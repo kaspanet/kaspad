@@ -11,8 +11,8 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"math"
@@ -688,7 +688,7 @@ func (c *Client) handleSendPostMessage(details *sendPostDetails) {
 	respBytes, err := ioutil.ReadAll(httpResponse.Body)
 	httpResponse.Body.Close()
 	if err != nil {
-		err = fmt.Errorf("error reading json reply: %s", err)
+		err = errors.Errorf("error reading json reply: %s", err)
 		jReq.responseChan <- &response{err: err}
 		return
 	}
@@ -700,7 +700,7 @@ func (c *Client) handleSendPostMessage(details *sendPostDetails) {
 		// When the response itself isn't a valid JSON-RPC response
 		// return an error which includes the HTTP status code and raw
 		// response bytes.
-		err = fmt.Errorf("status code: %d, response: %q",
+		err = errors.Errorf("status code: %d, response: %q",
 			httpResponse.StatusCode, string(respBytes))
 		jReq.responseChan <- &response{err: err}
 		return

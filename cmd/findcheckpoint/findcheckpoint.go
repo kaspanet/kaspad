@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 
@@ -61,7 +62,7 @@ func findCandidates(dag *blockdag.BlockDAG, highestTipHash *daghash.Hash) ([]*da
 	checkpointConfirmations := uint64(blockdag.CheckpointConfirmations)
 	requiredChainHeight := latestCheckpoint.ChainHeight + checkpointConfirmations
 	if block.ChainHeight() < requiredChainHeight {
-		return nil, fmt.Errorf("the block database is only at chain "+
+		return nil, errors.Errorf("the block database is only at chain "+
 			"height %d which is less than the latest checkpoint chain height "+
 			"of %d plus required confirmations of %d",
 			block.ChainHeight(), latestCheckpoint.ChainHeight,

@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"net"
 	"os"
 	"strconv"
@@ -138,14 +139,14 @@ func (d *DNSServer) validateDNSRequest(addr *net.UDPAddr, b []byte) (dnsMsg *dns
 	if len(dnsMsg.Question) != 1 {
 		str := fmt.Sprintf("%s sent more than 1 question: %d", addr, len(dnsMsg.Question))
 		log.Infof("%s", str)
-		return nil, "", "", fmt.Errorf("%s", str)
+		return nil, "", "", errors.Errorf("%s", str)
 	}
 	domainName = strings.ToLower(dnsMsg.Question[0].Name)
 	ff := strings.LastIndex(domainName, d.hostname)
 	if ff < 0 {
 		str := fmt.Sprintf("invalid name: %s", dnsMsg.Question[0].Name)
 		log.Infof("%s", str)
-		return nil, "", "", fmt.Errorf("%s", str)
+		return nil, "", "", errors.Errorf("%s", str)
 	}
 	atype, err = translateDNSQuestion(addr, dnsMsg)
 	return dnsMsg, domainName, atype, err
@@ -164,7 +165,7 @@ func translateDNSQuestion(addr *net.UDPAddr, dnsMsg *dns.Msg) (string, error) {
 	default:
 		str := fmt.Sprintf("%s: invalid qtype: %d", addr, dnsMsg.Question[0].Qtype)
 		log.Infof("%s", str)
-		return "", fmt.Errorf("%s", str)
+		return "", errors.Errorf("%s", str)
 	}
 	return atype, nil
 }

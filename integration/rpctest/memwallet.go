@@ -7,7 +7,7 @@ package rpctest
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
+	"github.com/pkg/errors"
 	"sync"
 
 	"github.com/daglabs/btcd/btcec"
@@ -399,7 +399,7 @@ func (m *memWallet) fundTx(tx *wire.MsgTx, amt util.Amount, feeRate util.Amount)
 
 	// If we've reached this point, then coin selection failed due to an
 	// insufficient amount of coins.
-	return fmt.Errorf("not enough funds for coin selection")
+	return errors.Errorf("not enough funds for coin selection")
 }
 
 // SendOutputs creates, then sends a transaction paying to the specified output

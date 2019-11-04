@@ -7,7 +7,7 @@ package blockdag
 import (
 	"compress/bzip2"
 	"encoding/binary"
-	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -185,7 +185,7 @@ func checkRuleError(gotErr, wantErr error) error {
 	// Ensure the error code is of the expected type and the error
 	// code matches the value specified in the test instance.
 	if reflect.TypeOf(gotErr) != reflect.TypeOf(wantErr) {
-		return fmt.Errorf("wrong error - got %T (%[1]v), want %T",
+		return errors.Errorf("wrong error - got %T (%[1]v), want %T",
 			gotErr, wantErr)
 	}
 	if gotErr == nil {
@@ -195,7 +195,7 @@ func checkRuleError(gotErr, wantErr error) error {
 	// Ensure the want error type is a script error.
 	werr, ok := wantErr.(RuleError)
 	if !ok {
-		return fmt.Errorf("unexpected test error type %T", wantErr)
+		return errors.Errorf("unexpected test error type %T", wantErr)
 	}
 
 	// Ensure the error codes match.  It's safe to use a raw type assert
@@ -203,7 +203,7 @@ func checkRuleError(gotErr, wantErr error) error {
 	// the want error is a script error.
 	gotErrorCode := gotErr.(RuleError).ErrorCode
 	if gotErrorCode != werr.ErrorCode {
-		return fmt.Errorf("mismatched error code - got %v (%v), want %v",
+		return errors.Errorf("mismatched error code - got %v (%v), want %v",
 			gotErrorCode, gotErr, werr.ErrorCode)
 	}
 

@@ -5,8 +5,8 @@
 package txscript
 
 import (
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"testing"
 
 	"github.com/daglabs/btcd/btcec"
@@ -59,13 +59,13 @@ func checkScripts(msg string, tx *wire.MsgTx, idx int, sigScript, scriptPubKey [
 	vm, err := NewEngine(scriptPubKey, tx, idx,
 		flags, nil)
 	if err != nil {
-		return fmt.Errorf("failed to make script engine for %s: %v",
+		return errors.Errorf("failed to make script engine for %s: %v",
 			msg, err)
 	}
 
 	err = vm.Execute()
 	if err != nil {
-		return fmt.Errorf("invalid script signature for %s: %v", msg,
+		return errors.Errorf("invalid script signature for %s: %v", msg,
 			err)
 	}
 
@@ -79,7 +79,7 @@ func signAndCheck(msg string, tx *wire.MsgTx, idx int, scriptPubKey []byte,
 	sigScript, err := SignTxOutput(&dagconfig.TestNetParams, tx, idx,
 		scriptPubKey, hashType, kdb, sdb, nil)
 	if err != nil {
-		return fmt.Errorf("failed to sign output %s: %v", msg, err)
+		return errors.Errorf("failed to sign output %s: %v", msg, err)
 	}
 
 	return checkScripts(msg, tx, idx, sigScript, scriptPubKey)

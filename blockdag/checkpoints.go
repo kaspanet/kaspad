@@ -10,6 +10,7 @@ import (
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
+	"github.com/pkg/errors"
 )
 
 // CheckpointConfirmations is the number of blocks before the end of the current
@@ -218,7 +219,7 @@ func (dag *BlockDAG) IsCheckpointCandidate(block *util.Block) (bool, error) {
 	// in the DAG match.  This should always be the case unless the
 	// caller provided an invalid block.
 	if node.chainHeight != block.ChainHeight() {
-		return false, fmt.Errorf("passed block chain height of %d does not "+
+		return false, errors.Errorf("passed block chain height of %d does not "+
 			"match the its height in the DAG: %d", block.ChainHeight(),
 			node.chainHeight)
 	}

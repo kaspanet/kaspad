@@ -5,8 +5,8 @@
 package indexers
 
 import (
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"sync"
 
 	"github.com/daglabs/btcd/blockdag"
@@ -898,7 +898,7 @@ func (idx *AddrIndex) UnconfirmedTxnsForAddress(addr util.Address) []*util.Tx {
 //
 // This is part of the Indexer interface.
 func (idx *AddrIndex) Recover(dbTx database.Tx, currentBlockID, lastKnownBlockID uint64) error {
-	return fmt.Errorf("addrindex was turned off for %d blocks and can't be recovered."+
+	return errors.Errorf("addrindex was turned off for %d blocks and can't be recovered."+
 		" To resume working drop the addrindex with --dropaddrindex", lastKnownBlockID-currentBlockID)
 }
 

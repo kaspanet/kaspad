@@ -7,7 +7,7 @@ package mining
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
+	"github.com/pkg/errors"
 	"sort"
 	"time"
 
@@ -224,7 +224,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 	txsForBlockTemplate, err := g.selectTxs(payToAddress)
 	if err != nil {
-		return nil, fmt.Errorf("failed to select txs: %s", err)
+		return nil, errors.Errorf("failed to select txs: %s", err)
 	}
 
 	// Calculate the required difficulty for the block.  The timestamp
@@ -360,7 +360,7 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, extraNonce 
 		return err
 	}
 	if len(coinbasePayload) > blockdag.MaxCoinbasePayloadLen {
-		return fmt.Errorf("coinbase transaction script length "+
+		return errors.Errorf("coinbase transaction script length "+
 			"of %d is out of range (max: %d)",
 			len(coinbasePayload),
 			blockdag.MaxCoinbasePayloadLen)

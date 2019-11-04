@@ -5,7 +5,7 @@
 package dagconfig
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 	"math"
 	"math/big"
 	"time"

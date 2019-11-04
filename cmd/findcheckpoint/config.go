@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -99,7 +100,7 @@ func loadConfig() (*config, []string, error) {
 	if numNets > 1 {
 		str := "%s: The testnet, regtest, simnet and devnet params can't be " +
 			"used together -- choose one of the four"
-		err := fmt.Errorf(str, funcName)
+		err := errors.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)
 		parser.WriteHelp(os.Stderr)
 		return nil, nil, err
@@ -109,7 +110,7 @@ func loadConfig() (*config, []string, error) {
 	if !validDbType(cfg.DbType) {
 		str := "%s: The specified database type [%s] is invalid -- " +
 			"supported types %s"
-		err := fmt.Errorf(str, funcName, cfg.DbType, strings.Join(knownDbTypes, ", "))
+		err := errors.Errorf(str, funcName, cfg.DbType, strings.Join(knownDbTypes, ", "))
 		fmt.Fprintln(os.Stderr, err)
 		parser.WriteHelp(os.Stderr)
 		return nil, nil, err
@@ -127,7 +128,7 @@ func loadConfig() (*config, []string, error) {
 	if cfg.NumCandidates < minCandidates || cfg.NumCandidates > maxCandidates {
 		str := "%s: The specified number of candidates is out of " +
 			"range -- parsed [%d]"
-		err = fmt.Errorf(str, funcName, cfg.NumCandidates)
+		err = errors.Errorf(str, funcName, cfg.NumCandidates)
 		fmt.Fprintln(os.Stderr, err)
 		parser.WriteHelp(os.Stderr)
 		return nil, nil, err

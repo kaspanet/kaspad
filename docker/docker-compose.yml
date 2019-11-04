@@ -2,7 +2,7 @@ version: '3'
 services:
   first:
     image: btcd:latest
-    security_opt: 
+    security_opt:
       - apparmor=unconfined
     cap_add:
       - SYS_PTRACE
@@ -24,7 +24,7 @@ services:
   second:
     image: btcd:latest
     links: ["first"]
-    security_opt: 
+    security_opt:
       - apparmor=unconfined
     cap_add:
       - SYS_PTRACE
@@ -45,14 +45,14 @@ services:
   second-debug:
     image: btcd:latest
     links: ["first"]
-    security_opt: 
+    security_opt:
       - apparmor=unconfined
     cap_add:
       - SYS_PTRACE
     command: [
-      "dlv", 
-      "--listen=:40000", 
-      "--api-version=2", 
+      "dlv",
+      "--listen=:40000",
+      "--api-version=2",
       "--headless=true",
       "exec",
       "./btcd",

@@ -1,7 +1,7 @@
 package ffldb
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 	"testing"
 
 	"bou.ke/monkey"

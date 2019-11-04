@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"time"
 
@@ -16,7 +16,7 @@ func connectToServers(cfg *config, addressList []string) ([]*simulatorClient, er
 		var err error
 		cert, err = ioutil.ReadFile(cfg.CertificatePath)
 		if err != nil {
-			return nil, fmt.Errorf("Error reading certificates file: %s", err)
+			return nil, errors.Errorf("Error reading certificates file: %s", err)
 		}
 	}
 

@@ -6,9 +6,8 @@ package rpcclient
 
 import (
 	"encoding/json"
-	"errors"
-
 	"github.com/daglabs/btcd/btcjson"
+	"github.com/pkg/errors"
 )
 
 // FutureRawResult is a future promise to deliver the result of a RawRequest RPC

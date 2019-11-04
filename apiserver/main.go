@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"os"
 
 	"github.com/daglabs/btcd/apiserver/config"
@@ -32,25 +33,25 @@ func main() {
 	if cfg.Migrate {
 		err := database.Migrate(cfg)
 		if err != nil {
-			panic(fmt.Errorf("Error migrating database: %s", err))
+			panic(errors.Errorf("Error migrating database: %s", err))
 		}
 		return
 	}
 
 	err = database.Connect(cfg)
 	if err != nil {
-		panic(fmt.Errorf("Error connecting to database: %s", err))
+		panic(errors.Errorf("Error connecting to database: %s", err))
 	}
 	defer func() {
 		err := database.Close()
 		if err != nil {
-			panic(fmt.Errorf("Error closing the database: %s", err))
+			panic(errors.Errorf("Error closing the database: %s", err))
 		}
 	}()
 
 	err = jsonrpc.Connect(cfg)
 	if err != nil {
-		panic(fmt.Errorf("Error connecting to servers: %s", err))
+		panic(errors.Errorf("Error connecting to servers: %s", err))
 	}
 	defer jsonrpc.Close()
 

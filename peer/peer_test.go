@@ -5,7 +5,7 @@
 package peer_test
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 	"io"
 	"net"
 	"strconv"

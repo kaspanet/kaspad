@@ -1,8 +1,8 @@
 package blockdag
 
 import (
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"math"
 	"sort"
 	"strings"
@@ -223,7 +223,7 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 					other.toAdd.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)) {
 				continue
 			}
-			return nil, fmt.Errorf("diffFrom: outpoint %s both in d.toAdd and in other.toRemove", outpoint)
+			return nil, errors.Errorf("diffFrom: outpoint %s both in d.toAdd and in other.toRemove", outpoint)
 		}
 	}
 
@@ -383,7 +383,7 @@ func (d *UTXODiff) AddEntry(outpoint wire.Outpoint, entry *UTXOEntry) error {
 	if d.toRemove.containsWithBlueScore(outpoint, entry.blockBlueScore) {
 		d.toRemove.remove(outpoint)
 	} else if _, exists := d.toAdd[outpoint]; exists {
-		return fmt.Errorf("AddEntry: Cannot add outpoint %s twice", outpoint)
+		return errors.Errorf("AddEntry: Cannot add outpoint %s twice", outpoint)
 	} else {
 		d.toAdd.add(outpoint, entry)
 	}
@@ -402,7 +402,7 @@ func (d *UTXODiff) RemoveEntry(outpoint wire.Outpoint, entry *UTXOEntry) error {
 	if d.toAdd.containsWithBlueScore(outpoint, entry.blockBlueScore) {
 		d.toAdd.remove(outpoint)
 	} else if _, exists := d.toRemove[outpoint]; exists {
-		return fmt.Errorf("removeEntry: Cannot remove outpoint %s twice", outpoint)
+		return errors.Errorf("removeEntry: Cannot remove outpoint %s twice", outpoint)
 	} else {
 		d.toRemove.add(outpoint, entry)
 	}
@@ -490,7 +490,7 @@ func diffFromAcceptedTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*
 		existingOutpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
 		existingEntry, ok := u.Get(existingOutpoint)
 		if !ok {
-			return nil, fmt.Errorf("cannot accept outpoint %s because it doesn't exist in the given UTXO", existingOutpoint)
+			return nil, errors.Errorf("cannot accept outpoint %s because it doesn't exist in the given UTXO", existingOutpoint)
 		}
 
 		// Remove unaccepted entries
@@ -642,7 +642,7 @@ func (fus *FullUTXOSet) addAndUpdateMultiset(outpoint wire.Outpoint, entry *UTXO
 func (fus *FullUTXOSet) removeAndUpdateMultiset(outpoint wire.Outpoint) error {
 	entry, ok := fus.Get(outpoint)
 	if !ok {
-		return fmt.Errorf("Couldn't find outpoint %s", outpoint)
+		return errors.Errorf("Couldn't find outpoint %s", outpoint)
 	}
 	fus.remove(outpoint)
 	var err error
@@ -663,7 +663,7 @@ func (fus *FullUTXOSet) WithTransactions(transactions []*wire.MsgTx, blockBlueSc
 			return nil, err
 		}
 		if !ignoreDoubleSpends && !isAccepted {
-			return nil, fmt.Errorf("Transaction %s is not valid with the current UTXO set", tx.TxID())
+			return nil, errors.Errorf("Transaction %s is not valid with the current UTXO set", tx.TxID())
 		}
 	}
 	return UTXOSet(diffSet), nil
@@ -729,7 +729,7 @@ func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockBlueScore uint64, isCoinba
 			outpoint := *wire.NewOutpoint(&txIn.PreviousOutpoint.TxID, txIn.PreviousOutpoint.Index)
 			entry, ok := dus.Get(outpoint)
 			if !ok {
-				return fmt.Errorf("Couldn't find entry for outpoint %s", outpoint)
+				return errors.Errorf("Couldn't find entry for outpoint %s", outpoint)
 			}
 			err := dus.UTXODiff.RemoveEntry(outpoint, entry)
 			if err != nil {
@@ -770,7 +770,7 @@ func (dus *DiffUTXOSet) meldToBase() error {
 		if _, ok := dus.base.Get(outpoint); ok {
 			dus.base.remove(outpoint)
 		} else {
-			return fmt.Errorf("Couldn't remove outpoint %s because it doesn't exist in the DiffUTXOSet base", outpoint)
+			return errors.Errorf("Couldn't remove outpoint %s because it doesn't exist in the DiffUTXOSet base", outpoint)
 		}
 	}
 
@@ -835,7 +835,7 @@ func (dus *DiffUTXOSet) WithTransactions(transactions []*wire.MsgTx, blockBlueSc
 			return nil, err
 		}
 		if !ignoreDoubleSpends && !isAccepted {
-			return nil, fmt.Errorf("Transaction %s is not valid with the current UTXO set", tx.TxID())
+			return nil, errors.Errorf("Transaction %s is not valid with the current UTXO set", tx.TxID())
 		}
 	}
 	return UTXOSet(diffSet), nil

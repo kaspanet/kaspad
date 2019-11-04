@@ -9,8 +9,8 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/binary"
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"math"
 	"net"
 	"runtime"
@@ -1503,7 +1503,7 @@ func ParseListeners(addrs []string) ([]net.Addr, error) {
 			}
 			ip = net.ParseIP(hostAddrs[0])
 			if ip == nil {
-				return nil, fmt.Errorf("Cannot resolve IP address for host '%s'", host)
+				return nil, errors.Errorf("Cannot resolve IP address for host '%s'", host)
 			}
 		}
 
@@ -1932,7 +1932,7 @@ func addrStringToNetAddr(addr string) (net.Addr, error) {
 		return nil, err
 	}
 	if len(ips) == 0 {
-		return nil, fmt.Errorf("no addresses found for %s", host)
+		return nil, errors.Errorf("no addresses found for %s", host)
 	}
 
 	return &net.TCPAddr{

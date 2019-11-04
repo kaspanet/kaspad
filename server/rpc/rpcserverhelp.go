@@ -6,7 +6,7 @@
 package rpc
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 	"sort"
 	"strings"
 	"sync"

@@ -4,9 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
-	"errors"
-	"fmt"
 	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/pkg/errors"
 	"io"
 	"math"
 
@@ -85,7 +84,7 @@ func (node *blockNode) getBluesFeeData(dag *BlockDAG) (map[daghash.Hash]compactF
 		for _, blueBlock := range node.blues {
 			feeData, err := dbFetchFeeData(dbTx, blueBlock.hash)
 			if err != nil {
-				return fmt.Errorf("Error getting fee data for block %s: %s", blueBlock.hash, err)
+				return errors.Errorf("Error getting fee data for block %s: %s", blueBlock.hash, err)
 			}
 
 			bluesFeeData[*blueBlock.hash] = feeData
@@ -103,7 +102,7 @@ func (node *blockNode) getBluesFeeData(dag *BlockDAG) (map[daghash.Hash]compactF
 func dbStoreFeeData(dbTx database.Tx, blockHash *daghash.Hash, feeData compactFeeData) error {
 	feeBucket, err := dbTx.Metadata().CreateBucketIfNotExists(feeBucket)
 	if err != nil {
-		return fmt.Errorf("Error creating or retrieving fee bucket: %s", err)
+		return errors.Errorf("Error creating or retrieving fee bucket: %s", err)
 	}
 
 	return feeBucket.Put(blockHash.CloneBytes(), feeData)
@@ -117,7 +116,7 @@ func dbFetchFeeData(dbTx database.Tx, blockHash *daghash.Hash) (compactFeeData, 
 
 	feeData := feeBucket.Get(blockHash.CloneBytes())
 	if feeData == nil {
-		return nil, fmt.Errorf("No fee data found for block %s", blockHash)
+		return nil, errors.Errorf("No fee data found for block %s", blockHash)
 	}
 
 	return feeData, nil
@@ -223,15 +222,15 @@ func coinbaseInputAndOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode,
 
 	blockTxsAcceptanceData, ok := txsAcceptanceData[*blueBlock.hash]
 	if !ok {
-		return nil, nil, fmt.Errorf("No txsAcceptanceData for block %s", blueBlock.hash)
+		return nil, nil, errors.Errorf("No txsAcceptanceData for block %s", blueBlock.hash)
 	}
 	blockFeeData, ok := feeData[*blueBlock.hash]
 	if !ok {
-		return nil, nil, fmt.Errorf("No feeData for block %s", blueBlock.hash)
+		return nil, nil, errors.Errorf("No feeData for block %s", blueBlock.hash)
 	}
 
 	if len(blockTxsAcceptanceData) != blockFeeData.Len() {
-		return nil, nil, fmt.Errorf(
+		return nil, nil, errors.Errorf(
 			"length of accepted transaction data(%d) and fee data(%d) is not equal for block %s",
 			len(blockTxsAcceptanceData), blockFeeData.Len(), blueBlock.hash)
 	}
@@ -251,7 +250,7 @@ func coinbaseInputAndOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode,
 	for _, txAcceptanceData := range blockTxsAcceptanceData {
 		fee, err := feeIterator.next()
 		if err != nil {
-			return nil, nil, fmt.Errorf("Error retrieving fee from compactFeeData iterator: %s", err)
+			return nil, nil, errors.Errorf("Error retrieving fee from compactFeeData iterator: %s", err)
 		}
 		if txAcceptanceData.IsAccepted {
 			totalFees += fee

@@ -7,6 +7,7 @@ package wire
 import (
 	"bytes"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"unicode/utf8"
 
@@ -171,7 +172,7 @@ func makeEmptyMessage(command string) (Message, error) {
 		msg = &MsgCFCheckpt{}
 
 	default:
-		return nil, fmt.Errorf("unhandled command [%s]", command)
+		return nil, errors.Errorf("unhandled command [%s]", command)
 	}
 	return msg, nil
 }

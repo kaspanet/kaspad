@@ -1,11 +1,11 @@
 package config
 
 import (
-	"errors"
 	"github.com/daglabs/btcd/apiserver/logger"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/util"
 	"github.com/jessevdk/go-flags"
+	"github.com/pkg/errors"
 	"path/filepath"
 )
 

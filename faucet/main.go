@@ -47,19 +47,19 @@ func main() {
 	if cfg.Migrate {
 		err := database.Migrate()
 		if err != nil {
-			panic(fmt.Errorf("Error migrating database: %s", err))
+			panic(errors.Errorf("Error migrating database: %s", err))
 		}
 		return
 	}
 
 	err = database.Connect()
 	if err != nil {
-		panic(fmt.Errorf("Error connecting to database: %s", err))
+		panic(errors.Errorf("Error connecting to database: %s", err))
 	}
 	defer func() {
 		err := database.Close()
 		if err != nil {
-			panic(fmt.Errorf("Error closing the database: %s", err))
+			panic(errors.Errorf("Error closing the database: %s", err))
 		}
 	}()
 
@@ -68,12 +68,12 @@ func main() {
 
 	faucetAddress, err = privateKeyToP2PKHAddress(faucetPrivateKey, config.ActiveNetParams())
 	if err != nil {
-		panic(fmt.Errorf("Failed to get P2PKH address from private key: %s", err))
+		panic(errors.Errorf("Failed to get P2PKH address from private key: %s", err))
 	}
 
 	faucetScriptPubKey, err = txscript.PayToAddrScript(faucetAddress)
 	if err != nil {
-		panic(fmt.Errorf("failed to generate faucetScriptPubKey to address: %s", err))
+		panic(errors.Errorf("failed to generate faucetScriptPubKey to address: %s", err))
 	}
 
 	shutdownServer := startHTTPServer(cfg.HTTPListen)

@@ -8,7 +8,6 @@
 package integration
 
 import (
-	"fmt"
 	"runtime"
 	"testing"
 	"time"
@@ -80,7 +79,7 @@ func thresholdStateToStatus(state blockdag.ThresholdState) (string, error) {
 		return "failed", nil
 	}
 
-	return "", fmt.Errorf("unrecognized threshold state: %v", state)
+	return "", errors.Errorf("unrecognized threshold state: %v", state)
 }
 
 // assertSoftForkStatus retrieves the current blockchain info from the given

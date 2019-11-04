@@ -8,7 +8,7 @@
 package ffldb
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 	"io"
 	"sync"
 )

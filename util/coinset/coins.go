@@ -6,7 +6,7 @@ package coinset
 
 import (
 	"container/list"
-	"errors"
+	"github.com/pkg/errors"
 	"sort"
 
 	"github.com/daglabs/btcd/util"

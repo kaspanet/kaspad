@@ -11,6 +11,7 @@ import (
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -429,6 +430,6 @@ func DropTxIndex(db database.DB, interrupt <-chan struct{}) error {
 //
 // This is part of the Indexer interface.
 func (idx *TxIndex) Recover(dbTx database.Tx, currentBlockID, lastKnownBlockID uint64) error {
-	return fmt.Errorf("txindex was turned off for %d blocks and can't be recovered."+
+	return errors.Errorf("txindex was turned off for %d blocks and can't be recovered."+
 		" To resume working drop the txindex with --droptxindex", lastKnownBlockID-currentBlockID)
 }

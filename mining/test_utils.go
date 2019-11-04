@@ -3,7 +3,7 @@ package mining
 // This file functions are not considered safe for regular use, and should be used for test purposes only.
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/daglabs/btcd/dagconfig"
@@ -90,7 +90,7 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 		}
 		if !found {
 			if !forceTransactions {
-				return nil, fmt.Errorf("tx %s wasn't found in the block", tx.TxHash())
+				return nil, errors.Errorf("tx %s wasn't found in the block", tx.TxHash())
 			}
 			txsToAdd = append(txsToAdd, tx)
 		}

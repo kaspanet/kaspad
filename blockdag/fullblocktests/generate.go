@@ -12,8 +12,8 @@ package fullblocktests
 import (
 	"bytes"
 	"encoding/binary"
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"math"
 	"runtime"
 	"time"

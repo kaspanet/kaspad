@@ -1,10 +1,10 @@
 package blockdag
 
 import (
-	"fmt"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/util/locks"
+	"github.com/pkg/errors"
 )
 
 var multisetPointSize = 32
@@ -105,7 +105,7 @@ func (diffStore *utxoDiffStore) diffDataByHash(hash *daghash.Hash) (*blockUTXODi
 }
 
 func diffNotFoundError(node *blockNode) error {
-	return fmt.Errorf("Couldn't find diff data for block %s", node.hash)
+	return errors.Errorf("Couldn't find diff data for block %s", node.hash)
 }
 
 func (diffStore *utxoDiffStore) diffByNode(node *blockNode) (*UTXODiff, error) {

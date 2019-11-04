@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jinzhu/gorm"
+	"github.com/pkg/errors"
 	"net/http"
 	"strings"
 )
@@ -54,7 +55,7 @@ func NewErrorFromDBErrors(prefix string, dbErrors []error) error {
 	for i, dbErr := range dbErrors {
 		dbErrorsStrings[i] = fmt.Sprintf("\"%s\"", dbErr)
 	}
-	return fmt.Errorf("%s [%s]", prefix, strings.Join(dbErrorsStrings, ","))
+	return errors.Errorf("%s [%s]", prefix, strings.Join(dbErrorsStrings, ","))
 }
 
 // NewHandlerErrorFromDBErrors takes a slice of database errors and a prefix, and

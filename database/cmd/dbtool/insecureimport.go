@@ -6,7 +6,7 @@ package main
 
 import (
 	"encoding/binary"
-	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"os"
 	"sync"
@@ -72,7 +72,7 @@ func (bi *blockImporter) readBlock() ([]byte, error) {
 		return nil, nil
 	}
 	if net != uint32(activeNetParams.Net) {
-		return nil, fmt.Errorf("network mismatch -- got %x, want %x",
+		return nil, errors.Errorf("network mismatch -- got %x, want %x",
 			net, uint32(activeNetParams.Net))
 	}
 
@@ -82,7 +82,7 @@ func (bi *blockImporter) readBlock() ([]byte, error) {
 		return nil, err
 	}
 	if blockLen > wire.MaxMessagePayload {
-		return nil, fmt.Errorf("block payload of %d bytes is larger "+
+		return nil, errors.Errorf("block payload of %d bytes is larger "+
 			"than the max allowed %d bytes", blockLen,
 			wire.MaxMessagePayload)
 	}
@@ -137,7 +137,7 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 			return false, err
 		}
 		if !exists {
-			return false, fmt.Errorf("import file contains block "+
+			return false, errors.Errorf("import file contains block "+
 				"%s which does not link to the available "+
 				"block chain", parentHash)
 		}
@@ -164,7 +164,7 @@ out:
 		// notify the status handler with the error and bail.
 		serializedBlock, err := bi.readBlock()
 		if err != nil {
-			bi.errChan <- fmt.Errorf("Error reading from input "+
+			bi.errChan <- errors.Errorf("Error reading from input "+
 				"file: %s", err.Error())
 			break out
 		}
@@ -329,7 +329,7 @@ func (cmd *importCmd) Execute(args []string) error {
 	// Ensure the specified block file exists.
 	if !fileExists(cmd.InFile) {
 		str := "The specified block file [%s] does not exist"
-		return fmt.Errorf(str, cmd.InFile)
+		return errors.Errorf(str, cmd.InFile)
 	}
 
 	// Load the block database.

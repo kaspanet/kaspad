@@ -10,7 +10,7 @@ import (
 	"encoding/base32"
 	"encoding/binary"
 	"encoding/json"
-	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"math/rand"
 	"net"
@@ -565,7 +565,7 @@ func (a *AddrManager) deserializePeers(filePath string) error {
 	}
 	r, err := os.Open(filePath)
 	if err != nil {
-		return fmt.Errorf("%s error opening file: %s", filePath, err)
+		return errors.Errorf("%s error opening file: %s", filePath, err)
 	}
 	defer r.Close()
 
@@ -573,11 +573,11 @@ func (a *AddrManager) deserializePeers(filePath string) error {
 	dec := json.NewDecoder(r)
 	err = dec.Decode(&sam)
 	if err != nil {
-		return fmt.Errorf("error reading %s: %s", filePath, err)
+		return errors.Errorf("error reading %s: %s", filePath, err)
 	}
 
 	if sam.Version != serialisationVersion {
-		return fmt.Errorf("unknown version %d in serialized "+
+		return errors.Errorf("unknown version %d in serialized "+
 			"addrmanager", sam.Version)
 	}
 	copy(a.key[:], sam.Key[:])
@@ -586,18 +586,18 @@ func (a *AddrManager) deserializePeers(filePath string) error {
 		ka := new(KnownAddress)
 		ka.na, err = a.DeserializeNetAddress(v.Addr)
 		if err != nil {
-			return fmt.Errorf("failed to deserialize netaddress "+
+			return errors.Errorf("failed to deserialize netaddress "+
 				"%s: %s", v.Addr, err)
 		}
 		ka.srcAddr, err = a.DeserializeNetAddress(v.Src)
 		if err != nil {
-			return fmt.Errorf("failed to deserialize netaddress "+
+			return errors.Errorf("failed to deserialize netaddress "+
 				"%s: %s", v.Src, err)
 		}
 		if v.SubnetworkID != "" {
 			ka.subnetworkID, err = subnetworkid.NewFromStr(v.SubnetworkID)
 			if err != nil {
-				return fmt.Errorf("failed to deserialize subnetwork id "+
+				return errors.Errorf("failed to deserialize subnetwork id "+
 					"%s: %s", v.SubnetworkID, err)
 			}
 		}
@@ -616,7 +616,7 @@ func (a *AddrManager) deserializePeers(filePath string) error {
 			for _, val := range subnetworkNewBucket {
 				ka, ok := a.addrIndex[val]
 				if !ok {
-					return fmt.Errorf("newbucket contains %s but "+
+					return errors.Errorf("newbucket contains %s but "+
 						"none in address list", val)
 				}
 
@@ -633,7 +633,7 @@ func (a *AddrManager) deserializePeers(filePath string) error {
 		for _, val := range newBucket {
 			ka, ok := a.addrIndex[val]
 			if !ok {
-				return fmt.Errorf("full nodes newbucket contains %s but "+
+				return errors.Errorf("full nodes newbucket contains %s but "+
 					"none in address list", val)
 			}
 
@@ -654,7 +654,7 @@ func (a *AddrManager) deserializePeers(filePath string) error {
 			for _, val := range subnetworkTriedBucket {
 				ka, ok := a.addrIndex[val]
 				if !ok {
-					return fmt.Errorf("Tried bucket contains %s but "+
+					return errors.Errorf("Tried bucket contains %s but "+
 						"none in address list", val)
 				}
 
@@ -669,7 +669,7 @@ func (a *AddrManager) deserializePeers(filePath string) error {
 		for _, val := range triedBucket {
 			ka, ok := a.addrIndex[val]
 			if !ok {
-				return fmt.Errorf("Full nodes tried bucket contains %s but "+
+				return errors.Errorf("Full nodes tried bucket contains %s but "+
 					"none in address list", val)
 			}
 
@@ -682,12 +682,12 @@ func (a *AddrManager) deserializePeers(filePath string) error {
 	// Sanity checking.
 	for k, v := range a.addrIndex {
 		if v.refs == 0 && !v.tried {
-			return fmt.Errorf("address %s after serialisation "+
+			return errors.Errorf("address %s after serialisation "+
 				"with no references", k)
 		}
 
 		if v.refs > 0 && v.tried {
-			return fmt.Errorf("address %s after serialisation "+
+			return errors.Errorf("address %s after serialisation "+
 				"which is both new and tried!", k)
 		}
 	}
@@ -774,11 +774,11 @@ func (a *AddrManager) AddAddressByIP(addrIP string, subnetworkID *subnetworkid.S
 	// Put it in wire.Netaddress
 	ip := net.ParseIP(addr)
 	if ip == nil {
-		return fmt.Errorf("invalid ip address %s", addr)
+		return errors.Errorf("invalid ip address %s", addr)
 	}
 	port, err := strconv.ParseUint(portStr, 10, 0)
 	if err != nil {
-		return fmt.Errorf("invalid port %s: %s", portStr, err)
+		return errors.Errorf("invalid port %s: %s", portStr, err)
 	}
 	na := wire.NewNetAddressIPPort(ip, uint16(port), 0)
 	a.AddAddress(na, na, subnetworkID) // XXX use correct src address
@@ -917,7 +917,7 @@ func (a *AddrManager) HostToNetAddress(host string, port uint16, services wire.S
 			return nil, err
 		}
 		if len(ips) == 0 {
-			return nil, fmt.Errorf("no addresses found for %s", host)
+			return nil, errors.Errorf("no addresses found for %s", host)
 		}
 		ip = ips[0]
 	}
@@ -1249,7 +1249,7 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 // with the given priority.
 func (a *AddrManager) AddLocalAddress(na *wire.NetAddress, priority AddressPriority) error {
 	if !IsRoutable(na) {
-		return fmt.Errorf("address %s is not routable", na.IP)
+		return errors.Errorf("address %s is not routable", na.IP)
 	}
 
 	a.lamtx.Lock()

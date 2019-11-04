@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/hex"
-	"fmt"
+	"github.com/pkg/errors"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -24,7 +24,7 @@ func parseBlock(template *btcjson.GetBlockTemplateResult) (*util.Block, error) {
 	for i, parentHash := range template.ParentHashes {
 		hash, err := daghash.NewHashFromStr(parentHash)
 		if err != nil {
-			return nil, fmt.Errorf("Error decoding hash %s: %s", parentHash, err)
+			return nil, errors.Errorf("Error decoding hash %s: %s", parentHash, err)
 		}
 		parentHashes[i] = hash
 	}
@@ -32,18 +32,18 @@ func parseBlock(template *btcjson.GetBlockTemplateResult) (*util.Block, error) {
 	// parse Bits
 	bitsInt64, err := strconv.ParseInt(template.Bits, 16, 32)
 	if err != nil {
-		return nil, fmt.Errorf("Error decoding bits %s: %s", template.Bits, err)
+		return nil, errors.Errorf("Error decoding bits %s: %s", template.Bits, err)
 	}
 	bits := uint32(bitsInt64)
 
 	// parseAcceptedIDMerkleRoot
 	acceptedIDMerkleRoot, err := daghash.NewHashFromStr(template.AcceptedIDMerkleRoot)
 	if err != nil {
-		return nil, fmt.Errorf("Error parsing acceptedIDMerkleRoot: %s", err)
+		return nil, errors.Errorf("Error parsing acceptedIDMerkleRoot: %s", err)
 	}
 	utxoCommitment, err := daghash.NewHashFromStr(template.UTXOCommitment)
 	if err != nil {
-		return nil, fmt.Errorf("Error parsing utxoCommitment: %s", err)
+		return nil, errors.Errorf("Error parsing utxoCommitment: %s", err)
 	}
 	// parse rest of block
 	msgBlock := wire.NewMsgBlock(
@@ -54,7 +54,7 @@ func parseBlock(template *btcjson.GetBlockTemplateResult) (*util.Block, error) {
 		reader := hex.NewDecoder(strings.NewReader(txResult.Data))
 		tx := &wire.MsgTx{}
 		if err := tx.BtcDecode(reader, 0); err != nil {
-			return nil, fmt.Errorf("Error decoding tx #%d: %s", i, err)
+			return nil, errors.Errorf("Error decoding tx #%d: %s", i, err)
 		}
 		msgBlock.AddTransaction(tx)
 	}
@@ -101,7 +101,7 @@ func templatesLoop(client *simulatorClient, newTemplateChan chan *btcjson.GetBlo
 			log.Infof("Got timeout while requesting template '%s' from %s", longPollID, client.Host())
 			return
 		} else if err != nil {
-			errChan <- fmt.Errorf("Error getting block template: %s", err)
+			errChan <- errors.Errorf("Error getting block template: %s", err)
 			return
 		}
 		if template.LongPollID != longPollID {
@@ -133,7 +133,7 @@ func solveLoop(newTemplateChan chan *btcjson.GetBlockTemplateResult, foundBlock 
 		stopOldTemplateSolving = make(chan struct{})
 		block, err := parseBlock(template)
 		if err != nil {
-			errChan <- fmt.Errorf("Error parsing block: %s", err)
+			errChan <- errors.Errorf("Error parsing block: %s", err)
 			return
 		}
 
@@ -156,7 +156,7 @@ func handleFoundBlock(client *simulatorClient, block *util.Block, templateStopCh
 
 	err := client.SubmitBlock(block, &btcjson.SubmitBlockOptions{})
 	if err != nil {
-		return fmt.Errorf("Error submitting block: %s", err)
+		return errors.Errorf("Error submitting block: %s", err)
 	}
 	return nil
 }

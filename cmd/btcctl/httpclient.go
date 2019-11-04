@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"fmt"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -98,7 +98,7 @@ func sendPostRequest(marshalledJSON []byte, cfg *config) ([]byte, error) {
 	respBytes, err := ioutil.ReadAll(httpResponse.Body)
 	httpResponse.Body.Close()
 	if err != nil {
-		err = fmt.Errorf("error reading json reply: %s", err)
+		err = errors.Errorf("error reading json reply: %s", err)
 		return nil, err
 	}
 
@@ -109,10 +109,10 @@ func sendPostRequest(marshalledJSON []byte, cfg *config) ([]byte, error) {
 		// than showing nothing in case the target server has a poor
 		// implementation.
 		if len(respBytes) == 0 {
-			return nil, fmt.Errorf("%d %s", httpResponse.StatusCode,
+			return nil, errors.Errorf("%d %s", httpResponse.StatusCode,
 				http.StatusText(httpResponse.StatusCode))
 		}
-		return nil, fmt.Errorf("%s", respBytes)
+		return nil, errors.Errorf("%s", respBytes)
 	}
 
 	// Unmarshal the response.
