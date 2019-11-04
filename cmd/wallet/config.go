@@ -10,9 +10,15 @@ type newConfig struct {
 }
 
 type balanceConfig struct {
+	APIAddress string `long:"api-address" short:"a" description:"Address of API-Server" required:"true"`
+	Address    string `long:"address" short:"d" description:"Address whose balance to check" required:"true"`
 }
 
 type sendConfig struct {
+	APIAddress string  `long:"api-address" short:"a" description:"Address of API-Server" required:"true"`
+	PrivateKey string  `long:"private-key" short:"k" description:"Signing private key in hex" required:"true"`
+	ToAddress  string  `long:"to-address" short:"t" description:"Address to which to send funds" required:"true"`
+	SendAmound float64 `long:"send-amount" short:"v" description:"Amount of coins to send" required:"true"`
 }
 
 func parseCommandLine() (subCommand string, config interface{}) {
