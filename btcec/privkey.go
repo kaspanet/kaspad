@@ -59,7 +59,7 @@ func (p *PrivateKey) ToECDSA() *ecdsa.PrivateKey {
 // is deterministic (same message and same key yield the same signature) and canonical
 // in accordance with RFC6979 and BIP0062.
 func (p *PrivateKey) Sign(hash []byte) (*Signature, error) {
-	return signSchnorr(p, hash)
+	return sign(p, hash)
 }
 
 // PrivKeyBytesLen defines the length in bytes of a serialized private key.

@@ -70,7 +70,7 @@ func Example_verifySignature() {
 		fmt.Println(err)
 		return
 	}
-	signature, err := btcec.ParseSchnorrSignature(sigBytes)
+	signature, err := btcec.ParseSignature(sigBytes)
 	if err != nil {
 		fmt.Println(err)
 		return

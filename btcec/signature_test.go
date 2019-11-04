@@ -239,7 +239,7 @@ func TestSchnorrSignatureVerify(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		sig, err := ParseSchnorrSignature(test.signature)
+		sig, err := ParseSignature(test.signature)
 		if err != nil {
 			t.Fatal(err)
 		}

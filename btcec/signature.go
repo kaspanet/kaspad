@@ -102,7 +102,8 @@ func (sig *Signature) IsEqual(otherSig *Signature) bool {
 		sig.S.Cmp(otherSig.S) == 0
 }
 
-func parseSchnorrSig(sigStr []byte) (*Signature, error) {
+// ParseSignature parses a 64 byte schnorr signature into a Signature type.
+func ParseSignature(sigStr []byte) (*Signature, error) {
 	if len(sigStr) != 64 {
 		return nil, errors.New("malformed schnorr signature: not 64 bytes")
 	}
@@ -112,11 +113,6 @@ func parseSchnorrSig(sigStr []byte) (*Signature, error) {
 		R: bigR,
 		S: bigS,
 	}, nil
-}
-
-// ParseSchnorrSignature parses a 64 byte schnorr signature into a Signature type.
-func ParseSchnorrSignature(sigStr []byte) (*Signature, error) {
-	return parseSchnorrSig(sigStr)
 }
 
 // padIntBytes pads a big int bytes with leading zeros if they
@@ -149,8 +145,8 @@ func hashToInt(hash []byte, c elliptic.Curve) *big.Int {
 	return ret
 }
 
-// signSchnorr signs the hash using the schnorr signature algorithm.
-func signSchnorr(privateKey *PrivateKey, hash []byte) (*Signature, error) {
+// sign signs the hash using the schnorr signature algorithm.
+func sign(privateKey *PrivateKey, hash []byte) (*Signature, error) {
 	// The rfc6979 nonce derivation function accepts additional entropy.
 	// We are using the same entropy that is used by bitcoin-abc so our test
 	// vectors will be compatible. This byte string is chosen to avoid collisions

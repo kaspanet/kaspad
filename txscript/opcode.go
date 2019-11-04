@@ -2048,7 +2048,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 		return nil
 	}
 
-	signature, err := btcec.ParseSchnorrSignature(sigBytes)
+	signature, err := btcec.ParseSignature(sigBytes)
 	if err != nil {
 		vm.dstack.PushBool(false)
 		return nil
@@ -2218,7 +2218,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 
 			// Parse the signature.
 			var err error
-			parsedSig, err = btcec.ParseSchnorrSignature(signature)
+			parsedSig, err = btcec.ParseSignature(signature)
 
 			sigInfo.parsed = true
 			if err != nil {
