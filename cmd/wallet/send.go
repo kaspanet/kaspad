@@ -1,4 +1,4 @@
 package main
 
-func send() {
+func send(conf *sendConfig) {
 }

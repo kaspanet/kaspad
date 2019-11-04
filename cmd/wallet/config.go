@@ -1,57 +1,55 @@
 package main
 
 import (
-	"fmt"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/jessevdk/go-flags"
-	"github.com/pkg/errors"
 	"os"
+
+	"github.com/jessevdk/go-flags"
 )
 
-var activeNetParams = &dagconfig.MainNetParams
-
-type config struct {
-	Transaction    string `long:"transaction" short:"t" description:"Unsigned transaction in HEX format" required:"true"`
-	PrivateKey     string `long:"private-key" short:"p" description:"Private key" required:"true"`
-	TestNet        bool   `long:"testnet" description:"Use the test network"`
-	RegressionTest bool   `long:"regtest" description:"Use the regression test network"`
-	SimNet         bool   `long:"simnet" description:"Use the simulation test network"`
-	DevNet         bool   `long:"devnet" description:"Use the development test network"`
+type newConfig struct {
 }
 
-func parseCommandLine() (*config, error) {
-	cfg := &config{}
+type balanceConfig struct {
+}
+
+type sendConfig struct {
+}
+
+func parseCommandLine() (subCommand string, config interface{}) {
+	cfg := &struct{}{}
 	parser := flags.NewParser(cfg, flags.PrintErrors|flags.HelpFlag)
+
+	newConf := &newConfig{}
+	parser.AddCommand("new", "Creates a new wallet",
+		"Creates a new wallet and prints it's private key as well as addresses to all networks", newConf)
+
+	balanceConf := &balanceConfig{}
+	parser.AddCommand("balance", "Shows the balance for a given address",
+		"Shows the balance for a given address", balanceConf)
+
+	sendConf := &sendConfig{}
+	parser.AddCommand("send", "Sends a transaction to given address",
+		"Sends a transaction to given address", sendConf)
+
 	_, err := parser.Parse()
-	// Multiple networks can't be selected simultaneously.
-	funcName := "loadConfig"
-	numNets := 0
-	// Count number of network flags passed; assign active network params
-	// while we're at it
-	if cfg.TestNet {
-		numNets++
-		activeNetParams = &dagconfig.TestNetParams
-	}
-	if cfg.RegressionTest {
-		numNets++
-		activeNetParams = &dagconfig.RegressionNetParams
-	}
-	if cfg.SimNet {
-		numNets++
-		activeNetParams = &dagconfig.SimNetParams
-	}
-	if cfg.DevNet {
-		numNets++
-		activeNetParams = &dagconfig.DevNetParams
-	}
-	if numNets > 1 {
-		str := "%s: The testnet, regtest, simnet and devent params can't be " +
-			"used together -- choose one of the four"
-		err := errors.Errorf(str, funcName)
-		fmt.Fprintln(os.Stderr, err)
-		parser.WriteHelp(os.Stderr)
-		return nil, err
+
+	if err != nil {
+		if err, ok := err.(*flags.Error); ok && err.Type == flags.ErrHelp {
+			os.Exit(0)
+		} else {
+			os.Exit(1)
+		}
+		return "", nil
 	}
 
-	return cfg, err
+	switch parser.Command.Active.Name {
+	case "new":
+		config = newConf
+	case "balance":
+		config = balanceConf
+	case "send":
+		config = sendConf
+	}
+
+	return parser.Command.Active.Name, config
 }

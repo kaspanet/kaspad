@@ -9,7 +9,7 @@ import (
 	"github.com/daglabs/btcd/util"
 )
 
-func new() {
+func new(*newConfig) {
 	privateKey, err := btcec.NewPrivateKey(btcec.S256())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to generate private key: %s", err)
@@ -26,5 +26,4 @@ func new() {
 		}
 		fmt.Printf("Address (%s): %s\n", netParams.Name, addr)
 	}
-
 }
