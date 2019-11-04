@@ -5,7 +5,7 @@
 package mining
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 	"testing"
 
 	"github.com/daglabs/btcd/util/subnetworkid"

@@ -1,7 +1,7 @@
 package serverutils
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"net"
 	"os"
@@ -42,7 +42,7 @@ type Peer struct {
 // are not intended to be resolved outside of the tor proxy.
 func BTCDLookup(host string) ([]net.IP, error) {
 	if strings.HasSuffix(host, ".onion") {
-		return nil, fmt.Errorf("attempt to resolve tor address %s", host)
+		return nil, errors.Errorf("attempt to resolve tor address %s", host)
 	}
 
 	return config.MainConfig().Lookup(host)

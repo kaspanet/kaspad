@@ -9,7 +9,7 @@ import (
 	"crypto/elliptic"
 	"crypto/hmac"
 	"crypto/sha256"
-	"errors"
+	"github.com/pkg/errors"
 	"hash"
 	"math/big"
 )

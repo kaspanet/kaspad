@@ -9,8 +9,8 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/daglabs/btcd/btcjson"

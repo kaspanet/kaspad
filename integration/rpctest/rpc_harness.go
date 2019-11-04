@@ -6,6 +6,7 @@ package rpctest
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"net"
 	"os"
@@ -116,7 +117,7 @@ func New(activeNet *dagconfig.Params, handlers *rpcclient.NotificationHandlers,
 	case wire.SimNet:
 		extraArgs = append(extraArgs, "--simnet")
 	default:
-		return nil, fmt.Errorf("rpctest.New must be called with one " +
+		return nil, errors.Errorf("rpctest.New must be called with one " +
 			"of the supported chain networks")
 	}
 
@@ -314,7 +315,7 @@ func (h *Harness) connectRPCClient() error {
 	}
 
 	if client == nil {
-		return fmt.Errorf("connection timeout")
+		return errors.Errorf("connection timeout")
 	}
 
 	h.Node = client

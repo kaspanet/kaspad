@@ -2,7 +2,7 @@ package ffldb
 
 import (
 	"container/list"
-	"errors"
+	"github.com/pkg/errors"
 	"os"
 	"sync"
 	"testing"

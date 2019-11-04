@@ -1,13 +1,13 @@
 package indexers
 
 import (
-	"fmt"
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
+	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"os"
@@ -259,7 +259,7 @@ func copyDirectory(scrDir, dest string) error {
 
 		stat, ok := fileInfo.Sys().(*syscall.Stat_t)
 		if !ok {
-			return fmt.Errorf("failed to get raw syscall.Stat_t data for '%s'", sourcePath)
+			return errors.Errorf("failed to get raw syscall.Stat_t data for '%s'", sourcePath)
 		}
 
 		switch fileInfo.Mode() & os.ModeType {
@@ -323,7 +323,7 @@ func createIfNotExists(dir string, perm os.FileMode) error {
 	}
 
 	if err := os.MkdirAll(dir, perm); err != nil {
-		return fmt.Errorf("failed to create directory: '%s', error: '%s'", dir, err.Error())
+		return errors.Errorf("failed to create directory: '%s', error: '%s'", dir, err.Error())
 	}
 
 	return nil

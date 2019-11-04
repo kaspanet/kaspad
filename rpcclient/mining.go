@@ -7,11 +7,10 @@ package rpcclient
 import (
 	"encoding/hex"
 	"encoding/json"
-	"errors"
-
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
+	"github.com/pkg/errors"
 )
 
 // FutureGenerateResult is a future promise to deliver the result of a

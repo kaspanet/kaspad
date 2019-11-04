@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
+	"github.com/pkg/errors"
 )
 
 func buildSubnetworkRegistryTx(cfg *config, fundingOutpoint *wire.Outpoint, fundingTx *wire.MsgTx, privateKey *btcec.PrivateKey) (*wire.MsgTx, error) {
@@ -21,7 +21,7 @@ func buildSubnetworkRegistryTx(cfg *config, fundingOutpoint *wire.Outpoint, fund
 	SignatureScript, err := txscript.SignatureScript(registryTx, 0, fundingTx.TxOut[fundingOutpoint.Index].ScriptPubKey,
 		txscript.SigHashAll, privateKey, true)
 	if err != nil {
-		return nil, fmt.Errorf("failed to build signature script: %s", err)
+		return nil, errors.Errorf("failed to build signature script: %s", err)
 	}
 	txIn.SignatureScript = SignatureScript
 

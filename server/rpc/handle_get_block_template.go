@@ -3,7 +3,6 @@ package rpc
 import (
 	"bytes"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"
@@ -13,6 +12,7 @@ import (
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
+	"github.com/pkg/errors"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -864,14 +864,14 @@ func decodeLongPollID(longPollID string) ([]*daghash.Hash, int64, error) {
 	for i := 0; i < len(parentHashesStr); i += daghash.HashSize {
 		hash, err := daghash.NewHashFromStr(parentHashesStr[i : i+daghash.HashSize])
 		if err != nil {
-			return nil, 0, fmt.Errorf("decodeLongPollID: NewHashFromStr: %s", err)
+			return nil, 0, errors.Errorf("decodeLongPollID: NewHashFromStr: %s", err)
 		}
 		parentHashes = append(parentHashes, hash)
 	}
 
 	lastGenerated, err := strconv.ParseInt(fields[1], 10, 64)
 	if err != nil {
-		return nil, 0, fmt.Errorf("decodeLongPollID: Cannot parse timestamp %s: %s", fields[1], err)
+		return nil, 0, errors.Errorf("decodeLongPollID: Cannot parse timestamp %s: %s", fields[1], err)
 	}
 
 	return parentHashes, lastGenerated, nil

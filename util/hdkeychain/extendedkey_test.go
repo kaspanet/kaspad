@@ -11,7 +11,8 @@ package hdkeychain
 import (
 	"bytes"
 	"encoding/hex"
-	"errors"
+	"github.com/daglabs/btcd/testutil"
+	"github.com/pkg/errors"
 	"math"
 	"reflect"
 	"testing"
@@ -540,7 +541,7 @@ func TestGenenerateSeed(t *testing.T) {
 
 	for i, test := range tests {
 		seed, err := GenerateSeed(test.length)
-		if !reflect.DeepEqual(err, test.err) {
+		if !testutil.AreErrorsEqual(err, test.err) {
 			t.Errorf("GenerateSeed #%d (%s): unexpected error -- "+
 				"want %v, got %v", i, test.name, test.err, err)
 			continue
@@ -870,7 +871,7 @@ func TestErrors(t *testing.T) {
 
 	for i, test := range tests {
 		extKey, err := NewKeyFromString(test.key)
-		if !reflect.DeepEqual(err, test.err) {
+		if !testutil.AreErrorsEqual(err, test.err) {
 			t.Errorf("NewKeyFromString #%d (%s): mismatched error "+
 				"-- got: %v, want: %v", i, test.name, err,
 				test.err)
@@ -953,7 +954,7 @@ func TestZero(t *testing.T) {
 
 		wantErr = errors.New("pubkey string is empty")
 		_, err = key.ECPubKey()
-		if !reflect.DeepEqual(err, wantErr) {
+		if !testutil.AreErrorsEqual(err, wantErr) {
 			t.Errorf("ECPubKey #%d (%s): mismatched error: want "+
 				"%v, got %v", i, testName, wantErr, err)
 			return false

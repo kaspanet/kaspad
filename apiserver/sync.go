@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
-	"fmt"
 	"github.com/daglabs/btcd/apiserver/config"
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/dbmodels"
@@ -14,6 +13,7 @@ import (
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/jinzhu/gorm"
+	"github.com/pkg/errors"
 	"strconv"
 	"time"
 )
@@ -314,6 +314,11 @@ func insertBlock(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult) (*dbmode
 		IsChainBlock:         false, // This must be false for updateSelectedParentChain to work properly
 		Mass:                 rawBlock.Mass,
 	}
+
+	// Set genesis block as the initial chain block
+	if len(rawBlock.ParentHashes) == 0 {
+		dbBlock.IsChainBlock = true
+	}
 	dbResult := dbTx.Create(&dbBlock)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
@@ -341,7 +346,7 @@ func insertBlockParents(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult, d
 		return httpserverutils.NewErrorFromDBErrors("failed to find blocks: ", dbErrors)
 	}
 	if len(dbParents) != len(rawBlock.ParentHashes) {
-		return fmt.Errorf("some parents are missing for block: %s", rawBlock.Hash)
+		return errors.Errorf("some parents are missing for block: %s", rawBlock.Hash)
 	}
 
 	for _, dbParent := range dbParents {
@@ -496,7 +501,7 @@ func insertTransactionInput(dbTx *gorm.DB, dbTransaction *dbmodels.Transaction, 
 		return httpserverutils.NewErrorFromDBErrors("failed to find previous transactionOutput: ", dbErrors)
 	}
 	if httpserverutils.IsDBRecordNotFoundError(dbErrors) {
-		return fmt.Errorf("missing output transaction output for txID: %s and index: %d", input.TxID, input.Vout)
+		return errors.Errorf("missing output transaction output for txID: %s and index: %d", input.TxID, input.Vout)
 	}
 
 	var dbTransactionInputCount int
@@ -651,10 +656,10 @@ func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
 		return httpserverutils.NewErrorFromDBErrors("failed to find block: ", dbErrors)
 	}
 	if httpserverutils.IsDBRecordNotFoundError(dbErrors) {
-		return fmt.Errorf("missing block for hash: %s", removedHash)
+		return errors.Errorf("missing block for hash: %s", removedHash)
 	}
 	if !dbBlock.IsChainBlock {
-		return fmt.Errorf("block erroneously marked as not a chain block: %s", removedHash)
+		return errors.Errorf("block erroneously marked as not a chain block: %s", removedHash)
 	}
 
 	var dbTransactions []dbmodels.Transaction
@@ -670,7 +675,7 @@ func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
 		for _, dbTransactionInput := range dbTransaction.TransactionInputs {
 			dbPreviousTransactionOutput := dbTransactionInput.PreviousTransactionOutput
 			if !dbPreviousTransactionOutput.IsSpent {
-				return fmt.Errorf("cannot de-spend an unspent transaction output: %s index: %d",
+				return errors.Errorf("cannot de-spend an unspent transaction output: %s index: %d",
 					dbTransaction.TransactionID, dbTransactionInput.Index)
 			}
 
@@ -690,6 +695,16 @@ func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
 		}
 	}
 
+	dbResult = dbTx.
+		Model(&dbmodels.Block{}).
+		Where(&dbmodels.Block{AcceptingBlockID: btcjson.Uint64(dbBlock.ID)}).
+		Updates(map[string]interface{}{"AcceptingBlockID": nil})
+
+	dbErrors = dbResult.GetErrors()
+	if httpserverutils.HasDBError(dbErrors) {
+		return httpserverutils.NewErrorFromDBErrors("failed to update blocks: ", dbErrors)
+	}
+
 	dbBlock.IsChainBlock = false
 	dbResult = dbTx.Save(&dbBlock)
 	dbErrors = dbResult.GetErrors()
@@ -707,6 +722,21 @@ func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
 // * The block is set IsChainBlock = true
 // This function will return an error if any of the above are in an unexpected state
 func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error {
+	var dbAddedBlock dbmodels.Block
+	dbResult := dbTx.
+		Where(&dbmodels.Block{BlockHash: addedBlock.Hash}).
+		First(&dbAddedBlock)
+	dbErrors := dbResult.GetErrors()
+	if httpserverutils.HasDBError(dbErrors) {
+		return httpserverutils.NewErrorFromDBErrors("failed to find block: ", dbErrors)
+	}
+	if httpserverutils.IsDBRecordNotFoundError(dbErrors) {
+		return errors.Errorf("missing block for hash: %s", addedBlock.Hash)
+	}
+	if dbAddedBlock.IsChainBlock {
+		return errors.Errorf("block erroneously marked as a chain block: %s", addedBlock.Hash)
+	}
+
 	for _, acceptedBlock := range addedBlock.AcceptedBlocks {
 		var dbAccepedBlock dbmodels.Block
 		dbResult := dbTx.
@@ -717,10 +747,10 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 			return httpserverutils.NewErrorFromDBErrors("failed to find block: ", dbErrors)
 		}
 		if httpserverutils.IsDBRecordNotFoundError(dbErrors) {
-			return fmt.Errorf("missing block for hash: %s", acceptedBlock.Hash)
+			return errors.Errorf("missing block for hash: %s", acceptedBlock.Hash)
 		}
-		if dbAccepedBlock.IsChainBlock {
-			return fmt.Errorf("block erroneously marked as a chain block: %s", acceptedBlock.Hash)
+		if dbAccepedBlock.AcceptingBlockID != nil && *dbAccepedBlock.AcceptingBlockID == dbAddedBlock.ID {
+			return errors.Errorf("block %s erroneously marked as accepted by %s", acceptedBlock.Hash, addedBlock.Hash)
 		}
 
 		transactionIDsIn := make([]string, len(acceptedBlock.AcceptedTxIDs))
@@ -731,20 +761,20 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 		dbResult = dbTx.
 			Where("transaction_id in (?)", transactionIDsIn).
 			Preload("TransactionInputs.PreviousTransactionOutput").
-			First(&dbAcceptedTransactions)
+			Find(&dbAcceptedTransactions)
 		dbErrors = dbResult.GetErrors()
 		if httpserverutils.HasDBError(dbErrors) {
 			return httpserverutils.NewErrorFromDBErrors("failed to find transactions: ", dbErrors)
 		}
 		if len(dbAcceptedTransactions) != len(acceptedBlock.AcceptedTxIDs) {
-			return fmt.Errorf("some transaction are missing for block: %s", acceptedBlock.Hash)
+			return errors.Errorf("some transaction are missing for block: %s", acceptedBlock.Hash)
 		}
 
 		for _, dbAcceptedTransaction := range dbAcceptedTransactions {
 			for _, dbTransactionInput := range dbAcceptedTransaction.TransactionInputs {
 				dbPreviousTransactionOutput := dbTransactionInput.PreviousTransactionOutput
 				if dbPreviousTransactionOutput.IsSpent {
-					return fmt.Errorf("cannot spend an already spent transaction output: %s index: %d",
+					return errors.Errorf("cannot spend an already spent transaction output: %s index: %d",
 						dbAcceptedTransaction.TransactionID, dbTransactionInput.Index)
 				}
 
@@ -764,13 +794,21 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 			}
 		}
 
-		dbAccepedBlock.IsChainBlock = true
+		dbAccepedBlock.AcceptingBlockID = btcjson.Uint64(dbAddedBlock.ID)
 		dbResult = dbTx.Save(&dbAccepedBlock)
 		dbErrors = dbResult.GetErrors()
 		if httpserverutils.HasDBError(dbErrors) {
 			return httpserverutils.NewErrorFromDBErrors("failed to update block: ", dbErrors)
 		}
 	}
+
+	dbAddedBlock.IsChainBlock = true
+	dbResult = dbTx.Save(&dbAddedBlock)
+	dbErrors = dbResult.GetErrors()
+	if httpserverutils.HasDBError(dbErrors) {
+		return httpserverutils.NewErrorFromDBErrors("failed to update block: ", dbErrors)
+	}
+
 	return nil
 }
 

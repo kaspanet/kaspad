@@ -6,6 +6,7 @@ import (
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/util/daghash"
+	"github.com/pkg/errors"
 	"strings"
 )
 
@@ -94,6 +95,6 @@ func softForkStatus(state blockdag.ThresholdState) (string, error) {
 	case blockdag.ThresholdFailed:
 		return "failed", nil
 	default:
-		return "", fmt.Errorf("unknown deployment state: %s", state)
+		return "", errors.Errorf("unknown deployment state: %s", state)
 	}
 }

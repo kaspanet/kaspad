@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"github.com/daglabs/btcd/rpcclient"
+	"github.com/pkg/errors"
 	"io/ioutil"
 )
 
@@ -12,7 +12,7 @@ func connect(cfg *config) (*rpcclient.Client, error) {
 		var err error
 		cert, err = ioutil.ReadFile(cfg.RPCCert)
 		if err != nil {
-			return nil, fmt.Errorf("error reading certificates file: %s", err)
+			return nil, errors.Errorf("error reading certificates file: %s", err)
 		}
 	}
 
@@ -30,7 +30,7 @@ func connect(cfg *config) (*rpcclient.Client, error) {
 
 	client, err := rpcclient.New(connCfg, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error connecting to address %s: %s", cfg.RPCServer, err)
+		return nil, errors.Errorf("error connecting to address %s: %s", cfg.RPCServer, err)
 	}
 
 	return client, nil

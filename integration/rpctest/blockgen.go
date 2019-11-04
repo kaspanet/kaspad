@@ -5,7 +5,7 @@
 package rpctest
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 	"math"
 	"math/big"
 	"runtime"

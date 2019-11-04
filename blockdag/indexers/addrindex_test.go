@@ -7,6 +7,7 @@ package indexers
 import (
 	"bytes"
 	"fmt"
+	"github.com/pkg/errors"
 	"testing"
 
 	"github.com/daglabs/btcd/wire"
@@ -127,17 +128,17 @@ func (b *addrIndexBucket) sanityCheck(addrKey [addrKeySize]byte, expectedTotal i
 			if (highestLevel != 0 && numEntries == 0) ||
 				numEntries > maxEntries {
 
-				return fmt.Errorf("level %d has %d entries",
+				return errors.Errorf("level %d has %d entries",
 					level, numEntries)
 			}
 		} else if numEntries != maxEntries && numEntries != maxEntries/2 {
-			return fmt.Errorf("level %d has %d entries", level,
+			return errors.Errorf("level %d has %d entries", level,
 				numEntries)
 		}
 		maxEntries *= 2
 	}
 	if totalEntries != expectedTotal {
-		return fmt.Errorf("expected %d entries - got %d", expectedTotal,
+		return errors.Errorf("expected %d entries - got %d", expectedTotal,
 			totalEntries)
 	}
 
@@ -151,7 +152,7 @@ func (b *addrIndexBucket) sanityCheck(addrKey [addrKeySize]byte, expectedTotal i
 			start := i * txEntrySize
 			num := byteOrder.Uint32(data[start:])
 			if num != expectedNum {
-				return fmt.Errorf("level %d offset %d does "+
+				return errors.Errorf("level %d offset %d does "+
 					"not contain the expected number of "+
 					"%d - got %d", level, i, num,
 					expectedNum)

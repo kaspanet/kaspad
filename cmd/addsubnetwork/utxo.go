@@ -3,12 +3,11 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
-	"fmt"
-
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/rpcclient"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/wire"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -58,7 +57,7 @@ func collectTransactions(client *rpcclient.Client, addrPubKeyHash *util.AddressP
 
 			tx, err := parseRawTransactionResult(result)
 			if err != nil {
-				return nil, fmt.Errorf("failed to process SearchRawTransactionResult: %s", err)
+				return nil, errors.Errorf("failed to process SearchRawTransactionResult: %s", err)
 			}
 			if tx == nil {
 				continue
@@ -78,13 +77,13 @@ func collectTransactions(client *rpcclient.Client, addrPubKeyHash *util.AddressP
 func parseRawTransactionResult(result *btcjson.SearchRawTransactionsResult) (*wire.MsgTx, error) {
 	txBytes, err := hex.DecodeString(result.Hex)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode transaction bytes: %s", err)
+		return nil, errors.Errorf("failed to decode transaction bytes: %s", err)
 	}
 	var tx wire.MsgTx
 	reader := bytes.NewReader(txBytes)
 	err = tx.Deserialize(reader)
 	if err != nil {
-		return nil, fmt.Errorf("failed to deserialize transaction: %s", err)
+		return nil, errors.Errorf("failed to deserialize transaction: %s", err)
 	}
 	return &tx, nil
 }

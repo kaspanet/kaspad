@@ -17,7 +17,6 @@ import (
 type ScriptFlags uint32
 
 const (
-
 	// ScriptNoFlags is used when you want to use ScriptFlags without raising any flags
 	ScriptNoFlags ScriptFlags = 0
 

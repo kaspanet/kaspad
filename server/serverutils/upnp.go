@@ -35,7 +35,7 @@ package serverutils
 import (
 	"bytes"
 	"encoding/xml"
-	"errors"
+	"github.com/pkg/errors"
 	"net"
 	"net/http"
 	"os"

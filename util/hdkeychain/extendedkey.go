@@ -14,8 +14,7 @@ import (
 	"crypto/rand"
 	"crypto/sha512"
 	"encoding/binary"
-	"errors"
-	"fmt"
+	"github.com/pkg/errors"
 	"math/big"
 
 	"github.com/daglabs/btcd/btcec"
@@ -84,7 +83,7 @@ var (
 
 	// ErrInvalidSeedLen describes an error in which the provided seed or
 	// seed length is not in the allowed range.
-	ErrInvalidSeedLen = fmt.Errorf("seed length must be between %d and %d "+
+	ErrInvalidSeedLen = errors.Errorf("seed length must be between %d and %d "+
 		"bits", MinSeedBytes*8, MaxSeedBytes*8)
 
 	// ErrBadChecksum describes an error in which the checksum encoded with

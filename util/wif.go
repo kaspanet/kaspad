@@ -6,10 +6,10 @@ package util
 
 import (
 	"bytes"
-	"errors"
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/util/base58"
 	"github.com/daglabs/btcd/util/daghash"
+	"github.com/pkg/errors"
 )
 
 // ErrMalformedPrivateKey describes an error where a WIF-encoded private

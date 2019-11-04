@@ -1,9 +1,9 @@
 package blockdag
 
 import (
-	"fmt"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util/daghash"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -57,7 +57,7 @@ func DBFetchBlockIDByHash(dbTx database.Tx, hash *daghash.Hash) (uint64, error) 
 	hashIndex := dbTx.Metadata().Bucket(idByHashIndexBucketName)
 	serializedID := hashIndex.Get(hash[:])
 	if serializedID == nil {
-		return 0, fmt.Errorf("no entry in the block ID index for block with hash %s", hash)
+		return 0, errors.Errorf("no entry in the block ID index for block with hash %s", hash)
 	}
 
 	return DeserializeBlockID(serializedID), nil
@@ -69,7 +69,7 @@ func DBFetchBlockHashBySerializedID(dbTx database.Tx, serializedID []byte) (*dag
 	idIndex := dbTx.Metadata().Bucket(hashByIDIndexBucketName)
 	hashBytes := idIndex.Get(serializedID)
 	if hashBytes == nil {
-		return nil, fmt.Errorf("no entry in the block ID index for block with id %d", byteOrder.Uint64(serializedID))
+		return nil, errors.Errorf("no entry in the block ID index for block with id %d", byteOrder.Uint64(serializedID))
 	}
 
 	var hash daghash.Hash

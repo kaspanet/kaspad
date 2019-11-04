@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -111,7 +112,7 @@ func loadConfig() (*config, []string, error) {
 	if numNets > 1 {
 		str := "%s: The testnet, regtest, simnet and devent params can't be " +
 			"used together -- choose one of the four"
-		err := fmt.Errorf(str, funcName)
+		err := errors.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)
 		parser.WriteHelp(os.Stderr)
 		return nil, nil, err
@@ -121,7 +122,7 @@ func loadConfig() (*config, []string, error) {
 	if !validDbType(cfg.DbType) {
 		str := "%s: The specified database type [%s] is invalid -- " +
 			"supported types %s"
-		err := fmt.Errorf(str, "loadConfig", cfg.DbType, strings.Join(knownDbTypes, ", "))
+		err := errors.Errorf(str, "loadConfig", cfg.DbType, strings.Join(knownDbTypes, ", "))
 		fmt.Fprintln(os.Stderr, err)
 		parser.WriteHelp(os.Stderr)
 		return nil, nil, err
@@ -138,7 +139,7 @@ func loadConfig() (*config, []string, error) {
 	// Ensure the specified block file exists.
 	if !fileExists(cfg.InFile) {
 		str := "%s: The specified block file [%s] does not exist"
-		err := fmt.Errorf(str, "loadConfig", cfg.InFile)
+		err := errors.Errorf(str, "loadConfig", cfg.InFile)
 		fmt.Fprintln(os.Stderr, err)
 		parser.WriteHelp(os.Stderr)
 		return nil, nil, err

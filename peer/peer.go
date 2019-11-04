@@ -7,8 +7,8 @@ package peer
 import (
 	"bytes"
 	"container/list"
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"math/rand"
 	"net"

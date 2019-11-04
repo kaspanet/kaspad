@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"net"
 	"os"
 	"path/filepath"
@@ -55,12 +56,12 @@ func loadConfig() (*config, error) {
 		if e, ok := err.(*os.PathError); ok && os.IsExist(err) {
 			if link, lerr := os.Readlink(e.Path); lerr == nil {
 				str := "is symlink %s -> %s mounted?"
-				err = fmt.Errorf(str, e.Path, link)
+				err = errors.Errorf(str, e.Path, link)
 			}
 		}
 
 		str := "failed to create home directory: %v"
-		err := fmt.Errorf(str, err)
+		err := errors.Errorf(str, err)
 		fmt.Fprintln(os.Stderr, err)
 		return nil, err
 	}
@@ -109,14 +110,14 @@ func loadConfig() (*config, error) {
 
 	if len(cfg.Host) == 0 {
 		str := "Please specify a hostname"
-		err := fmt.Errorf(str)
+		err := errors.Errorf(str)
 		fmt.Fprintln(os.Stderr, err)
 		return nil, err
 	}
 
 	if len(cfg.Nameserver) == 0 {
 		str := "Please specify a nameserver"
-		err := fmt.Errorf(str)
+		err := errors.Errorf(str)
 		fmt.Fprintln(os.Stderr, err)
 		return nil, err
 	}
@@ -125,7 +126,7 @@ func loadConfig() (*config, error) {
 
 	if cfg.TestNet && cfg.DevNet {
 		str := "Both testnet and devnet are specified"
-		err := fmt.Errorf(str)
+		err := errors.Errorf(str)
 		fmt.Fprintln(os.Stderr, err)
 		return nil, err
 	} else if cfg.TestNet {

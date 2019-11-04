@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"os"
 
 	"github.com/daglabs/btcd/signal"
@@ -22,19 +23,19 @@ func main() {
 
 	addressList, err := getAddressList(cfg)
 	if err != nil {
-		panic(fmt.Errorf("Couldn't load address list: %s", err))
+		panic(errors.Errorf("Couldn't load address list: %s", err))
 	}
 
 	clients, err := connectToServers(cfg, addressList)
 	if err != nil {
-		panic(fmt.Errorf("Error connecting to servers: %s", err))
+		panic(errors.Errorf("Error connecting to servers: %s", err))
 	}
 	defer disconnect(clients)
 
 	spawn(func() {
 		err = mineLoop(clients)
 		if err != nil {
-			panic(fmt.Errorf("Error in main loop: %s", err))
+			panic(errors.Errorf("Error in main loop: %s", err))
 		}
 	})
 

@@ -35,6 +35,7 @@ package logs
 import (
 	"bytes"
 	"fmt"
+	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -270,11 +271,11 @@ func (b *Backend) AddLogFile(logFile string, logLevel Level) error {
 	logDir, _ := filepath.Split(logFile)
 	err := os.MkdirAll(logDir, 0700)
 	if err != nil {
-		return fmt.Errorf("failed to create log directory: %s", err)
+		return errors.Errorf("failed to create log directory: %s", err)
 	}
 	r, err := rotator.New(logFile, 10*1024, false, 3)
 	if err != nil {
-		return fmt.Errorf("failed to create file rotator: %s", err)
+		return errors.Errorf("failed to create file rotator: %s", err)
 	}
 	b.rotators = append(b.rotators, &backendLogRotator{
 		Rotator:  r,

@@ -7,7 +7,7 @@ package blockdag_test
 
 import (
 	"bytes"
-	"fmt"
+	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -62,7 +62,7 @@ func isSupportedDbType(dbType string) bool {
 // a teardown function the caller should invoke when done testing to clean up.
 func DAGSetup(dbName string, params *dagconfig.Params) (*blockdag.BlockDAG, func(), error) {
 	if !isSupportedDbType(testDbType) {
-		return nil, nil, fmt.Errorf("unsupported db type %v", testDbType)
+		return nil, nil, errors.Errorf("unsupported db type %v", testDbType)
 	}
 
 	// Handle memory database specially since it doesn't need the disk
@@ -72,7 +72,7 @@ func DAGSetup(dbName string, params *dagconfig.Params) (*blockdag.BlockDAG, func
 	if testDbType == "memdb" {
 		ndb, err := database.Create(testDbType)
 		if err != nil {
-			return nil, nil, fmt.Errorf("error creating db: %v", err)
+			return nil, nil, errors.Errorf("error creating db: %v", err)
 		}
 		db = ndb
 
@@ -85,7 +85,7 @@ func DAGSetup(dbName string, params *dagconfig.Params) (*blockdag.BlockDAG, func
 		// Create the root directory for test databases.
 		if !fileExists(testDbRoot) {
 			if err := os.MkdirAll(testDbRoot, 0700); err != nil {
-				err := fmt.Errorf("unable to create test db "+
+				err := errors.Errorf("unable to create test db "+
 					"root: %v", err)
 				return nil, nil, err
 			}
@@ -96,7 +96,7 @@ func DAGSetup(dbName string, params *dagconfig.Params) (*blockdag.BlockDAG, func
 		_ = os.RemoveAll(dbPath)
 		ndb, err := database.Create(testDbType, dbPath, blockDataNet)
 		if err != nil {
-			return nil, nil, fmt.Errorf("error creating db: %v", err)
+			return nil, nil, errors.Errorf("error creating db: %v", err)
 		}
 		db = ndb
 
@@ -123,7 +123,7 @@ func DAGSetup(dbName string, params *dagconfig.Params) (*blockdag.BlockDAG, func
 	})
 	if err != nil {
 		teardown()
-		err := fmt.Errorf("failed to create chain instance: %v", err)
+		err := errors.Errorf("failed to create chain instance: %v", err)
 		return nil, nil, err
 	}
 	return chain, teardown, nil

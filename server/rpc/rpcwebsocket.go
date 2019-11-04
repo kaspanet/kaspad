@@ -13,7 +13,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
+	"github.com/pkg/errors"
 	"io"
 	"sync"
 	"time"

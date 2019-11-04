@@ -5,7 +5,7 @@
 package database_test
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
 	"testing"
 
 	"github.com/daglabs/btcd/database"
@@ -54,7 +54,7 @@ func TestAddDuplicateDriver(t *testing.T) {
 	// detected if the interface allows a duplicate driver to overwrite an
 	// existing one.
 	bogusCreateDB := func(args ...interface{}) (database.DB, error) {
-		return nil, fmt.Errorf("duplicate driver allowed for database "+
+		return nil, errors.Errorf("duplicate driver allowed for database "+
 			"type [%v]", dbType)
 	}
 
@@ -80,7 +80,7 @@ func TestCreateOpenFail(t *testing.T) {
 	// driver function that intentionally returns a failure which can be
 	// detected.
 	dbType := "createopenfail"
-	openError := fmt.Errorf("failed to create or open database for "+
+	openError := errors.Errorf("failed to create or open database for "+
 		"database type [%v]", dbType)
 	bogusCreateDB := func(args ...interface{}) (database.DB, error) {
 		return nil, openError

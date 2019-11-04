@@ -1,14 +1,13 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/signal"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/base58"
 	"github.com/daglabs/btcd/util/panics"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -28,7 +27,7 @@ func main() {
 
 	cfg, err := parseConfig()
 	if err != nil {
-		panic(fmt.Errorf("Error parsing command-line arguments: %s", err))
+		panic(errors.Errorf("Error parsing command-line arguments: %s", err))
 	}
 
 	privateKeyBytes := base58.Decode(cfg.PrivateKey)
@@ -36,7 +35,7 @@ func main() {
 
 	p2pkhAddress, err = privateKeyToP2pkhAddress(privateKey, activeNetParams)
 	if err != nil {
-		panic(fmt.Errorf("Failed to get P2PKH address from private key: %s", err))
+		panic(errors.Errorf("Failed to get P2PKH address from private key: %s", err))
 	}
 
 	log.Infof("P2PKH address for private key: %s\n", p2pkhAddress)
@@ -44,13 +43,13 @@ func main() {
 	if cfg.SecondaryAddress != "" {
 		secondaryAddress, err = util.DecodeAddress(cfg.SecondaryAddress, activeNetParams.Prefix)
 		if err != nil {
-			panic(fmt.Errorf("Failed to decode secondary address %s: %s", cfg.SecondaryAddress, err))
+			panic(errors.Errorf("Failed to decode secondary address %s: %s", cfg.SecondaryAddress, err))
 		}
 	}
 
 	client, err := connectToServer(cfg)
 	if err != nil {
-		panic(fmt.Errorf("Error connecting to servers: %s", err))
+		panic(errors.Errorf("Error connecting to servers: %s", err))
 	}
 	defer disconnect(client)
 

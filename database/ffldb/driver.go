@@ -5,10 +5,9 @@
 package ffldb
 
 import (
-	"fmt"
-
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -18,20 +17,20 @@ const (
 // parseArgs parses the arguments from the database Open/Create methods.
 func parseArgs(funcName string, args ...interface{}) (string, wire.BitcoinNet, error) {
 	if len(args) != 2 {
-		return "", 0, fmt.Errorf("invalid arguments to %s.%s -- "+
+		return "", 0, errors.Errorf("invalid arguments to %s.%s -- "+
 			"expected database path and block network", dbType,
 			funcName)
 	}
 
 	dbPath, ok := args[0].(string)
 	if !ok {
-		return "", 0, fmt.Errorf("first argument to %s.%s is invalid -- "+
+		return "", 0, errors.Errorf("first argument to %s.%s is invalid -- "+
 			"expected database path string", dbType, funcName)
 	}
 
 	network, ok := args[1].(wire.BitcoinNet)
 	if !ok {
-		return "", 0, fmt.Errorf("second argument to %s.%s is invalid -- "+
+		return "", 0, errors.Errorf("second argument to %s.%s is invalid -- "+
 			"expected block network", dbType, funcName)
 	}
 

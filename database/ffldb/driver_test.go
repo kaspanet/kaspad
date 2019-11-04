@@ -5,7 +5,7 @@
 package ffldb_test
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -36,7 +36,7 @@ func TestCreateOpenFail(t *testing.T) {
 
 	// Ensure that attempting to open a database with the wrong number of
 	// parameters returns the expected error.
-	wantErr := fmt.Errorf("invalid arguments to %s.Open -- expected "+
+	wantErr := errors.Errorf("invalid arguments to %s.Open -- expected "+
 		"database path and block network", dbType)
 	_, err = database.Open(dbType, 1, 2, 3)
 	if err.Error() != wantErr.Error() {
@@ -47,7 +47,7 @@ func TestCreateOpenFail(t *testing.T) {
 
 	// Ensure that attempting to open a database with an invalid type for
 	// the first parameter returns the expected error.
-	wantErr = fmt.Errorf("first argument to %s.Open is invalid -- "+
+	wantErr = errors.Errorf("first argument to %s.Open is invalid -- "+
 		"expected database path string", dbType)
 	_, err = database.Open(dbType, 1, blockDataNet)
 	if err.Error() != wantErr.Error() {
@@ -58,7 +58,7 @@ func TestCreateOpenFail(t *testing.T) {
 
 	// Ensure that attempting to open a database with an invalid type for
 	// the second parameter returns the expected error.
-	wantErr = fmt.Errorf("second argument to %s.Open is invalid -- "+
+	wantErr = errors.Errorf("second argument to %s.Open is invalid -- "+
 		"expected block network", dbType)
 	_, err = database.Open(dbType, "noexist", "invalid")
 	if err.Error() != wantErr.Error() {
@@ -69,7 +69,7 @@ func TestCreateOpenFail(t *testing.T) {
 
 	// Ensure that attempting to create a database with the wrong number of
 	// parameters returns the expected error.
-	wantErr = fmt.Errorf("invalid arguments to %s.Create -- expected "+
+	wantErr = errors.Errorf("invalid arguments to %s.Create -- expected "+
 		"database path and block network", dbType)
 	_, err = database.Create(dbType, 1, 2, 3)
 	if err.Error() != wantErr.Error() {
@@ -80,7 +80,7 @@ func TestCreateOpenFail(t *testing.T) {
 
 	// Ensure that attempting to create a database with an invalid type for
 	// the first parameter returns the expected error.
-	wantErr = fmt.Errorf("first argument to %s.Create is invalid -- "+
+	wantErr = errors.Errorf("first argument to %s.Create is invalid -- "+
 		"expected database path string", dbType)
 	_, err = database.Create(dbType, 1, blockDataNet)
 	if err.Error() != wantErr.Error() {
@@ -91,7 +91,7 @@ func TestCreateOpenFail(t *testing.T) {
 
 	// Ensure that attempting to create a database with an invalid type for
 	// the second parameter returns the expected error.
-	wantErr = fmt.Errorf("second argument to %s.Create is invalid -- "+
+	wantErr = errors.Errorf("second argument to %s.Create is invalid -- "+
 		"expected block network", dbType)
 	_, err = database.Create(dbType, "noexist", "invalid")
 	if err.Error() != wantErr.Error() {
@@ -176,25 +176,25 @@ func TestPersistence(t *testing.T) {
 	err = db.Update(func(dbTx database.Tx) error {
 		metadataBucket := dbTx.Metadata()
 		if metadataBucket == nil {
-			return fmt.Errorf("Metadata: unexpected nil bucket")
+			return errors.Errorf("Metadata: unexpected nil bucket")
 		}
 
 		bucket1, err := metadataBucket.CreateBucket(bucket1Key)
 		if err != nil {
-			return fmt.Errorf("CreateBucket: unexpected error: %v",
+			return errors.Errorf("CreateBucket: unexpected error: %v",
 				err)
 		}
 
 		for k, v := range storeValues {
 			err := bucket1.Put([]byte(k), []byte(v))
 			if err != nil {
-				return fmt.Errorf("Put: unexpected error: %v",
+				return errors.Errorf("Put: unexpected error: %v",
 					err)
 			}
 		}
 
 		if err := dbTx.StoreBlock(genesisBlock); err != nil {
-			return fmt.Errorf("StoreBlock: unexpected error: %v",
+			return errors.Errorf("StoreBlock: unexpected error: %v",
 				err)
 		}
 
@@ -219,18 +219,18 @@ func TestPersistence(t *testing.T) {
 	err = db.View(func(dbTx database.Tx) error {
 		metadataBucket := dbTx.Metadata()
 		if metadataBucket == nil {
-			return fmt.Errorf("Metadata: unexpected nil bucket")
+			return errors.Errorf("Metadata: unexpected nil bucket")
 		}
 
 		bucket1 := metadataBucket.Bucket(bucket1Key)
 		if bucket1 == nil {
-			return fmt.Errorf("Bucket1: unexpected nil bucket")
+			return errors.Errorf("Bucket1: unexpected nil bucket")
 		}
 
 		for k, v := range storeValues {
 			gotVal := bucket1.Get([]byte(k))
 			if !reflect.DeepEqual(gotVal, []byte(v)) {
-				return fmt.Errorf("Get: key '%s' does not "+
+				return errors.Errorf("Get: key '%s' does not "+
 					"match expected value - got %s, want %s",
 					k, gotVal, v)
 			}
@@ -239,11 +239,11 @@ func TestPersistence(t *testing.T) {
 		genesisBlockBytes, _ := genesisBlock.Bytes()
 		gotBytes, err := dbTx.FetchBlock(genesisHash)
 		if err != nil {
-			return fmt.Errorf("FetchBlock: unexpected error: %v",
+			return errors.Errorf("FetchBlock: unexpected error: %v",
 				err)
 		}
 		if !reflect.DeepEqual(gotBytes, genesisBlockBytes) {
-			return fmt.Errorf("FetchBlock: stored block mismatch")
+			return errors.Errorf("FetchBlock: stored block mismatch")
 		}
 
 		return nil

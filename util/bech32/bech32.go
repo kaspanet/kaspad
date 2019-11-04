@@ -6,6 +6,7 @@ package bech32
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"strings"
 )
 
@@ -58,13 +59,13 @@ func decode(encoded string) (string, []byte, error) {
 	// since it needs a non-empty prefix, a separator, and an 8 character
 	// checksum.
 	if len(encoded) < checksumLength+2 {
-		return "", nil, fmt.Errorf("invalid bech32 string length %d",
+		return "", nil, errors.Errorf("invalid bech32 string length %d",
 			len(encoded))
 	}
 	// Only	ASCII characters between 33 and 126 are allowed.
 	for i := 0; i < len(encoded); i++ {
 		if encoded[i] < 33 || encoded[i] > 126 {
-			return "", nil, fmt.Errorf("invalid character in "+
+			return "", nil, errors.Errorf("invalid character in "+
 				"string: '%c'", encoded[i])
 		}
 	}
@@ -73,7 +74,7 @@ func decode(encoded string) (string, []byte, error) {
 	lower := strings.ToLower(encoded)
 	upper := strings.ToUpper(encoded)
 	if encoded != lower && encoded != upper {
-		return "", nil, fmt.Errorf("string not all lowercase or all " +
+		return "", nil, errors.Errorf("string not all lowercase or all " +
 			"uppercase")
 	}
 
@@ -86,7 +87,7 @@ func decode(encoded string) (string, []byte, error) {
 	// or if the string is more than 90 characters in total.
 	colonIndex := strings.LastIndexByte(encoded, ':')
 	if colonIndex < 1 || colonIndex+checksumLength+1 > len(encoded) {
-		return "", nil, fmt.Errorf("invalid index of ':'")
+		return "", nil, errors.Errorf("invalid index of ':'")
 	}
 
 	// The prefix part is everything before the last ':'.
@@ -97,7 +98,7 @@ func decode(encoded string) (string, []byte, error) {
 	// 'charset'.
 	decoded, err := decodeFromBase32(data)
 	if err != nil {
-		return "", nil, fmt.Errorf("failed converting data to bytes: "+
+		return "", nil, errors.Errorf("failed converting data to bytes: "+
 			"%s", err)
 	}
 
@@ -106,7 +107,7 @@ func decode(encoded string) (string, []byte, error) {
 		expected := encodeToBase32(calculateChecksum(prefix,
 			decoded[:len(decoded)-checksumLength]))
 
-		return "", nil, fmt.Errorf("checksum failed. Expected %s, got %s",
+		return "", nil, errors.Errorf("checksum failed. Expected %s, got %s",
 			expected, checksum)
 	}
 
@@ -136,7 +137,7 @@ func decodeFromBase32(base32String string) ([]byte, error) {
 	for i := 0; i < len(base32String); i++ {
 		index := strings.IndexByte(charset, base32String[i])
 		if index < 0 {
-			return nil, fmt.Errorf("invalid character not part of "+
+			return nil, errors.Errorf("invalid character not part of "+
 				"charset: %c", base32String[i])
 		}
 		decoded = append(decoded, byte(index))

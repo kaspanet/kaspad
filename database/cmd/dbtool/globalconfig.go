@@ -5,8 +5,7 @@
 package main
 
 import (
-	"errors"
-	"fmt"
+	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -93,7 +92,7 @@ func setupGlobalConfig() error {
 	if !validDbType(cfg.DbType) {
 		str := "The specified database type [%s] is invalid -- " +
 			"supported types: %s"
-		return fmt.Errorf(str, cfg.DbType, strings.Join(knownDbTypes, ", "))
+		return errors.Errorf(str, cfg.DbType, strings.Join(knownDbTypes, ", "))
 	}
 
 	// Append the network type to the data directory so it is "namespaced"

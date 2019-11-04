@@ -6,7 +6,7 @@ package main
 
 import (
 	"encoding/hex"
-	"errors"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/daglabs/btcd/database"

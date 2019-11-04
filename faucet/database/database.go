@@ -1,8 +1,8 @@
 package database
 
 import (
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"os"
 
 	"github.com/daglabs/btcd/faucet/config"
@@ -43,10 +43,10 @@ func Connect() error {
 	}
 	isCurrent, version, err := isCurrent(migrator, driver)
 	if err != nil {
-		return fmt.Errorf("Error checking whether the database is current: %s", err)
+		return errors.Errorf("Error checking whether the database is current: %s", err)
 	}
 	if !isCurrent {
-		return fmt.Errorf("Database is not current (version %d). Please migrate"+
+		return errors.Errorf("Database is not current (version %d). Please migrate"+
 			" the database by running the faucet with --migrate flag and then run it again.", version)
 	}
 
@@ -90,7 +90,7 @@ func isCurrent(migrator *migrate.Migrate, driver source.Driver) (bool, uint, err
 		return false, 0, err
 	}
 	if isDirty {
-		return false, 0, fmt.Errorf("Database is dirty")
+		return false, 0, errors.Errorf("Database is dirty")
 	}
 
 	// The database is current if Next returns ErrNotExist
@@ -128,7 +128,7 @@ func Migrate() error {
 	}
 	isCurrent, version, err := isCurrent(migrator, driver)
 	if err != nil {
-		return fmt.Errorf("Error checking whether the database is current: %s", err)
+		return errors.Errorf("Error checking whether the database is current: %s", err)
 	}
 	if isCurrent {
 		log.Infof("Database is already up-to-date (version %d)", version)
@@ -143,7 +143,7 @@ func Migrate() error {
 		return err
 	}
 	if isDirty {
-		return fmt.Errorf("error migrating database: database is dirty")
+		return errors.Errorf("error migrating database: database is dirty")
 	}
 	log.Infof("Migrated database to the latest version (version %d)", version)
 	return nil

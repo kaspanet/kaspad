@@ -7,8 +7,8 @@ package txscript
 import (
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"strconv"
 	"strings"
@@ -24,7 +24,7 @@ func scriptTestName(test []interface{}) (string, error) {
 	// The test must consist of a signature script, public key script, flags,
 	// and expected error.  Finally, it may optionally contain a comment.
 	if len(test) < 4 || len(test) > 5 {
-		return "", fmt.Errorf("invalid test length %d", len(test))
+		return "", errors.Errorf("invalid test length %d", len(test))
 	}
 
 	// Use the comment for the test name if one is specified, otherwise,
@@ -116,7 +116,7 @@ func parseShortForm(script string) ([]byte, error) {
 		} else if opcode, ok := shortFormOps[tok]; ok {
 			builder.AddOp(opcode)
 		} else {
-			return nil, fmt.Errorf("bad token %q", tok)
+			return nil, errors.Errorf("bad token %q", tok)
 		}
 
 	}
@@ -136,7 +136,7 @@ func parseScriptFlags(flagStr string) (ScriptFlags, error) {
 		case "DISCOURAGE_UPGRADABLE_NOPS":
 			flags |= ScriptDiscourageUpgradableNops
 		default:
-			return flags, fmt.Errorf("invalid flag: %s", flag)
+			return flags, errors.Errorf("invalid flag: %s", flag)
 		}
 	}
 	return flags, nil
@@ -206,7 +206,7 @@ func parseExpectedResult(expected string) ([]ErrorCode, error) {
 		return []ErrorCode{ErrMinimalIf}, nil
 	}
 
-	return nil, fmt.Errorf("unrecognized expected result in test data: %v",
+	return nil, errors.Errorf("unrecognized expected result in test data: %v",
 		expected)
 }
 

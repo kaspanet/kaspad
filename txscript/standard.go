@@ -6,6 +6,7 @@ package txscript
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/util"
@@ -313,7 +314,7 @@ func ExtractScriptPubKeyAddress(scriptPubKey []byte, chainParams *dagconfig.Para
 		return NonStandardTy, nil, nil
 	}
 
-	return NonStandardTy, nil, fmt.Errorf("Cannot handle script class %s", scriptClass)
+	return NonStandardTy, nil, errors.Errorf("Cannot handle script class %s", scriptClass)
 }
 
 // AtomicSwapDataPushes houses the data pushes found in atomic swap contracts.

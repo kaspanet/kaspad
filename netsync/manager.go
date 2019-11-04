@@ -6,8 +6,8 @@ package netsync
 
 import (
 	"container/list"
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"net"
 	"sync"
 	"sync/atomic"
