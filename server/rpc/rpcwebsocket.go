@@ -735,7 +735,7 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 	initializeMarshalledJSONVerbose := func() bool {
 		net := m.server.cfg.DAGParams
 		build := func() ([]byte, bool) {
-			rawTx, err := createTxRawResult(net, mtx, txIDStr, nil, "", nil, nil, true, 0)
+			rawTx, err := createTxRawResult(net, mtx, txIDStr, nil, "", nil, nil, true)
 			if err != nil {
 				return nil, false
 			}
