@@ -8,8 +8,10 @@ import (
 	"os"
 )
 
+// ActiveNetParams holds the selected network parameters. Default value is main-net.
 var ActiveNetParams = &dagconfig.MainNetParams
 
+// NetConfig holds the network configuration, that is which network is selected.
 type NetConfig struct {
 	TestNet        bool `long:"testnet" description:"Use the test network"`
 	RegressionTest bool `long:"regtest" description:"Use the regression test network"`
@@ -17,6 +19,8 @@ type NetConfig struct {
 	DevNet         bool `long:"devnet" description:"Use the development test network"`
 }
 
+// ParseNetConfig parses the network command line argument and sets ActiveNetParams accordingly.
+// It returns error if more than one network was selected, nil otherwise.
 func ParseNetConfig(netConfig NetConfig, parser *flags.Parser) error {
 	// Multiple networks can't be selected simultaneously.
 	numNets := 0

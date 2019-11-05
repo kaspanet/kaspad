@@ -67,7 +67,6 @@ func validDbType(dbType string) bool {
 // loadConfig initializes and parses the config using command line options.
 func loadConfig() (*config, []string, error) {
 	// Default config.
-
 	cfg := config{
 		DataDir:  defaultDataDir,
 		DbType:   defaultDbType,
