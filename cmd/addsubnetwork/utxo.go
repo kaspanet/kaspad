@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"github.com/daglabs/btcd/btcjson"
+	"github.com/daglabs/btcd/cmd/cmdconfig"
 	"github.com/daglabs/btcd/rpcclient"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/wire"
@@ -92,7 +93,7 @@ func isTxMatured(tx *wire.MsgTx, confirmations uint64) bool {
 	if !tx.IsCoinBase() {
 		return confirmations >= minConfirmations
 	}
-	return confirmations >= activeNetParams.BlockCoinbaseMaturity
+	return confirmations >= cmdconfig.ActiveNetParams.BlockCoinbaseMaturity
 }
 
 func buildUTXOs(txs []*wire.MsgTx) map[wire.Outpoint]*wire.MsgTx {

@@ -79,6 +79,8 @@ func loadConfig() (*config, []string, error) {
 		return nil, nil, err
 	}
 
+	funcName := "loadConfig"
+
 	// Validate database type.
 	if !validDbType(cfg.DbType) {
 		str := "%s: The specified database type [%s] is invalid -- " +
