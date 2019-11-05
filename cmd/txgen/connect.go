@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 )
 
-func connectToServer(cfg *commandConfig) (*txgenClient, error) {
+func connectToServer(cfg *configFlags) (*txgenClient, error) {
 	var cert []byte
 	if !cfg.DisableTLS {
 		var err error

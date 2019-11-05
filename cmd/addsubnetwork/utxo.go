@@ -16,7 +16,7 @@ const (
 	minConfirmations = 10
 )
 
-func findUnspentTXO(cfg *commandConfig, client *rpcclient.Client, addrPubKeyHash *util.AddressPubKeyHash) (*wire.Outpoint, *wire.MsgTx, error) {
+func findUnspentTXO(cfg *configFlags, client *rpcclient.Client, addrPubKeyHash *util.AddressPubKeyHash) (*wire.Outpoint, *wire.MsgTx, error) {
 	txs, err := collectTransactions(client, addrPubKeyHash)
 	if err != nil {
 		return nil, nil, err

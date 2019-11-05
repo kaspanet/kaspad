@@ -33,14 +33,14 @@ var (
 // config defines the configuration options for findcheckpoint.
 //
 // See loadConfig for details on the configuration load process.
-type commandConfig struct {
+type configFlags struct {
 	DataDir   string `short:"b" long:"datadir" description:"Location of the btcd data directory"`
 	DbType    string `long:"dbtype" description:"Database backend to use for the Block Chain"`
 	InFile    string `short:"i" long:"infile" description:"File containing the block(s)"`
 	TxIndex   bool   `long:"txindex" description:"Build a full hash-based transaction index which makes all transactions available via the getrawtransaction RPC"`
 	AddrIndex bool   `long:"addrindex" description:"Build a full address-based transaction index which makes the searchrawtransactions RPC available"`
 	Progress  int    `short:"p" long:"progress" description:"Show a progress message each time this number of seconds have passed -- Use 0 to disable progress announcements"`
-	config.NetConfig
+	config.NetworkFlags
 }
 
 // filesExists reports whether the named file or directory exists.
@@ -65,9 +65,9 @@ func validDbType(dbType string) bool {
 }
 
 // loadConfig initializes and parses the config using command line options.
-func loadConfig() (*commandConfig, []string, error) {
+func loadConfig() (*configFlags, []string, error) {
 	// Default config.
-	cfg := commandConfig{
+	cfg := configFlags{
 		DataDir:  defaultDataDir,
 		DbType:   defaultDbType,
 		InFile:   defaultDataFile,
@@ -84,7 +84,7 @@ func loadConfig() (*commandConfig, []string, error) {
 		return nil, nil, err
 	}
 
-	err = config.ParseNetConfig(cfg.NetConfig, parser)
+	err = config.ParseNetConfig(cfg.NetworkFlags, parser)
 	if err != nil {
 		return nil, nil, err
 	}

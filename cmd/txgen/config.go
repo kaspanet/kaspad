@@ -22,7 +22,7 @@ var (
 	defaultTargetNumberOfInputs  uint64 = 1
 )
 
-type commandConfig struct {
+type configFlags struct {
 	Address               string  `long:"address" description:"An address to a JSON-RPC endpoints" required:"true"`
 	PrivateKey            string  `long:"private-key" description:"Private key" required:"true"`
 	SecondaryAddress      string  `long:"secondary-address" description:"An address that gets paid once per txgen run"`
@@ -36,8 +36,8 @@ type commandConfig struct {
 	AverageFeeRate        float64 `long:"fee-rate" description:"Average coins per gram fee rate"`
 }
 
-func parseConfig() (*commandConfig, error) {
-	cfg := &commandConfig{}
+func parseConfig() (*configFlags, error) {
+	cfg := &configFlags{}
 	parser := flags.NewParser(cfg, flags.PrintErrors|flags.HelpFlag)
 	_, err := parser.Parse()
 

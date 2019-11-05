@@ -98,7 +98,7 @@ type commandConfig struct {
 	ProxyUser     string `long:"proxyuser" description:"Username for proxy server"`
 	ProxyPass     string `long:"proxypass" default-mask:"-" description:"Password for proxy server"`
 	TLSSkipVerify bool   `long:"skipverify" description:"Do not verify tls certificates (not recommended!)"`
-	config.NetConfig
+	config.NetworkFlags
 }
 
 // normalizeAddress returns addr with the passed default port appended if
@@ -223,7 +223,7 @@ func loadConfig() (*commandConfig, []string, error) {
 		return nil, nil, err
 	}
 
-	err = config.ParseNetConfig(cfg.NetConfig, parser)
+	err = config.ParseNetConfig(cfg.NetworkFlags, parser)
 	if err != nil {
 		return nil, nil, err
 	}

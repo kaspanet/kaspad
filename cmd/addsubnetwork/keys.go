@@ -7,7 +7,7 @@ import (
 	"github.com/daglabs/btcd/util/base58"
 )
 
-func decodeKeys(cfg *commandConfig) (*btcec.PrivateKey, *util.AddressPubKeyHash, error) {
+func decodeKeys(cfg *configFlags) (*btcec.PrivateKey, *util.AddressPubKeyHash, error) {
 	privateKeyBytes := base58.Decode(cfg.PrivateKey)
 	privateKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privateKeyBytes)
 	serializedPrivateKey := privateKey.PubKey().SerializeCompressed()

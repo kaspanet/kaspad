@@ -19,7 +19,7 @@ import (
 const blockDbNamePrefix = "blocks"
 
 var (
-	cfg *commandConfig
+	cfg *configFlags
 )
 
 // loadBlockDB opens the block database and returns a handle to it.

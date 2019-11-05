@@ -11,8 +11,8 @@ import (
 // ActiveNetParams holds the selected network parameters. Default value is main-net.
 var ActiveNetParams = &dagconfig.MainNetParams
 
-// NetConfig holds the network configuration, that is which network is selected.
-type NetConfig struct {
+// NetworkFlags holds the network configuration, that is which network is selected.
+type NetworkFlags struct {
 	TestNet        bool `long:"testnet" description:"Use the test network"`
 	RegressionTest bool `long:"regtest" description:"Use the regression test network"`
 	SimNet         bool `long:"simnet" description:"Use the simulation test network"`
@@ -21,25 +21,25 @@ type NetConfig struct {
 
 // ParseNetConfig parses the network command line argument and sets ActiveNetParams accordingly.
 // It returns error if more than one network was selected, nil otherwise.
-func ParseNetConfig(netConfig NetConfig, parser *flags.Parser) error {
+func ParseNetConfig(networkFlags NetworkFlags, parser *flags.Parser) error {
 	// Multiple networks can't be selected simultaneously.
 	numNets := 0
 	// default net is main net
 	// Count number of network flags passed; assign active network params
 	// while we're at it
-	if netConfig.TestNet {
+	if networkFlags.TestNet {
 		numNets++
 		ActiveNetParams = &dagconfig.TestNetParams
 	}
-	if netConfig.RegressionTest {
+	if networkFlags.RegressionTest {
 		numNets++
 		ActiveNetParams = &dagconfig.RegressionNetParams
 	}
-	if netConfig.SimNet {
+	if networkFlags.SimNet {
 		numNets++
 		ActiveNetParams = &dagconfig.SimNetParams
 	}
-	if netConfig.DevNet {
+	if networkFlags.DevNet {
 		numNets++
 		ActiveNetParams = &dagconfig.DevNetParams
 	}
