@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/daglabs/btcd/faucet/config"
 	"github.com/daglabs/btcd/httpserverutils"
 	"github.com/daglabs/btcd/util"
+	"github.com/pkg/errors"
 	"net/http"
 	"time"
 
@@ -51,7 +51,7 @@ type requestMoneyData struct {
 }
 
 func requestMoneyHandler(_ *httpserverutils.ServerContext, r *http.Request, _ map[string]string, _ map[string]string,
-	requestBody []byte) (interface{}, *httpserverutils.HandlerError) {
+	requestBody []byte) (interface{}, error) {
 	hErr := validateIPUsage(r)
 	if hErr != nil {
 		return nil, hErr
@@ -60,18 +60,18 @@ func requestMoneyHandler(_ *httpserverutils.ServerContext, r *http.Request, _ ma
 	err := json.Unmarshal(requestBody, requestData)
 	if err != nil {
 		return nil, httpserverutils.NewHandlerErrorWithCustomClientMessage(http.StatusUnprocessableEntity,
-			fmt.Sprintf("Error unmarshalling request body: %s", err),
+			errors.Wrap(err, "Error unmarshalling request body"),
 			"The request body is not json-formatted")
 	}
 	address, err := util.DecodeAddress(requestData.Address, config.ActiveNetParams().Prefix)
 	if err != nil {
 		return nil, httpserverutils.NewHandlerErrorWithCustomClientMessage(http.StatusUnprocessableEntity,
-			fmt.Sprintf("Error decoding address: %s", err),
+			errors.Wrap(err, "Error decoding address"),
 			"Error decoding address")
 	}
 	tx, err := sendToAddress(address)
 	if err != nil {
-		return nil, httpserverutils.NewInternalServerHandlerError(err.Error())
+		return nil, err
 	}
 	hErr = updateIPUsage(r)
 	if hErr != nil {

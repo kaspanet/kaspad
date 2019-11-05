@@ -13,29 +13,29 @@ import (
 // a rest route handler or a middleware.
 type HandlerError struct {
 	Code          int
-	Message       string
+	OriginalError error
 	ClientMessage string
 }
 
 func (hErr *HandlerError) Error() string {
-	return hErr.Message
+	return hErr.OriginalError.Error()
 }
 
 // NewHandlerError returns a HandlerError with the given code and message.
-func NewHandlerError(code int, message string) *HandlerError {
+func NewHandlerError(code int, err error) error {
 	return &HandlerError{
 		Code:          code,
-		Message:       message,
-		ClientMessage: message,
+		OriginalError: err,
+		ClientMessage: err.Error(),
 	}
 }
 
 // NewHandlerErrorWithCustomClientMessage returns a HandlerError with
 // the given code, message and client error message.
-func NewHandlerErrorWithCustomClientMessage(code int, message, clientMessage string) *HandlerError {
+func NewHandlerErrorWithCustomClientMessage(code int, err error, clientMessage string) error {
 	return &HandlerError{
 		Code:          code,
-		Message:       message,
+		OriginalError: err,
 		ClientMessage: clientMessage,
 	}
 }
@@ -43,8 +43,8 @@ func NewHandlerErrorWithCustomClientMessage(code int, message, clientMessage str
 // NewInternalServerHandlerError returns a HandlerError with
 // the given message, and the http.StatusInternalServerError
 // status text as client message.
-func NewInternalServerHandlerError(message string) *HandlerError {
-	return NewHandlerErrorWithCustomClientMessage(http.StatusInternalServerError, message, http.StatusText(http.StatusInternalServerError))
+func NewInternalServerHandlerError(err error) error {
+	return NewHandlerErrorWithCustomClientMessage(http.StatusInternalServerError, err, http.StatusText(http.StatusInternalServerError))
 }
 
 // NewErrorFromDBErrors takes a slice of database errors and a prefix, and
@@ -56,13 +56,6 @@ func NewErrorFromDBErrors(prefix string, dbErrors []error) error {
 		dbErrorsStrings[i] = fmt.Sprintf("\"%s\"", dbErr)
 	}
 	return errors.Errorf("%s [%s]", prefix, strings.Join(dbErrorsStrings, ","))
-}
-
-// NewHandlerErrorFromDBErrors takes a slice of database errors and a prefix, and
-// returns an HandlerError with error code http.StatusInternalServerError with
-// all of the database errors formatted to one string with the given prefix
-func NewHandlerErrorFromDBErrors(prefix string, dbErrors []error) *HandlerError {
-	return NewInternalServerHandlerError(NewErrorFromDBErrors(prefix, dbErrors).Error())
 }
 
 // IsDBRecordNotFoundError returns true if the given dbErrors contains only a RecordNotFound error
@@ -88,9 +81,13 @@ func (err *ClientError) Error() string {
 
 // SendErr takes a HandlerError and create a ClientError out of it that is sent
 // to the http client.
-func SendErr(ctx *ServerContext, w http.ResponseWriter, hErr *HandlerError) {
-	errMsg := fmt.Sprintf("got error: %s", hErr)
-	ctx.Warnf(errMsg)
+func SendErr(ctx *ServerContext, w http.ResponseWriter, err error) {
+	var hErr *HandlerError
+	var isHandleError bool
+	if hErr, isHandleError = err.(*HandlerError); !isHandleError {
+		hErr = NewInternalServerHandlerError(err).(*HandlerError)
+	}
+	ctx.Warnf("got error: %s", err)
 	w.WriteHeader(hErr.Code)
 	SendJSONResponse(w, &ClientError{
 		ErrorCode:    hErr.Code,
