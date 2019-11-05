@@ -41,6 +41,7 @@ type BlockAddedMsg struct {
 type ChainChangedMsg struct {
 	RemovedChainBlockHashes []*daghash.Hash
 	AddedChainBlocks        []*rpcclient.ChainBlock
+	VirtualBlueScore        uint64
 }
 
 // Close closes the connection to the JSON-RPC API server
@@ -100,10 +101,11 @@ func newClient(connCfg *rpcclient.ConnConfig) (*Client, error) {
 			}
 		},
 		OnChainChanged: func(removedChainBlockHashes []*daghash.Hash,
-			addedChainBlocks []*rpcclient.ChainBlock) {
+			addedChainBlocks []*rpcclient.ChainBlock, virtualBlueScore uint64) {
 			client.OnChainChanged <- &ChainChangedMsg{
 				RemovedChainBlockHashes: removedChainBlockHashes,
 				AddedChainBlocks:        addedChainBlocks,
+				VirtualBlueScore:        virtualBlueScore,
 			}
 		},
 	}

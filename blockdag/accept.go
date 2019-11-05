@@ -100,6 +100,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	dag.sendNotification(NTChainChanged, &ChainChangedNotificationData{
 		RemovedChainBlockHashes: chainUpdates.removedChainBlockHashes,
 		AddedChainBlockHashes:   chainUpdates.addedChainBlockHashes,
+		VirtualBlueScore:        dag.VirtualBlueScore(),
 	})
 	dag.dagLock.Lock()
 

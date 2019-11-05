@@ -96,7 +96,7 @@ type NotificationHandlers struct {
 	// NotifyChainChanges has been made to register for the notification and the
 	// function is non-nil.
 	OnChainChanged func(removedChainBlockHashes []*daghash.Hash,
-		addedChainBlocks []*ChainBlock)
+		addedChainBlocks []*ChainBlock, virtualBlueScore uint64)
 
 	// OnRelevantTxAccepted is invoked when an unmined transaction passes
 	// the client's transaction filter.
@@ -146,14 +146,14 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 			return
 		}
 
-		removedChainBlockHashes, addedChainBlocks, err := parseChainChangedParams(ntfn.Params)
+		removedChainBlockHashes, addedChainBlocks, virtualBlueScore, err := parseChainChangedParams(ntfn.Params)
 		if err != nil {
 			log.Warnf("Received invalid chain changed "+
 				"notification: %s", err)
 			return
 		}
 
-		c.ntfnHandlers.OnChainChanged(removedChainBlockHashes, addedChainBlocks)
+		c.ntfnHandlers.OnChainChanged(removedChainBlockHashes, addedChainBlocks, virtualBlueScore)
 
 	// OnFilteredBlockAdded
 	case btcjson.FilteredBlockAddedNtfnMethod:
@@ -259,25 +259,25 @@ type AcceptedBlock struct {
 	AcceptedTxIDs []*daghash.TxID
 }
 
-func parseChainChangedParams(params []json.RawMessage) (removedChainBlockHashes []*daghash.Hash, addedChainBlocks []*ChainBlock,
+func parseChainChangedParams(params []json.RawMessage) (removedChainBlockHashes []*daghash.Hash, addedChainBlocks []*ChainBlock, virtualBlueScore uint64,
 	err error) {
 
 	if len(params) != 1 {
-		return nil, nil, wrongNumParams(len(params))
+		return nil, nil, 0, wrongNumParams(len(params))
 	}
 
 	// Unmarshal first parameter as a raw transaction result object.
 	var rawParam btcjson.ChainChangedRawParam
 	err = json.Unmarshal(params[0], &rawParam)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, 0, err
 	}
 
 	removedChainBlockHashes = make([]*daghash.Hash, len(rawParam.RemovedChainBlockHashes))
 	for i, hashStr := range rawParam.RemovedChainBlockHashes {
 		hash, err := daghash.NewHashFromStr(hashStr)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, 0, err
 		}
 		removedChainBlockHashes[i] = hash
 	}
@@ -289,7 +289,7 @@ func parseChainChangedParams(params []json.RawMessage) (removedChainBlockHashes 
 		}
 		hash, err := daghash.NewHashFromStr(jsonChainBlock.Hash)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, 0, err
 		}
 		chainBlock.Hash = hash
 		for j, jsonAcceptedBlock := range jsonChainBlock.AcceptedBlocks {
@@ -298,13 +298,13 @@ func parseChainChangedParams(params []json.RawMessage) (removedChainBlockHashes 
 			}
 			hash, err := daghash.NewHashFromStr(jsonAcceptedBlock.Hash)
 			if err != nil {
-				return nil, nil, err
+				return nil, nil, 0, err
 			}
 			acceptedBlock.Hash = hash
 			for k, txIDStr := range jsonAcceptedBlock.AcceptedTxIDs {
 				txID, err := daghash.NewTxIDFromStr(txIDStr)
 				if err != nil {
-					return nil, nil, err
+					return nil, nil, 0, err
 				}
 				acceptedBlock.AcceptedTxIDs[k] = txID
 			}
@@ -313,7 +313,7 @@ func parseChainChangedParams(params []json.RawMessage) (removedChainBlockHashes 
 		addedChainBlocks[i] = chainBlock
 	}
 
-	return removedChainBlockHashes, addedChainBlocks, nil
+	return removedChainBlockHashes, addedChainBlocks, rawParam.VirtualBlueScore, nil
 }
 
 // parseFilteredBlockAddedParams parses out the parameters included in a

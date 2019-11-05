@@ -65,15 +65,17 @@ type ChainChangedNtfn struct {
 type ChainChangedRawParam struct {
 	RemovedChainBlockHashes []string     `json:"removedChainBlockHashes"`
 	AddedChainBlocks        []ChainBlock `json:"addedChainBlocks"`
+	VirtualBlueScore        uint64
 }
 
 // NewChainChangedNtfn returns a new instance which can be used to
 // issue a chainChanged JSON-RPC notification.
 func NewChainChangedNtfn(removedChainBlockHashes []string,
-	addedChainBlocks []ChainBlock) *ChainChangedNtfn {
+	addedChainBlocks []ChainBlock, virtualBlueScore uint64) *ChainChangedNtfn {
 	return &ChainChangedNtfn{ChainChangedRawParam: ChainChangedRawParam{
 		RemovedChainBlockHashes: removedChainBlockHashes,
 		AddedChainBlocks:        addedChainBlocks,
+		VirtualBlueScore:        virtualBlueScore,
 	}}
 }
 

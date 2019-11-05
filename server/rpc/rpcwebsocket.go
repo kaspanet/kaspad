@@ -214,10 +214,11 @@ func (m *wsNotificationManager) NotifyBlockAdded(block *util.Block) {
 // NotifyChainChanged passes changes to the selected parent chain of
 // the blockDAG to the notification manager for processing.
 func (m *wsNotificationManager) NotifyChainChanged(removedChainBlockHashes []*daghash.Hash,
-	addedChainBlockHashes []*daghash.Hash) {
+	addedChainBlockHashes []*daghash.Hash, virtualBlueScore uint64) {
 	n := &notificationChainChanged{
 		removedChainBlockHashes: removedChainBlockHashes,
 		addedChainBlocksHashes:  addedChainBlockHashes,
+		virtualBlueScore:        virtualBlueScore,
 	}
 	// As NotifyChainChanged will be called by the DAG manager
 	// and the RPC server may no longer be running, use a select
@@ -404,6 +405,7 @@ type notificationBlockAdded util.Block
 type notificationChainChanged struct {
 	removedChainBlockHashes []*daghash.Hash
 	addedChainBlocksHashes  []*daghash.Hash
+	virtualBlueScore        uint64
 }
 type notificationTxAcceptedByMempool struct {
 	isNew bool
@@ -456,7 +458,7 @@ out:
 
 			case *notificationChainChanged:
 				m.notifyChainChanged(chainChangeNotifications,
-					n.removedChainBlockHashes, n.addedChainBlocksHashes)
+					n.removedChainBlockHashes, n.addedChainBlocksHashes, n.virtualBlueScore)
 
 			case *notificationTxAcceptedByMempool:
 				if n.isNew && len(txNotifications) != 0 {
@@ -555,7 +557,7 @@ func (m *wsNotificationManager) UnregisterChainChanges(wsc *wsClient) {
 // notifyChainChanged notifies websocket clients that have registered for
 // chain changes.
 func (m *wsNotificationManager) notifyChainChanged(clients map[chan struct{}]*wsClient,
-	removedChainBlockHashes []*daghash.Hash, addedChainBlockHashes []*daghash.Hash) {
+	removedChainBlockHashes []*daghash.Hash, addedChainBlockHashes []*daghash.Hash, virtualBlueScore uint64) {
 
 	// Collect removed chain hashes.
 	removedChainHashesStrs := make([]string, len(removedChainBlockHashes))
@@ -571,7 +573,7 @@ func (m *wsNotificationManager) notifyChainChanged(clients map[chan struct{}]*ws
 	}
 
 	// Create the notification.
-	ntfn := btcjson.NewChainChangedNtfn(removedChainHashesStrs, addedChainBlocks)
+	ntfn := btcjson.NewChainChangedNtfn(removedChainHashesStrs, addedChainBlocks, virtualBlueScore)
 
 	var marshalledJSON []byte
 	if len(clients) != 0 {

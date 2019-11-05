@@ -86,4 +86,5 @@ type BlockAddedNotificationData struct {
 type ChainChangedNotificationData struct {
 	RemovedChainBlockHashes []*daghash.Hash
 	AddedChainBlockHashes   []*daghash.Hash
+	VirtualBlueScore        uint64
 }
