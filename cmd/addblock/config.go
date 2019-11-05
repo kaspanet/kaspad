@@ -6,12 +6,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/daglabs/btcd/cmd/cmdconfig"
 	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/database"
 	_ "github.com/daglabs/btcd/database/ffldb"
 	"github.com/daglabs/btcd/util"
@@ -25,26 +25,22 @@ const (
 )
 
 var (
-	btcdHomeDir     = util.AppDataDir("btcd", false)
-	defaultDataDir  = filepath.Join(btcdHomeDir, "data")
-	knownDbTypes    = database.SupportedDrivers()
-	activeNetParams = &dagconfig.MainNetParams
+	btcdHomeDir    = util.AppDataDir("btcd", false)
+	defaultDataDir = filepath.Join(btcdHomeDir, "data")
+	knownDbTypes   = database.SupportedDrivers()
 )
 
 // config defines the configuration options for findcheckpoint.
 //
 // See loadConfig for details on the configuration load process.
 type config struct {
-	DataDir        string `short:"b" long:"datadir" description:"Location of the btcd data directory"`
-	DbType         string `long:"dbtype" description:"Database backend to use for the Block Chain"`
-	TestNet        bool   `long:"testnet" description:"Use the test network"`
-	RegressionTest bool   `long:"regtest" description:"Use the regression test network"`
-	SimNet         bool   `long:"simnet" description:"Use the simulation test network"`
-	DevNet         bool   `long:"devnet" description:"Use the development test network"`
-	InFile         string `short:"i" long:"infile" description:"File containing the block(s)"`
-	TxIndex        bool   `long:"txindex" description:"Build a full hash-based transaction index which makes all transactions available via the getrawtransaction RPC"`
-	AddrIndex      bool   `long:"addrindex" description:"Build a full address-based transaction index which makes the searchrawtransactions RPC available"`
-	Progress       int    `short:"p" long:"progress" description:"Show a progress message each time this number of seconds have passed -- Use 0 to disable progress announcements"`
+	DataDir   string `short:"b" long:"datadir" description:"Location of the btcd data directory"`
+	DbType    string `long:"dbtype" description:"Database backend to use for the Block Chain"`
+	InFile    string `short:"i" long:"infile" description:"File containing the block(s)"`
+	TxIndex   bool   `long:"txindex" description:"Build a full hash-based transaction index which makes all transactions available via the getrawtransaction RPC"`
+	AddrIndex bool   `long:"addrindex" description:"Build a full address-based transaction index which makes the searchrawtransactions RPC available"`
+	Progress  int    `short:"p" long:"progress" description:"Show a progress message each time this number of seconds have passed -- Use 0 to disable progress announcements"`
+	cmdconfig.NetConfig
 }
 
 // filesExists reports whether the named file or directory exists.
@@ -71,6 +67,7 @@ func validDbType(dbType string) bool {
 // loadConfig initializes and parses the config using command line options.
 func loadConfig() (*config, []string, error) {
 	// Default config.
+
 	cfg := config{
 		DataDir:  defaultDataDir,
 		DbType:   defaultDbType,
@@ -88,33 +85,8 @@ func loadConfig() (*config, []string, error) {
 		return nil, nil, err
 	}
 
-	// Multiple networks can't be selected simultaneously.
-	funcName := "loadConfig"
-	numNets := 0
-	// Count number of network flags passed; assign active network params
-	// while we're at it
-	if cfg.TestNet {
-		numNets++
-		activeNetParams = &dagconfig.TestNetParams
-	}
-	if cfg.RegressionTest {
-		numNets++
-		activeNetParams = &dagconfig.RegressionNetParams
-	}
-	if cfg.SimNet {
-		numNets++
-		activeNetParams = &dagconfig.SimNetParams
-	}
-	if cfg.DevNet {
-		numNets++
-		activeNetParams = &dagconfig.DevNetParams
-	}
-	if numNets > 1 {
-		str := "%s: The testnet, regtest, simnet and devent params can't be " +
-			"used together -- choose one of the four"
-		err := errors.Errorf(str, funcName)
-		fmt.Fprintln(os.Stderr, err)
-		parser.WriteHelp(os.Stderr)
+	err = cmdconfig.ParseNetConfig(cfg.NetConfig, parser)
+	if err != nil {
 		return nil, nil, err
 	}
 
@@ -134,7 +106,7 @@ func loadConfig() (*config, []string, error) {
 	// All data is specific to a network, so namespacing the data directory
 	// means each individual piece of serialized data does not have to
 	// worry about changing names per network and such.
-	cfg.DataDir = filepath.Join(cfg.DataDir, activeNetParams.Name)
+	cfg.DataDir = filepath.Join(cfg.DataDir, cmdconfig.ActiveNetParams.Name)
 
 	// Ensure the specified block file exists.
 	if !fileExists(cfg.InFile) {

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/cmd/cmdconfig"
 	"github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
 )
@@ -13,20 +13,14 @@ type config struct {
 	RPCServer     string `short:"s" long:"rpcserver" description:"RPC server to connect to" required:"true"`
 	RPCCert       string `short:"c" long:"rpccert" description:"RPC server certificate chain for validation"`
 	DisableTLS    bool   `long:"notls" description:"Disable TLS"`
-	TestNet       bool   `long:"testnet" description:"Connect to testnet"`
-	SimNet        bool   `long:"simnet" description:"Connect to the simulation test network"`
-	DevNet        bool   `long:"devnet" description:"Connect to the development test network"`
 	GasLimit      uint64 `long:"gaslimit" description:"The gas limit of the new subnetwork"`
 	RegistryTxFee uint64 `long:"regtxfee" description:"The fee for the subnetwork registry transaction"`
+	cmdconfig.NetConfig
 }
 
 const (
 	defaultSubnetworkGasLimit = 1000
 	defaultRegistryTxFee      = 3000
-)
-
-var (
-	activeNetParams dagconfig.Params
 )
 
 func parseConfig() (*config, error) {
@@ -46,30 +40,9 @@ func parseConfig() (*config, error) {
 		return nil, errors.New("--cert should be omitted if --notls is used")
 	}
 
-	// Multiple networks can't be selected simultaneously.
-	numNets := 0
-	if cfg.TestNet {
-		numNets++
-	}
-	if cfg.SimNet {
-		numNets++
-	}
-	if cfg.DevNet {
-		numNets++
-	}
-	if numNets > 1 {
-		return nil, errors.New("multiple net params (testnet, simnet, devnet, etc.) can't be used " +
-			"together -- choose one of them")
-	}
-
-	activeNetParams = dagconfig.MainNetParams
-	switch {
-	case cfg.TestNet:
-		activeNetParams = dagconfig.TestNetParams
-	case cfg.SimNet:
-		activeNetParams = dagconfig.SimNetParams
-	case cfg.DevNet:
-		activeNetParams = dagconfig.DevNetParams
+	err = cmdconfig.ParseNetConfig(cfg.NetConfig, parser)
+	if err != nil {
+		return nil, err
 	}
 
 	if cfg.GasLimit < 0 {

@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/daglabs/btcd/cmd/cmdconfig"
 	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
@@ -36,14 +37,11 @@ var (
 //
 // See loadConfig for details on the configuration load process.
 type config struct {
-	DataDir        string `short:"b" long:"datadir" description:"Location of the btcd data directory"`
-	DbType         string `long:"dbtype" description:"Database backend to use for the Block Chain"`
-	TestNet        bool   `long:"testnet" description:"Use the test network"`
-	RegressionTest bool   `long:"regtest" description:"Use the regression test network"`
-	SimNet         bool   `long:"simnet" description:"Use the simulation test network"`
-	DevNet         bool   `long:"devnet" description:"Use the development test network"`
-	NumCandidates  int    `short:"n" long:"numcandidates" description:"Max num of checkpoint candidates to show {1-20}"`
-	UseGoOutput    bool   `short:"g" long:"gooutput" description:"Display the candidates using Go syntax that is ready to insert into the btcchain checkpoint list"`
+	DataDir       string `short:"b" long:"datadir" description:"Location of the btcd data directory"`
+	DbType        string `long:"dbtype" description:"Database backend to use for the Block Chain"`
+	NumCandidates int    `short:"n" long:"numcandidates" description:"Max num of checkpoint candidates to show {1-20}"`
+	UseGoOutput   bool   `short:"g" long:"gooutput" description:"Display the candidates using Go syntax that is ready to insert into the btcchain checkpoint list"`
+	cmdconfig.NetConfig
 }
 
 // validDbType returns whether or not dbType is a supported database type.
@@ -76,33 +74,8 @@ func loadConfig() (*config, []string, error) {
 		return nil, nil, err
 	}
 
-	// Multiple networks can't be selected simultaneously.
-	funcName := "loadConfig"
-	numNets := 0
-	// Count number of network flags passed; assign active network params
-	// while we're at it
-	if cfg.TestNet {
-		numNets++
-		activeNetParams = &dagconfig.TestNetParams
-	}
-	if cfg.RegressionTest {
-		numNets++
-		activeNetParams = &dagconfig.RegressionNetParams
-	}
-	if cfg.SimNet {
-		numNets++
-		activeNetParams = &dagconfig.SimNetParams
-	}
-	if cfg.DevNet {
-		numNets++
-		activeNetParams = &dagconfig.DevNetParams
-	}
-	if numNets > 1 {
-		str := "%s: The testnet, regtest, simnet and devnet params can't be " +
-			"used together -- choose one of the four"
-		err := errors.Errorf(str, funcName)
-		fmt.Fprintln(os.Stderr, err)
-		parser.WriteHelp(os.Stderr)
+	err = cmdconfig.ParseNetConfig(cfg.NetConfig, parser)
+	if err != nil {
 		return nil, nil, err
 	}
 

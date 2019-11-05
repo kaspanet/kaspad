@@ -6,7 +6,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
+	"github.com/daglabs/btcd/cmd/cmdconfig"
 	"io/ioutil"
 	"net"
 	"os"
@@ -97,10 +97,8 @@ type config struct {
 	Proxy         string `long:"proxy" description:"Connect via SOCKS5 proxy (eg. 127.0.0.1:9050)"`
 	ProxyUser     string `long:"proxyuser" description:"Username for proxy server"`
 	ProxyPass     string `long:"proxypass" default-mask:"-" description:"Password for proxy server"`
-	TestNet       bool   `long:"testnet" description:"Connect to testnet"`
-	SimNet        bool   `long:"simnet" description:"Connect to the simulation test network"`
-	DevNet        bool   `long:"devnet" description:"Connect to the development test network"`
 	TLSSkipVerify bool   `long:"skipverify" description:"Do not verify tls certificates (not recommended!)"`
+	cmdconfig.NetConfig
 }
 
 // normalizeAddress returns addr with the passed default port appended if
@@ -225,25 +223,10 @@ func loadConfig() (*config, []string, error) {
 		return nil, nil, err
 	}
 
-	// Multiple networks can't be selected simultaneously.
-	numNets := 0
-	if cfg.TestNet {
-		numNets++
-	}
-	if cfg.SimNet {
-		numNets++
-	}
-	if cfg.DevNet {
-		numNets++
-	}
-	if numNets > 1 {
-		str := "%s: The multiple net params (testnet, simnet, devnet etc.) can't be used " +
-			"together -- choose one of them"
-		err := errors.Errorf(str, "loadConfig")
-		fmt.Fprintln(os.Stderr, err)
+	err = cmdconfig.ParseNetConfig(cfg.NetConfig, parser)
+	if err != nil {
 		return nil, nil, err
 	}
-
 	// Handle environment variable expansion in the RPC certificate path.
 	cfg.RPCCert = cleanAndExpandPath(cfg.RPCCert)
 
