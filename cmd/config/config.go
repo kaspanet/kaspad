@@ -19,9 +19,9 @@ type NetworkFlags struct {
 	DevNet         bool `long:"devnet" description:"Use the development test network"`
 }
 
-// ParseNetConfig parses the network command line argument and sets ActiveNetParams accordingly.
+// ResolveNetwork parses the network command line argument and sets ActiveNetParams accordingly.
 // It returns error if more than one network was selected, nil otherwise.
-func ParseNetConfig(networkFlags NetworkFlags, parser *flags.Parser) error {
+func ResolveNetwork(networkFlags NetworkFlags, parser *flags.Parser) error {
 	// Multiple networks can't be selected simultaneously.
 	numNets := 0
 	// default net is main net

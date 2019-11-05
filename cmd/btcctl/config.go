@@ -223,7 +223,7 @@ func loadConfig() (*commandConfig, []string, error) {
 		return nil, nil, err
 	}
 
-	err = config.ParseNetConfig(cfg.NetworkFlags, parser)
+	err = config.ResolveNetwork(cfg.NetworkFlags, parser)
 	if err != nil {
 		return nil, nil, err
 	}

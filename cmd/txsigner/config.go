@@ -19,6 +19,6 @@ func parseCommandLine() (*configFlags, error) {
 		return nil, err
 	}
 
-	err = config.ParseNetConfig(cfg.NetworkFlags, parser)
+	err = config.ResolveNetwork(cfg.NetworkFlags, parser)
 	return cfg, err
 }

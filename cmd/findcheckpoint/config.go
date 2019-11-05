@@ -76,7 +76,7 @@ func loadConfig() (*configFlags, []string, error) {
 
 	funcName := "loadConfig"
 
-	err = config.ParseNetConfig(cfg.NetworkFlags, parser)
+	err = config.ResolveNetwork(cfg.NetworkFlags, parser)
 	if err != nil {
 		return nil, nil, err
 	}
