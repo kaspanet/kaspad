@@ -6,7 +6,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/cmd/cmdconfig"
+	"github.com/daglabs/btcd/cmd/config"
 	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
@@ -36,12 +36,12 @@ var (
 // config defines the configuration options for findcheckpoint.
 //
 // See loadConfig for details on the configuration load process.
-type config struct {
+type commandConfig struct {
 	DataDir       string `short:"b" long:"datadir" description:"Location of the btcd data directory"`
 	DbType        string `long:"dbtype" description:"Database backend to use for the Block Chain"`
 	NumCandidates int    `short:"n" long:"numcandidates" description:"Max num of checkpoint candidates to show {1-20}"`
 	UseGoOutput   bool   `short:"g" long:"gooutput" description:"Display the candidates using Go syntax that is ready to insert into the btcchain checkpoint list"`
-	cmdconfig.NetConfig
+	config.NetConfig
 }
 
 // validDbType returns whether or not dbType is a supported database type.
@@ -56,9 +56,9 @@ func validDbType(dbType string) bool {
 }
 
 // loadConfig initializes and parses the config using command line options.
-func loadConfig() (*config, []string, error) {
+func loadConfig() (*commandConfig, []string, error) {
 	// Default config.
-	cfg := config{
+	cfg := commandConfig{
 		DataDir:       defaultDataDir,
 		DbType:        defaultDbType,
 		NumCandidates: defaultNumCandidates,
@@ -76,7 +76,7 @@ func loadConfig() (*config, []string, error) {
 
 	funcName := "loadConfig"
 
-	err = cmdconfig.ParseNetConfig(cfg.NetConfig, parser)
+	err = config.ParseNetConfig(cfg.NetConfig, parser)
 	if err != nil {
 		return nil, nil, err
 	}

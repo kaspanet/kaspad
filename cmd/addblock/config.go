@@ -6,7 +6,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/cmd/cmdconfig"
+	"github.com/daglabs/btcd/cmd/config"
 	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
@@ -33,14 +33,14 @@ var (
 // config defines the configuration options for findcheckpoint.
 //
 // See loadConfig for details on the configuration load process.
-type config struct {
+type commandConfig struct {
 	DataDir   string `short:"b" long:"datadir" description:"Location of the btcd data directory"`
 	DbType    string `long:"dbtype" description:"Database backend to use for the Block Chain"`
 	InFile    string `short:"i" long:"infile" description:"File containing the block(s)"`
 	TxIndex   bool   `long:"txindex" description:"Build a full hash-based transaction index which makes all transactions available via the getrawtransaction RPC"`
 	AddrIndex bool   `long:"addrindex" description:"Build a full address-based transaction index which makes the searchrawtransactions RPC available"`
 	Progress  int    `short:"p" long:"progress" description:"Show a progress message each time this number of seconds have passed -- Use 0 to disable progress announcements"`
-	cmdconfig.NetConfig
+	config.NetConfig
 }
 
 // filesExists reports whether the named file or directory exists.
@@ -65,9 +65,9 @@ func validDbType(dbType string) bool {
 }
 
 // loadConfig initializes and parses the config using command line options.
-func loadConfig() (*config, []string, error) {
+func loadConfig() (*commandConfig, []string, error) {
 	// Default config.
-	cfg := config{
+	cfg := commandConfig{
 		DataDir:  defaultDataDir,
 		DbType:   defaultDbType,
 		InFile:   defaultDataFile,
@@ -84,7 +84,7 @@ func loadConfig() (*config, []string, error) {
 		return nil, nil, err
 	}
 
-	err = cmdconfig.ParseNetConfig(cfg.NetConfig, parser)
+	err = config.ParseNetConfig(cfg.NetConfig, parser)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -105,7 +105,7 @@ func loadConfig() (*config, []string, error) {
 	// All data is specific to a network, so namespacing the data directory
 	// means each individual piece of serialized data does not have to
 	// worry about changing names per network and such.
-	cfg.DataDir = filepath.Join(cfg.DataDir, cmdconfig.ActiveNetParams.Name)
+	cfg.DataDir = filepath.Join(cfg.DataDir, config.ActiveNetParams.Name)
 
 	// Ensure the specified block file exists.
 	if !fileExists(cfg.InFile) {

@@ -6,7 +6,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/cmd/cmdconfig"
+	"github.com/daglabs/btcd/cmd/config"
 	"io/ioutil"
 	"net"
 	"os"
@@ -85,7 +85,7 @@ func listCommands() {
 // config defines the configuration options for btcctl.
 //
 // See loadConfig for details on the configuration load process.
-type config struct {
+type commandConfig struct {
 	ShowVersion   bool   `short:"V" long:"version" description:"Display version information and exit"`
 	ListCommands  bool   `short:"l" long:"listcommands" description:"List all of the supported commands and exit"`
 	ConfigFile    string `short:"C" long:"configfile" description:"Path to configuration file"`
@@ -98,7 +98,7 @@ type config struct {
 	ProxyUser     string `long:"proxyuser" description:"Username for proxy server"`
 	ProxyPass     string `long:"proxypass" default-mask:"-" description:"Password for proxy server"`
 	TLSSkipVerify bool   `long:"skipverify" description:"Do not verify tls certificates (not recommended!)"`
-	cmdconfig.NetConfig
+	config.NetConfig
 }
 
 // normalizeAddress returns addr with the passed default port appended if
@@ -149,9 +149,9 @@ func cleanAndExpandPath(path string) string {
 // The above results in functioning properly without any config settings
 // while still allowing the user to override settings with config files and
 // command line options.  Command line options always take precedence.
-func loadConfig() (*config, []string, error) {
+func loadConfig() (*commandConfig, []string, error) {
 	// Default config.
-	cfg := config{
+	cfg := commandConfig{
 		ConfigFile: defaultConfigFile,
 		RPCServer:  defaultRPCServer,
 		RPCCert:    defaultRPCCertFile,
@@ -223,7 +223,7 @@ func loadConfig() (*config, []string, error) {
 		return nil, nil, err
 	}
 
-	err = cmdconfig.ParseNetConfig(cfg.NetConfig, parser)
+	err = config.ParseNetConfig(cfg.NetConfig, parser)
 	if err != nil {
 		return nil, nil, err
 	}

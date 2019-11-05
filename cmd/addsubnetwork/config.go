@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/daglabs/btcd/cmd/cmdconfig"
+	"github.com/daglabs/btcd/cmd/config"
 	"github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
 )
 
-type config struct {
+type commandConfig struct {
 	PrivateKey    string `short:"k" long:"private-key" description:"Private key" required:"true"`
 	RPCUser       string `short:"u" long:"rpcuser" description:"RPC username" required:"true"`
 	RPCPassword   string `short:"P" long:"rpcpass" default-mask:"-" description:"RPC password" required:"true"`
@@ -15,7 +15,7 @@ type config struct {
 	DisableTLS    bool   `long:"notls" description:"Disable TLS"`
 	GasLimit      uint64 `long:"gaslimit" description:"The gas limit of the new subnetwork"`
 	RegistryTxFee uint64 `long:"regtxfee" description:"The fee for the subnetwork registry transaction"`
-	cmdconfig.NetConfig
+	config.NetConfig
 }
 
 const (
@@ -23,8 +23,8 @@ const (
 	defaultRegistryTxFee      = 3000
 )
 
-func parseConfig() (*config, error) {
-	cfg := &config{}
+func parseConfig() (*commandConfig, error) {
+	cfg := &commandConfig{}
 	parser := flags.NewParser(cfg, flags.PrintErrors|flags.HelpFlag)
 	_, err := parser.Parse()
 
@@ -40,7 +40,7 @@ func parseConfig() (*config, error) {
 		return nil, errors.New("--cert should be omitted if --notls is used")
 	}
 
-	err = cmdconfig.ParseNetConfig(cfg.NetConfig, parser)
+	err = config.ParseNetConfig(cfg.NetConfig, parser)
 	if err != nil {
 		return nil, err
 	}

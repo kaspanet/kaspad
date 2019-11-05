@@ -1,24 +1,24 @@
 package main
 
 import (
-	"github.com/daglabs/btcd/cmd/cmdconfig"
+	"github.com/daglabs/btcd/cmd/config"
 	"github.com/jessevdk/go-flags"
 )
 
-type config struct {
+type commandConfig struct {
 	Transaction string `long:"transaction" short:"t" description:"Unsigned transaction in HEX format" required:"true"`
 	PrivateKey  string `long:"private-key" short:"p" description:"Private key" required:"true"`
-	cmdconfig.NetConfig
+	config.NetConfig
 }
 
-func parseCommandLine() (*config, error) {
-	cfg := &config{}
+func parseCommandLine() (*commandConfig, error) {
+	cfg := &commandConfig{}
 	parser := flags.NewParser(cfg, flags.PrintErrors|flags.HelpFlag)
 	_, err := parser.Parse()
 	if err != nil {
 		return nil, err
 	}
 
-	err = cmdconfig.ParseNetConfig(cfg.NetConfig, parser)
+	err = config.ParseNetConfig(cfg.NetConfig, parser)
 	return cfg, err
 }
