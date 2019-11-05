@@ -21,7 +21,7 @@ type NetworkFlags struct {
 
 // ResolveNetwork parses the network command line argument and sets ActiveNetParams accordingly.
 // It returns error if more than one network was selected, nil otherwise.
-func ResolveNetwork(networkFlags NetworkFlags, parser *flags.Parser) error {
+func (networkFlags *NetworkFlags) ResolveNetwork(parser *flags.Parser) error {
 	// Multiple networks can't be selected simultaneously.
 	numNets := 0
 	// default net is main net

@@ -40,7 +40,7 @@ func parseConfig() (*configFlags, error) {
 		return nil, errors.New("--cert should be omitted if --notls is used")
 	}
 
-	err = config.ResolveNetwork(cfg.NetworkFlags, parser)
+	err = cfg.ResolveNetwork(parser)
 	if err != nil {
 		return nil, err
 	}

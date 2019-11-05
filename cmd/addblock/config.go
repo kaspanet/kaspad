@@ -84,7 +84,7 @@ func loadConfig() (*configFlags, []string, error) {
 		return nil, nil, err
 	}
 
-	err = config.ResolveNetwork(cfg.NetworkFlags, parser)
+	err = cfg.ResolveNetwork(parser)
 	if err != nil {
 		return nil, nil, err
 	}

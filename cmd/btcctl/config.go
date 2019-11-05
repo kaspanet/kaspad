@@ -85,7 +85,7 @@ func listCommands() {
 // config defines the configuration options for btcctl.
 //
 // See loadConfig for details on the configuration load process.
-type commandConfig struct {
+type configFlags struct {
 	ShowVersion   bool   `short:"V" long:"version" description:"Display version information and exit"`
 	ListCommands  bool   `short:"l" long:"listcommands" description:"List all of the supported commands and exit"`
 	ConfigFile    string `short:"C" long:"configfile" description:"Path to configuration file"`
@@ -149,9 +149,9 @@ func cleanAndExpandPath(path string) string {
 // The above results in functioning properly without any config settings
 // while still allowing the user to override settings with config files and
 // command line options.  Command line options always take precedence.
-func loadConfig() (*commandConfig, []string, error) {
+func loadConfig() (*configFlags, []string, error) {
 	// Default config.
-	cfg := commandConfig{
+	cfg := configFlags{
 		ConfigFile: defaultConfigFile,
 		RPCServer:  defaultRPCServer,
 		RPCCert:    defaultRPCCertFile,
@@ -223,7 +223,7 @@ func loadConfig() (*commandConfig, []string, error) {
 		return nil, nil, err
 	}
 
-	err = config.ResolveNetwork(cfg.NetworkFlags, parser)
+	err = cfg.ResolveNetwork(parser)
 	if err != nil {
 		return nil, nil, err
 	}
