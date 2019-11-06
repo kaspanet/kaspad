@@ -460,23 +460,27 @@ func calcTxMass(dbTx *gorm.DB, transaction *btcjson.TxRawResult) (uint64, error)
 	if err != nil {
 		return 0, err
 	}
-	prevTxIds := make([]string, len(transaction.Vin))
+	prevTxIDs := make([]string, len(transaction.Vin))
 	for i, txIn := range transaction.Vin {
-		prevTxIds[i] = txIn.TxID
+		prevTxIDs[i] = txIn.TxID
 	}
-	var prevDbTransactionsOutputs []dbmodels.TransactionOutput
+	var prevDBTransactionsOutputs []dbmodels.TransactionOutput
 	dbResult := dbTx.
 		Joins("LEFT JOIN `transactions` ON `transactions`.`id` = `transaction_outputs`.`transaction_id`").
-		Where("transactions.transaction_id in (?)", prevTxIds).
+		Where("transactions.transaction_id in (?)", prevTxIDs).
 		Preload("Transaction").
-		Find(&prevDbTransactionsOutputs)
+		Find(&prevDBTransactionsOutputs)
 	dbErrors := dbResult.GetErrors()
 	if len(dbErrors) > 0 {
 		return 0, httpserverutils.NewErrorFromDBErrors("error fetching previous transactions: ", dbErrors)
 	}
 	prevScriptPubKeysMap := make(map[string]map[uint32][]byte)
-	for _, prevDbTransactionsOutput := range prevDbTransactionsOutputs {
-		prevScriptPubKeysMap[prevDbTransactionsOutput.Transaction.TransactionID][prevDbTransactionsOutput.Index] = prevDbTransactionsOutput.ScriptPubKey
+	for _, prevDBTransactionsOutput := range prevDBTransactionsOutputs {
+		txID := prevDBTransactionsOutput.Transaction.TransactionID
+		if prevScriptPubKeysMap[txID] == nil {
+			prevScriptPubKeysMap[txID] = make(map[uint32][]byte)
+		}
+		prevScriptPubKeysMap[prevDBTransactionsOutput.Transaction.TransactionID][prevDBTransactionsOutput.Index] = prevDBTransactionsOutput.ScriptPubKey
 	}
 	orderedPrevScriptPubKeys := make([][]byte, len(transaction.Vin))
 	for i, txIn := range transaction.Vin {
