@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/daglabs/btcd/apiserver/logger"
+	"github.com/daglabs/btcd/config"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/util"
 	"github.com/jessevdk/go-flags"
@@ -12,11 +13,6 @@ import (
 const (
 	defaultLogFilename    = "apiserver.log"
 	defaultErrLogFilename = "apiserver_err.log"
-)
-
-var (
-	// activeNetParams are the currently active net params
-	activeNetParams dagconfig.Params
 )
 
 var (
@@ -40,9 +36,7 @@ type Config struct {
 	DBName      string `long:"dbname" description:"Database name" required:"true"`
 	HTTPListen  string `long:"listen" description:"HTTP address to listen on (default: 0.0.0.0:8080)"`
 	Migrate     bool   `long:"migrate" description:"Migrate the database to the latest version. The server will not start when using this flag."`
-	TestNet     bool   `long:"testnet" description:"Connect to testnet"`
-	SimNet      bool   `long:"simnet" description:"Connect to the simulation test network"`
-	DevNet      bool   `long:"devnet" description:"Connect to the development test network"`
+	config.NetworkFlags
 }
 
 // Parse parses the CLI arguments and returns a config struct.
@@ -78,7 +72,7 @@ func Parse() (*Config, error) {
 		return nil, errors.New("--cert should be omitted if --notls is used")
 	}
 
-	err = resolveNetwork(cfg)
+	err = cfg.ResolveNetwork(parser)
 	if err != nil {
 		return nil, err
 	}
@@ -90,37 +84,7 @@ func Parse() (*Config, error) {
 	return cfg, nil
 }
 
-func resolveNetwork(cfg *Config) error {
-	// Multiple networks can't be selected simultaneously.
-	numNets := 0
-	if cfg.TestNet {
-		numNets++
-	}
-	if cfg.SimNet {
-		numNets++
-	}
-	if cfg.DevNet {
-		numNets++
-	}
-	if numNets > 1 {
-		return errors.New("multiple net params (testnet, simnet, devnet, etc.) can't be used " +
-			"together -- choose one of them")
-	}
-
-	activeNetParams = dagconfig.MainNetParams
-	switch {
-	case cfg.TestNet:
-		activeNetParams = dagconfig.TestNetParams
-	case cfg.SimNet:
-		activeNetParams = dagconfig.SimNetParams
-	case cfg.DevNet:
-		activeNetParams = dagconfig.DevNetParams
-	}
-
-	return nil
-}
-
 // ActiveNetParams returns the currently active net params
 func ActiveNetParams() *dagconfig.Params {
-	return &activeNetParams
+	return config.ActiveNetParams()
 }

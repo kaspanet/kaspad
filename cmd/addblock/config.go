@@ -6,7 +6,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/cmd/config"
+	"github.com/daglabs/btcd/config"
 	"github.com/pkg/errors"
 	"os"
 	"path/filepath"

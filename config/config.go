@@ -74,10 +74,6 @@ var (
 	defaultLogDir      = filepath.Join(DefaultHomeDir, defaultLogDirname)
 )
 
-// activeNetParams is a pointer to the parameters specific to the
-// currently active bitcoin network.
-var activeNetParams = &dagconfig.MainNetParams
-
 var mainCfg *Config
 
 // RunServiceCommand is only set to a real function on Windows.  It is used
@@ -134,10 +130,6 @@ type configFlags struct {
 	OnionProxyPass       string        `long:"onionpass" default-mask:"-" description:"Password for onion proxy server"`
 	NoOnion              bool          `long:"noonion" description:"Disable connecting to tor hidden services"`
 	TorIsolation         bool          `long:"torisolation" description:"Enable Tor stream isolation by randomizing user credentials for each connection."`
-	TestNet              bool          `long:"testnet" description:"Use the test network"`
-	RegressionTest       bool          `long:"regtest" description:"Use the regression test network"`
-	SimNet               bool          `long:"simnet" description:"Use the simulation test network"`
-	DevNet               bool          `long:"devnet" description:"Use the development test network"`
 	AddCheckpoints       []string      `long:"addcheckpoint" description:"Add a custom checkpoint.  Format: '<height>:<hash>'"`
 	DisableCheckpoints   bool          `long:"nocheckpoints" description:"Disable built-in checkpoints.  Don't do this unless you know what you're doing."`
 	DbType               string        `long:"dbtype" description:"Database backend to use for the Block DAG"`
@@ -166,6 +158,7 @@ type configFlags struct {
 	RejectNonStd         bool          `long:"rejectnonstd" description:"Reject non-standard transactions regardless of the default settings for the active network."`
 	Subnetwork           string        `long:"subnetwork" description:"If subnetwork ID is specified, than node will request and process only payloads from specified subnetwork. And if subnetwork ID is ommited, than payloads of all subnetworks are processed. Subnetworks with IDs 2 through 255 are reserved for future use and are currently not allowed."`
 	ResetDatabase        bool          `long:"reset-db" description:"Reset database before starting node. It's needed when switching between subnetworks."`
+	NetworkFlags
 }
 
 // Config defines the configuration options for btcd.
@@ -424,34 +417,8 @@ func loadConfig() (*Config, []string, error) {
 		return nil, nil, err
 	}
 
-	// Multiple networks can't be selected simultaneously.
-	numNets := 0
-	// Count number of network flags passed; assign active network params
-	// while we're at it
-	if cfg.TestNet {
-		numNets++
-		activeNetParams = &dagconfig.TestNetParams
-	}
-	if cfg.RegressionTest {
-		numNets++
-		activeNetParams = &dagconfig.RegressionNetParams
-	}
-	if cfg.SimNet {
-		numNets++
-		// Also disable dns seeding on the simulation test network.
-		activeNetParams = &dagconfig.SimNetParams
-		cfg.DisableDNSSeed = true
-	}
-	if cfg.DevNet {
-		numNets++
-		activeNetParams = &dagconfig.DevNetParams
-	}
-	if numNets > 1 {
-		str := "%s: The testnet, regtest, devnet, and simnet params " +
-			"can't be used together -- choose one of the four"
-		err := errors.Errorf(str, funcName)
-		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprintln(os.Stderr, usageMessage)
+	err = cfg.ResolveNetwork(parser)
+	if err != nil {
 		return nil, nil, err
 	}
 
