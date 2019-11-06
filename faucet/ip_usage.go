@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/daglabs/btcd/faucet/database"
 	"github.com/daglabs/btcd/httpserverutils"
+	"github.com/pkg/errors"
 	"net"
 	"net/http"
 	"time"
@@ -23,43 +24,43 @@ func ipFromRequest(r *http.Request) (string, error) {
 	return ip, nil
 }
 
-func validateIPUsage(r *http.Request) *httpserverutils.HandlerError {
+func validateIPUsage(r *http.Request) error {
 	db, err := database.DB()
 	if err != nil {
-		return httpserverutils.NewInternalServerHandlerError(err.Error())
+		return err
 	}
 	now := time.Now()
 	timeBeforeMinRequestInterval := now.Add(-minRequestInterval)
 	var count int
 	ip, err := ipFromRequest(r)
 	if err != nil {
-		return httpserverutils.NewInternalServerHandlerError(err.Error())
+		return err
 	}
 	dbResult := db.Model(&ipUse{}).Where(&ipUse{IP: ip}).Where("last_use BETWEEN ? AND ?", timeBeforeMinRequestInterval, now).Count(&count)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
-		return httpserverutils.NewHandlerErrorFromDBErrors("Some errors were encountered when checking the last use of an IP:", dbResult.GetErrors())
+		return httpserverutils.NewErrorFromDBErrors("Some errors were encountered when checking the last use of an IP:", dbResult.GetErrors())
 	}
 	if count != 0 {
-		return httpserverutils.NewHandlerError(http.StatusForbidden, "A user is allowed to to have one request from the faucet every 24 hours.")
+		return httpserverutils.NewHandlerError(http.StatusForbidden, errors.New("A user is allowed to to have one request from the faucet every 24 hours"))
 	}
 	return nil
 }
 
-func updateIPUsage(r *http.Request) *httpserverutils.HandlerError {
+func updateIPUsage(r *http.Request) error {
 	db, err := database.DB()
 	if err != nil {
-		return httpserverutils.NewInternalServerHandlerError(err.Error())
+		return err
 	}
 
 	ip, err := ipFromRequest(r)
 	if err != nil {
-		return httpserverutils.NewInternalServerHandlerError(err.Error())
+		return err
 	}
 	dbResult := db.Where(&ipUse{IP: ip}).Assign(&ipUse{LastUse: time.Now()}).FirstOrCreate(&ipUse{})
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
-		return httpserverutils.NewHandlerErrorFromDBErrors("Some errors were encountered when upserting the IP to the new date:", dbResult.GetErrors())
+		return httpserverutils.NewErrorFromDBErrors("Some errors were encountered when upserting the IP to the new date:", dbResult.GetErrors())
 	}
 	return nil
 }
