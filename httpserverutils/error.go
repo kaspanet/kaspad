@@ -13,19 +13,19 @@ import (
 // a rest route handler or a middleware.
 type HandlerError struct {
 	Code          int
-	OriginalError error
+	Cause         error
 	ClientMessage string
 }
 
 func (hErr *HandlerError) Error() string {
-	return hErr.OriginalError.Error()
+	return hErr.Cause.Error()
 }
 
 // NewHandlerError returns a HandlerError with the given code and message.
 func NewHandlerError(code int, err error) error {
 	return &HandlerError{
 		Code:          code,
-		OriginalError: err,
+		Cause:         err,
 		ClientMessage: err.Error(),
 	}
 }
@@ -35,7 +35,7 @@ func NewHandlerError(code int, err error) error {
 func NewHandlerErrorWithCustomClientMessage(code int, err error, clientMessage string) error {
 	return &HandlerError{
 		Code:          code,
-		OriginalError: err,
+		Cause:         err,
 		ClientMessage: clientMessage,
 	}
 }
@@ -83,8 +83,8 @@ func (err *ClientError) Error() string {
 // to the http client.
 func SendErr(ctx *ServerContext, w http.ResponseWriter, err error) {
 	var hErr *HandlerError
-	var isHandleError bool
-	if hErr, isHandleError = err.(*HandlerError); !isHandleError {
+	var ok bool
+	if hErr, ok = err.(*HandlerError); !ok {
 		hErr = NewInternalServerHandlerError(err).(*HandlerError)
 	}
 	ctx.Warnf("got error: %s", err)
