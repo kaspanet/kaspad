@@ -480,7 +480,7 @@ func calcTxMass(dbTx *gorm.DB, transaction *btcjson.TxRawResult) (uint64, error)
 		if prevScriptPubKeysMap[txID] == nil {
 			prevScriptPubKeysMap[txID] = make(map[uint32][]byte)
 		}
-		prevScriptPubKeysMap[prevDBTransactionsOutput.Transaction.TransactionID][prevDBTransactionsOutput.Index] = prevDBTransactionsOutput.ScriptPubKey
+		prevScriptPubKeysMap[txID][prevDBTransactionsOutput.Index] = prevDBTransactionsOutput.ScriptPubKey
 	}
 	orderedPrevScriptPubKeys := make([][]byte, len(transaction.Vin))
 	for i, txIn := range transaction.Vin {
