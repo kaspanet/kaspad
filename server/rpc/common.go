@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/txscript"
@@ -142,7 +141,7 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 // to a raw transaction JSON object.
 func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 	txID string, blkHeader *wire.BlockHeader, blkHash string,
-	acceptingBlock *daghash.Hash, confirmations *uint64, isInMempool bool, txMass uint64) (*btcjson.TxRawResult, error) {
+	acceptingBlock *daghash.Hash, confirmations *uint64, isInMempool bool) (*btcjson.TxRawResult, error) {
 
 	mtxHex, err := messageToHex(mtx)
 	if err != nil {
@@ -165,7 +164,6 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 		LockTime:    mtx.LockTime,
 		Subnetwork:  mtx.SubnetworkID.String(),
 		Gas:         mtx.Gas,
-		Mass:        txMass,
 		PayloadHash: payloadHash,
 		Payload:     hex.EncodeToString(mtx.Payload),
 	}
@@ -240,17 +238,6 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		return nil, internalRPCError(err.Error(), context)
 	}
 
-	pastUTXO, err := s.cfg.DAG.BlockPastUTXO(block.Hash())
-	if err != nil {
-		context := "Could not get block past utxo"
-		return nil, internalRPCError(err.Error(), context)
-	}
-	blockMass, err := blockdag.CalcBlockMass(pastUTXO, block.Transactions())
-	if err != nil {
-		context := "Could not get block mass"
-		return nil, internalRPCError(err.Error(), context)
-	}
-
 	isChainBlock := s.cfg.DAG.IsInSelectedParentChain(hash)
 
 	result := &btcjson.GetBlockVerboseResult{
@@ -266,7 +253,6 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		Confirmations:        blockConfirmations,
 		Height:               blockChainHeight,
 		BlueScore:            blockBlueScore,
-		Mass:                 blockMass,
 		IsChainBlock:         isChainBlock,
 		Size:                 int32(block.MsgBlock().SerializeSize()),
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
@@ -299,12 +285,8 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 				}
 				confirmations = &txConfirmations
 			}
-			txMass, err := blockdag.CalcTxMassFromUTXOSet(tx, pastUTXO)
-			if err != nil {
-				return nil, err
-			}
 			rawTxn, err := createTxRawResult(params, tx.MsgTx(), tx.ID().String(),
-				&blockHeader, hash.String(), acceptingBlock, confirmations, false, txMass)
+				&blockHeader, hash.String(), acceptingBlock, confirmations, false)
 			if err != nil {
 				return nil, err
 			}
