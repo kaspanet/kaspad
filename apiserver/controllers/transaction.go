@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/daglabs/btcd/apiserver/apimodels"
 	"github.com/daglabs/btcd/apiserver/dbmodels"
+	"github.com/daglabs/btcd/apiserver/virtual"
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/httpserverutils"
 	"github.com/daglabs/btcd/util/subnetworkid"
@@ -110,23 +111,6 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 	return txResponses, nil
 }
 
-func fetchSelectedTipBlueScore() (uint64, error) {
-	db, err := database.DB()
-	if err != nil {
-		return 0, err
-	}
-	block := &dbmodels.Block{}
-	dbResult := db.Order("blue_score DESC").
-		Where(&dbmodels.Block{IsChainBlock: true}).
-		Select("blue_score").
-		First(block)
-	dbErrors := dbResult.GetErrors()
-	if httpserverutils.HasDBError(dbErrors) {
-		return 0, httpserverutils.NewErrorFromDBErrors("Some errors were encountered when loading transactions from the database:", dbErrors)
-	}
-	return block.BlueScore, nil
-}
-
 // GetUTXOsByAddressHandler searches for all UTXOs that belong to a certain address.
 func GetUTXOsByAddressHandler(address string) (interface{}, error) {
 	db, err := database.DB()
@@ -145,10 +129,7 @@ func GetUTXOsByAddressHandler(address string) (interface{}, error) {
 		return nil, httpserverutils.NewErrorFromDBErrors("Some errors were encountered when loading UTXOs from the database:", dbErrors)
 	}
 
-	selectedTipBlueScore, err := fetchSelectedTipBlueScore()
-	if err != nil {
-		return nil, err
-	}
+	virtualBlueScore := virtual.BlueScore()
 
 	UTXOsResponses := make([]*apimodels.TransactionOutputResponse, len(transactionOutputs))
 	for i, transactionOutput := range transactionOutputs {
@@ -163,7 +144,7 @@ func GetUTXOsByAddressHandler(address string) (interface{}, error) {
 		if transactionOutput.Transaction.AcceptingBlock != nil {
 			acceptingBlockHash = btcjson.String(transactionOutput.Transaction.AcceptingBlock.BlockHash)
 			acceptingBlockBlueScore = transactionOutput.Transaction.AcceptingBlock.BlueScore
-			confirmations = selectedTipBlueScore - acceptingBlockBlueScore
+			confirmations = virtualBlueScore - acceptingBlockBlueScore + 1
 		}
 		UTXOsResponses[i] = &apimodels.TransactionOutputResponse{
 			TransactionID:           transactionOutput.Transaction.TransactionID,
