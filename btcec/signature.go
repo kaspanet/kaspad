@@ -196,21 +196,13 @@ func nonceRFC6979(privkey *big.Int, hash []byte, additionalData []byte) *big.Int
 	k := make([]byte, holen)
 
 	// Step D
-	if additionalData != nil {
-		k = mac(alg, k, append(append(append(v, 0x00), bx...), additionalData...))
-	} else {
-		k = mac(alg, k, append(append(v, 0x00), bx...))
-	}
+	k = mac(alg, k, append(append(append(v, 0x00), bx...), additionalData...))
 
 	// Step E
 	v = mac(alg, k, v)
 
 	// Step F
-	if additionalData != nil {
-		k = mac(alg, k, append(append(append(v, 0x01), bx...), additionalData...))
-	} else {
-		k = mac(alg, k, append(append(v, 0x01), bx...))
-	}
+	k = mac(alg, k, append(append(append(v, 0x01), bx...), additionalData...))
 
 	// Step G
 	v = mac(alg, k, v)

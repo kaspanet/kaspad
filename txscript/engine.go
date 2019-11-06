@@ -382,7 +382,7 @@ func (vm *Engine) checkPubKeyEncoding(pubKey []byte) error {
 }
 
 // checkSignatureLength returns whether or not the passed signature is
-// in the correct Schnorr format
+// in the correct Schnorr format.
 func (vm *Engine) checkSignatureLength(sig []byte) error {
 	if len(sig) != 64 {
 		message := fmt.Sprintf("invalid signature length %d", len(sig))

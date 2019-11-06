@@ -44,7 +44,7 @@ func TestRFC6979(t *testing.T) {
 		{
 			"cca9fbcc1b41e5a95d369eaa6ddcff73b61a4efaa279cfc6567e8daa39cbaf50",
 			"sample",
-			"2df40ca70e639d89528a6b670d9d48d9165fdc0febc0974056bdce192b8e16a3",
+			"bbed2b98f40ded8587b0615b8413d2aaf520215f369b098cea4ceec119b3f722",
 			"e8d6af55a53a1ac260c89aa247cc677a6219132f0d031530c75c22bffde442d894a5edc9cfffa4362f0b9f2af84f4cd13ae67b0b742d18c46eb85dac8eea6171",
 		},
 		{
@@ -52,31 +52,31 @@ func TestRFC6979(t *testing.T) {
 			// If S is not canonicalized (lowered by halforder), this test will fail.
 			"0000000000000000000000000000000000000000000000000000000000000001",
 			"Satoshi Nakamoto",
-			"8f8a276c19f4149656b280621e358cce24f5f52542772691ee69063b74f15d15",
+			"c2b802cb01789ed38de5cffd81a56374c39b7ee6f31bb36244650141bb3425fe",
 			"2f78a0720cf85bef9a24aef691fce02002c59381133ee543055d24222e2797cc78531f684122d541bbb4afe536e0b19236ad83e2e97a6277626aa5e0d1428f64",
 		},
 		{
 			"fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140",
 			"Satoshi Nakamoto",
-			"33a19b60e25fb6f4435af53a3d42d493644827367e6453928554f43e49aa6f90",
+			"b962c5b6537356a8b9362d6a275614df9711dff7b94d803b9ba5b5f2d4d90f8c",
 			"bebecd554a4c22ad202d074db855af4c974a55a5b9ef5ecf009eff232c806c63b9b37ef1d984feb2aa500777562d66f2ba468fab0491202ede12e76aa69d194a",
 		},
 		{
 			"f8b8af8ce3c7cca5e300d33939540c10d45ce001b8f252bfbc57ba0342904181",
 			"Alan Turing",
-			"525a82b70e67874398067543fd84c83d30c175fdc45fdeee082fe13b1d7cfdf1",
+			"65e72825561dd93f7a0ab53cdce97d5e57b2235c056e8b8396857425a6a8ff54",
 			"864487c21bc3a7823a9dbc99fc2a6de67cf7d7cf5f2feb6585319256393ff0f2192c3292df9979a01bf26f96017bc7e5f4a2e01fa5b9e1007af1a19a58f767d0",
 		},
 		{
 			"0000000000000000000000000000000000000000000000000000000000000001",
 			"All those moments will be lost in time, like tears in rain. Time to die...",
-			"38aa22d72376b4dbc472e06c3ba403ee0a394da63fc58d88686c611aba98d6b3",
+			"60eb74b1fbc2db67be649f56246cee8c2225803155c86ff72f29641958de471a",
 			"66e3a89b2842c05cf57e5315bc2d063b1054979a4f0e5718ec5e0d68bde268296f855a1595aaa0625c822b526226a0e248fc0a1eae6f160cc97a783b8646b755",
 		},
 		{
 			"e91671c46231f833a6406ccbea0e3e392c76c167bac1cb013f6f1013980455c2",
 			"There is a computer disease that anybody who works with computers knows about. It's a very serious disease and it interferes completely with the work. The trouble with computers is that you 'play' with them!",
-			"1f4b84c23a86a221d233f2521be018d9318639d5b8bbd6374a8a59232d16ad3d",
+			"a1b518d7f2c6d9b68672f5e2b66fc872ef67a9b0b422d8b70ce0292017a62f60",
 			"c5290b3ecadc0ed0d674501ffc880f2f44b2ed829bfd101676f6fb55def15f23236ace4b651a52e9d590f421668e2b1b495c9039d27db848eb3edf1d1eb60d50",
 		},
 	}
@@ -86,7 +86,8 @@ func TestRFC6979(t *testing.T) {
 		hash := sha256.Sum256([]byte(test.msg))
 
 		// Ensure deterministically generated nonce is the expected value.
-		gotNonce := nonceRFC6979(privKey.D, hash[:], nil).Bytes()
+		additionalData := []byte{'S', 'c', 'h', 'n', 'o', 'r', 'r', '+', 'S', 'H', 'A', '2', '5', '6', ' ', ' '}
+		gotNonce := nonceRFC6979(privKey.D, hash[:], additionalData).Bytes()
 		wantNonce := decodeHex(test.nonce)
 		if !bytes.Equal(gotNonce, wantNonce) {
 			t.Errorf("NonceRFC6979 #%d (%s): Nonce is incorrect: "+
