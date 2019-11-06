@@ -6,7 +6,7 @@ package main
 
 import (
 	"encoding/binary"
-	"github.com/daglabs/btcd/cmd/config"
+	"github.com/daglabs/btcd/config"
 	"github.com/pkg/errors"
 	"io"
 	"sync"
@@ -60,9 +60,9 @@ func (bi *blockImporter) readBlock() ([]byte, error) {
 		// No block and no error means there are no more blocks to read.
 		return nil, nil
 	}
-	if net != uint32(config.ActiveNetParams.Net) {
+	if net != uint32(config.ActiveNetParams().Net) {
 		return nil, errors.Errorf("network mismatch -- got %x, want %x",
-			net, uint32(config.ActiveNetParams.Net))
+			net, uint32(config.ActiveNetParams().Net))
 	}
 
 	// Read the block length and ensure it is sane.
@@ -312,7 +312,7 @@ func newBlockImporter(db database.DB, r io.ReadSeeker) (*blockImporter, error) {
 	}
 	if cfg.AddrIndex {
 		log.Info("Address index is enabled")
-		indexes = append(indexes, indexers.NewAddrIndex(config.ActiveNetParams))
+		indexes = append(indexes, indexers.NewAddrIndex(config.ActiveNetParams()))
 	}
 
 	// Create an index manager if any of the optional indexes are enabled.
@@ -323,7 +323,7 @@ func newBlockImporter(db database.DB, r io.ReadSeeker) (*blockImporter, error) {
 
 	dag, err := blockdag.New(&blockdag.Config{
 		DB:           db,
-		DAGParams:    config.ActiveNetParams,
+		DAGParams:    config.ActiveNetParams(),
 		TimeSource:   blockdag.NewMedianTime(),
 		IndexManager: indexManager,
 	})

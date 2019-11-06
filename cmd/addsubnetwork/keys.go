@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/cmd/config"
+	"github.com/daglabs/btcd/config"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/base58"
 )
@@ -12,7 +12,7 @@ func decodeKeys(cfg *configFlags) (*btcec.PrivateKey, *util.AddressPubKeyHash, e
 	privateKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privateKeyBytes)
 	serializedPrivateKey := privateKey.PubKey().SerializeCompressed()
 
-	addr, err := util.NewAddressPubKeyHashFromPublicKey(serializedPrivateKey, config.ActiveNetParams.Prefix)
+	addr, err := util.NewAddressPubKeyHashFromPublicKey(serializedPrivateKey, config.ActiveNetParams().Prefix)
 	if err != nil {
 		return nil, nil, err
 	}
