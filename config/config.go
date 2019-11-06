@@ -1021,8 +1021,3 @@ func createDefaultConfigFile(destinationPath string) error {
 
 	return nil
 }
-
-//ActiveNetParams returns a pointer to the current active net params
-func ActiveNetParams() *dagconfig.Params {
-	return activeNetParams
-}

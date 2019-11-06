@@ -54,3 +54,8 @@ func (networkFlags *NetworkFlags) ResolveNetwork(parser *flags.Parser) error {
 	}
 	return nil
 }
+
+// ActiveNetParams returns a pointer to the current active net params
+func ActiveNetParams() *dagconfig.Params {
+	return activeNetParams
+}
