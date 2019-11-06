@@ -1362,9 +1362,9 @@ func (dag *BlockDAG) UTXOCommitment() string {
 
 // blockConfirmations returns the current confirmations number of the given node
 // The confirmations number is defined as follows:
-// * If the node is in the selected tip red set -> 0
-// * If the node is the selected tip 			-> 1
-// * Otherwise          						-> selectedTip.blueScore - acceptingBlock.blueScore + 2
+// * If the node is in the selected tip red set	-> 0
+// * If the node is the selected tip			-> 1
+// * Otherwise									-> selectedTip.blueScore - acceptingBlock.blueScore + 2
 func (dag *BlockDAG) blockConfirmations(node *blockNode) (uint64, error) {
 	if node == dag.selectedTip() {
 		return 1, nil
@@ -1404,8 +1404,8 @@ func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 	// Find the only chain block that may contain the node in its blues
 	candidateAcceptingBlock := dag.oldestChainBlockWithBlueScoreGreaterThan(node.blueScore)
 
-	// if not candidate is found, it means that the node has the same
-	// blue score as the selected tip and is found in its anticone, so
+	// if not candidate is found, it means that the node has same or more
+	// blue score than the selected tip and is found in its anticone, so
 	// it doesn't have an accepting block
 	if candidateAcceptingBlock == nil {
 		return nil, nil
