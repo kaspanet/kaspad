@@ -10,6 +10,7 @@ import (
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/httpserverutils"
 	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/pkg/errors"
 	"net/http"
 
 	"github.com/daglabs/btcd/apiserver/database"
@@ -23,15 +24,15 @@ import (
 const maxGetTransactionsLimit = 1000
 
 // GetTransactionByIDHandler returns a transaction by a given transaction ID.
-func GetTransactionByIDHandler(txID string) (interface{}, *httpserverutils.HandlerError) {
+func GetTransactionByIDHandler(txID string) (interface{}, error) {
 	if bytes, err := hex.DecodeString(txID); err != nil || len(bytes) != daghash.TxIDSize {
 		return nil, httpserverutils.NewHandlerError(http.StatusUnprocessableEntity,
-			fmt.Sprintf("The given txid is not a hex-encoded %d-byte hash.", daghash.TxIDSize))
+			errors.Errorf("The given txid is not a hex-encoded %d-byte hash.", daghash.TxIDSize))
 	}
 
 	db, err := database.DB()
 	if err != nil {
-		return nil, httpserverutils.NewInternalServerHandlerError(err.Error())
+		return nil, err
 	}
 
 	tx := &dbmodels.Transaction{}
@@ -39,24 +40,24 @@ func GetTransactionByIDHandler(txID string) (interface{}, *httpserverutils.Handl
 	dbResult := addTxPreloadedFields(query).First(&tx)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.IsDBRecordNotFoundError(dbErrors) {
-		return nil, httpserverutils.NewHandlerError(http.StatusNotFound, "No transaction with the given txid was found.")
+		return nil, httpserverutils.NewHandlerError(http.StatusNotFound, errors.New("No transaction with the given txid was found"))
 	}
 	if httpserverutils.HasDBError(dbErrors) {
-		return nil, httpserverutils.NewHandlerErrorFromDBErrors("Some errors were encountered when loading transaction from the database:", dbErrors)
+		return nil, httpserverutils.NewErrorFromDBErrors("Some errors were encountered when loading transaction from the database:", dbErrors)
 	}
 	return convertTxDBModelToTxResponse(tx), nil
 }
 
 // GetTransactionByHashHandler returns a transaction by a given transaction hash.
-func GetTransactionByHashHandler(txHash string) (interface{}, *httpserverutils.HandlerError) {
+func GetTransactionByHashHandler(txHash string) (interface{}, error) {
 	if bytes, err := hex.DecodeString(txHash); err != nil || len(bytes) != daghash.HashSize {
 		return nil, httpserverutils.NewHandlerError(http.StatusUnprocessableEntity,
-			fmt.Sprintf("The given txhash is not a hex-encoded %d-byte hash.", daghash.HashSize))
+			errors.Errorf("The given txhash is not a hex-encoded %d-byte hash.", daghash.HashSize))
 	}
 
 	db, err := database.DB()
 	if err != nil {
-		return nil, httpserverutils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return nil, err
 	}
 
 	tx := &dbmodels.Transaction{}
@@ -64,25 +65,25 @@ func GetTransactionByHashHandler(txHash string) (interface{}, *httpserverutils.H
 	dbResult := addTxPreloadedFields(query).First(&tx)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.IsDBRecordNotFoundError(dbErrors) {
-		return nil, httpserverutils.NewHandlerError(http.StatusNotFound, "No transaction with the given txhash was found.")
+		return nil, httpserverutils.NewHandlerError(http.StatusNotFound, errors.Errorf("No transaction with the given txhash was found."))
 	}
 	if httpserverutils.HasDBError(dbErrors) {
-		return nil, httpserverutils.NewHandlerErrorFromDBErrors("Some errors were encountered when loading transaction from the database:", dbErrors)
+		return nil, httpserverutils.NewErrorFromDBErrors("Some errors were encountered when loading transaction from the database:", dbErrors)
 	}
 	return convertTxDBModelToTxResponse(tx), nil
 }
 
 // GetTransactionsByAddressHandler searches for all transactions
 // where the given address is either an input or an output.
-func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) (interface{}, *httpserverutils.HandlerError) {
+func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) (interface{}, error) {
 	if limit > maxGetTransactionsLimit {
 		return nil, httpserverutils.NewHandlerError(http.StatusUnprocessableEntity,
-			fmt.Sprintf("The maximum allowed value for the limit is %d", maxGetTransactionsLimit))
+			errors.Errorf("The maximum allowed value for the limit is %d", maxGetTransactionsLimit))
 	}
 
 	db, err := database.DB()
 	if err != nil {
-		return nil, httpserverutils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return nil, err
 	}
 
 	txs := []*dbmodels.Transaction{}
@@ -90,7 +91,7 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 		Joins("LEFT JOIN `transaction_outputs` ON `transaction_outputs`.`transaction_id` = `transactions`.`id`").
 		Joins("LEFT JOIN `addresses` AS `out_addresses` ON `out_addresses`.`id` = `transaction_outputs`.`address_id`").
 		Joins("LEFT JOIN `transaction_inputs` ON `transaction_inputs`.`transaction_id` = `transactions`.`id`").
-		Joins("LEFT JOIN `transaction_outputs` AS `inputs_outs` ON `inputs_outs`.`id` = `transaction_inputs`.`transaction_output_id`").
+		Joins("LEFT JOIN `transaction_outputs` AS `inputs_outs` ON `inputs_outs`.`id` = `transaction_inputs`.`previous_transaction_output_id`").
 		Joins("LEFT JOIN `addresses` AS `in_addresses` ON `in_addresses`.`id` = `inputs_outs`.`address_id`").
 		Where("`out_addresses`.`address` = ?", address).
 		Or("`in_addresses`.`address` = ?", address).
@@ -100,7 +101,7 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 	dbResult := addTxPreloadedFields(query).Find(&txs)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
-		return nil, httpserverutils.NewHandlerErrorFromDBErrors("Some errors were encountered when loading transactions from the database:", dbErrors)
+		return nil, httpserverutils.NewErrorFromDBErrors("Some errors were encountered when loading transactions from the database:", dbErrors)
 	}
 	txResponses := make([]*apimodels.TransactionResponse, len(txs))
 	for i, tx := range txs {
@@ -109,10 +110,10 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 	return txResponses, nil
 }
 
-func fetchSelectedTip() (*dbmodels.Block, *httpserverutils.HandlerError) {
+func fetchSelectedTip() (*dbmodels.Block, error) {
 	db, err := database.DB()
 	if err != nil {
-		return nil, httpserverutils.NewInternalServerHandlerError(err.Error())
+		return nil, err
 	}
 	block := &dbmodels.Block{}
 	dbResult := db.Order("blue_score DESC").
@@ -120,15 +121,15 @@ func fetchSelectedTip() (*dbmodels.Block, *httpserverutils.HandlerError) {
 		First(block)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
-		return nil, httpserverutils.NewHandlerErrorFromDBErrors("Some errors were encountered when loading transactions from the database:", dbErrors)
+		return nil, httpserverutils.NewErrorFromDBErrors("Some errors were encountered when loading transactions from the database:", dbErrors)
 	}
 	return block, nil
 }
 
-func areTxsInBlock(blockID uint64, txIDs []uint64) (map[uint64]bool, *httpserverutils.HandlerError) {
+func areTxsInBlock(blockID uint64, txIDs []uint64) (map[uint64]bool, error) {
 	db, err := database.DB()
 	if err != nil {
-		return nil, httpserverutils.NewInternalServerHandlerError(err.Error())
+		return nil, err
 	}
 	transactionBlocks := []*dbmodels.TransactionBlock{}
 	dbErrors := db.
@@ -137,7 +138,7 @@ func areTxsInBlock(blockID uint64, txIDs []uint64) (map[uint64]bool, *httpserver
 		Find(&transactionBlocks).GetErrors()
 
 	if len(dbErrors) > 0 {
-		return nil, httpserverutils.NewHandlerErrorFromDBErrors("Some errors were encountered when loading UTXOs from the database:", dbErrors)
+		return nil, httpserverutils.NewErrorFromDBErrors("Some errors were encountered when loading UTXOs from the database:", dbErrors)
 	}
 
 	isInBlock := make(map[uint64]bool)
@@ -148,10 +149,10 @@ func areTxsInBlock(blockID uint64, txIDs []uint64) (map[uint64]bool, *httpserver
 }
 
 // GetUTXOsByAddressHandler searches for all UTXOs that belong to a certain address.
-func GetUTXOsByAddressHandler(address string) (interface{}, *httpserverutils.HandlerError) {
+func GetUTXOsByAddressHandler(address string) (interface{}, error) {
 	db, err := database.DB()
 	if err != nil {
-		return nil, httpserverutils.NewInternalServerHandlerError(err.Error())
+		return nil, err
 	}
 
 	var transactionOutputs []*dbmodels.TransactionOutput
@@ -162,12 +163,12 @@ func GetUTXOsByAddressHandler(address string) (interface{}, *httpserverutils.Han
 		Preload("Transaction.Subnetwork").
 		Find(&transactionOutputs).GetErrors()
 	if len(dbErrors) > 0 {
-		return nil, httpserverutils.NewHandlerErrorFromDBErrors("Some errors were encountered when loading UTXOs from the database:", dbErrors)
+		return nil, httpserverutils.NewErrorFromDBErrors("Some errors were encountered when loading UTXOs from the database:", dbErrors)
 	}
 
-	selectedTip, hErr := fetchSelectedTip()
-	if hErr != nil {
-		return nil, hErr
+	selectedTip, err := fetchSelectedTip()
+	if err != nil {
+		return nil, err
 	}
 
 	nonAcceptedTxIds := make([]uint64, len(transactionOutputs))
@@ -187,7 +188,7 @@ func GetUTXOsByAddressHandler(address string) (interface{}, *httpserverutils.Han
 		subnetworkID := &subnetworkid.SubnetworkID{}
 		err := subnetworkid.Decode(subnetworkID, transactionOutput.Transaction.Subnetwork.SubnetworkID)
 		if err != nil {
-			return nil, httpserverutils.NewInternalServerHandlerError(fmt.Sprintf("Couldn't decode subnetwork id %s: %s", transactionOutput.Transaction.Subnetwork.SubnetworkID, err))
+			return nil, errors.Wrap(err, fmt.Sprintf("Couldn't decode subnetwork id %s", transactionOutput.Transaction.Subnetwork.SubnetworkID))
 		}
 		var acceptingBlockHash *string
 		var confirmations uint64
@@ -223,24 +224,24 @@ func addTxPreloadedFields(query *gorm.DB) *gorm.DB {
 }
 
 // PostTransaction forwards a raw transaction to the JSON-RPC API server
-func PostTransaction(requestBody []byte) *httpserverutils.HandlerError {
+func PostTransaction(requestBody []byte) error {
 	client, err := jsonrpc.GetClient()
 	if err != nil {
-		return httpserverutils.NewInternalServerHandlerError(err.Error())
+		return err
 	}
 
 	rawTx := &apimodels.RawTransaction{}
 	err = json.Unmarshal(requestBody, rawTx)
 	if err != nil {
 		return httpserverutils.NewHandlerErrorWithCustomClientMessage(http.StatusUnprocessableEntity,
-			fmt.Sprintf("Error unmarshalling request body: %s", err),
+			errors.Wrap(err, "Error unmarshalling request body"),
 			"The request body is not json-formatted")
 	}
 
 	txBytes, err := hex.DecodeString(rawTx.RawTransaction)
 	if err != nil {
 		return httpserverutils.NewHandlerErrorWithCustomClientMessage(http.StatusUnprocessableEntity,
-			fmt.Sprintf("Error decoding hex raw transaction: %s", err),
+			errors.Wrap(err, "Error decoding hex raw transaction"),
 			"The raw transaction is not a hex-encoded transaction")
 	}
 
@@ -249,16 +250,16 @@ func PostTransaction(requestBody []byte) *httpserverutils.HandlerError {
 	err = tx.BtcDecode(txReader, 0)
 	if err != nil {
 		return httpserverutils.NewHandlerErrorWithCustomClientMessage(http.StatusUnprocessableEntity,
-			fmt.Sprintf("Error decoding raw transaction: %s", err),
+			errors.Wrap(err, "Error decoding raw transaction"),
 			"Error decoding raw transaction")
 	}
 
 	_, err = client.SendRawTransaction(tx, true)
 	if err != nil {
 		if rpcErr, ok := err.(*btcjson.RPCError); ok && rpcErr.Code == btcjson.ErrRPCVerify {
-			return httpserverutils.NewHandlerError(http.StatusInternalServerError, rpcErr.Message)
+			return httpserverutils.NewHandlerError(http.StatusInternalServerError, err)
 		}
-		return httpserverutils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return err
 	}
 
 	return nil
