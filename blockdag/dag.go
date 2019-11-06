@@ -1392,13 +1392,16 @@ func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 
 	// If the node is a chain-block itself, the accepting block is its chain-child
 	if dag.IsInSelectedParentChain(node.hash) {
+		if len(node.children) == 0 {
+			// If the node is the selected tip, it doesn't have an accepting block
+			return nil, nil
+		}
 		for _, child := range node.children {
 			if dag.IsInSelectedParentChain(child.hash) {
 				return child, nil
 			}
 		}
-		// If the node is the selected tip, it doesn't have an accepting block
-		return nil, nil
+		return nil, errors.Errorf("chain block %s does not have a chain child", node.hash)
 	}
 
 	// Find the only chain block that may contain the node in its blues
@@ -1419,7 +1422,8 @@ func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 		}
 	}
 
-	// Otherwise, the node is red and doesn't have an accepting block
+	// Otherwise, the node is red or in the selected tip anticone, and
+	// doesn't have an accepting block
 	return nil, nil
 }
 
