@@ -1,8 +1,8 @@
 package httpserverutils
 
 import (
-	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 )
@@ -11,7 +11,7 @@ import (
 // MakeHandler wrapper and gets the relevant request fields
 // from it.
 type HandlerFunc func(ctx *ServerContext, r *http.Request, routeParams map[string]string, queryParams map[string]string, requestBody []byte) (
-	interface{}, *HandlerError)
+	interface{}, error)
 
 // MakeHandler is a wrapper function that takes a handler in the form of HandlerFunc
 // and returns a function that can be used as a handler in mux.Router.HandleFunc.
@@ -24,19 +24,19 @@ func MakeHandler(handler HandlerFunc) func(http.ResponseWriter, *http.Request) {
 			var err error
 			requestBody, err = ioutil.ReadAll(r.Body)
 			if err != nil {
-				SendErr(ctx, w, NewInternalServerHandlerError("Error reading POST data"))
+				SendErr(ctx, w, errors.New("Error reading POST data"))
 			}
 		}
 
-		flattenedQueryParams, hErr := flattenQueryParams(r.URL.Query())
-		if hErr != nil {
-			SendErr(ctx, w, hErr)
+		flattenedQueryParams, err := flattenQueryParams(r.URL.Query())
+		if err != nil {
+			SendErr(ctx, w, err)
 			return
 		}
 
-		response, hErr := handler(ctx, r, mux.Vars(r), flattenedQueryParams, requestBody)
-		if hErr != nil {
-			SendErr(ctx, w, hErr)
+		response, err := handler(ctx, r, mux.Vars(r), flattenedQueryParams, requestBody)
+		if err != nil {
+			SendErr(ctx, w, err)
 			return
 		}
 		if response != nil {
@@ -45,11 +45,11 @@ func MakeHandler(handler HandlerFunc) func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func flattenQueryParams(queryParams map[string][]string) (map[string]string, *HandlerError) {
+func flattenQueryParams(queryParams map[string][]string) (map[string]string, error) {
 	flattenedMap := make(map[string]string)
 	for param, valuesSlice := range queryParams {
 		if len(valuesSlice) > 1 {
-			return nil, NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Couldn't parse the '%s' query parameter:"+
+			return nil, NewHandlerError(http.StatusUnprocessableEntity, errors.Errorf("Couldn't parse the '%s' query parameter:"+
 				" expected a single value but got multiple values", param))
 		}
 		flattenedMap[param] = valuesSlice[0]
