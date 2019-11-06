@@ -170,12 +170,14 @@ func GetUTXOsByAddressHandler(address string) (interface{}, *httpserverutils.Han
 		return nil, hErr
 	}
 
-	txIds := make([]uint64, len(transactionOutputs))
+	nonAcceptedTxIds := make([]uint64, len(transactionOutputs))
 	for i, txOut := range transactionOutputs {
-		txIds[i] = txOut.TransactionID
+		if txOut.Transaction.AcceptingBlock == nil {
+			nonAcceptedTxIds[i] = txOut.TransactionID
+		}
 	}
 
-	isTxInSelectedTip, hErr := areTxsInBlock(selectedTip.ID, txIds)
+	isTxInSelectedTip, hErr := areTxsInBlock(selectedTip.ID, nonAcceptedTxIds)
 	if hErr != nil {
 		return nil, hErr
 	}
