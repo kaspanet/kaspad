@@ -381,9 +381,9 @@ func (vm *Engine) checkPubKeyEncoding(pubKey []byte) error {
 	return scriptError(ErrPubKeyFormat, "unsupported public key type")
 }
 
-// checkSignatureEncoding returns whether or not the passed signature is
+// checkSignatureLength returns whether or not the passed signature is
 // in the correct Schnorr format
-func (vm *Engine) checkSignatureEncoding(sig []byte) error {
+func (vm *Engine) checkSignatureLength(sig []byte) error {
 	if len(sig) != 64 {
 		message := fmt.Sprintf("invalid signature length %d", len(sig))
 		return scriptError(ErrSigLength, message)

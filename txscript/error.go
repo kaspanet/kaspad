@@ -174,7 +174,7 @@ const (
 	// SigHashSingle points to a non-existing output
 	ErrInvalidSigHashSingleIndex
 
-	// ErrSigLength is return when Schnorr signature is of incorrect length
+	// ErrSigLength is returned when Schnorr signature is of incorrect length
 	ErrSigLength
 
 	// ErrSigHighS is returned when the ScriptVerifyLowS flag is set and the

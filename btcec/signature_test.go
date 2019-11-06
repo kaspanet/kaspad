@@ -263,6 +263,6 @@ func TestDeterministicSchnorrSignatureGen(t *testing.T) {
 	}
 	if !bytes.Equal(sig.R.Bytes(), decodeHex("2c56731ac2f7a7e7f11518fc7722a166b02438924ca9d8b4d111347b81d07175")) ||
 		!bytes.Equal(sig.S.Bytes(), decodeHex("71846de67ad3d913a8fdf9d8f3f73161a4c48ae81cb183b214765feb86e255ce")) {
-		t.Error("Failed to generated deterministic schnorr signature")
+		t.Error("Failed to generate deterministic schnorr signature")
 	}
 }

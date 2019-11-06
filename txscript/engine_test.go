@@ -205,7 +205,7 @@ func TestCheckPubKeyEncoding(t *testing.T) {
 	for _, test := range tests {
 		err := vm.checkPubKeyEncoding(test.key)
 		if err != nil && test.isValid {
-			t.Errorf("checkSignatureEncoding test '%s' failed "+
+			t.Errorf("checkSignatureLength test '%s' failed "+
 				"when it should have succeeded: %v", test.name,
 				err)
 		} else if err == nil && !test.isValid {

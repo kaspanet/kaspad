@@ -35,12 +35,12 @@ var (
 	oneInitializer = []byte{0x01}
 )
 
-// Serialize returns the a serialized signature.
+// Serialize returns a serialized signature (R and S concatenated).
 func (sig *Signature) Serialize() []byte {
-	return append(padIntBytes(sig.R), padIntBytes(sig.S)...)
+	return append(intTo32Bytes(sig.R), intTo32Bytes(sig.S)...)
 }
 
-// Verify verifies digital signature It returns true if the signature
+// Verify verifies digital signatures. It returns true if the signature
 // is valid, false otherwise.
 func (sig *Signature) Verify(hash []byte, pubKey *PublicKey) bool {
 	return verifySchnorr(pubKey, hash, sig.R, sig.S)
@@ -62,7 +62,7 @@ func verifySchnorr(pubKey *PublicKey, hash []byte, r *big.Int, s *big.Int) bool 
 	}
 
 	// Compute scalar e = Hash(r || compressed(P) || m) mod N
-	eBytes := sha256.Sum256(append(append(padIntBytes(r), pubKey.SerializeCompressed()...), hash...))
+	eBytes := sha256.Sum256(append(append(intTo32Bytes(r), pubKey.SerializeCompressed()...), hash...))
 	e := new(big.Int).SetBytes(eBytes[:])
 	e.Mod(e, curve.Params().N)
 
@@ -114,9 +114,9 @@ func ParseSignature(sigStr []byte) (*Signature, error) {
 	}, nil
 }
 
-// padIntBytes pads a big int bytes with leading zeros if they
+// intTo32Bytes pads a big int bytes with leading zeros if they
 // are missing to get the length up to 32 bytes.
-func padIntBytes(val *big.Int) []byte {
+func intTo32Bytes(val *big.Int) []byte {
 	b := val.Bytes()
 	pad := bytes.Repeat([]byte{0x00}, 32-len(b))
 	return append(pad, b...)
@@ -147,10 +147,6 @@ func hashToInt(hash []byte, c elliptic.Curve) *big.Int {
 // sign signs the hash using the schnorr signature algorithm.
 func sign(privateKey *PrivateKey, hash []byte) (*Signature, error) {
 	// The rfc6979 nonce derivation function accepts additional entropy.
-	// We are using the same entropy that is used by bitcoin-abc so our test
-	// vectors will be compatible. This byte string is chosen to avoid collisions
-	// with ECDSA which would render the signature insecure.
-	//
 	// See https://github.com/bitcoincashorg/bitcoincash.org/blob/master/spec/2019-05-15-schnorr.md#recommended-practices-for-secure-signature-generation
 	additionalData := []byte{'S', 'c', 'h', 'n', 'o', 'r', 'r', '+', 'S', 'H', 'A', '2', '5', '6', ' ', ' '}
 	k := nonceRFC6979(privateKey.D, hash, additionalData)
@@ -163,7 +159,7 @@ func sign(privateKey *PrivateKey, hash []byte) (*Signature, error) {
 	}
 
 	// Compute scalar e = Hash(R.x || compressed(P) || m) mod N
-	eBytes := sha256.Sum256(append(append(padIntBytes(rx), privateKey.PubKey().SerializeCompressed()...), hash...))
+	eBytes := sha256.Sum256(append(append(intTo32Bytes(rx), privateKey.PubKey().SerializeCompressed()...), hash...))
 	e := new(big.Int).SetBytes(eBytes[:])
 	e.Mod(e, privateKey.Params().N)
 
@@ -178,10 +174,11 @@ func sign(privateKey *PrivateKey, hash []byte) (*Signature, error) {
 	}, nil
 }
 
-// nonceRFC6979 generates an ECDSA nonce (`k`) deterministically according to RFC 6979.
-// It takes a 32-byte hash as an input and returns 32-byte nonce to be used in ECDSA algorithm.
+// nonceRFC6979 generates a nonce (`k`) deterministically according to RFC 6979.
+// It takes a 32-byte hash as an input and returns 32-byte nonce to be used in the digital signature algorithm.
 func nonceRFC6979(privkey *big.Int, hash []byte, additionalData []byte) *big.Int {
 
+	// Step A
 	curve := S256()
 	q := curve.Params().N
 	x := privkey
