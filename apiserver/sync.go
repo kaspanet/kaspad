@@ -7,6 +7,7 @@ import (
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/dbmodels"
 	"github.com/daglabs/btcd/apiserver/jsonrpc"
+	"github.com/daglabs/btcd/apiserver/virtual"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/httpserverutils"
 	"github.com/daglabs/btcd/txscript"
@@ -881,8 +882,10 @@ func handleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) {
 		log.Warnf("Could not update selected parent chain: %s", err)
 		return
 	}
-	log.Infof("Chain changed: removed %d blocks and added %d block",
-		len(removedHashes), len(addedBlocks))
+	virtual.SetBlueScore(chainChanged.VirtualBlueScore)
+	log.Infof("Chain changed: removed %d blocks and added %d block. New "+
+		"virtual blue score is %d",
+		len(removedHashes), len(addedBlocks), chainChanged.VirtualBlueScore)
 }
 
 func convertChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) (
