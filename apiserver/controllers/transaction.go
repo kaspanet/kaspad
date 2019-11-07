@@ -110,21 +110,42 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 	return txResponses, nil
 }
 
-func fetchSelectedTipBlueScore() (uint64, error) {
+func fetchSelectedTip() (*dbmodels.Block, error) {
 	db, err := database.DB()
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	block := &dbmodels.Block{}
 	dbResult := db.Order("blue_score DESC").
 		Where(&dbmodels.Block{IsChainBlock: true}).
-		Select("blue_score").
 		First(block)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
-		return 0, httpserverutils.NewErrorFromDBErrors("Some errors were encountered when loading transactions from the database:", dbErrors)
+		return nil, httpserverutils.NewErrorFromDBErrors("Some errors were encountered when loading transactions from the database:", dbErrors)
 	}
-	return block.BlueScore, nil
+	return block, nil
+}
+
+func areTxsInBlock(blockID uint64, txIDs []uint64) (map[uint64]bool, error) {
+	db, err := database.DB()
+	if err != nil {
+		return nil, err
+	}
+	transactionBlocks := []*dbmodels.TransactionBlock{}
+	dbErrors := db.
+		Where(&dbmodels.TransactionBlock{BlockID: blockID}).
+		Where("transaction_id in (?)", txIDs).
+		Find(&transactionBlocks).GetErrors()
+
+	if len(dbErrors) > 0 {
+		return nil, httpserverutils.NewErrorFromDBErrors("Some errors were encountered when loading UTXOs from the database:", dbErrors)
+	}
+
+	isInBlock := make(map[uint64]bool)
+	for _, transactionBlock := range transactionBlocks {
+		isInBlock[transactionBlock.TransactionID] = true
+	}
+	return isInBlock, nil
 }
 
 // GetUTXOsByAddressHandler searches for all UTXOs that belong to a certain address.
@@ -145,9 +166,25 @@ func GetUTXOsByAddressHandler(address string) (interface{}, error) {
 		return nil, httpserverutils.NewErrorFromDBErrors("Some errors were encountered when loading UTXOs from the database:", dbErrors)
 	}
 
-	selectedTipBlueScore, err := fetchSelectedTipBlueScore()
-	if err != nil {
-		return nil, err
+	nonAcceptedTxIds := make([]uint64, len(transactionOutputs))
+	for i, txOut := range transactionOutputs {
+		if txOut.Transaction.AcceptingBlock == nil {
+			nonAcceptedTxIds[i] = txOut.TransactionID
+		}
+	}
+
+	var selectedTip *dbmodels.Block
+	var isTxInSelectedTip map[uint64]bool
+	if len(nonAcceptedTxIds) != 0 {
+		selectedTip, err = fetchSelectedTip()
+		if err != nil {
+			return nil, err
+		}
+
+		isTxInSelectedTip, err = areTxsInBlock(selectedTip.ID, nonAcceptedTxIds)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	UTXOsResponses := make([]*apimodels.TransactionOutputResponse, len(transactionOutputs))
@@ -160,10 +197,12 @@ func GetUTXOsByAddressHandler(address string) (interface{}, error) {
 		var acceptingBlockHash *string
 		var confirmations uint64
 		acceptingBlockBlueScore := blockdag.UnacceptedBlueScore
-		if transactionOutput.Transaction.AcceptingBlock != nil {
+		if isTxInSelectedTip[transactionOutput.ID] {
+			confirmations = 1
+		} else if transactionOutput.Transaction.AcceptingBlock != nil {
 			acceptingBlockHash = btcjson.String(transactionOutput.Transaction.AcceptingBlock.BlockHash)
 			acceptingBlockBlueScore = transactionOutput.Transaction.AcceptingBlock.BlueScore
-			confirmations = selectedTipBlueScore - acceptingBlockBlueScore
+			confirmations = selectedTip.BlueScore - acceptingBlockBlueScore + 2
 		}
 		UTXOsResponses[i] = &apimodels.TransactionOutputResponse{
 			TransactionID:           transactionOutput.Transaction.TransactionID,
