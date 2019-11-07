@@ -166,11 +166,6 @@ func GetUTXOsByAddressHandler(address string) (interface{}, error) {
 		return nil, httpserverutils.NewErrorFromDBErrors("Some errors were encountered when loading UTXOs from the database:", dbErrors)
 	}
 
-	selectedTip, err := fetchSelectedTip()
-	if err != nil {
-		return nil, err
-	}
-
 	nonAcceptedTxIds := make([]uint64, len(transactionOutputs))
 	for i, txOut := range transactionOutputs {
 		if txOut.Transaction.AcceptingBlock == nil {
@@ -178,9 +173,18 @@ func GetUTXOsByAddressHandler(address string) (interface{}, error) {
 		}
 	}
 
-	isTxInSelectedTip, hErr := areTxsInBlock(selectedTip.ID, nonAcceptedTxIds)
-	if hErr != nil {
-		return nil, hErr
+	var selectedTip *dbmodels.Block
+	var isTxInSelectedTip map[uint64]bool
+	if len(nonAcceptedTxIds) != 0 {
+		selectedTip, err = fetchSelectedTip()
+		if err != nil {
+			return nil, err
+		}
+
+		isTxInSelectedTip, err = areTxsInBlock(selectedTip.ID, nonAcceptedTxIds)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	UTXOsResponses := make([]*apimodels.TransactionOutputResponse, len(transactionOutputs))

@@ -1407,7 +1407,7 @@ func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 	// Find the only chain block that may contain the node in its blues
 	candidateAcceptingBlock := dag.oldestChainBlockWithBlueScoreGreaterThan(node.blueScore)
 
-	// if not candidate is found, it means that the node has same or more
+	// if no candidate is found, it means that the node has same or more
 	// blue score than the selected tip and is found in its anticone, so
 	// it doesn't have an accepting block
 	if candidateAcceptingBlock == nil {
