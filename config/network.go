@@ -47,7 +47,6 @@ func (networkFlags *NetworkFlags) ResolveNetwork(parser *flags.Parser) error {
 		networkFlags.ActiveNetParams = &dagconfig.DevNetParams
 	}
 	if numNets > 1 {
-
 		message := "Multiple networks parameters (testnet, simnet, devnet, etc.) cannot be used" +
 			"together. Please choose only one network"
 		err := errors.Errorf(message)
