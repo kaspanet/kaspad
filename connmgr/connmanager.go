@@ -44,14 +44,14 @@ var (
 	// throttledConnFailedLogInterval. The values in this map are the last
 	// times each type of log had been written.
 	throttledConnFailedLogs = map[error]time.Time{
-		NoAddressError: {},
+		ErrNoAddress: {},
 	}
 )
 
 var (
-	// NoAddressError is an error that is thrown when there aren't any
+	// ErrNoAddress is an error that is thrown when there aren't any
 	// valid connection addresses.
-	NoAddressError = errors.New("no valid connect address")
+	ErrNoAddress = errors.New("no valid connect address")
 )
 
 // ConnState represents the state of the requested connection.
