@@ -3,11 +3,11 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/daglabs/btcd/apiserver/config"
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/dbmodels"
 	"github.com/daglabs/btcd/apiserver/jsonrpc"
 	"github.com/daglabs/btcd/btcjson"
+	"github.com/daglabs/btcd/config"
 	"github.com/daglabs/btcd/httpserverutils"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util/daghash"

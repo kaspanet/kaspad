@@ -3,7 +3,6 @@ package config
 import (
 	"github.com/daglabs/btcd/apiserver/logger"
 	"github.com/daglabs/btcd/config"
-	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/util"
 	"github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
@@ -82,9 +81,4 @@ func Parse() (*Config, error) {
 	logger.InitLog(logFile, errLogFile)
 
 	return cfg, nil
-}
-
-// ActiveNetParams returns the currently active net params
-func ActiveNetParams() *dagconfig.Params {
-	return config.ActiveNetParams()
 }
