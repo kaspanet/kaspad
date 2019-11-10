@@ -11,6 +11,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	nativeerrors "errors"
 	"fmt"
 	"github.com/pkg/errors"
 	"io"
@@ -841,7 +842,7 @@ func (c *Client) sendRequest(data *jsonRequestData) chan *response {
 		select {
 		case <-c.connEstablished:
 		default:
-			jReq.responseChan <- &response{err: ErrClientNotConnected}
+			jReq.responseChan <- &response{err: errors.WithStack(ErrClientNotConnected)}
 			return
 		}
 
@@ -860,7 +861,7 @@ func (c *Client) sendRequest(data *jsonRequestData) chan *response {
 		spawn(func() {
 			select {
 			case <-time.Tick(c.config.RequestTimeout):
-				responseChan <- &response{err: ErrResponseTimedOut}
+				responseChan <- &response{err: errors.WithStack(ErrResponseTimedOut)}
 			case resp := <-jReq.responseChan:
 				responseChan <- resp
 			}
@@ -1209,21 +1210,21 @@ func dial(config *ConnConfig) (*websocket.Conn, error) {
 	url := fmt.Sprintf("%s://%s/%s", scheme, config.Host, config.Endpoint)
 	wsConn, resp, err := dialer.Dial(url, requestHeader)
 	if err != nil {
-		if err != websocket.ErrBadHandshake || resp == nil {
+		if !nativeerrors.Is(err, websocket.ErrBadHandshake) || resp == nil {
 			return nil, err
 		}
 
 		// Detect HTTP authentication error status codes.
 		if resp.StatusCode == http.StatusUnauthorized ||
 			resp.StatusCode == http.StatusForbidden {
-			return nil, ErrInvalidAuth
+			return nil, errors.WithStack(ErrInvalidAuth)
 		}
 
 		// The connection was authenticated and the status response was
 		// ok, but the websocket handshake still failed, so the endpoint
 		// is invalid in some way.
 		if resp.StatusCode == http.StatusOK {
-			return nil, ErrInvalidEndpoint
+			return nil, errors.WithStack(ErrInvalidEndpoint)
 		}
 
 		// Return the status text from the server if none of the special

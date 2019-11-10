@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/hex"
+	nativeerrors "errors"
+	"github.com/daglabs/btcd/rpcclient"
 	"github.com/pkg/errors"
 	"math/rand"
 	"strconv"
@@ -10,7 +12,6 @@ import (
 
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/rpcclient"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
@@ -97,7 +98,7 @@ func templatesLoop(client *simulatorClient, newTemplateChan chan *btcjson.GetBlo
 			log.Infof("Requesting template without longPollID from %s", client.Host())
 		}
 		template, err := getBlockTemplate(client, longPollID)
-		if err == rpcclient.ErrResponseTimedOut {
+		if nativeerrors.Is(err, rpcclient.ErrResponseTimedOut) {
 			log.Infof("Got timeout while requesting template '%s' from %s", longPollID, client.Host())
 			return
 		} else if err != nil {

@@ -7,9 +7,10 @@ import (
 )
 
 // HandlePanic recovers panics, log them, and then exits the process.
-func HandlePanic(log logs.Logger, backendLog *logs.Backend) {
+func HandlePanic(log logs.Logger, backendLog *logs.Backend, goroutineStackTrace []byte) {
 	if err := recover(); err != nil {
 		log.Criticalf("Fatal error: %+v", err)
+		log.Criticalf("goroutine stack trance: %s", goroutineStackTrace)
 		log.Criticalf("Stack trace: %s", debug.Stack())
 		if backendLog != nil {
 			backendLog.Close()
@@ -21,8 +22,9 @@ func HandlePanic(log logs.Logger, backendLog *logs.Backend) {
 // GoroutineWrapperFunc returns a goroutine wrapper function that handles panics and write them to the log.
 func GoroutineWrapperFunc(log logs.Logger, backendLog *logs.Backend) func(func()) {
 	return func(f func()) {
+		stackTrace := debug.Stack()
 		go func() {
-			defer HandlePanic(log, backendLog)
+			defer HandlePanic(log, backendLog, stackTrace)
 			f()
 		}()
 	}

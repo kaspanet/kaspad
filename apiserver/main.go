@@ -18,7 +18,7 @@ import (
 )
 
 func main() {
-	defer panics.HandlePanic(log, logger.BackendLog)
+	defer panics.HandlePanic(log, logger.BackendLog, nil)
 
 	cfg, err := config.Parse()
 	if err != nil {
