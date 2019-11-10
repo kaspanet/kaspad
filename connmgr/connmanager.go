@@ -35,6 +35,10 @@ var (
 	// defaultTargetOutbound is the default number of outbound connections to
 	// maintain.
 	defaultTargetOutbound = uint32(8)
+
+	// failedConnectionLogInterval is the duration of time between logs
+	// about failed connection attempts.
+	failedConnectionLogInterval = time.Minute * 10
 )
 
 // ConnState represents the state of the requested connection.
@@ -61,10 +65,11 @@ type ConnReq struct {
 	Addr      net.Addr
 	Permanent bool
 
-	conn       net.Conn
-	state      ConnState
-	stateMtx   sync.RWMutex
-	retryCount uint32
+	conn             net.Conn
+	state            ConnState
+	stateMtx         sync.RWMutex
+	retryCount       uint32
+	lastRetryLogTime time.Time
 }
 
 // updateState updates the state of the connection request.
@@ -180,11 +185,12 @@ type ConnManager struct {
 
 	newConnReqMtx sync.Mutex
 
-	cfg            Config
-	wg             sync.WaitGroup
-	failedAttempts uint64
-	requests       chan interface{}
-	quit           chan struct{}
+	cfg                      Config
+	wg                       sync.WaitGroup
+	failedAttempts           uint64
+	lastFailedAttemptLogTime time.Time
+	requests                 chan interface{}
+	quit                     chan struct{}
 }
 
 // handleFailedConn handles a connection failed due to a disconnect or any
@@ -202,16 +208,24 @@ func (cm *ConnManager) handleFailedConn(c *ConnReq) {
 		if d > maxRetryDuration {
 			d = maxRetryDuration
 		}
-		log.Debugf("Retrying connection to %s in %s", c, d)
+		if c.lastRetryLogTime.Add(failedConnectionLogInterval).Before(time.Now()) {
+			// Only write a log every failedConnectionLogInterval.
+			c.lastRetryLogTime = time.Now()
+			log.Debugf("Retrying further connections to %s every %s", c, d)
+		}
 		time.AfterFunc(d, func() {
 			cm.Connect(c)
 		})
 	} else if cm.cfg.GetNewAddress != nil {
 		cm.failedAttempts++
 		if cm.failedAttempts >= maxFailedAttempts {
-			log.Debugf("Max failed connection attempts reached: [%d] "+
-				"-- retrying connection in: %s", maxFailedAttempts,
-				cm.cfg.RetryDuration)
+			if cm.lastFailedAttemptLogTime.Add(failedConnectionLogInterval).Before(time.Now()) {
+				// Only write a log every failedConnectionLogInterval
+				cm.lastFailedAttemptLogTime = time.Now()
+				log.Debugf("Max failed connection attempts reached: [%d] "+
+					"-- retrying further connections every %s", maxFailedAttempts,
+					cm.cfg.RetryDuration)
+			}
 			time.AfterFunc(cm.cfg.RetryDuration, func() {
 				cm.NewConnReq()
 			})
@@ -267,7 +281,9 @@ out:
 				conns[connReq.id] = connReq
 				log.Debugf("Connected to %s", connReq)
 				connReq.retryCount = 0
+				connReq.lastRetryLogTime = time.Time{}
 				cm.failedAttempts = 0
+				cm.lastFailedAttemptLogTime = time.Time{}
 
 				delete(pending, connReq.id)
 
@@ -344,8 +360,12 @@ out:
 				}
 
 				connReq.updateState(ConnFailing)
-				log.Debugf("Failed to connect to %s: %s",
-					connReq, msg.err)
+				if (connReq.Permanent && connReq.lastRetryLogTime.Add(failedConnectionLogInterval).Before(time.Now())) ||
+					(!connReq.Permanent && cm.lastFailedAttemptLogTime.Add(failedConnectionLogInterval).Before(time.Now())) {
+					// Only write a log every failedConnectionLogInterval.
+					log.Debugf("Failed to connect to %s: %s",
+						connReq, msg.err)
+				}
 				cm.handleFailedConn(connReq)
 			}
 
