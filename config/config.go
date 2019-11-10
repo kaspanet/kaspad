@@ -426,7 +426,7 @@ func loadConfig() (*Config, []string, error) {
 	// according to the default of the active network. The set
 	// configuration value takes precedence over the default value for the
 	// selected network.
-	relayNonStd := activeNetParams.RelayNonStdTxs
+	relayNonStd := cfg.ActiveNetParams.RelayNonStdTxs
 	switch {
 	case cfg.RelayNonStd && cfg.RejectNonStd:
 		str := "%s: rejectnonstd and relaynonstd cannot be used " +
@@ -449,12 +449,12 @@ func loadConfig() (*Config, []string, error) {
 	// means each individual piece of serialized data does not have to
 	// worry about changing names per network and such.
 	cfg.DataDir = cleanAndExpandPath(cfg.DataDir)
-	cfg.DataDir = filepath.Join(cfg.DataDir, activeNetParams.Name)
+	cfg.DataDir = filepath.Join(cfg.DataDir, cfg.ActiveNetParams.Name)
 
 	// Append the network type to the log directory so it is "namespaced"
 	// per network in the same fashion as the data directory.
 	cfg.LogDir = cleanAndExpandPath(cfg.LogDir)
-	cfg.LogDir = filepath.Join(cfg.LogDir, activeNetParams.Name)
+	cfg.LogDir = filepath.Join(cfg.LogDir, cfg.ActiveNetParams.Name)
 
 	// Special show command to list supported subsystems and exit.
 	if cfg.DebugLevel == "show" {
@@ -563,7 +563,7 @@ func loadConfig() (*Config, []string, error) {
 	// we are to connect to.
 	if len(cfg.Listeners) == 0 {
 		cfg.Listeners = []string{
-			net.JoinHostPort("", activeNetParams.DefaultPort),
+			net.JoinHostPort("", cfg.ActiveNetParams.DefaultPort),
 		}
 	}
 
@@ -605,7 +605,7 @@ func loadConfig() (*Config, []string, error) {
 		}
 		cfg.RPCListeners = make([]string, 0, len(addrs))
 		for _, addr := range addrs {
-			addr = net.JoinHostPort(addr, activeNetParams.RPCPort)
+			addr = net.JoinHostPort(addr, cfg.ActiveNetParams.RPCPort)
 			cfg.RPCListeners = append(cfg.RPCListeners, addr)
 		}
 	}
@@ -718,7 +718,7 @@ func loadConfig() (*Config, []string, error) {
 	// Check mining addresses are valid and saved parsed versions.
 	cfg.MiningAddrs = make([]util.Address, 0, len(cfg.configFlags.MiningAddrs))
 	for _, strAddr := range cfg.configFlags.MiningAddrs {
-		addr, err := util.DecodeAddress(strAddr, activeNetParams.Prefix)
+		addr, err := util.DecodeAddress(strAddr, cfg.ActiveNetParams.Prefix)
 		if err != nil {
 			str := "%s: mining address '%s' failed to decode: %s"
 			err := errors.Errorf(str, funcName, strAddr, err)
@@ -726,7 +726,7 @@ func loadConfig() (*Config, []string, error) {
 			fmt.Fprintln(os.Stderr, usageMessage)
 			return nil, nil, err
 		}
-		if !addr.IsForPrefix(activeNetParams.Prefix) {
+		if !addr.IsForPrefix(cfg.ActiveNetParams.Prefix) {
 			str := "%s: mining address '%s' is on the wrong network"
 			err := errors.Errorf(str, funcName, strAddr)
 			fmt.Fprintln(os.Stderr, err)
@@ -768,12 +768,12 @@ func loadConfig() (*Config, []string, error) {
 	// Add default port to all listener addresses if needed and remove
 	// duplicate addresses.
 	cfg.Listeners = network.NormalizeAddresses(cfg.Listeners,
-		activeNetParams.DefaultPort)
+		cfg.ActiveNetParams.DefaultPort)
 
 	// Add default port to all rpc listener addresses if needed and remove
 	// duplicate addresses.
 	cfg.RPCListeners = network.NormalizeAddresses(cfg.RPCListeners,
-		activeNetParams.RPCPort)
+		cfg.ActiveNetParams.RPCPort)
 
 	// Only allow TLS to be disabled if the RPC is bound to localhost
 	// addresses.
@@ -808,9 +808,9 @@ func loadConfig() (*Config, []string, error) {
 	// Add default port to all added peer addresses if needed and remove
 	// duplicate addresses.
 	cfg.AddPeers = network.NormalizeAddresses(cfg.AddPeers,
-		activeNetParams.DefaultPort)
+		cfg.ActiveNetParams.DefaultPort)
 	cfg.ConnectPeers = network.NormalizeAddresses(cfg.ConnectPeers,
-		activeNetParams.DefaultPort)
+		cfg.ActiveNetParams.DefaultPort)
 
 	// --noonion and --onion do not mix.
 	if cfg.NoOnion && cfg.OnionProxy != "" {

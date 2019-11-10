@@ -6,6 +6,8 @@ package addrmgr
 
 import (
 	"fmt"
+	"github.com/daglabs/btcd/config"
+	"github.com/daglabs/btcd/dagconfig"
 	"github.com/pkg/errors"
 	"net"
 	"reflect"
@@ -30,6 +32,12 @@ var naTests = make([]naTest, 0)
 
 // Put some IP in here for convenience. Points to google.
 var someIP = "173.194.115.66"
+
+func init() {
+	config.ActiveNetworkFlags = &config.NetworkFlags{
+		ActiveNetParams: &dagconfig.SimNetParams,
+	}
+}
 
 // addNaTests
 func addNaTests() {

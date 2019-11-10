@@ -93,7 +93,7 @@ func isTxMatured(tx *wire.MsgTx, confirmations uint64) bool {
 	if !tx.IsCoinBase() {
 		return confirmations >= minConfirmations
 	}
-	return confirmations >= config.ActiveNetParams().BlockCoinbaseMaturity
+	return confirmations >= config.ActiveNetworkFlags.ActiveNetParams.BlockCoinbaseMaturity
 }
 
 func buildUTXOs(txs []*wire.MsgTx) map[wire.Outpoint]*wire.MsgTx {

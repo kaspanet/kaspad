@@ -1178,7 +1178,7 @@ func (s *Server) peerHandler() {
 
 	if !config.MainConfig().DisableDNSSeed {
 		seedFromSubNetwork := func(subnetworkID *subnetworkid.SubnetworkID) {
-			connmgr.SeedFromDNS(config.ActiveNetParams(), defaultRequiredServices,
+			connmgr.SeedFromDNS(config.ActiveNetworkFlags.ActiveNetParams, defaultRequiredServices,
 				false, subnetworkID, serverutils.BTCDLookup, func(addrs []*wire.NetAddress) {
 					// Bitcoind uses a lookup of the dns seeder here. Since seeder returns
 					// IPs of nodes and not its own IP, we can not know real IP of
@@ -1522,7 +1522,7 @@ func (s *Server) upnpUpdateThread() {
 	// Go off immediately to prevent code duplication, thereafter we renew
 	// lease every 15 minutes.
 	timer := time.NewTimer(0 * time.Second)
-	lport, _ := strconv.ParseInt(config.ActiveNetParams().DefaultPort, 10, 16)
+	lport, _ := strconv.ParseInt(config.ActiveNetworkFlags.ActiveNetParams.DefaultPort, 10, 16)
 	first := true
 out:
 	for {
@@ -1745,7 +1745,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 				// Networks that accept unroutable connections are exempt
 				// from this rule, since they're meant to run within a
 				// private subnet, like 10.0.0.0/16.
-				if !config.ActiveNetParams().AcceptUnroutable {
+				if !config.ActiveNetworkFlags.ActiveNetParams.AcceptUnroutable {
 					key := addrmgr.GroupKey(addr.NetAddress())
 					if s.OutboundGroupCount(key) != 0 {
 						continue
@@ -1760,7 +1760,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 
 				// allow nondefault ports after 50 failed tries.
 				if tries < 50 && fmt.Sprintf("%d", addr.NetAddress().Port) !=
-					config.ActiveNetParams().DefaultPort {
+					config.ActiveNetworkFlags.ActiveNetParams.DefaultPort {
 					continue
 				}
 
@@ -1837,10 +1837,10 @@ func initListeners(amgr *addrmgr.AddrManager, listenAddrs []string, services wir
 
 	var nat serverutils.NAT
 	if len(config.MainConfig().ExternalIPs) != 0 {
-		defaultPort, err := strconv.ParseUint(config.ActiveNetParams().DefaultPort, 10, 16)
+		defaultPort, err := strconv.ParseUint(config.ActiveNetworkFlags.ActiveNetParams.DefaultPort, 10, 16)
 		if err != nil {
 			srvrLog.Errorf("Can not parse default port %s for active chain: %s",
-				config.ActiveNetParams().DefaultPort, err)
+				config.ActiveNetworkFlags.ActiveNetParams.DefaultPort, err)
 			return nil, nil, err
 		}
 

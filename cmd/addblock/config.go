@@ -105,7 +105,7 @@ func loadConfig() (*configFlags, []string, error) {
 	// All data is specific to a network, so namespacing the data directory
 	// means each individual piece of serialized data does not have to
 	// worry about changing names per network and such.
-	cfg.DataDir = filepath.Join(cfg.DataDir, config.ActiveNetParams().Name)
+	cfg.DataDir = filepath.Join(cfg.DataDir, config.ActiveNetworkFlags.ActiveNetParams.Name)
 
 	// Ensure the specified block file exists.
 	if !fileExists(cfg.InFile) {

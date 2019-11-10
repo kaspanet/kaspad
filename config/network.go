@@ -8,20 +8,23 @@ import (
 	"os"
 )
 
-// activeNetParams holds the selected network parameters. Default value is main-net.
-var activeNetParams = &dagconfig.MainNetParams
+// ActiveNetworkFlags holds the active network information
+var ActiveNetworkFlags *NetworkFlags
 
 // NetworkFlags holds the network configuration, that is which network is selected.
 type NetworkFlags struct {
-	TestNet        bool `long:"testnet" description:"Use the test network"`
-	RegressionTest bool `long:"regtest" description:"Use the regression test network"`
-	SimNet         bool `long:"simnet" description:"Use the simulation test network"`
-	DevNet         bool `long:"devnet" description:"Use the development test network"`
+	TestNet         bool `long:"testnet" description:"Use the test network"`
+	RegressionTest  bool `long:"regtest" description:"Use the regression test network"`
+	SimNet          bool `long:"simnet" description:"Use the simulation test network"`
+	DevNet          bool `long:"devnet" description:"Use the development test network"`
+	ActiveNetParams *dagconfig.Params
 }
 
-// ResolveNetwork parses the network command line argument and sets activeNetParams accordingly.
+// ResolveNetwork parses the network command line argument and sets ActiveNetParams accordingly.
 // It returns error if more than one network was selected, nil otherwise.
 func (networkFlags *NetworkFlags) ResolveNetwork(parser *flags.Parser) error {
+	//ActiveNetParams holds the selected network parameters. Default value is main-net.
+	networkFlags.ActiveNetParams = &dagconfig.MainNetParams
 	// Multiple networks can't be selected simultaneously.
 	numNets := 0
 	// default net is main net
@@ -29,19 +32,19 @@ func (networkFlags *NetworkFlags) ResolveNetwork(parser *flags.Parser) error {
 	// while we're at it
 	if networkFlags.TestNet {
 		numNets++
-		activeNetParams = &dagconfig.TestNetParams
+		networkFlags.ActiveNetParams = &dagconfig.TestNetParams
 	}
 	if networkFlags.RegressionTest {
 		numNets++
-		activeNetParams = &dagconfig.RegressionNetParams
+		networkFlags.ActiveNetParams = &dagconfig.RegressionNetParams
 	}
 	if networkFlags.SimNet {
 		numNets++
-		activeNetParams = &dagconfig.SimNetParams
+		networkFlags.ActiveNetParams = &dagconfig.SimNetParams
 	}
 	if networkFlags.DevNet {
 		numNets++
-		activeNetParams = &dagconfig.DevNetParams
+		networkFlags.ActiveNetParams = &dagconfig.DevNetParams
 	}
 	if numNets > 1 {
 
@@ -52,10 +55,6 @@ func (networkFlags *NetworkFlags) ResolveNetwork(parser *flags.Parser) error {
 		parser.WriteHelp(os.Stderr)
 		return err
 	}
+	ActiveNetworkFlags = networkFlags
 	return nil
-}
-
-// ActiveNetParams returns a pointer to the current active net params
-func ActiveNetParams() *dagconfig.Params {
-	return activeNetParams
 }
