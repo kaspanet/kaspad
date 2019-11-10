@@ -1767,7 +1767,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 				addrString := addrmgr.NetAddressKey(addr.NetAddress())
 				return addrStringToNetAddr(addrString)
 			}
-			return nil, errors.New("no valid connect address")
+			return nil, connmgr.NoAddressError
 		}
 	}
 

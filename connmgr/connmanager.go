@@ -36,9 +36,22 @@ var (
 	// maintain.
 	defaultTargetOutbound = uint32(8)
 
-	// failedConnectionLogInterval is the duration of time between logs
-	// about failed connection attempts.
-	failedConnectionLogInterval = time.Minute * 10
+	// throttledConnFailedLogInterval is the minimum duration of time between
+	// the logs defined in throttledConnFailedLogs.
+	throttledConnFailedLogInterval = time.Minute * 10
+
+	// throttledConnFailedLogs are logs that get written at most every
+	// throttledConnFailedLogInterval. The values in this map are the last
+	// times each type of log had been written.
+	throttledConnFailedLogs = map[error]time.Time{
+		NoAddressError: {},
+	}
+)
+
+var (
+	// NoAddressError is an error that is thrown when there aren't any
+	// valid connection addresses.
+	NoAddressError = errors.New("no valid connect address")
 )
 
 // ConnState represents the state of the requested connection.
@@ -65,11 +78,10 @@ type ConnReq struct {
 	Addr      net.Addr
 	Permanent bool
 
-	conn             net.Conn
-	state            ConnState
-	stateMtx         sync.RWMutex
-	retryCount       uint32
-	lastRetryLogTime time.Time
+	conn       net.Conn
+	state      ConnState
+	stateMtx   sync.RWMutex
+	retryCount uint32
 }
 
 // updateState updates the state of the connection request.
@@ -185,12 +197,11 @@ type ConnManager struct {
 
 	newConnReqMtx sync.Mutex
 
-	cfg                      Config
-	wg                       sync.WaitGroup
-	failedAttempts           uint64
-	lastFailedAttemptLogTime time.Time
-	requests                 chan interface{}
-	quit                     chan struct{}
+	cfg            Config
+	wg             sync.WaitGroup
+	failedAttempts uint64
+	requests       chan interface{}
+	quit           chan struct{}
 }
 
 // handleFailedConn handles a connection failed due to a disconnect or any
@@ -198,19 +209,24 @@ type ConnManager struct {
 // retry duration. Otherwise, if required, it makes a new connection request.
 // After maxFailedConnectionAttempts new connections will be retried after the
 // configured retry duration.
-func (cm *ConnManager) handleFailedConn(c *ConnReq) {
+func (cm *ConnManager) handleFailedConn(c *ConnReq, err error) {
 	if atomic.LoadInt32(&cm.stop) != 0 {
 		return
 	}
+
+	// Don't write throttled logs more than once every throttledConnFailedLogInterval
+	shouldWriteLog := shouldWriteConnFailedLog(err)
+	if shouldWriteLog {
+		throttledConnFailedLogs[err] = time.Now()
+	}
+
 	if c.Permanent {
 		c.retryCount++
 		d := time.Duration(c.retryCount) * cm.cfg.RetryDuration
 		if d > maxRetryDuration {
 			d = maxRetryDuration
 		}
-		if c.lastRetryLogTime.Add(failedConnectionLogInterval).Before(time.Now()) {
-			// Only write a log every failedConnectionLogInterval.
-			c.lastRetryLogTime = time.Now()
+		if shouldWriteLog {
 			log.Debugf("Retrying further connections to %s every %s", c, d)
 		}
 		time.AfterFunc(d, func() {
@@ -219,9 +235,7 @@ func (cm *ConnManager) handleFailedConn(c *ConnReq) {
 	} else if cm.cfg.GetNewAddress != nil {
 		cm.failedAttempts++
 		if cm.failedAttempts >= maxFailedAttempts {
-			if cm.lastFailedAttemptLogTime.Add(failedConnectionLogInterval).Before(time.Now()) {
-				// Only write a log every failedConnectionLogInterval
-				cm.lastFailedAttemptLogTime = time.Now()
+			if shouldWriteLog {
 				log.Debugf("Max failed connection attempts reached: [%d] "+
 					"-- retrying further connections every %s", maxFailedAttempts,
 					cm.cfg.RetryDuration)
@@ -233,6 +247,11 @@ func (cm *ConnManager) handleFailedConn(c *ConnReq) {
 			spawn(cm.NewConnReq)
 		}
 	}
+}
+
+func shouldWriteConnFailedLog(err error) bool {
+	lastLogTime, ok := throttledConnFailedLogs[err]
+	return !ok || lastLogTime.Add(throttledConnFailedLogInterval).Before(time.Now())
 }
 
 // connHandler handles all connection related requests.  It must be run as a
@@ -281,9 +300,7 @@ out:
 				conns[connReq.id] = connReq
 				log.Debugf("Connected to %s", connReq)
 				connReq.retryCount = 0
-				connReq.lastRetryLogTime = time.Time{}
 				cm.failedAttempts = 0
-				cm.lastFailedAttemptLogTime = time.Time{}
 
 				delete(pending, connReq.id)
 
@@ -347,7 +364,7 @@ out:
 					log.Debugf("Reconnecting to %s",
 						connReq)
 					pending[msg.id] = connReq
-					cm.handleFailedConn(connReq)
+					cm.handleFailedConn(connReq, nil)
 				}
 
 			case handleFailed:
@@ -360,13 +377,11 @@ out:
 				}
 
 				connReq.updateState(ConnFailing)
-				if (connReq.Permanent && connReq.lastRetryLogTime.Add(failedConnectionLogInterval).Before(time.Now())) ||
-					(!connReq.Permanent && cm.lastFailedAttemptLogTime.Add(failedConnectionLogInterval).Before(time.Now())) {
-					// Only write a log every failedConnectionLogInterval.
+				if shouldWriteConnFailedLog(msg.err) {
 					log.Debugf("Failed to connect to %s: %s",
 						connReq, msg.err)
 				}
-				cm.handleFailedConn(connReq)
+				cm.handleFailedConn(connReq, msg.err)
 			}
 
 		case <-cm.quit:
