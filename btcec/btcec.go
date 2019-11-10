@@ -858,7 +858,7 @@ func (curve *KoblitzCurve) ScalarMult(Bx, By *big.Int, k []byte) (*big.Int, *big
 }
 
 // scalarMultJacobian returns the Jacobian coordinates of k*(Bx, By) where k is a big endian integer.
-// Taken from https://github.com/gcash/bchd/blob/master/bchec/bchec.go
+// Taken from https://github.com/gcash/bchd/blob/99ad9c81ae1c543b42d9049cbfaa164014219ec9/bchec/bchec.go
 func (curve *KoblitzCurve) scalarMultJacobian(Bx, By *big.Int, k []byte) (*fieldVal, *fieldVal, *fieldVal) {
 	// Point Q = ∞ (point at infinity).
 	qx, qy, qz := new(fieldVal), new(fieldVal), new(fieldVal)
@@ -984,7 +984,7 @@ func (curve *KoblitzCurve) ScalarBaseMult(k []byte) (*big.Int, *big.Int) {
 
 // scalarBaseMultJacobian returns the Jacobian coordinates k*G where G is the base point of
 // the group and k is a big endian integer.
-// Taken from https://github.com/gcash/bchd/blob/master/bchec/bchec.go
+// Taken from https://github.com/gcash/bchd/blob/99ad9c81ae1c543b42d9049cbfaa164014219ec9/bchec/bchec.go
 func (curve *KoblitzCurve) scalarBaseMultJacobian(k []byte) (*fieldVal, *fieldVal, *fieldVal) {
 	newK := curve.moduloReduce(k)
 	diff := len(curve.bytePoints) - len(newK)
