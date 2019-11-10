@@ -249,7 +249,12 @@ func (cm *ConnManager) handleFailedConn(c *ConnReq, err error) {
 	}
 }
 
+// shouldWriteConnFailedLog resolves whether to write logs related to connection
+// failures.
 func shouldWriteConnFailedLog(err error) bool {
+	if err == nil {
+		return true
+	}
 	lastLogTime, ok := throttledConnFailedLogs[err]
 	return !ok || lastLogTime.Add(throttledConnFailedLogInterval).Before(time.Now())
 }
