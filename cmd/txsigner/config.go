@@ -5,24 +5,32 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-type configFlags struct {
+var activeConfig *ConfigFlags
+
+// ActiveConfig returns the active configuration struct
+func ActiveConfig() *ConfigFlags {
+	return activeConfig
+}
+
+// ConfigFlags holds the configurations set by the command line argument
+type ConfigFlags struct {
 	Transaction string `long:"transaction" short:"t" description:"Unsigned transaction in HEX format" required:"true"`
 	PrivateKey  string `long:"private-key" short:"p" description:"Private key" required:"true"`
 	config.NetworkFlags
 }
 
-func parseCommandLine() (*configFlags, error) {
-	cfg := &configFlags{}
-	parser := flags.NewParser(cfg, flags.PrintErrors|flags.HelpFlag)
+func parseCommandLine() (*ConfigFlags, error) {
+	activeConfig = &ConfigFlags{}
+	parser := flags.NewParser(activeConfig, flags.PrintErrors|flags.HelpFlag)
 	_, err := parser.Parse()
 	if err != nil {
 		return nil, err
 	}
 
-	err = cfg.ResolveNetwork(parser)
+	err = activeConfig.ResolveNetwork(parser)
 	if err != nil {
 		return nil, err
 	}
 
-	return cfg, nil
+	return activeConfig, nil
 }

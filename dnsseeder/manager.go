@@ -6,7 +6,6 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/daglabs/btcd/config"
 	"github.com/pkg/errors"
 	"net"
 	"os"
@@ -102,7 +101,7 @@ func ipNet(ip string, ones, bits int) net.IPNet {
 }
 
 func isRoutable(addr net.IP) bool {
-	if config.ActiveNetworkFlags.ActiveNetParams.AcceptUnroutable {
+	if ActiveConfig().NetParams().AcceptUnroutable {
 		return true
 	}
 

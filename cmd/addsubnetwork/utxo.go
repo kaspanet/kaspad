@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/config"
 	"github.com/daglabs/btcd/rpcclient"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/wire"
@@ -16,7 +15,7 @@ const (
 	minConfirmations = 10
 )
 
-func findUnspentTXO(cfg *configFlags, client *rpcclient.Client, addrPubKeyHash *util.AddressPubKeyHash) (*wire.Outpoint, *wire.MsgTx, error) {
+func findUnspentTXO(cfg *ConfigFlags, client *rpcclient.Client, addrPubKeyHash *util.AddressPubKeyHash) (*wire.Outpoint, *wire.MsgTx, error) {
 	txs, err := collectTransactions(client, addrPubKeyHash)
 	if err != nil {
 		return nil, nil, err
@@ -93,7 +92,7 @@ func isTxMatured(tx *wire.MsgTx, confirmations uint64) bool {
 	if !tx.IsCoinBase() {
 		return confirmations >= minConfirmations
 	}
-	return confirmations >= config.ActiveNetworkFlags.ActiveNetParams.BlockCoinbaseMaturity
+	return confirmations >= ActiveConfig().NetParams().BlockCoinbaseMaturity
 }
 
 func buildUTXOs(txs []*wire.MsgTx) map[wire.Outpoint]*wire.MsgTx {

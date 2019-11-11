@@ -384,7 +384,7 @@ func (sp *Peer) pushAddrMsg(addresses []*wire.NetAddress, subnetworkID *subnetwo
 // disconnected.
 func (sp *Peer) addBanScore(persistent, transient uint32, reason string) {
 	// No warning is logged and no score is calculated if banning is disabled.
-	if config.MainConfig().DisableBanning {
+	if config.ActiveConfig().DisableBanning {
 		return
 	}
 	if sp.isWhitelisted {
@@ -392,7 +392,7 @@ func (sp *Peer) addBanScore(persistent, transient uint32, reason string) {
 		return
 	}
 
-	warnThreshold := config.MainConfig().BanThreshold >> 1
+	warnThreshold := config.ActiveConfig().BanThreshold >> 1
 	if transient == 0 && persistent == 0 {
 		// The score is not being increased, but a warning message is still
 		// logged if the score is above the warn threshold.
@@ -407,7 +407,7 @@ func (sp *Peer) addBanScore(persistent, transient uint32, reason string) {
 	if score > warnThreshold {
 		peerLog.Warnf("Misbehaving peer %s: %s -- ban score increased to %d",
 			sp, reason, score)
-		if score > config.MainConfig().BanThreshold {
+		if score > config.ActiveConfig().BanThreshold {
 			peerLog.Warnf("Misbehaving peer %s -- banning and disconnecting",
 				sp)
 			sp.server.BanPeer(sp)
@@ -426,7 +426,7 @@ func (sp *Peer) enforceNodeBloomFlag(cmd string) bool {
 		// whether or not banning is enabled, it is checked here as well
 		// to ensure the violation is logged and the peer is
 		// disconnected regardless.
-		if !config.MainConfig().DisableBanning {
+		if !config.ActiveConfig().DisableBanning {
 
 			// Disconnect the peer regardless of whether it was
 			// banned.
@@ -687,9 +687,9 @@ func (s *Server) handleAddPeerMsg(state *peerState, sp *Peer) bool {
 	// TODO: Check for max peers from a single IP.
 
 	// Limit max number of total peers.
-	if state.Count() >= config.MainConfig().MaxPeers {
+	if state.Count() >= config.ActiveConfig().MaxPeers {
 		srvrLog.Infof("Max peers reached [%d] - disconnecting peer %s",
-			config.MainConfig().MaxPeers, sp)
+			config.ActiveConfig().MaxPeers, sp)
 		sp.Disconnect()
 		// TODO: how to handle permanent peers here?
 		// they should be rescheduled.
@@ -758,8 +758,8 @@ func (s *Server) handleBanPeerMsg(state *peerState, sp *Peer) {
 	}
 	direction := logger.DirectionString(sp.Inbound())
 	srvrLog.Infof("Banned peer %s (%s) for %s", host, direction,
-		config.MainConfig().BanDuration)
-	state.banned[host] = time.Now().Add(config.MainConfig().BanDuration)
+		config.ActiveConfig().BanDuration)
+	state.banned[host] = time.Now().Add(config.ActiveConfig().BanDuration)
 }
 
 // handleRelayInvMsg deals with relaying inventory to peers that are not already
@@ -938,7 +938,7 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 	case ConnectNodeMsg:
 		// TODO: duplicate oneshots?
 		// Limit max number of total peers.
-		if state.Count() >= config.MainConfig().MaxPeers {
+		if state.Count() >= config.ActiveConfig().MaxPeers {
 			msg.Reply <- errors.New("max peers reached")
 			return
 		}
@@ -1084,15 +1084,15 @@ func newPeerConfig(sp *Peer) *peer.Config {
 		SelectedTip:       sp.selectedTip,
 		BlockExists:       sp.blockExists,
 		HostToNetAddress:  sp.server.addrManager.HostToNetAddress,
-		Proxy:             config.MainConfig().Proxy,
+		Proxy:             config.ActiveConfig().Proxy,
 		UserAgentName:     userAgentName,
 		UserAgentVersion:  userAgentVersion,
-		UserAgentComments: config.MainConfig().UserAgentComments,
+		UserAgentComments: config.ActiveConfig().UserAgentComments,
 		DAGParams:         sp.server.DAGParams,
 		Services:          sp.server.services,
-		DisableRelayTx:    config.MainConfig().BlocksOnly,
+		DisableRelayTx:    config.ActiveConfig().BlocksOnly,
 		ProtocolVersion:   peer.MaxProtocolVersion,
-		SubnetworkID:      config.MainConfig().SubnetworkID,
+		SubnetworkID:      config.ActiveConfig().SubnetworkID,
 	}
 }
 
@@ -1176,9 +1176,9 @@ func (s *Server) peerHandler() {
 		outboundGroups:  make(map[string]int),
 	}
 
-	if !config.MainConfig().DisableDNSSeed {
+	if !config.ActiveConfig().DisableDNSSeed {
 		seedFromSubNetwork := func(subnetworkID *subnetworkid.SubnetworkID) {
-			connmgr.SeedFromDNS(config.ActiveNetworkFlags.ActiveNetParams, defaultRequiredServices,
+			connmgr.SeedFromDNS(config.ActiveConfig().NetParams(), defaultRequiredServices,
 				false, subnetworkID, serverutils.BTCDLookup, func(addrs []*wire.NetAddress) {
 					// Bitcoind uses a lookup of the dns seeder here. Since seeder returns
 					// IPs of nodes and not its own IP, we can not know real IP of
@@ -1190,9 +1190,9 @@ func (s *Server) peerHandler() {
 		// Add full nodes discovered through DNS to the address manager.
 		seedFromSubNetwork(nil)
 
-		if config.MainConfig().SubnetworkID != nil {
+		if config.ActiveConfig().SubnetworkID != nil {
 			// Node is partial - fetch nodes with same subnetwork
-			seedFromSubNetwork(config.MainConfig().SubnetworkID)
+			seedFromSubNetwork(config.ActiveConfig().SubnetworkID)
 		}
 	}
 	spawn(s.connManager.Start)
@@ -1403,7 +1403,7 @@ func (s *Server) Start() {
 		spawn(s.upnpUpdateThread)
 	}
 
-	cfg := config.MainConfig()
+	cfg := config.ActiveConfig()
 
 	if !cfg.DisableRPC {
 		s.wg.Add(1)
@@ -1522,7 +1522,7 @@ func (s *Server) upnpUpdateThread() {
 	// Go off immediately to prevent code duplication, thereafter we renew
 	// lease every 15 minutes.
 	timer := time.NewTimer(0 * time.Second)
-	lport, _ := strconv.ParseInt(config.ActiveNetworkFlags.ActiveNetParams.DefaultPort, 10, 16)
+	lport, _ := strconv.ParseInt(config.ActiveConfig().NetParams().DefaultPort, 10, 16)
 	first := true
 out:
 	for {
@@ -1577,18 +1577,18 @@ out:
 // connections from peers.
 func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params, interrupt <-chan struct{}, notifyNewTransactions func(txns []*mempool.TxDesc)) (*Server, error) {
 	services := defaultServices
-	if config.MainConfig().NoPeerBloomFilters {
+	if config.ActiveConfig().NoPeerBloomFilters {
 		services &^= wire.SFNodeBloom
 	}
-	if !config.MainConfig().EnableCFilters {
+	if !config.ActiveConfig().EnableCFilters {
 		services &^= wire.SFNodeCF
 	}
 
-	amgr := addrmgr.New(config.MainConfig().DataDir, serverutils.BTCDLookup, config.MainConfig().SubnetworkID)
+	amgr := addrmgr.New(config.ActiveConfig().DataDir, serverutils.BTCDLookup, config.ActiveConfig().SubnetworkID)
 
 	var listeners []net.Listener
 	var nat serverutils.NAT
-	if !config.MainConfig().DisableListen {
+	if !config.ActiveConfig().DisableListen {
 		var err error
 		listeners, nat, err = initListeners(amgr, listenAddrs, services)
 		if err != nil {
@@ -1602,12 +1602,12 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 	s := Server{
 		DAGParams:             dagParams,
 		addrManager:           amgr,
-		newPeers:              make(chan *Peer, config.MainConfig().MaxPeers),
-		donePeers:             make(chan *Peer, config.MainConfig().MaxPeers),
-		banPeers:              make(chan *Peer, config.MainConfig().MaxPeers),
+		newPeers:              make(chan *Peer, config.ActiveConfig().MaxPeers),
+		donePeers:             make(chan *Peer, config.ActiveConfig().MaxPeers),
+		banPeers:              make(chan *Peer, config.ActiveConfig().MaxPeers),
 		Query:                 make(chan interface{}),
-		relayInv:              make(chan relayMsg, config.MainConfig().MaxPeers),
-		broadcast:             make(chan broadcastMsg, config.MainConfig().MaxPeers),
+		relayInv:              make(chan relayMsg, config.ActiveConfig().MaxPeers),
+		broadcast:             make(chan broadcastMsg, config.ActiveConfig().MaxPeers),
 		quit:                  make(chan struct{}),
 		modifyRebroadcastInv:  make(chan interface{}),
 		newOutboundConnection: make(chan *outboundPeerConnectedMsg),
@@ -1615,7 +1615,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		db:                    db,
 		TimeSource:            blockdag.NewMedianTime(),
 		services:              services,
-		SigCache:              txscript.NewSigCache(config.MainConfig().SigCacheMaxSize),
+		SigCache:              txscript.NewSigCache(config.ActiveConfig().SigCacheMaxSize),
 		cfCheckptCaches:       make(map[wire.FilterType][]cfHeaderKV),
 		notifyNewTransactions: notifyNewTransactions,
 	}
@@ -1627,13 +1627,13 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 	// addrindex is run first, it may not have the transactions from the
 	// current block indexed.
 	var indexes []indexers.Indexer
-	if config.MainConfig().TxIndex || config.MainConfig().AddrIndex {
+	if config.ActiveConfig().TxIndex || config.ActiveConfig().AddrIndex {
 		// Enable transaction index if address index is enabled since it
 		// requires it.
-		if !config.MainConfig().TxIndex {
+		if !config.ActiveConfig().TxIndex {
 			indxLog.Infof("Transaction index enabled because it " +
 				"is required by the address index")
-			config.MainConfig().TxIndex = true
+			config.ActiveConfig().TxIndex = true
 		} else {
 			indxLog.Info("Transaction index is enabled")
 		}
@@ -1641,17 +1641,17 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		s.TxIndex = indexers.NewTxIndex()
 		indexes = append(indexes, s.TxIndex)
 	}
-	if config.MainConfig().AddrIndex {
+	if config.ActiveConfig().AddrIndex {
 		indxLog.Info("Address index is enabled")
 		s.AddrIndex = indexers.NewAddrIndex(dagParams)
 		indexes = append(indexes, s.AddrIndex)
 	}
-	if config.MainConfig().AcceptanceIndex {
+	if config.ActiveConfig().AcceptanceIndex {
 		indxLog.Info("acceptance index is enabled")
 		s.AcceptanceIndex = indexers.NewAcceptanceIndex()
 		indexes = append(indexes, s.AcceptanceIndex)
 	}
-	if config.MainConfig().EnableCFilters {
+	if config.ActiveConfig().EnableCFilters {
 		indxLog.Info("cf index is enabled")
 		s.CfIndex = indexers.NewCfIndex(dagParams)
 		indexes = append(indexes, s.CfIndex)
@@ -1665,8 +1665,8 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 
 	// Merge given checkpoints with the default ones unless they are disabled.
 	var checkpoints []dagconfig.Checkpoint
-	if !config.MainConfig().DisableCheckpoints {
-		checkpoints = mergeCheckpoints(s.DAGParams.Checkpoints, config.MainConfig().AddCheckpoints)
+	if !config.ActiveConfig().DisableCheckpoints {
+		checkpoints = mergeCheckpoints(s.DAGParams.Checkpoints, config.ActiveConfig().AddCheckpoints)
 	}
 
 	// Create a new block chain instance with the appropriate configuration.
@@ -1679,7 +1679,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		TimeSource:   s.TimeSource,
 		SigCache:     s.SigCache,
 		IndexManager: indexManager,
-		SubnetworkID: config.MainConfig().SubnetworkID,
+		SubnetworkID: config.ActiveConfig().SubnetworkID,
 	})
 	if err != nil {
 		return nil, err
@@ -1687,10 +1687,10 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 
 	txC := mempool.Config{
 		Policy: mempool.Policy{
-			AcceptNonStd:    config.MainConfig().RelayNonStd,
-			MaxOrphanTxs:    config.MainConfig().MaxOrphanTxs,
+			AcceptNonStd:    config.ActiveConfig().RelayNonStd,
+			MaxOrphanTxs:    config.ActiveConfig().MaxOrphanTxs,
 			MaxOrphanTxSize: config.DefaultMaxOrphanTxSize,
-			MinRelayTxFee:   config.MainConfig().MinRelayTxFee,
+			MinRelayTxFee:   config.ActiveConfig().MinRelayTxFee,
 			MaxTxVersion:    1,
 		},
 		DAGParams:      dagParams,
@@ -1706,7 +1706,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 	}
 	s.TxMemPool = mempool.New(&txC)
 
-	cfg := config.MainConfig()
+	cfg := config.ActiveConfig()
 
 	s.SyncManager, err = netsync.New(&netsync.Config{
 		PeerNotifier:       &s,
@@ -1727,7 +1727,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 	// discovered peers in order to prevent it from becoming a public test
 	// network.
 	var newAddressFunc func() (net.Addr, error)
-	if !config.MainConfig().SimNet && len(config.MainConfig().ConnectPeers) == 0 {
+	if !config.ActiveConfig().SimNet && len(config.ActiveConfig().ConnectPeers) == 0 {
 		newAddressFunc = func() (net.Addr, error) {
 			for tries := 0; tries < 100; tries++ {
 				addr := s.addrManager.GetAddress()
@@ -1745,7 +1745,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 				// Networks that accept unroutable connections are exempt
 				// from this rule, since they're meant to run within a
 				// private subnet, like 10.0.0.0/16.
-				if !config.ActiveNetworkFlags.ActiveNetParams.AcceptUnroutable {
+				if !config.ActiveConfig().NetParams().AcceptUnroutable {
 					key := addrmgr.GroupKey(addr.NetAddress())
 					if s.OutboundGroupCount(key) != 0 {
 						continue
@@ -1760,7 +1760,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 
 				// allow nondefault ports after 50 failed tries.
 				if tries < 50 && fmt.Sprintf("%d", addr.NetAddress().Port) !=
-					config.ActiveNetworkFlags.ActiveNetParams.DefaultPort {
+					config.ActiveConfig().NetParams().DefaultPort {
 					continue
 				}
 
@@ -1773,8 +1773,8 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 
 	// Create a connection manager.
 	targetOutbound := defaultTargetOutbound
-	if config.MainConfig().MaxPeers < targetOutbound {
-		targetOutbound = config.MainConfig().MaxPeers
+	if config.ActiveConfig().MaxPeers < targetOutbound {
+		targetOutbound = config.ActiveConfig().MaxPeers
 	}
 	cmgr, err := connmgr.New(&connmgr.Config{
 		Listeners:      listeners,
@@ -1796,9 +1796,9 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 	s.connManager = cmgr
 
 	// Start up persistent peers.
-	permanentPeers := config.MainConfig().ConnectPeers
+	permanentPeers := config.ActiveConfig().ConnectPeers
 	if len(permanentPeers) == 0 {
-		permanentPeers = config.MainConfig().AddPeers
+		permanentPeers = config.ActiveConfig().AddPeers
 	}
 	for _, addr := range permanentPeers {
 		netAddr, err := addrStringToNetAddr(addr)
@@ -1836,15 +1836,15 @@ func initListeners(amgr *addrmgr.AddrManager, listenAddrs []string, services wir
 	}
 
 	var nat serverutils.NAT
-	if len(config.MainConfig().ExternalIPs) != 0 {
-		defaultPort, err := strconv.ParseUint(config.ActiveNetworkFlags.ActiveNetParams.DefaultPort, 10, 16)
+	if len(config.ActiveConfig().ExternalIPs) != 0 {
+		defaultPort, err := strconv.ParseUint(config.ActiveConfig().NetParams().DefaultPort, 10, 16)
 		if err != nil {
 			srvrLog.Errorf("Can not parse default port %s for active chain: %s",
-				config.ActiveNetworkFlags.ActiveNetParams.DefaultPort, err)
+				config.ActiveConfig().NetParams().DefaultPort, err)
 			return nil, nil, err
 		}
 
-		for _, sip := range config.MainConfig().ExternalIPs {
+		for _, sip := range config.ActiveConfig().ExternalIPs {
 			eport := uint16(defaultPort)
 			host, portstr, err := net.SplitHostPort(sip)
 			if err != nil {
@@ -1871,7 +1871,7 @@ func initListeners(amgr *addrmgr.AddrManager, listenAddrs []string, services wir
 			}
 		}
 	} else {
-		if config.MainConfig().Upnp {
+		if config.ActiveConfig().Upnp {
 			var err error
 			nat, err = serverutils.Discover()
 			if err != nil {
@@ -1919,7 +1919,7 @@ func addrStringToNetAddr(addr string) (net.Addr, error) {
 	// Tor addresses cannot be resolved to an IP, so just return an onion
 	// address instead.
 	if strings.HasSuffix(host, ".onion") {
-		if config.MainConfig().NoOnion {
+		if config.ActiveConfig().NoOnion {
 			return nil, errors.New("tor has been disabled")
 		}
 
@@ -2012,7 +2012,7 @@ func dynamicTickDuration(remaining time.Duration) time.Duration {
 // isWhitelisted returns whether the IP address is included in the whitelisted
 // networks and IPs.
 func isWhitelisted(addr net.Addr) bool {
-	if len(config.MainConfig().Whitelists) == 0 {
+	if len(config.ActiveConfig().Whitelists) == 0 {
 		return false
 	}
 
@@ -2027,7 +2027,7 @@ func isWhitelisted(addr net.Addr) bool {
 		return false
 	}
 
-	for _, ipnet := range config.MainConfig().Whitelists {
+	for _, ipnet := range config.ActiveConfig().Whitelists {
 		if ipnet.Contains(ip) {
 			return true
 		}
@@ -2107,7 +2107,7 @@ func (s *Server) AnnounceNewTransactions(txns []*mempool.TxDesc) {
 // longer needing rebroadcasting.
 func (s *Server) TransactionConfirmed(tx *util.Tx) {
 	// Rebroadcasting is only necessary when the RPC server is active.
-	if config.MainConfig().DisableRPC {
+	if config.ActiveConfig().DisableRPC {
 		return
 	}
 

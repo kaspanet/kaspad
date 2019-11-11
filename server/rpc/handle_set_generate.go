@@ -7,7 +7,7 @@ import (
 
 // handleSetGenerate implements the setGenerate command.
 func handleSetGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	if config.MainConfig().SubnetworkID != nil {
+	if config.ActiveConfig().SubnetworkID != nil {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInvalidRequest.Code,
 			Message: "`setGenerate` is not supported on partial nodes.",
@@ -33,7 +33,7 @@ func handleSetGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (i
 	} else {
 		// Respond with an error if there are no addresses to pay the
 		// created blocks to.
-		if len(config.MainConfig().MiningAddrs) == 0 {
+		if len(config.ActiveConfig().MiningAddrs) == 0 {
 			return nil, &btcjson.RPCError{
 				Code: btcjson.ErrRPCInternal.Code,
 				Message: "No payment addresses specified " +

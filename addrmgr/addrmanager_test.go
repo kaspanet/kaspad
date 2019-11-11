@@ -5,6 +5,7 @@
 package addrmgr
 
 import (
+	"bou.ke/monkey"
 	"fmt"
 	"github.com/daglabs/btcd/config"
 	"github.com/daglabs/btcd/dagconfig"
@@ -115,9 +116,16 @@ func TestStartStop(t *testing.T) {
 }
 
 func TestAddAddressByIP(t *testing.T) {
-	config.ActiveNetworkFlags = &config.NetworkFlags{
-		ActiveNetParams: &dagconfig.SimNetParams,
-	}
+	activeConfigPatch := monkey.Patch(config.ActiveConfig, func() *config.Config {
+		return &config.Config{
+			Flags: &config.Flags{
+				NetworkFlags: config.NetworkFlags{
+					ActiveNetParams: &dagconfig.SimNetParams},
+			},
+		}
+	})
+	defer activeConfigPatch.Unpatch()
+
 	fmtErr := errors.Errorf("")
 	addrErr := &net.AddrError{}
 	var tests = []struct {
@@ -162,6 +170,16 @@ func TestAddAddressByIP(t *testing.T) {
 }
 
 func TestAddLocalAddress(t *testing.T) {
+	activeConfigPatch := monkey.Patch(config.ActiveConfig, func() *config.Config {
+		return &config.Config{
+			Flags: &config.Flags{
+				NetworkFlags: config.NetworkFlags{
+					ActiveNetParams: &dagconfig.SimNetParams},
+			},
+		}
+	})
+	defer activeConfigPatch.Unpatch()
+
 	var tests = []struct {
 		address  wire.NetAddress
 		priority AddressPriority
@@ -215,6 +233,16 @@ func TestAddLocalAddress(t *testing.T) {
 }
 
 func TestAttempt(t *testing.T) {
+	activeConfigPatch := monkey.Patch(config.ActiveConfig, func() *config.Config {
+		return &config.Config{
+			Flags: &config.Flags{
+				NetworkFlags: config.NetworkFlags{
+					ActiveNetParams: &dagconfig.SimNetParams},
+			},
+		}
+	})
+	defer activeConfigPatch.Unpatch()
+
 	n := New("testattempt", lookupFunc, nil)
 
 	// Add a new address and get it
@@ -237,6 +265,16 @@ func TestAttempt(t *testing.T) {
 }
 
 func TestConnected(t *testing.T) {
+	activeConfigPatch := monkey.Patch(config.ActiveConfig, func() *config.Config {
+		return &config.Config{
+			Flags: &config.Flags{
+				NetworkFlags: config.NetworkFlags{
+					ActiveNetParams: &dagconfig.SimNetParams},
+			},
+		}
+	})
+	defer activeConfigPatch.Unpatch()
+
 	n := New("testconnected", lookupFunc, nil)
 
 	// Add a new address and get it
@@ -257,6 +295,16 @@ func TestConnected(t *testing.T) {
 }
 
 func TestNeedMoreAddresses(t *testing.T) {
+	activeConfigPatch := monkey.Patch(config.ActiveConfig, func() *config.Config {
+		return &config.Config{
+			Flags: &config.Flags{
+				NetworkFlags: config.NetworkFlags{
+					ActiveNetParams: &dagconfig.SimNetParams},
+			},
+		}
+	})
+	defer activeConfigPatch.Unpatch()
+
 	n := New("testneedmoreaddresses", lookupFunc, nil)
 	addrsToAdd := 1500
 	b := n.NeedMoreAddresses()
@@ -289,6 +337,16 @@ func TestNeedMoreAddresses(t *testing.T) {
 }
 
 func TestGood(t *testing.T) {
+	activeConfigPatch := monkey.Patch(config.ActiveConfig, func() *config.Config {
+		return &config.Config{
+			Flags: &config.Flags{
+				NetworkFlags: config.NetworkFlags{
+					ActiveNetParams: &dagconfig.SimNetParams},
+			},
+		}
+	})
+	defer activeConfigPatch.Unpatch()
+
 	n := New("testgood", lookupFunc, nil)
 	addrsToAdd := 64 * 64
 	addrs := make([]*wire.NetAddress, addrsToAdd)
@@ -336,6 +394,16 @@ func TestGood(t *testing.T) {
 }
 
 func TestGoodChangeSubnetworkID(t *testing.T) {
+	activeConfigPatch := monkey.Patch(config.ActiveConfig, func() *config.Config {
+		return &config.Config{
+			Flags: &config.Flags{
+				NetworkFlags: config.NetworkFlags{
+					ActiveNetParams: &dagconfig.SimNetParams},
+			},
+		}
+	})
+	defer activeConfigPatch.Unpatch()
+
 	n := New("test_good_change_subnetwork_id", lookupFunc, nil)
 	addr := wire.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
 	addrKey := NetAddressKey(addr)
@@ -405,6 +473,16 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 }
 
 func TestGetAddress(t *testing.T) {
+	activeConfigPatch := monkey.Patch(config.ActiveConfig, func() *config.Config {
+		return &config.Config{
+			Flags: &config.Flags{
+				NetworkFlags: config.NetworkFlags{
+					ActiveNetParams: &dagconfig.SimNetParams},
+			},
+		}
+	})
+	defer activeConfigPatch.Unpatch()
+
 	localSubnetworkID := &subnetworkid.SubnetworkID{0xff}
 	n := New("testgetaddress", lookupFunc, localSubnetworkID)
 
@@ -477,6 +555,16 @@ func TestGetAddress(t *testing.T) {
 }
 
 func TestGetBestLocalAddress(t *testing.T) {
+	activeConfigPatch := monkey.Patch(config.ActiveConfig, func() *config.Config {
+		return &config.Config{
+			Flags: &config.Flags{
+				NetworkFlags: config.NetworkFlags{
+					ActiveNetParams: &dagconfig.SimNetParams},
+			},
+		}
+	})
+	defer activeConfigPatch.Unpatch()
+
 	localAddrs := []wire.NetAddress{
 		{IP: net.ParseIP("192.168.0.100")},
 		{IP: net.ParseIP("::1")},

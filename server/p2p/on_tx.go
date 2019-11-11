@@ -13,7 +13,7 @@ import (
 // handler this does not serialize all transactions through a single thread
 // transactions don't rely on the previous one in a linear fashion like blocks.
 func (sp *Peer) OnTx(_ *peer.Peer, msg *wire.MsgTx) {
-	if config.MainConfig().BlocksOnly {
+	if config.ActiveConfig().BlocksOnly {
 		peerLog.Tracef("Ignoring tx %s from %s - blocksonly enabled",
 			msg.TxID(), sp)
 		return

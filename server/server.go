@@ -40,7 +40,7 @@ func (s *Server) Start() {
 	s.p2pServer.Start()
 
 	// Start the CPU miner if generation is enabled.
-	cfg := config.MainConfig()
+	cfg := config.ActiveConfig()
 	if cfg.Generate {
 		s.cpuminer.Start()
 	}
@@ -68,7 +68,7 @@ func (s *Server) Stop() error {
 	s.p2pServer.Stop()
 
 	// Shutdown the RPC server if it's not disabled.
-	if !config.MainConfig().DisableRPC {
+	if !config.ActiveConfig().DisableRPC {
 		s.rpcServer.Stop()
 	}
 
@@ -93,7 +93,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		return nil, err
 	}
 
-	cfg := config.MainConfig()
+	cfg := config.ActiveConfig()
 
 	// Create the mining policy and block template generator based on the
 	// configuration options.

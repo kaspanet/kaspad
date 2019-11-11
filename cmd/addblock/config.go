@@ -28,12 +28,18 @@ var (
 	btcdHomeDir    = util.AppDataDir("btcd", false)
 	defaultDataDir = filepath.Join(btcdHomeDir, "data")
 	knownDbTypes   = database.SupportedDrivers()
+	activeConfig   *ConfigFlags
 )
 
-// config defines the configuration options for findcheckpoint.
+// ActiveConfig returns the active configuration struct
+func ActiveConfig() *ConfigFlags {
+	return activeConfig
+}
+
+// ConfigFlags defines the configuration options for findcheckpoint.
 //
 // See loadConfig for details on the configuration load process.
-type configFlags struct {
+type ConfigFlags struct {
 	DataDir   string `short:"b" long:"datadir" description:"Location of the btcd data directory"`
 	DbType    string `long:"dbtype" description:"Database backend to use for the Block Chain"`
 	InFile    string `short:"i" long:"infile" description:"File containing the block(s)"`
@@ -65,9 +71,9 @@ func validDbType(dbType string) bool {
 }
 
 // loadConfig initializes and parses the config using command line options.
-func loadConfig() (*configFlags, []string, error) {
+func loadConfig() (*ConfigFlags, []string, error) {
 	// Default config.
-	cfg := configFlags{
+	activeConfig = &ConfigFlags{
 		DataDir:  defaultDataDir,
 		DbType:   defaultDbType,
 		InFile:   defaultDataFile,
@@ -75,7 +81,7 @@ func loadConfig() (*configFlags, []string, error) {
 	}
 
 	// Parse command line options.
-	parser := flags.NewParser(&cfg, flags.Default)
+	parser := flags.NewParser(&activeConfig, flags.Default)
 	remainingArgs, err := parser.Parse()
 	if err != nil {
 		if e, ok := err.(*flags.Error); !ok || e.Type != flags.ErrHelp {
@@ -84,16 +90,16 @@ func loadConfig() (*configFlags, []string, error) {
 		return nil, nil, err
 	}
 
-	err = cfg.ResolveNetwork(parser)
+	err = activeConfig.ResolveNetwork(parser)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// Validate database type.
-	if !validDbType(cfg.DbType) {
+	if !validDbType(activeConfig.DbType) {
 		str := "%s: The specified database type [%s] is invalid -- " +
 			"supported types %s"
-		err := errors.Errorf(str, "loadConfig", cfg.DbType, strings.Join(knownDbTypes, ", "))
+		err := errors.Errorf(str, "loadConfig", activeConfig.DbType, strings.Join(knownDbTypes, ", "))
 		fmt.Fprintln(os.Stderr, err)
 		parser.WriteHelp(os.Stderr)
 		return nil, nil, err
@@ -105,7 +111,7 @@ func loadConfig() (*configFlags, []string, error) {
 	// All data is specific to a network, so namespacing the data directory
 	// means each individual piece of serialized data does not have to
 	// worry about changing names per network and such.
-	cfg.DataDir = filepath.Join(cfg.DataDir, config.ActiveNetworkFlags.ActiveNetParams.Name)
+	cfg.DataDir = filepath.Join(cfg.DataDir, ActiveConfig().NetParams().Name)
 
 	// Ensure the specified block file exists.
 	if !fileExists(cfg.InFile) {
@@ -116,5 +122,5 @@ func loadConfig() (*configFlags, []string, error) {
 		return nil, nil, err
 	}
 
-	return &cfg, remainingArgs, nil
+	return cfg, remainingArgs, nil
 }

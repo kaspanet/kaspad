@@ -32,7 +32,13 @@ var (
 	defaultConfigFile  = filepath.Join(btcctlHomeDir, "btcctl.conf")
 	defaultRPCServer   = "localhost"
 	defaultRPCCertFile = filepath.Join(btcdHomeDir, "rpc.cert")
+	activeConfig       *ConfigFlags
 )
+
+// ActiveConfig returns the active configuration struct
+func ActiveConfig() *ConfigFlags {
+	return activeConfig
+}
 
 // listCommands categorizes and lists all of the usable commands along with
 // their one-line usage.
@@ -82,10 +88,10 @@ func listCommands() {
 	}
 }
 
-// config defines the configuration options for btcctl.
+// ConfigFlags defines the configuration options for btcctl.
 //
 // See loadConfig for details on the configuration load process.
-type configFlags struct {
+type ConfigFlags struct {
 	ShowVersion   bool   `short:"V" long:"version" description:"Display version information and exit"`
 	ListCommands  bool   `short:"l" long:"listcommands" description:"List all of the supported commands and exit"`
 	ConfigFile    string `short:"C" long:"configfile" description:"Path to configuration file"`
@@ -149,9 +155,9 @@ func cleanAndExpandPath(path string) string {
 // The above results in functioning properly without any config settings
 // while still allowing the user to override settings with config files and
 // command line options.  Command line options always take precedence.
-func loadConfig() (*configFlags, []string, error) {
+func loadConfig() (*ConfigFlags, []string, error) {
 	// Default config.
-	cfg := configFlags{
+	activeConfig = &ConfigFlags{
 		ConfigFile: defaultConfigFile,
 		RPCServer:  defaultRPCServer,
 		RPCCert:    defaultRPCCertFile,
@@ -161,7 +167,7 @@ func loadConfig() (*configFlags, []string, error) {
 	// file, the version flag, or the list commands flag was specified.  Any
 	// errors aside from the help message error can be ignored here since
 	// they will be caught by the final parse below.
-	preCfg := cfg
+	preCfg := activeConfig
 	preParser := flags.NewParser(&preCfg, flags.HelpFlag)
 	_, err := preParser.Parse()
 	if err != nil {
@@ -203,7 +209,7 @@ func loadConfig() (*configFlags, []string, error) {
 	}
 
 	// Load additional config from file.
-	parser := flags.NewParser(&cfg, flags.Default)
+	parser := flags.NewParser(&activeConfig, flags.Default)
 	err = flags.NewIniParser(parser).ParseFile(preCfg.ConfigFile)
 	if err != nil {
 		if _, ok := err.(*os.PathError); !ok {
@@ -223,19 +229,19 @@ func loadConfig() (*configFlags, []string, error) {
 		return nil, nil, err
 	}
 
-	err = cfg.ResolveNetwork(parser)
+	err = activeConfig.ResolveNetwork(parser)
 	if err != nil {
 		return nil, nil, err
 	}
 	// Handle environment variable expansion in the RPC certificate path.
-	cfg.RPCCert = cleanAndExpandPath(cfg.RPCCert)
+	activeConfig.RPCCert = cleanAndExpandPath(activeConfig.RPCCert)
 
 	// Add default port to RPC server based on --testnet and --simnet flags
 	// if needed.
-	cfg.RPCServer = normalizeAddress(cfg.RPCServer, cfg.TestNet,
-		cfg.SimNet, cfg.DevNet)
+	activeConfig.RPCServer = normalizeAddress(activeConfig.RPCServer, activeConfig.TestNet,
+		activeConfig.SimNet, activeConfig.DevNet)
 
-	return &cfg, remainingArgs, nil
+	return activeConfig, remainingArgs, nil
 }
 
 // createDefaultConfig creates a basic config file at the given destination path.

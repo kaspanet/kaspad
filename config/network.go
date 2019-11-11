@@ -8,9 +8,6 @@ import (
 	"os"
 )
 
-// ActiveNetworkFlags holds the active network information
-var ActiveNetworkFlags *NetworkFlags
-
 // NetworkFlags holds the network configuration, that is which network is selected.
 type NetworkFlags struct {
 	TestNet         bool `long:"testnet" description:"Use the test network"`
@@ -20,10 +17,10 @@ type NetworkFlags struct {
 	ActiveNetParams *dagconfig.Params
 }
 
-// ResolveNetwork parses the network command line argument and sets ActiveNetParams accordingly.
+// ResolveNetwork parses the network command line argument and sets NetParams accordingly.
 // It returns error if more than one network was selected, nil otherwise.
 func (networkFlags *NetworkFlags) ResolveNetwork(parser *flags.Parser) error {
-	//ActiveNetParams holds the selected network parameters. Default value is main-net.
+	//NetParams holds the selected network parameters. Default value is main-net.
 	networkFlags.ActiveNetParams = &dagconfig.MainNetParams
 	// Multiple networks can't be selected simultaneously.
 	numNets := 0
@@ -54,6 +51,10 @@ func (networkFlags *NetworkFlags) ResolveNetwork(parser *flags.Parser) error {
 		parser.WriteHelp(os.Stderr)
 		return err
 	}
-	ActiveNetworkFlags = networkFlags
 	return nil
+}
+
+// NetParams returns the ActiveNetParams
+func (networkFlags *NetworkFlags) NetParams() *dagconfig.Params {
+	return networkFlags.ActiveNetParams
 }

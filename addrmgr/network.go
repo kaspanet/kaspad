@@ -225,7 +225,7 @@ func IsValid(na *wire.NetAddress) bool {
 // the public internet.  This is true as long as the address is valid and is not
 // in any reserved ranges.
 func IsRoutable(na *wire.NetAddress) bool {
-	if config.ActiveNetworkFlags.ActiveNetParams.AcceptUnroutable {
+	if config.ActiveConfig().NetParams().AcceptUnroutable {
 		return !IsLocal(na)
 	}
 

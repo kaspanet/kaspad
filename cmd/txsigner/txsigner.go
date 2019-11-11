@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/config"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/wire"
@@ -60,7 +59,7 @@ func parseTransaction(transactionHex string) (*wire.MsgTx, error) {
 }
 
 func createScriptPubKey(publicKey *btcec.PublicKey) ([]byte, error) {
-	p2pkhAddress, err := util.NewAddressPubKeyHashFromPublicKey(publicKey.SerializeCompressed(), config.ActiveNetworkFlags.ActiveNetParams.Prefix)
+	p2pkhAddress, err := util.NewAddressPubKeyHashFromPublicKey(publicKey.SerializeCompressed(), ActiveConfig().NetParams().Prefix)
 	scriptPubKey, err := txscript.PayToAddrScript(p2pkhAddress)
 	return scriptPubKey, err
 }

@@ -15,11 +15,11 @@ func handleGetInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (inter
 		Blocks:          s.cfg.DAG.BlockCount(),
 		TimeOffset:      int64(s.cfg.TimeSource.Offset().Seconds()),
 		Connections:     s.cfg.ConnMgr.ConnectedCount(),
-		Proxy:           config.MainConfig().Proxy,
+		Proxy:           config.ActiveConfig().Proxy,
 		Difficulty:      getDifficultyRatio(s.cfg.DAG.CurrentBits(), s.cfg.DAGParams),
-		TestNet:         config.MainConfig().TestNet,
-		DevNet:          config.MainConfig().DevNet,
-		RelayFee:        config.MainConfig().MinRelayTxFee.ToBTC(),
+		TestNet:         config.ActiveConfig().TestNet,
+		DevNet:          config.ActiveConfig().DevNet,
+		RelayFee:        config.ActiveConfig().MinRelayTxFee.ToBTC(),
 	}
 
 	return ret, nil
