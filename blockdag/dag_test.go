@@ -1042,13 +1042,9 @@ func TestConfirmations(t *testing.T) {
 		if err != nil {
 			t.Fatalf("TestConfirmations: confirmations for tip unexpectedly failed: %s", err)
 		}
-		acceptingBlock, err := dag.acceptingBlock(tip)
-		if err != nil {
-			t.Fatalf("TestConfirmations: dag.acceptingBlock unexpectedly failed: %s", err)
-		}
-		expectedConfirmations := uint64(1)
-		if acceptingBlock == nil {
-			expectedConfirmations = 0
+		expectedConfirmations := uint64(0)
+		if tip == dag.selectedTip() {
+			expectedConfirmations = 1
 		}
 		if tipConfirmations != expectedConfirmations {
 			t.Fatalf("TestConfirmations: unexpected confirmations for tip. "+
@@ -1090,7 +1086,7 @@ func TestConfirmations(t *testing.T) {
 func TestAcceptingBlock(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	params := dagconfig.SimNetParams
-	params.K = 1
+	params.K = 3
 	dag, teardownFunc, err := DAGSetup("TestAcceptingBlock", Config{
 		DAGParams: &params,
 	})
@@ -1105,15 +1101,16 @@ func TestAcceptingBlock(t *testing.T) {
 	if err != nil {
 		t.Fatalf("TestAcceptingBlock: acceptingBlock for genesis block unexpectedly failed: %s", err)
 	}
-	if genesisAcceptingBlock != &dag.virtual.blockNode {
+	if genesisAcceptingBlock != nil {
 		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for genesis block. "+
-			"Want: virtual, got: %s", genesisAcceptingBlock.hash)
+			"Want: nil, got: %s", genesisAcceptingBlock.hash)
 	}
 
-	chainBlocks := make([]*blockNode, 5)
+	numChainBlocks := uint32(10)
+	chainBlocks := make([]*blockNode, numChainBlocks)
 	chainBlocks[0] = dag.genesis
 	buildNode := buildNodeGenerator(dag.dagParams.K, true)
-	for i := uint32(1); i <= 4; i++ {
+	for i := uint32(1); i <= numChainBlocks-1; i++ {
 		chainBlocks[i] = buildNode(setFromSlice(chainBlocks[i-1]))
 		dag.virtual.AddTip(chainBlocks[i])
 	}
@@ -1131,16 +1128,65 @@ func TestAcceptingBlock(t *testing.T) {
 		}
 	}
 
-	branchingBlocks := make([]*blockNode, 2)
-	// Add two branching blocks
-	branchingBlocks[0] = buildNode(setFromSlice(chainBlocks[1]))
-	dag.virtual.AddTip(branchingBlocks[0])
-	branchingBlocks[1] = buildNode(setFromSlice(branchingBlocks[0]))
-	dag.virtual.AddTip(branchingBlocks[1])
+	// Make sure that the selected tip doesn't have an accepting
+	tipAcceptingBlock, err := dag.acceptingBlock(chainBlocks[len(chainBlocks)-1])
+	if err != nil {
+		t.Fatalf("TestAcceptingBlock: acceptingBlock for tip unexpectedly failed: %s", err)
+	}
+	if tipAcceptingBlock != nil {
+		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for tip. "+
+			"Want: nil, got: %s", tipAcceptingBlock.hash)
+	}
+
+	// Generate side-chain of dag.dagParams.K + 1 blocks so its tip
+	// will be in the blues of the virtual but in the anticone of
+	// the selected tip.
+	branchingChainTip := chainBlocks[len(chainBlocks)-2]
+	for i := uint32(0); i < dag.dagParams.K+1; i++ {
+		nextBranchingChainTip := buildNode(setFromSlice(branchingChainTip))
+		dag.virtual.AddTip(nextBranchingChainTip)
+		branchingChainTip = nextBranchingChainTip
+	}
+
+	// Make sure that branchingChainTip is not in the selected parent chain
+	if dag.IsInSelectedParentChain(branchingChainTip.hash) {
+		t.Fatalf("TestAcceptingBlock: branchingChainTip wasn't expected to be in the selected parent chain")
+	}
+
+	// Make sure that branchingChainTip is in the virtual blues
+	isVirtualBlue := false
+	for _, virtualBlue := range dag.virtual.blues {
+		if branchingChainTip == virtualBlue {
+			isVirtualBlue = true
+			break
+		}
+	}
+	if !isVirtualBlue {
+		t.Fatalf("TestAcceptingBlock: redChainBlock was expected to be a virtual blue")
+	}
+
+	// Make sure that a block that is in the anticone of the selected tip and
+	// in the blues of the virtual doesn't have an accepting block
+	branchingChainTipAcceptionBlock, err := dag.acceptingBlock(branchingChainTip)
+	if err != nil {
+		t.Fatalf("TestAcceptingBlock: acceptingBlock for red chain block unexpectedly failed: %s", err)
+	}
+	if branchingChainTipAcceptionBlock != nil {
+		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for branchingChainTipAcceptionBlock. "+
+			"Want: nil, got: %s", branchingChainTipAcceptionBlock.hash)
+	}
+
+	// Add K + 1 branching blocks
+	intersectionBlock := chainBlocks[1]
+	sideChainTip := buildNode(setFromSlice(intersectionBlock))
+	i := uint32(0)
+	for ; i < dag.dagParams.K+1; sideChainTip = buildNode(setFromSlice(sideChainTip)) {
+		dag.virtual.AddTip(sideChainTip)
+		i++
+	}
 
 	// Make sure that the accepting block of the parent of the branching block didn't change
 	expectedAcceptingBlock := chainBlocks[2]
-	intersectionBlock := chainBlocks[1]
 	intersectionAcceptingBlock, err := dag.acceptingBlock(intersectionBlock)
 	if err != nil {
 		t.Fatalf("TestAcceptingBlock: acceptingBlock for intersection block unexpectedly failed: %s", err)
@@ -1150,44 +1196,18 @@ func TestAcceptingBlock(t *testing.T) {
 			"Want: %s, got: %s", expectedAcceptingBlock.hash, intersectionAcceptingBlock.hash)
 	}
 
-	// Make sure that the accepting block of the chain tips is the virtual block
-	tipAcceptingBlock, err := dag.acceptingBlock(chainBlocks[len(chainBlocks)-1])
-	if err != nil {
-		t.Fatalf("TestAcceptingBlock: acceptingBlock for tip unexpectedly failed: %s", err)
-	}
-	if tipAcceptingBlock != &dag.virtual.blockNode {
-		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for tip. "+
-			"Want: Virtual, got: %s", tipAcceptingBlock.hash)
-	}
+	// Make sure that a block that is found in the red set of the selected tip
+	// doesn't have an accepting block
+	newTip := buildNode(setFromSlice(sideChainTip, chainBlocks[len(chainBlocks)-1]))
+	dag.virtual.AddTip(newTip)
 
-	// Generate 100 blocks to force the "main" chain to become red
-	branchingChainTip := branchingBlocks[1]
-	for i := uint32(0); i < 100; i++ {
-		nextBranchingChainTip := buildNode(setFromSlice(branchingChainTip))
-		dag.virtual.AddTip(nextBranchingChainTip)
-		branchingChainTip = nextBranchingChainTip
-	}
-
-	// Make sure that a red block returns nil
-	redChainBlock := chainBlocks[2]
-	redChainBlockAcceptionBlock, err := dag.acceptingBlock(redChainBlock)
+	sideChainTipAcceptingBlock, err := dag.acceptingBlock(sideChainTip)
 	if err != nil {
-		t.Fatalf("TestAcceptingBlock: acceptingBlock for red chain block unexpectedly failed: %s", err)
+		t.Fatalf("TestAcceptingBlock: acceptingBlock for sideChainTip unexpectedly failed: %s", err)
 	}
-	if redChainBlockAcceptionBlock != nil {
-		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for red chain block. "+
-			"Want: nil, got: %s", redChainBlockAcceptionBlock.hash)
-	}
-
-	// Make sure that a red tip returns nil
-	redChainTip := chainBlocks[len(chainBlocks)-1]
-	redChainTipAcceptingBlock, err := dag.acceptingBlock(redChainTip)
-	if err != nil {
-		t.Fatalf("TestAcceptingBlock: acceptingBlock for red chain tip unexpectedly failed: %s", err)
-	}
-	if redChainTipAcceptingBlock != nil {
-		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for red tip block. "+
-			"Want: nil, got: %s", redChainTipAcceptingBlock.hash)
+	if sideChainTipAcceptingBlock != nil {
+		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for sideChainTip. "+
+			"Want: nil, got: %s", intersectionAcceptingBlock.hash)
 	}
 }
 

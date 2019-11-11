@@ -6,12 +6,15 @@ import (
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/dbmodels"
 	"github.com/daglabs/btcd/apiserver/jsonrpc"
+	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/config"
 	"github.com/daglabs/btcd/httpserverutils"
 	"github.com/daglabs/btcd/txscript"
+	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/daglabs/btcd/wire"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 	"strconv"
@@ -269,6 +272,7 @@ func addBlock(client *jsonrpc.Client, block string, rawBlock btcjson.GetBlockVer
 		return err
 	}
 
+	blockMass := uint64(0)
 	for i, transaction := range rawBlock.RawTx {
 		dbSubnetwork, err := insertSubnetwork(dbTx, &transaction, client)
 		if err != nil {
@@ -278,6 +282,7 @@ func addBlock(client *jsonrpc.Client, block string, rawBlock btcjson.GetBlockVer
 		if err != nil {
 			return err
 		}
+		blockMass += dbTransaction.Mass
 		err = insertTransactionBlock(dbTx, dbBlock, dbTransaction, uint32(i))
 		if err != nil {
 			return err
@@ -290,6 +295,13 @@ func addBlock(client *jsonrpc.Client, block string, rawBlock btcjson.GetBlockVer
 		if err != nil {
 			return err
 		}
+	}
+
+	dbBlock.Mass = blockMass
+	dbResult := dbTx.Save(dbBlock)
+	dbErrors := dbResult.GetErrors()
+	if httpserverutils.HasDBError(dbErrors) {
+		return httpserverutils.NewErrorFromDBErrors("failed to update block: ", dbErrors)
 	}
 
 	dbTx.Commit()
@@ -416,6 +428,10 @@ func insertTransaction(dbTx *gorm.DB, transaction *btcjson.TxRawResult, dbSubnet
 		return nil, httpserverutils.NewErrorFromDBErrors("failed to find transaction: ", dbErrors)
 	}
 	if httpserverutils.IsDBRecordNotFoundError(dbErrors) {
+		mass, err := calcTxMass(dbTx, transaction)
+		if err != nil {
+			return nil, err
+		}
 		payload, err := hex.DecodeString(transaction.Payload)
 		if err != nil {
 			return nil, err
@@ -428,6 +444,7 @@ func insertTransaction(dbTx *gorm.DB, transaction *btcjson.TxRawResult, dbSubnet
 			Gas:             transaction.Gas,
 			PayloadHash:     transaction.PayloadHash,
 			Payload:         payload,
+			Mass:            mass,
 		}
 		dbResult := dbTx.Create(&dbTransaction)
 		dbErrors := dbResult.GetErrors()
@@ -436,6 +453,85 @@ func insertTransaction(dbTx *gorm.DB, transaction *btcjson.TxRawResult, dbSubnet
 		}
 	}
 	return &dbTransaction, nil
+}
+
+func calcTxMass(dbTx *gorm.DB, transaction *btcjson.TxRawResult) (uint64, error) {
+	msgTx, err := convertTxRawResultToMsgTx(transaction)
+	if err != nil {
+		return 0, err
+	}
+	prevTxIDs := make([]string, len(transaction.Vin))
+	for i, txIn := range transaction.Vin {
+		prevTxIDs[i] = txIn.TxID
+	}
+	var prevDBTransactionsOutputs []dbmodels.TransactionOutput
+	dbResult := dbTx.
+		Joins("LEFT JOIN `transactions` ON `transactions`.`id` = `transaction_outputs`.`transaction_id`").
+		Where("transactions.transaction_id in (?)", prevTxIDs).
+		Preload("Transaction").
+		Find(&prevDBTransactionsOutputs)
+	dbErrors := dbResult.GetErrors()
+	if len(dbErrors) > 0 {
+		return 0, httpserverutils.NewErrorFromDBErrors("error fetching previous transactions: ", dbErrors)
+	}
+	prevScriptPubKeysMap := make(map[string]map[uint32][]byte)
+	for _, prevDBTransactionsOutput := range prevDBTransactionsOutputs {
+		txID := prevDBTransactionsOutput.Transaction.TransactionID
+		if prevScriptPubKeysMap[txID] == nil {
+			prevScriptPubKeysMap[txID] = make(map[uint32][]byte)
+		}
+		prevScriptPubKeysMap[txID][prevDBTransactionsOutput.Index] = prevDBTransactionsOutput.ScriptPubKey
+	}
+	orderedPrevScriptPubKeys := make([][]byte, len(transaction.Vin))
+	for i, txIn := range transaction.Vin {
+		orderedPrevScriptPubKeys[i] = prevScriptPubKeysMap[txIn.TxID][uint32(i)]
+	}
+	return blockdag.CalcTxMass(util.NewTx(msgTx), orderedPrevScriptPubKeys), nil
+}
+
+func convertTxRawResultToMsgTx(tx *btcjson.TxRawResult) (*wire.MsgTx, error) {
+	txIns := make([]*wire.TxIn, len(tx.Vin))
+	for i, txIn := range tx.Vin {
+		prevTxID, err := daghash.NewTxIDFromStr(txIn.TxID)
+		if err != nil {
+			return nil, err
+		}
+		signatureScript, err := hex.DecodeString(txIn.ScriptSig.Hex)
+		if err != nil {
+			return nil, err
+		}
+		txIns[i] = &wire.TxIn{
+			PreviousOutpoint: wire.Outpoint{
+				TxID:  *prevTxID,
+				Index: txIn.Vout,
+			},
+			SignatureScript: signatureScript,
+			Sequence:        txIn.Sequence,
+		}
+	}
+	txOuts := make([]*wire.TxOut, len(tx.Vout))
+	for i, txOut := range tx.Vout {
+		scriptPubKey, err := hex.DecodeString(txOut.ScriptPubKey.Hex)
+		if err != nil {
+			return nil, err
+		}
+		txOuts[i] = &wire.TxOut{
+			Value:        txOut.Value,
+			ScriptPubKey: scriptPubKey,
+		}
+	}
+	subnetworkID, err := subnetworkid.NewFromStr(tx.Subnetwork)
+	if err != nil {
+		return nil, err
+	}
+	if subnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
+		return wire.NewNativeMsgTx(tx.Version, txIns, txOuts), nil
+	}
+	payload, err := hex.DecodeString(tx.Payload)
+	if err != nil {
+		return nil, err
+	}
+	return wire.NewSubnetworkMsgTx(tx.Version, txIns, txOuts, subnetworkID, tx.Gas, payload), nil
 }
 
 func insertTransactionBlock(dbTx *gorm.DB, dbBlock *dbmodels.Block, dbTransaction *dbmodels.Transaction, index uint32) error {
