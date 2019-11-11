@@ -38,7 +38,8 @@ services:
       "--miningaddr=dagtest:qrgufg4qzfqacfzrf6xvx46aqedr5nke3qv6a74fex",
       "--rpclisten=0.0.0.0:18334",
       "--rpccert=/go/src/github.com/daglabs/btcd/docker/rpc.cert",
-      "--rpckey=/go/src/github.com/daglabs/btcd/docker/rpc.key"
+      "--rpckey=/go/src/github.com/daglabs/btcd/docker/rpc.key",
+      "--acceptanceindex"
     ]
     ports: ["18335:18334"]
 
