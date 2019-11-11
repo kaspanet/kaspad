@@ -6,13 +6,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/daglabs/btcd/config"
 	"github.com/pkg/errors"
 	"net"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/util"
 	"github.com/jessevdk/go-flags"
 )
@@ -25,9 +25,6 @@ const (
 )
 
 var (
-	// Default network parameters
-	activeNetParams = &dagconfig.MainNetParams
-
 	// Default configuration options
 	defaultHomeDir    = util.AppDataDir("dnsseeder", false)
 	defaultConfigFile = filepath.Join(defaultHomeDir, defaultConfigFilename)
@@ -35,19 +32,18 @@ var (
 	defaultErrLogFile = filepath.Join(defaultHomeDir, defaultErrLogFilename)
 )
 
-// config defines the configuration options for hardforkdemo.
+// configFlags defines the configuration options for hardforkdemo.
 //
 // See loadConfig for details on the configuration load process.
-type config struct {
+type configFlags struct {
 	Host       string `short:"H" long:"host" description:"Seed DNS address"`
 	Listen     string `long:"listen" short:"l" description:"Listen on address:port"`
 	Nameserver string `short:"n" long:"nameserver" description:"hostname of nameserver"`
 	Seeder     string `short:"s" long:"default seeder" description:"IP address of a  working node"`
-	TestNet    bool   `long:"testnet" description:"Use testnet"`
-	DevNet     bool   `long:"devnet" description:"Use devnet"`
+	config.NetworkFlags
 }
 
-func loadConfig() (*config, error) {
+func loadConfig() (*configFlags, error) {
 	err := os.MkdirAll(defaultHomeDir, 0700)
 	if err != nil {
 		// Show a nicer error message if it's because a symlink is
@@ -67,7 +63,7 @@ func loadConfig() (*config, error) {
 	}
 
 	// Default config.
-	cfg := config{
+	cfg := configFlags{
 		Listen: normalizeAddress("localhost", defaultListenPort),
 	}
 
@@ -92,7 +88,7 @@ func loadConfig() (*config, error) {
 	err = flags.NewIniParser(parser).ParseFile(defaultConfigFile)
 	if err != nil {
 		if _, ok := err.(*os.PathError); !ok {
-			fmt.Fprintf(os.Stderr, "Error parsing config "+
+			fmt.Fprintf(os.Stderr, "Error parsing configFlags "+
 				"file: %v\n", err)
 			fmt.Fprintln(os.Stderr, usageMessage)
 			return nil, err
@@ -124,15 +120,9 @@ func loadConfig() (*config, error) {
 
 	cfg.Listen = normalizeAddress(cfg.Listen, defaultListenPort)
 
-	if cfg.TestNet && cfg.DevNet {
-		str := "Both testnet and devnet are specified"
-		err := errors.Errorf(str)
-		fmt.Fprintln(os.Stderr, err)
+	err = cfg.ResolveNetwork(parser)
+	if err != nil {
 		return nil, err
-	} else if cfg.TestNet {
-		activeNetParams = &dagconfig.TestNetParams
-	} else if cfg.DevNet {
-		activeNetParams = &dagconfig.DevNetParams
 	}
 
 	initLog(defaultLogFile, defaultErrLogFile)
