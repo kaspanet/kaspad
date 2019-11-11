@@ -39,7 +39,7 @@ var (
 
 	// throttledConnFailedLogInterval is the minimum duration of time between
 	// the logs defined in throttledConnFailedLogs.
-	throttledConnFailedLogInterval = time.Minute * 1
+	throttledConnFailedLogInterval = time.Minute * 10
 
 	// throttledConnFailedLogs are logs that get written at most every
 	// throttledConnFailedLogInterval. Each entry in this map defines a type
