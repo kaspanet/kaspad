@@ -20,9 +20,6 @@ import (
 const maxFailedAttempts = 25
 
 var (
-	//ErrDialNil is used to indicate that Dial cannot be nil in the configuration.
-	ErrDialNil = errors.New("Config: Dial cannot be nil")
-
 	// maxRetryDuration is the max duration of time retrying of a persistent
 	// connection is allowed to grow to.  This is necessary since the retry
 	// logic uses a backoff mechanism which increases the interval base times
@@ -36,18 +33,6 @@ var (
 	// defaultTargetOutbound is the default number of outbound connections to
 	// maintain.
 	defaultTargetOutbound = uint32(8)
-
-	// throttledConnFailedLogInterval is the minimum duration of time between
-	// the logs defined in throttledConnFailedLogs.
-	throttledConnFailedLogInterval = time.Minute * 10
-
-	// throttledConnFailedLogs are logs that get written at most every
-	// throttledConnFailedLogInterval. Each entry in this map defines a type
-	// of error that we want to throttle. The value of each entry is the last
-	// time that type of log had been written.
-	throttledConnFailedLogs = map[throttledError]time.Time{
-		ErrNoAddress: {},
-	}
 )
 
 // throttledError defines an error type whose logs get throttled. This is to
@@ -55,9 +40,27 @@ var (
 type throttledError error
 
 var (
+	//ErrDialNil is used to indicate that Dial cannot be nil in the configuration.
+	ErrDialNil = errors.New("Config: Dial cannot be nil")
+
 	// ErrNoAddress is an error that is thrown when there aren't any
 	// valid connection addresses.
 	ErrNoAddress throttledError = errors.New("no valid connect address")
+
+	// ErrMaxPeers is an error that is thrown when the max amount of peers had
+	// been reached.
+	ErrMaxPeers = errors.New("max peers reached")
+
+	// ErrAlreadyConnected is an error that is thrown if the peer is already
+	// connected.
+	ErrAlreadyConnected = errors.New("peer already connected")
+
+	// ErrAlreadyPermanent is an error that is thrown if the peer is already
+	// connected as a permanent peer.
+	ErrAlreadyPermanent = errors.New("peer exists as a permanent peer")
+
+	// ErrPeerNotFound is an error that is thrown if the peer was not found.
+	ErrPeerNotFound = errors.New("peer not found")
 )
 
 // ConnState represents the state of the requested connection.
@@ -255,6 +258,20 @@ func (cm *ConnManager) handleFailedConn(c *ConnReq, err error) {
 		}
 	}
 }
+
+var (
+	// throttledConnFailedLogInterval is the minimum duration of time between
+	// the logs defined in throttledConnFailedLogs.
+	throttledConnFailedLogInterval = time.Minute * 10
+
+	// throttledConnFailedLogs are logs that get written at most every
+	// throttledConnFailedLogInterval. Each entry in this map defines a type
+	// of error that we want to throttle. The value of each entry is the last
+	// time that type of log had been written.
+	throttledConnFailedLogs = map[throttledError]time.Time{
+		ErrNoAddress: {},
+	}
+)
 
 // shouldWriteConnFailedLog resolves whether to write logs related to connection
 // failures. Errors that had not been previously registered in throttledConnFailedLogs
