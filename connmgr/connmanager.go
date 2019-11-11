@@ -5,6 +5,7 @@
 package connmgr
 
 import (
+	nativeerrors "errors"
 	"fmt"
 	"github.com/pkg/errors"
 	"net"
@@ -38,20 +39,25 @@ var (
 
 	// throttledConnFailedLogInterval is the minimum duration of time between
 	// the logs defined in throttledConnFailedLogs.
-	throttledConnFailedLogInterval = time.Minute * 10
+	throttledConnFailedLogInterval = time.Minute * 1
 
 	// throttledConnFailedLogs are logs that get written at most every
-	// throttledConnFailedLogInterval. The values in this map are the last
-	// times each type of log had been written.
-	throttledConnFailedLogs = map[error]time.Time{
+	// throttledConnFailedLogInterval. Each entry in this map defines a type
+	// of error that we want to throttle. The value of each entry is the last
+	// time that type of log had been written.
+	throttledConnFailedLogs = map[throttledError]time.Time{
 		ErrNoAddress: {},
 	}
 )
 
+// throttledError defines an error type whose logs get throttled. This is to
+// prevent flooding the logs with identical errors.
+type throttledError error
+
 var (
 	// ErrNoAddress is an error that is thrown when there aren't any
 	// valid connection addresses.
-	ErrNoAddress = errors.New("no valid connect address")
+	ErrNoAddress throttledError = errors.New("no valid connect address")
 )
 
 // ConnState represents the state of the requested connection.
@@ -217,7 +223,8 @@ func (cm *ConnManager) handleFailedConn(c *ConnReq, err error) {
 	// Don't write throttled logs more than once every throttledConnFailedLogInterval
 	shouldWriteLog := shouldWriteConnFailedLog(err)
 	if shouldWriteLog {
-		throttledConnFailedLogs[err] = time.Now()
+		// If we are to write a log, set its lastLogTime to now
+		setConnFailedLastLogTime(err, time.Now())
 	}
 
 	if c.Permanent {
@@ -250,13 +257,21 @@ func (cm *ConnManager) handleFailedConn(c *ConnReq, err error) {
 }
 
 // shouldWriteConnFailedLog resolves whether to write logs related to connection
-// failures.
+// failures. Errors that had not been previously registered in throttledConnFailedLogs
+// and non-error (nil values) must always be logged.
 func shouldWriteConnFailedLog(err error) bool {
 	if err == nil {
 		return true
 	}
 	lastLogTime, ok := throttledConnFailedLogs[err]
 	return !ok || lastLogTime.Add(throttledConnFailedLogInterval).Before(time.Now())
+}
+
+// setConnFailedLastLogTime sets the last log time of the specified error
+func setConnFailedLastLogTime(err error, lastLogTime time.Time) {
+	var throttledErr throttledError
+	nativeerrors.As(err, &throttledErr)
+	throttledConnFailedLogs[err] = lastLogTime
 }
 
 // connHandler handles all connection related requests.  It must be run as a
