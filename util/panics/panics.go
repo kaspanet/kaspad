@@ -10,7 +10,9 @@ import (
 func HandlePanic(log logs.Logger, backendLog *logs.Backend, goroutineStackTrace []byte) {
 	if err := recover(); err != nil {
 		log.Criticalf("Fatal error: %+v", err)
-		log.Criticalf("goroutine stack trance: %s", goroutineStackTrace)
+		if goroutineStackTrace != nil {
+			log.Criticalf("goroutine stack trance: %s", goroutineStackTrace)
+		}
 		log.Criticalf("Stack trace: %s", debug.Stack())
 		if backendLog != nil {
 			backendLog.Close()
