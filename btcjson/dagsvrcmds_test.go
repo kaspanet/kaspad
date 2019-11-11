@@ -658,36 +658,6 @@ func TestDAGSvrCmds(t *testing.T) {
 			},
 		},
 		{
-			name: "getTxOutProof",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getTxOutProof", []string{"123", "456"})
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewGetTxOutProofCmd([]string{"123", "456"}, nil)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getTxOutProof","params":[["123","456"]],"id":1}`,
-			unmarshalled: &btcjson.GetTxOutProofCmd{
-				TxIDs: []string{"123", "456"},
-			},
-		},
-		{
-			name: "getTxOutProof optional",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getTxOutProof", []string{"123", "456"},
-					btcjson.String("000000000000034a7dedef4a161fa058a2d67a173a90155f3a2fe6fc132e0ebf"))
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewGetTxOutProofCmd([]string{"123", "456"},
-					btcjson.String("000000000000034a7dedef4a161fa058a2d67a173a90155f3a2fe6fc132e0ebf"))
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getTxOutProof","params":[["123","456"],` +
-				`"000000000000034a7dedef4a161fa058a2d67a173a90155f3a2fe6fc132e0ebf"],"id":1}`,
-			unmarshalled: &btcjson.GetTxOutProofCmd{
-				TxIDs:     []string{"123", "456"},
-				BlockHash: btcjson.String("000000000000034a7dedef4a161fa058a2d67a173a90155f3a2fe6fc132e0ebf"),
-			},
-		},
-		{
 			name: "getTxOutSetInfo",
 			newCmd: func() (interface{}, error) {
 				return btcjson.NewCmd("getTxOutSetInfo")
@@ -1046,19 +1016,6 @@ func TestDAGSvrCmds(t *testing.T) {
 			marshalled: `{"jsonrpc":"1.0","method":"validateAddress","params":["1Address"],"id":1}`,
 			unmarshalled: &btcjson.ValidateAddressCmd{
 				Address: "1Address",
-			},
-		},
-		{
-			name: "verifyTxOutProof",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("verifyTxOutProof", "test")
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewVerifyTxOutProofCmd("test")
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"verifyTxOutProof","params":["test"],"id":1}`,
-			unmarshalled: &btcjson.VerifyTxOutProofCmd{
-				Proof: "test",
 			},
 		},
 	}
