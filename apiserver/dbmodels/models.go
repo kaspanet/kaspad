@@ -104,7 +104,7 @@ type TransactionInput struct {
 	Sequence                    uint64
 }
 
-// Address is the gorm model for the 'utxos' table
+// Address is the gorm model for the 'addresses' table
 type Address struct {
 	ID      uint64 `gorm:"primary_key"`
 	Address string

@@ -10,7 +10,7 @@ import (
 const (
 	// maxBlocksInGetBlocksResult is the max amount of blocks that are
 	// allowed in a GetBlocksResult.
-	maxBlocksInGetBlocksResult = 100
+	maxBlocksInGetBlocksResult = 1000
 )
 
 func handleGetBlocks(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
