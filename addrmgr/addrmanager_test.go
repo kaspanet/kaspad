@@ -33,12 +33,6 @@ var naTests = make([]naTest, 0)
 // Put some IP in here for convenience. Points to google.
 var someIP = "173.194.115.66"
 
-func init() {
-	config.ActiveNetworkFlags = &config.NetworkFlags{
-		ActiveNetParams: &dagconfig.SimNetParams,
-	}
-}
-
 // addNaTests
 func addNaTests() {
 	// IPv4
@@ -121,6 +115,9 @@ func TestStartStop(t *testing.T) {
 }
 
 func TestAddAddressByIP(t *testing.T) {
+	config.ActiveNetworkFlags = &config.NetworkFlags{
+		ActiveNetParams: &dagconfig.SimNetParams,
+	}
 	fmtErr := errors.Errorf("")
 	addrErr := &net.AddrError{}
 	var tests = []struct {
