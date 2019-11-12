@@ -8,7 +8,7 @@ import (
 // handleGetMiningInfo implements the getMiningInfo command. We only return the
 // fields that are not related to wallet functionality.
 func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	if config.MainConfig().SubnetworkID != nil {
+	if config.ActiveConfig().SubnetworkID != nil {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInvalidRequest.Code,
 			Message: "`getMiningInfo` is not supported on partial nodes.",
@@ -50,8 +50,8 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 		HashesPerSec:     int64(s.cfg.CPUMiner.HashesPerSecond()),
 		NetworkHashPS:    networkHashesPerSec,
 		PooledTx:         uint64(s.cfg.TxMemPool.Count()),
-		TestNet:          config.MainConfig().TestNet,
-		DevNet:           config.MainConfig().DevNet,
+		TestNet:          config.ActiveConfig().TestNet,
+		DevNet:           config.ActiveConfig().DevNet,
 	}
 	return &result, nil
 }

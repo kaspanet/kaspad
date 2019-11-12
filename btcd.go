@@ -52,11 +52,11 @@ var winServiceMain func() (bool, error)
 func btcdMain(serverChan chan<- *server.Server) error {
 	// Load configuration and parse command line.  This function also
 	// initializes logging and configures it accordingly.
-	err := config.LoadAndSetMainConfig()
+	err := config.LoadAndSetActiveConfig()
 	if err != nil {
 		return err
 	}
-	cfg = config.MainConfig()
+	cfg = config.ActiveConfig()
 	defer panics.HandlePanic(btcdLog, logger.BackendLog)
 
 	// Get a channel that will be closed when a shutdown signal has been
@@ -166,7 +166,7 @@ func btcdMain(serverChan chan<- *server.Server) error {
 	}
 
 	// Create server and start it.
-	server, err := server.NewServer(cfg.Listeners, db, config.ActiveNetParams(),
+	server, err := server.NewServer(cfg.Listeners, db, config.ActiveConfig().NetParams(),
 		interrupt)
 	if err != nil {
 		// TODO: this logging could do with some beautifying.
@@ -297,7 +297,7 @@ func loadBlockDB() (database.DB, error) {
 	removeRegressionDB(dbPath)
 
 	btcdLog.Infof("Loading block database from '%s'", dbPath)
-	db, err := database.Open(cfg.DbType, dbPath, config.ActiveNetParams().Net)
+	db, err := database.Open(cfg.DbType, dbPath, config.ActiveConfig().NetParams().Net)
 	if err != nil {
 		// Return the error if it's not because the database doesn't
 		// exist.
@@ -312,7 +312,7 @@ func loadBlockDB() (database.DB, error) {
 		if err != nil {
 			return nil, err
 		}
-		db, err = database.Create(cfg.DbType, dbPath, config.ActiveNetParams().Net)
+		db, err = database.Create(cfg.DbType, dbPath, config.ActiveConfig().NetParams().Net)
 		if err != nil {
 			return nil, err
 		}

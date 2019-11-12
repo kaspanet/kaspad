@@ -10,7 +10,7 @@ import (
 func handleGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	// Respond with an error if there are no addresses to pay the
 	// created blocks to.
-	if len(config.MainConfig().MiningAddrs) == 0 {
+	if len(config.ActiveConfig().MiningAddrs) == 0 {
 		return nil, &btcjson.RPCError{
 			Code: btcjson.ErrRPCInternal.Code,
 			Message: "No payment addresses specified " +
@@ -18,7 +18,7 @@ func handleGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		}
 	}
 
-	if config.MainConfig().SubnetworkID != nil {
+	if config.ActiveConfig().SubnetworkID != nil {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInvalidRequest.Code,
 			Message: "`generate` is not supported on partial nodes.",

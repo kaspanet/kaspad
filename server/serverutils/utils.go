@@ -45,7 +45,7 @@ func BTCDLookup(host string) ([]net.IP, error) {
 		return nil, errors.Errorf("attempt to resolve tor address %s", host)
 	}
 
-	return config.MainConfig().Lookup(host)
+	return config.ActiveConfig().Lookup(host)
 }
 
 // GenCertPair generates a key/cert pair to the paths provided.
@@ -79,8 +79,8 @@ func GenCertPair(certFile, keyFile string) error {
 // could itself use a proxy or not).
 func BTCDDial(addr net.Addr) (net.Conn, error) {
 	if strings.Contains(addr.String(), ".onion:") {
-		return config.MainConfig().OnionDial(addr.Network(), addr.String(),
+		return config.ActiveConfig().OnionDial(addr.Network(), addr.String(),
 			config.DefaultConnectTimeout)
 	}
-	return config.MainConfig().Dial(addr.Network(), addr.String(), config.DefaultConnectTimeout)
+	return config.ActiveConfig().Dial(addr.Network(), addr.String(), config.DefaultConnectTimeout)
 }

@@ -53,7 +53,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 				Message: "invalid subnetwork string",
 			}
 		}
-		nodeSubnetworkID := config.MainConfig().SubnetworkID
+		nodeSubnetworkID := config.ActiveConfig().SubnetworkID
 
 		if requestSubnetworkID != nil {
 			if nodeSubnetworkID != nil {

@@ -11,7 +11,7 @@ import (
 // accordingly.  We pass the message down to blockmanager which will call
 // QueueMessage with any appropriate responses.
 func (sp *Peer) OnInv(_ *peer.Peer, msg *wire.MsgInv) {
-	if !config.MainConfig().BlocksOnly {
+	if !config.ActiveConfig().BlocksOnly {
 		if len(msg.InvList) > 0 {
 			sp.server.SyncManager.QueueInv(msg, sp.Peer)
 		}

@@ -5,6 +5,9 @@
 package addrmgr_test
 
 import (
+	"bou.ke/monkey"
+	"github.com/daglabs/btcd/config"
+	"github.com/daglabs/btcd/dagconfig"
 	"net"
 	"testing"
 
@@ -15,6 +18,16 @@ import (
 // TestIPTypes ensures the various functions which determine the type of an IP
 // address based on RFCs work as intended.
 func TestIPTypes(t *testing.T) {
+	activeConfigPatch := monkey.Patch(config.ActiveConfig, func() *config.Config {
+		return &config.Config{
+			Flags: &config.Flags{
+				NetworkFlags: config.NetworkFlags{
+					ActiveNetParams: &dagconfig.SimNetParams},
+			},
+		}
+	})
+	defer activeConfigPatch.Unpatch()
+
 	type ipTest struct {
 		in       wire.NetAddress
 		rfc1918  bool
@@ -145,6 +158,16 @@ func TestIPTypes(t *testing.T) {
 // TestGroupKey tests the GroupKey function to ensure it properly groups various
 // IP addresses.
 func TestGroupKey(t *testing.T) {
+	activeConfigPatch := monkey.Patch(config.ActiveConfig, func() *config.Config {
+		return &config.Config{
+			Flags: &config.Flags{
+				NetworkFlags: config.NetworkFlags{
+					ActiveNetParams: &dagconfig.SimNetParams},
+			},
+		}
+	})
+	defer activeConfigPatch.Unpatch()
+
 	tests := []struct {
 		name     string
 		ip       string

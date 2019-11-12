@@ -19,7 +19,7 @@ import (
 const blockDbNamePrefix = "blocks"
 
 var (
-	cfg *config
+	cfg *ConfigFlags
 )
 
 // loadBlockDB opens the block database and returns a handle to it.
@@ -28,7 +28,7 @@ func loadBlockDB() (database.DB, error) {
 	dbName := blockDbNamePrefix + "_" + cfg.DbType
 	dbPath := filepath.Join(cfg.DataDir, dbName)
 	fmt.Printf("Loading block database from '%s'\n", dbPath)
-	db, err := database.Open(cfg.DbType, dbPath, activeNetParams.Net)
+	db, err := database.Open(cfg.DbType, dbPath, ActiveConfig().NetParams().Net)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func findCandidates(dag *blockdag.BlockDAG, highestTipHash *daghash.Hash) ([]*da
 		// Set the latest checkpoint to the genesis block if there isn't
 		// already one.
 		latestCheckpoint = &dagconfig.Checkpoint{
-			Hash:        activeNetParams.GenesisHash,
+			Hash:        ActiveConfig().NetParams().GenesisHash,
 			ChainHeight: 0,
 		}
 	}
@@ -72,7 +72,7 @@ func findCandidates(dag *blockdag.BlockDAG, highestTipHash *daghash.Hash) ([]*da
 	// For the first checkpoint, the required height is any block after the
 	// genesis block, so long as the DAG has at least the required number
 	// of confirmations (which is enforced above).
-	if len(activeNetParams.Checkpoints) == 0 {
+	if len(ActiveConfig().NetParams().Checkpoints) == 0 {
 		requiredChainHeight = 1
 	}
 
@@ -153,7 +153,7 @@ func main() {
 	// util.
 	dag, err := blockdag.New(&blockdag.Config{
 		DB:         db,
-		DAGParams:  activeNetParams,
+		DAGParams:  ActiveConfig().NetParams(),
 		TimeSource: blockdag.NewMedianTime(),
 	})
 	if err != nil {
