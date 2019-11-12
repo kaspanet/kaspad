@@ -2026,7 +2026,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	if err := vm.checkHashTypeEncoding(hashType); err != nil {
 		return err
 	}
-	if err := vm.checkSignatureEncoding(sigBytes); err != nil {
+	if err := vm.checkSignatureLength(sigBytes); err != nil {
 		return err
 	}
 	if err := vm.checkPubKeyEncoding(pkBytes); err != nil {
@@ -2048,7 +2048,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 		return nil
 	}
 
-	signature, err := btcec.ParseDERSignature(sigBytes, btcec.S256())
+	signature, err := btcec.ParseSignature(sigBytes)
 	if err != nil {
 		vm.dstack.PushBool(false)
 		return nil
@@ -2212,14 +2212,13 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 			if err := vm.checkHashTypeEncoding(hashType); err != nil {
 				return err
 			}
-			if err := vm.checkSignatureEncoding(signature); err != nil {
+			if err := vm.checkSignatureLength(signature); err != nil {
 				return err
 			}
 
 			// Parse the signature.
 			var err error
-			parsedSig, err = btcec.ParseDERSignature(signature,
-				btcec.S256())
+			parsedSig, err = btcec.ParseSignature(signature)
 
 			sigInfo.parsed = true
 			if err != nil {

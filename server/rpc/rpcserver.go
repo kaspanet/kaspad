@@ -106,7 +106,6 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"submitBlock":           handleSubmitBlock,
 	"uptime":                handleUptime,
 	"validateAddress":       handleValidateAddress,
-	"verifyMessage":         handleVerifyMessage,
 	"version":               handleVersion,
 }
 
@@ -165,7 +164,6 @@ var rpcLimited = map[string]struct{}{
 	"submitBlock":           {},
 	"uptime":                {},
 	"validateAddress":       {},
-	"verifyMessage":         {},
 	"version":               {},
 }
 
