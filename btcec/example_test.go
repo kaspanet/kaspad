@@ -7,9 +7,9 @@ package btcec_test
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/daglabs/btcd/util/daghash"
 
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/util/daghash"
 )
 
 // This example demonstrates signing a message with a secp256k1 private key that
@@ -41,7 +41,7 @@ func Example_signMessage() {
 	fmt.Printf("Signature Verified? %v\n", verified)
 
 	// Output:
-	// Serialized Signature: 304402201008e236fa8cd0f25df4482dddbb622e8a8b26ef0ba731719458de3ccd93805b022032f8ebe514ba5f672466eba334639282616bb3c2f0ab09998037513d1f9e3d6d
+	// Serialized Signature: 275d1c73a01b023377633cd1eaa6460e8cd0542ba089ad50450a8197246b3ef6d6836ef5a18226132c305e2b2060a699529cadc816fc98d63bc7d05771acec4d
 	// Signature Verified? true
 }
 
@@ -63,15 +63,14 @@ func Example_verifySignature() {
 	}
 
 	// Decode hex-encoded serialized signature.
-	sigBytes, err := hex.DecodeString("30450220090ebfb3690a0ff115bb1b38b" +
-		"8b323a667b7653454f1bccb06d4bbdca42c2079022100ec95778b51e707" +
-		"1cb1205f8bde9af6592fc978b0452dafe599481c46d6b2e479")
+	sigBytes, err := hex.DecodeString("275d1c73a01b023377633cd1eaa6460e8cd0542ba" +
+		"089ad50450a8197246b3ef6d6836ef5a18226132c305e2b2060a699529cadc816fc98d63bc7d05771acec4d")
 
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	signature, err := btcec.ParseSignature(sigBytes, btcec.S256())
+	signature, err := btcec.ParseSignature(sigBytes)
 	if err != nil {
 		fmt.Println(err)
 		return
