@@ -1040,6 +1040,7 @@ type BlockTxsAcceptanceData struct {
 // It's a slice of the block's blues block IDs and their transaction acceptance data
 type MultiBlockTxsAcceptanceData []BlockTxsAcceptanceData
 
+// FindAcceptanceData finds the BlockTxsAcceptanceData that matches blockHash
 func (data MultiBlockTxsAcceptanceData) FindAcceptanceData(blockHash *daghash.Hash) (*BlockTxsAcceptanceData, bool) {
 	for _, acceptanceData := range data {
 		if acceptanceData.BlockHash.IsEqual(blockHash) {
