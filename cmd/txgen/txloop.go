@@ -61,7 +61,7 @@ var (
 )
 
 // txLoop performs main loop of transaction generation
-func txLoop(client *txgenClient, cfg *config) error {
+func txLoop(client *txgenClient, cfg *configFlags) error {
 	filterAddresses := []util.Address{p2pkhAddress}
 	var err error
 	primaryScriptPubKey, err = txscript.PayToAddrScript(p2pkhAddress)
@@ -217,7 +217,7 @@ func randomIntegerWithAverageTarget(target uint64, allowZero bool) uint64 {
 	return uint64(math.Round(randomNum))
 }
 
-func createRandomTxFromFunds(walletUTXOSet utxoSet, cfg *config, gasLimitMap map[subnetworkid.SubnetworkID]uint64, funds uint64) (tx *wire.MsgTx, isSecondaryAddress bool, err error) {
+func createRandomTxFromFunds(walletUTXOSet utxoSet, cfg *configFlags, gasLimitMap map[subnetworkid.SubnetworkID]uint64, funds uint64) (tx *wire.MsgTx, isSecondaryAddress bool, err error) {
 	if secondaryScriptPubKey != nil && !sentToSecondaryAddress && funds > minSecondaryTxAmount {
 		tx, err = createTx(walletUTXOSet, minSecondaryTxAmount, cfg.AverageFeeRate, 1, 1, subnetworkid.SubnetworkIDNative, 0, 0, secondaryScriptPubKey)
 		if err != nil {
@@ -266,7 +266,7 @@ func createRandomTxFromFunds(walletUTXOSet utxoSet, cfg *config, gasLimitMap map
 }
 
 func enqueueTransactions(client *txgenClient, blockAdded *blockAddedMsg, walletUTXOSet utxoSet, walletTxs map[daghash.TxID]*walletTransaction,
-	txChan chan *wire.MsgTx, cfg *config, gasLimitMap map[subnetworkid.SubnetworkID]uint64) error {
+	txChan chan *wire.MsgTx, cfg *configFlags, gasLimitMap map[subnetworkid.SubnetworkID]uint64) error {
 	if err := applyConfirmedTransactionsAndResendNonAccepted(client, walletTxs, walletUTXOSet, blockAdded.chainHeight, txChan); err != nil {
 		return err
 	}

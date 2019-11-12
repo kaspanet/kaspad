@@ -3,12 +3,12 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/daglabs/btcd/apiserver/config"
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/dbmodels"
 	"github.com/daglabs/btcd/apiserver/jsonrpc"
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"
+	"github.com/daglabs/btcd/config"
 	"github.com/daglabs/btcd/httpserverutils"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
@@ -648,7 +648,7 @@ func insertTransactionOutputs(dbTx *gorm.DB, transaction *btcjson.TxRawResult, d
 }
 
 func insertAddress(dbTx *gorm.DB, scriptPubKey []byte) (*dbmodels.Address, error) {
-	_, addr, err := txscript.ExtractScriptPubKeyAddress(scriptPubKey, config.ActiveNetParams())
+	_, addr, err := txscript.ExtractScriptPubKeyAddress(scriptPubKey, config.ActiveConfig().NetParams())
 	if err != nil {
 		return nil, err
 	}

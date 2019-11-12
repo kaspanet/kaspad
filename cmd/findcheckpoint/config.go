@@ -6,12 +6,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/daglabs/btcd/config"
 	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/database"
 	_ "github.com/daglabs/btcd/database/ffldb"
 	"github.com/daglabs/btcd/util"
@@ -26,24 +26,26 @@ const (
 )
 
 var (
-	btcdHomeDir     = util.AppDataDir("btcd", false)
-	defaultDataDir  = filepath.Join(btcdHomeDir, "data")
-	knownDbTypes    = database.SupportedDrivers()
-	activeNetParams = &dagconfig.MainNetParams
+	btcdHomeDir    = util.AppDataDir("btcd", false)
+	defaultDataDir = filepath.Join(btcdHomeDir, "data")
+	knownDbTypes   = database.SupportedDrivers()
+	activeConfig   *ConfigFlags
 )
 
-// config defines the configuration options for findcheckpoint.
+// ActiveConfig returns the active configuration struct
+func ActiveConfig() *ConfigFlags {
+	return activeConfig
+}
+
+// ConfigFlags defines the configuration options for findcheckpoint.
 //
 // See loadConfig for details on the configuration load process.
-type config struct {
-	DataDir        string `short:"b" long:"datadir" description:"Location of the btcd data directory"`
-	DbType         string `long:"dbtype" description:"Database backend to use for the Block Chain"`
-	TestNet        bool   `long:"testnet" description:"Use the test network"`
-	RegressionTest bool   `long:"regtest" description:"Use the regression test network"`
-	SimNet         bool   `long:"simnet" description:"Use the simulation test network"`
-	DevNet         bool   `long:"devnet" description:"Use the development test network"`
-	NumCandidates  int    `short:"n" long:"numcandidates" description:"Max num of checkpoint candidates to show {1-20}"`
-	UseGoOutput    bool   `short:"g" long:"gooutput" description:"Display the candidates using Go syntax that is ready to insert into the btcchain checkpoint list"`
+type ConfigFlags struct {
+	DataDir       string `short:"b" long:"datadir" description:"Location of the btcd data directory"`
+	DbType        string `long:"dbtype" description:"Database backend to use for the Block Chain"`
+	NumCandidates int    `short:"n" long:"numcandidates" description:"Max num of checkpoint candidates to show {1-20}"`
+	UseGoOutput   bool   `short:"g" long:"gooutput" description:"Display the candidates using Go syntax that is ready to insert into the btcchain checkpoint list"`
+	config.NetworkFlags
 }
 
 // validDbType returns whether or not dbType is a supported database type.
@@ -58,16 +60,16 @@ func validDbType(dbType string) bool {
 }
 
 // loadConfig initializes and parses the config using command line options.
-func loadConfig() (*config, []string, error) {
+func loadConfig() (*ConfigFlags, []string, error) {
 	// Default config.
-	cfg := config{
+	activeConfig = &ConfigFlags{
 		DataDir:       defaultDataDir,
 		DbType:        defaultDbType,
 		NumCandidates: defaultNumCandidates,
 	}
 
 	// Parse command line options.
-	parser := flags.NewParser(&cfg, flags.Default)
+	parser := flags.NewParser(&activeConfig, flags.Default)
 	remainingArgs, err := parser.Parse()
 	if err != nil {
 		if e, ok := err.(*flags.Error); !ok || e.Type != flags.ErrHelp {
@@ -76,41 +78,17 @@ func loadConfig() (*config, []string, error) {
 		return nil, nil, err
 	}
 
-	// Multiple networks can't be selected simultaneously.
 	funcName := "loadConfig"
-	numNets := 0
-	// Count number of network flags passed; assign active network params
-	// while we're at it
-	if cfg.TestNet {
-		numNets++
-		activeNetParams = &dagconfig.TestNetParams
-	}
-	if cfg.RegressionTest {
-		numNets++
-		activeNetParams = &dagconfig.RegressionNetParams
-	}
-	if cfg.SimNet {
-		numNets++
-		activeNetParams = &dagconfig.SimNetParams
-	}
-	if cfg.DevNet {
-		numNets++
-		activeNetParams = &dagconfig.DevNetParams
-	}
-	if numNets > 1 {
-		str := "%s: The testnet, regtest, simnet and devnet params can't be " +
-			"used together -- choose one of the four"
-		err := errors.Errorf(str, funcName)
-		fmt.Fprintln(os.Stderr, err)
-		parser.WriteHelp(os.Stderr)
+
+	err = activeConfig.ResolveNetwork(parser)
+	if err != nil {
 		return nil, nil, err
 	}
-
 	// Validate database type.
-	if !validDbType(cfg.DbType) {
+	if !validDbType(activeConfig.DbType) {
 		str := "%s: The specified database type [%s] is invalid -- " +
 			"supported types %s"
-		err := errors.Errorf(str, funcName, cfg.DbType, strings.Join(knownDbTypes, ", "))
+		err := errors.Errorf(str, funcName, activeConfig.DbType, strings.Join(knownDbTypes, ", "))
 		fmt.Fprintln(os.Stderr, err)
 		parser.WriteHelp(os.Stderr)
 		return nil, nil, err
@@ -122,17 +100,17 @@ func loadConfig() (*config, []string, error) {
 	// All data is specific to a network, so namespacing the data directory
 	// means each individual piece of serialized data does not have to
 	// worry about changing names per network and such.
-	cfg.DataDir = filepath.Join(cfg.DataDir, activeNetParams.Name)
+	activeConfig.DataDir = filepath.Join(activeConfig.DataDir, activeConfig.NetParams().Name)
 
 	// Validate the number of candidates.
-	if cfg.NumCandidates < minCandidates || cfg.NumCandidates > maxCandidates {
+	if activeConfig.NumCandidates < minCandidates || activeConfig.NumCandidates > maxCandidates {
 		str := "%s: The specified number of candidates is out of " +
 			"range -- parsed [%d]"
-		err = errors.Errorf(str, funcName, cfg.NumCandidates)
+		err = errors.Errorf(str, funcName, activeConfig.NumCandidates)
 		fmt.Fprintln(os.Stderr, err)
 		parser.WriteHelp(os.Stderr)
 		return nil, nil, err
 	}
 
-	return &cfg, remainingArgs, nil
+	return activeConfig, remainingArgs, nil
 }

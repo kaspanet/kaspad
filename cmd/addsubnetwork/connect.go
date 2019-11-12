@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 )
 
-func connect(cfg *config) (*rpcclient.Client, error) {
+func connect(cfg *ConfigFlags) (*rpcclient.Client, error) {
 	var cert []byte
 	if !cfg.DisableTLS {
 		var err error

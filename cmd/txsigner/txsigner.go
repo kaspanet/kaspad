@@ -59,7 +59,7 @@ func parseTransaction(transactionHex string) (*wire.MsgTx, error) {
 }
 
 func createScriptPubKey(publicKey *btcec.PublicKey) ([]byte, error) {
-	p2pkhAddress, err := util.NewAddressPubKeyHashFromPublicKey(publicKey.SerializeCompressed(), activeNetParams.Prefix)
+	p2pkhAddress, err := util.NewAddressPubKeyHashFromPublicKey(publicKey.SerializeCompressed(), ActiveConfig().NetParams().Prefix)
 	scriptPubKey, err := txscript.PayToAddrScript(p2pkhAddress)
 	return scriptPubKey, err
 }

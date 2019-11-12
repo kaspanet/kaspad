@@ -27,14 +27,14 @@ func (sp *Peer) OnVersion(_ *peer.Peer, msg *wire.MsgVersion) {
 	// on the simulation test network since it is only intended to connect
 	// to specified peers and actively avoids advertising and connecting to
 	// discovered peers.
-	if !config.MainConfig().SimNet {
+	if !config.ActiveConfig().SimNet {
 		addrManager := sp.server.addrManager
 
 		// Outbound connections.
 		if !sp.Inbound() {
 			// TODO(davec): Only do this if not doing the initial block
 			// download and the local address is routable.
-			if !config.MainConfig().DisableListen /* && isCurrent? */ {
+			if !config.ActiveConfig().DisableListen /* && isCurrent? */ {
 				// Get address that best matches.
 				lna := addrManager.GetBestLocalAddress(sp.NA())
 				if addrmgr.IsRoutable(lna) {

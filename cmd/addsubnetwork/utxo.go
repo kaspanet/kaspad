@@ -15,7 +15,7 @@ const (
 	minConfirmations = 10
 )
 
-func findUnspentTXO(cfg *config, client *rpcclient.Client, addrPubKeyHash *util.AddressPubKeyHash) (*wire.Outpoint, *wire.MsgTx, error) {
+func findUnspentTXO(cfg *ConfigFlags, client *rpcclient.Client, addrPubKeyHash *util.AddressPubKeyHash) (*wire.Outpoint, *wire.MsgTx, error) {
 	txs, err := collectTransactions(client, addrPubKeyHash)
 	if err != nil {
 		return nil, nil, err
@@ -92,7 +92,7 @@ func isTxMatured(tx *wire.MsgTx, confirmations uint64) bool {
 	if !tx.IsCoinBase() {
 		return confirmations >= minConfirmations
 	}
-	return confirmations >= activeNetParams.BlockCoinbaseMaturity
+	return confirmations >= ActiveConfig().NetParams().BlockCoinbaseMaturity
 }
 
 func buildUTXOs(txs []*wire.MsgTx) map[wire.Outpoint]*wire.MsgTx {

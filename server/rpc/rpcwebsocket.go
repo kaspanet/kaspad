@@ -90,9 +90,9 @@ func (s *Server) WebsocketHandler(conn *websocket.Conn, remoteAddr string,
 
 	// Limit max number of websocket clients.
 	log.Infof("New websocket client %s", remoteAddr)
-	if s.ntfnMgr.NumClients()+1 > config.MainConfig().RPCMaxWebsockets {
+	if s.ntfnMgr.NumClients()+1 > config.ActiveConfig().RPCMaxWebsockets {
 		log.Infof("Max websocket clients exceeded [%d] - "+
-			"disconnecting client %s", config.MainConfig().RPCMaxWebsockets,
+			"disconnecting client %s", config.ActiveConfig().RPCMaxWebsockets,
 			remoteAddr)
 		conn.Close()
 		return
@@ -1000,7 +1000,7 @@ out:
 		//
 		// RPC quirks can be enabled by the user to avoid compatibility issues
 		// with software relying on Core's behavior.
-		if request.ID == nil && !(config.MainConfig().RPCQuirks && request.JSONRPC == "") {
+		if request.ID == nil && !(config.ActiveConfig().RPCQuirks && request.JSONRPC == "") {
 			if !c.authenticated {
 				break out
 			}
@@ -1361,7 +1361,7 @@ func newWebsocketClient(server *Server, conn *websocket.Conn,
 		isAdmin:           isAdmin,
 		sessionID:         sessionID,
 		server:            server,
-		serviceRequestSem: makeSemaphore(config.MainConfig().RPCMaxConcurrentReqs),
+		serviceRequestSem: makeSemaphore(config.ActiveConfig().RPCMaxConcurrentReqs),
 		ntfnChan:          make(chan []byte, 1), // nonblocking sync
 		sendChan:          make(chan wsResponse, websocketSendBufferSize),
 		quit:              make(chan struct{}),

@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func buildSubnetworkRegistryTx(cfg *config, fundingOutpoint *wire.Outpoint, fundingTx *wire.MsgTx, privateKey *btcec.PrivateKey) (*wire.MsgTx, error) {
+func buildSubnetworkRegistryTx(cfg *ConfigFlags, fundingOutpoint *wire.Outpoint, fundingTx *wire.MsgTx, privateKey *btcec.PrivateKey) (*wire.MsgTx, error) {
 	txIn := &wire.TxIn{
 		PreviousOutpoint: *fundingOutpoint,
 		Sequence:         wire.MaxTxInSequenceNum,

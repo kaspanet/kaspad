@@ -163,7 +163,7 @@ func handleGetBlockTemplateRequest(s *Server, request *btcjson.TemplateRequest, 
 
 	// When a coinbase transaction has been requested, respond with an error
 	// if there are no addresses to pay the created block template to.
-	if !useCoinbaseValue && len(config.MainConfig().MiningAddrs) == 0 {
+	if !useCoinbaseValue && len(config.ActiveConfig().MiningAddrs) == 0 {
 		return nil, &btcjson.RPCError{
 			Code: btcjson.ErrRPCInternal.Code,
 			Message: "A coinbase transaction has been requested, " +
@@ -176,7 +176,7 @@ func handleGetBlockTemplateRequest(s *Server, request *btcjson.TemplateRequest, 
 	// way to relay a found block or receive transactions to work on.
 	// However, allow this state when running in the regression test or
 	// simulation test mode.
-	if !(config.MainConfig().RegressionTest || config.MainConfig().SimNet) &&
+	if !(config.ActiveConfig().RegressionTest || config.ActiveConfig().SimNet) &&
 		s.cfg.ConnMgr.ConnectedCount() == 0 {
 
 		return nil, &btcjson.RPCError{
@@ -607,7 +607,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		// to create their own coinbase.
 		var payAddr util.Address
 		if !useCoinbaseValue {
-			payAddr = config.MainConfig().MiningAddrs[rand.Intn(len(config.MainConfig().MiningAddrs))]
+			payAddr = config.ActiveConfig().MiningAddrs[rand.Intn(len(config.ActiveConfig().MiningAddrs))]
 		}
 
 		// Create a new block template that has a coinbase which anyone
@@ -661,7 +661,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		// returned if none have been specified.
 		if !useCoinbaseValue && !template.ValidPayAddress {
 			// Choose a payment address at random.
-			payToAddr := config.MainConfig().MiningAddrs[rand.Intn(len(config.MainConfig().MiningAddrs))]
+			payToAddr := config.ActiveConfig().MiningAddrs[rand.Intn(len(config.ActiveConfig().MiningAddrs))]
 
 			// Update the block coinbase output of the template to
 			// pay to the randomly selected payment address.
