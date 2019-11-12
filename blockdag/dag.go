@@ -1093,7 +1093,11 @@ func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []
 	pastUTXO = selectedParentUTXO
 	multiBlockTxsAcceptanceData = MultiBlockTxsAcceptanceData{}
 
-	for _, blueBlock := range blueBlocks {
+	// Add blueBlocks to multiBlockTxsAcceptanceData bottom-to-top instead of
+	// top-to-bottom. This is so that anyone who iterates over it would process
+	// blocks (and transactions) in their order of appearance in the DAG.
+	for i := len(blueBlocks) - 1; i >= 0; i-- {
+		blueBlock := blueBlocks[i]
 		transactions := blueBlock.Transactions()
 		blockTxsAcceptanceData := BlockTxsAcceptanceData{
 			BlockHash:        *blueBlock.Hash(),
