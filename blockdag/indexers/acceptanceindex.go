@@ -168,8 +168,8 @@ type serializableTxAcceptanceData struct {
 }
 
 type serializableBlockTxsAcceptanceData struct {
-	blockHash        daghash.Hash
-	txAcceptanceData []serializableTxAcceptanceData
+	BlockHash        daghash.Hash
+	TxAcceptanceData []serializableTxAcceptanceData
 }
 
 type serializableMultiBlockTxsAcceptanceData []serializableBlockTxsAcceptanceData
@@ -178,18 +178,18 @@ func serializeMultiBlockTxsAcceptanceData(
 	multiBlockTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) ([]byte, error) {
 	// Convert MultiBlockTxsAcceptanceData to a serializable format
 	serializableData := make(serializableMultiBlockTxsAcceptanceData, len(multiBlockTxsAcceptanceData))
-	for _, blockTxsAcceptanceData := range multiBlockTxsAcceptanceData {
+	for i, blockTxsAcceptanceData := range multiBlockTxsAcceptanceData {
 		serializableBlockData := serializableBlockTxsAcceptanceData{
-			blockHash:        blockTxsAcceptanceData.BlockHash,
-			txAcceptanceData: make([]serializableTxAcceptanceData, len(blockTxsAcceptanceData.TxAcceptanceData)),
+			BlockHash:        blockTxsAcceptanceData.BlockHash,
+			TxAcceptanceData: make([]serializableTxAcceptanceData, len(blockTxsAcceptanceData.TxAcceptanceData)),
 		}
 		for i, txAcceptanceData := range blockTxsAcceptanceData.TxAcceptanceData {
-			serializableBlockData.txAcceptanceData[i] = serializableTxAcceptanceData{
+			serializableBlockData.TxAcceptanceData[i] = serializableTxAcceptanceData{
 				MsgTx:      *txAcceptanceData.Tx.MsgTx(),
 				IsAccepted: txAcceptanceData.IsAccepted,
 			}
 		}
-		serializableData = append(serializableData, serializableBlockData)
+		serializableData[i] = serializableBlockData
 	}
 
 	// Serialize
@@ -215,19 +215,19 @@ func deserializeMultiBlockTxsAcceptanceData(
 
 	// Convert serializable format to MultiBlockTxsAcceptanceData
 	multiBlockTxsAcceptanceData := make(blockdag.MultiBlockTxsAcceptanceData, len(serializedData))
-	for _, serializableBlockData := range serializedData {
+	for i, serializableBlockData := range serializedData {
 		blockTxsAcceptanceData := blockdag.BlockTxsAcceptanceData{
-			BlockHash:        serializableBlockData.blockHash,
-			TxAcceptanceData: make([]blockdag.TxAcceptanceData, len(serializableBlockData.txAcceptanceData)),
+			BlockHash:        serializableBlockData.BlockHash,
+			TxAcceptanceData: make([]blockdag.TxAcceptanceData, len(serializableBlockData.TxAcceptanceData)),
 		}
-		for i, txData := range serializableBlockData.txAcceptanceData {
+		for i, txData := range serializableBlockData.TxAcceptanceData {
 			msgTx := txData.MsgTx
 			blockTxsAcceptanceData.TxAcceptanceData[i] = blockdag.TxAcceptanceData{
 				Tx:         util.NewTx(&msgTx),
 				IsAccepted: txData.IsAccepted,
 			}
 		}
-		multiBlockTxsAcceptanceData = append(multiBlockTxsAcceptanceData, blockTxsAcceptanceData)
+		multiBlockTxsAcceptanceData[i] = blockTxsAcceptanceData
 	}
 
 	return multiBlockTxsAcceptanceData, nil
