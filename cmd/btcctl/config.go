@@ -168,7 +168,7 @@ func loadConfig() (*ConfigFlags, []string, error) {
 	// errors aside from the help message error can be ignored here since
 	// they will be caught by the final parse below.
 	preCfg := activeConfig
-	preParser := flags.NewParser(&preCfg, flags.HelpFlag)
+	preParser := flags.NewParser(preCfg, flags.HelpFlag)
 	_, err := preParser.Parse()
 	if err != nil {
 		if e, ok := err.(*flags.Error); ok && e.Type == flags.ErrHelp {
@@ -209,7 +209,7 @@ func loadConfig() (*ConfigFlags, []string, error) {
 	}
 
 	// Load additional config from file.
-	parser := flags.NewParser(&activeConfig, flags.Default)
+	parser := flags.NewParser(activeConfig, flags.Default)
 	err = flags.NewIniParser(parser).ParseFile(preCfg.ConfigFile)
 	if err != nil {
 		if _, ok := err.(*os.PathError); !ok {
