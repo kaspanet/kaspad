@@ -376,8 +376,7 @@ func TestOrderInDiffFromAcceptanceData(t *testing.T) {
 	// one of the chains is selected as the selected parent chain while all the blocks in
 	// the other chain (and their transactions) get accepted by the new virtual. If the
 	// transactions in the non-selected parent chain get processed in the wrong order then
-	// diffFromAcceptanceData panics. Note that there's an astronomically low chance that
-	// this test will pass when it should actually fail.
+	// diffFromAcceptanceData panics.
 	blockAmountPerChain := 100
 	chainATip := util.NewBlock(params.GenesisBlock)
 	chainBTip := chainATip
