@@ -29,18 +29,21 @@ func ActiveConfig() *Config {
 
 // Config defines the configuration options for the API server.
 type Config struct {
-	LogDir      string `long:"logdir" description:"Directory to log output."`
-	RPCUser     string `short:"u" long:"rpcuser" description:"RPC username"`
-	RPCPassword string `short:"P" long:"rpcpass" default-mask:"-" description:"RPC password"`
-	RPCServer   string `short:"s" long:"rpcserver" description:"RPC server to connect to"`
-	RPCCert     string `short:"c" long:"rpccert" description:"RPC server certificate chain for validation"`
-	DisableTLS  bool   `long:"notls" description:"Disable TLS"`
-	DBAddress   string `long:"dbaddress" description:"Database address"`
-	DBUser      string `long:"dbuser" description:"Database user" required:"true"`
-	DBPassword  string `long:"dbpass" description:"Database password" required:"true"`
-	DBName      string `long:"dbname" description:"Database name" required:"true"`
-	HTTPListen  string `long:"listen" description:"HTTP address to listen on (default: 0.0.0.0:8080)"`
-	Migrate     bool   `long:"migrate" description:"Migrate the database to the latest version. The server will not start when using this flag."`
+	LogDir       string `long:"logdir" description:"Directory to log output."`
+	RPCUser      string `short:"u" long:"rpcuser" description:"RPC username"`
+	RPCPassword  string `short:"P" long:"rpcpass" default-mask:"-" description:"RPC password"`
+	RPCServer    string `short:"s" long:"rpcserver" description:"RPC server to connect to"`
+	RPCCert      string `short:"c" long:"rpccert" description:"RPC server certificate chain for validation"`
+	DisableTLS   bool   `long:"notls" description:"Disable TLS"`
+	DBAddress    string `long:"dbaddress" description:"Database address"`
+	DBUser       string `long:"dbuser" description:"Database user" required:"true"`
+	DBPassword   string `long:"dbpass" description:"Database password" required:"true"`
+	DBName       string `long:"dbname" description:"Database name" required:"true"`
+	HTTPListen   string `long:"listen" description:"HTTP address to listen on (default: 0.0.0.0:8080)"`
+	Migrate      bool   `long:"migrate" description:"Migrate the database to the latest version. The server will not start when using this flag."`
+	MQTTAddress  string `long:"mqttaddress" description:"MQTT server address" required:"false"`
+	MQTTUser     string `long:"mqttuser" description:"MQTT server user" required:"false"`
+	MQTTPassword string `long:"mqttpass" description:"MQTT server password" required:"false"`
 	config.NetworkFlags
 }
 
@@ -75,6 +78,10 @@ func Parse() (*Config, error) {
 
 	if activeConfig.RPCCert != "" && activeConfig.DisableTLS {
 		return nil, errors.New("--cert should be omitted if --notls is used")
+	}
+
+	if activeConfig.MQTTAddress != "" && (activeConfig.MQTTUser == "" || activeConfig.MQTTPassword == "") {
+		return nil, errors.New("--mqttuser and --mqttpass are required if --mqttaddress is used")
 	}
 
 	err = activeConfig.ResolveNetwork(parser)

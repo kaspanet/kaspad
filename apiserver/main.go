@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/daglabs/btcd/apiserver/mqtt"
 	"github.com/pkg/errors"
 	"os"
 
@@ -48,6 +49,12 @@ func main() {
 			panic(errors.Errorf("Error closing the database: %s", err))
 		}
 	}()
+
+	err = mqtt.Connect(cfg)
+	if err != nil {
+		panic(errors.Errorf("Error connecting to MQTT: %s", err))
+	}
+	defer mqtt.Close()
 
 	err = jsonrpc.Connect(cfg)
 	if err != nil {
