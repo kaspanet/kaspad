@@ -493,10 +493,10 @@ func (dag *BlockDAG) addBlock(node *blockNode, parentNodes blockSet,
 	return chainUpdates, nil
 }
 
-func calculateAcceptedIDMerkleRoot(txsAcceptanceData MultiBlockTxsAcceptanceData) *daghash.Hash {
+func calculateAcceptedIDMerkleRoot(multiBlockTxsAcceptanceData MultiBlockTxsAcceptanceData) *daghash.Hash {
 	var acceptedTxs []*util.Tx
-	for _, blockTxsAcceptanceData := range txsAcceptanceData {
-		for _, txAcceptance := range blockTxsAcceptanceData {
+	for _, blockTxsAcceptanceData := range multiBlockTxsAcceptanceData {
+		for _, txAcceptance := range blockTxsAcceptanceData.TxAcceptanceData {
 			if !txAcceptance.IsAccepted {
 				continue
 			}
@@ -951,11 +951,11 @@ func (node *blockNode) diffFromTxs(pastUTXO UTXOSet, transactions []*util.Tx) (*
 
 // diffFromAccpetanceData creates a diff that "updates" the blue scores of the given
 // UTXOSet with the node's blueScore according to the given acceptance data.
-func (node *blockNode) diffFromAcceptanceData(pastUTXO UTXOSet, blockTxsAcceptanceDatas MultiBlockTxsAcceptanceData) (*UTXODiff, error) {
+func (node *blockNode) diffFromAcceptanceData(pastUTXO UTXOSet, multiBlockTxsAcceptanceData MultiBlockTxsAcceptanceData) (*UTXODiff, error) {
 	diff := NewUTXODiff()
 
-	for _, blockTxsAcceptanceData := range blockTxsAcceptanceDatas {
-		for _, txAcceptanceData := range blockTxsAcceptanceData {
+	for _, blockTxsAcceptanceData := range multiBlockTxsAcceptanceData {
+		for _, txAcceptanceData := range blockTxsAcceptanceData.TxAcceptanceData {
 			if txAcceptanceData.IsAccepted {
 				acceptanceDiff, err := pastUTXO.diffFromAcceptedTx(txAcceptanceData.Tx.MsgTx(), node.blueScore)
 				if err != nil {
@@ -1029,13 +1029,25 @@ type TxAcceptanceData struct {
 	IsAccepted bool
 }
 
-// BlockTxsAcceptanceData  stores all transactions in a block with an indication
+// BlockTxsAcceptanceData stores all transactions in a block with an indication
 // if they were accepted or not by some other block
-type BlockTxsAcceptanceData []TxAcceptanceData
+type BlockTxsAcceptanceData struct {
+	BlockHash        daghash.Hash
+	TxAcceptanceData []TxAcceptanceData
+}
 
 // MultiBlockTxsAcceptanceData stores data about which transactions were accepted by a block
-// It's a map from the block's blues block IDs to the transaction acceptance data
-type MultiBlockTxsAcceptanceData map[daghash.Hash]BlockTxsAcceptanceData
+// It's a slice of the block's blues block IDs and their transaction acceptance data
+type MultiBlockTxsAcceptanceData []BlockTxsAcceptanceData
+
+func (data MultiBlockTxsAcceptanceData) FindAcceptanceData(blockHash *daghash.Hash) (*BlockTxsAcceptanceData, bool) {
+	for _, acceptanceData := range data {
+		if acceptanceData.BlockHash.IsEqual(blockHash) {
+			return &acceptanceData, true
+		}
+	}
+	return nil, false
+}
 
 func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 	// The genesis has no past UTXO, so we create an empty UTXO
@@ -1076,14 +1088,17 @@ func (node *blockNode) fetchBlueBlocks(db database.DB) ([]*util.Block, error) {
 // Purposefully ignoring failures - these are just unaccepted transactions
 // Writing down which transactions were accepted or not in txsAcceptanceData
 func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []*util.Block) (
-	pastUTXO UTXOSet, txsAcceptanceData MultiBlockTxsAcceptanceData, err error) {
+	pastUTXO UTXOSet, multiBlockTxsAcceptanceData MultiBlockTxsAcceptanceData, err error) {
 
 	pastUTXO = selectedParentUTXO
-	txsAcceptanceData = MultiBlockTxsAcceptanceData{}
+	multiBlockTxsAcceptanceData = MultiBlockTxsAcceptanceData{}
 
 	for _, blueBlock := range blueBlocks {
 		transactions := blueBlock.Transactions()
-		blockTxsAcceptanceData := make(BlockTxsAcceptanceData, len(transactions))
+		blockTxsAcceptanceData := BlockTxsAcceptanceData{
+			BlockHash:        *blueBlock.Hash(),
+			TxAcceptanceData: make([]TxAcceptanceData, len(transactions)),
+		}
 		isSelectedParent := blueBlock.Hash().IsEqual(node.selectedParent.hash)
 		for i, tx := range blueBlock.Transactions() {
 			var isAccepted bool
@@ -1095,12 +1110,12 @@ func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []
 					return nil, nil, err
 				}
 			}
-			blockTxsAcceptanceData[i] = TxAcceptanceData{Tx: tx, IsAccepted: isAccepted}
+			blockTxsAcceptanceData.TxAcceptanceData[i] = TxAcceptanceData{Tx: tx, IsAccepted: isAccepted}
 		}
-		txsAcceptanceData[*blueBlock.Hash()] = blockTxsAcceptanceData
+		multiBlockTxsAcceptanceData = append(multiBlockTxsAcceptanceData, blockTxsAcceptanceData)
 	}
 
-	return pastUTXO, txsAcceptanceData, nil
+	return pastUTXO, multiBlockTxsAcceptanceData, nil
 }
 
 // updateParents adds this block to the children sets of its parents

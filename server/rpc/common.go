@@ -310,15 +310,15 @@ func collectChainBlocks(s *Server, hashes []*daghash.Hash) ([]btcjson.ChainBlock
 		}
 
 		acceptedBlocks := make([]btcjson.AcceptedBlock, 0, len(acceptanceData))
-		for blockHash, blockAcceptanceData := range acceptanceData {
-			acceptedTxIds := make([]string, 0, len(blockAcceptanceData))
-			for _, txAcceptanceData := range blockAcceptanceData {
+		for _, blockAcceptanceData := range acceptanceData {
+			acceptedTxIds := make([]string, 0, len(blockAcceptanceData.TxAcceptanceData))
+			for _, txAcceptanceData := range blockAcceptanceData.TxAcceptanceData {
 				if txAcceptanceData.IsAccepted {
 					acceptedTxIds = append(acceptedTxIds, txAcceptanceData.Tx.ID().String())
 				}
 			}
 			acceptedBlock := btcjson.AcceptedBlock{
-				Hash:          blockHash.String(),
+				Hash:          blockAcceptanceData.BlockHash.String(),
 				AcceptedTxIDs: acceptedTxIds,
 			}
 			acceptedBlocks = append(acceptedBlocks, acceptedBlock)
