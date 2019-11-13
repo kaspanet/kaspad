@@ -6,8 +6,10 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
+// db is the API server database.
 var client mqtt.Client
 
+// GetClient returns an instance of the MQTT client, in case we have an active connection
 func GetClient() (mqtt.Client, error) {
 	if client == nil {
 		return nil, errors.New("MQTT is not connected")
@@ -15,6 +17,7 @@ func GetClient() (mqtt.Client, error) {
 	return client, nil
 }
 
+// Connect initiates a connection to the MQTT server, if defined
 func Connect(cfg *config.Config) error {
 	if cfg.MQTTBrokerAddress == "" {
 		// MQTT broker not defined -- nothing to do
@@ -36,6 +39,7 @@ func Connect(cfg *config.Config) error {
 	return nil
 }
 
+// Close closes the connection to the MQTT server, if previously connected
 func Close() {
 	if client == nil {
 		return
