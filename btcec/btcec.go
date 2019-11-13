@@ -857,6 +857,109 @@ func (curve *KoblitzCurve) ScalarMult(Bx, By *big.Int, k []byte) (*big.Int, *big
 	return curve.fieldJacobianToBigAffine(qx, qy, qz)
 }
 
+// scalarMultJacobian returns the Jacobian coordinates of k*(Bx, By) where k is a big endian integer.
+// Taken from https://github.com/gcash/bchd/blob/99ad9c81ae1c543b42d9049cbfaa164014219ec9/bchec/bchec.go
+func (curve *KoblitzCurve) scalarMultJacobian(Bx, By *big.Int, k []byte) (*fieldVal, *fieldVal, *fieldVal) {
+	// Point Q = ∞ (point at infinity).
+	qx, qy, qz := new(fieldVal), new(fieldVal), new(fieldVal)
+
+	// Decompose K into k1 and k2 in order to halve the number of EC ops.
+	// See Algorithm 3.74 in [GECC].
+	k1, k2, signK1, signK2 := curve.splitK(curve.moduloReduce(k))
+
+	// The main equation here to remember is:
+	//   k * P = k1 * P + k2 * ϕ(P)
+	//
+	// P1 below is P in the equation, P2 below is ϕ(P) in the equation
+	p1x, p1y := curve.bigAffineToField(Bx, By)
+	p1yNeg := new(fieldVal).NegateVal(p1y, 1)
+	p1z := new(fieldVal).SetInt(1)
+
+	// NOTE: ϕ(x,y) = (βx,y).  The Jacobian z coordinate is 1, so this math
+	// goes through.
+	p2x := new(fieldVal).Mul2(p1x, curve.beta)
+	p2y := new(fieldVal).Set(p1y)
+	p2yNeg := new(fieldVal).NegateVal(p2y, 1)
+	p2z := new(fieldVal).SetInt(1)
+
+	// Flip the positive and negative values of the points as needed
+	// depending on the signs of k1 and k2.  As mentioned in the equation
+	// above, each of k1 and k2 are multiplied by the respective point.
+	// Since -k * P is the same thing as k * -P, and the group law for
+	// elliptic curves states that P(x, y) = -P(x, -y), it's faster and
+	// simplifies the code to just make the point negative.
+	if signK1 == -1 {
+		p1y, p1yNeg = p1yNeg, p1y
+	}
+	if signK2 == -1 {
+		p2y, p2yNeg = p2yNeg, p2y
+	}
+
+	// NAF versions of k1 and k2 should have a lot more zeros.
+	//
+	// The Pos version of the bytes contain the +1s and the Neg versions
+	// contain the -1s.
+	k1PosNAF, k1NegNAF := NAF(k1)
+	k2PosNAF, k2NegNAF := NAF(k2)
+	k1Len := len(k1PosNAF)
+	k2Len := len(k2PosNAF)
+
+	m := k1Len
+	if m < k2Len {
+		m = k2Len
+	}
+
+	// Add left-to-right using the NAF optimization.  See algorithm 3.77
+	// from [GECC].  This should be faster overall since there will be a lot
+	// more instances of 0, hence reducing the number of Jacobian additions
+	// at the cost of 1 possible extra doubling.
+	var k1BytePos, k1ByteNeg, k2BytePos, k2ByteNeg byte
+	for i := 0; i < m; i++ {
+		// Since we're going left-to-right, pad the front with 0s.
+		if i < m-k1Len {
+			k1BytePos = 0
+			k1ByteNeg = 0
+		} else {
+			k1BytePos = k1PosNAF[i-(m-k1Len)]
+			k1ByteNeg = k1NegNAF[i-(m-k1Len)]
+		}
+		if i < m-k2Len {
+			k2BytePos = 0
+			k2ByteNeg = 0
+		} else {
+			k2BytePos = k2PosNAF[i-(m-k2Len)]
+			k2ByteNeg = k2NegNAF[i-(m-k2Len)]
+		}
+
+		for j := 7; j >= 0; j-- {
+			// Q = 2 * Q
+			curve.doubleJacobian(qx, qy, qz, qx, qy, qz)
+
+			if k1BytePos&0x80 == 0x80 {
+				curve.addJacobian(qx, qy, qz, p1x, p1y, p1z,
+					qx, qy, qz)
+			} else if k1ByteNeg&0x80 == 0x80 {
+				curve.addJacobian(qx, qy, qz, p1x, p1yNeg, p1z,
+					qx, qy, qz)
+			}
+
+			if k2BytePos&0x80 == 0x80 {
+				curve.addJacobian(qx, qy, qz, p2x, p2y, p2z,
+					qx, qy, qz)
+			} else if k2ByteNeg&0x80 == 0x80 {
+				curve.addJacobian(qx, qy, qz, p2x, p2yNeg, p2z,
+					qx, qy, qz)
+			}
+			k1BytePos <<= 1
+			k1ByteNeg <<= 1
+			k2BytePos <<= 1
+			k2ByteNeg <<= 1
+		}
+	}
+
+	return qx, qy, qz
+}
+
 // ScalarBaseMult returns k*G where G is the base point of the group and k is a
 // big endian integer.
 // Part of the elliptic.Curve interface.
@@ -877,6 +980,28 @@ func (curve *KoblitzCurve) ScalarBaseMult(k []byte) (*big.Int, *big.Int) {
 		curve.addJacobian(qx, qy, qz, &p[0], &p[1], &p[2], qx, qy, qz)
 	}
 	return curve.fieldJacobianToBigAffine(qx, qy, qz)
+}
+
+// scalarBaseMultJacobian returns the Jacobian coordinates k*G where G is the base point of
+// the group and k is a big endian integer.
+// Taken from https://github.com/gcash/bchd/blob/99ad9c81ae1c543b42d9049cbfaa164014219ec9/bchec/bchec.go
+func (curve *KoblitzCurve) scalarBaseMultJacobian(k []byte) (*fieldVal, *fieldVal, *fieldVal) {
+	newK := curve.moduloReduce(k)
+	diff := len(curve.bytePoints) - len(newK)
+
+	// Point Q = ∞ (point at infinity).
+	qx, qy, qz := new(fieldVal), new(fieldVal), new(fieldVal)
+
+	// curve.bytePoints has all 256 byte points for each 8-bit window. The
+	// strategy is to add up the byte points. This is best understood by
+	// expressing k in base-256 which it already sort of is.
+	// Each "digit" in the 8-bit window can be looked up using bytePoints
+	// and added together.
+	for i, byteVal := range newK {
+		p := curve.bytePoints[diff+i][byteVal]
+		curve.addJacobian(qx, qy, qz, &p[0], &p[1], &p[2], qx, qy, qz)
+	}
+	return qx, qy, qz
 }
 
 // QPlus1Div4 returns the Q+1/4 constant for the curve for use in calculating

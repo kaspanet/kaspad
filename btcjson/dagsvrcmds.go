@@ -539,24 +539,6 @@ func NewGetTxOutCmd(txHash string, vout uint32, includeMempool *bool) *GetTxOutC
 	}
 }
 
-// GetTxOutProofCmd defines the getTxOutProof JSON-RPC command.
-type GetTxOutProofCmd struct {
-	TxIDs     []string
-	BlockHash *string
-}
-
-// NewGetTxOutProofCmd returns a new instance which can be used to issue a
-// getTxOutProof JSON-RPC command.
-//
-// The parameters which are pointers indicate they are optional.  Passing nil
-// for optional parameters will use the default value.
-func NewGetTxOutProofCmd(txIDs []string, blockHash *string) *GetTxOutProofCmd {
-	return &GetTxOutProofCmd{
-		TxIDs:     txIDs,
-		BlockHash: blockHash,
-	}
-}
-
 // GetTxOutSetInfoCmd defines the getTxOutSetInfo JSON-RPC command.
 type GetTxOutSetInfoCmd struct{}
 
@@ -749,36 +731,6 @@ func NewValidateAddressCmd(address string) *ValidateAddressCmd {
 	}
 }
 
-// VerifyMessageCmd defines the verifyMessage JSON-RPC command.
-type VerifyMessageCmd struct {
-	Address   string
-	Signature string
-	Message   string
-}
-
-// NewVerifyMessageCmd returns a new instance which can be used to issue a
-// verifyMessage JSON-RPC command.
-func NewVerifyMessageCmd(address, signature, message string) *VerifyMessageCmd {
-	return &VerifyMessageCmd{
-		Address:   address,
-		Signature: signature,
-		Message:   message,
-	}
-}
-
-// VerifyTxOutProofCmd defines the verifyTxOutProof JSON-RPC command.
-type VerifyTxOutProofCmd struct {
-	Proof string
-}
-
-// NewVerifyTxOutProofCmd returns a new instance which can be used to issue a
-// verifyTxOutProof JSON-RPC command.
-func NewVerifyTxOutProofCmd(proof string) *VerifyTxOutProofCmd {
-	return &VerifyTxOutProofCmd{
-		Proof: proof,
-	}
-}
-
 func init() {
 	// No special flags for commands in this file.
 	flags := UsageFlag(0)
@@ -816,7 +768,6 @@ func init() {
 	MustRegisterCmd("getRawTransaction", (*GetRawTransactionCmd)(nil), flags)
 	MustRegisterCmd("getSubnetwork", (*GetSubnetworkCmd)(nil), flags)
 	MustRegisterCmd("getTxOut", (*GetTxOutCmd)(nil), flags)
-	MustRegisterCmd("getTxOutProof", (*GetTxOutProofCmd)(nil), flags)
 	MustRegisterCmd("getTxOutSetInfo", (*GetTxOutSetInfoCmd)(nil), flags)
 	MustRegisterCmd("help", (*HelpCmd)(nil), flags)
 	MustRegisterCmd("invalidateBlock", (*InvalidateBlockCmd)(nil), flags)
@@ -831,6 +782,4 @@ func init() {
 	MustRegisterCmd("submitBlock", (*SubmitBlockCmd)(nil), flags)
 	MustRegisterCmd("uptime", (*UptimeCmd)(nil), flags)
 	MustRegisterCmd("validateAddress", (*ValidateAddressCmd)(nil), flags)
-	MustRegisterCmd("verifyMessage", (*VerifyMessageCmd)(nil), flags)
-	MustRegisterCmd("verifyTxOutProof", (*VerifyTxOutProofCmd)(nil), flags)
 }
