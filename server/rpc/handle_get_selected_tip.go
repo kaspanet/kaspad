@@ -9,13 +9,13 @@ import (
 
 // handleGetSelectedTip implements the getSelectedTip command.
 func handleGetSelectedTip(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.GetSelectedTipCmd)
-	hash := s.cfg.DAG.SelectedTipHash()
+	getSelectedTipCmd := cmd.(*btcjson.GetSelectedTipCmd)
+	selectedTipHash := s.cfg.DAG.SelectedTipHash()
 
-	var blkBytes []byte
+	var blockBytes []byte
 	err := s.cfg.DB.View(func(dbTx database.Tx) error {
 		var err error
-		blkBytes, err = dbTx.FetchBlock(hash)
+		blockBytes, err = dbTx.FetchBlock(selectedTipHash)
 		return err
 	})
 	if err != nil {
@@ -27,20 +27,20 @@ func handleGetSelectedTip(s *Server, cmd interface{}, closeChan <-chan struct{})
 
 	// When the verbose flag isn't set, simply return the serialized block
 	// as a hex-encoded string.
-	if c.Verbose != nil && !*c.Verbose {
-		return hex.EncodeToString(blkBytes), nil
+	if getSelectedTipCmd.Verbose != nil && !*getSelectedTipCmd.Verbose {
+		return hex.EncodeToString(blockBytes), nil
 	}
 
 	// Deserialize the block.
-	blk, err := util.NewBlockFromBytes(blkBytes)
+	blk, err := util.NewBlockFromBytes(blockBytes)
 	if err != nil {
 		context := "Failed to deserialize block"
 		return nil, internalRPCError(err.Error(), context)
 	}
 
-	blockReply, err := buildGetBlockVerboseResult(s, blk, c.VerboseTx == nil || !*c.VerboseTx)
+	blockVerboseResult, err := buildGetBlockVerboseResult(s, blk, getSelectedTipCmd.VerboseTx == nil || !*getSelectedTipCmd.VerboseTx)
 	if err != nil {
 		return nil, err
 	}
-	return blockReply, nil
+	return blockVerboseResult, nil
 }
