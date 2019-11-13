@@ -120,10 +120,13 @@ func TestBtcdExtCmds(t *testing.T) {
 				return btcjson.NewCmd("getSelectedTip")
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewGetSelectedTipCmd()
+				return btcjson.NewGetSelectedTipCmd(nil, nil)
 			},
-			marshalled:   `{"jsonrpc":"1.0","method":"getSelectedTip","params":[],"id":1}`,
-			unmarshalled: &btcjson.GetSelectedTipCmd{},
+			marshalled: `{"jsonrpc":"1.0","method":"getSelectedTip","params":[],"id":1}`,
+			unmarshalled: &btcjson.GetSelectedTipCmd{
+				Verbose:   btcjson.Bool(true),
+				VerboseTx: btcjson.Bool(false),
+			},
 		},
 		{
 			name: "getCurrentNet",
