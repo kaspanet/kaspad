@@ -6,7 +6,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
-// db is the API server database.
+// client is an instance of the MQTT client, in case we have an active connection
 var client mqtt.Client
 
 // GetClient returns an instance of the MQTT client, in case we have an active connection
