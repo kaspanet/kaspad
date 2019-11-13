@@ -222,6 +222,9 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	g.dag.RLock()
 	defer g.dag.RUnlock()
 
+	g.dag.UTXOToECMHCacheLock.Lock()
+	defer g.dag.UTXOToECMHCacheLock.Unlock()
+
 	txsForBlockTemplate, err := g.selectTxs(payToAddress)
 	if err != nil {
 		return nil, errors.Errorf("failed to select txs: %s", err)

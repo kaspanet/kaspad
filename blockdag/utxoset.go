@@ -155,15 +155,20 @@ type UTXODiff struct {
 	toAdd        utxoCollection
 	toRemove     utxoCollection
 	diffMultiset *btcec.Multiset
+	useMultiset  bool
 }
 
 // NewUTXODiff creates a new, empty utxoDiff
-func NewUTXODiff() *UTXODiff {
-	return &UTXODiff{
-		toAdd:        utxoCollection{},
-		toRemove:     utxoCollection{},
-		diffMultiset: btcec.NewMultiset(btcec.S256()),
+func NewUTXODiff(useMultiset bool) *UTXODiff {
+	d := &UTXODiff{
+		toAdd:       utxoCollection{},
+		toRemove:    utxoCollection{},
+		useMultiset: useMultiset,
 	}
+	if useMultiset {
+		d.diffMultiset = btcec.NewMultiset(btcec.S256())
+	}
+	return d
 }
 
 // diffFrom returns a new utxoDiff with the difference between this utxoDiff and another
@@ -196,9 +201,13 @@ func NewUTXODiff() *UTXODiff {
 //    diffFrom results in the UTXO being added to toAdd
 func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	result := UTXODiff{
-		toAdd:        make(utxoCollection, len(d.toRemove)+len(other.toAdd)),
-		toRemove:     make(utxoCollection, len(d.toAdd)+len(other.toRemove)),
-		diffMultiset: btcec.NewMultiset(btcec.S256()),
+		toAdd:       make(utxoCollection, len(d.toRemove)+len(other.toAdd)),
+		toRemove:    make(utxoCollection, len(d.toAdd)+len(other.toRemove)),
+		useMultiset: d.useMultiset,
+	}
+
+	if d.useMultiset {
+		result.diffMultiset = btcec.NewMultiset(btcec.S256())
 	}
 
 	// Note that the following cases are not accounted for, as they are impossible
@@ -264,8 +273,10 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 		}
 	}
 
-	// Create a new diffMultiset as the subtraction of the two diffs.
-	result.diffMultiset = other.diffMultiset.Subtract(d.diffMultiset)
+	if d.useMultiset {
+		// Create a new diffMultiset as the subtraction of the two diffs.
+		result.diffMultiset = other.diffMultiset.Subtract(d.diffMultiset)
+	}
 
 	return &result, nil
 }
@@ -298,9 +309,13 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 //    WithDiff results in the UTXO being added to toRemove
 func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 	result := UTXODiff{
-		toAdd:        make(utxoCollection, len(d.toAdd)+len(diff.toAdd)),
-		toRemove:     make(utxoCollection, len(d.toRemove)+len(diff.toRemove)),
-		diffMultiset: btcec.NewMultiset(btcec.S256()),
+		toAdd:       make(utxoCollection, len(d.toAdd)+len(diff.toAdd)),
+		toRemove:    make(utxoCollection, len(d.toRemove)+len(diff.toRemove)),
+		useMultiset: d.useMultiset,
+	}
+
+	if d.useMultiset {
+		result.diffMultiset = btcec.NewMultiset(btcec.S256())
 	}
 
 	// All transactions in d.toAdd:
@@ -364,21 +379,30 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 	}
 
 	// Apply diff.diffMultiset to d.diffMultiset
-	result.diffMultiset = d.diffMultiset.Union(diff.diffMultiset)
+	if d.useMultiset {
+		result.diffMultiset = d.diffMultiset.Union(diff.diffMultiset)
+	}
 
 	return &result, nil
 }
 
 // clone returns a clone of this utxoDiff
 func (d *UTXODiff) clone() *UTXODiff {
-	return &UTXODiff{
-		toAdd:        d.toAdd.clone(),
-		toRemove:     d.toRemove.clone(),
-		diffMultiset: d.diffMultiset.Clone(),
+	dClone := &UTXODiff{
+		toAdd:       d.toAdd.clone(),
+		toRemove:    d.toRemove.clone(),
+		useMultiset: d.useMultiset,
 	}
+	if d.useMultiset {
+		dClone.diffMultiset = d.diffMultiset.Clone()
+	}
+	return dClone
 }
 
 // AddEntry adds a UTXOEntry to the diff
+//
+// If d.useMultiset is true, this function MUST be
+// called with the dag.UTXOToECMHCacheLock lock held.
 func (d *UTXODiff) AddEntry(outpoint wire.Outpoint, entry *UTXOEntry) error {
 	if d.toRemove.containsWithBlueScore(outpoint, entry.blockBlueScore) {
 		d.toRemove.remove(outpoint)
@@ -388,16 +412,20 @@ func (d *UTXODiff) AddEntry(outpoint wire.Outpoint, entry *UTXOEntry) error {
 		d.toAdd.add(outpoint, entry)
 	}
 
-	var err error
-	newMs, err := addUTXOToMultiset(d.diffMultiset, entry, &outpoint)
-	if err != nil {
-		return err
+	if d.useMultiset {
+		newMs, err := addUTXOToMultiset(d.diffMultiset, entry, &outpoint)
+		if err != nil {
+			return err
+		}
+		d.diffMultiset = newMs
 	}
-	d.diffMultiset = newMs
 	return nil
 }
 
-// RemoveEntry removes a UTXOEntry from the diff
+// RemoveEntry removes a UTXOEntry from the diff.
+//
+// If d.useMultiset is true, this function MUST be
+// called with the dag.UTXOToECMHCacheLock lock held.
 func (d *UTXODiff) RemoveEntry(outpoint wire.Outpoint, entry *UTXOEntry) error {
 	if d.toAdd.containsWithBlueScore(outpoint, entry.blockBlueScore) {
 		d.toAdd.remove(outpoint)
@@ -407,17 +435,21 @@ func (d *UTXODiff) RemoveEntry(outpoint wire.Outpoint, entry *UTXOEntry) error {
 		d.toRemove.add(outpoint, entry)
 	}
 
-	var err error
-	newMs, err := removeUTXOFromMultiset(d.diffMultiset, entry, &outpoint)
-	if err != nil {
-		return err
+	if d.useMultiset {
+		newMs, err := removeUTXOFromMultiset(d.diffMultiset, entry, &outpoint)
+		if err != nil {
+			return err
+		}
+		d.diffMultiset = newMs
 	}
-	d.diffMultiset = newMs
 	return nil
 }
 
 func (d UTXODiff) String() string {
-	return fmt.Sprintf("toAdd: %s; toRemove: %s, Multiset-Hash: %s", d.toAdd, d.toRemove, d.diffMultiset.Hash())
+	if d.useMultiset {
+		return fmt.Sprintf("toAdd: %s; toRemove: %s, Multiset-Hash: %s", d.toAdd, d.toRemove, d.diffMultiset.Hash())
+	}
+	return fmt.Sprintf("toAdd: %s; toRemove: %s", d.toAdd, d.toRemove)
 }
 
 // UTXOSet represents a set of unspent transaction outputs
@@ -450,7 +482,7 @@ type UTXOSet interface {
 // Returns a diff that is equivalent to provided transaction,
 // or an error if provided transaction is not valid in the context of this UTXOSet
 func diffFromTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
-	diff := NewUTXODiff()
+	diff := NewUTXODiff(true)
 	isCoinbase := tx.IsCoinBase()
 	if !isCoinbase {
 		for _, txIn := range tx.TxIn {
@@ -483,7 +515,7 @@ func diffFromTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff
 // Returns an error if the provided transaction's entry is not valid in the context
 // of this UTXOSet.
 func diffFromAcceptedTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
-	diff := NewUTXODiff()
+	diff := NewUTXODiff(true)
 	isCoinbase := tx.IsCoinBase()
 	for i, txOut := range tx.TxOut {
 		// Fetch any unaccepted transaction
@@ -523,6 +555,7 @@ func NewFullUTXOSet() *FullUTXOSet {
 	}
 }
 
+// newFullUTXOSetFromUTXOCollection converts a utxoCollection to a FullUTXOSet
 func newFullUTXOSetFromUTXOCollection(collection utxoCollection) (*FullUTXOSet, error) {
 	var err error
 	multiset := btcec.NewMultiset(btcec.S256())
@@ -561,6 +594,8 @@ func (fus *FullUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 // AddTx adds a transaction to this utxoSet and returns isAccepted=true iff it's valid in this UTXO's context.
 // It returns error if something unexpected happens, such as serialization error (isAccepted=false doesn't
 // necessarily means there's an error).
+//
+// This function MUST be called with the dag.UTXOToECMHCacheLock lock held.
 func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blueScore uint64) (isAccepted bool, err error) {
 	isCoinbase := tx.IsCoinBase()
 	if !isCoinbase {
@@ -654,9 +689,11 @@ func (fus *FullUTXOSet) removeAndUpdateMultiset(outpoint wire.Outpoint) error {
 	return nil
 }
 
-// WithTransactions returns a new UTXO Set with the added transactions
+// WithTransactions returns a new UTXO Set with the added transactions.
+//
+// This function MUST be called with the dag.UTXOToECMHCacheLock lock held.
 func (fus *FullUTXOSet) WithTransactions(transactions []*wire.MsgTx, blockBlueScore uint64, ignoreDoubleSpends bool) (UTXOSet, error) {
-	diffSet := NewDiffUTXOSet(fus, NewUTXODiff())
+	diffSet := NewDiffUTXOSet(fus, NewUTXODiff(true))
 	for _, tx := range transactions {
 		isAccepted, err := diffSet.AddTx(tx, blockBlueScore)
 		if err != nil {
@@ -708,7 +745,10 @@ func (dus *DiffUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 	return NewDiffUTXOSet(dus.base, diff), nil
 }
 
-// AddTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
+// AddTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context.
+//
+// If dus.UTXODiff.useMultiset is true, this function MUST be
+// called with the dag.UTXOToECMHCacheLock lock held.
 func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockBlueScore uint64) (bool, error) {
 	isCoinbase := tx.IsCoinBase()
 	if !isCoinbase && !dus.containsInputs(tx) {
@@ -778,9 +818,11 @@ func (dus *DiffUTXOSet) meldToBase() error {
 		dus.base.add(outpoint, utxoEntry)
 	}
 
-	dus.base.UTXOMultiset = dus.base.UTXOMultiset.Union(dus.UTXODiff.diffMultiset)
+	if dus.UTXODiff.useMultiset {
+		dus.base.UTXOMultiset = dus.base.UTXOMultiset.Union(dus.UTXODiff.diffMultiset)
+	}
 
-	dus.UTXODiff = NewUTXODiff()
+	dus.UTXODiff = NewUTXODiff(dus.UTXODiff.useMultiset)
 	return nil
 }
 
@@ -826,7 +868,10 @@ func (dus *DiffUTXOSet) Multiset() *btcec.Multiset {
 	return dus.base.UTXOMultiset.Union(dus.UTXODiff.diffMultiset)
 }
 
-// WithTransactions returns a new UTXO Set with the added transactions
+// WithTransactions returns a new UTXO Set with the added transactions.
+//
+// If dus.UTXODiff.useMultiset is true, this function MUST be
+// called with the dag.UTXOToECMHCacheLock lock held.
 func (dus *DiffUTXOSet) WithTransactions(transactions []*wire.MsgTx, blockBlueScore uint64, ignoreDoubleSpends bool) (UTXOSet, error) {
 	diffSet := NewDiffUTXOSet(dus.base, dus.UTXODiff.clone())
 	for _, tx := range transactions {

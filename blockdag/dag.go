@@ -78,6 +78,10 @@ type BlockDAG struct {
 
 	utxoLock sync.RWMutex
 
+	// UTXOToECMHCacheLock protects concurrent access to the
+	// UTXO-to-ECMH cache.
+	UTXOToECMHCacheLock sync.Mutex
+
 	// index and virtual are related to the memory block index.  They both
 	// have their own locks, however they are often also protected by the
 	// DAG lock to help prevent logic races when blocks are being processed.
@@ -532,6 +536,9 @@ func (node *blockNode) validateAcceptedIDMerkleRoot(dag *BlockDAG, txsAcceptance
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) connectBlock(node *blockNode,
 	block *util.Block, fastAdd bool) (*chainUpdates, error) {
+
+	dag.UTXOToECMHCacheLock.Lock()
+	defer dag.UTXOToECMHCacheLock.Unlock()
 	// No warnings about unknown rules or versions until the DAG is
 	// current.
 	if dag.isCurrent() {
@@ -933,7 +940,7 @@ func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) error {
 }
 
 func (node *blockNode) diffFromTxs(pastUTXO UTXOSet, transactions []*util.Tx) (*UTXODiff, error) {
-	diff := NewUTXODiff()
+	diff := NewUTXODiff(true)
 
 	for _, tx := range transactions {
 		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), UnacceptedBlueScore)
@@ -952,7 +959,7 @@ func (node *blockNode) diffFromTxs(pastUTXO UTXOSet, transactions []*util.Tx) (*
 // diffFromAccpetanceData creates a diff that "updates" the blue scores of the given
 // UTXOSet with the node's blueScore according to the given acceptance data.
 func (node *blockNode) diffFromAcceptanceData(pastUTXO UTXOSet, blockTxsAcceptanceDatas MultiBlockTxsAcceptanceData) (*UTXODiff, error) {
-	diff := NewUTXODiff()
+	diff := NewUTXODiff(true)
 
 	for _, blockTxsAcceptanceData := range blockTxsAcceptanceDatas {
 		for _, txAcceptanceData := range blockTxsAcceptanceData {
@@ -1041,7 +1048,7 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 	// The genesis has no past UTXO, so we create an empty UTXO
 	// set by creating a diff UTXO set with the virtual UTXO
 	// set, and adding all of its entries in toRemove
-	diff := NewUTXODiff()
+	diff := NewUTXODiff(true)
 	for outpoint, entry := range virtual.utxoSet.utxoCollection {
 		diff.toRemove[outpoint] = entry
 	}
