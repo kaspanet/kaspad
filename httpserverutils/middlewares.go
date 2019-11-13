@@ -1,7 +1,6 @@
 package httpserverutils
 
 import (
-	"fmt"
 	"github.com/pkg/errors"
 	"net/http"
 	"runtime/debug"
@@ -45,8 +44,7 @@ func RecoveryMiddleware(h http.Handler) http.Handler {
 				} else {
 					recoveryErrAsError = errors.Errorf("%s", recoveryErr)
 				}
-				recoveryErrStr := fmt.Sprintf("%s", recoveryErr)
-				log.Criticalf("Fatal error: %+v", recoveryErrStr)
+				log.Criticalf("Fatal error: %+v", recoveryErrAsError)
 				log.Criticalf("Stack trace: %s", debug.Stack())
 				SendErr(ctx, w, recoveryErrAsError)
 			}

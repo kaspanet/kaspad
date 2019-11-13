@@ -57,7 +57,7 @@ func btcdMain(serverChan chan<- *server.Server) error {
 		return err
 	}
 	cfg = config.ActiveConfig()
-	defer panics.HandlePanic(btcdLog, logger.BackendLog)
+	defer panics.HandlePanic(btcdLog, logger.BackendLog, nil)
 
 	// Get a channel that will be closed when a shutdown signal has been
 	// triggered either from an OS signal such as SIGINT (Ctrl+C) or from
