@@ -25,7 +25,6 @@ func Connect(cfg *config.Config) error {
 	options.AddBroker(cfg.MQTTBrokerAddress)
 	options.SetUsername(cfg.MQTTUser)
 	options.SetPassword(cfg.MQTTPassword)
-	options.SetCleanSession(true)
 	options.SetAutoReconnect(true)
 
 	newClient := mqtt.NewClient(options)
