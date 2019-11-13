@@ -35,17 +35,9 @@ var (
 	defaultTargetOutbound = uint32(8)
 )
 
-// throttledError defines an error type whose logs get throttled. This is to
-// prevent flooding the logs with identical errors.
-type throttledError error
-
 var (
 	//ErrDialNil is used to indicate that Dial cannot be nil in the configuration.
 	ErrDialNil = errors.New("Config: Dial cannot be nil")
-
-	// ErrNoAddress is an error that is thrown when there aren't any
-	// valid connection addresses.
-	ErrNoAddress throttledError = errors.New("no valid connect address")
 
 	// ErrMaxPeers is an error that is thrown when the max amount of peers had
 	// been reached.
@@ -259,6 +251,10 @@ func (cm *ConnManager) handleFailedConn(c *ConnReq, err error) {
 	}
 }
 
+// throttledError defines an error type whose logs get throttled. This is to
+// prevent flooding the logs with identical errors.
+type throttledError error
+
 var (
 	// throttledConnFailedLogInterval is the minimum duration of time between
 	// the logs defined in throttledConnFailedLogs.
@@ -271,6 +267,10 @@ var (
 	throttledConnFailedLogs = map[throttledError]time.Time{
 		ErrNoAddress: {},
 	}
+
+	// ErrNoAddress is an error that is thrown when there aren't any
+	// valid connection addresses.
+	ErrNoAddress throttledError = errors.New("no valid connect address")
 )
 
 // shouldWriteConnFailedLog resolves whether to write logs related to connection
