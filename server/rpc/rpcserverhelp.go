@@ -675,7 +675,7 @@ var rpcResultTypes = map[string][]interface{}{
 	"decodeScript":          {(*btcjson.DecodeScriptResult)(nil)},
 	"generate":              {(*[]string)(nil)},
 	"getAllManualNodesInfo": {(*[]string)(nil), (*[]btcjson.GetManualNodeInfoResult)(nil)},
-	"getSelectedTip":        {(*btcjson.GetSelectedTipResult)(nil)},
+	"getSelectedTip":        {(*btcjson.GetBlockVerboseResult)(nil)},
 	"getSelectedTipHash":    {(*string)(nil)},
 	"getBlock":              {(*string)(nil), (*btcjson.GetBlockVerboseResult)(nil)},
 	"getBlocks":             {(*btcjson.GetBlocksResult)(nil)},

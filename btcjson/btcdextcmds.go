@@ -73,12 +73,18 @@ func NewGenerateCmd(numBlocks uint32) *GenerateCmd {
 }
 
 // GetSelectedTipCmd defines the getSelectedTip JSON-RPC command.
-type GetSelectedTipCmd struct{}
+type GetSelectedTipCmd struct {
+	Verbose   *bool `jsonrpcdefault:"true"`
+	VerboseTx *bool `jsonrpcdefault:"false"`
+}
 
 // NewGetSelectedTipCmd returns a new instance which can be used to issue a
 // getSelectedTip JSON-RPC command.
-func NewGetSelectedTipCmd() *GetSelectedTipCmd {
-	return &GetSelectedTipCmd{}
+func NewGetSelectedTipCmd(verbose, verboseTx *bool) *GetSelectedTipCmd {
+	return &GetSelectedTipCmd{
+		Verbose:   verbose,
+		VerboseTx: verboseTx,
+	}
 }
 
 // GetCurrentNetCmd defines the getCurrentNet JSON-RPC command.

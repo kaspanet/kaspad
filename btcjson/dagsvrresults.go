@@ -485,12 +485,6 @@ type ValidateAddressResult struct {
 	Address string `json:"address,omitempty"`
 }
 
-// GetSelectedTipResult models the data from the getSelectedTip command.
-type GetSelectedTipResult struct {
-	Hash   string `json:"hash"`
-	Height uint64 `json:"height"`
-}
-
 // ChainBlock models a block that is part of the selected parent chain.
 type ChainBlock struct {
 	Hash           string          `json:"hash"`

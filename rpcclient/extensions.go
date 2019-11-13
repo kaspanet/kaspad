@@ -68,26 +68,32 @@ type FutureGetSelectedTipResult chan *response
 
 // Receive waits for the response promised by the future and returns the hash
 // and height of the block in the longest (best) chain.
-func (r FutureGetSelectedTipResult) Receive() (*daghash.Hash, uint64, error) {
+func (r FutureGetSelectedTipResult) Receive() (*wire.MsgBlock, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
-	// Unmarshal result as a getSelectedTip result object.
-	var selectedTip btcjson.GetSelectedTipResult
-	err = json.Unmarshal(res, &selectedTip)
+	// Unmarshal result as a string.
+	var blockHex string
+	err = json.Unmarshal(res, &blockHex)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
-	// Convert to hash from string.
-	hash, err := daghash.NewHashFromStr(selectedTip.Hash)
+	// Decode the serialized block hex to raw bytes.
+	serializedBlock, err := hex.DecodeString(blockHex)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
-	return hash, selectedTip.Height, nil
+	// Deserialize the block and return it.
+	var msgBlock wire.MsgBlock
+	err = msgBlock.Deserialize(bytes.NewReader(serializedBlock))
+	if err != nil {
+		return nil, err
+	}
+	return &msgBlock, nil
 }
 
 // GetSelectedTipAsync returns an instance of a type that can be used to get the
@@ -98,15 +104,13 @@ func (r FutureGetSelectedTipResult) Receive() (*daghash.Hash, uint64, error) {
 //
 // NOTE: This is a btcd extension.
 func (c *Client) GetSelectedTipAsync() FutureGetSelectedTipResult {
-	cmd := btcjson.NewGetSelectedTipCmd()
+	cmd := btcjson.NewGetSelectedTipCmd(btcjson.Bool(false), btcjson.Bool(false))
 	return c.sendCmd(cmd)
 }
 
-// GetSelectedTip returns the hash and height of the block in the longest (best)
-// chain.
-//
+// GetSelectedTip returns the block of the selected DAG tip
 // NOTE: This is a btcd extension.
-func (c *Client) GetSelectedTip() (*daghash.Hash, uint64, error) {
+func (c *Client) GetSelectedTip() (*wire.MsgBlock, error) {
 	return c.GetSelectedTipAsync().Receive()
 }
 
