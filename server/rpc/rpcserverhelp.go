@@ -149,17 +149,17 @@ var helpDescsEnUS = map[string]string{
 	"getManualNodeInfo--condition1": "details=true",
 	"getManualNodeInfo--result0":    "List of added peers",
 
-	// GetBestBlockResult help.
-	"getBestBlockResult-hash":   "Hex-encoded bytes of the best block hash",
-	"getBestBlockResult-height": "Height of the best block",
+	// GetSelectedTipResult help.
+	"getSelectedTipResult-hash":   "Hex-encoded bytes of the best block hash",
+	"getSelectedTipResult-height": "Height of the best block",
 
-	// GetBestBlockCmd help.
-	"getBestBlock--synopsis": "Get block height and hash of best block in the main chain.",
-	"getBestBlock--result0":  "Get block height and hash of best block in the main chain.",
+	// GetSelectedTipCmd help.
+	"getSelectedTip--synopsis": "Get block height and hash of best block in the main chain.",
+	"getSelectedTip--result0":  "Get block height and hash of best block in the main chain.",
 
-	// GetBestBlockHashCmd help.
-	"getBestBlockHash--synopsis": "Returns the hash of the of the best (most recent) block in the longest block chain.",
-	"getBestBlockHash--result0":  "The hex-encoded block hash",
+	// GetSelectedTipHashCmd help.
+	"getSelectedTipHash--synopsis": "Returns the hash of the of the best (most recent) block in the longest block chain.",
+	"getSelectedTipHash--result0":  "The hex-encoded block hash",
 
 	// GetBlockCmd help.
 	"getBlock--synopsis":   "Returns information about a block given its hash.",
@@ -519,7 +519,7 @@ var helpDescsEnUS = map[string]string{
 	"getSubnetworkResult-gasLimit": "The gas limit of the subnetwork",
 
 	// GetTxOutResult help.
-	"getTxOutResult-bestBlock":     "The block hash that contains the transaction output",
+	"getTxOutResult-selectedTip":   "The block hash that contains the transaction output",
 	"getTxOutResult-confirmations": "The number of confirmations (Will be 'null' if txindex is not disabled)",
 	"getTxOutResult-isInMempool":   "Whether the transaction is in the mempool",
 	"getTxOutResult-value":         "The transaction amount in BTC",
@@ -675,8 +675,8 @@ var rpcResultTypes = map[string][]interface{}{
 	"decodeScript":          {(*btcjson.DecodeScriptResult)(nil)},
 	"generate":              {(*[]string)(nil)},
 	"getAllManualNodesInfo": {(*[]string)(nil), (*[]btcjson.GetManualNodeInfoResult)(nil)},
-	"getBestBlock":          {(*btcjson.GetBestBlockResult)(nil)},
-	"getBestBlockHash":      {(*string)(nil)},
+	"getSelectedTip":        {(*btcjson.GetSelectedTipResult)(nil)},
+	"getSelectedTipHash":    {(*string)(nil)},
 	"getBlock":              {(*string)(nil), (*btcjson.GetBlockVerboseResult)(nil)},
 	"getBlocks":             {(*btcjson.GetBlocksResult)(nil)},
 	"getBlockCount":         {(*int64)(nil)},

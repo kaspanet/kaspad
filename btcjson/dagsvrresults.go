@@ -283,7 +283,7 @@ type GetSubnetworkResult struct {
 
 // GetTxOutResult models the data from the gettxout command.
 type GetTxOutResult struct {
-	BestBlock     string             `json:"bestBlock"`
+	SelectedTip   string             `json:"selectedTip"`
 	Confirmations *uint64            `json:"confirmations,omitempty"`
 	IsInMempool   bool               `json:"isInMempool"`
 	Value         float64            `json:"value"`
@@ -485,8 +485,8 @@ type ValidateAddressResult struct {
 	Address string `json:"address,omitempty"`
 }
 
-// GetBestBlockResult models the data from the getbestblock command.
-type GetBestBlockResult struct {
+// GetSelectedTipResult models the data from the getSelectedTip command.
+type GetSelectedTipResult struct {
 	Hash   string `json:"hash"`
 	Height uint64 `json:"height"`
 }

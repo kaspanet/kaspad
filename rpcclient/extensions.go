@@ -62,52 +62,52 @@ func (c *Client) DebugLevel(levelSpec string) (string, error) {
 	return c.DebugLevelAsync(levelSpec).Receive()
 }
 
-// FutureGetBestBlockResult is a future promise to deliver the result of a
-// GetBestBlockAsync RPC invocation (or an applicable error).
-type FutureGetBestBlockResult chan *response
+// FutureGetSelectedTipResult is a future promise to deliver the result of a
+// GetSelectedTipAsync RPC invocation (or an applicable error).
+type FutureGetSelectedTipResult chan *response
 
 // Receive waits for the response promised by the future and returns the hash
 // and height of the block in the longest (best) chain.
-func (r FutureGetBestBlockResult) Receive() (*daghash.Hash, uint64, error) {
+func (r FutureGetSelectedTipResult) Receive() (*daghash.Hash, uint64, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	// Unmarshal result as a getbestblock result object.
-	var bestBlock btcjson.GetBestBlockResult
-	err = json.Unmarshal(res, &bestBlock)
+	// Unmarshal result as a getSelectedTip result object.
+	var selectedTip btcjson.GetSelectedTipResult
+	err = json.Unmarshal(res, &selectedTip)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	// Convert to hash from string.
-	hash, err := daghash.NewHashFromStr(bestBlock.Hash)
+	hash, err := daghash.NewHashFromStr(selectedTip.Hash)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	return hash, bestBlock.Height, nil
+	return hash, selectedTip.Height, nil
 }
 
-// GetBestBlockAsync returns an instance of a type that can be used to get the
+// GetSelectedTipAsync returns an instance of a type that can be used to get the
 // result of the RPC at some future time by invoking the Receive function on the
 // returned instance.
 //
-// See GetBestBlock for the blocking version and more details.
+// See GetSelectedTip for the blocking version and more details.
 //
 // NOTE: This is a btcd extension.
-func (c *Client) GetBestBlockAsync() FutureGetBestBlockResult {
-	cmd := btcjson.NewGetBestBlockCmd()
+func (c *Client) GetSelectedTipAsync() FutureGetSelectedTipResult {
+	cmd := btcjson.NewGetSelectedTipCmd()
 	return c.sendCmd(cmd)
 }
 
-// GetBestBlock returns the hash and height of the block in the longest (best)
+// GetSelectedTip returns the hash and height of the block in the longest (best)
 // chain.
 //
 // NOTE: This is a btcd extension.
-func (c *Client) GetBestBlock() (*daghash.Hash, uint64, error) {
-	return c.GetBestBlockAsync().Receive()
+func (c *Client) GetSelectedTip() (*daghash.Hash, uint64, error) {
+	return c.GetSelectedTipAsync().Receive()
 }
 
 // FutureGetCurrentNetResult is a future promise to deliver the result of a

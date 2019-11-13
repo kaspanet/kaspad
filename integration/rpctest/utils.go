@@ -83,7 +83,7 @@ retry:
 		var parentHash *daghash.Hash
 		var prevHeight uint64
 		for _, node := range nodes {
-			blockHash, blockHeight, err := node.Node.GetBestBlock()
+			blockHash, blockHeight, err := node.Node.GetSelectedTip()
 			if err != nil {
 				return err
 			}

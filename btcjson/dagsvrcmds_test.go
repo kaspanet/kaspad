@@ -115,15 +115,15 @@ func TestDAGSvrCmds(t *testing.T) {
 			unmarshalled: &btcjson.GetAllManualNodesInfoCmd{Details: btcjson.Bool(true)},
 		},
 		{
-			name: "getBestBlockHash",
+			name: "getSelectedTipHash",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getBestBlockHash")
+				return btcjson.NewCmd("getSelectedTipHash")
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewGetBestBlockHashCmd()
+				return btcjson.NewGetSelectedTipHashCmd()
 			},
-			marshalled:   `{"jsonrpc":"1.0","method":"getBestBlockHash","params":[],"id":1}`,
-			unmarshalled: &btcjson.GetBestBlockHashCmd{},
+			marshalled:   `{"jsonrpc":"1.0","method":"getSelectedTipHash","params":[],"id":1}`,
+			unmarshalled: &btcjson.GetSelectedTipHashCmd{},
 		},
 		{
 			name: "getBlock",
