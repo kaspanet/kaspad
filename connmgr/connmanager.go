@@ -5,6 +5,7 @@
 package connmgr
 
 import (
+	nativeerrors "errors"
 	"fmt"
 	"github.com/pkg/errors"
 	"net"
@@ -19,9 +20,6 @@ import (
 const maxFailedAttempts = 25
 
 var (
-	//ErrDialNil is used to indicate that Dial cannot be nil in the configuration.
-	ErrDialNil = errors.New("Config: Dial cannot be nil")
-
 	// maxRetryDuration is the max duration of time retrying of a persistent
 	// connection is allowed to grow to.  This is necessary since the retry
 	// logic uses a backoff mechanism which increases the interval base times
@@ -35,6 +33,26 @@ var (
 	// defaultTargetOutbound is the default number of outbound connections to
 	// maintain.
 	defaultTargetOutbound = uint32(8)
+)
+
+var (
+	//ErrDialNil is used to indicate that Dial cannot be nil in the configuration.
+	ErrDialNil = errors.New("Config: Dial cannot be nil")
+
+	// ErrMaxPeers is an error that is thrown when the max amount of peers had
+	// been reached.
+	ErrMaxPeers = errors.New("max peers reached")
+
+	// ErrAlreadyConnected is an error that is thrown if the peer is already
+	// connected.
+	ErrAlreadyConnected = errors.New("peer already connected")
+
+	// ErrAlreadyPermanent is an error that is thrown if the peer is already
+	// connected as a permanent peer.
+	ErrAlreadyPermanent = errors.New("peer exists as a permanent peer")
+
+	// ErrPeerNotFound is an error that is thrown if the peer was not found.
+	ErrPeerNotFound = errors.New("peer not found")
 )
 
 // ConnState represents the state of the requested connection.
@@ -192,26 +210,38 @@ type ConnManager struct {
 // retry duration. Otherwise, if required, it makes a new connection request.
 // After maxFailedConnectionAttempts new connections will be retried after the
 // configured retry duration.
-func (cm *ConnManager) handleFailedConn(c *ConnReq) {
+func (cm *ConnManager) handleFailedConn(c *ConnReq, err error) {
 	if atomic.LoadInt32(&cm.stop) != 0 {
 		return
 	}
+
+	// Don't write throttled logs more than once every throttledConnFailedLogInterval
+	shouldWriteLog := shouldWriteConnFailedLog(err)
+	if shouldWriteLog {
+		// If we are to write a log, set its lastLogTime to now
+		setConnFailedLastLogTime(err, time.Now())
+	}
+
 	if c.Permanent {
 		c.retryCount++
 		d := time.Duration(c.retryCount) * cm.cfg.RetryDuration
 		if d > maxRetryDuration {
 			d = maxRetryDuration
 		}
-		log.Debugf("Retrying connection to %s in %s", c, d)
+		if shouldWriteLog {
+			log.Debugf("Retrying further connections to %s every %s", c, d)
+		}
 		time.AfterFunc(d, func() {
 			cm.Connect(c)
 		})
 	} else if cm.cfg.GetNewAddress != nil {
 		cm.failedAttempts++
 		if cm.failedAttempts >= maxFailedAttempts {
-			log.Debugf("Max failed connection attempts reached: [%d] "+
-				"-- retrying connection in: %s", maxFailedAttempts,
-				cm.cfg.RetryDuration)
+			if shouldWriteLog {
+				log.Debugf("Max failed connection attempts reached: [%d] "+
+					"-- retrying further connections every %s", maxFailedAttempts,
+					cm.cfg.RetryDuration)
+			}
 			time.AfterFunc(cm.cfg.RetryDuration, func() {
 				cm.NewConnReq()
 			})
@@ -219,6 +249,46 @@ func (cm *ConnManager) handleFailedConn(c *ConnReq) {
 			spawn(cm.NewConnReq)
 		}
 	}
+}
+
+// throttledError defines an error type whose logs get throttled. This is to
+// prevent flooding the logs with identical errors.
+type throttledError error
+
+var (
+	// throttledConnFailedLogInterval is the minimum duration of time between
+	// the logs defined in throttledConnFailedLogs.
+	throttledConnFailedLogInterval = time.Minute * 10
+
+	// throttledConnFailedLogs are logs that get written at most every
+	// throttledConnFailedLogInterval. Each entry in this map defines a type
+	// of error that we want to throttle. The value of each entry is the last
+	// time that type of log had been written.
+	throttledConnFailedLogs = map[throttledError]time.Time{
+		ErrNoAddress: {},
+	}
+
+	// ErrNoAddress is an error that is thrown when there aren't any
+	// valid connection addresses.
+	ErrNoAddress throttledError = errors.New("no valid connect address")
+)
+
+// shouldWriteConnFailedLog resolves whether to write logs related to connection
+// failures. Errors that had not been previously registered in throttledConnFailedLogs
+// and non-error (nil values) must always be logged.
+func shouldWriteConnFailedLog(err error) bool {
+	if err == nil {
+		return true
+	}
+	lastLogTime, ok := throttledConnFailedLogs[err]
+	return !ok || lastLogTime.Add(throttledConnFailedLogInterval).Before(time.Now())
+}
+
+// setConnFailedLastLogTime sets the last log time of the specified error
+func setConnFailedLastLogTime(err error, lastLogTime time.Time) {
+	var throttledErr throttledError
+	nativeerrors.As(err, &throttledErr)
+	throttledConnFailedLogs[err] = lastLogTime
 }
 
 // connHandler handles all connection related requests.  It must be run as a
@@ -331,7 +401,7 @@ out:
 					log.Debugf("Reconnecting to %s",
 						connReq)
 					pending[msg.id] = connReq
-					cm.handleFailedConn(connReq)
+					cm.handleFailedConn(connReq, nil)
 				}
 
 			case handleFailed:
@@ -344,9 +414,11 @@ out:
 				}
 
 				connReq.updateState(ConnFailing)
-				log.Debugf("Failed to connect to %s: %s",
-					connReq, msg.err)
-				cm.handleFailedConn(connReq)
+				if shouldWriteConnFailedLog(msg.err) {
+					log.Debugf("Failed to connect to %s: %s",
+						connReq, msg.err)
+				}
+				cm.handleFailedConn(connReq, msg.err)
 			}
 
 		case <-cm.quit:

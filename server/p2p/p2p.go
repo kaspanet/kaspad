@@ -939,15 +939,15 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 		// TODO: duplicate oneshots?
 		// Limit max number of total peers.
 		if state.Count() >= config.ActiveConfig().MaxPeers {
-			msg.Reply <- errors.New("max peers reached")
+			msg.Reply <- connmgr.ErrMaxPeers
 			return
 		}
 		for _, peer := range state.persistentPeers {
 			if peer.Addr() == msg.Addr {
 				if msg.Permanent {
-					msg.Reply <- errors.New("peer already connected")
+					msg.Reply <- connmgr.ErrAlreadyConnected
 				} else {
-					msg.Reply <- errors.New("peer exists as a permanent peer")
+					msg.Reply <- connmgr.ErrAlreadyPermanent
 				}
 				return
 			}
@@ -975,7 +975,7 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 		if found {
 			msg.Reply <- nil
 		} else {
-			msg.Reply <- errors.New("peer not found")
+			msg.Reply <- connmgr.ErrPeerNotFound
 		}
 	case getOutboundGroup:
 		count, ok := state.outboundGroups[msg.key]
@@ -1020,7 +1020,7 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 			return
 		}
 
-		msg.Reply <- errors.New("peer not found")
+		msg.Reply <- connmgr.ErrPeerNotFound
 	}
 }
 
@@ -1767,7 +1767,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 				addrString := addrmgr.NetAddressKey(addr.NetAddress())
 				return addrStringToNetAddr(addrString)
 			}
-			return nil, errors.New("no valid connect address")
+			return nil, connmgr.ErrNoAddress
 		}
 	}
 
