@@ -3,12 +3,15 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
+	"strconv"
+	"time"
+
+	"github.com/daglabs/btcd/apiserver/config"
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/dbmodels"
 	"github.com/daglabs/btcd/apiserver/jsonrpc"
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/config"
 	"github.com/daglabs/btcd/httpserverutils"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
@@ -17,8 +20,6 @@ import (
 	"github.com/daglabs/btcd/wire"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
-	"strconv"
-	"time"
 )
 
 // startSync keeps the node and the API server in sync. On start, it downloads
