@@ -73,7 +73,7 @@ func loadConfig() (*ConfigFlags, error) {
 	}
 
 	preCfg := activeConfig
-	preParser := flags.NewParser(&preCfg, flags.Default)
+	preParser := flags.NewParser(preCfg, flags.Default)
 	_, err = preParser.Parse()
 	if err != nil {
 		e, ok := err.(*flags.Error)
@@ -89,7 +89,7 @@ func loadConfig() (*ConfigFlags, error) {
 	usageMessage := fmt.Sprintf("Use %s -h to show usage", appName)
 
 	// Load additional config from file.
-	parser := flags.NewParser(&activeConfig, flags.Default)
+	parser := flags.NewParser(activeConfig, flags.Default)
 	err = flags.NewIniParser(parser).ParseFile(defaultConfigFile)
 	if err != nil {
 		if _, ok := err.(*os.PathError); !ok {
