@@ -16,10 +16,23 @@ func GetClient() (mqtt.Client, error) {
 }
 
 func Connect(cfg *config.Config) error {
-	if cfg.MQTTAddress == "" {
+	if cfg.MQTTBrokerAddress == "" {
 		// MQTT not defined -- nothing to do
 		return nil
 	}
+
+	options := mqtt.NewClientOptions()
+	options.AddBroker(cfg.MQTTBrokerAddress)
+	options.SetUsername(cfg.MQTTUser)
+	options.SetPassword(cfg.MQTTPassword)
+	options.SetCleanSession(true)
+	options.SetAutoReconnect(true)
+
+	newClient := mqtt.NewClient(options)
+	if token := newClient.Connect(); token.Wait() && token.Error() != nil {
+		return token.Error()
+	}
+	client = newClient
 
 	return nil
 }
