@@ -17,7 +17,7 @@ func GetClient() (mqtt.Client, error) {
 
 func Connect(cfg *config.Config) error {
 	if cfg.MQTTBrokerAddress == "" {
-		// MQTT not defined -- nothing to do
+		// MQTT broker not defined -- nothing to do
 		return nil
 	}
 
