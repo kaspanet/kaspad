@@ -81,19 +81,26 @@ func syncBlocks(nodes []*Harness) error {
 retry:
 	for !blocksMatch {
 		var parentHash *daghash.Hash
-		var prevHeight uint64
+		var prevBlueScore uint64
 		for _, node := range nodes {
-			blockHash, blockHeight, err := node.Node.GetSelectedTip()
+			selectedTip, err := node.Node.GetSelectedTip()
 			if err != nil {
 				return err
 			}
+
+			blockHash, err := daghash.NewHashFromStr(selectedTip.Hash)
+			if err != nil {
+				return err
+			}
+			blueScore := selectedTip.BlueScore
+
 			if parentHash != nil && (*blockHash != *parentHash ||
-				blockHeight != prevHeight) {
+				blueScore != prevBlueScore) {
 
 				time.Sleep(time.Millisecond * 100)
 				continue retry
 			}
-			parentHash, prevHeight = blockHash, blockHeight
+			parentHash, prevBlueScore = blockHash, blueScore
 		}
 
 		blocksMatch = true

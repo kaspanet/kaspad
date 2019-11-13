@@ -110,8 +110,39 @@ func (c *Client) GetSelectedTipAsync() FutureGetSelectedTipResult {
 
 // GetSelectedTip returns the block of the selected DAG tip
 // NOTE: This is a btcd extension.
-func (c *Client) GetSelectedTip() (*wire.MsgBlock, error) {
-	return c.GetSelectedTipAsync().Receive()
+func (c *Client) GetSelectedTip() (*btcjson.GetBlockVerboseResult, error) {
+	return c.GetSelectedTipVerboseAsync().Receive()
+}
+
+// FutureGetSelectedTipVerboseResult is a future promise to deliver the result of a
+// GetSelectedTipVerboseAsync RPC invocation (or an applicable error).
+type FutureGetSelectedTipVerboseResult chan *response
+
+// Receive waits for the response promised by the future and returns the data
+// structure from the server with information about the requested block.
+func (r FutureGetSelectedTipVerboseResult) Receive() (*btcjson.GetBlockVerboseResult, error) {
+	res, err := receiveFuture(r)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal the raw result into a BlockResult.
+	var blockResult btcjson.GetBlockVerboseResult
+	err = json.Unmarshal(res, &blockResult)
+	if err != nil {
+		return nil, err
+	}
+	return &blockResult, nil
+}
+
+// GetSelectedTipVerboseAsync returns an instance of a type that can be used to get
+// the result of the RPC at some future time by invoking the Receive function on
+// the returned instance.
+//
+// See GeSelectedTipBlockVerbose for the blocking version and more details.
+func (c *Client) GetSelectedTipVerboseAsync() FutureGetSelectedTipVerboseResult {
+	cmd := btcjson.NewGetSelectedTipCmd(btcjson.Bool(true), btcjson.Bool(false))
+	return c.sendCmd(cmd)
 }
 
 // FutureGetCurrentNetResult is a future promise to deliver the result of a

@@ -245,7 +245,7 @@ func (h *Harness) SetUp(createTestChain bool, numMatureOutputs uint32) error {
 
 	// Block until the wallet has fully synced up to the tip of the main
 	// chain.
-	_, height, err := h.Node.GetSelectedTip()
+	_, height, err := h.Node.GetBestBlock()
 	if err != nil {
 		return err
 	}
@@ -429,16 +429,24 @@ func (h *Harness) GenerateAndSubmitBlockWithCustomCoinbaseOutputs(
 		blockVersion = BlockVersion
 	}
 
-	parentBlockHash, parentBlockHeight, err := h.Node.GetSelectedTip()
+	selectedTip, err := h.Node.GetSelectedTip()
 	if err != nil {
 		return nil, err
 	}
-	mBlock, err := h.Node.GetBlock(parentBlockHash, nil)
+
+	selectedTipHash, err := daghash.NewHashFromStr(selectedTip.Hash)
 	if err != nil {
 		return nil, err
 	}
+
+	selectedTipBlueScore := selectedTip.BlueScore
+	mBlock, err := h.Node.GetBlock(selectedTipHash, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	parentBlock := util.NewBlock(mBlock)
-	parentBlock.SetChainHeight(parentBlockHeight)
+	parentBlock.SetChainHeight(selectedTipBlueScore)
 
 	// Create a new block including the specified transactions
 	newBlock, err := CreateBlock(parentBlock, txns, blockVersion,
