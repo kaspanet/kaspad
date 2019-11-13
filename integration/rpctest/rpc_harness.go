@@ -245,7 +245,8 @@ func (h *Harness) SetUp(createTestChain bool, numMatureOutputs uint32) error {
 
 	// Block until the wallet has fully synced up to the tip of the main
 	// chain.
-	_, height, err := h.Node.GetBestBlock()
+	selectedTip, err := h.Node.GetSelectedTip()
+	height := selectedTip.BlueScore
 	if err != nil {
 		return err
 	}
