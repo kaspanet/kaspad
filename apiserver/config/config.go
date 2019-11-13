@@ -80,8 +80,9 @@ func Parse() (*Config, error) {
 		return nil, errors.New("--cert should be omitted if --notls is used")
 	}
 
-	if activeConfig.MQTTBrokerAddress != "" && (activeConfig.MQTTUser == "" || activeConfig.MQTTPassword == "") {
-		return nil, errors.New("--mqttuser and --mqttpass are required if --mqttaddress is used")
+	if (activeConfig.MQTTBrokerAddress != "" || activeConfig.MQTTUser != "" || activeConfig.MQTTPassword != "") &&
+		(activeConfig.MQTTBrokerAddress == "" || activeConfig.MQTTUser == "" || activeConfig.MQTTPassword == "") {
+		return nil, errors.New("--mqttaddress, --mqttuser, and --mqttpass must be passed all together")
 	}
 
 	err = activeConfig.ResolveNetwork(parser)
