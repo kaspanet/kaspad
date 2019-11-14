@@ -715,6 +715,9 @@ func (sm *SyncManager) addBlocksToRequestQueue(state *peerSyncState, hashes []*d
 }
 
 func (state *peerSyncState) addInvToRequestQueueNoLock(iv *wire.InvVect, isRelayedInv bool) {
+	if iv.Type == wire.InvTypeTx {
+		log.Criticalf("Adding tx inv %s to request queue", iv.Hash)
+	}
 	if isRelayedInv {
 		if _, exists := state.relayedInvsRequestQueueSet[*iv.Hash]; !exists {
 			state.relayedInvsRequestQueueSet[*iv.Hash] = struct{}{}
@@ -1056,11 +1059,18 @@ func (sm *SyncManager) addInvsToGetDataMessageFromQueue(gdmsg *wire.MsgGetData, 
 		invsNum = len(requestQueue)
 	}
 	invsToAdd := make([]*wire.InvVect, 0, invsNum)
-
+	addedBlocks := 0
 	for len(requestQueue) != 0 && len(invsToAdd) < invsNum {
 		iv := requestQueue[0]
 		requestQueue[0] = nil
 		requestQueue = requestQueue[1:]
+
+		if iv.Type == wire.InvTypeSyncBlock || iv.Type == wire.InvTypeBlock {
+			if addedBlocks >= wire.MaxBlockInvPerGetDataMsg {
+				continue
+			}
+			addedBlocks++
+		}
 
 		exists, err := sm.haveInventory(iv)
 		if err != nil {
@@ -1071,7 +1081,8 @@ func (sm *SyncManager) addInvsToGetDataMessageFromQueue(gdmsg *wire.MsgGetData, 
 		}
 	}
 
-	addBlockInv := func(iv *wire.InvVect) {
+	addBlockInv := func(requestQueueSet map[daghash.Hash]struct{}, iv *wire.InvVect) {
+		delete(requestQueueSet, *iv.Hash)
 		// Request the block if there is not already a pending
 		// request.
 		if _, exists := sm.requestedBlocks[*iv.Hash]; !exists {
@@ -1085,11 +1096,9 @@ func (sm *SyncManager) addInvsToGetDataMessageFromQueue(gdmsg *wire.MsgGetData, 
 	for _, iv := range invsToAdd {
 		switch iv.Type {
 		case wire.InvTypeSyncBlock:
-			delete(state.requestQueueSet, *iv.Hash)
-			addBlockInv(iv)
+			addBlockInv(state.requestQueueSet, iv)
 		case wire.InvTypeBlock:
-			delete(state.relayedInvsRequestQueueSet, *iv.Hash)
-			addBlockInv(iv)
+			addBlockInv(state.relayedInvsRequestQueueSet, iv)
 
 		case wire.InvTypeTx:
 			delete(state.relayedInvsRequestQueueSet, *iv.Hash)
@@ -1104,7 +1113,7 @@ func (sm *SyncManager) addInvsToGetDataMessageFromQueue(gdmsg *wire.MsgGetData, 
 			}
 		}
 
-		if len(requestQueue) >= wire.MaxInvPerMsg {
+		if len(requestQueue) >= wire.MaxInvPerGetDataMsg {
 			break
 		}
 	}
