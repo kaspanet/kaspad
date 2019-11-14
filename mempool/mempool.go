@@ -466,7 +466,7 @@ func (mp *TxPool) HaveTransaction(hash *daghash.TxID) bool {
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) removeTransactions(txs []*util.Tx) error {
-	diff := blockdag.NewUTXODiff(false)
+	diff := blockdag.NewUTXODiffWithoutMultiset()
 
 	for _, tx := range txs {
 		txID := tx.ID()
@@ -514,7 +514,7 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeDependants bool, restoreI
 		return nil
 	}
 
-	diff := blockdag.NewUTXODiff(false)
+	diff := blockdag.NewUTXODiffWithoutMultiset()
 	err := mp.removeTransactionWithDiff(tx, diff, restoreInputs)
 	if err != nil {
 		return err
@@ -1375,7 +1375,7 @@ func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan NewBlockMsg) err
 // transactions until they are mined into a block.
 func New(cfg *Config) *TxPool {
 	virtualUTXO := cfg.DAG.UTXOSet()
-	mpUTXO := blockdag.NewDiffUTXOSet(virtualUTXO, blockdag.NewUTXODiff(false))
+	mpUTXO := blockdag.NewDiffUTXOSet(virtualUTXO, blockdag.NewUTXODiffWithoutMultiset())
 	return &TxPool{
 		cfg:            *cfg,
 		pool:           make(map[daghash.TxID]*TxDesc),

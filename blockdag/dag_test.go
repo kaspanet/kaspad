@@ -1247,7 +1247,7 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 		dag.index.AddNode(node)
 
 		// Put dummy diff data in dag.utxoDiffStore
-		err := dag.utxoDiffStore.setBlockDiff(node, NewUTXODiff(true))
+		err := dag.utxoDiffStore.setBlockDiff(node, NewUTXODiff())
 		if err != nil {
 			t.Fatalf("setBlockDiff: %s", err)
 		}

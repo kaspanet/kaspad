@@ -158,17 +158,24 @@ type UTXODiff struct {
 	useMultiset  bool
 }
 
-// NewUTXODiff creates a new, empty utxoDiff
-func NewUTXODiff(useMultiset bool) *UTXODiff {
-	d := &UTXODiff{
+// NewUTXODiffWithoutMultiset creates a new, empty utxoDiff
+// without a multiset.
+func NewUTXODiffWithoutMultiset() *UTXODiff {
+	return &UTXODiff{
 		toAdd:       utxoCollection{},
 		toRemove:    utxoCollection{},
-		useMultiset: useMultiset,
+		useMultiset: false,
 	}
-	if useMultiset {
-		d.diffMultiset = btcec.NewMultiset(btcec.S256())
+}
+
+// NewUTXODiff creates a new, empty utxoDiff.
+func NewUTXODiff() *UTXODiff {
+	return &UTXODiff{
+		toAdd:        utxoCollection{},
+		toRemove:     utxoCollection{},
+		useMultiset:  true,
+		diffMultiset: btcec.NewMultiset(btcec.S256()),
 	}
-	return d
 }
 
 // diffFrom returns a new utxoDiff with the difference between this utxoDiff and another
@@ -482,7 +489,7 @@ type UTXOSet interface {
 // Returns a diff that is equivalent to provided transaction,
 // or an error if provided transaction is not valid in the context of this UTXOSet
 func diffFromTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
-	diff := NewUTXODiff(true)
+	diff := NewUTXODiff()
 	isCoinbase := tx.IsCoinBase()
 	if !isCoinbase {
 		for _, txIn := range tx.TxIn {
@@ -515,7 +522,7 @@ func diffFromTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff
 // Returns an error if the provided transaction's entry is not valid in the context
 // of this UTXOSet.
 func diffFromAcceptedTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
-	diff := NewUTXODiff(true)
+	diff := NewUTXODiff()
 	isCoinbase := tx.IsCoinBase()
 	for i, txOut := range tx.TxOut {
 		// Fetch any unaccepted transaction
@@ -693,7 +700,7 @@ func (fus *FullUTXOSet) removeAndUpdateMultiset(outpoint wire.Outpoint) error {
 //
 // This function MUST be called with the dag.UTXOToECMHCacheLock lock held.
 func (fus *FullUTXOSet) WithTransactions(transactions []*wire.MsgTx, blockBlueScore uint64, ignoreDoubleSpends bool) (UTXOSet, error) {
-	diffSet := NewDiffUTXOSet(fus, NewUTXODiff(true))
+	diffSet := NewDiffUTXOSet(fus, NewUTXODiff())
 	for _, tx := range transactions {
 		isAccepted, err := diffSet.AddTx(tx, blockBlueScore)
 		if err != nil {
@@ -822,7 +829,11 @@ func (dus *DiffUTXOSet) meldToBase() error {
 		dus.base.UTXOMultiset = dus.base.UTXOMultiset.Union(dus.UTXODiff.diffMultiset)
 	}
 
-	dus.UTXODiff = NewUTXODiff(dus.UTXODiff.useMultiset)
+	if dus.UTXODiff.useMultiset {
+		dus.UTXODiff = NewUTXODiff()
+	} else {
+		dus.UTXODiff = NewUTXODiffWithoutMultiset()
+	}
 	return nil
 }
 

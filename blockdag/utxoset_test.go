@@ -80,7 +80,7 @@ func TestUTXODiff(t *testing.T) {
 	utxoEntry1 := NewUTXOEntry(&wire.TxOut{ScriptPubKey: []byte{}, Value: 20}, false, 1)
 
 	// Test utxoDiff creation
-	diff := NewUTXODiff(true)
+	diff := NewUTXODiff()
 	if len(diff.toAdd) != 0 || len(diff.toRemove) != 0 {
 		t.Errorf("new diff is not empty")
 	}
@@ -492,7 +492,7 @@ func addMultisetToDiff(t *testing.T, diff *UTXODiff) *UTXODiff {
 	if diff == nil {
 		return nil
 	}
-	diffWithMs := NewUTXODiff(true)
+	diffWithMs := NewUTXODiff()
 	for outpoint, entry := range diff.toAdd {
 		err := diffWithMs.AddEntry(outpoint, entry)
 		if err != nil {
@@ -611,7 +611,7 @@ func TestDiffUTXOSet(t *testing.T) {
 	})
 
 	// Test diffUTXOSet creation
-	emptySet := NewDiffUTXOSet(NewFullUTXOSet(), NewUTXODiff(true))
+	emptySet := NewDiffUTXOSet(NewFullUTXOSet(), NewUTXODiff())
 	if collection, err := emptySet.collection(); err != nil {
 		t.Errorf("Error getting emptySet collection: %s", err)
 	} else if len(collection) != 0 {
@@ -627,7 +627,7 @@ func TestDiffUTXOSet(t *testing.T) {
 	if !ok {
 		t.Errorf("WithDiff is of unexpected type")
 	}
-	withDiff, _ := NewUTXODiff(true).WithDiff(diff)
+	withDiff, _ := NewUTXODiff().WithDiff(diff)
 	if !reflect.DeepEqual(withDiffUTXOSet.base, emptySet.base) || !reflect.DeepEqual(withDiffUTXOSet.UTXODiff, withDiff) {
 		t.Errorf("WithDiff is of unexpected composition")
 	}
@@ -809,7 +809,7 @@ func TestDiffUTXOSet(t *testing.T) {
 // 3. diffUTXOSet cannot diffFrom a diffUTXOSet with a different base.
 func TestUTXOSetDiffRules(t *testing.T) {
 	fullSet := NewFullUTXOSet()
-	diffSet := NewDiffUTXOSet(fullSet, NewUTXODiff(true))
+	diffSet := NewDiffUTXOSet(fullSet, NewUTXODiff())
 
 	// For each of the following test cases, we will call utxoSet.diffFrom(diffSet) and compare
 	// whether the function succeeded with expectedSuccess
@@ -828,12 +828,12 @@ func TestUTXOSetDiffRules(t *testing.T) {
 			},
 			{
 				name:            "diff from diffSet with different base",
-				diffSet:         NewDiffUTXOSet(NewFullUTXOSet(), NewUTXODiff(true)),
+				diffSet:         NewDiffUTXOSet(NewFullUTXOSet(), NewUTXODiff()),
 				expectedSuccess: false,
 			},
 			{
 				name:            "diff from diffSet with same base",
-				diffSet:         NewDiffUTXOSet(fullSet, NewUTXODiff(true)),
+				diffSet:         NewDiffUTXOSet(fullSet, NewUTXODiff()),
 				expectedSuccess: true,
 			},
 		}
@@ -893,7 +893,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	}{
 		{
 			name:        "add coinbase transaction to empty set",
-			startSet:    NewDiffUTXOSet(NewFullUTXOSet(), NewUTXODiff(true)),
+			startSet:    NewDiffUTXOSet(NewFullUTXOSet(), NewUTXODiff()),
 			startHeight: 0,
 			toAdd:       []*wire.MsgTx{coinbaseTX},
 			expectedSet: &DiffUTXOSet{
@@ -906,7 +906,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 		},
 		{
 			name:        "add regular transaction to empty set",
-			startSet:    NewDiffUTXOSet(NewFullUTXOSet(), NewUTXODiff(true)),
+			startSet:    NewDiffUTXOSet(NewFullUTXOSet(), NewUTXODiff()),
 			startHeight: 0,
 			toAdd:       []*wire.MsgTx{transaction1},
 			expectedSet: &DiffUTXOSet{
@@ -1119,7 +1119,7 @@ func TestUTXOSetAddEntry(t *testing.T) {
 	utxoEntry0 := NewUTXOEntry(&wire.TxOut{ScriptPubKey: []byte{}, Value: 10}, true, 0)
 	utxoEntry1 := NewUTXOEntry(&wire.TxOut{ScriptPubKey: []byte{}, Value: 20}, false, 1)
 
-	utxoDiff := NewUTXODiff(true)
+	utxoDiff := NewUTXODiff()
 
 	tests := []struct {
 		name             string

@@ -940,7 +940,7 @@ func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) error {
 }
 
 func (node *blockNode) diffFromTxs(pastUTXO UTXOSet, transactions []*util.Tx) (*UTXODiff, error) {
-	diff := NewUTXODiff(true)
+	diff := NewUTXODiff()
 
 	for _, tx := range transactions {
 		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), UnacceptedBlueScore)
@@ -959,7 +959,7 @@ func (node *blockNode) diffFromTxs(pastUTXO UTXOSet, transactions []*util.Tx) (*
 // diffFromAccpetanceData creates a diff that "updates" the blue scores of the given
 // UTXOSet with the node's blueScore according to the given acceptance data.
 func (node *blockNode) diffFromAcceptanceData(pastUTXO UTXOSet, multiBlockTxsAcceptanceData MultiBlockTxsAcceptanceData) (*UTXODiff, error) {
-	diff := NewUTXODiff(true)
+	diff := NewUTXODiff()
 
 	for _, blockTxsAcceptanceData := range multiBlockTxsAcceptanceData {
 		for _, txAcceptanceData := range blockTxsAcceptanceData.TxAcceptanceData {
@@ -1061,7 +1061,7 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 	// The genesis has no past UTXO, so we create an empty UTXO
 	// set by creating a diff UTXO set with the virtual UTXO
 	// set, and adding all of its entries in toRemove
-	diff := NewUTXODiff(true)
+	diff := NewUTXODiff()
 	for outpoint, entry := range virtual.utxoSet.utxoCollection {
 		diff.toRemove[outpoint] = entry
 	}
