@@ -154,7 +154,7 @@ var helpDescsEnUS = map[string]string{
 	"getSelectedTipResult-height": "Height of the best block",
 
 	// GetSelectedTipCmd help.
-	"getSelectedTip--synopsis":   "Returns information about a the selected tip block of the DAG.",
+	"getSelectedTip--synopsis":   "Returns information about the selected tip block of the blockDAG.",
 	"getSelectedTip-verbose":     "Specifies the block is returned as a JSON object instead of hex-encoded string",
 	"getSelectedTip-verboseTx":   "Specifies that each transaction is returned as a JSON object and only applies if the verbose flag is true (btcd extension)",
 	"getSelectedTip--condition0": "verbose=false",
@@ -163,7 +163,7 @@ var helpDescsEnUS = map[string]string{
 	"getSelectedTip--result0":    "Hex-encoded bytes of the serialized block",
 
 	// GetSelectedTipHashCmd help.
-	"getSelectedTipHash--synopsis": "Returns the hash of the of the best (most recent) block in the longest block chain.",
+	"getSelectedTipHash--synopsis": "Returns the hash of the of the selected tip block of the blockDAG.",
 	"getSelectedTipHash--result0":  "The hex-encoded block hash",
 
 	// GetBlockCmd help.

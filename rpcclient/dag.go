@@ -46,8 +46,8 @@ func (c *Client) GetSelectedTipHashAsync() FutureGetSelectedTipHashResult {
 	return c.sendCmd(cmd)
 }
 
-// GetSelectedTipHash returns the hash of the best block in the longest block
-// dag.
+// GetSelectedTipHash returns the hash of the selected tip of the
+// Block DAG.
 func (c *Client) GetSelectedTipHash() (*daghash.Hash, error) {
 	return c.GetSelectedTipHashAsync().Receive()
 }

@@ -66,8 +66,8 @@ func (c *Client) DebugLevel(levelSpec string) (string, error) {
 // GetSelectedTipAsync RPC invocation (or an applicable error).
 type FutureGetSelectedTipResult chan *response
 
-// Receive waits for the response promised by the future and returns the hash
-// and height of the block in the longest (best) chain.
+// Receive waits for the response promised by the future and returns the
+// selected tip block.
 func (r FutureGetSelectedTipResult) Receive() (*wire.MsgBlock, error) {
 	res, err := receiveFuture(r)
 	if err != nil {

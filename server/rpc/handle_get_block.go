@@ -80,8 +80,8 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		}
 	}
 
-	// When the verbose flag isn't set, simply return the serialized block
-	// as a hex-encoded string.
+	// When the verbose flag is set to false, simply return the serialized block
+	// as a hex-encoded string (verbose flag is on by default).
 	if c.Verbose != nil && !*c.Verbose {
 		return hex.EncodeToString(blkBytes), nil
 	}
