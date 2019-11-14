@@ -395,15 +395,15 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 
 // clone returns a clone of this utxoDiff
 func (d *UTXODiff) clone() *UTXODiff {
-	dClone := &UTXODiff{
+	clone := &UTXODiff{
 		toAdd:       d.toAdd.clone(),
 		toRemove:    d.toRemove.clone(),
 		useMultiset: d.useMultiset,
 	}
 	if d.useMultiset {
-		dClone.diffMultiset = d.diffMultiset.Clone()
+		clone.diffMultiset = d.diffMultiset.Clone()
 	}
-	return dClone
+	return clone
 }
 
 // AddEntry adds a UTXOEntry to the diff
