@@ -213,10 +213,6 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 		useMultiset: d.useMultiset,
 	}
 
-	if d.useMultiset {
-		result.diffMultiset = btcec.NewMultiset(btcec.S256())
-	}
-
 	// Note that the following cases are not accounted for, as they are impossible
 	// as long as the base utxoSet is the same:
 	// - if utxoEntry is in d.toAdd and other.toRemove
