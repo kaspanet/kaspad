@@ -321,10 +321,6 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 		useMultiset: d.useMultiset,
 	}
 
-	if d.useMultiset {
-		result.diffMultiset = btcec.NewMultiset(btcec.S256())
-	}
-
 	// All transactions in d.toAdd:
 	// If they are not in diff.toRemove - should be added in result.toAdd
 	// If they are in diff.toAdd - should throw an error
