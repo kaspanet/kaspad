@@ -5,13 +5,15 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/daglabs/btcd/apiserver/apimodels"
+	"github.com/daglabs/btcd/apiserver/config"
 	"github.com/daglabs/btcd/apiserver/dbmodels"
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/httpserverutils"
 	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/pkg/errors"
-	"net/http"
 
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/jsonrpc"
@@ -187,6 +189,8 @@ func GetUTXOsByAddressHandler(address string) (interface{}, error) {
 		}
 	}
 
+	activeNetParams := config.ActiveConfig().NetParams()
+
 	UTXOsResponses := make([]*apimodels.TransactionOutputResponse, len(transactionOutputs))
 	for i, transactionOutput := range transactionOutputs {
 		subnetworkID := &subnetworkid.SubnetworkID{}
@@ -204,6 +208,7 @@ func GetUTXOsByAddressHandler(address string) (interface{}, error) {
 			acceptingBlockBlueScore = transactionOutput.Transaction.AcceptingBlock.BlueScore
 			confirmations = selectedTip.BlueScore - acceptingBlockBlueScore + 2
 		}
+		isCoinbase := subnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase)
 		UTXOsResponses[i] = &apimodels.TransactionOutputResponse{
 			TransactionID:           transactionOutput.Transaction.TransactionID,
 			Value:                   transactionOutput.Value,
@@ -211,8 +216,9 @@ func GetUTXOsByAddressHandler(address string) (interface{}, error) {
 			AcceptingBlockHash:      acceptingBlockHash,
 			AcceptingBlockBlueScore: acceptingBlockBlueScore,
 			Index:                   transactionOutput.Index,
-			IsCoinbase:              btcjson.Bool(subnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase)),
+			IsCoinbase:              btcjson.Bool(isCoinbase),
 			Confirmations:           btcjson.Uint64(confirmations),
+			IsSpendable:             btcjson.Bool(!isCoinbase || confirmations >= activeNetParams.BlockCoinbaseMaturity),
 		}
 	}
 	return UTXOsResponses, nil

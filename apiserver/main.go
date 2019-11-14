@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/daglabs/btcd/apiserver/mqtt"
 	"github.com/pkg/errors"
 	"os"
 
@@ -31,14 +32,14 @@ func main() {
 	}
 
 	if cfg.Migrate {
-		err := database.Migrate(cfg)
+		err := database.Migrate()
 		if err != nil {
 			panic(errors.Errorf("Error migrating database: %s", err))
 		}
 		return
 	}
 
-	err = database.Connect(cfg)
+	err = database.Connect()
 	if err != nil {
 		panic(errors.Errorf("Error connecting to database: %s", err))
 	}
@@ -49,13 +50,19 @@ func main() {
 		}
 	}()
 
-	err = jsonrpc.Connect(cfg)
+	err = mqtt.Connect()
+	if err != nil {
+		panic(errors.Errorf("Error connecting to MQTT: %s", err))
+	}
+	defer mqtt.Close()
+
+	err = jsonrpc.Connect()
 	if err != nil {
 		panic(errors.Errorf("Error connecting to servers: %s", err))
 	}
 	defer jsonrpc.Close()
 
-	shutdownServer := server.Start(cfg.HTTPListen)
+	shutdownServer := server.Start(config.ActiveConfig().HTTPListen)
 	defer shutdownServer()
 
 	doneChan := make(chan struct{}, 1)

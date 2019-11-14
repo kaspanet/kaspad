@@ -33,8 +33,8 @@ func (l gormLogger) Print(v ...interface{}) {
 
 // Connect connects to the database mentioned in
 // config variable.
-func Connect(cfg *config.Config) error {
-	connectionString := buildConnectionString(cfg)
+func Connect() error {
+	connectionString := buildConnectionString()
 	migrator, driver, err := openMigrator(connectionString)
 	if err != nil {
 		return err
@@ -67,7 +67,8 @@ func Close() error {
 	return err
 }
 
-func buildConnectionString(cfg *config.Config) string {
+func buildConnectionString() string {
+	cfg := config.ActiveConfig()
 	return fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True",
 		cfg.DBUser, cfg.DBPassword, cfg.DBAddress, cfg.DBName)
 }
@@ -111,8 +112,8 @@ func openMigrator(connectionString string) (*migrate.Migrate, source.Driver, err
 }
 
 // Migrate database to the latest version.
-func Migrate(cfg *config.Config) error {
-	connectionString := buildConnectionString(cfg)
+func Migrate() error {
+	connectionString := buildConnectionString()
 	migrator, driver, err := openMigrator(connectionString)
 	if err != nil {
 		return err

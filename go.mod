@@ -10,6 +10,7 @@ require (
 	github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792
 	github.com/btcsuite/winsvc v1.0.0
 	github.com/davecgh/go-spew v1.1.1
+	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/golang-migrate/migrate/v4 v4.6.1
 	github.com/golang/groupcache v0.0.0-20191002201903-404acd9df4cc
 	github.com/gorilla/handlers v1.4.2
