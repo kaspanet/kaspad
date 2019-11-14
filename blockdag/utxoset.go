@@ -405,7 +405,7 @@ func (d *UTXODiff) clone() *UTXODiff {
 // AddEntry adds a UTXOEntry to the diff
 //
 // If d.useMultiset is true, this function MUST be
-// called with the dag.UTXOToECMHCacheLock lock held.
+// called with the DAG lock held.
 func (d *UTXODiff) AddEntry(outpoint wire.Outpoint, entry *UTXOEntry) error {
 	if d.toRemove.containsWithBlueScore(outpoint, entry.blockBlueScore) {
 		d.toRemove.remove(outpoint)
@@ -428,7 +428,7 @@ func (d *UTXODiff) AddEntry(outpoint wire.Outpoint, entry *UTXOEntry) error {
 // RemoveEntry removes a UTXOEntry from the diff.
 //
 // If d.useMultiset is true, this function MUST be
-// called with the dag.UTXOToECMHCacheLock lock held.
+// called with the DAG lock held.
 func (d *UTXODiff) RemoveEntry(outpoint wire.Outpoint, entry *UTXOEntry) error {
 	if d.toAdd.containsWithBlueScore(outpoint, entry.blockBlueScore) {
 		d.toAdd.remove(outpoint)
@@ -598,7 +598,7 @@ func (fus *FullUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 // It returns error if something unexpected happens, such as serialization error (isAccepted=false doesn't
 // necessarily means there's an error).
 //
-// This function MUST be called with the dag.UTXOToECMHCacheLock lock held.
+// This function MUST be called with the DAG lock held.
 func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blueScore uint64) (isAccepted bool, err error) {
 	isCoinbase := tx.IsCoinBase()
 	if !isCoinbase {
@@ -694,7 +694,7 @@ func (fus *FullUTXOSet) removeAndUpdateMultiset(outpoint wire.Outpoint) error {
 
 // WithTransactions returns a new UTXO Set with the added transactions.
 //
-// This function MUST be called with the dag.UTXOToECMHCacheLock lock held.
+// This function MUST be called with the DAG lock held.
 func (fus *FullUTXOSet) WithTransactions(transactions []*wire.MsgTx, blockBlueScore uint64, ignoreDoubleSpends bool) (UTXOSet, error) {
 	diffSet := NewDiffUTXOSet(fus, NewUTXODiff())
 	for _, tx := range transactions {
@@ -751,7 +751,7 @@ func (dus *DiffUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 // AddTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context.
 //
 // If dus.UTXODiff.useMultiset is true, this function MUST be
-// called with the dag.UTXOToECMHCacheLock lock held.
+// called with the DAG lock held.
 func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockBlueScore uint64) (bool, error) {
 	isCoinbase := tx.IsCoinBase()
 	if !isCoinbase && !dus.containsInputs(tx) {
@@ -878,7 +878,7 @@ func (dus *DiffUTXOSet) Multiset() *btcec.Multiset {
 // WithTransactions returns a new UTXO Set with the added transactions.
 //
 // If dus.UTXODiff.useMultiset is true, this function MUST be
-// called with the dag.UTXOToECMHCacheLock lock held.
+// called with the DAG lock held.
 func (dus *DiffUTXOSet) WithTransactions(transactions []*wire.MsgTx, blockBlueScore uint64, ignoreDoubleSpends bool) (UTXOSet, error) {
 	diffSet := NewDiffUTXOSet(dus.base, dus.UTXODiff.clone())
 	for _, tx := range transactions {

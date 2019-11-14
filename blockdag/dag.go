@@ -78,10 +78,6 @@ type BlockDAG struct {
 
 	utxoLock sync.RWMutex
 
-	// UTXOToECMHCacheLock protects concurrent access to the
-	// UTXO-to-ECMH cache.
-	UTXOToECMHCacheLock sync.Mutex
-
 	// index and virtual are related to the memory block index.  They both
 	// have their own locks, however they are often also protected by the
 	// DAG lock to help prevent logic races when blocks are being processed.
@@ -536,9 +532,6 @@ func (node *blockNode) validateAcceptedIDMerkleRoot(dag *BlockDAG, txsAcceptance
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) connectBlock(node *blockNode,
 	block *util.Block, fastAdd bool) (*chainUpdates, error) {
-
-	dag.UTXOToECMHCacheLock.Lock()
-	defer dag.UTXOToECMHCacheLock.Unlock()
 	// No warnings about unknown rules or versions until the DAG is
 	// current.
 	if dag.isCurrent() {
@@ -1772,6 +1765,16 @@ func (dag *BlockDAG) GetTopHeaders(startHash *daghash.Hash) ([]*wire.BlockHeader
 		}
 	}
 	return headers, nil
+}
+
+// Lock locks the DAG's UTXO set for writing.
+func (dag *BlockDAG) Lock() {
+	dag.dagLock.Lock()
+}
+
+// Unlock unlocks the DAG's UTXO set for writing.
+func (dag *BlockDAG) Unlock() {
+	dag.dagLock.Unlock()
 }
 
 // RLock locks the DAG's UTXO set for reading.
