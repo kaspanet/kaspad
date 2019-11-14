@@ -54,7 +54,8 @@ func Close() {
 }
 
 // Connect initiates a connection to the JSON-RPC API Server
-func Connect(cfg *config.Config) error {
+func Connect() error {
+	cfg := config.ActiveConfig()
 	var cert []byte
 	if !cfg.DisableTLS {
 		var err error
