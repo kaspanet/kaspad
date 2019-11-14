@@ -18,7 +18,8 @@ func GetClient() (mqtt.Client, error) {
 }
 
 // Connect initiates a connection to the MQTT server, if defined
-func Connect(cfg *config.Config) error {
+func Connect() error {
+	cfg := config.ActiveConfig()
 	if cfg.MQTTBrokerAddress == "" {
 		// MQTT broker not defined -- nothing to do
 		return nil
