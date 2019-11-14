@@ -21,7 +21,7 @@ func TestUTXOCollection(t *testing.T) {
 	utxoEntry1 := NewUTXOEntry(&wire.TxOut{ScriptPubKey: []byte{}, Value: 20}, false, 1)
 
 	// For each of the following test cases, we will:
-	// .String() the given collection and compare it to expectedString
+	// .String() the given collection and compare it to expectedStringWithMultiset
 	// .clone() the given collection and compare its value to itself (expected: equals) and its reference to itself (expected: not equal)
 	tests := []struct {
 		name           string
@@ -79,38 +79,49 @@ func TestUTXODiff(t *testing.T) {
 	utxoEntry0 := NewUTXOEntry(&wire.TxOut{ScriptPubKey: []byte{}, Value: 10}, true, 0)
 	utxoEntry1 := NewUTXOEntry(&wire.TxOut{ScriptPubKey: []byte{}, Value: 20}, false, 1)
 
-	// Test utxoDiff creation
-	diff := NewUTXODiff()
-	if len(diff.toAdd) != 0 || len(diff.toRemove) != 0 {
-		t.Errorf("new diff is not empty")
-	}
+	for i := 0; i < 2; i++ {
+		withMultiset := i == 0
+		// Test utxoDiff creation
+		var diff *UTXODiff
+		if withMultiset {
+			diff = NewUTXODiff()
+		} else {
+			diff = NewUTXODiffWithoutMultiset()
+		}
+		if len(diff.toAdd) != 0 || len(diff.toRemove) != 0 {
+			t.Errorf("new diff is not empty")
+		}
 
-	err := diff.AddEntry(outpoint0, utxoEntry0)
-	if err != nil {
-		t.Fatalf("Error adding entry to utxo diff: %s", err)
-	}
+		err := diff.AddEntry(outpoint0, utxoEntry0)
+		if err != nil {
+			t.Fatalf("error adding entry to utxo diff: %s", err)
+		}
 
-	err = diff.RemoveEntry(outpoint1, utxoEntry1)
-	if err != nil {
-		t.Fatalf("Error adding entry to utxo diff: %s", err)
-	}
+		err = diff.RemoveEntry(outpoint1, utxoEntry1)
+		if err != nil {
+			t.Fatalf("error adding entry to utxo diff: %s", err)
+		}
 
-	// Test utxoDiff cloning
-	clonedDiff := diff.clone()
-	if clonedDiff == diff {
-		t.Errorf("cloned diff is reference-equal to the original")
-	}
-	if !reflect.DeepEqual(clonedDiff, diff) {
-		t.Errorf("cloned diff not equal to the original"+
-			"Original: \"%v\", cloned: \"%v\".", diff, clonedDiff)
-	}
+		// Test utxoDiff cloning
+		clonedDiff := diff.clone()
+		if clonedDiff == diff {
+			t.Errorf("cloned diff is reference-equal to the original")
+		}
+		if !reflect.DeepEqual(clonedDiff, diff) {
+			t.Errorf("cloned diff not equal to the original"+
+				"Original: \"%v\", cloned: \"%v\".", diff, clonedDiff)
+		}
 
-	// Test utxoDiff string representation
-	expectedDiffString := "toAdd: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ]; toRemove: [ (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20, blueScore: 1 ], Multiset-Hash: 7cb61e48005b0c817211d04589d719bff87d86a6a6ce2454515f57265382ded7"
-	diffString := clonedDiff.String()
-	if diffString != expectedDiffString {
-		t.Errorf("unexpected diff string. "+
-			"Expected: \"%s\", got: \"%s\".", expectedDiffString, diffString)
+		// Test utxoDiff string representation
+		expectedDiffString := "toAdd: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ]; toRemove: [ (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20, blueScore: 1 ]"
+		if withMultiset {
+			expectedDiffString = "toAdd: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ]; toRemove: [ (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20, blueScore: 1 ], Multiset-Hash: 7cb61e48005b0c817211d04589d719bff87d86a6a6ce2454515f57265382ded7"
+		}
+		diffString := clonedDiff.String()
+		if diffString != expectedDiffString {
+			t.Errorf("unexpected diff string. "+
+				"Expected: \"%s\", got: \"%s\".", expectedDiffString, diffString)
+		}
 	}
 }
 

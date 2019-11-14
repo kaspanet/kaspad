@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"math/big"
 
@@ -73,7 +74,9 @@ func (diffStore *utxoDiffStore) deserializeBlockUTXODiffData(serializedDiffDataB
 		diffData.diffChild = diffStore.dag.index.LookupNode(hash)
 	}
 
-	diffData.diff = &UTXODiff{}
+	diffData.diff = &UTXODiff{
+		useMultiset: true,
+	}
 
 	diffData.diff.toAdd, err = deserializeDiffEntries(serializedDiffData)
 	if err != nil {
@@ -155,6 +158,9 @@ func deserializeMultiset(r io.Reader) (*btcec.Multiset, error) {
 // serializeUTXODiff serializes UTXODiff by serializing
 // UTXODiff.toAdd, UTXODiff.toRemove and UTXODiff.Multiset one after the other.
 func serializeUTXODiff(w io.Writer, diff *UTXODiff) error {
+	if !diff.useMultiset {
+		return errors.New("Cannot serialize a UTXO diff without a multiset")
+	}
 	err := serializeUTXOCollection(w, diff.toAdd)
 	if err != nil {
 		return err
