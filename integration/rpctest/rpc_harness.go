@@ -246,14 +246,14 @@ func (h *Harness) SetUp(createTestChain bool, numMatureOutputs uint32) error {
 	// Block until the wallet has fully synced up to the tip of the main
 	// chain.
 	selectedTip, err := h.Node.GetSelectedTip()
-	height := selectedTip.BlueScore
 	if err != nil {
 		return err
 	}
+	blueScore := selectedTip.BlueScore
 	ticker := time.NewTicker(time.Millisecond * 100)
 	for range ticker.C {
 		walletHeight := h.wallet.SyncedHeight()
-		if walletHeight == height {
+		if walletHeight == blueScore {
 			break
 		}
 	}
