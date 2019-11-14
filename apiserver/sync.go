@@ -589,7 +589,7 @@ func insertTransactionInput(dbTx *gorm.DB, dbTransaction *dbmodels.Transaction, 
 	var dbPreviousTransactionOutput dbmodels.TransactionOutput
 	dbResult := dbTx.
 		Joins("LEFT JOIN `transactions` ON `transactions`.`id` = `transaction_outputs`.`transaction_id`").
-		Where("`transactions`.`transactiond_id` = ? AND `transaction_outputs`.`index` = ?", input.TxID, input.Vout).
+		Where("`transactions`.`transaction_id` = ? AND `transaction_outputs`.`index` = ?", input.TxID, input.Vout).
 		First(&dbPreviousTransactionOutput)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
