@@ -26,10 +26,14 @@ func IsConnected() bool {
 }
 
 // PublishTransactionForAddress publishes a transaction message for the topic to transactions/address.
-func PublishTransactionForAddress(address util.Address, transaction *btcjson.TxRawResult) {
+func PublishTransactionForAddress(address util.Address, transaction *btcjson.TxRawResult) error {
 	payload := fmt.Sprintf("%+v", *transaction)
-	token := client.Publish(transactionsTopic(address), 0, false, payload)
+	token := client.Publish(transactionsTopic(address), 0, true, payload)
 	token.Wait()
+	if token.Error() != nil {
+		return token.Error()
+	}
+	return nil
 }
 
 func transactionsTopic(address util.Address) string {

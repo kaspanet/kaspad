@@ -719,7 +719,10 @@ func publishTransactionNotifications(transaction *btcjson.TxRawResult) error {
 	}
 
 	for address := range addresses {
-		mqtt.PublishTransactionForAddress(address, transaction)
+		err = mqtt.PublishTransactionForAddress(address, transaction)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
