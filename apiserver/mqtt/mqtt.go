@@ -1,10 +1,12 @@
 package mqtt
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/daglabs/btcd/apiserver/config"
-	"github.com/daglabs/btcd/btcjson"
+	"github.com/daglabs/btcd/apiserver/controllers"
+	"github.com/daglabs/btcd/apiserver/dbmodels"
 	"github.com/daglabs/btcd/util"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
@@ -26,8 +28,9 @@ func IsConnected() bool {
 }
 
 // PublishTransactionForAddress publishes a transaction message for the topic to transactions/address.
-func PublishTransactionForAddress(address util.Address, transaction *btcjson.TxRawResult) error {
-	payload := fmt.Sprintf("%+v", *transaction)
+func PublishTransactionForAddress(address util.Address, transaction *dbmodels.Transaction) error {
+	response := controllers.ConvertTxDBModelToTxResponse(transaction)
+	payload, _ := json.Marshal(response)
 	token := client.Publish(transactionsTopic(address), 0, true, payload)
 	token.Wait()
 	if token.Error() != nil {

@@ -7,12 +7,21 @@ import (
 	"github.com/daglabs/btcd/btcjson"
 )
 
-func convertTxDBModelToTxResponse(tx *dbmodels.Transaction) *apimodels.TransactionResponse {
+// ConvertTxDBModelToTxResponse converts a Transaction model to TransactionResponse
+func ConvertTxDBModelToTxResponse(tx *dbmodels.Transaction) *apimodels.TransactionResponse {
+	var acceptingBlockHash string
+	var acceptingBlockBlueScore uint64
+
+	if tx.AcceptingBlock != nil {
+		acceptingBlockHash = tx.AcceptingBlock.BlockHash
+		acceptingBlockBlueScore = tx.AcceptingBlock.BlueScore
+	}
+
 	txRes := &apimodels.TransactionResponse{
 		TransactionHash:         tx.TransactionHash,
 		TransactionID:           tx.TransactionID,
-		AcceptingBlockHash:      tx.AcceptingBlock.BlockHash,
-		AcceptingBlockBlueScore: tx.AcceptingBlock.BlueScore,
+		AcceptingBlockHash:      acceptingBlockHash,
+		AcceptingBlockBlueScore: acceptingBlockBlueScore,
 		SubnetworkID:            tx.Subnetwork.SubnetworkID,
 		LockTime:                tx.LockTime,
 		Gas:                     tx.Gas,

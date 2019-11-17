@@ -298,7 +298,7 @@ func addBlock(client *jsonrpc.Client, block string, rawBlock btcjson.GetBlockVer
 			return err
 		}
 		if mqtt.IsConnected() {
-			err = publishTransactionNotifications(&transaction)
+			err = publishTransactionNotifications(&transaction, dbTransaction)
 			if err != nil {
 				return err
 			}
@@ -712,8 +712,8 @@ func insertTransactionOutput(dbTx *gorm.DB, dbTransaction *dbmodels.Transaction,
 	return nil
 }
 
-func publishTransactionNotifications(transaction *btcjson.TxRawResult) error {
-	addresses, err := getAddressesFromTxOutputs(transaction.Vout)
+func publishTransactionNotifications(rawTransaction *btcjson.TxRawResult, transaction *dbmodels.Transaction) error {
+	addresses, err := getAddressesFromTxOutputs(rawTransaction.Vout)
 	if err != nil {
 		return err
 	}
