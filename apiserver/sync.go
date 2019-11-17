@@ -902,7 +902,7 @@ func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedM
 
 var pendingChainChangedMsgs []*jsonrpc.ChainChangedMsg
 
-// enqueueChainChangedMsg equeues onChainChanged messages to be handled later
+// enqueueChainChangedMsg enqueues onChainChanged messages to be handled later
 func enqueueChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) {
 	pendingChainChangedMsgs = append(pendingChainChangedMsgs, chainChanged)
 }
