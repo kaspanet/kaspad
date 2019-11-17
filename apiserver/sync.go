@@ -67,6 +67,7 @@ loop:
 			handleBlockAddedMsg(client, blockAdded)
 		case chainChanged := <-client.OnChainChanged:
 			enqueueChainChangedMsg(chainChanged)
+			processChainChangedMsgs()
 		case <-doneChan:
 			log.Infof("startSync stopped")
 			break loop
@@ -899,38 +900,39 @@ func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedM
 	log.Infof("Added block %s", hash)
 }
 
-var pendingChainChangedMsgs = make(map[*jsonrpc.ChainChangedMsg]struct{})
+var pendingChainChangedMsgs []*jsonrpc.ChainChangedMsg
 
 // enqueueChainChangedMsg equeues onChainChanged messages to be handled later
 func enqueueChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) {
-	pendingChainChangedMsgs[chainChanged] = struct{}{}
-	for pendingMsg := range pendingChainChangedMsgs {
-		handleChainChangedMsg(pendingMsg)
-	}
+	pendingChainChangedMsgs = append(pendingChainChangedMsgs, chainChanged)
 }
 
-// handleChainChangedMsg handles onChainChanged messages
-func handleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) {
-	canHandle, err := canHandleChainChangedMsg(chainChanged)
-	if err != nil {
-		panic(errors.Errorf("Could not resolve if can handle ChainChangedMsg: %s", err))
-	}
-	if !canHandle {
-		return
-	}
+// processChainChangedMsgs processes all pending onChainChanged messages.
+// Messages that cannot yet be processed are re-enqueued.
+func processChainChangedMsgs() {
+	var unprocessedChainChangedMessages []*jsonrpc.ChainChangedMsg
+	for _, chainChanged := range pendingChainChangedMsgs {
+		canHandle, err := canHandleChainChangedMsg(chainChanged)
+		if err != nil {
+			panic(errors.Errorf("Could not resolve if can handle ChainChangedMsg: %s", err))
+		}
+		if !canHandle {
+			unprocessedChainChangedMessages = append(unprocessedChainChangedMessages, chainChanged)
+			continue
+		}
 
-	// Convert the data in chainChanged to something we can feed into
-	// updateSelectedParentChain
-	removedHashes, addedBlocks := convertChainChangedMsg(chainChanged)
+		// Convert the data in chainChanged to something we can feed into
+		// updateSelectedParentChain
+		removedHashes, addedBlocks := convertChainChangedMsg(chainChanged)
 
-	err = updateSelectedParentChain(removedHashes, addedBlocks)
-	if err != nil {
-		panic(errors.Errorf("Could not update selected parent chain: %s", err))
+		err = updateSelectedParentChain(removedHashes, addedBlocks)
+		if err != nil {
+			panic(errors.Errorf("Could not update selected parent chain: %s", err))
+		}
+		log.Infof("Chain changed: removed %d blocks and added %d block",
+			len(removedHashes), len(addedBlocks))
 	}
-	log.Infof("Chain changed: removed %d blocks and added %d block",
-		len(removedHashes), len(addedBlocks))
-
-	delete(pendingChainChangedMsgs, chainChanged)
+	pendingChainChangedMsgs = unprocessedChainChangedMessages
 }
 
 // canHandleChainChangedMsg checks whether we have all the necessary data
@@ -942,15 +944,12 @@ func canHandleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) (bool, erro
 	}
 
 	// Collect all referenced block hashes
-	hashesIn := make([]string, len(chainChanged.AddedChainBlocks)+len(chainChanged.RemovedChainBlockHashes))
-	i := 0
+	hashesIn := make([]string, 0, len(chainChanged.AddedChainBlocks)+len(chainChanged.RemovedChainBlockHashes))
 	for _, hash := range chainChanged.RemovedChainBlockHashes {
-		hashesIn[i] = hash.String()
-		i++
+		hashesIn = append(hashesIn, hash.String())
 	}
 	for _, block := range chainChanged.AddedChainBlocks {
-		hashesIn[i] = block.Hash.String()
-		i++
+		hashesIn = append(hashesIn, block.Hash.String())
 	}
 
 	// Make sure that all the hashes exist in the database
