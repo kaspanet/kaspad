@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
+	"github.com/daglabs/btcd/apiserver/mqtt"
 	"strconv"
 	"time"
 
@@ -295,6 +296,12 @@ func addBlock(client *jsonrpc.Client, block string, rawBlock btcjson.GetBlockVer
 		err = insertTransactionOutputs(dbTx, &transaction, dbTransaction)
 		if err != nil {
 			return err
+		}
+		if mqtt.IsConnected() {
+			err = publishTransactionNotifications(&transaction)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -589,7 +596,7 @@ func insertTransactionInput(dbTx *gorm.DB, dbTransaction *dbmodels.Transaction, 
 	var dbPreviousTransactionOutput dbmodels.TransactionOutput
 	dbResult := dbTx.
 		Joins("LEFT JOIN `transactions` ON `transactions`.`id` = `transaction_outputs`.`transaction_id`").
-		Where("`transactions`.`transactiond_id` = ? AND `transaction_outputs`.`index` = ?", input.TxID, input.Vout).
+		Where("`transactions`.`transaction_id` = ? AND `transaction_outputs`.`index` = ?", input.TxID, input.Vout).
 		First(&dbPreviousTransactionOutput)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
@@ -703,6 +710,37 @@ func insertTransactionOutput(dbTx *gorm.DB, dbTransaction *dbmodels.Transaction,
 		}
 	}
 	return nil
+}
+
+func publishTransactionNotifications(transaction *btcjson.TxRawResult) error {
+	addresses, err := getAddressesFromTxOutputs(transaction.Vout)
+	if err != nil {
+		return err
+	}
+
+	for address, _ := range addresses {
+		mqtt.PublishTransactionForAddress(address, transaction)
+	}
+	return nil
+}
+
+func getAddressesFromTxOutputs(outputs []btcjson.Vout) (map[util.Address]bool, error) {
+	addresses := make(map[util.Address]bool)
+	for _, output := range outputs {
+
+		scriptPubKey, err := hex.DecodeString(output.ScriptPubKey.Hex)
+		if err != nil {
+			return nil, err
+		}
+
+		_, address, err := txscript.ExtractScriptPubKeyAddress(scriptPubKey, config.ActiveConfig().NetParams())
+		if err != nil {
+			return nil, err
+		}
+
+		addresses[address] = true
+	}
+	return addresses, nil
 }
 
 // updateSelectedParentChain updates the database to reflect the current selected

@@ -2,7 +2,10 @@ package mqtt
 
 import (
 	"errors"
+	"fmt"
 	"github.com/daglabs/btcd/apiserver/config"
+	"github.com/daglabs/btcd/btcjson"
+	"github.com/daglabs/btcd/util"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
@@ -15,6 +18,20 @@ func GetClient() (mqtt.Client, error) {
 		return nil, errors.New("MQTT is not connected")
 	}
 	return client, nil
+}
+
+// IsConnected returns true is MQTT client was connected, false otherwise.
+func IsConnected() bool {
+	return client != nil
+}
+
+// PublishTransactionForAddress publishes a transaction message for the topic to transactions/address.
+func PublishTransactionForAddress(address util.Address, transaction *btcjson.TxRawResult) {
+	client.Publish(transactionsTopic(address), 0, false, transaction)
+}
+
+func transactionsTopic(address util.Address) string {
+	return fmt.Sprintf("transactions/%v", address)
 }
 
 // Connect initiates a connection to the MQTT server, if defined
