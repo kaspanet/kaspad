@@ -932,9 +932,9 @@ func enqueueBlockAddedMsg(blockAdded *jsonrpc.BlockAddedMsg) {
 func processBlockAddedMsgs(client *jsonrpc.Client) {
 	var unprocessedBlockAddedMsgs []*jsonrpc.BlockAddedMsg
 	for _, blockAdded := range pendingBlockAddedMsgs {
-		canHandle, missingParentHashes, err := canHandleBlockAddedMsg(blockAdded)
+		missingParentHashes, err := missingParentHashes(blockAdded)
 		if err != nil {
-			panic(errors.Errorf("Could not resolve if can handle BlockAddedMsg: %s", err))
+			panic(errors.Errorf("Could not resolve missing parents: %s", err))
 		}
 		for _, missingParentHash := range missingParentHashes {
 			err := handleMissingParentBlock(client, missingParentHash)
@@ -944,7 +944,7 @@ func processBlockAddedMsgs(client *jsonrpc.Client) {
 				continue
 			}
 		}
-		if !canHandle {
+		if len(missingParentHashes) > 0 {
 			unprocessedBlockAddedMsgs = append(unprocessedBlockAddedMsgs, blockAdded)
 			continue
 		}
@@ -966,11 +966,10 @@ func processBlockAddedMsgs(client *jsonrpc.Client) {
 	pendingBlockAddedMsgs = unprocessedBlockAddedMsgs
 }
 
-func canHandleBlockAddedMsg(blockAdded *jsonrpc.BlockAddedMsg) (
-	canHandle bool, missingParentHashes []string, err error) {
+func missingParentHashes(blockAdded *jsonrpc.BlockAddedMsg) ([]string, error) {
 	db, err := database.DB()
 	if err != nil {
-		return false, nil, err
+		return nil, err
 	}
 
 	// Collect all referenced parent hashes
@@ -987,23 +986,24 @@ func canHandleBlockAddedMsg(blockAdded *jsonrpc.BlockAddedMsg) (
 		Find(&dbParentBlocks)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
-		return false, nil, httpserverutils.NewErrorFromDBErrors("failed to find parent blocks: ", dbErrors)
+		return nil, httpserverutils.NewErrorFromDBErrors("failed to find parent blocks: ", dbErrors)
 	}
 	if len(hashesIn) != len(dbParentBlocks) {
 		// Some parent hashes are missing. Collect and return them
 		var missingParentHashes []string
+	outerloop:
 		for _, hash := range hashesIn {
 			for _, dbParentBlock := range dbParentBlocks {
 				if dbParentBlock.BlockHash == hash {
-					break
+					continue outerloop
 				}
 			}
 			missingParentHashes = append(missingParentHashes, hash)
 		}
-		return false, missingParentHashes, nil
+		return missingParentHashes, nil
 	}
 
-	return true, nil, nil
+	return nil, nil
 }
 
 // handleMissingParentBlock handles missing parent blocks as follows:
