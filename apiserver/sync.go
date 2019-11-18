@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/daglabs/btcd/apiserver/config"
@@ -334,7 +335,17 @@ func insertBlockParents(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult, d
 		return httpserverutils.NewErrorFromDBErrors("failed to find blocks: ", dbErrors)
 	}
 	if len(dbParents) != len(rawBlock.ParentHashes) {
-		return errors.Errorf("some parents are missing for block: %s", rawBlock.Hash)
+		missingParents := make([]string, 0, len(rawBlock.ParentHashes)-len(dbParents))
+	outerLoop:
+		for _, parentHash := range rawBlock.ParentHashes {
+			for _, dbParent := range dbParents {
+				if dbParent.BlockHash == parentHash {
+					continue outerLoop
+				}
+			}
+			missingParents = append(missingParents, parentHash)
+		}
+		return errors.Errorf("some parents are missing for block %s: %s", rawBlock.Hash, strings.Join(missingParents, ", "))
 	}
 
 	for _, dbParent := range dbParents {
