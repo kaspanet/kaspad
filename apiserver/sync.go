@@ -942,7 +942,7 @@ func processBlockAddedMsgs(client *jsonrpc.Client) {
 }
 
 func canHandleBlockAddedMsg(blockAdded *jsonrpc.BlockAddedMsg) (bool, error) {
-	dbTx, err := database.DB()
+	db, err := database.DB()
 	if err != nil {
 		return false, err
 	}
@@ -955,7 +955,7 @@ func canHandleBlockAddedMsg(blockAdded *jsonrpc.BlockAddedMsg) (bool, error) {
 
 	// Make sure that all the parent hashes exist in the database
 	var dbParentCount int
-	dbResult := dbTx.
+	dbResult := db.
 		Model(&dbmodels.Block{}).
 		Where("block_hash in (?)", hashesIn).
 		Count(&dbParentCount)
