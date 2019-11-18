@@ -29,6 +29,17 @@ var (
 
 	// pendingChainChangedMsgs holds chainChangedMsgs in order of arrival
 	pendingChainChangedMsgs []*jsonrpc.ChainChangedMsg
+
+	// missingBlocks is a map between missing block hashes and the time
+	// they were first found to be missing. If a block is still missing
+	// after blockMissingTimeout then it gets re-requested from the node.
+	missingBlocks = make(map[string]time.Time)
+)
+
+const (
+	// blockMissingTimeout is the amount of time after which a missing block
+	// gets re-requested from the node.
+	blockMissingTimeout = time.Second * 10
 )
 
 // startSync keeps the node and the API server in sync. On start, it downloads
@@ -293,6 +304,12 @@ func addBlock(client *jsonrpc.Client, block string, rawBlock btcjson.GetBlockVer
 	}
 
 	dbTx.Commit()
+
+	// If the block was previously missing, remove it from
+	// the missing blocks collection.
+	if _, ok := missingBlocks[rawBlock.Hash]; ok {
+		delete(missingBlocks, rawBlock.Hash)
+	}
 	return nil
 }
 
@@ -915,9 +932,37 @@ func enqueueBlockAddedMsg(blockAdded *jsonrpc.BlockAddedMsg) {
 func processBlockAddedMsgs(client *jsonrpc.Client) {
 	var unprocessedBlockAddedMsgs []*jsonrpc.BlockAddedMsg
 	for _, blockAdded := range pendingBlockAddedMsgs {
-		canHandle, err := canHandleBlockAddedMsg(blockAdded)
+		canHandle, missingParentHashes, err := canHandleBlockAddedMsg(blockAdded)
 		if err != nil {
 			panic(errors.Errorf("Could not resolve if can handle BlockAddedMsg: %s", err))
+		}
+		for _, missingParentHash := range missingParentHashes {
+			firstMissingTime, ok := missingBlocks[missingParentHash]
+			if !ok {
+				log.Infof("Parent %s of block %s is missing",
+					missingParentHash, blockAdded.Header.BlockHash())
+				missingBlocks[missingParentHash] = time.Now()
+				continue
+			}
+			if firstMissingTime.Add(blockMissingTimeout).Before(time.Now()) {
+				hash, err := daghash.NewHashFromStr(missingParentHash)
+				if err != nil {
+					log.Warnf("Could not create hash: %s", err)
+					continue
+				}
+				block, rawBlock, err := fetchBlock(client, hash)
+				if err != nil {
+					log.Warnf("Could not fetch block %s: %s", hash, err)
+					continue
+				}
+				err = addBlock(client, block, *rawBlock)
+				if err != nil {
+					log.Warnf("Could not insert block %s: %s", hash, err)
+					continue
+				}
+				log.Infof("Parent %s of block %s was fetched after missing for %s",
+					missingParentHash, blockAdded.Header.BlockHash(), blockMissingTimeout)
+			}
 		}
 		if !canHandle {
 			unprocessedBlockAddedMsgs = append(unprocessedBlockAddedMsgs, blockAdded)
@@ -941,10 +986,10 @@ func processBlockAddedMsgs(client *jsonrpc.Client) {
 	pendingBlockAddedMsgs = unprocessedBlockAddedMsgs
 }
 
-func canHandleBlockAddedMsg(blockAdded *jsonrpc.BlockAddedMsg) (bool, error) {
+func canHandleBlockAddedMsg(blockAdded *jsonrpc.BlockAddedMsg) (bool, []string, error) {
 	db, err := database.DB()
 	if err != nil {
-		return false, err
+		return false, nil, err
 	}
 
 	// Collect all referenced parent hashes
@@ -954,20 +999,30 @@ func canHandleBlockAddedMsg(blockAdded *jsonrpc.BlockAddedMsg) (bool, error) {
 	}
 
 	// Make sure that all the parent hashes exist in the database
-	var dbParentCount int
+	var dbParentBlocks []dbmodels.Block
 	dbResult := db.
 		Model(&dbmodels.Block{}).
 		Where("block_hash in (?)", hashesIn).
-		Count(&dbParentCount)
+		Find(&dbParentBlocks)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
-		return false, httpserverutils.NewErrorFromDBErrors("failed to count parent blocks: ", dbErrors)
+		return false, nil, httpserverutils.NewErrorFromDBErrors("failed to count parent blocks: ", dbErrors)
 	}
-	if len(hashesIn) != dbParentCount {
-		return false, nil
+	if len(hashesIn) != len(dbParentBlocks) {
+		// Some parent hashes are missing. Collect and return them
+		var missingParentHashes []string
+		for _, hash := range hashesIn {
+			for _, dbParentBlock := range dbParentBlocks {
+				if dbParentBlock.BlockHash == hash {
+					break
+				}
+			}
+			missingParentHashes = append(missingParentHashes, hash)
+		}
+		return false, missingParentHashes, nil
 	}
 
-	return true, nil
+	return true, nil, nil
 }
 
 // enqueueChainChangedMsg enqueues onChainChanged messages to be handled later
