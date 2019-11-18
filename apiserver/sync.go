@@ -932,11 +932,11 @@ func enqueueBlockAddedMsg(blockAdded *jsonrpc.BlockAddedMsg) {
 func processBlockAddedMsgs(client *jsonrpc.Client) {
 	var unprocessedBlockAddedMsgs []*jsonrpc.BlockAddedMsg
 	for _, blockAdded := range pendingBlockAddedMsgs {
-		missingParentHashes, err := missingParentHashes(blockAdded)
+		missingHashes, err := missingParentHashes(blockAdded)
 		if err != nil {
 			panic(errors.Errorf("Could not resolve missing parents: %s", err))
 		}
-		for _, missingParentHash := range missingParentHashes {
+		for _, missingParentHash := range missingHashes {
 			err := handleMissingParentBlock(client, missingParentHash)
 			if err != nil {
 				log.Warnf("Failed to handle missing parent block %s: %s",
@@ -944,7 +944,7 @@ func processBlockAddedMsgs(client *jsonrpc.Client) {
 				continue
 			}
 		}
-		if len(missingParentHashes) > 0 {
+		if len(missingHashes) > 0 {
 			unprocessedBlockAddedMsgs = append(unprocessedBlockAddedMsgs, blockAdded)
 			continue
 		}
