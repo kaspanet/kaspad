@@ -1006,7 +1006,7 @@ func canHandleBlockAddedMsg(blockAdded *jsonrpc.BlockAddedMsg) (bool, []string, 
 		Find(&dbParentBlocks)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
-		return false, nil, httpserverutils.NewErrorFromDBErrors("failed to count parent blocks: ", dbErrors)
+		return false, nil, httpserverutils.NewErrorFromDBErrors("failed to find parent blocks: ", dbErrors)
 	}
 	if len(hashesIn) != len(dbParentBlocks) {
 		// Some parent hashes are missing. Collect and return them
