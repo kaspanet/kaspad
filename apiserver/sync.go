@@ -936,11 +936,11 @@ func processBlockAddedMsgs(client *jsonrpc.Client) {
 		if err != nil {
 			panic(errors.Errorf("Could not resolve missing parents: %s", err))
 		}
-		for _, missingParentHash := range missingHashes {
-			err := handleMissingParentBlock(client, missingParentHash)
+		for _, missingHash := range missingHashes {
+			err := handleMissingParent(client, missingHash)
 			if err != nil {
 				log.Warnf("Failed to handle missing parent block %s: %s",
-					missingParentHash, err)
+					missingHash, err)
 				continue
 			}
 		}
@@ -1006,13 +1006,13 @@ func missingParentHashes(blockAdded *jsonrpc.BlockAddedMsg) ([]string, error) {
 	return nil, nil
 }
 
-// handleMissingParentBlock handles missing parent blocks as follows:
-// a. If it's the first time we've encountered this block, add it to
+// handleMissingParent handles missing parent block hashes as follows:
+// a. If it's the first time we've encountered this block hash, add it to
 //    the missing blocks collection with time = now
 // b. Otherwise, if time + blockMissingTimeout < now (that is to say,
 //    blockMissingTimeout had elapsed) then request the block from the
 //    node
-func handleMissingParentBlock(client *jsonrpc.Client, missingParentHash string) error {
+func handleMissingParent(client *jsonrpc.Client, missingParentHash string) error {
 	firstMissingTime, ok := missingBlocks[missingParentHash]
 	if !ok {
 		log.Infof("Parent block %s is missing", missingParentHash)
