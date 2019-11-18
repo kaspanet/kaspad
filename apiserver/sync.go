@@ -23,6 +23,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	// pendingBlockAddedMsgs holds blockAddedMsgs in order of arrival
+	pendingBlockAddedMsgs []*jsonrpc.BlockAddedMsg
+
+	// pendingChainChangedMsgs holds chainChangedMsgs in order of arrival
+	pendingChainChangedMsgs []*jsonrpc.ChainChangedMsg
+)
+
 // startSync keeps the node and the API server in sync. On start, it downloads
 // all data that's missing from the API server, and once it's done it keeps
 // sync with the node via notifications.
@@ -65,7 +73,8 @@ loop:
 	for {
 		select {
 		case blockAdded := <-client.OnBlockAdded:
-			handleBlockAddedMsg(client, blockAdded)
+			enqueueBlockAddedMsg(blockAdded)
+			processBlockAddedMsgs(client)
 		case chainChanged := <-client.OnChainChanged:
 			enqueueChainChangedMsg(chainChanged)
 			processChainChangedMsgs()
@@ -894,24 +903,70 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 	return nil
 }
 
-// handleBlockAddedMsg handles onBlockAdded messages
-func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedMsg) {
-	hash := blockAdded.Header.BlockHash()
-	log.Debugf("Got block %s from the RPC server", hash)
-	block, rawBlock, err := fetchBlock(client, hash)
-	if err != nil {
-		log.Warnf("Could not fetch block %s: %s", hash, err)
-		return
-	}
-	err = addBlock(client, block, *rawBlock)
-	if err != nil {
-		log.Warnf("Could not insert block %s: %s", hash, err)
-		return
-	}
-	log.Infof("Added block %s", hash)
+// enqueueBlockAddedMsg enqueues onBlockAdded messages to be handled later
+func enqueueBlockAddedMsg(blockAdded *jsonrpc.BlockAddedMsg) {
+	pendingBlockAddedMsgs = append(pendingBlockAddedMsgs, blockAdded)
 }
 
-var pendingChainChangedMsgs []*jsonrpc.ChainChangedMsg
+// processBlockAddedMsgs processes all pending onBlockAdded messages.
+// Messages that cannot yet be processed are re-enqueued.
+func processBlockAddedMsgs(client *jsonrpc.Client) {
+	var unprocessedBlockAddedMsgs []*jsonrpc.BlockAddedMsg
+	for _, blockAdded := range pendingBlockAddedMsgs {
+		canHandle, err := canHandleBlockAddedMsg(blockAdded)
+		if err != nil {
+			panic(errors.Errorf("Could not resolve if can handle BlockAddedMsg: %s", err))
+		}
+		if !canHandle {
+			unprocessedBlockAddedMsgs = append(unprocessedBlockAddedMsgs, blockAdded)
+			continue
+		}
+
+		hash := blockAdded.Header.BlockHash()
+		log.Debugf("Got block %s from the RPC server", hash)
+		block, rawBlock, err := fetchBlock(client, hash)
+		if err != nil {
+			log.Warnf("Could not fetch block %s: %s", hash, err)
+			return
+		}
+		err = addBlock(client, block, *rawBlock)
+		if err != nil {
+			log.Warnf("Could not insert block %s: %s", hash, err)
+			return
+		}
+		log.Infof("Added block %s", hash)
+	}
+	pendingBlockAddedMsgs = unprocessedBlockAddedMsgs
+}
+
+func canHandleBlockAddedMsg(blockAdded *jsonrpc.BlockAddedMsg) (bool, error) {
+	dbTx, err := database.DB()
+	if err != nil {
+		return false, err
+	}
+
+	// Collect all referenced parent hashes
+	hashesIn := make([]string, 0, len(blockAdded.Header.ParentHashes))
+	for _, hash := range blockAdded.Header.ParentHashes {
+		hashesIn = append(hashesIn, hash.String())
+	}
+
+	// Make sure that all the parent hashes exist in the database
+	var dbParentCount int
+	dbResult := dbTx.
+		Model(&dbmodels.Block{}).
+		Where("block_hash in (?)", hashesIn).
+		Count(&dbParentCount)
+	dbErrors := dbResult.GetErrors()
+	if httpserverutils.HasDBError(dbErrors) {
+		return false, httpserverutils.NewErrorFromDBErrors("failed to count parent blocks: ", dbErrors)
+	}
+	if len(hashesIn) != dbParentCount {
+		return false, nil
+	}
+
+	return true, nil
+}
 
 // enqueueChainChangedMsg enqueues onChainChanged messages to be handled later
 func enqueueChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) {
