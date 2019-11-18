@@ -1070,9 +1070,8 @@ func (sm *SyncManager) addInvsToGetDataMessageFromQueue(gdmsg *wire.MsgGetData, 
 	}
 	invsToAdd := make([]*wire.InvVect, 0, invsNum)
 	for len(queue) != 0 && len(invsToAdd) < invsNum {
-		iv := queue[0]
-		queue[0] = nil
-		queue = queue[1:]
+		var iv *wire.InvVect
+		iv, queue = queue[0], queue[1:]
 
 		exists, err := sm.haveInventory(iv)
 		if err != nil {
