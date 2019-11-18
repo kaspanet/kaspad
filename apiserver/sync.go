@@ -937,31 +937,11 @@ func processBlockAddedMsgs(client *jsonrpc.Client) {
 			panic(errors.Errorf("Could not resolve if can handle BlockAddedMsg: %s", err))
 		}
 		for _, missingParentHash := range missingParentHashes {
-			firstMissingTime, ok := missingBlocks[missingParentHash]
-			if !ok {
-				log.Infof("Parent %s of block %s is missing",
-					missingParentHash, blockAdded.Header.BlockHash())
-				missingBlocks[missingParentHash] = time.Now()
+			err := handleMissingParentBlock(client, missingParentHash)
+			if err != nil {
+				log.Warnf("Failed to handle missing parent block %s: %s",
+					missingParentHash, err)
 				continue
-			}
-			if firstMissingTime.Add(blockMissingTimeout).Before(time.Now()) {
-				hash, err := daghash.NewHashFromStr(missingParentHash)
-				if err != nil {
-					log.Warnf("Could not create hash: %s", err)
-					continue
-				}
-				block, rawBlock, err := fetchBlock(client, hash)
-				if err != nil {
-					log.Warnf("Could not fetch block %s: %s", hash, err)
-					continue
-				}
-				err = addBlock(client, block, *rawBlock)
-				if err != nil {
-					log.Warnf("Could not insert block %s: %s", hash, err)
-					continue
-				}
-				log.Infof("Parent %s of block %s was fetched after missing for %s",
-					missingParentHash, blockAdded.Header.BlockHash(), blockMissingTimeout)
 			}
 		}
 		if !canHandle {
@@ -1023,6 +1003,38 @@ func canHandleBlockAddedMsg(blockAdded *jsonrpc.BlockAddedMsg) (bool, []string, 
 	}
 
 	return true, nil, nil
+}
+
+// handleMissingParentBlock handles missing parent blocks as follows:
+// a. If it's the first time we've encountered this block, add it to
+//    the missing blocks collection with time = now
+// b. Otherwise, if time + blockMissingTimeout < now (that is to say,
+//    blockMissingTimeout had elapsed) then request the block from the
+//    node
+func handleMissingParentBlock(client *jsonrpc.Client, missingParentHash string) error {
+	firstMissingTime, ok := missingBlocks[missingParentHash]
+	if !ok {
+		log.Infof("Parent block %s is missing", missingParentHash)
+		missingBlocks[missingParentHash] = time.Now()
+		return nil
+	}
+	if firstMissingTime.Add(blockMissingTimeout).Before(time.Now()) {
+		hash, err := daghash.NewHashFromStr(missingParentHash)
+		if err != nil {
+			return errors.Errorf("Could not create hash: %s", err)
+		}
+		block, rawBlock, err := fetchBlock(client, hash)
+		if err != nil {
+			return errors.Errorf("Could not fetch block %s: %s", hash, err)
+		}
+		err = addBlock(client, block, *rawBlock)
+		if err != nil {
+			return errors.Errorf("Could not insert block %s: %s", hash, err)
+		}
+		log.Infof("Parent block %s was fetched after missing for over %s",
+			missingParentHash, blockMissingTimeout)
+	}
+	return nil
 }
 
 // enqueueChainChangedMsg enqueues onChainChanged messages to be handled later
