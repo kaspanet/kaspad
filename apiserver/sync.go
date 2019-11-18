@@ -147,13 +147,13 @@ func syncSelectedParentChain(client *jsonrpc.Client) error {
 // blue score in the database. If the database is empty,
 // return nil.
 func findHashOfBluestBlock(mustBeChainBlock bool) (*string, error) {
-	dbTx, err := database.DB()
+	db, err := database.DB()
 	if err != nil {
 		return nil, err
 	}
 
 	var block dbmodels.Block
-	dbQuery := dbTx.Order("blue_score DESC")
+	dbQuery := db.Order("blue_score DESC")
 	if mustBeChainBlock {
 		dbQuery = dbQuery.Where(&dbmodels.Block{IsChainBlock: true})
 	}
@@ -226,6 +226,7 @@ func addBlock(client *jsonrpc.Client, block string, rawBlock btcjson.GetBlockVer
 		return err
 	}
 	dbTx := db.Begin()
+	defer dbTx.RollbackUnlessCommitted()
 
 	// Skip this block if it already exists.
 	blockExists, err := doesBlockExist(dbTx, rawBlock.Hash)
@@ -703,6 +704,7 @@ func updateSelectedParentChain(removedChainHashes []string, addedChainBlocks []b
 		return err
 	}
 	dbTx := db.Begin()
+	defer dbTx.RollbackUnlessCommitted()
 
 	for _, removedHash := range removedChainHashes {
 		err := updateRemovedChainHashes(dbTx, removedHash)
@@ -949,7 +951,7 @@ func processChainChangedMsgs() {
 // canHandleChainChangedMsg checks whether we have all the necessary data
 // to successfully handle a ChainChangedMsg.
 func canHandleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) (bool, error) {
-	dbTx, err := database.DB()
+	db, err := database.DB()
 	if err != nil {
 		return false, err
 	}
@@ -965,7 +967,7 @@ func canHandleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) (bool, erro
 
 	// Make sure that all the hashes exist in the database
 	var dbBlocks []dbmodels.Block
-	dbResult := dbTx.
+	dbResult := db.
 		Model(&dbmodels.Block{}).
 		Where("block_hash in (?)", hashesIn).
 		Find(&dbBlocks)
