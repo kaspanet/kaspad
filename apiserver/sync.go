@@ -991,11 +991,11 @@ func missingParentHashes(blockAdded *jsonrpc.BlockAddedMsg) ([]string, error) {
 	if len(hashesIn) != len(dbParentBlocks) {
 		// Some parent hashes are missing. Collect and return them
 		var missingParentHashes []string
-	outerloop:
+	outerLoop:
 		for _, hash := range hashesIn {
 			for _, dbParentBlock := range dbParentBlocks {
 				if dbParentBlock.BlockHash == hash {
-					continue outerloop
+					continue outerLoop
 				}
 			}
 			missingParentHashes = append(missingParentHashes, hash)
