@@ -966,7 +966,8 @@ func processBlockAddedMsgs(client *jsonrpc.Client) {
 	pendingBlockAddedMsgs = unprocessedBlockAddedMsgs
 }
 
-func canHandleBlockAddedMsg(blockAdded *jsonrpc.BlockAddedMsg) (bool, []string, error) {
+func canHandleBlockAddedMsg(blockAdded *jsonrpc.BlockAddedMsg) (
+	canHandle bool, missingParentHashes []string, err error) {
 	db, err := database.DB()
 	if err != nil {
 		return false, nil, err
