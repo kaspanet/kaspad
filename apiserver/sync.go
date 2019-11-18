@@ -336,11 +336,11 @@ func insertBlockParents(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult, d
 	}
 	if len(dbParents) != len(rawBlock.ParentHashes) {
 		missingParents := make([]string, 0, len(rawBlock.ParentHashes)-len(dbParents))
-	OUTER_LOOP:
+	outerLoop:
 		for _, parentHash := range rawBlock.ParentHashes {
 			for _, dbParent := range dbParents {
 				if dbParent.BlockHash == parentHash {
-					continue OUTER_LOOP
+					continue outerLoop
 				}
 			}
 			missingParents = append(missingParents, parentHash)
