@@ -16,9 +16,9 @@ const (
 	// single bitcoin inv message.
 	MaxInvPerMsg = 1 << 16
 
-	// MaxBlockInvPerGetDataMsg is the maximum number of block inventory vectors that can
-	// be in a single getData message.
-	MaxBlockInvPerGetDataMsg = 50
+	// MaxSyncBlockInvPerGetDataMsg is the maximum number of sync block inventory
+	// vectors that can be in a single getData message.
+	MaxSyncBlockInvPerGetDataMsg = 50
 
 	// MaxInvPerGetDataMsg is the maximum number of inventory vectors that can
 	// be in a single getData message.
