@@ -17,6 +17,11 @@ func GetClient() (mqtt.Client, error) {
 	return client, nil
 }
 
+// IsConnected returns true if MQTT client was connected, false otherwise.
+func IsConnected() bool {
+	return client != nil
+}
+
 // Connect initiates a connection to the MQTT server, if defined
 func Connect() error {
 	cfg := config.ActiveConfig()
