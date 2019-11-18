@@ -95,6 +95,8 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		return nil, internalRPCError(err.Error(), context)
 	}
 
+	s.cfg.DAG.RLock()
+	defer s.cfg.DAG.RUnlock()
 	blockReply, err := buildGetBlockVerboseResult(s, blk, c.VerboseTx == nil || !*c.VerboseTx)
 	if err != nil {
 		return nil, err

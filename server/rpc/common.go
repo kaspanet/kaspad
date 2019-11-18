@@ -203,6 +203,9 @@ func getDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
 	return diff
 }
 
+// buildGetBlockVerboseResult takes a block and convert it to btcjson.GetBlockVerboseResult
+//
+// This function MUST be called with the DAG state lock held (for reads).
 func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) (*btcjson.GetBlockVerboseResult, error) {
 	hash := block.Hash()
 	params := s.cfg.DAGParams
@@ -226,7 +229,7 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		nextHashStrings = daghash.Strings(childHashes)
 	}
 
-	blockConfirmations, err := s.cfg.DAG.BlockConfirmationsByHash(hash)
+	blockConfirmations, err := s.cfg.DAG.BlockConfirmationsByHashNoLock(hash)
 	if err != nil {
 		context := "Could not get block confirmations"
 		return nil, internalRPCError(err.Error(), context)
@@ -333,6 +336,10 @@ func collectChainBlocks(s *Server, hashes []*daghash.Hash) ([]btcjson.ChainBlock
 	return chainBlocks, nil
 }
 
+// hashesToGetBlockVerboseResults takes block hashes and returns their
+// correspondent block verbose.
+//
+// This function MUST be called with the DAG state lock held (for reads).
 func hashesToGetBlockVerboseResults(s *Server, hashes []*daghash.Hash) ([]btcjson.GetBlockVerboseResult, error) {
 	getBlockVerboseResults := make([]btcjson.GetBlockVerboseResult, 0, len(hashes))
 	for _, blockHash := range hashes {
