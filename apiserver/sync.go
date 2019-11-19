@@ -939,7 +939,7 @@ func processBlockAddedMsgs(client *jsonrpc.Client) {
 		for _, missingHash := range missingHashes {
 			err := handleMissingParent(client, missingHash)
 			if err != nil {
-				log.Warnf("Failed to handle missing parent block %s: %s",
+				log.Errorf("Failed to handle missing parent block %s: %s",
 					missingHash, err)
 			}
 		}
@@ -957,7 +957,7 @@ func processBlockAddedMsgs(client *jsonrpc.Client) {
 		}
 		err = addBlock(client, block, *rawBlock)
 		if err != nil {
-			log.Warnf("Could not insert block %s: %s", hash, err)
+			log.Errorf("Could not insert block %s: %s", hash, err)
 			return
 		}
 		log.Infof("Added block %s", hash)
