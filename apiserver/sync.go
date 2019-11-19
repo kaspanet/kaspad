@@ -941,7 +941,6 @@ func processBlockAddedMsgs(client *jsonrpc.Client) {
 			if err != nil {
 				log.Warnf("Failed to handle missing parent block %s: %s",
 					missingHash, err)
-				continue
 			}
 		}
 		if len(missingHashes) > 0 {
@@ -950,7 +949,7 @@ func processBlockAddedMsgs(client *jsonrpc.Client) {
 		}
 
 		hash := blockAdded.Header.BlockHash()
-		log.Debugf("Got block %s from the RPC server", hash)
+		log.Debugf("Getting block %s from the RPC server", hash)
 		block, rawBlock, err := fetchBlock(client, hash)
 		if err != nil {
 			log.Warnf("Could not fetch block %s: %s", hash, err)
