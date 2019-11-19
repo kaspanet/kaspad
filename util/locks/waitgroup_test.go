@@ -73,7 +73,7 @@ func TestWaitGroup(t *testing.T) {
 func TestWaitGroupMisuse(t *testing.T) {
 	defer func() {
 		err := recover()
-		if err != "negative values for wg.counter are not allowed. This was likely caused by calling done() before add()" {
+		if err != "negative values for wg.addDoneCounter are not allowed. This was likely caused by calling done() before add()" {
 			t.Fatalf("Unexpected panic: %#v", err)
 		}
 	}()
@@ -81,7 +81,7 @@ func TestWaitGroupMisuse(t *testing.T) {
 	wg.add(1)
 	wg.done()
 	wg.done()
-	t.Fatal("Should panic, because wg.counter should be negative (-1), which is not allowed")
+	t.Fatal("Should panic, because wg.addDoneCounter should be negative (-1), which is not allowed")
 }
 
 func TestAddAfterWait(t *testing.T) {

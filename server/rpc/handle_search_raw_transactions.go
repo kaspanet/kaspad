@@ -276,7 +276,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 		result.IsInMempool = rtx.tx != nil
 
 		if s.cfg.TxIndex != nil && !result.IsInMempool {
-			confirmations, err := txConfirmations(s, mtx.TxID())
+			confirmations, err := txConfirmationsWithLock(s, mtx.TxID())
 			if err != nil {
 				context := "Failed to obtain block confirmations"
 				return nil, internalRPCError(err.Error(), context)

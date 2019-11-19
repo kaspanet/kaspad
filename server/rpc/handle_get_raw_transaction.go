@@ -103,7 +103,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 
 	var confirmations uint64
 	if !isInMempool {
-		confirmations, err = txConfirmations(s, tx.ID())
+		confirmations, err = txConfirmationsWithLock(s, tx.ID())
 		if err != nil {
 			return nil, err
 		}

@@ -366,6 +366,8 @@ func hashesToGetBlockVerboseResults(s *Server, hashes []*daghash.Hash) ([]btcjso
 // The confirmations number is defined as follows:
 // If the transaction is in the mempool/in a red block/is a double spend -> 0
 // Otherwise -> The confirmations number of the accepting block
+//
+// This function MUST be called with the DAG state lock held (for reads).
 func txConfirmations(s *Server, txID *daghash.TxID) (uint64, error) {
 	if s.cfg.TxIndex == nil {
 		return 0, errors.New("transaction index must be enabled (--txindex)")
@@ -379,10 +381,16 @@ func txConfirmations(s *Server, txID *daghash.TxID) (uint64, error) {
 		return 0, nil
 	}
 
-	confirmations, err := s.cfg.DAG.BlockConfirmationsByHash(acceptingBlock)
+	confirmations, err := s.cfg.DAG.BlockConfirmationsByHashNoLock(acceptingBlock)
 	if err != nil {
 		return 0, errors.Errorf("could not get confirmations for block that accepted tx %s: %s", txID, err)
 	}
 
 	return confirmations, nil
+}
+
+func txConfirmationsWithLock(s *Server, txID *daghash.TxID) (uint64, error) {
+	s.cfg.DAG.RLock()
+	defer s.cfg.DAG.RUnlock()
+	return txConfirmations(s, txID)
 }

@@ -78,7 +78,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		}
 
 		if s.cfg.TxIndex != nil {
-			txConfirmations, err := txConfirmations(s, txID)
+			txConfirmations, err := txConfirmationsWithLock(s, txID)
 			if err != nil {
 				return nil, internalRPCError("Output index number (vout) does not "+
 					"exist for transaction.", "")

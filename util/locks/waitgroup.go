@@ -6,9 +6,9 @@ import (
 )
 
 type waitGroup struct {
-	counter     int64
-	waitLock    sync.Mutex
-	syncChannel chan struct{}
+	addDoneCounter, waitingCounter int64
+	waitLock                       sync.Mutex
+	syncChannel                    chan struct{}
 }
 
 func newWaitGroup() *waitGroup {
@@ -19,25 +19,29 @@ func newWaitGroup() *waitGroup {
 }
 
 func (wg *waitGroup) add() {
-	atomic.AddInt64(&wg.counter, 1)
+	atomic.AddInt64(&wg.addDoneCounter, 1)
 }
 
 func (wg *waitGroup) done() {
-	counter := atomic.AddInt64(&wg.counter, -1)
+	counter := atomic.AddInt64(&wg.addDoneCounter, -1)
 	if counter < 0 {
-		panic("negative values for wg.counter are not allowed. This was likely caused by calling done() before add()")
+		panic("negative values for wg.addDoneCounter are not allowed. This was likely caused by calling done() before add()")
 	}
-	if atomic.LoadInt64(&wg.counter) == 0 {
+	if atomic.LoadInt64(&wg.addDoneCounter) == 0 && atomic.LoadInt64(&wg.waitingCounter) > 0 {
 		spawn(func() {
-			wg.syncChannel <- struct{}{}
+			if atomic.LoadInt64(&wg.waitingCounter) > 0 {
+				wg.syncChannel <- struct{}{}
+			}
 		})
 	}
 }
 
 func (wg *waitGroup) wait() {
+	atomic.AddInt64(&wg.waitingCounter, 1)
+	defer atomic.AddInt64(&wg.waitingCounter, -1)
 	wg.waitLock.Lock()
 	defer wg.waitLock.Unlock()
-	for atomic.LoadInt64(&wg.counter) != 0 {
+	for atomic.LoadInt64(&wg.addDoneCounter) != 0 {
 		<-wg.syncChannel
 	}
 }
