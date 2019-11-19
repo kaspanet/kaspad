@@ -34,7 +34,7 @@ func newSyncWgCompatible() *syncWaitGroupCompatible {
 	}
 }
 
-func spawnPatch(t *testing.T) func() {
+func spawnPatch(t *testing.T) (checkIfRunningSpawnsAreLeft func(), unpatch func()) {
 	realSpawn := spawn
 	runningSpawns := 0
 	spawn = func(f func()) {
@@ -44,16 +44,20 @@ func spawnPatch(t *testing.T) func() {
 			runningSpawns--
 		})
 	}
-	checkIfRunningSpawnsAreLeft := func() {
+	unpatch = func() {
+		spawn = realSpawn
+	}
+	checkIfRunningSpawnsAreLeft = func() {
 		if runningSpawns != 0 {
 			t.Fatalf("%d running spawns left", runningSpawns)
 		}
 	}
-	return checkIfRunningSpawnsAreLeft
+	return checkIfRunningSpawnsAreLeft, unpatch
 }
 
 func testWaitGroup(t *testing.T, wg1 *syncWaitGroupCompatible, wg2 *syncWaitGroupCompatible) {
-	checkIfRunningSpawnsAreLeft := spawnPatch(t)
+	checkIfRunningSpawnsAreLeft, unpatch := spawnPatch(t)
+	defer unpatch()
 	n := 16
 	wg1.add(n)
 	wg2.add(n)
@@ -105,7 +109,8 @@ func TestWaitGroupMisuse(t *testing.T) {
 }
 
 func TestAddAfterWait(t *testing.T) {
-	checkIfRunningSpawnsAreLeft := spawnPatch(t)
+	checkIfRunningSpawnsAreLeft, unpatch := spawnPatch(t)
+	defer unpatch()
 	wg := newSyncWgCompatible()
 	wg.add(1)
 	syncChan := make(chan struct{})
@@ -126,7 +131,8 @@ func TestWaitGroupRace(t *testing.T) {
 	// Run this test for about 1ms.
 	for i := 0; i < 1000; i++ {
 		func() {
-			checkIfRunningSpawnsAreLeft := spawnPatch(t)
+			checkIfRunningSpawnsAreLeft, unpatch := spawnPatch(t)
+			defer unpatch()
 			wg := newSyncWgCompatible()
 			n := new(int32)
 			// spawn goroutine 1
@@ -152,7 +158,8 @@ func TestWaitGroupRace(t *testing.T) {
 }
 
 func TestWaitGroupAlign(t *testing.T) {
-	checkIfRunningSpawnsAreLeft := spawnPatch(t)
+	checkIfRunningSpawnsAreLeft, unpatch := spawnPatch(t)
+	defer unpatch()
 	type X struct {
 		x  byte
 		wg *syncWaitGroupCompatible
@@ -167,7 +174,8 @@ func TestWaitGroupAlign(t *testing.T) {
 }
 
 func TestWaitAfterAddDoneCounterHasReset(t *testing.T) {
-	checkIfRunningSpawnsAreLeft := spawnPatch(t)
+	checkIfRunningSpawnsAreLeft, unpatch := spawnPatch(t)
+	defer unpatch()
 	wg := newSyncWgCompatible()
 	wg.add(1)
 	wg.done()
