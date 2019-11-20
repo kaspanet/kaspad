@@ -9,6 +9,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+// PublishTransactionsNotifications publishes notification for each transaction of the given block
 func PublishTransactionsNotifications(db *gorm.DB, rawBlock *btcjson.GetBlockVerboseResult) error {
 	transactionIds := make([]string, len(rawBlock.RawTx))
 	for i, tx := range rawBlock.RawTx {
