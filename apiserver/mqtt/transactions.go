@@ -64,7 +64,7 @@ func publishTransactionNotificationForAddress(transaction *apimodels.Transaction
 	if token.Error() != nil {
 		return token.Error()
 	}
-	fmt.Printf("Published to topic: %v, message: %s\n\n", transactionsTopic(address), payload)
+
 	return nil
 }
 
