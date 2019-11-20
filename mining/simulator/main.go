@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"os"
+	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/daglabs/btcd/signal"
 	"github.com/daglabs/btcd/util/panics"
@@ -25,6 +27,7 @@ func main() {
 	if err != nil {
 		panic(errors.Errorf("Couldn't load address list: %s", err))
 	}
+	log.Infof("Got address list: %s", strings.Join(addressList, ", "))
 
 	clients, err := connectToServers(cfg, addressList)
 	if err != nil {

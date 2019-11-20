@@ -3,12 +3,13 @@ package main
 import (
 	"encoding/hex"
 	nativeerrors "errors"
-	"github.com/daglabs/btcd/rpcclient"
-	"github.com/pkg/errors"
 	"math/rand"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/daglabs/btcd/rpcclient"
+	"github.com/pkg/errors"
 
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"

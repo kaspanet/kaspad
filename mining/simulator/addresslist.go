@@ -2,28 +2,33 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/daglabs/btcd/dagconfig"
 	"github.com/pkg/errors"
 )
 
+const instanceStateCodeActive = "16"
+
 func getAddressList(cfg *config) ([]string, error) {
 	if cfg.AddressListPath != "" {
-		return getAddressListFromPath(cfg.AddressListPath)
+		return getAddressListFromPath(cfg)
 	}
-	return getAddressListFromAWS(cfg.AutoScalingGroup, cfg.Region)
+	return getAddressListFromAWS(cfg)
 }
 
-func getAddressListFromAWS(autoScalingGroup string, region string) ([]string, error) {
-	sess := session.Must(session.NewSession(&aws.Config{Region: aws.String(region)}))
+func getAddressListFromAWS(cfg *config) ([]string, error) {
+	log.Infof("Getting hosts list for autoscaling group %s", cfg.AutoScalingGroup)
+	sess := session.Must(session.NewSession(&aws.Config{Region: aws.String(cfg.Region)}))
 	ec2Client := ec2.New(sess)
 	instances, err := ec2Client.DescribeInstances(&ec2.DescribeInstancesInput{
 		Filters: []*ec2.Filter{
-			&ec2.Filter{Name: aws.String("tag:aws:autoscaling:groupName"), Values: []*string{&autoScalingGroup}},
-			&ec2.Filter{Name: aws.String("instance-state-code"), Values: []*string{aws.String("16")}},
+			&ec2.Filter{Name: aws.String("tag:aws:autoscaling:groupName"), Values: []*string{&cfg.AutoScalingGroup}},
+			&ec2.Filter{Name: aws.String("instance-state-code"), Values: []*string{aws.String(instanceStateCodeActive)}},
 		},
 	})
 	if err != nil {
@@ -36,15 +41,15 @@ func getAddressListFromAWS(autoScalingGroup string, region string) ([]string, er
 			if instance.PrivateDnsName == nil {
 				continue
 			}
-			addressList = append(addressList, *instance.PrivateDnsName)
+			addressList = append(addressList, fmt.Sprintf("%s:%s", *instance.PrivateDnsName, dagconfig.DevNetParams.RPCPort))
 		}
 	}
 
 	return addressList, nil
 }
 
-func getAddressListFromPath(addressListPath string) ([]string, error) {
-	file, err := os.Open(addressListPath)
+func getAddressListFromPath(cfg *config) ([]string, error) {
+	file, err := os.Open(cfg.AddressListPath)
 	if err != nil {
 		return nil, err
 	}
