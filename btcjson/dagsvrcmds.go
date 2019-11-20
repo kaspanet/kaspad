@@ -124,13 +124,13 @@ func NewGetAllManualNodesInfoCmd(details *bool) *GetAllManualNodesInfoCmd {
 	}
 }
 
-// GetBestBlockHashCmd defines the getBestBlockHash JSON-RPC command.
-type GetBestBlockHashCmd struct{}
+// GetSelectedTipHashCmd defines the getSelectedTipHash JSON-RPC command.
+type GetSelectedTipHashCmd struct{}
 
-// NewGetBestBlockHashCmd returns a new instance which can be used to issue a
-// getBestBlockHash JSON-RPC command.
-func NewGetBestBlockHashCmd() *GetBestBlockHashCmd {
-	return &GetBestBlockHashCmd{}
+// NewGetSelectedTipHashCmd returns a new instance which can be used to issue a
+// getSelectedTipHash JSON-RPC command.
+func NewGetSelectedTipHashCmd() *GetSelectedTipHashCmd {
+	return &GetSelectedTipHashCmd{}
 }
 
 // GetBlockCmd defines the getBlock JSON-RPC command.
@@ -740,7 +740,7 @@ func init() {
 	MustRegisterCmd("decodeRawTransaction", (*DecodeRawTransactionCmd)(nil), flags)
 	MustRegisterCmd("decodeScript", (*DecodeScriptCmd)(nil), flags)
 	MustRegisterCmd("getAllManualNodesInfo", (*GetAllManualNodesInfoCmd)(nil), flags)
-	MustRegisterCmd("getBestBlockHash", (*GetBestBlockHashCmd)(nil), flags)
+	MustRegisterCmd("getSelectedTipHash", (*GetSelectedTipHashCmd)(nil), flags)
 	MustRegisterCmd("getBlock", (*GetBlockCmd)(nil), flags)
 	MustRegisterCmd("getBlocks", (*GetBlocksCmd)(nil), flags)
 	MustRegisterCmd("getBlockDagInfo", (*GetBlockDAGInfoCmd)(nil), flags)

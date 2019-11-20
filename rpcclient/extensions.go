@@ -62,52 +62,87 @@ func (c *Client) DebugLevel(levelSpec string) (string, error) {
 	return c.DebugLevelAsync(levelSpec).Receive()
 }
 
-// FutureGetBestBlockResult is a future promise to deliver the result of a
-// GetBestBlockAsync RPC invocation (or an applicable error).
-type FutureGetBestBlockResult chan *response
+// FutureGetSelectedTipResult is a future promise to deliver the result of a
+// GetSelectedTipAsync RPC invocation (or an applicable error).
+type FutureGetSelectedTipResult chan *response
 
-// Receive waits for the response promised by the future and returns the hash
-// and height of the block in the longest (best) chain.
-func (r FutureGetBestBlockResult) Receive() (*daghash.Hash, uint64, error) {
+// Receive waits for the response promised by the future and returns the
+// selected tip block.
+func (r FutureGetSelectedTipResult) Receive() (*wire.MsgBlock, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
-	// Unmarshal result as a getbestblock result object.
-	var bestBlock btcjson.GetBestBlockResult
-	err = json.Unmarshal(res, &bestBlock)
+	// Unmarshal result as a string.
+	var blockHex string
+	err = json.Unmarshal(res, &blockHex)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
-	// Convert to hash from string.
-	hash, err := daghash.NewHashFromStr(bestBlock.Hash)
+	// Decode the serialized block hex to raw bytes.
+	serializedBlock, err := hex.DecodeString(blockHex)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
-	return hash, bestBlock.Height, nil
+	// Deserialize the block and return it.
+	var msgBlock wire.MsgBlock
+	err = msgBlock.Deserialize(bytes.NewReader(serializedBlock))
+	if err != nil {
+		return nil, err
+	}
+	return &msgBlock, nil
 }
 
-// GetBestBlockAsync returns an instance of a type that can be used to get the
+// GetSelectedTipAsync returns an instance of a type that can be used to get the
 // result of the RPC at some future time by invoking the Receive function on the
 // returned instance.
 //
-// See GetBestBlock for the blocking version and more details.
+// See GetSelectedTip for the blocking version and more details.
 //
 // NOTE: This is a btcd extension.
-func (c *Client) GetBestBlockAsync() FutureGetBestBlockResult {
-	cmd := btcjson.NewGetBestBlockCmd()
+func (c *Client) GetSelectedTipAsync() FutureGetSelectedTipResult {
+	cmd := btcjson.NewGetSelectedTipCmd(btcjson.Bool(false), btcjson.Bool(false))
 	return c.sendCmd(cmd)
 }
 
-// GetBestBlock returns the hash and height of the block in the longest (best)
-// chain.
-//
+// GetSelectedTip returns the block of the selected DAG tip
 // NOTE: This is a btcd extension.
-func (c *Client) GetBestBlock() (*daghash.Hash, uint64, error) {
-	return c.GetBestBlockAsync().Receive()
+func (c *Client) GetSelectedTip() (*btcjson.GetBlockVerboseResult, error) {
+	return c.GetSelectedTipVerboseAsync().Receive()
+}
+
+// FutureGetSelectedTipVerboseResult is a future promise to deliver the result of a
+// GetSelectedTipVerboseAsync RPC invocation (or an applicable error).
+type FutureGetSelectedTipVerboseResult chan *response
+
+// Receive waits for the response promised by the future and returns the data
+// structure from the server with information about the requested block.
+func (r FutureGetSelectedTipVerboseResult) Receive() (*btcjson.GetBlockVerboseResult, error) {
+	res, err := receiveFuture(r)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal the raw result into a BlockResult.
+	var blockResult btcjson.GetBlockVerboseResult
+	err = json.Unmarshal(res, &blockResult)
+	if err != nil {
+		return nil, err
+	}
+	return &blockResult, nil
+}
+
+// GetSelectedTipVerboseAsync returns an instance of a type that can be used to get
+// the result of the RPC at some future time by invoking the Receive function on
+// the returned instance.
+//
+// See GeSelectedTipBlockVerbose for the blocking version and more details.
+func (c *Client) GetSelectedTipVerboseAsync() FutureGetSelectedTipVerboseResult {
+	cmd := btcjson.NewGetSelectedTipCmd(btcjson.Bool(true), btcjson.Bool(false))
+	return c.sendCmd(cmd)
 }
 
 // FutureGetCurrentNetResult is a future promise to deliver the result of a

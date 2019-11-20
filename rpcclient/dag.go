@@ -15,13 +15,13 @@ import (
 	"github.com/daglabs/btcd/wire"
 )
 
-// FutureGetBestBlockHashResult is a future promise to deliver the result of a
-// GetBestBlockAsync RPC invocation (or an applicable error).
-type FutureGetBestBlockHashResult chan *response
+// FutureGetSelectedTipHashResult is a future promise to deliver the result of a
+// GetSelectedTipAsync RPC invocation (or an applicable error).
+type FutureGetSelectedTipHashResult chan *response
 
 // Receive waits for the response promised by the future and returns the hash of
 // the best block in the longest block dag.
-func (r FutureGetBestBlockHashResult) Receive() (*daghash.Hash, error) {
+func (r FutureGetSelectedTipHashResult) Receive() (*daghash.Hash, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
@@ -36,20 +36,20 @@ func (r FutureGetBestBlockHashResult) Receive() (*daghash.Hash, error) {
 	return daghash.NewHashFromStr(txHashStr)
 }
 
-// GetBestBlockHashAsync returns an instance of a type that can be used to get
+// GetSelectedTipHashAsync returns an instance of a type that can be used to get
 // the result of the RPC at some future time by invoking the Receive function on
 // the returned instance.
 //
-// See GetBestBlockHash for the blocking version and more details.
-func (c *Client) GetBestBlockHashAsync() FutureGetBestBlockHashResult {
-	cmd := btcjson.NewGetBestBlockHashCmd()
+// See GetSelectedTipHash for the blocking version and more details.
+func (c *Client) GetSelectedTipHashAsync() FutureGetSelectedTipHashResult {
+	cmd := btcjson.NewGetSelectedTipHashCmd()
 	return c.sendCmd(cmd)
 }
 
-// GetBestBlockHash returns the hash of the best block in the longest block
-// dag.
-func (c *Client) GetBestBlockHash() (*daghash.Hash, error) {
-	return c.GetBestBlockHashAsync().Receive()
+// GetSelectedTipHash returns the hash of the selected tip of the
+// Block DAG.
+func (c *Client) GetSelectedTipHash() (*daghash.Hash, error) {
+	return c.GetSelectedTipHashAsync().Receive()
 }
 
 // FutureGetBlockResult is a future promise to deliver the result of a

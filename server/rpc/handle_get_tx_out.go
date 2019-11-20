@@ -22,7 +22,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 
 	// If requested and the tx is available in the mempool try to fetch it
 	// from there, otherwise attempt to fetch from the block database.
-	var bestBlockHash string
+	var selectedTipHash string
 	var confirmations *uint64
 	var value uint64
 	var scriptPubKey []byte
@@ -56,7 +56,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 			return nil, internalRPCError(errStr, "")
 		}
 
-		bestBlockHash = s.cfg.DAG.SelectedTipHash().String()
+		selectedTipHash = s.cfg.DAG.SelectedTipHash().String()
 		value = txOut.Value
 		scriptPubKey = txOut.ScriptPubKey
 		isCoinbase = mtx.IsCoinBase()
@@ -86,7 +86,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 			confirmations = &txConfirmations
 		}
 
-		bestBlockHash = s.cfg.DAG.SelectedTipHash().String()
+		selectedTipHash = s.cfg.DAG.SelectedTipHash().String()
 		value = entry.Amount()
 		scriptPubKey = entry.ScriptPubKey()
 		isCoinbase = entry.IsCoinbase()
@@ -108,7 +108,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	}
 
 	txOutReply := &btcjson.GetTxOutResult{
-		BestBlock:     bestBlockHash,
+		SelectedTip:   selectedTipHash,
 		Confirmations: confirmations,
 		IsInMempool:   isInMempool,
 		Value:         util.Amount(value).ToBTC(),

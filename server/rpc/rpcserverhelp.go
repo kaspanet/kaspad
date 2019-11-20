@@ -149,17 +149,22 @@ var helpDescsEnUS = map[string]string{
 	"getManualNodeInfo--condition1": "details=true",
 	"getManualNodeInfo--result0":    "List of added peers",
 
-	// GetBestBlockResult help.
-	"getBestBlockResult-hash":   "Hex-encoded bytes of the best block hash",
-	"getBestBlockResult-height": "Height of the best block",
+	// GetSelectedTipResult help.
+	"getSelectedTipResult-hash":   "Hex-encoded bytes of the best block hash",
+	"getSelectedTipResult-height": "Height of the best block",
 
-	// GetBestBlockCmd help.
-	"getBestBlock--synopsis": "Get block height and hash of best block in the main chain.",
-	"getBestBlock--result0":  "Get block height and hash of best block in the main chain.",
+	// GetSelectedTipCmd help.
+	"getSelectedTip--synopsis":   "Returns information about the selected tip of the blockDAG.",
+	"getSelectedTip-verbose":     "Specifies the block is returned as a JSON object instead of hex-encoded string",
+	"getSelectedTip-verboseTx":   "Specifies that each transaction is returned as a JSON object and only applies if the verbose flag is true (btcd extension)",
+	"getSelectedTip--condition0": "verbose=false",
+	"getSelectedTip--condition1": "verbose=true",
+	"getSelectedTip-acceptedTx":  "Specifies if the transaction got accepted",
+	"getSelectedTip--result0":    "Hex-encoded bytes of the serialized block",
 
-	// GetBestBlockHashCmd help.
-	"getBestBlockHash--synopsis": "Returns the hash of the of the best (most recent) block in the longest block chain.",
-	"getBestBlockHash--result0":  "The hex-encoded block hash",
+	// GetSelectedTipHashCmd help.
+	"getSelectedTipHash--synopsis": "Returns the hash of the of the selected tip of the blockDAG.",
+	"getSelectedTipHash--result0":  "The hex-encoded block hash",
 
 	// GetBlockCmd help.
 	"getBlock--synopsis":   "Returns information about a block given its hash.",
@@ -519,7 +524,7 @@ var helpDescsEnUS = map[string]string{
 	"getSubnetworkResult-gasLimit": "The gas limit of the subnetwork",
 
 	// GetTxOutResult help.
-	"getTxOutResult-bestBlock":     "The block hash that contains the transaction output",
+	"getTxOutResult-selectedTip":   "The block hash that contains the transaction output",
 	"getTxOutResult-confirmations": "The number of confirmations (Will be 'null' if txindex is not disabled)",
 	"getTxOutResult-isInMempool":   "Whether the transaction is in the mempool",
 	"getTxOutResult-value":         "The transaction amount in BTC",
@@ -675,8 +680,8 @@ var rpcResultTypes = map[string][]interface{}{
 	"decodeScript":          {(*btcjson.DecodeScriptResult)(nil)},
 	"generate":              {(*[]string)(nil)},
 	"getAllManualNodesInfo": {(*[]string)(nil), (*[]btcjson.GetManualNodeInfoResult)(nil)},
-	"getBestBlock":          {(*btcjson.GetBestBlockResult)(nil)},
-	"getBestBlockHash":      {(*string)(nil)},
+	"getSelectedTip":        {(*btcjson.GetBlockVerboseResult)(nil)},
+	"getSelectedTipHash":    {(*string)(nil)},
 	"getBlock":              {(*string)(nil), (*btcjson.GetBlockVerboseResult)(nil)},
 	"getBlocks":             {(*btcjson.GetBlocksResult)(nil)},
 	"getBlockCount":         {(*int64)(nil)},
