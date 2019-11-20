@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/database"
+	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
 )
 
@@ -52,33 +53,37 @@ func handleGetBlocks(s *Server, cmd interface{}, closeChan <-chan struct{}) (int
 		RawBlocks:     nil,
 		VerboseBlocks: nil,
 	}
-	if c.IncludeRawBlockData {
-		rawBlocks, err := hashesToBlockStrings(s, blockHashes)
+
+	// Include more data if requested
+	if c.IncludeRawBlockData || c.IncludeVerboseBlockData {
+		blockBytesSlice, err := hashesToBlockBytes(s, blockHashes)
 		if err != nil {
 			return nil, err
 		}
-		result.RawBlocks = rawBlocks
-	}
-	if c.IncludeVerboseBlockData {
-		getBlockVerboseResults, err := hashesToGetBlockVerboseResults(s, blockHashes)
-		if err != nil {
-			return nil, err
+		if c.IncludeRawBlockData {
+			result.RawBlocks = blockBytesToStrings(blockBytesSlice)
 		}
-		result.VerboseBlocks = getBlockVerboseResults
+		if c.IncludeVerboseBlockData {
+			verboseBlocks, err := blockBytesToBlockVerboseResults(s, blockBytesSlice)
+			if err != nil {
+				return nil, err
+			}
+			result.VerboseBlocks = verboseBlocks
+		}
 	}
 
 	return result, nil
 }
 
-func hashesToBlockStrings(s *Server, hashes []*daghash.Hash) ([]string, error) {
-	blocks := make([]string, len(hashes))
+func hashesToBlockBytes(s *Server, hashes []*daghash.Hash) ([][]byte, error) {
+	blocks := make([][]byte, len(hashes))
 	err := s.cfg.DB.View(func(dbTx database.Tx) error {
 		for i, hash := range hashes {
 			blockBytes, err := dbTx.FetchBlock(hash)
 			if err != nil {
 				return err
 			}
-			blocks[i] = hex.EncodeToString(blockBytes)
+			blocks[i] = blockBytes
 		}
 		return nil
 	})
@@ -86,4 +91,28 @@ func hashesToBlockStrings(s *Server, hashes []*daghash.Hash) ([]string, error) {
 		return nil, err
 	}
 	return blocks, nil
+}
+
+func blockBytesToStrings(blockBytesSlice [][]byte) []string {
+	rawBlocks := make([]string, len(blockBytesSlice))
+	for i, blockBytes := range blockBytesSlice {
+		rawBlocks[i] = hex.EncodeToString(blockBytes)
+	}
+	return rawBlocks
+}
+
+func blockBytesToBlockVerboseResults(s *Server, blockBytesSlice [][]byte) ([]btcjson.GetBlockVerboseResult, error) {
+	verboseBlocks := make([]btcjson.GetBlockVerboseResult, len(blockBytesSlice))
+	for i, blockBytes := range blockBytesSlice {
+		block, err := util.NewBlockFromBytes(blockBytes)
+		if err != nil {
+			return nil, err
+		}
+		getBlockVerboseResult, err := buildGetBlockVerboseResult(s, block, false)
+		if err != nil {
+			return nil, err
+		}
+		verboseBlocks[i] = *getBlockVerboseResult
+	}
+	return verboseBlocks, nil
 }
