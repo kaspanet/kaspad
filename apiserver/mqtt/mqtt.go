@@ -17,7 +17,7 @@ func GetClient() (mqtt.Client, error) {
 	return client, nil
 }
 
-// IsConnected returns true is MQTT client was connected, false otherwise.
+// IsConnected returns true if the MQTT client was connected, false otherwise.
 func IsConnected() bool {
 	return client != nil
 }

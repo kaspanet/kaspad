@@ -8,19 +8,19 @@ import (
 )
 
 func convertTxDBModelToTxResponse(tx *dbmodels.Transaction) *apimodels.TransactionResponse {
-	var acceptingBlockHash string
-	var acceptingBlockBlueScore uint64
+	var acceptingBlockHash *string
+	var acceptingBlockBlueScore *uint64
 
 	if tx.AcceptingBlock != nil {
-		acceptingBlockHash = tx.AcceptingBlock.BlockHash
-		acceptingBlockBlueScore = tx.AcceptingBlock.BlueScore
+		acceptingBlockHash = &tx.AcceptingBlock.BlockHash
+		acceptingBlockBlueScore = &tx.AcceptingBlock.BlueScore
 	}
 
 	txRes := &apimodels.TransactionResponse{
 		TransactionHash:         tx.TransactionHash,
 		TransactionID:           tx.TransactionID,
-		AcceptingBlockHash:      acceptingBlockHash,
-		AcceptingBlockBlueScore: acceptingBlockBlueScore,
+		AcceptingBlockHash:      *acceptingBlockHash,
+		AcceptingBlockBlueScore: *acceptingBlockBlueScore,
 		SubnetworkID:            tx.Subnetwork.SubnetworkID,
 		LockTime:                tx.LockTime,
 		Gas:                     tx.Gas,

@@ -10,9 +10,9 @@ import (
 )
 
 // PublishTransactionsNotifications publishes notification for each transaction of the given block
-func PublishTransactionsNotifications(db *gorm.DB, rawBlock *btcjson.GetBlockVerboseResult) error {
-	transactionIds := make([]string, len(rawBlock.RawTx))
-	for i, tx := range rawBlock.RawTx {
+func PublishTransactionsNotifications(db *gorm.DB, rawTransactions []btcjson.TxRawResult) error {
+	transactionIds := make([]string, len(rawTransactions))
+	for i, tx := range rawTransactions {
 		transactionIds[i] = tx.TxID
 	}
 
@@ -42,11 +42,10 @@ func publishTransactionNotifications(transaction *apimodels.TransactionResponse)
 }
 
 func uniqueAddressesForTransaction(transaction *apimodels.TransactionResponse) []string {
-	addressesMap := make(map[string]bool)
+	addressesMap := make(map[string]struct{})
 	addresses := []string{}
 	for _, output := range transaction.Outputs {
-		if !addressesMap[output.Address] {
-			addressesMap[output.Address] = true
+		if _, exists := addressesMap[output.Address]; !exists {
 			addresses = append(addresses, output.Address)
 		}
 	}
