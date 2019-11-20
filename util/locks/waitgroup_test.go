@@ -7,6 +7,7 @@ package locks
 import (
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
 // All of the tests, except TestAddAfterWait, are copied
@@ -49,15 +50,16 @@ func spawnPatch(t *testing.T) (checkIfRunningSpawnsAreLeft func(), unpatch func(
 	}
 	checkIfRunningSpawnsAreLeft = func() {
 		if runningSpawns != 0 {
-			t.Fatalf("%d running spawns left", runningSpawns)
+			time.Sleep(10 * time.Millisecond)
+			if runningSpawns != 0 {
+				t.Fatalf("%d running spawns left", runningSpawns)
+			}
 		}
 	}
 	return checkIfRunningSpawnsAreLeft, unpatch
 }
 
 func testWaitGroup(t *testing.T, wg1 *syncWaitGroupCompatible, wg2 *syncWaitGroupCompatible) {
-	checkIfRunningSpawnsAreLeft, unpatch := spawnPatch(t)
-	defer unpatch()
 	n := 16
 	wg1.add(n)
 	wg2.add(n)
@@ -81,10 +83,11 @@ func testWaitGroup(t *testing.T, wg1 *syncWaitGroupCompatible, wg2 *syncWaitGrou
 	for i := 0; i != n; i++ {
 		<-exited // Will block if barrier fails to unlock someone.
 	}
-	checkIfRunningSpawnsAreLeft()
 }
 
 func TestWaitGroup(t *testing.T) {
+	checkIfRunningSpawnsAreLeft, unpatch := spawnPatch(t)
+	defer unpatch()
 	wg1 := newSyncWgCompatible()
 	wg2 := newSyncWgCompatible()
 
@@ -92,6 +95,7 @@ func TestWaitGroup(t *testing.T) {
 	for i := 0; i != 8; i++ {
 		testWaitGroup(t, wg1, wg2)
 	}
+	checkIfRunningSpawnsAreLeft()
 }
 
 func TestWaitGroupMisuse(t *testing.T) {
@@ -128,33 +132,31 @@ func TestAddAfterWait(t *testing.T) {
 }
 
 func TestWaitGroupRace(t *testing.T) {
+	checkIfRunningSpawnsAreLeft, unpatch := spawnPatch(t)
+	defer unpatch()
 	// Run this test for about 1ms.
 	for i := 0; i < 1000; i++ {
-		func() {
-			checkIfRunningSpawnsAreLeft, unpatch := spawnPatch(t)
-			defer unpatch()
-			wg := newSyncWgCompatible()
-			n := new(int32)
-			// spawn goroutine 1
-			wg.add(1)
-			go func() {
-				atomic.AddInt32(n, 1)
-				wg.done()
-			}()
-			// spawn goroutine 2
-			wg.add(1)
-			go func() {
-				atomic.AddInt32(n, 1)
-				wg.done()
-			}()
-			// Wait for goroutine 1 and 2
-			wg.wait()
-			if atomic.LoadInt32(n) != 2 {
-				t.Fatal("Spurious wakeup from Wait")
-			}
-			checkIfRunningSpawnsAreLeft()
+		wg := newSyncWgCompatible()
+		n := new(int32)
+		// spawn goroutine 1
+		wg.add(1)
+		go func() {
+			atomic.AddInt32(n, 1)
+			wg.done()
 		}()
+		// spawn goroutine 2
+		wg.add(1)
+		go func() {
+			atomic.AddInt32(n, 1)
+			wg.done()
+		}()
+		// Wait for goroutine 1 and 2
+		wg.wait()
+		if atomic.LoadInt32(n) != 2 {
+			t.Fatal("Spurious wakeup from Wait")
+		}
 	}
+	checkIfRunningSpawnsAreLeft()
 }
 
 func TestWaitGroupAlign(t *testing.T) {

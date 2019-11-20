@@ -7,14 +7,14 @@ import (
 
 type waitGroup struct {
 	addDoneCounter, waitingCounter int64
-	waitLock                       sync.Mutex
-	syncChannel                    chan struct{}
+	waitLock, releaseWaitLock      sync.Mutex
+	releaseWait, releaseDoneSpawn  chan struct{}
 }
 
 func newWaitGroup() *waitGroup {
 	return &waitGroup{
-		waitLock:    sync.Mutex{},
-		syncChannel: make(chan struct{}),
+		releaseWait:      make(chan struct{}),
+		releaseDoneSpawn: make(chan struct{}),
 	}
 }
 
@@ -29,19 +29,23 @@ func (wg *waitGroup) done() {
 	}
 	if atomic.LoadInt64(&wg.addDoneCounter) == 0 && atomic.LoadInt64(&wg.waitingCounter) > 0 {
 		spawn(func() {
+			wg.releaseWaitLock.Lock()
 			if atomic.LoadInt64(&wg.waitingCounter) > 0 {
-				wg.syncChannel <- struct{}{}
+				wg.releaseWait <- struct{}{}
+				<-wg.releaseDoneSpawn
 			}
+			wg.releaseWaitLock.Unlock()
 		})
 	}
 }
 
 func (wg *waitGroup) wait() {
-	atomic.AddInt64(&wg.waitingCounter, 1)
-	defer atomic.AddInt64(&wg.waitingCounter, -1)
 	wg.waitLock.Lock()
 	defer wg.waitLock.Unlock()
 	for atomic.LoadInt64(&wg.addDoneCounter) != 0 {
-		<-wg.syncChannel
+		atomic.AddInt64(&wg.waitingCounter, 1)
+		<-wg.releaseWait
+		atomic.AddInt64(&wg.waitingCounter, -1)
+		wg.releaseDoneSpawn <- struct{}{}
 	}
 }
