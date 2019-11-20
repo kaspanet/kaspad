@@ -17,7 +17,9 @@ type connectionManager struct {
 }
 
 func newConnectionManager(cfg *config) (*connectionManager, error) {
-	connManager := &connectionManager{}
+	connManager := &connectionManager{
+		cfg: cfg,
+	}
 	var err error
 
 	connManager.addressList, err = getAddressList(cfg)
