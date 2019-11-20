@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
+	"github.com/daglabs/btcd/apiserver/apimodels"
+	"github.com/daglabs/btcd/apiserver/controllers"
 	"github.com/daglabs/btcd/apiserver/mqtt"
 	"strconv"
 	"time"
@@ -274,6 +276,7 @@ func addBlock(client *jsonrpc.Client, block string, rawBlock btcjson.GetBlockVer
 		return err
 	}
 
+	transactionIds := make([]string, len(rawBlock.RawTx))
 	blockMass := uint64(0)
 	for i, transaction := range rawBlock.RawTx {
 		dbSubnetwork, err := insertSubnetwork(dbTx, &transaction, client)
@@ -284,6 +287,7 @@ func addBlock(client *jsonrpc.Client, block string, rawBlock btcjson.GetBlockVer
 		if err != nil {
 			return err
 		}
+		transactionIds[i] = dbTransaction.TransactionID
 		blockMass += dbTransaction.Mass
 		err = insertTransactionBlock(dbTx, dbBlock, dbTransaction, uint32(i))
 		if err != nil {
@@ -297,12 +301,6 @@ func addBlock(client *jsonrpc.Client, block string, rawBlock btcjson.GetBlockVer
 		if err != nil {
 			return err
 		}
-		if mqtt.IsConnected() {
-			err = publishTransactionNotifications(&transaction, dbTransaction)
-			if err != nil {
-				return err
-			}
-		}
 	}
 
 	dbBlock.Mass = blockMass
@@ -312,8 +310,61 @@ func addBlock(client *jsonrpc.Client, block string, rawBlock btcjson.GetBlockVer
 		return httpserverutils.NewErrorFromDBErrors("failed to update block: ", dbErrors)
 	}
 
+	if mqtt.IsConnected() {
+		err = publishTransactionsNotifications(dbTx, transactionIds)
+		if err != nil {
+			return err
+		}
+	}
+
 	dbTx.Commit()
 	return nil
+}
+
+func publishTransactionsNotifications(db *gorm.DB, transactionIds []string) error {
+	var txs []*dbmodels.Transaction
+	query := db.
+		Joins("LEFT JOIN `transaction_outputs` ON `transaction_outputs`.`transaction_id` = `transactions`.`id`").
+		Joins("LEFT JOIN `addresses` AS `out_addresses` ON `out_addresses`.`id` = `transaction_outputs`.`address_id`").
+		Joins("LEFT JOIN `transaction_inputs` ON `transaction_inputs`.`transaction_id` = `transactions`.`id`").
+		Joins("LEFT JOIN `transaction_outputs` AS `inputs_outs` ON `inputs_outs`.`id` = `transaction_inputs`.`previous_transaction_output_id`").
+		Joins("LEFT JOIN `addresses` AS `in_addresses` ON `in_addresses`.`id` = `inputs_outs`.`address_id`").
+		Where("`transactions`.`transaction_id` IN (?)", transactionIds).
+		Preload("TransactionOutputs").
+		Preload("TransactionOutputs.Address").
+		Preload("TransactionInputs").
+		Preload("TransactionInputs.PreviousTransactionOutput.Transaction").
+		Preload("TransactionInputs.PreviousTransactionOutput.Address")
+
+	dbResult := query.Find(&txs)
+	dbErrors := dbResult.GetErrors()
+	if httpserverutils.HasDBError(dbErrors) {
+		return httpserverutils.NewErrorFromDBErrors("Some errors were encountered when loading transactions from the database:", dbErrors)
+	}
+	txResponses := make([]*apimodels.TransactionResponse, len(txs))
+	for i, tx := range txs {
+		txResponses[i] = controllers.ConvertTxDBModelToTxResponse(tx)
+		addresses := uniqueAddressesForTx(txResponses[i])
+		for _, address := range addresses {
+			err := mqtt.PublishTransactionNotification(txResponses[i], address)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func uniqueAddressesForTx(transaction *apimodels.TransactionResponse) []string {
+	addressesMap := make(map[string]bool)
+	addresses := []string{}
+	for _, output := range transaction.Outputs {
+		if !addressesMap[output.Address] {
+			addressesMap[output.Address] = true
+			addresses = append(addresses, output.Address)
+		}
+	}
+	return addresses
 }
 
 func insertBlock(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult) (*dbmodels.Block, error) {
@@ -710,40 +761,6 @@ func insertTransactionOutput(dbTx *gorm.DB, dbTransaction *dbmodels.Transaction,
 		}
 	}
 	return nil
-}
-
-func publishTransactionNotifications(rawTransaction *btcjson.TxRawResult, transaction *dbmodels.Transaction) error {
-	addresses, err := getAddressesFromTxOutputs(rawTransaction.Vout)
-	if err != nil {
-		return err
-	}
-
-	for address := range addresses {
-		err = mqtt.PublishTransactionForAddress(address, transaction)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func getAddressesFromTxOutputs(outputs []btcjson.Vout) (map[util.Address]bool, error) {
-	addresses := make(map[util.Address]bool)
-	for _, output := range outputs {
-
-		scriptPubKey, err := hex.DecodeString(output.ScriptPubKey.Hex)
-		if err != nil {
-			return nil, err
-		}
-
-		_, address, err := txscript.ExtractScriptPubKeyAddress(scriptPubKey, config.ActiveConfig().NetParams())
-		if err != nil {
-			return nil, err
-		}
-
-		addresses[address] = true
-	}
-	return addresses, nil
 }
 
 // updateSelectedParentChain updates the database to reflect the current selected
