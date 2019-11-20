@@ -133,15 +133,15 @@ func (r FutureGetBlocksResult) Receive() (*btcjson.GetBlocksResult, error) {
 // returned instance.
 //
 // See GetBlocks for the blocking version and more details.
-func (c *Client) GetBlocksAsync(includeBlocks bool, verboseBlocks bool, startHash *string) FutureGetBlocksResult {
-	cmd := btcjson.NewGetBlocksCmd(includeBlocks, verboseBlocks, startHash)
+func (c *Client) GetBlocksAsync(includeRawBlockData bool, IncludeVerboseBlockData bool, startHash *string) FutureGetBlocksResult {
+	cmd := btcjson.NewGetBlocksCmd(includeRawBlockData, IncludeVerboseBlockData, startHash)
 	return c.sendCmd(cmd)
 }
 
 // GetBlocks returns the blocks starting from startHash up to the virtual ordered
 // by blue score.
-func (c *Client) GetBlocks(includeBlocks bool, verboseBlocks bool, startHash *string) (*btcjson.GetBlocksResult, error) {
-	return c.GetBlocksAsync(includeBlocks, verboseBlocks, startHash).Receive()
+func (c *Client) GetBlocks(includeRawBlockData bool, includeVerboseBlockData bool, startHash *string) (*btcjson.GetBlocksResult, error) {
+	return c.GetBlocksAsync(includeRawBlockData, includeVerboseBlockData, startHash).Receive()
 }
 
 // FutureGetBlockVerboseResult is a future promise to deliver the result of a
