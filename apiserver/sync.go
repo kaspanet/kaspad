@@ -124,8 +124,8 @@ func syncBlocks(client *jsonrpc.Client) error {
 		}
 
 		startHash = &blocksResult.Hashes[len(blocksResult.Hashes)-1]
-		blocks = append(blocks, blocksResult.Blocks...)
-		rawBlocks = append(rawBlocks, rawBlocksResult.RawBlocks...)
+		blocks = append(blocks, blocksResult.RawBlocks...)
+		rawBlocks = append(rawBlocks, rawBlocksResult.VerboseBlocks...)
 	}
 
 	return addBlocks(client, blocks, rawBlocks)

@@ -48,25 +48,23 @@ func handleGetBlocks(s *Server, cmd interface{}, closeChan <-chan struct{}) (int
 	}
 
 	result := &btcjson.GetBlocksResult{
-		Hashes: hashes,
-		Blocks: nil,
+		Hashes:        hashes,
+		RawBlocks:     nil,
+		VerboseBlocks: nil,
 	}
-
-	// If the user specified to include the blocks, collect them as well.
-	if c.IncludeBlocks {
-		if c.VerboseBlocks {
-			getBlockVerboseResults, err := hashesToGetBlockVerboseResults(s, blockHashes)
-			if err != nil {
-				return nil, err
-			}
-			result.RawBlocks = getBlockVerboseResults
-		} else {
-			blocks, err := hashesToBlockStrings(s, blockHashes)
-			if err != nil {
-				return nil, err
-			}
-			result.Blocks = blocks
+	if c.IncludeRawBlockData {
+		rawBlocks, err := hashesToBlockStrings(s, blockHashes)
+		if err != nil {
+			return nil, err
 		}
+		result.RawBlocks = rawBlocks
+	}
+	if c.IncludeVerboseBlockData {
+		getBlockVerboseResults, err := hashesToGetBlockVerboseResults(s, blockHashes)
+		if err != nil {
+			return nil, err
+		}
+		result.VerboseBlocks = getBlockVerboseResults
 	}
 
 	return result, nil

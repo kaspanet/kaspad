@@ -200,9 +200,9 @@ func TestDAGSvrCmds(t *testing.T) {
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getBlocks","params":[true,true,"123"],"id":1}`,
 			unmarshalled: &btcjson.GetBlocksCmd{
-				IncludeBlocks: true,
-				VerboseBlocks: true,
-				StartHash:     btcjson.String("123"),
+				IncludeRawBlockData:     true,
+				IncludeVerboseBlockData: true,
+				StartHash:               btcjson.String("123"),
 			},
 		},
 		{
