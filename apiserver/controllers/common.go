@@ -19,8 +19,8 @@ func convertTxDBModelToTxResponse(tx *dbmodels.Transaction) *apimodels.Transacti
 	txRes := &apimodels.TransactionResponse{
 		TransactionHash:         tx.TransactionHash,
 		TransactionID:           tx.TransactionID,
-		AcceptingBlockHash:      *acceptingBlockHash,
-		AcceptingBlockBlueScore: *acceptingBlockBlueScore,
+		AcceptingBlockHash:      acceptingBlockHash,
+		AcceptingBlockBlueScore: acceptingBlockBlueScore,
 		SubnetworkID:            tx.Subnetwork.SubnetworkID,
 		LockTime:                tx.LockTime,
 		Gas:                     tx.Gas,
