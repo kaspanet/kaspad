@@ -5,10 +5,16 @@ import (
 	"fmt"
 	"github.com/daglabs/btcd/apiserver/apimodels"
 	"github.com/daglabs/btcd/apiserver/controllers"
+	"github.com/daglabs/btcd/btcjson"
 	"github.com/jinzhu/gorm"
 )
 
-func PublishTransactionsNotifications(db *gorm.DB, transactionIds []string) error {
+func PublishTransactionsNotifications(db *gorm.DB, rawBlock *btcjson.GetBlockVerboseResult) error {
+	transactionIds := make([]string, len(rawBlock.RawTx))
+	for i, tx := range rawBlock.RawTx {
+		transactionIds[i] = tx.TxID
+	}
+
 	transactions, err := controllers.GetTransactionsByIdsHandler(db, transactionIds)
 	if err != nil {
 		return err

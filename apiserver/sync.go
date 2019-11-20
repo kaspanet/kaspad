@@ -274,7 +274,6 @@ func addBlock(client *jsonrpc.Client, block string, rawBlock btcjson.GetBlockVer
 		return err
 	}
 
-	transactionIds := make([]string, len(rawBlock.RawTx))
 	blockMass := uint64(0)
 	for i, transaction := range rawBlock.RawTx {
 		dbSubnetwork, err := insertSubnetwork(dbTx, &transaction, client)
@@ -285,7 +284,6 @@ func addBlock(client *jsonrpc.Client, block string, rawBlock btcjson.GetBlockVer
 		if err != nil {
 			return err
 		}
-		transactionIds[i] = dbTransaction.TransactionID
 		blockMass += dbTransaction.Mass
 		err = insertTransactionBlock(dbTx, dbBlock, dbTransaction, uint32(i))
 		if err != nil {
@@ -309,7 +307,7 @@ func addBlock(client *jsonrpc.Client, block string, rawBlock btcjson.GetBlockVer
 	}
 
 	if mqtt.IsConnected() {
-		err = mqtt.PublishTransactionsNotifications(dbTx, transactionIds)
+		err = mqtt.PublishTransactionsNotifications(dbTx, &rawBlock)
 		if err != nil {
 			return err
 		}
