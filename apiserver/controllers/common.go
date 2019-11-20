@@ -7,8 +7,7 @@ import (
 	"github.com/daglabs/btcd/btcjson"
 )
 
-// ConvertTxDBModelToTxResponse converts a Transaction model to TransactionResponse
-func ConvertTxDBModelToTxResponse(tx *dbmodels.Transaction) *apimodels.TransactionResponse {
+func convertTxDBModelToTxResponse(tx *dbmodels.Transaction) *apimodels.TransactionResponse {
 	var acceptingBlockHash string
 	var acceptingBlockBlueScore uint64
 

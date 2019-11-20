@@ -1,10 +1,7 @@
 package mqtt
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
-	"github.com/daglabs/btcd/apiserver/apimodels"
 	"github.com/daglabs/btcd/apiserver/config"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
@@ -23,25 +20,6 @@ func GetClient() (mqtt.Client, error) {
 // IsConnected returns true is MQTT client was connected, false otherwise.
 func IsConnected() bool {
 	return client != nil
-}
-
-// PublishTransactionForAddress publishes a transaction message for the topic to transactions/address.
-func PublishTransactionNotification(transaction *apimodels.TransactionResponse, address string) error {
-	payload, err := json.Marshal(transaction)
-	if err != nil {
-		return err
-	}
-
-	token := client.Publish(transactionsTopic(address), 0, false, payload)
-	token.Wait()
-	if token.Error() != nil {
-		return token.Error()
-	}
-	return nil
-}
-
-func transactionsTopic(address string) string {
-	return fmt.Sprintf("transactions/%s", address)
 }
 
 // Connect initiates a connection to the MQTT server, if defined
