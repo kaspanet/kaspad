@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/pkg/errors"
 
@@ -23,20 +22,14 @@ func main() {
 		enableRPCLogging()
 	}
 
-	addressList, err := getAddressList(cfg)
+	connManager, err := newConnectionManager(cfg)
 	if err != nil {
-		panic(errors.Errorf("Couldn't load address list: %s", err))
+		panic(errors.Errorf("Error initializing connection manager: %s", err))
 	}
-	log.Infof("Got address list: %s", strings.Join(addressList, ", "))
-
-	clients, err := connectToServers(cfg, addressList)
-	if err != nil {
-		panic(errors.Errorf("Error connecting to servers: %s", err))
-	}
-	defer disconnect(clients)
+	defer connManager.close()
 
 	spawn(func() {
-		err = mineLoop(clients)
+		err = mineLoop(connManager)
 		if err != nil {
 			panic(errors.Errorf("Error in main loop: %s", err))
 		}

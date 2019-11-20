@@ -171,7 +171,7 @@ func getRandomClient(clients []*simulatorClient) *simulatorClient {
 	return clients[random.Int63n(clientsCount)]
 }
 
-func mineLoop(clients []*simulatorClient) error {
+func mineLoop(connManager *connectionManager) error {
 	errChan := make(chan error)
 
 	templateStopChan := make(chan struct{})
@@ -179,7 +179,7 @@ func mineLoop(clients []*simulatorClient) error {
 	spawn(func() {
 		for {
 			foundBlock := make(chan *util.Block)
-			currentClient := getRandomClient(clients)
+			currentClient := getRandomClient(connManager.clients)
 			currentClient.notifyForNewBlocks = true
 			log.Infof("Next block will be mined by: %s", currentClient.Host())
 			mineNextBlock(currentClient, foundBlock, templateStopChan, errChan)
