@@ -5,10 +5,14 @@ import (
 	"sync/atomic"
 )
 
+// waitGroup is a type that implements the same API
+// as sync.WaitGroup but allows concurrent calls to
+// add() and wait().
 type waitGroup struct {
-	addDoneCounter, waitingCounter int64
-	waitLock, releaseWaitLock      sync.Mutex
-	releaseWait, releaseDoneSpawn  chan struct{}
+	counter, isReleaseWaitWaiting          int64
+	mainWaitLock, isReleaseWaitWaitingLock sync.Mutex
+	releaseWait, releaseDoneSpawn          chan struct{}
+	id                                     uint64
 }
 
 func newWaitGroup() *waitGroup {
@@ -18,34 +22,46 @@ func newWaitGroup() *waitGroup {
 	}
 }
 
-func (wg *waitGroup) add() {
-	atomic.AddInt64(&wg.addDoneCounter, 1)
+func (wg *waitGroup) add(delta int64) {
+	atomic.AddInt64(&wg.counter, delta)
 }
 
 func (wg *waitGroup) done() {
-	counter := atomic.AddInt64(&wg.addDoneCounter, -1)
+	counter := atomic.AddInt64(&wg.counter, -1)
 	if counter < 0 {
-		panic("negative values for wg.addDoneCounter are not allowed. This was likely caused by calling done() before add()")
+		panic("negative values for wg.counter are not allowed. This was likely caused by calling done() before add()")
 	}
-	if atomic.LoadInt64(&wg.addDoneCounter) == 0 && atomic.LoadInt64(&wg.waitingCounter) > 0 {
+
+	// To avoid a situation where a struct is
+	// being sent to wg.releaseWait while there
+	// are no listeners to the channel (which will
+	// cause the goroutine to hang for eternity),
+	// we check wg.isReleaseWaitWaiting to see
+	// if there is a listener to wg.releaseWait.
+	if atomic.LoadInt64(&wg.counter) == 0 && atomic.LoadInt64(&wg.isReleaseWaitWaiting) == 1 {
 		spawn(func() {
-			wg.releaseWaitLock.Lock()
-			if atomic.LoadInt64(&wg.waitingCounter) > 0 {
+			wg.isReleaseWaitWaitingLock.Lock()
+			if atomic.LoadInt64(&wg.isReleaseWaitWaiting) == 1 {
 				wg.releaseWait <- struct{}{}
 				<-wg.releaseDoneSpawn
 			}
-			wg.releaseWaitLock.Unlock()
+			wg.isReleaseWaitWaitingLock.Unlock()
 		})
+	} else {
 	}
 }
 
 func (wg *waitGroup) wait() {
-	wg.waitLock.Lock()
-	defer wg.waitLock.Unlock()
-	for atomic.LoadInt64(&wg.addDoneCounter) != 0 {
-		atomic.AddInt64(&wg.waitingCounter, 1)
+	wg.mainWaitLock.Lock()
+	defer wg.mainWaitLock.Unlock()
+	wg.isReleaseWaitWaitingLock.Lock()
+	for atomic.LoadInt64(&wg.counter) != 0 {
+		atomic.StoreInt64(&wg.isReleaseWaitWaiting, 1)
+		wg.isReleaseWaitWaitingLock.Unlock()
 		<-wg.releaseWait
-		atomic.AddInt64(&wg.waitingCounter, -1)
+		atomic.StoreInt64(&wg.isReleaseWaitWaiting, 0)
 		wg.releaseDoneSpawn <- struct{}{}
+		wg.isReleaseWaitWaitingLock.Lock()
 	}
+	wg.isReleaseWaitWaitingLock.Unlock()
 }
