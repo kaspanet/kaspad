@@ -300,7 +300,7 @@ func addBlock(client *jsonrpc.Client, rawBlock string, verboseBlock btcjson.GetB
 	}
 
 	if mqtt.IsConnected() {
-		err = mqtt.PublishTransactionsNotifications(dbTx, rawBlock.RawTx)
+		err = mqtt.PublishTransactionsNotifications(dbTx, verboseBlock.RawTx)
 		if err != nil {
 			return err
 		}
