@@ -58,7 +58,7 @@ func publishTransactionNotificationForAddress(transaction *apimodels.Transaction
 		return err
 	}
 
-	token := client.Publish(transactionsTopic(address), 0, false, payload)
+	token := client.Publish(transactionsTopic(address), 2, false, payload)
 	token.Wait()
 	if token.Error() != nil {
 		return token.Error()
