@@ -178,16 +178,16 @@ var helpDescsEnUS = map[string]string{
 	"getBlock--result0":    "Hex-encoded bytes of the serialized block",
 
 	// GetBlocksCmd help.
-	"getBlocks--synopsis":     "Return the blocks starting from startHash up to the virtual ordered by blue score.",
-	"getBlocks-includeBlocks": "If set to true - the block contents would be also included.",
-	"getBlocks-verboseBlocks": "If set to true - each block is returned as a JSON object",
-	"getBlocks-startHash":     "Hash of the block with the bottom blue score. If this hash is unknown - returns an error.",
-	"getBlocks--result0":      "Blocks starting from startHash. The result may contains up to 1000 blocks. For the remainder, call the command again with the bluest block's hash.",
+	"getBlocks--synopsis":               "Return the blocks starting from startHash up to the virtual ordered by blue score.",
+	"getBlocks-includeRawBlockData":     "If set to true - the raw block data would be also included.",
+	"getBlocks-includeVerboseBlockData": "If set to true - the verbose block data would also be included.",
+	"getBlocks-startHash":               "Hash of the block with the bottom blue score. If this hash is unknown - returns an error.",
+	"getBlocks--result0":                "Blocks starting from startHash. The result may contains up to 1000 blocks. For the remainder, call the command again with the bluest block's hash.",
 
 	// GetChainFromBlockResult help.
-	"getBlocksResult-hashes":    "List of hashes from StartHash (excluding StartHash) ordered by smallest blue score to greatest.",
-	"getBlocksResult-blocks":    "If includeBlocks=true - contains the block contents. Otherwise - omitted.",
-	"getBlocksResult-rawBlocks": "If includeBlocks=true and verboseBlocks=true - each block is returned as a JSON object. Otherwise - hex encoded string.",
+	"getBlocksResult-hashes":        "List of hashes from StartHash (excluding StartHash) ordered by smallest blue score to greatest.",
+	"getBlocksResult-rawBlocks":     "If includeBlocks=true - contains the block contents. Otherwise - omitted.",
+	"getBlocksResult-verboseBlocks": "If includeBlocks=true and verboseBlocks=true - each block is returned as a JSON object. Otherwise - hex encoded string.",
 
 	// GetBlockChainInfoCmd help.
 	"getBlockDagInfo--synopsis": "Returns information about the current blockDAG state and the status of any active soft-fork deployments.",
