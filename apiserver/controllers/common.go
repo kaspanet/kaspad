@@ -8,27 +8,21 @@ import (
 )
 
 func convertTxDBModelToTxResponse(tx *dbmodels.Transaction) *apimodels.TransactionResponse {
-	var acceptingBlockHash *string
-	var acceptingBlockBlueScore *uint64
-
-	if tx.AcceptingBlock != nil {
-		acceptingBlockHash = &tx.AcceptingBlock.BlockHash
-		acceptingBlockBlueScore = &tx.AcceptingBlock.BlueScore
-	}
-
 	txRes := &apimodels.TransactionResponse{
-		TransactionHash:         tx.TransactionHash,
-		TransactionID:           tx.TransactionID,
-		AcceptingBlockHash:      acceptingBlockHash,
-		AcceptingBlockBlueScore: acceptingBlockBlueScore,
-		SubnetworkID:            tx.Subnetwork.SubnetworkID,
-		LockTime:                tx.LockTime,
-		Gas:                     tx.Gas,
-		PayloadHash:             tx.PayloadHash,
-		Payload:                 hex.EncodeToString(tx.Payload),
-		Inputs:                  make([]*apimodels.TransactionInputResponse, len(tx.TransactionInputs)),
-		Outputs:                 make([]*apimodels.TransactionOutputResponse, len(tx.TransactionOutputs)),
-		Mass:                    tx.Mass,
+		TransactionHash: tx.TransactionHash,
+		TransactionID:   tx.TransactionID,
+		SubnetworkID:    tx.Subnetwork.SubnetworkID,
+		LockTime:        tx.LockTime,
+		Gas:             tx.Gas,
+		PayloadHash:     tx.PayloadHash,
+		Payload:         hex.EncodeToString(tx.Payload),
+		Inputs:          make([]*apimodels.TransactionInputResponse, len(tx.TransactionInputs)),
+		Outputs:         make([]*apimodels.TransactionOutputResponse, len(tx.TransactionOutputs)),
+		Mass:            tx.Mass,
+	}
+	if tx.AcceptingBlock != nil {
+		txRes.AcceptingBlockHash = &tx.AcceptingBlock.BlockHash
+		txRes.AcceptingBlockBlueScore = &tx.AcceptingBlock.BlueScore
 	}
 	for i, txOut := range tx.TransactionOutputs {
 		txRes.Outputs[i] = &apimodels.TransactionOutputResponse{

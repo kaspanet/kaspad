@@ -299,11 +299,9 @@ func addBlock(client *jsonrpc.Client, rawBlock string, verboseBlock btcjson.GetB
 		return httpserverutils.NewErrorFromDBErrors("failed to update block: ", dbErrors)
 	}
 
-	if mqtt.IsConnected() {
-		err = mqtt.PublishTransactionsNotifications(dbTx, verboseBlock.RawTx)
-		if err != nil {
-			return err
-		}
+	err = mqtt.PublishTransactionsNotifications(dbTx, verboseBlock.RawTx)
+	if err != nil {
+		return err
 	}
 
 	dbTx.Commit()
