@@ -2,7 +2,6 @@ package mqtt
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/daglabs/btcd/apiserver/apimodels"
 	"github.com/daglabs/btcd/apiserver/controllers"
 	"github.com/daglabs/btcd/apiserver/database"
@@ -70,8 +69,6 @@ func publishTransactionNotificationForAddress(transaction *apimodels.Transaction
 	if token.Error() != nil {
 		return token.Error()
 	}
-
-	fmt.Printf("Published to topic: %v, message: %s\n\n", topic+address, payload)
 
 	return nil
 }
