@@ -1,7 +1,6 @@
 package mqtt
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/daglabs/btcd/apiserver/apimodels"
 	"github.com/daglabs/btcd/apiserver/controllers"
@@ -58,18 +57,7 @@ func uniqueAddressesForTransaction(transaction *apimodels.TransactionResponse) [
 }
 
 func publishTransactionNotificationForAddress(transaction *apimodels.TransactionResponse, address string) error {
-	payload, err := json.Marshal(transaction)
-	if err != nil {
-		return err
-	}
-
-	token := client.Publish(transactionsTopic(address), 2, false, payload)
-	token.Wait()
-	if token.Error() != nil {
-		return token.Error()
-	}
-
-	return nil
+	return publish(transactionsTopic(address), transaction)
 }
 
 func transactionsTopic(address string) string {

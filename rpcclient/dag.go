@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"github.com/pkg/errors"
 
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/util/daghash"
@@ -31,7 +32,7 @@ func (r FutureGetSelectedTipHashResult) Receive() (*daghash.Hash, error) {
 	var txHashStr string
 	err = json.Unmarshal(res, &txHashStr)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	return daghash.NewHashFromStr(txHashStr)
 }
@@ -68,13 +69,13 @@ func (r FutureGetBlockResult) Receive() (*wire.MsgBlock, error) {
 	var blockHex string
 	err = json.Unmarshal(res, &blockHex)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	// Decode the serialized block hex to raw bytes.
 	serializedBlock, err := hex.DecodeString(blockHex)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	// Deserialize the block and return it.
@@ -123,7 +124,7 @@ func (r FutureGetBlocksResult) Receive() (*btcjson.GetBlocksResult, error) {
 
 	var result btcjson.GetBlocksResult
 	if err := json.Unmarshal(res, &result); err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "%s", string(res))
 	}
 	return &result, nil
 }
@@ -160,7 +161,7 @@ func (r FutureGetBlockVerboseResult) Receive() (*btcjson.GetBlockVerboseResult, 
 	var blockResult btcjson.GetBlockVerboseResult
 	err = json.Unmarshal(res, &blockResult)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	return &blockResult, nil
 }
@@ -265,7 +266,7 @@ func (r FutureGetChainFromBlockResult) Receive() (*btcjson.GetChainFromBlockResu
 
 	var result btcjson.GetChainFromBlockResult
 	if err := json.Unmarshal(res, &result); err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	return &result, nil
 }
@@ -339,7 +340,7 @@ func (r FutureGetBlockDAGInfoResult) Receive() (*btcjson.GetBlockDAGInfoResult, 
 
 	var dagInfo btcjson.GetBlockDAGInfoResult
 	if err := json.Unmarshal(res, &dagInfo); err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	return &dagInfo, nil
 }
@@ -377,7 +378,7 @@ func (r FutureGetBlockHashResult) Receive() (*daghash.Hash, error) {
 	var txHashStr string
 	err = json.Unmarshal(res, &txHashStr)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	return daghash.NewHashFromStr(txHashStr)
 }
@@ -398,12 +399,12 @@ func (r FutureGetBlockHeaderResult) Receive() (*wire.BlockHeader, error) {
 	var bhHex string
 	err = json.Unmarshal(res, &bhHex)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	serializedBH, err := hex.DecodeString(bhHex)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	// Deserialize the blockheader and return it.
@@ -455,7 +456,7 @@ func (r FutureGetBlockHeaderVerboseResult) Receive() (*btcjson.GetBlockHeaderVer
 	var bh btcjson.GetBlockHeaderVerboseResult
 	err = json.Unmarshal(res, &bh)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return &bh, nil
@@ -501,7 +502,7 @@ func (r FutureGetMempoolEntryResult) Receive() (*btcjson.GetMempoolEntryResult, 
 	var mempoolEntryResult btcjson.GetMempoolEntryResult
 	err = json.Unmarshal(res, &mempoolEntryResult)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return &mempoolEntryResult, nil
@@ -539,7 +540,7 @@ func (r FutureGetRawMempoolResult) Receive() ([]*daghash.Hash, error) {
 	var txHashStrs []string
 	err = json.Unmarshal(res, &txHashStrs)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	// Create a slice of ShaHash arrays from the string slice.
@@ -591,7 +592,7 @@ func (r FutureGetRawMempoolVerboseResult) Receive() (map[string]btcjson.GetRawMe
 	var mempoolItems map[string]btcjson.GetRawMempoolVerboseResult
 	err = json.Unmarshal(res, &mempoolItems)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	return mempoolItems, nil
 }
@@ -631,7 +632,7 @@ func (r FutureGetSubnetworkResult) Receive() (*btcjson.GetSubnetworkResult, erro
 	var getSubnetworkResult *btcjson.GetSubnetworkResult
 	err = json.Unmarshal(res, &getSubnetworkResult)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return getSubnetworkResult, nil
@@ -674,7 +675,7 @@ func (r FutureGetTxOutResult) Receive() (*btcjson.GetTxOutResult, error) {
 	var txOutInfo *btcjson.GetTxOutResult
 	err = json.Unmarshal(res, &txOutInfo)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return txOutInfo, nil
@@ -722,7 +723,7 @@ func (r FutureRescanBlocksResult) Receive() ([]btcjson.RescannedBlock, error) {
 	var rescanBlocksResult []btcjson.RescannedBlock
 	err = json.Unmarshal(res, &rescanBlocksResult)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return rescanBlocksResult, nil
@@ -804,13 +805,13 @@ func (r FutureGetCFilterResult) Receive() (*wire.MsgCFilter, error) {
 	var filterHex string
 	err = json.Unmarshal(res, &filterHex)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	// Decode the serialized cf hex to raw bytes.
 	serializedFilter, err := hex.DecodeString(filterHex)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	// Assign the filter bytes to the correct field of the wire message.
@@ -859,7 +860,7 @@ func (r FutureGetCFilterHeaderResult) Receive() (*wire.MsgCFHeaders, error) {
 	var headerHex string
 	err = json.Unmarshal(res, &headerHex)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	// Assign the decoded header into a hash

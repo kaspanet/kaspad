@@ -103,11 +103,10 @@ func syncBlocks(client *jsonrpc.Client) error {
 	// Start syncing from the bluest block hash. We use blue score to
 	// simulate the "last" block we have because blue-block order is
 	// the order that the node uses in the various JSONRPC calls.
-	bluestBlock, err := findBluestBlock(false)
+	startHash, err := findHashOfBluestBlock(false)
 	if err != nil {
 		return err
 	}
-	startHash := bluestBlock.BlockHash
 
 	var rawBlocks []string
 	var verboseBlocks []btcjson.GetBlockVerboseResult
@@ -133,14 +132,13 @@ func syncBlocks(client *jsonrpc.Client) error {
 // database accordingly.
 func syncSelectedParentChain(client *jsonrpc.Client) error {
 	// Start syncing from the selected tip hash
-	selectedTip, err := findBluestBlock(true)
+	startHash, err := findHashOfBluestBlock(true)
 	if err != nil {
 		return err
 	}
-	startHash := selectedTip.BlockHash
 
 	for {
-		chainFromBlockResult, err := client.GetChainFromBlock(false, &startHash)
+		chainFromBlockResult, err := client.GetChainFromBlock(false, startHash)
 		if err != nil {
 			return err
 		}
@@ -148,7 +146,7 @@ func syncSelectedParentChain(client *jsonrpc.Client) error {
 			break
 		}
 
-		startHash = chainFromBlockResult.AddedChainBlocks[len(chainFromBlockResult.AddedChainBlocks)-1].Hash
+		startHash = &chainFromBlockResult.AddedChainBlocks[len(chainFromBlockResult.AddedChainBlocks)-1].Hash
 		err = updateSelectedParentChain(chainFromBlockResult.RemovedChainBlockHashes,
 			chainFromBlockResult.AddedChainBlocks)
 		if err != nil {
@@ -158,17 +156,17 @@ func syncSelectedParentChain(client *jsonrpc.Client) error {
 	return nil
 }
 
-// findBluestBlock finds the block with the highest
+// findHashOfBluestBlock finds the block with the highest
 // blue score in the database. If the database is empty,
 // return nil.
-func findBluestBlock(mustBeChainBlock bool) (*dbmodels.Block, error) {
+func findHashOfBluestBlock(mustBeChainBlock bool) (*string, error) {
 	db, err := database.DB()
 	if err != nil {
 		return nil, err
 	}
 
 	var block dbmodels.Block
-	dbQuery := db.Order("blue_score DESC")
+	dbQuery := db.Select("block_hash").Order("blue_score DESC")
 	if mustBeChainBlock {
 		dbQuery = dbQuery.Where(&dbmodels.Block{IsChainBlock: true})
 	}
@@ -180,7 +178,7 @@ func findBluestBlock(mustBeChainBlock bool) (*dbmodels.Block, error) {
 	if httpserverutils.IsDBRecordNotFoundError(dbErrors) {
 		return nil, nil
 	}
-	return &block, nil
+	return &block.BlockHash, nil
 }
 
 // fetchBlock downloads the serialized block and raw block data of
@@ -1068,13 +1066,14 @@ func handleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) {
 
 	err := updateSelectedParentChain(removedHashes, addedBlocks)
 	if err != nil {
-		panic(errors.Errorf("Could not update selected parent chain: %s", err))
+		panic(errors.Wrap(err, "Could not update selected parent chain"))
 	}
 	log.Infof("Chain changed: removed %d blocks and added %d block",
 		len(removedHashes), len(addedBlocks))
 
-	if mqtt.IsConnected() {
-
+	err = mqtt.PublishSelectedTipNotification(addedBlocks[len(addedBlocks)-1].Hash)
+	if err != nil {
+		panic(err)
 	}
 }
 
