@@ -21,7 +21,7 @@ import (
 //   is 0. If it's the case the function returns. otherwise,
 //   it sets the flag waitGroup.isReleaseWaitWaiting to 1 so
 //   that there's a pending wait function, and waits for a signal
-//   from the channel waitGroup.relaseWait (waitGroup.isReleaseWaitWaiting
+//   from the channel waitGroup.releaseWait (waitGroup.isReleaseWaitWaiting
 //   is set to 1 wrapped with waitGroup.isReleaseWaitWaitingLock to
 //   synchronize with the reader from waitGroup.done).
 //
