@@ -54,7 +54,7 @@ func (mtx *PriorityMutex) LowPriorityWriteUnlock() {
 
 // HighPriorityWriteLock acquires a high-priority write lock.
 func (mtx *PriorityMutex) HighPriorityWriteLock() {
-	mtx.highPriorityWaiting.add()
+	mtx.highPriorityWaiting.add(1)
 	mtx.dataMutex.Lock()
 }
 
@@ -67,7 +67,7 @@ func (mtx *PriorityMutex) HighPriorityWriteUnlock() {
 // HighPriorityReadLock acquires a high-priority read
 // lock.
 func (mtx *PriorityMutex) HighPriorityReadLock() {
-	mtx.highPriorityWaiting.add()
+	mtx.highPriorityWaiting.add(1)
 	mtx.dataMutex.RLock()
 }
 

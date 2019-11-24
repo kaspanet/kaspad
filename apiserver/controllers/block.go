@@ -2,11 +2,12 @@ package controllers
 
 import (
 	"encoding/hex"
+	"net/http"
+
 	"github.com/daglabs/btcd/apiserver/apimodels"
 	"github.com/daglabs/btcd/apiserver/dbmodels"
 	"github.com/daglabs/btcd/httpserverutils"
 	"github.com/pkg/errors"
-	"net/http"
 
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/util/daghash"
@@ -45,7 +46,8 @@ func GetBlockByHashHandler(blockHash string) (interface{}, error) {
 		return nil, httpserverutils.NewHandlerError(http.StatusNotFound, errors.New("No block with the given block hash was found"))
 	}
 	if httpserverutils.HasDBError(dbErrors) {
-		return nil, httpserverutils.NewErrorFromDBErrors("Some errors were encountered when loading transactions from the database:", dbResult.GetErrors())
+		return nil, httpserverutils.NewErrorFromDBErrors("Some errors were encountered when loading transactions from the database:",
+			dbResult.GetErrors())
 	}
 	return convertBlockModelToBlockResponse(block), nil
 }
@@ -53,7 +55,7 @@ func GetBlockByHashHandler(blockHash string) (interface{}, error) {
 // GetBlocksHandler searches for all blocks
 func GetBlocksHandler(order string, skip uint64, limit uint64) (interface{}, error) {
 	if limit > maxGetBlocksLimit {
-		return nil, httpserverutils.NewHandlerError(http.StatusUnprocessableEntity, errors.Errorf("The maximum allowed value for the limit is %d", maxGetTransactionsLimit))
+		return nil, httpserverutils.NewHandlerError(http.StatusUnprocessableEntity, errors.Errorf("The maximum allowed value for the limit is %d", maxGetBlocksLimit))
 	}
 	blocks := []*dbmodels.Block{}
 	db, err := database.DB()

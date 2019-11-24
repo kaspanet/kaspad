@@ -4,8 +4,8 @@ package apimodels
 type TransactionResponse struct {
 	TransactionHash         string                       `json:"transactionHash"`
 	TransactionID           string                       `json:"transactionId"`
-	AcceptingBlockHash      string                       `json:"acceptingBlockHash,omitempty"`
-	AcceptingBlockBlueScore uint64                       `json:"acceptingBlockBlueScore,omitempty"`
+	AcceptingBlockHash      *string                      `json:"acceptingBlockHash,omitempty"`
+	AcceptingBlockBlueScore *uint64                      `json:"acceptingBlockBlueScore,omitempty"`
 	SubnetworkID            string                       `json:"subnetworkId"`
 	LockTime                uint64                       `json:"lockTime"`
 	Gas                     uint64                       `json:"gas,omitempty"`

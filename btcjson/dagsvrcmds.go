@@ -124,13 +124,13 @@ func NewGetAllManualNodesInfoCmd(details *bool) *GetAllManualNodesInfoCmd {
 	}
 }
 
-// GetBestBlockHashCmd defines the getBestBlockHash JSON-RPC command.
-type GetBestBlockHashCmd struct{}
+// GetSelectedTipHashCmd defines the getSelectedTipHash JSON-RPC command.
+type GetSelectedTipHashCmd struct{}
 
-// NewGetBestBlockHashCmd returns a new instance which can be used to issue a
-// getBestBlockHash JSON-RPC command.
-func NewGetBestBlockHashCmd() *GetBestBlockHashCmd {
-	return &GetBestBlockHashCmd{}
+// NewGetSelectedTipHashCmd returns a new instance which can be used to issue a
+// getSelectedTipHash JSON-RPC command.
+func NewGetSelectedTipHashCmd() *GetSelectedTipHashCmd {
+	return &GetSelectedTipHashCmd{}
 }
 
 // GetBlockCmd defines the getBlock JSON-RPC command.
@@ -157,18 +157,18 @@ func NewGetBlockCmd(hash string, verbose, verboseTx *bool, subnetworkID *string)
 
 // GetBlocksCmd defines the getBlocks JSON-RPC command.
 type GetBlocksCmd struct {
-	IncludeBlocks bool    `json:"includeBlocks"`
-	VerboseBlocks bool    `json:"verboseBlocks"`
-	StartHash     *string `json:"startHash"`
+	IncludeRawBlockData     bool    `json:"includeRawBlockData"`
+	IncludeVerboseBlockData bool    `json:"includeVerboseBlockData"`
+	StartHash               *string `json:"startHash"`
 }
 
 // NewGetBlocksCmd returns a new instance which can be used to issue a
 // GetGetBlocks JSON-RPC command.
-func NewGetBlocksCmd(includeBlocks bool, verboseBlocks bool, startHash *string) *GetBlocksCmd {
+func NewGetBlocksCmd(includeRawBlockData bool, includeVerboseBlockData bool, startHash *string) *GetBlocksCmd {
 	return &GetBlocksCmd{
-		IncludeBlocks: includeBlocks,
-		VerboseBlocks: verboseBlocks,
-		StartHash:     startHash,
+		IncludeRawBlockData:     includeRawBlockData,
+		IncludeVerboseBlockData: includeVerboseBlockData,
+		StartHash:               startHash,
 	}
 }
 
@@ -740,7 +740,7 @@ func init() {
 	MustRegisterCmd("decodeRawTransaction", (*DecodeRawTransactionCmd)(nil), flags)
 	MustRegisterCmd("decodeScript", (*DecodeScriptCmd)(nil), flags)
 	MustRegisterCmd("getAllManualNodesInfo", (*GetAllManualNodesInfoCmd)(nil), flags)
-	MustRegisterCmd("getBestBlockHash", (*GetBestBlockHashCmd)(nil), flags)
+	MustRegisterCmd("getSelectedTipHash", (*GetSelectedTipHashCmd)(nil), flags)
 	MustRegisterCmd("getBlock", (*GetBlockCmd)(nil), flags)
 	MustRegisterCmd("getBlocks", (*GetBlocksCmd)(nil), flags)
 	MustRegisterCmd("getBlockDagInfo", (*GetBlockDAGInfoCmd)(nil), flags)
