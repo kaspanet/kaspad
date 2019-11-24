@@ -81,13 +81,13 @@ func connectToServers(addressList []string, cert []byte) ([]*simulatorClient, er
 }
 
 func readCert(cfg *config) ([]byte, error) {
-	var cert []byte
-	if !cfg.DisableTLS {
-		var err error
-		cert, err = ioutil.ReadFile(cfg.CertificatePath)
-		if err != nil {
-			return nil, errors.Errorf("Error reading certificates file: %s", err)
-		}
+	if cfg.DisableTLS {
+		return nil, nil
+	}
+
+	cert, err := ioutil.ReadFile(cfg.CertificatePath)
+	if err != nil {
+		return nil, errors.Errorf("Error reading certificates file: %s", err)
 	}
 
 	return cert, nil
