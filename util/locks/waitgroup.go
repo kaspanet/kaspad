@@ -19,9 +19,9 @@ import (
 //
 // 1) The waitGroup.wait method is checking if waitGroup.counter
 //   is 0. If it's the case the function returns. otherwise,
-//   it sets the flag waitGroup.isReleaseWaitWaiting to 1 to
+//   it sets the flag waitGroup.isReleaseWaitWaiting to 1 so
 //   that there's a pending wait function, and waits for a signal
-//   from  the channel waitGroup.relaseWait (waitGroup.isReleaseWaitWaiting
+//   from the channel waitGroup.relaseWait (waitGroup.isReleaseWaitWaiting
 //   is set to 1 wrapped with waitGroup.isReleaseWaitWaitingLock to
 //   synchronize with the reader from waitGroup.done).
 //
@@ -42,10 +42,9 @@ import (
 //       channel wg.releaseWait and making one of them hang forever.
 //
 // 4) After the waitGroup.wait is released, it sets
-//    waitGroup.isReleaseWaitWaiting to 0, and  sends
+//    waitGroup.isReleaseWaitWaiting to 0, and sends
 //    a signal to wg.releaseDone and go back to step 1.
 //
-// P.S
 // The waitGroup.wait is wrapped with waitGroup.mainWaitLock. It
 // is used to enable multiple waits pending for the counter to be
 // set to zero. This will cause a situation when one wait function
