@@ -115,15 +115,18 @@ func TestBtcdExtCmds(t *testing.T) {
 			},
 		},
 		{
-			name: "getBestBlock",
+			name: "getSelectedTip",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getBestBlock")
+				return btcjson.NewCmd("getSelectedTip")
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewGetBestBlockCmd()
+				return btcjson.NewGetSelectedTipCmd(nil, nil)
 			},
-			marshalled:   `{"jsonrpc":"1.0","method":"getBestBlock","params":[],"id":1}`,
-			unmarshalled: &btcjson.GetBestBlockCmd{},
+			marshalled: `{"jsonrpc":"1.0","method":"getSelectedTip","params":[],"id":1}`,
+			unmarshalled: &btcjson.GetSelectedTipCmd{
+				Verbose:   btcjson.Bool(true),
+				VerboseTx: btcjson.Bool(false),
+			},
 		},
 		{
 			name: "getCurrentNet",
