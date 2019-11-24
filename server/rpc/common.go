@@ -282,7 +282,7 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 				if err != nil {
 					return nil, err
 				}
-				txConfirmations, err := txConfirmations(s, tx.ID())
+				txConfirmations, err := txConfirmationsNoLock(s, tx.ID())
 				if err != nil {
 					return nil, err
 				}
@@ -362,13 +362,13 @@ func hashesToGetBlockVerboseResults(s *Server, hashes []*daghash.Hash) ([]btcjso
 	return getBlockVerboseResults, nil
 }
 
-// txConfirmations returns the confirmations number for the given transaction
+// txConfirmationsNoLock returns the confirmations number for the given transaction
 // The confirmations number is defined as follows:
 // If the transaction is in the mempool/in a red block/is a double spend -> 0
 // Otherwise -> The confirmations number of the accepting block
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func txConfirmations(s *Server, txID *daghash.TxID) (uint64, error) {
+func txConfirmationsNoLock(s *Server, txID *daghash.TxID) (uint64, error) {
 	if s.cfg.TxIndex == nil {
 		return 0, errors.New("transaction index must be enabled (--txindex)")
 	}
@@ -389,8 +389,8 @@ func txConfirmations(s *Server, txID *daghash.TxID) (uint64, error) {
 	return confirmations, nil
 }
 
-func txConfirmationsWithLock(s *Server, txID *daghash.TxID) (uint64, error) {
+func txConfirmations(s *Server, txID *daghash.TxID) (uint64, error) {
 	s.cfg.DAG.RLock()
 	defer s.cfg.DAG.RUnlock()
-	return txConfirmations(s, txID)
+	return txConfirmationsNoLock(s, txID)
 }
