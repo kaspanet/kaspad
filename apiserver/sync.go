@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
+	"github.com/daglabs/btcd/apiserver/mqtt"
 	"strconv"
 	"strings"
 	"time"
@@ -296,6 +297,11 @@ func addBlock(client *jsonrpc.Client, rawBlock string, verboseBlock btcjson.GetB
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
 		return httpserverutils.NewErrorFromDBErrors("failed to update block: ", dbErrors)
+	}
+
+	err = mqtt.PublishTransactionsNotifications(dbTx, verboseBlock.RawTx)
+	if err != nil {
+		return err
 	}
 
 	dbTx.Commit()
