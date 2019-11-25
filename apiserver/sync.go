@@ -1072,7 +1072,7 @@ func handleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) {
 		len(removedHashes), len(addedBlocks))
 	err = mqtt.PublishAcceptedTransactionsNotifications(chainChanged.AddedChainBlocks)
 	if err != nil {
-		panic(errors.Wrapf(err, "Error while publishing accepted transactions notifications %s"))
+		panic(errors.Wrapf(err, "Error while publishing accepted transactions notifications"))
 	}
 	err = mqtt.PublishSelectedTipNotification(addedBlocks[len(addedBlocks)-1].Hash)
 	if err != nil {
