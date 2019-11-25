@@ -6,6 +6,7 @@ import (
 
 const selectedTipTopic = "dag/selected-tip"
 
+// PublishSelectedTipNotification publishes notification for a new selected tip
 func PublishSelectedTipNotification(selectedTipHash string) error {
 	if !isConnected() {
 		return nil
