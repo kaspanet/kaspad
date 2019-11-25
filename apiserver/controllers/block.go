@@ -80,3 +80,37 @@ func GetBlocksHandler(order string, skip uint64, limit uint64) (interface{}, err
 	}
 	return blockResponses, nil
 }
+
+// GetTransactionIDsByBlockHashHandler returns an array of transaction IDs for a given block hash
+func GetTransactionIDsByBlockHashHandler(blockHash *daghash.Hash) ([]string, error) {
+	db, err := database.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	var block *dbmodels.Block
+	dbResult := db.
+		Where(&dbmodels.Block{BlockHash: blockHash.String()}).
+		First(&block)
+	dbErrors := dbResult.GetErrors()
+	if httpserverutils.HasDBError(dbErrors) {
+		return nil, httpserverutils.NewErrorFromDBErrors("GetTransactionIDsByBlockHash, failed to find block: ", dbErrors)
+	}
+
+	var transactions []dbmodels.Transaction
+	dbResult = db.
+		Where(&dbmodels.Transaction{AcceptingBlockID: &block.ID}).
+		Find(&transactions)
+
+	dbErrors = dbResult.GetErrors()
+	if httpserverutils.HasDBError(dbErrors) {
+		return nil, httpserverutils.NewErrorFromDBErrors("GetTransactionIDsByBlockHash, failed to find transactions: ", dbErrors)
+	}
+
+	result := make([]string, len(transactions))
+	for _, transaction := range transactions {
+		result = append(result, transaction.TransactionID)
+	}
+
+	return result, nil
+}
