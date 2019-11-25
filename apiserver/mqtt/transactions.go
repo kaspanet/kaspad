@@ -1,10 +1,11 @@
 package mqtt
 
 import (
-	"fmt"
 	"github.com/daglabs/btcd/apiserver/apimodels"
 	"github.com/daglabs/btcd/apiserver/controllers"
+	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/btcjson"
+	"github.com/daglabs/btcd/rpcclient"
 	"github.com/jinzhu/gorm"
 )
 
@@ -14,18 +15,18 @@ func PublishTransactionsNotifications(db *gorm.DB, rawTransactions []btcjson.TxR
 		return nil
 	}
 
-	transactionIds := make([]string, len(rawTransactions))
+	transactionIDs := make([]string, len(rawTransactions))
 	for i, tx := range rawTransactions {
-		transactionIds[i] = tx.TxID
+		transactionIDs[i] = tx.TxID
 	}
 
-	transactions, err := controllers.GetTransactionsByIdsHandler(db, transactionIds)
+	transactions, err := controllers.GetTransactionsByIDsHandler(db, transactionIDs)
 	if err != nil {
 		return err
 	}
 
 	for _, transaction := range transactions {
-		err = publishTransactionNotifications(transaction)
+		err = publishTransactionNotifications(transaction, "transactions/")
 		if err != nil {
 			return err
 		}
@@ -33,10 +34,10 @@ func PublishTransactionsNotifications(db *gorm.DB, rawTransactions []btcjson.TxR
 	return nil
 }
 
-func publishTransactionNotifications(transaction *apimodels.TransactionResponse) error {
+func publishTransactionNotifications(transaction *apimodels.TransactionResponse, topic string) error {
 	addresses := uniqueAddressesForTransaction(transaction)
 	for _, address := range addresses {
-		err := publishTransactionNotificationForAddress(transaction, address)
+		err := publishTransactionNotificationForAddress(transaction, address, topic)
 		if err != nil {
 			return err
 		}
@@ -56,10 +57,37 @@ func uniqueAddressesForTransaction(transaction *apimodels.TransactionResponse) [
 	return addresses
 }
 
-func publishTransactionNotificationForAddress(transaction *apimodels.TransactionResponse, address string) error {
-	return publish(transactionsTopic(address), transaction)
+func publishTransactionNotificationForAddress(transaction *apimodels.TransactionResponse, address string, topic string) error {
+	return publish(topic+address, transaction)
 }
 
-func transactionsTopic(address string) string {
-	return fmt.Sprintf("transactions/%s", address)
+// PublishAcceptedTransactionsNotifications publishes notification for each accepted transaction of the given chain-block
+func PublishAcceptedTransactionsNotifications(addedChainBlocks []*rpcclient.ChainBlock) error {
+	db, err := database.DB()
+	if err != nil {
+		return err
+	}
+
+	for _, addedChainBlock := range addedChainBlocks {
+		for _, acceptedBlock := range addedChainBlock.AcceptedBlocks {
+			transactionIDs := make([]string, len(acceptedBlock.AcceptedTxIDs))
+			for i, acceptedTxID := range acceptedBlock.AcceptedTxIDs {
+				transactionIDs[i] = acceptedTxID.String()
+			}
+
+			transactions, err := controllers.GetTransactionsByIDsHandler(db, transactionIDs)
+			if err != nil {
+				return err
+			}
+
+			for _, transaction := range transactions {
+				err = publishTransactionNotifications(transaction, "transactions/accepted/")
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}
+	return nil
 }

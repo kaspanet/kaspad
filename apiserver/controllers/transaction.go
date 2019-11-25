@@ -279,8 +279,8 @@ func PostTransaction(requestBody []byte) error {
 	return nil
 }
 
-// GetTransactionsByIdsHandler finds transactions by the given transactionIds.
-func GetTransactionsByIdsHandler(db *gorm.DB, transactionIds []string) ([]*apimodels.TransactionResponse, error) {
+// GetTransactionsByIDsHandler finds transactions by the given transactionIds.
+func GetTransactionsByIDsHandler(db *gorm.DB, transactionIds []string) ([]*apimodels.TransactionResponse, error) {
 	var txs []*dbmodels.Transaction
 	query := joinTxInputsTxOutputsAndAddresses(db).
 		Where("`transactions`.`transaction_id` IN (?)", transactionIds)
