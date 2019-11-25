@@ -1067,6 +1067,11 @@ func processChainChangedMsgs() {
 		}
 		log.Infof("Chain changed: removed %d blocks and added %d block",
 			len(removedHashes), len(addedBlocks))
+
+		err = mqtt.PublishAcceptedTransactionsNotifications(chainChanged.AddedChainBlocks)
+		if err != nil {
+			panic(errors.Errorf("Error while publishing accepted transactions notifications %s", err))
+		}
 	}
 	pendingChainChangedMsgs = unprocessedChainChangedMessages
 }
