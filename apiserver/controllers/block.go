@@ -81,8 +81,8 @@ func GetBlocksHandler(order string, skip uint64, limit uint64) (interface{}, err
 	return blockResponses, nil
 }
 
-// GetTransactionIDsByBlockHashHandler returns an array of transaction IDs for a given block hash
-func GetTransactionIDsByBlockHashHandler(blockHash *daghash.Hash) ([]string, error) {
+// GetAcceptedTransactionIDsByBlockHashHandler returns an array of transaction IDs for a given block hash
+func GetAcceptedTransactionIDsByBlockHashHandler(blockHash *daghash.Hash) ([]string, error) {
 	db, err := database.DB()
 	if err != nil {
 		return nil, err
