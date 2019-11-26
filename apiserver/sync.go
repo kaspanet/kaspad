@@ -79,7 +79,6 @@ func fetchInitialData(client *jsonrpc.Client) error {
 
 // sync keeps the API server in sync with the node via notifications
 func sync(client *jsonrpc.Client, doneChan chan struct{}) error {
-loop:
 	// Handle client notifications until we're told to stop
 	for {
 		select {
@@ -97,10 +96,9 @@ loop:
 			}
 		case <-doneChan:
 			log.Infof("startSync stopped")
-			break loop
+			return nil
 		}
 	}
-	return nil
 }
 
 // syncBlocks attempts to download all DAG blocks starting with
