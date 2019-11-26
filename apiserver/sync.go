@@ -1071,11 +1071,9 @@ func processChainChangedMsgs() error {
 		}
 
 		err = handleChainChangedMsg(chainChanged)
-
 		if err != nil {
 			return err
 		}
-
 	}
 	pendingChainChangedMsgs = unprocessedChainChangedMessages
 	return nil
