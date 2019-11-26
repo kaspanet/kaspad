@@ -171,12 +171,15 @@ func findHashOfBluestBlock(mustBeChainBlock bool) (*string, error) {
 		return nil, err
 	}
 
-	var block dbmodels.Block
-	dbQuery := db.Select("block_hash").Order("blue_score DESC")
+	var blockHashes []string
+	dbQuery := db.Model(&dbmodels.Block{}).
+		Select("block_hash").
+		Order("blue_score DESC").
+		Limit(1)
 	if mustBeChainBlock {
 		dbQuery = dbQuery.Where(&dbmodels.Block{IsChainBlock: true})
 	}
-	dbResult := dbQuery.First(&block)
+	dbResult := dbQuery.Pluck("block_hash", &blockHashes)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
 		return nil, httpserverutils.NewErrorFromDBErrors("failed to find hash of bluest block: ", dbErrors)
@@ -184,7 +187,7 @@ func findHashOfBluestBlock(mustBeChainBlock bool) (*string, error) {
 	if httpserverutils.IsDBRecordNotFoundError(dbErrors) {
 		return nil, nil
 	}
-	return &block.BlockHash, nil
+	return &blockHashes[0], nil
 }
 
 // fetchBlock downloads the serialized block and raw block data of
