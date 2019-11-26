@@ -178,7 +178,7 @@ func findHashOfBluestBlock(mustBeChainBlock bool) (*string, error) {
 	}
 	dbResult := dbQuery.Pluck("block_hash", &blockHashes)
 	dbErrors := dbResult.GetErrors()
-	if len(dbErrors) > 0 {
+	if httpserverutils.HasDBError(dbErrors) {
 		return nil, httpserverutils.NewErrorFromDBErrors("failed to find hash of bluest block: ", dbErrors)
 	}
 	if len(blockHashes) == 0 {
