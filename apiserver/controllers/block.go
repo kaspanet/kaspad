@@ -104,7 +104,7 @@ func GetTransactionIDsByBlockHashHandler(blockHash *daghash.Hash) ([]string, err
 
 	dbErrors = dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
-		return nil, httpserverutils.NewErrorFromDBErrors("GetTransactionIDsByBlockHash, failed to find transactions: ", dbErrors)
+		return nil, httpserverutils.NewErrorFromDBErrors("Failed to find transactions: ", dbErrors)
 	}
 
 	result := make([]string, len(transactions))
