@@ -60,8 +60,7 @@ func startSync(doneChan chan struct{}) error {
 	log.Infof("Finished syncing past data")
 
 	// Keep the node and the API server in sync
-	sync(client, doneChan)
-	return nil
+	return sync(client, doneChan)
 }
 
 // fetchInitialData downloads all data that's currently missing from
@@ -79,22 +78,29 @@ func fetchInitialData(client *jsonrpc.Client) error {
 }
 
 // sync keeps the API server in sync with the node via notifications
-func sync(client *jsonrpc.Client, doneChan chan struct{}) {
+func sync(client *jsonrpc.Client, doneChan chan struct{}) error {
 loop:
 	// Handle client notifications until we're told to stop
 	for {
 		select {
 		case blockAdded := <-client.OnBlockAdded:
 			enqueueBlockAddedMsg(blockAdded)
-			processBlockAddedMsgs(client)
+			err := processBlockAddedMsgs(client)
+			if err != nil {
+				return err
+			}
 		case chainChanged := <-client.OnChainChanged:
 			enqueueChainChangedMsg(chainChanged)
-			processChainChangedMsgs()
+			err := processChainChangedMsgs()
+			if err != nil {
+				return err
+			}
 		case <-doneChan:
 			log.Infof("startSync stopped")
 			break loop
 		}
 	}
+	return nil
 }
 
 // syncBlocks attempts to download all DAG blocks starting with
@@ -927,12 +933,12 @@ func enqueueBlockAddedMsg(blockAdded *jsonrpc.BlockAddedMsg) {
 
 // processBlockAddedMsgs processes all pending onBlockAdded messages.
 // Messages that cannot yet be processed are re-enqueued.
-func processBlockAddedMsgs(client *jsonrpc.Client) {
+func processBlockAddedMsgs(client *jsonrpc.Client) error {
 	var unprocessedBlockAddedMsgs []*jsonrpc.BlockAddedMsg
 	for _, blockAdded := range pendingBlockAddedMsgs {
 		missingHashes, err := missingParentHashes(blockAdded)
 		if err != nil {
-			panic(errors.Errorf("Could not resolve missing parents: %s", err))
+			return errors.Errorf("Could not resolve missing parents: %s", err)
 		}
 		for _, missingHash := range missingHashes {
 			err := handleMissingParent(client, missingHash)
@@ -949,6 +955,7 @@ func processBlockAddedMsgs(client *jsonrpc.Client) {
 		handleBlockAddedMsg(client, blockAdded)
 	}
 	pendingBlockAddedMsgs = unprocessedBlockAddedMsgs
+	return nil
 }
 
 func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedMsg) {
@@ -1046,42 +1053,43 @@ func enqueueChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) {
 
 // processChainChangedMsgs processes all pending onChainChanged messages.
 // Messages that cannot yet be processed are re-enqueued.
-func processChainChangedMsgs() {
+func processChainChangedMsgs() error {
 	var unprocessedChainChangedMessages []*jsonrpc.ChainChangedMsg
 	for _, chainChanged := range pendingChainChangedMsgs {
 		canHandle, err := canHandleChainChangedMsg(chainChanged)
 		if err != nil {
-			panic(errors.Errorf("Could not resolve if can handle ChainChangedMsg: %s", err))
+			return errors.Wrap(err, "Could not resolve if can handle ChainChangedMsg")
 		}
 		if !canHandle {
 			unprocessedChainChangedMessages = append(unprocessedChainChangedMessages, chainChanged)
 			continue
 		}
-		handleChainChangedMsg(chainChanged)
+		err = handleChainChangedMsg(chainChanged)
+		if err != nil {
+			return err
+		}
 
 	}
 	pendingChainChangedMsgs = unprocessedChainChangedMessages
+	return nil
 }
 
-func handleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) {
+func handleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) error {
 	// Convert the data in chainChanged to something we can feed into
 	// updateSelectedParentChain
 	removedHashes, addedBlocks := convertChainChangedMsg(chainChanged)
 
 	err := updateSelectedParentChain(removedHashes, addedBlocks)
 	if err != nil {
-		panic(errors.Wrap(err, "Could not update selected parent chain"))
+		return errors.Wrap(err, "Could not update selected parent chain")
 	}
 	log.Infof("Chain changed: removed %d blocks and added %d block",
 		len(removedHashes), len(addedBlocks))
 	err = mqtt.PublishAcceptedTransactionsNotifications(chainChanged.AddedChainBlocks)
 	if err != nil {
-		panic(errors.Wrapf(err, "Error while publishing accepted transactions notifications"))
+		return errors.Wrap(err, "Error while publishing accepted transactions notifications")
 	}
-	err = mqtt.PublishSelectedTipNotification(addedBlocks[len(addedBlocks)-1].Hash)
-	if err != nil {
-		panic(err)
-	}
+	return mqtt.PublishSelectedTipNotification(addedBlocks[len(addedBlocks)-1].Hash)
 }
 
 // canHandleChainChangedMsg checks whether we have all the necessary data
