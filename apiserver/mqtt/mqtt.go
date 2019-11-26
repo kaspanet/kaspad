@@ -10,6 +10,11 @@ import (
 // client is an instance of the MQTT client, in case we have an active connection
 var client mqtt.Client
 
+const (
+	qualityOfService    = 2
+	quiesceMilliseconds = 250
+)
+
 // GetClient returns an instance of the MQTT client, in case we have an active connection
 func GetClient() (mqtt.Client, error) {
 	if client == nil {
@@ -50,7 +55,7 @@ func Close() {
 	if client == nil {
 		return
 	}
-	client.Disconnect(250)
+	client.Disconnect(quiesceMilliseconds)
 	client = nil
 }
 
@@ -60,7 +65,7 @@ func publish(topic string, data interface{}) error {
 		return err
 	}
 
-	token := client.Publish(topic, 2, false, payload)
+	token := client.Publish(topic, qualityOfService, false, payload)
 	token.Wait()
 	if token.Error() != nil {
 		return errors.WithStack(token.Error())
