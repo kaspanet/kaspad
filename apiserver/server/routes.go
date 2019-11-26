@@ -27,7 +27,7 @@ const (
 const (
 	defaultGetTransactionsLimit = 100
 	defaultGetBlocksLimit       = 25
-	defaultGetBlocksOrder       = controllers.OrderAscending
+	defaultGetBlocksOrder       = controllers.OrderDescending
 )
 
 func mainHandler(_ *httpserverutils.ServerContext, _ *http.Request, _ map[string]string, _ map[string]string, _ []byte) (interface{}, error) {
