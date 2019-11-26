@@ -371,11 +371,7 @@ func dbFetchTxAcceptingBlock(dbTx database.Tx, txID *daghash.TxID, dag *blockdag
 
 	bucket := dbTx.Metadata().Bucket(acceptingBlocksIndexKey).Bucket(txID[:])
 	if bucket == nil {
-		return nil, database.Error{
-			ErrorCode: database.ErrCorruption,
-			Description: fmt.Sprintf("No accepting blocks bucket "+
-				"exists for %s", txID),
-		}
+		return nil, nil
 	}
 	cursor := bucket.Cursor()
 	if !cursor.First() {

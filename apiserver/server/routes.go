@@ -118,7 +118,7 @@ func getTransactionsByAddressHandler(_ *httpserverutils.ServerContext, _ *http.R
 	}
 	if _, ok := queryParams[queryParamLimit]; ok {
 		var err error
-		skip, err = strconv.Atoi(queryParams[queryParamLimit])
+		limit, err = strconv.Atoi(queryParams[queryParamLimit])
 		if err != nil {
 			return nil, httpserverutils.NewHandlerError(http.StatusUnprocessableEntity,
 				errors.Wrap(err, fmt.Sprintf("Couldn't parse the '%s' query parameter", queryParamLimit)))
