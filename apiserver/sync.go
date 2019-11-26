@@ -946,21 +946,25 @@ func processBlockAddedMsgs(client *jsonrpc.Client) {
 			continue
 		}
 
-		hash := blockAdded.Header.BlockHash()
-		log.Debugf("Getting block %s from the RPC server", hash)
-		rawBlock, verboseBlock, err := fetchBlock(client, hash)
-		if err != nil {
-			log.Warnf("Could not fetch block %s: %s", hash, err)
-			return
-		}
-		err = addBlock(client, rawBlock, *verboseBlock)
-		if err != nil {
-			log.Errorf("Could not insert block %s: %s", hash, err)
-			return
-		}
-		log.Infof("Added block %s", hash)
+		handleBlockAddedMsg(client, blockAdded)
 	}
 	pendingBlockAddedMsgs = unprocessedBlockAddedMsgs
+}
+
+func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedMsg) {
+	hash := blockAdded.Header.BlockHash()
+	log.Debugf("Getting block %s from the RPC server", hash)
+	rawBlock, verboseBlock, err := fetchBlock(client, hash)
+	if err != nil {
+		log.Warnf("Could not fetch block %s: %s", hash, err)
+		return
+	}
+	err = addBlock(client, rawBlock, *verboseBlock)
+	if err != nil {
+		log.Errorf("Could not insert block %s: %s", hash, err)
+		return
+	}
+	log.Infof("Added block %s", hash)
 }
 
 func missingParentHashes(blockAdded *jsonrpc.BlockAddedMsg) ([]string, error) {
