@@ -302,7 +302,7 @@ func addBlock(client *jsonrpc.Client, rawBlock string, verboseBlock btcjson.GetB
 		return httpserverutils.NewErrorFromDBErrors("failed to update block: ", dbErrors)
 	}
 
-	err = mqtt.PublishTransactionsNotifications(dbTx, verboseBlock.RawTx)
+	err = mqtt.PublishTransactionsNotifications(verboseBlock.RawTx)
 	if err != nil {
 		return err
 	}
@@ -1064,11 +1064,16 @@ func processChainChangedMsgs() error {
 			unprocessedChainChangedMessages = append(unprocessedChainChangedMessages, chainChanged)
 			continue
 		}
+
+		err = mqtt.PublishUnacceptedTransactionsNotifications(chainChanged.RemovedChainBlockHashes)
+		if err != nil {
+			panic(errors.Errorf("Error while publishing unaccepted transactions notifications %s", err))
+		}
+
 		err = handleChainChangedMsg(chainChanged)
 		if err != nil {
 			return err
 		}
-
 	}
 	pendingChainChangedMsgs = unprocessedChainChangedMessages
 	return nil

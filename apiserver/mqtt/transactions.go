@@ -3,15 +3,14 @@ package mqtt
 import (
 	"github.com/daglabs/btcd/apiserver/apimodels"
 	"github.com/daglabs/btcd/apiserver/controllers"
-	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/rpcclient"
-	"github.com/jinzhu/gorm"
+	"github.com/daglabs/btcd/util/daghash"
 	"path"
 )
 
 // PublishTransactionsNotifications publishes notification for each transaction of the given block
-func PublishTransactionsNotifications(db *gorm.DB, rawTransactions []btcjson.TxRawResult) error {
+func PublishTransactionsNotifications(rawTransactions []btcjson.TxRawResult) error {
 	if !isConnected() {
 		return nil
 	}
@@ -21,7 +20,7 @@ func PublishTransactionsNotifications(db *gorm.DB, rawTransactions []btcjson.TxR
 		transactionIDs[i] = tx.TxID
 	}
 
-	transactions, err := controllers.GetTransactionsByIDsHandler(db, transactionIDs)
+	transactions, err := controllers.GetTransactionsByIDsHandler(transactionIDs)
 	if err != nil {
 		return err
 	}
@@ -55,6 +54,12 @@ func uniqueAddressesForTransaction(transaction *apimodels.TransactionResponse) [
 			addressesMap[output.Address] = struct{}{}
 		}
 	}
+	for _, input := range transaction.Inputs {
+		if _, exists := addressesMap[input.Address]; !exists {
+			addresses = append(addresses, input.Address)
+			addressesMap[input.Address] = struct{}{}
+		}
+	}
 	return addresses
 }
 
@@ -64,11 +69,6 @@ func publishTransactionNotificationForAddress(transaction *apimodels.Transaction
 
 // PublishAcceptedTransactionsNotifications publishes notification for each accepted transaction of the given chain-block
 func PublishAcceptedTransactionsNotifications(addedChainBlocks []*rpcclient.ChainBlock) error {
-	db, err := database.DB()
-	if err != nil {
-		return err
-	}
-
 	for _, addedChainBlock := range addedChainBlocks {
 		for _, acceptedBlock := range addedChainBlock.AcceptedBlocks {
 			transactionIDs := make([]string, len(acceptedBlock.AcceptedTxIDs))
@@ -76,7 +76,7 @@ func PublishAcceptedTransactionsNotifications(addedChainBlocks []*rpcclient.Chai
 				transactionIDs[i] = acceptedTxID.String()
 			}
 
-			transactions, err := controllers.GetTransactionsByIDsHandler(db, transactionIDs)
+			transactions, err := controllers.GetTransactionsByIDsHandler(transactionIDs)
 			if err != nil {
 				return err
 			}
@@ -88,6 +88,29 @@ func PublishAcceptedTransactionsNotifications(addedChainBlocks []*rpcclient.Chai
 				}
 			}
 			return nil
+		}
+	}
+	return nil
+}
+
+// PublishUnacceptedTransactionsNotifications publishes notification for each unaccepted transaction of the given chain-block
+func PublishUnacceptedTransactionsNotifications(removedChainHashes []*daghash.Hash) error {
+	for _, removedHash := range removedChainHashes {
+		transactionIDs, err := controllers.GetAcceptedTransactionIDsByBlockHashHandler(removedHash)
+		if err != nil {
+			return err
+		}
+
+		transactions, err := controllers.GetTransactionsByIDsHandler(transactionIDs)
+		if err != nil {
+			return err
+		}
+
+		for _, transaction := range transactions {
+			err = publishTransactionNotifications(transaction, "transactions/unaccepted")
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
