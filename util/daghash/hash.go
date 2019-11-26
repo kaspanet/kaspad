@@ -191,7 +191,7 @@ func Decode(dst *Hash, src string) error {
 	var reversedHash Hash
 	_, err := hex.Decode(reversedHash[HashSize-hex.DecodedLen(len(srcBytes)):], srcBytes)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	// Reverse copy from the temporary hash to destination.  Because the
