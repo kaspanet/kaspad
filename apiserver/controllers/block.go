@@ -94,7 +94,7 @@ func GetTransactionIDsByBlockHashHandler(blockHash *daghash.Hash) ([]string, err
 		First(&block)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
-		return nil, httpserverutils.NewErrorFromDBErrors("GetTransactionIDsByBlockHash, failed to find block: ", dbErrors)
+		return nil, httpserverutils.NewErrorFromDBErrors("Failed to find block: ", dbErrors)
 	}
 
 	var transactions []dbmodels.Transaction
