@@ -173,7 +173,6 @@ func findHashOfBluestBlock(mustBeChainBlock bool) (*string, error) {
 
 	var blockHashes []string
 	dbQuery := db.Model(&dbmodels.Block{}).
-		Select("block_hash").
 		Order("blue_score DESC").
 		Limit(1)
 	if mustBeChainBlock {
