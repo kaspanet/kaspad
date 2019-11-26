@@ -88,21 +88,13 @@ func GetAcceptedTransactionIDsByBlockHashHandler(blockHash *daghash.Hash) ([]str
 		return nil, err
 	}
 
-	var block *dbmodels.Block
-	dbResult := db.
-		Where(&dbmodels.Block{BlockHash: blockHash.String()}).
-		First(&block)
-	dbErrors := dbResult.GetErrors()
-	if httpserverutils.HasDBError(dbErrors) {
-		return nil, httpserverutils.NewErrorFromDBErrors("Failed to find block: ", dbErrors)
-	}
-
 	var transactions []dbmodels.Transaction
-	dbResult = db.
-		Where(&dbmodels.Transaction{AcceptingBlockID: &block.ID}).
+	dbResult := db.
+		Joins("LEFT JOIN `blocks` ON `blocks`.`id` = `transactions`.`accepting_block_id`").
+		Where("`blocks`.`block_hash` = ?", blockHash).
 		Find(&transactions)
 
-	dbErrors = dbResult.GetErrors()
+	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
 		return nil, httpserverutils.NewErrorFromDBErrors("Failed to find transactions: ", dbErrors)
 	}
