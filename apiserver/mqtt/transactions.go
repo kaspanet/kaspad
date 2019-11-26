@@ -113,6 +113,5 @@ func PublishUnacceptedTransactionsNotifications(removedChainHashes []*daghash.Ha
 			}
 		}
 	}
-
 	return nil
 }
