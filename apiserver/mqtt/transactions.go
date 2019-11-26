@@ -1,13 +1,13 @@
 package mqtt
 
 import (
-	"encoding/json"
 	"github.com/daglabs/btcd/apiserver/apimodels"
 	"github.com/daglabs/btcd/apiserver/controllers"
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/rpcclient"
 	"github.com/jinzhu/gorm"
+	"path"
 )
 
 // PublishTransactionsNotifications publishes notification for each transaction of the given block
@@ -27,7 +27,7 @@ func PublishTransactionsNotifications(db *gorm.DB, rawTransactions []btcjson.TxR
 	}
 
 	for _, transaction := range transactions {
-		err = publishTransactionNotifications(transaction, "transactions/")
+		err = publishTransactionNotifications(transaction, "transactions")
 		if err != nil {
 			return err
 		}
@@ -59,18 +59,7 @@ func uniqueAddressesForTransaction(transaction *apimodels.TransactionResponse) [
 }
 
 func publishTransactionNotificationForAddress(transaction *apimodels.TransactionResponse, address string, topic string) error {
-	payload, err := json.Marshal(transaction)
-	if err != nil {
-		return err
-	}
-
-	token := client.Publish(topic+address, 2, false, payload)
-	token.Wait()
-	if token.Error() != nil {
-		return token.Error()
-	}
-
-	return nil
+	return publish(path.Join(topic, address), transaction)
 }
 
 // PublishAcceptedTransactionsNotifications publishes notification for each accepted transaction of the given chain-block
@@ -93,7 +82,7 @@ func PublishAcceptedTransactionsNotifications(addedChainBlocks []*rpcclient.Chai
 			}
 
 			for _, transaction := range transactions {
-				err = publishTransactionNotifications(transaction, "transactions/accepted/")
+				err = publishTransactionNotifications(transaction, "transactions/accepted")
 				if err != nil {
 					return err
 				}

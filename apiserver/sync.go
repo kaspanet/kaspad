@@ -60,8 +60,7 @@ func startSync(doneChan chan struct{}) error {
 	log.Infof("Finished syncing past data")
 
 	// Keep the node and the API server in sync
-	sync(client, doneChan)
-	return nil
+	return sync(client, doneChan)
 }
 
 // fetchInitialData downloads all data that's currently missing from
@@ -79,20 +78,25 @@ func fetchInitialData(client *jsonrpc.Client) error {
 }
 
 // sync keeps the API server in sync with the node via notifications
-func sync(client *jsonrpc.Client, doneChan chan struct{}) {
-loop:
+func sync(client *jsonrpc.Client, doneChan chan struct{}) error {
 	// Handle client notifications until we're told to stop
 	for {
 		select {
 		case blockAdded := <-client.OnBlockAdded:
 			enqueueBlockAddedMsg(blockAdded)
-			processBlockAddedMsgs(client)
+			err := processBlockAddedMsgs(client)
+			if err != nil {
+				return err
+			}
 		case chainChanged := <-client.OnChainChanged:
 			enqueueChainChangedMsg(chainChanged)
-			processChainChangedMsgs()
+			err := processChainChangedMsgs()
+			if err != nil {
+				return err
+			}
 		case <-doneChan:
 			log.Infof("startSync stopped")
-			break loop
+			return nil
 		}
 	}
 }
@@ -131,10 +135,7 @@ func syncBlocks(client *jsonrpc.Client) error {
 // chain starting with the bluest chain-block, and then updates the
 // database accordingly.
 func syncSelectedParentChain(client *jsonrpc.Client) error {
-	// Start syncing from the bluest chain-block hash. We use blue
-	// score to simulate the "last" block we have because blue-block
-	// order is the order that the node uses in the various JSONRPC
-	// calls.
+	// Start syncing from the selected tip hash
 	startHash, err := findHashOfBluestBlock(true)
 	if err != nil {
 		return err
@@ -168,12 +169,14 @@ func findHashOfBluestBlock(mustBeChainBlock bool) (*string, error) {
 		return nil, err
 	}
 
-	var block dbmodels.Block
-	dbQuery := db.Order("blue_score DESC")
+	var blockHashes []string
+	dbQuery := db.Model(&dbmodels.Block{}).
+		Order("blue_score DESC").
+		Limit(1)
 	if mustBeChainBlock {
 		dbQuery = dbQuery.Where(&dbmodels.Block{IsChainBlock: true})
 	}
-	dbResult := dbQuery.First(&block)
+	dbResult := dbQuery.Pluck("block_hash", &blockHashes)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
 		return nil, httpserverutils.NewErrorFromDBErrors("failed to find hash of bluest block: ", dbErrors)
@@ -181,7 +184,7 @@ func findHashOfBluestBlock(mustBeChainBlock bool) (*string, error) {
 	if httpserverutils.IsDBRecordNotFoundError(dbErrors) {
 		return nil, nil
 	}
-	return &block.BlockHash, nil
+	return &blockHashes[0], nil
 }
 
 // fetchBlock downloads the serialized block and raw block data of
@@ -930,12 +933,12 @@ func enqueueBlockAddedMsg(blockAdded *jsonrpc.BlockAddedMsg) {
 
 // processBlockAddedMsgs processes all pending onBlockAdded messages.
 // Messages that cannot yet be processed are re-enqueued.
-func processBlockAddedMsgs(client *jsonrpc.Client) {
+func processBlockAddedMsgs(client *jsonrpc.Client) error {
 	var unprocessedBlockAddedMsgs []*jsonrpc.BlockAddedMsg
 	for _, blockAdded := range pendingBlockAddedMsgs {
 		missingHashes, err := missingParentHashes(blockAdded)
 		if err != nil {
-			panic(errors.Errorf("Could not resolve missing parents: %s", err))
+			return errors.Errorf("Could not resolve missing parents: %s", err)
 		}
 		for _, missingHash := range missingHashes {
 			err := handleMissingParent(client, missingHash)
@@ -949,21 +952,26 @@ func processBlockAddedMsgs(client *jsonrpc.Client) {
 			continue
 		}
 
-		hash := blockAdded.Header.BlockHash()
-		log.Debugf("Getting block %s from the RPC server", hash)
-		rawBlock, verboseBlock, err := fetchBlock(client, hash)
-		if err != nil {
-			log.Warnf("Could not fetch block %s: %s", hash, err)
-			return
-		}
-		err = addBlock(client, rawBlock, *verboseBlock)
-		if err != nil {
-			log.Errorf("Could not insert block %s: %s", hash, err)
-			return
-		}
-		log.Infof("Added block %s", hash)
+		handleBlockAddedMsg(client, blockAdded)
 	}
 	pendingBlockAddedMsgs = unprocessedBlockAddedMsgs
+	return nil
+}
+
+func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedMsg) {
+	hash := blockAdded.Header.BlockHash()
+	log.Debugf("Getting block %s from the RPC server", hash)
+	rawBlock, verboseBlock, err := fetchBlock(client, hash)
+	if err != nil {
+		log.Warnf("Could not fetch block %s: %s", hash, err)
+		return
+	}
+	err = addBlock(client, rawBlock, *verboseBlock)
+	if err != nil {
+		log.Errorf("Could not insert block %s: %s", hash, err)
+		return
+	}
+	log.Infof("Added block %s", hash)
 }
 
 func missingParentHashes(blockAdded *jsonrpc.BlockAddedMsg) ([]string, error) {
@@ -1045,35 +1053,43 @@ func enqueueChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) {
 
 // processChainChangedMsgs processes all pending onChainChanged messages.
 // Messages that cannot yet be processed are re-enqueued.
-func processChainChangedMsgs() {
+func processChainChangedMsgs() error {
 	var unprocessedChainChangedMessages []*jsonrpc.ChainChangedMsg
 	for _, chainChanged := range pendingChainChangedMsgs {
 		canHandle, err := canHandleChainChangedMsg(chainChanged)
 		if err != nil {
-			panic(errors.Errorf("Could not resolve if can handle ChainChangedMsg: %s", err))
+			return errors.Wrap(err, "Could not resolve if can handle ChainChangedMsg")
 		}
 		if !canHandle {
 			unprocessedChainChangedMessages = append(unprocessedChainChangedMessages, chainChanged)
 			continue
 		}
-
-		// Convert the data in chainChanged to something we can feed into
-		// updateSelectedParentChain
-		removedHashes, addedBlocks := convertChainChangedMsg(chainChanged)
-
-		err = updateSelectedParentChain(removedHashes, addedBlocks)
+		err = handleChainChangedMsg(chainChanged)
 		if err != nil {
-			panic(errors.Errorf("Could not update selected parent chain: %s", err))
+			return err
 		}
-		log.Infof("Chain changed: removed %d blocks and added %d block",
-			len(removedHashes), len(addedBlocks))
 
-		err = mqtt.PublishAcceptedTransactionsNotifications(chainChanged.AddedChainBlocks)
-		if err != nil {
-			panic(errors.Errorf("Error while publishing accepted transactions notifications %s", err))
-		}
 	}
 	pendingChainChangedMsgs = unprocessedChainChangedMessages
+	return nil
+}
+
+func handleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) error {
+	// Convert the data in chainChanged to something we can feed into
+	// updateSelectedParentChain
+	removedHashes, addedBlocks := convertChainChangedMsg(chainChanged)
+
+	err := updateSelectedParentChain(removedHashes, addedBlocks)
+	if err != nil {
+		return errors.Wrap(err, "Could not update selected parent chain")
+	}
+	log.Infof("Chain changed: removed %d blocks and added %d block",
+		len(removedHashes), len(addedBlocks))
+	err = mqtt.PublishAcceptedTransactionsNotifications(chainChanged.AddedChainBlocks)
+	if err != nil {
+		return errors.Wrap(err, "Error while publishing accepted transactions notifications")
+	}
+	return mqtt.PublishSelectedTipNotification(addedBlocks[len(addedBlocks)-1].Hash)
 }
 
 // canHandleChainChangedMsg checks whether we have all the necessary data

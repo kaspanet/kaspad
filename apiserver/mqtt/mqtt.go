@@ -1,13 +1,19 @@
 package mqtt
 
 import (
-	"errors"
+	"encoding/json"
 	"github.com/daglabs/btcd/apiserver/config"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/pkg/errors"
 )
 
 // client is an instance of the MQTT client, in case we have an active connection
 var client mqtt.Client
+
+const (
+	qualityOfService    = 2
+	quiesceMilliseconds = 250
+)
 
 // GetClient returns an instance of the MQTT client, in case we have an active connection
 func GetClient() (mqtt.Client, error) {
@@ -49,6 +55,20 @@ func Close() {
 	if client == nil {
 		return
 	}
-	client.Disconnect(250)
+	client.Disconnect(quiesceMilliseconds)
 	client = nil
+}
+
+func publish(topic string, data interface{}) error {
+	payload, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	token := client.Publish(topic, qualityOfService, false, payload)
+	token.Wait()
+	if token.Error() != nil {
+		return errors.WithStack(token.Error())
+	}
+	return nil
 }
