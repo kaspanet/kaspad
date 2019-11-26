@@ -54,6 +54,12 @@ func uniqueAddressesForTransaction(transaction *apimodels.TransactionResponse) [
 			addressesMap[output.Address] = struct{}{}
 		}
 	}
+	for _, input := range transaction.Inputs {
+		if _, exists := addressesMap[input.Address]; !exists {
+			addresses = append(addresses, input.Address)
+			addressesMap[input.Address] = struct{}{}
+		}
+	}
 	return addresses
 }
 
