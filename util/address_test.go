@@ -17,13 +17,14 @@ import (
 
 func TestAddresses(t *testing.T) {
 	tests := []struct {
-		name    string
-		addr    string
-		encoded string
-		valid   bool
-		result  util.Address
-		f       func() (util.Address, error)
-		prefix  util.Bech32Prefix
+		name           string
+		addr           string
+		encoded        string
+		valid          bool
+		result         util.Address
+		f              func() (util.Address, error)
+		passedPrefix   util.Bech32Prefix
+		expectedPrefix util.Bech32Prefix
 	}{
 		// Positive P2PKH tests.
 		{
@@ -42,7 +43,8 @@ func TestAddresses(t *testing.T) {
 					0xc5, 0x4c, 0xe7, 0xd2, 0xa4, 0x91, 0xbb, 0x4a, 0x0e, 0x84}
 				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixDAGCoin)
 			},
-			prefix: util.Bech32PrefixDAGCoin,
+			passedPrefix:   util.Bech32PrefixUnknown,
+			expectedPrefix: util.Bech32PrefixDAGCoin,
 		},
 		{
 			name:    "mainnet p2pkh 2",
@@ -60,7 +62,8 @@ func TestAddresses(t *testing.T) {
 					0x05, 0x12, 0xbc, 0xa2, 0xce, 0xb1, 0xdd, 0x80, 0xad, 0xaa}
 				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixDAGCoin)
 			},
-			prefix: util.Bech32PrefixDAGCoin,
+			passedPrefix:   util.Bech32PrefixDAGCoin,
+			expectedPrefix: util.Bech32PrefixDAGCoin,
 		},
 		{
 			name:    "testnet p2pkh",
@@ -78,7 +81,8 @@ func TestAddresses(t *testing.T) {
 					0xe5, 0x12, 0xd3, 0x60, 0x3f, 0x1f, 0x1c, 0x8d, 0xe6, 0x8f}
 				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixDAGTest)
 			},
-			prefix: util.Bech32PrefixDAGTest,
+			passedPrefix:   util.Bech32PrefixDAGTest,
+			expectedPrefix: util.Bech32PrefixDAGTest,
 		},
 
 		// Negative P2PKH tests.
@@ -93,13 +97,15 @@ func TestAddresses(t *testing.T) {
 					0xaa}
 				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixDAGCoin)
 			},
-			prefix: util.Bech32PrefixDAGCoin,
+			passedPrefix:   util.Bech32PrefixDAGCoin,
+			expectedPrefix: util.Bech32PrefixDAGCoin,
 		},
 		{
-			name:   "p2pkh bad checksum",
-			addr:   "dagcoin:qr35ennsep3hxfe7lnz5ee7j5jgmkjswss74as46gx",
-			valid:  false,
-			prefix: util.Bech32PrefixDAGCoin,
+			name:           "p2pkh bad checksum",
+			addr:           "dagcoin:qr35ennsep3hxfe7lnz5ee7j5jgmkjswss74as46gx",
+			valid:          false,
+			passedPrefix:   util.Bech32PrefixDAGCoin,
+			expectedPrefix: util.Bech32PrefixDAGCoin,
 		},
 
 		// Positive P2SH tests.
@@ -141,7 +147,8 @@ func TestAddresses(t *testing.T) {
 					0xae}
 				return util.NewAddressScriptHash(script, util.Bech32PrefixDAGCoin)
 			},
-			prefix: util.Bech32PrefixDAGCoin,
+			passedPrefix:   util.Bech32PrefixDAGCoin,
+			expectedPrefix: util.Bech32PrefixDAGCoin,
 		},
 		{
 			// Taken from transactions:
@@ -162,7 +169,8 @@ func TestAddresses(t *testing.T) {
 					0xc0, 0x51, 0x99, 0x29, 0x01, 0x9e, 0xf8, 0x6e, 0xb5, 0xb4}
 				return util.NewAddressScriptHashFromHash(hash, util.Bech32PrefixDAGCoin)
 			},
-			prefix: util.Bech32PrefixDAGCoin,
+			passedPrefix:   util.Bech32PrefixDAGCoin,
+			expectedPrefix: util.Bech32PrefixDAGCoin,
 		},
 		{
 			// Taken from bitcoind base58_keys_valid.
@@ -181,7 +189,8 @@ func TestAddresses(t *testing.T) {
 					0x2c, 0xdc, 0x28, 0x56, 0x17, 0x04, 0x0c, 0x92, 0x4a, 0x0a}
 				return util.NewAddressScriptHashFromHash(hash, util.Bech32PrefixDAGTest)
 			},
-			prefix: util.Bech32PrefixDAGTest,
+			passedPrefix:   util.Bech32PrefixDAGTest,
+			expectedPrefix: util.Bech32PrefixDAGTest,
 		},
 
 		// Negative P2SH tests.
@@ -196,13 +205,14 @@ func TestAddresses(t *testing.T) {
 					0x10}
 				return util.NewAddressScriptHashFromHash(hash, util.Bech32PrefixDAGCoin)
 			},
-			prefix: util.Bech32PrefixDAGCoin,
+			passedPrefix:   util.Bech32PrefixDAGCoin,
+			expectedPrefix: util.Bech32PrefixDAGCoin,
 		},
 	}
 
 	for _, test := range tests {
 		// Decode addr and compare error against valid.
-		decoded, err := util.DecodeAddress(test.addr, test.prefix)
+		decoded, err := util.DecodeAddress(test.addr, test.passedPrefix)
 		if (err == nil) != test.valid {
 			t.Errorf("%v: decoding test failed: %v", test.name, err)
 			return
@@ -263,7 +273,7 @@ func TestAddresses(t *testing.T) {
 			}
 
 			// Ensure the address is for the expected network.
-			if !decoded.IsForPrefix(test.prefix) {
+			if !decoded.IsForPrefix(test.expectedPrefix) {
 				t.Errorf("%v: calculated network does not match expected",
 					test.name)
 				return
@@ -325,6 +335,11 @@ func TestDecodeAddressErrorConditions(t *testing.T) {
 			"dagreg:raskzcg5egs6nnj",
 			util.Bech32PrefixDAGReg,
 			"decoded address is of unknown size",
+		},
+		{
+			"dagtest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pg6ghunlhx",
+			util.Bech32PrefixDAGCoin,
+			"decoded address is of wrong network",
 		},
 	}
 
