@@ -216,7 +216,7 @@ func (dag *BlockDAG) GetOrphanMissingAncestorHashes(hash *daghash.Hash) ([]*dagh
 					queue = append(queue, parentHash)
 				}
 			} else {
-				if !dag.BlockExists(current) {
+				if !dag.BlockExists(current) && current != hash {
 					missingAncestorsHashes = append(missingAncestorsHashes, current)
 				}
 			}
