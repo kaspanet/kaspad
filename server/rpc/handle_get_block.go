@@ -53,7 +53,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 				Message: "invalid subnetwork string",
 			}
 		}
-		nodeSubnetworkID := config.MainConfig().SubnetworkID
+		nodeSubnetworkID := config.ActiveConfig().SubnetworkID
 
 		if requestSubnetworkID != nil {
 			if nodeSubnetworkID != nil {
@@ -80,8 +80,8 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		}
 	}
 
-	// When the verbose flag isn't set, simply return the serialized block
-	// as a hex-encoded string.
+	// When the verbose flag is set to false, simply return the serialized block
+	// as a hex-encoded string (verbose flag is on by default).
 	if c.Verbose != nil && !*c.Verbose {
 		return hex.EncodeToString(blkBytes), nil
 	}
@@ -95,6 +95,8 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		return nil, internalRPCError(err.Error(), context)
 	}
 
+	s.cfg.DAG.RLock()
+	defer s.cfg.DAG.RUnlock()
 	blockReply, err := buildGetBlockVerboseResult(s, blk, c.VerboseTx == nil || !*c.VerboseTx)
 	if err != nil {
 		return nil, err

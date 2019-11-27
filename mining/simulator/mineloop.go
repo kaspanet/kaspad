@@ -2,15 +2,17 @@ package main
 
 import (
 	"encoding/hex"
-	"github.com/pkg/errors"
+	nativeerrors "errors"
 	"math/rand"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/daglabs/btcd/rpcclient"
+	"github.com/pkg/errors"
+
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/rpcclient"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
@@ -97,7 +99,7 @@ func templatesLoop(client *simulatorClient, newTemplateChan chan *btcjson.GetBlo
 			log.Infof("Requesting template without longPollID from %s", client.Host())
 		}
 		template, err := getBlockTemplate(client, longPollID)
-		if err == rpcclient.ErrResponseTimedOut {
+		if nativeerrors.Is(err, rpcclient.ErrResponseTimedOut) {
 			log.Infof("Got timeout while requesting template '%s' from %s", longPollID, client.Host())
 			return
 		} else if err != nil {
@@ -169,7 +171,7 @@ func getRandomClient(clients []*simulatorClient) *simulatorClient {
 	return clients[random.Int63n(clientsCount)]
 }
 
-func mineLoop(clients []*simulatorClient) error {
+func mineLoop(connManager *connectionManager) error {
 	errChan := make(chan error)
 
 	templateStopChan := make(chan struct{})
@@ -177,7 +179,7 @@ func mineLoop(clients []*simulatorClient) error {
 	spawn(func() {
 		for {
 			foundBlock := make(chan *util.Block)
-			currentClient := getRandomClient(clients)
+			currentClient := getRandomClient(connManager.clients)
 			currentClient.notifyForNewBlocks = true
 			log.Infof("Next block will be mined by: %s", currentClient.Host())
 			mineNextBlock(currentClient, foundBlock, templateStopChan, errChan)

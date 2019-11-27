@@ -18,10 +18,10 @@ import (
 	"github.com/daglabs/btcd/integration/rpctest"
 )
 
-func testGetBestBlock(r *rpctest.Harness, t *testing.T) {
-	_, prevbestHeight, err := r.Node.GetBestBlock()
+func testGetSelectedTip(r *rpctest.Harness, t *testing.T) {
+	_, prevbestHeight, err := r.Node.GetSelectedTip()
 	if err != nil {
-		t.Fatalf("Call to `getbestblock` failed: %v", err)
+		t.Fatalf("Call to `GetSelectedTip` failed: %v", err)
 	}
 
 	// Create a new block connecting to the current tip.
@@ -30,9 +30,9 @@ func testGetBestBlock(r *rpctest.Harness, t *testing.T) {
 		t.Fatalf("Unable to generate block: %v", err)
 	}
 
-	bestHash, bestHeight, err := r.Node.GetBestBlock()
+	bestHash, bestHeight, err := r.Node.GetSelectedTip()
 	if err != nil {
-		t.Fatalf("Call to `getbestblock` failed: %v", err)
+		t.Fatalf("Call to `GetSelectedTip` failed: %v", err)
 	}
 
 	// Hash should be the same as the newly submitted block.
@@ -95,7 +95,7 @@ func testGetBlockHash(r *rpctest.Harness, t *testing.T) {
 }
 
 var rpcTestCases = []rpctest.HarnessTestCase{
-	testGetBestBlock,
+	testGetSelectedTip,
 	testGetBlockCount,
 	testGetBlockHash,
 }

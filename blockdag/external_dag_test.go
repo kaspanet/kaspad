@@ -314,6 +314,78 @@ func TestChainedTransactions(t *testing.T) {
 	}
 }
 
+// TestOrderInDiffFromAcceptanceData makes sure that the order of transactions in
+// dag.diffFromAcceptanceData is such that if txA is spent by txB then txA is processed
+// before txB.
+func TestOrderInDiffFromAcceptanceData(t *testing.T) {
+	// Create a new database and DAG instance to run tests against.
+	params := dagconfig.SimNetParams
+	params.K = math.MaxUint32
+	dag, teardownFunc, err := blockdag.DAGSetup("TestOrderInDiffFromAcceptanceData", blockdag.Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
+	dag.TestSetCoinbaseMaturity(0)
+
+	createBlock := func(previousBlock *util.Block) *util.Block {
+		// Prepare a transaction that spends the previous block's coinbase transaction
+		var txs []*wire.MsgTx
+		if !previousBlock.IsGenesis() {
+			previousCoinbaseTx := previousBlock.MsgBlock().Transactions[0]
+			signatureScript, err := txscript.PayToScriptHashSignatureScript(blockdag.OpTrueScript, nil)
+			if err != nil {
+				t.Fatalf("TestOrderInDiffFromAcceptanceData: Failed to build signature script: %s", err)
+			}
+			txIn := &wire.TxIn{
+				PreviousOutpoint: wire.Outpoint{TxID: *previousCoinbaseTx.TxID(), Index: 0},
+				SignatureScript:  signatureScript,
+				Sequence:         wire.MaxTxInSequenceNum,
+			}
+			txOut := &wire.TxOut{
+				ScriptPubKey: blockdag.OpTrueScript,
+				Value:        uint64(1),
+			}
+			txs = append(txs, wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}))
+		}
+
+		// Create the block
+		msgBlock, err := mining.PrepareBlockForTest(dag, &params, []*daghash.Hash{previousBlock.Hash()}, txs, false)
+		if err != nil {
+			t.Fatalf("TestOrderInDiffFromAcceptanceData: Failed to prepare block: %s", err)
+		}
+
+		// Add the block to the DAG
+		newBlock := util.NewBlock(msgBlock)
+		isOrphan, delay, err := dag.ProcessBlock(newBlock, blockdag.BFNoPoWCheck)
+		if err != nil {
+			t.Errorf("TestOrderInDiffFromAcceptanceData: %s", err)
+		}
+		if delay != 0 {
+			t.Fatalf("TestOrderInDiffFromAcceptanceData: block is too far in the future")
+		}
+		if isOrphan {
+			t.Fatalf("TestOrderInDiffFromAcceptanceData: block got unexpectedly orphaned")
+		}
+		return newBlock
+	}
+
+	// Create two block chains starting from the genesis block. Every time a block is added
+	// one of the chains is selected as the selected parent chain while all the blocks in
+	// the other chain (and their transactions) get accepted by the new virtual. If the
+	// transactions in the non-selected parent chain get processed in the wrong order then
+	// diffFromAcceptanceData panics.
+	blockAmountPerChain := 100
+	chainATip := util.NewBlock(params.GenesisBlock)
+	chainBTip := chainATip
+	for i := 0; i < blockAmountPerChain; i++ {
+		chainATip = createBlock(chainATip)
+		chainBTip = createBlock(chainBTip)
+	}
+}
+
 // TestGasLimit tests the gas limit rules
 func TestGasLimit(t *testing.T) {
 	params := dagconfig.SimNetParams

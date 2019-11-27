@@ -115,15 +115,15 @@ func TestDAGSvrCmds(t *testing.T) {
 			unmarshalled: &btcjson.GetAllManualNodesInfoCmd{Details: btcjson.Bool(true)},
 		},
 		{
-			name: "getBestBlockHash",
+			name: "getSelectedTipHash",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getBestBlockHash")
+				return btcjson.NewCmd("getSelectedTipHash")
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewGetBestBlockHashCmd()
+				return btcjson.NewGetSelectedTipHashCmd()
 			},
-			marshalled:   `{"jsonrpc":"1.0","method":"getBestBlockHash","params":[],"id":1}`,
-			unmarshalled: &btcjson.GetBestBlockHashCmd{},
+			marshalled:   `{"jsonrpc":"1.0","method":"getSelectedTipHash","params":[],"id":1}`,
+			unmarshalled: &btcjson.GetSelectedTipHashCmd{},
 		},
 		{
 			name: "getBlock",
@@ -200,9 +200,9 @@ func TestDAGSvrCmds(t *testing.T) {
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getBlocks","params":[true,true,"123"],"id":1}`,
 			unmarshalled: &btcjson.GetBlocksCmd{
-				IncludeBlocks: true,
-				VerboseBlocks: true,
-				StartHash:     btcjson.String("123"),
+				IncludeRawBlockData:     true,
+				IncludeVerboseBlockData: true,
+				StartHash:               btcjson.String("123"),
 			},
 		},
 		{
@@ -658,36 +658,6 @@ func TestDAGSvrCmds(t *testing.T) {
 			},
 		},
 		{
-			name: "getTxOutProof",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getTxOutProof", []string{"123", "456"})
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewGetTxOutProofCmd([]string{"123", "456"}, nil)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getTxOutProof","params":[["123","456"]],"id":1}`,
-			unmarshalled: &btcjson.GetTxOutProofCmd{
-				TxIDs: []string{"123", "456"},
-			},
-		},
-		{
-			name: "getTxOutProof optional",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getTxOutProof", []string{"123", "456"},
-					btcjson.String("000000000000034a7dedef4a161fa058a2d67a173a90155f3a2fe6fc132e0ebf"))
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewGetTxOutProofCmd([]string{"123", "456"},
-					btcjson.String("000000000000034a7dedef4a161fa058a2d67a173a90155f3a2fe6fc132e0ebf"))
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getTxOutProof","params":[["123","456"],` +
-				`"000000000000034a7dedef4a161fa058a2d67a173a90155f3a2fe6fc132e0ebf"],"id":1}`,
-			unmarshalled: &btcjson.GetTxOutProofCmd{
-				TxIDs:     []string{"123", "456"},
-				BlockHash: btcjson.String("000000000000034a7dedef4a161fa058a2d67a173a90155f3a2fe6fc132e0ebf"),
-			},
-		},
-		{
 			name: "getTxOutSetInfo",
 			newCmd: func() (interface{}, error) {
 				return btcjson.NewCmd("getTxOutSetInfo")
@@ -1046,34 +1016,6 @@ func TestDAGSvrCmds(t *testing.T) {
 			marshalled: `{"jsonrpc":"1.0","method":"validateAddress","params":["1Address"],"id":1}`,
 			unmarshalled: &btcjson.ValidateAddressCmd{
 				Address: "1Address",
-			},
-		},
-		{
-			name: "verifyMessage",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("verifyMessage", "1Address", "301234", "test")
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewVerifyMessageCmd("1Address", "301234", "test")
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"verifyMessage","params":["1Address","301234","test"],"id":1}`,
-			unmarshalled: &btcjson.VerifyMessageCmd{
-				Address:   "1Address",
-				Signature: "301234",
-				Message:   "test",
-			},
-		},
-		{
-			name: "verifyTxOutProof",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("verifyTxOutProof", "test")
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewVerifyTxOutProofCmd("test")
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"verifyTxOutProof","params":["test"],"id":1}`,
-			unmarshalled: &btcjson.VerifyTxOutProofCmd{
-				Proof: "test",
 			},
 		},
 	}

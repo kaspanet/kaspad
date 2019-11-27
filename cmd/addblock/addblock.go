@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	cfg   *config
+	cfg   *ConfigFlags
 	log   logs.Logger
 	spawn func(func())
 )
@@ -33,7 +33,7 @@ func loadBlockDB() (database.DB, error) {
 	dbPath := filepath.Join(cfg.DataDir, dbName)
 
 	log.Infof("Loading block database from '%s'", dbPath)
-	db, err := database.Open(cfg.DbType, dbPath, activeNetParams.Net)
+	db, err := database.Open(cfg.DbType, dbPath, ActiveConfig().NetParams().Net)
 	if err != nil {
 		// Return the error if it's not because the database doesn't
 		// exist.
@@ -48,7 +48,7 @@ func loadBlockDB() (database.DB, error) {
 		if err != nil {
 			return nil, err
 		}
-		db, err = database.Create(cfg.DbType, dbPath, activeNetParams.Net)
+		db, err = database.Create(cfg.DbType, dbPath, ActiveConfig().NetParams().Net)
 		if err != nil {
 			return nil, err
 		}

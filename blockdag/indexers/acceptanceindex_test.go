@@ -18,8 +18,6 @@ import (
 )
 
 func TestAcceptanceIndexSerializationAndDeserialization(t *testing.T) {
-	txsAcceptanceData := blockdag.MultiBlockTxsAcceptanceData{}
-
 	// Create test data
 	hash, _ := daghash.NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
 	txIn1 := &wire.TxIn{SignatureScript: []byte{1}, PreviousOutpoint: wire.Outpoint{Index: 1}, Sequence: 0}
@@ -27,19 +25,22 @@ func TestAcceptanceIndexSerializationAndDeserialization(t *testing.T) {
 	txOut1 := &wire.TxOut{ScriptPubKey: []byte{1}, Value: 10}
 	txOut2 := &wire.TxOut{ScriptPubKey: []byte{2}, Value: 20}
 	blockTxsAcceptanceData := blockdag.BlockTxsAcceptanceData{
-		{
-			Tx:         util.NewTx(wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn1}, []*wire.TxOut{txOut1})),
-			IsAccepted: true,
-		},
-		{
-			Tx:         util.NewTx(wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn2}, []*wire.TxOut{txOut2})),
-			IsAccepted: false,
+		BlockHash: *hash,
+		TxAcceptanceData: []blockdag.TxAcceptanceData{
+			{
+				Tx:         util.NewTx(wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn1}, []*wire.TxOut{txOut1})),
+				IsAccepted: true,
+			},
+			{
+				Tx:         util.NewTx(wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn2}, []*wire.TxOut{txOut2})),
+				IsAccepted: false,
+			},
 		},
 	}
-	txsAcceptanceData[*hash] = blockTxsAcceptanceData
+	multiBlockTxsAcceptanceData := blockdag.MultiBlockTxsAcceptanceData{blockTxsAcceptanceData}
 
 	// Serialize
-	serializedTxsAcceptanceData, err := serializeMultiBlockTxsAcceptanceData(txsAcceptanceData)
+	serializedTxsAcceptanceData, err := serializeMultiBlockTxsAcceptanceData(multiBlockTxsAcceptanceData)
 	if err != nil {
 		t.Fatalf("TestAcceptanceIndexSerializationAndDeserialization: serialization failed: %s", err)
 	}
@@ -51,7 +52,7 @@ func TestAcceptanceIndexSerializationAndDeserialization(t *testing.T) {
 	}
 
 	// Check that they're the same
-	if !reflect.DeepEqual(txsAcceptanceData, deserializedTxsAcceptanceData) {
+	if !reflect.DeepEqual(multiBlockTxsAcceptanceData, deserializedTxsAcceptanceData) {
 		t.Fatalf("TestAcceptanceIndexSerializationAndDeserialization: original data and deseralize data aren't equal")
 	}
 }

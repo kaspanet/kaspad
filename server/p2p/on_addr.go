@@ -14,7 +14,7 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 	// helps prevent the network from becoming another public test network
 	// since it will not be able to learn about other peers that have not
 	// specifically been provided.
-	if config.MainConfig().SimNet {
+	if config.ActiveConfig().SimNet {
 		return
 	}
 
@@ -31,9 +31,9 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 			msg.Command(), sp.Peer)
 		sp.Disconnect()
 		return
-	} else if !msg.SubnetworkID.IsEqual(config.MainConfig().SubnetworkID) && msg.SubnetworkID != nil {
+	} else if !msg.SubnetworkID.IsEqual(config.ActiveConfig().SubnetworkID) && msg.SubnetworkID != nil {
 		peerLog.Errorf("Only full nodes and %s subnetwork IDs are allowed in [%s] command, but got subnetwork ID %s from %s",
-			config.MainConfig().SubnetworkID, msg.Command(), msg.SubnetworkID, sp.Peer)
+			config.ActiveConfig().SubnetworkID, msg.Command(), msg.SubnetworkID, sp.Peer)
 		sp.Disconnect()
 		return
 	}

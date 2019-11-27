@@ -124,13 +124,13 @@ func NewGetAllManualNodesInfoCmd(details *bool) *GetAllManualNodesInfoCmd {
 	}
 }
 
-// GetBestBlockHashCmd defines the getBestBlockHash JSON-RPC command.
-type GetBestBlockHashCmd struct{}
+// GetSelectedTipHashCmd defines the getSelectedTipHash JSON-RPC command.
+type GetSelectedTipHashCmd struct{}
 
-// NewGetBestBlockHashCmd returns a new instance which can be used to issue a
-// getBestBlockHash JSON-RPC command.
-func NewGetBestBlockHashCmd() *GetBestBlockHashCmd {
-	return &GetBestBlockHashCmd{}
+// NewGetSelectedTipHashCmd returns a new instance which can be used to issue a
+// getSelectedTipHash JSON-RPC command.
+func NewGetSelectedTipHashCmd() *GetSelectedTipHashCmd {
+	return &GetSelectedTipHashCmd{}
 }
 
 // GetBlockCmd defines the getBlock JSON-RPC command.
@@ -157,18 +157,18 @@ func NewGetBlockCmd(hash string, verbose, verboseTx *bool, subnetworkID *string)
 
 // GetBlocksCmd defines the getBlocks JSON-RPC command.
 type GetBlocksCmd struct {
-	IncludeBlocks bool    `json:"includeBlocks"`
-	VerboseBlocks bool    `json:"verboseBlocks"`
-	StartHash     *string `json:"startHash"`
+	IncludeRawBlockData     bool    `json:"includeRawBlockData"`
+	IncludeVerboseBlockData bool    `json:"includeVerboseBlockData"`
+	StartHash               *string `json:"startHash"`
 }
 
 // NewGetBlocksCmd returns a new instance which can be used to issue a
 // GetGetBlocks JSON-RPC command.
-func NewGetBlocksCmd(includeBlocks bool, verboseBlocks bool, startHash *string) *GetBlocksCmd {
+func NewGetBlocksCmd(includeRawBlockData bool, includeVerboseBlockData bool, startHash *string) *GetBlocksCmd {
 	return &GetBlocksCmd{
-		IncludeBlocks: includeBlocks,
-		VerboseBlocks: verboseBlocks,
-		StartHash:     startHash,
+		IncludeRawBlockData:     includeRawBlockData,
+		IncludeVerboseBlockData: includeVerboseBlockData,
+		StartHash:               startHash,
 	}
 }
 
@@ -539,24 +539,6 @@ func NewGetTxOutCmd(txHash string, vout uint32, includeMempool *bool) *GetTxOutC
 	}
 }
 
-// GetTxOutProofCmd defines the getTxOutProof JSON-RPC command.
-type GetTxOutProofCmd struct {
-	TxIDs     []string
-	BlockHash *string
-}
-
-// NewGetTxOutProofCmd returns a new instance which can be used to issue a
-// getTxOutProof JSON-RPC command.
-//
-// The parameters which are pointers indicate they are optional.  Passing nil
-// for optional parameters will use the default value.
-func NewGetTxOutProofCmd(txIDs []string, blockHash *string) *GetTxOutProofCmd {
-	return &GetTxOutProofCmd{
-		TxIDs:     txIDs,
-		BlockHash: blockHash,
-	}
-}
-
 // GetTxOutSetInfoCmd defines the getTxOutSetInfo JSON-RPC command.
 type GetTxOutSetInfoCmd struct{}
 
@@ -749,36 +731,6 @@ func NewValidateAddressCmd(address string) *ValidateAddressCmd {
 	}
 }
 
-// VerifyMessageCmd defines the verifyMessage JSON-RPC command.
-type VerifyMessageCmd struct {
-	Address   string
-	Signature string
-	Message   string
-}
-
-// NewVerifyMessageCmd returns a new instance which can be used to issue a
-// verifyMessage JSON-RPC command.
-func NewVerifyMessageCmd(address, signature, message string) *VerifyMessageCmd {
-	return &VerifyMessageCmd{
-		Address:   address,
-		Signature: signature,
-		Message:   message,
-	}
-}
-
-// VerifyTxOutProofCmd defines the verifyTxOutProof JSON-RPC command.
-type VerifyTxOutProofCmd struct {
-	Proof string
-}
-
-// NewVerifyTxOutProofCmd returns a new instance which can be used to issue a
-// verifyTxOutProof JSON-RPC command.
-func NewVerifyTxOutProofCmd(proof string) *VerifyTxOutProofCmd {
-	return &VerifyTxOutProofCmd{
-		Proof: proof,
-	}
-}
-
 func init() {
 	// No special flags for commands in this file.
 	flags := UsageFlag(0)
@@ -788,7 +740,7 @@ func init() {
 	MustRegisterCmd("decodeRawTransaction", (*DecodeRawTransactionCmd)(nil), flags)
 	MustRegisterCmd("decodeScript", (*DecodeScriptCmd)(nil), flags)
 	MustRegisterCmd("getAllManualNodesInfo", (*GetAllManualNodesInfoCmd)(nil), flags)
-	MustRegisterCmd("getBestBlockHash", (*GetBestBlockHashCmd)(nil), flags)
+	MustRegisterCmd("getSelectedTipHash", (*GetSelectedTipHashCmd)(nil), flags)
 	MustRegisterCmd("getBlock", (*GetBlockCmd)(nil), flags)
 	MustRegisterCmd("getBlocks", (*GetBlocksCmd)(nil), flags)
 	MustRegisterCmd("getBlockDagInfo", (*GetBlockDAGInfoCmd)(nil), flags)
@@ -816,7 +768,6 @@ func init() {
 	MustRegisterCmd("getRawTransaction", (*GetRawTransactionCmd)(nil), flags)
 	MustRegisterCmd("getSubnetwork", (*GetSubnetworkCmd)(nil), flags)
 	MustRegisterCmd("getTxOut", (*GetTxOutCmd)(nil), flags)
-	MustRegisterCmd("getTxOutProof", (*GetTxOutProofCmd)(nil), flags)
 	MustRegisterCmd("getTxOutSetInfo", (*GetTxOutSetInfoCmd)(nil), flags)
 	MustRegisterCmd("help", (*HelpCmd)(nil), flags)
 	MustRegisterCmd("invalidateBlock", (*InvalidateBlockCmd)(nil), flags)
@@ -831,6 +782,4 @@ func init() {
 	MustRegisterCmd("submitBlock", (*SubmitBlockCmd)(nil), flags)
 	MustRegisterCmd("uptime", (*UptimeCmd)(nil), flags)
 	MustRegisterCmd("validateAddress", (*ValidateAddressCmd)(nil), flags)
-	MustRegisterCmd("verifyMessage", (*VerifyMessageCmd)(nil), flags)
-	MustRegisterCmd("verifyTxOutProof", (*VerifyTxOutProofCmd)(nil), flags)
 }

@@ -1,7 +1,7 @@
 package httpserverutils
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
 	"net/http"
 	"runtime/debug"
 )
@@ -38,10 +38,15 @@ func RecoveryMiddleware(h http.Handler) http.Handler {
 		defer func() {
 			recoveryErr := recover()
 			if recoveryErr != nil {
-				recoveryErrStr := fmt.Sprintf("%s", recoveryErr)
-				log.Criticalf("Fatal error: %s", recoveryErrStr)
+				var recoveryErrAsError error
+				if rErr, ok := recoveryErr.(error); ok {
+					recoveryErrAsError = rErr
+				} else {
+					recoveryErrAsError = errors.Errorf("%s", recoveryErr)
+				}
+				log.Criticalf("Fatal error: %+v", recoveryErrAsError)
 				log.Criticalf("Stack trace: %s", debug.Stack())
-				SendErr(ctx, w, NewInternalServerHandlerError(recoveryErrStr))
+				SendErr(ctx, w, recoveryErrAsError)
 			}
 		}()
 		h.ServeHTTP(w, r)

@@ -220,7 +220,7 @@ func coinbaseInputAndOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode,
 	txsAcceptanceData MultiBlockTxsAcceptanceData, feeData map[daghash.Hash]compactFeeData) (
 	*wire.TxIn, *wire.TxOut, error) {
 
-	blockTxsAcceptanceData, ok := txsAcceptanceData[*blueBlock.hash]
+	blockTxsAcceptanceData, ok := txsAcceptanceData.FindAcceptanceData(blueBlock.hash)
 	if !ok {
 		return nil, nil, errors.Errorf("No txsAcceptanceData for block %s", blueBlock.hash)
 	}
@@ -229,10 +229,10 @@ func coinbaseInputAndOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode,
 		return nil, nil, errors.Errorf("No feeData for block %s", blueBlock.hash)
 	}
 
-	if len(blockTxsAcceptanceData) != blockFeeData.Len() {
+	if len(blockTxsAcceptanceData.TxAcceptanceData) != blockFeeData.Len() {
 		return nil, nil, errors.Errorf(
 			"length of accepted transaction data(%d) and fee data(%d) is not equal for block %s",
-			len(blockTxsAcceptanceData), blockFeeData.Len(), blueBlock.hash)
+			len(blockTxsAcceptanceData.TxAcceptanceData), blockFeeData.Len(), blueBlock.hash)
 	}
 
 	txIn := &wire.TxIn{
@@ -247,7 +247,7 @@ func coinbaseInputAndOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode,
 	totalFees := uint64(0)
 	feeIterator := blockFeeData.iterator()
 
-	for _, txAcceptanceData := range blockTxsAcceptanceData {
+	for _, txAcceptanceData := range blockTxsAcceptanceData.TxAcceptanceData {
 		fee, err := feeIterator.next()
 		if err != nil {
 			return nil, nil, errors.Errorf("Error retrieving fee from compactFeeData iterator: %s", err)
@@ -264,7 +264,7 @@ func coinbaseInputAndOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode,
 	}
 
 	// the ScriptPubKey for the coinbase is parsed from the coinbase payload
-	scriptPubKey, _, err := DeserializeCoinbasePayload(blockTxsAcceptanceData[0].Tx.MsgTx())
+	scriptPubKey, _, err := DeserializeCoinbasePayload(blockTxsAcceptanceData.TxAcceptanceData[0].Tx.MsgTx())
 	if err != nil {
 		return nil, nil, err
 	}

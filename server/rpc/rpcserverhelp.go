@@ -149,17 +149,22 @@ var helpDescsEnUS = map[string]string{
 	"getManualNodeInfo--condition1": "details=true",
 	"getManualNodeInfo--result0":    "List of added peers",
 
-	// GetBestBlockResult help.
-	"getBestBlockResult-hash":   "Hex-encoded bytes of the best block hash",
-	"getBestBlockResult-height": "Height of the best block",
+	// GetSelectedTipResult help.
+	"getSelectedTipResult-hash":   "Hex-encoded bytes of the best block hash",
+	"getSelectedTipResult-height": "Height of the best block",
 
-	// GetBestBlockCmd help.
-	"getBestBlock--synopsis": "Get block height and hash of best block in the main chain.",
-	"getBestBlock--result0":  "Get block height and hash of best block in the main chain.",
+	// GetSelectedTipCmd help.
+	"getSelectedTip--synopsis":   "Returns information about the selected tip of the blockDAG.",
+	"getSelectedTip-verbose":     "Specifies the block is returned as a JSON object instead of hex-encoded string",
+	"getSelectedTip-verboseTx":   "Specifies that each transaction is returned as a JSON object and only applies if the verbose flag is true (btcd extension)",
+	"getSelectedTip--condition0": "verbose=false",
+	"getSelectedTip--condition1": "verbose=true",
+	"getSelectedTip-acceptedTx":  "Specifies if the transaction got accepted",
+	"getSelectedTip--result0":    "Hex-encoded bytes of the serialized block",
 
-	// GetBestBlockHashCmd help.
-	"getBestBlockHash--synopsis": "Returns the hash of the of the best (most recent) block in the longest block chain.",
-	"getBestBlockHash--result0":  "The hex-encoded block hash",
+	// GetSelectedTipHashCmd help.
+	"getSelectedTipHash--synopsis": "Returns the hash of the of the selected tip of the blockDAG.",
+	"getSelectedTipHash--result0":  "The hex-encoded block hash",
 
 	// GetBlockCmd help.
 	"getBlock--synopsis":   "Returns information about a block given its hash.",
@@ -173,16 +178,16 @@ var helpDescsEnUS = map[string]string{
 	"getBlock--result0":    "Hex-encoded bytes of the serialized block",
 
 	// GetBlocksCmd help.
-	"getBlocks--synopsis":     "Return the blocks starting from startHash up to the virtual ordered by blue score.",
-	"getBlocks-includeBlocks": "If set to true - the block contents would be also included.",
-	"getBlocks-verboseBlocks": "If set to true - each block is returned as a JSON object",
-	"getBlocks-startHash":     "Hash of the block with the bottom blue score. If this hash is unknown - returns an error.",
-	"getBlocks--result0":      "Blocks starting from startHash. The result may contains up to 1000 blocks. For the remainder, call the command again with the bluest block's hash.",
+	"getBlocks--synopsis":               "Return the blocks starting from startHash up to the virtual ordered by blue score.",
+	"getBlocks-includeRawBlockData":     "If set to true - the raw block data would be also included.",
+	"getBlocks-includeVerboseBlockData": "If set to true - the verbose block data would also be included.",
+	"getBlocks-startHash":               "Hash of the block with the bottom blue score. If this hash is unknown - returns an error.",
+	"getBlocks--result0":                "Blocks starting from startHash. The result may contains up to 1000 blocks. For the remainder, call the command again with the bluest block's hash.",
 
 	// GetChainFromBlockResult help.
-	"getBlocksResult-hashes":    "List of hashes from StartHash (excluding StartHash) ordered by smallest blue score to greatest.",
-	"getBlocksResult-blocks":    "If includeBlocks=true - contains the block contents. Otherwise - omitted.",
-	"getBlocksResult-rawBlocks": "If includeBlocks=true and verboseBlocks=true - each block is returned as a JSON object. Otherwise - hex encoded string.",
+	"getBlocksResult-hashes":        "List of hashes from StartHash (excluding StartHash) ordered by smallest blue score to greatest.",
+	"getBlocksResult-rawBlocks":     "If includeBlocks=true - contains the block contents. Otherwise - omitted.",
+	"getBlocksResult-verboseBlocks": "If includeBlocks=true and verboseBlocks=true - each block is returned as a JSON object. Otherwise - hex encoded string.",
 
 	// GetBlockChainInfoCmd help.
 	"getBlockDagInfo--synopsis": "Returns information about the current blockDAG state and the status of any active soft-fork deployments.",
@@ -519,7 +524,7 @@ var helpDescsEnUS = map[string]string{
 	"getSubnetworkResult-gasLimit": "The gas limit of the subnetwork",
 
 	// GetTxOutResult help.
-	"getTxOutResult-bestBlock":     "The block hash that contains the transaction output",
+	"getTxOutResult-selectedTip":   "The block hash that contains the transaction output",
 	"getTxOutResult-confirmations": "The number of confirmations (Will be 'null' if txindex is not disabled)",
 	"getTxOutResult-isInMempool":   "Whether the transaction is in the mempool",
 	"getTxOutResult-value":         "The transaction amount in BTC",
@@ -600,13 +605,6 @@ var helpDescsEnUS = map[string]string{
 	"validateAddress--synopsis": "Verify an address is valid.",
 	"validateAddress-address":   "Bitcoin address to validate",
 
-	// VerifyMessageCmd help.
-	"verifyMessage--synopsis": "Verify a signed message.",
-	"verifyMessage-address":   "The bitcoin address to use for the signature",
-	"verifyMessage-signature": "The base-64 encoded signature provided by the signer",
-	"verifyMessage-message":   "The signed message",
-	"verifyMessage--result0":  "Whether or not the signature verified",
-
 	// -------- Websocket-specific help --------
 
 	// Session help.
@@ -682,8 +680,8 @@ var rpcResultTypes = map[string][]interface{}{
 	"decodeScript":          {(*btcjson.DecodeScriptResult)(nil)},
 	"generate":              {(*[]string)(nil)},
 	"getAllManualNodesInfo": {(*[]string)(nil), (*[]btcjson.GetManualNodeInfoResult)(nil)},
-	"getBestBlock":          {(*btcjson.GetBestBlockResult)(nil)},
-	"getBestBlockHash":      {(*string)(nil)},
+	"getSelectedTip":        {(*btcjson.GetBlockVerboseResult)(nil)},
+	"getSelectedTipHash":    {(*string)(nil)},
 	"getBlock":              {(*string)(nil), (*btcjson.GetBlockVerboseResult)(nil)},
 	"getBlocks":             {(*btcjson.GetBlocksResult)(nil)},
 	"getBlockCount":         {(*int64)(nil)},
@@ -722,7 +720,6 @@ var rpcResultTypes = map[string][]interface{}{
 	"submitBlock":           {nil, (*string)(nil)},
 	"uptime":                {(*int64)(nil)},
 	"validateAddress":       {(*btcjson.ValidateAddressResult)(nil)},
-	"verifyMessage":         {(*bool)(nil)},
 	"version":               {(*map[string]btcjson.VersionResult)(nil)},
 
 	// Websocket commands.

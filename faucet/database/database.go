@@ -1,6 +1,7 @@
 package database
 
 import (
+	nativeerrors "errors"
 	"fmt"
 	"github.com/pkg/errors"
 	"os"
@@ -83,7 +84,7 @@ func buildConnectionString() (string, error) {
 func isCurrent(migrator *migrate.Migrate, driver source.Driver) (bool, uint, error) {
 	// Get the current version
 	version, isDirty, err := migrator.Version()
-	if err == migrate.ErrNilVersion {
+	if nativeerrors.Is(err, migrate.ErrNilVersion) {
 		return false, 0, nil
 	}
 	if err != nil {

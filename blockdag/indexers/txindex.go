@@ -153,7 +153,7 @@ func dbFetchFirstTxRegion(dbTx database.Tx, txID *daghash.TxID) (*database.Block
 
 // dbAddTxIndexEntries uses an existing database transaction to add a
 // transaction index entry for every transaction in the passed block.
-func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint64, txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
+func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint64, multiBlockTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
 	// The offset and length of the transactions within the serialized
 	// block.
 	txLocs, err := block.TxLoc()
@@ -179,12 +179,12 @@ func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint64, tx
 		includingBlocksOffset += includingBlocksIndexKeyEntrySize
 	}
 
-	for includingBlockHash, blockTxsAcceptanceData := range txsAcceptanceData {
+	for _, blockTxsAcceptanceData := range multiBlockTxsAcceptanceData {
 		var includingBlockID uint64
-		if includingBlockHash.IsEqual(block.Hash()) {
+		if blockTxsAcceptanceData.BlockHash.IsEqual(block.Hash()) {
 			includingBlockID = blockID
 		} else {
-			includingBlockID, err = blockdag.DBFetchBlockIDByHash(dbTx, &includingBlockHash)
+			includingBlockID, err = blockdag.DBFetchBlockIDByHash(dbTx, &blockTxsAcceptanceData.BlockHash)
 			if err != nil {
 				return err
 			}
@@ -192,7 +192,7 @@ func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint64, tx
 
 		serializedIncludingBlockID := blockdag.SerializeBlockID(includingBlockID)
 
-		for _, txAcceptanceData := range blockTxsAcceptanceData {
+		for _, txAcceptanceData := range blockTxsAcceptanceData.TxAcceptanceData {
 			err = dbPutAcceptingBlocksEntry(dbTx, txAcceptanceData.Tx.ID(), blockID, serializedIncludingBlockID)
 			if err != nil {
 				return err
@@ -207,13 +207,13 @@ func updateTxsAcceptedByVirtual(virtualTxsAcceptanceData blockdag.MultiBlockTxsA
 	// Initialize a new txsAcceptedByVirtual
 	entries := 0
 	for _, blockTxsAcceptanceData := range virtualTxsAcceptanceData {
-		entries += len(blockTxsAcceptanceData)
+		entries += len(blockTxsAcceptanceData.TxAcceptanceData)
 	}
 	txsAcceptedByVirtual = make(map[daghash.TxID]bool, entries)
 
 	// Copy virtualTxsAcceptanceData to txsAcceptedByVirtual
 	for _, blockTxsAcceptanceData := range virtualTxsAcceptanceData {
-		for _, txAcceptanceData := range blockTxsAcceptanceData {
+		for _, txAcceptanceData := range blockTxsAcceptanceData.TxAcceptanceData {
 			txsAcceptedByVirtual[*txAcceptanceData.Tx.ID()] = true
 		}
 	}
@@ -371,11 +371,7 @@ func dbFetchTxAcceptingBlock(dbTx database.Tx, txID *daghash.TxID, dag *blockdag
 
 	bucket := dbTx.Metadata().Bucket(acceptingBlocksIndexKey).Bucket(txID[:])
 	if bucket == nil {
-		return nil, database.Error{
-			ErrorCode: database.ErrCorruption,
-			Description: fmt.Sprintf("No accepting blocks bucket "+
-				"exists for %s", txID),
-		}
+		return nil, nil
 	}
 	cursor := bucket.Cursor()
 	if !cursor.First() {

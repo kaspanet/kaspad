@@ -493,10 +493,10 @@ func (dag *BlockDAG) addBlock(node *blockNode, parentNodes blockSet,
 	return chainUpdates, nil
 }
 
-func calculateAcceptedIDMerkleRoot(txsAcceptanceData MultiBlockTxsAcceptanceData) *daghash.Hash {
+func calculateAcceptedIDMerkleRoot(multiBlockTxsAcceptanceData MultiBlockTxsAcceptanceData) *daghash.Hash {
 	var acceptedTxs []*util.Tx
-	for _, blockTxsAcceptanceData := range txsAcceptanceData {
-		for _, txAcceptance := range blockTxsAcceptanceData {
+	for _, blockTxsAcceptanceData := range multiBlockTxsAcceptanceData {
+		for _, txAcceptance := range blockTxsAcceptanceData.TxAcceptanceData {
 			if !txAcceptance.IsAccepted {
 				continue
 			}
@@ -951,11 +951,11 @@ func (node *blockNode) diffFromTxs(pastUTXO UTXOSet, transactions []*util.Tx) (*
 
 // diffFromAccpetanceData creates a diff that "updates" the blue scores of the given
 // UTXOSet with the node's blueScore according to the given acceptance data.
-func (node *blockNode) diffFromAcceptanceData(pastUTXO UTXOSet, blockTxsAcceptanceDatas MultiBlockTxsAcceptanceData) (*UTXODiff, error) {
+func (node *blockNode) diffFromAcceptanceData(pastUTXO UTXOSet, multiBlockTxsAcceptanceData MultiBlockTxsAcceptanceData) (*UTXODiff, error) {
 	diff := NewUTXODiff()
 
-	for _, blockTxsAcceptanceData := range blockTxsAcceptanceDatas {
-		for _, txAcceptanceData := range blockTxsAcceptanceData {
+	for _, blockTxsAcceptanceData := range multiBlockTxsAcceptanceData {
+		for _, txAcceptanceData := range blockTxsAcceptanceData.TxAcceptanceData {
 			if txAcceptanceData.IsAccepted {
 				acceptanceDiff, err := pastUTXO.diffFromAcceptedTx(txAcceptanceData.Tx.MsgTx(), node.blueScore)
 				if err != nil {
@@ -1029,13 +1029,26 @@ type TxAcceptanceData struct {
 	IsAccepted bool
 }
 
-// BlockTxsAcceptanceData  stores all transactions in a block with an indication
+// BlockTxsAcceptanceData stores all transactions in a block with an indication
 // if they were accepted or not by some other block
-type BlockTxsAcceptanceData []TxAcceptanceData
+type BlockTxsAcceptanceData struct {
+	BlockHash        daghash.Hash
+	TxAcceptanceData []TxAcceptanceData
+}
 
 // MultiBlockTxsAcceptanceData stores data about which transactions were accepted by a block
-// It's a map from the block's blues block IDs to the transaction acceptance data
-type MultiBlockTxsAcceptanceData map[daghash.Hash]BlockTxsAcceptanceData
+// It's a slice of the block's blues block IDs and their transaction acceptance data
+type MultiBlockTxsAcceptanceData []BlockTxsAcceptanceData
+
+// FindAcceptanceData finds the BlockTxsAcceptanceData that matches blockHash
+func (data MultiBlockTxsAcceptanceData) FindAcceptanceData(blockHash *daghash.Hash) (*BlockTxsAcceptanceData, bool) {
+	for _, acceptanceData := range data {
+		if acceptanceData.BlockHash.IsEqual(blockHash) {
+			return &acceptanceData, true
+		}
+	}
+	return nil, false
+}
 
 func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 	// The genesis has no past UTXO, so we create an empty UTXO
@@ -1076,14 +1089,21 @@ func (node *blockNode) fetchBlueBlocks(db database.DB) ([]*util.Block, error) {
 // Purposefully ignoring failures - these are just unaccepted transactions
 // Writing down which transactions were accepted or not in txsAcceptanceData
 func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []*util.Block) (
-	pastUTXO UTXOSet, txsAcceptanceData MultiBlockTxsAcceptanceData, err error) {
+	pastUTXO UTXOSet, multiBlockTxsAcceptanceData MultiBlockTxsAcceptanceData, err error) {
 
 	pastUTXO = selectedParentUTXO
-	txsAcceptanceData = MultiBlockTxsAcceptanceData{}
+	multiBlockTxsAcceptanceData = MultiBlockTxsAcceptanceData{}
 
-	for _, blueBlock := range blueBlocks {
+	// Add blueBlocks to multiBlockTxsAcceptanceData bottom-to-top instead of
+	// top-to-bottom. This is so that anyone who iterates over it would process
+	// blocks (and transactions) in their order of appearance in the DAG.
+	for i := len(blueBlocks) - 1; i >= 0; i-- {
+		blueBlock := blueBlocks[i]
 		transactions := blueBlock.Transactions()
-		blockTxsAcceptanceData := make(BlockTxsAcceptanceData, len(transactions))
+		blockTxsAcceptanceData := BlockTxsAcceptanceData{
+			BlockHash:        *blueBlock.Hash(),
+			TxAcceptanceData: make([]TxAcceptanceData, len(transactions)),
+		}
 		isSelectedParent := blueBlock.Hash().IsEqual(node.selectedParent.hash)
 		for i, tx := range blueBlock.Transactions() {
 			var isAccepted bool
@@ -1095,12 +1115,12 @@ func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []
 					return nil, nil, err
 				}
 			}
-			blockTxsAcceptanceData[i] = TxAcceptanceData{Tx: tx, IsAccepted: isAccepted}
+			blockTxsAcceptanceData.TxAcceptanceData[i] = TxAcceptanceData{Tx: tx, IsAccepted: isAccepted}
 		}
-		txsAcceptanceData[*blueBlock.Hash()] = blockTxsAcceptanceData
+		multiBlockTxsAcceptanceData = append(multiBlockTxsAcceptanceData, blockTxsAcceptanceData)
 	}
 
-	return pastUTXO, txsAcceptanceData, nil
+	return pastUTXO, multiBlockTxsAcceptanceData, nil
 }
 
 // updateParents adds this block to the children sets of its parents
@@ -1362,9 +1382,13 @@ func (dag *BlockDAG) UTXOCommitment() string {
 
 // blockConfirmations returns the current confirmations number of the given node
 // The confirmations number is defined as follows:
-// * If the node is red -> 0
-// * Otherwise          -> virtual.blueScore - acceptingBlock.blueScore + 1
+// * If the node is in the selected tip red set	-> 0
+// * If the node is the selected tip			-> 1
+// * Otherwise									-> selectedTip.blueScore - acceptingBlock.blueScore + 2
 func (dag *BlockDAG) blockConfirmations(node *blockNode) (uint64, error) {
+	if node == dag.selectedTip() {
+		return 1, nil
+	}
 	acceptingBlock, err := dag.acceptingBlock(node)
 	if err != nil {
 		return 0, err
@@ -1375,36 +1399,23 @@ func (dag *BlockDAG) blockConfirmations(node *blockNode) (uint64, error) {
 		return 0, nil
 	}
 
-	return dag.virtual.blueScore - acceptingBlock.blueScore + 1, nil
+	return dag.selectedTip().blueScore - acceptingBlock.blueScore + 2, nil
 }
 
 // acceptingBlock finds the node in the selected-parent chain that had accepted
 // the given node
 func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
-	// Explicitly handle the DAG tips
-	if dag.virtual.tips().contains(node) {
-		// Return the virtual block if the node is one of the DAG blues
-		for _, tip := range dag.virtual.blues {
-			if tip == node {
-				return &dag.virtual.blockNode, nil
-			}
-		}
-
-		// Otherwise, this tip is red and doesn't have an accepting block
-		return nil, nil
-	}
-
 	// Return an error if the node is the virtual block
-	if len(node.children) == 0 {
-		if node == &dag.virtual.blockNode {
-			return nil, errors.New("cannot get acceptingBlock for virtual")
-		}
-		// A childless block that isn't a tip or the virtual can never happen. Panicking
-		panic(errors.Errorf("got childless block %s that is neither a tip nor the virtual", node.hash))
+	if node == &dag.virtual.blockNode {
+		return nil, errors.New("cannot get acceptingBlock for virtual")
 	}
 
 	// If the node is a chain-block itself, the accepting block is its chain-child
 	if dag.IsInSelectedParentChain(node.hash) {
+		if len(node.children) == 0 {
+			// If the node is the selected tip, it doesn't have an accepting block
+			return nil, nil
+		}
 		for _, child := range node.children {
 			if dag.IsInSelectedParentChain(child.hash) {
 				return child, nil
@@ -1416,6 +1427,13 @@ func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 	// Find the only chain block that may contain the node in its blues
 	candidateAcceptingBlock := dag.oldestChainBlockWithBlueScoreGreaterThan(node.blueScore)
 
+	// if no candidate is found, it means that the node has same or more
+	// blue score than the selected tip and is found in its anticone, so
+	// it doesn't have an accepting block
+	if candidateAcceptingBlock == nil {
+		return nil, nil
+	}
+
 	// candidateAcceptingBlock is the accepting block only if it actually contains
 	// the node in its blues
 	for _, blue := range candidateAcceptingBlock.blues {
@@ -1424,7 +1442,8 @@ func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 		}
 	}
 
-	// Otherwise, the node is red and doesn't have an accepting block
+	// Otherwise, the node is red or in the selected tip anticone, and
+	// doesn't have an accepting block
 	return nil, nil
 }
 
@@ -1746,6 +1765,16 @@ func (dag *BlockDAG) GetTopHeaders(startHash *daghash.Hash) ([]*wire.BlockHeader
 		}
 	}
 	return headers, nil
+}
+
+// Lock locks the DAG's UTXO set for writing.
+func (dag *BlockDAG) Lock() {
+	dag.dagLock.Lock()
+}
+
+// Unlock unlocks the DAG's UTXO set for writing.
+func (dag *BlockDAG) Unlock() {
+	dag.dagLock.Unlock()
 }
 
 // RLock locks the DAG's UTXO set for reading.

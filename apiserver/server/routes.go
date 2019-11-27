@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/daglabs/btcd/httpserverutils"
+	"github.com/pkg/errors"
 	"net/http"
 	"strconv"
 
@@ -26,10 +27,10 @@ const (
 const (
 	defaultGetTransactionsLimit = 100
 	defaultGetBlocksLimit       = 25
-	defaultGetBlocksOrder       = controllers.OrderAscending
+	defaultGetBlocksOrder       = controllers.OrderDescending
 )
 
-func mainHandler(_ *httpserverutils.ServerContext, _ *http.Request, _ map[string]string, _ map[string]string, _ []byte) (interface{}, *httpserverutils.HandlerError) {
+func mainHandler(_ *httpserverutils.ServerContext, _ *http.Request, _ map[string]string, _ map[string]string, _ []byte) (interface{}, error) {
 	return struct {
 		Message string `json:"message"`
 	}{
@@ -81,11 +82,11 @@ func addRoutes(router *mux.Router) {
 		Methods("POST")
 }
 
-func convertQueryParamToInt(queryParams map[string]string, param string, defaultValue int) (int, *httpserverutils.HandlerError) {
+func convertQueryParamToInt(queryParams map[string]string, param string, defaultValue int) (int, error) {
 	if _, ok := queryParams[param]; ok {
 		intValue, err := strconv.Atoi(queryParams[param])
 		if err != nil {
-			return 0, httpserverutils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Couldn't parse the '%s' query parameter: %s", param, err))
+			return 0, httpserverutils.NewHandlerError(http.StatusUnprocessableEntity, errors.Wrap(err, fmt.Sprintf("Couldn't parse the '%s' query parameter", param)))
 		}
 		return intValue, nil
 	}
@@ -93,72 +94,72 @@ func convertQueryParamToInt(queryParams map[string]string, param string, default
 }
 
 func getTransactionByIDHandler(_ *httpserverutils.ServerContext, _ *http.Request, routeParams map[string]string, _ map[string]string,
-	_ []byte) (interface{}, *httpserverutils.HandlerError) {
+	_ []byte) (interface{}, error) {
 
 	return controllers.GetTransactionByIDHandler(routeParams[routeParamTxID])
 }
 
 func getTransactionByHashHandler(_ *httpserverutils.ServerContext, _ *http.Request, routeParams map[string]string, _ map[string]string,
-	_ []byte) (interface{}, *httpserverutils.HandlerError) {
+	_ []byte) (interface{}, error) {
 
 	return controllers.GetTransactionByHashHandler(routeParams[routeParamTxHash])
 }
 
 func getTransactionsByAddressHandler(_ *httpserverutils.ServerContext, _ *http.Request, routeParams map[string]string, queryParams map[string]string,
-	_ []byte) (interface{}, *httpserverutils.HandlerError) {
+	_ []byte) (interface{}, error) {
 
-	skip, hErr := convertQueryParamToInt(queryParams, queryParamSkip, 0)
-	if hErr != nil {
-		return nil, hErr
+	skip, err := convertQueryParamToInt(queryParams, queryParamSkip, 0)
+	if err != nil {
+		return nil, err
 	}
-	limit, hErr := convertQueryParamToInt(queryParams, queryParamLimit, defaultGetTransactionsLimit)
-	if hErr != nil {
-		return nil, hErr
+	limit, err := convertQueryParamToInt(queryParams, queryParamLimit, defaultGetTransactionsLimit)
+	if err != nil {
+		return nil, err
 	}
 	if _, ok := queryParams[queryParamLimit]; ok {
 		var err error
-		skip, err = strconv.Atoi(queryParams[queryParamLimit])
+		limit, err = strconv.Atoi(queryParams[queryParamLimit])
 		if err != nil {
 			return nil, httpserverutils.NewHandlerError(http.StatusUnprocessableEntity,
-				fmt.Sprintf("Couldn't parse the '%s' query parameter: %s", queryParamLimit, err))
+				errors.Wrap(err, fmt.Sprintf("Couldn't parse the '%s' query parameter", queryParamLimit)))
 		}
 	}
 	return controllers.GetTransactionsByAddressHandler(routeParams[routeParamAddress], uint64(skip), uint64(limit))
 }
 
 func getUTXOsByAddressHandler(_ *httpserverutils.ServerContext, _ *http.Request, routeParams map[string]string, _ map[string]string,
-	_ []byte) (interface{}, *httpserverutils.HandlerError) {
+	_ []byte) (interface{}, error) {
 
 	return controllers.GetUTXOsByAddressHandler(routeParams[routeParamAddress])
 }
 
 func getBlockByHashHandler(_ *httpserverutils.ServerContext, _ *http.Request, routeParams map[string]string, _ map[string]string,
-	_ []byte) (interface{}, *httpserverutils.HandlerError) {
+	_ []byte) (interface{}, error) {
 
 	return controllers.GetBlockByHashHandler(routeParams[routeParamBlockHash])
 }
 
 func getFeeEstimatesHandler(_ *httpserverutils.ServerContext, _ *http.Request, _ map[string]string, _ map[string]string,
-	_ []byte) (interface{}, *httpserverutils.HandlerError) {
+	_ []byte) (interface{}, error) {
 
 	return controllers.GetFeeEstimatesHandler()
 }
 
 func getBlocksHandler(_ *httpserverutils.ServerContext, _ *http.Request, _ map[string]string, queryParams map[string]string,
-	_ []byte) (interface{}, *httpserverutils.HandlerError) {
+	_ []byte) (interface{}, error) {
 
-	skip, hErr := convertQueryParamToInt(queryParams, queryParamSkip, 0)
-	if hErr != nil {
-		return nil, hErr
+	skip, err := convertQueryParamToInt(queryParams, queryParamSkip, 0)
+	if err != nil {
+		return nil, err
 	}
-	limit, hErr := convertQueryParamToInt(queryParams, queryParamLimit, defaultGetBlocksLimit)
-	if hErr != nil {
-		return nil, hErr
+	limit, err := convertQueryParamToInt(queryParams, queryParamLimit, defaultGetBlocksLimit)
+	if err != nil {
+		return nil, err
 	}
 	order := defaultGetBlocksOrder
 	if orderParamValue, ok := queryParams[queryParamOrder]; ok {
 		if orderParamValue != controllers.OrderAscending && orderParamValue != controllers.OrderDescending {
-			return nil, httpserverutils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("'%s' is not a valid value for the '%s' query parameter", orderParamValue, queryParamLimit))
+			return nil, httpserverutils.NewHandlerError(http.StatusUnprocessableEntity, errors.Errorf("'%s' is not a valid value for the '%s' query parameter", orderParamValue, queryParamLimit))
 		}
 		order = orderParamValue
 	}
@@ -166,6 +167,6 @@ func getBlocksHandler(_ *httpserverutils.ServerContext, _ *http.Request, _ map[s
 }
 
 func postTransactionHandler(_ *httpserverutils.ServerContext, _ *http.Request, _ map[string]string, _ map[string]string,
-	requestBody []byte) (interface{}, *httpserverutils.HandlerError) {
+	requestBody []byte) (interface{}, error) {
 	return nil, controllers.PostTransaction(requestBody)
 }

@@ -3,19 +3,44 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
+	"github.com/daglabs/btcd/apiserver/mqtt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/daglabs/btcd/apiserver/config"
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/dbmodels"
 	"github.com/daglabs/btcd/apiserver/jsonrpc"
+	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/httpserverutils"
 	"github.com/daglabs/btcd/txscript"
+	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/daglabs/btcd/wire"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
-	"strconv"
-	"time"
+)
+
+var (
+	// pendingBlockAddedMsgs holds blockAddedMsgs in order of arrival
+	pendingBlockAddedMsgs []*jsonrpc.BlockAddedMsg
+
+	// pendingChainChangedMsgs holds chainChangedMsgs in order of arrival
+	pendingChainChangedMsgs []*jsonrpc.ChainChangedMsg
+
+	// missingBlocks is a map between missing block hashes and the time
+	// they were first found to be missing. If a block is still missing
+	// after blockMissingTimeout then it gets re-requested from the node.
+	missingBlocks = make(map[string]time.Time)
+)
+
+const (
+	// blockMissingTimeout is the amount of time after which a missing block
+	// gets re-requested from the node.
+	blockMissingTimeout = time.Second * 10
 )
 
 // startSync keeps the node and the API server in sync. On start, it downloads
@@ -35,8 +60,7 @@ func startSync(doneChan chan struct{}) error {
 	log.Infof("Finished syncing past data")
 
 	// Keep the node and the API server in sync
-	sync(client, doneChan)
-	return nil
+	return sync(client, doneChan)
 }
 
 // fetchInitialData downloads all data that's currently missing from
@@ -54,43 +78,25 @@ func fetchInitialData(client *jsonrpc.Client) error {
 }
 
 // sync keeps the API server in sync with the node via notifications
-func sync(client *jsonrpc.Client, doneChan chan struct{}) {
-	// ChainChangedMsgs must be processed in order and there may be times
-	// when we may not be able to process them (e.g. appropriate
-	// BlockAddedMsgs haven't arrived yet). As such, we pop messages from
-	// client.OnChainChanged, make sure we're able to handle them, and
-	// only then push them into nextChainChangedChan for them to be
-	// actually handled.
-	blockAddedMsgHandledChan := make(chan struct{})
-	nextChainChangedChan := make(chan *jsonrpc.ChainChangedMsg)
-	spawn(func() {
-		for chainChanged := range client.OnChainChanged {
-			for {
-				<-blockAddedMsgHandledChan
-				canHandle, err := canHandleChainChangedMsg(chainChanged)
-				if err != nil {
-					panic(err)
-				}
-				if canHandle {
-					break
-				}
-			}
-			nextChainChangedChan <- chainChanged
-		}
-	})
-
+func sync(client *jsonrpc.Client, doneChan chan struct{}) error {
 	// Handle client notifications until we're told to stop
-loop:
 	for {
 		select {
 		case blockAdded := <-client.OnBlockAdded:
-			handleBlockAddedMsg(client, blockAdded)
-			blockAddedMsgHandledChan <- struct{}{}
-		case chainChanged := <-nextChainChangedChan:
-			handleChainChangedMsg(chainChanged)
+			enqueueBlockAddedMsg(blockAdded)
+			err := processBlockAddedMsgs(client)
+			if err != nil {
+				return err
+			}
+		case chainChanged := <-client.OnChainChanged:
+			enqueueChainChangedMsg(chainChanged)
+			err := processChainChangedMsgs()
+			if err != nil {
+				return err
+			}
 		case <-doneChan:
 			log.Infof("startSync stopped")
-			break loop
+			return nil
 		}
 	}
 }
@@ -106,10 +112,10 @@ func syncBlocks(client *jsonrpc.Client) error {
 		return err
 	}
 
-	var blocks []string
-	var rawBlocks []btcjson.GetBlockVerboseResult
+	var rawBlocks []string
+	var verboseBlocks []btcjson.GetBlockVerboseResult
 	for {
-		blocksResult, err := client.GetBlocks(true, false, startHash)
+		blocksResult, err := client.GetBlocks(true, true, startHash)
 		if err != nil {
 			return err
 		}
@@ -117,27 +123,19 @@ func syncBlocks(client *jsonrpc.Client) error {
 			break
 		}
 
-		rawBlocksResult, err := client.GetBlocks(true, true, startHash)
-		if err != nil {
-			return err
-		}
-
 		startHash = &blocksResult.Hashes[len(blocksResult.Hashes)-1]
-		blocks = append(blocks, blocksResult.Blocks...)
-		rawBlocks = append(rawBlocks, rawBlocksResult.RawBlocks...)
+		rawBlocks = append(rawBlocks, blocksResult.RawBlocks...)
+		verboseBlocks = append(verboseBlocks, blocksResult.VerboseBlocks...)
 	}
 
-	return addBlocks(client, blocks, rawBlocks)
+	return addBlocks(client, rawBlocks, verboseBlocks)
 }
 
 // syncSelectedParentChain attempts to download the selected parent
 // chain starting with the bluest chain-block, and then updates the
 // database accordingly.
 func syncSelectedParentChain(client *jsonrpc.Client) error {
-	// Start syncing from the bluest chain-block hash. We use blue
-	// score to simulate the "last" block we have because blue-block
-	// order is the order that the node uses in the various JSONRPC
-	// calls.
+	// Start syncing from the selected tip hash
 	startHash, err := findHashOfBluestBlock(true)
 	if err != nil {
 		return err
@@ -166,31 +164,33 @@ func syncSelectedParentChain(client *jsonrpc.Client) error {
 // blue score in the database. If the database is empty,
 // return nil.
 func findHashOfBluestBlock(mustBeChainBlock bool) (*string, error) {
-	dbTx, err := database.DB()
+	db, err := database.DB()
 	if err != nil {
 		return nil, err
 	}
 
-	var block dbmodels.Block
-	dbQuery := dbTx.Order("blue_score DESC")
+	var blockHashes []string
+	dbQuery := db.Model(&dbmodels.Block{}).
+		Order("blue_score DESC").
+		Limit(1)
 	if mustBeChainBlock {
 		dbQuery = dbQuery.Where(&dbmodels.Block{IsChainBlock: true})
 	}
-	dbResult := dbQuery.First(&block)
+	dbResult := dbQuery.Pluck("block_hash", &blockHashes)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
 		return nil, httpserverutils.NewErrorFromDBErrors("failed to find hash of bluest block: ", dbErrors)
 	}
-	if httpserverutils.IsDBRecordNotFoundError(dbErrors) {
+	if len(blockHashes) == 0 {
 		return nil, nil
 	}
-	return &block.BlockHash, nil
+	return &blockHashes[0], nil
 }
 
 // fetchBlock downloads the serialized block and raw block data of
 // the block with hash blockHash.
 func fetchBlock(client *jsonrpc.Client, blockHash *daghash.Hash) (
-	block string, rawBlock *btcjson.GetBlockVerboseResult, err error) {
+	rawBlock string, verboseBlock *btcjson.GetBlockVerboseResult, err error) {
 	msgBlock, err := client.GetBlock(blockHash, nil)
 	if err != nil {
 		return "", nil, err
@@ -200,21 +200,21 @@ func fetchBlock(client *jsonrpc.Client, blockHash *daghash.Hash) (
 	if err != nil {
 		return "", nil, err
 	}
-	block = hex.EncodeToString(writer.Bytes())
+	rawBlock = hex.EncodeToString(writer.Bytes())
 
-	rawBlock, err = client.GetBlockVerboseTx(blockHash, nil)
+	verboseBlock, err = client.GetBlockVerboseTx(blockHash, nil)
 	if err != nil {
 		return "", nil, err
 	}
-	return block, rawBlock, nil
+	return rawBlock, verboseBlock, nil
 }
 
-// addBlocks inserts data in the given blocks and rawBlocks pairwise
+// addBlocks inserts data in the given rawBlocks and verboseBlocks pairwise
 // into the database. See addBlock for further details.
-func addBlocks(client *jsonrpc.Client, blocks []string, rawBlocks []btcjson.GetBlockVerboseResult) error {
+func addBlocks(client *jsonrpc.Client, rawBlocks []string, verboseBlocks []btcjson.GetBlockVerboseResult) error {
 	for i, rawBlock := range rawBlocks {
-		block := blocks[i]
-		err := addBlock(client, block, rawBlock)
+		verboseBlock := verboseBlocks[i]
+		err := addBlock(client, rawBlock, verboseBlock)
 		if err != nil {
 			return err
 		}
@@ -234,20 +234,21 @@ func doesBlockExist(dbTx *gorm.DB, blockHash string) (bool, error) {
 	return !httpserverutils.IsDBRecordNotFoundError(dbErrors), nil
 }
 
-// addBlocks inserts all the data that could be gleaned out of the serialized
+// addBlocks inserts all the data that could be gleaned out of the verbose
 // block and raw block data into the database. This includes transactions,
 // subnetworks, and addresses.
 // Note that if this function may take a nil dbTx, in which case it would start
 // a database transaction by itself and commit it before returning.
-func addBlock(client *jsonrpc.Client, block string, rawBlock btcjson.GetBlockVerboseResult) error {
+func addBlock(client *jsonrpc.Client, rawBlock string, verboseBlock btcjson.GetBlockVerboseResult) error {
 	db, err := database.DB()
 	if err != nil {
 		return err
 	}
 	dbTx := db.Begin()
+	defer dbTx.RollbackUnlessCommitted()
 
 	// Skip this block if it already exists.
-	blockExists, err := doesBlockExist(dbTx, rawBlock.Hash)
+	blockExists, err := doesBlockExist(dbTx, verboseBlock.Hash)
 	if err != nil {
 		return err
 	}
@@ -256,20 +257,21 @@ func addBlock(client *jsonrpc.Client, block string, rawBlock btcjson.GetBlockVer
 		return nil
 	}
 
-	dbBlock, err := insertBlock(dbTx, rawBlock)
+	dbBlock, err := insertBlock(dbTx, verboseBlock)
 	if err != nil {
 		return err
 	}
-	err = insertBlockParents(dbTx, rawBlock, dbBlock)
+	err = insertBlockParents(dbTx, verboseBlock, dbBlock)
 	if err != nil {
 		return err
 	}
-	err = insertBlockData(dbTx, block, dbBlock)
+	err = insertRawBlockData(dbTx, rawBlock, dbBlock)
 	if err != nil {
 		return err
 	}
 
-	for i, transaction := range rawBlock.RawTx {
+	blockMass := uint64(0)
+	for i, transaction := range verboseBlock.RawTx {
 		dbSubnetwork, err := insertSubnetwork(dbTx, &transaction, client)
 		if err != nil {
 			return err
@@ -278,6 +280,7 @@ func addBlock(client *jsonrpc.Client, block string, rawBlock btcjson.GetBlockVer
 		if err != nil {
 			return err
 		}
+		blockMass += dbTransaction.Mass
 		err = insertTransactionBlock(dbTx, dbBlock, dbTransaction, uint32(i))
 		if err != nil {
 			return err
@@ -292,31 +295,48 @@ func addBlock(client *jsonrpc.Client, block string, rawBlock btcjson.GetBlockVer
 		}
 	}
 
+	dbBlock.Mass = blockMass
+	dbResult := dbTx.Save(dbBlock)
+	dbErrors := dbResult.GetErrors()
+	if httpserverutils.HasDBError(dbErrors) {
+		return httpserverutils.NewErrorFromDBErrors("failed to update block: ", dbErrors)
+	}
+
+	err = mqtt.PublishTransactionsNotifications(verboseBlock.RawTx)
+	if err != nil {
+		return err
+	}
+
 	dbTx.Commit()
+
+	// If the block was previously missing, remove it from
+	// the missing blocks collection.
+	if _, ok := missingBlocks[verboseBlock.Hash]; ok {
+		delete(missingBlocks, verboseBlock.Hash)
+	}
 	return nil
 }
 
-func insertBlock(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult) (*dbmodels.Block, error) {
-	bits, err := strconv.ParseUint(rawBlock.Bits, 16, 32)
+func insertBlock(dbTx *gorm.DB, verboseBlock btcjson.GetBlockVerboseResult) (*dbmodels.Block, error) {
+	bits, err := strconv.ParseUint(verboseBlock.Bits, 16, 32)
 	if err != nil {
 		return nil, err
 	}
 	dbBlock := dbmodels.Block{
-		BlockHash:            rawBlock.Hash,
-		Version:              rawBlock.Version,
-		HashMerkleRoot:       rawBlock.HashMerkleRoot,
-		AcceptedIDMerkleRoot: rawBlock.AcceptedIDMerkleRoot,
-		UTXOCommitment:       rawBlock.UTXOCommitment,
-		Timestamp:            time.Unix(rawBlock.Time, 0),
+		BlockHash:            verboseBlock.Hash,
+		Version:              verboseBlock.Version,
+		HashMerkleRoot:       verboseBlock.HashMerkleRoot,
+		AcceptedIDMerkleRoot: verboseBlock.AcceptedIDMerkleRoot,
+		UTXOCommitment:       verboseBlock.UTXOCommitment,
+		Timestamp:            time.Unix(verboseBlock.Time, 0),
 		Bits:                 uint32(bits),
-		Nonce:                rawBlock.Nonce,
-		BlueScore:            rawBlock.BlueScore,
+		Nonce:                verboseBlock.Nonce,
+		BlueScore:            verboseBlock.BlueScore,
 		IsChainBlock:         false, // This must be false for updateSelectedParentChain to work properly
-		Mass:                 rawBlock.Mass,
 	}
 
 	// Set genesis block as the initial chain block
-	if len(rawBlock.ParentHashes) == 0 {
+	if len(verboseBlock.ParentHashes) == 0 {
 		dbBlock.IsChainBlock = true
 	}
 	dbResult := dbTx.Create(&dbBlock)
@@ -327,14 +347,14 @@ func insertBlock(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult) (*dbmode
 	return &dbBlock, nil
 }
 
-func insertBlockParents(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult, dbBlock *dbmodels.Block) error {
+func insertBlockParents(dbTx *gorm.DB, verboseBlock btcjson.GetBlockVerboseResult, dbBlock *dbmodels.Block) error {
 	// Exit early if this is the genesis block
-	if len(rawBlock.ParentHashes) == 0 {
+	if len(verboseBlock.ParentHashes) == 0 {
 		return nil
 	}
 
-	hashesIn := make([]string, len(rawBlock.ParentHashes))
-	for i, parentHash := range rawBlock.ParentHashes {
+	hashesIn := make([]string, len(verboseBlock.ParentHashes))
+	for i, parentHash := range verboseBlock.ParentHashes {
 		hashesIn[i] = parentHash
 	}
 	var dbParents []dbmodels.Block
@@ -345,8 +365,18 @@ func insertBlockParents(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult, d
 	if httpserverutils.HasDBError(dbErrors) {
 		return httpserverutils.NewErrorFromDBErrors("failed to find blocks: ", dbErrors)
 	}
-	if len(dbParents) != len(rawBlock.ParentHashes) {
-		return errors.Errorf("some parents are missing for block: %s", rawBlock.Hash)
+	if len(dbParents) != len(verboseBlock.ParentHashes) {
+		missingParents := make([]string, 0, len(verboseBlock.ParentHashes)-len(dbParents))
+	outerLoop:
+		for _, parentHash := range verboseBlock.ParentHashes {
+			for _, dbParent := range dbParents {
+				if dbParent.BlockHash == parentHash {
+					continue outerLoop
+				}
+			}
+			missingParents = append(missingParents, parentHash)
+		}
+		return errors.Errorf("some parents are missing for block %s: %s", verboseBlock.Hash, strings.Join(missingParents, ", "))
 	}
 
 	for _, dbParent := range dbParents {
@@ -363,8 +393,8 @@ func insertBlockParents(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult, d
 	return nil
 }
 
-func insertBlockData(dbTx *gorm.DB, block string, dbBlock *dbmodels.Block) error {
-	blockData, err := hex.DecodeString(block)
+func insertRawBlockData(dbTx *gorm.DB, rawBlock string, dbBlock *dbmodels.Block) error {
+	blockData, err := hex.DecodeString(rawBlock)
 	if err != nil {
 		return err
 	}
@@ -417,6 +447,10 @@ func insertTransaction(dbTx *gorm.DB, transaction *btcjson.TxRawResult, dbSubnet
 		return nil, httpserverutils.NewErrorFromDBErrors("failed to find transaction: ", dbErrors)
 	}
 	if httpserverutils.IsDBRecordNotFoundError(dbErrors) {
+		mass, err := calcTxMass(dbTx, transaction)
+		if err != nil {
+			return nil, err
+		}
 		payload, err := hex.DecodeString(transaction.Payload)
 		if err != nil {
 			return nil, err
@@ -427,9 +461,9 @@ func insertTransaction(dbTx *gorm.DB, transaction *btcjson.TxRawResult, dbSubnet
 			LockTime:        transaction.LockTime,
 			SubnetworkID:    dbSubnetwork.ID,
 			Gas:             transaction.Gas,
-			Mass:            transaction.Mass,
 			PayloadHash:     transaction.PayloadHash,
 			Payload:         payload,
+			Mass:            mass,
 		}
 		dbResult := dbTx.Create(&dbTransaction)
 		dbErrors := dbResult.GetErrors()
@@ -438,6 +472,85 @@ func insertTransaction(dbTx *gorm.DB, transaction *btcjson.TxRawResult, dbSubnet
 		}
 	}
 	return &dbTransaction, nil
+}
+
+func calcTxMass(dbTx *gorm.DB, transaction *btcjson.TxRawResult) (uint64, error) {
+	msgTx, err := convertTxRawResultToMsgTx(transaction)
+	if err != nil {
+		return 0, err
+	}
+	prevTxIDs := make([]string, len(transaction.Vin))
+	for i, txIn := range transaction.Vin {
+		prevTxIDs[i] = txIn.TxID
+	}
+	var prevDBTransactionsOutputs []dbmodels.TransactionOutput
+	dbResult := dbTx.
+		Joins("LEFT JOIN `transactions` ON `transactions`.`id` = `transaction_outputs`.`transaction_id`").
+		Where("transactions.transaction_id in (?)", prevTxIDs).
+		Preload("Transaction").
+		Find(&prevDBTransactionsOutputs)
+	dbErrors := dbResult.GetErrors()
+	if len(dbErrors) > 0 {
+		return 0, httpserverutils.NewErrorFromDBErrors("error fetching previous transactions: ", dbErrors)
+	}
+	prevScriptPubKeysMap := make(map[string]map[uint32][]byte)
+	for _, prevDBTransactionsOutput := range prevDBTransactionsOutputs {
+		txID := prevDBTransactionsOutput.Transaction.TransactionID
+		if prevScriptPubKeysMap[txID] == nil {
+			prevScriptPubKeysMap[txID] = make(map[uint32][]byte)
+		}
+		prevScriptPubKeysMap[txID][prevDBTransactionsOutput.Index] = prevDBTransactionsOutput.ScriptPubKey
+	}
+	orderedPrevScriptPubKeys := make([][]byte, len(transaction.Vin))
+	for i, txIn := range transaction.Vin {
+		orderedPrevScriptPubKeys[i] = prevScriptPubKeysMap[txIn.TxID][uint32(i)]
+	}
+	return blockdag.CalcTxMass(util.NewTx(msgTx), orderedPrevScriptPubKeys), nil
+}
+
+func convertTxRawResultToMsgTx(tx *btcjson.TxRawResult) (*wire.MsgTx, error) {
+	txIns := make([]*wire.TxIn, len(tx.Vin))
+	for i, txIn := range tx.Vin {
+		prevTxID, err := daghash.NewTxIDFromStr(txIn.TxID)
+		if err != nil {
+			return nil, err
+		}
+		signatureScript, err := hex.DecodeString(txIn.ScriptSig.Hex)
+		if err != nil {
+			return nil, err
+		}
+		txIns[i] = &wire.TxIn{
+			PreviousOutpoint: wire.Outpoint{
+				TxID:  *prevTxID,
+				Index: txIn.Vout,
+			},
+			SignatureScript: signatureScript,
+			Sequence:        txIn.Sequence,
+		}
+	}
+	txOuts := make([]*wire.TxOut, len(tx.Vout))
+	for i, txOut := range tx.Vout {
+		scriptPubKey, err := hex.DecodeString(txOut.ScriptPubKey.Hex)
+		if err != nil {
+			return nil, err
+		}
+		txOuts[i] = &wire.TxOut{
+			Value:        txOut.Value,
+			ScriptPubKey: scriptPubKey,
+		}
+	}
+	subnetworkID, err := subnetworkid.NewFromStr(tx.Subnetwork)
+	if err != nil {
+		return nil, err
+	}
+	if subnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
+		return wire.NewNativeMsgTx(tx.Version, txIns, txOuts), nil
+	}
+	payload, err := hex.DecodeString(tx.Payload)
+	if err != nil {
+		return nil, err
+	}
+	return wire.NewSubnetworkMsgTx(tx.Version, txIns, txOuts, subnetworkID, tx.Gas, payload), nil
 }
 
 func insertTransactionBlock(dbTx *gorm.DB, dbBlock *dbmodels.Block, dbTransaction *dbmodels.Transaction, index uint32) error {
@@ -494,7 +607,7 @@ func insertTransactionInput(dbTx *gorm.DB, dbTransaction *dbmodels.Transaction, 
 	var dbPreviousTransactionOutput dbmodels.TransactionOutput
 	dbResult := dbTx.
 		Joins("LEFT JOIN `transactions` ON `transactions`.`id` = `transaction_outputs`.`transaction_id`").
-		Where("`transactions`.`transactiond_id` = ? AND `transaction_outputs`.`index` = ?", input.TxID, input.Vout).
+		Where("`transactions`.`transaction_id` = ? AND `transaction_outputs`.`index` = ?", input.TxID, input.Vout).
 		First(&dbPreviousTransactionOutput)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
@@ -554,7 +667,7 @@ func insertTransactionOutputs(dbTx *gorm.DB, transaction *btcjson.TxRawResult, d
 }
 
 func insertAddress(dbTx *gorm.DB, scriptPubKey []byte) (*dbmodels.Address, error) {
-	_, addr, err := txscript.ExtractScriptPubKeyAddress(scriptPubKey, config.ActiveNetParams())
+	_, addr, err := txscript.ExtractScriptPubKeyAddress(scriptPubKey, config.ActiveConfig().NetParams())
 	if err != nil {
 		return nil, err
 	}
@@ -621,6 +734,7 @@ func updateSelectedParentChain(removedChainHashes []string, addedChainBlocks []b
 		return err
 	}
 	dbTx := db.Begin()
+	defer dbTx.RollbackUnlessCommitted()
 
 	for _, removedHash := range removedChainHashes {
 		err := updateRemovedChainHashes(dbTx, removedHash)
@@ -812,79 +926,229 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 	return nil
 }
 
-// handleBlockAddedMsg handles onBlockAdded messages
+// enqueueBlockAddedMsg enqueues onBlockAdded messages to be handled later
+func enqueueBlockAddedMsg(blockAdded *jsonrpc.BlockAddedMsg) {
+	pendingBlockAddedMsgs = append(pendingBlockAddedMsgs, blockAdded)
+}
+
+// processBlockAddedMsgs processes all pending onBlockAdded messages.
+// Messages that cannot yet be processed are re-enqueued.
+func processBlockAddedMsgs(client *jsonrpc.Client) error {
+	var unprocessedBlockAddedMsgs []*jsonrpc.BlockAddedMsg
+	for _, blockAdded := range pendingBlockAddedMsgs {
+		missingHashes, err := missingParentHashes(blockAdded)
+		if err != nil {
+			return errors.Errorf("Could not resolve missing parents: %s", err)
+		}
+		for _, missingHash := range missingHashes {
+			err := handleMissingParent(client, missingHash)
+			if err != nil {
+				log.Errorf("Failed to handle missing parent block %s: %s",
+					missingHash, err)
+			}
+		}
+		if len(missingHashes) > 0 {
+			unprocessedBlockAddedMsgs = append(unprocessedBlockAddedMsgs, blockAdded)
+			continue
+		}
+
+		handleBlockAddedMsg(client, blockAdded)
+	}
+	pendingBlockAddedMsgs = unprocessedBlockAddedMsgs
+	return nil
+}
+
 func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedMsg) {
 	hash := blockAdded.Header.BlockHash()
-	log.Debugf("Got block %s from the RPC server", hash)
-	block, rawBlock, err := fetchBlock(client, hash)
+	log.Debugf("Getting block %s from the RPC server", hash)
+	rawBlock, verboseBlock, err := fetchBlock(client, hash)
 	if err != nil {
 		log.Warnf("Could not fetch block %s: %s", hash, err)
 		return
 	}
-	err = addBlock(client, block, *rawBlock)
+	err = addBlock(client, rawBlock, *verboseBlock)
 	if err != nil {
-		log.Warnf("Could not insert block %s: %s", hash, err)
+		log.Errorf("Could not insert block %s: %s", hash, err)
 		return
 	}
 	log.Infof("Added block %s", hash)
 }
 
-// canHandleChainChangedMsg checks whether we have all the necessary data
-// to successfully handle a ChainChangedMsg.
-func canHandleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) (bool, error) {
-	dbTx, err := database.DB()
+func missingParentHashes(blockAdded *jsonrpc.BlockAddedMsg) ([]string, error) {
+	db, err := database.DB()
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	// Collect all unique referenced block hashes
-	hashes := make(map[string]struct{})
-	for _, removedHash := range chainChanged.RemovedChainBlockHashes {
-		hashes[removedHash.String()] = struct{}{}
-	}
-	for _, addedBlock := range chainChanged.AddedChainBlocks {
-		hashes[addedBlock.Hash.String()] = struct{}{}
-		for _, acceptedBlock := range addedBlock.AcceptedBlocks {
-			hashes[acceptedBlock.Hash.String()] = struct{}{}
-		}
+	// Collect all referenced parent hashes
+	hashesIn := make([]string, 0, len(blockAdded.Header.ParentHashes))
+	for _, hash := range blockAdded.Header.ParentHashes {
+		hashesIn = append(hashesIn, hash.String())
 	}
 
-	// Make sure that all the hashes exist in the database
-	hashesIn := make([]string, len(hashes))
-	i := 0
-	for hash := range hashes {
-		hashesIn[i] = hash
-		i++
-	}
-	var dbBlocksCount int
-	dbResult := dbTx.
+	// Make sure that all the parent hashes exist in the database
+	var dbParentBlocks []dbmodels.Block
+	dbResult := db.
 		Model(&dbmodels.Block{}).
 		Where("block_hash in (?)", hashesIn).
-		Count(&dbBlocksCount)
+		Find(&dbParentBlocks)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
-		return false, httpserverutils.NewErrorFromDBErrors("failed to find block count: ", dbErrors)
+		return nil, httpserverutils.NewErrorFromDBErrors("failed to find parent blocks: ", dbErrors)
 	}
-	if len(hashes) != dbBlocksCount {
-		return false, nil
+	if len(hashesIn) != len(dbParentBlocks) {
+		// Some parent hashes are missing. Collect and return them
+		var missingParentHashes []string
+	outerLoop:
+		for _, hash := range hashesIn {
+			for _, dbParentBlock := range dbParentBlocks {
+				if dbParentBlock.BlockHash == hash {
+					continue outerLoop
+				}
+			}
+			missingParentHashes = append(missingParentHashes, hash)
+		}
+		return missingParentHashes, nil
 	}
 
-	return true, nil
+	return nil, nil
 }
 
-// handleChainChangedMsg handles onChainChanged messages
-func handleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) {
+// handleMissingParent handles missing parent block hashes as follows:
+// a. If it's the first time we've encountered this block hash, add it to
+//    the missing blocks collection with time = now
+// b. Otherwise, if time + blockMissingTimeout < now (that is to say,
+//    blockMissingTimeout had elapsed) then request the block from the
+//    node
+func handleMissingParent(client *jsonrpc.Client, missingParentHash string) error {
+	firstMissingTime, ok := missingBlocks[missingParentHash]
+	if !ok {
+		log.Infof("Parent block %s is missing", missingParentHash)
+		missingBlocks[missingParentHash] = time.Now()
+		return nil
+	}
+	if firstMissingTime.Add(blockMissingTimeout).Before(time.Now()) {
+		hash, err := daghash.NewHashFromStr(missingParentHash)
+		if err != nil {
+			return errors.Errorf("Could not create hash: %s", err)
+		}
+		rawBlock, verboseBlock, err := fetchBlock(client, hash)
+		if err != nil {
+			return errors.Errorf("Could not fetch block %s: %s", hash, err)
+		}
+		err = addBlock(client, rawBlock, *verboseBlock)
+		if err != nil {
+			return errors.Errorf("Could not insert block %s: %s", hash, err)
+		}
+		log.Infof("Parent block %s was fetched after missing for over %s",
+			missingParentHash, blockMissingTimeout)
+	}
+	return nil
+}
+
+// enqueueChainChangedMsg enqueues onChainChanged messages to be handled later
+func enqueueChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) {
+	pendingChainChangedMsgs = append(pendingChainChangedMsgs, chainChanged)
+}
+
+// processChainChangedMsgs processes all pending onChainChanged messages.
+// Messages that cannot yet be processed are re-enqueued.
+func processChainChangedMsgs() error {
+	var unprocessedChainChangedMessages []*jsonrpc.ChainChangedMsg
+	for _, chainChanged := range pendingChainChangedMsgs {
+		canHandle, err := canHandleChainChangedMsg(chainChanged)
+		if err != nil {
+			return errors.Wrap(err, "Could not resolve if can handle ChainChangedMsg")
+		}
+		if !canHandle {
+			unprocessedChainChangedMessages = append(unprocessedChainChangedMessages, chainChanged)
+			continue
+		}
+
+		err = mqtt.PublishUnacceptedTransactionsNotifications(chainChanged.RemovedChainBlockHashes)
+		if err != nil {
+			panic(errors.Errorf("Error while publishing unaccepted transactions notifications %s", err))
+		}
+
+		err = handleChainChangedMsg(chainChanged)
+		if err != nil {
+			return err
+		}
+	}
+	pendingChainChangedMsgs = unprocessedChainChangedMessages
+	return nil
+}
+
+func handleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) error {
 	// Convert the data in chainChanged to something we can feed into
 	// updateSelectedParentChain
 	removedHashes, addedBlocks := convertChainChangedMsg(chainChanged)
 
 	err := updateSelectedParentChain(removedHashes, addedBlocks)
 	if err != nil {
-		log.Warnf("Could not update selected parent chain: %s", err)
-		return
+		return errors.Wrap(err, "Could not update selected parent chain")
 	}
 	log.Infof("Chain changed: removed %d blocks and added %d block",
 		len(removedHashes), len(addedBlocks))
+	err = mqtt.PublishAcceptedTransactionsNotifications(chainChanged.AddedChainBlocks)
+	if err != nil {
+		return errors.Wrap(err, "Error while publishing accepted transactions notifications")
+	}
+	return mqtt.PublishSelectedTipNotification(addedBlocks[len(addedBlocks)-1].Hash)
+}
+
+// canHandleChainChangedMsg checks whether we have all the necessary data
+// to successfully handle a ChainChangedMsg.
+func canHandleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) (bool, error) {
+	db, err := database.DB()
+	if err != nil {
+		return false, err
+	}
+
+	// Collect all referenced block hashes
+	hashesIn := make([]string, 0, len(chainChanged.AddedChainBlocks)+len(chainChanged.RemovedChainBlockHashes))
+	for _, hash := range chainChanged.RemovedChainBlockHashes {
+		hashesIn = append(hashesIn, hash.String())
+	}
+	for _, block := range chainChanged.AddedChainBlocks {
+		hashesIn = append(hashesIn, block.Hash.String())
+	}
+
+	// Make sure that all the hashes exist in the database
+	var dbBlocks []dbmodels.Block
+	dbResult := db.
+		Model(&dbmodels.Block{}).
+		Where("block_hash in (?)", hashesIn).
+		Find(&dbBlocks)
+	dbErrors := dbResult.GetErrors()
+	if httpserverutils.HasDBError(dbErrors) {
+		return false, httpserverutils.NewErrorFromDBErrors("failed to find blocks: ", dbErrors)
+	}
+	if len(hashesIn) != len(dbBlocks) {
+		return false, nil
+	}
+
+	// Make sure that chain changes are valid for this message
+	hashesToIsChainBlocks := make(map[string]bool)
+	for _, dbBlock := range dbBlocks {
+		hashesToIsChainBlocks[dbBlock.BlockHash] = dbBlock.IsChainBlock
+	}
+	for _, hash := range chainChanged.RemovedChainBlockHashes {
+		isDBBlockChainBlock := hashesToIsChainBlocks[hash.String()]
+		if !isDBBlockChainBlock {
+			return false, nil
+		}
+		hashesToIsChainBlocks[hash.String()] = false
+	}
+	for _, block := range chainChanged.AddedChainBlocks {
+		isDBBlockChainBlock := hashesToIsChainBlocks[block.Hash.String()]
+		if isDBBlockChainBlock {
+			return false, nil
+		}
+		hashesToIsChainBlocks[block.Hash.String()] = true
+	}
+
+	return true, nil
 }
 
 func convertChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) (

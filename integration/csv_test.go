@@ -435,7 +435,7 @@ func TestBIP0068AndCsv(t *testing.T) {
 
 	// Now mine 10 additional blocks giving the inputs generated above a
 	// age of 11. Space out each block 10 minutes after the previous block.
-	parentBlockHash, err := r.Node.GetBestBlockHash()
+	parentBlockHash, err := r.Node.GetSelectedTipHash()
 	if err != nil {
 		t.Fatalf("unable to get prior block hash: %v", err)
 	}

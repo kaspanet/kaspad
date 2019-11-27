@@ -54,7 +54,7 @@ const (
 const (
 	ErrRPCBlockNotFound      RPCErrorCode = -5
 	ErrRPCBlockCount         RPCErrorCode = -5
-	ErrRPCBestBlockHash      RPCErrorCode = -5
+	ErrRPCSelectedTipHash    RPCErrorCode = -5
 	ErrRPCDifficulty         RPCErrorCode = -5
 	ErrRPCOutOfRange         RPCErrorCode = -1
 	ErrRPCNoTxInfo           RPCErrorCode = -5

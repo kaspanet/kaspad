@@ -1,6 +1,8 @@
 package testutil
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // AreErrorsEqual returns whether errors have the same type
 // and same error string from .Error().

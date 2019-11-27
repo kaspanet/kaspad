@@ -59,9 +59,9 @@ func (bi *blockImporter) readBlock() ([]byte, error) {
 		// No block and no error means there are no more blocks to read.
 		return nil, nil
 	}
-	if net != uint32(activeNetParams.Net) {
+	if net != uint32(ActiveConfig().NetParams().Net) {
 		return nil, errors.Errorf("network mismatch -- got %x, want %x",
-			net, uint32(activeNetParams.Net))
+			net, uint32(ActiveConfig().NetParams().Net))
 	}
 
 	// Read the block length and ensure it is sane.
@@ -311,7 +311,7 @@ func newBlockImporter(db database.DB, r io.ReadSeeker) (*blockImporter, error) {
 	}
 	if cfg.AddrIndex {
 		log.Info("Address index is enabled")
-		indexes = append(indexes, indexers.NewAddrIndex(activeNetParams))
+		indexes = append(indexes, indexers.NewAddrIndex(ActiveConfig().NetParams()))
 	}
 
 	// Create an index manager if any of the optional indexes are enabled.
@@ -322,7 +322,7 @@ func newBlockImporter(db database.DB, r io.ReadSeeker) (*blockImporter, error) {
 
 	dag, err := blockdag.New(&blockdag.Config{
 		DB:           db,
-		DAGParams:    activeNetParams,
+		DAGParams:    ActiveConfig().NetParams(),
 		TimeSource:   blockdag.NewMedianTime(),
 		IndexManager: indexManager,
 	})

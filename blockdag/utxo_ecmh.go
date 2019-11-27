@@ -10,7 +10,9 @@ import (
 
 const ecmhCacheSize = 4_000_000
 
-var ecmhCache = lru.New(ecmhCacheSize)
+var (
+	utxoToECMHCache = lru.New(ecmhCacheSize)
+)
 
 func utxoMultiset(entry *UTXOEntry, outpoint *wire.Outpoint) (*btcec.Multiset, error) {
 	w := &bytes.Buffer{}
@@ -20,10 +22,11 @@ func utxoMultiset(entry *UTXOEntry, outpoint *wire.Outpoint) (*btcec.Multiset, e
 	}
 	serializedUTXO := w.Bytes()
 	utxoHash := daghash.DoubleHashH(serializedUTXO)
-	if cachedMSPoint, ok := ecmhCache.Get(utxoHash); ok {
+
+	if cachedMSPoint, ok := utxoToECMHCache.Get(utxoHash); ok {
 		return cachedMSPoint.(*btcec.Multiset), nil
 	}
 	msPoint := btcec.NewMultiset(btcec.S256()).Add(serializedUTXO)
-	ecmhCache.Add(utxoHash, msPoint)
+	utxoToECMHCache.Add(utxoHash, msPoint)
 	return msPoint, nil
 }

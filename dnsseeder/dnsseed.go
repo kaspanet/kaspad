@@ -55,12 +55,12 @@ func creep() {
 
 	onAddr := make(chan struct{})
 	onVersion := make(chan struct{})
-	config := peer.Config{
+	cfg := peer.Config{
 		UserAgentName:    "daglabs-sniffer",
 		UserAgentVersion: "0.0.1",
-		DAGParams:        activeNetParams,
+		DAGParams:        ActiveConfig().NetParams(),
 		DisableRelayTx:   true,
-		SelectedTip:      func() *daghash.Hash { return activeNetParams.GenesisBlock.BlockHash() },
+		SelectedTip:      func() *daghash.Hash { return ActiveConfig().NetParams().GenesisBlock.BlockHash() },
 
 		Listeners: peer.MessageListeners{
 			OnAddr: func(p *peer.Peer, msg *wire.MsgAddr) {
@@ -87,7 +87,7 @@ func creep() {
 		peers := amgr.Addresses()
 		if len(peers) == 0 && amgr.AddressCount() == 0 {
 			// Add peers discovered through DNS to the address manager.
-			connmgr.SeedFromDNS(activeNetParams, requiredServices, true, nil, hostLookup, func(addrs []*wire.NetAddress) {
+			connmgr.SeedFromDNS(ActiveConfig().NetParams(), requiredServices, true, nil, hostLookup, func(addrs []*wire.NetAddress) {
 				amgr.AddAddresses(addrs)
 			})
 			peers = amgr.Addresses()
@@ -116,7 +116,7 @@ func creep() {
 				defer wgCreep.Done()
 
 				host := net.JoinHostPort(addr.IP.String(), strconv.Itoa(int(addr.Port)))
-				p, err := peer.NewOutboundPeer(&config, host)
+				p, err := peer.NewOutboundPeer(&cfg, host)
 				if err != nil {
 					log.Warnf("NewOutboundPeer on %v: %v",
 						host, err)
@@ -156,7 +156,7 @@ func creep() {
 }
 
 func main() {
-	defer panics.HandlePanic(log, backendLog)
+	defer panics.HandlePanic(log, backendLog, nil)
 	cfg, err := loadConfig()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "loadConfig: %v\n", err)
@@ -168,9 +168,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	peersDefaultPort, err = strconv.Atoi(activeNetParams.DefaultPort)
+	peersDefaultPort, err = strconv.Atoi(ActiveConfig().NetParams().DefaultPort)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Invalid peers default port %s: %v\n", activeNetParams.DefaultPort, err)
+		fmt.Fprintf(os.Stderr, "Invalid peers default port %s: %v\n", ActiveConfig().NetParams().DefaultPort, err)
 		os.Exit(1)
 	}
 

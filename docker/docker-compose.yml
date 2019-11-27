@@ -10,6 +10,7 @@ services:
       "./btcd",
       "--devnet",
       "--addrindex",
+      "--acceptanceindex",
       # "--generate",
       "--nodnsseed",
       "--miningaddr=dagtest:qrgufg4qzfqacfzrf6xvx46aqedr5nke3qv6a74fex",
@@ -32,6 +33,7 @@ services:
       "./btcd",
       "--devnet",
       "--addrindex",
+      "--acceptanceindex",
       "--connect=first",
       "--rpcuser=user",
       "--rpcpass=pass",
@@ -61,6 +63,7 @@ services:
       # here starts btcd parameters
       "--devnet",
       "--addrindex",
+      "--acceptanceindex",
       "--connect=first",
       "--rpcuser=user",
       "--rpcpass=pass",

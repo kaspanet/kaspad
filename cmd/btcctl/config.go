@@ -6,7 +6,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
+	"github.com/daglabs/btcd/config"
 	"io/ioutil"
 	"net"
 	"os"
@@ -32,7 +32,13 @@ var (
 	defaultConfigFile  = filepath.Join(btcctlHomeDir, "btcctl.conf")
 	defaultRPCServer   = "localhost"
 	defaultRPCCertFile = filepath.Join(btcdHomeDir, "rpc.cert")
+	activeConfig       *ConfigFlags
 )
+
+// ActiveConfig returns the active configuration struct
+func ActiveConfig() *ConfigFlags {
+	return activeConfig
+}
 
 // listCommands categorizes and lists all of the usable commands along with
 // their one-line usage.
@@ -82,10 +88,10 @@ func listCommands() {
 	}
 }
 
-// config defines the configuration options for btcctl.
+// ConfigFlags defines the configuration options for btcctl.
 //
 // See loadConfig for details on the configuration load process.
-type config struct {
+type ConfigFlags struct {
 	ShowVersion   bool   `short:"V" long:"version" description:"Display version information and exit"`
 	ListCommands  bool   `short:"l" long:"listcommands" description:"List all of the supported commands and exit"`
 	ConfigFile    string `short:"C" long:"configfile" description:"Path to configuration file"`
@@ -97,10 +103,8 @@ type config struct {
 	Proxy         string `long:"proxy" description:"Connect via SOCKS5 proxy (eg. 127.0.0.1:9050)"`
 	ProxyUser     string `long:"proxyuser" description:"Username for proxy server"`
 	ProxyPass     string `long:"proxypass" default-mask:"-" description:"Password for proxy server"`
-	TestNet       bool   `long:"testnet" description:"Connect to testnet"`
-	SimNet        bool   `long:"simnet" description:"Connect to the simulation test network"`
-	DevNet        bool   `long:"devnet" description:"Connect to the development test network"`
 	TLSSkipVerify bool   `long:"skipverify" description:"Do not verify tls certificates (not recommended!)"`
+	config.NetworkFlags
 }
 
 // normalizeAddress returns addr with the passed default port appended if
@@ -151,9 +155,9 @@ func cleanAndExpandPath(path string) string {
 // The above results in functioning properly without any config settings
 // while still allowing the user to override settings with config files and
 // command line options.  Command line options always take precedence.
-func loadConfig() (*config, []string, error) {
+func loadConfig() (*ConfigFlags, []string, error) {
 	// Default config.
-	cfg := config{
+	activeConfig = &ConfigFlags{
 		ConfigFile: defaultConfigFile,
 		RPCServer:  defaultRPCServer,
 		RPCCert:    defaultRPCCertFile,
@@ -163,8 +167,8 @@ func loadConfig() (*config, []string, error) {
 	// file, the version flag, or the list commands flag was specified.  Any
 	// errors aside from the help message error can be ignored here since
 	// they will be caught by the final parse below.
-	preCfg := cfg
-	preParser := flags.NewParser(&preCfg, flags.HelpFlag)
+	preCfg := activeConfig
+	preParser := flags.NewParser(preCfg, flags.HelpFlag)
 	_, err := preParser.Parse()
 	if err != nil {
 		if e, ok := err.(*flags.Error); ok && e.Type == flags.ErrHelp {
@@ -205,7 +209,7 @@ func loadConfig() (*config, []string, error) {
 	}
 
 	// Load additional config from file.
-	parser := flags.NewParser(&cfg, flags.Default)
+	parser := flags.NewParser(activeConfig, flags.Default)
 	err = flags.NewIniParser(parser).ParseFile(preCfg.ConfigFile)
 	if err != nil {
 		if _, ok := err.(*os.PathError); !ok {
@@ -225,34 +229,19 @@ func loadConfig() (*config, []string, error) {
 		return nil, nil, err
 	}
 
-	// Multiple networks can't be selected simultaneously.
-	numNets := 0
-	if cfg.TestNet {
-		numNets++
-	}
-	if cfg.SimNet {
-		numNets++
-	}
-	if cfg.DevNet {
-		numNets++
-	}
-	if numNets > 1 {
-		str := "%s: The multiple net params (testnet, simnet, devnet etc.) can't be used " +
-			"together -- choose one of them"
-		err := errors.Errorf(str, "loadConfig")
-		fmt.Fprintln(os.Stderr, err)
+	err = activeConfig.ResolveNetwork(parser)
+	if err != nil {
 		return nil, nil, err
 	}
-
 	// Handle environment variable expansion in the RPC certificate path.
-	cfg.RPCCert = cleanAndExpandPath(cfg.RPCCert)
+	activeConfig.RPCCert = cleanAndExpandPath(activeConfig.RPCCert)
 
 	// Add default port to RPC server based on --testnet and --simnet flags
 	// if needed.
-	cfg.RPCServer = normalizeAddress(cfg.RPCServer, cfg.TestNet,
-		cfg.SimNet, cfg.DevNet)
+	activeConfig.RPCServer = normalizeAddress(activeConfig.RPCServer, activeConfig.TestNet,
+		activeConfig.SimNet, activeConfig.DevNet)
 
-	return &cfg, remainingArgs, nil
+	return activeConfig, remainingArgs, nil
 }
 
 // createDefaultConfig creates a basic config file at the given destination path.

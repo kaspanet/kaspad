@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/txscript"
@@ -142,7 +141,7 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 // to a raw transaction JSON object.
 func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 	txID string, blkHeader *wire.BlockHeader, blkHash string,
-	acceptingBlock *daghash.Hash, confirmations *uint64, isInMempool bool, txMass uint64) (*btcjson.TxRawResult, error) {
+	acceptingBlock *daghash.Hash, confirmations *uint64, isInMempool bool) (*btcjson.TxRawResult, error) {
 
 	mtxHex, err := messageToHex(mtx)
 	if err != nil {
@@ -165,7 +164,6 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 		LockTime:    mtx.LockTime,
 		Subnetwork:  mtx.SubnetworkID.String(),
 		Gas:         mtx.Gas,
-		Mass:        txMass,
 		PayloadHash: payloadHash,
 		Payload:     hex.EncodeToString(mtx.Payload),
 	}
@@ -205,6 +203,9 @@ func getDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
 	return diff
 }
 
+// buildGetBlockVerboseResult takes a block and convert it to btcjson.GetBlockVerboseResult
+//
+// This function MUST be called with the DAG state lock held (for reads).
 func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) (*btcjson.GetBlockVerboseResult, error) {
 	hash := block.Hash()
 	params := s.cfg.DAGParams
@@ -228,7 +229,7 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		nextHashStrings = daghash.Strings(childHashes)
 	}
 
-	blockConfirmations, err := s.cfg.DAG.BlockConfirmationsByHash(hash)
+	blockConfirmations, err := s.cfg.DAG.BlockConfirmationsByHashNoLock(hash)
 	if err != nil {
 		context := "Could not get block confirmations"
 		return nil, internalRPCError(err.Error(), context)
@@ -237,17 +238,6 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 	blockBlueScore, err := s.cfg.DAG.BlueScoreByBlockHash(hash)
 	if err != nil {
 		context := "Could not get block blue score"
-		return nil, internalRPCError(err.Error(), context)
-	}
-
-	pastUTXO, err := s.cfg.DAG.BlockPastUTXO(block.Hash())
-	if err != nil {
-		context := "Could not get block past utxo"
-		return nil, internalRPCError(err.Error(), context)
-	}
-	blockMass, err := blockdag.CalcBlockMass(pastUTXO, block.Transactions())
-	if err != nil {
-		context := "Could not get block mass"
 		return nil, internalRPCError(err.Error(), context)
 	}
 
@@ -266,7 +256,6 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		Confirmations:        blockConfirmations,
 		Height:               blockChainHeight,
 		BlueScore:            blockBlueScore,
-		Mass:                 blockMass,
 		IsChainBlock:         isChainBlock,
 		Size:                 int32(block.MsgBlock().SerializeSize()),
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
@@ -293,18 +282,14 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 				if err != nil {
 					return nil, err
 				}
-				txConfirmations, err := txConfirmations(s, tx.ID())
+				txConfirmations, err := txConfirmationsNoLock(s, tx.ID())
 				if err != nil {
 					return nil, err
 				}
 				confirmations = &txConfirmations
 			}
-			txMass, err := blockdag.CalcTxMassFromUTXOSet(tx, pastUTXO)
-			if err != nil {
-				return nil, err
-			}
 			rawTxn, err := createTxRawResult(params, tx.MsgTx(), tx.ID().String(),
-				&blockHeader, hash.String(), acceptingBlock, confirmations, false, txMass)
+				&blockHeader, hash.String(), acceptingBlock, confirmations, false)
 			if err != nil {
 				return nil, err
 			}
@@ -328,15 +313,15 @@ func collectChainBlocks(s *Server, hashes []*daghash.Hash) ([]btcjson.ChainBlock
 		}
 
 		acceptedBlocks := make([]btcjson.AcceptedBlock, 0, len(acceptanceData))
-		for blockHash, blockAcceptanceData := range acceptanceData {
-			acceptedTxIds := make([]string, 0, len(blockAcceptanceData))
-			for _, txAcceptanceData := range blockAcceptanceData {
+		for _, blockAcceptanceData := range acceptanceData {
+			acceptedTxIds := make([]string, 0, len(blockAcceptanceData.TxAcceptanceData))
+			for _, txAcceptanceData := range blockAcceptanceData.TxAcceptanceData {
 				if txAcceptanceData.IsAccepted {
 					acceptedTxIds = append(acceptedTxIds, txAcceptanceData.Tx.ID().String())
 				}
 			}
 			acceptedBlock := btcjson.AcceptedBlock{
-				Hash:          blockHash.String(),
+				Hash:          blockAcceptanceData.BlockHash.String(),
 				AcceptedTxIDs: acceptedTxIds,
 			}
 			acceptedBlocks = append(acceptedBlocks, acceptedBlock)
@@ -351,6 +336,10 @@ func collectChainBlocks(s *Server, hashes []*daghash.Hash) ([]btcjson.ChainBlock
 	return chainBlocks, nil
 }
 
+// hashesToGetBlockVerboseResults takes block hashes and returns their
+// correspondent block verbose.
+//
+// This function MUST be called with the DAG state lock held (for reads).
 func hashesToGetBlockVerboseResults(s *Server, hashes []*daghash.Hash) ([]btcjson.GetBlockVerboseResult, error) {
 	getBlockVerboseResults := make([]btcjson.GetBlockVerboseResult, 0, len(hashes))
 	for _, blockHash := range hashes {
@@ -373,11 +362,13 @@ func hashesToGetBlockVerboseResults(s *Server, hashes []*daghash.Hash) ([]btcjso
 	return getBlockVerboseResults, nil
 }
 
-// txConfirmations returns the confirmations number for the given transaction
+// txConfirmationsNoLock returns the confirmations number for the given transaction
 // The confirmations number is defined as follows:
 // If the transaction is in the mempool/in a red block/is a double spend -> 0
 // Otherwise -> The confirmations number of the accepting block
-func txConfirmations(s *Server, txID *daghash.TxID) (uint64, error) {
+//
+// This function MUST be called with the DAG state lock held (for reads).
+func txConfirmationsNoLock(s *Server, txID *daghash.TxID) (uint64, error) {
 	if s.cfg.TxIndex == nil {
 		return 0, errors.New("transaction index must be enabled (--txindex)")
 	}
@@ -390,10 +381,16 @@ func txConfirmations(s *Server, txID *daghash.TxID) (uint64, error) {
 		return 0, nil
 	}
 
-	confirmations, err := s.cfg.DAG.BlockConfirmationsByHash(acceptingBlock)
+	confirmations, err := s.cfg.DAG.BlockConfirmationsByHashNoLock(acceptingBlock)
 	if err != nil {
 		return 0, errors.Errorf("could not get confirmations for block that accepted tx %s: %s", txID, err)
 	}
 
 	return confirmations, nil
+}
+
+func txConfirmations(s *Server, txID *daghash.TxID) (uint64, error) {
+	s.cfg.DAG.RLock()
+	defer s.cfg.DAG.RUnlock()
+	return txConfirmationsNoLock(s, txID)
 }

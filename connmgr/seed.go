@@ -43,7 +43,7 @@ func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag, incl
 	subnetworkID *subnetworkid.SubnetworkID, lookupFn LookupFunc, seedFn OnSeed) {
 
 	var dnsSeeds []string
-	mainConfig := config.MainConfig()
+	mainConfig := config.ActiveConfig()
 	if mainConfig != nil && mainConfig.DNSSeed != "" {
 		dnsSeeds = []string{mainConfig.DNSSeed}
 	} else {

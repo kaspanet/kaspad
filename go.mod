@@ -5,11 +5,13 @@ go 1.13
 require (
 	bou.ke/monkey v1.0.1
 	github.com/aead/siphash v1.0.1
+	github.com/aws/aws-sdk-go v1.25.37
 	github.com/btcsuite/go-socks v0.0.0-20170105172521-4720035b7bfd
 	github.com/btcsuite/goleveldb v1.0.0
 	github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792
 	github.com/btcsuite/winsvc v1.0.0
 	github.com/davecgh/go-spew v1.1.1
+	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/golang-migrate/migrate/v4 v4.6.1
 	github.com/golang/groupcache v0.0.0-20191002201903-404acd9df4cc
 	github.com/gorilla/handlers v1.4.2
