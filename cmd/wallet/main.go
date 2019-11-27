@@ -3,11 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-
-	"github.com/daglabs/btcd/dagconfig"
 )
-
-var activeNetParams = dagconfig.MainNetParams
 
 func main() {
 	subCommand, config := parseCommandLine()

@@ -7,12 +7,11 @@ import (
 	"net/http"
 
 	"github.com/daglabs/btcd/apiserver/apimodels"
-	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/util"
 	"github.com/pkg/errors"
 )
 
-func getUTXOs(apiAddress string, address string) ([]apimodels.TransactionOutputResponse, error) {
+func getUTXOs(apiAddress string, address string) ([]*apimodels.TransactionOutputResponse, error) {
 	resp, err := http.Get(fmt.Sprintf("%s/utxos/%s", apiAddress, address))
 	if err != nil {
 		return nil, errors.Wrap(err, "Error getting utxos from API server")
@@ -23,7 +22,7 @@ func getUTXOs(apiAddress string, address string) ([]apimodels.TransactionOutputR
 		return nil, errors.Wrap(err, "Error reading utxos from API server response")
 	}
 
-	utxos := []apimodels.TransactionOutputResponse{}
+	utxos := []*apimodels.TransactionOutputResponse{}
 
 	err = json.Unmarshal(body, utxos)
 	if err != nil {
@@ -41,10 +40,10 @@ func balance(conf *balanceConfig) error {
 
 	var availableBalance, pendingBalance uint64 = 0, 0
 	for _, utxo := range utxos {
-		if *utxo.IsCoinbase && *utxo.Confirmations < dagconfig.MainNetParams.BlockCoinbaseMaturity {
-			pendingBalance += utxo.Value
-		} else {
+		if utxo.IsSpendable != nil && *utxo.IsSpendable {
 			availableBalance += utxo.Value
+		} else {
+			pendingBalance += utxo.Value
 		}
 	}
 
