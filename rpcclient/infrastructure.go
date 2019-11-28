@@ -782,7 +782,11 @@ func newFutureError(err error) chan *response {
 func receiveFuture(f chan *response) ([]byte, error) {
 	// Wait for a response on the returned channel.
 	r := <-f
-	return r.result, r.err
+	var err error
+	if r.err != nil {
+		err = errors.Wrap(r.err, "got error from response channel")
+	}
+	return r.result, err
 }
 
 // sendPost sends the passed request to the server by issuing an HTTP POST

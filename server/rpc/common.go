@@ -275,21 +275,8 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		txns := block.Transactions()
 		rawTxns := make([]btcjson.TxRawResult, len(txns))
 		for i, tx := range txns {
-			var acceptingBlock *daghash.Hash
-			var confirmations *uint64
-			if s.cfg.TxIndex != nil {
-				acceptingBlock, err = s.cfg.TxIndex.BlockThatAcceptedTx(s.cfg.DAG, tx.ID())
-				if err != nil {
-					return nil, err
-				}
-				txConfirmations, err := txConfirmationsNoLock(s, tx.ID())
-				if err != nil {
-					return nil, err
-				}
-				confirmations = &txConfirmations
-			}
 			rawTxn, err := createTxRawResult(params, tx.MsgTx(), tx.ID().String(),
-				&blockHeader, hash.String(), acceptingBlock, confirmations, false)
+				&blockHeader, hash.String(), nil, nil, false)
 			if err != nil {
 				return nil, err
 			}
