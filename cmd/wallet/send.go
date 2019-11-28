@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/daglabs/btcd/apiserver/apimodels"
@@ -52,6 +53,10 @@ func send(conf *sendConfig) error {
 		return err
 	}
 
+	return sendTx(conf, msgTx)
+}
+
+func sendTx(conf *sendConfig, msgTx *wire.MsgTx) error {
 	txBuffer := bytes.NewBuffer(make([]byte, 0, msgTx.SerializeSize()))
 	if err := msgTx.BtcEncode(txBuffer, 0); err != nil {
 		return err
@@ -61,12 +66,22 @@ func send(conf *sendConfig) error {
 	}
 	txBytes, err := json.Marshal(rawTx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Error marshalling transaction to json")
 	}
 
-	http.Post(fmt.Sprintf("%s/transaction", conf.APIAddress), "application/json", bytes.NewBuffer(txBytes))
+	response, err := http.Post(fmt.Sprintf("%s/transaction", conf.APIAddress), "application/json", bytes.NewBuffer(txBytes))
+	if err != nil {
+		return errors.Wrap(err, "Error posting transaction to server")
+	}
+	defer response.Body.Close()
 
-	return nil
+	if response.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(response.Body)
+		return errors.Errorf("Got status %d(%s) from server. \nResponse Body: %s",
+			response.StatusCode, http.StatusText(response.StatusCode), body)
+	}
+
+	return err
 }
 
 func generateTx(privateKey *btcec.PrivateKey, selectedUTXOs []*apimodels.TransactionOutputResponse, satoshisToSend uint64, totalValue uint64,
