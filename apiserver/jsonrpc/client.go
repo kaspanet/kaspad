@@ -71,7 +71,7 @@ func Connect() error {
 		User:           cfg.RPCUser,
 		Pass:           cfg.RPCPassword,
 		DisableTLS:     cfg.DisableTLS,
-		RequestTimeout: time.Second * 5,
+		RequestTimeout: time.Second * 60,
 	}
 
 	if !cfg.DisableTLS {

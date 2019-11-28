@@ -38,7 +38,9 @@ func handleGetSelectedTip(s *Server, cmd interface{}, closeChan <-chan struct{})
 		return nil, internalRPCError(err.Error(), context)
 	}
 
-	blockVerboseResult, err := buildGetBlockVerboseResult(s, blk, getSelectedTipCmd.VerboseTx == nil || !*getSelectedTipCmd.VerboseTx)
+	isVerboseTx := getSelectedTipCmd.VerboseTx == nil || !*getSelectedTipCmd.VerboseTx
+	shouldIncludeTxConfirmationsAndAcceptingBlock := isVerboseTx && s.cfg.TxIndex != nil
+	blockVerboseResult, err := buildGetBlockVerboseResult(s, blk, getSelectedTipCmd.VerboseTx == nil || !*getSelectedTipCmd.VerboseTx, shouldIncludeTxConfirmationsAndAcceptingBlock)
 	if err != nil {
 		return nil, err
 	}

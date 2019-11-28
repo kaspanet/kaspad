@@ -57,7 +57,6 @@ func startSync(doneChan chan struct{}) error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Finished syncing past data")
 
 	// Keep the node and the API server in sync
 	return sync(client, doneChan)
@@ -66,14 +65,17 @@ func startSync(doneChan chan struct{}) error {
 // fetchInitialData downloads all data that's currently missing from
 // the database.
 func fetchInitialData(client *jsonrpc.Client) error {
+	log.Infof("Syncing past blocks")
 	err := syncBlocks(client)
 	if err != nil {
 		return err
 	}
+	log.Infof("Syncing past selected parent chain")
 	err = syncSelectedParentChain(client)
 	if err != nil {
 		return err
 	}
+	log.Infof("Finished syncing past data")
 	return nil
 }
 
@@ -115,6 +117,11 @@ func syncBlocks(client *jsonrpc.Client) error {
 	var rawBlocks []string
 	var verboseBlocks []btcjson.GetBlockVerboseResult
 	for {
+		startHashStr := "<nil>"
+		if startHash != nil {
+			startHashStr = *startHash
+		}
+		log.Infof("Calling getBlocks with start hash %s", startHashStr)
 		blocksResult, err := client.GetBlocks(true, true, startHash)
 		if err != nil {
 			return err
@@ -142,6 +149,11 @@ func syncSelectedParentChain(client *jsonrpc.Client) error {
 	}
 
 	for {
+		startHashStr := "<nil>"
+		if startHash != nil {
+			startHashStr = *startHash
+		}
+		log.Infof("Calling getChainFromBlock with start hash %s", startHashStr)
 		chainFromBlockResult, err := client.GetChainFromBlock(false, startHash)
 		if err != nil {
 			return err
