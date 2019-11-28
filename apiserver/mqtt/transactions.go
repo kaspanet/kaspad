@@ -96,7 +96,7 @@ func PublishAcceptedTransactionsNotifications(addedChainBlocks []*rpcclient.Chai
 // PublishUnacceptedTransactionsNotifications publishes notification for each unaccepted transaction of the given chain-block
 func PublishUnacceptedTransactionsNotifications(removedChainHashes []*daghash.Hash) error {
 	for _, removedHash := range removedChainHashes {
-		transactionIDs, err := controllers.GetAcceptedTransactionIDsByBlockHashHandler(removedHash)
+		transactionIDs, err := controllers.GetAcceptedTransactionIDsByBlockHashHandler(removedHash.String())
 		if err != nil {
 			return err
 		}
