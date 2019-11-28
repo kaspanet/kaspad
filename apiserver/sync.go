@@ -57,7 +57,6 @@ func startSync(doneChan chan struct{}) error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Finished syncing past data")
 
 	// Keep the node and the API server in sync
 	return sync(client, doneChan)
@@ -66,14 +65,17 @@ func startSync(doneChan chan struct{}) error {
 // fetchInitialData downloads all data that's currently missing from
 // the database.
 func fetchInitialData(client *jsonrpc.Client) error {
+	log.Infof("Syncing past blocks")
 	err := syncBlocks(client)
 	if err != nil {
 		return err
 	}
+	log.Infof("Syncing past selected parent chain")
 	err = syncSelectedParentChain(client)
 	if err != nil {
 		return err
 	}
+	log.Infof("Finished syncing past data")
 	return nil
 }
 
@@ -101,6 +103,13 @@ func sync(client *jsonrpc.Client, doneChan chan struct{}) error {
 	}
 }
 
+func stringPointerToString(str *string) string {
+	if str == nil {
+		return "<nil>"
+	}
+	return *str
+}
+
 // syncBlocks attempts to download all DAG blocks starting with
 // the bluest block, and then inserts them into the database.
 func syncBlocks(client *jsonrpc.Client) error {
@@ -115,6 +124,7 @@ func syncBlocks(client *jsonrpc.Client) error {
 	var rawBlocks []string
 	var verboseBlocks []btcjson.GetBlockVerboseResult
 	for {
+		log.Debugf("Calling getBlocks with start hash %v", stringPointerToString(startHash))
 		blocksResult, err := client.GetBlocks(true, true, startHash)
 		if err != nil {
 			return err
@@ -142,6 +152,7 @@ func syncSelectedParentChain(client *jsonrpc.Client) error {
 	}
 
 	for {
+		log.Debugf("Calling getChainFromBlock with start hash %s", stringPointerToString(startHash))
 		chainFromBlockResult, err := client.GetChainFromBlock(false, startHash)
 		if err != nil {
 			return err
