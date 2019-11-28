@@ -206,13 +206,7 @@ func getDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
 // buildGetBlockVerboseResult takes a block and convert it to btcjson.GetBlockVerboseResult
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx, shouldIncludeTxConfirmationsAndAcceptingBlock bool) (*btcjson.GetBlockVerboseResult, error) {
-	if shouldIncludeTxConfirmationsAndAcceptingBlock && !isVerboseTx {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCInvalidRequest.Code,
-			Message: "shouldIncludeTxConfirmationsAndAcceptingBlock can't be true if isVerboseTx is false",
-		}
-	}
+func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) (*btcjson.GetBlockVerboseResult, error) {
 	hash := block.Hash()
 	params := s.cfg.DAGParams
 	blockHeader := block.MsgBlock().Header
@@ -281,21 +275,8 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx, shoul
 		txns := block.Transactions()
 		rawTxns := make([]btcjson.TxRawResult, len(txns))
 		for i, tx := range txns {
-			var acceptingBlock *daghash.Hash
-			var confirmations *uint64
-			if shouldIncludeTxConfirmationsAndAcceptingBlock {
-				acceptingBlock, err = s.cfg.TxIndex.BlockThatAcceptedTx(s.cfg.DAG, tx.ID())
-				if err != nil {
-					return nil, err
-				}
-				txConfirmations, err := txConfirmationsNoLock(s, tx.ID())
-				if err != nil {
-					return nil, err
-				}
-				confirmations = &txConfirmations
-			}
 			rawTxn, err := createTxRawResult(params, tx.MsgTx(), tx.ID().String(),
-				&blockHeader, hash.String(), acceptingBlock, confirmations, false)
+				&blockHeader, hash.String(), nil, nil, false)
 			if err != nil {
 				return nil, err
 			}
@@ -356,7 +337,7 @@ func hashesToGetBlockVerboseResults(s *Server, hashes []*daghash.Hash) ([]btcjso
 				Message: fmt.Sprintf("could not retrieve block %s.", blockHash),
 			}
 		}
-		getBlockVerboseResult, err := buildGetBlockVerboseResult(s, block, false, false)
+		getBlockVerboseResult, err := buildGetBlockVerboseResult(s, block, false)
 		if err != nil {
 			return nil, &btcjson.RPCError{
 				Code:    btcjson.ErrRPCInternal.Code,

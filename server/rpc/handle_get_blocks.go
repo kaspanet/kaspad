@@ -108,7 +108,7 @@ func blockBytesToBlockVerboseResults(s *Server, blockBytesSlice [][]byte) ([]btc
 		if err != nil {
 			return nil, err
 		}
-		getBlockVerboseResult, err := buildGetBlockVerboseResult(s, block, false, false)
+		getBlockVerboseResult, err := buildGetBlockVerboseResult(s, block, false)
 		if err != nil {
 			return nil, err
 		}
