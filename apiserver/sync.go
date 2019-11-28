@@ -69,28 +69,35 @@ func sync(client *jsonrpc.Client, doneChan chan struct{}) error {
 	for {
 		select {
 		case blockAdded := <-client.OnBlockAdded:
-			missingParents, err := handleBlockHeader(client, blockAdded.Header)
+			missingBlocks, err := handleBlockHeader(client, blockAdded.Header)
 			if err != nil {
 				return err
 			}
-			if len(missingParents) > 0 {
+			if len(missingBlocks) > 0 {
 				visited := make(map[daghash.Hash]struct{})
-				for len(missingParents) > 0 {
-					var parent *wire.BlockHeader
-					parent, missingParents = missingParents[0], missingParents[1:]
-					additionalMissingParents, err := handleBlockHeader(client, parent)
+				pendingHeaders := append(missingBlocks, blockAdded.Header)
+				for len(pendingHeaders) > 0 {
+					var currentHeader *wire.BlockHeader
+					currentHeader, pendingHeaders = pendingHeaders[0], pendingHeaders[1:]
+					blockHash := currentHeader.BlockHash()
+					log.Debugf("Handling pending block header %s", blockHash)
+					missingParents, err := handleBlockHeader(client, currentHeader)
 					if err != nil {
 						return err
 					}
-					parentHash := parent.BlockHash()
-					if len(additionalMissingParents) > 0 {
-						if _, ok := visited[*parentHash]; ok {
-							return errors.Errorf("unexpected missing parents after querying missing parents for block %s", blockAdded.Header.BlockHash())
+					if len(missingParents) > 0 {
+						missingParentsHashes := make([]string, len(missingParents))
+						for i, parent := range missingParents {
+							missingParentsHashes[i] = parent.BlockHash().String()
 						}
-						missingParents = append(additionalMissingParents, missingParents...)
-						missingParents = append(missingParents, parent)
+						if _, ok := visited[*blockHash]; ok {
+							return errors.Errorf("unexpected missing parents [%s] after querying missing parents for block %s", strings.Join(missingParentsHashes, ","), blockAdded.Header.BlockHash())
+						}
+						log.Debugf("Found [%s] missing parents for pending block header %s", strings.Join(missingParentsHashes, ","), blockHash)
+						headersToPush := append(missingParents, currentHeader)
+						pendingHeaders = append(headersToPush, pendingHeaders...)
 					}
-					visited[*parentHash] = struct{}{}
+					visited[*blockHash] = struct{}{}
 				}
 			}
 		case chainChanged := <-client.OnChainChanged:
@@ -127,7 +134,7 @@ func syncBlocks(client *jsonrpc.Client) error {
 	var rawBlocks []string
 	var verboseBlocks []btcjson.GetBlockVerboseResult
 	for {
-		log.Debugf("Calling getBlocks with start hash %v", stringPointerToString(startHash))
+		log.Infof("Calling getBlocks with start hash %v", stringPointerToString(startHash))
 		blocksResult, err := client.GetBlocks(true, true, startHash)
 		if err != nil {
 			return err
