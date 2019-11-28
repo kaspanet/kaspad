@@ -103,6 +103,13 @@ func sync(client *jsonrpc.Client, doneChan chan struct{}) error {
 	}
 }
 
+func stringPointerToString(str *string) string {
+	if str == nil {
+		return "<nil>"
+	}
+	return *str
+}
+
 // syncBlocks attempts to download all DAG blocks starting with
 // the bluest block, and then inserts them into the database.
 func syncBlocks(client *jsonrpc.Client) error {
@@ -117,11 +124,7 @@ func syncBlocks(client *jsonrpc.Client) error {
 	var rawBlocks []string
 	var verboseBlocks []btcjson.GetBlockVerboseResult
 	for {
-		startHashStr := "<nil>"
-		if startHash != nil {
-			startHashStr = *startHash
-		}
-		log.Infof("Calling getBlocks with start hash %s", startHashStr)
+		log.Debugf("Calling getBlocks with start hash %v", stringPointerToString(startHash))
 		blocksResult, err := client.GetBlocks(true, true, startHash)
 		if err != nil {
 			return err
@@ -149,11 +152,7 @@ func syncSelectedParentChain(client *jsonrpc.Client) error {
 	}
 
 	for {
-		startHashStr := "<nil>"
-		if startHash != nil {
-			startHashStr = *startHash
-		}
-		log.Infof("Calling getChainFromBlock with start hash %s", startHashStr)
+		log.Debugf("Calling getChainFromBlock with start hash %s", stringPointerToString(startHash))
 		chainFromBlockResult, err := client.GetChainFromBlock(false, startHash)
 		if err != nil {
 			return err
