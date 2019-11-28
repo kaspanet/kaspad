@@ -80,8 +80,8 @@ func GetTransactionByHashHandler(txHash string) (interface{}, error) {
 // where the given address is either an input or an output.
 func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) (interface{}, error) {
 	if limit > maxGetTransactionsLimit {
-		return nil, httpserverutils.NewHandlerError(http.StatusUnprocessableEntity,
-			errors.Errorf("The maximum allowed value for the limit is %d", maxGetTransactionsLimit))
+		return nil, httpserverutils.NewHandlerError(http.StatusBadRequest,
+			errors.Errorf("Limit higher than %d or lower than 0 was requested.", maxGetTransactionsLimit))
 	}
 
 	db, err := database.DB()
