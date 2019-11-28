@@ -7,6 +7,7 @@ package daghash
 import (
 	"bytes"
 	"encoding/hex"
+	"github.com/daglabs/btcd/testutil"
 	"math/big"
 	"reflect"
 	"testing"
@@ -214,7 +215,7 @@ func TestNewHashFromStr(t *testing.T) {
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
 		result, err := NewHashFromStr(test.in)
-		if err != test.err {
+		if !testutil.AreErrorsEqual(err, test.err) {
 			t.Errorf(unexpectedErrStr, i, err, test.err)
 			continue
 		} else if err != nil {
