@@ -9,7 +9,7 @@ import (
 
 // BackendLog is the logging backend used to create all subsystem loggers.
 var BackendLog = logs.NewBackend()
-var loggers = make([]logs.Logger, 0, 1)
+var loggers []logs.Logger
 
 // InitLog attaches log file and error log file to the backend log.
 func InitLog(logFile, errLogFile string) {
