@@ -142,7 +142,7 @@ func syncBlocks(client *jsonrpc.Client) error {
 	var rawBlocks []string
 	var verboseBlocks []btcjson.GetBlockVerboseResult
 	for {
-		log.Infof("Calling getBlocks with start hash %v", stringPointerToString(startHash))
+		log.Debugf("Calling getBlocks with start hash %v", stringPointerToString(startHash))
 		blocksResult, err := client.GetBlocks(true, true, startHash)
 		if err != nil {
 			return err
