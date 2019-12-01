@@ -3,11 +3,13 @@ package logger
 import (
 	"fmt"
 	"github.com/daglabs/btcd/logs"
+	"github.com/pkg/errors"
 	"os"
 )
 
 // BackendLog is the logging backend used to create all subsystem loggers.
 var BackendLog = logs.NewBackend()
+var loggers = make([]logs.Logger, 0, 1)
 
 // InitLog attaches log file and error log file to the backend log.
 func InitLog(logFile, errLogFile string) {
@@ -21,4 +23,21 @@ func InitLog(logFile, errLogFile string) {
 		fmt.Fprintf(os.Stderr, "Error adding log file %s as log rotator for level %s: %s", errLogFile, logs.LevelWarn, err)
 		os.Exit(1)
 	}
+}
+
+func Logger(subsystemTag string) logs.Logger {
+	logger := BackendLog.Logger(subsystemTag)
+	loggers = append(loggers, logger)
+	return logger
+}
+
+func SetLogLevel(level string) error {
+	lvl, ok := logs.LevelFromString(level)
+	if !ok {
+		return errors.Errorf("Invalid log level %s", level)
+	}
+	for _, logger := range loggers {
+		logger.SetLevel(lvl)
+	}
+	return nil
 }

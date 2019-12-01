@@ -4,6 +4,6 @@ import "github.com/daglabs/btcd/util/panics"
 import "github.com/daglabs/btcd/apiserver/logger"
 
 var (
-	log   = logger.BackendLog.Logger("REST")
+	log   = logger.Logger("REST")
 	spawn = panics.GoroutineWrapperFunc(log, logger.BackendLog)
 )
