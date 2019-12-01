@@ -69,35 +69,14 @@ func sync(client *jsonrpc.Client, doneChan chan struct{}) error {
 	for {
 		select {
 		case blockAdded := <-client.OnBlockAdded:
-			missingBlocks, err := handleBlockHeader(client, blockAdded.Header)
+			missingParentHeaders, err := handleBlockHeader(client, blockAdded.Header)
 			if err != nil {
 				return err
 			}
-			if len(missingBlocks) > 0 {
-				visited := make(map[daghash.Hash]struct{})
-				pendingHeaders := append(missingBlocks, blockAdded.Header)
-				for len(pendingHeaders) > 0 {
-					var currentHeader *wire.BlockHeader
-					currentHeader, pendingHeaders = pendingHeaders[0], pendingHeaders[1:]
-					blockHash := currentHeader.BlockHash()
-					log.Debugf("Handling pending block header %s", blockHash)
-					missingParents, err := handleBlockHeader(client, currentHeader)
-					if err != nil {
-						return err
-					}
-					if len(missingParents) > 0 {
-						missingParentsHashes := make([]string, len(missingParents))
-						for i, parent := range missingParents {
-							missingParentsHashes[i] = parent.BlockHash().String()
-						}
-						if _, ok := visited[*blockHash]; ok {
-							return errors.Errorf("unexpected missing parents [%s] after querying missing parents for block %s", strings.Join(missingParentsHashes, ","), blockAdded.Header.BlockHash())
-						}
-						log.Debugf("Found [%s] missing parents for pending block header %s", strings.Join(missingParentsHashes, ","), blockHash)
-						headersToPush := append(missingParents, currentHeader)
-						pendingHeaders = append(headersToPush, pendingHeaders...)
-					}
-					visited[*blockHash] = struct{}{}
+			if len(missingParentHeaders) > 0 {
+				err := handleMissingParentHeaders(client, blockAdded.Header, missingParentHeaders)
+				if err != nil {
+					return err
 				}
 			}
 		case chainChanged := <-client.OnChainChanged:
@@ -111,6 +90,35 @@ func sync(client *jsonrpc.Client, doneChan chan struct{}) error {
 			return nil
 		}
 	}
+}
+
+func handleMissingParentHeaders(client *jsonrpc.Client, blockHeader *wire.BlockHeader, missingParentHeaders []*wire.BlockHeader) error {
+	visited := make(map[daghash.Hash]struct{})
+	pendingHeaders := append(missingParentHeaders, blockHeader)
+	for len(pendingHeaders) > 0 {
+		var currentHeader *wire.BlockHeader
+		currentHeader, pendingHeaders = pendingHeaders[0], pendingHeaders[1:]
+		blockHash := currentHeader.BlockHash()
+		log.Debugf("Handling pending block header %s", blockHash)
+		missingParents, err := handleBlockHeader(client, currentHeader)
+		if err != nil {
+			return err
+		}
+		if len(missingParents) > 0 {
+			missingParentsHashes := make([]string, len(missingParents))
+			for i, parent := range missingParents {
+				missingParentsHashes[i] = parent.BlockHash().String()
+			}
+			if _, ok := visited[*blockHash]; ok {
+				return errors.Errorf("unexpected missing parents [%s] after querying missing parents for block %s", strings.Join(missingParentsHashes, ","), blockHeader.BlockHash())
+			}
+			log.Debugf("Found [%s] missing parents for pending block header %s", strings.Join(missingParentsHashes, ","), blockHash)
+			headersToPush := append(missingParents, currentHeader)
+			pendingHeaders = append(headersToPush, pendingHeaders...)
+		}
+		visited[*blockHash] = struct{}{}
+	}
+	return nil
 }
 
 func stringPointerToString(str *string) string {
