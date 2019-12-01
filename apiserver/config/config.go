@@ -96,7 +96,7 @@ func Parse() error {
 	logger.InitLog(logFile, errLogFile)
 
 	if activeConfig.DebugLevel != "" {
-		err := logger.SetLogLevel(activeConfig.DebugLevel)
+		err := logger.SetLogLevels(activeConfig.DebugLevel)
 		if err != nil {
 			return err
 		}

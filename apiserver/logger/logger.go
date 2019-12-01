@@ -25,13 +25,17 @@ func InitLog(logFile, errLogFile string) {
 	}
 }
 
+// Logger returns a new logger for a particular subsystem that writes to
+// BackendLog, and add it to a slice so it will be possible to access it
+// later and change its log level
 func Logger(subsystemTag string) logs.Logger {
 	logger := BackendLog.Logger(subsystemTag)
 	loggers = append(loggers, logger)
 	return logger
 }
 
-func SetLogLevel(level string) error {
+// SetLogLevels sets the logging level for all of the subsystems in the API server.
+func SetLogLevels(level string) error {
 	lvl, ok := logs.LevelFromString(level)
 	if !ok {
 		return errors.Errorf("Invalid log level %s", level)
