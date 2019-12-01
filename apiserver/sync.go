@@ -185,6 +185,7 @@ func findHashOfBluestBlock(mustBeChainBlock bool) (*string, error) {
 // the block with hash blockHash.
 func fetchBlock(client *jsonrpc.Client, blockHash *daghash.Hash) (
 	rawBlock string, verboseBlock *btcjson.GetBlockVerboseResult, err error) {
+	log.Debugf("Getting block %s from the RPC server", blockHash)
 	msgBlock, err := client.GetBlock(blockHash, nil)
 	if err != nil {
 		return "", nil, err
@@ -914,116 +915,106 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 	return nil
 }
 
+type rawVerboseBlockTuple struct {
+	rawBlock     string
+	verboseBlock *btcjson.GetBlockVerboseResult
+}
+
 func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedMsg) error {
-	missingParentHeaders, err := handleBlockHeader(client, blockAdded.Header)
+	blocks, err := getBlocksAndItsMissingAncestors(client, blockAdded)
 	if err != nil {
 		return err
 	}
-	if len(missingParentHeaders) > 0 {
-		err := handleMissingParentHeaders(client, blockAdded.Header, missingParentHeaders)
+	for _, block := range blocks {
+		err = addBlock(client, block.rawBlock, *block.verboseBlock)
 		if err != nil {
 			return err
 		}
+		log.Infof("Added block %s", block.verboseBlock.Hash)
 	}
 	return nil
 }
 
-func handleMissingParentHeaders(client *jsonrpc.Client, blockHeader *wire.BlockHeader, missingParentHeaders []*wire.BlockHeader) error {
-	visited := make(map[daghash.Hash]struct{})
-	pendingHeaders := append(missingParentHeaders, blockHeader)
-	for len(pendingHeaders) > 0 {
-		var currentHeader *wire.BlockHeader
-		currentHeader, pendingHeaders = pendingHeaders[0], pendingHeaders[1:]
-		blockHash := currentHeader.BlockHash()
-		log.Debugf("Handling pending block header %s", blockHash)
-		missingParents, err := handleBlockHeader(client, currentHeader)
-		if err != nil {
-			return err
-		}
-		if len(missingParents) > 0 {
-			missingParentHashes := make([]*daghash.Hash, len(missingParents))
-			for i, parent := range missingParents {
-				missingParentHashes[i] = parent.BlockHash()
-			}
-			missingParentHashesStr := daghash.JoinHashesStrings(missingParentHashes, ", ")
-			if _, ok := visited[*blockHash]; ok {
-				return errors.Errorf("unexpected missing parents [%s] after querying missing parents for block %s", missingParentHashesStr, blockHeader.BlockHash())
-			}
-			log.Debugf("Found [%s] missing parents for pending block header %s", missingParentHashesStr, blockHash)
-			headersToPush := append(missingParents, currentHeader)
-			pendingHeaders = append(headersToPush, pendingHeaders...)
-		}
-		visited[*blockHash] = struct{}{}
-	}
-	return nil
-}
-
-func handleBlockHeader(client *jsonrpc.Client, header *wire.BlockHeader) (missingParentHeaders []*wire.BlockHeader, err error) {
-	blockHash := header.BlockHash()
-	missingHashes, err := missingParentHashes(header.ParentHashes)
-	if err != nil {
-		return nil, errors.Errorf("Could not resolve missing parents: %s", err)
-	}
-	if len(missingHashes) > 0 {
-		missingParentHeaders = make([]*wire.BlockHeader, len(missingHashes))
-		for i, missingHash := range missingHashes {
-			missingParentHeaders[i], err = client.GetBlockHeader(missingHash)
-			if err != nil {
-				return nil, err
-			}
-		}
-		return missingParentHeaders, nil
-	}
-	log.Debugf("Getting block %s from the RPC server", blockHash)
-	rawBlock, verboseBlock, err := fetchBlock(client, blockHash)
-	if err != nil {
-		log.Warnf("Could not fetch block %s: %s", blockHash, err)
-		return nil, nil
-	}
-	err = addBlock(client, rawBlock, *verboseBlock)
-	if err != nil {
-		log.Errorf("Could not insert block %s: %s", blockHash, err)
-		return nil, nil
-	}
-	log.Infof("Added block %s", blockHash)
-	return nil, nil
-}
-
-func missingParentHashes(parentHashes []*daghash.Hash) ([]*daghash.Hash, error) {
-	db, err := database.DB()
+func getBlocksAndItsMissingAncestors(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedMsg) ([]*rawVerboseBlockTuple, error) {
+	blockAddedHash := blockAdded.Header.BlockHash()
+	rawBlock, verboseBlock, err := fetchBlock(client, blockAddedHash)
 	if err != nil {
 		return nil, err
 	}
+	pendingBlocks := []*rawVerboseBlockTuple{{
+		rawBlock:     rawBlock,
+		verboseBlock: verboseBlock,
+	}}
+	blocksToAdd := make([]*rawVerboseBlockTuple, 0)
+	blocksToAddSet := make(map[string]struct{})
+	for len(pendingBlocks) > 0 {
+		var currentBlock *rawVerboseBlockTuple
+		currentBlock, pendingBlocks = pendingBlocks[0], pendingBlocks[1:]
+		blockHash := currentBlock.verboseBlock.Hash
+		log.Debugf("Handling pending block header %s", blockHash)
+		missingHashes, err := missingParentHashes(currentBlock.verboseBlock.ParentHashes)
+		if err != nil {
+			return nil, err
+		}
+		log.Debugf("Found [%s] missing parents for block %s", strings.Join(missingHashes, ", "), blockHash)
+		blocksToPushToPending := make([]*rawVerboseBlockTuple, 0, len(missingHashes))
+		for _, missingHash := range missingHashes {
+			if _, ok := blocksToAddSet[missingHash]; ok {
+				continue
+			}
+			hash, err := daghash.NewHashFromStr(missingHash)
+			if err != nil {
+				return nil, err
+			}
+			rawBlock, verboseBlock, err := fetchBlock(client, hash)
+			if err != nil {
+				return nil, err
+			}
+			blocksToPushToPending = append(blocksToPushToPending, &rawVerboseBlockTuple{
+				rawBlock:     rawBlock,
+				verboseBlock: verboseBlock,
+			})
+		}
+		if len(blocksToPushToPending) == 0 {
+			blocksToAddSet[currentBlock.verboseBlock.Hash] = struct{}{}
+			blocksToAdd = append(blocksToAdd, currentBlock)
+			continue
+		}
+		pendingBlocks = append(blocksToPushToPending, pendingBlocks...)
+		pendingBlocks = append(pendingBlocks, currentBlock)
+	}
+	return blocksToAdd, nil
+}
 
-	// Collect all referenced parent hashes
-	hashesIn := make([]string, 0, len(parentHashes))
-	for _, hash := range parentHashes {
-		hashesIn = append(hashesIn, hash.String())
+func missingParentHashes(parentHashes []string) ([]string, error) {
+	db, err := database.DB()
+	if err != nil {
+		return nil, err
 	}
 
 	// Make sure that all the parent hashes exist in the database
 	var dbParentBlocks []dbmodels.Block
 	dbResult := db.
 		Model(&dbmodels.Block{}).
-		Where("block_hash in (?)", hashesIn).
+		Where("block_hash in (?)", parentHashes).
 		Find(&dbParentBlocks)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
 		return nil, httpserverutils.NewErrorFromDBErrors("failed to find parent blocks: ", dbErrors)
 	}
-	if len(hashesIn) != len(dbParentBlocks) {
+	if len(parentHashes) != len(dbParentBlocks) {
 		// Some parent hashes are missing. Collect and return them
-		var missingParentHashes []*daghash.Hash
+		var missingHashes []string
 	outerLoop:
 		for _, hash := range parentHashes {
 			for _, dbParentBlock := range dbParentBlocks {
-				if dbParentBlock.BlockHash == hash.String() {
+				if dbParentBlock.BlockHash == hash {
 					continue outerLoop
 				}
 			}
-			missingParentHashes = append(missingParentHashes, hash)
+			missingHashes = append(missingHashes, hash)
 		}
-		return missingParentHashes, nil
+		return missingHashes, nil
 	}
 
 	return nil, nil
