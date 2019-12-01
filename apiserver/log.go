@@ -6,6 +6,6 @@ import (
 )
 
 var (
-	log   = logger.BackendLog.Logger("APIS")
+	log   = logger.Logger("APIS")
 	spawn = panics.GoroutineWrapperFunc(log, logger.BackendLog)
 )

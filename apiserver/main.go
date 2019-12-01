@@ -21,7 +21,7 @@ import (
 func main() {
 	defer panics.HandlePanic(log, logger.BackendLog, nil)
 
-	cfg, err := config.Parse()
+	err := config.Parse()
 	if err != nil {
 		errString := fmt.Sprintf("Error parsing command-line arguments: %s", err)
 		_, fErr := fmt.Fprintf(os.Stderr, errString)
@@ -31,7 +31,7 @@ func main() {
 		return
 	}
 
-	if cfg.Migrate {
+	if config.ActiveConfig().Migrate {
 		err := database.Migrate()
 		if err != nil {
 			panic(errors.Errorf("Error migrating database: %s", err))
