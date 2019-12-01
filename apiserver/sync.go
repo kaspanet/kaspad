@@ -69,15 +69,9 @@ func sync(client *jsonrpc.Client, doneChan chan struct{}) error {
 	for {
 		select {
 		case blockAdded := <-client.OnBlockAdded:
-			missingParentHeaders, err := handleBlockHeader(client, blockAdded.Header)
+			err := handleBlockAddedMsg(client, blockAdded)
 			if err != nil {
 				return err
-			}
-			if len(missingParentHeaders) > 0 {
-				err := handleMissingParentHeaders(client, blockAdded.Header, missingParentHeaders)
-				if err != nil {
-					return err
-				}
 			}
 		case chainChanged := <-client.OnChainChanged:
 			enqueueChainChangedMsg(chainChanged)
@@ -917,6 +911,20 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 		return httpserverutils.NewErrorFromDBErrors("failed to update block: ", dbErrors)
 	}
 
+	return nil
+}
+
+func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedMsg) error {
+	missingParentHeaders, err := handleBlockHeader(client, blockAdded.Header)
+	if err != nil {
+		return err
+	}
+	if len(missingParentHeaders) > 0 {
+		err := handleMissingParentHeaders(client, blockAdded.Header, missingParentHeaders)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
