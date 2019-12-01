@@ -941,14 +941,15 @@ func handleMissingParentHeaders(client *jsonrpc.Client, blockHeader *wire.BlockH
 			return err
 		}
 		if len(missingParents) > 0 {
-			missingParentsHashes := make([]string, len(missingParents))
+			missingParentsHashes := make([]*daghash.Hash, len(missingParents))
 			for i, parent := range missingParents {
-				missingParentsHashes[i] = parent.BlockHash().String()
+				missingParentsHashes[i] = parent.BlockHash()
 			}
+			missingParentsHashesStr := daghash.JoinHashesStrings(missingParentsHashes, ", ")
 			if _, ok := visited[*blockHash]; ok {
-				return errors.Errorf("unexpected missing parents [%s] after querying missing parents for block %s", strings.Join(missingParentsHashes, ","), blockHeader.BlockHash())
+				return errors.Errorf("unexpected missing parents [%s] after querying missing parents for block %s", missingParentsHashesStr, blockHeader.BlockHash())
 			}
-			log.Debugf("Found [%s] missing parents for pending block header %s", strings.Join(missingParentsHashes, ","), blockHash)
+			log.Debugf("Found [%s] missing parents for pending block header %s", missingParentsHashesStr, blockHash)
 			headersToPush := append(missingParents, currentHeader)
 			pendingHeaders = append(headersToPush, pendingHeaders...)
 		}
