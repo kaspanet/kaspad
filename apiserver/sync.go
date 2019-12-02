@@ -184,7 +184,7 @@ func findHashOfBluestBlock(mustBeChainBlock bool) (*string, error) {
 // fetchBlock downloads the serialized block and raw block data of
 // the block with hash blockHash.
 func fetchBlock(client *jsonrpc.Client, blockHash *daghash.Hash) (
-	*rawVerboseBlock, error) {
+	*rawAndVerboseBlock, error) {
 	log.Debugf("Getting block %s from the RPC server", blockHash)
 	msgBlock, err := client.GetBlock(blockHash, nil)
 	if err != nil {
@@ -201,7 +201,7 @@ func fetchBlock(client *jsonrpc.Client, blockHash *daghash.Hash) (
 	if err != nil {
 		return nil, err
 	}
-	return &rawVerboseBlock{
+	return &rawAndVerboseBlock{
 		rawBlock:     rawBlock,
 		verboseBlock: verboseBlock,
 	}, nil
@@ -918,12 +918,12 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 	return nil
 }
 
-type rawVerboseBlock struct {
+type rawAndVerboseBlock struct {
 	rawBlock     string
 	verboseBlock *btcjson.GetBlockVerboseResult
 }
 
-func (r *rawVerboseBlock) String() string {
+func (r *rawAndVerboseBlock) String() string {
 	return r.verboseBlock.Hash
 }
 
@@ -942,22 +942,22 @@ func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedM
 	return nil
 }
 
-func fetchBlockAndMissingAncestors(client *jsonrpc.Client, blockHash *daghash.Hash) ([]*rawVerboseBlock, error) {
+func fetchBlockAndMissingAncestors(client *jsonrpc.Client, blockHash *daghash.Hash) ([]*rawAndVerboseBlock, error) {
 	block, err := fetchBlock(client, blockHash)
 	if err != nil {
 		return nil, err
 	}
-	pendingBlocks := []*rawVerboseBlock{block}
-	blocksToAdd := make([]*rawVerboseBlock, 0)
+	pendingBlocks := []*rawAndVerboseBlock{block}
+	blocksToAdd := make([]*rawAndVerboseBlock, 0)
 	blocksToAddSet := make(map[string]struct{})
 	for len(pendingBlocks) > 0 {
-		var currentBlock *rawVerboseBlock
+		var currentBlock *rawAndVerboseBlock
 		currentBlock, pendingBlocks = pendingBlocks[0], pendingBlocks[1:]
 		missingHashes, err := missingParentHashes(currentBlock.verboseBlock.ParentHashes)
 		if err != nil {
 			return nil, err
 		}
-		blocksToPrependToPending := make([]*rawVerboseBlock, 0, len(missingHashes))
+		blocksToPrependToPending := make([]*rawAndVerboseBlock, 0, len(missingHashes))
 		for _, missingHash := range missingHashes {
 			if _, ok := blocksToAddSet[missingHash]; ok {
 				continue
