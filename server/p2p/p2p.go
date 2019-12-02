@@ -277,11 +277,16 @@ type Server struct {
 	relayInv              chan relayMsg
 	broadcast             chan broadcastMsg
 	wg                    sync.WaitGroup
-	quit                  chan struct{}
 	nat                   serverutils.NAT
 	db                    database.DB
 	TimeSource            blockdag.MedianTimeSource
 	services              wire.ServiceFlag
+
+	// We add to quitWaitGroup before every instance in which we wait for
+	// the quit channel so that all those instances finish before we shut
+	// down the managers (connManager, addrManager, etc),
+	quitWaitGroup sync.WaitGroup
+	quit          chan struct{}
 
 	// The following fields are used for optional indexes.  They will be nil
 	// if the associated index is not enabled.  These fields are set during
@@ -1167,6 +1172,8 @@ func (s *Server) peerHandler() {
 	s.addrManager.Start()
 	s.SyncManager.Start()
 
+	s.quitWaitGroup.Add(1)
+
 	srvrLog.Tracef("Starting peer handler")
 
 	state := &peerState{
@@ -1232,12 +1239,17 @@ out:
 				sp.Disconnect()
 				return true
 			})
+			s.quitWaitGroup.Done()
 			break out
 
 		case opcMsg := <-s.newOutboundConnection:
 			s.outboundPeerConnected(state, opcMsg)
 		}
 	}
+
+	// Wait for all p2p server quit jobs to finish before stopping the
+	// various managers
+	s.quitWaitGroup.Wait()
 
 	s.connManager.Stop()
 	s.SyncManager.Stop()
@@ -1341,6 +1353,8 @@ func (s *Server) rebroadcastHandler() {
 	timer := time.NewTimer(5 * time.Minute)
 	pendingInvs := make(map[wire.InvVect]interface{})
 
+	s.quitWaitGroup.Add(1)
+
 out:
 	for {
 		select {
@@ -1388,6 +1402,7 @@ cleanup:
 			break cleanup
 		}
 	}
+	s.quitWaitGroup.Done()
 	s.wg.Done()
 }
 
@@ -1525,6 +1540,9 @@ func (s *Server) upnpUpdateThread() {
 	timer := time.NewTimer(0 * time.Second)
 	lport, _ := strconv.ParseInt(config.ActiveConfig().NetParams().DefaultPort, 10, 16)
 	first := true
+
+	s.quitWaitGroup.Add(1)
+
 out:
 	for {
 		select {
@@ -1570,6 +1588,7 @@ out:
 		srvrLog.Debugf("successfully disestablished UPnP port mapping")
 	}
 
+	s.quitWaitGroup.Done()
 	s.wg.Done()
 }
 
