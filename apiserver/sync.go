@@ -920,6 +920,10 @@ type rawVerboseBlockTuple struct {
 	verboseBlock *btcjson.GetBlockVerboseResult
 }
 
+func (r *rawVerboseBlockTuple) String() string {
+	return r.verboseBlock.Hash
+}
+
 func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedMsg) error {
 	blocks, err := fetchBlockAndMissingAncestors(client, blockAdded.Header.BlockHash())
 	if err != nil {
@@ -976,9 +980,7 @@ func fetchBlockAndMissingAncestors(client *jsonrpc.Client, blockHash *daghash.Ha
 			blocksToAdd = append(blocksToAdd, currentBlock)
 			continue
 		}
-		if len(missingHashes) > 0 {
-			log.Debugf("Found [%s] missing parents for block %s and fetched them", strings.Join(missingHashes, ", "), currentBlock.verboseBlock.Hash)
-		}
+		log.Debugf("Found %s missing parents for block %s and fetched them", blocksToPrependToPending, currentBlock)
 		blocksToPrependToPending = append(blocksToPrependToPending, currentBlock)
 		pendingBlocks = append(blocksToPrependToPending, pendingBlocks...)
 	}
