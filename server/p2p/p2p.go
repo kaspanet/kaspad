@@ -1168,6 +1168,8 @@ func (s *Server) peerHandler() {
 	s.addrManager.Start()
 	s.SyncManager.Start()
 
+	s.quitWaitGroup.Add(1)
+
 	srvrLog.Tracef("Starting peer handler")
 
 	state := &peerState{
@@ -1227,7 +1229,6 @@ out:
 			s.handleQuery(state, qmsg)
 
 		case <-s.quit:
-			s.quitWaitGroup.Add(1)
 			// Disconnect all peers on server shutdown.
 			state.forAllPeers(func(sp *Peer) bool {
 				srvrLog.Tracef("Shutdown peer %s", sp)
@@ -1348,6 +1349,8 @@ func (s *Server) rebroadcastHandler() {
 	timer := time.NewTimer(5 * time.Minute)
 	pendingInvs := make(map[wire.InvVect]interface{})
 
+	s.quitWaitGroup.Add(1)
+
 out:
 	for {
 		select {
@@ -1379,7 +1382,6 @@ out:
 				time.Duration(randomUint16Number(1800)))
 
 		case <-s.quit:
-			s.quitWaitGroup.Add(1)
 			break out
 		}
 	}
@@ -1534,6 +1536,9 @@ func (s *Server) upnpUpdateThread() {
 	timer := time.NewTimer(0 * time.Second)
 	lport, _ := strconv.ParseInt(config.ActiveConfig().NetParams().DefaultPort, 10, 16)
 	first := true
+
+	s.quitWaitGroup.Add(1)
+
 out:
 	for {
 		select {
@@ -1567,7 +1572,6 @@ out:
 			}
 			timer.Reset(time.Minute * 15)
 		case <-s.quit:
-			s.quitWaitGroup.Add(1)
 			break out
 		}
 	}
