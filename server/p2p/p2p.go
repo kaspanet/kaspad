@@ -282,7 +282,7 @@ type Server struct {
 	TimeSource            blockdag.MedianTimeSource
 	services              wire.ServiceFlag
 
-	// We add to quitWaitGroup before on every instance in which we wait for
+	// We add to quitWaitGroup before every instance in which we wait for
 	// the quit channel so that all those instances finish before we shut
 	// down the managers (connManager, SyncManager),
 	quitWaitGroup sync.WaitGroup
