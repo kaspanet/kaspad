@@ -277,12 +277,16 @@ type Server struct {
 	relayInv              chan relayMsg
 	broadcast             chan broadcastMsg
 	wg                    sync.WaitGroup
-	quit                  chan struct{}
-	quitWaitGroup         sync.WaitGroup
 	nat                   serverutils.NAT
 	db                    database.DB
 	TimeSource            blockdag.MedianTimeSource
 	services              wire.ServiceFlag
+
+	// We add to quitWaitGroup before on every instance in which we wait for
+	// the quit channel so that all those instances finish before we shut
+	// down the managers (connManager, SyncManager),
+	quitWaitGroup sync.WaitGroup
+	quit          chan struct{}
 
 	// The following fields are used for optional indexes.  They will be nil
 	// if the associated index is not enabled.  These fields are set during
