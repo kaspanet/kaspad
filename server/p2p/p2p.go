@@ -278,6 +278,7 @@ type Server struct {
 	broadcast             chan broadcastMsg
 	wg                    sync.WaitGroup
 	quit                  chan struct{}
+	quitWaitGroup         sync.WaitGroup
 	nat                   serverutils.NAT
 	db                    database.DB
 	TimeSource            blockdag.MedianTimeSource
@@ -1226,18 +1227,24 @@ out:
 			s.handleQuery(state, qmsg)
 
 		case <-s.quit:
+			s.quitWaitGroup.Add(1)
 			// Disconnect all peers on server shutdown.
 			state.forAllPeers(func(sp *Peer) bool {
 				srvrLog.Tracef("Shutdown peer %s", sp)
 				sp.Disconnect()
 				return true
 			})
+			s.quitWaitGroup.Done()
 			break out
 
 		case opcMsg := <-s.newOutboundConnection:
 			s.outboundPeerConnected(state, opcMsg)
 		}
 	}
+
+	// Wait for all p2p server quit jobs to finish before stopping the
+	// various managers
+	s.quitWaitGroup.Wait()
 
 	s.connManager.Stop()
 	s.SyncManager.Stop()
@@ -1372,6 +1379,7 @@ out:
 				time.Duration(randomUint16Number(1800)))
 
 		case <-s.quit:
+			s.quitWaitGroup.Add(1)
 			break out
 		}
 	}
@@ -1388,6 +1396,7 @@ cleanup:
 			break cleanup
 		}
 	}
+	s.quitWaitGroup.Done()
 	s.wg.Done()
 }
 
@@ -1558,6 +1567,7 @@ out:
 			}
 			timer.Reset(time.Minute * 15)
 		case <-s.quit:
+			s.quitWaitGroup.Add(1)
 			break out
 		}
 	}
@@ -1570,6 +1580,7 @@ out:
 		srvrLog.Debugf("successfully disestablished UPnP port mapping")
 	}
 
+	s.quitWaitGroup.Done()
 	s.wg.Done()
 }
 
