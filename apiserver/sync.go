@@ -935,9 +935,8 @@ func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedM
 	return nil
 }
 
-func fetchBlockAndMissingAncestors(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedMsg) ([]*rawVerboseBlockTuple, error) {
-	blockAddedHash := blockAdded.Header.BlockHash()
-	rawBlock, verboseBlock, err := fetchBlock(client, blockAddedHash)
+func fetchBlockAndMissingAncestors(client *jsonrpc.Client, blockHash *daghash.Hash) ([]*rawVerboseBlockTuple, error) {
+	rawBlock, verboseBlock, err := fetchBlock(client, blockHash)
 	if err != nil {
 		return nil, err
 	}
