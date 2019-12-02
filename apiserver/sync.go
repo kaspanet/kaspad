@@ -184,24 +184,27 @@ func findHashOfBluestBlock(mustBeChainBlock bool) (*string, error) {
 // fetchBlock downloads the serialized block and raw block data of
 // the block with hash blockHash.
 func fetchBlock(client *jsonrpc.Client, blockHash *daghash.Hash) (
-	rawBlock string, verboseBlock *btcjson.GetBlockVerboseResult, err error) {
+	*rawVerboseBlock, error) {
 	log.Debugf("Getting block %s from the RPC server", blockHash)
 	msgBlock, err := client.GetBlock(blockHash, nil)
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 	writer := bytes.NewBuffer(make([]byte, 0, msgBlock.SerializeSize()))
 	err = msgBlock.Serialize(writer)
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
-	rawBlock = hex.EncodeToString(writer.Bytes())
+	rawBlock := hex.EncodeToString(writer.Bytes())
 
-	verboseBlock, err = client.GetBlockVerboseTx(blockHash, nil)
+	verboseBlock, err := client.GetBlockVerboseTx(blockHash, nil)
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
-	return rawBlock, verboseBlock, nil
+	return &rawVerboseBlock{
+		rawBlock:     rawBlock,
+		verboseBlock: verboseBlock,
+	}, nil
 }
 
 // addBlocks inserts data in the given rawBlocks and verboseBlocks pairwise
@@ -940,14 +943,11 @@ func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedM
 }
 
 func fetchBlockAndMissingAncestors(client *jsonrpc.Client, blockHash *daghash.Hash) ([]*rawVerboseBlock, error) {
-	rawBlock, verboseBlock, err := fetchBlock(client, blockHash)
+	block, err := fetchBlock(client, blockHash)
 	if err != nil {
 		return nil, err
 	}
-	pendingBlocks := []*rawVerboseBlock{{
-		rawBlock:     rawBlock,
-		verboseBlock: verboseBlock,
-	}}
+	pendingBlocks := []*rawVerboseBlock{block}
 	blocksToAdd := make([]*rawVerboseBlock, 0)
 	blocksToAddSet := make(map[string]struct{})
 	for len(pendingBlocks) > 0 {
@@ -966,14 +966,11 @@ func fetchBlockAndMissingAncestors(client *jsonrpc.Client, blockHash *daghash.Ha
 			if err != nil {
 				return nil, err
 			}
-			rawBlock, verboseBlock, err := fetchBlock(client, hash)
+			block, err := fetchBlock(client, hash)
 			if err != nil {
 				return nil, err
 			}
-			blocksToPrependToPending = append(blocksToPrependToPending, &rawVerboseBlock{
-				rawBlock:     rawBlock,
-				verboseBlock: verboseBlock,
-			})
+			blocksToPrependToPending = append(blocksToPrependToPending, block)
 		}
 		if len(blocksToPrependToPending) == 0 {
 			blocksToAddSet[currentBlock.verboseBlock.Hash] = struct{}{}
