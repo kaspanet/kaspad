@@ -698,13 +698,6 @@ func (s *Server) handleAddPeerMsg(state *peerState, sp *Peer) bool {
 			config.ActiveConfig().MaxInboundPeers, sp)
 		sp.Disconnect()
 		return false
-	} else if state.countOutboundPeers() >= config.ActiveConfig().TargetOutboundPeers {
-		srvrLog.Infof("Max outbound peers reached [%d] - disconnecting peer %s",
-			config.ActiveConfig().TargetOutboundPeers, sp)
-		sp.Disconnect()
-		// TODO: how to handle permanent peers here?
-		// they should be rescheduled.
-		return false
 	}
 
 	// Add the new peer and start it.
