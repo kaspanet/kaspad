@@ -284,7 +284,7 @@ type Server struct {
 
 	// We add to quitWaitGroup before every instance in which we wait for
 	// the quit channel so that all those instances finish before we shut
-	// down the managers (connManager, SyncManager),
+	// down the managers (connManager, addrManager, etc),
 	quitWaitGroup sync.WaitGroup
 	quit          chan struct{}
 
