@@ -915,12 +915,12 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 	return nil
 }
 
-type rawVerboseBlockTuple struct {
+type rawVerboseBlock struct {
 	rawBlock     string
 	verboseBlock *btcjson.GetBlockVerboseResult
 }
 
-func (r *rawVerboseBlockTuple) String() string {
+func (r *rawVerboseBlock) String() string {
 	return r.verboseBlock.Hash
 }
 
@@ -939,25 +939,25 @@ func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedM
 	return nil
 }
 
-func fetchBlockAndMissingAncestors(client *jsonrpc.Client, blockHash *daghash.Hash) ([]*rawVerboseBlockTuple, error) {
+func fetchBlockAndMissingAncestors(client *jsonrpc.Client, blockHash *daghash.Hash) ([]*rawVerboseBlock, error) {
 	rawBlock, verboseBlock, err := fetchBlock(client, blockHash)
 	if err != nil {
 		return nil, err
 	}
-	pendingBlocks := []*rawVerboseBlockTuple{{
+	pendingBlocks := []*rawVerboseBlock{{
 		rawBlock:     rawBlock,
 		verboseBlock: verboseBlock,
 	}}
-	blocksToAdd := make([]*rawVerboseBlockTuple, 0)
+	blocksToAdd := make([]*rawVerboseBlock, 0)
 	blocksToAddSet := make(map[string]struct{})
 	for len(pendingBlocks) > 0 {
-		var currentBlock *rawVerboseBlockTuple
+		var currentBlock *rawVerboseBlock
 		currentBlock, pendingBlocks = pendingBlocks[0], pendingBlocks[1:]
 		missingHashes, err := missingParentHashes(currentBlock.verboseBlock.ParentHashes)
 		if err != nil {
 			return nil, err
 		}
-		blocksToPrependToPending := make([]*rawVerboseBlockTuple, 0, len(missingHashes))
+		blocksToPrependToPending := make([]*rawVerboseBlock, 0, len(missingHashes))
 		for _, missingHash := range missingHashes {
 			if _, ok := blocksToAddSet[missingHash]; ok {
 				continue
@@ -970,7 +970,7 @@ func fetchBlockAndMissingAncestors(client *jsonrpc.Client, blockHash *daghash.Ha
 			if err != nil {
 				return nil, err
 			}
-			blocksToPrependToPending = append(blocksToPrependToPending, &rawVerboseBlockTuple{
+			blocksToPrependToPending = append(blocksToPrependToPending, &rawVerboseBlock{
 				rawBlock:     rawBlock,
 				verboseBlock: verboseBlock,
 			})
