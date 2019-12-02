@@ -921,7 +921,7 @@ type rawVerboseBlockTuple struct {
 }
 
 func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedMsg) error {
-	blocks, err := getBlocksAndItsMissingAncestors(client, blockAdded)
+	blocks, err := fetchBlockAndMissingAncestors(client, blockAdded)
 	if err != nil {
 		return err
 	}
@@ -935,7 +935,7 @@ func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedM
 	return nil
 }
 
-func getBlocksAndItsMissingAncestors(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedMsg) ([]*rawVerboseBlockTuple, error) {
+func fetchBlockAndMissingAncestors(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedMsg) ([]*rawVerboseBlockTuple, error) {
 	blockAddedHash := blockAdded.Header.BlockHash()
 	rawBlock, verboseBlock, err := fetchBlock(client, blockAddedHash)
 	if err != nil {
@@ -950,14 +950,11 @@ func getBlocksAndItsMissingAncestors(client *jsonrpc.Client, blockAdded *jsonrpc
 	for len(pendingBlocks) > 0 {
 		var currentBlock *rawVerboseBlockTuple
 		currentBlock, pendingBlocks = pendingBlocks[0], pendingBlocks[1:]
-		blockHash := currentBlock.verboseBlock.Hash
-		log.Debugf("Handling pending block header %s", blockHash)
 		missingHashes, err := missingParentHashes(currentBlock.verboseBlock.ParentHashes)
 		if err != nil {
 			return nil, err
 		}
-		log.Debugf("Found [%s] missing parents for block %s", strings.Join(missingHashes, ", "), blockHash)
-		blocksToPushToPending := make([]*rawVerboseBlockTuple, 0, len(missingHashes))
+		blocksToPrependToPending := make([]*rawVerboseBlockTuple, 0, len(missingHashes))
 		for _, missingHash := range missingHashes {
 			if _, ok := blocksToAddSet[missingHash]; ok {
 				continue
@@ -970,17 +967,17 @@ func getBlocksAndItsMissingAncestors(client *jsonrpc.Client, blockAdded *jsonrpc
 			if err != nil {
 				return nil, err
 			}
-			blocksToPushToPending = append(blocksToPushToPending, &rawVerboseBlockTuple{
+			blocksToPrependToPending = append(blocksToPrependToPending, &rawVerboseBlockTuple{
 				rawBlock:     rawBlock,
 				verboseBlock: verboseBlock,
 			})
 		}
-		if len(blocksToPushToPending) == 0 {
+		if len(blocksToPrependToPending) == 0 {
 			blocksToAddSet[currentBlock.verboseBlock.Hash] = struct{}{}
 			blocksToAdd = append(blocksToAdd, currentBlock)
 			continue
 		}
-		pendingBlocks = append(blocksToPushToPending, pendingBlocks...)
+		pendingBlocks = append(blocksToPrependToPending, pendingBlocks...)
 		pendingBlocks = append(pendingBlocks, currentBlock)
 	}
 	return blocksToAdd, nil
