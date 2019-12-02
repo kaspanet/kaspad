@@ -188,7 +188,11 @@ type peerState struct {
 
 // Count returns the count of all known peers.
 func (ps *peerState) Count() int {
-	return len(ps.inboundPeers) + ps.countOutboundPeers()
+	return ps.countinboundPeers() + ps.countOutboundPeers()
+}
+
+func (ps *peerState) countinboundPeers() int {
+	return len(ps.inboundPeers)
 }
 
 func (ps *peerState) countOutboundPeers() int {
@@ -694,9 +698,9 @@ func (s *Server) handleAddPeerMsg(state *peerState, sp *Peer) bool {
 			config.ActiveConfig().MaxInboundPeers, sp)
 		sp.Disconnect()
 		return false
-	} else if state.countOutboundPeers() >= config.ActiveConfig().MaxOutboundPeers {
+	} else if state.countOutboundPeers() >= config.ActiveConfig().TargetOutboundPeers {
 		srvrLog.Infof("Max outbound peers reached [%d] - disconnecting peer %s",
-			config.ActiveConfig().MaxOutboundPeers, sp)
+			config.ActiveConfig().TargetOutboundPeers, sp)
 		sp.Disconnect()
 		// TODO: how to handle permanent peers here?
 		// they should be rescheduled.
@@ -945,7 +949,7 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 	case ConnectNodeMsg:
 		// TODO: duplicate oneshots?
 		// Limit max number of total peers.
-		if state.countOutboundPeers() >= config.ActiveConfig().MaxOutboundPeers {
+		if state.countOutboundPeers() >= config.ActiveConfig().TargetOutboundPeers {
 			msg.Reply <- connmgr.ErrMaxOutboundPeers
 			return
 		}
@@ -1606,7 +1610,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		}
 	}
 
-	maxPeers := config.ActiveConfig().MaxOutboundPeers + config.ActiveConfig().MaxInboundPeers
+	maxPeers := config.ActiveConfig().TargetOutboundPeers + config.ActiveConfig().MaxInboundPeers
 
 	s := Server{
 		DAGParams:             dagParams,
@@ -1619,7 +1623,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		broadcast:             make(chan broadcastMsg, maxPeers),
 		quit:                  make(chan struct{}),
 		modifyRebroadcastInv:  make(chan interface{}),
-		newOutboundConnection: make(chan *outboundPeerConnectedMsg, config.ActiveConfig().MaxOutboundPeers),
+		newOutboundConnection: make(chan *outboundPeerConnectedMsg, config.ActiveConfig().TargetOutboundPeers),
 		nat:                   nat,
 		db:                    db,
 		TimeSource:            blockdag.NewMedianTime(),
@@ -1785,7 +1789,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		Listeners:      listeners,
 		OnAccept:       s.inboundPeerConnected,
 		RetryDuration:  connectionRetryInterval,
-		TargetOutbound: uint32(config.ActiveConfig().MaxOutboundPeers),
+		TargetOutbound: uint32(config.ActiveConfig().TargetOutboundPeers),
 		Dial:           serverutils.BTCDDial,
 		OnConnection: func(c *connmgr.ConnReq, conn net.Conn) {
 			s.newOutboundConnection <- &outboundPeerConnectedMsg{

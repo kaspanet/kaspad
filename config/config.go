@@ -32,16 +32,16 @@ import (
 )
 
 const (
-	defaultConfigFilename   = "btcd.conf"
-	defaultDataDirname      = "data"
-	defaultLogLevel         = "info"
-	defaultLogDirname       = "logs"
-	defaultLogFilename      = "btcd.log"
-	defaultErrLogFilename   = "btcd_err.log"
-	defaultMaxOutboundPeers = 8
-	defaultMaxInboundPeers  = 117
-	defaultBanDuration      = time.Hour * 24
-	defaultBanThreshold     = 100
+	defaultConfigFilename      = "btcd.conf"
+	defaultDataDirname         = "data"
+	defaultLogLevel            = "info"
+	defaultLogDirname          = "logs"
+	defaultLogFilename         = "btcd.log"
+	defaultErrLogFilename      = "btcd_err.log"
+	defaultTargetOutboundPeers = 8
+	defaultMaxInboundPeers     = 117
+	defaultBanDuration         = time.Hour * 24
+	defaultBanThreshold        = 100
 	//DefaultConnectTimeout is the default connection timeout when dialing
 	DefaultConnectTimeout        = time.Second * 30
 	defaultMaxRPCClients         = 10
@@ -102,7 +102,7 @@ type Flags struct {
 	ConnectPeers         []string      `long:"connect" description:"Connect only to the specified peers at startup"`
 	DisableListen        bool          `long:"nolisten" description:"Disable listening for incoming connections -- NOTE: Listening is automatically disabled if the --connect or --proxy options are used without also specifying listen interfaces via --listen"`
 	Listeners            []string      `long:"listen" description:"Add an interface/port to listen for connections (default all interfaces port: 8333, testnet: 18333)"`
-	MaxOutboundPeers     int           `long:"maxoutpeers" description:"Max number of outbound peers"`
+	TargetOutboundPeers  int           `long:"outpeers" description:"Target number of outbound peers"`
 	MaxInboundPeers      int           `long:"maxinpeers" description:"Max number of inbound peers"`
 	DisableBanning       bool          `long:"nobanning" description:"Disable banning of misbehaving peers"`
 	BanDuration          time.Duration `long:"banduration" description:"How long to ban misbehaving peers.  Valid time units are {s, m, h}.  Minimum 1 second"`
@@ -298,7 +298,7 @@ func loadConfig() (*Config, []string, error) {
 	cfgFlags := Flags{
 		ConfigFile:           defaultConfigFile,
 		DebugLevel:           defaultLogLevel,
-		MaxOutboundPeers:     defaultMaxOutboundPeers,
+		TargetOutboundPeers:  defaultTargetOutboundPeers,
 		MaxInboundPeers:      defaultMaxInboundPeers,
 		BanDuration:          defaultBanDuration,
 		BanThreshold:         defaultBanThreshold,
