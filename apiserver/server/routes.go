@@ -164,7 +164,7 @@ func getBlocksHandler(_ *httpserverutils.ServerContext, _ *http.Request, _ map[s
 	if orderParamValue, ok := queryParams[queryParamOrder]; ok {
 		if orderParamValue != controllers.OrderAscending && orderParamValue != controllers.OrderDescending {
 			return nil, httpserverutils.NewHandlerError(http.StatusUnprocessableEntity, errors.Errorf(
-				"Couldn't parse the '%s' query parameter", queryParamLimit))
+				"Couldn't parse the '%s' query parameter", queryParamOrder))
 		}
 		order = orderParamValue
 	}
