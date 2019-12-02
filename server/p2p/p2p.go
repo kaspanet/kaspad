@@ -1619,7 +1619,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		broadcast:             make(chan broadcastMsg, maxPeers),
 		quit:                  make(chan struct{}),
 		modifyRebroadcastInv:  make(chan interface{}),
-		newOutboundConnection: make(chan *outboundPeerConnectedMsg, config.ActiveConfig().MaxPeers), // TODO: replace with target outbound
+		newOutboundConnection: make(chan *outboundPeerConnectedMsg, config.ActiveConfig().MaxOutboundPeers),
 		nat:                   nat,
 		db:                    db,
 		TimeSource:            blockdag.NewMedianTime(),
