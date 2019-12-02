@@ -10,7 +10,6 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
-	"github.com/pkg/errors"
 	"math"
 	"net"
 	"runtime"
@@ -20,6 +19,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/daglabs/btcd/util/subnetworkid"
 
@@ -1618,7 +1619,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		broadcast:             make(chan broadcastMsg, maxPeers),
 		quit:                  make(chan struct{}),
 		modifyRebroadcastInv:  make(chan interface{}),
-		newOutboundConnection: make(chan *outboundPeerConnectedMsg),
+		newOutboundConnection: make(chan *outboundPeerConnectedMsg, config.ActiveConfig().MaxPeers), // TODO: replace with target outbound
 		nat:                   nat,
 		db:                    db,
 		TimeSource:            blockdag.NewMedianTime(),

@@ -7,11 +7,12 @@ package connmgr
 import (
 	nativeerrors "errors"
 	"fmt"
-	"github.com/pkg/errors"
 	"net"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // maxFailedAttempts is the maximum number of successive failed connection

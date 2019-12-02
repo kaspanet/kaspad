@@ -79,9 +79,9 @@ func GetTransactionByHashHandler(txHash string) (interface{}, error) {
 // GetTransactionsByAddressHandler searches for all transactions
 // where the given address is either an input or an output.
 func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) (interface{}, error) {
-	if limit > maxGetTransactionsLimit {
+	if limit < 1 || limit > maxGetTransactionsLimit {
 		return nil, httpserverutils.NewHandlerError(http.StatusBadRequest,
-			errors.Errorf("Limit higher than %d or lower than 0 was requested.", maxGetTransactionsLimit))
+			errors.Errorf("Limit higher than %d or lower than 1 was requested.", maxGetTransactionsLimit))
 	}
 
 	db, err := database.DB()
