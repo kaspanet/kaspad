@@ -982,8 +982,8 @@ func fetchBlockAndMissingAncestors(client *jsonrpc.Client, blockHash *daghash.Ha
 			blocksToAdd = append(blocksToAdd, currentBlock)
 			continue
 		}
+		blocksToPrependToPending = append(blocksToPrependToPending, currentBlock)
 		pendingBlocks = append(blocksToPrependToPending, pendingBlocks...)
-		pendingBlocks = append(pendingBlocks, currentBlock)
 	}
 	return blocksToAdd, nil
 }
