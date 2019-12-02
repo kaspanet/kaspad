@@ -278,9 +278,9 @@ func PostTransaction(requestBody []byte) error {
 
 	_, err = client.SendRawTransaction(tx, true)
 	if err != nil {
-		switch RpcErr := errors.Cause(err).(type) {
+		switch RPCErr := errors.Cause(err).(type) {
 		case *btcjson.RPCError:
-			return httpserverutils.NewHandlerError(http.StatusUnprocessableEntity, RpcErr)
+			return httpserverutils.NewHandlerError(http.StatusUnprocessableEntity, RPCErr)
 		default:
 			return err
 		}
