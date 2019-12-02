@@ -921,7 +921,7 @@ type rawVerboseBlockTuple struct {
 }
 
 func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedMsg) error {
-	blocks, err := fetchBlockAndMissingAncestors(client, blockAdded)
+	blocks, err := fetchBlockAndMissingAncestors(client, blockAdded.Header.BlockHash())
 	if err != nil {
 		return err
 	}
@@ -946,12 +946,18 @@ func fetchBlockAndMissingAncestors(client *jsonrpc.Client, blockHash *daghash.Ha
 	}}
 	blocksToAdd := make([]*rawVerboseBlockTuple, 0)
 	blocksToAddSet := make(map[string]struct{})
+	blockHashStr := blockHash.String()
+	wroteOrphanLog := false
 	for len(pendingBlocks) > 0 {
 		var currentBlock *rawVerboseBlockTuple
 		currentBlock, pendingBlocks = pendingBlocks[0], pendingBlocks[1:]
 		missingHashes, err := missingParentHashes(currentBlock.verboseBlock.ParentHashes)
 		if err != nil {
 			return nil, err
+		}
+		if !wroteOrphanLog && len(missingHashes) > 0 && currentBlock.verboseBlock.Hash == blockHashStr {
+			log.Debugf("Found [%s] missing parents for block %s. Fetching missing ancestors...", strings.Join(missingHashes, ", "), blockHash)
+			wroteOrphanLog = true
 		}
 		blocksToPrependToPending := make([]*rawVerboseBlockTuple, 0, len(missingHashes))
 		for _, missingHash := range missingHashes {
