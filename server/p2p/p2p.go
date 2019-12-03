@@ -53,9 +53,6 @@ const (
 	// required to be supported by outbound peers.
 	defaultRequiredServices = wire.SFNodeNetwork
 
-	// defaultTargetOutbound is the default number of outbound peers to target.
-	defaultTargetOutbound = 8
-
 	// connectionRetryInterval is the base amount of time to wait in between
 	// retries when connecting to persistent peers.  It is adjusted by the
 	// number of retries such that there is a retry backoff.
@@ -191,7 +188,15 @@ type peerState struct {
 
 // Count returns the count of all known peers.
 func (ps *peerState) Count() int {
-	return len(ps.inboundPeers) + len(ps.outboundPeers) +
+	return ps.countInboundPeers() + ps.countOutboundPeers()
+}
+
+func (ps *peerState) countInboundPeers() int {
+	return len(ps.inboundPeers)
+}
+
+func (ps *peerState) countOutboundPeers() int {
+	return len(ps.outboundPeers) +
 		len(ps.persistentPeers)
 }
 
@@ -693,12 +698,10 @@ func (s *Server) handleAddPeerMsg(state *peerState, sp *Peer) bool {
 	// TODO: Check for max peers from a single IP.
 
 	// Limit max number of total peers.
-	if state.Count() >= config.ActiveConfig().MaxPeers {
-		srvrLog.Infof("Max peers reached [%d] - disconnecting peer %s",
-			config.ActiveConfig().MaxPeers, sp)
+	if sp.Inbound() && len(state.inboundPeers) >= config.ActiveConfig().MaxInboundPeers {
+		srvrLog.Infof("Max inbound peers reached [%d] - disconnecting peer %s",
+			config.ActiveConfig().MaxInboundPeers, sp)
 		sp.Disconnect()
-		// TODO: how to handle permanent peers here?
-		// they should be rescheduled.
 		return false
 	}
 
@@ -944,8 +947,8 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 	case ConnectNodeMsg:
 		// TODO: duplicate oneshots?
 		// Limit max number of total peers.
-		if state.Count() >= config.ActiveConfig().MaxPeers {
-			msg.Reply <- connmgr.ErrMaxPeers
+		if state.countOutboundPeers() >= config.ActiveConfig().TargetOutboundPeers {
+			msg.Reply <- connmgr.ErrMaxOutboundPeers
 			return
 		}
 		for _, peer := range state.persistentPeers {
@@ -1619,18 +1622,20 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		}
 	}
 
+	maxPeers := config.ActiveConfig().TargetOutboundPeers + config.ActiveConfig().MaxInboundPeers
+
 	s := Server{
 		DAGParams:             dagParams,
 		addrManager:           amgr,
-		newPeers:              make(chan *Peer, config.ActiveConfig().MaxPeers),
-		donePeers:             make(chan *Peer, config.ActiveConfig().MaxPeers),
-		banPeers:              make(chan *Peer, config.ActiveConfig().MaxPeers),
+		newPeers:              make(chan *Peer, maxPeers),
+		donePeers:             make(chan *Peer, maxPeers),
+		banPeers:              make(chan *Peer, maxPeers),
 		Query:                 make(chan interface{}),
-		relayInv:              make(chan relayMsg, config.ActiveConfig().MaxPeers),
-		broadcast:             make(chan broadcastMsg, config.ActiveConfig().MaxPeers),
+		relayInv:              make(chan relayMsg, maxPeers),
+		broadcast:             make(chan broadcastMsg, maxPeers),
 		quit:                  make(chan struct{}),
 		modifyRebroadcastInv:  make(chan interface{}),
-		newOutboundConnection: make(chan *outboundPeerConnectedMsg, config.ActiveConfig().MaxPeers), // TODO: replace with target outbound
+		newOutboundConnection: make(chan *outboundPeerConnectedMsg, config.ActiveConfig().TargetOutboundPeers),
 		nat:                   nat,
 		db:                    db,
 		TimeSource:            blockdag.NewMedianTime(),
@@ -1734,7 +1739,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		TxMemPool:          s.TxMemPool,
 		ChainParams:        s.DAGParams,
 		DisableCheckpoints: cfg.DisableCheckpoints,
-		MaxPeers:           cfg.MaxPeers,
+		MaxPeers:           maxPeers,
 	})
 	if err != nil {
 		return nil, err
@@ -1792,15 +1797,11 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 	}
 
 	// Create a connection manager.
-	targetOutbound := defaultTargetOutbound
-	if config.ActiveConfig().MaxPeers < targetOutbound {
-		targetOutbound = config.ActiveConfig().MaxPeers
-	}
 	cmgr, err := connmgr.New(&connmgr.Config{
 		Listeners:      listeners,
 		OnAccept:       s.inboundPeerConnected,
 		RetryDuration:  connectionRetryInterval,
-		TargetOutbound: uint32(targetOutbound),
+		TargetOutbound: uint32(config.ActiveConfig().TargetOutboundPeers),
 		Dial:           serverutils.BTCDDial,
 		OnConnection: func(c *connmgr.ConnReq, conn net.Conn) {
 			s.newOutboundConnection <- &outboundPeerConnectedMsg{
