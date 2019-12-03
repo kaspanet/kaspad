@@ -7,11 +7,12 @@ package netsync
 import (
 	"container/list"
 	"fmt"
-	"github.com/pkg/errors"
 	"net"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/dagconfig"
@@ -1290,15 +1291,12 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 			}
 		})
 
-		// Don't relay if we are not current or the block was just now unorphaned.
-		// Other peers that are current should already know about it
-		if !sm.current() || data.WasUnorphaned {
-			return
+		// Relay if we are current and the block was not just now unorphaned.
+		// Otherwise peers that are current should already know about it
+		if sm.current() && !data.WasUnorphaned {
+			iv := wire.NewInvVect(wire.InvTypeBlock, block.Hash())
+			sm.peerNotifier.RelayInventory(iv, block.MsgBlock().Header)
 		}
-
-		// Generate the inventory vector and relay it.
-		iv := wire.NewInvVect(wire.InvTypeBlock, block.Hash())
-		sm.peerNotifier.RelayInventory(iv, block.MsgBlock().Header)
 
 		for msg := range ch {
 			sm.peerNotifier.TransactionConfirmed(msg.Tx)
