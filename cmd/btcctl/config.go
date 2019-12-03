@@ -255,8 +255,7 @@ func createDefaultConfigFile(destinationPath, serverConfigPath string) error {
 	// Read the RPC server config
 	serverConfigFile, err := os.Open(serverConfigPath)
 	if os.IsNotExist(err) {
-		return errors.Errorf("Couldn't create default configuration file "+
-			"because the RPC server configuration could not be found at %s", serverConfigPath)
+		return errors.Errorf("the RPC server configuration file could not be found at %s", serverConfigPath)
 	}
 	if err != nil {
 		return err
