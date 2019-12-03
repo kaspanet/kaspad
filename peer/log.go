@@ -132,12 +132,6 @@ func messageSummary(msg wire.Message) string {
 	case *wire.MsgPong:
 		// No summary - perhaps add nonce.
 
-	case *wire.MsgAlert:
-		// No summary.
-
-	case *wire.MsgMemPool:
-		// No summary.
-
 	case *wire.MsgTx:
 		return fmt.Sprintf("hash %s, %d inputs, %d outputs, lock %s",
 			msg.TxID(), len(msg.TxIn), len(msg.TxOut),

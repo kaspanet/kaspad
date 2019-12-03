@@ -1059,7 +1059,6 @@ func newPeerConfig(sp *Peer) *peer.Config {
 	return &peer.Config{
 		Listeners: peer.MessageListeners{
 			OnVersion:         sp.OnVersion,
-			OnMemPool:         sp.OnMemPool,
 			OnTx:              sp.OnTx,
 			OnBlock:           sp.OnBlock,
 			OnInv:             sp.OnInv,
@@ -1080,12 +1079,6 @@ func newPeerConfig(sp *Peer) *peer.Config {
 			OnAddr:            sp.OnAddr,
 			OnRead:            sp.OnRead,
 			OnWrite:           sp.OnWrite,
-
-			// Note: The reference client currently bans peers that send alerts
-			// not signed with its key.  We could verify against their key, but
-			// since the reference client is currently unwilling to support
-			// other implementations' alert messages, we will not relay theirs.
-			OnAlert: nil,
 		},
 		SelectedTip:       sp.selectedTip,
 		BlockExists:       sp.blockExists,
