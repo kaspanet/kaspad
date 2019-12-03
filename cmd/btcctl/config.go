@@ -7,6 +7,7 @@ package main
 import (
 	"fmt"
 	"github.com/daglabs/btcd/config"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"net"
 	"os"
@@ -198,13 +199,16 @@ func loadConfig() (*ConfigFlags, []string, error) {
 		os.Exit(0)
 	}
 
-	if _, err := os.Stat(preCfg.ConfigFile); os.IsNotExist(err) {
-		// Use config file for RPC server to create default btcctl config
-		serverConfigPath := filepath.Join(btcdHomeDir, "btcd.conf")
-
-		err := createDefaultConfigFile(preCfg.ConfigFile, serverConfigPath)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error creating a default config file: %s\n", err)
+	// If no rpc user and password were configured, create
+	// a btcctl default config file based on the rpc login
+	// details written in the RPC server configuration file
+	if preCfg.RPCUser == "" && preCfg.RPCPassword == "" {
+		if _, err := os.Stat(preCfg.ConfigFile); os.IsNotExist(err) {
+			serverConfigPath := filepath.Join(btcdHomeDir, "btcd.conf")
+			err := createDefaultConfigFile(preCfg.ConfigFile, serverConfigPath)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error creating a default config file: %s\n", err)
+			}
 		}
 	}
 
@@ -250,6 +254,9 @@ func loadConfig() (*ConfigFlags, []string, error) {
 func createDefaultConfigFile(destinationPath, serverConfigPath string) error {
 	// Read the RPC server config
 	serverConfigFile, err := os.Open(serverConfigPath)
+	if os.IsNotExist(err) {
+		return errors.Errorf("the RPC server configuration file could not be found at %s", serverConfigPath)
+	}
 	if err != nil {
 		return err
 	}

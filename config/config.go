@@ -417,6 +417,24 @@ func loadConfig() (*Config, []string, error) {
 		return nil, nil, err
 	}
 
+	if !activeConfig.DisableRPC {
+		if activeConfig.RPCUser == "" {
+			str := "%s: rpcuser cannot be empty"
+			err := errors.Errorf(str, funcName)
+			fmt.Fprintln(os.Stderr, err)
+			fmt.Fprintln(os.Stderr, usageMessage)
+			return nil, nil, err
+		}
+
+		if activeConfig.RPCPass == "" {
+			str := "%s: rpcpass cannot be empty"
+			err := errors.Errorf(str, funcName)
+			fmt.Fprintln(os.Stderr, err)
+			fmt.Fprintln(os.Stderr, usageMessage)
+			return nil, nil, err
+		}
+	}
+
 	err = activeConfig.ResolveNetwork(parser)
 	if err != nil {
 		return nil, nil, err
