@@ -72,7 +72,7 @@ func realMain() error {
 	backendLogger := logs.NewBackend()
 	defer os.Stdout.Sync()
 	log = backendLogger.Logger("MAIN")
-	spawn = panics.GoroutineWrapperFunc(log, backendLogger)
+	spawn = panics.GoroutineWrapperFunc(log)
 
 	// Load the block database.
 	db, err := loadBlockDB()

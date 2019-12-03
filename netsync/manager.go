@@ -621,6 +621,8 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	if delay != 0 {
 		spawn(func() {
 			sm.QueueBlock(bmsg.block, bmsg.peer, true, make(chan struct{}))
+		}, func() {
+			atomic.AddInt32(&sm.shutdown, 1)
 		})
 	}
 
@@ -1288,6 +1290,8 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 			if err != nil {
 				panic(fmt.Sprintf("HandleNewBlock failed to handle block %s", block.Hash()))
 			}
+		}, func() {
+			atomic.AddInt32(&sm.shutdown, 1)
 		})
 
 		// Don't relay if we are not current or the block was just now unorphaned.
@@ -1395,7 +1399,7 @@ func (sm *SyncManager) Start() {
 
 	log.Trace("Starting sync manager")
 	sm.wg.Add(1)
-	spawn(sm.blockHandler)
+	spawn(sm.blockHandler, func() { atomic.AddInt32(&sm.shutdown, 1) })
 }
 
 // Stop gracefully shuts down the sync manager by stopping all asynchronous

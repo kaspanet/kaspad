@@ -13,6 +13,10 @@ import (
 // subsystems using the same code paths as when an interrupt signal is received.
 var ShutdownRequestChannel = make(chan struct{})
 
+// PanicShutdownChannel is used to initiate shutdown when any thread
+// panics using the same code paths as when an interrupt signal is received.
+var PanicShutdownChannel = make(chan struct{})
+
 // interruptSignals defines the default signals to catch in order to do a proper
 // shutdown.  This may be modified during init depending on the platform.
 var interruptSignals = []os.Signal{os.Interrupt}
@@ -30,11 +34,14 @@ func InterruptListener() <-chan struct{} {
 		// channel to notify the caller.
 		select {
 		case sig := <-interruptChannel:
-			btcdLog.Infof("Received signal (%s).  Shutting down...",
+			btcdLog.Infof("Received signal (%s). Shutting down...",
 				sig)
 
 		case <-ShutdownRequestChannel:
-			btcdLog.Info("Shutdown requested.  Shutting down...")
+			btcdLog.Info("Shutdown requested. Shutting down...")
+
+		case <-PanicShutdownChannel:
+			btcdLog.Info("Panic occurred. Shutting down...")
 		}
 		close(c)
 
@@ -44,12 +51,17 @@ func InterruptListener() <-chan struct{} {
 		for {
 			select {
 			case sig := <-interruptChannel:
-				btcdLog.Infof("Received signal (%s).  Already "+
+				btcdLog.Infof("Received signal (%s). Already "+
 					"shutting down...", sig)
 
 			case <-ShutdownRequestChannel:
-				btcdLog.Info("Shutdown requested.  Already " +
+				btcdLog.Info("Shutdown requested. Already " +
 					"shutting down...")
+
+			case <-PanicShutdownChannel:
+				btcdLog.Info("Panic occurred while shutting down " +
+					"due to a panic. Forcing shut down...")
+				os.Exit(1)
 			}
 		}
 	}()

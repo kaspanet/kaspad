@@ -22,7 +22,7 @@ const (
 )
 
 var log, _ = logger.Get(logger.SubsystemTags.PEER)
-var spawn = panics.GoroutineWrapperFunc(log, logger.BackendLog)
+var spawn = panics.GoroutineWrapperFunc(log)
 
 // LogClosure is a closure that can be printed with %s to be used to
 // generate expensive-to-create data for a detailed log level and avoid doing
