@@ -3,6 +3,7 @@ package p2p
 import (
 	"github.com/daglabs/btcd/peer"
 	"github.com/daglabs/btcd/wire"
+	"github.com/prometheus/common/log"
 )
 
 // OnGetHeaders is invoked when a peer receives a getheaders bitcoin
@@ -22,7 +23,12 @@ func (sp *Peer) OnGetHeaders(_ *peer.Peer, msg *wire.MsgGetHeaders) {
 	// provided locator are known.  This does mean the client will start
 	// over with the genesis block if unknown block locators are provided.
 	dag := sp.server.DAG
-	headers := dag.GetBlueBlocksHeadersBetween(msg.StartHash, msg.StopHash)
+	headers, err := dag.GetBlueBlocksHeadersBetween(msg.StartHash, msg.StopHash)
+	if err != nil {
+		log.Warnf("Error getting blue blocks headers between %s and %s: %s", msg.StartHash, msg.StopHash, err)
+		sp.Disconnect()
+		return
+	}
 
 	// Send found headers to the requesting peer.
 	blockHeaders := make([]*wire.BlockHeader, len(headers))

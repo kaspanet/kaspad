@@ -3,6 +3,7 @@ package p2p
 import (
 	"github.com/daglabs/btcd/peer"
 	"github.com/daglabs/btcd/wire"
+	"github.com/prometheus/common/log"
 )
 
 // OnGetBlockInvs is invoked when a peer receives a getblockinvs bitcoin
@@ -20,8 +21,13 @@ func (sp *Peer) OnGetBlockInvs(_ *peer.Peer, msg *wire.MsgGetBlockInvs) {
 	// This way, if one getblocks is not enough to get the peer
 	// synced, we can know for sure that its selected chain will
 	// change, so we'll have higher shared chain block.
-	hashList := dag.GetBlueBlocksHashesBetween(msg.StartHash, msg.StopHash,
+	hashList, err := dag.GetBlueBlocksHashesBetween(msg.StartHash, msg.StopHash,
 		wire.MaxInvPerMsg)
+	if err != nil {
+		log.Warnf("Error getting blue blocks between %s and %s: %s", msg.StartHash, msg.StopHash, err)
+		sp.Disconnect()
+		return
+	}
 
 	// Generate inventory message.
 	invMsg := wire.NewMsgInv()
