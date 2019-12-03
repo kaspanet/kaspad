@@ -188,10 +188,10 @@ type peerState struct {
 
 // Count returns the count of all known peers.
 func (ps *peerState) Count() int {
-	return ps.countinboundPeers() + ps.countOutboundPeers()
+	return ps.countInboundPeers() + ps.countOutboundPeers()
 }
 
-func (ps *peerState) countinboundPeers() int {
+func (ps *peerState) countInboundPeers() int {
 	return len(ps.inboundPeers)
 }
 
