@@ -30,6 +30,7 @@ func ActiveConfig() *Config {
 // Config defines the configuration options for the API server.
 type Config struct {
 	LogDir            string `long:"logdir" description:"Directory to log output."`
+	DebugLevel        string `short:"d" long:"debuglevel" description:"Set log level {trace, debug, info, warn, error, critical}"`
 	RPCUser           string `short:"u" long:"rpcuser" description:"RPC username"`
 	RPCPassword       string `short:"P" long:"rpcpass" default-mask:"-" description:"RPC password"`
 	RPCServer         string `short:"s" long:"rpcserver" description:"RPC server to connect to"`
@@ -48,7 +49,7 @@ type Config struct {
 }
 
 // Parse parses the CLI arguments and returns a config struct.
-func Parse() (*Config, error) {
+func Parse() error {
 	activeConfig = &Config{
 		LogDir:     defaultLogDir,
 		DBAddress:  defaultDBAddress,
@@ -57,42 +58,49 @@ func Parse() (*Config, error) {
 	parser := flags.NewParser(activeConfig, flags.PrintErrors|flags.HelpFlag)
 	_, err := parser.Parse()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if !activeConfig.Migrate {
 		if activeConfig.RPCUser == "" {
-			return nil, errors.New("--rpcuser is required if --migrate flag is not used")
+			return errors.New("--rpcuser is required if --migrate flag is not used")
 		}
 		if activeConfig.RPCPassword == "" {
-			return nil, errors.New("--rpcpass is required if --migrate flag is not used")
+			return errors.New("--rpcpass is required if --migrate flag is not used")
 		}
 		if activeConfig.RPCServer == "" {
-			return nil, errors.New("--rpcserver is required if --migrate flag is not used")
+			return errors.New("--rpcserver is required if --migrate flag is not used")
 		}
 	}
 
 	if activeConfig.RPCCert == "" && !activeConfig.DisableTLS {
-		return nil, errors.New("--notls has to be disabled if --cert is used")
+		return errors.New("--notls has to be disabled if --cert is used")
 	}
 
 	if activeConfig.RPCCert != "" && activeConfig.DisableTLS {
-		return nil, errors.New("--cert should be omitted if --notls is used")
+		return errors.New("--cert should be omitted if --notls is used")
 	}
 
 	if (activeConfig.MQTTBrokerAddress != "" || activeConfig.MQTTUser != "" || activeConfig.MQTTPassword != "") &&
 		(activeConfig.MQTTBrokerAddress == "" || activeConfig.MQTTUser == "" || activeConfig.MQTTPassword == "") {
-		return nil, errors.New("--mqttaddress, --mqttuser, and --mqttpass must be passed all together")
+		return errors.New("--mqttaddress, --mqttuser, and --mqttpass must be passed all together")
 	}
 
 	err = activeConfig.ResolveNetwork(parser)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	logFile := filepath.Join(activeConfig.LogDir, defaultLogFilename)
 	errLogFile := filepath.Join(activeConfig.LogDir, defaultErrLogFilename)
 	logger.InitLog(logFile, errLogFile)
 
-	return activeConfig, nil
+	if activeConfig.DebugLevel != "" {
+		err := logger.SetLogLevels(activeConfig.DebugLevel)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

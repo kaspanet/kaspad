@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/daglabs/btcd/util"
 	"net/http"
 
 	"github.com/daglabs/btcd/apiserver/apimodels"
@@ -78,9 +79,9 @@ func GetTransactionByHashHandler(txHash string) (interface{}, error) {
 // GetTransactionsByAddressHandler searches for all transactions
 // where the given address is either an input or an output.
 func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) (interface{}, error) {
-	if limit > maxGetTransactionsLimit {
-		return nil, httpserverutils.NewHandlerError(http.StatusUnprocessableEntity,
-			errors.Errorf("The maximum allowed value for the limit is %d", maxGetTransactionsLimit))
+	if limit < 1 || limit > maxGetTransactionsLimit {
+		return nil, httpserverutils.NewHandlerError(http.StatusBadRequest,
+			errors.Errorf("Limit higher than %d or lower than 1 was requested.", maxGetTransactionsLimit))
 	}
 
 	db, err := database.DB()
@@ -89,12 +90,7 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 	}
 
 	txs := []*dbmodels.Transaction{}
-	query := db.
-		Joins("LEFT JOIN `transaction_outputs` ON `transaction_outputs`.`transaction_id` = `transactions`.`id`").
-		Joins("LEFT JOIN `addresses` AS `out_addresses` ON `out_addresses`.`id` = `transaction_outputs`.`address_id`").
-		Joins("LEFT JOIN `transaction_inputs` ON `transaction_inputs`.`transaction_id` = `transactions`.`id`").
-		Joins("LEFT JOIN `transaction_outputs` AS `inputs_outs` ON `inputs_outs`.`id` = `transaction_inputs`.`previous_transaction_output_id`").
-		Joins("LEFT JOIN `addresses` AS `in_addresses` ON `in_addresses`.`id` = `inputs_outs`.`address_id`").
+	query := joinTxInputsTxOutputsAndAddresses(db).
 		Where("`out_addresses`.`address` = ?", address).
 		Or("`in_addresses`.`address` = ?", address).
 		Limit(limit).
@@ -152,6 +148,13 @@ func areTxsInBlock(blockID uint64, txIDs []uint64) (map[uint64]bool, error) {
 
 // GetUTXOsByAddressHandler searches for all UTXOs that belong to a certain address.
 func GetUTXOsByAddressHandler(address string) (interface{}, error) {
+	_, err := util.DecodeAddress(address, config.ActiveConfig().ActiveNetParams.Prefix)
+	if err != nil {
+		return nil, httpserverutils.NewHandlerErrorWithCustomClientMessage(http.StatusUnprocessableEntity,
+			errors.Wrap(err, "error decoding address"),
+			"The given address is not a well-formatted P2PKH or P2SH address.")
+	}
+
 	db, err := database.DB()
 	if err != nil {
 		return nil, err
@@ -224,6 +227,15 @@ func GetUTXOsByAddressHandler(address string) (interface{}, error) {
 	return UTXOsResponses, nil
 }
 
+func joinTxInputsTxOutputsAndAddresses(query *gorm.DB) *gorm.DB {
+	return query.
+		Joins("LEFT JOIN `transaction_outputs` ON `transaction_outputs`.`transaction_id` = `transactions`.`id`").
+		Joins("LEFT JOIN `addresses` AS `out_addresses` ON `out_addresses`.`id` = `transaction_outputs`.`address_id`").
+		Joins("LEFT JOIN `transaction_inputs` ON `transaction_inputs`.`transaction_id` = `transactions`.`id`").
+		Joins("LEFT JOIN `transaction_outputs` AS `inputs_outs` ON `inputs_outs`.`id` = `transaction_inputs`.`previous_transaction_output_id`").
+		Joins("LEFT JOIN `addresses` AS `in_addresses` ON `in_addresses`.`id` = `inputs_outs`.`address_id`")
+}
+
 func addTxPreloadedFields(query *gorm.DB) *gorm.DB {
 	return query.Preload("AcceptingBlock").
 		Preload("Subnetwork").
@@ -266,11 +278,36 @@ func PostTransaction(requestBody []byte) error {
 
 	_, err = client.SendRawTransaction(tx, true)
 	if err != nil {
-		if rpcErr, ok := err.(*btcjson.RPCError); ok && rpcErr.Code == btcjson.ErrRPCVerify {
-			return httpserverutils.NewHandlerError(http.StatusInternalServerError, err)
+		switch err := errors.Cause(err).(type) {
+		case *btcjson.RPCError:
+			return httpserverutils.NewHandlerError(http.StatusUnprocessableEntity, err)
+		default:
+			return err
 		}
-		return err
+	}
+	return nil
+}
+
+// GetTransactionsByIDsHandler finds transactions by the given transactionIds.
+func GetTransactionsByIDsHandler(transactionIds []string) ([]*apimodels.TransactionResponse, error) {
+	db, err := database.DB()
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	var txs []*dbmodels.Transaction
+	query := joinTxInputsTxOutputsAndAddresses(db).
+		Where("`transactions`.`transaction_id` IN (?)", transactionIds)
+
+	dbResult := addTxPreloadedFields(query).Find(&txs)
+	dbErrors := dbResult.GetErrors()
+	if httpserverutils.HasDBError(dbErrors) {
+		return nil, httpserverutils.NewErrorFromDBErrors("Some errors were encountered when loading transactions from the database:", dbErrors)
+	}
+
+	txResponses := make([]*apimodels.TransactionResponse, len(txs))
+	for i, tx := range txs {
+		txResponses[i] = convertTxDBModelToTxResponse(tx)
+	}
+	return txResponses, nil
 }

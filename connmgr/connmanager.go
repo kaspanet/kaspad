@@ -7,11 +7,12 @@ package connmgr
 import (
 	nativeerrors "errors"
 	"fmt"
-	"github.com/pkg/errors"
 	"net"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // maxFailedAttempts is the maximum number of successive failed connection
@@ -39,9 +40,9 @@ var (
 	//ErrDialNil is used to indicate that Dial cannot be nil in the configuration.
 	ErrDialNil = errors.New("Config: Dial cannot be nil")
 
-	// ErrMaxPeers is an error that is thrown when the max amount of peers had
+	// ErrMaxOutboundPeers is an error that is thrown when the max amount of peers had
 	// been reached.
-	ErrMaxPeers = errors.New("max peers reached")
+	ErrMaxOutboundPeers = errors.New("max outbound peers reached")
 
 	// ErrAlreadyConnected is an error that is thrown if the peer is already
 	// connected.

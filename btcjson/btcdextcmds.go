@@ -72,13 +72,19 @@ func NewGenerateCmd(numBlocks uint32) *GenerateCmd {
 	}
 }
 
-// GetBestBlockCmd defines the getBestBlock JSON-RPC command.
-type GetBestBlockCmd struct{}
+// GetSelectedTipCmd defines the getSelectedTip JSON-RPC command.
+type GetSelectedTipCmd struct {
+	Verbose   *bool `jsonrpcdefault:"true"`
+	VerboseTx *bool `jsonrpcdefault:"false"`
+}
 
-// NewGetBestBlockCmd returns a new instance which can be used to issue a
-// getBestBlock JSON-RPC command.
-func NewGetBestBlockCmd() *GetBestBlockCmd {
-	return &GetBestBlockCmd{}
+// NewGetSelectedTipCmd returns a new instance which can be used to issue a
+// getSelectedTip JSON-RPC command.
+func NewGetSelectedTipCmd(verbose, verboseTx *bool) *GetSelectedTipCmd {
+	return &GetSelectedTipCmd{
+		Verbose:   verbose,
+		VerboseTx: verboseTx,
+	}
 }
 
 // GetCurrentNetCmd defines the getCurrentNet JSON-RPC command.
@@ -144,7 +150,7 @@ func init() {
 	MustRegisterCmd("debugLevel", (*DebugLevelCmd)(nil), flags)
 	MustRegisterCmd("node", (*NodeCmd)(nil), flags)
 	MustRegisterCmd("generate", (*GenerateCmd)(nil), flags)
-	MustRegisterCmd("getBestBlock", (*GetBestBlockCmd)(nil), flags)
+	MustRegisterCmd("getSelectedTip", (*GetSelectedTipCmd)(nil), flags)
 	MustRegisterCmd("getCurrentNet", (*GetCurrentNetCmd)(nil), flags)
 	MustRegisterCmd("getHeaders", (*GetHeadersCmd)(nil), flags)
 	MustRegisterCmd("getTopHeaders", (*GetTopHeadersCmd)(nil), flags)

@@ -27,7 +27,7 @@ const (
 const (
 	defaultGetTransactionsLimit = 100
 	defaultGetBlocksLimit       = 25
-	defaultGetBlocksOrder       = controllers.OrderAscending
+	defaultGetBlocksOrder       = controllers.OrderDescending
 )
 
 func mainHandler(_ *httpserverutils.ServerContext, _ *http.Request, _ map[string]string, _ map[string]string, _ []byte) (interface{}, error) {
@@ -86,7 +86,11 @@ func convertQueryParamToInt(queryParams map[string]string, param string, default
 	if _, ok := queryParams[param]; ok {
 		intValue, err := strconv.Atoi(queryParams[param])
 		if err != nil {
-			return 0, httpserverutils.NewHandlerError(http.StatusUnprocessableEntity, errors.Wrap(err, fmt.Sprintf("Couldn't parse the '%s' query parameter", param)))
+			errorMessage := fmt.Sprintf("Couldn't parse the '%s' query parameter", param)
+			return 0, httpserverutils.NewHandlerErrorWithCustomClientMessage(
+				http.StatusUnprocessableEntity,
+				errors.Wrap(err, errorMessage),
+				errorMessage)
 		}
 		return intValue, nil
 	}
@@ -118,7 +122,7 @@ func getTransactionsByAddressHandler(_ *httpserverutils.ServerContext, _ *http.R
 	}
 	if _, ok := queryParams[queryParamLimit]; ok {
 		var err error
-		skip, err = strconv.Atoi(queryParams[queryParamLimit])
+		limit, err = strconv.Atoi(queryParams[queryParamLimit])
 		if err != nil {
 			return nil, httpserverutils.NewHandlerError(http.StatusUnprocessableEntity,
 				errors.Wrap(err, fmt.Sprintf("Couldn't parse the '%s' query parameter", queryParamLimit)))
@@ -159,7 +163,8 @@ func getBlocksHandler(_ *httpserverutils.ServerContext, _ *http.Request, _ map[s
 	order := defaultGetBlocksOrder
 	if orderParamValue, ok := queryParams[queryParamOrder]; ok {
 		if orderParamValue != controllers.OrderAscending && orderParamValue != controllers.OrderDescending {
-			return nil, httpserverutils.NewHandlerError(http.StatusUnprocessableEntity, errors.Errorf("'%s' is not a valid value for the '%s' query parameter", orderParamValue, queryParamLimit))
+			return nil, httpserverutils.NewHandlerError(http.StatusUnprocessableEntity, errors.Errorf(
+				"Couldn't parse the '%s' query parameter", queryParamOrder))
 		}
 		order = orderParamValue
 	}

@@ -32,15 +32,16 @@ import (
 )
 
 const (
-	defaultConfigFilename = "btcd.conf"
-	defaultDataDirname    = "data"
-	defaultLogLevel       = "info"
-	defaultLogDirname     = "logs"
-	defaultLogFilename    = "btcd.log"
-	defaultErrLogFilename = "btcd_err.log"
-	defaultMaxPeers       = 125
-	defaultBanDuration    = time.Hour * 24
-	defaultBanThreshold   = 100
+	defaultConfigFilename      = "btcd.conf"
+	defaultDataDirname         = "data"
+	defaultLogLevel            = "info"
+	defaultLogDirname          = "logs"
+	defaultLogFilename         = "btcd.log"
+	defaultErrLogFilename      = "btcd_err.log"
+	defaultTargetOutboundPeers = 8
+	defaultMaxInboundPeers     = 117
+	defaultBanDuration         = time.Hour * 24
+	defaultBanThreshold        = 100
 	//DefaultConnectTimeout is the default connection timeout when dialing
 	DefaultConnectTimeout        = time.Second * 30
 	defaultMaxRPCClients         = 10
@@ -101,7 +102,8 @@ type Flags struct {
 	ConnectPeers         []string      `long:"connect" description:"Connect only to the specified peers at startup"`
 	DisableListen        bool          `long:"nolisten" description:"Disable listening for incoming connections -- NOTE: Listening is automatically disabled if the --connect or --proxy options are used without also specifying listen interfaces via --listen"`
 	Listeners            []string      `long:"listen" description:"Add an interface/port to listen for connections (default all interfaces port: 8333, testnet: 18333)"`
-	MaxPeers             int           `long:"maxpeers" description:"Max number of inbound and outbound peers"`
+	TargetOutboundPeers  int           `long:"outpeers" description:"Target number of outbound peers"`
+	MaxInboundPeers      int           `long:"maxinpeers" description:"Max number of inbound peers"`
 	DisableBanning       bool          `long:"nobanning" description:"Disable banning of misbehaving peers"`
 	BanDuration          time.Duration `long:"banduration" description:"How long to ban misbehaving peers.  Valid time units are {s, m, h}.  Minimum 1 second"`
 	BanThreshold         uint32        `long:"banthreshold" description:"Maximum allowed ban score before disconnecting and banning misbehaving peers."`
@@ -296,7 +298,8 @@ func loadConfig() (*Config, []string, error) {
 	cfgFlags := Flags{
 		ConfigFile:           defaultConfigFile,
 		DebugLevel:           defaultLogLevel,
-		MaxPeers:             defaultMaxPeers,
+		TargetOutboundPeers:  defaultTargetOutboundPeers,
+		MaxInboundPeers:      defaultMaxInboundPeers,
 		BanDuration:          defaultBanDuration,
 		BanThreshold:         defaultBanThreshold,
 		RPCMaxClients:        defaultMaxRPCClients,
@@ -415,6 +418,24 @@ func loadConfig() (*Config, []string, error) {
 		err := errors.Errorf(str, funcName, err)
 		fmt.Fprintln(os.Stderr, err)
 		return nil, nil, err
+	}
+
+	if !activeConfig.DisableRPC {
+		if activeConfig.RPCUser == "" {
+			str := "%s: rpcuser cannot be empty"
+			err := errors.Errorf(str, funcName)
+			fmt.Fprintln(os.Stderr, err)
+			fmt.Fprintln(os.Stderr, usageMessage)
+			return nil, nil, err
+		}
+
+		if activeConfig.RPCPass == "" {
+			str := "%s: rpcpass cannot be empty"
+			err := errors.Errorf(str, funcName)
+			fmt.Fprintln(os.Stderr, err)
+			fmt.Fprintln(os.Stderr, usageMessage)
+			return nil, nil, err
+		}
 	}
 
 	err = activeConfig.ResolveNetwork(parser)

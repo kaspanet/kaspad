@@ -2,11 +2,12 @@ package controllers
 
 import (
 	"encoding/hex"
+	"net/http"
+
 	"github.com/daglabs/btcd/apiserver/apimodels"
 	"github.com/daglabs/btcd/apiserver/dbmodels"
 	"github.com/daglabs/btcd/httpserverutils"
 	"github.com/pkg/errors"
-	"net/http"
 
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/util/daghash"
@@ -45,15 +46,17 @@ func GetBlockByHashHandler(blockHash string) (interface{}, error) {
 		return nil, httpserverutils.NewHandlerError(http.StatusNotFound, errors.New("No block with the given block hash was found"))
 	}
 	if httpserverutils.HasDBError(dbErrors) {
-		return nil, httpserverutils.NewErrorFromDBErrors("Some errors were encountered when loading transactions from the database:", dbResult.GetErrors())
+		return nil, httpserverutils.NewErrorFromDBErrors("Some errors were encountered when loading transactions from the database:",
+			dbResult.GetErrors())
 	}
 	return convertBlockModelToBlockResponse(block), nil
 }
 
 // GetBlocksHandler searches for all blocks
 func GetBlocksHandler(order string, skip uint64, limit uint64) (interface{}, error) {
-	if limit > maxGetBlocksLimit {
-		return nil, httpserverutils.NewHandlerError(http.StatusUnprocessableEntity, errors.Errorf("The maximum allowed value for the limit is %d", maxGetTransactionsLimit))
+	if limit < 1 || limit > maxGetBlocksLimit {
+		return nil, httpserverutils.NewHandlerError(http.StatusBadRequest,
+			errors.Errorf("Limit higher than %d or lower than 1 was requested.", maxGetTransactionsLimit))
 	}
 	blocks := []*dbmodels.Block{}
 	db, err := database.DB()
@@ -77,4 +80,30 @@ func GetBlocksHandler(order string, skip uint64, limit uint64) (interface{}, err
 		blockResponses[i] = convertBlockModelToBlockResponse(block)
 	}
 	return blockResponses, nil
+}
+
+// GetAcceptedTransactionIDsByBlockHashHandler returns an array of transaction IDs for a given block hash
+func GetAcceptedTransactionIDsByBlockHashHandler(blockHash string) ([]string, error) {
+	db, err := database.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	var transactions []dbmodels.Transaction
+	dbResult := db.
+		Joins("LEFT JOIN `blocks` ON `blocks`.`id` = `transactions`.`accepting_block_id`").
+		Where("`blocks`.`block_hash` = ?", blockHash).
+		Find(&transactions)
+
+	dbErrors := dbResult.GetErrors()
+	if httpserverutils.HasDBError(dbErrors) {
+		return nil, httpserverutils.NewErrorFromDBErrors("Failed to find transactions: ", dbErrors)
+	}
+
+	result := make([]string, len(transactions))
+	for _, transaction := range transactions {
+		result = append(result, transaction.TransactionID)
+	}
+
+	return result, nil
 }
