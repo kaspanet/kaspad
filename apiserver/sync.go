@@ -211,8 +211,10 @@ func fetchBlock(client *jsonrpc.Client, blockHash *daghash.Hash) (
 // into the database. See addBlock for further details.
 func addBlocks(client *jsonrpc.Client, rawBlocks []string, verboseBlocks []btcjson.GetBlockVerboseResult) error {
 	for i, rawBlock := range rawBlocks {
-		verboseBlock := verboseBlocks[i]
-		err := addBlock(client, rawBlock, verboseBlock)
+		err := addBlockAndMissingAncestors(client, &rawAndVerboseBlock{
+			rawBlock:     rawBlock,
+			verboseBlock: &verboseBlocks[i],
+		})
 		if err != nil {
 			return err
 		}
@@ -928,7 +930,15 @@ func (r *rawAndVerboseBlock) String() string {
 }
 
 func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedMsg) error {
-	blocks, err := fetchBlockAndMissingAncestors(client, blockAdded.Header.BlockHash())
+	block, err := fetchBlock(client, blockAdded.Header.BlockHash())
+	if err != nil {
+		return err
+	}
+	return addBlockAndMissingAncestors(client, block)
+}
+
+func addBlockAndMissingAncestors(client *jsonrpc.Client, block *rawAndVerboseBlock) error {
+	blocks, err := fetchBlockAndMissingAncestors(client, block)
 	if err != nil {
 		return err
 	}
@@ -942,11 +952,7 @@ func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedM
 	return nil
 }
 
-func fetchBlockAndMissingAncestors(client *jsonrpc.Client, blockHash *daghash.Hash) ([]*rawAndVerboseBlock, error) {
-	block, err := fetchBlock(client, blockHash)
-	if err != nil {
-		return nil, err
-	}
+func fetchBlockAndMissingAncestors(client *jsonrpc.Client, block *rawAndVerboseBlock) ([]*rawAndVerboseBlock, error) {
 	pendingBlocks := []*rawAndVerboseBlock{block}
 	blocksToAdd := make([]*rawAndVerboseBlock, 0)
 	blocksToAddSet := make(map[string]struct{})
