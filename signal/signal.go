@@ -59,8 +59,8 @@ func InterruptListener() <-chan struct{} {
 					"shutting down...")
 
 			case <-PanicShutdownChannel:
-				btcdLog.Info("Panic occurred while shutting down " +
-					"due to a panic. Forcing shut down...")
+				btcdLog.Info("Panic occurred while shutting down. " +
+					"Forcing shut down...")
 				os.Exit(1)
 			}
 		}
