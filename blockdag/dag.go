@@ -1707,10 +1707,11 @@ func (dag *BlockDAG) getBlueBlocksBetween(startHash, stopHash *daghash.Hash, max
 	nodes := make([]*blockNode, 0, stopNode.blueScore-startNode.blueScore+1)
 	nodes = append(nodes, stopNode)
 	current := stopNode
-	for ; current.blueScore > startNode.blueScore; current = current.selectedParent {
+	for current.blueScore > startNode.blueScore {
 		for _, blue := range current.blues {
 			nodes = append(nodes, blue)
 		}
+		current = current.selectedParent
 	}
 	if current != startNode {
 		return nil, errors.Errorf("the start hash is not found in the " +

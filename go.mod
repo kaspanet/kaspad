@@ -22,6 +22,7 @@ require (
 	github.com/kkdai/bstream v0.0.0-20181106074824-b3251f7901ec
 	github.com/miekg/dns v1.1.6
 	github.com/pkg/errors v0.8.1
+	github.com/prometheus/common v0.2.0
 	github.com/stretchr/testify v1.4.0 // indirect
 	golang.org/x/crypto v0.0.0-20190426145343-a29dc8fdc734
 )
