@@ -351,12 +351,6 @@ func TestPeerListeners(t *testing.T) {
 			OnPong: func(p *peer.Peer, msg *wire.MsgPong) {
 				ok <- msg
 			},
-			OnAlert: func(p *peer.Peer, msg *wire.MsgAlert) {
-				ok <- msg
-			},
-			OnMemPool: func(p *peer.Peer, msg *wire.MsgMemPool) {
-				ok <- msg
-			},
 			OnTx: func(p *peer.Peer, msg *wire.MsgTx) {
 				ok <- msg
 			},
@@ -478,14 +472,6 @@ func TestPeerListeners(t *testing.T) {
 		{
 			"OnPong",
 			wire.NewMsgPong(42),
-		},
-		{
-			"OnAlert",
-			wire.NewMsgAlert([]byte("payload"), []byte("signature")),
-		},
-		{
-			"OnMemPool",
-			wire.NewMsgMemPool(),
 		},
 		{
 			"OnTx",
@@ -692,7 +678,6 @@ func TestOutboundPeer(t *testing.T) {
 	// Test Queue Messages
 	p2.QueueMessage(wire.NewMsgGetAddr(false, nil), nil)
 	p2.QueueMessage(wire.NewMsgPing(1), nil)
-	p2.QueueMessage(wire.NewMsgMemPool(), nil)
 	p2.QueueMessage(wire.NewMsgGetData(), nil)
 	p2.QueueMessage(wire.NewMsgGetHeaders(&daghash.ZeroHash, &daghash.ZeroHash), nil)
 	p2.QueueMessage(wire.NewMsgFeeFilter(20000), nil)

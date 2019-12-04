@@ -65,8 +65,6 @@ func TestMessage(t *testing.T) {
 	msgSendHeaders := NewMsgSendHeaders()
 	msgFeeFilter := NewMsgFeeFilter(123456)
 	msgHeaders := NewMsgHeaders()
-	msgAlert := NewMsgAlert([]byte("payload"), []byte("signature"))
-	msgMemPool := NewMsgMemPool()
 	msgFilterAdd := NewMsgFilterAdd([]byte{0x01})
 	msgFilterClear := NewMsgFilterClear()
 	msgFilterLoad := NewMsgFilterLoad([]byte{0x01}, 10, 0, BloomUpdateNone)
@@ -106,8 +104,6 @@ func TestMessage(t *testing.T) {
 		{msgSendHeaders, msgSendHeaders, pver, MainNet, 24},
 		{msgFeeFilter, msgFeeFilter, pver, MainNet, 32},
 		{msgHeaders, msgHeaders, pver, MainNet, 25},
-		{msgAlert, msgAlert, pver, MainNet, 42},
-		{msgMemPool, msgMemPool, pver, MainNet, 24},
 		{msgFilterAdd, msgFilterAdd, pver, MainNet, 26},
 		{msgFilterClear, msgFilterClear, pver, MainNet, 24},
 		{msgFilterLoad, msgFilterLoad, pver, MainNet, 35},
