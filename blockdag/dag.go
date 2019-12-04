@@ -580,7 +580,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 		panic(err)
 	}
 
-	err = dag.saveChangesFromBlock(node, block, virtualUTXODiff, txsAcceptanceData, virtualTxsAcceptanceData, newBlockFeeData)
+	err = dag.saveChangesFromBlock(block, virtualUTXODiff, txsAcceptanceData, virtualTxsAcceptanceData, newBlockFeeData)
 	if err != nil {
 		return nil, err
 	}
@@ -588,7 +588,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	return chainUpdates, nil
 }
 
-func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, virtualUTXODiff *UTXODiff,
+func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UTXODiff,
 	txsAcceptanceData MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData,
 	feeData compactFeeData) error {
 
