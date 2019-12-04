@@ -28,6 +28,7 @@ type config struct {
 	CertificatePath  string `long:"cert" description:"Path to certificate accepted by JSON-RPC endpoint"`
 	DisableTLS       bool   `long:"notls" description:"Disable TLS"`
 	Verbose          bool   `long:"verbose" short:"v" description:"Enable logging of RPC requests"`
+	BlockDelay       uint64 `long:"block-delay" description:"Delay for block submission (in milliseconds)"`
 }
 
 func parseConfig() (*config, error) {

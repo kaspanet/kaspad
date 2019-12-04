@@ -50,7 +50,7 @@ func parseBlock(template *btcjson.GetBlockTemplateResult) (*util.Block, error) {
 	// parse rest of block
 	msgBlock := wire.NewMsgBlock(
 		wire.NewBlockHeader(template.Version, parentHashes, &daghash.Hash{},
-			acceptedIDMerkleRoot, utxoCommitment, uint32(bits), 0))
+			acceptedIDMerkleRoot, utxoCommitment, bits, 0))
 
 	for i, txResult := range append([]btcjson.GetBlockTemplateResultTx{*template.CoinbaseTxn}, template.Transactions...) {
 		reader := hex.NewDecoder(strings.NewReader(txResult.Data))
@@ -68,9 +68,9 @@ func parseBlock(template *btcjson.GetBlockTemplateResult) (*util.Block, error) {
 
 func solveBlock(block *util.Block, stopChan chan struct{}, foundBlock chan *util.Block) {
 	msgBlock := block.MsgBlock()
-	maxNonce := ^uint64(0) // 2^64 - 1
 	targetDifficulty := util.CompactToBig(msgBlock.Header.Bits)
-	for i := uint64(0); i < maxNonce; i++ {
+	initialNonce := random.Uint64()
+	for i := random.Uint64(); i != initialNonce-1; i++ {
 		select {
 		case <-stopChan:
 			return
@@ -152,13 +152,12 @@ func mineNextBlock(client *simulatorClient, foundBlock chan *util.Block, templat
 	go solveLoop(newTemplateChan, foundBlock, errChan)
 }
 
-func handleFoundBlock(client *simulatorClient, block *util.Block, templateStopChan chan struct{}) error {
-	templateStopChan <- struct{}{}
+func handleFoundBlock(client *simulatorClient, block *util.Block) error {
 	log.Infof("Found block %s with parents %s! Submitting to %s", block.Hash(), block.MsgBlock().Header.ParentHashes, client.Host())
 
 	err := client.SubmitBlock(block, &btcjson.SubmitBlockOptions{})
 	if err != nil {
-		return errors.Errorf("Error submitting block: %s", err)
+		return errors.Errorf("Error submitting block %s to %s: %s", block.Hash(), client.Host(), err)
 	}
 	return nil
 }
@@ -171,7 +170,7 @@ func getRandomClient(clients []*simulatorClient) *simulatorClient {
 	return clients[random.Int63n(clientsCount)]
 }
 
-func mineLoop(connManager *connectionManager) error {
+func mineLoop(connManager *connectionManager, blockDelay uint64) error {
 	errChan := make(chan error)
 
 	templateStopChan := make(chan struct{})
@@ -189,11 +188,16 @@ func mineLoop(connManager *connectionManager) error {
 				return
 			}
 			currentClient.notifyForNewBlocks = false
-			err := handleFoundBlock(currentClient, block, templateStopChan)
-			if err != nil {
-				errChan <- err
-				return
-			}
+			templateStopChan <- struct{}{}
+			spawn(func() {
+				if blockDelay != 0 {
+					time.Sleep(time.Duration(blockDelay) * time.Millisecond)
+				}
+				err := handleFoundBlock(currentClient, block)
+				if err != nil {
+					errChan <- err
+				}
+			})
 		}
 	})
 
