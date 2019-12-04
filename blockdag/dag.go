@@ -1666,23 +1666,26 @@ func (dag *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval uint64,
 // provided max number of block hashes.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) getBlueBlocksHashesBetween(startHash, stopHash *daghash.Hash, maxHashes uint64) []*daghash.Hash {
-	nodes := dag.getBlueBlocksBetween(startHash, stopHash, maxHashes)
+func (dag *BlockDAG) getBlueBlocksHashesBetween(startHash, stopHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
+	nodes, err := dag.getBlueBlocksBetween(startHash, stopHash, maxHashes)
+	if err != nil {
+		return nil, err
+	}
 	hashes := make([]*daghash.Hash, len(nodes))
 	for i, node := range nodes {
 		hashes[i] = node.hash
 	}
-	return hashes
+	return hashes, nil
 }
 
-func (dag *BlockDAG) getBlueBlocksBetween(startHash, stopHash *daghash.Hash, maxEntries uint64) []*blockNode {
+func (dag *BlockDAG) getBlueBlocksBetween(startHash, stopHash *daghash.Hash, maxEntries uint64) ([]*blockNode, error) {
 	startNode := dag.index.LookupNode(startHash)
 	if startNode == nil {
-		return nil
+		return nil, errors.Errorf("Couldn't find start hash %s", startHash)
 	}
 	stopNode := dag.index.LookupNode(stopHash)
 	if stopNode == nil {
-		stopNode = dag.selectedTip()
+		return nil, errors.Errorf("Couldn't find stop hash %s", stopHash)
 	}
 
 	// In order to get no more then maxEntries of blue blocks from
@@ -1703,16 +1706,22 @@ func (dag *BlockDAG) getBlueBlocksBetween(startHash, stopHash *daghash.Hash, max
 	// Populate and return the found nodes.
 	nodes := make([]*blockNode, 0, stopNode.blueScore-startNode.blueScore+1)
 	nodes = append(nodes, stopNode)
-	for current := stopNode; current != startNode; current = current.selectedParent {
+	current := stopNode
+	for current.blueScore > startNode.blueScore {
 		for _, blue := range current.blues {
 			nodes = append(nodes, blue)
 		}
+		current = current.selectedParent
+	}
+	if current != startNode {
+		return nil, errors.Errorf("the start hash is not found in the " +
+			"selected parent chain of the stop hash")
 	}
 	reversedNodes := make([]*blockNode, len(nodes))
 	for i, node := range nodes {
 		reversedNodes[len(reversedNodes)-i-1] = node
 	}
-	return reversedNodes
+	return reversedNodes, nil
 }
 
 // GetBlueBlocksHashesBetween returns the hashes of the blue blocks after the
@@ -1720,11 +1729,14 @@ func (dag *BlockDAG) getBlueBlocksBetween(startHash, stopHash *daghash.Hash, max
 // provided max number of block hashes.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) GetBlueBlocksHashesBetween(startHash, stopHash *daghash.Hash, maxHashes uint64) []*daghash.Hash {
+func (dag *BlockDAG) GetBlueBlocksHashesBetween(startHash, stopHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
 	dag.dagLock.RLock()
-	hashes := dag.getBlueBlocksHashesBetween(startHash, stopHash, maxHashes)
+	hashes, err := dag.getBlueBlocksHashesBetween(startHash, stopHash, maxHashes)
+	if err != nil {
+		return nil, err
+	}
 	dag.dagLock.RUnlock()
-	return hashes
+	return hashes, nil
 }
 
 // getBlueBlocksHeadersBetween returns the headers of the blue blocks after the
@@ -1732,13 +1744,16 @@ func (dag *BlockDAG) GetBlueBlocksHashesBetween(startHash, stopHash *daghash.Has
 // provided max number of block headers.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) getBlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash, maxHeaders uint64) []*wire.BlockHeader {
-	nodes := dag.getBlueBlocksBetween(startHash, stopHash, maxHeaders)
+func (dag *BlockDAG) getBlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
+	nodes, err := dag.getBlueBlocksBetween(startHash, stopHash, maxHeaders)
+	if err != nil {
+		return nil, err
+	}
 	headers := make([]*wire.BlockHeader, len(nodes))
 	for i, node := range nodes {
 		headers[i] = node.Header()
 	}
-	return headers
+	return headers, nil
 }
 
 // GetTopHeaders returns the top wire.MaxBlockHeadersPerMsg block headers ordered by height.
@@ -1792,11 +1807,14 @@ func (dag *BlockDAG) RUnlock() {
 // provided max number of block headers.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) GetBlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash) []*wire.BlockHeader {
+func (dag *BlockDAG) GetBlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash) ([]*wire.BlockHeader, error) {
 	dag.dagLock.RLock()
-	headers := dag.getBlueBlocksHeadersBetween(startHash, stopHash, wire.MaxBlockHeadersPerMsg)
+	headers, err := dag.getBlueBlocksHeadersBetween(startHash, stopHash, wire.MaxBlockHeadersPerMsg)
+	if err != nil {
+		return nil, err
+	}
 	dag.dagLock.RUnlock()
-	return headers
+	return headers, nil
 }
 
 // SubnetworkID returns the node's subnetwork ID

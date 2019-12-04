@@ -28,7 +28,13 @@ func handleGetHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (in
 			return nil, rpcDecodeHexError(c.StopHash)
 		}
 	}
-	headers := s.cfg.SyncMgr.GetBlueBlocksHeadersBetween(startHash, stopHash)
+	headers, err := s.cfg.SyncMgr.GetBlueBlocksHeadersBetween(startHash, stopHash)
+	if err != nil {
+		return nil, &btcjson.RPCError{
+			Code:    btcjson.ErrRPCMisc,
+			Message: err.Error(),
+		}
+	}
 
 	// Return the serialized block headers as hex-encoded strings.
 	hexBlockHeaders := make([]string, len(headers))
