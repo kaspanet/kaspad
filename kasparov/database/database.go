@@ -11,9 +11,6 @@ import (
 	"github.com/jinzhu/gorm"
 
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/mysql"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
 // db is the Kasparov database.

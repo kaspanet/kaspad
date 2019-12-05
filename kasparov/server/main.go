@@ -11,6 +11,9 @@ import (
 	"github.com/daglabs/btcd/kasparov/server/server"
 	"github.com/daglabs/btcd/signal"
 	"github.com/daglabs/btcd/util/panics"
+	_ "github.com/golang-migrate/migrate/v4/database/mysql"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
 func main() {
