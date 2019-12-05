@@ -5,6 +5,7 @@ import (
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/jsonrpc"
 	"github.com/daglabs/btcd/apiserver/syncd/config"
+	"github.com/daglabs/btcd/apiserver/syncd/mqtt"
 	"github.com/daglabs/btcd/signal"
 	"github.com/daglabs/btcd/util/panics"
 	"github.com/pkg/errors"
@@ -42,6 +43,12 @@ func main() {
 			panic(errors.Errorf("Error closing the database: %s", err))
 		}
 	}()
+
+	err = mqtt.Connect()
+	if err != nil {
+		panic(errors.Errorf("Error connecting to MQTT: %s", err))
+	}
+	defer mqtt.Close()
 
 	err = jsonrpc.Connect(&config.ActiveConfig().ApiServerFlags)
 	if err != nil {

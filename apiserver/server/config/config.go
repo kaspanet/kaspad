@@ -5,7 +5,6 @@ import (
 	"github.com/daglabs/btcd/apiserver/logger"
 	"github.com/daglabs/btcd/util"
 	"github.com/jessevdk/go-flags"
-	"github.com/pkg/errors"
 	"path/filepath"
 )
 
@@ -28,12 +27,9 @@ func ActiveConfig() *Config {
 
 // Config defines the configuration options for the API server.
 type Config struct {
-	LogDir            string `long:"logdir" description:"Directory to log output."`
-	DebugLevel        string `short:"d" long:"debuglevel" description:"Set log level {trace, debug, info, warn, error, critical}"`
-	HTTPListen        string `long:"listen" description:"HTTP address to listen on (default: 0.0.0.0:8080)"`
-	MQTTBrokerAddress string `long:"mqttaddress" description:"MQTT broker address" required:"false"`
-	MQTTUser          string `long:"mqttuser" description:"MQTT server user" required:"false"`
-	MQTTPassword      string `long:"mqttpass" description:"MQTT server password" required:"false"`
+	LogDir     string `long:"logdir" description:"Directory to log output."`
+	DebugLevel string `short:"d" long:"debuglevel" description:"Set log level {trace, debug, info, warn, error, critical}"`
+	HTTPListen string `long:"listen" description:"HTTP address to listen on (default: 0.0.0.0:8080)"`
 	config.ApiServerFlags
 }
 
@@ -52,11 +48,6 @@ func Parse() error {
 	err = activeConfig.ResolveApiServerFlags(parser)
 	if err != nil {
 		return err
-	}
-
-	if (activeConfig.MQTTBrokerAddress != "" || activeConfig.MQTTUser != "" || activeConfig.MQTTPassword != "") &&
-		(activeConfig.MQTTBrokerAddress == "" || activeConfig.MQTTUser == "" || activeConfig.MQTTPassword == "") {
-		return errors.New("--mqttaddress, --mqttuser, and --mqttpass must be passed all together")
 	}
 
 	logFile := filepath.Join(activeConfig.LogDir, defaultLogFilename)

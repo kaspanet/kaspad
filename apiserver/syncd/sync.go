@@ -6,6 +6,7 @@ import (
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/jsonrpc"
 	"github.com/daglabs/btcd/apiserver/syncd/config"
+	"github.com/daglabs/btcd/apiserver/syncd/mqtt"
 	"strconv"
 	"strings"
 	"time"
@@ -300,11 +301,10 @@ func addBlock(client *jsonrpc.Client, rawBlock string, verboseBlock btcjson.GetB
 		return httpserverutils.NewErrorFromDBErrors("failed to update block: ", dbErrors)
 	}
 
-	// TODO: Get rid of this
-	//err = mqtt2.PublishTransactionsNotifications(verboseBlock.RawTx)
-	//if err != nil {
-	//	return err
-	//}
+	err = mqtt.PublishTransactionsNotifications(verboseBlock.RawTx)
+	if err != nil {
+		return err
+	}
 
 	dbTx.Commit()
 	return nil
@@ -1042,11 +1042,10 @@ func processChainChangedMsgs() error {
 			continue
 		}
 
-		// TODO: Get rid of this
-		//err = mqtt2.PublishUnacceptedTransactionsNotifications(chainChanged.RemovedChainBlockHashes)
-		//if err != nil {
-		//	panic(errors.Errorf("Error while publishing unaccepted transactions notifications %s", err))
-		//}
+		err = mqtt.PublishUnacceptedTransactionsNotifications(chainChanged.RemovedChainBlockHashes)
+		if err != nil {
+			panic(errors.Errorf("Error while publishing unaccepted transactions notifications %s", err))
+		}
 
 		err = handleChainChangedMsg(chainChanged)
 		if err != nil {
@@ -1068,14 +1067,12 @@ func handleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) error {
 	}
 	log.Infof("Chain changed: removed %d blocks and added %d block",
 		len(removedHashes), len(addedBlocks))
-	return nil
 
-	// TODO: Get rid of this
-	//err = mqtt2.PublishAcceptedTransactionsNotifications(chainChanged.AddedChainBlocks)
-	//if err != nil {
-	//	return errors.Wrap(err, "Error while publishing accepted transactions notifications")
-	//}
-	//return mqtt2.PublishSelectedTipNotification(addedBlocks[len(addedBlocks)-1].Hash)
+	err = mqtt.PublishAcceptedTransactionsNotifications(chainChanged.AddedChainBlocks)
+	if err != nil {
+		return errors.Wrap(err, "Error while publishing accepted transactions notifications")
+	}
+	return mqtt.PublishSelectedTipNotification(addedBlocks[len(addedBlocks)-1].Hash)
 }
 
 // canHandleChainChangedMsg checks whether we have all the necessary data
