@@ -3,15 +3,13 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/daglabs/btcd/apiserver/mqtt"
+	"github.com/daglabs/btcd/apiserver/database"
+	"github.com/daglabs/btcd/apiserver/jsonrpc"
+	"github.com/daglabs/btcd/apiserver/syncd/config"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/daglabs/btcd/apiserver/config"
-	"github.com/daglabs/btcd/apiserver/database"
-	"github.com/daglabs/btcd/apiserver/dbmodels"
-	"github.com/daglabs/btcd/apiserver/jsonrpc"
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/httpserverutils"
@@ -27,8 +25,8 @@ import (
 // pendingChainChangedMsgs holds chainChangedMsgs in order of arrival
 var pendingChainChangedMsgs []*jsonrpc.ChainChangedMsg
 
-// startSync keeps the node and the API server in sync. On start, it downloads
-// all data that's missing from the API server, and once it's done it keeps
+// startSync keeps the node and the database in sync. On start, it downloads
+// all data that's missing from the dabase, and once it's done it keeps
 // sync with the node via notifications.
 func startSync(doneChan chan struct{}) error {
 	client, err := jsonrpc.GetClient()
@@ -42,7 +40,7 @@ func startSync(doneChan chan struct{}) error {
 		return err
 	}
 
-	// Keep the node and the API server in sync
+	// Keep the node and the database in sync
 	return sync(client, doneChan)
 }
 
@@ -63,7 +61,7 @@ func fetchInitialData(client *jsonrpc.Client) error {
 	return nil
 }
 
-// sync keeps the API server in sync with the node via notifications
+// sync keeps the database in sync with the node via notifications
 func sync(client *jsonrpc.Client, doneChan chan struct{}) error {
 	// Handle client notifications until we're told to stop
 	for {
@@ -164,11 +162,11 @@ func findHashOfBluestBlock(mustBeChainBlock bool) (*string, error) {
 	}
 
 	var blockHashes []string
-	dbQuery := db.Model(&dbmodels.Block{}).
+	dbQuery := db.Model(&database.Block{}).
 		Order("blue_score DESC").
 		Limit(1)
 	if mustBeChainBlock {
-		dbQuery = dbQuery.Where(&dbmodels.Block{IsChainBlock: true})
+		dbQuery = dbQuery.Where(&database.Block{IsChainBlock: true})
 	}
 	dbResult := dbQuery.Pluck("block_hash", &blockHashes)
 	dbErrors := dbResult.GetErrors()
@@ -223,9 +221,9 @@ func addBlocks(client *jsonrpc.Client, rawBlocks []string, verboseBlocks []btcjs
 }
 
 func doesBlockExist(dbTx *gorm.DB, blockHash string) (bool, error) {
-	var dbBlock dbmodels.Block
+	var dbBlock database.Block
 	dbResult := dbTx.
-		Where(&dbmodels.Block{BlockHash: blockHash}).
+		Where(&database.Block{BlockHash: blockHash}).
 		First(&dbBlock)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
@@ -302,21 +300,22 @@ func addBlock(client *jsonrpc.Client, rawBlock string, verboseBlock btcjson.GetB
 		return httpserverutils.NewErrorFromDBErrors("failed to update block: ", dbErrors)
 	}
 
-	err = mqtt.PublishTransactionsNotifications(verboseBlock.RawTx)
-	if err != nil {
-		return err
-	}
+	// TODO: Get rid of this
+	//err = mqtt2.PublishTransactionsNotifications(verboseBlock.RawTx)
+	//if err != nil {
+	//	return err
+	//}
 
 	dbTx.Commit()
 	return nil
 }
 
-func insertBlock(dbTx *gorm.DB, verboseBlock btcjson.GetBlockVerboseResult) (*dbmodels.Block, error) {
+func insertBlock(dbTx *gorm.DB, verboseBlock btcjson.GetBlockVerboseResult) (*database.Block, error) {
 	bits, err := strconv.ParseUint(verboseBlock.Bits, 16, 32)
 	if err != nil {
 		return nil, err
 	}
-	dbBlock := dbmodels.Block{
+	dbBlock := database.Block{
 		BlockHash:            verboseBlock.Hash,
 		Version:              verboseBlock.Version,
 		HashMerkleRoot:       verboseBlock.HashMerkleRoot,
@@ -341,7 +340,7 @@ func insertBlock(dbTx *gorm.DB, verboseBlock btcjson.GetBlockVerboseResult) (*db
 	return &dbBlock, nil
 }
 
-func insertBlockParents(dbTx *gorm.DB, verboseBlock btcjson.GetBlockVerboseResult, dbBlock *dbmodels.Block) error {
+func insertBlockParents(dbTx *gorm.DB, verboseBlock btcjson.GetBlockVerboseResult, dbBlock *database.Block) error {
 	// Exit early if this is the genesis block
 	if len(verboseBlock.ParentHashes) == 0 {
 		return nil
@@ -351,7 +350,7 @@ func insertBlockParents(dbTx *gorm.DB, verboseBlock btcjson.GetBlockVerboseResul
 	for i, parentHash := range verboseBlock.ParentHashes {
 		hashesIn[i] = parentHash
 	}
-	var dbParents []dbmodels.Block
+	var dbParents []database.Block
 	dbResult := dbTx.
 		Where("block_hash in (?)", hashesIn).
 		Find(&dbParents)
@@ -374,7 +373,7 @@ func insertBlockParents(dbTx *gorm.DB, verboseBlock btcjson.GetBlockVerboseResul
 	}
 
 	for _, dbParent := range dbParents {
-		dbParentBlock := dbmodels.ParentBlock{
+		dbParentBlock := database.ParentBlock{
 			BlockID:       dbBlock.ID,
 			ParentBlockID: dbParent.ID,
 		}
@@ -387,12 +386,12 @@ func insertBlockParents(dbTx *gorm.DB, verboseBlock btcjson.GetBlockVerboseResul
 	return nil
 }
 
-func insertRawBlockData(dbTx *gorm.DB, rawBlock string, dbBlock *dbmodels.Block) error {
+func insertRawBlockData(dbTx *gorm.DB, rawBlock string, dbBlock *database.Block) error {
 	blockData, err := hex.DecodeString(rawBlock)
 	if err != nil {
 		return err
 	}
-	dbRawBlock := dbmodels.RawBlock{
+	dbRawBlock := database.RawBlock{
 		BlockID:   dbBlock.ID,
 		BlockData: blockData,
 	}
@@ -404,10 +403,10 @@ func insertRawBlockData(dbTx *gorm.DB, rawBlock string, dbBlock *dbmodels.Block)
 	return nil
 }
 
-func insertSubnetwork(dbTx *gorm.DB, transaction *btcjson.TxRawResult, client *jsonrpc.Client) (*dbmodels.Subnetwork, error) {
-	var dbSubnetwork dbmodels.Subnetwork
+func insertSubnetwork(dbTx *gorm.DB, transaction *btcjson.TxRawResult, client *jsonrpc.Client) (*database.Subnetwork, error) {
+	var dbSubnetwork database.Subnetwork
 	dbResult := dbTx.
-		Where(&dbmodels.Subnetwork{SubnetworkID: transaction.Subnetwork}).
+		Where(&database.Subnetwork{SubnetworkID: transaction.Subnetwork}).
 		First(&dbSubnetwork)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
@@ -418,7 +417,7 @@ func insertSubnetwork(dbTx *gorm.DB, transaction *btcjson.TxRawResult, client *j
 		if err != nil {
 			return nil, err
 		}
-		dbSubnetwork = dbmodels.Subnetwork{
+		dbSubnetwork = database.Subnetwork{
 			SubnetworkID: transaction.Subnetwork,
 			GasLimit:     subnetwork.GasLimit,
 		}
@@ -431,10 +430,10 @@ func insertSubnetwork(dbTx *gorm.DB, transaction *btcjson.TxRawResult, client *j
 	return &dbSubnetwork, nil
 }
 
-func insertTransaction(dbTx *gorm.DB, transaction *btcjson.TxRawResult, dbSubnetwork *dbmodels.Subnetwork) (*dbmodels.Transaction, error) {
-	var dbTransaction dbmodels.Transaction
+func insertTransaction(dbTx *gorm.DB, transaction *btcjson.TxRawResult, dbSubnetwork *database.Subnetwork) (*database.Transaction, error) {
+	var dbTransaction database.Transaction
 	dbResult := dbTx.
-		Where(&dbmodels.Transaction{TransactionID: transaction.TxID}).
+		Where(&database.Transaction{TransactionID: transaction.TxID}).
 		First(&dbTransaction)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
@@ -449,7 +448,7 @@ func insertTransaction(dbTx *gorm.DB, transaction *btcjson.TxRawResult, dbSubnet
 		if err != nil {
 			return nil, err
 		}
-		dbTransaction = dbmodels.Transaction{
+		dbTransaction = database.Transaction{
 			TransactionHash: transaction.Hash,
 			TransactionID:   transaction.TxID,
 			LockTime:        transaction.LockTime,
@@ -477,7 +476,7 @@ func calcTxMass(dbTx *gorm.DB, transaction *btcjson.TxRawResult) (uint64, error)
 	for i, txIn := range transaction.Vin {
 		prevTxIDs[i] = txIn.TxID
 	}
-	var prevDBTransactionsOutputs []dbmodels.TransactionOutput
+	var prevDBTransactionsOutputs []database.TransactionOutput
 	dbResult := dbTx.
 		Joins("LEFT JOIN `transactions` ON `transactions`.`id` = `transaction_outputs`.`transaction_id`").
 		Where("transactions.transaction_id in (?)", prevTxIDs).
@@ -547,17 +546,17 @@ func convertTxRawResultToMsgTx(tx *btcjson.TxRawResult) (*wire.MsgTx, error) {
 	return wire.NewSubnetworkMsgTx(tx.Version, txIns, txOuts, subnetworkID, tx.Gas, payload), nil
 }
 
-func insertTransactionBlock(dbTx *gorm.DB, dbBlock *dbmodels.Block, dbTransaction *dbmodels.Transaction, index uint32) error {
-	var dbTransactionBlock dbmodels.TransactionBlock
+func insertTransactionBlock(dbTx *gorm.DB, dbBlock *database.Block, dbTransaction *database.Transaction, index uint32) error {
+	var dbTransactionBlock database.TransactionBlock
 	dbResult := dbTx.
-		Where(&dbmodels.TransactionBlock{TransactionID: dbTransaction.ID, BlockID: dbBlock.ID}).
+		Where(&database.TransactionBlock{TransactionID: dbTransaction.ID, BlockID: dbBlock.ID}).
 		First(&dbTransactionBlock)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
 		return httpserverutils.NewErrorFromDBErrors("failed to find transactionBlock: ", dbErrors)
 	}
 	if httpserverutils.IsDBRecordNotFoundError(dbErrors) {
-		dbTransactionBlock = dbmodels.TransactionBlock{
+		dbTransactionBlock = database.TransactionBlock{
 			TransactionID: dbTransaction.ID,
 			BlockID:       dbBlock.ID,
 			Index:         index,
@@ -571,7 +570,7 @@ func insertTransactionBlock(dbTx *gorm.DB, dbBlock *dbmodels.Block, dbTransactio
 	return nil
 }
 
-func insertTransactionInputs(dbTx *gorm.DB, transaction *btcjson.TxRawResult, dbTransaction *dbmodels.Transaction) error {
+func insertTransactionInputs(dbTx *gorm.DB, transaction *btcjson.TxRawResult, dbTransaction *database.Transaction) error {
 	isCoinbase, err := isTransactionCoinbase(transaction)
 	if err != nil {
 		return err
@@ -597,8 +596,8 @@ func isTransactionCoinbase(transaction *btcjson.TxRawResult) (bool, error) {
 	return subnetwork.IsEqual(subnetworkid.SubnetworkIDCoinbase), nil
 }
 
-func insertTransactionInput(dbTx *gorm.DB, dbTransaction *dbmodels.Transaction, input *btcjson.Vin) error {
-	var dbPreviousTransactionOutput dbmodels.TransactionOutput
+func insertTransactionInput(dbTx *gorm.DB, dbTransaction *database.Transaction, input *btcjson.Vin) error {
+	var dbPreviousTransactionOutput database.TransactionOutput
 	dbResult := dbTx.
 		Joins("LEFT JOIN `transactions` ON `transactions`.`id` = `transaction_outputs`.`transaction_id`").
 		Where("`transactions`.`transaction_id` = ? AND `transaction_outputs`.`index` = ?", input.TxID, input.Vout).
@@ -613,8 +612,8 @@ func insertTransactionInput(dbTx *gorm.DB, dbTransaction *dbmodels.Transaction, 
 
 	var dbTransactionInputCount int
 	dbResult = dbTx.
-		Model(&dbmodels.TransactionInput{}).
-		Where(&dbmodels.TransactionInput{TransactionID: dbTransaction.ID, PreviousTransactionOutputID: dbPreviousTransactionOutput.ID}).
+		Model(&database.TransactionInput{}).
+		Where(&database.TransactionInput{TransactionID: dbTransaction.ID, PreviousTransactionOutputID: dbPreviousTransactionOutput.ID}).
 		Count(&dbTransactionInputCount)
 	dbErrors = dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
@@ -625,7 +624,7 @@ func insertTransactionInput(dbTx *gorm.DB, dbTransaction *dbmodels.Transaction, 
 		if err != nil {
 			return nil
 		}
-		dbTransactionInput := dbmodels.TransactionInput{
+		dbTransactionInput := database.TransactionInput{
 			TransactionID:               dbTransaction.ID,
 			PreviousTransactionOutputID: dbPreviousTransactionOutput.ID,
 			Index:                       input.Vout,
@@ -642,7 +641,7 @@ func insertTransactionInput(dbTx *gorm.DB, dbTransaction *dbmodels.Transaction, 
 	return nil
 }
 
-func insertTransactionOutputs(dbTx *gorm.DB, transaction *btcjson.TxRawResult, dbTransaction *dbmodels.Transaction) error {
+func insertTransactionOutputs(dbTx *gorm.DB, transaction *btcjson.TxRawResult, dbTransaction *database.Transaction) error {
 	for _, output := range transaction.Vout {
 		scriptPubKey, err := hex.DecodeString(output.ScriptPubKey.Hex)
 		if err != nil {
@@ -660,23 +659,23 @@ func insertTransactionOutputs(dbTx *gorm.DB, transaction *btcjson.TxRawResult, d
 	return nil
 }
 
-func insertAddress(dbTx *gorm.DB, scriptPubKey []byte) (*dbmodels.Address, error) {
+func insertAddress(dbTx *gorm.DB, scriptPubKey []byte) (*database.Address, error) {
 	_, addr, err := txscript.ExtractScriptPubKeyAddress(scriptPubKey, config.ActiveConfig().NetParams())
 	if err != nil {
 		return nil, err
 	}
 	hexAddress := addr.EncodeAddress()
 
-	var dbAddress dbmodels.Address
+	var dbAddress database.Address
 	dbResult := dbTx.
-		Where(&dbmodels.Address{Address: hexAddress}).
+		Where(&database.Address{Address: hexAddress}).
 		First(&dbAddress)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
 		return nil, httpserverutils.NewErrorFromDBErrors("failed to find address: ", dbErrors)
 	}
 	if httpserverutils.IsDBRecordNotFoundError(dbErrors) {
-		dbAddress = dbmodels.Address{
+		dbAddress = database.Address{
 			Address: hexAddress,
 		}
 		dbResult := dbTx.Create(&dbAddress)
@@ -688,19 +687,19 @@ func insertAddress(dbTx *gorm.DB, scriptPubKey []byte) (*dbmodels.Address, error
 	return &dbAddress, nil
 }
 
-func insertTransactionOutput(dbTx *gorm.DB, dbTransaction *dbmodels.Transaction,
-	output *btcjson.Vout, scriptPubKey []byte, dbAddress *dbmodels.Address) error {
+func insertTransactionOutput(dbTx *gorm.DB, dbTransaction *database.Transaction,
+	output *btcjson.Vout, scriptPubKey []byte, dbAddress *database.Address) error {
 	var dbTransactionOutputCount int
 	dbResult := dbTx.
-		Model(&dbmodels.TransactionOutput{}).
-		Where(&dbmodels.TransactionOutput{TransactionID: dbTransaction.ID, Index: output.N}).
+		Model(&database.TransactionOutput{}).
+		Where(&database.TransactionOutput{TransactionID: dbTransaction.ID, Index: output.N}).
 		Count(&dbTransactionOutputCount)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
 		return httpserverutils.NewErrorFromDBErrors("failed to find transactionOutput: ", dbErrors)
 	}
 	if dbTransactionOutputCount == 0 {
-		dbTransactionOutput := dbmodels.TransactionOutput{
+		dbTransactionOutput := database.TransactionOutput{
 			TransactionID: dbTransaction.ID,
 			Index:         output.N,
 			Value:         output.Value,
@@ -755,9 +754,9 @@ func updateSelectedParentChain(removedChainHashes []string, addedChainBlocks []b
 // * The block is set IsChainBlock = false
 // This function will return an error if any of the above are in an unexpected state
 func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
-	var dbBlock dbmodels.Block
+	var dbBlock database.Block
 	dbResult := dbTx.
-		Where(&dbmodels.Block{BlockHash: removedHash}).
+		Where(&database.Block{BlockHash: removedHash}).
 		First(&dbBlock)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
@@ -770,9 +769,9 @@ func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
 		return errors.Errorf("block erroneously marked as not a chain block: %s", removedHash)
 	}
 
-	var dbTransactions []dbmodels.Transaction
+	var dbTransactions []database.Transaction
 	dbResult = dbTx.
-		Where(&dbmodels.Transaction{AcceptingBlockID: &dbBlock.ID}).
+		Where(&database.Transaction{AcceptingBlockID: &dbBlock.ID}).
 		Preload("TransactionInputs.PreviousTransactionOutput").
 		Find(&dbTransactions)
 	dbErrors = dbResult.GetErrors()
@@ -804,8 +803,8 @@ func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
 	}
 
 	dbResult = dbTx.
-		Model(&dbmodels.Block{}).
-		Where(&dbmodels.Block{AcceptingBlockID: btcjson.Uint64(dbBlock.ID)}).
+		Model(&database.Block{}).
+		Where(&database.Block{AcceptingBlockID: btcjson.Uint64(dbBlock.ID)}).
 		Updates(map[string]interface{}{"AcceptingBlockID": nil})
 
 	dbErrors = dbResult.GetErrors()
@@ -830,9 +829,9 @@ func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
 // * The block is set IsChainBlock = true
 // This function will return an error if any of the above are in an unexpected state
 func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error {
-	var dbAddedBlock dbmodels.Block
+	var dbAddedBlock database.Block
 	dbResult := dbTx.
-		Where(&dbmodels.Block{BlockHash: addedBlock.Hash}).
+		Where(&database.Block{BlockHash: addedBlock.Hash}).
 		First(&dbAddedBlock)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
@@ -846,9 +845,9 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 	}
 
 	for _, acceptedBlock := range addedBlock.AcceptedBlocks {
-		var dbAccepedBlock dbmodels.Block
+		var dbAccepedBlock database.Block
 		dbResult := dbTx.
-			Where(&dbmodels.Block{BlockHash: acceptedBlock.Hash}).
+			Where(&database.Block{BlockHash: acceptedBlock.Hash}).
 			First(&dbAccepedBlock)
 		dbErrors := dbResult.GetErrors()
 		if httpserverutils.HasDBError(dbErrors) {
@@ -865,7 +864,7 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 		for i, acceptedTxID := range acceptedBlock.AcceptedTxIDs {
 			transactionIDsIn[i] = acceptedTxID
 		}
-		var dbAcceptedTransactions []dbmodels.Transaction
+		var dbAcceptedTransactions []database.Transaction
 		dbResult = dbTx.
 			Where("transaction_id in (?)", transactionIDsIn).
 			Preload("TransactionInputs.PreviousTransactionOutput").
@@ -997,9 +996,9 @@ func missingParentHashes(parentHashes []string) ([]string, error) {
 	}
 
 	// Make sure that all the parent hashes exist in the database
-	var dbParentBlocks []dbmodels.Block
+	var dbParentBlocks []database.Block
 	dbResult := db.
-		Model(&dbmodels.Block{}).
+		Model(&database.Block{}).
 		Where("block_hash in (?)", parentHashes).
 		Find(&dbParentBlocks)
 	dbErrors := dbResult.GetErrors()
@@ -1043,10 +1042,11 @@ func processChainChangedMsgs() error {
 			continue
 		}
 
-		err = mqtt.PublishUnacceptedTransactionsNotifications(chainChanged.RemovedChainBlockHashes)
-		if err != nil {
-			panic(errors.Errorf("Error while publishing unaccepted transactions notifications %s", err))
-		}
+		// TODO: Get rid of this
+		//err = mqtt2.PublishUnacceptedTransactionsNotifications(chainChanged.RemovedChainBlockHashes)
+		//if err != nil {
+		//	panic(errors.Errorf("Error while publishing unaccepted transactions notifications %s", err))
+		//}
 
 		err = handleChainChangedMsg(chainChanged)
 		if err != nil {
@@ -1068,11 +1068,14 @@ func handleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) error {
 	}
 	log.Infof("Chain changed: removed %d blocks and added %d block",
 		len(removedHashes), len(addedBlocks))
-	err = mqtt.PublishAcceptedTransactionsNotifications(chainChanged.AddedChainBlocks)
-	if err != nil {
-		return errors.Wrap(err, "Error while publishing accepted transactions notifications")
-	}
-	return mqtt.PublishSelectedTipNotification(addedBlocks[len(addedBlocks)-1].Hash)
+	return nil
+
+	// TODO: Get rid of this
+	//err = mqtt2.PublishAcceptedTransactionsNotifications(chainChanged.AddedChainBlocks)
+	//if err != nil {
+	//	return errors.Wrap(err, "Error while publishing accepted transactions notifications")
+	//}
+	//return mqtt2.PublishSelectedTipNotification(addedBlocks[len(addedBlocks)-1].Hash)
 }
 
 // canHandleChainChangedMsg checks whether we have all the necessary data
@@ -1093,9 +1096,9 @@ func canHandleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) (bool, erro
 	}
 
 	// Make sure that all the hashes exist in the database
-	var dbBlocks []dbmodels.Block
+	var dbBlocks []database.Block
 	dbResult := db.
-		Model(&dbmodels.Block{}).
+		Model(&database.Block{}).
 		Where("block_hash in (?)", hashesIn).
 		Find(&dbBlocks)
 	dbErrors := dbResult.GetErrors()

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/daglabs/btcd/apiserver/controllers"
+	"github.com/daglabs/btcd/apiserver/server/controllers"
 	"github.com/gorilla/mux"
 )
 

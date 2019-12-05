@@ -2,12 +2,12 @@ package controllers
 
 import (
 	"encoding/hex"
-	"github.com/daglabs/btcd/apiserver/apimodels"
-	"github.com/daglabs/btcd/apiserver/dbmodels"
+	"github.com/daglabs/btcd/apiserver/database"
+	"github.com/daglabs/btcd/apiserver/server/apimodels"
 	"github.com/daglabs/btcd/btcjson"
 )
 
-func convertTxDBModelToTxResponse(tx *dbmodels.Transaction) *apimodels.TransactionResponse {
+func convertTxDBModelToTxResponse(tx *database.Transaction) *apimodels.TransactionResponse {
 	txRes := &apimodels.TransactionResponse{
 		TransactionHash: tx.TransactionHash,
 		TransactionID:   tx.TransactionID,
@@ -44,7 +44,7 @@ func convertTxDBModelToTxResponse(tx *dbmodels.Transaction) *apimodels.Transacti
 	return txRes
 }
 
-func convertBlockModelToBlockResponse(block *dbmodels.Block) *apimodels.BlockResponse {
+func convertBlockModelToBlockResponse(block *database.Block) *apimodels.BlockResponse {
 	blockRes := &apimodels.BlockResponse{
 		BlockHash:            block.BlockHash,
 		Version:              block.Version,

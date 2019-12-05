@@ -2,19 +2,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/apiserver/mqtt"
+	"github.com/daglabs/btcd/apiserver/server/mqtt"
 	"github.com/pkg/errors"
 	"os"
 
-	"github.com/daglabs/btcd/apiserver/config"
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/jsonrpc"
-	"github.com/daglabs/btcd/apiserver/server"
+	"github.com/daglabs/btcd/apiserver/server/config"
+	"github.com/daglabs/btcd/apiserver/server/server"
 	"github.com/daglabs/btcd/signal"
 	"github.com/daglabs/btcd/util/panics"
-	_ "github.com/golang-migrate/migrate/v4/database/mysql"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
 func main() {
@@ -30,15 +27,7 @@ func main() {
 		return
 	}
 
-	if config.ActiveConfig().Migrate {
-		err := database.Migrate()
-		if err != nil {
-			panic(errors.Errorf("Error migrating database: %s", err))
-		}
-		return
-	}
-
-	err = database.Connect()
+	err = database.Connect(&config.ActiveConfig().ApiServerFlags)
 	if err != nil {
 		panic(errors.Errorf("Error connecting to database: %s", err))
 	}
@@ -55,7 +44,7 @@ func main() {
 	}
 	defer mqtt.Close()
 
-	err = jsonrpc.Connect()
+	err = jsonrpc.Connect(&config.ActiveConfig().ApiServerFlags)
 	if err != nil {
 		panic(errors.Errorf("Error connecting to servers: %s", err))
 	}
@@ -64,17 +53,6 @@ func main() {
 	shutdownServer := server.Start(config.ActiveConfig().HTTPListen)
 	defer shutdownServer()
 
-	doneChan := make(chan struct{}, 1)
-	spawn(func() {
-		err := startSync(doneChan)
-		if err != nil {
-			panic(err)
-		}
-	})
-
 	interrupt := signal.InterruptListener()
 	<-interrupt
-
-	// Gracefully stop syncing
-	doneChan <- struct{}{}
 }

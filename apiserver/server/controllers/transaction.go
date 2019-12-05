@@ -5,19 +5,18 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/daglabs/btcd/apiserver/database"
+	"github.com/daglabs/btcd/apiserver/jsonrpc"
+	"github.com/daglabs/btcd/apiserver/server/apimodels"
 	"github.com/daglabs/btcd/util"
 	"net/http"
 
-	"github.com/daglabs/btcd/apiserver/apimodels"
-	"github.com/daglabs/btcd/apiserver/config"
-	"github.com/daglabs/btcd/apiserver/dbmodels"
+	"github.com/daglabs/btcd/apiserver/server/config"
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/httpserverutils"
 	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/pkg/errors"
 
-	"github.com/daglabs/btcd/apiserver/database"
-	"github.com/daglabs/btcd/apiserver/jsonrpc"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
@@ -38,8 +37,8 @@ func GetTransactionByIDHandler(txID string) (interface{}, error) {
 		return nil, err
 	}
 
-	tx := &dbmodels.Transaction{}
-	query := db.Where(&dbmodels.Transaction{TransactionID: txID})
+	tx := &database.Transaction{}
+	query := db.Where(&database.Transaction{TransactionID: txID})
 	dbResult := addTxPreloadedFields(query).First(&tx)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.IsDBRecordNotFoundError(dbErrors) {
@@ -63,8 +62,8 @@ func GetTransactionByHashHandler(txHash string) (interface{}, error) {
 		return nil, err
 	}
 
-	tx := &dbmodels.Transaction{}
-	query := db.Where(&dbmodels.Transaction{TransactionHash: txHash})
+	tx := &database.Transaction{}
+	query := db.Where(&database.Transaction{TransactionHash: txHash})
 	dbResult := addTxPreloadedFields(query).First(&tx)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.IsDBRecordNotFoundError(dbErrors) {
@@ -89,7 +88,7 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 		return nil, err
 	}
 
-	txs := []*dbmodels.Transaction{}
+	txs := []*database.Transaction{}
 	query := joinTxInputsTxOutputsAndAddresses(db).
 		Where("`out_addresses`.`address` = ?", address).
 		Or("`in_addresses`.`address` = ?", address).
@@ -108,14 +107,14 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 	return txResponses, nil
 }
 
-func fetchSelectedTip() (*dbmodels.Block, error) {
+func fetchSelectedTip() (*database.Block, error) {
 	db, err := database.DB()
 	if err != nil {
 		return nil, err
 	}
-	block := &dbmodels.Block{}
+	block := &database.Block{}
 	dbResult := db.Order("blue_score DESC").
-		Where(&dbmodels.Block{IsChainBlock: true}).
+		Where(&database.Block{IsChainBlock: true}).
 		First(block)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
@@ -129,9 +128,9 @@ func areTxsInBlock(blockID uint64, txIDs []uint64) (map[uint64]bool, error) {
 	if err != nil {
 		return nil, err
 	}
-	transactionBlocks := []*dbmodels.TransactionBlock{}
+	transactionBlocks := []*database.TransactionBlock{}
 	dbErrors := db.
-		Where(&dbmodels.TransactionBlock{BlockID: blockID}).
+		Where(&database.TransactionBlock{BlockID: blockID}).
 		Where("transaction_id in (?)", txIDs).
 		Find(&transactionBlocks).GetErrors()
 
@@ -160,7 +159,7 @@ func GetUTXOsByAddressHandler(address string) (interface{}, error) {
 		return nil, err
 	}
 
-	var transactionOutputs []*dbmodels.TransactionOutput
+	var transactionOutputs []*database.TransactionOutput
 	dbErrors := db.
 		Joins("LEFT JOIN `addresses` ON `addresses`.`id` = `transaction_outputs`.`address_id`").
 		Where("`addresses`.`address` = ? AND `transaction_outputs`.`is_spent` = 0", address).
@@ -178,7 +177,7 @@ func GetUTXOsByAddressHandler(address string) (interface{}, error) {
 		}
 	}
 
-	var selectedTip *dbmodels.Block
+	var selectedTip *database.Block
 	var isTxInSelectedTip map[uint64]bool
 	if len(nonAcceptedTxIds) != 0 {
 		selectedTip, err = fetchSelectedTip()
@@ -295,7 +294,7 @@ func GetTransactionsByIDsHandler(transactionIds []string) ([]*apimodels.Transact
 		return nil, err
 	}
 
-	var txs []*dbmodels.Transaction
+	var txs []*database.Transaction
 	query := joinTxInputsTxOutputsAndAddresses(db).
 		Where("`transactions`.`transaction_id` IN (?)", transactionIds)
 

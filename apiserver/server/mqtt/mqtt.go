@@ -2,7 +2,7 @@ package mqtt
 
 import (
 	"encoding/json"
-	"github.com/daglabs/btcd/apiserver/config"
+	"github.com/daglabs/btcd/apiserver/server/config"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/pkg/errors"
 )

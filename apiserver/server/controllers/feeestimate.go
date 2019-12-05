@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"github.com/daglabs/btcd/apiserver/apimodels"
+	"github.com/daglabs/btcd/apiserver/server/apimodels"
 )
 
 // GetFeeEstimatesHandler returns the fee estimates for different priorities

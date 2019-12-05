@@ -2,14 +2,13 @@ package controllers
 
 import (
 	"encoding/hex"
+	"github.com/daglabs/btcd/apiserver/database"
+	"github.com/daglabs/btcd/apiserver/server/apimodels"
 	"net/http"
 
-	"github.com/daglabs/btcd/apiserver/apimodels"
-	"github.com/daglabs/btcd/apiserver/dbmodels"
 	"github.com/daglabs/btcd/httpserverutils"
 	"github.com/pkg/errors"
 
-	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/util/daghash"
 )
 
@@ -39,8 +38,8 @@ func GetBlockByHashHandler(blockHash string) (interface{}, error) {
 		return nil, err
 	}
 
-	block := &dbmodels.Block{}
-	dbResult := db.Where(&dbmodels.Block{BlockHash: blockHash}).Preload("AcceptingBlock").First(block)
+	block := &database.Block{}
+	dbResult := db.Where(&database.Block{BlockHash: blockHash}).Preload("AcceptingBlock").First(block)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.IsDBRecordNotFoundError(dbErrors) {
 		return nil, httpserverutils.NewHandlerError(http.StatusNotFound, errors.New("No block with the given block hash was found"))
@@ -58,7 +57,7 @@ func GetBlocksHandler(order string, skip uint64, limit uint64) (interface{}, err
 		return nil, httpserverutils.NewHandlerError(http.StatusBadRequest,
 			errors.Errorf("Limit higher than %d or lower than 1 was requested.", maxGetTransactionsLimit))
 	}
-	blocks := []*dbmodels.Block{}
+	blocks := []*database.Block{}
 	db, err := database.DB()
 	if err != nil {
 		return nil, err
@@ -89,7 +88,7 @@ func GetAcceptedTransactionIDsByBlockHashHandler(blockHash string) ([]string, er
 		return nil, err
 	}
 
-	var transactions []dbmodels.Transaction
+	var transactions []database.Transaction
 	dbResult := db.
 		Joins("LEFT JOIN `blocks` ON `blocks`.`id` = `transactions`.`accepting_block_id`").
 		Where("`blocks`.`block_hash` = ?", blockHash).

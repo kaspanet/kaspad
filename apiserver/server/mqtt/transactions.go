@@ -1,8 +1,8 @@
 package mqtt
 
 import (
-	"github.com/daglabs/btcd/apiserver/apimodels"
-	"github.com/daglabs/btcd/apiserver/controllers"
+	"github.com/daglabs/btcd/apiserver/server/apimodels"
+	"github.com/daglabs/btcd/apiserver/server/controllers"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/rpcclient"
 	"github.com/daglabs/btcd/util/daghash"

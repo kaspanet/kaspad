@@ -1,11 +1,11 @@
 package jsonrpc
 
 import (
+	"github.com/daglabs/btcd/apiserver/config"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"time"
 
-	"github.com/daglabs/btcd/apiserver/config"
 	"github.com/daglabs/btcd/util/daghash"
 
 	"github.com/daglabs/btcd/rpcclient"
@@ -54,8 +54,7 @@ func Close() {
 }
 
 // Connect initiates a connection to the JSON-RPC API Server
-func Connect() error {
-	cfg := config.ActiveConfig()
+func Connect(cfg *config.ApiServerFlags) error {
 	var cert []byte
 	if !cfg.DisableTLS {
 		var err error

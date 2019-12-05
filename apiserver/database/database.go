@@ -3,14 +3,17 @@ package database
 import (
 	nativeerrors "errors"
 	"fmt"
+	"github.com/daglabs/btcd/apiserver/config"
 	"github.com/pkg/errors"
 	"os"
 
-	"github.com/daglabs/btcd/apiserver/config"
 	"github.com/golang-migrate/migrate/v4/source"
 	"github.com/jinzhu/gorm"
 
 	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/mysql"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
 // db is the API server database.
@@ -33,8 +36,8 @@ func (l gormLogger) Print(v ...interface{}) {
 
 // Connect connects to the database mentioned in
 // config variable.
-func Connect() error {
-	connectionString := buildConnectionString()
+func Connect(cfg *config.ApiServerFlags) error {
+	connectionString := buildConnectionString(cfg)
 	migrator, driver, err := openMigrator(connectionString)
 	if err != nil {
 		return err
@@ -67,8 +70,7 @@ func Close() error {
 	return err
 }
 
-func buildConnectionString() string {
-	cfg := config.ActiveConfig()
+func buildConnectionString(cfg *config.ApiServerFlags) string {
 	return fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True",
 		cfg.DBUser, cfg.DBPassword, cfg.DBAddress, cfg.DBName)
 }
@@ -99,7 +101,7 @@ func isCurrent(migrator *migrate.Migrate, driver source.Driver) (bool, uint, err
 }
 
 func openMigrator(connectionString string) (*migrate.Migrate, source.Driver, error) {
-	driver, err := source.Open("file://migrations")
+	driver, err := source.Open("file://../database/migrations")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -112,8 +114,8 @@ func openMigrator(connectionString string) (*migrate.Migrate, source.Driver, err
 }
 
 // Migrate database to the latest version.
-func Migrate() error {
-	connectionString := buildConnectionString()
+func Migrate(cfg *config.ApiServerFlags) error {
+	connectionString := buildConnectionString(cfg)
 	migrator, driver, err := openMigrator(connectionString)
 	if err != nil {
 		return err

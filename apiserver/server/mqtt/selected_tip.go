@@ -1,7 +1,7 @@
 package mqtt
 
 import (
-	"github.com/daglabs/btcd/apiserver/controllers"
+	"github.com/daglabs/btcd/apiserver/server/controllers"
 )
 
 const selectedTipTopic = "dag/selected-tip"

@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/daglabs/btcd/apiserver/apimodels"
+	"github.com/daglabs/btcd/apiserver/server/apimodels"
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/faucet/config"
 	"github.com/daglabs/btcd/httpserverutils"
