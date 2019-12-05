@@ -2,8 +2,8 @@ package controllers
 
 import (
 	"encoding/hex"
-	"github.com/daglabs/btcd/apiserver/database"
-	"github.com/daglabs/btcd/apiserver/server/apimodels"
+	"github.com/daglabs/btcd/kasparov/database"
+	"github.com/daglabs/btcd/kasparov/server/apimodels"
 	"net/http"
 
 	"github.com/daglabs/btcd/httpserverutils"

@@ -5,10 +5,10 @@ import (
 	"github.com/pkg/errors"
 	"os"
 
-	"github.com/daglabs/btcd/apiserver/database"
-	"github.com/daglabs/btcd/apiserver/jsonrpc"
-	"github.com/daglabs/btcd/apiserver/server/config"
-	"github.com/daglabs/btcd/apiserver/server/server"
+	"github.com/daglabs/btcd/kasparov/database"
+	"github.com/daglabs/btcd/kasparov/jsonrpc"
+	"github.com/daglabs/btcd/kasparov/server/config"
+	"github.com/daglabs/btcd/kasparov/server/server"
 	"github.com/daglabs/btcd/signal"
 	"github.com/daglabs/btcd/util/panics"
 )

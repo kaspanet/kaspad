@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/apiserver/database"
-	"github.com/daglabs/btcd/apiserver/jsonrpc"
-	"github.com/daglabs/btcd/apiserver/syncd/config"
-	"github.com/daglabs/btcd/apiserver/syncd/mqtt"
+	"github.com/daglabs/btcd/kasparov/database"
+	"github.com/daglabs/btcd/kasparov/jsonrpc"
+	"github.com/daglabs/btcd/kasparov/syncd/config"
+	"github.com/daglabs/btcd/kasparov/syncd/mqtt"
 	"github.com/daglabs/btcd/signal"
 	"github.com/daglabs/btcd/util/panics"
 	"github.com/pkg/errors"

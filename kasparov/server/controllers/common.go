@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"encoding/hex"
-	"github.com/daglabs/btcd/apiserver/database"
-	"github.com/daglabs/btcd/apiserver/server/apimodels"
 	"github.com/daglabs/btcd/btcjson"
+	"github.com/daglabs/btcd/kasparov/database"
+	"github.com/daglabs/btcd/kasparov/server/apimodels"
 )
 
 func convertTxDBModelToTxResponse(tx *database.Transaction) *apimodels.TransactionResponse {

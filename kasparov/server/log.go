@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/daglabs/btcd/apiserver/logger"
+	"github.com/daglabs/btcd/kasparov/logger"
 	"github.com/daglabs/btcd/util/panics"
 )
 

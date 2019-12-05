@@ -22,7 +22,7 @@ WORKDIR /app
 
 RUN apk add --no-cache tini
 
-COPY --from=build /go/src/github.com/daglabs/btcd/apiserver/syncd/ /app/
+COPY --from=build /go/src/github.com/daglabs/btcd/kasparov/syncd/ /app/
 
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["/app/syncd"]

@@ -22,7 +22,7 @@ WORKDIR /app
 
 RUN apk add --no-cache tini
 
-COPY --from=build /go/src/github.com/daglabs/btcd/apiserver/server/ /app/
+COPY --from=build /go/src/github.com/daglabs/btcd/kasparov/server/ /app/
 
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["/app/server"]

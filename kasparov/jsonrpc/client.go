@@ -1,7 +1,7 @@
 package jsonrpc
 
 import (
-	"github.com/daglabs/btcd/apiserver/config"
+	"github.com/daglabs/btcd/kasparov/config"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"time"
