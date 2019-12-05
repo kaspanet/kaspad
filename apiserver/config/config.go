@@ -31,13 +31,13 @@ func (apiServerFlags *ApiServerFlags) ResolveApiServerFlags(parser *flags.Parser
 		apiServerFlags.DBAddress = defaultDBAddress
 	}
 	if apiServerFlags.RPCUser == "" {
-		return errors.New("--rpcuser is required if --migrate flag is not used")
+		return errors.New("--rpcuser is required")
 	}
 	if apiServerFlags.RPCPassword == "" {
-		return errors.New("--rpcpass is required if --migrate flag is not used")
+		return errors.New("--rpcpass is required")
 	}
 	if apiServerFlags.RPCServer == "" {
-		return errors.New("--rpcserver is required if --migrate flag is not used")
+		return errors.New("--rpcserver is required")
 	}
 
 	if apiServerFlags.RPCCert == "" && !apiServerFlags.DisableTLS {
