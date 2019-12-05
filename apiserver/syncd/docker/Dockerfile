@@ -14,7 +14,7 @@ RUN go mod download
 
 COPY . .
 
-RUN cd apiserver/server && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server .
+RUN cd apiserver/syncd && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o syncd .
 
 # --- multistage docker build: stage #2: runtime image
 FROM alpine
@@ -22,7 +22,7 @@ WORKDIR /app
 
 RUN apk add --no-cache tini
 
-COPY --from=build /go/src/github.com/daglabs/btcd/apiserver/server/ /app/
+COPY --from=build /go/src/github.com/daglabs/btcd/apiserver/syncd/ /app/
 
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["/app/server"]
+CMD ["/app/syncd"]
