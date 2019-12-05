@@ -1,4 +1,4 @@
-package apimodels
+package models
 
 // TransactionResponse is a json representation of a transaction
 type TransactionResponse struct {

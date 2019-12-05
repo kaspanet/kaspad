@@ -14,7 +14,7 @@ RUN go mod download
 
 COPY . .
 
-RUN cd apiserver/server && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server .
+RUN cd kasparov/server && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o kasparov-server .
 
 # --- multistage docker build: stage #2: runtime image
 FROM alpine
@@ -25,4 +25,4 @@ RUN apk add --no-cache tini
 COPY --from=build /go/src/github.com/daglabs/btcd/kasparov/server/ /app/
 
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["/app/server"]
+CMD ["/app/kasparov-server"]

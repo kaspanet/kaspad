@@ -30,7 +30,7 @@ type Config struct {
 	LogDir     string `long:"logdir" description:"Directory to log output."`
 	DebugLevel string `short:"d" long:"debuglevel" description:"Set log level {trace, debug, info, warn, error, critical}"`
 	HTTPListen string `long:"listen" description:"HTTP address to listen on (default: 0.0.0.0:8080)"`
-	config.ApiServerFlags
+	config.KasparovFlags
 }
 
 // Parse parses the CLI arguments and returns a config struct.
@@ -45,7 +45,7 @@ func Parse() error {
 		return err
 	}
 
-	err = activeConfig.ResolveApiServerFlags(parser)
+	err = activeConfig.ResolveKasparovFlags(parser)
 	if err != nil {
 		return err
 	}

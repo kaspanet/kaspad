@@ -8,7 +8,7 @@ import (
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/faucet/config"
 	"github.com/daglabs/btcd/httpserverutils"
-	"github.com/daglabs/btcd/kasparov/server/apimodels"
+	"github.com/daglabs/btcd/kasparov/server/models"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
@@ -129,7 +129,7 @@ func getWalletUTXOSet() (utxoSet, error) {
 	if err != nil {
 		return nil, err
 	}
-	utxoResponses := []*apimodels.TransactionOutputResponse{}
+	utxoResponses := []*models.TransactionOutputResponse{}
 	err = json.Unmarshal(body, &utxoResponses)
 	if err != nil {
 		return nil, err
@@ -167,7 +167,7 @@ func sendToAddress(address util.Address) (*wire.MsgTx, error) {
 	if err := tx.Serialize(buf); err != nil {
 		return nil, err
 	}
-	rawTx := &apimodels.RawTransaction{RawTransaction: hex.EncodeToString(buf.Bytes())}
+	rawTx := &models.RawTransaction{RawTransaction: hex.EncodeToString(buf.Bytes())}
 	return tx, postToAPIServer("transaction", rawTx)
 }
 

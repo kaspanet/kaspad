@@ -11,8 +11,8 @@ var (
 	defaultDBAddress = "localhost:3306"
 )
 
-// ApiServerFlags holds configuration common to both the server and the daemon.
-type ApiServerFlags struct {
+// KasparovFlags holds configuration common to both the Kasparov server and the Kasparov daemon.
+type KasparovFlags struct {
 	DBAddress   string `long:"dbaddress" description:"Database address"`
 	DBUser      string `long:"dbuser" description:"Database user" required:"true"`
 	DBPassword  string `long:"dbpass" description:"Database password" required:"true"`
@@ -25,27 +25,27 @@ type ApiServerFlags struct {
 	config.NetworkFlags
 }
 
-// ResolveApiServerFlags parses command line arguments and sets ApiServerFlags accordingly.
-func (apiServerFlags *ApiServerFlags) ResolveApiServerFlags(parser *flags.Parser) error {
-	if apiServerFlags.DBAddress == "" {
-		apiServerFlags.DBAddress = defaultDBAddress
+// ResolveKasparovFlags parses command line arguments and sets KasparovFlags accordingly.
+func (kasparovFlags *KasparovFlags) ResolveKasparovFlags(parser *flags.Parser) error {
+	if kasparovFlags.DBAddress == "" {
+		kasparovFlags.DBAddress = defaultDBAddress
 	}
-	if apiServerFlags.RPCUser == "" {
+	if kasparovFlags.RPCUser == "" {
 		return errors.New("--rpcuser is required")
 	}
-	if apiServerFlags.RPCPassword == "" {
+	if kasparovFlags.RPCPassword == "" {
 		return errors.New("--rpcpass is required")
 	}
-	if apiServerFlags.RPCServer == "" {
+	if kasparovFlags.RPCServer == "" {
 		return errors.New("--rpcserver is required")
 	}
 
-	if apiServerFlags.RPCCert == "" && !apiServerFlags.DisableTLS {
+	if kasparovFlags.RPCCert == "" && !kasparovFlags.DisableTLS {
 		return errors.New("--notls has to be disabled if --cert is used")
 	}
 
-	if apiServerFlags.RPCCert != "" && apiServerFlags.DisableTLS {
+	if kasparovFlags.RPCCert != "" && kasparovFlags.DisableTLS {
 		return errors.New("--cert should be omitted if --notls is used")
 	}
-	return apiServerFlags.ResolveNetwork(parser)
+	return kasparovFlags.ResolveNetwork(parser)
 }

@@ -4,11 +4,11 @@ import (
 	"encoding/hex"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/kasparov/database"
-	"github.com/daglabs/btcd/kasparov/server/apimodels"
+	"github.com/daglabs/btcd/kasparov/server/models"
 )
 
-func convertTxDBModelToTxResponse(tx *database.Transaction) *apimodels.TransactionResponse {
-	txRes := &apimodels.TransactionResponse{
+func convertTxDBModelToTxResponse(tx *database.Transaction) *models.TransactionResponse {
+	txRes := &models.TransactionResponse{
 		TransactionHash: tx.TransactionHash,
 		TransactionID:   tx.TransactionID,
 		SubnetworkID:    tx.Subnetwork.SubnetworkID,
@@ -16,8 +16,8 @@ func convertTxDBModelToTxResponse(tx *database.Transaction) *apimodels.Transacti
 		Gas:             tx.Gas,
 		PayloadHash:     tx.PayloadHash,
 		Payload:         hex.EncodeToString(tx.Payload),
-		Inputs:          make([]*apimodels.TransactionInputResponse, len(tx.TransactionInputs)),
-		Outputs:         make([]*apimodels.TransactionOutputResponse, len(tx.TransactionOutputs)),
+		Inputs:          make([]*models.TransactionInputResponse, len(tx.TransactionInputs)),
+		Outputs:         make([]*models.TransactionOutputResponse, len(tx.TransactionOutputs)),
 		Mass:            tx.Mass,
 	}
 	if tx.AcceptingBlock != nil {
@@ -25,7 +25,7 @@ func convertTxDBModelToTxResponse(tx *database.Transaction) *apimodels.Transacti
 		txRes.AcceptingBlockBlueScore = &tx.AcceptingBlock.BlueScore
 	}
 	for i, txOut := range tx.TransactionOutputs {
-		txRes.Outputs[i] = &apimodels.TransactionOutputResponse{
+		txRes.Outputs[i] = &models.TransactionOutputResponse{
 			Value:        txOut.Value,
 			ScriptPubKey: hex.EncodeToString(txOut.ScriptPubKey),
 			Address:      txOut.Address.Address,
@@ -33,7 +33,7 @@ func convertTxDBModelToTxResponse(tx *database.Transaction) *apimodels.Transacti
 		}
 	}
 	for i, txIn := range tx.TransactionInputs {
-		txRes.Inputs[i] = &apimodels.TransactionInputResponse{
+		txRes.Inputs[i] = &models.TransactionInputResponse{
 			PreviousTransactionID:          txIn.PreviousTransactionOutput.Transaction.TransactionID,
 			PreviousTransactionOutputIndex: txIn.PreviousTransactionOutput.Index,
 			SignatureScript:                hex.EncodeToString(txIn.SignatureScript),
@@ -44,8 +44,8 @@ func convertTxDBModelToTxResponse(tx *database.Transaction) *apimodels.Transacti
 	return txRes
 }
 
-func convertBlockModelToBlockResponse(block *database.Block) *apimodels.BlockResponse {
-	blockRes := &apimodels.BlockResponse{
+func convertBlockModelToBlockResponse(block *database.Block) *models.BlockResponse {
+	blockRes := &models.BlockResponse{
 		BlockHash:            block.BlockHash,
 		Version:              block.Version,
 		HashMerkleRoot:       block.HashMerkleRoot,

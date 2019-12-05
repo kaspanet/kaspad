@@ -34,7 +34,7 @@ func mainHandler(_ *httpserverutils.ServerContext, _ *http.Request, _ map[string
 	return struct {
 		Message string `json:"message"`
 	}{
-		Message: "API server is running",
+		Message: "Kasparov server is running",
 	}, nil
 }
 

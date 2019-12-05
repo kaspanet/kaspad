@@ -33,7 +33,7 @@ type Config struct {
 	MQTTBrokerAddress string `long:"mqttaddress" description:"MQTT broker address" required:"false"`
 	MQTTUser          string `long:"mqttuser" description:"MQTT server user" required:"false"`
 	MQTTPassword      string `long:"mqttpass" description:"MQTT server password" required:"false"`
-	config.ApiServerFlags
+	config.KasparovFlags
 }
 
 // Parse parses the CLI arguments and returns a config struct.
@@ -47,7 +47,7 @@ func Parse() error {
 		return err
 	}
 
-	err = activeConfig.ResolveApiServerFlags(parser)
+	err = activeConfig.ResolveKasparovFlags(parser)
 	if err != nil {
 		return err
 	}

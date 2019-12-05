@@ -6,6 +6,6 @@ import (
 )
 
 var (
-	log   = logger.Logger("APIS")
+	log   = logger.Logger("KVSV")
 	spawn = panics.GoroutineWrapperFunc(log)
 )

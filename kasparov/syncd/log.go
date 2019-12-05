@@ -6,6 +6,6 @@ import (
 )
 
 var (
-	log   = logger.Logger("SYNC")
+	log   = logger.Logger("KVSD")
 	spawn = panics.GoroutineWrapperFunc(log)
 )

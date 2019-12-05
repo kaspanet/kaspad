@@ -26,7 +26,7 @@ func main() {
 		return
 	}
 
-	err = database.Connect(&config.ActiveConfig().ApiServerFlags)
+	err = database.Connect(&config.ActiveConfig().KasparovFlags)
 	if err != nil {
 		panic(errors.Errorf("Error connecting to database: %s", err))
 	}
@@ -37,7 +37,7 @@ func main() {
 		}
 	}()
 
-	err = jsonrpc.Connect(&config.ActiveConfig().ApiServerFlags)
+	err = jsonrpc.Connect(&config.ActiveConfig().KasparovFlags)
 	if err != nil {
 		panic(errors.Errorf("Error connecting to servers: %s", err))
 	}
