@@ -160,6 +160,12 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 		return false, 0, ruleError(ErrDuplicateBlock, str)
 	}
 
+	// The block must not already exist as a delayed block.
+	if _, exists := dag.delayedBlocks[*blockHash]; exists {
+		str := fmt.Sprintf("already have block (delayed) %s", blockHash)
+		return false, 0, ruleError(ErrDuplicateBlock, str)
+	}
+
 	if !isDelayedBlock {
 		// Perform preliminary sanity checks on the block and its transactions.
 		delay, err := dag.checkBlockSanity(block, flags)
@@ -170,6 +176,22 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 		if delay != 0 {
 			return false, delay, err
 		}
+	}
+
+	// Handle the case of a block with a valid timestamp(non-delayed) which points to a delayed block.
+	dag.delayedBlocksLock.RLock()
+	delay = 0
+	for _, parentHash := range block.MsgBlock().Header.ParentHashes {
+		if delayedParent, exists := dag.delayedBlocks[*parentHash]; exists {
+			parentDelay := delayedParent.processTime.Sub(time.Now())
+			if parentDelay > delay {
+				delay = parentDelay
+			}
+		}
+	}
+	dag.delayedBlocksLock.RUnlock()
+	if delay != 0 {
+		return false, delay, err
 	}
 
 	// Handle orphan blocks.

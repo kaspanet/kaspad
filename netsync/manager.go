@@ -579,6 +579,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 
 	if bmsg.isDelayedBlock {
 		behaviorFlags |= blockdag.BFAfterDelay
+		defer sm.dag.RemoveDelayedBlock(bmsg.block)
 	}
 	if bmsg.peer == sm.syncPeer {
 		behaviorFlags |= blockdag.BFIsSync
@@ -621,6 +622,8 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 
 	if delay != 0 {
 		spawn(func() {
+			sm.dag.AddDelayedBlock(bmsg.block, delay)
+			time.Sleep(delay)
 			sm.QueueBlock(bmsg.block, bmsg.peer, true, make(chan struct{}))
 		})
 	}

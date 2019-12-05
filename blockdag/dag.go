@@ -36,6 +36,12 @@ type orphanBlock struct {
 	expiration time.Time
 }
 
+// delayedBlock represents a block which has a delayed timestamp and will be processed at processTime
+type delayedBlock struct {
+	block       *util.Block
+	processTime time.Time
+}
+
 // chainUpdates represents the updates made to the selected parent chain after
 // a block had been added to the DAG.
 type chainUpdates struct {
@@ -101,6 +107,13 @@ type BlockDAG struct {
 	orphans      map[daghash.Hash]*orphanBlock
 	prevOrphans  map[daghash.Hash][]*orphanBlock
 	newestOrphan *orphanBlock
+
+	// delayedBlocks is a list of all delayed blocks. We are maintaining this
+	// list for the case where new block with a valid timestamp points to a delayed block.
+	// In that case we will delay the processing of the child block so it would be processed
+	// after his parent.
+	delayedBlocks     map[daghash.Hash]*delayedBlock
+	delayedBlocksLock sync.RWMutex
 
 	// These fields are related to checkpoint handling.  They are protected
 	// by the chain lock.
@@ -1820,6 +1833,23 @@ func (dag *BlockDAG) GetBlueBlocksHeadersBetween(startHash, stopHash *daghash.Ha
 // SubnetworkID returns the node's subnetwork ID
 func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 	return dag.subnetworkID
+}
+
+// AddDelayedBlock adds a block to the delayed blocks list.
+func (dag *BlockDAG) AddDelayedBlock(block *util.Block, delay time.Duration) {
+	dag.delayedBlocksLock.Lock()
+	defer dag.delayedBlocksLock.Unlock()
+	dag.delayedBlocks[*block.Hash()] = &delayedBlock{
+		block:       block,
+		processTime: time.Now().Add(delay),
+	}
+}
+
+// RemoveDelayedBlock removes a block from the delayed blocks list.
+func (dag *BlockDAG) RemoveDelayedBlock(block *util.Block) {
+	dag.delayedBlocksLock.Lock()
+	defer dag.delayedBlocksLock.Unlock()
+	delete(dag.delayedBlocks, *block.Hash())
 }
 
 // IndexManager provides a generic interface that is called when blocks are
