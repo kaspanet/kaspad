@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"os"
 
-	"github.com/daglabs/btcd/logger"
 	"github.com/daglabs/btcd/signal"
 	"github.com/daglabs/btcd/util/panics"
 	_ "github.com/golang-migrate/migrate/v4/database/mysql"
@@ -27,7 +26,7 @@ var (
 )
 
 func main() {
-	defer panics.HandlePanic(log, logger.BackendLog, nil)
+	defer panics.HandlePanic(log, nil, nil)
 
 	err := config.Parse()
 	if err != nil {

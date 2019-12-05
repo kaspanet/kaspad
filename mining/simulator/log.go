@@ -11,7 +11,7 @@ import (
 var (
 	backendLog = logs.NewBackend()
 	log        = backendLog.Logger("MNSM")
-	spawn      = panics.GoroutineWrapperFunc(log, backendLog)
+	spawn      = panics.GoroutineWrapperFunc(log)
 )
 
 func initLog(logFile, errLogFile string) {
@@ -30,5 +30,5 @@ func initLog(logFile, errLogFile string) {
 func enableRPCLogging() {
 	rpclog := backendLog.Logger("RPCC")
 	rpclog.SetLevel(logs.LevelTrace)
-	rpcclient.UseLogger(rpclog, backendLog)
+	rpcclient.UseLogger(rpclog)
 }

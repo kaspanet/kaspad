@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	defer panics.HandlePanic(log, backendLog, nil)
+	defer panics.HandlePanic(log, nil, nil)
 	cfg, err := parseConfig()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error parsing command-line arguments: %s", err)

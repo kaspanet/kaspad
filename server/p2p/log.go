@@ -12,7 +12,7 @@ import (
 var (
 	srvrLog, _ = logger.Get(logger.SubsystemTags.SRVR)
 	peerLog, _ = logger.Get(logger.SubsystemTags.PEER)
-	spawn      = panics.GoroutineWrapperFunc(peerLog, logger.BackendLog)
+	spawn      = panics.GoroutineWrapperFunc(peerLog)
 
 	txmpLog, _ = logger.Get(logger.SubsystemTags.TXMP)
 	indxLog, _ = logger.Get(logger.SubsystemTags.INDX)

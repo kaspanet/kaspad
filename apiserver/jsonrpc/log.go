@@ -8,9 +8,9 @@ import (
 
 var (
 	log   = logger.BackendLog.Logger("RPCC")
-	spawn = panics.GoroutineWrapperFunc(log, logger.BackendLog)
+	spawn = panics.GoroutineWrapperFunc(log)
 )
 
 func init() {
-	rpcclient.UseLogger(log, logger.BackendLog)
+	rpcclient.UseLogger(log)
 }
