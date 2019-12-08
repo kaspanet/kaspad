@@ -11,12 +11,6 @@ import (
 	"math/big"
 )
 
-// Errors returned by canonicalPadding.
-var (
-	errNegativeValue          = errors.New("value may be interpreted as negative")
-	errExcessivelyPaddedValue = errors.New("value is excessively padded")
-)
-
 // Signature is a type representing a Schnorr signature.
 type Signature struct {
 	R *big.Int
@@ -46,11 +40,12 @@ func verifySchnorr(pubKey *PublicKey, hash []byte, r *big.Int, s *big.Int) bool 
 	// This schnorr specification is specific to the secp256k1 curve so if the
 	// provided curve is not a KoblitizCurve then we'll just return false.
 	curve, ok := pubKey.Curve.(*KoblitzCurve)
+	// No need to verify this is actually on secp because the only way to create the pubkey is through `ParsePubKey` (pubkey.go)
 	if !ok {
 		return false
 	}
 
-	// Signature is invalid if s >= order or r >= p.
+	// Signature is invalid if s >= order or r >= p or s <= 0 or r <= 0
 	if s.Cmp(curve.Params().N) >= 0 || r.Cmp(curve.Params().P) >= 0 {
 		return false
 	}
@@ -58,10 +53,11 @@ func verifySchnorr(pubKey *PublicKey, hash []byte, r *big.Int, s *big.Int) bool 
 	// Compute scalar e = Hash(r || compressed(P) || m) mod N
 	eBytes := sha256.Sum256(append(append(bigIntTo32Bytes(r), pubKey.SerializeCompressed()...), hash...))
 	e := new(big.Int).SetBytes(eBytes[:])
-	e.Mod(e, curve.Params().N)
+	// The modulo is fine because n is close enough to 2^256 that this is very very rare
+	e.Mod(e, n)
 
 	// Negate e
-	e.Neg(e).Mod(e, curve.Params().N)
+	e.Neg(e).Mod(e, n)
 
 	// Compute point R = s * G - e * P.
 	sgx, sgy, sgz := curve.scalarBaseMultJacobian(s.Bytes())
@@ -70,21 +66,18 @@ func verifySchnorr(pubKey *PublicKey, hash []byte, r *big.Int, s *big.Int) bool 
 	curve.addJacobian(sgx, sgy, sgz, epx, epy, epz, rx, ry, rz)
 
 	// Check that R is not infinity
-	if rz.Equals(new(fieldVal).SetInt(0)) {
+	if (ry.IsZero() && rx.IsZero()) || rz.IsZero() {
 		return false
 	}
 
 	// Check if R.y is quadratic residue
-	yz := ry.Mul(rz).Normalize()
-	b := yz.Bytes()
-	if big.Jacobi(new(big.Int).SetBytes(b[:]), curve.P) != 1 {
+	rax, ray := curve.fieldJacobianToBigAffine(rx, ry, rz)
+	if big.Jacobi(ray, curve.P) != 1 {
 		return false
 	}
 
 	// Check R values match
-	// rx ≠ rz^2 * r mod p
-	fieldR := new(fieldVal).SetByteSlice(r.Bytes())
-	return rx.Normalize().Equals(rz.Square().Mul(fieldR).Normalize())
+	return rax.Cmp(r) == 0
 }
 
 // IsEqual compares this Signature instance to the one passed, returning true
