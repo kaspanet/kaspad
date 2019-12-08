@@ -2,21 +2,21 @@ package main
 
 import (
 	"fmt"
-	"github.com/daglabs/kaspad/btcec"
-	"github.com/daglabs/kaspad/dagconfig"
-	"github.com/daglabs/kaspad/faucet/config"
-	"github.com/daglabs/kaspad/faucet/database"
-	"github.com/daglabs/kaspad/txscript"
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/util/base58"
+	"github.com/kaspanet/kaspad/btcec"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/faucet/config"
+	"github.com/kaspanet/kaspad/faucet/database"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/base58"
 	"github.com/pkg/errors"
 	"os"
 
-	"github.com/daglabs/kaspad/signal"
-	"github.com/daglabs/kaspad/util/panics"
 	_ "github.com/golang-migrate/migrate/v4/database/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"github.com/kaspanet/kaspad/signal"
+	"github.com/kaspanet/kaspad/util/panics"
 )
 
 var (

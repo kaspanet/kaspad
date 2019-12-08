@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"hash/crc32"
 
-	"github.com/daglabs/kaspad/database"
+	"github.com/kaspanet/kaspad/database"
 )
 
 // The serialized write cursor location format is:

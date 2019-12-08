@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/kaspad/util/subnetworkid"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
 // TestAddr tests the MsgAddr API.

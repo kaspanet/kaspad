@@ -12,10 +12,10 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/daglabs/kaspad/dagconfig"
-	"github.com/daglabs/kaspad/database"
-	"github.com/daglabs/kaspad/database/ffldb"
-	"github.com/daglabs/kaspad/util"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/database/ffldb"
+	"github.com/kaspanet/kaspad/util"
 )
 
 // dbType is the database type name for this driver.

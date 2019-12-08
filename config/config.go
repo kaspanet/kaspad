@@ -20,15 +20,15 @@ import (
 	"time"
 
 	"github.com/btcsuite/go-socks/socks"
-	"github.com/daglabs/kaspad/dagconfig"
-	"github.com/daglabs/kaspad/database"
-	"github.com/daglabs/kaspad/logger"
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/util/daghash"
-	"github.com/daglabs/kaspad/util/network"
-	"github.com/daglabs/kaspad/util/subnetworkid"
-	"github.com/daglabs/kaspad/version"
 	"github.com/jessevdk/go-flags"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/logger"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/network"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/version"
 )
 
 const (

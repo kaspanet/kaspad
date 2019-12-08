@@ -7,7 +7,7 @@ package addrmgr
 import (
 	"time"
 
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 func TstKnownAddressIsBad(ka *KnownAddress) bool {

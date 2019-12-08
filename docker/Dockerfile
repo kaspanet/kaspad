@@ -1,9 +1,9 @@
 # -- multistage docker build: stage #1: build stage
 FROM golang:1.13-alpine AS build
 
-RUN mkdir -p /go/src/github.com/daglabs/kaspad
+RUN mkdir -p /go/src/github.com/kaspanet/kaspad
 
-WORKDIR /go/src/github.com/daglabs/kaspad
+WORKDIR /go/src/github.com/kaspanet/kaspad
 
 RUN apk add --no-cache curl git openssh binutils gcc musl-dev
 RUN go get -u golang.org/x/lint/golint \
@@ -37,8 +37,8 @@ WORKDIR /app
 
 RUN apk add --no-cache ca-certificates tini
 
-COPY --from=build /go/src/github.com/daglabs/kaspad/btcd /app/
-COPY --from=build /go/src/github.com/daglabs/kaspad/sample-btcd.conf /app/
+COPY --from=build /go/src/github.com/kaspanet/kaspad/btcd /app/
+COPY --from=build /go/src/github.com/kaspanet/kaspad/sample-btcd.conf /app/
 
 USER nobody
 ENTRYPOINT [ "/sbin/tini", "--" ]

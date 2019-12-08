@@ -8,11 +8,11 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/util/bloom"
-	"github.com/daglabs/kaspad/util/daghash"
-	"github.com/daglabs/kaspad/wire"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/bloom"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 func TestMerkleBlock3(t *testing.T) {

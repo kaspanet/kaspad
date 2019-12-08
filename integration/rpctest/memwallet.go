@@ -10,14 +10,14 @@ import (
 	"github.com/pkg/errors"
 	"sync"
 
-	"github.com/daglabs/kaspad/btcec"
-	"github.com/daglabs/kaspad/dagconfig"
-	"github.com/daglabs/kaspad/rpcclient"
-	"github.com/daglabs/kaspad/txscript"
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/util/daghash"
-	"github.com/daglabs/kaspad/util/hdkeychain"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/btcec"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/rpcclient"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/hdkeychain"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 var (

@@ -11,8 +11,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/kaspad/btcjson"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // TestDAGSvrCmds tests all of the dag server commands marshal and unmarshal

@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 
-	"github.com/daglabs/kaspad/dagconfig"
-	"github.com/daglabs/kaspad/util"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util"
 )
 
 const (

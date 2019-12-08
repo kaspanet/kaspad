@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/kaspad/util/daghash"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // TestMerkleBlock tests the MsgMerkleBlock API.

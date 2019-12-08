@@ -3,10 +3,10 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/daglabs/kaspad/btcjson"
-	"github.com/daglabs/kaspad/rpcclient"
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/rpcclient"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
 

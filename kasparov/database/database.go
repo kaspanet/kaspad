@@ -3,7 +3,7 @@ package database
 import (
 	nativeerrors "errors"
 	"fmt"
-	"github.com/daglabs/kaspad/kasparov/config"
+	"github.com/kaspanet/kaspad/kasparov/config"
 	"github.com/pkg/errors"
 	"os"
 

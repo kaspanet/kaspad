@@ -14,8 +14,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/daglabs/kaspad/util/daghash"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // scriptTestName returns a descriptive test name for the given reference script

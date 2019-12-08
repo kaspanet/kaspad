@@ -1,8 +1,8 @@
 package rpc
 
 import (
-	"github.com/daglabs/kaspad/btcjson"
-	"github.com/daglabs/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
 // handleNotifyNewTransations implements the notifyNewTransactions command

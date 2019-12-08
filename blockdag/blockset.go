@@ -3,7 +3,7 @@ package blockdag
 import (
 	"strings"
 
-	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // blockSet implements a basic unsorted set of blocks

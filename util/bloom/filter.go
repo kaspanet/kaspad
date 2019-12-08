@@ -9,10 +9,10 @@ import (
 	"math"
 	"sync"
 
-	"github.com/daglabs/kaspad/txscript"
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/util/daghash"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // ln2Squared is simply the square of the natural log of 2.

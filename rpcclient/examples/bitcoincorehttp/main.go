@@ -7,7 +7,7 @@ package main
 import (
 	"log"
 
-	"github.com/daglabs/kaspad/rpcclient"
+	"github.com/kaspanet/kaspad/rpcclient"
 )
 
 func main() {

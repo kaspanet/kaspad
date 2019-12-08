@@ -1,8 +1,8 @@
 package rpc
 
 import (
-	"github.com/daglabs/kaspad/btcjson"
-	"github.com/daglabs/kaspad/config"
+	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/config"
 )
 
 // handleGetNetworkHashPS implements the getNetworkHashPs command.

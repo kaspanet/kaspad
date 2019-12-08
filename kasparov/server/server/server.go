@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	"github.com/daglabs/kaspad/httpserverutils"
+	"github.com/kaspanet/kaspad/httpserverutils"
 	"net/http"
 	"time"
 

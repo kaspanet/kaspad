@@ -11,12 +11,12 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/daglabs/kaspad/blockdag"
-	"github.com/daglabs/kaspad/dagconfig"
-	"github.com/daglabs/kaspad/txscript"
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/util/daghash"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // solveBlock attempts to find a nonce which makes the passed block header hash

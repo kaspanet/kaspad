@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/daglabs/kaspad/config"
-	"github.com/daglabs/kaspad/connmgr"
-	"github.com/daglabs/kaspad/peer"
-	"github.com/daglabs/kaspad/util"
+	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/connmgr"
+	"github.com/kaspanet/kaspad/peer"
+	"github.com/kaspanet/kaspad/util"
 )
 
 // Peer extends the peer to maintain state shared by the server and

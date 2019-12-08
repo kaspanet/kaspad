@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/daglabs/kaspad/util"
+	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 	"path/filepath"
 

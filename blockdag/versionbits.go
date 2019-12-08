@@ -7,7 +7,7 @@ package blockdag
 import (
 	"math"
 
-	"github.com/daglabs/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/dagconfig"
 )
 
 const (

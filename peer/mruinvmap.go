@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // mruInventoryMap provides a concurrency safe map that is limited to a maximum

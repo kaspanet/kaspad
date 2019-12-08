@@ -3,7 +3,7 @@ package ffldb
 import (
 	"fmt"
 
-	"github.com/daglabs/kaspad/database"
+	"github.com/kaspanet/kaspad/database"
 )
 
 func registerDriver() {

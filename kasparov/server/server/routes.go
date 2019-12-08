@@ -2,13 +2,13 @@ package server
 
 import (
 	"fmt"
-	"github.com/daglabs/kaspad/httpserverutils"
+	"github.com/kaspanet/kaspad/httpserverutils"
 	"github.com/pkg/errors"
 	"net/http"
 	"strconv"
 
-	"github.com/daglabs/kaspad/kasparov/server/controllers"
 	"github.com/gorilla/mux"
+	"github.com/kaspanet/kaspad/kasparov/server/controllers"
 )
 
 const (

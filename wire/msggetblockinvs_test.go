@@ -10,8 +10,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/kaspad/util/daghash"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // TestGetBlockInvs tests the MsgGetBlockInvs API.

@@ -1,9 +1,9 @@
 package rpc
 
 import (
-	"github.com/daglabs/kaspad/btcjson"
-	"github.com/daglabs/kaspad/config"
-	"github.com/daglabs/kaspad/version"
+	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/version"
 )
 
 // handleGetInfo implements the getInfo command. We only return the fields

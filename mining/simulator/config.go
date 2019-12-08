@@ -3,7 +3,7 @@ package main
 import (
 	"path/filepath"
 
-	"github.com/daglabs/kaspad/util"
+	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 
 	"github.com/jessevdk/go-flags"

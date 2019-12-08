@@ -9,7 +9,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/daglabs/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/btcjson"
 )
 
 // TestUsageFlagStringer tests the stringized output for the UsageFlag type.

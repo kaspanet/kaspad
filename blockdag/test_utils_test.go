@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"bou.ke/monkey"
-	"github.com/daglabs/kaspad/dagconfig"
-	"github.com/daglabs/kaspad/database"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/database"
 )
 
 func TestIsSupportedDbType(t *testing.T) {

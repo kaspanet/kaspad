@@ -12,7 +12,7 @@ import (
 	"testing"
 	"unicode"
 
-	"github.com/daglabs/kaspad/util"
+	"github.com/kaspanet/kaspad/util"
 )
 
 // TestAppDataDir tests the API for AppDataDir to ensure it gives expected

@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"io"
 
-	"github.com/daglabs/kaspad/util/binaryserializer"
+	"github.com/kaspanet/kaspad/util/binaryserializer"
 )
 
 // randomUint64 returns a cryptographically random uint64 value.  This

@@ -5,7 +5,7 @@
 package serverutils
 
 import (
-	"github.com/daglabs/kaspad/logger"
+	"github.com/kaspanet/kaspad/logger"
 )
 
 var log, _ = logger.Get(logger.SubsystemTags.RPCS)

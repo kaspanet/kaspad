@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/util/daghash"
-	"github.com/daglabs/kaspad/util/subnetworkid"
-	"github.com/daglabs/kaspad/wire"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // TestBlock tests the API for Block.

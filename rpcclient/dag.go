@@ -11,9 +11,9 @@ import (
 	"encoding/json"
 	"github.com/pkg/errors"
 
-	"github.com/daglabs/kaspad/btcjson"
-	"github.com/daglabs/kaspad/util/daghash"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // FutureGetSelectedTipHashResult is a future promise to deliver the result of a

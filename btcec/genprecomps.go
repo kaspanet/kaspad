@@ -17,7 +17,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/daglabs/kaspad/btcec"
+	"github.com/kaspanet/kaspad/btcec"
 )
 
 func main() {
