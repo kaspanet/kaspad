@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/daglabs/btcd/kasparov/database"
+	"github.com/daglabs/btcd/kasparov/dbmodels"
 	"github.com/daglabs/btcd/kasparov/jsonrpc"
 	"github.com/daglabs/btcd/kasparov/server/models"
 	"github.com/daglabs/btcd/util"
@@ -37,8 +38,8 @@ func GetTransactionByIDHandler(txID string) (interface{}, error) {
 		return nil, err
 	}
 
-	tx := &database.Transaction{}
-	query := db.Where(&database.Transaction{TransactionID: txID})
+	tx := &dbmodels.Transaction{}
+	query := db.Where(&dbmodels.Transaction{TransactionID: txID})
 	dbResult := addTxPreloadedFields(query).First(&tx)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.IsDBRecordNotFoundError(dbErrors) {
@@ -62,8 +63,8 @@ func GetTransactionByHashHandler(txHash string) (interface{}, error) {
 		return nil, err
 	}
 
-	tx := &database.Transaction{}
-	query := db.Where(&database.Transaction{TransactionHash: txHash})
+	tx := &dbmodels.Transaction{}
+	query := db.Where(&dbmodels.Transaction{TransactionHash: txHash})
 	dbResult := addTxPreloadedFields(query).First(&tx)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.IsDBRecordNotFoundError(dbErrors) {
@@ -88,7 +89,7 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 		return nil, err
 	}
 
-	txs := []*database.Transaction{}
+	txs := []*dbmodels.Transaction{}
 	query := joinTxInputsTxOutputsAndAddresses(db).
 		Where("`out_addresses`.`address` = ?", address).
 		Or("`in_addresses`.`address` = ?", address).
@@ -107,14 +108,14 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 	return txResponses, nil
 }
 
-func fetchSelectedTip() (*database.Block, error) {
+func fetchSelectedTip() (*dbmodels.Block, error) {
 	db, err := database.DB()
 	if err != nil {
 		return nil, err
 	}
-	block := &database.Block{}
+	block := &dbmodels.Block{}
 	dbResult := db.Order("blue_score DESC").
-		Where(&database.Block{IsChainBlock: true}).
+		Where(&dbmodels.Block{IsChainBlock: true}).
 		First(block)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
@@ -128,9 +129,9 @@ func areTxsInBlock(blockID uint64, txIDs []uint64) (map[uint64]bool, error) {
 	if err != nil {
 		return nil, err
 	}
-	transactionBlocks := []*database.TransactionBlock{}
+	transactionBlocks := []*dbmodels.TransactionBlock{}
 	dbErrors := db.
-		Where(&database.TransactionBlock{BlockID: blockID}).
+		Where(&dbmodels.TransactionBlock{BlockID: blockID}).
 		Where("transaction_id in (?)", txIDs).
 		Find(&transactionBlocks).GetErrors()
 
@@ -159,7 +160,7 @@ func GetUTXOsByAddressHandler(address string) (interface{}, error) {
 		return nil, err
 	}
 
-	var transactionOutputs []*database.TransactionOutput
+	var transactionOutputs []*dbmodels.TransactionOutput
 	dbErrors := db.
 		Joins("LEFT JOIN `addresses` ON `addresses`.`id` = `transaction_outputs`.`address_id`").
 		Where("`addresses`.`address` = ? AND `transaction_outputs`.`is_spent` = 0", address).
@@ -177,7 +178,7 @@ func GetUTXOsByAddressHandler(address string) (interface{}, error) {
 		}
 	}
 
-	var selectedTip *database.Block
+	var selectedTip *dbmodels.Block
 	var isTxInSelectedTip map[uint64]bool
 	if len(nonAcceptedTxIds) != 0 {
 		selectedTip, err = fetchSelectedTip()
@@ -294,7 +295,7 @@ func GetTransactionsByIDsHandler(transactionIds []string) ([]*models.Transaction
 		return nil, err
 	}
 
-	var txs []*database.Transaction
+	var txs []*dbmodels.Transaction
 	query := joinTxInputsTxOutputsAndAddresses(db).
 		Where("`transactions`.`transaction_id` IN (?)", transactionIds)
 

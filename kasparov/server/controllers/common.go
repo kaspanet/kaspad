@@ -3,11 +3,11 @@ package controllers
 import (
 	"encoding/hex"
 	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/kasparov/database"
+	"github.com/daglabs/btcd/kasparov/dbmodels"
 	"github.com/daglabs/btcd/kasparov/server/models"
 )
 
-func convertTxDBModelToTxResponse(tx *database.Transaction) *models.TransactionResponse {
+func convertTxDBModelToTxResponse(tx *dbmodels.Transaction) *models.TransactionResponse {
 	txRes := &models.TransactionResponse{
 		TransactionHash: tx.TransactionHash,
 		TransactionID:   tx.TransactionID,
@@ -44,7 +44,7 @@ func convertTxDBModelToTxResponse(tx *database.Transaction) *models.TransactionR
 	return txRes
 }
 
-func convertBlockModelToBlockResponse(block *database.Block) *models.BlockResponse {
+func convertBlockModelToBlockResponse(block *dbmodels.Block) *models.BlockResponse {
 	blockRes := &models.BlockResponse{
 		BlockHash:            block.BlockHash,
 		Version:              block.Version,
