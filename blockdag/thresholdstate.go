@@ -7,7 +7,7 @@ package blockdag
 import (
 	"fmt"
 
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/kaspad/util/daghash"
 )
 
 // ThresholdState define the various threshold states used when voting on

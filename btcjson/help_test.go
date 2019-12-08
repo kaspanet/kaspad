@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/btcd/btcjson"
+	"github.com/daglabs/kaspad/btcjson"
 )
 
 // TestHelpReflectInternals ensures the various help functions which deal with

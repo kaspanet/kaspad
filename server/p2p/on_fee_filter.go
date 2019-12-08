@@ -1,9 +1,9 @@
 package p2p
 
 import (
-	"github.com/daglabs/btcd/peer"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/peer"
+	"github.com/daglabs/kaspad/util"
+	"github.com/daglabs/kaspad/wire"
 	"sync/atomic"
 )
 

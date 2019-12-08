@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/kaspad/dagconfig"
 	"github.com/pkg/errors"
 )
 

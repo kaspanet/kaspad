@@ -8,7 +8,7 @@ import (
 	"math"
 	"testing"
 
-	. "github.com/daglabs/btcd/util"
+	. "github.com/daglabs/kaspad/util"
 )
 
 func TestAmountCreation(t *testing.T) {

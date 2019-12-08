@@ -9,8 +9,8 @@ import (
 	"github.com/pkg/errors"
 	"time"
 
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/kaspad/database"
+	"github.com/daglabs/kaspad/util/daghash"
 )
 
 // fetchBlockCmd defines the configuration options for the fetchblock command.

@@ -7,8 +7,8 @@ package txscript
 import (
 	"sync"
 
-	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/kaspad/btcec"
+	"github.com/daglabs/kaspad/util/daghash"
 )
 
 // sigCacheEntry represents an entry in the SigCache. Entries within the

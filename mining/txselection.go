@@ -1,11 +1,11 @@
 package mining
 
 import (
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/random"
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/daglabs/kaspad/blockdag"
+	"github.com/daglabs/kaspad/txscript"
+	"github.com/daglabs/kaspad/util"
+	"github.com/daglabs/kaspad/util/random"
+	"github.com/daglabs/kaspad/util/subnetworkid"
 	"math"
 	"math/rand"
 	"sort"

@@ -16,16 +16,16 @@ import (
 	"runtime/pprof"
 	"strings"
 
-	"github.com/daglabs/btcd/blockdag/indexers"
-	"github.com/daglabs/btcd/config"
-	"github.com/daglabs/btcd/database"
-	_ "github.com/daglabs/btcd/database/ffldb"
-	"github.com/daglabs/btcd/limits"
-	"github.com/daglabs/btcd/server"
-	"github.com/daglabs/btcd/signal"
-	"github.com/daglabs/btcd/util/fs"
-	"github.com/daglabs/btcd/util/panics"
-	"github.com/daglabs/btcd/version"
+	"github.com/daglabs/kaspad/blockdag/indexers"
+	"github.com/daglabs/kaspad/config"
+	"github.com/daglabs/kaspad/database"
+	_ "github.com/daglabs/kaspad/database/ffldb"
+	"github.com/daglabs/kaspad/limits"
+	"github.com/daglabs/kaspad/server"
+	"github.com/daglabs/kaspad/signal"
+	"github.com/daglabs/kaspad/util/fs"
+	"github.com/daglabs/kaspad/util/panics"
+	"github.com/daglabs/kaspad/version"
 )
 
 const (

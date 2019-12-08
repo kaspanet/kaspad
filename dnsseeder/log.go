@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/logs"
-	"github.com/daglabs/btcd/util/panics"
+	"github.com/daglabs/kaspad/logs"
+	"github.com/daglabs/kaspad/util/panics"
 	"os"
 )
 

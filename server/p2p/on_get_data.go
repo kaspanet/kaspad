@@ -1,9 +1,9 @@
 package p2p
 
 import (
-	"github.com/daglabs/btcd/peer"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/peer"
+	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/daglabs/kaspad/wire"
 )
 
 // OnGetData is invoked when a peer receives a getdata bitcoin message and

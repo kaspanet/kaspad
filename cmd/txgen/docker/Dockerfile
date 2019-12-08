@@ -1,9 +1,9 @@
 # -- multistage docker build: stage #1: build stage
 FROM golang:1.13-alpine AS build
 
-RUN mkdir -p /go/src/github.com/daglabs/btcd
+RUN mkdir -p /go/src/github.com/daglabs/kaspad
 
-WORKDIR /go/src/github.com/daglabs/btcd
+WORKDIR /go/src/github.com/daglabs/kaspad
 
 RUN apk add --no-cache curl git
 
@@ -22,7 +22,7 @@ WORKDIR /app
 
 RUN apk add --no-cache tini
 
-COPY --from=build /go/src/github.com/daglabs/btcd/cmd/txgen/txgen /app/
+COPY --from=build /go/src/github.com/daglabs/kaspad/cmd/txgen/txgen /app/
 
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["/app/txgen"]

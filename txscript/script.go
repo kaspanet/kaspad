@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/daglabs/kaspad/wire"
 )
 
 // SigHashType represents hash type bits at the end of a signature.

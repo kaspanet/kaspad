@@ -1,8 +1,8 @@
 package p2p
 
 import (
-	"github.com/daglabs/btcd/peer"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/peer"
+	"github.com/daglabs/kaspad/wire"
 	"github.com/prometheus/common/log"
 )
 

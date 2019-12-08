@@ -2,7 +2,7 @@ package rpc
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/btcjson"
+	"github.com/daglabs/kaspad/btcjson"
 	"time"
 )
 

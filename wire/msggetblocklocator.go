@@ -3,7 +3,7 @@ package wire
 import (
 	"io"
 
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/kaspad/util/daghash"
 )
 
 // MsgGetBlockLocator implements the Message interface and represents a bitcoin

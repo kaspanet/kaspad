@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"testing"
 
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/wire"
 )
 
 // addrIndexBucket provides a mock address index database bucket by implementing

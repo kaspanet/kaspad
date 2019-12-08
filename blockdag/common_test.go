@@ -16,11 +16,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/dagconfig"
-	_ "github.com/daglabs/btcd/database/ffldb"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/dagconfig"
+	_ "github.com/daglabs/kaspad/database/ffldb"
+	"github.com/daglabs/kaspad/util"
+	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/daglabs/kaspad/wire"
 )
 
 func loadBlocksWithLog(t *testing.T, filename string) ([]*util.Block, error) {

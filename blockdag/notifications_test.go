@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/kaspad/dagconfig"
 )
 
 // TestNotifications ensures that notification callbacks are fired on events.

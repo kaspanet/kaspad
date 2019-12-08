@@ -2,9 +2,9 @@ package rpc
 
 import (
 	"encoding/hex"
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/kaspad/btcjson"
+	"github.com/daglabs/kaspad/database"
+	"github.com/daglabs/kaspad/util"
 )
 
 // handleGetSelectedTip implements the getSelectedTip command.

@@ -1,10 +1,10 @@
 package p2p
 
 import (
-	"github.com/daglabs/btcd/addrmgr"
-	"github.com/daglabs/btcd/config"
-	"github.com/daglabs/btcd/peer"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/addrmgr"
+	"github.com/daglabs/kaspad/config"
+	"github.com/daglabs/kaspad/peer"
+	"github.com/daglabs/kaspad/wire"
 )
 
 // OnVersion is invoked when a peer receives a version bitcoin message

@@ -3,11 +3,11 @@ package indexers
 import (
 	"bytes"
 	"encoding/gob"
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/blockdag"
+	"github.com/daglabs/kaspad/database"
+	"github.com/daglabs/kaspad/util"
+	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/daglabs/kaspad/wire"
 	"github.com/pkg/errors"
 )
 

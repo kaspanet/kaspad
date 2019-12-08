@@ -5,8 +5,8 @@
 package mempool
 
 import (
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/blockdag"
+	"github.com/daglabs/kaspad/wire"
 )
 
 // RuleError identifies a rule violation.  It is used to indicate that

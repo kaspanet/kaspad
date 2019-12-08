@@ -12,7 +12,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/btcd/btcjson"
+	"github.com/daglabs/kaspad/btcjson"
 )
 
 // TestDAGSvrWsCmds tests all of the dag server websocket-specific commands

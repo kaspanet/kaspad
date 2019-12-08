@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/btcd/btcjson"
+	"github.com/daglabs/kaspad/btcjson"
 )
 
 // TestIsValidIDType ensures the IsValidIDType function behaves as expected.

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/kaspad/util"
 	"golang.org/x/crypto/ripemd160"
 )
 

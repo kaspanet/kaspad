@@ -25,8 +25,8 @@
 //          "fmt"
 //          "log"
 //
-//          "github.com/daglabs/btcd/util"
-//          "github.com/daglabs/btcd/dagconfig"
+//          "github.com/daglabs/kaspad/util"
+//          "github.com/daglabs/kaspad/dagconfig"
 //  )
 //
 //  var testnet = flag.Bool("testnet", false, "operate on the testnet Bitcoin network")

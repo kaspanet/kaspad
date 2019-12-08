@@ -5,7 +5,7 @@
 package bech32_test
 
 import (
-	"github.com/daglabs/btcd/util/bech32"
+	"github.com/daglabs/kaspad/util/bech32"
 	"testing"
 )
 

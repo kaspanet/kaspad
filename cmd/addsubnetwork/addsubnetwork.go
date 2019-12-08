@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/rpcclient"
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/daglabs/kaspad/blockdag"
+	"github.com/daglabs/kaspad/btcjson"
+	"github.com/daglabs/kaspad/rpcclient"
+	"github.com/daglabs/kaspad/util/subnetworkid"
 	"github.com/pkg/errors"
 	"time"
 )

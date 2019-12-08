@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/kaspad/util/daghash"
 )
 
 // RejectCode represents a numeric value by which a remote peer indicates

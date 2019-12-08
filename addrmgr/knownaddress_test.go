@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/addrmgr"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/addrmgr"
+	"github.com/daglabs/kaspad/wire"
 )
 
 func TestChance(t *testing.T) {
