@@ -7,7 +7,7 @@ package wire
 import (
 	"io"
 
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/kaspad/util/daghash"
 )
 
 // MaxGetCFiltersReqRange the maximum number of filters that may be requested in

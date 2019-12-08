@@ -1,4 +1,4 @@
-module github.com/daglabs/btcd
+module github.com/daglabs/kaspad
 
 go 1.13
 

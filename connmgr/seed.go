@@ -11,11 +11,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/daglabs/btcd/config"
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/daglabs/kaspad/config"
+	"github.com/daglabs/kaspad/util/subnetworkid"
 
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/dagconfig"
+	"github.com/daglabs/kaspad/wire"
 )
 
 const (

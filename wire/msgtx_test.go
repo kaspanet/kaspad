@@ -13,8 +13,8 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/daglabs/kaspad/util/subnetworkid"
 	"github.com/davecgh/go-spew/spew"
 )
 

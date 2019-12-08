@@ -5,7 +5,7 @@
 package config
 
 import (
-	"github.com/daglabs/btcd/logger"
+	"github.com/daglabs/kaspad/logger"
 )
 
 var log, _ = logger.Get(logger.SubsystemTags.CNFG)

@@ -9,9 +9,9 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/txscript"
+	"github.com/daglabs/kaspad/util"
+	"github.com/daglabs/kaspad/wire"
 )
 
 // txValidateItem holds a transaction along with which input to validate.

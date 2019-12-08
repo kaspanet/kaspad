@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/daglabs/btcd/config"
+	"github.com/daglabs/kaspad/config"
 	"github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
 )

@@ -5,14 +5,14 @@
 package blockdag
 
 import (
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/dagconfig"
+	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/daglabs/kaspad/wire"
 	"math/big"
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/kaspad/util"
 )
 
 // TestBigToCompact ensures BigToCompact converts big integers to the expected

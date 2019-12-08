@@ -20,14 +20,14 @@ import (
 	"time"
 
 	"github.com/btcsuite/go-socks/socks"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/logger"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/util/network"
-	"github.com/daglabs/btcd/util/subnetworkid"
-	"github.com/daglabs/btcd/version"
+	"github.com/daglabs/kaspad/dagconfig"
+	"github.com/daglabs/kaspad/database"
+	"github.com/daglabs/kaspad/logger"
+	"github.com/daglabs/kaspad/util"
+	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/daglabs/kaspad/util/network"
+	"github.com/daglabs/kaspad/util/subnetworkid"
+	"github.com/daglabs/kaspad/version"
 	"github.com/jessevdk/go-flags"
 )
 

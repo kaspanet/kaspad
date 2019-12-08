@@ -13,10 +13,10 @@ import (
 	"time"
 
 	"github.com/btcsuite/go-socks/socks"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/peer"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/dagconfig"
+	"github.com/daglabs/kaspad/peer"
+	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/daglabs/kaspad/wire"
 )
 
 // conn mocks a network connection by implementing the net.Conn interface.  It

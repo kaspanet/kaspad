@@ -6,9 +6,9 @@ package util
 
 import (
 	"bytes"
-	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/util/base58"
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/kaspad/btcec"
+	"github.com/daglabs/kaspad/util/base58"
+	"github.com/daglabs/kaspad/util/daghash"
 	"github.com/pkg/errors"
 )
 

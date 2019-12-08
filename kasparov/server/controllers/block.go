@@ -2,15 +2,15 @@ package controllers
 
 import (
 	"encoding/hex"
-	"github.com/daglabs/btcd/kasparov/database"
-	"github.com/daglabs/btcd/kasparov/dbmodels"
-	"github.com/daglabs/btcd/kasparov/server/apimodels"
+	"github.com/daglabs/kaspad/kasparov/database"
+	"github.com/daglabs/kaspad/kasparov/dbmodels"
+	"github.com/daglabs/kaspad/kasparov/server/apimodels"
 	"net/http"
 
-	"github.com/daglabs/btcd/httpserverutils"
+	"github.com/daglabs/kaspad/httpserverutils"
 	"github.com/pkg/errors"
 
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/kaspad/util/daghash"
 )
 
 const (

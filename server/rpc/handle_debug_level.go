@@ -2,8 +2,8 @@ package rpc
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/logger"
+	"github.com/daglabs/kaspad/btcjson"
+	"github.com/daglabs/kaspad/logger"
 )
 
 // handleDebugLevel handles debugLevel commands.

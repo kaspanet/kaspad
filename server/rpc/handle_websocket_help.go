@@ -1,6 +1,6 @@
 package rpc
 
-import "github.com/daglabs/btcd/btcjson"
+import "github.com/daglabs/kaspad/btcjson"
 
 // handleWebsocketHelp implements the help command for websocket connections.
 func handleWebsocketHelp(wsc *wsClient, icmd interface{}) (interface{}, error) {

@@ -1,9 +1,9 @@
 package blockdag
 
 import (
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/util/locks"
+	"github.com/daglabs/kaspad/database"
+	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/daglabs/kaspad/util/locks"
 	"github.com/pkg/errors"
 )
 

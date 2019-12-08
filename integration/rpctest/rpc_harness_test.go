@@ -13,11 +13,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/dagconfig"
+	"github.com/daglabs/kaspad/txscript"
+	"github.com/daglabs/kaspad/util"
+	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/daglabs/kaspad/wire"
 )
 
 func testSendOutputs(r *Harness, t *testing.T) {

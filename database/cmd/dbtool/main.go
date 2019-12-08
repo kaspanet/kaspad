@@ -5,15 +5,15 @@
 package main
 
 import (
-	"github.com/daglabs/btcd/util/panics"
+	"github.com/daglabs/kaspad/util/panics"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/logger"
-	"github.com/daglabs/btcd/logs"
+	"github.com/daglabs/kaspad/database"
+	"github.com/daglabs/kaspad/logger"
+	"github.com/daglabs/kaspad/logs"
 	"github.com/jessevdk/go-flags"
 )
 

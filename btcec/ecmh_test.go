@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/kaspad/util/daghash"
 )
 
 var testVectors = []struct {

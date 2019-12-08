@@ -2,8 +2,8 @@ package rpc
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/config"
+	"github.com/daglabs/kaspad/btcjson"
+	"github.com/daglabs/kaspad/config"
 )
 
 // handleGenerate handles generate commands.

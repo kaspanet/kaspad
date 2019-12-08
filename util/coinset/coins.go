@@ -9,9 +9,9 @@ import (
 	"github.com/pkg/errors"
 	"sort"
 
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/util"
+	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/daglabs/kaspad/wire"
 )
 
 // Coin represents a spendable transaction outpoint

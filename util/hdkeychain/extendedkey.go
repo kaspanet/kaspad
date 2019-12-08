@@ -17,10 +17,10 @@ import (
 	"github.com/pkg/errors"
 	"math/big"
 
-	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/base58"
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/kaspad/btcec"
+	"github.com/daglabs/kaspad/util"
+	"github.com/daglabs/kaspad/util/base58"
+	"github.com/daglabs/kaspad/util/daghash"
 )
 
 const (

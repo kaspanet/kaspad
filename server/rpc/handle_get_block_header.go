@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/kaspad/btcjson"
+	"github.com/daglabs/kaspad/util/daghash"
 	"strconv"
 )
 

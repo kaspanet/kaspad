@@ -5,10 +5,10 @@
 package blockdag
 
 import (
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/kaspad/util/daghash"
 	"testing"
 
-	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/kaspad/util"
 )
 
 // TestMerkle tests the BuildHashMerkleTreeStore API.

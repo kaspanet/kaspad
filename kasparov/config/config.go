@@ -1,8 +1,8 @@
 package config
 
 import (
-	"github.com/daglabs/btcd/config"
-	"github.com/daglabs/btcd/kasparov/logger"
+	"github.com/daglabs/kaspad/config"
+	"github.com/daglabs/kaspad/kasparov/logger"
 	"github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
 	"path/filepath"

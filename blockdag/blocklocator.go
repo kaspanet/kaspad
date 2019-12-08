@@ -1,8 +1,8 @@
 package blockdag
 
 import (
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/kaspad/util"
+	"github.com/daglabs/kaspad/util/daghash"
 )
 
 // BlockLocator is used to help locate a specific block.  The algorithm for

@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/daglabs/btcd/btcjson"
+	"github.com/daglabs/kaspad/btcjson"
 )
 
 // This example demonstrates how to create and marshal a command into a JSON-RPC

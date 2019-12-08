@@ -6,13 +6,13 @@ package addrmgr_test
 
 import (
 	"bou.ke/monkey"
-	"github.com/daglabs/btcd/config"
-	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/kaspad/config"
+	"github.com/daglabs/kaspad/dagconfig"
 	"net"
 	"testing"
 
-	"github.com/daglabs/btcd/addrmgr"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/addrmgr"
+	"github.com/daglabs/kaspad/wire"
 )
 
 // TestIPTypes ensures the various functions which determine the type of an IP

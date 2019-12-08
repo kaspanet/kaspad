@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/daglabs/kaspad/wire"
 )
 
 // TestMruInventoryMap ensures the MruInventoryMap behaves as expected including

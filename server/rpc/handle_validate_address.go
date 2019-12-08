@@ -1,8 +1,8 @@
 package rpc
 
 import (
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/kaspad/btcjson"
+	"github.com/daglabs/kaspad/util"
 )
 
 // handleValidateAddress implements the validateAddress command.

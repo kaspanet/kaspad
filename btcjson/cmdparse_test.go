@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/btcd/btcjson"
+	"github.com/daglabs/kaspad/btcjson"
 )
 
 // TestAssignField tests the assignField function handles supported combinations

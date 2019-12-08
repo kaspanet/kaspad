@@ -12,7 +12,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/daglabs/btcd/logs"
+	"github.com/daglabs/kaspad/logs"
 )
 
 // Loggers per subsystem.  A single backend logger is created and all subsytem

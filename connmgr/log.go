@@ -5,8 +5,8 @@
 package connmgr
 
 import (
-	"github.com/daglabs/btcd/logger"
-	"github.com/daglabs/btcd/util/panics"
+	"github.com/daglabs/kaspad/logger"
+	"github.com/daglabs/kaspad/util/panics"
 )
 
 var log, _ = logger.Get(logger.SubsystemTags.CMGR)

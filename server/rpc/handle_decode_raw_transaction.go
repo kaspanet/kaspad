@@ -3,8 +3,8 @@ package rpc
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/btcjson"
+	"github.com/daglabs/kaspad/wire"
 )
 
 // handleDecodeRawTransaction handles decodeRawTransaction commands.

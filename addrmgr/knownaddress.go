@@ -7,9 +7,9 @@ package addrmgr
 import (
 	"time"
 
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/daglabs/kaspad/util/subnetworkid"
 
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/wire"
 )
 
 // KnownAddress tracks information about a known network address that is used

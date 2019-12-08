@@ -11,9 +11,9 @@ import (
 	"math"
 	"time"
 
-	"github.com/daglabs/btcd/util/binaryserializer"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/daglabs/kaspad/util/binaryserializer"
+	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/daglabs/kaspad/util/subnetworkid"
 )
 
 // MaxVarIntPayload is the maximum payload size for a variable length integer.

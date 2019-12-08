@@ -15,18 +15,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/util/subnetworkid"
-	"github.com/daglabs/btcd/util/testtools"
+	"github.com/daglabs/kaspad/util/subnetworkid"
+	"github.com/daglabs/kaspad/util/testtools"
 
 	"bou.ke/monkey"
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/blockdag/indexers"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/mining"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/blockdag"
+	"github.com/daglabs/kaspad/blockdag/indexers"
+	"github.com/daglabs/kaspad/dagconfig"
+	"github.com/daglabs/kaspad/mining"
+	"github.com/daglabs/kaspad/txscript"
+	"github.com/daglabs/kaspad/util"
+	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/daglabs/kaspad/wire"
 )
 
 // fakeChain is used by the pool harness to provide generated test utxos and

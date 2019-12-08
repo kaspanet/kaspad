@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	"bou.ke/monkey"
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/database"
+	"github.com/daglabs/kaspad/util"
+	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/daglabs/kaspad/wire"
 )
 
 // TestCursorDeleteErrors tests all error-cases in *cursor.Delete().

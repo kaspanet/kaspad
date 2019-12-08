@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"bou.ke/monkey"
-	"github.com/daglabs/btcd/database"
+	"github.com/daglabs/kaspad/database"
 )
 
 // TestRegisterDriverErrors tests all error-cases in registerDriver().
