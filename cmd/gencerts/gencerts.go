@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kaspanet/kaspad/util"
 	flags "github.com/jessevdk/go-flags"
+	"github.com/kaspanet/kaspad/util"
 )
 
 type config struct {

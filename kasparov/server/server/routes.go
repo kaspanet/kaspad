@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/kaspanet/kaspad/kasparov/server/controllers"
 	"github.com/gorilla/mux"
+	"github.com/kaspanet/kaspad/kasparov/server/controllers"
 )
 
 const (

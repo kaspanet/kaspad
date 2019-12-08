@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // mainNetGenesisHash is the hash of the first block in the block chain for the

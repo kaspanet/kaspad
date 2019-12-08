@@ -13,9 +13,9 @@ import (
 	"testing"
 	"unsafe"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
-	"github.com/davecgh/go-spew/spew"
 )
 
 // TestTx tests the MsgTx API.

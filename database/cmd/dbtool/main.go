@@ -11,10 +11,10 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/jessevdk/go-flags"
 	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/logger"
 	"github.com/kaspanet/kaspad/logs"
-	"github.com/jessevdk/go-flags"
 )
 
 const (

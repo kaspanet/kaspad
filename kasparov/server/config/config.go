@@ -1,9 +1,9 @@
 package config
 
 import (
+	"github.com/jessevdk/go-flags"
 	"github.com/kaspanet/kaspad/kasparov/config"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/jessevdk/go-flags"
 )
 
 const (

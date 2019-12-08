@@ -10,8 +10,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kaspanet/kaspad/util/random"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util/random"
 )
 
 // TestPongLatest tests the MsgPong API against the latest protocol version.

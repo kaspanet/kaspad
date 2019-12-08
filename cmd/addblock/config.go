@@ -12,10 +12,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	flags "github.com/jessevdk/go-flags"
 	"github.com/kaspanet/kaspad/database"
 	_ "github.com/kaspanet/kaspad/database/ffldb"
 	"github.com/kaspanet/kaspad/util"
-	flags "github.com/jessevdk/go-flags"
 )
 
 const (

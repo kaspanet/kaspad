@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // makeHeader is a convenience function to make a message header in the form of

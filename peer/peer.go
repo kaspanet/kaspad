@@ -21,12 +21,12 @@ import (
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
 	"github.com/btcsuite/go-socks/socks"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/logger"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
-	"github.com/davecgh/go-spew/spew"
 )
 
 const (

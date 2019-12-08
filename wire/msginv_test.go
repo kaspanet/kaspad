@@ -10,8 +10,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // TestInv tests the MsgInv API.

@@ -9,8 +9,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // TestInvVectStringer tests the stringized output for inventory vector types.

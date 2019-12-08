@@ -18,10 +18,10 @@ import (
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/pkg/errors"
 
+	"github.com/jinzhu/gorm"
 	"github.com/kaspanet/kaspad/btcjson"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
-	"github.com/jinzhu/gorm"
 )
 
 const maxGetTransactionsLimit = 1000

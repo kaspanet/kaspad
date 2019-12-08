@@ -15,9 +15,9 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/jessevdk/go-flags"
 	"github.com/kaspanet/kaspad/btcjson"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/jessevdk/go-flags"
 )
 
 const (

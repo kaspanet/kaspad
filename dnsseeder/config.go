@@ -13,8 +13,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/kaspanet/kaspad/util"
 	"github.com/jessevdk/go-flags"
+	"github.com/kaspanet/kaspad/util"
 )
 
 const (

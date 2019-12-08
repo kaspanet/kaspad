@@ -12,11 +12,11 @@ import (
 	"github.com/pkg/errors"
 	"os"
 
-	"github.com/kaspanet/kaspad/signal"
-	"github.com/kaspanet/kaspad/util/panics"
 	_ "github.com/golang-migrate/migrate/v4/database/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"github.com/kaspanet/kaspad/signal"
+	"github.com/kaspanet/kaspad/util/panics"
 )
 
 var (

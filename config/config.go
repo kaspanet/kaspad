@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/go-socks/socks"
+	"github.com/jessevdk/go-flags"
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/logger"
@@ -28,7 +29,6 @@ import (
 	"github.com/kaspanet/kaspad/util/network"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/version"
-	"github.com/jessevdk/go-flags"
 )
 
 const (
