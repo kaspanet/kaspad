@@ -11,7 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // AddManualNodeCmd defines the addManualNode JSON-RPC command.

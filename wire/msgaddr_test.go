@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/davecgh/go-spew/spew"
 )
 

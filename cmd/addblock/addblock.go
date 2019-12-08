@@ -9,10 +9,10 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/daglabs/kaspad/database"
-	"github.com/daglabs/kaspad/limits"
-	"github.com/daglabs/kaspad/logs"
-	"github.com/daglabs/kaspad/util/panics"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/limits"
+	"github.com/kaspanet/kaspad/logs"
+	"github.com/kaspanet/kaspad/util/panics"
 )
 
 const (

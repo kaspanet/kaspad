@@ -9,9 +9,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/daglabs/kaspad/dagconfig"
-	"github.com/daglabs/kaspad/peer"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/peer"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // mockRemotePeer creates a basic inbound peer listening on the simnet port for

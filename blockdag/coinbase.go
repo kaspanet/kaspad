@@ -4,16 +4,16 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
-	"github.com/daglabs/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/pkg/errors"
 	"io"
 	"math"
 
-	"github.com/daglabs/kaspad/database"
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/util/daghash"
-	"github.com/daglabs/kaspad/util/txsort"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/txsort"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // compactFeeData is a specialized data type to store a compact list of fees

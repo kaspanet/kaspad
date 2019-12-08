@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/daglabs/kaspad/btcjson"
-	"github.com/daglabs/kaspad/mempool"
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/util/daghash"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/mempool"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // handleSendRawTransaction implements the sendRawTransaction command.

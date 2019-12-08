@@ -3,7 +3,7 @@ btcd
 
 [![Build Status](https://travis-ci.org/btcsuite/btcd.png?branch=master)](https://travis-ci.org/btcsuite/btcd)
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
-[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/daglabs/kaspad)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/kaspanet/kaspad)
 
 btcd is an alternative full node bitcoin implementation written in Go (golang).
 
@@ -41,7 +41,7 @@ which are both under active development.
 
 #### Windows - MSI Available
 
-https://github.com/daglabs/kaspad/releases
+https://github.com/kaspanet/kaspad/releases
 
 #### Linux/BSD/MacOSX/POSIX - Build from Source
 
@@ -64,8 +64,8 @@ recommended that `GOPATH` is set to a directory in your home directory such as
 
 ```bash
 $ # Install dep: https://golang.github.io/dep/docs/installation.html
-$ git clone https://github.com/daglabs/kaspad $GOPATH/src/github.com/daglabs/kaspad
-$ cd $GOPATH/src/github.com/daglabs/kaspad
+$ git clone https://github.com/kaspanet/kaspad $GOPATH/src/github.com/kaspanet/kaspad
+$ cd $GOPATH/src/github.com/kaspanet/kaspad
 $ dep ensure
 $ go install . ./cmd/...
 ```
@@ -85,7 +85,7 @@ Install a newer MSI
 - Run the following commands to update btcd, all dependencies, and install it:
 
 ```bash
-$ cd $GOPATH/src/github.com/daglabs/kaspad
+$ cd $GOPATH/src/github.com/kaspanet/kaspad
 $ git pull && dep ensure
 $ go install . ./cmd/...
 ```
@@ -114,12 +114,12 @@ $ ./btcd
 
 ## Issue Tracker
 
-The [integrated github issue tracker](https://github.com/daglabs/kaspad/issues)
+The [integrated github issue tracker](https://github.com/kaspanet/kaspad/issues)
 is used for this project.
 
 ## Documentation
 
-The documentation is a work-in-progress.  It is located in the [docs](https://github.com/daglabs/kaspad/tree/master/docs) folder.
+The documentation is a work-in-progress.  It is located in the [docs](https://github.com/kaspanet/kaspad/tree/master/docs) folder.
 
 ## GPG Verification Key
 

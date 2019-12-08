@@ -5,7 +5,7 @@ package blockdag
 import (
 	"compress/bzip2"
 	"encoding/binary"
-	"github.com/daglabs/kaspad/util"
+	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 	"io"
 	"os"
@@ -13,13 +13,13 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/daglabs/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/daglabs/kaspad/database"
-	_ "github.com/daglabs/kaspad/database/ffldb" // blank import ffldb so that its init() function runs before tests
-	"github.com/daglabs/kaspad/txscript"
-	"github.com/daglabs/kaspad/util/daghash"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/database"
+	_ "github.com/kaspanet/kaspad/database/ffldb" // blank import ffldb so that its init() function runs before tests
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 const (

@@ -18,19 +18,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/daglabs/kaspad/util/random"
-	"github.com/daglabs/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/util/random"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 
 	"golang.org/x/crypto/ripemd160"
 
 	"github.com/btcsuite/websocket"
-	"github.com/daglabs/kaspad/btcjson"
-	"github.com/daglabs/kaspad/config"
-	"github.com/daglabs/kaspad/dagconfig"
-	"github.com/daglabs/kaspad/txscript"
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/util/daghash"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 const (

@@ -1,7 +1,7 @@
 package database
 
-import "github.com/daglabs/kaspad/util/panics"
-import "github.com/daglabs/kaspad/kasparov/logger"
+import "github.com/kaspanet/kaspad/util/panics"
+import "github.com/kaspanet/kaspad/kasparov/logger"
 
 var (
 	log   = logger.Logger("DTBS")

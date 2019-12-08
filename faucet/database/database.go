@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"os"
 
-	"github.com/daglabs/kaspad/faucet/config"
+	"github.com/kaspanet/kaspad/faucet/config"
 	"github.com/golang-migrate/migrate/v4/source"
 	"github.com/jinzhu/gorm"
 

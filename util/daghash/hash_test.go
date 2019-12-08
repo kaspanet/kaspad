@@ -7,7 +7,7 @@ package daghash
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/daglabs/kaspad/testutil"
+	"github.com/kaspanet/kaspad/testutil"
 	"math/big"
 	"reflect"
 	"testing"

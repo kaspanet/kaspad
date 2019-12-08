@@ -7,9 +7,9 @@ package blockdag
 import (
 	"sync"
 
-	"github.com/daglabs/kaspad/dagconfig"
-	"github.com/daglabs/kaspad/database"
-	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // blockIndex provides facilities for keeping track of an in-memory index of the

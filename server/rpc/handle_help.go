@@ -1,6 +1,6 @@
 package rpc
 
-import "github.com/daglabs/kaspad/btcjson"
+import "github.com/kaspanet/kaspad/btcjson"
 
 // handleHelp implements the help command.
 func handleHelp(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {

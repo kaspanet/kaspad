@@ -6,8 +6,8 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // NotificationType represents the type of a notification message.

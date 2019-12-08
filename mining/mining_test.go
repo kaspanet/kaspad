@@ -8,16 +8,16 @@ import (
 	"github.com/pkg/errors"
 	"testing"
 
-	"github.com/daglabs/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 
 	"bou.ke/monkey"
-	"github.com/daglabs/kaspad/blockdag"
-	"github.com/daglabs/kaspad/dagconfig"
-	"github.com/daglabs/kaspad/txscript"
-	"github.com/daglabs/kaspad/util/daghash"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 
-	"github.com/daglabs/kaspad/util"
+	"github.com/kaspanet/kaspad/util"
 )
 
 func TestNewBlockTemplate(t *testing.T) {

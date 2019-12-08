@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/daglabs/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
 var (

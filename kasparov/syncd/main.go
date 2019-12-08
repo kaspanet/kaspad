@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/daglabs/kaspad/kasparov/database"
-	"github.com/daglabs/kaspad/kasparov/jsonrpc"
-	"github.com/daglabs/kaspad/kasparov/syncd/config"
-	"github.com/daglabs/kaspad/kasparov/syncd/mqtt"
-	"github.com/daglabs/kaspad/signal"
-	"github.com/daglabs/kaspad/util/panics"
+	"github.com/kaspanet/kaspad/kasparov/database"
+	"github.com/kaspanet/kaspad/kasparov/jsonrpc"
+	"github.com/kaspanet/kaspad/kasparov/syncd/config"
+	"github.com/kaspanet/kaspad/kasparov/syncd/mqtt"
+	"github.com/kaspanet/kaspad/signal"
+	"github.com/kaspanet/kaspad/util/panics"
 	_ "github.com/golang-migrate/migrate/v4/database/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jinzhu/gorm/dialects/mysql"

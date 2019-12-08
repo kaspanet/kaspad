@@ -3,7 +3,7 @@ chaincfg
 
 [![Build Status](http://img.shields.io/travis/btcsuite/btcd.svg)](https://travis-ci.org/btcsuite/btcd)
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
-[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/daglabs/kaspad/chaincfg)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/kaspanet/kaspad/chaincfg)
 
 Package chaincfg defines chain configuration parameters for the three standard
 Bitcoin networks and provides the ability for callers to define their own custom
@@ -24,8 +24,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/daglabs/kaspad/btcutil"
-	"github.com/daglabs/kaspad/chaincfg"
+	"github.com/kaspanet/kaspad/btcutil"
+	"github.com/kaspanet/kaspad/chaincfg"
 )
 
 var testnet = flag.Bool("testnet", false, "operate on the testnet Bitcoin network")
@@ -56,7 +56,7 @@ func main() {
 ## Installation and Updating
 
 ```bash
-$ go get -u github.com/daglabs/kaspad/chaincfg
+$ go get -u github.com/kaspanet/kaspad/chaincfg
 ```
 
 ## GPG Verification Key

@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/davecgh/go-spew/spew"
 )
 

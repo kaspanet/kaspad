@@ -7,7 +7,7 @@ package rpcclient
 import (
 	"encoding/json"
 
-	"github.com/daglabs/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/btcjson"
 )
 
 // FutureAddNodeResult is a future promise to deliver the result of an

@@ -1,11 +1,11 @@
 package mqtt
 
 import (
-	"github.com/daglabs/kaspad/btcjson"
-	"github.com/daglabs/kaspad/kasparov/server/apimodels"
-	"github.com/daglabs/kaspad/kasparov/server/controllers"
-	"github.com/daglabs/kaspad/rpcclient"
-	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/kasparov/server/apimodels"
+	"github.com/kaspanet/kaspad/kasparov/server/controllers"
+	"github.com/kaspanet/kaspad/rpcclient"
+	"github.com/kaspanet/kaspad/util/daghash"
 	"path"
 )
 

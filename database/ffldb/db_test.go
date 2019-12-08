@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	"bou.ke/monkey"
-	"github.com/daglabs/kaspad/database"
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/util/daghash"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // TestCursorDeleteErrors tests all error-cases in *cursor.Delete().

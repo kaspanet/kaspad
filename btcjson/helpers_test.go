@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/btcjson"
 )
 
 // TestHelpers tests the various helper functions which create pointers to

@@ -9,8 +9,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/kaspad/dagconfig"
-	"github.com/daglabs/kaspad/util"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util"
 )
 
 // mustParseShortForm parses the passed short form script and returns the

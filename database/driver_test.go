@@ -8,8 +8,8 @@ import (
 	"github.com/pkg/errors"
 	"testing"
 
-	"github.com/daglabs/kaspad/database"
-	_ "github.com/daglabs/kaspad/database/ffldb"
+	"github.com/kaspanet/kaspad/database"
+	_ "github.com/kaspanet/kaspad/database/ffldb"
 )
 
 var (

@@ -25,8 +25,8 @@
 //          "fmt"
 //          "log"
 //
-//          "github.com/daglabs/kaspad/util"
-//          "github.com/daglabs/kaspad/dagconfig"
+//          "github.com/kaspanet/kaspad/util"
+//          "github.com/kaspanet/kaspad/dagconfig"
 //  )
 //
 //  var testnet = flag.Bool("testnet", false, "operate on the testnet Bitcoin network")

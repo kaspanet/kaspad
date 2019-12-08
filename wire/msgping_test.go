@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/kaspad/util/random"
+	"github.com/kaspanet/kaspad/util/random"
 	"github.com/davecgh/go-spew/spew"
 )
 

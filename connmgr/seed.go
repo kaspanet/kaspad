@@ -11,11 +11,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/daglabs/kaspad/config"
-	"github.com/daglabs/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/daglabs/kaspad/dagconfig"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 const (

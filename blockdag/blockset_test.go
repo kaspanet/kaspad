@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 func TestHashes(t *testing.T) {

@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/daglabs/kaspad/util"
+	"github.com/kaspanet/kaspad/util"
 	flags "github.com/jessevdk/go-flags"
 )
 

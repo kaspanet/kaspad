@@ -7,7 +7,7 @@ package blockdag
 import (
 	"testing"
 
-	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // TestThresholdStateStringer tests the stringized output for the

@@ -7,7 +7,7 @@ package btcjson_test
 import (
 	"testing"
 
-	"github.com/daglabs/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/btcjson"
 )
 
 // TestErrorCodeStringer tests the stringized output for the ErrorCode type.

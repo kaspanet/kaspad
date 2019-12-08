@@ -7,8 +7,8 @@ package blockdag
 import (
 	"math"
 
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // MerkleTree holds the hashes of a merkle tree

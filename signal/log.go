@@ -5,7 +5,7 @@
 package signal
 
 import (
-	"github.com/daglabs/kaspad/logger"
+	"github.com/kaspanet/kaspad/logger"
 )
 
 var btcdLog, _ = logger.Get(logger.SubsystemTags.BTCD)

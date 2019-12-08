@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // MaxBlockLocatorsPerMsg is the maximum number of block locator hashes allowed

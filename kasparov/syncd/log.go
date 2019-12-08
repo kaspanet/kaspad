@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/daglabs/kaspad/kasparov/logger"
-	"github.com/daglabs/kaspad/util/panics"
+	"github.com/kaspanet/kaspad/kasparov/logger"
+	"github.com/kaspanet/kaspad/util/panics"
 )
 
 var (

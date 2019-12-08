@@ -5,7 +5,7 @@
 package base58_test
 
 import (
-	"github.com/daglabs/kaspad/util/base58"
+	"github.com/kaspanet/kaspad/util/base58"
 	"testing"
 )
 

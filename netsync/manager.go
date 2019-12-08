@@ -14,14 +14,14 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/daglabs/kaspad/blockdag"
-	"github.com/daglabs/kaspad/dagconfig"
-	"github.com/daglabs/kaspad/database"
-	"github.com/daglabs/kaspad/mempool"
-	peerpkg "github.com/daglabs/kaspad/peer"
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/util/daghash"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/mempool"
+	peerpkg "github.com/kaspanet/kaspad/peer"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 const (

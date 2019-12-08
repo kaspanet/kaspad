@@ -11,11 +11,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/daglabs/kaspad/dagconfig"
-	"github.com/daglabs/kaspad/database"
-	_ "github.com/daglabs/kaspad/database/ffldb"
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/database"
+	_ "github.com/kaspanet/kaspad/database/ffldb"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // This example demonstrates creating a new database.
@@ -23,8 +23,8 @@ func ExampleCreate() {
 	// This example assumes the ffldb driver is imported.
 	//
 	// import (
-	// 	"github.com/daglabs/kaspad/database"
-	// 	_ "github.com/daglabs/kaspad/database/ffldb"
+	// 	"github.com/kaspanet/kaspad/database"
+	// 	_ "github.com/kaspanet/kaspad/database/ffldb"
 	// )
 
 	// Create a database and schedule it to be closed and removed on exit.
@@ -49,8 +49,8 @@ func Example_basicUsage() {
 	// This example assumes the ffldb driver is imported.
 	//
 	// import (
-	// 	"github.com/daglabs/kaspad/database"
-	// 	_ "github.com/daglabs/kaspad/database/ffldb"
+	// 	"github.com/kaspanet/kaspad/database"
+	// 	_ "github.com/kaspanet/kaspad/database/ffldb"
 	// )
 
 	// Create a database and schedule it to be closed and removed on exit.
@@ -117,8 +117,8 @@ func Example_blockStorageAndRetrieval() {
 	// This example assumes the ffldb driver is imported.
 	//
 	// import (
-	// 	"github.com/daglabs/kaspad/database"
-	// 	_ "github.com/daglabs/kaspad/database/ffldb"
+	// 	"github.com/kaspanet/kaspad/database"
+	// 	_ "github.com/kaspanet/kaspad/database/ffldb"
 	// )
 
 	// Create a database and schedule it to be closed and removed on exit.
