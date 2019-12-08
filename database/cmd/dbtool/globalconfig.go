@@ -88,6 +88,10 @@ func setupGlobalConfig() error {
 			"can't be used together -- choose one of the four")
 	}
 
+	if numNets == 0 {
+		return errors.New("Mainnet has not launched yet, use --testnet to run in testnet mode")
+	}
+
 	// Validate database type.
 	if !validDbType(cfg.DbType) {
 		str := "The specified database type [%s] is invalid -- " +
