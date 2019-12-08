@@ -684,7 +684,6 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		node.blues[i] = dag.index.LookupNode(hash)
 	}
 
-	node.height = calculateNodeHeight(node)
 	node.chainHeight = calculateChainHeight(node)
 
 	return node, nil

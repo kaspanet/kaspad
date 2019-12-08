@@ -23,17 +23,6 @@ func setFromSlice(blocks ...*blockNode) blockSet {
 	return set
 }
 
-// maxHeight returns the height of the highest block in the block set
-func (bs blockSet) maxHeight() uint64 {
-	var maxHeight uint64
-	for _, node := range bs {
-		if maxHeight < node.height {
-			maxHeight = node.height
-		}
-	}
-	return maxHeight
-}
-
 // add adds a block to this BlockSet
 func (bs blockSet) add(block *blockNode) {
 	bs[*block.hash] = block
