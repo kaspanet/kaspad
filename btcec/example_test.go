@@ -7,9 +7,9 @@ package btcec_test
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/kaspad/util/daghash"
 
-	"github.com/daglabs/btcd/btcec"
+	"github.com/daglabs/kaspad/btcec"
 )
 
 // This example demonstrates signing a message with a secp256k1 private key that

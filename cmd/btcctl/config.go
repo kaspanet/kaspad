@@ -6,7 +6,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/config"
+	"github.com/daglabs/kaspad/config"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"net"
@@ -15,8 +15,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/kaspad/btcjson"
+	"github.com/daglabs/kaspad/util"
 	"github.com/jessevdk/go-flags"
 )
 

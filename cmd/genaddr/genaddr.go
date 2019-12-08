@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/base58"
+	"github.com/daglabs/kaspad/btcec"
+	"github.com/daglabs/kaspad/dagconfig"
+	"github.com/daglabs/kaspad/util"
+	"github.com/daglabs/kaspad/util/base58"
 )
 
 func main() {

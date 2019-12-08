@@ -7,9 +7,9 @@ package util_test
 import (
 	"testing"
 
-	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/dagconfig"
-	. "github.com/daglabs/btcd/util"
+	"github.com/daglabs/kaspad/btcec"
+	"github.com/daglabs/kaspad/dagconfig"
+	. "github.com/daglabs/kaspad/util"
 )
 
 func TestEncodeDecodeWIF(t *testing.T) {

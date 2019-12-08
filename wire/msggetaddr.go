@@ -7,7 +7,7 @@ package wire
 import (
 	"io"
 
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/daglabs/kaspad/util/subnetworkid"
 )
 
 // MsgGetAddr implements the Message interface and represents a bitcoin

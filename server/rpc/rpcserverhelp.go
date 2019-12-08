@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/daglabs/btcd/btcjson"
+	"github.com/daglabs/kaspad/btcjson"
 )
 
 // helpDescsEnUS defines the English descriptions used for the help strings.

@@ -6,7 +6,7 @@ package base58_test
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/util/base58"
+	"github.com/daglabs/kaspad/util/base58"
 )
 
 // This example demonstrates how to decode modified base58 encoded data.

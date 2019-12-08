@@ -12,10 +12,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/daglabs/kaspad/util/subnetworkid"
 
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/kaspad/btcjson"
+	"github.com/daglabs/kaspad/util/daghash"
 )
 
 // TestDAGSvrWsNtfns tests all of the dag server websocket-specific

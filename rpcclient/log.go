@@ -5,8 +5,8 @@
 package rpcclient
 
 import (
-	"github.com/daglabs/btcd/logs"
-	"github.com/daglabs/btcd/util/panics"
+	"github.com/daglabs/kaspad/logs"
+	"github.com/daglabs/kaspad/util/panics"
 )
 
 // log is a logger that is initialized with no output filters.  This

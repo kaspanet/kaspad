@@ -1,9 +1,9 @@
 package rpc
 
 import (
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/logger"
-	"github.com/daglabs/btcd/server/serverutils"
+	"github.com/daglabs/kaspad/btcjson"
+	"github.com/daglabs/kaspad/logger"
+	"github.com/daglabs/kaspad/server/serverutils"
 	"net"
 	"strings"
 )

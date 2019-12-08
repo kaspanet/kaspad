@@ -10,11 +10,11 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/blockdag"
+	"github.com/daglabs/kaspad/dagconfig"
+	"github.com/daglabs/kaspad/util"
+	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/daglabs/kaspad/wire"
 )
 
 // solveGenesisBlock attempts to find some combination of a nonce and

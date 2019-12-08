@@ -2,12 +2,12 @@ package server
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/httpserverutils"
+	"github.com/daglabs/kaspad/httpserverutils"
 	"github.com/pkg/errors"
 	"net/http"
 	"strconv"
 
-	"github.com/daglabs/btcd/kasparov/server/controllers"
+	"github.com/daglabs/kaspad/kasparov/server/controllers"
 	"github.com/gorilla/mux"
 )
 

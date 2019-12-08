@@ -1,8 +1,8 @@
 package rpc
 
 import (
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/config"
+	"github.com/daglabs/kaspad/btcjson"
+	"github.com/daglabs/kaspad/config"
 )
 
 // handleGetMiningInfo implements the getMiningInfo command. We only return the

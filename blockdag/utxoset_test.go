@@ -1,14 +1,14 @@
 package blockdag
 
 import (
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/daglabs/kaspad/util/subnetworkid"
 	"math"
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/btcec"
+	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/daglabs/kaspad/wire"
 )
 
 // TestUTXOCollection makes sure that utxoCollection cloning and string representations work as expected.

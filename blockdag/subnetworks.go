@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 
-	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/kaspad/util"
 
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/util/subnetworkid"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/database"
+	"github.com/daglabs/kaspad/util/subnetworkid"
+	"github.com/daglabs/kaspad/wire"
 )
 
 // SubnetworkStore stores the subnetworks data

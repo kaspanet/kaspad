@@ -6,8 +6,8 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/kaspad/database"
+	"github.com/daglabs/kaspad/util"
 )
 
 func (dag *BlockDAG) addNodeToIndexWithInvalidAncestor(block *util.Block) error {

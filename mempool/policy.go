@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/blockdag"
+	"github.com/daglabs/kaspad/txscript"
+	"github.com/daglabs/kaspad/util"
+	"github.com/daglabs/kaspad/wire"
 )
 
 const (

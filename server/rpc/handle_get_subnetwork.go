@@ -1,8 +1,8 @@
 package rpc
 
 import (
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/daglabs/kaspad/btcjson"
+	"github.com/daglabs/kaspad/util/subnetworkid"
 )
 
 // handleGetSubnetwork handles the getSubnetwork command.

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/daglabs/btcd/logs"
+	"github.com/daglabs/kaspad/logs"
 )
 
 var (

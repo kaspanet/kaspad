@@ -10,11 +10,11 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/hdkeychain"
+	"github.com/daglabs/kaspad/util"
+	"github.com/daglabs/kaspad/util/hdkeychain"
 
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/daglabs/kaspad/wire"
 )
 
 // These variables are the chain proof-of-work limit parameters for each default

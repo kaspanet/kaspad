@@ -1,8 +1,8 @@
 package p2p
 
 import (
-	"github.com/daglabs/btcd/peer"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/peer"
+	"github.com/daglabs/kaspad/wire"
 )
 
 // OnFilterClear is invoked when a peer receives a filterclear bitcoin

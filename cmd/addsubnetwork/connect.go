@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/daglabs/btcd/rpcclient"
+	"github.com/daglabs/kaspad/rpcclient"
 	"github.com/pkg/errors"
 	"io/ioutil"
 )

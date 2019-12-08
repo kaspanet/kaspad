@@ -7,7 +7,7 @@ package bech32_test
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/daglabs/btcd/util/bech32"
+	"github.com/daglabs/kaspad/util/bech32"
 )
 
 // This example demonstrates how to decode a bech32 encoded string.

@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/kaspad/dagconfig"
 	"github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
 	"os"

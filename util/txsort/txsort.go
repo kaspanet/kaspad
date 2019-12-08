@@ -11,8 +11,8 @@ import (
 	"bytes"
 	"sort"
 
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/daglabs/kaspad/wire"
 )
 
 // InPlaceSort modifies the passed transaction inputs and outputs to be sorted

@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/daglabs/kaspad/util/subnetworkid"
 	"github.com/davecgh/go-spew/spew"
 )
 

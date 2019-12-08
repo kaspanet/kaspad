@@ -22,11 +22,11 @@ import (
 	"github.com/btcsuite/goleveldb/leveldb/iterator"
 	"github.com/btcsuite/goleveldb/leveldb/opt"
 	dbutil "github.com/btcsuite/goleveldb/leveldb/util"
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/database/internal/treap"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/database"
+	"github.com/daglabs/kaspad/database/internal/treap"
+	"github.com/daglabs/kaspad/util"
+	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/daglabs/kaspad/wire"
 )
 
 const (

@@ -2,7 +2,7 @@ package mqtt
 
 import (
 	"encoding/json"
-	"github.com/daglabs/btcd/kasparov/syncd/config"
+	"github.com/daglabs/kaspad/kasparov/syncd/config"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/pkg/errors"
 )

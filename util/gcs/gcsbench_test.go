@@ -7,7 +7,7 @@ package gcs_test
 
 import (
 	"encoding/binary"
-	"github.com/daglabs/btcd/util/gcs"
+	"github.com/daglabs/kaspad/util/gcs"
 	"math/rand"
 	"testing"
 )

@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/daglabs/btcd/faucet/config"
-	"github.com/daglabs/btcd/httpserverutils"
-	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/kaspad/faucet/config"
+	"github.com/daglabs/kaspad/httpserverutils"
+	"github.com/daglabs/kaspad/util"
 	"github.com/pkg/errors"
 	"net/http"
 	"time"

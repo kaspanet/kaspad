@@ -1,8 +1,8 @@
 package rpc
 
 import (
-	"github.com/daglabs/btcd/util/random"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/kaspad/util/random"
+	"github.com/daglabs/kaspad/wire"
 )
 
 // handlePing implements the ping command.

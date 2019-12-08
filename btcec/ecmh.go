@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"math/big"
 
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/kaspad/util/daghash"
 )
 
 // Multiset tracks the state of a multiset as used to calculate the ECMH
