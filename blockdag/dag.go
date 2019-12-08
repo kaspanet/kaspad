@@ -192,6 +192,18 @@ func (dag *BlockDAG) IsKnownOrphan(hash *daghash.Hash) bool {
 	return exists
 }
 
+// IsKnownInvalid returns whether the passed hash is known to be an invalid block.
+// Note that if the block is not found this method will return false.
+//
+// This function is safe for concurrent access.
+func (dag *BlockDAG) IsKnownInvalid(hash *daghash.Hash) bool {
+	node := dag.index.LookupNode(hash)
+	if node == nil {
+		return false
+	}
+	return dag.index.NodeStatus(node).KnownInvalid()
+}
+
 // GetOrphanMissingAncestorHashes returns all of the missing parents in the orphan's sub-DAG
 //
 // This function is safe for concurrent access.
