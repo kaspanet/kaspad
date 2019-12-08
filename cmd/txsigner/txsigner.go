@@ -47,7 +47,7 @@ func main() {
 
 func parsePrivateKey(privateKeyHex string) (*btcec.PrivateKey, error) {
 	privateKeyBytes, err := hex.DecodeString(privateKeyHex)
-	privateKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privateKeyBytes)
+	privateKey, _ := btcec.PrivKeyFromBytes(privateKeyBytes)
 	return privateKey, err
 }
 

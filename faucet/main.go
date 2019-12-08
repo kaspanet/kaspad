@@ -63,7 +63,7 @@ func main() {
 	}()
 
 	privateKeyBytes := base58.Decode(cfg.PrivateKey)
-	faucetPrivateKey, _ = btcec.PrivKeyFromBytes(btcec.S256(), privateKeyBytes)
+	faucetPrivateKey, _ = btcec.PrivKeyFromBytes(privateKeyBytes)
 
 	faucetAddress, err = privateKeyToP2PKHAddress(faucetPrivateKey, config.ActiveNetParams())
 	if err != nil {

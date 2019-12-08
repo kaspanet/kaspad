@@ -429,7 +429,7 @@ func (k *ExtendedKey) ECPrivKey() (*btcec.PrivateKey, error) {
 		return nil, ErrNotPrivExtKey
 	}
 
-	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), k.key)
+	privKey, _ := btcec.PrivKeyFromBytes(k.key)
 	return privKey, nil
 }
 

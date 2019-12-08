@@ -22,7 +22,7 @@ func Example_signMessage() {
 		fmt.Println(err)
 		return
 	}
-	privKey, pubKey := btcec.PrivKeyFromBytes(btcec.S256(), pkBytes)
+	privKey, pubKey := btcec.PrivKeyFromBytes(pkBytes)
 
 	// Sign a message using the private key.
 	message := "test message"
@@ -56,7 +56,7 @@ func Example_verifySignature() {
 		fmt.Println(err)
 		return
 	}
-	pubKey, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
+	pubKey, err := btcec.ParsePubKey(pubKeyBytes)
 	if err != nil {
 		fmt.Println(err)
 		return

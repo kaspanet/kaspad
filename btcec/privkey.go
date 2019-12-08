@@ -6,7 +6,6 @@ package btcec
 
 import (
 	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/rand"
 	"math/big"
 )
@@ -18,8 +17,9 @@ type PrivateKey ecdsa.PrivateKey
 
 // PrivKeyFromBytes returns a private and public key for `curve' based on the
 // private key passed as an argument as a byte slice.
-func PrivKeyFromBytes(curve elliptic.Curve, pk []byte) (*PrivateKey,
+func PrivKeyFromBytes(pk []byte) (*PrivateKey,
 	*PublicKey) {
+	curve := S256()
 	x, y := curve.ScalarBaseMult(pk)
 
 	priv := &ecdsa.PrivateKey{
@@ -36,8 +36,8 @@ func PrivKeyFromBytes(curve elliptic.Curve, pk []byte) (*PrivateKey,
 
 // NewPrivateKey is a wrapper for ecdsa.GenerateKey that returns a PrivateKey
 // instead of the normal ecdsa.PrivateKey.
-func NewPrivateKey(curve elliptic.Curve) (*PrivateKey, error) {
-	key, err := ecdsa.GenerateKey(curve, rand.Reader)
+func NewPrivateKey() (*PrivateKey, error) {
+	key, err := ecdsa.GenerateKey(S256(), rand.Reader)
 	if err != nil {
 		return nil, err
 	}

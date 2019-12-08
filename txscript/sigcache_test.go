@@ -16,7 +16,7 @@ import (
 // public key and the public key. This function is used to generate randomized
 // test data.
 func genRandomSig() (*daghash.Hash, *btcec.Signature, *btcec.PublicKey, error) {
-	privKey, err := btcec.NewPrivateKey(btcec.S256())
+	privKey, err := btcec.NewPrivateKey()
 	if err != nil {
 		return nil, nil, nil, err
 	}

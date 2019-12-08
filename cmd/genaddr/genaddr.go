@@ -13,7 +13,7 @@ import (
 
 func main() {
 	activeNetParams := &dagconfig.DevNetParams
-	privateKey, err := btcec.NewPrivateKey(btcec.S256())
+	privateKey, err := btcec.NewPrivateKey()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to generate private key: %s", err)
 		os.Exit(1)

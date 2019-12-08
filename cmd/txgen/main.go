@@ -31,7 +31,7 @@ func main() {
 	}
 
 	privateKeyBytes := base58.Decode(cfg.PrivateKey)
-	privateKey, _ = btcec.PrivKeyFromBytes(btcec.S256(), privateKeyBytes)
+	privateKey, _ = btcec.PrivKeyFromBytes(privateKeyBytes)
 
 	p2pkhAddress, err = privateKeyToP2pkhAddress(privateKey, activeNetParams)
 	if err != nil {

@@ -31,7 +31,7 @@ func makeTestOutput(r *rpctest.Harness, t *testing.T,
 
 	// Create a fresh key, then send some coins to an address spendable by
 	// that key.
-	key, err := btcec.NewPrivateKey(btcec.S256())
+	key, err := btcec.NewPrivateKey()
 	if err != nil {
 		return nil, nil, nil, err
 	}

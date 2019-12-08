@@ -82,7 +82,7 @@ func TestRFC6979(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		privKey, _ := PrivKeyFromBytes(S256(), decodeHex(test.key))
+		privKey, _ := PrivKeyFromBytes(decodeHex(test.key))
 		hash := sha256.Sum256([]byte(test.msg))
 
 		// Ensure deterministically generated nonce is the expected value.
@@ -254,7 +254,7 @@ func TestSchnorrSignatureVerify(t *testing.T) {
 func TestDeterministicSchnorrSignatureGen(t *testing.T) {
 	// Test vector from Bitcoin-ABC
 	privKeyBytes := decodeHex("12b004fff7f4b69ef8650e767f18f11ede158148b425660723b9f9a66e61f747")
-	privKey, _ := PrivKeyFromBytes(S256(), privKeyBytes)
+	privKey, _ := PrivKeyFromBytes(privKeyBytes)
 
 	h1 := sha256.Sum256([]byte("Very deterministic message"))
 	h2 := sha256.Sum256(h1[:])
