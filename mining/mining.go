@@ -316,13 +316,10 @@ func CoinbasePayloadExtraData(extraNonce uint64) ([]byte, error) {
 }
 
 func (g *BlkTmplGenerator) buildUTXOCommitment(transactions []*wire.MsgTx) (*daghash.Hash, error) {
-	log.Criticalf("DAG UTXO SET: %s", g.dag.UTXOSet())
 	utxoWithTransactions, err := g.dag.UTXOSet().WithTransactions(transactions, blockdag.UnacceptedBlueScore, false)
 	if err != nil {
 		return nil, err
 	}
-
-	log.Criticalf("buildUTXOCommitment for %s: %s", g.TipHashes(), utxoWithTransactions)
 
 	return utxoWithTransactions.Multiset().Hash(), nil
 }

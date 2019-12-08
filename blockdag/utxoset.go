@@ -751,11 +751,7 @@ func (dus *DiffUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockBlueScore uint64) (bool, error) {
 	isCoinbase := tx.IsCoinBase()
 	if isCoinbase {
-		shouldAdd, err := dus.shouldAddCoinbase(tx, blockBlueScore)
-		if err != nil {
-			return false, err
-		}
-		if !shouldAdd {
+		if !dus.shouldAddCoinbase(tx) {
 			return false, nil
 		}
 	} else if !dus.containsInputs(tx) {
@@ -811,14 +807,14 @@ func (dus *DiffUTXOSet) containsInputs(tx *wire.MsgTx) bool {
 	return true
 }
 
-func (dus *DiffUTXOSet) shouldAddCoinbase(tx *wire.MsgTx) (bool, error) {
+func (dus *DiffUTXOSet) shouldAddCoinbase(tx *wire.MsgTx) bool {
 	for i := range tx.TxOut {
 		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
 		if _, ok := dus.Get(outpoint); ok {
-			return false, nil
+			return false
 		}
 	}
-	return true, nil
+	return true
 }
 
 // meldToBase updates the base fullUTXOSet with all changes in diff
