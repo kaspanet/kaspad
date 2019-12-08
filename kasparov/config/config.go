@@ -2,8 +2,10 @@ package config
 
 import (
 	"github.com/daglabs/btcd/config"
+	"github.com/daglabs/btcd/kasparov/logger"
 	"github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
+	"path/filepath"
 )
 
 var (
@@ -13,6 +15,8 @@ var (
 
 // KasparovFlags holds configuration common to both the Kasparov server and the Kasparov daemon.
 type KasparovFlags struct {
+	LogDir      string `long:"logdir" description:"Directory to log output."`
+	DebugLevel  string `short:"d" long:"debuglevel" description:"Set log level {trace, debug, info, warn, error, critical}"`
 	DBAddress   string `long:"dbaddress" description:"Database address"`
 	DBUser      string `long:"dbuser" description:"Database user" required:"true"`
 	DBPassword  string `long:"dbpass" description:"Database password" required:"true"`
@@ -26,7 +30,22 @@ type KasparovFlags struct {
 }
 
 // ResolveKasparovFlags parses command line arguments and sets KasparovFlags accordingly.
-func (kasparovFlags *KasparovFlags) ResolveKasparovFlags(parser *flags.Parser) error {
+func (kasparovFlags *KasparovFlags) ResolveKasparovFlags(parser *flags.Parser,
+	defaultLogDir, logFilename, errLogFilename string) error {
+	if kasparovFlags.LogDir == "" {
+		kasparovFlags.LogDir = defaultLogDir
+	}
+	logFile := filepath.Join(kasparovFlags.LogDir, logFilename)
+	errLogFile := filepath.Join(kasparovFlags.LogDir, errLogFilename)
+	logger.InitLog(logFile, errLogFile)
+
+	if kasparovFlags.DebugLevel != "" {
+		err := logger.SetLogLevels(kasparovFlags.DebugLevel)
+		if err != nil {
+			return err
+		}
+	}
+
 	if kasparovFlags.DBAddress == "" {
 		kasparovFlags.DBAddress = defaultDBAddress
 	}
@@ -43,7 +62,6 @@ func (kasparovFlags *KasparovFlags) ResolveKasparovFlags(parser *flags.Parser) e
 	if kasparovFlags.RPCCert == "" && !kasparovFlags.DisableTLS {
 		return errors.New("--notls has to be disabled if --cert is used")
 	}
-
 	if kasparovFlags.RPCCert != "" && kasparovFlags.DisableTLS {
 		return errors.New("--cert should be omitted if --notls is used")
 	}
