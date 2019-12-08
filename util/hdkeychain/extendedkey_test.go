@@ -11,13 +11,13 @@ package hdkeychain
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/daglabs/kaspad/testutil"
+	"github.com/kaspanet/kaspad/testutil"
 	"github.com/pkg/errors"
 	"math"
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/kaspad/util"
+	"github.com/kaspanet/kaspad/util"
 )
 
 // TestBIP0032Vectors tests the vectors provided by [BIP32] to ensure the

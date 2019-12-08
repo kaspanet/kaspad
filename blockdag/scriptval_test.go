@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/daglabs/kaspad/txscript"
+	"github.com/kaspanet/kaspad/txscript"
 )
 
 // TestCheckBlockScripts ensures that validating the all of the scripts in a

@@ -11,11 +11,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/daglabs/kaspad/blockdag"
-	"github.com/daglabs/kaspad/blockdag/indexers"
-	"github.com/daglabs/kaspad/database"
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/blockdag/indexers"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // importResults houses the stats and result as an import operation.

@@ -8,8 +8,8 @@
 package database
 
 import (
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // Cursor represents a cursor over key/value pairs and nested buckets of a

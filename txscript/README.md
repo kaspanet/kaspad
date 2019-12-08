@@ -3,7 +3,7 @@ txscript
 
 [![Build Status](https://travis-ci.org/btcsuite/btcd.png?branch=master)](https://travis-ci.org/btcsuite/btcd)
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
-[![GoDoc](https://godoc.org/github.com/daglabs/kaspad/txscript?status.png)](http://godoc.org/github.com/daglabs/kaspad/txscript)
+[![GoDoc](https://godoc.org/github.com/kaspanet/kaspad/txscript?status.png)](http://godoc.org/github.com/kaspanet/kaspad/txscript)
 
 Package txscript implements the bitcoin transaction script language.  There is
 a comprehensive test suite.
@@ -21,20 +21,20 @@ can be found at https://en.bitcoin.it/wiki/Script
 ## Installation and Updating
 
 ```bash
-$ go get -u github.com/daglabs/kaspad/txscript
+$ go get -u github.com/kaspanet/kaspad/txscript
 ```
 
 ## Examples
 
-* [Standard Pay-to-pubkey-hash Script](http://godoc.org/github.com/daglabs/kaspad/txscript#example-PayToAddrScript)  
+* [Standard Pay-to-pubkey-hash Script](http://godoc.org/github.com/kaspanet/kaspad/txscript#example-PayToAddrScript)  
   Demonstrates creating a script which pays to a bitcoin address.  It also
   prints the created script hex and uses the DisasmString function to display
   the disassembled script.
 
-* [Extracting Details from Standard Scripts](http://godoc.org/github.com/daglabs/kaspad/txscript#example-ExtractPkScriptAddrs)  
+* [Extracting Details from Standard Scripts](http://godoc.org/github.com/kaspanet/kaspad/txscript#example-ExtractPkScriptAddrs)  
   Demonstrates extracting information from a standard public key script.
 
-* [Manually Signing a Transaction Output](http://godoc.org/github.com/daglabs/kaspad/txscript#example-SignTxOutput)  
+* [Manually Signing a Transaction Output](http://godoc.org/github.com/kaspanet/kaspad/txscript#example-SignTxOutput)  
   Demonstrates manually creating and signing a redeem transaction.
 
 ## GPG Verification Key

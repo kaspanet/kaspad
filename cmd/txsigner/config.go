@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/daglabs/kaspad/config"
 	"github.com/jessevdk/go-flags"
+	"github.com/kaspanet/kaspad/config"
 )
 
 var activeConfig *ConfigFlags

@@ -1,9 +1,9 @@
 package p2p
 
 import (
-	"github.com/daglabs/kaspad/peer"
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/peer"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // OnBlock is invoked when a peer receives a block bitcoin message.  It

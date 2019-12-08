@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"github.com/daglabs/kaspad/kasparov/server/apimodels"
+	"github.com/kaspanet/kaspad/kasparov/server/apimodels"
 )
 
 // GetFeeEstimatesHandler returns the fee estimates for different priorities

@@ -5,8 +5,8 @@
 package p2p
 
 import (
-	"github.com/daglabs/kaspad/logger"
-	"github.com/daglabs/kaspad/util/panics"
+	"github.com/kaspanet/kaspad/logger"
+	"github.com/kaspanet/kaspad/util/panics"
 )
 
 var (

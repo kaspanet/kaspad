@@ -4,15 +4,15 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/daglabs/kaspad/config"
-	"github.com/daglabs/kaspad/dagconfig"
-	"github.com/daglabs/kaspad/database"
-	"github.com/daglabs/kaspad/mempool"
-	"github.com/daglabs/kaspad/mining"
-	"github.com/daglabs/kaspad/mining/cpuminer"
-	"github.com/daglabs/kaspad/server/p2p"
-	"github.com/daglabs/kaspad/server/rpc"
-	"github.com/daglabs/kaspad/signal"
+	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/mempool"
+	"github.com/kaspanet/kaspad/mining"
+	"github.com/kaspanet/kaspad/mining/cpuminer"
+	"github.com/kaspanet/kaspad/server/p2p"
+	"github.com/kaspanet/kaspad/server/rpc"
+	"github.com/kaspanet/kaspad/signal"
 )
 
 // Server is a wrapper for p2p server and rpc server

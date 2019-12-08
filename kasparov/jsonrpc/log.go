@@ -1,9 +1,9 @@
 package jsonrpc
 
 import (
-	"github.com/daglabs/kaspad/kasparov/logger"
-	"github.com/daglabs/kaspad/rpcclient"
-	"github.com/daglabs/kaspad/util/panics"
+	"github.com/kaspanet/kaspad/kasparov/logger"
+	"github.com/kaspanet/kaspad/rpcclient"
+	"github.com/kaspanet/kaspad/util/panics"
 )
 
 var (

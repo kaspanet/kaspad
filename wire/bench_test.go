@@ -14,7 +14,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // genesisCoinbaseTx is the coinbase transaction for the genesis blocks for

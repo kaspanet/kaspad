@@ -1,4 +1,4 @@
-module github.com/daglabs/kaspad
+module github.com/kaspanet/kaspad
 
 go 1.13
 

@@ -8,8 +8,8 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/daglabs/kaspad/util/daghash"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // TxIndexUnknown is the value returned for a transaction index that is unknown.

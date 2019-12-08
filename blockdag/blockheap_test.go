@@ -3,8 +3,8 @@ package blockdag
 import (
 	"testing"
 
-	"github.com/daglabs/kaspad/dagconfig"
-	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // TestBlockHeap tests pushing, popping, and determining the length of the heap.

@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/kaspad/util/daghash"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // TestGetBlockLocator tests the MsgGetBlockLocator API.

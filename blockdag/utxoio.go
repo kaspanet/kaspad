@@ -8,9 +8,9 @@ import (
 	"io"
 	"math/big"
 
-	"github.com/daglabs/kaspad/btcec"
-	"github.com/daglabs/kaspad/util/daghash"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/btcec"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // serializeBlockUTXODiffData serializes diff data in the following format:

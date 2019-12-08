@@ -1,11 +1,11 @@
 package p2p
 
 import (
-	"github.com/daglabs/kaspad/config"
-	"github.com/daglabs/kaspad/peer"
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/util/daghash"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/peer"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // OnTx is invoked when a peer receives a tx bitcoin message.  It blocks

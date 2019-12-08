@@ -5,11 +5,11 @@
 package netsync
 
 import (
-	"github.com/daglabs/kaspad/blockdag"
-	"github.com/daglabs/kaspad/dagconfig"
-	"github.com/daglabs/kaspad/mempool"
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/mempool"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // PeerNotifier exposes methods to notify peers of status changes to

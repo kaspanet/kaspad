@@ -5,8 +5,8 @@
 package blockdag
 
 import (
-	"github.com/daglabs/kaspad/btcec"
-	"github.com/daglabs/kaspad/txscript"
+	"github.com/kaspanet/kaspad/btcec"
+	"github.com/kaspanet/kaspad/txscript"
 )
 
 // -----------------------------------------------------------------------------

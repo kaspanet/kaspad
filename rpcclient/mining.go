@@ -7,9 +7,9 @@ package rpcclient
 import (
 	"encoding/hex"
 	"encoding/json"
-	"github.com/daglabs/kaspad/btcjson"
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 )
 

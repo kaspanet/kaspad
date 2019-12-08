@@ -8,9 +8,9 @@ import (
 	"math"
 	"time"
 
-	"github.com/daglabs/kaspad/util/daghash"
-	"github.com/daglabs/kaspad/util/subnetworkid"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 var genesisTxIns = []*wire.TxIn{

@@ -1,9 +1,9 @@
 package p2p
 
 import (
-	"github.com/daglabs/kaspad/config"
-	"github.com/daglabs/kaspad/peer"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/peer"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // OnGetAddr is invoked when a peer receives a getaddr bitcoin message

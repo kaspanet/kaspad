@@ -3,7 +3,7 @@ indexers
 
 [![Build Status](https://travis-ci.org/btcsuite/btcd.png?branch=master)](https://travis-ci.org/btcsuite/btcd)
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
-[![GoDoc](https://godoc.org/github.com/daglabs/kaspad/blockchain/indexers?status.png)](http://godoc.org/github.com/daglabs/kaspad/blockchain/indexers)
+[![GoDoc](https://godoc.org/github.com/kaspanet/kaspad/blockchain/indexers?status.png)](http://godoc.org/github.com/kaspanet/kaspad/blockchain/indexers)
 
 Package indexers implements optional block chain indexes.
 
@@ -23,7 +23,7 @@ via an RPC interface.
 ## Installation
 
 ```bash
-$ go get -u github.com/daglabs/kaspad/blockchain/indexers
+$ go get -u github.com/kaspanet/kaspad/blockchain/indexers
 ```
 
 ## License

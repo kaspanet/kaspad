@@ -7,17 +7,17 @@ package addrmgr
 import (
 	"bou.ke/monkey"
 	"fmt"
-	"github.com/daglabs/kaspad/config"
-	"github.com/daglabs/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/pkg/errors"
 	"net"
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/daglabs/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // naTest is used to describe a test to be performed against the NetAddressKey

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/daglabs/kaspad/util"
+	"github.com/kaspanet/kaspad/util"
 	"golang.org/x/crypto/ripemd160"
 )
 

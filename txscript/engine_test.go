@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"bou.ke/monkey"
-	"github.com/daglabs/kaspad/util/daghash"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // TestBadPC sets the pc to a deliberately bad result then confirms that Step()

@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/daglabs/kaspad/config"
+	"github.com/kaspanet/kaspad/config"
 
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 var (

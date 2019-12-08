@@ -10,7 +10,7 @@ block count.
 The first step is to use `go get` to download and install the rpcclient package:
 
 ```bash
-$ go get github.com/daglabs/kaspad/rpcclient
+$ go get github.com/kaspanet/kaspad/rpcclient
 ```
 
 Next, modify the `main.go` source to specify the correct RPC username and
@@ -24,7 +24,7 @@ password for the RPC server:
 Finally, navigate to the example's directory and run it with:
 
 ```bash
-$ cd $GOPATH/src/github.com/daglabs/kaspad/rpcclient/examples/bitcoincorehttp
+$ cd $GOPATH/src/github.com/kaspanet/kaspad/rpcclient/examples/bitcoincorehttp
 $ go run *.go
 ```
 

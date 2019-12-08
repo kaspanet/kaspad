@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/daglabs/kaspad/faucet/database"
-	"github.com/daglabs/kaspad/httpserverutils"
+	"github.com/kaspanet/kaspad/faucet/database"
+	"github.com/kaspanet/kaspad/httpserverutils"
 	"github.com/pkg/errors"
 	"net"
 	"net/http"

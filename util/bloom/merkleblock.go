@@ -5,10 +5,10 @@
 package bloom
 
 import (
-	"github.com/daglabs/kaspad/blockdag"
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/util/daghash"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // merkleBlock is used to house intermediate information needed to generate a

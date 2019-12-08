@@ -7,10 +7,10 @@ package txscript
 import (
 	"github.com/pkg/errors"
 
-	"github.com/daglabs/kaspad/btcec"
-	"github.com/daglabs/kaspad/dagconfig"
-	"github.com/daglabs/kaspad/util"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/btcec"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // RawTxInSignature returns the serialized ECDSA signature for the input idx of

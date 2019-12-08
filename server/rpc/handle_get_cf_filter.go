@@ -2,8 +2,8 @@ package rpc
 
 import (
 	"encoding/hex"
-	"github.com/daglabs/kaspad/btcjson"
-	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // handleGetCFilter implements the getCFilter command.

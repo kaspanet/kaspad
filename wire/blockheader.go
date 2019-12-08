@@ -9,7 +9,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/daglabs/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // BaseBlockHeaderPayload is the base number of bytes a block header can be,

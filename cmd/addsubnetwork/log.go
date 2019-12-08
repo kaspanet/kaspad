@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/daglabs/kaspad/logs"
+	"github.com/kaspanet/kaspad/logs"
 )
 
 var (

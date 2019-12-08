@@ -13,13 +13,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/daglabs/kaspad/util/daghash"
-	"github.com/daglabs/kaspad/util/panics"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/panics"
 
-	"github.com/daglabs/kaspad/connmgr"
-	"github.com/daglabs/kaspad/peer"
-	"github.com/daglabs/kaspad/signal"
-	"github.com/daglabs/kaspad/wire"
+	"github.com/kaspanet/kaspad/connmgr"
+	"github.com/kaspanet/kaspad/peer"
+	"github.com/kaspanet/kaspad/signal"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 const (
