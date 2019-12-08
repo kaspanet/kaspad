@@ -2042,7 +2042,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 		return nil
 	}
 
-	pubKey, err := btcec.ParsePubKey(pkBytes, btcec.S256())
+	pubKey, err := btcec.ParsePubKey(pkBytes)
 	if err != nil {
 		vm.dstack.PushBool(false)
 		return nil
@@ -2240,7 +2240,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		}
 
 		// Parse the pubkey.
-		parsedPubKey, err := btcec.ParsePubKey(pubKey, btcec.S256())
+		parsedPubKey, err := btcec.ParsePubKey(pubKey)
 		if err != nil {
 			continue
 		}

@@ -74,9 +74,9 @@ func IsCompressedPubKey(pubKey []byte) bool {
 // ParsePubKey parses a public key for a koblitz curve from a bytestring into a
 // ecdsa.Publickey, verifying that it is valid. It supports compressed,
 // uncompressed and hybrid signature formats.
-func ParsePubKey(pubKeyStr []byte, curve *KoblitzCurve) (key *PublicKey, err error) {
+func ParsePubKey(pubKeyStr []byte) (key *PublicKey, err error) {
 	pubkey := PublicKey{}
-	pubkey.Curve = curve
+	pubkey.Curve = S256()
 
 	if len(pubKeyStr) == 0 {
 		return nil, errors.New("pubkey string is empty")
@@ -108,7 +108,7 @@ func ParsePubKey(pubKeyStr []byte, curve *KoblitzCurve) (key *PublicKey, err err
 				"pubkey string: %d", pubKeyStr[0])
 		}
 		pubkey.X = new(big.Int).SetBytes(pubKeyStr[1:33])
-		pubkey.Y, err = decompressPoint(curve, pubkey.X, ybit)
+		pubkey.Y, err = decompressPoint(S256(), pubkey.X, ybit)
 		if err != nil {
 			return nil, err
 		}
@@ -159,6 +159,7 @@ func (p *PublicKey) SerializeCompressed() []byte {
 }
 
 // SerializeHybrid serializes a public key in a 65-byte hybrid format.
+// TODO: Please don't.
 func (p *PublicKey) SerializeHybrid() []byte {
 	b := make([]byte, 0, PubKeyBytesLenHybrid)
 	format := pubkeyHybrid

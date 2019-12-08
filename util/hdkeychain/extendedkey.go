@@ -313,7 +313,7 @@ func (k *ExtendedKey) Child(i uint32) (*ExtendedKey, error) {
 		// Convert the serialized compressed parent public key into X
 		// and Y coordinates so it can be added to the intermediate
 		// public key.
-		pubKey, err := btcec.ParsePubKey(k.key, btcec.S256())
+		pubKey, err := btcec.ParsePubKey(k.key)
 		if err != nil {
 			return nil, err
 		}
@@ -417,7 +417,7 @@ func HDPrivateKeyToPublicKeyID(id []byte) ([]byte, error) {
 
 // ECPubKey converts the extended key to a btcec public key and returns it.
 func (k *ExtendedKey) ECPubKey() (*btcec.PublicKey, error) {
-	return btcec.ParsePubKey(k.pubKeyBytes(), btcec.S256())
+	return btcec.ParsePubKey(k.pubKeyBytes())
 }
 
 // ECPrivKey converts the extended key to a btcec private key and returns it.
@@ -603,7 +603,7 @@ func NewKeyFromString(key string) (*ExtendedKey, error) {
 	} else {
 		// Ensure the public key parses correctly and is actually on the
 		// secp256k1 curve.
-		_, err := btcec.ParsePubKey(keyData, btcec.S256())
+		_, err := btcec.ParsePubKey(keyData)
 		if err != nil {
 			return nil, err
 		}

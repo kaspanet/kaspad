@@ -236,7 +236,7 @@ func TestSchnorrSignatureVerify(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		pubkey, err := ParsePubKey(test.pubKey, S256())
+		pubkey, err := ParsePubKey(test.pubKey)
 		if err != nil {
 			t.Fatal(err)
 		}
