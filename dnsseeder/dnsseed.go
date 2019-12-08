@@ -156,7 +156,7 @@ func creep() {
 }
 
 func main() {
-	defer panics.HandlePanic(log, backendLog, nil)
+	defer panics.HandlePanic(log, nil, nil)
 	cfg, err := loadConfig()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "loadConfig: %v\n", err)

@@ -67,7 +67,7 @@ func realMain() error {
 	backendLogger := logs.NewBackend()
 	defer os.Stdout.Sync()
 	log = backendLogger.Logger("MAIN")
-	spawn = panics.GoroutineWrapperFunc(log, backendLogger)
+	spawn = panics.GoroutineWrapperFunc(log)
 	dbLog, _ := logger.Get(logger.SubsystemTags.BCDB)
 	dbLog.SetLevel(logs.LevelDebug)
 

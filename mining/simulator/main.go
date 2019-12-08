@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	defer panics.HandlePanic(log, backendLog, nil)
+	defer panics.HandlePanic(log, nil, nil)
 	cfg, err := parseConfig()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error parsing command-line arguments: %s", err)
@@ -29,7 +29,7 @@ func main() {
 	defer connManager.close()
 
 	spawn(func() {
-		err = mineLoop(connManager)
+		err = mineLoop(connManager, cfg.BlockDelay)
 		if err != nil {
 			panic(errors.Errorf("Error in main loop: %s", err))
 		}

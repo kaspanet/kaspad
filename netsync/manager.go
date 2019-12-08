@@ -217,7 +217,7 @@ func (sm *SyncManager) PushGetBlockInvsOrHeaders(peer *peerpkg.Peer, startHash *
 			"%d from peer %s", sm.dag.ChainHeight()+1,
 			sm.nextCheckpoint.ChainHeight, peer.Addr()) //TODO: (Ori) This is probably wrong. Done only for compilation
 	}
-	return peer.PushGetBlockInvsMsg(startHash, &daghash.ZeroHash)
+	return peer.PushGetBlockInvsMsg(startHash, peer.SelectedTip())
 }
 
 // resetHeaderState sets the headers-first mode state to values appropriate for
@@ -622,7 +622,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	if delay != 0 {
 		spawn(func() {
 			sm.QueueBlock(bmsg.block, bmsg.peer, true, make(chan struct{}))
-		})
+		}, sm.handlePanic)
 	}
 
 	// Request the parents for the orphan block from the peer that sent it.
@@ -700,7 +700,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	sm.headersFirstMode = false
 	sm.headerList.Init()
 	log.Infof("Reached the final checkpoint -- switching to normal mode")
-	err = peer.PushGetBlockInvsMsg(blockHash, &daghash.ZeroHash)
+	err = peer.PushGetBlockInvsMsg(blockHash, peer.SelectedTip())
 	if err != nil {
 		log.Warnf("Failed to send getblockinvs message to peer %s: %s",
 			peer.Addr(), err)
@@ -1289,7 +1289,7 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 			if err != nil {
 				panic(fmt.Sprintf("HandleNewBlock failed to handle block %s", block.Hash()))
 			}
-		})
+		}, sm.handlePanic)
 
 		// Relay if we are current and the block was not just now unorphaned.
 		// Otherwise peers that are current should already know about it
@@ -1393,7 +1393,11 @@ func (sm *SyncManager) Start() {
 
 	log.Trace("Starting sync manager")
 	sm.wg.Add(1)
-	spawn(sm.blockHandler)
+	spawn(sm.blockHandler, sm.handlePanic)
+}
+
+func (sm *SyncManager) handlePanic() {
+	atomic.AddInt32(&sm.shutdown, 1)
 }
 
 // Stop gracefully shuts down the sync manager by stopping all asynchronous

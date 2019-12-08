@@ -23,6 +23,14 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		return nil, rpcDecodeHexError(c.Hash)
 	}
 
+	// Return an appropriate error if the block is known to be invalid
+	if s.cfg.DAG.IsKnownInvalid(hash) {
+		return nil, &btcjson.RPCError{
+			Code:    btcjson.ErrRPCBlockInvalid,
+			Message: "Block is known to be invalid",
+		}
+	}
+
 	// Return an appropriate error if the block is an orphan
 	if s.cfg.DAG.IsKnownOrphan(hash) {
 		return nil, &btcjson.RPCError{

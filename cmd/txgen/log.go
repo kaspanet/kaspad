@@ -10,7 +10,7 @@ import (
 var (
 	backendLog = logs.NewBackend()
 	log        = backendLog.Logger("TXGN")
-	spawn      = panics.GoroutineWrapperFunc(log, backendLog)
+	spawn      = panics.GoroutineWrapperFunc(log)
 )
 
 func initLog(logFile, errLogFile string) {
