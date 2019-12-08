@@ -7,6 +7,7 @@ package rpcclient
 import (
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
@@ -322,6 +323,7 @@ func (c *Client) SubmitBlockAsync(block *util.Block, options *btcjson.SubmitBloc
 		}
 
 		blockHex = hex.EncodeToString(blockBytes)
+		fmt.Printf("Sending block %s to client %s with hex %s\n", block.Hash(), c.config.Host, blockHex)
 	}
 
 	cmd := btcjson.NewSubmitBlockCmd(blockHex, options)

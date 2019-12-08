@@ -224,7 +224,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 	txsForBlockTemplate, err := g.selectTxs(payToAddress)
 	if err != nil {
-		return nil, errors.Errorf("failed to select txs: %s", err)
+		return nil, errors.Errorf("failed to select transactions: %s", err)
 	}
 
 	// Calculate the required difficulty for the block.  The timestamp
@@ -316,10 +316,13 @@ func CoinbasePayloadExtraData(extraNonce uint64) ([]byte, error) {
 }
 
 func (g *BlkTmplGenerator) buildUTXOCommitment(transactions []*wire.MsgTx) (*daghash.Hash, error) {
+	log.Criticalf("DAG UTXO SET: %s", g.dag.UTXOSet())
 	utxoWithTransactions, err := g.dag.UTXOSet().WithTransactions(transactions, blockdag.UnacceptedBlueScore, false)
 	if err != nil {
 		return nil, err
 	}
+
+	log.Criticalf("buildUTXOCommitment for %s: %s", g.TipHashes(), utxoWithTransactions)
 
 	return utxoWithTransactions.Multiset().Hash(), nil
 }

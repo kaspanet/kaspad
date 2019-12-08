@@ -750,7 +750,15 @@ func (dus *DiffUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 // called with the DAG lock held.
 func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockBlueScore uint64) (bool, error) {
 	isCoinbase := tx.IsCoinBase()
-	if !isCoinbase && !dus.containsInputs(tx) {
+	if isCoinbase {
+		shouldAdd, err := dus.shouldAddCoinbase(tx, blockBlueScore)
+		if err != nil {
+			return false, err
+		}
+		if !shouldAdd {
+			return false, nil
+		}
+	} else if !dus.containsInputs(tx) {
 		return false, nil
 	}
 
@@ -801,6 +809,16 @@ func (dus *DiffUTXOSet) containsInputs(tx *wire.MsgTx) bool {
 	}
 
 	return true
+}
+
+func (dus *DiffUTXOSet) shouldAddCoinbase(tx *wire.MsgTx) (bool, error) {
+	for i := range tx.TxOut {
+		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
+		if _, ok := dus.Get(outpoint); ok {
+			return false, nil
+		}
+	}
+	return true, nil
 }
 
 // meldToBase updates the base fullUTXOSet with all changes in diff

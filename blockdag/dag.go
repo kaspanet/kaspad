@@ -532,6 +532,7 @@ func (node *blockNode) validateAcceptedIDMerkleRoot(dag *BlockDAG, txsAcceptance
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) connectBlock(node *blockNode,
 	block *util.Block, fastAdd bool) (*chainUpdates, error) {
+	log.Criticalf("connect block %s with parents %s", node.hash, node.ParentHashes())
 	// No warnings about unknown rules or versions until the DAG is
 	// current.
 	if dag.isCurrent() {
@@ -570,8 +571,11 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 		return nil, err
 	}
 
+	log.Criticalf("UTXO b4 block: %s", dag.virtual.utxoSet)
+	log.Criticalf("block utxo: %s", newBlockUTXO)
+
 	// Apply all changes to the DAG.
-	virtualUTXODiff, virtualTxsAcceptanceData, chainUpdates, err := dag.applyDAGChanges(node, block, newBlockUTXO, fastAdd)
+	virtualUTXODiff, virtualTxsAcceptanceData, chainUpdates, err := dag.applyDAGChanges(node, newBlockUTXO, fastAdd)
 	if err != nil {
 		// Since all validation logic has already ran, if applyDAGChanges errors out,
 		// this means we have a problem in the internal structure of the DAG - a problem which is
@@ -805,6 +809,7 @@ func (dag *BlockDAG) NextBlockCoinbaseTransaction(scriptPubKey []byte, extraData
 //
 // This function MUST be called with the DAG read-lock held
 func (dag *BlockDAG) NextBlockCoinbaseTransactionNoLock(scriptPubKey []byte, extraData []byte) (*util.Tx, error) {
+	log.Criticalf("NextBlockCoinbaseTransactionNoLock")
 	txsAcceptanceData, err := dag.TxsAcceptedByVirtual()
 	if err != nil {
 		return nil, err
@@ -877,7 +882,7 @@ func (dag *BlockDAG) BlockPastUTXO(blockHash *daghash.Hash) (UTXOSet, error) {
 // It returns the diff in the virtual block's UTXO set.
 //
 // This function MUST be called with the DAG state lock held (for writes).
-func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBlockUTXO UTXOSet, fastAdd bool) (
+func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, fastAdd bool) (
 	virtualUTXODiff *UTXODiff, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData,
 	chainUpdates *chainUpdates, err error) {
 
@@ -888,21 +893,26 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBloc
 	// Update the virtual block's parents (the DAG tips) to include the new block.
 	chainUpdates = dag.virtual.AddTip(node)
 
+	log.Criticalf("Calcing virtual past utxo")
 	// Build a UTXO set for the new virtual block
 	newVirtualPastUTXO, virtualTxsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
 	if err != nil {
-		return nil, nil, nil, errors.Errorf("could not restore past UTXO for virtual %s: %s", dag.virtual, err)
+		return nil, nil, nil, errors.Wrapf(err, "could not restore past UTXO for virtual %s", dag.virtual)
 	}
 
-	// Apply the new virtual's blue score to all the unaccepted UTXOs
-	diffFromAcceptanceData, err := dag.virtual.diffFromAcceptanceData(newVirtualPastUTXO, virtualTxsAcceptanceData)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	newVirtualUTXO, err := newVirtualPastUTXO.WithDiff(diffFromAcceptanceData)
-	if err != nil {
-		return nil, nil, nil, err
-	}
+	log.Criticalf("newVirtualPastUTXO: %s", newVirtualPastUTXO)
+	log.Criticalf("virtualTxsAcceptanceData: %s", virtualTxsAcceptanceData)
+
+	//// Apply the new virtual's blue score to all the unaccepted UTXOs
+	//diffFromAcceptanceData, err := dag.virtual.diffFromAcceptanceData(newVirtualPastUTXO, virtualTxsAcceptanceData)
+	//if err != nil {
+	//	return nil, nil, nil, err
+	//}
+	//newVirtualUTXO, err := newVirtualPastUTXO.WithDiff(diffFromAcceptanceData)
+	//if err != nil {
+	//	return nil, nil, nil, err
+	//}
+	newVirtualUTXO := newVirtualPastUTXO
 
 	// Apply new utxoDiffs to all the tips
 	err = updateTipsUTXO(dag, newVirtualUTXO)
@@ -992,16 +1002,17 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 		return nil, nil, nil, err
 	}
 
-	// We diff from the acceptance data here to "replace" the blueScore that was diff-ed
-	// out of the virtual's UTXO in pastUTXO with this node's blueScore.
-	diffFromAcceptanceData, err := node.diffFromAcceptanceData(pastUTXO, txsAcceptanceData)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	utxo, err := pastUTXO.WithDiff(diffFromAcceptanceData)
-	if err != nil {
-		return nil, nil, nil, err
-	}
+	//// We diff from the acceptance data here to "replace" the blueScore that was diff-ed
+	//// out of the virtual's UTXO in pastUTXO with this node's blueScore.
+	//diffFromAcceptanceData, err := node.diffFromAcceptanceData(pastUTXO, txsAcceptanceData)
+	//if err != nil {
+	//	return nil, nil, nil, err
+	//}
+	//utxo, err := pastUTXO.WithDiff(diffFromAcceptanceData)
+	//if err != nil {
+	//	return nil, nil, nil, err
+	//}
+	utxo := pastUTXO
 
 	diffFromTxs, err := node.diffFromTxs(utxo, transactions)
 	if err != nil {
@@ -1014,6 +1025,7 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 
 	calculatedMultisetHash := utxo.Multiset().Hash()
 	if !calculatedMultisetHash.IsEqual(node.utxoCommitment) {
+		log.Criticalf("BLAAAAAA for %s: %s", node.ParentHashes(), utxo)
 		str := fmt.Sprintf("block %s UTXO commitment is invalid - block "+
 			"header indicates %s, but calculated value is %s", node.hash,
 			node.utxoCommitment, calculatedMultisetHash)
@@ -1183,13 +1195,44 @@ func (dag *BlockDAG) pastUTXO(node *blockNode) (
 	if err != nil {
 		return nil, nil, err
 	}
+	log.Criticalf("pastUTXO: selectedParentUTXO: %s", selectedParentUTXO)
+	acceptedSelectedParentUTXO, err := node.acceptSelectedParentTransactions(dag.db, selectedParentUTXO)
+	if err != nil {
+		return nil, nil, err
+	}
+	log.Criticalf("pastUTXO: acceptedSelectedParentUTXO: %s", acceptedSelectedParentUTXO)
 
 	blueBlocks, err := node.fetchBlueBlocks(dag.db)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return node.applyBlueBlocks(selectedParentUTXO, blueBlocks)
+	return node.applyBlueBlocks(acceptedSelectedParentUTXO, blueBlocks)
+}
+
+func (node *blockNode) acceptSelectedParentTransactions(db database.DB, selectedParentUTXO UTXOSet) (UTXOSet, error) {
+	diff := NewUTXODiff()
+	err := db.View(func(dbTx database.Tx) error {
+		block, err := dbFetchBlockByNode(dbTx, node.selectedParent)
+		if err != nil {
+			return err
+		}
+		for _, tx := range block.Transactions() {
+			acceptanceDiff, err := selectedParentUTXO.diffFromAcceptedTx(tx.MsgTx(), node.blueScore)
+			if err != nil {
+				return err
+			}
+			diff, err = diff.WithDiff(acceptanceDiff)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return selectedParentUTXO.WithDiff(diff)
 }
 
 // restoreUTXO restores the UTXO of a given block from its diff
