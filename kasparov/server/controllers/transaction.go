@@ -8,7 +8,7 @@ import (
 	"github.com/daglabs/btcd/kasparov/database"
 	"github.com/daglabs/btcd/kasparov/dbmodels"
 	"github.com/daglabs/btcd/kasparov/jsonrpc"
-	"github.com/daglabs/btcd/kasparov/server/models"
+	"github.com/daglabs/btcd/kasparov/server/apimodels"
 	"github.com/daglabs/btcd/util"
 	"net/http"
 
@@ -101,7 +101,7 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 	if httpserverutils.HasDBError(dbErrors) {
 		return nil, httpserverutils.NewErrorFromDBErrors("Some errors were encountered when loading transactions from the database:", dbErrors)
 	}
-	txResponses := make([]*models.TransactionResponse, len(txs))
+	txResponses := make([]*apimodels.TransactionResponse, len(txs))
 	for i, tx := range txs {
 		txResponses[i] = convertTxDBModelToTxResponse(tx)
 	}
@@ -194,7 +194,7 @@ func GetUTXOsByAddressHandler(address string) (interface{}, error) {
 
 	activeNetParams := config.ActiveConfig().NetParams()
 
-	UTXOsResponses := make([]*models.TransactionOutputResponse, len(transactionOutputs))
+	UTXOsResponses := make([]*apimodels.TransactionOutputResponse, len(transactionOutputs))
 	for i, transactionOutput := range transactionOutputs {
 		subnetworkID := &subnetworkid.SubnetworkID{}
 		err := subnetworkid.Decode(subnetworkID, transactionOutput.Transaction.Subnetwork.SubnetworkID)
@@ -212,7 +212,7 @@ func GetUTXOsByAddressHandler(address string) (interface{}, error) {
 			confirmations = selectedTip.BlueScore - acceptingBlockBlueScore + 2
 		}
 		isCoinbase := subnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase)
-		UTXOsResponses[i] = &models.TransactionOutputResponse{
+		UTXOsResponses[i] = &apimodels.TransactionOutputResponse{
 			TransactionID:           transactionOutput.Transaction.TransactionID,
 			Value:                   transactionOutput.Value,
 			ScriptPubKey:            hex.EncodeToString(transactionOutput.ScriptPubKey),
@@ -252,7 +252,7 @@ func PostTransaction(requestBody []byte) error {
 		return err
 	}
 
-	rawTx := &models.RawTransaction{}
+	rawTx := &apimodels.RawTransaction{}
 	err = json.Unmarshal(requestBody, rawTx)
 	if err != nil {
 		return httpserverutils.NewHandlerErrorWithCustomClientMessage(http.StatusUnprocessableEntity,
@@ -289,7 +289,7 @@ func PostTransaction(requestBody []byte) error {
 }
 
 // GetTransactionsByIDsHandler finds transactions by the given transactionIds.
-func GetTransactionsByIDsHandler(transactionIds []string) ([]*models.TransactionResponse, error) {
+func GetTransactionsByIDsHandler(transactionIds []string) ([]*apimodels.TransactionResponse, error) {
 	db, err := database.DB()
 	if err != nil {
 		return nil, err
@@ -305,7 +305,7 @@ func GetTransactionsByIDsHandler(transactionIds []string) ([]*models.Transaction
 		return nil, httpserverutils.NewErrorFromDBErrors("Some errors were encountered when loading transactions from the database:", dbErrors)
 	}
 
-	txResponses := make([]*models.TransactionResponse, len(txs))
+	txResponses := make([]*apimodels.TransactionResponse, len(txs))
 	for i, tx := range txs {
 		txResponses[i] = convertTxDBModelToTxResponse(tx)
 	}

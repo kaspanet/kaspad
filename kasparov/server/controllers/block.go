@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"github.com/daglabs/btcd/kasparov/database"
 	"github.com/daglabs/btcd/kasparov/dbmodels"
-	"github.com/daglabs/btcd/kasparov/server/models"
+	"github.com/daglabs/btcd/kasparov/server/apimodels"
 	"net/http"
 
 	"github.com/daglabs/btcd/httpserverutils"
@@ -75,7 +75,7 @@ func GetBlocksHandler(order string, skip uint64, limit uint64) (interface{}, err
 		return nil, httpserverutils.NewHandlerError(http.StatusUnprocessableEntity, errors.Errorf("'%s' is not a valid order", order))
 	}
 	query.Find(&blocks)
-	blockResponses := make([]*models.BlockResponse, len(blocks))
+	blockResponses := make([]*apimodels.BlockResponse, len(blocks))
 	for i, block := range blocks {
 		blockResponses[i] = convertBlockModelToBlockResponse(block)
 	}

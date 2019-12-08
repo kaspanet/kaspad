@@ -2,8 +2,8 @@ package mqtt
 
 import (
 	"github.com/daglabs/btcd/btcjson"
+	"github.com/daglabs/btcd/kasparov/server/apimodels"
 	"github.com/daglabs/btcd/kasparov/server/controllers"
-	"github.com/daglabs/btcd/kasparov/server/models"
 	"github.com/daglabs/btcd/rpcclient"
 	"github.com/daglabs/btcd/util/daghash"
 	"path"
@@ -34,7 +34,7 @@ func PublishTransactionsNotifications(rawTransactions []btcjson.TxRawResult) err
 	return nil
 }
 
-func publishTransactionNotifications(transaction *models.TransactionResponse, topic string) error {
+func publishTransactionNotifications(transaction *apimodels.TransactionResponse, topic string) error {
 	addresses := uniqueAddressesForTransaction(transaction)
 	for _, address := range addresses {
 		err := publishTransactionNotificationForAddress(transaction, address, topic)
@@ -45,7 +45,7 @@ func publishTransactionNotifications(transaction *models.TransactionResponse, to
 	return nil
 }
 
-func uniqueAddressesForTransaction(transaction *models.TransactionResponse) []string {
+func uniqueAddressesForTransaction(transaction *apimodels.TransactionResponse) []string {
 	addressesMap := make(map[string]struct{})
 	addresses := []string{}
 	for _, output := range transaction.Outputs {
@@ -63,7 +63,7 @@ func uniqueAddressesForTransaction(transaction *models.TransactionResponse) []st
 	return addresses
 }
 
-func publishTransactionNotificationForAddress(transaction *models.TransactionResponse, address string, topic string) error {
+func publishTransactionNotificationForAddress(transaction *apimodels.TransactionResponse, address string, topic string) error {
 	return publish(path.Join(topic, address), transaction)
 }
 
