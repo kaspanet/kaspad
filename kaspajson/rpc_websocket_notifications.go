@@ -4,32 +4,32 @@
 // license that can be found in the LICENSE file.
 
 // NOTE: This file is intended to house the RPC websocket notifications that are
-// supported by a dag server.
+// supported by a kaspa rpc server.
 
 package kaspajson
 
 const (
 	// FilteredBlockAddedNtfnMethod is the new method used for
-	// notifications from the dag server that a block has been connected.
+	// notifications from the kaspa rpc server that a block has been connected.
 	FilteredBlockAddedNtfnMethod = "filteredBlockAdded"
 
 	// TxAcceptedNtfnMethod is the method used for notifications from the
-	// dag server that a transaction has been accepted into the mempool.
+	// kaspa rpc server that a transaction has been accepted into the mempool.
 	TxAcceptedNtfnMethod = "txAccepted"
 
 	// TxAcceptedVerboseNtfnMethod is the method used for notifications from
-	// the dag server that a transaction has been accepted into the
+	// the kaspa rpc server that a transaction has been accepted into the
 	// mempool. This differs from TxAcceptedNtfnMethod in that it provides
 	// more details in the notification.
 	TxAcceptedVerboseNtfnMethod = "txAcceptedVerbose"
 
 	// RelevantTxAcceptedNtfnMethod is the new method used for notifications
-	// from the dag server that inform a client that a transaction that
+	// from the kaspa rpc server that inform a client that a transaction that
 	// matches the loaded filter was accepted by the mempool.
 	RelevantTxAcceptedNtfnMethod = "relevantTxAccepted"
 
 	// ChainChangedNtfnMethod is the new method used for notifications
-	// from the dag server that inform a client that the selected chain
+	// from the kaspa rpc server that inform a client that the selected chain
 	// has changed.
 	ChainChangedNtfnMethod = "chainChanged"
 )

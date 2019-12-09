@@ -15,7 +15,7 @@ import (
 	"github.com/kaspanet/kaspad/kaspajson"
 )
 
-// TestDAGSvrWsCmds tests all of the dag server websocket-specific commands
+// TestDAGSvrWsCmds tests all of the kaspa rpc server websocket-specific commands
 // marshal and unmarshal into valid results include handling of optional fields
 // being omitted in the marshalled command, while optional fields with defaults
 // have the default assigned on unmarshalled commands.

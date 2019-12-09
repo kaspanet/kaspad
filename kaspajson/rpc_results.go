@@ -414,7 +414,7 @@ type GetWorkResult struct {
 	Target   string `json:"target"`
 }
 
-// InfoDAGResult models the data returned by the dag server getinfo command.
+// InfoDAGResult models the data returned by the kaspa rpc server getinfo command.
 type InfoDAGResult struct {
 	Version         int32   `json:"version"`
 	ProtocolVersion int32   `json:"protocolVersion"`
@@ -478,7 +478,7 @@ type TxRawDecodeResult struct {
 	Vout     []Vout `json:"vout"`
 }
 
-// ValidateAddressResult models the data returned by the dag server
+// ValidateAddressResult models the data returned by the kaspa rpc server
 // validateaddress command.
 type ValidateAddressResult struct {
 	IsValid bool   `json:"isValid"`
@@ -510,4 +510,18 @@ type GetBlocksResult struct {
 	Hashes        []string                `json:"hashes"`
 	RawBlocks     []string                `json:"rawBlocks"`
 	VerboseBlocks []GetBlockVerboseResult `json:"verboseBlocks"`
+}
+
+// VersionResult models objects included in the version response. In the actual
+// result, these objects are keyed by the program or API name.
+//
+// NOTE: This is a btcsuite extension ported from
+// github.com/decred/dcrd/dcrjson.
+type VersionResult struct {
+	VersionString string `json:"versionString"`
+	Major         uint32 `json:"major"`
+	Minor         uint32 `json:"minor"`
+	Patch         uint32 `json:"patch"`
+	Prerelease    string `json:"prerelease"`
+	BuildMetadata string `json:"buildMetadata"`
 }
