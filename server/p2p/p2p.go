@@ -300,12 +300,6 @@ type Server struct {
 	TxIndex         *indexers.TxIndex
 	AddrIndex       *indexers.AddrIndex
 	AcceptanceIndex *indexers.AcceptanceIndex
-	CfIndex         *indexers.CfIndex
-
-	// cfCheckptCaches stores a cached slice of filter headers for cfcheckpt
-	// messages for each filter type.
-	cfCheckptCaches    map[wire.FilterType][]cfHeaderKV
-	cfCheckptCachesMtx sync.RWMutex
 
 	notifyNewTransactions func(txns []*mempool.TxDesc)
 	isRPCServerActive     bool
@@ -1071,9 +1065,6 @@ func newPeerConfig(sp *Peer) *peer.Config {
 			OnBlockLocator:    sp.OnBlockLocator,
 			OnGetBlockInvs:    sp.OnGetBlockInvs,
 			OnGetHeaders:      sp.OnGetHeaders,
-			OnGetCFilters:     sp.OnGetCFilters,
-			OnGetCFHeaders:    sp.OnGetCFHeaders,
-			OnGetCFCheckpt:    sp.OnGetCFCheckpt,
 			OnFeeFilter:       sp.OnFeeFilter,
 			OnFilterAdd:       sp.OnFilterAdd,
 			OnFilterClear:     sp.OnFilterClear,
@@ -1596,9 +1587,6 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 	if config.ActiveConfig().NoPeerBloomFilters {
 		services &^= wire.SFNodeBloom
 	}
-	if !config.ActiveConfig().EnableCFilters {
-		services &^= wire.SFNodeCF
-	}
 
 	amgr := addrmgr.New(config.ActiveConfig().DataDir, serverutils.BTCDLookup, config.ActiveConfig().SubnetworkID)
 
@@ -1668,11 +1656,6 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		indxLog.Info("acceptance index is enabled")
 		s.AcceptanceIndex = indexers.NewAcceptanceIndex()
 		indexes = append(indexes, s.AcceptanceIndex)
-	}
-	if config.ActiveConfig().EnableCFilters {
-		indxLog.Info("cf index is enabled")
-		s.CfIndex = indexers.NewCfIndex(dagParams)
-		indexes = append(indexes, s.CfIndex)
 	}
 
 	// Create an index manager if any of the optional indexes are enabled.

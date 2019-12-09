@@ -50,12 +50,6 @@ const (
 	CmdReject          = "reject"
 	CmdSendHeaders     = "sendheaders"
 	CmdFeeFilter       = "feefilter"
-	CmdGetCFilters     = "getcfilters"
-	CmdGetCFHeaders    = "getcfheaders"
-	CmdGetCFCheckpt    = "getcfcheckpt"
-	CmdCFilter         = "cfilter"
-	CmdCFHeaders       = "cfheaders"
-	CmdCFCheckpt       = "cfcheckpt"
 	CmdGetBlockLocator = "getlocator"
 	CmdBlockLocator    = "locator"
 )
@@ -144,24 +138,6 @@ func makeEmptyMessage(command string) (Message, error) {
 
 	case CmdFeeFilter:
 		msg = &MsgFeeFilter{}
-
-	case CmdGetCFilters:
-		msg = &MsgGetCFilters{}
-
-	case CmdGetCFHeaders:
-		msg = &MsgGetCFHeaders{}
-
-	case CmdGetCFCheckpt:
-		msg = &MsgGetCFCheckpt{}
-
-	case CmdCFilter:
-		msg = &MsgCFilter{}
-
-	case CmdCFHeaders:
-		msg = &MsgCFHeaders{}
-
-	case CmdCFCheckpt:
-		msg = &MsgCFCheckpt{}
 
 	default:
 		return nil, errors.Errorf("unhandled command [%s]", command)

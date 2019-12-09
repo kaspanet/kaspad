@@ -360,12 +360,6 @@ var helpDescsEnUS = map[string]string{
 	"getBlockTemplate--condition2": "mode=proposal, accepted",
 	"getBlockTemplate--result1":    "An error string which represents why the proposal was rejected or nothing if accepted",
 
-	// GetCFilterCmd help.
-	"getCFilter--synopsis":  "Returns a block's committed filter given its hash.",
-	"getCFilter-filterType": "The type of filter to return (0=regular, 1=extended)",
-	"getCFilter-hash":       "The hash of the block",
-	"getCFilter--result0":   "The block's committed filter",
-
 	// GetChainFromBlockCmd help.
 	"getChainFromBlock--synopsis":     "Return the selected parent chain starting from startHash up to the virtual. If startHash is not in the selected parent chain, it goes down the DAG until it does reach a hash in the selected parent chain while collecting hashes into removedChainBlockHashes.",
 	"getChainFromBlock-startHash":     "Hash of the bottom of the requested chain. If this hash is unknown or is not a chain block - returns an error.",
@@ -376,12 +370,6 @@ var helpDescsEnUS = map[string]string{
 	"getChainFromBlockResult-removedChainBlockHashes": "List chain-block hashes that were removed from the selected parent chain in top-to-bottom order",
 	"getChainFromBlockResult-addedChainBlocks":        "List of ChainBlocks from Virtual.SelectedTip to StartHash (excluding StartHash) ordered bottom-to-top.",
 	"getChainFromBlockResult-blocks":                  "If includeBlocks=true - contains the contents of all chain and accepted blocks in the AddedChainBlocks. Otherwise - omitted.",
-
-	// GetCFilterHeaderCmd help.
-	"getCFilterHeader--synopsis":  "Returns a block's compact filter header given its hash.",
-	"getCFilterHeader-filterType": "The type of filter header to return (0=regular, 1=extended)",
-	"getCFilterHeader-hash":       "The hash of the block",
-	"getCFilterHeader--result0":   "The block's gcs filter header",
 
 	// GetConnectionCountCmd help.
 	"getConnectionCount--synopsis": "Returns the number of active connections to other peers.",
@@ -688,8 +676,6 @@ var rpcResultTypes = map[string][]interface{}{
 	"getBlockHeader":        {(*string)(nil), (*btcjson.GetBlockHeaderVerboseResult)(nil)},
 	"getBlockTemplate":      {(*btcjson.GetBlockTemplateResult)(nil), (*string)(nil), nil},
 	"getBlockDagInfo":       {(*btcjson.GetBlockDAGInfoResult)(nil)},
-	"getCFilter":            {(*string)(nil)},
-	"getCFilterHeader":      {(*string)(nil)},
 	"getChainFromBlock":     {(*btcjson.GetChainFromBlockResult)(nil)},
 	"getConnectionCount":    {(*int32)(nil)},
 	"getCurrentNet":         {(*uint32)(nil)},
