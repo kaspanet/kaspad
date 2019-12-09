@@ -131,7 +131,7 @@ func TestElementWire(t *testing.T) {
 			[]byte{0x01, 0x00, 0x00, 0x00},
 		},
 		{
-			BitcoinNet(MainNet),
+			KaspaNet(MainNet),
 			[]byte{0xf9, 0xbe, 0xb4, 0xd9},
 		},
 		// Type not supported by the "fast" path and requires reflection.
@@ -218,7 +218,7 @@ func TestElementWireErrors(t *testing.T) {
 		},
 		{ServiceFlag(SFNodeNetwork), 0, io.ErrShortWrite, io.EOF},
 		{InvType(InvTypeTx), 0, io.ErrShortWrite, io.EOF},
-		{BitcoinNet(MainNet), 0, io.ErrShortWrite, io.EOF},
+		{KaspaNet(MainNet), 0, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))

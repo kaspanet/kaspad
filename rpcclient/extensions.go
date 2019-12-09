@@ -151,7 +151,7 @@ type FutureGetCurrentNetResult chan *response
 
 // Receive waits for the response promised by the future and returns the network
 // the server is running on.
-func (r FutureGetCurrentNetResult) Receive() (wire.BitcoinNet, error) {
+func (r FutureGetCurrentNetResult) Receive() (wire.KaspaNet, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return 0, err
@@ -164,7 +164,7 @@ func (r FutureGetCurrentNetResult) Receive() (wire.BitcoinNet, error) {
 		return 0, err
 	}
 
-	return wire.BitcoinNet(net), nil
+	return wire.KaspaNet(net), nil
 }
 
 // GetCurrentNetAsync returns an instance of a type that can be used to get the
@@ -182,7 +182,7 @@ func (c *Client) GetCurrentNetAsync() FutureGetCurrentNetResult {
 // GetCurrentNet returns the network the server is running on.
 //
 // NOTE: This is a kaspad extension.
-func (c *Client) GetCurrentNet() (wire.BitcoinNet, error) {
+func (c *Client) GetCurrentNet() (wire.KaspaNet, error) {
 	return c.GetCurrentNetAsync().Receive()
 }
 

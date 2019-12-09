@@ -1,6 +1,6 @@
 // Package dagconfig defines chain configuration parameters.
 //
-// In addition to the main Bitcoin network, which is intended for the transfer
+// In addition to the main Kaspa network, which is intended for the transfer
 // of monetary value, there also exists two currently active standard networks:
 // regression test and testnet. These networks are incompatible
 // with each other (each sharing a different genesis block) and software should
@@ -10,7 +10,7 @@
 // For library packages, dagconfig provides the ability to lookup chain
 // parameters and encoding magics when passed a *Params. Older APIs not updated
 // to the new convention of passing a *Params may lookup the parameters for a
-// wire.BitcoinNet using ParamsForNet, but be aware that this usage is
+// wire.KaspaNet using ParamsForNet, but be aware that this usage is
 // deprecated and will be removed from dagconfig in the future.
 //
 // For main packages, a (typically global) var may be assigned the address of
@@ -29,7 +29,7 @@
 //          "github.com/kaspanet/kaspad/dagconfig"
 //  )
 //
-//  var testnet = flag.Bool("testnet", false, "operate on the testnet Bitcoin network")
+//  var testnet = flag.Bool("testnet", false, "operate on the testnet Kaspa network")
 //
 //  // By default (without -testnet), use mainnet.
 //  var chainParams = &dagconfig.MainNetParams
@@ -53,7 +53,7 @@
 //          fmt.Println(addr)
 //  }
 //
-// If an application does not use one of the three standard Bitcoin networks,
+// If an application does not use one of the three standard Kaspa networks,
 // a new Params struct may be created which defines the parameters for the
 // non-standard network. As a general rule of thumb, all network parameters
 // should be unique to the network, but parameter collisions can still occur

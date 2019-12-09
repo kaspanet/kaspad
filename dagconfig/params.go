@@ -24,23 +24,23 @@ var (
 	// the overhead of creating it multiple times.
 	bigOne = big.NewInt(1)
 
-	// mainPowMax is the highest proof of work value a Bitcoin block can
+	// mainPowMax is the highest proof of work value a Kaspa block can
 	// have for the main network. It is the value 2^255 - 1.
 	mainPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
-	// regressionPowMax is the highest proof of work value a Bitcoin block
+	// regressionPowMax is the highest proof of work value a Kaspa block
 	// can have for the regression test network. It is the value 2^255 - 1.
 	regressionPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
-	// testNetPowMax is the highest proof of work value a Bitcoin block
+	// testNetPowMax is the highest proof of work value a Kaspa block
 	// can have for the test network. It is the value 2^255 - 1.
 	testNetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
-	// simNetPowMax is the highest proof of work value a Bitcoin block
+	// simNetPowMax is the highest proof of work value a Kaspa block
 	// can have for the simulation test network. It is the value 2^255 - 1.
 	simNetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
-	// devNetPowMax is the highest proof of work value a Bitcoin block
+	// devNetPowMax is the highest proof of work value a Kaspa block
 	// can have for the development network. It is the value
 	// 2^239 - 1.
 	devNetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
@@ -93,8 +93,8 @@ const (
 	DefinedDeployments
 )
 
-// Params defines a Bitcoin network by its parameters. These parameters may be
-// used by Bitcoin applications to differentiate networks as well as addresses
+// Params defines a Kaspa network by its parameters. These parameters may be
+// used by Kaspa applications to differentiate networks as well as addresses
 // and keys for one network from those intended for use on another network.
 type Params struct {
 	K uint32
@@ -103,7 +103,7 @@ type Params struct {
 	Name string
 
 	// Net defines the magic bytes used to identify the network.
-	Net wire.BitcoinNet
+	Net wire.KaspaNet
 
 	// RPCPort defines the rpc server port
 	RPCPort string
@@ -192,7 +192,7 @@ type Params struct {
 	HDCoinType uint32
 }
 
-// MainNetParams defines the network parameters for the main Bitcoin network.
+// MainNetParams defines the network parameters for the main Kaspa network.
 var MainNetParams = Params{
 	K:           phantomK,
 	Name:        "mainnet",
@@ -252,7 +252,7 @@ var MainNetParams = Params{
 }
 
 // RegressionNetParams defines the network parameters for the regression test
-// Bitcoin network. Not to be confused with the test Bitcoin network (version
+// Kaspa network. Not to be confused with the test Kaspa network (version
 // 3), this network is sometimes simply called "testnet".
 var RegressionNetParams = Params{
 	K:           phantomK,
@@ -312,7 +312,7 @@ var RegressionNetParams = Params{
 	HDCoinType: 1,
 }
 
-// TestNetParams defines the network parameters for the test Bitcoin network.
+// TestNetParams defines the network parameters for the test Kaspa network.
 var TestNetParams = Params{
 	K:           phantomK,
 	Name:        "testnet",
@@ -371,7 +371,7 @@ var TestNetParams = Params{
 	HDCoinType: 1,
 }
 
-// SimNetParams defines the network parameters for the simulation test Bitcoin
+// SimNetParams defines the network parameters for the simulation test Kaspa
 // network. This network is similar to the normal test network except it is
 // intended for private use within a group of individuals doing simulation
 // testing. The functionality is intended to differ in that the only nodes
@@ -434,7 +434,7 @@ var SimNetParams = Params{
 	HDCoinType: 115, // ASCII for s
 }
 
-// DevNetParams defines the network parameters for the development Bitcoin network.
+// DevNetParams defines the network parameters for the development Kaspa network.
 var DevNetParams = Params{
 	K:           phantomK,
 	Name:        "devnet",
@@ -494,17 +494,17 @@ var DevNetParams = Params{
 }
 
 var (
-	// ErrDuplicateNet describes an error where the parameters for a Bitcoin
+	// ErrDuplicateNet describes an error where the parameters for a Kaspa
 	// network could not be set due to the network already being a standard
 	// network or previously-registered into this package.
-	ErrDuplicateNet = errors.New("duplicate Bitcoin network")
+	ErrDuplicateNet = errors.New("duplicate Kaspa network")
 )
 
 var (
-	registeredNets = make(map[wire.BitcoinNet]struct{})
+	registeredNets = make(map[wire.KaspaNet]struct{})
 )
 
-// Register registers the network parameters for a Bitcoin network. This may
+// Register registers the network parameters for a Kaspa network. This may
 // error with ErrDuplicateNet if the network is already registered (either
 // due to a previous Register call, or the network being one of the default
 // networks).
