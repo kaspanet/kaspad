@@ -475,8 +475,8 @@ func TestCheckBlockSanity(t *testing.T) {
 		},
 	}
 
-	btcutilInvalidBlock := util.NewBlock(&invalidParentsOrderBlock)
-	delay, err = dag.checkBlockSanity(btcutilInvalidBlock, BFNone)
+	utilInvalidBlock := util.NewBlock(&invalidParentsOrderBlock)
+	delay, err = dag.checkBlockSanity(utilInvalidBlock, BFNone)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: error is nil when it shouldn't be")
 	}
