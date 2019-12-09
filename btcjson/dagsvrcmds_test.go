@@ -508,48 +508,6 @@ func TestDAGSvrCmds(t *testing.T) {
 			unmarshalled: &btcjson.GetNetTotalsCmd{},
 		},
 		{
-			name: "getNetworkHashPs",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getNetworkHashPs")
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewGetNetworkHashPSCmd(nil, nil)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getNetworkHashPs","params":[],"id":1}`,
-			unmarshalled: &btcjson.GetNetworkHashPSCmd{
-				Blocks: btcjson.Int(120),
-				Height: btcjson.Int(-1),
-			},
-		},
-		{
-			name: "getNetworkHashPs optional1",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getNetworkHashPs", 200)
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewGetNetworkHashPSCmd(btcjson.Int(200), nil)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getNetworkHashPs","params":[200],"id":1}`,
-			unmarshalled: &btcjson.GetNetworkHashPSCmd{
-				Blocks: btcjson.Int(200),
-				Height: btcjson.Int(-1),
-			},
-		},
-		{
-			name: "getNetworkHashPs optional2",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getNetworkHashPs", 200, 123)
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewGetNetworkHashPSCmd(btcjson.Int(200), btcjson.Int(123))
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getNetworkHashPs","params":[200,123],"id":1}`,
-			unmarshalled: &btcjson.GetNetworkHashPSCmd{
-				Blocks: btcjson.Int(200),
-				Height: btcjson.Int(123),
-			},
-		},
-		{
 			name: "getPeerInfo",
 			newCmd: func() (interface{}, error) {
 				return btcjson.NewCmd("getPeerInfo")

@@ -442,24 +442,6 @@ func NewGetNetTotalsCmd() *GetNetTotalsCmd {
 	return &GetNetTotalsCmd{}
 }
 
-// GetNetworkHashPSCmd defines the getNetworkHashPs JSON-RPC command.
-type GetNetworkHashPSCmd struct {
-	Blocks *int `jsonrpcdefault:"120"`
-	Height *int `jsonrpcdefault:"-1"`
-}
-
-// NewGetNetworkHashPSCmd returns a new instance which can be used to issue a
-// getNetworkHashPs JSON-RPC command.
-//
-// The parameters which are pointers indicate they are optional.  Passing nil
-// for optional parameters will use the default value.
-func NewGetNetworkHashPSCmd(numBlocks, height *int) *GetNetworkHashPSCmd {
-	return &GetNetworkHashPSCmd{
-		Blocks: numBlocks,
-		Height: height,
-	}
-}
-
 // GetPeerInfoCmd defines the getPeerInfo JSON-RPC command.
 type GetPeerInfoCmd struct{}
 
@@ -762,7 +744,6 @@ func init() {
 	MustRegisterCmd("getMiningInfo", (*GetMiningInfoCmd)(nil), flags)
 	MustRegisterCmd("getNetworkInfo", (*GetNetworkInfoCmd)(nil), flags)
 	MustRegisterCmd("getNetTotals", (*GetNetTotalsCmd)(nil), flags)
-	MustRegisterCmd("getNetworkHashPs", (*GetNetworkHashPSCmd)(nil), flags)
 	MustRegisterCmd("getPeerInfo", (*GetPeerInfoCmd)(nil), flags)
 	MustRegisterCmd("getRawMempool", (*GetRawMempoolCmd)(nil), flags)
 	MustRegisterCmd("getRawTransaction", (*GetRawTransactionCmd)(nil), flags)

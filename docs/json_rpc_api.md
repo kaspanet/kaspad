@@ -175,7 +175,6 @@ the method name for further details such as parameter and return information.
 |16|[getmempoolinfo](#getmempoolinfo)|N|Returns a JSON object containing mempool-related information.|
 |17|[getmininginfo](#getmininginfo)|N|Returns a JSON object containing mining-related information.|
 |18|[getnettotals](#getnettotals)|Y|Returns a JSON object containing network traffic statistics.|
-|19|[getnetworkhashps](#getnetworkhashps)|Y|Returns the estimated network hashes per second for the block heights provided by the parameters.|
 |20|[getpeerinfo](#getpeerinfo)|N|Returns information about each connected network peer as an array of json objects.|
 |21|[getrawmempool](#getrawmempool)|Y|Returns an array of hashes for all of the transactions currently in the memory pool.|
 |22|[getrawtransaction](#getrawtransaction)|Y|Returns information about a transaction given its hash.|
@@ -397,8 +396,8 @@ Example Return|`{`<br />&nbsp;&nbsp;`"bytes": 310768,`<br />&nbsp;&nbsp;`"size":
 |Method|getmininginfo|
 |Parameters|None|
 |Description|Returns a JSON object containing mining-related information.|
-|Returns|`{ (json object)`<br />&nbsp;&nbsp;`"blocks": n,  (numeric) latest best block`<br />&nbsp;&nbsp;`"currentblocksize": n,  (numeric) size of the latest best block`<br />&nbsp;&nbsp;`"currentblocktx": n,  (numeric) number of transactions in the latest best block`<br />&nbsp;&nbsp;`"difficulty": n.nn,  (numeric) current target difficulty`<br />&nbsp;&nbsp;`"errors": "errors",  (string) any current errors`<br />&nbsp;&nbsp;`"generate": true or false,  (boolean) whether or not server is set to generate coins`<br />&nbsp;&nbsp;`"genproclimit": n,  (numeric) number of processors to use for coin generation (-1 when disabled)`<br />&nbsp;&nbsp;`"hashespersec": n,  (numeric) recent hashes per second performance measurement while generating coins`<br />&nbsp;&nbsp;`"networkhashps": n,  (numeric) estimated network hashes per second for the most recent blocks`<br />&nbsp;&nbsp;`"pooledtx": n,  (numeric) number of transactions in the memory pool`<br />&nbsp;&nbsp;`"testnet": true or false,  (boolean) whether or not server is using testnet`<br />`}`|
-|Example Return|`{`<br />&nbsp;&nbsp;`"blocks": 236526,`<br />&nbsp;&nbsp;`"currentblocksize": 185,`<br />&nbsp;&nbsp;`"currentblocktx": 1,`<br />&nbsp;&nbsp;`"difficulty": 256,`<br />&nbsp;&nbsp;`"errors": "",`<br />&nbsp;&nbsp;`"generate": false,`<br />&nbsp;&nbsp;`"genproclimit": -1,`<br />&nbsp;&nbsp;`"hashespersec": 0,`<br />&nbsp;&nbsp;`"networkhashps": 33081554756,`<br />&nbsp;&nbsp;`"pooledtx": 8,`<br />&nbsp;&nbsp;`"testnet": true,`<br />`}`|
+|Returns|`{ (json object)`<br />&nbsp;&nbsp;`"blocks": n,  (numeric) latest best block`<br />&nbsp;&nbsp;`"currentblocksize": n,  (numeric) size of the latest best block`<br />&nbsp;&nbsp;`"currentblocktx": n,  (numeric) number of transactions in the latest best block`<br />&nbsp;&nbsp;`"difficulty": n.nn,  (numeric) current target difficulty`<br />&nbsp;&nbsp;`"errors": "errors",  (string) any current errors`<br />&nbsp;&nbsp;`"generate": true or false,  (boolean) whether or not server is set to generate coins`<br />&nbsp;&nbsp;`"genproclimit": n,  (numeric) number of processors to use for coin generation (-1 when disabled)`<br />&nbsp;&nbsp;`"hashespersec": n,  (numeric) recent hashes per second performance measurement while generating coins`<br />&nbsp;&nbsp;`"pooledtx": n,  (numeric) number of transactions in the memory pool`<br />&nbsp;&nbsp;`"testnet": true or false,  (boolean) whether or not server is using testnet`<br />`}`|
+|Example Return|`{`<br />&nbsp;&nbsp;`"blocks": 236526,`<br />&nbsp;&nbsp;`"currentblocksize": 185,`<br />&nbsp;&nbsp;`"currentblocktx": 1,`<br />&nbsp;&nbsp;`"difficulty": 256,`<br />&nbsp;&nbsp;`"errors": "",`<br />&nbsp;&nbsp;`"generate": false,`<br />&nbsp;&nbsp;`"genproclimit": -1,`<br />&nbsp;&nbsp;`"hashespersec": 0,`<br />&nbsp;&nbsp;`"pooledtx": 8,`<br />&nbsp;&nbsp;`"testnet": true,`<br />`}`|
 [Return to Overview](#MethodOverview)<br />
 
 ***
@@ -411,18 +410,6 @@ Example Return|`{`<br />&nbsp;&nbsp;`"bytes": 310768,`<br />&nbsp;&nbsp;`"size":
 |Description|Returns a JSON object containing network traffic statistics.|
 |Returns|`{`<br />&nbsp;&nbsp;`"totalbytesrecv": n,  (numeric) total bytes received`<br />&nbsp;&nbsp;`"totalbytessent": n,  (numeric) total bytes sent`<br />&nbsp;&nbsp;`"timemillis": n  (numeric) number of milliseconds since 1 Jan 1970 GMT`<br />`}`|
 |Example Return|`{`<br />&nbsp;&nbsp;`"totalbytesrecv": 1150990,`<br />&nbsp;&nbsp;`"totalbytessent": 206739,`<br />&nbsp;&nbsp;`"timemillis": 1391626433845`<br />`}`|
-[Return to Overview](#MethodOverview)<br />
-
-***
-<a name="getnetworkhashps"/>
-
-|   |   |
-|---|---|
-|Method|getnetworkhashps|
-|Parameters|1. blocks (numeric, optional, default=120) - The number of blocks, or -1 for blocks since last difficulty change<br />2. height (numeric, optional, default=-1) - Perform estimate ending with this height or -1 for current best chain block height|
-|Description|Returns the estimated network hashes per second for the block heights provided by the parameters.|
-|Returns|numeric|
-|Example Return|`6573971939`|
 [Return to Overview](#MethodOverview)<br />
 
 ***

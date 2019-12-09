@@ -7,6 +7,7 @@ package rpcclient
 import (
 	"encoding/hex"
 	"encoding/json"
+
 	"github.com/kaspanet/kaspad/btcjson"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -198,89 +199,6 @@ func (c *Client) GetMiningInfoAsync() FutureGetMiningInfoResult {
 // GetMiningInfo returns mining information.
 func (c *Client) GetMiningInfo() (*btcjson.GetMiningInfoResult, error) {
 	return c.GetMiningInfoAsync().Receive()
-}
-
-// FutureGetNetworkHashPS is a future promise to deliver the result of a
-// GetNetworkHashPSAsync RPC invocation (or an applicable error).
-type FutureGetNetworkHashPS chan *response
-
-// Receive waits for the response promised by the future and returns the
-// estimated network hashes per second for the block heights provided by the
-// parameters.
-func (r FutureGetNetworkHashPS) Receive() (int64, error) {
-	res, err := receiveFuture(r)
-	if err != nil {
-		return -1, err
-	}
-
-	// Unmarshal result as an int64.
-	var result int64
-	err = json.Unmarshal(res, &result)
-	if err != nil {
-		return 0, err
-	}
-
-	return result, nil
-}
-
-// GetNetworkHashPSAsync returns an instance of a type that can be used to get
-// the result of the RPC at some future time by invoking the Receive function on
-// the returned instance.
-//
-// See GetNetworkHashPS for the blocking version and more details.
-func (c *Client) GetNetworkHashPSAsync() FutureGetNetworkHashPS {
-	cmd := btcjson.NewGetNetworkHashPSCmd(nil, nil)
-	return c.sendCmd(cmd)
-}
-
-// GetNetworkHashPS returns the estimated network hashes per second using the
-// default number of blocks and the most recent block height.
-//
-// See GetNetworkHashPS2 to override the number of blocks to use and
-// GetNetworkHashPS3 to override the height at which to calculate the estimate.
-func (c *Client) GetNetworkHashPS() (int64, error) {
-	return c.GetNetworkHashPSAsync().Receive()
-}
-
-// GetNetworkHashPS2Async returns an instance of a type that can be used to get
-// the result of the RPC at some future time by invoking the Receive function on
-// the returned instance.
-//
-// See GetNetworkHashPS2 for the blocking version and more details.
-func (c *Client) GetNetworkHashPS2Async(blocks int) FutureGetNetworkHashPS {
-	cmd := btcjson.NewGetNetworkHashPSCmd(&blocks, nil)
-	return c.sendCmd(cmd)
-}
-
-// GetNetworkHashPS2 returns the estimated network hashes per second for the
-// specified previous number of blocks working backwards from the most recent
-// block height.  The blocks parameter can also be -1 in which case the number
-// of blocks since the last difficulty change will be used.
-//
-// See GetNetworkHashPS to use defaults and GetNetworkHashPS3 to override the
-// height at which to calculate the estimate.
-func (c *Client) GetNetworkHashPS2(blocks int) (int64, error) {
-	return c.GetNetworkHashPS2Async(blocks).Receive()
-}
-
-// GetNetworkHashPS3Async returns an instance of a type that can be used to get
-// the result of the RPC at some future time by invoking the Receive function on
-// the returned instance.
-//
-// See GetNetworkHashPS3 for the blocking version and more details.
-func (c *Client) GetNetworkHashPS3Async(blocks, height int) FutureGetNetworkHashPS {
-	cmd := btcjson.NewGetNetworkHashPSCmd(&blocks, &height)
-	return c.sendCmd(cmd)
-}
-
-// GetNetworkHashPS3 returns the estimated network hashes per second for the
-// specified previous number of blocks working backwards from the specified
-// block height.  The blocks parameter can also be -1 in which case the number
-// of blocks since the last difficulty change will be used.
-//
-// See GetNetworkHashPS and GetNetworkHashPS2 to use defaults.
-func (c *Client) GetNetworkHashPS3(blocks, height int) (int64, error) {
-	return c.GetNetworkHashPS3Async(blocks, height).Receive()
 }
 
 // FutureSubmitBlockResult is a future promise to deliver the result of a

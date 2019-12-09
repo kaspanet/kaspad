@@ -12,7 +12,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -22,6 +21,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/btcsuite/websocket"
 	"github.com/kaspanet/kaspad/blockdag"
@@ -89,7 +90,6 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getMempoolInfo":        handleGetMempoolInfo,
 	"getMiningInfo":         handleGetMiningInfo,
 	"getNetTotals":          handleGetNetTotals,
-	"getNetworkHashPs":      handleGetNetworkHashPS,
 	"getPeerInfo":           handleGetPeerInfo,
 	"getRawMempool":         handleGetRawMempool,
 	"getRawTransaction":     handleGetRawTransaction,
@@ -155,7 +155,6 @@ var rpcLimited = map[string]struct{}{
 	"getHeaders":            {},
 	"getInfo":               {},
 	"getNetTotals":          {},
-	"getNetworkHashPs":      {},
 	"getRawMempool":         {},
 	"getRawTransaction":     {},
 	"getTxOut":              {},
