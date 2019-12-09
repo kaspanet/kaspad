@@ -257,7 +257,7 @@ func coinbaseInputAndOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode,
 		}
 	}
 
-	totalReward := CalcBlockSubsidy(blueBlock.height, dag.dagParams) + totalFees
+	totalReward := CalcBlockSubsidy(blueBlock.blueScore, dag.dagParams) + totalFees
 
 	if totalReward == 0 {
 		return txIn, nil, nil

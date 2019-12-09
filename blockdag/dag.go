@@ -1611,13 +1611,13 @@ func (dag *BlockDAG) ChildHashesByHash(hash *daghash.Hash) ([]*daghash.Hash, err
 	return node.children.hashes(), nil
 }
 
-// HeightToHashRange returns a range of block hashes for the given start height
-// and end hash, inclusive on both ends.  The hashes are for all blocks that are
-// ancestors of endHash with height greater than or equal to startHeight.  The
-// end hash must belong to a block that is known to be valid.
+// ChainHeightToHashRange returns a range of block hashes for the given start chain
+// height and end hash, inclusive on both ends.  The hashes are for all blocks that
+// are ancestors of endHash with height greater than or equal to startChainHeight.
+// The end hash must belong to a block that is known to be valid.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) HeightToHashRange(startHeight uint64,
+func (dag *BlockDAG) ChainHeightToHashRange(startChainHeight uint64,
 	endHash *daghash.Hash, maxResults int) ([]*daghash.Hash, error) {
 
 	endNode := dag.index.LookupNode(endHash)
@@ -1627,23 +1627,23 @@ func (dag *BlockDAG) HeightToHashRange(startHeight uint64,
 	if !dag.index.NodeStatus(endNode).KnownValid() {
 		return nil, errors.Errorf("block %s is not yet validated", endHash)
 	}
-	endHeight := endNode.height
+	endChainHeight := endNode.chainHeight
 
-	if startHeight < 0 {
-		return nil, errors.Errorf("start height (%d) is below 0", startHeight)
+	if startChainHeight < 0 {
+		return nil, errors.Errorf("start chain height (%d) is below 0", startChainHeight)
 	}
-	if startHeight > endHeight {
-		return nil, errors.Errorf("start height (%d) is past end height (%d)",
-			startHeight, endHeight)
+	if startChainHeight > endChainHeight {
+		return nil, errors.Errorf("start chain height (%d) is past end chain height (%d)",
+			startChainHeight, endChainHeight)
 	}
 
-	resultsLength := int(endHeight - startHeight + 1)
+	resultsLength := int(endChainHeight - startChainHeight + 1)
 	if resultsLength > maxResults {
 		return nil, errors.Errorf("number of results (%d) would exceed max (%d)",
 			resultsLength, maxResults)
 	}
 
-	// Walk backwards from endHeight to startHeight, collecting block hashes.
+	// Walk backwards from endChainHeight to startChainHeight, collecting block hashes.
 	node := endNode
 	hashes := make([]*daghash.Hash, resultsLength)
 	for i := resultsLength - 1; i >= 0; i-- {
@@ -1667,16 +1667,16 @@ func (dag *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval uint64,
 	if !dag.index.NodeStatus(endNode).KnownValid() {
 		return nil, errors.Errorf("block %s is not yet validated", endHash)
 	}
-	endHeight := endNode.height
+	endChainHeight := endNode.chainHeight
 
-	resultsLength := endHeight / interval
+	resultsLength := endChainHeight / interval
 	hashes := make([]*daghash.Hash, resultsLength)
 
 	dag.virtual.mtx.Lock()
 	defer dag.virtual.mtx.Unlock()
 
 	blockNode := endNode
-	for index := endHeight / interval; index > 0; index-- {
+	for index := endChainHeight / interval; index > 0; index-- {
 		blockHeight := index * interval
 		blockNode = blockNode.SelectedAncestor(blockHeight)
 

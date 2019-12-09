@@ -594,10 +594,10 @@ func testTip(nodes []*blockNode) *blockNode {
 	return nodes[len(nodes)-1]
 }
 
-// TestHeightToHashRange ensures that fetching a range of block hashes by start
-// height and end hash works as expected.
-func TestHeightToHashRange(t *testing.T) {
-	// Construct a synthetic block chain with a block index consisting of
+// TestChainHeightToHashRange ensures that fetching a range of block hashes by start
+// chain height and end hash works as expected.
+func TestChainHeightToHashRange(t *testing.T) {
+	// Construct a synthetic block DAG with a block index consisting of
 	// the following structure.
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
@@ -610,7 +610,7 @@ func TestHeightToHashRange(t *testing.T) {
 		blockDAG.index.AddNode(node)
 	}
 	for _, node := range branch1Nodes {
-		if node.height < 18 {
+		if node.chainHeight < 18 {
 			blockDAG.index.SetStatusFlags(node, statusValid)
 		}
 		blockDAG.index.AddNode(node)
@@ -618,59 +618,59 @@ func TestHeightToHashRange(t *testing.T) {
 	blockDAG.virtual.SetTips(setFromSlice(tip(branch0Nodes)))
 
 	tests := []struct {
-		name        string
-		startHeight uint64          // locator for requested inventory
-		endHash     *daghash.Hash   // stop hash for locator
-		maxResults  int             // max to locate, 0 = wire const
-		hashes      []*daghash.Hash // expected located hashes
-		expectError bool
+		name             string
+		startChainHeight uint64          // locator for requested inventory
+		endHash          *daghash.Hash   // stop hash for locator
+		maxResults       int             // max to locate, 0 = wire const
+		hashes           []*daghash.Hash // expected located hashes
+		expectError      bool
 	}{
 		{
-			name:        "blocks below tip",
-			startHeight: 11,
-			endHash:     branch0Nodes[14].hash,
-			maxResults:  10,
-			hashes:      nodeHashes(branch0Nodes, 10, 11, 12, 13, 14),
+			name:             "blocks below tip",
+			startChainHeight: 11,
+			endHash:          branch0Nodes[14].hash,
+			maxResults:       10,
+			hashes:           nodeHashes(branch0Nodes, 10, 11, 12, 13, 14),
 		},
 		{
-			name:        "blocks on main chain",
-			startHeight: 15,
-			endHash:     branch0Nodes[17].hash,
-			maxResults:  10,
-			hashes:      nodeHashes(branch0Nodes, 14, 15, 16, 17),
+			name:             "blocks on main chain",
+			startChainHeight: 15,
+			endHash:          branch0Nodes[17].hash,
+			maxResults:       10,
+			hashes:           nodeHashes(branch0Nodes, 14, 15, 16, 17),
 		},
 		{
-			name:        "blocks on stale chain",
-			startHeight: 15,
-			endHash:     branch1Nodes[1].hash,
-			maxResults:  10,
+			name:             "blocks on stale chain",
+			startChainHeight: 15,
+			endHash:          branch1Nodes[1].hash,
+			maxResults:       10,
 			hashes: append(nodeHashes(branch0Nodes, 14),
 				nodeHashes(branch1Nodes, 0, 1)...),
 		},
 		{
-			name:        "invalid start height",
-			startHeight: 19,
-			endHash:     branch0Nodes[17].hash,
-			maxResults:  10,
-			expectError: true,
+			name:             "invalid start chain height",
+			startChainHeight: 19,
+			endHash:          branch0Nodes[17].hash,
+			maxResults:       10,
+			expectError:      true,
 		},
 		{
-			name:        "too many results",
-			startHeight: 1,
-			endHash:     branch0Nodes[17].hash,
-			maxResults:  10,
-			expectError: true,
+			name:             "too many results",
+			startChainHeight: 1,
+			endHash:          branch0Nodes[17].hash,
+			maxResults:       10,
+			expectError:      true,
 		},
 		{
-			name:        "unvalidated block",
-			startHeight: 15,
-			endHash:     branch1Nodes[2].hash,
-			maxResults:  10,
-			expectError: true,
+			name:             "unvalidated block",
+			startChainHeight: 15,
+			endHash:          branch1Nodes[2].hash,
+			maxResults:       10,
+			expectError:      true,
 		},
 	}
 	for _, test := range tests {
-		hashes, err := blockDAG.HeightToHashRange(test.startHeight, test.endHash,
+		hashes, err := blockDAG.ChainHeightToHashRange(test.startChainHeight, test.endHash,
 			test.maxResults)
 		if err != nil {
 			if !test.expectError {
@@ -702,7 +702,7 @@ func TestIntervalBlockHashes(t *testing.T) {
 		dag.index.AddNode(node)
 	}
 	for _, node := range branch1Nodes {
-		if node.height < 18 {
+		if node.chainHeight < 18 {
 			dag.index.SetStatusFlags(node, statusValid)
 		}
 		dag.index.AddNode(node)

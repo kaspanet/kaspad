@@ -24,7 +24,7 @@ func (sp *Peer) OnGetCFHeaders(_ *peer.Peer, msg *wire.MsgGetCFHeaders) {
 	}
 
 	// Fetch the hashes from the block index.
-	hashList, err := sp.server.DAG.HeightToHashRange(startHeight,
+	hashList, err := sp.server.DAG.ChainHeightToHashRange(startHeight,
 		msg.StopHash, maxResults)
 	if err != nil {
 		peerLog.Debugf("Invalid getcfheaders request: %s", err)

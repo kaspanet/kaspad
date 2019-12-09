@@ -12,7 +12,7 @@ func (sp *Peer) OnGetCFilters(_ *peer.Peer, msg *wire.MsgGetCFilters) {
 		return
 	}
 
-	hashes, err := sp.server.DAG.HeightToHashRange(msg.StartHeight,
+	hashes, err := sp.server.DAG.ChainHeightToHashRange(msg.StartHeight,
 		msg.StopHash, wire.MaxGetCFiltersReqRange)
 	if err != nil {
 		peerLog.Debugf("Invalid getcfilters request: %s", err)
