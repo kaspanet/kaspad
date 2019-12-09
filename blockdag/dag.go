@@ -894,7 +894,7 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, fast
 	chainUpdates *chainUpdates, err error) {
 
 	if err = node.updateParents(dag, newBlockUTXO); err != nil {
-		return nil, nil, nil, errors.Errorf("failed updating parents of %s: %s", node, err)
+		return nil, nil, nil, errors.Wrapf(err, "failed updating parents of %s", node)
 	}
 
 	// Update the virtual block's parents (the DAG tips) to include the new block.
@@ -903,13 +903,13 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, fast
 	// Build a UTXO set for the new virtual block
 	newVirtualUTXO, virtualTxsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
 	if err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "could not restore past UTXO for virtual %s", dag.virtual)
+		return nil, nil, nil, errors.Wrap(err, "could not restore past UTXO for virtual")
 	}
 
 	// Apply new utxoDiffs to all the tips
 	err = updateTipsUTXO(dag, newVirtualUTXO)
 	if err != nil {
-		return nil, nil, nil, errors.Errorf("failed updating the tips' UTXO: %s", err)
+		return nil, nil, nil, errors.Wrap(err, "failed updating the tips' UTXO")
 	}
 
 	// It is now safe to meld the UTXO set to base.
@@ -917,7 +917,7 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, fast
 	virtualUTXODiff = diffSet.UTXODiff
 	err = dag.meldVirtualUTXO(diffSet)
 	if err != nil {
-		return nil, nil, nil, errors.Errorf("failed melding the virtual UTXO: %s", err)
+		return nil, nil, nil, errors.Wrap(err, "failed melding the virtual UTXO")
 	}
 
 	dag.index.SetStatusFlags(node, statusValid)
@@ -1030,20 +1030,16 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 	return genesisPastUTXO
 }
 
-func (node *blockNode) fetchBlueBlocksExceptSelectedParent(db database.DB) ([]*util.Block, error) {
-	blueBlocks := make([]*util.Block, 0, len(node.blues)-1)
+func (node *blockNode) fetchBlueBlocks(db database.DB) ([]*util.Block, error) {
+	blueBlocks := make([]*util.Block, len(node.blues))
 	err := db.View(func(dbTx database.Tx) error {
-		for i := len(node.blues) - 1; i >= 0; i-- {
-			blueBlockNode := node.blues[i]
-			if blueBlockNode == node.selectedParent {
-				continue
-			}
+		for i, blueBlockNode := range node.blues {
 			blueBlock, err := dbFetchBlockByNode(dbTx, blueBlockNode)
 			if err != nil {
 				return err
 			}
 
-			blueBlocks = append(blueBlocks, blueBlock)
+			blueBlocks[i] = blueBlock
 		}
 
 		return nil
@@ -1054,10 +1050,10 @@ func (node *blockNode) fetchBlueBlocksExceptSelectedParent(db database.DB) ([]*u
 // applyBlueBlocks adds all transactions in the blue blocks to the selectedParent's UTXO set
 // Purposefully ignoring failures - these are just unaccepted transactions
 // Writing down which transactions were accepted or not in txsAcceptanceData
-func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, selectedParentAcceptanceData []TxAcceptanceData, blueBlocks []*util.Block) (
+func (node *blockNode) applyBlueBlocks(acceptedSelectedParentUTXO UTXOSet, selectedParentAcceptanceData []TxAcceptanceData, blueBlocks []*util.Block) (
 	pastUTXO UTXOSet, multiBlockTxsAcceptanceData MultiBlockTxsAcceptanceData, err error) {
 
-	pastUTXO = selectedParentUTXO
+	pastUTXO = acceptedSelectedParentUTXO
 	multiBlockTxsAcceptanceData = MultiBlockTxsAcceptanceData{BlockTxsAcceptanceData{
 		BlockHash:        *node.selectedParent.hash,
 		TxAcceptanceData: selectedParentAcceptanceData,
@@ -1066,7 +1062,8 @@ func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, selectedParen
 	// Add blueBlocks to multiBlockTxsAcceptanceData bottom-to-top instead of
 	// top-to-bottom. This is so that anyone who iterates over it would process
 	// blocks (and transactions) in their order of appearance in the DAG.
-	for i := len(blueBlocks) - 1; i >= 0; i-- {
+	// We skip the selected parent, because we calculated its UTXO before.
+	for i := len(blueBlocks) - 2; i >= 0; i-- {
 		blueBlock := blueBlocks[i]
 		transactions := blueBlock.Transactions()
 		blockTxsAcceptanceData := BlockTxsAcceptanceData{
@@ -1146,12 +1143,14 @@ func (dag *BlockDAG) pastUTXO(node *blockNode) (
 	if err != nil {
 		return nil, nil, err
 	}
-	acceptedSelectedParentUTXO, selectedParentAcceptanceData, err := node.acceptSelectedParentTransactions(dag.db, selectedParentUTXO)
+
+	blueBlocks, err := node.fetchBlueBlocks(dag.db)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	blueBlocks, err := node.fetchBlueBlocksExceptSelectedParent(dag.db)
+	selectedParent := blueBlocks[len(blueBlocks)-1]
+	acceptedSelectedParentUTXO, selectedParentAcceptanceData, err := node.acceptSelectedParentTransactions(selectedParent, selectedParentUTXO)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1159,32 +1158,22 @@ func (dag *BlockDAG) pastUTXO(node *blockNode) (
 	return node.applyBlueBlocks(acceptedSelectedParentUTXO, selectedParentAcceptanceData, blueBlocks)
 }
 
-func (node *blockNode) acceptSelectedParentTransactions(db database.DB, selectedParentUTXO UTXOSet) (acceptedSelectedParentUTXO UTXOSet, txAcceptanceData []TxAcceptanceData, err error) {
+func (node *blockNode) acceptSelectedParentTransactions(selectedParent *util.Block, selectedParentUTXO UTXOSet) (acceptedSelectedParentUTXO UTXOSet, txAcceptanceData []TxAcceptanceData, err error) {
 	diff := NewUTXODiff()
-	err = db.View(func(dbTx database.Tx) error {
-		block, err := dbFetchBlockByNode(dbTx, node.selectedParent)
+	txAcceptanceData = make([]TxAcceptanceData, len(selectedParent.Transactions()))
+	for i, tx := range selectedParent.Transactions() {
+		txAcceptanceData[i] = TxAcceptanceData{
+			Tx:         tx,
+			IsAccepted: true,
+		}
+		acceptanceDiff, err := selectedParentUTXO.diffFromAcceptedTx(tx.MsgTx(), node.blueScore)
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
-		txAcceptanceData = make([]TxAcceptanceData, len(block.Transactions()))
-		for i, tx := range block.Transactions() {
-			txAcceptanceData[i] = TxAcceptanceData{
-				Tx:         tx,
-				IsAccepted: true,
-			}
-			acceptanceDiff, err := selectedParentUTXO.diffFromAcceptedTx(tx.MsgTx(), node.blueScore)
-			if err != nil {
-				return err
-			}
-			diff, err = diff.WithDiff(acceptanceDiff)
-			if err != nil {
-				return err
-			}
+		diff, err = diff.WithDiff(acceptanceDiff)
+		if err != nil {
+			return nil, nil, err
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, nil, err
 	}
 	acceptedSelectedParentUTXO, err = selectedParentUTXO.WithDiff(diff)
 	if err != nil {
