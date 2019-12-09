@@ -17,20 +17,20 @@ import (
 )
 
 var (
-	btcdHomeDir     = util.AppDataDir("btcd", false)
+	kaspadHomeDir   = util.AppDataDir("kaspad", false)
 	knownDbTypes    = database.SupportedDrivers()
 	activeNetParams = &dagconfig.MainNetParams
 
 	// Default global config.
 	cfg = &config{
-		DataDir: filepath.Join(btcdHomeDir, "data"),
+		DataDir: filepath.Join(kaspadHomeDir, "data"),
 		DbType:  "ffldb",
 	}
 )
 
 // config defines the global configuration options.
 type config struct {
-	DataDir        string `short:"b" long:"datadir" description:"Location of the btcd data directory"`
+	DataDir        string `short:"b" long:"datadir" description:"Location of the kaspad data directory"`
 	DbType         string `long:"dbtype" description:"Database backend to use for the Block Chain"`
 	TestNet        bool   `long:"testnet" description:"Use the test network"`
 	RegressionTest bool   `long:"regtest" description:"Use the regression test network"`
