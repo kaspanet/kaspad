@@ -239,7 +239,7 @@ func TestNotFoundWireErrors(t *testing.T) {
 		// Decode from wire format.
 		var msg MsgNotFound
 		r := newFixedReader(test.max, test.buf)
-		err = msg.BtcDecode(r, test.pver)
+		err = msg.KaspaDecode(r, test.pver)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.readErr) {
 			t.Errorf("KaspaDecode #%d wrong error got: %v, want: %v",
 				i, err, test.readErr)

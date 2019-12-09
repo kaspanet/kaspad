@@ -84,7 +84,7 @@ func (h *BlockHeader) IsGenesis() bool {
 // This is part of the Message interface implementation.
 // See Deserialize for decoding block headers stored to disk, such as in a
 // database, as opposed to decoding block headers from the wire.
-func (h *BlockHeader) BtcDecode(r io.Reader, pver uint32) error {
+func (h *BlockHeader) KaspaDecode(r io.Reader, pver uint32) error {
 	return readBlockHeader(r, pver, h)
 }
 
@@ -92,7 +92,7 @@ func (h *BlockHeader) BtcDecode(r io.Reader, pver uint32) error {
 // This is part of the Message interface implementation.
 // See Serialize for encoding block headers to be stored to disk, such as in a
 // database, as opposed to encoding block headers for the wire.
-func (h *BlockHeader) BtcEncode(w io.Writer, pver uint32) error {
+func (h *BlockHeader) KaspaEncode(w io.Writer, pver uint32) error {
 	return writeBlockHeader(w, pver, h)
 }
 

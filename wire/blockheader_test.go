@@ -127,7 +127,7 @@ func TestBlockHeaderWire(t *testing.T) {
 		}
 
 		buf.Reset()
-		err = test.in.BtcEncode(&buf, pver)
+		err = test.in.KaspaEncode(&buf, pver)
 		if err != nil {
 			t.Errorf("KaspaEncode #%d error %v", i, err)
 			continue
@@ -153,7 +153,7 @@ func TestBlockHeaderWire(t *testing.T) {
 		}
 
 		rbuf = bytes.NewReader(test.buf)
-		err = bh.BtcDecode(rbuf, pver)
+		err = bh.KaspaDecode(rbuf, pver)
 		if err != nil {
 			t.Errorf("KaspaDecode #%d error %v", i, err)
 			continue
