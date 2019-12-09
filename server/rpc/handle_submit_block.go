@@ -31,7 +31,7 @@ func handleSubmitBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (i
 	}
 
 	// Process this block using the same rules as blocks coming from other
-	// nodes.  This will in turn relay it to the network like normal.
+	// nodes. This will in turn relay it to the network like normal.
 	_, err = s.cfg.SyncMgr.SubmitBlock(block, blockdag.BFNone)
 	if err != nil {
 		return nil, &btcjson.RPCError{

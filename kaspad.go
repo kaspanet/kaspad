@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	// blockDbNamePrefix is the prefix for the block database name.  The
+	// blockDbNamePrefix is the prefix for the block database name. The
 	// database type is appended to this value to form the full block
 	// database name.
 	blockDbNamePrefix = "blocks"
@@ -39,43 +39,43 @@ var (
 	cfg *config.Config
 )
 
-// winServiceMain is only invoked on Windows.  It detects when btcd is running
+// winServiceMain is only invoked on Windows. It detects when kaspad is running
 // as a service and reacts accordingly.
 var winServiceMain func() (bool, error)
 
-// btcdMain is the real main function for btcd.  It is necessary to work around
-// the fact that deferred functions do not run when os.Exit() is called.  The
-// optional serverChan parameter is mainly used by the service code to be
+// kaspadMain is the real main function for kaspad. It is necessary to work
+// around the fact that deferred functions do not run when os.Exit() is called.
+// The optional serverChan parameter is mainly used by the service code to be
 // notified with the server once it is setup so it can gracefully stop it when
 // requested from the service control manager.
-func btcdMain(serverChan chan<- *server.Server) error {
-	// Load configuration and parse command line.  This function also
+func kaspadMain(serverChan chan<- *server.Server) error {
+	// Load configuration and parse command line. This function also
 	// initializes logging and configures it accordingly.
 	err := config.LoadAndSetActiveConfig()
 	if err != nil {
 		return err
 	}
 	cfg = config.ActiveConfig()
-	defer panics.HandlePanic(btcdLog, nil, nil)
+	defer panics.HandlePanic(kaspadLog, nil, nil)
 
 	// Get a channel that will be closed when a shutdown signal has been
 	// triggered either from an OS signal such as SIGINT (Ctrl+C) or from
 	// another subsystem such as the RPC server.
 	interrupt := signal.InterruptListener()
-	defer btcdLog.Info("Shutdown complete")
+	defer kaspadLog.Info("Shutdown complete")
 
 	// Show version at startup.
-	btcdLog.Infof("Version %s", version.Version())
+	kaspadLog.Infof("Version %s", version.Version())
 
 	// Enable http profiling server if requested.
 	if cfg.Profile != "" {
 		spawn(func() {
 			listenAddr := net.JoinHostPort("", cfg.Profile)
-			btcdLog.Infof("Profile server listening on %s", listenAddr)
+			kaspadLog.Infof("Profile server listening on %s", listenAddr)
 			profileRedirect := http.RedirectHandler("/debug/pprof",
 				http.StatusSeeOther)
 			http.Handle("/", profileRedirect)
-			btcdLog.Errorf("%s", http.ListenAndServe(listenAddr, nil))
+			kaspadLog.Errorf("%s", http.ListenAndServe(listenAddr, nil))
 		})
 	}
 
@@ -83,7 +83,7 @@ func btcdMain(serverChan chan<- *server.Server) error {
 	if cfg.CPUProfile != "" {
 		f, err := os.Create(cfg.CPUProfile)
 		if err != nil {
-			btcdLog.Errorf("Unable to create cpu profile: %s", err)
+			kaspadLog.Errorf("Unable to create cpu profile: %s", err)
 			return err
 		}
 		pprof.StartCPUProfile(f)
@@ -91,9 +91,9 @@ func btcdMain(serverChan chan<- *server.Server) error {
 		defer pprof.StopCPUProfile()
 	}
 
-	// Perform upgrades to btcd as new versions require it.
+	// Perform upgrades to kaspad as new versions require it.
 	if err := doUpgrades(); err != nil {
-		btcdLog.Errorf("%s", err)
+		kaspadLog.Errorf("%s", err)
 		return err
 	}
 
@@ -105,7 +105,7 @@ func btcdMain(serverChan chan<- *server.Server) error {
 	if cfg.ResetDatabase {
 		err := removeDatabase()
 		if err != nil {
-			btcdLog.Errorf("%s", err)
+			kaspadLog.Errorf("%s", err)
 			return err
 		}
 	}
@@ -113,12 +113,12 @@ func btcdMain(serverChan chan<- *server.Server) error {
 	// Load the block database.
 	db, err := loadBlockDB()
 	if err != nil {
-		btcdLog.Errorf("%s", err)
+		kaspadLog.Errorf("%s", err)
 		return err
 	}
 	defer func() {
 		// Ensure the database is sync'd and closed on shutdown.
-		btcdLog.Infof("Gracefully shutting down the database...")
+		kaspadLog.Infof("Gracefully shutting down the database...")
 		db.Close()
 	}()
 
@@ -133,7 +133,7 @@ func btcdMain(serverChan chan<- *server.Server) error {
 	// drops the address index since it relies on it.
 	if cfg.DropAddrIndex {
 		if err := indexers.DropAddrIndex(db, interrupt); err != nil {
-			btcdLog.Errorf("%s", err)
+			kaspadLog.Errorf("%s", err)
 			return err
 		}
 
@@ -141,7 +141,7 @@ func btcdMain(serverChan chan<- *server.Server) error {
 	}
 	if cfg.DropTxIndex {
 		if err := indexers.DropTxIndex(db, interrupt); err != nil {
-			btcdLog.Errorf("%s", err)
+			kaspadLog.Errorf("%s", err)
 			return err
 		}
 
@@ -149,7 +149,7 @@ func btcdMain(serverChan chan<- *server.Server) error {
 	}
 	if cfg.DropAcceptanceIndex {
 		if err := indexers.DropAcceptanceIndex(db, interrupt); err != nil {
-			btcdLog.Errorf("%s", err)
+			kaspadLog.Errorf("%s", err)
 			return err
 		}
 
@@ -157,7 +157,7 @@ func btcdMain(serverChan chan<- *server.Server) error {
 	}
 	if cfg.DropCfIndex {
 		if err := indexers.DropCfIndex(db, interrupt); err != nil {
-			btcdLog.Errorf("%s", err)
+			kaspadLog.Errorf("%s", err)
 			return err
 		}
 
@@ -169,12 +169,12 @@ func btcdMain(serverChan chan<- *server.Server) error {
 		interrupt)
 	if err != nil {
 		// TODO: this logging could do with some beautifying.
-		btcdLog.Errorf("Unable to start server on %s: %s",
+		kaspadLog.Errorf("Unable to start server on %s: %s",
 			strings.Join(cfg.Listeners, ", "), err)
 		return err
 	}
 	defer func() {
-		btcdLog.Infof("Gracefully shutting down the server...")
+		kaspadLog.Infof("Gracefully shutting down the server...")
 		server.Stop()
 		server.WaitForShutdown()
 		srvrLog.Infof("Server shutdown complete")
@@ -207,7 +207,7 @@ func removeRegressionDB(dbPath string) error {
 	// Remove the old regression test database if it already exists.
 	fi, err := os.Stat(dbPath)
 	if err == nil {
-		btcdLog.Infof("Removing regression test database from '%s'", dbPath)
+		kaspadLog.Infof("Removing regression test database from '%s'", dbPath)
 		if fi.IsDir() {
 			err := os.RemoveAll(dbPath)
 			if err != nil {
@@ -236,7 +236,7 @@ func blockDbPath(dbType string) string {
 }
 
 // warnMultipleDBs shows a warning if multiple block database types are detected.
-// This is not a situation most users want.  It is handy for development however
+// This is not a situation most users want. It is handy for development however
 // to support multiple side-by-side databases.
 func warnMultipleDBs() {
 	// This is intentionally not using the known db types which depend
@@ -259,7 +259,7 @@ func warnMultipleDBs() {
 	// Warn if there are extra databases.
 	if len(duplicateDbPaths) > 0 {
 		selectedDbPath := blockDbPath(cfg.DbType)
-		btcdLog.Warnf("WARNING: There are multiple block chain databases "+
+		kaspadLog.Warnf("WARNING: There are multiple block DAG databases "+
 			"using different database types.\nYou probably don't "+
 			"want to waste disk space by having more than one.\n"+
 			"Your current database is located at [%s].\nThe "+
@@ -269,16 +269,16 @@ func warnMultipleDBs() {
 }
 
 // loadBlockDB loads (or creates when needed) the block database taking into
-// account the selected database backend and returns a handle to it.  It also
+// account the selected database backend and returns a handle to it. It also
 // contains additional logic such warning the user if there are multiple
 // databases which consume space on the file system and ensuring the regression
 // test database is clean when in regression test mode.
 func loadBlockDB() (database.DB, error) {
 	// The memdb backend does not have a file path associated with it, so
-	// handle it uniquely.  We also don't want to worry about the multiple
+	// handle it uniquely. We also don't want to worry about the multiple
 	// database type warnings when running with the memory database.
 	if cfg.DbType == "memdb" {
-		btcdLog.Infof("Creating block database in memory.")
+		kaspadLog.Infof("Creating block database in memory.")
 		db, err := database.Create(cfg.DbType)
 		if err != nil {
 			return nil, err
@@ -295,7 +295,7 @@ func loadBlockDB() (database.DB, error) {
 	// each run, so remove it now if it already exists.
 	removeRegressionDB(dbPath)
 
-	btcdLog.Infof("Loading block database from '%s'", dbPath)
+	kaspadLog.Infof("Loading block database from '%s'", dbPath)
 	db, err := database.Open(cfg.DbType, dbPath, config.ActiveConfig().NetParams().Net)
 	if err != nil {
 		// Return the error if it's not because the database doesn't
@@ -317,7 +317,7 @@ func loadBlockDB() (database.DB, error) {
 		}
 	}
 
-	btcdLog.Info("Block database loaded")
+	kaspadLog.Info("Block database loaded")
 	return db, nil
 }
 
@@ -325,9 +325,9 @@ func main() {
 	// Use all processor cores.
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	// Block and transaction processing can cause bursty allocations.  This
+	// Block and transaction processing can cause bursty allocations. This
 	// limits the garbage collector from excessively overallocating during
-	// bursts.  This value was arrived at with the help of profiling live
+	// bursts. This value was arrived at with the help of profiling live
 	// usage.
 	debug.SetGCPercent(10)
 
@@ -337,9 +337,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Call serviceMain on Windows to handle running as a service.  When
+	// Call serviceMain on Windows to handle running as a service. When
 	// the return isService flag is true, exit now since we ran as a
-	// service.  Otherwise, just fall through to normal operation.
+	// service. Otherwise, just fall through to normal operation.
 	if runtime.GOOS == "windows" {
 		isService, err := winServiceMain()
 		if err != nil {
@@ -352,7 +352,7 @@ func main() {
 	}
 
 	// Work around defer not working after os.Exit()
-	if err := btcdMain(nil); err != nil {
+	if err := kaspadMain(nil); err != nil {
 		os.Exit(1)
 	}
 }

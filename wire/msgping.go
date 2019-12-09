@@ -12,7 +12,7 @@ import (
 // message.
 //
 // For versions BIP0031Version and earlier, it is used primarily to confirm
-// that a connection is still valid.  A transmission error is typically
+// that a connection is still valid. A transmission error is typically
 // interpreted as a closed connection and that the peer should be removed.
 // For versions AFTER BIP0031Version it contains an identifier which can be
 // returned in the pong message to determine network timing.
@@ -47,21 +47,21 @@ func (msg *MsgPing) BtcEncode(w io.Writer, pver uint32) error {
 	return nil
 }
 
-// Command returns the protocol command string for the message.  This is part
+// Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgPing) Command() string {
 	return CmdPing
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
-// receiver.  This is part of the Message interface implementation.
+// receiver. This is part of the Message interface implementation.
 func (msg *MsgPing) MaxPayloadLength(pver uint32) uint32 {
 	// Nonce 8 bytes.
 	return uint32(8)
 }
 
 // NewMsgPing returns a new bitcoin ping message that conforms to the Message
-// interface.  See MsgPing for details.
+// interface. See MsgPing for details.
 func NewMsgPing(nonce uint64) *MsgPing {
 	return &MsgPing{
 		Nonce: nonce,

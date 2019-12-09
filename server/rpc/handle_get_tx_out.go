@@ -32,7 +32,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	if c.IncludeMempool != nil {
 		includeMempool = *c.IncludeMempool
 	}
-	// TODO: This is racy.  It should attempt to fetch it directly and check
+	// TODO: This is racy. It should attempt to fetch it directly and check
 	// the error.
 	if includeMempool && s.cfg.TxMemPool.HaveTransaction(txID) {
 		tx, err := s.cfg.TxMemPool.FetchTransaction(txID)
@@ -70,7 +70,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 
 		// To match the behavior of the reference client, return nil
 		// (JSON null) if the transaction output is spent by another
-		// transaction already in the main chain.  Mined transactions
+		// transaction already in the main chain. Mined transactions
 		// that are spent by a mempool transaction are not affected by
 		// this.
 		if entry == nil {

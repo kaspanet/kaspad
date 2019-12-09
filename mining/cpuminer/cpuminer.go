@@ -31,7 +31,7 @@ const (
 
 	// hashUpdateSec is the number of seconds each worker waits in between
 	// notifying the speed monitor with how many hashes have been completed
-	// while they are actively searching for a solution.  This is done to
+	// while they are actively searching for a solution. This is done to
 	// reduce the amount of syncs between the workers that must be done to
 	// keep track of the hashes per second.
 	hashUpdateSecs = 15
@@ -39,7 +39,7 @@ const (
 
 var (
 	// defaultNumWorkers is the default number of workers to use for mining
-	// and is based on the number of processor cores.  This helps ensure the
+	// and is based on the number of processor cores. This helps ensure the
 	// system stays reasonably responsive under heavy load.
 	defaultNumWorkers = uint32(runtime.NumCPU())
 )
@@ -55,7 +55,7 @@ type Config struct {
 	BlockTemplateGenerator *mining.BlkTmplGenerator
 
 	// MiningAddrs is a list of payment addresses to use for the generated
-	// blocks.  Each generated block will randomly choose one of them.
+	// blocks. Each generated block will randomly choose one of them.
 	MiningAddrs []util.Address
 
 	// ProcessBlock defines the function to call with any solved blocks.
@@ -64,9 +64,9 @@ type Config struct {
 	ProcessBlock func(*util.Block, blockdag.BehaviorFlags) (bool, error)
 
 	// ConnectedCount defines the function to use to obtain how many other
-	// peers the server is connected to.  This is used by the automatic
+	// peers the server is connected to. This is used by the automatic
 	// persistent mining routine to determine whether or it should attempt
-	// mining.  This is useful because there is no point in mining when not
+	// mining. This is useful because there is no point in mining when not
 	// connected to any peers since there would no be anyone to send any
 	// found blocks to.
 	ConnectedCount func() int32
@@ -77,7 +77,7 @@ type Config struct {
 	ShouldMineOnGenesis func() bool
 
 	// IsCurrent defines the function to use to obtain whether or not the
-	// block chain is current.  This is used by the automatic persistent
+	// block chain is current. This is used by the automatic persistent
 	// mining routine to determine whether or it should attempt mining.
 	// This is useful because there is no point in mining if the chain is
 	// not current since any solved blocks would be on a side chain and and
@@ -86,9 +86,9 @@ type Config struct {
 }
 
 // CPUMiner provides facilities for solving blocks (mining) using the CPU in
-// a concurrency-safe manner.  It consists of two main goroutines -- a speed
+// a concurrency-safe manner. It consists of two main goroutines -- a speed
 // monitor and a controller for worker goroutines which generate and solve
-// blocks.  The number of goroutines can be set via the SetMaxGoRoutines
+// blocks. The number of goroutines can be set via the SetMaxGoRoutines
 // function, but the default is based on the number of processor cores in the
 // system which is typically sufficient.
 type CPUMiner struct {
@@ -109,7 +109,7 @@ type CPUMiner struct {
 }
 
 // speedMonitor handles tracking the number of hashes per second the mining
-// process is performing.  It must be run as a goroutine.
+// process is performing. It must be run as a goroutine.
 func (m *CPUMiner) speedMonitor() {
 	log.Tracef("CPU miner speed monitor started")
 
@@ -159,7 +159,7 @@ func (m *CPUMiner) submitBlock(block *util.Block) bool {
 	defer m.submitBlockLock.Unlock()
 
 	// Ensure the block is not stale since a new block could have shown up
-	// while the solution was being found.  Typically that condition is
+	// while the solution was being found. Typically that condition is
 	// detected and all work on the stale block is halted to start work on
 	// a new block, but the check only happens periodically, so it is
 	// possible a block was found and submitted in between.
@@ -171,7 +171,7 @@ func (m *CPUMiner) submitBlock(block *util.Block) bool {
 	}
 
 	// Process this block using the same rules as blocks coming from other
-	// nodes.  This will in turn relay it to the network like normal.
+	// nodes. This will in turn relay it to the network like normal.
 	isOrphan, err := m.cfg.ProcessBlock(block, blockdag.BFNone)
 	if err != nil {
 		// Anything other than a rule violation is an unexpected error,
@@ -197,8 +197,8 @@ func (m *CPUMiner) submitBlock(block *util.Block) bool {
 
 // solveBlock attempts to find some combination of a nonce, extra nonce, and
 // current timestamp which makes the passed block hash to a value less than the
-// target difficulty.  The timestamp is updated periodically and the passed
-// block is modified with all tweaks during this process.  This means that
+// target difficulty. The timestamp is updated periodically and the passed
+// block is modified with all tweaks during this process. This means that
 // when the function returns true, the block is ready for submission.
 //
 // This function will return early with false when conditions that trigger a
@@ -260,7 +260,7 @@ func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, ticker *time.Ticker, quit
 			// Non-blocking select to fall through
 		}
 
-		// Update the nonce and hash the block header.  Each
+		// Update the nonce and hash the block header. Each
 		// hash is actually a double sha256 (two hashes), so
 		// increment the number of hashes completed for each
 		// attempt accordingly.
@@ -269,7 +269,7 @@ func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, ticker *time.Ticker, quit
 		hashesCompleted += 2
 
 		// The block is solved when the new block hash is less
-		// than the target difficulty.  Yay!
+		// than the target difficulty. Yay!
 		if daghash.HashToBig(hash).Cmp(targetDifficulty) <= 0 {
 			m.updateHashes <- hashesCompleted
 			return true
@@ -282,7 +282,7 @@ func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, ticker *time.Ticker, quit
 // generateBlocks is a worker that is controlled by the miningWorkerController.
 // It is self contained in that it creates block templates and attempts to solve
 // them while detecting when it is performing stale work and reacting
-// accordingly by generating a new block template.  When a block is solved, it
+// accordingly by generating a new block template. When a block is solved, it
 // is submitted.
 //
 // It must be run as a goroutine.
@@ -312,7 +312,7 @@ out:
 		}
 
 		// No point in searching for a solution before the DAG is
-		// synced.  Also, grab the same lock as used for block
+		// synced. Also, grab the same lock as used for block
 		// submission, since the current block will be changing and
 		// this would otherwise end up building a new block template on
 		// a block that is in the process of becoming stale.
@@ -340,9 +340,9 @@ out:
 			continue
 		}
 
-		// Attempt to solve the block.  The function will exit early
+		// Attempt to solve the block. The function will exit early
 		// with false when conditions that trigger a stale block, so
-		// a new block template can be generated.  When the return is
+		// a new block template can be generated. When the return is
 		// true a solution was found, so submit the solved block.
 		if m.solveBlock(template.Block, ticker, quit) {
 			block := util.NewBlock(template.Block)
@@ -355,7 +355,7 @@ out:
 }
 
 // miningWorkerController launches the worker goroutines that are used to
-// generate block templates and solve them.  It also provides the ability to
+// generate block templates and solve them. It also provides the ability to
 // dynamically adjust the number of running worker goroutines.
 //
 // It must be run as a goroutine.
@@ -419,7 +419,7 @@ out:
 }
 
 // Start begins the CPU mining process as well as the speed monitor used to
-// track hashing metrics.  Calling this function when the CPU miner has
+// track hashing metrics. Calling this function when the CPU miner has
 // already been started will have no effect.
 //
 // This function is safe for concurrent access.
@@ -444,7 +444,7 @@ func (m *CPUMiner) Start() {
 }
 
 // Stop gracefully stops the mining process by signalling all workers, and the
-// speed monitor to quit.  Calling this function when the CPU miner has not
+// speed monitor to quit. Calling this function when the CPU miner has not
 // already been started will have no effect.
 //
 // This function is safe for concurrent access.
@@ -476,7 +476,7 @@ func (m *CPUMiner) IsMining() bool {
 }
 
 // HashesPerSecond returns the number of hashes per second the mining process
-// is performing.  0 is returned if the miner is not currently running.
+// is performing. 0 is returned if the miner is not currently running.
 //
 // This function is safe for concurrent access.
 func (m *CPUMiner) HashesPerSecond() float64 {
@@ -491,9 +491,9 @@ func (m *CPUMiner) HashesPerSecond() float64 {
 	return <-m.queryHashesPerSec
 }
 
-// SetNumWorkers sets the number of workers to create which solve blocks.  Any
+// SetNumWorkers sets the number of workers to create which solve blocks. Any
 // negative values will cause a default number of workers to be used which is
-// based on the number of processor cores in the system.  A value of 0 will
+// based on the number of processor cores in the system. A value of 0 will
 // cause all CPU mining to be stopped.
 //
 // This function is safe for concurrent access.
@@ -534,7 +534,7 @@ func (m *CPUMiner) NumWorkers() int32 {
 // GenerateNBlocks generates the requested number of blocks. It is self
 // contained in that it creates block templates and attempts to solve them while
 // detecting when it is performing stale work and reacting accordingly by
-// generating a new block template.  When a block is solved, it is submitted.
+// generating a new block template. When a block is solved, it is submitted.
 // The function returns a list of the hashes of generated blocks.
 func (m *CPUMiner) GenerateNBlocks(n uint32) ([]*daghash.Hash, error) {
 	m.Lock()
@@ -595,9 +595,9 @@ func (m *CPUMiner) GenerateNBlocks(n uint32) ([]*daghash.Hash, error) {
 			continue
 		}
 
-		// Attempt to solve the block.  The function will exit early
+		// Attempt to solve the block. The function will exit early
 		// with false when conditions that trigger a stale block, so
-		// a new block template can be generated.  When the return is
+		// a new block template can be generated. When the return is
 		// true a solution was found, so submit the solved block.
 		if m.solveBlock(template.Block, ticker, nil) {
 			block := util.NewBlock(template.Block)
@@ -626,7 +626,7 @@ func (m *CPUMiner) ShouldMineOnGenesis() bool {
 }
 
 // New returns a new instance of a CPU miner for the provided configuration.
-// Use Start to begin the mining process.  See the documentation for CPUMiner
+// Use Start to begin the mining process. See the documentation for CPUMiner
 // type for more details.
 func New(cfg *Config) *CPUMiner {
 	return &CPUMiner{

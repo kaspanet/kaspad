@@ -226,7 +226,7 @@ func (idx *CfIndex) ConnectBlock(dbTx database.Tx, block *util.Block, _ uint64,
 }
 
 // DisconnectBlock is invoked by the index manager when a block has been
-// disconnected from the main chain.  This indexer removes the hash-to-cf
+// disconnected from the main chain. This indexer removes the hash-to-cf
 // mapping for every passed block. This is part of the Indexer interface.
 func (idx *CfIndex) DisconnectBlock(dbTx database.Tx, block *util.Block,
 	_ *blockdag.BlockDAG) error {

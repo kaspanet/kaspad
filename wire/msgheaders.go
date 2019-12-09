@@ -14,9 +14,9 @@ import (
 const MaxBlockHeadersPerMsg = 2000
 
 // MsgHeaders implements the Message interface and represents a bitcoin headers
-// message.  It is used to deliver block header information in response
-// to a getheaders message (MsgGetHeaders).  The maximum number of block headers
-// per message is currently 2000.  See MsgGetHeaders for details on requesting
+// message. It is used to deliver block header information in response
+// to a getheaders message (MsgGetHeaders). The maximum number of block headers
+// per message is currently 2000. See MsgGetHeaders for details on requesting
 // the headers.
 type MsgHeaders struct {
 	Headers []*BlockHeader
@@ -100,7 +100,7 @@ func (msg *MsgHeaders) BtcEncode(w io.Writer, pver uint32) error {
 		}
 
 		// The wire protocol encoding always includes a 0 for the number
-		// of transactions on header messages.  This is really just an
+		// of transactions on header messages. This is really just an
 		// artifact of the way the original implementation serializes
 		// block headers, but it is required.
 		err = WriteVarInt(w, 0)
@@ -112,14 +112,14 @@ func (msg *MsgHeaders) BtcEncode(w io.Writer, pver uint32) error {
 	return nil
 }
 
-// Command returns the protocol command string for the message.  This is part
+// Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgHeaders) Command() string {
 	return CmdHeaders
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
-// receiver.  This is part of the Message interface implementation.
+// receiver. This is part of the Message interface implementation.
 func (msg *MsgHeaders) MaxPayloadLength(pver uint32) uint32 {
 	// Num headers (varInt) + max allowed headers (header length + 1 byte
 	// for the number of transactions which is always 0).
@@ -128,7 +128,7 @@ func (msg *MsgHeaders) MaxPayloadLength(pver uint32) uint32 {
 }
 
 // NewMsgHeaders returns a new bitcoin headers message that conforms to the
-// Message interface.  See MsgHeaders for details.
+// Message interface. See MsgHeaders for details.
 func NewMsgHeaders() *MsgHeaders {
 	return &MsgHeaders{
 		Headers: make([]*BlockHeader, 0, MaxBlockHeadersPerMsg),

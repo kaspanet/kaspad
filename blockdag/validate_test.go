@@ -730,7 +730,7 @@ func TestCheckTransactionSanity(t *testing.T) {
 	}
 }
 
-// Block100000 defines block 100,000 of the block DAG.  It is used to
+// Block100000 defines block 100,000 of the block DAG. It is used to
 // test Block operations.
 var Block100000 = wire.MsgBlock{
 	Header: wire.BlockHeader{

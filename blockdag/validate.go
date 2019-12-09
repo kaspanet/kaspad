@@ -23,7 +23,7 @@ const (
 	// MaxCoinbasePayloadLen is the maximum length a coinbase payload can be.
 	MaxCoinbasePayloadLen = 150
 
-	// baseSubsidy is the starting subsidy amount for mined blocks.  This
+	// baseSubsidy is the starting subsidy amount for mined blocks. This
 	// value is halved every SubsidyHalvingInterval blocks.
 	baseSubsidy = 50 * util.SatoshiPerBitcoin
 
@@ -80,7 +80,7 @@ func IsFinalizedTransaction(tx *util.Tx, blockBlueScore uint64, blockTime time.T
 
 	// The lock time field of a transaction is either a block blue score at
 	// which the transaction is finalized or a timestamp depending on if the
-	// value is before the txscript.LockTimeThreshold.  When it is under the
+	// value is before the txscript.LockTimeThreshold. When it is under the
 	// threshold it is a block blue score.
 	blockTimeOrBlueScore := int64(0)
 	if lockTime < txscript.LockTimeThreshold {
@@ -108,7 +108,7 @@ func IsFinalizedTransaction(tx *util.Tx, blockBlueScore uint64, blockTime time.T
 // newly generated blocks awards as well as validating the coinbase for blocks
 // has the expected value.
 //
-// The subsidy is halved every SubsidyReductionInterval blocks.  Mathematically
+// The subsidy is halved every SubsidyReductionInterval blocks. Mathematically
 // this is: baseSubsidy / 2^(blueScore/SubsidyReductionInterval)
 //
 // At the target block generation rate for the main network, this is
@@ -123,7 +123,7 @@ func CalcBlockSubsidy(blueScore uint64, dagParams *dagconfig.Params) uint64 {
 }
 
 // CheckTransactionSanity performs some preliminary checks on a transaction to
-// ensure it is sane.  These checks are context free.
+// ensure it is sane. These checks are context free.
 func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
 	isCoinbase := tx.IsCoinBase()
 	// A transaction must have at least one input.
@@ -141,11 +141,11 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 		return ruleError(ErrTxMassTooHigh, str)
 	}
 
-	// Ensure the transaction amounts are in range.  Each transaction
+	// Ensure the transaction amounts are in range. Each transaction
 	// output must not be negative or more than the max allowed per
-	// transaction.  Also, the total of all outputs must abide by the same
-	// restrictions.  All amounts in a transaction are in a unit value known
-	// as a satoshi.  One bitcoin is a quantity of satoshi as defined by the
+	// transaction. Also, the total of all outputs must abide by the same
+	// restrictions. All amounts in a transaction are in a unit value known
+	// as a satoshi. One bitcoin is a quantity of satoshi as defined by the
 	// SatoshiPerBitcoin constant.
 	var totalSatoshi uint64
 	for _, txOut := range msgTx.TxOut {
@@ -394,7 +394,7 @@ func CalcTxMass(tx *util.Tx, previousScriptPubKeys [][]byte) uint64 {
 }
 
 // checkBlockHeaderSanity performs some preliminary checks on a block header to
-// ensure it is sane before continuing with processing.  These checks are
+// ensure it is sane before continuing with processing. These checks are
 // context free.
 //
 // The flags do not modify the behavior of this function directly, however they
@@ -457,7 +457,7 @@ func checkBlockParentsOrder(header *wire.BlockHeader) error {
 }
 
 // checkBlockSanity performs some preliminary checks on a block to ensure it is
-// sane before continuing with block processing.  These checks are context free.
+// sane before continuing with block processing. These checks are context free.
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkBlockHeaderSanity.
@@ -516,9 +516,9 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 	}
 
 	// Build merkle tree and ensure the calculated merkle root matches the
-	// entry in the block header.  This also has the effect of caching all
+	// entry in the block header. This also has the effect of caching all
 	// of the transaction hashes in the block to speed up future hash
-	// checks.  Bitcoind builds the tree here and checks the merkle root
+	// checks. Bitcoind builds the tree here and checks the merkle root
 	// after the following checks, but there is no reason not to check the
 	// merkle root matches here.
 	hashMerkleTree := BuildHashMerkleTreeStore(block.Transactions())
@@ -530,7 +530,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 		return 0, ruleError(ErrBadMerkleRoot, str)
 	}
 
-	// Check for duplicate transactions.  This check will be fairly quick
+	// Check for duplicate transactions. This check will be fairly quick
 	// since the transaction IDs are already cached due to building the
 	// merkle tree above.
 	existingTxIDs := make(map[daghash.TxID]struct{})
@@ -659,7 +659,7 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 //  - BFFastAdd: The transaction are not checked to see if they are finalized
 //    and the somewhat expensive BIP0034 validation is not performed.
 //
-// The flags are also passed to checkBlockHeaderContext.  See its documentation
+// The flags are also passed to checkBlockHeaderContext. See its documentation
 // for how the flags modify its behavior.
 //
 // This function MUST be called with the dag state lock held (for writes).
@@ -700,7 +700,7 @@ func (dag *BlockDAG) validateAllTxsFinalized(block *util.Block, node *blockNode,
 }
 
 // ensureNoDuplicateTx ensures blocks do not contain duplicate transactions which
-// 'overwrite' older transactions that are not fully spent.  This prevents an
+// 'overwrite' older transactions that are not fully spent. This prevents an
 // attack where a coinbase and all of its dependent transactions could be
 // duplicated to effectively revert the overwritten transactions to a single
 // confirmation thereby making them vulnerable to a double spend.
@@ -736,11 +736,11 @@ func ensureNoDuplicateTx(utxoSet UTXOSet, transactions []*util.Tx) error {
 }
 
 // CheckTransactionInputsAndCalulateFee performs a series of checks on the inputs to a
-// transaction to ensure they are valid.  An example of some of the checks
+// transaction to ensure they are valid. An example of some of the checks
 // include verifying all inputs exist, ensuring the block reward seasoning
 // requirements are met, detecting double spends, validating all values and fees
 // are in the legal range and the total output amount doesn't exceed the input
-// amount.  As it checks the inputs, it also calculates the total fees for the
+// amount. As it checks the inputs, it also calculates the total fees for the
 // transaction and returns that value.
 //
 // NOTE: The transaction MUST have already been sanity checked with the
@@ -772,10 +772,10 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoS
 			}
 		}
 
-		// Ensure the transaction amounts are in range.  Each of the
+		// Ensure the transaction amounts are in range. Each of the
 		// output values of the input transactions must not be negative
-		// or more than the max allowed per transaction.  All amounts in
-		// a transaction are in a unit value known as a satoshi.  One
+		// or more than the max allowed per transaction. All amounts in
+		// a transaction are in a unit value known as a satoshi. One
 		// bitcoin is a quantity of satoshi as defined by the
 		// SatoshiPerBitcoin constant.
 		originTxSatoshi := entry.Amount()
@@ -788,7 +788,7 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoS
 		}
 
 		// The total of all outputs must not be more than the max
-		// allowed per transaction.  Also, we could potentially overflow
+		// allowed per transaction. Also, we could potentially overflow
 		// the accumulator so check for overflow.
 		lastSatoshiIn := totalSatoshiIn
 		totalSatoshiIn += originTxSatoshi
@@ -802,7 +802,7 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoS
 		}
 	}
 
-	// Calculate the total output amount for this transaction.  It is safe
+	// Calculate the total output amount for this transaction. It is safe
 	// to ignore overflow and out of range errors here because those error
 	// conditions would have already been caught by checkTransactionSanity.
 	var totalSatoshiOut uint64
@@ -870,8 +870,8 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 		}
 	}
 
-	// Perform several checks on the inputs for each transaction.  Also
-	// accumulate the total fees.  This could technically be combined with
+	// Perform several checks on the inputs for each transaction. Also
+	// accumulate the total fees. This could technically be combined with
 	// the loop above instead of running another loop over the transactions,
 	// but by separating it we can avoid running the more expensive (though
 	// still relatively cheap as compared to running the scripts) checks
@@ -913,7 +913,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 		// Don't run scripts if this node is before the latest known good
 		// checkpoint since the validity is verified via the checkpoints (all
 		// transactions are included in the merkle root hash and any changes
-		// will therefore be detected by the next checkpoint).  This is a huge
+		// will therefore be detected by the next checkpoint). This is a huge
 		// optimization because running the scripts is the most time consuming
 		// portion of block handling.
 		checkpoint := dag.LatestCheckpoint()
@@ -953,7 +953,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 
 		// Now that the inexpensive checks are done and have passed, verify the
 		// transactions are actually allowed to spend the coins by running the
-		// expensive ECDSA signature check scripts.  Doing this last helps
+		// expensive ECDSA signature check scripts. Doing this last helps
 		// prevent CPU exhaustion attacks.
 		if runScripts {
 			err := checkBlockScripts(block, pastUTXO, transactions, scriptFlags, dag.sigCache)

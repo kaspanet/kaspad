@@ -27,20 +27,20 @@ func (msg *MsgFilterClear) BtcEncode(w io.Writer, pver uint32) error {
 	return nil
 }
 
-// Command returns the protocol command string for the message.  This is part
+// Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgFilterClear) Command() string {
 	return CmdFilterClear
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
-// receiver.  This is part of the Message interface implementation.
+// receiver. This is part of the Message interface implementation.
 func (msg *MsgFilterClear) MaxPayloadLength(pver uint32) uint32 {
 	return 0
 }
 
 // NewMsgFilterClear returns a new bitcoin filterclear message that conforms to the Message
-// interface.  See MsgFilterClear for details.
+// interface. See MsgFilterClear for details.
 func NewMsgFilterClear() *MsgFilterClear {
 	return &MsgFilterClear{}
 }

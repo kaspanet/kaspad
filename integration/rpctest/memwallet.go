@@ -291,7 +291,7 @@ func (m *memWallet) evalInputs(inputs []*wire.TxIn, undo *undoEntry) {
 	}
 }
 
-// newAddress returns a new address from the wallet's hd key chain.  It also
+// newAddress returns a new address from the wallet's hd key chain. It also
 // loads the address into the RPC client's transaction filter to ensure any
 // transactions that involve it are delivered via the notifications.
 func (m *memWallet) newAddress() (util.Address, error) {

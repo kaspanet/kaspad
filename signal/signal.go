@@ -18,11 +18,11 @@ var ShutdownRequestChannel = make(chan struct{})
 var PanicShutdownChannel = make(chan struct{})
 
 // interruptSignals defines the default signals to catch in order to do a proper
-// shutdown.  This may be modified during init depending on the platform.
+// shutdown. This may be modified during init depending on the platform.
 var interruptSignals = []os.Signal{os.Interrupt}
 
 // InterruptListener listens for OS Signals such as SIGINT (Ctrl+C) and shutdown
-// requests from shutdownRequestChannel.  It returns a channel that is closed
+// requests from shutdownRequestChannel. It returns a channel that is closed
 // when either signal is received.
 func InterruptListener() <-chan struct{} {
 	c := make(chan struct{})
@@ -70,7 +70,7 @@ func InterruptListener() <-chan struct{} {
 }
 
 // InterruptRequested returns true when the channel returned by
-// InterruptListener was closed.  This simplifies early shutdown slightly since
+// InterruptListener was closed. This simplifies early shutdown slightly since
 // the caller can just use an if statement instead of a select.
 func InterruptRequested(interrupted <-chan struct{}) bool {
 	select {

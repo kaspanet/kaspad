@@ -13,7 +13,7 @@ type ErrorCode int
 
 // These constants are used to identify a specific Error.
 const (
-	// ErrInternal is returned if internal consistency checks fail.  In
+	// ErrInternal is returned if internal consistency checks fail. In
 	// practice this error should never be seen as it would mean there is an
 	// error in the engine logic.
 	ErrInternal ErrorCode = iota
@@ -63,7 +63,7 @@ const (
 	ErrScriptUnfinished
 
 	// ErrScriptDone is returned when an attempt to execute an opcode is
-	// made once all of them have already been executed.  This can happen
+	// made once all of them have already been executed. This can happen
 	// due to things such as a second call to Execute or calling Step after
 	// all opcodes have already been executed.
 	ErrInvalidProgramCounter
@@ -99,9 +99,9 @@ const (
 
 	// ErrNumberTooBig is returned when the argument for an opcode that
 	// expects numeric input is larger than the expected maximum number of
-	// bytes.  For the most part, opcodes that deal with stack manipulation
+	// bytes. For the most part, opcodes that deal with stack manipulation
 	// via offsets, arithmetic, numeric comparison, and boolean logic are
-	// those that this applies to.  However, any opcode that expects numeric
+	// those that this applies to. However, any opcode that expects numeric
 	// input may fail with this code.
 	ErrNumberTooBig
 
@@ -221,7 +221,7 @@ const (
 	// is not either an empty vector or [0x01].
 	ErrMinimalIf
 
-	// numErrorCodes is the maximum error code number used in tests.  This
+	// numErrorCodes is the maximum error code number used in tests. This
 	// entry MUST be the last entry in the enum.
 	numErrorCodes
 )
@@ -279,7 +279,7 @@ func (e ErrorCode) String() string {
 	return fmt.Sprintf("Unknown ErrorCode (%d)", int(e))
 }
 
-// Error identifies a script-related error.  It is used to indicate three
+// Error identifies a script-related error. It is used to indicate three
 // classes of errors:
 // 1) Script execution failures due to violating one of the many requirements
 //    imposed by the script engine or evaluating to false
@@ -287,7 +287,7 @@ func (e ErrorCode) String() string {
 // 3) Internal consistency check failures
 //
 // The caller can use type assertions on the returned errors to access the
-// ErrorCode field to ascertain the specific reason for the error.  As an
+// ErrorCode field to ascertain the specific reason for the error. As an
 // additional convenience, the caller may make use of the IsErrorCode function
 // to check for a specific error code.
 type Error struct {

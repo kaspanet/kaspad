@@ -34,7 +34,7 @@ type NodeCmd struct {
 // NewNodeCmd returns a new instance which can be used to issue a `node`
 // JSON-RPC command.
 //
-// The parameters which are pointers indicate they are optional.  Passing nil
+// The parameters which are pointers indicate they are optional. Passing nil
 // for optional parameters will use the default value.
 func NewNodeCmd(subCmd NodeSubCmd, target string, connectSubCmd *string) *NodeCmd {
 	return &NodeCmd{
@@ -44,14 +44,14 @@ func NewNodeCmd(subCmd NodeSubCmd, target string, connectSubCmd *string) *NodeCm
 	}
 }
 
-// DebugLevelCmd defines the debugLevel JSON-RPC command.  This command is not a
-// standard Bitcoin command.  It is an extension for btcd.
+// DebugLevelCmd defines the debugLevel JSON-RPC command. This command is not a
+// standard Bitcoin command. It is an extension for btcd.
 type DebugLevelCmd struct {
 	LevelSpec string
 }
 
 // NewDebugLevelCmd returns a new DebugLevelCmd which can be used to issue a
-// debugLevel JSON-RPC command.  This command is not a standard Bitcoin command.
+// debugLevel JSON-RPC command. This command is not a standard Bitcoin command.
 // It is an extension for btcd.
 func NewDebugLevelCmd(levelSpec string) *DebugLevelCmd {
 	return &DebugLevelCmd{

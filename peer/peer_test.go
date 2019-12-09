@@ -19,7 +19,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// conn mocks a network connection by implementing the net.Conn interface.  It
+// conn mocks a network connection by implementing the net.Conn interface. It
 // is used to test peer connection without actually opening a network
 // connection.
 type conn struct {

@@ -68,7 +68,7 @@ func getManualNodesInfo(s *Server, detailsArg *bool, node string) (interface{}, 
 		result.Connected = btcjson.Bool(peer.Connected())
 
 		// Split the address into host and port portions so we can do
-		// a DNS lookup against the host.  When no port is specified in
+		// a DNS lookup against the host. When no port is specified in
 		// the address, just use the address as the host.
 		host, _, err := net.SplitHostPort(peer.Addr())
 		if err != nil {
@@ -81,7 +81,7 @@ func getManualNodesInfo(s *Server, detailsArg *bool, node string) (interface{}, 
 			ipList = make([]string, 1)
 			ipList[0] = host
 		default:
-			// Do a DNS lookup for the address.  If the lookup fails, just
+			// Do a DNS lookup for the address. If the lookup fails, just
 			// use the host.
 			ips, err := serverutils.BTCDLookup(host)
 			if err != nil {

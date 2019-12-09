@@ -18,7 +18,7 @@ import (
 )
 
 // makeHeader is a convenience function to make a message header in the form of
-// a byte slice.  It is used to force errors when reading messages.
+// a byte slice. It is used to force errors when reading messages.
 func makeHeader(btcnet BitcoinNet, command string,
 	payloadLen uint32, checksum uint32) []byte {
 
@@ -232,9 +232,9 @@ func TestReadMessageWireErrors(t *testing.T) {
 	badChecksumBytes = append(badChecksumBytes, []byte{0x0, 0x0}...)
 
 	// Wire encoded bytes for a message which has a valid header, but is
-	// the wrong format.  An addr starts with a varint of the number of
-	// contained in the message.  Claim there is two, but don't provide
-	// them.  At the same time, forge the header fields so the message is
+	// the wrong format. An addr starts with a varint of the number of
+	// contained in the message. Claim there is two, but don't provide
+	// them. At the same time, forge the header fields so the message is
 	// otherwise accurate.
 	badMessageBytes := makeHeader(btcnet, "addr", 1, 0xeaadc31c)
 	badMessageBytes = append(badMessageBytes, 0x2)
@@ -263,7 +263,7 @@ func TestReadMessageWireErrors(t *testing.T) {
 			0,
 		},
 
-		// Wrong network.  Want MainNet, but giving TestNet.
+		// Wrong network. Want MainNet, but giving TestNet.
 		{
 			testNetBytes,
 			pver,

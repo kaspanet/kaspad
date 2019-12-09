@@ -19,7 +19,7 @@ import (
 func ExamplePayToAddrScript() {
 	// Parse the address to send the coins to into a util.Address
 	// which is useful to ensure the accuracy of the address and determine
-	// the address type.  It is also required for the upcoming call to
+	// the address type. It is also required for the upcoming call to
 	// PayToAddrScript.
 	addressStr := "dagcoin:qqfgqp8l9l90zwetj84k2jcac2m8falvvy9uastr55"
 	address, err := util.DecodeAddress(addressStr, util.Bech32PrefixDAGCoin)

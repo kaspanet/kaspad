@@ -8,7 +8,7 @@ import (
 	"fmt"
 )
 
-// ErrorCode identifies a kind of error.  These error codes are NOT used for
+// ErrorCode identifies a kind of error. These error codes are NOT used for
 // JSON-RPC response errors.
 type ErrorCode int
 
@@ -90,10 +90,10 @@ func (e ErrorCode) String() string {
 	return fmt.Sprintf("Unknown ErrorCode (%d)", int(e))
 }
 
-// Error identifies a general error.  This differs from an RPCError in that this
+// Error identifies a general error. This differs from an RPCError in that this
 // error typically is used more by the consumers of the package as opposed to
 // RPCErrors which are intended to be returned to the client across the wire via
-// a JSON-RPC Response.  The caller can use type assertions to determine the
+// a JSON-RPC Response. The caller can use type assertions to determine the
 // specific error and access the ErrorCode field.
 type Error struct {
 	ErrorCode   ErrorCode // Describes the kind of error

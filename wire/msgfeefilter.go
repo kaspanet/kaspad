@@ -9,7 +9,7 @@ import (
 )
 
 // MsgFeeFilter implements the Message interface and represents a bitcoin
-// feefilter message.  It is used to request the receiving peer does not
+// feefilter message. It is used to request the receiving peer does not
 // announce any transactions below the specified minimum fee rate.
 //
 // This message was not added until protocol versions starting with
@@ -30,20 +30,20 @@ func (msg *MsgFeeFilter) BtcEncode(w io.Writer, pver uint32) error {
 	return WriteElement(w, msg.MinFee)
 }
 
-// Command returns the protocol command string for the message.  This is part
+// Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgFeeFilter) Command() string {
 	return CmdFeeFilter
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
-// receiver.  This is part of the Message interface implementation.
+// receiver. This is part of the Message interface implementation.
 func (msg *MsgFeeFilter) MaxPayloadLength(pver uint32) uint32 {
 	return 8
 }
 
 // NewMsgFeeFilter returns a new bitcoin feefilter message that conforms to
-// the Message interface.  See MsgFeeFilter for details.
+// the Message interface. See MsgFeeFilter for details.
 func NewMsgFeeFilter(minfee int64) *MsgFeeFilter {
 	return &MsgFeeFilter{
 		MinFee: minfee,

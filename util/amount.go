@@ -11,7 +11,7 @@ import (
 )
 
 // AmountUnit describes a method of converting an Amount to something
-// other than the base unit of a bitcoin.  The value of the AmountUnit
+// other than the base unit of a bitcoin. The value of the AmountUnit
 // is the exponent component of the decadic multiple to convert from
 // an amount in bitcoin to an amount counted in units.
 type AmountUnit int
@@ -27,8 +27,8 @@ const (
 	AmountSatoshi  AmountUnit = -8
 )
 
-// String returns the unit as a string.  For recognized units, the SI
-// prefix is used, or "Satoshi" for the base unit.  For all unrecognized
+// String returns the unit as a string. For recognized units, the SI
+// prefix is used, or "Satoshi" for the base unit. For all unrecognized
 // units, "1eN BTC" is returned, where N is the AmountUnit.
 func (u AmountUnit) String() string {
 	switch u {
@@ -50,7 +50,7 @@ func (u AmountUnit) String() string {
 }
 
 // Amount represents the base bitcoin monetary unit (colloquially referred
-// to as a `Satoshi').  A single Amount is equal to 1e-8 of a bitcoin.
+// to as a `Satoshi'). A single Amount is equal to 1e-8 of a bitcoin.
 type Amount uint64
 
 // round converts a floating point number, which may or may not be representable
@@ -65,7 +65,7 @@ func round(f float64) Amount {
 }
 
 // NewAmount creates an Amount from a floating point value representing
-// some value in bitcoin.  NewAmount errors if f is NaN or +-Infinity, but
+// some value in bitcoin. NewAmount errors if f is NaN or +-Infinity, but
 // does not check that the amount is within the total amount of bitcoin
 // producible as f may not refer to an amount at a single moment in time.
 //
@@ -75,7 +75,7 @@ func round(f float64) Amount {
 // See GoDoc for example: http://godoc.org/github.com/daglabs/btcutil#example-Amount
 func NewAmount(f float64) (Amount, error) {
 	// The amount is only considered invalid if it cannot be represented
-	// as an integer type.  This may happen if f is NaN or +-Infinity.
+	// as an integer type. This may happen if f is NaN or +-Infinity.
 	switch {
 	case math.IsNaN(f):
 		fallthrough
@@ -100,7 +100,7 @@ func (a Amount) ToBTC() float64 {
 }
 
 // Format formats a monetary amount counted in bitcoin base units as a
-// string for a given unit.  The conversion will succeed for any unit,
+// string for a given unit. The conversion will succeed for any unit,
 // however, known units will be formated with an appended label describing
 // the units with SI notation, or "Satoshi" for the base unit.
 func (a Amount) Format(u AmountUnit) string {
@@ -113,7 +113,7 @@ func (a Amount) String() string {
 	return a.Format(AmountBTC)
 }
 
-// MulF64 multiplies an Amount by a floating point value.  While this is not
+// MulF64 multiplies an Amount by a floating point value. While this is not
 // an operation that must typically be done by a full node or wallet, it is
 // useful for services that build on top of bitcoin (for example, calculating
 // a fee by multiplying by a percentage).

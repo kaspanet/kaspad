@@ -50,11 +50,11 @@ const phantomK = 10
 const difficultyAdjustmentWindowSize = 2640
 const timestampDeviationTolerance = 132
 
-// Checkpoint identifies a known good point in the block chain.  Using
+// Checkpoint identifies a known good point in the block chain. Using
 // checkpoints allows a few optimizations for old blocks during initial download
 // and also prevents forks from old blocks.
 //
-// Each checkpoint is selected based upon several factors.  See the
+// Each checkpoint is selected based upon several factors. See the
 // documentation for blockchain.IsCheckpointCandidate for details on the
 // selection criteria.
 type Checkpoint struct {
@@ -63,7 +63,7 @@ type Checkpoint struct {
 }
 
 // ConsensusDeployment defines details related to a specific consensus rule
-// change that is voted in.  This is part of BIP0009.
+// change that is voted in. This is part of BIP0009.
 type ConsensusDeployment struct {
 	// BitNumber defines the specific bit number within the block version
 	// this particular soft-fork deployment refers to.
@@ -79,7 +79,7 @@ type ConsensusDeployment struct {
 }
 
 // Constants that define the deployment offset in the deployments field of the
-// parameters for each deployment.  This is useful to be able to get the details
+// parameters for each deployment. This is useful to be able to get the details
 // of a specific deployment by name.
 const (
 	// DeploymentTestDummy defines the rule change deployment ID for testing
@@ -93,7 +93,7 @@ const (
 	DefinedDeployments
 )
 
-// Params defines a Bitcoin network by its parameters.  These parameters may be
+// Params defines a Bitcoin network by its parameters. These parameters may be
 // used by Bitcoin applications to differentiate networks as well as addresses
 // and keys for one network from those intended for use on another network.
 type Params struct {
@@ -252,7 +252,7 @@ var MainNetParams = Params{
 }
 
 // RegressionNetParams defines the network parameters for the regression test
-// Bitcoin network.  Not to be confused with the test Bitcoin network (version
+// Bitcoin network. Not to be confused with the test Bitcoin network (version
 // 3), this network is sometimes simply called "testnet".
 var RegressionNetParams = Params{
 	K:           phantomK,
@@ -372,11 +372,11 @@ var TestNetParams = Params{
 }
 
 // SimNetParams defines the network parameters for the simulation test Bitcoin
-// network.  This network is similar to the normal test network except it is
+// network. This network is similar to the normal test network except it is
 // intended for private use within a group of individuals doing simulation
-// testing.  The functionality is intended to differ in that the only nodes
+// testing. The functionality is intended to differ in that the only nodes
 // which are specifically specified are used to create the network rather than
-// following normal discovery rules.  This is important as otherwise it would
+// following normal discovery rules. This is important as otherwise it would
 // just turn into another public testnet.
 var SimNetParams = Params{
 	K:           phantomK,
@@ -504,13 +504,13 @@ var (
 	registeredNets = make(map[wire.BitcoinNet]struct{})
 )
 
-// Register registers the network parameters for a Bitcoin network.  This may
+// Register registers the network parameters for a Bitcoin network. This may
 // error with ErrDuplicateNet if the network is already registered (either
 // due to a previous Register call, or the network being one of the default
 // networks).
 //
 // Network parameters should be registered into this package by a main package
-// as early as possible.  Then, library packages may lookup networks or network
+// as early as possible. Then, library packages may lookup networks or network
 // parameters based on inputs and work regardless of the network being standard
 // or not.
 func Register(params *Params) error {
@@ -523,7 +523,7 @@ func Register(params *Params) error {
 }
 
 // mustRegister performs the same function as Register except it panics if there
-// is an error.  This should only be called from package init functions.
+// is an error. This should only be called from package init functions.
 func mustRegister(params *Params) {
 	if err := Register(params); err != nil {
 		panic("failed to register network: " + err.Error())
@@ -531,7 +531,7 @@ func mustRegister(params *Params) {
 }
 
 // newHashFromStr converts the passed big-endian hex string into a
-// daghash.Hash.  It only differs from the one available in daghash in that
+// daghash.Hash. It only differs from the one available in daghash in that
 // it panics on an error since it will only (and must only) be called with
 // hard-coded, and therefore known good, hashes.
 func newHashFromStr(hexStr string) *daghash.Hash {
@@ -541,7 +541,7 @@ func newHashFromStr(hexStr string) *daghash.Hash {
 		// can take applications down without them having a chance to
 		// recover which is extremely annoying, however an exception is
 		// being made in this case because the only way this can panic
-		// is if there is an error in the hard-coded hashes.  Thus it
+		// is if there is an error in the hard-coded hashes. Thus it
 		// will only ever potentially panic on init and therefore is
 		// 100% predictable.
 		panic(err)

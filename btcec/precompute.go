@@ -15,10 +15,10 @@ import (
 //go:generate go run -tags gensecp256k1 genprecomps.go
 
 // loadS256BytePoints decompresses and deserializes the pre-computed byte points
-// used to accelerate scalar base multiplication for the secp256k1 curve.  This
+// used to accelerate scalar base multiplication for the secp256k1 curve. This
 // approach is used since it allows the compile to use significantly less ram
 // and be performed much faster than it is with hard-coding the final in-memory
-// data structure.  At the same time, it is quite fast to generate the in-memory
+// data structure. At the same time, it is quite fast to generate the in-memory
 // data structure at init time with this approach versus computing the table.
 func loadS256BytePoints() error {
 	// There will be no byte points to load when generating them.

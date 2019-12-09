@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// OnBlock is invoked when a peer receives a block bitcoin message.  It
+// OnBlock is invoked when a peer receives a block bitcoin message. It
 // blocks until the bitcoin block has been fully processed.
 func (sp *Peer) OnBlock(_ *peer.Peer, msg *wire.MsgBlock, buf []byte) {
 	// Convert the raw MsgBlock to a util.Block which provides some
@@ -20,10 +20,10 @@ func (sp *Peer) OnBlock(_ *peer.Peer, msg *wire.MsgBlock, buf []byte) {
 	// Queue the block up to be handled by the block
 	// manager and intentionally block further receives
 	// until the bitcoin block is fully processed and known
-	// good or bad.  This helps prevent a malicious peer
+	// good or bad. This helps prevent a malicious peer
 	// from queuing up a bunch of bad blocks before
 	// disconnecting (or being disconnected) and wasting
-	// memory.  Additionally, this behavior is depended on
+	// memory. Additionally, this behavior is depended on
 	// by at least the block acceptance test tool as the
 	// reference implementation processes blocks in the same
 	// thread and therefore blocks further messages until

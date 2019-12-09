@@ -19,7 +19,7 @@ const (
 
 	// TxAcceptedVerboseNtfnMethod is the method used for notifications from
 	// the dag server that a transaction has been accepted into the
-	// mempool.  This differs from TxAcceptedNtfnMethod in that it provides
+	// mempool. This differs from TxAcceptedNtfnMethod in that it provides
 	// more details in the notification.
 	TxAcceptedVerboseNtfnMethod = "txAcceptedVerbose"
 

@@ -6,16 +6,16 @@
 Package blockdag implements bitcoin block handling and chain selection rules.
 
 The bitcoin block handling and chain selection rules are an integral, and quite
-likely the most important, part of bitcoin.  Unfortunately, at the time of
+likely the most important, part of bitcoin. Unfortunately, at the time of
 this writing, these rules are also largely undocumented and had to be
-ascertained from the bitcoind source code.  At its core, bitcoin is a
+ascertained from the bitcoind source code. At its core, bitcoin is a
 distributed consensus of which blocks are valid and which ones will comprise the
 main block chain (public ledger) that ultimately determines accepted
 transactions, so it is extremely important that fully validating nodes agree on
 all rules.
 
 At a high level, this package provides support for inserting new blocks into
-the block chain according to the aforementioned rules.  It includes
+the block chain according to the aforementioned rules. It includes
 functionality such as rejecting duplicate blocks, ensuring blocks and
 transactions follow all rules, orphan handling, and best chain selection along
 with reorganization.
@@ -29,7 +29,7 @@ main chain blocks which might result in wallet updates.
 Bitcoin Chain Processing Overview
 
 Before a block is allowed into the block chain, it must go through an intensive
-series of validation rules.  The following list serves as a general outline of
+series of validation rules. The following list serves as a general outline of
 those rules to provide some intuition into what is going on under the hood, but
 is by no means exhaustive:
 
@@ -64,9 +64,9 @@ is by no means exhaustive:
 Errors
 
 Errors returned by this package are either the raw errors provided by underlying
-calls or of type blockchain.RuleError.  This allows the caller to differentiate
+calls or of type blockchain.RuleError. This allows the caller to differentiate
 between unexpected errors, such as database errors, versus errors due to rule
-violations through type assertions.  In addition, callers can programmatically
+violations through type assertions. In addition, callers can programmatically
 determine the specific rule violation by examining the ErrorCode field of the
 type asserted blockchain.RuleError.
 

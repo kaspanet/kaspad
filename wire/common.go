@@ -34,7 +34,7 @@ var (
 var errNonCanonicalVarInt = "non-canonical varint %x - discriminant %x must " +
 	"encode a value greater than %x"
 
-// int64Time represents a unix timestamp encoded with an int64.  It is used as
+// int64Time represents a unix timestamp encoded with an int64. It is used as
 // a way to signal the readElement function how to decode a timestamp into a Go
 // time.Time since it is otherwise ambiguous.
 type int64Time time.Time
@@ -182,7 +182,7 @@ func ReadElement(r io.Reader, element interface{}) error {
 	return binary.Read(r, littleEndian, element)
 }
 
-// readElements reads multiple items from r.  It is equivalent to multiple
+// readElements reads multiple items from r. It is equivalent to multiple
 // calls to readElement.
 func readElements(r io.Reader, elements ...interface{}) error {
 	for _, element := range elements {
@@ -318,7 +318,7 @@ func WriteElement(w io.Writer, element interface{}) error {
 	return binary.Write(w, littleEndian, element)
 }
 
-// writeElements writes multiple items to w.  It is equivalent to multiple
+// writeElements writes multiple items to w. It is equivalent to multiple
 // calls to writeElement.
 func writeElements(w io.Writer, elements ...interface{}) error {
 	for _, element := range elements {
@@ -445,9 +445,9 @@ func VarIntSerializeSize(val uint64) int {
 }
 
 // ReadVarString reads a variable length string from r and returns it as a Go
-// string.  A variable length string is encoded as a variable length integer
+// string. A variable length string is encoded as a variable length integer
 // containing the length of the string followed by the bytes that represent the
-// string itself.  An error is returned if the length is greater than the
+// string itself. An error is returned if the length is greater than the
 // maximum block payload size since it helps protect against memory exhaustion
 // attacks and forced panics through malformed messages.
 func ReadVarString(r io.Reader, pver uint32) (string, error) {
@@ -457,7 +457,7 @@ func ReadVarString(r io.Reader, pver uint32) (string, error) {
 	}
 
 	// Prevent variable length strings that are larger than the maximum
-	// message size.  It would be possible to cause memory exhaustion and
+	// message size. It would be possible to cause memory exhaustion and
 	// panics without a sane upper bound on this count.
 	if count > MaxMessagePayload {
 		str := fmt.Sprintf("variable length string is too long "+
@@ -485,11 +485,11 @@ func WriteVarString(w io.Writer, str string) error {
 	return err
 }
 
-// ReadVarBytes reads a variable length byte array.  A byte array is encoded
+// ReadVarBytes reads a variable length byte array. A byte array is encoded
 // as a varInt containing the length of the array followed by the bytes
-// themselves.  An error is returned if the length is greater than the
+// themselves. An error is returned if the length is greater than the
 // passed maxAllowed parameter which helps protect against memory exhaustion
-// attacks and forced panics through malformed messages.  The fieldName
+// attacks and forced panics through malformed messages. The fieldName
 // parameter is only used for the error message so it provides more context in
 // the error.
 func ReadVarBytes(r io.Reader, pver uint32, maxAllowed uint32,
@@ -500,7 +500,7 @@ func ReadVarBytes(r io.Reader, pver uint32, maxAllowed uint32,
 		return nil, err
 	}
 
-	// Prevent byte array larger than the max message size.  It would
+	// Prevent byte array larger than the max message size. It would
 	// be possible to cause memory exhaustion and panics without a sane
 	// upper bound on this count.
 	if count > uint64(maxAllowed) {

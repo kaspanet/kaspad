@@ -14,7 +14,7 @@ import (
 )
 
 // mustParseShortForm parses the passed short form script and returns the
-// resulting bytes.  It panics if an error occurs.  This is only used in the
+// resulting bytes. It panics if an error occurs. This is only used in the
 // tests as a helper since the only way it can fail is if there is an error in
 // the test source code.
 func mustParseShortForm(script string) []byte {
@@ -28,7 +28,7 @@ func mustParseShortForm(script string) []byte {
 }
 
 // newAddressPubKeyHash returns a new util.AddressPubKeyHash from the
-// provided hash.  It panics if an error occurs.  This is only used in the tests
+// provided hash. It panics if an error occurs. This is only used in the tests
 // as a helper since the only way it can fail is if there is an error in the
 // test source code.
 func newAddressPubKeyHash(pkHash []byte) util.Address {
@@ -41,7 +41,7 @@ func newAddressPubKeyHash(pkHash []byte) util.Address {
 }
 
 // newAddressScriptHash returns a new util.AddressScriptHash from the
-// provided hash.  It panics if an error occurs.  This is only used in the tests
+// provided hash. It panics if an error occurs. This is only used in the tests
 // as a helper since the only way it can fail is if there is an error in the
 // test source code.
 func newAddressScriptHash(scriptHash []byte) util.Address {
@@ -253,13 +253,13 @@ func TestCalcScriptInfo(t *testing.T) {
 // unsupported address types are handled properly.
 type bogusAddress struct{}
 
-// EncodeAddress simply returns an empty string.  It exists to satisfy the
+// EncodeAddress simply returns an empty string. It exists to satisfy the
 // util.Address interface.
 func (b *bogusAddress) EncodeAddress() string {
 	return ""
 }
 
-// ScriptAddress simply returns an empty byte slice.  It exists to satisfy the
+// ScriptAddress simply returns an empty byte slice. It exists to satisfy the
 // util.Address interface.
 func (b *bogusAddress) ScriptAddress() []byte {
 	return nil
@@ -270,7 +270,7 @@ func (b *bogusAddress) IsForPrefix(prefix util.Bech32Prefix) bool {
 	return true // why not?
 }
 
-// String simply returns an empty string.  It exists to satisfy the
+// String simply returns an empty string. It exists to satisfy the
 // util.Address interface.
 func (b *bogusAddress) String() string {
 	return ""
@@ -347,7 +347,7 @@ func TestPayToAddrScript(t *testing.T) {
 }
 
 // scriptClassTests houses several test scripts used to ensure various class
-// determination is working as expected.  It's defined as a test global versus
+// determination is working as expected. It's defined as a test global versus
 // inside a function scope since this spans both the standard tests and the
 // consensus tests (pay-to-script-hash is part of consensus).
 var scriptClassTests = []struct {

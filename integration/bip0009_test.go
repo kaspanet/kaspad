@@ -118,7 +118,7 @@ func assertSoftForkStatus(r *rpctest.Harness, t *testing.T, forkKey string, stat
 }
 
 // testBIP0009 ensures the BIP0009 soft fork mechanism follows the state
-// transition rules set forth by the BIP for the provided soft fork key.  It
+// transition rules set forth by the BIP for the provided soft fork key. It
 // uses the regression test network to signal support and advance through the
 // various threshold states including failure to achieve locked in status.
 //
@@ -153,7 +153,7 @@ func testBIP0009(t *testing.T, forkKey string, deploymentID uint32) {
 	//
 	// NOTE: This is two blocks before the confirmation window because the
 	// getblockchaininfo RPC reports the status for the block AFTER the
-	// current one.  All of the heights below are thus offset by one to
+	// current one. All of the heights below are thus offset by one to
 	// compensate.
 	//
 	// Assert the chain height is the expected value and soft fork status is
@@ -272,7 +272,7 @@ func testBIP0009(t *testing.T, forkKey string, deploymentID uint32) {
 }
 
 // TestBIP0009 ensures the BIP0009 soft fork mechanism follows the state
-// transition rules set forth by the BIP for all soft forks.  It uses the
+// transition rules set forth by the BIP for all soft forks. It uses the
 // regression test network to signal support and advance through the various
 // threshold states including failure to achieve locked in status.
 //
@@ -332,7 +332,7 @@ func TestBIP0009Mining(t *testing.T) {
 
 	// *** ThresholdDefined ***
 	//
-	// Generate a block that extends the genesis block.  It should not have
+	// Generate a block that extends the genesis block. It should not have
 	// the test dummy bit set in the version since the first window is
 	// in the defined threshold state.
 	deployment := &r.ActiveNet.Deployments[dagconfig.DeploymentTestDummy]

@@ -269,7 +269,7 @@ func TestMerkleBlockWireErrors(t *testing.T) {
 
 // TestMerkleBlockOverflowErrors performs tests to ensure encoding and decoding
 // merkle blocks that are intentionally crafted to use large values for the
-// number of hashes and flags are handled properly.  This could otherwise
+// number of hashes and flags are handled properly. This could otherwise
 // potentially be used as an attack vector.
 func TestMerkleBlockOverflowErrors(t *testing.T) {
 	pver := ProtocolVersion

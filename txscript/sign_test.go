@@ -867,7 +867,7 @@ var sigScriptTests = []tstSigScript{
 }
 
 // Test the sigscript generation for valid and invalid inputs, all
-// hashTypes, and with and without compression.  This test creates
+// hashTypes, and with and without compression. This test creates
 // sigscripts to spend fake coinbase inputs, as sigscripts cannot be
 // created for the MsgTxs in txTests, since they come from the blockchain
 // and we don't have the private keys.
@@ -920,7 +920,7 @@ nexttest:
 		}
 
 		// If testing using a correct sigscript but for an incorrect
-		// index, use last input script for first input.  Requires > 0
+		// index, use last input script for first input. Requires > 0
 		// inputs for test.
 		if sigScriptTests[i].scriptAtWrongIndex {
 			tx.TxIn[0].SignatureScript = script

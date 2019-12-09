@@ -16,7 +16,7 @@ func handleRescanBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 		return nil, btcjson.ErrRPCInternal
 	}
 
-	// Load client's transaction filter.  Must exist in order to continue.
+	// Load client's transaction filter. Must exist in order to continue.
 	wsc.Lock()
 	filter := wsc.filterData
 	wsc.Unlock()
@@ -39,7 +39,7 @@ func handleRescanBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 
 	discoveredData := make([]btcjson.RescannedBlock, 0, len(blockHashes))
 
-	// Iterate over each block in the request and rescan.  When a block
+	// Iterate over each block in the request and rescan. When a block
 	// contains relevant transactions, add it to the response.
 	bc := wsc.server.cfg.DAG
 	params := wsc.server.cfg.DAGParams

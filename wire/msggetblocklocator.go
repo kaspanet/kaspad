@@ -7,7 +7,7 @@ import (
 )
 
 // MsgGetBlockLocator implements the Message interface and represents a bitcoin
-// getlocator message.  It is used to request a block locator between start and stop hash.
+// getlocator message. It is used to request a block locator between start and stop hash.
 // The locator is returned via a locator message (MsgBlockLocator).
 //
 // This message has no payload.
@@ -48,14 +48,14 @@ func (msg *MsgGetBlockLocator) BtcEncode(w io.Writer, pver uint32) error {
 	return nil
 }
 
-// Command returns the protocol command string for the message.  This is part
+// Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgGetBlockLocator) Command() string {
 	return CmdGetBlockLocator
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
-// receiver.  This is part of the Message interface implementation.
+// receiver. This is part of the Message interface implementation.
 func (msg *MsgGetBlockLocator) MaxPayloadLength(pver uint32) uint32 {
 	return daghash.HashSize * 2
 }

@@ -77,7 +77,7 @@ var (
 
 var activeConfig *Config
 
-// RunServiceCommand is only set to a real function on Windows.  It is used
+// RunServiceCommand is only set to a real function on Windows. It is used
 // to parse and execute service commands specified via the -s flag.
 var RunServiceCommand func(string) error
 
@@ -105,7 +105,7 @@ type Flags struct {
 	TargetOutboundPeers  int           `long:"outpeers" description:"Target number of outbound peers"`
 	MaxInboundPeers      int           `long:"maxinpeers" description:"Max number of inbound peers"`
 	DisableBanning       bool          `long:"nobanning" description:"Disable banning of misbehaving peers"`
-	BanDuration          time.Duration `long:"banduration" description:"How long to ban misbehaving peers.  Valid time units are {s, m, h}.  Minimum 1 second"`
+	BanDuration          time.Duration `long:"banduration" description:"How long to ban misbehaving peers. Valid time units are {s, m, h}. Minimum 1 second"`
 	BanThreshold         uint32        `long:"banthreshold" description:"Maximum allowed ban score before disconnecting and banning misbehaving peers."`
 	Whitelists           []string      `long:"whitelist" description:"Add an IP network or IP that will not be banned. (eg. 192.168.1.0/24 or ::1)"`
 	RPCUser              string        `short:"u" long:"rpcuser" description:"Username for RPC connections"`
@@ -132,8 +132,8 @@ type Flags struct {
 	OnionProxyPass       string        `long:"onionpass" default-mask:"-" description:"Password for onion proxy server"`
 	NoOnion              bool          `long:"noonion" description:"Disable connecting to tor hidden services"`
 	TorIsolation         bool          `long:"torisolation" description:"Enable Tor stream isolation by randomizing user credentials for each connection."`
-	AddCheckpoints       []string      `long:"addcheckpoint" description:"Add a custom checkpoint.  Format: '<height>:<hash>'"`
-	DisableCheckpoints   bool          `long:"nocheckpoints" description:"Disable built-in checkpoints.  Don't do this unless you know what you're doing."`
+	AddCheckpoints       []string      `long:"addcheckpoint" description:"Add a custom checkpoint. Format: '<height>:<hash>'"`
+	DisableCheckpoints   bool          `long:"nocheckpoints" description:"Disable built-in checkpoints. Don't do this unless you know what you're doing."`
 	DbType               string        `long:"dbtype" description:"Database backend to use for the Block DAG"`
 	Profile              string        `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
 	CPUProfile           string        `long:"cpuprofile" description:"Write CPU profile to the specified file"`
@@ -292,7 +292,7 @@ func ActiveConfig() *Config {
 //
 // The above results in btcd functioning properly without any config settings
 // while still allowing the user to override settings with config files and
-// command line options.  Command line options always take precedence.
+// command line options. Command line options always take precedence.
 func loadConfig() (*Config, []string, error) {
 	// Default config.
 	cfgFlags := Flags{
@@ -324,7 +324,7 @@ func loadConfig() (*Config, []string, error) {
 	serviceOpts := serviceOptions{}
 
 	// Pre-parse the command line options to see if an alternative config
-	// file or the version flag was specified.  Any errors aside from the
+	// file or the version flag was specified. Any errors aside from the
 	// help message error can be ignored here since they will be caught by
 	// the final parse below.
 	preCfg := cfgFlags
@@ -346,8 +346,8 @@ func loadConfig() (*Config, []string, error) {
 		os.Exit(0)
 	}
 
-	// Perform service command and exit if specified.  Invalid service
-	// commands show an appropriate error.  Only runs on Windows since
+	// Perform service command and exit if specified. Invalid service
+	// commands show an appropriate error. Only runs on Windows since
 	// the RunServiceCommand function will be nil when not on Windows.
 	if serviceOpts.ServiceCommand != "" && RunServiceCommand != nil {
 		err := RunServiceCommand(serviceOpts.ServiceCommand)
@@ -464,7 +464,7 @@ func loadConfig() (*Config, []string, error) {
 	activeConfig.RelayNonStd = relayNonStd
 
 	// Append the network type to the data directory so it is "namespaced"
-	// per network.  In addition to the block database, there are other
+	// per network. In addition to the block database, there are other
 	// pieces of data that are saved to disk such as address manager state.
 	// All data is specific to a network, so namespacing the data directory
 	// means each individual piece of serialized data does not have to
@@ -483,7 +483,7 @@ func loadConfig() (*Config, []string, error) {
 		os.Exit(0)
 	}
 
-	// Initialize log rotation.  After log rotation has been initialized, the
+	// Initialize log rotation. After log rotation has been initialized, the
 	// logger variables may be used.
 	logger.InitLog(filepath.Join(activeConfig.LogDir, defaultLogFilename), filepath.Join(activeConfig.LogDir, defaultErrLogFilename))
 
@@ -863,8 +863,8 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// Setup dial and DNS resolution (lookup) functions depending on the
-	// specified options.  The default is to use the standard
-	// net.DialTimeout function as well as the system DNS resolver.  When a
+	// specified options. The default is to use the standard
+	// net.DialTimeout function as well as the system DNS resolver. When a
 	// proxy is specified, the dial function is set to the proxy specific
 	// dial function and the lookup is set to use tor (unless --noonion is
 	// specified in which case the system DNS resolver is used).
@@ -911,10 +911,10 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// Setup onion address dial function depending on the specified options.
-	// The default is to use the same dial function selected above.  However,
+	// The default is to use the same dial function selected above. However,
 	// when an onion-specific proxy is specified, the onion address dial
 	// function is set to use the onion-specific proxy while leaving the
-	// normal dial function as selected above.  This allows .onion address
+	// normal dial function as selected above. This allows .onion address
 	// traffic to be routed through a different proxy than normal traffic.
 	if activeConfig.OnionProxy != "" {
 		_, _, err := net.SplitHostPort(activeConfig.OnionProxy)
@@ -967,8 +967,8 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// Warn about missing config file only after all other configuration is
-	// done.  This prevents the warning on help messages and invalid
-	// options.  Note this should go directly before the return.
+	// done. This prevents the warning on help messages and invalid
+	// options. Note this should go directly before the return.
 	if configFileError != nil {
 		log.Warnf("%s", configFileError)
 	}

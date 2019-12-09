@@ -18,8 +18,8 @@ type signatureTest struct {
 	isValid bool
 }
 
-// decodeHex decodes the passed hex string and returns the resulting bytes.  It
-// panics if an error occurs.  This is only used in the tests as a helper since
+// decodeHex decodes the passed hex string and returns the resulting bytes. It
+// panics if an error occurs. This is only used in the tests as a helper since
 // the only way it can fail is if there is an error in the test source code.
 func decodeHex(hexStr string) []byte {
 	b, err := hex.DecodeString(hexStr)

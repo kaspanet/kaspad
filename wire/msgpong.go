@@ -31,21 +31,21 @@ func (msg *MsgPong) BtcEncode(w io.Writer, pver uint32) error {
 	return WriteElement(w, msg.Nonce)
 }
 
-// Command returns the protocol command string for the message.  This is part
+// Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgPong) Command() string {
 	return CmdPong
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
-// receiver.  This is part of the Message interface implementation.
+// receiver. This is part of the Message interface implementation.
 func (msg *MsgPong) MaxPayloadLength(pver uint32) uint32 {
 	// Nonce 8 bytes.
 	return uint32(8)
 }
 
 // NewMsgPong returns a new bitcoin pong message that conforms to the Message
-// interface.  See MsgPong for details.
+// interface. See MsgPong for details.
 func NewMsgPong(nonce uint64) *MsgPong {
 	return &MsgPong{
 		Nonce: nonce,

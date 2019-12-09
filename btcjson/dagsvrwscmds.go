@@ -68,7 +68,7 @@ type NotifyNewTransactionsCmd struct {
 // NewNotifyNewTransactionsCmd returns a new instance which can be used to issue
 // a notifyNewTransactions JSON-RPC command.
 //
-// The parameters which are pointers indicate they are optional.  Passing nil
+// The parameters which are pointers indicate they are optional. Passing nil
 // for optional parameters will use the default value.
 func NewNotifyNewTransactionsCmd(verbose *bool, subnetworkID *string) *NotifyNewTransactionsCmd {
 	return &NotifyNewTransactionsCmd{
@@ -92,7 +92,7 @@ type StopNotifyNewTransactionsCmd struct{}
 // NewStopNotifyNewTransactionsCmd returns a new instance which can be used to issue
 // a stopNotifyNewTransactions JSON-RPC command.
 //
-// The parameters which are pointers indicate they are optional.  Passing nil
+// The parameters which are pointers indicate they are optional. Passing nil
 // for optional parameters will use the default value.
 func NewStopNotifyNewTransactionsCmd() *StopNotifyNewTransactionsCmd {
 	return &StopNotifyNewTransactionsCmd{}

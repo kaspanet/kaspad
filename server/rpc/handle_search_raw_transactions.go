@@ -14,9 +14,9 @@ import (
 )
 
 // retrievedTx represents a transaction that was either loaded from the
-// transaction memory pool or from the database.  When a transaction is loaded
+// transaction memory pool or from the database. When a transaction is loaded
 // from the database, it is loaded with the raw serialized bytes while the
-// mempool has the fully deserialized structure.  This structure therefore will
+// mempool has the fully deserialized structure. This structure therefore will
 // have one of the two fields set depending on where is was retrieved from.
 // This is mainly done for efficiency to avoid extra serialization steps when
 // possible.
@@ -46,7 +46,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 	}
 
 	// Including the extra previous output information requires the
-	// transaction index.  Currently the address index relies on the
+	// transaction index. Currently the address index relies on the
 	// transaction index, so this check is redundant, but it's better to be
 	// safe in case the address index is ever changed to not rely on it.
 	if vinExtra && s.cfg.TxIndex == nil {
@@ -66,7 +66,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 		}
 	}
 
-	// Override the default number of requested entries if needed.  Also,
+	// Override the default number of requested entries if needed. Also,
 	// just return now if the number of requested entries is zero to avoid
 	// extra work.
 	numRequested := 100
@@ -96,10 +96,10 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 	}
 
 	// Add transactions from mempool first if client asked for reverse
-	// order.  Otherwise, they will be added last (as needed depending on
+	// order. Otherwise, they will be added last (as needed depending on
 	// the requested counts).
 	//
-	// NOTE: This code doesn't sort by dependency.  This might be something
+	// NOTE: This code doesn't sort by dependency. This might be something
 	// to do in the future for the client's convenience, or leave it to the
 	// client.
 	numSkipped := uint32(0)
@@ -134,7 +134,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 			}
 
 			// Add the transaction and the hash of the block it is
-			// contained in to the list.  Note that the transaction
+			// contained in to the list. Note that the transaction
 			// is left serialized here since the caller might have
 			// requested non-verbose output and hence there would be
 			// no point in deserializing it just to reserialize it
@@ -244,7 +244,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 		result.LockTime = mtx.LockTime
 
 		// Transactions grabbed from the mempool aren't yet in a block,
-		// so conditionally fetch block details here.  This will be
+		// so conditionally fetch block details here. This will be
 		// reflected in the final JSON output (mempool won't have
 		// confirmations or block information).
 		var blkHeader *wire.BlockHeader
@@ -453,7 +453,7 @@ func fetchInputTxos(s *Server, tx *wire.MsgTx) (map[wire.Outpoint]wire.TxOut, er
 }
 
 // fetchMempoolTxnsForAddress queries the address index for all unconfirmed
-// transactions that involve the provided address.  The results will be limited
+// transactions that involve the provided address. The results will be limited
 // by the number to skip and the number requested.
 func fetchMempoolTxnsForAddress(s *Server, addr util.Address, numToSkip, numRequested uint32) ([]*util.Tx, uint32) {
 	// There are no entries to return when there are less available than the

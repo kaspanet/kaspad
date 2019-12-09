@@ -25,8 +25,8 @@ const (
 type UTXOEntry struct {
 	// NOTE: Additions, deletions, or modifications to the order of the
 	// definitions in this struct should not be changed without considering
-	// how it affects alignment on 64-bit platforms.  The current order is
-	// specifically crafted to result in minimal padding.  There will be a
+	// how it affects alignment on 64-bit platforms. The current order is
+	// specifically crafted to result in minimal padding. There will be a
 	// lot of these in memory, so a few extra bytes of padding adds up.
 
 	amount         uint64
@@ -35,7 +35,7 @@ type UTXOEntry struct {
 
 	// packedFlags contains additional info about output such as whether it
 	// is a coinbase, and whether it has been modified
-	// since it was loaded.  This approach is used in order to reduce memory
+	// since it was loaded. This approach is used in order to reduce memory
 	// usage since there will be a lot of these in memory.
 	packedFlags txoFlags
 }

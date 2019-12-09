@@ -32,7 +32,7 @@ const MaxBlockHeaderPayload = BaseBlockHeaderPayload + (MaxNumParentBlocks * dag
 // BlockHeader defines information about a block and is used in the bitcoin
 // block (MsgBlock) and headers (MsgHeader) messages.
 type BlockHeader struct {
-	// Version of the block.  This is not the same as the protocol version.
+	// Version of the block. This is not the same as the protocol version.
 	Version int32
 
 	// Hashes of the parent block headers in the blockDAG.
@@ -66,7 +66,7 @@ func (h *BlockHeader) NumParentBlocks() byte {
 // BlockHash computes the block identifier hash for the given block header.
 func (h *BlockHeader) BlockHash() *daghash.Hash {
 	// Encode the header and double sha256 everything prior to the number of
-	// transactions.  Ignore the error returns since there is no way the
+	// transactions. Ignore the error returns since there is no way the
 	// encode could fail except being out of memory which would cause a
 	// run-time panic.
 	buf := bytes.NewBuffer(make([]byte, 0, BaseBlockHeaderPayload+h.NumParentBlocks()))
@@ -101,7 +101,7 @@ func (h *BlockHeader) BtcEncode(w io.Writer, pver uint32) error {
 // the Version field.
 func (h *BlockHeader) Deserialize(r io.Reader) error {
 	// At the current time, there is no difference between the wire encoding
-	// at protocol version 0 and the stable long-term storage format.  As
+	// at protocol version 0 and the stable long-term storage format. As
 	// a result, make use of readBlockHeader.
 	return readBlockHeader(r, 0, h)
 }
@@ -111,7 +111,7 @@ func (h *BlockHeader) Deserialize(r io.Reader) error {
 // the Version field.
 func (h *BlockHeader) Serialize(w io.Writer) error {
 	// At the current time, there is no difference between the wire encoding
-	// at protocol version 0 and the stable long-term storage format.  As
+	// at protocol version 0 and the stable long-term storage format. As
 	// a result, make use of writeBlockHeader.
 	return writeBlockHeader(w, 0, h)
 }
@@ -142,7 +142,7 @@ func NewBlockHeader(version int32, parentHashes []*daghash.Hash, hashMerkleRoot 
 	}
 }
 
-// readBlockHeader reads a bitcoin block header from r.  See Deserialize for
+// readBlockHeader reads a bitcoin block header from r. See Deserialize for
 // decoding block headers stored to disk, such as in a database, as opposed to
 // decoding from the wire.
 func readBlockHeader(r io.Reader, pver uint32, bh *BlockHeader) error {
@@ -168,7 +168,7 @@ func readBlockHeader(r io.Reader, pver uint32, bh *BlockHeader) error {
 		(*int64Time)(&bh.Timestamp), &bh.Bits, &bh.Nonce)
 }
 
-// writeBlockHeader writes a bitcoin block header to w.  See Serialize for
+// writeBlockHeader writes a bitcoin block header to w. See Serialize for
 // encoding block headers to be stored to disk, such as in a database, as
 // opposed to encoding for the wire.
 func writeBlockHeader(w io.Writer, pver uint32, bh *BlockHeader) error {

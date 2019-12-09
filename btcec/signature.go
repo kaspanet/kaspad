@@ -30,7 +30,7 @@ var (
 	// Used in RFC6979 implementation when testing the nonce for correctness
 	one = big.NewInt(1)
 
-	// oneInitializer is used to fill a byte slice with byte 0x01.  It is provided
+	// oneInitializer is used to fill a byte slice with byte 0x01. It is provided
 	// here to avoid the need to create it multiple times.
 	oneInitializer = []byte{0x01}
 )

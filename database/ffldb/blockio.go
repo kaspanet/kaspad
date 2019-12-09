@@ -25,7 +25,7 @@ import (
 
 const (
 	// maxOpenFiles is the max number of open files to maintain in the
-	// open blocks cache.  Note that this does not include the current
+	// open blocks cache. Note that this does not include the current
 	// write file, so there will typically be one more than this value open.
 	maxOpenFiles = 25
 
@@ -33,7 +33,7 @@ const (
 	// blocks.
 	//
 	// NOTE: The current code uses uint32 for all offsets, so this value
-	// must be less than 2^32 (4 GiB).  This is also why it's a typed
+	// must be less than 2^32 (4 GiB). This is also why it's a typed
 	// constant.
 	maxBlockFileSize uint32 = 512 * 1024 * 1024 // 512 MiB
 
@@ -54,7 +54,7 @@ var (
 )
 
 // filer is an interface which acts very similar to a *os.File and is typically
-// implemented by it.  It exists so the test code can provide mock files for
+// implemented by it. It exists so the test code can provide mock files for
 // properly testing corruption and file system issues.
 type filer interface {
 	io.Closer
@@ -65,7 +65,7 @@ type filer interface {
 }
 
 // lockableFile represents a block file on disk that has been opened for either
-// read or read/write access.  It also contains a read-write mutex to support
+// read or read/write access. It also contains a read-write mutex to support
 // multiple concurrent readers.
 type lockableFile struct {
 	sync.RWMutex
@@ -102,20 +102,20 @@ type blockStore struct {
 	basePath string
 
 	// maxBlockFileSize is the maximum size for each file used to store
-	// blocks.  It is defined on the store so the whitebox tests can
+	// blocks. It is defined on the store so the whitebox tests can
 	// override the value.
 	maxBlockFileSize uint32
 
 	// maxOpenFiles is the max number of open files to maintain in the
-	// open blocks cache.  Note that this does not include the current
+	// open blocks cache. Note that this does not include the current
 	// write file, so there will typically be one more than this value open.
 	// It is defined on the store so the whitebox tests can override the value.
 	maxOpenFiles int
 
 	// The following fields are related to the flat files which hold the
-	// actual blocks.   The number of open files is limited by maxOpenFiles.
+	// actual blocks. The number of open files is limited by maxOpenFiles.
 	//
-	// obfMutex protects concurrent access to the openBlockFiles map.  It is
+	// obfMutex protects concurrent access to the openBlockFiles map. It is
 	// a RWMutex so multiple readers can simultaneously access open files.
 	//
 	// openBlockFiles houses the open file handles for existing block files
@@ -128,7 +128,7 @@ type blockStore struct {
 	//
 	// openBlocksLRU tracks how the open files are refenced by pushing the
 	// most recently used files to the front of the list thereby trickling
-	// the least recently used files to end of the list.  When a file needs
+	// the least recently used files to end of the list. When a file needs
 	// to be closed due to exceeding the the max number of allowed open
 	// files, the one at the end of the list is closed.
 	//
@@ -141,7 +141,7 @@ type blockStore struct {
 	// closing the least recently used files as needed.
 	//
 	// NOTE: The locking order used throughout is well-defined and MUST be
-	// followed.  Failure to do so could lead to deadlocks.  In particular,
+	// followed. Failure to do so could lead to deadlocks. In particular,
 	// the locking order is as follows:
 	//   1) obfMutex
 	//   2) lruMutex
@@ -149,7 +149,7 @@ type blockStore struct {
 	//   4) specific file mutexes
 	//
 	// None of the mutexes are required to be locked at the same time, and
-	// often aren't.  However, if they are to be locked simultaneously, they
+	// often aren't. However, if they are to be locked simultaneously, they
 	// MUST be locked in the order previously specified.
 	//
 	// Due to the high performance and multi-read concurrency requirements,
@@ -180,11 +180,11 @@ type blockLocation struct {
 }
 
 // deserializeBlockLoc deserializes the passed serialized block location
-// information.  This is data stored into the block index metadata for each
-// block.  The serialized data passed to this function MUST be at least
-// blockLocSize bytes or it will panic.  The error check is avoided here because
+// information. This is data stored into the block index metadata for each
+// block. The serialized data passed to this function MUST be at least
+// blockLocSize bytes or it will panic. The error check is avoided here because
 // this information will always be coming from the block index which includes a
-// checksum to detect corruption.  Thus it is safe to use this unchecked here.
+// checksum to detect corruption. Thus it is safe to use this unchecked here.
 func deserializeBlockLoc(serializedLoc []byte) blockLocation {
 	// The serialized block location format is:
 	//
@@ -216,11 +216,11 @@ func serializeBlockLoc(loc blockLocation) []byte {
 // blockFilePath return the file path for the provided block file number.
 func blockFilePath(dbPath string, fileNum uint32) string {
 	// The Bitcoin protocol encodes block height as int32, so max number of
-	// blocks is 2^31.  Max block size per the protocol is 32MiB per block.
+	// blocks is 2^31. Max block size per the protocol is 32MiB per block.
 	// So the theoretical max at the time this comment was written is 64PiB
-	// (pebibytes).  With files @ 512MiB each, this would require a maximum
-	// of 134,217,728 files.  Thus, choose 9 digits of precision for the
-	// filenames.  An additional benefit is 9 digits provides 10^9 files @
+	// (pebibytes). With files @ 512MiB each, this would require a maximum
+	// of 134,217,728 files. Thus, choose 9 digits of precision for the
+	// filenames. An additional benefit is 9 digits provides 10^9 files @
 	// 512MiB each for a total of ~476.84PiB (roughly 7.4 times the current
 	// theoretical max), so there is room for the max block size to grow in
 	// the future.
@@ -230,13 +230,13 @@ func blockFilePath(dbPath string, fileNum uint32) string {
 }
 
 // openWriteFile returns a file handle for the passed flat file number in
-// read/write mode.  The file will be created if needed.  It is typically used
-// for the current file that will have all new data appended.  Unlike openFile,
+// read/write mode. The file will be created if needed. It is typically used
+// for the current file that will have all new data appended. Unlike openFile,
 // this function does not keep track of the open file and it is not subject to
 // the maxOpenFiles limit.
 func (s *blockStore) openWriteFile(fileNum uint32) (filer, error) {
 	// The current block file needs to be read-write so it is possible to
-	// append to it.  Also, it shouldn't be part of the least recently used
+	// append to it. Also, it shouldn't be part of the least recently used
 	// file.
 	filePath := blockFilePath(s.basePath, fileNum)
 	file, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0666)
@@ -266,7 +266,7 @@ func (s *blockStore) openFile(fileNum uint32) (*lockableFile, error) {
 	blockFile := &lockableFile{file: file}
 
 	// Close the least recently used file if the file exceeds the max
-	// allowed open files.  This is not done until after the file open in
+	// allowed open files. This is not done until after the file open in
 	// case the file fails to open, there is no need to close any files.
 	//
 	// A write lock is required on the LRU list here to protect against
@@ -301,7 +301,7 @@ func (s *blockStore) openFile(fileNum uint32) (*lockableFile, error) {
 	return blockFile, nil
 }
 
-// deleteFile removes the block file for the passed flat file number.  The file
+// deleteFile removes the block file for the passed flat file number. The file
 // must already be closed and it is the responsibility of the caller to do any
 // other state cleanup necessary.
 func (s *blockStore) deleteFile(fileNum uint32) error {
@@ -314,13 +314,13 @@ func (s *blockStore) deleteFile(fileNum uint32) error {
 }
 
 // blockFile attempts to return an existing file handle for the passed flat file
-// number if it is already open as well as marking it as most recently used.  It
+// number if it is already open as well as marking it as most recently used. It
 // will also open the file when it's not already open subject to the rules
 // described in openFile.
 //
 // NOTE: The returned block file will already have the read lock acquired and
 // the caller MUST call .RUnlock() to release it once it has finished all read
-// operations.  This is necessary because otherwise it would be possible for a
+// operations. This is necessary because otherwise it would be possible for a
 // separate goroutine to close the file after it is returned from here, but
 // before the caller has acquired a read lock.
 func (s *blockStore) blockFile(fileNum uint32) (*lockableFile, error) {
@@ -371,7 +371,7 @@ func (s *blockStore) blockFile(fileNum uint32) (*lockableFile, error) {
 }
 
 // writeData is a helper function for writeBlock which writes the provided data
-// at the current write offset and updates the write cursor accordingly.  The
+// at the current write offset and updates the write cursor accordingly. The
 // field name parameter is only used when there is an error to provide a nicer
 // error message.
 //
@@ -380,7 +380,7 @@ func (s *blockStore) blockFile(fileNum uint32) (*lockableFile, error) {
 //
 // NOTE: This function MUST be called with the write cursor current file lock
 // held and must only be called during a write transaction so it is effectively
-// locked for writes.  Also, the write cursor current file must NOT be nil.
+// locked for writes. Also, the write cursor current file must NOT be nil.
 func (s *blockStore) writeData(data []byte, fieldName string) error {
 	wc := s.writeCursor
 	n, err := wc.curFile.file.WriteAt(data, int64(wc.curOffset))
@@ -400,7 +400,7 @@ func (s *blockStore) writeData(data []byte, fieldName string) error {
 }
 
 // writeBlock appends the specified raw block bytes to the store's write cursor
-// location and increments it accordingly.  When the block would exceed the max
+// location and increments it accordingly. When the block would exceed the max
 // file size for the current flat file, this function will close the current
 // file, create the next file, update the write cursor, and write the block to
 // the new file.
@@ -417,7 +417,7 @@ func (s *blockStore) writeBlock(rawBlock []byte) (blockLocation, error) {
 	fullLen := blockLen + 12
 
 	// Move to the next block file if adding the new block would exceed the
-	// max allowed size for the current block file.  Also detect overflow
+	// max allowed size for the current block file. Also detect overflow
 	// to be paranoid, even though it isn't possible currently, numbers
 	// might change in the future to make it possible.
 	//
@@ -432,7 +432,7 @@ func (s *blockStore) writeBlock(rawBlock []byte) (blockLocation, error) {
 		// field is accessed elsewhere by readers.
 		//
 		// Close the current write file to force a read-only reopen
-		// with LRU tracking.  The close is done under the write lock
+		// with LRU tracking. The close is done under the write lock
 		// for the file to prevent it from being closed out from under
 		// any readers currently reading from it.
 		wc.Lock()
@@ -454,9 +454,9 @@ func (s *blockStore) writeBlock(rawBlock []byte) (blockLocation, error) {
 	wc.curFile.Lock()
 	defer wc.curFile.Unlock()
 
-	// Open the current file if needed.  This will typically only be the
+	// Open the current file if needed. This will typically only be the
 	// case when moving to the next file to write to or on initial database
-	// load.  However, it might also be the case if rollbacks happened after
+	// load. However, it might also be the case if rollbacks happened after
 	// file writes started during a transaction commit.
 	if wc.curFile.file == nil {
 		file, err := s.openWriteFileFunc(wc.curFileNum)
@@ -516,7 +516,7 @@ func (s *blockStore) writeBlock(rawBlock []byte) (blockLocation, error) {
 //
 // Format: <network><block length><serialized block><checksum>
 func (s *blockStore) readBlock(hash *daghash.Hash, loc blockLocation) ([]byte, error) {
-	// Get the referenced block file handle opening the file as needed.  The
+	// Get the referenced block file handle opening the file as needed. The
 	// function also handles closing files as needed to avoid going over the
 	// max allowed open files.
 	blockFile, err := s.blockFile(loc.blockFileNum)
@@ -535,7 +535,7 @@ func (s *blockStore) readBlock(hash *daghash.Hash, loc blockLocation) ([]byte, e
 	}
 
 	// Calculate the checksum of the read data and ensure it matches the
-	// serialized checksum.  This will detect any data corruption in the
+	// serialized checksum. This will detect any data corruption in the
 	// flat file without having to do much more expensive merkle root
 	// calculations on the loaded block.
 	serializedChecksum := binary.BigEndian.Uint32(serializedData[n-4:])
@@ -564,15 +564,15 @@ func (s *blockStore) readBlock(hash *daghash.Hash, loc blockLocation) ([]byte, e
 }
 
 // readBlockRegion reads the specified amount of data at the provided offset for
-// a given block location.  The offset is relative to the start of the
-// serialized block (as opposed to the beginning of the block record).  This
+// a given block location. The offset is relative to the start of the
+// serialized block (as opposed to the beginning of the block record). This
 // function automatically handles all file management such as opening and
 // closing files as necessary to stay within the maximum allowed open files
 // limit.
 //
 // Returns ErrDriverSpecific if the data fails to read for any reason.
 func (s *blockStore) readBlockRegion(loc blockLocation, offset, numBytes uint32) ([]byte, error) {
-	// Get the referenced block file handle opening the file as needed.  The
+	// Get the referenced block file handle opening the file as needed. The
 	// function also handles closing files as needed to avoid going over the
 	// max allowed open files.
 	blockFile, err := s.blockFile(loc.blockFileNum)
@@ -582,7 +582,7 @@ func (s *blockStore) readBlockRegion(loc blockLocation, offset, numBytes uint32)
 
 	// Regions are offsets into the actual block, however the serialized
 	// data for a block includes an initial 4 bytes for network + 4 bytes
-	// for block length.  Thus, add 8 bytes to adjust.
+	// for block length. Thus, add 8 bytes to adjust.
 	readOffset := loc.fileOffset + 8 + offset
 	serializedData := make([]byte, numBytes)
 	_, err = blockFile.file.ReadAt(serializedData, int64(readOffset))
@@ -598,11 +598,11 @@ func (s *blockStore) readBlockRegion(loc blockLocation, offset, numBytes uint32)
 }
 
 // syncBlocks performs a file system sync on the flat file associated with the
-// store's current write cursor.  It is safe to call even when there is not a
+// store's current write cursor. It is safe to call even when there is not a
 // current write file in which case it will have no effect.
 //
 // This is used when flushing cached metadata updates to disk to ensure all the
-// block data is fully written before updating the metadata.  This ensures the
+// block data is fully written before updating the metadata. This ensures the
 // metadata and block data can be properly reconciled in failure scenarios.
 func (s *blockStore) syncBlocks() error {
 	wc := s.writeCursor
@@ -628,7 +628,7 @@ func (s *blockStore) syncBlocks() error {
 }
 
 // handleRollback rolls the block files on disk back to the provided file number
-// and offset.  This involves potentially deleting and truncating the files that
+// and offset. This involves potentially deleting and truncating the files that
 // were partially written.
 //
 // There are effectively two scenarios to consider here:
@@ -673,7 +673,7 @@ func (s *blockStore) handleRollback(oldBlockFileNum, oldBlockOffset uint32) {
 	log.Debugf("ROLLBACK: Rolling back to file %d, offset %d",
 		oldBlockFileNum, oldBlockOffset)
 
-	// Close the current write file if it needs to be deleted.  Then delete
+	// Close the current write file if it needs to be deleted. Then delete
 	// all files that are newer than the provided rollback file while
 	// also moving the write cursor file backwards accordingly.
 	if wc.curFileNum > oldBlockFileNum {
@@ -723,8 +723,8 @@ func (s *blockStore) handleRollback(oldBlockFileNum, oldBlockOffset uint32) {
 }
 
 // scanBlockFiles searches the database directory for all flat block files to
-// find the end of the most recent file.  This position is considered the
-// current write cursor which is also stored in the metadata.  Thus, it is used
+// find the end of the most recent file. This position is considered the
+// current write cursor which is also stored in the metadata. Thus, it is used
 // to detect unexpected shutdowns in the middle of writes so the block files
 // can be reconciled.
 func scanBlockFiles(dbPath string) (int, uint32) {

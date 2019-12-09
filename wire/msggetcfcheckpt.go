@@ -41,14 +41,14 @@ func (msg *MsgGetCFCheckpt) BtcEncode(w io.Writer, pver uint32) error {
 	return WriteElement(w, msg.StopHash)
 }
 
-// Command returns the protocol command string for the message.  This is part
+// Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgGetCFCheckpt) Command() string {
 	return CmdGetCFCheckpt
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
-// receiver.  This is part of the Message interface implementation.
+// receiver. This is part of the Message interface implementation.
 func (msg *MsgGetCFCheckpt) MaxPayloadLength(pver uint32) uint32 {
 	// Filter type + uint32 + block hash
 	return 1 + daghash.HashSize

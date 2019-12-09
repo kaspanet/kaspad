@@ -9,7 +9,7 @@ import (
 )
 
 // MsgSendHeaders implements the Message interface and represents a bitcoin
-// sendheaders message.  It is used to request the peer send block headers
+// sendheaders message. It is used to request the peer send block headers
 // rather than inventory vectors.
 //
 // This message has no payload.
@@ -27,20 +27,20 @@ func (msg *MsgSendHeaders) BtcEncode(w io.Writer, pver uint32) error {
 	return nil
 }
 
-// Command returns the protocol command string for the message.  This is part
+// Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgSendHeaders) Command() string {
 	return CmdSendHeaders
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
-// receiver.  This is part of the Message interface implementation.
+// receiver. This is part of the Message interface implementation.
 func (msg *MsgSendHeaders) MaxPayloadLength(pver uint32) uint32 {
 	return 0
 }
 
 // NewMsgSendHeaders returns a new bitcoin sendheaders message that conforms to
-// the Message interface.  See MsgSendHeaders for details.
+// the Message interface. See MsgSendHeaders for details.
 func NewMsgSendHeaders() *MsgSendHeaders {
 	return &MsgSendHeaders{}
 }

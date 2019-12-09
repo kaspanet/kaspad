@@ -57,7 +57,7 @@ func newNotificationState() *notificationState {
 }
 
 // newNilFutureResult returns a new future result channel that already has the
-// result waiting on the channel with the reply set to nil.  This is useful
+// result waiting on the channel with the reply set to nil. This is useful
 // to ignore things such as notifications when the caller didn't specify any
 // notification handlers.
 func newNilFutureResult() chan *response {
@@ -67,12 +67,12 @@ func newNilFutureResult() chan *response {
 }
 
 // NotificationHandlers defines callback function pointers to invoke with
-// notifications.  Since all of the functions are nil by default, all
+// notifications. Since all of the functions are nil by default, all
 // notifications are effectively ignored until their handlers are set to a
 // concrete callback.
 type NotificationHandlers struct {
 	// OnClientConnected is invoked when the client connects or reconnects
-	// to the RPC server.  This callback is run async with the rest of the
+	// to the RPC server. This callback is run async with the rest of the
 	// notification handlers, and is safe for blocking client requests.
 	OnClientConnected func()
 
@@ -84,9 +84,9 @@ type NotificationHandlers struct {
 	OnBlockAdded func(hash *daghash.Hash, height int32, t time.Time)
 
 	// OnFilteredBlockAdded is invoked when a block is connected to the
-	// bloackDAG.  It will only be invoked if a preceding call to
+	// bloackDAG. It will only be invoked if a preceding call to
 	// NotifyBlocks has been made to register for the notification and the
-	// function is non-nil.  Its parameters differ from OnBlockAdded: it
+	// function is non-nil. Its parameters differ from OnBlockAdded: it
 	// receives the block's height, header, and relevant transactions.
 	OnFilteredBlockAdded func(height uint64, header *wire.BlockHeader,
 		txs []*util.Tx)
@@ -106,19 +106,19 @@ type NotificationHandlers struct {
 	OnRelevantTxAccepted func(transaction []byte)
 
 	// OnTxAccepted is invoked when a transaction is accepted into the
-	// memory pool.  It will only be invoked if a preceding call to
+	// memory pool. It will only be invoked if a preceding call to
 	// NotifyNewTransactions with the verbose flag set to false has been
 	// made to register for the notification and the function is non-nil.
 	OnTxAccepted func(hash *daghash.Hash, amount util.Amount)
 
 	// OnTxAccepted is invoked when a transaction is accepted into the
-	// memory pool.  It will only be invoked if a preceding call to
+	// memory pool. It will only be invoked if a preceding call to
 	// NotifyNewTransactions with the verbose flag set to true has been
 	// made to register for the notification and the function is non-nil.
 	OnTxAcceptedVerbose func(txDetails *btcjson.TxRawResult)
 
 	// OnUnknownNotification is invoked when an unrecognized notification
-	// is received.  This typically means the notification handling code
+	// is received. This typically means the notification handling code
 	// for this package needs to be updated for a new notification type or
 	// the caller is using a custom notification this package does not know
 	// about.
@@ -237,7 +237,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 
 // wrongNumParams is an error type describing an unparseable JSON-RPC
 // notificiation due to an incorrect number of parameters for the
-// expected notification type.  The value is the number of parameters
+// expected notification type. The value is the number of parameters
 // of the invalid notification.
 type wrongNumParams int
 
@@ -530,8 +530,8 @@ func (c *Client) NotifyBlocksAsync() FutureNotifyBlocksResult {
 }
 
 // NotifyBlocks registers the client to receive notifications when blocks are
-// connected and disconnected from the main chain.  The notifications are
-// delivered to the notification handlers associated with the client.  Calling
+// connected and disconnected from the main chain. The notifications are
+// delivered to the notification handlers associated with the client. Calling
 // this function has no effect if there are no notification handlers and will
 // result in an error if the client is configured to run in HTTP POST mode.
 //
@@ -633,8 +633,8 @@ func (c *Client) NotifyNewTransactionsAsync(verbose bool, subnetworkID *string) 
 }
 
 // NotifyNewTransactions registers the client to receive notifications every
-// time a new transaction is accepted to the memory pool.  The notifications are
-// delivered to the notification handlers associated with the client.  Calling
+// time a new transaction is accepted to the memory pool. The notifications are
+// delivered to the notification handlers associated with the client. Calling
 // this function has no effect if there are no notification handlers and will
 // result in an error if the client is configured to run in HTTP POST mode.
 //
@@ -692,7 +692,7 @@ func (c *Client) LoadTxFilterAsync(reload bool, addresses []util.Address,
 }
 
 // LoadTxFilter loads, reloads, or adds data to a websocket client's transaction
-// filter.  The filter is consistently updated based on inspected transactions
+// filter. The filter is consistently updated based on inspected transactions
 // during mempool acceptance, block acceptance, and for all rescanned blocks.
 //
 // NOTE: This is a btcd extension ported from github.com/decred/dcrrpcclient

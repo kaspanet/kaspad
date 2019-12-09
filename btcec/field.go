@@ -10,26 +10,26 @@ package btcec
 //     http://cacr.uwaterloo.ca/hac/
 
 // All elliptic curve operations for secp256k1 are done in a finite field
-// characterized by a 256-bit prime.  Given this precision is larger than the
+// characterized by a 256-bit prime. Given this precision is larger than the
 // biggest available native type, obviously some form of bignum math is needed.
 // This package implements specialized fixed-precision field arithmetic rather
 // than relying on an arbitrary-precision arithmetic package such as math/big
-// for dealing with the field math since the size is known.  As a result, rather
+// for dealing with the field math since the size is known. As a result, rather
 // large performance gains are achieved by taking advantage of many
 // optimizations not available to arbitrary-precision arithmetic and generic
 // modular arithmetic algorithms.
 //
 // There are various ways to internally represent each finite field element.
 // For example, the most obvious representation would be to use an array of 4
-// uint64s (64 bits * 4 = 256 bits).  However, that representation suffers from
-// a couple of issues.  First, there is no native Go type large enough to handle
+// uint64s (64 bits * 4 = 256 bits). However, that representation suffers from
+// a couple of issues. First, there is no native Go type large enough to handle
 // the intermediate results while adding or multiplying two 64-bit numbers, and
 // second there is no space left for overflows when performing the intermediate
 // arithmetic between each array element which would lead to expensive carry
 // propagation.
 //
 // Given the above, this implementation represents the the field elements as
-// 10 uint32s with each word (array entry) treated as base 2^26.  This was
+// 10 uint32s with each word (array entry) treated as base 2^26. This was
 // chosen for the following reasons:
 // 1) Most systems at the current time are 64-bit (or at least have 64-bit
 //    registers available for specialized purposes such as MMX) so the
@@ -48,7 +48,7 @@ package btcec
 //
 // Since it is so important that the field arithmetic is extremely fast for
 // high performance crypto, this package does not perform any validation where
-// it ordinarily would.  For example, some functions only give the correct
+// it ordinarily would. For example, some functions only give the correct
 // result is the field is normalized and there is no checking to ensure it is.
 // While I typically prefer to ensure all state and input is valid for most
 // packages, this code is really only used internally and every extra check
@@ -94,20 +94,20 @@ const (
 	fieldMSBMask = (1 << fieldMSBBits) - 1
 
 	// fieldPrimeWordZero is word zero of the secp256k1 prime in the
-	// internal field representation.  It is used during negation.
+	// internal field representation. It is used during negation.
 	fieldPrimeWordZero = 0x3fffc2f
 
 	// fieldPrimeWordOne is word one of the secp256k1 prime in the
-	// internal field representation.  It is used during negation.
+	// internal field representation. It is used during negation.
 	fieldPrimeWordOne = 0x3ffffbf
 )
 
 // fieldVal implements optimized fixed-precision arithmetic over the
-// secp256k1 finite field.  This means all arithmetic is performed modulo
-// 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f.  It
-// represents each 256-bit value as 10 32-bit integers in base 2^26.  This
+// secp256k1 finite field. This means all arithmetic is performed modulo
+// 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f. It
+// represents each 256-bit value as 10 32-bit integers in base 2^26. This
 // provides 6 bits of overflow in each word (10 bits in the most significant
-// word) for a total of 64 bits of overflow (9*6 + 10 = 64).  It only implements
+// word) for a total of 64 bits of overflow (9*6 + 10 = 64). It only implements
 // the arithmetic needed for elliptic curve operations.
 //
 // The following depicts the internal representation:
@@ -119,7 +119,7 @@ const (
 // 	| Mult: 2^(26*9)    | Mult: 2^(26*8)    | ... | Mult: 2^(26*0)    |
 // 	 -----------------------------------------------------------------
 //
-// For example, consider the number 2^49 + 1.  It would be represented as:
+// For example, consider the number 2^49 + 1. It would be represented as:
 // 	n[0] = 1
 // 	n[1] = 2^23
 // 	n[2..9] = 0
@@ -142,8 +142,8 @@ func (f fieldVal) String() string {
 	return hex.EncodeToString(t.Bytes()[:])
 }
 
-// Zero sets the field value to zero.  A newly created field value is already
-// set to zero.  This function can be useful to clear an existing field value
+// Zero sets the field value to zero. A newly created field value is already
+// set to zero. This function can be useful to clear an existing field value
 // for reuse.
 func (f *fieldVal) Zero() {
 	f.n[0] = 0
@@ -160,7 +160,7 @@ func (f *fieldVal) Zero() {
 
 // Set sets the field value equal to the passed value.
 //
-// The field value is returned to support chaining.  This enables syntax like:
+// The field value is returned to support chaining. This enables syntax like:
 // f := new(fieldVal).Set(f2).Add(1) so that f = f2 + 1 where f2 is not
 // modified.
 func (f *fieldVal) Set(val *fieldVal) *fieldVal {
@@ -168,11 +168,11 @@ func (f *fieldVal) Set(val *fieldVal) *fieldVal {
 	return f
 }
 
-// SetInt sets the field value to the passed integer.  This is a convenience
+// SetInt sets the field value to the passed integer. This is a convenience
 // function since it is fairly common to perform some arithemetic with small
 // native integers.
 //
-// The field value is returned to support chaining.  This enables syntax such
+// The field value is returned to support chaining. This enables syntax such
 // as f := new(fieldVal).SetInt(2).Mul(f2) so that f = 2 * f2.
 func (f *fieldVal) SetInt(ui uint) *fieldVal {
 	f.Zero()
@@ -183,12 +183,12 @@ func (f *fieldVal) SetInt(ui uint) *fieldVal {
 // SetBytes packs the passed 32-byte big-endian value into the internal field
 // value representation.
 //
-// The field value is returned to support chaining.  This enables syntax like:
+// The field value is returned to support chaining. This enables syntax like:
 // f := new(fieldVal).SetBytes(byteArray).Mul(f2) so that f = ba * f2.
 func (f *fieldVal) SetBytes(b *[32]byte) *fieldVal {
 	// Pack the 256 total bits across the 10 uint32 words with a max of
-	// 26-bits per word.  This could be done with a couple of for loops,
-	// but this unrolled version is significantly faster.  Benchmarks show
+	// 26-bits per word. This could be done with a couple of for loops,
+	// but this unrolled version is significantly faster. Benchmarks show
 	// this is about 34 times faster than the variant which uses loops.
 	f.n[0] = uint32(b[31]) | uint32(b[30])<<8 | uint32(b[29])<<16 |
 		(uint32(b[28])&twoBitsMask)<<24
@@ -213,11 +213,11 @@ func (f *fieldVal) SetBytes(b *[32]byte) *fieldVal {
 }
 
 // SetByteSlice packs the passed big-endian value into the internal field value
-// representation.  Only the first 32-bytes are used.  As a result, it is up to
+// representation. Only the first 32-bytes are used. As a result, it is up to
 // the caller to ensure numbers of the appropriate size are used or the value
 // will be truncated.
 //
-// The field value is returned to support chaining.  This enables syntax like:
+// The field value is returned to support chaining. This enables syntax like:
 // f := new(fieldVal).SetByteSlice(byteSlice)
 func (f *fieldVal) SetByteSlice(b []byte) *fieldVal {
 	var b32 [32]byte
@@ -230,9 +230,9 @@ func (f *fieldVal) SetByteSlice(b []byte) *fieldVal {
 }
 
 // SetHex decodes the passed big-endian hex string into the internal field value
-// representation.  Only the first 32-bytes are used.
+// representation. Only the first 32-bytes are used.
 //
-// The field value is returned to support chaining.  This enables syntax like:
+// The field value is returned to support chaining. This enables syntax like:
 // f := new(fieldVal).SetHex("0abc").Add(1) so that f = 0x0abc + 1
 func (f *fieldVal) SetHex(hexString string) *fieldVal {
 	if len(hexString)%2 != 0 {
@@ -248,7 +248,7 @@ func (f *fieldVal) SetHex(hexString string) *fieldVal {
 func (f *fieldVal) Normalize() *fieldVal {
 	// The field representation leaves 6 bits of overflow in each word so
 	// intermediate calculations can be performed without needing to
-	// propagate the carry to each higher word during the calculations.  In
+	// propagate the carry to each higher word during the calculations. In
 	// order to normalize, we need to "compact" the full 256-bit value to
 	// the right while propagating any carries through to the high order
 	// word.
@@ -269,11 +269,11 @@ func (f *fieldVal) Normalize() *fieldVal {
 	// That is to say (2^26 * 64) + 977 = 4294968273
 	//
 	// The algorithm presented in the referenced section typically repeats
-	// until the quotient is zero.  However, due to our field representation
+	// until the quotient is zero. However, due to our field representation
 	// we already know to within one reduction how many times we would need
-	// to repeat as it's the uppermost bits of the high order word.  Thus we
+	// to repeat as it's the uppermost bits of the high order word. Thus we
 	// can simply multiply the magnitude by the field representation of the
-	// prime and do a single iteration.  After this step there might be an
+	// prime and do a single iteration. After this step there might be an
 	// additional carry to bit 256 (bit 22 of the high order word).
 	t9 := f.n[9]
 	m := t9 >> fieldMSBBits
@@ -301,13 +301,13 @@ func (f *fieldVal) Normalize() *fieldVal {
 	// At this point, the magnitude is guaranteed to be one, however, the
 	// value could still be greater than the prime if there was either a
 	// carry through to bit 256 (bit 22 of the higher order word) or the
-	// value is greater than or equal to the field characteristic.  The
+	// value is greater than or equal to the field characteristic. The
 	// following determines if either or these conditions are true and does
 	// the final reduction in constant time.
 	//
 	// Note that the if/else statements here intentionally do the bitwise
 	// operators even when it won't change the value to ensure constant time
-	// between the branches.  Also note that 'm' will be zero when neither
+	// between the branches. Also note that 'm' will be zero when neither
 	// of the aforementioned conditions are true and the value will not be
 	// changed when 'm' is zero.
 	m = 1
@@ -367,8 +367,8 @@ func (f *fieldVal) Normalize() *fieldVal {
 }
 
 // PutBytes unpacks the field value to a 32-byte big-endian value using the
-// passed byte array.  There is a similar function, Bytes, which unpacks the
-// field value into a new array and returns that.  This version is provided
+// passed byte array. There is a similar function, Bytes, which unpacks the
+// field value into a new array and returns that. This version is provided
 // since it can be useful to cut down on the number of allocations by allowing
 // the caller to reuse a buffer.
 //
@@ -376,8 +376,8 @@ func (f *fieldVal) Normalize() *fieldVal {
 // result.
 func (f *fieldVal) PutBytes(b *[32]byte) {
 	// Unpack the 256 total bits from the 10 uint32 words with a max of
-	// 26-bits per word.  This could be done with a couple of for loops,
-	// but this unrolled version is a bit faster.  Benchmarks show this is
+	// 26-bits per word. This could be done with a couple of for loops,
+	// but this unrolled version is a bit faster. Benchmarks show this is
 	// about 10 times faster than the variant which uses loops.
 	b[31] = byte(f.n[0] & eightBitsMask)
 	b[30] = byte((f.n[0] >> 8) & eightBitsMask)
@@ -413,7 +413,7 @@ func (f *fieldVal) PutBytes(b *[32]byte) {
 	b[0] = byte((f.n[9] >> 14) & eightBitsMask)
 }
 
-// Bytes unpacks the field value to a 32-byte big-endian value.  See PutBytes
+// Bytes unpacks the field value to a 32-byte big-endian value. See PutBytes
 // for a variant that allows the a buffer to be passed which can be useful to
 // to cut down on the number of allocations by allowing the caller to reuse a
 // buffer.
@@ -445,7 +445,7 @@ func (f *fieldVal) IsOdd() bool {
 	return f.n[0]&1 == 1
 }
 
-// Equals returns whether or not the two field values are the same.  Both
+// Equals returns whether or not the two field values are the same. Both
 // field values being compared must be normalized for this function to return
 // the correct result.
 func (f *fieldVal) Equals(val *fieldVal) bool {
@@ -460,30 +460,30 @@ func (f *fieldVal) Equals(val *fieldVal) bool {
 	return bits == 0
 }
 
-// NegateVal negates the passed value and stores the result in f.  The caller
+// NegateVal negates the passed value and stores the result in f. The caller
 // must provide the magnitude of the passed value for a correct result.
 //
-// The field value is returned to support chaining.  This enables syntax like:
+// The field value is returned to support chaining. This enables syntax like:
 // f.NegateVal(f2).AddInt(1) so that f = -f2 + 1.
 func (f *fieldVal) NegateVal(val *fieldVal, magnitude uint32) *fieldVal {
-	// Negation in the field is just the prime minus the value.  However,
+	// Negation in the field is just the prime minus the value. However,
 	// in order to allow negation against a field value without having to
 	// normalize/reduce it first, multiply by the magnitude (that is how
-	// "far" away it is from the normalized value) to adjust.  Also, since
+	// "far" away it is from the normalized value) to adjust. Also, since
 	// negating a value pushes it one more order of magnitude away from the
 	// normalized range, add 1 to compensate.
 	//
 	// For some intuition here, imagine you're performing mod 12 arithmetic
-	// (picture a clock) and you are negating the number 7.  So you start at
+	// (picture a clock) and you are negating the number 7. So you start at
 	// 12 (which is of course 0 under mod 12) and count backwards (left on
-	// the clock) 7 times to arrive at 5.  Notice this is just 12-7 = 5.
+	// the clock) 7 times to arrive at 5. Notice this is just 12-7 = 5.
 	// Now, assume you're starting with 19, which is a number that is
-	// already larger than the modulus and congruent to 7 (mod 12).  When a
-	// value is already in the desired range, its magnitude is 1.  Since 19
-	// is an additional "step", its magnitude (mod 12) is 2.  Since any
+	// already larger than the modulus and congruent to 7 (mod 12). When a
+	// value is already in the desired range, its magnitude is 1. Since 19
+	// is an additional "step", its magnitude (mod 12) is 2. Since any
 	// multiple of the modulus is conguent to zero (mod m), the answer can
 	// be shortcut by simply mulplying the magnitude by the modulus and
-	// subtracting.  Keeping with the example, this would be (2*12)-19 = 5.
+	// subtracting. Keeping with the example, this would be (2*12)-19 = 5.
 	f.n[0] = (magnitude+1)*fieldPrimeWordZero - val.n[0]
 	f.n[1] = (magnitude+1)*fieldPrimeWordOne - val.n[1]
 	f.n[2] = (magnitude+1)*fieldBaseMask - val.n[2]
@@ -498,20 +498,20 @@ func (f *fieldVal) NegateVal(val *fieldVal, magnitude uint32) *fieldVal {
 	return f
 }
 
-// Negate negates the field value.  The existing field value is modified.  The
+// Negate negates the field value. The existing field value is modified. The
 // caller must provide the magnitude of the field value for a correct result.
 //
-// The field value is returned to support chaining.  This enables syntax like:
+// The field value is returned to support chaining. This enables syntax like:
 // f.Negate().AddInt(1) so that f = -f + 1.
 func (f *fieldVal) Negate(magnitude uint32) *fieldVal {
 	return f.NegateVal(f, magnitude)
 }
 
 // AddInt adds the passed integer to the existing field value and stores the
-// result in f.  This is a convenience function since it is fairly common to
+// result in f. This is a convenience function since it is fairly common to
 // perform some arithemetic with small native integers.
 //
-// The field value is returned to support chaining.  This enables syntax like:
+// The field value is returned to support chaining. This enables syntax like:
 // f.AddInt(1).Add(f2) so that f = f + 1 + f2.
 func (f *fieldVal) AddInt(ui uint) *fieldVal {
 	// Since the field representation intentionally provides overflow bits,
@@ -525,12 +525,12 @@ func (f *fieldVal) AddInt(ui uint) *fieldVal {
 // Add adds the passed value to the existing field value and stores the result
 // in f.
 //
-// The field value is returned to support chaining.  This enables syntax like:
+// The field value is returned to support chaining. This enables syntax like:
 // f.Add(f2).AddInt(1) so that f = f + f2 + 1.
 func (f *fieldVal) Add(val *fieldVal) *fieldVal {
 	// Since the field representation intentionally provides overflow bits,
 	// it's ok to use carryless addition as the carry bit is safely part of
-	// each word and will be normalized out.  This could obviously be done
+	// each word and will be normalized out. This could obviously be done
 	// in a loop, but the unrolled version is faster.
 	f.n[0] += val.n[0]
 	f.n[1] += val.n[1]
@@ -548,12 +548,12 @@ func (f *fieldVal) Add(val *fieldVal) *fieldVal {
 
 // Add2 adds the passed two field values together and stores the result in f.
 //
-// The field value is returned to support chaining.  This enables syntax like:
+// The field value is returned to support chaining. This enables syntax like:
 // f3.Add2(f, f2).AddInt(1) so that f3 = f + f2 + 1.
 func (f *fieldVal) Add2(val *fieldVal, val2 *fieldVal) *fieldVal {
 	// Since the field representation intentionally provides overflow bits,
 	// it's ok to use carryless addition as the carry bit is safely part of
-	// each word and will be normalized out.  This could obviously be done
+	// each word and will be normalized out. This could obviously be done
 	// in a loop, but the unrolled version is faster.
 	f.n[0] = val.n[0] + val2.n[0]
 	f.n[1] = val.n[1] + val2.n[1]
@@ -570,17 +570,17 @@ func (f *fieldVal) Add2(val *fieldVal, val2 *fieldVal) *fieldVal {
 }
 
 // MulInt multiplies the field value by the passed int and stores the result in
-// f.  Note that this function can overflow if multiplying the value by any of
-// the individual words exceeds a max uint32.  Therefore it is important that
+// f. Note that this function can overflow if multiplying the value by any of
+// the individual words exceeds a max uint32. Therefore it is important that
 // the caller ensures no overflows will occur before using this function.
 //
-// The field value is returned to support chaining.  This enables syntax like:
+// The field value is returned to support chaining. This enables syntax like:
 // f.MulInt(2).Add(f2) so that f = 2 * f + f2.
 func (f *fieldVal) MulInt(val uint) *fieldVal {
 	// Since each word of the field representation can hold up to
 	// fieldOverflowBits extra bits which will be normalized out, it's safe
 	// to multiply each word without using a larger type or carry
-	// propagation so long as the values won't overflow a uint32.  This
+	// propagation so long as the values won't overflow a uint32. This
 	// could obviously be done in a loop, but the unrolled version is
 	// faster.
 	ui := uint32(val)
@@ -599,24 +599,24 @@ func (f *fieldVal) MulInt(val uint) *fieldVal {
 }
 
 // Mul multiplies the passed value to the existing field value and stores the
-// result in f.  Note that this function can overflow if multiplying any
-// of the individual words exceeds a max uint32.  In practice, this means the
+// result in f. Note that this function can overflow if multiplying any
+// of the individual words exceeds a max uint32. In practice, this means the
 // magnitude of either value involved in the multiplication must be a max of
 // 8.
 //
-// The field value is returned to support chaining.  This enables syntax like:
+// The field value is returned to support chaining. This enables syntax like:
 // f.Mul(f2).AddInt(1) so that f = (f * f2) + 1.
 func (f *fieldVal) Mul(val *fieldVal) *fieldVal {
 	return f.Mul2(f, val)
 }
 
 // Mul2 multiplies the passed two field values together and stores the result
-// result in f.  Note that this function can overflow if multiplying any of
-// the individual words exceeds a max uint32.  In practice, this means the
+// result in f. Note that this function can overflow if multiplying any of
+// the individual words exceeds a max uint32. In practice, this means the
 // magnitude of either value involved in the multiplication must be a max of
 // 8.
 //
-// The field value is returned to support chaining.  This enables syntax like:
+// The field value is returned to support chaining. This enables syntax like:
 // f3.Mul2(f, f2).AddInt(1) so that f3 = (f * f2) + 1.
 func (f *fieldVal) Mul2(val *fieldVal, val2 *fieldVal) *fieldVal {
 	// This could be done with a couple of for loops and an array to store
@@ -818,8 +818,8 @@ func (f *fieldVal) Mul2(val *fieldVal, val2 *fieldVal) *fieldVal {
 	// Since each word is in base 26, the upper terms (t10 and up) start
 	// at 260 bits (versus the final desired range of 256 bits), so the
 	// field representation of 'c' from above needs to be adjusted for the
-	// extra 4 bits by multiplying it by 2^4 = 16.  4294968273 * 16 =
-	// 68719492368.  Thus, the adjusted field representation of 'c' is:
+	// extra 4 bits by multiplying it by 2^4 = 16. 4294968273 * 16 =
+	// 68719492368. Thus, the adjusted field representation of 'c' is:
 	// n[0] = 977 * 16 = 15632
 	// n[1] = 64 * 16 = 1024
 	// That is to say (2^26 * 1024) + 15632 = 68719492368
@@ -851,17 +851,17 @@ func (f *fieldVal) Mul2(val *fieldVal, val2 *fieldVal) *fieldVal {
 	m = m >> fieldMSBBits
 
 	// At this point, if the magnitude is greater than 0, the overall value
-	// is greater than the max possible 256-bit value.  In particular, it is
+	// is greater than the max possible 256-bit value. In particular, it is
 	// "how many times larger" than the max value it is.
 	//
 	// The algorithm presented in [HAC] section 14.3.4 repeats until the
-	// quotient is zero.  However, due to the above, we already know at
+	// quotient is zero. However, due to the above, we already know at
 	// least how many times we would need to repeat as it's the value
-	// currently in m.  Thus we can simply multiply the magnitude by the
-	// field representation of the prime and do a single iteration.  Notice
+	// currently in m. Thus we can simply multiply the magnitude by the
+	// field representation of the prime and do a single iteration. Notice
 	// that nothing will be changed when the magnitude is zero, so we could
 	// skip this in that case, however always running regardless allows it
-	// to run in constant time.  The final result will be in the range
+	// to run in constant time. The final result will be in the range
 	// 0 <= result <= prime + (2^64 - c), so it is guaranteed to have a
 	// magnitude of 1, but it is denormalized.
 	d := t0 + m*977
@@ -880,23 +880,23 @@ func (f *fieldVal) Mul2(val *fieldVal, val2 *fieldVal) *fieldVal {
 	return f
 }
 
-// Square squares the field value.  The existing field value is modified.  Note
+// Square squares the field value. The existing field value is modified. Note
 // that this function can overflow if multiplying any of the individual words
-// exceeds a max uint32.  In practice, this means the magnitude of the field
+// exceeds a max uint32. In practice, this means the magnitude of the field
 // must be a max of 8 to prevent overflow.
 //
-// The field value is returned to support chaining.  This enables syntax like:
+// The field value is returned to support chaining. This enables syntax like:
 // f.Square().Mul(f2) so that f = f^2 * f2.
 func (f *fieldVal) Square() *fieldVal {
 	return f.SquareVal(f)
 }
 
-// SquareVal squares the passed value and stores the result in f.  Note that
+// SquareVal squares the passed value and stores the result in f. Note that
 // this function can overflow if multiplying any of the individual words
-// exceeds a max uint32.  In practice, this means the magnitude of the field
+// exceeds a max uint32. In practice, this means the magnitude of the field
 // being squred must be a max of 8 to prevent overflow.
 //
-// The field value is returned to support chaining.  This enables syntax like:
+// The field value is returned to support chaining. This enables syntax like:
 // f3.SquareVal(f).Mul(f) so that f3 = f^2 * f = f^3.
 func (f *fieldVal) SquareVal(val *fieldVal) *fieldVal {
 	// This could be done with a couple of for loops and an array to store
@@ -1051,8 +1051,8 @@ func (f *fieldVal) SquareVal(val *fieldVal) *fieldVal {
 	// Since each word is in base 26, the upper terms (t10 and up) start
 	// at 260 bits (versus the final desired range of 256 bits), so the
 	// field representation of 'c' from above needs to be adjusted for the
-	// extra 4 bits by multiplying it by 2^4 = 16.  4294968273 * 16 =
-	// 68719492368.  Thus, the adjusted field representation of 'c' is:
+	// extra 4 bits by multiplying it by 2^4 = 16. 4294968273 * 16 =
+	// 68719492368. Thus, the adjusted field representation of 'c' is:
 	// n[0] = 977 * 16 = 15632
 	// n[1] = 64 * 16 = 1024
 	// That is to say (2^26 * 1024) + 15632 = 68719492368
@@ -1084,17 +1084,17 @@ func (f *fieldVal) SquareVal(val *fieldVal) *fieldVal {
 	m = m >> fieldMSBBits
 
 	// At this point, if the magnitude is greater than 0, the overall value
-	// is greater than the max possible 256-bit value.  In particular, it is
+	// is greater than the max possible 256-bit value. In particular, it is
 	// "how many times larger" than the max value it is.
 	//
 	// The algorithm presented in [HAC] section 14.3.4 repeats until the
-	// quotient is zero.  However, due to the above, we already know at
+	// quotient is zero. However, due to the above, we already know at
 	// least how many times we would need to repeat as it's the value
-	// currently in m.  Thus we can simply multiply the magnitude by the
-	// field representation of the prime and do a single iteration.  Notice
+	// currently in m. Thus we can simply multiply the magnitude by the
+	// field representation of the prime and do a single iteration. Notice
 	// that nothing will be changed when the magnitude is zero, so we could
 	// skip this in that case, however always running regardless allows it
-	// to run in constant time.  The final result will be in the range
+	// to run in constant time. The final result will be in the range
 	// 0 <= result <= prime + (2^64 - c), so it is guaranteed to have a
 	// magnitude of 1, but it is denormalized.
 	n := t0 + m*977
@@ -1113,14 +1113,14 @@ func (f *fieldVal) SquareVal(val *fieldVal) *fieldVal {
 	return f
 }
 
-// Inverse finds the modular multiplicative inverse of the field value.  The
+// Inverse finds the modular multiplicative inverse of the field value. The
 // existing field value is modified.
 //
-// The field value is returned to support chaining.  This enables syntax like:
+// The field value is returned to support chaining. This enables syntax like:
 // f.Inverse().Mul(f2) so that f = f^-1 * f2.
 func (f *fieldVal) Inverse() *fieldVal {
 	// Fermat's little theorem states that for a nonzero number a and prime
-	// prime p, a^(p-1) = 1 (mod p).  Since the multipliciative inverse is
+	// prime p, a^(p-1) = 1 (mod p). Since the multipliciative inverse is
 	// a*b = 1 (mod p), it follows that b = a*a^(p-2) = a^(p-1) = 1 (mod p).
 	// Thus, a^(p-2) is the multiplicative inverse.
 	//

@@ -192,7 +192,7 @@ type Server struct {
 }
 
 // httpStatusLine returns a response Status-Line (RFC 2616 Section 6.1)
-// for the given request and response status code.  This function was lifted and
+// for the given request and response status code. This function was lifted and
 // adapted from the standard library HTTP server code since it's not exported.
 func (s *Server) httpStatusLine(req *http.Request, code int) string {
 	// Fast path:
@@ -269,14 +269,14 @@ func (s *Server) Stop() error {
 }
 
 // RequestedProcessShutdown returns a channel that is sent to when an authorized
-// RPC client requests the process to shutdown.  If the request can not be read
+// RPC client requests the process to shutdown. If the request can not be read
 // immediately, it is dropped.
 func (s *Server) RequestedProcessShutdown() <-chan struct{} {
 	return s.requestProcessShutdown
 }
 
 // NotifyNewTransactions notifies both websocket and getBlockTemplate long
-// poll clients of the passed transactions.  This function should be called
+// poll clients of the passed transactions. This function should be called
 // whenever new transactions are added to the mempool.
 func (s *Server) NotifyNewTransactions(txns []*mempool.TxDesc) {
 	for _, txD := range txns {
@@ -298,15 +298,15 @@ func (s *Server) limitConnections(w http.ResponseWriter, remoteAddr string) bool
 		log.Infof("Max RPC clients exceeded [%d] - "+
 			"disconnecting client %s", config.ActiveConfig().RPCMaxClients,
 			remoteAddr)
-		http.Error(w, "503 Too busy.  Try again later.",
+		http.Error(w, "503 Too busy. Try again later.",
 			http.StatusServiceUnavailable)
 		return true
 	}
 	return false
 }
 
-// incrementClients adds one to the number of connected RPC clients.  Note
-// this only applies to standard clients.  Websocket clients have their own
+// incrementClients adds one to the number of connected RPC clients. Note
+// this only applies to standard clients. Websocket clients have their own
 // limits and are tracked separately.
 //
 // This function is safe for concurrent access.
@@ -315,7 +315,7 @@ func (s *Server) incrementClients() {
 }
 
 // decrementClients subtracts one from the number of connected RPC clients.
-// Note this only applies to standard clients.  Websocket clients have their own
+// Note this only applies to standard clients. Websocket clients have their own
 // limits and are tracked separately.
 //
 // This function is safe for concurrent access.
@@ -324,7 +324,7 @@ func (s *Server) decrementClients() {
 }
 
 // checkAuth checks the HTTP Basic authentication supplied by a wallet
-// or RPC client in the HTTP request r.  If the supplied authentication
+// or RPC client in the HTTP request r. If the supplied authentication
 // does not match the username and password expected, a non-nil error is
 // returned.
 //
@@ -377,7 +377,7 @@ type parsedRPCCmd struct {
 }
 
 // standardCmdResult checks that a parsed command is a standard Bitcoin JSON-RPC
-// command and runs the appropriate handler to reply to the command.  Any
+// command and runs the appropriate handler to reply to the command. Any
 // commands which are not recognized or not implemented will return an error
 // suitable for use in replies.
 func (s *Server) standardCmdResult(cmd *parsedRPCCmd, closeChan <-chan struct{}) (interface{}, error) {
@@ -396,7 +396,7 @@ handled:
 	return handler(s, cmd.cmd, closeChan)
 }
 
-// parseCmd parses a JSON-RPC request object into known concrete command.  The
+// parseCmd parses a JSON-RPC request object into known concrete command. The
 // err field of the returned parsedRPCCmd struct will contain an RPC error that
 // is suitable for use in replies if the command is invalid in some way such as
 // an unregistered command or invalid parameters.
@@ -428,7 +428,7 @@ func parseCmd(request *btcjson.Request) *parsedRPCCmd {
 }
 
 // createMarshalledReply returns a new marshalled JSON-RPC response given the
-// passed parameters.  It will automatically convert errors that are not of
+// passed parameters. It will automatically convert errors that are not of
 // the type *btcjson.RPCError to the appropriate type as needed.
 func createMarshalledReply(id, result interface{}, replyErr error) ([]byte, error) {
 	var jsonErr *btcjson.RPCError
@@ -461,8 +461,8 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 
 	// Unfortunately, the http server doesn't provide the ability to
 	// change the read deadline for the new connection and having one breaks
-	// long polling.  However, not having a read deadline on the initial
-	// connection would mean clients can connect and idle forever.  Thus,
+	// long polling. However, not having a read deadline on the initial
+	// connection would mean clients can connect and idle forever. Thus,
 	// hijack the connecton from the HTTP server, clear the read deadline,
 	// and handle writing the response manually.
 	hj, ok := w.(http.Hijacker)
@@ -522,7 +522,7 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 		// set it for the response.
 		responseID = request.ID
 
-		// Setup a close notifier.  Since the connection is hijacked,
+		// Setup a close notifier. Since the connection is hijacked,
 		// the CloseNotifer on the ResponseWriter is not available.
 		closeChan := make(chan struct{}, 1)
 		spawn(func() {
@@ -684,29 +684,29 @@ type rpcserverPeer interface {
 // The interface contract requires that all of these methods are safe for
 // concurrent access.
 type rpcserverConnManager interface {
-	// Connect adds the provided address as a new outbound peer.  The
+	// Connect adds the provided address as a new outbound peer. The
 	// permanent flag indicates whether or not to make the peer persistent
-	// and reconnect if the connection is lost.  Attempting to connect to an
+	// and reconnect if the connection is lost. Attempting to connect to an
 	// already existing peer will return an error.
 	Connect(addr string, permanent bool) error
 
 	// RemoveByID removes the peer associated with the provided id from the
-	// list of persistent peers.  Attempting to remove an id that does not
+	// list of persistent peers. Attempting to remove an id that does not
 	// exist will return an error.
 	RemoveByID(id int32) error
 
 	// RemoveByAddr removes the peer associated with the provided address
-	// from the list of persistent peers.  Attempting to remove an address
+	// from the list of persistent peers. Attempting to remove an address
 	// that does not exist will return an error.
 	RemoveByAddr(addr string) error
 
 	// DisconnectByID disconnects the peer associated with the provided id.
-	// This applies to both inbound and outbound peers.  Attempting to
+	// This applies to both inbound and outbound peers. Attempting to
 	// remove an id that does not exist will return an error.
 	DisconnectByID(id int32) error
 
 	// DisconnectByAddr disconnects the peer associated with the provided
-	// address.  This applies to both inbound and outbound peers.
+	// address. This applies to both inbound and outbound peers.
 	// Attempting to remove an address that does not exist will return an
 	// error.
 	DisconnectByAddr(addr string) error
@@ -769,7 +769,7 @@ type rpcserverSyncManager interface {
 // rpcserverConfig is a descriptor containing the RPC server configuration.
 type rpcserverConfig struct {
 	// Listeners defines a slice of listeners for which the RPC server will
-	// take ownership of and accept connections.  Since the RPC server takes
+	// take ownership of and accept connections. Since the RPC server takes
 	// ownership of these listeners, they will be closed when the RPC server
 	// is stopped.
 	Listeners []net.Listener
@@ -778,7 +778,7 @@ type rpcserverConfig struct {
 	// the RPC server started.
 	StartupTime int64
 
-	// ConnMgr defines the connection manager for the RPC server to use.  It
+	// ConnMgr defines the connection manager for the RPC server to use. It
 	// provides the RPC server with a means to do things such as add,
 	// remove, connect, disconnect, and query peers as well as other
 	// connection-related data and tasks.
@@ -800,7 +800,7 @@ type rpcserverConfig struct {
 	// These fields allow the RPC server to interface with mining.
 	//
 	// Generator produces block templates and the CPUMiner solves them using
-	// the CPU.  CPU mining is typically only useful for test purposes when
+	// the CPU. CPU mining is typically only useful for test purposes when
 	// doing regression or simulation testing.
 	Generator *mining.BlkTmplGenerator
 	CPUMiner  *cpuminer.CPUMiner
@@ -921,7 +921,7 @@ func NewRPCServer(
 	return &rpc, nil
 }
 
-// Callback for notifications from blockdag.  It notifies clients that are
+// Callback for notifications from blockdag. It notifies clients that are
 // long polling for changes or subscribed to websockets notifications.
 func (s *Server) handleBlockDAGNotification(notification *blockdag.Notification) {
 	switch notification.Type {

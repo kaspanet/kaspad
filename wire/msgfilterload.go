@@ -91,14 +91,14 @@ func (msg *MsgFilterLoad) BtcEncode(w io.Writer, pver uint32) error {
 	return writeElements(w, msg.HashFuncs, msg.Tweak, msg.Flags)
 }
 
-// Command returns the protocol command string for the message.  This is part
+// Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgFilterLoad) Command() string {
 	return CmdFilterLoad
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
-// receiver.  This is part of the Message interface implementation.
+// receiver. This is part of the Message interface implementation.
 func (msg *MsgFilterLoad) MaxPayloadLength(pver uint32) uint32 {
 	// Num filter bytes (varInt) + filter + 4 bytes hash funcs +
 	// 4 bytes tweak + 1 byte flags.
@@ -107,7 +107,7 @@ func (msg *MsgFilterLoad) MaxPayloadLength(pver uint32) uint32 {
 }
 
 // NewMsgFilterLoad returns a new bitcoin filterload message that conforms to
-// the Message interface.  See MsgFilterLoad for details.
+// the Message interface. See MsgFilterLoad for details.
 func NewMsgFilterLoad(filter []byte, hashFuncs uint32, tweak uint32, flags BloomUpdateType) *MsgFilterLoad {
 	return &MsgFilterLoad{
 		Filter:    filter,

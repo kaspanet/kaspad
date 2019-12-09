@@ -1038,9 +1038,9 @@ func TestZero(t *testing.T) {
 }
 
 // TestMaximumDepth ensures that attempting to retrieve a child key when already
-// at the maximum depth is not allowed.  The serialization of a BIP32 key uses
-// uint8 to encode the depth.  This implicitly bounds the depth of the tree to
-// 255 derivations.  Here we test that an error is returned after 'max uint8'.
+// at the maximum depth is not allowed. The serialization of a BIP32 key uses
+// uint8 to encode the depth. This implicitly bounds the depth of the tree to
+// 255 derivations. Here we test that an error is returned after 'max uint8'.
 func TestMaximumDepth(t *testing.T) {
 	extKey, err := NewMaster([]byte(`abcd1234abcd1234abcd1234abcd1234`), HDKeyPairMainNet.PrivateKeyID)
 	if err != nil {

@@ -34,7 +34,7 @@ func (e OutOfRangeError) Error() string {
 }
 
 // Block defines a bitcoin block that provides easier and more efficient
-// manipulation of raw blocks.  It also memoizes hashes for the block and its
+// manipulation of raw blocks. It also memoizes hashes for the block and its
 // transactions on their first access so subsequent accesses don't have to
 // repeat the relatively expensive hashing operations.
 type Block struct {
@@ -52,7 +52,7 @@ func (b *Block) MsgBlock() *wire.MsgBlock {
 	return b.msgBlock
 }
 
-// Bytes returns the serialized bytes for the Block.  This is equivalent to
+// Bytes returns the serialized bytes for the Block. This is equivalent to
 // calling Serialize on the underlying wire.MsgBlock, however it caches the
 // result so subsequent calls are more efficient.
 func (b *Block) Bytes() ([]byte, error) {
@@ -74,7 +74,7 @@ func (b *Block) Bytes() ([]byte, error) {
 	return serializedBlock, nil
 }
 
-// Hash returns the block identifier hash for the Block.  This is equivalent to
+// Hash returns the block identifier hash for the Block. This is equivalent to
 // calling BlockHash on the underlying wire.MsgBlock, however it caches the
 // result so subsequent calls are more efficient.
 func (b *Block) Hash() *daghash.Hash {
@@ -90,8 +90,8 @@ func (b *Block) Hash() *daghash.Hash {
 }
 
 // Tx returns a wrapped transaction (util.Tx) for the transaction at the
-// specified index in the Block.  The supplied index is 0 based.  That is to
-// say, the first transaction in the block is txNum 0.  This is nearly
+// specified index in the Block. The supplied index is 0 based. That is to
+// say, the first transaction in the block is txNum 0. This is nearly
 // equivalent to accessing the raw transaction (wire.MsgTx) from the
 // underlying wire.MsgBlock, however the wrapped transaction has some helpful
 // properties such as caching the hash so subsequent calls are more efficient.
@@ -122,11 +122,11 @@ func (b *Block) Tx(txNum int) (*Tx, error) {
 }
 
 // Transactions returns a slice of wrapped transactions (util.Tx) for all
-// transactions in the Block.  This is nearly equivalent to accessing the raw
+// transactions in the Block. This is nearly equivalent to accessing the raw
 // transactions (wire.MsgTx) in the underlying wire.MsgBlock, however it
 // instead provides easy access to wrapped versions (util.Tx) of them.
 func (b *Block) Transactions() []*Tx {
-	// Return transactions if they have ALL already been generated.  This
+	// Return transactions if they have ALL already been generated. This
 	// flag is necessary because the wrapped transactions are lazily
 	// generated in a sparse fashion.
 	if b.txnsGenerated {
@@ -153,12 +153,12 @@ func (b *Block) Transactions() []*Tx {
 }
 
 // TxHash returns the hash for the requested transaction number in the Block.
-// The supplied index is 0 based.  That is to say, the first transaction in the
-// block is txNum 0.  This is equivalent to calling TxHash on the underlying
+// The supplied index is 0 based. That is to say, the first transaction in the
+// block is txNum 0. This is equivalent to calling TxHash on the underlying
 // wire.MsgTx, however it caches the result so subsequent calls are more
 // efficient.
 func (b *Block) TxHash(txNum int) (*daghash.Hash, error) {
-	// Attempt to get a wrapped transaction for the specified index.  It
+	// Attempt to get a wrapped transaction for the specified index. It
 	// will be created lazily if needed or simply return the cached version
 	// if it has already been generated.
 	tx, err := b.Tx(txNum)
@@ -189,7 +189,7 @@ func (b *Block) TxLoc() ([]wire.TxLoc, error) {
 	return txLocs, err
 }
 
-// ChainHeight returns the saved chan height of the block .  This value
+// ChainHeight returns the saved chan height of the block . This value
 // will be BlockHeightUnknown if it hasn't already explicitly been set.
 func (b *Block) ChainHeight() uint64 {
 	return b.chainHeight
@@ -216,7 +216,7 @@ func (b *Block) Timestamp() time.Time {
 }
 
 // NewBlock returns a new instance of a bitcoin block given an underlying
-// wire.MsgBlock.  See Block.
+// wire.MsgBlock. See Block.
 func NewBlock(msgBlock *wire.MsgBlock) *Block {
 	return &Block{
 		msgBlock:    msgBlock,
@@ -225,7 +225,7 @@ func NewBlock(msgBlock *wire.MsgBlock) *Block {
 }
 
 // NewBlockFromBytes returns a new instance of a bitcoin block given the
-// serialized bytes.  See Block.
+// serialized bytes. See Block.
 func NewBlockFromBytes(serializedBlock []byte) (*Block, error) {
 	br := bytes.NewReader(serializedBlock)
 	b, err := NewBlockFromReader(br)
@@ -237,7 +237,7 @@ func NewBlockFromBytes(serializedBlock []byte) (*Block, error) {
 }
 
 // NewBlockFromReader returns a new instance of a bitcoin block given a
-// Reader to deserialize the block.  See Block.
+// Reader to deserialize the block. See Block.
 func NewBlockFromReader(r io.Reader) (*Block, error) {
 	// Deserialize the bytes into a MsgBlock.
 	var msgBlock wire.MsgBlock
@@ -253,7 +253,7 @@ func NewBlockFromReader(r io.Reader) (*Block, error) {
 }
 
 // NewBlockFromBlockAndBytes returns a new instance of a bitcoin block given
-// an underlying wire.MsgBlock and the serialized bytes for it.  See Block.
+// an underlying wire.MsgBlock and the serialized bytes for it. See Block.
 func NewBlockFromBlockAndBytes(msgBlock *wire.MsgBlock, serializedBlock []byte) *Block {
 	return &Block{
 		msgBlock:        msgBlock,

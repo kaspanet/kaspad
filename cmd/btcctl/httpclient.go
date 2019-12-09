@@ -62,7 +62,7 @@ func newHTTPClient(cfg *ConfigFlags) (*http.Client, error) {
 }
 
 // sendPostRequest sends the marshalled JSON-RPC command using HTTP-POST mode
-// to the server described in the passed config struct.  It also attempts to
+// to the server described in the passed config struct. It also attempts to
 // unmarshal the response as a JSON-RPC response and returns either the result
 // field or the error field depending on whether or not there is an error.
 func sendPostRequest(marshalledJSON []byte, cfg *ConfigFlags) ([]byte, error) {
@@ -105,7 +105,7 @@ func sendPostRequest(marshalledJSON []byte, cfg *ConfigFlags) ([]byte, error) {
 	// Handle unsuccessful HTTP responses
 	if httpResponse.StatusCode < 200 || httpResponse.StatusCode >= 300 {
 		// Generate a standard error to return if the server body is
-		// empty.  This should not happen very often, but it's better
+		// empty. This should not happen very often, but it's better
 		// than showing nothing in case the target server has a poor
 		// implementation.
 		if len(respBytes) == 0 {

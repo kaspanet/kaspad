@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	// blockHdrSize is the size of a block header.  This is simply the
+	// blockHdrSize is the size of a block header. This is simply the
 	// constant from wire and is only provided here for convenience since
 	// wire.MaxBlockHeaderPayload is quite long.
 	blockHdrSize = wire.MaxBlockHeaderPayload
@@ -99,7 +99,7 @@ func isDeserializeErr(err error) bool {
 }
 
 // dbPutVersion uses an existing database transaction to update the provided
-// key in the metadata bucket to the given version.  It is primarily used to
+// key in the metadata bucket to the given version. It is primarily used to
 // track versions on entities such as buckets.
 func dbPutVersion(dbTx database.Tx, key []byte, version uint32) error {
 	var serialized [4]byte
@@ -110,10 +110,10 @@ func dbPutVersion(dbTx database.Tx, key []byte, version uint32) error {
 // -----------------------------------------------------------------------------
 // The unspent transaction output (UTXO) set consists of an entry for each
 // unspent output using a format that is optimized to reduce space using domain
-// specific compression algorithms.  This format is a slightly modified version
+// specific compression algorithms. This format is a slightly modified version
 // of the format used in Bitcoin Core.
 //
-// Each entry is keyed by an outpoint as specified below.  It is important to
+// Each entry is keyed by an outpoint as specified below. It is important to
 // note that the key encoding uses a VLQ, which employs an MSB encoding so
 // iteration of UTXOs when doing byte-wise comparisons will produce them in
 // order.
@@ -199,8 +199,8 @@ var outpointKeyPool = sync.Pool{
 }
 
 // outpointKey returns a key suitable for use as a database key in the UTXO set
-// while making use of a free list.  A new buffer is allocated if there are not
-// already any available on the free list.  The returned byte slice should be
+// while making use of a free list. A new buffer is allocated if there are not
+// already any available on the free list. The returned byte slice should be
 // returned to the free list by using the recycleOutpointKey function when the
 // caller is done with it _unless_ the slice will need to live for longer than
 // the caller can calculate such as when used to write to the database.
@@ -223,7 +223,7 @@ func recycleOutpointKey(key *[]byte) {
 }
 
 // dbPutUTXODiff uses an existing database transaction to update the UTXO set
-// in the database based on the provided UTXO view contents and state.  In
+// in the database based on the provided UTXO view contents and state. In
 // particular, only the entries that have been marked as modified are written
 // to the database.
 func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
@@ -244,7 +244,7 @@ func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 		key := outpointKey(outpoint)
 		err := utxoBucket.Put(*key, serialized)
 		// NOTE: The key is intentionally not recycled here since the
-		// database interface contract prohibits modifications.  It will
+		// database interface contract prohibits modifications. It will
 		// be garbage collected normally when the database is done with
 		// it.
 		if err != nil {
@@ -295,7 +295,7 @@ func dbPutDAGState(dbTx database.Tx, state *dagState) error {
 }
 
 // createDAGState initializes both the database and the DAG state to the
-// genesis block.  This includes creating the necessary buckets, so it
+// genesis block. This includes creating the necessary buckets, so it
 // must only be called on an uninitialized database.
 func (dag *BlockDAG) createDAGState() error {
 	// Create the initial the database DAG state including creating the
@@ -403,7 +403,7 @@ func dbPutLocalSubnetworkID(dbTx database.Tx, subnetworkID *subnetworkid.Subnetw
 }
 
 // initDAGState attempts to load and initialize the DAG state from the
-// database.  When the db does not yet contain any DAG state, both it and the
+// database. When the db does not yet contain any DAG state, both it and the
 // DAG state are initialized to the genesis block.
 func (dag *BlockDAG) initDAGState() error {
 	// Determine the state of the DAG database. We may need to initialize
@@ -451,7 +451,7 @@ func (dag *BlockDAG) initDAGState() error {
 		}
 
 		// Load all of the headers from the data for the known DAG
-		// and construct the block index accordingly.  Since the
+		// and construct the block index accordingly. Since the
 		// number of nodes are already known, perform a single alloc
 		// for them versus a whole bunch of little ones to reduce
 		// pressure on the GC.
@@ -503,7 +503,7 @@ func (dag *BlockDAG) initDAGState() error {
 		}
 
 		// Load all of the known UTXO entries and construct the full
-		// UTXO set accordingly.  Since the number of entries is already
+		// UTXO set accordingly. Since the number of entries is already
 		// known, perform a single alloc for them versus a whole bunch
 		// of little ones to reduce pressure on the GC.
 		log.Infof("Loading UTXO set...")

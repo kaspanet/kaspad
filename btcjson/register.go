@@ -20,7 +20,7 @@ type UsageFlag uint32
 
 const (
 	// UFWebsocketOnly indicates that the command can only be used when
-	// communicating with an RPC server over websockets.  This typically
+	// communicating with an RPC server over websockets. This typically
 	// applies to notifications and notification registration functions
 	// since neiher makes since when using a single-shot HTTP-POST request.
 	UFWebsocketOnly UsageFlag = 1 << iota
@@ -98,7 +98,7 @@ func baseKindString(rt reflect.Type) string {
 }
 
 // isAcceptableKind returns whether or not the passed field type is a supported
-// type.  It is called after the first pointer indirection, so further pointers
+// type. It is called after the first pointer indirection, so further pointers
 // are not supported.
 func isAcceptableKind(kind reflect.Kind) bool {
 	switch kind {
@@ -120,7 +120,7 @@ func isAcceptableKind(kind reflect.Kind) bool {
 }
 
 // RegisterCmd registers a new command that will automatically marshal to and
-// from JSON-RPC with full type checking and positional parameter support.  It
+// from JSON-RPC with full type checking and positional parameter support. It
 // also accepts usage flags which identify the circumstances under which the
 // command can be used.
 //
@@ -129,7 +129,7 @@ func isAcceptableKind(kind reflect.Kind) bool {
 // register custom types.
 //
 // The type format is very strict since it needs to be able to automatically
-// marshal to and from JSON-RPC 1.0.  The following enumerates the requirements:
+// marshal to and from JSON-RPC 1.0. The following enumerates the requirements:
 //
 //   - The provided command must be a single pointer to a struct
 //   - All fields must be exported
@@ -146,7 +146,7 @@ func isAcceptableKind(kind reflect.Kind) bool {
 //     (pointer)
 //
 // NOTE: This function only needs to be able to examine the structure of the
-// passed struct, so it does not need to be an actual instance.  Therefore, it
+// passed struct, so it does not need to be an actual instance. Therefore, it
 // is recommended to simply pass a nil pointer cast to the appropriate type.
 // For example, (*FooCmd)(nil).
 func RegisterCmd(method string, cmd interface{}, flags UsageFlag) error {
@@ -196,7 +196,7 @@ func RegisterCmd(method string, cmd interface{}, flags UsageFlag) error {
 			return makeError(ErrUnexportedField, str)
 		}
 
-		// Disallow types that can't be JSON encoded.  Also, determine
+		// Disallow types that can't be JSON encoded. Also, determine
 		// if the field is optional based on it being a pointer.
 		var isOptional bool
 		switch kind := rtf.Type.Kind(); kind {
@@ -262,7 +262,7 @@ func RegisterCmd(method string, cmd interface{}, flags UsageFlag) error {
 }
 
 // MustRegisterCmd performs the same function as RegisterCmd except it panics
-// if there is an error.  This should only be called from package init
+// if there is an error. This should only be called from package init
 // functions.
 func MustRegisterCmd(method string, cmd interface{}, flags UsageFlag) {
 	if err := RegisterCmd(method, cmd, flags); err != nil {

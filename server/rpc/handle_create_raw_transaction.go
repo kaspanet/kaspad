@@ -103,7 +103,7 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 		mtx.LockTime = *c.LockTime
 	}
 
-	// Return the serialized and hex-encoded transaction.  Note that this
+	// Return the serialized and hex-encoded transaction. Note that this
 	// is intentionally not directly returning because the first return
 	// value is a string and it would result in returning an empty string to
 	// the client instead of nothing (nil) in the case of an error.

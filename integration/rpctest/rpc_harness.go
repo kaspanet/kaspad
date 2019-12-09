@@ -25,7 +25,7 @@ import (
 
 const (
 	// These constants define the minimum and maximum p2p and rpc port
-	// numbers used by a test harness.  The min port is inclusive while the
+	// numbers used by a test harness. The min port is inclusive while the
 	// max port is exclusive.
 	minPeerPort = 10000
 	maxPeerPort = 35000
@@ -41,9 +41,9 @@ var (
 	// current number of active test nodes.
 	numTestInstances = 0
 
-	// processID is the process ID of the current running process.  It is
+	// processID is the process ID of the current running process. It is
 	// used to calculate ports based upon it when launching an rpc
-	// harnesses.  The intent is to allow multiple process to run in
+	// harnesses. The intent is to allow multiple process to run in
 	// parallel without port collisions.
 	//
 	// It should be noted however that there is still some small probability
@@ -68,7 +68,7 @@ type HarnessTestCase func(r *Harness, t *testing.T)
 // Harness fully encapsulates an active btcd process to provide a unified
 // platform for creating rpc driven integration tests involving btcd. The
 // active btcd node will typically be run in simnet mode in order to allow for
-// easy generation of test blockchains.  The active btcd process is fully
+// easy generation of test blockchains. The active btcd process is fully
 // managed by Harness, which handles the necessary initialization, and teardown
 // of the process along with any temporary directories created as a result.
 // Multiple Harness instances may be run concurrently, in order to allow for
@@ -262,7 +262,7 @@ func (h *Harness) SetUp(createTestChain bool, numMatureOutputs uint32) error {
 	return nil
 }
 
-// tearDown stops the running rpc test instance.  All created processes are
+// tearDown stops the running rpc test instance. All created processes are
 // killed, and temporary directories removed.
 //
 // This function MUST be called with the harness state mutex held (for writes).

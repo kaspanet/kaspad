@@ -243,7 +243,7 @@ func serializeUTXO(w io.Writer, entry *UTXOEntry, outpoint *wire.Outpoint) error
 }
 
 // serializeUTXOEntry returns the entry serialized to a format that is suitable
-// for long-term storage.  The format is described in detail above.
+// for long-term storage. The format is described in detail above.
 func serializeUTXOEntry(entry *UTXOEntry) []byte {
 	// Encode the header code.
 	headerCode := utxoEntryHeaderCode(entry)
@@ -278,7 +278,7 @@ func deserializeOutpoint(serialized []byte) (*wire.Outpoint, error) {
 
 // deserializeUTXOEntry decodes a UTXO entry from the passed serialized byte
 // slice into a new UTXOEntry using a format that is suitable for long-term
-// storage.  The format is described in detail above.
+// storage. The format is described in detail above.
 func deserializeUTXOEntry(serialized []byte) (*UTXOEntry, error) {
 	// Deserialize the header code.
 	code, offset := deserializeVLQ(serialized)

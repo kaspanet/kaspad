@@ -112,7 +112,7 @@ func IsLocal(na *wire.NetAddress) bool {
 }
 
 // IsOnionCatTor returns whether or not the passed address is in the IPv6 range
-// used by bitcoin to support Tor (fd87:d87e:eb43::/48).  Note that this range
+// used by bitcoin to support Tor (fd87:d87e:eb43::/48). Note that this range
 // is the same range used by OnionCat, which is part of the RFC4193 unique local
 // IPv6 range.
 func IsOnionCatTor(na *wire.NetAddress) bool {
@@ -210,7 +210,7 @@ func IsRFC6598(na *wire.NetAddress) bool {
 	return rfc6598Net.Contains(na.IP)
 }
 
-// IsValid returns whether or not the passed address is valid.  The address is
+// IsValid returns whether or not the passed address is valid. The address is
 // considered invalid under the following circumstances:
 // IPv4: It is either a zero or all bits set address.
 // IPv6: It is either a zero or RFC3849 documentation address.
@@ -222,7 +222,7 @@ func IsValid(na *wire.NetAddress) bool {
 }
 
 // IsRoutable returns whether or not the passed address is routable over
-// the public internet.  This is true as long as the address is valid and is not
+// the public internet. This is true as long as the address is valid and is not
 // in any reserved ranges.
 func IsRoutable(na *wire.NetAddress) bool {
 	if config.ActiveConfig().NetParams().AcceptUnroutable {
@@ -236,7 +236,7 @@ func IsRoutable(na *wire.NetAddress) bool {
 }
 
 // GroupKey returns a string representing the network group an address is part
-// of.  This is the /16 for IPv4, the /32 (/36 for he.net) for IPv6, the string
+// of. This is the /16 for IPv4, the /32 (/36 for he.net) for IPv6, the string
 // "local" for a local address, the string "tor:key" where key is the /4 of the
 // onion address for Tor address, and the string "unroutable" for an unroutable
 // address.

@@ -14,17 +14,17 @@ import (
 // This example demonstrates how to create and marshal a command into a JSON-RPC
 // request.
 func ExampleMarshalCmd() {
-	// Create a new getblock command.  Notice the nil parameter indicates
-	// to use the default parameter for that fields.  This is a common
+	// Create a new getblock command. Notice the nil parameter indicates
+	// to use the default parameter for that fields. This is a common
 	// pattern used in all of the New<Foo>Cmd functions in this package for
-	// optional fields.  Also, notice the call to btcjson.Bool which is a
+	// optional fields. Also, notice the call to btcjson.Bool which is a
 	// convenience function for creating a pointer out of a primitive for
 	// optional parameters.
 	blockHash := "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"
 	gbCmd := btcjson.NewGetBlockCmd(blockHash, btcjson.Bool(false), nil, nil)
 
 	// Marshal the command to the format suitable for sending to the RPC
-	// server.  Typically the client would increment the id here which is
+	// server. Typically the client would increment the id here which is
 	// request so the response can be identified.
 	id := 1
 	marshalledBytes, err := btcjson.MarshalCmd(id, gbCmd)
@@ -33,7 +33,7 @@ func ExampleMarshalCmd() {
 		return
 	}
 
-	// Display the marshalled command.  Ordinarily this would be sent across
+	// Display the marshalled command. Ordinarily this would be sent across
 	// the wire to the RPC server, but for this example, just display it.
 	fmt.Printf("%s\n", marshalledBytes)
 
@@ -57,7 +57,7 @@ func ExampleUnmarshalCmd() {
 
 	// Typically there isn't any need to examine the request fields directly
 	// like this as the caller already knows what response to expect based
-	// on the command it sent.  However, this is done here to demonstrate
+	// on the command it sent. However, this is done here to demonstrate
 	// why the unmarshal process is two steps.
 	if request.ID == nil {
 		fmt.Println("Unexpected notification")
@@ -98,7 +98,7 @@ func ExampleUnmarshalCmd() {
 
 // This example demonstrates how to marshal a JSON-RPC response.
 func ExampleMarshalResponse() {
-	// Marshal a new JSON-RPC response.  For example, this is a response
+	// Marshal a new JSON-RPC response. For example, this is a response
 	// to a getblockheight request.
 	marshalledBytes, err := btcjson.MarshalResponse(1, 350001, nil)
 	if err != nil {
@@ -106,7 +106,7 @@ func ExampleMarshalResponse() {
 		return
 	}
 
-	// Display the marshalled response.  Ordinarily this would be sent
+	// Display the marshalled response. Ordinarily this would be sent
 	// across the wire to the RPC client, but for this example, just display
 	// it.
 	fmt.Printf("%s\n", marshalledBytes)
@@ -119,7 +119,7 @@ func ExampleMarshalResponse() {
 // unmarshal the result field in the response to a concrete type.
 func Example_unmarshalResponse() {
 	// Ordinarily this would be read from the wire, but for this example,
-	// it is hard coded here for clarity.  This is an example response to a
+	// it is hard coded here for clarity. This is an example response to a
 	// getblockheight request.
 	data := []byte(`{"result":350001,"error":null,"id":1}`)
 
@@ -130,7 +130,7 @@ func Example_unmarshalResponse() {
 		return
 	}
 
-	// Check the response for an error from the server.  For example, the
+	// Check the response for an error from the server. For example, the
 	// server might return an error if an invalid/unknown block hash is
 	// requested.
 	if response.Error != nil {

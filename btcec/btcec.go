@@ -26,7 +26,7 @@ import (
 )
 
 var (
-	// fieldOne is simply the integer 1 in field representation.  It is
+	// fieldOne is simply the integer 1 in field representation. It is
 	// used to avoid needing to create it multiple times during the internal
 	// arithmetic.
 	fieldOne = new(fieldVal).SetInt(1)
@@ -84,7 +84,7 @@ func (curve *KoblitzCurve) bigAffineToField(x, y *big.Int) (*fieldVal, *fieldVal
 // converts it to an affine point as big integers.
 func (curve *KoblitzCurve) fieldJacobianToBigAffine(x, y, z *fieldVal) (*big.Int, *big.Int) {
 	// Inversions are expensive and both point addition and point doubling
-	// are faster when working with points that have a z value of one.  So,
+	// are faster when working with points that have a z value of one. So,
 	// if the point needs to be converted to affine, go ahead and normalize
 	// the point itself at the same time as the calculation is the same.
 	var zInv, tempZ fieldVal
@@ -119,8 +119,8 @@ func (curve *KoblitzCurve) IsOnCurve(x, y *big.Int) bool {
 }
 
 // addZ1AndZ2EqualsOne adds two Jacobian points that are already known to have
-// z values of 1 and stores the result in (x3, y3, z3).  That is to say
-// (x1, y1, 1) + (x2, y2, 1) = (x3, y3, z3).  It performs faster addition than
+// z values of 1 and stores the result in (x3, y3, z3). That is to say
+// (x1, y1, 1) + (x2, y2, 1) = (x3, y3, z3). It performs faster addition than
 // the generic add routine since less arithmetic is needed due to the ability to
 // avoid the z value multiplications.
 func (curve *KoblitzCurve) addZ1AndZ2EqualsOne(x1, y1, z1, x2, y2, x3, y3, z3 *fieldVal) {
@@ -185,8 +185,8 @@ func (curve *KoblitzCurve) addZ1AndZ2EqualsOne(x1, y1, z1, x2, y2, x3, y3, z3 *f
 }
 
 // addZ1EqualsZ2 adds two Jacobian points that are already known to have the
-// same z value and stores the result in (x3, y3, z3).  That is to say
-// (x1, y1, z1) + (x2, y2, z1) = (x3, y3, z3).  It performs faster addition than
+// same z value and stores the result in (x3, y3, z3). That is to say
+// (x1, y1, z1) + (x2, y2, z1) = (x3, y3, z3). It performs faster addition than
 // the generic add routine since less arithmetic is needed due to the known
 // equivalence.
 func (curve *KoblitzCurve) addZ1EqualsZ2(x1, y1, z1, x2, y2, x3, y3, z3 *fieldVal) {
@@ -254,8 +254,8 @@ func (curve *KoblitzCurve) addZ1EqualsZ2(x1, y1, z1, x2, y2, x3, y3, z3 *fieldVa
 
 // addZ2EqualsOne adds two Jacobian points when the second point is already
 // known to have a z value of 1 (and the z value for the first point is not 1)
-// and stores the result in (x3, y3, z3).  That is to say (x1, y1, z1) +
-// (x2, y2, 1) = (x3, y3, z3).  It performs faster addition than the generic
+// and stores the result in (x3, y3, z3). That is to say (x1, y1, z1) +
+// (x2, y2, 1) = (x3, y3, z3). It performs faster addition than the generic
 // add routine since less arithmetic is needed due to the ability to avoid
 // multiplications by the second point's z value.
 func (curve *KoblitzCurve) addZ2EqualsOne(x1, y1, z1, x2, y2, x3, y3, z3 *fieldVal) {
@@ -275,9 +275,9 @@ func (curve *KoblitzCurve) addZ2EqualsOne(x1, y1, z1, x2, y2, x3, y3, z3 *fieldV
 	// When the x coordinates are the same for two points on the curve, the
 	// y coordinates either must be the same, in which case it is point
 	// doubling, or they are opposite and the result is the point at
-	// infinity per the group law for elliptic curve cryptography.  Since
+	// infinity per the group law for elliptic curve cryptography. Since
 	// any number of Jacobian coordinates can represent the same affine
-	// point, the x and y values need to be converted to like terms.  Due to
+	// point, the x and y values need to be converted to like terms. Due to
 	// the assumption made for this function that the second point has a z
 	// value of 1 (z2=1), the first point is already "converted".
 	var z1z1, u2, s2 fieldVal
@@ -332,7 +332,7 @@ func (curve *KoblitzCurve) addZ2EqualsOne(x1, y1, z1, x2, y2, x3, y3, z3 *fieldV
 
 // addGeneric adds two Jacobian points (x1, y1, z1) and (x2, y2, z2) without any
 // assumptions about the z values of the two points and stores the result in
-// (x3, y3, z3).  That is to say (x1, y1, z1) + (x2, y2, z2) = (x3, y3, z3).  It
+// (x3, y3, z3). That is to say (x1, y1, z1) + (x2, y2, z2) = (x3, y3, z3). It
 // is the slowest of the add routines due to requiring the most arithmetic.
 func (curve *KoblitzCurve) addGeneric(x1, y1, z1, x2, y2, z2, x3, y3, z3 *fieldVal) {
 	// To compute the point addition efficiently, this implementation splits
@@ -352,7 +352,7 @@ func (curve *KoblitzCurve) addGeneric(x1, y1, z1, x2, y2, z2, x3, y3, z3 *fieldV
 	// When the x coordinates are the same for two points on the curve, the
 	// y coordinates either must be the same, in which case it is point
 	// doubling, or they are opposite and the result is the point at
-	// infinity.  Since any number of Jacobian coordinates can represent the
+	// infinity. Since any number of Jacobian coordinates can represent the
 	// same affine point, the x and y values need to be converted to like
 	// terms.
 	var z1z1, z2z2, u1, u2, s1, s2 fieldVal
@@ -409,7 +409,7 @@ func (curve *KoblitzCurve) addGeneric(x1, y1, z1, x2, y2, z2, x3, y3, z3 *fieldV
 // together and stores the result in (x3, y3, z3).
 func (curve *KoblitzCurve) addJacobian(x1, y1, z1, x2, y2, z2, x3, y3, z3 *fieldVal) {
 	// A point at infinity is the identity according to the group law for
-	// elliptic curve cryptography.  Thus, ∞ + P = P and P + ∞ = P.
+	// elliptic curve cryptography. Thus, ∞ + P = P and P + ∞ = P.
 	if (x1.IsZero() && y1.IsZero()) || z1.IsZero() {
 		x3.Set(x2)
 		y3.Set(y2)
@@ -424,8 +424,8 @@ func (curve *KoblitzCurve) addJacobian(x1, y1, z1, x2, y2, z2, x3, y3, z3 *field
 	}
 
 	// Faster point addition can be achieved when certain assumptions are
-	// met.  For example, when both points have the same z value, arithmetic
-	// on the z values can be avoided.  This section thus checks for these
+	// met. For example, when both points have the same z value, arithmetic
+	// on the z values can be avoided. This section thus checks for these
 	// conditions and calls an appropriate add function which is accelerated
 	// by using those assumptions.
 	z1.Normalize()
@@ -453,7 +453,7 @@ func (curve *KoblitzCurve) addJacobian(x1, y1, z1, x2, y2, z2, x3, y3, z3 *field
 // interface.
 func (curve *KoblitzCurve) Add(x1, y1, x2, y2 *big.Int) (*big.Int, *big.Int) {
 	// A point at infinity is the identity according to the group law for
-	// elliptic curve cryptography.  Thus, ∞ + P = P and P + ∞ = P.
+	// elliptic curve cryptography. Thus, ∞ + P = P and P + ∞ = P.
 	if x1.Sign() == 0 && y1.Sign() == 0 {
 		return x2, y2
 	}
@@ -476,7 +476,7 @@ func (curve *KoblitzCurve) Add(x1, y1, x2, y2 *big.Int) (*big.Int, *big.Int) {
 
 // doubleZ1EqualsOne performs point doubling on the passed Jacobian point
 // when the point is already known to have a z value of 1 and stores
-// the result in (x3, y3, z3).  That is to say (x3, y3, z3) = 2*(x1, y1, 1).  It
+// the result in (x3, y3, z3). That is to say (x3, y3, z3) = 2*(x1, y1, 1). It
 // performs faster point doubling than the generic routine since less arithmetic
 // is needed due to the ability to avoid multiplication by the z value.
 func (curve *KoblitzCurve) doubleZ1EqualsOne(x1, y1, x3, y3, z3 *fieldVal) {
@@ -527,7 +527,7 @@ func (curve *KoblitzCurve) doubleZ1EqualsOne(x1, y1, x3, y3, z3 *fieldVal) {
 
 // doubleGeneric performs point doubling on the passed Jacobian point without
 // any assumptions about the z value and stores the result in (x3, y3, z3).
-// That is to say (x3, y3, z3) = 2*(x1, y1, z1).  It is the slowest of the point
+// That is to say (x3, y3, z3) = 2*(x1, y1, z1). It is the slowest of the point
 // doubling routines due to requiring the most arithmetic.
 func (curve *KoblitzCurve) doubleGeneric(x1, y1, z1, x3, y3, z3 *fieldVal) {
 	// Point doubling formula for Jacobian coordinates for the secp256k1
@@ -586,7 +586,7 @@ func (curve *KoblitzCurve) doubleJacobian(x1, y1, z1, x3, y3, z3 *fieldVal) {
 	}
 
 	// Slightly faster point doubling can be achieved when the z value is 1
-	// by avoiding the multiplication on the z value.  This section calls
+	// by avoiding the multiplication on the z value. This section calls
 	// a point doubling function which is accelerated by using that
 	// assumption when possible.
 	if z1.Normalize().Equals(fieldOne) {
@@ -621,7 +621,7 @@ func (curve *KoblitzCurve) Double(x1, y1 *big.Int) (*big.Int, *big.Int) {
 // This is algorithm 3.74 from [GECC].
 //
 // One thing of note about this algorithm is that no matter what c1 and c2 are,
-// the final equation of k = k1 + k2 * lambda (mod n) will hold.  This is
+// the final equation of k = k1 + k2 * lambda (mod n) will hold. This is
 // provable mathematically due to how a1/b1/a2/b2 are computed.
 //
 // c1 and c2 are chosen to minimize the max(k1,k2).
@@ -660,8 +660,8 @@ func (curve *KoblitzCurve) splitK(k []byte) ([]byte, []byte, int, int) {
 	return k1.Bytes(), k2.Bytes(), k1.Sign(), k2.Sign()
 }
 
-// moduloReduce reduces k from more than 32 bytes to 32 bytes and under.  This
-// is done by doing a simple modulo curve.N.  We can do this since G^N = 1 and
+// moduloReduce reduces k from more than 32 bytes to 32 bytes and under. This
+// is done by doing a simple modulo curve.N. We can do this since G^N = 1 and
 // thus any other valid point on the elliptic curve has the same order.
 func (curve *KoblitzCurve) moduloReduce(k []byte) []byte {
 	// Since the order of G is curve.N, we can use a much smaller number
@@ -677,22 +677,22 @@ func (curve *KoblitzCurve) moduloReduce(k []byte) []byte {
 }
 
 // NAF takes a positive integer k and returns the Non-Adjacent Form (NAF) as two
-// byte slices.  The first is where 1s will be.  The second is where -1s will
-// be.  NAF is convenient in that on average, only 1/3rd of its values are
-// non-zero.  This is algorithm 3.30 from [GECC].
+// byte slices. The first is where 1s will be. The second is where -1s will
+// be. NAF is convenient in that on average, only 1/3rd of its values are
+// non-zero. This is algorithm 3.30 from [GECC].
 //
 // Essentially, this makes it possible to minimize the number of operations
 // since the resulting ints returned will be at least 50% 0s.
 func NAF(k []byte) ([]byte, []byte) {
 	// The essence of this algorithm is that whenever we have consecutive 1s
 	// in the binary, we want to put a -1 in the lowest bit and get a bunch
-	// of 0s up to the highest bit of consecutive 1s.  This is due to this
+	// of 0s up to the highest bit of consecutive 1s. This is due to this
 	// identity:
 	// 2^n + 2^(n-1) + 2^(n-2) + ... + 2^(n-k) = 2^(n+1) - 2^(n-k)
 	//
 	// The algorithm thus may need to go 1 more bit than the length of the
 	// bits we actually have, hence bits being 1 bit longer than was
-	// necessary.  Since we need to know whether adding will cause a carry,
+	// necessary. Since we need to know whether adding will cause a carry,
 	// we go from right-to-left in this addition.
 	var carry, curIsOne, nextIsOne bool
 	// these default to zero
@@ -771,7 +771,7 @@ func (curve *KoblitzCurve) ScalarMult(Bx, By *big.Int, k []byte) (*big.Int, *big
 	p1yNeg := new(fieldVal).NegateVal(p1y, 1)
 	p1z := new(fieldVal).SetInt(1)
 
-	// NOTE: ϕ(x,y) = (βx,y).  The Jacobian z coordinate is 1, so this math
+	// NOTE: ϕ(x,y) = (βx,y). The Jacobian z coordinate is 1, so this math
 	// goes through.
 	p2x := new(fieldVal).Mul2(p1x, curve.beta)
 	p2y := new(fieldVal).Set(p1y)
@@ -779,7 +779,7 @@ func (curve *KoblitzCurve) ScalarMult(Bx, By *big.Int, k []byte) (*big.Int, *big
 	p2z := new(fieldVal).SetInt(1)
 
 	// Flip the positive and negative values of the points as needed
-	// depending on the signs of k1 and k2.  As mentioned in the equation
+	// depending on the signs of k1 and k2. As mentioned in the equation
 	// above, each of k1 and k2 are multiplied by the respective point.
 	// Since -k * P is the same thing as k * -P, and the group law for
 	// elliptic curves states that P(x, y) = -P(x, -y), it's faster and
@@ -805,8 +805,8 @@ func (curve *KoblitzCurve) ScalarMult(Bx, By *big.Int, k []byte) (*big.Int, *big
 		m = k2Len
 	}
 
-	// Add left-to-right using the NAF optimization.  See algorithm 3.77
-	// from [GECC].  This should be faster overall since there will be a lot
+	// Add left-to-right using the NAF optimization. See algorithm 3.77
+	// from [GECC]. This should be faster overall since there will be a lot
 	// more instances of 0, hence reducing the number of Jacobian additions
 	// at the cost of 1 possible extra doubling.
 	var k1BytePos, k1ByteNeg, k2BytePos, k2ByteNeg byte
@@ -875,7 +875,7 @@ func (curve *KoblitzCurve) scalarMultJacobian(Bx, By *big.Int, k []byte) (*field
 	p1yNeg := new(fieldVal).NegateVal(p1y, 1)
 	p1z := new(fieldVal).SetInt(1)
 
-	// NOTE: ϕ(x,y) = (βx,y).  The Jacobian z coordinate is 1, so this math
+	// NOTE: ϕ(x,y) = (βx,y). The Jacobian z coordinate is 1, so this math
 	// goes through.
 	p2x := new(fieldVal).Mul2(p1x, curve.beta)
 	p2y := new(fieldVal).Set(p1y)
@@ -883,7 +883,7 @@ func (curve *KoblitzCurve) scalarMultJacobian(Bx, By *big.Int, k []byte) (*field
 	p2z := new(fieldVal).SetInt(1)
 
 	// Flip the positive and negative values of the points as needed
-	// depending on the signs of k1 and k2.  As mentioned in the equation
+	// depending on the signs of k1 and k2. As mentioned in the equation
 	// above, each of k1 and k2 are multiplied by the respective point.
 	// Since -k * P is the same thing as k * -P, and the group law for
 	// elliptic curves states that P(x, y) = -P(x, -y), it's faster and
@@ -909,8 +909,8 @@ func (curve *KoblitzCurve) scalarMultJacobian(Bx, By *big.Int, k []byte) (*field
 		m = k2Len
 	}
 
-	// Add left-to-right using the NAF optimization.  See algorithm 3.77
-	// from [GECC].  This should be faster overall since there will be a lot
+	// Add left-to-right using the NAF optimization. See algorithm 3.77
+	// from [GECC]. This should be faster overall since there will be a lot
 	// more instances of 0, hence reducing the number of Jacobian additions
 	// at the cost of 1 possible extra doubling.
 	var k1BytePos, k1ByteNeg, k2BytePos, k2ByteNeg byte
@@ -1018,7 +1018,7 @@ func initAll() {
 }
 
 // fromHex converts the passed hex string into a big integer pointer and will
-// panic is there is an error.  This is only provided for the hard-coded
+// panic is there is an error. This is only provided for the hard-coded
 // constants so errors in the source code can bet detected. It will only (and
 // must only) be called for initialization purposes.
 func fromHex(s string) *big.Int {
@@ -1047,7 +1047,7 @@ func initS256() {
 	secp256k1.byteSize = secp256k1.BitSize / 8
 
 	// Deserialize and set the pre-computed table used to accelerate scalar
-	// base multiplication.  This is hard-coded data, so any errors are
+	// base multiplication. This is hard-coded data, so any errors are
 	// panics because it means something is wrong in the source code.
 	if err := loadS256BytePoints(); err != nil {
 		panic(err)

@@ -48,7 +48,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 		}
 
 		// When the verbose flag isn't set, simply return the serialized
-		// transaction as a hex-encoded string.  This is done here to
+		// transaction as a hex-encoded string. This is done here to
 		// avoid deserializing it only to reserialize it again later.
 		if !verbose {
 			return hex.EncodeToString(txBytes), nil

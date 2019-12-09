@@ -25,8 +25,8 @@ var (
 )
 
 // internalRPCError is a convenience function to convert an internal error to
-// an RPC error with the appropriate code set.  It also logs the error to the
-// RPC server subsystem since internal errors really should not occur.  The
+// an RPC error with the appropriate code set. It also logs the error to the
+// RPC server subsystem since internal errors really should not occur. The
 // context parameter is only used in the log message and may be empty if it's
 // not needed.
 func internalRPCError(errStr, context string) *btcjson.RPCError {
@@ -188,7 +188,7 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 // minimum difficulty using the passed bits field from the header of a block.
 func getDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
 	// The minimum difficulty is the max possible proof-of-work limit bits
-	// converted back to a number.  Note this is not the same as the proof of
+	// converted back to a number. Note this is not the same as the proof of
 	// work limit directly because the block difficulty is encoded in a block
 	// with the compact form which loses precision.
 	target := util.CompactToBig(bits)

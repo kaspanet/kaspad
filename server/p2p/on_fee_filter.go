@@ -9,7 +9,7 @@ import (
 
 // OnFeeFilter is invoked when a peer receives a feefilter bitcoin message and
 // is used by remote peers to request that no transactions which have a fee rate
-// lower than provided value are inventoried to them.  The peer will be
+// lower than provided value are inventoried to them. The peer will be
 // disconnected if an invalid fee filter value is provided.
 func (sp *Peer) OnFeeFilter(_ *peer.Peer, msg *wire.MsgFeeFilter) {
 	// Check that the passed minimum fee is a valid amount.

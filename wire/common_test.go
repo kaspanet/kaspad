@@ -56,7 +56,7 @@ var exampleUTXOCommitment = &daghash.Hash{
 	0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
 }
 
-// TestElementWire tests wire encode and decode for various element types.  This
+// TestElementWire tests wire encode and decode for various element types. This
 // is mainly to test the "fast" paths in readElement and writeElement which use
 // type assertions to avoid reflection when possible.
 func TestElementWire(t *testing.T) {
@@ -546,7 +546,7 @@ func TestVarStringWireErrors(t *testing.T) {
 
 // TestVarStringOverflowErrors performs tests to ensure deserializing variable
 // length strings intentionally crafted to use large values for the string
-// length are handled properly.  This could otherwise potentially be used as an
+// length are handled properly. This could otherwise potentially be used as an
 // attack vector.
 func TestVarStringOverflowErrors(t *testing.T) {
 	pver := ProtocolVersion
@@ -678,7 +678,7 @@ func TestVarBytesWireErrors(t *testing.T) {
 
 // TestVarBytesOverflowErrors performs tests to ensure deserializing variable
 // length byte arrays intentionally crafted to use large values for the array
-// length are handled properly.  This could otherwise potentially be used as an
+// length are handled properly. This could otherwise potentially be used as an
 // attack vector.
 func TestVarBytesOverflowErrors(t *testing.T) {
 	pver := ProtocolVersion

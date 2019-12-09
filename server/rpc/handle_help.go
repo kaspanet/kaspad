@@ -21,7 +21,7 @@ func handleHelp(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 		return usage, nil
 	}
 
-	// Check that the command asked for is supported and implemented.  Only
+	// Check that the command asked for is supported and implemented. Only
 	// search the main list of handlers since help should not be provided
 	// for commands that are unimplemented or related to wallet
 	// functionality.

@@ -91,7 +91,7 @@ type dbCacheIterator struct {
 var _ iterator.Iterator = (*dbCacheIterator)(nil)
 
 // skipPendingUpdates skips any keys at the current database iterator position
-// that are being updated by the cache.  The forwards flag indicates the
+// that are being updated by the cache. The forwards flag indicates the
 // direction the iterator is moving.
 func (iter *dbCacheIterator) skipPendingUpdates(forwards bool) {
 	for iter.dbIter.Valid() {
@@ -117,7 +117,7 @@ func (iter *dbCacheIterator) skipPendingUpdates(forwards bool) {
 // chooseIterator first skips any entries in the database iterator that are
 // being updated by the cache and sets the current iterator to the appropriate
 // iterator depending on their validity and the order they compare in while taking
-// into account the direction flag.  When the iterator is being moved forwards
+// into account the direction flag. When the iterator is being moved forwards
 // and both iterators are valid, the iterator with the smaller key is chosen and
 // vice versa when the iterator is being moved backwards.
 func (iter *dbCacheIterator) chooseIterator(forwards bool) bool {
@@ -211,7 +211,7 @@ func (iter *dbCacheIterator) Prev() bool {
 }
 
 // Seek positions the iterator at the first key/value pair that is greater than
-// or equal to the passed seek key.  Returns false if no suitable key was found.
+// or equal to the passed seek key. Returns false if no suitable key was found.
 //
 // This is part of the leveldb iterator.Iterator interface implementation.
 func (iter *dbCacheIterator) Seek(key []byte) bool {
@@ -305,7 +305,7 @@ func (snap *dbCacheSnapshot) Has(key []byte) bool {
 	return hasKey
 }
 
-// Get returns the value for the passed key.  The function will return nil when
+// Get returns the value for the passed key. The function will return nil when
 // the key does not exist.
 func (snap *dbCacheSnapshot) Get(key []byte) []byte {
 	// Check the cached entries first.
@@ -331,12 +331,12 @@ func (snap *dbCacheSnapshot) Release() {
 	snap.pendingRemove = nil
 }
 
-// NewIterator returns a new iterator for the snapshot.  The newly returned
+// NewIterator returns a new iterator for the snapshot. The newly returned
 // iterator is not pointing to a valid item until a call to one of the methods
 // to position it is made.
 //
 // The slice parameter allows the iterator to be limited to a range of keys.
-// The start key is inclusive and the limit key is exclusive.  Either or both
+// The start key is inclusive and the limit key is exclusive. Either or both
 // can be nil if the functionality is not desired.
 func (snap *dbCacheSnapshot) NewIterator(slice *util.Range) *dbCacheIterator {
 	return &dbCacheIterator{
@@ -346,11 +346,11 @@ func (snap *dbCacheSnapshot) NewIterator(slice *util.Range) *dbCacheIterator {
 	}
 }
 
-// dbCache provides a database cache layer backed by an underlying database.  It
+// dbCache provides a database cache layer backed by an underlying database. It
 // allows a maximum cache size and flush interval to be specified such that the
 // cache is flushed to the database when the cache size exceeds the maximum
 // configured value or it has been longer than the configured interval since the
-// last flush.  This effectively provides transaction batching so that callers
+// last flush. This effectively provides transaction batching so that callers
 // can commit transactions at will without incurring large performance hits due
 // to frequent disk syncs.
 type dbCache struct {
@@ -361,8 +361,8 @@ type dbCache struct {
 	store *blockStore
 
 	// The following fields are related to flushing the cache to persistent
-	// storage.  Note that all flushing is performed in an opportunistic
-	// fashion.  This means that it is only flushed during a transaction or
+	// storage. Note that all flushing is performed in an opportunistic
+	// fashion. This means that it is only flushed during a transaction or
 	// when the database cache is closed.
 	//
 	// maxSize is the maximum size threshold the cache can grow to before
@@ -371,7 +371,7 @@ type dbCache struct {
 	// flushInterval is the threshold interval of time that is allowed to
 	// pass before the cache is flushed.
 	//
-	// lastFlush is the time the cache was last flushed.  It is used in
+	// lastFlush is the time the cache was last flushed. It is used in
 	// conjunction with the current time and the flush interval.
 	//
 	// NOTE: These flush related fields are protected by the database write
@@ -382,9 +382,9 @@ type dbCache struct {
 
 	// The following fields hold the keys that need to be stored or deleted
 	// from the underlying database once the cache is full, enough time has
-	// passed, or when the database is shutting down.  Note that these are
+	// passed, or when the database is shutting down. Note that these are
 	// stored using immutable treaps to support O(1) MVCC snapshots against
-	// the cached data.  The cacheLock is used to protect concurrent access
+	// the cached data. The cacheLock is used to protect concurrent access
 	// for cache updates and snapshots.
 	cacheLock    sync.RWMutex
 	cachedKeys   *treap.Immutable
@@ -416,7 +416,7 @@ func (c *dbCache) Snapshot() (*dbCacheSnapshot, error) {
 }
 
 // updateDB invokes the passed function in the context of a managed leveldb
-// transaction.  Any errors returned from the user-supplied function will cause
+// transaction. Any errors returned from the user-supplied function will cause
 // the transaction to be rolled back and are returned from this function.
 // Otherwise, the transaction is committed when the user-supplied function
 // returns a nil error.
@@ -440,7 +440,7 @@ func (c *dbCache) updateDB(fn func(ldbTx *leveldb.Transaction) error) error {
 }
 
 // TreapForEacher is an interface which allows iteration of a treap in ascending
-// order using a user-supplied callback for each key/value pair.  It mainly
+// order using a user-supplied callback for each key/value pair. It mainly
 // exists so both mutable and immutable treaps can be atomically committed to
 // the database with the same function.
 type TreapForEacher interface {
@@ -480,7 +480,7 @@ func (c *dbCache) commitTreaps(pendingKeys, pendingRemove TreapForEacher) error 
 	})
 }
 
-// flush flushes the database cache to persistent storage.  This involes syncing
+// flush flushes the database cache to persistent storage. This involes syncing
 // the block store and replaying all transactions that have been applied to the
 // cache to the underlying database.
 //
@@ -488,7 +488,7 @@ func (c *dbCache) commitTreaps(pendingKeys, pendingRemove TreapForEacher) error 
 func (c *dbCache) flush() error {
 	c.lastFlush = time.Now()
 
-	// Sync the current write file associated with the block store.  This is
+	// Sync the current write file associated with the block store. This is
 	// necessary before writing the metadata to prevent the case where the
 	// metadata contains information about a block which actually hasn't
 	// been written yet in unexpected shutdown scenarios.
@@ -538,7 +538,7 @@ func (c *dbCache) needsFlush(tx *transaction) bool {
 	}
 
 	// A flush is needed when the size of the database cache exceeds the
-	// specified max cache size.  The total calculated size is multiplied by
+	// specified max cache size. The total calculated size is multiplied by
 	// 1.5 here to account for additional memory consumption that will be
 	// needed during the flush as well as old nodes in the cache that are
 	// referenced by the snapshot used by the transaction.
@@ -549,7 +549,7 @@ func (c *dbCache) needsFlush(tx *transaction) bool {
 }
 
 // commitTx atomically adds all of the pending keys to add and remove into the
-// database cache.  When adding the pending keys would cause the size of the
+// database cache. When adding the pending keys would cause the size of the
 // cache to exceed the max cache size, or the time since the last flush exceeds
 // the configured flush interval, the cache will be flushed to the underlying
 // persistent database.
@@ -628,7 +628,7 @@ func (c *dbCache) Close() error {
 	// Flush any outstanding cached entries to disk.
 	if err := c.flush(); err != nil {
 		// Even if there is an error while flushing, attempt to close
-		// the underlying database.  The error is ignored since it would
+		// the underlying database. The error is ignored since it would
 		// mask the flush error.
 		_ = c.ldb.Close()
 		return err
@@ -644,7 +644,7 @@ func (c *dbCache) Close() error {
 }
 
 // newDbCache returns a new database cache instance backed by the provided
-// leveldb instance.  The cache will be flushed to leveldb when the max size
+// leveldb instance. The cache will be flushed to leveldb when the max size
 // exceeds the provided value or it has been longer than the provided interval
 // since the last flush.
 func newDbCache(ldb *leveldb.DB, store *blockStore, maxSize uint64, flushIntervalSecs uint32) *dbCache {

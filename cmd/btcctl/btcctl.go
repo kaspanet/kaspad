@@ -33,7 +33,7 @@ func commandUsage(method string) {
 }
 
 // usage displays the general usage when the help flag is not displayed and
-// and an invalid command was specified.  The commandUsage function is used
+// and an invalid command was specified. The commandUsage function is used
 // instead when a valid command was specified.
 func usage(errorMessage string) {
 	appName := filepath.Base(os.Args[0])
@@ -118,7 +118,7 @@ func main() {
 		}
 
 		// The error is not a btcjson.Error and this really should not
-		// happen.  Nevertheless, fallback to just showing the error
+		// happen. Nevertheless, fallback to just showing the error
 		// if it should happen due to a bug in the package.
 		fmt.Fprintf(os.Stderr, "%s error: %s\n", method, err)
 		commandUsage(method)

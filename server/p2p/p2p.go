@@ -54,7 +54,7 @@ const (
 	defaultRequiredServices = wire.SFNodeNetwork
 
 	// connectionRetryInterval is the base amount of time to wait in between
-	// retries when connecting to persistent peers.  It is adjusted by the
+	// retries when connecting to persistent peers. It is adjusted by the
 	// number of retries such that there is a retry backoff.
 	connectionRetryInterval = time.Second * 5
 )
@@ -293,8 +293,8 @@ type Server struct {
 	quitWaitGroup sync.WaitGroup
 	quit          chan struct{}
 
-	// The following fields are used for optional indexes.  They will be nil
-	// if the associated index is not enabled.  These fields are set during
+	// The following fields are used for optional indexes. They will be nil
+	// if the associated index is not enabled. These fields are set during
 	// initial creation of the server and never changed afterwards, so they
 	// do not need to be protected for concurrent access.
 	TxIndex         *indexers.TxIndex
@@ -428,7 +428,7 @@ func (sp *Peer) addBanScore(persistent, transient uint32, reason string) {
 }
 
 // enforceNodeBloomFlag disconnects the peer if the server is not configured to
-// allow bloom filters.  Additionally, if the peer has negotiated to a protocol
+// allow bloom filters. Additionally, if the peer has negotiated to a protocol
 // version  that is high enough to observe the bloom filter service support bit,
 // it will be banned since it is intentionally violating the protocol.
 func (sp *Peer) enforceNodeBloomFlag(cmd string) bool {
@@ -469,7 +469,7 @@ func (sp *Peer) OnWrite(_ *peer.Peer, bytesWritten int, msg wire.Message, err er
 	sp.server.AddBytesSent(uint64(bytesWritten))
 }
 
-// randomUint16Number returns a random uint16 in a specified input range.  Note
+// randomUint16Number returns a random uint16 in a specified input range. Note
 // that the range is in zeroth ordering; if you pass it 1800, you will get
 // values from 0 to 1800.
 func randomUint16Number(max uint16) uint16 {
@@ -519,11 +519,11 @@ func (s *Server) RelayTransactions(txns []*mempool.TxDesc) {
 }
 
 // pushTxMsg sends a tx message for the provided transaction hash to the
-// connected peer.  An error is returned if the transaction hash is not known.
+// connected peer. An error is returned if the transaction hash is not known.
 func (s *Server) pushTxMsg(sp *Peer, txID *daghash.TxID, doneChan chan<- struct{},
 	waitChan <-chan struct{}) error {
 
-	// Attempt to fetch the requested transaction from the pool.  A
+	// Attempt to fetch the requested transaction from the pool. A
 	// call could be made to check for existence first, but simply trying
 	// to fetch a missing transaction results in the same behavior.
 	tx, err := s.TxMemPool.FetchTransaction(txID)
@@ -548,7 +548,7 @@ func (s *Server) pushTxMsg(sp *Peer, txID *daghash.TxID, doneChan chan<- struct{
 }
 
 // pushBlockMsg sends a block message for the provided block hash to the
-// connected peer.  An error is returned if the block hash is not known.
+// connected peer. An error is returned if the block hash is not known.
 func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- struct{},
 	waitChan <-chan struct{}) error {
 
@@ -603,8 +603,8 @@ func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- stru
 }
 
 // pushMerkleBlockMsg sends a merkleblock message for the provided block hash to
-// the connected peer.  Since a merkle block requires the peer to have a filter
-// loaded, this call will simply be ignored if there is no filter loaded.  An
+// the connected peer. Since a merkle block requires the peer to have a filter
+// loaded, this call will simply be ignored if there is no filter loaded. An
 // error is returned if the block hash is not known.
 func (s *Server) pushMerkleBlockMsg(sp *Peer, hash *daghash.Hash,
 	doneChan chan<- struct{}, waitChan <-chan struct{}) error {
@@ -638,7 +638,7 @@ func (s *Server) pushMerkleBlockMsg(sp *Peer, hash *daghash.Hash,
 		<-waitChan
 	}
 
-	// Send the merkleblock.  Only send the done channel with this message
+	// Send the merkleblock. Only send the done channel with this message
 	// if no transactions will be sent afterwards.
 	var dc chan<- struct{}
 	if len(matchedTxIndices) == 0 {
@@ -662,7 +662,7 @@ func (s *Server) pushMerkleBlockMsg(sp *Peer, hash *daghash.Hash,
 	return nil
 }
 
-// handleAddPeerMsg deals with adding new peers.  It is invoked from the
+// handleAddPeerMsg deals with adding new peers. It is invoked from the
 // peerHandler goroutine.
 func (s *Server) handleAddPeerMsg(state *peerState, sp *Peer) bool {
 	if sp == nil {
@@ -720,7 +720,7 @@ func (s *Server) handleAddPeerMsg(state *peerState, sp *Peer) bool {
 	return true
 }
 
-// handleDonePeerMsg deals with peers that have signalled they are done.  It is
+// handleDonePeerMsg deals with peers that have signalled they are done. It is
 // invoked from the peerHandler goroutine.
 func (s *Server) handleDonePeerMsg(state *peerState, sp *Peer) {
 	var list map[int32]*Peer
@@ -757,7 +757,7 @@ func (s *Server) handleDonePeerMsg(state *peerState, sp *Peer) {
 	// or we purposefully deleted it.
 }
 
-// handleBanPeerMsg deals with banning peers.  It is invoked from the
+// handleBanPeerMsg deals with banning peers. It is invoked from the
 // peerHandler goroutine.
 func (s *Server) handleBanPeerMsg(state *peerState, sp *Peer) {
 	host, _, err := net.SplitHostPort(sp.Addr())
@@ -772,7 +772,7 @@ func (s *Server) handleBanPeerMsg(state *peerState, sp *Peer) {
 }
 
 // handleRelayInvMsg deals with relaying inventory to peers that are not already
-// known to have it.  It is invoked from the peerHandler goroutine.
+// known to have it. It is invoked from the peerHandler goroutine.
 func (s *Server) handleRelayInvMsg(state *peerState, msg relayMsg) {
 	state.forAllPeers(func(sp *Peer) bool {
 		if !sp.Connected() {
@@ -844,7 +844,7 @@ func (s *Server) handleRelayInvMsg(state *peerState, msg relayMsg) {
 	})
 }
 
-// handleBroadcastMsg deals with broadcasting messages to peers.  It is invoked
+// handleBroadcastMsg deals with broadcasting messages to peers. It is invoked
 // from the peerHandler goroutine.
 func (s *Server) handleBroadcastMsg(state *peerState, bmsg *broadcastMsg) {
 	state.forAllPeers(func(sp *Peer) bool {
@@ -1099,7 +1099,7 @@ func newPeerConfig(sp *Peer) *peer.Config {
 }
 
 // inboundPeerConnected is invoked by the connection manager when a new inbound
-// connection is established.  It initializes a new inbound server peer
+// connection is established. It initializes a new inbound server peer
 // instance, associates it with the connection, and starts a goroutine to wait
 // for disconnection.
 func (s *Server) inboundPeerConnected(conn net.Conn) {
@@ -1113,7 +1113,7 @@ func (s *Server) inboundPeerConnected(conn net.Conn) {
 }
 
 // outboundPeerConnected is invoked by the connection manager when a new
-// outbound connection is established.  It initializes a new outbound server
+// outbound connection is established. It initializes a new outbound server
 // peer instance, associates it with the relevant state such as the connection
 // request instance and the connection itself, and finally notifies the address
 // manager of the attempt.
@@ -1158,10 +1158,10 @@ func (s *Server) peerDoneHandler(sp *Peer) {
 
 // peerHandler is used to handle peer operations such as adding and removing
 // peers to and from the server, banning peers, and broadcasting messages to
-// peers.  It must be run in a goroutine.
+// peers. It must be run in a goroutine.
 func (s *Server) peerHandler() {
 	// Start the address manager and sync manager, both of which are needed
-	// by peers.  This is done here since their lifecycle is closely tied
+	// by peers. This is done here since their lifecycle is closely tied
 	// to this handler and rather than adding more channels to sychronize
 	// things, it's easier and slightly faster to simply start and stop them
 	// in this handler.
@@ -1323,19 +1323,19 @@ func (s *Server) OutboundGroupCount(key string) int {
 }
 
 // AddBytesSent adds the passed number of bytes to the total bytes sent counter
-// for the server.  It is safe for concurrent access.
+// for the server. It is safe for concurrent access.
 func (s *Server) AddBytesSent(bytesSent uint64) {
 	atomic.AddUint64(&s.bytesSent, bytesSent)
 }
 
 // AddBytesReceived adds the passed number of bytes to the total bytes received
-// counter for the server.  It is safe for concurrent access.
+// counter for the server. It is safe for concurrent access.
 func (s *Server) AddBytesReceived(bytesReceived uint64) {
 	atomic.AddUint64(&s.bytesReceived, bytesReceived)
 }
 
 // NetTotals returns the sum of all bytes received and sent across the network
-// for all peers.  It is safe for concurrent access.
+// for all peers. It is safe for concurrent access.
 func (s *Server) NetTotals() (uint64, uint64) {
 	return atomic.LoadUint64(&s.bytesReceived),
 		atomic.LoadUint64(&s.bytesSent)
@@ -1589,7 +1589,7 @@ out:
 }
 
 // NewServer returns a new btcd server configured to listen on addr for the
-// bitcoin network type specified by dagParams.  Use start to begin accepting
+// bitcoin network type specified by dagParams. Use start to begin accepting
 // connections from peers.
 func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params, interrupt <-chan struct{}, notifyNewTransactions func(txns []*mempool.TxDesc)) (*Server, error) {
 	services := defaultServices
@@ -1641,7 +1641,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 	// Create the transaction and address indexes if needed.
 	//
 	// CAUTION: the txindex needs to be first in the indexes array because
-	// the addrindex uses data from the txindex during catchup.  If the
+	// the addrindex uses data from the txindex during catchup. If the
 	// addrindex is run first, it may not have the transactions from the
 	// current block indexed.
 	var indexes []indexers.Indexer
@@ -1739,7 +1739,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 	}
 
 	// Only setup a function to return new addresses to connect to when
-	// not running in connect-only mode.  The simulation network is always
+	// not running in connect-only mode. The simulation network is always
 	// in connect-only mode since it is only intended to connect to
 	// specified peers and actively avoid advertising and connecting to
 	// discovered peers in order to prevent it from becoming a public test
@@ -1909,7 +1909,7 @@ func initListeners(amgr *addrmgr.AddrManager, listenAddrs []string, services wir
 
 // addrStringToNetAddr takes an address in the form of 'host:port' and returns
 // a net.Addr which maps to the original address with any host names resolved
-// to IP addresses.  It also handles tor addresses properly by returning a
+// to IP addresses. It also handles tor addresses properly by returning a
 // net.Addr that encapsulates the address.
 func addrStringToNetAddr(addr string) (net.Addr, error) {
 	host, strPort, err := net.SplitHostPort(addr)
@@ -2002,7 +2002,7 @@ func addLocalAddress(addrMgr *addrmgr.AddrManager, addr string, services wire.Se
 }
 
 // dynamicTickDuration is a convenience function used to dynamically choose a
-// tick duration based on remaining time.  It is primarily used during
+// tick duration based on remaining time. It is primarily used during
 // server shutdown to make shutdown warnings more frequent as the shutdown time
 // approaches.
 func dynamicTickDuration(remaining time.Duration) time.Duration {
@@ -2053,26 +2053,26 @@ func isWhitelisted(addr net.Addr) bool {
 // be sorted.
 type checkpointSorter []dagconfig.Checkpoint
 
-// Len returns the number of checkpoints in the slice.  It is part of the
+// Len returns the number of checkpoints in the slice. It is part of the
 // sort.Interface implementation.
 func (s checkpointSorter) Len() int {
 	return len(s)
 }
 
-// Swap swaps the checkpoints at the passed indices.  It is part of the
+// Swap swaps the checkpoints at the passed indices. It is part of the
 // sort.Interface implementation.
 func (s checkpointSorter) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
 // Less returns whether the checkpoint with index i should sort before the
-// checkpoint with index j.  It is part of the sort.Interface implementation.
+// checkpoint with index j. It is part of the sort.Interface implementation.
 func (s checkpointSorter) Less(i, j int) bool {
 	return s[i].ChainHeight < s[j].ChainHeight
 }
 
 // mergeCheckpoints returns two slices of checkpoints merged into one slice
-// such that the checkpoints are sorted by height.  In the case the additional
+// such that the checkpoints are sorted by height. In the case the additional
 // checkpoints contain a checkpoint with the same height as a checkpoint in the
 // default checkpoints, the additional checkpoint will take precedence and
 // overwrite the default one.
@@ -2104,7 +2104,7 @@ func mergeCheckpoints(defaultCheckpoints, additional []dagconfig.Checkpoint) []d
 
 // AnnounceNewTransactions generates and relays inventory vectors and notifies
 // both websocket and getblocktemplate long poll clients of the passed
-// transactions.  This function should be called whenever new transactions
+// transactions. This function should be called whenever new transactions
 // are added to the mempool.
 func (s *Server) AnnounceNewTransactions(txns []*mempool.TxDesc) {
 	// Generate and relay inventory vectors for all newly accepted

@@ -11,7 +11,7 @@ import (
 )
 
 // MsgGetBlockInvs implements the Message interface and represents a bitcoin
-// getblockinvs message.  It is used to request a list of blocks starting after the
+// getblockinvs message. It is used to request a list of blocks starting after the
 // start hash and until the stop hash.
 type MsgGetBlockInvs struct {
 	StartHash *daghash.Hash
@@ -42,14 +42,14 @@ func (msg *MsgGetBlockInvs) BtcEncode(w io.Writer, pver uint32) error {
 	return WriteElement(w, msg.StopHash)
 }
 
-// Command returns the protocol command string for the message.  This is part
+// Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgGetBlockInvs) Command() string {
 	return CmdGetBlockInvs
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
-// receiver.  This is part of the Message interface implementation.
+// receiver. This is part of the Message interface implementation.
 func (msg *MsgGetBlockInvs) MaxPayloadLength(pver uint32) uint32 {
 	// start hash + stop hash.
 	return 2 * daghash.HashSize

@@ -19,8 +19,8 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// An opcode defines the information related to a txscript opcode.  opfunc, if
-// present, is the function to call to perform the opcode on the script.  The
+// An opcode defines the information related to a txscript opcode. opfunc, if
+// present, is the function to call to perform the opcode on the script. The
 // current script is passed in as a slice with the first member being the opcode
 // itself.
 type opcode struct {
@@ -573,7 +573,7 @@ var opcodeArray = [256]opcode{
 	OpUnknown248: {OpUnknown248, "OP_UNKNOWN248", 1, opcodeInvalid},
 	OpUnknown249: {OpUnknown249, "OP_UNKNOWN249", 1, opcodeInvalid},
 
-	// Bitcoin Core internal use opcode.  Defined here for completeness.
+	// Bitcoin Core internal use opcode. Defined here for completeness.
 	OpSmallInteger: {OpSmallInteger, "OP_SMALLINTEGER", 1, opcodeInvalid},
 	OpPubKeys:      {OpPubKeys, "OP_PUBKEYS", 1, opcodeInvalid},
 	OpUnknown252:   {OpUnknown252, "OP_UNKNOWN252", 1, opcodeInvalid},
@@ -584,7 +584,7 @@ var opcodeArray = [256]opcode{
 }
 
 // opcodeOnelineRepls defines opcode names which are replaced when doing a
-// one-line disassembly.  This is done to match the output of the reference
+// one-line disassembly. This is done to match the output of the reference
 // implementation while not changing the opcode names in the nicer full
 // disassembly.
 var opcodeOnelineRepls = map[string]string{
@@ -697,7 +697,7 @@ func (pop *parsedOpcode) isConditional() bool {
 }
 
 // checkMinimalDataPush returns whether or not the current data push uses the
-// smallest possible opcode to represent it.  For example, the value 15 could
+// smallest possible opcode to represent it. For example, the value 15 could
 // be pushed with OP_DATA_1 15 (among other variations); however, OP_15 is a
 // single opcode that represents the same value and is only a single byte versus
 // two bytes.
@@ -756,8 +756,8 @@ func (pop *parsedOpcode) checkMinimalDataPush() error {
 func (pop *parsedOpcode) print(oneline bool) string {
 	// The reference implementation one-line disassembly replaces opcodes
 	// which represent values (e.g. OP_0 through OP_16 and OP_1NEGATE)
-	// with the raw value.  However, when not doing a one-line dissassembly,
-	// we prefer to show the actual opcode names.  Thus, only replace the
+	// with the raw value. However, when not doing a one-line dissassembly,
+	// we prefer to show the actual opcode names. Thus, only replace the
 	// opcodes in question when the oneline flag is set.
 	opcodeName := pop.opcode.name
 	if oneline {
@@ -793,7 +793,7 @@ func (pop *parsedOpcode) print(oneline bool) string {
 }
 
 // bytes returns any data associated with the opcode encoded as it would be in
-// a script.  This is used for unparsing scripts from parsed opcodes.
+// a script. This is used for unparsing scripts from parsed opcodes.
 func (pop *parsedOpcode) bytes() ([]byte, error) {
 	var retbytes []byte
 	if pop.opcode.length > 0 {
@@ -852,8 +852,8 @@ func (pop *parsedOpcode) bytes() ([]byte, error) {
 // Opcode implementation functions start here.
 // *******************************************
 
-// opcodeDisabled is a common handler for disabled opcodes.  It returns an
-// appropriate error indicating the opcode is disabled.  While it would
+// opcodeDisabled is a common handler for disabled opcodes. It returns an
+// appropriate error indicating the opcode is disabled. While it would
 // ordinarily make more sense to detect if the script contains any disabled
 // opcodes before executing in an initial parse step, the consensus rules
 // dictate the script doesn't fail until the program counter passes over a
@@ -864,7 +864,7 @@ func opcodeDisabled(op *parsedOpcode, vm *Engine) error {
 	return scriptError(ErrDisabledOpcode, str)
 }
 
-// opcodeReserved is a common handler for all reserved opcodes.  It returns an
+// opcodeReserved is a common handler for all reserved opcodes. It returns an
 // appropriate error indicating the opcode is reserved.
 func opcodeReserved(op *parsedOpcode, vm *Engine) error {
 	str := fmt.Sprintf("attempt to execute reserved opcode %s",
@@ -872,7 +872,7 @@ func opcodeReserved(op *parsedOpcode, vm *Engine) error {
 	return scriptError(ErrReservedOpcode, str)
 }
 
-// opcodeInvalid is a common handler for all invalid opcodes.  It returns an
+// opcodeInvalid is a common handler for all invalid opcodes. It returns an
 // appropriate error indicating the opcode is invalid.
 func opcodeInvalid(op *parsedOpcode, vm *Engine) error {
 	str := fmt.Sprintf("attempt to execute invalid opcode %s",
@@ -880,7 +880,7 @@ func opcodeInvalid(op *parsedOpcode, vm *Engine) error {
 	return scriptError(ErrReservedOpcode, str)
 }
 
-// opcodeFalse pushes an empty array to the data stack to represent false.  Note
+// opcodeFalse pushes an empty array to the data stack to represent false. Note
 // that 0, when encoded as a number according to the numeric encoding consensus
 // rules, is an empty array.
 func opcodeFalse(op *parsedOpcode, vm *Engine) error {
@@ -901,7 +901,7 @@ func opcode1Negate(op *parsedOpcode, vm *Engine) error {
 	return nil
 }
 
-// opcodeN is a common handler for the small integer data push opcodes.  It
+// opcodeN is a common handler for the small integer data push opcodes. It
 // pushes the numeric value the opcode represents (which will be from 1 to 16)
 // onto the data stack.
 func opcodeN(op *parsedOpcode, vm *Engine) error {
@@ -911,7 +911,7 @@ func opcodeN(op *parsedOpcode, vm *Engine) error {
 	return nil
 }
 
-// opcodeNop is a common handler for the NOP family of opcodes.  As the name
+// opcodeNop is a common handler for the NOP family of opcodes. As the name
 // implies it generally does nothing, however, it will return an error when
 // the flag to discourage use of NOPs is set for select opcodes.
 func opcodeNop(op *parsedOpcode, vm *Engine) error {
@@ -955,7 +955,7 @@ func popIfBool(vm *Engine) (bool, error) {
 // An appropriate entry is added to the conditional stack depending on whether
 // the boolean is true and whether this if is on an executing branch in order
 // to allow proper execution of further opcodes depending on the conditional
-// logic.  When the boolean is true, the first branch will be executed (unless
+// logic. When the boolean is true, the first branch will be executed (unless
 // this opcode is nested in a non-executed branch).
 //
 // <expression> if [statements] [else [statements]] endif
@@ -990,7 +990,7 @@ func opcodeIf(op *parsedOpcode, vm *Engine) error {
 // An appropriate entry is added to the conditional stack depending on whether
 // the boolean is true and whether this if is on an executing branch in order
 // to allow proper execution of further opcodes depending on the conditional
-// logic.  When the boolean is false, the first branch will be executed (unless
+// logic. When the boolean is false, the first branch will be executed (unless
 // this opcode is nested in a non-executed branch).
 //
 // <expression> notif [statements] [else [statements]] endif
@@ -1061,8 +1061,8 @@ func opcodeEndif(op *parsedOpcode, vm *Engine) error {
 }
 
 // abstractVerify examines the top item on the data stack as a boolean value and
-// verifies it evaluates to true.  An error is returned either when there is no
-// item on the stack or when that item evaluates to false.  In the latter case
+// verifies it evaluates to true. An error is returned either when there is no
+// item on the stack or when that item evaluates to false. In the latter case
 // where the verification fails specifically due to the top item evaluating
 // to false, the returned error will use the passed error code.
 func abstractVerify(op *parsedOpcode, vm *Engine, c ErrorCode) error {
@@ -1079,7 +1079,7 @@ func abstractVerify(op *parsedOpcode, vm *Engine, c ErrorCode) error {
 }
 
 // opcodeVerify examines the top item on the data stack as a boolean value and
-// verifies it evaluates to true.  An error is returned if it does not.
+// verifies it evaluates to true. An error is returned if it does not.
 func opcodeVerify(op *parsedOpcode, vm *Engine) error {
 	return abstractVerify(op, vm, ErrVerify)
 }
@@ -1116,9 +1116,9 @@ func verifyLockTime(txLockTime, threshold, lockTime uint64) error {
 // validating if the transaction outputs are spendable yet.
 func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 	// The current transaction locktime is a uint64 resulting in a maximum
-	// locktime of 2^63-1 (the year 292278994).  However, scriptNums are signed
+	// locktime of 2^63-1 (the year 292278994). However, scriptNums are signed
 	// and therefore a standard 4-byte scriptNum would only support up to a
-	// maximum of 2^31-1 (the year 2038).  Thus, a 5-byte scriptNum is used
+	// maximum of 2^31-1 (the year 2038). Thus, a 5-byte scriptNum is used
 	// here since it will support up to 2^39-1 which allows dates until the year 19400
 	// PopByteArray is used here instead of PopInt because we do not want
 	// to be limited to a 4-byte integer for reasons specified above.
@@ -1141,7 +1141,7 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 
 	// The lock time field of a transaction is either a block height at
 	// which the transaction is finalized or a timestamp depending on if the
-	// value is before the txscript.LockTimeThreshold.  When it is under the
+	// value is before the txscript.LockTimeThreshold. When it is under the
 	// threshold it is a block height.
 	err = verifyLockTime(vm.tx.LockTime, LockTimeThreshold,
 		uint64(lockTime))
@@ -1151,13 +1151,13 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 
 	// The lock time feature can also be disabled, thereby bypassing
 	// OP_CHECKLOCKTIMEVERIFY, if every transaction input has been finalized by
-	// setting its sequence to the maximum value (wire.MaxTxInSequenceNum).  This
+	// setting its sequence to the maximum value (wire.MaxTxInSequenceNum). This
 	// condition would result in the transaction being allowed into the blockchain
 	// making the opcode ineffective.
 	//
 	// This condition is prevented by enforcing that the input being used by
 	// the opcode is unlocked (its sequence number is less than the max
-	// value).  This is sufficient to prove correctness without having to
+	// value). This is sufficient to prove correctness without having to
 	// check every input.
 	//
 	// NOTE: This implies that even if the transaction is not finalized due to
@@ -1177,9 +1177,9 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 
 	// The current transaction sequence is a uint64 resulting in a maximum
-	// sequence of 2^63-1.  However, scriptNums are signed and therefore a
+	// sequence of 2^63-1. However, scriptNums are signed and therefore a
 	// standard 4-byte scriptNum would only support up to a maximum of
-	// 2^31-1.  Thus, a 5-byte scriptNum is used here since it will support
+	// 2^31-1. Thus, a 5-byte scriptNum is used here since it will support
 	// up to 2^39-1 which allows sequences beyond the current sequence
 	// limit.
 	//
@@ -1445,9 +1445,9 @@ func opcodeEqual(op *parsedOpcode, vm *Engine) error {
 
 // opcodeEqualVerify is a combination of opcodeEqual and opcodeVerify.
 // Specifically, it removes the top 2 items of the data stack, compares them,
-// and pushes the result, encoded as a boolean, back to the stack.  Then, it
+// and pushes the result, encoded as a boolean, back to the stack. Then, it
 // examines the top item on the data stack as a boolean value and verifies it
-// evaluates to true.  An error is returned if it does not.
+// evaluates to true. An error is returned if it does not.
 //
 // Stack transformation: [... x1 x2] -> [... bool] -> [...]
 func opcodeEqualVerify(op *parsedOpcode, vm *Engine) error {
@@ -1601,7 +1601,7 @@ func opcodeSub(op *parsedOpcode, vm *Engine) error {
 	return nil
 }
 
-// opcodeBoolAnd treats the top two items on the data stack as integers.  When
+// opcodeBoolAnd treats the top two items on the data stack as integers. When
 // both of them are not zero, they are replaced with a 1, otherwise a 0.
 //
 // Stack transformation (x1==0, x2==0): [... 0 0] -> [... 0]
@@ -1628,7 +1628,7 @@ func opcodeBoolAnd(op *parsedOpcode, vm *Engine) error {
 	return nil
 }
 
-// opcodeBoolOr treats the top two items on the data stack as integers.  When
+// opcodeBoolOr treats the top two items on the data stack as integers. When
 // either of them are not zero, they are replaced with a 1, otherwise a 0.
 //
 // Stack transformation (x1==0, x2==0): [... 0 0] -> [... 0]
@@ -1655,7 +1655,7 @@ func opcodeBoolOr(op *parsedOpcode, vm *Engine) error {
 	return nil
 }
 
-// opcodeNumEqual treats the top two items on the data stack as integers.  When
+// opcodeNumEqual treats the top two items on the data stack as integers. When
 // they are equal, they are replaced with a 1, otherwise a 0.
 //
 // Stack transformation (x1==x2): [... 5 5] -> [... 1]
@@ -1682,10 +1682,10 @@ func opcodeNumEqual(op *parsedOpcode, vm *Engine) error {
 
 // opcodeNumEqualVerify is a combination of opcodeNumEqual and opcodeVerify.
 //
-// Specifically, treats the top two items on the data stack as integers.  When
-// they are equal, they are replaced with a 1, otherwise a 0.  Then, it examines
+// Specifically, treats the top two items on the data stack as integers. When
+// they are equal, they are replaced with a 1, otherwise a 0. Then, it examines
 // the top item on the data stack as a boolean value and verifies it evaluates
-// to true.  An error is returned if it does not.
+// to true. An error is returned if it does not.
 //
 // Stack transformation: [... x1 x2] -> [... bool] -> [...]
 func opcodeNumEqualVerify(op *parsedOpcode, vm *Engine) error {
@@ -1721,7 +1721,7 @@ func opcodeNumNotEqual(op *parsedOpcode, vm *Engine) error {
 	return nil
 }
 
-// opcodeLessThan treats the top two items on the data stack as integers.  When
+// opcodeLessThan treats the top two items on the data stack as integers. When
 // the second-to-top item is less than the top item, they are replaced with a 1,
 // otherwise a 0.
 //
@@ -1795,7 +1795,7 @@ func opcodeLessThanOrEqual(op *parsedOpcode, vm *Engine) error {
 }
 
 // opcodeGreaterThanOrEqual treats the top two items on the data stack as
-// integers.  When the second-to-top item is greater than or equal to the top
+// integers. When the second-to-top item is greater than or equal to the top
 // item, they are replaced with a 1, otherwise a 0.
 //
 // Stack transformation: [... x1 x2] -> [... bool]
@@ -1867,7 +1867,7 @@ func opcodeMax(op *parsedOpcode, vm *Engine) error {
 	return nil
 }
 
-// opcodeWithin treats the top 3 items on the data stack as integers.  When the
+// opcodeWithin treats the top 3 items on the data stack as integers. When the
 // value to test is within the specified range (left inclusive), they are
 // replaced with a 1, otherwise a 0.
 //
@@ -1983,7 +1983,7 @@ func opcodeHash256(op *parsedOpcode, vm *Engine) error {
 // successfully verified.
 //
 // The process of verifying a signature requires calculating a signature hash in
-// the same way the transaction signer did.  It involves hashing portions of the
+// the same way the transaction signer did. It involves hashing portions of the
 // transaction based on the hash type byte (which is the final byte of the
 // signature) and the script.
 // Once this "script hash" is calculated, the signature is checked using standard
@@ -2002,7 +2002,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	}
 
 	// The signature actually needs needs to be longer than this, but at
-	// least 1 byte is needed for the hash type below.  The full length is
+	// least 1 byte is needed for the hash type below. The full length is
 	// checked depending on the script flags and upon parsing the signature.
 	if len(fullSigBytes) < 1 {
 		vm.dstack.PushBool(false)
@@ -2015,10 +2015,10 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	//
 	// NOTE: When the strict encoding flags are set, any errors in the
 	// signature or public encoding here result in an immediate script error
-	// (and thus no result bool is pushed to the data stack).  This differs
+	// (and thus no result bool is pushed to the data stack). This differs
 	// from the logic below where any errors in parsing the signature is
 	// treated as the signature failure resulting in false being pushed to
-	// the data stack.  This is required because the more general script
+	// the data stack. This is required because the more general script
 	// validation consensus rules do not have the new strict encoding
 	// requirements enabled by the flags.
 	hashType := SigHashType(fullSigBytes[len(fullSigBytes)-1])
@@ -2078,7 +2078,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 }
 
 // opcodeCheckSigVerify is a combination of opcodeCheckSig and opcodeVerify.
-// The opcodeCheckSig function is invoked followed by opcodeVerify.  See the
+// The opcodeCheckSig function is invoked followed by opcodeVerify. See the
 // documentation for each of those opcodes for more details.
 //
 // Stack transformation: signature pubkey] -> [... bool] -> [...]
@@ -2091,7 +2091,7 @@ func opcodeCheckSigVerify(op *parsedOpcode, vm *Engine) error {
 }
 
 // parsedSigInfo houses a raw signature along with its parsed form and a flag
-// for whether or not it has already been parsed.  It is used to prevent parsing
+// for whether or not it has already been parsed. It is used to prevent parsing
 // the same signature multiple times when verifying a multisig.
 type parsedSigInfo struct {
 	signature       []byte
@@ -2286,7 +2286,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 }
 
 // opcodeCheckMultiSigVerify is a combination of opcodeCheckMultiSig and
-// opcodeVerify.  The opcodeCheckMultiSig is invoked followed by opcodeVerify.
+// opcodeVerify. The opcodeCheckMultiSig is invoked followed by opcodeVerify.
 // See the documentation for each of those opcodes for more details.
 //
 // Stack transformation:
@@ -2305,7 +2305,7 @@ var OpcodeByName = make(map[string]byte)
 
 func init() {
 	// Initialize the opcode name to value map using the contents of the
-	// opcode array.  Also add entries for "OP_FALSE" and "OP_TRUE"
+	// opcode array. Also add entries for "OP_FALSE" and "OP_TRUE"
 	// since they are aliases for "OP_0" and "OP_1" respectively.
 	for _, op := range opcodeArray {
 		OpcodeByName[op.name] = op.value

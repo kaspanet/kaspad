@@ -38,7 +38,7 @@ func (curve *KoblitzCurve) getDoublingPoints() [][3]fieldVal {
 }
 
 // SerializedBytePoints returns a serialized byte slice which contains all of
-// the possible points per 8-bit window.  This is used to when generating
+// the possible points per 8-bit window. This is used to when generating
 // secp256k1.go.
 func (curve *KoblitzCurve) SerializedBytePoints() []byte {
 	doublingPoints := curve.getDoublingPoints()
@@ -79,7 +79,7 @@ func (curve *KoblitzCurve) SerializedBytePoints() []byte {
 }
 
 // sqrt returns the square root of the provided big integer using Newton's
-// method.  It's only compiled and used during generation of pre-computed
+// method. It's only compiled and used during generation of pre-computed
 // values, so speed is not a huge concern.
 func sqrt(n *big.Int) *big.Int {
 	// Initial guess = 2^(log_2(n)/2)
@@ -103,7 +103,7 @@ func sqrt(n *big.Int) *big.Int {
 // EndomorphismVectors runs the first 3 steps of algorithm 3.74 from [GECC] to
 // generate the linearly independent vectors needed to generate a balanced
 // length-two representation of a multiplier such that k = k1 + k2λ (mod N) and
-// returns them.  Since the values will always be the same given the fact that N
+// returns them. Since the values will always be the same given the fact that N
 // and λ are fixed, the final results can be accelerated by storing the
 // precomputed values with the curve.
 func (curve *KoblitzCurve) EndomorphismVectors() (a1, b1, a2, b2 *big.Int) {
@@ -152,7 +152,7 @@ func (curve *KoblitzCurve) EndomorphismVectors() (a1, b1, a2, b2 *big.Int) {
 		if !found && r.Cmp(nSqrt) < 0 {
 			// When this condition executes ri and ti represent the
 			// r[i] and t[i] values such that i is the greatest
-			// index for which r >= sqrt(n).  Meanwhile, the current
+			// index for which r >= sqrt(n). Meanwhile, the current
 			// r and t values are r[i+1] and t[i+1], respectively.
 
 			// a1 = r[i+1], b1 = -t[i+1]

@@ -157,7 +157,7 @@ func TestBlockLocatorWire(t *testing.T) {
 // TestBlockLocatorWireErrors performs negative tests against wire encode and
 // decode of MsgBlockLocator to confirm error paths work correctly.
 func TestBlockLocatorWireErrors(t *testing.T) {
-	// Set protocol inside locator message.  Use protocol version 1
+	// Set protocol inside locator message. Use protocol version 1
 	// specifically here instead of the latest because the test data is
 	// using bytes encoded with that protocol version.
 	pver := uint32(1)

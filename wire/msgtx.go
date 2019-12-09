@@ -51,7 +51,7 @@ const (
 	SequenceLockTimeGranularity = 9
 
 	// defaultTxInOutAlloc is the default size used for the backing array for
-	// transaction inputs and outputs.  The array will dynamically grow as needed,
+	// transaction inputs and outputs. The array will dynamically grow as needed,
 	// but this figure is intended to provide enough space for the number of
 	// inputs and outputs in a typical transaction without needing to grow the
 	// backing array multiple times.
@@ -74,7 +74,7 @@ const (
 	// a transaction which fits into a message could possibly have.
 	maxTxOutPerMessage = (MaxMessagePayload / MinTxOutPayload) + 1
 
-	// minTxPayload is the minimum payload size for a transaction.  Note
+	// minTxPayload is the minimum payload size for a transaction. Note
 	// that any realistically usable transaction must have at least one
 	// input or output, but that is a rule enforced at a higher layer, so
 	// it is intentionally not included here.
@@ -85,16 +85,16 @@ const (
 
 	// freeListMaxScriptSize is the size of each buffer in the free list
 	// that	is used for deserializing scripts from the wire before they are
-	// concatenated into a single contiguous buffers.  This value was chosen
+	// concatenated into a single contiguous buffers. This value was chosen
 	// because it is slightly more than twice the size of the vast majority
-	// of all "standard" scripts.  Larger scripts are still deserialized
+	// of all "standard" scripts. Larger scripts are still deserialized
 	// properly as the free list will simply be bypassed for them.
 	freeListMaxScriptSize = 512
 
 	// freeListMaxItems is the number of buffers to keep in the free list
-	// to use for script deserialization.  This value allows up to 100
+	// to use for script deserialization. This value allows up to 100
 	// scripts per transaction being simultaneously deserialized by 125
-	// peers.  Thus, the peak usage of the free list is 12,500 * 512 =
+	// peers. Thus, the peak usage of the free list is 12,500 * 512 =
 	// 6,400,000 bytes.
 	freeListMaxItems = 12500
 )
@@ -113,7 +113,7 @@ const (
 
 // scriptFreeList defines a free list of byte slices (up to the maximum number
 // defined by the freeListMaxItems constant) that have a cap according to the
-// freeListMaxScriptSize constant.  It is used to provide temporary buffers for
+// freeListMaxScriptSize constant. It is used to provide temporary buffers for
 // deserializing scripts in order to greatly reduce the number of allocations
 // required.
 //
@@ -122,10 +122,10 @@ const (
 type scriptFreeList chan []byte
 
 // Borrow returns a byte slice from the free list with a length according the
-// provided size.  A new buffer is allocated if there are any items available.
+// provided size. A new buffer is allocated if there are any items available.
 //
 // When the size is larger than the max size allowed for items on the free list
-// a new buffer of the appropriate size is allocated and returned.  It is safe
+// a new buffer of the appropriate size is allocated and returned. It is safe
 // to attempt to return said buffer via the Return function as it will be
 // ignored and allowed to go the garbage collector.
 func (c scriptFreeList) Borrow(size uint64) []byte {
@@ -143,8 +143,8 @@ func (c scriptFreeList) Borrow(size uint64) []byte {
 }
 
 // Return puts the provided byte slice back on the free list when it has a cap
-// of the expected length.  The buffer is expected to have been obtained via
-// the Borrow function.  Any slices that are not of the appropriate size, such
+// of the expected length. The buffer is expected to have been obtained via
+// the Borrow function. Any slices that are not of the appropriate size, such
 // as those whose size is greater than the largest allowed free list item size
 // are simply ignored so they can go to the garbage collector.
 func (c scriptFreeList) Return(buf []byte) {
@@ -154,7 +154,7 @@ func (c scriptFreeList) Return(buf []byte) {
 		return
 	}
 
-	// Return the buffer to the free list when it's not full.  Otherwise let
+	// Return the buffer to the free list when it's not full. Otherwise let
 	// it be garbage collected.
 	select {
 	case c <- buf:
@@ -163,7 +163,7 @@ func (c scriptFreeList) Return(buf []byte) {
 	}
 }
 
-// Create the concurrent safe free list to use for script deserialization.  As
+// Create the concurrent safe free list to use for script deserialization. As
 // previously described, this free list is maintained to significantly reduce
 // the number of allocations.
 var scriptPool scriptFreeList = make(chan []byte, freeListMaxItems)
@@ -186,7 +186,7 @@ func NewOutpoint(txID *daghash.TxID, index uint32) *Outpoint {
 
 // String returns the Outpoint in the human-readable form "txID:index".
 func (o Outpoint) String() string {
-	// Allocate enough for ID string, colon, and 10 digits.  Although
+	// Allocate enough for ID string, colon, and 10 digits. Although
 	// at the time of writing, the number of digits can be no greater than
 	// the length of the decimal representation of maxTxOutPerMessage, the
 	// maximum message payload may increase in the future and this
@@ -288,10 +288,10 @@ func (msg *MsgTx) AddTxOut(to *TxOut) {
 	msg.TxOut = append(msg.TxOut, to)
 }
 
-// IsCoinBase determines whether or not a transaction is a coinbase transaction.  A coinbase
+// IsCoinBase determines whether or not a transaction is a coinbase transaction. A coinbase
 // transaction is a special transaction created by miners that distributes fees and block subsidy
 // to the previous blocks' miners, and to specify the scriptPubKey that will be used to pay the current
-// miner in future blocks.  Each input of the coinbase transaction should set index to maximum
+// miner in future blocks. Each input of the coinbase transaction should set index to maximum
 // value and reference the relevant block id, instead of previous transaction id.
 func (msg *MsgTx) IsCoinBase() bool {
 	// A coinbase transaction must have subnetwork id SubnetworkIDCoinbase
@@ -314,7 +314,7 @@ func (msg *MsgTx) TxHash() *daghash.Hash {
 // TxID generates the Hash for the transaction without the signature script, gas and payload fields.
 func (msg *MsgTx) TxID() *daghash.TxID {
 	// Encode the transaction, replace signature script with zeroes, cut off
-	// payload and calculate double sha256 on the result.  Ignore the error
+	// payload and calculate double sha256 on the result. Ignore the error
 	// returns since the only way the encode could fail is being out of memory or
 	// due to nil pointers, both of which would cause a run-time panic.
 	var encodingFlags txEncoding
@@ -415,7 +415,7 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 	}
 
 	// Prevent more input transactions than could possibly fit into a
-	// message.  It would be possible to cause memory exhaustion and panics
+	// message. It would be possible to cause memory exhaustion and panics
 	// without a sane upper bound on this count.
 	if count > uint64(maxTxInPerMessage) {
 		str := fmt.Sprintf("too many input transactions to fit into "+
@@ -426,7 +426,7 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 
 	// returnScriptBuffers is a closure that returns any script buffers that
 	// were borrowed from the pool when there are any deserialization
-	// errors.  This is only valid to call before the final step which
+	// errors. This is only valid to call before the final step which
 	// replaces the scripts with the location in a contiguous buffer and
 	// returns them.
 	returnScriptBuffers := func() {
@@ -468,7 +468,7 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 	}
 
 	// Prevent more output transactions than could possibly fit into a
-	// message.  It would be possible to cause memory exhaustion and panics
+	// message. It would be possible to cause memory exhaustion and panics
 	// without a sane upper bound on this count.
 	if count > uint64(maxTxOutPerMessage) {
 		returnScriptBuffers()
@@ -534,9 +534,9 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 
 	// Create a single allocation to house all of the scripts and set each
 	// input signature script and output public key script to the
-	// appropriate subslice of the overall contiguous buffer.  Then, return
+	// appropriate subslice of the overall contiguous buffer. Then, return
 	// each individual script buffer back to the pool so they can be reused
-	// for future deserializations.  This is done because it significantly
+	// for future deserializations. This is done because it significantly
 	// reduces the number of allocations the garbage collector needs to
 	// track, which in turn improves performance and drastically reduces the
 	// amount of runtime overhead that would otherwise be needed to keep
@@ -586,17 +586,17 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 
 // Deserialize decodes a transaction from r into the receiver using a format
 // that is suitable for long-term storage such as a database while respecting
-// the Version field in the transaction.  This function differs from BtcDecode
+// the Version field in the transaction. This function differs from BtcDecode
 // in that BtcDecode decodes from the bitcoin wire protocol as it was sent
-// across the network.  The wire encoding can technically differ depending on
+// across the network. The wire encoding can technically differ depending on
 // the protocol version and doesn't even really need to match the format of a
-// stored transaction at all.  As of the time this comment was written, the
+// stored transaction at all. As of the time this comment was written, the
 // encoded transaction is the same in both instances, but there is a distinct
 // difference and separating the two allows the API to be flexible enough to
 // deal with changes.
 func (msg *MsgTx) Deserialize(r io.Reader) error {
 	// At the current time, there is no difference between the wire encoding
-	// at protocol version 0 and the stable long-term storage format.  As
+	// at protocol version 0 and the stable long-term storage format. As
 	// a result, make use of BtcDecode.
 	return msg.BtcDecode(r, 0)
 }
@@ -692,24 +692,24 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 
 // Serialize encodes the transaction to w using a format that suitable for
 // long-term storage such as a database while respecting the Version field in
-// the transaction.  This function differs from BtcEncode in that BtcEncode
+// the transaction. This function differs from BtcEncode in that BtcEncode
 // encodes the transaction to the bitcoin wire protocol in order to be sent
-// across the network.  The wire encoding can technically differ depending on
+// across the network. The wire encoding can technically differ depending on
 // the protocol version and doesn't even really need to match the format of a
-// stored transaction at all.  As of the time this comment was written, the
+// stored transaction at all. As of the time this comment was written, the
 // encoded transaction is the same in both instances, but there is a distinct
 // difference and separating the two allows the API to be flexible enough to
 // deal with changes.
 func (msg *MsgTx) Serialize(w io.Writer) error {
 	// At the current time, there is no difference between the wire encoding
-	// at protocol version 0 and the stable long-term storage format.  As
+	// at protocol version 0 and the stable long-term storage format. As
 	// a result, make use of BtcEncode.
 	return msg.BtcEncode(w, 0)
 }
 
 func (msg *MsgTx) serialize(w io.Writer, encodingFlags txEncoding) error {
 	// At the current time, there is no difference between the wire encoding
-	// at protocol version 0 and the stable long-term storage format.  As
+	// at protocol version 0 and the stable long-term storage format. As
 	// a result, make use of `encode`.
 	return msg.encode(w, 0, encodingFlags)
 }
@@ -756,20 +756,20 @@ func (msg *MsgTx) serializeSize(encodingFlags txEncoding) int {
 	return n
 }
 
-// Command returns the protocol command string for the message.  This is part
+// Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgTx) Command() string {
 	return CmdTx
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
-// receiver.  This is part of the Message interface implementation.
+// receiver. This is part of the Message interface implementation.
 func (msg *MsgTx) MaxPayloadLength(pver uint32) uint32 {
 	return MaxMessagePayload
 }
 
 // ScriptPubKeyLocs returns a slice containing the start of each public key script
-// within the raw serialized transaction.  The caller can easily obtain the
+// within the raw serialized transaction. The caller can easily obtain the
 // length of each script by using len on the script available via the
 // appropriate transaction output entry.
 func (msg *MsgTx) ScriptPubKeyLocs() []int {
@@ -903,10 +903,10 @@ func writeOutpoint(w io.Writer, pver uint32, version int32, op *Outpoint) error 
 }
 
 // readScript reads a variable length byte array that represents a transaction
-// script.  It is encoded as a varInt containing the length of the array
-// followed by the bytes themselves.  An error is returned if the length is
+// script. It is encoded as a varInt containing the length of the array
+// followed by the bytes themselves. An error is returned if the length is
 // greater than the passed maxAllowed parameter which helps protect against
-// memory exhaustion attacks and forced panics through malformed messages.  The
+// memory exhaustion attacks and forced panics through malformed messages. The
 // fieldName parameter is only used for the error message so it provides more
 // context in the error.
 func readScript(r io.Reader, pver uint32, maxAllowed uint32, fieldName string) ([]byte, error) {
@@ -915,7 +915,7 @@ func readScript(r io.Reader, pver uint32, maxAllowed uint32, fieldName string) (
 		return nil, err
 	}
 
-	// Prevent byte array larger than the max message size.  It would
+	// Prevent byte array larger than the max message size. It would
 	// be possible to cause memory exhaustion and panics without a sane
 	// upper bound on this count.
 	if count > uint64(maxAllowed) {

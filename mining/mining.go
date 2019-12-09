@@ -70,7 +70,7 @@ type TxSource interface {
 // details about the fees and the number of signature operations for each
 // transaction in the block.
 type BlockTemplate struct {
-	// Block is a block that is ready to be solved by miners.  Thus, it is
+	// Block is a block that is ready to be solved by miners. Thus, it is
 	// completely valid with the exception of satisfying the proof-of-work
 	// requirement.
 	Block *wire.MsgBlock
@@ -80,7 +80,7 @@ type BlockTemplate struct {
 	TxMasses []uint64
 
 	// Fees contains the amount of fees each transaction in the generated
-	// template pays in base units.  Since the first transaction is the
+	// template pays in base units. Since the first transaction is the
 	// coinbase, the first entry (offset 0) will contain the negative of the
 	// sum of the fees of all other transactions.
 	Fees []uint64
@@ -89,14 +89,14 @@ type BlockTemplate struct {
 	Height uint64
 
 	// ValidPayAddress indicates whether or not the template coinbase pays
-	// to an address or is redeemable by anyone.  See the documentation on
+	// to an address or is redeemable by anyone. See the documentation on
 	// NewBlockTemplate for details on which this can be useful to generate
 	// templates without a coinbase payment address.
 	ValidPayAddress bool
 }
 
 // MinimumMedianTime returns the minimum allowed timestamp for a block building
-// on the end of the DAG.  In particular, it is one second after
+// on the end of the DAG. In particular, it is one second after
 // the median timestamp of the last several blocks per the DAG consensus
 // rules.
 func MinimumMedianTime(dagMedianTime time.Time) time.Time {
@@ -108,8 +108,8 @@ func MinimumMedianTime(dagMedianTime time.Time) time.Time {
 // chain consensus rules.
 func medianAdjustedTime(dagMedianTime time.Time, timeSource blockdag.MedianTimeSource) time.Time {
 	// The timestamp for the block must not be before the median timestamp
-	// of the last several blocks.  Thus, choose the maximum between the
-	// current time and one second after the past median time.  The current
+	// of the last several blocks. Thus, choose the maximum between the
+	// current time and one second after the past median time. The current
 	// timestamp is truncated to a second boundary before comparison since a
 	// block timestamp does not supported a precision greater than one
 	// second.
@@ -159,25 +159,25 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 // NewBlockTemplate returns a new block template that is ready to be solved
 // using the transactions from the passed transaction source pool and a coinbase
 // that either pays to the passed address if it is not nil, or a coinbase that
-// is redeemable by anyone if the passed address is nil.  The nil address
+// is redeemable by anyone if the passed address is nil. The nil address
 // functionality is useful since there are cases such as the getblocktemplate
 // RPC where external mining software is responsible for creating their own
-// coinbase which will replace the one generated for the block template.  Thus
+// coinbase which will replace the one generated for the block template. Thus
 // the need to have configured address can be avoided.
 //
 // The transactions selected and included are prioritized according to several
-// factors.  First, each transaction has a priority calculated based on its
-// value, age of inputs, and size.  Transactions which consist of larger
-// amounts, older inputs, and small sizes have the highest priority.  Second, a
-// fee per kilobyte is calculated for each transaction.  Transactions with a
-// higher fee per kilobyte are preferred.  Finally, the block generation related
+// factors. First, each transaction has a priority calculated based on its
+// value, age of inputs, and size. Transactions which consist of larger
+// amounts, older inputs, and small sizes have the highest priority. Second, a
+// fee per kilobyte is calculated for each transaction. Transactions with a
+// higher fee per kilobyte are preferred. Finally, the block generation related
 // policy settings are all taken into account.
 //
 // Transactions which only spend outputs from other transactions already in the
 // block chain are immediately added to a priority queue which either
 // prioritizes based on the priority (then fee per kilobyte) or the fee per
 // kilobyte (then priority) depending on whether or not the BlockPrioritySize
-// policy setting allots space for high-priority transactions.  Transactions
+// policy setting allots space for high-priority transactions. Transactions
 // which spend outputs from other transactions in the source pool are added to a
 // dependency map so they can be added to the priority queue once the
 // transactions they depend on have been included.
@@ -227,7 +227,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		return nil, errors.Errorf("failed to select txs: %s", err)
 	}
 
-	// Calculate the required difficulty for the block.  The timestamp
+	// Calculate the required difficulty for the block. The timestamp
 	// is potentially adjusted to ensure it comes after the median time of
 	// the last several blocks per the chain consensus rules.
 	ts := medianAdjustedTime(g.dag.CalcPastMedianTime(), g.timeSource)
@@ -327,7 +327,7 @@ func (g *BlkTmplGenerator) buildUTXOCommitment(transactions []*wire.MsgTx) (*dag
 // UpdateBlockTime updates the timestamp in the header of the passed block to
 // the current time while taking into account the median time of the last
 // several blocks to ensure the new time is after that time per the chain
-// consensus rules.  Finally, it will update the target difficulty if needed
+// consensus rules. Finally, it will update the target difficulty if needed
 // based on the new time for the test networks since their target difficulty can
 // change based upon time.
 func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
@@ -343,7 +343,7 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 
 // UpdateExtraNonce updates the extra nonce in the coinbase script of the passed
 // block by regenerating the coinbase script with the passed value and block
-// height.  It also recalculates and updates the new merkle root that results
+// height. It also recalculates and updates the new merkle root that results
 // from changing the coinbase script.
 func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, extraNonce uint64) error {
 	coinbasePayloadScriptPubKey, _, err := blockdag.DeserializeCoinbasePayload(msgBlock.Transactions[util.CoinbaseTransactionIndex])

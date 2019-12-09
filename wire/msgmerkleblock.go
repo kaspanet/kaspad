@@ -12,9 +12,9 @@ import (
 )
 
 // maxFlagsPerMerkleBlock is the maximum number of flag bytes that could
-// possibly fit into a merkle block.  Since each transaction is represented by
+// possibly fit into a merkle block. Since each transaction is represented by
 // a single bit, this is the max number of transactions per block divided by
-// 8 bits per byte.  Then an extra one to cover partials.
+// 8 bits per byte. Then an extra one to cover partials.
 const maxFlagsPerMerkleBlock = maxTxPerBlock / 8
 
 // MsgMerkleBlock implements the Message interface and represents a bitcoin
@@ -124,20 +124,20 @@ func (msg *MsgMerkleBlock) BtcEncode(w io.Writer, pver uint32) error {
 	return WriteVarBytes(w, pver, msg.Flags)
 }
 
-// Command returns the protocol command string for the message.  This is part
+// Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgMerkleBlock) Command() string {
 	return CmdMerkleBlock
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
-// receiver.  This is part of the Message interface implementation.
+// receiver. This is part of the Message interface implementation.
 func (msg *MsgMerkleBlock) MaxPayloadLength(pver uint32) uint32 {
 	return MaxMessagePayload
 }
 
 // NewMsgMerkleBlock returns a new bitcoin merkleblock message that conforms to
-// the Message interface.  See MsgMerkleBlock for details.
+// the Message interface. See MsgMerkleBlock for details.
 func NewMsgMerkleBlock(bh *BlockHeader) *MsgMerkleBlock {
 	return &MsgMerkleBlock{
 		Header:       *bh,

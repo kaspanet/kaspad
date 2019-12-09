@@ -748,7 +748,7 @@ func (c *Client) RescanBlocksAsync(blockHashes []*daghash.Hash) FutureRescanBloc
 }
 
 // RescanBlocks rescans the blocks identified by blockHashes, in order, using
-// the client's loaded transaction filter.  The blocks do not need to be on the
+// the client's loaded transaction filter. The blocks do not need to be on the
 // main dag, but they do need to be adjacent to each other.
 //
 // NOTE: This is a btcsuite extension ported from

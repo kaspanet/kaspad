@@ -421,7 +421,7 @@ func (a *AddrManager) getTriedBucket(netAddr *wire.NetAddress) int {
 	return int(binary.LittleEndian.Uint64(hash2) % triedBucketCount)
 }
 
-// addressHandler is the main handler for the address manager.  It must be run
+// addressHandler is the main handler for the address manager. It must be run
 // as a goroutine.
 func (a *AddrManager) addressHandler() {
 	dumpAddressTicker := time.NewTicker(dumpAddressInterval)
@@ -537,7 +537,7 @@ func (a *AddrManager) savePeers() {
 	}
 }
 
-// loadPeers loads the known address from the saved file.  If empty, missing, or
+// loadPeers loads the known address from the saved file. If empty, missing, or
 // malformed file, just don't load anything and start fresh
 func (a *AddrManager) loadPeers() {
 	a.mtx.Lock()
@@ -745,8 +745,8 @@ func (a *AddrManager) Stop() error {
 	return nil
 }
 
-// AddAddresses adds new addresses to the address manager.  It enforces a max
-// number of addresses and silently ignores duplicate addresses.  It is
+// AddAddresses adds new addresses to the address manager. It enforces a max
+// number of addresses and silently ignores duplicate addresses. It is
 // safe for concurrent access.
 func (a *AddrManager) AddAddresses(addrs []*wire.NetAddress, srcAddr *wire.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
 	a.mtx.Lock()
@@ -757,8 +757,8 @@ func (a *AddrManager) AddAddresses(addrs []*wire.NetAddress, srcAddr *wire.NetAd
 	}
 }
 
-// AddAddress adds a new address to the address manager.  It enforces a max
-// number of addresses and silently ignores duplicate addresses.  It is
+// AddAddress adds a new address to the address manager. It enforces a max
+// number of addresses and silently ignores duplicate addresses. It is
 // safe for concurrent access.
 func (a *AddrManager) AddAddress(addr, srcAddr *wire.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
 	a.mtx.Lock()
@@ -831,7 +831,7 @@ func (a *AddrManager) NeedMoreAddresses() bool {
 	return allAddrs < needAddressThreshold
 }
 
-// AddressCache returns the current address cache.  It must be treated as
+// AddressCache returns the current address cache. It must be treated as
 // read-only (but since it is a copy now, this is not as dangerous).
 func (a *AddrManager) AddressCache(includeAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID) []*wire.NetAddress {
 	a.mtx.Lock()
@@ -898,8 +898,8 @@ func (a *AddrManager) reset() {
 	a.addrTrying = make(map[*KnownAddress]bool)
 }
 
-// HostToNetAddress returns a netaddress given a host address.  If the address
-// is a Tor .onion address this will be taken care of.  Else if the host is
+// HostToNetAddress returns a netaddress given a host address. If the address
+// is a Tor .onion address this will be taken care of. Else if the host is
 // not an IP address it will be resolved (via Tor if required).
 func (a *AddrManager) HostToNetAddress(host string, port uint16, services wire.ServiceFlag) (*wire.NetAddress, error) {
 	// Tor address is 16 char base32 + ".onion"
@@ -950,7 +950,7 @@ func NetAddressKey(na *wire.NetAddress) string {
 	return net.JoinHostPort(ipString(na), port)
 }
 
-// GetAddress returns a single address that should be routable.  It picks a
+// GetAddress returns a single address that should be routable. It picks a
 // random one from the possible addresses with preference given to ones that
 // have not been used recently and should not pick 'close' addresses
 // consecutively.
@@ -1065,7 +1065,7 @@ func (a *AddrManager) Attempt(addr *wire.NetAddress) {
 }
 
 // Connected Marks the given address as currently connected and working at the
-// current time.  The address must already be known to AddrManager else it will
+// current time. The address must already be known to AddrManager else it will
 // be ignored.
 func (a *AddrManager) Connected(addr *wire.NetAddress) {
 	a.mtx.Lock()
@@ -1087,8 +1087,8 @@ func (a *AddrManager) Connected(addr *wire.NetAddress) {
 	}
 }
 
-// Good marks the given address as good.  To be called after a successful
-// connection and version exchange.  If the address is unknown to the address
+// Good marks the given address as good. To be called after a successful
+// connection and version exchange. If the address is unknown to the address
 // manager it will be ignored.
 func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
 	a.mtx.Lock()

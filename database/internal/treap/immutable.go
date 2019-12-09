@@ -23,17 +23,17 @@ func cloneTreapNode(node *treapNode) *treapNode {
 // Immutable represents a treap data structure which is used to hold ordered
 // key/value pairs using a combination of binary search tree and heap semantics.
 // It is a self-organizing and randomized data structure that doesn't require
-// complex operations to maintain balance.  Search, insert, and delete
-// operations are all O(log n).  In addition, it provides O(1) snapshots for
+// complex operations to maintain balance. Search, insert, and delete
+// operations are all O(log n). In addition, it provides O(1) snapshots for
 // multi-version concurrency control (MVCC).
 //
 // All operations which result in modifying the treap return a new version of
-// the treap with only the modified nodes updated.  All unmodified nodes are
-// shared with the previous version.  This is extremely useful in concurrent
+// the treap with only the modified nodes updated. All unmodified nodes are
+// shared with the previous version. This is extremely useful in concurrent
 // applications since the caller only has to atomically replace the treap
-// pointer with the newly returned version after performing any mutations.  All
+// pointer with the newly returned version after performing any mutations. All
 // readers can simply use their existing pointer as a snapshot since the treap
-// it points to is immutable.  This effectively provides O(1) snapshot
+// it points to is immutable. This effectively provides O(1) snapshot
 // capability with efficient memory usage characteristics since the old nodes
 // only remain allocated until there are no longer any references to them.
 type Immutable struct {
@@ -57,13 +57,13 @@ func (t *Immutable) Len() int {
 
 // Size returns a best estimate of the total number of bytes the treap is
 // consuming including all of the fields used to represent the nodes as well as
-// the size of the keys and values.  Shared values are not detected, so the
+// the size of the keys and values. Shared values are not detected, so the
 // returned size assumes each value is pointing to different memory.
 func (t *Immutable) Size() uint64 {
 	return t.totalSize
 }
 
-// get returns the treap node that contains the passed key.  It will return nil
+// get returns the treap node that contains the passed key. It will return nil
 // when the key does not exist.
 func (t *Immutable) get(key []byte) *treapNode {
 	for node := t.root; node != nil; {
@@ -95,7 +95,7 @@ func (t *Immutable) Has(key []byte) bool {
 	return false
 }
 
-// Get returns the value for the passed key.  The function will return nil when
+// Get returns the value for the passed key. The function will return nil when
 // the key does not exist.
 func (t *Immutable) Get(key []byte) []byte {
 	if node := t.get(key); node != nil {
@@ -106,7 +106,7 @@ func (t *Immutable) Get(key []byte) []byte {
 
 // Put inserts the passed key/value pair.
 func (t *Immutable) Put(key, value []byte) *Immutable {
-	// Use an empty byte slice for the value when none was provided.  This
+	// Use an empty byte slice for the value when none was provided. This
 	// ultimately allows key existence to be determined from the value since
 	// an empty byte slice is distinguishable from nil.
 	if value == nil {
@@ -120,7 +120,7 @@ func (t *Immutable) Put(key, value []byte) *Immutable {
 	}
 
 	// Find the binary tree insertion point and construct a replaced list of
-	// parents while doing so.  This is done because this is an immutable
+	// parents while doing so. This is done because this is an immutable
 	// data structure so regardless of where in the treap the new key/value
 	// pair ends up, all ancestors up to and including the root need to be
 	// replaced.
@@ -209,7 +209,7 @@ func (t *Immutable) Put(key, value []byte) *Immutable {
 }
 
 // Delete removes the passed key from the treap and returns the resulting treap
-// if it exists.  The original immutable treap is returned if the key does not
+// if it exists. The original immutable treap is returned if the key does not
 // exist.
 func (t *Immutable) Delete(key []byte) *Immutable {
 	// Find the node for the key while constructing a list of parents while
@@ -288,7 +288,7 @@ func (t *Immutable) Delete(key []byte) *Immutable {
 		}
 
 		// Rotate left or right depending on which side the child node
-		// is on.  This has the effect of moving the node to delete
+		// is on. This has the effect of moving the node to delete
 		// towards the bottom of the tree while maintaining the
 		// min-heap.
 		child = cloneTreapNode(child)
@@ -353,7 +353,7 @@ func (t *Immutable) ForEach(fn func(k, v []byte) bool) {
 	}
 }
 
-// NewImmutable returns a new empty immutable treap ready for use.  See the
+// NewImmutable returns a new empty immutable treap ready for use. See the
 // documentation for the Immutable structure for more details.
 func NewImmutable() *Immutable {
 	return &Immutable{}

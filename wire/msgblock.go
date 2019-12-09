@@ -15,7 +15,7 @@ import (
 )
 
 // defaultTransactionAlloc is the default size used for the backing array
-// for transactions.  The transaction array will dynamically grow as needed, but
+// for transactions. The transaction array will dynamically grow as needed, but
 // this figure is intended to provide enough space for the number of
 // transactions in the vast majority of blocks without needing to grow the
 // backing array multiple times.
@@ -39,7 +39,7 @@ type TxLoc struct {
 }
 
 // MsgBlock implements the Message interface and represents a bitcoin
-// block message.  It is used to deliver block and transaction information in
+// block message. It is used to deliver block and transaction information in
 // response to a getdata message (MsgGetData) for a given block hash.
 type MsgBlock struct {
 	Header       BlockHeader
@@ -95,16 +95,16 @@ func (msg *MsgBlock) BtcDecode(r io.Reader, pver uint32) error {
 
 // Deserialize decodes a block from r into the receiver using a format that is
 // suitable for long-term storage such as a database while respecting the
-// Version field in the block.  This function differs from BtcDecode in that
+// Version field in the block. This function differs from BtcDecode in that
 // BtcDecode decodes from the bitcoin wire protocol as it was sent across the
-// network.  The wire encoding can technically differ depending on the protocol
+// network. The wire encoding can technically differ depending on the protocol
 // version and doesn't even really need to match the format of a stored block at
-// all.  As of the time this comment was written, the encoded block is the same
+// all. As of the time this comment was written, the encoded block is the same
 // in both instances, but there is a distinct difference and separating the two
 // allows the API to be flexible enough to deal with changes.
 func (msg *MsgBlock) Deserialize(r io.Reader) error {
 	// At the current time, there is no difference between the wire encoding
-	// at protocol version 0 and the stable long-term storage format.  As
+	// at protocol version 0 and the stable long-term storage format. As
 	// a result, make use of BtcDecode.
 	return msg.BtcDecode(r, 0)
 }
@@ -117,7 +117,7 @@ func (msg *MsgBlock) DeserializeTxLoc(r *bytes.Buffer) ([]TxLoc, error) {
 	fullLen := r.Len()
 
 	// At the current time, there is no difference between the wire encoding
-	// at protocol version 0 and the stable long-term storage format.  As
+	// at protocol version 0 and the stable long-term storage format. As
 	// a result, make use of existing wire protocol functions.
 	err := readBlockHeader(r, 0, &msg.Header)
 	if err != nil {
@@ -184,15 +184,15 @@ func (msg *MsgBlock) BtcEncode(w io.Writer, pver uint32) error {
 // Serialize encodes the block to w using a format that suitable for long-term
 // storage such as a database while respecting the Version field in the block.
 // This function differs from BtcEncode in that BtcEncode encodes the block to
-// the bitcoin wire protocol in order to be sent across the network.  The wire
+// the bitcoin wire protocol in order to be sent across the network. The wire
 // encoding can technically differ depending on the protocol version and doesn't
-// even really need to match the format of a stored block at all.  As of the
+// even really need to match the format of a stored block at all. As of the
 // time this comment was written, the encoded block is the same in both
 // instances, but there is a distinct difference and separating the two allows
 // the API to be flexible enough to deal with changes.
 func (msg *MsgBlock) Serialize(w io.Writer) error {
 	// At the current time, there is no difference between the wire encoding
-	// at protocol version 0 and the stable long-term storage format.  As
+	// at protocol version 0 and the stable long-term storage format. As
 	// a result, make use of BtcEncode.
 	return msg.BtcEncode(w, 0)
 }
@@ -211,14 +211,14 @@ func (msg *MsgBlock) SerializeSize() int {
 	return n
 }
 
-// Command returns the protocol command string for the message.  This is part
+// Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgBlock) Command() string {
 	return CmdBlock
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
-// receiver.  This is part of the Message interface implementation.
+// receiver. This is part of the Message interface implementation.
 func (msg *MsgBlock) MaxPayloadLength(pver uint32) uint32 {
 	return MaxMessagePayload
 }
@@ -240,7 +240,7 @@ func (msg *MsgBlock) ConvertToPartial(subnetworkID *subnetworkid.SubnetworkID) {
 }
 
 // NewMsgBlock returns a new bitcoin block message that conforms to the
-// Message interface.  See MsgBlock for details.
+// Message interface. See MsgBlock for details.
 func NewMsgBlock(blockHeader *BlockHeader) *MsgBlock {
 	return &MsgBlock{
 		Header:       *blockHeader,

@@ -178,7 +178,7 @@ func testJoinMempools(r *Harness, t *testing.T) {
 		t.Fatal("main test harness mempool not empty")
 	}
 
-	// Create a local test harness with only the genesis block.  The nodes
+	// Create a local test harness with only the genesis block. The nodes
 	// will be synced below so the same transaction can be sent to both
 	// nodes without it being an orphan.
 	harness, err := New(&dagconfig.SimNetParams, nil, nil)
@@ -580,7 +580,7 @@ func TestMain(m *testing.M) {
 
 		// Even though the harness was not fully setup, it still needs
 		// to be torn down to ensure all resources such as temp
-		// directories are cleaned up.  The error is intentionally
+		// directories are cleaned up. The error is intentionally
 		// ignored since this is already an error path and nothing else
 		// could be done about it anyways.
 		_ = mainHarness.TearDown()

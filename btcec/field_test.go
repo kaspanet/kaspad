@@ -275,7 +275,7 @@ func TestNormalize(t *testing.T) {
 		},
 		// Prime larger than P that reduces to a value which is still
 		// larger than P when it has a magnitude of 1 due to a carry to
-		// bit 256, but would not be without the carry.  These values
+		// bit 256, but would not be without the carry. These values
 		// come from the fact that P is 2^256 - 4294968273 and 977 is
 		// the low order word in the internal field representation.
 		//
@@ -616,7 +616,7 @@ func TestMulInt(t *testing.T) {
 			8,
 			"fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc27",
 		},
-		// Random samples for first value.  The second value is limited
+		// Random samples for first value. The second value is limited
 		// to 8 since that is the maximum int used in the elliptic curve
 		// calculations.
 		{

@@ -58,7 +58,7 @@ func isSupportedDbType(dbType string) bool {
 }
 
 // DAGSetup is used to create a new db and chain instance with the genesis
-// block already inserted.  In addition to the new chain instance, it returns
+// block already inserted. In addition to the new chain instance, it returns
 // a teardown function the caller should invoke when done testing to clean up.
 func DAGSetup(dbName string, params *dagconfig.Params) (*blockdag.BlockDAG, func(), error) {
 	if !isSupportedDbType(testDbType) {
@@ -76,7 +76,7 @@ func DAGSetup(dbName string, params *dagconfig.Params) (*blockdag.BlockDAG, func
 		}
 		db = ndb
 
-		// Setup a teardown function for cleaning up.  This function is
+		// Setup a teardown function for cleaning up. This function is
 		// returned to the caller to be invoked when it is done testing.
 		teardown = func() {
 			db.Close()
@@ -100,7 +100,7 @@ func DAGSetup(dbName string, params *dagconfig.Params) (*blockdag.BlockDAG, func
 		}
 		db = ndb
 
-		// Setup a teardown function for cleaning up.  This function is
+		// Setup a teardown function for cleaning up. This function is
 		// returned to the caller to be invoked when it is done testing.
 		teardown = func() {
 			db.Close()

@@ -54,11 +54,11 @@ func (code RejectCode) String() string {
 // This message was not added until protocol version RejectVersion.
 type MsgReject struct {
 	// Cmd is the command for the message which was rejected such as
-	// as CmdBlock or CmdTx.  This can be obtained from the Command function
+	// as CmdBlock or CmdTx. This can be obtained from the Command function
 	// of a Message.
 	Cmd string
 
-	// RejectCode is a code indicating why the command was rejected.  It
+	// RejectCode is a code indicating why the command was rejected. It
 	// is encoded as a uint8 on the wire.
 	Code RejectCode
 
@@ -142,14 +142,14 @@ func (msg *MsgReject) BtcEncode(w io.Writer, pver uint32) error {
 	return nil
 }
 
-// Command returns the protocol command string for the message.  This is part
+// Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgReject) Command() string {
 	return CmdReject
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
-// receiver.  This is part of the Message interface implementation.
+// receiver. This is part of the Message interface implementation.
 func (msg *MsgReject) MaxPayloadLength(pver uint32) uint32 {
 	// Unfortunately the bitcoin protocol does not enforce a sane
 	// limit on the length of the reason, so the max payload is the
@@ -158,7 +158,7 @@ func (msg *MsgReject) MaxPayloadLength(pver uint32) uint32 {
 }
 
 // NewMsgReject returns a new bitcoin reject message that conforms to the
-// Message interface.  See MsgReject for details.
+// Message interface. See MsgReject for details.
 func NewMsgReject(command string, code RejectCode, reason string) *MsgReject {
 	return &MsgReject{
 		Cmd:    command,

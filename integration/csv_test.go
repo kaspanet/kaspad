@@ -507,7 +507,7 @@ func TestBIP0068AndCsv(t *testing.T) {
 			accept: true,
 		},
 		// A transaction whose input has a 1000 blck relative time
-		// lock.  This should be rejected as the input's age is only 11
+		// lock. This should be rejected as the input's age is only 11
 		// blocks.
 		{
 			tx:     makeTxCase(blockdag.LockTimeToSequence(false, 1000), 1),

@@ -22,7 +22,7 @@ import (
 
 const (
 	// unusableFlags are the command usage flags which this utility are not
-	// able to use.  In particular it doesn't support websockets and
+	// able to use. In particular it doesn't support websockets and
 	// consequently notifications.
 	unusableFlags = btcjson.UFWebsocketOnly | btcjson.UFNotification
 )
@@ -155,7 +155,7 @@ func cleanAndExpandPath(path string) string {
 //
 // The above results in functioning properly without any config settings
 // while still allowing the user to override settings with config files and
-// command line options.  Command line options always take precedence.
+// command line options. Command line options always take precedence.
 func loadConfig() (*ConfigFlags, []string, error) {
 	// Default config.
 	activeConfig = &ConfigFlags{
@@ -165,7 +165,7 @@ func loadConfig() (*ConfigFlags, []string, error) {
 	}
 
 	// Pre-parse the command line options to see if an alternative config
-	// file, the version flag, or the list commands flag was specified.  Any
+	// file, the version flag, or the list commands flag was specified. Any
 	// errors aside from the help message error can be ignored here since
 	// they will be caught by the final parse below.
 	preCfg := activeConfig

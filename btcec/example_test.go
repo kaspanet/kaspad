@@ -46,7 +46,7 @@ func Example_signMessage() {
 }
 
 // This example demonstrates verifying a secp256k1 signature against a public
-// key that is first parsed from raw bytes.  The signature is also parsed from
+// key that is first parsed from raw bytes. The signature is also parsed from
 // raw bytes.
 func Example_verifySignature() {
 	// Decode hex-encoded serialized public key.

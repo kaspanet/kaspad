@@ -83,7 +83,7 @@ func (prefix Bech32Prefix) String() string {
 }
 
 // encodeAddress returns a human-readable payment address given a network prefix
-// and a ripemd160 hash which encodes the bitcoin network and address type.  It is used
+// and a ripemd160 hash which encodes the bitcoin network and address type. It is used
 // in both pay-to-pubkey-hash (P2PKH) and pay-to-script-hash (P2SH) address
 // encoding.
 func encodeAddress(prefix Bech32Prefix, hash160 []byte, version byte) string {
@@ -91,8 +91,8 @@ func encodeAddress(prefix Bech32Prefix, hash160 []byte, version byte) string {
 }
 
 // Address is an interface type for any type of destination a transaction
-// output may spend to.  This includes pay-to-pubkey (P2PK), pay-to-pubkey-hash
-// (P2PKH), and pay-to-script-hash (P2SH).  Address is designed to be generic
+// output may spend to. This includes pay-to-pubkey (P2PK), pay-to-pubkey-hash
+// (P2PKH), and pay-to-script-hash (P2SH). Address is designed to be generic
 // enough that other kinds of addresses may be added in the future without
 // changing the decoding and encoding API.
 type Address interface {
@@ -107,7 +107,7 @@ type Address interface {
 	String() string
 
 	// EncodeAddress returns the string encoding of the payment address
-	// associated with the Address value.  See the comment on String
+	// associated with the Address value. See the comment on String
 	// for how this method differs from String.
 	EncodeAddress() string
 
@@ -169,7 +169,7 @@ func NewAddressPubKeyHashFromPublicKey(publicKey []byte, prefix Bech32Prefix) (*
 	return newAddressPubKeyHash(prefix, pkHash)
 }
 
-// NewAddressPubKeyHash returns a new AddressPubKeyHash.  pkHash mustbe 20
+// NewAddressPubKeyHash returns a new AddressPubKeyHash. pkHash mustbe 20
 // bytes.
 func NewAddressPubKeyHash(pkHash []byte, prefix Bech32Prefix) (*AddressPubKeyHash, error) {
 	return newAddressPubKeyHash(prefix, pkHash)
@@ -177,7 +177,7 @@ func NewAddressPubKeyHash(pkHash []byte, prefix Bech32Prefix) (*AddressPubKeyHas
 
 // newAddressPubKeyHash is the internal API to create a pubkey hash address
 // with a known leading identifier byte for a network, rather than looking
-// it up through its parameters.  This is useful when creating a new address
+// it up through its parameters. This is useful when creating a new address
 // structure from a string encoding where the identifer byte is already
 // known.
 func newAddressPubKeyHash(prefix Bech32Prefix, pkHash []byte) (*AddressPubKeyHash, error) {
@@ -192,13 +192,13 @@ func newAddressPubKeyHash(prefix Bech32Prefix, pkHash []byte) (*AddressPubKeyHas
 }
 
 // EncodeAddress returns the string encoding of a pay-to-pubkey-hash
-// address.  Part of the Address interface.
+// address. Part of the Address interface.
 func (a *AddressPubKeyHash) EncodeAddress() string {
 	return encodeAddress(a.prefix, a.hash[:], pubKeyHashAddrID)
 }
 
 // ScriptAddress returns the bytes to be included in a txout script to pay
-// to a pubkey hash.  Part of the Address interface.
+// to a pubkey hash. Part of the Address interface.
 func (a *AddressPubKeyHash) ScriptAddress() []byte {
 	return a.hash[:]
 }
@@ -216,7 +216,7 @@ func (a *AddressPubKeyHash) String() string {
 	return a.EncodeAddress()
 }
 
-// Hash160 returns the underlying array of the pubkey hash.  This can be useful
+// Hash160 returns the underlying array of the pubkey hash. This can be useful
 // when an array is more appropiate than a slice (for example, when used as map
 // keys).
 func (a *AddressPubKeyHash) Hash160() *[ripemd160.Size]byte {
@@ -236,7 +236,7 @@ func NewAddressScriptHash(serializedScript []byte, prefix Bech32Prefix) (*Addres
 	return newAddressScriptHashFromHash(prefix, scriptHash)
 }
 
-// NewAddressScriptHashFromHash returns a new AddressScriptHash.  scriptHash
+// NewAddressScriptHashFromHash returns a new AddressScriptHash. scriptHash
 // must be 20 bytes.
 func NewAddressScriptHashFromHash(scriptHash []byte, prefix Bech32Prefix) (*AddressScriptHash, error) {
 	return newAddressScriptHashFromHash(prefix, scriptHash)
@@ -244,7 +244,7 @@ func NewAddressScriptHashFromHash(scriptHash []byte, prefix Bech32Prefix) (*Addr
 
 // newAddressScriptHashFromHash is the internal API to create a script hash
 // address with a known leading identifier byte for a network, rather than
-// looking it up through its parameters.  This is useful when creating a new
+// looking it up through its parameters. This is useful when creating a new
 // address structure from a string encoding where the identifer byte is already
 // known.
 func newAddressScriptHashFromHash(prefix Bech32Prefix, scriptHash []byte) (*AddressScriptHash, error) {
@@ -259,13 +259,13 @@ func newAddressScriptHashFromHash(prefix Bech32Prefix, scriptHash []byte) (*Addr
 }
 
 // EncodeAddress returns the string encoding of a pay-to-script-hash
-// address.  Part of the Address interface.
+// address. Part of the Address interface.
 func (a *AddressScriptHash) EncodeAddress() string {
 	return encodeAddress(a.prefix, a.hash[:], scriptHashAddrID)
 }
 
 // ScriptAddress returns the bytes to be included in a txout script to pay
-// to a script hash.  Part of the Address interface.
+// to a script hash. Part of the Address interface.
 func (a *AddressScriptHash) ScriptAddress() []byte {
 	return a.hash[:]
 }
@@ -283,7 +283,7 @@ func (a *AddressScriptHash) String() string {
 	return a.EncodeAddress()
 }
 
-// Hash160 returns the underlying array of the script hash.  This can be useful
+// Hash160 returns the underlying array of the script hash. This can be useful
 // when an array is more appropiate than a slice (for example, when used as map
 // keys).
 func (a *AddressScriptHash) Hash160() *[ripemd160.Size]byte {

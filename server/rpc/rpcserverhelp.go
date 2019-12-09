@@ -568,7 +568,7 @@ var helpDescsEnUS = map[string]string{
 	"searchRawTransactions-count":       "The maximum number of transactions to return",
 	"searchRawTransactions-vinExtra":    "Specify that extra data from previous output will be returned in vin",
 	"searchRawTransactions-reverse":     "Specifies that the transactions should be returned in reverse chronological order",
-	"searchRawTransactions-filterAddrs": "Address list.  Only inputs or outputs with matching address will be returned",
+	"searchRawTransactions-filterAddrs": "Address list. Only inputs or outputs with matching address will be returned",
 	"searchRawTransactions--result0":    "Hex-encoded serialized transaction",
 
 	// SendRawTransactionCmd help.
@@ -643,7 +643,7 @@ var helpDescsEnUS = map[string]string{
 
 	// RescanBlocks help.
 	"rescanBlocks--synopsis":   "Rescan blocks for transactions matching the loaded transaction filter.",
-	"rescanBlocks-blockHashes": "List of hashes to rescan.  Each next block must be a child of the previous.",
+	"rescanBlocks-blockHashes": "List of hashes to rescan. Each next block must be a child of the previous.",
 	"rescanBlocks--result0":    "List of matching blocks.",
 
 	// RescannedBlock help.
@@ -670,7 +670,7 @@ var helpDescsEnUS = map[string]string{
 }
 
 // rpcResultTypes specifies the result types that each RPC command can return.
-// This information is used to generate the help.  Each result type must be a
+// This information is used to generate the help. Each result type must be a
 // pointer to the type (or nil to indicate no return value).
 var rpcResultTypes = map[string][]interface{}{
 	"addManualNode":         nil,

@@ -13,10 +13,10 @@ import (
 	"strings"
 )
 
-// HashSize of array used to store hashes.  See Hash.
+// HashSize of array used to store hashes. See Hash.
 const HashSize = 32
 
-// TxIDSize of array used to store TxID.  See TxID.
+// TxIDSize of array used to store TxID. See TxID.
 const TxIDSize = HashSize
 
 // MaxHashStringSize is the maximum length of a Hash hash string.
@@ -26,7 +26,7 @@ const MaxHashStringSize = HashSize * 2
 // string that has too many characters.
 var ErrHashStrSize = errors.Errorf("max hash string length is %d bytes", MaxHashStringSize)
 
-// Hash is used in several of the bitcoin messages and common structures.  It
+// Hash is used in several of the bitcoin messages and common structures. It
 // typically represents the double sha256 of data.
 type Hash [HashSize]byte
 
@@ -79,7 +79,7 @@ func (txID *TxID) CloneBytes() []byte {
 	return (*Hash)(txID).CloneBytes()
 }
 
-// SetBytes sets the bytes which represent the hash.  An error is returned if
+// SetBytes sets the bytes which represent the hash. An error is returned if
 // the number of bytes passed in is not HashSize.
 func (hash *Hash) SetBytes(newHash []byte) error {
 	nhlen := len(newHash)
@@ -92,7 +92,7 @@ func (hash *Hash) SetBytes(newHash []byte) error {
 	return nil
 }
 
-// SetBytes sets the bytes which represent the TxID.  An error is returned if
+// SetBytes sets the bytes which represent the TxID. An error is returned if
 // the number of bytes passed in is not HashSize.
 func (txID *TxID) SetBytes(newID []byte) error {
 	return (*Hash)(txID).SetBytes(newID)
@@ -130,7 +130,7 @@ func AreEqual(first []*Hash, second []*Hash) bool {
 	return true
 }
 
-// NewHash returns a new Hash from a byte slice.  An error is returned if
+// NewHash returns a new Hash from a byte slice. An error is returned if
 // the number of bytes passed in is not HashSize.
 func NewHash(newHash []byte) (*Hash, error) {
 	var sh Hash
@@ -141,14 +141,14 @@ func NewHash(newHash []byte) (*Hash, error) {
 	return &sh, err
 }
 
-// NewTxID returns a new TxID from a byte slice.  An error is returned if
+// NewTxID returns a new TxID from a byte slice. An error is returned if
 // the number of bytes passed in is not HashSize.
 func NewTxID(newTxID []byte) (*TxID, error) {
 	hash, err := NewHash(newTxID)
 	return (*TxID)(hash), err
 }
 
-// NewHashFromStr creates a Hash from a hash string.  The string should be
+// NewHashFromStr creates a Hash from a hash string. The string should be
 // the hexadecimal string of a byte-reversed hash, but any missing characters
 // result in zero padding at the end of the Hash.
 func NewHashFromStr(hash string) (*Hash, error) {
@@ -160,7 +160,7 @@ func NewHashFromStr(hash string) (*Hash, error) {
 	return ret, nil
 }
 
-// NewTxIDFromStr creates a TxID from a hash string.  The string should be
+// NewTxIDFromStr creates a TxID from a hash string. The string should be
 // the hexadecimal string of a byte-reversed hash, but any missing characters
 // result in zero padding at the end of the Hash.
 func NewTxIDFromStr(idStr string) (*TxID, error) {
@@ -176,7 +176,7 @@ func Decode(dst *Hash, src string) error {
 		return ErrHashStrSize
 	}
 
-	// Hex decoder expects the hash to be a multiple of two.  When not, pad
+	// Hex decoder expects the hash to be a multiple of two. When not, pad
 	// with a leading zero.
 	var srcBytes []byte
 	if len(src)%2 == 0 {
@@ -194,7 +194,7 @@ func Decode(dst *Hash, src string) error {
 		return errors.WithStack(err)
 	}
 
-	// Reverse copy from the temporary hash to destination.  Because the
+	// Reverse copy from the temporary hash to destination. Because the
 	// temporary was zeroed, the written result will be correctly padded.
 	for i, b := range reversedHash[:HashSize/2] {
 		dst[i], dst[HashSize-1-i] = reversedHash[HashSize-1-i], b

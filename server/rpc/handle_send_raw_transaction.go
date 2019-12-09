@@ -38,8 +38,8 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 	if err != nil {
 		// When the error is a rule error, it means the transaction was
 		// simply rejected as opposed to something actually going wrong,
-		// so log it as such.  Otherwise, something really did go wrong,
-		// so log it as an actual error.  In both cases, a JSON-RPC
+		// so log it as such. Otherwise, something really did go wrong,
+		// so log it as an actual error. In both cases, a JSON-RPC
 		// error is returned to the client with the deserialization
 		// error code (to match bitcoind behavior).
 		if _, ok := err.(mempool.RuleError); ok {
@@ -56,7 +56,7 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 	}
 
 	// When the transaction was accepted it should be the first item in the
-	// returned array of accepted transactions.  The only way this will not
+	// returned array of accepted transactions. The only way this will not
 	// be true is if the API for ProcessTransaction changes and this code is
 	// not properly updated, but ensure the condition holds as a safeguard.
 	//

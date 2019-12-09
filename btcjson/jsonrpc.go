@@ -25,7 +25,7 @@ type RPCError struct {
 // Guarantee RPCError satisifies the builtin error interface.
 var _, _ error = RPCError{}, (*RPCError)(nil)
 
-// Error returns a string describing the RPC error.  This satisifies the
+// Error returns a string describing the RPC error. This satisifies the
 // builtin error interface.
 func (e RPCError) Error() string {
 	return fmt.Sprintf("%d: %s", e.Code, e.Message)
@@ -41,11 +41,11 @@ func NewRPCError(code RPCErrorCode, message string) *RPCError {
 }
 
 // IsValidIDType checks that the ID field (which can go in any of the JSON-RPC
-// requests, responses, or notifications) is valid.  JSON-RPC 1.0 allows any
-// valid JSON type.  JSON-RPC 2.0 (which bitcoind follows for some parts) only
+// requests, responses, or notifications) is valid. JSON-RPC 1.0 allows any
+// valid JSON type. JSON-RPC 2.0 (which bitcoind follows for some parts) only
 // allows string, number, or null, so this function restricts the allowed types
-// to that list.  This function is only provided in case the caller is manually
-// marshalling for some reason.    The functions which accept an ID in this
+// to that list. This function is only provided in case the caller is manually
+// marshalling for some reason. The functions which accept an ID in this
 // package already call this function to ensure the provided id is valid.
 func IsValidIDType(id interface{}) bool {
 	switch id.(type) {
@@ -60,7 +60,7 @@ func IsValidIDType(id interface{}) bool {
 	}
 }
 
-// Request is a type for raw JSON-RPC 1.0 requests.  The Method field identifies
+// Request is a type for raw JSON-RPC 1.0 requests. The Method field identifies
 // the specific command type which in turns leads to different parameters.
 // Callers typically will not use this directly since this package provides a
 // statically typed command infrastructure which handles creation of these
@@ -74,8 +74,8 @@ type Request struct {
 }
 
 // NewRequest returns a new JSON-RPC 1.0 request object given the provided id,
-// method, and parameters.  The parameters are marshalled into a json.RawMessage
-// for the Params field of the returned request object.  This function is only
+// method, and parameters. The parameters are marshalled into a json.RawMessage
+// for the Params field of the returned request object. This function is only
 // provided in case the caller wants to construct raw requests for some reason.
 //
 // Typically callers will instead want to create a registered concrete command
@@ -105,9 +105,9 @@ func NewRequest(id interface{}, method string, params []interface{}) (*Request, 
 	}, nil
 }
 
-// Response is the general form of a JSON-RPC response.  The type of the Result
+// Response is the general form of a JSON-RPC response. The type of the Result
 // field varies from one command to the next, so it is implemented as an
-// interface.  The ID field has to be a pointer for Go to put a null in it when
+// interface. The ID field has to be a pointer for Go to put a null in it when
 // empty.
 type Response struct {
 	Result json.RawMessage `json:"result"`
@@ -116,7 +116,7 @@ type Response struct {
 }
 
 // NewResponse returns a new JSON-RPC response object given the provided id,
-// marshalled result, and RPC error.  This function is only provided in case the
+// marshalled result, and RPC error. This function is only provided in case the
 // caller wants to construct raw responses for some reason.
 //
 // Typically callers will instead want to create the fully marshalled JSON-RPC

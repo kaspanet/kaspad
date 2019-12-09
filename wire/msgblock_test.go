@@ -394,7 +394,7 @@ func TestBlockSerializeErrors(t *testing.T) {
 
 // TestBlockOverflowErrors  performs tests to ensure deserializing blocks which
 // are intentionally crafted to use large values for the number of transactions
-// are handled properly.  This could otherwise potentially be used as an attack
+// are handled properly. This could otherwise potentially be used as an attack
 // vector.
 func TestBlockOverflowErrors(t *testing.T) {
 	pver := ProtocolVersion

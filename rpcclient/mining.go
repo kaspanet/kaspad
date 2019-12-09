@@ -157,7 +157,7 @@ func (c *Client) GetHashesPerSecAsync() FutureGetHashesPerSecResult {
 }
 
 // GetHashesPerSec returns a recent hashes per second performance measurement
-// while generating coins (mining).  Zero is returned if the server is not
+// while generating coins (mining). Zero is returned if the server is not
 // mining.
 func (c *Client) GetHashesPerSec() (int64, error) {
 	return c.GetHashesPerSecAsync().Receive()
@@ -254,7 +254,7 @@ func (c *Client) GetNetworkHashPS2Async(blocks int) FutureGetNetworkHashPS {
 
 // GetNetworkHashPS2 returns the estimated network hashes per second for the
 // specified previous number of blocks working backwards from the most recent
-// block height.  The blocks parameter can also be -1 in which case the number
+// block height. The blocks parameter can also be -1 in which case the number
 // of blocks since the last difficulty change will be used.
 //
 // See GetNetworkHashPS to use defaults and GetNetworkHashPS3 to override the
@@ -275,7 +275,7 @@ func (c *Client) GetNetworkHashPS3Async(blocks, height int) FutureGetNetworkHash
 
 // GetNetworkHashPS3 returns the estimated network hashes per second for the
 // specified previous number of blocks working backwards from the specified
-// block height.  The blocks parameter can also be -1 in which case the number
+// block height. The blocks parameter can also be -1 in which case the number
 // of blocks since the last difficulty change will be used.
 //
 // See GetNetworkHashPS and GetNetworkHashPS2 to use defaults.

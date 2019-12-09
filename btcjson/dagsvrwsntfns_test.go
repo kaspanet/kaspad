@@ -149,7 +149,7 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
 		// Marshal the notification as created by the new static
-		// creation function.  The ID is nil for notifications.
+		// creation function. The ID is nil for notifications.
 		marshalled, err := btcjson.MarshalCmd(nil, test.staticNtfn())
 		if err != nil {
 			t.Errorf("MarshalCmd #%d (%s) unexpected error: %v", i,
@@ -173,7 +173,7 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 		}
 
 		// Marshal the notification as created by the generic new
-		// notification creation function.    The ID is nil for
+		// notification creation function. The ID is nil for
 		// notifications.
 		marshalled, err = btcjson.MarshalCmd(nil, cmd)
 		if err != nil {

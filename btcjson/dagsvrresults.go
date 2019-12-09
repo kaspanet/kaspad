@@ -7,7 +7,7 @@ package btcjson
 import "encoding/json"
 
 // GetBlockHeaderVerboseResult models the data from the getblockheader command when
-// the verbose flag is set.  When the verbose flag is not set, getblockheader
+// the verbose flag is set. When the verbose flag is not set, getblockheader
 // returns a hex-encoded string.
 type GetBlockHeaderVerboseResult struct {
 	Hash                 string   `json:"hash"`
@@ -26,7 +26,7 @@ type GetBlockHeaderVerboseResult struct {
 }
 
 // GetBlockVerboseResult models the data from the getblock command when the
-// verbose flag is set.  When the verbose flag is not set, getblock returns a
+// verbose flag is set. When the verbose flag is not set, getblock returns a
 // hex-encoded string.
 type GetBlockVerboseResult struct {
 	Hash                 string        `json:"hash"`
@@ -136,7 +136,7 @@ type GetBlockTemplateResultAux struct {
 // GetBlockTemplateResult models the data returned from the getblocktemplate
 // command.
 type GetBlockTemplateResult struct {
-	// Base fields from BIP 0022.  CoinbaseAux is optional.  One of
+	// Base fields from BIP 0022. CoinbaseAux is optional. One of
 	// CoinbaseTxn or CoinbaseValue must be specified, but not both.
 	Bits                 string                     `json:"bits"`
 	CurTime              int64                      `json:"curTime"`
@@ -257,7 +257,7 @@ type GetPeerInfoResult struct {
 }
 
 // GetRawMempoolVerboseResult models the data returned from the getrawmempool
-// command when the verbose flag is set.  When the verbose flag is not set,
+// command when the verbose flag is set. When the verbose flag is not set,
 // getrawmempool returns an array of transaction hashes.
 type GetRawMempoolVerboseResult struct {
 	Size    int32    `json:"size"`
@@ -267,7 +267,7 @@ type GetRawMempoolVerboseResult struct {
 	Depends []string `json:"depends"`
 }
 
-// ScriptPubKeyResult models the scriptPubKey data of a tx script.  It is
+// ScriptPubKeyResult models the scriptPubKey data of a tx script. It is
 // defined separately since it is used by multiple commands.
 type ScriptPubKeyResult struct {
 	Asm     string  `json:"asm"`
@@ -298,15 +298,15 @@ type GetNetTotalsResult struct {
 	TimeMillis     int64  `json:"timeMillis"`
 }
 
-// ScriptSig models a signature script.  It is defined separately since it only
-// applies to non-coinbase.  Therefore the field in the Vin structure needs
+// ScriptSig models a signature script. It is defined separately since it only
+// applies to non-coinbase. Therefore the field in the Vin structure needs
 // to be a pointer.
 type ScriptSig struct {
 	Asm string `json:"asm"`
 	Hex string `json:"hex"`
 }
 
-// Vin models parts of the tx data.  It is defined separately since
+// Vin models parts of the tx data. It is defined separately since
 // getrawtransaction, decoderawtransaction, and searchrawtransaction use the
 // same structure.
 type Vin struct {
@@ -338,7 +338,7 @@ type PrevOut struct {
 	Value   float64 `json:"value"`
 }
 
-// VinPrevOut is like Vin except it includes PrevOut.  It is used by searchrawtransaction
+// VinPrevOut is like Vin except it includes PrevOut. It is used by searchrawtransaction
 type VinPrevOut struct {
 	Coinbase  string     `json:"coinbase"`
 	TxID      string     `json:"txId"`
@@ -382,7 +382,7 @@ func (v *VinPrevOut) MarshalJSON() ([]byte, error) {
 	return json.Marshal(txStruct)
 }
 
-// Vout models parts of the tx data.  It is defined separately since both
+// Vout models parts of the tx data. It is defined separately since both
 // getrawtransaction and decoderawtransaction use the same structure.
 type Vout struct {
 	Value        uint64             `json:"value"`

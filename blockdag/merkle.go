@@ -20,7 +20,7 @@ func (mt MerkleTree) Root() *daghash.Hash {
 }
 
 // nextPowerOfTwo returns the next highest power of two from a given number if
-// it is not already a power of two.  This is a helper function used during the
+// it is not already a power of two. This is a helper function used during the
 // calculation of a merkle tree.
 func nextPowerOfTwo(n int) int {
 	// Return the number if it's already a power of 2.
@@ -34,7 +34,7 @@ func nextPowerOfTwo(n int) int {
 }
 
 // HashMerkleBranches takes two hashes, treated as the left and right tree
-// nodes, and returns the hash of their concatenation.  This is a helper
+// nodes, and returns the hash of their concatenation. This is a helper
 // function used to aid in the generation of a merkle tree.
 func HashMerkleBranches(left *daghash.Hash, right *daghash.Hash) *daghash.Hash {
 	// Concatenate the left and right nodes.
@@ -67,13 +67,13 @@ func BuildIDMerkleTreeStore(transactions []*util.Tx) MerkleTree {
 }
 
 // buildMerkleTreeStore creates a merkle tree from a slice of hashes,
-// stores it using a linear array, and returns a slice of the backing array.  A
+// stores it using a linear array, and returns a slice of the backing array. A
 // linear array was chosen as opposed to an actual tree structure since it uses
-// about half as much memory.  The following describes a merkle tree and how it
+// about half as much memory. The following describes a merkle tree and how it
 // is stored in a linear array.
 //
 // A merkle tree is a tree in which every non-leaf node is the hash of its
-// children nodes.  A diagram depicting how this works for bitcoin transactions
+// children nodes. A diagram depicting how this works for bitcoin transactions
 // where h(x) is a double sha256 follows:
 //
 //	         root = h1234 = h(h12 + h34)
@@ -89,7 +89,7 @@ func BuildIDMerkleTreeStore(transactions []*util.Tx) MerkleTree {
 // As the above shows, the merkle root is always the last element in the array.
 //
 // The number of inputs is not always a power of two which results in a
-// balanced tree structure as above.  In that case, parent nodes with no
+// balanced tree structure as above. In that case, parent nodes with no
 // children are also zero and parent nodes with only a single left node
 // are calculated by concatenating the left node with itself before hashing.
 // Since this function uses nodes that are pointers to the hashes, empty nodes

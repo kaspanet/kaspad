@@ -35,7 +35,7 @@ func TestMruNonceMap(t *testing.T) {
 testLoop:
 	for i, test := range tests {
 		// Create a new mru nonce map limited by the specified test
-		// limit and add all of the test nonces.  This will cause
+		// limit and add all of the test nonces. This will cause
 		// evicition since there are more test nonces than the limits.
 		mruNonceMap := newMruNonceMap(uint(test.limit))
 		for j := 0; j < numNonces; j++ {
@@ -118,7 +118,7 @@ func TestMruNonceMapStringer(t *testing.T) {
 	mruNonceMap.Add(nonce1)
 	mruNonceMap.Add(nonce2)
 
-	// Ensure the stringer gives the expected result.  Since map iteration
+	// Ensure the stringer gives the expected result. Since map iteration
 	// is not ordered, either entry could be first, so account for both
 	// cases.
 	wantStr1 := fmt.Sprintf("<%d>[%d, %d]", 2, nonce1, nonce2)

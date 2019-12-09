@@ -620,7 +620,7 @@ func TestTxSerializeErrors(t *testing.T) {
 
 // TestTxOverflowErrors performs tests to ensure deserializing transactions
 // which are intentionally crafted to use large values for the variable number
-// of inputs and outputs are handled properly.  This could otherwise potentially
+// of inputs and outputs are handled properly. This could otherwise potentially
 // be used as an attack vector.
 func TestTxOverflowErrors(t *testing.T) {
 	pver := ProtocolVersion

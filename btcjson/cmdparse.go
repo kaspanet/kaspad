@@ -32,8 +32,8 @@ func makeParams(rt reflect.Type, rv reflect.Value) []interface{} {
 }
 
 // MarshalCmd marshals the passed command to a JSON-RPC request byte slice that
-// is suitable for transmission to an RPC server.  The provided command type
-// must be a registered type.  All commands provided by this package are
+// is suitable for transmission to an RPC server. The provided command type
+// must be a registered type. All commands provided by this package are
 // registered by default.
 func MarshalCmd(id interface{}, cmd interface{}) ([]byte, error) {
 	// Look up the cmd type and error out if not registered.
@@ -87,14 +87,14 @@ func checkNumParams(numParams int, info *methodInfo) error {
 }
 
 // populateDefaults populates default values into any remaining optional struct
-// fields that did not have parameters explicitly provided.  The caller should
+// fields that did not have parameters explicitly provided. The caller should
 // have previously checked that the number of parameters being passed is at
 // least the required number of parameters to avoid unnecessary work in this
 // function, but since required fields never have default values, it will work
 // properly even without the check.
 func populateDefaults(numParams int, info *methodInfo, rv reflect.Value) {
 	// When there are no more parameters left in the supplied parameters,
-	// any remaining struct fields must be optional.  Thus, populate them
+	// any remaining struct fields must be optional. Thus, populate them
 	// with their associated default value as needed.
 	for i := numParams; i < info.maxParams; i++ {
 		rvf := rv.Field(i)
@@ -151,7 +151,7 @@ func UnmarshalCmd(r *Request) (interface{}, error) {
 	}
 
 	// When there are less supplied parameters than the total number of
-	// params, any remaining struct fields must be optional.  Thus, populate
+	// params, any remaining struct fields must be optional. Thus, populate
 	// them with their associated default value as needed.
 	if numParams < info.maxParams {
 		populateDefaults(numParams, &info, rv)
@@ -175,7 +175,7 @@ func isNumeric(kind reflect.Kind) bool {
 }
 
 // typesMaybeCompatible returns whether the source type can possibly be
-// assigned to the destination type.  This is intended as a relatively quick
+// assigned to the destination type. This is intended as a relatively quick
 // check to weed out obviously invalid conversions.
 func typesMaybeCompatible(dest reflect.Type, src reflect.Type) bool {
 	// The same types are obviously compatible.
@@ -229,7 +229,7 @@ func baseType(arg reflect.Type) (reflect.Type, int) {
 }
 
 // assignField is the main workhorse for the NewCmd function which handles
-// assigning the provided source value to the destination field.  It supports
+// assigning the provided source value to the destination field. It supports
 // direct type assignments, indirection, conversion of numeric types, and
 // unmarshaling of strings into arrays, slices, structs, and maps via
 // json.Unmarshal.
@@ -256,7 +256,7 @@ func assignField(paramNum int, fieldName string, dest reflect.Value, src reflect
 	}
 
 	// When the destination has more indirects than the source, the extra
-	// pointers have to be created.  Only create enough pointers to reach
+	// pointers have to be created. Only create enough pointers to reach
 	// the same level of indirection as the source so the dest can simply be
 	// set to the provided source when the types are the same.
 	destIndirectsRemaining := destIndirects
@@ -484,15 +484,15 @@ func assignField(paramNum int, fieldName string, dest reflect.Value, src reflect
 
 // NewCmd provides a generic mechanism to create a new command that can marshal
 // to a JSON-RPC request while respecting the requirements of the provided
-// method.  The method must have been registered with the package already along
-// with its type definition.  All methods associated with the commands exported
+// method. The method must have been registered with the package already along
+// with its type definition. All methods associated with the commands exported
 // by this package are already registered by default.
 //
 // The arguments are most efficient when they are the exact same type as the
 // underlying field in the command struct associated with the the method,
 // however this function also will perform a variety of conversions to make it
-// more flexible.  This allows, for example, command line args which are strings
-// to be passed unaltered.  In particular, the following conversions are
+// more flexible. This allows, for example, command line args which are strings
+// to be passed unaltered. In particular, the following conversions are
 // supported:
 //
 //   - Conversion between any size signed or unsigned integer so long as the
@@ -509,7 +509,7 @@ func assignField(paramNum int, fieldName string, dest reflect.Value, src reflect
 //     the string as marshalled JSON and calling json.Unmarshal into the
 //     destination field
 func NewCmd(method string, args ...interface{}) (interface{}, error) {
-	// Look up details about the provided method.  Any methods that aren't
+	// Look up details about the provided method. Any methods that aren't
 	// registered are an error.
 	registerLock.RLock()
 	rtp, ok := methodToConcreteType[method]
@@ -526,7 +526,7 @@ func NewCmd(method string, args ...interface{}) (interface{}, error) {
 		return nil, err
 	}
 
-	// Create the appropriate command type for the method.  Since all types
+	// Create the appropriate command type for the method. Since all types
 	// are enforced to be a pointer to a struct at registration time, it's
 	// safe to indirect to the struct now.
 	rvp := reflect.New(rtp.Elem())

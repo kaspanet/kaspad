@@ -15,14 +15,14 @@ type fakeMessage struct {
 	forceLenErr    bool
 }
 
-// BtcDecode doesn't do anything.  It just satisfies the wire.Message
+// BtcDecode doesn't do anything. It just satisfies the wire.Message
 // interface.
 func (msg *fakeMessage) BtcDecode(r io.Reader, pver uint32) error {
 	return nil
 }
 
 // BtcEncode writes the payload field of the fake message or forces an error
-// if the forceEncodeErr flag of the fake message is set.  It also satisfies the
+// if the forceEncodeErr flag of the fake message is set. It also satisfies the
 // wire.Message interface.
 func (msg *fakeMessage) BtcEncode(w io.Writer, pver uint32) error {
 	if msg.forceEncodeErr {
@@ -44,7 +44,7 @@ func (msg *fakeMessage) Command() string {
 }
 
 // MaxPayloadLength returns the length of the payload field of fake message
-// or a smaller value if the forceLenErr flag of the fake message is set.  It
+// or a smaller value if the forceLenErr flag of the fake message is set. It
 // satisfies the Message interface.
 func (msg *fakeMessage) MaxPayloadLength(pver uint32) uint32 {
 	lenp := uint32(len(msg.payload))

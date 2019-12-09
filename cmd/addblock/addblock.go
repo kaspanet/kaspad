@@ -58,7 +58,7 @@ func loadBlockDB() (database.DB, error) {
 	return db, nil
 }
 
-// realMain is the real main function for the utility.  It is necessary to work
+// realMain is the real main function for the utility. It is necessary to work
 // around the fact that deferred functions do not run when os.Exit() is called.
 func realMain() error {
 	// Load configuration and parse command line.
@@ -98,8 +98,8 @@ func realMain() error {
 		return err
 	}
 
-	// Perform the import asynchronously.  This allows blocks to be
-	// processed and read in parallel.  The results channel returned from
+	// Perform the import asynchronously. This allows blocks to be
+	// processed and read in parallel. The results channel returned from
 	// Import contains the statistics about the import including an error
 	// if something went wrong.
 	log.Info("Starting import")

@@ -104,7 +104,7 @@ type processBlockResponse struct {
 }
 
 // processBlockMsg is a message type to be sent across the message channel
-// for requested a block is processed.  Note this call differs from blockMsg
+// for requested a block is processed. Note this call differs from blockMsg
 // above in that blockMsg is intended for blocks that came from peers and have
 // extra handling whereas this message essentially is just a concurrent safe
 // way to call ProcessBlock on the internal block chain instance.
@@ -122,7 +122,7 @@ type isCurrentMsg struct {
 }
 
 // pauseMsg is a message type to be sent across the message channel for
-// pausing the sync manager.  This effectively provides the caller with
+// pausing the sync manager. This effectively provides the caller with
 // exclusive access over the manager until a receive is performed on the
 // unpause channel.
 type pauseMsg struct {
@@ -190,18 +190,18 @@ func (sm *SyncManager) PushGetBlockInvsOrHeaders(peer *peerpkg.Peer, startHash *
 	// When the current height is less than a known checkpoint we
 	// can use block headers to learn about which blocks comprise
 	// the DAG up to the checkpoint and perform less validation
-	// for them.  This is possible since each header contains the
-	// hash of the previous header and a merkle root.  Therefore if
+	// for them. This is possible since each header contains the
+	// hash of the previous header and a merkle root. Therefore if
 	// we validate all of the received headers link together
 	// properly and the checkpoint hashes match, we can be sure the
-	// hashes for the blocks in between are accurate.  Further, once
+	// hashes for the blocks in between are accurate. Further, once
 	// the full blocks are downloaded, the merkle root is computed
 	// and compared against the value in the header which proves the
 	// full block hasn't been tampered with.
 	//
 	// Once we have passed the final checkpoint, or checkpoints are
 	// disabled, use standard inv messages learn about the blocks
-	// and fully validate them.  Finally, regression test mode does
+	// and fully validate them. Finally, regression test mode does
 	// not support the headers-first approach so do normal block
 	// downloads when in regression test mode.
 	if sm.nextCheckpoint != nil &&
@@ -228,7 +228,7 @@ func (sm *SyncManager) resetHeaderState(newestHash *daghash.Hash, newestHeight u
 	sm.startHeader = nil
 
 	// When there is a next checkpoint, add an entry for the latest known
-	// block into the header pool.  This allows the next downloaded header
+	// block into the header pool. This allows the next downloaded header
 	// to prove it links to the chain properly.
 	if sm.nextCheckpoint != nil {
 		node := headerNode{height: newestHeight, hash: newestHash}
@@ -265,8 +265,8 @@ func (sm *SyncManager) findNextHeaderCheckpoint(height uint64) *dagconfig.Checkp
 }
 
 // startSync will choose the best peer among the available candidate peers to
-// download/sync the blockchain from.  When syncing is already running, it
-// simply returns.  It also examines the candidates for any which are no longer
+// download/sync the blockchain from. When syncing is already running, it
+// simply returns. It also examines the candidates for any which are no longer
 // candidates and removes them as needed.
 func (sm *SyncManager) startSync() {
 	// Return now if we're already syncing.
@@ -345,8 +345,8 @@ func (sm *SyncManager) isSyncCandidate(peer *peerpkg.Peer) bool {
 }
 
 // handleNewPeerMsg deals with new peers that have signalled they may
-// be considered as a sync peer (they have already successfully negotiated).  It
-// also starts syncing if needed.  It is invoked from the syncHandler goroutine.
+// be considered as a sync peer (they have already successfully negotiated). It
+// also starts syncing if needed. It is invoked from the syncHandler goroutine.
 func (sm *SyncManager) handleNewPeerMsg(peer *peerpkg.Peer) {
 	// Ignore if in the process of shutting down.
 	if atomic.LoadInt32(&sm.shutdown) != 0 {
@@ -377,9 +377,9 @@ func (sm *SyncManager) handleNewPeerMsg(peer *peerpkg.Peer) {
 	}
 }
 
-// handleDonePeerMsg deals with peers that have signalled they are done.  It
+// handleDonePeerMsg deals with peers that have signalled they are done. It
 // removes the peer as a candidate for syncing and in the case where it was
-// the current sync peer, attempts to select a new best peer to sync from.  It
+// the current sync peer, attempts to select a new best peer to sync from. It
 // is invoked from the syncHandler goroutine.
 func (sm *SyncManager) handleDonePeerMsg(peer *peerpkg.Peer) {
 	state, exists := sm.peerStates[peer]
@@ -412,7 +412,7 @@ func (sm *SyncManager) handleDonePeerMsg(peer *peerpkg.Peer) {
 
 func (sm *SyncManager) stopSyncFromPeer(peer *peerpkg.Peer) {
 	// Attempt to find a new peer to sync from if the quitting peer is the
-	// sync peer.  Also, reset the headers-first state if in headers-first
+	// sync peer. Also, reset the headers-first state if in headers-first
 	// mode so
 	if sm.syncPeer == peer {
 		sm.syncPeer = nil
@@ -447,7 +447,7 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 		return
 	}
 
-	// Ignore transactions that we have already rejected.  Do not
+	// Ignore transactions that we have already rejected. Do not
 	// send a reject message here because if the transaction was already
 	// rejected, the transaction was unsolicited.
 	if _, exists = sm.rejectedTxns[*txID]; exists {
@@ -476,7 +476,7 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 
 		// When the error is a rule error, it means the transaction was
 		// simply rejected as opposed to something actually going wrong,
-		// so log it as such.  Otherwise, something really did go wrong,
+		// so log it as such. Otherwise, something really did go wrong,
 		// so log it as an actual error.
 		if _, ok := err.(mempool.RuleError); ok {
 			log.Debugf("Rejected transaction %s from %s: %s",
@@ -541,7 +541,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	blockHash := bmsg.block.Hash()
 	if _, exists = state.requestedBlocks[*blockHash]; !exists {
 		// The regression test intentionally sends some blocks twice
-		// to test duplicate block insertion fails.  Don't disconnect
+		// to test duplicate block insertion fails. Don't disconnect
 		// the peer or ignore the block when we're in regression test
 		// mode in this case so the chain code is actually fed the
 		// duplicate blocks.
@@ -598,7 +598,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	if err != nil {
 		// When the error is a rule error, it means the block was simply
 		// rejected as opposed to something actually going wrong, so log
-		// it as such.  Otherwise, something really did go wrong, so log
+		// it as such. Otherwise, something really did go wrong, so log
 		// it as an actual error.
 		if _, ok := err.(blockdag.RuleError); ok {
 			log.Infof("Rejected block %s from %s: %s", blockHash,
@@ -674,7 +674,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		return
 	}
 
-	// This is headers-first mode and the block is a checkpoint.  When
+	// This is headers-first mode and the block is a checkpoint. When
 	// there is a next checkpoint, get the next round of headers by asking
 	// for headers starting from the block after this one up to the next
 	// checkpoint.
@@ -750,7 +750,7 @@ func (sm *SyncManager) fetchHeaderBlocks() {
 	}
 
 	// Build up a getdata request for the list of blocks the headers
-	// describe.  The size hint will be limited to wire.MaxInvPerMsg by
+	// describe. The size hint will be limited to wire.MaxInvPerMsg by
 	// the function, so no need to double check it here.
 	gdmsg := wire.NewMsgGetDataSizeHint(uint(sm.headerList.Len()))
 	numRequested := 0
@@ -787,7 +787,7 @@ func (sm *SyncManager) fetchHeaderBlocks() {
 	}
 }
 
-// handleHeadersMsg handles block header messages from all peers.  Headers are
+// handleHeadersMsg handles block header messages from all peers. Headers are
 // requested when performing a headers-first sync.
 func (sm *SyncManager) handleHeadersMsg(hmsg *headersMsg) {
 	peer := hmsg.peer
@@ -895,7 +895,7 @@ func (sm *SyncManager) handleHeadersMsg(hmsg *headersMsg) {
 }
 
 // haveInventory returns whether or not the inventory represented by the passed
-// inventory vector is known.  This includes checking all of the various places
+// inventory vector is known. This includes checking all of the various places
 // inventory can be when it is in different states such as blocks that are part
 // of the main chain, on a side chain, in the orphan pool, and transactions that
 // are in the memory pool (either the main pool or orphan pool).
@@ -915,10 +915,10 @@ func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 		}
 
 		// Check if the transaction exists from the point of view of the
-		// end of the main chain.  Note that this is only a best effort
+		// end of the main chain. Note that this is only a best effort
 		// since it is expensive to check existence of every output and
 		// the only purpose of this check is to avoid downloading
-		// already known transactions.  Only the first two outputs are
+		// already known transactions. Only the first two outputs are
 		// checked because the vast majority of transactions consist of
 		// two outputs where one is some form of "pay-to-somebody-else"
 		// and the other is a change output.
@@ -952,7 +952,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		return
 	}
 
-	// Attempt to find the final block in the inventory list.  There may
+	// Attempt to find the final block in the inventory list. There may
 	// not be one.
 	lastBlock := -1
 	invVects := imsg.inv.InvList
@@ -963,7 +963,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		}
 	}
 
-	// Request the advertised inventory if we don't already have it.  Also,
+	// Request the advertised inventory if we don't already have it. Also,
 	// request parent blocks of orphans if we receive one we already have.
 	// Finally, attempt to detect potential stalls due to long side chains
 	// we already have and request more blocks to prevent them.
@@ -1015,9 +1015,9 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		if iv.IsBlockOrSyncBlock() {
 			// The block is an orphan block that we already have.
 			// When the existing orphan was processed, it requested
-			// the missing parent blocks.  When this scenario
+			// the missing parent blocks. When this scenario
 			// happens, it means there were more blocks missing
-			// than are allowed into a single inventory message.  As
+			// than are allowed into a single inventory message. As
 			// a result, once this peer requested the final
 			// advertised block, the remote peer noticed and is now
 			// resending the orphan block as an available block
@@ -1035,7 +1035,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 			}
 
 			// We already have the final block advertised by this
-			// inventory message, so force a request for more.  This
+			// inventory message, so force a request for more. This
 			// should only happen if our DAG and the peer's DAG have
 			// diverged long time ago.
 			if i == lastBlock && peer == sm.syncPeer {
@@ -1152,9 +1152,9 @@ func (sm *SyncManager) sendInvsFromRequestQueue(peer *peerpkg.Peer, state *peerS
 // overflow the maximum allowed.
 func (sm *SyncManager) limitTxIDMap(m map[daghash.TxID]struct{}, limit int) {
 	if len(m)+1 > limit {
-		// Remove a random entry from the map.  For most compilers, Go's
+		// Remove a random entry from the map. For most compilers, Go's
 		// range statement iterates starting at a random item although
-		// that is not 100% guaranteed by the spec.  The iteration order
+		// that is not 100% guaranteed by the spec. The iteration order
 		// is not important here because an adversary would have to be
 		// able to pull off preimage attacks on the hashing function in
 		// order to target eviction of specific entries anyways.
@@ -1170,9 +1170,9 @@ func (sm *SyncManager) limitTxIDMap(m map[daghash.TxID]struct{}, limit int) {
 // overflow the maximum allowed.
 func (sm *SyncManager) limitHashMap(m map[daghash.Hash]struct{}, limit int) {
 	if len(m)+1 > limit {
-		// Remove a random entry from the map.  For most compilers, Go's
+		// Remove a random entry from the map. For most compilers, Go's
 		// range statement iterates starting at a random item although
-		// that is not 100% guaranteed by the spec.  The iteration order
+		// that is not 100% guaranteed by the spec. The iteration order
 		// is not important here because an adversary would have to be
 		// able to pull off preimage attacks on the hashing function in
 		// order to target eviction of specific entries anyways.
@@ -1183,10 +1183,10 @@ func (sm *SyncManager) limitHashMap(m map[daghash.Hash]struct{}, limit int) {
 	}
 }
 
-// blockHandler is the main handler for the sync manager.  It must be run as a
-// goroutine.  It processes block and inv messages in a separate goroutine
+// blockHandler is the main handler for the sync manager. It must be run as a
+// goroutine. It processes block and inv messages in a separate goroutine
 // from the peer handlers so the block (MsgBlock) messages are handled by a
-// single thread without needing to lock memory data structures.  This is
+// single thread without needing to lock memory data structures. This is
 // important because the sync manager controls which blocks are needed and how
 // the fetching should proceed.
 func (sm *SyncManager) blockHandler() {
@@ -1267,12 +1267,12 @@ out:
 	log.Trace("Block handler done")
 }
 
-// handleBlockDAGNotification handles notifications from blockDAG.  It does
+// handleBlockDAGNotification handles notifications from blockDAG. It does
 // things such as request orphan block parents and relay accepted blocks to
 // connected peers.
 func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notification) {
 	switch notification.Type {
-	// A block has been accepted into the blockDAG.  Relay it to other peers.
+	// A block has been accepted into the blockDAG. Relay it to other peers.
 	case blockdag.NTBlockAdded:
 		data, ok := notification.Data.(*blockdag.BlockAddedNotificationData)
 		if !ok {
@@ -1440,7 +1440,7 @@ func (sm *SyncManager) IsCurrent() bool {
 
 // Pause pauses the sync manager until the returned channel is closed.
 //
-// Note that while paused, all peer and block processing is halted.  The
+// Note that while paused, all peer and block processing is halted. The
 // message sender should avoid pausing the sync manager for long durations.
 func (sm *SyncManager) Pause() chan<- struct{} {
 	c := make(chan struct{})

@@ -15,7 +15,7 @@ import (
 )
 
 // baseHelpDescs house the various help labels, types, and example values used
-// when generating help.  The per-command synopsis, field descriptions,
+// when generating help. The per-command synopsis, field descriptions,
 // conditions, and result descriptions are to be provided by the caller.
 var baseHelpDescs = map[string]string{
 	// Misc help labels and output.
@@ -76,8 +76,8 @@ func reflectTypeToJSONType(xT descLookupFunc, rt reflect.Type) string {
 }
 
 // resultStructHelp returns a slice of strings containing the result help output
-// for a struct.  Each line makes use of tabs to separate the relevant pieces so
-// a tabwriter can be used later to line everything up.  The descriptions are
+// for a struct. Each line makes use of tabs to separate the relevant pieces so
+// a tabwriter can be used later to line everything up. The descriptions are
 // pulled from the active help descriptions map based on the lowercase version
 // of the provided reflect type and json name (or the lowercase version of the
 // field name if no json tag was specified).
@@ -107,7 +107,7 @@ func resultStructHelp(xT descLookupFunc, rt reflect.Type, indentLevel int) []str
 		}
 
 		// Generate the JSON example for the result type of this struct
-		// field.  When it is a complex type, examine the type and
+		// field. When it is a complex type, examine the type and
 		// adjust the opening bracket and brace combination accordingly.
 		fieldType := reflectTypeToJSONType(xT, rtfType)
 		fieldDescKey := typeName + "-" + fieldName
@@ -137,9 +137,9 @@ func resultStructHelp(xT descLookupFunc, rt reflect.Type, indentLevel int) []str
 }
 
 // reflectTypeToJSONExample generates example usage in the format used by the
-// help output.  It handles arrays, slices and structs recursively.  The output
+// help output. It handles arrays, slices and structs recursively. The output
 // is returned as a slice of lines so the final help can be nicely aligned via
-// a tab writer.  A bool is also returned which specifies whether or not the
+// a tab writer. A bool is also returned which specifies whether or not the
 // type results in a complex JSON object since they need to be handled
 // differently.
 func reflectTypeToJSONExample(xT descLookupFunc, rt reflect.Type, indentLevel int, fieldDescKey string) ([]string, bool) {
@@ -167,7 +167,7 @@ func reflectTypeToJSONExample(xT descLookupFunc, rt reflect.Type, indentLevel in
 		indent := strings.Repeat(" ", indentLevel)
 		results := resultStructHelp(xT, rt, indentLevel+1)
 
-		// An opening brace is needed for the first indent level.  For
+		// An opening brace is needed for the first indent level. For
 		// all others, it will be included as a part of the previous
 		// field.
 		if indentLevel == 0 {
@@ -178,7 +178,7 @@ func reflectTypeToJSONExample(xT descLookupFunc, rt reflect.Type, indentLevel in
 		}
 
 		// The closing brace has a comma after it except for the first
-		// indent level.  The final tabs are necessary so the tab writer
+		// indent level. The final tabs are necessary so the tab writer
 		// lines things up properly.
 		closingBrace := indent + "}"
 		if indentLevel > 0 {
@@ -197,7 +197,7 @@ func reflectTypeToJSONExample(xT descLookupFunc, rt reflect.Type, indentLevel in
 			// When this is at indent level zero, there is no
 			// previous field to house the opening array bracket, so
 			// replace the opening object brace with the array
-			// syntax.  Also, replace the final closing object brace
+			// syntax. Also, replace the final closing object brace
 			// with the variadiac array closing syntax.
 			indent := strings.Repeat(" ", indentLevel)
 			if indentLevel == 0 {
@@ -208,9 +208,9 @@ func reflectTypeToJSONExample(xT descLookupFunc, rt reflect.Type, indentLevel in
 
 			// At this point, the indent level is greater than 0, so
 			// the opening array bracket and object brace are
-			// already a part of the previous field.  However, the
+			// already a part of the previous field. However, the
 			// closing entry is a simple object brace, so replace it
-			// with the variadiac array closing syntax.  The final
+			// with the variadiac array closing syntax. The final
 			// tabs are necessary so the tab writer lines things up
 			// properly.
 			results[len(results)-1] = indent + "},...],\t\t"
@@ -225,7 +225,7 @@ func reflectTypeToJSONExample(xT descLookupFunc, rt reflect.Type, indentLevel in
 		indent := strings.Repeat(" ", indentLevel)
 		results := make([]string, 0, 3)
 
-		// An opening brace is needed for the first indent level.  For
+		// An opening brace is needed for the first indent level. For
 		// all others, it will be included as a part of the previous
 		// field.
 		if indentLevel == 0 {
@@ -264,7 +264,7 @@ func resultTypeHelp(xT descLookupFunc, rt reflect.Type, fieldDescKey string) str
 	}
 
 	// At this point, this is a complex type that already has the JSON types
-	// and descriptions in the results.  Thus, use a tab writer to nicely
+	// and descriptions in the results. Thus, use a tab writer to nicely
 	// align the help text.
 	var formatted bytes.Buffer
 	w := new(tabwriter.Writer)
@@ -281,7 +281,7 @@ func resultTypeHelp(xT descLookupFunc, rt reflect.Type, fieldDescKey string) str
 }
 
 // argTypeHelp returns the type of provided command argument as a string in the
-// format used by the help output.  In particular, it includes the JSON type
+// format used by the help output. In particular, it includes the JSON type
 // (boolean, numeric, string, array, object) along with optional and the default
 // value if applicable.
 func argTypeHelp(xT descLookupFunc, structField reflect.StructField, defaultVal *reflect.Value) string {
@@ -308,7 +308,7 @@ func argTypeHelp(xT descLookupFunc, structField reflect.StructField, defaultVal 
 	if isOptional {
 		details = append(details, xT("help-optional"))
 
-		// Add the default value if there is one.  This is only checked
+		// Add the default value if there is one. This is only checked
 		// when the field is optional since a non-optional field can't
 		// have a default value.
 		if defaultVal != nil {
@@ -335,7 +335,7 @@ func argHelp(xT descLookupFunc, rtp reflect.Type, defaults map[int]reflect.Value
 		return ""
 	}
 
-	// Generate the help for each argument in the command.  Several
+	// Generate the help for each argument in the command. Several
 	// simplifying assumptions are made here because the RegisterCmd
 	// function has already rigorously enforced the layout.
 	args := make([]string, 0, numFields)
@@ -380,7 +380,7 @@ func argHelp(xT descLookupFunc, rtp reflect.Type, defaults map[int]reflect.Value
 		}
 	}
 
-	// Add argument names, types, and descriptions if there are any.  Use a
+	// Add argument names, types, and descriptions if there are any. Use a
 	// tab writer to nicely align the help text.
 	var formatted bytes.Buffer
 	w := new(tabwriter.Writer)
@@ -393,7 +393,7 @@ func argHelp(xT descLookupFunc, rtp reflect.Type, defaults map[int]reflect.Value
 }
 
 // methodHelp generates and returns the help output for the provided command
-// and method info.  This is the main work horse for the exported MethodHelp
+// and method info. This is the main work horse for the exported MethodHelp
 // function.
 func methodHelp(xT descLookupFunc, rtp reflect.Type, defaults map[int]reflect.Value, method string, resultTypes []interface{}) string {
 	// Start off with the method usage and help synopsis.
@@ -424,7 +424,7 @@ func methodHelp(xT descLookupFunc, rtp reflect.Type, defaults map[int]reflect.Va
 		resultTexts = append(resultTexts, resultText)
 	}
 
-	// Add result types and descriptions.  When there is more than one
+	// Add result types and descriptions. When there is more than one
 	// result type, also add the condition which triggers it.
 	if len(resultTexts) > 1 {
 		for i, resultText := range resultTexts {
@@ -461,20 +461,20 @@ func isValidResultType(kind reflect.Kind) bool {
 
 // GenerateHelp generates and returns help output for the provided method and
 // result types given a map to provide the appropriate keys for the method
-// synopsis, field descriptions, conditions, and result descriptions.  The
-// method must be associated with a registered type.  All commands provided by
+// synopsis, field descriptions, conditions, and result descriptions. The
+// method must be associated with a registered type. All commands provided by
 // this package are registered by default.
 //
 // The resultTypes must be pointer-to-types which represent the specific types
-// of values the command returns.  For example, if the command only returns a
-// boolean value, there should only be a single entry of (*bool)(nil).  Note
-// that each type must be a single pointer to the type.  Therefore, it is
+// of values the command returns. For example, if the command only returns a
+// boolean value, there should only be a single entry of (*bool)(nil). Note
+// that each type must be a single pointer to the type. Therefore, it is
 // recommended to simply pass a nil pointer cast to the appropriate type as
 // previously shown.
 //
 // The provided descriptions map must contain all of the keys or an error will
 // be returned which includes the missing key, or the final missing key when
-// there is more than one key missing.  The generated help in the case of such
+// there is more than one key missing. The generated help in the case of such
 // an error will use the key in place of the description.
 //
 // The following outlines the required keys:
@@ -491,8 +491,8 @@ func isValidResultType(kind reflect.Kind) bool {
 // and the result key for a given result type is only required if it's not an
 // object.
 //
-// For example, consider the 'help' command itself.  There are two possible
-// returns depending on the provided parameters.  So, the help would be
+// For example, consider the 'help' command itself. There are two possible
+// returns depending on the provided parameters. So, the help would be
 // generated by calling the function as follows:
 //   GenerateHelp("help", descs, (*string)(nil), (*string)(nil)).
 //

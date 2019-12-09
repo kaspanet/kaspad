@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-// This file intended to be copied into each backend driver directory.  Each
+// This file intended to be copied into each backend driver directory. Each
 // driver should have their own driver_test.go file which creates a database and
 // invokes the testInterface function in this file to ensure the driver properly
 // implements the interface.
@@ -72,7 +72,7 @@ func loadBlocks(t *testing.T, dataFile string, network wire.BitcoinNet) ([]*util
 		var net uint32
 		err := binary.Read(dr, binary.LittleEndian, &net)
 		if err == io.EOF {
-			// Hit end of file at the expected offset.  No error.
+			// Hit end of file at the expected offset. No error.
 			break
 		}
 		if err != nil {
@@ -143,7 +143,7 @@ type testContext struct {
 	blocks      []*util.Block
 }
 
-// keyPair houses a key/value pair.  It is used over maps so ordering can be
+// keyPair houses a key/value pair. It is used over maps so ordering can be
 // maintained.
 type keyPair struct {
 	key   []byte
@@ -163,7 +163,7 @@ func lookupKey(key []byte, values []keyPair) ([]byte, bool) {
 }
 
 // toGetValues returns a copy of the provided keypairs with all of the nil
-// values set to an empty byte slice.  This is used to ensure that keys set to
+// values set to an empty byte slice. This is used to ensure that keys set to
 // nil values result in empty byte slices when retrieved instead of nil.
 func toGetValues(values []keyPair) []keyPair {
 	ret := make([]keyPair, len(values))
@@ -177,7 +177,7 @@ func toGetValues(values []keyPair) []keyPair {
 }
 
 // rollbackValues returns a copy of the provided keypairs with all values set to
-// nil.  This is used to test that values are properly rolled back.
+// nil. This is used to test that values are properly rolled back.
 func rollbackValues(values []keyPair) []keyPair {
 	ret := make([]keyPair, len(values))
 	copy(ret, values)
@@ -188,7 +188,7 @@ func rollbackValues(values []keyPair) []keyPair {
 }
 
 // testCursorKeyPair checks that the provide key and value match the expected
-// keypair at the provided index.  It also ensures the index is in range for the
+// keypair at the provided index. It also ensures the index is in range for the
 // provided slice of expected keypairs.
 func testCursorKeyPair(tc *testContext, k, v []byte, index int, values []keyPair) bool {
 	if index >= len(values) || index < 0 {
@@ -400,7 +400,7 @@ func testNestedBucket(tc *testContext, testBucket database.Bucket) bool {
 }
 
 // testBucketInterface ensures the bucket interface is working properly by
-// exercising all of its functions.  This includes the cursor interface for the
+// exercising all of its functions. This includes the cursor interface for the
 // cursor returned from the bucket.
 func testBucketInterface(tc *testContext, bucket database.Bucket) bool {
 	if bucket.Writable() != tc.isWritable {
@@ -623,9 +623,9 @@ func testBucketInterface(tc *testContext, bucket database.Bucket) bool {
 }
 
 // rollbackOnPanic rolls the passed transaction back if the code in the calling
-// function panics.  This is useful in case the tests unexpectedly panic which
+// function panics. This is useful in case the tests unexpectedly panic which
 // would leave any manually created transactions with the database mutex locked
-// thereby leading to a deadlock and masking the real reason for the panic.  It
+// thereby leading to a deadlock and masking the real reason for the panic. It
 // also logs a test error and repanics so the original panic can be traced.
 func rollbackOnPanic(t *testing.T, dbTx database.Tx) {
 	if err := recover(); err != nil {
@@ -1116,7 +1116,7 @@ func testFetchBlockIOMissing(tc *testContext, dbTx database.Tx) bool {
 	// ---------------------
 
 	// Test the individual block APIs one block at a time to ensure they
-	// return the expected error.  Also, build the data needed to test the
+	// return the expected error. Also, build the data needed to test the
 	// bulk APIs below while looping.
 	allBlockHashes := make([]*daghash.Hash, len(tc.blocks))
 	allBlockRegions := make([]database.BlockRegion, len(tc.blocks))
@@ -1212,8 +1212,8 @@ func testFetchBlockIOMissing(tc *testContext, dbTx database.Tx) bool {
 }
 
 // testFetchBlockIO ensures all of the block retrieval API functions work as
-// expected for the provide set of blocks.  The blocks must already be stored in
-// the database, or at least stored into the the passed transaction.  It also
+// expected for the provide set of blocks. The blocks must already be stored in
+// the database, or at least stored into the the passed transaction. It also
 // tests several error conditions such as ensuring the expected errors are
 // returned when fetching blocks, headers, and regions that don't exist.
 func testFetchBlockIO(tc *testContext, dbTx database.Tx) bool {
@@ -1221,7 +1221,7 @@ func testFetchBlockIO(tc *testContext, dbTx database.Tx) bool {
 	// Non-bulk Block IO API
 	// ---------------------
 
-	// Test the individual block APIs one block at a time.  Also, build the
+	// Test the individual block APIs one block at a time. Also, build the
 	// data needed to test the bulk APIs below while looping.
 	allBlockHashes := make([]*daghash.Hash, len(tc.blocks))
 	allBlockBytes := make([][]byte, len(tc.blocks))
@@ -1506,7 +1506,7 @@ func testFetchBlockIO(tc *testContext, dbTx database.Tx) bool {
 }
 
 // testBlockIOTxInterface ensures that the block IO interface works as expected
-// for both managed read/write and manual transactions.  This function leaves
+// for both managed read/write and manual transactions. This function leaves
 // all of the stored blocks in the database.
 func testBlockIOTxInterface(tc *testContext) bool {
 	// Ensure attempting to store a block with a read-only transaction fails
@@ -1532,7 +1532,7 @@ func testBlockIOTxInterface(tc *testContext) bool {
 
 	// Populate the database with loaded blocks and ensure all of the data
 	// fetching APIs work properly on them within the transaction before a
-	// commit or rollback.  Then, force a rollback so the code below can
+	// commit or rollback. Then, force a rollback so the code below can
 	// ensure none of the data actually gets stored.
 	forceRollbackError := errors.Errorf("force rollback")
 	err = tc.db.Update(func(dbTx database.Tx) error {
@@ -1657,7 +1657,7 @@ func testBlockIOTxInterface(tc *testContext) bool {
 		}
 
 		// Ensure attempting to store existing blocks again returns the
-		// expected error.  Note that this is different from the
+		// expected error. Note that this is different from the
 		// previous version since this is a new transaction after the
 		// blocks have been committed.
 		wantErrCode := database.ErrBlockExists
@@ -1836,7 +1836,7 @@ func testClosedTxInterface(tc *testContext, dbTx database.Tx) bool {
 	// ---------------------
 
 	// Test the individual block APIs one block at a time to ensure they
-	// return the expected error.  Also, build the data needed to test the
+	// return the expected error. Also, build the data needed to test the
 	// bulk APIs below while looping.
 	allBlockHashes := make([]*daghash.Hash, len(tc.blocks))
 	allBlockRegions := make([]database.BlockRegion, len(tc.blocks))
@@ -1991,15 +1991,15 @@ func testTxClosed(tc *testContext) bool {
 }
 
 // testConcurrecy ensure the database properly supports concurrent readers and
-// only a single writer.  It also ensures views act as snapshots at the time
+// only a single writer. It also ensures views act as snapshots at the time
 // they are acquired.
 func testConcurrecy(tc *testContext) bool {
 	// sleepTime is how long each of the concurrent readers should sleep to
 	// aid in detection of whether or not the data is actually being read
-	// concurrently.  It starts with a sane lower bound.
+	// concurrently. It starts with a sane lower bound.
 	var sleepTime = time.Millisecond * 250
 
-	// Determine about how long it takes for a single block read.  When it's
+	// Determine about how long it takes for a single block read. When it's
 	// longer than the default minimum sleep time, adjust the sleep time to
 	// help prevent durations that are too short which would cause erroneous
 	// test failures on slower systems.
@@ -2020,7 +2020,7 @@ func testConcurrecy(tc *testContext) bool {
 		sleepTime)
 
 	// reader takes a block number to load and channel to return the result
-	// of the operation on.  It is used below to launch multiple concurrent
+	// of the operation on. It is used below to launch multiple concurrent
 	// readers.
 	numReaders := len(tc.blocks)
 	resultChan := make(chan bool, numReaders)
@@ -2084,7 +2084,7 @@ func testConcurrecy(tc *testContext) bool {
 		return false
 	}
 
-	// Start up a few readers and wait for them to acquire views.  Each
+	// Start up a few readers and wait for them to acquire views. Each
 	// reader waits for a signal from the writer to be finished to ensure
 	// that the data written by the writer is not seen by the view since it
 	// was started before the data was set.
@@ -2142,7 +2142,7 @@ func testConcurrecy(tc *testContext) bool {
 	}
 
 	// Start a few writers and ensure the total time is at least the
-	// writeSleepTime * numWriters.  This ensures only one write transaction
+	// writeSleepTime * numWriters. This ensures only one write transaction
 	// can be active at a time.
 	writeSleepTime := time.Millisecond * 250
 	writer := func() {
@@ -2187,7 +2187,7 @@ func testConcurrecy(tc *testContext) bool {
 //
 // The database will be closed upon returning from this function.
 func testConcurrentClose(tc *testContext) bool {
-	// Start up a few readers and wait for them to acquire views.  Each
+	// Start up a few readers and wait for them to acquire views. Each
 	// reader waits for a signal to complete to ensure the transactions stay
 	// open until they are explicitly signalled to be closed.
 	var activeReaders int32
@@ -2217,8 +2217,8 @@ func testConcurrentClose(tc *testContext) bool {
 		<-started
 	}
 
-	// Close the database in a separate goroutine.  This should block until
-	// the transactions are finished.  Once the close has taken place, the
+	// Close the database in a separate goroutine. This should block until
+	// the transactions are finished. Once the close has taken place, the
 	// dbClosed channel is closed to signal the main goroutine below.
 	dbClosed := make(chan struct{})
 	go func() {
@@ -2235,7 +2235,7 @@ func testConcurrentClose(tc *testContext) bool {
 	<-started
 
 	// Wait a short period and then signal the reader transactions to
-	// finish.  When the db closed channel is received, ensure there are no
+	// finish. When the db closed channel is received, ensure there are no
 	// active readers open.
 	time.AfterFunc(time.Millisecond*250, func() { close(finishReaders) })
 	<-dbClosed
@@ -2277,7 +2277,7 @@ func testInterface(t *testing.T, db database.DB) {
 	}
 
 	// Test the transaction block IO interface using managed and manual
-	// transactions.  This function leaves all of the stored blocks in the
+	// transactions. This function leaves all of the stored blocks in the
 	// database since they're used later.
 	if !testBlockIOTxInterface(&context) {
 		return

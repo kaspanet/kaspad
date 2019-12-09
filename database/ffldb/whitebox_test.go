@@ -65,7 +65,7 @@ func loadBlocks(t *testing.T, dataFile string, network wire.BitcoinNet) ([]*util
 		var net uint32
 		err := binary.Read(dr, binary.LittleEndian, &net)
 		if err == io.EOF {
-			// Hit end of file at the expected offset.  No error.
+			// Hit end of file at the expected offset. No error.
 			break
 		}
 		if err != nil {
@@ -189,7 +189,7 @@ func TestCornerCases(t *testing.T) {
 		return
 	}
 
-	// Remove the file and create the database to run tests against.  It
+	// Remove the file and create the database to run tests against. It
 	// should be successful this time.
 	_ = os.RemoveAll(dbPath)
 	idb, err = openDB(dbPath, blockDataNet, true)
@@ -256,7 +256,7 @@ func resetDatabase(tc *testContext) bool {
 	// Reset the metadata.
 	err := tc.db.Update(func(dbTx database.Tx) error {
 		// Remove all the keys using a cursor while also generating a
-		// list of buckets.  It's not safe to remove keys during ForEach
+		// list of buckets. It's not safe to remove keys during ForEach
 		// iteration nor is it safe to remove buckets during cursor
 		// iteration, so this dual approach is needed.
 		var bucketNames [][]byte
@@ -537,7 +537,7 @@ func testCorruption(tc *testContext) bool {
 		fixChecksum bool
 		wantErrCode database.ErrorCode
 	}{
-		// One of the network bytes.  The checksum needs to be fixed so
+		// One of the network bytes. The checksum needs to be fixed so
 		// the invalid network is detected.
 		{2, true, database.ErrDriverSpecific},
 
@@ -624,7 +624,7 @@ func TestFailureScenarios(t *testing.T) {
 
 	// Change the maximum file size to a small value to force multiple flat
 	// files with the test data set and replace the file-related functions
-	// to make use of mock files in memory.  This allows injection of
+	// to make use of mock files in memory. This allows injection of
 	// various file-related errors.
 	store := idb.(*db).store
 	store.maxBlockFileSize = 1024 // 1KiB

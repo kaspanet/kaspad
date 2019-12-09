@@ -22,7 +22,7 @@ import (
 // test data.
 func scriptTestName(test []interface{}) (string, error) {
 	// The test must consist of a signature script, public key script, flags,
-	// and expected error.  Finally, it may optionally contain a comment.
+	// and expected error. Finally, it may optionally contain a comment.
 	if len(test) < 4 || len(test) > 5 {
 		return "", errors.Errorf("invalid test length %d", len(test))
 	}
@@ -49,7 +49,7 @@ func parseHex(tok string) ([]byte, error) {
 }
 
 // shortFormOps holds a map of opcode names to values for use in short form
-// parsing.  It is declared here so it only needs to be created once.
+// parsing. It is declared here so it only needs to be created once.
 var shortFormOps map[string]byte
 
 // parseShortForm parses a string as as used in the Bitcoin Core reference tests
@@ -75,7 +75,7 @@ func parseShortForm(script string) ([]byte, error) {
 
 			// The opcodes named OP_# can't have the OP_ prefix
 			// stripped or they would conflict with the plain
-			// numbers.  Also, since OP_FALSE and OP_TRUE are
+			// numbers. Also, since OP_FALSE and OP_TRUE are
 			// aliases for the OP_0, and OP_1, respectively, they
 			// have the same value, so detect those by name and
 			// allow them.
@@ -143,7 +143,7 @@ func parseScriptFlags(flagStr string) (ScriptFlags, error) {
 }
 
 // parseExpectedResult parses the provided expected result string into allowed
-// script error codes.  An error is returned if the expected result string is
+// script error codes. An error is returned if the expected result string is
 // not supported.
 func parseExpectedResult(expected string) ([]ErrorCode, error) {
 	switch expected {
@@ -295,7 +295,7 @@ func testScripts(t *testing.T, tests [][]interface{}, useSigCache bool) {
 		// Extract and parse the expected result from the test fields.
 		//
 		// Convert the expected result string into the allowed script
-		// error codes.  This is necessary because txscript is more
+		// error codes. This is necessary because txscript is more
 		// fine grained with its errors than the reference test data, so
 		// some of the reference test data errors map to more than one
 		// possibility.
@@ -369,10 +369,10 @@ func TestScripts(t *testing.T) {
 }
 
 // testVecF64ToUint32 properly handles conversion of float64s read from the JSON
-// test data to unsigned 32-bit integers.  This is necessary because some of the
+// test data to unsigned 32-bit integers. This is necessary because some of the
 // test data uses -1 as a shortcut to mean max uint32 and direct conversion of a
 // negative float to an unsigned int is implementation dependent and therefore
-// doesn't result in the expected value on all platforms.  This function woks
+// doesn't result in the expected value on all platforms. This function woks
 // around that limitation by converting to a 32-bit signed integer first and
 // then to a 32-bit unsigned integer which results in the expected behavior on
 // all platforms.

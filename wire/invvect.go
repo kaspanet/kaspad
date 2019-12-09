@@ -28,7 +28,7 @@ const (
 	maxInvVectPayload = 4 + daghash.HashSize
 )
 
-// InvType represents the allowed types of inventory vectors.  See InvVect.
+// InvType represents the allowed types of inventory vectors. See InvVect.
 type InvType uint32
 
 // These constants define the various supported inventory vector types.

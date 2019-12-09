@@ -84,7 +84,7 @@ func (msg *MsgCFilter) BtcEncode(w io.Writer, pver uint32) error {
 // Deserialize decodes a filter from r into the receiver using a format that is
 // suitable for long-term storage such as a database. This function differs
 // from BtcDecode in that BtcDecode decodes from the bitcoin wire protocol as
-// it was sent across the network.  The wire encoding can technically differ
+// it was sent across the network. The wire encoding can technically differ
 // depending on the protocol version and doesn't even really need to match the
 // format of a stored filter at all. As of the time this comment was written,
 // the encoded filter is the same in both instances, but there is a distinct
@@ -92,19 +92,19 @@ func (msg *MsgCFilter) BtcEncode(w io.Writer, pver uint32) error {
 // deal with changes.
 func (msg *MsgCFilter) Deserialize(r io.Reader) error {
 	// At the current time, there is no difference between the wire encoding
-	// and the stable long-term storage format.  As a result, make use of
+	// and the stable long-term storage format. As a result, make use of
 	// BtcDecode.
 	return msg.BtcDecode(r, 0)
 }
 
-// Command returns the protocol command string for the message.  This is part
+// Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgCFilter) Command() string {
 	return CmdCFilter
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
-// receiver.  This is part of the Message interface implementation.
+// receiver. This is part of the Message interface implementation.
 func (msg *MsgCFilter) MaxPayloadLength(pver uint32) uint32 {
 	return uint32(VarIntSerializeSize(MaxCFilterDataSize)) +
 		MaxCFilterDataSize + daghash.HashSize + 1

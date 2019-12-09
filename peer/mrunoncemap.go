@@ -55,7 +55,7 @@ func (m *mruNonceMap) Exists(nonce uint64) bool {
 }
 
 // Add adds the passed nonce to the map and handles eviction of the oldest item
-// if adding the new item would exceed the max limit.  Adding an existing item
+// if adding the new item would exceed the max limit. Adding an existing item
 // makes it the most recently used item.
 //
 // This function is safe for concurrent access.
@@ -77,7 +77,7 @@ func (m *mruNonceMap) Add(nonce uint64) {
 	}
 
 	// Evict the least recently used entry (back of the list) if the the new
-	// entry would exceed the size limit for the map.  Also reuse the list
+	// entry would exceed the size limit for the map. Also reuse the list
 	// node so a new one doesn't have to be allocated.
 	if uint(len(m.nonceMap))+1 > m.limit {
 		node := m.nonceList.Back()
@@ -112,7 +112,7 @@ func (m *mruNonceMap) Delete(nonce uint64) {
 }
 
 // newMruNonceMap returns a new nonce map that is limited to the number of
-// entries specified by limit.  When the number of entries exceeds the limit,
+// entries specified by limit. When the number of entries exceeds the limit,
 // the oldest (least recently used) entry will be removed to make room for the
 // new entry.
 func newMruNonceMap(limit uint) *mruNonceMap {

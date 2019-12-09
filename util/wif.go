@@ -13,7 +13,7 @@ import (
 )
 
 // ErrMalformedPrivateKey describes an error where a WIF-encoded private
-// key cannot be decoded due to being improperly formatted.  This may occur
+// key cannot be decoded due to being improperly formatted. This may occur
 // if the byte length is incorrect or an unexpected magic number was
 // encountered.
 var ErrMalformedPrivateKey = errors.New("malformed private key")
@@ -23,9 +23,9 @@ var ErrMalformedPrivateKey = errors.New("malformed private key")
 const compressMagic byte = 0x01
 
 // WIF contains the individual components described by the Wallet Import Format
-// (WIF).  A WIF string is typically used to represent a private key and its
+// (WIF). A WIF string is typically used to represent a private key and its
 // associated address in a way that  may be easily copied and imported into or
-// exported from wallet software.  WIF strings may be decoded into this
+// exported from wallet software. WIF strings may be decoded into this
 // structure by calling DecodeWIF or created with a user-provided private key
 // by calling NewWIF.
 type WIF struct {
@@ -44,7 +44,7 @@ type WIF struct {
 }
 
 // NewWIF creates a new WIF structure to export an address and its private key
-// as a string encoded in the Wallet Import Format.  The compress argument
+// as a string encoded in the Wallet Import Format. The compress argument
 // specifies whether the address intended to be imported or exported was created
 // by serializing the public key compressed rather than uncompressed.
 func NewWIF(privKey *btcec.PrivateKey, privateKeyID byte, compress bool) (*WIF, error) {
@@ -73,9 +73,9 @@ func (w *WIF) IsForNet(privateKeyID byte) bool {
 //    of every byte before the checksum in this sequence
 //
 // If the base58-decoded byte sequence does not match this, DecodeWIF will
-// return a non-nil error.  ErrMalformedPrivateKey is returned when the WIF
+// return a non-nil error. ErrMalformedPrivateKey is returned when the WIF
 // is of an impossible length or the expected compressed pubkey magic number
-// does not equal the expected value of 0x01.  ErrChecksumMismatch is returned
+// does not equal the expected value of 0x01. ErrChecksumMismatch is returned
 // if the expected WIF checksum does not match the calculated checksum.
 func DecodeWIF(wif string) (*WIF, error) {
 	decoded := base58.Decode(wif)
@@ -97,7 +97,7 @@ func DecodeWIF(wif string) (*WIF, error) {
 	}
 
 	// Checksum is first four bytes of double SHA256 of the identifier byte
-	// and privKey.  Verify this matches the final 4 bytes of the decoded
+	// and privKey. Verify this matches the final 4 bytes of the decoded
 	// private key.
 	var tosum []byte
 	if compress {
@@ -120,7 +120,7 @@ func DecodeWIF(wif string) (*WIF, error) {
 // See DecodeWIF for a detailed breakdown of the format and requirements of
 // a valid WIF string.
 func (w *WIF) String() string {
-	// Precalculate size.  Maximum number of bytes before base58 encoding
+	// Precalculate size. Maximum number of bytes before base58 encoding
 	// is one byte for the network, 32 bytes of private key, possibly one
 	// extra byte if the pubkey is to be compressed, and finally four
 	// bytes of checksum.
@@ -143,7 +143,7 @@ func (w *WIF) String() string {
 }
 
 // SerializePubKey serializes the associated public key of the imported or
-// exported private key in either a compressed or uncompressed format.  The
+// exported private key in either a compressed or uncompressed format. The
 // serialization format chosen depends on the value of w.CompressPubKey.
 func (w *WIF) SerializePubKey() []byte {
 	pk := (*btcec.PublicKey)(&w.PrivKey.PublicKey)
