@@ -6,7 +6,7 @@
 // NOTE: This file is intended to house the RPC websocket notifications that are
 // supported by a kaspa rpc server.
 
-package kaspajson
+package jsonrpc
 
 const (
 	// FilteredBlockAddedNtfnMethod is the new method used for
@@ -130,9 +130,9 @@ func init() {
 	// notifications.
 	flags := UFWebsocketOnly | UFNotification
 
-	MustRegisterCmd(FilteredBlockAddedNtfnMethod, (*FilteredBlockAddedNtfn)(nil), flags)
-	MustRegisterCmd(TxAcceptedNtfnMethod, (*TxAcceptedNtfn)(nil), flags)
-	MustRegisterCmd(TxAcceptedVerboseNtfnMethod, (*TxAcceptedVerboseNtfn)(nil), flags)
-	MustRegisterCmd(RelevantTxAcceptedNtfnMethod, (*RelevantTxAcceptedNtfn)(nil), flags)
-	MustRegisterCmd(ChainChangedNtfnMethod, (*ChainChangedNtfn)(nil), flags)
+	MustRegisterCommand(FilteredBlockAddedNtfnMethod, (*FilteredBlockAddedNtfn)(nil), flags)
+	MustRegisterCommand(TxAcceptedNtfnMethod, (*TxAcceptedNtfn)(nil), flags)
+	MustRegisterCommand(TxAcceptedVerboseNtfnMethod, (*TxAcceptedVerboseNtfn)(nil), flags)
+	MustRegisterCommand(RelevantTxAcceptedNtfnMethod, (*RelevantTxAcceptedNtfn)(nil), flags)
+	MustRegisterCommand(ChainChangedNtfnMethod, (*ChainChangedNtfn)(nil), flags)
 }

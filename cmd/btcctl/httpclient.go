@@ -11,7 +11,7 @@ import (
 	"net/http"
 
 	"github.com/btcsuite/go-socks/socks"
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 )
 
 // newHTTPClient returns a new HTTP client that is configured according to the
@@ -116,7 +116,7 @@ func sendPostRequest(marshalledJSON []byte, cfg *ConfigFlags) ([]byte, error) {
 	}
 
 	// Unmarshal the response.
-	var resp kaspajson.Response
+	var resp jsonrpc.Response
 	if err := json.Unmarshal(respBytes, &resp); err != nil {
 		return nil, err
 	}

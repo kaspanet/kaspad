@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package kaspajson
+package jsonrpc
 
 import (
 	"encoding/json"
@@ -42,7 +42,7 @@ func NewRPCError(code RPCErrorCode, message string) *RPCError {
 
 // IsValidIDType checks that the ID field (which can go in any of the JSON-RPC
 // requests, responses, or notifications) is valid. JSON-RPC 1.0 allows any
-// valid JSON type. JSON-RPC 2.0 (which bitcoind follows for some parts) only
+// valid JSON type. JSON-RPC 2.0 (which kaspad follows for some parts) only
 // allows string, number, or null, so this function restricts the allowed types
 // to that list. This function is only provided in case the caller is manually
 // marshalling for some reason. The functions which accept an ID in this
@@ -79,7 +79,7 @@ type Request struct {
 // provided in case the caller wants to construct raw requests for some reason.
 //
 // Typically callers will instead want to create a registered concrete command
-// type with the NewCmd or New<Foo>Cmd functions and call the MarshalCmd
+// type with the NewCommand or New<Foo>Cmd functions and call the MarshalCommand
 // function with that command to generate the marshalled JSON-RPC request.
 func NewRequest(id interface{}, method string, params []interface{}) (*Request, error) {
 	if !IsValidIDType(id) {

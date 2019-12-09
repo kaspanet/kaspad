@@ -2,7 +2,7 @@ package rpc
 
 import (
 	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 )
 
 // handleGetNetworkHashPS implements the getNetworkHashPs command.
@@ -10,8 +10,8 @@ import (
 // Originally it relied on height, which no longer makes sense.
 func handleGetNetworkHashPS(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	if config.ActiveConfig().SubnetworkID != nil {
-		return nil, &kaspajson.RPCError{
-			Code:    kaspajson.ErrRPCInvalidRequest.Code,
+		return nil, &jsonrpc.RPCError{
+			Code:    jsonrpc.ErrRPCInvalidRequest.Code,
 			Message: "`getNetworkHashPS` is not supported on partial nodes.",
 		}
 	}

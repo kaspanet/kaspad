@@ -2,7 +2,7 @@ package rpc
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -11,9 +11,9 @@ import (
 //
 // NOTE: This extension is ported from github.com/decred/dcrd
 func handleRescanBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
-	cmd, ok := icmd.(*kaspajson.RescanBlocksCmd)
+	cmd, ok := icmd.(*jsonrpc.RescanBlocksCmd)
 	if !ok {
-		return nil, kaspajson.ErrRPCInternal
+		return nil, jsonrpc.ErrRPCInternal
 	}
 
 	// Load client's transaction filter. Must exist in order to continue.
@@ -21,8 +21,8 @@ func handleRescanBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	filter := wsc.filterData
 	wsc.Unlock()
 	if filter == nil {
-		return nil, &kaspajson.RPCError{
-			Code:    kaspajson.ErrRPCMisc,
+		return nil, &jsonrpc.RPCError{
+			Code:    jsonrpc.ErrRPCMisc,
 			Message: "Transaction filter must be loaded before rescanning",
 		}
 	}
@@ -37,7 +37,7 @@ func handleRescanBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 		blockHashes[i] = hash
 	}
 
-	discoveredData := make([]kaspajson.RescannedBlock, 0, len(blockHashes))
+	discoveredData := make([]jsonrpc.RescannedBlock, 0, len(blockHashes))
 
 	// Iterate over each block in the request and rescan. When a block
 	// contains relevant transactions, add it to the response.
@@ -47,14 +47,14 @@ func handleRescanBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	for i := range blockHashes {
 		block, err := bc.BlockByHash(blockHashes[i])
 		if err != nil {
-			return nil, &kaspajson.RPCError{
-				Code:    kaspajson.ErrRPCBlockNotFound,
+			return nil, &jsonrpc.RPCError{
+				Code:    jsonrpc.ErrRPCBlockNotFound,
 				Message: "Failed to fetch block: " + err.Error(),
 			}
 		}
 		if lastBlockHash != nil && !block.MsgBlock().Header.ParentHashes[0].IsEqual(lastBlockHash) { // TODO: (Stas) This is likely wrong. Modified to satisfy compilation.
-			return nil, &kaspajson.RPCError{
-				Code: kaspajson.ErrRPCInvalidParameter,
+			return nil, &jsonrpc.RPCError{
+				Code: jsonrpc.ErrRPCInvalidParameter,
 				Message: fmt.Sprintf("Block %s is not a child of %s",
 					blockHashes[i], lastBlockHash),
 			}
@@ -63,7 +63,7 @@ func handleRescanBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 
 		transactions := rescanBlockFilter(filter, block, params)
 		if len(transactions) != 0 {
-			discoveredData = append(discoveredData, kaspajson.RescannedBlock{
+			discoveredData = append(discoveredData, jsonrpc.RescannedBlock{
 				Hash:         cmd.BlockHashes[i],
 				Transactions: transactions,
 			})

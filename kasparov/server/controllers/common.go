@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"encoding/hex"
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 	"github.com/kaspanet/kaspad/kasparov/dbmodels"
 	"github.com/kaspanet/kaspad/kasparov/server/apimodels"
 )
@@ -59,7 +59,7 @@ func convertBlockModelToBlockResponse(block *dbmodels.Block) *apimodels.BlockRes
 		Mass:                 block.Mass,
 	}
 	if block.AcceptingBlock != nil {
-		blockRes.AcceptingBlockHash = kaspajson.String(block.AcceptingBlock.BlockHash)
+		blockRes.AcceptingBlockHash = jsonrpc.String(block.AcceptingBlock.BlockHash)
 	}
 	return blockRes
 }

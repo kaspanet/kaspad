@@ -1,10 +1,10 @@
 package rpc
 
-import "github.com/kaspanet/kaspad/kaspajson"
+import "github.com/kaspanet/kaspad/jsonrpc"
 
 // handleGetRawMempool implements the getRawMempool command.
 func handleGetRawMempool(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*kaspajson.GetRawMempoolCmd)
+	c := cmd.(*jsonrpc.GetRawMempoolCmd)
 	mp := s.cfg.TxMemPool
 
 	if c.Verbose != nil && *c.Verbose {

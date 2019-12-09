@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 /*
-Package kaspajson provides primitives for working with the bitcoin JSON-RPC API.
+Package jsonrpc provides primitives for working with the kaspa JSON-RPC API.
 
 Overview
 
@@ -42,11 +42,6 @@ object, except they have the id field set to null. Therefore, servers will
 ignore requests with the id field set to null, while clients can choose to
 consume or ignore them.
 
-Unfortunately, the original Bitcoin JSON-RPC API (and hence anything compatible
-with it) doesn't always follow the spec and will sometimes return an error
-string in the result field with a null error for certain commands. However,
-for the most part, the error field will be set as described on failure.
-
 Marshalling and Unmarshalling
 
 Based upon the discussion above, it should be easy to see how the types of this
@@ -58,13 +53,13 @@ package map into the required parts of the protocol
   - Response Objects (type Response)
     - Result (type <Foo>Result)
 
-To simplify the marshalling of the requests and responses, the MarshalCmd and
+To simplify the marshalling of the requests and responses, the MarshalCommand and
 MarshalResponse functions are provided. They return the raw bytes ready to be
 sent across the wire.
 
 Unmarshalling a received Request object is a two step process:
   1) Unmarshal the raw bytes into a Request struct instance via json.Unmarshal
-  2) Use UnmarshalCmd on the Result field of the unmarshalled Request to create
+  2) Use UnmarshalCommand on the Result field of the unmarshalled Request to create
      a concrete command or notification instance with all struct fields set
      accordingly
 
@@ -86,7 +81,7 @@ and preferred, method is to use one of the New<Foo>Cmd functions. This allows
 static compile-time checking to help ensure the parameters stay in sync with
 the struct definitions.
 
-The second approach is the NewCmd function which takes a method (command) name
+The second approach is the NewCommand function which takes a method (command) name
 and variable arguments. The function includes full checking to ensure the
 parameters are accurate according to provided method, however these checks are,
 obviously, run-time which means any mistakes won't be found until the code is
@@ -110,7 +105,7 @@ All registered commands are registered with flags that identify information such
 as whether the command applies to a kaspa rpc server or is a
 notification along with the method name to use. These flags can be obtained
 with the MethodUsageFlags flags, and the method can be obtained with the
-CmdMethod function.
+CommandMethod function.
 
 Help Generation
 
@@ -137,10 +132,10 @@ returned from the various functions available in this package. They identify
 issues such as unsupported field types, attempts to register malformed commands,
 and attempting to create a new command with an improper number of parameters.
 The specific reason for the error can be detected by type asserting it to a
-*kaspajson.Error and accessing the ErrorCode field.
+*jsonrpc.Error and accessing the ErrorCode field.
 
 The second category of errors (type RPCError), on the other hand, are useful for
 returning errors to RPC clients. Consequently, they are used in the previously
 described Response type.
 */
-package kaspajson
+package jsonrpc

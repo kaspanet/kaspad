@@ -3,13 +3,13 @@ package rpc
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // handleGetTopHeaders implements the getTopHeaders command.
 func handleGetTopHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*kaspajson.GetTopHeadersCmd)
+	c := cmd.(*jsonrpc.GetTopHeadersCmd)
 
 	var startHash *daghash.Hash
 	if c.StartHash != nil {

@@ -1,20 +1,20 @@
 package rpc
 
 import (
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // handleGetCFilterHeader implements the getCFilterHeader command.
 func handleGetCFilterHeader(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	if s.cfg.CfIndex == nil {
-		return nil, &kaspajson.RPCError{
-			Code:    kaspajson.ErrRPCNoCFIndex,
+		return nil, &jsonrpc.RPCError{
+			Code:    jsonrpc.ErrRPCNoCFIndex,
 			Message: "The CF index must be enabled for this command",
 		}
 	}
 
-	c := cmd.(*kaspajson.GetCFilterHeaderCmd)
+	c := cmd.(*jsonrpc.GetCFilterHeaderCmd)
 	hash, err := daghash.NewHashFromStr(c.Hash)
 	if err != nil {
 		return nil, rpcDecodeHexError(c.Hash)
@@ -26,8 +26,8 @@ func handleGetCFilterHeader(s *Server, cmd interface{}, closeChan <-chan struct{
 	} else {
 		log.Debugf("Could not find header of committed filter for %s: %s",
 			hash, err)
-		return nil, &kaspajson.RPCError{
-			Code:    kaspajson.ErrRPCBlockNotFound,
+		return nil, &jsonrpc.RPCError{
+			Code:    jsonrpc.ErrRPCBlockNotFound,
 			Message: "Block not found",
 		}
 	}

@@ -3,18 +3,18 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package kaspajson_test
+package jsonrpc_test
 
 import (
 	"encoding/json"
 	"testing"
 
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 )
 
-// TestDAGSvrWsResults ensures any results that have custom marshalling
-// work as inteded.
-func TestDAGSvrWsResults(t *testing.T) {
+// TestRPCServerWebsocketResults ensures any results that have custom marshalling
+// work as intended.
+func TestRPCServerWebsocketResults(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -24,7 +24,7 @@ func TestDAGSvrWsResults(t *testing.T) {
 	}{
 		{
 			name: "RescannedBlock",
-			result: &kaspajson.RescannedBlock{
+			result: &jsonrpc.RescannedBlock{
 				Hash:         "blockhash",
 				Transactions: []string{"serializedtx"},
 			},

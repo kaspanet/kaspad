@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 )
 
 // helpDescsEnUS defines the English descriptions used for the help strings.
@@ -676,21 +676,21 @@ var rpcResultTypes = map[string][]interface{}{
 	"addManualNode":         nil,
 	"createRawTransaction":  {(*string)(nil)},
 	"debugLevel":            {(*string)(nil), (*string)(nil)},
-	"decodeRawTransaction":  {(*kaspajson.TxRawDecodeResult)(nil)},
-	"decodeScript":          {(*kaspajson.DecodeScriptResult)(nil)},
+	"decodeRawTransaction":  {(*jsonrpc.TxRawDecodeResult)(nil)},
+	"decodeScript":          {(*jsonrpc.DecodeScriptResult)(nil)},
 	"generate":              {(*[]string)(nil)},
-	"getAllManualNodesInfo": {(*[]string)(nil), (*[]kaspajson.GetManualNodeInfoResult)(nil)},
-	"getSelectedTip":        {(*kaspajson.GetBlockVerboseResult)(nil)},
+	"getAllManualNodesInfo": {(*[]string)(nil), (*[]jsonrpc.GetManualNodeInfoResult)(nil)},
+	"getSelectedTip":        {(*jsonrpc.GetBlockVerboseResult)(nil)},
 	"getSelectedTipHash":    {(*string)(nil)},
-	"getBlock":              {(*string)(nil), (*kaspajson.GetBlockVerboseResult)(nil)},
-	"getBlocks":             {(*kaspajson.GetBlocksResult)(nil)},
+	"getBlock":              {(*string)(nil), (*jsonrpc.GetBlockVerboseResult)(nil)},
+	"getBlocks":             {(*jsonrpc.GetBlocksResult)(nil)},
 	"getBlockCount":         {(*int64)(nil)},
-	"getBlockHeader":        {(*string)(nil), (*kaspajson.GetBlockHeaderVerboseResult)(nil)},
-	"getBlockTemplate":      {(*kaspajson.GetBlockTemplateResult)(nil), (*string)(nil), nil},
-	"getBlockDagInfo":       {(*kaspajson.GetBlockDAGInfoResult)(nil)},
+	"getBlockHeader":        {(*string)(nil), (*jsonrpc.GetBlockHeaderVerboseResult)(nil)},
+	"getBlockTemplate":      {(*jsonrpc.GetBlockTemplateResult)(nil), (*string)(nil), nil},
+	"getBlockDagInfo":       {(*jsonrpc.GetBlockDAGInfoResult)(nil)},
 	"getCFilter":            {(*string)(nil)},
 	"getCFilterHeader":      {(*string)(nil)},
-	"getChainFromBlock":     {(*kaspajson.GetChainFromBlockResult)(nil)},
+	"getChainFromBlock":     {(*jsonrpc.GetChainFromBlockResult)(nil)},
 	"getConnectionCount":    {(*int32)(nil)},
 	"getCurrentNet":         {(*uint32)(nil)},
 	"getDifficulty":         {(*float64)(nil)},
@@ -698,40 +698,40 @@ var rpcResultTypes = map[string][]interface{}{
 	"getHashesPerSec":       {(*float64)(nil)},
 	"getTopHeaders":         {(*[]string)(nil)},
 	"getHeaders":            {(*[]string)(nil)},
-	"getInfo":               {(*kaspajson.InfoDAGResult)(nil)},
-	"getManualNodeInfo":     {(*string)(nil), (*kaspajson.GetManualNodeInfoResult)(nil)},
-	"getMempoolInfo":        {(*kaspajson.GetMempoolInfoResult)(nil)},
-	"getMiningInfo":         {(*kaspajson.GetMiningInfoResult)(nil)},
-	"getNetTotals":          {(*kaspajson.GetNetTotalsResult)(nil)},
+	"getInfo":               {(*jsonrpc.InfoDAGResult)(nil)},
+	"getManualNodeInfo":     {(*string)(nil), (*jsonrpc.GetManualNodeInfoResult)(nil)},
+	"getMempoolInfo":        {(*jsonrpc.GetMempoolInfoResult)(nil)},
+	"getMiningInfo":         {(*jsonrpc.GetMiningInfoResult)(nil)},
+	"getNetTotals":          {(*jsonrpc.GetNetTotalsResult)(nil)},
 	"getNetworkHashPs":      {(*int64)(nil)},
-	"getPeerInfo":           {(*[]kaspajson.GetPeerInfoResult)(nil)},
-	"getRawMempool":         {(*[]string)(nil), (*kaspajson.GetRawMempoolVerboseResult)(nil)},
-	"getRawTransaction":     {(*string)(nil), (*kaspajson.TxRawResult)(nil)},
-	"getSubnetwork":         {(*kaspajson.GetSubnetworkResult)(nil)},
-	"getTxOut":              {(*kaspajson.GetTxOutResult)(nil)},
+	"getPeerInfo":           {(*[]jsonrpc.GetPeerInfoResult)(nil)},
+	"getRawMempool":         {(*[]string)(nil), (*jsonrpc.GetRawMempoolVerboseResult)(nil)},
+	"getRawTransaction":     {(*string)(nil), (*jsonrpc.TxRawResult)(nil)},
+	"getSubnetwork":         {(*jsonrpc.GetSubnetworkResult)(nil)},
+	"getTxOut":              {(*jsonrpc.GetTxOutResult)(nil)},
 	"node":                  nil,
 	"help":                  {(*string)(nil), (*string)(nil)},
 	"ping":                  nil,
 	"removeManualNode":      nil,
-	"searchRawTransactions": {(*string)(nil), (*[]kaspajson.SearchRawTransactionsResult)(nil)},
+	"searchRawTransactions": {(*string)(nil), (*[]jsonrpc.SearchRawTransactionsResult)(nil)},
 	"sendRawTransaction":    {(*string)(nil)},
 	"setGenerate":           nil,
 	"stop":                  {(*string)(nil)},
 	"submitBlock":           {nil, (*string)(nil)},
 	"uptime":                {(*int64)(nil)},
-	"validateAddress":       {(*kaspajson.ValidateAddressResult)(nil)},
-	"version":               {(*map[string]kaspajson.VersionResult)(nil)},
+	"validateAddress":       {(*jsonrpc.ValidateAddressResult)(nil)},
+	"version":               {(*map[string]jsonrpc.VersionResult)(nil)},
 
 	// Websocket commands.
 	"loadTxFilter":              nil,
-	"session":                   {(*kaspajson.SessionResult)(nil)},
+	"session":                   {(*jsonrpc.SessionResult)(nil)},
 	"notifyBlocks":              nil,
 	"stopNotifyBlocks":          nil,
 	"notifyChainChanges":        nil,
 	"stopNotifyChainChanges":    nil,
 	"notifyNewTransactions":     nil,
 	"stopNotifyNewTransactions": nil,
-	"rescanBlocks":              {(*[]kaspajson.RescannedBlock)(nil)},
+	"rescanBlocks":              {(*[]jsonrpc.RescannedBlock)(nil)},
 }
 
 // helpCacher provides a concurrent safe type that provides help and usage for
@@ -762,7 +762,7 @@ func (c *helpCacher) rpcMethodHelp(method string) (string, error) {
 	}
 
 	// Generate, cache, and return the help.
-	help, err := kaspajson.GenerateHelp(method, helpDescsEnUS, resultTypes...)
+	help, err := jsonrpc.GenerateHelp(method, helpDescsEnUS, resultTypes...)
 	if err != nil {
 		return "", err
 	}
@@ -785,7 +785,7 @@ func (c *helpCacher) rpcUsage(includeWebsockets bool) (string, error) {
 	// Generate a list of one-line usage for every command.
 	usageTexts := make([]string, 0, len(rpcHandlers))
 	for k := range rpcHandlers {
-		usage, err := kaspajson.MethodUsageText(k)
+		usage, err := jsonrpc.MethodUsageText(k)
 		if err != nil {
 			return "", err
 		}
@@ -795,7 +795,7 @@ func (c *helpCacher) rpcUsage(includeWebsockets bool) (string, error) {
 	// Include websockets commands if requested.
 	if includeWebsockets {
 		for k := range wsHandlers {
-			usage, err := kaspajson.MethodUsageText(k)
+			usage, err := jsonrpc.MethodUsageText(k)
 			if err != nil {
 				return "", err
 			}

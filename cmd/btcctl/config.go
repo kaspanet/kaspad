@@ -16,7 +16,7 @@ import (
 	"strings"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 	"github.com/kaspanet/kaspad/util"
 )
 
@@ -24,7 +24,7 @@ const (
 	// unusableFlags are the command usage flags which this utility are not
 	// able to use. In particular it doesn't support websockets and
 	// consequently notifications.
-	unusableFlags = kaspajson.UFWebsocketOnly | kaspajson.UFNotification
+	unusableFlags = jsonrpc.UFWebsocketOnly | jsonrpc.UFNotification
 )
 
 var (
@@ -50,10 +50,10 @@ func listCommands() {
 	)
 
 	// Get a list of registered commands and categorize and filter them.
-	cmdMethods := kaspajson.RegisteredCmdMethods()
+	cmdMethods := jsonrpc.RegisteredCmdMethods()
 	categorized := make([][]string, numCategories)
 	for _, method := range cmdMethods {
-		flags, err := kaspajson.MethodUsageFlags(method)
+		flags, err := jsonrpc.MethodUsageFlags(method)
 		if err != nil {
 			// This should never happen since the method was just
 			// returned from the package, but be safe.
@@ -65,7 +65,7 @@ func listCommands() {
 			continue
 		}
 
-		usage, err := kaspajson.MethodUsageText(method)
+		usage, err := jsonrpc.MethodUsageText(method)
 		if err != nil {
 			// This should never happen since the method was just
 			// returned from the package, but be safe.

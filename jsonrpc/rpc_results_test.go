@@ -2,19 +2,19 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package kaspajson_test
+package jsonrpc_test
 
 import (
 	"encoding/json"
 	"testing"
 
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 )
 
-// TestDAGSvrCustomResults ensures any results that have custom marshalling
-// work as inteded.
+// TestRPCServerCustomResults ensures any results that have custom marshalling
+// work as intended.
 // and unmarshal code of results are as expected.
-func TestDAGSvrCustomResults(t *testing.T) {
+func TestRPCServerCustomResults(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -24,10 +24,10 @@ func TestDAGSvrCustomResults(t *testing.T) {
 	}{
 		{
 			name: "custom vin marshal without coinbase",
-			result: &kaspajson.Vin{
+			result: &jsonrpc.Vin{
 				TxID: "123",
 				Vout: 1,
-				ScriptSig: &kaspajson.ScriptSig{
+				ScriptSig: &jsonrpc.ScriptSig{
 					Asm: "0",
 					Hex: "00",
 				},
@@ -37,7 +37,7 @@ func TestDAGSvrCustomResults(t *testing.T) {
 		},
 		{
 			name: "custom vinprevout marshal with coinbase",
-			result: &kaspajson.VinPrevOut{
+			result: &jsonrpc.VinPrevOut{
 				Coinbase: "021234",
 				Sequence: 4294967295,
 			},
@@ -45,54 +45,24 @@ func TestDAGSvrCustomResults(t *testing.T) {
 		},
 		{
 			name: "custom vinprevout marshal without coinbase",
-			result: &kaspajson.VinPrevOut{
+			result: &jsonrpc.VinPrevOut{
 				TxID: "123",
 				Vout: 1,
-				ScriptSig: &kaspajson.ScriptSig{
+				ScriptSig: &jsonrpc.ScriptSig{
 					Asm: "0",
 					Hex: "00",
 				},
-				PrevOut: &kaspajson.PrevOut{
-					Address: kaspajson.String("addr1"),
+				PrevOut: &jsonrpc.PrevOut{
+					Address: jsonrpc.String("addr1"),
 					Value:   0,
 				},
 				Sequence: 4294967295,
 			},
 			expected: `{"txId":"123","vout":1,"scriptSig":{"asm":"0","hex":"00"},"prevOut":{"address":"addr1","value":0},"sequence":4294967295}`,
 		},
-	}
-
-	t.Logf("Running %d tests", len(tests))
-	for i, test := range tests {
-		marshalled, err := json.Marshal(test.result)
-		if err != nil {
-			t.Errorf("Test #%d (%s) unexpected error: %v", i,
-				test.name, err)
-			continue
-		}
-		if string(marshalled) != test.expected {
-			t.Errorf("Test #%d (%s) unexpected marhsalled data - "+
-				"got %s, want %s", i, test.name, marshalled,
-				test.expected)
-			continue
-		}
-	}
-}
-
-// TestBtcdExtCustomResults ensures any results that have custom marshalling
-// work as inteded.
-// and unmarshal code of results are as expected.
-func TestBtcdExtCustomResults(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name     string
-		result   interface{}
-		expected string
-	}{
 		{
 			name: "versionresult",
-			result: &kaspajson.VersionResult{
+			result: &jsonrpc.VersionResult{
 				VersionString: "1.0.0",
 				Major:         1,
 				Minor:         0,

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -466,7 +466,7 @@ func collectTransactions(client *txgenClient, gasLimitMap map[subnetworkid.Subne
 		results, err := client.SearchRawTransactionsVerbose(p2pkhAddress, skip, searchRawTransactionResultCount, true, true, nil)
 		if err != nil {
 			// Break when there are no further txs
-			if rpcError, ok := err.(*kaspajson.RPCError); ok && rpcError.Code == kaspajson.ErrRPCNoTxInfo {
+			if rpcError, ok := err.(*jsonrpc.RPCError); ok && rpcError.Code == jsonrpc.ErrRPCNoTxInfo {
 				break
 			}
 
@@ -513,7 +513,7 @@ func collectTransactions(client *txgenClient, gasLimitMap map[subnetworkid.Subne
 	return walletTxs, nil
 }
 
-func parseRawTransactionResult(result *kaspajson.SearchRawTransactionsResult) (*wire.MsgTx, error) {
+func parseRawTransactionResult(result *jsonrpc.SearchRawTransactionsResult) (*wire.MsgTx, error) {
 	txBytes, err := hex.DecodeString(result.Hex)
 	if err != nil {
 		return nil, errors.Errorf("failed to decode transaction bytes: %s", err)

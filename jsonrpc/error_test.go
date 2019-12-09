@@ -2,12 +2,12 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package kaspajson_test
+package jsonrpc_test
 
 import (
 	"testing"
 
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 )
 
 // TestErrorCodeStringer tests the stringized output for the ErrorCode type.
@@ -15,26 +15,26 @@ func TestErrorCodeStringer(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		in   kaspajson.ErrorCode
+		in   jsonrpc.ErrorCode
 		want string
 	}{
-		{kaspajson.ErrDuplicateMethod, "ErrDuplicateMethod"},
-		{kaspajson.ErrInvalidUsageFlags, "ErrInvalidUsageFlags"},
-		{kaspajson.ErrInvalidType, "ErrInvalidType"},
-		{kaspajson.ErrEmbeddedType, "ErrEmbeddedType"},
-		{kaspajson.ErrUnexportedField, "ErrUnexportedField"},
-		{kaspajson.ErrUnsupportedFieldType, "ErrUnsupportedFieldType"},
-		{kaspajson.ErrNonOptionalField, "ErrNonOptionalField"},
-		{kaspajson.ErrNonOptionalDefault, "ErrNonOptionalDefault"},
-		{kaspajson.ErrMismatchedDefault, "ErrMismatchedDefault"},
-		{kaspajson.ErrUnregisteredMethod, "ErrUnregisteredMethod"},
-		{kaspajson.ErrNumParams, "ErrNumParams"},
-		{kaspajson.ErrMissingDescription, "ErrMissingDescription"},
+		{jsonrpc.ErrDuplicateMethod, "ErrDuplicateMethod"},
+		{jsonrpc.ErrInvalidUsageFlags, "ErrInvalidUsageFlags"},
+		{jsonrpc.ErrInvalidType, "ErrInvalidType"},
+		{jsonrpc.ErrEmbeddedType, "ErrEmbeddedType"},
+		{jsonrpc.ErrUnexportedField, "ErrUnexportedField"},
+		{jsonrpc.ErrUnsupportedFieldType, "ErrUnsupportedFieldType"},
+		{jsonrpc.ErrNonOptionalField, "ErrNonOptionalField"},
+		{jsonrpc.ErrNonOptionalDefault, "ErrNonOptionalDefault"},
+		{jsonrpc.ErrMismatchedDefault, "ErrMismatchedDefault"},
+		{jsonrpc.ErrUnregisteredMethod, "ErrUnregisteredMethod"},
+		{jsonrpc.ErrNumParams, "ErrNumParams"},
+		{jsonrpc.ErrMissingDescription, "ErrMissingDescription"},
 		{0xffff, "Unknown ErrorCode (65535)"},
 	}
 
 	// Detect additional error codes that don't have the stringer added.
-	if len(tests)-1 != int(kaspajson.TstNumErrorCodes) {
+	if len(tests)-1 != int(jsonrpc.TstNumErrorCodes) {
 		t.Errorf("It appears an error code was added without adding an " +
 			"associated stringer test")
 	}
@@ -55,15 +55,15 @@ func TestError(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		in   kaspajson.Error
+		in   jsonrpc.Error
 		want string
 	}{
 		{
-			kaspajson.Error{Description: "some error"},
+			jsonrpc.Error{Description: "some error"},
 			"some error",
 		},
 		{
-			kaspajson.Error{Description: "human-readable error"},
+			jsonrpc.Error{Description: "human-readable error"},
 			"human-readable error",
 		},
 	}

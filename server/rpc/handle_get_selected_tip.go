@@ -3,13 +3,13 @@ package rpc
 import (
 	"encoding/hex"
 	"github.com/kaspanet/kaspad/database"
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 	"github.com/kaspanet/kaspad/util"
 )
 
 // handleGetSelectedTip implements the getSelectedTip command.
 func handleGetSelectedTip(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	getSelectedTipCmd := cmd.(*kaspajson.GetSelectedTipCmd)
+	getSelectedTipCmd := cmd.(*jsonrpc.GetSelectedTipCmd)
 	selectedTipHash := s.cfg.DAG.SelectedTipHash()
 
 	var blockBytes []byte
@@ -19,8 +19,8 @@ func handleGetSelectedTip(s *Server, cmd interface{}, closeChan <-chan struct{})
 		return err
 	})
 	if err != nil {
-		return nil, &kaspajson.RPCError{
-			Code:    kaspajson.ErrRPCBlockNotFound,
+		return nil, &jsonrpc.RPCError{
+			Code:    jsonrpc.ErrRPCBlockNotFound,
 			Message: "Block not found",
 		}
 	}

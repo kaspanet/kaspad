@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package kaspajson
+package jsonrpc
 
 import "encoding/json"
 
@@ -514,9 +514,6 @@ type GetBlocksResult struct {
 
 // VersionResult models objects included in the version response. In the actual
 // result, these objects are keyed by the program or API name.
-//
-// NOTE: This is a btcsuite extension ported from
-// github.com/decred/dcrd/dcrjson.
 type VersionResult struct {
 	VersionString string `json:"versionString"`
 	Major         uint32 `json:"major"`

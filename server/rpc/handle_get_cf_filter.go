@@ -2,20 +2,20 @@ package rpc
 
 import (
 	"encoding/hex"
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // handleGetCFilter implements the getCFilter command.
 func handleGetCFilter(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	if s.cfg.CfIndex == nil {
-		return nil, &kaspajson.RPCError{
-			Code:    kaspajson.ErrRPCNoCFIndex,
+		return nil, &jsonrpc.RPCError{
+			Code:    jsonrpc.ErrRPCNoCFIndex,
 			Message: "The CF index must be enabled for this command",
 		}
 	}
 
-	c := cmd.(*kaspajson.GetCFilterCmd)
+	c := cmd.(*jsonrpc.GetCFilterCmd)
 	hash, err := daghash.NewHashFromStr(c.Hash)
 	if err != nil {
 		return nil, rpcDecodeHexError(c.Hash)
@@ -25,8 +25,8 @@ func handleGetCFilter(s *Server, cmd interface{}, closeChan <-chan struct{}) (in
 	if err != nil {
 		log.Debugf("Could not find committed filter for %s: %s",
 			hash, err)
-		return nil, &kaspajson.RPCError{
-			Code:    kaspajson.ErrRPCBlockNotFound,
+		return nil, &jsonrpc.RPCError{
+			Code:    jsonrpc.ErrRPCBlockNotFound,
 			Message: "Block not found",
 		}
 	}

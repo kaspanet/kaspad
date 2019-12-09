@@ -2,13 +2,13 @@ package rpc
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 	"github.com/kaspanet/kaspad/logger"
 )
 
 // handleDebugLevel handles debugLevel commands.
 func handleDebugLevel(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*kaspajson.DebugLevelCmd)
+	c := cmd.(*jsonrpc.DebugLevelCmd)
 
 	// Special show command to list supported subsystems.
 	if c.LevelSpec == "show" {
@@ -18,8 +18,8 @@ func handleDebugLevel(s *Server, cmd interface{}, closeChan <-chan struct{}) (in
 
 	err := logger.ParseAndSetDebugLevels(c.LevelSpec)
 	if err != nil {
-		return nil, &kaspajson.RPCError{
-			Code:    kaspajson.ErrRPCInvalidParams.Code,
+		return nil, &jsonrpc.RPCError{
+			Code:    jsonrpc.ErrRPCInvalidParams.Code,
 			Message: err.Error(),
 		}
 	}

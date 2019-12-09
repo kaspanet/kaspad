@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 
 	"github.com/kaspanet/kaspad/database"
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
@@ -13,7 +13,7 @@ import (
 
 // handleGetRawTransaction implements the getRawTransaction command.
 func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*kaspajson.GetRawTransactionCmd)
+	c := cmd.(*jsonrpc.GetRawTransactionCmd)
 
 	// Convert the provided transaction hash hex to a Hash.
 	txID, err := daghash.NewTxIDFromStr(c.TxID)
@@ -34,8 +34,8 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 	mempoolTx, err := s.cfg.TxMemPool.FetchTransaction(txID)
 	if err != nil {
 		if s.cfg.TxIndex == nil {
-			return nil, &kaspajson.RPCError{
-				Code: kaspajson.ErrRPCNoTxInfo,
+			return nil, &jsonrpc.RPCError{
+				Code: jsonrpc.ErrRPCNoTxInfo,
 				Message: "The transaction index must be " +
 					"enabled to query the blockchain " +
 					"(specify --txindex)",

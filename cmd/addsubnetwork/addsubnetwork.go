@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 	"github.com/kaspanet/kaspad/rpcclient"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/pkg/errors"
@@ -68,7 +68,7 @@ func waitForSubnetworkToBecomeAccepted(client *rpcclient.Client, subnetworkID *s
 	for {
 		_, err := client.GetSubnetwork(subnetworkID.String())
 		if err != nil {
-			if rpcError, ok := err.(*kaspajson.RPCError); ok && rpcError.Code == kaspajson.ErrRPCSubnetworkNotFound {
+			if rpcError, ok := err.(*jsonrpc.RPCError); ok && rpcError.Code == jsonrpc.ErrRPCSubnetworkNotFound {
 				log.Infof("Subnetwork not found")
 
 				retries++

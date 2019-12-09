@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package kaspajson_test
+package jsonrpc_test
 
 import (
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 )
 
 // TestAssignField tests the assignField function handles supported combinations
@@ -168,7 +168,7 @@ func TestAssignField(t *testing.T) {
 	for i, test := range tests {
 		dst := reflect.New(reflect.TypeOf(test.dest)).Elem()
 		src := reflect.ValueOf(test.src)
-		err := kaspajson.TstAssignField(1, "testField", dst, src)
+		err := jsonrpc.TstAssignField(1, "testField", dst, src)
 		if err != nil {
 			t.Errorf("Test #%d (%s) unexpected error: %v", i,
 				test.name, err)
@@ -197,133 +197,133 @@ func TestAssignFieldErrors(t *testing.T) {
 		name string
 		dest interface{}
 		src  interface{}
-		err  kaspajson.Error
+		err  jsonrpc.Error
 	}{
 		{
 			name: "general incompatible int -> string",
 			dest: string(0),
 			src:  int(0),
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name: "overflow source int -> dest int",
 			dest: int8(0),
 			src:  int(128),
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name: "overflow source int -> dest uint",
 			dest: uint8(0),
 			src:  int(256),
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name: "int -> float",
 			dest: float32(0),
 			src:  int(256),
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name: "overflow source uint64 -> dest int64",
 			dest: int64(0),
 			src:  uint64(1 << 63),
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name: "overflow source uint -> dest int",
 			dest: int8(0),
 			src:  uint(128),
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name: "overflow source uint -> dest uint",
 			dest: uint8(0),
 			src:  uint(256),
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name: "uint -> float",
 			dest: float32(0),
 			src:  uint(256),
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name: "float -> int",
 			dest: int(0),
 			src:  float32(1.0),
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name: "overflow float64 -> float32",
 			dest: float32(0),
 			src:  float64(math.MaxFloat64),
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name: "invalid string -> bool",
 			dest: true,
 			src:  "foo",
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name: "invalid string -> int",
 			dest: int8(0),
 			src:  "foo",
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name: "overflow string -> int",
 			dest: int8(0),
 			src:  "128",
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name: "invalid string -> uint",
 			dest: uint8(0),
 			src:  "foo",
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name: "overflow string -> uint",
 			dest: uint8(0),
 			src:  "256",
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name: "invalid string -> float",
 			dest: float32(0),
 			src:  "foo",
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name: "overflow string -> float",
 			dest: float32(0),
 			src:  "1.7976931348623157e+308",
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name: "invalid string -> array",
 			dest: [3]int{},
 			src:  "foo",
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name: "invalid string -> slice",
 			dest: []int{},
 			src:  "foo",
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name: "invalid string -> struct",
 			dest: struct{ A int }{},
 			src:  "foo",
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name: "invalid string -> map",
 			dest: map[string]int{},
 			src:  "foo",
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 	}
 
@@ -331,13 +331,13 @@ func TestAssignFieldErrors(t *testing.T) {
 	for i, test := range tests {
 		dst := reflect.New(reflect.TypeOf(test.dest)).Elem()
 		src := reflect.ValueOf(test.src)
-		err := kaspajson.TstAssignField(1, "testField", dst, src)
+		err := jsonrpc.TstAssignField(1, "testField", dst, src)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
 			t.Errorf("Test #%d (%s) wrong error - got %T (%[3]v), "+
 				"want %T", i, test.name, err, test.err)
 			continue
 		}
-		gotErrorCode := err.(kaspajson.Error).ErrorCode
+		gotErrorCode := err.(jsonrpc.Error).ErrorCode
 		if gotErrorCode != test.err.ErrorCode {
 			t.Errorf("Test #%d (%s) mismatched error code - got "+
 				"%v (%v), want %v", i, test.name, gotErrorCode,
@@ -347,51 +347,51 @@ func TestAssignFieldErrors(t *testing.T) {
 	}
 }
 
-// TestNewCmdErrors ensures the error paths of NewCmd behave as expected.
-func TestNewCmdErrors(t *testing.T) {
+// TestNewCommandErrors ensures the error paths of NewCommand behave as expected.
+func TestNewCommandErrors(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name   string
 		method string
 		args   []interface{}
-		err    kaspajson.Error
+		err    jsonrpc.Error
 	}{
 		{
 			name:   "unregistered command",
 			method: "bogusCommand",
 			args:   []interface{}{},
-			err:    kaspajson.Error{ErrorCode: kaspajson.ErrUnregisteredMethod},
+			err:    jsonrpc.Error{ErrorCode: jsonrpc.ErrUnregisteredMethod},
 		},
 		{
 			name:   "too few parameters to command with required + optional",
 			method: "getBlock",
 			args:   []interface{}{},
-			err:    kaspajson.Error{ErrorCode: kaspajson.ErrNumParams},
+			err:    jsonrpc.Error{ErrorCode: jsonrpc.ErrNumParams},
 		},
 		{
 			name:   "too many parameters to command with no optional",
 			method: "getBlockCount",
 			args:   []interface{}{"123"},
-			err:    kaspajson.Error{ErrorCode: kaspajson.ErrNumParams},
+			err:    jsonrpc.Error{ErrorCode: jsonrpc.ErrNumParams},
 		},
 		{
 			name:   "incorrect parameter type",
 			method: "getBlock",
 			args:   []interface{}{1},
-			err:    kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err:    jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 	}
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		_, err := kaspajson.NewCmd(test.method, test.args...)
+		_, err := jsonrpc.NewCommand(test.method, test.args...)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
 			t.Errorf("Test #%d (%s) wrong error - got %T (%[2]v), "+
 				"want %T", i, test.name, err, test.err)
 			continue
 		}
-		gotErrorCode := err.(kaspajson.Error).ErrorCode
+		gotErrorCode := err.(jsonrpc.Error).ErrorCode
 		if gotErrorCode != test.err.ErrorCode {
 			t.Errorf("Test #%d (%s) mismatched error code - got "+
 				"%v (%v), want %v", i, test.name, gotErrorCode,
@@ -401,45 +401,45 @@ func TestNewCmdErrors(t *testing.T) {
 	}
 }
 
-// TestMarshalCmdErrors  tests the error paths of the MarshalCmd function.
-func TestMarshalCmdErrors(t *testing.T) {
+// TestMarshalCommandErrors  tests the error paths of the MarshalCommand function.
+func TestMarshalCommandErrors(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name string
 		id   interface{}
 		cmd  interface{}
-		err  kaspajson.Error
+		err  jsonrpc.Error
 	}{
 		{
 			name: "unregistered type",
 			id:   1,
 			cmd:  (*int)(nil),
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrUnregisteredMethod},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrUnregisteredMethod},
 		},
 		{
 			name: "nil instance of registered type",
 			id:   1,
-			cmd:  (*kaspajson.GetBlockCmd)(nil),
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			cmd:  (*jsonrpc.GetBlockCmd)(nil),
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name: "nil instance of registered type",
 			id:   []int{0, 1},
-			cmd:  &kaspajson.GetBlockCountCmd{},
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			cmd:  &jsonrpc.GetBlockCountCmd{},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 	}
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		_, err := kaspajson.MarshalCmd(test.id, test.cmd)
+		_, err := jsonrpc.MarshalCommand(test.id, test.cmd)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
 			t.Errorf("Test #%d (%s) wrong error - got %T (%[2]v), "+
 				"want %T", i, test.name, err, test.err)
 			continue
 		}
-		gotErrorCode := err.(kaspajson.Error).ErrorCode
+		gotErrorCode := err.(jsonrpc.Error).ErrorCode
 		if gotErrorCode != test.err.ErrorCode {
 			t.Errorf("Test #%d (%s) mismatched error code - got "+
 				"%v (%v), want %v", i, test.name, gotErrorCode,
@@ -449,66 +449,66 @@ func TestMarshalCmdErrors(t *testing.T) {
 	}
 }
 
-// TestUnmarshalCmdErrors  tests the error paths of the UnmarshalCmd function.
-func TestUnmarshalCmdErrors(t *testing.T) {
+// TestUnmarshalCommandErrors  tests the error paths of the UnmarshalCommand function.
+func TestUnmarshalCommandErrors(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name    string
-		request kaspajson.Request
-		err     kaspajson.Error
+		request jsonrpc.Request
+		err     jsonrpc.Error
 	}{
 		{
 			name: "unregistered type",
-			request: kaspajson.Request{
+			request: jsonrpc.Request{
 				JSONRPC: "1.0",
 				Method:  "bogusMethod",
 				Params:  nil,
 				ID:      nil,
 			},
-			err: kaspajson.Error{ErrorCode: kaspajson.ErrUnregisteredMethod},
+			err: jsonrpc.Error{ErrorCode: jsonrpc.ErrUnregisteredMethod},
 		},
 		{
 			name: "incorrect number of params",
-			request: kaspajson.Request{
+			request: jsonrpc.Request{
 				JSONRPC: "1.0",
 				Method:  "getBlockCount",
 				Params:  []json.RawMessage{[]byte(`"bogusparam"`)},
 				ID:      nil,
 			},
-			err: kaspajson.Error{ErrorCode: kaspajson.ErrNumParams},
+			err: jsonrpc.Error{ErrorCode: jsonrpc.ErrNumParams},
 		},
 		{
 			name: "invalid type for a parameter",
-			request: kaspajson.Request{
+			request: jsonrpc.Request{
 				JSONRPC: "1.0",
 				Method:  "getBlock",
 				Params:  []json.RawMessage{[]byte("1")},
 				ID:      nil,
 			},
-			err: kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err: jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name: "invalid JSON for a parameter",
-			request: kaspajson.Request{
+			request: jsonrpc.Request{
 				JSONRPC: "1.0",
 				Method:  "getBlock",
 				Params:  []json.RawMessage{[]byte(`"1`)},
 				ID:      nil,
 			},
-			err: kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err: jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 	}
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		_, err := kaspajson.UnmarshalCmd(&test.request)
+		_, err := jsonrpc.UnmarshalCommand(&test.request)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
 			t.Errorf("Test #%d (%s) wrong error - got %T (%[2]v), "+
 				"want %T", i, test.name, err, test.err)
 			continue
 		}
-		gotErrorCode := err.(kaspajson.Error).ErrorCode
+		gotErrorCode := err.(jsonrpc.Error).ErrorCode
 		if gotErrorCode != test.err.ErrorCode {
 			t.Errorf("Test #%d (%s) mismatched error code - got "+
 				"%v (%v), want %v", i, test.name, gotErrorCode,

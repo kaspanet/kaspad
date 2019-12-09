@@ -3,7 +3,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package kaspajson
+package jsonrpc
 
 // SessionResult models the data from the session command.
 type SessionResult struct {
@@ -12,9 +12,6 @@ type SessionResult struct {
 
 // RescannedBlock contains the hash and all discovered transactions of a single
 // rescanned block.
-//
-// NOTE: This is a btcsuite extension ported from
-// github.com/decred/dcrd/dcrjson.
 type RescannedBlock struct {
 	Hash         string   `json:"hash"`
 	Transactions []string `json:"transactions"`

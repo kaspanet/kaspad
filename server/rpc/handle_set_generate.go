@@ -2,19 +2,19 @@ package rpc
 
 import (
 	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 )
 
 // handleSetGenerate implements the setGenerate command.
 func handleSetGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	if config.ActiveConfig().SubnetworkID != nil {
-		return nil, &kaspajson.RPCError{
-			Code:    kaspajson.ErrRPCInvalidRequest.Code,
+		return nil, &jsonrpc.RPCError{
+			Code:    jsonrpc.ErrRPCInvalidRequest.Code,
 			Message: "`setGenerate` is not supported on partial nodes.",
 		}
 	}
 
-	c := cmd.(*kaspajson.SetGenerateCmd)
+	c := cmd.(*jsonrpc.SetGenerateCmd)
 
 	// Disable generation regardless of the provided generate flag if the
 	// maximum number of threads (goroutines for our purposes) is 0.
@@ -34,8 +34,8 @@ func handleSetGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (i
 		// Respond with an error if there are no addresses to pay the
 		// created blocks to.
 		if len(config.ActiveConfig().MiningAddrs) == 0 {
-			return nil, &kaspajson.RPCError{
-				Code: kaspajson.ErrRPCInternal.Code,
+			return nil, &jsonrpc.RPCError{
+				Code: jsonrpc.ErrRPCInternal.Code,
 				Message: "No payment addresses specified " +
 					"via --miningaddr",
 			}

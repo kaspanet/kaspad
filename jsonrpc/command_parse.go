@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package kaspajson
+package jsonrpc
 
 import (
 	"encoding/json"
@@ -31,11 +31,11 @@ func makeParams(rt reflect.Type, rv reflect.Value) []interface{} {
 	return params
 }
 
-// MarshalCmd marshals the passed command to a JSON-RPC request byte slice that
+// MarshalCommand marshals the passed command to a JSON-RPC request byte slice that
 // is suitable for transmission to an RPC server. The provided command type
 // must be a registered type. All commands provided by this package are
 // registered by default.
-func MarshalCmd(id interface{}, cmd interface{}) ([]byte, error) {
+func MarshalCommand(id interface{}, cmd interface{}) ([]byte, error) {
 	// Look up the cmd type and error out if not registered.
 	rt := reflect.TypeOf(cmd)
 	registerLock.RLock()
@@ -104,10 +104,10 @@ func populateDefaults(numParams int, info *methodInfo, rv reflect.Value) {
 	}
 }
 
-// UnmarshalCmd unmarshals a JSON-RPC request into a suitable concrete command
+// UnmarshalCommand unmarshals a JSON-RPC request into a suitable concrete command
 // so long as the method type contained within the marshalled request is
 // registered.
-func UnmarshalCmd(r *Request) (interface{}, error) {
+func UnmarshalCommand(r *Request) (interface{}, error) {
 	registerLock.RLock()
 	rtp, ok := methodToConcreteType[r.Method]
 	info := methodToInfo[r.Method]
@@ -228,7 +228,7 @@ func baseType(arg reflect.Type) (reflect.Type, int) {
 	return arg, numIndirects
 }
 
-// assignField is the main workhorse for the NewCmd function which handles
+// assignField is the main workhorse for the NewCommand function which handles
 // assigning the provided source value to the destination field. It supports
 // direct type assignments, indirection, conversion of numeric types, and
 // unmarshaling of strings into arrays, slices, structs, and maps via
@@ -482,7 +482,7 @@ func assignField(paramNum int, fieldName string, dest reflect.Value, src reflect
 	return nil
 }
 
-// NewCmd provides a generic mechanism to create a new command that can marshal
+// NewCommand provides a generic mechanism to create a new command that can marshal
 // to a JSON-RPC request while respecting the requirements of the provided
 // method. The method must have been registered with the package already along
 // with its type definition. All methods associated with the commands exported
@@ -508,7 +508,7 @@ func assignField(paramNum int, fieldName string, dest reflect.Value, src reflect
 //   - Conversion from string to arrays, slices, structs, and maps by treating
 //     the string as marshalled JSON and calling json.Unmarshal into the
 //     destination field
-func NewCmd(method string, args ...interface{}) (interface{}, error) {
+func NewCommand(method string, args ...interface{}) (interface{}, error) {
 	// Look up details about the provided method. Any methods that aren't
 	// registered are an error.
 	registerLock.RLock()

@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package kaspajson
+package jsonrpc
 
 // TstHighestUsageFlagBit makes the internal highestUsageFlagBit parameter
 // available to the test package.

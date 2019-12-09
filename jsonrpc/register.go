@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package kaspajson
+package jsonrpc
 
 import (
 	"encoding/json"
@@ -261,10 +261,10 @@ func RegisterCmd(method string, cmd interface{}, flags UsageFlag) error {
 	return nil
 }
 
-// MustRegisterCmd performs the same function as RegisterCmd except it panics
+// MustRegisterCommand performs the same function as RegisterCmd except it panics
 // if there is an error. This should only be called from package init
 // functions.
-func MustRegisterCmd(method string, cmd interface{}, flags UsageFlag) {
+func MustRegisterCommand(method string, cmd interface{}, flags UsageFlag) {
 	if err := RegisterCmd(method, cmd, flags); err != nil {
 		panic(fmt.Sprintf("failed to register type %q: %s\n", method,
 			err))

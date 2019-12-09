@@ -15,7 +15,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/httpserverutils"
-	"github.com/kaspanet/kaspad/kaspajson"
+	kasparpc "github.com/kaspanet/kaspad/jsonrpc"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -105,7 +105,7 @@ func syncBlocks(client *jsonrpc.Client) error {
 	}
 
 	var rawBlocks []string
-	var verboseBlocks []kaspajson.GetBlockVerboseResult
+	var verboseBlocks []kasparpc.GetBlockVerboseResult
 	for {
 		log.Debugf("Calling getBlocks with start hash %v", stringPointerToString(startHash))
 		blocksResult, err := client.GetBlocks(true, true, startHash)
@@ -209,7 +209,7 @@ func fetchBlock(client *jsonrpc.Client, blockHash *daghash.Hash) (
 
 // addBlocks inserts data in the given rawBlocks and verboseBlocks pairwise
 // into the database. See addBlock for further details.
-func addBlocks(client *jsonrpc.Client, rawBlocks []string, verboseBlocks []kaspajson.GetBlockVerboseResult) error {
+func addBlocks(client *jsonrpc.Client, rawBlocks []string, verboseBlocks []kasparpc.GetBlockVerboseResult) error {
 	for i, rawBlock := range rawBlocks {
 		err := addBlockAndMissingAncestors(client, &rawAndVerboseBlock{
 			rawBlock:     rawBlock,
@@ -239,7 +239,7 @@ func doesBlockExist(dbTx *gorm.DB, blockHash string) (bool, error) {
 // subnetworks, and addresses.
 // Note that if this function may take a nil dbTx, in which case it would start
 // a database transaction by itself and commit it before returning.
-func addBlock(client *jsonrpc.Client, rawBlock string, verboseBlock kaspajson.GetBlockVerboseResult) error {
+func addBlock(client *jsonrpc.Client, rawBlock string, verboseBlock kasparpc.GetBlockVerboseResult) error {
 	db, err := database.DB()
 	if err != nil {
 		return err
@@ -311,7 +311,7 @@ func addBlock(client *jsonrpc.Client, rawBlock string, verboseBlock kaspajson.Ge
 	return nil
 }
 
-func insertBlock(dbTx *gorm.DB, verboseBlock kaspajson.GetBlockVerboseResult) (*dbmodels.Block, error) {
+func insertBlock(dbTx *gorm.DB, verboseBlock kasparpc.GetBlockVerboseResult) (*dbmodels.Block, error) {
 	bits, err := strconv.ParseUint(verboseBlock.Bits, 16, 32)
 	if err != nil {
 		return nil, err
@@ -341,7 +341,7 @@ func insertBlock(dbTx *gorm.DB, verboseBlock kaspajson.GetBlockVerboseResult) (*
 	return &dbBlock, nil
 }
 
-func insertBlockParents(dbTx *gorm.DB, verboseBlock kaspajson.GetBlockVerboseResult, dbBlock *dbmodels.Block) error {
+func insertBlockParents(dbTx *gorm.DB, verboseBlock kasparpc.GetBlockVerboseResult, dbBlock *dbmodels.Block) error {
 	// Exit early if this is the genesis block
 	if len(verboseBlock.ParentHashes) == 0 {
 		return nil
@@ -404,7 +404,7 @@ func insertRawBlockData(dbTx *gorm.DB, rawBlock string, dbBlock *dbmodels.Block)
 	return nil
 }
 
-func insertSubnetwork(dbTx *gorm.DB, transaction *kaspajson.TxRawResult, client *jsonrpc.Client) (*dbmodels.Subnetwork, error) {
+func insertSubnetwork(dbTx *gorm.DB, transaction *kasparpc.TxRawResult, client *jsonrpc.Client) (*dbmodels.Subnetwork, error) {
 	var dbSubnetwork dbmodels.Subnetwork
 	dbResult := dbTx.
 		Where(&dbmodels.Subnetwork{SubnetworkID: transaction.Subnetwork}).
@@ -431,7 +431,7 @@ func insertSubnetwork(dbTx *gorm.DB, transaction *kaspajson.TxRawResult, client 
 	return &dbSubnetwork, nil
 }
 
-func insertTransaction(dbTx *gorm.DB, transaction *kaspajson.TxRawResult, dbSubnetwork *dbmodels.Subnetwork) (*dbmodels.Transaction, error) {
+func insertTransaction(dbTx *gorm.DB, transaction *kasparpc.TxRawResult, dbSubnetwork *dbmodels.Subnetwork) (*dbmodels.Transaction, error) {
 	var dbTransaction dbmodels.Transaction
 	dbResult := dbTx.
 		Where(&dbmodels.Transaction{TransactionID: transaction.TxID}).
@@ -468,7 +468,7 @@ func insertTransaction(dbTx *gorm.DB, transaction *kaspajson.TxRawResult, dbSubn
 	return &dbTransaction, nil
 }
 
-func calcTxMass(dbTx *gorm.DB, transaction *kaspajson.TxRawResult) (uint64, error) {
+func calcTxMass(dbTx *gorm.DB, transaction *kasparpc.TxRawResult) (uint64, error) {
 	msgTx, err := convertTxRawResultToMsgTx(transaction)
 	if err != nil {
 		return 0, err
@@ -502,7 +502,7 @@ func calcTxMass(dbTx *gorm.DB, transaction *kaspajson.TxRawResult) (uint64, erro
 	return blockdag.CalcTxMass(util.NewTx(msgTx), orderedPrevScriptPubKeys), nil
 }
 
-func convertTxRawResultToMsgTx(tx *kaspajson.TxRawResult) (*wire.MsgTx, error) {
+func convertTxRawResultToMsgTx(tx *kasparpc.TxRawResult) (*wire.MsgTx, error) {
 	txIns := make([]*wire.TxIn, len(tx.Vin))
 	for i, txIn := range tx.Vin {
 		prevTxID, err := daghash.NewTxIDFromStr(txIn.TxID)
@@ -571,7 +571,7 @@ func insertTransactionBlock(dbTx *gorm.DB, dbBlock *dbmodels.Block, dbTransactio
 	return nil
 }
 
-func insertTransactionInputs(dbTx *gorm.DB, transaction *kaspajson.TxRawResult, dbTransaction *dbmodels.Transaction) error {
+func insertTransactionInputs(dbTx *gorm.DB, transaction *kasparpc.TxRawResult, dbTransaction *dbmodels.Transaction) error {
 	isCoinbase, err := isTransactionCoinbase(transaction)
 	if err != nil {
 		return err
@@ -589,7 +589,7 @@ func insertTransactionInputs(dbTx *gorm.DB, transaction *kaspajson.TxRawResult, 
 	return nil
 }
 
-func isTransactionCoinbase(transaction *kaspajson.TxRawResult) (bool, error) {
+func isTransactionCoinbase(transaction *kasparpc.TxRawResult) (bool, error) {
 	subnetwork, err := subnetworkid.NewFromStr(transaction.Subnetwork)
 	if err != nil {
 		return false, err
@@ -597,7 +597,7 @@ func isTransactionCoinbase(transaction *kaspajson.TxRawResult) (bool, error) {
 	return subnetwork.IsEqual(subnetworkid.SubnetworkIDCoinbase), nil
 }
 
-func insertTransactionInput(dbTx *gorm.DB, dbTransaction *dbmodels.Transaction, input *kaspajson.Vin) error {
+func insertTransactionInput(dbTx *gorm.DB, dbTransaction *dbmodels.Transaction, input *kasparpc.Vin) error {
 	var dbPreviousTransactionOutput dbmodels.TransactionOutput
 	dbResult := dbTx.
 		Joins("LEFT JOIN `transactions` ON `transactions`.`id` = `transaction_outputs`.`transaction_id`").
@@ -642,7 +642,7 @@ func insertTransactionInput(dbTx *gorm.DB, dbTransaction *dbmodels.Transaction, 
 	return nil
 }
 
-func insertTransactionOutputs(dbTx *gorm.DB, transaction *kaspajson.TxRawResult, dbTransaction *dbmodels.Transaction) error {
+func insertTransactionOutputs(dbTx *gorm.DB, transaction *kasparpc.TxRawResult, dbTransaction *dbmodels.Transaction) error {
 	for _, output := range transaction.Vout {
 		scriptPubKey, err := hex.DecodeString(output.ScriptPubKey.Hex)
 		if err != nil {
@@ -689,7 +689,7 @@ func insertAddress(dbTx *gorm.DB, scriptPubKey []byte) (*dbmodels.Address, error
 }
 
 func insertTransactionOutput(dbTx *gorm.DB, dbTransaction *dbmodels.Transaction,
-	output *kaspajson.Vout, scriptPubKey []byte, dbAddress *dbmodels.Address) error {
+	output *kasparpc.Vout, scriptPubKey []byte, dbAddress *dbmodels.Address) error {
 	var dbTransactionOutputCount int
 	dbResult := dbTx.
 		Model(&dbmodels.TransactionOutput{}).
@@ -722,7 +722,7 @@ func insertTransactionOutput(dbTx *gorm.DB, dbTransaction *dbmodels.Transaction,
 // all addChainBlocks.
 // Note that if this function may take a nil dbTx, in which case it would start
 // a database transaction by itself and commit it before returning.
-func updateSelectedParentChain(removedChainHashes []string, addedChainBlocks []kaspajson.ChainBlock) error {
+func updateSelectedParentChain(removedChainHashes []string, addedChainBlocks []kasparpc.ChainBlock) error {
 	db, err := database.DB()
 	if err != nil {
 		return err
@@ -805,7 +805,7 @@ func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
 
 	dbResult = dbTx.
 		Model(&dbmodels.Block{}).
-		Where(&dbmodels.Block{AcceptingBlockID: kaspajson.Uint64(dbBlock.ID)}).
+		Where(&dbmodels.Block{AcceptingBlockID: kasparpc.Uint64(dbBlock.ID)}).
 		Updates(map[string]interface{}{"AcceptingBlockID": nil})
 
 	dbErrors = dbResult.GetErrors()
@@ -829,7 +829,7 @@ func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
 // * All its Transactions are set AcceptingBlockID = addedBlock
 // * The block is set IsChainBlock = true
 // This function will return an error if any of the above are in an unexpected state
-func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *kaspajson.ChainBlock) error {
+func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *kasparpc.ChainBlock) error {
 	var dbAddedBlock dbmodels.Block
 	dbResult := dbTx.
 		Where(&dbmodels.Block{BlockHash: addedBlock.Hash}).
@@ -902,7 +902,7 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *kaspajson.ChainBlock) err
 			}
 		}
 
-		dbAccepedBlock.AcceptingBlockID = kaspajson.Uint64(dbAddedBlock.ID)
+		dbAccepedBlock.AcceptingBlockID = kasparpc.Uint64(dbAddedBlock.ID)
 		dbResult = dbTx.Save(&dbAccepedBlock)
 		dbErrors = dbResult.GetErrors()
 		if httpserverutils.HasDBError(dbErrors) {
@@ -922,7 +922,7 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *kaspajson.ChainBlock) err
 
 type rawAndVerboseBlock struct {
 	rawBlock     string
-	verboseBlock *kaspajson.GetBlockVerboseResult
+	verboseBlock *kasparpc.GetBlockVerboseResult
 }
 
 func (r *rawAndVerboseBlock) String() string {
@@ -1131,27 +1131,27 @@ func canHandleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) (bool, erro
 }
 
 func convertChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) (
-	removedHashes []string, addedBlocks []kaspajson.ChainBlock) {
+	removedHashes []string, addedBlocks []kasparpc.ChainBlock) {
 
 	removedHashes = make([]string, len(chainChanged.RemovedChainBlockHashes))
 	for i, hash := range chainChanged.RemovedChainBlockHashes {
 		removedHashes[i] = hash.String()
 	}
 
-	addedBlocks = make([]kaspajson.ChainBlock, len(chainChanged.AddedChainBlocks))
+	addedBlocks = make([]kasparpc.ChainBlock, len(chainChanged.AddedChainBlocks))
 	for i, addedBlock := range chainChanged.AddedChainBlocks {
-		acceptedBlocks := make([]kaspajson.AcceptedBlock, len(addedBlock.AcceptedBlocks))
+		acceptedBlocks := make([]kasparpc.AcceptedBlock, len(addedBlock.AcceptedBlocks))
 		for j, acceptedBlock := range addedBlock.AcceptedBlocks {
 			acceptedTxIDs := make([]string, len(acceptedBlock.AcceptedTxIDs))
 			for k, acceptedTxID := range acceptedBlock.AcceptedTxIDs {
 				acceptedTxIDs[k] = acceptedTxID.String()
 			}
-			acceptedBlocks[j] = kaspajson.AcceptedBlock{
+			acceptedBlocks[j] = kasparpc.AcceptedBlock{
 				Hash:          acceptedBlock.Hash.String(),
 				AcceptedTxIDs: acceptedTxIDs,
 			}
 		}
-		addedBlocks[i] = kaspajson.ChainBlock{
+		addedBlocks[i] = kasparpc.ChainBlock{
 			Hash:           addedBlock.Hash.String(),
 			AcceptedBlocks: acceptedBlocks,
 		}

@@ -2,14 +2,14 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package kaspajson_test
+package jsonrpc_test
 
 import (
 	"encoding/json"
 	"reflect"
 	"testing"
 
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 )
 
 // TestIsValidIDType ensures the IsValidIDType function behaves as expected.
@@ -44,7 +44,7 @@ func TestIsValidIDType(t *testing.T) {
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		if kaspajson.IsValidIDType(test.id) != test.isValid {
+		if jsonrpc.IsValidIDType(test.id) != test.isValid {
 			t.Errorf("Test #%d (%s) valid mismatch - got %v, "+
 				"want %v", i, test.name, !test.isValid,
 				test.isValid)
@@ -61,7 +61,7 @@ func TestMarshalResponse(t *testing.T) {
 	tests := []struct {
 		name     string
 		result   interface{}
-		jsonErr  *kaspajson.RPCError
+		jsonErr  *jsonrpc.RPCError
 		expected []byte
 	}{
 		{
@@ -73,8 +73,8 @@ func TestMarshalResponse(t *testing.T) {
 		{
 			name:   "result with error",
 			result: nil,
-			jsonErr: func() *kaspajson.RPCError {
-				return kaspajson.NewRPCError(kaspajson.ErrRPCBlockNotFound, "123 not found")
+			jsonErr: func() *jsonrpc.RPCError {
+				return jsonrpc.NewRPCError(jsonrpc.ErrRPCBlockNotFound, "123 not found")
 			}(),
 			expected: []byte(`{"result":null,"error":{"code":-5,"message":"123 not found"},"id":1}`),
 		},
@@ -83,7 +83,7 @@ func TestMarshalResponse(t *testing.T) {
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
 		_, _ = i, test
-		marshalled, err := kaspajson.MarshalResponse(testID, test.result, test.jsonErr)
+		marshalled, err := jsonrpc.MarshalResponse(testID, test.result, test.jsonErr)
 		if err != nil {
 			t.Errorf("Test #%d (%s) unexpected error: %v", i,
 				test.name, err)
@@ -104,7 +104,7 @@ func TestMiscErrors(t *testing.T) {
 
 	// Force an error in NewRequest by giving it a parameter type that is
 	// not supported.
-	_, err := kaspajson.NewRequest(nil, "test", []interface{}{make(chan int)})
+	_, err := jsonrpc.NewRequest(nil, "test", []interface{}{make(chan int)})
 	if err == nil {
 		t.Error("NewRequest: did not receive error")
 		return
@@ -112,9 +112,9 @@ func TestMiscErrors(t *testing.T) {
 
 	// Force an error in MarshalResponse by giving it an id type that is not
 	// supported.
-	wantErr := kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType}
-	_, err = kaspajson.MarshalResponse(make(chan int), nil, nil)
-	if jerr, ok := err.(kaspajson.Error); !ok || jerr.ErrorCode != wantErr.ErrorCode {
+	wantErr := jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType}
+	_, err = jsonrpc.MarshalResponse(make(chan int), nil, nil)
+	if jerr, ok := err.(jsonrpc.Error); !ok || jerr.ErrorCode != wantErr.ErrorCode {
 		t.Errorf("MarshalResult: did not receive expected error - got "+
 			"%v (%[1]T), want %v (%[2]T)", err, wantErr)
 		return
@@ -122,7 +122,7 @@ func TestMiscErrors(t *testing.T) {
 
 	// Force an error in MarshalResponse by giving it a result type that
 	// can't be marshalled.
-	_, err = kaspajson.MarshalResponse(1, make(chan int), nil)
+	_, err = jsonrpc.MarshalResponse(1, make(chan int), nil)
 	if _, ok := err.(*json.UnsupportedTypeError); !ok {
 		wantErr := &json.UnsupportedTypeError{}
 		t.Errorf("MarshalResult: did not receive expected error - got "+
@@ -136,15 +136,15 @@ func TestRPCError(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		in   *kaspajson.RPCError
+		in   *jsonrpc.RPCError
 		want string
 	}{
 		{
-			kaspajson.ErrRPCInvalidRequest,
+			jsonrpc.ErrRPCInvalidRequest,
 			"-32600: Invalid request",
 		},
 		{
-			kaspajson.ErrRPCMethodNotFound,
+			jsonrpc.ErrRPCMethodNotFound,
 			"-32601: Method not found",
 		},
 	}

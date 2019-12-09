@@ -1,6 +1,6 @@
 package rpc
 
-import "github.com/kaspanet/kaspad/kaspajson"
+import "github.com/kaspanet/kaspad/jsonrpc"
 
 // API version constants
 const (
@@ -14,7 +14,7 @@ const (
 //
 // NOTE: This is a btcsuite extension ported from github.com/decred/dcrd.
 func handleVersion(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	result := map[string]kaspajson.VersionResult{
+	result := map[string]jsonrpc.VersionResult{
 		"btcdjsonrpcapi": {
 			VersionString: jsonrpcSemverString,
 			Major:         jsonrpcSemverMajor,

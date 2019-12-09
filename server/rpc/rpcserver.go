@@ -29,7 +29,7 @@ import (
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/database"
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/mining"
 	"github.com/kaspanet/kaspad/mining/cpuminer"
@@ -373,7 +373,7 @@ type parsedRPCCmd struct {
 	id     interface{}
 	method string
 	cmd    interface{}
-	err    *kaspajson.RPCError
+	err    *jsonrpc.RPCError
 }
 
 // standardCmdResult checks that a parsed command is a standard Bitcoin JSON-RPC
@@ -390,7 +390,7 @@ func (s *Server) standardCmdResult(cmd *parsedRPCCmd, closeChan <-chan struct{})
 		handler = handleUnimplemented
 		goto handled
 	}
-	return nil, kaspajson.ErrRPCMethodNotFound
+	return nil, jsonrpc.ErrRPCMethodNotFound
 handled:
 
 	return handler(s, cmd.cmd, closeChan)
@@ -400,26 +400,26 @@ handled:
 // err field of the returned parsedRPCCmd struct will contain an RPC error that
 // is suitable for use in replies if the command is invalid in some way such as
 // an unregistered command or invalid parameters.
-func parseCmd(request *kaspajson.Request) *parsedRPCCmd {
+func parseCmd(request *jsonrpc.Request) *parsedRPCCmd {
 	var parsedCmd parsedRPCCmd
 	parsedCmd.id = request.ID
 	parsedCmd.method = request.Method
 
-	cmd, err := kaspajson.UnmarshalCmd(request)
+	cmd, err := jsonrpc.UnmarshalCommand(request)
 	if err != nil {
 		// When the error is because the method is not registered,
 		// produce a method not found RPC error.
-		if jerr, ok := err.(kaspajson.Error); ok &&
-			jerr.ErrorCode == kaspajson.ErrUnregisteredMethod {
+		if jerr, ok := err.(jsonrpc.Error); ok &&
+			jerr.ErrorCode == jsonrpc.ErrUnregisteredMethod {
 
-			parsedCmd.err = kaspajson.ErrRPCMethodNotFound
+			parsedCmd.err = jsonrpc.ErrRPCMethodNotFound
 			return &parsedCmd
 		}
 
 		// Otherwise, some type of invalid parameters is the
 		// cause, so produce the equivalent RPC error.
-		parsedCmd.err = kaspajson.NewRPCError(
-			kaspajson.ErrRPCInvalidParams.Code, err.Error())
+		parsedCmd.err = jsonrpc.NewRPCError(
+			jsonrpc.ErrRPCInvalidParams.Code, err.Error())
 		return &parsedCmd
 	}
 
@@ -429,18 +429,18 @@ func parseCmd(request *kaspajson.Request) *parsedRPCCmd {
 
 // createMarshalledReply returns a new marshalled JSON-RPC response given the
 // passed parameters. It will automatically convert errors that are not of
-// the type *kaspajson.RPCError to the appropriate type as needed.
+// the type *jsonrpc.RPCError to the appropriate type as needed.
 func createMarshalledReply(id, result interface{}, replyErr error) ([]byte, error) {
-	var jsonErr *kaspajson.RPCError
+	var jsonErr *jsonrpc.RPCError
 	if replyErr != nil {
-		if jErr, ok := replyErr.(*kaspajson.RPCError); ok {
+		if jErr, ok := replyErr.(*jsonrpc.RPCError); ok {
 			jsonErr = jErr
 		} else {
 			jsonErr = internalRPCError(replyErr.Error(), "")
 		}
 	}
 
-	return kaspajson.MarshalResponse(id, result, jsonErr)
+	return jsonrpc.MarshalResponse(id, result, jsonErr)
 }
 
 // jsonRPCRead handles reading and responding to RPC messages.
@@ -488,10 +488,10 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 	var responseID interface{}
 	var jsonErr error
 	var result interface{}
-	var request kaspajson.Request
+	var request jsonrpc.Request
 	if err := json.Unmarshal(body, &request); err != nil {
-		jsonErr = &kaspajson.RPCError{
-			Code:    kaspajson.ErrRPCParse.Code,
+		jsonErr = &jsonrpc.RPCError{
+			Code:    jsonrpc.ErrRPCParse.Code,
 			Message: "Failed to parse request: " + err.Error(),
 		}
 	}
@@ -535,8 +535,8 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 		// Check if the user is limited and set error if method unauthorized
 		if !isAdmin {
 			if _, ok := rpcLimited[request.Method]; !ok {
-				jsonErr = &kaspajson.RPCError{
-					Code:    kaspajson.ErrRPCInvalidParams.Code,
+				jsonErr = &jsonrpc.RPCError{
+					Code:    jsonrpc.ErrRPCInvalidParams.Code,
 					Message: "limited user not authorized for this method",
 				}
 			}

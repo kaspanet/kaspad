@@ -5,7 +5,7 @@
 // NOTE: This file is intended to house the RPC commands that are supported by
 // a kaspa rpc server.
 
-package kaspajson
+package jsonrpc
 
 import (
 	"encoding/json"
@@ -52,14 +52,14 @@ type TransactionInput struct {
 // CreateRawTransactionCmd defines the createRawTransaction JSON-RPC command.
 type CreateRawTransactionCmd struct {
 	Inputs   []TransactionInput
-	Amounts  map[string]float64 `jsonrpcusage:"{\"address\":amount,...}"` // In BTC
+	Amounts  map[string]float64 `jsonrpcusage:"{\"address\":amount,...}"` // In KAS
 	LockTime *uint64
 }
 
 // NewCreateRawTransactionCmd returns a new instance which can be used to issue
 // a createRawTransaction JSON-RPC command.
 //
-// Amounts are in BTC.
+// Amounts are in KAS.
 func NewCreateRawTransactionCmd(inputs []TransactionInput, amounts map[string]float64,
 	lockTime *uint64) *CreateRawTransactionCmd {
 
@@ -205,9 +205,8 @@ func NewGetBlockHeaderCmd(hash string, verbose *bool) *GetBlockHeaderCmd {
 	}
 }
 
-// TemplateRequest is a request object as defined in BIP22
-// (https://en.bitcoin.it/wiki/BIP_0022), it is optionally provided as an
-// pointer argument to GetBlockTemplateCmd.
+// TemplateRequest is a request object as defined in BIP22. It is optionally
+// provided as an pointer argument to GetBlockTemplateCmd.
 type TemplateRequest struct {
 	Mode         string   `json:"mode,omitempty"`
 	Capabilities []string `json:"capabilities,omitempty"`
@@ -486,9 +485,6 @@ func NewGetRawMempoolCmd(verbose *bool) *GetRawMempoolCmd {
 }
 
 // GetRawTransactionCmd defines the getRawTransaction JSON-RPC command.
-//
-// NOTE: This field is an int versus a bool to remain compatible with Bitcoin
-// Core even though it really should be a bool.
 type GetRawTransactionCmd struct {
 	TxID    string
 	Verbose *int `jsonrpcdefault:"0"`
@@ -767,15 +763,13 @@ func NewNodeCmd(subCmd NodeSubCmd, target string, connectSubCmd *string) *NodeCm
 	}
 }
 
-// DebugLevelCmd defines the debugLevel JSON-RPC command. This command is not a
-// standard Bitcoin command. It is an extension for kaspad.
+// DebugLevelCmd defines the debugLevel JSON-RPC command.
 type DebugLevelCmd struct {
 	LevelSpec string
 }
 
 // NewDebugLevelCmd returns a new DebugLevelCmd which can be used to issue a
-// debugLevel JSON-RPC command. This command is not a standard Bitcoin command.
-// It is an extension for kaspad.
+// debugLevel JSON-RPC command.
 func NewDebugLevelCmd(levelSpec string) *DebugLevelCmd {
 	return &DebugLevelCmd{
 		LevelSpec: levelSpec,
@@ -833,9 +827,6 @@ func NewGetTopHeadersCmd(startHash *string) *GetTopHeadersCmd {
 }
 
 // GetHeadersCmd defines the getHeaders JSON-RPC command.
-//
-// NOTE: This is a btcsuite extension ported from
-// github.com/decred/dcrd/dcrjson.
 type GetHeadersCmd struct {
 	StartHash string `json:"startHash"`
 	StopHash  string `json:"stopHash"`
@@ -843,9 +834,6 @@ type GetHeadersCmd struct {
 
 // NewGetHeadersCmd returns a new instance which can be used to issue a
 // getHeaders JSON-RPC command.
-//
-// NOTE: This is a btcsuite extension ported from
-// github.com/decred/dcrd/dcrjson.
 func NewGetHeadersCmd(startHash, stopHash string) *GetHeadersCmd {
 	return &GetHeadersCmd{
 		StartHash: startHash,
@@ -854,75 +842,69 @@ func NewGetHeadersCmd(startHash, stopHash string) *GetHeadersCmd {
 }
 
 // VersionCmd defines the version JSON-RPC command.
-//
-// NOTE: This is a btcsuite extension ported from
-// github.com/decred/dcrd/dcrjson.
 type VersionCmd struct{}
 
 // NewVersionCmd returns a new instance which can be used to issue a JSON-RPC
 // version command.
-//
-// NOTE: This is a btcsuite extension ported from
-// github.com/decred/dcrd/dcrjson.
 func NewVersionCmd() *VersionCmd { return new(VersionCmd) }
 
 func init() {
 	// No special flags for commands in this file.
 	flags := UsageFlag(0)
 
-	MustRegisterCmd("addManualNode", (*AddManualNodeCmd)(nil), flags)
-	MustRegisterCmd("createRawTransaction", (*CreateRawTransactionCmd)(nil), flags)
-	MustRegisterCmd("decodeRawTransaction", (*DecodeRawTransactionCmd)(nil), flags)
-	MustRegisterCmd("decodeScript", (*DecodeScriptCmd)(nil), flags)
-	MustRegisterCmd("getAllManualNodesInfo", (*GetAllManualNodesInfoCmd)(nil), flags)
-	MustRegisterCmd("getSelectedTipHash", (*GetSelectedTipHashCmd)(nil), flags)
-	MustRegisterCmd("getBlock", (*GetBlockCmd)(nil), flags)
-	MustRegisterCmd("getBlocks", (*GetBlocksCmd)(nil), flags)
-	MustRegisterCmd("getBlockDagInfo", (*GetBlockDAGInfoCmd)(nil), flags)
-	MustRegisterCmd("getBlockCount", (*GetBlockCountCmd)(nil), flags)
-	MustRegisterCmd("getBlockHeader", (*GetBlockHeaderCmd)(nil), flags)
-	MustRegisterCmd("getBlockTemplate", (*GetBlockTemplateCmd)(nil), flags)
-	MustRegisterCmd("getCFilter", (*GetCFilterCmd)(nil), flags)
-	MustRegisterCmd("getCFilterHeader", (*GetCFilterHeaderCmd)(nil), flags)
-	MustRegisterCmd("getChainFromBlock", (*GetChainFromBlockCmd)(nil), flags)
-	MustRegisterCmd("getDagTips", (*GetDAGTipsCmd)(nil), flags)
-	MustRegisterCmd("getConnectionCount", (*GetConnectionCountCmd)(nil), flags)
-	MustRegisterCmd("getDifficulty", (*GetDifficultyCmd)(nil), flags)
-	MustRegisterCmd("getGenerate", (*GetGenerateCmd)(nil), flags)
-	MustRegisterCmd("getHashesPerSec", (*GetHashesPerSecCmd)(nil), flags)
-	MustRegisterCmd("getInfo", (*GetInfoCmd)(nil), flags)
-	MustRegisterCmd("getManualNodeInfo", (*GetManualNodeInfoCmd)(nil), flags)
-	MustRegisterCmd("getMempoolEntry", (*GetMempoolEntryCmd)(nil), flags)
-	MustRegisterCmd("getMempoolInfo", (*GetMempoolInfoCmd)(nil), flags)
-	MustRegisterCmd("getMiningInfo", (*GetMiningInfoCmd)(nil), flags)
-	MustRegisterCmd("getNetworkInfo", (*GetNetworkInfoCmd)(nil), flags)
-	MustRegisterCmd("getNetTotals", (*GetNetTotalsCmd)(nil), flags)
-	MustRegisterCmd("getNetworkHashPs", (*GetNetworkHashPSCmd)(nil), flags)
-	MustRegisterCmd("getPeerInfo", (*GetPeerInfoCmd)(nil), flags)
-	MustRegisterCmd("getRawMempool", (*GetRawMempoolCmd)(nil), flags)
-	MustRegisterCmd("getRawTransaction", (*GetRawTransactionCmd)(nil), flags)
-	MustRegisterCmd("getSubnetwork", (*GetSubnetworkCmd)(nil), flags)
-	MustRegisterCmd("getTxOut", (*GetTxOutCmd)(nil), flags)
-	MustRegisterCmd("getTxOutSetInfo", (*GetTxOutSetInfoCmd)(nil), flags)
-	MustRegisterCmd("help", (*HelpCmd)(nil), flags)
-	MustRegisterCmd("invalidateBlock", (*InvalidateBlockCmd)(nil), flags)
-	MustRegisterCmd("ping", (*PingCmd)(nil), flags)
-	MustRegisterCmd("preciousBlock", (*PreciousBlockCmd)(nil), flags)
-	MustRegisterCmd("reconsiderBlock", (*ReconsiderBlockCmd)(nil), flags)
-	MustRegisterCmd("removeManualNode", (*RemoveManualNodeCmd)(nil), flags)
-	MustRegisterCmd("searchRawTransactions", (*SearchRawTransactionsCmd)(nil), flags)
-	MustRegisterCmd("sendRawTransaction", (*SendRawTransactionCmd)(nil), flags)
-	MustRegisterCmd("setGenerate", (*SetGenerateCmd)(nil), flags)
-	MustRegisterCmd("stop", (*StopCmd)(nil), flags)
-	MustRegisterCmd("submitBlock", (*SubmitBlockCmd)(nil), flags)
-	MustRegisterCmd("uptime", (*UptimeCmd)(nil), flags)
-	MustRegisterCmd("validateAddress", (*ValidateAddressCmd)(nil), flags)
-	MustRegisterCmd("debugLevel", (*DebugLevelCmd)(nil), flags)
-	MustRegisterCmd("node", (*NodeCmd)(nil), flags)
-	MustRegisterCmd("generate", (*GenerateCmd)(nil), flags)
-	MustRegisterCmd("getSelectedTip", (*GetSelectedTipCmd)(nil), flags)
-	MustRegisterCmd("getCurrentNet", (*GetCurrentNetCmd)(nil), flags)
-	MustRegisterCmd("getHeaders", (*GetHeadersCmd)(nil), flags)
-	MustRegisterCmd("getTopHeaders", (*GetTopHeadersCmd)(nil), flags)
-	MustRegisterCmd("version", (*VersionCmd)(nil), flags)
+	MustRegisterCommand("addManualNode", (*AddManualNodeCmd)(nil), flags)
+	MustRegisterCommand("createRawTransaction", (*CreateRawTransactionCmd)(nil), flags)
+	MustRegisterCommand("decodeRawTransaction", (*DecodeRawTransactionCmd)(nil), flags)
+	MustRegisterCommand("decodeScript", (*DecodeScriptCmd)(nil), flags)
+	MustRegisterCommand("getAllManualNodesInfo", (*GetAllManualNodesInfoCmd)(nil), flags)
+	MustRegisterCommand("getSelectedTipHash", (*GetSelectedTipHashCmd)(nil), flags)
+	MustRegisterCommand("getBlock", (*GetBlockCmd)(nil), flags)
+	MustRegisterCommand("getBlocks", (*GetBlocksCmd)(nil), flags)
+	MustRegisterCommand("getBlockDagInfo", (*GetBlockDAGInfoCmd)(nil), flags)
+	MustRegisterCommand("getBlockCount", (*GetBlockCountCmd)(nil), flags)
+	MustRegisterCommand("getBlockHeader", (*GetBlockHeaderCmd)(nil), flags)
+	MustRegisterCommand("getBlockTemplate", (*GetBlockTemplateCmd)(nil), flags)
+	MustRegisterCommand("getCFilter", (*GetCFilterCmd)(nil), flags)
+	MustRegisterCommand("getCFilterHeader", (*GetCFilterHeaderCmd)(nil), flags)
+	MustRegisterCommand("getChainFromBlock", (*GetChainFromBlockCmd)(nil), flags)
+	MustRegisterCommand("getDagTips", (*GetDAGTipsCmd)(nil), flags)
+	MustRegisterCommand("getConnectionCount", (*GetConnectionCountCmd)(nil), flags)
+	MustRegisterCommand("getDifficulty", (*GetDifficultyCmd)(nil), flags)
+	MustRegisterCommand("getGenerate", (*GetGenerateCmd)(nil), flags)
+	MustRegisterCommand("getHashesPerSec", (*GetHashesPerSecCmd)(nil), flags)
+	MustRegisterCommand("getInfo", (*GetInfoCmd)(nil), flags)
+	MustRegisterCommand("getManualNodeInfo", (*GetManualNodeInfoCmd)(nil), flags)
+	MustRegisterCommand("getMempoolEntry", (*GetMempoolEntryCmd)(nil), flags)
+	MustRegisterCommand("getMempoolInfo", (*GetMempoolInfoCmd)(nil), flags)
+	MustRegisterCommand("getMiningInfo", (*GetMiningInfoCmd)(nil), flags)
+	MustRegisterCommand("getNetworkInfo", (*GetNetworkInfoCmd)(nil), flags)
+	MustRegisterCommand("getNetTotals", (*GetNetTotalsCmd)(nil), flags)
+	MustRegisterCommand("getNetworkHashPs", (*GetNetworkHashPSCmd)(nil), flags)
+	MustRegisterCommand("getPeerInfo", (*GetPeerInfoCmd)(nil), flags)
+	MustRegisterCommand("getRawMempool", (*GetRawMempoolCmd)(nil), flags)
+	MustRegisterCommand("getRawTransaction", (*GetRawTransactionCmd)(nil), flags)
+	MustRegisterCommand("getSubnetwork", (*GetSubnetworkCmd)(nil), flags)
+	MustRegisterCommand("getTxOut", (*GetTxOutCmd)(nil), flags)
+	MustRegisterCommand("getTxOutSetInfo", (*GetTxOutSetInfoCmd)(nil), flags)
+	MustRegisterCommand("help", (*HelpCmd)(nil), flags)
+	MustRegisterCommand("invalidateBlock", (*InvalidateBlockCmd)(nil), flags)
+	MustRegisterCommand("ping", (*PingCmd)(nil), flags)
+	MustRegisterCommand("preciousBlock", (*PreciousBlockCmd)(nil), flags)
+	MustRegisterCommand("reconsiderBlock", (*ReconsiderBlockCmd)(nil), flags)
+	MustRegisterCommand("removeManualNode", (*RemoveManualNodeCmd)(nil), flags)
+	MustRegisterCommand("searchRawTransactions", (*SearchRawTransactionsCmd)(nil), flags)
+	MustRegisterCommand("sendRawTransaction", (*SendRawTransactionCmd)(nil), flags)
+	MustRegisterCommand("setGenerate", (*SetGenerateCmd)(nil), flags)
+	MustRegisterCommand("stop", (*StopCmd)(nil), flags)
+	MustRegisterCommand("submitBlock", (*SubmitBlockCmd)(nil), flags)
+	MustRegisterCommand("uptime", (*UptimeCmd)(nil), flags)
+	MustRegisterCommand("validateAddress", (*ValidateAddressCmd)(nil), flags)
+	MustRegisterCommand("debugLevel", (*DebugLevelCmd)(nil), flags)
+	MustRegisterCommand("node", (*NodeCmd)(nil), flags)
+	MustRegisterCommand("generate", (*GenerateCmd)(nil), flags)
+	MustRegisterCommand("getSelectedTip", (*GetSelectedTipCmd)(nil), flags)
+	MustRegisterCommand("getCurrentNet", (*GetCurrentNetCmd)(nil), flags)
+	MustRegisterCommand("getHeaders", (*GetHeadersCmd)(nil), flags)
+	MustRegisterCommand("getTopHeaders", (*GetTopHeadersCmd)(nil), flags)
+	MustRegisterCommand("version", (*VersionCmd)(nil), flags)
 }

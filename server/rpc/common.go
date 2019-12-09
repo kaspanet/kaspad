@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -18,8 +18,8 @@ import (
 var (
 	// ErrRPCUnimplemented is an error returned to RPC clients when the
 	// provided command is recognized, but not implemented.
-	ErrRPCUnimplemented = &kaspajson.RPCError{
-		Code:    kaspajson.ErrRPCUnimplemented,
+	ErrRPCUnimplemented = &jsonrpc.RPCError{
+		Code:    jsonrpc.ErrRPCUnimplemented,
 		Message: "Command unimplemented",
 	}
 )
@@ -29,19 +29,19 @@ var (
 // RPC server subsystem since internal errors really should not occur. The
 // context parameter is only used in the log message and may be empty if it's
 // not needed.
-func internalRPCError(errStr, context string) *kaspajson.RPCError {
+func internalRPCError(errStr, context string) *jsonrpc.RPCError {
 	logStr := errStr
 	if context != "" {
 		logStr = context + ": " + errStr
 	}
 	log.Error(logStr)
-	return kaspajson.NewRPCError(kaspajson.ErrRPCInternal.Code, errStr)
+	return jsonrpc.NewRPCError(jsonrpc.ErrRPCInternal.Code, errStr)
 }
 
 // rpcDecodeHexError is a convenience function for returning a nicely formatted
 // RPC error which indicates the provided hex string failed to decode.
-func rpcDecodeHexError(gotHex string) *kaspajson.RPCError {
-	return kaspajson.NewRPCError(kaspajson.ErrRPCDecodeHexString,
+func rpcDecodeHexError(gotHex string) *jsonrpc.RPCError {
+	return jsonrpc.NewRPCError(jsonrpc.ErrRPCDecodeHexString,
 		fmt.Sprintf("Argument must be hexadecimal string (not %q)",
 			gotHex))
 }
@@ -49,8 +49,8 @@ func rpcDecodeHexError(gotHex string) *kaspajson.RPCError {
 // rpcNoTxInfoError is a convenience function for returning a nicely formatted
 // RPC error which indicates there is no information available for the provided
 // transaction hash.
-func rpcNoTxInfoError(txID *daghash.TxID) *kaspajson.RPCError {
-	return kaspajson.NewRPCError(kaspajson.ErrRPCNoTxInfo,
+func rpcNoTxInfoError(txID *daghash.TxID) *jsonrpc.RPCError {
+	return jsonrpc.NewRPCError(jsonrpc.ErrRPCNoTxInfo,
 		fmt.Sprintf("No information available about transaction %s",
 			txID))
 }
@@ -69,8 +69,8 @@ func messageToHex(msg wire.Message) (string, error) {
 
 // createVinList returns a slice of JSON objects for the inputs of the passed
 // transaction.
-func createVinList(mtx *wire.MsgTx) []kaspajson.Vin {
-	vinList := make([]kaspajson.Vin, len(mtx.TxIn))
+func createVinList(mtx *wire.MsgTx) []jsonrpc.Vin {
+	vinList := make([]jsonrpc.Vin, len(mtx.TxIn))
 	for i, txIn := range mtx.TxIn {
 		// The disassembled string will contain [error] inline
 		// if the script doesn't fully parse, so ignore the
@@ -81,7 +81,7 @@ func createVinList(mtx *wire.MsgTx) []kaspajson.Vin {
 		vinEntry.TxID = txIn.PreviousOutpoint.TxID.String()
 		vinEntry.Vout = txIn.PreviousOutpoint.Index
 		vinEntry.Sequence = txIn.Sequence
-		vinEntry.ScriptSig = &kaspajson.ScriptSig{
+		vinEntry.ScriptSig = &jsonrpc.ScriptSig{
 			Asm: disbuf,
 			Hex: hex.EncodeToString(txIn.SignatureScript),
 		}
@@ -92,8 +92,8 @@ func createVinList(mtx *wire.MsgTx) []kaspajson.Vin {
 
 // createVoutList returns a slice of JSON objects for the outputs of the passed
 // transaction.
-func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMap map[string]struct{}) []kaspajson.Vout {
-	voutList := make([]kaspajson.Vout, 0, len(mtx.TxOut))
+func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMap map[string]struct{}) []jsonrpc.Vout {
+	voutList := make([]jsonrpc.Vout, 0, len(mtx.TxOut))
 	for i, v := range mtx.TxOut {
 		// The disassembled string will contain [error] inline if the
 		// script doesn't fully parse, so ignore the error here.
@@ -110,7 +110,7 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 		passesFilter := len(filterAddrMap) == 0
 		var encodedAddr *string
 		if addr != nil {
-			encodedAddr = kaspajson.String(addr.EncodeAddress())
+			encodedAddr = jsonrpc.String(addr.EncodeAddress())
 
 			// If the filter doesn't already pass, make it pass if
 			// the address exists in the filter.
@@ -123,7 +123,7 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 			continue
 		}
 
-		var vout kaspajson.Vout
+		var vout jsonrpc.Vout
 		vout.N = uint32(i)
 		vout.Value = v.Value
 		vout.ScriptPubKey.Address = encodedAddr
@@ -141,7 +141,7 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 // to a raw transaction JSON object.
 func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 	txID string, blkHeader *wire.BlockHeader, blkHash string,
-	acceptingBlock *daghash.Hash, confirmations *uint64, isInMempool bool) (*kaspajson.TxRawResult, error) {
+	acceptingBlock *daghash.Hash, confirmations *uint64, isInMempool bool) (*jsonrpc.TxRawResult, error) {
 
 	mtxHex, err := messageToHex(mtx)
 	if err != nil {
@@ -153,7 +153,7 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 		payloadHash = mtx.PayloadHash.String()
 	}
 
-	txReply := &kaspajson.TxRawResult{
+	txReply := &jsonrpc.TxRawResult{
 		Hex:         mtxHex,
 		TxID:        txID,
 		Hash:        mtx.TxHash().String(),
@@ -178,7 +178,7 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 	txReply.Confirmations = confirmations
 	txReply.IsInMempool = isInMempool
 	if acceptingBlock != nil {
-		txReply.AcceptedBy = kaspajson.String(acceptingBlock.String())
+		txReply.AcceptedBy = jsonrpc.String(acceptingBlock.String())
 	}
 
 	return txReply, nil
@@ -203,10 +203,10 @@ func getDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
 	return diff
 }
 
-// buildGetBlockVerboseResult takes a block and convert it to kaspajson.GetBlockVerboseResult
+// buildGetBlockVerboseResult takes a block and convert it to jsonrpc.GetBlockVerboseResult
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) (*kaspajson.GetBlockVerboseResult, error) {
+func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) (*jsonrpc.GetBlockVerboseResult, error) {
 	hash := block.Hash()
 	params := s.cfg.DAGParams
 	blockHeader := block.MsgBlock().Header
@@ -243,7 +243,7 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 
 	isChainBlock := s.cfg.DAG.IsInSelectedParentChain(hash)
 
-	result := &kaspajson.GetBlockVerboseResult{
+	result := &jsonrpc.GetBlockVerboseResult{
 		Hash:                 hash.String(),
 		Version:              blockHeader.Version,
 		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version),
@@ -273,7 +273,7 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		result.Tx = txNames
 	} else {
 		txns := block.Transactions()
-		rawTxns := make([]kaspajson.TxRawResult, len(txns))
+		rawTxns := make([]jsonrpc.TxRawResult, len(txns))
 		for i, tx := range txns {
 			rawTxn, err := createTxRawResult(params, tx.MsgTx(), tx.ID().String(),
 				&blockHeader, hash.String(), nil, nil, false)
@@ -288,18 +288,18 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 	return result, nil
 }
 
-func collectChainBlocks(s *Server, hashes []*daghash.Hash) ([]kaspajson.ChainBlock, error) {
-	chainBlocks := make([]kaspajson.ChainBlock, 0, len(hashes))
+func collectChainBlocks(s *Server, hashes []*daghash.Hash) ([]jsonrpc.ChainBlock, error) {
+	chainBlocks := make([]jsonrpc.ChainBlock, 0, len(hashes))
 	for _, hash := range hashes {
 		acceptanceData, err := s.cfg.AcceptanceIndex.TxsAcceptanceData(hash)
 		if err != nil {
-			return nil, &kaspajson.RPCError{
-				Code:    kaspajson.ErrRPCInternal.Code,
+			return nil, &jsonrpc.RPCError{
+				Code:    jsonrpc.ErrRPCInternal.Code,
 				Message: fmt.Sprintf("could not retrieve acceptance data for block %s", hash),
 			}
 		}
 
-		acceptedBlocks := make([]kaspajson.AcceptedBlock, 0, len(acceptanceData))
+		acceptedBlocks := make([]jsonrpc.AcceptedBlock, 0, len(acceptanceData))
 		for _, blockAcceptanceData := range acceptanceData {
 			acceptedTxIds := make([]string, 0, len(blockAcceptanceData.TxAcceptanceData))
 			for _, txAcceptanceData := range blockAcceptanceData.TxAcceptanceData {
@@ -307,14 +307,14 @@ func collectChainBlocks(s *Server, hashes []*daghash.Hash) ([]kaspajson.ChainBlo
 					acceptedTxIds = append(acceptedTxIds, txAcceptanceData.Tx.ID().String())
 				}
 			}
-			acceptedBlock := kaspajson.AcceptedBlock{
+			acceptedBlock := jsonrpc.AcceptedBlock{
 				Hash:          blockAcceptanceData.BlockHash.String(),
 				AcceptedTxIDs: acceptedTxIds,
 			}
 			acceptedBlocks = append(acceptedBlocks, acceptedBlock)
 		}
 
-		chainBlock := kaspajson.ChainBlock{
+		chainBlock := jsonrpc.ChainBlock{
 			Hash:           hash.String(),
 			AcceptedBlocks: acceptedBlocks,
 		}
@@ -327,20 +327,20 @@ func collectChainBlocks(s *Server, hashes []*daghash.Hash) ([]kaspajson.ChainBlo
 // correspondent block verbose.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func hashesToGetBlockVerboseResults(s *Server, hashes []*daghash.Hash) ([]kaspajson.GetBlockVerboseResult, error) {
-	getBlockVerboseResults := make([]kaspajson.GetBlockVerboseResult, 0, len(hashes))
+func hashesToGetBlockVerboseResults(s *Server, hashes []*daghash.Hash) ([]jsonrpc.GetBlockVerboseResult, error) {
+	getBlockVerboseResults := make([]jsonrpc.GetBlockVerboseResult, 0, len(hashes))
 	for _, blockHash := range hashes {
 		block, err := s.cfg.DAG.BlockByHash(blockHash)
 		if err != nil {
-			return nil, &kaspajson.RPCError{
-				Code:    kaspajson.ErrRPCInternal.Code,
+			return nil, &jsonrpc.RPCError{
+				Code:    jsonrpc.ErrRPCInternal.Code,
 				Message: fmt.Sprintf("could not retrieve block %s.", blockHash),
 			}
 		}
 		getBlockVerboseResult, err := buildGetBlockVerboseResult(s, block, false)
 		if err != nil {
-			return nil, &kaspajson.RPCError{
-				Code:    kaspajson.ErrRPCInternal.Code,
+			return nil, &jsonrpc.RPCError{
+				Code:    jsonrpc.ErrRPCInternal.Code,
 				Message: fmt.Sprintf("could not build getBlockVerboseResult for block %s: %s", blockHash, err),
 			}
 		}

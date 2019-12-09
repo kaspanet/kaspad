@@ -3,7 +3,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package kaspajson_test
+package jsonrpc_test
 
 import (
 	"bytes"
@@ -12,14 +12,14 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 )
 
-// TestDAGSvrWsCmds tests all of the kaspa rpc server websocket-specific commands
+// TestRPCServerWebsocketCommands tests all of the kaspa rpc server websocket-specific commands
 // marshal and unmarshal into valid results include handling of optional fields
 // being omitted in the marshalled command, while optional fields with defaults
 // have the default assigned on unmarshalled commands.
-func TestDAGSvrWsCmds(t *testing.T) {
+func TestRPCServerWebsocketCommands(t *testing.T) {
 	t.Parallel()
 
 	testID := int(1)
@@ -33,140 +33,140 @@ func TestDAGSvrWsCmds(t *testing.T) {
 		{
 			name: "authenticate",
 			newCmd: func() (interface{}, error) {
-				return kaspajson.NewCmd("authenticate", "user", "pass")
+				return jsonrpc.NewCommand("authenticate", "user", "pass")
 			},
 			staticCmd: func() interface{} {
-				return kaspajson.NewAuthenticateCmd("user", "pass")
+				return jsonrpc.NewAuthenticateCmd("user", "pass")
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"authenticate","params":["user","pass"],"id":1}`,
-			unmarshalled: &kaspajson.AuthenticateCmd{Username: "user", Passphrase: "pass"},
+			unmarshalled: &jsonrpc.AuthenticateCmd{Username: "user", Passphrase: "pass"},
 		},
 		{
 			name: "notifyBlocks",
 			newCmd: func() (interface{}, error) {
-				return kaspajson.NewCmd("notifyBlocks")
+				return jsonrpc.NewCommand("notifyBlocks")
 			},
 			staticCmd: func() interface{} {
-				return kaspajson.NewNotifyBlocksCmd()
+				return jsonrpc.NewNotifyBlocksCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"notifyBlocks","params":[],"id":1}`,
-			unmarshalled: &kaspajson.NotifyBlocksCmd{},
+			unmarshalled: &jsonrpc.NotifyBlocksCmd{},
 		},
 		{
 			name: "stopNotifyBlocks",
 			newCmd: func() (interface{}, error) {
-				return kaspajson.NewCmd("stopNotifyBlocks")
+				return jsonrpc.NewCommand("stopNotifyBlocks")
 			},
 			staticCmd: func() interface{} {
-				return kaspajson.NewStopNotifyBlocksCmd()
+				return jsonrpc.NewStopNotifyBlocksCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"stopNotifyBlocks","params":[],"id":1}`,
-			unmarshalled: &kaspajson.StopNotifyBlocksCmd{},
+			unmarshalled: &jsonrpc.StopNotifyBlocksCmd{},
 		},
 		{
 			name: "notifyChainChanges",
 			newCmd: func() (interface{}, error) {
-				return kaspajson.NewCmd("notifyChainChanges")
+				return jsonrpc.NewCommand("notifyChainChanges")
 			},
 			staticCmd: func() interface{} {
-				return kaspajson.NewNotifyChainChangesCmd()
+				return jsonrpc.NewNotifyChainChangesCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"notifyChainChanges","params":[],"id":1}`,
-			unmarshalled: &kaspajson.NotifyChainChangesCmd{},
+			unmarshalled: &jsonrpc.NotifyChainChangesCmd{},
 		},
 		{
 			name: "stopNotifyChainChanges",
 			newCmd: func() (interface{}, error) {
-				return kaspajson.NewCmd("stopNotifyChainChanges")
+				return jsonrpc.NewCommand("stopNotifyChainChanges")
 			},
 			staticCmd: func() interface{} {
-				return kaspajson.NewStopNotifyChainChangesCmd()
+				return jsonrpc.NewStopNotifyChainChangesCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"stopNotifyChainChanges","params":[],"id":1}`,
-			unmarshalled: &kaspajson.StopNotifyChainChangesCmd{},
+			unmarshalled: &jsonrpc.StopNotifyChainChangesCmd{},
 		},
 		{
 			name: "notifyNewTransactions",
 			newCmd: func() (interface{}, error) {
-				return kaspajson.NewCmd("notifyNewTransactions")
+				return jsonrpc.NewCommand("notifyNewTransactions")
 			},
 			staticCmd: func() interface{} {
-				return kaspajson.NewNotifyNewTransactionsCmd(nil, nil)
+				return jsonrpc.NewNotifyNewTransactionsCmd(nil, nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"notifyNewTransactions","params":[],"id":1}`,
-			unmarshalled: &kaspajson.NotifyNewTransactionsCmd{
-				Verbose: kaspajson.Bool(false),
+			unmarshalled: &jsonrpc.NotifyNewTransactionsCmd{
+				Verbose: jsonrpc.Bool(false),
 			},
 		},
 		{
 			name: "notifyNewTransactions optional",
 			newCmd: func() (interface{}, error) {
-				return kaspajson.NewCmd("notifyNewTransactions", true)
+				return jsonrpc.NewCommand("notifyNewTransactions", true)
 			},
 			staticCmd: func() interface{} {
-				return kaspajson.NewNotifyNewTransactionsCmd(kaspajson.Bool(true), nil)
+				return jsonrpc.NewNotifyNewTransactionsCmd(jsonrpc.Bool(true), nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"notifyNewTransactions","params":[true],"id":1}`,
-			unmarshalled: &kaspajson.NotifyNewTransactionsCmd{
-				Verbose: kaspajson.Bool(true),
+			unmarshalled: &jsonrpc.NotifyNewTransactionsCmd{
+				Verbose: jsonrpc.Bool(true),
 			},
 		},
 		{
 			name: "notifyNewTransactions optional 2",
 			newCmd: func() (interface{}, error) {
-				return kaspajson.NewCmd("notifyNewTransactions", true, "0000000000000000000000000000000000000123")
+				return jsonrpc.NewCommand("notifyNewTransactions", true, "0000000000000000000000000000000000000123")
 			},
 			staticCmd: func() interface{} {
-				return kaspajson.NewNotifyNewTransactionsCmd(kaspajson.Bool(true), kaspajson.String("0000000000000000000000000000000000000123"))
+				return jsonrpc.NewNotifyNewTransactionsCmd(jsonrpc.Bool(true), jsonrpc.String("0000000000000000000000000000000000000123"))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"notifyNewTransactions","params":[true,"0000000000000000000000000000000000000123"],"id":1}`,
-			unmarshalled: &kaspajson.NotifyNewTransactionsCmd{
-				Verbose:    kaspajson.Bool(true),
-				Subnetwork: kaspajson.String("0000000000000000000000000000000000000123"),
+			unmarshalled: &jsonrpc.NotifyNewTransactionsCmd{
+				Verbose:    jsonrpc.Bool(true),
+				Subnetwork: jsonrpc.String("0000000000000000000000000000000000000123"),
 			},
 		},
 		{
 			name: "stopNotifyNewTransactions",
 			newCmd: func() (interface{}, error) {
-				return kaspajson.NewCmd("stopNotifyNewTransactions")
+				return jsonrpc.NewCommand("stopNotifyNewTransactions")
 			},
 			staticCmd: func() interface{} {
-				return kaspajson.NewStopNotifyNewTransactionsCmd()
+				return jsonrpc.NewStopNotifyNewTransactionsCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"stopNotifyNewTransactions","params":[],"id":1}`,
-			unmarshalled: &kaspajson.StopNotifyNewTransactionsCmd{},
+			unmarshalled: &jsonrpc.StopNotifyNewTransactionsCmd{},
 		},
 		{
 			name: "loadTxFilter",
 			newCmd: func() (interface{}, error) {
-				return kaspajson.NewCmd("loadTxFilter", false, `["1Address"]`, `[{"txid":"0000000000000000000000000000000000000000000000000000000000000123","index":0}]`)
+				return jsonrpc.NewCommand("loadTxFilter", false, `["1Address"]`, `[{"txid":"0000000000000000000000000000000000000000000000000000000000000123","index":0}]`)
 			},
 			staticCmd: func() interface{} {
 				addrs := []string{"1Address"}
-				ops := []kaspajson.Outpoint{{
+				ops := []jsonrpc.Outpoint{{
 					TxID:  "0000000000000000000000000000000000000000000000000000000000000123",
 					Index: 0,
 				}}
-				return kaspajson.NewLoadTxFilterCmd(false, addrs, ops)
+				return jsonrpc.NewLoadTxFilterCmd(false, addrs, ops)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"loadTxFilter","params":[false,["1Address"],[{"txid":"0000000000000000000000000000000000000000000000000000000000000123","index":0}]],"id":1}`,
-			unmarshalled: &kaspajson.LoadTxFilterCmd{
+			unmarshalled: &jsonrpc.LoadTxFilterCmd{
 				Reload:    false,
 				Addresses: []string{"1Address"},
-				Outpoints: []kaspajson.Outpoint{{TxID: "0000000000000000000000000000000000000000000000000000000000000123", Index: 0}},
+				Outpoints: []jsonrpc.Outpoint{{TxID: "0000000000000000000000000000000000000000000000000000000000000123", Index: 0}},
 			},
 		},
 		{
 			name: "rescanBlocks",
 			newCmd: func() (interface{}, error) {
-				return kaspajson.NewCmd("rescanBlocks", `["0000000000000000000000000000000000000000000000000000000000000123"]`)
+				return jsonrpc.NewCommand("rescanBlocks", `["0000000000000000000000000000000000000000000000000000000000000123"]`)
 			},
 			staticCmd: func() interface{} {
 				blockhashes := []string{"0000000000000000000000000000000000000000000000000000000000000123"}
-				return kaspajson.NewRescanBlocksCmd(blockhashes)
+				return jsonrpc.NewRescanBlocksCmd(blockhashes)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"rescanBlocks","params":[["0000000000000000000000000000000000000000000000000000000000000123"]],"id":1}`,
-			unmarshalled: &kaspajson.RescanBlocksCmd{
+			unmarshalled: &jsonrpc.RescanBlocksCmd{
 				BlockHashes: []string{"0000000000000000000000000000000000000000000000000000000000000123"},
 			},
 		},
@@ -176,9 +176,9 @@ func TestDAGSvrWsCmds(t *testing.T) {
 	for i, test := range tests {
 		// Marshal the command as created by the new static command
 		// creation function.
-		marshalled, err := kaspajson.MarshalCmd(testID, test.staticCmd())
+		marshalled, err := jsonrpc.MarshalCommand(testID, test.staticCmd())
 		if err != nil {
-			t.Errorf("MarshalCmd #%d (%s) unexpected error: %v", i,
+			t.Errorf("MarshalCommand #%d (%s) unexpected error: %v", i,
 				test.name, err)
 			continue
 		}
@@ -194,15 +194,15 @@ func TestDAGSvrWsCmds(t *testing.T) {
 		// new command creation function.
 		cmd, err := test.newCmd()
 		if err != nil {
-			t.Errorf("Test #%d (%s) unexpected NewCmd error: %v ",
+			t.Errorf("Test #%d (%s) unexpected NewCommand error: %v ",
 				i, test.name, err)
 		}
 
 		// Marshal the command as created by the generic new command
 		// creation function.
-		marshalled, err = kaspajson.MarshalCmd(testID, cmd)
+		marshalled, err = jsonrpc.MarshalCommand(testID, cmd)
 		if err != nil {
-			t.Errorf("MarshalCmd #%d (%s) unexpected error: %v", i,
+			t.Errorf("MarshalCommand #%d (%s) unexpected error: %v", i,
 				test.name, err)
 			continue
 		}
@@ -214,7 +214,7 @@ func TestDAGSvrWsCmds(t *testing.T) {
 			continue
 		}
 
-		var request kaspajson.Request
+		var request jsonrpc.Request
 		if err := json.Unmarshal(marshalled, &request); err != nil {
 			t.Errorf("Test #%d (%s) unexpected error while "+
 				"unmarshalling JSON-RPC request: %v", i,
@@ -222,9 +222,9 @@ func TestDAGSvrWsCmds(t *testing.T) {
 			continue
 		}
 
-		cmd, err = kaspajson.UnmarshalCmd(&request)
+		cmd, err = jsonrpc.UnmarshalCommand(&request)
 		if err != nil {
-			t.Errorf("UnmarshalCmd #%d (%s) unexpected error: %v", i,
+			t.Errorf("UnmarshalCommand #%d (%s) unexpected error: %v", i,
 				test.name, err)
 			continue
 		}

@@ -2,18 +2,18 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package kaspajson_test
+package jsonrpc_test
 
 import (
 	"reflect"
 	"testing"
 
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 )
 
-// TestCmdMethod tests the CmdMethod function to ensure it retunrs the expected
+// TestCommandMethod tests the CommandMethod function to ensure it retunrs the expected
 // methods and errors.
-func TestCmdMethod(t *testing.T) {
+func TestCommandMethod(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -25,35 +25,35 @@ func TestCmdMethod(t *testing.T) {
 		{
 			name: "unregistered type",
 			cmd:  (*int)(nil),
-			err:  kaspajson.Error{ErrorCode: kaspajson.ErrUnregisteredMethod},
+			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrUnregisteredMethod},
 		},
 		{
 			name:   "nil pointer of registered type",
-			cmd:    (*kaspajson.GetBlockCmd)(nil),
+			cmd:    (*jsonrpc.GetBlockCmd)(nil),
 			method: "getBlock",
 		},
 		{
 			name:   "nil instance of registered type",
-			cmd:    &kaspajson.GetBlockCountCmd{},
+			cmd:    &jsonrpc.GetBlockCountCmd{},
 			method: "getBlockCount",
 		},
 	}
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		method, err := kaspajson.CmdMethod(test.cmd)
+		method, err := jsonrpc.CommandMethod(test.cmd)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
 			t.Errorf("Test #%d (%s) wrong error - got %T (%[3]v), "+
 				"want %T", i, test.name, err, test.err)
 			continue
 		}
 		if err != nil {
-			gotErrorCode := err.(kaspajson.Error).ErrorCode
-			if gotErrorCode != test.err.(kaspajson.Error).ErrorCode {
+			gotErrorCode := err.(jsonrpc.Error).ErrorCode
+			if gotErrorCode != test.err.(jsonrpc.Error).ErrorCode {
 				t.Errorf("Test #%d (%s) mismatched error code "+
 					"- got %v (%v), want %v", i, test.name,
 					gotErrorCode, err,
-					test.err.(kaspajson.Error).ErrorCode)
+					test.err.(jsonrpc.Error).ErrorCode)
 				continue
 			}
 
@@ -78,12 +78,12 @@ func TestMethodUsageFlags(t *testing.T) {
 		name   string
 		method string
 		err    error
-		flags  kaspajson.UsageFlag
+		flags  jsonrpc.UsageFlag
 	}{
 		{
 			name:   "unregistered type",
 			method: "bogusMethod",
-			err:    kaspajson.Error{ErrorCode: kaspajson.ErrUnregisteredMethod},
+			err:    jsonrpc.Error{ErrorCode: jsonrpc.ErrUnregisteredMethod},
 		},
 		{
 			name:   "getBlock",
@@ -94,19 +94,19 @@ func TestMethodUsageFlags(t *testing.T) {
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		flags, err := kaspajson.MethodUsageFlags(test.method)
+		flags, err := jsonrpc.MethodUsageFlags(test.method)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
 			t.Errorf("Test #%d (%s) wrong error - got %T (%[3]v), "+
 				"want %T", i, test.name, err, test.err)
 			continue
 		}
 		if err != nil {
-			gotErrorCode := err.(kaspajson.Error).ErrorCode
-			if gotErrorCode != test.err.(kaspajson.Error).ErrorCode {
+			gotErrorCode := err.(jsonrpc.Error).ErrorCode
+			if gotErrorCode != test.err.(jsonrpc.Error).ErrorCode {
 				t.Errorf("Test #%d (%s) mismatched error code "+
 					"- got %v (%v), want %v", i, test.name,
 					gotErrorCode, err,
-					test.err.(kaspajson.Error).ErrorCode)
+					test.err.(jsonrpc.Error).ErrorCode)
 				continue
 			}
 
@@ -136,7 +136,7 @@ func TestMethodUsageText(t *testing.T) {
 		{
 			name:   "unregistered type",
 			method: "bogusMethod",
-			err:    kaspajson.Error{ErrorCode: kaspajson.ErrUnregisteredMethod},
+			err:    jsonrpc.Error{ErrorCode: jsonrpc.ErrUnregisteredMethod},
 		},
 		{
 			name:     "getBlockCount",
@@ -152,19 +152,19 @@ func TestMethodUsageText(t *testing.T) {
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		usage, err := kaspajson.MethodUsageText(test.method)
+		usage, err := jsonrpc.MethodUsageText(test.method)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
 			t.Errorf("Test #%d (%s) wrong error - got %T (%[3]v), "+
 				"want %T", i, test.name, err, test.err)
 			continue
 		}
 		if err != nil {
-			gotErrorCode := err.(kaspajson.Error).ErrorCode
-			if gotErrorCode != test.err.(kaspajson.Error).ErrorCode {
+			gotErrorCode := err.(jsonrpc.Error).ErrorCode
+			if gotErrorCode != test.err.(jsonrpc.Error).ErrorCode {
 				t.Errorf("Test #%d (%s) mismatched error code "+
 					"- got %v (%v), want %v", i, test.name,
 					gotErrorCode, err,
-					test.err.(kaspajson.Error).ErrorCode)
+					test.err.(jsonrpc.Error).ErrorCode)
 				continue
 			}
 
@@ -179,7 +179,7 @@ func TestMethodUsageText(t *testing.T) {
 		}
 
 		// Get the usage again to exercise caching.
-		usage, err = kaspajson.MethodUsageText(test.method)
+		usage, err = jsonrpc.MethodUsageText(test.method)
 		if err != nil {
 			t.Errorf("Test #%d (%s) unexpected error: %v", i,
 				test.name, err)
@@ -415,7 +415,7 @@ func TestFieldUsage(t *testing.T) {
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
 		// Ensure usage matches the expected value.
-		usage := kaspajson.TstFieldUsage(test.field, test.defValue)
+		usage := jsonrpc.TstFieldUsage(test.field, test.defValue)
 		if usage != test.expected {
 			t.Errorf("Test #%d (%s) mismatched usage - got %v, "+
 				"want %v", i, test.name, usage, test.expected)

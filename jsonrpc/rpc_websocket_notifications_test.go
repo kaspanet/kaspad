@@ -3,7 +3,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package kaspajson_test
+package jsonrpc_test
 
 import (
 	"bytes"
@@ -14,15 +14,15 @@ import (
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// TestDAGSvrWsNtfns tests all of the kaspa rpc server websocket-specific
+// TestRPCServerWebsocketNotifications tests all of the kaspa rpc server websocket-specific
 // notifications marshal and unmarshal into valid results include handling of
 // optional fields being omitted in the marshalled command, while optional
 // fields with defaults have the default assigned on unmarshalled commands.
-func TestDAGSvrWsNtfns(t *testing.T) {
+func TestRPCServerWebsocketNotifications(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -35,13 +35,13 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 		{
 			name: "filteredBlockAdded",
 			newNtfn: func() (interface{}, error) {
-				return kaspajson.NewCmd("filteredBlockAdded", 100000, "header", []string{"tx0", "tx1"})
+				return jsonrpc.NewCommand("filteredBlockAdded", 100000, "header", []string{"tx0", "tx1"})
 			},
 			staticNtfn: func() interface{} {
-				return kaspajson.NewFilteredBlockAddedNtfn(100000, "header", []string{"tx0", "tx1"})
+				return jsonrpc.NewFilteredBlockAddedNtfn(100000, "header", []string{"tx0", "tx1"})
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"filteredBlockAdded","params":[100000,"header",["tx0","tx1"]],"id":null}`,
-			unmarshalled: &kaspajson.FilteredBlockAddedNtfn{
+			unmarshalled: &jsonrpc.FilteredBlockAddedNtfn{
 				ChainHeight:   100000,
 				Header:        "header",
 				SubscribedTxs: []string{"tx0", "tx1"},
@@ -50,13 +50,13 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 		{
 			name: "txAccepted",
 			newNtfn: func() (interface{}, error) {
-				return kaspajson.NewCmd("txAccepted", "123", 1.5)
+				return jsonrpc.NewCommand("txAccepted", "123", 1.5)
 			},
 			staticNtfn: func() interface{} {
-				return kaspajson.NewTxAcceptedNtfn("123", 1.5)
+				return jsonrpc.NewTxAcceptedNtfn("123", 1.5)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"txAccepted","params":["123",1.5],"id":null}`,
-			unmarshalled: &kaspajson.TxAcceptedNtfn{
+			unmarshalled: &jsonrpc.TxAcceptedNtfn{
 				TxID:   "123",
 				Amount: 1.5,
 			},
@@ -64,10 +64,10 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 		{
 			name: "txAcceptedVerbose",
 			newNtfn: func() (interface{}, error) {
-				return kaspajson.NewCmd("txAcceptedVerbose", `{"hex":"001122","txid":"123","version":1,"locktime":4294967295,"subnetwork":"0000000000000000000000000000000000000000","gas":0,"payloadHash":"","payload":"","vin":null,"vout":null,"isInMempool":false}`)
+				return jsonrpc.NewCommand("txAcceptedVerbose", `{"hex":"001122","txid":"123","version":1,"locktime":4294967295,"subnetwork":"0000000000000000000000000000000000000000","gas":0,"payloadHash":"","payload":"","vin":null,"vout":null,"isInMempool":false}`)
 			},
 			staticNtfn: func() interface{} {
-				txResult := kaspajson.TxRawResult{
+				txResult := jsonrpc.TxRawResult{
 					Hex:           "001122",
 					TxID:          "123",
 					Version:       1,
@@ -77,11 +77,11 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 					Vout:          nil,
 					Confirmations: nil,
 				}
-				return kaspajson.NewTxAcceptedVerboseNtfn(txResult)
+				return jsonrpc.NewTxAcceptedVerboseNtfn(txResult)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"txAcceptedVerbose","params":[{"hex":"001122","txId":"123","version":1,"lockTime":4294967295,"subnetwork":"0000000000000000000000000000000000000000","gas":0,"payloadHash":"","payload":"","vin":null,"vout":null,"isInMempool":false}],"id":null}`,
-			unmarshalled: &kaspajson.TxAcceptedVerboseNtfn{
-				RawTx: kaspajson.TxRawResult{
+			unmarshalled: &jsonrpc.TxAcceptedVerboseNtfn{
+				RawTx: jsonrpc.TxRawResult{
 					Hex:           "001122",
 					TxID:          "123",
 					Version:       1,
@@ -96,10 +96,10 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 		{
 			name: "txAcceptedVerbose with subnetwork, gas and paylaod",
 			newNtfn: func() (interface{}, error) {
-				return kaspajson.NewCmd("txAcceptedVerbose", `{"hex":"001122","txId":"123","version":1,"lockTime":4294967295,"subnetwork":"000000000000000000000000000000000000432d","gas":10,"payloadHash":"bf8ccdb364499a3e628200c3d3512c2c2a43b7a7d4f1a40d7f716715e449f442","payload":"102030","vin":null,"vout":null,"isInMempool":false}`)
+				return jsonrpc.NewCommand("txAcceptedVerbose", `{"hex":"001122","txId":"123","version":1,"lockTime":4294967295,"subnetwork":"000000000000000000000000000000000000432d","gas":10,"payloadHash":"bf8ccdb364499a3e628200c3d3512c2c2a43b7a7d4f1a40d7f716715e449f442","payload":"102030","vin":null,"vout":null,"isInMempool":false}`)
 			},
 			staticNtfn: func() interface{} {
-				txResult := kaspajson.TxRawResult{
+				txResult := jsonrpc.TxRawResult{
 					Hex:           "001122",
 					TxID:          "123",
 					Version:       1,
@@ -112,11 +112,11 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 					Vout:          nil,
 					Confirmations: nil,
 				}
-				return kaspajson.NewTxAcceptedVerboseNtfn(txResult)
+				return jsonrpc.NewTxAcceptedVerboseNtfn(txResult)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"txAcceptedVerbose","params":[{"hex":"001122","txId":"123","version":1,"lockTime":4294967295,"subnetwork":"000000000000000000000000000000000000432d","gas":10,"payloadHash":"bf8ccdb364499a3e628200c3d3512c2c2a43b7a7d4f1a40d7f716715e449f442","payload":"102030","vin":null,"vout":null,"isInMempool":false}],"id":null}`,
-			unmarshalled: &kaspajson.TxAcceptedVerboseNtfn{
-				RawTx: kaspajson.TxRawResult{
+			unmarshalled: &jsonrpc.TxAcceptedVerboseNtfn{
+				RawTx: jsonrpc.TxRawResult{
 					Hex:           "001122",
 					TxID:          "123",
 					Version:       1,
@@ -134,13 +134,13 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 		{
 			name: "relevantTxAccepted",
 			newNtfn: func() (interface{}, error) {
-				return kaspajson.NewCmd("relevantTxAccepted", "001122")
+				return jsonrpc.NewCommand("relevantTxAccepted", "001122")
 			},
 			staticNtfn: func() interface{} {
-				return kaspajson.NewRelevantTxAcceptedNtfn("001122")
+				return jsonrpc.NewRelevantTxAcceptedNtfn("001122")
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"relevantTxAccepted","params":["001122"],"id":null}`,
-			unmarshalled: &kaspajson.RelevantTxAcceptedNtfn{
+			unmarshalled: &jsonrpc.RelevantTxAcceptedNtfn{
 				Transaction: "001122",
 			},
 		},
@@ -150,9 +150,9 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 	for i, test := range tests {
 		// Marshal the notification as created by the new static
 		// creation function. The ID is nil for notifications.
-		marshalled, err := kaspajson.MarshalCmd(nil, test.staticNtfn())
+		marshalled, err := jsonrpc.MarshalCommand(nil, test.staticNtfn())
 		if err != nil {
-			t.Errorf("MarshalCmd #%d (%s) unexpected error: %v", i,
+			t.Errorf("MarshalCommand #%d (%s) unexpected error: %v", i,
 				test.name, err)
 			continue
 		}
@@ -168,16 +168,16 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 		// generic new notification creation function.
 		cmd, err := test.newNtfn()
 		if err != nil {
-			t.Errorf("Test #%d (%s) unexpected NewCmd error: %v ",
+			t.Errorf("Test #%d (%s) unexpected NewCommand error: %v ",
 				i, test.name, err)
 		}
 
 		// Marshal the notification as created by the generic new
 		// notification creation function. The ID is nil for
 		// notifications.
-		marshalled, err = kaspajson.MarshalCmd(nil, cmd)
+		marshalled, err = jsonrpc.MarshalCommand(nil, cmd)
 		if err != nil {
-			t.Errorf("MarshalCmd #%d (%s) unexpected error: %v", i,
+			t.Errorf("MarshalCommand #%d (%s) unexpected error: %v", i,
 				test.name, err)
 			continue
 		}
@@ -189,7 +189,7 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 			continue
 		}
 
-		var request kaspajson.Request
+		var request jsonrpc.Request
 		if err := json.Unmarshal(marshalled, &request); err != nil {
 			t.Errorf("Test #%d (%s) unexpected error while "+
 				"unmarshalling JSON-RPC request: %v", i,
@@ -197,9 +197,9 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 			continue
 		}
 
-		cmd, err = kaspajson.UnmarshalCmd(&request)
+		cmd, err = jsonrpc.UnmarshalCommand(&request)
 		if err != nil {
-			t.Errorf("UnmarshalCmd #%d (%s) unexpected error: %v", i,
+			t.Errorf("UnmarshalCommand #%d (%s) unexpected error: %v", i,
 				test.name, err)
 			continue
 		}

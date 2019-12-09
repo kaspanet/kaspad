@@ -3,7 +3,7 @@ package rpc
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 )
 
 // handleGenerate handles generate commands.
@@ -11,16 +11,16 @@ func handleGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	// Respond with an error if there are no addresses to pay the
 	// created blocks to.
 	if len(config.ActiveConfig().MiningAddrs) == 0 {
-		return nil, &kaspajson.RPCError{
-			Code: kaspajson.ErrRPCInternal.Code,
+		return nil, &jsonrpc.RPCError{
+			Code: jsonrpc.ErrRPCInternal.Code,
 			Message: "No payment addresses specified " +
 				"via --miningaddr",
 		}
 	}
 
 	if config.ActiveConfig().SubnetworkID != nil {
-		return nil, &kaspajson.RPCError{
-			Code:    kaspajson.ErrRPCInvalidRequest.Code,
+		return nil, &jsonrpc.RPCError{
+			Code:    jsonrpc.ErrRPCInvalidRequest.Code,
 			Message: "`generate` is not supported on partial nodes.",
 		}
 	}
@@ -28,8 +28,8 @@ func handleGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	// Respond with an error if there's virtually 0 chance of mining a block
 	// with the CPU.
 	if !s.cfg.DAGParams.GenerateSupported {
-		return nil, &kaspajson.RPCError{
-			Code: kaspajson.ErrRPCDifficulty,
+		return nil, &jsonrpc.RPCError{
+			Code: jsonrpc.ErrRPCDifficulty,
 			Message: fmt.Sprintf("No support for `generate` on "+
 				"the current network, %s, as it's unlikely to "+
 				"be possible to mine a block with the CPU.",
@@ -37,12 +37,12 @@ func handleGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		}
 	}
 
-	c := cmd.(*kaspajson.GenerateCmd)
+	c := cmd.(*jsonrpc.GenerateCmd)
 
 	// Respond with an error if the client is requesting 0 blocks to be generated.
 	if c.NumBlocks == 0 {
-		return nil, &kaspajson.RPCError{
-			Code:    kaspajson.ErrRPCInternal.Code,
+		return nil, &jsonrpc.RPCError{
+			Code:    jsonrpc.ErrRPCInternal.Code,
 			Message: "Please request a nonzero number of blocks to generate.",
 		}
 	}
@@ -52,8 +52,8 @@ func handleGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 
 	blockHashes, err := s.cfg.CPUMiner.GenerateNBlocks(c.NumBlocks)
 	if err != nil {
-		return nil, &kaspajson.RPCError{
-			Code:    kaspajson.ErrRPCInternal.Code,
+		return nil, &jsonrpc.RPCError{
+			Code:    jsonrpc.ErrRPCInternal.Code,
 			Message: err.Error(),
 		}
 	}

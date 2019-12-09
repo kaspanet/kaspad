@@ -2,14 +2,14 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package kaspajson_test
+package jsonrpc_test
 
 import (
 	"reflect"
 	"sort"
 	"testing"
 
-	"github.com/kaspanet/kaspad/kaspajson"
+	"github.com/kaspanet/kaspad/jsonrpc"
 )
 
 // TestUsageFlagStringer tests the stringized output for the UsageFlag type.
@@ -17,21 +17,21 @@ func TestUsageFlagStringer(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		in   kaspajson.UsageFlag
+		in   jsonrpc.UsageFlag
 		want string
 	}{
 		{0, "0x0"},
-		{kaspajson.UFWebsocketOnly, "UFWebsocketOnly"},
-		{kaspajson.UFNotification, "UFNotification"},
-		{kaspajson.UFWebsocketOnly | kaspajson.UFNotification,
+		{jsonrpc.UFWebsocketOnly, "UFWebsocketOnly"},
+		{jsonrpc.UFNotification, "UFNotification"},
+		{jsonrpc.UFWebsocketOnly | jsonrpc.UFNotification,
 			"UFWebsocketOnly|UFNotification"},
-		{kaspajson.UFWebsocketOnly | kaspajson.UFNotification | (1 << 31),
+		{jsonrpc.UFWebsocketOnly | jsonrpc.UFNotification | (1 << 31),
 			"UFWebsocketOnly|UFNotification|0x80000000"},
 	}
 
 	// Detect additional usage flags that don't have the stringer added.
 	numUsageFlags := 0
-	highestUsageFlagBit := kaspajson.TstHighestUsageFlagBit
+	highestUsageFlagBit := jsonrpc.TstHighestUsageFlagBit
 	for highestUsageFlagBit > 1 {
 		numUsageFlags++
 		highestUsageFlagBit >>= 1
@@ -61,8 +61,8 @@ func TestRegisterCmdErrors(t *testing.T) {
 		name    string
 		method  string
 		cmdFunc func() interface{}
-		flags   kaspajson.UsageFlag
-		err     kaspajson.Error
+		flags   jsonrpc.UsageFlag
+		err     jsonrpc.Error
 	}{
 		{
 			name:   "duplicate method",
@@ -70,7 +70,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 			cmdFunc: func() interface{} {
 				return struct{}{}
 			},
-			err: kaspajson.Error{ErrorCode: kaspajson.ErrDuplicateMethod},
+			err: jsonrpc.Error{ErrorCode: jsonrpc.ErrDuplicateMethod},
 		},
 		{
 			name:   "invalid usage flags",
@@ -78,8 +78,8 @@ func TestRegisterCmdErrors(t *testing.T) {
 			cmdFunc: func() interface{} {
 				return 0
 			},
-			flags: kaspajson.TstHighestUsageFlagBit,
-			err:   kaspajson.Error{ErrorCode: kaspajson.ErrInvalidUsageFlags},
+			flags: jsonrpc.TstHighestUsageFlagBit,
+			err:   jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidUsageFlags},
 		},
 		{
 			name:   "invalid type",
@@ -87,7 +87,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 			cmdFunc: func() interface{} {
 				return 0
 			},
-			err: kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err: jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name:   "invalid type 2",
@@ -95,7 +95,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 			cmdFunc: func() interface{} {
 				return &[]string{}
 			},
-			err: kaspajson.Error{ErrorCode: kaspajson.ErrInvalidType},
+			err: jsonrpc.Error{ErrorCode: jsonrpc.ErrInvalidType},
 		},
 		{
 			name:   "embedded field",
@@ -104,7 +104,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 				type test struct{ int }
 				return (*test)(nil)
 			},
-			err: kaspajson.Error{ErrorCode: kaspajson.ErrEmbeddedType},
+			err: jsonrpc.Error{ErrorCode: jsonrpc.ErrEmbeddedType},
 		},
 		{
 			name:   "unexported field",
@@ -113,7 +113,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 				type test struct{ a int }
 				return (*test)(nil)
 			},
-			err: kaspajson.Error{ErrorCode: kaspajson.ErrUnexportedField},
+			err: jsonrpc.Error{ErrorCode: jsonrpc.ErrUnexportedField},
 		},
 		{
 			name:   "unsupported field type 1",
@@ -122,7 +122,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 				type test struct{ A **int }
 				return (*test)(nil)
 			},
-			err: kaspajson.Error{ErrorCode: kaspajson.ErrUnsupportedFieldType},
+			err: jsonrpc.Error{ErrorCode: jsonrpc.ErrUnsupportedFieldType},
 		},
 		{
 			name:   "unsupported field type 2",
@@ -131,7 +131,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 				type test struct{ A chan int }
 				return (*test)(nil)
 			},
-			err: kaspajson.Error{ErrorCode: kaspajson.ErrUnsupportedFieldType},
+			err: jsonrpc.Error{ErrorCode: jsonrpc.ErrUnsupportedFieldType},
 		},
 		{
 			name:   "unsupported field type 3",
@@ -140,7 +140,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 				type test struct{ A complex64 }
 				return (*test)(nil)
 			},
-			err: kaspajson.Error{ErrorCode: kaspajson.ErrUnsupportedFieldType},
+			err: jsonrpc.Error{ErrorCode: jsonrpc.ErrUnsupportedFieldType},
 		},
 		{
 			name:   "unsupported field type 4",
@@ -149,7 +149,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 				type test struct{ A complex128 }
 				return (*test)(nil)
 			},
-			err: kaspajson.Error{ErrorCode: kaspajson.ErrUnsupportedFieldType},
+			err: jsonrpc.Error{ErrorCode: jsonrpc.ErrUnsupportedFieldType},
 		},
 		{
 			name:   "unsupported field type 5",
@@ -158,7 +158,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 				type test struct{ A func() }
 				return (*test)(nil)
 			},
-			err: kaspajson.Error{ErrorCode: kaspajson.ErrUnsupportedFieldType},
+			err: jsonrpc.Error{ErrorCode: jsonrpc.ErrUnsupportedFieldType},
 		},
 		{
 			name:   "unsupported field type 6",
@@ -167,7 +167,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 				type test struct{ A interface{} }
 				return (*test)(nil)
 			},
-			err: kaspajson.Error{ErrorCode: kaspajson.ErrUnsupportedFieldType},
+			err: jsonrpc.Error{ErrorCode: jsonrpc.ErrUnsupportedFieldType},
 		},
 		{
 			name:   "required after optional",
@@ -179,7 +179,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 				}
 				return (*test)(nil)
 			},
-			err: kaspajson.Error{ErrorCode: kaspajson.ErrNonOptionalField},
+			err: jsonrpc.Error{ErrorCode: jsonrpc.ErrNonOptionalField},
 		},
 		{
 			name:   "non-optional with default",
@@ -190,7 +190,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 				}
 				return (*test)(nil)
 			},
-			err: kaspajson.Error{ErrorCode: kaspajson.ErrNonOptionalDefault},
+			err: jsonrpc.Error{ErrorCode: jsonrpc.ErrNonOptionalDefault},
 		},
 		{
 			name:   "mismatched default",
@@ -201,20 +201,20 @@ func TestRegisterCmdErrors(t *testing.T) {
 				}
 				return (*test)(nil)
 			},
-			err: kaspajson.Error{ErrorCode: kaspajson.ErrMismatchedDefault},
+			err: jsonrpc.Error{ErrorCode: jsonrpc.ErrMismatchedDefault},
 		},
 	}
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		err := kaspajson.RegisterCmd(test.method, test.cmdFunc(),
+		err := jsonrpc.RegisterCmd(test.method, test.cmdFunc(),
 			test.flags)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
 			t.Errorf("Test #%d (%s) wrong error - got %T, "+
 				"want %T", i, test.name, err, test.err)
 			continue
 		}
-		gotErrorCode := err.(kaspajson.Error).ErrorCode
+		gotErrorCode := err.(jsonrpc.Error).ErrorCode
 		if gotErrorCode != test.err.ErrorCode {
 			t.Errorf("Test #%d (%s) mismatched error code - got "+
 				"%v, want %v", i, test.name, gotErrorCode,
@@ -224,7 +224,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 	}
 }
 
-// TestMustRegisterCmdPanic ensures the MustRegisterCmd function panics when
+// TestMustRegisterCmdPanic ensures the MustRegisterCommand function panics when
 // used to register an invalid type.
 func TestMustRegisterCmdPanic(t *testing.T) {
 	t.Parallel()
@@ -233,12 +233,12 @@ func TestMustRegisterCmdPanic(t *testing.T) {
 	// paniced.
 	defer func() {
 		if err := recover(); err == nil {
-			t.Error("MustRegisterCmd did not panic as expected")
+			t.Error("MustRegisterCommand did not panic as expected")
 		}
 	}()
 
 	// Intentionally try to register an invalid type to force a panic.
-	kaspajson.MustRegisterCmd("panicme", 0, 0)
+	jsonrpc.MustRegisterCommand("panicme", 0, 0)
 }
 
 // TestRegisteredCmdMethods tests the RegisteredCmdMethods function ensure it
@@ -247,7 +247,7 @@ func TestRegisteredCmdMethods(t *testing.T) {
 	t.Parallel()
 
 	// Ensure the registered methods are returned.
-	methods := kaspajson.RegisteredCmdMethods()
+	methods := jsonrpc.RegisteredCmdMethods()
 	if len(methods) == 0 {
 		t.Fatal("RegisteredCmdMethods: no methods")
 	}

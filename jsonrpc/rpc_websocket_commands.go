@@ -6,7 +6,7 @@
 // NOTE: This file is intended to house the RPC commands that are supported by
 // a kaspa rpc server, but are only available via websockets.
 
-package kaspajson
+package jsonrpc
 
 // AuthenticateCmd defines the authenticate JSON-RPC command.
 type AuthenticateCmd struct {
@@ -139,14 +139,14 @@ func init() {
 	// The commands in this file are only usable by websockets.
 	flags := UFWebsocketOnly
 
-	MustRegisterCmd("authenticate", (*AuthenticateCmd)(nil), flags)
-	MustRegisterCmd("loadTxFilter", (*LoadTxFilterCmd)(nil), flags)
-	MustRegisterCmd("notifyBlocks", (*NotifyBlocksCmd)(nil), flags)
-	MustRegisterCmd("notifyChainChanges", (*NotifyChainChangesCmd)(nil), flags)
-	MustRegisterCmd("notifyNewTransactions", (*NotifyNewTransactionsCmd)(nil), flags)
-	MustRegisterCmd("session", (*SessionCmd)(nil), flags)
-	MustRegisterCmd("stopNotifyBlocks", (*StopNotifyBlocksCmd)(nil), flags)
-	MustRegisterCmd("stopNotifyChainChanges", (*StopNotifyChainChangesCmd)(nil), flags)
-	MustRegisterCmd("stopNotifyNewTransactions", (*StopNotifyNewTransactionsCmd)(nil), flags)
-	MustRegisterCmd("rescanBlocks", (*RescanBlocksCmd)(nil), flags)
+	MustRegisterCommand("authenticate", (*AuthenticateCmd)(nil), flags)
+	MustRegisterCommand("loadTxFilter", (*LoadTxFilterCmd)(nil), flags)
+	MustRegisterCommand("notifyBlocks", (*NotifyBlocksCmd)(nil), flags)
+	MustRegisterCommand("notifyChainChanges", (*NotifyChainChangesCmd)(nil), flags)
+	MustRegisterCommand("notifyNewTransactions", (*NotifyNewTransactionsCmd)(nil), flags)
+	MustRegisterCommand("session", (*SessionCmd)(nil), flags)
+	MustRegisterCommand("stopNotifyBlocks", (*StopNotifyBlocksCmd)(nil), flags)
+	MustRegisterCommand("stopNotifyChainChanges", (*StopNotifyChainChangesCmd)(nil), flags)
+	MustRegisterCommand("stopNotifyNewTransactions", (*StopNotifyNewTransactionsCmd)(nil), flags)
+	MustRegisterCommand("rescanBlocks", (*RescanBlocksCmd)(nil), flags)
 }
