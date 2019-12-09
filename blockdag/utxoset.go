@@ -750,11 +750,7 @@ func (dus *DiffUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 // called with the DAG lock held.
 func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockBlueScore uint64) (bool, error) {
 	isCoinbase := tx.IsCoinBase()
-	if isCoinbase {
-		if !dus.shouldAddCoinbase(tx) {
-			return false, nil
-		}
-	} else if !dus.containsInputs(tx) {
+	if !isCoinbase && !dus.containsInputs(tx) {
 		return false, nil
 	}
 
@@ -804,16 +800,6 @@ func (dus *DiffUTXOSet) containsInputs(tx *wire.MsgTx) bool {
 		}
 	}
 
-	return true
-}
-
-func (dus *DiffUTXOSet) shouldAddCoinbase(tx *wire.MsgTx) bool {
-	for i := range tx.TxOut {
-		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
-		if _, ok := dus.Get(outpoint); ok {
-			return false
-		}
-	}
 	return true
 }
 

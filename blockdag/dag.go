@@ -1071,9 +1071,17 @@ func (node *blockNode) applyBlueBlocks(acceptedSelectedParentUTXO UTXOSet, selec
 			TxAcceptanceData: make([]TxAcceptanceData, len(transactions)),
 		}
 		for i, tx := range blueBlock.Transactions() {
-			isAccepted, err := pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
-			if err != nil {
-				return nil, nil, err
+			var isAccepted bool
+			isCoinBase := i == util.CoinbaseTransactionIndex
+			// Coinbase transaction outputs are added to the UTXO
+			// only if they are in the selected parent chain.
+			if isCoinBase {
+				isAccepted = false
+			} else {
+				isAccepted, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
+				if err != nil {
+					return nil, nil, err
+				}
 			}
 			blockTxsAcceptanceData.TxAcceptanceData[i] = TxAcceptanceData{Tx: tx, IsAccepted: isAccepted}
 		}
