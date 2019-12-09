@@ -120,7 +120,7 @@ func findCandidates(dag *blockdag.BlockDAG, highestTipHash *daghash.Hash) ([]*da
 
 // showCandidate display a checkpoint candidate using and output format
 // determined by the configuration parameters. The Go syntax output
-// uses the format the btcchain code expects for checkpoints added to the list.
+// uses the format kaspa code expects for checkpoints added to the list.
 func showCandidate(candidateNum int, checkpoint *dagconfig.Checkpoint) {
 	if cfg.UseGoOutput {
 		fmt.Printf("Candidate %d -- {%d, newShaHashFromStr(\"%s\")},\n",

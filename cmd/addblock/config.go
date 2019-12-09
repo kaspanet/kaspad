@@ -25,8 +25,8 @@ const (
 )
 
 var (
-	btcdHomeDir    = util.AppDataDir("btcd", false)
-	defaultDataDir = filepath.Join(btcdHomeDir, "data")
+	kaspadHomeDir  = util.AppDataDir("kaspad", false)
+	defaultDataDir = filepath.Join(kaspadHomeDir, "data")
 	knownDbTypes   = database.SupportedDrivers()
 	activeConfig   *ConfigFlags
 )
@@ -40,7 +40,7 @@ func ActiveConfig() *ConfigFlags {
 //
 // See loadConfig for details on the configuration load process.
 type ConfigFlags struct {
-	DataDir   string `short:"b" long:"datadir" description:"Location of the btcd data directory"`
+	DataDir   string `short:"b" long:"datadir" description:"Location of the kaspad data directory"`
 	DbType    string `long:"dbtype" description:"Database backend to use for the Block Chain"`
 	InFile    string `short:"i" long:"infile" description:"File containing the block(s)"`
 	TxIndex   bool   `long:"txindex" description:"Build a full hash-based transaction index which makes all transactions available via the getrawtransaction RPC"`

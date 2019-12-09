@@ -28,11 +28,11 @@ const (
 )
 
 var (
-	btcdHomeDir        = util.AppDataDir("btcd", false)
-	btcctlHomeDir      = util.AppDataDir("btcctl", false)
-	defaultConfigFile  = filepath.Join(btcctlHomeDir, "btcctl.conf")
+	kaspadHomeDir      = util.AppDataDir("kaspad", false)
+	kaspactlHomeDir    = util.AppDataDir("kaspactl", false)
+	defaultConfigFile  = filepath.Join(kaspactlHomeDir, "kaspactl.conf")
 	defaultRPCServer   = "localhost"
-	defaultRPCCertFile = filepath.Join(btcdHomeDir, "rpc.cert")
+	defaultRPCCertFile = filepath.Join(kaspadHomeDir, "rpc.cert")
 	activeConfig       *ConfigFlags
 )
 
@@ -89,7 +89,7 @@ func listCommands() {
 	}
 }
 
-// ConfigFlags defines the configuration options for btcctl.
+// ConfigFlags defines the configuration options for kaspactl.
 //
 // See loadConfig for details on the configuration load process.
 type ConfigFlags struct {
@@ -135,7 +135,7 @@ func normalizeAddress(addr string, useTestNet, useSimNet, useDevNet bool) string
 func cleanAndExpandPath(path string) string {
 	// Expand initial ~ to OS specific home directory.
 	if strings.HasPrefix(path, "~") {
-		homeDir := filepath.Dir(btcctlHomeDir)
+		homeDir := filepath.Dir(kaspactlHomeDir)
 		path = strings.Replace(path, "~", homeDir, 1)
 	}
 
@@ -200,11 +200,11 @@ func loadConfig() (*ConfigFlags, []string, error) {
 	}
 
 	// If no rpc user and password were configured, create
-	// a btcctl default config file based on the rpc login
+	// a kaspactl default config file based on the rpc login
 	// details written in the RPC server configuration file
 	if preCfg.RPCUser == "" && preCfg.RPCPassword == "" {
 		if _, err := os.Stat(preCfg.ConfigFile); os.IsNotExist(err) {
-			serverConfigPath := filepath.Join(btcdHomeDir, "btcd.conf")
+			serverConfigPath := filepath.Join(kaspadHomeDir, "kaspad.conf")
 			err := createDefaultConfigFile(preCfg.ConfigFile, serverConfigPath)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error creating a default config file: %s\n", err)
