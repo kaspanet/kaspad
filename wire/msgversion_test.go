@@ -13,9 +13,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/util/random"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/random"
 )
 
 // TestVersion tests the MsgVersion API.

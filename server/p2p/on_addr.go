@@ -1,9 +1,9 @@
 package p2p
 
 import (
-	"github.com/daglabs/btcd/config"
-	"github.com/daglabs/btcd/peer"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/peer"
+	"github.com/kaspanet/kaspad/wire"
 	"time"
 )
 

@@ -7,7 +7,7 @@ package util
 import (
 	"github.com/pkg/errors"
 
-	"github.com/daglabs/btcd/util/bech32"
+	"github.com/kaspanet/kaspad/util/bech32"
 	"golang.org/x/crypto/ripemd160"
 )
 

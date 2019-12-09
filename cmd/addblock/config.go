@@ -6,16 +6,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/config"
+	"github.com/kaspanet/kaspad/config"
 	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/daglabs/btcd/database"
-	_ "github.com/daglabs/btcd/database/ffldb"
-	"github.com/daglabs/btcd/util"
 	flags "github.com/jessevdk/go-flags"
+	"github.com/kaspanet/kaspad/database"
+	_ "github.com/kaspanet/kaspad/database/ffldb"
+	"github.com/kaspanet/kaspad/util"
 )
 
 const (

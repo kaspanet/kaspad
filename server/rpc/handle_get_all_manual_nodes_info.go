@@ -1,6 +1,6 @@
 package rpc
 
-import "github.com/daglabs/btcd/btcjson"
+import "github.com/kaspanet/kaspad/btcjson"
 
 // handleGetAllManualNodesInfo handles getAllManualNodesInfo commands.
 func handleGetAllManualNodesInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {

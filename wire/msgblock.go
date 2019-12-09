@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // defaultTransactionAlloc is the default size used for the backing array

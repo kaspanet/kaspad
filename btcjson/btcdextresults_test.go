@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/daglabs/btcd/btcjson"
+	"github.com/kaspanet/kaspad/btcjson"
 )
 
 // TestBtcdExtCustomResults ensures any results that have custom marshalling

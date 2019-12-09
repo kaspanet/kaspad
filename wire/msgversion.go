@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
 // MaxUserAgentLen is the maximum allowed length for the user agent field in a

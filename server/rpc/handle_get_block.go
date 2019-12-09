@@ -4,13 +4,13 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/hex"
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/config"
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/util/subnetworkid"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // handleGetBlock implements the getBlock command.
@@ -21,6 +21,14 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	hash, err := daghash.NewHashFromStr(c.Hash)
 	if err != nil {
 		return nil, rpcDecodeHexError(c.Hash)
+	}
+
+	// Return an appropriate error if the block is known to be invalid
+	if s.cfg.DAG.IsKnownInvalid(hash) {
+		return nil, &btcjson.RPCError{
+			Code:    btcjson.ErrRPCBlockInvalid,
+			Message: "Block is known to be invalid",
+		}
 	}
 
 	// Return an appropriate error if the block is an orphan

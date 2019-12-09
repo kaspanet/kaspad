@@ -2,9 +2,9 @@ package rpc
 
 import (
 	"encoding/hex"
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
+	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
 )
 
 // handleDecodeScript handles decodeScript commands.

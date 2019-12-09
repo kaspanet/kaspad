@@ -5,16 +5,16 @@
 package main
 
 import (
-	"github.com/daglabs/btcd/util/panics"
+	"github.com/kaspanet/kaspad/util/panics"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/logger"
-	"github.com/daglabs/btcd/logs"
 	"github.com/jessevdk/go-flags"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/logger"
+	"github.com/kaspanet/kaspad/logs"
 )
 
 const (
@@ -67,7 +67,7 @@ func realMain() error {
 	backendLogger := logs.NewBackend()
 	defer os.Stdout.Sync()
 	log = backendLogger.Logger("MAIN")
-	spawn = panics.GoroutineWrapperFunc(log, backendLogger)
+	spawn = panics.GoroutineWrapperFunc(log)
 	dbLog, _ := logger.Get(logger.SubsystemTags.BCDB)
 	dbLog.SetLevel(logs.LevelDebug)
 

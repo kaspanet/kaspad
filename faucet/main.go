@@ -2,22 +2,21 @@ package main
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/faucet/config"
-	"github.com/daglabs/btcd/faucet/database"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/base58"
+	"github.com/kaspanet/kaspad/btcec"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/faucet/config"
+	"github.com/kaspanet/kaspad/faucet/database"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/base58"
 	"github.com/pkg/errors"
 	"os"
 
-	"github.com/daglabs/btcd/logger"
-	"github.com/daglabs/btcd/signal"
-	"github.com/daglabs/btcd/util/panics"
 	_ "github.com/golang-migrate/migrate/v4/database/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"github.com/kaspanet/kaspad/signal"
+	"github.com/kaspanet/kaspad/util/panics"
 )
 
 var (
@@ -27,7 +26,7 @@ var (
 )
 
 func main() {
-	defer panics.HandlePanic(log, logger.BackendLog, nil)
+	defer panics.HandlePanic(log, nil, nil)
 
 	err := config.Parse()
 	if err != nil {

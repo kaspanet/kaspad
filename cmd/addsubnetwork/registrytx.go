@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/btcec"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
 

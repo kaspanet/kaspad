@@ -6,12 +6,12 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/daglabs/btcd/signal"
-	"github.com/daglabs/btcd/util/panics"
+	"github.com/kaspanet/kaspad/signal"
+	"github.com/kaspanet/kaspad/util/panics"
 )
 
 func main() {
-	defer panics.HandlePanic(log, backendLog, nil)
+	defer panics.HandlePanic(log, nil, nil)
 	cfg, err := parseConfig()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error parsing command-line arguments: %s", err)

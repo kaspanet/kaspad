@@ -5,8 +5,8 @@
 package ffldb
 
 import (
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
 

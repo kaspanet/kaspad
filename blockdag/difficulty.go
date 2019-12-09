@@ -8,7 +8,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/daglabs/btcd/util"
+	"github.com/kaspanet/kaspad/util"
 )
 
 // requiredDifficulty calculates the required difficulty for a

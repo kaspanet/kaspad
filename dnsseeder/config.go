@@ -6,15 +6,15 @@ package main
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/config"
+	"github.com/kaspanet/kaspad/config"
 	"github.com/pkg/errors"
 	"net"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/daglabs/btcd/util"
 	"github.com/jessevdk/go-flags"
+	"github.com/kaspanet/kaspad/util"
 )
 
 const (

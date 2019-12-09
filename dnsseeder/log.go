@@ -2,15 +2,15 @@ package main
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/logs"
-	"github.com/daglabs/btcd/util/panics"
+	"github.com/kaspanet/kaspad/logs"
+	"github.com/kaspanet/kaspad/util/panics"
 	"os"
 )
 
 var (
 	backendLog = logs.NewBackend()
 	log        = backendLog.Logger("SEED")
-	spawn      = panics.GoroutineWrapperFunc(log, backendLog)
+	spawn      = panics.GoroutineWrapperFunc(log)
 )
 
 func initLog(logFile, errLogFile string) {

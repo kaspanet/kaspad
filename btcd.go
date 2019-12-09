@@ -6,7 +6,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/logger"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -17,16 +16,16 @@ import (
 	"runtime/pprof"
 	"strings"
 
-	"github.com/daglabs/btcd/blockdag/indexers"
-	"github.com/daglabs/btcd/config"
-	"github.com/daglabs/btcd/database"
-	_ "github.com/daglabs/btcd/database/ffldb"
-	"github.com/daglabs/btcd/limits"
-	"github.com/daglabs/btcd/server"
-	"github.com/daglabs/btcd/signal"
-	"github.com/daglabs/btcd/util/fs"
-	"github.com/daglabs/btcd/util/panics"
-	"github.com/daglabs/btcd/version"
+	"github.com/kaspanet/kaspad/blockdag/indexers"
+	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/database"
+	_ "github.com/kaspanet/kaspad/database/ffldb"
+	"github.com/kaspanet/kaspad/limits"
+	"github.com/kaspanet/kaspad/server"
+	"github.com/kaspanet/kaspad/signal"
+	"github.com/kaspanet/kaspad/util/fs"
+	"github.com/kaspanet/kaspad/util/panics"
+	"github.com/kaspanet/kaspad/version"
 )
 
 const (
@@ -57,7 +56,7 @@ func btcdMain(serverChan chan<- *server.Server) error {
 		return err
 	}
 	cfg = config.ActiveConfig()
-	defer panics.HandlePanic(btcdLog, logger.BackendLog, nil)
+	defer panics.HandlePanic(btcdLog, nil, nil)
 
 	// Get a channel that will be closed when a shutdown signal has been
 	// triggered either from an OS signal such as SIGINT (Ctrl+C) or from

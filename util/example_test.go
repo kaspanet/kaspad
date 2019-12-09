@@ -5,7 +5,7 @@ import (
 	"math"
 	"math/big"
 
-	"github.com/daglabs/btcd/util"
+	"github.com/kaspanet/kaspad/util"
 )
 
 func ExampleAmount() {

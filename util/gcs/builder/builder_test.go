@@ -9,12 +9,12 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/util/gcs"
-	"github.com/daglabs/btcd/util/gcs/builder"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/gcs"
+	"github.com/kaspanet/kaspad/util/gcs/builder"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 var (

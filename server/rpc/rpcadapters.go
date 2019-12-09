@@ -7,14 +7,14 @@ package rpc
 import (
 	"sync/atomic"
 
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/mempool"
-	"github.com/daglabs/btcd/netsync"
-	"github.com/daglabs/btcd/peer"
-	"github.com/daglabs/btcd/server/p2p"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/mempool"
+	"github.com/kaspanet/kaspad/netsync"
+	"github.com/kaspanet/kaspad/peer"
+	"github.com/kaspanet/kaspad/server/p2p"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // rpcPeer provides a peer for use with the RPC server and implements the

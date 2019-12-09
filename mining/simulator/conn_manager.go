@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/daglabs/btcd/rpcclient"
+	"github.com/kaspanet/kaspad/rpcclient"
 	"github.com/pkg/errors"
 )
 

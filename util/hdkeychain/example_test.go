@@ -6,9 +6,9 @@ package hdkeychain_test
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/util"
+	"github.com/kaspanet/kaspad/util"
 
-	"github.com/daglabs/btcd/util/hdkeychain"
+	"github.com/kaspanet/kaspad/util/hdkeychain"
 )
 
 // This example demonstrates how to generate a cryptographically random seed

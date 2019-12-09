@@ -22,10 +22,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 type newBucket [newBucketCount]map[string]*KnownAddress
@@ -724,7 +724,11 @@ func (a *AddrManager) Start() {
 
 	// Start the address ticker to save addresses periodically.
 	a.wg.Add(1)
-	spawn(a.addressHandler)
+	spawn(a.addressHandler, a.handlePanic)
+}
+
+func (a *AddrManager) handlePanic() {
+	atomic.AddInt32(&a.shutdown, 1)
 }
 
 // Stop gracefully shuts down the address manager by stopping the main handler.

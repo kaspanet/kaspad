@@ -1,6 +1,6 @@
 package rpc
 
-import "github.com/daglabs/btcd/btcjson"
+import "github.com/kaspanet/kaspad/btcjson"
 
 // API version constants
 const (

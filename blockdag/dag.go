@@ -12,14 +12,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 const (
@@ -203,6 +203,18 @@ func (dag *BlockDAG) IsKnownOrphan(hash *daghash.Hash) bool {
 	dag.orphanLock.RUnlock()
 
 	return exists
+}
+
+// IsKnownInvalid returns whether the passed hash is known to be an invalid block.
+// Note that if the block is not found this method will return false.
+//
+// This function is safe for concurrent access.
+func (dag *BlockDAG) IsKnownInvalid(hash *daghash.Hash) bool {
+	node := dag.index.LookupNode(hash)
+	if node == nil {
+		return false
+	}
+	return dag.index.NodeStatus(node).KnownInvalid()
 }
 
 // GetOrphanMissingAncestorHashes returns all of the missing parents in the orphan's sub-DAG

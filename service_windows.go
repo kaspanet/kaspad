@@ -13,10 +13,10 @@ import (
 	"github.com/btcsuite/winsvc/eventlog"
 	"github.com/btcsuite/winsvc/mgr"
 	"github.com/btcsuite/winsvc/svc"
-	"github.com/daglabs/btcd/config"
-	"github.com/daglabs/btcd/server"
-	"github.com/daglabs/btcd/signal"
-	"github.com/daglabs/btcd/version"
+	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/server"
+	"github.com/kaspanet/kaspad/signal"
+	"github.com/kaspanet/kaspad/version"
 )
 
 const (

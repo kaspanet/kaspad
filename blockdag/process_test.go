@@ -3,9 +3,9 @@ package blockdag
 import (
 	"bou.ke/monkey"
 	"fmt"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
 	"path/filepath"
 	"testing"
 	"time"

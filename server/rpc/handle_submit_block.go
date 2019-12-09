@@ -3,9 +3,9 @@ package rpc
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/util"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/util"
 )
 
 // handleSubmitBlock implements the submitBlock command.

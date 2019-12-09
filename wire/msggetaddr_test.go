@@ -9,8 +9,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
 // TestGetAddr tests the MsgGetAddr API.

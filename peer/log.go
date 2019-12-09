@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/daglabs/btcd/logger"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util/panics"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/logger"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util/panics"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 )
 
 var log, _ = logger.Get(logger.SubsystemTags.PEER)
-var spawn = panics.GoroutineWrapperFunc(log, logger.BackendLog)
+var spawn = panics.GoroutineWrapperFunc(log)
 
 // LogClosure is a closure that can be printed with %s to be used to
 // generate expensive-to-create data for a detailed log level and avoid doing

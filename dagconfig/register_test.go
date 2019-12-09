@@ -2,11 +2,11 @@ package dagconfig_test
 
 import (
 	"bytes"
-	"github.com/daglabs/btcd/util/hdkeychain"
+	"github.com/kaspanet/kaspad/util/hdkeychain"
 	"reflect"
 	"testing"
 
-	. "github.com/daglabs/btcd/dagconfig"
+	. "github.com/kaspanet/kaspad/dagconfig"
 )
 
 // Define some of the required parameters for a user-registered

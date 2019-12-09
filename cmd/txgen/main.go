@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/signal"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/base58"
-	"github.com/daglabs/btcd/util/panics"
+	"github.com/kaspanet/kaspad/btcec"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/signal"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/base58"
+	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/pkg/errors"
 )
 
@@ -23,7 +23,7 @@ func privateKeyToP2pkhAddress(key *btcec.PrivateKey, net *dagconfig.Params) (uti
 }
 
 func main() {
-	defer panics.HandlePanic(log, backendLog, nil)
+	defer panics.HandlePanic(log, nil, nil)
 
 	cfg, err := parseConfig()
 	if err != nil {

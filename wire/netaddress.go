@@ -10,7 +10,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/daglabs/btcd/util/binaryserializer"
+	"github.com/kaspanet/kaspad/util/binaryserializer"
 )
 
 // maxNetAddressPayload returns the max payload size for a bitcoin NetAddress

@@ -14,8 +14,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // scriptTestName returns a descriptive test name for the given reference script

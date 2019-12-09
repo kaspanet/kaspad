@@ -9,9 +9,9 @@ package indexers
 
 import (
 	"encoding/binary"
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/util"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
 

@@ -13,13 +13,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/util/panics"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/panics"
 
-	"github.com/daglabs/btcd/connmgr"
-	"github.com/daglabs/btcd/peer"
-	"github.com/daglabs/btcd/signal"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/connmgr"
+	"github.com/kaspanet/kaspad/peer"
+	"github.com/kaspanet/kaspad/signal"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 const (
@@ -156,7 +156,7 @@ func creep() {
 }
 
 func main() {
-	defer panics.HandlePanic(log, backendLog, nil)
+	defer panics.HandlePanic(log, nil, nil)
 	cfg, err := loadConfig()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "loadConfig: %v\n", err)

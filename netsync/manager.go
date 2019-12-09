@@ -14,14 +14,14 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/mempool"
-	peerpkg "github.com/daglabs/btcd/peer"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/mempool"
+	peerpkg "github.com/kaspanet/kaspad/peer"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 const (
@@ -625,7 +625,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 			sm.dag.AddDelayedBlock(bmsg.block, delay)
 			time.Sleep(delay)
 			sm.QueueBlock(bmsg.block, bmsg.peer, true, make(chan struct{}))
-		})
+		}, sm.handlePanic)
 	}
 
 	// Request the parents for the orphan block from the peer that sent it.
@@ -1292,7 +1292,7 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 			if err != nil {
 				panic(fmt.Sprintf("HandleNewBlock failed to handle block %s", block.Hash()))
 			}
-		})
+		}, sm.handlePanic)
 
 		// Relay if we are current and the block was not just now unorphaned.
 		// Otherwise peers that are current should already know about it
@@ -1396,7 +1396,11 @@ func (sm *SyncManager) Start() {
 
 	log.Trace("Starting sync manager")
 	sm.wg.Add(1)
-	spawn(sm.blockHandler)
+	spawn(sm.blockHandler, sm.handlePanic)
+}
+
+func (sm *SyncManager) handlePanic() {
+	atomic.AddInt32(&sm.shutdown, 1)
 }
 
 // Stop gracefully shuts down the sync manager by stopping all asynchronous

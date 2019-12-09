@@ -14,8 +14,8 @@ import (
 	"runtime"
 	"time"
 
-	rpc "github.com/daglabs/btcd/rpcclient"
-	"github.com/daglabs/btcd/util"
+	rpc "github.com/kaspanet/kaspad/rpcclient"
+	"github.com/kaspanet/kaspad/util"
 )
 
 // nodeConfig contains all the args, and data required to launch a btcd process

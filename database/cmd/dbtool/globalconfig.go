@@ -10,10 +10,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/database"
-	_ "github.com/daglabs/btcd/database/ffldb"
-	"github.com/daglabs/btcd/util"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/database"
+	_ "github.com/kaspanet/kaspad/database/ffldb"
+	"github.com/kaspanet/kaspad/util"
 )
 
 var (
@@ -86,6 +86,10 @@ func setupGlobalConfig() error {
 	if numNets > 1 {
 		return errors.New("The testnet, regtest, simnet and devnet params " +
 			"can't be used together -- choose one of the four")
+	}
+
+	if numNets == 0 {
+		return errors.New("Mainnet has not launched yet, use --testnet to run in testnet mode")
 	}
 
 	// Validate database type.
