@@ -1622,7 +1622,6 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		TimeSource:            blockdag.NewMedianTime(),
 		services:              services,
 		SigCache:              txscript.NewSigCache(config.ActiveConfig().SigCacheMaxSize),
-		cfCheckptCaches:       make(map[wire.FilterType][]cfHeaderKV),
 		notifyNewTransactions: notifyNewTransactions,
 	}
 
