@@ -207,7 +207,7 @@ func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (
 
 // LoadBlocks reads files containing bitcoin block data (gzipped but otherwise
 // in the format bitcoind writes) from disk and returns them as an array of
-// util.Block. This is largely borrowed from the test code in btcdb.
+// util.Block.
 func LoadBlocks(filename string) (blocks []*util.Block, err error) {
 	var network = wire.MainNet
 	var dr io.Reader

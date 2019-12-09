@@ -4,7 +4,7 @@
 // license that can be found in the LICENSE file.
 
 // NOTE: This file is intended to house the RPC commands that are supported by
-// a dag server with btcd extensions.
+// a dag server with kaspad extensions.
 
 package btcjson
 
@@ -45,14 +45,14 @@ func NewNodeCmd(subCmd NodeSubCmd, target string, connectSubCmd *string) *NodeCm
 }
 
 // DebugLevelCmd defines the debugLevel JSON-RPC command. This command is not a
-// standard Bitcoin command. It is an extension for btcd.
+// standard Bitcoin command. It is an extension for kaspad.
 type DebugLevelCmd struct {
 	LevelSpec string
 }
 
 // NewDebugLevelCmd returns a new DebugLevelCmd which can be used to issue a
 // debugLevel JSON-RPC command. This command is not a standard Bitcoin command.
-// It is an extension for btcd.
+// It is an extension for kaspad.
 func NewDebugLevelCmd(levelSpec string) *DebugLevelCmd {
 	return &DebugLevelCmd{
 		LevelSpec: levelSpec,

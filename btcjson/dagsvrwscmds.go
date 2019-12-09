@@ -107,9 +107,6 @@ type Outpoint struct {
 
 // LoadTxFilterCmd defines the loadTxFilter request parameters to load or
 // reload a transaction filter.
-//
-// NOTE: This is a btcd extension ported from github.com/decred/dcrd/dcrjson
-// and requires a websocket connection.
 type LoadTxFilterCmd struct {
 	Reload    bool
 	Addresses []string
@@ -118,9 +115,6 @@ type LoadTxFilterCmd struct {
 
 // NewLoadTxFilterCmd returns a new instance which can be used to issue a
 // loadTxFilter JSON-RPC command.
-//
-// NOTE: This is a btcd extension ported from github.com/decred/dcrd/dcrjson
-// and requires a websocket connection.
 func NewLoadTxFilterCmd(reload bool, addresses []string, outpoints []Outpoint) *LoadTxFilterCmd {
 	return &LoadTxFilterCmd{
 		Reload:    reload,
@@ -130,9 +124,6 @@ func NewLoadTxFilterCmd(reload bool, addresses []string, outpoints []Outpoint) *
 }
 
 // RescanBlocksCmd defines the rescan JSON-RPC command.
-//
-// NOTE: This is a btcd extension ported from github.com/decred/dcrd/dcrjson
-// and requires a websocket connection.
 type RescanBlocksCmd struct {
 	// Block hashes as a string array.
 	BlockHashes []string
@@ -140,9 +131,6 @@ type RescanBlocksCmd struct {
 
 // NewRescanBlocksCmd returns a new instance which can be used to issue a rescan
 // JSON-RPC command.
-//
-// NOTE: This is a btcd extension ported from github.com/decred/dcrd/dcrjson
-// and requires a websocket connection.
 func NewRescanBlocksCmd(blockHashes []string) *RescanBlocksCmd {
 	return &RescanBlocksCmd{BlockHashes: blockHashes}
 }

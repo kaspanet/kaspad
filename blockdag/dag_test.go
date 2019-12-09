@@ -886,10 +886,10 @@ func TestNew(t *testing.T) {
 
 	config.SubnetworkID = &subnetworkid.SubnetworkID{0xff}
 	_, err = New(config)
-	expectedErrorMessage := fmt.Sprintf("Cannot start btcd with subnetwork ID %s because"+
+	expectedErrorMessage := fmt.Sprintf("Cannot start kaspad with subnetwork ID %s because"+
 		" its database is already built with subnetwork ID <nil>. If you"+
 		" want to switch to a new database, please reset the"+
-		" database by starting btcd with --reset-db flag", config.SubnetworkID)
+		" database by starting kaspad with --reset-db flag", config.SubnetworkID)
 	if err.Error() != expectedErrorMessage {
 		t.Errorf("Unexpected error. Expected error '%s' but got '%s'", expectedErrorMessage, err)
 	}

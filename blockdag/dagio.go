@@ -419,10 +419,10 @@ func (dag *BlockDAG) initDAGState() error {
 				localSubnetworkID.SetBytes(localSubnetworkIDBytes)
 			}
 			if !localSubnetworkID.IsEqual(dag.subnetworkID) {
-				return errors.Errorf("Cannot start btcd with subnetwork ID %s because"+
+				return errors.Errorf("Cannot start kaspad with subnetwork ID %s because"+
 					" its database is already built with subnetwork ID %s. If you"+
 					" want to switch to a new database, please reset the"+
-					" database by starting btcd with --reset-db flag", dag.subnetworkID, localSubnetworkID)
+					" database by starting kaspad with --reset-db flag", dag.subnetworkID, localSubnetworkID)
 			}
 		}
 		return nil

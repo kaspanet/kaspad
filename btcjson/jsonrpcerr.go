@@ -69,7 +69,7 @@ const (
 	ErrRPCBlockInvalid       RPCErrorCode = -5
 )
 
-// Errors that are specific to btcd.
+// Errors that are specific to kaspad.
 const (
 	ErrRPCUnimplemented RPCErrorCode = -1
 )
