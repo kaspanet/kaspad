@@ -51,7 +51,7 @@ const (
 	defaultBlockMaxMass          = 10000000
 	blockMaxMassMin              = 1000
 	blockMaxMassMax              = 10000000
-	defaultMinRelayTxFee         = 1e-5 // 1 satoshi per byte
+	defaultMinRelayTxFee         = 1e-5 // 1 sompi per byte
 	defaultGenerate              = false
 	defaultMaxOrphanTransactions = 100
 	//DefaultMaxOrphanTxSize is the default maximum size for an orphan transaction
@@ -90,7 +90,7 @@ func minUint32(a, b uint32) uint32 {
 	return b
 }
 
-// Flags defines the configuration options for btcd.
+// Flags defines the configuration options for kaspad.
 //
 // See loadConfig for details on the configuration load process.
 type Flags struct {
@@ -139,9 +139,9 @@ type Flags struct {
 	CPUProfile           string        `long:"cpuprofile" description:"Write CPU profile to the specified file"`
 	DebugLevel           string        `short:"d" long:"debuglevel" description:"Logging level for all subsystems {trace, debug, info, warn, error, critical} -- You may also specify <subsystem>=<level>,<subsystem2>=<level>,... to set the log level for individual subsystems -- Use show to list available subsystems"`
 	Upnp                 bool          `long:"upnp" description:"Use UPnP to map our listening port outside of NAT"`
-	MinRelayTxFee        float64       `long:"minrelaytxfee" description:"The minimum transaction fee in BTC/kB to be considered a non-zero fee."`
+	MinRelayTxFee        float64       `long:"minrelaytxfee" description:"The minimum transaction fee in KAS/kB to be considered a non-zero fee."`
 	MaxOrphanTxs         int           `long:"maxorphantx" description:"Max number of orphan transactions to keep in memory"`
-	Generate             bool          `long:"generate" description:"Generate (mine) bitcoins using the CPU"`
+	Generate             bool          `long:"generate" description:"Generate (mine) kaspa using the CPU"`
 	MiningAddrs          []string      `long:"miningaddr" description:"Add the specified payment address to the list of addresses to use for generated blocks -- At least one address is required if the generate option is set"`
 	BlockMaxMass         uint64        `long:"blockmaxmass" description:"Maximum transaction mass to be used when creating a block"`
 	UserAgentComments    []string      `long:"uacomment" description:"Comment to add to the user agent -- See BIP 14 for more information."`
@@ -163,7 +163,7 @@ type Flags struct {
 	NetworkFlags
 }
 
-// Config defines the configuration options for btcd.
+// Config defines the configuration options for kaspad.
 //
 // See loadConfig for details on the configuration load process.
 type Config struct {
@@ -290,7 +290,7 @@ func ActiveConfig() *Config {
 // 	3) Load configuration file overwriting defaults with any specified options
 // 	4) Parse CLI options and overwrite/add any specified options
 //
-// The above results in btcd functioning properly without any config settings
+// The above results in kaspad functioning properly without any config settings
 // while still allowing the user to override settings with config files and
 // command line options. Command line options always take precedence.
 func loadConfig() (*Config, []string, error) {

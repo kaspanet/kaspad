@@ -25,13 +25,13 @@ func TestCreateDefaultConfigFile(t *testing.T) {
 	sampleConfigFile := filepath.Join(filepath.Dir(path), "..", "sample-kaspad.conf")
 
 	// Setup a temporary directory
-	tmpDir, err := ioutil.TempDir("", "btcd")
+	tmpDir, err := ioutil.TempDir("", "kaspad")
 	if err != nil {
 		t.Fatalf("Failed creating a temporary directory: %v", err)
 	}
 	testpath := filepath.Join(tmpDir, "test.conf")
 
-	// copy config file to location of btcd binary
+	// copy config file to location of kaspad binary
 	data, err := ioutil.ReadFile(sampleConfigFile)
 	if err != nil {
 		t.Fatalf("Failed reading sample config file: %v", err)
