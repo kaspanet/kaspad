@@ -9,26 +9,26 @@ import (
 	"github.com/pkg/errors"
 	"testing"
 
-	"github.com/kaspanet/kaspad/btcec"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
 
 type addressToKey struct {
-	key        *btcec.PrivateKey
+	key        *ecc.PrivateKey
 	compressed bool
 }
 
 func mkGetKey(keys map[string]addressToKey) KeyDB {
 	if keys == nil {
-		return KeyClosure(func(addr util.Address) (*btcec.PrivateKey,
+		return KeyClosure(func(addr util.Address) (*ecc.PrivateKey,
 			bool, error) {
 			return nil, false, errors.New("nope")
 		})
 	}
-	return KeyClosure(func(addr util.Address) (*btcec.PrivateKey,
+	return KeyClosure(func(addr util.Address) (*ecc.PrivateKey,
 		bool, error) {
 		a2k, ok := keys[addr.EncodeAddress()]
 		if !ok {
@@ -139,14 +139,14 @@ func TestSignTxOutput(t *testing.T) {
 	for _, hashType := range hashTypes {
 		for i := range tx.TxIn {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
-			key, err := btcec.NewPrivateKey(btcec.S256())
+			key, err := ecc.NewPrivateKey(ecc.S256())
 			if err != nil {
 				t.Errorf("failed to make privKey for %s: %v",
 					msg, err)
 				break
 			}
 
-			pk := (*btcec.PublicKey)(&key.PublicKey).
+			pk := (*ecc.PublicKey)(&key.PublicKey).
 				SerializeUncompressed()
 			address, err := util.NewAddressPubKeyHash(
 				util.Hash160(pk), util.Bech32PrefixDAGTest)
@@ -176,14 +176,14 @@ func TestSignTxOutput(t *testing.T) {
 	for _, hashType := range hashTypes {
 		for i := range tx.TxIn {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
-			key, err := btcec.NewPrivateKey(btcec.S256())
+			key, err := ecc.NewPrivateKey(ecc.S256())
 			if err != nil {
 				t.Errorf("failed to make privKey for %s: %v",
 					msg, err)
 				break
 			}
 
-			pk := (*btcec.PublicKey)(&key.PublicKey).
+			pk := (*ecc.PublicKey)(&key.PublicKey).
 				SerializeUncompressed()
 			address, err := util.NewAddressPubKeyHash(
 				util.Hash160(pk), util.Bech32PrefixDAGTest)
@@ -237,14 +237,14 @@ func TestSignTxOutput(t *testing.T) {
 		for i := range tx.TxIn {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
 
-			key, err := btcec.NewPrivateKey(btcec.S256())
+			key, err := ecc.NewPrivateKey(ecc.S256())
 			if err != nil {
 				t.Errorf("failed to make privKey for %s: %v",
 					msg, err)
 				break
 			}
 
-			pk := (*btcec.PublicKey)(&key.PublicKey).
+			pk := (*ecc.PublicKey)(&key.PublicKey).
 				SerializeCompressed()
 			address, err := util.NewAddressPubKeyHash(
 				util.Hash160(pk), util.Bech32PrefixDAGTest)
@@ -275,14 +275,14 @@ func TestSignTxOutput(t *testing.T) {
 		for i := range tx.TxIn {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
 
-			key, err := btcec.NewPrivateKey(btcec.S256())
+			key, err := ecc.NewPrivateKey(ecc.S256())
 			if err != nil {
 				t.Errorf("failed to make privKey for %s: %v",
 					msg, err)
 				break
 			}
 
-			pk := (*btcec.PublicKey)(&key.PublicKey).
+			pk := (*ecc.PublicKey)(&key.PublicKey).
 				SerializeCompressed()
 			address, err := util.NewAddressPubKeyHash(
 				util.Hash160(pk), util.Bech32PrefixDAGTest)
@@ -336,14 +336,14 @@ func TestSignTxOutput(t *testing.T) {
 	for _, hashType := range hashTypes {
 		for i := range tx.TxIn {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
-			key, err := btcec.NewPrivateKey(btcec.S256())
+			key, err := ecc.NewPrivateKey(ecc.S256())
 			if err != nil {
 				t.Errorf("failed to make privKey for %s: %v",
 					msg, err)
 				break
 			}
 
-			pk := (*btcec.PublicKey)(&key.PublicKey).
+			pk := (*ecc.PublicKey)(&key.PublicKey).
 				SerializeUncompressed()
 			address, err := util.NewAddressPubKeyHash(
 				util.Hash160(pk), util.Bech32PrefixDAGTest)
@@ -392,14 +392,14 @@ func TestSignTxOutput(t *testing.T) {
 	for _, hashType := range hashTypes {
 		for i := range tx.TxIn {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
-			key, err := btcec.NewPrivateKey(btcec.S256())
+			key, err := ecc.NewPrivateKey(ecc.S256())
 			if err != nil {
 				t.Errorf("failed to make privKey for %s: %v",
 					msg, err)
 				break
 			}
 
-			pk := (*btcec.PublicKey)(&key.PublicKey).
+			pk := (*ecc.PublicKey)(&key.PublicKey).
 				SerializeUncompressed()
 			address, err := util.NewAddressPubKeyHash(
 				util.Hash160(pk), util.Bech32PrefixDAGTest)
@@ -474,14 +474,14 @@ func TestSignTxOutput(t *testing.T) {
 		for i := range tx.TxIn {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
 
-			key, err := btcec.NewPrivateKey(btcec.S256())
+			key, err := ecc.NewPrivateKey(ecc.S256())
 			if err != nil {
 				t.Errorf("failed to make privKey for %s: %v",
 					msg, err)
 				break
 			}
 
-			pk := (*btcec.PublicKey)(&key.PublicKey).
+			pk := (*ecc.PublicKey)(&key.PublicKey).
 				SerializeCompressed()
 			address, err := util.NewAddressPubKeyHash(
 				util.Hash160(pk), util.Bech32PrefixDAGTest)
@@ -530,14 +530,14 @@ func TestSignTxOutput(t *testing.T) {
 		for i := range tx.TxIn {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
 
-			key, err := btcec.NewPrivateKey(btcec.S256())
+			key, err := ecc.NewPrivateKey(ecc.S256())
 			if err != nil {
 				t.Errorf("failed to make privKey for %s: %v",
 					msg, err)
 				break
 			}
 
-			pk := (*btcec.PublicKey)(&key.PublicKey).
+			pk := (*ecc.PublicKey)(&key.PublicKey).
 				SerializeCompressed()
 			address, err := util.NewAddressPubKeyHash(
 				util.Hash160(pk), util.Bech32PrefixDAGTest)
@@ -874,7 +874,7 @@ var sigScriptTests = []tstSigScript{
 func TestSignatureScript(t *testing.T) {
 	t.Parallel()
 
-	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyD)
+	privKey, _ := ecc.PrivKeyFromBytes(ecc.S256(), privKeyD)
 
 nexttest:
 	for i := range sigScriptTests {

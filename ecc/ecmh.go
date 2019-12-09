@@ -1,4 +1,4 @@
-package btcec
+package ecc
 
 import (
 	"crypto/sha256"

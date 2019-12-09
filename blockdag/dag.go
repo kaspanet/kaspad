@@ -43,7 +43,7 @@ type chainUpdates struct {
 	addedChainBlockHashes   []*daghash.Hash
 }
 
-// BlockDAG provides functions for working with the bitcoin block chain.
+// BlockDAG provides functions for working with the kaspa block DAG.
 // It includes functionality such as rejecting duplicate blocks, ensuring blocks
 // follow all rules, orphan handling, checkpoint handling, and best chain
 // selection with reorganization.
@@ -449,8 +449,6 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 
 // LockTimeToSequence converts the passed relative locktime to a sequence
 // number in accordance to BIP-68.
-// See: https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki
-//  * (Compatibility)
 func LockTimeToSequence(isSeconds bool, locktime uint64) uint64 {
 	// If we're expressing the relative lock time in blocks, then the
 	// corresponding sequence number is simply the desired input age.

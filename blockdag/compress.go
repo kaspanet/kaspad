@@ -5,7 +5,7 @@
 package blockdag
 
 import (
-	"github.com/kaspanet/kaspad/btcec"
+	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/txscript"
 )
 
@@ -108,8 +108,7 @@ func deserializeVLQ(serialized []byte) (uint64, int) {
 // -----------------------------------------------------------------------------
 // In order to reduce the size of stored scripts, a domain specific compression
 // algorithm is used which recognizes standard scripts and stores them using
-// less bytes than the original script. The compression algorithm used here was
-// obtained from Bitcoin Core, so all credits for the algorithm go to it.
+// less bytes than the original script.
 //
 // The general serialized format is:
 //
@@ -218,7 +217,7 @@ func isPubKey(script []byte) (bool, []byte) {
 
 		// Ensure the public key is valid.
 		serializedPubKey := script[1:34]
-		_, err := btcec.ParsePubKey(serializedPubKey, btcec.S256())
+		_, err := ecc.ParsePubKey(serializedPubKey, ecc.S256())
 		if err == nil {
 			return true, serializedPubKey
 		}
@@ -230,7 +229,7 @@ func isPubKey(script []byte) (bool, []byte) {
 
 		// Ensure the public key is valid.
 		serializedPubKey := script[1:66]
-		_, err := btcec.ParsePubKey(serializedPubKey, btcec.S256())
+		_, err := ecc.ParsePubKey(serializedPubKey, ecc.S256())
 		if err == nil {
 			return true, serializedPubKey
 		}
@@ -399,7 +398,7 @@ func decompressScript(compressedScriptPubKey []byte) []byte {
 		compressedKey := make([]byte, 33)
 		compressedKey[0] = byte(encodedScriptSize - 2)
 		copy(compressedKey[1:], compressedScriptPubKey[1:])
-		key, err := btcec.ParsePubKey(compressedKey, btcec.S256())
+		key, err := ecc.ParsePubKey(compressedKey, ecc.S256())
 		if err != nil {
 			return nil
 		}
@@ -423,13 +422,12 @@ func decompressScript(compressedScriptPubKey []byte) []byte {
 // -----------------------------------------------------------------------------
 // In order to reduce the size of stored amounts, a domain specific compression
 // algorithm is used which relies on there typically being a lot of zeroes at
-// end of the amounts. The compression algorithm used here was obtained from
-// Bitcoin Core, so all credits for the algorithm go to it.
+// end of the amounts.
 //
 // While this is simply exchanging one uint64 for another, the resulting value
 // for typical amounts has a much smaller magnitude which results in fewer bytes
 // when encoded as variable length quantity. For example, consider the amount
-// of 0.1 BTC which is 10000000 satoshi. Encoding 10000000 as a VLQ would take
+// of 0.1 KAS which is 10000000 sompi. Encoding 10000000 as a VLQ would take
 // 4 bytes while encoding the compressed value of 8 as a VLQ only takes 1 byte.
 //
 // Essentially the compression is achieved by splitting the value into an

@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/btcec"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -49,7 +49,7 @@ var (
 	// opcode. It is defined here to reduce garbage creation.
 	opTrueScript = []byte{txscript.OpTrue}
 
-	// lowFee is a single satoshi and exists to make the test code more
+	// lowFee is a single sompi and exists to make the test code more
 	// readable.
 	lowFee = util.Amount(1)
 )
@@ -193,7 +193,7 @@ type testGenerator struct {
 	prevCollectedHash *daghash.Hash
 
 	// Common key for any tests which require signed transactions.
-	privKey *btcec.PrivateKey
+	privKey *ecc.PrivateKey
 
 	powMaxBits uint32
 }
@@ -201,7 +201,7 @@ type testGenerator struct {
 // makeTestGenerator returns a test generator instance initialized with the
 // genesis block as the tip.
 func makeTestGenerator(params *dagconfig.Params) (testGenerator, error) {
-	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), []byte{0x01})
+	privKey, _ := ecc.PrivKeyFromBytes(ecc.S256(), []byte{0x01})
 	genesis := params.GenesisBlock
 	genesisHash := genesis.BlockHash()
 	return testGenerator{

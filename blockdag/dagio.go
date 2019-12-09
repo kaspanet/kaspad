@@ -110,8 +110,7 @@ func dbPutVersion(dbTx database.Tx, key []byte, version uint32) error {
 // -----------------------------------------------------------------------------
 // The unspent transaction output (UTXO) set consists of an entry for each
 // unspent output using a format that is optimized to reduce space using domain
-// specific compression algorithms. This format is a slightly modified version
-// of the format used in Bitcoin Core.
+// specific compression algorithms.
 //
 // Each entry is keyed by an outpoint as specified below. It is important to
 // note that the key encoding uses a VLQ, which employs an MSB encoding so

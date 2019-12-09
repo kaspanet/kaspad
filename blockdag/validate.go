@@ -25,7 +25,7 @@ const (
 
 	// baseSubsidy is the starting subsidy amount for mined blocks. This
 	// value is halved every SubsidyHalvingInterval blocks.
-	baseSubsidy = 50 * util.SatoshiPerBitcoin
+	baseSubsidy = 50 * util.SompiPerKaspa
 
 	// the following are used when calculating a transaction's mass
 
@@ -145,34 +145,34 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	// output must not be negative or more than the max allowed per
 	// transaction. Also, the total of all outputs must abide by the same
 	// restrictions. All amounts in a transaction are in a unit value known
-	// as a satoshi. One bitcoin is a quantity of satoshi as defined by the
-	// SatoshiPerBitcoin constant.
-	var totalSatoshi uint64
+	// as a sompi. One kaspa is a quantity of sompi as defined by the
+	// SompiPerKaspa constant.
+	var totalSompi uint64
 	for _, txOut := range msgTx.TxOut {
-		satoshi := txOut.Value
-		if satoshi > util.MaxSatoshi {
+		sompi := txOut.Value
+		if sompi > util.MaxSompi {
 			str := fmt.Sprintf("transaction output value of %d is "+
-				"higher than max allowed value of %d", satoshi,
-				util.MaxSatoshi)
+				"higher than max allowed value of %d", sompi,
+				util.MaxSompi)
 			return ruleError(ErrBadTxOutValue, str)
 		}
 
 		// Binary arithmetic guarantees that any overflow is detected and reported.
-		// This is impossible for Bitcoin, but perhaps possible if an alt increases
+		// This is impossible for Kaspa, but perhaps possible if an alt increases
 		// the total money supply.
-		newTotalSatoshi := totalSatoshi + satoshi
-		if newTotalSatoshi < totalSatoshi {
+		newTotalSompi := totalSompi + sompi
+		if newTotalSompi < totalSompi {
 			str := fmt.Sprintf("total value of all transaction "+
 				"outputs exceeds max allowed value of %d",
-				util.MaxSatoshi)
+				util.MaxSompi)
 			return ruleError(ErrBadTxOutValue, str)
 		}
-		totalSatoshi = newTotalSatoshi
-		if totalSatoshi > util.MaxSatoshi {
+		totalSompi = newTotalSompi
+		if totalSompi > util.MaxSompi {
 			str := fmt.Sprintf("total value of all transaction "+
 				"outputs is %d which is higher than max "+
-				"allowed value of %d", totalSatoshi,
-				util.MaxSatoshi)
+				"allowed value of %d", totalSompi,
+				util.MaxSompi)
 			return ruleError(ErrBadTxOutValue, str)
 		}
 	}
@@ -518,7 +518,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 	// Build merkle tree and ensure the calculated merkle root matches the
 	// entry in the block header. This also has the effect of caching all
 	// of the transaction hashes in the block to speed up future hash
-	// checks. Bitcoind builds the tree here and checks the merkle root
+	// checks. Kaspad builds the tree here and checks the merkle root
 	// after the following checks, but there is no reason not to check the
 	// merkle root matches here.
 	hashMerkleTree := BuildHashMerkleTreeStore(block.Transactions())
@@ -705,9 +705,7 @@ func (dag *BlockDAG) validateAllTxsFinalized(block *util.Block, node *blockNode,
 // duplicated to effectively revert the overwritten transactions to a single
 // confirmation thereby making them vulnerable to a double spend.
 //
-// For more details, see
-// https://github.com/bitcoin/bips/blob/master/bip-0030.mediawiki and
-// http://r6.ca/blog/20120206T005236Z.html.
+// For more details, see http://r6.ca/blog/20120206T005236Z.html.
 //
 // This function MUST be called with the dag state lock held (for reads).
 func ensureNoDuplicateTx(utxoSet UTXOSet, transactions []*util.Tx) error {
@@ -746,7 +744,7 @@ func ensureNoDuplicateTx(utxoSet UTXOSet, transactions []*util.Tx) error {
 // NOTE: The transaction MUST have already been sanity checked with the
 // CheckTransactionSanity function prior to calling this function.
 func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoSet UTXOSet, dagParams *dagconfig.Params, fastAdd bool) (
-	txFeeInSatoshi uint64, err error) {
+	txFeeInSompi uint64, err error) {
 
 	// Coinbase transactions have no standard inputs to validate.
 	if tx.IsCoinBase() {
@@ -754,7 +752,7 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoS
 	}
 
 	txID := tx.ID()
-	var totalSatoshiIn uint64
+	var totalSompiIn uint64
 	for txInIndex, txIn := range tx.MsgTx().TxIn {
 		// Ensure the referenced input transaction is available.
 		entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
@@ -775,29 +773,29 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoS
 		// Ensure the transaction amounts are in range. Each of the
 		// output values of the input transactions must not be negative
 		// or more than the max allowed per transaction. All amounts in
-		// a transaction are in a unit value known as a satoshi. One
-		// bitcoin is a quantity of satoshi as defined by the
-		// SatoshiPerBitcoin constant.
-		originTxSatoshi := entry.Amount()
-		if originTxSatoshi > util.MaxSatoshi {
+		// a transaction are in a unit value known as a sompi. One
+		// kaspa is a quantity of sompi as defined by the
+		// SompiPerKaspa constant.
+		originTxSompi := entry.Amount()
+		if originTxSompi > util.MaxSompi {
 			str := fmt.Sprintf("transaction output value of %s is "+
 				"higher than max allowed value of %d",
-				util.Amount(originTxSatoshi),
-				util.MaxSatoshi)
+				util.Amount(originTxSompi),
+				util.MaxSompi)
 			return 0, ruleError(ErrBadTxOutValue, str)
 		}
 
 		// The total of all outputs must not be more than the max
 		// allowed per transaction. Also, we could potentially overflow
 		// the accumulator so check for overflow.
-		lastSatoshiIn := totalSatoshiIn
-		totalSatoshiIn += originTxSatoshi
-		if totalSatoshiIn < lastSatoshiIn ||
-			totalSatoshiIn > util.MaxSatoshi {
+		lastSompiIn := totalSompiIn
+		totalSompiIn += originTxSompi
+		if totalSompiIn < lastSompiIn ||
+			totalSompiIn > util.MaxSompi {
 			str := fmt.Sprintf("total value of all transaction "+
 				"inputs is %d which is higher than max "+
-				"allowed value of %d", totalSatoshiIn,
-				util.MaxSatoshi)
+				"allowed value of %d", totalSompiIn,
+				util.MaxSompi)
 			return 0, ruleError(ErrBadTxOutValue, str)
 		}
 	}
@@ -805,24 +803,24 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoS
 	// Calculate the total output amount for this transaction. It is safe
 	// to ignore overflow and out of range errors here because those error
 	// conditions would have already been caught by checkTransactionSanity.
-	var totalSatoshiOut uint64
+	var totalSompiOut uint64
 	for _, txOut := range tx.MsgTx().TxOut {
-		totalSatoshiOut += txOut.Value
+		totalSompiOut += txOut.Value
 	}
 
 	// Ensure the transaction does not spend more than its inputs.
-	if totalSatoshiIn < totalSatoshiOut {
+	if totalSompiIn < totalSompiOut {
 		str := fmt.Sprintf("total value of all transaction inputs for "+
 			"transaction %s is %d which is less than the amount "+
-			"spent of %d", txID, totalSatoshiIn, totalSatoshiOut)
+			"spent of %d", txID, totalSompiIn, totalSompiOut)
 		return 0, ruleError(ErrSpendTooHigh, str)
 	}
 
-	// NOTE: bitcoind checks if the transaction fees are < 0 here, but that
+	// NOTE: kaspad checks if the transaction fees are < 0 here, but that
 	// is an impossible condition because of the check above that ensures
 	// the inputs are >= the outputs.
-	txFeeInSatoshi = totalSatoshiIn - totalSatoshiOut
-	return txFeeInSatoshi, nil
+	txFeeInSompi = totalSompiIn - totalSompiOut
+	return txFeeInSompi, nil
 }
 
 func validateCoinbaseMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, txBlueScore uint64, txIn *wire.TxIn) error {

@@ -2,14 +2,14 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcec_test
+package ecc_test
 
 import (
 	"encoding/hex"
 	"fmt"
 	"github.com/kaspanet/kaspad/util/daghash"
 
-	"github.com/kaspanet/kaspad/btcec"
+	"github.com/kaspanet/kaspad/ecc"
 )
 
 // This example demonstrates signing a message with a secp256k1 private key that
@@ -22,7 +22,7 @@ func Example_signMessage() {
 		fmt.Println(err)
 		return
 	}
-	privKey, pubKey := btcec.PrivKeyFromBytes(btcec.S256(), pkBytes)
+	privKey, pubKey := ecc.PrivKeyFromBytes(ecc.S256(), pkBytes)
 
 	// Sign a message using the private key.
 	message := "test message"
@@ -56,7 +56,7 @@ func Example_verifySignature() {
 		fmt.Println(err)
 		return
 	}
-	pubKey, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
+	pubKey, err := ecc.ParsePubKey(pubKeyBytes, ecc.S256())
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -70,7 +70,7 @@ func Example_verifySignature() {
 		fmt.Println(err)
 		return
 	}
-	signature, err := btcec.ParseSignature(sigBytes)
+	signature, err := ecc.ParseSignature(sigBytes)
 	if err != nil {
 		fmt.Println(err)
 		return

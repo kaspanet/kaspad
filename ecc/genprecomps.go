@@ -17,7 +17,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/kaspanet/kaspad/btcec"
+	"github.com/kaspanet/kaspad/ecc"
 )
 
 func main() {
@@ -28,7 +28,7 @@ func main() {
 	defer fi.Close()
 
 	// Compress the serialized byte points.
-	serialized := btcec.S256().SerializedBytePoints()
+	serialized := ecc.S256().SerializedBytePoints()
 	var compressed bytes.Buffer
 	w := zlib.NewWriter(&compressed)
 	if _, err := w.Write(serialized); err != nil {
@@ -45,14 +45,14 @@ func main() {
 	fmt.Fprintln(fi, "// Use of this source code is governed by an ISC")
 	fmt.Fprintln(fi, "// license that can be found in the LICENSE file.")
 	fmt.Fprintln(fi)
-	fmt.Fprintln(fi, "package btcec")
+	fmt.Fprintln(fi, "package ecc")
 	fmt.Fprintln(fi)
 	fmt.Fprintln(fi, "// Auto-generated file (see genprecomps.go)")
 	fmt.Fprintln(fi, "// DO NOT EDIT")
 	fmt.Fprintln(fi)
 	fmt.Fprintf(fi, "var secp256k1BytePoints = %q\n", string(encoded))
 
-	a1, b1, a2, b2 := btcec.S256().EndomorphismVectors()
+	a1, b1, a2, b2 := ecc.S256().EndomorphismVectors()
 	fmt.Println("The following values are the computed linearly " +
 		"independent vectors needed to make use of the secp256k1 " +
 		"endomorphism:")

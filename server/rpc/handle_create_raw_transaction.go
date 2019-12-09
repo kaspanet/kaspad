@@ -44,7 +44,7 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 	params := s.cfg.DAGParams
 	for encodedAddr, amount := range c.Amounts {
 		// Ensure amount is in the valid range for monetary amounts.
-		if amount <= 0 || amount > util.MaxSatoshi {
+		if amount <= 0 || amount > util.MaxSompi {
 			return nil, &jsonrpc.RPCError{
 				Code:    jsonrpc.ErrRPCType,
 				Message: "Invalid amount",

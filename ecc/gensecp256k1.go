@@ -6,7 +6,7 @@
 // This build tag is set during go generate.
 // +build gensecp256k1
 
-package btcec
+package ecc
 
 // References:
 //   [GECC]: Guide to Elliptic Curve Cryptography (Hankerson, Menezes, Vanstone)

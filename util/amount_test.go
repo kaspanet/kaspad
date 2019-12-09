@@ -29,19 +29,19 @@ func TestAmountCreation(t *testing.T) {
 			name:     "max producible",
 			amount:   21e6,
 			valid:    true,
-			expected: MaxSatoshi,
+			expected: MaxSompi,
 		},
 		{
 			name:     "exceeds max producible",
 			amount:   21e6 + 1e-8,
 			valid:    true,
-			expected: MaxSatoshi + 1,
+			expected: MaxSompi + 1,
 		},
 		{
 			name:     "one hundred",
 			amount:   100,
 			valid:    true,
-			expected: 100 * SatoshiPerBitcoin,
+			expected: 100 * SompiPerKaspa,
 		},
 		{
 			name:     "fraction",
@@ -53,13 +53,13 @@ func TestAmountCreation(t *testing.T) {
 			name:     "rounding up",
 			amount:   54.999999999999943157,
 			valid:    true,
-			expected: 55 * SatoshiPerBitcoin,
+			expected: 55 * SompiPerKaspa,
 		},
 		{
 			name:     "rounding down",
 			amount:   55.000000000000056843,
 			valid:    true,
-			expected: 55 * SatoshiPerBitcoin,
+			expected: 55 * SompiPerKaspa,
 		},
 
 		// Negative tests.
@@ -108,7 +108,7 @@ func TestAmountUnitConversions(t *testing.T) {
 	}{
 		{
 			name:      "MBTC",
-			amount:    MaxSatoshi,
+			amount:    MaxSompi,
 			unit:      AmountMegaBTC,
 			converted: 21,
 			s:         "21 MBTC",

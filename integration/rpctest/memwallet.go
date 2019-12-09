@@ -10,8 +10,8 @@ import (
 	"github.com/pkg/errors"
 	"sync"
 
-	"github.com/kaspanet/kaspad/btcec"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/rpcclient"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
@@ -69,7 +69,7 @@ type undoEntry struct {
 // wallet functionality to the harness. The wallet uses a hard-coded HD key
 // hierarchy which promotes reproducibility between harness test runs.
 type memWallet struct {
-	coinbaseKey  *btcec.PrivateKey
+	coinbaseKey  *ecc.PrivateKey
 	coinbaseAddr util.Address
 
 	// hdRoot is the root master private key for the wallet.
@@ -520,7 +520,7 @@ func (m *memWallet) ConfirmedBalance() util.Amount {
 }
 
 // keyToAddr maps the passed private to corresponding p2pkh address.
-func keyToAddr(key *btcec.PrivateKey, net *dagconfig.Params) (util.Address, error) {
+func keyToAddr(key *ecc.PrivateKey, net *dagconfig.Params) (util.Address, error) {
 	serializedKey := key.PubKey().SerializeCompressed()
 	return util.NewAddressPubKeyHashFromPublicKey(serializedKey, net.Prefix)
 }

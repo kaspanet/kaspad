@@ -8,7 +8,7 @@ import (
 	"io"
 	"math/big"
 
-	"github.com/kaspanet/kaspad/btcec"
+	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -138,7 +138,7 @@ func deserializeDiffEntries(r io.Reader) (utxoCollection, error) {
 
 // deserializeMultiset deserializes an EMCH multiset.
 // See serializeMultiset for more details.
-func deserializeMultiset(r io.Reader) (*btcec.Multiset, error) {
+func deserializeMultiset(r io.Reader) (*ecc.Multiset, error) {
 	xBytes := make([]byte, multisetPointSize)
 	yBytes := make([]byte, multisetPointSize)
 	err := binary.Read(r, byteOrder, xBytes)
@@ -152,7 +152,7 @@ func deserializeMultiset(r io.Reader) (*btcec.Multiset, error) {
 	var x, y big.Int
 	x.SetBytes(xBytes)
 	y.SetBytes(yBytes)
-	return btcec.NewMultisetFromPoint(btcec.S256(), &x, &y), nil
+	return ecc.NewMultisetFromPoint(ecc.S256(), &x, &y), nil
 }
 
 // serializeUTXODiff serializes UTXODiff by serializing
@@ -199,7 +199,7 @@ func serializeUTXOCollection(w io.Writer, collection utxoCollection) error {
 // padding each one of them with 32 byte (it'll be 32 byte in most
 // cases anyway except one of the coordinates is zero) and writing
 // them one after the other.
-func serializeMultiset(w io.Writer, ms *btcec.Multiset) error {
+func serializeMultiset(w io.Writer, ms *ecc.Multiset) error {
 	x, y := ms.Point()
 	xBytes := make([]byte, multisetPointSize)
 	copy(xBytes, x.Bytes())

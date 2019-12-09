@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/kaspanet/kaspad/btcec"
+	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/wire"
 )
 
@@ -39,7 +39,7 @@ const (
 )
 
 // halforder is used to tame ECDSA malleability (see BIP0062).
-var halfOrder = new(big.Int).Rsh(btcec.S256().N, 1)
+var halfOrder = new(big.Int).Rsh(ecc.S256().N, 1)
 
 // Engine is the virtual machine that executes scripts.
 type Engine struct {

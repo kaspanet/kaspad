@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/btcec"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/integration/rpctest"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
@@ -27,11 +27,11 @@ import (
 // makeTestOutput creates an on-chain output paying to a freshly generated
 // p2pkh output with the specified amount.
 func makeTestOutput(r *rpctest.Harness, t *testing.T,
-	amt util.Amount) (*btcec.PrivateKey, *wire.Outpoint, []byte, error) {
+	amt util.Amount) (*ecc.PrivateKey, *wire.Outpoint, []byte, error) {
 
 	// Create a fresh key, then send some coins to an address spendable by
 	// that key.
-	key, err := btcec.NewPrivateKey(btcec.S256())
+	key, err := ecc.NewPrivateKey(ecc.S256())
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -108,7 +108,7 @@ func TestBIP0113(t *testing.T) {
 	defer r.TearDown()
 
 	// Create a fresh output for usage within the test below.
-	const outputValue = util.SatoshiPerBitcoin
+	const outputValue = util.SompiPerKaspa
 	outputKey, testOutput, testScriptPubKey, err := makeTestOutput(r, t,
 		outputValue)
 	if err != nil {
@@ -370,7 +370,7 @@ func TestBIP0068AndCsv(t *testing.T) {
 	}
 
 	const (
-		outputAmt         = util.SatoshiPerBitcoin
+		outputAmt         = util.SompiPerKaspa
 		relativeBlockLock = 10
 	)
 

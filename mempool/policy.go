@@ -68,8 +68,8 @@ func calcMinRequiredTxRelayFee(serializedSize int64, minRelayTxFee util.Amount) 
 
 	// Set the minimum fee to the maximum possible value if the calculated
 	// fee is not in the valid range for monetary amounts.
-	if minFee < 0 || minFee > util.MaxSatoshi {
-		minFee = util.MaxSatoshi
+	if minFee < 0 || minFee > util.MaxSompi {
+		minFee = util.MaxSompi
 	}
 
 	return minFee

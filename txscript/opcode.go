@@ -14,7 +14,7 @@ import (
 
 	"golang.org/x/crypto/ripemd160"
 
-	"github.com/kaspanet/kaspad/btcec"
+	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -2042,13 +2042,13 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 		return nil
 	}
 
-	pubKey, err := btcec.ParsePubKey(pkBytes, btcec.S256())
+	pubKey, err := ecc.ParsePubKey(pkBytes, ecc.S256())
 	if err != nil {
 		vm.dstack.PushBool(false)
 		return nil
 	}
 
-	signature, err := btcec.ParseSignature(sigBytes)
+	signature, err := ecc.ParseSignature(sigBytes)
 	if err != nil {
 		vm.dstack.PushBool(false)
 		return nil
@@ -2095,7 +2095,7 @@ func opcodeCheckSigVerify(op *parsedOpcode, vm *Engine) error {
 // the same signature multiple times when verifying a multisig.
 type parsedSigInfo struct {
 	signature       []byte
-	parsedSignature *btcec.Signature
+	parsedSignature *ecc.Signature
 	parsed          bool
 }
 
@@ -2207,7 +2207,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		signature := rawSig[:len(rawSig)-1]
 
 		// Only parse and check the signature encoding once.
-		var parsedSig *btcec.Signature
+		var parsedSig *ecc.Signature
 		if !sigInfo.parsed {
 			if err := vm.checkHashTypeEncoding(hashType); err != nil {
 				return err
@@ -2218,7 +2218,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 
 			// Parse the signature.
 			var err error
-			parsedSig, err = btcec.ParseSignature(signature)
+			parsedSig, err = ecc.ParseSignature(signature)
 
 			sigInfo.parsed = true
 			if err != nil {
@@ -2240,7 +2240,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		}
 
 		// Parse the pubkey.
-		parsedPubKey, err := btcec.ParsePubKey(pubKey, btcec.S256())
+		parsedPubKey, err := ecc.ParsePubKey(pubKey, ecc.S256())
 		if err != nil {
 			continue
 		}
