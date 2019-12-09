@@ -641,7 +641,7 @@ func encodeNonCanonicalBlock(b *wire.MsgBlock) []byte {
 	b.Header.BtcEncode(&buf, 0)
 	buf.Write(nonCanonicalVarInt(uint32(len(b.Transactions))))
 	for _, tx := range b.Transactions {
-		tx.BtcEncode(&buf, 0)
+		tx.KaspaEncode(&buf, 0)
 	}
 	return buf.Bytes()
 }

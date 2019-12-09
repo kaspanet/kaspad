@@ -19,9 +19,9 @@ type MsgGetCFHeaders struct {
 	StopHash    *daghash.Hash
 }
 
-// BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
-func (msg *MsgGetCFHeaders) BtcDecode(r io.Reader, pver uint32) error {
+func (msg *MsgGetCFHeaders) KaspaDecode(r io.Reader, pver uint32) error {
 	err := ReadElement(r, &msg.FilterType)
 	if err != nil {
 		return err
@@ -36,9 +36,9 @@ func (msg *MsgGetCFHeaders) BtcDecode(r io.Reader, pver uint32) error {
 	return ReadElement(r, msg.StopHash)
 }
 
-// BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
-func (msg *MsgGetCFHeaders) BtcEncode(w io.Writer, pver uint32) error {
+func (msg *MsgGetCFHeaders) KaspaEncode(w io.Writer, pver uint32) error {
 	err := WriteElement(w, msg.FilterType)
 	if err != nil {
 		return err

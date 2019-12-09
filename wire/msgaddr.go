@@ -12,10 +12,10 @@ import (
 )
 
 // MaxAddrPerMsg is the maximum number of addresses that can be in a single
-// bitcoin addr message (MsgAddr).
+// kaspa addr message (MsgAddr).
 const MaxAddrPerMsg = 1000
 
-// MsgAddr implements the Message interface and represents a bitcoin
+// MsgAddr implements the Message interface and represents a kaspa
 // addr message. It is used to provide a list of known active peers on the
 // network. An active peer is considered one that has transmitted a message
 // within the last 3 hours. Nodes which have not transmitted in that time
@@ -59,9 +59,9 @@ func (msg *MsgAddr) ClearAddresses() {
 	msg.AddrList = []*NetAddress{}
 }
 
-// BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
-func (msg *MsgAddr) BtcDecode(r io.Reader, pver uint32) error {
+func (msg *MsgAddr) KaspaDecode(r io.Reader, pver uint32) error {
 	msg.SubnetworkID = nil
 
 	err := ReadElement(r, &msg.IncludeAllSubnetworks)
@@ -95,7 +95,7 @@ func (msg *MsgAddr) BtcDecode(r io.Reader, pver uint32) error {
 	if count > MaxAddrPerMsg {
 		str := fmt.Sprintf("too many addresses for message "+
 			"[count %d, max %d]", count, MaxAddrPerMsg)
-		return messageError("MsgAddr.BtcDecode", str)
+		return messageError("MsgAddr.KaspaDecode", str)
 	}
 
 	addrList := make([]NetAddress, count)
@@ -111,14 +111,14 @@ func (msg *MsgAddr) BtcDecode(r io.Reader, pver uint32) error {
 	return nil
 }
 
-// BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
-func (msg *MsgAddr) BtcEncode(w io.Writer, pver uint32) error {
+func (msg *MsgAddr) KaspaEncode(w io.Writer, pver uint32) error {
 	count := len(msg.AddrList)
 	if count > MaxAddrPerMsg {
 		str := fmt.Sprintf("too many addresses for message "+
 			"[count %d, max %d]", count, MaxAddrPerMsg)
-		return messageError("MsgAddr.BtcEncode", str)
+		return messageError("MsgAddr.KaspaEncode", str)
 	}
 
 	err := WriteElement(w, msg.IncludeAllSubnetworks)
@@ -169,7 +169,7 @@ func (msg *MsgAddr) MaxPayloadLength(pver uint32) uint32 {
 	return 1 + 1 + subnetworkid.IDLength + MaxVarIntPayload + (MaxAddrPerMsg * maxNetAddressPayload(pver))
 }
 
-// NewMsgAddr returns a new bitcoin addr message that conforms to the
+// NewMsgAddr returns a new kaspa addr message that conforms to the
 // Message interface. See MsgAddr for details.
 func NewMsgAddr(includeAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID) *MsgAddr {
 	return &MsgAddr{

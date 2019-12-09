@@ -25,23 +25,23 @@ type MsgFilterAdd struct {
 	Data []byte
 }
 
-// BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
-func (msg *MsgFilterAdd) BtcDecode(r io.Reader, pver uint32) error {
+func (msg *MsgFilterAdd) KaspaDecode(r io.Reader, pver uint32) error {
 	var err error
 	msg.Data, err = ReadVarBytes(r, pver, MaxFilterAddDataSize,
 		"filteradd data")
 	return err
 }
 
-// BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
-func (msg *MsgFilterAdd) BtcEncode(w io.Writer, pver uint32) error {
+func (msg *MsgFilterAdd) KaspaEncode(w io.Writer, pver uint32) error {
 	size := len(msg.Data)
 	if size > MaxFilterAddDataSize {
 		str := fmt.Sprintf("filteradd size too large for message "+
 			"[size %d, max %d]", size, MaxFilterAddDataSize)
-		return messageError("MsgFilterAdd.BtcEncode", str)
+		return messageError("MsgFilterAdd.KaspaEncode", str)
 	}
 
 	return WriteVarBytes(w, pver, msg.Data)

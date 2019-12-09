@@ -42,7 +42,7 @@ func (r FutureDebugLevelResult) Receive() (string, error) {
 //
 // See DebugLevel for the blocking version and more details.
 //
-// NOTE: This is a btcd extension.
+// NOTE: This is a kaspad extension.
 func (c *Client) DebugLevelAsync(levelSpec string) FutureDebugLevelResult {
 	cmd := btcjson.NewDebugLevelCmd(levelSpec)
 	return c.sendCmd(cmd)
@@ -57,7 +57,7 @@ func (c *Client) DebugLevelAsync(levelSpec string) FutureDebugLevelResult {
 // Additionally, the special keyword 'show' can be used to get a list of the
 // available subsystems.
 //
-// NOTE: This is a btcd extension.
+// NOTE: This is a kaspad extension.
 func (c *Client) DebugLevel(levelSpec string) (string, error) {
 	return c.DebugLevelAsync(levelSpec).Receive()
 }
@@ -102,14 +102,14 @@ func (r FutureGetSelectedTipResult) Receive() (*wire.MsgBlock, error) {
 //
 // See GetSelectedTip for the blocking version and more details.
 //
-// NOTE: This is a btcd extension.
+// NOTE: This is a kaspad extension.
 func (c *Client) GetSelectedTipAsync() FutureGetSelectedTipResult {
 	cmd := btcjson.NewGetSelectedTipCmd(btcjson.Bool(false), btcjson.Bool(false))
 	return c.sendCmd(cmd)
 }
 
 // GetSelectedTip returns the block of the selected DAG tip
-// NOTE: This is a btcd extension.
+// NOTE: This is a kaspad extension.
 func (c *Client) GetSelectedTip() (*btcjson.GetBlockVerboseResult, error) {
 	return c.GetSelectedTipVerboseAsync().Receive()
 }
@@ -173,7 +173,7 @@ func (r FutureGetCurrentNetResult) Receive() (wire.BitcoinNet, error) {
 //
 // See GetCurrentNet for the blocking version and more details.
 //
-// NOTE: This is a btcd extension.
+// NOTE: This is a kaspad extension.
 func (c *Client) GetCurrentNetAsync() FutureGetCurrentNetResult {
 	cmd := btcjson.NewGetCurrentNetCmd()
 	return c.sendCmd(cmd)
@@ -181,7 +181,7 @@ func (c *Client) GetCurrentNetAsync() FutureGetCurrentNetResult {
 
 // GetCurrentNet returns the network the server is running on.
 //
-// NOTE: This is a btcd extension.
+// NOTE: This is a kaspad extension.
 func (c *Client) GetCurrentNet() (wire.BitcoinNet, error) {
 	return c.GetCurrentNetAsync().Receive()
 }

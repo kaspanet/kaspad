@@ -43,9 +43,9 @@ type MsgFilterLoad struct {
 	Flags     BloomUpdateType
 }
 
-// BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
-func (msg *MsgFilterLoad) BtcDecode(r io.Reader, pver uint32) error {
+func (msg *MsgFilterLoad) KaspaDecode(r io.Reader, pver uint32) error {
 	var err error
 	msg.Filter, err = ReadVarBytes(r, pver, MaxFilterLoadFilterSize,
 		"filterload filter size")
@@ -61,26 +61,26 @@ func (msg *MsgFilterLoad) BtcDecode(r io.Reader, pver uint32) error {
 	if msg.HashFuncs > MaxFilterLoadHashFuncs {
 		str := fmt.Sprintf("too many filter hash functions for message "+
 			"[count %d, max %d]", msg.HashFuncs, MaxFilterLoadHashFuncs)
-		return messageError("MsgFilterLoad.BtcDecode", str)
+		return messageError("MsgFilterLoad.KaspaDecode", str)
 	}
 
 	return nil
 }
 
-// BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
-func (msg *MsgFilterLoad) BtcEncode(w io.Writer, pver uint32) error {
+func (msg *MsgFilterLoad) KaspaEncode(w io.Writer, pver uint32) error {
 	size := len(msg.Filter)
 	if size > MaxFilterLoadFilterSize {
 		str := fmt.Sprintf("filterload filter size too large for message "+
 			"[size %d, max %d]", size, MaxFilterLoadFilterSize)
-		return messageError("MsgFilterLoad.BtcEncode", str)
+		return messageError("MsgFilterLoad.KaspaEncode", str)
 	}
 
 	if msg.HashFuncs > MaxFilterLoadHashFuncs {
 		str := fmt.Sprintf("too many filter hash functions for message "+
 			"[count %d, max %d]", msg.HashFuncs, MaxFilterLoadHashFuncs)
-		return messageError("MsgFilterLoad.BtcEncode", str)
+		return messageError("MsgFilterLoad.KaspaEncode", str)
 	}
 
 	err := WriteVarBytes(w, pver, msg.Filter)

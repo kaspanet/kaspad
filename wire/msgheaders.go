@@ -34,9 +34,9 @@ func (msg *MsgHeaders) AddBlockHeader(bh *BlockHeader) error {
 	return nil
 }
 
-// BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
-func (msg *MsgHeaders) BtcDecode(r io.Reader, pver uint32) error {
+func (msg *MsgHeaders) KaspaDecode(r io.Reader, pver uint32) error {
 	count, err := ReadVarInt(r)
 	if err != nil {
 		return err
@@ -46,7 +46,7 @@ func (msg *MsgHeaders) BtcDecode(r io.Reader, pver uint32) error {
 	if count > MaxBlockHeadersPerMsg {
 		str := fmt.Sprintf("too many block headers for message "+
 			"[count %d, max %d]", count, MaxBlockHeadersPerMsg)
-		return messageError("MsgHeaders.BtcDecode", str)
+		return messageError("MsgHeaders.KaspaDecode", str)
 	}
 
 	// Create a contiguous slice of headers to deserialize into in order to
@@ -69,7 +69,7 @@ func (msg *MsgHeaders) BtcDecode(r io.Reader, pver uint32) error {
 		if txCount > 0 {
 			str := fmt.Sprintf("block headers may not contain "+
 				"transactions [count %d]", txCount)
-			return messageError("MsgHeaders.BtcDecode", str)
+			return messageError("MsgHeaders.KaspaDecode", str)
 		}
 		msg.AddBlockHeader(bh)
 	}
@@ -77,15 +77,15 @@ func (msg *MsgHeaders) BtcDecode(r io.Reader, pver uint32) error {
 	return nil
 }
 
-// BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
-func (msg *MsgHeaders) BtcEncode(w io.Writer, pver uint32) error {
+func (msg *MsgHeaders) KaspaEncode(w io.Writer, pver uint32) error {
 	// Limit to max block headers per message.
 	count := len(msg.Headers)
 	if count > MaxBlockHeadersPerMsg {
 		str := fmt.Sprintf("too many block headers for message "+
 			"[count %d, max %d]", count, MaxBlockHeadersPerMsg)
-		return messageError("MsgHeaders.BtcEncode", str)
+		return messageError("MsgHeaders.KaspaEncode", str)
 	}
 
 	err := WriteVarInt(w, uint64(count))

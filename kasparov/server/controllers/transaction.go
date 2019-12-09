@@ -269,7 +269,7 @@ func PostTransaction(requestBody []byte) error {
 
 	txReader := bytes.NewReader(txBytes)
 	tx := &wire.MsgTx{}
-	err = tx.BtcDecode(txReader, 0)
+	err = tx.KaspaDecode(txReader, 0)
 	if err != nil {
 		return httpserverutils.NewHandlerErrorWithCustomClientMessage(http.StatusUnprocessableEntity,
 			errors.Wrap(err, "Error decoding raw transaction"),

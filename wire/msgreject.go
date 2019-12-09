@@ -71,9 +71,9 @@ type MsgReject struct {
 	Hash *daghash.Hash
 }
 
-// BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
-func (msg *MsgReject) BtcDecode(r io.Reader, pver uint32) error {
+func (msg *MsgReject) KaspaDecode(r io.Reader, pver uint32) error {
 	// Command that was rejected.
 	cmd, err := ReadVarString(r, pver)
 	if err != nil {
@@ -108,9 +108,9 @@ func (msg *MsgReject) BtcDecode(r io.Reader, pver uint32) error {
 	return nil
 }
 
-// BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
-func (msg *MsgReject) BtcEncode(w io.Writer, pver uint32) error {
+func (msg *MsgReject) KaspaEncode(w io.Writer, pver uint32) error {
 	// Command that was rejected.
 	err := WriteVarString(w, msg.Cmd)
 	if err != nil {

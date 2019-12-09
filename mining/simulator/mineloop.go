@@ -55,7 +55,7 @@ func parseBlock(template *btcjson.GetBlockTemplateResult) (*util.Block, error) {
 	for i, txResult := range append([]btcjson.GetBlockTemplateResultTx{*template.CoinbaseTxn}, template.Transactions...) {
 		reader := hex.NewDecoder(strings.NewReader(txResult.Data))
 		tx := &wire.MsgTx{}
-		if err := tx.BtcDecode(reader, 0); err != nil {
+		if err := tx.KaspaDecode(reader, 0); err != nil {
 			return nil, errors.Errorf("Error decoding tx #%d: %s", i, err)
 		}
 		msgBlock.AddTransaction(tx)

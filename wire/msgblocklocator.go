@@ -30,9 +30,9 @@ func (msg *MsgBlockLocator) AddBlockLocatorHash(hash *daghash.Hash) error {
 	return nil
 }
 
-// BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
-func (msg *MsgBlockLocator) BtcDecode(r io.Reader, pver uint32) error {
+func (msg *MsgBlockLocator) KaspaDecode(r io.Reader, pver uint32) error {
 	// Read num block locator hashes and limit to max.
 	count, err := ReadVarInt(r)
 	if err != nil {
@@ -41,7 +41,7 @@ func (msg *MsgBlockLocator) BtcDecode(r io.Reader, pver uint32) error {
 	if count > MaxBlockLocatorsPerMsg {
 		str := fmt.Sprintf("too many block locator hashes for message "+
 			"[count %d, max %d]", count, MaxBlockLocatorsPerMsg)
-		return messageError("MsgBlockLocator.BtcDecode", str)
+		return messageError("MsgBlockLocator.KaspaDecode", str)
 	}
 
 	// Create a contiguous slice of hashes to deserialize into in order to
@@ -62,15 +62,15 @@ func (msg *MsgBlockLocator) BtcDecode(r io.Reader, pver uint32) error {
 	return nil
 }
 
-// BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
-func (msg *MsgBlockLocator) BtcEncode(w io.Writer, pver uint32) error {
+func (msg *MsgBlockLocator) KaspaEncode(w io.Writer, pver uint32) error {
 	// Limit to max block locator hashes per message.
 	count := len(msg.BlockLocatorHashes)
 	if count > MaxBlockLocatorsPerMsg {
 		str := fmt.Sprintf("too many block locator hashes for message "+
 			"[count %d, max %d]", count, MaxBlockLocatorsPerMsg)
-		return messageError("MsgBlockLocator.BtcEncode", str)
+		return messageError("MsgBlockLocator.KaspaEncode", str)
 	}
 
 	err := WriteVarInt(w, uint64(count))

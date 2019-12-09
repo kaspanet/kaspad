@@ -19,15 +19,15 @@ type MsgPong struct {
 	Nonce uint64
 }
 
-// BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
-func (msg *MsgPong) BtcDecode(r io.Reader, pver uint32) error {
+func (msg *MsgPong) KaspaDecode(r io.Reader, pver uint32) error {
 	return ReadElement(r, &msg.Nonce)
 }
 
-// BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
-func (msg *MsgPong) BtcEncode(w io.Writer, pver uint32) error {
+func (msg *MsgPong) KaspaEncode(w io.Writer, pver uint32) error {
 	return WriteElement(w, msg.Nonce)
 }
 

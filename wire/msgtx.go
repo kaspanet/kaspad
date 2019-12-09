@@ -398,11 +398,11 @@ func (msg *MsgTx) Copy() *MsgTx {
 	return &newTx
 }
 
-// BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 // See Deserialize for decoding transactions stored to disk, such as in a
 // database, as opposed to decoding transactions from the wire.
-func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
+func (msg *MsgTx) KaspaDecode(r io.Reader, pver uint32) error {
 	version, err := binaryserializer.Uint32(r, littleEndian)
 	if err != nil {
 		return err
@@ -421,7 +421,7 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 		str := fmt.Sprintf("too many input transactions to fit into "+
 			"max message size [count %d, max %d]", count,
 			maxTxInPerMessage)
-		return messageError("MsgTx.BtcDecode", str)
+		return messageError("MsgTx.KaspaDecode", str)
 	}
 
 	// returnScriptBuffers is a closure that returns any script buffers that
@@ -475,7 +475,7 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 		str := fmt.Sprintf("too many output transactions to fit into "+
 			"max message size [count %d, max %d]", count,
 			maxTxOutPerMessage)
-		return messageError("MsgTx.BtcDecode", str)
+		return messageError("MsgTx.KaspaDecode", str)
 	}
 
 	// Deserialize the outputs.
@@ -586,8 +586,8 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 
 // Deserialize decodes a transaction from r into the receiver using a format
 // that is suitable for long-term storage such as a database while respecting
-// the Version field in the transaction. This function differs from BtcDecode
-// in that BtcDecode decodes from the bitcoin wire protocol as it was sent
+// the Version field in the transaction. This function differs from KaspaDecode
+// in that KaspaDecode decodes from the bitcoin wire protocol as it was sent
 // across the network. The wire encoding can technically differ depending on
 // the protocol version and doesn't even really need to match the format of a
 // stored transaction at all. As of the time this comment was written, the
@@ -597,15 +597,15 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 func (msg *MsgTx) Deserialize(r io.Reader) error {
 	// At the current time, there is no difference between the wire encoding
 	// at protocol version 0 and the stable long-term storage format. As
-	// a result, make use of BtcDecode.
-	return msg.BtcDecode(r, 0)
+	// a result, make use of KaspaDecode.
+	return msg.KaspaDecode(r, 0)
 }
 
-// BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
 // See Serialize for encoding transactions to be stored to disk, such as in a
 // database, as opposed to encoding transactions for the wire.
-func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
+func (msg *MsgTx) KaspaEncode(w io.Writer, pver uint32) error {
 	return msg.encode(w, pver, txEncodingFull)
 }
 
@@ -654,7 +654,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 	if !msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
 		if msg.SubnetworkID.IsBuiltIn() && msg.Gas != 0 {
 			str := "Transactions from built-in should have 0 gas"
-			return messageError("MsgTx.BtcEncode", str)
+			return messageError("MsgTx.KaspaEncode", str)
 		}
 
 		err = binaryserializer.PutUint64(w, littleEndian, msg.Gas)
@@ -678,13 +678,13 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 		}
 	} else if msg.Payload != nil {
 		str := "Transactions from native subnetwork should have <nil> payload"
-		return messageError("MsgTx.BtcEncode", str)
+		return messageError("MsgTx.KaspaEncode", str)
 	} else if msg.PayloadHash != nil {
 		str := "Transactions from native subnetwork should have <nil> payload hash"
-		return messageError("MsgTx.BtcEncode", str)
+		return messageError("MsgTx.KaspaEncode", str)
 	} else if msg.Gas != 0 {
 		str := "Transactions from native subnetwork should have 0 gas"
-		return messageError("MsgTx.BtcEncode", str)
+		return messageError("MsgTx.KaspaEncode", str)
 	}
 
 	return nil
@@ -692,7 +692,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 
 // Serialize encodes the transaction to w using a format that suitable for
 // long-term storage such as a database while respecting the Version field in
-// the transaction. This function differs from BtcEncode in that BtcEncode
+// the transaction. This function differs from KaspaEncode in that KaspaEncode
 // encodes the transaction to the bitcoin wire protocol in order to be sent
 // across the network. The wire encoding can technically differ depending on
 // the protocol version and doesn't even really need to match the format of a
@@ -703,8 +703,8 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 func (msg *MsgTx) Serialize(w io.Writer) error {
 	// At the current time, there is no difference between the wire encoding
 	// at protocol version 0 and the stable long-term storage format. As
-	// a result, make use of BtcEncode.
-	return msg.BtcEncode(w, 0)
+	// a result, make use of KaspaEncode.
+	return msg.KaspaEncode(w, 0)
 }
 
 func (msg *MsgTx) serialize(w io.Writer, encodingFlags txEncoding) error {

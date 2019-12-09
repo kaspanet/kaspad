@@ -43,9 +43,9 @@ func (msg *MsgInv) AddInvVect(iv *InvVect) error {
 	return nil
 }
 
-// BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
-func (msg *MsgInv) BtcDecode(r io.Reader, pver uint32) error {
+func (msg *MsgInv) KaspaDecode(r io.Reader, pver uint32) error {
 	count, err := ReadVarInt(r)
 	if err != nil {
 		return err
@@ -54,7 +54,7 @@ func (msg *MsgInv) BtcDecode(r io.Reader, pver uint32) error {
 	// Limit to max inventory vectors per message.
 	if count > MaxInvPerMsg {
 		str := fmt.Sprintf("too many invvect in message [%d]", count)
-		return messageError("MsgInv.BtcDecode", str)
+		return messageError("MsgInv.KaspaDecode", str)
 	}
 
 	// Create a contiguous slice of inventory vectors to deserialize into in
@@ -73,14 +73,14 @@ func (msg *MsgInv) BtcDecode(r io.Reader, pver uint32) error {
 	return nil
 }
 
-// BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
-func (msg *MsgInv) BtcEncode(w io.Writer, pver uint32) error {
+func (msg *MsgInv) KaspaEncode(w io.Writer, pver uint32) error {
 	// Limit to max inventory vectors per message.
 	count := len(msg.InvList)
 	if count > MaxInvPerMsg {
 		str := fmt.Sprintf("too many invvect in message [%d]", count)
-		return messageError("MsgInv.BtcEncode", str)
+		return messageError("MsgInv.KaspaEncode", str)
 	}
 
 	err := WriteVarInt(w, uint64(count))

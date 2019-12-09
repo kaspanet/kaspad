@@ -15,15 +15,15 @@ import (
 // This message has no payload.
 type MsgSendHeaders struct{}
 
-// BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
-func (msg *MsgSendHeaders) BtcDecode(r io.Reader, pver uint32) error {
+func (msg *MsgSendHeaders) KaspaDecode(r io.Reader, pver uint32) error {
 	return nil
 }
 
-// BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
-func (msg *MsgSendHeaders) BtcEncode(w io.Writer, pver uint32) error {
+func (msg *MsgSendHeaders) KaspaEncode(w io.Writer, pver uint32) error {
 	return nil
 }
 

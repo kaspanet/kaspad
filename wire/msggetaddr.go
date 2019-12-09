@@ -21,9 +21,9 @@ type MsgGetAddr struct {
 	SubnetworkID          *subnetworkid.SubnetworkID
 }
 
-// BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
-func (msg *MsgGetAddr) BtcDecode(r io.Reader, pver uint32) error {
+func (msg *MsgGetAddr) KaspaDecode(r io.Reader, pver uint32) error {
 	msg.SubnetworkID = nil
 
 	err := ReadElement(r, &msg.IncludeAllSubnetworks)
@@ -53,9 +53,9 @@ func (msg *MsgGetAddr) BtcDecode(r io.Reader, pver uint32) error {
 	return nil
 }
 
-// BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
-func (msg *MsgGetAddr) BtcEncode(w io.Writer, pver uint32) error {
+func (msg *MsgGetAddr) KaspaEncode(w io.Writer, pver uint32) error {
 	err := WriteElement(w, msg.IncludeAllSubnetworks)
 	if err != nil {
 		return err
