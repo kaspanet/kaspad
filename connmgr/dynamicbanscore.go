@@ -50,7 +50,7 @@ func decayFactor(t int64) float64 {
 
 // DynamicBanScore provides dynamic ban scores consisting of a persistent and a
 // decaying component. The persistent score could be utilized to create simple
-// additive banning policies similar to those found in other bitcoin node
+// additive banning policies similar to those found in other kaspa node
 // implementations.
 //
 // The decaying score enables the creation of evasive logic which handles
