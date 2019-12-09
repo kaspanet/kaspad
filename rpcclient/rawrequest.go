@@ -6,7 +6,7 @@ package rpcclient
 
 import (
 	"encoding/json"
-	"github.com/daglabs/btcd/btcjson"
+	"github.com/kaspanet/kaspad/btcjson"
 	"github.com/pkg/errors"
 )
 

@@ -7,8 +7,8 @@ package main
 import (
 	"time"
 
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // headersCmd defines the configuration options for the loadheaders command.

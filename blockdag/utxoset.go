@@ -7,8 +7,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/btcec"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 const (

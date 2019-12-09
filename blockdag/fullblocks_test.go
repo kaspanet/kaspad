@@ -12,15 +12,15 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/blockdag/fullblocktests"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/database"
-	_ "github.com/daglabs/btcd/database/ffldb"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/blockdag/fullblocktests"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/database"
+	_ "github.com/kaspanet/kaspad/database/ffldb"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 const (

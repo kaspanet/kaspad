@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/logs"
-	"github.com/daglabs/btcd/rpcclient"
-	"github.com/daglabs/btcd/util/panics"
+	"github.com/kaspanet/kaspad/logs"
+	"github.com/kaspanet/kaspad/rpcclient"
+	"github.com/kaspanet/kaspad/util/panics"
 	"os"
 )
 

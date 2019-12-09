@@ -6,17 +6,17 @@ import (
 	"math"
 	"testing"
 
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/util/testtools"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/testtools"
 
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/mining"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/mining"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // TestFinality checks that the finality mechanism works as expected.

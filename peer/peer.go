@@ -17,16 +17,16 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/daglabs/btcd/util/random"
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/kaspanet/kaspad/util/random"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 
 	"github.com/btcsuite/go-socks/socks"
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/logger"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/logger"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 const (

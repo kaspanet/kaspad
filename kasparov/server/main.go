@@ -5,15 +5,15 @@ import (
 	"github.com/pkg/errors"
 	"os"
 
-	"github.com/daglabs/btcd/kasparov/database"
-	"github.com/daglabs/btcd/kasparov/jsonrpc"
-	"github.com/daglabs/btcd/kasparov/server/config"
-	"github.com/daglabs/btcd/kasparov/server/server"
-	"github.com/daglabs/btcd/signal"
-	"github.com/daglabs/btcd/util/panics"
 	_ "github.com/golang-migrate/migrate/v4/database/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"github.com/kaspanet/kaspad/kasparov/database"
+	"github.com/kaspanet/kaspad/kasparov/jsonrpc"
+	"github.com/kaspanet/kaspad/kasparov/server/config"
+	"github.com/kaspanet/kaspad/kasparov/server/server"
+	"github.com/kaspanet/kaspad/signal"
+	"github.com/kaspanet/kaspad/util/panics"
 )
 
 func main() {

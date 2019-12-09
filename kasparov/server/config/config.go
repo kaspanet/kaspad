@@ -1,9 +1,9 @@
 package config
 
 import (
-	"github.com/daglabs/btcd/kasparov/config"
-	"github.com/daglabs/btcd/util"
 	"github.com/jessevdk/go-flags"
+	"github.com/kaspanet/kaspad/kasparov/config"
+	"github.com/kaspanet/kaspad/util"
 )
 
 const (

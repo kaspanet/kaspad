@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/daglabs/btcd/logger"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util/panics"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/logger"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util/panics"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 const (

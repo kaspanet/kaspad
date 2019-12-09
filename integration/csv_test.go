@@ -14,14 +14,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/integration/rpctest"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/btcec"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/integration/rpctest"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // makeTestOutput creates an on-chain output paying to a freshly generated

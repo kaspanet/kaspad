@@ -9,10 +9,10 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/bloom"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/bloom"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // TestFilterLarge ensures a maximum sized filter can be created.

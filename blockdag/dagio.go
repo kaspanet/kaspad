@@ -13,12 +13,12 @@ import (
 	"io"
 	"sync"
 
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/binaryserializer"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/util/subnetworkid"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/binaryserializer"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 const (

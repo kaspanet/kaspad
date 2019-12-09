@@ -5,7 +5,7 @@
 package txscript
 
 import (
-	"github.com/daglabs/btcd/logger"
+	"github.com/kaspanet/kaspad/logger"
 )
 
 var log, _ = logger.Get(logger.SubsystemTags.SCRP)

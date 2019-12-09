@@ -5,7 +5,7 @@
 package blockdag
 
 import (
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/kaspanet/kaspad/util/daghash"
 	"sync"
 )
 

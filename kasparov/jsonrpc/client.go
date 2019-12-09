@@ -1,16 +1,16 @@
 package jsonrpc
 
 import (
-	"github.com/daglabs/btcd/kasparov/config"
+	"github.com/kaspanet/kaspad/kasparov/config"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"time"
 
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/kaspanet/kaspad/util/daghash"
 
-	"github.com/daglabs/btcd/rpcclient"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/rpcclient"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // Client represents a connection to the JSON-RPC API of a full node

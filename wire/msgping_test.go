@@ -10,8 +10,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/btcd/util/random"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util/random"
 )
 
 // TestPing tests the MsgPing API against the latest protocol version.

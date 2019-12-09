@@ -8,9 +8,9 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
 )
 
 // This example demonstrates creating a script which pays to a bitcoin address.

@@ -9,7 +9,7 @@ import (
 	"github.com/btcsuite/goleveldb/leveldb"
 	"github.com/btcsuite/goleveldb/leveldb/filter"
 	"github.com/btcsuite/goleveldb/leveldb/opt"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 func newTestDb(testName string, t *testing.T) *db {

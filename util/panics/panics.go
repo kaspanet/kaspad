@@ -1,8 +1,8 @@
 package panics
 
 import (
-	"github.com/daglabs/btcd/logs"
-	"github.com/daglabs/btcd/signal"
+	"github.com/kaspanet/kaspad/logs"
+	"github.com/kaspanet/kaspad/signal"
 	"runtime/debug"
 )
 

@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/daglabs/btcd/logs"
-	"github.com/daglabs/btcd/util"
+	"github.com/kaspanet/kaspad/logs"
+	"github.com/kaspanet/kaspad/util"
 )
 
 // blockProgressLogger provides periodic logging for other services in order

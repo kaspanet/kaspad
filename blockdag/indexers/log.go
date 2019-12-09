@@ -5,8 +5,8 @@
 package indexers
 
 import (
-	"github.com/daglabs/btcd/logger"
-	"github.com/daglabs/btcd/util/panics"
+	"github.com/kaspanet/kaspad/logger"
+	"github.com/kaspanet/kaspad/util/panics"
 )
 
 var log, _ = logger.Get(logger.SubsystemTags.INDX)

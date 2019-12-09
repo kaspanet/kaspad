@@ -8,14 +8,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/daglabs/btcd/rpcclient"
+	"github.com/kaspanet/kaspad/rpcclient"
 	"github.com/pkg/errors"
 
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 var random = rand.New(rand.NewSource(time.Now().UnixNano()))

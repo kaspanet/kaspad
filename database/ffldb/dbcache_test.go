@@ -9,7 +9,7 @@ import (
 	"github.com/btcsuite/goleveldb/leveldb"
 	"github.com/btcsuite/goleveldb/leveldb/opt"
 	ldbutil "github.com/btcsuite/goleveldb/leveldb/util"
-	"github.com/daglabs/btcd/database"
+	"github.com/kaspanet/kaspad/database"
 )
 
 // TestDBCacheCloseErrors tests all error-cases in *dbCache.Close().

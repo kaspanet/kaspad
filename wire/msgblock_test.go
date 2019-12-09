@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/daglabs/btcd/util/daghash"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // TestBlock tests the MsgBlock API.

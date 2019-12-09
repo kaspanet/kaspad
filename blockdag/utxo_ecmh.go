@@ -2,10 +2,10 @@ package blockdag
 
 import (
 	"bytes"
-	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
 	"github.com/golang/groupcache/lru"
+	"github.com/kaspanet/kaspad/btcec"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 const ecmhCacheSize = 4_000_000

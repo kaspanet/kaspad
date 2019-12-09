@@ -2,10 +2,10 @@ package rpc
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 	"strings"
 )

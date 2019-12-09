@@ -11,7 +11,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/daglabs/btcd/util"
+	"github.com/kaspanet/kaspad/util"
 )
 
 // baseHelpDescs house the various help labels, types, and example values used

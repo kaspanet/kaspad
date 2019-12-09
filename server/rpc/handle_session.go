@@ -1,6 +1,6 @@
 package rpc
 
-import "github.com/daglabs/btcd/btcjson"
+import "github.com/kaspanet/kaspad/btcjson"
 
 // handleSession implements the session command extension for websocket
 // connections.

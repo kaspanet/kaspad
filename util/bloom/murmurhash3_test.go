@@ -5,7 +5,7 @@
 package bloom_test
 
 import (
-	"github.com/daglabs/btcd/util/bloom"
+	"github.com/kaspanet/kaspad/util/bloom"
 	"testing"
 )
 

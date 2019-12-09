@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"bou.ke/monkey"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/util"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/util"
 )
 
 func TestMaybeAcceptBlockErrors(t *testing.T) {

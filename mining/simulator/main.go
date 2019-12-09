@@ -6,8 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/daglabs/btcd/signal"
-	"github.com/daglabs/btcd/util/panics"
+	"github.com/kaspanet/kaspad/signal"
+	"github.com/kaspanet/kaspad/util/panics"
 )
 
 func main() {

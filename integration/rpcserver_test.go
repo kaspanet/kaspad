@@ -14,8 +14,8 @@ import (
 	"runtime/debug"
 	"testing"
 
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/integration/rpctest"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/integration/rpctest"
 )
 
 func testGetSelectedTip(r *rpctest.Harness, t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 const (

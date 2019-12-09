@@ -10,8 +10,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/btcd/util/daghash"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // TestHeaders tests the MsgHeaders API.
