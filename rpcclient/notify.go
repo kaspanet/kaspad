@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"time"
 
-	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/kaspajson"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
@@ -115,7 +115,7 @@ type NotificationHandlers struct {
 	// memory pool. It will only be invoked if a preceding call to
 	// NotifyNewTransactions with the verbose flag set to true has been
 	// made to register for the notification and the function is non-nil.
-	OnTxAcceptedVerbose func(txDetails *btcjson.TxRawResult)
+	OnTxAcceptedVerbose func(txDetails *kaspajson.TxRawResult)
 
 	// OnUnknownNotification is invoked when an unrecognized notification
 	// is received. This typically means the notification handling code
@@ -139,7 +139,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 	switch ntfn.Method {
 
 	// ChainChangedNtfnMethod
-	case btcjson.ChainChangedNtfnMethod:
+	case kaspajson.ChainChangedNtfnMethod:
 		// Ignore the notification if the client is not interested in
 		// it.
 		if c.ntfnHandlers.OnChainChanged == nil {
@@ -156,7 +156,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		c.ntfnHandlers.OnChainChanged(removedChainBlockHashes, addedChainBlocks)
 
 	// OnFilteredBlockAdded
-	case btcjson.FilteredBlockAddedNtfnMethod:
+	case kaspajson.FilteredBlockAddedNtfnMethod:
 		// Ignore the notification if the client is not interested in
 		// it.
 		if c.ntfnHandlers.OnFilteredBlockAdded == nil {
@@ -175,7 +175,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 			blockHeader, transactions)
 
 	// OnRelevantTxAccepted
-	case btcjson.RelevantTxAcceptedNtfnMethod:
+	case kaspajson.RelevantTxAcceptedNtfnMethod:
 		// Ignore the notification if the client is not interested in
 		// it.
 		if c.ntfnHandlers.OnRelevantTxAccepted == nil {
@@ -192,7 +192,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		c.ntfnHandlers.OnRelevantTxAccepted(transaction)
 
 	// OnTxAccepted
-	case btcjson.TxAcceptedNtfnMethod:
+	case kaspajson.TxAcceptedNtfnMethod:
 		// Ignore the notification if the client is not interested in
 		// it.
 		if c.ntfnHandlers.OnTxAccepted == nil {
@@ -209,7 +209,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		c.ntfnHandlers.OnTxAccepted(hash, amt)
 
 	// OnTxAcceptedVerbose
-	case btcjson.TxAcceptedVerboseNtfnMethod:
+	case kaspajson.TxAcceptedVerboseNtfnMethod:
 		// Ignore the notification if the client is not interested in
 		// it.
 		if c.ntfnHandlers.OnTxAcceptedVerbose == nil {
@@ -267,7 +267,7 @@ func parseChainChangedParams(params []json.RawMessage) (removedChainBlockHashes 
 	}
 
 	// Unmarshal first parameter as a raw transaction result object.
-	var rawParam btcjson.ChainChangedRawParam
+	var rawParam kaspajson.ChainChangedRawParam
 	err = json.Unmarshal(params[0], &rawParam)
 	if err != nil {
 		return nil, nil, err
@@ -395,7 +395,7 @@ func parseRelevantTxAcceptedParams(params []json.RawMessage) (transaction []byte
 // the block it's mined in from the parameters of recvtx and redeemingtx
 // notifications.
 func parseChainTxNtfnParams(params []json.RawMessage) (*util.Tx,
-	*btcjson.BlockDetails, error) {
+	*kaspajson.BlockDetails, error) {
 
 	if len(params) == 0 || len(params) > 2 {
 		return nil, nil, wrongNumParams(len(params))
@@ -410,7 +410,7 @@ func parseChainTxNtfnParams(params []json.RawMessage) (*util.Tx,
 
 	// If present, unmarshal second optional parameter as the block details
 	// JSON object.
-	var block *btcjson.BlockDetails
+	var block *kaspajson.BlockDetails
 	if len(params) > 1 {
 		err = json.Unmarshal(params[1], &block)
 		if err != nil {
@@ -475,7 +475,7 @@ func parseTxAcceptedNtfnParams(params []json.RawMessage) (*daghash.Hash,
 
 // parseTxAcceptedVerboseNtfnParams parses out details about a raw transaction
 // from the parameters of a txacceptedverbose notification.
-func parseTxAcceptedVerboseNtfnParams(params []json.RawMessage) (*btcjson.TxRawResult,
+func parseTxAcceptedVerboseNtfnParams(params []json.RawMessage) (*kaspajson.TxRawResult,
 	error) {
 
 	if len(params) != 1 {
@@ -483,7 +483,7 @@ func parseTxAcceptedVerboseNtfnParams(params []json.RawMessage) (*btcjson.TxRawR
 	}
 
 	// Unmarshal first parameter as a raw transaction result object.
-	var rawTx btcjson.TxRawResult
+	var rawTx kaspajson.TxRawResult
 	err := json.Unmarshal(params[0], &rawTx)
 	if err != nil {
 		return nil, err
@@ -525,7 +525,7 @@ func (c *Client) NotifyBlocksAsync() FutureNotifyBlocksResult {
 		return newNilFutureResult()
 	}
 
-	cmd := btcjson.NewNotifyBlocksCmd()
+	cmd := kaspajson.NewNotifyBlocksCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -572,7 +572,7 @@ func (c *Client) NotifyChainChangesAsync() FutureNotifyBlocksResult {
 		return newNilFutureResult()
 	}
 
-	cmd := btcjson.NewNotifyChainChangesCmd()
+	cmd := kaspajson.NewNotifyChainChangesCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -589,10 +589,10 @@ func (c *Client) NotifyChainChanges() error {
 	return c.NotifyChainChangesAsync().Receive()
 }
 
-// newOutpointFromWire constructs the btcjson representation of a transaction
+// newOutpointFromWire constructs the kaspajson representation of a transaction
 // outpoint from the wire type.
-func newOutpointFromWire(op *wire.Outpoint) btcjson.Outpoint {
-	return btcjson.Outpoint{
+func newOutpointFromWire(op *wire.Outpoint) kaspajson.Outpoint {
+	return kaspajson.Outpoint{
 		TxID:  op.TxID.String(),
 		Index: op.Index,
 	}
@@ -628,7 +628,7 @@ func (c *Client) NotifyNewTransactionsAsync(verbose bool, subnetworkID *string) 
 		return newNilFutureResult()
 	}
 
-	cmd := btcjson.NewNotifyNewTransactionsCmd(&verbose, subnetworkID)
+	cmd := kaspajson.NewNotifyNewTransactionsCmd(&verbose, subnetworkID)
 	return c.sendCmd(cmd)
 }
 
@@ -679,15 +679,15 @@ func (c *Client) LoadTxFilterAsync(reload bool, addresses []util.Address,
 	for i, a := range addresses {
 		addrStrs[i] = a.EncodeAddress()
 	}
-	outpointObjects := make([]btcjson.Outpoint, len(outpoints))
+	outpointObjects := make([]kaspajson.Outpoint, len(outpoints))
 	for i := range outpoints {
-		outpointObjects[i] = btcjson.Outpoint{
+		outpointObjects[i] = kaspajson.Outpoint{
 			TxID:  outpoints[i].TxID.String(),
 			Index: outpoints[i].Index,
 		}
 	}
 
-	cmd := btcjson.NewLoadTxFilterCmd(reload, addrStrs, outpointObjects)
+	cmd := kaspajson.NewLoadTxFilterCmd(reload, addrStrs, outpointObjects)
 	return c.sendCmd(cmd)
 }
 

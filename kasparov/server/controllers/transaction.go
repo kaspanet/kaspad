@@ -19,7 +19,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/jinzhu/gorm"
-	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/kaspajson"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -207,7 +207,7 @@ func GetUTXOsByAddressHandler(address string) (interface{}, error) {
 		if isTxInSelectedTip[transactionOutput.ID] {
 			confirmations = 1
 		} else if transactionOutput.Transaction.AcceptingBlock != nil {
-			acceptingBlockHash = btcjson.String(transactionOutput.Transaction.AcceptingBlock.BlockHash)
+			acceptingBlockHash = kaspajson.String(transactionOutput.Transaction.AcceptingBlock.BlockHash)
 			acceptingBlockBlueScore = transactionOutput.Transaction.AcceptingBlock.BlueScore
 			confirmations = selectedTip.BlueScore - acceptingBlockBlueScore + 2
 		}
@@ -219,9 +219,9 @@ func GetUTXOsByAddressHandler(address string) (interface{}, error) {
 			AcceptingBlockHash:      acceptingBlockHash,
 			AcceptingBlockBlueScore: acceptingBlockBlueScore,
 			Index:                   transactionOutput.Index,
-			IsCoinbase:              btcjson.Bool(isCoinbase),
-			Confirmations:           btcjson.Uint64(confirmations),
-			IsSpendable:             btcjson.Bool(!isCoinbase || confirmations >= activeNetParams.BlockCoinbaseMaturity),
+			IsCoinbase:              kaspajson.Bool(isCoinbase),
+			Confirmations:           kaspajson.Uint64(confirmations),
+			IsSpendable:             kaspajson.Bool(!isCoinbase || confirmations >= activeNetParams.BlockCoinbaseMaturity),
 		}
 	}
 	return UTXOsResponses, nil
@@ -279,7 +279,7 @@ func PostTransaction(requestBody []byte) error {
 	_, err = client.SendRawTransaction(tx, true)
 	if err != nil {
 		switch err := errors.Cause(err).(type) {
-		case *btcjson.RPCError:
+		case *kaspajson.RPCError:
 			return httpserverutils.NewHandlerError(http.StatusUnprocessableEntity, err)
 		default:
 			return err

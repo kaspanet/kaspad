@@ -9,7 +9,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/kaspajson"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -44,7 +44,7 @@ func (r FutureDebugLevelResult) Receive() (string, error) {
 //
 // NOTE: This is a kaspad extension.
 func (c *Client) DebugLevelAsync(levelSpec string) FutureDebugLevelResult {
-	cmd := btcjson.NewDebugLevelCmd(levelSpec)
+	cmd := kaspajson.NewDebugLevelCmd(levelSpec)
 	return c.sendCmd(cmd)
 }
 
@@ -104,13 +104,13 @@ func (r FutureGetSelectedTipResult) Receive() (*wire.MsgBlock, error) {
 //
 // NOTE: This is a kaspad extension.
 func (c *Client) GetSelectedTipAsync() FutureGetSelectedTipResult {
-	cmd := btcjson.NewGetSelectedTipCmd(btcjson.Bool(false), btcjson.Bool(false))
+	cmd := kaspajson.NewGetSelectedTipCmd(kaspajson.Bool(false), kaspajson.Bool(false))
 	return c.sendCmd(cmd)
 }
 
 // GetSelectedTip returns the block of the selected DAG tip
 // NOTE: This is a kaspad extension.
-func (c *Client) GetSelectedTip() (*btcjson.GetBlockVerboseResult, error) {
+func (c *Client) GetSelectedTip() (*kaspajson.GetBlockVerboseResult, error) {
 	return c.GetSelectedTipVerboseAsync().Receive()
 }
 
@@ -120,14 +120,14 @@ type FutureGetSelectedTipVerboseResult chan *response
 
 // Receive waits for the response promised by the future and returns the data
 // structure from the server with information about the requested block.
-func (r FutureGetSelectedTipVerboseResult) Receive() (*btcjson.GetBlockVerboseResult, error) {
+func (r FutureGetSelectedTipVerboseResult) Receive() (*kaspajson.GetBlockVerboseResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal the raw result into a BlockResult.
-	var blockResult btcjson.GetBlockVerboseResult
+	var blockResult kaspajson.GetBlockVerboseResult
 	err = json.Unmarshal(res, &blockResult)
 	if err != nil {
 		return nil, err
@@ -141,7 +141,7 @@ func (r FutureGetSelectedTipVerboseResult) Receive() (*btcjson.GetBlockVerboseRe
 //
 // See GeSelectedTipBlockVerbose for the blocking version and more details.
 func (c *Client) GetSelectedTipVerboseAsync() FutureGetSelectedTipVerboseResult {
-	cmd := btcjson.NewGetSelectedTipCmd(btcjson.Bool(true), btcjson.Bool(false))
+	cmd := kaspajson.NewGetSelectedTipCmd(kaspajson.Bool(true), kaspajson.Bool(false))
 	return c.sendCmd(cmd)
 }
 
@@ -175,7 +175,7 @@ func (r FutureGetCurrentNetResult) Receive() (wire.BitcoinNet, error) {
 //
 // NOTE: This is a kaspad extension.
 func (c *Client) GetCurrentNetAsync() FutureGetCurrentNetResult {
-	cmd := btcjson.NewGetCurrentNetCmd()
+	cmd := kaspajson.NewGetCurrentNetCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -233,9 +233,9 @@ func (r FutureGetHeadersResult) Receive() ([]wire.BlockHeader, error) {
 func (c *Client) GetTopHeadersAsync(startHash *daghash.Hash) FutureGetHeadersResult {
 	var hash *string
 	if startHash != nil {
-		hash = btcjson.String(startHash.String())
+		hash = kaspajson.String(startHash.String())
 	}
-	cmd := btcjson.NewGetTopHeadersCmd(hash)
+	cmd := kaspajson.NewGetTopHeadersCmd(hash)
 	return c.sendCmd(cmd)
 }
 
@@ -260,7 +260,7 @@ func (c *Client) GetHeadersAsync(startHash, stopHash *daghash.Hash) FutureGetHea
 	if stopHash != nil {
 		stopHashStr = stopHash.String()
 	}
-	cmd := btcjson.NewGetHeadersCmd(startHashStr, stopHashStr)
+	cmd := kaspajson.NewGetHeadersCmd(startHashStr, stopHashStr)
 	return c.sendCmd(cmd)
 }
 
@@ -280,14 +280,14 @@ type FutureSessionResult chan *response
 
 // Receive waits for the response promised by the future and returns the
 // session result.
-func (r FutureSessionResult) Receive() (*btcjson.SessionResult, error) {
+func (r FutureSessionResult) Receive() (*kaspajson.SessionResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a session result object.
-	var session btcjson.SessionResult
+	var session kaspajson.SessionResult
 	err = json.Unmarshal(res, &session)
 	if err != nil {
 		return nil, err
@@ -309,7 +309,7 @@ func (c *Client) SessionAsync() FutureSessionResult {
 		return newFutureError(ErrWebsocketsRequired)
 	}
 
-	cmd := btcjson.NewSessionCmd()
+	cmd := kaspajson.NewSessionCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -318,7 +318,7 @@ func (c *Client) SessionAsync() FutureSessionResult {
 // This RPC requires the client to be running in websocket mode.
 //
 // NOTE: This is a btcsuite extension.
-func (c *Client) Session() (*btcjson.SessionResult, error) {
+func (c *Client) Session() (*kaspajson.SessionResult, error) {
 	return c.SessionAsync().Receive()
 }
 
@@ -334,7 +334,7 @@ type FutureVersionResult chan *response
 //
 // NOTE: This is a btcsuite extension ported from
 // github.com/decred/dcrrpcclient.
-func (r FutureVersionResult) Receive() (map[string]btcjson.VersionResult,
+func (r FutureVersionResult) Receive() (map[string]kaspajson.VersionResult,
 	error) {
 	res, err := receiveFuture(r)
 	if err != nil {
@@ -342,7 +342,7 @@ func (r FutureVersionResult) Receive() (map[string]btcjson.VersionResult,
 	}
 
 	// Unmarshal result as a version result object.
-	var vr map[string]btcjson.VersionResult
+	var vr map[string]kaspajson.VersionResult
 	err = json.Unmarshal(res, &vr)
 	if err != nil {
 		return nil, err
@@ -360,7 +360,7 @@ func (r FutureVersionResult) Receive() (map[string]btcjson.VersionResult,
 // NOTE: This is a btcsuite extension ported from
 // github.com/decred/dcrrpcclient.
 func (c *Client) VersionAsync() FutureVersionResult {
-	cmd := btcjson.NewVersionCmd()
+	cmd := kaspajson.NewVersionCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -368,6 +368,6 @@ func (c *Client) VersionAsync() FutureVersionResult {
 //
 // NOTE: This is a btcsuite extension ported from
 // github.com/decred/dcrrpcclient.
-func (c *Client) Version() (map[string]btcjson.VersionResult, error) {
+func (c *Client) Version() (map[string]kaspajson.VersionResult, error) {
 	return c.VersionAsync().Receive()
 }

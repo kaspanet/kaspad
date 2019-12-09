@@ -1,6 +1,6 @@
 package rpc
 
-import "github.com/kaspanet/kaspad/btcjson"
+import "github.com/kaspanet/kaspad/kaspajson"
 
 // handleGetMempoolInfo implements the getMempoolInfo command.
 func handleGetMempoolInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
@@ -11,7 +11,7 @@ func handleGetMempoolInfo(s *Server, cmd interface{}, closeChan <-chan struct{})
 		numBytes += int64(txD.Tx.MsgTx().SerializeSize())
 	}
 
-	ret := &btcjson.GetMempoolInfoResult{
+	ret := &kaspajson.GetMempoolInfoResult{
 		Size:  int64(len(mempoolTxns)),
 		Bytes: numBytes,
 	}

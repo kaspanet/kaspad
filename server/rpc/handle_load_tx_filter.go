@@ -1,7 +1,7 @@
 package rpc
 
 import (
-	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/kaspajson"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -11,14 +11,14 @@ import (
 //
 // NOTE: This extension is ported from github.com/decred/dcrd
 func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
-	cmd := icmd.(*btcjson.LoadTxFilterCmd)
+	cmd := icmd.(*kaspajson.LoadTxFilterCmd)
 
 	outpoints := make([]wire.Outpoint, len(cmd.Outpoints))
 	for i := range cmd.Outpoints {
 		txID, err := daghash.NewTxIDFromStr(cmd.Outpoints[i].TxID)
 		if err != nil {
-			return nil, &btcjson.RPCError{
-				Code:    btcjson.ErrRPCInvalidParameter,
+			return nil, &kaspajson.RPCError{
+				Code:    kaspajson.ErrRPCInvalidParameter,
 				Message: err.Error(),
 			}
 		}

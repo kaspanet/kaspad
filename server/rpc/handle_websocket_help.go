@@ -1,12 +1,12 @@
 package rpc
 
-import "github.com/kaspanet/kaspad/btcjson"
+import "github.com/kaspanet/kaspad/kaspajson"
 
 // handleWebsocketHelp implements the help command for websocket connections.
 func handleWebsocketHelp(wsc *wsClient, icmd interface{}) (interface{}, error) {
-	cmd, ok := icmd.(*btcjson.HelpCmd)
+	cmd, ok := icmd.(*kaspajson.HelpCmd)
 	if !ok {
-		return nil, btcjson.ErrRPCInternal
+		return nil, kaspajson.ErrRPCInternal
 	}
 
 	// Provide a usage overview of all commands when no specific command
@@ -34,8 +34,8 @@ func handleWebsocketHelp(wsc *wsClient, icmd interface{}) (interface{}, error) {
 		}
 	}
 	if !valid {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCInvalidParameter,
+		return nil, &kaspajson.RPCError{
+			Code:    kaspajson.ErrRPCInvalidParameter,
 			Message: "Unknown command: " + command,
 		}
 	}

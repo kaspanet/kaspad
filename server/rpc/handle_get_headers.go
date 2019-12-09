@@ -3,7 +3,7 @@ package rpc
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/kaspajson"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -12,7 +12,7 @@ import (
 // NOTE: This is a btcsuite extension originally ported from
 // github.com/decred/dcrd.
 func handleGetHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.GetHeadersCmd)
+	c := cmd.(*kaspajson.GetHeadersCmd)
 
 	startHash := &daghash.ZeroHash
 	if c.StartHash != "" {
@@ -30,8 +30,8 @@ func handleGetHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (in
 	}
 	headers, err := s.cfg.SyncMgr.GetBlueBlocksHeadersBetween(startHash, stopHash)
 	if err != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCMisc,
+		return nil, &kaspajson.RPCError{
+			Code:    kaspajson.ErrRPCMisc,
 			Message: err.Error(),
 		}
 	}

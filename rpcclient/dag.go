@@ -11,7 +11,7 @@ import (
 	"encoding/json"
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/kaspajson"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -43,7 +43,7 @@ func (r FutureGetSelectedTipHashResult) Receive() (*daghash.Hash, error) {
 //
 // See GetSelectedTipHash for the blocking version and more details.
 func (c *Client) GetSelectedTipHashAsync() FutureGetSelectedTipHashResult {
-	cmd := btcjson.NewGetSelectedTipHashCmd()
+	cmd := kaspajson.NewGetSelectedTipHashCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -98,7 +98,7 @@ func (c *Client) GetBlockAsync(blockHash *daghash.Hash, subnetworkID *string) Fu
 		hash = blockHash.String()
 	}
 
-	cmd := btcjson.NewGetBlockCmd(hash, btcjson.Bool(false), btcjson.Bool(false), subnetworkID)
+	cmd := kaspajson.NewGetBlockCmd(hash, kaspajson.Bool(false), kaspajson.Bool(false), subnetworkID)
 	return c.sendCmd(cmd)
 }
 
@@ -116,13 +116,13 @@ type FutureGetBlocksResult chan *response
 
 // Receive waits for the response promised by the future and returns the blocks
 // starting from startHash up to the virtual ordered by blue score.
-func (r FutureGetBlocksResult) Receive() (*btcjson.GetBlocksResult, error) {
+func (r FutureGetBlocksResult) Receive() (*kaspajson.GetBlocksResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
-	var result btcjson.GetBlocksResult
+	var result kaspajson.GetBlocksResult
 	if err := json.Unmarshal(res, &result); err != nil {
 		return nil, errors.Wrapf(err, "%s", string(res))
 	}
@@ -135,13 +135,13 @@ func (r FutureGetBlocksResult) Receive() (*btcjson.GetBlocksResult, error) {
 //
 // See GetBlocks for the blocking version and more details.
 func (c *Client) GetBlocksAsync(includeRawBlockData bool, IncludeVerboseBlockData bool, startHash *string) FutureGetBlocksResult {
-	cmd := btcjson.NewGetBlocksCmd(includeRawBlockData, IncludeVerboseBlockData, startHash)
+	cmd := kaspajson.NewGetBlocksCmd(includeRawBlockData, IncludeVerboseBlockData, startHash)
 	return c.sendCmd(cmd)
 }
 
 // GetBlocks returns the blocks starting from startHash up to the virtual ordered
 // by blue score.
-func (c *Client) GetBlocks(includeRawBlockData bool, includeVerboseBlockData bool, startHash *string) (*btcjson.GetBlocksResult, error) {
+func (c *Client) GetBlocks(includeRawBlockData bool, includeVerboseBlockData bool, startHash *string) (*kaspajson.GetBlocksResult, error) {
 	return c.GetBlocksAsync(includeRawBlockData, includeVerboseBlockData, startHash).Receive()
 }
 
@@ -151,14 +151,14 @@ type FutureGetBlockVerboseResult chan *response
 
 // Receive waits for the response promised by the future and returns the data
 // structure from the server with information about the requested block.
-func (r FutureGetBlockVerboseResult) Receive() (*btcjson.GetBlockVerboseResult, error) {
+func (r FutureGetBlockVerboseResult) Receive() (*kaspajson.GetBlockVerboseResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal the raw result into a BlockResult.
-	var blockResult btcjson.GetBlockVerboseResult
+	var blockResult kaspajson.GetBlockVerboseResult
 	err = json.Unmarshal(res, &blockResult)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -177,7 +177,7 @@ func (c *Client) GetBlockVerboseAsync(blockHash *daghash.Hash, subnetworkID *str
 		hash = blockHash.String()
 	}
 
-	cmd := btcjson.NewGetBlockCmd(hash, btcjson.Bool(true), btcjson.Bool(false), subnetworkID)
+	cmd := kaspajson.NewGetBlockCmd(hash, kaspajson.Bool(true), kaspajson.Bool(false), subnetworkID)
 	return c.sendCmd(cmd)
 }
 
@@ -186,7 +186,7 @@ func (c *Client) GetBlockVerboseAsync(blockHash *daghash.Hash, subnetworkID *str
 //
 // See GetBlockVerboseTx to retrieve transaction data structures as well.
 // See GetBlock to retrieve a raw block instead.
-func (c *Client) GetBlockVerbose(blockHash *daghash.Hash, subnetworkID *string) (*btcjson.GetBlockVerboseResult, error) {
+func (c *Client) GetBlockVerbose(blockHash *daghash.Hash, subnetworkID *string) (*kaspajson.GetBlockVerboseResult, error) {
 	return c.GetBlockVerboseAsync(blockHash, subnetworkID).Receive()
 }
 
@@ -201,7 +201,7 @@ func (c *Client) GetBlockVerboseTxAsync(blockHash *daghash.Hash, subnetworkID *s
 		hash = blockHash.String()
 	}
 
-	cmd := btcjson.NewGetBlockCmd(hash, btcjson.Bool(true), btcjson.Bool(true), subnetworkID)
+	cmd := kaspajson.NewGetBlockCmd(hash, kaspajson.Bool(true), kaspajson.Bool(true), subnetworkID)
 	return c.sendCmd(cmd)
 }
 
@@ -210,7 +210,7 @@ func (c *Client) GetBlockVerboseTxAsync(blockHash *daghash.Hash, subnetworkID *s
 //
 // See GetBlockVerbose if only transaction hashes are preferred.
 // See GetBlock to retrieve a raw block instead.
-func (c *Client) GetBlockVerboseTx(blockHash *daghash.Hash, subnetworkID *string) (*btcjson.GetBlockVerboseResult, error) {
+func (c *Client) GetBlockVerboseTx(blockHash *daghash.Hash, subnetworkID *string) (*kaspajson.GetBlockVerboseResult, error) {
 	return c.GetBlockVerboseTxAsync(blockHash, subnetworkID).Receive()
 }
 
@@ -241,7 +241,7 @@ func (r FutureGetBlockCountResult) Receive() (int64, error) {
 //
 // See GetBlockCount for the blocking version and more details.
 func (c *Client) GetBlockCountAsync() FutureGetBlockCountResult {
-	cmd := btcjson.NewGetBlockCountCmd()
+	cmd := kaspajson.NewGetBlockCountCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -258,13 +258,13 @@ type FutureGetChainFromBlockResult chan *response
 // parent chain starting from startHash up to the virtual. If startHash is not in
 // the selected parent chain, it goes down the DAG until it does reach a hash in
 // the selected parent chain while collecting hashes into RemovedChainBlockHashes.
-func (r FutureGetChainFromBlockResult) Receive() (*btcjson.GetChainFromBlockResult, error) {
+func (r FutureGetChainFromBlockResult) Receive() (*kaspajson.GetChainFromBlockResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
-	var result btcjson.GetChainFromBlockResult
+	var result kaspajson.GetChainFromBlockResult
 	if err := json.Unmarshal(res, &result); err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -277,7 +277,7 @@ func (r FutureGetChainFromBlockResult) Receive() (*btcjson.GetChainFromBlockResu
 //
 // See GetChainFromBlock for the blocking version and more details.
 func (c *Client) GetChainFromBlockAsync(includeBlocks bool, startHash *string) FutureGetChainFromBlockResult {
-	cmd := btcjson.NewGetChainFromBlockCmd(includeBlocks, startHash)
+	cmd := kaspajson.NewGetChainFromBlockCmd(includeBlocks, startHash)
 	return c.sendCmd(cmd)
 }
 
@@ -285,7 +285,7 @@ func (c *Client) GetChainFromBlockAsync(includeBlocks bool, startHash *string) F
 // up to the virtual. If startHash is not in the selected parent chain, it goes
 // down the DAG until it does reach a hash in the selected parent chain while
 // collecting hashes into RemovedChainBlockHashes.
-func (c *Client) GetChainFromBlock(includeBlocks bool, startHash *string) (*btcjson.GetChainFromBlockResult, error) {
+func (c *Client) GetChainFromBlock(includeBlocks bool, startHash *string) (*kaspajson.GetChainFromBlockResult, error) {
 	return c.GetChainFromBlockAsync(includeBlocks, startHash).Receive()
 }
 
@@ -316,7 +316,7 @@ func (r FutureGetDifficultyResult) Receive() (float64, error) {
 //
 // See GetDifficulty for the blocking version and more details.
 func (c *Client) GetDifficultyAsync() FutureGetDifficultyResult {
-	cmd := btcjson.NewGetDifficultyCmd()
+	cmd := kaspajson.NewGetDifficultyCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -332,13 +332,13 @@ type FutureGetBlockDAGInfoResult chan *response
 
 // Receive waits for the response promised by the future and returns dag info
 // result provided by the server.
-func (r FutureGetBlockDAGInfoResult) Receive() (*btcjson.GetBlockDAGInfoResult, error) {
+func (r FutureGetBlockDAGInfoResult) Receive() (*kaspajson.GetBlockDAGInfoResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
-	var dagInfo btcjson.GetBlockDAGInfoResult
+	var dagInfo kaspajson.GetBlockDAGInfoResult
 	if err := json.Unmarshal(res, &dagInfo); err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -351,14 +351,14 @@ func (r FutureGetBlockDAGInfoResult) Receive() (*btcjson.GetBlockDAGInfoResult, 
 //
 // See GetBlockDAGInfo for the blocking version and more details.
 func (c *Client) GetBlockDAGInfoAsync() FutureGetBlockDAGInfoResult {
-	cmd := btcjson.NewGetBlockDAGInfoCmd()
+	cmd := kaspajson.NewGetBlockDAGInfoCmd()
 	return c.sendCmd(cmd)
 }
 
 // GetBlockDAGInfo returns information related to the processing state of
 // various dag-specific details such as the current difficulty from the tip
 // of the main dag.
-func (c *Client) GetBlockDAGInfo() (*btcjson.GetBlockDAGInfoResult, error) {
+func (c *Client) GetBlockDAGInfo() (*kaspajson.GetBlockDAGInfoResult, error) {
 	return c.GetBlockDAGInfoAsync().Receive()
 }
 
@@ -428,7 +428,7 @@ func (c *Client) GetBlockHeaderAsync(blockHash *daghash.Hash) FutureGetBlockHead
 		hash = blockHash.String()
 	}
 
-	cmd := btcjson.NewGetBlockHeaderCmd(hash, btcjson.Bool(false))
+	cmd := kaspajson.NewGetBlockHeaderCmd(hash, kaspajson.Bool(false))
 	return c.sendCmd(cmd)
 }
 
@@ -446,14 +446,14 @@ type FutureGetBlockHeaderVerboseResult chan *response
 
 // Receive waits for the response promised by the future and returns the
 // data structure of the blockheader requested from the server given its hash.
-func (r FutureGetBlockHeaderVerboseResult) Receive() (*btcjson.GetBlockHeaderVerboseResult, error) {
+func (r FutureGetBlockHeaderVerboseResult) Receive() (*kaspajson.GetBlockHeaderVerboseResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a string.
-	var bh btcjson.GetBlockHeaderVerboseResult
+	var bh kaspajson.GetBlockHeaderVerboseResult
 	err = json.Unmarshal(res, &bh)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -473,7 +473,7 @@ func (c *Client) GetBlockHeaderVerboseAsync(blockHash *daghash.Hash) FutureGetBl
 		hash = blockHash.String()
 	}
 
-	cmd := btcjson.NewGetBlockHeaderCmd(hash, btcjson.Bool(true))
+	cmd := kaspajson.NewGetBlockHeaderCmd(hash, kaspajson.Bool(true))
 	return c.sendCmd(cmd)
 }
 
@@ -481,7 +481,7 @@ func (c *Client) GetBlockHeaderVerboseAsync(blockHash *daghash.Hash) FutureGetBl
 // blockheader from the server given its hash.
 //
 // See GetBlockHeader to retrieve a blockheader instead.
-func (c *Client) GetBlockHeaderVerbose(blockHash *daghash.Hash) (*btcjson.GetBlockHeaderVerboseResult, error) {
+func (c *Client) GetBlockHeaderVerbose(blockHash *daghash.Hash) (*kaspajson.GetBlockHeaderVerboseResult, error) {
 	return c.GetBlockHeaderVerboseAsync(blockHash).Receive()
 }
 
@@ -492,14 +492,14 @@ type FutureGetMempoolEntryResult chan *response
 // Receive waits for the response promised by the future and returns a data
 // structure with information about the transaction in the memory pool given
 // its hash.
-func (r FutureGetMempoolEntryResult) Receive() (*btcjson.GetMempoolEntryResult, error) {
+func (r FutureGetMempoolEntryResult) Receive() (*kaspajson.GetMempoolEntryResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal the result as an array of strings.
-	var mempoolEntryResult btcjson.GetMempoolEntryResult
+	var mempoolEntryResult kaspajson.GetMempoolEntryResult
 	err = json.Unmarshal(res, &mempoolEntryResult)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -514,13 +514,13 @@ func (r FutureGetMempoolEntryResult) Receive() (*btcjson.GetMempoolEntryResult, 
 //
 // See GetMempoolEntry for the blocking version and more details.
 func (c *Client) GetMempoolEntryAsync(txHash string) FutureGetMempoolEntryResult {
-	cmd := btcjson.NewGetMempoolEntryCmd(txHash)
+	cmd := kaspajson.NewGetMempoolEntryCmd(txHash)
 	return c.sendCmd(cmd)
 }
 
 // GetMempoolEntry returns a data structure with information about the
 // transaction in the memory pool given its hash.
-func (c *Client) GetMempoolEntry(txHash string) (*btcjson.GetMempoolEntryResult, error) {
+func (c *Client) GetMempoolEntry(txHash string) (*kaspajson.GetMempoolEntryResult, error) {
 	return c.GetMempoolEntryAsync(txHash).Receive()
 }
 
@@ -562,7 +562,7 @@ func (r FutureGetRawMempoolResult) Receive() ([]*daghash.Hash, error) {
 //
 // See GetRawMempool for the blocking version and more details.
 func (c *Client) GetRawMempoolAsync() FutureGetRawMempoolResult {
-	cmd := btcjson.NewGetRawMempoolCmd(btcjson.Bool(false))
+	cmd := kaspajson.NewGetRawMempoolCmd(kaspajson.Bool(false))
 	return c.sendCmd(cmd)
 }
 
@@ -581,7 +581,7 @@ type FutureGetRawMempoolVerboseResult chan *response
 // Receive waits for the response promised by the future and returns a map of
 // transaction hashes to an associated data structure with information about the
 // transaction for all transactions in the memory pool.
-func (r FutureGetRawMempoolVerboseResult) Receive() (map[string]btcjson.GetRawMempoolVerboseResult, error) {
+func (r FutureGetRawMempoolVerboseResult) Receive() (map[string]kaspajson.GetRawMempoolVerboseResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
@@ -589,7 +589,7 @@ func (r FutureGetRawMempoolVerboseResult) Receive() (map[string]btcjson.GetRawMe
 
 	// Unmarshal the result as a map of strings (tx shas) to their detailed
 	// results.
-	var mempoolItems map[string]btcjson.GetRawMempoolVerboseResult
+	var mempoolItems map[string]kaspajson.GetRawMempoolVerboseResult
 	err = json.Unmarshal(res, &mempoolItems)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -603,7 +603,7 @@ func (r FutureGetRawMempoolVerboseResult) Receive() (map[string]btcjson.GetRawMe
 //
 // See GetRawMempoolVerbose for the blocking version and more details.
 func (c *Client) GetRawMempoolVerboseAsync() FutureGetRawMempoolVerboseResult {
-	cmd := btcjson.NewGetRawMempoolCmd(btcjson.Bool(true))
+	cmd := kaspajson.NewGetRawMempoolCmd(kaspajson.Bool(true))
 	return c.sendCmd(cmd)
 }
 
@@ -612,7 +612,7 @@ func (c *Client) GetRawMempoolVerboseAsync() FutureGetRawMempoolVerboseResult {
 // the memory pool.
 //
 // See GetRawMempool to retrieve only the transaction hashes instead.
-func (c *Client) GetRawMempoolVerbose() (map[string]btcjson.GetRawMempoolVerboseResult, error) {
+func (c *Client) GetRawMempoolVerbose() (map[string]kaspajson.GetRawMempoolVerboseResult, error) {
 	return c.GetRawMempoolVerboseAsync().Receive()
 }
 
@@ -622,14 +622,14 @@ type FutureGetSubnetworkResult chan *response
 
 // Receive waits for the response promised by the future and returns information
 // regarding the requested subnetwork
-func (r FutureGetSubnetworkResult) Receive() (*btcjson.GetSubnetworkResult, error) {
+func (r FutureGetSubnetworkResult) Receive() (*kaspajson.GetSubnetworkResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a getSubnetwork result object.
-	var getSubnetworkResult *btcjson.GetSubnetworkResult
+	var getSubnetworkResult *kaspajson.GetSubnetworkResult
 	err = json.Unmarshal(res, &getSubnetworkResult)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -644,12 +644,12 @@ func (r FutureGetSubnetworkResult) Receive() (*btcjson.GetSubnetworkResult, erro
 //
 // See GetSubnetwork for the blocking version and more details.
 func (c *Client) GetSubnetworkAsync(subnetworkID string) FutureGetSubnetworkResult {
-	cmd := btcjson.NewGetSubnetworkCmd(subnetworkID)
+	cmd := kaspajson.NewGetSubnetworkCmd(subnetworkID)
 	return c.sendCmd(cmd)
 }
 
 // GetSubnetwork provides information about a subnetwork given its ID.
-func (c *Client) GetSubnetwork(subnetworkID string) (*btcjson.GetSubnetworkResult, error) {
+func (c *Client) GetSubnetwork(subnetworkID string) (*kaspajson.GetSubnetworkResult, error) {
 	return c.GetSubnetworkAsync(subnetworkID).Receive()
 }
 
@@ -659,7 +659,7 @@ type FutureGetTxOutResult chan *response
 
 // Receive waits for the response promised by the future and returns a
 // transaction given its hash.
-func (r FutureGetTxOutResult) Receive() (*btcjson.GetTxOutResult, error) {
+func (r FutureGetTxOutResult) Receive() (*kaspajson.GetTxOutResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
@@ -672,7 +672,7 @@ func (r FutureGetTxOutResult) Receive() (*btcjson.GetTxOutResult, error) {
 	}
 
 	// Unmarshal result as an gettxout result object.
-	var txOutInfo *btcjson.GetTxOutResult
+	var txOutInfo *kaspajson.GetTxOutResult
 	err = json.Unmarshal(res, &txOutInfo)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -692,13 +692,13 @@ func (c *Client) GetTxOutAsync(txHash *daghash.Hash, index uint32, mempool bool)
 		hash = txHash.String()
 	}
 
-	cmd := btcjson.NewGetTxOutCmd(hash, index, &mempool)
+	cmd := kaspajson.NewGetTxOutCmd(hash, index, &mempool)
 	return c.sendCmd(cmd)
 }
 
 // GetTxOut returns the transaction output info if it's unspent and
 // nil, otherwise.
-func (c *Client) GetTxOut(txHash *daghash.Hash, index uint32, mempool bool) (*btcjson.GetTxOutResult, error) {
+func (c *Client) GetTxOut(txHash *daghash.Hash, index uint32, mempool bool) (*kaspajson.GetTxOutResult, error) {
 	return c.GetTxOutAsync(txHash, index, mempool).Receive()
 }
 
@@ -714,13 +714,13 @@ type FutureRescanBlocksResult chan *response
 //
 // NOTE: This is a btcsuite extension ported from
 // github.com/decred/dcrrpcclient.
-func (r FutureRescanBlocksResult) Receive() ([]btcjson.RescannedBlock, error) {
+func (r FutureRescanBlocksResult) Receive() ([]kaspajson.RescannedBlock, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
-	var rescanBlocksResult []btcjson.RescannedBlock
+	var rescanBlocksResult []kaspajson.RescannedBlock
 	err = json.Unmarshal(res, &rescanBlocksResult)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -743,7 +743,7 @@ func (c *Client) RescanBlocksAsync(blockHashes []*daghash.Hash) FutureRescanBloc
 		strBlockHashes[i] = blockHashes[i].String()
 	}
 
-	cmd := btcjson.NewRescanBlocksCmd(strBlockHashes)
+	cmd := kaspajson.NewRescanBlocksCmd(strBlockHashes)
 	return c.sendCmd(cmd)
 }
 
@@ -753,7 +753,7 @@ func (c *Client) RescanBlocksAsync(blockHashes []*daghash.Hash) FutureRescanBloc
 //
 // NOTE: This is a btcsuite extension ported from
 // github.com/decred/dcrrpcclient.
-func (c *Client) RescanBlocks(blockHashes []*daghash.Hash) ([]btcjson.RescannedBlock, error) {
+func (c *Client) RescanBlocks(blockHashes []*daghash.Hash) ([]kaspajson.RescannedBlock, error) {
 	return c.RescanBlocksAsync(blockHashes).Receive()
 }
 
@@ -780,7 +780,7 @@ func (c *Client) InvalidateBlockAsync(blockHash *daghash.Hash) FutureInvalidateB
 		hash = blockHash.String()
 	}
 
-	cmd := btcjson.NewInvalidateBlockCmd(hash)
+	cmd := kaspajson.NewInvalidateBlockCmd(hash)
 	return c.sendCmd(cmd)
 }
 
@@ -834,7 +834,7 @@ func (c *Client) GetCFilterAsync(blockHash *daghash.Hash,
 		hash = blockHash.String()
 	}
 
-	cmd := btcjson.NewGetCFilterCmd(hash, filterType)
+	cmd := kaspajson.NewGetCFilterCmd(hash, filterType)
 	return c.sendCmd(cmd)
 }
 
@@ -887,7 +887,7 @@ func (c *Client) GetCFilterHeaderAsync(blockHash *daghash.Hash,
 		hash = blockHash.String()
 	}
 
-	cmd := btcjson.NewGetCFilterHeaderCmd(hash, filterType)
+	cmd := kaspajson.NewGetCFilterHeaderCmd(hash, filterType)
 	return c.sendCmd(cmd)
 }
 

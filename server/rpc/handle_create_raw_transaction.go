@@ -1,7 +1,7 @@
 package rpc
 
 import (
-	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/kaspajson"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -10,13 +10,13 @@ import (
 
 // handleCreateRawTransaction handles createRawTransaction commands.
 func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.CreateRawTransactionCmd)
+	c := cmd.(*kaspajson.CreateRawTransactionCmd)
 
 	// Validate the locktime, if given.
 	if c.LockTime != nil &&
 		(*c.LockTime < 0 || *c.LockTime > wire.MaxTxInSequenceNum) {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCInvalidParameter,
+		return nil, &kaspajson.RPCError{
+			Code:    kaspajson.ErrRPCInvalidParameter,
 			Message: "Locktime out of range",
 		}
 	}
@@ -45,8 +45,8 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 	for encodedAddr, amount := range c.Amounts {
 		// Ensure amount is in the valid range for monetary amounts.
 		if amount <= 0 || amount > util.MaxSatoshi {
-			return nil, &btcjson.RPCError{
-				Code:    btcjson.ErrRPCType,
+			return nil, &kaspajson.RPCError{
+				Code:    kaspajson.ErrRPCType,
 				Message: "Invalid amount",
 			}
 		}
@@ -54,8 +54,8 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 		// Decode the provided address.
 		addr, err := util.DecodeAddress(encodedAddr, params.Prefix)
 		if err != nil {
-			return nil, &btcjson.RPCError{
-				Code:    btcjson.ErrRPCInvalidAddressOrKey,
+			return nil, &kaspajson.RPCError{
+				Code:    kaspajson.ErrRPCInvalidAddressOrKey,
 				Message: "Invalid address or key: " + err.Error(),
 			}
 		}
@@ -67,14 +67,14 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 		case *util.AddressPubKeyHash:
 		case *util.AddressScriptHash:
 		default:
-			return nil, &btcjson.RPCError{
-				Code:    btcjson.ErrRPCInvalidAddressOrKey,
+			return nil, &kaspajson.RPCError{
+				Code:    kaspajson.ErrRPCInvalidAddressOrKey,
 				Message: "Invalid address or key",
 			}
 		}
 		if !addr.IsForPrefix(params.Prefix) {
-			return nil, &btcjson.RPCError{
-				Code: btcjson.ErrRPCInvalidAddressOrKey,
+			return nil, &kaspajson.RPCError{
+				Code: kaspajson.ErrRPCInvalidAddressOrKey,
 				Message: "Invalid address: " + encodedAddr +
 					" is for the wrong network",
 			}

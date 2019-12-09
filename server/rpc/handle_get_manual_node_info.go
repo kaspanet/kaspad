@@ -1,7 +1,7 @@
 package rpc
 
 import (
-	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/kaspajson"
 	"github.com/kaspanet/kaspad/logger"
 	"github.com/kaspanet/kaspad/server/serverutils"
 	"net"
@@ -10,7 +10,7 @@ import (
 
 // handleGetManualNodeInfo handles getManualNodeInfo commands.
 func handleGetManualNodeInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.GetManualNodeInfoCmd)
+	c := cmd.(*kaspajson.GetManualNodeInfoCmd)
 	results, err := getManualNodesInfo(s, c.Details, c.Node)
 	if err != nil {
 		return nil, err
@@ -18,7 +18,7 @@ func handleGetManualNodeInfo(s *Server, cmd interface{}, closeChan <-chan struct
 	if resultsNonDetailed, ok := results.([]string); ok {
 		return resultsNonDetailed[0], nil
 	}
-	resultsDetailed := results.([]*btcjson.GetManualNodeInfoResult)
+	resultsDetailed := results.([]*kaspajson.GetManualNodeInfoResult)
 	return resultsDetailed[0], nil
 }
 
@@ -39,8 +39,8 @@ func getManualNodesInfo(s *Server, detailsArg *bool, node string) (interface{}, 
 			}
 		}
 		if !found {
-			return nil, &btcjson.RPCError{
-				Code:    btcjson.ErrRPCClientNodeNotAdded,
+			return nil, &kaspajson.RPCError{
+				Code:    kaspajson.ErrRPCClientNodeNotAdded,
 				Message: "Node has not been added",
 			}
 		}
@@ -58,14 +58,14 @@ func getManualNodesInfo(s *Server, detailsArg *bool, node string) (interface{}, 
 
 	// With the details flag, the result is an array of JSON objects which
 	// include the result of DNS lookups for each peer.
-	results := make([]*btcjson.GetManualNodeInfoResult, 0, len(peers))
+	results := make([]*kaspajson.GetManualNodeInfoResult, 0, len(peers))
 	for _, rpcPeer := range peers {
 		// Set the "address" of the peer which could be an ip address
 		// or a domain name.
 		peer := rpcPeer.ToPeer()
-		var result btcjson.GetManualNodeInfoResult
+		var result kaspajson.GetManualNodeInfoResult
 		result.ManualNode = peer.Addr()
-		result.Connected = btcjson.Bool(peer.Connected())
+		result.Connected = kaspajson.Bool(peer.Connected())
 
 		// Split the address into host and port portions so we can do
 		// a DNS lookup against the host. When no port is specified in
@@ -96,9 +96,9 @@ func getManualNodesInfo(s *Server, detailsArg *bool, node string) (interface{}, 
 		}
 
 		// Add the addresses and connection info to the result.
-		addrs := make([]btcjson.GetManualNodeInfoResultAddr, 0, len(ipList))
+		addrs := make([]kaspajson.GetManualNodeInfoResultAddr, 0, len(ipList))
 		for _, ip := range ipList {
-			var addr btcjson.GetManualNodeInfoResultAddr
+			var addr kaspajson.GetManualNodeInfoResultAddr
 			addr.Address = ip
 			addr.Connected = "false"
 			if ip == host && peer.Connected() {

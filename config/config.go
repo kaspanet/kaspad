@@ -32,12 +32,12 @@ import (
 )
 
 const (
-	defaultConfigFilename      = "btcd.conf"
+	defaultConfigFilename      = "kaspad.conf"
 	defaultDataDirname         = "data"
 	defaultLogLevel            = "info"
 	defaultLogDirname          = "logs"
-	defaultLogFilename         = "btcd.log"
-	defaultErrLogFilename      = "btcd_err.log"
+	defaultLogFilename         = "kaspad.log"
+	defaultErrLogFilename      = "kaspad_err.log"
 	defaultTargetOutboundPeers = 8
 	defaultMaxInboundPeers     = 117
 	defaultBanDuration         = time.Hour * 24
@@ -57,15 +57,15 @@ const (
 	//DefaultMaxOrphanTxSize is the default maximum size for an orphan transaction
 	DefaultMaxOrphanTxSize = 100000
 	defaultSigCacheMaxSize = 100000
-	sampleConfigFilename   = "sample-btcd.conf"
+	sampleConfigFilename   = "sample-kaspad.conf"
 	defaultTxIndex         = false
 	defaultAddrIndex       = false
 	defaultAcceptanceIndex = false
 )
 
 var (
-	// DefaultHomeDir is the default home directory for BTCD.
-	DefaultHomeDir = util.AppDataDir("btcd", false)
+	// DefaultHomeDir is the default home directory for kaspad.
+	DefaultHomeDir = util.AppDataDir("kaspad", false)
 
 	defaultConfigFile  = filepath.Join(DefaultHomeDir, defaultConfigFilename)
 	defaultDataDir     = filepath.Join(DefaultHomeDir, defaultDataDirname)
@@ -976,7 +976,7 @@ func loadConfig() (*Config, []string, error) {
 	return activeConfig, remainingArgs, nil
 }
 
-// createDefaultConfig copies the file sample-btcd.conf to the given destination path,
+// createDefaultConfig copies the file sample-kaspad.conf to the given destination path,
 // and populates it with some randomly generated RPC username and password.
 func createDefaultConfigFile(destinationPath string) error {
 	// Create the destination directory if it does not exists

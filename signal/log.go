@@ -8,4 +8,4 @@ import (
 	"github.com/kaspanet/kaspad/logger"
 )
 
-var btcdLog, _ = logger.Get(logger.SubsystemTags.BTCD)
+var btcdLog, _ = logger.Get(logger.SubsystemTags.KSPD)

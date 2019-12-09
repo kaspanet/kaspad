@@ -4,13 +4,13 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/kaspajson"
 	"github.com/kaspanet/kaspad/util"
 )
 
 // handleSubmitBlock implements the submitBlock command.
 func handleSubmitBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.SubmitBlockCmd)
+	c := cmd.(*kaspajson.SubmitBlockCmd)
 
 	// Deserialize the submitted block.
 	hexStr := c.HexBlock
@@ -24,8 +24,8 @@ func handleSubmitBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (i
 
 	block, err := util.NewBlockFromBytes(serializedBlock)
 	if err != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCDeserialization,
+		return nil, &kaspajson.RPCError{
+			Code:    kaspajson.ErrRPCDeserialization,
 			Message: "Block decode failed: " + err.Error(),
 		}
 	}
@@ -34,8 +34,8 @@ func handleSubmitBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (i
 	// nodes. This will in turn relay it to the network like normal.
 	_, err = s.cfg.SyncMgr.SubmitBlock(block, blockdag.BFNone)
 	if err != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCVerify,
+		return nil, &kaspajson.RPCError{
+			Code:    kaspajson.ErrRPCVerify,
 			Message: fmt.Sprintf("Block rejected. Reason: %s", err),
 		}
 	}

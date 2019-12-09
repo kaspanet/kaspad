@@ -5,8 +5,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/btcjson"
 	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/kaspajson"
 	"github.com/kaspanet/kaspad/mining"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
@@ -46,7 +46,7 @@ var (
 	// in the coinbase signature script. It is declared here to avoid the
 	// overhead of creating a new object on every invocation for constant
 	// data.
-	gbtCoinbaseAux = &btcjson.GetBlockTemplateResultAux{
+	gbtCoinbaseAux = &kaspajson.GetBlockTemplateResultAux{
 		Flags: hex.EncodeToString(builderScript(txscript.
 			NewScriptBuilder().
 			AddData([]byte(mining.CoinbaseFlags)))),
@@ -98,7 +98,7 @@ func builderScript(builder *txscript.ScriptBuilder) []byte {
 // See https://en.bitcoin.it/wiki/BIP_0022 and
 // https://en.bitcoin.it/wiki/BIP_0023 for more details.
 func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.GetBlockTemplateCmd)
+	c := cmd.(*kaspajson.GetBlockTemplateCmd)
 	request := c.Request
 
 	// Set the default mode and override it if supplied.
@@ -114,8 +114,8 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 	currentChainHeight := s.cfg.DAG.ChainHeight()
 	if (currentChainHeight != 0 && !s.cfg.SyncMgr.IsCurrent()) ||
 		(currentChainHeight == 0 && !s.cfg.CPUMiner.ShouldMineOnGenesis()) {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCClientInInitialDownload,
+		return nil, &kaspajson.RPCError{
+			Code:    kaspajson.ErrRPCClientInInitialDownload,
 			Message: "Bitcoin is downloading blocks...",
 		}
 	}
@@ -127,8 +127,8 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 		return handleGetBlockTemplateProposal(s, request)
 	}
 
-	return nil, &btcjson.RPCError{
-		Code:    btcjson.ErrRPCInvalidParameter,
+	return nil, &kaspajson.RPCError{
+		Code:    kaspajson.ErrRPCInvalidParameter,
 		Message: "Invalid mode",
 	}
 }
@@ -140,7 +140,7 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 // in regards to whether or not it supports creating its own coinbase (the
 // coinbasetxn and coinbasevalue capabilities) and modifies the returned block
 // template accordingly.
-func handleGetBlockTemplateRequest(s *Server, request *btcjson.TemplateRequest, closeChan <-chan struct{}) (interface{}, error) {
+func handleGetBlockTemplateRequest(s *Server, request *kaspajson.TemplateRequest, closeChan <-chan struct{}) (interface{}, error) {
 	// Extract the relevant passed capabilities and restrict the result to
 	// either a coinbase value or a coinbase transaction object depending on
 	// the request. Default to only providing a coinbase value.
@@ -164,8 +164,8 @@ func handleGetBlockTemplateRequest(s *Server, request *btcjson.TemplateRequest, 
 	// When a coinbase transaction has been requested, respond with an error
 	// if there are no addresses to pay the created block template to.
 	if !useCoinbaseValue && len(config.ActiveConfig().MiningAddrs) == 0 {
-		return nil, &btcjson.RPCError{
-			Code: btcjson.ErrRPCInternal.Code,
+		return nil, &kaspajson.RPCError{
+			Code: kaspajson.ErrRPCInternal.Code,
 			Message: "A coinbase transaction has been requested, " +
 				"but the server has not been configured with " +
 				"any payment addresses via --miningaddr",
@@ -179,8 +179,8 @@ func handleGetBlockTemplateRequest(s *Server, request *btcjson.TemplateRequest, 
 	if !(config.ActiveConfig().RegressionTest || config.ActiveConfig().SimNet) &&
 		s.cfg.ConnMgr.ConnectedCount() == 0 {
 
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCClientNotConnected,
+		return nil, &kaspajson.RPCError{
+			Code:    kaspajson.ErrRPCClientNotConnected,
 			Message: "Bitcoin is not connected",
 		}
 	}
@@ -310,11 +310,11 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 // deals with block proposals.
 //
 // See https://en.bitcoin.it/wiki/BIP_0023 for more details.
-func handleGetBlockTemplateProposal(s *Server, request *btcjson.TemplateRequest) (interface{}, error) {
+func handleGetBlockTemplateProposal(s *Server, request *kaspajson.TemplateRequest) (interface{}, error) {
 	hexData := request.Data
 	if hexData == "" {
-		return false, &btcjson.RPCError{
-			Code: btcjson.ErrRPCType,
+		return false, &kaspajson.RPCError{
+			Code: kaspajson.ErrRPCType,
 			Message: fmt.Sprintf("Data must contain the " +
 				"hex-encoded serialized block that is being " +
 				"proposed"),
@@ -327,16 +327,16 @@ func handleGetBlockTemplateProposal(s *Server, request *btcjson.TemplateRequest)
 	}
 	dataBytes, err := hex.DecodeString(hexData)
 	if err != nil {
-		return false, &btcjson.RPCError{
-			Code: btcjson.ErrRPCDeserialization,
+		return false, &kaspajson.RPCError{
+			Code: kaspajson.ErrRPCDeserialization,
 			Message: fmt.Sprintf("Data must be "+
 				"hexadecimal string (not %q)", hexData),
 		}
 	}
 	var msgBlock wire.MsgBlock
 	if err := msgBlock.Deserialize(bytes.NewReader(dataBytes)); err != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCDeserialization,
+		return nil, &kaspajson.RPCError{
+			Code:    kaspajson.ErrRPCDeserialization,
 			Message: "Block decode failed: " + err.Error(),
 		}
 	}
@@ -353,8 +353,8 @@ func handleGetBlockTemplateProposal(s *Server, request *btcjson.TemplateRequest)
 		if _, ok := err.(blockdag.RuleError); !ok {
 			errStr := fmt.Sprintf("Failed to process block proposal: %s", err)
 			log.Error(errStr)
-			return nil, &btcjson.RPCError{
-				Code:    btcjson.ErrRPCVerify,
+			return nil, &kaspajson.RPCError{
+				Code:    kaspajson.ErrRPCVerify,
 				Message: errStr,
 			}
 		}
@@ -699,11 +699,11 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 }
 
 // blockTemplateResult returns the current block template associated with the
-// state as a btcjson.GetBlockTemplateResult that is ready to be encoded to JSON
+// state as a kaspajson.GetBlockTemplateResult that is ready to be encoded to JSON
 // and returned to the caller.
 //
 // This function MUST be called with the state locked.
-func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinbaseValue bool, submitOld *bool) (*btcjson.GetBlockTemplateResult, error) {
+func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinbaseValue bool, submitOld *bool) (*kaspajson.GetBlockTemplateResult, error) {
 	// Ensure the timestamps are still in valid range for the template.
 	// This should really only ever happen if the local clock is changed
 	// after the template is generated, but it's important to avoid serving
@@ -714,8 +714,8 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 	adjustedTime := state.timeSource.AdjustedTime()
 	maxTime := adjustedTime.Add(time.Second * time.Duration(dag.TimestampDeviationTolerance))
 	if header.Timestamp.After(maxTime) {
-		return nil, &btcjson.RPCError{
-			Code: btcjson.ErrRPCOutOfRange,
+		return nil, &kaspajson.RPCError{
+			Code: kaspajson.ErrRPCOutOfRange,
 			Message: fmt.Sprintf("The template time is after the "+
 				"maximum allowed time for a block - template "+
 				"time %s, maximum time %s", adjustedTime,
@@ -727,7 +727,7 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 	// transaction. The result does not include the coinbase, so notice
 	// the adjustments to the various lengths and indices.
 	numTx := len(msgBlock.Transactions)
-	transactions := make([]btcjson.GetBlockTemplateResultTx, 0, numTx-1)
+	transactions := make([]kaspajson.GetBlockTemplateResultTx, 0, numTx-1)
 	txIndex := make(map[daghash.TxID]int64, numTx)
 	for i, tx := range msgBlock.Transactions {
 		txID := tx.TxID()
@@ -762,7 +762,7 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 			return nil, internalRPCError(err.Error(), context)
 		}
 
-		resultTx := btcjson.GetBlockTemplateResultTx{
+		resultTx := kaspajson.GetBlockTemplateResultTx{
 			Data:    hex.EncodeToString(txBuf.Bytes()),
 			ID:      txID.String(),
 			Depends: depends,
@@ -778,7 +778,7 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 	//  Omitting CoinbaseTxn -> coinbase, generation
 	targetDifficulty := fmt.Sprintf("%064x", util.CompactToBig(header.Bits))
 	longPollID := encodeLongPollID(state.tipHashes, state.lastGenerated)
-	reply := btcjson.GetBlockTemplateResult{
+	reply := kaspajson.GetBlockTemplateResult{
 		Bits:                 strconv.FormatInt(int64(header.Bits), 16),
 		CurTime:              header.Timestamp.Unix(),
 		Height:               template.Height,
@@ -805,8 +805,8 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 		// Ensure the template has a valid payment address associated
 		// with it when a full coinbase is requested.
 		if !template.ValidPayAddress {
-			return nil, &btcjson.RPCError{
-				Code: btcjson.ErrRPCInternal.Code,
+			return nil, &kaspajson.RPCError{
+				Code: kaspajson.ErrRPCInternal.Code,
 				Message: "A coinbase transaction has been " +
 					"requested, but the server has not " +
 					"been configured with any payment " +
@@ -822,7 +822,7 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 			return nil, internalRPCError(err.Error(), context)
 		}
 
-		resultTx := btcjson.GetBlockTemplateResultTx{
+		resultTx := kaspajson.GetBlockTemplateResultTx{
 			Data:    hex.EncodeToString(txBuf.Bytes()),
 			ID:      tx.TxID().String(),
 			Depends: []int64{},

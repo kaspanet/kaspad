@@ -4,9 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/hex"
-	"github.com/kaspanet/kaspad/btcjson"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/kaspajson"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -15,7 +15,7 @@ import (
 
 // handleGetBlock implements the getBlock command.
 func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.GetBlockCmd)
+	c := cmd.(*kaspajson.GetBlockCmd)
 
 	// Load the raw block bytes from the database.
 	hash, err := daghash.NewHashFromStr(c.Hash)
@@ -25,16 +25,16 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 
 	// Return an appropriate error if the block is known to be invalid
 	if s.cfg.DAG.IsKnownInvalid(hash) {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCBlockInvalid,
+		return nil, &kaspajson.RPCError{
+			Code:    kaspajson.ErrRPCBlockInvalid,
 			Message: "Block is known to be invalid",
 		}
 	}
 
 	// Return an appropriate error if the block is an orphan
 	if s.cfg.DAG.IsKnownOrphan(hash) {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCOrphanBlock,
+		return nil, &kaspajson.RPCError{
+			Code:    kaspajson.ErrRPCOrphanBlock,
 			Message: "Block is an orphan",
 		}
 	}
@@ -46,8 +46,8 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		return err
 	})
 	if err != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCBlockNotFound,
+		return nil, &kaspajson.RPCError{
+			Code:    kaspajson.ErrRPCBlockNotFound,
 			Message: "Block not found",
 		}
 	}
@@ -56,8 +56,8 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	if c.Subnetwork != nil {
 		requestSubnetworkID, err := subnetworkid.NewFromStr(*c.Subnetwork)
 		if err != nil {
-			return nil, &btcjson.RPCError{
-				Code:    btcjson.ErrRPCInvalidRequest.Code,
+			return nil, &kaspajson.RPCError{
+				Code:    kaspajson.ErrRPCInvalidRequest.Code,
 				Message: "invalid subnetwork string",
 			}
 		}
@@ -66,8 +66,8 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		if requestSubnetworkID != nil {
 			if nodeSubnetworkID != nil {
 				if !nodeSubnetworkID.IsEqual(requestSubnetworkID) {
-					return nil, &btcjson.RPCError{
-						Code:    btcjson.ErrRPCInvalidRequest.Code,
+					return nil, &kaspajson.RPCError{
+						Code:    kaspajson.ErrRPCInvalidRequest.Code,
 						Message: "subnetwork does not match this partial node",
 					}
 				}

@@ -9,7 +9,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 
-	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/kaspajson"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
@@ -59,7 +59,7 @@ func (c *Client) GetRawTransactionAsync(txID *daghash.TxID) FutureGetRawTransact
 		id = txID.String()
 	}
 
-	cmd := btcjson.NewGetRawTransactionCmd(id, btcjson.Int(0))
+	cmd := kaspajson.NewGetRawTransactionCmd(id, kaspajson.Int(0))
 	return c.sendCmd(cmd)
 }
 
@@ -78,14 +78,14 @@ type FutureGetRawTransactionVerboseResult chan *response
 
 // Receive waits for the response promised by the future and returns information
 // about a transaction given its hash.
-func (r FutureGetRawTransactionVerboseResult) Receive() (*btcjson.TxRawResult, error) {
+func (r FutureGetRawTransactionVerboseResult) Receive() (*kaspajson.TxRawResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a gettrawtransaction result object.
-	var rawTxResult btcjson.TxRawResult
+	var rawTxResult kaspajson.TxRawResult
 	err = json.Unmarshal(res, &rawTxResult)
 	if err != nil {
 		return nil, err
@@ -105,7 +105,7 @@ func (c *Client) GetRawTransactionVerboseAsync(txID *daghash.TxID) FutureGetRawT
 		id = txID.String()
 	}
 
-	cmd := btcjson.NewGetRawTransactionCmd(id, btcjson.Int(1))
+	cmd := kaspajson.NewGetRawTransactionCmd(id, kaspajson.Int(1))
 	return c.sendCmd(cmd)
 }
 
@@ -113,7 +113,7 @@ func (c *Client) GetRawTransactionVerboseAsync(txID *daghash.TxID) FutureGetRawT
 // its hash.
 //
 // See GetRawTransaction to obtain only the transaction already deserialized.
-func (c *Client) GetRawTransactionVerbose(txID *daghash.TxID) (*btcjson.TxRawResult, error) {
+func (c *Client) GetRawTransactionVerbose(txID *daghash.TxID) (*kaspajson.TxRawResult, error) {
 	return c.GetRawTransactionVerboseAsync(txID).Receive()
 }
 
@@ -123,14 +123,14 @@ type FutureDecodeRawTransactionResult chan *response
 
 // Receive waits for the response promised by the future and returns information
 // about a transaction given its serialized bytes.
-func (r FutureDecodeRawTransactionResult) Receive() (*btcjson.TxRawResult, error) {
+func (r FutureDecodeRawTransactionResult) Receive() (*kaspajson.TxRawResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a decoderawtransaction result object.
-	var rawTxResult btcjson.TxRawResult
+	var rawTxResult kaspajson.TxRawResult
 	err = json.Unmarshal(res, &rawTxResult)
 	if err != nil {
 		return nil, err
@@ -146,13 +146,13 @@ func (r FutureDecodeRawTransactionResult) Receive() (*btcjson.TxRawResult, error
 // See DecodeRawTransaction for the blocking version and more details.
 func (c *Client) DecodeRawTransactionAsync(serializedTx []byte) FutureDecodeRawTransactionResult {
 	txHex := hex.EncodeToString(serializedTx)
-	cmd := btcjson.NewDecodeRawTransactionCmd(txHex)
+	cmd := kaspajson.NewDecodeRawTransactionCmd(txHex)
 	return c.sendCmd(cmd)
 }
 
 // DecodeRawTransaction returns information about a transaction given its
 // serialized bytes.
-func (c *Client) DecodeRawTransaction(serializedTx []byte) (*btcjson.TxRawResult, error) {
+func (c *Client) DecodeRawTransaction(serializedTx []byte) (*kaspajson.TxRawResult, error) {
 	return c.DecodeRawTransactionAsync(serializedTx).Receive()
 }
 
@@ -195,20 +195,20 @@ func (r FutureCreateRawTransactionResult) Receive() (*wire.MsgTx, error) {
 // function on the returned instance.
 //
 // See CreateRawTransaction for the blocking version and more details.
-func (c *Client) CreateRawTransactionAsync(inputs []btcjson.TransactionInput,
+func (c *Client) CreateRawTransactionAsync(inputs []kaspajson.TransactionInput,
 	amounts map[util.Address]util.Amount, lockTime *uint64) FutureCreateRawTransactionResult {
 
 	convertedAmts := make(map[string]float64, len(amounts))
 	for addr, amount := range amounts {
 		convertedAmts[addr.String()] = amount.ToBTC()
 	}
-	cmd := btcjson.NewCreateRawTransactionCmd(inputs, convertedAmts, lockTime)
+	cmd := kaspajson.NewCreateRawTransactionCmd(inputs, convertedAmts, lockTime)
 	return c.sendCmd(cmd)
 }
 
 // CreateRawTransaction returns a new transaction spending the provided inputs
 // and sending to the provided addresses.
-func (c *Client) CreateRawTransaction(inputs []btcjson.TransactionInput,
+func (c *Client) CreateRawTransaction(inputs []kaspajson.TransactionInput,
 	amounts map[util.Address]util.Amount, lockTime *uint64) (*wire.MsgTx, error) {
 
 	return c.CreateRawTransactionAsync(inputs, amounts, lockTime).Receive()
@@ -253,7 +253,7 @@ func (c *Client) SendRawTransactionAsync(tx *wire.MsgTx, allowHighFees bool) Fut
 		txHex = hex.EncodeToString(buf.Bytes())
 	}
 
-	cmd := btcjson.NewSendRawTransactionCmd(txHex, &allowHighFees)
+	cmd := kaspajson.NewSendRawTransactionCmd(txHex, &allowHighFees)
 	return c.sendCmd(cmd)
 }
 
@@ -310,8 +310,8 @@ func (r FutureSearchRawTransactionsResult) Receive() ([]*wire.MsgTx, error) {
 // See SearchRawTransactions for the blocking version and more details.
 func (c *Client) SearchRawTransactionsAsync(address util.Address, skip, count int, reverse bool, filterAddrs []string) FutureSearchRawTransactionsResult {
 	addr := address.EncodeAddress()
-	verbose := btcjson.Bool(false)
-	cmd := btcjson.NewSearchRawTransactionsCmd(addr, verbose, &skip, &count,
+	verbose := kaspajson.Bool(false)
+	cmd := kaspajson.NewSearchRawTransactionsCmd(addr, verbose, &skip, &count,
 		nil, &reverse, &filterAddrs)
 	return c.sendCmd(cmd)
 }
@@ -334,14 +334,14 @@ type FutureSearchRawTransactionsVerboseResult chan *response
 
 // Receive waits for the response promised by the future and returns the
 // found raw transactions.
-func (r FutureSearchRawTransactionsVerboseResult) Receive() ([]*btcjson.SearchRawTransactionsResult, error) {
+func (r FutureSearchRawTransactionsVerboseResult) Receive() ([]*kaspajson.SearchRawTransactionsResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal as an array of raw transaction results.
-	var result []*btcjson.SearchRawTransactionsResult
+	var result []*kaspajson.SearchRawTransactionsResult
 	err = json.Unmarshal(res, &result)
 	if err != nil {
 		return nil, err
@@ -359,12 +359,12 @@ func (c *Client) SearchRawTransactionsVerboseAsync(address util.Address, skip,
 	count int, includePrevOut, reverse bool, filterAddrs *[]string) FutureSearchRawTransactionsVerboseResult {
 
 	addr := address.EncodeAddress()
-	verbose := btcjson.Bool(true)
+	verbose := kaspajson.Bool(true)
 	var prevOut *bool
 	if includePrevOut {
-		prevOut = btcjson.Bool(true)
+		prevOut = kaspajson.Bool(true)
 	}
-	cmd := btcjson.NewSearchRawTransactionsCmd(addr, verbose, &skip, &count,
+	cmd := kaspajson.NewSearchRawTransactionsCmd(addr, verbose, &skip, &count,
 		prevOut, &reverse, filterAddrs)
 	return c.sendCmd(cmd)
 }
@@ -377,7 +377,7 @@ func (c *Client) SearchRawTransactionsVerboseAsync(address util.Address, skip,
 //
 // See SearchRawTransactions to retrieve a list of raw transactions instead.
 func (c *Client) SearchRawTransactionsVerbose(address util.Address, skip,
-	count int, includePrevOut, reverse bool, filterAddrs []string) ([]*btcjson.SearchRawTransactionsResult, error) {
+	count int, includePrevOut, reverse bool, filterAddrs []string) ([]*kaspajson.SearchRawTransactionsResult, error) {
 
 	return c.SearchRawTransactionsVerboseAsync(address, skip, count,
 		includePrevOut, reverse, &filterAddrs).Receive()
@@ -389,14 +389,14 @@ type FutureDecodeScriptResult chan *response
 
 // Receive waits for the response promised by the future and returns information
 // about a script given its serialized bytes.
-func (r FutureDecodeScriptResult) Receive() (*btcjson.DecodeScriptResult, error) {
+func (r FutureDecodeScriptResult) Receive() (*kaspajson.DecodeScriptResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a decodescript result object.
-	var decodeScriptResult btcjson.DecodeScriptResult
+	var decodeScriptResult kaspajson.DecodeScriptResult
 	err = json.Unmarshal(res, &decodeScriptResult)
 	if err != nil {
 		return nil, err
@@ -412,11 +412,11 @@ func (r FutureDecodeScriptResult) Receive() (*btcjson.DecodeScriptResult, error)
 // See DecodeScript for the blocking version and more details.
 func (c *Client) DecodeScriptAsync(serializedScript []byte) FutureDecodeScriptResult {
 	scriptHex := hex.EncodeToString(serializedScript)
-	cmd := btcjson.NewDecodeScriptCmd(scriptHex)
+	cmd := kaspajson.NewDecodeScriptCmd(scriptHex)
 	return c.sendCmd(cmd)
 }
 
 // DecodeScript returns information about a script given its serialized bytes.
-func (c *Client) DecodeScript(serializedScript []byte) (*btcjson.DecodeScriptResult, error) {
+func (c *Client) DecodeScript(serializedScript []byte) (*kaspajson.DecodeScriptResult, error) {
 	return c.DecodeScriptAsync(serializedScript).Receive()
 }

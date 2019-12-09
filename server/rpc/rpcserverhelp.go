@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/kaspajson"
 )
 
 // helpDescsEnUS defines the English descriptions used for the help strings.
@@ -21,7 +21,7 @@ var helpDescsEnUS = map[string]string{
 		"The levelspec can either a debug level or of the form:\n" +
 		"<subsystem>=<level>,<subsystem2>=<level2>,...\n" +
 		"The valid debug levels are trace, debug, info, warn, error, and critical.\n" +
-		"The valid subsystems are AMGR, ADXR, BCDB, BMGR, BTCD, BDAG, DISC, PEER, RPCS, SCRP, SRVR, and TXMP.\n" +
+		"The valid subsystems are AMGR, ADXR, BCDB, BMGR, KSPD, BDAG, DISC, PEER, RPCS, SCRP, SRVR, and TXMP.\n" +
 		"Finally the keyword 'show' will return a list of the available subsystems.",
 	"debugLevel-levelSpec":   "The debug level(s) to use or the keyword 'show'",
 	"debugLevel--condition0": "levelspec!=show",
@@ -676,21 +676,21 @@ var rpcResultTypes = map[string][]interface{}{
 	"addManualNode":         nil,
 	"createRawTransaction":  {(*string)(nil)},
 	"debugLevel":            {(*string)(nil), (*string)(nil)},
-	"decodeRawTransaction":  {(*btcjson.TxRawDecodeResult)(nil)},
-	"decodeScript":          {(*btcjson.DecodeScriptResult)(nil)},
+	"decodeRawTransaction":  {(*kaspajson.TxRawDecodeResult)(nil)},
+	"decodeScript":          {(*kaspajson.DecodeScriptResult)(nil)},
 	"generate":              {(*[]string)(nil)},
-	"getAllManualNodesInfo": {(*[]string)(nil), (*[]btcjson.GetManualNodeInfoResult)(nil)},
-	"getSelectedTip":        {(*btcjson.GetBlockVerboseResult)(nil)},
+	"getAllManualNodesInfo": {(*[]string)(nil), (*[]kaspajson.GetManualNodeInfoResult)(nil)},
+	"getSelectedTip":        {(*kaspajson.GetBlockVerboseResult)(nil)},
 	"getSelectedTipHash":    {(*string)(nil)},
-	"getBlock":              {(*string)(nil), (*btcjson.GetBlockVerboseResult)(nil)},
-	"getBlocks":             {(*btcjson.GetBlocksResult)(nil)},
+	"getBlock":              {(*string)(nil), (*kaspajson.GetBlockVerboseResult)(nil)},
+	"getBlocks":             {(*kaspajson.GetBlocksResult)(nil)},
 	"getBlockCount":         {(*int64)(nil)},
-	"getBlockHeader":        {(*string)(nil), (*btcjson.GetBlockHeaderVerboseResult)(nil)},
-	"getBlockTemplate":      {(*btcjson.GetBlockTemplateResult)(nil), (*string)(nil), nil},
-	"getBlockDagInfo":       {(*btcjson.GetBlockDAGInfoResult)(nil)},
+	"getBlockHeader":        {(*string)(nil), (*kaspajson.GetBlockHeaderVerboseResult)(nil)},
+	"getBlockTemplate":      {(*kaspajson.GetBlockTemplateResult)(nil), (*string)(nil), nil},
+	"getBlockDagInfo":       {(*kaspajson.GetBlockDAGInfoResult)(nil)},
 	"getCFilter":            {(*string)(nil)},
 	"getCFilterHeader":      {(*string)(nil)},
-	"getChainFromBlock":     {(*btcjson.GetChainFromBlockResult)(nil)},
+	"getChainFromBlock":     {(*kaspajson.GetChainFromBlockResult)(nil)},
 	"getConnectionCount":    {(*int32)(nil)},
 	"getCurrentNet":         {(*uint32)(nil)},
 	"getDifficulty":         {(*float64)(nil)},
@@ -698,40 +698,40 @@ var rpcResultTypes = map[string][]interface{}{
 	"getHashesPerSec":       {(*float64)(nil)},
 	"getTopHeaders":         {(*[]string)(nil)},
 	"getHeaders":            {(*[]string)(nil)},
-	"getInfo":               {(*btcjson.InfoDAGResult)(nil)},
-	"getManualNodeInfo":     {(*string)(nil), (*btcjson.GetManualNodeInfoResult)(nil)},
-	"getMempoolInfo":        {(*btcjson.GetMempoolInfoResult)(nil)},
-	"getMiningInfo":         {(*btcjson.GetMiningInfoResult)(nil)},
-	"getNetTotals":          {(*btcjson.GetNetTotalsResult)(nil)},
+	"getInfo":               {(*kaspajson.InfoDAGResult)(nil)},
+	"getManualNodeInfo":     {(*string)(nil), (*kaspajson.GetManualNodeInfoResult)(nil)},
+	"getMempoolInfo":        {(*kaspajson.GetMempoolInfoResult)(nil)},
+	"getMiningInfo":         {(*kaspajson.GetMiningInfoResult)(nil)},
+	"getNetTotals":          {(*kaspajson.GetNetTotalsResult)(nil)},
 	"getNetworkHashPs":      {(*int64)(nil)},
-	"getPeerInfo":           {(*[]btcjson.GetPeerInfoResult)(nil)},
-	"getRawMempool":         {(*[]string)(nil), (*btcjson.GetRawMempoolVerboseResult)(nil)},
-	"getRawTransaction":     {(*string)(nil), (*btcjson.TxRawResult)(nil)},
-	"getSubnetwork":         {(*btcjson.GetSubnetworkResult)(nil)},
-	"getTxOut":              {(*btcjson.GetTxOutResult)(nil)},
+	"getPeerInfo":           {(*[]kaspajson.GetPeerInfoResult)(nil)},
+	"getRawMempool":         {(*[]string)(nil), (*kaspajson.GetRawMempoolVerboseResult)(nil)},
+	"getRawTransaction":     {(*string)(nil), (*kaspajson.TxRawResult)(nil)},
+	"getSubnetwork":         {(*kaspajson.GetSubnetworkResult)(nil)},
+	"getTxOut":              {(*kaspajson.GetTxOutResult)(nil)},
 	"node":                  nil,
 	"help":                  {(*string)(nil), (*string)(nil)},
 	"ping":                  nil,
 	"removeManualNode":      nil,
-	"searchRawTransactions": {(*string)(nil), (*[]btcjson.SearchRawTransactionsResult)(nil)},
+	"searchRawTransactions": {(*string)(nil), (*[]kaspajson.SearchRawTransactionsResult)(nil)},
 	"sendRawTransaction":    {(*string)(nil)},
 	"setGenerate":           nil,
 	"stop":                  {(*string)(nil)},
 	"submitBlock":           {nil, (*string)(nil)},
 	"uptime":                {(*int64)(nil)},
-	"validateAddress":       {(*btcjson.ValidateAddressResult)(nil)},
-	"version":               {(*map[string]btcjson.VersionResult)(nil)},
+	"validateAddress":       {(*kaspajson.ValidateAddressResult)(nil)},
+	"version":               {(*map[string]kaspajson.VersionResult)(nil)},
 
 	// Websocket commands.
 	"loadTxFilter":              nil,
-	"session":                   {(*btcjson.SessionResult)(nil)},
+	"session":                   {(*kaspajson.SessionResult)(nil)},
 	"notifyBlocks":              nil,
 	"stopNotifyBlocks":          nil,
 	"notifyChainChanges":        nil,
 	"stopNotifyChainChanges":    nil,
 	"notifyNewTransactions":     nil,
 	"stopNotifyNewTransactions": nil,
-	"rescanBlocks":              {(*[]btcjson.RescannedBlock)(nil)},
+	"rescanBlocks":              {(*[]kaspajson.RescannedBlock)(nil)},
 }
 
 // helpCacher provides a concurrent safe type that provides help and usage for
@@ -762,7 +762,7 @@ func (c *helpCacher) rpcMethodHelp(method string) (string, error) {
 	}
 
 	// Generate, cache, and return the help.
-	help, err := btcjson.GenerateHelp(method, helpDescsEnUS, resultTypes...)
+	help, err := kaspajson.GenerateHelp(method, helpDescsEnUS, resultTypes...)
 	if err != nil {
 		return "", err
 	}
@@ -785,7 +785,7 @@ func (c *helpCacher) rpcUsage(includeWebsockets bool) (string, error) {
 	// Generate a list of one-line usage for every command.
 	usageTexts := make([]string, 0, len(rpcHandlers))
 	for k := range rpcHandlers {
-		usage, err := btcjson.MethodUsageText(k)
+		usage, err := kaspajson.MethodUsageText(k)
 		if err != nil {
 			return "", err
 		}
@@ -795,7 +795,7 @@ func (c *helpCacher) rpcUsage(includeWebsockets bool) (string, error) {
 	// Include websockets commands if requested.
 	if includeWebsockets {
 		for k := range wsHandlers {
-			usage, err := btcjson.MethodUsageText(k)
+			usage, err := kaspajson.MethodUsageText(k)
 			if err != nil {
 				return "", err
 			}

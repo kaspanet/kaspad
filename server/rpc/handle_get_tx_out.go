@@ -3,7 +3,7 @@ package rpc
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/kaspajson"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -12,7 +12,7 @@ import (
 
 // handleGetTxOut handles getTxOut commands.
 func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.GetTxOutCmd)
+	c := cmd.(*kaspajson.GetTxOutCmd)
 
 	// Convert the provided transaction hash hex to a Hash.
 	txID, err := daghash.NewTxIDFromStr(c.TxID)
@@ -42,8 +42,8 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 
 		mtx := tx.MsgTx()
 		if c.Vout > uint32(len(mtx.TxOut)-1) {
-			return nil, &btcjson.RPCError{
-				Code: btcjson.ErrRPCInvalidTxVout,
+			return nil, &kaspajson.RPCError{
+				Code: kaspajson.ErrRPCInvalidTxVout,
 				Message: "Output index number (vout) does not " +
 					"exist for transaction.",
 			}
@@ -104,15 +104,15 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		s.cfg.DAGParams)
 	var address *string
 	if addr != nil {
-		address = btcjson.String(addr.EncodeAddress())
+		address = kaspajson.String(addr.EncodeAddress())
 	}
 
-	txOutReply := &btcjson.GetTxOutResult{
+	txOutReply := &kaspajson.GetTxOutResult{
 		SelectedTip:   selectedTipHash,
 		Confirmations: confirmations,
 		IsInMempool:   isInMempool,
 		Value:         util.Amount(value).ToBTC(),
-		ScriptPubKey: btcjson.ScriptPubKeyResult{
+		ScriptPubKey: kaspajson.ScriptPubKeyResult{
 			Asm:     disbuf,
 			Hex:     hex.EncodeToString(scriptPubKey),
 			Type:    scriptClass.String(),

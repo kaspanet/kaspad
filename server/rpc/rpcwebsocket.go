@@ -24,9 +24,9 @@ import (
 	"golang.org/x/crypto/ripemd160"
 
 	"github.com/btcsuite/websocket"
-	"github.com/kaspanet/kaspad/btcjson"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/kaspajson"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -571,13 +571,13 @@ func (m *wsNotificationManager) notifyChainChanged(clients map[chan struct{}]*ws
 	}
 
 	// Create the notification.
-	ntfn := btcjson.NewChainChangedNtfn(removedChainHashesStrs, addedChainBlocks)
+	ntfn := kaspajson.NewChainChangedNtfn(removedChainHashesStrs, addedChainBlocks)
 
 	var marshalledJSON []byte
 	if len(clients) != 0 {
 		// Marshal notification
 		var err error
-		marshalledJSON, err = btcjson.MarshalCmd(nil, ntfn)
+		marshalledJSON, err = kaspajson.MarshalCmd(nil, ntfn)
 		if err != nil {
 			log.Errorf("Failed to marshal chain changed "+
 				"notification: %s", err)
@@ -665,7 +665,7 @@ func (m *wsNotificationManager) notifyFilteredBlockAdded(clients map[chan struct
 			"added notification: %s", err)
 		return
 	}
-	ntfn := btcjson.NewFilteredBlockAddedNtfn(block.ChainHeight(),
+	ntfn := kaspajson.NewFilteredBlockAddedNtfn(block.ChainHeight(),
 		hex.EncodeToString(w.Bytes()), nil)
 
 	// Search for relevant transactions for each client and save them
@@ -686,7 +686,7 @@ func (m *wsNotificationManager) notifyFilteredBlockAdded(clients map[chan struct
 		ntfn.SubscribedTxs = subscribedTxs[quitChan]
 
 		// Marshal and queue notification.
-		marshalledJSON, err := btcjson.MarshalCmd(nil, ntfn)
+		marshalledJSON, err := kaspajson.MarshalCmd(nil, ntfn)
 		if err != nil {
 			log.Errorf("Failed to marshal filtered block "+
 				"connected notification: %s", err)
@@ -719,8 +719,8 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 		amount += txOut.Value
 	}
 
-	ntfn := btcjson.NewTxAcceptedNtfn(txIDStr, util.Amount(amount).ToBTC())
-	marshalledJSON, err := btcjson.MarshalCmd(nil, ntfn)
+	ntfn := kaspajson.NewTxAcceptedNtfn(txIDStr, util.Amount(amount).ToBTC())
+	marshalledJSON, err := kaspajson.MarshalCmd(nil, ntfn)
 	if err != nil {
 		log.Errorf("Failed to marshal tx notification: %s", err.Error())
 		return
@@ -739,8 +739,8 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 			if err != nil {
 				return nil, false
 			}
-			verboseNtfn := btcjson.NewTxAcceptedVerboseNtfn(*rawTx)
-			marshalledJSONVerbose, err := btcjson.MarshalCmd(nil, verboseNtfn)
+			verboseNtfn := kaspajson.NewTxAcceptedVerboseNtfn(*rawTx)
+			marshalledJSONVerbose, err := kaspajson.MarshalCmd(nil, verboseNtfn)
 			if err != nil {
 				log.Errorf("Failed to marshal verbose tx notification: %s", err.Error())
 				return nil, false
@@ -808,8 +808,8 @@ func (m *wsNotificationManager) notifyRelevantTxAccepted(tx *util.Tx,
 	clientsToNotify := m.subscribedClients(tx, clients)
 
 	if len(clientsToNotify) != 0 {
-		n := btcjson.NewRelevantTxAcceptedNtfn(txHexString(tx.MsgTx()))
-		marshalled, err := btcjson.MarshalCmd(nil, n)
+		n := kaspajson.NewRelevantTxAcceptedNtfn(txHexString(tx.MsgTx()))
+		marshalled, err := kaspajson.MarshalCmd(nil, n)
 		if err != nil {
 			log.Errorf("Failed to marshal notification: %s", err)
 			return
@@ -961,15 +961,15 @@ out:
 			break out
 		}
 
-		var request btcjson.Request
+		var request kaspajson.Request
 		err = json.Unmarshal(msg, &request)
 		if err != nil {
 			if !c.authenticated {
 				break out
 			}
 
-			jsonErr := &btcjson.RPCError{
-				Code:    btcjson.ErrRPCParse.Code,
+			jsonErr := &kaspajson.RPCError{
+				Code:    kaspajson.ErrRPCParse.Code,
 				Message: "Failed to parse request: " + err.Error(),
 			}
 			reply, err := createMarshalledReply(nil, nil, jsonErr)
@@ -1029,7 +1029,7 @@ out:
 		// the authenticate request, an authenticate request is received
 		// when the client is already authenticated, or incorrect
 		// authentication credentials are provided in the request.
-		switch authCmd, ok := cmd.cmd.(*btcjson.AuthenticateCmd); {
+		switch authCmd, ok := cmd.cmd.(*kaspajson.AuthenticateCmd); {
 		case c.authenticated && ok:
 			log.Warnf("Websocket client %s is already authenticated",
 				c.addr)
@@ -1067,8 +1067,8 @@ out:
 		// error when not authorized to call this RPC.
 		if !c.isAdmin {
 			if _, ok := rpcLimited[request.Method]; !ok {
-				jsonErr := &btcjson.RPCError{
-					Code:    btcjson.ErrRPCInvalidParams.Code,
+				jsonErr := &kaspajson.RPCError{
+					Code:    kaspajson.ErrRPCInvalidParams.Code,
 					Message: "limited user not authorized for this method",
 				}
 				// Marshal and send response.

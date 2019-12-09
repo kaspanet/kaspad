@@ -1,20 +1,20 @@
 package rpc
 
 import (
-	"github.com/kaspanet/kaspad/btcjson"
 	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/kaspajson"
 )
 
 // handleSetGenerate implements the setGenerate command.
 func handleSetGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	if config.ActiveConfig().SubnetworkID != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCInvalidRequest.Code,
+		return nil, &kaspajson.RPCError{
+			Code:    kaspajson.ErrRPCInvalidRequest.Code,
 			Message: "`setGenerate` is not supported on partial nodes.",
 		}
 	}
 
-	c := cmd.(*btcjson.SetGenerateCmd)
+	c := cmd.(*kaspajson.SetGenerateCmd)
 
 	// Disable generation regardless of the provided generate flag if the
 	// maximum number of threads (goroutines for our purposes) is 0.
@@ -34,8 +34,8 @@ func handleSetGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (i
 		// Respond with an error if there are no addresses to pay the
 		// created blocks to.
 		if len(config.ActiveConfig().MiningAddrs) == 0 {
-			return nil, &btcjson.RPCError{
-				Code: btcjson.ErrRPCInternal.Code,
+			return nil, &kaspajson.RPCError{
+				Code: kaspajson.ErrRPCInternal.Code,
 				Message: "No payment addresses specified " +
 					"via --miningaddr",
 			}

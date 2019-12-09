@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/kaspajson"
 	"github.com/kaspanet/kaspad/rpcclient"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/wire"
@@ -41,7 +41,7 @@ func collectTransactions(client *rpcclient.Client, addrPubKeyHash *util.AddressP
 		results, err := client.SearchRawTransactionsVerbose(addrPubKeyHash, skip, resultsCount, true, false, nil)
 		if err != nil {
 			// Break when there are no further txs
-			if rpcError, ok := err.(*btcjson.RPCError); ok && rpcError.Code == btcjson.ErrRPCNoTxInfo {
+			if rpcError, ok := err.(*kaspajson.RPCError); ok && rpcError.Code == kaspajson.ErrRPCNoTxInfo {
 				break
 			}
 
@@ -74,7 +74,7 @@ func collectTransactions(client *rpcclient.Client, addrPubKeyHash *util.AddressP
 	return txs, nil
 }
 
-func parseRawTransactionResult(result *btcjson.SearchRawTransactionsResult) (*wire.MsgTx, error) {
+func parseRawTransactionResult(result *kaspajson.SearchRawTransactionsResult) (*wire.MsgTx, error) {
 	txBytes, err := hex.DecodeString(result.Hex)
 	if err != nil {
 		return nil, errors.Errorf("failed to decode transaction bytes: %s", err)

@@ -7,7 +7,7 @@ package rpcclient
 import (
 	"encoding/hex"
 	"encoding/json"
-	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/kaspajson"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
@@ -51,7 +51,7 @@ func (r FutureGenerateResult) Receive() ([]*daghash.Hash, error) {
 //
 // See Generate for the blocking version and more details.
 func (c *Client) GenerateAsync(numBlocks uint32) FutureGenerateResult {
-	cmd := btcjson.NewGenerateCmd(numBlocks)
+	cmd := kaspajson.NewGenerateCmd(numBlocks)
 	return c.sendCmd(cmd)
 }
 
@@ -88,7 +88,7 @@ func (r FutureGetGenerateResult) Receive() (bool, error) {
 //
 // See GetGenerate for the blocking version and more details.
 func (c *Client) GetGenerateAsync() FutureGetGenerateResult {
-	cmd := btcjson.NewGetGenerateCmd()
+	cmd := kaspajson.NewGetGenerateCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -114,7 +114,7 @@ func (r FutureSetGenerateResult) Receive() error {
 //
 // See SetGenerate for the blocking version and more details.
 func (c *Client) SetGenerateAsync(enable bool, numCPUs int) FutureSetGenerateResult {
-	cmd := btcjson.NewSetGenerateCmd(enable, &numCPUs)
+	cmd := kaspajson.NewSetGenerateCmd(enable, &numCPUs)
 	return c.sendCmd(cmd)
 }
 
@@ -152,7 +152,7 @@ func (r FutureGetHashesPerSecResult) Receive() (int64, error) {
 //
 // See GetHashesPerSec for the blocking version and more details.
 func (c *Client) GetHashesPerSecAsync() FutureGetHashesPerSecResult {
-	cmd := btcjson.NewGetHashesPerSecCmd()
+	cmd := kaspajson.NewGetHashesPerSecCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -169,14 +169,14 @@ type FutureGetMiningInfoResult chan *response
 
 // Receive waits for the response promised by the future and returns the mining
 // information.
-func (r FutureGetMiningInfoResult) Receive() (*btcjson.GetMiningInfoResult, error) {
+func (r FutureGetMiningInfoResult) Receive() (*kaspajson.GetMiningInfoResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a getmininginfo result object.
-	var infoResult btcjson.GetMiningInfoResult
+	var infoResult kaspajson.GetMiningInfoResult
 	err = json.Unmarshal(res, &infoResult)
 	if err != nil {
 		return nil, err
@@ -191,12 +191,12 @@ func (r FutureGetMiningInfoResult) Receive() (*btcjson.GetMiningInfoResult, erro
 //
 // See GetMiningInfo for the blocking version and more details.
 func (c *Client) GetMiningInfoAsync() FutureGetMiningInfoResult {
-	cmd := btcjson.NewGetMiningInfoCmd()
+	cmd := kaspajson.NewGetMiningInfoCmd()
 	return c.sendCmd(cmd)
 }
 
 // GetMiningInfo returns mining information.
-func (c *Client) GetMiningInfo() (*btcjson.GetMiningInfoResult, error) {
+func (c *Client) GetMiningInfo() (*kaspajson.GetMiningInfoResult, error) {
 	return c.GetMiningInfoAsync().Receive()
 }
 
@@ -229,7 +229,7 @@ func (r FutureGetNetworkHashPS) Receive() (int64, error) {
 //
 // See GetNetworkHashPS for the blocking version and more details.
 func (c *Client) GetNetworkHashPSAsync() FutureGetNetworkHashPS {
-	cmd := btcjson.NewGetNetworkHashPSCmd(nil, nil)
+	cmd := kaspajson.NewGetNetworkHashPSCmd(nil, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -248,7 +248,7 @@ func (c *Client) GetNetworkHashPS() (int64, error) {
 //
 // See GetNetworkHashPS2 for the blocking version and more details.
 func (c *Client) GetNetworkHashPS2Async(blocks int) FutureGetNetworkHashPS {
-	cmd := btcjson.NewGetNetworkHashPSCmd(&blocks, nil)
+	cmd := kaspajson.NewGetNetworkHashPSCmd(&blocks, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -269,7 +269,7 @@ func (c *Client) GetNetworkHashPS2(blocks int) (int64, error) {
 //
 // See GetNetworkHashPS3 for the blocking version and more details.
 func (c *Client) GetNetworkHashPS3Async(blocks, height int) FutureGetNetworkHashPS {
-	cmd := btcjson.NewGetNetworkHashPSCmd(&blocks, &height)
+	cmd := kaspajson.NewGetNetworkHashPSCmd(&blocks, &height)
 	return c.sendCmd(cmd)
 }
 
@@ -313,7 +313,7 @@ func (r FutureSubmitBlockResult) Receive() error {
 // returned instance.
 //
 // See SubmitBlock for the blocking version and more details.
-func (c *Client) SubmitBlockAsync(block *util.Block, options *btcjson.SubmitBlockOptions) FutureSubmitBlockResult {
+func (c *Client) SubmitBlockAsync(block *util.Block, options *kaspajson.SubmitBlockOptions) FutureSubmitBlockResult {
 	blockHex := ""
 	if block != nil {
 		blockBytes, err := block.Bytes()
@@ -324,12 +324,12 @@ func (c *Client) SubmitBlockAsync(block *util.Block, options *btcjson.SubmitBloc
 		blockHex = hex.EncodeToString(blockBytes)
 	}
 
-	cmd := btcjson.NewSubmitBlockCmd(blockHex, options)
+	cmd := kaspajson.NewSubmitBlockCmd(blockHex, options)
 	return c.sendCmd(cmd)
 }
 
 // SubmitBlock attempts to submit a new block into the bitcoin network.
-func (c *Client) SubmitBlock(block *util.Block, options *btcjson.SubmitBlockOptions) error {
+func (c *Client) SubmitBlock(block *util.Block, options *kaspajson.SubmitBlockOptions) error {
 	return c.SubmitBlockAsync(block, options).Receive()
 }
 
@@ -343,24 +343,24 @@ type FutureGetBlockTemplateResult chan *response
 //
 // See GetBlockTemplate for the blocking version and more details
 func (c *Client) GetBlockTemplateAsync(capabilities []string, longPollID string) FutureGetBlockTemplateResult {
-	request := &btcjson.TemplateRequest{
+	request := &kaspajson.TemplateRequest{
 		Mode:         "template",
 		Capabilities: capabilities,
 		LongPollID:   longPollID,
 	}
-	cmd := btcjson.NewGetBlockTemplateCmd(request)
+	cmd := kaspajson.NewGetBlockTemplateCmd(request)
 	return c.sendCmd(cmd)
 }
 
 // Receive waits for the response promised by the future and returns an error if
 // any occurred when submitting the block.
-func (r FutureGetBlockTemplateResult) Receive() (*btcjson.GetBlockTemplateResult, error) {
+func (r FutureGetBlockTemplateResult) Receive() (*kaspajson.GetBlockTemplateResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
-	var result btcjson.GetBlockTemplateResult
+	var result kaspajson.GetBlockTemplateResult
 	if err := json.Unmarshal(res, &result); err != nil {
 		return nil, err
 	}
@@ -368,6 +368,6 @@ func (r FutureGetBlockTemplateResult) Receive() (*btcjson.GetBlockTemplateResult
 }
 
 // GetBlockTemplate request a block template from the server, to mine upon
-func (c *Client) GetBlockTemplate(capabilities []string, longPollID string) (*btcjson.GetBlockTemplateResult, error) {
+func (c *Client) GetBlockTemplate(capabilities []string, longPollID string) (*kaspajson.GetBlockTemplateResult, error) {
 	return c.GetBlockTemplateAsync(capabilities, longPollID).Receive()
 }

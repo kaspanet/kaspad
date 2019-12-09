@@ -1,15 +1,15 @@
 package rpc
 
 import (
-	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/kaspajson"
 	"github.com/kaspanet/kaspad/util"
 )
 
 // handleValidateAddress implements the validateAddress command.
 func handleValidateAddress(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.ValidateAddressCmd)
+	c := cmd.(*kaspajson.ValidateAddressCmd)
 
-	result := btcjson.ValidateAddressResult{}
+	result := kaspajson.ValidateAddressResult{}
 	addr, err := util.DecodeAddress(c.Address, s.cfg.DAGParams.Prefix)
 	if err != nil {
 		// Return the default value (false) for IsValid.
