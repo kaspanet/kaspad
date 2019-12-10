@@ -22,7 +22,7 @@ const MaxStringSize = IDLength * 2
 // string that has too many characters.
 var ErrIDStrSize = errors.Errorf("max ID string length is %d bytes", MaxStringSize)
 
-// SubnetworkID is used in several of the bitcoin messages and common structures. It
+// SubnetworkID is used in several of the kaspa messages and common structures. It
 // typically represents ripmed160(sha256(data)).
 type SubnetworkID [IDLength]byte
 

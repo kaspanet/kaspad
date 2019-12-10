@@ -27,7 +27,7 @@ func minUint32(a, b uint32) uint32 {
 	return b
 }
 
-// Filter defines a bitcoin bloom filter that provides easy manipulation of raw
+// Filter defines a kaspa bloom filter that provides easy manipulation of raw
 // filter data.
 type Filter struct {
 	mtx           sync.Mutex
@@ -115,7 +115,7 @@ func (bf *Filter) Unload() {
 // hash returns the bit offset in the bloom filter which corresponds to the
 // passed data for the given indepedent hash function number.
 func (bf *Filter) hash(hashNum uint32, data []byte) uint32 {
-	// bitcoind: 0xfba4c795 chosen as it guarantees a reasonable bit
+	// kaspad: 0xfba4c795 chosen as it guarantees a reasonable bit
 	// difference between hashNum values.
 	//
 	// Note that << 3 is equivalent to multiplying by 8, but is faster.

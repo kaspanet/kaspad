@@ -17,7 +17,7 @@ import (
 // yet.
 const TxIndexUnknown = -1
 
-// Tx defines a bitcoin transaction that provides easier and more efficient
+// Tx defines a kaspa transaction that provides easier and more efficient
 // manipulation of raw transactions. It also memoizes the hash for the
 // transaction on its first access so subsequent accesses don't have to repeat
 // the relatively expensive hashing operations.
@@ -84,7 +84,7 @@ func (t *Tx) IsCoinBase() bool {
 	return t.MsgTx().IsCoinBase()
 }
 
-// NewTx returns a new instance of a bitcoin transaction given an underlying
+// NewTx returns a new instance of a kaspa transaction given an underlying
 // wire.MsgTx. See Tx.
 func NewTx(msgTx *wire.MsgTx) *Tx {
 	return &Tx{
@@ -93,14 +93,14 @@ func NewTx(msgTx *wire.MsgTx) *Tx {
 	}
 }
 
-// NewTxFromBytes returns a new instance of a bitcoin transaction given the
+// NewTxFromBytes returns a new instance of a kaspa transaction given the
 // serialized bytes. See Tx.
 func NewTxFromBytes(serializedTx []byte) (*Tx, error) {
 	br := bytes.NewReader(serializedTx)
 	return NewTxFromReader(br)
 }
 
-// NewTxFromReader returns a new instance of a bitcoin transaction given a
+// NewTxFromReader returns a new instance of a kaspa transaction given a
 // Reader to deserialize the transaction. See Tx.
 func NewTxFromReader(r io.Reader) (*Tx, error) {
 	// Deserialize the bytes into a MsgTx.

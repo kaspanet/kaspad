@@ -71,7 +71,7 @@ var (
 	}
 )
 
-// TestGCSFilterBuild builds a test filter with a randomized key. For Bitcoin
+// TestGCSFilterBuild builds a test filter with a randomized key. For kaspa
 // use, deterministic filter generation is desired. Therefore, a key that's
 // derived deterministically would be required.
 func TestGCSFilterBuild(t *testing.T) {

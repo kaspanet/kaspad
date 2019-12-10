@@ -165,7 +165,6 @@ func TestAddresses(t *testing.T) {
 			prefix: util.Bech32PrefixDAGCoin,
 		},
 		{
-			// Taken from bitcoind base58_keys_valid.
 			name:    "testnet p2sh",
 			addr:    "dagtest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pg6ghunlhx",
 			encoded: "dagtest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pg6ghunlhx",

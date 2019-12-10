@@ -103,7 +103,7 @@ var (
 
 // masterKey is the master key used along with a random seed used to generate
 // the master node in the hierarchical tree.
-var masterKey = []byte("Bitcoin seed")
+var masterKey = []byte("Kaspa seed")
 
 var hdPrivToPubKeyIDs = make(map[[4]byte][]byte)
 
@@ -433,7 +433,7 @@ func (k *ExtendedKey) ECPrivKey() (*ecc.PrivateKey, error) {
 	return privKey, nil
 }
 
-// Address converts the extended key to a standard bitcoin pay-to-pubkey-hash
+// Address converts the extended key to a standard kaspa pay-to-pubkey-hash
 // address for the passed network.
 func (k *ExtendedKey) Address(prefix util.Bech32Prefix) (*util.AddressPubKeyHash, error) {
 	pkHash := util.Hash160(k.pubKeyBytes())
@@ -537,7 +537,7 @@ func NewMaster(seed []byte, hdPrivateKeyID [4]byte) (*ExtendedKey, error) {
 	}
 
 	// First take the HMAC-SHA512 of the master key and the seed data:
-	//   I = HMAC-SHA512(Key = "Bitcoin seed", Data = S)
+	//   I = HMAC-SHA512(Key = "Kaspa seed", Data = S)
 	hmac512 := hmac.New(sha512.New, masterKey)
 	hmac512.Write(seed)
 	lr := hmac512.Sum(nil)

@@ -5,12 +5,9 @@
 package util
 
 const (
-	// SatoshiPerBitcent is the number of satoshi in one bitcoin cent.
-	SatoshiPerBitcent = 1000000
-
-	// SompiPerKaspa is the number of satoshi in one bitcoin (1 BTC).
+	// SompiPerKaspa is the number of sompi in one kaspa (1 KAS).
 	SompiPerKaspa = 100000000
 
-	// MaxSompi is the maximum transaction amount allowed in satoshi.
+	// MaxSompi is the maximum transaction amount allowed in sompi.
 	MaxSompi = 21000000 * SompiPerKaspa
 )

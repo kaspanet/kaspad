@@ -83,7 +83,7 @@ func (prefix Bech32Prefix) String() string {
 }
 
 // encodeAddress returns a human-readable payment address given a network prefix
-// and a ripemd160 hash which encodes the bitcoin network and address type. It is used
+// and a ripemd160 hash which encodes the kaspa network and address type. It is used
 // in both pay-to-pubkey-hash (P2PKH) and pay-to-script-hash (P2SH) address
 // encoding.
 func encodeAddress(prefix Bech32Prefix, hash160 []byte, version byte) string {
@@ -116,14 +116,14 @@ type Address interface {
 	ScriptAddress() []byte
 
 	// IsForPrefix returns whether or not the address is associated with the
-	// passed bitcoin network.
+	// passed kaspa network.
 	IsForPrefix(prefix Bech32Prefix) bool
 }
 
 // DecodeAddress decodes the string encoding of an address and returns
 // the Address if addr is a valid encoding for a known address type.
 //
-// The bitcoin network address is associated with is extracted if possible.
+// The kaspa network address is associated with is extracted if possible.
 // When the address does not encode the network, such as in the case of a raw
 // public key, the address will be associated with the passed defaultNet.
 func DecodeAddress(addr string, defaultPrefix Bech32Prefix) (Address, error) {
@@ -204,7 +204,7 @@ func (a *AddressPubKeyHash) ScriptAddress() []byte {
 }
 
 // IsForPrefix returns whether or not the pay-to-pubkey-hash address is associated
-// with the passed bitcoin network.
+// with the passed kaspa network.
 func (a *AddressPubKeyHash) IsForPrefix(prefix Bech32Prefix) bool {
 	return a.prefix == prefix
 }
@@ -271,7 +271,7 @@ func (a *AddressScriptHash) ScriptAddress() []byte {
 }
 
 // IsForPrefix returns whether or not the pay-to-script-hash address is associated
-// with the passed bitcoin network.
+// with the passed kaspa network.
 func (a *AddressScriptHash) IsForPrefix(prefix Bech32Prefix) bool {
 	return a.prefix == prefix
 }

@@ -38,7 +38,7 @@ type WIF struct {
 	// uncompressed (65-byte) one.
 	CompressPubKey bool
 
-	// netID is the bitcoin network identifier byte used when
+	// netID is the kaspa network identifier byte used when
 	// WIF encoding the private key.
 	netID byte
 }
@@ -52,7 +52,7 @@ func NewWIF(privKey *ecc.PrivateKey, privateKeyID byte, compress bool) (*WIF, er
 }
 
 // IsForNet returns whether or not the decoded WIF structure is associated
-// with the passed bitcoin network.
+// with the passed kaspa network.
 func (w *WIF) IsForNet(privateKeyID byte) bool {
 	return w.netID == privateKeyID
 }

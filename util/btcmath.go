@@ -52,10 +52,6 @@ func FastLog2Floor(n uint64) uint8 {
 //
 // The formula to calculate N is:
 // 	N = (-1^sign) * mantissa * 256^(exponent-3)
-//
-// This compact form is only used in bitcoin to encode unsigned 256-bit numbers
-// which represent difficulty targets, thus there really is not a need for a
-// sign bit, but it is implemented here to stay consistent with bitcoind.
 func CompactToBig(compact uint32) *big.Int {
 	// Extract the mantissa, sign bit, and exponent.
 	mantissa := compact & 0x007fffff
@@ -126,7 +122,7 @@ func BigToCompact(n *big.Int) uint32 {
 	return compact
 }
 
-// CalcWork calculates a work value from difficulty bits. Bitcoin increases
+// CalcWork calculates a work value from difficulty bits. Kaspa increases
 // the difficulty for generating a block by decreasing the value which the
 // generated hash must be less than. This difficulty target is stored in each
 // block header using a compact representation as described in the documentation
