@@ -1,8 +1,6 @@
 package mqtt
 
-import (
-	"github.com/kaspanet/kaspad/kasparov/server/controllers"
-)
+import "github.com/kaspanet/kaspad/kasparov/kasparovserver/controllers"
 
 const selectedTipTopic = "dag/selected-tip"
 

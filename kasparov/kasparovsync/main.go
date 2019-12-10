@@ -2,17 +2,18 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	_ "github.com/golang-migrate/migrate/v4/database/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/kaspanet/kaspad/kasparov/database"
 	"github.com/kaspanet/kaspad/kasparov/jsonrpc"
-	"github.com/kaspanet/kaspad/kasparov/syncd/config"
-	"github.com/kaspanet/kaspad/kasparov/syncd/mqtt"
+	"github.com/kaspanet/kaspad/kasparov/kasparovsync/config"
+	"github.com/kaspanet/kaspad/kasparov/kasparovsync/mqtt"
 	"github.com/kaspanet/kaspad/signal"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/pkg/errors"
-	"os"
 )
 
 func main() {
