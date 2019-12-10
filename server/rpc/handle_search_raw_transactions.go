@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/database"
-	"github.com/kaspanet/kaspad/jsonrpc"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -31,15 +31,15 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 	// Respond with an error if the address index is not enabled.
 	addrIndex := s.cfg.AddrIndex
 	if addrIndex == nil {
-		return nil, &jsonrpc.RPCError{
-			Code:    jsonrpc.ErrRPCMisc,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCMisc,
 			Message: "Address index must be enabled (--addrindex)",
 		}
 	}
 
 	// Override the flag for including extra previous output information in
 	// each input if needed.
-	c := cmd.(*jsonrpc.SearchRawTransactionsCmd)
+	c := cmd.(*rpcmodel.SearchRawTransactionsCmd)
 	vinExtra := false
 	if c.VinExtra != nil {
 		vinExtra = *c.VinExtra
@@ -50,8 +50,8 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 	// transaction index, so this check is redundant, but it's better to be
 	// safe in case the address index is ever changed to not rely on it.
 	if vinExtra && s.cfg.TxIndex == nil {
-		return nil, &jsonrpc.RPCError{
-			Code:    jsonrpc.ErrRPCMisc,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCMisc,
 			Message: "Transaction index must be enabled (--txindex)",
 		}
 	}
@@ -60,8 +60,8 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 	params := s.cfg.DAGParams
 	addr, err := util.DecodeAddress(c.Address, params.Prefix)
 	if err != nil {
-		return nil, &jsonrpc.RPCError{
-			Code:    jsonrpc.ErrRPCInvalidAddressOrKey,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCInvalidAddressOrKey,
 			Message: "Invalid address or key: " + err.Error(),
 		}
 	}
@@ -173,7 +173,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 
 	// Address has never been used if neither source yielded any results.
 	if len(addressTxns) == 0 {
-		return []jsonrpc.SearchRawTransactionsResult{}, nil
+		return []rpcmodel.SearchRawTransactionsResult{}, nil
 	}
 
 	// Serialize all of the transactions to hex.
@@ -210,7 +210,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 	}
 
 	// The verbose flag is set, so generate the JSON object and return it.
-	srtList := make([]jsonrpc.SearchRawTransactionsResult, len(addressTxns))
+	srtList := make([]rpcmodel.SearchRawTransactionsResult, len(addressTxns))
 	for i := range addressTxns {
 		// The deserialized transaction is needed, so deserialize the
 		// retrieved transaction if it's in serialized form (which will
@@ -253,8 +253,8 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 			// Fetch the header from chain.
 			header, err := s.cfg.DAG.HeaderByHash(blkHash)
 			if err != nil {
-				return nil, &jsonrpc.RPCError{
-					Code:    jsonrpc.ErrRPCBlockNotFound,
+				return nil, &rpcmodel.RPCError{
+					Code:    rpcmodel.ErrRPCBlockNotFound,
 					Message: "Block not found",
 				}
 			}
@@ -290,9 +290,9 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 
 // createVinListPrevOut returns a slice of JSON objects for the inputs of the
 // passed transaction.
-func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Params, vinExtra bool, filterAddrMap map[string]struct{}) ([]jsonrpc.VinPrevOut, error) {
+func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Params, vinExtra bool, filterAddrMap map[string]struct{}) ([]rpcmodel.VinPrevOut, error) {
 	// Use a dynamically sized list to accommodate the address filter.
-	vinList := make([]jsonrpc.VinPrevOut, 0, len(mtx.TxIn))
+	vinList := make([]rpcmodel.VinPrevOut, 0, len(mtx.TxIn))
 
 	// Lookup all of the referenced transaction outputs needed to populate the
 	// previous output information if requested. Coinbase transactions do not contain
@@ -316,11 +316,11 @@ func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Par
 		// previous output details which will be added later if
 		// requested and available.
 		prevOut := &txIn.PreviousOutpoint
-		vinEntry := jsonrpc.VinPrevOut{
+		vinEntry := rpcmodel.VinPrevOut{
 			TxID:     prevOut.TxID.String(),
 			Vout:     prevOut.Index,
 			Sequence: txIn.Sequence,
-			ScriptSig: &jsonrpc.ScriptSig{
+			ScriptSig: &rpcmodel.ScriptSig{
 				Asm: disbuf,
 				Hex: hex.EncodeToString(txIn.SignatureScript),
 			},
@@ -353,7 +353,7 @@ func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Par
 		if addr != nil {
 			// Encode the address while checking if the address passes the
 			// filter when needed.
-			encodedAddr = jsonrpc.String(addr.EncodeAddress())
+			encodedAddr = rpcmodel.String(addr.EncodeAddress())
 
 			// If the filter doesn't already pass, make it pass if
 			// the address exists in the filter.
@@ -376,7 +376,7 @@ func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Par
 		// requested.
 		if vinExtra {
 			vinListEntry := &vinList[len(vinList)-1]
-			vinListEntry.PrevOut = &jsonrpc.PrevOut{
+			vinListEntry.PrevOut = &rpcmodel.PrevOut{
 				Address: encodedAddr,
 				Value:   util.Amount(originTxOut.Value).ToBTC(),
 			}

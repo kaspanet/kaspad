@@ -4,13 +4,13 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/jsonrpc"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util"
 )
 
 // handleSubmitBlock implements the submitBlock command.
 func handleSubmitBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*jsonrpc.SubmitBlockCmd)
+	c := cmd.(*rpcmodel.SubmitBlockCmd)
 
 	// Deserialize the submitted block.
 	hexStr := c.HexBlock
@@ -24,8 +24,8 @@ func handleSubmitBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (i
 
 	block, err := util.NewBlockFromBytes(serializedBlock)
 	if err != nil {
-		return nil, &jsonrpc.RPCError{
-			Code:    jsonrpc.ErrRPCDeserialization,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCDeserialization,
 			Message: "Block decode failed: " + err.Error(),
 		}
 	}
@@ -34,8 +34,8 @@ func handleSubmitBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (i
 	// nodes. This will in turn relay it to the network like normal.
 	_, err = s.cfg.SyncMgr.SubmitBlock(block, blockdag.BFNone)
 	if err != nil {
-		return nil, &jsonrpc.RPCError{
-			Code:    jsonrpc.ErrRPCVerify,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCVerify,
 			Message: fmt.Sprintf("Block rejected. Reason: %s", err),
 		}
 	}

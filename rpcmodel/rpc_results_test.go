@@ -2,13 +2,13 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package jsonrpc_test
+package rpcmodel_test
 
 import (
 	"encoding/json"
 	"testing"
 
-	"github.com/kaspanet/kaspad/jsonrpc"
+	"github.com/kaspanet/kaspad/rpcmodel"
 )
 
 // TestRPCServerCustomResults ensures any results that have custom marshalling
@@ -24,10 +24,10 @@ func TestRPCServerCustomResults(t *testing.T) {
 	}{
 		{
 			name: "custom vin marshal without coinbase",
-			result: &jsonrpc.Vin{
+			result: &rpcmodel.Vin{
 				TxID: "123",
 				Vout: 1,
-				ScriptSig: &jsonrpc.ScriptSig{
+				ScriptSig: &rpcmodel.ScriptSig{
 					Asm: "0",
 					Hex: "00",
 				},
@@ -37,7 +37,7 @@ func TestRPCServerCustomResults(t *testing.T) {
 		},
 		{
 			name: "custom vinprevout marshal with coinbase",
-			result: &jsonrpc.VinPrevOut{
+			result: &rpcmodel.VinPrevOut{
 				Coinbase: "021234",
 				Sequence: 4294967295,
 			},
@@ -45,15 +45,15 @@ func TestRPCServerCustomResults(t *testing.T) {
 		},
 		{
 			name: "custom vinprevout marshal without coinbase",
-			result: &jsonrpc.VinPrevOut{
+			result: &rpcmodel.VinPrevOut{
 				TxID: "123",
 				Vout: 1,
-				ScriptSig: &jsonrpc.ScriptSig{
+				ScriptSig: &rpcmodel.ScriptSig{
 					Asm: "0",
 					Hex: "00",
 				},
-				PrevOut: &jsonrpc.PrevOut{
-					Address: jsonrpc.String("addr1"),
+				PrevOut: &rpcmodel.PrevOut{
+					Address: rpcmodel.String("addr1"),
 					Value:   0,
 				},
 				Sequence: 4294967295,
@@ -62,7 +62,7 @@ func TestRPCServerCustomResults(t *testing.T) {
 		},
 		{
 			name: "versionresult",
-			result: &jsonrpc.VersionResult{
+			result: &rpcmodel.VersionResult{
 				VersionString: "1.0.0",
 				Major:         1,
 				Minor:         0,

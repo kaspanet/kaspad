@@ -2,13 +2,13 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package jsonrpc_test
+package rpcmodel_test
 
 import (
 	"reflect"
 	"testing"
 
-	"github.com/kaspanet/kaspad/jsonrpc"
+	"github.com/kaspanet/kaspad/rpcmodel"
 )
 
 // TestHelpers tests the various helper functions which create pointers to
@@ -24,7 +24,7 @@ func TestHelpers(t *testing.T) {
 		{
 			name: "bool",
 			f: func() interface{} {
-				return jsonrpc.Bool(true)
+				return rpcmodel.Bool(true)
 			},
 			expected: func() interface{} {
 				val := true
@@ -34,7 +34,7 @@ func TestHelpers(t *testing.T) {
 		{
 			name: "int",
 			f: func() interface{} {
-				return jsonrpc.Int(5)
+				return rpcmodel.Int(5)
 			},
 			expected: func() interface{} {
 				val := int(5)
@@ -44,7 +44,7 @@ func TestHelpers(t *testing.T) {
 		{
 			name: "uint",
 			f: func() interface{} {
-				return jsonrpc.Uint(5)
+				return rpcmodel.Uint(5)
 			},
 			expected: func() interface{} {
 				val := uint(5)
@@ -54,7 +54,7 @@ func TestHelpers(t *testing.T) {
 		{
 			name: "int32",
 			f: func() interface{} {
-				return jsonrpc.Int32(5)
+				return rpcmodel.Int32(5)
 			},
 			expected: func() interface{} {
 				val := int32(5)
@@ -64,7 +64,7 @@ func TestHelpers(t *testing.T) {
 		{
 			name: "uint32",
 			f: func() interface{} {
-				return jsonrpc.Uint32(5)
+				return rpcmodel.Uint32(5)
 			},
 			expected: func() interface{} {
 				val := uint32(5)
@@ -74,7 +74,7 @@ func TestHelpers(t *testing.T) {
 		{
 			name: "int64",
 			f: func() interface{} {
-				return jsonrpc.Int64(5)
+				return rpcmodel.Int64(5)
 			},
 			expected: func() interface{} {
 				val := int64(5)
@@ -84,7 +84,7 @@ func TestHelpers(t *testing.T) {
 		{
 			name: "uint64",
 			f: func() interface{} {
-				return jsonrpc.Uint64(5)
+				return rpcmodel.Uint64(5)
 			},
 			expected: func() interface{} {
 				val := uint64(5)
@@ -94,7 +94,7 @@ func TestHelpers(t *testing.T) {
 		{
 			name: "string",
 			f: func() interface{} {
-				return jsonrpc.String("abc")
+				return rpcmodel.String("abc")
 			},
 			expected: func() interface{} {
 				val := "abc"

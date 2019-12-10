@@ -11,7 +11,7 @@ import (
 	"encoding/json"
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/jsonrpc"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -43,7 +43,7 @@ func (r FutureGetSelectedTipHashResult) Receive() (*daghash.Hash, error) {
 //
 // See GetSelectedTipHash for the blocking version and more details.
 func (c *Client) GetSelectedTipHashAsync() FutureGetSelectedTipHashResult {
-	cmd := jsonrpc.NewGetSelectedTipHashCmd()
+	cmd := rpcmodel.NewGetSelectedTipHashCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -98,7 +98,7 @@ func (c *Client) GetBlockAsync(blockHash *daghash.Hash, subnetworkID *string) Fu
 		hash = blockHash.String()
 	}
 
-	cmd := jsonrpc.NewGetBlockCmd(hash, jsonrpc.Bool(false), jsonrpc.Bool(false), subnetworkID)
+	cmd := rpcmodel.NewGetBlockCmd(hash, rpcmodel.Bool(false), rpcmodel.Bool(false), subnetworkID)
 	return c.sendCmd(cmd)
 }
 
@@ -116,13 +116,13 @@ type FutureGetBlocksResult chan *response
 
 // Receive waits for the response promised by the future and returns the blocks
 // starting from startHash up to the virtual ordered by blue score.
-func (r FutureGetBlocksResult) Receive() (*jsonrpc.GetBlocksResult, error) {
+func (r FutureGetBlocksResult) Receive() (*rpcmodel.GetBlocksResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
-	var result jsonrpc.GetBlocksResult
+	var result rpcmodel.GetBlocksResult
 	if err := json.Unmarshal(res, &result); err != nil {
 		return nil, errors.Wrapf(err, "%s", string(res))
 	}
@@ -135,13 +135,13 @@ func (r FutureGetBlocksResult) Receive() (*jsonrpc.GetBlocksResult, error) {
 //
 // See GetBlocks for the blocking version and more details.
 func (c *Client) GetBlocksAsync(includeRawBlockData bool, IncludeVerboseBlockData bool, startHash *string) FutureGetBlocksResult {
-	cmd := jsonrpc.NewGetBlocksCmd(includeRawBlockData, IncludeVerboseBlockData, startHash)
+	cmd := rpcmodel.NewGetBlocksCmd(includeRawBlockData, IncludeVerboseBlockData, startHash)
 	return c.sendCmd(cmd)
 }
 
 // GetBlocks returns the blocks starting from startHash up to the virtual ordered
 // by blue score.
-func (c *Client) GetBlocks(includeRawBlockData bool, includeVerboseBlockData bool, startHash *string) (*jsonrpc.GetBlocksResult, error) {
+func (c *Client) GetBlocks(includeRawBlockData bool, includeVerboseBlockData bool, startHash *string) (*rpcmodel.GetBlocksResult, error) {
 	return c.GetBlocksAsync(includeRawBlockData, includeVerboseBlockData, startHash).Receive()
 }
 
@@ -151,14 +151,14 @@ type FutureGetBlockVerboseResult chan *response
 
 // Receive waits for the response promised by the future and returns the data
 // structure from the server with information about the requested block.
-func (r FutureGetBlockVerboseResult) Receive() (*jsonrpc.GetBlockVerboseResult, error) {
+func (r FutureGetBlockVerboseResult) Receive() (*rpcmodel.GetBlockVerboseResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal the raw result into a BlockResult.
-	var blockResult jsonrpc.GetBlockVerboseResult
+	var blockResult rpcmodel.GetBlockVerboseResult
 	err = json.Unmarshal(res, &blockResult)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -177,7 +177,7 @@ func (c *Client) GetBlockVerboseAsync(blockHash *daghash.Hash, subnetworkID *str
 		hash = blockHash.String()
 	}
 
-	cmd := jsonrpc.NewGetBlockCmd(hash, jsonrpc.Bool(true), jsonrpc.Bool(false), subnetworkID)
+	cmd := rpcmodel.NewGetBlockCmd(hash, rpcmodel.Bool(true), rpcmodel.Bool(false), subnetworkID)
 	return c.sendCmd(cmd)
 }
 
@@ -186,7 +186,7 @@ func (c *Client) GetBlockVerboseAsync(blockHash *daghash.Hash, subnetworkID *str
 //
 // See GetBlockVerboseTx to retrieve transaction data structures as well.
 // See GetBlock to retrieve a raw block instead.
-func (c *Client) GetBlockVerbose(blockHash *daghash.Hash, subnetworkID *string) (*jsonrpc.GetBlockVerboseResult, error) {
+func (c *Client) GetBlockVerbose(blockHash *daghash.Hash, subnetworkID *string) (*rpcmodel.GetBlockVerboseResult, error) {
 	return c.GetBlockVerboseAsync(blockHash, subnetworkID).Receive()
 }
 
@@ -201,7 +201,7 @@ func (c *Client) GetBlockVerboseTxAsync(blockHash *daghash.Hash, subnetworkID *s
 		hash = blockHash.String()
 	}
 
-	cmd := jsonrpc.NewGetBlockCmd(hash, jsonrpc.Bool(true), jsonrpc.Bool(true), subnetworkID)
+	cmd := rpcmodel.NewGetBlockCmd(hash, rpcmodel.Bool(true), rpcmodel.Bool(true), subnetworkID)
 	return c.sendCmd(cmd)
 }
 
@@ -210,7 +210,7 @@ func (c *Client) GetBlockVerboseTxAsync(blockHash *daghash.Hash, subnetworkID *s
 //
 // See GetBlockVerbose if only transaction hashes are preferred.
 // See GetBlock to retrieve a raw block instead.
-func (c *Client) GetBlockVerboseTx(blockHash *daghash.Hash, subnetworkID *string) (*jsonrpc.GetBlockVerboseResult, error) {
+func (c *Client) GetBlockVerboseTx(blockHash *daghash.Hash, subnetworkID *string) (*rpcmodel.GetBlockVerboseResult, error) {
 	return c.GetBlockVerboseTxAsync(blockHash, subnetworkID).Receive()
 }
 
@@ -241,7 +241,7 @@ func (r FutureGetBlockCountResult) Receive() (int64, error) {
 //
 // See GetBlockCount for the blocking version and more details.
 func (c *Client) GetBlockCountAsync() FutureGetBlockCountResult {
-	cmd := jsonrpc.NewGetBlockCountCmd()
+	cmd := rpcmodel.NewGetBlockCountCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -258,13 +258,13 @@ type FutureGetChainFromBlockResult chan *response
 // parent chain starting from startHash up to the virtual. If startHash is not in
 // the selected parent chain, it goes down the DAG until it does reach a hash in
 // the selected parent chain while collecting hashes into RemovedChainBlockHashes.
-func (r FutureGetChainFromBlockResult) Receive() (*jsonrpc.GetChainFromBlockResult, error) {
+func (r FutureGetChainFromBlockResult) Receive() (*rpcmodel.GetChainFromBlockResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
-	var result jsonrpc.GetChainFromBlockResult
+	var result rpcmodel.GetChainFromBlockResult
 	if err := json.Unmarshal(res, &result); err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -277,7 +277,7 @@ func (r FutureGetChainFromBlockResult) Receive() (*jsonrpc.GetChainFromBlockResu
 //
 // See GetChainFromBlock for the blocking version and more details.
 func (c *Client) GetChainFromBlockAsync(includeBlocks bool, startHash *string) FutureGetChainFromBlockResult {
-	cmd := jsonrpc.NewGetChainFromBlockCmd(includeBlocks, startHash)
+	cmd := rpcmodel.NewGetChainFromBlockCmd(includeBlocks, startHash)
 	return c.sendCmd(cmd)
 }
 
@@ -285,7 +285,7 @@ func (c *Client) GetChainFromBlockAsync(includeBlocks bool, startHash *string) F
 // up to the virtual. If startHash is not in the selected parent chain, it goes
 // down the DAG until it does reach a hash in the selected parent chain while
 // collecting hashes into RemovedChainBlockHashes.
-func (c *Client) GetChainFromBlock(includeBlocks bool, startHash *string) (*jsonrpc.GetChainFromBlockResult, error) {
+func (c *Client) GetChainFromBlock(includeBlocks bool, startHash *string) (*rpcmodel.GetChainFromBlockResult, error) {
 	return c.GetChainFromBlockAsync(includeBlocks, startHash).Receive()
 }
 
@@ -316,7 +316,7 @@ func (r FutureGetDifficultyResult) Receive() (float64, error) {
 //
 // See GetDifficulty for the blocking version and more details.
 func (c *Client) GetDifficultyAsync() FutureGetDifficultyResult {
-	cmd := jsonrpc.NewGetDifficultyCmd()
+	cmd := rpcmodel.NewGetDifficultyCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -332,13 +332,13 @@ type FutureGetBlockDAGInfoResult chan *response
 
 // Receive waits for the response promised by the future and returns dag info
 // result provided by the server.
-func (r FutureGetBlockDAGInfoResult) Receive() (*jsonrpc.GetBlockDAGInfoResult, error) {
+func (r FutureGetBlockDAGInfoResult) Receive() (*rpcmodel.GetBlockDAGInfoResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
-	var dagInfo jsonrpc.GetBlockDAGInfoResult
+	var dagInfo rpcmodel.GetBlockDAGInfoResult
 	if err := json.Unmarshal(res, &dagInfo); err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -351,14 +351,14 @@ func (r FutureGetBlockDAGInfoResult) Receive() (*jsonrpc.GetBlockDAGInfoResult, 
 //
 // See GetBlockDAGInfo for the blocking version and more details.
 func (c *Client) GetBlockDAGInfoAsync() FutureGetBlockDAGInfoResult {
-	cmd := jsonrpc.NewGetBlockDAGInfoCmd()
+	cmd := rpcmodel.NewGetBlockDAGInfoCmd()
 	return c.sendCmd(cmd)
 }
 
 // GetBlockDAGInfo returns information related to the processing state of
 // various dag-specific details such as the current difficulty from the tip
 // of the main dag.
-func (c *Client) GetBlockDAGInfo() (*jsonrpc.GetBlockDAGInfoResult, error) {
+func (c *Client) GetBlockDAGInfo() (*rpcmodel.GetBlockDAGInfoResult, error) {
 	return c.GetBlockDAGInfoAsync().Receive()
 }
 
@@ -428,7 +428,7 @@ func (c *Client) GetBlockHeaderAsync(blockHash *daghash.Hash) FutureGetBlockHead
 		hash = blockHash.String()
 	}
 
-	cmd := jsonrpc.NewGetBlockHeaderCmd(hash, jsonrpc.Bool(false))
+	cmd := rpcmodel.NewGetBlockHeaderCmd(hash, rpcmodel.Bool(false))
 	return c.sendCmd(cmd)
 }
 
@@ -446,14 +446,14 @@ type FutureGetBlockHeaderVerboseResult chan *response
 
 // Receive waits for the response promised by the future and returns the
 // data structure of the blockheader requested from the server given its hash.
-func (r FutureGetBlockHeaderVerboseResult) Receive() (*jsonrpc.GetBlockHeaderVerboseResult, error) {
+func (r FutureGetBlockHeaderVerboseResult) Receive() (*rpcmodel.GetBlockHeaderVerboseResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a string.
-	var bh jsonrpc.GetBlockHeaderVerboseResult
+	var bh rpcmodel.GetBlockHeaderVerboseResult
 	err = json.Unmarshal(res, &bh)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -473,7 +473,7 @@ func (c *Client) GetBlockHeaderVerboseAsync(blockHash *daghash.Hash) FutureGetBl
 		hash = blockHash.String()
 	}
 
-	cmd := jsonrpc.NewGetBlockHeaderCmd(hash, jsonrpc.Bool(true))
+	cmd := rpcmodel.NewGetBlockHeaderCmd(hash, rpcmodel.Bool(true))
 	return c.sendCmd(cmd)
 }
 
@@ -481,7 +481,7 @@ func (c *Client) GetBlockHeaderVerboseAsync(blockHash *daghash.Hash) FutureGetBl
 // blockheader from the server given its hash.
 //
 // See GetBlockHeader to retrieve a blockheader instead.
-func (c *Client) GetBlockHeaderVerbose(blockHash *daghash.Hash) (*jsonrpc.GetBlockHeaderVerboseResult, error) {
+func (c *Client) GetBlockHeaderVerbose(blockHash *daghash.Hash) (*rpcmodel.GetBlockHeaderVerboseResult, error) {
 	return c.GetBlockHeaderVerboseAsync(blockHash).Receive()
 }
 
@@ -492,14 +492,14 @@ type FutureGetMempoolEntryResult chan *response
 // Receive waits for the response promised by the future and returns a data
 // structure with information about the transaction in the memory pool given
 // its hash.
-func (r FutureGetMempoolEntryResult) Receive() (*jsonrpc.GetMempoolEntryResult, error) {
+func (r FutureGetMempoolEntryResult) Receive() (*rpcmodel.GetMempoolEntryResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal the result as an array of strings.
-	var mempoolEntryResult jsonrpc.GetMempoolEntryResult
+	var mempoolEntryResult rpcmodel.GetMempoolEntryResult
 	err = json.Unmarshal(res, &mempoolEntryResult)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -514,13 +514,13 @@ func (r FutureGetMempoolEntryResult) Receive() (*jsonrpc.GetMempoolEntryResult, 
 //
 // See GetMempoolEntry for the blocking version and more details.
 func (c *Client) GetMempoolEntryAsync(txHash string) FutureGetMempoolEntryResult {
-	cmd := jsonrpc.NewGetMempoolEntryCmd(txHash)
+	cmd := rpcmodel.NewGetMempoolEntryCmd(txHash)
 	return c.sendCmd(cmd)
 }
 
 // GetMempoolEntry returns a data structure with information about the
 // transaction in the memory pool given its hash.
-func (c *Client) GetMempoolEntry(txHash string) (*jsonrpc.GetMempoolEntryResult, error) {
+func (c *Client) GetMempoolEntry(txHash string) (*rpcmodel.GetMempoolEntryResult, error) {
 	return c.GetMempoolEntryAsync(txHash).Receive()
 }
 
@@ -562,7 +562,7 @@ func (r FutureGetRawMempoolResult) Receive() ([]*daghash.Hash, error) {
 //
 // See GetRawMempool for the blocking version and more details.
 func (c *Client) GetRawMempoolAsync() FutureGetRawMempoolResult {
-	cmd := jsonrpc.NewGetRawMempoolCmd(jsonrpc.Bool(false))
+	cmd := rpcmodel.NewGetRawMempoolCmd(rpcmodel.Bool(false))
 	return c.sendCmd(cmd)
 }
 
@@ -581,7 +581,7 @@ type FutureGetRawMempoolVerboseResult chan *response
 // Receive waits for the response promised by the future and returns a map of
 // transaction hashes to an associated data structure with information about the
 // transaction for all transactions in the memory pool.
-func (r FutureGetRawMempoolVerboseResult) Receive() (map[string]jsonrpc.GetRawMempoolVerboseResult, error) {
+func (r FutureGetRawMempoolVerboseResult) Receive() (map[string]rpcmodel.GetRawMempoolVerboseResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
@@ -589,7 +589,7 @@ func (r FutureGetRawMempoolVerboseResult) Receive() (map[string]jsonrpc.GetRawMe
 
 	// Unmarshal the result as a map of strings (tx shas) to their detailed
 	// results.
-	var mempoolItems map[string]jsonrpc.GetRawMempoolVerboseResult
+	var mempoolItems map[string]rpcmodel.GetRawMempoolVerboseResult
 	err = json.Unmarshal(res, &mempoolItems)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -603,7 +603,7 @@ func (r FutureGetRawMempoolVerboseResult) Receive() (map[string]jsonrpc.GetRawMe
 //
 // See GetRawMempoolVerbose for the blocking version and more details.
 func (c *Client) GetRawMempoolVerboseAsync() FutureGetRawMempoolVerboseResult {
-	cmd := jsonrpc.NewGetRawMempoolCmd(jsonrpc.Bool(true))
+	cmd := rpcmodel.NewGetRawMempoolCmd(rpcmodel.Bool(true))
 	return c.sendCmd(cmd)
 }
 
@@ -612,7 +612,7 @@ func (c *Client) GetRawMempoolVerboseAsync() FutureGetRawMempoolVerboseResult {
 // the memory pool.
 //
 // See GetRawMempool to retrieve only the transaction hashes instead.
-func (c *Client) GetRawMempoolVerbose() (map[string]jsonrpc.GetRawMempoolVerboseResult, error) {
+func (c *Client) GetRawMempoolVerbose() (map[string]rpcmodel.GetRawMempoolVerboseResult, error) {
 	return c.GetRawMempoolVerboseAsync().Receive()
 }
 
@@ -622,14 +622,14 @@ type FutureGetSubnetworkResult chan *response
 
 // Receive waits for the response promised by the future and returns information
 // regarding the requested subnetwork
-func (r FutureGetSubnetworkResult) Receive() (*jsonrpc.GetSubnetworkResult, error) {
+func (r FutureGetSubnetworkResult) Receive() (*rpcmodel.GetSubnetworkResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a getSubnetwork result object.
-	var getSubnetworkResult *jsonrpc.GetSubnetworkResult
+	var getSubnetworkResult *rpcmodel.GetSubnetworkResult
 	err = json.Unmarshal(res, &getSubnetworkResult)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -644,12 +644,12 @@ func (r FutureGetSubnetworkResult) Receive() (*jsonrpc.GetSubnetworkResult, erro
 //
 // See GetSubnetwork for the blocking version and more details.
 func (c *Client) GetSubnetworkAsync(subnetworkID string) FutureGetSubnetworkResult {
-	cmd := jsonrpc.NewGetSubnetworkCmd(subnetworkID)
+	cmd := rpcmodel.NewGetSubnetworkCmd(subnetworkID)
 	return c.sendCmd(cmd)
 }
 
 // GetSubnetwork provides information about a subnetwork given its ID.
-func (c *Client) GetSubnetwork(subnetworkID string) (*jsonrpc.GetSubnetworkResult, error) {
+func (c *Client) GetSubnetwork(subnetworkID string) (*rpcmodel.GetSubnetworkResult, error) {
 	return c.GetSubnetworkAsync(subnetworkID).Receive()
 }
 
@@ -659,7 +659,7 @@ type FutureGetTxOutResult chan *response
 
 // Receive waits for the response promised by the future and returns a
 // transaction given its hash.
-func (r FutureGetTxOutResult) Receive() (*jsonrpc.GetTxOutResult, error) {
+func (r FutureGetTxOutResult) Receive() (*rpcmodel.GetTxOutResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
@@ -672,7 +672,7 @@ func (r FutureGetTxOutResult) Receive() (*jsonrpc.GetTxOutResult, error) {
 	}
 
 	// Unmarshal result as an gettxout result object.
-	var txOutInfo *jsonrpc.GetTxOutResult
+	var txOutInfo *rpcmodel.GetTxOutResult
 	err = json.Unmarshal(res, &txOutInfo)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -692,13 +692,13 @@ func (c *Client) GetTxOutAsync(txHash *daghash.Hash, index uint32, mempool bool)
 		hash = txHash.String()
 	}
 
-	cmd := jsonrpc.NewGetTxOutCmd(hash, index, &mempool)
+	cmd := rpcmodel.NewGetTxOutCmd(hash, index, &mempool)
 	return c.sendCmd(cmd)
 }
 
 // GetTxOut returns the transaction output info if it's unspent and
 // nil, otherwise.
-func (c *Client) GetTxOut(txHash *daghash.Hash, index uint32, mempool bool) (*jsonrpc.GetTxOutResult, error) {
+func (c *Client) GetTxOut(txHash *daghash.Hash, index uint32, mempool bool) (*rpcmodel.GetTxOutResult, error) {
 	return c.GetTxOutAsync(txHash, index, mempool).Receive()
 }
 
@@ -714,13 +714,13 @@ type FutureRescanBlocksResult chan *response
 //
 // NOTE: This is a btcsuite extension ported from
 // github.com/decred/dcrrpcclient.
-func (r FutureRescanBlocksResult) Receive() ([]jsonrpc.RescannedBlock, error) {
+func (r FutureRescanBlocksResult) Receive() ([]rpcmodel.RescannedBlock, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
-	var rescanBlocksResult []jsonrpc.RescannedBlock
+	var rescanBlocksResult []rpcmodel.RescannedBlock
 	err = json.Unmarshal(res, &rescanBlocksResult)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -743,7 +743,7 @@ func (c *Client) RescanBlocksAsync(blockHashes []*daghash.Hash) FutureRescanBloc
 		strBlockHashes[i] = blockHashes[i].String()
 	}
 
-	cmd := jsonrpc.NewRescanBlocksCmd(strBlockHashes)
+	cmd := rpcmodel.NewRescanBlocksCmd(strBlockHashes)
 	return c.sendCmd(cmd)
 }
 
@@ -753,7 +753,7 @@ func (c *Client) RescanBlocksAsync(blockHashes []*daghash.Hash) FutureRescanBloc
 //
 // NOTE: This is a btcsuite extension ported from
 // github.com/decred/dcrrpcclient.
-func (c *Client) RescanBlocks(blockHashes []*daghash.Hash) ([]jsonrpc.RescannedBlock, error) {
+func (c *Client) RescanBlocks(blockHashes []*daghash.Hash) ([]rpcmodel.RescannedBlock, error) {
 	return c.RescanBlocksAsync(blockHashes).Receive()
 }
 
@@ -780,7 +780,7 @@ func (c *Client) InvalidateBlockAsync(blockHash *daghash.Hash) FutureInvalidateB
 		hash = blockHash.String()
 	}
 
-	cmd := jsonrpc.NewInvalidateBlockCmd(hash)
+	cmd := rpcmodel.NewInvalidateBlockCmd(hash)
 	return c.sendCmd(cmd)
 }
 
@@ -834,7 +834,7 @@ func (c *Client) GetCFilterAsync(blockHash *daghash.Hash,
 		hash = blockHash.String()
 	}
 
-	cmd := jsonrpc.NewGetCFilterCmd(hash, filterType)
+	cmd := rpcmodel.NewGetCFilterCmd(hash, filterType)
 	return c.sendCmd(cmd)
 }
 
@@ -887,7 +887,7 @@ func (c *Client) GetCFilterHeaderAsync(blockHash *daghash.Hash,
 		hash = blockHash.String()
 	}
 
-	cmd := jsonrpc.NewGetCFilterHeaderCmd(hash, filterType)
+	cmd := rpcmodel.NewGetCFilterHeaderCmd(hash, filterType)
 	return c.sendCmd(cmd)
 }
 

@@ -1,16 +1,16 @@
 package mqtt
 
 import (
-	"github.com/kaspanet/kaspad/jsonrpc"
 	"github.com/kaspanet/kaspad/kasparov/server/apimodels"
 	"github.com/kaspanet/kaspad/kasparov/server/controllers"
 	"github.com/kaspanet/kaspad/rpcclient"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"path"
 )
 
 // PublishTransactionsNotifications publishes notification for each transaction of the given block
-func PublishTransactionsNotifications(rawTransactions []jsonrpc.TxRawResult) error {
+func PublishTransactionsNotifications(rawTransactions []rpcmodel.TxRawResult) error {
 	if !isConnected() {
 		return nil
 	}

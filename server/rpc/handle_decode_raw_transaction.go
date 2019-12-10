@@ -3,13 +3,13 @@ package rpc
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/kaspanet/kaspad/jsonrpc"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/wire"
 )
 
 // handleDecodeRawTransaction handles decodeRawTransaction commands.
 func handleDecodeRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*jsonrpc.DecodeRawTransactionCmd)
+	c := cmd.(*rpcmodel.DecodeRawTransactionCmd)
 
 	// Deserialize the transaction.
 	hexStr := c.HexTx
@@ -23,14 +23,14 @@ func handleDecodeRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 	var mtx wire.MsgTx
 	err = mtx.Deserialize(bytes.NewReader(serializedTx))
 	if err != nil {
-		return nil, &jsonrpc.RPCError{
-			Code:    jsonrpc.ErrRPCDeserialization,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCDeserialization,
 			Message: "TX decode failed: " + err.Error(),
 		}
 	}
 
 	// Create and return the result.
-	txReply := jsonrpc.TxRawDecodeResult{
+	txReply := rpcmodel.TxRawDecodeResult{
 		TxID:     mtx.TxID().String(),
 		Version:  mtx.Version,
 		Locktime: mtx.LockTime,

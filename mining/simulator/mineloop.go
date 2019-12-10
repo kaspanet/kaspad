@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/jsonrpc"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
@@ -20,7 +20,7 @@ import (
 
 var random = rand.New(rand.NewSource(time.Now().UnixNano()))
 
-func parseBlock(template *jsonrpc.GetBlockTemplateResult) (*util.Block, error) {
+func parseBlock(template *rpcmodel.GetBlockTemplateResult) (*util.Block, error) {
 	// parse parent hashes
 	parentHashes := make([]*daghash.Hash, len(template.ParentHashes))
 	for i, parentHash := range template.ParentHashes {
@@ -52,7 +52,7 @@ func parseBlock(template *jsonrpc.GetBlockTemplateResult) (*util.Block, error) {
 		wire.NewBlockHeader(template.Version, parentHashes, &daghash.Hash{},
 			acceptedIDMerkleRoot, utxoCommitment, bits, 0))
 
-	for i, txResult := range append([]jsonrpc.GetBlockTemplateResultTx{*template.CoinbaseTxn}, template.Transactions...) {
+	for i, txResult := range append([]rpcmodel.GetBlockTemplateResultTx{*template.CoinbaseTxn}, template.Transactions...) {
 		reader := hex.NewDecoder(strings.NewReader(txResult.Data))
 		tx := &wire.MsgTx{}
 		if err := tx.KaspaDecode(reader, 0); err != nil {
@@ -86,11 +86,11 @@ func solveBlock(block *util.Block, stopChan chan struct{}, foundBlock chan *util
 
 }
 
-func getBlockTemplate(client *simulatorClient, longPollID string) (*jsonrpc.GetBlockTemplateResult, error) {
+func getBlockTemplate(client *simulatorClient, longPollID string) (*rpcmodel.GetBlockTemplateResult, error) {
 	return client.GetBlockTemplate([]string{"coinbasetxn"}, longPollID)
 }
 
-func templatesLoop(client *simulatorClient, newTemplateChan chan *jsonrpc.GetBlockTemplateResult, errChan chan error, stopChan chan struct{}) {
+func templatesLoop(client *simulatorClient, newTemplateChan chan *rpcmodel.GetBlockTemplateResult, errChan chan error, stopChan chan struct{}) {
 	longPollID := ""
 	getBlockTemplateLongPoll := func() {
 		if longPollID != "" {
@@ -126,7 +126,7 @@ func templatesLoop(client *simulatorClient, newTemplateChan chan *jsonrpc.GetBlo
 	}
 }
 
-func solveLoop(newTemplateChan chan *jsonrpc.GetBlockTemplateResult, foundBlock chan *util.Block, errChan chan error) {
+func solveLoop(newTemplateChan chan *rpcmodel.GetBlockTemplateResult, foundBlock chan *util.Block, errChan chan error) {
 	var stopOldTemplateSolving chan struct{}
 	for template := range newTemplateChan {
 		if stopOldTemplateSolving != nil {
@@ -147,7 +147,7 @@ func solveLoop(newTemplateChan chan *jsonrpc.GetBlockTemplateResult, foundBlock 
 }
 
 func mineNextBlock(client *simulatorClient, foundBlock chan *util.Block, templateStopChan chan struct{}, errChan chan error) {
-	newTemplateChan := make(chan *jsonrpc.GetBlockTemplateResult)
+	newTemplateChan := make(chan *rpcmodel.GetBlockTemplateResult)
 	go templatesLoop(client, newTemplateChan, errChan, templateStopChan)
 	go solveLoop(newTemplateChan, foundBlock, errChan)
 }
@@ -155,7 +155,7 @@ func mineNextBlock(client *simulatorClient, foundBlock chan *util.Block, templat
 func handleFoundBlock(client *simulatorClient, block *util.Block) error {
 	log.Infof("Found block %s with parents %s! Submitting to %s", block.Hash(), block.MsgBlock().Header.ParentHashes, client.Host())
 
-	err := client.SubmitBlock(block, &jsonrpc.SubmitBlockOptions{})
+	err := client.SubmitBlock(block, &rpcmodel.SubmitBlockOptions{})
 	if err != nil {
 		return errors.Errorf("Error submitting block %s to %s: %s", block.Hash(), client.Host(), err)
 	}

@@ -2,22 +2,22 @@ package rpc
 
 import (
 	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/jsonrpc"
+	"github.com/kaspanet/kaspad/rpcmodel"
 )
 
 // handleGetMiningInfo implements the getMiningInfo command. We only return the
 // fields that are not related to wallet functionality.
 func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	if config.ActiveConfig().SubnetworkID != nil {
-		return nil, &jsonrpc.RPCError{
-			Code:    jsonrpc.ErrRPCInvalidRequest.Code,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCInvalidRequest.Code,
 			Message: "`getMiningInfo` is not supported on partial nodes.",
 		}
 	}
 
 	// Create a default getNetworkHashPs command to use defaults and make
 	// use of the existing getNetworkHashPs handler.
-	gnhpsCmd := jsonrpc.NewGetNetworkHashPSCmd(nil, nil)
+	gnhpsCmd := rpcmodel.NewGetNetworkHashPSCmd(nil, nil)
 	networkHashesPerSecIface, err := handleGetNetworkHashPS(s, gnhpsCmd,
 		closeChan)
 	if err != nil {
@@ -25,8 +25,8 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 	}
 	networkHashesPerSec, ok := networkHashesPerSecIface.(int64)
 	if !ok {
-		return nil, &jsonrpc.RPCError{
-			Code:    jsonrpc.ErrRPCInternal.Code,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCInternal.Code,
 			Message: "networkHashesPerSec is not an int64",
 		}
 	}
@@ -34,13 +34,13 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 	selectedTipHash := s.cfg.DAG.SelectedTipHash()
 	selectedBlock, err := s.cfg.DAG.BlockByHash(selectedTipHash)
 	if err != nil {
-		return nil, &jsonrpc.RPCError{
-			Code:    jsonrpc.ErrRPCInternal.Code,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCInternal.Code,
 			Message: "could not find block for selected tip",
 		}
 	}
 
-	result := jsonrpc.GetMiningInfoResult{
+	result := rpcmodel.GetMiningInfoResult{
 		Blocks:           int64(s.cfg.DAG.BlockCount()),
 		CurrentBlockSize: uint64(selectedBlock.MsgBlock().SerializeSize()),
 		CurrentBlockTx:   uint64(len(selectedBlock.MsgBlock().Transactions)),

@@ -1,7 +1,7 @@
 package rpc
 
 import (
-	"github.com/kaspanet/kaspad/jsonrpc"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -10,13 +10,13 @@ import (
 
 // handleCreateRawTransaction handles createRawTransaction commands.
 func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*jsonrpc.CreateRawTransactionCmd)
+	c := cmd.(*rpcmodel.CreateRawTransactionCmd)
 
 	// Validate the locktime, if given.
 	if c.LockTime != nil &&
 		(*c.LockTime < 0 || *c.LockTime > wire.MaxTxInSequenceNum) {
-		return nil, &jsonrpc.RPCError{
-			Code:    jsonrpc.ErrRPCInvalidParameter,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCInvalidParameter,
 			Message: "Locktime out of range",
 		}
 	}
@@ -45,8 +45,8 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 	for encodedAddr, amount := range c.Amounts {
 		// Ensure amount is in the valid range for monetary amounts.
 		if amount <= 0 || amount > util.MaxSompi {
-			return nil, &jsonrpc.RPCError{
-				Code:    jsonrpc.ErrRPCType,
+			return nil, &rpcmodel.RPCError{
+				Code:    rpcmodel.ErrRPCType,
 				Message: "Invalid amount",
 			}
 		}
@@ -54,8 +54,8 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 		// Decode the provided address.
 		addr, err := util.DecodeAddress(encodedAddr, params.Prefix)
 		if err != nil {
-			return nil, &jsonrpc.RPCError{
-				Code:    jsonrpc.ErrRPCInvalidAddressOrKey,
+			return nil, &rpcmodel.RPCError{
+				Code:    rpcmodel.ErrRPCInvalidAddressOrKey,
 				Message: "Invalid address or key: " + err.Error(),
 			}
 		}
@@ -67,14 +67,14 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 		case *util.AddressPubKeyHash:
 		case *util.AddressScriptHash:
 		default:
-			return nil, &jsonrpc.RPCError{
-				Code:    jsonrpc.ErrRPCInvalidAddressOrKey,
+			return nil, &rpcmodel.RPCError{
+				Code:    rpcmodel.ErrRPCInvalidAddressOrKey,
 				Message: "Invalid address or key",
 			}
 		}
 		if !addr.IsForPrefix(params.Prefix) {
-			return nil, &jsonrpc.RPCError{
-				Code: jsonrpc.ErrRPCInvalidAddressOrKey,
+			return nil, &rpcmodel.RPCError{
+				Code: rpcmodel.ErrRPCInvalidAddressOrKey,
 				Message: "Invalid address: " + encodedAddr +
 					" is for the wrong network",
 			}

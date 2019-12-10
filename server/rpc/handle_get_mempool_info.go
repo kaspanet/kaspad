@@ -1,6 +1,6 @@
 package rpc
 
-import "github.com/kaspanet/kaspad/jsonrpc"
+import "github.com/kaspanet/kaspad/rpcmodel"
 
 // handleGetMempoolInfo implements the getMempoolInfo command.
 func handleGetMempoolInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
@@ -11,7 +11,7 @@ func handleGetMempoolInfo(s *Server, cmd interface{}, closeChan <-chan struct{})
 		numBytes += int64(txD.Tx.MsgTx().SerializeSize())
 	}
 
-	ret := &jsonrpc.GetMempoolInfoResult{
+	ret := &rpcmodel.GetMempoolInfoResult{
 		Size:  int64(len(mempoolTxns)),
 		Bytes: numBytes,
 	}

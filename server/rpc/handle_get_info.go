@@ -2,14 +2,14 @@ package rpc
 
 import (
 	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/jsonrpc"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/version"
 )
 
 // handleGetInfo implements the getInfo command. We only return the fields
 // that are not related to wallet functionality.
 func handleGetInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	ret := &jsonrpc.InfoDAGResult{
+	ret := &rpcmodel.InfoDAGResult{
 		Version:         int32(1000000*version.AppMajor + 10000*version.AppMinor + 100*version.AppPatch),
 		ProtocolVersion: int32(maxProtocolVersion),
 		Blocks:          s.cfg.DAG.BlockCount(),

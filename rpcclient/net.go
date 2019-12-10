@@ -7,7 +7,7 @@ package rpcclient
 import (
 	"encoding/json"
 
-	"github.com/kaspanet/kaspad/jsonrpc"
+	"github.com/kaspanet/kaspad/rpcmodel"
 )
 
 // FutureAddNodeResult is a future promise to deliver the result of an
@@ -27,7 +27,7 @@ func (r FutureAddNodeResult) Receive() error {
 //
 // See AddNode for the blocking version and more details.
 func (c *Client) AddManualNodeAsync(host string) FutureAddNodeResult {
-	cmd := jsonrpc.NewAddManualNodeCmd(host, jsonrpc.Bool(false))
+	cmd := rpcmodel.NewAddManualNodeCmd(host, rpcmodel.Bool(false))
 	return c.sendCmd(cmd)
 }
 
@@ -46,14 +46,14 @@ type FutureGetManualNodeInfoResult chan *response
 
 // Receive waits for the response promised by the future and returns information
 // about manually added (persistent) peers.
-func (r FutureGetManualNodeInfoResult) Receive() ([]jsonrpc.GetManualNodeInfoResult, error) {
+func (r FutureGetManualNodeInfoResult) Receive() ([]rpcmodel.GetManualNodeInfoResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal as an array of getmanualnodeinfo result objects.
-	var nodeInfo []jsonrpc.GetManualNodeInfoResult
+	var nodeInfo []rpcmodel.GetManualNodeInfoResult
 	err = json.Unmarshal(res, &nodeInfo)
 	if err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func (r FutureGetManualNodeInfoResult) Receive() ([]jsonrpc.GetManualNodeInfoRes
 //
 // See GetManualNodeInfo for the blocking version and more details.
 func (c *Client) GetManualNodeInfoAsync(peer string) FutureGetManualNodeInfoResult {
-	cmd := jsonrpc.NewGetManualNodeInfoCmd(peer, nil)
+	cmd := rpcmodel.NewGetManualNodeInfoCmd(peer, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -76,7 +76,7 @@ func (c *Client) GetManualNodeInfoAsync(peer string) FutureGetManualNodeInfoResu
 //
 // See GetManualNodeInfoNoDNS to retrieve only a list of the added (persistent)
 // peers.
-func (c *Client) GetManualNodeInfo(peer string) ([]jsonrpc.GetManualNodeInfoResult, error) {
+func (c *Client) GetManualNodeInfo(peer string) ([]rpcmodel.GetManualNodeInfoResult, error) {
 	return c.GetManualNodeInfoAsync(peer).Receive()
 }
 
@@ -108,7 +108,7 @@ func (r FutureGetManualNodeInfoNoDNSResult) Receive() ([]string, error) {
 //
 // See GetManualNodeInfoNoDNS for the blocking version and more details.
 func (c *Client) GetManualNodeInfoNoDNSAsync(peer string) FutureGetManualNodeInfoNoDNSResult {
-	cmd := jsonrpc.NewGetManualNodeInfoCmd(peer, jsonrpc.Bool(false))
+	cmd := rpcmodel.NewGetManualNodeInfoCmd(peer, rpcmodel.Bool(false))
 	return c.sendCmd(cmd)
 }
 
@@ -149,7 +149,7 @@ func (r FutureGetConnectionCountResult) Receive() (int64, error) {
 //
 // See GetConnectionCount for the blocking version and more details.
 func (c *Client) GetConnectionCountAsync() FutureGetConnectionCountResult {
-	cmd := jsonrpc.NewGetConnectionCountCmd()
+	cmd := rpcmodel.NewGetConnectionCountCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -175,7 +175,7 @@ func (r FuturePingResult) Receive() error {
 //
 // See Ping for the blocking version and more details.
 func (c *Client) PingAsync() FuturePingResult {
-	cmd := jsonrpc.NewPingCmd()
+	cmd := rpcmodel.NewPingCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -193,14 +193,14 @@ type FutureGetPeerInfoResult chan *response
 
 // Receive waits for the response promised by the future and returns  data about
 // each connected network peer.
-func (r FutureGetPeerInfoResult) Receive() ([]jsonrpc.GetPeerInfoResult, error) {
+func (r FutureGetPeerInfoResult) Receive() ([]rpcmodel.GetPeerInfoResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as an array of getpeerinfo result objects.
-	var peerInfo []jsonrpc.GetPeerInfoResult
+	var peerInfo []rpcmodel.GetPeerInfoResult
 	err = json.Unmarshal(res, &peerInfo)
 	if err != nil {
 		return nil, err
@@ -215,12 +215,12 @@ func (r FutureGetPeerInfoResult) Receive() ([]jsonrpc.GetPeerInfoResult, error) 
 //
 // See GetPeerInfo for the blocking version and more details.
 func (c *Client) GetPeerInfoAsync() FutureGetPeerInfoResult {
-	cmd := jsonrpc.NewGetPeerInfoCmd()
+	cmd := rpcmodel.NewGetPeerInfoCmd()
 	return c.sendCmd(cmd)
 }
 
 // GetPeerInfo returns data about each connected network peer.
-func (c *Client) GetPeerInfo() ([]jsonrpc.GetPeerInfoResult, error) {
+func (c *Client) GetPeerInfo() ([]rpcmodel.GetPeerInfoResult, error) {
 	return c.GetPeerInfoAsync().Receive()
 }
 
@@ -230,14 +230,14 @@ type FutureGetNetTotalsResult chan *response
 
 // Receive waits for the response promised by the future and returns network
 // traffic statistics.
-func (r FutureGetNetTotalsResult) Receive() (*jsonrpc.GetNetTotalsResult, error) {
+func (r FutureGetNetTotalsResult) Receive() (*rpcmodel.GetNetTotalsResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a getnettotals result object.
-	var totals jsonrpc.GetNetTotalsResult
+	var totals rpcmodel.GetNetTotalsResult
 	err = json.Unmarshal(res, &totals)
 	if err != nil {
 		return nil, err
@@ -252,11 +252,11 @@ func (r FutureGetNetTotalsResult) Receive() (*jsonrpc.GetNetTotalsResult, error)
 //
 // See GetNetTotals for the blocking version and more details.
 func (c *Client) GetNetTotalsAsync() FutureGetNetTotalsResult {
-	cmd := jsonrpc.NewGetNetTotalsCmd()
+	cmd := rpcmodel.NewGetNetTotalsCmd()
 	return c.sendCmd(cmd)
 }
 
 // GetNetTotals returns network traffic statistics.
-func (c *Client) GetNetTotals() (*jsonrpc.GetNetTotalsResult, error) {
+func (c *Client) GetNetTotals() (*rpcmodel.GetNetTotalsResult, error) {
 	return c.GetNetTotalsAsync().Receive()
 }

@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/kaspanet/kaspad/jsonrpc"
+	"github.com/kaspanet/kaspad/rpcmodel"
 )
 
 const (
@@ -20,7 +20,7 @@ const (
 
 // commandUsage display the usage for a specific command.
 func commandUsage(method string) {
-	usage, err := jsonrpc.MethodUsageText(method)
+	usage, err := rpcmodel.MethodUsageText(method)
 	if err != nil {
 		// This should never happen since the method was already checked
 		// before calling this function, but be safe.
@@ -59,7 +59,7 @@ func main() {
 	// Ensure the specified method identifies a valid registered command and
 	// is one of the usable types.
 	method := args[0]
-	usageFlags, err := jsonrpc.MethodUsageFlags(method)
+	usageFlags, err := rpcmodel.MethodUsageFlags(method)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unrecognized command '%s'\n", method)
 		fmt.Fprintln(os.Stderr, listCmdMessage)
@@ -104,20 +104,20 @@ func main() {
 
 	// Attempt to create the appropriate command using the arguments
 	// provided by the user.
-	cmd, err := jsonrpc.NewCommand(method, params...)
+	cmd, err := rpcmodel.NewCommand(method, params...)
 	if err != nil {
 		// Show the error along with its error code when it's a
-		// jsonrpc.Error as it reallistcally will always be since the
+		// rpcmodel.Error as it reallistcally will always be since the
 		// NewCommand function is only supposed to return errors of that
 		// type.
-		if jerr, ok := err.(jsonrpc.Error); ok {
+		if jerr, ok := err.(rpcmodel.Error); ok {
 			fmt.Fprintf(os.Stderr, "%s error: %s (command code: %s)\n",
 				method, err, jerr.ErrorCode)
 			commandUsage(method)
 			os.Exit(1)
 		}
 
-		// The error is not a jsonrpc.Error and this really should not
+		// The error is not a rpcmodel.Error and this really should not
 		// happen. Nevertheless, fallback to just showing the error
 		// if it should happen due to a bug in the package.
 		fmt.Fprintf(os.Stderr, "%s error: %s\n", method, err)
@@ -127,7 +127,7 @@ func main() {
 
 	// Marshal the command into a JSON-RPC byte slice in preparation for
 	// sending it to the RPC server.
-	marshalledJSON, err := jsonrpc.MarshalCommand(1, cmd)
+	marshalledJSON, err := rpcmodel.MarshalCommand(1, cmd)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

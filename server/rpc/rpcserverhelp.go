@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/kaspanet/kaspad/jsonrpc"
+	"github.com/kaspanet/kaspad/rpcmodel"
 )
 
 // helpDescsEnUS defines the English descriptions used for the help strings.
@@ -676,21 +676,21 @@ var rpcResultTypes = map[string][]interface{}{
 	"addManualNode":         nil,
 	"createRawTransaction":  {(*string)(nil)},
 	"debugLevel":            {(*string)(nil), (*string)(nil)},
-	"decodeRawTransaction":  {(*jsonrpc.TxRawDecodeResult)(nil)},
-	"decodeScript":          {(*jsonrpc.DecodeScriptResult)(nil)},
+	"decodeRawTransaction":  {(*rpcmodel.TxRawDecodeResult)(nil)},
+	"decodeScript":          {(*rpcmodel.DecodeScriptResult)(nil)},
 	"generate":              {(*[]string)(nil)},
-	"getAllManualNodesInfo": {(*[]string)(nil), (*[]jsonrpc.GetManualNodeInfoResult)(nil)},
-	"getSelectedTip":        {(*jsonrpc.GetBlockVerboseResult)(nil)},
+	"getAllManualNodesInfo": {(*[]string)(nil), (*[]rpcmodel.GetManualNodeInfoResult)(nil)},
+	"getSelectedTip":        {(*rpcmodel.GetBlockVerboseResult)(nil)},
 	"getSelectedTipHash":    {(*string)(nil)},
-	"getBlock":              {(*string)(nil), (*jsonrpc.GetBlockVerboseResult)(nil)},
-	"getBlocks":             {(*jsonrpc.GetBlocksResult)(nil)},
+	"getBlock":              {(*string)(nil), (*rpcmodel.GetBlockVerboseResult)(nil)},
+	"getBlocks":             {(*rpcmodel.GetBlocksResult)(nil)},
 	"getBlockCount":         {(*int64)(nil)},
-	"getBlockHeader":        {(*string)(nil), (*jsonrpc.GetBlockHeaderVerboseResult)(nil)},
-	"getBlockTemplate":      {(*jsonrpc.GetBlockTemplateResult)(nil), (*string)(nil), nil},
-	"getBlockDagInfo":       {(*jsonrpc.GetBlockDAGInfoResult)(nil)},
+	"getBlockHeader":        {(*string)(nil), (*rpcmodel.GetBlockHeaderVerboseResult)(nil)},
+	"getBlockTemplate":      {(*rpcmodel.GetBlockTemplateResult)(nil), (*string)(nil), nil},
+	"getBlockDagInfo":       {(*rpcmodel.GetBlockDAGInfoResult)(nil)},
 	"getCFilter":            {(*string)(nil)},
 	"getCFilterHeader":      {(*string)(nil)},
-	"getChainFromBlock":     {(*jsonrpc.GetChainFromBlockResult)(nil)},
+	"getChainFromBlock":     {(*rpcmodel.GetChainFromBlockResult)(nil)},
 	"getConnectionCount":    {(*int32)(nil)},
 	"getCurrentNet":         {(*uint32)(nil)},
 	"getDifficulty":         {(*float64)(nil)},
@@ -698,40 +698,40 @@ var rpcResultTypes = map[string][]interface{}{
 	"getHashesPerSec":       {(*float64)(nil)},
 	"getTopHeaders":         {(*[]string)(nil)},
 	"getHeaders":            {(*[]string)(nil)},
-	"getInfo":               {(*jsonrpc.InfoDAGResult)(nil)},
-	"getManualNodeInfo":     {(*string)(nil), (*jsonrpc.GetManualNodeInfoResult)(nil)},
-	"getMempoolInfo":        {(*jsonrpc.GetMempoolInfoResult)(nil)},
-	"getMiningInfo":         {(*jsonrpc.GetMiningInfoResult)(nil)},
-	"getNetTotals":          {(*jsonrpc.GetNetTotalsResult)(nil)},
+	"getInfo":               {(*rpcmodel.InfoDAGResult)(nil)},
+	"getManualNodeInfo":     {(*string)(nil), (*rpcmodel.GetManualNodeInfoResult)(nil)},
+	"getMempoolInfo":        {(*rpcmodel.GetMempoolInfoResult)(nil)},
+	"getMiningInfo":         {(*rpcmodel.GetMiningInfoResult)(nil)},
+	"getNetTotals":          {(*rpcmodel.GetNetTotalsResult)(nil)},
 	"getNetworkHashPs":      {(*int64)(nil)},
-	"getPeerInfo":           {(*[]jsonrpc.GetPeerInfoResult)(nil)},
-	"getRawMempool":         {(*[]string)(nil), (*jsonrpc.GetRawMempoolVerboseResult)(nil)},
-	"getRawTransaction":     {(*string)(nil), (*jsonrpc.TxRawResult)(nil)},
-	"getSubnetwork":         {(*jsonrpc.GetSubnetworkResult)(nil)},
-	"getTxOut":              {(*jsonrpc.GetTxOutResult)(nil)},
+	"getPeerInfo":           {(*[]rpcmodel.GetPeerInfoResult)(nil)},
+	"getRawMempool":         {(*[]string)(nil), (*rpcmodel.GetRawMempoolVerboseResult)(nil)},
+	"getRawTransaction":     {(*string)(nil), (*rpcmodel.TxRawResult)(nil)},
+	"getSubnetwork":         {(*rpcmodel.GetSubnetworkResult)(nil)},
+	"getTxOut":              {(*rpcmodel.GetTxOutResult)(nil)},
 	"node":                  nil,
 	"help":                  {(*string)(nil), (*string)(nil)},
 	"ping":                  nil,
 	"removeManualNode":      nil,
-	"searchRawTransactions": {(*string)(nil), (*[]jsonrpc.SearchRawTransactionsResult)(nil)},
+	"searchRawTransactions": {(*string)(nil), (*[]rpcmodel.SearchRawTransactionsResult)(nil)},
 	"sendRawTransaction":    {(*string)(nil)},
 	"setGenerate":           nil,
 	"stop":                  {(*string)(nil)},
 	"submitBlock":           {nil, (*string)(nil)},
 	"uptime":                {(*int64)(nil)},
-	"validateAddress":       {(*jsonrpc.ValidateAddressResult)(nil)},
-	"version":               {(*map[string]jsonrpc.VersionResult)(nil)},
+	"validateAddress":       {(*rpcmodel.ValidateAddressResult)(nil)},
+	"version":               {(*map[string]rpcmodel.VersionResult)(nil)},
 
 	// Websocket commands.
 	"loadTxFilter":              nil,
-	"session":                   {(*jsonrpc.SessionResult)(nil)},
+	"session":                   {(*rpcmodel.SessionResult)(nil)},
 	"notifyBlocks":              nil,
 	"stopNotifyBlocks":          nil,
 	"notifyChainChanges":        nil,
 	"stopNotifyChainChanges":    nil,
 	"notifyNewTransactions":     nil,
 	"stopNotifyNewTransactions": nil,
-	"rescanBlocks":              {(*[]jsonrpc.RescannedBlock)(nil)},
+	"rescanBlocks":              {(*[]rpcmodel.RescannedBlock)(nil)},
 }
 
 // helpCacher provides a concurrent safe type that provides help and usage for
@@ -762,7 +762,7 @@ func (c *helpCacher) rpcMethodHelp(method string) (string, error) {
 	}
 
 	// Generate, cache, and return the help.
-	help, err := jsonrpc.GenerateHelp(method, helpDescsEnUS, resultTypes...)
+	help, err := rpcmodel.GenerateHelp(method, helpDescsEnUS, resultTypes...)
 	if err != nil {
 		return "", err
 	}
@@ -785,7 +785,7 @@ func (c *helpCacher) rpcUsage(includeWebsockets bool) (string, error) {
 	// Generate a list of one-line usage for every command.
 	usageTexts := make([]string, 0, len(rpcHandlers))
 	for k := range rpcHandlers {
-		usage, err := jsonrpc.MethodUsageText(k)
+		usage, err := rpcmodel.MethodUsageText(k)
 		if err != nil {
 			return "", err
 		}
@@ -795,7 +795,7 @@ func (c *helpCacher) rpcUsage(includeWebsockets bool) (string, error) {
 	// Include websockets commands if requested.
 	if includeWebsockets {
 		for k := range wsHandlers {
-			usage, err := jsonrpc.MethodUsageText(k)
+			usage, err := rpcmodel.MethodUsageText(k)
 			if err != nil {
 				return "", err
 			}

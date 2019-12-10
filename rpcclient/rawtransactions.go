@@ -9,7 +9,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 
-	"github.com/kaspanet/kaspad/jsonrpc"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
@@ -59,7 +59,7 @@ func (c *Client) GetRawTransactionAsync(txID *daghash.TxID) FutureGetRawTransact
 		id = txID.String()
 	}
 
-	cmd := jsonrpc.NewGetRawTransactionCmd(id, jsonrpc.Int(0))
+	cmd := rpcmodel.NewGetRawTransactionCmd(id, rpcmodel.Int(0))
 	return c.sendCmd(cmd)
 }
 
@@ -78,14 +78,14 @@ type FutureGetRawTransactionVerboseResult chan *response
 
 // Receive waits for the response promised by the future and returns information
 // about a transaction given its hash.
-func (r FutureGetRawTransactionVerboseResult) Receive() (*jsonrpc.TxRawResult, error) {
+func (r FutureGetRawTransactionVerboseResult) Receive() (*rpcmodel.TxRawResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a gettrawtransaction result object.
-	var rawTxResult jsonrpc.TxRawResult
+	var rawTxResult rpcmodel.TxRawResult
 	err = json.Unmarshal(res, &rawTxResult)
 	if err != nil {
 		return nil, err
@@ -105,7 +105,7 @@ func (c *Client) GetRawTransactionVerboseAsync(txID *daghash.TxID) FutureGetRawT
 		id = txID.String()
 	}
 
-	cmd := jsonrpc.NewGetRawTransactionCmd(id, jsonrpc.Int(1))
+	cmd := rpcmodel.NewGetRawTransactionCmd(id, rpcmodel.Int(1))
 	return c.sendCmd(cmd)
 }
 
@@ -113,7 +113,7 @@ func (c *Client) GetRawTransactionVerboseAsync(txID *daghash.TxID) FutureGetRawT
 // its hash.
 //
 // See GetRawTransaction to obtain only the transaction already deserialized.
-func (c *Client) GetRawTransactionVerbose(txID *daghash.TxID) (*jsonrpc.TxRawResult, error) {
+func (c *Client) GetRawTransactionVerbose(txID *daghash.TxID) (*rpcmodel.TxRawResult, error) {
 	return c.GetRawTransactionVerboseAsync(txID).Receive()
 }
 
@@ -123,14 +123,14 @@ type FutureDecodeRawTransactionResult chan *response
 
 // Receive waits for the response promised by the future and returns information
 // about a transaction given its serialized bytes.
-func (r FutureDecodeRawTransactionResult) Receive() (*jsonrpc.TxRawResult, error) {
+func (r FutureDecodeRawTransactionResult) Receive() (*rpcmodel.TxRawResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a decoderawtransaction result object.
-	var rawTxResult jsonrpc.TxRawResult
+	var rawTxResult rpcmodel.TxRawResult
 	err = json.Unmarshal(res, &rawTxResult)
 	if err != nil {
 		return nil, err
@@ -146,13 +146,13 @@ func (r FutureDecodeRawTransactionResult) Receive() (*jsonrpc.TxRawResult, error
 // See DecodeRawTransaction for the blocking version and more details.
 func (c *Client) DecodeRawTransactionAsync(serializedTx []byte) FutureDecodeRawTransactionResult {
 	txHex := hex.EncodeToString(serializedTx)
-	cmd := jsonrpc.NewDecodeRawTransactionCmd(txHex)
+	cmd := rpcmodel.NewDecodeRawTransactionCmd(txHex)
 	return c.sendCmd(cmd)
 }
 
 // DecodeRawTransaction returns information about a transaction given its
 // serialized bytes.
-func (c *Client) DecodeRawTransaction(serializedTx []byte) (*jsonrpc.TxRawResult, error) {
+func (c *Client) DecodeRawTransaction(serializedTx []byte) (*rpcmodel.TxRawResult, error) {
 	return c.DecodeRawTransactionAsync(serializedTx).Receive()
 }
 
@@ -195,20 +195,20 @@ func (r FutureCreateRawTransactionResult) Receive() (*wire.MsgTx, error) {
 // function on the returned instance.
 //
 // See CreateRawTransaction for the blocking version and more details.
-func (c *Client) CreateRawTransactionAsync(inputs []jsonrpc.TransactionInput,
+func (c *Client) CreateRawTransactionAsync(inputs []rpcmodel.TransactionInput,
 	amounts map[util.Address]util.Amount, lockTime *uint64) FutureCreateRawTransactionResult {
 
 	convertedAmts := make(map[string]float64, len(amounts))
 	for addr, amount := range amounts {
 		convertedAmts[addr.String()] = amount.ToBTC()
 	}
-	cmd := jsonrpc.NewCreateRawTransactionCmd(inputs, convertedAmts, lockTime)
+	cmd := rpcmodel.NewCreateRawTransactionCmd(inputs, convertedAmts, lockTime)
 	return c.sendCmd(cmd)
 }
 
 // CreateRawTransaction returns a new transaction spending the provided inputs
 // and sending to the provided addresses.
-func (c *Client) CreateRawTransaction(inputs []jsonrpc.TransactionInput,
+func (c *Client) CreateRawTransaction(inputs []rpcmodel.TransactionInput,
 	amounts map[util.Address]util.Amount, lockTime *uint64) (*wire.MsgTx, error) {
 
 	return c.CreateRawTransactionAsync(inputs, amounts, lockTime).Receive()
@@ -253,7 +253,7 @@ func (c *Client) SendRawTransactionAsync(tx *wire.MsgTx, allowHighFees bool) Fut
 		txHex = hex.EncodeToString(buf.Bytes())
 	}
 
-	cmd := jsonrpc.NewSendRawTransactionCmd(txHex, &allowHighFees)
+	cmd := rpcmodel.NewSendRawTransactionCmd(txHex, &allowHighFees)
 	return c.sendCmd(cmd)
 }
 
@@ -310,8 +310,8 @@ func (r FutureSearchRawTransactionsResult) Receive() ([]*wire.MsgTx, error) {
 // See SearchRawTransactions for the blocking version and more details.
 func (c *Client) SearchRawTransactionsAsync(address util.Address, skip, count int, reverse bool, filterAddrs []string) FutureSearchRawTransactionsResult {
 	addr := address.EncodeAddress()
-	verbose := jsonrpc.Bool(false)
-	cmd := jsonrpc.NewSearchRawTransactionsCmd(addr, verbose, &skip, &count,
+	verbose := rpcmodel.Bool(false)
+	cmd := rpcmodel.NewSearchRawTransactionsCmd(addr, verbose, &skip, &count,
 		nil, &reverse, &filterAddrs)
 	return c.sendCmd(cmd)
 }
@@ -334,14 +334,14 @@ type FutureSearchRawTransactionsVerboseResult chan *response
 
 // Receive waits for the response promised by the future and returns the
 // found raw transactions.
-func (r FutureSearchRawTransactionsVerboseResult) Receive() ([]*jsonrpc.SearchRawTransactionsResult, error) {
+func (r FutureSearchRawTransactionsVerboseResult) Receive() ([]*rpcmodel.SearchRawTransactionsResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal as an array of raw transaction results.
-	var result []*jsonrpc.SearchRawTransactionsResult
+	var result []*rpcmodel.SearchRawTransactionsResult
 	err = json.Unmarshal(res, &result)
 	if err != nil {
 		return nil, err
@@ -359,12 +359,12 @@ func (c *Client) SearchRawTransactionsVerboseAsync(address util.Address, skip,
 	count int, includePrevOut, reverse bool, filterAddrs *[]string) FutureSearchRawTransactionsVerboseResult {
 
 	addr := address.EncodeAddress()
-	verbose := jsonrpc.Bool(true)
+	verbose := rpcmodel.Bool(true)
 	var prevOut *bool
 	if includePrevOut {
-		prevOut = jsonrpc.Bool(true)
+		prevOut = rpcmodel.Bool(true)
 	}
-	cmd := jsonrpc.NewSearchRawTransactionsCmd(addr, verbose, &skip, &count,
+	cmd := rpcmodel.NewSearchRawTransactionsCmd(addr, verbose, &skip, &count,
 		prevOut, &reverse, filterAddrs)
 	return c.sendCmd(cmd)
 }
@@ -377,7 +377,7 @@ func (c *Client) SearchRawTransactionsVerboseAsync(address util.Address, skip,
 //
 // See SearchRawTransactions to retrieve a list of raw transactions instead.
 func (c *Client) SearchRawTransactionsVerbose(address util.Address, skip,
-	count int, includePrevOut, reverse bool, filterAddrs []string) ([]*jsonrpc.SearchRawTransactionsResult, error) {
+	count int, includePrevOut, reverse bool, filterAddrs []string) ([]*rpcmodel.SearchRawTransactionsResult, error) {
 
 	return c.SearchRawTransactionsVerboseAsync(address, skip, count,
 		includePrevOut, reverse, &filterAddrs).Receive()
@@ -389,14 +389,14 @@ type FutureDecodeScriptResult chan *response
 
 // Receive waits for the response promised by the future and returns information
 // about a script given its serialized bytes.
-func (r FutureDecodeScriptResult) Receive() (*jsonrpc.DecodeScriptResult, error) {
+func (r FutureDecodeScriptResult) Receive() (*rpcmodel.DecodeScriptResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a decodescript result object.
-	var decodeScriptResult jsonrpc.DecodeScriptResult
+	var decodeScriptResult rpcmodel.DecodeScriptResult
 	err = json.Unmarshal(res, &decodeScriptResult)
 	if err != nil {
 		return nil, err
@@ -412,11 +412,11 @@ func (r FutureDecodeScriptResult) Receive() (*jsonrpc.DecodeScriptResult, error)
 // See DecodeScript for the blocking version and more details.
 func (c *Client) DecodeScriptAsync(serializedScript []byte) FutureDecodeScriptResult {
 	scriptHex := hex.EncodeToString(serializedScript)
-	cmd := jsonrpc.NewDecodeScriptCmd(scriptHex)
+	cmd := rpcmodel.NewDecodeScriptCmd(scriptHex)
 	return c.sendCmd(cmd)
 }
 
 // DecodeScript returns information about a script given its serialized bytes.
-func (c *Client) DecodeScript(serializedScript []byte) (*jsonrpc.DecodeScriptResult, error) {
+func (c *Client) DecodeScript(serializedScript []byte) (*rpcmodel.DecodeScriptResult, error) {
 	return c.DecodeScriptAsync(serializedScript).Receive()
 }

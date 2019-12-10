@@ -3,8 +3,8 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/kaspanet/kaspad/jsonrpc"
 	"github.com/kaspanet/kaspad/rpcclient"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
@@ -41,7 +41,7 @@ func collectTransactions(client *rpcclient.Client, addrPubKeyHash *util.AddressP
 		results, err := client.SearchRawTransactionsVerbose(addrPubKeyHash, skip, resultsCount, true, false, nil)
 		if err != nil {
 			// Break when there are no further txs
-			if rpcError, ok := err.(*jsonrpc.RPCError); ok && rpcError.Code == jsonrpc.ErrRPCNoTxInfo {
+			if rpcError, ok := err.(*rpcmodel.RPCError); ok && rpcError.Code == rpcmodel.ErrRPCNoTxInfo {
 				break
 			}
 
@@ -74,7 +74,7 @@ func collectTransactions(client *rpcclient.Client, addrPubKeyHash *util.AddressP
 	return txs, nil
 }
 
-func parseRawTransactionResult(result *jsonrpc.SearchRawTransactionsResult) (*wire.MsgTx, error) {
+func parseRawTransactionResult(result *rpcmodel.SearchRawTransactionsResult) (*wire.MsgTx, error) {
 	txBytes, err := hex.DecodeString(result.Hex)
 	if err != nil {
 		return nil, errors.Errorf("failed to decode transaction bytes: %s", err)

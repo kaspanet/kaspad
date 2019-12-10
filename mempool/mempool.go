@@ -15,9 +15,9 @@ import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/blockdag/indexers"
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/jsonrpc"
 	"github.com/kaspanet/kaspad/logger"
 	"github.com/kaspanet/kaspad/mining"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -1299,11 +1299,11 @@ func (mp *TxPool) MiningDescs() []*mining.TxDesc {
 // populated jsonrpc result.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) RawMempoolVerbose() map[string]*jsonrpc.GetRawMempoolVerboseResult {
+func (mp *TxPool) RawMempoolVerbose() map[string]*rpcmodel.GetRawMempoolVerboseResult {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
-	result := make(map[string]*jsonrpc.GetRawMempoolVerboseResult, len(mp.pool))
+	result := make(map[string]*rpcmodel.GetRawMempoolVerboseResult, len(mp.pool))
 
 	for _, desc := range mp.pool {
 		// Calculate the current priority based on the inputs to
@@ -1311,7 +1311,7 @@ func (mp *TxPool) RawMempoolVerbose() map[string]*jsonrpc.GetRawMempoolVerboseRe
 		// input transactions can't be found for some reason.
 		tx := desc.Tx
 
-		mpd := &jsonrpc.GetRawMempoolVerboseResult{
+		mpd := &rpcmodel.GetRawMempoolVerboseResult{
 			Size:    int32(tx.MsgTx().SerializeSize()),
 			Fee:     util.Amount(desc.Fee).ToBTC(),
 			Time:    desc.Added.Unix(),

@@ -1,15 +1,15 @@
 package rpc
 
 import (
-	"github.com/kaspanet/kaspad/jsonrpc"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util"
 )
 
 // handleValidateAddress implements the validateAddress command.
 func handleValidateAddress(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*jsonrpc.ValidateAddressCmd)
+	c := cmd.(*rpcmodel.ValidateAddressCmd)
 
-	result := jsonrpc.ValidateAddressResult{}
+	result := rpcmodel.ValidateAddressResult{}
 	addr, err := util.DecodeAddress(c.Address, s.cfg.DAGParams.Prefix)
 	if err != nil {
 		// Return the default value (false) for IsValid.

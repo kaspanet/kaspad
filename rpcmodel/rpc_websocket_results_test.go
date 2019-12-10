@@ -3,13 +3,13 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package jsonrpc_test
+package rpcmodel_test
 
 import (
 	"encoding/json"
 	"testing"
 
-	"github.com/kaspanet/kaspad/jsonrpc"
+	"github.com/kaspanet/kaspad/rpcmodel"
 )
 
 // TestRPCServerWebsocketResults ensures any results that have custom marshalling
@@ -24,7 +24,7 @@ func TestRPCServerWebsocketResults(t *testing.T) {
 	}{
 		{
 			name: "RescannedBlock",
-			result: &jsonrpc.RescannedBlock{
+			result: &rpcmodel.RescannedBlock{
 				Hash:         "blockhash",
 				Transactions: []string{"serializedtx"},
 			},

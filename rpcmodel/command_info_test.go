@@ -2,13 +2,13 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package jsonrpc_test
+package rpcmodel_test
 
 import (
 	"reflect"
 	"testing"
 
-	"github.com/kaspanet/kaspad/jsonrpc"
+	"github.com/kaspanet/kaspad/rpcmodel"
 )
 
 // TestCommandMethod tests the CommandMethod function to ensure it retunrs the expected
@@ -25,35 +25,35 @@ func TestCommandMethod(t *testing.T) {
 		{
 			name: "unregistered type",
 			cmd:  (*int)(nil),
-			err:  jsonrpc.Error{ErrorCode: jsonrpc.ErrUnregisteredMethod},
+			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrUnregisteredMethod},
 		},
 		{
 			name:   "nil pointer of registered type",
-			cmd:    (*jsonrpc.GetBlockCmd)(nil),
+			cmd:    (*rpcmodel.GetBlockCmd)(nil),
 			method: "getBlock",
 		},
 		{
 			name:   "nil instance of registered type",
-			cmd:    &jsonrpc.GetBlockCountCmd{},
+			cmd:    &rpcmodel.GetBlockCountCmd{},
 			method: "getBlockCount",
 		},
 	}
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		method, err := jsonrpc.CommandMethod(test.cmd)
+		method, err := rpcmodel.CommandMethod(test.cmd)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
 			t.Errorf("Test #%d (%s) wrong error - got %T (%[3]v), "+
 				"want %T", i, test.name, err, test.err)
 			continue
 		}
 		if err != nil {
-			gotErrorCode := err.(jsonrpc.Error).ErrorCode
-			if gotErrorCode != test.err.(jsonrpc.Error).ErrorCode {
+			gotErrorCode := err.(rpcmodel.Error).ErrorCode
+			if gotErrorCode != test.err.(rpcmodel.Error).ErrorCode {
 				t.Errorf("Test #%d (%s) mismatched error code "+
 					"- got %v (%v), want %v", i, test.name,
 					gotErrorCode, err,
-					test.err.(jsonrpc.Error).ErrorCode)
+					test.err.(rpcmodel.Error).ErrorCode)
 				continue
 			}
 
@@ -78,12 +78,12 @@ func TestMethodUsageFlags(t *testing.T) {
 		name   string
 		method string
 		err    error
-		flags  jsonrpc.UsageFlag
+		flags  rpcmodel.UsageFlag
 	}{
 		{
 			name:   "unregistered type",
 			method: "bogusMethod",
-			err:    jsonrpc.Error{ErrorCode: jsonrpc.ErrUnregisteredMethod},
+			err:    rpcmodel.Error{ErrorCode: rpcmodel.ErrUnregisteredMethod},
 		},
 		{
 			name:   "getBlock",
@@ -94,19 +94,19 @@ func TestMethodUsageFlags(t *testing.T) {
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		flags, err := jsonrpc.MethodUsageFlags(test.method)
+		flags, err := rpcmodel.MethodUsageFlags(test.method)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
 			t.Errorf("Test #%d (%s) wrong error - got %T (%[3]v), "+
 				"want %T", i, test.name, err, test.err)
 			continue
 		}
 		if err != nil {
-			gotErrorCode := err.(jsonrpc.Error).ErrorCode
-			if gotErrorCode != test.err.(jsonrpc.Error).ErrorCode {
+			gotErrorCode := err.(rpcmodel.Error).ErrorCode
+			if gotErrorCode != test.err.(rpcmodel.Error).ErrorCode {
 				t.Errorf("Test #%d (%s) mismatched error code "+
 					"- got %v (%v), want %v", i, test.name,
 					gotErrorCode, err,
-					test.err.(jsonrpc.Error).ErrorCode)
+					test.err.(rpcmodel.Error).ErrorCode)
 				continue
 			}
 
@@ -136,7 +136,7 @@ func TestMethodUsageText(t *testing.T) {
 		{
 			name:   "unregistered type",
 			method: "bogusMethod",
-			err:    jsonrpc.Error{ErrorCode: jsonrpc.ErrUnregisteredMethod},
+			err:    rpcmodel.Error{ErrorCode: rpcmodel.ErrUnregisteredMethod},
 		},
 		{
 			name:     "getBlockCount",
@@ -152,19 +152,19 @@ func TestMethodUsageText(t *testing.T) {
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		usage, err := jsonrpc.MethodUsageText(test.method)
+		usage, err := rpcmodel.MethodUsageText(test.method)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
 			t.Errorf("Test #%d (%s) wrong error - got %T (%[3]v), "+
 				"want %T", i, test.name, err, test.err)
 			continue
 		}
 		if err != nil {
-			gotErrorCode := err.(jsonrpc.Error).ErrorCode
-			if gotErrorCode != test.err.(jsonrpc.Error).ErrorCode {
+			gotErrorCode := err.(rpcmodel.Error).ErrorCode
+			if gotErrorCode != test.err.(rpcmodel.Error).ErrorCode {
 				t.Errorf("Test #%d (%s) mismatched error code "+
 					"- got %v (%v), want %v", i, test.name,
 					gotErrorCode, err,
-					test.err.(jsonrpc.Error).ErrorCode)
+					test.err.(rpcmodel.Error).ErrorCode)
 				continue
 			}
 
@@ -179,7 +179,7 @@ func TestMethodUsageText(t *testing.T) {
 		}
 
 		// Get the usage again to exercise caching.
-		usage, err = jsonrpc.MethodUsageText(test.method)
+		usage, err = rpcmodel.MethodUsageText(test.method)
 		if err != nil {
 			t.Errorf("Test #%d (%s) unexpected error: %v", i,
 				test.name, err)
@@ -415,7 +415,7 @@ func TestFieldUsage(t *testing.T) {
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
 		// Ensure usage matches the expected value.
-		usage := jsonrpc.TstFieldUsage(test.field, test.defValue)
+		usage := rpcmodel.TstFieldUsage(test.field, test.defValue)
 		if usage != test.expected {
 			t.Errorf("Test #%d (%s) mismatched usage - got %v, "+
 				"want %v", i, test.name, usage, test.expected)

@@ -1,12 +1,12 @@
 package rpc
 
-import "github.com/kaspanet/kaspad/jsonrpc"
+import "github.com/kaspanet/kaspad/rpcmodel"
 
 // handleWebsocketHelp implements the help command for websocket connections.
 func handleWebsocketHelp(wsc *wsClient, icmd interface{}) (interface{}, error) {
-	cmd, ok := icmd.(*jsonrpc.HelpCmd)
+	cmd, ok := icmd.(*rpcmodel.HelpCmd)
 	if !ok {
-		return nil, jsonrpc.ErrRPCInternal
+		return nil, rpcmodel.ErrRPCInternal
 	}
 
 	// Provide a usage overview of all commands when no specific command
@@ -34,8 +34,8 @@ func handleWebsocketHelp(wsc *wsClient, icmd interface{}) (interface{}, error) {
 		}
 	}
 	if !valid {
-		return nil, &jsonrpc.RPCError{
-			Code:    jsonrpc.ErrRPCInvalidParameter,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCInvalidParameter,
 			Message: "Unknown command: " + command,
 		}
 	}

@@ -6,7 +6,7 @@ package rpcclient
 
 import (
 	"encoding/json"
-	"github.com/kaspanet/kaspad/jsonrpc"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/pkg/errors"
 )
 
@@ -42,7 +42,7 @@ func (c *Client) RawRequestAsync(method string, params []json.RawMessage) Future
 	// since that relies on marshalling registered jsonrpc commands rather
 	// than custom commands.
 	id := c.NextID()
-	rawRequest := &jsonrpc.Request{
+	rawRequest := &rpcmodel.Request{
 		JSONRPC: "1.0",
 		ID:      id,
 		Method:  method,
