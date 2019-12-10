@@ -653,19 +653,6 @@ func TestDAGSvrCmds(t *testing.T) {
 			},
 		},
 		{
-			name: "invalidateBlock",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("invalidateBlock", "123")
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewInvalidateBlockCmd("123")
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"invalidateBlock","params":["123"],"id":1}`,
-			unmarshalled: &btcjson.InvalidateBlockCmd{
-				BlockHash: "123",
-			},
-		},
-		{
 			name: "ping",
 			newCmd: func() (interface{}, error) {
 				return btcjson.NewCmd("ping")
@@ -675,32 +662,6 @@ func TestDAGSvrCmds(t *testing.T) {
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"ping","params":[],"id":1}`,
 			unmarshalled: &btcjson.PingCmd{},
-		},
-		{
-			name: "preciousBlock",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("preciousBlock", "0123")
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewPreciousBlockCmd("0123")
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"preciousBlock","params":["0123"],"id":1}`,
-			unmarshalled: &btcjson.PreciousBlockCmd{
-				BlockHash: "0123",
-			},
-		},
-		{
-			name: "reconsiderBlock",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("reconsiderBlock", "123")
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewReconsiderBlockCmd("123")
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"reconsiderBlock","params":["123"],"id":1}`,
-			unmarshalled: &btcjson.ReconsiderBlockCmd{
-				BlockHash: "123",
-			},
 		},
 		{
 			name: "removeManualNode",

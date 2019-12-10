@@ -111,13 +111,8 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 
 // Commands that are currently unimplemented, but should ultimately be.
 var rpcUnimplemented = map[string]struct{}{
-	"estimatePriority": {},
-	"getChainTips":     {},
-	"getMempoolEntry":  {},
-	"getNetworkInfo":   {},
-	"invalidateBlock":  {},
-	"preciousBlock":    {},
-	"reconsiderBlock":  {},
+	"getMempoolEntry": {},
+	"getNetworkInfo":  {},
 }
 
 // Commands that are available to a limited user
