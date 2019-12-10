@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/kaspanet/kaspad/rpcmodel"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // TestRPCServerCommands tests all of the kaspa rpc server commands marshal and unmarshal
@@ -325,38 +324,6 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 		},
 		{
-			name: "getCFilter",
-			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getCFilter", "123",
-					wire.GCSFilterExtended)
-			},
-			staticCmd: func() interface{} {
-				return rpcmodel.NewGetCFilterCmd("123",
-					wire.GCSFilterExtended)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getCFilter","params":["123",1],"id":1}`,
-			unmarshalled: &rpcmodel.GetCFilterCmd{
-				Hash:       "123",
-				FilterType: wire.GCSFilterExtended,
-			},
-		},
-		{
-			name: "getCFilterHeader",
-			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getCFilterHeader", "123",
-					wire.GCSFilterExtended)
-			},
-			staticCmd: func() interface{} {
-				return rpcmodel.NewGetCFilterHeaderCmd("123",
-					wire.GCSFilterExtended)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getCFilterHeader","params":["123",1],"id":1}`,
-			unmarshalled: &rpcmodel.GetCFilterHeaderCmd{
-				Hash:       "123",
-				FilterType: wire.GCSFilterExtended,
-			},
-		},
-		{
 			name: "getChainFromBlock",
 			newCmd: func() (interface{}, error) {
 				return rpcmodel.NewCommand("getChainFromBlock", true, "123")
@@ -508,48 +475,6 @@ func TestRPCServerCommands(t *testing.T) {
 			unmarshalled: &rpcmodel.GetNetTotalsCmd{},
 		},
 		{
-			name: "getNetworkHashPs",
-			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getNetworkHashPs")
-			},
-			staticCmd: func() interface{} {
-				return rpcmodel.NewGetNetworkHashPSCmd(nil, nil)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getNetworkHashPs","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetNetworkHashPSCmd{
-				Blocks: rpcmodel.Int(120),
-				Height: rpcmodel.Int(-1),
-			},
-		},
-		{
-			name: "getNetworkHashPs optional1",
-			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getNetworkHashPs", 200)
-			},
-			staticCmd: func() interface{} {
-				return rpcmodel.NewGetNetworkHashPSCmd(rpcmodel.Int(200), nil)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getNetworkHashPs","params":[200],"id":1}`,
-			unmarshalled: &rpcmodel.GetNetworkHashPSCmd{
-				Blocks: rpcmodel.Int(200),
-				Height: rpcmodel.Int(-1),
-			},
-		},
-		{
-			name: "getNetworkHashPs optional2",
-			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getNetworkHashPs", 200, 123)
-			},
-			staticCmd: func() interface{} {
-				return rpcmodel.NewGetNetworkHashPSCmd(rpcmodel.Int(200), rpcmodel.Int(123))
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getNetworkHashPs","params":[200,123],"id":1}`,
-			unmarshalled: &rpcmodel.GetNetworkHashPSCmd{
-				Blocks: rpcmodel.Int(200),
-				Height: rpcmodel.Int(123),
-			},
-		},
-		{
 			name: "getPeerInfo",
 			newCmd: func() (interface{}, error) {
 				return rpcmodel.NewCommand("getPeerInfo")
@@ -695,19 +620,6 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 		},
 		{
-			name: "invalidateBlock",
-			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("invalidateBlock", "123")
-			},
-			staticCmd: func() interface{} {
-				return rpcmodel.NewInvalidateBlockCmd("123")
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"invalidateBlock","params":["123"],"id":1}`,
-			unmarshalled: &rpcmodel.InvalidateBlockCmd{
-				BlockHash: "123",
-			},
-		},
-		{
 			name: "ping",
 			newCmd: func() (interface{}, error) {
 				return rpcmodel.NewCommand("ping")
@@ -717,32 +629,6 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"ping","params":[],"id":1}`,
 			unmarshalled: &rpcmodel.PingCmd{},
-		},
-		{
-			name: "preciousBlock",
-			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("preciousBlock", "0123")
-			},
-			staticCmd: func() interface{} {
-				return rpcmodel.NewPreciousBlockCmd("0123")
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"preciousBlock","params":["0123"],"id":1}`,
-			unmarshalled: &rpcmodel.PreciousBlockCmd{
-				BlockHash: "0123",
-			},
-		},
-		{
-			name: "reconsiderBlock",
-			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("reconsiderBlock", "123")
-			},
-			staticCmd: func() interface{} {
-				return rpcmodel.NewReconsiderBlockCmd("123")
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"reconsiderBlock","params":["123"],"id":1}`,
-			unmarshalled: &rpcmodel.ReconsiderBlockCmd{
-				BlockHash: "123",
-			},
 		},
 		{
 			name: "removeManualNode",
