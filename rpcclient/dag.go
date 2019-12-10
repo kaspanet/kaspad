@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/btcjson"
@@ -756,7 +757,3 @@ func (c *Client) RescanBlocksAsync(blockHashes []*daghash.Hash) FutureRescanBloc
 func (c *Client) RescanBlocks(blockHashes []*daghash.Hash) ([]btcjson.RescannedBlock, error) {
 	return c.RescanBlocksAsync(blockHashes).Receive()
 }
-
-
-
-
