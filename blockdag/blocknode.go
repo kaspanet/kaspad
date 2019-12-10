@@ -78,9 +78,6 @@ type blockNode struct {
 	// hash is the double sha 256 of the block.
 	hash *daghash.Hash
 
-	// height is the position in the block DAG.
-	height uint64
-
 	// chainHeight is the number of hops you need to go down the selected parent chain in order to get to the genesis block.
 	chainHeight uint64
 
@@ -132,16 +129,8 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 
 	if len(parents) > 0 {
 		node.blues, node.selectedParent, node.blueScore = phantom(node, phantomK)
-		node.height = calculateNodeHeight(node)
 		node.chainHeight = calculateChainHeight(node)
 	}
-}
-
-func calculateNodeHeight(node *blockNode) uint64 {
-	if node.isGenesis() {
-		return 0
-	}
-	return node.parents.maxHeight() + 1
 }
 
 func calculateChainHeight(node *blockNode) uint64 {
