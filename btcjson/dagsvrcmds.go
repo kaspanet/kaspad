@@ -10,8 +10,6 @@ package btcjson
 import (
 	"encoding/json"
 	"fmt"
-
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // AddManualNodeCmd defines the addManualNode JSON-RPC command.
@@ -290,37 +288,6 @@ type GetBlockTemplateCmd struct {
 func NewGetBlockTemplateCmd(request *TemplateRequest) *GetBlockTemplateCmd {
 	return &GetBlockTemplateCmd{
 		Request: request,
-	}
-}
-
-// GetCFilterCmd defines the getCFilter JSON-RPC command.
-type GetCFilterCmd struct {
-	Hash       string
-	FilterType wire.FilterType
-}
-
-// NewGetCFilterCmd returns a new instance which can be used to issue a
-// getCFilter JSON-RPC command.
-func NewGetCFilterCmd(hash string, filterType wire.FilterType) *GetCFilterCmd {
-	return &GetCFilterCmd{
-		Hash:       hash,
-		FilterType: filterType,
-	}
-}
-
-// GetCFilterHeaderCmd defines the getCFilterHeader JSON-RPC command.
-type GetCFilterHeaderCmd struct {
-	Hash       string
-	FilterType wire.FilterType
-}
-
-// NewGetCFilterHeaderCmd returns a new instance which can be used to issue a
-// getCFilterHeader JSON-RPC command.
-func NewGetCFilterHeaderCmd(hash string,
-	filterType wire.FilterType) *GetCFilterHeaderCmd {
-	return &GetCFilterHeaderCmd{
-		Hash:       hash,
-		FilterType: filterType,
 	}
 }
 
@@ -747,8 +714,6 @@ func init() {
 	MustRegisterCmd("getBlockCount", (*GetBlockCountCmd)(nil), flags)
 	MustRegisterCmd("getBlockHeader", (*GetBlockHeaderCmd)(nil), flags)
 	MustRegisterCmd("getBlockTemplate", (*GetBlockTemplateCmd)(nil), flags)
-	MustRegisterCmd("getCFilter", (*GetCFilterCmd)(nil), flags)
-	MustRegisterCmd("getCFilterHeader", (*GetCFilterHeaderCmd)(nil), flags)
 	MustRegisterCmd("getChainFromBlock", (*GetChainFromBlockCmd)(nil), flags)
 	MustRegisterCmd("getDagTips", (*GetDAGTipsCmd)(nil), flags)
 	MustRegisterCmd("getConnectionCount", (*GetConnectionCountCmd)(nil), flags)
