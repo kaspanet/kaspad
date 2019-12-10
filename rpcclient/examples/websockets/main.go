@@ -27,9 +27,9 @@ func main() {
 		},
 	}
 
-	// Connect to local btcd RPC server using websockets.
-	btcdHomeDir := util.AppDataDir("btcd", false)
-	certs, err := ioutil.ReadFile(filepath.Join(btcdHomeDir, "rpc.cert"))
+	// Connect to local kaspad RPC server using websockets.
+	kaspadHomeDir := util.AppDataDir("kaspad", false)
+	certs, err := ioutil.ReadFile(filepath.Join(kaspadHomeDir, "rpc.cert"))
 	if err != nil {
 		log.Fatal(err)
 	}

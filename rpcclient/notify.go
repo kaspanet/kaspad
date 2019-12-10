@@ -100,9 +100,6 @@ type NotificationHandlers struct {
 
 	// OnRelevantTxAccepted is invoked when an unmined transaction passes
 	// the client's transaction filter.
-	//
-	// NOTE: This is a btcsuite extension ported from
-	// github.com/decred/dcrrpcclient.
 	OnRelevantTxAccepted func(transaction []byte)
 
 	// OnTxAccepted is invoked when a transaction is accepted into the
@@ -318,9 +315,6 @@ func parseChainChangedParams(params []json.RawMessage) (removedChainBlockHashes 
 
 // parseFilteredBlockAddedParams parses out the parameters included in a
 // filteredblockadded notification.
-//
-// NOTE: This is a btcd extension ported from github.com/decred/dcrrpcclient
-// and requires a websocket connection.
 func parseFilteredBlockAddedParams(params []json.RawMessage) (uint64,
 	*wire.BlockHeader, []*util.Tx, error) {
 
@@ -511,8 +505,6 @@ func (r FutureNotifyBlocksResult) Receive() error {
 // the returned instance.
 //
 // See NotifyBlocks for the blocking version and more details.
-//
-// NOTE: This is a btcd extension and requires a websocket connection.
 func (c *Client) NotifyBlocksAsync() FutureNotifyBlocksResult {
 	// Not supported in HTTP POST mode.
 	if c.config.HTTPPostMode {
@@ -536,8 +528,6 @@ func (c *Client) NotifyBlocksAsync() FutureNotifyBlocksResult {
 // result in an error if the client is configured to run in HTTP POST mode.
 //
 // The notifications delivered as a result of this call will be via OnBlockAdded
-//
-// NOTE: This is a btcd extension and requires a websocket connection.
 func (c *Client) NotifyBlocks() error {
 	return c.NotifyBlocksAsync().Receive()
 }
@@ -558,8 +548,6 @@ func (r FutureNotifyChainChangesResult) Receive() error {
 // the returned instance.
 //
 // See NotifyChainChanges for the blocking version and more details.
-//
-// NOTE: This is a btcd extension and requires a websocket connection.
 func (c *Client) NotifyChainChangesAsync() FutureNotifyBlocksResult {
 	// Not supported in HTTP POST mode.
 	if c.config.HTTPPostMode {
@@ -583,8 +571,6 @@ func (c *Client) NotifyChainChangesAsync() FutureNotifyBlocksResult {
 // if the client is configured to run in HTTP POST mode.
 //
 // The notifications delivered as a result of this call will be via OnBlockAdded
-//
-// NOTE: This is a btcd extension and requires a websocket connection.
 func (c *Client) NotifyChainChanges() error {
 	return c.NotifyChainChangesAsync().Receive()
 }
@@ -614,8 +600,6 @@ func (r FutureNotifyNewTransactionsResult) Receive() error {
 // function on the returned instance.
 //
 // See NotifyNewTransactionsAsync for the blocking version and more details.
-//
-// NOTE: This is a btcd extension and requires a websocket connection.
 func (c *Client) NotifyNewTransactionsAsync(verbose bool, subnetworkID *string) FutureNotifyNewTransactionsResult {
 	// Not supported in HTTP POST mode.
 	if c.config.HTTPPostMode {
@@ -641,24 +625,16 @@ func (c *Client) NotifyNewTransactionsAsync(verbose bool, subnetworkID *string) 
 // The notifications delivered as a result of this call will be via one of
 // OnTxAccepted (when verbose is false) or OnTxAcceptedVerbose (when verbose is
 // true).
-//
-// NOTE: This is a btcd extension and requires a websocket connection.
 func (c *Client) NotifyNewTransactions(verbose bool, subnetworkID *string) error {
 	return c.NotifyNewTransactionsAsync(verbose, subnetworkID).Receive()
 }
 
 // FutureLoadTxFilterResult is a future promise to deliver the result
 // of a LoadTxFilterAsync RPC invocation (or an applicable error).
-//
-// NOTE: This is a btcd extension ported from github.com/decred/dcrrpcclient
-// and requires a websocket connection.
 type FutureLoadTxFilterResult chan *response
 
 // Receive waits for the response promised by the future and returns an error
 // if the registration was not successful.
-//
-// NOTE: This is a btcd extension ported from github.com/decred/dcrrpcclient
-// and requires a websocket connection.
 func (r FutureLoadTxFilterResult) Receive() error {
 	_, err := receiveFuture(r)
 	return err
@@ -669,9 +645,6 @@ func (r FutureLoadTxFilterResult) Receive() error {
 // function on the returned instance.
 //
 // See LoadTxFilter for the blocking version and more details.
-//
-// NOTE: This is a btcd extension ported from github.com/decred/dcrrpcclient
-// and requires a websocket connection.
 func (c *Client) LoadTxFilterAsync(reload bool, addresses []util.Address,
 	outpoints []wire.Outpoint) FutureLoadTxFilterResult {
 
@@ -694,9 +667,6 @@ func (c *Client) LoadTxFilterAsync(reload bool, addresses []util.Address,
 // LoadTxFilter loads, reloads, or adds data to a websocket client's transaction
 // filter. The filter is consistently updated based on inspected transactions
 // during mempool acceptance, block acceptance, and for all rescanned blocks.
-//
-// NOTE: This is a btcd extension ported from github.com/decred/dcrrpcclient
-// and requires a websocket connection.
 func (c *Client) LoadTxFilter(reload bool, addresses []util.Address, outpoints []wire.Outpoint) error {
 	return c.LoadTxFilterAsync(reload, addresses, outpoints).Receive()
 }

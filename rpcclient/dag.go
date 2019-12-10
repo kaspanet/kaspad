@@ -704,16 +704,10 @@ func (c *Client) GetTxOut(txHash *daghash.Hash, index uint32, mempool bool) (*rp
 
 // FutureRescanBlocksResult is a future promise to deliver the result of a
 // RescanBlocksAsync RPC invocation (or an applicable error).
-//
-// NOTE: This is a btcsuite extension ported from
-// github.com/decred/dcrrpcclient.
 type FutureRescanBlocksResult chan *response
 
 // Receive waits for the response promised by the future and returns the
 // discovered rescanblocks data.
-//
-// NOTE: This is a btcsuite extension ported from
-// github.com/decred/dcrrpcclient.
 func (r FutureRescanBlocksResult) Receive() ([]rpcmodel.RescannedBlock, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
@@ -734,9 +728,6 @@ func (r FutureRescanBlocksResult) Receive() ([]rpcmodel.RescannedBlock, error) {
 // returned instance.
 //
 // See RescanBlocks for the blocking version and more details.
-//
-// NOTE: This is a btcsuite extension ported from
-// github.com/decred/dcrrpcclient.
 func (c *Client) RescanBlocksAsync(blockHashes []*daghash.Hash) FutureRescanBlocksResult {
 	strBlockHashes := make([]string, len(blockHashes))
 	for i := range blockHashes {
@@ -750,9 +741,6 @@ func (c *Client) RescanBlocksAsync(blockHashes []*daghash.Hash) FutureRescanBloc
 // RescanBlocks rescans the blocks identified by blockHashes, in order, using
 // the client's loaded transaction filter. The blocks do not need to be on the
 // main dag, but they do need to be adjacent to each other.
-//
-// NOTE: This is a btcsuite extension ported from
-// github.com/decred/dcrrpcclient.
 func (c *Client) RescanBlocks(blockHashes []*daghash.Hash) ([]rpcmodel.RescannedBlock, error) {
 	return c.RescanBlocksAsync(blockHashes).Receive()
 }

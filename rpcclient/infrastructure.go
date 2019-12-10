@@ -112,8 +112,8 @@ type jsonRequestData struct {
 	marshalledJSON []byte
 }
 
-// Client represents a Bitcoin RPC client which allows easy access to the
-// various RPC methods available on a Bitcoin RPC server. Each of the wrapper
+// Client represents a kaspa RPC client which allows easy access to the
+// various RPC methods available on a kaspa RPC server. Each of the wrapper
 // functions handle the details of converting the passed and return types to and
 // from the underlying JSON types which are required for the JSON-RPC
 // invocations

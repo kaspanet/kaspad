@@ -328,7 +328,7 @@ func (c *Client) SubmitBlockAsync(block *util.Block, options *rpcmodel.SubmitBlo
 	return c.sendCmd(cmd)
 }
 
-// SubmitBlock attempts to submit a new block into the bitcoin network.
+// SubmitBlock attempts to submit a new block into the kaspa network.
 func (c *Client) SubmitBlock(block *util.Block, options *rpcmodel.SubmitBlockOptions) error {
 	return c.SubmitBlockAsync(block, options).Receive()
 }
