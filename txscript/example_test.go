@@ -13,7 +13,7 @@ import (
 	"github.com/kaspanet/kaspad/util"
 )
 
-// This example demonstrates creating a script which pays to a bitcoin address.
+// This example demonstrates creating a script which pays to a kaspa address.
 // It also prints the created script hex and uses the DisasmString function to
 // display the disassembled script.
 func ExamplePayToAddrScript() {

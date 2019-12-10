@@ -355,7 +355,7 @@ var scriptClassTests = []struct {
 	script string
 	class  ScriptClass
 }{
-	// p2pk. It is standard in BTC but not in DAGCoin
+	// p2pk
 	{
 		name: "Pay Pubkey",
 		script: "DATA_65 0x0411db93e1dcdb8a016b49840f8c53bc1eb68a382e" +
@@ -370,7 +370,7 @@ var scriptClassTests = []struct {
 			"c271ad504b EQUALVERIFY CHECKSIG",
 		class: PubKeyHashTy,
 	},
-	// mutlisig. It is standard in BTC but not in DAGCoin
+	// mutlisig
 	{
 		name: "multisig",
 		script: "1 DATA_33 0x0232abdc893e7f0631364d7fd01cb33d24da4" +
@@ -386,7 +386,7 @@ var scriptClassTests = []struct {
 	},
 
 	{
-		// Nulldata. It is standard in BTC but not in DAGCoin
+		// Nulldata
 		name:   "nulldata",
 		script: "RETURN 0",
 		class:  NonStandardTy,

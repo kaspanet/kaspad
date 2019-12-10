@@ -30,9 +30,6 @@ type opcode struct {
 	opfunc func(*parsedOpcode, *Engine) error
 }
 
-// These constants are the values of the official opcodes used on the btc wiki,
-// in bitcoin core and in most if not all other references and software related
-// to handling BTC scripts.
 const (
 	Op0                   = 0x00 // 0
 	OpFalse               = 0x00 // 0 - AKA Op0
@@ -286,12 +283,12 @@ const (
 	OpUnknown247          = 0xf7 // 247
 	OpUnknown248          = 0xf8 // 248
 	OpUnknown249          = 0xf9 // 249
-	OpSmallInteger        = 0xfa // 250 - bitcoin core internal
-	OpPubKeys             = 0xfb // 251 - bitcoin core internal
+	OpSmallInteger        = 0xfa // 250
+	OpPubKeys             = 0xfb // 251
 	OpUnknown252          = 0xfc // 252
-	OpPubKeyHash          = 0xfd // 253 - bitcoin core internal
-	OpPubKey              = 0xfe // 254 - bitcoin core internal
-	OpInvalidOpCode       = 0xff // 255 - bitcoin core internal
+	OpPubKeyHash          = 0xfd // 253
+	OpPubKey              = 0xfe // 254
+	OpInvalidOpCode       = 0xff // 255
 )
 
 // Conditional execution constants.
@@ -573,7 +570,6 @@ var opcodeArray = [256]opcode{
 	OpUnknown248: {OpUnknown248, "OP_UNKNOWN248", 1, opcodeInvalid},
 	OpUnknown249: {OpUnknown249, "OP_UNKNOWN249", 1, opcodeInvalid},
 
-	// Bitcoin Core internal use opcode. Defined here for completeness.
 	OpSmallInteger: {OpSmallInteger, "OP_SMALLINTEGER", 1, opcodeInvalid},
 	OpPubKeys:      {OpPubKeys, "OP_PUBKEYS", 1, opcodeInvalid},
 	OpUnknown252:   {OpUnknown252, "OP_UNKNOWN252", 1, opcodeInvalid},

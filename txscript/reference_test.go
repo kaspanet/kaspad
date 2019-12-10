@@ -52,7 +52,7 @@ func parseHex(tok string) ([]byte, error) {
 // parsing. It is declared here so it only needs to be created once.
 var shortFormOps map[string]byte
 
-// parseShortForm parses a string as as used in the Bitcoin Core reference tests
+// parseShortForm parses a string as as used in the reference tests
 // into the script it came from.
 //
 // The format used for these tests is pretty simple if ad-hoc:
