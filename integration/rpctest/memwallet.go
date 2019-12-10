@@ -168,7 +168,7 @@ func (m *memWallet) SyncedHeight() uint64 {
 	return m.currentHeight
 }
 
-// SetRPCClient saves the passed rpc connection to btcd as the wallet's
+// SetRPCClient saves the passed rpc connection to kaspad as the wallet's
 // personal rpc connection.
 func (m *memWallet) SetRPCClient(rpcClient *rpcclient.Client) {
 	m.rpc = rpcClient
@@ -336,7 +336,7 @@ func (m *memWallet) NewAddress() (util.Address, error) {
 // fundTx attempts to fund a transaction sending amt bitcoin. The coins are
 // selected such that the final amount spent pays enough fees as dictated by
 // the passed fee rate. The passed fee rate should be expressed in
-// satoshis-per-byte.
+// sompis-per-byte.
 //
 // NOTE: The memWallet's mutex must be held when this function is called.
 func (m *memWallet) fundTx(tx *wire.MsgTx, amt util.Amount, feeRate util.Amount) error {
@@ -404,7 +404,7 @@ func (m *memWallet) fundTx(tx *wire.MsgTx, amt util.Amount, feeRate util.Amount)
 
 // SendOutputs creates, then sends a transaction paying to the specified output
 // while observing the passed fee rate. The passed fee rate should be expressed
-// in satoshis-per-byte.
+// in sompis-per-byte.
 func (m *memWallet) SendOutputs(outputs []*wire.TxOut,
 	feeRate util.Amount) (*daghash.TxID, error) {
 
@@ -418,7 +418,7 @@ func (m *memWallet) SendOutputs(outputs []*wire.TxOut,
 
 // CreateTransaction returns a fully signed transaction paying to the specified
 // outputs while observing the desired fee rate. The passed fee rate should be
-// expressed in satoshis-per-byte.
+// expressed in sompis-per-byte.
 //
 // This function is safe for concurrent access.
 func (m *memWallet) CreateTransaction(outputs []*wire.TxOut, feeRate util.Amount) (*wire.MsgTx, error) {

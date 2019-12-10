@@ -65,10 +65,10 @@ var (
 // Harness to exercise functionality.
 type HarnessTestCase func(r *Harness, t *testing.T)
 
-// Harness fully encapsulates an active btcd process to provide a unified
-// platform for creating rpc driven integration tests involving btcd. The
-// active btcd node will typically be run in simnet mode in order to allow for
-// easy generation of test blockchains. The active btcd process is fully
+// Harness fully encapsulates an active kaspad process to provide a unified
+// platform for creating rpc driven integration tests involving kaspad. The
+// active kaspad node will typically be run in simnet mode in order to allow for
+// easy generation of test blockchains. The active kaspad process is fully
 // managed by Harness, which handles the necessary initialization, and teardown
 // of the process along with any temporary directories created as a result.
 // Multiple Harness instances may be run concurrently, in order to allow for
@@ -208,7 +208,7 @@ func New(activeNet *dagconfig.Params, handlers *rpcclient.NotificationHandlers,
 // NOTE: This method and TearDown should always be called from the same
 // goroutine as they are not concurrent safe.
 func (h *Harness) SetUp(createTestChain bool, numMatureOutputs uint32) error {
-	// Start the btcd node itself. This spawns a new process which will be
+	// Start the kaspad node itself. This spawns a new process which will be
 	// managed
 	if err := h.node.start(); err != nil {
 		return err
@@ -226,7 +226,7 @@ func (h *Harness) SetUp(createTestChain bool, numMatureOutputs uint32) error {
 		return err
 	}
 
-	// Ensure btcd properly dispatches our registered call-back for each new
+	// Ensure kaspad properly dispatches our registered call-back for each new
 	// block. Otherwise, the memWallet won't function properly.
 	if err := h.Node.NotifyBlocks(); err != nil {
 		return err
@@ -296,7 +296,7 @@ func (h *Harness) TearDown() error {
 	return h.tearDown()
 }
 
-// connectRPCClient attempts to establish an RPC connection to the created btcd
+// connectRPCClient attempts to establish an RPC connection to the created kaspad
 // process belonging to this Harness instance. If the initial connection
 // attempt fails, this function will retry h.maxConnRetries times, backing off
 // the time between subsequent attempts. If after h.maxConnRetries attempts,
@@ -353,7 +353,7 @@ func (h *Harness) SendOutputs(targetOutputs []*wire.TxOut,
 
 // CreateTransaction returns a fully signed transaction paying to the specified
 // outputs while observing the desired fee rate. The passed fee rate should be
-// expressed in satoshis-per-byte. Any unspent outputs selected as inputs for
+// expressed in sompis-per-byte. Any unspent outputs selected as inputs for
 // the crafted transaction are marked as unspendable in order to avoid
 // potential double-spends by future calls to this method. If the created
 // transaction is cancelled for any reason then the selected inputs MUST be
@@ -485,7 +485,7 @@ func generateListeningAddresses() (string, string) {
 
 // baseDir is the directory path of the temp directory for all rpctest files.
 func baseDir() (string, error) {
-	dirPath := filepath.Join(os.TempDir(), "btcd", "rpctest")
+	dirPath := filepath.Join(os.TempDir(), "kaspad", "rpctest")
 	err := os.MkdirAll(dirPath, 0755)
 	return dirPath, err
 }

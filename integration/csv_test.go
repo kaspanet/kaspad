@@ -237,7 +237,7 @@ func TestBIP0113(t *testing.T) {
 // createCSVOutput creates an output paying to a trivially redeemable CSV
 // scriptPubKey with the specified time-lock.
 func createCSVOutput(r *rpctest.Harness, t *testing.T,
-	numSatoshis util.Amount, timeLock int64,
+	numSompis util.Amount, timeLock int64,
 	isSeconds bool) ([]byte, *wire.Outpoint, *wire.MsgTx, error) {
 
 	// Convert the time-lock to the proper sequence lock based according to
@@ -266,7 +266,7 @@ func createCSVOutput(r *rpctest.Harness, t *testing.T,
 	}
 	output := &wire.TxOut{
 		ScriptPubKey: p2shScript,
-		Value:        int64(numSatoshis),
+		Value:        int64(numSompis),
 	}
 
 	// Finally create a valid transaction which creates the output crafted
