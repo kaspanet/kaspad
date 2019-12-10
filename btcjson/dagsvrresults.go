@@ -400,7 +400,6 @@ type GetMiningInfoResult struct {
 	Generate         bool    `json:"generate"`
 	GenProcLimit     int32   `json:"genProcLimit"`
 	HashesPerSec     int64   `json:"hashesPerSec"`
-	NetworkHashPS    int64   `json:"networkHashPs"`
 	PooledTx         uint64  `json:"pooledTx"`
 	TestNet          bool    `json:"testNet"`
 	DevNet           bool    `json:"devNet"`

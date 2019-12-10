@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/kaspad/btcjson"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
