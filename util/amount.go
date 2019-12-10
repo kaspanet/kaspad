@@ -94,8 +94,8 @@ func (a Amount) ToUnit(u AmountUnit) float64 {
 	return float64(a) / math.Pow10(int(u+8))
 }
 
-// ToBTC is the equivalent of calling ToUnit with AmountBTC.
-func (a Amount) ToBTC() float64 {
+// ToKAS is the equivalent of calling ToUnit with AmountBTC.
+func (a Amount) ToKAS() float64 {
 	return a.ToUnit(AmountBTC)
 }
 

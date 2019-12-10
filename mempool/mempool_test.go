@@ -346,7 +346,7 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 			Policy: Policy{
 				MaxOrphanTxs:    5,
 				MaxOrphanTxSize: 1000,
-				MinRelayTxFee:   1000, // 1 Satoshi per byte
+				MinRelayTxFee:   1000, // 1 sompi per byte
 				MaxTxVersion:    1,
 			},
 			DAGParams:              &params,

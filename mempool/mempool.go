@@ -112,7 +112,7 @@ type Policy struct {
 	// of big orphans.
 	MaxOrphanTxSize int
 
-	// MinRelayTxFee defines the minimum transaction fee in BTC/kB to be
+	// MinRelayTxFee defines the minimum transaction fee in KAS/kB to be
 	// considered a non-zero fee.
 	MinRelayTxFee util.Amount
 }
@@ -1313,7 +1313,7 @@ func (mp *TxPool) RawMempoolVerbose() map[string]*rpcmodel.GetRawMempoolVerboseR
 
 		mpd := &rpcmodel.GetRawMempoolVerboseResult{
 			Size:    int32(tx.MsgTx().SerializeSize()),
-			Fee:     util.Amount(desc.Fee).ToBTC(),
+			Fee:     util.Amount(desc.Fee).ToKAS(),
 			Time:    desc.Added.Unix(),
 			Height:  desc.Height,
 			Depends: make([]string, 0),

@@ -19,7 +19,7 @@ func handleGetInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (inter
 		Difficulty:      getDifficultyRatio(s.cfg.DAG.CurrentBits(), s.cfg.DAGParams),
 		TestNet:         config.ActiveConfig().TestNet,
 		DevNet:          config.ActiveConfig().DevNet,
-		RelayFee:        config.ActiveConfig().MinRelayTxFee.ToBTC(),
+		RelayFee:        config.ActiveConfig().MinRelayTxFee.ToKAS(),
 	}
 
 	return ret, nil

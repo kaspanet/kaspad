@@ -378,7 +378,7 @@ func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Par
 			vinListEntry := &vinList[len(vinList)-1]
 			vinListEntry.PrevOut = &rpcmodel.PrevOut{
 				Address: encodedAddr,
-				Value:   util.Amount(originTxOut.Value).ToBTC(),
+				Value:   util.Amount(originTxOut.Value).ToKAS(),
 			}
 		}
 	}

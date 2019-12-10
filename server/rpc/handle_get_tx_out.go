@@ -111,7 +111,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		SelectedTip:   selectedTipHash,
 		Confirmations: confirmations,
 		IsInMempool:   isInMempool,
-		Value:         util.Amount(value).ToBTC(),
+		Value:         util.Amount(value).ToKAS(),
 		ScriptPubKey: rpcmodel.ScriptPubKeyResult{
 			Asm:     disbuf,
 			Hex:     hex.EncodeToString(scriptPubKey),

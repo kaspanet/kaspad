@@ -43,11 +43,11 @@ const (
 	// for mining.
 	MaxStandardTxSize = 100000
 
-	// DefaultMinRelayTxFee is the minimum fee in satoshi that is required
+	// DefaultMinRelayTxFee is the minimum fee in sompi that is required
 	// for a transaction to be treated as free for relay and mining
 	// purposes. It is also used to help determine if a transaction is
 	// considered dust and as a base for calculating minimum required fees
-	// for larger transactions. This value is in Satoshi/1000 bytes.
+	// for larger transactions. This value is in sompi/1000 bytes.
 	DefaultMinRelayTxFee = util.Amount(1000)
 )
 
@@ -57,9 +57,9 @@ const (
 func calcMinRequiredTxRelayFee(serializedSize int64, minRelayTxFee util.Amount) int64 {
 	// Calculate the minimum fee for a transaction to be allowed into the
 	// mempool and relayed by scaling the base fee (which is the minimum
-	// free transaction relay fee). minTxRelayFee is in Satoshi/kB so
+	// free transaction relay fee). minTxRelayFee is in sompi/kB so
 	// multiply by serializedSize (which is in bytes) and divide by 1000 to
-	// get minimum Satoshis.
+	// get minimum sompis.
 	minFee := (serializedSize * int64(minRelayTxFee)) / 1000
 
 	if minFee == 0 && minRelayTxFee > 0 {
@@ -170,12 +170,12 @@ func isDust(txOut *wire.TxOut, minRelayTxFee util.Amount) bool {
 
 	// The output is considered dust if the cost to the network to spend the
 	// coins is more than 1/3 of the minimum free transaction relay fee.
-	// minFreeTxRelayFee is in Satoshi/KB, so multiply by 1000 to
+	// minFreeTxRelayFee is in sompi/KB, so multiply by 1000 to
 	// convert to bytes.
 	//
 	// Using the typical values for a pay-to-pubkey-hash transaction from
 	// the breakdown above and the default minimum free transaction relay
-	// fee of 1000, this equates to values less than 546 satoshi being
+	// fee of 1000, this equates to values less than 546 sompi being
 	// considered dust.
 	//
 	// The following is equivalent to (value/totalSize) * (1/3) * 1000

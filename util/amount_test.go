@@ -173,11 +173,11 @@ func TestAmountUnitConversions(t *testing.T) {
 			continue
 		}
 
-		// Verify that Amount.ToBTC works as advertised.
+		// Verify that Amount.ToKAS works as advertised.
 		f1 := test.amount.ToUnit(AmountBTC)
-		f2 := test.amount.ToBTC()
+		f2 := test.amount.ToKAS()
 		if f1 != f2 {
-			t.Errorf("%v: ToBTC does not match ToUnit(AmountBTC): %v != %v", test.name, f1, f2)
+			t.Errorf("%v: ToKAS does not match ToUnit(AmountBTC): %v != %v", test.name, f1, f2)
 		}
 
 		// Verify that Amount.String works as advertised.

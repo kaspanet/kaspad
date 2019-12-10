@@ -719,7 +719,7 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 		amount += txOut.Value
 	}
 
-	ntfn := rpcmodel.NewTxAcceptedNtfn(txIDStr, util.Amount(amount).ToBTC())
+	ntfn := rpcmodel.NewTxAcceptedNtfn(txIDStr, util.Amount(amount).ToKAS())
 	marshalledJSON, err := rpcmodel.MarshalCommand(nil, ntfn)
 	if err != nil {
 		log.Errorf("Failed to marshal tx notification: %s", err.Error())
