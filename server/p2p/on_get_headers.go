@@ -6,7 +6,7 @@ import (
 	"github.com/prometheus/common/log"
 )
 
-// OnGetHeaders is invoked when a peer receives a getheaders bitcoin
+// OnGetHeaders is invoked when a peer receives a getheaders kaspa
 // message.
 func (sp *Peer) OnGetHeaders(_ *peer.Peer, msg *wire.MsgGetHeaders) {
 	// Ignore getheaders requests if not in sync.

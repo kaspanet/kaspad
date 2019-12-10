@@ -61,11 +61,11 @@ const (
 
 var (
 	// userAgentName is the user agent name and is used to help identify
-	// ourselves to other bitcoin peers.
-	userAgentName = "btcd"
+	// ourselves to other kaspa peers.
+	userAgentName = "kaspad"
 
 	// userAgentVersion is the user agent version and is used to help
-	// identify ourselves to other bitcoin peers.
+	// identify ourselves to other kaspa peers.
 	userAgentVersion = fmt.Sprintf("%d.%d.%d", version.AppMajor, version.AppMinor, version.AppPatch)
 )
 
@@ -113,7 +113,7 @@ func (a simpleAddr) Network() string {
 // Ensure simpleAddr implements the net.Addr interface.
 var _ net.Addr = simpleAddr{}
 
-// broadcastMsg provides the ability to house a bitcoin message to be broadcast
+// broadcastMsg provides the ability to house a kaspa message to be broadcast
 // to all connected peers except specified excluded peers.
 type broadcastMsg struct {
 	message      wire.Message
@@ -254,8 +254,8 @@ type cfHeaderKV struct {
 	filterHeader *daghash.Hash
 }
 
-// Server provides a bitcoin server for handling communications to and from
-// bitcoin peers.
+// Server provides a kaspa server for handling communications to and from
+// kaspa peers.
 type Server struct {
 	// The following variables must only be used atomically.
 	// Putting the uint64s first makes them 64-bit aligned for 32-bit systems.
@@ -1183,8 +1183,8 @@ func (s *Server) peerHandler() {
 	if !config.ActiveConfig().DisableDNSSeed {
 		seedFromSubNetwork := func(subnetworkID *subnetworkid.SubnetworkID) {
 			connmgr.SeedFromDNS(config.ActiveConfig().NetParams(), defaultRequiredServices,
-				false, subnetworkID, serverutils.BTCDLookup, func(addrs []*wire.NetAddress) {
-					// Bitcoind uses a lookup of the dns seeder here. Since seeder returns
+				false, subnetworkID, serverutils.KaspadLookup, func(addrs []*wire.NetAddress) {
+					// kaspad uses a lookup of the dns seeder here. Since seeder returns
 					// IPs of nodes and not its own IP, we can not know real IP of
 					// source. So we'll take first returned address as source.
 					s.addrManager.AddAddresses(addrs, addrs[0], subnetworkID)
@@ -1549,7 +1549,7 @@ out:
 			// listen port?
 			// XXX this assumes timeout is in seconds.
 			listenPort, err := s.nat.AddPortMapping("tcp", int(lport), int(lport),
-				"btcd listen port", 20*60)
+				"kaspad listen port", 20*60)
 			if err != nil {
 				srvrLog.Warnf("can't add UPnP port mapping: %s", err)
 			}
@@ -1588,8 +1588,8 @@ out:
 	s.wg.Done()
 }
 
-// NewServer returns a new btcd server configured to listen on addr for the
-// bitcoin network type specified by dagParams. Use start to begin accepting
+// NewServer returns a new kaspad server configured to listen on addr for the
+// kaspa network type specified by dagParams. Use start to begin accepting
 // connections from peers.
 func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params, interrupt <-chan struct{}, notifyNewTransactions func(txns []*mempool.TxDesc)) (*Server, error) {
 	services := defaultServices
@@ -1600,7 +1600,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		services &^= wire.SFNodeCF
 	}
 
-	amgr := addrmgr.New(config.ActiveConfig().DataDir, serverutils.BTCDLookup, config.ActiveConfig().SubnetworkID)
+	amgr := addrmgr.New(config.ActiveConfig().DataDir, serverutils.KaspadLookup, config.ActiveConfig().SubnetworkID)
 
 	var listeners []net.Listener
 	var nat serverutils.NAT
@@ -1795,7 +1795,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		OnAccept:       s.inboundPeerConnected,
 		RetryDuration:  connectionRetryInterval,
 		TargetOutbound: uint32(config.ActiveConfig().TargetOutboundPeers),
-		Dial:           serverutils.BTCDDial,
+		Dial:           serverutils.KaspadDial,
 		OnConnection: func(c *connmgr.ConnReq, conn net.Conn) {
 			s.newOutboundConnection <- &outboundPeerConnectedMsg{
 				connReq: c,
@@ -1941,7 +1941,7 @@ func addrStringToNetAddr(addr string) (net.Addr, error) {
 	}
 
 	// Attempt to look up an IP address associated with the parsed host.
-	ips, err := serverutils.BTCDLookup(host)
+	ips, err := serverutils.KaspadLookup(host)
 	if err != nil {
 		return nil, err
 	}

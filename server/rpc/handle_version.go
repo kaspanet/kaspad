@@ -11,11 +11,9 @@ const (
 )
 
 // handleVersion implements the version command.
-//
-// NOTE: This is a btcsuite extension ported from github.com/decred/dcrd.
 func handleVersion(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	result := map[string]rpcmodel.VersionResult{
-		"btcdjsonrpcapi": {
+		"kaspadjsonrpcapi": {
 			VersionString: jsonrpcSemverString,
 			Major:         jsonrpcSemverMajor,
 			Minor:         jsonrpcSemverMinor,

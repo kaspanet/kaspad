@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 )
 
-// OnFeeFilter is invoked when a peer receives a feefilter bitcoin message and
+// OnFeeFilter is invoked when a peer receives a feefilter kaspa message and
 // is used by remote peers to request that no transactions which have a fee rate
 // lower than provided value are inventoried to them. The peer will be
 // disconnected if an invalid fee filter value is provided.

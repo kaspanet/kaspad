@@ -51,7 +51,7 @@ var helpDescsEnUS = map[string]string{
 	"createRawTransaction-amounts":        "JSON object with the destination addresses as keys and amounts as values",
 	"createRawTransaction-amounts--key":   "address",
 	"createRawTransaction-amounts--value": "n.nnn",
-	"createRawTransaction-amounts--desc":  "The destination address as the key and the amount in BTC as the value",
+	"createRawTransaction-amounts--desc":  "The destination address as the key and the amount in KAS as the value",
 	"createRawTransaction-lockTime":       "Locktime value; a non-zero value will also locktime-activate the inputs",
 	"createRawTransaction--result0":       "Hex-encoded bytes of the serialized transaction",
 
@@ -82,10 +82,10 @@ var helpDescsEnUS = map[string]string{
 	"scriptPubKeyResult-asm":     "Disassembly of the script",
 	"scriptPubKeyResult-hex":     "Hex-encoded bytes of the script",
 	"scriptPubKeyResult-type":    "The type of the script (e.g. 'pubkeyhash')",
-	"scriptPubKeyResult-address": "The bitcoin address (if any) associated with this script",
+	"scriptPubKeyResult-address": "The kaspa address (if any) associated with this script",
 
 	// Vout help.
-	"vout-value":        "The amount in BTC",
+	"vout-value":        "The amount in KAS",
 	"vout-n":            "The index of this transaction output",
 	"vout-scriptPubKey": "The public key script used to pay coins as a JSON object",
 
@@ -112,7 +112,7 @@ var helpDescsEnUS = map[string]string{
 	"decodeScriptResult-asm":     "Disassembly of the script",
 	"decodeScriptResult-type":    "The type of the script (e.g. 'pubkeyhash')",
 	"decodeScriptResult-reqSigs": "The number of required signatures",
-	"decodeScriptResult-address": "The bitcoin address (if any) associated with this script",
+	"decodeScriptResult-address": "The kaspa address (if any) associated with this script",
 	"decodeScriptResult-p2sh":    "The script hash for use in pay-to-script-hash transactions (only present if the provided redeem script is not already a pay-to-script-hash script)",
 
 	// DecodeScriptCmd help.
@@ -156,7 +156,7 @@ var helpDescsEnUS = map[string]string{
 	// GetSelectedTipCmd help.
 	"getSelectedTip--synopsis":   "Returns information about the selected tip of the blockDAG.",
 	"getSelectedTip-verbose":     "Specifies the block is returned as a JSON object instead of hex-encoded string",
-	"getSelectedTip-verboseTx":   "Specifies that each transaction is returned as a JSON object and only applies if the verbose flag is true (btcd extension)",
+	"getSelectedTip-verboseTx":   "Specifies that each transaction is returned as a JSON object and only applies if the verbose flag is true (kaspad extension)",
 	"getSelectedTip--condition0": "verbose=false",
 	"getSelectedTip--condition1": "verbose=true",
 	"getSelectedTip-acceptedTx":  "Specifies if the transaction got accepted",
@@ -170,7 +170,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlock--synopsis":   "Returns information about a block given its hash.",
 	"getBlock-hash":        "The hash of the block",
 	"getBlock-verbose":     "Specifies the block is returned as a JSON object instead of hex-encoded string",
-	"getBlock-verboseTx":   "Specifies that each transaction is returned as a JSON object and only applies if the verbose flag is true (btcd extension)",
+	"getBlock-verboseTx":   "Specifies that each transaction is returned as a JSON object and only applies if the verbose flag is true (kaspad extension)",
 	"getBlock-subnetwork":  "If passed, the returned block will be a partial block of the specified subnetwork",
 	"getBlock--condition0": "verbose=false",
 	"getBlock--condition1": "verbose=true",
@@ -318,7 +318,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockTemplateResultTx-id":      "Hex-encoded transaction ID (little endian if treated as a 256-bit number)",
 	"getBlockTemplateResultTx-depends": "Other transactions before this one (by 1-based index in the 'transactions'  list) that must be present in the final block if this one is",
 	"getBlockTemplateResultTx-mass":    "Total mass of all transactions in the block",
-	"getBlockTemplateResultTx-fee":     "Difference in value between transaction inputs and outputs (in Satoshi)",
+	"getBlockTemplateResultTx-fee":     "Difference in value between transaction inputs and outputs (in sompi)",
 	"getBlockTemplateResultTx-sigOps":  "Total number of signature operations as counted for purposes of block limits",
 
 	// GetBlockTemplateResultAux help.
@@ -337,7 +337,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockTemplateResult-version":              "The block version",
 	"getBlockTemplateResult-coinbaseAux":          "Data that should be included in the coinbase signature script",
 	"getBlockTemplateResult-coinbaseTxn":          "Information about the coinbase transaction",
-	"getBlockTemplateResult-coinbaseValue":        "Total amount available for the coinbase in Satoshi",
+	"getBlockTemplateResult-coinbaseValue":        "Total amount available for the coinbase in sompi",
 	"getBlockTemplateResult-workId":               "This value must be returned with result if provided (not provided)",
 	"getBlockTemplateResult-longPollId":           "Identifier for long poll request which allows monitoring for expiration",
 	"getBlockTemplateResult-longPollUri":          "An alternate URI to use for long poll requests if provided (not provided)",
@@ -388,7 +388,7 @@ var helpDescsEnUS = map[string]string{
 	"getConnectionCount--result0":  "The number of connections",
 
 	// GetCurrentNetCmd help.
-	"getCurrentNet--synopsis": "Get bitcoin network the server is running on.",
+	"getCurrentNet--synopsis": "Get kaspa network the server is running on.",
 	"getCurrentNet--result0":  "The network identifer",
 
 	// GetDifficultyCmd help.
@@ -413,7 +413,7 @@ var helpDescsEnUS = map[string]string{
 	"infoDagResult-difficulty":      "The current target difficulty",
 	"infoDagResult-testNet":         "Whether or not server is using testnet",
 	"infoDagResult-devNet":          "Whether or not server is using devnet",
-	"infoDagResult-relayFee":        "The minimum relay fee for non-free transactions in BTC/KB",
+	"infoDagResult-relayFee":        "The minimum relay fee for non-free transactions in KAS/KB",
 	"infoDagResult-errors":          "Any current errors",
 
 	// GetTopHeadersCmd help.
@@ -494,7 +494,7 @@ var helpDescsEnUS = map[string]string{
 
 	// GetRawMempoolVerboseResult help.
 	"getRawMempoolVerboseResult-size":             "Transaction size in bytes",
-	"getRawMempoolVerboseResult-fee":              "Transaction fee in bitcoins",
+	"getRawMempoolVerboseResult-fee":              "Transaction fee in kaspa",
 	"getRawMempoolVerboseResult-time":             "Local time transaction entered pool in seconds since 1 Jan 1970 GMT",
 	"getRawMempoolVerboseResult-height":           "Block height when transaction entered the pool",
 	"getRawMempoolVerboseResult-startingPriority": "Priority when transaction entered the pool",
@@ -527,7 +527,7 @@ var helpDescsEnUS = map[string]string{
 	"getTxOutResult-selectedTip":   "The block hash that contains the transaction output",
 	"getTxOutResult-confirmations": "The number of confirmations (Will be 'null' if txindex is not disabled)",
 	"getTxOutResult-isInMempool":   "Whether the transaction is in the mempool",
-	"getTxOutResult-value":         "The transaction amount in BTC",
+	"getTxOutResult-value":         "The transaction amount in KAS",
 	"getTxOutResult-scriptPubKey":  "The public key script used to pay coins as a JSON object",
 	"getTxOutResult-version":       "The transaction version",
 	"getTxOutResult-coinbase":      "Whether or not the transaction is a coinbase",
@@ -560,7 +560,7 @@ var helpDescsEnUS = map[string]string{
 		"Transactions pulled from the mempool will have the 'confirmations' field set to 0.\n" +
 		"Usage of this RPC requires the optional --addrindex flag to be activated, otherwise all responses will simply return with an error stating the address index has not yet been built.\n" +
 		"Similarly, until the address index has caught up with the current best height, all requests will return an error response in order to avoid serving stale data.",
-	"searchRawTransactions-address":     "The Bitcoin address to search for",
+	"searchRawTransactions-address":     "The kaspa address to search for",
 	"searchRawTransactions-verbose":     "Specifies the transaction is returned as a JSON object instead of hex-encoded string",
 	"searchRawTransactions--condition0": "verbose=0",
 	"searchRawTransactions--condition1": "verbose=1",
@@ -574,7 +574,7 @@ var helpDescsEnUS = map[string]string{
 	// SendRawTransactionCmd help.
 	"sendRawTransaction--synopsis":     "Submits the serialized, hex-encoded transaction to the local peer and relays it to the network.",
 	"sendRawTransaction-hexTx":         "Serialized, hex-encoded signed transaction",
-	"sendRawTransaction-allowHighFees": "Whether or not to allow insanely high fees (btcd does not yet implement this parameter, so it has no effect)",
+	"sendRawTransaction-allowHighFees": "Whether or not to allow insanely high fees (kaspad does not yet implement this parameter, so it has no effect)",
 	"sendRawTransaction--result0":      "The hash of the transaction",
 
 	// SetGenerateCmd help.
@@ -583,8 +583,8 @@ var helpDescsEnUS = map[string]string{
 	"setGenerate-genProcLimit": "The number of processors (cores) to limit generation to or -1 for default",
 
 	// StopCmd help.
-	"stop--synopsis": "Shutdown btcd.",
-	"stop--result0":  "The string 'btcd stopping.'",
+	"stop--synopsis": "Shutdown kaspad.",
+	"stop--result0":  "The string 'kaspad stopping.'",
 
 	// SubmitBlockOptions help.
 	"submitBlockOptions-workId": "This parameter is currently ignored",
@@ -599,11 +599,11 @@ var helpDescsEnUS = map[string]string{
 
 	// ValidateAddressResult help.
 	"validateAddressResult-isValid": "Whether or not the address is valid",
-	"validateAddressResult-address": "The bitcoin address (only when isvalid is true)",
+	"validateAddressResult-address": "The kaspa address (only when isvalid is true)",
 
 	// ValidateAddressCmd help.
 	"validateAddress--synopsis": "Verify an address is valid.",
-	"validateAddress-address":   "Bitcoin address to validate",
+	"validateAddress-address":   "Kaspa address to validate",
 
 	// -------- Websocket-specific help --------
 

@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// OnGetCFCheckpt is invoked when a peer receives a getcfcheckpt bitcoin message.
+// OnGetCFCheckpt is invoked when a peer receives a getcfcheckpt kaspa message.
 func (sp *Peer) OnGetCFCheckpt(_ *peer.Peer, msg *wire.MsgGetCFCheckpt) {
 	// Ignore getcfcheckpt requests if not in sync.
 	if !sp.server.SyncManager.IsCurrent() {

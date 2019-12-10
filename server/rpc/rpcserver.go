@@ -376,7 +376,7 @@ type parsedRPCCmd struct {
 	err    *rpcmodel.RPCError
 }
 
-// standardCmdResult checks that a parsed command is a standard Bitcoin JSON-RPC
+// standardCmdResult checks that a parsed command is a standard kaspa JSON-RPC
 // command and runs the appropriate handler to reply to the command. Any
 // commands which are not recognized or not implemented will return an error
 // suitable for use in replies.
@@ -504,10 +504,7 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 		// must not be responded to. JSON-RPC 2.0 permits the null value as a
 		// valid request id, therefore such requests are not notifications.
 		//
-		// Bitcoin Core serves requests with "id":null or even an absent "id",
-		// and responds to such requests with "id":null in the response.
-		//
-		// Btcd does not respond to any request without and "id" or "id":null,
+		// Kaspad does not respond to any request without and "id" or "id":null,
 		// regardless the indicated JSON-RPC protocol version unless RPC quirks
 		// are enabled. With RPC quirks enabled, such requests will be responded
 		// to if the reqeust does not indicate JSON-RPC version.
@@ -572,7 +569,7 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 		log.Errorf("Failed to write marshalled reply: %s", err)
 	}
 
-	// Terminate with newline to maintain compatibility with Bitcoin Core.
+	// Terminate with newline for historical reasons.
 	if err := buf.WriteByte('\n'); err != nil {
 		log.Errorf("Failed to append terminating newline to reply: %s", err)
 	}
@@ -580,7 +577,7 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 
 // jsonAuthFail sends a message back to the client if the http auth is rejected.
 func jsonAuthFail(w http.ResponseWriter) {
-	w.Header().Add("WWW-Authenticate", `Basic realm="btcd RPC"`)
+	w.Header().Add("WWW-Authenticate", `Basic realm="kaspad RPC"`)
 	http.Error(w, "401 Unauthorized.", http.StatusUnauthorized)
 }
 

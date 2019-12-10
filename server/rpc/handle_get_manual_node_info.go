@@ -83,7 +83,7 @@ func getManualNodesInfo(s *Server, detailsArg *bool, node string) (interface{}, 
 		default:
 			// Do a DNS lookup for the address. If the lookup fails, just
 			// use the host.
-			ips, err := serverutils.BTCDLookup(host)
+			ips, err := serverutils.KaspadLookup(host)
 			if err != nil {
 				ipList = make([]string, 1)
 				ipList[0] = host

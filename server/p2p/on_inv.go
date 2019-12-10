@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// OnInv is invoked when a peer receives an inv bitcoin message and is
+// OnInv is invoked when a peer receives an inv kaspa message and is
 // used to examine the inventory being advertised by the remote peer and react
 // accordingly. We pass the message down to blockmanager which will call
 // QueueMessage with any appropriate responses.

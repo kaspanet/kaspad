@@ -75,8 +75,8 @@ func (s *Server) Stop() error {
 	return nil
 }
 
-// NewServer returns a new btcd server configured to listen on addr for the
-// bitcoin network type specified by chainParams. Use start to begin accepting
+// NewServer returns a new kaspad server configured to listen on addr for the
+// kaspa network type specified by dagParams. Use start to begin accepting
 // connections from peers.
 func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params, interrupt <-chan struct{}) (*Server, error) {
 	s := &Server{}

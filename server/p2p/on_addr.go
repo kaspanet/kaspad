@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// OnAddr is invoked when a peer receives an addr bitcoin message and is
+// OnAddr is invoked when a peer receives an addr kaspa message and is
 // used to notify the server about advertised addresses.
 func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 	// Ignore addresses when running on the simulation test network. This
@@ -59,7 +59,7 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 	// Add addresses to server address manager. The address manager handles
 	// the details of things such as preventing duplicate addresses, max
 	// addresses, and last seen updates.
-	// XXX bitcoind gives a 2 hour time penalty here, do we want to do the
+	// XXX kaspad gives a 2 hour time penalty here, do we want to do the
 	// same?
 	sp.server.addrManager.AddAddresses(msg.AddrList, sp.NA(), msg.SubnetworkID)
 }

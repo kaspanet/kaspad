@@ -5,7 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// OnGetCFilters is invoked when a peer receives a getcfilters bitcoin message.
+// OnGetCFilters is invoked when a peer receives a getcfilters kaspa message.
 func (sp *Peer) OnGetCFilters(_ *peer.Peer, msg *wire.MsgGetCFilters) {
 	// Ignore getcfilters requests if not in sync.
 	if !sp.server.SyncManager.IsCurrent() {

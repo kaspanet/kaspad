@@ -8,9 +8,6 @@ import (
 )
 
 // handleGetHeaders implements the getHeaders command.
-//
-// NOTE: This is a btcsuite extension originally ported from
-// github.com/decred/dcrd.
 func handleGetHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*rpcmodel.GetHeadersCmd)
 

@@ -8,8 +8,8 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// OnTx is invoked when a peer receives a tx bitcoin message. It blocks
-// until the bitcoin transaction has been fully processed. Unlock the block
+// OnTx is invoked when a peer receives a tx kaspa message. It blocks
+// until the kaspa transaction has been fully processed. Unlock the block
 // handler this does not serialize all transactions through a single thread
 // transactions don't rely on the previous one in a linear fashion like blocks.
 func (sp *Peer) OnTx(_ *peer.Peer, msg *wire.MsgTx) {

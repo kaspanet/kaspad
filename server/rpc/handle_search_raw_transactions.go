@@ -265,8 +265,6 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 
 		// Add the block information to the result if there is any.
 		if blkHeader != nil {
-			// This is not a typo, they are identical in Bitcoin
-			// Core as well.
 			result.Time = uint64(blkHeader.Timestamp.Unix())
 			result.Blocktime = uint64(blkHeader.Timestamp.Unix())
 			result.BlockHash = blkHashStr

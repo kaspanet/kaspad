@@ -7,7 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// OnVersion is invoked when a peer receives a version bitcoin message
+// OnVersion is invoked when a peer receives a version kaspa message
 // and is used to negotiate the protocol version details as well as kick start
 // the communications.
 func (sp *Peer) OnVersion(_ *peer.Peer, msg *wire.MsgVersion) {

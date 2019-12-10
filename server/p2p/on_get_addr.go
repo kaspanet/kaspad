@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// OnGetAddr is invoked when a peer receives a getaddr bitcoin message
+// OnGetAddr is invoked when a peer receives a getaddr kaspa message
 // and is used to provide the peer with known addresses from the address
 // manager.
 func (sp *Peer) OnGetAddr(_ *peer.Peer, msg *wire.MsgGetAddr) {

@@ -87,14 +87,14 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 			return nil, internalRPCError(err.Error(), context)
 		}
 
-		// Convert the amount to satoshi.
-		satoshi, err := util.NewAmount(amount)
+		// Convert the amount to sompi.
+		sompi, err := util.NewAmount(amount)
 		if err != nil {
 			context := "Failed to convert amount"
 			return nil, internalRPCError(err.Error(), context)
 		}
 
-		txOut := wire.NewTxOut(uint64(satoshi), scriptPubKey)
+		txOut := wire.NewTxOut(uint64(sompi), scriptPubKey)
 		mtx.AddTxOut(txOut)
 	}
 

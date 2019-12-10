@@ -169,7 +169,6 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 	}
 
 	if blkHeader != nil {
-		// This is not a typo, they are identical in bitcoind as well.
 		txReply.Time = uint64(blkHeader.Timestamp.Unix())
 		txReply.BlockTime = uint64(blkHeader.Timestamp.Unix())
 		txReply.BlockHash = blkHash

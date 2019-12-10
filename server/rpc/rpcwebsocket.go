@@ -990,10 +990,7 @@ out:
 		// must not be responded to. JSON-RPC 2.0 permits the null value as a
 		// valid request id, therefore such requests are not notifications.
 		//
-		// Bitcoin Core serves requests with "id":null or even an absent "id",
-		// and responds to such requests with "id":null in the response.
-		//
-		// Btcd does not respond to any request without and "id" or "id":null,
+		// Kaspad does not respond to any request without and "id" or "id":null,
 		// regardless the indicated JSON-RPC protocol version unless RPC quirks
 		// are enabled. With RPC quirks enabled, such requests will be responded
 		// to if the reqeust does not indicate JSON-RPC version.

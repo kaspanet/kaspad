@@ -94,9 +94,6 @@ func builderScript(builder *txscript.ScriptBuilder) []byte {
 }
 
 // handleGetBlockTemplate implements the getBlockTemplate command.
-//
-// See https://en.bitcoin.it/wiki/BIP_0022 and
-// https://en.bitcoin.it/wiki/BIP_0023 for more details.
 func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*rpcmodel.GetBlockTemplateCmd)
 	request := c.Request
@@ -116,7 +113,7 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 		(currentChainHeight == 0 && !s.cfg.CPUMiner.ShouldMineOnGenesis()) {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCClientInInitialDownload,
-			Message: "Bitcoin is downloading blocks...",
+			Message: "Kaspa is downloading blocks...",
 		}
 	}
 
@@ -181,7 +178,7 @@ func handleGetBlockTemplateRequest(s *Server, request *rpcmodel.TemplateRequest,
 
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCClientNotConnected,
-			Message: "Bitcoin is not connected",
+			Message: "Kaspa is not connected",
 		}
 	}
 
@@ -218,8 +215,6 @@ func handleGetBlockTemplateRequest(s *Server, request *rpcmodel.TemplateRequest,
 // old block template is no longer valid due to a solution already being found
 // and added to the block chain, or new transactions have shown up and some time
 // has passed without finding a solution.
-//
-// See https://en.bitcoin.it/wiki/BIP_0022 for more details.
 func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseValue bool, closeChan <-chan struct{}) (interface{}, error) {
 	state := s.gbtWorkState
 	state.Lock()
@@ -308,8 +303,6 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 
 // handleGetBlockTemplateProposal is a helper for handleGetBlockTemplate which
 // deals with block proposals.
-//
-// See https://en.bitcoin.it/wiki/BIP_0023 for more details.
 func handleGetBlockTemplateProposal(s *Server, request *rpcmodel.TemplateRequest) (interface{}, error) {
 	hexData := request.Data
 	if hexData == "" {
@@ -366,7 +359,7 @@ func handleGetBlockTemplateProposal(s *Server, request *rpcmodel.TemplateRequest
 	return nil, nil
 }
 
-// chainErrToGBTErrString converts an error returned from btcchain to a string
+// chainErrToGBTErrString converts an error returned from kaspa to a string
 // which matches the reasons and format described in BIP0022 for rejection
 // reasons.
 func chainErrToGBTErrString(err error) string {

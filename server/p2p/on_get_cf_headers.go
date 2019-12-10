@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// OnGetCFHeaders is invoked when a peer receives a getcfheader bitcoin message.
+// OnGetCFHeaders is invoked when a peer receives a getcfheader kaspa message.
 func (sp *Peer) OnGetCFHeaders(_ *peer.Peer, msg *wire.MsgGetCFHeaders) {
 	// Ignore getcfilterheader requests if not in sync.
 	if !sp.server.SyncManager.IsCurrent() {
