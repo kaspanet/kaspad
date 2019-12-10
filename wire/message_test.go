@@ -71,13 +71,6 @@ func TestMessage(t *testing.T) {
 	bh := NewBlockHeader(1, []*daghash.Hash{mainNetGenesisHash, simNetGenesisHash}, &daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, 0, 0)
 	msgMerkleBlock := NewMsgMerkleBlock(bh)
 	msgReject := NewMsgReject("block", RejectDuplicate, "duplicate block")
-	msgGetCFilters := NewMsgGetCFilters(GCSFilterExtended, 0, &daghash.Hash{})
-	msgGetCFHeaders := NewMsgGetCFHeaders(GCSFilterExtended, 0, &daghash.Hash{})
-	msgGetCFCheckpt := NewMsgGetCFCheckpt(GCSFilterExtended, &daghash.Hash{})
-	msgCFilter := NewMsgCFilter(GCSFilterExtended, &daghash.Hash{},
-		[]byte("payload"))
-	msgCFHeaders := NewMsgCFHeaders()
-	msgCFCheckpt := NewMsgCFCheckpt(GCSFilterExtended, &daghash.Hash{}, 0)
 
 	tests := []struct {
 		in       Message  // Value to encode
@@ -109,12 +102,6 @@ func TestMessage(t *testing.T) {
 		{msgFilterLoad, msgFilterLoad, pver, MainNet, 35},
 		{msgMerkleBlock, msgMerkleBlock, pver, MainNet, 215},
 		{msgReject, msgReject, pver, MainNet, 79},
-		{msgGetCFilters, msgGetCFilters, pver, MainNet, 65},
-		{msgGetCFHeaders, msgGetCFHeaders, pver, MainNet, 65},
-		{msgGetCFCheckpt, msgGetCFCheckpt, pver, MainNet, 57},
-		{msgCFilter, msgCFilter, pver, MainNet, 65},
-		{msgCFHeaders, msgCFHeaders, pver, MainNet, 90},
-		{msgCFCheckpt, msgCFCheckpt, pver, MainNet, 58},
 	}
 
 	t.Logf("Running %d tests", len(tests))

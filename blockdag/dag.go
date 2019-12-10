@@ -581,7 +581,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	}
 
 	// Apply all changes to the DAG.
-	virtualUTXODiff, virtualTxsAcceptanceData, chainUpdates, err := dag.applyDAGChanges(node, block, newBlockUTXO, fastAdd)
+	virtualUTXODiff, virtualTxsAcceptanceData, chainUpdates, err := dag.applyDAGChanges(node, newBlockUTXO, fastAdd)
 	if err != nil {
 		// Since all validation logic has already ran, if applyDAGChanges errors out,
 		// this means we have a problem in the internal structure of the DAG - a problem which is
@@ -887,37 +887,27 @@ func (dag *BlockDAG) BlockPastUTXO(blockHash *daghash.Hash) (UTXOSet, error) {
 // It returns the diff in the virtual block's UTXO set.
 //
 // This function MUST be called with the DAG state lock held (for writes).
-func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBlockUTXO UTXOSet, fastAdd bool) (
+func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, fastAdd bool) (
 	virtualUTXODiff *UTXODiff, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData,
 	chainUpdates *chainUpdates, err error) {
 
 	if err = node.updateParents(dag, newBlockUTXO); err != nil {
-		return nil, nil, nil, errors.Errorf("failed updating parents of %s: %s", node, err)
+		return nil, nil, nil, errors.Wrapf(err, "failed updating parents of %s", node)
 	}
 
 	// Update the virtual block's parents (the DAG tips) to include the new block.
 	chainUpdates = dag.virtual.AddTip(node)
 
 	// Build a UTXO set for the new virtual block
-	newVirtualPastUTXO, virtualTxsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
+	newVirtualUTXO, virtualTxsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
 	if err != nil {
-		return nil, nil, nil, errors.Errorf("could not restore past UTXO for virtual %s: %s", dag.virtual, err)
-	}
-
-	// Apply the new virtual's blue score to all the unaccepted UTXOs
-	diffFromAcceptanceData, err := dag.virtual.diffFromAcceptanceData(newVirtualPastUTXO, virtualTxsAcceptanceData)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	newVirtualUTXO, err := newVirtualPastUTXO.WithDiff(diffFromAcceptanceData)
-	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "could not restore past UTXO for virtual")
 	}
 
 	// Apply new utxoDiffs to all the tips
 	err = updateTipsUTXO(dag, newVirtualUTXO)
 	if err != nil {
-		return nil, nil, nil, errors.Errorf("failed updating the tips' UTXO: %s", err)
+		return nil, nil, nil, errors.Wrap(err, "failed updating the tips' UTXO")
 	}
 
 	// It is now safe to meld the UTXO set to base.
@@ -925,7 +915,7 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBloc
 	virtualUTXODiff = diffSet.UTXODiff
 	err = dag.meldVirtualUTXO(diffSet)
 	if err != nil {
-		return nil, nil, nil, errors.Errorf("failed melding the virtual UTXO: %s", err)
+		return nil, nil, nil, errors.Wrap(err, "failed melding the virtual UTXO")
 	}
 
 	dag.index.SetStatusFlags(node, statusValid)
@@ -959,29 +949,6 @@ func (node *blockNode) diffFromTxs(pastUTXO UTXOSet, transactions []*util.Tx) (*
 	return diff, nil
 }
 
-// diffFromAccpetanceData creates a diff that "updates" the blue scores of the given
-// UTXOSet with the node's blueScore according to the given acceptance data.
-func (node *blockNode) diffFromAcceptanceData(pastUTXO UTXOSet, multiBlockTxsAcceptanceData MultiBlockTxsAcceptanceData) (*UTXODiff, error) {
-	diff := NewUTXODiff()
-
-	for _, blockTxsAcceptanceData := range multiBlockTxsAcceptanceData {
-		for _, txAcceptanceData := range blockTxsAcceptanceData.TxAcceptanceData {
-			if txAcceptanceData.IsAccepted {
-				acceptanceDiff, err := pastUTXO.diffFromAcceptedTx(txAcceptanceData.Tx.MsgTx(), node.blueScore)
-				if err != nil {
-					return nil, err
-				}
-				diff, err = diff.WithDiff(acceptanceDiff)
-				if err != nil {
-					return nil, err
-				}
-			}
-		}
-	}
-
-	return diff, nil
-}
-
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
 // to save extra traversals it returns the transactions acceptance data and the compactFeeData for the new block
 func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
@@ -1002,22 +969,11 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 		return nil, nil, nil, err
 	}
 
-	// We diff from the acceptance data here to "replace" the blueScore that was diff-ed
-	// out of the virtual's UTXO in pastUTXO with this node's blueScore.
-	diffFromAcceptanceData, err := node.diffFromAcceptanceData(pastUTXO, txsAcceptanceData)
+	diffFromTxs, err := node.diffFromTxs(pastUTXO, transactions)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	utxo, err := pastUTXO.WithDiff(diffFromAcceptanceData)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	diffFromTxs, err := node.diffFromTxs(utxo, transactions)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	utxo, err = utxo.WithDiff(diffFromTxs)
+	utxo, err := pastUTXO.WithDiff(diffFromTxs)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -1073,21 +1029,15 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 }
 
 func (node *blockNode) fetchBlueBlocks(db database.DB) ([]*util.Block, error) {
-	// Fetch from the database all the transactions for this block's blue set
-	blueBlocks := make([]*util.Block, 0, len(node.blues))
+	blueBlocks := make([]*util.Block, len(node.blues))
 	err := db.View(func(dbTx database.Tx) error {
-		// Precalculate the amount of transactions in this block's blue set, besides the selected parent.
-		// This is to avoid an attack in which an attacker fabricates a block that will deliberately cause
-		// a lot of copying, causing a high cost to the whole network.
-		for i := len(node.blues) - 1; i >= 0; i-- {
-			blueBlockNode := node.blues[i]
-
+		for i, blueBlockNode := range node.blues {
 			blueBlock, err := dbFetchBlockByNode(dbTx, blueBlockNode)
 			if err != nil {
 				return err
 			}
 
-			blueBlocks = append(blueBlocks, blueBlock)
+			blueBlocks[i] = blueBlock
 		}
 
 		return nil
@@ -1098,27 +1048,32 @@ func (node *blockNode) fetchBlueBlocks(db database.DB) ([]*util.Block, error) {
 // applyBlueBlocks adds all transactions in the blue blocks to the selectedParent's UTXO set
 // Purposefully ignoring failures - these are just unaccepted transactions
 // Writing down which transactions were accepted or not in txsAcceptanceData
-func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []*util.Block) (
+func (node *blockNode) applyBlueBlocks(acceptedSelectedParentUTXO UTXOSet, selectedParentAcceptanceData []TxAcceptanceData, blueBlocks []*util.Block) (
 	pastUTXO UTXOSet, multiBlockTxsAcceptanceData MultiBlockTxsAcceptanceData, err error) {
 
-	pastUTXO = selectedParentUTXO
-	multiBlockTxsAcceptanceData = MultiBlockTxsAcceptanceData{}
+	pastUTXO = acceptedSelectedParentUTXO
+	multiBlockTxsAcceptanceData = MultiBlockTxsAcceptanceData{BlockTxsAcceptanceData{
+		BlockHash:        *node.selectedParent.hash,
+		TxAcceptanceData: selectedParentAcceptanceData,
+	}}
 
 	// Add blueBlocks to multiBlockTxsAcceptanceData bottom-to-top instead of
 	// top-to-bottom. This is so that anyone who iterates over it would process
 	// blocks (and transactions) in their order of appearance in the DAG.
-	for i := len(blueBlocks) - 1; i >= 0; i-- {
+	// We skip the selected parent, because we calculated its UTXO before.
+	for i := len(blueBlocks) - 2; i >= 0; i-- {
 		blueBlock := blueBlocks[i]
 		transactions := blueBlock.Transactions()
 		blockTxsAcceptanceData := BlockTxsAcceptanceData{
 			BlockHash:        *blueBlock.Hash(),
 			TxAcceptanceData: make([]TxAcceptanceData, len(transactions)),
 		}
-		isSelectedParent := blueBlock.Hash().IsEqual(node.selectedParent.hash)
 		for i, tx := range blueBlock.Transactions() {
 			var isAccepted bool
-			if isSelectedParent {
-				isAccepted = true
+			// Coinbase transaction outputs are added to the UTXO
+			// only if they are in the selected parent chain.
+			if tx.IsCoinBase() {
+				isAccepted = false
 			} else {
 				isAccepted, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
 				if err != nil {
@@ -1199,7 +1154,37 @@ func (dag *BlockDAG) pastUTXO(node *blockNode) (
 		return nil, nil, err
 	}
 
-	return node.applyBlueBlocks(selectedParentUTXO, blueBlocks)
+	selectedParent := blueBlocks[len(blueBlocks)-1]
+	acceptedSelectedParentUTXO, selectedParentAcceptanceData, err := node.acceptSelectedParentTransactions(selectedParent, selectedParentUTXO)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return node.applyBlueBlocks(acceptedSelectedParentUTXO, selectedParentAcceptanceData, blueBlocks)
+}
+
+func (node *blockNode) acceptSelectedParentTransactions(selectedParent *util.Block, selectedParentUTXO UTXOSet) (acceptedSelectedParentUTXO UTXOSet, txAcceptanceData []TxAcceptanceData, err error) {
+	diff := NewUTXODiff()
+	txAcceptanceData = make([]TxAcceptanceData, len(selectedParent.Transactions()))
+	for i, tx := range selectedParent.Transactions() {
+		txAcceptanceData[i] = TxAcceptanceData{
+			Tx:         tx,
+			IsAccepted: true,
+		}
+		acceptanceDiff, err := selectedParentUTXO.diffFromAcceptedTx(tx.MsgTx(), node.blueScore)
+		if err != nil {
+			return nil, nil, err
+		}
+		diff, err = diff.WithDiff(acceptanceDiff)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	acceptedSelectedParentUTXO, err = selectedParentUTXO.WithDiff(diff)
+	if err != nil {
+		return nil, nil, err
+	}
+	return acceptedSelectedParentUTXO, txAcceptanceData, nil
 }
 
 // restoreUTXO restores the UTXO of a given block from its diff
@@ -1596,13 +1581,13 @@ func (dag *BlockDAG) ChildHashesByHash(hash *daghash.Hash) ([]*daghash.Hash, err
 	return node.children.hashes(), nil
 }
 
-// HeightToHashRange returns a range of block hashes for the given start height
-// and end hash, inclusive on both ends. The hashes are for all blocks that are
-// ancestors of endHash with height greater than or equal to startHeight. The
-// end hash must belong to a block that is known to be valid.
+// ChainHeightToHashRange returns a range of block hashes for the given start chain
+// height and end hash, inclusive on both ends. The hashes are for all blocks that
+// are ancestors of endHash with height greater than or equal to startChainHeight.
+// The end hash must belong to a block that is known to be valid.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) HeightToHashRange(startHeight uint64,
+func (dag *BlockDAG) ChainHeightToHashRange(startChainHeight uint64,
 	endHash *daghash.Hash, maxResults int) ([]*daghash.Hash, error) {
 
 	endNode := dag.index.LookupNode(endHash)
@@ -1612,23 +1597,23 @@ func (dag *BlockDAG) HeightToHashRange(startHeight uint64,
 	if !dag.index.NodeStatus(endNode).KnownValid() {
 		return nil, errors.Errorf("block %s is not yet validated", endHash)
 	}
-	endHeight := endNode.height
+	endChainHeight := endNode.chainHeight
 
-	if startHeight < 0 {
-		return nil, errors.Errorf("start height (%d) is below 0", startHeight)
+	if startChainHeight < 0 {
+		return nil, errors.Errorf("start chain height (%d) is below 0", startChainHeight)
 	}
-	if startHeight > endHeight {
-		return nil, errors.Errorf("start height (%d) is past end height (%d)",
-			startHeight, endHeight)
+	if startChainHeight > endChainHeight {
+		return nil, errors.Errorf("start chain height (%d) is past end chain height (%d)",
+			startChainHeight, endChainHeight)
 	}
 
-	resultsLength := int(endHeight - startHeight + 1)
+	resultsLength := int(endChainHeight - startChainHeight + 1)
 	if resultsLength > maxResults {
 		return nil, errors.Errorf("number of results (%d) would exceed max (%d)",
 			resultsLength, maxResults)
 	}
 
-	// Walk backwards from endHeight to startHeight, collecting block hashes.
+	// Walk backwards from endChainHeight to startChainHeight, collecting block hashes.
 	node := endNode
 	hashes := make([]*daghash.Hash, resultsLength)
 	for i := resultsLength - 1; i >= 0; i-- {
@@ -1652,16 +1637,16 @@ func (dag *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval uint64,
 	if !dag.index.NodeStatus(endNode).KnownValid() {
 		return nil, errors.Errorf("block %s is not yet validated", endHash)
 	}
-	endHeight := endNode.height
+	endChainHeight := endNode.chainHeight
 
-	resultsLength := endHeight / interval
+	resultsLength := endChainHeight / interval
 	hashes := make([]*daghash.Hash, resultsLength)
 
 	dag.virtual.mtx.Lock()
 	defer dag.virtual.mtx.Unlock()
 
 	blockNode := endNode
-	for index := endHeight / interval; index > 0; index-- {
+	for index := endChainHeight / interval; index > 0; index-- {
 		blockHeight := index * interval
 		blockNode = blockNode.SelectedAncestor(blockHeight)
 

@@ -224,7 +224,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 	txsForBlockTemplate, err := g.selectTxs(payToAddress)
 	if err != nil {
-		return nil, errors.Errorf("failed to select txs: %s", err)
+		return nil, errors.Errorf("failed to select transactions: %s", err)
 	}
 
 	// Calculate the required difficulty for the block. The timestamp

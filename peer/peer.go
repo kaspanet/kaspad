@@ -117,18 +117,7 @@ type MessageListeners struct {
 	// OnBlock is invoked when a peer receives a block kaspa message.
 	OnBlock func(p *Peer, msg *wire.MsgBlock, buf []byte)
 
-	// OnCFilter is invoked when a peer receives a cfilter kaspa message.
-	OnCFilter func(p *Peer, msg *wire.MsgCFilter)
-
-	// OnCFHeaders is invoked when a peer receives a cfheaders kaspa
-	// message.
-	OnCFHeaders func(p *Peer, msg *wire.MsgCFHeaders)
-
-	// OnCFCheckpt is invoked when a peer receives a cfcheckpt kaspa
-	// message.
-	OnCFCheckpt func(p *Peer, msg *wire.MsgCFCheckpt)
-
-	// OnInv is invoked when a peer receives an inv kaspa message.
+	// OnInv is invoked when a peer receives an inv bitcoin message.
 	OnInv func(p *Peer, msg *wire.MsgInv)
 
 	// OnGetBlockLocator is invoked when a peer receives a getlocator kaspa message.
@@ -155,19 +144,7 @@ type MessageListeners struct {
 	// message.
 	OnGetHeaders func(p *Peer, msg *wire.MsgGetHeaders)
 
-	// OnGetCFilters is invoked when a peer receives a getcfilters kaspa
-	// message.
-	OnGetCFilters func(p *Peer, msg *wire.MsgGetCFilters)
-
-	// OnGetCFHeaders is invoked when a peer receives a getcfheaders
-	// kaspa message.
-	OnGetCFHeaders func(p *Peer, msg *wire.MsgGetCFHeaders)
-
-	// OnGetCFCheckpt is invoked when a peer receives a getcfcheckpt
-	// kaspa message.
-	OnGetCFCheckpt func(p *Peer, msg *wire.MsgGetCFCheckpt)
-
-	// OnFeeFilter is invoked when a peer receives a feefilter kaspa message.
+	// OnFeeFilter is invoked when a peer receives a feefilter bitcoin message.
 	OnFeeFilter func(p *Peer, msg *wire.MsgFeeFilter)
 
 	// OnFilterAdd is invoked when a peer receives a filteradd kaspa message.
@@ -1515,31 +1492,6 @@ out:
 		case *wire.MsgGetHeaders:
 			if p.cfg.Listeners.OnGetHeaders != nil {
 				p.cfg.Listeners.OnGetHeaders(p, msg)
-			}
-
-		case *wire.MsgGetCFilters:
-			if p.cfg.Listeners.OnGetCFilters != nil {
-				p.cfg.Listeners.OnGetCFilters(p, msg)
-			}
-
-		case *wire.MsgGetCFHeaders:
-			if p.cfg.Listeners.OnGetCFHeaders != nil {
-				p.cfg.Listeners.OnGetCFHeaders(p, msg)
-			}
-
-		case *wire.MsgGetCFCheckpt:
-			if p.cfg.Listeners.OnGetCFCheckpt != nil {
-				p.cfg.Listeners.OnGetCFCheckpt(p, msg)
-			}
-
-		case *wire.MsgCFilter:
-			if p.cfg.Listeners.OnCFilter != nil {
-				p.cfg.Listeners.OnCFilter(p, msg)
-			}
-
-		case *wire.MsgCFHeaders:
-			if p.cfg.Listeners.OnCFHeaders != nil {
-				p.cfg.Listeners.OnCFHeaders(p, msg)
 			}
 
 		case *wire.MsgFeeFilter:

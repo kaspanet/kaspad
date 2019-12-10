@@ -183,19 +183,11 @@ func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (
 	}
 	virtual := newVirtualBlock(parents, dag.dagParams.K)
 
-	pastUTXO, acceptanceData, err := dag.pastUTXO(&virtual.blockNode)
+	pastUTXO, _, err := dag.pastUTXO(&virtual.blockNode)
 	if err != nil {
 		return nil, err
 	}
-	diffFromAcceptanceData, err := virtual.blockNode.diffFromAcceptanceData(pastUTXO, acceptanceData)
-	if err != nil {
-		return nil, err
-	}
-	utxo, err := pastUTXO.WithDiff(diffFromAcceptanceData)
-	if err != nil {
-		return nil, err
-	}
-	diffUTXO := utxo.clone().(*DiffUTXOSet)
+	diffUTXO := pastUTXO.clone().(*DiffUTXOSet)
 	err = diffUTXO.meldToBase()
 	if err != nil {
 		return nil, err
