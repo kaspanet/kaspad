@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/kaspanet/kaspad/btcjson"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // TestDAGSvrCmds tests all of the dag server commands marshal and unmarshal
@@ -322,38 +321,6 @@ func TestDAGSvrCmds(t *testing.T) {
 					MassLimit:    int64(100000000),
 					MaxVersion:   1,
 				},
-			},
-		},
-		{
-			name: "getCFilter",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getCFilter", "123",
-					wire.GCSFilterExtended)
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewGetCFilterCmd("123",
-					wire.GCSFilterExtended)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getCFilter","params":["123",1],"id":1}`,
-			unmarshalled: &btcjson.GetCFilterCmd{
-				Hash:       "123",
-				FilterType: wire.GCSFilterExtended,
-			},
-		},
-		{
-			name: "getCFilterHeader",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getCFilterHeader", "123",
-					wire.GCSFilterExtended)
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewGetCFilterHeaderCmd("123",
-					wire.GCSFilterExtended)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getCFilterHeader","params":["123",1],"id":1}`,
-			unmarshalled: &btcjson.GetCFilterHeaderCmd{
-				Hash:       "123",
-				FilterType: wire.GCSFilterExtended,
 			},
 		},
 		{

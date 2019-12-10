@@ -74,8 +74,6 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getBlockCount":         handleGetBlockCount,
 	"getBlockHeader":        handleGetBlockHeader,
 	"getBlockTemplate":      handleGetBlockTemplate,
-	"getCFilter":            handleGetCFilter,
-	"getCFilterHeader":      handleGetCFilterHeader,
 	"getChainFromBlock":     handleGetChainFromBlock,
 	"getConnectionCount":    handleGetConnectionCount,
 	"getCurrentNet":         handleGetCurrentNet,
@@ -147,8 +145,6 @@ var rpcLimited = map[string]struct{}{
 	"getBlockCount":         {},
 	"getBlockHash":          {},
 	"getBlockHeader":        {},
-	"getCFilter":            {},
-	"getCFilterHeader":      {},
 	"getChainFromBlock":     {},
 	"getCurrentNet":         {},
 	"getDifficulty":         {},
@@ -810,7 +806,6 @@ type rpcserverConfig struct {
 	TxIndex         *indexers.TxIndex
 	AddrIndex       *indexers.AddrIndex
 	AcceptanceIndex *indexers.AcceptanceIndex
-	CfIndex         *indexers.CfIndex
 }
 
 // setupRPCListeners returns a slice of listeners that are configured for use
@@ -894,7 +889,6 @@ func NewRPCServer(
 		TxIndex:         p2pServer.TxIndex,
 		AddrIndex:       p2pServer.AddrIndex,
 		AcceptanceIndex: p2pServer.AcceptanceIndex,
-		CfIndex:         p2pServer.CfIndex,
 		DAG:             p2pServer.DAG,
 	}
 	rpc := Server{
