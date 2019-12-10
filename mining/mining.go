@@ -43,7 +43,7 @@ type TxDesc struct {
 	// Fee is the total fee the transaction associated with the entry pays.
 	Fee uint64
 
-	// FeePerKB is the fee the transaction pays in Satoshi per 1000 bytes.
+	// FeePerKB is the fee the transaction pays in sompi per 1000 bytes.
 	FeePerKB uint64
 }
 
