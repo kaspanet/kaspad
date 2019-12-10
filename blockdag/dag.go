@@ -1072,10 +1072,9 @@ func (node *blockNode) applyBlueBlocks(acceptedSelectedParentUTXO UTXOSet, selec
 		}
 		for i, tx := range blueBlock.Transactions() {
 			var isAccepted bool
-			isCoinBase := i == util.CoinbaseTransactionIndex
 			// Coinbase transaction outputs are added to the UTXO
 			// only if they are in the selected parent chain.
-			if isCoinBase {
+			if tx.IsCoinBase() {
 				isAccepted = false
 			} else {
 				isAccepted, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
