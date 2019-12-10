@@ -31,7 +31,7 @@ var (
 	amgrLog = BackendLog.Logger("AMGR")
 	cmgrLog = BackendLog.Logger("CMGR")
 	bcdbLog = BackendLog.Logger("BCDB")
-	btcdLog = BackendLog.Logger("KSPD")
+	kspdLog = BackendLog.Logger("KSPD")
 	bdagLog = BackendLog.Logger("BDAG")
 	cnfgLog = BackendLog.Logger("CNFG")
 	discLog = BackendLog.Logger("DISC")
@@ -91,7 +91,7 @@ var subsystemLoggers = map[string]logs.Logger{
 	SubsystemTags.AMGR: amgrLog,
 	SubsystemTags.CMGR: cmgrLog,
 	SubsystemTags.BCDB: bcdbLog,
-	SubsystemTags.KSPD: btcdLog,
+	SubsystemTags.KSPD: kspdLog,
 	SubsystemTags.BDAG: bdagLog,
 	SubsystemTags.CNFG: cnfgLog,
 	SubsystemTags.DISC: discLog,
