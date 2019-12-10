@@ -13,7 +13,7 @@ import (
 
 // This example demonstrates how to create and marshal a command into a JSON-RPC
 // request.
-func ExampleMarshalCmd() {
+func ExampleMarshalCommand() {
 	// Create a new getblock command. Notice the nil parameter indicates
 	// to use the default parameter for that fields. This is a common
 	// pattern used in all of the New<Foo>Cmd functions in this package for
@@ -43,7 +43,7 @@ func ExampleMarshalCmd() {
 
 // This example demonstrates how to unmarshal a JSON-RPC request and then
 // unmarshal the concrete request into a concrete command.
-func ExampleUnmarshalCmd() {
+func ExampleUnmarshalCommand() {
 	// Ordinarily this would be read from the wire, but for this example,
 	// it is hard coded here for clarity.
 	data := []byte(`{"jsonrpc":"1.0","method":"getBlock","params":["000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",false],"id":1}`)
