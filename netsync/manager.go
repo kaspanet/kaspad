@@ -623,9 +623,11 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	if delay != 0 {
 		spawn(func() {
 			sm.dag.AddDelayedBlock(bmsg.block, delay)
+			state.requestedBlocks[*blockHash] = struct{}{}
 			time.Sleep(delay)
 			sm.QueueBlock(bmsg.block, bmsg.peer, true, make(chan struct{}))
 		}, sm.handlePanic)
+		return
 	}
 
 	// Request the parents for the orphan block from the peer that sent it.

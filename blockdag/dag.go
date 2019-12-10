@@ -1991,6 +1991,7 @@ func New(config *Config) (*BlockDAG, error) {
 		virtual:                        newVirtualBlock(nil, params.K),
 		orphans:                        make(map[daghash.Hash]*orphanBlock),
 		prevOrphans:                    make(map[daghash.Hash][]*orphanBlock),
+		delayedBlocks:                  make(map[daghash.Hash]*delayedBlock),
 		warningCaches:                  newThresholdCaches(vbNumBits),
 		deploymentCaches:               newThresholdCaches(dagconfig.DefinedDeployments),
 		blockCount:                     0,
