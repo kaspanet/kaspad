@@ -13,7 +13,7 @@ import (
 
 const (
 	// MaxInvPerMsg is the maximum number of inventory vectors that can be in a
-	// single bitcoin inv message.
+	// single kaspa inv message.
 	MaxInvPerMsg = 1 << 16
 
 	// MaxSyncBlockInvPerGetDataMsg is the maximum number of sync block inventory
@@ -58,7 +58,7 @@ func (invtype InvType) String() string {
 	return fmt.Sprintf("Unknown InvType (%d)", uint32(invtype))
 }
 
-// InvVect defines a bitcoin inventory vector which is used to describe data,
+// InvVect defines a kaspa inventory vector which is used to describe data,
 // as specified by the Type field, that a peer wants, has, or does not have to
 // another peer.
 type InvVect struct {

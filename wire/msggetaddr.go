@@ -10,7 +10,7 @@ import (
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
-// MsgGetAddr implements the Message interface and represents a bitcoin
+// MsgGetAddr implements the Message interface and represents a kaspa
 // getaddr message. It is used to request a list of known active peers on the
 // network from a peer to help identify potential nodes. The list is returned
 // via one or more addr messages (MsgAddr).
@@ -21,7 +21,7 @@ type MsgGetAddr struct {
 	SubnetworkID          *subnetworkid.SubnetworkID
 }
 
-// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgGetAddr) KaspaDecode(r io.Reader, pver uint32) error {
 	msg.SubnetworkID = nil
@@ -53,7 +53,7 @@ func (msg *MsgGetAddr) KaspaDecode(r io.Reader, pver uint32) error {
 	return nil
 }
 
-// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgGetAddr) KaspaEncode(w io.Writer, pver uint32) error {
 	err := WriteElement(w, msg.IncludeAllSubnetworks)
@@ -94,7 +94,7 @@ func (msg *MsgGetAddr) MaxPayloadLength(pver uint32) uint32 {
 	return subnetworkid.IDLength + 2
 }
 
-// NewMsgGetAddr returns a new bitcoin getaddr message that conforms to the
+// NewMsgGetAddr returns a new kaspa getaddr message that conforms to the
 // Message interface. See MsgGetAddr for details.
 func NewMsgGetAddr(includeAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID) *MsgGetAddr {
 	return &MsgGetAddr{

@@ -10,7 +10,7 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// MsgGetBlockInvs implements the Message interface and represents a bitcoin
+// MsgGetBlockInvs implements the Message interface and represents a kaspa
 // getblockinvs message. It is used to request a list of blocks starting after the
 // start hash and until the stop hash.
 type MsgGetBlockInvs struct {
@@ -18,7 +18,7 @@ type MsgGetBlockInvs struct {
 	StopHash  *daghash.Hash
 }
 
-// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgGetBlockInvs) KaspaDecode(r io.Reader, pver uint32) error {
 	msg.StartHash = &daghash.Hash{}
@@ -31,7 +31,7 @@ func (msg *MsgGetBlockInvs) KaspaDecode(r io.Reader, pver uint32) error {
 	return ReadElement(r, msg.StopHash)
 }
 
-// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgGetBlockInvs) KaspaEncode(w io.Writer, pver uint32) error {
 	err := WriteElement(w, msg.StartHash)
@@ -55,7 +55,7 @@ func (msg *MsgGetBlockInvs) MaxPayloadLength(pver uint32) uint32 {
 	return 2 * daghash.HashSize
 }
 
-// NewMsgGetBlockInvs returns a new bitcoin getblockinvs message that conforms to the
+// NewMsgGetBlockInvs returns a new kaspa getblockinvs message that conforms to the
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
 func NewMsgGetBlockInvs(startHash, stopHash *daghash.Hash) *MsgGetBlockInvs {

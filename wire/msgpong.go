@@ -8,9 +8,9 @@ import (
 	"io"
 )
 
-// MsgPong implements the Message interface and represents a bitcoin pong
+// MsgPong implements the Message interface and represents a kaspa pong
 // message which is used primarily to confirm that a connection is still valid
-// in response to a bitcoin ping message (MsgPing).
+// in response to a kaspa ping message (MsgPing).
 //
 // This message was not added until protocol versions AFTER BIP0031Version.
 type MsgPong struct {
@@ -19,13 +19,13 @@ type MsgPong struct {
 	Nonce uint64
 }
 
-// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgPong) KaspaDecode(r io.Reader, pver uint32) error {
 	return ReadElement(r, &msg.Nonce)
 }
 
-// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgPong) KaspaEncode(w io.Writer, pver uint32) error {
 	return WriteElement(w, msg.Nonce)
@@ -44,7 +44,7 @@ func (msg *MsgPong) MaxPayloadLength(pver uint32) uint32 {
 	return uint32(8)
 }
 
-// NewMsgPong returns a new bitcoin pong message that conforms to the Message
+// NewMsgPong returns a new kaspa pong message that conforms to the Message
 // interface. See MsgPong for details.
 func NewMsgPong(nonce uint64) *MsgPong {
 	return &MsgPong{

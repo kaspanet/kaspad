@@ -17,7 +17,7 @@ import (
 // 8 bits per byte. Then an extra one to cover partials.
 const maxFlagsPerMerkleBlock = maxTxPerBlock / 8
 
-// MsgMerkleBlock implements the Message interface and represents a bitcoin
+// MsgMerkleBlock implements the Message interface and represents a kaspa
 // merkleblock message which is used to reset a Bloom filter.
 //
 // This message was not added until protocol version BIP0037Version.
@@ -40,7 +40,7 @@ func (msg *MsgMerkleBlock) AddTxHash(hash *daghash.Hash) error {
 	return nil
 }
 
-// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgMerkleBlock) KaspaDecode(r io.Reader, pver uint32) error {
 	err := readBlockHeader(r, pver, &msg.Header)
@@ -83,7 +83,7 @@ func (msg *MsgMerkleBlock) KaspaDecode(r io.Reader, pver uint32) error {
 	return err
 }
 
-// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgMerkleBlock) KaspaEncode(w io.Writer, pver uint32) error {
 	// Read num transaction hashes and limit to max.
@@ -136,7 +136,7 @@ func (msg *MsgMerkleBlock) MaxPayloadLength(pver uint32) uint32 {
 	return MaxMessagePayload
 }
 
-// NewMsgMerkleBlock returns a new bitcoin merkleblock message that conforms to
+// NewMsgMerkleBlock returns a new kaspa merkleblock message that conforms to
 // the Message interface. See MsgMerkleBlock for details.
 func NewMsgMerkleBlock(bh *BlockHeader) *MsgMerkleBlock {
 	return &MsgMerkleBlock{

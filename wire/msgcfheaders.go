@@ -17,11 +17,11 @@ const (
 	MaxCFHeaderPayload = daghash.HashSize
 
 	// MaxCFHeadersPerMsg is the maximum number of committed filter headers
-	// that can be in a single bitcoin cfheaders message.
+	// that can be in a single kaspa cfheaders message.
 	MaxCFHeadersPerMsg = 2000
 )
 
-// MsgCFHeaders implements the Message interface and represents a bitcoin
+// MsgCFHeaders implements the Message interface and represents a kaspa
 // cfheaders message. It is used to deliver committed filter header information
 // in response to a getcfheaders message (MsgGetCFHeaders). The maximum number
 // of committed filter headers per message is currently 2000. See
@@ -45,7 +45,7 @@ func (msg *MsgCFHeaders) AddCFHash(hash *daghash.Hash) error {
 	return nil
 }
 
-// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgCFHeaders) KaspaDecode(r io.Reader, pver uint32) error {
 	// Read filter type
@@ -97,7 +97,7 @@ func (msg *MsgCFHeaders) KaspaDecode(r io.Reader, pver uint32) error {
 	return nil
 }
 
-// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgCFHeaders) KaspaEncode(w io.Writer, pver uint32) error {
 	// Write filter type
@@ -144,7 +144,7 @@ func (msg *MsgCFHeaders) KaspaEncode(w io.Writer, pver uint32) error {
 
 // Deserialize decodes a filter header from r into the receiver using a format
 // that is suitable for long-term storage such as a database. This function
-// differs from KaspaDecode in that KaspaDecode decodes from the bitcoin wire
+// differs from KaspaDecode in that KaspaDecode decodes from the kaspa wire
 // protocol as it was sent across the network. The wire encoding can
 // technically differ depending on the protocol version and doesn't even really
 // need to match the format of a stored filter header at all. As of the time
@@ -173,7 +173,7 @@ func (msg *MsgCFHeaders) MaxPayloadLength(pver uint32) uint32 {
 		(MaxCFHeaderPayload * MaxCFHeadersPerMsg)
 }
 
-// NewMsgCFHeaders returns a new bitcoin cfheaders message that conforms to
+// NewMsgCFHeaders returns a new kaspa cfheaders message that conforms to
 // the Message interface. See MsgCFHeaders for details.
 func NewMsgCFHeaders() *MsgCFHeaders {
 	return &MsgCFHeaders{

@@ -168,14 +168,14 @@ func (c scriptFreeList) Return(buf []byte) {
 // the number of allocations.
 var scriptPool scriptFreeList = make(chan []byte, freeListMaxItems)
 
-// Outpoint defines a bitcoin data type that is used to track previous
+// Outpoint defines a kaspa data type that is used to track previous
 // transaction outputs.
 type Outpoint struct {
 	TxID  daghash.TxID
 	Index uint32
 }
 
-// NewOutpoint returns a new bitcoin transaction outpoint point with the
+// NewOutpoint returns a new kaspa transaction outpoint point with the
 // provided hash and index.
 func NewOutpoint(txID *daghash.TxID, index uint32) *Outpoint {
 	return &Outpoint{
@@ -199,7 +199,7 @@ func (o Outpoint) String() string {
 	return string(buf)
 }
 
-// TxIn defines a bitcoin transaction input.
+// TxIn defines a kaspa transaction input.
 type TxIn struct {
 	PreviousOutpoint Outpoint
 	SignatureScript  []byte
@@ -227,7 +227,7 @@ func serializeSignatureScriptSize(signatureScript []byte, encodingFlags txEncodi
 	return VarIntSerializeSize(0)
 }
 
-// NewTxIn returns a new bitcoin transaction input with the provided
+// NewTxIn returns a new kaspa transaction input with the provided
 // previous outpoint point and signature script with a default sequence of
 // MaxTxInSequenceNum.
 func NewTxIn(prevOut *Outpoint, signatureScript []byte) *TxIn {
@@ -238,7 +238,7 @@ func NewTxIn(prevOut *Outpoint, signatureScript []byte) *TxIn {
 	}
 }
 
-// TxOut defines a bitcoin transaction output.
+// TxOut defines a kaspa transaction output.
 type TxOut struct {
 	Value        uint64
 	ScriptPubKey []byte
@@ -252,7 +252,7 @@ func (t *TxOut) SerializeSize() int {
 	return 8 + VarIntSerializeSize(uint64(len(t.ScriptPubKey))) + len(t.ScriptPubKey)
 }
 
-// NewTxOut returns a new bitcoin transaction output with the provided
+// NewTxOut returns a new kaspa transaction output with the provided
 // transaction value and public key script.
 func NewTxOut(value uint64, scriptPubKey []byte) *TxOut {
 	return &TxOut{
@@ -261,7 +261,7 @@ func NewTxOut(value uint64, scriptPubKey []byte) *TxOut {
 	}
 }
 
-// MsgTx implements the Message interface and represents a bitcoin tx message.
+// MsgTx implements the Message interface and represents a kaspa tx message.
 // It is used to deliver transaction information in response to a getdata
 // message (MsgGetData) for a given transaction.
 //
@@ -398,7 +398,7 @@ func (msg *MsgTx) Copy() *MsgTx {
 	return &newTx
 }
 
-// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 // See Deserialize for decoding transactions stored to disk, such as in a
 // database, as opposed to decoding transactions from the wire.
@@ -587,7 +587,7 @@ func (msg *MsgTx) KaspaDecode(r io.Reader, pver uint32) error {
 // Deserialize decodes a transaction from r into the receiver using a format
 // that is suitable for long-term storage such as a database while respecting
 // the Version field in the transaction. This function differs from KaspaDecode
-// in that KaspaDecode decodes from the bitcoin wire protocol as it was sent
+// in that KaspaDecode decodes from the kaspa wire protocol as it was sent
 // across the network. The wire encoding can technically differ depending on
 // the protocol version and doesn't even really need to match the format of a
 // stored transaction at all. As of the time this comment was written, the
@@ -601,7 +601,7 @@ func (msg *MsgTx) Deserialize(r io.Reader) error {
 	return msg.KaspaDecode(r, 0)
 }
 
-// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 // See Serialize for encoding transactions to be stored to disk, such as in a
 // database, as opposed to encoding transactions for the wire.
@@ -693,7 +693,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 // Serialize encodes the transaction to w using a format that suitable for
 // long-term storage such as a database while respecting the Version field in
 // the transaction. This function differs from KaspaEncode in that KaspaEncode
-// encodes the transaction to the bitcoin wire protocol in order to be sent
+// encodes the transaction to the kaspa wire protocol in order to be sent
 // across the network. The wire encoding can technically differ depending on
 // the protocol version and doesn't even really need to match the format of a
 // stored transaction at all. As of the time this comment was written, the
@@ -891,7 +891,7 @@ func readOutpoint(r io.Reader, pver uint32, version int32, op *Outpoint) error {
 	return err
 }
 
-// writeOutpoint encodes op to the bitcoin protocol encoding for an Outpoint
+// writeOutpoint encodes op to the kaspa protocol encoding for an Outpoint
 // to w.
 func writeOutpoint(w io.Writer, pver uint32, version int32, op *Outpoint) error {
 	_, err := w.Write(op.TxID[:])
@@ -950,7 +950,7 @@ func readTxIn(r io.Reader, pver uint32, version int32, ti *TxIn) error {
 	return ReadElement(r, &ti.Sequence)
 }
 
-// writeTxIn encodes ti to the bitcoin protocol encoding for a transaction
+// writeTxIn encodes ti to the kaspa protocol encoding for a transaction
 // input (TxIn) to w.
 func writeTxIn(w io.Writer, pver uint32, version int32, ti *TxIn, encodingFlags txEncoding) error {
 	err := writeOutpoint(w, pver, version, &ti.PreviousOutpoint)
@@ -983,7 +983,7 @@ func readTxOut(r io.Reader, pver uint32, version int32, to *TxOut) error {
 	return err
 }
 
-// WriteTxOut encodes to into the bitcoin protocol encoding for a transaction
+// WriteTxOut encodes to into the kaspa protocol encoding for a transaction
 // output (TxOut) to w.
 func WriteTxOut(w io.Writer, pver uint32, version int32, to *TxOut) error {
 	err := binaryserializer.PutUint64(w, littleEndian, uint64(to.Value))

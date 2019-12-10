@@ -8,7 +8,7 @@ import (
 	"io"
 )
 
-// MsgPing implements the Message interface and represents a bitcoin ping
+// MsgPing implements the Message interface and represents a kaspa ping
 // message.
 //
 // For versions BIP0031Version and earlier, it is used primarily to confirm
@@ -25,7 +25,7 @@ type MsgPing struct {
 	Nonce uint64
 }
 
-// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgPing) KaspaDecode(r io.Reader, pver uint32) error {
 	err := ReadElement(r, &msg.Nonce)
@@ -36,7 +36,7 @@ func (msg *MsgPing) KaspaDecode(r io.Reader, pver uint32) error {
 	return nil
 }
 
-// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgPing) KaspaEncode(w io.Writer, pver uint32) error {
 	err := WriteElement(w, msg.Nonce)
@@ -60,7 +60,7 @@ func (msg *MsgPing) MaxPayloadLength(pver uint32) uint32 {
 	return uint32(8)
 }
 
-// NewMsgPing returns a new bitcoin ping message that conforms to the Message
+// NewMsgPing returns a new kaspa ping message that conforms to the Message
 // interface. See MsgPing for details.
 func NewMsgPing(nonce uint64) *MsgPing {
 	return &MsgPing{

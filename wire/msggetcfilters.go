@@ -14,7 +14,7 @@ import (
 // a getcfheaders message.
 const MaxGetCFiltersReqRange = 1000
 
-// MsgGetCFilters implements the Message interface and represents a bitcoin
+// MsgGetCFilters implements the Message interface and represents a kaspa
 // getcfilters message. It is used to request committed filters for a range of
 // blocks.
 type MsgGetCFilters struct {
@@ -23,7 +23,7 @@ type MsgGetCFilters struct {
 	StopHash    *daghash.Hash
 }
 
-// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgGetCFilters) KaspaDecode(r io.Reader, pver uint32) error {
 	err := ReadElement(r, &msg.FilterType)
@@ -40,7 +40,7 @@ func (msg *MsgGetCFilters) KaspaDecode(r io.Reader, pver uint32) error {
 	return ReadElement(r, msg.StopHash)
 }
 
-// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgGetCFilters) KaspaEncode(w io.Writer, pver uint32) error {
 	err := WriteElement(w, msg.FilterType)
@@ -69,7 +69,7 @@ func (msg *MsgGetCFilters) MaxPayloadLength(pver uint32) uint32 {
 	return 1 + 8 + daghash.HashSize
 }
 
-// NewMsgGetCFilters returns a new bitcoin getcfilters message that conforms to
+// NewMsgGetCFilters returns a new kaspa getcfilters message that conforms to
 // the Message interface using the passed parameters and defaults for the
 // remaining fields.
 func NewMsgGetCFilters(filterType FilterType, startHeight uint64,

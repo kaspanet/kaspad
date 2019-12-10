@@ -18,7 +18,7 @@ type MsgGetCFCheckpt struct {
 	StopHash   *daghash.Hash
 }
 
-// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgGetCFCheckpt) KaspaDecode(r io.Reader, pver uint32) error {
 	err := ReadElement(r, &msg.FilterType)
@@ -30,7 +30,7 @@ func (msg *MsgGetCFCheckpt) KaspaDecode(r io.Reader, pver uint32) error {
 	return ReadElement(r, msg.StopHash)
 }
 
-// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgGetCFCheckpt) KaspaEncode(w io.Writer, pver uint32) error {
 	err := WriteElement(w, msg.FilterType)
@@ -54,7 +54,7 @@ func (msg *MsgGetCFCheckpt) MaxPayloadLength(pver uint32) uint32 {
 	return 1 + daghash.HashSize
 }
 
-// NewMsgGetCFCheckpt returns a new bitcoin getcfcheckpt message that conforms
+// NewMsgGetCFCheckpt returns a new kaspa getcfcheckpt message that conforms
 // to the Message interface using the passed parameters and defaults for the
 // remaining fields.
 func NewMsgGetCFCheckpt(filterType FilterType, stopHash *daghash.Hash) *MsgGetCFCheckpt {

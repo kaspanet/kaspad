@@ -8,20 +8,20 @@ import (
 	"io"
 )
 
-// MsgFilterClear implements the Message interface and represents a bitcoin
+// MsgFilterClear implements the Message interface and represents a kaspa
 // filterclear message which is used to reset a Bloom filter.
 //
 // This message was not added until protocol version BIP0037Version and has
 // no payload.
 type MsgFilterClear struct{}
 
-// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgFilterClear) KaspaDecode(r io.Reader, pver uint32) error {
 	return nil
 }
 
-// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgFilterClear) KaspaEncode(w io.Writer, pver uint32) error {
 	return nil
@@ -39,7 +39,7 @@ func (msg *MsgFilterClear) MaxPayloadLength(pver uint32) uint32 {
 	return 0
 }
 
-// NewMsgFilterClear returns a new bitcoin filterclear message that conforms to the Message
+// NewMsgFilterClear returns a new kaspa filterclear message that conforms to the Message
 // interface. See MsgFilterClear for details.
 func NewMsgFilterClear() *MsgFilterClear {
 	return &MsgFilterClear{}

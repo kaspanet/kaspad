@@ -13,7 +13,7 @@ import (
 	"github.com/kaspanet/kaspad/util/binaryserializer"
 )
 
-// maxNetAddressPayload returns the max payload size for a bitcoin NetAddress
+// maxNetAddressPayload returns the max payload size for a kaspa NetAddress
 // based on the protocol version.
 func maxNetAddressPayload(pver uint32) uint32 {
 	// Services 8 bytes + ip 16 bytes + port 2 bytes + timestamp 8 bytes.

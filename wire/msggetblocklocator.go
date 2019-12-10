@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// MsgGetBlockLocator implements the Message interface and represents a bitcoin
+// MsgGetBlockLocator implements the Message interface and represents a kaspa
 // getlocator message. It is used to request a block locator between start and stop hash.
 // The locator is returned via a locator message (MsgBlockLocator).
 //
@@ -16,7 +16,7 @@ type MsgGetBlockLocator struct {
 	StopHash  *daghash.Hash
 }
 
-// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgGetBlockLocator) KaspaDecode(r io.Reader, pver uint32) error {
 	msg.StartHash = &daghash.Hash{}
@@ -33,7 +33,7 @@ func (msg *MsgGetBlockLocator) KaspaDecode(r io.Reader, pver uint32) error {
 	return nil
 }
 
-// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgGetBlockLocator) KaspaEncode(w io.Writer, pver uint32) error {
 	err := WriteElement(w, msg.StartHash)

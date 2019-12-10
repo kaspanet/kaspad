@@ -322,7 +322,7 @@ var baseVersion = &MsgVersion{
 		Port:      8333,
 	},
 	Nonce:       123123, // 0x1e0f3
-	UserAgent:   "/btcdtest:0.0.1/",
+	UserAgent:   "/kaspadtest:0.0.1/",
 	SelectedTip: &daghash.Hash{0x12, 0x34},
 }
 
@@ -371,7 +371,7 @@ var baseVersionWithRelayTx = &MsgVersion{
 		Port:      8333,
 	},
 	Nonce:       123123, // 0x1e0f3
-	UserAgent:   "/btcdtest:0.0.1/",
+	UserAgent:   "/kaspadtest:0.0.1/",
 	SelectedTip: &daghash.Hash{0x12, 0x34},
 }
 

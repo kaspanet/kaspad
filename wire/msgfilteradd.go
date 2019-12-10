@@ -16,7 +16,7 @@ const (
 	MaxFilterAddDataSize = 520
 )
 
-// MsgFilterAdd implements the Message interface and represents a bitcoin
+// MsgFilterAdd implements the Message interface and represents a kaspa
 // filteradd message. It is used to add a data element to an existing Bloom
 // filter.
 //
@@ -25,7 +25,7 @@ type MsgFilterAdd struct {
 	Data []byte
 }
 
-// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgFilterAdd) KaspaDecode(r io.Reader, pver uint32) error {
 	var err error
@@ -34,7 +34,7 @@ func (msg *MsgFilterAdd) KaspaDecode(r io.Reader, pver uint32) error {
 	return err
 }
 
-// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgFilterAdd) KaspaEncode(w io.Writer, pver uint32) error {
 	size := len(msg.Data)
@@ -60,7 +60,7 @@ func (msg *MsgFilterAdd) MaxPayloadLength(pver uint32) uint32 {
 		MaxFilterAddDataSize
 }
 
-// NewMsgFilterAdd returns a new bitcoin filteradd message that conforms to the
+// NewMsgFilterAdd returns a new kaspa filteradd message that conforms to the
 // Message interface. See MsgFilterAdd for details.
 func NewMsgFilterAdd(data []byte) *MsgFilterAdd {
 	return &MsgFilterAdd{

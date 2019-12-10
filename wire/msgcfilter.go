@@ -28,7 +28,7 @@ const (
 	MaxCFilterDataSize = 256 * 1024
 )
 
-// MsgCFilter implements the Message interface and represents a bitcoin cfilter
+// MsgCFilter implements the Message interface and represents a kaspa cfilter
 // message. It is used to deliver a committed filter in response to a
 // getcfilters (MsgGetCFilters) message.
 type MsgCFilter struct {
@@ -37,7 +37,7 @@ type MsgCFilter struct {
 	Data       []byte
 }
 
-// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgCFilter) KaspaDecode(r io.Reader, pver uint32) error {
 	// Read filter type
@@ -58,7 +58,7 @@ func (msg *MsgCFilter) KaspaDecode(r io.Reader, pver uint32) error {
 	return err
 }
 
-// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgCFilter) KaspaEncode(w io.Writer, pver uint32) error {
 	size := len(msg.Data)
@@ -83,7 +83,7 @@ func (msg *MsgCFilter) KaspaEncode(w io.Writer, pver uint32) error {
 
 // Deserialize decodes a filter from r into the receiver using a format that is
 // suitable for long-term storage such as a database. This function differs
-// from KaspaDecode in that KaspaDecode decodes from the bitcoin wire protocol as
+// from KaspaDecode in that KaspaDecode decodes from the kaspa wire protocol as
 // it was sent across the network. The wire encoding can technically differ
 // depending on the protocol version and doesn't even really need to match the
 // format of a stored filter at all. As of the time this comment was written,
@@ -110,7 +110,7 @@ func (msg *MsgCFilter) MaxPayloadLength(pver uint32) uint32 {
 		MaxCFilterDataSize + daghash.HashSize + 1
 }
 
-// NewMsgCFilter returns a new bitcoin cfilter message that conforms to the
+// NewMsgCFilter returns a new kaspa cfilter message that conforms to the
 // Message interface. See MsgCFilter for details.
 func NewMsgCFilter(filterType FilterType, blockHash *daghash.Hash,
 	data []byte) *MsgCFilter {

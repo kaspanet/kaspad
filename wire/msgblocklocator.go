@@ -11,7 +11,7 @@ import (
 // per message.
 const MaxBlockLocatorsPerMsg = 500
 
-// MsgBlockLocator implements the Message interface and represents a bitcoin
+// MsgBlockLocator implements the Message interface and represents a kaspa
 // locator message. It is used to find the highest known chain block with
 // a peer that is syncing with you.
 type MsgBlockLocator struct {
@@ -30,7 +30,7 @@ func (msg *MsgBlockLocator) AddBlockLocatorHash(hash *daghash.Hash) error {
 	return nil
 }
 
-// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgBlockLocator) KaspaDecode(r io.Reader, pver uint32) error {
 	// Read num block locator hashes and limit to max.
@@ -62,7 +62,7 @@ func (msg *MsgBlockLocator) KaspaDecode(r io.Reader, pver uint32) error {
 	return nil
 }
 
-// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgBlockLocator) KaspaEncode(w io.Writer, pver uint32) error {
 	// Limit to max block locator hashes per message.
@@ -102,7 +102,7 @@ func (msg *MsgBlockLocator) MaxPayloadLength(pver uint32) uint32 {
 		daghash.HashSize)
 }
 
-// NewMsgBlockLocator returns a new bitcoin locator message that conforms to
+// NewMsgBlockLocator returns a new kaspa locator message that conforms to
 // the Message interface. See MsgBlockLocator for details.
 func NewMsgBlockLocator() *MsgBlockLocator {
 	return &MsgBlockLocator{

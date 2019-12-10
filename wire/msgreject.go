@@ -48,7 +48,7 @@ func (code RejectCode) String() string {
 	return fmt.Sprintf("Unknown RejectCode (%d)", uint8(code))
 }
 
-// MsgReject implements the Message interface and represents a bitcoin reject
+// MsgReject implements the Message interface and represents a kaspa reject
 // message.
 //
 // This message was not added until protocol version RejectVersion.
@@ -71,7 +71,7 @@ type MsgReject struct {
 	Hash *daghash.Hash
 }
 
-// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgReject) KaspaDecode(r io.Reader, pver uint32) error {
 	// Command that was rejected.
@@ -108,7 +108,7 @@ func (msg *MsgReject) KaspaDecode(r io.Reader, pver uint32) error {
 	return nil
 }
 
-// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgReject) KaspaEncode(w io.Writer, pver uint32) error {
 	// Command that was rejected.
@@ -151,13 +151,13 @@ func (msg *MsgReject) Command() string {
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver. This is part of the Message interface implementation.
 func (msg *MsgReject) MaxPayloadLength(pver uint32) uint32 {
-	// Unfortunately the bitcoin protocol does not enforce a sane
+	// Unfortunately the kaspa protocol does not enforce a sane
 	// limit on the length of the reason, so the max payload is the
 	// overall maximum message payload.
 	return uint32(MaxMessagePayload)
 }
 
-// NewMsgReject returns a new bitcoin reject message that conforms to the
+// NewMsgReject returns a new kaspa reject message that conforms to the
 // Message interface. See MsgReject for details.
 func NewMsgReject(command string, code RejectCode, reason string) *MsgReject {
 	return &MsgReject{

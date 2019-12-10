@@ -14,12 +14,12 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// MessageHeaderSize is the number of bytes in a bitcoin message header.
-// Bitcoin network (magic) 4 bytes + command 12 bytes + payload length 4 bytes +
+// MessageHeaderSize is the number of bytes in a kaspa message header.
+// Kaspa network (magic) 4 bytes + command 12 bytes + payload length 4 bytes +
 // checksum 4 bytes.
 const MessageHeaderSize = 24
 
-// CommandSize is the fixed size of all commands in the common bitcoin message
+// CommandSize is the fixed size of all commands in the common kaspa message
 // header. Shorter commands must be zero padded.
 const CommandSize = 12
 
@@ -27,7 +27,7 @@ const CommandSize = 12
 // individual limits imposed by messages themselves.
 const MaxMessagePayload = (1024 * 1024 * 32) // 32MB
 
-// Commands used in bitcoin message headers which describe the type of message.
+// Commands used in kaspa message headers which describe the type of message.
 const (
 	CmdVersion         = "version"
 	CmdVerAck          = "verack"
@@ -60,7 +60,7 @@ const (
 	CmdBlockLocator    = "locator"
 )
 
-// Message is an interface that describes a bitcoin message. A type that
+// Message is an interface that describes a kaspa message. A type that
 // implements Message has complete control over the representation of its data
 // and may therefore contain additional or fewer fields than those which
 // are used directly in the protocol encoded message.
@@ -169,7 +169,7 @@ func makeEmptyMessage(command string) (Message, error) {
 	return msg, nil
 }
 
-// messageHeader defines the header structure for all bitcoin protocol messages.
+// messageHeader defines the header structure for all kaspa protocol messages.
 type messageHeader struct {
 	magic    KaspaNet // 4 bytes
 	command  string   // 12 bytes
@@ -177,7 +177,7 @@ type messageHeader struct {
 	checksum [4]byte  // 4 bytes
 }
 
-// readMessageHeader reads a bitcoin message header from r.
+// readMessageHeader reads a kaspa message header from r.
 func readMessageHeader(r io.Reader) (int, *messageHeader, error) {
 	// Since readElements doesn't return the amount of bytes read, attempt
 	// to read the entire header into a buffer first in case there is a
@@ -221,10 +221,10 @@ func discardInput(r io.Reader, n uint32) {
 	}
 }
 
-// WriteMessageN writes a bitcoin Message to w including the necessary header
+// WriteMessageN writes a kaspa Message to w including the necessary header
 // information and returns the number of bytes written. This function is the
 // same as WriteMessage except it also returns the number of bytes written.
-func WriteMessageN(w io.Writer, msg Message, pver uint32, btcnet KaspaNet) (int, error) {
+func WriteMessageN(w io.Writer, msg Message, pver uint32, kaspaNet KaspaNet) (int, error) {
 	totalBytes := 0
 
 	// Enforce max command size.
@@ -265,7 +265,7 @@ func WriteMessageN(w io.Writer, msg Message, pver uint32, btcnet KaspaNet) (int,
 
 	// Create header for the message.
 	hdr := messageHeader{}
-	hdr.magic = btcnet
+	hdr.magic = kaspaNet
 	hdr.command = cmd
 	hdr.length = uint32(lenp)
 	copy(hdr.checksum[:], daghash.DoubleHashB(payload)[0:4])
@@ -289,22 +289,22 @@ func WriteMessageN(w io.Writer, msg Message, pver uint32, btcnet KaspaNet) (int,
 	return totalBytes, err
 }
 
-// WriteMessage writes a bitcoin Message to w including the necessary header
+// WriteMessage writes a kaspa Message to w including the necessary header
 // information. This function is the same as WriteMessageN except it doesn't
 // doesn't return the number of bytes written. This function is mainly provided
 // for backwards compatibility with the original API, but it's also useful for
 // callers that don't care about byte counts.
-func WriteMessage(w io.Writer, msg Message, pver uint32, btcnet KaspaNet) error {
-	_, err := WriteMessageN(w, msg, pver, btcnet)
+func WriteMessage(w io.Writer, msg Message, pver uint32, kaspaNet KaspaNet) error {
+	_, err := WriteMessageN(w, msg, pver, kaspaNet)
 	return err
 }
 
-// ReadMessageN reads, validates, and parses the next bitcoin Message from r for
-// the provided protocol version and bitcoin network. It returns the number of
+// ReadMessageN reads, validates, and parses the next kaspa Message from r for
+// the provided protocol version and kaspa network. It returns the number of
 // bytes read in addition to the parsed Message and raw bytes which comprise the
 // message. This function is the same as ReadMessage except it also returns the
 // number of bytes read.
-func ReadMessageN(r io.Reader, pver uint32, btcnet KaspaNet) (int, Message, []byte, error) {
+func ReadMessageN(r io.Reader, pver uint32, kaspaNet KaspaNet) (int, Message, []byte, error) {
 	totalBytes := 0
 	n, hdr, err := readMessageHeader(r)
 	totalBytes += n
@@ -321,8 +321,8 @@ func ReadMessageN(r io.Reader, pver uint32, btcnet KaspaNet) (int, Message, []by
 
 	}
 
-	// Check for messages from the wrong bitcoin network.
-	if hdr.magic != btcnet {
+	// Check for messages from the wrong kaspa network.
+	if hdr.magic != kaspaNet {
 		discardInput(r, hdr.length)
 		str := fmt.Sprintf("message from other network [%s]", hdr.magic)
 		return totalBytes, nil, nil, messageError("ReadMessage", str)
@@ -384,13 +384,13 @@ func ReadMessageN(r io.Reader, pver uint32, btcnet KaspaNet) (int, Message, []by
 	return totalBytes, msg, payload, nil
 }
 
-// ReadMessage reads, validates, and parses the next bitcoin Message from r for
-// the provided protocol version and bitcoin network. It returns the parsed
+// ReadMessage reads, validates, and parses the next kaspa Message from r for
+// the provided protocol version and kaspa network. It returns the parsed
 // Message and raw bytes which comprise the message. This function only differs
 // from ReadMessageN in that it doesn't return the number of bytes read. This
 // function is mainly provided for backwards compatibility with the original
 // API, but it's also useful for callers that don't care about byte counts.
-func ReadMessage(r io.Reader, pver uint32, btcnet KaspaNet) (Message, []byte, error) {
-	_, msg, buf, err := ReadMessageN(r, pver, btcnet)
+func ReadMessage(r io.Reader, pver uint32, kaspaNet KaspaNet) (Message, []byte, error) {
+	_, msg, buf, err := ReadMessageN(r, pver, kaspaNet)
 	return msg, buf, err
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// MsgGetHeaders implements the Message interface and represents a bitcoin
+// MsgGetHeaders implements the Message interface and represents a kaspa
 // getheaders message. It is used to request a list of block headers for
 // blocks starting after the last known hash in the slice of block locator
 // hashes. The list is returned via a headers message (MsgHeaders) and is
@@ -31,7 +31,7 @@ type MsgGetHeaders struct {
 	StopHash  *daghash.Hash
 }
 
-// KaspaDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgGetHeaders) KaspaDecode(r io.Reader, pver uint32) error {
 	msg.StartHash = &daghash.Hash{}
@@ -44,7 +44,7 @@ func (msg *MsgGetHeaders) KaspaDecode(r io.Reader, pver uint32) error {
 	return ReadElement(r, msg.StopHash)
 }
 
-// KaspaEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgGetHeaders) KaspaEncode(w io.Writer, pver uint32) error {
 	err := WriteElement(w, msg.StartHash)
@@ -68,7 +68,7 @@ func (msg *MsgGetHeaders) MaxPayloadLength(pver uint32) uint32 {
 	return 2 * daghash.HashSize
 }
 
-// NewMsgGetHeaders returns a new bitcoin getheaders message that conforms to
+// NewMsgGetHeaders returns a new kaspa getheaders message that conforms to
 // the Message interface. See MsgGetHeaders for details.
 func NewMsgGetHeaders(startHash, stopHash *daghash.Hash) *MsgGetHeaders {
 	return &MsgGetHeaders{

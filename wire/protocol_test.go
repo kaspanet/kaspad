@@ -33,8 +33,8 @@ func TestServiceFlagStringer(t *testing.T) {
 	}
 }
 
-// TestBitcoinNetStringer tests the stringized output for bitcoin net types.
-func TestBitcoinNetStringer(t *testing.T) {
+// TestKaspaNetStringer tests the stringized output for kaspa net types.
+func TestKaspaNetStringer(t *testing.T) {
 	tests := []struct {
 		in   KaspaNet
 		want string
