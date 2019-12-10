@@ -48,7 +48,7 @@ type newPeerMsg struct {
 	peer *peerpkg.Peer
 }
 
-// blockMsg packages a bitcoin block message and the peer it came from together
+// blockMsg packages a kaspa block message and the peer it came from together
 // so the block handler has access to that information.
 type blockMsg struct {
 	block          *util.Block
@@ -57,14 +57,14 @@ type blockMsg struct {
 	reply          chan struct{}
 }
 
-// invMsg packages a bitcoin inv message and the peer it came from together
+// invMsg packages a kaspa inv message and the peer it came from together
 // so the block handler has access to that information.
 type invMsg struct {
 	inv  *wire.MsgInv
 	peer *peerpkg.Peer
 }
 
-// headersMsg packages a bitcoin headers message and the peer it came from
+// headersMsg packages a kaspa headers message and the peer it came from
 // together so the block handler has access to that information.
 type headersMsg struct {
 	headers *wire.MsgHeaders
@@ -82,7 +82,7 @@ type removeFromSyncCandidatesMsg struct {
 	peer *peerpkg.Peer
 }
 
-// txMsg packages a bitcoin tx message and the peer it came from together
+// txMsg packages a kaspa tx message and the peer it came from together
 // so the block handler has access to that information.
 type txMsg struct {
 	tx    *util.Tx
