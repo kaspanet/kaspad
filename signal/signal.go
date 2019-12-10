@@ -34,14 +34,14 @@ func InterruptListener() <-chan struct{} {
 		// channel to notify the caller.
 		select {
 		case sig := <-interruptChannel:
-			btcdLog.Infof("Received signal (%s). Shutting down...",
+			kspdLog.Infof("Received signal (%s). Shutting down...",
 				sig)
 
 		case <-ShutdownRequestChannel:
-			btcdLog.Info("Shutdown requested. Shutting down...")
+			kspdLog.Info("Shutdown requested. Shutting down...")
 
 		case <-PanicShutdownChannel:
-			btcdLog.Info("Panic occurred. Shutting down...")
+			kspdLog.Info("Panic occurred. Shutting down...")
 		}
 		close(c)
 
@@ -51,15 +51,15 @@ func InterruptListener() <-chan struct{} {
 		for {
 			select {
 			case sig := <-interruptChannel:
-				btcdLog.Infof("Received signal (%s). Already "+
+				kspdLog.Infof("Received signal (%s). Already "+
 					"shutting down...", sig)
 
 			case <-ShutdownRequestChannel:
-				btcdLog.Info("Shutdown requested. Already " +
+				kspdLog.Info("Shutdown requested. Already " +
 					"shutting down...")
 
 			case <-PanicShutdownChannel:
-				btcdLog.Info("Panic occurred while shutting down. " +
+				kspdLog.Info("Panic occurred while shutting down. " +
 					"Forcing shut down...")
 				os.Exit(1)
 			}

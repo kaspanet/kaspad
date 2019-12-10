@@ -56,26 +56,26 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 		return err
 	}
 	cfg = config.ActiveConfig()
-	defer panics.HandlePanic(kaspadLog, nil, nil)
+	defer panics.HandlePanic(kspdLog, nil, nil)
 
 	// Get a channel that will be closed when a shutdown signal has been
 	// triggered either from an OS signal such as SIGINT (Ctrl+C) or from
 	// another subsystem such as the RPC server.
 	interrupt := signal.InterruptListener()
-	defer kaspadLog.Info("Shutdown complete")
+	defer kspdLog.Info("Shutdown complete")
 
 	// Show version at startup.
-	kaspadLog.Infof("Version %s", version.Version())
+	kspdLog.Infof("Version %s", version.Version())
 
 	// Enable http profiling server if requested.
 	if cfg.Profile != "" {
 		spawn(func() {
 			listenAddr := net.JoinHostPort("", cfg.Profile)
-			kaspadLog.Infof("Profile server listening on %s", listenAddr)
+			kspdLog.Infof("Profile server listening on %s", listenAddr)
 			profileRedirect := http.RedirectHandler("/debug/pprof",
 				http.StatusSeeOther)
 			http.Handle("/", profileRedirect)
-			kaspadLog.Errorf("%s", http.ListenAndServe(listenAddr, nil))
+			kspdLog.Errorf("%s", http.ListenAndServe(listenAddr, nil))
 		})
 	}
 
@@ -83,7 +83,7 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 	if cfg.CPUProfile != "" {
 		f, err := os.Create(cfg.CPUProfile)
 		if err != nil {
-			kaspadLog.Errorf("Unable to create cpu profile: %s", err)
+			kspdLog.Errorf("Unable to create cpu profile: %s", err)
 			return err
 		}
 		pprof.StartCPUProfile(f)
@@ -93,7 +93,7 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 
 	// Perform upgrades to kaspad as new versions require it.
 	if err := doUpgrades(); err != nil {
-		kaspadLog.Errorf("%s", err)
+		kspdLog.Errorf("%s", err)
 		return err
 	}
 
@@ -105,7 +105,7 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 	if cfg.ResetDatabase {
 		err := removeDatabase()
 		if err != nil {
-			kaspadLog.Errorf("%s", err)
+			kspdLog.Errorf("%s", err)
 			return err
 		}
 	}
@@ -113,12 +113,12 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 	// Load the block database.
 	db, err := loadBlockDB()
 	if err != nil {
-		kaspadLog.Errorf("%s", err)
+		kspdLog.Errorf("%s", err)
 		return err
 	}
 	defer func() {
 		// Ensure the database is sync'd and closed on shutdown.
-		kaspadLog.Infof("Gracefully shutting down the database...")
+		kspdLog.Infof("Gracefully shutting down the database...")
 		db.Close()
 	}()
 
@@ -133,7 +133,7 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 	// drops the address index since it relies on it.
 	if cfg.DropAddrIndex {
 		if err := indexers.DropAddrIndex(db, interrupt); err != nil {
-			kaspadLog.Errorf("%s", err)
+			kspdLog.Errorf("%s", err)
 			return err
 		}
 
@@ -141,7 +141,7 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 	}
 	if cfg.DropTxIndex {
 		if err := indexers.DropTxIndex(db, interrupt); err != nil {
-			kaspadLog.Errorf("%s", err)
+			kspdLog.Errorf("%s", err)
 			return err
 		}
 
@@ -149,7 +149,7 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 	}
 	if cfg.DropAcceptanceIndex {
 		if err := indexers.DropAcceptanceIndex(db, interrupt); err != nil {
-			kaspadLog.Errorf("%s", err)
+			kspdLog.Errorf("%s", err)
 			return err
 		}
 
@@ -157,7 +157,7 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 	}
 	if cfg.DropCfIndex {
 		if err := indexers.DropCfIndex(db, interrupt); err != nil {
-			kaspadLog.Errorf("%s", err)
+			kspdLog.Errorf("%s", err)
 			return err
 		}
 
@@ -169,12 +169,12 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 		interrupt)
 	if err != nil {
 		// TODO: this logging could do with some beautifying.
-		kaspadLog.Errorf("Unable to start server on %s: %s",
+		kspdLog.Errorf("Unable to start server on %s: %s",
 			strings.Join(cfg.Listeners, ", "), err)
 		return err
 	}
 	defer func() {
-		kaspadLog.Infof("Gracefully shutting down the server...")
+		kspdLog.Infof("Gracefully shutting down the server...")
 		server.Stop()
 		server.WaitForShutdown()
 		srvrLog.Infof("Server shutdown complete")
@@ -207,7 +207,7 @@ func removeRegressionDB(dbPath string) error {
 	// Remove the old regression test database if it already exists.
 	fi, err := os.Stat(dbPath)
 	if err == nil {
-		kaspadLog.Infof("Removing regression test database from '%s'", dbPath)
+		kspdLog.Infof("Removing regression test database from '%s'", dbPath)
 		if fi.IsDir() {
 			err := os.RemoveAll(dbPath)
 			if err != nil {
@@ -259,7 +259,7 @@ func warnMultipleDBs() {
 	// Warn if there are extra databases.
 	if len(duplicateDbPaths) > 0 {
 		selectedDbPath := blockDbPath(cfg.DbType)
-		kaspadLog.Warnf("WARNING: There are multiple block DAG databases "+
+		kspdLog.Warnf("WARNING: There are multiple block DAG databases "+
 			"using different database types.\nYou probably don't "+
 			"want to waste disk space by having more than one.\n"+
 			"Your current database is located at [%s].\nThe "+
@@ -278,7 +278,7 @@ func loadBlockDB() (database.DB, error) {
 	// handle it uniquely. We also don't want to worry about the multiple
 	// database type warnings when running with the memory database.
 	if cfg.DbType == "memdb" {
-		kaspadLog.Infof("Creating block database in memory.")
+		kspdLog.Infof("Creating block database in memory.")
 		db, err := database.Create(cfg.DbType)
 		if err != nil {
 			return nil, err
@@ -295,7 +295,7 @@ func loadBlockDB() (database.DB, error) {
 	// each run, so remove it now if it already exists.
 	removeRegressionDB(dbPath)
 
-	kaspadLog.Infof("Loading block database from '%s'", dbPath)
+	kspdLog.Infof("Loading block database from '%s'", dbPath)
 	db, err := database.Open(cfg.DbType, dbPath, config.ActiveConfig().NetParams().Net)
 	if err != nil {
 		// Return the error if it's not because the database doesn't
@@ -317,7 +317,7 @@ func loadBlockDB() (database.DB, error) {
 		}
 	}
 
-	kaspadLog.Info("Block database loaded")
+	kspdLog.Info("Block database loaded")
 	return db, nil
 }
 

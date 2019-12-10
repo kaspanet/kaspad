@@ -10,6 +10,6 @@ import (
 	"github.com/kaspanet/kaspad/util/panics"
 )
 
-var kaspadLog, _ = logger.Get(logger.SubsystemTags.KSPD)
-var spawn = panics.GoroutineWrapperFunc(kaspadLog)
+var kspdLog, _ = logger.Get(logger.SubsystemTags.KSPD)
+var spawn = panics.GoroutineWrapperFunc(kspdLog)
 var srvrLog, _ = logger.Get(logger.SubsystemTags.SRVR)
