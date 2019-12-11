@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/kaspanet/kaspad/kasparov/kasparovsync/config"
+	"github.com/kaspanet/kaspad/kasparov/kasparovsyncd/config"
 	"github.com/pkg/errors"
 )
 
