@@ -1,8 +1,8 @@
 package mqtt
 
 import (
-	"github.com/kaspanet/kaspad/kasparov/server/apimodels"
-	"github.com/kaspanet/kaspad/kasparov/server/controllers"
+	"github.com/kaspanet/kaspad/kasparov/kasparovd/apimodels"
+	"github.com/kaspanet/kaspad/kasparov/kasparovd/controllers"
 	"github.com/kaspanet/kaspad/rpcclient"
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util/daghash"
