@@ -13,7 +13,7 @@ import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/faucet/config"
 	"github.com/kaspanet/kaspad/httpserverutils"
-	"github.com/kaspanet/kaspad/kasparov/kasparovserver/apimodels"
+	"github.com/kaspanet/kaspad/kasparov/kasparovd/apimodels"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"

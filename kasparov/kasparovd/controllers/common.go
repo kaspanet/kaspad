@@ -5,7 +5,7 @@ import (
 
 	"github.com/kaspanet/kaspad/btcjson"
 	"github.com/kaspanet/kaspad/kasparov/dbmodels"
-	"github.com/kaspanet/kaspad/kasparov/kasparovserver/apimodels"
+	"github.com/kaspanet/kaspad/kasparov/kasparovd/apimodels"
 )
 
 func convertTxDBModelToTxResponse(tx *dbmodels.Transaction) *apimodels.TransactionResponse {

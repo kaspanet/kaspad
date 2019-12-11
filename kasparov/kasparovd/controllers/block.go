@@ -6,7 +6,7 @@ import (
 
 	"github.com/kaspanet/kaspad/kasparov/database"
 	"github.com/kaspanet/kaspad/kasparov/dbmodels"
-	"github.com/kaspanet/kaspad/kasparov/kasparovserver/apimodels"
+	"github.com/kaspanet/kaspad/kasparov/kasparovd/apimodels"
 
 	"github.com/kaspanet/kaspad/httpserverutils"
 	"github.com/pkg/errors"

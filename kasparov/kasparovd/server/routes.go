@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/kaspanet/kaspad/httpserverutils"
-	"github.com/kaspanet/kaspad/kasparov/kasparovserver/controllers"
+	"github.com/kaspanet/kaspad/kasparov/kasparovd/controllers"
 	"github.com/pkg/errors"
 
 	"github.com/gorilla/mux"

@@ -11,8 +11,8 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/kaspanet/kaspad/kasparov/database"
 	"github.com/kaspanet/kaspad/kasparov/jsonrpc"
-	"github.com/kaspanet/kaspad/kasparov/kasparovserver/config"
-	"github.com/kaspanet/kaspad/kasparov/kasparovserver/server"
+	"github.com/kaspanet/kaspad/kasparov/kasparovd/config"
+	"github.com/kaspanet/kaspad/kasparov/kasparovd/server"
 	"github.com/kaspanet/kaspad/signal"
 	"github.com/kaspanet/kaspad/util/panics"
 )

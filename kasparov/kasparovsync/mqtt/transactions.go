@@ -4,8 +4,8 @@ import (
 	"path"
 
 	"github.com/kaspanet/kaspad/btcjson"
-	"github.com/kaspanet/kaspad/kasparov/kasparovserver/apimodels"
-	"github.com/kaspanet/kaspad/kasparov/kasparovserver/controllers"
+	"github.com/kaspanet/kaspad/kasparov/kasparovd/apimodels"
+	"github.com/kaspanet/kaspad/kasparov/kasparovd/controllers"
 	"github.com/kaspanet/kaspad/rpcclient"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
