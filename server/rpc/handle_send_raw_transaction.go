@@ -41,7 +41,7 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 		// so log it as such. Otherwise, something really did go wrong,
 		// so log it as an actual error. In both cases, a JSON-RPC
 		// error is returned to the client with the deserialization
-		// error code (to match kaspad behavior).
+		// error code
 		if _, ok := err.(mempool.RuleError); ok {
 			log.Debugf("Rejected transaction %s: %s", tx.ID(),
 				err)

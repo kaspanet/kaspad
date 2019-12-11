@@ -518,9 +518,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 	// Build merkle tree and ensure the calculated merkle root matches the
 	// entry in the block header. This also has the effect of caching all
 	// of the transaction hashes in the block to speed up future hash
-	// checks. Kaspad builds the tree here and checks the merkle root
-	// after the following checks, but there is no reason not to check the
-	// merkle root matches here.
+	// checks.
 	hashMerkleTree := BuildHashMerkleTreeStore(block.Transactions())
 	calculatedHashMerkleRoot := hashMerkleTree.Root()
 	if !header.HashMerkleRoot.IsEqual(calculatedHashMerkleRoot) {
@@ -816,9 +814,6 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoS
 		return 0, ruleError(ErrSpendTooHigh, str)
 	}
 
-	// NOTE: kaspad checks if the transaction fees are < 0 here, but that
-	// is an impossible condition because of the check above that ensures
-	// the inputs are >= the outputs.
 	txFeeInSompi = totalSompiIn - totalSompiOut
 	return txFeeInSompi, nil
 }

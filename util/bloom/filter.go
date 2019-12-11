@@ -115,7 +115,7 @@ func (bf *Filter) Unload() {
 // hash returns the bit offset in the bloom filter which corresponds to the
 // passed data for the given indepedent hash function number.
 func (bf *Filter) hash(hashNum uint32, data []byte) uint32 {
-	// kaspad: 0xfba4c795 chosen as it guarantees a reasonable bit
+	// 0xfba4c795 chosen as it guarantees a reasonable bit
 	// difference between hashNum values.
 	//
 	// Note that << 3 is equivalent to multiplying by 8, but is faster.

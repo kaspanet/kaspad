@@ -765,22 +765,6 @@ func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
 	msg.AddUserAgent(p.cfg.UserAgentName, p.cfg.UserAgentVersion,
 		p.cfg.UserAgentComments...)
 
-	// XXX: kaspad appears to always enable the full node services flag
-	// of the remote peer netaddress field in the version message regardless
-	// of whether it knows it supports it or not. Also, kaspad sets
-	// the services field of the local peer to 0 regardless of support.
-	//
-	// Realistically, this should be set as follows:
-	// - For outgoing connections:
-	//    - Set the local netaddress services to what the local peer
-	//      actually supports
-	//    - Set the remote netaddress services to 0 to indicate no services
-	//      as they are still unknown
-	// - For incoming connections:
-	//    - Set the local netaddress services to what the local peer
-	//      actually supports
-	//    - Set the remote netaddress services to the what was advertised by
-	//      by the remote peer in its version message
 	msg.AddrYou.Services = wire.SFNodeNetwork
 
 	// Advertise the services flag
