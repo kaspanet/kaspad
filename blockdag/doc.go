@@ -5,12 +5,10 @@
 /*
 Package blockdag implements kaspa block handling and DAG selection rules.
 
-The kaspa block handling and chain selection rules are an integral, and quite
-likely the most important, part of kaspa. Unfortunately, at the time of
-this writing, these rules are also largely undocumented and had to be
-ascertained from the kaspad source code. At its core, kaspa is a
+The kaspa block handling and DAG selection rules are an integral, and quite
+likely the most important, part of kaspa. At its core, kaspa is a
 distributed consensus of which blocks are valid and which ones will comprise the
-main block chain (public ledger) that ultimately determines accepted
+DAG (public ledger) that ultimately determines accepted
 transactions, so it is extremely important that fully validating nodes agree on
 all rules.
 
