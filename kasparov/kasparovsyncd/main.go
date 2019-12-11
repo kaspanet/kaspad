@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"os"
 
 	_ "github.com/golang-migrate/migrate/v4/database/mysql"
@@ -10,10 +9,11 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/kaspanet/kaspad/kasparov/database"
 	"github.com/kaspanet/kaspad/kasparov/jsonrpc"
-	"github.com/kaspanet/kaspad/kasparov/server/config"
-	"github.com/kaspanet/kaspad/kasparov/server/server"
+	"github.com/kaspanet/kaspad/kasparov/kasparovsyncd/config"
+	"github.com/kaspanet/kaspad/kasparov/kasparovsyncd/mqtt"
 	"github.com/kaspanet/kaspad/signal"
 	"github.com/kaspanet/kaspad/util/panics"
+	"github.com/pkg/errors"
 )
 
 func main() {
@@ -29,6 +29,14 @@ func main() {
 		return
 	}
 
+	if config.ActiveConfig().Migrate {
+		err := database.Migrate(&config.ActiveConfig().KasparovFlags)
+		if err != nil {
+			panic(errors.Errorf("Error migrating database: %s", err))
+		}
+		return
+	}
+
 	err = database.Connect(&config.ActiveConfig().KasparovFlags)
 	if err != nil {
 		panic(errors.Errorf("Error connecting to database: %s", err))
@@ -40,15 +48,29 @@ func main() {
 		}
 	}()
 
+	err = mqtt.Connect()
+	if err != nil {
+		panic(errors.Errorf("Error connecting to MQTT: %s", err))
+	}
+	defer mqtt.Close()
+
 	err = jsonrpc.Connect(&config.ActiveConfig().KasparovFlags)
 	if err != nil {
 		panic(errors.Errorf("Error connecting to servers: %s", err))
 	}
 	defer jsonrpc.Close()
 
-	shutdownServer := server.Start(config.ActiveConfig().HTTPListen)
-	defer shutdownServer()
+	doneChan := make(chan struct{}, 1)
+	spawn(func() {
+		err := startSync(doneChan)
+		if err != nil {
+			panic(err)
+		}
+	})
 
 	interrupt := signal.InterruptListener()
 	<-interrupt
+
+	// Gracefully stop syncing
+	doneChan <- struct{}{}
 }

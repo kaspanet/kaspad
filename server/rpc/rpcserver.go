@@ -12,7 +12,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -22,6 +21,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/btcsuite/websocket"
 	"github.com/kaspanet/kaspad/blockdag"
@@ -74,8 +75,6 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getBlockCount":         handleGetBlockCount,
 	"getBlockHeader":        handleGetBlockHeader,
 	"getBlockTemplate":      handleGetBlockTemplate,
-	"getCFilter":            handleGetCFilter,
-	"getCFilterHeader":      handleGetCFilterHeader,
 	"getChainFromBlock":     handleGetChainFromBlock,
 	"getConnectionCount":    handleGetConnectionCount,
 	"getCurrentNet":         handleGetCurrentNet,
@@ -89,7 +88,6 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getMempoolInfo":        handleGetMempoolInfo,
 	"getMiningInfo":         handleGetMiningInfo,
 	"getNetTotals":          handleGetNetTotals,
-	"getNetworkHashPs":      handleGetNetworkHashPS,
 	"getPeerInfo":           handleGetPeerInfo,
 	"getRawMempool":         handleGetRawMempool,
 	"getRawTransaction":     handleGetRawTransaction,
@@ -111,13 +109,8 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 
 // Commands that are currently unimplemented, but should ultimately be.
 var rpcUnimplemented = map[string]struct{}{
-	"estimatePriority": {},
-	"getChainTips":     {},
-	"getMempoolEntry":  {},
-	"getNetworkInfo":   {},
-	"invalidateBlock":  {},
-	"preciousBlock":    {},
-	"reconsiderBlock":  {},
+	"getMempoolEntry": {},
+	"getNetworkInfo":  {},
 }
 
 // Commands that are available to a limited user
@@ -147,15 +140,12 @@ var rpcLimited = map[string]struct{}{
 	"getBlockCount":         {},
 	"getBlockHash":          {},
 	"getBlockHeader":        {},
-	"getCFilter":            {},
-	"getCFilterHeader":      {},
 	"getChainFromBlock":     {},
 	"getCurrentNet":         {},
 	"getDifficulty":         {},
 	"getHeaders":            {},
 	"getInfo":               {},
 	"getNetTotals":          {},
-	"getNetworkHashPs":      {},
 	"getRawMempool":         {},
 	"getRawTransaction":     {},
 	"getTxOut":              {},
@@ -810,7 +800,6 @@ type rpcserverConfig struct {
 	TxIndex         *indexers.TxIndex
 	AddrIndex       *indexers.AddrIndex
 	AcceptanceIndex *indexers.AcceptanceIndex
-	CfIndex         *indexers.CfIndex
 }
 
 // setupRPCListeners returns a slice of listeners that are configured for use
@@ -894,7 +883,6 @@ func NewRPCServer(
 		TxIndex:         p2pServer.TxIndex,
 		AddrIndex:       p2pServer.AddrIndex,
 		AcceptanceIndex: p2pServer.AcceptanceIndex,
-		CfIndex:         p2pServer.CfIndex,
 		DAG:             p2pServer.DAG,
 	}
 	rpc := Server{

@@ -6,10 +6,11 @@
 package rpc
 
 import (
-	"github.com/pkg/errors"
 	"sort"
 	"strings"
 	"sync"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/btcjson"
 )
@@ -360,12 +361,6 @@ var helpDescsEnUS = map[string]string{
 	"getBlockTemplate--condition2": "mode=proposal, accepted",
 	"getBlockTemplate--result1":    "An error string which represents why the proposal was rejected or nothing if accepted",
 
-	// GetCFilterCmd help.
-	"getCFilter--synopsis":  "Returns a block's committed filter given its hash.",
-	"getCFilter-filterType": "The type of filter to return (0=regular, 1=extended)",
-	"getCFilter-hash":       "The hash of the block",
-	"getCFilter--result0":   "The block's committed filter",
-
 	// GetChainFromBlockCmd help.
 	"getChainFromBlock--synopsis":     "Return the selected parent chain starting from startHash up to the virtual. If startHash is not in the selected parent chain, it goes down the DAG until it does reach a hash in the selected parent chain while collecting hashes into removedChainBlockHashes.",
 	"getChainFromBlock-startHash":     "Hash of the bottom of the requested chain. If this hash is unknown or is not a chain block - returns an error.",
@@ -376,12 +371,6 @@ var helpDescsEnUS = map[string]string{
 	"getChainFromBlockResult-removedChainBlockHashes": "List chain-block hashes that were removed from the selected parent chain in top-to-bottom order",
 	"getChainFromBlockResult-addedChainBlocks":        "List of ChainBlocks from Virtual.SelectedTip to StartHash (excluding StartHash) ordered bottom-to-top.",
 	"getChainFromBlockResult-blocks":                  "If includeBlocks=true - contains the contents of all chain and accepted blocks in the AddedChainBlocks. Otherwise - omitted.",
-
-	// GetCFilterHeaderCmd help.
-	"getCFilterHeader--synopsis":  "Returns a block's compact filter header given its hash.",
-	"getCFilterHeader-filterType": "The type of filter header to return (0=regular, 1=extended)",
-	"getCFilterHeader-hash":       "The hash of the block",
-	"getCFilterHeader--result0":   "The block's gcs filter header",
 
 	// GetConnectionCountCmd help.
 	"getConnectionCount--synopsis": "Returns the number of active connections to other peers.",
@@ -446,19 +435,12 @@ var helpDescsEnUS = map[string]string{
 	"getMiningInfoResult-generate":         "Whether or not server is set to generate coins",
 	"getMiningInfoResult-genProcLimit":     "Number of processors to use for coin generation (-1 when disabled)",
 	"getMiningInfoResult-hashesPerSec":     "Recent hashes per second performance measurement while generating coins",
-	"getMiningInfoResult-networkHashPs":    "Estimated network hashes per second for the most recent blocks",
 	"getMiningInfoResult-pooledTx":         "Number of transactions in the memory pool",
 	"getMiningInfoResult-testNet":          "Whether or not server is using testnet",
 	"getMiningInfoResult-devNet":           "Whether or not server is using devnet",
 
 	// GetMiningInfoCmd help.
 	"getMiningInfo--synopsis": "Returns a JSON object containing mining-related information.",
-
-	// GetNetworkHashPSCmd help.
-	"getNetworkHashPs--synopsis": "Returns the estimated network hashes per second for the block heights provided by the parameters.",
-	"getNetworkHashPs-blocks":    "The number of blocks, or -1 for blocks since last difficulty change",
-	"getNetworkHashPs-height":    "Perform estimate ending with this height or -1 for current best chain block height",
-	"getNetworkHashPs--result0":  "Estimated hashes per second",
 
 	// GetNetTotalsCmd help.
 	"getNetTotals--synopsis": "Returns a JSON object containing network traffic statistics.",
@@ -688,8 +670,6 @@ var rpcResultTypes = map[string][]interface{}{
 	"getBlockHeader":        {(*string)(nil), (*btcjson.GetBlockHeaderVerboseResult)(nil)},
 	"getBlockTemplate":      {(*btcjson.GetBlockTemplateResult)(nil), (*string)(nil), nil},
 	"getBlockDagInfo":       {(*btcjson.GetBlockDAGInfoResult)(nil)},
-	"getCFilter":            {(*string)(nil)},
-	"getCFilterHeader":      {(*string)(nil)},
 	"getChainFromBlock":     {(*btcjson.GetChainFromBlockResult)(nil)},
 	"getConnectionCount":    {(*int32)(nil)},
 	"getCurrentNet":         {(*uint32)(nil)},
@@ -703,7 +683,6 @@ var rpcResultTypes = map[string][]interface{}{
 	"getMempoolInfo":        {(*btcjson.GetMempoolInfoResult)(nil)},
 	"getMiningInfo":         {(*btcjson.GetMiningInfoResult)(nil)},
 	"getNetTotals":          {(*btcjson.GetNetTotalsResult)(nil)},
-	"getNetworkHashPs":      {(*int64)(nil)},
 	"getPeerInfo":           {(*[]btcjson.GetPeerInfoResult)(nil)},
 	"getRawMempool":         {(*[]string)(nil), (*btcjson.GetRawMempoolVerboseResult)(nil)},
 	"getRawTransaction":     {(*string)(nil), (*btcjson.TxRawResult)(nil)},

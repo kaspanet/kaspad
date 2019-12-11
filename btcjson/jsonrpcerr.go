@@ -59,7 +59,6 @@ const (
 	ErrRPCOutOfRange         RPCErrorCode = -1
 	ErrRPCNoTxInfo           RPCErrorCode = -5
 	ErrRPCNoAcceptanceIndex  RPCErrorCode = -5
-	ErrRPCNoCFIndex          RPCErrorCode = -5
 	ErrRPCNoNewestBlockInfo  RPCErrorCode = -5
 	ErrRPCInvalidTxVout      RPCErrorCode = -5
 	ErrRPCSubnetworkNotFound RPCErrorCode = -5

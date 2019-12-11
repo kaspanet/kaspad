@@ -10,8 +10,6 @@ package btcjson
 import (
 	"encoding/json"
 	"fmt"
-
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // AddManualNodeCmd defines the addManualNode JSON-RPC command.
@@ -293,37 +291,6 @@ func NewGetBlockTemplateCmd(request *TemplateRequest) *GetBlockTemplateCmd {
 	}
 }
 
-// GetCFilterCmd defines the getCFilter JSON-RPC command.
-type GetCFilterCmd struct {
-	Hash       string
-	FilterType wire.FilterType
-}
-
-// NewGetCFilterCmd returns a new instance which can be used to issue a
-// getCFilter JSON-RPC command.
-func NewGetCFilterCmd(hash string, filterType wire.FilterType) *GetCFilterCmd {
-	return &GetCFilterCmd{
-		Hash:       hash,
-		FilterType: filterType,
-	}
-}
-
-// GetCFilterHeaderCmd defines the getCFilterHeader JSON-RPC command.
-type GetCFilterHeaderCmd struct {
-	Hash       string
-	FilterType wire.FilterType
-}
-
-// NewGetCFilterHeaderCmd returns a new instance which can be used to issue a
-// getCFilterHeader JSON-RPC command.
-func NewGetCFilterHeaderCmd(hash string,
-	filterType wire.FilterType) *GetCFilterHeaderCmd {
-	return &GetCFilterHeaderCmd{
-		Hash:       hash,
-		FilterType: filterType,
-	}
-}
-
 // GetChainFromBlockCmd defines the getChainFromBlock JSON-RPC command.
 type GetChainFromBlockCmd struct {
 	IncludeBlocks bool    `json:"includeBlocks"`
@@ -442,24 +409,6 @@ func NewGetNetTotalsCmd() *GetNetTotalsCmd {
 	return &GetNetTotalsCmd{}
 }
 
-// GetNetworkHashPSCmd defines the getNetworkHashPs JSON-RPC command.
-type GetNetworkHashPSCmd struct {
-	Blocks *int `jsonrpcdefault:"120"`
-	Height *int `jsonrpcdefault:"-1"`
-}
-
-// NewGetNetworkHashPSCmd returns a new instance which can be used to issue a
-// getNetworkHashPs JSON-RPC command.
-//
-// The parameters which are pointers indicate they are optional.  Passing nil
-// for optional parameters will use the default value.
-func NewGetNetworkHashPSCmd(numBlocks, height *int) *GetNetworkHashPSCmd {
-	return &GetNetworkHashPSCmd{
-		Blocks: numBlocks,
-		Height: height,
-	}
-}
-
 // GetPeerInfoCmd defines the getPeerInfo JSON-RPC command.
 type GetPeerInfoCmd struct{}
 
@@ -564,19 +513,6 @@ func NewHelpCmd(command *string) *HelpCmd {
 	}
 }
 
-// InvalidateBlockCmd defines the invalidateBlock JSON-RPC command.
-type InvalidateBlockCmd struct {
-	BlockHash string
-}
-
-// NewInvalidateBlockCmd returns a new instance which can be used to issue a
-// invalidateBlock JSON-RPC command.
-func NewInvalidateBlockCmd(blockHash string) *InvalidateBlockCmd {
-	return &InvalidateBlockCmd{
-		BlockHash: blockHash,
-	}
-}
-
 // PingCmd defines the ping JSON-RPC command.
 type PingCmd struct{}
 
@@ -584,32 +520,6 @@ type PingCmd struct{}
 // command.
 func NewPingCmd() *PingCmd {
 	return &PingCmd{}
-}
-
-// PreciousBlockCmd defines the preciousBlock JSON-RPC command.
-type PreciousBlockCmd struct {
-	BlockHash string
-}
-
-// NewPreciousBlockCmd returns a new instance which can be used to issue a
-// preciousBlock JSON-RPC command.
-func NewPreciousBlockCmd(blockHash string) *PreciousBlockCmd {
-	return &PreciousBlockCmd{
-		BlockHash: blockHash,
-	}
-}
-
-// ReconsiderBlockCmd defines the reconsiderBlock JSON-RPC command.
-type ReconsiderBlockCmd struct {
-	BlockHash string
-}
-
-// NewReconsiderBlockCmd returns a new instance which can be used to issue a
-// reconsiderBlock JSON-RPC command.
-func NewReconsiderBlockCmd(blockHash string) *ReconsiderBlockCmd {
-	return &ReconsiderBlockCmd{
-		BlockHash: blockHash,
-	}
 }
 
 // SearchRawTransactionsCmd defines the searchRawTransactions JSON-RPC command.
@@ -747,8 +657,6 @@ func init() {
 	MustRegisterCmd("getBlockCount", (*GetBlockCountCmd)(nil), flags)
 	MustRegisterCmd("getBlockHeader", (*GetBlockHeaderCmd)(nil), flags)
 	MustRegisterCmd("getBlockTemplate", (*GetBlockTemplateCmd)(nil), flags)
-	MustRegisterCmd("getCFilter", (*GetCFilterCmd)(nil), flags)
-	MustRegisterCmd("getCFilterHeader", (*GetCFilterHeaderCmd)(nil), flags)
 	MustRegisterCmd("getChainFromBlock", (*GetChainFromBlockCmd)(nil), flags)
 	MustRegisterCmd("getDagTips", (*GetDAGTipsCmd)(nil), flags)
 	MustRegisterCmd("getConnectionCount", (*GetConnectionCountCmd)(nil), flags)
@@ -762,7 +670,6 @@ func init() {
 	MustRegisterCmd("getMiningInfo", (*GetMiningInfoCmd)(nil), flags)
 	MustRegisterCmd("getNetworkInfo", (*GetNetworkInfoCmd)(nil), flags)
 	MustRegisterCmd("getNetTotals", (*GetNetTotalsCmd)(nil), flags)
-	MustRegisterCmd("getNetworkHashPs", (*GetNetworkHashPSCmd)(nil), flags)
 	MustRegisterCmd("getPeerInfo", (*GetPeerInfoCmd)(nil), flags)
 	MustRegisterCmd("getRawMempool", (*GetRawMempoolCmd)(nil), flags)
 	MustRegisterCmd("getRawTransaction", (*GetRawTransactionCmd)(nil), flags)
@@ -770,10 +677,7 @@ func init() {
 	MustRegisterCmd("getTxOut", (*GetTxOutCmd)(nil), flags)
 	MustRegisterCmd("getTxOutSetInfo", (*GetTxOutSetInfoCmd)(nil), flags)
 	MustRegisterCmd("help", (*HelpCmd)(nil), flags)
-	MustRegisterCmd("invalidateBlock", (*InvalidateBlockCmd)(nil), flags)
 	MustRegisterCmd("ping", (*PingCmd)(nil), flags)
-	MustRegisterCmd("preciousBlock", (*PreciousBlockCmd)(nil), flags)
-	MustRegisterCmd("reconsiderBlock", (*ReconsiderBlockCmd)(nil), flags)
 	MustRegisterCmd("removeManualNode", (*RemoveManualNodeCmd)(nil), flags)
 	MustRegisterCmd("searchRawTransactions", (*SearchRawTransactionsCmd)(nil), flags)
 	MustRegisterCmd("sendRawTransaction", (*SendRawTransactionCmd)(nil), flags)

@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/kaspanet/kaspad/btcjson"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // TestDAGSvrCmds tests all of the dag server commands marshal and unmarshal
@@ -325,38 +324,6 @@ func TestDAGSvrCmds(t *testing.T) {
 			},
 		},
 		{
-			name: "getCFilter",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getCFilter", "123",
-					wire.GCSFilterExtended)
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewGetCFilterCmd("123",
-					wire.GCSFilterExtended)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getCFilter","params":["123",1],"id":1}`,
-			unmarshalled: &btcjson.GetCFilterCmd{
-				Hash:       "123",
-				FilterType: wire.GCSFilterExtended,
-			},
-		},
-		{
-			name: "getCFilterHeader",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getCFilterHeader", "123",
-					wire.GCSFilterExtended)
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewGetCFilterHeaderCmd("123",
-					wire.GCSFilterExtended)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getCFilterHeader","params":["123",1],"id":1}`,
-			unmarshalled: &btcjson.GetCFilterHeaderCmd{
-				Hash:       "123",
-				FilterType: wire.GCSFilterExtended,
-			},
-		},
-		{
 			name: "getChainFromBlock",
 			newCmd: func() (interface{}, error) {
 				return btcjson.NewCmd("getChainFromBlock", true, "123")
@@ -508,48 +475,6 @@ func TestDAGSvrCmds(t *testing.T) {
 			unmarshalled: &btcjson.GetNetTotalsCmd{},
 		},
 		{
-			name: "getNetworkHashPs",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getNetworkHashPs")
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewGetNetworkHashPSCmd(nil, nil)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getNetworkHashPs","params":[],"id":1}`,
-			unmarshalled: &btcjson.GetNetworkHashPSCmd{
-				Blocks: btcjson.Int(120),
-				Height: btcjson.Int(-1),
-			},
-		},
-		{
-			name: "getNetworkHashPs optional1",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getNetworkHashPs", 200)
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewGetNetworkHashPSCmd(btcjson.Int(200), nil)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getNetworkHashPs","params":[200],"id":1}`,
-			unmarshalled: &btcjson.GetNetworkHashPSCmd{
-				Blocks: btcjson.Int(200),
-				Height: btcjson.Int(-1),
-			},
-		},
-		{
-			name: "getNetworkHashPs optional2",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getNetworkHashPs", 200, 123)
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewGetNetworkHashPSCmd(btcjson.Int(200), btcjson.Int(123))
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getNetworkHashPs","params":[200,123],"id":1}`,
-			unmarshalled: &btcjson.GetNetworkHashPSCmd{
-				Blocks: btcjson.Int(200),
-				Height: btcjson.Int(123),
-			},
-		},
-		{
 			name: "getPeerInfo",
 			newCmd: func() (interface{}, error) {
 				return btcjson.NewCmd("getPeerInfo")
@@ -695,19 +620,6 @@ func TestDAGSvrCmds(t *testing.T) {
 			},
 		},
 		{
-			name: "invalidateBlock",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("invalidateBlock", "123")
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewInvalidateBlockCmd("123")
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"invalidateBlock","params":["123"],"id":1}`,
-			unmarshalled: &btcjson.InvalidateBlockCmd{
-				BlockHash: "123",
-			},
-		},
-		{
 			name: "ping",
 			newCmd: func() (interface{}, error) {
 				return btcjson.NewCmd("ping")
@@ -717,32 +629,6 @@ func TestDAGSvrCmds(t *testing.T) {
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"ping","params":[],"id":1}`,
 			unmarshalled: &btcjson.PingCmd{},
-		},
-		{
-			name: "preciousBlock",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("preciousBlock", "0123")
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewPreciousBlockCmd("0123")
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"preciousBlock","params":["0123"],"id":1}`,
-			unmarshalled: &btcjson.PreciousBlockCmd{
-				BlockHash: "0123",
-			},
-		},
-		{
-			name: "reconsiderBlock",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("reconsiderBlock", "123")
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewReconsiderBlockCmd("123")
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"reconsiderBlock","params":["123"],"id":1}`,
-			unmarshalled: &btcjson.ReconsiderBlockCmd{
-				BlockHash: "123",
-			},
 		},
 		{
 			name: "removeManualNode",
