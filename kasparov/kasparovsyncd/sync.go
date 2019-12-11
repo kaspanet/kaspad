@@ -10,8 +10,8 @@ import (
 	"github.com/kaspanet/kaspad/kasparov/database"
 	"github.com/kaspanet/kaspad/kasparov/dbmodels"
 	"github.com/kaspanet/kaspad/kasparov/jsonrpc"
-	"github.com/kaspanet/kaspad/kasparov/kasparovsync/config"
-	"github.com/kaspanet/kaspad/kasparov/kasparovsync/mqtt"
+	"github.com/kaspanet/kaspad/kasparov/kasparovsyncd/config"
+	"github.com/kaspanet/kaspad/kasparov/kasparovsyncd/mqtt"
 
 	"github.com/jinzhu/gorm"
 	"github.com/kaspanet/kaspad/blockdag"
