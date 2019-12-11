@@ -5,16 +5,17 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/kaspanet/kaspad/kasparov/database"
 	"github.com/kaspanet/kaspad/kasparov/dbmodels"
 	"github.com/kaspanet/kaspad/kasparov/jsonrpc"
-	"github.com/kaspanet/kaspad/kasparov/server/apimodels"
+	"github.com/kaspanet/kaspad/kasparov/kasparovd/apimodels"
+	"github.com/kaspanet/kaspad/kasparov/kasparovd/config"
 	"github.com/kaspanet/kaspad/util"
-	"net/http"
 
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/httpserverutils"
-	"github.com/kaspanet/kaspad/kasparov/server/config"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/pkg/errors"
 

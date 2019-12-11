@@ -14,7 +14,7 @@ RUN go mod download
 
 COPY . .
 
-RUN cd kasparov/syncd && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o kasparov-syncd .
+RUN cd kasparov/server && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o kasparov-server .
 
 # --- multistage docker build: stage #2: runtime image
 FROM alpine
@@ -22,7 +22,7 @@ WORKDIR /app
 
 RUN apk add --no-cache tini
 
-COPY --from=build /go/src/github.com/kaspanet/kaspad/kasparov/syncd/ /app/
+COPY --from=build /go/src/github.com/kaspanet/kaspad/kasparov/kasparovd/ /app/
 
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["/app/kasparov-syncd"]
+CMD ["/app/kasparov-server"]
