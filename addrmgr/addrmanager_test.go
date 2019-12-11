@@ -154,15 +154,15 @@ func TestAddAddressByIP(t *testing.T) {
 	for i, test := range tests {
 		err := amgr.AddAddressByIP(test.addrIP, nil)
 		if test.err != nil && err == nil {
-			t.Errorf("TestGood test %d failed expected an error and got none", i)
+			t.Errorf("TestAddAddressByIP test %d failed expected an error and got none", i)
 			continue
 		}
 		if test.err == nil && err != nil {
-			t.Errorf("TestGood test %d failed expected no error and got one", i)
+			t.Errorf("TestAddAddressByIP test %d failed expected no error and got one", i)
 			continue
 		}
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
-			t.Errorf("TestGood test %d failed got %v, want %v", i,
+			t.Errorf("TestAddAddressByIP test %d failed got %v, want %v", i,
 				reflect.TypeOf(err), reflect.TypeOf(test.err))
 			continue
 		}

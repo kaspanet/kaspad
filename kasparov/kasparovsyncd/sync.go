@@ -3,14 +3,15 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/kaspanet/kaspad/kasparov/database"
-	"github.com/kaspanet/kaspad/kasparov/dbmodels"
-	"github.com/kaspanet/kaspad/kasparov/jsonrpc"
-	"github.com/kaspanet/kaspad/kasparov/syncd/config"
-	"github.com/kaspanet/kaspad/kasparov/syncd/mqtt"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/kaspanet/kaspad/kasparov/database"
+	"github.com/kaspanet/kaspad/kasparov/dbmodels"
+	"github.com/kaspanet/kaspad/kasparov/jsonrpc"
+	"github.com/kaspanet/kaspad/kasparov/kasparovsyncd/config"
+	"github.com/kaspanet/kaspad/kasparov/kasparovsyncd/mqtt"
 
 	"github.com/jinzhu/gorm"
 	"github.com/kaspanet/kaspad/blockdag"

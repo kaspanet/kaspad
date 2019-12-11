@@ -6,10 +6,11 @@
 package rpc
 
 import (
-	"github.com/pkg/errors"
 	"sort"
 	"strings"
 	"sync"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/btcjson"
 )
@@ -434,19 +435,12 @@ var helpDescsEnUS = map[string]string{
 	"getMiningInfoResult-generate":         "Whether or not server is set to generate coins",
 	"getMiningInfoResult-genProcLimit":     "Number of processors to use for coin generation (-1 when disabled)",
 	"getMiningInfoResult-hashesPerSec":     "Recent hashes per second performance measurement while generating coins",
-	"getMiningInfoResult-networkHashPs":    "Estimated network hashes per second for the most recent blocks",
 	"getMiningInfoResult-pooledTx":         "Number of transactions in the memory pool",
 	"getMiningInfoResult-testNet":          "Whether or not server is using testnet",
 	"getMiningInfoResult-devNet":           "Whether or not server is using devnet",
 
 	// GetMiningInfoCmd help.
 	"getMiningInfo--synopsis": "Returns a JSON object containing mining-related information.",
-
-	// GetNetworkHashPSCmd help.
-	"getNetworkHashPs--synopsis": "Returns the estimated network hashes per second for the block heights provided by the parameters.",
-	"getNetworkHashPs-blocks":    "The number of blocks, or -1 for blocks since last difficulty change",
-	"getNetworkHashPs-height":    "Perform estimate ending with this height or -1 for current best chain block height",
-	"getNetworkHashPs--result0":  "Estimated hashes per second",
 
 	// GetNetTotalsCmd help.
 	"getNetTotals--synopsis": "Returns a JSON object containing network traffic statistics.",
@@ -689,7 +683,6 @@ var rpcResultTypes = map[string][]interface{}{
 	"getMempoolInfo":        {(*btcjson.GetMempoolInfoResult)(nil)},
 	"getMiningInfo":         {(*btcjson.GetMiningInfoResult)(nil)},
 	"getNetTotals":          {(*btcjson.GetNetTotalsResult)(nil)},
-	"getNetworkHashPs":      {(*int64)(nil)},
 	"getPeerInfo":           {(*[]btcjson.GetPeerInfoResult)(nil)},
 	"getRawMempool":         {(*[]string)(nil), (*btcjson.GetRawMempoolVerboseResult)(nil)},
 	"getRawTransaction":     {(*string)(nil), (*btcjson.TxRawResult)(nil)},

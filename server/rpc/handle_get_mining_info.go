@@ -15,22 +15,6 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 		}
 	}
 
-	// Create a default getNetworkHashPs command to use defaults and make
-	// use of the existing getNetworkHashPs handler.
-	gnhpsCmd := btcjson.NewGetNetworkHashPSCmd(nil, nil)
-	networkHashesPerSecIface, err := handleGetNetworkHashPS(s, gnhpsCmd,
-		closeChan)
-	if err != nil {
-		return nil, err
-	}
-	networkHashesPerSec, ok := networkHashesPerSecIface.(int64)
-	if !ok {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCInternal.Code,
-			Message: "networkHashesPerSec is not an int64",
-		}
-	}
-
 	selectedTipHash := s.cfg.DAG.SelectedTipHash()
 	selectedBlock, err := s.cfg.DAG.BlockByHash(selectedTipHash)
 	if err != nil {
@@ -48,7 +32,6 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 		Generate:         s.cfg.CPUMiner.IsMining(),
 		GenProcLimit:     s.cfg.CPUMiner.NumWorkers(),
 		HashesPerSec:     int64(s.cfg.CPUMiner.HashesPerSecond()),
-		NetworkHashPS:    networkHashesPerSec,
 		PooledTx:         uint64(s.cfg.TxMemPool.Count()),
 		TestNet:          config.ActiveConfig().TestNet,
 		DevNet:           config.ActiveConfig().DevNet,

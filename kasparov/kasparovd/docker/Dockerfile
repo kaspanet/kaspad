@@ -22,7 +22,8 @@ WORKDIR /app
 
 RUN apk add --no-cache tini
 
-COPY --from=build /go/src/github.com/kaspanet/kaspad/kasparov/server/ /app/
+COPY --from=build /go/src/github.com/kaspanet/kaspad/kasparov/kasparovd/ /app/
+COPY --from=build /go/src/github.com/kaspanet/kaspad/kasparov/database/migrations/ /database/migrations/
 
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["/app/kasparov-server"]
