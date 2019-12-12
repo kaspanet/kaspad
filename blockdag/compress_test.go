@@ -11,7 +11,7 @@ import (
 )
 
 // hexToBytes converts the passed hex string into bytes and will panic if there
-// is an error.  This is only provided for the hard-coded constants so errors in
+// is an error. This is only provided for the hard-coded constants so errors in
 // the source code can be detected. It will only (and must only) be called with
 // hard-coded values.
 func hexToBytes(s string) []byte {
@@ -260,47 +260,47 @@ func TestAmountCompression(t *testing.T) {
 		compressed   uint64
 	}{
 		{
-			name:         "0 BTC",
+			name:         "0 KAS",
 			uncompressed: 0,
 			compressed:   0,
 		},
 		{
-			name:         "546 Satoshi (current network dust value)",
+			name:         "546 Sompi (current network dust value)",
 			uncompressed: 546,
 			compressed:   4911,
 		},
 		{
-			name:         "0.00001 BTC (typical transaction fee)",
+			name:         "0.00001 KAS (typical transaction fee)",
 			uncompressed: 1000,
 			compressed:   4,
 		},
 		{
-			name:         "0.0001 BTC (typical transaction fee)",
+			name:         "0.0001 KAS (typical transaction fee)",
 			uncompressed: 10000,
 			compressed:   5,
 		},
 		{
-			name:         "0.12345678 BTC",
+			name:         "0.12345678 KAS",
 			uncompressed: 12345678,
 			compressed:   111111101,
 		},
 		{
-			name:         "0.5 BTC",
+			name:         "0.5 KAS",
 			uncompressed: 50000000,
 			compressed:   48,
 		},
 		{
-			name:         "1 BTC",
+			name:         "1 KAS",
 			uncompressed: 100000000,
 			compressed:   9,
 		},
 		{
-			name:         "5 BTC",
+			name:         "5 KAS",
 			uncompressed: 500000000,
 			compressed:   49,
 		},
 		{
-			name:         "21000000 BTC (max minted coins)",
+			name:         "21000000 KAS (max minted coins)",
 			uncompressed: 2100000000000000,
 			compressed:   21000000,
 		},
@@ -345,7 +345,7 @@ func TestCompressedTxOut(t *testing.T) {
 			compressed:   hexToBytes("a52f001018853670f9f3b0582c5b9ee8ce93764ac32b93"),
 		},
 		{
-			name:         "pay-to-pubkey uncompressed 1 BTC",
+			name:         "pay-to-pubkey uncompressed 1 KAS",
 			amount:       100000000,
 			scriptPubKey: hexToBytes("4104192d74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b40d45264838c0bd96852662ce6a847b197376830160c6d2eb5e6a4c44d33f453eac"),
 			compressed:   hexToBytes("0904192d74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b4"),

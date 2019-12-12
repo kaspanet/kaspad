@@ -14,7 +14,7 @@ package ffldb
 import "github.com/kaspanet/kaspad/database"
 
 // TstRunWithMaxBlockFileSize runs the passed function with the maximum allowed
-// file size for the database set to the provided value.  The value will be set
+// file size for the database set to the provided value. The value will be set
 // back to the original value upon completion.
 func TstRunWithMaxBlockFileSizeAndMaxOpenFiles(idb database.DB, size uint32, maxOpenFiles int, fn func()) {
 	ffldb := idb.(*db)

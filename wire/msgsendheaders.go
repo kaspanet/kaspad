@@ -8,39 +8,39 @@ import (
 	"io"
 )
 
-// MsgSendHeaders implements the Message interface and represents a bitcoin
-// sendheaders message.  It is used to request the peer send block headers
+// MsgSendHeaders implements the Message interface and represents a kaspa
+// sendheaders message. It is used to request the peer send block headers
 // rather than inventory vectors.
 //
 // This message has no payload.
 type MsgSendHeaders struct{}
 
-// BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
-func (msg *MsgSendHeaders) BtcDecode(r io.Reader, pver uint32) error {
+func (msg *MsgSendHeaders) KaspaDecode(r io.Reader, pver uint32) error {
 	return nil
 }
 
-// BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
-func (msg *MsgSendHeaders) BtcEncode(w io.Writer, pver uint32) error {
+func (msg *MsgSendHeaders) KaspaEncode(w io.Writer, pver uint32) error {
 	return nil
 }
 
-// Command returns the protocol command string for the message.  This is part
+// Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgSendHeaders) Command() string {
 	return CmdSendHeaders
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
-// receiver.  This is part of the Message interface implementation.
+// receiver. This is part of the Message interface implementation.
 func (msg *MsgSendHeaders) MaxPayloadLength(pver uint32) uint32 {
 	return 0
 }
 
-// NewMsgSendHeaders returns a new bitcoin sendheaders message that conforms to
-// the Message interface.  See MsgSendHeaders for details.
+// NewMsgSendHeaders returns a new kaspa sendheaders message that conforms to
+// the Message interface. See MsgSendHeaders for details.
 func NewMsgSendHeaders() *MsgSendHeaders {
 	return &MsgSendHeaders{}
 }

@@ -36,7 +36,7 @@ const (
 // bitConditionChecker provides a thresholdConditionChecker which can be used to
 // test whether or not a specific bit is set when it's not supposed to be
 // according to the expected version based on the known deployments and the
-// current state of the chain.  This is useful for detecting and warning about
+// current state of the chain. This is useful for detecting and warning about
 // unknown rule activations.
 type bitConditionChecker struct {
 	bit   uint32
@@ -117,7 +117,7 @@ func (c bitConditionChecker) Condition(node *blockNode) (bool, error) {
 }
 
 // deploymentChecker provides a thresholdConditionChecker which can be used to
-// test a specific deployment rule.  This is required for properly detecting
+// test a specific deployment rule. This is required for properly detecting
 // and activating consensus rule changes.
 type deploymentChecker struct {
 	deployment *dagconfig.ConsensusDeployment
@@ -224,7 +224,7 @@ func (dag *BlockDAG) CalcNextBlockVersion() (int32, error) {
 }
 
 // warnUnknownRuleActivations displays a warning when any unknown new rules are
-// either about to activate or have been activated.  This will only happen once
+// either about to activate or have been activated. This will only happen once
 // when new rules have been activated and every block for those about to be
 // activated.
 //
@@ -285,7 +285,7 @@ func (dag *BlockDAG) warnUnknownVersions(node *blockNode) error {
 	}
 	if numUpgraded > unknownVerWarnNum {
 		log.Warn("Unknown block versions are being mined, so new " +
-			"rules might be in effect.  Are you running the " +
+			"rules might be in effect. Are you running the " +
 			"latest version of the software?")
 		dag.unknownVersionsWarned = true
 	}

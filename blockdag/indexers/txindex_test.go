@@ -134,7 +134,7 @@ func TestTxIndexConnectBlock(t *testing.T) {
 	block3TxInBlock := regionBlockBytes[region.Offset : region.Offset+region.Len]
 
 	block3TxBuf := bytes.NewBuffer(make([]byte, 0, block3Tx.SerializeSize()))
-	block3Tx.BtcEncode(block3TxBuf, 0)
+	block3Tx.KaspaEncode(block3TxBuf, 0)
 	blockTxBytes := block3TxBuf.Bytes()
 
 	if !reflect.DeepEqual(blockTxBytes, block3TxInBlock) {

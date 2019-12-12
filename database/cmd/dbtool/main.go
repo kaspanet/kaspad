@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	// blockDbNamePrefix is the prefix for the btcd block database.
+	// blockDbNamePrefix is the prefix for the kaspad block database.
 	blockDbNamePrefix = "blocks"
 )
 
@@ -60,7 +60,7 @@ func loadBlockDB() (database.DB, error) {
 	return db, nil
 }
 
-// realMain is the real main function for the utility.  It is necessary to work
+// realMain is the real main function for the utility. It is necessary to work
 // around the fact that deferred functions do not run when os.Exit() is called.
 func realMain() error {
 	// Setup logging.
@@ -79,9 +79,9 @@ func realMain() error {
 	parser.AddGroup("Global Options", "", cfg)
 	parser.AddCommand("insecureimport",
 		"Insecurely import bulk block data from bootstrap.dat",
-		"Insecurely import bulk block data from bootstrap.dat.  "+
+		"Insecurely import bulk block data from bootstrap.dat. "+
 			"WARNING: This is NOT secure because it does NOT "+
-			"verify chain rules.  It is only provided for testing "+
+			"verify chain rules. It is only provided for testing "+
 			"purposes.", &importCfg)
 	parser.AddCommand("loadheaders",
 		"Time how long to load headers for all blocks in the database",

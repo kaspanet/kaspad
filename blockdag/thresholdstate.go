@@ -84,7 +84,7 @@ type thresholdConditionChecker interface {
 	MinerConfirmationWindow() uint64
 
 	// Condition returns whether or not the rule change activation condition
-	// has been met.  This typically involves checking whether or not the
+	// has been met. This typically involves checking whether or not the
 	// bit associated with the condition is set, but can be more complex as
 	// needed.
 	Condition(*blockNode) (bool, error)
@@ -122,7 +122,7 @@ func newThresholdCaches(numCaches uint32) []thresholdStateCache {
 }
 
 // thresholdState returns the current rule change threshold state for the block
-// AFTER the given node and deployment ID.  The cache is used to ensure the
+// AFTER the given node and deployment ID. The cache is used to ensure the
 // threshold states for previous windows are only calculated once.
 //
 // This function MUST be called with the chain state lock held (for writes).
@@ -135,7 +135,7 @@ func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdCondit
 	}
 
 	// Get the ancestor that is the last block of the previous confirmation
-	// window in order to get its threshold state.  This can be done because
+	// window in order to get its threshold state. This can be done because
 	// the state is the same for all blocks within a given window.
 	prevNode = prevNode.SelectedAncestor(prevNode.chainHeight -
 		(prevNode.chainHeight+1)%confirmationWindow)
@@ -292,7 +292,7 @@ func (dag *BlockDAG) IsDeploymentActive(deploymentID uint32) (bool, error) {
 //
 // It is important to note that, as the variable name indicates, this function
 // expects the block node prior to the block for which the deployment state is
-// desired.  In other words, the returned deployment state is for the block
+// desired. In other words, the returned deployment state is for the block
 // AFTER the passed node.
 //
 // This function MUST be called with the chain state lock held (for writes).
@@ -313,7 +313,7 @@ func (dag *BlockDAG) deploymentState(prevNode *blockNode, deploymentID uint32) (
 // the warnUnknownVersions and warnUnknownRuleActivations functions.
 func (dag *BlockDAG) initThresholdCaches() error {
 	// Initialize the warning and deployment caches by calculating the
-	// threshold state for each of them.  This will ensure the caches are
+	// threshold state for each of them. This will ensure the caches are
 	// populated and any states that needed to be recalculated due to
 	// definition changes is done now.
 	prevNode := dag.selectedTip().selectedParent

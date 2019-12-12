@@ -22,7 +22,7 @@ const maxFailedAttempts = 25
 
 var (
 	// maxRetryDuration is the max duration of time retrying of a persistent
-	// connection is allowed to grow to.  This is necessary since the retry
+	// connection is allowed to grow to. This is necessary since the retry
 	// logic uses a backoff mechanism which increases the interval base times
 	// the number of retries that have been done.
 	maxRetryDuration = time.Minute * 5
@@ -59,9 +59,9 @@ var (
 // ConnState represents the state of the requested connection.
 type ConnState uint8
 
-// ConnState can be either pending, established, disconnected or failed.  When
+// ConnState can be either pending, established, disconnected or failed. When
 // a new connection is requested, it is attempted and categorized as
-// established or failed depending on the connection result.  An established
+// established or failed depending on the connection result. An established
 // connection which was disconnected is categorized as disconnected.
 const (
 	ConnPending ConnState = iota
@@ -117,19 +117,19 @@ func (c *ConnReq) String() string {
 // Config holds the configuration options related to the connection manager.
 type Config struct {
 	// Listeners defines a slice of listeners for which the connection
-	// manager will take ownership of and accept connections.  When a
+	// manager will take ownership of and accept connections. When a
 	// connection is accepted, the OnAccept handler will be invoked with the
-	// connection.  Since the connection manager takes ownership of these
+	// connection. Since the connection manager takes ownership of these
 	// listeners, they will be closed when the connection manager is
 	// stopped.
 	//
 	// This field will not have any effect if the OnAccept field is not
-	// also specified.  It may be nil if the caller does not wish to listen
+	// also specified. It may be nil if the caller does not wish to listen
 	// for incoming connections.
 	Listeners []net.Listener
 
 	// OnAccept is a callback that is fired when an inbound connection is
-	// accepted.  It is the caller's responsibility to close the connection.
+	// accepted. It is the caller's responsibility to close the connection.
 	// Failure to close the connection will result in the connection manager
 	// believing the connection is still active and thus have undesirable
 	// side effects such as still counting toward maximum connection limits.
@@ -156,7 +156,7 @@ type Config struct {
 	OnDisconnection func(*ConnReq)
 
 	// GetNewAddress is a way to get an address to make a network connection
-	// to.  If nil, no new connections will be made automatically.
+	// to. If nil, no new connections will be made automatically.
 	GetNewAddress func() (net.Addr, error)
 
 	// Dial connects to the address on the named network. It cannot be nil.
@@ -292,11 +292,11 @@ func setConnFailedLastLogTime(err error, lastLogTime time.Time) {
 	throttledConnFailedLogs[err] = lastLogTime
 }
 
-// connHandler handles all connection related requests.  It must be run as a
+// connHandler handles all connection related requests. It must be run as a
 // goroutine.
 //
 // The connection handler makes sure that we maintain a pool of active outbound
-// connections so that we remain connected to the network.  Connection requests
+// connections so that we remain connected to the network. Connection requests
 // are processed and mapped by their assigned ids.
 func (cm *ConnManager) connHandler() {
 
@@ -555,7 +555,7 @@ func (cm *ConnManager) Remove(id uint64) {
 	}
 }
 
-// listenHandler accepts incoming connections on a given listener.  It must be
+// listenHandler accepts incoming connections on a given listener. It must be
 // run as a goroutine.
 func (cm *ConnManager) listenHandler(listener net.Listener) {
 	log.Infof("Server listening on %s", listener.Addr())
@@ -616,7 +616,7 @@ func (cm *ConnManager) Stop() {
 		return
 	}
 
-	// Stop all the listeners.  There will not be any listeners if
+	// Stop all the listeners. There will not be any listeners if
 	// listening is disabled.
 	for _, listener := range cm.cfg.Listeners {
 		// Ignore the error since this is shutdown and there is no way

@@ -15,8 +15,8 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/btcjson"
 	"github.com/kaspanet/kaspad/httpserverutils"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -210,7 +210,7 @@ func fetchBlock(client *jsonrpc.Client, blockHash *daghash.Hash) (
 
 // addBlocks inserts data in the given rawBlocks and verboseBlocks pairwise
 // into the database. See addBlock for further details.
-func addBlocks(client *jsonrpc.Client, rawBlocks []string, verboseBlocks []btcjson.GetBlockVerboseResult) error {
+func addBlocks(client *jsonrpc.Client, rawBlocks []string, verboseBlocks []rpcmodel.GetBlockVerboseResult) error {
 	for i, rawBlock := range rawBlocks {
 		err := addBlockAndMissingAncestors(client, &rawAndVerboseBlock{
 			rawBlock:     rawBlock,
@@ -240,7 +240,7 @@ func doesBlockExist(dbTx *gorm.DB, blockHash string) (bool, error) {
 // subnetworks, and addresses.
 // Note that if this function may take a nil dbTx, in which case it would start
 // a database transaction by itself and commit it before returning.
-func addBlock(client *jsonrpc.Client, rawBlock string, verboseBlock btcjson.GetBlockVerboseResult) error {
+func addBlock(client *jsonrpc.Client, rawBlock string, verboseBlock rpcmodel.GetBlockVerboseResult) error {
 	db, err := database.DB()
 	if err != nil {
 		return err
@@ -312,7 +312,7 @@ func addBlock(client *jsonrpc.Client, rawBlock string, verboseBlock btcjson.GetB
 	return nil
 }
 
-func insertBlock(dbTx *gorm.DB, verboseBlock btcjson.GetBlockVerboseResult) (*dbmodels.Block, error) {
+func insertBlock(dbTx *gorm.DB, verboseBlock rpcmodel.GetBlockVerboseResult) (*dbmodels.Block, error) {
 	bits, err := strconv.ParseUint(verboseBlock.Bits, 16, 32)
 	if err != nil {
 		return nil, err
@@ -342,7 +342,7 @@ func insertBlock(dbTx *gorm.DB, verboseBlock btcjson.GetBlockVerboseResult) (*db
 	return &dbBlock, nil
 }
 
-func insertBlockParents(dbTx *gorm.DB, verboseBlock btcjson.GetBlockVerboseResult, dbBlock *dbmodels.Block) error {
+func insertBlockParents(dbTx *gorm.DB, verboseBlock rpcmodel.GetBlockVerboseResult, dbBlock *dbmodels.Block) error {
 	// Exit early if this is the genesis block
 	if len(verboseBlock.ParentHashes) == 0 {
 		return nil
@@ -405,7 +405,7 @@ func insertRawBlockData(dbTx *gorm.DB, rawBlock string, dbBlock *dbmodels.Block)
 	return nil
 }
 
-func insertSubnetwork(dbTx *gorm.DB, transaction *btcjson.TxRawResult, client *jsonrpc.Client) (*dbmodels.Subnetwork, error) {
+func insertSubnetwork(dbTx *gorm.DB, transaction *rpcmodel.TxRawResult, client *jsonrpc.Client) (*dbmodels.Subnetwork, error) {
 	var dbSubnetwork dbmodels.Subnetwork
 	dbResult := dbTx.
 		Where(&dbmodels.Subnetwork{SubnetworkID: transaction.Subnetwork}).
@@ -432,7 +432,7 @@ func insertSubnetwork(dbTx *gorm.DB, transaction *btcjson.TxRawResult, client *j
 	return &dbSubnetwork, nil
 }
 
-func insertTransaction(dbTx *gorm.DB, transaction *btcjson.TxRawResult, dbSubnetwork *dbmodels.Subnetwork) (*dbmodels.Transaction, error) {
+func insertTransaction(dbTx *gorm.DB, transaction *rpcmodel.TxRawResult, dbSubnetwork *dbmodels.Subnetwork) (*dbmodels.Transaction, error) {
 	var dbTransaction dbmodels.Transaction
 	dbResult := dbTx.
 		Where(&dbmodels.Transaction{TransactionID: transaction.TxID}).
@@ -469,7 +469,7 @@ func insertTransaction(dbTx *gorm.DB, transaction *btcjson.TxRawResult, dbSubnet
 	return &dbTransaction, nil
 }
 
-func calcTxMass(dbTx *gorm.DB, transaction *btcjson.TxRawResult) (uint64, error) {
+func calcTxMass(dbTx *gorm.DB, transaction *rpcmodel.TxRawResult) (uint64, error) {
 	msgTx, err := convertTxRawResultToMsgTx(transaction)
 	if err != nil {
 		return 0, err
@@ -503,7 +503,7 @@ func calcTxMass(dbTx *gorm.DB, transaction *btcjson.TxRawResult) (uint64, error)
 	return blockdag.CalcTxMass(util.NewTx(msgTx), orderedPrevScriptPubKeys), nil
 }
 
-func convertTxRawResultToMsgTx(tx *btcjson.TxRawResult) (*wire.MsgTx, error) {
+func convertTxRawResultToMsgTx(tx *rpcmodel.TxRawResult) (*wire.MsgTx, error) {
 	txIns := make([]*wire.TxIn, len(tx.Vin))
 	for i, txIn := range tx.Vin {
 		prevTxID, err := daghash.NewTxIDFromStr(txIn.TxID)
@@ -572,7 +572,7 @@ func insertTransactionBlock(dbTx *gorm.DB, dbBlock *dbmodels.Block, dbTransactio
 	return nil
 }
 
-func insertTransactionInputs(dbTx *gorm.DB, transaction *btcjson.TxRawResult, dbTransaction *dbmodels.Transaction) error {
+func insertTransactionInputs(dbTx *gorm.DB, transaction *rpcmodel.TxRawResult, dbTransaction *dbmodels.Transaction) error {
 	isCoinbase, err := isTransactionCoinbase(transaction)
 	if err != nil {
 		return err
@@ -590,7 +590,7 @@ func insertTransactionInputs(dbTx *gorm.DB, transaction *btcjson.TxRawResult, db
 	return nil
 }
 
-func isTransactionCoinbase(transaction *btcjson.TxRawResult) (bool, error) {
+func isTransactionCoinbase(transaction *rpcmodel.TxRawResult) (bool, error) {
 	subnetwork, err := subnetworkid.NewFromStr(transaction.Subnetwork)
 	if err != nil {
 		return false, err
@@ -598,7 +598,7 @@ func isTransactionCoinbase(transaction *btcjson.TxRawResult) (bool, error) {
 	return subnetwork.IsEqual(subnetworkid.SubnetworkIDCoinbase), nil
 }
 
-func insertTransactionInput(dbTx *gorm.DB, dbTransaction *dbmodels.Transaction, input *btcjson.Vin) error {
+func insertTransactionInput(dbTx *gorm.DB, dbTransaction *dbmodels.Transaction, input *rpcmodel.Vin) error {
 	var dbPreviousTransactionOutput dbmodels.TransactionOutput
 	dbResult := dbTx.
 		Joins("LEFT JOIN `transactions` ON `transactions`.`id` = `transaction_outputs`.`transaction_id`").
@@ -643,7 +643,7 @@ func insertTransactionInput(dbTx *gorm.DB, dbTransaction *dbmodels.Transaction, 
 	return nil
 }
 
-func insertTransactionOutputs(dbTx *gorm.DB, transaction *btcjson.TxRawResult, dbTransaction *dbmodels.Transaction) error {
+func insertTransactionOutputs(dbTx *gorm.DB, transaction *rpcmodel.TxRawResult, dbTransaction *dbmodels.Transaction) error {
 	for _, output := range transaction.Vout {
 		scriptPubKey, err := hex.DecodeString(output.ScriptPubKey.Hex)
 		if err != nil {
@@ -690,7 +690,7 @@ func insertAddress(dbTx *gorm.DB, scriptPubKey []byte) (*dbmodels.Address, error
 }
 
 func insertTransactionOutput(dbTx *gorm.DB, dbTransaction *dbmodels.Transaction,
-	output *btcjson.Vout, scriptPubKey []byte, dbAddress *dbmodels.Address) error {
+	output *rpcmodel.Vout, scriptPubKey []byte, dbAddress *dbmodels.Address) error {
 	var dbTransactionOutputCount int
 	dbResult := dbTx.
 		Model(&dbmodels.TransactionOutput{}).
@@ -723,7 +723,7 @@ func insertTransactionOutput(dbTx *gorm.DB, dbTransaction *dbmodels.Transaction,
 // all addChainBlocks.
 // Note that if this function may take a nil dbTx, in which case it would start
 // a database transaction by itself and commit it before returning.
-func updateSelectedParentChain(removedChainHashes []string, addedChainBlocks []btcjson.ChainBlock) error {
+func updateSelectedParentChain(removedChainHashes []string, addedChainBlocks []rpcmodel.ChainBlock) error {
 	db, err := database.DB()
 	if err != nil {
 		return err
@@ -806,7 +806,7 @@ func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
 
 	dbResult = dbTx.
 		Model(&dbmodels.Block{}).
-		Where(&dbmodels.Block{AcceptingBlockID: btcjson.Uint64(dbBlock.ID)}).
+		Where(&dbmodels.Block{AcceptingBlockID: rpcmodel.Uint64(dbBlock.ID)}).
 		Updates(map[string]interface{}{"AcceptingBlockID": nil})
 
 	dbErrors = dbResult.GetErrors()
@@ -830,7 +830,7 @@ func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
 // * All its Transactions are set AcceptingBlockID = addedBlock
 // * The block is set IsChainBlock = true
 // This function will return an error if any of the above are in an unexpected state
-func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error {
+func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *rpcmodel.ChainBlock) error {
 	var dbAddedBlock dbmodels.Block
 	dbResult := dbTx.
 		Where(&dbmodels.Block{BlockHash: addedBlock.Hash}).
@@ -903,7 +903,7 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 			}
 		}
 
-		dbAccepedBlock.AcceptingBlockID = btcjson.Uint64(dbAddedBlock.ID)
+		dbAccepedBlock.AcceptingBlockID = rpcmodel.Uint64(dbAddedBlock.ID)
 		dbResult = dbTx.Save(&dbAccepedBlock)
 		dbErrors = dbResult.GetErrors()
 		if httpserverutils.HasDBError(dbErrors) {
@@ -923,7 +923,7 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 
 type rawAndVerboseBlock struct {
 	rawBlock     string
-	verboseBlock *btcjson.GetBlockVerboseResult
+	verboseBlock *rpcmodel.GetBlockVerboseResult
 }
 
 func (r *rawAndVerboseBlock) String() string {
@@ -1132,27 +1132,27 @@ func canHandleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) (bool, erro
 }
 
 func convertChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) (
-	removedHashes []string, addedBlocks []btcjson.ChainBlock) {
+	removedHashes []string, addedBlocks []rpcmodel.ChainBlock) {
 
 	removedHashes = make([]string, len(chainChanged.RemovedChainBlockHashes))
 	for i, hash := range chainChanged.RemovedChainBlockHashes {
 		removedHashes[i] = hash.String()
 	}
 
-	addedBlocks = make([]btcjson.ChainBlock, len(chainChanged.AddedChainBlocks))
+	addedBlocks = make([]rpcmodel.ChainBlock, len(chainChanged.AddedChainBlocks))
 	for i, addedBlock := range chainChanged.AddedChainBlocks {
-		acceptedBlocks := make([]btcjson.AcceptedBlock, len(addedBlock.AcceptedBlocks))
+		acceptedBlocks := make([]rpcmodel.AcceptedBlock, len(addedBlock.AcceptedBlocks))
 		for j, acceptedBlock := range addedBlock.AcceptedBlocks {
 			acceptedTxIDs := make([]string, len(acceptedBlock.AcceptedTxIDs))
 			for k, acceptedTxID := range acceptedBlock.AcceptedTxIDs {
 				acceptedTxIDs[k] = acceptedTxID.String()
 			}
-			acceptedBlocks[j] = btcjson.AcceptedBlock{
+			acceptedBlocks[j] = rpcmodel.AcceptedBlock{
 				Hash:          acceptedBlock.Hash.String(),
 				AcceptedTxIDs: acceptedTxIDs,
 			}
 		}
-		addedBlocks[i] = btcjson.ChainBlock{
+		addedBlocks[i] = rpcmodel.ChainBlock{
 			Hash:           addedBlock.Hash.String(),
 			AcceptedBlocks: acceptedBlocks,
 		}

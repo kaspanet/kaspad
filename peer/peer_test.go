@@ -19,7 +19,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// conn mocks a network connection by implementing the net.Conn interface.  It
+// conn mocks a network connection by implementing the net.Conn interface. It
 // is used to test peer connection without actually opening a network
 // connection.
 type conn struct {
@@ -241,8 +241,8 @@ func TestPeerConnection(t *testing.T) {
 		wantLastPingNonce:   uint64(0),
 		wantLastPingMicros:  int64(0),
 		wantTimeOffset:      int64(0),
-		wantBytesSent:       196, // 172 version + 24 verack
-		wantBytesReceived:   196,
+		wantBytesSent:       198, // 174 version + 24 verack
+		wantBytesReceived:   198,
 	}
 	wantStats2 := peerStats{
 		wantUserAgent:       wire.DefaultUserAgent + "peer:1.0(comment)/",
@@ -255,8 +255,8 @@ func TestPeerConnection(t *testing.T) {
 		wantLastPingNonce:   uint64(0),
 		wantLastPingMicros:  int64(0),
 		wantTimeOffset:      int64(0),
-		wantBytesSent:       196, // 172 version + 24 verack
-		wantBytesReceived:   196,
+		wantBytesSent:       198, // 174 version + 24 verack
+		wantBytesReceived:   198,
 	}
 
 	tests := []struct {

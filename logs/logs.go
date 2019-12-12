@@ -47,7 +47,7 @@ import (
 	"github.com/jrick/logrotate/rotator"
 )
 
-// defaultFlags specifies changes to the default logger behavior.  It is set
+// defaultFlags specifies changes to the default logger behavior. It is set
 // during package init and configured using the LOGFLAGS environment variable.
 // New logger backends can override these default flags using WithFlags.
 var defaultFlags uint32
@@ -59,11 +59,11 @@ const (
 	Llongfile uint32 = 1 << iota
 
 	// Lshortfile modifies the logger output to include filename and line number
-	// of the logging callsite, e.g. main.go:123.  Overrides Llongfile.
+	// of the logging callsite, e.g. main.go:123. Overrides Llongfile.
 	Lshortfile
 )
 
-// Read logger flags from the LOGFLAGS environment variable.  Multiple flags can
+// Read logger flags from the LOGFLAGS environment variable. Multiple flags can
 // be set at once, separated by commas.
 func init() {
 	for _, f := range strings.Split(os.Getenv("LOGFLAGS"), ",") {
@@ -76,7 +76,7 @@ func init() {
 	}
 }
 
-// Level is the level at which a logger is configured.  All messages sent
+// Level is the level at which a logger is configured. All messages sent
 // to a level which is below the current level are filtered.
 type Level uint32
 
@@ -94,7 +94,7 @@ const (
 // levelStrs defines the human-readable names for each logging level.
 var levelStrs = [...]string{"TRC", "DBG", "INF", "WRN", "ERR", "CRT", "OFF"}
 
-// LevelFromString returns a level based on the input string s.  If the input
+// LevelFromString returns a level based on the input string s. If the input
 // can't be interpreted as a valid log level, the info level and false is
 // returned.
 func LevelFromString(s string) (l Level, ok bool) {
@@ -141,8 +141,8 @@ type backendLogRotator struct {
 	logLevel Level
 }
 
-// Backend is a logging backend.  Subsystems created from the backend write to
-// the backend's Writer.  Backend provides atomic writes to the Writer from all
+// Backend is a logging backend. Subsystems created from the backend write to
+// the backend's Writer. Backend provides atomic writes to the Writer from all
 // subsystems.
 type Backend struct {
 	rotators []*backendLogRotator
@@ -171,8 +171,8 @@ var bufferPool = sync.Pool{
 	},
 }
 
-// buffer returns a byte slice from the free list.  A new buffer is allocated if
-// there are not any available on the free list.  The returned byte slice should
+// buffer returns a byte slice from the free list. A new buffer is allocated if
+// there are not any available on the free list. The returned byte slice should
 // be returned to the fee list by using the recycleBuffer function when the
 // caller is done with it.
 func buffer() *[]byte {
@@ -187,7 +187,7 @@ func recycleBuffer(b *[]byte) {
 }
 
 // From stdlib log package.
-// Cheap integer to fixed-width decimal ASCII.  Give a negative width to avoid
+// Cheap integer to fixed-width decimal ASCII. Give a negative width to avoid
 // zero-padding.
 func itoa(buf *[]byte, i int, wid int) {
 	// Assemble decimal in reverse order.
@@ -240,7 +240,7 @@ func formatHeader(buf *[]byte, t time.Time, lvl, tag string, file string, line i
 }
 
 // calldepth is the call depth of the callsite function relative to the
-// caller of the subsystem logger.  It is used to recover the filename and line
+// caller of the subsystem logger. It is used to recover the filename and line
 // number of the logging call if either the short or long file flags are
 // specified.
 const calldepth = 3
@@ -352,13 +352,13 @@ func (b *Backend) Close() {
 }
 
 // Logger returns a new logger for a particular subsystem that writes to the
-// Backend b.  A tag describes the subsystem and is included in all log
-// messages.  The logger uses the info verbosity level by default.
+// Backend b. A tag describes the subsystem and is included in all log
+// messages. The logger uses the info verbosity level by default.
 func (b *Backend) Logger(subsystemTag string) Logger {
 	return &slog{LevelInfo, subsystemTag, b}
 }
 
-// slog is a subsystem logger for a Backend.  Implements the Logger interface.
+// slog is a subsystem logger for a Backend. Implements the Logger interface.
 type slog struct {
 	lvl Level // atomic
 	tag string

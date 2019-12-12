@@ -18,7 +18,7 @@ import (
 const CheckpointConfirmations = 2016
 
 // newHashFromStr converts the passed big-endian hex string into a
-// daghash.Hash.  It only differs from the one available in daghash in that
+// daghash.Hash. It only differs from the one available in daghash in that
 // it ignores the error since it will only (and must only) be called with
 // hard-coded, and therefore known good, hashes.
 func newHashFromStr(hexStr string) *daghash.Hash {
@@ -27,7 +27,7 @@ func newHashFromStr(hexStr string) *daghash.Hash {
 }
 
 // newTxIDFromStr converts the passed big-endian hex string into a
-// daghash.TxID.  It only differs from the one available in daghash in that
+// daghash.TxID. It only differs from the one available in daghash in that
 // it ignores the error since it will only (and must only) be called with
 // hard-coded, and therefore known good, IDs.
 func newTxIDFromStr(hexStr string) *daghash.TxID {
@@ -36,7 +36,7 @@ func newTxIDFromStr(hexStr string) *daghash.TxID {
 }
 
 // Checkpoints returns a slice of checkpoints (regardless of whether they are
-// already known).  When there are no checkpoints for the chain, it will return
+// already known). When there are no checkpoints for the chain, it will return
 // nil.
 //
 // This function is safe for concurrent access.
@@ -64,7 +64,7 @@ func (dag *BlockDAG) LatestCheckpoint() *dagconfig.Checkpoint {
 }
 
 // verifyCheckpoint returns whether the passed block chain height and hash combination
-// match the checkpoint data.  It also returns true if there is no checkpoint
+// match the checkpoint data. It also returns true if there is no checkpoint
 // data for the passed block chain height.
 func (dag *BlockDAG) verifyCheckpoint(chainHeight uint64, hash *daghash.Hash) bool {
 	if !dag.HasCheckpoints() {
@@ -88,7 +88,7 @@ func (dag *BlockDAG) verifyCheckpoint(chainHeight uint64, hash *daghash.Hash) bo
 
 // findPreviousCheckpoint finds the most recent checkpoint that is already
 // available in the downloaded portion of the block chain and returns the
-// associated block node.  It returns nil if a checkpoint can't be found (this
+// associated block node. It returns nil if a checkpoint can't be found (this
 // should really only happen for blocks before the first checkpoint).
 //
 // This function MUST be called with the DAG lock held (for reads).
@@ -111,7 +111,7 @@ func (dag *BlockDAG) findPreviousCheckpoint() (*blockNode, error) {
 				continue
 			}
 
-			// Checkpoint found.  Cache it for future lookups and
+			// Checkpoint found. Cache it for future lookups and
 			// set the next expected checkpoint accordingly.
 			dag.checkpointNode = node
 			if i < numCheckpoints-1 {
@@ -120,8 +120,8 @@ func (dag *BlockDAG) findPreviousCheckpoint() (*blockNode, error) {
 			return dag.checkpointNode, nil
 		}
 
-		// No known latest checkpoint.  This will only happen on blocks
-		// before the first known checkpoint.  So, set the next expected
+		// No known latest checkpoint. This will only happen on blocks
+		// before the first known checkpoint. So, set the next expected
 		// checkpoint to the first checkpoint and return the fact there
 		// is no latest known checkpoint block.
 		dag.nextCheckpoint = &checkpoints[0]
@@ -142,12 +142,12 @@ func (dag *BlockDAG) findPreviousCheckpoint() (*blockNode, error) {
 		return dag.checkpointNode, nil
 	}
 
-	// We've reached or exceeded the next checkpoint height.  Note that
+	// We've reached or exceeded the next checkpoint height. Note that
 	// once a checkpoint lockin has been reached, forks are prevented from
 	// any blocks before the checkpoint, so we don't have to worry about the
 	// checkpoint going away out from under us due to a chain reorganize.
 
-	// Cache the latest known checkpoint for future lookups.  Note that if
+	// Cache the latest known checkpoint for future lookups. Note that if
 	// this lookup fails something is very wrong since the chain has already
 	// passed the checkpoint which was verified as accurate before inserting
 	// it.
@@ -216,7 +216,7 @@ func (dag *BlockDAG) IsCheckpointCandidate(block *util.Block) (bool, error) {
 	}
 
 	// Ensure the chain height of the passed block and the entry for the block
-	// in the DAG match.  This should always be the case unless the
+	// in the DAG match. This should always be the case unless the
 	// caller provided an invalid block.
 	if node.chainHeight != block.ChainHeight() {
 		return false, errors.Errorf("passed block chain height of %d does not "+

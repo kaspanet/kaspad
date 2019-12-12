@@ -17,8 +17,8 @@ import (
 // yet.
 const TxIndexUnknown = -1
 
-// Tx defines a bitcoin transaction that provides easier and more efficient
-// manipulation of raw transactions.  It also memoizes the hash for the
+// Tx defines a kaspa transaction that provides easier and more efficient
+// manipulation of raw transactions. It also memoizes the hash for the
 // transaction on its first access so subsequent accesses don't have to repeat
 // the relatively expensive hashing operations.
 type Tx struct {
@@ -34,7 +34,7 @@ func (t *Tx) MsgTx() *wire.MsgTx {
 	return t.msgTx
 }
 
-// Hash returns the hash of the transaction.  This is equivalent to
+// Hash returns the hash of the transaction. This is equivalent to
 // calling TxHash on the underlying wire.MsgTx, however it caches the
 // result so subsequent calls are more efficient.
 func (t *Tx) Hash() *daghash.Hash {
@@ -49,7 +49,7 @@ func (t *Tx) Hash() *daghash.Hash {
 	return hash
 }
 
-// ID returns the id of the transaction.  This is equivalent to
+// ID returns the id of the transaction. This is equivalent to
 // calling TxID on the underlying wire.MsgTx, however it caches the
 // result so subsequent calls are more efficient.
 func (t *Tx) ID() *daghash.TxID {
@@ -64,7 +64,7 @@ func (t *Tx) ID() *daghash.TxID {
 	return id
 }
 
-// Index returns the saved index of the transaction within a block.  This value
+// Index returns the saved index of the transaction within a block. This value
 // will be TxIndexUnknown if it hasn't already explicitly been set.
 func (t *Tx) Index() int {
 	return t.txIndex
@@ -75,8 +75,8 @@ func (t *Tx) SetIndex(index int) {
 	t.txIndex = index
 }
 
-// IsCoinBase determines whether or not a transaction is a coinbase.  A coinbase
-// is a special transaction created by miners that has no inputs.  This is
+// IsCoinBase determines whether or not a transaction is a coinbase. A coinbase
+// is a special transaction created by miners that has no inputs. This is
 // represented in the block dag by a transaction with a single input that has
 // a previous output transaction index set to the maximum value along with a
 // zero hash.
@@ -84,8 +84,8 @@ func (t *Tx) IsCoinBase() bool {
 	return t.MsgTx().IsCoinBase()
 }
 
-// NewTx returns a new instance of a bitcoin transaction given an underlying
-// wire.MsgTx.  See Tx.
+// NewTx returns a new instance of a kaspa transaction given an underlying
+// wire.MsgTx. See Tx.
 func NewTx(msgTx *wire.MsgTx) *Tx {
 	return &Tx{
 		msgTx:   msgTx,
@@ -93,15 +93,15 @@ func NewTx(msgTx *wire.MsgTx) *Tx {
 	}
 }
 
-// NewTxFromBytes returns a new instance of a bitcoin transaction given the
-// serialized bytes.  See Tx.
+// NewTxFromBytes returns a new instance of a kaspa transaction given the
+// serialized bytes. See Tx.
 func NewTxFromBytes(serializedTx []byte) (*Tx, error) {
 	br := bytes.NewReader(serializedTx)
 	return NewTxFromReader(br)
 }
 
-// NewTxFromReader returns a new instance of a bitcoin transaction given a
-// Reader to deserialize the transaction.  See Tx.
+// NewTxFromReader returns a new instance of a kaspa transaction given a
+// Reader to deserialize the transaction. See Tx.
 func NewTxFromReader(r io.Reader) (*Tx, error) {
 	// Deserialize the bytes into a MsgTx.
 	var msgTx wire.MsgTx

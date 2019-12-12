@@ -45,7 +45,7 @@ func (m *merkleBlock) calcHash(height, pos uint32) *daghash.Hash {
 }
 
 // traverseAndBuild builds a partial merkle tree using a recursive depth-first
-// approach.  As it calculates the hashes, it also saves whether or not each
+// approach. As it calculates the hashes, it also saves whether or not each
 // node is a parent node and a list of final hashes to be included in the
 // merkle block.
 func (m *merkleBlock) traverseAndBuild(height, pos uint32) {

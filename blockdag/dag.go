@@ -28,7 +28,7 @@ const (
 	maxOrphanBlocks = 100
 )
 
-// orphanBlock represents a block that we don't yet have the parent for.  It
+// orphanBlock represents a block that we don't yet have the parent for. It
 // is a normal block plus an expiration time to prevent caching the orphan
 // forever.
 type orphanBlock struct {
@@ -43,7 +43,7 @@ type chainUpdates struct {
 	addedChainBlockHashes   []*daghash.Hash
 }
 
-// BlockDAG provides functions for working with the bitcoin block chain.
+// BlockDAG provides functions for working with the kaspa block DAG.
 // It includes functionality such as rejecting duplicate blocks, ensuring blocks
 // follow all rules, orphan handling, checkpoint handling, and best chain
 // selection with reorganization.
@@ -61,7 +61,7 @@ type BlockDAG struct {
 	genesis                  *blockNode
 
 	// The following fields are calculated based upon the provided DAG
-	// parameters.  They are also set when the instance is created and
+	// parameters. They are also set when the instance is created and
 	// can't be changed afterwards, so there is no need to protect them with
 	// a separate mutex.
 	targetTimePerBlock             int64 // The target delay between blocks (in seconds)
@@ -78,11 +78,11 @@ type BlockDAG struct {
 
 	utxoLock sync.RWMutex
 
-	// index and virtual are related to the memory block index.  They both
+	// index and virtual are related to the memory block index. They both
 	// have their own locks, however they are often also protected by the
 	// DAG lock to help prevent logic races when blocks are being processed.
 
-	// index houses the entire block index in memory.  The block index is
+	// index houses the entire block index in memory. The block index is
 	// a tree-shaped structure.
 	index *blockIndex
 
@@ -95,14 +95,14 @@ type BlockDAG struct {
 	// subnetworkID holds the subnetwork ID of the DAG
 	subnetworkID *subnetworkid.SubnetworkID
 
-	// These fields are related to handling of orphan blocks.  They are
+	// These fields are related to handling of orphan blocks. They are
 	// protected by a combination of the chain lock and the orphan lock.
 	orphanLock   sync.RWMutex
 	orphans      map[daghash.Hash]*orphanBlock
 	prevOrphans  map[daghash.Hash][]*orphanBlock
 	newestOrphan *orphanBlock
 
-	// These fields are related to checkpoint handling.  They are protected
+	// These fields are related to checkpoint handling. They are protected
 	// by the chain lock.
 	nextCheckpoint *dagconfig.Checkpoint
 	checkpointNode *blockNode
@@ -114,7 +114,7 @@ type BlockDAG struct {
 	// reconstructed on load.
 	//
 	// warningCaches caches the current deployment threshold state for blocks
-	// in each of the **possible** deployments.  This is used in order to
+	// in each of the **possible** deployments. This is used in order to
 	// detect when new unrecognized rule changes are being voted on and/or
 	// have been activated such as will be the case when older versions of
 	// the software are being used
@@ -147,7 +147,7 @@ type BlockDAG struct {
 }
 
 // HaveBlock returns whether or not the DAG instance has the block represented
-// by the passed hash.  This includes checking the various places a block can
+// by the passed hash. This includes checking the various places a block can
 // be in, like part of the DAG or the orphan pool.
 //
 // This function is safe for concurrent access.
@@ -175,15 +175,15 @@ func (dag *BlockDAG) HaveBlocks(hashes []*daghash.Hash) bool {
 // IsKnownOrphan returns whether the passed hash is currently a known orphan.
 // Keep in mind that only a limited number of orphans are held onto for a
 // limited amount of time, so this function must not be used as an absolute
-// way to test if a block is an orphan block.  A full block (as opposed to just
-// its hash) must be passed to ProcessBlock for that purpose.  However, calling
+// way to test if a block is an orphan block. A full block (as opposed to just
+// its hash) must be passed to ProcessBlock for that purpose. However, calling
 // ProcessBlock with an orphan that already exists results in an error, so this
 // function provides a mechanism for a caller to intelligently detect *recent*
 // duplicate orphans and react accordingly.
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) IsKnownOrphan(hash *daghash.Hash) bool {
-	// Protect concurrent access.  Using a read lock only so multiple
+	// Protect concurrent access. Using a read lock only so multiple
 	// readers can query without blocking each other.
 	dag.orphanLock.RLock()
 	_, exists := dag.orphans[*hash]
@@ -208,7 +208,7 @@ func (dag *BlockDAG) IsKnownInvalid(hash *daghash.Hash) bool {
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) GetOrphanMissingAncestorHashes(orphanHash *daghash.Hash) ([]*daghash.Hash, error) {
-	// Protect concurrent access.  Using a read lock only so multiple
+	// Protect concurrent access. Using a read lock only so multiple
 	// readers can query without blocking each other.
 	dag.orphanLock.RLock()
 	defer dag.orphanLock.RUnlock()
@@ -274,7 +274,7 @@ func (dag *BlockDAG) removeOrphanBlock(orphan *orphanBlock) {
 }
 
 // addOrphanBlock adds the passed block (which is already determined to be
-// an orphan prior calling this function) to the orphan pool.  It lazily cleans
+// an orphan prior calling this function) to the orphan pool. It lazily cleans
 // up any expired blocks so a separate cleanup poller doesn't need to be run.
 // It also imposes a maximum limit on the number of outstanding orphan
 // blocks and will remove the oldest received orphan block if the limit is
@@ -306,7 +306,7 @@ func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 		dag.newestOrphan = nil
 	}
 
-	// Protect concurrent access.  This is intentionally done here instead
+	// Protect concurrent access. This is intentionally done here instead
 	// of near the top since removeOrphanBlock does its own locking and
 	// the range iterator is not invalidated by removing map entries.
 	dag.orphanLock.Lock()
@@ -409,7 +409,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			continue
 		case sequenceNum&wire.SequenceLockTimeIsSeconds == wire.SequenceLockTimeIsSeconds:
 			// This input requires a relative time lock expressed
-			// in seconds before it can be spent.  Therefore, we
+			// in seconds before it can be spent. Therefore, we
 			// need to query for the block prior to the one in
 			// which this input was accepted within so we can
 			// compute the past median time for the block prior to
@@ -449,8 +449,6 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 
 // LockTimeToSequence converts the passed relative locktime to a sequence
 // number in accordance to BIP-68.
-// See: https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki
-//  * (Compatibility)
 func LockTimeToSequence(isSeconds bool, locktime uint64) uint64 {
 	// If we're expressing the relative lock time in blocks, then the
 	// corresponding sequence number is simply the desired input age.
@@ -1238,7 +1236,7 @@ func updateTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
 	return nil
 }
 
-// isCurrent returns whether or not the DAG believes it is current.  Several
+// isCurrent returns whether or not the DAG believes it is current. Several
 // factors are used to guess, but the key factors that allow the DAG to
 // believe it is current are:
 //  - Latest block height is after the latest checkpoint (if enabled)
@@ -1270,7 +1268,7 @@ func (dag *BlockDAG) isCurrent() bool {
 	return dagTimestamp >= minus24Hours
 }
 
-// IsCurrent returns whether or not the chain believes it is current.  Several
+// IsCurrent returns whether or not the chain believes it is current. Several
 // factors are used to guess, but the key factors that allow the chain to
 // believe it is current are:
 //  - Latest block height is after the latest checkpoint (if enabled)
@@ -1584,7 +1582,7 @@ func (dag *BlockDAG) ChildHashesByHash(hash *daghash.Hash) ([]*daghash.Hash, err
 }
 
 // ChainHeightToHashRange returns a range of block hashes for the given start chain
-// height and end hash, inclusive on both ends.  The hashes are for all blocks that
+// height and end hash, inclusive on both ends. The hashes are for all blocks that
 // are ancestors of endHash with height greater than or equal to startChainHeight.
 // The end hash must belong to a block that is known to be valid.
 //
@@ -1824,9 +1822,9 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 // purpose of supporting optional indexes.
 type IndexManager interface {
 	// Init is invoked during chain initialize in order to allow the index
-	// manager to initialize itself and any indexes it is managing.  The
+	// manager to initialize itself and any indexes it is managing. The
 	// channel parameter specifies a channel the caller can close to signal
-	// that the process should be interrupted.  It can be nil if that
+	// that the process should be interrupted. It can be nil if that
 	// behavior is not desired.
 	Init(database.DB, *BlockDAG, <-chan struct{}) error
 
@@ -1857,7 +1855,7 @@ type Config struct {
 	DAGParams *dagconfig.Params
 
 	// Checkpoints hold caller-defined checkpoints that should be added to
-	// the default checkpoints in DAGParams.  Checkpoints must be sorted
+	// the default checkpoints in DAGParams. Checkpoints must be sorted
 	// by height.
 	//
 	// This field can be nil if the caller does not wish to specify any
@@ -1873,7 +1871,7 @@ type Config struct {
 	TimeSource MedianTimeSource
 
 	// SigCache defines a signature cache to use when when validating
-	// signatures.  This is typically most useful when individual
+	// signatures. This is typically most useful when individual
 	// transactions are already being validated prior to their inclusion in
 	// a block such as what is usually done via a transaction memory pool.
 	//
@@ -1955,7 +1953,7 @@ func New(config *Config) (*BlockDAG, error) {
 
 	dag.utxoDiffStore = newUTXODiffStore(&dag)
 
-	// Initialize the chain state from the passed database.  When the db
+	// Initialize the chain state from the passed database. When the db
 	// does not yet contain any DAG state, both it and the DAG state
 	// will be initialized to contain only the genesis block.
 	err := dag.initDAGState()

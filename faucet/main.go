@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/btcec"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/faucet/config"
 	"github.com/kaspanet/kaspad/faucet/database"
 	"github.com/kaspanet/kaspad/txscript"
@@ -21,7 +21,7 @@ import (
 
 var (
 	faucetAddress      util.Address
-	faucetPrivateKey   *btcec.PrivateKey
+	faucetPrivateKey   *ecc.PrivateKey
 	faucetScriptPubKey []byte
 )
 
@@ -63,7 +63,7 @@ func main() {
 	}()
 
 	privateKeyBytes := base58.Decode(cfg.PrivateKey)
-	faucetPrivateKey, _ = btcec.PrivKeyFromBytes(btcec.S256(), privateKeyBytes)
+	faucetPrivateKey, _ = ecc.PrivKeyFromBytes(ecc.S256(), privateKeyBytes)
 
 	faucetAddress, err = privateKeyToP2PKHAddress(faucetPrivateKey, config.ActiveNetParams())
 	if err != nil {
@@ -83,6 +83,6 @@ func main() {
 }
 
 // privateKeyToP2PKHAddress generates p2pkh address from private key.
-func privateKeyToP2PKHAddress(key *btcec.PrivateKey, net *dagconfig.Params) (util.Address, error) {
+func privateKeyToP2PKHAddress(key *ecc.PrivateKey, net *dagconfig.Params) (util.Address, error) {
 	return util.NewAddressPubKeyHashFromPublicKey(key.PubKey().SerializeCompressed(), net.Prefix)
 }

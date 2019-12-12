@@ -33,7 +33,7 @@ func solveGenesisBlock(block *wire.MsgBlock, powBits uint32, netName string) {
 	for {
 		header.Timestamp = time.Unix(time.Now().Unix(), 0)
 		for i := uint64(0); i <= maxNonce; i++ {
-			// Update the nonce and hash the block header.  Each
+			// Update the nonce and hash the block header. Each
 			// hash is actually a double sha256 (two hashes), so
 			// increment the number of hashes completed for each
 			// attempt accordingly.
@@ -41,7 +41,7 @@ func solveGenesisBlock(block *wire.MsgBlock, powBits uint32, netName string) {
 			hash := header.BlockHash()
 
 			// The block is solved when the new block hash is less
-			// than the target difficulty.  Yay!
+			// than the target difficulty. Yay!
 			if daghash.HashToBig(hash).Cmp(targetDifficulty) <= 0 {
 				fmt.Printf("\n\nGenesis block of %s is solved:\n", netName)
 				fmt.Printf("timestamp: 0x%x\n", header.Timestamp.Unix())

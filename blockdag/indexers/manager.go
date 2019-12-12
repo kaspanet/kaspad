@@ -40,7 +40,7 @@ func indexDropKey(idxKey []byte) []byte {
 }
 
 // maybeFinishDrops determines if each of the enabled indexes are in the middle
-// of being dropped and finishes dropping them when the are.  This is necessary
+// of being dropped and finishes dropping them when the are. This is necessary
 // because dropping and index has to be done in several atomic steps rather than
 // one big atomic step due to the massive number of entries.
 func (m *Manager) maybeFinishDrops(interrupt <-chan struct{}) error {
@@ -116,9 +116,9 @@ func (m *Manager) maybeCreateIndexes(dbTx database.Tx) error {
 	return nil
 }
 
-// Init initializes the enabled indexes.  This is called during chain
+// Init initializes the enabled indexes. This is called during chain
 // initialization and primarily consists of catching up all indexes to the
-// current best chain tip.  This is necessary since each index can be disabled
+// current best chain tip. This is necessary since each index can be disabled
 // and re-enabled at any time and attempting to catch-up indexes at the same
 // time new blocks are being downloaded would lead to an overall longer time to
 // catch up due to the I/O contention.
@@ -192,7 +192,7 @@ func (m *Manager) recoverIfNeeded() error {
 	})
 }
 
-// ConnectBlock must be invoked when a block is extending the main chain.  It
+// ConnectBlock must be invoked when a block is extending the main chain. It
 // keeps track of the state of each index it is managing, performs some sanity
 // checks, and invokes each indexer.
 //
@@ -239,9 +239,9 @@ func NewManager(enabledIndexes []Indexer) *Manager {
 	}
 }
 
-// dropIndex drops the passed index from the database.  Since indexes can be
+// dropIndex drops the passed index from the database. Since indexes can be
 // massive, it deletes the index in multiple database transactions in order to
-// keep memory usage to reasonable levels.  It also marks the drop in progress
+// keep memory usage to reasonable levels. It also marks the drop in progress
 // so the drop can be resumed if it is stopped before it is done before the
 // index can be used again.
 func dropIndex(db database.DB, idxKey []byte, idxName string, interrupt <-chan struct{}) error {
@@ -265,7 +265,7 @@ func dropIndex(db database.DB, idxKey []byte, idxName string, interrupt <-chan s
 	// Mark that the index is in the process of being dropped so that it
 	// can be resumed on the next start if interrupted before the process is
 	// complete.
-	log.Infof("Dropping all %s entries.  This might take a while...",
+	log.Infof("Dropping all %s entries. This might take a while...",
 		idxName)
 	err = db.Update(func(dbTx database.Tx) error {
 		indexesBucket := dbTx.Metadata().Bucket(indexTipsBucketName)
@@ -277,7 +277,7 @@ func dropIndex(db database.DB, idxKey []byte, idxName string, interrupt <-chan s
 
 	// Since the indexes can be so large, attempting to simply delete
 	// the bucket in a single database transaction would result in massive
-	// memory usage and likely crash many systems due to ulimits.  In order
+	// memory usage and likely crash many systems due to ulimits. In order
 	// to avoid this, use a cursor to delete a maximum number of entries out
 	// of the bucket at a time. Recurse buckets depth-first to delete any
 	// sub-buckets.

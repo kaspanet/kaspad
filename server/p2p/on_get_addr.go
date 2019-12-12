@@ -6,19 +6,19 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// OnGetAddr is invoked when a peer receives a getaddr bitcoin message
+// OnGetAddr is invoked when a peer receives a getaddr kaspa message
 // and is used to provide the peer with known addresses from the address
 // manager.
 func (sp *Peer) OnGetAddr(_ *peer.Peer, msg *wire.MsgGetAddr) {
 	// Don't return any addresses when running on the simulation test
-	// network.  This helps prevent the network from becoming another
+	// network. This helps prevent the network from becoming another
 	// public test network since it will not be able to learn about other
 	// peers that have not specifically been provided.
 	if config.ActiveConfig().SimNet {
 		return
 	}
 
-	// Do not accept getaddr requests from outbound peers.  This reduces
+	// Do not accept getaddr requests from outbound peers. This reduces
 	// fingerprinting attacks.
 	if !sp.Inbound() {
 		peerLog.Debugf("Ignoring getaddr request from outbound peer ",

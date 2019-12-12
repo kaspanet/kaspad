@@ -27,7 +27,7 @@ func minUint32(a, b uint32) uint32 {
 	return b
 }
 
-// Filter defines a bitcoin bloom filter that provides easy manipulation of raw
+// Filter defines a kaspa bloom filter that provides easy manipulation of raw
 // filter data.
 type Filter struct {
 	mtx           sync.Mutex
@@ -35,9 +35,9 @@ type Filter struct {
 }
 
 // NewFilter creates a new bloom filter instance, mainly to be used by SPV
-// clients.  The tweak parameter is a random value added to the seed value.
+// clients. The tweak parameter is a random value added to the seed value.
 // The false positive rate is the probability of a false positive where 1.0 is
-// "match everything" and zero is unachievable.  Thus, providing any false
+// "match everything" and zero is unachievable. Thus, providing any false
 // positive rates less than 0 or greater than 1 will be adjusted to the valid
 // range.
 //
@@ -115,7 +115,7 @@ func (bf *Filter) Unload() {
 // hash returns the bit offset in the bloom filter which corresponds to the
 // passed data for the given indepedent hash function number.
 func (bf *Filter) hash(hashNum uint32, data []byte) uint32 {
-	// bitcoind: 0xfba4c795 chosen as it guarantees a reasonable bit
+	// 0xfba4c795 chosen as it guarantees a reasonable bit
 	// difference between hashNum values.
 	//
 	// Note that << 3 is equivalent to multiplying by 8, but is faster.
@@ -136,7 +136,7 @@ func (bf *Filter) matches(data []byte) bool {
 
 	// The bloom filter does not contain the data if any of the bit offsets
 	// which result from hashing the data using each independent hash
-	// function are not set.  The shifts and masks below are a faster
+	// function are not set. The shifts and masks below are a faster
 	// equivalent of:
 	//   arrayIndex := idx / 8     (idx >> 3)
 	//   bitOffset := idx % 8      (idx & 7)
@@ -195,7 +195,7 @@ func (bf *Filter) add(data []byte) {
 
 	// Adding data to a bloom filter consists of setting all of the bit
 	// offsets which result from hashing the data using each independent
-	// hash function.  The shifts and masks below are a faster equivalent
+	// hash function. The shifts and masks below are a faster equivalent
 	// of:
 	//   arrayIndex := idx / 8    (idx >> 3)
 	//   bitOffset := idx % 8     (idx & 7)
@@ -258,7 +258,7 @@ func (bf *Filter) maybeAddOutpoint(scriptPubKey []byte, outTxID *daghash.TxID, o
 }
 
 // matchTxAndUpdate returns true if the bloom filter matches data within the
-// passed transaction, otherwise false is returned.  If the filter does match
+// passed transaction, otherwise false is returned. If the filter does match
 // the passed transaction, it will also update the filter depending on the bloom
 // update flags set via the loaded filter if needed.
 //
@@ -269,10 +269,10 @@ func (bf *Filter) matchTxAndUpdate(tx *util.Tx) bool {
 	matched := bf.matches(tx.ID()[:])
 
 	// Check if the filter matches any data elements in the public key
-	// scripts of any of the outputs.  When it does, add the outpoint that
+	// scripts of any of the outputs. When it does, add the outpoint that
 	// matched so transactions which spend from the matched transaction are
-	// also included in the filter.  This removes the burden of updating the
-	// filter for this scenario from the client.  It is also more efficient
+	// also included in the filter. This removes the burden of updating the
+	// filter for this scenario from the client. It is also more efficient
 	// on the network since it avoids the need for another filteradd message
 	// from the client and avoids some potential races that could otherwise
 	// occur.
@@ -323,7 +323,7 @@ func (bf *Filter) matchTxAndUpdate(tx *util.Tx) bool {
 }
 
 // MatchTxAndUpdate returns true if the bloom filter matches data within the
-// passed transaction, otherwise false is returned.  If the filter does match
+// passed transaction, otherwise false is returned. If the filter does match
 // the passed transaction, it will also update the filter depending on the bloom
 // update flags set via the loaded filter if needed.
 //

@@ -93,9 +93,9 @@ func TestMerkleBlock3(t *testing.T) {
 	}
 
 	got := bytes.NewBuffer(nil)
-	err = mBlock.BtcEncode(got, wire.ProtocolVersion)
+	err = mBlock.KaspaEncode(got, wire.ProtocolVersion)
 	if err != nil {
-		t.Errorf("TestMerkleBlock3 BtcEncode failed: %v", err)
+		t.Errorf("TestMerkleBlock3 KaspaEncode failed: %v", err)
 		return
 	}
 

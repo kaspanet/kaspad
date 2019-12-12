@@ -26,7 +26,7 @@ func TestMutableIterator(t *testing.T) {
 		seekKey       []byte
 		expectedSeek  []byte
 	}{
-		// No range limits.  Values are the set (0, 1, 2, ..., 49).
+		// No range limits. Values are the set (0, 1, 2, ..., 49).
 		// Seek existing value.
 		{
 			numKeys:       50,
@@ -37,8 +37,8 @@ func TestMutableIterator(t *testing.T) {
 			expectedSeek:  serializeUint32(12),
 		},
 
-		// Limited to range [24, end].  Values are the set
-		// (0, 2, 4, ..., 48).  Seek value that doesn't exist and is
+		// Limited to range [24, end]. Values are the set
+		// (0, 2, 4, ..., 48). Seek value that doesn't exist and is
 		// greater than largest existing key.
 		{
 			numKeys:       50,
@@ -50,8 +50,8 @@ func TestMutableIterator(t *testing.T) {
 			expectedSeek:  nil,
 		},
 
-		// Limited to range [start, 25).  Values are the set
-		// (0, 3, 6, ..., 48).  Seek value that doesn't exist but is
+		// Limited to range [start, 25). Values are the set
+		// (0, 3, 6, ..., 48). Seek value that doesn't exist but is
 		// before an existing value within the range.
 		{
 			numKeys:       50,
@@ -63,8 +63,8 @@ func TestMutableIterator(t *testing.T) {
 			expectedSeek:  serializeUint32(18),
 		},
 
-		// Limited to range [10, 21).  Values are the set
-		// (0, 4, ..., 48).  Seek value that exists, but is before the
+		// Limited to range [10, 21). Values are the set
+		// (0, 4, ..., 48). Seek value that exists, but is before the
 		// minimum allowed range.
 		{
 			numKeys:       50,
@@ -324,7 +324,7 @@ func TestIteratorUpdates(t *testing.T) {
 	t.Parallel()
 
 	// Create a new treap with various values inserted in no particular
-	// order.  The resulting keys are the set (2, 4, 7, 11, 18, 25).
+	// order. The resulting keys are the set (2, 4, 7, 11, 18, 25).
 	testTreap := NewMutable()
 	testTreap.Put(serializeUint32(7), nil)
 	testTreap.Put(serializeUint32(2), nil)
@@ -334,7 +334,7 @@ func TestIteratorUpdates(t *testing.T) {
 	testTreap.Put(serializeUint32(4), nil)
 
 	// Create an iterator against the treap with a range that excludes the
-	// lowest and highest entries.  The limited set is then (4, 7, 11, 18)
+	// lowest and highest entries. The limited set is then (4, 7, 11, 18)
 	iter := testTreap.Iterator(serializeUint32(3), serializeUint32(25))
 
 	// Delete a key from the middle of the range and notify the iterator to
@@ -343,7 +343,7 @@ func TestIteratorUpdates(t *testing.T) {
 	iter.ForceReseek()
 
 	// Ensure that calling Next on the iterator after the forced reseek
-	// gives the expected key.  The limited set of keys at this point is
+	// gives the expected key. The limited set of keys at this point is
 	// (4, 7, 18) and the iterator has not yet been positioned.
 	if !iter.Next() {
 		t.Fatal("ForceReseek.Next: unexpected exhausted iterator")
@@ -361,7 +361,7 @@ func TestIteratorUpdates(t *testing.T) {
 	iter.ForceReseek()
 
 	// Ensure that calling Next on the iterator after the forced reseek
-	// gives the expected key.  The limited set of keys at this point is
+	// gives the expected key. The limited set of keys at this point is
 	// (7, 18) and the iterator is positioned at a deleted entry before 7.
 	if !iter.Next() {
 		t.Fatal("ForceReseek.Next: unexpected exhausted iterator")
@@ -379,7 +379,7 @@ func TestIteratorUpdates(t *testing.T) {
 	iter.ForceReseek()
 
 	// Ensure that calling Prev on the iterator after the forced reseek
-	// gives the expected key.  The limited set of keys at this point is
+	// gives the expected key. The limited set of keys at this point is
 	// (4, 7, 18) and the iterator is positioned at 7.
 	if !iter.Prev() {
 		t.Fatal("ForceReseek.Prev: unexpected exhausted iterator")
@@ -397,7 +397,7 @@ func TestIteratorUpdates(t *testing.T) {
 	iter.ForceReseek()
 
 	// Ensure that calling Next on the iterator after the forced reseek
-	// gives the expected key.  The limited set of keys at this point is
+	// gives the expected key. The limited set of keys at this point is
 	// (4, 18) and the iterator is positioned at 4.
 	if !iter.Next() {
 		t.Fatal("ForceReseek.Next: unexpected exhausted iterator")
@@ -426,7 +426,7 @@ func TestImmutableIterator(t *testing.T) {
 		seekKey       []byte
 		expectedSeek  []byte
 	}{
-		// No range limits.  Values are the set (0, 1, 2, ..., 49).
+		// No range limits. Values are the set (0, 1, 2, ..., 49).
 		// Seek existing value.
 		{
 			numKeys:       50,
@@ -437,8 +437,8 @@ func TestImmutableIterator(t *testing.T) {
 			expectedSeek:  serializeUint32(12),
 		},
 
-		// Limited to range [24, end].  Values are the set
-		// (0, 2, 4, ..., 48).  Seek value that doesn't exist and is
+		// Limited to range [24, end]. Values are the set
+		// (0, 2, 4, ..., 48). Seek value that doesn't exist and is
 		// greater than largest existing key.
 		{
 			numKeys:       50,
@@ -450,8 +450,8 @@ func TestImmutableIterator(t *testing.T) {
 			expectedSeek:  nil,
 		},
 
-		// Limited to range [start, 25).  Values are the set
-		// (0, 3, 6, ..., 48).  Seek value that doesn't exist but is
+		// Limited to range [start, 25). Values are the set
+		// (0, 3, 6, ..., 48). Seek value that doesn't exist but is
 		// before an existing value within the range.
 		{
 			numKeys:       50,
@@ -463,8 +463,8 @@ func TestImmutableIterator(t *testing.T) {
 			expectedSeek:  serializeUint32(18),
 		},
 
-		// Limited to range [10, 21).  Values are the set
-		// (0, 4, ..., 48).  Seek value that exists, but is before the
+		// Limited to range [10, 21). Values are the set
+		// (0, 4, ..., 48). Seek value that exists, but is before the
 		// minimum allowed range.
 		{
 			numKeys:       50,

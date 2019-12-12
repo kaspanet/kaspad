@@ -13,7 +13,7 @@ import (
 )
 
 // fromHex converts the passed hex string into a byte slice and will panic if
-// there is an error.  This is only provided for the hard-coded constants so
+// there is an error. This is only provided for the hard-coded constants so
 // errors in the source code can be detected. It will only (and must only) be
 // called for initialization purposes.
 func fromHex(s string) []byte {

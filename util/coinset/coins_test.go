@@ -225,7 +225,7 @@ func TestMinPrioritySelector(t *testing.T) {
 }
 
 var (
-	// should be two outpoints, with 1st one having 0.035BTC value.
+	// should be two outpoints, with 1st one having 0.035KAS value.
 	testSimpleCoinNumConfs = int64(1)
 	testSimpleCoinTxHash   = "c9e1a2b492e1d76872df50ddae62662f7d40f853b6d5aa85522ed915bbd96be7"
 	testSimpleCoinTxHex    = "0100000001A214A110F79E4ABE073865EA5B3745C6E82C91" +

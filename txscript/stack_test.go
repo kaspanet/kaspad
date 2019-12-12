@@ -32,7 +32,7 @@ func checkScriptError(gotErr, wantErr error) error {
 		return errors.Errorf("unexpected test error type %T", wantErr)
 	}
 
-	// Ensure the error codes match.  It's safe to use a raw type assert
+	// Ensure the error codes match. It's safe to use a raw type assert
 	// here since the code above already proved they are the same type and
 	// the want error is a script error.
 	gotErrorCode := gotErr.(Error).ErrorCode

@@ -23,7 +23,7 @@ func (dag *BlockDAG) addNodeToIndexWithInvalidAncestor(block *util.Block) error 
 // the block DAG before adding it. The block is expected to have already
 // gone through ProcessBlock before calling this function with it.
 //
-// The flags are also passed to checkBlockContext and connectToDAG.  See
+// The flags are also passed to checkBlockContext and connectToDAG. See
 // their documentation for how the flags modify their behavior.
 //
 // This function MUST be called with the dagLock held (for writes).
@@ -51,13 +51,13 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	newNode.status = statusDataStored
 	dag.index.AddNode(newNode)
 
-	// Insert the block into the database if it's not already there.  Even
+	// Insert the block into the database if it's not already there. Even
 	// though it is possible the block will ultimately fail to connect, it
 	// has already passed all proof-of-work and validity tests which means
 	// it would be prohibitively expensive for an attacker to fill up the
-	// disk with a bunch of blocks that fail to connect.  This is necessary
+	// disk with a bunch of blocks that fail to connect. This is necessary
 	// since it allows block download to be decoupled from the much more
-	// expensive connection logic.  It also has some other nice properties
+	// expensive connection logic. It also has some other nice properties
 	// such as making blocks that never become part of the DAG or
 	// blocks that fail to connect available for further analysis.
 	err = dag.db.Update(func(dbTx database.Tx) error {
@@ -90,7 +90,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	}
 
 	// Notify the caller that the new block was accepted into the block
-	// DAG.  The caller would typically want to react by relaying the
+	// DAG. The caller would typically want to react by relaying the
 	// inventory to other peers.
 	dag.dagLock.Unlock()
 	dag.sendNotification(NTBlockAdded, &BlockAddedNotificationData{

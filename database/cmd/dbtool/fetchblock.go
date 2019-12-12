@@ -21,7 +21,7 @@ var (
 	fetchBlockCfg = fetchBlockCmd{}
 )
 
-// Execute is the main entry point for the command.  It's invoked by the parser.
+// Execute is the main entry point for the command. It's invoked by the parser.
 func (cmd *fetchBlockCmd) Execute(args []string) error {
 	// Setup the global config options and ensure they are valid.
 	if err := setupGlobalConfig(); err != nil {

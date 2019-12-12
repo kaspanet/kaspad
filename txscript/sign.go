@@ -7,8 +7,8 @@ package txscript
 import (
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/btcec"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -16,7 +16,7 @@ import (
 // RawTxInSignature returns the serialized ECDSA signature for the input idx of
 // the given transaction, with hashType appended to it.
 func RawTxInSignature(tx *wire.MsgTx, idx int, script []byte,
-	hashType SigHashType, key *btcec.PrivateKey) ([]byte, error) {
+	hashType SigHashType, key *ecc.PrivateKey) ([]byte, error) {
 
 	hash, err := CalcSignatureHash(script, hashType, tx, idx)
 	if err != nil {
@@ -30,7 +30,7 @@ func RawTxInSignature(tx *wire.MsgTx, idx int, script []byte,
 	return append(signature.Serialize(), byte(hashType)), nil
 }
 
-// SignatureScript creates an input signature script for tx to spend BTC sent
+// SignatureScript creates an input signature script for tx to spend KAS sent
 // from a previous output to the owner of privKey. tx must include all
 // transaction inputs and outputs, however txin scripts are allowed to be filled
 // or empty. The returned script is calculated to be used as the idx'th txin
@@ -38,13 +38,13 @@ func RawTxInSignature(tx *wire.MsgTx, idx int, script []byte,
 // as the idx'th input. privKey is serialized in either a compressed or
 // uncompressed format based on compress. This format must match the same format
 // used to generate the payment address, or the script validation will fail.
-func SignatureScript(tx *wire.MsgTx, idx int, script []byte, hashType SigHashType, privKey *btcec.PrivateKey, compress bool) ([]byte, error) {
+func SignatureScript(tx *wire.MsgTx, idx int, script []byte, hashType SigHashType, privKey *ecc.PrivateKey, compress bool) ([]byte, error) {
 	sig, err := RawTxInSignature(tx, idx, script, hashType, privKey)
 	if err != nil {
 		return nil, err
 	}
 
-	pk := (*btcec.PublicKey)(&privKey.PublicKey)
+	pk := (*ecc.PublicKey)(&privKey.PublicKey)
 	var pkData []byte
 	if compress {
 		pkData = pk.SerializeCompressed()
@@ -159,14 +159,14 @@ func mergeScripts(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 // KeyDB is an interface type provided to SignTxOutput, it encapsulates
 // any user state required to get the private keys for an address.
 type KeyDB interface {
-	GetKey(util.Address) (*btcec.PrivateKey, bool, error)
+	GetKey(util.Address) (*ecc.PrivateKey, bool, error)
 }
 
 // KeyClosure implements KeyDB with a closure.
-type KeyClosure func(util.Address) (*btcec.PrivateKey, bool, error)
+type KeyClosure func(util.Address) (*ecc.PrivateKey, bool, error)
 
 // GetKey implements KeyDB by returning the result of calling the closure.
-func (kc KeyClosure) GetKey(address util.Address) (*btcec.PrivateKey,
+func (kc KeyClosure) GetKey(address util.Address) (*ecc.PrivateKey,
 	bool, error) {
 	return kc(address)
 }

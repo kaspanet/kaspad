@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 /*
-Package connmgr implements a generic Bitcoin network connection manager.
+Package connmgr implements a generic Kaspa network connection manager.
 
 Connection Manager Overview
 

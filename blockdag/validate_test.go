@@ -475,8 +475,8 @@ func TestCheckBlockSanity(t *testing.T) {
 		},
 	}
 
-	btcutilInvalidBlock := util.NewBlock(&invalidParentsOrderBlock)
-	delay, err = dag.checkBlockSanity(btcutilInvalidBlock, BFNone)
+	utilInvalidBlock := util.NewBlock(&invalidParentsOrderBlock)
+	delay, err = dag.checkBlockSanity(utilInvalidBlock, BFNone)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: error is nil when it shouldn't be")
 	}
@@ -635,12 +635,12 @@ func TestCheckTransactionSanity(t *testing.T) {
 		{"no inputs", 0, 1, 1, *subnetworkid.SubnetworkIDNative, nil, nil, ruleError(ErrNoTxInputs, "")},
 		{"no outputs", 1, 0, 1, *subnetworkid.SubnetworkIDNative, nil, nil, nil},
 		{"too massive", 1, 1000000, 1, *subnetworkid.SubnetworkIDNative, nil, nil, ruleError(ErrTxMassTooHigh, "")},
-		{"too much satoshi in one output", 1, 1, util.MaxSatoshi + 1,
+		{"too much sompi in one output", 1, 1, util.MaxSompi + 1,
 			*subnetworkid.SubnetworkIDNative,
 			nil,
 			nil,
 			ruleError(ErrBadTxOutValue, "")},
-		{"too much satoshi in total outputs", 1, 2, util.MaxSatoshi - 1,
+		{"too much sompi in total outputs", 1, 2, util.MaxSompi - 1,
 			*subnetworkid.SubnetworkIDNative,
 			nil,
 			nil,
@@ -730,7 +730,7 @@ func TestCheckTransactionSanity(t *testing.T) {
 	}
 }
 
-// Block100000 defines block 100,000 of the block DAG.  It is used to
+// Block100000 defines block 100,000 of the block DAG. It is used to
 // test Block operations.
 var Block100000 = wire.MsgBlock{
 	Header: wire.BlockHeader{

@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/btcec"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/integration/rpctest"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
@@ -27,11 +27,11 @@ import (
 // makeTestOutput creates an on-chain output paying to a freshly generated
 // p2pkh output with the specified amount.
 func makeTestOutput(r *rpctest.Harness, t *testing.T,
-	amt util.Amount) (*btcec.PrivateKey, *wire.Outpoint, []byte, error) {
+	amt util.Amount) (*ecc.PrivateKey, *wire.Outpoint, []byte, error) {
 
 	// Create a fresh key, then send some coins to an address spendable by
 	// that key.
-	key, err := btcec.NewPrivateKey(btcec.S256())
+	key, err := ecc.NewPrivateKey(ecc.S256())
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -97,8 +97,8 @@ func makeTestOutput(r *rpctest.Harness, t *testing.T,
 func TestBIP0113(t *testing.T) {
 	t.Parallel()
 
-	btcdCfg := []string{"--rejectnonstd"}
-	r, err := rpctest.New(&dagconfig.SimNetParams, nil, btcdCfg)
+	kaspadCfg := []string{"--rejectnonstd"}
+	r, err := rpctest.New(&dagconfig.SimNetParams, nil, kaspadCfg)
 	if err != nil {
 		t.Fatal("unable to create primary harness: ", err)
 	}
@@ -108,7 +108,7 @@ func TestBIP0113(t *testing.T) {
 	defer r.TearDown()
 
 	// Create a fresh output for usage within the test below.
-	const outputValue = util.SatoshiPerBitcoin
+	const outputValue = util.SompiPerKaspa
 	outputKey, testOutput, testScriptPubKey, err := makeTestOutput(r, t,
 		outputValue)
 	if err != nil {
@@ -237,7 +237,7 @@ func TestBIP0113(t *testing.T) {
 // createCSVOutput creates an output paying to a trivially redeemable CSV
 // scriptPubKey with the specified time-lock.
 func createCSVOutput(r *rpctest.Harness, t *testing.T,
-	numSatoshis util.Amount, timeLock int64,
+	numSompis util.Amount, timeLock int64,
 	isSeconds bool) ([]byte, *wire.Outpoint, *wire.MsgTx, error) {
 
 	// Convert the time-lock to the proper sequence lock based according to
@@ -266,7 +266,7 @@ func createCSVOutput(r *rpctest.Harness, t *testing.T,
 	}
 	output := &wire.TxOut{
 		ScriptPubKey: p2shScript,
-		Value:        int64(numSatoshis),
+		Value:        int64(numSompis),
 	}
 
 	// Finally create a valid transaction which creates the output crafted
@@ -350,8 +350,8 @@ func TestBIP0068AndCsv(t *testing.T) {
 	// (sequence locks) and BIP 112 rule-sets which add input-age based
 	// relative lock times.
 
-	btcdCfg := []string{"--rejectnonstd"}
-	r, err := rpctest.New(&dagconfig.SimNetParams, nil, btcdCfg)
+	kaspadCfg := []string{"--rejectnonstd"}
+	r, err := rpctest.New(&dagconfig.SimNetParams, nil, kaspadCfg)
 	if err != nil {
 		t.Fatal("unable to create primary harness: ", err)
 	}
@@ -370,7 +370,7 @@ func TestBIP0068AndCsv(t *testing.T) {
 	}
 
 	const (
-		outputAmt         = util.SatoshiPerBitcoin
+		outputAmt         = util.SompiPerKaspa
 		relativeBlockLock = 10
 	)
 
@@ -507,7 +507,7 @@ func TestBIP0068AndCsv(t *testing.T) {
 			accept: true,
 		},
 		// A transaction whose input has a 1000 blck relative time
-		// lock.  This should be rejected as the input's age is only 11
+		// lock. This should be rejected as the input's age is only 11
 		// blocks.
 		{
 			tx:     makeTxCase(blockdag.LockTimeToSequence(false, 1000), 1),

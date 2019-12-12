@@ -3,9 +3,9 @@ package controllers
 import (
 	"encoding/hex"
 
-	"github.com/kaspanet/kaspad/btcjson"
 	"github.com/kaspanet/kaspad/kasparov/dbmodels"
 	"github.com/kaspanet/kaspad/kasparov/kasparovd/apimodels"
+	"github.com/kaspanet/kaspad/rpcmodel"
 )
 
 func convertTxDBModelToTxResponse(tx *dbmodels.Transaction) *apimodels.TransactionResponse {
@@ -60,7 +60,7 @@ func convertBlockModelToBlockResponse(block *dbmodels.Block) *apimodels.BlockRes
 		Mass:                 block.Mass,
 	}
 	if block.AcceptingBlock != nil {
-		blockRes.AcceptingBlockHash = btcjson.String(block.AcceptingBlock.BlockHash)
+		blockRes.AcceptingBlockHash = rpcmodel.String(block.AcceptingBlock.BlockHash)
 	}
 	return blockRes
 }

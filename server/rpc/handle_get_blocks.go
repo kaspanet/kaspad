@@ -2,8 +2,8 @@ package rpc
 
 import (
 	"encoding/hex"
-	"github.com/kaspanet/kaspad/btcjson"
 	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
@@ -15,7 +15,7 @@ const (
 )
 
 func handleGetBlocks(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.GetBlocksCmd)
+	c := cmd.(*rpcmodel.GetBlocksCmd)
 	var startHash *daghash.Hash
 	if c.StartHash != nil {
 		startHash = &daghash.Hash{}
@@ -30,8 +30,8 @@ func handleGetBlocks(s *Server, cmd interface{}, closeChan <-chan struct{}) (int
 
 	// If startHash is not in the DAG, there's nothing to do; return an error.
 	if startHash != nil && !s.cfg.DAG.HaveBlock(startHash) {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCBlockNotFound,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCBlockNotFound,
 			Message: "Block not found",
 		}
 	}
@@ -48,7 +48,7 @@ func handleGetBlocks(s *Server, cmd interface{}, closeChan <-chan struct{}) (int
 		hashes[i] = blockHash.String()
 	}
 
-	result := &btcjson.GetBlocksResult{
+	result := &rpcmodel.GetBlocksResult{
 		Hashes:        hashes,
 		RawBlocks:     nil,
 		VerboseBlocks: nil,
@@ -101,8 +101,8 @@ func blockBytesToStrings(blockBytesSlice [][]byte) []string {
 	return rawBlocks
 }
 
-func blockBytesToBlockVerboseResults(s *Server, blockBytesSlice [][]byte) ([]btcjson.GetBlockVerboseResult, error) {
-	verboseBlocks := make([]btcjson.GetBlockVerboseResult, len(blockBytesSlice))
+func blockBytesToBlockVerboseResults(s *Server, blockBytesSlice [][]byte) ([]rpcmodel.GetBlockVerboseResult, error) {
+	verboseBlocks := make([]rpcmodel.GetBlockVerboseResult, len(blockBytesSlice))
 	for i, blockBytes := range blockBytesSlice {
 		block, err := util.NewBlockFromBytes(blockBytes)
 		if err != nil {
