@@ -238,7 +238,7 @@ var MainNetParams = Params{
 	AcceptUnroutable: false,
 
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.Bech32PrefixDAGCoin,
+	Prefix: util.Bech32PrefixKaspa,
 
 	// Address encoding magics
 	PrivateKeyID: 0x80, // starts with 5 (uncompressed) or K (compressed)
@@ -299,7 +299,7 @@ var RegressionNetParams = Params{
 	AcceptUnroutable: false,
 
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.Bech32PrefixDAGReg,
+	Prefix: util.Bech32PrefixKaspaReg,
 
 	// Address encoding magics
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
@@ -358,7 +358,7 @@ var TestNetParams = Params{
 	AcceptUnroutable: false,
 
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.Bech32PrefixDAGTest,
+	Prefix: util.Bech32PrefixKaspaTest,
 
 	// Address encoding magics
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
@@ -424,7 +424,7 @@ var SimNetParams = Params{
 
 	PrivateKeyID: 0x64, // starts with 4 (uncompressed) or F (compressed)
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.Bech32PrefixDAGSim,
+	Prefix: util.Bech32PrefixKaspaSim,
 
 	// BIP32 hierarchical deterministic extended key magics
 	HDKeyIDPair: hdkeychain.HDKeyPairSimNet,
@@ -480,7 +480,7 @@ var DevNetParams = Params{
 	AcceptUnroutable: true,
 
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.Bech32PrefixDAGTest,
+	Prefix: util.Bech32PrefixKaspaTest,
 
 	// Address encoding magics
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)

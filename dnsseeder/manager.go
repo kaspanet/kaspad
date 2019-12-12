@@ -18,7 +18,7 @@ import (
 	"github.com/miekg/dns"
 )
 
-// Node repesents a node in the DAGCoin network
+// Node repesents a node in the Kaspa network
 type Node struct {
 	Addr         *wire.NetAddress
 	Services     wire.ServiceFlag
