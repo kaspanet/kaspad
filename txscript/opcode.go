@@ -1149,7 +1149,7 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 	// The lock time feature can also be disabled, thereby bypassing
 	// OP_CHECKLOCKTIMEVERIFY, if every transaction input has been finalized by
 	// setting its sequence to the maximum value (wire.MaxTxInSequenceNum). This
-	// condition would result in the transaction being allowed into the blockchain
+	// condition would result in the transaction being allowed into the blockDAG
 	// making the opcode ineffective.
 	//
 	// This condition is prevented by enforcing that the input being used by

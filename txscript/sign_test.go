@@ -869,7 +869,7 @@ var sigScriptTests = []tstSigScript{
 // Test the sigscript generation for valid and invalid inputs, all
 // hashTypes, and with and without compression. This test creates
 // sigscripts to spend fake coinbase inputs, as sigscripts cannot be
-// created for the MsgTxs in txTests, since they come from the blockchain
+// created for the MsgTxs in txTests, since they come from the blockDAG
 // and we don't have the private keys.
 func TestSignatureScript(t *testing.T) {
 	t.Parallel()

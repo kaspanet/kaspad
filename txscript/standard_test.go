@@ -210,8 +210,6 @@ func TestCalcScriptInfo(t *testing.T) {
 			},
 		},
 		{
-			// from 567a53d1ce19ce3d07711885168484439965501536d0d0294c5d46d46c10e53b
-			// from the blockchain.
 			name: "p2sh nonstandard script",
 			sigScript: "1 81 DATA_8 2DUP EQUAL NOT VERIFY ABS " +
 				"SWAP ABS EQUAL",
