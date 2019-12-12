@@ -1175,7 +1175,7 @@ func (s *Server) peerHandler() {
 		seedFromSubNetwork := func(subnetworkID *subnetworkid.SubnetworkID) {
 			connmgr.SeedFromDNS(config.ActiveConfig().NetParams(), defaultRequiredServices,
 				false, subnetworkID, serverutils.KaspadLookup, func(addrs []*wire.NetAddress) {
-					// kaspad uses a lookup of the dns seeder here. Since seeder returns
+					// Kaspad uses a lookup of the dns seeder here. Since seeder returns
 					// IPs of nodes and not its own IP, we can not know real IP of
 					// source. So we'll take first returned address as source.
 					s.addrManager.AddAddresses(addrs, addrs[0], subnetworkID)

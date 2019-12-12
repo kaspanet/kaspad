@@ -386,7 +386,7 @@ var scriptClassTests = []struct {
 	},
 
 	{
-		// Nulldata
+		// Nulldata. It is standard in Bitcoin but not in Kaspa
 		name:   "nulldata",
 		script: "RETURN 0",
 		class:  NonStandardTy,

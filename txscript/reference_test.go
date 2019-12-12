@@ -52,10 +52,7 @@ func parseHex(tok string) ([]byte, error) {
 // parsing. It is declared here so it only needs to be created once.
 var shortFormOps map[string]byte
 
-// parseShortForm parses a string as as used in the reference tests
-// into the script it came from.
-//
-// The format used for these tests is pretty simple if ad-hoc:
+// parseShortForm parses a string into a script as follows:
 //   - Opcodes other than the push opcodes and unknown are present as
 //     either OP_NAME or just NAME
 //   - Plain numbers are made into push operations

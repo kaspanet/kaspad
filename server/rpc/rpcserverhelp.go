@@ -156,7 +156,7 @@ var helpDescsEnUS = map[string]string{
 	// GetSelectedTipCmd help.
 	"getSelectedTip--synopsis":   "Returns information about the selected tip of the blockDAG.",
 	"getSelectedTip-verbose":     "Specifies the block is returned as a JSON object instead of hex-encoded string",
-	"getSelectedTip-verboseTx":   "Specifies that each transaction is returned as a JSON object and only applies if the verbose flag is true (kaspad extension)",
+	"getSelectedTip-verboseTx":   "Specifies that each transaction is returned as a JSON object and only applies if the verbose flag is true",
 	"getSelectedTip--condition0": "verbose=false",
 	"getSelectedTip--condition1": "verbose=true",
 	"getSelectedTip-acceptedTx":  "Specifies if the transaction got accepted",
@@ -170,7 +170,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlock--synopsis":   "Returns information about a block given its hash.",
 	"getBlock-hash":        "The hash of the block",
 	"getBlock-verbose":     "Specifies the block is returned as a JSON object instead of hex-encoded string",
-	"getBlock-verboseTx":   "Specifies that each transaction is returned as a JSON object and only applies if the verbose flag is true (kaspad extension)",
+	"getBlock-verboseTx":   "Specifies that each transaction is returned as a JSON object and only applies if the verbose flag is true",
 	"getBlock-subnetwork":  "If passed, the returned block will be a partial block of the specified subnetwork",
 	"getBlock--condition0": "verbose=false",
 	"getBlock--condition1": "verbose=true",
