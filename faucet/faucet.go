@@ -5,19 +5,20 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"path"
+
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/faucet/config"
 	"github.com/kaspanet/kaspad/httpserverutils"
-	"github.com/kaspanet/kaspad/kasparov/server/apimodels"
+	"github.com/kaspanet/kaspad/kasparov/kasparovd/apimodels"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"path"
 )
 
 const (
