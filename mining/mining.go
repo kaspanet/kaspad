@@ -105,7 +105,7 @@ func MinimumMedianTime(dagMedianTime time.Time) time.Time {
 
 // medianAdjustedTime returns the current time adjusted to ensure it is at least
 // one second after the median timestamp of the last several blocks per the
-// chain consensus rules.
+// DAG consensus rules.
 func medianAdjustedTime(dagMedianTime time.Time, timeSource blockdag.MedianTimeSource) time.Time {
 	// The timestamp for the block must not be before the median timestamp
 	// of the last several blocks. Thus, choose the maximum between the
@@ -125,7 +125,7 @@ func medianAdjustedTime(dagMedianTime time.Time, timeSource blockdag.MedianTimeS
 // BlkTmplGenerator provides a type that can be used to generate block templates
 // based on a given mining policy and source of transactions to choose from.
 // It also houses additional state required in order to ensure the templates
-// are built on top of the current best chain and adhere to the consensus rules.
+// are built on top of the current DAG and adhere to the consensus rules.
 type BlkTmplGenerator struct {
 	policy     *Policy
 	dagParams  *dagconfig.Params
@@ -139,7 +139,7 @@ type BlkTmplGenerator struct {
 // policy using transactions from the provided transaction source.
 //
 // The additional state-related fields are required in order to ensure the
-// templates are built on top of the current best chain and adhere to the
+// templates are built on top of the current DAG and adhere to the
 // consensus rules.
 func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 	txSource TxSource, dag *blockdag.BlockDAG,
@@ -174,7 +174,7 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 // policy settings are all taken into account.
 //
 // Transactions which only spend outputs from other transactions already in the
-// block chain are immediately added to a priority queue which either
+// block DAG are immediately added to a priority queue which either
 // prioritizes based on the priority (then fee per kilobyte) or the fee per
 // kilobyte (then priority) depending on whether or not the BlockPrioritySize
 // policy setting allots space for high-priority transactions. Transactions
@@ -229,7 +229,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 	// Calculate the required difficulty for the block. The timestamp
 	// is potentially adjusted to ensure it comes after the median time of
-	// the last several blocks per the chain consensus rules.
+	// the last several blocks per the DAG consensus rules.
 	ts := medianAdjustedTime(g.dag.CalcPastMedianTime(), g.timeSource)
 	requiredDifficulty := g.dag.NextRequiredDifficulty(ts)
 
@@ -326,13 +326,13 @@ func (g *BlkTmplGenerator) buildUTXOCommitment(transactions []*wire.MsgTx) (*dag
 
 // UpdateBlockTime updates the timestamp in the header of the passed block to
 // the current time while taking into account the median time of the last
-// several blocks to ensure the new time is after that time per the chain
+// several blocks to ensure the new time is after that time per the DAG
 // consensus rules. Finally, it will update the target difficulty if needed
 // based on the new time for the test networks since their target difficulty can
 // change based upon time.
 func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 	// The new timestamp is potentially adjusted to ensure it comes after
-	// the median time of the last several blocks per the chain consensus
+	// the median time of the last several blocks per the DAG consensus
 	// rules.
 	dagMedianTime := g.dag.CalcPastMedianTime()
 	newTime := medianAdjustedTime(dagMedianTime, g.timeSource)
