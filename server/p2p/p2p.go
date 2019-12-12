@@ -1712,7 +1712,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		PeerNotifier:       &s,
 		DAG:                s.DAG,
 		TxMemPool:          s.TxMemPool,
-		ChainParams:        s.DAGParams,
+		DAGParams:          s.DAGParams,
 		DisableCheckpoints: cfg.DisableCheckpoints,
 		MaxPeers:           maxPeers,
 	})

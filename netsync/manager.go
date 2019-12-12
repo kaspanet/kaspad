@@ -107,7 +107,7 @@ type processBlockResponse struct {
 // for requested a block is processed. Note this call differs from blockMsg
 // above in that blockMsg is intended for blocks that came from peers and have
 // extra handling whereas this message essentially is just a concurrent safe
-// way to call ProcessBlock on the internal block chain instance.
+// way to call ProcessBlock on the internal block DAG instance.
 type processBlockMsg struct {
 	block *util.Block
 	flags blockdag.BehaviorFlags
@@ -154,7 +154,7 @@ type peerSyncState struct {
 // SyncManager is used to communicate block related messages with peers. The
 // SyncManager is started as by executing Start() in a goroutine. Once started,
 // it selects peers to sync from and starts the initial block download. Once the
-// chain is in sync, the SyncManager handles incoming block and header
+// DAG is in sync, the SyncManager handles incoming block and header
 // notifications and relays announcements of new blocks to peers.
 type SyncManager struct {
 	peerNotifier   PeerNotifier
@@ -229,7 +229,7 @@ func (sm *SyncManager) resetHeaderState(newestHash *daghash.Hash, newestHeight u
 
 	// When there is a next checkpoint, add an entry for the latest known
 	// block into the header pool. This allows the next downloaded header
-	// to prove it links to the chain properly.
+	// to prove it links to the DAG properly.
 	if sm.nextCheckpoint != nil {
 		node := headerNode{height: newestHeight, hash: newestHash}
 		sm.headerList.PushBack(&node)
@@ -265,7 +265,7 @@ func (sm *SyncManager) findNextHeaderCheckpoint(height uint64) *dagconfig.Checkp
 }
 
 // startSync will choose the best peer among the available candidate peers to
-// download/sync the blockchain from. When syncing is already running, it
+// download/sync the blockDAG from. When syncing is already running, it
 // simply returns. It also examines the candidates for any which are no longer
 // candidates and removes them as needed.
 func (sm *SyncManager) startSync() {
@@ -461,7 +461,7 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 	acceptedTxs, err := sm.txMemPool.ProcessTransaction(tmsg.tx,
 		true, mempool.Tag(peer.ID()))
 
-	// Remove transaction from request maps. Either the mempool/chain
+	// Remove transaction from request maps. Either the mempool/DAG
 	// already knows about it and as such we shouldn't have any more
 	// instances of trying to fetch it, or we failed to insert and thus
 	// we'll retry next time we get an inv.
@@ -543,7 +543,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		// The regression test intentionally sends some blocks twice
 		// to test duplicate block insertion fails. Don't disconnect
 		// the peer or ignore the block when we're in regression test
-		// mode in this case so the chain code is actually fed the
+		// mode in this case so the DAG code is actually fed the
 		// duplicate blocks.
 		if sm.dagParams != &dagconfig.RegressionNetParams {
 			log.Warnf("Got unrequested block %s from %s -- "+
@@ -696,7 +696,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 
 	// This is headers-first mode, the block is a checkpoint, and there are
 	// no more checkpoints, so switch to normal mode by requesting blocks
-	// from the block after this one up to the end of the chain (zero hash).
+	// from the block after this one up to the end of the DAG (zero hash).
 	sm.headersFirstMode = false
 	sm.headerList.Init()
 	log.Infof("Reached the final checkpoint -- switching to normal mode")
@@ -841,7 +841,7 @@ func (sm *SyncManager) handleHeadersMsg(hmsg *headersMsg) {
 			}
 		} else {
 			log.Warnf("Received block header that does not "+
-				"properly connect to the chain from peer %s "+
+				"properly connect to the DAG from peer %s "+
 				"-- disconnecting", peer.Addr())
 			peer.Disconnect()
 			return
@@ -897,8 +897,8 @@ func (sm *SyncManager) handleHeadersMsg(hmsg *headersMsg) {
 // haveInventory returns whether or not the inventory represented by the passed
 // inventory vector is known. This includes checking all of the various places
 // inventory can be when it is in different states such as blocks that are part
-// of the main chain, on a side chain, in the orphan pool, and transactions that
-// are in the memory pool (either the main pool or orphan pool).
+// of the DAG, in the orphan pool, and transactions that are in the memory pool
+// (either the main pool or orphan pool).
 func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 	switch invVect.Type {
 	case wire.InvTypeSyncBlock:
@@ -915,7 +915,7 @@ func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 		}
 
 		// Check if the transaction exists from the point of view of the
-		// end of the main chain. Note that this is only a best effort
+		// DAG's selected parent. Note that this is only a best effort
 		// since it is expensive to check existence of every output and
 		// the only purpose of this check is to avoid downloading
 		// already known transactions. Only the first two outputs are
@@ -965,7 +965,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 
 	// Request the advertised inventory if we don't already have it. Also,
 	// request parent blocks of orphans if we receive one we already have.
-	// Finally, attempt to detect potential stalls due to long side chains
+	// Finally, attempt to detect potential stalls due to long chains
 	// we already have and request more blocks to prevent them.
 	for i, iv := range invVects {
 		// Ignore unsupported inventory types.
@@ -1455,7 +1455,7 @@ func New(config *Config) (*SyncManager, error) {
 		peerNotifier:    config.PeerNotifier,
 		dag:             config.DAG,
 		txMemPool:       config.TxMemPool,
-		dagParams:       config.ChainParams,
+		dagParams:       config.DAGParams,
 		rejectedTxns:    make(map[daghash.TxID]struct{}),
 		requestedTxns:   make(map[daghash.TxID]struct{}),
 		requestedBlocks: make(map[daghash.Hash]struct{}),
