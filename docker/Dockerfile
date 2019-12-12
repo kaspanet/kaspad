@@ -25,7 +25,7 @@ RUN golint -set_exit_status ./...
 # RUN aligncheck ./...
 # RUN structcheck -e ./...
 # RUN varcheck -e ./...
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o btcd .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o kaspad .
 
 # Remove the line below and uncomment the line after it for testing with coverage
 RUN go test -gcflags='-l' ./...
@@ -37,7 +37,7 @@ WORKDIR /app
 
 RUN apk add --no-cache ca-certificates tini
 
-COPY --from=build /go/src/github.com/kaspanet/kaspad/btcd /app/
+COPY --from=build /go/src/github.com/kaspanet/kaspad/kaspad /app/
 COPY --from=build /go/src/github.com/kaspanet/kaspad/sample-btcd.conf /app/
 
 USER nobody
