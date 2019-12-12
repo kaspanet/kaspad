@@ -5,7 +5,7 @@ connmgr
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/kaspanet/kaspad/connmgr)
 
-Package connmgr implements a generic Bitcoin network connection manager.
+Package connmgr implements a generic Kaspa network connection manager.
 
 ## Overview
 
@@ -25,12 +25,6 @@ In addition the connection manager provides the following utilities:
 - Connect only to specified addresses
 - Permanent connections with increasing backoff retry timers
 - Disconnect or Remove an established connection
-
-## Installation and Updating
-
-```bash
-$ go get -u github.com/kaspanet/kaspad/connmgr
-```
 
 ## License
 
