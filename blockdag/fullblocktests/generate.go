@@ -245,8 +245,7 @@ func pushDataScript(items ...[]byte) []byte {
 }
 
 // standardCoinbaseScript returns a standard script suitable for use as the
-// signature script of the coinbase transaction of a new block. In particular,
-// it starts with the block height that is required by version 2 blocks.
+// signature script of the coinbase transaction of a new block.
 func standardCoinbaseScript(extraNonce uint64) ([]byte, error) {
 	return txscript.NewScriptBuilder().
 		AddInt64(int64(extraNonce)).Script()
