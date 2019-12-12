@@ -12,8 +12,8 @@ import (
 const MaxBlockLocatorsPerMsg = 500
 
 // MsgBlockLocator implements the Message interface and represents a kaspa
-// locator message. It is used to find the highest known chain block with
-// a peer that is syncing with you.
+// locator message. It is used to find the blockLocator of a peer that is
+// syncing with you.
 type MsgBlockLocator struct {
 	BlockLocatorHashes []*daghash.Hash
 }
