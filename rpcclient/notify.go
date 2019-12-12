@@ -385,50 +385,6 @@ func parseRelevantTxAcceptedParams(params []json.RawMessage) (transaction []byte
 	return parseHexParam(params[0])
 }
 
-// parseChainTxNtfnParams parses out the transaction and optional details about
-// the block it's mined in from the parameters of recvtx and redeemingtx
-// notifications.
-func parseChainTxNtfnParams(params []json.RawMessage) (*util.Tx,
-	*rpcmodel.BlockDetails, error) {
-
-	if len(params) == 0 || len(params) > 2 {
-		return nil, nil, wrongNumParams(len(params))
-	}
-
-	// Unmarshal first parameter as a string.
-	var txHex string
-	err := json.Unmarshal(params[0], &txHex)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// If present, unmarshal second optional parameter as the block details
-	// JSON object.
-	var block *rpcmodel.BlockDetails
-	if len(params) > 1 {
-		err = json.Unmarshal(params[1], &block)
-		if err != nil {
-			return nil, nil, err
-		}
-	}
-
-	// Hex decode and deserialize the transaction.
-	serializedTx, err := hex.DecodeString(txHex)
-	if err != nil {
-		return nil, nil, err
-	}
-	var msgTx wire.MsgTx
-	err = msgTx.Deserialize(bytes.NewReader(serializedTx))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// TODO: Change recvtx and redeemingtx callback signatures to use
-	// nicer types for details about the block (block hash as a
-	// daghash.Hash, block time as a time.Time, etc.).
-	return util.NewTx(&msgTx), block, nil
-}
-
 // parseTxAcceptedNtfnParams parses out the transaction hash and total amount
 // from the parameters of a txaccepted notification.
 func parseTxAcceptedNtfnParams(params []json.RawMessage) (*daghash.Hash,
@@ -522,10 +478,10 @@ func (c *Client) NotifyBlocksAsync() FutureNotifyBlocksResult {
 }
 
 // NotifyBlocks registers the client to receive notifications when blocks are
-// connected and disconnected from the main chain. The notifications are
-// delivered to the notification handlers associated with the client. Calling
-// this function has no effect if there are no notification handlers and will
-// result in an error if the client is configured to run in HTTP POST mode.
+// connected to the DAG. The notifications are delivered to the notification
+// handlers associated with the client. Calling this function has no effect
+// if there are no notification handlers and will result in an error if the
+// client is configured to run in HTTP POST mode.
 //
 // The notifications delivered as a result of this call will be via OnBlockAdded
 func (c *Client) NotifyBlocks() error {

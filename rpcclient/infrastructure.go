@@ -1128,7 +1128,7 @@ type ConnConfig struct {
 	ConnectionTimeout time.Duration
 
 	// EnableBCInfoHacks is an option provided to enable compatibility hacks
-	// when connecting to blockchain.info RPC server
+	// when connecting to blockdag.info RPC server
 	EnableBCInfoHacks bool
 }
 
