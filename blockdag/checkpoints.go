@@ -13,8 +13,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-// CheckpointConfirmations is the number of blocks before the end of the current
-// best block chain that a good checkpoint candidate must be.
+// CheckpointConfirmations is the number of confirmations that a good
+// checkpoint candidate must be.
 const CheckpointConfirmations = 2016
 
 // newHashFromStr converts the passed big-endian hex string into a
@@ -36,7 +36,7 @@ func newTxIDFromStr(hexStr string) *daghash.TxID {
 }
 
 // Checkpoints returns a slice of checkpoints (regardless of whether they are
-// already known). When there are no checkpoints for the chain, it will return
+// already known). When there are no checkpoints for the DAG, it will return
 // nil.
 //
 // This function is safe for concurrent access.
@@ -52,7 +52,7 @@ func (dag *BlockDAG) HasCheckpoints() bool {
 }
 
 // LatestCheckpoint returns the most recent checkpoint (regardless of whether it
-// is already known). When there are no defined checkpoints for the active chain
+// is already known). When there are no defined checkpoints for the active DAG
 // instance, it will return nil.
 //
 // This function is safe for concurrent access.
@@ -63,9 +63,9 @@ func (dag *BlockDAG) LatestCheckpoint() *dagconfig.Checkpoint {
 	return &dag.checkpoints[len(dag.checkpoints)-1]
 }
 
-// verifyCheckpoint returns whether the passed block chain height and hash combination
+// verifyCheckpoint returns whether the passed block chainHeight and hash combination
 // match the checkpoint data. It also returns true if there is no checkpoint
-// data for the passed block chain height.
+// data for the passed block chainHeight.
 func (dag *BlockDAG) verifyCheckpoint(chainHeight uint64, hash *daghash.Hash) bool {
 	if !dag.HasCheckpoints() {
 		return true
@@ -87,7 +87,7 @@ func (dag *BlockDAG) verifyCheckpoint(chainHeight uint64, hash *daghash.Hash) bo
 }
 
 // findPreviousCheckpoint finds the most recent checkpoint that is already
-// available in the downloaded portion of the block chain and returns the
+// available in the downloaded portion of the block DAG and returns the
 // associated block node. It returns nil if a checkpoint can't be found (this
 // should really only happen for blocks before the first checkpoint).
 //
@@ -98,8 +98,7 @@ func (dag *BlockDAG) findPreviousCheckpoint() (*blockNode, error) {
 	}
 
 	// Perform the initial search to find and cache the latest known
-	// checkpoint if the best chain is not known yet or we haven't already
-	// previously searched.
+	// checkpoint if we haven't already previously searched.
 	checkpoints := dag.checkpoints
 	numCheckpoints := len(checkpoints)
 	if dag.checkpointNode == nil && dag.nextCheckpoint == nil {
@@ -135,20 +134,15 @@ func (dag *BlockDAG) findPreviousCheckpoint() (*blockNode, error) {
 		return dag.checkpointNode, nil
 	}
 
-	// When there is a next checkpoint and the chain height of the current
+	// When there is a next checkpoint and the chainHeight of the current
 	// selected tip of the DAG does not exceed it, the current checkpoint
 	// lockin is still the latest known checkpoint.
 	if dag.selectedTip().chainHeight < dag.nextCheckpoint.ChainHeight {
 		return dag.checkpointNode, nil
 	}
 
-	// We've reached or exceeded the next checkpoint height. Note that
-	// once a checkpoint lockin has been reached, forks are prevented from
-	// any blocks before the checkpoint, so we don't have to worry about the
-	// checkpoint going away out from under us due to a chain reorganize.
-
 	// Cache the latest known checkpoint for future lookups. Note that if
-	// this lookup fails something is very wrong since the chain has already
+	// this lookup fails something is very wrong since the DAG has already
 	// passed the checkpoint which was verified as accurate before inserting
 	// it.
 	checkpointNode := dag.index.LookupNode(dag.nextCheckpoint.Hash)
@@ -192,9 +186,9 @@ func isNonstandardTransaction(tx *util.Tx) bool {
 // checkpoint candidate.
 //
 // The factors used to determine a good checkpoint are:
-//  - The block must be in the main chain
+//  - The block must be in the DAG
 //  - The block must be at least 'CheckpointConfirmations' blocks prior to the
-//    current end of the main chain
+//    selected tip
 //  - The timestamps for the blocks before and after the checkpoint must have
 //    timestamps which are also before and after the checkpoint, respectively
 //    (due to the median time allowance this is not always the case)
@@ -215,17 +209,17 @@ func (dag *BlockDAG) IsCheckpointCandidate(block *util.Block) (bool, error) {
 		return false, nil
 	}
 
-	// Ensure the chain height of the passed block and the entry for the block
+	// Ensure the chainHeight of the passed block and the entry for the block
 	// in the DAG match. This should always be the case unless the
 	// caller provided an invalid block.
 	if node.chainHeight != block.ChainHeight() {
-		return false, errors.Errorf("passed block chain height of %d does not "+
+		return false, errors.Errorf("passed block chainHeight of %d does not "+
 			"match the its height in the DAG: %d", block.ChainHeight(),
 			node.chainHeight)
 	}
 
 	// A checkpoint must be at least CheckpointConfirmations blocks
-	// before the end of the main chain.
+	// before the selected tip of the DAG.
 	dagChainHeight := dag.selectedTip().chainHeight
 	if node.chainHeight > (dagChainHeight - CheckpointConfirmations) {
 		return false, nil
