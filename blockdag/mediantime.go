@@ -207,7 +207,7 @@ func (m *medianTime) Offset() time.Duration {
 
 // NewMedianTime returns a new instance of concurrency-safe implementation of
 // the MedianTimeSource interface. The returned implementation contains the
-// rules necessary for proper time handling in the chain consensus rules and
+// rules necessary for proper time handling in the DAG consensus rules and
 // expects the time samples to be added from the timestamp field of the version
 // message received from remote peers that successfully connect and negotiate.
 func NewMedianTime() MedianTimeSource {

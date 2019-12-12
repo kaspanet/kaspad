@@ -109,12 +109,12 @@ func (dag *BlockDAG) TestSetCoinbaseMaturity(maturity uint64) {
 }
 
 // newTestDAG returns a DAG that is usable for syntetic tests. It is
-// important to note that this chain has no database associated with it, so
+// important to note that this DAG has no database associated with it, so
 // it is not usable with all functions and the tests must take care when making
 // use of it.
 func newTestDAG(params *dagconfig.Params) *BlockDAG {
 	// Create a genesis block node and block index index populated with it
-	// for use when creating the fake chain below.
+	// for use when creating the fake DAG below.
 	node := newBlockNode(&params.GenesisBlock.Header, newSet(), params.K)
 	index := newBlockIndex(nil, params)
 	index.AddNode(node)

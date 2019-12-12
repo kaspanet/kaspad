@@ -14,7 +14,7 @@ import (
 type NotificationType int
 
 // NotificationCallback is used for a caller to provide a callback for
-// notifications about various chain events.
+// notifications about various blockDAG events.
 type NotificationCallback func(*Notification)
 
 // Constants for the type of a notification message.
@@ -52,7 +52,7 @@ type Notification struct {
 	Data interface{}
 }
 
-// Subscribe to block chain notifications. Registers a callback to be executed
+// Subscribe to block DAG notifications. Registers a callback to be executed
 // when various events take place. See the documentation on Notification and
 // NotificationType for details on the types and contents of notifications.
 func (dag *BlockDAG) Subscribe(callback NotificationCallback) {

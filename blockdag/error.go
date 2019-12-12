@@ -47,12 +47,12 @@ const (
 	ErrBlockVersionTooOld
 
 	// ErrInvalidTime indicates the time in the passed block has a precision
-	// that is more than one second. The chain consensus rules require
+	// that is more than one second. The DAG consensus rules require
 	// timestamps to have a maximum precision of one second.
 	ErrInvalidTime
 
 	// ErrTimeTooOld indicates the time is either before the median time of
-	// the last several blocks per the chain consensus rules or prior to the
+	// the last several blocks per the DAG consensus rules or prior to the
 	// most recent checkpoint.
 	ErrTimeTooOld
 

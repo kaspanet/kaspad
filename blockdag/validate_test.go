@@ -69,7 +69,7 @@ func TestSequenceLocksActive(t *testing.T) {
 // TestCheckConnectBlockTemplate tests the CheckConnectBlockTemplate function to
 // ensure it fails.
 func TestCheckConnectBlockTemplate(t *testing.T) {
-	// Create a new database and chain instance to run tests against.
+	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("checkconnectblocktemplate", Config{
 		DAGParams: &dagconfig.SimNetParams,
 	})
@@ -1033,7 +1033,7 @@ var Block100000 = wire.MsgBlock{
 	},
 }
 
-// BlockWithWrongTxOrder defines invalid block 100,000 of the block chain.
+// BlockWithWrongTxOrder defines invalid block 100,000 of the block DAG.
 var BlockWithWrongTxOrder = wire.MsgBlock{
 	Header: wire.BlockHeader{
 		Version: 1,
