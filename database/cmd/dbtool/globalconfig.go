@@ -31,7 +31,7 @@ var (
 // config defines the global configuration options.
 type config struct {
 	DataDir        string `short:"b" long:"datadir" description:"Location of the kaspad data directory"`
-	DbType         string `long:"dbtype" description:"Database backend to use for the Block Chain"`
+	DbType         string `long:"dbtype" description:"Database backend to use for the Block DAG"`
 	TestNet        bool   `long:"testnet" description:"Use the test network"`
 	RegressionTest bool   `long:"regtest" description:"Use the regression test network"`
 	SimNet         bool   `long:"simnet" description:"Use the simulation test network"`

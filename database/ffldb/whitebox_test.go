@@ -31,7 +31,7 @@ var (
 	blockDataNet = wire.MainNet
 
 	// blockDataFile is the path to a file containing the first 256 blocks
-	// of the block chain.
+	// of the block DAG.
 	blockDataFile = filepath.Join("..", "testdata", "blocks1-256.bz2")
 
 	// errSubTestFail is used to signal that a sub test returned false.

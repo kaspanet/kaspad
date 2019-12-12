@@ -81,7 +81,7 @@ func realMain() error {
 		"Insecurely import bulk block data from bootstrap.dat",
 		"Insecurely import bulk block data from bootstrap.dat. "+
 			"WARNING: This is NOT secure because it does NOT "+
-			"verify chain rules. It is only provided for testing "+
+			"verify DAG rules. It is only provided for testing "+
 			"purposes.", &importCfg)
 	parser.AddCommand("loadheaders",
 		"Time how long to load headers for all blocks in the database",
