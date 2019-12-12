@@ -14,7 +14,7 @@ RUN go mod download
 
 COPY . .
 
-RUN cd kasparov/server && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o kasparov-server .
+RUN cd kasparov/kasparovd && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o kasparov-server .
 
 # --- multistage docker build: stage #2: runtime image
 FROM alpine

@@ -105,8 +105,6 @@ func syncBlocks(client *jsonrpc.Client) error {
 		return err
 	}
 
-	var rawBlocks []string
-	var verboseBlocks []btcjson.GetBlockVerboseResult
 	for {
 		log.Debugf("Calling getBlocks with start hash %v", stringPointerToString(startHash))
 		blocksResult, err := client.GetBlocks(true, true, startHash)
@@ -118,11 +116,13 @@ func syncBlocks(client *jsonrpc.Client) error {
 		}
 
 		startHash = &blocksResult.Hashes[len(blocksResult.Hashes)-1]
-		rawBlocks = append(rawBlocks, blocksResult.RawBlocks...)
-		verboseBlocks = append(verboseBlocks, blocksResult.VerboseBlocks...)
+		err = addBlocks(client, blocksResult.RawBlocks, blocksResult.VerboseBlocks)
+		if err != nil {
+			return err
+		}
 	}
 
-	return addBlocks(client, rawBlocks, verboseBlocks)
+	return nil
 }
 
 // syncSelectedParentChain attempts to download the selected parent
