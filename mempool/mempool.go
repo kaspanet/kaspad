@@ -59,12 +59,12 @@ type Config struct {
 	DAGParams *dagconfig.Params
 
 	// DAGChainHeight defines the function to use to access the block height of
-	// the current best chain.
+	// the DAG.
 	DAGChainHeight func() uint64
 
 	// MedianTimePast defines the function to use in order to access the
 	// median time past calculated from the point-of-view of the current
-	// chain tip within the best chain.
+	// selected tip.
 	MedianTimePast func() time.Time
 
 	// CalcSequenceLockNoLock defines the function to use in order to generate
@@ -661,7 +661,7 @@ func (mp *TxPool) RemoveTransactions(txs []*util.Tx) error {
 // RemoveDoubleSpends removes all transactions which spend outputs spent by the
 // passed transaction from the memory pool. Removing those transactions then
 // leads to removing all transactions which rely on them, recursively. This is
-// necessary when a block is connected to the main chain because the block may
+// necessary when a block is connected to the DAG because the block may
 // contain transactions which were previously unknown to the memory pool.
 //
 // This function is safe for concurrent access.
@@ -874,9 +874,9 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rejectDupOrphans bo
 	// transactions already in the pool as that would ultimately result in a
 	// double spend. This check is intended to be quick and therefore only
 	// detects double spends within the transaction pool itself. The
-	// transaction could still be double spending coins from the main chain
+	// transaction could still be double spending coins from the DAG
 	// at this point. There is a more in-depth check that happens later
-	// after fetching the referenced transaction inputs from the main chain
+	// after fetching the referenced transaction inputs from the DAG
 	// which examines the actual spend data and prevents double spends.
 	err = mp.checkPoolDoubleSpend(tx)
 	if err != nil {
@@ -945,7 +945,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rejectDupOrphans bo
 	}
 
 	// Perform several checks on the transaction inputs using the invariant
-	// rules in blockchain for what transactions are allowed into blocks.
+	// rules in blockDAG for what transactions are allowed into blocks.
 	// Also returns the fees associated with the transaction which will be
 	// used later.
 	txFee, err := blockdag.CheckTransactionInputsAndCalulateFee(tx, nextBlockBlueScore,

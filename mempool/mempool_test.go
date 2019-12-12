@@ -38,9 +38,9 @@ type fakeChain struct {
 	medianTimePast time.Time
 }
 
-// BestHeight returns the current height associated with the fake chain
+// Height returns the current height associated with the fake chain
 // instance.
-func (s *fakeChain) BestHeight() uint64 {
+func (s *fakeChain) Height() uint64 {
 	s.RLock()
 	height := s.currentHeight
 	s.RUnlock()
@@ -315,7 +315,7 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 	params := *dagParams
 	params.BlockCoinbaseMaturity = 0
 
-	// Create a new database and chain instance to run tests against.
+	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := blockdag.DAGSetup(dbName, blockdag.Config{
 		DAGParams: &params,
 	})
@@ -350,7 +350,7 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 				MaxTxVersion:    1,
 			},
 			DAGParams:              &params,
-			DAGChainHeight:         chain.BestHeight,
+			DAGChainHeight:         chain.Height,
 			MedianTimePast:         chain.MedianTimePast,
 			CalcSequenceLockNoLock: calcSequenceLock,
 			SigCache:               nil,
@@ -362,7 +362,7 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 
 	// Mine numOutputs blocks to get numOutputs coinbase outpoints
 	outpoints := tc.mineTransactions(nil, uint64(numOutputs))
-	curHeight := harness.chain.BestHeight()
+	curHeight := harness.chain.Height()
 	if params.BlockCoinbaseMaturity != 0 {
 		harness.chain.SetHeight(params.BlockCoinbaseMaturity + curHeight)
 	} else {
@@ -543,7 +543,7 @@ func TestProcessTransaction(t *testing.T) {
 	}
 
 	//Checks that a coinbase transaction cannot be added to the mempool
-	curHeight := harness.chain.BestHeight()
+	curHeight := harness.chain.Height()
 	coinbase, err := harness.CreateCoinbaseTx(curHeight+1, 1)
 	if err != nil {
 		t.Errorf("CreateCoinbaseTx: %v", err)
