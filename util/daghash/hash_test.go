@@ -13,7 +13,7 @@ import (
 	"testing"
 )
 
-// mainNetGenesisHash is the hash of the first block in the block chain for the
+// mainNetGenesisHash is the hash of the first block in the block DAG for the
 // main network (genesis block).
 var mainNetGenesisHash = Hash([HashSize]byte{
 	0xdc, 0x5f, 0x5b, 0x5b, 0x1d, 0xc2, 0xa7, 0x25,
