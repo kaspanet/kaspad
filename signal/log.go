@@ -8,4 +8,4 @@ import (
 	"github.com/kaspanet/kaspad/logger"
 )
 
-var kspdLog, _ = logger.Get(logger.SubsystemTags.KSPD)
+var kasdLog, _ = logger.Get(logger.SubsystemTags.KASD)
