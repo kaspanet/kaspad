@@ -91,7 +91,7 @@ Application Options:
                             the log level for individual subsystems -- Use show
                             to list available subsystems (info)
       --upnp                Use UPnP to map our listening port outside of NAT
-      --minrelaytxfee=      The minimum transaction fee in BTC/kB to be
+      --minrelaytxfee=      The minimum transaction fee in KAS/kB to be
                             considered a non-zero fee.
       --limitfreerelay=     Limit relay of transactions with no transaction fee
                             to the given amount in thousands of bytes per
@@ -100,7 +100,7 @@ Application Options:
                             high priority for relaying
       --maxorphantx=        Max number of orphan transactions to keep in memory
                             (100)
-      --generate            Generate (mine) bitcoins using the CPU
+      --generate            Generate (mine) kaspa using the CPU
       --miningaddr=         Add the specified payment address to the list of
                             addresses to use for generated blocks -- At least
                             one address is required if the generate option is
