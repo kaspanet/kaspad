@@ -14,7 +14,7 @@ RUN go mod download
 
 COPY . .
 
-RUN cd kasparov/kasparovd && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o kasparov-server .
+RUN cd kasparov/kasparovd && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o kasparovd .
 
 # --- multistage docker build: stage #2: runtime image
 FROM alpine
@@ -26,4 +26,4 @@ COPY --from=build /go/src/github.com/kaspanet/kaspad/kasparov/kasparovd/ /app/
 COPY --from=build /go/src/github.com/kaspanet/kaspad/kasparov/database/migrations/ /database/migrations/
 
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["/app/kasparov-server"]
+CMD ["/app/kasparovd"]
