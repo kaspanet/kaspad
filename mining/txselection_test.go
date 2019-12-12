@@ -460,7 +460,7 @@ func TestSelectTxs(t *testing.T) {
 
 			// Force the fee to be as defined in the definition.
 			// We use the first payload byte to resolve which definition to use.
-			feePatch := monkey.Patch(blockdag.CheckTransactionInputsAndCalulateFee, func(tx *util.Tx, _ uint64, _ blockdag.UTXOSet, _ *dagconfig.Params, _ bool) (txFeeInSatoshi uint64, err error) {
+			feePatch := monkey.Patch(blockdag.CheckTransactionInputsAndCalulateFee, func(tx *util.Tx, _ uint64, _ blockdag.UTXOSet, _ *dagconfig.Params, _ bool) (txFeeInSompi uint64, err error) {
 				if tx.IsCoinBase() {
 					return 0, nil
 				}

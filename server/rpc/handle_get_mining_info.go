@@ -1,16 +1,16 @@
 package rpc
 
 import (
-	"github.com/kaspanet/kaspad/btcjson"
 	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/rpcmodel"
 )
 
 // handleGetMiningInfo implements the getMiningInfo command. We only return the
 // fields that are not related to wallet functionality.
 func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	if config.ActiveConfig().SubnetworkID != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCInvalidRequest.Code,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCInvalidRequest.Code,
 			Message: "`getMiningInfo` is not supported on partial nodes.",
 		}
 	}
@@ -18,13 +18,13 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 	selectedTipHash := s.cfg.DAG.SelectedTipHash()
 	selectedBlock, err := s.cfg.DAG.BlockByHash(selectedTipHash)
 	if err != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCInternal.Code,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCInternal.Code,
 			Message: "could not find block for selected tip",
 		}
 	}
 
-	result := btcjson.GetMiningInfoResult{
+	result := rpcmodel.GetMiningInfoResult{
 		Blocks:           int64(s.cfg.DAG.BlockCount()),
 		CurrentBlockSize: uint64(selectedBlock.MsgBlock().SerializeSize()),
 		CurrentBlockTx:   uint64(len(selectedBlock.MsgBlock().Transactions)),

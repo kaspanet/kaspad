@@ -273,7 +273,7 @@ func (m *Manager) Good(ip net.IP, services wire.ServiceFlag, subnetworkid *subne
 	m.mtx.Unlock()
 }
 
-// addressHandler is the main handler for the address manager.  It must be run
+// addressHandler is the main handler for the address manager. It must be run
 // as a goroutine.
 func (m *Manager) addressHandler() {
 	defer m.wg.Done()

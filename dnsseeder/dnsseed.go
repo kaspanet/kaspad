@@ -40,10 +40,10 @@ var (
 )
 
 // hostLookup returns the correct DNS lookup function to use depending on the
-// passed host and configuration options.  For example, .onion addresses will be
+// passed host and configuration options. For example, .onion addresses will be
 // resolved using the onion specific proxy if one was specified, but will
 // otherwise treat the normal proxy as tor unless --noonion was specified in
-// which case the lookup will fail.  Meanwhile, normal IP addresses will be
+// which case the lookup will fail. Meanwhile, normal IP addresses will be
 // resolved using tor if a proxy was specified unless --noonion was also
 // specified in which case the normal system DNS resolver will be used.
 func hostLookup(host string) ([]net.IP, error) {

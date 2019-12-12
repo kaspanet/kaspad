@@ -14,10 +14,10 @@ import (
 
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/blockdag/indexers"
-	"github.com/kaspanet/kaspad/btcjson"
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/logger"
 	"github.com/kaspanet/kaspad/mining"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -43,7 +43,7 @@ type NewBlockMsg struct {
 	Tx          *util.Tx
 }
 
-// Tag represents an identifier to use for tagging orphan transactions.  The
+// Tag represents an identifier to use for tagging orphan transactions. The
 // caller may choose any scheme it desires, however it is common to use peer IDs
 // so that orphans can be identified by which peer first relayed them.
 type Tag uint64
@@ -94,7 +94,7 @@ type Config struct {
 // control the mempool.
 type Policy struct {
 	// MaxTxVersion is the transaction version that the mempool should
-	// accept.  All transactions above this version are rejected as
+	// accept. All transactions above this version are rejected as
 	// non-standard.
 	MaxTxVersion int32
 
@@ -112,7 +112,7 @@ type Policy struct {
 	// of big orphans.
 	MaxOrphanTxSize int
 
-	// MinRelayTxFee defines the minimum transaction fee in BTC/kB to be
+	// MinRelayTxFee defines the minimum transaction fee in KAS/kB to be
 	// considered a non-zero fee.
 	MinRelayTxFee util.Amount
 }
@@ -129,7 +129,7 @@ type TxDesc struct {
 }
 
 // orphanTx is normal transaction that references an ancestor transaction
-// that is not yet available.  It also contains additional information related
+// that is not yet available. It also contains additional information related
 // to it such as an expiration time to help prevent caching the orphan forever.
 type orphanTx struct {
 	tx         *util.Tx
@@ -138,7 +138,7 @@ type orphanTx struct {
 }
 
 // TxPool is used as a source of transactions that need to be mined into blocks
-// and relayed to other peers.  It is safe for concurrent access from multiple
+// and relayed to other peers. It is safe for concurrent access from multiple
 // peers.
 type TxPool struct {
 	// The following variables must only be used atomically.
@@ -156,7 +156,7 @@ type TxPool struct {
 	lastPennyUnix int64   // unix time of last ``penny spend''
 
 	// nextExpireScan is the time after which the orphan pool will be
-	// scanned in order to evict orphans.  This is NOT a hard deadline as
+	// scanned in order to evict orphans. This is NOT a hard deadline as
 	// the scan will only run when an orphan is added to the pool as opposed
 	// to on an unconditional timer.
 	nextExpireScan time.Time
@@ -168,7 +168,7 @@ type TxPool struct {
 var _ mining.TxSource = (*TxPool)(nil)
 
 // removeOrphan is the internal function which implements the public
-// RemoveOrphan.  See the comment for RemoveOrphan for more details.
+// RemoveOrphan. See the comment for RemoveOrphan for more details.
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) removeOrphan(tx *util.Tx, removeRedeemers bool) {
@@ -241,7 +241,7 @@ func (mp *TxPool) RemoveOrphansByTag(tag Tag) uint64 {
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) limitNumOrphans() error {
 	// Scan through the orphan pool and remove any expired orphans when it's
-	// time.  This is done for efficiency so the scan only happens
+	// time. This is done for efficiency so the scan only happens
 	// periodically instead of on every orphan added to the pool.
 	if now := time.Now(); now.After(mp.nextExpireScan) {
 		origNumOrphans := len(mp.orphans)
@@ -272,9 +272,9 @@ func (mp *TxPool) limitNumOrphans() error {
 		return nil
 	}
 
-	// Remove a random entry from the map.  For most compilers, Go's
+	// Remove a random entry from the map. For most compilers, Go's
 	// range statement iterates starting at a random item although
-	// that is not 100% guaranteed by the spec.  The iteration order
+	// that is not 100% guaranteed by the spec. The iteration order
 	// is not important here because an adversary would have to be
 	// able to pull off preimage attacks on the hashing function in
 	// order to target eviction of specific entries anyways.
@@ -323,9 +323,9 @@ func (mp *TxPool) addOrphan(tx *util.Tx, tag Tag) {
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) maybeAddOrphan(tx *util.Tx, tag Tag) error {
-	// Ignore orphan transactions that are too large.  This helps avoid
+	// Ignore orphan transactions that are too large. This helps avoid
 	// a memory exhaustion attack based on sending a lot of really large
-	// orphans.  In the case there is a valid transaction larger than this,
+	// orphans. In the case there is a valid transaction larger than this,
 	// it will ultimtely be rebroadcast after the parent transactions
 	// have been mined or otherwise received.
 	//
@@ -348,8 +348,8 @@ func (mp *TxPool) maybeAddOrphan(tx *util.Tx, tag Tag) error {
 }
 
 // removeOrphanDoubleSpends removes all orphans which spend outputs spent by the
-// passed transaction from the orphan pool.  Removing those orphans then leads
-// to removing all orphans which rely on them, recursively.  This is necessary
+// passed transaction from the orphan pool. Removing those orphans then leads
+// to removing all orphans which rely on them, recursively. This is necessary
 // when a transaction is added to the main pool because it may spend outputs
 // that orphans also spend.
 //
@@ -457,7 +457,7 @@ func (mp *TxPool) HaveTransaction(hash *daghash.TxID) bool {
 }
 
 // removeTransactions is the internal function which implements the public
-// RemoveTransactions.  See the comment for RemoveTransactions for more details.
+// RemoveTransactions. See the comment for RemoveTransactions for more details.
 //
 // This method, in contrast to removeTransaction (singular), creates one utxoDiff
 // and calls removeTransactionWithDiff on it for every transaction. This is an
@@ -492,7 +492,7 @@ func (mp *TxPool) removeTransactions(txs []*util.Tx) error {
 }
 
 // removeTransaction is the internal function which implements the public
-// RemoveTransaction.  See the comment for RemoveTransaction for more details.
+// RemoveTransaction. See the comment for RemoveTransaction for more details.
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) removeTransaction(tx *util.Tx, removeDependants bool, restoreInputs bool) error {
@@ -659,8 +659,8 @@ func (mp *TxPool) RemoveTransactions(txs []*util.Tx) error {
 }
 
 // RemoveDoubleSpends removes all transactions which spend outputs spent by the
-// passed transaction from the memory pool.  Removing those transactions then
-// leads to removing all transactions which rely on them, recursively.  This is
+// passed transaction from the memory pool. Removing those transactions then
+// leads to removing all transactions which rely on them, recursively. This is
 // necessary when a block is connected to the main chain because the block may
 // contain transactions which were previously unknown to the memory pool.
 //
@@ -678,8 +678,8 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 	}
 }
 
-// addTransaction adds the passed transaction to the memory pool.  It should
-// not be called directly as it doesn't perform any validation.  This is a
+// addTransaction adds the passed transaction to the memory pool. It should
+// not be called directly as it doesn't perform any validation. This is a
 // helper for maybeAcceptTransaction.
 //
 // This function MUST be called with the mempool lock held (for writes).
@@ -785,16 +785,16 @@ func (mp *TxPool) FetchTransaction(txID *daghash.TxID) (*util.Tx, error) {
 }
 
 // maybeAcceptTransaction is the internal function which implements the public
-// MaybeAcceptTransaction.  See the comment for MaybeAcceptTransaction for
+// MaybeAcceptTransaction. See the comment for MaybeAcceptTransaction for
 // more details.
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rejectDupOrphans bool) ([]*daghash.TxID, *TxDesc, error) {
 	txID := tx.ID()
 
-	// Don't accept the transaction if it already exists in the pool.  This
+	// Don't accept the transaction if it already exists in the pool. This
 	// applies to orphan transactions as well when the reject duplicate
-	// orphans flag is set.  This check is intended to be a quick check to
+	// orphans flag is set. This check is intended to be a quick check to
 	// weed out duplicates.
 	if mp.isTransactionInPool(txID) || (rejectDupOrphans &&
 		mp.isOrphanInPool(txID)) {
@@ -811,7 +811,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rejectDupOrphans bo
 		return nil, nil, txRuleError(wire.RejectInvalid, str)
 	}
 
-	// Perform preliminary sanity checks on the transaction.  This makes
+	// Perform preliminary sanity checks on the transaction. This makes
 	// use of blockDAG which contains the invariant rules for what
 	// transactions are allowed into blocks.
 	err := blockdag.CheckTransactionSanity(tx, subnetworkID)
@@ -858,7 +858,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rejectDupOrphans bo
 			medianTimePast, &mp.cfg.Policy)
 		if err != nil {
 			// Attempt to extract a reject code from the error so
-			// it can be retained.  When not possible, fall back to
+			// it can be retained. When not possible, fall back to
 			// a non standard error.
 			rejectCode, found := extractRejectCode(err)
 			if !found {
@@ -872,10 +872,10 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rejectDupOrphans bo
 
 	// The transaction may not use any of the same outputs as other
 	// transactions already in the pool as that would ultimately result in a
-	// double spend.  This check is intended to be quick and therefore only
-	// detects double spends within the transaction pool itself.  The
+	// double spend. This check is intended to be quick and therefore only
+	// detects double spends within the transaction pool itself. The
 	// transaction could still be double spending coins from the main chain
-	// at this point.  There is a more in-depth check that happens later
+	// at this point. There is a more in-depth check that happens later
 	// after fetching the referenced transaction inputs from the main chain
 	// which examines the actual spend data and prevents double spends.
 	err = mp.checkPoolDoubleSpend(tx)
@@ -896,7 +896,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rejectDupOrphans bo
 	}
 
 	// Transaction is an orphan if any of the referenced transaction outputs
-	// don't exist or are already spent.  Adding orphans to the orphan pool
+	// don't exist or are already spent. Adding orphans to the orphan pool
 	// is not handled by this function, and the caller should use
 	// maybeAddOrphan if this behavior is desired.
 	var missingParents []*daghash.TxID
@@ -963,7 +963,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rejectDupOrphans bo
 		err := checkInputsStandard(tx, mp.mpUTXOSet)
 		if err != nil {
 			// Attempt to extract a reject code from the error so
-			// it can be retained.  When not possible, fall back to
+			// it can be retained. When not possible, fall back to
 			// a non standard error.
 			rejectCode, found := extractRejectCode(err)
 			if !found {
@@ -989,11 +989,11 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rejectDupOrphans bo
 	//
 	// Most miners allow a free transaction area in blocks they mine to go
 	// alongside the area used for high-priority transactions as well as
-	// transactions with fees.  A transaction size of up to 1000 bytes is
-	// considered safe to go into this section.  Further, the minimum fee
+	// transactions with fees. A transaction size of up to 1000 bytes is
+	// considered safe to go into this section. Further, the minimum fee
 	// calculated below on its own would encourage several small
 	// transactions to avoid fees rather than one single larger transaction
-	// which is more desirable.  Therefore, as long as the size of the
+	// which is more desirable. Therefore, as long as the size of the
 	// transaction does not exceeed 1000 less than the reserved space for
 	// high-priority transactions, don't require a fee for it.
 	serializedSize := int64(tx.MsgTx().SerializeSize())
@@ -1031,13 +1031,13 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rejectDupOrphans bo
 }
 
 // MaybeAcceptTransaction is the main workhorse for handling insertion of new
-// free-standing transactions into a memory pool.  It includes functionality
+// free-standing transactions into a memory pool. It includes functionality
 // such as rejecting duplicate transactions, ensuring transactions follow all
 // rules, detecting orphan transactions, and insertion into the memory pool.
 //
 // If the transaction is an orphan (missing parent transactions), the
 // transaction is NOT added to the orphan pool, but each unknown referenced
-// parent is returned.  Use ProcessTransaction instead if new orphans should
+// parent is returned. Use ProcessTransaction instead if new orphans should
 // be added to the orphan pool.
 //
 // This function is safe for concurrent access.
@@ -1053,7 +1053,7 @@ func (mp *TxPool) MaybeAcceptTransaction(tx *util.Tx, isNew bool) ([]*daghash.Tx
 }
 
 // processOrphans is the internal function which implements the public
-// ProcessOrphans.  See the comment for ProcessOrphans for more details.
+// ProcessOrphans. See the comment for ProcessOrphans for more details.
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) processOrphans(acceptedTx *util.Tx) []*TxDesc {
@@ -1070,9 +1070,9 @@ func (mp *TxPool) processOrphans(acceptedTx *util.Tx) []*TxDesc {
 		prevOut := wire.Outpoint{TxID: *processItem.ID()}
 		for txOutIdx := range processItem.MsgTx().TxOut {
 			// Look up all orphans that redeem the output that is
-			// now available.  This will typically only be one, but
+			// now available. This will typically only be one, but
 			// it could be multiple if the orphan pool contains
-			// double spends.  While it may seem odd that the orphan
+			// double spends. While it may seem odd that the orphan
 			// pool would allow this since there can only possibly
 			// ultimately be a single redeemer, it's important to
 			// track it this way to prevent malicious actors from
@@ -1094,12 +1094,12 @@ func (mp *TxPool) processOrphans(acceptedTx *util.Tx) []*TxDesc {
 					// The orphan is now invalid, so there
 					// is no way any other orphans which
 					// redeem any of its outputs can be
-					// accepted.  Remove them.
+					// accepted. Remove them.
 					mp.removeOrphan(tx, true)
 					break
 				}
 
-				// Transaction is still an orphan.  Try the next
+				// Transaction is still an orphan. Try the next
 				// orphan which redeems this output.
 				if len(missing) > 0 {
 					continue
@@ -1137,11 +1137,11 @@ func (mp *TxPool) processOrphans(acceptedTx *util.Tx) []*TxDesc {
 
 // ProcessOrphans determines if there are any orphans which depend on the passed
 // transaction hash (it is possible that they are no longer orphans) and
-// potentially accepts them to the memory pool.  It repeats the process for the
+// potentially accepts them to the memory pool. It repeats the process for the
 // newly accepted transactions (to detect further orphans which may no longer be
 // orphans) until there are no more.
 //
-// It returns a slice of transactions added to the mempool.  A nil slice means
+// It returns a slice of transactions added to the mempool. A nil slice means
 // no transactions were moved from the orphan pool to the mempool.
 //
 // This function is safe for concurrent access.
@@ -1156,11 +1156,11 @@ func (mp *TxPool) ProcessOrphans(acceptedTx *util.Tx) []*TxDesc {
 }
 
 // ProcessTransaction is the main workhorse for handling insertion of new
-// free-standing transactions into the memory pool.  It includes functionality
+// free-standing transactions into the memory pool. It includes functionality
 // such as rejecting duplicate transactions, ensuring transactions follow all
 // rules, orphan transaction handling, and insertion into the memory pool.
 //
-// It returns a slice of transactions added to the mempool.  When the
+// It returns a slice of transactions added to the mempool. When the
 // error is nil, the list will include the passed transaction itself along
 // with any additional orphan transaactions that were added as a result of
 // the passed one being accepted.
@@ -1197,7 +1197,7 @@ func (mp *TxPool) ProcessTransaction(tx *util.Tx, allowOrphan bool, tag Tag) ([]
 		return acceptedTxs, nil
 	}
 
-	// The transaction is an orphan (has inputs missing).  Reject
+	// The transaction is an orphan (has inputs missing). Reject
 	// it if the flag to allow orphans is not set.
 	if !allowOrphan {
 		// Only use the first missing parent transaction in
@@ -1206,7 +1206,7 @@ func (mp *TxPool) ProcessTransaction(tx *util.Tx, allowOrphan bool, tag Tag) ([]
 		// NOTE: RejectDuplicate is really not an accurate
 		// reject code here, but it matches the reference
 		// implementation and there isn't a better choice due
-		// to the limited number of reject codes.  Missing
+		// to the limited number of reject codes. Missing
 		// inputs is assumed to mean they are already spent
 		// which is not really always the case.
 		str := fmt.Sprintf("orphan transaction %s references "+
@@ -1220,7 +1220,7 @@ func (mp *TxPool) ProcessTransaction(tx *util.Tx, allowOrphan bool, tag Tag) ([]
 	return nil, err
 }
 
-// Count returns the number of transactions in the main pool.  It does not
+// Count returns the number of transactions in the main pool. It does not
 // include the orphan pool.
 //
 // This function is safe for concurrent access.
@@ -1232,7 +1232,7 @@ func (mp *TxPool) Count() int {
 	return count
 }
 
-// DepCount returns the number of dependent transactions in the main pool.  It does not
+// DepCount returns the number of dependent transactions in the main pool. It does not
 // include the orphan pool.
 //
 // This function is safe for concurrent access.
@@ -1296,24 +1296,24 @@ func (mp *TxPool) MiningDescs() []*mining.TxDesc {
 }
 
 // RawMempoolVerbose returns all of the entries in the mempool as a fully
-// populated btcjson result.
+// populated jsonrpc result.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) RawMempoolVerbose() map[string]*btcjson.GetRawMempoolVerboseResult {
+func (mp *TxPool) RawMempoolVerbose() map[string]*rpcmodel.GetRawMempoolVerboseResult {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
-	result := make(map[string]*btcjson.GetRawMempoolVerboseResult, len(mp.pool))
+	result := make(map[string]*rpcmodel.GetRawMempoolVerboseResult, len(mp.pool))
 
 	for _, desc := range mp.pool {
 		// Calculate the current priority based on the inputs to
-		// the transaction.  Use zero if one or more of the
+		// the transaction. Use zero if one or more of the
 		// input transactions can't be found for some reason.
 		tx := desc.Tx
 
-		mpd := &btcjson.GetRawMempoolVerboseResult{
+		mpd := &rpcmodel.GetRawMempoolVerboseResult{
 			Size:    int32(tx.MsgTx().SerializeSize()),
-			Fee:     util.Amount(desc.Fee).ToBTC(),
+			Fee:     util.Amount(desc.Fee).ToKAS(),
 			Time:    desc.Added.Unix(),
 			Height:  desc.Height,
 			Depends: make([]string, 0),
@@ -1333,7 +1333,7 @@ func (mp *TxPool) RawMempoolVerbose() map[string]*btcjson.GetRawMempoolVerboseRe
 }
 
 // LastUpdated returns the last time a transaction was added to or removed from
-// the main pool.  It does not include the orphan pool.
+// the main pool. It does not include the orphan pool.
 //
 // This function is safe for concurrent access.
 func (mp *TxPool) LastUpdated() time.Time {
@@ -1348,9 +1348,9 @@ func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan NewBlockMsg) err
 	oldUTXOSet := mp.mpUTXOSet
 
 	// Remove all of the transactions (except the coinbase) in the
-	// connected block from the transaction pool.  Secondly, remove any
+	// connected block from the transaction pool. Secondly, remove any
 	// transactions which are now double spends as a result of these
-	// new transactions.  Finally, remove any transaction that is
+	// new transactions. Finally, remove any transaction that is
 	// no longer an orphan. Transactions which depend on a confirmed
 	// transaction are NOT removed recursively because they are still
 	// valid.

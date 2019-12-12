@@ -18,7 +18,7 @@ import (
 func main() {
 	// Only override the handlers for notifications you care about.
 	// Also note most of these handlers will only be called if you register
-	// for notifications.  See the documentation of the rpcclient
+	// for notifications. See the documentation of the rpcclient
 	// NotificationHandlers type for more details about each handler.
 	ntfnHandlers := rpcclient.NotificationHandlers{
 		OnFilteredBlockAdded: func(height uint64, header *wire.BlockHeader, txns []*util.Tx) {
@@ -27,9 +27,9 @@ func main() {
 		},
 	}
 
-	// Connect to local btcd RPC server using websockets.
-	btcdHomeDir := util.AppDataDir("btcd", false)
-	certs, err := ioutil.ReadFile(filepath.Join(btcdHomeDir, "rpc.cert"))
+	// Connect to local kaspad RPC server using websockets.
+	kaspadHomeDir := util.AppDataDir("kaspad", false)
+	certs, err := ioutil.ReadFile(filepath.Join(kaspadHomeDir, "rpc.cert"))
 	if err != nil {
 		log.Fatal(err)
 	}

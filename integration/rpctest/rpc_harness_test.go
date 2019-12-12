@@ -28,7 +28,7 @@ func testSendOutputs(r *Harness, t *testing.T) {
 			t.Fatalf("unable to get new address: %v", err)
 		}
 
-		// Next, send amt BTC to this address, spending from one of our mature
+		// Next, send amt KAS to this address, spending from one of our mature
 		// coinbase outputs.
 		addrScript, err := txscript.PayToAddrScript(addr)
 		if err != nil {
@@ -63,7 +63,7 @@ func testSendOutputs(r *Harness, t *testing.T) {
 
 	// First, generate a small spend which will require only a single
 	// input.
-	txid := genSpend(util.Amount(5 * util.SatoshiPerBitcoin))
+	txid := genSpend(util.Amount(5 * util.SompiPerKaspa))
 
 	// Generate a single block, the transaction the wallet created should
 	// be found in this block.
@@ -75,7 +75,7 @@ func testSendOutputs(r *Harness, t *testing.T) {
 
 	// Next, generate a spend much greater than the block reward. This
 	// transaction should also have been mined properly.
-	txid = genSpend(util.Amount(500 * util.SatoshiPerBitcoin))
+	txid = genSpend(util.Amount(500 * util.SompiPerKaspa))
 	blockHashes, err = r.Node.Generate(1)
 	if err != nil {
 		t.Fatalf("unable to generate single block: %v", err)
@@ -178,7 +178,7 @@ func testJoinMempools(r *Harness, t *testing.T) {
 		t.Fatal("main test harness mempool not empty")
 	}
 
-	// Create a local test harness with only the genesis block.  The nodes
+	// Create a local test harness with only the genesis block. The nodes
 	// will be synced below so the same transaction can be sent to both
 	// nodes without it being an orphan.
 	harness, err := New(&dagconfig.SimNetParams, nil, nil)
@@ -335,7 +335,7 @@ func testGenerateAndSubmitBlock(r *Harness, t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create script: %v", err)
 	}
-	output := wire.NewTxOut(util.SatoshiPerBitcoin, scriptPubKey)
+	output := wire.NewTxOut(util.SompiPerKaspa, scriptPubKey)
 
 	const numTxns = 5
 	txns := make([]*util.Tx, 0, numTxns)
@@ -402,7 +402,7 @@ func testGenerateAndSubmitBlockWithCustomCoinbaseOutputs(r *Harness,
 	if err != nil {
 		t.Fatalf("unable to create script: %v", err)
 	}
-	output := wire.NewTxOut(util.SatoshiPerBitcoin, scriptPubKey)
+	output := wire.NewTxOut(util.SompiPerKaspa, scriptPubKey)
 
 	const numTxns = 5
 	txns := make([]*util.Tx, 0, numTxns)
@@ -478,8 +478,8 @@ func testMemWalletReorg(r *Harness, t *testing.T) {
 	}
 	defer harness.TearDown()
 
-	// The internal wallet of this harness should now have 250 BTC.
-	expectedBalance := util.Amount(250 * util.SatoshiPerBitcoin)
+	// The internal wallet of this harness should now have 250 KAS.
+	expectedBalance := util.Amount(250 * util.SompiPerKaspa)
 	walletBalance := harness.ConfirmedBalance()
 	if expectedBalance != walletBalance {
 		t.Fatalf("wallet balance incorrect: expected %v, got %v",
@@ -496,7 +496,7 @@ func testMemWalletReorg(r *Harness, t *testing.T) {
 		t.Fatalf("unable to join node on blocks: %v", err)
 	}
 
-	// The original wallet should now have a balance of 0 BTC as its entire
+	// The original wallet should now have a balance of 0 KAS as its entire
 	// chain should have been decimated in favor of the main harness'
 	// chain.
 	expectedBalance = util.Amount(0)
@@ -520,14 +520,14 @@ func testMemWalletLockedOutputs(r *Harness, t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create script: %v", err)
 	}
-	outputAmt := util.Amount(50 * util.SatoshiPerBitcoin)
+	outputAmt := util.Amount(50 * util.SompiPerKaspa)
 	output := wire.NewTxOut(int64(outputAmt), scriptPubKey)
 	tx, err := r.CreateTransaction([]*wire.TxOut{output}, 10)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
 
-	// The current wallet balance should now be at least 50 BTC less
+	// The current wallet balance should now be at least 50 KAS less
 	// (accounting for fees) than the period balance
 	currentBalance := r.ConfirmedBalance()
 	if !(currentBalance <= startingBalance-outputAmt) {
@@ -580,7 +580,7 @@ func TestMain(m *testing.M) {
 
 		// Even though the harness was not fully setup, it still needs
 		// to be torn down to ensure all resources such as temp
-		// directories are cleaned up.  The error is intentionally
+		// directories are cleaned up. The error is intentionally
 		// ignored since this is already an error path and nothing else
 		// could be done about it anyways.
 		_ = mainHarness.TearDown()
@@ -601,9 +601,9 @@ func TestMain(m *testing.M) {
 }
 
 func TestHarness(t *testing.T) {
-	// We should have (numMatureOutputs * 50 BTC) of mature unspendable
+	// We should have (numMatureOutputs * 50 KAS) of mature unspendable
 	// outputs.
-	expectedBalance := util.Amount(numMatureOutputs * 50 * util.SatoshiPerBitcoin)
+	expectedBalance := util.Amount(numMatureOutputs * 50 * util.SompiPerKaspa)
 	harnessBalance := mainHarness.ConfirmedBalance()
 	if harnessBalance != expectedBalance {
 		t.Fatalf("expected wallet balance of %v instead have %v",

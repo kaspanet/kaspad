@@ -7,7 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// OnVersion is invoked when a peer receives a version bitcoin message
+// OnVersion is invoked when a peer receives a version kaspa message
 // and is used to negotiate the protocol version details as well as kick start
 // the communications.
 func (sp *Peer) OnVersion(_ *peer.Peer, msg *wire.MsgVersion) {
@@ -23,7 +23,7 @@ func (sp *Peer) OnVersion(_ *peer.Peer, msg *wire.MsgVersion) {
 	sp.setDisableRelayTx(msg.DisableRelayTx)
 
 	// Update the address manager and request known addresses from the
-	// remote peer for outbound connections.  This is skipped when running
+	// remote peer for outbound connections. This is skipped when running
 	// on the simulation test network since it is only intended to connect
 	// to specified peers and actively avoids advertising and connecting to
 	// discovered peers.

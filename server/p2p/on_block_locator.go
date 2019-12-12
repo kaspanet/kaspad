@@ -5,7 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// OnBlockLocator is invoked when a peer receives a locator bitcoin
+// OnBlockLocator is invoked when a peer receives a locator kaspa
 // message.
 func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgBlockLocator) {
 	// Find the highest known shared block between the peers, and asks

@@ -5,7 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// BlockLocator is used to help locate a specific block.  The algorithm for
+// BlockLocator is used to help locate a specific block. The algorithm for
 // building the block locator is to add block hashes in reverse order on the
 // block's selected parent chain until the desired stop block is reached.
 // In order to keep the list of locator hashes to a reasonable number of entries,
@@ -83,7 +83,7 @@ func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) BlockLocator {
 	}
 
 	// Calculate the max number of entries that will ultimately be in the
-	// block locator.  See the description of the algorithm for how these
+	// block locator. See the description of the algorithm for how these
 	// numbers are derived.
 
 	// startNode.hash + stopNode.hash.
@@ -124,7 +124,7 @@ func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) BlockLocator {
 //
 // This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) FindNextLocatorBoundaries(locator BlockLocator) (startHash, stopHash *daghash.Hash) {
-	// Find the most recent locator block hash in the DAG.  In the case none of
+	// Find the most recent locator block hash in the DAG. In the case none of
 	// the hashes in the locator are in the DAG, fall back to the genesis block.
 	stopNode := dag.genesis
 	nextBlockLocatorIndex := int64(len(locator) - 1)

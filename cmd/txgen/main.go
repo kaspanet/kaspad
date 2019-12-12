@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/kaspanet/kaspad/btcec"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/signal"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/base58"
@@ -14,11 +14,11 @@ var (
 	activeNetParams  = &dagconfig.DevNetParams
 	p2pkhAddress     util.Address
 	secondaryAddress util.Address
-	privateKey       *btcec.PrivateKey
+	privateKey       *ecc.PrivateKey
 )
 
 // privateKeyToP2pkhAddress generates p2pkh address from private key.
-func privateKeyToP2pkhAddress(key *btcec.PrivateKey, net *dagconfig.Params) (util.Address, error) {
+func privateKeyToP2pkhAddress(key *ecc.PrivateKey, net *dagconfig.Params) (util.Address, error) {
 	return util.NewAddressPubKeyHashFromPublicKey(key.PubKey().SerializeCompressed(), net.Prefix)
 }
 
@@ -31,7 +31,7 @@ func main() {
 	}
 
 	privateKeyBytes := base58.Decode(cfg.PrivateKey)
-	privateKey, _ = btcec.PrivKeyFromBytes(btcec.S256(), privateKeyBytes)
+	privateKey, _ = ecc.PrivKeyFromBytes(ecc.S256(), privateKeyBytes)
 
 	p2pkhAddress, err = privateKeyToP2pkhAddress(privateKey, activeNetParams)
 	if err != nil {

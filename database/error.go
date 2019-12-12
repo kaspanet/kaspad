@@ -82,18 +82,18 @@ const (
 	ErrKeyRequired
 
 	// ErrKeyTooLarge indicates an attmempt to insert a key that is larger
-	// than the max allowed key size.  The max key size depends on the
-	// specific backend driver being used.  As a general rule, key sizes
+	// than the max allowed key size. The max key size depends on the
+	// specific backend driver being used. As a general rule, key sizes
 	// should be relatively, so this should rarely be an issue.
 	ErrKeyTooLarge
 
 	// ErrValueTooLarge indicates an attmpt to insert a value that is larger
-	// than max allowed value size.  The max key size depends on the
+	// than max allowed value size. The max key size depends on the
 	// specific backend driver being used.
 	ErrValueTooLarge
 
 	// ErrIncompatibleValue indicates the value in question is invalid for
-	// the specific requested operation.  For example, trying create or
+	// the specific requested operation. For example, trying create or
 	// delete a bucket with an existing non-bucket key, attempting to create
 	// or delete a non-bucket key with an existing bucket key, or trying to
 	// delete a value via a cursor when it points to a nested bucket.
@@ -112,7 +112,7 @@ const (
 	ErrBlockExists
 
 	// ErrBlockRegionInvalid indicates a region that exceeds the bounds of
-	// the specified block was requested.  When the hash provided by the
+	// the specified block was requested. When the hash provided by the
 	// region does not correspond to an existing block, the error will be
 	// ErrBlockNotFound instead.
 	ErrBlockRegionInvalid
@@ -165,7 +165,7 @@ func (e ErrorCode) String() string {
 }
 
 // Error provides a single type for errors that can happen during database
-// operation.  It is used to indicate several types of failures including errors
+// operation. It is used to indicate several types of failures including errors
 // with caller requests such as specifying invalid block regions or attempting
 // to access data against closed database transactions, driver errors, errors
 // retrieving data, and errors communicating with database servers.
@@ -174,7 +174,7 @@ func (e ErrorCode) String() string {
 // access the ErrorCode field to ascertain the specific reason for the failure.
 //
 // The ErrDriverSpecific error code will also have the Err field set with the
-// underlying error.  Depending on the backend driver, the Err field might be
+// underlying error. Depending on the backend driver, the Err field might be
 // set to the underlying error for other error codes as well.
 type Error struct {
 	ErrorCode   ErrorCode // Describes the kind of error
@@ -190,7 +190,7 @@ func (e Error) Error() string {
 	return e.Description
 }
 
-// makeError creates an Error given a set of arguments.  The error code must
+// makeError creates an Error given a set of arguments. The error code must
 // be one of the error codes provided by this package.
 func makeError(c ErrorCode, desc string, err error) Error {
 	return Error{ErrorCode: c, Description: desc, Err: err}

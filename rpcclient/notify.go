@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"time"
 
-	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
@@ -57,7 +57,7 @@ func newNotificationState() *notificationState {
 }
 
 // newNilFutureResult returns a new future result channel that already has the
-// result waiting on the channel with the reply set to nil.  This is useful
+// result waiting on the channel with the reply set to nil. This is useful
 // to ignore things such as notifications when the caller didn't specify any
 // notification handlers.
 func newNilFutureResult() chan *response {
@@ -67,12 +67,12 @@ func newNilFutureResult() chan *response {
 }
 
 // NotificationHandlers defines callback function pointers to invoke with
-// notifications.  Since all of the functions are nil by default, all
+// notifications. Since all of the functions are nil by default, all
 // notifications are effectively ignored until their handlers are set to a
 // concrete callback.
 type NotificationHandlers struct {
 	// OnClientConnected is invoked when the client connects or reconnects
-	// to the RPC server.  This callback is run async with the rest of the
+	// to the RPC server. This callback is run async with the rest of the
 	// notification handlers, and is safe for blocking client requests.
 	OnClientConnected func()
 
@@ -84,9 +84,9 @@ type NotificationHandlers struct {
 	OnBlockAdded func(hash *daghash.Hash, height int32, t time.Time)
 
 	// OnFilteredBlockAdded is invoked when a block is connected to the
-	// bloackDAG.  It will only be invoked if a preceding call to
+	// bloackDAG. It will only be invoked if a preceding call to
 	// NotifyBlocks has been made to register for the notification and the
-	// function is non-nil.  Its parameters differ from OnBlockAdded: it
+	// function is non-nil. Its parameters differ from OnBlockAdded: it
 	// receives the block's height, header, and relevant transactions.
 	OnFilteredBlockAdded func(height uint64, header *wire.BlockHeader,
 		txs []*util.Tx)
@@ -100,25 +100,22 @@ type NotificationHandlers struct {
 
 	// OnRelevantTxAccepted is invoked when an unmined transaction passes
 	// the client's transaction filter.
-	//
-	// NOTE: This is a btcsuite extension ported from
-	// github.com/decred/dcrrpcclient.
 	OnRelevantTxAccepted func(transaction []byte)
 
 	// OnTxAccepted is invoked when a transaction is accepted into the
-	// memory pool.  It will only be invoked if a preceding call to
+	// memory pool. It will only be invoked if a preceding call to
 	// NotifyNewTransactions with the verbose flag set to false has been
 	// made to register for the notification and the function is non-nil.
 	OnTxAccepted func(hash *daghash.Hash, amount util.Amount)
 
 	// OnTxAccepted is invoked when a transaction is accepted into the
-	// memory pool.  It will only be invoked if a preceding call to
+	// memory pool. It will only be invoked if a preceding call to
 	// NotifyNewTransactions with the verbose flag set to true has been
 	// made to register for the notification and the function is non-nil.
-	OnTxAcceptedVerbose func(txDetails *btcjson.TxRawResult)
+	OnTxAcceptedVerbose func(txDetails *rpcmodel.TxRawResult)
 
 	// OnUnknownNotification is invoked when an unrecognized notification
-	// is received.  This typically means the notification handling code
+	// is received. This typically means the notification handling code
 	// for this package needs to be updated for a new notification type or
 	// the caller is using a custom notification this package does not know
 	// about.
@@ -139,7 +136,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 	switch ntfn.Method {
 
 	// ChainChangedNtfnMethod
-	case btcjson.ChainChangedNtfnMethod:
+	case rpcmodel.ChainChangedNtfnMethod:
 		// Ignore the notification if the client is not interested in
 		// it.
 		if c.ntfnHandlers.OnChainChanged == nil {
@@ -156,7 +153,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		c.ntfnHandlers.OnChainChanged(removedChainBlockHashes, addedChainBlocks)
 
 	// OnFilteredBlockAdded
-	case btcjson.FilteredBlockAddedNtfnMethod:
+	case rpcmodel.FilteredBlockAddedNtfnMethod:
 		// Ignore the notification if the client is not interested in
 		// it.
 		if c.ntfnHandlers.OnFilteredBlockAdded == nil {
@@ -175,7 +172,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 			blockHeader, transactions)
 
 	// OnRelevantTxAccepted
-	case btcjson.RelevantTxAcceptedNtfnMethod:
+	case rpcmodel.RelevantTxAcceptedNtfnMethod:
 		// Ignore the notification if the client is not interested in
 		// it.
 		if c.ntfnHandlers.OnRelevantTxAccepted == nil {
@@ -192,7 +189,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		c.ntfnHandlers.OnRelevantTxAccepted(transaction)
 
 	// OnTxAccepted
-	case btcjson.TxAcceptedNtfnMethod:
+	case rpcmodel.TxAcceptedNtfnMethod:
 		// Ignore the notification if the client is not interested in
 		// it.
 		if c.ntfnHandlers.OnTxAccepted == nil {
@@ -209,7 +206,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		c.ntfnHandlers.OnTxAccepted(hash, amt)
 
 	// OnTxAcceptedVerbose
-	case btcjson.TxAcceptedVerboseNtfnMethod:
+	case rpcmodel.TxAcceptedVerboseNtfnMethod:
 		// Ignore the notification if the client is not interested in
 		// it.
 		if c.ntfnHandlers.OnTxAcceptedVerbose == nil {
@@ -237,7 +234,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 
 // wrongNumParams is an error type describing an unparseable JSON-RPC
 // notificiation due to an incorrect number of parameters for the
-// expected notification type.  The value is the number of parameters
+// expected notification type. The value is the number of parameters
 // of the invalid notification.
 type wrongNumParams int
 
@@ -267,7 +264,7 @@ func parseChainChangedParams(params []json.RawMessage) (removedChainBlockHashes 
 	}
 
 	// Unmarshal first parameter as a raw transaction result object.
-	var rawParam btcjson.ChainChangedRawParam
+	var rawParam rpcmodel.ChainChangedRawParam
 	err = json.Unmarshal(params[0], &rawParam)
 	if err != nil {
 		return nil, nil, err
@@ -318,9 +315,6 @@ func parseChainChangedParams(params []json.RawMessage) (removedChainBlockHashes 
 
 // parseFilteredBlockAddedParams parses out the parameters included in a
 // filteredblockadded notification.
-//
-// NOTE: This is a btcd extension ported from github.com/decred/dcrrpcclient
-// and requires a websocket connection.
 func parseFilteredBlockAddedParams(params []json.RawMessage) (uint64,
 	*wire.BlockHeader, []*util.Tx, error) {
 
@@ -395,7 +389,7 @@ func parseRelevantTxAcceptedParams(params []json.RawMessage) (transaction []byte
 // the block it's mined in from the parameters of recvtx and redeemingtx
 // notifications.
 func parseChainTxNtfnParams(params []json.RawMessage) (*util.Tx,
-	*btcjson.BlockDetails, error) {
+	*rpcmodel.BlockDetails, error) {
 
 	if len(params) == 0 || len(params) > 2 {
 		return nil, nil, wrongNumParams(len(params))
@@ -410,7 +404,7 @@ func parseChainTxNtfnParams(params []json.RawMessage) (*util.Tx,
 
 	// If present, unmarshal second optional parameter as the block details
 	// JSON object.
-	var block *btcjson.BlockDetails
+	var block *rpcmodel.BlockDetails
 	if len(params) > 1 {
 		err = json.Unmarshal(params[1], &block)
 		if err != nil {
@@ -475,7 +469,7 @@ func parseTxAcceptedNtfnParams(params []json.RawMessage) (*daghash.Hash,
 
 // parseTxAcceptedVerboseNtfnParams parses out details about a raw transaction
 // from the parameters of a txacceptedverbose notification.
-func parseTxAcceptedVerboseNtfnParams(params []json.RawMessage) (*btcjson.TxRawResult,
+func parseTxAcceptedVerboseNtfnParams(params []json.RawMessage) (*rpcmodel.TxRawResult,
 	error) {
 
 	if len(params) != 1 {
@@ -483,7 +477,7 @@ func parseTxAcceptedVerboseNtfnParams(params []json.RawMessage) (*btcjson.TxRawR
 	}
 
 	// Unmarshal first parameter as a raw transaction result object.
-	var rawTx btcjson.TxRawResult
+	var rawTx rpcmodel.TxRawResult
 	err := json.Unmarshal(params[0], &rawTx)
 	if err != nil {
 		return nil, err
@@ -511,8 +505,6 @@ func (r FutureNotifyBlocksResult) Receive() error {
 // the returned instance.
 //
 // See NotifyBlocks for the blocking version and more details.
-//
-// NOTE: This is a btcd extension and requires a websocket connection.
 func (c *Client) NotifyBlocksAsync() FutureNotifyBlocksResult {
 	// Not supported in HTTP POST mode.
 	if c.config.HTTPPostMode {
@@ -525,19 +517,17 @@ func (c *Client) NotifyBlocksAsync() FutureNotifyBlocksResult {
 		return newNilFutureResult()
 	}
 
-	cmd := btcjson.NewNotifyBlocksCmd()
+	cmd := rpcmodel.NewNotifyBlocksCmd()
 	return c.sendCmd(cmd)
 }
 
 // NotifyBlocks registers the client to receive notifications when blocks are
-// connected and disconnected from the main chain.  The notifications are
-// delivered to the notification handlers associated with the client.  Calling
+// connected and disconnected from the main chain. The notifications are
+// delivered to the notification handlers associated with the client. Calling
 // this function has no effect if there are no notification handlers and will
 // result in an error if the client is configured to run in HTTP POST mode.
 //
 // The notifications delivered as a result of this call will be via OnBlockAdded
-//
-// NOTE: This is a btcd extension and requires a websocket connection.
 func (c *Client) NotifyBlocks() error {
 	return c.NotifyBlocksAsync().Receive()
 }
@@ -558,8 +548,6 @@ func (r FutureNotifyChainChangesResult) Receive() error {
 // the returned instance.
 //
 // See NotifyChainChanges for the blocking version and more details.
-//
-// NOTE: This is a btcd extension and requires a websocket connection.
 func (c *Client) NotifyChainChangesAsync() FutureNotifyBlocksResult {
 	// Not supported in HTTP POST mode.
 	if c.config.HTTPPostMode {
@@ -572,7 +560,7 @@ func (c *Client) NotifyChainChangesAsync() FutureNotifyBlocksResult {
 		return newNilFutureResult()
 	}
 
-	cmd := btcjson.NewNotifyChainChangesCmd()
+	cmd := rpcmodel.NewNotifyChainChangesCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -583,16 +571,14 @@ func (c *Client) NotifyChainChangesAsync() FutureNotifyBlocksResult {
 // if the client is configured to run in HTTP POST mode.
 //
 // The notifications delivered as a result of this call will be via OnBlockAdded
-//
-// NOTE: This is a btcd extension and requires a websocket connection.
 func (c *Client) NotifyChainChanges() error {
 	return c.NotifyChainChangesAsync().Receive()
 }
 
-// newOutpointFromWire constructs the btcjson representation of a transaction
+// newOutpointFromWire constructs the jsonrpc representation of a transaction
 // outpoint from the wire type.
-func newOutpointFromWire(op *wire.Outpoint) btcjson.Outpoint {
-	return btcjson.Outpoint{
+func newOutpointFromWire(op *wire.Outpoint) rpcmodel.Outpoint {
+	return rpcmodel.Outpoint{
 		TxID:  op.TxID.String(),
 		Index: op.Index,
 	}
@@ -614,8 +600,6 @@ func (r FutureNotifyNewTransactionsResult) Receive() error {
 // function on the returned instance.
 //
 // See NotifyNewTransactionsAsync for the blocking version and more details.
-//
-// NOTE: This is a btcd extension and requires a websocket connection.
 func (c *Client) NotifyNewTransactionsAsync(verbose bool, subnetworkID *string) FutureNotifyNewTransactionsResult {
 	// Not supported in HTTP POST mode.
 	if c.config.HTTPPostMode {
@@ -628,37 +612,29 @@ func (c *Client) NotifyNewTransactionsAsync(verbose bool, subnetworkID *string) 
 		return newNilFutureResult()
 	}
 
-	cmd := btcjson.NewNotifyNewTransactionsCmd(&verbose, subnetworkID)
+	cmd := rpcmodel.NewNotifyNewTransactionsCmd(&verbose, subnetworkID)
 	return c.sendCmd(cmd)
 }
 
 // NotifyNewTransactions registers the client to receive notifications every
-// time a new transaction is accepted to the memory pool.  The notifications are
-// delivered to the notification handlers associated with the client.  Calling
+// time a new transaction is accepted to the memory pool. The notifications are
+// delivered to the notification handlers associated with the client. Calling
 // this function has no effect if there are no notification handlers and will
 // result in an error if the client is configured to run in HTTP POST mode.
 //
 // The notifications delivered as a result of this call will be via one of
 // OnTxAccepted (when verbose is false) or OnTxAcceptedVerbose (when verbose is
 // true).
-//
-// NOTE: This is a btcd extension and requires a websocket connection.
 func (c *Client) NotifyNewTransactions(verbose bool, subnetworkID *string) error {
 	return c.NotifyNewTransactionsAsync(verbose, subnetworkID).Receive()
 }
 
 // FutureLoadTxFilterResult is a future promise to deliver the result
 // of a LoadTxFilterAsync RPC invocation (or an applicable error).
-//
-// NOTE: This is a btcd extension ported from github.com/decred/dcrrpcclient
-// and requires a websocket connection.
 type FutureLoadTxFilterResult chan *response
 
 // Receive waits for the response promised by the future and returns an error
 // if the registration was not successful.
-//
-// NOTE: This is a btcd extension ported from github.com/decred/dcrrpcclient
-// and requires a websocket connection.
 func (r FutureLoadTxFilterResult) Receive() error {
 	_, err := receiveFuture(r)
 	return err
@@ -669,9 +645,6 @@ func (r FutureLoadTxFilterResult) Receive() error {
 // function on the returned instance.
 //
 // See LoadTxFilter for the blocking version and more details.
-//
-// NOTE: This is a btcd extension ported from github.com/decred/dcrrpcclient
-// and requires a websocket connection.
 func (c *Client) LoadTxFilterAsync(reload bool, addresses []util.Address,
 	outpoints []wire.Outpoint) FutureLoadTxFilterResult {
 
@@ -679,24 +652,21 @@ func (c *Client) LoadTxFilterAsync(reload bool, addresses []util.Address,
 	for i, a := range addresses {
 		addrStrs[i] = a.EncodeAddress()
 	}
-	outpointObjects := make([]btcjson.Outpoint, len(outpoints))
+	outpointObjects := make([]rpcmodel.Outpoint, len(outpoints))
 	for i := range outpoints {
-		outpointObjects[i] = btcjson.Outpoint{
+		outpointObjects[i] = rpcmodel.Outpoint{
 			TxID:  outpoints[i].TxID.String(),
 			Index: outpoints[i].Index,
 		}
 	}
 
-	cmd := btcjson.NewLoadTxFilterCmd(reload, addrStrs, outpointObjects)
+	cmd := rpcmodel.NewLoadTxFilterCmd(reload, addrStrs, outpointObjects)
 	return c.sendCmd(cmd)
 }
 
 // LoadTxFilter loads, reloads, or adds data to a websocket client's transaction
-// filter.  The filter is consistently updated based on inspected transactions
+// filter. The filter is consistently updated based on inspected transactions
 // during mempool acceptance, block acceptance, and for all rescanned blocks.
-//
-// NOTE: This is a btcd extension ported from github.com/decred/dcrrpcclient
-// and requires a websocket connection.
 func (c *Client) LoadTxFilter(reload bool, addresses []util.Address, outpoints []wire.Outpoint) error {
 	return c.LoadTxFilterAsync(reload, addresses, outpoints).Receive()
 }

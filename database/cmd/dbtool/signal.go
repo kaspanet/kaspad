@@ -18,7 +18,7 @@ var addHandlerChannel = make(chan func())
 
 // mainInterruptHandler listens for SIGINT (Ctrl+C) signals on the
 // interruptChannel and invokes the registered interruptCallbacks accordingly.
-// It also listens for callback registration.  It must be run as a goroutine.
+// It also listens for callback registration. It must be run as a goroutine.
 func mainInterruptHandler() {
 	// interruptCallbacks is a list of callbacks to invoke when a
 	// SIGINT (Ctrl+C) is received.
@@ -35,13 +35,13 @@ func mainInterruptHandler() {
 		case <-interruptChannel:
 			// Ignore more than one shutdown signal.
 			if isShutdown {
-				log.Infof("Received SIGINT (Ctrl+C).  " +
+				log.Infof("Received SIGINT (Ctrl+C). " +
 					"Already shutting down...")
 				continue
 			}
 
 			isShutdown = true
-			log.Infof("Received SIGINT (Ctrl+C).  Shutting down...")
+			log.Infof("Received SIGINT (Ctrl+C). Shutting down...")
 
 			// Run handlers in LIFO order.
 			for i := range interruptCallbacks {

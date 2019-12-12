@@ -20,7 +20,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/jinzhu/gorm"
-	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -208,7 +208,7 @@ func GetUTXOsByAddressHandler(address string) (interface{}, error) {
 		if isTxInSelectedTip[transactionOutput.ID] {
 			confirmations = 1
 		} else if transactionOutput.Transaction.AcceptingBlock != nil {
-			acceptingBlockHash = btcjson.String(transactionOutput.Transaction.AcceptingBlock.BlockHash)
+			acceptingBlockHash = rpcmodel.String(transactionOutput.Transaction.AcceptingBlock.BlockHash)
 			acceptingBlockBlueScore = transactionOutput.Transaction.AcceptingBlock.BlueScore
 			confirmations = selectedTip.BlueScore - acceptingBlockBlueScore + 2
 		}
@@ -220,9 +220,9 @@ func GetUTXOsByAddressHandler(address string) (interface{}, error) {
 			AcceptingBlockHash:      acceptingBlockHash,
 			AcceptingBlockBlueScore: acceptingBlockBlueScore,
 			Index:                   transactionOutput.Index,
-			IsCoinbase:              btcjson.Bool(isCoinbase),
-			Confirmations:           btcjson.Uint64(confirmations),
-			IsSpendable:             btcjson.Bool(!isCoinbase || confirmations >= activeNetParams.BlockCoinbaseMaturity),
+			IsCoinbase:              rpcmodel.Bool(isCoinbase),
+			Confirmations:           rpcmodel.Uint64(confirmations),
+			IsSpendable:             rpcmodel.Bool(!isCoinbase || confirmations >= activeNetParams.BlockCoinbaseMaturity),
 		}
 	}
 	return UTXOsResponses, nil
@@ -270,7 +270,7 @@ func PostTransaction(requestBody []byte) error {
 
 	txReader := bytes.NewReader(txBytes)
 	tx := &wire.MsgTx{}
-	err = tx.BtcDecode(txReader, 0)
+	err = tx.KaspaDecode(txReader, 0)
 	if err != nil {
 		return httpserverutils.NewHandlerErrorWithCustomClientMessage(http.StatusUnprocessableEntity,
 			errors.Wrap(err, "Error decoding raw transaction"),
@@ -280,7 +280,7 @@ func PostTransaction(requestBody []byte) error {
 	_, err = client.SendRawTransaction(tx, true)
 	if err != nil {
 		switch err := errors.Cause(err).(type) {
-		case *btcjson.RPCError:
+		case *rpcmodel.RPCError:
 			return httpserverutils.NewHandlerError(http.StatusUnprocessableEntity, err)
 		default:
 			return err

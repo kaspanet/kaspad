@@ -6,7 +6,7 @@ import (
 	"github.com/prometheus/common/log"
 )
 
-// OnGetHeaders is invoked when a peer receives a getheaders bitcoin
+// OnGetHeaders is invoked when a peer receives a getheaders kaspa
 // message.
 func (sp *Peer) OnGetHeaders(_ *peer.Peer, msg *wire.MsgGetHeaders) {
 	// Ignore getheaders requests if not in sync.
@@ -20,7 +20,7 @@ func (sp *Peer) OnGetHeaders(_ *peer.Peer, msg *wire.MsgGetHeaders) {
 	// hash is encountered.
 	//
 	// Use the block after the genesis block if no other blocks in the
-	// provided locator are known.  This does mean the client will start
+	// provided locator are known. This does mean the client will start
 	// over with the genesis block if unknown block locators are provided.
 	dag := sp.server.DAG
 	headers, err := dag.GetBlueBlocksHeadersBetween(msg.StartHash, msg.StopHash)

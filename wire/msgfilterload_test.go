@@ -37,14 +37,14 @@ func TestFilterLoadLatest(t *testing.T) {
 
 	// Test encode with latest protocol version.
 	var buf bytes.Buffer
-	err := msg.BtcEncode(&buf, pver)
+	err := msg.KaspaEncode(&buf, pver)
 	if err != nil {
 		t.Errorf("encode of MsgFilterLoad failed %v err <%v>", msg, err)
 	}
 
 	// Test decode with latest protocol version.
 	readmsg := MsgFilterLoad{}
-	err = readmsg.BtcDecode(&buf, pver)
+	err = readmsg.KaspaDecode(&buf, pver)
 	if err != nil {
 		t.Errorf("decode of MsgFilterLoad failed [%v] err <%v>", buf, err)
 	}
@@ -57,7 +57,7 @@ func TestFilterLoadCrossProtocol(t *testing.T) {
 
 	// Encode with latest protocol version.
 	var buf bytes.Buffer
-	err := msg.BtcEncode(&buf, ProtocolVersion)
+	err := msg.KaspaEncode(&buf, ProtocolVersion)
 	if err != nil {
 		t.Errorf("encode of NewMsgFilterLoad failed %v err <%v>", msg,
 			err)
@@ -71,7 +71,7 @@ func TestFilterLoadMaxFilterSize(t *testing.T) {
 
 	// Encode with latest protocol version.
 	var buf bytes.Buffer
-	err := msg.BtcEncode(&buf, ProtocolVersion)
+	err := msg.KaspaEncode(&buf, ProtocolVersion)
 	if err == nil {
 		t.Errorf("encode of MsgFilterLoad succeeded when it shouldn't "+
 			"have %v", msg)
@@ -79,7 +79,7 @@ func TestFilterLoadMaxFilterSize(t *testing.T) {
 
 	// Decode with latest protocol version.
 	readbuf := bytes.NewReader(data)
-	err = msg.BtcDecode(readbuf, ProtocolVersion)
+	err = msg.KaspaDecode(readbuf, ProtocolVersion)
 	if err == nil {
 		t.Errorf("decode of MsgFilterLoad succeeded when it shouldn't "+
 			"have %v", msg)
@@ -93,7 +93,7 @@ func TestFilterLoadMaxHashFuncsSize(t *testing.T) {
 
 	// Encode with latest protocol version.
 	var buf bytes.Buffer
-	err := msg.BtcEncode(&buf, ProtocolVersion)
+	err := msg.KaspaEncode(&buf, ProtocolVersion)
 	if err == nil {
 		t.Errorf("encode of MsgFilterLoad succeeded when it shouldn't have %v",
 			msg)
@@ -108,7 +108,7 @@ func TestFilterLoadMaxHashFuncsSize(t *testing.T) {
 	}
 	// Decode with latest protocol version.
 	readbuf := bytes.NewReader(newBuf)
-	err = msg.BtcDecode(readbuf, ProtocolVersion)
+	err = msg.KaspaDecode(readbuf, ProtocolVersion)
 	if err == nil {
 		t.Errorf("decode of MsgFilterLoad succeeded when it shouldn't have %v",
 			msg)
@@ -163,9 +163,9 @@ func TestFilterLoadWireErrors(t *testing.T) {
 	for i, test := range tests {
 		// Encode to wire format.
 		w := newFixedWriter(test.max)
-		err := test.in.BtcEncode(w, test.pver)
+		err := test.in.KaspaEncode(w, test.pver)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.writeErr) {
-			t.Errorf("BtcEncode #%d wrong error got: %v, want: %v",
+			t.Errorf("KaspaEncode #%d wrong error got: %v, want: %v",
 				i, err, test.writeErr)
 			continue
 		}
@@ -174,7 +174,7 @@ func TestFilterLoadWireErrors(t *testing.T) {
 		// equality.
 		if _, ok := err.(*MessageError); !ok {
 			if err != test.writeErr {
-				t.Errorf("BtcEncode #%d wrong error got: %v, "+
+				t.Errorf("KaspaEncode #%d wrong error got: %v, "+
 					"want: %v", i, err, test.writeErr)
 				continue
 			}
@@ -183,9 +183,9 @@ func TestFilterLoadWireErrors(t *testing.T) {
 		// Decode from wire format.
 		var msg MsgFilterLoad
 		r := newFixedReader(test.max, test.buf)
-		err = msg.BtcDecode(r, test.pver)
+		err = msg.KaspaDecode(r, test.pver)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.readErr) {
-			t.Errorf("BtcDecode #%d wrong error got: %v, want: %v",
+			t.Errorf("KaspaDecode #%d wrong error got: %v, want: %v",
 				i, err, test.readErr)
 			continue
 		}
@@ -194,7 +194,7 @@ func TestFilterLoadWireErrors(t *testing.T) {
 		// equality.
 		if _, ok := err.(*MessageError); !ok {
 			if err != test.readErr {
-				t.Errorf("BtcDecode #%d wrong error got: %v, "+
+				t.Errorf("KaspaDecode #%d wrong error got: %v, "+
 					"want: %v", i, err, test.readErr)
 				continue
 			}

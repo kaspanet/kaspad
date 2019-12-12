@@ -47,7 +47,7 @@ const (
 	ErrBlockVersionTooOld
 
 	// ErrInvalidTime indicates the time in the passed block has a precision
-	// that is more than one second.  The chain consensus rules require
+	// that is more than one second. The chain consensus rules require
 	// timestamps to have a maximum precision of one second.
 	ErrInvalidTime
 
@@ -97,11 +97,11 @@ const (
 	ErrFinalityPointTimeTooOld
 
 	// ErrNoTransactions indicates the block does not have a least one
-	// transaction.  A valid block must have at least the coinbase
+	// transaction. A valid block must have at least the coinbase
 	// transaction.
 	ErrNoTransactions
 
-	// ErrNoTxInputs indicates a transaction does not have any inputs.  A
+	// ErrNoTxInputs indicates a transaction does not have any inputs. A
 	// valid transaction must have at least one input.
 	ErrNoTxInputs
 
@@ -131,7 +131,7 @@ const (
 	ErrUnfinalizedTx
 
 	// ErrDuplicateTx indicates a block contains an identical transaction
-	// (or at least two transactions which hash to the same value).  A
+	// (or at least two transactions which hash to the same value). A
 	// valid block may only contain unique transactions.
 	ErrDuplicateTx
 
@@ -172,12 +172,12 @@ const (
 	ErrBadCoinbaseTransaction
 
 	// ErrScriptMalformed indicates a transaction script is malformed in
-	// some way.  For example, it might be longer than the maximum allowed
+	// some way. For example, it might be longer than the maximum allowed
 	// length or fail to parse.
 	ErrScriptMalformed
 
 	// ErrScriptValidation indicates the result of executing transaction
-	// script failed.  The error covers any failure when executing scripts
+	// script failed. The error covers any failure when executing scripts
 	// such signature verification failures and execution past the end of
 	// the stack.
 	ErrScriptValidation
@@ -280,9 +280,9 @@ func (e ErrorCode) String() string {
 	return fmt.Sprintf("Unknown ErrorCode (%d)", int(e))
 }
 
-// RuleError identifies a rule violation.  It is used to indicate that
+// RuleError identifies a rule violation. It is used to indicate that
 // processing of a block or transaction failed due to one of the many validation
-// rules.  The caller can use type assertions to determine if a failure was
+// rules. The caller can use type assertions to determine if a failure was
 // specifically due to a rule violation and access the ErrorCode field to
 // ascertain the specific reason for the rule violation.
 type RuleError struct {

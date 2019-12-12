@@ -36,7 +36,7 @@ func loadBlockDB() (database.DB, error) {
 }
 
 // findCandidates searches the DAG backwards for checkpoint candidates and
-// returns a slice of found candidates, if any.  It also stops searching for
+// returns a slice of found candidates, if any. It also stops searching for
 // candidates at the last checkpoint that is already hard coded since there
 // is no point in finding candidates before already existing checkpoints.
 func findCandidates(dag *blockdag.BlockDAG, highestTipHash *daghash.Hash) ([]*dagconfig.Checkpoint, error) {
@@ -119,8 +119,8 @@ func findCandidates(dag *blockdag.BlockDAG, highestTipHash *daghash.Hash) ([]*da
 }
 
 // showCandidate display a checkpoint candidate using and output format
-// determined by the configuration parameters.  The Go syntax output
-// uses the format the btcchain code expects for checkpoints added to the list.
+// determined by the configuration parameters. The Go syntax output
+// uses the format kaspa code expects for checkpoints added to the list.
 func showCandidate(candidateNum int, checkpoint *dagconfig.Checkpoint) {
 	if cfg.UseGoOutput {
 		fmt.Printf("Candidate %d -- {%d, newShaHashFromStr(\"%s\")},\n",
@@ -149,7 +149,7 @@ func main() {
 	}
 	defer db.Close()
 
-	// Setup chain.  Ignore notifications since they aren't needed for this
+	// Setup chain. Ignore notifications since they aren't needed for this
 	// util.
 	dag, err := blockdag.New(&blockdag.Config{
 		DB:         db,

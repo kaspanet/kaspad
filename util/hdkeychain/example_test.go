@@ -69,7 +69,7 @@ func Example_defaultWalletLayout() {
 		return
 	}
 
-	// Derive the extended key for account 0.  This gives the path:
+	// Derive the extended key for account 0. This gives the path:
 	//   m/0H
 	acct0, err := masterKey.Child(hdkeychain.HardenedKeyStart + 0)
 	if err != nil {
@@ -77,7 +77,7 @@ func Example_defaultWalletLayout() {
 		return
 	}
 
-	// Derive the extended key for the account 0 external chain.  This
+	// Derive the extended key for the account 0 external chain. This
 	// gives the path:
 	//   m/0H/0
 	acct0Ext, err := acct0.Child(0)
@@ -86,7 +86,7 @@ func Example_defaultWalletLayout() {
 		return
 	}
 
-	// Derive the extended key for the account 0 internal chain.  This gives
+	// Derive the extended key for the account 0 internal chain. This gives
 	// the path:
 	//   m/0H/1
 	acct0Int, err := acct0.Child(1)
@@ -98,7 +98,7 @@ func Example_defaultWalletLayout() {
 	// At this point, acct0Ext and acct0Int are ready to derive the keys for
 	// the external and internal wallet chains.
 
-	// Derive the 10th extended key for the account 0 external chain.  This
+	// Derive the 10th extended key for the account 0 external chain. This
 	// gives the path:
 	//   m/0H/0/10
 	acct0Ext10, err := acct0Ext.Child(10)
@@ -107,7 +107,7 @@ func Example_defaultWalletLayout() {
 		return
 	}
 
-	// Derive the 1st extended key for the account 0 internal chain.  This
+	// Derive the 1st extended key for the account 0 internal chain. This
 	// gives the path:
 	//   m/0H/1/0
 	acct0Int0, err := acct0Int.Child(0)
@@ -117,7 +117,7 @@ func Example_defaultWalletLayout() {
 	}
 
 	// Get and show the address associated with the extended keys for the
-	// main bitcoin	network.
+	// main kaspa network.
 	acct0ExtAddr, err := acct0Ext10.Address(util.Bech32PrefixDAGCoin)
 	if err != nil {
 		fmt.Println(err)
@@ -165,7 +165,7 @@ func Example_audits() {
 		return
 	}
 
-	// Neuter the master key to generate a master public extended key.  This
+	// Neuter the master key to generate a master public extended key. This
 	// gives the path:
 	//   N(m/*)
 	masterPubKey, err := masterKey.Neuter()

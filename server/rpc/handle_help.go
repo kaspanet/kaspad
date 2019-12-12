@@ -1,10 +1,10 @@
 package rpc
 
-import "github.com/kaspanet/kaspad/btcjson"
+import "github.com/kaspanet/kaspad/rpcmodel"
 
 // handleHelp implements the help command.
 func handleHelp(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.HelpCmd)
+	c := cmd.(*rpcmodel.HelpCmd)
 
 	// Provide a usage overview of all commands when no specific command
 	// was specified.
@@ -21,13 +21,13 @@ func handleHelp(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 		return usage, nil
 	}
 
-	// Check that the command asked for is supported and implemented.  Only
+	// Check that the command asked for is supported and implemented. Only
 	// search the main list of handlers since help should not be provided
 	// for commands that are unimplemented or related to wallet
 	// functionality.
 	if _, ok := rpcHandlers[command]; !ok {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCInvalidParameter,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCInvalidParameter,
 			Message: "Unknown command: " + command,
 		}
 	}

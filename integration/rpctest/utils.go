@@ -110,7 +110,7 @@ retry:
 }
 
 // ConnectNode establishes a new peer-to-peer connection between the "from"
-// harness and the "to" harness.  The connection made is flagged as persistent,
+// harness and the "to" harness. The connection made is flagged as persistent,
 // therefore in the case of disconnects, "from" will attempt to reestablish a
 // connection to the "to" harness.
 func ConnectNode(from *Harness, to *Harness) error {

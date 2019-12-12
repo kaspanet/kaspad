@@ -20,23 +20,23 @@ import (
 )
 
 const (
-	// svcName is the name of btcd service.
-	svcName = "btcdsvc"
+	// svcName is the name of kaspad service.
+	svcName = "kaspadsvc"
 
 	// svcDisplayName is the service name that will be shown in the windows
-	// services list.  Not the svcName is the "real" name which is used
-	// to control the service.  This is only for display purposes.
-	svcDisplayName = "Btcd Service"
+	// services list. Not the svcName is the "real" name which is used
+	// to control the service. This is only for display purposes.
+	svcDisplayName = "Kaspad Service"
 
 	// svcDesc is the description of the service.
-	svcDesc = "Downloads and stays synchronized with the bitcoin block " +
-		"chain and provides chain services to applications."
+	svcDesc = "Downloads and stays synchronized with the Kaspa block " +
+		"DAG and provides DAG services to applications."
 )
 
 // elog is used to send messages to the Windows event log.
 var elog *eventlog.Log
 
-// logServiceStartOfDay logs information about btcd when the main server has
+// logServiceStartOfDay logs information about kaspad when the main server has
 // been started to the Windows event log.
 func logServiceStartOfDay() {
 	var message string
@@ -48,27 +48,27 @@ func logServiceStartOfDay() {
 	elog.Info(1, message)
 }
 
-// btcdService houses the main service handler which handles all service
-// updates and launching btcdMain.
-type btcdService struct{}
+// kaspadService houses the main service handler which handles all service
+// updates and launching kaspadMain.
+type kaspadService struct{}
 
 // Execute is the main entry point the winsvc package calls when receiving
-// information from the Windows service control manager.  It launches the
-// long-running btcdMain (which is the real meat of btcd), handles service
+// information from the Windows service control manager. It launches the
+// long-running kaspadMain (which is the real meat of kaspad), handles service
 // change requests, and notifies the service control manager of changes.
-func (s *btcdService) Execute(args []string, r <-chan svc.ChangeRequest, changes chan<- svc.Status) (bool, uint32) {
+func (s *kaspadService) Execute(args []string, r <-chan svc.ChangeRequest, changes chan<- svc.Status) (bool, uint32) {
 	// Service start is pending.
 	const cmdsAccepted = svc.AcceptStop | svc.AcceptShutdown
 	changes <- svc.Status{State: svc.StartPending}
 
-	// Start btcdMain in a separate goroutine so the service can start
-	// quickly.  Shutdown (along with a potential error) is reported via
-	// doneChan.  serverChan is notified with the main server instance once
+	// Start kaspadMain in a separate goroutine so the service can start
+	// quickly. Shutdown (along with a potential error) is reported via
+	// doneChan. serverChan is notified with the main server instance once
 	// it is started so it can be gracefully stopped.
 	doneChan := make(chan error)
 	serverChan := make(chan *server.Server)
 	spawn(func() {
-		err := btcdMain(serverChan)
+		err := kaspadMain(serverChan)
 		doneChan <- err
 	})
 
@@ -83,7 +83,7 @@ loop:
 				changes <- c.CurrentStatus
 
 			case svc.Stop, svc.Shutdown:
-				// Service stop is pending.  Don't accept any
+				// Service stop is pending. Don't accept any
 				// more commands while pending.
 				changes <- svc.Status{State: svc.StopPending}
 
@@ -111,11 +111,11 @@ loop:
 	return false, 0
 }
 
-// installService attempts to install the btcd service.  Typically this should
+// installService attempts to install the kaspad service. Typically this should
 // be done by the msi installer, but it is provided here since it can be useful
 // for development.
 func installService() error {
-	// Get the path of the current executable.  This is needed because
+	// Get the path of the current executable. This is needed because
 	// os.Args[0] can vary depending on how the application was launched.
 	// For example, under cmd.exe it will only be the name of the app
 	// without the path or extension, but under mingw it will be the full
@@ -153,16 +153,16 @@ func installService() error {
 	defer service.Close()
 
 	// Support events to the event log using the standard "standard" Windows
-	// EventCreate.exe message file.  This allows easy logging of custom
+	// EventCreate.exe message file. This allows easy logging of custom
 	// messges instead of needing to create our own message catalog.
 	eventlog.Remove(svcName)
 	eventsSupported := uint32(eventlog.Error | eventlog.Warning | eventlog.Info)
 	return eventlog.InstallAsEventCreate(svcName, eventsSupported)
 }
 
-// removeService attempts to uninstall the btcd service.  Typically this should
+// removeService attempts to uninstall the kaspad service. Typically this should
 // be done by the msi uninstaller, but it is provided here since it can be
-// useful for development.  Not the eventlog entry is intentionally not removed
+// useful for development. Not the eventlog entry is intentionally not removed
 // since it would invalidate any existing event log messages.
 func removeService() error {
 	// Connect to the windows service manager.
@@ -183,7 +183,7 @@ func removeService() error {
 	return service.Delete()
 }
 
-// startService attempts to start the btcd service.
+// startService attempts to start the kaspad service.
 func startService() error {
 	// Connect to the windows service manager.
 	serviceManager, err := mgr.Connect()
@@ -206,7 +206,7 @@ func startService() error {
 	return nil
 }
 
-// controlService allows commands which change the status of the service.  It
+// controlService allows commands which change the status of the service. It
 // also waits for up to 10 seconds for the service to change to the passed
 // state.
 func controlService(c svc.Cmd, to svc.State) error {
@@ -247,7 +247,7 @@ func controlService(c svc.Cmd, to svc.State) error {
 }
 
 // performServiceCommand attempts to run one of the supported service commands
-// provided on the command line via the service command flag.  An appropriate
+// provided on the command line via the service command flag. An appropriate
 // error is returned if an invalid command is specified.
 func performServiceCommand(command string) error {
 	var err error
@@ -272,7 +272,7 @@ func performServiceCommand(command string) error {
 }
 
 // serviceMain checks whether we're being invoked as a service, and if so uses
-// the service control manager to start the long-running server.  A flag is
+// the service control manager to start the long-running server. A flag is
 // returned to the caller so the application can determine whether to exit (when
 // running as a service) or launch in normal interactive mode.
 func serviceMain() (bool, error) {
@@ -292,7 +292,7 @@ func serviceMain() (bool, error) {
 	}
 	defer elog.Close()
 
-	err = svc.Run(svcName, &btcdService{})
+	err = svc.Run(svcName, &kaspadService{})
 	if err != nil {
 		elog.Error(1, fmt.Sprintf("Service start failed: %s", err))
 		return true, err

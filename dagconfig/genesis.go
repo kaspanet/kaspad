@@ -78,7 +78,7 @@ var genesisBlock = wire.MsgBlock{
 var regTestGenesisHash = genesisHash
 
 // regTestGenesisMerkleRoot is the hash of the first transaction in the genesis
-// block for the regression test network.  It is the same as the merkle root for
+// block for the regression test network. It is the same as the merkle root for
 // the main network.
 var regTestGenesisMerkleRoot = genesisMerkleRoot
 
@@ -91,7 +91,7 @@ var regTestGenesisBlock = genesisBlock
 var testNetGenesisHash = genesisHash
 
 // testNetGenesisMerkleRoot is the hash of the first transaction in the genesis
-// block for the test network.  It is the same as the merkle root for the main
+// block for the test network. It is the same as the merkle root for the main
 // network.
 var testNetGenesisMerkleRoot = genesisMerkleRoot
 
@@ -104,7 +104,7 @@ var testNetGenesisBlock = genesisBlock
 var simNetGenesisHash = genesisHash
 
 // simNetGenesisMerkleRoot is the hash of the first transaction in the genesis
-// block for the simulation test network.  It is the same as the merkle root for
+// block for the simulation test network. It is the same as the merkle root for
 // the main network.
 var simNetGenesisMerkleRoot = genesisMerkleRoot
 
