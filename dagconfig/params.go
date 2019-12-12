@@ -17,7 +17,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// These variables are the chain proof-of-work limit parameters for each default
+// These variables are the DAG proof-of-work limit parameters for each default
 // network.
 var (
 	// bigOne is 1 represented as a big.Int. It is defined here to avoid
@@ -50,12 +50,12 @@ const phantomK = 10
 const difficultyAdjustmentWindowSize = 2640
 const timestampDeviationTolerance = 132
 
-// Checkpoint identifies a known good point in the block chain. Using
+// Checkpoint identifies a known good point in the block DAG. Using
 // checkpoints allows a few optimizations for old blocks during initial download
 // and also prevents forks from old blocks.
 //
 // Each checkpoint is selected based upon several factors. See the
-// documentation for blockchain.IsCheckpointCandidate for details on the
+// documentation for blockdag.IsCheckpointCandidate for details on the
 // selection criteria.
 type Checkpoint struct {
 	ChainHeight uint64
@@ -115,7 +115,7 @@ type Params struct {
 	// as one method to discover peers.
 	DNSSeeds []string
 
-	// GenesisBlock defines the first block of the chain.
+	// GenesisBlock defines the first block of the DAG.
 	GenesisBlock *wire.MsgBlock
 
 	// GenesisHash is the starting block hash.

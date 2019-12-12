@@ -1,4 +1,4 @@
-// Package dagconfig defines chain configuration parameters.
+// Package dagconfig defines DAG configuration parameters.
 //
 // In addition to the main Kaspa network, which is intended for the transfer
 // of monetary value, there also exists two currently active standard networks:
@@ -7,7 +7,7 @@
 // handle errors where input intended for one network is used on an application
 // instance running on a different network.
 //
-// For library packages, dagconfig provides the ability to lookup chain
+// For library packages, dagconfig provides the ability to lookup DAG
 // parameters and encoding magics when passed a *Params. Older APIs not updated
 // to the new convention of passing a *Params may lookup the parameters for a
 // wire.KaspaNet using ParamsForNet, but be aware that this usage is
@@ -32,21 +32,21 @@
 //  var testnet = flag.Bool("testnet", false, "operate on the testnet Kaspa network")
 //
 //  // By default (without -testnet), use mainnet.
-//  var chainParams = &dagconfig.MainNetParams
+//  var dagParams = &dagconfig.MainNetParams
 //
 //  func main() {
 //          flag.Parse()
 //
 //          // Modify active network parameters if operating on testnet.
 //          if *testnet {
-//                  chainParams = &dagconfig.TestNetParams
+//                  dagParams = &dagconfig.TestNetParams
 //          }
 //
 //          // later...
 //
 //          // Create and print new payment address, specific to the active network.
 //          pubKeyHash := make([]byte, 20)
-//          addr, err := util.NewAddressPubKeyHash(pubKeyHash, chainParams)
+//          addr, err := util.NewAddressPubKeyHash(pubKeyHash, dagParams)
 //          if err != nil {
 //                  log.Fatal(err)
 //          }
