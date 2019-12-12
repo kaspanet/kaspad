@@ -143,7 +143,7 @@ type outboundPeerConnectedMsg struct {
 // updatePeerHeightsMsg is a message sent from the blockmanager to the server
 // after a new block has been accepted. The purpose of the message is to update
 // the heights of peers that were known to announce the block before we
-// connected it to the main chain or recognized it as an orphan. With these
+// connected it to the DAG or recognized it as an orphan. With these
 // updates, peer heights will be kept up to date, allowing for fresh data when
 // selecting sync peer candidacy.
 type updatePeerHeightsMsg struct {
@@ -1669,7 +1669,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		checkpoints = mergeCheckpoints(s.DAGParams.Checkpoints, config.ActiveConfig().AddCheckpoints)
 	}
 
-	// Create a new block chain instance with the appropriate configuration.
+	// Create a new block DAG instance with the appropriate configuration.
 	var err error
 	s.DAG, err = blockdag.New(&blockdag.Config{
 		DB:           s.db,
@@ -1835,7 +1835,7 @@ func initListeners(amgr *addrmgr.AddrManager, listenAddrs []string, services wir
 	if len(config.ActiveConfig().ExternalIPs) != 0 {
 		defaultPort, err := strconv.ParseUint(config.ActiveConfig().NetParams().DefaultPort, 10, 16)
 		if err != nil {
-			srvrLog.Errorf("Can not parse default port %s for active chain: %s",
+			srvrLog.Errorf("Can not parse default port %s for active DAG: %s",
 				config.ActiveConfig().NetParams().DefaultPort, err)
 			return nil, nil, err
 		}

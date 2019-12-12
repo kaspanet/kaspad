@@ -14,7 +14,7 @@ func (sp *Peer) OnGetHeaders(_ *peer.Peer, msg *wire.MsgGetHeaders) {
 		return
 	}
 
-	// Find the most recent known block in the best chain based on the block
+	// Find the most recent known block in the DAG based on the block
 	// locator and fetch all of the headers after it until either
 	// wire.MaxBlockHeadersPerMsg have been fetched or the provided stop
 	// hash is encountered.

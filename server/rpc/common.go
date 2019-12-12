@@ -92,7 +92,7 @@ func createVinList(mtx *wire.MsgTx) []rpcmodel.Vin {
 
 // createVoutList returns a slice of JSON objects for the outputs of the passed
 // transaction.
-func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMap map[string]struct{}) []rpcmodel.Vout {
+func createVoutList(mtx *wire.MsgTx, dagParams *dagconfig.Params, filterAddrMap map[string]struct{}) []rpcmodel.Vout {
 	voutList := make([]rpcmodel.Vout, 0, len(mtx.TxOut))
 	for i, v := range mtx.TxOut {
 		// The disassembled string will contain [error] inline if the
@@ -103,7 +103,7 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 		// couldn't parse and there is no additional information about
 		// it anyways.
 		scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddress(
-			v.ScriptPubKey, chainParams)
+			v.ScriptPubKey, dagParams)
 
 		// Encode the addresses while checking if the address passes the
 		// filter when needed.

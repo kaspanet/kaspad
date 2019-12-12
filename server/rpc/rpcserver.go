@@ -163,7 +163,7 @@ func handleUnimplemented(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 	return nil, ErrRPCUnimplemented
 }
 
-// Server provides a concurrent safe RPC server to a chain server.
+// Server provides a concurrent safe RPC server to a kaspa node.
 type Server struct {
 	started                int32
 	shutdown               int32
@@ -731,7 +731,7 @@ type rpcserverConnManager interface {
 // The interface contract requires that all of these methods are safe for
 // concurrent access.
 type rpcserverSyncManager interface {
-	// IsCurrent returns whether or not the sync manager believes the chain
+	// IsCurrent returns whether or not the sync manager believes the DAG
 	// is current as compared to the rest of the network.
 	IsCurrent() bool
 
@@ -775,7 +775,7 @@ type rpcserverConfig struct {
 	SyncMgr rpcserverSyncManager
 
 	// These fields allow the RPC server to interface with the local block
-	// chain data and state.
+	// DAG data and state.
 	TimeSource blockdag.MedianTimeSource
 	DAG        *blockdag.BlockDAG
 	DAGParams  *dagconfig.Params
