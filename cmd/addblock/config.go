@@ -41,7 +41,7 @@ func ActiveConfig() *ConfigFlags {
 // See loadConfig for details on the configuration load process.
 type ConfigFlags struct {
 	DataDir   string `short:"b" long:"datadir" description:"Location of the kaspad data directory"`
-	DbType    string `long:"dbtype" description:"Database backend to use for the Block Chain"`
+	DbType    string `long:"dbtype" description:"Database backend to use for the Block DAG"`
 	InFile    string `short:"i" long:"infile" description:"File containing the block(s)"`
 	TxIndex   bool   `long:"txindex" description:"Build a full hash-based transaction index which makes all transactions available via the getrawtransaction RPC"`
 	AddrIndex bool   `long:"addrindex" description:"Build a full address-based transaction index which makes the searchrawtransactions RPC available"`

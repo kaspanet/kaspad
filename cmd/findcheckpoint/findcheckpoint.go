@@ -149,7 +149,7 @@ func main() {
 	}
 	defer db.Close()
 
-	// Setup chain. Ignore notifications since they aren't needed for this
+	// Setup DAG. Ignore notifications since they aren't needed for this
 	// util.
 	dag, err := blockdag.New(&blockdag.Config{
 		DB:         db,
@@ -157,7 +157,7 @@ func main() {
 		TimeSource: blockdag.NewMedianTime(),
 	})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to initialize chain: %s\n", err)
+		fmt.Fprintf(os.Stderr, "failed to initialize DAG: %s\n", err)
 		return
 	}
 
