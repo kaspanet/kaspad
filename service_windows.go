@@ -9,7 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-
+	"pkg/errors"
+	
 	"github.com/btcsuite/winsvc/eventlog"
 	"github.com/btcsuite/winsvc/mgr"
 	"github.com/btcsuite/winsvc/svc"
