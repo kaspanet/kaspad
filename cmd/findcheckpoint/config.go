@@ -26,8 +26,8 @@ const (
 )
 
 var (
-	btcdHomeDir    = util.AppDataDir("btcd", false)
-	defaultDataDir = filepath.Join(btcdHomeDir, "data")
+	kaspadHomeDir  = util.AppDataDir("kaspad", false)
+	defaultDataDir = filepath.Join(kaspadHomeDir, "data")
 	knownDbTypes   = database.SupportedDrivers()
 	activeConfig   *ConfigFlags
 )
@@ -41,10 +41,10 @@ func ActiveConfig() *ConfigFlags {
 //
 // See loadConfig for details on the configuration load process.
 type ConfigFlags struct {
-	DataDir       string `short:"b" long:"datadir" description:"Location of the btcd data directory"`
+	DataDir       string `short:"b" long:"datadir" description:"Location of the kaspad data directory"`
 	DbType        string `long:"dbtype" description:"Database backend to use for the Block Chain"`
 	NumCandidates int    `short:"n" long:"numcandidates" description:"Max num of checkpoint candidates to show {1-20}"`
-	UseGoOutput   bool   `short:"g" long:"gooutput" description:"Display the candidates using Go syntax that is ready to insert into the btcchain checkpoint list"`
+	UseGoOutput   bool   `short:"g" long:"gooutput" description:"Display the candidates using Go syntax that is ready to insert into the Kaspa checkpoint list"`
 	config.NetworkFlags
 }
 
@@ -95,7 +95,7 @@ func loadConfig() (*ConfigFlags, []string, error) {
 	}
 
 	// Append the network type to the data directory so it is "namespaced"
-	// per network.  In addition to the block database, there are other
+	// per network. In addition to the block database, there are other
 	// pieces of data that are saved to disk such as address manager state.
 	// All data is specific to a network, so namespacing the data directory
 	// means each individual piece of serialized data does not have to

@@ -41,7 +41,7 @@ func (ka *KnownAddress) LastAttempt() time.Time {
 	return ka.lastattempt
 }
 
-// chance returns the selection probability for a known address.  The priority
+// chance returns the selection probability for a known address. The priority
 // depends upon how recently the address has been seen, how recently it was last
 // attempted and how often attempts to connect to it have failed.
 func (ka *KnownAddress) chance() float64 {

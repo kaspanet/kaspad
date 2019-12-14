@@ -32,12 +32,12 @@ import (
 )
 
 const (
-	defaultConfigFilename      = "btcd.conf"
+	defaultConfigFilename      = "kaspad.conf"
 	defaultDataDirname         = "data"
 	defaultLogLevel            = "info"
 	defaultLogDirname          = "logs"
-	defaultLogFilename         = "btcd.log"
-	defaultErrLogFilename      = "btcd_err.log"
+	defaultLogFilename         = "kaspad.log"
+	defaultErrLogFilename      = "kaspad_err.log"
 	defaultTargetOutboundPeers = 8
 	defaultMaxInboundPeers     = 117
 	defaultBanDuration         = time.Hour * 24
@@ -51,21 +51,21 @@ const (
 	defaultBlockMaxMass          = 10000000
 	blockMaxMassMin              = 1000
 	blockMaxMassMax              = 10000000
-	defaultMinRelayTxFee         = 1e-5 // 1 satoshi per byte
+	defaultMinRelayTxFee         = 1e-5 // 1 sompi per byte
 	defaultGenerate              = false
 	defaultMaxOrphanTransactions = 100
 	//DefaultMaxOrphanTxSize is the default maximum size for an orphan transaction
 	DefaultMaxOrphanTxSize = 100000
 	defaultSigCacheMaxSize = 100000
-	sampleConfigFilename   = "sample-btcd.conf"
+	sampleConfigFilename   = "sample-kaspad.conf"
 	defaultTxIndex         = false
 	defaultAddrIndex       = false
 	defaultAcceptanceIndex = false
 )
 
 var (
-	// DefaultHomeDir is the default home directory for BTCD.
-	DefaultHomeDir = util.AppDataDir("btcd", false)
+	// DefaultHomeDir is the default home directory for kaspad.
+	DefaultHomeDir = util.AppDataDir("kaspad", false)
 
 	defaultConfigFile  = filepath.Join(DefaultHomeDir, defaultConfigFilename)
 	defaultDataDir     = filepath.Join(DefaultHomeDir, defaultDataDirname)
@@ -77,7 +77,7 @@ var (
 
 var activeConfig *Config
 
-// RunServiceCommand is only set to a real function on Windows.  It is used
+// RunServiceCommand is only set to a real function on Windows. It is used
 // to parse and execute service commands specified via the -s flag.
 var RunServiceCommand func(string) error
 
@@ -90,7 +90,7 @@ func minUint32(a, b uint32) uint32 {
 	return b
 }
 
-// Flags defines the configuration options for btcd.
+// Flags defines the configuration options for kaspad.
 //
 // See loadConfig for details on the configuration load process.
 type Flags struct {
@@ -105,7 +105,7 @@ type Flags struct {
 	TargetOutboundPeers  int           `long:"outpeers" description:"Target number of outbound peers"`
 	MaxInboundPeers      int           `long:"maxinpeers" description:"Max number of inbound peers"`
 	DisableBanning       bool          `long:"nobanning" description:"Disable banning of misbehaving peers"`
-	BanDuration          time.Duration `long:"banduration" description:"How long to ban misbehaving peers.  Valid time units are {s, m, h}.  Minimum 1 second"`
+	BanDuration          time.Duration `long:"banduration" description:"How long to ban misbehaving peers. Valid time units are {s, m, h}. Minimum 1 second"`
 	BanThreshold         uint32        `long:"banthreshold" description:"Maximum allowed ban score before disconnecting and banning misbehaving peers."`
 	Whitelists           []string      `long:"whitelist" description:"Add an IP network or IP that will not be banned. (eg. 192.168.1.0/24 or ::1)"`
 	RPCUser              string        `short:"u" long:"rpcuser" description:"Username for RPC connections"`
@@ -132,16 +132,16 @@ type Flags struct {
 	OnionProxyPass       string        `long:"onionpass" default-mask:"-" description:"Password for onion proxy server"`
 	NoOnion              bool          `long:"noonion" description:"Disable connecting to tor hidden services"`
 	TorIsolation         bool          `long:"torisolation" description:"Enable Tor stream isolation by randomizing user credentials for each connection."`
-	AddCheckpoints       []string      `long:"addcheckpoint" description:"Add a custom checkpoint.  Format: '<height>:<hash>'"`
-	DisableCheckpoints   bool          `long:"nocheckpoints" description:"Disable built-in checkpoints.  Don't do this unless you know what you're doing."`
+	AddCheckpoints       []string      `long:"addcheckpoint" description:"Add a custom checkpoint. Format: '<height>:<hash>'"`
+	DisableCheckpoints   bool          `long:"nocheckpoints" description:"Disable built-in checkpoints. Don't do this unless you know what you're doing."`
 	DbType               string        `long:"dbtype" description:"Database backend to use for the Block DAG"`
 	Profile              string        `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
 	CPUProfile           string        `long:"cpuprofile" description:"Write CPU profile to the specified file"`
 	DebugLevel           string        `short:"d" long:"debuglevel" description:"Logging level for all subsystems {trace, debug, info, warn, error, critical} -- You may also specify <subsystem>=<level>,<subsystem2>=<level>,... to set the log level for individual subsystems -- Use show to list available subsystems"`
 	Upnp                 bool          `long:"upnp" description:"Use UPnP to map our listening port outside of NAT"`
-	MinRelayTxFee        float64       `long:"minrelaytxfee" description:"The minimum transaction fee in BTC/kB to be considered a non-zero fee."`
+	MinRelayTxFee        float64       `long:"minrelaytxfee" description:"The minimum transaction fee in KAS/kB to be considered a non-zero fee."`
 	MaxOrphanTxs         int           `long:"maxorphantx" description:"Max number of orphan transactions to keep in memory"`
-	Generate             bool          `long:"generate" description:"Generate (mine) bitcoins using the CPU"`
+	Generate             bool          `long:"generate" description:"Generate (mine) kaspa using the CPU"`
 	MiningAddrs          []string      `long:"miningaddr" description:"Add the specified payment address to the list of addresses to use for generated blocks -- At least one address is required if the generate option is set"`
 	BlockMaxMass         uint64        `long:"blockmaxmass" description:"Maximum transaction mass to be used when creating a block"`
 	UserAgentComments    []string      `long:"uacomment" description:"Comment to add to the user agent -- See BIP 14 for more information."`
@@ -161,7 +161,7 @@ type Flags struct {
 	NetworkFlags
 }
 
-// Config defines the configuration options for btcd.
+// Config defines the configuration options for kaspad.
 //
 // See loadConfig for details on the configuration load process.
 type Config struct {
@@ -288,9 +288,9 @@ func ActiveConfig() *Config {
 // 	3) Load configuration file overwriting defaults with any specified options
 // 	4) Parse CLI options and overwrite/add any specified options
 //
-// The above results in btcd functioning properly without any config settings
+// The above results in kaspad functioning properly without any config settings
 // while still allowing the user to override settings with config files and
-// command line options.  Command line options always take precedence.
+// command line options. Command line options always take precedence.
 func loadConfig() (*Config, []string, error) {
 	// Default config.
 	cfgFlags := Flags{
@@ -322,7 +322,7 @@ func loadConfig() (*Config, []string, error) {
 	serviceOpts := serviceOptions{}
 
 	// Pre-parse the command line options to see if an alternative config
-	// file or the version flag was specified.  Any errors aside from the
+	// file or the version flag was specified. Any errors aside from the
 	// help message error can be ignored here since they will be caught by
 	// the final parse below.
 	preCfg := cfgFlags
@@ -344,8 +344,8 @@ func loadConfig() (*Config, []string, error) {
 		os.Exit(0)
 	}
 
-	// Perform service command and exit if specified.  Invalid service
-	// commands show an appropriate error.  Only runs on Windows since
+	// Perform service command and exit if specified. Invalid service
+	// commands show an appropriate error. Only runs on Windows since
 	// the RunServiceCommand function will be nil when not on Windows.
 	if serviceOpts.ServiceCommand != "" && RunServiceCommand != nil {
 		err := RunServiceCommand(serviceOpts.ServiceCommand)
@@ -462,7 +462,7 @@ func loadConfig() (*Config, []string, error) {
 	activeConfig.RelayNonStd = relayNonStd
 
 	// Append the network type to the data directory so it is "namespaced"
-	// per network.  In addition to the block database, there are other
+	// per network. In addition to the block database, there are other
 	// pieces of data that are saved to disk such as address manager state.
 	// All data is specific to a network, so namespacing the data directory
 	// means each individual piece of serialized data does not have to
@@ -481,7 +481,7 @@ func loadConfig() (*Config, []string, error) {
 		os.Exit(0)
 	}
 
-	// Initialize log rotation.  After log rotation has been initialized, the
+	// Initialize log rotation. After log rotation has been initialized, the
 	// logger variables may be used.
 	logger.InitLog(filepath.Join(activeConfig.LogDir, defaultLogFilename), filepath.Join(activeConfig.LogDir, defaultErrLogFilename))
 
@@ -861,8 +861,8 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// Setup dial and DNS resolution (lookup) functions depending on the
-	// specified options.  The default is to use the standard
-	// net.DialTimeout function as well as the system DNS resolver.  When a
+	// specified options. The default is to use the standard
+	// net.DialTimeout function as well as the system DNS resolver. When a
 	// proxy is specified, the dial function is set to the proxy specific
 	// dial function and the lookup is set to use tor (unless --noonion is
 	// specified in which case the system DNS resolver is used).
@@ -909,10 +909,10 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// Setup onion address dial function depending on the specified options.
-	// The default is to use the same dial function selected above.  However,
+	// The default is to use the same dial function selected above. However,
 	// when an onion-specific proxy is specified, the onion address dial
 	// function is set to use the onion-specific proxy while leaving the
-	// normal dial function as selected above.  This allows .onion address
+	// normal dial function as selected above. This allows .onion address
 	// traffic to be routed through a different proxy than normal traffic.
 	if activeConfig.OnionProxy != "" {
 		_, _, err := net.SplitHostPort(activeConfig.OnionProxy)
@@ -965,8 +965,8 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// Warn about missing config file only after all other configuration is
-	// done.  This prevents the warning on help messages and invalid
-	// options.  Note this should go directly before the return.
+	// done. This prevents the warning on help messages and invalid
+	// options. Note this should go directly before the return.
 	if configFileError != nil {
 		log.Warnf("%s", configFileError)
 	}
@@ -974,7 +974,7 @@ func loadConfig() (*Config, []string, error) {
 	return activeConfig, remainingArgs, nil
 }
 
-// createDefaultConfig copies the file sample-btcd.conf to the given destination path,
+// createDefaultConfig copies the file sample-kaspad.conf to the given destination path,
 // and populates it with some randomly generated RPC username and password.
 func createDefaultConfigFile(destinationPath string) error {
 	// Create the destination directory if it does not exists

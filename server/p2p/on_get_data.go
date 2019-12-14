@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// OnGetData is invoked when a peer receives a getdata bitcoin message and
+// OnGetData is invoked when a peer receives a getdata kaspa message and
 // is used to deliver block and transaction information.
 func (sp *Peer) OnGetData(_ *peer.Peer, msg *wire.MsgGetData) {
 	numAdded := 0

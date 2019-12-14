@@ -20,7 +20,7 @@ func rescanBlockFilter(filter *wsClientFilter, block *util.Block, params *dagcon
 		msgTx := tx.MsgTx()
 
 		// Keep track of whether the transaction has already been added
-		// to the result.  It shouldn't be added twice.
+		// to the result. It shouldn't be added twice.
 		added := false
 
 		// Scan inputs if not a coinbase transaction.

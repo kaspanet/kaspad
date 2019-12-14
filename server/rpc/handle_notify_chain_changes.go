@@ -1,13 +1,13 @@
 package rpc
 
-import "github.com/kaspanet/kaspad/btcjson"
+import "github.com/kaspanet/kaspad/rpcmodel"
 
 // handleNotifyChainChanges implements the notifyChainChanges command extension for
 // websocket connections.
 func handleNotifyChainChanges(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	if wsc.server.cfg.AcceptanceIndex == nil {
-		return nil, &btcjson.RPCError{
-			Code: btcjson.ErrRPCNoAcceptanceIndex,
+		return nil, &rpcmodel.RPCError{
+			Code: rpcmodel.ErrRPCNoAcceptanceIndex,
 			Message: "The acceptance index must be " +
 				"enabled to receive chain changes " +
 				"(specify --acceptanceindex)",

@@ -591,7 +591,7 @@ func (m *mockListener) Addr() net.Addr {
 }
 
 // Connect fakes a connection to the mock listener from the provided remote
-// address.  It will cause the Accept function to return a mock connection
+// address. It will cause the Accept function to return a mock connection
 // configured with the provided remote address and the local address for the
 // mock listener.
 func (m *mockListener) Connect(ip string, port int) {
@@ -606,7 +606,7 @@ func (m *mockListener) Connect(ip string, port int) {
 }
 
 // newMockListener returns a new mock listener for the provided local address
-// and port.  No ports are actually opened.
+// and port. No ports are actually opened.
 func newMockListener(localAddr string) *mockListener {
 	return &mockListener{
 		localAddr:   localAddr,
@@ -645,7 +645,7 @@ func TestListeners(t *testing.T) {
 	}()
 
 	// Tally the receive connections to ensure the expected number are
-	// received.  Also, fail the test after a timeout so it will not hang
+	// received. Also, fail the test after a timeout so it will not hang
 	// forever should the test not work.
 	expectedNumConns := len(listeners) * 2
 	var numConns int

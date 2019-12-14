@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/hex"
 
-	"github.com/kaspanet/kaspad/btcjson"
 	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
@@ -13,7 +13,7 @@ import (
 
 // handleGetRawTransaction implements the getRawTransaction command.
 func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.GetRawTransactionCmd)
+	c := cmd.(*rpcmodel.GetRawTransactionCmd)
 
 	// Convert the provided transaction hash hex to a Hash.
 	txID, err := daghash.NewTxIDFromStr(c.TxID)
@@ -34,8 +34,8 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 	mempoolTx, err := s.cfg.TxMemPool.FetchTransaction(txID)
 	if err != nil {
 		if s.cfg.TxIndex == nil {
-			return nil, &btcjson.RPCError{
-				Code: btcjson.ErrRPCNoTxInfo,
+			return nil, &rpcmodel.RPCError{
+				Code: rpcmodel.ErrRPCNoTxInfo,
 				Message: "The transaction index must be " +
 					"enabled to query the blockchain " +
 					"(specify --txindex)",
@@ -48,7 +48,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 		}
 
 		// When the verbose flag isn't set, simply return the serialized
-		// transaction as a hex-encoded string.  This is done here to
+		// transaction as a hex-encoded string. This is done here to
 		// avoid deserializing it only to reserialize it again later.
 		if !verbose {
 			return hex.EncodeToString(txBytes), nil

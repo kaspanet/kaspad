@@ -31,7 +31,7 @@ type Coins interface {
 }
 
 // CoinSet is a utility struct for the modifications of a set of
-// Coins that implements the Coins interface.  To create a CoinSet,
+// Coins that implements the Coins interface. To create a CoinSet,
 // you must call NewCoinSet with nil for an empty set or a slice of
 // coins as the initial contents.
 //
@@ -157,7 +157,7 @@ func satisfiesTargetValue(targetValue, minChange, totalValue util.Amount) bool {
 // CoinSelector is an interface that wraps the CoinSelect method.
 //
 // CoinSelect will attempt to select a subset of the coins which has at
-// least the targetValue amount.  CoinSelect is not guaranteed to return a
+// least the targetValue amount. CoinSelect is not guaranteed to return a
 // selection of coins even if the total value of coins given is greater
 // than the target value.
 //
@@ -237,7 +237,7 @@ func (s MaxValueAgeCoinSelector) CoinSelect(targetValue util.Amount, coins []Coi
 //
 // When possible, MinPriorityCoinSelector will attempt to reduce the average
 // input priority over the threshold, but no guarantees will be made as to
-// minimality of the selection.  The selection below is almost certainly
+// minimality of the selection. The selection below is almost certainly
 // suboptimal.
 //
 type MinPriorityCoinSelector struct {
@@ -395,7 +395,7 @@ func (c *SimpleCoin) NumConfs() int64 {
 	return c.TxNumConfs
 }
 
-// ValueAge returns the product of the value and the number of confirmations.  This is
+// ValueAge returns the product of the value and the number of confirmations. This is
 // used as an input to calculate the priority of the transaction.
 func (c *SimpleCoin) ValueAge() int64 {
 	return c.TxNumConfs * int64(c.Value())

@@ -12,7 +12,7 @@ import (
 // Mutable represents a treap data structure which is used to hold ordered
 // key/value pairs using a combination of binary search tree and heap semantics.
 // It is a self-organizing and randomized data structure that doesn't require
-// complex operations to maintain balance.  Search, insert, and delete
+// complex operations to maintain balance. Search, insert, and delete
 // operations are all O(log n).
 type Mutable struct {
 	root  *treapNode
@@ -30,14 +30,14 @@ func (t *Mutable) Len() int {
 
 // Size returns a best estimate of the total number of bytes the treap is
 // consuming including all of the fields used to represent the nodes as well as
-// the size of the keys and values.  Shared values are not detected, so the
+// the size of the keys and values. Shared values are not detected, so the
 // returned size assumes each value is pointing to different memory.
 func (t *Mutable) Size() uint64 {
 	return t.totalSize
 }
 
-// get returns the treap node that contains the passed key and its parent.  When
-// the found node is the root of the tree, the parent will be nil.  When the key
+// get returns the treap node that contains the passed key and its parent. When
+// the found node is the root of the tree, the parent will be nil. When the key
 // does not exist, both the node and the parent will be nil.
 func (t *Mutable) get(key []byte) (*treapNode, *treapNode) {
 	var parent *treapNode
@@ -72,7 +72,7 @@ func (t *Mutable) Has(key []byte) bool {
 	return false
 }
 
-// Get returns the value for the passed key.  The function will return nil when
+// Get returns the value for the passed key. The function will return nil when
 // the key does not exist.
 func (t *Mutable) Get(key []byte) []byte {
 	if node, _ := t.get(key); node != nil {
@@ -83,7 +83,7 @@ func (t *Mutable) Get(key []byte) []byte {
 
 // relinkGrandparent relinks the node into the treap after it has been rotated
 // by changing the passed grandparent's left or right pointer, depending on
-// where the old parent was, to point at the passed node.  Otherwise, when there
+// where the old parent was, to point at the passed node. Otherwise, when there
 // is no grandparent, it means the node is now the root of the tree, so update
 // it accordingly.
 func (t *Mutable) relinkGrandparent(node, parent, grandparent *treapNode) {
@@ -104,7 +104,7 @@ func (t *Mutable) relinkGrandparent(node, parent, grandparent *treapNode) {
 
 // Put inserts the passed key/value pair.
 func (t *Mutable) Put(key, value []byte) {
-	// Use an empty byte slice for the value when none was provided.  This
+	// Use an empty byte slice for the value when none was provided. This
 	// ultimately allows key existence to be determined from the value since
 	// an empty byte slice is distinguishable from nil.
 	if value == nil {
@@ -121,7 +121,7 @@ func (t *Mutable) Put(key, value []byte) {
 	}
 
 	// Find the binary tree insertion point and construct a list of parents
-	// while doing so.  When the key matches an entry already in the treap,
+	// while doing so. When the key matches an entry already in the treap,
 	// just update its value and return.
 	var parents parentStack
 	var compareResult int
@@ -177,7 +177,7 @@ func (t *Mutable) Put(key, value []byte) {
 
 // Delete removes the passed key if it exists.
 func (t *Mutable) Delete(key []byte) {
-	// Find the node for the key along with its parent.  There is nothing to
+	// Find the node for the key along with its parent. There is nothing to
 	// do if the key does not exist.
 	node, parent := t.get(key)
 	if node == nil {
@@ -214,7 +214,7 @@ func (t *Mutable) Delete(key []byte) {
 		}
 
 		// Rotate left or right depending on which side the child node
-		// is on.  This has the effect of moving the node to delete
+		// is on. This has the effect of moving the node to delete
 		// towards the bottom of the tree while maintaining the
 		// min-heap.
 		if isLeft {
@@ -271,7 +271,7 @@ func (t *Mutable) Reset() {
 	t.root = nil
 }
 
-// NewMutable returns a new empty mutable treap ready for use.  See the
+// NewMutable returns a new empty mutable treap ready for use. See the
 // documentation for the Mutable structure for more details.
 func NewMutable() *Mutable {
 	return &Mutable{}

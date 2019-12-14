@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kaspanet/kaspad/btcec"
+	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -474,7 +474,7 @@ func TestUTXODiffRules(t *testing.T) {
 	}
 }
 
-func areMultisetsEqual(a *btcec.Multiset, b *btcec.Multiset) bool {
+func areMultisetsEqual(a *ecc.Multiset, b *ecc.Multiset) bool {
 	aX, aY := a.Point()
 	bX, bY := b.Point()
 	return aX.Cmp(bX) == 0 && aY.Cmp(bY) == 0

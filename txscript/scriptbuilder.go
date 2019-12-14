@@ -11,14 +11,14 @@ import (
 
 const (
 	// defaultScriptAlloc is the default size used for the backing array
-	// for a script being built by the ScriptBuilder.  The array will
+	// for a script being built by the ScriptBuilder. The array will
 	// dynamically grow as needed, but this figure is intended to provide
 	// enough space for vast majority of scripts without needing to grow the
 	// backing array multiple times.
 	defaultScriptAlloc = 500
 )
 
-// ErrScriptNotCanonical identifies a non-canonical script.  The caller can use
+// ErrScriptNotCanonical identifies a non-canonical script. The caller can use
 // a type assertion to detect this error type.
 type ErrScriptNotCanonical string
 
@@ -27,8 +27,8 @@ func (e ErrScriptNotCanonical) Error() string {
 	return string(e)
 }
 
-// ScriptBuilder provides a facility for building custom scripts.  It allows
-// you to push opcodes, ints, and data while respecting canonical encoding.  In
+// ScriptBuilder provides a facility for building custom scripts. It allows
+// you to push opcodes, ints, and data while respecting canonical encoding. In
 // general it does not ensure the script will execute correctly, however any
 // data pushes which would exceed the maximum allowed script engine limits and
 // are therefore guaranteed not to execute will not be pushed and will result in
@@ -52,7 +52,7 @@ type ScriptBuilder struct {
 	err    error
 }
 
-// AddOp pushes the passed opcode to the end of the script.  The script will not
+// AddOp pushes the passed opcode to the end of the script. The script will not
 // be modified if pushing the opcode would cause the script to exceed the
 // maximum allowed script engine size.
 func (b *ScriptBuilder) AddOp(opcode byte) *ScriptBuilder {
@@ -73,7 +73,7 @@ func (b *ScriptBuilder) AddOp(opcode byte) *ScriptBuilder {
 	return b
 }
 
-// AddOps pushes the passed opcodes to the end of the script.  The script will
+// AddOps pushes the passed opcodes to the end of the script. The script will
 // not be modified if pushing the opcodes would cause the script to exceed the
 // maximum allowed script engine size.
 func (b *ScriptBuilder) AddOps(opcodes []byte) *ScriptBuilder {
@@ -122,9 +122,9 @@ func canonicalDataSize(data []byte) int {
 }
 
 // addData is the internal function that actually pushes the passed data to the
-// end of the script.  It automatically chooses canonical opcodes depending on
-// the length of the data.  A zero length buffer will lead to a push of empty
-// data onto the stack (OP_0).  No data limits are enforced with this function.
+// end of the script. It automatically chooses canonical opcodes depending on
+// the length of the data. A zero length buffer will lead to a push of empty
+// data onto the stack (OP_0). No data limits are enforced with this function.
 func (b *ScriptBuilder) addData(data []byte) *ScriptBuilder {
 	dataLen := len(data)
 
@@ -170,7 +170,7 @@ func (b *ScriptBuilder) addData(data []byte) *ScriptBuilder {
 
 // AddFullData should not typically be used by ordinary users as it does not
 // include the checks which prevent data pushes larger than the maximum allowed
-// sizes which leads to scripts that can't be executed.  This is provided for
+// sizes which leads to scripts that can't be executed. This is provided for
 // testing purposes such as regression tests where sizes are intentionally made
 // larger than allowed.
 //
@@ -183,11 +183,11 @@ func (b *ScriptBuilder) AddFullData(data []byte) *ScriptBuilder {
 	return b.addData(data)
 }
 
-// AddData pushes the passed data to the end of the script.  It automatically
-// chooses canonical opcodes depending on the length of the data.  A zero length
+// AddData pushes the passed data to the end of the script. It automatically
+// chooses canonical opcodes depending on the length of the data. A zero length
 // buffer will lead to a push of empty data onto the stack (OP_0) and any push
 // of data greater than MaxScriptElementSize will not modify the script since
-// that is not allowed by the script engine.  Also, the script will not be
+// that is not allowed by the script engine. Also, the script will not be
 // modified if pushing the data would cause the script to exceed the maximum
 // allowed script engine size.
 func (b *ScriptBuilder) AddData(data []byte) *ScriptBuilder {
@@ -220,7 +220,7 @@ func (b *ScriptBuilder) AddData(data []byte) *ScriptBuilder {
 	return b.addData(data)
 }
 
-// AddInt64 pushes the passed integer to the end of the script.  The script will
+// AddInt64 pushes the passed integer to the end of the script. The script will
 // not be modified if pushing the data would cause the script to exceed the
 // maximum allowed script engine size.
 func (b *ScriptBuilder) AddInt64(val int64) *ScriptBuilder {
@@ -258,14 +258,14 @@ func (b *ScriptBuilder) Reset() *ScriptBuilder {
 	return b
 }
 
-// Script returns the currently built script.  When any errors occurred while
+// Script returns the currently built script. When any errors occurred while
 // building the script, the script will be returned up the point of the first
 // error along with the error.
 func (b *ScriptBuilder) Script() ([]byte, error) {
 	return b.script, b.err
 }
 
-// NewScriptBuilder returns a new instance of a script builder.  See
+// NewScriptBuilder returns a new instance of a script builder. See
 // ScriptBuilder for details.
 func NewScriptBuilder() *ScriptBuilder {
 	return &ScriptBuilder{

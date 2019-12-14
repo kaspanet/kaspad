@@ -2,8 +2,8 @@ package rpc
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/btcjson"
 	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/rpcmodel"
 )
 
 // handleGenerate handles generate commands.
@@ -11,16 +11,16 @@ func handleGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	// Respond with an error if there are no addresses to pay the
 	// created blocks to.
 	if len(config.ActiveConfig().MiningAddrs) == 0 {
-		return nil, &btcjson.RPCError{
-			Code: btcjson.ErrRPCInternal.Code,
+		return nil, &rpcmodel.RPCError{
+			Code: rpcmodel.ErrRPCInternal.Code,
 			Message: "No payment addresses specified " +
 				"via --miningaddr",
 		}
 	}
 
 	if config.ActiveConfig().SubnetworkID != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCInvalidRequest.Code,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCInvalidRequest.Code,
 			Message: "`generate` is not supported on partial nodes.",
 		}
 	}
@@ -28,8 +28,8 @@ func handleGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	// Respond with an error if there's virtually 0 chance of mining a block
 	// with the CPU.
 	if !s.cfg.DAGParams.GenerateSupported {
-		return nil, &btcjson.RPCError{
-			Code: btcjson.ErrRPCDifficulty,
+		return nil, &rpcmodel.RPCError{
+			Code: rpcmodel.ErrRPCDifficulty,
 			Message: fmt.Sprintf("No support for `generate` on "+
 				"the current network, %s, as it's unlikely to "+
 				"be possible to mine a block with the CPU.",
@@ -37,12 +37,12 @@ func handleGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		}
 	}
 
-	c := cmd.(*btcjson.GenerateCmd)
+	c := cmd.(*rpcmodel.GenerateCmd)
 
 	// Respond with an error if the client is requesting 0 blocks to be generated.
 	if c.NumBlocks == 0 {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCInternal.Code,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCInternal.Code,
 			Message: "Please request a nonzero number of blocks to generate.",
 		}
 	}
@@ -52,8 +52,8 @@ func handleGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 
 	blockHashes, err := s.cfg.CPUMiner.GenerateNBlocks(c.NumBlocks)
 	if err != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCInternal.Code,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCInternal.Code,
 			Message: err.Error(),
 		}
 	}

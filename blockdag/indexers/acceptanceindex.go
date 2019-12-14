@@ -64,7 +64,7 @@ func (idx *AcceptanceIndex) Name() string {
 }
 
 // Create is invoked when the indexer manager determines the index needs
-// to be created for the first time.  It creates the bucket for the
+// to be created for the first time. It creates the bucket for the
 // acceptance index.
 //
 // This is part of the Indexer interface.

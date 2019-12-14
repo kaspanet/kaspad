@@ -6,7 +6,7 @@ import (
 	"github.com/prometheus/common/log"
 )
 
-// OnGetBlockInvs is invoked when a peer receives a getblockinvs bitcoin
+// OnGetBlockInvs is invoked when a peer receives a getblockinvs kaspa
 // message.
 // It finds the blue future between msg.StartHash and msg.StopHash
 // and send the invs to the requesting peer.

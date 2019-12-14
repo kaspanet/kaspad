@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/kaspanet/kaspad/btcec"
+	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/wire"
 )
 
@@ -25,8 +25,8 @@ const (
 type UTXOEntry struct {
 	// NOTE: Additions, deletions, or modifications to the order of the
 	// definitions in this struct should not be changed without considering
-	// how it affects alignment on 64-bit platforms.  The current order is
-	// specifically crafted to result in minimal padding.  There will be a
+	// how it affects alignment on 64-bit platforms. The current order is
+	// specifically crafted to result in minimal padding. There will be a
 	// lot of these in memory, so a few extra bytes of padding adds up.
 
 	amount         uint64
@@ -35,7 +35,7 @@ type UTXOEntry struct {
 
 	// packedFlags contains additional info about output such as whether it
 	// is a coinbase, and whether it has been modified
-	// since it was loaded.  This approach is used in order to reduce memory
+	// since it was loaded. This approach is used in order to reduce memory
 	// usage since there will be a lot of these in memory.
 	packedFlags txoFlags
 }
@@ -154,7 +154,7 @@ func (uc utxoCollection) clone() utxoCollection {
 type UTXODiff struct {
 	toAdd        utxoCollection
 	toRemove     utxoCollection
-	diffMultiset *btcec.Multiset
+	diffMultiset *ecc.Multiset
 	useMultiset  bool
 }
 
@@ -174,7 +174,7 @@ func NewUTXODiff() *UTXODiff {
 		toAdd:        utxoCollection{},
 		toRemove:     utxoCollection{},
 		useMultiset:  true,
-		diffMultiset: btcec.NewMultiset(btcec.S256()),
+		diffMultiset: ecc.NewMultiset(ecc.S256()),
 	}
 }
 
@@ -472,7 +472,7 @@ type UTXOSet interface {
 	AddTx(tx *wire.MsgTx, blockBlueScore uint64) (ok bool, err error)
 	clone() UTXOSet
 	Get(outpoint wire.Outpoint) (*UTXOEntry, bool)
-	Multiset() *btcec.Multiset
+	Multiset() *ecc.Multiset
 	WithTransactions(transactions []*wire.MsgTx, blockBlueScore uint64, ignoreDoubleSpends bool) (UTXOSet, error)
 }
 
@@ -543,21 +543,21 @@ func diffFromAcceptedTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*
 // FullUTXOSet represents a full list of transaction outputs and their values
 type FullUTXOSet struct {
 	utxoCollection
-	UTXOMultiset *btcec.Multiset
+	UTXOMultiset *ecc.Multiset
 }
 
 // NewFullUTXOSet creates a new utxoSet with full list of transaction outputs and their values
 func NewFullUTXOSet() *FullUTXOSet {
 	return &FullUTXOSet{
 		utxoCollection: utxoCollection{},
-		UTXOMultiset:   btcec.NewMultiset(btcec.S256()),
+		UTXOMultiset:   ecc.NewMultiset(ecc.S256()),
 	}
 }
 
 // newFullUTXOSetFromUTXOCollection converts a utxoCollection to a FullUTXOSet
 func newFullUTXOSetFromUTXOCollection(collection utxoCollection) (*FullUTXOSet, error) {
 	var err error
-	multiset := btcec.NewMultiset(btcec.S256())
+	multiset := ecc.NewMultiset(ecc.S256())
 	for outpoint, utxoEntry := range collection {
 		multiset, err = addUTXOToMultiset(multiset, utxoEntry, &outpoint)
 		if err != nil {
@@ -657,7 +657,7 @@ func (fus *FullUTXOSet) Get(outpoint wire.Outpoint) (*UTXOEntry, bool) {
 }
 
 // Multiset returns the ecmh-Multiset of this utxoSet
-func (fus *FullUTXOSet) Multiset() *btcec.Multiset {
+func (fus *FullUTXOSet) Multiset() *ecc.Multiset {
 	return fus.UTXOMultiset
 }
 
@@ -867,7 +867,7 @@ func (dus *DiffUTXOSet) Get(outpoint wire.Outpoint) (*UTXOEntry, bool) {
 }
 
 // Multiset returns the ecmh-Multiset of this utxoSet
-func (dus *DiffUTXOSet) Multiset() *btcec.Multiset {
+func (dus *DiffUTXOSet) Multiset() *ecc.Multiset {
 	return dus.base.UTXOMultiset.Union(dus.UTXODiff.diffMultiset)
 }
 
@@ -889,7 +889,7 @@ func (dus *DiffUTXOSet) WithTransactions(transactions []*wire.MsgTx, blockBlueSc
 	return UTXOSet(diffSet), nil
 }
 
-func addUTXOToMultiset(ms *btcec.Multiset, entry *UTXOEntry, outpoint *wire.Outpoint) (*btcec.Multiset, error) {
+func addUTXOToMultiset(ms *ecc.Multiset, entry *UTXOEntry, outpoint *wire.Outpoint) (*ecc.Multiset, error) {
 	utxoMS, err := utxoMultiset(entry, outpoint)
 	if err != nil {
 		return nil, err
@@ -897,7 +897,7 @@ func addUTXOToMultiset(ms *btcec.Multiset, entry *UTXOEntry, outpoint *wire.Outp
 	return ms.Union(utxoMS), nil
 }
 
-func removeUTXOFromMultiset(ms *btcec.Multiset, entry *UTXOEntry, outpoint *wire.Outpoint) (*btcec.Multiset, error) {
+func removeUTXOFromMultiset(ms *ecc.Multiset, entry *UTXOEntry, outpoint *wire.Outpoint) (*ecc.Multiset, error) {
 	utxoMS, err := utxoMultiset(entry, outpoint)
 	if err != nil {
 		return nil, err

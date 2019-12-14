@@ -20,7 +20,7 @@ const (
 	// BFFastAdd may be set to indicate that several checks can be avoided
 	// for the block since it is already known to fit into the chain due to
 	// already proving it correct links into the chain up to a known
-	// checkpoint.  This is primarily used for headers-first mode.
+	// checkpoint. This is primarily used for headers-first mode.
 	BFFastAdd BehaviorFlags = 1 << iota
 
 	// BFNoPoWCheck may be set to indicate the proof of work check which
@@ -66,7 +66,7 @@ func (dag *BlockDAG) BlockExists(hash *daghash.Hash) bool {
 //
 // This function MUST be called with the chain state lock held (for writes).
 func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) error {
-	// Start with processing at least the passed hash.  Leave a little room
+	// Start with processing at least the passed hash. Leave a little room
 	// for additional orphan blocks that need to be processed without
 	// needing to grow the array in the common case.
 	processHashes := make([]*daghash.Hash, 0, 10)
@@ -127,7 +127,7 @@ func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 }
 
 // ProcessBlock is the main workhorse for handling insertion of new blocks into
-// the block chain.  It includes functionality such as rejecting duplicate
+// the block chain. It includes functionality such as rejecting duplicate
 // blocks, ensuring blocks follow all rules, orphan handling, and insertion into
 // the block DAG.
 //
