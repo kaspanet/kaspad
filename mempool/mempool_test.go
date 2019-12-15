@@ -1577,15 +1577,11 @@ func TestExtractRejectCode(t *testing.T) {
 		},
 		{
 			blockdagRuleErrorCode: blockdag.ErrFinalityPointTimeTooOld,
-			wireRejectCode:        wire.RejectCheckpoint,
+			wireRejectCode:        wire.RejectFinality,
 		},
 		{
 			blockdagRuleErrorCode: blockdag.ErrDifficultyTooLow,
-			wireRejectCode:        wire.RejectCheckpoint,
-		},
-		{
-			blockdagRuleErrorCode: blockdag.ErrBadCheckpoint,
-			wireRejectCode:        wire.RejectCheckpoint,
+			wireRejectCode:        wire.RejectFinality,
 		},
 		{
 			blockdagRuleErrorCode: math.MaxUint32,

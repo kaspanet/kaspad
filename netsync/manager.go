@@ -127,8 +127,7 @@ type pauseMsg struct {
 	unpause <-chan struct{}
 }
 
-// headerNode is used as a node in a list of headers that are linked together
-// between checkpoints.
+// headerNode is used as a node in a list of headers
 type headerNode struct {
 	height uint64
 	hash   *daghash.Hash
@@ -472,8 +471,8 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	// When in headers-first mode, if the block matches the hash of the
 	// first header in the list of headers that are being fetched, it's
 	// eligible for less validation since the headers have already been
-	// verified to link together and are valid up to the next checkpoint.
-	// Also, remove the list entry for all blocks.
+	// verified to link together. Also, remove the list entry for all
+	// blocks.
 	behaviorFlags := blockdag.BFNone
 	if sm.headersFirstMode {
 		firstNodeEl := sm.headerList.Front()
@@ -719,8 +718,7 @@ func (sm *SyncManager) handleHeadersMsg(hmsg *headersMsg) {
 		}
 	}
 
-	// This header is not a checkpoint, so request the next batch of
-	// headers starting from the latest known header.
+	// Request the next batch of headers starting from the latest known header.
 	err := peer.PushGetHeadersMsg(finalHash, &daghash.Hash{})
 	if err != nil {
 		log.Warnf("Failed to send getheaders message to "+

@@ -45,8 +45,7 @@ type chainUpdates struct {
 
 // BlockDAG provides functions for working with the kaspa block DAG.
 // It includes functionality such as rejecting duplicate blocks, ensuring blocks
-// follow all rules, orphan handling, checkpoint handling, and best chain
-// selection with reorganization.
+// follow all rules, orphan handling, and best chain selection with reorganization.
 type BlockDAG struct {
 	// The following fields are set when the instance is created and can't
 	// be changed afterwards, so there is no need to protect them with a
@@ -461,7 +460,6 @@ func LockTimeToSequence(isSeconds bool, locktime uint64) uint64 {
 //
 // The flags modify the behavior of this function as follows:
 //  - BFFastAdd: Avoids several expensive transaction validation operations.
-//    This is useful when using checkpoints.
 //
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) addBlock(node *blockNode, parentNodes blockSet,
@@ -1232,7 +1230,6 @@ func updateTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
 // isCurrent returns whether or not the DAG believes it is current. Several
 // factors are used to guess, but the key factors that allow the DAG to
 // believe it is current are:
-//  - Latest block height is after the latest checkpoint (if enabled)
 //  - Latest block has a timestamp newer than 24 hours ago
 //
 // This function MUST be called with the DAG state lock held (for reads).
@@ -1257,7 +1254,6 @@ func (dag *BlockDAG) isCurrent() bool {
 // IsCurrent returns whether or not the chain believes it is current. Several
 // factors are used to guess, but the key factors that allow the chain to
 // believe it is current are:
-//  - Latest block height is after the latest checkpoint (if enabled)
 //  - Latest block has a timestamp newer than 24 hours ago
 //
 // This function is safe for concurrent access.
