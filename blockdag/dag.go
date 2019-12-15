@@ -51,14 +51,12 @@ type BlockDAG struct {
 	// The following fields are set when the instance is created and can't
 	// be changed afterwards, so there is no need to protect them with a
 	// separate mutex.
-	checkpoints              []dagconfig.Checkpoint
-	checkpointsByChainHeight map[uint64]*dagconfig.Checkpoint
-	db                       database.DB
-	dagParams                *dagconfig.Params
-	timeSource               MedianTimeSource
-	sigCache                 *txscript.SigCache
-	indexManager             IndexManager
-	genesis                  *blockNode
+	db           database.DB
+	dagParams    *dagconfig.Params
+	timeSource   MedianTimeSource
+	sigCache     *txscript.SigCache
+	indexManager IndexManager
+	genesis      *blockNode
 
 	// The following fields are calculated based upon the provided DAG
 	// parameters. They are also set when the instance is created and
@@ -101,11 +99,6 @@ type BlockDAG struct {
 	orphans      map[daghash.Hash]*orphanBlock
 	prevOrphans  map[daghash.Hash][]*orphanBlock
 	newestOrphan *orphanBlock
-
-	// These fields are related to checkpoint handling. They are protected
-	// by the chain lock.
-	nextCheckpoint *dagconfig.Checkpoint
-	checkpointNode *blockNode
 
 	// The following caches are used to efficiently keep track of the
 	// current deployment threshold state of each rule change deployment.
@@ -1244,13 +1237,6 @@ func updateTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
 //
 // This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) isCurrent() bool {
-	// Not current if the virtual's selected tip chain height is less than
-	// the latest known good checkpoint (when checkpoints are enabled).
-	checkpoint := dag.LatestCheckpoint()
-	if checkpoint != nil && dag.selectedTip().chainHeight < checkpoint.ChainHeight {
-		return false
-	}
-
 	// Not current if the virtual's selected parent has a timestamp
 	// before 24 hours ago. If the DAG is empty, we take the genesis
 	// block timestamp.
@@ -1854,14 +1840,6 @@ type Config struct {
 	// This field is required.
 	DAGParams *dagconfig.Params
 
-	// Checkpoints hold caller-defined checkpoints that should be added to
-	// the default checkpoints in DAGParams. Checkpoints must be sorted
-	// by height.
-	//
-	// This field can be nil if the caller does not wish to specify any
-	// checkpoints.
-	Checkpoints []dagconfig.Checkpoint
-
 	// TimeSource defines the median time source to use for things such as
 	// block processing and determining whether or not the chain is current.
 	//
@@ -1906,31 +1884,11 @@ func New(config *Config) (*BlockDAG, error) {
 		return nil, AssertError("BlockDAG.New timesource is nil")
 	}
 
-	// Generate a checkpoint by chain height map from the provided checkpoints
-	// and assert the provided checkpoints are sorted by chain height as required.
-	var checkpointsByChainHeight map[uint64]*dagconfig.Checkpoint
-	var prevCheckpointChainHeight uint64
-	if len(config.Checkpoints) > 0 {
-		checkpointsByChainHeight = make(map[uint64]*dagconfig.Checkpoint)
-		for i := range config.Checkpoints {
-			checkpoint := &config.Checkpoints[i]
-			if checkpoint.ChainHeight <= prevCheckpointChainHeight {
-				return nil, AssertError("blockdag.New " +
-					"checkpoints are not sorted by chain height")
-			}
-
-			checkpointsByChainHeight[checkpoint.ChainHeight] = checkpoint
-			prevCheckpointChainHeight = checkpoint.ChainHeight
-		}
-	}
-
 	params := config.DAGParams
 	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
 
 	index := newBlockIndex(config.DB, params)
 	dag := BlockDAG{
-		checkpoints:                    config.Checkpoints,
-		checkpointsByChainHeight:       checkpointsByChainHeight,
 		db:                             config.DB,
 		dagParams:                      params,
 		timeSource:                     config.TimeSource,

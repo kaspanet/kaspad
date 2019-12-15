@@ -7,12 +7,10 @@ package netsync
 import (
 	"container/list"
 	"fmt"
+	"github.com/pkg/errors"
 	"net"
 	"sync"
 	"sync/atomic"
-	"time"
-
-	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/dagconfig"
@@ -179,45 +177,6 @@ type SyncManager struct {
 	headersFirstMode bool
 	headerList       *list.List
 	startHeader      *list.Element
-	nextCheckpoint   *dagconfig.Checkpoint
-}
-
-// PushGetBlockInvsOrHeaders sends a getblockinvs or getheaders message according to checkpoint status
-// for the provided start hash.
-//
-// This function is safe for concurrent access.
-func (sm *SyncManager) PushGetBlockInvsOrHeaders(peer *peerpkg.Peer, startHash *daghash.Hash) error {
-	// When the current height is less than a known checkpoint we
-	// can use block headers to learn about which blocks comprise
-	// the DAG up to the checkpoint and perform less validation
-	// for them. This is possible since each header contains the
-	// hash of the previous header and a merkle root. Therefore if
-	// we validate all of the received headers link together
-	// properly and the checkpoint hashes match, we can be sure the
-	// hashes for the blocks in between are accurate. Further, once
-	// the full blocks are downloaded, the merkle root is computed
-	// and compared against the value in the header which proves the
-	// full block hasn't been tampered with.
-	//
-	// Once we have passed the final checkpoint, or checkpoints are
-	// disabled, use standard inv messages learn about the blocks
-	// and fully validate them. Finally, regression test mode does
-	// not support the headers-first approach so do normal block
-	// downloads when in regression test mode.
-	if sm.nextCheckpoint != nil &&
-		sm.dag.ChainHeight() < sm.nextCheckpoint.ChainHeight &&
-		sm.dagParams != &dagconfig.RegressionNetParams {
-		//TODO: (Ori) This is probably wrong. Done only for compilation
-		err := peer.PushGetHeadersMsg(startHash, sm.nextCheckpoint.Hash)
-		if err != nil {
-			return err
-		}
-		sm.headersFirstMode = true
-		log.Infof("Downloading headers for blocks %d to "+
-			"%d from peer %s", sm.dag.ChainHeight()+1,
-			sm.nextCheckpoint.ChainHeight, peer.Addr()) //TODO: (Ori) This is probably wrong. Done only for compilation
-	}
-	return peer.PushGetBlockInvsMsg(startHash, peer.SelectedTip())
 }
 
 // resetHeaderState sets the headers-first mode state to values appropriate for
@@ -226,42 +185,6 @@ func (sm *SyncManager) resetHeaderState(newestHash *daghash.Hash, newestHeight u
 	sm.headersFirstMode = false
 	sm.headerList.Init()
 	sm.startHeader = nil
-
-	// When there is a next checkpoint, add an entry for the latest known
-	// block into the header pool. This allows the next downloaded header
-	// to prove it links to the chain properly.
-	if sm.nextCheckpoint != nil {
-		node := headerNode{height: newestHeight, hash: newestHash}
-		sm.headerList.PushBack(&node)
-	}
-}
-
-// findNextHeaderCheckpoint returns the next checkpoint after the passed height.
-// It returns nil when there is not one either because the height is already
-// later than the final checkpoint or some other reason such as disabled
-// checkpoints.
-func (sm *SyncManager) findNextHeaderCheckpoint(height uint64) *dagconfig.Checkpoint {
-	checkpoints := sm.dag.Checkpoints()
-	if len(checkpoints) == 0 {
-		return nil
-	}
-
-	// There is no next checkpoint if the height is already after the final
-	// checkpoint.
-	finalCheckpoint := &checkpoints[len(checkpoints)-1]
-	if height >= finalCheckpoint.ChainHeight {
-		return nil
-	}
-
-	// Find the next checkpoint.
-	nextCheckpoint := finalCheckpoint
-	for i := len(checkpoints) - 2; i >= 0; i-- {
-		if height >= checkpoints[i].ChainHeight {
-			break
-		}
-		nextCheckpoint = &checkpoints[i]
-	}
-	return nextCheckpoint
 }
 
 // startSync will choose the best peer among the available candidate peers to
@@ -300,14 +223,7 @@ func (sm *SyncManager) startSync() {
 		log.Infof("Syncing to block %s from peer %s",
 			bestPeer.SelectedTip(), bestPeer.Addr())
 
-		if sm.nextCheckpoint != nil &&
-			sm.dag.ChainHeight() < sm.nextCheckpoint.ChainHeight &&
-			sm.dagParams != &dagconfig.RegressionNetParams {
-			//TODO: (Ori) This is probably wrong. Done only for compilation
-			bestPeer.PushGetBlockLocatorMsg(sm.nextCheckpoint.Hash, sm.dagParams.GenesisHash)
-		} else {
-			bestPeer.PushGetBlockLocatorMsg(&daghash.ZeroHash, sm.dagParams.GenesisHash)
-		}
+		bestPeer.PushGetBlockLocatorMsg(&daghash.ZeroHash, sm.dagParams.GenesisHash)
 		sm.syncPeer = bestPeer
 	} else {
 		log.Warnf("No sync peer candidates available")
@@ -557,10 +473,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	// first header in the list of headers that are being fetched, it's
 	// eligible for less validation since the headers have already been
 	// verified to link together and are valid up to the next checkpoint.
-	// Also, remove the list entry for all blocks except the checkpoint
-	// since it is needed to verify the next round of headers links
-	// properly.
-	isCheckpointBlock := false
+	// Also, remove the list entry for all blocks.
 	behaviorFlags := blockdag.BFNone
 	if sm.headersFirstMode {
 		firstNodeEl := sm.headerList.Front()
@@ -568,11 +481,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 			firstNode := firstNodeEl.Value.(*headerNode)
 			if blockHash.IsEqual(firstNode.hash) {
 				behaviorFlags |= blockdag.BFFastAdd
-				if firstNode.hash.IsEqual(sm.nextCheckpoint.Hash) {
-					isCheckpointBlock = true
-				} else {
-					sm.headerList.Remove(firstNodeEl)
-				}
+				sm.headerList.Remove(firstNodeEl)
 			}
 		}
 	}
@@ -663,48 +572,11 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		return
 	}
 
-	// This is headers-first mode, so if the block is not a checkpoint
-	// request more blocks using the header list when the request queue is
-	// getting short.
-	if !isCheckpointBlock {
-		if sm.startHeader != nil &&
-			len(state.requestedBlocks) < minInFlightBlocks {
-			sm.fetchHeaderBlocks()
-		}
-		return
-	}
-
-	// This is headers-first mode and the block is a checkpoint. When
-	// there is a next checkpoint, get the next round of headers by asking
-	// for headers starting from the block after this one up to the next
-	// checkpoint.
-	prevHeight := sm.nextCheckpoint.ChainHeight
-	parentHash := sm.nextCheckpoint.Hash
-	sm.nextCheckpoint = sm.findNextHeaderCheckpoint(prevHeight)
-	if sm.nextCheckpoint != nil {
-		err := peer.PushGetHeadersMsg(parentHash, sm.nextCheckpoint.Hash)
-		if err != nil {
-			log.Warnf("Failed to send getheaders message to "+
-				"peer %s: %s", peer.Addr(), err)
-			return
-		}
-		log.Infof("Downloading headers for blocks %d to %d from "+
-			"peer %s", prevHeight+1, sm.nextCheckpoint.ChainHeight,
-			sm.syncPeer.Addr())
-		return
-	}
-
-	// This is headers-first mode, the block is a checkpoint, and there are
-	// no more checkpoints, so switch to normal mode by requesting blocks
-	// from the block after this one up to the end of the chain (zero hash).
-	sm.headersFirstMode = false
-	sm.headerList.Init()
-	log.Infof("Reached the final checkpoint -- switching to normal mode")
-	err = peer.PushGetBlockInvsMsg(blockHash, peer.SelectedTip())
-	if err != nil {
-		log.Warnf("Failed to send getblockinvs message to peer %s: %s",
-			peer.Addr(), err)
-		return
+	// This is headers-first mode, so  request more blocks using
+	// the header list when the request queue is getting short.
+	if sm.startHeader != nil &&
+		len(state.requestedBlocks) < minInFlightBlocks {
+		sm.fetchHeaderBlocks()
 	}
 }
 
@@ -813,8 +685,7 @@ func (sm *SyncManager) handleHeadersMsg(hmsg *headersMsg) {
 	}
 
 	// Process all of the received headers ensuring each one connects to the
-	// previous and that checkpoints match.
-	receivedCheckpoint := false
+	// previous.
 	var finalHash *daghash.Hash
 	for _, blockHeader := range msg.Headers {
 		blockHash := blockHeader.BlockHash()
@@ -846,47 +717,11 @@ func (sm *SyncManager) handleHeadersMsg(hmsg *headersMsg) {
 			peer.Disconnect()
 			return
 		}
-
-		// Verify the header at the next checkpoint height matches.
-		if node.height == sm.nextCheckpoint.ChainHeight {
-			if node.hash.IsEqual(sm.nextCheckpoint.Hash) {
-				receivedCheckpoint = true
-				log.Infof("Verified downloaded block "+
-					"header against checkpoint at height "+
-					"%d/hash %s", node.height, node.hash)
-			} else {
-				log.Warnf("Block header at height %d/hash "+
-					"%s from peer %s does NOT match "+
-					"expected checkpoint hash of %s -- "+
-					"disconnecting", node.height,
-					node.hash, peer.Addr(),
-					sm.nextCheckpoint.Hash)
-				peer.Disconnect()
-				return
-			}
-			break
-		}
-	}
-
-	// When this header is a checkpoint, switch to fetching the blocks for
-	// all of the headers since the last checkpoint.
-	if receivedCheckpoint {
-		// Since the first entry of the list is always the final block
-		// that is already in the database and is only used to ensure
-		// the next header links properly, it must be removed before
-		// fetching the blocks.
-		sm.headerList.Remove(sm.headerList.Front())
-		log.Infof("Received %d block headers: Fetching blocks",
-			sm.headerList.Len())
-		sm.progressLogger.SetLastLogTime(time.Now())
-		sm.fetchHeaderBlocks()
-		return
 	}
 
 	// This header is not a checkpoint, so request the next batch of
-	// headers starting from the latest known header and ending with the
-	// next checkpoint.
-	err := peer.PushGetHeadersMsg(finalHash, sm.nextCheckpoint.Hash)
+	// headers starting from the latest known header.
+	err := peer.PushGetHeadersMsg(finalHash, &daghash.Hash{})
 	if err != nil {
 		log.Warnf("Failed to send getheaders message to "+
 			"peer %s: %s", peer.Addr(), err)
@@ -1464,17 +1299,6 @@ func New(config *Config) (*SyncManager, error) {
 		msgChan:         make(chan interface{}, config.MaxPeers*3),
 		headerList:      list.New(),
 		quit:            make(chan struct{}),
-	}
-
-	selectedTipHash := sm.dag.SelectedTipHash()
-	if !config.DisableCheckpoints {
-		// Initialize the next checkpoint based on the current chain height.
-		sm.nextCheckpoint = sm.findNextHeaderCheckpoint(sm.dag.ChainHeight()) //TODO: (Ori) This is probably wrong. Done only for compilation
-		if sm.nextCheckpoint != nil {
-			sm.resetHeaderState(selectedTipHash, sm.dag.ChainHeight()) //TODO: (Ori) This is probably wrong. Done only for compilation)
-		}
-	} else {
-		log.Info("Checkpoints are disabled")
 	}
 
 	sm.dag.Subscribe(sm.handleBlockDAGNotification)

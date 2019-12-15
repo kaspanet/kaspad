@@ -50,18 +50,6 @@ const phantomK = 10
 const difficultyAdjustmentWindowSize = 2640
 const timestampDeviationTolerance = 132
 
-// Checkpoint identifies a known good point in the block chain. Using
-// checkpoints allows a few optimizations for old blocks during initial download
-// and also prevents forks from old blocks.
-//
-// Each checkpoint is selected based upon several factors. See the
-// documentation for blockchain.IsCheckpointCandidate for details on the
-// selection criteria.
-type Checkpoint struct {
-	ChainHeight uint64
-	Hash        *daghash.Hash
-}
-
 // ConsensusDeployment defines details related to a specific consensus rule
 // change that is voted in. This is part of BIP0009.
 type ConsensusDeployment struct {
@@ -151,9 +139,6 @@ type Params struct {
 	// GenerateSupported specifies whether or not CPU mining is allowed.
 	GenerateSupported bool
 
-	// Checkpoints ordered from oldest to newest.
-	Checkpoints []Checkpoint
-
 	// These fields are related to voting on consensus rule changes as
 	// defined by BIP0009.
 	//
@@ -213,9 +198,6 @@ var MainNetParams = Params{
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 	GenerateSupported:              false,
 
-	// Checkpoints ordered from oldest to newest.
-	Checkpoints: nil,
-
 	// Consensus rule change deployments.
 	//
 	// The miner confirmation window is defined as:
@@ -274,9 +256,6 @@ var RegressionNetParams = Params{
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 	GenerateSupported:              true,
 
-	// Checkpoints ordered from oldest to newest.
-	Checkpoints: nil,
-
 	// Consensus rule change deployments.
 	//
 	// The miner confirmation window is defined as:
@@ -332,9 +311,6 @@ var TestNetParams = Params{
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 	GenerateSupported:              true,
-
-	// Checkpoints ordered from oldest to newest.
-	Checkpoints: nil,
 
 	// Consensus rule change deployments.
 	//
@@ -398,9 +374,6 @@ var SimNetParams = Params{
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 	GenerateSupported:              true,
 
-	// Checkpoints ordered from oldest to newest.
-	Checkpoints: nil,
-
 	// Consensus rule change deployments.
 	//
 	// The miner confirmation window is defined as:
@@ -454,9 +427,6 @@ var DevNetParams = Params{
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 	GenerateSupported:              true,
-
-	// Checkpoints ordered from oldest to newest.
-	Checkpoints: nil,
 
 	// Consensus rule change deployments.
 	//
