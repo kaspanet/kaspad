@@ -630,7 +630,7 @@ func TestProcessTransaction(t *testing.T) {
 
 	addrHash := [20]byte{0x01}
 	addr, err := util.NewAddressPubKeyHash(addrHash[:],
-		util.Bech32PrefixDAGTest)
+		util.Bech32PrefixKaspaTest)
 	if err != nil {
 		t.Fatalf("NewAddressPubKeyHash: unexpected error: %v", err)
 	}

@@ -118,12 +118,12 @@ func Example_defaultWalletLayout() {
 
 	// Get and show the address associated with the extended keys for the
 	// main kaspa network.
-	acct0ExtAddr, err := acct0Ext10.Address(util.Bech32PrefixDAGCoin)
+	acct0ExtAddr, err := acct0Ext10.Address(util.Bech32PrefixKaspa)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	acct0IntAddr, err := acct0Int0.Address(util.Bech32PrefixDAGCoin)
+	acct0IntAddr, err := acct0Int0.Address(util.Bech32PrefixKaspa)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -132,8 +132,8 @@ func Example_defaultWalletLayout() {
 	fmt.Println("Account 0 Internal Address 0:", acct0IntAddr)
 
 	// Output:
-	// Account 0 External Address 10: dagcoin:qz6wkeydwnmhsf0w9ac4rwhnx8jmlqsp9yyvhchtuw
-	// Account 0 Internal Address 0: dagcoin:qzak20c4paxssre0a2zvgk8e0r22p06j9szsxadlgy
+	// Account 0 External Address 10: kaspa:qz6wkeydwnmhsf0w9ac4rwhnx8jmlqsp9y9hv6hmlh
+	// Account 0 Internal Address 0: kaspa:qzak20c4paxssre0a2zvgk8e0r22p06j9srtald0ta
 }
 
 // This example demonstrates the audits use case in BIP0032.
