@@ -1,4 +1,4 @@
-integration
+Integration
 ===========
 
 [![Build Status](http://img.shields.io/travis/btcsuite/btcd.svg)](https://travis-ci.org/btcsuite/btcd)
@@ -8,6 +8,3 @@ This contains integration tests which make use of the
 [rpctest](https://github.com/kaspanet/kaspad/tree/master/integration/rpctest)
 package to programmatically drive nodes via RPC.
 
-## License
-
-This code is licensed under the [copyfree](http://copyfree.org) ISC License.

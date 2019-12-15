@@ -32,7 +32,7 @@ represent real money and introducing bugs and security vulnerabilities can have
 far more dire consequences than in typical projects where having a small bug is
 minimal by comparison.  In the world of cryptocurrencies, even the smallest bug
 in the wrong area can cost people a significant amount of money.  For this
-reason, the btcd suite has a formalized and rigorous development process which
+reason, the kaspad suite has a formalized and rigorous development process which
 is outlined on this page.
 
 We highly encourage code contributions, however it is imperative that you adhere

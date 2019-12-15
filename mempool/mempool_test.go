@@ -7,13 +7,14 @@ package mempool
 import (
 	"bytes"
 	"fmt"
-	"github.com/pkg/errors"
 	"math"
 	"reflect"
 	"runtime"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/util/testtools"
