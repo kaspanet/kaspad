@@ -29,34 +29,34 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// fakeChain is used by the pool harness to provide generated test utxos and
+// fakeDAG is used by the pool harness to provide generated test utxos and
 // a current faked chain height to the pool callbacks. This, in turn, allows
 // transactions to appear as though they are spending completely valid utxos.
-type fakeChain struct {
+type fakeDAG struct {
 	sync.RWMutex
-	currentHeight  uint64
-	medianTimePast time.Time
+	currentBlueScore uint64
+	medianTimePast   time.Time
 }
 
-// Height returns the current height associated with the fake chain
+// BlueScore returns the current blue score associated with the fake DAG
 // instance.
-func (s *fakeChain) Height() uint64 {
+func (s *fakeDAG) BlueScore() uint64 {
 	s.RLock()
-	height := s.currentHeight
+	blueScore := s.currentBlueScore
 	s.RUnlock()
-	return height
+	return blueScore
 }
 
-// SetHeight sets the current height associated with the fake chain instance.
-func (s *fakeChain) SetHeight(height uint64) {
+// SetBlueScore sets the current blueScore associated with the fake DAG instance.
+func (s *fakeDAG) SetBlueScore(blueScore uint64) {
 	s.Lock()
-	s.currentHeight = height
+	s.currentBlueScore = blueScore
 	s.Unlock()
 }
 
 // MedianTimePast returns the current median time past associated with the fake
-// chain instance.
-func (s *fakeChain) MedianTimePast() time.Time {
+// DAG instance.
+func (s *fakeDAG) MedianTimePast() time.Time {
 	s.RLock()
 	mtp := s.medianTimePast
 	s.RUnlock()
@@ -64,8 +64,8 @@ func (s *fakeChain) MedianTimePast() time.Time {
 }
 
 // SetMedianTimePast sets the current median time past associated with the fake
-// chain instance.
-func (s *fakeChain) SetMedianTimePast(mtp time.Time) {
+// DAG instance.
+func (s *fakeDAG) SetMedianTimePast(mtp time.Time) {
 	s.Lock()
 	s.medianTimePast = mtp
 	s.Unlock()
@@ -98,14 +98,14 @@ func txOutToSpendableOutpoint(tx *util.Tx, outputNum uint32) spendableOutpoint {
 }
 
 // poolHarness provides a harness that includes functionality for creating and
-// signing transactions as well as a fake chain that provides utxos for use in
+// signing transactions as well as a fake DAG that provides utxos for use in
 // generating valid transactions.
 type poolHarness struct {
 	signatureScript []byte
 	payScript       []byte
 	dagParams       *dagconfig.Params
 
-	chain  *fakeChain
+	dag    *fakeDAG
 	txPool *TxPool
 }
 
@@ -302,8 +302,8 @@ func (tc *testContext) mineTransactions(transactions []*util.Tx, numberOfBlocks 
 }
 
 // newPoolHarness returns a new instance of a pool harness initialized with a
-// fake chain and a TxPool bound to it that is configured with a policy suitable
-// for testing. Also, the fake chain is populated with the returned spendable
+// fake DAG and a TxPool bound to it that is configured with a policy suitable
+// for testing. Also, the fake DAG is populated with the returned spendable
 // outputs so the caller can easily create new valid transactions which build
 // off of it.
 func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32, dbName string) (*testContext, []spendableOutpoint, func(), error) {
@@ -333,14 +333,14 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 		return nil, nil, nil, errors.Errorf("Failed to build harness signature script: %s", err)
 	}
 
-	// Create a new fake chain and harness bound to it.
-	chain := &fakeChain{}
+	// Create a new fake DAG and harness bound to it.
+	fDAG := &fakeDAG{}
 	harness := &poolHarness{
 		signatureScript: signatureScript,
 		payScript:       scriptPubKey,
 		dagParams:       &params,
 
-		chain: chain,
+		dag: fDAG,
 		txPool: New(&Config{
 			DAG: dag,
 			Policy: Policy{
@@ -350,8 +350,8 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 				MaxTxVersion:    1,
 			},
 			DAGParams:              &params,
-			DAGChainHeight:         chain.Height,
-			MedianTimePast:         chain.MedianTimePast,
+			DAGChainHeight:         fDAG.BlueScore,
+			MedianTimePast:         fDAG.MedianTimePast,
 			CalcSequenceLockNoLock: calcSequenceLock,
 			SigCache:               nil,
 			AddrIndex:              nil,
@@ -362,13 +362,13 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 
 	// Mine numOutputs blocks to get numOutputs coinbase outpoints
 	outpoints := tc.mineTransactions(nil, uint64(numOutputs))
-	curHeight := harness.chain.Height()
+	curHeight := harness.dag.BlueScore()
 	if params.BlockCoinbaseMaturity != 0 {
-		harness.chain.SetHeight(params.BlockCoinbaseMaturity + curHeight)
+		harness.dag.SetBlueScore(params.BlockCoinbaseMaturity + curHeight)
 	} else {
-		harness.chain.SetHeight(curHeight + 1)
+		harness.dag.SetBlueScore(curHeight + 1)
 	}
-	harness.chain.SetMedianTimePast(time.Now())
+	harness.dag.SetMedianTimePast(time.Now())
 
 	return tc, outpoints, teardownFunc, nil
 }
@@ -543,7 +543,7 @@ func TestProcessTransaction(t *testing.T) {
 	}
 
 	//Checks that a coinbase transaction cannot be added to the mempool
-	curHeight := harness.chain.Height()
+	curHeight := harness.dag.BlueScore()
 	coinbase, err := harness.CreateCoinbaseTx(curHeight+1, 1)
 	if err != nil {
 		t.Errorf("CreateCoinbaseTx: %v", err)
