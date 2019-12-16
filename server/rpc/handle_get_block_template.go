@@ -449,8 +449,8 @@ func dagErrToGBTErrString(err error) string {
 //
 // This function MUST be called with the state locked.
 func (state *gbtWorkState) notifyLongPollers(tipHashes []*daghash.Hash, lastGenerated time.Time) {
-	// Notify anything that is waiting for a block template update from a
-	// hashes which are not the tip hashes since their work is now invalid.
+	// Notify anything that is waiting for a block template update from
+	// hashes which are not the current tip hashes.
 	tipHashesStr := daghash.JoinHashesStrings(tipHashes, "")
 	for hashesStr, channels := range state.notifyMap {
 		if hashesStr != tipHashesStr {
