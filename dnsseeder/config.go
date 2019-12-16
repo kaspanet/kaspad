@@ -6,12 +6,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/config"
-	"github.com/pkg/errors"
 	"net"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/kaspanet/kaspad/config"
+	"github.com/pkg/errors"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/kaspanet/kaspad/util"
