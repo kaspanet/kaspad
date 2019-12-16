@@ -126,9 +126,6 @@ type MessageListeners struct {
 	// OnBlockLocator is invoked when a peer receives a locator kaspa message.
 	OnBlockLocator func(p *Peer, msg *wire.MsgBlockLocator)
 
-	// OnHeaders is invoked when a peer receives a headers kaspa message.
-	OnHeaders func(p *Peer, msg *wire.MsgHeaders)
-
 	// OnNotFound is invoked when a peer receives a notfound kaspa
 	// message.
 	OnNotFound func(p *Peer, msg *wire.MsgNotFound)
@@ -139,10 +136,6 @@ type MessageListeners struct {
 	// OnGetBlockInvs is invoked when a peer receives a getblockinvs kaspa
 	// message.
 	OnGetBlockInvs func(p *Peer, msg *wire.MsgGetBlockInvs)
-
-	// OnGetHeaders is invoked when a peer receives a getheaders kaspa
-	// message.
-	OnGetHeaders func(p *Peer, msg *wire.MsgGetHeaders)
 
 	// OnFeeFilter is invoked when a peer receives a feefilter bitcoin message.
 	OnFeeFilter func(p *Peer, msg *wire.MsgFeeFilter)
@@ -1443,11 +1436,6 @@ out:
 				p.cfg.Listeners.OnInv(p, msg)
 			}
 
-		case *wire.MsgHeaders:
-			if p.cfg.Listeners.OnHeaders != nil {
-				p.cfg.Listeners.OnHeaders(p, msg)
-			}
-
 		case *wire.MsgNotFound:
 			if p.cfg.Listeners.OnNotFound != nil {
 				p.cfg.Listeners.OnNotFound(p, msg)
@@ -1471,11 +1459,6 @@ out:
 		case *wire.MsgGetBlockInvs:
 			if p.cfg.Listeners.OnGetBlockInvs != nil {
 				p.cfg.Listeners.OnGetBlockInvs(p, msg)
-			}
-
-		case *wire.MsgGetHeaders:
-			if p.cfg.Listeners.OnGetHeaders != nil {
-				p.cfg.Listeners.OnGetHeaders(p, msg)
 			}
 
 		case *wire.MsgFeeFilter:

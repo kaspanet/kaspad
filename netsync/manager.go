@@ -5,7 +5,6 @@
 package netsync
 
 import (
-	"container/list"
 	"fmt"
 	"github.com/pkg/errors"
 	"net"
@@ -23,11 +22,6 @@ import (
 )
 
 const (
-	// minInFlightBlocks is the minimum number of blocks that should be
-	// in the request queue for headers-first mode before requesting
-	// more.
-	minInFlightBlocks = 10
-
 	// maxRejectedTxns is the maximum number of rejected transactions
 	// hashes to store in memory.
 	maxRejectedTxns = 1000
@@ -60,13 +54,6 @@ type blockMsg struct {
 type invMsg struct {
 	inv  *wire.MsgInv
 	peer *peerpkg.Peer
-}
-
-// headersMsg packages a kaspa headers message and the peer it came from
-// together so the block handler has access to that information.
-type headersMsg struct {
-	headers *wire.MsgHeaders
-	peer    *peerpkg.Peer
 }
 
 // donePeerMsg signifies a newly disconnected peer to the block handler.
@@ -127,12 +114,6 @@ type pauseMsg struct {
 	unpause <-chan struct{}
 }
 
-// headerNode is used as a node in a list of headers
-type headerNode struct {
-	height uint64
-	hash   *daghash.Hash
-}
-
 type requestQueueAndSet struct {
 	queue []*wire.InvVect
 	set   map[daghash.Hash]struct{}
@@ -171,19 +152,6 @@ type SyncManager struct {
 	requestedBlocks map[daghash.Hash]struct{}
 	syncPeer        *peerpkg.Peer
 	peerStates      map[*peerpkg.Peer]*peerSyncState
-
-	// The following fields are used for headers-first mode.
-	headersFirstMode bool
-	headerList       *list.List
-	startHeader      *list.Element
-}
-
-// resetHeaderState sets the headers-first mode state to values appropriate for
-// syncing from a new peer.
-func (sm *SyncManager) resetHeaderState(newestHash *daghash.Hash, newestHeight uint64) {
-	sm.headersFirstMode = false
-	sm.headerList.Init()
-	sm.startHeader = nil
 }
 
 // startSync will choose the best peer among the available candidate peers to
@@ -327,14 +295,9 @@ func (sm *SyncManager) handleDonePeerMsg(peer *peerpkg.Peer) {
 
 func (sm *SyncManager) stopSyncFromPeer(peer *peerpkg.Peer) {
 	// Attempt to find a new peer to sync from if the quitting peer is the
-	// sync peer. Also, reset the headers-first state if in headers-first
-	// mode so
+	// sync peer.
 	if sm.syncPeer == peer {
 		sm.syncPeer = nil
-		if sm.headersFirstMode {
-			selectedTipHash := sm.dag.SelectedTipHash()
-			sm.resetHeaderState(selectedTipHash, sm.dag.ChainHeight()) //TODO: (Ori) This is probably wrong. Done only for compilation
-		}
 		sm.startSync()
 	}
 }
@@ -468,23 +431,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		}
 	}
 
-	// When in headers-first mode, if the block matches the hash of the
-	// first header in the list of headers that are being fetched, it's
-	// eligible for less validation since the headers have already been
-	// verified to link together. Also, remove the list entry for all
-	// blocks.
 	behaviorFlags := blockdag.BFNone
-	if sm.headersFirstMode {
-		firstNodeEl := sm.headerList.Front()
-		if firstNodeEl != nil {
-			firstNode := firstNodeEl.Value.(*headerNode)
-			if blockHash.IsEqual(firstNode.hash) {
-				behaviorFlags |= blockdag.BFFastAdd
-				sm.headerList.Remove(firstNodeEl)
-			}
-		}
-	}
-
 	if bmsg.isDelayedBlock {
 		behaviorFlags |= blockdag.BFAfterDelay
 	}
@@ -565,18 +512,6 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 			return
 		}
 	}
-
-	// Nothing more to do if we aren't in headers-first mode.
-	if !sm.headersFirstMode {
-		return
-	}
-
-	// This is headers-first mode, so  request more blocks using
-	// the header list when the request queue is getting short.
-	if sm.startHeader != nil &&
-		len(state.requestedBlocks) < minInFlightBlocks {
-		sm.fetchHeaderBlocks()
-	}
 }
 
 func (sm *SyncManager) addBlocksToRequestQueue(state *peerSyncState, hashes []*daghash.Hash, isRelayedInv bool) {
@@ -609,122 +544,6 @@ func (state *peerSyncState) addInvToRequestQueue(iv *wire.InvVect) {
 	state.requestQueueMtx.Lock()
 	defer state.requestQueueMtx.Unlock()
 	state.addInvToRequestQueueNoLock(iv)
-}
-
-// fetchHeaderBlocks creates and sends a request to the syncPeer for the next
-// list of blocks to be downloaded based on the current list of headers.
-func (sm *SyncManager) fetchHeaderBlocks() {
-	// Nothing to do if there is no start header.
-	if sm.startHeader == nil {
-		log.Warnf("fetchHeaderBlocks called with no start header")
-		return
-	}
-
-	// Build up a getdata request for the list of blocks the headers
-	// describe. The size hint will be limited to wire.MaxInvPerMsg by
-	// the function, so no need to double check it here.
-	gdmsg := wire.NewMsgGetDataSizeHint(uint(sm.headerList.Len()))
-	numRequested := 0
-	for e := sm.startHeader; e != nil; e = e.Next() {
-		node, ok := e.Value.(*headerNode)
-		if !ok {
-			log.Warn("Header list node type is not a headerNode")
-			continue
-		}
-
-		iv := wire.NewInvVect(wire.InvTypeBlock, node.hash)
-		haveInv, err := sm.haveInventory(iv)
-		if err != nil {
-			log.Warnf("Unexpected failure when checking for "+
-				"existing inventory during header block "+
-				"fetch: %s", err)
-		}
-		if !haveInv {
-			syncPeerState := sm.peerStates[sm.syncPeer]
-
-			sm.requestedBlocks[*node.hash] = struct{}{}
-			syncPeerState.requestedBlocks[*node.hash] = struct{}{}
-
-			gdmsg.AddInvVect(iv)
-			numRequested++
-		}
-		sm.startHeader = e.Next()
-		if numRequested >= wire.MaxInvPerMsg {
-			break
-		}
-	}
-	if len(gdmsg.InvList) > 0 {
-		sm.syncPeer.QueueMessage(gdmsg, nil)
-	}
-}
-
-// handleHeadersMsg handles block header messages from all peers. Headers are
-// requested when performing a headers-first sync.
-func (sm *SyncManager) handleHeadersMsg(hmsg *headersMsg) {
-	peer := hmsg.peer
-	_, exists := sm.peerStates[peer]
-	if !exists {
-		log.Warnf("Received headers message from unknown peer %s", peer)
-		return
-	}
-
-	// The remote peer is misbehaving if we didn't request headers.
-	msg := hmsg.headers
-	numHeaders := len(msg.Headers)
-	if !sm.headersFirstMode {
-		log.Warnf("Got %d unrequested headers from %s -- "+
-			"disconnecting", numHeaders, peer.Addr())
-		peer.Disconnect()
-		return
-	}
-
-	// Nothing to do for an empty headers message.
-	if numHeaders == 0 {
-		return
-	}
-
-	// Process all of the received headers ensuring each one connects to the
-	// previous.
-	var finalHash *daghash.Hash
-	for _, blockHeader := range msg.Headers {
-		blockHash := blockHeader.BlockHash()
-		finalHash = blockHash
-
-		// Ensure there is a previous header to compare against.
-		prevNodeEl := sm.headerList.Back()
-		if prevNodeEl == nil {
-			log.Warnf("Header list does not contain a previous" +
-				"element as expected -- disconnecting peer")
-			peer.Disconnect()
-			return
-		}
-
-		// Ensure the header properly connects to the previous one and
-		// add it to the list of headers.
-		node := headerNode{hash: blockHash}
-		prevNode := prevNodeEl.Value.(*headerNode)
-		if prevNode.hash.IsEqual(blockHeader.ParentHashes[0]) { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
-			node.height = prevNode.height + 1
-			e := sm.headerList.PushBack(&node)
-			if sm.startHeader == nil {
-				sm.startHeader = e
-			}
-		} else {
-			log.Warnf("Received block header that does not "+
-				"properly connect to the chain from peer %s "+
-				"-- disconnecting", peer.Addr())
-			peer.Disconnect()
-			return
-		}
-	}
-
-	// Request the next batch of headers starting from the latest known header.
-	err := peer.PushGetHeadersMsg(finalHash, &daghash.Hash{})
-	if err != nil {
-		log.Warnf("Failed to send getheaders message to "+
-			"peer %s: %s", peer.Addr(), err)
-		return
-	}
 }
 
 // haveInventory returns whether or not the inventory represented by the passed
@@ -813,11 +632,6 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		// Add the inventory to the cache of known inventory
 		// for the peer.
 		peer.AddKnownInventory(iv)
-
-		// Ignore inventory when we're in headers-first mode.
-		if sm.headersFirstMode {
-			continue
-		}
 
 		// Request the inventory if we don't already have it.
 		haveInv, err := sm.haveInventory(iv)
@@ -1042,9 +856,6 @@ out:
 			case *invMsg:
 				sm.handleInvMsg(msg)
 
-			case *headersMsg:
-				sm.handleHeadersMsg(msg)
-
 			case *donePeerMsg:
 				sm.handleDonePeerMsg(msg.peer)
 
@@ -1184,18 +995,6 @@ func (sm *SyncManager) QueueInv(inv *wire.MsgInv, peer *peerpkg.Peer) {
 	sm.msgChan <- &invMsg{inv: inv, peer: peer}
 }
 
-// QueueHeaders adds the passed headers message and peer to the block handling
-// queue.
-func (sm *SyncManager) QueueHeaders(headers *wire.MsgHeaders, peer *peerpkg.Peer) {
-	// No channel handling here because peers do not need to block on
-	// headers messages.
-	if atomic.LoadInt32(&sm.shutdown) != 0 {
-		return
-	}
-
-	sm.msgChan <- &headersMsg{headers: headers, peer: peer}
-}
-
 // DonePeer informs the blockmanager that a peer has disconnected.
 func (sm *SyncManager) DonePeer(peer *peerpkg.Peer) {
 	// Ignore if we are shutting down.
@@ -1295,7 +1094,6 @@ func New(config *Config) (*SyncManager, error) {
 		peerStates:      make(map[*peerpkg.Peer]*peerSyncState),
 		progressLogger:  newBlockProgressLogger("Processed", log),
 		msgChan:         make(chan interface{}, config.MaxPeers*3),
-		headerList:      list.New(),
 		quit:            make(chan struct{}),
 	}
 
