@@ -81,7 +81,8 @@ type blockNode struct {
 	// chainHeight is the number of hops you need to go down the selected parent chain in order to get to the genesis block.
 	chainHeight uint64
 
-	// interval TODO: What is this?
+	// interval is the reachability interval of the block.
+	// See reachability.go for further details.
 	interval reachabilityInterval
 
 	// Some fields from block headers to aid in best chain selection and
