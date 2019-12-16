@@ -35,7 +35,7 @@ recommended that `GOPATH` is set to a directory in your home directory such as
 `~/dev/go` to avoid write permission issues. It is also recommended to add
 `$GOPATH/bin` to your `PATH` at this point.
 
-- Run the following commands to obtain kaspad, all dependencies, and install it:
+- Run the following commands to obtain and install kaspad including all dependencies:
 
 ```bash
 $ git clone https://github.com/kaspanet/kaspad $GOPATH/src/github.com/kaspanet/kaspad
@@ -43,18 +43,17 @@ $ cd $GOPATH/src/github.com/kaspanet/kaspad
 $ ./test.sh
 $ go install . ./cmd/...
 ```
-`./test.sh` Tests can be skipped, but some things might not run correctly on your system if tests fail.
+`./test.sh` tests can be skipped, but some things might not run correctly on your system if tests fail.
 
-- kaspad (and utilities) will now be installed in ```$GOPATH/bin```. If you did
+- Kaspad (and utilities) should now be installed in `$GOPATH/bin`. If you did
   not already add the bin directory to your system path during Go installation,
-  we recommend you do so now.
+  you are encouraged to do so now.
 
 
 ## Getting Started
 
-kaspad has several configuration options available to tweak how it runs, but all
-of the basic operations described in the intro section work with zero
-configuration.
+Kaspad has several configuration options available to tweak how it runs, but all
+of the basic operations work with zero configuration.
 
 #### Linux/BSD/POSIX/Source
 
@@ -63,7 +62,7 @@ $ ./kaspad
 ```
 
 ## Discord
-Join our discord server using the following link: https://discord.gg/dbtyKeN
+Join our discord server using the following link: https://discord.gg/WmGhhzk
 
 ## Issue Tracker
 
@@ -76,5 +75,5 @@ The documentation is a work-in-progress. It is located in the [docs](https://git
 
 ## License
 
-kaspad is licensed under the [copyfree](http://copyfree.org) ISC License.
+Kaspad is licensed under the [copyfree](http://copyfree.org) ISC License.
 

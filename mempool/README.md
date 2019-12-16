@@ -45,7 +45,7 @@ be an exhaustive list.
 - Maintain a pool of fully validated transactions
   - Reject non-fully-spent duplicate transactions
   - Reject coinbase transactions
-  - Reject double spends (both from the dag and other transactions in pool)
+  - Reject double spends (both from the DAG and other transactions in pool)
   - Reject invalid transactions according to the network consensus rules
   - Full script execution and validation with signature cache support
   - Individual transaction query support

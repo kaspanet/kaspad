@@ -2,7 +2,7 @@ hdkeychain
 ==========
 
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
-[![GoDoc](http://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/daglabs/btcutil/hdkeychain)
+[![GoDoc](http://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/kaspanet/kaspad/util/hdkeychain)
 
 Package hdkeychain provides an API for kaspa hierarchical deterministic
 extended keys.
@@ -18,10 +18,10 @@ extended keys.
   keys
 - Support for custom networks by registering them with dagconfig
 - Obtaining the underlying EC pubkeys, EC privkeys, and associated kaspa
-  addresses ties in seamlessly with existing kaspad/ecc and kaspad/util types 
-  which provide powerful tools for working with them to do things like sign
-  transations and generate payment scripts
-- Uses the kaspad/ecc package which is highly optimized for secp256k1
+  addresses ties in seamlessly with existing ecc and util types which provide
+  powerful tools for working with them to do things like sign transations and 
+  generate payment scripts
+- Uses the ecc package which is highly optimized for secp256k1
 - Code examples including:
   - Generating a cryptographically secure random seed and deriving a
     master node from it
@@ -32,12 +32,12 @@ extended keys.
 
 ## Examples
 
-* [NewMaster Example](http://godoc.org/github.com/daglabs/btcutil/hdkeychain#example-NewMaster)  
+* [NewMaster Example](http://godoc.org/github.com/kaspanet/kaspad/util/hdkeychain#example-NewMaster) 
   Demonstrates how to generate a cryptographically random seed then use it to
   create a new master node (extended key).
-* [Default Wallet Layout Example](http://godoc.org/github.com/daglabs/btcutil/hdkeychain#example-package--DefaultWalletLayout)  
+* [Default Wallet Layout Example](http://godoc.org/github.com/kaspanet/kaspad/util/hdkeychain#example-package--DefaultWalletLayout) 
   Demonstrates the default hierarchical deterministic wallet layout as described
   in BIP0032.
-* [Audits Use Case Example](http://godoc.org/github.com/daglabs/btcutil/hdkeychain#example-package--Audits)  
+* [Audits Use Case Example](http://godoc.org/github.com/kaspanet/kaspad/util/hdkeychain#example-package--Audits) 
   Demonstrates the audits use case in BIP0032.
 

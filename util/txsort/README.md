@@ -2,7 +2,7 @@ txsort
 ======
 
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
-[![GoDoc](http://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/daglabs/btcutil/txsort)
+[![GoDoc](http://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/kaspanet/kaspad/util/txsort)
 
 Package txsort provides the transaction sorting compatible with to [BIP 69](https://github.com/bitcoin/bips/blob/master/bip-0069.mediawiki).
 

@@ -18,7 +18,7 @@ password for the RPC server:
 Finally, navigate to the example's directory and run it with:
 
 ```bash
-$ cd $GOPATH/src/github.com/kaspanet/kaspad/rpcclient/examples/http
+$ cd $GOPATH/src/github.com/kaspanet/kaspad/rpcclient/examples/httppost
 $ go run *.go
 ```
 

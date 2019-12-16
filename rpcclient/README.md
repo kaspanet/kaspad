@@ -18,11 +18,11 @@ implement and the API is not stable yet.
 ## Documentation
 
 * [API Reference](http://godoc.org/github.com/kaspanet/kaspad/rpcclient)
-* [Websockets Example](https://github.com/kaspanet/kaspad/blob/master/rpcclient/examples/websockets)  
+* [Websockets Example](https://github.com/kaspanet/kaspad/blob/master/rpcclient/examples/websockets) 
   Connects to a kaspad RPC server using TLS-secured websockets, registers for
   block connected and block disconnected notifications, and gets the current
   block count
-* [HTTP POST Example](https://github.com/kaspanet/kaspad/rpcclient/blob/master/examples/http)  
+* [HTTP POST Example](https://github.com/kaspanet/kaspad/rpcclient/blob/master/examples/httppost) 
   Connects to a kaspad RPC server using HTTP POST mode with TLS disabled
   and gets the current block count
 

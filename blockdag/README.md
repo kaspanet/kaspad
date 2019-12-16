@@ -1,11 +1,11 @@
 blockchain
 ==========
 
-[![Build Status](http://img.shields.io/travis/btcsuite/btcd.svg)](https://travis-ci.org/btcsuite/btcd)
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/kaspanet/kaspad/blockchain)
 
-Package blockdag implements Kaspa block handling DAG organization and .
+Package blockdag implements Kaspa block handling, organization of the blockDAG, 
+block sorting and UTXO-set maintenance.
 The test coverage is currently only around 75%, but will be increasing over
 time.
 

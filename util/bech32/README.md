@@ -1,8 +1,8 @@
-bech32dag
+bech32
 ==========
 
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
-[![GoDoc](https://godoc.org/github.com/daglabs/btcutil/bech32dag?status.png)](http://godoc.org/github.com/daglabs/btcutil/bech32)
+[![GoDoc](https://godoc.org/github.com/kaspanet/kaspad/util/bech32?status.png)](http://godoc.org/github.com/kaspanet/kaspad/util/bech32)
 
 Package bech32 provides a Go implementation of the bech32 format.
 
