@@ -80,7 +80,6 @@ func ExampleAmount_unitConversions() {
 // which represent the target difficulty to a big integer and display it using
 // the typical hex notation.
 func ExampleCompactToBig() {
-	// Convert the bits from block 300000 in the bitcoin main chain.
 	bits := uint32(419465580)
 	targetDifficulty := util.CompactToBig(bits)
 

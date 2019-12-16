@@ -965,7 +965,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 
 	// Request the advertised inventory if we don't already have it. Also,
 	// request parent blocks of orphans if we receive one we already have.
-	// Finally, attempt to detect potential stalls due to long chains
+	// Finally, attempt to detect potential stalls due to long sub-DAGs
 	// we already have and request more blocks to prevent them.
 	for i, iv := range invVects {
 		// Ignore unsupported inventory types.

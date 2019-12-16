@@ -80,7 +80,7 @@ type Config struct {
 	// block DAG is current. This is used by the automatic persistent
 	// mining routine to determine whether or it should attempt mining.
 	// This is useful because there is no point in mining if the DAG is
-	// not current since any solved blocks would end up orphaned anyways.
+	// not current since any solved blocks would end up red anyways.
 	IsCurrent func() bool
 }
 

@@ -1126,10 +1126,6 @@ type ConnConfig struct {
 	// ConnectionTimeout is the time it'll take for to try to connect
 	// to the RPC server before the connection times out.
 	ConnectionTimeout time.Duration
-
-	// EnableBCInfoHacks is an option provided to enable compatibility hacks
-	// when connecting to blockdag.info RPC server
-	EnableBCInfoHacks bool
 }
 
 // newHTTPClient returns a new http client that is configured according to the
