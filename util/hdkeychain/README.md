@@ -18,10 +18,10 @@ extended keys.
   keys
 - Support for custom networks by registering them with dagconfig
 - Obtaining the underlying EC pubkeys, EC privkeys, and associated kaspa
-  addresses ties in seamlessly with existing ecc and util types which provide
+  addresses ties in seamlessly with existing `ecc` and `util` types which provide
   powerful tools for working with them to do things like sign transations and 
   generate payment scripts
-- Uses the ecc package which is highly optimized for secp256k1
+- Uses the `ecc` package which is highly optimized for secp256k1
 - Code examples including:
   - Generating a cryptographically secure random seed and deriving a
     master node from it
