@@ -1,7 +1,6 @@
 treap
 =====
 
-[![Build Status](https://travis-ci.org/btcsuite/btcd.png?branch=master)](https://travis-ci.org/btcsuite/btcd)
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
 [![GoDoc](https://godoc.org/github.com/kaspanet/kaspad/database/internal/treap?status.png)](http://godoc.org/github.com/kaspanet/kaspad/database/internal/treap)
 
@@ -26,14 +25,3 @@ since the treap it points to is immutable.  This effectively provides O(1)
 snapshot capability with efficient memory usage characteristics since the old
 nodes only remain allocated until there are no longer any references to them.
 
-Package treap is licensed under the copyfree ISC license.
-
-## Usage
-
-This package is only used internally in the database code and as such is not
-available for use outside of it.
-
-## License
-
-Package treap is licensed under the [copyfree](http://copyfree.org) ISC
-License.

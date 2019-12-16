@@ -22,7 +22,3 @@ although it is still fairly powerful.
 
 * [Extracting Details from Standard Scripts](http://godoc.org/github.com/kaspanet/kaspad/txscript#example-ExtractPkScriptAddrs)  
   Demonstrates extracting information from a standard public key script.
-
-* [Manually Signing a Transaction Output](http://godoc.org/github.com/kaspanet/kaspad/txscript#example-SignTxOutput)  
-  Demonstrates manually creating and signing a redeem transaction.
-

@@ -7,7 +7,7 @@ wire
 
 Package wire implements the kaspa wire protocol.
 
-## Bitcoin Message Overview
+## Kaspa Message Overview
 
 The kaspa protocol consists of exchanging messages between peers. Each message
 is preceded by a header which identifies information about it such as which
