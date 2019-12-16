@@ -267,9 +267,12 @@ func TestDAGStateDeserializeErrors(t *testing.T) {
 
 // newHashFromStr converts the passed big-endian hex string into a
 // daghash.Hash. It only differs from the one available in daghash in that
-// it ignores the error since it will only (and must only) be called with
-// hard-coded, and therefore known good, hashes.
+// it panics in case of an error since it will only (and must only) be
+// called with hard-coded, and therefore known good, hashes.
 func newHashFromStr(hexStr string) *daghash.Hash {
-	hash, _ := daghash.NewHashFromStr(hexStr)
+	hash, err := daghash.NewHashFromStr(hexStr)
+	if err != nil {
+		panic(err)
+	}
 	return hash
 }
