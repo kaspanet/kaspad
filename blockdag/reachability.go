@@ -5,38 +5,54 @@ type reachabilityInterval struct {
 	end   uint64
 }
 
-func bisect(futureBlocks []*blockNode, intervalEnd uint64) int {
+type futureBlocks []*blockNode
+
+func (fb *futureBlocks) insertFutureBlock(block *blockNode) {
+	start := block.interval.start
+	end := block.interval.end
+	i := fb.bisect(end)
+	if i > 0 {
+		candidate := (*fb)[i-1]
+		if candidate.interval.start <= end && end <= candidate.interval.end {
+			// candidate is an ancestor of block, no need to insert
+			return
+		}
+		if start <= candidate.interval.end && candidate.interval.end <= end {
+			// block is ancestor of candidate, and can thus replace it
+			(*fb)[i-1] = block
+			return
+		}
+	}
+
+	// Insert block in the correct index to maintain futureBlocks as a sorted-by-interval list
+	// (note that i might be equal to len(futureBlocks))
+	left := (*fb)[:i]
+	right := append([]*blockNode{block}, (*fb)[i:]...)
+	*fb = append(left, right...)
+}
+
+func (fb *futureBlocks) isFutureBlock(block *blockNode) bool {
+	end := block.interval.end
+	i := fb.bisect(end)
+	if i == 0 {
+		// No candidate to contain block
+		return false
+	}
+
+	candidate := (*fb)[i-1]
+	return candidate.interval.start <= end && end <= candidate.interval.end
+}
+
+func (fb *futureBlocks) bisect(intervalEnd uint64) int {
 	low := 0
-	high := len(futureBlocks)
+	high := len(*fb)
 	for low < high {
 		middle := (low + high) / 2
-		if intervalEnd < futureBlocks[middle].interval.start {
+		if intervalEnd < (*fb)[middle].interval.start {
 			high = middle
 		} else {
 			low = middle + 1
 		}
 	}
 	return low
-}
-
-func insertFutureBlock(futureBlocks []*blockNode, block *blockNode) []*blockNode {
-	start := block.interval.start
-	end := block.interval.end
-	i := bisect(futureBlocks, end)
-	if i > 0 {
-		candidate := futureBlocks[i-1]
-		if candidate.interval.start <= end && end <= candidate.interval.end {
-			// candidate is an ancestor of block, no need to insert
-			return futureBlocks
-		}
-		if start <= candidate.interval.end && candidate.interval.end <= end {
-			// block is ancestor of candidate, and can thus replace it
-			futureBlocks[i-1] = block
-			return futureBlocks
-		}
-	}
-	// Insert block in the correct index to maintain future_blocks as a sorted-by-interval list
-	// (note that i might be equal to len(future_blocks))
-	//futureBlocks.insert(i, block)
-	return futureBlocks
 }
