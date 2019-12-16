@@ -494,14 +494,9 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 		// must not be responded to. JSON-RPC 2.0 permits the null value as a
 		// valid request id, therefore such requests are not notifications.
 		//
-		// Kaspad does not respond to any request without and "id" or "id":null,
-		// regardless the indicated JSON-RPC protocol version unless RPC quirks
-		// are enabled. With RPC quirks enabled, such requests will be responded
-		// to if the reqeust does not indicate JSON-RPC version.
-		//
-		// RPC quirks can be enabled by the user to avoid compatibility issues
-		// with software relying on Core's behavior.
-		if request.ID == nil && !(config.ActiveConfig().RPCQuirks && request.JSONRPC == "") {
+		// Kaspad does not respond to any request without an "id" or "id":null,
+		// regardless the indicated JSON-RPC protocol version.
+		if request.ID == nil {
 			return
 		}
 

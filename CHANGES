@@ -426,7 +426,7 @@ Changes in 0.9.0 (Sat Sep 20 2014)
       - BIP0023 Block Proposals
     - Implement built-in concurrent CPU miner
       (https://github.com/conformal/btcd/issues/137)
-      NOTE: CPU mining on mainnet is pointless.  This has been provided
+      NOTE: CPU mining on mainnet is pointless. This has been provided
       for testing purposes such as for the new simulation test network
     - Add --generate flag to enable CPU mining
     - Deprecate the --getworkkey flag in favor of --miningaddr which
@@ -933,7 +933,7 @@ Changes in 0.3.2 (Tue Oct 22 2013)
 
 Changes in 0.3.1-alpha (Tue Oct 15 2013)
   - Change default database to leveldb
-    NOTE: This does mean you will have to redownload the block chain.  Since we
+    NOTE: This does mean you will have to redownload the block chain. Since we
     are still in alpha, we didn't feel writing a converter was worth the time as
     it would take away from more important issues at this stage
   - Add a warning if there are multiple block chain databases of different types

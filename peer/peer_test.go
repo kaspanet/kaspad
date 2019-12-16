@@ -360,9 +360,6 @@ func TestPeerListeners(t *testing.T) {
 			OnInv: func(p *peer.Peer, msg *wire.MsgInv) {
 				ok <- msg
 			},
-			OnHeaders: func(p *peer.Peer, msg *wire.MsgHeaders) {
-				ok <- msg
-			},
 			OnNotFound: func(p *peer.Peer, msg *wire.MsgNotFound) {
 				ok <- msg
 			},
@@ -370,9 +367,6 @@ func TestPeerListeners(t *testing.T) {
 				ok <- msg
 			},
 			OnGetBlockInvs: func(p *peer.Peer, msg *wire.MsgGetBlockInvs) {
-				ok <- msg
-			},
-			OnGetHeaders: func(p *peer.Peer, msg *wire.MsgGetHeaders) {
 				ok <- msg
 			},
 			OnFeeFilter: func(p *peer.Peer, msg *wire.MsgFeeFilter) {
@@ -472,10 +466,6 @@ func TestPeerListeners(t *testing.T) {
 			wire.NewMsgInv(),
 		},
 		{
-			"OnHeaders",
-			wire.NewMsgHeaders(),
-		},
-		{
 			"OnNotFound",
 			wire.NewMsgNotFound(),
 		},
@@ -486,10 +476,6 @@ func TestPeerListeners(t *testing.T) {
 		{
 			"OnGetBlockInvs",
 			wire.NewMsgGetBlockInvs(&daghash.Hash{}, &daghash.Hash{}),
-		},
-		{
-			"OnGetHeaders",
-			wire.NewMsgGetHeaders(&daghash.Hash{}, &daghash.Hash{}),
 		},
 		{
 			"OnFeeFilter",

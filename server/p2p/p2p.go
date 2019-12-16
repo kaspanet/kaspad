@@ -13,7 +13,6 @@ import (
 	"math"
 	"net"
 	"runtime"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -1059,12 +1058,10 @@ func newPeerConfig(sp *Peer) *peer.Config {
 			OnTx:              sp.OnTx,
 			OnBlock:           sp.OnBlock,
 			OnInv:             sp.OnInv,
-			OnHeaders:         sp.OnHeaders,
 			OnGetData:         sp.OnGetData,
 			OnGetBlockLocator: sp.OnGetBlockLocator,
 			OnBlockLocator:    sp.OnBlockLocator,
 			OnGetBlockInvs:    sp.OnGetBlockInvs,
-			OnGetHeaders:      sp.OnGetHeaders,
 			OnFeeFilter:       sp.OnFeeFilter,
 			OnFilterAdd:       sp.OnFilterAdd,
 			OnFilterClear:     sp.OnFilterClear,
@@ -1663,19 +1660,12 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		indexManager = indexers.NewManager(indexes)
 	}
 
-	// Merge given checkpoints with the default ones unless they are disabled.
-	var checkpoints []dagconfig.Checkpoint
-	if !config.ActiveConfig().DisableCheckpoints {
-		checkpoints = mergeCheckpoints(s.DAGParams.Checkpoints, config.ActiveConfig().AddCheckpoints)
-	}
-
 	// Create a new block chain instance with the appropriate configuration.
 	var err error
 	s.DAG, err = blockdag.New(&blockdag.Config{
 		DB:           s.db,
 		Interrupt:    interrupt,
 		DAGParams:    s.DAGParams,
-		Checkpoints:  checkpoints,
 		TimeSource:   s.TimeSource,
 		SigCache:     s.SigCache,
 		IndexManager: indexManager,
@@ -1706,15 +1696,12 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 	}
 	s.TxMemPool = mempool.New(&txC)
 
-	cfg := config.ActiveConfig()
-
 	s.SyncManager, err = netsync.New(&netsync.Config{
-		PeerNotifier:       &s,
-		DAG:                s.DAG,
-		TxMemPool:          s.TxMemPool,
-		ChainParams:        s.DAGParams,
-		DisableCheckpoints: cfg.DisableCheckpoints,
-		MaxPeers:           maxPeers,
+		PeerNotifier: &s,
+		DAG:          s.DAG,
+		TxMemPool:    s.TxMemPool,
+		ChainParams:  s.DAGParams,
+		MaxPeers:     maxPeers,
 	})
 	if err != nil {
 		return nil, err
@@ -2029,59 +2016,6 @@ func isWhitelisted(addr net.Addr) bool {
 		}
 	}
 	return false
-}
-
-// checkpointSorter implements sort.Interface to allow a slice of checkpoints to
-// be sorted.
-type checkpointSorter []dagconfig.Checkpoint
-
-// Len returns the number of checkpoints in the slice. It is part of the
-// sort.Interface implementation.
-func (s checkpointSorter) Len() int {
-	return len(s)
-}
-
-// Swap swaps the checkpoints at the passed indices. It is part of the
-// sort.Interface implementation.
-func (s checkpointSorter) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
-
-// Less returns whether the checkpoint with index i should sort before the
-// checkpoint with index j. It is part of the sort.Interface implementation.
-func (s checkpointSorter) Less(i, j int) bool {
-	return s[i].ChainHeight < s[j].ChainHeight
-}
-
-// mergeCheckpoints returns two slices of checkpoints merged into one slice
-// such that the checkpoints are sorted by height. In the case the additional
-// checkpoints contain a checkpoint with the same height as a checkpoint in the
-// default checkpoints, the additional checkpoint will take precedence and
-// overwrite the default one.
-func mergeCheckpoints(defaultCheckpoints, additional []dagconfig.Checkpoint) []dagconfig.Checkpoint {
-	// Create a map of the additional checkpoints to remove duplicates while
-	// leaving the most recently-specified checkpoint.
-	extra := make(map[uint64]dagconfig.Checkpoint)
-	for _, checkpoint := range additional {
-		extra[checkpoint.ChainHeight] = checkpoint
-	}
-
-	// Add all default checkpoints that do not have an override in the
-	// additional checkpoints.
-	numDefault := len(defaultCheckpoints)
-	checkpoints := make([]dagconfig.Checkpoint, 0, numDefault+len(extra))
-	for _, checkpoint := range defaultCheckpoints {
-		if _, exists := extra[checkpoint.ChainHeight]; !exists {
-			checkpoints = append(checkpoints, checkpoint)
-		}
-	}
-
-	// Append the additional checkpoints and return the sorted results.
-	for _, checkpoint := range extra {
-		checkpoints = append(checkpoints, checkpoint)
-	}
-	sort.Sort(checkpointSorter(checkpoints))
-	return checkpoints
 }
 
 // AnnounceNewTransactions generates and relays inventory vectors and notifies

@@ -1,19 +1,13 @@
-Bitcoin Core HTTP POST Example
+HTTP POST Example
 ==============================
 
-This example shows how to use the rpcclient package to connect to a Bitcoin
-Core RPC server using HTTP POST mode with TLS disabled and gets the current
+This example shows how to use the rpcclient package to connect to a Kaspa
+RPC server using HTTP POST mode with TLS disabled and gets the current
 block count.
 
 ## Running the Example
 
-The first step is to use `go get` to download and install the rpcclient package:
-
-```bash
-$ go get github.com/kaspanet/kaspad/rpcclient
-```
-
-Next, modify the `main.go` source to specify the correct RPC username and
+Modify the `main.go` source to specify the correct RPC username and
 password for the RPC server:
 
 ```Go
@@ -24,10 +18,7 @@ password for the RPC server:
 Finally, navigate to the example's directory and run it with:
 
 ```bash
-$ cd $GOPATH/src/github.com/kaspanet/kaspad/rpcclient/examples/bitcoincorehttp
+$ cd $GOPATH/src/github.com/kaspanet/kaspad/rpcclient/examples/httppost
 $ go run *.go
 ```
 
-## License
-
-This example is licensed under the [copyfree](http://copyfree.org) ISC License.

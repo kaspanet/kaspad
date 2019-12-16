@@ -21,8 +21,8 @@ func ExamplePayToAddrScript() {
 	// which is useful to ensure the accuracy of the address and determine
 	// the address type. It is also required for the upcoming call to
 	// PayToAddrScript.
-	addressStr := "dagcoin:qqfgqp8l9l90zwetj84k2jcac2m8falvvy9uastr55"
-	address, err := util.DecodeAddress(addressStr, util.Bech32PrefixDAGCoin)
+	addressStr := "kaspa:qqfgqp8l9l90zwetj84k2jcac2m8falvvyy8xjtnhd"
+	address, err := util.DecodeAddress(addressStr, util.Bech32PrefixKaspa)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -71,5 +71,5 @@ func ExampleExtractScriptPubKeyAddress() {
 
 	// Output:
 	// Script Class: pubkeyhash
-	// Address: dagcoin:qqfgqp8l9l90zwetj84k2jcac2m8falvvy9uastr55
+	// Address: kaspa:qqfgqp8l9l90zwetj84k2jcac2m8falvvyy8xjtnhd
 }

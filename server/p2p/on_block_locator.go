@@ -28,7 +28,7 @@ func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgBlockLocator) {
 			sp.server.SyncManager.RemoveFromSyncCandidates(sp.Peer)
 			return
 		}
-		err := sp.server.SyncManager.PushGetBlockInvsOrHeaders(sp.Peer, firstHash)
+		err := sp.Peer.PushGetBlockInvsMsg(firstHash, sp.Peer.SelectedTip())
 		if err != nil {
 			peerLog.Errorf("Failed pushing get blocks message for peer %s: %s",
 				sp, err)

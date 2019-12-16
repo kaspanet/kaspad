@@ -7,10 +7,11 @@ package logger
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"os"
 	"sort"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/logs"
 )

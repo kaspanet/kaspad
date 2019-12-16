@@ -32,7 +32,7 @@ func mustParseShortForm(script string) []byte {
 // as a helper since the only way it can fail is if there is an error in the
 // test source code.
 func newAddressPubKeyHash(pkHash []byte) util.Address {
-	addr, err := util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixDAGCoin)
+	addr, err := util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixKaspa)
 	if err != nil {
 		panic("invalid public key hash in test source")
 	}
@@ -46,7 +46,7 @@ func newAddressPubKeyHash(pkHash []byte) util.Address {
 // test source code.
 func newAddressScriptHash(scriptHash []byte) util.Address {
 	addr, err := util.NewAddressScriptHashFromHash(scriptHash,
-		util.Bech32PrefixDAGCoin)
+		util.Bech32PrefixKaspa)
 	if err != nil {
 		panic("invalid script hash in test source")
 	}
@@ -283,7 +283,7 @@ func TestPayToAddrScript(t *testing.T) {
 
 	// 1MirQ9bwyQcGVJPwKUgapu5ouK2E2Ey4gX
 	p2pkhMain, err := util.NewAddressPubKeyHash(hexToBytes("e34cce70c86"+
-		"373273efcc54ce7d2a491bb4a0e84"), util.Bech32PrefixDAGCoin)
+		"373273efcc54ce7d2a491bb4a0e84"), util.Bech32PrefixKaspa)
 	if err != nil {
 		t.Fatalf("Unable to create public key hash address: %v", err)
 	}
@@ -291,7 +291,7 @@ func TestPayToAddrScript(t *testing.T) {
 	// Taken from transaction:
 	// b0539a45de13b3e0403909b8bd1a555b8cbe45fd4e3f3fda76f3a5f52835c29d
 	p2shMain, _ := util.NewAddressScriptHashFromHash(hexToBytes("e8c300"+
-		"c87986efa84c37c0519929019ef86eb5b4"), util.Bech32PrefixDAGCoin)
+		"c87986efa84c37c0519929019ef86eb5b4"), util.Bech32PrefixKaspa)
 	if err != nil {
 		t.Fatalf("Unable to create script hash address: %v", err)
 	}
