@@ -5,14 +5,14 @@ rpcclient
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/kaspanet/kaspad/rpcclient)
 
 rpcclient implements a Websocket-enabled Kaspa JSON-RPC client package written
-in [Go](http://golang.org/).  It provides a robust and easy to use client for
+in [Go](http://golang.org/). It provides a robust and easy to use client for
 interfacing with a Kaspa RPC server that uses a kaspad compatible
 Kaspa JSON-RPC API.
 
 ## Status
 
-This package is currently under active development.  It is already stable and
-the infrastructure is complete.  However, there are still several RPCs left to
+This package is currently under active development. It is already stable and
+the infrastructure is complete. However, there are still several RPCs left to
 implement and the API is not stable yet.
 
 ## Documentation

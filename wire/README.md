@@ -26,7 +26,7 @@ caller doesn't have to concern themselves with the specifics.
 
 In order to unmarshal kaspa messages from the wire, use the `ReadMessage`
 function. It accepts any `io.Reader`, but typically this will be a `net.Conn`
-to a remote node running a kaspa peer.  Example syntax is:
+to a remote node running a kaspa peer. Example syntax is:
 
 ```Go
 	// Use the most recent protocol version supported by the package and the
@@ -35,7 +35,7 @@ to a remote node running a kaspa peer.  Example syntax is:
 	kaspanet := wire.MainNet
 
 	// Reads and validates the next kaspa message from conn using the
-	// protocol version pver and the kaspa network kaspanet.  The returns
+	// protocol version pver and the kaspa network kaspanet. The returns
 	// are a wire.Message, a []byte which contains the unmarshalled
 	// raw payload, and a possible error.
 	msg, rawPayload, err := wire.ReadMessage(conn, pver, kaspanet)
@@ -63,7 +63,7 @@ from a remote peer is:
 	msg := wire.NewMsgGetAddr()
 
 	// Writes a kaspa message msg to conn using the protocol version
-	// pver, and the kaspa network kaspanet.  The return is a possible
+	// pver, and the kaspa network kaspanet. The return is a possible
 	// error.
 	err := wire.WriteMessage(conn, msg, pver, kaspanet)
 	if err != nil {

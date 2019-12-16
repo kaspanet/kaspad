@@ -16,7 +16,7 @@ likely want to use the [rpcclient](https://github.com/kaspanet/kaspad/tree/maste
 package which makes use of the [JSON-RPC API](https://github.com/kaspanet/kaspad/tree/master/docs/json_rpc_api.md).
 
 The default backend, ffldb, has a strong focus on speed, efficiency, and
-robustness.  It makes use of leveldb for the metadata, flat files for block
+robustness. It makes use of leveldb for the metadata, flat files for block
 storage, and strict checksums in key areas to ensure data integrity.
 
 ## Feature Overview

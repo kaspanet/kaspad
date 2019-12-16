@@ -7,7 +7,7 @@ mempool
 Package mempool provides a policy-enforced pool of unmined kaspa transactions.
 
 A key responsbility of the kaspa network is mining user-generated transactions
-into blocks.  In order to facilitate this, the mining process relies on having a
+into blocks. In order to facilitate this, the mining process relies on having a
 readily-available source of transactions to include in a block that is being
 solved.
 
@@ -16,10 +16,10 @@ in-memory pool of fully validated transactions that can also optionally be
 further filtered based upon a configurable policy.
 
 One of the policy configuration options controls whether or not "standard"
-transactions are accepted.  In essence, a "standard" transaction is one that
+transactions are accepted. In essence, a "standard" transaction is one that
 satisfies a fairly strict set of requirements that are largely intended to help
-provide fair use of the system to all users.  It is important to note that what
-is considered a "standard" transaction changes over time.  For some insight, at
+provide fair use of the system to all users. It is important to note that what
+is considered a "standard" transaction changes over time. For some insight, at
 the time of this writing, an example of _some_ of the criteria that are required
 for a transaction to be considered standard are that it is of the most-recently
 supported version, finalized, does not exceed a specific size, and only consists
@@ -28,7 +28,7 @@ of specific script forms.
 Since this package does not deal with other kaspa specifics such as network
 communication and transaction relay, it returns a list of transactions that were
 accepted which gives the caller a high level of flexibility in how they want to
-proceed.  Typically, this will involve things such as relaying the transactions
+proceed. Typically, this will involve things such as relaying the transactions
 to other peers on the network and notifying the mining process that new
 transactions are available.
 
@@ -39,7 +39,7 @@ configurable policy.
 
 ## Feature Overview
 
-The following is a quick overview of the major features.  It is not intended to
+The following is a quick overview of the major features. It is not intended to
 be an exhaustive list.
 
 - Maintain a pool of fully validated transactions

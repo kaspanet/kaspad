@@ -6,10 +6,10 @@ ecc
 
 Package ecc implements elliptic curve cryptography needed for working with
 Kaspa  It is designed so that it may be used with the standard crypto/ecdsa 
-packages provided with go.  A comprehensive suite of tests is provided to ensure 
-proper functionality.  Package ecc was originally based on work from ThePiachu 
+packages provided with go. A comprehensive suite of tests is provided to ensure 
+proper functionality. Package ecc was originally based on work from ThePiachu 
 which is licensed under the same terms as Go, but it has signficantly diverged 
-since then.  The kaspanet developers original is licensed under the liberal ISC 
+since then. The kaspanet developers original is licensed under the liberal ISC 
 license.
 
 ## Examples
@@ -20,5 +20,5 @@ license.
 
 * [Verify Signature](http://godoc.org/github.com/kaspanet/kaspad/btcec#example-package--VerifySignature)  
   Demonstrates verifying a secp256k1 signature against a public key that is
-  first parsed from raw bytes.  The signature is also parsed from raw bytes.
+  first parsed from raw bytes. The signature is also parsed from raw bytes.
 

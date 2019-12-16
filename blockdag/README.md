@@ -12,7 +12,7 @@ time.
 ## Kaspad BlockDAG Processing Overview
 
 Before a block is allowed into the block DAG, it must go through an intensive
-series of validation rules.  The following list serves as a general outline of
+series of validation rules. The following list serves as a general outline of
 those rules to provide some intuition into what is going on under the hood, but
 is by no means exhaustive:
 
