@@ -139,7 +139,7 @@ func dbPutVersion(dbTx database.Tx, key []byte, version uint32) error {
 //   bits 1-x - height of the block that contains the unspent txout
 //
 // Example 1:
-// Blk 1, b7c3332bc138e2c9429818f5fed500bcc1746544218772389054dc8047d7cd3f:0
+// b7c3332bc138e2c9429818f5fed500bcc1746544218772389054dc8047d7cd3f:0
 //
 //    03320496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52
 //    <><------------------------------------------------------------------>
@@ -153,7 +153,7 @@ func dbPutVersion(dbTx database.Tx, key []byte, version uint32) error {
 //    - 0x96...52: x-coordinate of the pubkey
 //
 // Example 2:
-// Blk 113931, 4a16969aa4764dd7507fc1de7f0baa4850a246de90c45e59a3207f9a26b5036f:2
+// 4a16969aa4764dd7507fc1de7f0baa4850a246de90c45e59a3207f9a26b5036f:2
 //
 //    8cf316800900b8025be1b3efc63b0ad48e7f9f10e87544528d58
 //    <----><------------------------------------------>
@@ -167,7 +167,7 @@ func dbPutVersion(dbTx database.Tx, key []byte, version uint32) error {
 //    - 0xb8...58: pubkey hash
 //
 // Example 3:
-// Blk 338156, 1b02d1c8cfef60a189017b9a420c682cf4a0028175f2f563209e4ff61c8c3620:22
+// 1b02d1c8cfef60a189017b9a420c682cf4a0028175f2f563209e4ff61c8c3620:22
 //
 //    a8a2588ba5b9e763011dd46a006572d820e448e12d2bbb38640bc718e6
 //    <----><-------------------------------------------------->
