@@ -1,5 +1,7 @@
 package blockdag
 
+import "fmt"
+
 type reachabilityInterval struct {
 	start uint64
 	end   uint64
@@ -31,7 +33,7 @@ func (fb *futureBlocks) insertFutureBlock(block *blockNode) {
 	*fb = append(left, right...)
 }
 
-func (fb *futureBlocks) isFutureBlock(block *blockNode) bool {
+func (fb futureBlocks) isFutureBlock(block *blockNode) bool {
 	end := block.interval.end
 	i := fb.bisect(end)
 	if i == 0 {
@@ -39,20 +41,29 @@ func (fb *futureBlocks) isFutureBlock(block *blockNode) bool {
 		return false
 	}
 
-	candidate := (*fb)[i-1]
+	candidate := fb[i-1]
 	return candidate.interval.start <= end && end <= candidate.interval.end
 }
 
-func (fb *futureBlocks) bisect(intervalEnd uint64) int {
+func (fb futureBlocks) bisect(intervalEnd uint64) int {
 	low := 0
-	high := len(*fb)
+	high := len(fb)
 	for low < high {
 		middle := (low + high) / 2
-		if intervalEnd < (*fb)[middle].interval.start {
+		if intervalEnd < fb[middle].interval.start {
 			high = middle
 		} else {
 			low = middle + 1
 		}
 	}
 	return low
+}
+
+// String returns a string representation of the intervals in this futureBlocks.
+func (fb futureBlocks) String() string {
+	intervalsString := ""
+	for _, block := range fb {
+		intervalsString += fmt.Sprintf("[%d,%d]", block.interval.start, block.interval.end)
+	}
+	return intervalsString
 }
