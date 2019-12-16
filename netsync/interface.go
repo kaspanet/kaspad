@@ -29,7 +29,5 @@ type Config struct {
 	DAG          *blockdag.BlockDAG
 	TxMemPool    *mempool.TxPool
 	ChainParams  *dagconfig.Params
-
-	DisableCheckpoints bool
-	MaxPeers           int
+	MaxPeers     int
 }

@@ -21,11 +21,9 @@ import (
 
 	"github.com/btcsuite/go-socks/socks"
 	"github.com/jessevdk/go-flags"
-	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/logger"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/network"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/version"
@@ -131,8 +129,6 @@ type Flags struct {
 	OnionProxyPass       string        `long:"onionpass" default-mask:"-" description:"Password for onion proxy server"`
 	NoOnion              bool          `long:"noonion" description:"Disable connecting to tor hidden services"`
 	TorIsolation         bool          `long:"torisolation" description:"Enable Tor stream isolation by randomizing user credentials for each connection."`
-	AddCheckpoints       []string      `long:"addcheckpoint" description:"Add a custom checkpoint. Format: '<height>:<hash>'"`
-	DisableCheckpoints   bool          `long:"nocheckpoints" description:"Disable built-in checkpoints. Don't do this unless you know what you're doing."`
 	DbType               string        `long:"dbtype" description:"Database backend to use for the Block DAG"`
 	Profile              string        `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
 	CPUProfile           string        `long:"cpuprofile" description:"Write CPU profile to the specified file"`
@@ -165,14 +161,13 @@ type Flags struct {
 // See loadConfig for details on the configuration load process.
 type Config struct {
 	*Flags
-	Lookup         func(string) ([]net.IP, error)
-	OnionDial      func(string, string, time.Duration) (net.Conn, error)
-	Dial           func(string, string, time.Duration) (net.Conn, error)
-	AddCheckpoints []dagconfig.Checkpoint
-	MiningAddrs    []util.Address
-	MinRelayTxFee  util.Amount
-	Whitelists     []*net.IPNet
-	SubnetworkID   *subnetworkid.SubnetworkID // nil in full nodes
+	Lookup        func(string) ([]net.IP, error)
+	OnionDial     func(string, string, time.Duration) (net.Conn, error)
+	Dial          func(string, string, time.Duration) (net.Conn, error)
+	MiningAddrs   []util.Address
+	MinRelayTxFee util.Amount
+	Whitelists    []*net.IPNet
+	SubnetworkID  *subnetworkid.SubnetworkID // nil in full nodes
 }
 
 // serviceOptions defines the configuration options for the daemon as a service on
@@ -204,54 +199,6 @@ func validDbType(dbType string) bool {
 	}
 
 	return false
-}
-
-// newCheckpointFromStr parses checkpoints in the '<height>:<hash>' format.
-func newCheckpointFromStr(checkpoint string) (dagconfig.Checkpoint, error) {
-	parts := strings.Split(checkpoint, ":")
-	if len(parts) != 2 {
-		return dagconfig.Checkpoint{}, errors.Errorf("unable to parse "+
-			"checkpoint %q -- use the syntax <height>:<hash>",
-			checkpoint)
-	}
-
-	height, err := strconv.ParseInt(parts[0], 10, 64)
-	if err != nil {
-		return dagconfig.Checkpoint{}, errors.Errorf("unable to parse "+
-			"checkpoint %q due to malformed height", checkpoint)
-	}
-
-	if len(parts[1]) == 0 {
-		return dagconfig.Checkpoint{}, errors.Errorf("unable to parse "+
-			"checkpoint %q due to missing hash", checkpoint)
-	}
-	hash, err := daghash.NewHashFromStr(parts[1])
-	if err != nil {
-		return dagconfig.Checkpoint{}, errors.Errorf("unable to parse "+
-			"checkpoint %q due to malformed hash", checkpoint)
-	}
-
-	return dagconfig.Checkpoint{
-		ChainHeight: uint64(height),
-		Hash:        hash,
-	}, nil
-}
-
-// parseCheckpoints checks the checkpoint strings for valid syntax
-// ('<height>:<hash>') and parses them to dagconfig.Checkpoint instances.
-func parseCheckpoints(checkpointStrings []string) ([]dagconfig.Checkpoint, error) {
-	if len(checkpointStrings) == 0 {
-		return nil, nil
-	}
-	checkpoints := make([]dagconfig.Checkpoint, len(checkpointStrings))
-	for i, cpString := range checkpointStrings {
-		checkpoint, err := newCheckpointFromStr(cpString)
-		if err != nil {
-			return nil, err
-		}
-		checkpoints[i] = checkpoint
-	}
-	return checkpoints, nil
 }
 
 // newConfigParser returns a new command line flags parser.
@@ -834,16 +781,6 @@ func loadConfig() (*Config, []string, error) {
 	if activeConfig.NoOnion && activeConfig.OnionProxy != "" {
 		err := errors.Errorf("%s: the --noonion and --onion options may "+
 			"not be activated at the same time", funcName)
-		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
-	}
-
-	// Check the checkpoints for syntax errors.
-	activeConfig.AddCheckpoints, err = parseCheckpoints(activeConfig.Flags.AddCheckpoints)
-	if err != nil {
-		str := "%s: Error parsing checkpoints: %s"
-		err := errors.Errorf(str, funcName, err)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
 		return nil, nil, err

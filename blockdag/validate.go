@@ -549,8 +549,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 // which depend on its position within the block dag.
 //
 // The flags modify the behavior of this function as follows:
-//  - BFFastAdd: All checks except those involving comparing the header against
-//    the checkpoints are not performed.
+//  - BFFastAdd: No checks are performed.
 //
 // This function MUST be called with the dag state lock held (for writes).
 func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestParent *blockNode, blockChainHeight uint64, fastAdd bool) error {
@@ -563,19 +562,6 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestPar
 			return err
 		}
 	}
-
-	return dag.validateCheckpoints(header, blockChainHeight)
-}
-
-func (dag *BlockDAG) validateCheckpoints(header *wire.BlockHeader, blockChainHeight uint64) error {
-	// Ensure DAG matches up to predetermined checkpoints.
-	blockHash := header.BlockHash()
-	if !dag.verifyCheckpoint(blockChainHeight, blockHash) {
-		str := fmt.Sprintf("block at chain height %d does not match "+
-			"checkpoint hash", blockChainHeight)
-		return ruleError(ErrBadCheckpoint, str)
-	}
-
 	return nil
 }
 
@@ -902,19 +888,6 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	}
 
 	if !fastAdd {
-
-		// Don't run scripts if this node is before the latest known good
-		// checkpoint since the validity is verified via the checkpoints (all
-		// transactions are included in the merkle root hash and any changes
-		// will therefore be detected by the next checkpoint). This is a huge
-		// optimization because running the scripts is the most time consuming
-		// portion of block handling.
-		checkpoint := dag.LatestCheckpoint()
-		runScripts := true
-		if checkpoint != nil && block.chainHeight <= checkpoint.ChainHeight {
-			runScripts = false
-		}
-
 		scriptFlags := txscript.ScriptNoFlags
 
 		// We obtain the MTP of the *previous* block (unless it's genesis block)
@@ -948,13 +921,10 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 		// transactions are actually allowed to spend the coins by running the
 		// expensive ECDSA signature check scripts. Doing this last helps
 		// prevent CPU exhaustion attacks.
-		if runScripts {
-			err := checkBlockScripts(block, pastUTXO, transactions, scriptFlags, dag.sigCache)
-			if err != nil {
-				return nil, err
-			}
+		err := checkBlockScripts(block, pastUTXO, transactions, scriptFlags, dag.sigCache)
+		if err != nil {
+			return nil, err
 		}
-
 	}
 	return feeData, nil
 }

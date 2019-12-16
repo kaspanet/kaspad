@@ -52,8 +52,7 @@ const (
 	ErrInvalidTime
 
 	// ErrTimeTooOld indicates the time is either before the median time of
-	// the last several blocks per the chain consensus rules or prior to the
-	// most recent checkpoint.
+	// the last several blocks per the chain consensus rules.
 	ErrTimeTooOld
 
 	// ErrTimeTooNew indicates the time is too far in the future as compared
@@ -67,7 +66,7 @@ const (
 	ErrWrongParentsOrder
 
 	// ErrDifficultyTooLow indicates the difficulty for the block is lower
-	// than the difficulty required by the most recent checkpoint.
+	// than the difficulty required.
 	ErrDifficultyTooLow
 
 	// ErrUnexpectedDifficulty indicates specified bits do not align with
@@ -87,10 +86,6 @@ const (
 	// ErrBadUTXOCommitment indicates the calculated UTXO commitment does not match
 	// the expected value.
 	ErrBadUTXOCommitment
-
-	// ErrBadCheckpoint indicates a block that is expected to be at a
-	// checkpoint height does not match the expected one.
-	ErrBadCheckpoint
 
 	// ErrFinalityPointTimeTooOld indicates a block has a timestamp before the
 	// last finality point.
@@ -238,7 +233,6 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrUnexpectedDifficulty:      "ErrUnexpectedDifficulty",
 	ErrHighHash:                  "ErrHighHash",
 	ErrBadMerkleRoot:             "ErrBadMerkleRoot",
-	ErrBadCheckpoint:             "ErrBadCheckpoint",
 	ErrFinalityPointTimeTooOld:   "ErrFinalityPointTimeTooOld",
 	ErrNoTransactions:            "ErrNoTransactions",
 	ErrNoTxInputs:                "ErrNoTxInputs",
