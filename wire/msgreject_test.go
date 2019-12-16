@@ -27,6 +27,7 @@ func TestRejectCodeStringer(t *testing.T) {
 		{RejectDust, "REJECT_DUST"},
 		{RejectInsufficientFee, "REJECT_INSUFFICIENTFEE"},
 		{RejectFinality, "REJECT_FINALITY"},
+		{RejectDifficulty, "REJECT_DIFFICULTY"},
 		{0xff, "Unknown RejectCode (255)"},
 	}
 

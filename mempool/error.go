@@ -82,9 +82,9 @@ func extractRejectCode(err error) (wire.RejectCode, bool) {
 
 		// Rejected due to being earlier than the last finality point.
 		case blockdag.ErrFinalityPointTimeTooOld:
-			fallthrough
-		case blockdag.ErrDifficultyTooLow:
 			code = wire.RejectFinality
+		case blockdag.ErrDifficultyTooLow:
+			code = wire.RejectDifficulty
 
 		// Everything else is due to the block or transaction being invalid.
 		default:

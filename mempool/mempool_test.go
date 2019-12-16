@@ -1581,7 +1581,7 @@ func TestExtractRejectCode(t *testing.T) {
 		},
 		{
 			blockdagRuleErrorCode: blockdag.ErrDifficultyTooLow,
-			wireRejectCode:        wire.RejectFinality,
+			wireRejectCode:        wire.RejectDifficulty,
 		},
 		{
 			blockdagRuleErrorCode: math.MaxUint32,
