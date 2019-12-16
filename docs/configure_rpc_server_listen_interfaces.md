@@ -1,24 +1,24 @@
 btcd allows you to bind the RPC server to specific interfaces which enables you
-to setup configurations with varying levels of complexity.  The `rpclisten`
+to setup configurations with varying levels of complexity. The `rpclisten`
 parameter can be specified on the command line as shown below with the -- prefix
 or in the configuration file without the -- prefix (as can all long command line
-options).  The configuration file takes one entry per line.
+options). The configuration file takes one entry per line.
 
 A few things to note regarding the RPC server:
 * The RPC server will **not** be enabled unless the `rpcuser` and `rpcpass`
   options are specified.
 * When the `rpcuser` and `rpcpass` and/or `rpclimituser` and `rpclimitpass`
   options are specified, the RPC server will only listen on localhost IPv4 and
-  IPv6 interfaces by default.  You will need to override the RPC listen
+  IPv6 interfaces by default. You will need to override the RPC listen
   interfaces to include external interfaces if you want to connect from a remote
   machine.
-* The RPC server has TLS enabled by default, even for localhost.  You may use
+* The RPC server has TLS enabled by default, even for localhost. You may use
   the `--notls` option to disable it, but only when all listeners are on
   localhost interfaces.
 * The `--rpclisten` flag can be specified multiple times to listen on multiple
   interfaces as a couple of the examples below illustrate.
 * The RPC server is disabled by default when using the `--regtest` and
-  `--simnet` networks.  You can override this by specifying listen interfaces.
+  `--simnet` networks. You can override this by specifying listen interfaces.
 
 Command Line Examples:
 

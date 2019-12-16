@@ -6,9 +6,9 @@ fullblocktests
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/kaspanet/kaspad/blockchain/fullblocktests)
 
 Package fullblocktests provides a set of full block tests to be used for testing
-the consensus validation rules.  The tests are intended to be flexible enough to
+the consensus validation rules. The tests are intended to be flexible enough to
 allow both unit-style tests directly against the blockchain code as well as
-integration style tests over the peer-to-peer network.  To achieve that goal,
+integration style tests over the peer-to-peer network. To achieve that goal,
 each test contains additional information about the expected result, however
 that information can be ignored when doing comparison tests between two
 independent versions over the peer-to-peer network.

@@ -28,28 +28,28 @@
 btcd is a full node bitcoin implementation written in [Go](http://golang.org),
 licensed under the [copyfree](http://www.copyfree.org) ISC License.
 
-This project is currently under active development and is in a Beta state.  It
+This project is currently under active development and is in a Beta state. It
 is extremely stable and has been in production use since October 2013.
 
 It properly downloads, validates, and serves the block chain using the exact
-rules (including consensus bugs) for block acceptance as Bitcoin Core.  We have
-taken great care to avoid btcd causing a fork to the block chain.  It includes a
+rules (including consensus bugs) for block acceptance as Bitcoin Core. We have
+taken great care to avoid btcd causing a fork to the block chain. It includes a
 full block validation testing framework which contains all of the 'official'
 block acceptance tests (and some additional ones) that is run on every pull
-request to help ensure it properly follows consensus.  Also, it passes all of
+request to help ensure it properly follows consensus. Also, it passes all of
 the JSON test data in the Bitcoin Core code.
 
 It also properly relays newly mined blocks, maintains a transaction pool, and
-relays individual transactions that have not yet made it into a block.  It
+relays individual transactions that have not yet made it into a block. It
 ensures all individual transactions admitted to the pool follow the rules
 required by the block chain and also includes more strict checks which filter
 transactions based on miner requirements ("standard" transactions).
 
 One key difference between btcd and Bitcoin Core is that btcd does *NOT* include
-wallet functionality and this was a very intentional design decision.  See the
+wallet functionality and this was a very intentional design decision. See the
 blog entry [here](https://blog.conformal.com/btcd-not-your-moms-bitcoin-daemon)
-for more details.  This means you can't actually make or receive payments
-directly with btcd.  That functionality is provided by the
+for more details. This means you can't actually make or receive payments
+directly with btcd. That functionality is provided by the
 [btcwallet](https://github.com/btcsuite/btcwallet) and
 [Paymetheus](https://github.com/btcsuite/Paymetheus) (Windows-only) projects
 which are both under active development.
@@ -62,7 +62,7 @@ which are both under active development.
 
 **2.1 Installation**
 
-The first step is to install btcd.  See one of the following sections for
+The first step is to install btcd. See one of the following sections for
 details on how to install on the supported operating systems.
 
 <a name="WindowsInstallation" />
@@ -87,9 +87,9 @@ $ go version
 $ go env GOROOT GOPATH
 ```
 
-NOTE: The `GOROOT` and `GOPATH` above must not be the same path.  It is
+NOTE: The `GOROOT` and `GOPATH` above must not be the same path. It is
 recommended that `GOPATH` is set to a directory in your home directory such as
-`~/goprojects` to avoid write permission issues.  It is also recommended to add
+`~/goprojects` to avoid write permission issues. It is also recommended to add
 `$GOPATH/bin` to your `PATH` at this point.
 
 - Run the following commands to obtain btcd, all dependencies, and install it:
@@ -102,7 +102,7 @@ $ glide install
 $ go install . ./cmd/...
 ```
 
-- btcd (and utilities) will now be installed in ```$GOPATH/bin```.  If you did
+- btcd (and utilities) will now be installed in ```$GOPATH/bin```. If you did
   not already add the bin directory to your system path during Go installation,
   we recommend you do so now.
 
@@ -137,7 +137,7 @@ options, which can be viewed by running: `$ btcd --help`.
 **2.3 Controlling and Querying btcd via btcctl**
 
 btcctl is a command line utility that can be used to both control and query btcd
-via [RPC](http://www.wikipedia.org/wiki/Remote_procedure_call).  btcd does
+via [RPC](http://www.wikipedia.org/wiki/Remote_procedure_call). btcd does
 **not** enable its RPC server by default;  You must configure at minimum both an
 RPC username and password or both an RPC limited username and password:
 
@@ -229,7 +229,7 @@ configuration necessary, however, there is an optional method to use a
 **3.1 Wallet**
 
 btcd was intentionally developed without an integrated wallet for security
-reasons.  Please see [btcwallet](https://github.com/btcsuite/btcwallet) for more
+reasons. Please see [btcwallet](https://github.com/btcsuite/btcwallet) for more
 information.
 
 
