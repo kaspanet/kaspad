@@ -15,7 +15,7 @@ all rules.
 At a high level, this package provides support for inserting new blocks into
 the block DAG according to the aforementioned rules. It includes
 functionality such as rejecting duplicate blocks, ensuring blocks and
-transactions follow all rules, orphan handling, and DAG selection along
+transactions follow all rules, orphan handling, and DAG order along
 with reorganization.
 
 Since this package does not deal with other kaspa specifics such as network

@@ -118,7 +118,7 @@ func (m *Manager) maybeCreateIndexes(dbTx database.Tx) error {
 
 // Init initializes the enabled indexes. This is called during DAG
 // initialization and primarily consists of catching up all indexes to the
-// current selected tip. This is necessary since each index can be disabled
+// current tips. This is necessary since each index can be disabled
 // and re-enabled at any time and attempting to catch-up indexes at the same
 // time new blocks are being downloaded would lead to an overall longer time to
 // catch up due to the I/O contention.

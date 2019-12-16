@@ -39,8 +39,8 @@ const (
 // current state of the DAG. This is useful for detecting and warning about
 // unknown rule activations.
 type bitConditionChecker struct {
-	bit      uint32
-	blockDAG *BlockDAG
+	bit uint32
+	dag *BlockDAG
 }
 
 // Ensure the bitConditionChecker type implements the thresholdConditionChecker
@@ -78,7 +78,7 @@ func (c bitConditionChecker) EndTime() uint64 {
 //
 // This is part of the thresholdConditionChecker interface implementation.
 func (c bitConditionChecker) RuleChangeActivationThreshold() uint64 {
-	return c.blockDAG.dagParams.RuleChangeActivationThreshold
+	return c.dag.dagParams.RuleChangeActivationThreshold
 }
 
 // MinerConfirmationWindow is the number of blocks in each threshold state
@@ -89,7 +89,7 @@ func (c bitConditionChecker) RuleChangeActivationThreshold() uint64 {
 //
 // This is part of the thresholdConditionChecker interface implementation.
 func (c bitConditionChecker) MinerConfirmationWindow() uint64 {
-	return c.blockDAG.dagParams.MinerConfirmationWindow
+	return c.dag.dagParams.MinerConfirmationWindow
 }
 
 // Condition returns true when the specific bit associated with the checker is
@@ -109,7 +109,7 @@ func (c bitConditionChecker) Condition(node *blockNode) (bool, error) {
 		return false, nil
 	}
 
-	expectedVersion, err := c.blockDAG.calcNextBlockVersion(node.selectedParent)
+	expectedVersion, err := c.dag.calcNextBlockVersion(node.selectedParent)
 	if err != nil {
 		return false, err
 	}
@@ -121,7 +121,7 @@ func (c bitConditionChecker) Condition(node *blockNode) (bool, error) {
 // and activating consensus rule changes.
 type deploymentChecker struct {
 	deployment *dagconfig.ConsensusDeployment
-	blockDAG   *BlockDAG
+	dag        *BlockDAG
 }
 
 // Ensure the deploymentChecker type implements the thresholdConditionChecker
@@ -159,7 +159,7 @@ func (c deploymentChecker) EndTime() uint64 {
 //
 // This is part of the thresholdConditionChecker interface implementation.
 func (c deploymentChecker) RuleChangeActivationThreshold() uint64 {
-	return c.blockDAG.dagParams.RuleChangeActivationThreshold
+	return c.dag.dagParams.RuleChangeActivationThreshold
 }
 
 // MinerConfirmationWindow is the number of blocks in each threshold state
@@ -170,7 +170,7 @@ func (c deploymentChecker) RuleChangeActivationThreshold() uint64 {
 //
 // This is part of the thresholdConditionChecker interface implementation.
 func (c deploymentChecker) MinerConfirmationWindow() uint64 {
-	return c.blockDAG.dagParams.MinerConfirmationWindow
+	return c.dag.dagParams.MinerConfirmationWindow
 }
 
 // Condition returns true when the specific bit defined by the deployment
@@ -201,7 +201,7 @@ func (dag *BlockDAG) calcNextBlockVersion(prevNode *blockNode) (int32, error) {
 	for id := 0; id < len(dag.dagParams.Deployments); id++ {
 		deployment := &dag.dagParams.Deployments[id]
 		cache := &dag.deploymentCaches[id]
-		checker := deploymentChecker{deployment: deployment, blockDAG: dag}
+		checker := deploymentChecker{deployment: deployment, dag: dag}
 		state, err := dag.thresholdState(prevNode, checker, cache)
 		if err != nil {
 			return 0, err
@@ -233,7 +233,7 @@ func (dag *BlockDAG) warnUnknownRuleActivations(node *blockNode) error {
 	// Warn if any unknown new rules are either about to activate or have
 	// already been activated.
 	for bit := uint32(0); bit < vbNumBits; bit++ {
-		checker := bitConditionChecker{bit: bit, blockDAG: dag}
+		checker := bitConditionChecker{bit: bit, dag: dag}
 		cache := &dag.warningCaches[bit]
 		state, err := dag.thresholdState(node.selectedParent, checker, cache)
 		if err != nil {

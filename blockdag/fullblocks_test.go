@@ -123,7 +123,7 @@ func DAGSetup(dbName string, params *dagconfig.Params) (*blockdag.BlockDAG, func
 	})
 	if err != nil {
 		teardown()
-		err := errors.Errorf("failed to create dag instance: %v", err)
+		err := errors.Errorf("failed to create DAG instance: %v", err)
 		return nil, nil, err
 	}
 	return dag, teardown, nil

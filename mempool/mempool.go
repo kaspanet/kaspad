@@ -58,8 +58,8 @@ type Config struct {
 	// associated with.
 	DAGParams *dagconfig.Params
 
-	// DAGChainHeight defines the function to use to access the block height of
-	// the DAG.
+	// DAGChainHeight defines the function to use to access the chain
+	// height of the DAG
 	DAGChainHeight func() uint64
 
 	// MedianTimePast defines the function to use in order to access the

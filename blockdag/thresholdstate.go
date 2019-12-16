@@ -302,7 +302,7 @@ func (dag *BlockDAG) deploymentState(prevNode *blockNode, deploymentID uint32) (
 	}
 
 	deployment := &dag.dagParams.Deployments[deploymentID]
-	checker := deploymentChecker{deployment: deployment, blockDAG: dag}
+	checker := deploymentChecker{deployment: deployment, dag: dag}
 	cache := &dag.deploymentCaches[deploymentID]
 
 	return dag.thresholdState(prevNode, checker, cache)
@@ -318,7 +318,7 @@ func (dag *BlockDAG) initThresholdCaches() error {
 	// definition changes is done now.
 	prevNode := dag.selectedTip().selectedParent
 	for bit := uint32(0); bit < vbNumBits; bit++ {
-		checker := bitConditionChecker{bit: bit, blockDAG: dag}
+		checker := bitConditionChecker{bit: bit, dag: dag}
 		cache := &dag.warningCaches[bit]
 		_, err := dag.thresholdState(prevNode, checker, cache)
 		if err != nil {
@@ -328,7 +328,7 @@ func (dag *BlockDAG) initThresholdCaches() error {
 	for id := 0; id < len(dag.dagParams.Deployments); id++ {
 		deployment := &dag.dagParams.Deployments[id]
 		cache := &dag.deploymentCaches[id]
-		checker := deploymentChecker{deployment: deployment, blockDAG: dag}
+		checker := deploymentChecker{deployment: deployment, dag: dag}
 		_, err := dag.thresholdState(prevNode, checker, cache)
 		if err != nil {
 			return err

@@ -915,7 +915,7 @@ func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 		}
 
 		// Check if the transaction exists from the point of view of the
-		// DAG's selected parent. Note that this is only a best effort
+		// DAG's virtual block. Note that this is only a best effort
 		// since it is expensive to check existence of every output and
 		// the only purpose of this check is to avoid downloading
 		// already known transactions. Only the first two outputs are
@@ -965,7 +965,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 
 	// Request the advertised inventory if we don't already have it. Also,
 	// request parent blocks of orphans if we receive one we already have.
-	// Finally, attempt to detect potential stalls due to long sub-DAGs
+	// Finally, attempt to detect potential stalls due to big orphan DAGs
 	// we already have and request more blocks to prevent them.
 	for i, iv := range invVects {
 		// Ignore unsupported inventory types.
