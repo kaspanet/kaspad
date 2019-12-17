@@ -78,10 +78,7 @@ func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 		processHashes = processHashes[1:]
 
 		// Look up all orphans that are parented by the block we just
-		// accepted. This will typically only be one, but it could
-		// be multiple if multiple blocks are mined and broadcast
-		// around the same time. The one with the most proof of work
-		// will eventually win out. An indexing for loop is
+		// accepted.  An indexing for loop is
 		// intentionally used over a range here as range does not
 		// reevaluate the slice on each iteration nor does it adjust the
 		// index for the modified slice.
