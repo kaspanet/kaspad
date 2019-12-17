@@ -7,13 +7,14 @@ package mempool
 import (
 	"bytes"
 	"fmt"
-	"github.com/pkg/errors"
 	"math"
 	"reflect"
 	"runtime"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/util/testtools"
@@ -630,7 +631,7 @@ func TestProcessTransaction(t *testing.T) {
 
 	addrHash := [20]byte{0x01}
 	addr, err := util.NewAddressPubKeyHash(addrHash[:],
-		util.Bech32PrefixDAGTest)
+		util.Bech32PrefixKaspaTest)
 	if err != nil {
 		t.Fatalf("NewAddressPubKeyHash: unexpected error: %v", err)
 	}
@@ -1577,15 +1578,11 @@ func TestExtractRejectCode(t *testing.T) {
 		},
 		{
 			blockdagRuleErrorCode: blockdag.ErrFinalityPointTimeTooOld,
-			wireRejectCode:        wire.RejectCheckpoint,
+			wireRejectCode:        wire.RejectFinality,
 		},
 		{
 			blockdagRuleErrorCode: blockdag.ErrDifficultyTooLow,
-			wireRejectCode:        wire.RejectCheckpoint,
-		},
-		{
-			blockdagRuleErrorCode: blockdag.ErrBadCheckpoint,
-			wireRejectCode:        wire.RejectCheckpoint,
+			wireRejectCode:        wire.RejectDifficulty,
 		},
 		{
 			blockdagRuleErrorCode: math.MaxUint32,

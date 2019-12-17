@@ -1,5 +1,5 @@
 btcd allows you to bind to specific interfaces which enables you to setup
-configurations with varying levels of complexity.  The listen parameter can be
+configurations with varying levels of complexity. The listen parameter can be
 specified on the command line as shown below with the -- prefix or in the
 configuration file without the -- prefix (as can all long command line options).
 The configuration file takes one entry per line.

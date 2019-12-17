@@ -52,9 +52,6 @@ Application Options:
       --rpcmaxclients=      Max number of RPC clients for standard connections
                             (10)
       --rpcmaxwebsockets=   Max number of RPC websocket connections (25)
-      --rpcquirks           Mirror some JSON-RPC quirks of Bitcoin Core -- NOTE:
-                            Discouraged unless interoperability issues need to
-                            be worked around
       --norpc               Disable built-in RPC server -- NOTE: The RPC server
                             is disabled by default if no rpcuser/rpcpass or
                             rpclimituser/rpclimitpass is specified
@@ -76,9 +73,6 @@ Application Options:
       --testnet             Use the test network
       --regtest             Use the regression test network
       --simnet              Use the simulation test network
-      --addcheckpoint=      Add a custom checkpoint. Format: '<height>:<hash>'
-      --nocheckpoints       Disable built-in checkpoints. Don't do this unless
-                            you know what you're doing.
       --uacomment=          Comment to add to the user agent --
                             See BIP 14 for more information.
       --dbtype=             Database backend to use for the Block Chain (ffldb)

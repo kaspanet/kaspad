@@ -41,24 +41,24 @@ const (
 	Bech32PrefixUnknown Bech32Prefix = iota
 
 	// Prefix for the main network.
-	Bech32PrefixDAGCoin
+	Bech32PrefixKaspa
 
 	// Prefix for the regression test network.
-	Bech32PrefixDAGReg
+	Bech32PrefixKaspaReg
 
 	// Prefix for the test network.
-	Bech32PrefixDAGTest
+	Bech32PrefixKaspaTest
 
 	// Prefix for the simulation network.
-	Bech32PrefixDAGSim
+	Bech32PrefixKaspaSim
 )
 
 // Map from strings to Bech32 address prefix constants for parsing purposes.
 var stringsToBech32Prefixes = map[string]Bech32Prefix{
-	"dagcoin": Bech32PrefixDAGCoin,
-	"dagreg":  Bech32PrefixDAGReg,
-	"dagtest": Bech32PrefixDAGTest,
-	"dagsim":  Bech32PrefixDAGSim,
+	"kaspa":     Bech32PrefixKaspa,
+	"kaspareg":  Bech32PrefixKaspaReg,
+	"kaspatest": Bech32PrefixKaspaTest,
+	"kaspasim":  Bech32PrefixKaspaSim,
 }
 
 // ParsePrefix attempts to parse a Bech32 address prefix.

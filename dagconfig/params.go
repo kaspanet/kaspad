@@ -50,18 +50,6 @@ const phantomK = 10
 const difficultyAdjustmentWindowSize = 2640
 const timestampDeviationTolerance = 132
 
-// Checkpoint identifies a known good point in the block chain. Using
-// checkpoints allows a few optimizations for old blocks during initial download
-// and also prevents forks from old blocks.
-//
-// Each checkpoint is selected based upon several factors. See the
-// documentation for blockchain.IsCheckpointCandidate for details on the
-// selection criteria.
-type Checkpoint struct {
-	ChainHeight uint64
-	Hash        *daghash.Hash
-}
-
 // ConsensusDeployment defines details related to a specific consensus rule
 // change that is voted in. This is part of BIP0009.
 type ConsensusDeployment struct {
@@ -151,9 +139,6 @@ type Params struct {
 	// GenerateSupported specifies whether or not CPU mining is allowed.
 	GenerateSupported bool
 
-	// Checkpoints ordered from oldest to newest.
-	Checkpoints []Checkpoint
-
 	// These fields are related to voting on consensus rule changes as
 	// defined by BIP0009.
 	//
@@ -213,9 +198,6 @@ var MainNetParams = Params{
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 	GenerateSupported:              false,
 
-	// Checkpoints ordered from oldest to newest.
-	Checkpoints: nil,
-
 	// Consensus rule change deployments.
 	//
 	// The miner confirmation window is defined as:
@@ -238,7 +220,7 @@ var MainNetParams = Params{
 	AcceptUnroutable: false,
 
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.Bech32PrefixDAGCoin,
+	Prefix: util.Bech32PrefixKaspa,
 
 	// Address encoding magics
 	PrivateKeyID: 0x80, // starts with 5 (uncompressed) or K (compressed)
@@ -274,9 +256,6 @@ var RegressionNetParams = Params{
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 	GenerateSupported:              true,
 
-	// Checkpoints ordered from oldest to newest.
-	Checkpoints: nil,
-
 	// Consensus rule change deployments.
 	//
 	// The miner confirmation window is defined as:
@@ -299,7 +278,7 @@ var RegressionNetParams = Params{
 	AcceptUnroutable: false,
 
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.Bech32PrefixDAGReg,
+	Prefix: util.Bech32PrefixKaspaReg,
 
 	// Address encoding magics
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
@@ -333,9 +312,6 @@ var TestNetParams = Params{
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 	GenerateSupported:              true,
 
-	// Checkpoints ordered from oldest to newest.
-	Checkpoints: nil,
-
 	// Consensus rule change deployments.
 	//
 	// The miner confirmation window is defined as:
@@ -358,7 +334,7 @@ var TestNetParams = Params{
 	AcceptUnroutable: false,
 
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.Bech32PrefixDAGTest,
+	Prefix: util.Bech32PrefixKaspaTest,
 
 	// Address encoding magics
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
@@ -398,9 +374,6 @@ var SimNetParams = Params{
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 	GenerateSupported:              true,
 
-	// Checkpoints ordered from oldest to newest.
-	Checkpoints: nil,
-
 	// Consensus rule change deployments.
 	//
 	// The miner confirmation window is defined as:
@@ -424,7 +397,7 @@ var SimNetParams = Params{
 
 	PrivateKeyID: 0x64, // starts with 4 (uncompressed) or F (compressed)
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.Bech32PrefixDAGSim,
+	Prefix: util.Bech32PrefixKaspaSim,
 
 	// BIP32 hierarchical deterministic extended key magics
 	HDKeyIDPair: hdkeychain.HDKeyPairSimNet,
@@ -455,9 +428,6 @@ var DevNetParams = Params{
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 	GenerateSupported:              true,
 
-	// Checkpoints ordered from oldest to newest.
-	Checkpoints: nil,
-
 	// Consensus rule change deployments.
 	//
 	// The miner confirmation window is defined as:
@@ -480,7 +450,7 @@ var DevNetParams = Params{
 	AcceptUnroutable: true,
 
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.Bech32PrefixDAGTest,
+	Prefix: util.Bech32PrefixKaspaTest,
 
 	// Address encoding magics
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
