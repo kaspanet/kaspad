@@ -1,9 +1,0 @@
-1. Since btcd is not public repository still, copy/checkout
-https://github.com/kaspanet/kaspad into vendor/github.com/kaspanet/kaspad before
-running "docker build".
-
-2. To build docker image invoke following command from dnsseeder directory:
-         docker build -t dnsseeder -f ./docker/Dockerfile .
-
-3. To run
-         sudo docker run -u root -p 53:53/udp dnsseeder
