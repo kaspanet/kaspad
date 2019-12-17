@@ -318,7 +318,7 @@ func (c *Client) SearchRawTransactionsAsync(address util.Address, skip, count in
 
 // SearchRawTransactions returns transactions that involve the passed address.
 //
-// NOTE: Chain servers do not typically provide this capability unless it has
+// NOTE: RPC servers do not typically provide this capability unless it has
 // specifically been enabled.
 //
 // See SearchRawTransactionsVerbose to retrieve a list of data structures with
@@ -372,7 +372,7 @@ func (c *Client) SearchRawTransactionsVerboseAsync(address util.Address, skip,
 // SearchRawTransactionsVerbose returns a list of data structures that describe
 // transactions which involve the passed address.
 //
-// NOTE: Chain servers do not typically provide this capability unless it has
+// NOTE: RPC servers do not typically provide this capability unless it has
 // specifically been enabled.
 //
 // See SearchRawTransactions to retrieve a list of raw transactions instead.

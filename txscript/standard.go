@@ -275,7 +275,7 @@ func PushedData(script []byte) ([][]byte, error) {
 // ExtractScriptPubKeyAddress returns the type of script and its addresses.
 // Note that it only works for 'standard' transaction script types. Any data such
 // as public keys which are invalid will return a nil address.
-func ExtractScriptPubKeyAddress(scriptPubKey []byte, chainParams *dagconfig.Params) (ScriptClass, util.Address, error) {
+func ExtractScriptPubKeyAddress(scriptPubKey []byte, dagParams *dagconfig.Params) (ScriptClass, util.Address, error) {
 	// No valid address if the script doesn't parse.
 	pops, err := parseScript(scriptPubKey)
 	if err != nil {
@@ -290,7 +290,7 @@ func ExtractScriptPubKeyAddress(scriptPubKey []byte, chainParams *dagconfig.Para
 		// Therefore the pubkey hash is the 3rd item on the stack.
 		// If the pubkey hash is invalid for some reason, return a nil address.
 		addr, err := util.NewAddressPubKeyHash(pops[2].data,
-			chainParams.Prefix)
+			dagParams.Prefix)
 		if err != nil {
 			return scriptClass, nil, nil
 		}
@@ -302,7 +302,7 @@ func ExtractScriptPubKeyAddress(scriptPubKey []byte, chainParams *dagconfig.Para
 		// Therefore the script hash is the 2nd item on the stack.
 		// If the script hash ss invalid for some reason, return a nil address.
 		addr, err := util.NewAddressScriptHashFromHash(pops[1].data,
-			chainParams.Prefix)
+			dagParams.Prefix)
 		if err != nil {
 			return scriptClass, nil, nil
 		}

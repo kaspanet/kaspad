@@ -14,7 +14,7 @@ RUN go mod download
 
 COPY . .
 
-RUN cd kasparov/kasparovd && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o kasparovd .
+RUN cd faucet && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o faucet .
 
 # --- multistage docker build: stage #2: runtime image
 FROM alpine
@@ -22,8 +22,7 @@ WORKDIR /app
 
 RUN apk add --no-cache tini
 
-COPY --from=build /go/src/github.com/kaspanet/kaspad/kasparov/kasparovd/ /app/
-COPY --from=build /go/src/github.com/kaspanet/kaspad/kasparov/database/migrations/ /database/migrations/
+COPY --from=build /go/src/github.com/kaspanet/kaspad/faucet /app/
 
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["/app/kasparovd"]
+CMD ["/app/faucet"]

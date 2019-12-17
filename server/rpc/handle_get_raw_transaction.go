@@ -37,7 +37,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 			return nil, &rpcmodel.RPCError{
 				Code: rpcmodel.ErrRPCNoTxInfo,
 				Message: "The transaction index must be " +
-					"enabled to query the blockchain " +
+					"enabled to query the blockDAG " +
 					"(specify --txindex)",
 			}
 		}
@@ -90,7 +90,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 	var blkHeader *wire.BlockHeader
 	var blkHashStr string
 	if blkHash != nil {
-		// Fetch the header from chain.
+		// Fetch the header from DAG.
 		header, err := s.cfg.DAG.HeaderByHash(blkHash)
 		if err != nil {
 			context := "Failed to fetch block header"

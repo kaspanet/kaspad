@@ -250,7 +250,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 		var blkHeader *wire.BlockHeader
 		var blkHashStr string
 		if blkHash := rtx.blkHash; blkHash != nil {
-			// Fetch the header from chain.
+			// Fetch the header from DAG.
 			header, err := s.cfg.DAG.HeaderByHash(blkHash)
 			if err != nil {
 				return nil, &rpcmodel.RPCError{
@@ -288,7 +288,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 
 // createVinListPrevOut returns a slice of JSON objects for the inputs of the
 // passed transaction.
-func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Params, vinExtra bool, filterAddrMap map[string]struct{}) ([]rpcmodel.VinPrevOut, error) {
+func createVinListPrevOut(s *Server, mtx *wire.MsgTx, dagParams *dagconfig.Params, vinExtra bool, filterAddrMap map[string]struct{}) ([]rpcmodel.VinPrevOut, error) {
 	// Use a dynamically sized list to accommodate the address filter.
 	vinList := make([]rpcmodel.VinPrevOut, 0, len(mtx.TxIn))
 
@@ -345,7 +345,7 @@ func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Par
 		// couldn't parse and there is no additional information about
 		// it anyways.
 		_, addr, _ := txscript.ExtractScriptPubKeyAddress(
-			originTxOut.ScriptPubKey, chainParams)
+			originTxOut.ScriptPubKey, dagParams)
 
 		var encodedAddr *string
 		if addr != nil {

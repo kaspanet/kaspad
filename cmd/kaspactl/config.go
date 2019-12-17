@@ -45,7 +45,7 @@ func ActiveConfig() *ConfigFlags {
 // their one-line usage.
 func listCommands() {
 	const (
-		categoryChain uint8 = iota
+		categoryDAG uint8 = iota
 		numCategories
 	)
 
@@ -73,13 +73,13 @@ func listCommands() {
 		}
 
 		// Categorize the command based on the usage flags.
-		category := categoryChain
+		category := categoryDAG
 		categorized[category] = append(categorized[category], usage)
 	}
 
 	// Display the command according to their categories.
 	categoryTitles := make([]string, numCategories)
-	categoryTitles[categoryChain] = "Chain Server Commands:"
+	categoryTitles[categoryDAG] = "DAG Server Commands:"
 	for category := uint8(0); category < numCategories; category++ {
 		fmt.Println(categoryTitles[category])
 		for _, usage := range categorized[category] {

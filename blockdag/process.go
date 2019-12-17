@@ -18,9 +18,8 @@ type BehaviorFlags uint32
 
 const (
 	// BFFastAdd may be set to indicate that several checks can be avoided
-	// for the block since it is already known to fit into the chain due to
-	// already proving it correct links into the chain.
-	// This is primarily used for headers-first mode.
+	// for the block since it is already known to fit into the DAG due to
+	// already proving it correct links into the DAG.
 	BFFastAdd BehaviorFlags = 1 << iota
 
 	// BFNoPoWCheck may be set to indicate the proof of work check which
@@ -64,7 +63,7 @@ func (dag *BlockDAG) BlockExists(hash *daghash.Hash) bool {
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to maybeAcceptBlock.
 //
-// This function MUST be called with the chain state lock held (for writes).
+// This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) error {
 	// Start with processing at least the passed hash. Leave a little room
 	// for additional orphan blocks that need to be processed without
@@ -78,10 +77,7 @@ func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 		processHashes = processHashes[1:]
 
 		// Look up all orphans that are parented by the block we just
-		// accepted. This will typically only be one, but it could
-		// be multiple if multiple blocks are mined and broadcast
-		// around the same time. The one with the most proof of work
-		// will eventually win out. An indexing for loop is
+		// accepted.  An indexing for loop is
 		// intentionally used over a range here as range does not
 		// reevaluate the slice on each iteration nor does it adjust the
 		// index for the modified slice.
@@ -130,7 +126,7 @@ func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 }
 
 // ProcessBlock is the main workhorse for handling insertion of new blocks into
-// the block chain. It includes functionality such as rejecting duplicate
+// the block DAG. It includes functionality such as rejecting duplicate
 // blocks, ensuring blocks follow all rules, orphan handling, and insertion into
 // the block DAG.
 //

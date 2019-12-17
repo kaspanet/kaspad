@@ -7,8 +7,6 @@ Package database provides a block and metadata storage database.
 
 Overview
 
-As of Feb 2016, there are over 400,000 blocks in the Bitcoin block chain and
-and over 112 million transactions (which turns out to be over 60GB of data).
 This package provides a database layer to store and retrieve this data in a
 simple and efficient manner.
 

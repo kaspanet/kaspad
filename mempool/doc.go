@@ -39,7 +39,7 @@ be an exhaustive list.
  - Maintain a pool of fully validated transactions
    - Reject non-fully-spent duplicate transactions
    - Reject coinbase transactions
-   - Reject double spends (both from the chain and other transactions in pool)
+   - Reject double spends (both from the DAG and other transactions in pool)
    - Reject invalid transactions according to the network consensus rules
    - Full script execution and validation with signature cache support
    - Individual transaction query support
@@ -68,9 +68,9 @@ Errors
 
 Errors returned by this package are either the raw errors provided by underlying
 calls or of type mempool.RuleError. Since there are two classes of rules
-(mempool acceptance rules and blockchain (consensus) acceptance rules), the
+(mempool acceptance rules and blockDAG (consensus) acceptance rules), the
 mempool.RuleError type contains a single Err field which will, in turn, either
-be a mempool.TxRuleError or a blockchain.RuleError. The first indicates a
+be a mempool.TxRuleError or a blockdag.RuleError. The first indicates a
 violation of mempool acceptance rules while the latter indicates a violation of
 consensus acceptance rules. This allows the caller to easily differentiate
 between unexpected errors, such as database errors, versus errors due to rule

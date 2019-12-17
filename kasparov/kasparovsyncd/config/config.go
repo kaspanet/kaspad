@@ -8,13 +8,13 @@ import (
 )
 
 const (
-	logFilename    = "syncd.log"
-	errLogFilename = "syncd_err.log"
+	logFilename    = "kasparov_syncd.log"
+	errLogFilename = "kasparov_syncd_err.log"
 )
 
 var (
 	// Default configuration options
-	defaultLogDir = util.AppDataDir("syncd", false)
+	defaultLogDir = util.AppDataDir("kasparov_syncd", false)
 	activeConfig  *Config
 )
 

@@ -213,7 +213,7 @@ func handleGetBlockTemplateRequest(s *Server, request *rpcmodel.TemplateRequest,
 // is not sent until the caller should stop working on the previous block
 // template in favor of the new one. In particular, this is the case when the
 // old block template is no longer valid due to a solution already being found
-// and added to the block chain, or new transactions have shown up and some time
+// and added to the block DAG, or new transactions have shown up and some time
 // has passed without finding a solution.
 func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseValue bool, closeChan <-chan struct{}) (interface{}, error) {
 	state := s.gbtWorkState
@@ -353,16 +353,16 @@ func handleGetBlockTemplateProposal(s *Server, request *rpcmodel.TemplateRequest
 		}
 
 		log.Infof("Rejected block proposal: %s", err)
-		return chainErrToGBTErrString(err), nil
+		return dagErrToGBTErrString(err), nil
 	}
 
 	return nil, nil
 }
 
-// chainErrToGBTErrString converts an error returned from kaspa to a string
+// dagErrToGBTErrString converts an error returned from kaspa to a string
 // which matches the reasons and format described in BIP0022 for rejection
 // reasons.
-func chainErrToGBTErrString(err error) string {
+func dagErrToGBTErrString(err error) string {
 	// When the passed error is not a RuleError, just return a generic
 	// rejected string with the error text.
 	ruleErr, ok := err.(blockdag.RuleError)
@@ -447,9 +447,8 @@ func chainErrToGBTErrString(err error) string {
 //
 // This function MUST be called with the state locked.
 func (state *gbtWorkState) notifyLongPollers(tipHashes []*daghash.Hash, lastGenerated time.Time) {
-	// Notify anything that is waiting for a block template update from a
-	// hash which is not the hash of the tip of the best chain since their
-	// work is now invalid.
+	// Notify anything that is waiting for a block template update from
+	// hashes which are not the current tip hashes.
 	tipHashesStr := daghash.JoinHashesStrings(tipHashes, "")
 	for hashesStr, channels := range state.notifyMap {
 		if hashesStr != tipHashesStr {
@@ -617,7 +616,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 			util.CompactToBig(msgBlock.Header.Bits))
 
 		// Get the minimum allowed timestamp for the block based on the
-		// median timestamp of the last several blocks per the chain
+		// median timestamp of the last several blocks per the DAG
 		// consensus rules.
 		minTimestamp := mining.MinimumMedianTime(s.cfg.DAG.CalcPastMedianTime())
 
@@ -677,7 +676,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 
 		// Update the time of the block template to the current time
 		// while accounting for the median time of the past several
-		// blocks per the chain consensus rules.
+		// blocks per the DAG consensus rules.
 		generator.UpdateBlockTime(msgBlock)
 		msgBlock.Header.Nonce = 0
 
