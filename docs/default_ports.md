@@ -12,4 +12,4 @@ configurations.
 |Name|Port|
 |----|----|
 |Default Bitcoin peer-to-peer port|TCP 8333|
-|Default RPC port|TCP 8334|
+|Default RPC port|TCP 10332|

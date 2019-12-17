@@ -182,7 +182,7 @@ var MainNetParams = Params{
 	K:           phantomK,
 	Name:        "mainnet",
 	Net:         wire.MainNet,
-	RPCPort:     "8334",
+	RPCPort:     "10332",
 	DefaultPort: "8333",
 	DNSSeeds:    []string{},
 
@@ -240,7 +240,7 @@ var RegressionNetParams = Params{
 	K:           phantomK,
 	Name:        "regtest",
 	Net:         wire.RegTest,
-	RPCPort:     "18334",
+	RPCPort:     "10432",
 	DefaultPort: "18444",
 	DNSSeeds:    []string{},
 
@@ -296,7 +296,7 @@ var TestNetParams = Params{
 	K:           phantomK,
 	Name:        "testnet",
 	Net:         wire.TestNet,
-	RPCPort:     "18334",
+	RPCPort:     "10432",
 	DefaultPort: "18333",
 	DNSSeeds:    []string{},
 
@@ -358,7 +358,7 @@ var SimNetParams = Params{
 	K:           phantomK,
 	Name:        "simnet",
 	Net:         wire.SimNet,
-	RPCPort:     "18556",
+	RPCPort:     "10632",
 	DefaultPort: "18555",
 	DNSSeeds:    []string{}, // NOTE: There must NOT be any seeds.
 
@@ -412,7 +412,7 @@ var DevNetParams = Params{
 	K:           phantomK,
 	Name:        "devnet",
 	Net:         wire.DevNet,
-	RPCPort:     "18334",
+	RPCPort:     "10532",
 	DefaultPort: "18333",
 	DNSSeeds:    []string{},
 

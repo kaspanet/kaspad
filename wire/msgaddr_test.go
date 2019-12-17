@@ -88,7 +88,7 @@ func TestAddrWire(t *testing.T) {
 		Timestamp: time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("192.168.0.1"),
-		Port:      8334,
+		Port:      10332,
 	}
 
 	// Empty address message.
@@ -114,7 +114,7 @@ func TestAddrWire(t *testing.T) {
 		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0xff, 0xff, 0xc0, 0xa8, 0x00, 0x01, // IP 192.168.0.1
-		0x20, 0x8e, // Port 8334 in big-endian
+		0x28, 0x5c, // Port 10332 in big-endian
 	}
 
 	// Address message with multiple addresses and subnetworkID.
@@ -136,7 +136,7 @@ func TestAddrWire(t *testing.T) {
 		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0xff, 0xff, 0xc0, 0xa8, 0x00, 0x01, // IP 192.168.0.1
-		0x20, 0x8e, // Port 8334 in big-endian
+		0x28, 0x5c, // Port 10332 in big-endian
 	}
 
 	tests := []struct {
@@ -218,7 +218,7 @@ func TestAddrWireErrors(t *testing.T) {
 		Timestamp: time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("192.168.0.1"),
-		Port:      8334,
+		Port:      10332,
 	}
 
 	// Address message with multiple addresses.
@@ -236,7 +236,7 @@ func TestAddrWireErrors(t *testing.T) {
 		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0xff, 0xff, 0xc0, 0xa8, 0x00, 0x01, // IP 192.168.0.1
-		0x20, 0x8e, // Port 8334 in big-endian
+		0x28, 0x5c, // Port 10332 in big-endian
 	}
 
 	// Message that forces an error by having more than the max allowed
