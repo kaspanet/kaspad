@@ -183,7 +183,7 @@ var MainNetParams = Params{
 	Name:        "mainnet",
 	Net:         wire.MainNet,
 	RPCPort:     "10332",
-	DefaultPort: "8333",
+	DefaultPort: "10333",
 	DNSSeeds:    []string{},
 
 	// DAG parameters
@@ -241,7 +241,7 @@ var RegressionNetParams = Params{
 	Name:        "regtest",
 	Net:         wire.RegTest,
 	RPCPort:     "10432",
-	DefaultPort: "18444",
+	DefaultPort: "10433",
 	DNSSeeds:    []string{},
 
 	// DAG parameters
@@ -297,7 +297,7 @@ var TestNetParams = Params{
 	Name:        "testnet",
 	Net:         wire.TestNet,
 	RPCPort:     "10432",
-	DefaultPort: "18333",
+	DefaultPort: "10433",
 	DNSSeeds:    []string{},
 
 	// DAG parameters
@@ -359,7 +359,7 @@ var SimNetParams = Params{
 	Name:        "simnet",
 	Net:         wire.SimNet,
 	RPCPort:     "10632",
-	DefaultPort: "18555",
+	DefaultPort: "10633",
 	DNSSeeds:    []string{}, // NOTE: There must NOT be any seeds.
 
 	// DAG parameters
@@ -413,7 +413,7 @@ var DevNetParams = Params{
 	Name:        "devnet",
 	Net:         wire.DevNet,
 	RPCPort:     "10532",
-	DefaultPort: "18333",
+	DefaultPort: "10533",
 	DNSSeeds:    []string{},
 
 	// DAG parameters
