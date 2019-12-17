@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/btcsuite/winsvc/eventlog"
