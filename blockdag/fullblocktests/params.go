@@ -125,9 +125,6 @@ var regressionNetParams = &dagconfig.Params{
 	TimestampDeviationTolerance:    132,
 	GenerateSupported:              true,
 
-	// Checkpoints ordered from oldest to newest.
-	Checkpoints: nil,
-
 	// Mempool parameters
 	RelayNonStdTxs: true,
 

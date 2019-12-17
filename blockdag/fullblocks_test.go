@@ -117,7 +117,6 @@ func DAGSetup(dbName string, params *dagconfig.Params) (*blockdag.BlockDAG, func
 	dag, err := blockdag.New(&blockdag.Config{
 		DB:          db,
 		DAGParams:   &paramsCopy,
-		Checkpoints: nil,
 		TimeSource:  blockdag.NewMedianTime(),
 		SigCache:    txscript.NewSigCache(1000),
 	})

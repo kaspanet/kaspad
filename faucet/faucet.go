@@ -40,7 +40,7 @@ func apiURL(requestPath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	u, err := url.Parse(cfg.APIServerURL)
+	u, err := url.Parse(cfg.KasparovdURL)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}

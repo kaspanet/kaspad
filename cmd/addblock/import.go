@@ -86,9 +86,8 @@ func (bi *blockImporter) readBlock() ([]byte, error) {
 // processBlock potentially imports the block into the database. It first
 // deserializes the raw block while checking for errors. Already known blocks
 // are skipped and orphan blocks are considered errors. Finally, it runs the
-// block through the DAG rules to ensure it follows all rules and matches
-// up to the known checkpoint. Returns whether the block was imported along
-// with any potential errors.
+// block through the DAG rules to ensure it follows all rules.
+// Returns whether the block was imported along with any potential errors.
 func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 	// Deserialize the block which includes checks for malformed blocks.
 	block, err := util.NewBlockFromBytes(serializedBlock)
@@ -116,8 +115,7 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 		}
 	}
 
-	// Ensure the blocks follows all of the DAG rules and match up to the
-	// known checkpoints.
+	// Ensure the blocks follows all of the DAG rules.
 	isOrphan, delay, err := bi.dag.ProcessBlock(block,
 		blockdag.BFFastAdd)
 	if err != nil {

@@ -149,7 +149,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*ecc.PublicKey)(&key.PublicKey).
 				SerializeUncompressed()
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), util.Bech32PrefixDAGTest)
+				util.Hash160(pk), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -186,7 +186,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*ecc.PublicKey)(&key.PublicKey).
 				SerializeUncompressed()
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), util.Bech32PrefixDAGTest)
+				util.Hash160(pk), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -247,7 +247,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*ecc.PublicKey)(&key.PublicKey).
 				SerializeCompressed()
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), util.Bech32PrefixDAGTest)
+				util.Hash160(pk), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -285,7 +285,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*ecc.PublicKey)(&key.PublicKey).
 				SerializeCompressed()
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), util.Bech32PrefixDAGTest)
+				util.Hash160(pk), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -346,7 +346,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*ecc.PublicKey)(&key.PublicKey).
 				SerializeUncompressed()
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), util.Bech32PrefixDAGTest)
+				util.Hash160(pk), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -361,7 +361,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			scriptAddr, err := util.NewAddressScriptHash(
-				scriptPubKey, util.Bech32PrefixDAGTest)
+				scriptPubKey, util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make p2sh addr for %s: %v",
 					msg, err)
@@ -402,7 +402,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*ecc.PublicKey)(&key.PublicKey).
 				SerializeUncompressed()
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), util.Bech32PrefixDAGTest)
+				util.Hash160(pk), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -417,7 +417,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			scriptAddr, err := util.NewAddressScriptHash(
-				scriptPubKey, util.Bech32PrefixDAGTest)
+				scriptPubKey, util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make p2sh addr for %s: %v",
 					msg, err)
@@ -484,7 +484,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*ecc.PublicKey)(&key.PublicKey).
 				SerializeCompressed()
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), util.Bech32PrefixDAGTest)
+				util.Hash160(pk), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -498,7 +498,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			scriptAddr, err := util.NewAddressScriptHash(
-				scriptPubKey, util.Bech32PrefixDAGTest)
+				scriptPubKey, util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make p2sh addr for %s: %v",
 					msg, err)
@@ -540,7 +540,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*ecc.PublicKey)(&key.PublicKey).
 				SerializeCompressed()
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), util.Bech32PrefixDAGTest)
+				util.Hash160(pk), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -554,7 +554,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			scriptAddr, err := util.NewAddressScriptHash(
-				scriptPubKey, util.Bech32PrefixDAGTest)
+				scriptPubKey, util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make p2sh addr for %s: %v",
 					msg, err)

@@ -36,7 +36,7 @@ func ActiveConfig() *ConfigFlags {
 	return activeConfig
 }
 
-// ConfigFlags defines the configuration options for findcheckpoint.
+// ConfigFlags defines the configuration options for addblock.
 //
 // See loadConfig for details on the configuration load process.
 type ConfigFlags struct {

@@ -391,8 +391,6 @@ func dagErrToGBTErrString(err error) string {
 		return "high-hash"
 	case blockdag.ErrBadMerkleRoot:
 		return "bad-txnmrklroot"
-	case blockdag.ErrBadCheckpoint:
-		return "bad-checkpoint"
 	case blockdag.ErrFinalityPointTimeTooOld:
 		return "finality-point-time-too-old"
 	case blockdag.ErrNoTransactions:

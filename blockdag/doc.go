@@ -35,8 +35,6 @@ is by no means exhaustive:
  - Perform a series of sanity checks on the block and its transactions such as
    verifying proof of work, timestamps, number and character of transactions,
    transaction amounts, script complexity, and merkle root calculations
- - Compare the block against predetermined checkpoints for expected timestamps
-   and difficulty based on elapsed time since the checkpoint
  - Save the most recent orphan blocks for a limited time in case their parent
    blocks become available
  - Stop processing if the block is an orphan as the rest of the processing
@@ -44,7 +42,7 @@ is by no means exhaustive:
  - Perform a series of more thorough checks that depend on the block's position
    within the block DAG such as verifying block difficulties adhere to
    difficulty retarget rules, timestamps are after the median of the last
-   several blocks, all transactions are finalized, checkpoint blocks match, and
+   several blocks, all transactions are finalized, and
    block versions are in line with the previous blocks
  - When a block is being connected to the DAG, perform further checks on the
    block's transactions such as verifying transaction duplicates, script
