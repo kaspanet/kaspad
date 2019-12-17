@@ -10,7 +10,19 @@ type reachabilityInterval struct {
 type futureBlocks []*blockNode
 
 // insertFutureBlock inserts the given block into this futureBlocks
-// if required.
+// while keeping futureBlocks ordered by interval.
+// If a block B ∈ futureBlocks exists s.t. its interval contains
+// block's interval, block need not be added. If block's interval
+// contains B's interval, it replaces it.
+//
+// Notes:
+// * Intervals never intersect unless one contains the other
+//   (this follows from the tree structure and the indexing rule).
+// * Since futureBlocks is kept ordered, a binary search can be
+//   used for insertion/queries.
+// * Although reindexing may change a block's interval, the
+//   is-superset relation will by definition
+// be always preserved.
 func (fb *futureBlocks) insertFutureBlock(block *blockNode) {
 	start := block.interval.start
 	i := fb.bisect(block)
@@ -36,8 +48,14 @@ func (fb *futureBlocks) insertFutureBlock(block *blockNode) {
 	*fb = append(left, right...)
 }
 
-// isFutureBlock resolves whether the given block is in the future of
+// isFutureBlock resolves whether the given block is in the subtree of
 // any block in this futureBlocks.
+// See insertFutureBlock method for the complementary insertion behavior.
+//
+// Like the insert method, this method also relies on the fact that
+// futureBlocks is kept ordered by interval to efficiently perform a
+// binary search over futureBlocks and answer the query in
+// O(log(|future_blocks|)).
 func (fb futureBlocks) isFutureBlock(block *blockNode) bool {
 	i := fb.bisect(block)
 	if i == 0 {
@@ -50,7 +68,7 @@ func (fb futureBlocks) isFutureBlock(block *blockNode) bool {
 	return candidate.interval.start <= end && end <= candidate.interval.end
 }
 
-// bisect finds the appropriate index for the givev block's reachability
+// bisect finds the appropriate index for the given block's reachability
 // interval.
 func (fb futureBlocks) bisect(block *blockNode) int {
 	end := block.interval.end
