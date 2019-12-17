@@ -7,13 +7,13 @@ import (
 )
 
 const (
-	logFilename    = "kasparov_server.log"
-	errLogFilename = "kasparov_server_err.log"
+	logFilename    = "kasparovd.log"
+	errLogFilename = "kasparovd_err.log"
 )
 
 var (
 	// Default configuration options
-	defaultLogDir     = util.AppDataDir("kasparov_server", false)
+	defaultLogDir     = util.AppDataDir("kasparovd", false)
 	defaultHTTPListen = "0.0.0.0:8080"
 	activeConfig      *Config
 )

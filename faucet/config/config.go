@@ -28,7 +28,7 @@ var (
 type Config struct {
 	LogDir       string  `long:"logdir" description:"Directory to log output."`
 	HTTPListen   string  `long:"listen" description:"HTTP address to listen on (default: 0.0.0.0:8081)"`
-	APIServerURL string  `long:"api-server-url" description:"The API server url to connect to"`
+	KasparovdURL string  `long:"kasparovd-url" description:"The API server url to connect to"`
 	PrivateKey   string  `long:"private-key" description:"Faucet Private key"`
 	DBAddress    string  `long:"dbaddress" description:"Database address"`
 	DBUser       string  `long:"dbuser" description:"Database user" required:"true"`
@@ -57,7 +57,7 @@ func Parse() error {
 	}
 
 	if !cfg.Migrate {
-		if cfg.APIServerURL == "" {
+		if cfg.KasparovdURL == "" {
 			return errors.New("api-server-url argument is required when --migrate flag is not raised")
 		}
 		if cfg.PrivateKey == "" {
