@@ -70,7 +70,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 
 		// To match the behavior of the reference client, return nil
 		// (JSON null) if the transaction output is spent by another
-		// transaction already in the main chain. Mined transactions
+		// transaction already in the DAG. Mined transactions
 		// that are spent by a mempool transaction are not affected by
 		// this.
 		if entry == nil {

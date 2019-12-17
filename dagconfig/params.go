@@ -17,7 +17,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// These variables are the chain proof-of-work limit parameters for each default
+// These variables are the DAG proof-of-work limit parameters for each default
 // network.
 var (
 	// bigOne is 1 represented as a big.Int. It is defined here to avoid
@@ -103,7 +103,7 @@ type Params struct {
 	// as one method to discover peers.
 	DNSSeeds []string
 
-	// GenesisBlock defines the first block of the chain.
+	// GenesisBlock defines the first block of the DAG.
 	GenesisBlock *wire.MsgBlock
 
 	// GenesisHash is the starting block hash.

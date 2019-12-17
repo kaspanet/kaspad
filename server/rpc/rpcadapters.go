@@ -234,7 +234,7 @@ type rpcSyncMgr struct {
 // Ensure rpcSyncMgr implements the rpcserverSyncManager interface.
 var _ rpcserverSyncManager = (*rpcSyncMgr)(nil)
 
-// IsCurrent returns whether or not the sync manager believes the chain is
+// IsCurrent returns whether or not the sync manager believes the DAG is
 // current as compared to the rest of the network.
 //
 // This function is safe for concurrent access and is part of the

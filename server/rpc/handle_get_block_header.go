@@ -13,7 +13,7 @@ import (
 func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*rpcmodel.GetBlockHeaderCmd)
 
-	// Fetch the header from chain.
+	// Fetch the header from DAG.
 	hash, err := daghash.NewHashFromStr(c.Hash)
 	if err != nil {
 		return nil, rpcDecodeHexError(c.Hash)

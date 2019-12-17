@@ -283,7 +283,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	medianTime := node.RelativeAncestor(5).PastMedianTime(dag).Unix()
 
 	// The median time calculated from the PoV of the best block in the
-	// test chain. For unconfirmed inputs, this value will be used since
+	// test DAG. For unconfirmed inputs, this value will be used since
 	// the MTP will be calculated from the PoV of the yet-to-be-mined
 	// block.
 	nextMedianTime := node.PastMedianTime(dag).Unix()
@@ -689,7 +689,7 @@ func TestChainHeightToHashRange(t *testing.T) {
 // TestIntervalBlockHashes ensures that fetching block hashes at specified
 // intervals by end hash works as expected.
 func TestIntervalBlockHashes(t *testing.T) {
-	// Construct a synthetic block chain with a block index consisting of
+	// Construct a synthetic block DAG with a block index consisting of
 	// the following structure.
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)

@@ -81,10 +81,9 @@ type blockNode struct {
 	// chainHeight is the number of hops you need to go down the selected parent chain in order to get to the genesis block.
 	chainHeight uint64
 
-	// Some fields from block headers to aid in best chain selection and
-	// reconstructing headers from memory. These must be treated as
-	// immutable and are intentionally ordered to avoid padding on 64-bit
-	// platforms.
+	// Some fields from block headers to aid in  reconstructing headers
+	// from memory. These must be treated as immutable and are intentionally
+	// ordered to avoid padding on 64-bit platforms.
 	version              int32
 	bits                 uint32
 	nonce                uint64

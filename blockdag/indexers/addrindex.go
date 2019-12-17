@@ -68,9 +68,9 @@ var (
 )
 
 // -----------------------------------------------------------------------------
-// The address index maps addresses referenced in the blockchain to a list of
+// The address index maps addresses referenced in the blockDAG to a list of
 // all the transactions involving that address. Transactions are stored
-// according to their order of appearance in the blockchain. That is to say
+// according to their order of appearance in the blockDAG. That is to say
 // first by block height and then by offset inside the block. It is also
 // important to note that this implementation requires the transaction index
 // since it is needed in order to catch up old blocks due to the fact the spent
@@ -536,7 +536,7 @@ func addrToKey(addr util.Address) ([addrKeySize]byte, error) {
 // AddrIndex implements a transaction by address index. That is to say, it
 // supports querying all transactions that reference a given address because
 // they are either crediting or debiting the address. The returned transactions
-// are ordered according to their order of appearance in the blockchain. In
+// are ordered according to their order of appearance in the blockDAG. In
 // other words, first by block height and then by offset inside the block.
 //
 // In addition, support is provided for a memory-only index of unconfirmed
@@ -681,7 +681,7 @@ func (idx *AddrIndex) indexBlock(data writeIndexData, block *util.Block, dag *bl
 }
 
 // ConnectBlock is invoked by the index manager when a new block has been
-// connected to the main chain. This indexer adds a mapping for each address
+// connected to the DAG. This indexer adds a mapping for each address
 // the transactions in the block involve.
 //
 // This is part of the Indexer interface.
@@ -881,12 +881,12 @@ func (idx *AddrIndex) Recover(dbTx database.Tx, currentBlockID, lastKnownBlockID
 }
 
 // NewAddrIndex returns a new instance of an indexer that is used to create a
-// mapping of all addresses in the blockchain to the respective transactions
+// mapping of all addresses in the blockDAG to the respective transactions
 // that involve them.
 //
 // It implements the Indexer interface which plugs into the IndexManager that in
-// turn is used by the blockchain package. This allows the index to be
-// seamlessly maintained along with the chain.
+// turn is used by the blockDAG package. This allows the index to be
+// seamlessly maintained along with the DAG.
 func NewAddrIndex(dagParams *dagconfig.Params) *AddrIndex {
 	return &AddrIndex{
 		dagParams:  dagParams,

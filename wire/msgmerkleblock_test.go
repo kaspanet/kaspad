@@ -318,7 +318,7 @@ func TestMerkleBlockOverflowErrors(t *testing.T) {
 	}
 }
 
-// merkleBlockOne is a merkle block created from block one of the block chain
+// merkleBlockOne is a merkle block created from block one of the block DAG
 // where the first transaction matches.
 var merkleBlockOne = MsgMerkleBlock{
 	Header: BlockHeader{
@@ -349,7 +349,7 @@ var merkleBlockOne = MsgMerkleBlock{
 }
 
 // merkleBlockOneBytes is the serialized bytes for a merkle block created from
-// block one of the block chain where the first transaction matches.
+// block one of the block DAG where the first transaction matches.
 var merkleBlockOneBytes = []byte{
 	0x01, 0x00, 0x00, 0x00, // Version 1
 	0x02,                                           // NumParentBlocks

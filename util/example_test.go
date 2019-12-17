@@ -80,7 +80,6 @@ func ExampleAmount_unitConversions() {
 // which represent the target difficulty to a big integer and display it using
 // the typical hex notation.
 func ExampleCompactToBig() {
-	// Convert the bits from block 300000 in the main block chain.
 	bits := uint32(419465580)
 	targetDifficulty := util.CompactToBig(bits)
 
@@ -94,8 +93,8 @@ func ExampleCompactToBig() {
 // This example demonstrates how to convert a target difficulty into the compact
 // "bits" in a block header which represent that target difficulty .
 func ExampleBigToCompact() {
-	// Convert the target difficulty from block 300000 in the main block
-	// chain to compact form.
+	// Convert the target difficulty from block 300000 in the bitcoin
+	// main chain to compact form.
 	t := "0000000000000000896c00000000000000000000000000000000000000000000"
 	targetDifficulty, success := new(big.Int).SetString(t, 16)
 	if !success {

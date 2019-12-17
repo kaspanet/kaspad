@@ -115,7 +115,7 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 		}
 	}
 
-	// Ensure the blocks follows all of the chain rules.
+	// Ensure the blocks follows all of the DAG rules.
 	isOrphan, delay, err := bi.dag.ProcessBlock(block,
 		blockdag.BFFastAdd)
 	if err != nil {
