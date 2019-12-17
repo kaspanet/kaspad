@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 /*
-Package indexers implements optional block chain indexes.
+Package indexers implements optional block DAG indexes.
 */
 package indexers
 

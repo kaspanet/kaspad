@@ -100,7 +100,7 @@ func (bi *blockImporter) readBlock() ([]byte, error) {
 // are skipped and orphan blocks are considered errors. Returns whether the
 // block was imported along with any potential errors.
 //
-// NOTE: This is not a safe import as it does not verify chain rules.
+// NOTE: This is not a safe import as it does not verify DAG rules.
 func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 	// Deserialize the block which includes checks for malformed blocks.
 	block, err := util.NewBlockFromBytes(serializedBlock)
@@ -139,11 +139,11 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 		if !exists {
 			return false, errors.Errorf("import file contains block "+
 				"%s which does not link to the available "+
-				"block chain", parentHash)
+				"block DAG", parentHash)
 		}
 	}
 
-	// Put the blocks into the database with no checking of chain rules.
+	// Put the blocks into the database with no checking of DAG rules.
 	err = bi.db.Update(func(dbTx database.Tx) error {
 		return dbTx.StoreBlock(block)
 	})

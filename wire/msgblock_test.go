@@ -483,7 +483,7 @@ func TestBlockSerializeSize(t *testing.T) {
 		// Block with no transactions.
 		{noTxBlock, 186},
 
-		// First block in the mainnet block chain.
+		// First block in the mainnet block DAG.
 		{&blockOne, len(blockOneBytes)},
 	}
 
@@ -499,7 +499,7 @@ func TestBlockSerializeSize(t *testing.T) {
 	}
 }
 
-// blockOne is the first block in the mainnet block chain.
+// blockOne is the first block in the mainnet block DAG.
 var blockOne = MsgBlock{
 	Header: BlockHeader{
 		Version:              1,

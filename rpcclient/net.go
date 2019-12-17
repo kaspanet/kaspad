@@ -496,7 +496,7 @@ func (c *Client) GetHeadersAsync(startHash, stopHash *daghash.Hash) FutureGetHea
 }
 
 // GetHeaders mimics the wire protocol getheaders and headers messages by
-// returning all headers on the main chain after the first known block in the
+// returning all headers in the DAG after the first known block in the
 // locators, up until a block hash matches stopHash.
 func (c *Client) GetHeaders(startHash, stopHash *daghash.Hash) ([]wire.BlockHeader, error) {
 	return c.GetHeadersAsync(startHash, stopHash).Receive()

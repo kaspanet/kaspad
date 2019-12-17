@@ -13,10 +13,7 @@ import (
 )
 
 // blockIndex provides facilities for keeping track of an in-memory index of the
-// block chain. Although the name block chain suggests a single chain of
-// blocks, it is actually a tree-shaped structure where any node can have
-// multiple children. However, there can only be one active branch which does
-// indeed form a chain from the tip all the way back to the genesis block.
+// block DAG.
 type blockIndex struct {
 	// The following fields are set when the instance is created and can't
 	// be changed afterwards, so there is no need to protect them with a

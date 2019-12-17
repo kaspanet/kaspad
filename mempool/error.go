@@ -14,7 +14,7 @@ import (
 // rules. The caller can use type assertions to determine if a failure was
 // specifically due to a rule violation and use the Err field to access the
 // underlying error, which will be either a TxRuleError or a
-// blockchain.RuleError.
+// blockdag.RuleError.
 type RuleError struct {
 	Err error
 }
@@ -69,7 +69,7 @@ func extractRejectCode(err error) (wire.RejectCode, bool) {
 
 	switch err := err.(type) {
 	case blockdag.RuleError:
-		// Convert the chain error to a reject code.
+		// Convert the DAG error to a reject code.
 		var code wire.RejectCode
 		switch err.ErrorCode {
 		// Rejected due to duplicate.

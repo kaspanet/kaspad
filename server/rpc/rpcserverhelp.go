@@ -194,15 +194,15 @@ var helpDescsEnUS = map[string]string{
 
 	// GetBlockDAGInfoResult help.
 	"getBlockDagInfoResult-dag":                  "The name of the DAG the daemon is on (testnet, mainnet, etc)",
-	"getBlockDagInfoResult-blocks":               "The number of blocks in the best known chain",
-	"getBlockDagInfoResult-headers":              "The number of headers that we've gathered for in the best known chain",
+	"getBlockDagInfoResult-blocks":               "The number of blocks in the DAG",
+	"getBlockDagInfoResult-headers":              "The number of headers that we've gathered for in the DAG",
 	"getBlockDagInfoResult-tipHashes":            "The block hashes for the tips in the DAG",
-	"getBlockDagInfoResult-difficulty":           "The current chain difficulty",
-	"getBlockDagInfoResult-medianTime":           "The median time from the PoV of the best block in the chain",
+	"getBlockDagInfoResult-difficulty":           "The current DAG difficulty",
+	"getBlockDagInfoResult-medianTime":           "The median time from the PoV of the selected tip in the DAG",
 	"getBlockDagInfoResult-utxoCommitment":       "Commitment to the dag's UTXOSet",
-	"getBlockDagInfoResult-verificationProgress": "An estimate for how much of the best chain we've verified",
+	"getBlockDagInfoResult-verificationProgress": "An estimate for how much of the DAG we've verified",
 	"getBlockDagInfoResult-pruned":               "A bool that indicates if the node is pruned or not",
-	"getBlockDagInfoResult-pruneHeight":          "The lowest block retained in the current pruned chain",
+	"getBlockDagInfoResult-pruneHeight":          "The lowest block retained in the current pruned DAG",
 	"getBlockDagInfoResult-dagWork":              "The total cumulative work in the DAG",
 	"getBlockDagInfoResult-softForks":            "The status of the super-majority soft-forks",
 	"getBlockDagInfoResult-bip9SoftForks":        "JSON object describing active BIP0009 deployments",
@@ -257,7 +257,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockVerboseResult-confirmations":        "The number of confirmations",
 	"getBlockVerboseResult-size":                 "The size of the block",
 	"getBlockVerboseResult-mass":                 "The mass of the block",
-	"getBlockVerboseResult-height":               "The height of the block in the block chain",
+	"getBlockVerboseResult-height":               "The height of the block in the block DAG",
 	"getBlockVerboseResult-version":              "The block version",
 	"getBlockVerboseResult-versionHex":           "The block version in hexadecimal",
 	"getBlockVerboseResult-hashMerkleRoot":       "Merkle tree reference to hash of all transactions for the block",
@@ -275,7 +275,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockVerboseResult-nextHashes":           "The hashes of the next blocks (only if there are any)",
 
 	// GetBlockCountCmd help.
-	"getBlockCount--synopsis": "Returns the number of blocks in the longest block chain.",
+	"getBlockCount--synopsis": "Returns the number of blocks in the block DAG.",
 	"getBlockCount--result0":  "The current block count",
 
 	// GetBlockHeaderCmd help.
@@ -289,7 +289,7 @@ var helpDescsEnUS = map[string]string{
 	// GetBlockHeaderVerboseResult help.
 	"getBlockHeaderVerboseResult-hash":                 "The hash of the block (same as provided)",
 	"getBlockHeaderVerboseResult-confirmations":        "The number of confirmations",
-	"getBlockHeaderVerboseResult-height":               "The height of the block in the block chain",
+	"getBlockHeaderVerboseResult-height":               "The height of the block in the block DAG",
 	"getBlockHeaderVerboseResult-version":              "The block version",
 	"getBlockHeaderVerboseResult-versionHex":           "The block version in hexadecimal",
 	"getBlockHeaderVerboseResult-hashMerkleRoot":       "Merkle tree reference to hash of all transactions for the block",
@@ -593,10 +593,10 @@ var helpDescsEnUS = map[string]string{
 	"sessionResult-sessionId": "The unique session ID for a client's websocket connection.",
 
 	// NotifyBlocksCmd help.
-	"notifyBlocks--synopsis": "Request notifications for whenever a block is connected or disconnected from the main (best) chain.",
+	"notifyBlocks--synopsis": "Request notifications for whenever a block is connected to the DAG.",
 
 	// StopNotifyBlocksCmd help.
-	"stopNotifyBlocks--synopsis": "Cancel registered notifications for whenever a block is connected or disconnected from the main (best) chain.",
+	"stopNotifyBlocks--synopsis": "Cancel registered notifications for whenever a block is connected to the DAG.",
 
 	// NotifyChainChangesCmd help.
 	"notifyChainChanges--synopsis": "Request notifications for whenever the selected parent chain changes.",

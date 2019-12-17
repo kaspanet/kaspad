@@ -55,12 +55,12 @@ func SignatureScript(tx *wire.MsgTx, idx int, script []byte, hashType SigHashTyp
 	return NewScriptBuilder().AddData(sig).AddData(pkData).Script()
 }
 
-func sign(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
+func sign(dagParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 	script []byte, hashType SigHashType, kdb KeyDB, sdb ScriptDB) ([]byte,
 	ScriptClass, util.Address, error) {
 
 	class, address, err := ExtractScriptPubKeyAddress(script,
-		chainParams)
+		dagParams)
 	if err != nil {
 		return nil, NonStandardTy, nil, err
 	}
@@ -98,7 +98,7 @@ func sign(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 // The return value is the best effort merging of the two scripts. Calling this
 // function with addresses, class and nrequired that do not match scriptPubKey is
 // an error and results in undefined behaviour.
-func mergeScripts(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
+func mergeScripts(dagParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 	class ScriptClass, sigScript, prevScript []byte) ([]byte, error) {
 
 	// TODO: the scripthash and multisig paths here are overly
@@ -124,14 +124,14 @@ func mergeScripts(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 
 		// We already know this information somewhere up the stack.
 		class, _, _ :=
-			ExtractScriptPubKeyAddress(script, chainParams)
+			ExtractScriptPubKeyAddress(script, dagParams)
 
 		// regenerate scripts.
 		sigScript, _ := unparseScript(sigPops)
 		prevScript, _ := unparseScript(prevPops)
 
 		// Merge
-		mergedScript, err := mergeScripts(chainParams, tx, idx, class, sigScript, prevScript)
+		mergedScript, err := mergeScripts(dagParams, tx, idx, class, sigScript, prevScript)
 		if err != nil {
 			return nil, err
 		}
@@ -192,11 +192,11 @@ func (sc ScriptClosure) GetScript(address util.Address) ([]byte, error) {
 // getScript. If previousScript is provided then the results in previousScript
 // will be merged in a type-dependent manner with the newly generated.
 // signature script.
-func SignTxOutput(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
+func SignTxOutput(dagParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 	scriptPubKey []byte, hashType SigHashType, kdb KeyDB, sdb ScriptDB,
 	previousScript []byte) ([]byte, error) {
 
-	sigScript, class, _, err := sign(chainParams, tx,
+	sigScript, class, _, err := sign(dagParams, tx,
 		idx, scriptPubKey, hashType, kdb, sdb)
 	if err != nil {
 		return nil, err
@@ -204,7 +204,7 @@ func SignTxOutput(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 
 	if class == ScriptHashTy {
 		// TODO keep the sub addressed and pass down to merge.
-		realSigScript, _, _, err := sign(chainParams, tx, idx,
+		realSigScript, _, _, err := sign(dagParams, tx, idx,
 			sigScript, hashType, kdb, sdb)
 		if err != nil {
 			return nil, err
@@ -220,5 +220,5 @@ func SignTxOutput(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 	}
 
 	// Merge scripts. with any previous data, if any.
-	return mergeScripts(chainParams, tx, idx, class, sigScript, previousScript)
+	return mergeScripts(dagParams, tx, idx, class, sigScript, previousScript)
 }

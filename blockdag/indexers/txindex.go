@@ -394,12 +394,12 @@ func dbFetchTxAcceptingBlock(dbTx database.Tx, txID *daghash.TxID, dag *blockdag
 }
 
 // NewTxIndex returns a new instance of an indexer that is used to create a
-// mapping of the hashes of all transactions in the blockchain to the respective
+// mapping of the hashes of all transactions in the blockDAG to the respective
 // block, location within the block, and size of the transaction.
 //
 // It implements the Indexer interface which plugs into the IndexManager that in
-// turn is used by the blockchain package. This allows the index to be
-// seamlessly maintained along with the chain.
+// turn is used by the blockdag package. This allows the index to be
+// seamlessly maintained along with the DAG.
 func NewTxIndex() *TxIndex {
 	return &TxIndex{}
 }

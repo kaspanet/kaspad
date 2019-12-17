@@ -45,7 +45,7 @@ type chainUpdates struct {
 
 // BlockDAG provides functions for working with the kaspa block DAG.
 // It includes functionality such as rejecting duplicate blocks, ensuring blocks
-// follow all rules, orphan handling, and best chain selection with reorganization.
+// follow all rules, and orphan handling.
 type BlockDAG struct {
 	// The following fields are set when the instance is created and can't
 	// be changed afterwards, so there is no need to protect them with a
@@ -93,7 +93,7 @@ type BlockDAG struct {
 	subnetworkID *subnetworkid.SubnetworkID
 
 	// These fields are related to handling of orphan blocks. They are
-	// protected by a combination of the chain lock and the orphan lock.
+	// protected by a combination of the DAG lock and the orphan lock.
 	orphanLock   sync.RWMutex
 	orphans      map[daghash.Hash]*orphanBlock
 	prevOrphans  map[daghash.Hash][]*orphanBlock
@@ -128,7 +128,7 @@ type BlockDAG struct {
 	unknownVersionsWarned bool
 
 	// The notifications field stores a slice of callbacks to be executed on
-	// certain blockchain events.
+	// certain blockDAG events.
 	notificationsLock sync.RWMutex
 	notifications     []NotificationCallback
 
@@ -1251,8 +1251,8 @@ func (dag *BlockDAG) isCurrent() bool {
 	return dagTimestamp >= minus24Hours
 }
 
-// IsCurrent returns whether or not the chain believes it is current. Several
-// factors are used to guess, but the key factors that allow the chain to
+// IsCurrent returns whether or not the DAG believes it is current. Several
+// factors are used to guess, but the key factors that allow the DAG to
 // believe it is current are:
 //  - Latest block has a timestamp newer than 24 hours ago
 //
@@ -1800,10 +1800,9 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 }
 
 // IndexManager provides a generic interface that is called when blocks are
-// connected and disconnected to and from the tip of the main chain for the
-// purpose of supporting optional indexes.
+// connected to the DAG for the purpose of supporting optional indexes.
 type IndexManager interface {
-	// Init is invoked during chain initialize in order to allow the index
+	// Init is invoked during DAG initialize in order to allow the index
 	// manager to initialize itself and any indexes it is managing. The
 	// channel parameter specifies a channel the caller can close to signal
 	// that the process should be interrupted. It can be nil if that
@@ -1815,7 +1814,7 @@ type IndexManager interface {
 	ConnectBlock(dbTx database.Tx, block *util.Block, blockID uint64, dag *BlockDAG, acceptedTxsData MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData) error
 }
 
-// Config is a descriptor which specifies the blockchain instance configuration.
+// Config is a descriptor which specifies the blockDAG instance configuration.
 type Config struct {
 	// DB defines the database which houses the blocks and will be used to
 	// store all metadata created by this package such as the utxo set.
@@ -1837,7 +1836,7 @@ type Config struct {
 	DAGParams *dagconfig.Params
 
 	// TimeSource defines the median time source to use for things such as
-	// block processing and determining whether or not the chain is current.
+	// block processing and determining whether or not the DAG is current.
 	//
 	// The caller is expected to keep a reference to the time source as well
 	// and add time samples from other peers on the network so the local
@@ -1854,7 +1853,7 @@ type Config struct {
 	SigCache *txscript.SigCache
 
 	// IndexManager defines an index manager to use when initializing the
-	// chain and connecting and disconnecting blocks.
+	// DAG and connecting blocks.
 	//
 	// This field can be nil if the caller does not wish to make use of an
 	// index manager.
@@ -1907,7 +1906,7 @@ func New(config *Config) (*BlockDAG, error) {
 
 	dag.utxoDiffStore = newUTXODiffStore(&dag)
 
-	// Initialize the chain state from the passed database. When the db
+	// Initialize the DAG state from the passed database. When the db
 	// does not yet contain any DAG state, both it and the DAG state
 	// will be initialized to contain only the genesis block.
 	err := dag.initDAGState()

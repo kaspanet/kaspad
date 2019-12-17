@@ -20,14 +20,14 @@ var (
 )
 
 // Manager defines an index manager that manages multiple optional indexes and
-// implements the blockchain.IndexManager interface so it can be seamlessly
-// plugged into normal chain processing.
+// implements the blockdag.IndexManager interface so it can be seamlessly
+// plugged into normal DAG processing.
 type Manager struct {
 	db             database.DB
 	enabledIndexes []Indexer
 }
 
-// Ensure the Manager type implements the blockchain.IndexManager interface.
+// Ensure the Manager type implements the blockdag.IndexManager interface.
 var _ blockdag.IndexManager = (*Manager)(nil)
 
 // indexDropKey returns the key for an index which indicates it is in the
@@ -116,14 +116,14 @@ func (m *Manager) maybeCreateIndexes(dbTx database.Tx) error {
 	return nil
 }
 
-// Init initializes the enabled indexes. This is called during chain
+// Init initializes the enabled indexes. This is called during DAG
 // initialization and primarily consists of catching up all indexes to the
-// current best chain tip. This is necessary since each index can be disabled
+// current tips. This is necessary since each index can be disabled
 // and re-enabled at any time and attempting to catch-up indexes at the same
 // time new blocks are being downloaded would lead to an overall longer time to
 // catch up due to the I/O contention.
 //
-// This is part of the blockchain.IndexManager interface.
+// This is part of the blockdag.IndexManager interface.
 func (m *Manager) Init(db database.DB, blockDAG *blockdag.BlockDAG, interrupt <-chan struct{}) error {
 	// Nothing to do when no indexes are enabled.
 	if len(m.enabledIndexes) == 0 {
@@ -192,11 +192,11 @@ func (m *Manager) recoverIfNeeded() error {
 	})
 }
 
-// ConnectBlock must be invoked when a block is extending the main chain. It
+// ConnectBlock must be invoked when a block is added to the DAG. It
 // keeps track of the state of each index it is managing, performs some sanity
 // checks, and invokes each indexer.
 //
-// This is part of the blockchain.IndexManager interface.
+// This is part of the blockdag.IndexManager interface.
 func (m *Manager) ConnectBlock(dbTx database.Tx, block *util.Block, blockID uint64, dag *blockdag.BlockDAG,
 	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
 
@@ -231,8 +231,8 @@ func (m *Manager) updateIndexersWithCurrentBlockID(dbTx database.Tx, blockHash *
 
 // NewManager returns a new index manager with the provided indexes enabled.
 //
-// The manager returned satisfies the blockchain.IndexManager interface and thus
-// cleanly plugs into the normal blockchain processing path.
+// The manager returned satisfies the blockdag.IndexManager interface and thus
+// cleanly plugs into the normal blockdag processing path.
 func NewManager(enabledIndexes []Indexer) *Manager {
 	return &Manager{
 		enabledIndexes: enabledIndexes,

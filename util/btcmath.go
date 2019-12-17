@@ -126,12 +126,11 @@ func BigToCompact(n *big.Int) uint32 {
 // the difficulty for generating a block by decreasing the value which the
 // generated hash must be less than. This difficulty target is stored in each
 // block header using a compact representation as described in the documentation
-// for CompactToBig. The main chain is selected by choosing the chain that has
-// the most proof of work (highest difficulty). Since a lower target difficulty
-// value equates to higher actual difficulty, the work value which will be
-// accumulated must be the inverse of the difficulty. Also, in order to avoid
-// potential division by zero and really small floating point numbers, the
-// result adds 1 to the denominator and multiplies the numerator by 2^256.
+// for CompactToBig. Since a lower target difficulty value equates to higher
+// actual difficulty, the work value which will be accumulated must be the
+// inverse of the difficulty. Also, in order to avoid potential division by
+// zero and really small floating point numbers, the result adds 1 to the
+// denominator and multiplies the numerator by 2^256.
 func CalcWork(bits uint32) *big.Int {
 	// Return a work value of zero if the passed difficulty bits represent
 	// a negative number. Note this should not happen in practice with valid

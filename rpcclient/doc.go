@@ -95,15 +95,6 @@ commands.
 The automatic reconnection can be disabled by setting the DisableAutoReconnect
 flag to true in the connection config when creating the client.
 
-Minor RPC Server Differences and Chain/Wallet Separation
-
-Some of the commands are extensions specific to a particular RPC server. For
-example, the DebugLevel call is an extension only provided by kaspad.
-Therefore if you call one of these commands against
-an RPC server that doesn't provide them, you will get an unimplemented error
-from the server. An effort has been made to call out which commmands are
-extensions in their documentation.
-
 Errors
 
 There are 3 categories of errors that will be returned throughout this package:

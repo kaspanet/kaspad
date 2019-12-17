@@ -77,11 +77,10 @@ type Config struct {
 	ShouldMineOnGenesis func() bool
 
 	// IsCurrent defines the function to use to obtain whether or not the
-	// block chain is current. This is used by the automatic persistent
+	// block DAG is current. This is used by the automatic persistent
 	// mining routine to determine whether or it should attempt mining.
-	// This is useful because there is no point in mining if the chain is
-	// not current since any solved blocks would be on a side chain and and
-	// up orphaned anyways.
+	// This is useful because there is no point in mining if the DAG is
+	// not current since any solved blocks would end up red anyways.
 	IsCurrent func() bool
 }
 

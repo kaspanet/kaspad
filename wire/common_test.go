@@ -15,7 +15,7 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// mainNetGenesisHash is the hash of the first block in the block chain for the
+// mainNetGenesisHash is the hash of the first block in the block DAG for the
 // main network (genesis block).
 var mainNetGenesisHash = &daghash.Hash{
 	0xdc, 0x5f, 0x5b, 0x5b, 0x1d, 0xc2, 0xa7, 0x25,
@@ -24,7 +24,7 @@ var mainNetGenesisHash = &daghash.Hash{
 	0x8c, 0xfd, 0x9f, 0x69, 0xdd, 0xcf, 0xbb, 0x63,
 }
 
-// simNetGenesisHash is the hash of the first block in the block chain for the
+// simNetGenesisHash is the hash of the first block in the block DAG for the
 // simulation test network.
 var simNetGenesisHash = &daghash.Hash{
 	0xf6, 0x7a, 0xd7, 0x69, 0x5d, 0x9b, 0x66, 0x2a,
