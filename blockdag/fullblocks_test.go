@@ -115,10 +115,10 @@ func DAGSetup(dbName string, params *dagconfig.Params) (*blockdag.BlockDAG, func
 
 	// Create the DAG instance.
 	dag, err := blockdag.New(&blockdag.Config{
-		DB:          db,
-		DAGParams:   &paramsCopy,
-		TimeSource:  blockdag.NewMedianTime(),
-		SigCache:    txscript.NewSigCache(1000),
+		DB:         db,
+		DAGParams:  &paramsCopy,
+		TimeSource: blockdag.NewMedianTime(),
+		SigCache:   txscript.NewSigCache(1000),
 	})
 	if err != nil {
 		teardown()

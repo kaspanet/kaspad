@@ -1700,7 +1700,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		PeerNotifier: &s,
 		DAG:          s.DAG,
 		TxMemPool:    s.TxMemPool,
-		DAGParams:  s.DAGParams,
+		DAGParams:    s.DAGParams,
 		MaxPeers:     maxPeers,
 	})
 	if err != nil {

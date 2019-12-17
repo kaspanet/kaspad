@@ -28,6 +28,6 @@ type Config struct {
 	PeerNotifier PeerNotifier
 	DAG          *blockdag.BlockDAG
 	TxMemPool    *mempool.TxPool
-	DAGParams  *dagconfig.Params
+	DAGParams    *dagconfig.Params
 	MaxPeers     int
 }
