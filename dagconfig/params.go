@@ -358,8 +358,8 @@ var SimNetParams = Params{
 	K:           phantomK,
 	Name:        "simnet",
 	Net:         wire.SimNet,
-	RPCPort:     "10632",
-	DefaultPort: "10633",
+	RPCPort:     "16510",
+	DefaultPort: "16511",
 	DNSSeeds:    []string{}, // NOTE: There must NOT be any seeds.
 
 	// DAG parameters
