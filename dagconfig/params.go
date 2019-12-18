@@ -412,8 +412,8 @@ var DevNetParams = Params{
 	K:           phantomK,
 	Name:        "devnet",
 	Net:         wire.DevNet,
-	RPCPort:     "10532",
-	DefaultPort: "10533",
+	RPCPort:     "16610",
+	DefaultPort: "16611",
 	DNSSeeds:    []string{},
 
 	// DAG parameters
