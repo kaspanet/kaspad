@@ -46,7 +46,7 @@ differences between btcd and bitcoind as far as how RPCs are serviced:
 Websockets are the preferred transport for btcd RPC and are used by applications
 such as [btcwallet](https://github.com/btcsuite/btcwallet) for inter-process
 communication with btcd. The websocket connection endpoint for btcd is
-`wss://your_ip_or_domain:10332/ws`.
+`wss://your_ip_or_domain:16110/ws`.
 
 In addition to the [standard API](#Methods), an [extension API](#WSExtMethods)
 has been developed that is exclusive to clients using Websockets. In its current
@@ -71,7 +71,7 @@ indicates, the [Websocket-specific extension](#WSExtMethods) methods can only be
 accessed when connected via Websockets.
 
 As mentioned in the [overview](#Overview), the websocket connection endpoint for
-btcd is `wss://your_ip_or_domain:10332/ws`.
+btcd is `wss://your_ip_or_domain:16110/ws`.
 
 The most important differences between the two transports as it pertains to the
 JSON-RPC API are:
@@ -1102,7 +1102,7 @@ func main() {
 	// not long-lived, the connection will be closed as soon as the program
 	// exits.
 	connCfg := &btcrpcclient.ConnConfig{
-		Host:         "localhost:10332",
+		Host:         "localhost:16110",
 		Endpoint:     "ws",
 		User:         "yourrpcuser",
 		Pass:         "yourrpcpass",
@@ -1267,7 +1267,7 @@ func main() {
 
 	// Create a new RPC client using websockets.
 	connCfg := &btcrpcclient.ConnConfig{
-		Host:         "localhost:10332",
+		Host:         "localhost:16110",
 		Endpoint:     "ws",
 		User:         "yourrpcuser",
 		Pass:         "yourrpcpass",
@@ -1338,7 +1338,7 @@ var password = "yourpassword";
 // Initiate the websocket connection. The btcd generated certificate acts as
 // its own certificate authority, so it needs to be specified in the 'ca' array
 // for the certificate to properly validate.
-var ws = new WebSocket('wss://127.0.0.1:10332/ws', {
+var ws = new WebSocket('wss://127.0.0.1:16110/ws', {
   headers: {
     'Authorization': 'Basic '+new Buffer(user+':'+password).toString('base64')
   },

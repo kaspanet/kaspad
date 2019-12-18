@@ -14,22 +14,22 @@ Command Line Examples:
 |--listen=|all interfaces on default port which is changed by `--testnet` and `--regtest` (**default**)|
 |--listen=0.0.0.0|all IPv4 interfaces on default port which is changed by `--testnet` and `--regtest`|
 |--listen=::|all IPv6 interfaces on default port which is changed by `--testnet` and `--regtest`|
-|--listen=:10333|all interfaces on port 10333|
-|--listen=0.0.0.0:10333|all IPv4 interfaces on port 10333|
-|--listen=[::]:10333|all IPv6 interfaces on port 10333|
-|--listen=127.0.0.1:10333|only IPv4 localhost on port 10333|
-|--listen=[::1]:10333|only IPv6 localhost on port 10333|
+|--listen=:16111|all interfaces on port 16111|
+|--listen=0.0.0.0:16111|all IPv4 interfaces on port 16111|
+|--listen=[::]:16111|all IPv6 interfaces on port 16111|
+|--listen=127.0.0.1:16111|only IPv4 localhost on port 16111|
+|--listen=[::1]:16111|only IPv6 localhost on port 16111|
 |--listen=:8336|all interfaces on non-standard port 8336|
 |--listen=0.0.0.0:8336|all IPv4 interfaces on non-standard port 8336|
 |--listen=[::]:8336|all IPv6 interfaces on non-standard port 8336|
-|--listen=127.0.0.1:8337 --listen=[::1]:10333|IPv4 localhost on port 8337 and IPv6 localhost on port 10333|
-|--listen=:10333 --listen=:8337|all interfaces on ports 10333 and 8337|
+|--listen=127.0.0.1:8337 --listen=[::1]:16111|IPv4 localhost on port 8337 and IPv6 localhost on port 16111|
+|--listen=:16111 --listen=:8337|all interfaces on ports 16111 and 8337|
 
 The following config file would configure btcd to only listen on localhost for both IPv4 and IPv6:
 
 ```text
 [Application Options]
 
-listen=127.0.0.1:10333
-listen=[::1]:10333
+listen=127.0.0.1:16111
+listen=[::1]:16111
 ```

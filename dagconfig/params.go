@@ -182,8 +182,8 @@ var MainNetParams = Params{
 	K:           phantomK,
 	Name:        "mainnet",
 	Net:         wire.MainNet,
-	RPCPort:     "10332",
-	DefaultPort: "10333",
+	RPCPort:     "16110",
+	DefaultPort: "16111",
 	DNSSeeds:    []string{},
 
 	// DAG parameters

@@ -32,7 +32,7 @@ Application Options:
                             or --proxy options are used without also specifying
                             listen interfaces via --listen
       --listen=             Add an interface/port to listen for connections
-                            (default all interfaces port: 10333, testnet: 10433)
+                            (default all interfaces port: 16111, testnet: 10433)
       --maxpeers=           Max number of inbound and outbound peers (125)
       --nobanning           Disable banning of misbehaving peers
       --banduration=        How long to ban misbehaving peers. Valid time units
@@ -46,7 +46,7 @@ Application Options:
       --rpclimituser=       Username for limited RPC connections
       --rpclimitpass=       Password for limited RPC connections
       --rpclisten=          Add an interface/port to listen for RPC connections
-                            (default port: 10332, testnet: 10432)
+                            (default port: 16110, testnet: 10432)
       --rpccert=            File containing the certificate file
       --rpckey=             File containing the certificate key
       --rpcmaxclients=      Max number of RPC clients for standard connections

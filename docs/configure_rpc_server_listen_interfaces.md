@@ -27,16 +27,16 @@ Command Line Examples:
 |--rpclisten=|all interfaces on default port which is changed by `--testnet`|
 |--rpclisten=0.0.0.0|all IPv4 interfaces on default port which is changed by `--testnet`|
 |--rpclisten=::|all IPv6 interfaces on default port which is changed by `--testnet`|
-|--rpclisten=:10332|all interfaces on port 10332|
-|--rpclisten=0.0.0.0:10332|all IPv4 interfaces on port 10332|
-|--rpclisten=[::]:10332|all IPv6 interfaces on port 10332|
-|--rpclisten=127.0.0.1:10332|only IPv4 localhost on port 10332|
-|--rpclisten=[::1]:10332|only IPv6 localhost on port 10332|
+|--rpclisten=:16110|all interfaces on port 16110|
+|--rpclisten=0.0.0.0:16110|all IPv4 interfaces on port 16110|
+|--rpclisten=[::]:16110|all IPv6 interfaces on port 16110|
+|--rpclisten=127.0.0.1:16110|only IPv4 localhost on port 16110|
+|--rpclisten=[::1]:16110|only IPv6 localhost on port 16110|
 |--rpclisten=:8336|all interfaces on non-standard port 8336|
 |--rpclisten=0.0.0.0:8336|all IPv4 interfaces on non-standard port 8336|
 |--rpclisten=[::]:8336|all IPv6 interfaces on non-standard port 8336|
-|--rpclisten=127.0.0.1:8337 --listen=[::1]:10332|IPv4 localhost on port 8337 and IPv6 localhost on port 10332|
-|--rpclisten=:10332 --listen=:8337|all interfaces on ports 10332 and 8337|
+|--rpclisten=127.0.0.1:8337 --listen=[::1]:16110|IPv4 localhost on port 8337 and IPv6 localhost on port 16110|
+|--rpclisten=:16110 --listen=:8337|all interfaces on ports 16110 and 8337|
 
 The following config file would configure the btcd RPC server to listen to all interfaces on the default port, including external interfaces, for both IPv4 and IPv6:
 
