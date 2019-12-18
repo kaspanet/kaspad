@@ -98,19 +98,19 @@ type KaspaNet uint32
 // better idea to simply disconnect clients that are misbehaving over TCP.
 const (
 	// MainNet represents the main kaspa network.
-	MainNet KaspaNet = 0xd9b4bef9
+	MainNet KaspaNet = 0x3ddcf71d
 
 	// TestNet represents the test network.
-	TestNet KaspaNet = 0x0709110b
+	TestNet KaspaNet = 0xddb8af8f
 
 	// RegTest represents the regression test network.
-	RegTest KaspaNet = 0xdab5bffa
+	RegTest KaspaNet = 0xf396cdd6
 
 	// SimNet represents the simulation test network.
-	SimNet KaspaNet = 0x12141c16
+	SimNet KaspaNet = 0x374dcf1c
 
 	// DevNet represents the development test network.
-	DevNet KaspaNet = 0x01020304
+	DevNet KaspaNet = 0x732d87e1
 )
 
 // bnStrings is a map of kaspa networks back to their constant names for
