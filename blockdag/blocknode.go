@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -105,18 +106,58 @@ type blockNode struct {
 	treeParent            *blockNode
 	treeInterval          reachabilityInterval
 	treeRemainingInterval reachabilityInterval
-	subTreeSize           uint64
+	subtreeSize           uint64
 }
 
-func (node *blockNode) setTreeInterval(interval reachabilityInterval) {
-	node.treeInterval = interval
-	node.treeRemainingInterval = reachabilityInterval{start: interval.start, end: interval.end - 1}
-}
-
-func (node *blockNode) addTreeChild(child *blockNode) {
+func (node *blockNode) addTreeChild(child *blockNode) error {
 	node.treeChildren.add(child)
 	child.treeParent = node
 
+	allocated, remaining, err := node.treeRemainingInterval.splitFraction(0.5)
+	if err != nil {
+		return err
+	}
+	if allocated.start > allocated.end {
+		return node.reindexTreeIntervals()
+	}
+
+	child.setTreeInterval(allocated)
+	node.treeRemainingInterval = *remaining
+	return nil
+}
+
+func (node *blockNode) setTreeInterval(interval *reachabilityInterval) {
+	node.treeInterval = *interval
+	node.treeRemainingInterval = reachabilityInterval{start: interval.start, end: interval.end - 1}
+}
+
+func (node *blockNode) reindexTreeIntervals() error {
+	current := node
+
+	// Initial interval and subtree sizes
+	intervalSize := current.treeInterval.size()
+	subtreeSize := current.countSubtreesUp()
+
+	// Find the first ancestor that has sufficient interval space
+	for intervalSize < subtreeSize {
+		if current.treeParent == nil {
+			return errors.Errorf("") // TODO: ask Michael how this might happen
+		}
+		current = current.treeParent
+		intervalSize = current.treeInterval.size()
+		subtreeSize = current.countSubtreesUp()
+	}
+
+	// Apply the interval down the subtree
+	return current.applyIntervalDown(&current.treeInterval)
+}
+
+func (node *blockNode) countSubtreesUp() uint64 {
+	return 0
+}
+
+func (node *blockNode) applyIntervalDown(interval *reachabilityInterval) error {
+	return nil
 }
 
 // initBlockNode initializes a block node from the given header and parent nodes.
