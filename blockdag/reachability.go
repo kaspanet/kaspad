@@ -6,6 +6,138 @@ import (
 	"math"
 )
 
+type reachabilityTreeNode struct {
+	children          []*reachabilityTreeNode
+	parent            *reachabilityTreeNode
+	interval          reachabilityInterval
+	remainingInterval reachabilityInterval
+	subtreeSize       uint64
+}
+
+// addTreeChild adds child to this tree node. If this node has no remaining
+// interval to allocate, a reindexing is triggered.
+func (rtn *reachabilityTreeNode) addTreeChild(child *reachabilityTreeNode) error {
+	rtn.children = append(rtn.children, child)
+	child.parent = rtn
+
+	allocated, remaining, err := rtn.remainingInterval.splitFraction(0.5)
+	if err != nil {
+		return err
+	}
+	if allocated.start > allocated.end {
+		return rtn.reindexTreeIntervals()
+	}
+
+	child.setTreeInterval(allocated)
+	rtn.remainingInterval = *remaining
+	return nil
+}
+
+func (rtn *reachabilityTreeNode) setTreeInterval(interval *reachabilityInterval) {
+	rtn.interval = *interval
+	rtn.remainingInterval = reachabilityInterval{start: interval.start, end: interval.end - 1}
+}
+
+func (rtn *reachabilityTreeNode) reindexTreeIntervals() error {
+	current := rtn
+
+	// Initial interval and subtree sizes
+	intervalSize := current.interval.size()
+	subtreeSize := current.countSubtreesUp()
+
+	// Find the first ancestor that has sufficient interval space
+	for intervalSize < subtreeSize {
+		if current.parent == nil {
+			// If we ended up here it means that there are more
+			// than 2^64 blocks inside the finality window,
+			// something that shouldn't ever happen.
+			return errors.Errorf("missing tree parent")
+		}
+		current = current.parent
+		intervalSize = current.interval.size()
+		subtreeSize = current.countSubtreesUp()
+	}
+
+	// Apply the interval down the subtree
+	return current.applyIntervalDown(&current.interval)
+}
+
+func (rtn *reachabilityTreeNode) countSubtreesUp() uint64 {
+	queue := []*reachabilityTreeNode{rtn}
+	for len(queue) > 0 {
+		var current *reachabilityTreeNode
+		current, queue = queue[0], queue[1:]
+		if len(current.children) == 0 {
+			// We reached a leaf
+			current.subtreeSize = 1
+		}
+		if current.subtreeSize <= uint64(len(current.children)) {
+			// We haven't yet calculated the subtree size of
+			// the current node. Add all its children to the
+			// queue
+			for _, child := range current.children {
+				queue = append(queue, child)
+			}
+			continue
+		}
+
+		// We reached a leaf or a pre-calculated subtree.
+		// Push information up
+		for current != rtn {
+			current = current.parent
+			current.subtreeSize++
+			if current.subtreeSize != uint64(len(current.children)) {
+				// Not all subtrees of the current node are ready
+				break
+			}
+			// All subtrees of current have reported readiness.
+			// Count actual subtree size and continue pushing up.
+			childSubtreeSizeSum := uint64(0)
+			for _, child := range current.children {
+				childSubtreeSizeSum += child.subtreeSize
+			}
+			current.subtreeSize = childSubtreeSizeSum + 1
+		}
+	}
+	return rtn.subtreeSize
+}
+
+// applyIntervalDown applies new intervals using a BFS traversal.
+// The intervals are allocated according to subtree sizes and the
+// 'split' allocation rule (see the split() method for further
+// details)
+func (rtn *reachabilityTreeNode) applyIntervalDown(interval *reachabilityInterval) error {
+	rtn.setTreeInterval(interval)
+
+	queue := []*reachabilityTreeNode{rtn}
+	for len(queue) > 0 {
+		var current *reachabilityTreeNode
+		current, queue = queue[0], queue[1:]
+		if len(current.children) > 0 {
+			sizes := make([]uint64, len(current.children))
+			for i, child := range current.children {
+				sizes[i] = child.subtreeSize
+			}
+			intervals, err := current.remainingInterval.split(sizes)
+			if err != nil {
+				return err
+			}
+			for i, child := range current.children {
+				childInterval := intervals[i]
+				child.setTreeInterval(childInterval)
+				queue = append(queue, child)
+			}
+
+			// Empty up remaining interval
+			current.remainingInterval.start = current.remainingInterval.end + 1
+		}
+
+		// Cleanup temp info for future reindexing
+		current.subtreeSize = 0
+	}
+	return nil
+}
+
 type reachabilityInterval struct {
 	start uint64
 	end   uint64
@@ -136,16 +268,18 @@ type futureBlocks []*blockNode
 //   is-superset relation will by definition
 // be always preserved.
 func (fb *futureBlocks) insertFutureBlock(block *blockNode) {
-	start := block.treeInterval.start
+	blockInterval := block.reachabilityTreeNode.interval
+	start := blockInterval.start
 	i := fb.bisect(block)
 	if i > 0 {
 		candidate := (*fb)[i-1]
-		end := block.treeInterval.end
-		if candidate.treeInterval.start <= end && end <= candidate.treeInterval.end {
+		candidateInterval := candidate.reachabilityTreeNode.interval
+		end := blockInterval.end
+		if candidateInterval.start <= end && end <= candidateInterval.end {
 			// candidate is an ancestor of block, no need to insert
 			return
 		}
-		if start <= candidate.treeInterval.end && candidate.treeInterval.end <= end {
+		if start <= candidateInterval.end && candidateInterval.end <= end {
 			// block is an ancestor of candidate, and can thus replace it
 			(*fb)[i-1] = block
 			return
@@ -176,20 +310,23 @@ func (fb futureBlocks) isFutureBlock(block *blockNode) bool {
 	}
 
 	candidate := fb[i-1]
-	end := block.treeInterval.end
-	return candidate.treeInterval.start <= end && end <= candidate.treeInterval.end
+	end := block.reachabilityTreeNode.interval.end
+	candidateInterval := candidate.reachabilityTreeNode.interval
+	return candidateInterval.start <= end && end <= candidateInterval.end
 }
 
 // bisect finds the appropriate index for the given block's reachability
 // interval.
 func (fb futureBlocks) bisect(block *blockNode) int {
-	end := block.treeInterval.end
+	blockInterval := block.reachabilityTreeNode.interval
+	end := blockInterval.end
 
 	low := 0
 	high := len(fb)
 	for low < high {
 		middle := (low + high) / 2
-		if end < fb[middle].treeInterval.start {
+		middleInterval := fb[middle].reachabilityTreeNode.interval
+		if end < middleInterval.start {
 			high = middle
 		} else {
 			low = middle + 1
@@ -202,7 +339,8 @@ func (fb futureBlocks) bisect(block *blockNode) int {
 func (fb futureBlocks) String() string {
 	intervalsString := ""
 	for _, block := range fb {
-		intervalsString += fmt.Sprintf("[%d,%d]", block.treeInterval.start, block.treeInterval.end)
+		blockInterval := block.reachabilityTreeNode.interval
+		intervalsString += fmt.Sprintf("[%d,%d]", blockInterval.start, blockInterval.end)
 	}
 	return intervalsString
 }

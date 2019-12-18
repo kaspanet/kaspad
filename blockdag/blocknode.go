@@ -6,7 +6,6 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"time"
 
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -82,6 +81,12 @@ type blockNode struct {
 	// chainHeight is the number of hops you need to go down the selected parent chain in order to get to the genesis block.
 	chainHeight uint64
 
+	// reachabilityTreeNode TODO: what is this?
+	reachabilityTreeNode reachabilityTreeNode
+
+	// futureBlocks TODO: what is this?
+	futureBlocks futureBlocks
+
 	// Some fields from block headers to aid in  reconstructing headers
 	// from memory. These must be treated as immutable and are intentionally
 	// ordered to avoid padding on 64-bit platforms.
@@ -101,136 +106,6 @@ type blockNode struct {
 
 	// isFinalized determines whether the node is below the finality point.
 	isFinalized bool
-
-	treeChildren          []*blockNode
-	treeParent            *blockNode
-	treeInterval          reachabilityInterval
-	treeRemainingInterval reachabilityInterval
-	subtreeSize           uint64
-}
-
-// addTreeChild adds child to this tree node. If this node has no remaining
-// interval to allocate, a reindexing is triggered.
-func (node *blockNode) addTreeChild(child *blockNode) error {
-	node.treeChildren = append(node.treeChildren, child)
-	child.treeParent = node
-
-	allocated, remaining, err := node.treeRemainingInterval.splitFraction(0.5)
-	if err != nil {
-		return err
-	}
-	if allocated.start > allocated.end {
-		return node.reindexTreeIntervals()
-	}
-
-	child.setTreeInterval(allocated)
-	node.treeRemainingInterval = *remaining
-	return nil
-}
-
-func (node *blockNode) setTreeInterval(interval *reachabilityInterval) {
-	node.treeInterval = *interval
-	node.treeRemainingInterval = reachabilityInterval{start: interval.start, end: interval.end - 1}
-}
-
-func (node *blockNode) reindexTreeIntervals() error {
-	current := node
-
-	// Initial interval and subtree sizes
-	intervalSize := current.treeInterval.size()
-	subtreeSize := current.countSubtreesUp()
-
-	// Find the first ancestor that has sufficient interval space
-	for intervalSize < subtreeSize {
-		if current.treeParent == nil {
-			// If we ended up here it means that there are more
-			// than 2^64 blocks inside the finality window,
-			// something that shouldn't ever happen.
-			return errors.Errorf("missing tree parent")
-		}
-		current = current.treeParent
-		intervalSize = current.treeInterval.size()
-		subtreeSize = current.countSubtreesUp()
-	}
-
-	// Apply the interval down the subtree
-	return current.applyIntervalDown(&current.treeInterval)
-}
-
-func (node *blockNode) countSubtreesUp() uint64 {
-	queue := []*blockNode{node}
-	for len(queue) > 0 {
-		var current *blockNode
-		current, queue = queue[0], queue[1:]
-		if len(current.treeChildren) == 0 {
-			// We reached a leaf
-			current.subtreeSize = 1
-		}
-		if current.subtreeSize <= uint64(len(current.treeChildren)) {
-			// We haven't yet calculated the subtree size of
-			// the current node. Add all its children to the
-			// queue
-			for _, child := range current.treeChildren {
-				queue = append(queue, child)
-			}
-			continue
-		}
-
-		// We reached a leaf or a pre-calculated subtree.
-		// Push information up
-		for current != node {
-			current = current.treeParent
-			current.subtreeSize++
-			if current.subtreeSize != uint64(len(current.treeChildren)) {
-				// Not all subtrees of the current node are ready
-				break
-			}
-			// All subtrees of current have reported readiness.
-			// Count actual subtree size and continue pushing up.
-			childSubtreeSizeSum := uint64(0)
-			for _, child := range current.treeChildren {
-				childSubtreeSizeSum += child.subtreeSize
-			}
-			current.subtreeSize = childSubtreeSizeSum + 1
-		}
-	}
-	return node.subtreeSize
-}
-
-// applyIntervalDown applies new intervals using a BFS traversal.
-// The intervals are allocated according to subtree sizes and the
-// 'split' allocation rule (see the split() method for further
-// details)
-func (node *blockNode) applyIntervalDown(interval *reachabilityInterval) error {
-	node.setTreeInterval(interval)
-
-	queue := []*blockNode{node}
-	for len(queue) > 0 {
-		var current *blockNode
-		current, queue = queue[0], queue[1:]
-		if len(current.treeChildren) > 0 {
-			sizes := make([]uint64, len(current.treeChildren))
-			for i, child := range current.treeChildren {
-				sizes[i] = child.subtreeSize
-			}
-			intervals, err := current.treeRemainingInterval.split(sizes)
-			if err != nil {
-				return err
-			}
-			for i, child := range current.treeChildren {
-				childInterval := intervals[i]
-				child.setTreeInterval(childInterval)
-				queue = append(queue, child)
-			}
-
-			// Empty up remaining interval
-			current.treeRemainingInterval.start = current.treeRemainingInterval.end + 1
-		}
-
-		// Cleanup temp info for future reindexing
-		current.subtreeSize = 0
-	}
-	return nil
 }
 
 // initBlockNode initializes a block node from the given header and parent nodes.
