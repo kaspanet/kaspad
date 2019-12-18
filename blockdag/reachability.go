@@ -1,10 +1,122 @@
 package blockdag
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/pkg/errors"
+	"math"
+)
 
 type reachabilityInterval struct {
 	start uint64
 	end   uint64
+}
+
+// size returns the size of this interval. Note that intervals are
+// inclusive from both sides.
+func (ri *reachabilityInterval) size() uint64 {
+	return ri.end - ri.start + 1
+}
+
+// splitFraction splits this interval to two parts such that their
+// union is equal to the original interval and the first (left) part
+// contains the given fraction of the original interval's capacity.
+func (ri *reachabilityInterval) splitFraction(fraction float64) (
+	left *reachabilityInterval, right *reachabilityInterval, err error) {
+	if fraction < 0 || fraction > 1 {
+		return nil, nil, errors.Errorf("fraction must be between 0 and 1")
+	}
+	if ri.end < ri.start {
+		return ri, ri, nil
+	}
+
+	allocationSize := uint64(math.Ceil(float64(ri.size()) * fraction))
+	left = &reachabilityInterval{start: ri.start, end: ri.start + allocationSize - 1}
+	right = &reachabilityInterval{start: ri.start + allocationSize, end: ri.end}
+	return left, right, nil
+}
+
+// splitExact splits this interval to exactly |sizes| parts where
+// |part_i| = sizes[i].	This method expects sum(sizes) to be exactly
+// equal to the interval's capacity.
+func (ri *reachabilityInterval) splitExact(sizes []uint64) ([]*reachabilityInterval, error) {
+	sizesSum := uint64(0)
+	for _, size := range sizes {
+		sizesSum += size
+	}
+	if sizesSum != ri.size() {
+		return nil, errors.Errorf("sum of sizes must be equal to the interval's size")
+	}
+
+	intervals := make([]*reachabilityInterval, len(sizes))
+	start := ri.start
+	for i, size := range sizes {
+		intervals[i] = &reachabilityInterval{start: start, end: start + size - 1}
+		start += size
+	}
+	return intervals, nil
+}
+
+// split splits this interval to |sizes| parts by some allocation
+// rule. This method expects sum(sizes)	to be smaller or equal to
+// the interval's capacity. Every part_i is allocated at least
+// sizes[i] capacity. The remaining budget is split by an
+// exponential rule described below.
+//
+// This rule follows the GHOSTDAG protocol behavior where the child
+// with the largest subtree is expected to dominate the competition
+// for new blocks and thus grow the most. However, we may need to
+// add slack for non-largest subtrees in order to make CPU reindexing
+// attacks unworthy.
+func (ri *reachabilityInterval) split(sizes []uint64) ([]*reachabilityInterval, error) {
+	intervalSize := ri.size()
+	sizesSum := uint64(0)
+	for _, size := range sizes {
+		sizesSum += size
+	}
+	if sizesSum > intervalSize {
+		return nil, errors.Errorf("sum of sizes must be less than or equal to the interval's size")
+	}
+	if sizesSum == intervalSize {
+		return ri.splitExact(sizes)
+	}
+
+	// Give exponentially proportional allocation:
+	//   f_i = 2^x_i / sum(2^x_j)
+	// In the code below the above equation is divided by 2^max(x_i)
+	// to avoid exploding numbers.
+	maxSize := uint64(0)
+	for _, size := range sizes {
+		if size > maxSize {
+			maxSize = size
+		}
+	}
+	fractions := make([]float64, len(sizes))
+	for i, size := range sizes {
+		fractions[i] = math.Pow(2, float64(size-maxSize))
+	}
+	fractionsSum := float64(0)
+	for _, fraction := range fractions {
+		fractionsSum += fraction
+	}
+	for i, fraction := range fractions {
+		fractions[i] = fraction / fractionsSum
+	}
+
+	// Add a fractional bias to every size in the given sizes
+	totalBias := float64(intervalSize - sizesSum)
+	remainingBias := totalBias
+	biasedSizes := make([]uint64, len(sizes))
+	for i, fraction := range fractions {
+		var bias float64
+		if i == len(fractions)-1 {
+			bias = remainingBias
+		} else {
+			bias = math.Min(math.Round(totalBias*fraction), remainingBias)
+		}
+		biasedSizes[i] = sizes[i] + uint64(bias)
+		remainingBias -= bias
+	}
+	return ri.splitExact(biasedSizes)
 }
 
 type futureBlocks []*blockNode
@@ -24,16 +136,16 @@ type futureBlocks []*blockNode
 //   is-superset relation will by definition
 // be always preserved.
 func (fb *futureBlocks) insertFutureBlock(block *blockNode) {
-	start := block.interval.start
+	start := block.treeInterval.start
 	i := fb.bisect(block)
 	if i > 0 {
 		candidate := (*fb)[i-1]
-		end := block.interval.end
-		if candidate.interval.start <= end && end <= candidate.interval.end {
+		end := block.treeInterval.end
+		if candidate.treeInterval.start <= end && end <= candidate.treeInterval.end {
 			// candidate is an ancestor of block, no need to insert
 			return
 		}
-		if start <= candidate.interval.end && candidate.interval.end <= end {
+		if start <= candidate.treeInterval.end && candidate.treeInterval.end <= end {
 			// block is an ancestor of candidate, and can thus replace it
 			(*fb)[i-1] = block
 			return
@@ -64,20 +176,20 @@ func (fb futureBlocks) isFutureBlock(block *blockNode) bool {
 	}
 
 	candidate := fb[i-1]
-	end := block.interval.end
-	return candidate.interval.start <= end && end <= candidate.interval.end
+	end := block.treeInterval.end
+	return candidate.treeInterval.start <= end && end <= candidate.treeInterval.end
 }
 
 // bisect finds the appropriate index for the given block's reachability
 // interval.
 func (fb futureBlocks) bisect(block *blockNode) int {
-	end := block.interval.end
+	end := block.treeInterval.end
 
 	low := 0
 	high := len(fb)
 	for low < high {
 		middle := (low + high) / 2
-		if end < fb[middle].interval.start {
+		if end < fb[middle].treeInterval.start {
 			high = middle
 		} else {
 			low = middle + 1
@@ -90,7 +202,7 @@ func (fb futureBlocks) bisect(block *blockNode) int {
 func (fb futureBlocks) String() string {
 	intervalsString := ""
 	for _, block := range fb {
-		intervalsString += fmt.Sprintf("[%d,%d]", block.interval.start, block.interval.end)
+		intervalsString += fmt.Sprintf("[%d,%d]", block.treeInterval.start, block.treeInterval.end)
 	}
 	return intervalsString
 }

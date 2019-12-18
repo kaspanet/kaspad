@@ -81,10 +81,6 @@ type blockNode struct {
 	// chainHeight is the number of hops you need to go down the selected parent chain in order to get to the genesis block.
 	chainHeight uint64
 
-	// interval is the reachability interval of the block.
-	// See reachability.go for further details.
-	interval reachabilityInterval
-
 	// Some fields from block headers to aid in  reconstructing headers
 	// from memory. These must be treated as immutable and are intentionally
 	// ordered to avoid padding on 64-bit platforms.
@@ -104,6 +100,23 @@ type blockNode struct {
 
 	// isFinalized determines whether the node is below the finality point.
 	isFinalized bool
+
+	treeChildren          blockSet
+	treeParent            *blockNode
+	treeInterval          reachabilityInterval
+	treeRemainingInterval reachabilityInterval
+	subTreeSize           uint64
+}
+
+func (node *blockNode) setTreeInterval(interval reachabilityInterval) {
+	node.treeInterval = interval
+	node.treeRemainingInterval = reachabilityInterval{start: interval.start, end: interval.end - 1}
+}
+
+func (node *blockNode) addTreeChild(child *blockNode) {
+	node.treeChildren.add(child)
+	child.treeParent = node
+
 }
 
 // initBlockNode initializes a block node from the given header and parent nodes.
