@@ -3,9 +3,9 @@
 // license that can be found in the LICENSE file.
 
 /*
-Package ecc implements support for the elliptic curves needed for bitcoin.
+Package ecc implements support for the elliptic curves needed for kaspa.
 
-Bitcoin uses elliptic curve cryptography using koblitz curves
+Kaspa uses elliptic curve cryptography using koblitz curves
 (specifically secp256k1) for cryptographic functions. See
 http://www.secg.org/collateral/sec2_final.pdf for details on the
 standard.

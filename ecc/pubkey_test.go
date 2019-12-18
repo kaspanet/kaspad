@@ -19,8 +19,6 @@ type pubKeyTest struct {
 }
 
 var pubKeyTests = []pubKeyTest{
-	// pubkey from bitcoin blockchain tx
-	// 0437cd7f8525ceed2324359c2d0ba26006d92d85
 	{
 		name: "uncompressed ok",
 		key: []byte{0x04, 0x11, 0xdb, 0x93, 0xe1, 0xdc, 0xdb, 0x8a,

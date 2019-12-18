@@ -34,9 +34,7 @@ func TestMedianTime(t *testing.T) {
 		{in: []int64{-5, -4, -3, -2, -1}, wantOffset: -3, useDupID: true},
 
 		// The offset stops being updated once the max number of entries
-		// has been reached. This is actually a bug from Bitcoin Core,
-		// but since the time is ultimately used as a part of the
-		// consensus rules, it must be mirrored.
+		// has been reached.
 		{in: []int64{-67, 67, -50, 24, 63, 17, 58, -14, 5, -32, -52}, wantOffset: 17},
 		{in: []int64{-67, 67, -50, 24, 63, 17, 58, -14, 5, -32, -52, 45}, wantOffset: 17},
 		{in: []int64{-67, 67, -50, 24, 63, 17, 58, -14, 5, -32, -52, 45, 4}, wantOffset: 17},

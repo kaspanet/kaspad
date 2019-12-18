@@ -71,9 +71,6 @@ func (s int64Sorter) Less(i, j int) bool {
 }
 
 // medianTime provides an implementation of the MedianTimeSource interface.
-// It is limited to maxMedianTimeEntries includes the same buggy behavior as
-// the time offset mechanism in Bitcoin Core. This is necessary because it is
-// used in the consensus code.
 type medianTime struct {
 	mtx                sync.Mutex
 	knownIDs           map[string]struct{}
@@ -136,15 +133,6 @@ func (m *medianTime) AddTimeSample(sourceID string, timeVal time.Time) {
 	offsetDuration := time.Duration(offsetSecs) * time.Second
 	log.Debugf("Added time sample of %s (total: %d)", offsetDuration,
 		numOffsets)
-
-	// NOTE: The following code intentionally has a bug to mirror the
-	// buggy behavior in Bitcoin Core since the median time is used in the
-	// consensus rules.
-	//
-	// In particular, the offset is only updated when the number of entries
-	// is odd, but the max number of entries is 200, an even number. Thus,
-	// the offset will never be updated again once the max number of entries
-	// is reached.
 
 	// The median offset is only updated when there are enough offsets and
 	// the number of offsets is odd so the middle value is the true median.
