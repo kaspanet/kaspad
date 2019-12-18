@@ -1,7 +1,9 @@
 package httpserverutils
 
-import "github.com/kaspanet/kaspad/util/panics"
-import "github.com/kaspanet/kaspad/kasparov/logger"
+import (
+	"github.com/kaspanet/kaspad/util/panics"
+	"github.com/kaspanet/kasparov/logger"
+)
 
 var (
 	log   = logger.BackendLog.Logger("UTIL")
