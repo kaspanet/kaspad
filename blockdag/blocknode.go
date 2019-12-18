@@ -106,7 +106,7 @@ type blockNode struct {
 	treeParent            *blockNode
 	treeInterval          reachabilityInterval
 	treeRemainingInterval reachabilityInterval
-	subtreeSize           uint64
+	subtreeSize           int
 }
 
 func (node *blockNode) addTreeChild(child *blockNode) error {
@@ -153,6 +153,42 @@ func (node *blockNode) reindexTreeIntervals() error {
 }
 
 func (node *blockNode) countSubtreesUp() uint64 {
+	queue := []*blockNode{node}
+	for len(queue) > 0 {
+		var current *blockNode
+		current, queue = queue[0], queue[1:]
+		if len(current.treeChildren) == 0 {
+			// We reached a leaf
+			current.subtreeSize = 1
+		}
+		if current.subtreeSize <= len(current.treeChildren) {
+			// We haven't yet calculated the subtree size of
+			// the current node. Add all its children to the
+			// queue
+			for _, child := range current.treeChildren {
+				queue = append(queue, child)
+			}
+			continue
+		}
+
+		// We reached a leaf or a pre-calculated subtree.
+		// Push information up
+		for current != node {
+			current = current.treeParent
+			current.subtreeSize++
+			if current.subtreeSize != len(current.treeChildren) {
+				// Not all subtrees of the current node are ready
+				break
+			}
+			// All subtrees of current have reported readiness.
+			// Count actual subtree size and continue pushing up.
+			childSubtreeSizeSum := 0
+			for _, child := range current.treeChildren {
+				childSubtreeSizeSum += child.subtreeSize
+			}
+			current.subtreeSize = childSubtreeSizeSum + 1
+		}
+	}
 	return 0
 }
 
