@@ -102,15 +102,17 @@ type blockNode struct {
 	// isFinalized determines whether the node is below the finality point.
 	isFinalized bool
 
-	treeChildren          blockSet
+	treeChildren          []*blockNode
 	treeParent            *blockNode
 	treeInterval          reachabilityInterval
 	treeRemainingInterval reachabilityInterval
-	subtreeSize           int
+	subtreeSize           uint64
 }
 
+// addTreeChild adds child to this tree node. If this node has no remaining
+// interval to allocate, a reindexing is triggered.
 func (node *blockNode) addTreeChild(child *blockNode) error {
-	node.treeChildren.add(child)
+	node.treeChildren = append(node.treeChildren, child)
 	child.treeParent = node
 
 	allocated, remaining, err := node.treeRemainingInterval.splitFraction(0.5)
@@ -164,7 +166,7 @@ func (node *blockNode) countSubtreesUp() uint64 {
 			// We reached a leaf
 			current.subtreeSize = 1
 		}
-		if current.subtreeSize <= len(current.treeChildren) {
+		if current.subtreeSize <= uint64(len(current.treeChildren)) {
 			// We haven't yet calculated the subtree size of
 			// the current node. Add all its children to the
 			// queue
@@ -179,23 +181,55 @@ func (node *blockNode) countSubtreesUp() uint64 {
 		for current != node {
 			current = current.treeParent
 			current.subtreeSize++
-			if current.subtreeSize != len(current.treeChildren) {
+			if current.subtreeSize != uint64(len(current.treeChildren)) {
 				// Not all subtrees of the current node are ready
 				break
 			}
 			// All subtrees of current have reported readiness.
 			// Count actual subtree size and continue pushing up.
-			childSubtreeSizeSum := 0
+			childSubtreeSizeSum := uint64(0)
 			for _, child := range current.treeChildren {
 				childSubtreeSizeSum += child.subtreeSize
 			}
 			current.subtreeSize = childSubtreeSizeSum + 1
 		}
 	}
-	return 0
+	return node.subtreeSize
 }
 
+// applyIntervalDown applies new intervals using a BFS traversal.
+// The intervals are allocated according to subtree sizes and the
+// 'split' allocation rule (see the split() method for further
+// details)
 func (node *blockNode) applyIntervalDown(interval *reachabilityInterval) error {
+	node.setTreeInterval(interval)
+
+	queue := []*blockNode{node}
+	for len(queue) > 0 {
+		var current *blockNode
+		current, queue = queue[0], queue[1:]
+		if len(current.treeChildren) > 0 {
+			sizes := make([]uint64, len(current.treeChildren))
+			for i, child := range current.treeChildren {
+				sizes[i] = child.subtreeSize
+			}
+			intervals, err := current.treeRemainingInterval.split(sizes)
+			if err != nil {
+				return err
+			}
+			for i, child := range current.treeChildren {
+				childInterval := intervals[i]
+				child.setTreeInterval(childInterval)
+				queue = append(queue, child)
+			}
+
+			// Empty up remaining interval
+			current.treeRemainingInterval.start = current.treeRemainingInterval.end + 1
+		}
+
+		// Cleanup temp info for future reindexing
+		current.subtreeSize = 0
+	}
 	return nil
 }
 
