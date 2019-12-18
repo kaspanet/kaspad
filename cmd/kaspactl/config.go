@@ -118,7 +118,7 @@ func normalizeAddress(addr string, useTestNet, useSimNet, useDevNet bool) string
 		case useDevNet:
 			defaultPort = "10532"
 		case useTestNet:
-			defaultPort = "10432"
+			defaultPort = "16210"
 		case useSimNet:
 			defaultPort = "10632"
 		default:

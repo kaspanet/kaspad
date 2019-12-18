@@ -240,8 +240,8 @@ var RegressionNetParams = Params{
 	K:           phantomK,
 	Name:        "regtest",
 	Net:         wire.RegTest,
-	RPCPort:     "10432",
-	DefaultPort: "10433",
+	RPCPort:     "16210",
+	DefaultPort: "16211",
 	DNSSeeds:    []string{},
 
 	// DAG parameters
@@ -296,8 +296,8 @@ var TestNetParams = Params{
 	K:           phantomK,
 	Name:        "testnet",
 	Net:         wire.TestNet,
-	RPCPort:     "10432",
-	DefaultPort: "10433",
+	RPCPort:     "16210",
+	DefaultPort: "16211",
 	DNSSeeds:    []string{},
 
 	// DAG parameters

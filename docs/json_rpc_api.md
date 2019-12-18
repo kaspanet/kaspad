@@ -1166,7 +1166,7 @@ func main() {
 	// not long-lived, the connection will be closed as soon as the program
 	// exits.
 	connCfg := &btcrpcclient.ConnConfig{
-		Host:         "localhost:10432",
+		Host:         "localhost:16210",
 		Endpoint:     "ws",
 		User:         "yourrpcuser",
 		Pass:         "yourrpcpass",
