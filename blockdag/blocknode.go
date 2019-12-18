@@ -141,7 +141,10 @@ func (node *blockNode) reindexTreeIntervals() error {
 	// Find the first ancestor that has sufficient interval space
 	for intervalSize < subtreeSize {
 		if current.treeParent == nil {
-			return errors.Errorf("") // TODO: ask Michael how this might happen
+			// If we ended up here it means that there are more
+			// than 2^64 blocks inside the finality window,
+			// something that shouldn't ever happen.
+			return errors.Errorf("missing tree parent")
 		}
 		current = current.treeParent
 		intervalSize = current.treeInterval.size()
