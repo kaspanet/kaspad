@@ -193,6 +193,9 @@ func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint64, mu
 		serializedIncludingBlockID := blockdag.SerializeBlockID(includingBlockID)
 
 		for _, txAcceptanceData := range blockTxsAcceptanceData.TxAcceptanceData {
+			if !txAcceptanceData.IsAccepted {
+				continue
+			}
 			err = dbPutAcceptingBlocksEntry(dbTx, txAcceptanceData.Tx.ID(), blockID, serializedIncludingBlockID)
 			if err != nil {
 				return err
