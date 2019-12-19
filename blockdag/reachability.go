@@ -17,17 +17,21 @@ type reachabilityTreeNode struct {
 // addTreeChild adds child to this tree node. If this node has no remaining
 // interval to allocate, a reindexing is triggered.
 func (rtn *reachabilityTreeNode) addTreeChild(child *reachabilityTreeNode) error {
+	// Set the parent-child relationship
 	rtn.children = append(rtn.children, child)
 	child.parent = rtn
 
-	allocated, remaining, err := rtn.remainingInterval.splitFraction(0.5)
+	allocated, remaining, err := rtn.remainingInterval.splitInHalf()
 	if err != nil {
 		return err
 	}
+
+	// No allocation space left -- reindex
 	if allocated.start > allocated.end {
 		return rtn.reindexTreeIntervals()
 	}
 
+	// Allocate from the remaining space
 	child.setTreeInterval(allocated)
 	rtn.remainingInterval = *remaining
 	return nil
@@ -35,6 +39,10 @@ func (rtn *reachabilityTreeNode) addTreeChild(child *reachabilityTreeNode) error
 
 func (rtn *reachabilityTreeNode) setTreeInterval(interval *reachabilityInterval) {
 	rtn.interval = *interval
+
+	// Reserve a single interval index for the current node. This
+	// is necessary to ensure that ancestor intervals are strictly
+	// supersets of any descendant intervals and not equal
 	rtn.remainingInterval = reachabilityInterval{start: interval.start, end: interval.end - 1}
 }
 
@@ -62,6 +70,39 @@ func (rtn *reachabilityTreeNode) reindexTreeIntervals() error {
 	return current.applyIntervalDown(&current.interval)
 }
 
+// This method counts the size of each subtree under this node.
+// The method outcome is exactly equal to the following recursive
+// implementation:
+//
+// func (rtn *reachabilityTreeNode) countSubtreesUp() uint64 {
+//     subtreeSize := uint64(0)
+//     for _, child := range rtn.children {
+//         subtreeSize += child.countSubtreesUp()
+//     }
+//     return subtreeSize
+// }
+//
+// However we are expecting (linearly) deep trees, and so a
+// recursive stack-based approach is inefficient and will hit
+// recursion limits. Instead, the same logic was implemented
+// using a (queue-based) BFS method. At a high level, the
+// algorithm uses BFS for reaching all leafs and pushes
+// intermediate updates from leafs via parent chains until all
+// size information is gathered at the root of the operation
+// (i.e. at self).
+//
+// Note the role of the subtreeSize field in the algorithm.
+// For each block B this field is initialized to 0. The field
+// has two possible states:
+// * rtn.subtreeSize > |B.children|:
+//	 this indicated that B's subtree size is already known and
+//	 calculated.
+// * rtn.subtreeSize <= |B.children|:
+//   we are still in the counting stage of tracking who of B's
+//   children has already calculated its subtree size. This way,
+//   once B.subtree_size = |B.children| we know we can pull
+//   subtree sizes from children and continue pushing the
+// 	 readiness signal further up
 func (rtn *reachabilityTreeNode) countSubtreesUp() uint64 {
 	queue := []*reachabilityTreeNode{rtn}
 	for len(queue) > 0 {
@@ -147,6 +188,13 @@ type reachabilityInterval struct {
 // inclusive from both sides.
 func (ri *reachabilityInterval) size() uint64 {
 	return ri.end - ri.start + 1
+}
+
+// splitInHalf splits this interval by a fraction of 0.5.
+// See splitFraction for further details.
+func (ri *reachabilityInterval) splitInHalf() (
+	left *reachabilityInterval, right *reachabilityInterval, err error) {
+	return ri.splitFraction(0.5)
 }
 
 // splitFraction splits this interval to two parts such that their
