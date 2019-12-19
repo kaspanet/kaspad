@@ -336,7 +336,7 @@ func TestDecodeAddressErrorConditions(t *testing.T) {
 			"decoded address is of unknown size",
 		},
 		{
-			"kaspatest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pg6ghunlhx",
+			"kaspatest:qqq65mvpxcmajeq44n2n8vfn6u9f8l4zsy0xez0tzw",
 			util.Bech32PrefixKaspa,
 			"decoded address is of wrong network",
 		},
@@ -347,7 +347,7 @@ func TestDecodeAddressErrorConditions(t *testing.T) {
 		if err == nil {
 			t.Errorf("decodeAddress unexpectedly succeeded")
 		} else if !strings.Contains(err.Error(), test.errorMessage) {
-			t.Errorf("received mismatched error. Expected %s but got %s",
+			t.Errorf("received mismatched error. Expected '%s' but got '%s'",
 				test.errorMessage, err)
 		}
 	}
