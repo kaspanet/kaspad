@@ -81,10 +81,10 @@ type blockNode struct {
 	// chainHeight is the number of hops you need to go down the selected parent chain in order to get to the genesis block.
 	chainHeight uint64
 
-	// reachabilityTreeNode TODO: what is this?
+	// reachabilityTreeNode is the reachabilityTree node representation of this block
 	reachabilityTreeNode reachabilityTreeNode
 
-	// futureBlocks TODO: what is this?
+	// futureBlocks keeps just enough future blocks for tracking block reachability in the DAG
 	futureBlocks futureBlocks
 
 	// Some fields from block headers to aid in  reconstructing headers
@@ -202,6 +202,22 @@ func (node *blockNode) SelectedAncestor(chainHeight uint64) *blockNode {
 // This function is safe for concurrent access.
 func (node *blockNode) RelativeAncestor(distance uint64) *blockNode {
 	return node.SelectedAncestor(node.chainHeight - distance)
+}
+
+// isInPast returns true iff this node can be reached from the other in the DAG.
+// The complexity of this method is O(log(|self.future_blocks|))
+func (node *blockNode) isInPast(other *blockNode) bool {
+	// First, check if this node is a reachability tree ancestor of the
+	// other node
+	thisTreeInterval := node.reachabilityTreeNode.interval
+	otherTreeInterval := other.reachabilityTreeNode.interval
+	if thisTreeInterval.isAncestorOf(&otherTreeInterval) {
+		return true
+	}
+
+	// Otherwise, use previously registered future blocks to complete the
+	// reachability test
+	return node.futureBlocks.isFutureBlock(other)
 }
 
 // CalcPastMedianTime returns the median time of the previous few blocks
