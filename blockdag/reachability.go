@@ -6,6 +6,21 @@ import (
 	"math"
 )
 
+// reachabilityTreeNode represents a node in the reachability tree
+// of some DAG block. It mainly provides the ability to query *tree*
+// reachability with O(1) query time. It does so by managing an
+// index interval for each node and making sure all nodes in its
+// subtree are indexed within the interval, so the query
+// B ∈ subtree(A) simply becomes B.interval ⊂ A.interval.
+//
+// The main challenge of maintaining such intervals is that our tree
+// is an ever-growing tree and as such pre-allocated intervals may
+// not suffice as per future events. This is where the reindexing
+// algorithm below comes in to place.
+// We use the reasonable assumption that the initial root interval
+// (e.g., [0, 2^64-1]) should always suffice for any practical use-
+// case, and so reindexing should always succeed unless more than
+// 2^64 blocks are added to the DAG/tree.
 type reachabilityTreeNode struct {
 	children []*reachabilityTreeNode
 	parent   *reachabilityTreeNode
@@ -208,6 +223,9 @@ func (rtn *reachabilityTreeNode) applyIntervalDown(interval *reachabilityInterva
 	return nil
 }
 
+// reachabilityInterval represents an interval to be used within the
+// tree reachability algorithm. See reachabilityTreeNode for further
+// details.
 type reachabilityInterval struct {
 	start uint64
 	end   uint64
@@ -356,6 +374,8 @@ func (ri *reachabilityInterval) String() string {
 	return fmt.Sprintf("[%d,%d]", ri.start, ri.end)
 }
 
+// futureBlocks represents a collection of blocks in the future of
+// some block.
 type futureBlocks []*blockNode
 
 // insertFutureBlock inserts the given block into this futureBlocks
