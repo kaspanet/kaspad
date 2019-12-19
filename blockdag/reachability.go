@@ -42,19 +42,27 @@ func (rtn *reachabilityTreeNode) addTreeChild(child *reachabilityTreeNode) error
 	}
 
 	// Allocate from the remaining space
-	child.setTreeInterval(allocated)
+	err = child.setTreeInterval(allocated)
+	if err != nil {
+		return err
+	}
 	rtn.remainingInterval = *remaining
 	return nil
 }
 
 // setTreeInterval sets the reachability interval for this node.
-func (rtn *reachabilityTreeNode) setTreeInterval(interval *reachabilityInterval) {
+func (rtn *reachabilityTreeNode) setTreeInterval(interval *reachabilityInterval) error {
 	rtn.interval = *interval
 
 	// Reserve a single interval index for the current node. This
 	// is necessary to ensure that ancestor intervals are strictly
 	// supersets of any descendant intervals and not equal
-	rtn.remainingInterval = reachabilityInterval{start: interval.start, end: interval.end - 1}
+	remainingInterval, err := newReachabilityInterval(interval.start, interval.end-1)
+	if err != nil {
+		return err
+	}
+	rtn.remainingInterval = *remainingInterval
+	return nil
 }
 
 // reindexTreeInterval traverses the reachability subtree that's
@@ -163,7 +171,10 @@ func (rtn *reachabilityTreeNode) countSubtreesUp() uint64 {
 // 'split' allocation rule (see the split() method for further
 // details)
 func (rtn *reachabilityTreeNode) applyIntervalDown(interval *reachabilityInterval) error {
-	rtn.setTreeInterval(interval)
+	err := rtn.setTreeInterval(interval)
+	if err != nil {
+		return err
+	}
 
 	queue := []*reachabilityTreeNode{rtn}
 	for len(queue) > 0 {
@@ -180,7 +191,10 @@ func (rtn *reachabilityTreeNode) applyIntervalDown(interval *reachabilityInterva
 			}
 			for i, child := range current.children {
 				childInterval := intervals[i]
-				child.setTreeInterval(childInterval)
+				err := child.setTreeInterval(childInterval)
+				if err != nil {
+					return err
+				}
 				queue = append(queue, child)
 			}
 
@@ -197,6 +211,13 @@ func (rtn *reachabilityTreeNode) applyIntervalDown(interval *reachabilityInterva
 type reachabilityInterval struct {
 	start uint64
 	end   uint64
+}
+
+func newReachabilityInterval(start uint64, end uint64) (*reachabilityInterval, error) {
+	if start < 1 || end > math.MaxUint64-1 {
+		return nil, errors.Errorf("start must be >= 1 and end must be <= MaxUint64 -1")
+	}
+	return &reachabilityInterval{start: start, end: end}, nil
 }
 
 // size returns the size of this interval. Note that intervals are
@@ -225,8 +246,14 @@ func (ri *reachabilityInterval) splitFraction(fraction float64) (
 	}
 
 	allocationSize := uint64(math.Ceil(float64(ri.size()) * fraction))
-	left = &reachabilityInterval{start: ri.start, end: ri.start + allocationSize - 1}
-	right = &reachabilityInterval{start: ri.start + allocationSize, end: ri.end}
+	left, err = newReachabilityInterval(ri.start, ri.start+allocationSize-1)
+	if err != nil {
+		return nil, nil, err
+	}
+	right, err = newReachabilityInterval(ri.start+allocationSize, ri.end)
+	if err != nil {
+		return nil, nil, err
+	}
 	return left, right, nil
 }
 
@@ -244,8 +271,12 @@ func (ri *reachabilityInterval) splitExact(sizes []uint64) ([]*reachabilityInter
 
 	intervals := make([]*reachabilityInterval, len(sizes))
 	start := ri.start
+	var err error
 	for i, size := range sizes {
-		intervals[i] = &reachabilityInterval{start: start, end: start + size - 1}
+		intervals[i], err = newReachabilityInterval(start, start+size-1)
+		if err != nil {
+			return nil, err
+		}
 		start += size
 	}
 	return intervals, nil
@@ -318,6 +349,11 @@ func (ri *reachabilityInterval) split(sizes []uint64) ([]*reachabilityInterval, 
 // ancestor of the other interval's node.
 func (ri *reachabilityInterval) isAncestorOf(other *reachabilityInterval) bool {
 	return ri.start <= other.end && other.end <= ri.end
+}
+
+// String returns a string representation of the interval.
+func (ri *reachabilityInterval) String() string {
+	return fmt.Sprintf("[%d,%d]", ri.start, ri.end)
 }
 
 type futureBlocks []*blockNode
@@ -406,8 +442,7 @@ func (fb futureBlocks) bisect(block *blockNode) int {
 func (fb futureBlocks) String() string {
 	intervalsString := ""
 	for _, block := range fb {
-		blockInterval := block.reachabilityTreeNode.interval
-		intervalsString += fmt.Sprintf("[%d,%d]", blockInterval.start, blockInterval.end)
+		intervalsString += block.reachabilityTreeNode.interval.String()
 	}
 	return intervalsString
 }
