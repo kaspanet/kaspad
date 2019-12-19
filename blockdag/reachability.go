@@ -97,27 +97,27 @@ func (rtn *reachabilityTreeNode) reindexTreeIntervals() error {
 //     return subtreeSize
 // }
 //
-// However we are expecting (linearly) deep trees, and so a
+// However, we are expecting (linearly) deep trees, and so a
 // recursive stack-based approach is inefficient and will hit
 // recursion limits. Instead, the same logic was implemented
 // using a (queue-based) BFS method. At a high level, the
-// algorithm uses BFS for reaching all leafs and pushes
-// intermediate updates from leafs via parent chains until all
+// algorithm uses BFS for reaching all leaves and pushes
+// intermediate updates from leaves via parent chains until all
 // size information is gathered at the root of the operation
-// (i.e. at self).
+// (i.e. at rtn).
 //
 // Note the role of the subtreeSize field in the algorithm.
-// For each block B this field is initialized to 0. The field
+// For each node rtn this field is initialized to 0. The field
 // has two possible states:
-// * rtn.subtreeSize > |B.children|:
-//	 this indicated that B's subtree size is already known and
+// * rtn.subtreeSize > |rtn.children|:
+//	 this indicated that rtn's subtree size is already known and
 //	 calculated.
-// * rtn.subtreeSize <= |B.children|:
-//   we are still in the counting stage of tracking who of B's
-//   children has already calculated its subtree size. This way,
-//   once B.subtree_size = |B.children| we know we can pull
-//   subtree sizes from children and continue pushing the
-// 	 readiness signal further up
+// * rtn.subtreeSize <= |rtn.children|:
+//   we are still in the counting stage of tracking which of
+//   rtn's children has already calculated its subtree size.
+//   This way, once rtn.subtree_size = |rtn.children| we know we
+//   can pull subtree sizes from children and continue pushing
+//   the readiness signal further up
 func (rtn *reachabilityTreeNode) countSubtreesUp() uint64 {
 	queue := []*reachabilityTreeNode{rtn}
 	for len(queue) > 0 {
