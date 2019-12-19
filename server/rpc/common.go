@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 	"math/big"
 	"strconv"
@@ -18,30 +18,30 @@ import (
 var (
 	// ErrRPCUnimplemented is an error returned to RPC clients when the
 	// provided command is recognized, but not implemented.
-	ErrRPCUnimplemented = &btcjson.RPCError{
-		Code:    btcjson.ErrRPCUnimplemented,
+	ErrRPCUnimplemented = &rpcmodel.RPCError{
+		Code:    rpcmodel.ErrRPCUnimplemented,
 		Message: "Command unimplemented",
 	}
 )
 
 // internalRPCError is a convenience function to convert an internal error to
-// an RPC error with the appropriate code set.  It also logs the error to the
-// RPC server subsystem since internal errors really should not occur.  The
+// an RPC error with the appropriate code set. It also logs the error to the
+// RPC server subsystem since internal errors really should not occur. The
 // context parameter is only used in the log message and may be empty if it's
 // not needed.
-func internalRPCError(errStr, context string) *btcjson.RPCError {
+func internalRPCError(errStr, context string) *rpcmodel.RPCError {
 	logStr := errStr
 	if context != "" {
 		logStr = context + ": " + errStr
 	}
 	log.Error(logStr)
-	return btcjson.NewRPCError(btcjson.ErrRPCInternal.Code, errStr)
+	return rpcmodel.NewRPCError(rpcmodel.ErrRPCInternal.Code, errStr)
 }
 
 // rpcDecodeHexError is a convenience function for returning a nicely formatted
 // RPC error which indicates the provided hex string failed to decode.
-func rpcDecodeHexError(gotHex string) *btcjson.RPCError {
-	return btcjson.NewRPCError(btcjson.ErrRPCDecodeHexString,
+func rpcDecodeHexError(gotHex string) *rpcmodel.RPCError {
+	return rpcmodel.NewRPCError(rpcmodel.ErrRPCDecodeHexString,
 		fmt.Sprintf("Argument must be hexadecimal string (not %q)",
 			gotHex))
 }
@@ -49,8 +49,8 @@ func rpcDecodeHexError(gotHex string) *btcjson.RPCError {
 // rpcNoTxInfoError is a convenience function for returning a nicely formatted
 // RPC error which indicates there is no information available for the provided
 // transaction hash.
-func rpcNoTxInfoError(txID *daghash.TxID) *btcjson.RPCError {
-	return btcjson.NewRPCError(btcjson.ErrRPCNoTxInfo,
+func rpcNoTxInfoError(txID *daghash.TxID) *rpcmodel.RPCError {
+	return rpcmodel.NewRPCError(rpcmodel.ErrRPCNoTxInfo,
 		fmt.Sprintf("No information available about transaction %s",
 			txID))
 }
@@ -59,7 +59,7 @@ func rpcNoTxInfoError(txID *daghash.TxID) *btcjson.RPCError {
 // latest protocol version and returns a hex-encoded string of the result.
 func messageToHex(msg wire.Message) (string, error) {
 	var buf bytes.Buffer
-	if err := msg.BtcEncode(&buf, maxProtocolVersion); err != nil {
+	if err := msg.KaspaEncode(&buf, maxProtocolVersion); err != nil {
 		context := fmt.Sprintf("Failed to encode msg of type %T", msg)
 		return "", internalRPCError(err.Error(), context)
 	}
@@ -69,8 +69,8 @@ func messageToHex(msg wire.Message) (string, error) {
 
 // createVinList returns a slice of JSON objects for the inputs of the passed
 // transaction.
-func createVinList(mtx *wire.MsgTx) []btcjson.Vin {
-	vinList := make([]btcjson.Vin, len(mtx.TxIn))
+func createVinList(mtx *wire.MsgTx) []rpcmodel.Vin {
+	vinList := make([]rpcmodel.Vin, len(mtx.TxIn))
 	for i, txIn := range mtx.TxIn {
 		// The disassembled string will contain [error] inline
 		// if the script doesn't fully parse, so ignore the
@@ -81,7 +81,7 @@ func createVinList(mtx *wire.MsgTx) []btcjson.Vin {
 		vinEntry.TxID = txIn.PreviousOutpoint.TxID.String()
 		vinEntry.Vout = txIn.PreviousOutpoint.Index
 		vinEntry.Sequence = txIn.Sequence
-		vinEntry.ScriptSig = &btcjson.ScriptSig{
+		vinEntry.ScriptSig = &rpcmodel.ScriptSig{
 			Asm: disbuf,
 			Hex: hex.EncodeToString(txIn.SignatureScript),
 		}
@@ -92,8 +92,8 @@ func createVinList(mtx *wire.MsgTx) []btcjson.Vin {
 
 // createVoutList returns a slice of JSON objects for the outputs of the passed
 // transaction.
-func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMap map[string]struct{}) []btcjson.Vout {
-	voutList := make([]btcjson.Vout, 0, len(mtx.TxOut))
+func createVoutList(mtx *wire.MsgTx, dagParams *dagconfig.Params, filterAddrMap map[string]struct{}) []rpcmodel.Vout {
+	voutList := make([]rpcmodel.Vout, 0, len(mtx.TxOut))
 	for i, v := range mtx.TxOut {
 		// The disassembled string will contain [error] inline if the
 		// script doesn't fully parse, so ignore the error here.
@@ -103,14 +103,14 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 		// couldn't parse and there is no additional information about
 		// it anyways.
 		scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddress(
-			v.ScriptPubKey, chainParams)
+			v.ScriptPubKey, dagParams)
 
 		// Encode the addresses while checking if the address passes the
 		// filter when needed.
 		passesFilter := len(filterAddrMap) == 0
 		var encodedAddr *string
 		if addr != nil {
-			encodedAddr = btcjson.String(addr.EncodeAddress())
+			encodedAddr = rpcmodel.String(addr.EncodeAddress())
 
 			// If the filter doesn't already pass, make it pass if
 			// the address exists in the filter.
@@ -123,7 +123,7 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 			continue
 		}
 
-		var vout btcjson.Vout
+		var vout rpcmodel.Vout
 		vout.N = uint32(i)
 		vout.Value = v.Value
 		vout.ScriptPubKey.Address = encodedAddr
@@ -141,7 +141,7 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 // to a raw transaction JSON object.
 func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 	txID string, blkHeader *wire.BlockHeader, blkHash string,
-	acceptingBlock *daghash.Hash, confirmations *uint64, isInMempool bool) (*btcjson.TxRawResult, error) {
+	acceptingBlock *daghash.Hash, confirmations *uint64, isInMempool bool) (*rpcmodel.TxRawResult, error) {
 
 	mtxHex, err := messageToHex(mtx)
 	if err != nil {
@@ -153,7 +153,7 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 		payloadHash = mtx.PayloadHash.String()
 	}
 
-	txReply := &btcjson.TxRawResult{
+	txReply := &rpcmodel.TxRawResult{
 		Hex:         mtxHex,
 		TxID:        txID,
 		Hash:        mtx.TxHash().String(),
@@ -169,7 +169,6 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 	}
 
 	if blkHeader != nil {
-		// This is not a typo, they are identical in bitcoind as well.
 		txReply.Time = uint64(blkHeader.Timestamp.Unix())
 		txReply.BlockTime = uint64(blkHeader.Timestamp.Unix())
 		txReply.BlockHash = blkHash
@@ -178,7 +177,7 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 	txReply.Confirmations = confirmations
 	txReply.IsInMempool = isInMempool
 	if acceptingBlock != nil {
-		txReply.AcceptedBy = btcjson.String(acceptingBlock.String())
+		txReply.AcceptedBy = rpcmodel.String(acceptingBlock.String())
 	}
 
 	return txReply, nil
@@ -188,7 +187,7 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 // minimum difficulty using the passed bits field from the header of a block.
 func getDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
 	// The minimum difficulty is the max possible proof-of-work limit bits
-	// converted back to a number.  Note this is not the same as the proof of
+	// converted back to a number. Note this is not the same as the proof of
 	// work limit directly because the block difficulty is encoded in a block
 	// with the compact form which loses precision.
 	target := util.CompactToBig(bits)
@@ -203,10 +202,10 @@ func getDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
 	return diff
 }
 
-// buildGetBlockVerboseResult takes a block and convert it to btcjson.GetBlockVerboseResult
+// buildGetBlockVerboseResult takes a block and convert it to rpcmodel.GetBlockVerboseResult
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) (*btcjson.GetBlockVerboseResult, error) {
+func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) (*rpcmodel.GetBlockVerboseResult, error) {
 	hash := block.Hash()
 	params := s.cfg.DAGParams
 	blockHeader := block.MsgBlock().Header
@@ -243,7 +242,7 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 
 	isChainBlock := s.cfg.DAG.IsInSelectedParentChain(hash)
 
-	result := &btcjson.GetBlockVerboseResult{
+	result := &rpcmodel.GetBlockVerboseResult{
 		Hash:                 hash.String(),
 		Version:              blockHeader.Version,
 		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version),
@@ -273,23 +272,10 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		result.Tx = txNames
 	} else {
 		txns := block.Transactions()
-		rawTxns := make([]btcjson.TxRawResult, len(txns))
+		rawTxns := make([]rpcmodel.TxRawResult, len(txns))
 		for i, tx := range txns {
-			var acceptingBlock *daghash.Hash
-			var confirmations *uint64
-			if s.cfg.TxIndex != nil {
-				acceptingBlock, err = s.cfg.TxIndex.BlockThatAcceptedTx(s.cfg.DAG, tx.ID())
-				if err != nil {
-					return nil, err
-				}
-				txConfirmations, err := txConfirmationsNoLock(s, tx.ID())
-				if err != nil {
-					return nil, err
-				}
-				confirmations = &txConfirmations
-			}
 			rawTxn, err := createTxRawResult(params, tx.MsgTx(), tx.ID().String(),
-				&blockHeader, hash.String(), acceptingBlock, confirmations, false)
+				&blockHeader, hash.String(), nil, nil, false)
 			if err != nil {
 				return nil, err
 			}
@@ -301,18 +287,18 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 	return result, nil
 }
 
-func collectChainBlocks(s *Server, hashes []*daghash.Hash) ([]btcjson.ChainBlock, error) {
-	chainBlocks := make([]btcjson.ChainBlock, 0, len(hashes))
+func collectChainBlocks(s *Server, hashes []*daghash.Hash) ([]rpcmodel.ChainBlock, error) {
+	chainBlocks := make([]rpcmodel.ChainBlock, 0, len(hashes))
 	for _, hash := range hashes {
 		acceptanceData, err := s.cfg.AcceptanceIndex.TxsAcceptanceData(hash)
 		if err != nil {
-			return nil, &btcjson.RPCError{
-				Code:    btcjson.ErrRPCInternal.Code,
+			return nil, &rpcmodel.RPCError{
+				Code:    rpcmodel.ErrRPCInternal.Code,
 				Message: fmt.Sprintf("could not retrieve acceptance data for block %s", hash),
 			}
 		}
 
-		acceptedBlocks := make([]btcjson.AcceptedBlock, 0, len(acceptanceData))
+		acceptedBlocks := make([]rpcmodel.AcceptedBlock, 0, len(acceptanceData))
 		for _, blockAcceptanceData := range acceptanceData {
 			acceptedTxIds := make([]string, 0, len(blockAcceptanceData.TxAcceptanceData))
 			for _, txAcceptanceData := range blockAcceptanceData.TxAcceptanceData {
@@ -320,14 +306,14 @@ func collectChainBlocks(s *Server, hashes []*daghash.Hash) ([]btcjson.ChainBlock
 					acceptedTxIds = append(acceptedTxIds, txAcceptanceData.Tx.ID().String())
 				}
 			}
-			acceptedBlock := btcjson.AcceptedBlock{
+			acceptedBlock := rpcmodel.AcceptedBlock{
 				Hash:          blockAcceptanceData.BlockHash.String(),
 				AcceptedTxIDs: acceptedTxIds,
 			}
 			acceptedBlocks = append(acceptedBlocks, acceptedBlock)
 		}
 
-		chainBlock := btcjson.ChainBlock{
+		chainBlock := rpcmodel.ChainBlock{
 			Hash:           hash.String(),
 			AcceptedBlocks: acceptedBlocks,
 		}
@@ -340,20 +326,20 @@ func collectChainBlocks(s *Server, hashes []*daghash.Hash) ([]btcjson.ChainBlock
 // correspondent block verbose.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func hashesToGetBlockVerboseResults(s *Server, hashes []*daghash.Hash) ([]btcjson.GetBlockVerboseResult, error) {
-	getBlockVerboseResults := make([]btcjson.GetBlockVerboseResult, 0, len(hashes))
+func hashesToGetBlockVerboseResults(s *Server, hashes []*daghash.Hash) ([]rpcmodel.GetBlockVerboseResult, error) {
+	getBlockVerboseResults := make([]rpcmodel.GetBlockVerboseResult, 0, len(hashes))
 	for _, blockHash := range hashes {
 		block, err := s.cfg.DAG.BlockByHash(blockHash)
 		if err != nil {
-			return nil, &btcjson.RPCError{
-				Code:    btcjson.ErrRPCInternal.Code,
+			return nil, &rpcmodel.RPCError{
+				Code:    rpcmodel.ErrRPCInternal.Code,
 				Message: fmt.Sprintf("could not retrieve block %s.", blockHash),
 			}
 		}
 		getBlockVerboseResult, err := buildGetBlockVerboseResult(s, block, false)
 		if err != nil {
-			return nil, &btcjson.RPCError{
-				Code:    btcjson.ErrRPCInternal.Code,
+			return nil, &rpcmodel.RPCError{
+				Code:    rpcmodel.ErrRPCInternal.Code,
 				Message: fmt.Sprintf("could not build getBlockVerboseResult for block %s: %s", blockHash, err),
 			}
 		}

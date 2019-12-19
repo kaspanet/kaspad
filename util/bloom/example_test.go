@@ -9,9 +9,9 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/daglabs/btcd/util/bloom"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/util/bloom"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // This example demonstrates how to create a new bloom filter, add a transaction
@@ -25,9 +25,9 @@ func ExampleNewFilter() {
 	// functionality when transactions are matched.
 	filter := bloom.NewFilter(10, tweak, 0.0001, wire.BloomUpdateNone)
 
-	// Create a transaction hash and add it to the filter.  This particular
+	// Create a transaction hash and add it to the filter. This particular
 	// trasaction is the first transaction in block 310,000 of the main
-	// bitcoin block chain.
+	// kaspa block DAG.
 	txHashStr := "fd611c56ca0d378cdcd16244b45c2ba9588da3adac367c4ef43e808b280b8a45"
 	txHash, err := daghash.NewHashFromStr(txHashStr)
 	if err != nil {

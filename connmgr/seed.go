@@ -11,11 +11,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/daglabs/btcd/config"
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 const (
@@ -86,9 +86,8 @@ func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag, incl
 			intPort, _ := strconv.Atoi(dagParams.DefaultPort)
 			for i, peer := range seedpeers {
 				addresses[i] = wire.NewNetAddressTimestamp(
-					// bitcoind seeds with addresses from
-					// a time randomly selected between 3
-					// and 7 days ago.
+					// seed with addresses from a time randomly selected
+					// between 3 and 7 days ago.
 					time.Now().Add(-1*time.Second*time.Duration(secondsIn3Days+
 						randSource.Int31n(secondsIn4Days))),
 					0, peer, uint16(intPort))

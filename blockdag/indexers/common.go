@@ -3,15 +3,15 @@
 // license that can be found in the LICENSE file.
 
 /*
-Package indexers implements optional block chain indexes.
+Package indexers implements optional block DAG indexes.
 */
 package indexers
 
 import (
 	"encoding/binary"
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/util"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
 
@@ -45,7 +45,7 @@ type Indexer interface {
 	Create(dbTx database.Tx) error
 
 	// Init is invoked when the index manager is first initializing the
-	// index.  This differs from the Create method in that it is called on
+	// index. This differs from the Create method in that it is called on
 	// every load, including the case the index was just created.
 	Init(db database.DB, dag *blockdag.BlockDAG) error
 
@@ -89,7 +89,7 @@ func isDeserializeErr(err error) bool {
 	return ok
 }
 
-// internalBucket is an abstraction over a database bucket.  It is used to make
+// internalBucket is an abstraction over a database bucket. It is used to make
 // the code easier to test since it allows mock objects in the tests to only
 // implement these functions instead of everything a database.Bucket supports.
 type internalBucket interface {

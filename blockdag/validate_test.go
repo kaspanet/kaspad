@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/util/subnetworkid"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // TestSequenceLocksActive tests the SequenceLockActive function to ensure it
@@ -69,7 +69,7 @@ func TestSequenceLocksActive(t *testing.T) {
 // TestCheckConnectBlockTemplate tests the CheckConnectBlockTemplate function to
 // ensure it fails.
 func TestCheckConnectBlockTemplate(t *testing.T) {
-	// Create a new database and chain instance to run tests against.
+	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("checkconnectblocktemplate", Config{
 		DAGParams: &dagconfig.SimNetParams,
 	})
@@ -475,8 +475,8 @@ func TestCheckBlockSanity(t *testing.T) {
 		},
 	}
 
-	btcutilInvalidBlock := util.NewBlock(&invalidParentsOrderBlock)
-	delay, err = dag.checkBlockSanity(btcutilInvalidBlock, BFNone)
+	utilInvalidBlock := util.NewBlock(&invalidParentsOrderBlock)
+	delay, err = dag.checkBlockSanity(utilInvalidBlock, BFNone)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: error is nil when it shouldn't be")
 	}
@@ -635,12 +635,12 @@ func TestCheckTransactionSanity(t *testing.T) {
 		{"no inputs", 0, 1, 1, *subnetworkid.SubnetworkIDNative, nil, nil, ruleError(ErrNoTxInputs, "")},
 		{"no outputs", 1, 0, 1, *subnetworkid.SubnetworkIDNative, nil, nil, nil},
 		{"too massive", 1, 1000000, 1, *subnetworkid.SubnetworkIDNative, nil, nil, ruleError(ErrTxMassTooHigh, "")},
-		{"too much satoshi in one output", 1, 1, util.MaxSatoshi + 1,
+		{"too much sompi in one output", 1, 1, util.MaxSompi + 1,
 			*subnetworkid.SubnetworkIDNative,
 			nil,
 			nil,
 			ruleError(ErrBadTxOutValue, "")},
-		{"too much satoshi in total outputs", 1, 2, util.MaxSatoshi - 1,
+		{"too much sompi in total outputs", 1, 2, util.MaxSompi - 1,
 			*subnetworkid.SubnetworkIDNative,
 			nil,
 			nil,
@@ -674,7 +674,7 @@ func TestCheckTransactionSanity(t *testing.T) {
 			&txSubnetworkData{subnetworkid.SubnetworkIDCoinbase, 0, make([]byte, MaxCoinbasePayloadLen+1)},
 			nil,
 			ruleError(ErrBadCoinbasePayloadLen, "")},
-		{"non-zero gas in DAGCoin", 1, 1, 0,
+		{"non-zero gas in Kaspa", 1, 1, 0,
 			*subnetworkid.SubnetworkIDNative,
 			&txSubnetworkData{subnetworkid.SubnetworkIDNative, 1, []byte{}},
 			nil,
@@ -684,7 +684,7 @@ func TestCheckTransactionSanity(t *testing.T) {
 			&txSubnetworkData{subnetworkid.SubnetworkIDNative, 1, []byte{}},
 			nil,
 			ruleError(ErrInvalidGas, "")},
-		{"non-zero payload in DAGCoin", 1, 1, 0,
+		{"non-zero payload in Kaspa", 1, 1, 0,
 			*subnetworkid.SubnetworkIDNative,
 			&txSubnetworkData{subnetworkid.SubnetworkIDNative, 0, []byte{1}},
 			nil,
@@ -730,7 +730,7 @@ func TestCheckTransactionSanity(t *testing.T) {
 	}
 }
 
-// Block100000 defines block 100,000 of the block DAG.  It is used to
+// Block100000 defines block 100,000 of the block DAG. It is used to
 // test Block operations.
 var Block100000 = wire.MsgBlock{
 	Header: wire.BlockHeader{
@@ -1033,7 +1033,7 @@ var Block100000 = wire.MsgBlock{
 	},
 }
 
-// BlockWithWrongTxOrder defines invalid block 100,000 of the block chain.
+// BlockWithWrongTxOrder defines invalid block 100,000 of the block DAG.
 var BlockWithWrongTxOrder = wire.MsgBlock{
 	Header: wire.BlockHeader{
 		Version: 1,

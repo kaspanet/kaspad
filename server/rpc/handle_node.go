@@ -1,15 +1,15 @@
 package rpc
 
 import (
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/util/network"
+	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/util/network"
 	"net"
 	"strconv"
 )
 
 // handleNode handles node commands.
 func handleNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.NodeCmd)
+	c := cmd.(*rpcmodel.NodeCmd)
 
 	var addr string
 	var nodeID uint64
@@ -27,16 +27,16 @@ func handleNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 				addr = network.NormalizeAddress(c.Target, params.DefaultPort)
 				err = s.cfg.ConnMgr.DisconnectByAddr(addr)
 			} else {
-				return nil, &btcjson.RPCError{
-					Code:    btcjson.ErrRPCInvalidParameter,
+				return nil, &rpcmodel.RPCError{
+					Code:    rpcmodel.ErrRPCInvalidParameter,
 					Message: "invalid address or node ID",
 				}
 			}
 		}
 		if err != nil && peerExists(s.cfg.ConnMgr, addr, int32(nodeID)) {
 
-			return nil, &btcjson.RPCError{
-				Code:    btcjson.ErrRPCMisc,
+			return nil, &rpcmodel.RPCError{
+				Code:    rpcmodel.ErrRPCMisc,
 				Message: "can't disconnect a permanent peer, use remove",
 			}
 		}
@@ -52,15 +52,15 @@ func handleNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 				addr = network.NormalizeAddress(c.Target, params.DefaultPort)
 				err = s.cfg.ConnMgr.RemoveByAddr(addr)
 			} else {
-				return nil, &btcjson.RPCError{
-					Code:    btcjson.ErrRPCInvalidParameter,
+				return nil, &rpcmodel.RPCError{
+					Code:    rpcmodel.ErrRPCInvalidParameter,
 					Message: "invalid address or node ID",
 				}
 			}
 		}
 		if err != nil && peerExists(s.cfg.ConnMgr, addr, int32(nodeID)) {
-			return nil, &btcjson.RPCError{
-				Code:    btcjson.ErrRPCMisc,
+			return nil, &rpcmodel.RPCError{
+				Code:    rpcmodel.ErrRPCMisc,
 				Message: "can't remove a temporary peer, use disconnect",
 			}
 		}
@@ -78,21 +78,21 @@ func handleNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 		case "perm", "temp":
 			err = s.cfg.ConnMgr.Connect(addr, subCmd == "perm")
 		default:
-			return nil, &btcjson.RPCError{
-				Code:    btcjson.ErrRPCInvalidParameter,
+			return nil, &rpcmodel.RPCError{
+				Code:    rpcmodel.ErrRPCInvalidParameter,
 				Message: "invalid subcommand for node connect",
 			}
 		}
 	default:
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCInvalidParameter,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCInvalidParameter,
 			Message: "invalid subcommand for node",
 		}
 	}
 
 	if err != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCInvalidParameter,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCInvalidParameter,
 			Message: err.Error(),
 		}
 	}

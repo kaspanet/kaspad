@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // blockStatus is a bit field representing the validation state of the block.
@@ -54,8 +54,8 @@ func (status blockStatus) KnownInvalid() bool {
 type blockNode struct {
 	// NOTE: Additions, deletions, or modifications to the order of the
 	// definitions in this struct should not be changed without considering
-	// how it affects alignment on 64-bit platforms.  The current order is
-	// specifically crafted to result in minimal padding.  There will be
+	// how it affects alignment on 64-bit platforms. The current order is
+	// specifically crafted to result in minimal padding. There will be
 	// hundreds of thousands of these in memory, so a few extra bytes of
 	// padding adds up.
 
@@ -78,16 +78,12 @@ type blockNode struct {
 	// hash is the double sha 256 of the block.
 	hash *daghash.Hash
 
-	// height is the position in the block DAG.
-	height uint64
-
 	// chainHeight is the number of hops you need to go down the selected parent chain in order to get to the genesis block.
 	chainHeight uint64
 
-	// Some fields from block headers to aid in best chain selection and
-	// reconstructing headers from memory.  These must be treated as
-	// immutable and are intentionally ordered to avoid padding on 64-bit
-	// platforms.
+	// Some fields from block headers to aid in  reconstructing headers
+	// from memory. These must be treated as immutable and are intentionally
+	// ordered to avoid padding on 64-bit platforms.
 	version              int32
 	bits                 uint32
 	nonce                uint64
@@ -107,7 +103,7 @@ type blockNode struct {
 }
 
 // initBlockNode initializes a block node from the given header and parent nodes.
-// This function is NOT safe for concurrent access.  It must only be called when
+// This function is NOT safe for concurrent access. It must only be called when
 // initially creating a node.
 func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents blockSet, phantomK uint32) {
 	*node = blockNode{
@@ -132,16 +128,8 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 
 	if len(parents) > 0 {
 		node.blues, node.selectedParent, node.blueScore = phantom(node, phantomK)
-		node.height = calculateNodeHeight(node)
 		node.chainHeight = calculateChainHeight(node)
 	}
-}
-
-func calculateNodeHeight(node *blockNode) uint64 {
-	if node.isGenesis() {
-		return 0
-	}
-	return node.parents.maxHeight() + 1
 }
 
 func calculateChainHeight(node *blockNode) uint64 {

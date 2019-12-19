@@ -5,10 +5,10 @@
 package bloom
 
 import (
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // merkleBlock is used to house intermediate information needed to generate a
@@ -45,7 +45,7 @@ func (m *merkleBlock) calcHash(height, pos uint32) *daghash.Hash {
 }
 
 // traverseAndBuild builds a partial merkle tree using a recursive depth-first
-// approach.  As it calculates the hashes, it also saves whether or not each
+// approach. As it calculates the hashes, it also saves whether or not each
 // node is a parent node and a list of final hashes to be included in the
 // merkle block.
 func (m *merkleBlock) traverseAndBuild(height, pos uint32) {

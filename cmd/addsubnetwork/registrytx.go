@@ -1,13 +1,13 @@
 package main
 
 import (
-	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/ecc"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
 
-func buildSubnetworkRegistryTx(cfg *ConfigFlags, fundingOutpoint *wire.Outpoint, fundingTx *wire.MsgTx, privateKey *btcec.PrivateKey) (*wire.MsgTx, error) {
+func buildSubnetworkRegistryTx(cfg *ConfigFlags, fundingOutpoint *wire.Outpoint, fundingTx *wire.MsgTx, privateKey *ecc.PrivateKey) (*wire.MsgTx, error) {
 	txIn := &wire.TxIn{
 		PreviousOutpoint: *fundingOutpoint,
 		Sequence:         wire.MaxTxInSequenceNum,

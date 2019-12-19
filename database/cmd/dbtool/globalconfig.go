@@ -10,28 +10,28 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/database"
-	_ "github.com/daglabs/btcd/database/ffldb"
-	"github.com/daglabs/btcd/util"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/database"
+	_ "github.com/kaspanet/kaspad/database/ffldb"
+	"github.com/kaspanet/kaspad/util"
 )
 
 var (
-	btcdHomeDir     = util.AppDataDir("btcd", false)
+	kaspadHomeDir   = util.AppDataDir("kaspad", false)
 	knownDbTypes    = database.SupportedDrivers()
 	activeNetParams = &dagconfig.MainNetParams
 
 	// Default global config.
 	cfg = &config{
-		DataDir: filepath.Join(btcdHomeDir, "data"),
+		DataDir: filepath.Join(kaspadHomeDir, "data"),
 		DbType:  "ffldb",
 	}
 )
 
 // config defines the global configuration options.
 type config struct {
-	DataDir        string `short:"b" long:"datadir" description:"Location of the btcd data directory"`
-	DbType         string `long:"dbtype" description:"Database backend to use for the Block Chain"`
+	DataDir        string `short:"b" long:"datadir" description:"Location of the kaspad data directory"`
+	DbType         string `long:"dbtype" description:"Database backend to use for the Block DAG"`
 	TestNet        bool   `long:"testnet" description:"Use the test network"`
 	RegressionTest bool   `long:"regtest" description:"Use the regression test network"`
 	SimNet         bool   `long:"simnet" description:"Use the simulation test network"`
@@ -88,6 +88,10 @@ func setupGlobalConfig() error {
 			"can't be used together -- choose one of the four")
 	}
 
+	if numNets == 0 {
+		return errors.New("Mainnet has not launched yet, use --testnet to run in testnet mode")
+	}
+
 	// Validate database type.
 	if !validDbType(cfg.DbType) {
 		str := "The specified database type [%s] is invalid -- " +
@@ -96,7 +100,7 @@ func setupGlobalConfig() error {
 	}
 
 	// Append the network type to the data directory so it is "namespaced"
-	// per network.  In addition to the block database, there are other
+	// per network. In addition to the block database, there are other
 	// pieces of data that are saved to disk such as address manager state.
 	// All data is specific to a network, so namespacing the data directory
 	// means each individual piece of serialized data does not have to

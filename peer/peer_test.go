@@ -13,13 +13,13 @@ import (
 	"time"
 
 	"github.com/btcsuite/go-socks/socks"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/peer"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/peer"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
-// conn mocks a network connection by implementing the net.Conn interface.  It
+// conn mocks a network connection by implementing the net.Conn interface. It
 // is used to test peer connection without actually opening a network
 // connection.
 type conn struct {
@@ -241,8 +241,8 @@ func TestPeerConnection(t *testing.T) {
 		wantLastPingNonce:   uint64(0),
 		wantLastPingMicros:  int64(0),
 		wantTimeOffset:      int64(0),
-		wantBytesSent:       196, // 172 version + 24 verack
-		wantBytesReceived:   196,
+		wantBytesSent:       198, // 174 version + 24 verack
+		wantBytesReceived:   198,
 	}
 	wantStats2 := peerStats{
 		wantUserAgent:       wire.DefaultUserAgent + "peer:1.0(comment)/",
@@ -255,8 +255,8 @@ func TestPeerConnection(t *testing.T) {
 		wantLastPingNonce:   uint64(0),
 		wantLastPingMicros:  int64(0),
 		wantTimeOffset:      int64(0),
-		wantBytesSent:       196, // 172 version + 24 verack
-		wantBytesReceived:   196,
+		wantBytesSent:       198, // 174 version + 24 verack
+		wantBytesReceived:   198,
 	}
 
 	tests := []struct {
@@ -351,12 +351,6 @@ func TestPeerListeners(t *testing.T) {
 			OnPong: func(p *peer.Peer, msg *wire.MsgPong) {
 				ok <- msg
 			},
-			OnAlert: func(p *peer.Peer, msg *wire.MsgAlert) {
-				ok <- msg
-			},
-			OnMemPool: func(p *peer.Peer, msg *wire.MsgMemPool) {
-				ok <- msg
-			},
 			OnTx: func(p *peer.Peer, msg *wire.MsgTx) {
 				ok <- msg
 			},
@@ -366,9 +360,6 @@ func TestPeerListeners(t *testing.T) {
 			OnInv: func(p *peer.Peer, msg *wire.MsgInv) {
 				ok <- msg
 			},
-			OnHeaders: func(p *peer.Peer, msg *wire.MsgHeaders) {
-				ok <- msg
-			},
 			OnNotFound: func(p *peer.Peer, msg *wire.MsgNotFound) {
 				ok <- msg
 			},
@@ -376,24 +367,6 @@ func TestPeerListeners(t *testing.T) {
 				ok <- msg
 			},
 			OnGetBlockInvs: func(p *peer.Peer, msg *wire.MsgGetBlockInvs) {
-				ok <- msg
-			},
-			OnGetHeaders: func(p *peer.Peer, msg *wire.MsgGetHeaders) {
-				ok <- msg
-			},
-			OnGetCFilters: func(p *peer.Peer, msg *wire.MsgGetCFilters) {
-				ok <- msg
-			},
-			OnGetCFHeaders: func(p *peer.Peer, msg *wire.MsgGetCFHeaders) {
-				ok <- msg
-			},
-			OnGetCFCheckpt: func(p *peer.Peer, msg *wire.MsgGetCFCheckpt) {
-				ok <- msg
-			},
-			OnCFilter: func(p *peer.Peer, msg *wire.MsgCFilter) {
-				ok <- msg
-			},
-			OnCFHeaders: func(p *peer.Peer, msg *wire.MsgCFHeaders) {
 				ok <- msg
 			},
 			OnFeeFilter: func(p *peer.Peer, msg *wire.MsgFeeFilter) {
@@ -480,14 +453,6 @@ func TestPeerListeners(t *testing.T) {
 			wire.NewMsgPong(42),
 		},
 		{
-			"OnAlert",
-			wire.NewMsgAlert([]byte("payload"), []byte("signature")),
-		},
-		{
-			"OnMemPool",
-			wire.NewMsgMemPool(),
-		},
-		{
 			"OnTx",
 			wire.NewNativeMsgTx(wire.TxVersion, nil, nil),
 		},
@@ -501,10 +466,6 @@ func TestPeerListeners(t *testing.T) {
 			wire.NewMsgInv(),
 		},
 		{
-			"OnHeaders",
-			wire.NewMsgHeaders(),
-		},
-		{
 			"OnNotFound",
 			wire.NewMsgNotFound(),
 		},
@@ -515,31 +476,6 @@ func TestPeerListeners(t *testing.T) {
 		{
 			"OnGetBlockInvs",
 			wire.NewMsgGetBlockInvs(&daghash.Hash{}, &daghash.Hash{}),
-		},
-		{
-			"OnGetHeaders",
-			wire.NewMsgGetHeaders(&daghash.Hash{}, &daghash.Hash{}),
-		},
-		{
-			"OnGetCFilters",
-			wire.NewMsgGetCFilters(wire.GCSFilterRegular, 0, &daghash.Hash{}),
-		},
-		{
-			"OnGetCFHeaders",
-			wire.NewMsgGetCFHeaders(wire.GCSFilterRegular, 0, &daghash.Hash{}),
-		},
-		{
-			"OnGetCFCheckpt",
-			wire.NewMsgGetCFCheckpt(wire.GCSFilterRegular, &daghash.Hash{}),
-		},
-		{
-			"OnCFilter",
-			wire.NewMsgCFilter(wire.GCSFilterRegular, &daghash.Hash{},
-				[]byte("payload")),
-		},
-		{
-			"OnCFHeaders",
-			wire.NewMsgCFHeaders(),
 		},
 		{
 			"OnFeeFilter",
@@ -692,7 +628,6 @@ func TestOutboundPeer(t *testing.T) {
 	// Test Queue Messages
 	p2.QueueMessage(wire.NewMsgGetAddr(false, nil), nil)
 	p2.QueueMessage(wire.NewMsgPing(1), nil)
-	p2.QueueMessage(wire.NewMsgMemPool(), nil)
 	p2.QueueMessage(wire.NewMsgGetData(), nil)
 	p2.QueueMessage(wire.NewMsgGetHeaders(&daghash.ZeroHash, &daghash.ZeroHash), nil)
 	p2.QueueMessage(wire.NewMsgFeeFilter(20000), nil)

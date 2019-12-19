@@ -11,17 +11,17 @@ import (
 	"bytes"
 	"sort"
 
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // InPlaceSort modifies the passed transaction inputs and outputs to be sorted
 // based on BIP 69.
 //
 // WARNING: This function must NOT be called with published transactions since
-// it will mutate the transaction if it's not already sorted.  This can cause
+// it will mutate the transaction if it's not already sorted. This can cause
 // issues if you mutate a tx in a block, for example, which would invalidate the
-// block.  It could also cause cached hashes, such as in a util.Tx to become
+// block. It could also cause cached hashes, such as in a util.Tx to become
 // invalidated.
 //
 // The function should only be used if the caller is creating the transaction or
@@ -33,7 +33,7 @@ func InPlaceSort(tx *wire.MsgTx) {
 }
 
 // Sort returns a new transaction with the inputs and outputs sorted based on
-// BIP 69.  The passed transaction is not modified and the new transaction
+// BIP 69. The passed transaction is not modified and the new transaction
 // might have a different hash if any sorting was done.
 func Sort(tx *wire.MsgTx) *wire.MsgTx {
 	txCopy := tx.Copy()
@@ -59,7 +59,7 @@ type sortableOutputSlice []*wire.TxOut
 
 // For SortableInputSlice and SortableOutputSlice, three functions are needed
 // to make it sortable with sort.Sort() -- Len, Less, and Swap
-// Len and Swap are trivial.  Less is BIP 69 specific.
+// Len and Swap are trivial. Less is BIP 69 specific.
 func (s sortableInputSlice) Len() int       { return len(s) }
 func (s sortableOutputSlice) Len() int      { return len(s) }
 func (s sortableOutputSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }

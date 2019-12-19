@@ -18,14 +18,14 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/util/random"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/ecc"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/random"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 const (
@@ -39,23 +39,23 @@ const (
 	maxScriptElementSize = 520
 
 	// numLargeReorgBlocks is the number of blocks to use in the large block
-	// reorg test (when enabled).  This is the equivalent of 1 week's worth
+	// reorg test (when enabled). This is the equivalent of 1 week's worth
 	// of blocks.
 	numLargeReorgBlocks = 1088
 )
 
 var (
 	// opTrueScript is simply a public key script that contains the OP_TRUE
-	// opcode.  It is defined here to reduce garbage creation.
+	// opcode. It is defined here to reduce garbage creation.
 	opTrueScript = []byte{txscript.OpTrue}
 
-	// lowFee is a single satoshi and exists to make the test code more
+	// lowFee is a single sompi and exists to make the test code more
 	// readable.
 	lowFee = util.Amount(1)
 )
 
 // TestInstance is an interface that describes a specific test instance returned
-// by the tests generated in this package.  It should be type asserted to one
+// by the tests generated in this package. It should be type asserted to one
 // of the concrete test instance types in order to test accordingly.
 type TestInstance interface {
 	FullBlockTestInstance()
@@ -100,7 +100,7 @@ var _ TestInstance = RejectedBlock{}
 func (b RejectedBlock) FullBlockTestInstance() {}
 
 // OrphanOrRejectedBlock defines a test instance that expects a block to either
-// be accepted as an orphan or rejected.  This is useful since some
+// be accepted as an orphan or rejected. This is useful since some
 // implementations might optimize the immediate rejection of orphan blocks when
 // their parent was previously rejected, while others might accept it as an
 // orphan that eventually gets flushed (since the parent can never be accepted
@@ -193,7 +193,7 @@ type testGenerator struct {
 	prevCollectedHash *daghash.Hash
 
 	// Common key for any tests which require signed transactions.
-	privKey *btcec.PrivateKey
+	privKey *ecc.PrivateKey
 
 	powMaxBits uint32
 }
@@ -201,7 +201,7 @@ type testGenerator struct {
 // makeTestGenerator returns a test generator instance initialized with the
 // genesis block as the tip.
 func makeTestGenerator(params *dagconfig.Params) (testGenerator, error) {
-	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), []byte{0x01})
+	privKey, _ := ecc.PrivKeyFromBytes(ecc.S256(), []byte{0x01})
 	genesis := params.GenesisBlock
 	genesisHash := genesis.BlockHash()
 	return testGenerator{
@@ -245,8 +245,7 @@ func pushDataScript(items ...[]byte) []byte {
 }
 
 // standardCoinbaseScript returns a standard script suitable for use as the
-// signature script of the coinbase transaction of a new block.  In particular,
-// it starts with the block height that is required by version 2 blocks.
+// signature script of the coinbase transaction of a new block.
 func standardCoinbaseScript(extraNonce uint64) ([]byte, error) {
 	return txscript.NewScriptBuilder().
 		AddInt64(int64(extraNonce)).Script()
@@ -316,11 +315,11 @@ func calcHashMerkleRoot(txns []*wire.MsgTx) *daghash.Hash {
 }
 
 // solveBlock attempts to find a nonce which makes the passed block header hash
-// to a value less than the target difficulty.  When a successful solution is
+// to a value less than the target difficulty. When a successful solution is
 // found true is returned and the nonce field of the passed header is updated
-// with the solution.  False is returned if no solution exists.
+// with the solution. False is returned if no solution exists.
 //
-// NOTE: This function will never solve blocks with a nonce of 0.  This is done
+// NOTE: This function will never solve blocks with a nonce of 0. This is done
 // so the 'nextBlock' function can properly detect when a nonce was modified by
 // a munge function.
 func solveBlock(header *wire.BlockHeader) bool {
@@ -393,7 +392,7 @@ func additionalCoinbase(amount util.Amount) func(*wire.MsgBlock) {
 // additionalSpendFee returns a function that itself takes a block and modifies
 // it by adding the provided fee to the spending transaction.
 //
-// NOTE: The coinbase value is NOT updated to reflect the additional fee.  Use
+// NOTE: The coinbase value is NOT updated to reflect the additional fee. Use
 // 'additionalCoinbase' for that purpose.
 func additionalSpendFee(fee util.Amount) func(*wire.MsgBlock) {
 	return func(b *wire.MsgBlock) {
@@ -434,7 +433,7 @@ func additionalTx(tx *wire.MsgTx) func(*wire.MsgBlock) {
 
 // createSpendTx creates a transaction that spends from the provided spendable
 // output and includes an additional unique OP_RETURN output to ensure the
-// transaction ends up with a unique hash.  The script is a simple OP_TRUE
+// transaction ends up with a unique hash. The script is a simple OP_TRUE
 // script which avoids the need to track addresses and signature scripts in the
 // tests.
 func createSpendTx(spend *spendableOut, fee util.Amount) *wire.MsgTx {
@@ -453,9 +452,9 @@ func createSpendTx(spend *spendableOut, fee util.Amount) *wire.MsgTx {
 
 // createSpendTxForTx creates a transaction that spends from the first output of
 // the provided transaction and includes an additional unique OP_RETURN output
-// to ensure the transaction ends up with a unique hash.  The public key script
+// to ensure the transaction ends up with a unique hash. The public key script
 // is a simple OP_TRUE script which avoids the need to track addresses and
-// signature scripts in the tests.  The signature script is nil.
+// signature scripts in the tests. The signature script is nil.
 func createSpendTxForTx(tx *wire.MsgTx, fee util.Amount) *wire.MsgTx {
 	spend := makeSpendableOutForTx(tx, 0)
 	return createSpendTx(&spend, fee)
@@ -473,7 +472,7 @@ func createSpendTxForTx(tx *wire.MsgTx, fee util.Amount) *wire.MsgTx {
 //       ensure the transaction has a unique hash
 //
 // Additionally, if one or more munge functions are specified, they will be
-// invoked with the block prior to solving it.  This provides callers with the
+// invoked with the block prior to solving it. This provides callers with the
 // opportunity to modify the block which is especially useful for testing.
 //
 // In order to simply the logic in the munge functions, the following rules are
@@ -522,7 +521,7 @@ func (g *testGenerator) nextBlock(blockName string, spend *spendableOut, mungers
 		Transactions: txns,
 	}
 
-	// Perform any block munging just before solving.  Only recalculate the
+	// Perform any block munging just before solving. Only recalculate the
 	// merkle root if it wasn't manually changed by a munge function.
 	curMerkleRoot := block.Header.HashMerkleRoot
 	curNonce := block.Header.Nonce
@@ -553,7 +552,7 @@ func (g *testGenerator) nextBlock(blockName string, spend *spendableOut, mungers
 
 // updateBlockState manually updates the generator state to remove all internal
 // map references to a block via its old hash and insert new ones for the new
-// block hash.  This is useful if the test code has to manually change a block
+// block hash. This is useful if the test code has to manually change a block
 // after 'nextBlock' has returned.
 func (g *testGenerator) updateBlockState(oldBlockName string, oldBlockHash *daghash.Hash, newBlockName string, newBlock *wire.MsgBlock) {
 	// Look up the height from the existing entries.
@@ -596,7 +595,7 @@ func (g *testGenerator) saveTipCoinbaseOut() {
 }
 
 // saveSpendableCoinbaseOuts adds all coinbase outputs from the last block that
-// had its coinbase tx output colleted to the current tip.  This is useful to
+// had its coinbase tx output colleted to the current tip. This is useful to
 // batch the collection of coinbase outputs once the tests reach a stable point
 // so they don't have to manually add them for the right tests which will
 // ultimately end up being the best chain.
@@ -638,10 +637,10 @@ func nonCanonicalVarInt(val uint32) []byte {
 // encoding.
 func encodeNonCanonicalBlock(b *wire.MsgBlock) []byte {
 	var buf bytes.Buffer
-	b.Header.BtcEncode(&buf, 0)
+	b.Header.KaspaEncode(&buf, 0)
 	buf.Write(nonCanonicalVarInt(uint32(len(b.Transactions))))
 	for _, tx := range b.Transactions {
-		tx.BtcEncode(&buf, 0)
+		tx.KaspaEncode(&buf, 0)
 	}
 	return buf.Bytes()
 }
@@ -785,16 +784,16 @@ func (g *testGenerator) assertTipBlockTxOutOpReturn(txIndex, txOutIndex uint32) 
 }
 
 // Generate returns a slice of tests that can be used to exercise the consensus
-// validation rules.  The tests are intended to be flexible enough to allow both
+// validation rules. The tests are intended to be flexible enough to allow both
 // unit-style tests directly against the blockchain code as well as integration
-// style tests over the peer-to-peer network.  To achieve that goal, each test
+// style tests over the peer-to-peer network. To achieve that goal, each test
 // contains additional information about the expected result, however that
 // information can be ignored when doing comparison tests between two
 // independent versions over the peer-to-peer network.
 func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	// In order to simplify the generation code which really should never
 	// fail unless the test code itself is broken, panics are used
-	// internally.  This deferred func ensures any panics don't escape the
+	// internally. This deferred func ensures any panics don't escape the
 	// generator by replacing the named error return with the underlying
 	// panic error.
 	defer func() {
@@ -868,7 +867,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	// chain.
 	//
 	// acceptedToSideChainWithExpectedTip creates an appends a two-instance
-	// test.  The first instance is an acceptBlock test instance for the
+	// test. The first instance is an acceptBlock test instance for the
 	// current tip which expects the block to be accepted to a side chain.
 	// The second instance is an expectBlockTip test instance for provided
 	// values.
@@ -925,7 +924,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	}
 	tests = append(tests, testInstances)
 
-	// Collect spendable outputs.  This simplifies the code below.
+	// Collect spendable outputs. This simplifies the code below.
 	var outs []*spendableOut
 	for i := uint64(0); i < coinbaseMaturity; i++ {
 		op := g.oldestCoinbaseOut()
@@ -957,7 +956,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	g.nextBlock("b2", outs[1])
 	accepted()
 
-	// Create a fork from b1.  There should not be a reorg since b2 was seen
+	// Create a fork from b1. There should not be a reorg since b2 was seen
 	// first.
 	//
 	//   ... -> b1(0) -> b2(1)
@@ -1094,7 +1093,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	g.assertTipBlockSize(maxBlockSize)
 	accepted()
 
-	// Create block that is the one byte larger than max allowed size.  This
+	// Create block that is the one byte larger than max allowed size. This
 	// is done on a fork and should be rejected regardless.
 	//
 	//   ... -> b15(5) -> b23(6)
@@ -1118,8 +1117,8 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	// ---------------------------------------------------------------------
 
 	// Create block that has a coinbase script that is smaller than the
-	// required length.  This is done on a fork and should be rejected
-	// regardless.  Also, create a block that builds on the rejected block.
+	// required length. This is done on a fork and should be rejected
+	// regardless. Also, create a block that builds on the rejected block.
 	//
 	//   ... -> b15(5) -> b23(6)
 	//                \-> b26(6) -> b27(7)
@@ -1134,8 +1133,8 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	orphanedOrRejected()
 
 	// Create block that has a coinbase script that is larger than the
-	// allowed length.  This is done on a fork and should be rejected
-	// regardless.  Also, create a block that builds on the rejected block.
+	// allowed length. This is done on a fork and should be rejected
+	// regardless. Also, create a block that builds on the rejected block.
 	//
 	//   ... -> b15(5) -> b23(6)
 	//                \-> b28(6) -> b29(7)
@@ -1512,7 +1511,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	g.nextBlock("b53", outs[14])
 	accepted()
 
-	// Create a block with a timestamp that is exactly the median time.  The
+	// Create a block with a timestamp that is exactly the median time. The
 	// block must be rejected.
 	//
 	//   ... -> b33(9) -> b35(10) -> b39(11) -> b42(12) -> b43(13) -> b53(14)
@@ -1529,7 +1528,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	rejected(blockdag.ErrTimeTooOld)
 
 	// Create a block with a timestamp that is one second after the median
-	// time.  The block must be accepted.
+	// time. The block must be accepted.
 	//
 	//   ... -> b33(9) -> b35(10) -> b39(11) -> b42(12) -> b43(13) -> b53(14) -> b55(15)
 	g.setTip("b53")
@@ -1730,9 +1729,9 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 
 	// Create a max size block with the variable-length integer for the
 	// number of transactions replaced with a larger non-canonical version
-	// that causes the block size to exceed the max allowed size.  Then,
+	// that causes the block size to exceed the max allowed size. Then,
 	// create another block that is identical except with the canonical
-	// encoding and ensure it is accepted.  The intent is to verify the
+	// encoding and ensure it is accepted. The intent is to verify the
 	// implementation does not reject the second block, which will have the
 	// same hash, due to the first one already being rejected.
 	//
@@ -1835,7 +1834,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	// Create block with more than max allowed signature operations such
 	// that the signature operation that pushes it over the limit is after
 	// a push data with a script element size that is larger than the max
-	// allowed size when executed.  The block must be rejected because the
+	// allowed size when executed. The block must be rejected because the
 	// signature operation after the script element must be counted since
 	// the script parses validly.
 	//
@@ -1881,7 +1880,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	// Create block with the max allowed signature operations such that all
 	// counted signature operations are before an invalid push data that
 	// claims a large amount of data even though that much data is not
-	// provided.  The pushed data itself consists of OP_CHECKSIG so the
+	// provided. The pushed data itself consists of OP_CHECKSIG so the
 	// block would be rejected if any of them were counted.
 	//
 	//   ... -> b69(20) -> b72(21)
@@ -1896,7 +1895,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 
 	// Create block with the max allowed signature operations such that all
 	// counted signature operations are before an invalid push data that
-	// contains OP_CHECKSIG in the number of bytes to push.  The block would
+	// contains OP_CHECKSIG in the number of bytes to push. The block would
 	// be rejected if any of them were counted.
 	//
 	//   ... -> b72(21) -> b73(22)
@@ -1992,7 +1991,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	g.nextBlock("b80", &b75OpReturnOut)
 	rejected(blockdag.ErrMissingTxOut)
 
-	// Create a block that has a transaction with multiple OP_RETURNs.  Even
+	// Create a block that has a transaction with multiple OP_RETURNs. Even
 	// though it's not considered a standard transaction, it is still valid
 	// by the consensus rules.
 	//
@@ -2050,7 +2049,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 		testInstances = append(testInstances, acceptBlock(g.tipName,
 			g.tip, false))
 
-		// Use the next available spendable output.  First use up any
+		// Use the next available spendable output. First use up any
 		// remaining spendable outputs that were already popped into the
 		// outs slice, then just pop them from the stack.
 		if spendableOutOffset+1+i < uint64(len(outs)) {

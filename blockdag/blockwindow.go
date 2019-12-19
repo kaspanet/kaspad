@@ -1,7 +1,7 @@
 package blockdag
 
 import (
-	"github.com/daglabs/btcd/util"
+	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 	"math"
 	"math/big"

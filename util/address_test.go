@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/daglabs/btcd/util"
+	"github.com/kaspanet/kaspad/util"
 	"golang.org/x/crypto/ripemd160"
 )
 
@@ -29,11 +29,11 @@ func TestAddresses(t *testing.T) {
 		// Positive P2PKH tests.
 		{
 			name:    "mainnet p2pkh",
-			addr:    "dagcoin:qr35ennsep3hxfe7lnz5ee7j5jgmkjswss74as46gy",
-			encoded: "dagcoin:qr35ennsep3hxfe7lnz5ee7j5jgmkjswss74as46gy",
+			addr:    "kaspa:qr35ennsep3hxfe7lnz5ee7j5jgmkjswsslwxj42ta",
+			encoded: "kaspa:qr35ennsep3hxfe7lnz5ee7j5jgmkjswsslwxj42ta",
 			valid:   true,
 			result: util.TstAddressPubKeyHash(
-				util.Bech32PrefixDAGCoin,
+				util.Bech32PrefixKaspa,
 				[ripemd160.Size]byte{
 					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
 					0xc5, 0x4c, 0xe7, 0xd2, 0xa4, 0x91, 0xbb, 0x4a, 0x0e, 0x84}),
@@ -41,18 +41,18 @@ func TestAddresses(t *testing.T) {
 				pkHash := []byte{
 					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
 					0xc5, 0x4c, 0xe7, 0xd2, 0xa4, 0x91, 0xbb, 0x4a, 0x0e, 0x84}
-				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixDAGCoin)
+				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixKaspa)
 			},
 			passedPrefix:   util.Bech32PrefixUnknown,
-			expectedPrefix: util.Bech32PrefixDAGCoin,
+			expectedPrefix: util.Bech32PrefixKaspa,
 		},
 		{
 			name:    "mainnet p2pkh 2",
-			addr:    "dagcoin:qq80qvqs0lfxuzmt7sz3909ze6camq9d4gwzqeljga",
-			encoded: "dagcoin:qq80qvqs0lfxuzmt7sz3909ze6camq9d4gwzqeljga",
+			addr:    "kaspa:qq80qvqs0lfxuzmt7sz3909ze6camq9d4g0emmlzty",
+			encoded: "kaspa:qq80qvqs0lfxuzmt7sz3909ze6camq9d4g0emmlzty",
 			valid:   true,
 			result: util.TstAddressPubKeyHash(
-				util.Bech32PrefixDAGCoin,
+				util.Bech32PrefixKaspa,
 				[ripemd160.Size]byte{
 					0x0e, 0xf0, 0x30, 0x10, 0x7f, 0xd2, 0x6e, 0x0b, 0x6b, 0xf4,
 					0x05, 0x12, 0xbc, 0xa2, 0xce, 0xb1, 0xdd, 0x80, 0xad, 0xaa}),
@@ -60,18 +60,18 @@ func TestAddresses(t *testing.T) {
 				pkHash := []byte{
 					0x0e, 0xf0, 0x30, 0x10, 0x7f, 0xd2, 0x6e, 0x0b, 0x6b, 0xf4,
 					0x05, 0x12, 0xbc, 0xa2, 0xce, 0xb1, 0xdd, 0x80, 0xad, 0xaa}
-				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixDAGCoin)
+				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixKaspa)
 			},
-			passedPrefix:   util.Bech32PrefixDAGCoin,
-			expectedPrefix: util.Bech32PrefixDAGCoin,
+			passedPrefix:   util.Bech32PrefixKaspa,
+			expectedPrefix: util.Bech32PrefixKaspa,
 		},
 		{
 			name:    "testnet p2pkh",
-			addr:    "dagtest:qputx94qseratdmjs0j395mq8u03er0x3ucluj5qam",
-			encoded: "dagtest:qputx94qseratdmjs0j395mq8u03er0x3ucluj5qam",
+			addr:    "kaspatest:qputx94qseratdmjs0j395mq8u03er0x3u2xu3wvh9",
+			encoded: "kaspatest:qputx94qseratdmjs0j395mq8u03er0x3u2xu3wvh9",
 			valid:   true,
 			result: util.TstAddressPubKeyHash(
-				util.Bech32PrefixDAGTest,
+				util.Bech32PrefixKaspaTest,
 				[ripemd160.Size]byte{
 					0x78, 0xb3, 0x16, 0xa0, 0x86, 0x47, 0xd5, 0xb7, 0x72, 0x83,
 					0xe5, 0x12, 0xd3, 0x60, 0x3f, 0x1f, 0x1c, 0x8d, 0xe6, 0x8f}),
@@ -79,10 +79,10 @@ func TestAddresses(t *testing.T) {
 				pkHash := []byte{
 					0x78, 0xb3, 0x16, 0xa0, 0x86, 0x47, 0xd5, 0xb7, 0x72, 0x83,
 					0xe5, 0x12, 0xd3, 0x60, 0x3f, 0x1f, 0x1c, 0x8d, 0xe6, 0x8f}
-				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixDAGTest)
+				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixKaspaTest)
 			},
-			passedPrefix:   util.Bech32PrefixDAGTest,
-			expectedPrefix: util.Bech32PrefixDAGTest,
+			passedPrefix:   util.Bech32PrefixKaspaTest,
+			expectedPrefix: util.Bech32PrefixKaspaTest,
 		},
 
 		// Negative P2PKH tests.
@@ -95,17 +95,17 @@ func TestAddresses(t *testing.T) {
 					0x00, 0x0e, 0xf0, 0x30, 0x10, 0x7f, 0xd2, 0x6e, 0x0b, 0x6b,
 					0xf4, 0x05, 0x12, 0xbc, 0xa2, 0xce, 0xb1, 0xdd, 0x80, 0xad,
 					0xaa}
-				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixDAGCoin)
+				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixKaspa)
 			},
-			passedPrefix:   util.Bech32PrefixDAGCoin,
-			expectedPrefix: util.Bech32PrefixDAGCoin,
+			passedPrefix:   util.Bech32PrefixKaspa,
+			expectedPrefix: util.Bech32PrefixKaspa,
 		},
 		{
 			name:           "p2pkh bad checksum",
-			addr:           "dagcoin:qr35ennsep3hxfe7lnz5ee7j5jgmkjswss74as46gx",
+			addr:           "kaspa:qr35ennsep3hxfe7lnz5ee7j5jgmkjswss74as46gx",
 			valid:          false,
-			passedPrefix:   util.Bech32PrefixDAGCoin,
-			expectedPrefix: util.Bech32PrefixDAGCoin,
+			passedPrefix:   util.Bech32PrefixKaspa,
+			expectedPrefix: util.Bech32PrefixKaspa,
 		},
 
 		// Positive P2SH tests.
@@ -114,11 +114,11 @@ func TestAddresses(t *testing.T) {
 			// output: 3c9018e8d5615c306d72397f8f5eef44308c98fb576a88e030c25456b4f3a7ac
 			// input:  837dea37ddc8b1e3ce646f1a656e79bbd8cc7f558ac56a169626d649ebe2a3ba
 			name:    "mainnet p2sh",
-			addr:    "dagcoin:pruptvpkmxamee0f72sq40gm70wfr624zq8mc2ujcn",
-			encoded: "dagcoin:pruptvpkmxamee0f72sq40gm70wfr624zq8mc2ujcn",
+			addr:    "kaspa:pruptvpkmxamee0f72sq40gm70wfr624zqxqrguzm2",
+			encoded: "kaspa:pruptvpkmxamee0f72sq40gm70wfr624zqxqrguzm2",
 			valid:   true,
 			result: util.TstAddressScriptHash(
-				util.Bech32PrefixDAGCoin,
+				util.Bech32PrefixKaspa,
 				[ripemd160.Size]byte{
 					0xf8, 0x15, 0xb0, 0x36, 0xd9, 0xbb, 0xbc, 0xe5, 0xe9, 0xf2,
 					0xa0, 0x0a, 0xbd, 0x1b, 0xf3, 0xdc, 0x91, 0xe9, 0x55, 0x10}),
@@ -145,21 +145,21 @@ func TestAddresses(t *testing.T) {
 					0xdb, 0xfb, 0x1e, 0x75, 0x4e, 0x35, 0xfa, 0x1c, 0x78, 0x44,
 					0xc4, 0x1f, 0x32, 0x2a, 0x18, 0x63, 0xd4, 0x62, 0x13, 0x53,
 					0xae}
-				return util.NewAddressScriptHash(script, util.Bech32PrefixDAGCoin)
+				return util.NewAddressScriptHash(script, util.Bech32PrefixKaspa)
 			},
-			passedPrefix:   util.Bech32PrefixDAGCoin,
-			expectedPrefix: util.Bech32PrefixDAGCoin,
+			passedPrefix:   util.Bech32PrefixKaspa,
+			expectedPrefix: util.Bech32PrefixKaspa,
 		},
 		{
 			// Taken from transactions:
 			// output: b0539a45de13b3e0403909b8bd1a555b8cbe45fd4e3f3fda76f3a5f52835c29d
 			// input: (not yet redeemed at time test was written)
 			name:    "mainnet p2sh 2",
-			addr:    "dagcoin:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44ksj47shjr6",
-			encoded: "dagcoin:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44ksj47shjr6",
+			addr:    "kaspa:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44ksnw9jhzqr",
+			encoded: "kaspa:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44ksnw9jhzqr",
 			valid:   true,
 			result: util.TstAddressScriptHash(
-				util.Bech32PrefixDAGCoin,
+				util.Bech32PrefixKaspa,
 				[ripemd160.Size]byte{
 					0xe8, 0xc3, 0x00, 0xc8, 0x79, 0x86, 0xef, 0xa8, 0x4c, 0x37,
 					0xc0, 0x51, 0x99, 0x29, 0x01, 0x9e, 0xf8, 0x6e, 0xb5, 0xb4}),
@@ -167,19 +167,18 @@ func TestAddresses(t *testing.T) {
 				hash := []byte{
 					0xe8, 0xc3, 0x00, 0xc8, 0x79, 0x86, 0xef, 0xa8, 0x4c, 0x37,
 					0xc0, 0x51, 0x99, 0x29, 0x01, 0x9e, 0xf8, 0x6e, 0xb5, 0xb4}
-				return util.NewAddressScriptHashFromHash(hash, util.Bech32PrefixDAGCoin)
+				return util.NewAddressScriptHashFromHash(hash, util.Bech32PrefixKaspa)
 			},
-			passedPrefix:   util.Bech32PrefixDAGCoin,
-			expectedPrefix: util.Bech32PrefixDAGCoin,
+			passedPrefix:   util.Bech32PrefixKaspa,
+			expectedPrefix: util.Bech32PrefixKaspa,
 		},
 		{
-			// Taken from bitcoind base58_keys_valid.
 			name:    "testnet p2sh",
-			addr:    "dagtest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pg6ghunlhx",
-			encoded: "dagtest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pg6ghunlhx",
+			addr:    "kaspatest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pgg3hlfnac",
+			encoded: "kaspatest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pgg3hlfnac",
 			valid:   true,
 			result: util.TstAddressScriptHash(
-				util.Bech32PrefixDAGTest,
+				util.Bech32PrefixKaspaTest,
 				[ripemd160.Size]byte{
 					0xc5, 0x79, 0x34, 0x2c, 0x2c, 0x4c, 0x92, 0x20, 0x20, 0x5e,
 					0x2c, 0xdc, 0x28, 0x56, 0x17, 0x04, 0x0c, 0x92, 0x4a, 0x0a}),
@@ -187,10 +186,10 @@ func TestAddresses(t *testing.T) {
 				hash := []byte{
 					0xc5, 0x79, 0x34, 0x2c, 0x2c, 0x4c, 0x92, 0x20, 0x20, 0x5e,
 					0x2c, 0xdc, 0x28, 0x56, 0x17, 0x04, 0x0c, 0x92, 0x4a, 0x0a}
-				return util.NewAddressScriptHashFromHash(hash, util.Bech32PrefixDAGTest)
+				return util.NewAddressScriptHashFromHash(hash, util.Bech32PrefixKaspaTest)
 			},
-			passedPrefix:   util.Bech32PrefixDAGTest,
-			expectedPrefix: util.Bech32PrefixDAGTest,
+			passedPrefix:   util.Bech32PrefixKaspaTest,
+			expectedPrefix: util.Bech32PrefixKaspaTest,
 		},
 
 		// Negative P2SH tests.
@@ -203,10 +202,10 @@ func TestAddresses(t *testing.T) {
 					0x00, 0xf8, 0x15, 0xb0, 0x36, 0xd9, 0xbb, 0xbc, 0xe5, 0xe9,
 					0xf2, 0xa0, 0x0a, 0xbd, 0x1b, 0xf3, 0xdc, 0x91, 0xe9, 0x55,
 					0x10}
-				return util.NewAddressScriptHashFromHash(hash, util.Bech32PrefixDAGCoin)
+				return util.NewAddressScriptHashFromHash(hash, util.Bech32PrefixKaspa)
 			},
-			passedPrefix:   util.Bech32PrefixDAGCoin,
-			expectedPrefix: util.Bech32PrefixDAGCoin,
+			passedPrefix:   util.Bech32PrefixKaspa,
+			expectedPrefix: util.Bech32PrefixKaspa,
 		},
 	}
 
@@ -322,23 +321,23 @@ func TestDecodeAddressErrorConditions(t *testing.T) {
 			"decoded address's prefix could not be parsed",
 		},
 		{
-			"dagreg:qpm2qsznhks23z7629mms6s4cwef74vcwvtmvqeszh",
-			util.Bech32PrefixDAGTest,
+			"kaspareg:qpm2qsznhks23z7629mms6s4cwef74vcwv4w75h796",
+			util.Bech32PrefixKaspaTest,
 			"decoded address is of wrong network",
 		},
 		{
-			"dagreg:raskzctpv9skzctpv9skzctpv9skzctpvyd070wnqg",
-			util.Bech32PrefixDAGReg,
+			"kaspareg:raskzctpv9skzctpv9skzctpv9skzctpvyn6vmqa89",
+			util.Bech32PrefixKaspaReg,
 			"unknown address type",
 		},
 		{
-			"dagreg:raskzcg5egs6nnj",
-			util.Bech32PrefixDAGReg,
+			"kaspareg:raskzcgrjj7l73l",
+			util.Bech32PrefixKaspaReg,
 			"decoded address is of unknown size",
 		},
 		{
-			"dagtest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pg6ghunlhx",
-			util.Bech32PrefixDAGCoin,
+			"kaspatest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pg6ghunlhx",
+			util.Bech32PrefixKaspa,
 			"decoded address is of wrong network",
 		},
 	}
@@ -360,10 +359,10 @@ func TestParsePrefix(t *testing.T) {
 		expectedPrefix util.Bech32Prefix
 		expectedError  bool
 	}{
-		{"dagcoin", util.Bech32PrefixDAGCoin, false},
-		{"dagreg", util.Bech32PrefixDAGReg, false},
-		{"dagtest", util.Bech32PrefixDAGTest, false},
-		{"dagsim", util.Bech32PrefixDAGSim, false},
+		{"kaspa", util.Bech32PrefixKaspa, false},
+		{"kaspareg", util.Bech32PrefixKaspaReg, false},
+		{"kaspatest", util.Bech32PrefixKaspaTest, false},
+		{"kaspasim", util.Bech32PrefixKaspaSim, false},
 		{"blabla", util.Bech32PrefixUnknown, true},
 		{"unknown", util.Bech32PrefixUnknown, true},
 		{"", util.Bech32PrefixUnknown, true},
@@ -388,10 +387,10 @@ func TestPrefixToString(t *testing.T) {
 		prefix            util.Bech32Prefix
 		expectedPrefixStr string
 	}{
-		{util.Bech32PrefixDAGCoin, "dagcoin"},
-		{util.Bech32PrefixDAGReg, "dagreg"},
-		{util.Bech32PrefixDAGTest, "dagtest"},
-		{util.Bech32PrefixDAGSim, "dagsim"},
+		{util.Bech32PrefixKaspa, "kaspa"},
+		{util.Bech32PrefixKaspaReg, "kaspareg"},
+		{util.Bech32PrefixKaspaTest, "kaspatest"},
+		{util.Bech32PrefixKaspaSim, "kaspasim"},
 		{util.Bech32PrefixUnknown, ""},
 	}
 

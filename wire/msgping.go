@@ -8,11 +8,11 @@ import (
 	"io"
 )
 
-// MsgPing implements the Message interface and represents a bitcoin ping
+// MsgPing implements the Message interface and represents a kaspa ping
 // message.
 //
 // For versions BIP0031Version and earlier, it is used primarily to confirm
-// that a connection is still valid.  A transmission error is typically
+// that a connection is still valid. A transmission error is typically
 // interpreted as a closed connection and that the peer should be removed.
 // For versions AFTER BIP0031Version it contains an identifier which can be
 // returned in the pong message to determine network timing.
@@ -25,9 +25,9 @@ type MsgPing struct {
 	Nonce uint64
 }
 
-// BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
-func (msg *MsgPing) BtcDecode(r io.Reader, pver uint32) error {
+func (msg *MsgPing) KaspaDecode(r io.Reader, pver uint32) error {
 	err := ReadElement(r, &msg.Nonce)
 	if err != nil {
 		return err
@@ -36,9 +36,9 @@ func (msg *MsgPing) BtcDecode(r io.Reader, pver uint32) error {
 	return nil
 }
 
-// BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
-func (msg *MsgPing) BtcEncode(w io.Writer, pver uint32) error {
+func (msg *MsgPing) KaspaEncode(w io.Writer, pver uint32) error {
 	err := WriteElement(w, msg.Nonce)
 	if err != nil {
 		return err
@@ -47,21 +47,21 @@ func (msg *MsgPing) BtcEncode(w io.Writer, pver uint32) error {
 	return nil
 }
 
-// Command returns the protocol command string for the message.  This is part
+// Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgPing) Command() string {
 	return CmdPing
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
-// receiver.  This is part of the Message interface implementation.
+// receiver. This is part of the Message interface implementation.
 func (msg *MsgPing) MaxPayloadLength(pver uint32) uint32 {
 	// Nonce 8 bytes.
 	return uint32(8)
 }
 
-// NewMsgPing returns a new bitcoin ping message that conforms to the Message
-// interface.  See MsgPing for details.
+// NewMsgPing returns a new kaspa ping message that conforms to the Message
+// interface. See MsgPing for details.
 func NewMsgPing(nonce uint64) *MsgPing {
 	return &MsgPing{
 		Nonce: nonce,

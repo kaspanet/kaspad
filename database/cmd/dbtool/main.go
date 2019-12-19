@@ -5,20 +5,20 @@
 package main
 
 import (
-	"github.com/daglabs/btcd/util/panics"
+	"github.com/kaspanet/kaspad/util/panics"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/logger"
-	"github.com/daglabs/btcd/logs"
 	"github.com/jessevdk/go-flags"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/logger"
+	"github.com/kaspanet/kaspad/logs"
 )
 
 const (
-	// blockDbNamePrefix is the prefix for the btcd block database.
+	// blockDbNamePrefix is the prefix for the kaspad block database.
 	blockDbNamePrefix = "blocks"
 )
 
@@ -60,14 +60,14 @@ func loadBlockDB() (database.DB, error) {
 	return db, nil
 }
 
-// realMain is the real main function for the utility.  It is necessary to work
+// realMain is the real main function for the utility. It is necessary to work
 // around the fact that deferred functions do not run when os.Exit() is called.
 func realMain() error {
 	// Setup logging.
 	backendLogger := logs.NewBackend()
 	defer os.Stdout.Sync()
 	log = backendLogger.Logger("MAIN")
-	spawn = panics.GoroutineWrapperFunc(log, backendLogger)
+	spawn = panics.GoroutineWrapperFunc(log)
 	dbLog, _ := logger.Get(logger.SubsystemTags.BCDB)
 	dbLog.SetLevel(logs.LevelDebug)
 
@@ -79,9 +79,9 @@ func realMain() error {
 	parser.AddGroup("Global Options", "", cfg)
 	parser.AddCommand("insecureimport",
 		"Insecurely import bulk block data from bootstrap.dat",
-		"Insecurely import bulk block data from bootstrap.dat.  "+
+		"Insecurely import bulk block data from bootstrap.dat. "+
 			"WARNING: This is NOT secure because it does NOT "+
-			"verify chain rules.  It is only provided for testing "+
+			"verify DAG rules. It is only provided for testing "+
 			"purposes.", &importCfg)
 	parser.AddCommand("loadheaders",
 		"Time how long to load headers for all blocks in the database",

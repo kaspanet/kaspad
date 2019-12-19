@@ -11,17 +11,17 @@ import (
 
 const (
 	// staticDepth is the size of the static array to use for keeping track
-	// of the parent stack during treap iteration.  Since a treap has a very
+	// of the parent stack during treap iteration. Since a treap has a very
 	// high probability that the tree height is logarithmic, it is
 	// exceedingly unlikely that the parent stack will ever exceed this size
 	// even for extremely large numbers of items.
 	staticDepth = 128
 
 	// nodeFieldsSize is the size the fields of each node takes excluding
-	// the contents of the key and value.  It assumes 64-bit pointers so
+	// the contents of the key and value. It assumes 64-bit pointers so
 	// technically it is smaller on 32-bit platforms, but overestimating the
 	// size in that case is acceptable since it avoids the need to import
-	// unsafe.  It consists of 24-bytes for each key and value + 8 bytes for
+	// unsafe. It consists of 24-bytes for each key and value + 8 bytes for
 	// each of the priority, left, and right fields (24*2 + 8*3).
 	nodeFieldsSize = 72
 )
@@ -48,17 +48,17 @@ func nodeSize(node *treapNode) uint64 {
 	return nodeFieldsSize + uint64(len(node.key)+len(node.value))
 }
 
-// newTreapNode returns a new node from the given key, value, and priority.  The
+// newTreapNode returns a new node from the given key, value, and priority. The
 // node is not initially linked to any others.
 func newTreapNode(key, value []byte, priority int) *treapNode {
 	return &treapNode{key: key, value: value, priority: priority}
 }
 
 // parentStack represents a stack of parent treap nodes that are used during
-// iteration.  It consists of a static array for holding the parents and a
-// dynamic overflow slice.  It is extremely unlikely the overflow will ever be
+// iteration. It consists of a static array for holding the parents and a
+// dynamic overflow slice. It is extremely unlikely the overflow will ever be
 // hit during normal operation, however, since a treap's height is
-// probabilistic, the overflow case needs to be handled properly.  This approach
+// probabilistic, the overflow case needs to be handled properly. This approach
 // is used because it is much more efficient for the majority case than
 // dynamically allocating heap space every time the treap is iterated.
 type parentStack struct {
@@ -73,7 +73,7 @@ func (s *parentStack) Len() int {
 }
 
 // At returns the item n number of items from the top of the stack, where 0 is
-// the topmost item, without removing it.  It returns nil if n exceeds the
+// the topmost item, without removing it. It returns nil if n exceeds the
 // number of items on the stack.
 func (s *parentStack) At(n int) *treapNode {
 	index := s.index - n - 1
@@ -88,7 +88,7 @@ func (s *parentStack) At(n int) *treapNode {
 	return s.overflow[index-staticDepth]
 }
 
-// Pop removes the top item from the stack.  It returns nil if the stack is
+// Pop removes the top item from the stack. It returns nil if the stack is
 // empty.
 func (s *parentStack) Pop() *treapNode {
 	if s.index == 0 {
@@ -116,10 +116,10 @@ func (s *parentStack) Push(node *treapNode) {
 	}
 
 	// This approach is used over append because reslicing the slice to pop
-	// the item causes the compiler to make unneeded allocations.  Also,
+	// the item causes the compiler to make unneeded allocations. Also,
 	// since the max number of items is related to the tree depth which
 	// requires expontentially more items to increase, only increase the cap
-	// one item at a time.  This is more intelligent than the generic append
+	// one item at a time. This is more intelligent than the generic append
 	// expansion algorithm which often doubles the cap.
 	index := s.index - staticDepth
 	if index+1 > cap(s.overflow) {

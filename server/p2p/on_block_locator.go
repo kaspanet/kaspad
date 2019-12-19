@@ -1,11 +1,11 @@
 package p2p
 
 import (
-	"github.com/daglabs/btcd/peer"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/peer"
+	"github.com/kaspanet/kaspad/wire"
 )
 
-// OnBlockLocator is invoked when a peer receives a locator bitcoin
+// OnBlockLocator is invoked when a peer receives a locator kaspa
 // message.
 func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgBlockLocator) {
 	// Find the highest known shared block between the peers, and asks
@@ -28,7 +28,7 @@ func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgBlockLocator) {
 			sp.server.SyncManager.RemoveFromSyncCandidates(sp.Peer)
 			return
 		}
-		err := sp.server.SyncManager.PushGetBlockInvsOrHeaders(sp.Peer, firstHash)
+		err := sp.Peer.PushGetBlockInvsMsg(firstHash, sp.Peer.SelectedTip())
 		if err != nil {
 			peerLog.Errorf("Failed pushing get blocks message for peer %s: %s",
 				sp, err)

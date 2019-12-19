@@ -22,17 +22,17 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 type newBucket [newBucketCount]map[string]*KnownAddress
 type triedBucket [triedBucketCount]*list.List
 
 // AddrManager provides a concurrency safe address manager for caching potential
-// peers on the bitcoin network.
+// peers on the Kaspa network.
 type AddrManager struct {
 	mtx                sync.Mutex
 	peersFile          string
@@ -309,9 +309,8 @@ func (a *AddrManager) updateAddrTried(bucket int, ka *KnownAddress) {
 func (a *AddrManager) expireNew(bucket *newBucket, idx int, decrNewCounter func()) {
 	// First see if there are any entries that are so bad we can just throw
 	// them away. otherwise we throw away the oldest entry in the cache.
-	// Bitcoind here chooses four random and just throws the oldest of
-	// those away, but we keep track of oldest in the initial traversal and
-	// use that information instead.
+	// We keep track of oldest in the initial traversal and use that
+	// information instead.
 	var oldest *KnownAddress
 	for k, v := range bucket[idx] {
 		if v.isBad() {
@@ -357,8 +356,7 @@ func (a *AddrManager) expireNewFullNodes(bucket int) {
 }
 
 // pickTried selects an address from the tried bucket to be evicted.
-// We just choose the eldest. Bitcoind selects 4 random entries and throws away
-// the older of them.
+// We just choose the eldest.
 func (a *AddrManager) pickTried(subnetworkID *subnetworkid.SubnetworkID, bucket int) *list.Element {
 	var oldest *KnownAddress
 	var oldestElem *list.Element
@@ -380,7 +378,6 @@ func (a *AddrManager) pickTried(subnetworkID *subnetworkid.SubnetworkID, bucket 
 }
 
 func (a *AddrManager) getNewBucket(netAddr, srcAddr *wire.NetAddress) int {
-	// bitcoind:
 	// doublesha256(key + sourcegroup + int64(doublesha256(key + group + sourcegroup))%bucket_per_source_group) % num_new_buckets
 
 	data1 := []byte{}
@@ -402,7 +399,6 @@ func (a *AddrManager) getNewBucket(netAddr, srcAddr *wire.NetAddress) int {
 }
 
 func (a *AddrManager) getTriedBucket(netAddr *wire.NetAddress) int {
-	// bitcoind hashes this as:
 	// doublesha256(key + group + truncate_to_64bits(doublesha256(key)) % buckets_per_group) % num_buckets
 	data1 := []byte{}
 	data1 = append(data1, a.key[:]...)
@@ -421,7 +417,7 @@ func (a *AddrManager) getTriedBucket(netAddr *wire.NetAddress) int {
 	return int(binary.LittleEndian.Uint64(hash2) % triedBucketCount)
 }
 
-// addressHandler is the main handler for the address manager.  It must be run
+// addressHandler is the main handler for the address manager. It must be run
 // as a goroutine.
 func (a *AddrManager) addressHandler() {
 	dumpAddressTicker := time.NewTicker(dumpAddressInterval)
@@ -537,7 +533,7 @@ func (a *AddrManager) savePeers() {
 	}
 }
 
-// loadPeers loads the known address from the saved file.  If empty, missing, or
+// loadPeers loads the known address from the saved file. If empty, missing, or
 // malformed file, just don't load anything and start fresh
 func (a *AddrManager) loadPeers() {
 	a.mtx.Lock()
@@ -724,7 +720,11 @@ func (a *AddrManager) Start() {
 
 	// Start the address ticker to save addresses periodically.
 	a.wg.Add(1)
-	spawn(a.addressHandler)
+	spawn(a.addressHandler, a.handlePanic)
+}
+
+func (a *AddrManager) handlePanic() {
+	atomic.AddInt32(&a.shutdown, 1)
 }
 
 // Stop gracefully shuts down the address manager by stopping the main handler.
@@ -741,8 +741,8 @@ func (a *AddrManager) Stop() error {
 	return nil
 }
 
-// AddAddresses adds new addresses to the address manager.  It enforces a max
-// number of addresses and silently ignores duplicate addresses.  It is
+// AddAddresses adds new addresses to the address manager. It enforces a max
+// number of addresses and silently ignores duplicate addresses. It is
 // safe for concurrent access.
 func (a *AddrManager) AddAddresses(addrs []*wire.NetAddress, srcAddr *wire.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
 	a.mtx.Lock()
@@ -753,8 +753,8 @@ func (a *AddrManager) AddAddresses(addrs []*wire.NetAddress, srcAddr *wire.NetAd
 	}
 }
 
-// AddAddress adds a new address to the address manager.  It enforces a max
-// number of addresses and silently ignores duplicate addresses.  It is
+// AddAddress adds a new address to the address manager. It enforces a max
+// number of addresses and silently ignores duplicate addresses. It is
 // safe for concurrent access.
 func (a *AddrManager) AddAddress(addr, srcAddr *wire.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
 	a.mtx.Lock()
@@ -827,7 +827,7 @@ func (a *AddrManager) NeedMoreAddresses() bool {
 	return allAddrs < needAddressThreshold
 }
 
-// AddressCache returns the current address cache.  It must be treated as
+// AddressCache returns the current address cache. It must be treated as
 // read-only (but since it is a copy now, this is not as dangerous).
 func (a *AddrManager) AddressCache(includeAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID) []*wire.NetAddress {
 	a.mtx.Lock()
@@ -894,15 +894,15 @@ func (a *AddrManager) reset() {
 	a.addrTrying = make(map[*KnownAddress]bool)
 }
 
-// HostToNetAddress returns a netaddress given a host address.  If the address
-// is a Tor .onion address this will be taken care of.  Else if the host is
+// HostToNetAddress returns a netaddress given a host address. If the address
+// is a Tor .onion address this will be taken care of. Else if the host is
 // not an IP address it will be resolved (via Tor if required).
 func (a *AddrManager) HostToNetAddress(host string, port uint16, services wire.ServiceFlag) (*wire.NetAddress, error) {
 	// Tor address is 16 char base32 + ".onion"
 	var ip net.IP
 	if len(host) == 22 && host[16:] == ".onion" {
 		// go base32 encoding uses capitals (as does the rfc
-		// but Tor and bitcoind tend to user lowercase, so we switch
+		// but Tor tend to user lowercase, so we switch
 		// case here.
 		data, err := base32.StdEncoding.DecodeString(
 			strings.ToUpper(host[:16]))
@@ -946,7 +946,7 @@ func NetAddressKey(na *wire.NetAddress) string {
 	return net.JoinHostPort(ipString(na), port)
 }
 
-// GetAddress returns a single address that should be routable.  It picks a
+// GetAddress returns a single address that should be routable. It picks a
 // random one from the possible addresses with preference given to ones that
 // have not been used recently and should not pick 'close' addresses
 // consecutively.
@@ -1061,7 +1061,7 @@ func (a *AddrManager) Attempt(addr *wire.NetAddress) {
 }
 
 // Connected Marks the given address as currently connected and working at the
-// current time.  The address must already be known to AddrManager else it will
+// current time. The address must already be known to AddrManager else it will
 // be ignored.
 func (a *AddrManager) Connected(addr *wire.NetAddress) {
 	a.mtx.Lock()
@@ -1083,8 +1083,8 @@ func (a *AddrManager) Connected(addr *wire.NetAddress) {
 	}
 }
 
-// Good marks the given address as good.  To be called after a successful
-// connection and version exchange.  If the address is unknown to the address
+// Good marks the given address as good. To be called after a successful
+// connection and version exchange. If the address is unknown to the address
 // manager it will be ignored.
 func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
 	a.mtx.Lock()
@@ -1388,7 +1388,7 @@ func (a *AddrManager) GetBestLocalAddress(remoteAddr *wire.NetAddress) *wire.Net
 	return bestAddress
 }
 
-// New returns a new bitcoin address manager.
+// New returns a new Kaspa address manager.
 // Use Start to begin processing asynchronous address updates.
 func New(dataDir string, lookupFunc func(string) ([]net.IP, error), subnetworkID *subnetworkid.SubnetworkID) *AddrManager {
 	am := AddrManager{

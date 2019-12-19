@@ -8,16 +8,16 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // maxFlagsPerMerkleBlock is the maximum number of flag bytes that could
-// possibly fit into a merkle block.  Since each transaction is represented by
+// possibly fit into a merkle block. Since each transaction is represented by
 // a single bit, this is the max number of transactions per block divided by
-// 8 bits per byte.  Then an extra one to cover partials.
+// 8 bits per byte. Then an extra one to cover partials.
 const maxFlagsPerMerkleBlock = maxTxPerBlock / 8
 
-// MsgMerkleBlock implements the Message interface and represents a bitcoin
+// MsgMerkleBlock implements the Message interface and represents a kaspa
 // merkleblock message which is used to reset a Bloom filter.
 //
 // This message was not added until protocol version BIP0037Version.
@@ -40,9 +40,9 @@ func (msg *MsgMerkleBlock) AddTxHash(hash *daghash.Hash) error {
 	return nil
 }
 
-// BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
-func (msg *MsgMerkleBlock) BtcDecode(r io.Reader, pver uint32) error {
+func (msg *MsgMerkleBlock) KaspaDecode(r io.Reader, pver uint32) error {
 	err := readBlockHeader(r, pver, &msg.Header)
 	if err != nil {
 		return err
@@ -61,7 +61,7 @@ func (msg *MsgMerkleBlock) BtcDecode(r io.Reader, pver uint32) error {
 	if count > maxTxPerBlock {
 		str := fmt.Sprintf("too many transaction hashes for message "+
 			"[count %d, max %d]", count, maxTxPerBlock)
-		return messageError("MsgMerkleBlock.BtcDecode", str)
+		return messageError("MsgMerkleBlock.KaspaDecode", str)
 	}
 
 	// Create a contiguous slice of hashes to deserialize into in order to
@@ -83,21 +83,21 @@ func (msg *MsgMerkleBlock) BtcDecode(r io.Reader, pver uint32) error {
 	return err
 }
 
-// BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
-func (msg *MsgMerkleBlock) BtcEncode(w io.Writer, pver uint32) error {
+func (msg *MsgMerkleBlock) KaspaEncode(w io.Writer, pver uint32) error {
 	// Read num transaction hashes and limit to max.
 	numHashes := len(msg.Hashes)
 	if numHashes > maxTxPerBlock {
 		str := fmt.Sprintf("too many transaction hashes for message "+
 			"[count %d, max %d]", numHashes, maxTxPerBlock)
-		return messageError("MsgMerkleBlock.BtcDecode", str)
+		return messageError("MsgMerkleBlock.KaspaDecode", str)
 	}
 	numFlagBytes := len(msg.Flags)
 	if numFlagBytes > maxFlagsPerMerkleBlock {
 		str := fmt.Sprintf("too many flag bytes for message [count %d, "+
 			"max %d]", numFlagBytes, maxFlagsPerMerkleBlock)
-		return messageError("MsgMerkleBlock.BtcDecode", str)
+		return messageError("MsgMerkleBlock.KaspaDecode", str)
 	}
 
 	err := writeBlockHeader(w, pver, &msg.Header)
@@ -124,20 +124,20 @@ func (msg *MsgMerkleBlock) BtcEncode(w io.Writer, pver uint32) error {
 	return WriteVarBytes(w, pver, msg.Flags)
 }
 
-// Command returns the protocol command string for the message.  This is part
+// Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgMerkleBlock) Command() string {
 	return CmdMerkleBlock
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
-// receiver.  This is part of the Message interface implementation.
+// receiver. This is part of the Message interface implementation.
 func (msg *MsgMerkleBlock) MaxPayloadLength(pver uint32) uint32 {
 	return MaxMessagePayload
 }
 
-// NewMsgMerkleBlock returns a new bitcoin merkleblock message that conforms to
-// the Message interface.  See MsgMerkleBlock for details.
+// NewMsgMerkleBlock returns a new kaspa merkleblock message that conforms to
+// the Message interface. See MsgMerkleBlock for details.
 func NewMsgMerkleBlock(bh *BlockHeader) *MsgMerkleBlock {
 	return &MsgMerkleBlock{
 		Header:       *bh,

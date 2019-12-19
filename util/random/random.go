@@ -5,10 +5,10 @@ import (
 	"encoding/binary"
 	"io"
 
-	"github.com/daglabs/btcd/util/binaryserializer"
+	"github.com/kaspanet/kaspad/util/binaryserializer"
 )
 
-// randomUint64 returns a cryptographically random uint64 value.  This
+// randomUint64 returns a cryptographically random uint64 value. This
 // unexported version takes a reader primarily to ensure the error paths
 // can be properly tested by passing a fake reader in the tests.
 func randomUint64(r io.Reader) (uint64, error) {

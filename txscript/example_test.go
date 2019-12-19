@@ -8,21 +8,21 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
 )
 
-// This example demonstrates creating a script which pays to a bitcoin address.
+// This example demonstrates creating a script which pays to a kaspa address.
 // It also prints the created script hex and uses the DisasmString function to
 // display the disassembled script.
 func ExamplePayToAddrScript() {
 	// Parse the address to send the coins to into a util.Address
 	// which is useful to ensure the accuracy of the address and determine
-	// the address type.  It is also required for the upcoming call to
+	// the address type. It is also required for the upcoming call to
 	// PayToAddrScript.
-	addressStr := "dagcoin:qqfgqp8l9l90zwetj84k2jcac2m8falvvy9uastr55"
-	address, err := util.DecodeAddress(addressStr, util.Bech32PrefixDAGCoin)
+	addressStr := "kaspa:qqfgqp8l9l90zwetj84k2jcac2m8falvvyy8xjtnhd"
+	address, err := util.DecodeAddress(addressStr, util.Bech32PrefixKaspa)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -71,5 +71,5 @@ func ExampleExtractScriptPubKeyAddress() {
 
 	// Output:
 	// Script Class: pubkeyhash
-	// Address: dagcoin:qqfgqp8l9l90zwetj84k2jcac2m8falvvy9uastr55
+	// Address: kaspa:qqfgqp8l9l90zwetj84k2jcac2m8falvvyy8xjtnhd
 }

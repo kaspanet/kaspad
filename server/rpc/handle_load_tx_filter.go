@@ -1,9 +1,9 @@
 package rpc
 
 import (
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // handleLoadTxFilter implements the loadTxFilter command extension for
@@ -11,14 +11,14 @@ import (
 //
 // NOTE: This extension is ported from github.com/decred/dcrd
 func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
-	cmd := icmd.(*btcjson.LoadTxFilterCmd)
+	cmd := icmd.(*rpcmodel.LoadTxFilterCmd)
 
 	outpoints := make([]wire.Outpoint, len(cmd.Outpoints))
 	for i := range cmd.Outpoints {
 		txID, err := daghash.NewTxIDFromStr(cmd.Outpoints[i].TxID)
 		if err != nil {
-			return nil, &btcjson.RPCError{
-				Code:    btcjson.ErrRPCInvalidParameter,
+			return nil, &rpcmodel.RPCError{
+				Code:    rpcmodel.ErrRPCInvalidParameter,
 				Message: err.Error(),
 			}
 		}

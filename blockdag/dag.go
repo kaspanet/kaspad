@@ -12,14 +12,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 const (
@@ -28,7 +28,7 @@ const (
 	maxOrphanBlocks = 100
 )
 
-// orphanBlock represents a block that we don't yet have the parent for.  It
+// orphanBlock represents a block that we don't yet have the parent for. It
 // is a normal block plus an expiration time to prevent caching the orphan
 // forever.
 type orphanBlock struct {
@@ -43,25 +43,22 @@ type chainUpdates struct {
 	addedChainBlockHashes   []*daghash.Hash
 }
 
-// BlockDAG provides functions for working with the bitcoin block chain.
+// BlockDAG provides functions for working with the kaspa block DAG.
 // It includes functionality such as rejecting duplicate blocks, ensuring blocks
-// follow all rules, orphan handling, checkpoint handling, and best chain
-// selection with reorganization.
+// follow all rules, and orphan handling.
 type BlockDAG struct {
 	// The following fields are set when the instance is created and can't
 	// be changed afterwards, so there is no need to protect them with a
 	// separate mutex.
-	checkpoints              []dagconfig.Checkpoint
-	checkpointsByChainHeight map[uint64]*dagconfig.Checkpoint
-	db                       database.DB
-	dagParams                *dagconfig.Params
-	timeSource               MedianTimeSource
-	sigCache                 *txscript.SigCache
-	indexManager             IndexManager
-	genesis                  *blockNode
+	db           database.DB
+	dagParams    *dagconfig.Params
+	timeSource   MedianTimeSource
+	sigCache     *txscript.SigCache
+	indexManager IndexManager
+	genesis      *blockNode
 
 	// The following fields are calculated based upon the provided DAG
-	// parameters.  They are also set when the instance is created and
+	// parameters. They are also set when the instance is created and
 	// can't be changed afterwards, so there is no need to protect them with
 	// a separate mutex.
 	targetTimePerBlock             int64 // The target delay between blocks (in seconds)
@@ -78,11 +75,11 @@ type BlockDAG struct {
 
 	utxoLock sync.RWMutex
 
-	// index and virtual are related to the memory block index.  They both
+	// index and virtual are related to the memory block index. They both
 	// have their own locks, however they are often also protected by the
 	// DAG lock to help prevent logic races when blocks are being processed.
 
-	// index houses the entire block index in memory.  The block index is
+	// index houses the entire block index in memory. The block index is
 	// a tree-shaped structure.
 	index *blockIndex
 
@@ -95,17 +92,12 @@ type BlockDAG struct {
 	// subnetworkID holds the subnetwork ID of the DAG
 	subnetworkID *subnetworkid.SubnetworkID
 
-	// These fields are related to handling of orphan blocks.  They are
-	// protected by a combination of the chain lock and the orphan lock.
+	// These fields are related to handling of orphan blocks. They are
+	// protected by a combination of the DAG lock and the orphan lock.
 	orphanLock   sync.RWMutex
 	orphans      map[daghash.Hash]*orphanBlock
 	prevOrphans  map[daghash.Hash][]*orphanBlock
 	newestOrphan *orphanBlock
-
-	// These fields are related to checkpoint handling.  They are protected
-	// by the chain lock.
-	nextCheckpoint *dagconfig.Checkpoint
-	checkpointNode *blockNode
 
 	// The following caches are used to efficiently keep track of the
 	// current deployment threshold state of each rule change deployment.
@@ -114,7 +106,7 @@ type BlockDAG struct {
 	// reconstructed on load.
 	//
 	// warningCaches caches the current deployment threshold state for blocks
-	// in each of the **possible** deployments.  This is used in order to
+	// in each of the **possible** deployments. This is used in order to
 	// detect when new unrecognized rule changes are being voted on and/or
 	// have been activated such as will be the case when older versions of
 	// the software are being used
@@ -136,7 +128,7 @@ type BlockDAG struct {
 	unknownVersionsWarned bool
 
 	// The notifications field stores a slice of callbacks to be executed on
-	// certain blockchain events.
+	// certain blockDAG events.
 	notificationsLock sync.RWMutex
 	notifications     []NotificationCallback
 
@@ -147,7 +139,7 @@ type BlockDAG struct {
 }
 
 // HaveBlock returns whether or not the DAG instance has the block represented
-// by the passed hash.  This includes checking the various places a block can
+// by the passed hash. This includes checking the various places a block can
 // be in, like part of the DAG or the orphan pool.
 //
 // This function is safe for concurrent access.
@@ -175,15 +167,15 @@ func (dag *BlockDAG) HaveBlocks(hashes []*daghash.Hash) bool {
 // IsKnownOrphan returns whether the passed hash is currently a known orphan.
 // Keep in mind that only a limited number of orphans are held onto for a
 // limited amount of time, so this function must not be used as an absolute
-// way to test if a block is an orphan block.  A full block (as opposed to just
-// its hash) must be passed to ProcessBlock for that purpose.  However, calling
+// way to test if a block is an orphan block. A full block (as opposed to just
+// its hash) must be passed to ProcessBlock for that purpose. However, calling
 // ProcessBlock with an orphan that already exists results in an error, so this
 // function provides a mechanism for a caller to intelligently detect *recent*
 // duplicate orphans and react accordingly.
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) IsKnownOrphan(hash *daghash.Hash) bool {
-	// Protect concurrent access.  Using a read lock only so multiple
+	// Protect concurrent access. Using a read lock only so multiple
 	// readers can query without blocking each other.
 	dag.orphanLock.RLock()
 	_, exists := dag.orphans[*hash]
@@ -192,11 +184,23 @@ func (dag *BlockDAG) IsKnownOrphan(hash *daghash.Hash) bool {
 	return exists
 }
 
+// IsKnownInvalid returns whether the passed hash is known to be an invalid block.
+// Note that if the block is not found this method will return false.
+//
+// This function is safe for concurrent access.
+func (dag *BlockDAG) IsKnownInvalid(hash *daghash.Hash) bool {
+	node := dag.index.LookupNode(hash)
+	if node == nil {
+		return false
+	}
+	return dag.index.NodeStatus(node).KnownInvalid()
+}
+
 // GetOrphanMissingAncestorHashes returns all of the missing parents in the orphan's sub-DAG
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) GetOrphanMissingAncestorHashes(hash *daghash.Hash) ([]*daghash.Hash, error) {
-	// Protect concurrent access.  Using a read lock only so multiple
+func (dag *BlockDAG) GetOrphanMissingAncestorHashes(orphanHash *daghash.Hash) ([]*daghash.Hash, error) {
+	// Protect concurrent access. Using a read lock only so multiple
 	// readers can query without blocking each other.
 	dag.orphanLock.RLock()
 	defer dag.orphanLock.RUnlock()
@@ -204,7 +208,7 @@ func (dag *BlockDAG) GetOrphanMissingAncestorHashes(hash *daghash.Hash) ([]*dagh
 	missingAncestorsHashes := make([]*daghash.Hash, 0)
 
 	visited := make(map[daghash.Hash]bool)
-	queue := []*daghash.Hash{hash}
+	queue := []*daghash.Hash{orphanHash}
 	for len(queue) > 0 {
 		var current *daghash.Hash
 		current, queue = queue[0], queue[1:]
@@ -216,7 +220,7 @@ func (dag *BlockDAG) GetOrphanMissingAncestorHashes(hash *daghash.Hash) ([]*dagh
 					queue = append(queue, parentHash)
 				}
 			} else {
-				if !dag.BlockExists(current) {
+				if !dag.BlockExists(current) && current != orphanHash {
 					missingAncestorsHashes = append(missingAncestorsHashes, current)
 				}
 			}
@@ -262,7 +266,7 @@ func (dag *BlockDAG) removeOrphanBlock(orphan *orphanBlock) {
 }
 
 // addOrphanBlock adds the passed block (which is already determined to be
-// an orphan prior calling this function) to the orphan pool.  It lazily cleans
+// an orphan prior calling this function) to the orphan pool. It lazily cleans
 // up any expired blocks so a separate cleanup poller doesn't need to be run.
 // It also imposes a maximum limit on the number of outstanding orphan
 // blocks and will remove the oldest received orphan block if the limit is
@@ -294,7 +298,7 @@ func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 		dag.newestOrphan = nil
 	}
 
-	// Protect concurrent access.  This is intentionally done here instead
+	// Protect concurrent access. This is intentionally done here instead
 	// of near the top since removeOrphanBlock does its own locking and
 	// the range iterator is not invalidated by removing map entries.
 	dag.orphanLock.Lock()
@@ -397,7 +401,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			continue
 		case sequenceNum&wire.SequenceLockTimeIsSeconds == wire.SequenceLockTimeIsSeconds:
 			// This input requires a relative time lock expressed
-			// in seconds before it can be spent.  Therefore, we
+			// in seconds before it can be spent. Therefore, we
 			// need to query for the block prior to the one in
 			// which this input was accepted within so we can
 			// compute the past median time for the block prior to
@@ -437,8 +441,6 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 
 // LockTimeToSequence converts the passed relative locktime to a sequence
 // number in accordance to BIP-68.
-// See: https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki
-//  * (Compatibility)
 func LockTimeToSequence(isSeconds bool, locktime uint64) uint64 {
 	// If we're expressing the relative lock time in blocks, then the
 	// corresponding sequence number is simply the desired input age.
@@ -458,7 +460,6 @@ func LockTimeToSequence(isSeconds bool, locktime uint64) uint64 {
 //
 // The flags modify the behavior of this function as follows:
 //  - BFFastAdd: Avoids several expensive transaction validation operations.
-//    This is useful when using checkpoints.
 //
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) addBlock(node *blockNode, parentNodes blockSet,
@@ -571,7 +572,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	}
 
 	// Apply all changes to the DAG.
-	virtualUTXODiff, virtualTxsAcceptanceData, chainUpdates, err := dag.applyDAGChanges(node, block, newBlockUTXO, fastAdd)
+	virtualUTXODiff, virtualTxsAcceptanceData, chainUpdates, err := dag.applyDAGChanges(node, newBlockUTXO, fastAdd)
 	if err != nil {
 		// Since all validation logic has already ran, if applyDAGChanges errors out,
 		// this means we have a problem in the internal structure of the DAG - a problem which is
@@ -580,7 +581,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 		panic(err)
 	}
 
-	err = dag.saveChangesFromBlock(node, block, virtualUTXODiff, txsAcceptanceData, virtualTxsAcceptanceData, newBlockFeeData)
+	err = dag.saveChangesFromBlock(block, virtualUTXODiff, txsAcceptanceData, virtualTxsAcceptanceData, newBlockFeeData)
 	if err != nil {
 		return nil, err
 	}
@@ -588,7 +589,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	return chainUpdates, nil
 }
 
-func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, virtualUTXODiff *UTXODiff,
+func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UTXODiff,
 	txsAcceptanceData MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData,
 	feeData compactFeeData) error {
 
@@ -877,37 +878,27 @@ func (dag *BlockDAG) BlockPastUTXO(blockHash *daghash.Hash) (UTXOSet, error) {
 // It returns the diff in the virtual block's UTXO set.
 //
 // This function MUST be called with the DAG state lock held (for writes).
-func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBlockUTXO UTXOSet, fastAdd bool) (
+func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, fastAdd bool) (
 	virtualUTXODiff *UTXODiff, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData,
 	chainUpdates *chainUpdates, err error) {
 
 	if err = node.updateParents(dag, newBlockUTXO); err != nil {
-		return nil, nil, nil, errors.Errorf("failed updating parents of %s: %s", node, err)
+		return nil, nil, nil, errors.Wrapf(err, "failed updating parents of %s", node)
 	}
 
 	// Update the virtual block's parents (the DAG tips) to include the new block.
 	chainUpdates = dag.virtual.AddTip(node)
 
 	// Build a UTXO set for the new virtual block
-	newVirtualPastUTXO, virtualTxsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
+	newVirtualUTXO, virtualTxsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
 	if err != nil {
-		return nil, nil, nil, errors.Errorf("could not restore past UTXO for virtual %s: %s", dag.virtual, err)
-	}
-
-	// Apply the new virtual's blue score to all the unaccepted UTXOs
-	diffFromAcceptanceData, err := dag.virtual.diffFromAcceptanceData(newVirtualPastUTXO, virtualTxsAcceptanceData)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	newVirtualUTXO, err := newVirtualPastUTXO.WithDiff(diffFromAcceptanceData)
-	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "could not restore past UTXO for virtual")
 	}
 
 	// Apply new utxoDiffs to all the tips
 	err = updateTipsUTXO(dag, newVirtualUTXO)
 	if err != nil {
-		return nil, nil, nil, errors.Errorf("failed updating the tips' UTXO: %s", err)
+		return nil, nil, nil, errors.Wrap(err, "failed updating the tips' UTXO")
 	}
 
 	// It is now safe to meld the UTXO set to base.
@@ -915,7 +906,7 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBloc
 	virtualUTXODiff = diffSet.UTXODiff
 	err = dag.meldVirtualUTXO(diffSet)
 	if err != nil {
-		return nil, nil, nil, errors.Errorf("failed melding the virtual UTXO: %s", err)
+		return nil, nil, nil, errors.Wrap(err, "failed melding the virtual UTXO")
 	}
 
 	dag.index.SetStatusFlags(node, statusValid)
@@ -949,29 +940,6 @@ func (node *blockNode) diffFromTxs(pastUTXO UTXOSet, transactions []*util.Tx) (*
 	return diff, nil
 }
 
-// diffFromAccpetanceData creates a diff that "updates" the blue scores of the given
-// UTXOSet with the node's blueScore according to the given acceptance data.
-func (node *blockNode) diffFromAcceptanceData(pastUTXO UTXOSet, multiBlockTxsAcceptanceData MultiBlockTxsAcceptanceData) (*UTXODiff, error) {
-	diff := NewUTXODiff()
-
-	for _, blockTxsAcceptanceData := range multiBlockTxsAcceptanceData {
-		for _, txAcceptanceData := range blockTxsAcceptanceData.TxAcceptanceData {
-			if txAcceptanceData.IsAccepted {
-				acceptanceDiff, err := pastUTXO.diffFromAcceptedTx(txAcceptanceData.Tx.MsgTx(), node.blueScore)
-				if err != nil {
-					return nil, err
-				}
-				diff, err = diff.WithDiff(acceptanceDiff)
-				if err != nil {
-					return nil, err
-				}
-			}
-		}
-	}
-
-	return diff, nil
-}
-
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
 // to save extra traversals it returns the transactions acceptance data and the compactFeeData for the new block
 func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
@@ -992,22 +960,11 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 		return nil, nil, nil, err
 	}
 
-	// We diff from the acceptance data here to "replace" the blueScore that was diff-ed
-	// out of the virtual's UTXO in pastUTXO with this node's blueScore.
-	diffFromAcceptanceData, err := node.diffFromAcceptanceData(pastUTXO, txsAcceptanceData)
+	diffFromTxs, err := node.diffFromTxs(pastUTXO, transactions)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	utxo, err := pastUTXO.WithDiff(diffFromAcceptanceData)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	diffFromTxs, err := node.diffFromTxs(utxo, transactions)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	utxo, err = utxo.WithDiff(diffFromTxs)
+	utxo, err := pastUTXO.WithDiff(diffFromTxs)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -1063,21 +1020,15 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 }
 
 func (node *blockNode) fetchBlueBlocks(db database.DB) ([]*util.Block, error) {
-	// Fetch from the database all the transactions for this block's blue set
-	blueBlocks := make([]*util.Block, 0, len(node.blues))
+	blueBlocks := make([]*util.Block, len(node.blues))
 	err := db.View(func(dbTx database.Tx) error {
-		// Precalculate the amount of transactions in this block's blue set, besides the selected parent.
-		// This is to avoid an attack in which an attacker fabricates a block that will deliberately cause
-		// a lot of copying, causing a high cost to the whole network.
-		for i := len(node.blues) - 1; i >= 0; i-- {
-			blueBlockNode := node.blues[i]
-
+		for i, blueBlockNode := range node.blues {
 			blueBlock, err := dbFetchBlockByNode(dbTx, blueBlockNode)
 			if err != nil {
 				return err
 			}
 
-			blueBlocks = append(blueBlocks, blueBlock)
+			blueBlocks[i] = blueBlock
 		}
 
 		return nil
@@ -1088,27 +1039,32 @@ func (node *blockNode) fetchBlueBlocks(db database.DB) ([]*util.Block, error) {
 // applyBlueBlocks adds all transactions in the blue blocks to the selectedParent's UTXO set
 // Purposefully ignoring failures - these are just unaccepted transactions
 // Writing down which transactions were accepted or not in txsAcceptanceData
-func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []*util.Block) (
+func (node *blockNode) applyBlueBlocks(acceptedSelectedParentUTXO UTXOSet, selectedParentAcceptanceData []TxAcceptanceData, blueBlocks []*util.Block) (
 	pastUTXO UTXOSet, multiBlockTxsAcceptanceData MultiBlockTxsAcceptanceData, err error) {
 
-	pastUTXO = selectedParentUTXO
-	multiBlockTxsAcceptanceData = MultiBlockTxsAcceptanceData{}
+	pastUTXO = acceptedSelectedParentUTXO
+	multiBlockTxsAcceptanceData = MultiBlockTxsAcceptanceData{BlockTxsAcceptanceData{
+		BlockHash:        *node.selectedParent.hash,
+		TxAcceptanceData: selectedParentAcceptanceData,
+	}}
 
 	// Add blueBlocks to multiBlockTxsAcceptanceData bottom-to-top instead of
 	// top-to-bottom. This is so that anyone who iterates over it would process
 	// blocks (and transactions) in their order of appearance in the DAG.
-	for i := len(blueBlocks) - 1; i >= 0; i-- {
+	// We skip the selected parent, because we calculated its UTXO before.
+	for i := len(blueBlocks) - 2; i >= 0; i-- {
 		blueBlock := blueBlocks[i]
 		transactions := blueBlock.Transactions()
 		blockTxsAcceptanceData := BlockTxsAcceptanceData{
 			BlockHash:        *blueBlock.Hash(),
 			TxAcceptanceData: make([]TxAcceptanceData, len(transactions)),
 		}
-		isSelectedParent := blueBlock.Hash().IsEqual(node.selectedParent.hash)
 		for i, tx := range blueBlock.Transactions() {
 			var isAccepted bool
-			if isSelectedParent {
-				isAccepted = true
+			// Coinbase transaction outputs are added to the UTXO
+			// only if they are in the selected parent chain.
+			if tx.IsCoinBase() {
+				isAccepted = false
 			} else {
 				isAccepted, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
 				if err != nil {
@@ -1189,7 +1145,37 @@ func (dag *BlockDAG) pastUTXO(node *blockNode) (
 		return nil, nil, err
 	}
 
-	return node.applyBlueBlocks(selectedParentUTXO, blueBlocks)
+	selectedParent := blueBlocks[len(blueBlocks)-1]
+	acceptedSelectedParentUTXO, selectedParentAcceptanceData, err := node.acceptSelectedParentTransactions(selectedParent, selectedParentUTXO)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return node.applyBlueBlocks(acceptedSelectedParentUTXO, selectedParentAcceptanceData, blueBlocks)
+}
+
+func (node *blockNode) acceptSelectedParentTransactions(selectedParent *util.Block, selectedParentUTXO UTXOSet) (acceptedSelectedParentUTXO UTXOSet, txAcceptanceData []TxAcceptanceData, err error) {
+	diff := NewUTXODiff()
+	txAcceptanceData = make([]TxAcceptanceData, len(selectedParent.Transactions()))
+	for i, tx := range selectedParent.Transactions() {
+		txAcceptanceData[i] = TxAcceptanceData{
+			Tx:         tx,
+			IsAccepted: true,
+		}
+		acceptanceDiff, err := selectedParentUTXO.diffFromAcceptedTx(tx.MsgTx(), node.blueScore)
+		if err != nil {
+			return nil, nil, err
+		}
+		diff, err = diff.WithDiff(acceptanceDiff)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	acceptedSelectedParentUTXO, err = selectedParentUTXO.WithDiff(diff)
+	if err != nil {
+		return nil, nil, err
+	}
+	return acceptedSelectedParentUTXO, txAcceptanceData, nil
 }
 
 // restoreUTXO restores the UTXO of a given block from its diff
@@ -1241,21 +1227,13 @@ func updateTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
 	return nil
 }
 
-// isCurrent returns whether or not the DAG believes it is current.  Several
+// isCurrent returns whether or not the DAG believes it is current. Several
 // factors are used to guess, but the key factors that allow the DAG to
 // believe it is current are:
-//  - Latest block height is after the latest checkpoint (if enabled)
 //  - Latest block has a timestamp newer than 24 hours ago
 //
 // This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) isCurrent() bool {
-	// Not current if the virtual's selected tip chain height is less than
-	// the latest known good checkpoint (when checkpoints are enabled).
-	checkpoint := dag.LatestCheckpoint()
-	if checkpoint != nil && dag.selectedTip().chainHeight < checkpoint.ChainHeight {
-		return false
-	}
-
 	// Not current if the virtual's selected parent has a timestamp
 	// before 24 hours ago. If the DAG is empty, we take the genesis
 	// block timestamp.
@@ -1273,10 +1251,9 @@ func (dag *BlockDAG) isCurrent() bool {
 	return dagTimestamp >= minus24Hours
 }
 
-// IsCurrent returns whether or not the chain believes it is current.  Several
-// factors are used to guess, but the key factors that allow the chain to
+// IsCurrent returns whether or not the DAG believes it is current. Several
+// factors are used to guess, but the key factors that allow the DAG to
 // believe it is current are:
-//  - Latest block height is after the latest checkpoint (if enabled)
 //  - Latest block has a timestamp newer than 24 hours ago
 //
 // This function is safe for concurrent access.
@@ -1586,13 +1563,13 @@ func (dag *BlockDAG) ChildHashesByHash(hash *daghash.Hash) ([]*daghash.Hash, err
 	return node.children.hashes(), nil
 }
 
-// HeightToHashRange returns a range of block hashes for the given start height
-// and end hash, inclusive on both ends.  The hashes are for all blocks that are
-// ancestors of endHash with height greater than or equal to startHeight.  The
-// end hash must belong to a block that is known to be valid.
+// ChainHeightToHashRange returns a range of block hashes for the given start chain
+// height and end hash, inclusive on both ends. The hashes are for all blocks that
+// are ancestors of endHash with height greater than or equal to startChainHeight.
+// The end hash must belong to a block that is known to be valid.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) HeightToHashRange(startHeight uint64,
+func (dag *BlockDAG) ChainHeightToHashRange(startChainHeight uint64,
 	endHash *daghash.Hash, maxResults int) ([]*daghash.Hash, error) {
 
 	endNode := dag.index.LookupNode(endHash)
@@ -1602,23 +1579,23 @@ func (dag *BlockDAG) HeightToHashRange(startHeight uint64,
 	if !dag.index.NodeStatus(endNode).KnownValid() {
 		return nil, errors.Errorf("block %s is not yet validated", endHash)
 	}
-	endHeight := endNode.height
+	endChainHeight := endNode.chainHeight
 
-	if startHeight < 0 {
-		return nil, errors.Errorf("start height (%d) is below 0", startHeight)
+	if startChainHeight < 0 {
+		return nil, errors.Errorf("start chain height (%d) is below 0", startChainHeight)
 	}
-	if startHeight > endHeight {
-		return nil, errors.Errorf("start height (%d) is past end height (%d)",
-			startHeight, endHeight)
+	if startChainHeight > endChainHeight {
+		return nil, errors.Errorf("start chain height (%d) is past end chain height (%d)",
+			startChainHeight, endChainHeight)
 	}
 
-	resultsLength := int(endHeight - startHeight + 1)
+	resultsLength := int(endChainHeight - startChainHeight + 1)
 	if resultsLength > maxResults {
 		return nil, errors.Errorf("number of results (%d) would exceed max (%d)",
 			resultsLength, maxResults)
 	}
 
-	// Walk backwards from endHeight to startHeight, collecting block hashes.
+	// Walk backwards from endChainHeight to startChainHeight, collecting block hashes.
 	node := endNode
 	hashes := make([]*daghash.Hash, resultsLength)
 	for i := resultsLength - 1; i >= 0; i-- {
@@ -1642,16 +1619,16 @@ func (dag *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval uint64,
 	if !dag.index.NodeStatus(endNode).KnownValid() {
 		return nil, errors.Errorf("block %s is not yet validated", endHash)
 	}
-	endHeight := endNode.height
+	endChainHeight := endNode.chainHeight
 
-	resultsLength := endHeight / interval
+	resultsLength := endChainHeight / interval
 	hashes := make([]*daghash.Hash, resultsLength)
 
 	dag.virtual.mtx.Lock()
 	defer dag.virtual.mtx.Unlock()
 
 	blockNode := endNode
-	for index := endHeight / interval; index > 0; index-- {
+	for index := endChainHeight / interval; index > 0; index-- {
 		blockHeight := index * interval
 		blockNode = blockNode.SelectedAncestor(blockHeight)
 
@@ -1666,23 +1643,26 @@ func (dag *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval uint64,
 // provided max number of block hashes.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) getBlueBlocksHashesBetween(startHash, stopHash *daghash.Hash, maxHashes uint64) []*daghash.Hash {
-	nodes := dag.getBlueBlocksBetween(startHash, stopHash, maxHashes)
+func (dag *BlockDAG) getBlueBlocksHashesBetween(startHash, stopHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
+	nodes, err := dag.getBlueBlocksBetween(startHash, stopHash, maxHashes)
+	if err != nil {
+		return nil, err
+	}
 	hashes := make([]*daghash.Hash, len(nodes))
 	for i, node := range nodes {
 		hashes[i] = node.hash
 	}
-	return hashes
+	return hashes, nil
 }
 
-func (dag *BlockDAG) getBlueBlocksBetween(startHash, stopHash *daghash.Hash, maxEntries uint64) []*blockNode {
+func (dag *BlockDAG) getBlueBlocksBetween(startHash, stopHash *daghash.Hash, maxEntries uint64) ([]*blockNode, error) {
 	startNode := dag.index.LookupNode(startHash)
 	if startNode == nil {
-		return nil
+		return nil, errors.Errorf("Couldn't find start hash %s", startHash)
 	}
 	stopNode := dag.index.LookupNode(stopHash)
 	if stopNode == nil {
-		stopNode = dag.selectedTip()
+		return nil, errors.Errorf("Couldn't find stop hash %s", stopHash)
 	}
 
 	// In order to get no more then maxEntries of blue blocks from
@@ -1703,16 +1683,22 @@ func (dag *BlockDAG) getBlueBlocksBetween(startHash, stopHash *daghash.Hash, max
 	// Populate and return the found nodes.
 	nodes := make([]*blockNode, 0, stopNode.blueScore-startNode.blueScore+1)
 	nodes = append(nodes, stopNode)
-	for current := stopNode; current != startNode; current = current.selectedParent {
+	current := stopNode
+	for current.blueScore > startNode.blueScore {
 		for _, blue := range current.blues {
 			nodes = append(nodes, blue)
 		}
+		current = current.selectedParent
+	}
+	if current != startNode {
+		return nil, errors.Errorf("the start hash is not found in the " +
+			"selected parent chain of the stop hash")
 	}
 	reversedNodes := make([]*blockNode, len(nodes))
 	for i, node := range nodes {
 		reversedNodes[len(reversedNodes)-i-1] = node
 	}
-	return reversedNodes
+	return reversedNodes, nil
 }
 
 // GetBlueBlocksHashesBetween returns the hashes of the blue blocks after the
@@ -1720,11 +1706,14 @@ func (dag *BlockDAG) getBlueBlocksBetween(startHash, stopHash *daghash.Hash, max
 // provided max number of block hashes.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) GetBlueBlocksHashesBetween(startHash, stopHash *daghash.Hash, maxHashes uint64) []*daghash.Hash {
+func (dag *BlockDAG) GetBlueBlocksHashesBetween(startHash, stopHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
 	dag.dagLock.RLock()
-	hashes := dag.getBlueBlocksHashesBetween(startHash, stopHash, maxHashes)
+	hashes, err := dag.getBlueBlocksHashesBetween(startHash, stopHash, maxHashes)
+	if err != nil {
+		return nil, err
+	}
 	dag.dagLock.RUnlock()
-	return hashes
+	return hashes, nil
 }
 
 // getBlueBlocksHeadersBetween returns the headers of the blue blocks after the
@@ -1732,13 +1721,16 @@ func (dag *BlockDAG) GetBlueBlocksHashesBetween(startHash, stopHash *daghash.Has
 // provided max number of block headers.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) getBlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash, maxHeaders uint64) []*wire.BlockHeader {
-	nodes := dag.getBlueBlocksBetween(startHash, stopHash, maxHeaders)
+func (dag *BlockDAG) getBlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
+	nodes, err := dag.getBlueBlocksBetween(startHash, stopHash, maxHeaders)
+	if err != nil {
+		return nil, err
+	}
 	headers := make([]*wire.BlockHeader, len(nodes))
 	for i, node := range nodes {
 		headers[i] = node.Header()
 	}
-	return headers
+	return headers, nil
 }
 
 // GetTopHeaders returns the top wire.MaxBlockHeadersPerMsg block headers ordered by height.
@@ -1792,11 +1784,14 @@ func (dag *BlockDAG) RUnlock() {
 // provided max number of block headers.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) GetBlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash) []*wire.BlockHeader {
+func (dag *BlockDAG) GetBlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash) ([]*wire.BlockHeader, error) {
 	dag.dagLock.RLock()
-	headers := dag.getBlueBlocksHeadersBetween(startHash, stopHash, wire.MaxBlockHeadersPerMsg)
+	headers, err := dag.getBlueBlocksHeadersBetween(startHash, stopHash, wire.MaxBlockHeadersPerMsg)
+	if err != nil {
+		return nil, err
+	}
 	dag.dagLock.RUnlock()
-	return headers
+	return headers, nil
 }
 
 // SubnetworkID returns the node's subnetwork ID
@@ -1805,13 +1800,12 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 }
 
 // IndexManager provides a generic interface that is called when blocks are
-// connected and disconnected to and from the tip of the main chain for the
-// purpose of supporting optional indexes.
+// connected to the DAG for the purpose of supporting optional indexes.
 type IndexManager interface {
-	// Init is invoked during chain initialize in order to allow the index
-	// manager to initialize itself and any indexes it is managing.  The
+	// Init is invoked during DAG initialize in order to allow the index
+	// manager to initialize itself and any indexes it is managing. The
 	// channel parameter specifies a channel the caller can close to signal
-	// that the process should be interrupted.  It can be nil if that
+	// that the process should be interrupted. It can be nil if that
 	// behavior is not desired.
 	Init(database.DB, *BlockDAG, <-chan struct{}) error
 
@@ -1820,7 +1814,7 @@ type IndexManager interface {
 	ConnectBlock(dbTx database.Tx, block *util.Block, blockID uint64, dag *BlockDAG, acceptedTxsData MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData) error
 }
 
-// Config is a descriptor which specifies the blockchain instance configuration.
+// Config is a descriptor which specifies the blockDAG instance configuration.
 type Config struct {
 	// DB defines the database which houses the blocks and will be used to
 	// store all metadata created by this package such as the utxo set.
@@ -1841,16 +1835,8 @@ type Config struct {
 	// This field is required.
 	DAGParams *dagconfig.Params
 
-	// Checkpoints hold caller-defined checkpoints that should be added to
-	// the default checkpoints in DAGParams.  Checkpoints must be sorted
-	// by height.
-	//
-	// This field can be nil if the caller does not wish to specify any
-	// checkpoints.
-	Checkpoints []dagconfig.Checkpoint
-
 	// TimeSource defines the median time source to use for things such as
-	// block processing and determining whether or not the chain is current.
+	// block processing and determining whether or not the DAG is current.
 	//
 	// The caller is expected to keep a reference to the time source as well
 	// and add time samples from other peers on the network so the local
@@ -1858,7 +1844,7 @@ type Config struct {
 	TimeSource MedianTimeSource
 
 	// SigCache defines a signature cache to use when when validating
-	// signatures.  This is typically most useful when individual
+	// signatures. This is typically most useful when individual
 	// transactions are already being validated prior to their inclusion in
 	// a block such as what is usually done via a transaction memory pool.
 	//
@@ -1867,7 +1853,7 @@ type Config struct {
 	SigCache *txscript.SigCache
 
 	// IndexManager defines an index manager to use when initializing the
-	// chain and connecting and disconnecting blocks.
+	// DAG and connecting blocks.
 	//
 	// This field can be nil if the caller does not wish to make use of an
 	// index manager.
@@ -1893,31 +1879,11 @@ func New(config *Config) (*BlockDAG, error) {
 		return nil, AssertError("BlockDAG.New timesource is nil")
 	}
 
-	// Generate a checkpoint by chain height map from the provided checkpoints
-	// and assert the provided checkpoints are sorted by chain height as required.
-	var checkpointsByChainHeight map[uint64]*dagconfig.Checkpoint
-	var prevCheckpointChainHeight uint64
-	if len(config.Checkpoints) > 0 {
-		checkpointsByChainHeight = make(map[uint64]*dagconfig.Checkpoint)
-		for i := range config.Checkpoints {
-			checkpoint := &config.Checkpoints[i]
-			if checkpoint.ChainHeight <= prevCheckpointChainHeight {
-				return nil, AssertError("blockdag.New " +
-					"checkpoints are not sorted by chain height")
-			}
-
-			checkpointsByChainHeight[checkpoint.ChainHeight] = checkpoint
-			prevCheckpointChainHeight = checkpoint.ChainHeight
-		}
-	}
-
 	params := config.DAGParams
 	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
 
 	index := newBlockIndex(config.DB, params)
 	dag := BlockDAG{
-		checkpoints:                    config.Checkpoints,
-		checkpointsByChainHeight:       checkpointsByChainHeight,
 		db:                             config.DB,
 		dagParams:                      params,
 		timeSource:                     config.TimeSource,
@@ -1940,7 +1906,7 @@ func New(config *Config) (*BlockDAG, error) {
 
 	dag.utxoDiffStore = newUTXODiffStore(&dag)
 
-	// Initialize the chain state from the passed database.  When the db
+	// Initialize the DAG state from the passed database. When the db
 	// does not yet contain any DAG state, both it and the DAG state
 	// will be initialized to contain only the genesis block.
 	err := dag.initDAGState()

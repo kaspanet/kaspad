@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/kaspanet/kaspad/util/daghash"
 
-	"github.com/daglabs/btcd/dagconfig"
+	"github.com/kaspanet/kaspad/dagconfig"
 )
 
 type testBlockData struct {

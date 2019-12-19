@@ -3,11 +3,11 @@ package indexers
 import (
 	"bytes"
 	"encoding/gob"
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
 
@@ -64,7 +64,7 @@ func (idx *AcceptanceIndex) Name() string {
 }
 
 // Create is invoked when the indexer manager determines the index needs
-// to be created for the first time.  It creates the bucket for the
+// to be created for the first time. It creates the bucket for the
 // acceptance index.
 //
 // This is part of the Indexer interface.

@@ -6,5 +6,5 @@ func handleStop(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 	case s.requestProcessShutdown <- struct{}{}:
 	default:
 	}
-	return "btcd stopping.", nil
+	return "kaspad stopping.", nil
 }

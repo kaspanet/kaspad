@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 const (
@@ -20,7 +20,7 @@ const (
 	maxStandardP2SHSigOps = 15
 
 	// maxStandardSigScriptSize is the maximum size allowed for a
-	// transaction input signature script to be considered standard.  This
+	// transaction input signature script to be considered standard. This
 	// value allows for a 15-of-15 CHECKMULTISIG pay-to-script-hash with
 	// compressed keys.
 	//
@@ -29,11 +29,11 @@ const (
 	//
 	// For the p2sh script portion, each of the 15 compressed pubkeys are
 	// 33 bytes (plus one for the OP_DATA_33 opcode), and the thus it totals
-	// to (15*34)+3 = 513 bytes.  Next, each of the 15 signatures is a max
-	// of 73 bytes (plus one for the OP_DATA_73 opcode).  Also, there is one
+	// to (15*34)+3 = 513 bytes. Next, each of the 15 signatures is a max
+	// of 73 bytes (plus one for the OP_DATA_73 opcode). Also, there is one
 	// extra byte for the initial extra OP_0 push and 3 bytes for the
 	// OP_PUSHDATA2 needed to specify the 513 bytes for the script push.
-	// That brings the total to 1+(15*74)+3+513 = 1627.  This value also
+	// That brings the total to 1+(15*74)+3+513 = 1627. This value also
 	// adds a few extra bytes to provide a little buffer.
 	// (1 + 15*74 + 3) + (15*34 + 3) + 23 = 1650
 	maxStandardSigScriptSize = 1650
@@ -43,11 +43,11 @@ const (
 	// for mining.
 	MaxStandardTxSize = 100000
 
-	// DefaultMinRelayTxFee is the minimum fee in satoshi that is required
+	// DefaultMinRelayTxFee is the minimum fee in sompi that is required
 	// for a transaction to be treated as free for relay and mining
-	// purposes.  It is also used to help determine if a transaction is
+	// purposes. It is also used to help determine if a transaction is
 	// considered dust and as a base for calculating minimum required fees
-	// for larger transactions.  This value is in Satoshi/1000 bytes.
+	// for larger transactions. This value is in sompi/1000 bytes.
 	DefaultMinRelayTxFee = util.Amount(1000)
 )
 
@@ -57,9 +57,9 @@ const (
 func calcMinRequiredTxRelayFee(serializedSize int64, minRelayTxFee util.Amount) int64 {
 	// Calculate the minimum fee for a transaction to be allowed into the
 	// mempool and relayed by scaling the base fee (which is the minimum
-	// free transaction relay fee).  minTxRelayFee is in Satoshi/kB so
+	// free transaction relay fee). minTxRelayFee is in sompi/kB so
 	// multiply by serializedSize (which is in bytes) and divide by 1000 to
-	// get minimum Satoshis.
+	// get minimum sompis.
 	minFee := (serializedSize * int64(minRelayTxFee)) / 1000
 
 	if minFee == 0 && minRelayTxFee > 0 {
@@ -68,15 +68,15 @@ func calcMinRequiredTxRelayFee(serializedSize int64, minRelayTxFee util.Amount) 
 
 	// Set the minimum fee to the maximum possible value if the calculated
 	// fee is not in the valid range for monetary amounts.
-	if minFee < 0 || minFee > util.MaxSatoshi {
-		minFee = util.MaxSatoshi
+	if minFee < 0 || minFee > util.MaxSompi {
+		minFee = util.MaxSompi
 	}
 
 	return minFee
 }
 
 // checkInputsStandard performs a series of checks on a transaction's inputs
-// to ensure they are "standard".  A standard transaction input within the
+// to ensure they are "standard". A standard transaction input within the
 // context of this function is one whose referenced public key script is of a
 // standard form and, for pay-to-script-hash, does not have more than
 // maxStandardP2SHSigOps signature operations.
@@ -115,7 +115,7 @@ func checkInputsStandard(tx *util.Tx, utxoSet blockdag.UTXOSet) error {
 
 // isDust returns whether or not the passed transaction output amount is
 // considered dust or not based on the passed minimum transaction relay fee.
-// Dust is defined in terms of the minimum transaction relay fee.  In
+// Dust is defined in terms of the minimum transaction relay fee. In
 // particular, if the cost to the network to spend coins is more than 1/3 of the
 // minimum transaction relay fee, it is considered dust.
 func isDust(txOut *wire.TxOut, minRelayTxFee util.Amount) bool {
@@ -125,7 +125,7 @@ func isDust(txOut *wire.TxOut, minRelayTxFee util.Amount) bool {
 	}
 
 	// The total serialized size consists of the output and the associated
-	// input script to redeem it.  Since there is no input script
+	// input script to redeem it. Since there is no input script
 	// to redeem it yet, use the minimum size of a typical input script.
 	//
 	// Pay-to-pubkey-hash bytes breakdown:
@@ -164,18 +164,18 @@ func isDust(txOut *wire.TxOut, minRelayTxFee util.Amount) bool {
 	// common.
 	//
 	// The most common scripts are pay-to-pubkey-hash, and as per the above
-	// breakdown, the minimum size of a p2pkh input script is 148 bytes.  So
+	// breakdown, the minimum size of a p2pkh input script is 148 bytes. So
 	// that figure is used.
 	totalSize := txOut.SerializeSize() + 148
 
 	// The output is considered dust if the cost to the network to spend the
 	// coins is more than 1/3 of the minimum free transaction relay fee.
-	// minFreeTxRelayFee is in Satoshi/KB, so multiply by 1000 to
+	// minFreeTxRelayFee is in sompi/KB, so multiply by 1000 to
 	// convert to bytes.
 	//
 	// Using the typical values for a pay-to-pubkey-hash transaction from
 	// the breakdown above and the default minimum free transaction relay
-	// fee of 1000, this equates to values less than 546 satoshi being
+	// fee of 1000, this equates to values less than 546 sompi being
 	// considered dust.
 	//
 	// The following is equivalent to (value/totalSize) * (1/3) * 1000
@@ -184,7 +184,7 @@ func isDust(txOut *wire.TxOut, minRelayTxFee util.Amount) bool {
 }
 
 // checkTransactionStandard performs a series of checks on a transaction to
-// ensure it is a "standard" transaction.  A standard transaction is one that
+// ensure it is a "standard" transaction. A standard transaction is one that
 // conforms to several additional limiting cases over what is considered a
 // "sane" transaction such as having a version in the supported range, being
 // finalized, conforming to more stringent size constraints, having scripts
@@ -211,7 +211,7 @@ func checkTransactionStandard(tx *util.Tx, blueScore uint64,
 
 	// Since extremely large transactions with a lot of inputs can cost
 	// almost as much to process as the sender fees, limit the maximum
-	// size of a transaction.  This also helps mitigate CPU exhaustion
+	// size of a transaction. This also helps mitigate CPU exhaustion
 	// attacks.
 	serializedLen := msgTx.SerializeSize()
 	if serializedLen > MaxStandardTxSize {
@@ -222,7 +222,7 @@ func checkTransactionStandard(tx *util.Tx, blueScore uint64,
 
 	for i, txIn := range msgTx.TxIn {
 		// Each transaction input signature script must not exceed the
-		// maximum size allowed for a standard transaction.  See
+		// maximum size allowed for a standard transaction. See
 		// the comment on maxStandardSigScriptSize for more details.
 		sigScriptLen := len(txIn.SignatureScript)
 		if sigScriptLen > maxStandardSigScriptSize {

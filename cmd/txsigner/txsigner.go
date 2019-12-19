@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/ecc"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/wire"
 	"os"
 )
 
@@ -45,9 +45,9 @@ func main() {
 	fmt.Printf("Signed Transaction (hex): %s\n\n", serializedTransaction)
 }
 
-func parsePrivateKey(privateKeyHex string) (*btcec.PrivateKey, error) {
+func parsePrivateKey(privateKeyHex string) (*ecc.PrivateKey, error) {
 	privateKeyBytes, err := hex.DecodeString(privateKeyHex)
-	privateKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privateKeyBytes)
+	privateKey, _ := ecc.PrivKeyFromBytes(ecc.S256(), privateKeyBytes)
 	return privateKey, err
 }
 
@@ -58,13 +58,13 @@ func parseTransaction(transactionHex string) (*wire.MsgTx, error) {
 	return &transaction, err
 }
 
-func createScriptPubKey(publicKey *btcec.PublicKey) ([]byte, error) {
+func createScriptPubKey(publicKey *ecc.PublicKey) ([]byte, error) {
 	p2pkhAddress, err := util.NewAddressPubKeyHashFromPublicKey(publicKey.SerializeCompressed(), ActiveConfig().NetParams().Prefix)
 	scriptPubKey, err := txscript.PayToAddrScript(p2pkhAddress)
 	return scriptPubKey, err
 }
 
-func signTransaction(transaction *wire.MsgTx, privateKey *btcec.PrivateKey, scriptPubKey []byte) error {
+func signTransaction(transaction *wire.MsgTx, privateKey *ecc.PrivateKey, scriptPubKey []byte) error {
 	for i, transactionInput := range transaction.TxIn {
 		signatureScript, err := txscript.SignatureScript(transaction, i, scriptPubKey, txscript.SigHashAll, privateKey, true)
 		if err != nil {

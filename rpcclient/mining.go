@@ -7,9 +7,9 @@ package rpcclient
 import (
 	"encoding/hex"
 	"encoding/json"
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 )
 
@@ -51,7 +51,7 @@ func (r FutureGenerateResult) Receive() ([]*daghash.Hash, error) {
 //
 // See Generate for the blocking version and more details.
 func (c *Client) GenerateAsync(numBlocks uint32) FutureGenerateResult {
-	cmd := btcjson.NewGenerateCmd(numBlocks)
+	cmd := rpcmodel.NewGenerateCmd(numBlocks)
 	return c.sendCmd(cmd)
 }
 
@@ -88,7 +88,7 @@ func (r FutureGetGenerateResult) Receive() (bool, error) {
 //
 // See GetGenerate for the blocking version and more details.
 func (c *Client) GetGenerateAsync() FutureGetGenerateResult {
-	cmd := btcjson.NewGetGenerateCmd()
+	cmd := rpcmodel.NewGetGenerateCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -114,7 +114,7 @@ func (r FutureSetGenerateResult) Receive() error {
 //
 // See SetGenerate for the blocking version and more details.
 func (c *Client) SetGenerateAsync(enable bool, numCPUs int) FutureSetGenerateResult {
-	cmd := btcjson.NewSetGenerateCmd(enable, &numCPUs)
+	cmd := rpcmodel.NewSetGenerateCmd(enable, &numCPUs)
 	return c.sendCmd(cmd)
 }
 
@@ -152,12 +152,12 @@ func (r FutureGetHashesPerSecResult) Receive() (int64, error) {
 //
 // See GetHashesPerSec for the blocking version and more details.
 func (c *Client) GetHashesPerSecAsync() FutureGetHashesPerSecResult {
-	cmd := btcjson.NewGetHashesPerSecCmd()
+	cmd := rpcmodel.NewGetHashesPerSecCmd()
 	return c.sendCmd(cmd)
 }
 
 // GetHashesPerSec returns a recent hashes per second performance measurement
-// while generating coins (mining).  Zero is returned if the server is not
+// while generating coins (mining). Zero is returned if the server is not
 // mining.
 func (c *Client) GetHashesPerSec() (int64, error) {
 	return c.GetHashesPerSecAsync().Receive()
@@ -169,14 +169,14 @@ type FutureGetMiningInfoResult chan *response
 
 // Receive waits for the response promised by the future and returns the mining
 // information.
-func (r FutureGetMiningInfoResult) Receive() (*btcjson.GetMiningInfoResult, error) {
+func (r FutureGetMiningInfoResult) Receive() (*rpcmodel.GetMiningInfoResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a getmininginfo result object.
-	var infoResult btcjson.GetMiningInfoResult
+	var infoResult rpcmodel.GetMiningInfoResult
 	err = json.Unmarshal(res, &infoResult)
 	if err != nil {
 		return nil, err
@@ -191,96 +191,13 @@ func (r FutureGetMiningInfoResult) Receive() (*btcjson.GetMiningInfoResult, erro
 //
 // See GetMiningInfo for the blocking version and more details.
 func (c *Client) GetMiningInfoAsync() FutureGetMiningInfoResult {
-	cmd := btcjson.NewGetMiningInfoCmd()
+	cmd := rpcmodel.NewGetMiningInfoCmd()
 	return c.sendCmd(cmd)
 }
 
 // GetMiningInfo returns mining information.
-func (c *Client) GetMiningInfo() (*btcjson.GetMiningInfoResult, error) {
+func (c *Client) GetMiningInfo() (*rpcmodel.GetMiningInfoResult, error) {
 	return c.GetMiningInfoAsync().Receive()
-}
-
-// FutureGetNetworkHashPS is a future promise to deliver the result of a
-// GetNetworkHashPSAsync RPC invocation (or an applicable error).
-type FutureGetNetworkHashPS chan *response
-
-// Receive waits for the response promised by the future and returns the
-// estimated network hashes per second for the block heights provided by the
-// parameters.
-func (r FutureGetNetworkHashPS) Receive() (int64, error) {
-	res, err := receiveFuture(r)
-	if err != nil {
-		return -1, err
-	}
-
-	// Unmarshal result as an int64.
-	var result int64
-	err = json.Unmarshal(res, &result)
-	if err != nil {
-		return 0, err
-	}
-
-	return result, nil
-}
-
-// GetNetworkHashPSAsync returns an instance of a type that can be used to get
-// the result of the RPC at some future time by invoking the Receive function on
-// the returned instance.
-//
-// See GetNetworkHashPS for the blocking version and more details.
-func (c *Client) GetNetworkHashPSAsync() FutureGetNetworkHashPS {
-	cmd := btcjson.NewGetNetworkHashPSCmd(nil, nil)
-	return c.sendCmd(cmd)
-}
-
-// GetNetworkHashPS returns the estimated network hashes per second using the
-// default number of blocks and the most recent block height.
-//
-// See GetNetworkHashPS2 to override the number of blocks to use and
-// GetNetworkHashPS3 to override the height at which to calculate the estimate.
-func (c *Client) GetNetworkHashPS() (int64, error) {
-	return c.GetNetworkHashPSAsync().Receive()
-}
-
-// GetNetworkHashPS2Async returns an instance of a type that can be used to get
-// the result of the RPC at some future time by invoking the Receive function on
-// the returned instance.
-//
-// See GetNetworkHashPS2 for the blocking version and more details.
-func (c *Client) GetNetworkHashPS2Async(blocks int) FutureGetNetworkHashPS {
-	cmd := btcjson.NewGetNetworkHashPSCmd(&blocks, nil)
-	return c.sendCmd(cmd)
-}
-
-// GetNetworkHashPS2 returns the estimated network hashes per second for the
-// specified previous number of blocks working backwards from the most recent
-// block height.  The blocks parameter can also be -1 in which case the number
-// of blocks since the last difficulty change will be used.
-//
-// See GetNetworkHashPS to use defaults and GetNetworkHashPS3 to override the
-// height at which to calculate the estimate.
-func (c *Client) GetNetworkHashPS2(blocks int) (int64, error) {
-	return c.GetNetworkHashPS2Async(blocks).Receive()
-}
-
-// GetNetworkHashPS3Async returns an instance of a type that can be used to get
-// the result of the RPC at some future time by invoking the Receive function on
-// the returned instance.
-//
-// See GetNetworkHashPS3 for the blocking version and more details.
-func (c *Client) GetNetworkHashPS3Async(blocks, height int) FutureGetNetworkHashPS {
-	cmd := btcjson.NewGetNetworkHashPSCmd(&blocks, &height)
-	return c.sendCmd(cmd)
-}
-
-// GetNetworkHashPS3 returns the estimated network hashes per second for the
-// specified previous number of blocks working backwards from the specified
-// block height.  The blocks parameter can also be -1 in which case the number
-// of blocks since the last difficulty change will be used.
-//
-// See GetNetworkHashPS and GetNetworkHashPS2 to use defaults.
-func (c *Client) GetNetworkHashPS3(blocks, height int) (int64, error) {
-	return c.GetNetworkHashPS3Async(blocks, height).Receive()
 }
 
 // FutureSubmitBlockResult is a future promise to deliver the result of a
@@ -313,7 +230,7 @@ func (r FutureSubmitBlockResult) Receive() error {
 // returned instance.
 //
 // See SubmitBlock for the blocking version and more details.
-func (c *Client) SubmitBlockAsync(block *util.Block, options *btcjson.SubmitBlockOptions) FutureSubmitBlockResult {
+func (c *Client) SubmitBlockAsync(block *util.Block, options *rpcmodel.SubmitBlockOptions) FutureSubmitBlockResult {
 	blockHex := ""
 	if block != nil {
 		blockBytes, err := block.Bytes()
@@ -324,12 +241,12 @@ func (c *Client) SubmitBlockAsync(block *util.Block, options *btcjson.SubmitBloc
 		blockHex = hex.EncodeToString(blockBytes)
 	}
 
-	cmd := btcjson.NewSubmitBlockCmd(blockHex, options)
+	cmd := rpcmodel.NewSubmitBlockCmd(blockHex, options)
 	return c.sendCmd(cmd)
 }
 
-// SubmitBlock attempts to submit a new block into the bitcoin network.
-func (c *Client) SubmitBlock(block *util.Block, options *btcjson.SubmitBlockOptions) error {
+// SubmitBlock attempts to submit a new block into the kaspa network.
+func (c *Client) SubmitBlock(block *util.Block, options *rpcmodel.SubmitBlockOptions) error {
 	return c.SubmitBlockAsync(block, options).Receive()
 }
 
@@ -343,24 +260,24 @@ type FutureGetBlockTemplateResult chan *response
 //
 // See GetBlockTemplate for the blocking version and more details
 func (c *Client) GetBlockTemplateAsync(capabilities []string, longPollID string) FutureGetBlockTemplateResult {
-	request := &btcjson.TemplateRequest{
+	request := &rpcmodel.TemplateRequest{
 		Mode:         "template",
 		Capabilities: capabilities,
 		LongPollID:   longPollID,
 	}
-	cmd := btcjson.NewGetBlockTemplateCmd(request)
+	cmd := rpcmodel.NewGetBlockTemplateCmd(request)
 	return c.sendCmd(cmd)
 }
 
 // Receive waits for the response promised by the future and returns an error if
 // any occurred when submitting the block.
-func (r FutureGetBlockTemplateResult) Receive() (*btcjson.GetBlockTemplateResult, error) {
+func (r FutureGetBlockTemplateResult) Receive() (*rpcmodel.GetBlockTemplateResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
-	var result btcjson.GetBlockTemplateResult
+	var result rpcmodel.GetBlockTemplateResult
 	if err := json.Unmarshal(res, &result); err != nil {
 		return nil, err
 	}
@@ -368,6 +285,6 @@ func (r FutureGetBlockTemplateResult) Receive() (*btcjson.GetBlockTemplateResult
 }
 
 // GetBlockTemplate request a block template from the server, to mine upon
-func (c *Client) GetBlockTemplate(capabilities []string, longPollID string) (*btcjson.GetBlockTemplateResult, error) {
+func (c *Client) GetBlockTemplate(capabilities []string, longPollID string) (*rpcmodel.GetBlockTemplateResult, error) {
 	return c.GetBlockTemplateAsync(capabilities, longPollID).Receive()
 }

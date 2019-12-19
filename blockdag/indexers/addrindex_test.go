@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"testing"
 
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // addrIndexBucket provides a mock address index database bucket by implementing
@@ -61,7 +61,7 @@ func (b *addrIndexBucket) Delete(key []byte) error {
 }
 
 // printLevels returns a string with a visual representation of the provided
-// address key taking into account the max size of each level.  It is useful
+// address key taking into account the max size of each level. It is useful
 // when creating and debugging test cases.
 func (b *addrIndexBucket) printLevels(addrKey [addrKeySize]byte) string {
 	highestLevel := uint8(0)
@@ -119,7 +119,7 @@ func (b *addrIndexBucket) sanityCheck(addrKey [addrKeySize]byte, expectedTotal i
 	maxEntries := level0MaxEntries
 	for level := uint8(0); level <= highestLevel; level++ {
 		// Level 0 can'have more entries than the max allowed if the
-		// levels after it have data and it can't be empty.  All other
+		// levels after it have data and it can't be empty. All other
 		// levels must either be half full or full.
 		data := b.levels[keyForLevel(addrKey, level)]
 		numEntries := len(data) / txEntrySize
@@ -236,9 +236,9 @@ nextTest:
 		}
 
 		// Delete entries from the populated bucket until all entries
-		// have been deleted.  The bucket is reset to the fully
+		// have been deleted. The bucket is reset to the fully
 		// populated bucket on each iteration so every combination is
-		// tested.  Notice the upper limit purposes exceeds the number
+		// tested. Notice the upper limit purposes exceeds the number
 		// of entries to ensure attempting to delete more entries than
 		// there are works correctly.
 		for numDelete := 0; numDelete <= test.numInsert+1; numDelete++ {

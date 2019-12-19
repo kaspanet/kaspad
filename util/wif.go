@@ -6,14 +6,14 @@ package util
 
 import (
 	"bytes"
-	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/util/base58"
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/kaspanet/kaspad/ecc"
+	"github.com/kaspanet/kaspad/util/base58"
+	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 )
 
 // ErrMalformedPrivateKey describes an error where a WIF-encoded private
-// key cannot be decoded due to being improperly formatted.  This may occur
+// key cannot be decoded due to being improperly formatted. This may occur
 // if the byte length is incorrect or an unexpected magic number was
 // encountered.
 var ErrMalformedPrivateKey = errors.New("malformed private key")
@@ -23,14 +23,14 @@ var ErrMalformedPrivateKey = errors.New("malformed private key")
 const compressMagic byte = 0x01
 
 // WIF contains the individual components described by the Wallet Import Format
-// (WIF).  A WIF string is typically used to represent a private key and its
+// (WIF). A WIF string is typically used to represent a private key and its
 // associated address in a way that  may be easily copied and imported into or
-// exported from wallet software.  WIF strings may be decoded into this
+// exported from wallet software. WIF strings may be decoded into this
 // structure by calling DecodeWIF or created with a user-provided private key
 // by calling NewWIF.
 type WIF struct {
 	// PrivKey is the private key being imported or exported.
-	PrivKey *btcec.PrivateKey
+	PrivKey *ecc.PrivateKey
 
 	// CompressPubKey specifies whether the address controlled by the
 	// imported or exported private key was created by hashing a
@@ -38,21 +38,21 @@ type WIF struct {
 	// uncompressed (65-byte) one.
 	CompressPubKey bool
 
-	// netID is the bitcoin network identifier byte used when
+	// netID is the kaspa network identifier byte used when
 	// WIF encoding the private key.
 	netID byte
 }
 
 // NewWIF creates a new WIF structure to export an address and its private key
-// as a string encoded in the Wallet Import Format.  The compress argument
+// as a string encoded in the Wallet Import Format. The compress argument
 // specifies whether the address intended to be imported or exported was created
 // by serializing the public key compressed rather than uncompressed.
-func NewWIF(privKey *btcec.PrivateKey, privateKeyID byte, compress bool) (*WIF, error) {
+func NewWIF(privKey *ecc.PrivateKey, privateKeyID byte, compress bool) (*WIF, error) {
 	return &WIF{privKey, compress, privateKeyID}, nil
 }
 
 // IsForNet returns whether or not the decoded WIF structure is associated
-// with the passed bitcoin network.
+// with the passed kaspa network.
 func (w *WIF) IsForNet(privateKeyID byte) bool {
 	return w.netID == privateKeyID
 }
@@ -73,9 +73,9 @@ func (w *WIF) IsForNet(privateKeyID byte) bool {
 //    of every byte before the checksum in this sequence
 //
 // If the base58-decoded byte sequence does not match this, DecodeWIF will
-// return a non-nil error.  ErrMalformedPrivateKey is returned when the WIF
+// return a non-nil error. ErrMalformedPrivateKey is returned when the WIF
 // is of an impossible length or the expected compressed pubkey magic number
-// does not equal the expected value of 0x01.  ErrChecksumMismatch is returned
+// does not equal the expected value of 0x01. ErrChecksumMismatch is returned
 // if the expected WIF checksum does not match the calculated checksum.
 func DecodeWIF(wif string) (*WIF, error) {
 	decoded := base58.Decode(wif)
@@ -85,25 +85,25 @@ func DecodeWIF(wif string) (*WIF, error) {
 	// Length of base58 decoded WIF must be 32 bytes + an optional 1 byte
 	// (0x01) if compressed, plus 1 byte for netID + 4 bytes of checksum.
 	switch decodedLen {
-	case 1 + btcec.PrivKeyBytesLen + 1 + 4:
+	case 1 + ecc.PrivKeyBytesLen + 1 + 4:
 		if decoded[33] != compressMagic {
 			return nil, ErrMalformedPrivateKey
 		}
 		compress = true
-	case 1 + btcec.PrivKeyBytesLen + 4:
+	case 1 + ecc.PrivKeyBytesLen + 4:
 		compress = false
 	default:
 		return nil, ErrMalformedPrivateKey
 	}
 
 	// Checksum is first four bytes of double SHA256 of the identifier byte
-	// and privKey.  Verify this matches the final 4 bytes of the decoded
+	// and privKey. Verify this matches the final 4 bytes of the decoded
 	// private key.
 	var tosum []byte
 	if compress {
-		tosum = decoded[:1+btcec.PrivKeyBytesLen+1]
+		tosum = decoded[:1+ecc.PrivKeyBytesLen+1]
 	} else {
-		tosum = decoded[:1+btcec.PrivKeyBytesLen]
+		tosum = decoded[:1+ecc.PrivKeyBytesLen]
 	}
 	cksum := daghash.DoubleHashB(tosum)[:4]
 	if !bytes.Equal(cksum, decoded[decodedLen-4:]) {
@@ -111,8 +111,8 @@ func DecodeWIF(wif string) (*WIF, error) {
 	}
 
 	netID := decoded[0]
-	privKeyBytes := decoded[1 : 1+btcec.PrivKeyBytesLen]
-	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyBytes)
+	privKeyBytes := decoded[1 : 1+ecc.PrivKeyBytesLen]
+	privKey, _ := ecc.PrivKeyFromBytes(ecc.S256(), privKeyBytes)
 	return &WIF{privKey, compress, netID}, nil
 }
 
@@ -120,11 +120,11 @@ func DecodeWIF(wif string) (*WIF, error) {
 // See DecodeWIF for a detailed breakdown of the format and requirements of
 // a valid WIF string.
 func (w *WIF) String() string {
-	// Precalculate size.  Maximum number of bytes before base58 encoding
+	// Precalculate size. Maximum number of bytes before base58 encoding
 	// is one byte for the network, 32 bytes of private key, possibly one
 	// extra byte if the pubkey is to be compressed, and finally four
 	// bytes of checksum.
-	encodeLen := 1 + btcec.PrivKeyBytesLen + 4
+	encodeLen := 1 + ecc.PrivKeyBytesLen + 4
 	if w.CompressPubKey {
 		encodeLen++
 	}
@@ -133,7 +133,7 @@ func (w *WIF) String() string {
 	a = append(a, w.netID)
 	// Pad and append bytes manually, instead of using Serialize, to
 	// avoid another call to make.
-	a = paddedAppend(btcec.PrivKeyBytesLen, a, w.PrivKey.D.Bytes())
+	a = paddedAppend(ecc.PrivKeyBytesLen, a, w.PrivKey.D.Bytes())
 	if w.CompressPubKey {
 		a = append(a, compressMagic)
 	}
@@ -143,10 +143,10 @@ func (w *WIF) String() string {
 }
 
 // SerializePubKey serializes the associated public key of the imported or
-// exported private key in either a compressed or uncompressed format.  The
+// exported private key in either a compressed or uncompressed format. The
 // serialization format chosen depends on the value of w.CompressPubKey.
 func (w *WIF) SerializePubKey() []byte {
-	pk := (*btcec.PublicKey)(&w.PrivKey.PublicKey)
+	pk := (*ecc.PublicKey)(&w.PrivKey.PublicKey)
 	if w.CompressPubKey {
 		return pk.SerializeCompressed()
 	}

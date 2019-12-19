@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/integration/rpctest"
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/integration/rpctest"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 const (
@@ -118,7 +118,7 @@ func assertSoftForkStatus(r *rpctest.Harness, t *testing.T, forkKey string, stat
 }
 
 // testBIP0009 ensures the BIP0009 soft fork mechanism follows the state
-// transition rules set forth by the BIP for the provided soft fork key.  It
+// transition rules set forth by the BIP for the provided soft fork key. It
 // uses the regression test network to signal support and advance through the
 // various threshold states including failure to achieve locked in status.
 //
@@ -153,7 +153,7 @@ func testBIP0009(t *testing.T, forkKey string, deploymentID uint32) {
 	//
 	// NOTE: This is two blocks before the confirmation window because the
 	// getblockchaininfo RPC reports the status for the block AFTER the
-	// current one.  All of the heights below are thus offset by one to
+	// current one. All of the heights below are thus offset by one to
 	// compensate.
 	//
 	// Assert the chain height is the expected value and soft fork status is
@@ -272,7 +272,7 @@ func testBIP0009(t *testing.T, forkKey string, deploymentID uint32) {
 }
 
 // TestBIP0009 ensures the BIP0009 soft fork mechanism follows the state
-// transition rules set forth by the BIP for all soft forks.  It uses the
+// transition rules set forth by the BIP for all soft forks. It uses the
 // regression test network to signal support and advance through the various
 // threshold states including failure to achieve locked in status.
 //
@@ -300,7 +300,7 @@ func TestBIP0009(t *testing.T) {
 	testBIP0009(t, "dummy", dagconfig.DeploymentTestDummy)
 }
 
-// TestBIP0009Mining ensures blocks built via btcd's CPU miner follow the rules
+// TestBIP0009Mining ensures blocks built via kaspad's CPU miner follow the rules
 // set forth by BIP0009 by using the test dummy deployment.
 //
 // Overview:
@@ -332,7 +332,7 @@ func TestBIP0009Mining(t *testing.T) {
 
 	// *** ThresholdDefined ***
 	//
-	// Generate a block that extends the genesis block.  It should not have
+	// Generate a block that extends the genesis block. It should not have
 	// the test dummy bit set in the version since the first window is
 	// in the defined threshold state.
 	deployment := &r.ActiveNet.Deployments[dagconfig.DeploymentTestDummy]
@@ -352,7 +352,7 @@ func TestBIP0009Mining(t *testing.T) {
 	// in the version.
 	//
 	// The last generated block should now have the test bit set in the
-	// version since the btcd mining code will have recognized the test
+	// version since the kaspad mining code will have recognized the test
 	// dummy deployment as started.
 	confirmationWindow := r.ActiveNet.MinerConfirmationWindow
 	numNeeded := confirmationWindow - 1
@@ -369,7 +369,7 @@ func TestBIP0009Mining(t *testing.T) {
 	// Generate enough blocks to reach the next state transition.
 	//
 	// The last generated block should still have the test bit set in the
-	// version since the btcd mining code will have recognized the test
+	// version since the kaspad mining code will have recognized the test
 	// dummy deployment as locked in.
 	hashes, err = r.Node.Generate(confirmationWindow)
 	if err != nil {
@@ -387,7 +387,7 @@ func TestBIP0009Mining(t *testing.T) {
 	// in the version since it is still locked in.
 	//
 	// The last generated block should NOT have the test bit set in the
-	// version since the btcd mining code will have recognized the test
+	// version since the kaspad mining code will have recognized the test
 	// dummy deployment as activated and thus there is no longer any need
 	// to set the bit.
 	hashes, err = r.Node.Generate(confirmationWindow)

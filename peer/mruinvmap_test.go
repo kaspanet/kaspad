@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // TestMruInventoryMap ensures the MruInventoryMap behaves as expected including
@@ -42,7 +42,7 @@ func TestMruInventoryMap(t *testing.T) {
 testLoop:
 	for i, test := range tests {
 		// Create a new mru inventory map limited by the specified test
-		// limit and add all of the test inventory vectors.  This will
+		// limit and add all of the test inventory vectors. This will
 		// cause evicition since there are more test inventory vectors
 		// than the limits.
 		mruInvMap := newMruInventoryMap(uint(test.limit))
@@ -132,7 +132,7 @@ func TestMruInventoryMapStringer(t *testing.T) {
 	mruInvMap.Add(iv1)
 	mruInvMap.Add(iv2)
 
-	// Ensure the stringer gives the expected result.  Since map iteration
+	// Ensure the stringer gives the expected result. Since map iteration
 	// is not ordered, either entry could be first, so account for both
 	// cases.
 	wantStr1 := fmt.Sprintf("<%d>[%s, %s]", 2, iv1, iv2)

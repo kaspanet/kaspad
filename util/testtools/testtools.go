@@ -1,18 +1,18 @@
 package testtools
 
 import (
-	"github.com/daglabs/btcd/dagconfig"
+	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/pkg/errors"
 
-	"github.com/daglabs/btcd/mining"
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/kaspanet/kaspad/mining"
+	"github.com/kaspanet/kaspad/util/daghash"
 
-	"github.com/daglabs/btcd/blockdag"
+	"github.com/kaspanet/kaspad/blockdag"
 
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/subnetworkid"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // RegisterSubnetworkForTest is used to register network on DAG with specified gas limit

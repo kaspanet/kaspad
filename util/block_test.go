@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/util/subnetworkid"
-	"github.com/daglabs/btcd/wire"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // TestBlock tests the API for Block.
@@ -301,7 +301,7 @@ func TestBlockErrors(t *testing.T) {
 	}
 }
 
-// Block100000 defines block 100,000 of the block chain.  It is used to
+// Block100000 defines block 100,000 of the block DAG. It is used to
 // test Block operations.
 var Block100000 = wire.MsgBlock{
 	Header: wire.BlockHeader{

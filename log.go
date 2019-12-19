@@ -6,10 +6,10 @@
 package main
 
 import (
-	"github.com/daglabs/btcd/logger"
-	"github.com/daglabs/btcd/util/panics"
+	"github.com/kaspanet/kaspad/logger"
+	"github.com/kaspanet/kaspad/util/panics"
 )
 
-var btcdLog, _ = logger.Get(logger.SubsystemTags.BTCD)
-var spawn = panics.GoroutineWrapperFunc(btcdLog, logger.BackendLog)
+var kasdLog, _ = logger.Get(logger.SubsystemTags.KASD)
+var spawn = panics.GoroutineWrapperFunc(kasdLog)
 var srvrLog, _ = logger.Get(logger.SubsystemTags.SRVR)

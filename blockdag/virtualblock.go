@@ -5,7 +5,7 @@
 package blockdag
 
 import (
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/kaspanet/kaspad/util/daghash"
 	"sync"
 )
 
@@ -153,7 +153,7 @@ func (v *virtualBlock) AddTip(newTip *blockNode) *chainUpdates {
 	return v.addTip(newTip)
 }
 
-// tips returns the current tip block nodes for the DAG.  It will return
+// tips returns the current tip block nodes for the DAG. It will return
 // an empty blockSet if there is no tip.
 //
 // This function is safe for concurrent access.

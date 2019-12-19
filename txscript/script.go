@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // SigHashType represents hash type bits at the end of a signature.
@@ -69,7 +69,7 @@ func IsPayToScriptHash(script []byte) bool {
 func isPushOnly(pops []parsedOpcode) bool {
 	// NOTE: This function does NOT verify opcodes directly since it is
 	// internal and is only called with parsed opcodes for scripts that did
-	// not have any parse errors.  Thus, consensus is properly maintained.
+	// not have any parse errors. Thus, consensus is properly maintained.
 
 	for _, pop := range pops {
 		// All opcodes up to OP_16 are data push instructions.
@@ -95,7 +95,7 @@ func IsPushOnlyScript(script []byte) (bool, error) {
 }
 
 // parseScriptTemplate is the same as parseScript but allows the passing of the
-// template list for testing purposes.  When there are parse errors, it returns
+// template list for testing purposes. When there are parse errors, it returns
 // the list of parsed opcodes up to the point of failure along with the error.
 func parseScriptTemplate(script []byte, opcodes *[256]opcode) ([]parsedOpcode, error) {
 	retScript := make([]parsedOpcode, 0, len(script))
@@ -106,7 +106,7 @@ func parseScriptTemplate(script []byte, opcodes *[256]opcode) ([]parsedOpcode, e
 
 		// Parse data out of instruction.
 		switch {
-		// No additional data.  Note that some of the opcodes, notably
+		// No additional data. Note that some of the opcodes, notably
 		// OP_1NEGATE, OP_0, and OP_[1-16] represent the data
 		// themselves.
 		case op.length == 1:
@@ -201,10 +201,10 @@ func unparseScript(pops []parsedOpcode) ([]byte, error) {
 	return script, nil
 }
 
-// DisasmString formats a disassembled script for one line printing.  When the
+// DisasmString formats a disassembled script for one line printing. When the
 // script fails to parse, the returned string will contain the disassembled
 // script up to the point the failure occurred along with the string '[error]'
-// appended.  In addition, the reason the script failed to parse is returned
+// appended. In addition, the reason the script failed to parse is returned
 // if the caller wants more information about the failure.
 func DisasmString(buf []byte) (string, error) {
 	var disbuf bytes.Buffer
@@ -249,13 +249,13 @@ func canonicalPush(pop parsedOpcode) bool {
 }
 
 // shallowCopyTx creates a shallow copy of the transaction for use when
-// calculating the signature hash.  It is used over the Copy method on the
+// calculating the signature hash. It is used over the Copy method on the
 // transaction itself since that is a deep copy and therefore does more work and
 // allocates much more space than needed.
 func shallowCopyTx(tx *wire.MsgTx) wire.MsgTx {
 	// As an additional memory optimization, use contiguous backing arrays
 	// for the copied inputs and outputs and point the final slice of
-	// pointers into the contiguous arrays.  This avoids a lot of small
+	// pointers into the contiguous arrays. This avoids a lot of small
 	// allocations.
 	// Specifically avoid using wire.NewMsgTx() to prevent correcting errors by
 	// auto-generating various fields.
@@ -426,9 +426,9 @@ func GetSigOpCount(script []byte) int {
 }
 
 // GetPreciseSigOpCount returns the number of signature operations in
-// scriptPubKey.  If p2sh is true then scriptSig may be searched for the
+// scriptPubKey. If p2sh is true then scriptSig may be searched for the
 // Pay-To-Script-Hash script in order to find the precise number of signature
-// operations in the transaction.  If the script fails to parse, then the count
+// operations in the transaction. If the script fails to parse, then the count
 // up to the point of failure is returned.
 func GetPreciseSigOpCount(scriptSig, scriptPubKey []byte, isP2SH bool) int {
 	// Don't check error since parseScript returns the parsed-up-to-error
@@ -441,7 +441,7 @@ func GetPreciseSigOpCount(scriptSig, scriptPubKey []byte, isP2SH bool) int {
 	}
 
 	// The public key script is a pay-to-script-hash, so parse the signature
-	// script to get the final item.  Scripts that fail to fully parse count
+	// script to get the final item. Scripts that fail to fully parse count
 	// as 0 signature operations.
 	sigPops, err := parseScript(scriptSig)
 	if err != nil {
@@ -456,7 +456,7 @@ func GetPreciseSigOpCount(scriptSig, scriptPubKey []byte, isP2SH bool) int {
 	}
 
 	// The P2SH script is the last item the signature script pushes to the
-	// stack.  When the script is empty, there are no signature operations.
+	// stack. When the script is empty, there are no signature operations.
 	shScript := sigPops[len(sigPops)-1].data
 	if len(shScript) == 0 {
 		return 0
@@ -471,7 +471,7 @@ func GetPreciseSigOpCount(scriptSig, scriptPubKey []byte, isP2SH bool) int {
 }
 
 // IsUnspendable returns whether the passed public key script is unspendable, or
-// guaranteed to fail at execution.  This allows inputs to be pruned instantly
+// guaranteed to fail at execution. This allows inputs to be pruned instantly
 // when entering the UTXO set.
 func IsUnspendable(scriptPubKey []byte) bool {
 	pops, err := parseScript(scriptPubKey)

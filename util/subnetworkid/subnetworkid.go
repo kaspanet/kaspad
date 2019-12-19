@@ -12,7 +12,7 @@ import (
 	"sort"
 )
 
-// IDLength of array used to store the subnetwork ID.  See SubnetworkID.
+// IDLength of array used to store the subnetwork ID. See SubnetworkID.
 const IDLength = 20
 
 // MaxStringSize is the maximum length of a SubnetworkID string.
@@ -22,7 +22,7 @@ const MaxStringSize = IDLength * 2
 // string that has too many characters.
 var ErrIDStrSize = errors.Errorf("max ID string length is %d bytes", MaxStringSize)
 
-// SubnetworkID is used in several of the bitcoin messages and common structures.  It
+// SubnetworkID is used in several of the kaspa messages and common structures. It
 // typically represents ripmed160(sha256(data)).
 type SubnetworkID [IDLength]byte
 
@@ -68,7 +68,7 @@ func (id *SubnetworkID) CloneBytes() []byte {
 	return newID
 }
 
-// SetBytes sets the bytes which represent the ID.  An error is returned if
+// SetBytes sets the bytes which represent the ID. An error is returned if
 // the number of bytes passed in is not IDLength.
 func (id *SubnetworkID) SetBytes(newID []byte) error {
 	nhlen := len(newID)
@@ -108,7 +108,7 @@ func AreEqual(first []SubnetworkID, second []SubnetworkID) bool {
 	return true
 }
 
-// New returns a new ID from a byte slice.  An error is returned if
+// New returns a new ID from a byte slice. An error is returned if
 // the number of bytes passed in is not IDLength.
 func New(newID []byte) (*SubnetworkID, error) {
 	var sh SubnetworkID
@@ -119,7 +119,7 @@ func New(newID []byte) (*SubnetworkID, error) {
 	return &sh, err
 }
 
-// NewFromStr creates a SubnetworkID from a string.  The string should be
+// NewFromStr creates a SubnetworkID from a string. The string should be
 // the hexadecimal string of a byte-reversed hash, but any missing characters
 // result in zero padding at the end of the SubnetworkID.
 func NewFromStr(id string) (*SubnetworkID, error) {
@@ -139,7 +139,7 @@ func Decode(dst *SubnetworkID, src string) error {
 		return ErrIDStrSize
 	}
 
-	// Hex decoder expects the ID to be a multiple of two.  When not, pad
+	// Hex decoder expects the ID to be a multiple of two. When not, pad
 	// with a leading zero.
 	var srcBytes []byte
 	if len(src)%2 == 0 {
@@ -157,7 +157,7 @@ func Decode(dst *SubnetworkID, src string) error {
 		return err
 	}
 
-	// Reverse copy from the temporary hash to destination.  Because the
+	// Reverse copy from the temporary hash to destination. Because the
 	// temporary was zeroed, the written result will be correctly padded.
 	for i, b := range reversedHash[:IDLength/2] {
 		dst[i], dst[IDLength-1-i] = reversedHash[IDLength-1-i], b

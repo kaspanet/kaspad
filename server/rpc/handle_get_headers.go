@@ -3,16 +3,13 @@ package rpc
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // handleGetHeaders implements the getHeaders command.
-//
-// NOTE: This is a btcsuite extension originally ported from
-// github.com/decred/dcrd.
 func handleGetHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.GetHeadersCmd)
+	c := cmd.(*rpcmodel.GetHeadersCmd)
 
 	startHash := &daghash.ZeroHash
 	if c.StartHash != "" {
@@ -28,7 +25,13 @@ func handleGetHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (in
 			return nil, rpcDecodeHexError(c.StopHash)
 		}
 	}
-	headers := s.cfg.SyncMgr.GetBlueBlocksHeadersBetween(startHash, stopHash)
+	headers, err := s.cfg.SyncMgr.GetBlueBlocksHeadersBetween(startHash, stopHash)
+	if err != nil {
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCMisc,
+			Message: err.Error(),
+		}
+	}
 
 	// Return the serialized block headers as hex-encoded strings.
 	hexBlockHeaders := make([]string, len(headers))

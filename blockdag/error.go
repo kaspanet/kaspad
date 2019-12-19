@@ -47,13 +47,12 @@ const (
 	ErrBlockVersionTooOld
 
 	// ErrInvalidTime indicates the time in the passed block has a precision
-	// that is more than one second.  The chain consensus rules require
+	// that is more than one second. The DAG consensus rules require
 	// timestamps to have a maximum precision of one second.
 	ErrInvalidTime
 
 	// ErrTimeTooOld indicates the time is either before the median time of
-	// the last several blocks per the chain consensus rules or prior to the
-	// most recent checkpoint.
+	// the last several blocks per the DAG consensus rules.
 	ErrTimeTooOld
 
 	// ErrTimeTooNew indicates the time is too far in the future as compared
@@ -67,7 +66,7 @@ const (
 	ErrWrongParentsOrder
 
 	// ErrDifficultyTooLow indicates the difficulty for the block is lower
-	// than the difficulty required by the most recent checkpoint.
+	// than the difficulty required.
 	ErrDifficultyTooLow
 
 	// ErrUnexpectedDifficulty indicates specified bits do not align with
@@ -88,20 +87,16 @@ const (
 	// the expected value.
 	ErrBadUTXOCommitment
 
-	// ErrBadCheckpoint indicates a block that is expected to be at a
-	// checkpoint height does not match the expected one.
-	ErrBadCheckpoint
-
 	// ErrFinalityPointTimeTooOld indicates a block has a timestamp before the
 	// last finality point.
 	ErrFinalityPointTimeTooOld
 
 	// ErrNoTransactions indicates the block does not have a least one
-	// transaction.  A valid block must have at least the coinbase
+	// transaction. A valid block must have at least the coinbase
 	// transaction.
 	ErrNoTransactions
 
-	// ErrNoTxInputs indicates a transaction does not have any inputs.  A
+	// ErrNoTxInputs indicates a transaction does not have any inputs. A
 	// valid transaction must have at least one input.
 	ErrNoTxInputs
 
@@ -131,7 +126,7 @@ const (
 	ErrUnfinalizedTx
 
 	// ErrDuplicateTx indicates a block contains an identical transaction
-	// (or at least two transactions which hash to the same value).  A
+	// (or at least two transactions which hash to the same value). A
 	// valid block may only contain unique transactions.
 	ErrDuplicateTx
 
@@ -172,12 +167,12 @@ const (
 	ErrBadCoinbaseTransaction
 
 	// ErrScriptMalformed indicates a transaction script is malformed in
-	// some way.  For example, it might be longer than the maximum allowed
+	// some way. For example, it might be longer than the maximum allowed
 	// length or fail to parse.
 	ErrScriptMalformed
 
 	// ErrScriptValidation indicates the result of executing transaction
-	// script failed.  The error covers any failure when executing scripts
+	// script failed. The error covers any failure when executing scripts
 	// such signature verification failures and execution past the end of
 	// the stack.
 	ErrScriptValidation
@@ -238,7 +233,6 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrUnexpectedDifficulty:      "ErrUnexpectedDifficulty",
 	ErrHighHash:                  "ErrHighHash",
 	ErrBadMerkleRoot:             "ErrBadMerkleRoot",
-	ErrBadCheckpoint:             "ErrBadCheckpoint",
 	ErrFinalityPointTimeTooOld:   "ErrFinalityPointTimeTooOld",
 	ErrNoTransactions:            "ErrNoTransactions",
 	ErrNoTxInputs:                "ErrNoTxInputs",
@@ -280,9 +274,9 @@ func (e ErrorCode) String() string {
 	return fmt.Sprintf("Unknown ErrorCode (%d)", int(e))
 }
 
-// RuleError identifies a rule violation.  It is used to indicate that
+// RuleError identifies a rule violation. It is used to indicate that
 // processing of a block or transaction failed due to one of the many validation
-// rules.  The caller can use type assertions to determine if a failure was
+// rules. The caller can use type assertions to determine if a failure was
 // specifically due to a rule violation and access the ErrorCode field to
 // ascertain the specific reason for the rule violation.
 type RuleError struct {

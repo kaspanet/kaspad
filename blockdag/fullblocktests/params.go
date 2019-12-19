@@ -10,16 +10,16 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/daglabs/btcd/util/hdkeychain"
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/kaspanet/kaspad/util/hdkeychain"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // newHashFromStr converts the passed big-endian hex string into a
-// wire.Hash.  It only differs from the one available in daghash in that
+// wire.Hash. It only differs from the one available in daghash in that
 // it panics on an error since it will only (and must only) be called with
 // hard-coded, and therefore known good, hashes.
 func newHashFromStr(hexStr string) *daghash.Hash {
@@ -31,7 +31,7 @@ func newHashFromStr(hexStr string) *daghash.Hash {
 }
 
 // newTxIDFromStr converts the passed big-endian hex string into a
-// wire.TxID.  It only differs from the one available in daghash in that
+// wire.TxID. It only differs from the one available in daghash in that
 // it panics on an error since it will only (and must only) be called with
 // hard-coded, and therefore known good, hashes.
 func newTxIDFromStr(hexStr string) *daghash.TxID {
@@ -43,7 +43,7 @@ func newTxIDFromStr(hexStr string) *daghash.TxID {
 }
 
 // fromHex converts the passed hex string into a byte slice and will panic if
-// there is an error.  This is only provided for the hard-coded constants so
+// there is an error. This is only provided for the hard-coded constants so
 // errors in the source code can be detected. It will only (and must only) be
 // called for initialization purposes.
 func fromHex(s string) []byte {
@@ -55,12 +55,12 @@ func fromHex(s string) []byte {
 }
 
 var (
-	// bigOne is 1 represented as a big.Int.  It is defined here to avoid
+	// bigOne is 1 represented as a big.Int. It is defined here to avoid
 	// the overhead of creating it multiple times.
 	bigOne = big.NewInt(1)
 
-	// regressionPowLimit is the highest proof of work value a Bitcoin block
-	// can have for the regression test network.  It is the value 2^255 - 1.
+	// regressionPowLimit is the highest proof of work value a kaspa block
+	// can have for the regression test network. It is the value 2^255 - 1.
 	regressionPowLimit = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
 	// regTestGenesisBlock defines the genesis block of the block chain which serves
@@ -107,7 +107,7 @@ var (
 //
 // NOTE: The test generator intentionally does not use the existing definitions
 // in the dagconfig package since the intent is to be able to generate known
-// good tests which exercise that code.  Using the dagconfig parameters would
+// good tests which exercise that code. Using the dagconfig parameters would
 // allow them to change out from under the tests potentially invalidating them.
 var regressionNetParams = &dagconfig.Params{
 	Name:        "regtest",
@@ -124,9 +124,6 @@ var regressionNetParams = &dagconfig.Params{
 	DifficultyAdjustmentWindowSize: 2640,
 	TimestampDeviationTolerance:    132,
 	GenerateSupported:              true,
-
-	// Checkpoints ordered from oldest to newest.
-	Checkpoints: nil,
 
 	// Mempool parameters
 	RelayNonStdTxs: true,

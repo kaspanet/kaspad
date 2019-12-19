@@ -1,11 +1,10 @@
 connmgr
 =======
 
-[![Build Status](http://img.shields.io/travis/btcsuite/btcd.svg)](https://travis-ci.org/btcsuite/btcd)
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
-[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/daglabs/btcd/connmgr)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/kaspanet/kaspad/connmgr)
 
-Package connmgr implements a generic Bitcoin network connection manager.
+Package connmgr implements a generic Kaspa network connection manager.
 
 ## Overview
 
@@ -26,12 +25,3 @@ In addition the connection manager provides the following utilities:
 - Permanent connections with increasing backoff retry timers
 - Disconnect or Remove an established connection
 
-## Installation and Updating
-
-```bash
-$ go get -u github.com/daglabs/btcd/connmgr
-```
-
-## License
-
-Package connmgr is licensed under the [copyfree](http://copyfree.org) ISC License.

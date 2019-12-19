@@ -1,13 +1,13 @@
 package rpc
 
 import (
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
 // handleGetSubnetwork handles the getSubnetwork command.
 func handleGetSubnetwork(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.GetSubnetworkCmd)
+	c := cmd.(*rpcmodel.GetSubnetworkCmd)
 
 	subnetworkID, err := subnetworkid.NewFromStr(c.SubnetworkID)
 	if err != nil {
@@ -19,15 +19,15 @@ func handleGetSubnetwork(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 		!subnetworkID.IsBuiltIn() {
 		limit, err := s.cfg.DAG.SubnetworkStore.GasLimit(subnetworkID)
 		if err != nil {
-			return nil, &btcjson.RPCError{
-				Code:    btcjson.ErrRPCSubnetworkNotFound,
+			return nil, &rpcmodel.RPCError{
+				Code:    rpcmodel.ErrRPCSubnetworkNotFound,
 				Message: "Subnetwork not found.",
 			}
 		}
 		gasLimit = &limit
 	}
 
-	subnetworkReply := &btcjson.GetSubnetworkResult{
+	subnetworkReply := &rpcmodel.GetSubnetworkResult{
 		GasLimit: gasLimit,
 	}
 	return subnetworkReply, nil

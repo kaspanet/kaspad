@@ -7,7 +7,7 @@ package base58_test
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/daglabs/btcd/util/base58"
+	"github.com/kaspanet/kaspad/util/base58"
 	"testing"
 )
 

@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/daglabs/btcd/logger"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util/panics"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/logger"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util/panics"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 )
 
 var log, _ = logger.Get(logger.SubsystemTags.PEER)
-var spawn = panics.GoroutineWrapperFunc(log, logger.BackendLog)
+var spawn = panics.GoroutineWrapperFunc(log)
 
 // LogClosure is a closure that can be printed with %s to be used to
 // generate expensive-to-create data for a detailed log level and avoid doing
@@ -41,7 +41,7 @@ func newLogClosure(c func() string) logClosure {
 func formatLockTime(lockTime uint64) string {
 	// The lock time field of a transaction is either a block height at
 	// which the transaction is finalized or a timestamp depending on if the
-	// value is before the lockTimeThreshold.  When it is under the
+	// value is before the lockTimeThreshold. When it is under the
 	// threshold it is a block height.
 	if lockTime < txscript.LockTimeThreshold {
 		return fmt.Sprintf("height %d", lockTime)
@@ -80,8 +80,8 @@ func invSummary(invList []*wire.InvVect) string {
 }
 
 // sanitizeString strips any characters which are even remotely dangerous, such
-// as html control characters, from the passed string.  It also limits it to
-// the passed maximum size, which can be 0 for unlimited.  When the string is
+// as html control characters, from the passed string. It also limits it to
+// the passed maximum size, which can be 0 for unlimited. When the string is
 // limited, it will also add "..." to the string to indicate it was truncated.
 func sanitizeString(str string, maxLength uint) string {
 	const safeChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXY" +
@@ -104,7 +104,7 @@ func sanitizeString(str string, maxLength uint) string {
 }
 
 // messageSummary returns a human-readable string which summarizes a message.
-// Not all messages have or need a summary.  This is used for debug logging.
+// Not all messages have or need a summary. This is used for debug logging.
 func messageSummary(msg wire.Message) string {
 	switch msg := msg.(type) {
 	case *wire.MsgVersion:
@@ -131,12 +131,6 @@ func messageSummary(msg wire.Message) string {
 
 	case *wire.MsgPong:
 		// No summary - perhaps add nonce.
-
-	case *wire.MsgAlert:
-		// No summary.
-
-	case *wire.MsgMemPool:
-		// No summary.
 
 	case *wire.MsgTx:
 		return fmt.Sprintf("hash %s, %d inputs, %d outputs, lock %s",
@@ -181,7 +175,7 @@ func messageSummary(msg wire.Message) string {
 	case *wire.MsgReject:
 		// Ensure the variable length strings don't contain any
 		// characters which are even remotely dangerous such as HTML
-		// control characters, etc.  Also limit them to sane length for
+		// control characters, etc. Also limit them to sane length for
 		// logging.
 		rejCommand := sanitizeString(msg.Cmd, wire.CommandSize)
 		rejReason := sanitizeString(msg.Reason, maxRejectReasonLen)

@@ -1,16 +1,16 @@
-// Package dagconfig defines chain configuration parameters.
+// Package dagconfig defines DAG configuration parameters.
 //
-// In addition to the main Bitcoin network, which is intended for the transfer
+// In addition to the main Kaspa network, which is intended for the transfer
 // of monetary value, there also exists two currently active standard networks:
-// regression test and testnet.  These networks are incompatible
+// regression test and testnet. These networks are incompatible
 // with each other (each sharing a different genesis block) and software should
 // handle errors where input intended for one network is used on an application
 // instance running on a different network.
 //
-// For library packages, dagconfig provides the ability to lookup chain
-// parameters and encoding magics when passed a *Params.  Older APIs not updated
+// For library packages, dagconfig provides the ability to lookup DAG
+// parameters and encoding magics when passed a *Params. Older APIs not updated
 // to the new convention of passing a *Params may lookup the parameters for a
-// wire.BitcoinNet using ParamsForNet, but be aware that this usage is
+// wire.KaspaNet using ParamsForNet, but be aware that this usage is
 // deprecated and will be removed from dagconfig in the future.
 //
 // For main packages, a (typically global) var may be assigned the address of
@@ -25,37 +25,37 @@
 //          "fmt"
 //          "log"
 //
-//          "github.com/daglabs/btcd/util"
-//          "github.com/daglabs/btcd/dagconfig"
+//          "github.com/kaspanet/kaspad/util"
+//          "github.com/kaspanet/kaspad/dagconfig"
 //  )
 //
-//  var testnet = flag.Bool("testnet", false, "operate on the testnet Bitcoin network")
+//  var testnet = flag.Bool("testnet", false, "operate on the testnet Kaspa network")
 //
 //  // By default (without -testnet), use mainnet.
-//  var chainParams = &dagconfig.MainNetParams
+//  var dagParams = &dagconfig.MainNetParams
 //
 //  func main() {
 //          flag.Parse()
 //
 //          // Modify active network parameters if operating on testnet.
 //          if *testnet {
-//                  chainParams = &dagconfig.TestNetParams
+//                  dagParams = &dagconfig.TestNetParams
 //          }
 //
 //          // later...
 //
 //          // Create and print new payment address, specific to the active network.
 //          pubKeyHash := make([]byte, 20)
-//          addr, err := util.NewAddressPubKeyHash(pubKeyHash, chainParams)
+//          addr, err := util.NewAddressPubKeyHash(pubKeyHash, dagParams)
 //          if err != nil {
 //                  log.Fatal(err)
 //          }
 //          fmt.Println(addr)
 //  }
 //
-// If an application does not use one of the three standard Bitcoin networks,
+// If an application does not use one of the three standard Kaspa networks,
 // a new Params struct may be created which defines the parameters for the
-// non-standard network.  As a general rule of thumb, all network parameters
+// non-standard network. As a general rule of thumb, all network parameters
 // should be unique to the network, but parameter collisions can still occur
 // (unfortunately, this is the case with regtest and testnet sharing magics).
 package dagconfig

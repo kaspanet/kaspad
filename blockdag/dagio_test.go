@@ -10,8 +10,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // TestErrNotInDAG ensures the functions related to errNotInDAG work
@@ -46,8 +46,6 @@ func TestUtxoSerialization(t *testing.T) {
 		entry      *UTXOEntry
 		serialized []byte
 	}{
-		// From tx in main blockchain:
-		// b7c3332bc138e2c9429818f5fed500bcc1746544218772389054dc8047d7cd3f:0
 		{
 			name: "blue score 1, coinbase",
 			entry: &UTXOEntry{
@@ -58,8 +56,6 @@ func TestUtxoSerialization(t *testing.T) {
 			},
 			serialized: hexToBytes("03320496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52"),
 		},
-		// From tx in main blockchain:
-		// 8131ffb0a2c945ecaf9b9063e59558784f9c3a74741ce6ae2a18d0571dac15bb:1
 		{
 			name: "blue score 100001, not coinbase",
 			entry: &UTXOEntry{
@@ -263,4 +259,16 @@ func TestDAGStateDeserializeErrors(t *testing.T) {
 			}
 		}
 	}
+}
+
+// newHashFromStr converts the passed big-endian hex string into a
+// daghash.Hash. It only differs from the one available in daghash in that
+// it panics in case of an error since it will only (and must only) be
+// called with hard-coded, and therefore known good, hashes.
+func newHashFromStr(hexStr string) *daghash.Hash {
+	hash, err := daghash.NewHashFromStr(hexStr)
+	if err != nil {
+		panic(err)
+	}
+	return hash
 }

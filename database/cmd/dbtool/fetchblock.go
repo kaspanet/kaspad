@@ -9,8 +9,8 @@ import (
 	"github.com/pkg/errors"
 	"time"
 
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // fetchBlockCmd defines the configuration options for the fetchblock command.
@@ -21,7 +21,7 @@ var (
 	fetchBlockCfg = fetchBlockCmd{}
 )
 
-// Execute is the main entry point for the command.  It's invoked by the parser.
+// Execute is the main entry point for the command. It's invoked by the parser.
 func (cmd *fetchBlockCmd) Execute(args []string) error {
 	// Setup the global config options and ensure they are valid.
 	if err := setupGlobalConfig(); err != nil {

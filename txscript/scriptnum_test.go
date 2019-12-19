@@ -11,7 +11,7 @@ import (
 )
 
 // hexToBytes converts the passed hex string into bytes and will panic if there
-// is an error.  This is only provided for the hard-coded constants so errors in
+// is an error. This is only provided for the hard-coded constants so errors in
 // the source code can be detected. It will only (and must only) be called with
 // hard-coded values.
 func hexToBytes(s string) []byte {
@@ -143,7 +143,7 @@ func TestMakeScriptNum(t *testing.T) {
 
 		// Minimally encoded values that are out of range for data that
 		// is interpreted as script numbers with the minimal encoding
-		// flag set.  Should error and return 0.
+		// flag set. Should error and return 0.
 		{hexToBytes("0000008000"), 0, defaultScriptNumLen, errNumTooBig},
 		{hexToBytes("0000008080"), 0, defaultScriptNumLen, errNumTooBig},
 		{hexToBytes("0000009000"), 0, defaultScriptNumLen, errNumTooBig},
@@ -160,7 +160,7 @@ func TestMakeScriptNum(t *testing.T) {
 		{hexToBytes("ffffffffffffffff"), 0, defaultScriptNumLen, errNumTooBig},
 
 		// Non-minimally encoded, but otherwise valid values with
-		// minimal encoding flag.  Should error and return 0.
+		// minimal encoding flag. Should error and return 0.
 		{hexToBytes("00"), 0, defaultScriptNumLen, errMinimalData},       // 0
 		{hexToBytes("0100"), 0, defaultScriptNumLen, errMinimalData},     // 1
 		{hexToBytes("7f00"), 0, defaultScriptNumLen, errMinimalData},     // 127

@@ -7,7 +7,7 @@ package blockdag
 import (
 	"math"
 
-	"github.com/daglabs/btcd/dagconfig"
+	"github.com/kaspanet/kaspad/dagconfig"
 )
 
 const (
@@ -36,11 +36,11 @@ const (
 // bitConditionChecker provides a thresholdConditionChecker which can be used to
 // test whether or not a specific bit is set when it's not supposed to be
 // according to the expected version based on the known deployments and the
-// current state of the chain.  This is useful for detecting and warning about
+// current state of the DAG. This is useful for detecting and warning about
 // unknown rule activations.
 type bitConditionChecker struct {
-	bit   uint32
-	chain *BlockDAG
+	bit uint32
+	dag *BlockDAG
 }
 
 // Ensure the bitConditionChecker type implements the thresholdConditionChecker
@@ -73,30 +73,30 @@ func (c bitConditionChecker) EndTime() uint64 {
 // RuleChangeActivationThreshold is the number of blocks for which the condition
 // must be true in order to lock in a rule change.
 //
-// This implementation returns the value defined by the chain params the checker
+// This implementation returns the value defined by the DAG params the checker
 // is associated with.
 //
 // This is part of the thresholdConditionChecker interface implementation.
 func (c bitConditionChecker) RuleChangeActivationThreshold() uint64 {
-	return c.chain.dagParams.RuleChangeActivationThreshold
+	return c.dag.dagParams.RuleChangeActivationThreshold
 }
 
 // MinerConfirmationWindow is the number of blocks in each threshold state
 // retarget window.
 //
-// This implementation returns the value defined by the chain params the checker
+// This implementation returns the value defined by the DAG params the checker
 // is associated with.
 //
 // This is part of the thresholdConditionChecker interface implementation.
 func (c bitConditionChecker) MinerConfirmationWindow() uint64 {
-	return c.chain.dagParams.MinerConfirmationWindow
+	return c.dag.dagParams.MinerConfirmationWindow
 }
 
 // Condition returns true when the specific bit associated with the checker is
 // set and it's not supposed to be according to the expected version based on
-// the known deployments and the current state of the chain.
+// the known deployments and the current state of the DAG.
 //
-// This function MUST be called with the chain state lock held (for writes).
+// This function MUST be called with the DAG state lock held (for writes).
 //
 // This is part of the thresholdConditionChecker interface implementation.
 func (c bitConditionChecker) Condition(node *blockNode) (bool, error) {
@@ -109,7 +109,7 @@ func (c bitConditionChecker) Condition(node *blockNode) (bool, error) {
 		return false, nil
 	}
 
-	expectedVersion, err := c.chain.calcNextBlockVersion(node.selectedParent)
+	expectedVersion, err := c.dag.calcNextBlockVersion(node.selectedParent)
 	if err != nil {
 		return false, err
 	}
@@ -117,11 +117,11 @@ func (c bitConditionChecker) Condition(node *blockNode) (bool, error) {
 }
 
 // deploymentChecker provides a thresholdConditionChecker which can be used to
-// test a specific deployment rule.  This is required for properly detecting
+// test a specific deployment rule. This is required for properly detecting
 // and activating consensus rule changes.
 type deploymentChecker struct {
 	deployment *dagconfig.ConsensusDeployment
-	chain      *BlockDAG
+	dag        *BlockDAG
 }
 
 // Ensure the deploymentChecker type implements the thresholdConditionChecker
@@ -154,23 +154,23 @@ func (c deploymentChecker) EndTime() uint64 {
 // RuleChangeActivationThreshold is the number of blocks for which the condition
 // must be true in order to lock in a rule change.
 //
-// This implementation returns the value defined by the chain params the checker
+// This implementation returns the value defined by the DAG params the checker
 // is associated with.
 //
 // This is part of the thresholdConditionChecker interface implementation.
 func (c deploymentChecker) RuleChangeActivationThreshold() uint64 {
-	return c.chain.dagParams.RuleChangeActivationThreshold
+	return c.dag.dagParams.RuleChangeActivationThreshold
 }
 
 // MinerConfirmationWindow is the number of blocks in each threshold state
 // retarget window.
 //
-// This implementation returns the value defined by the chain params the checker
+// This implementation returns the value defined by the DAG params the checker
 // is associated with.
 //
 // This is part of the thresholdConditionChecker interface implementation.
 func (c deploymentChecker) MinerConfirmationWindow() uint64 {
-	return c.chain.dagParams.MinerConfirmationWindow
+	return c.dag.dagParams.MinerConfirmationWindow
 }
 
 // Condition returns true when the specific bit defined by the deployment
@@ -189,10 +189,10 @@ func (c deploymentChecker) Condition(node *blockNode) (bool, error) {
 // rule change deployments.
 //
 // This function differs from the exported CalcNextBlockVersion in that the
-// exported version uses the current best chain as the previous block node
+// exported version uses the selected tip as the previous block node
 // while this function accepts any block node.
 //
-// This function MUST be called with the chain state lock held (for writes).
+// This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) calcNextBlockVersion(prevNode *blockNode) (int32, error) {
 	// Set the appropriate bits for each actively defined rule deployment
 	// that is either in the process of being voted on, or locked in for the
@@ -201,7 +201,7 @@ func (dag *BlockDAG) calcNextBlockVersion(prevNode *blockNode) (int32, error) {
 	for id := 0; id < len(dag.dagParams.Deployments); id++ {
 		deployment := &dag.dagParams.Deployments[id]
 		cache := &dag.deploymentCaches[id]
-		checker := deploymentChecker{deployment: deployment, chain: dag}
+		checker := deploymentChecker{deployment: deployment, dag: dag}
 		state, err := dag.thresholdState(prevNode, checker, cache)
 		if err != nil {
 			return 0, err
@@ -214,7 +214,7 @@ func (dag *BlockDAG) calcNextBlockVersion(prevNode *blockNode) (int32, error) {
 }
 
 // CalcNextBlockVersion calculates the expected version of the block after the
-// end of the current best chain based on the state of started and locked in
+// end of the current selected tip based on the state of started and locked in
 // rule change deployments.
 //
 // This function is safe for concurrent access.
@@ -224,16 +224,16 @@ func (dag *BlockDAG) CalcNextBlockVersion() (int32, error) {
 }
 
 // warnUnknownRuleActivations displays a warning when any unknown new rules are
-// either about to activate or have been activated.  This will only happen once
+// either about to activate or have been activated. This will only happen once
 // when new rules have been activated and every block for those about to be
 // activated.
 //
-// This function MUST be called with the chain state lock held (for writes)
+// This function MUST be called with the DAG state lock held (for writes)
 func (dag *BlockDAG) warnUnknownRuleActivations(node *blockNode) error {
 	// Warn if any unknown new rules are either about to activate or have
 	// already been activated.
 	for bit := uint32(0); bit < vbNumBits; bit++ {
-		checker := bitConditionChecker{bit: bit, chain: dag}
+		checker := bitConditionChecker{bit: bit, dag: dag}
 		cache := &dag.warningCaches[bit]
 		state, err := dag.thresholdState(node.selectedParent, checker, cache)
 		if err != nil {
@@ -262,7 +262,7 @@ func (dag *BlockDAG) warnUnknownRuleActivations(node *blockNode) error {
 // warnUnknownVersions logs a warning if a high enough percentage of the last
 // blocks have unexpected versions.
 //
-// This function MUST be called with the chain state lock held (for writes)
+// This function MUST be called with the DAG state lock held (for writes)
 func (dag *BlockDAG) warnUnknownVersions(node *blockNode) error {
 	// Nothing to do if already warned.
 	if dag.unknownVersionsWarned {
@@ -285,7 +285,7 @@ func (dag *BlockDAG) warnUnknownVersions(node *blockNode) error {
 	}
 	if numUpgraded > unknownVerWarnNum {
 		log.Warn("Unknown block versions are being mined, so new " +
-			"rules might be in effect.  Are you running the " +
+			"rules might be in effect. Are you running the " +
 			"latest version of the software?")
 		dag.unknownVersionsWarned = true
 	}

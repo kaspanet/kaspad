@@ -11,11 +11,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/daglabs/btcd/util/daghash"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// mainNetGenesisHash is the hash of the first block in the block chain for the
+// mainNetGenesisHash is the hash of the first block in the block DAG for the
 // main network (genesis block).
 var mainNetGenesisHash = &daghash.Hash{
 	0xdc, 0x5f, 0x5b, 0x5b, 0x1d, 0xc2, 0xa7, 0x25,
@@ -24,7 +24,7 @@ var mainNetGenesisHash = &daghash.Hash{
 	0x8c, 0xfd, 0x9f, 0x69, 0xdd, 0xcf, 0xbb, 0x63,
 }
 
-// simNetGenesisHash is the hash of the first block in the block chain for the
+// simNetGenesisHash is the hash of the first block in the block DAG for the
 // simulation test network.
 var simNetGenesisHash = &daghash.Hash{
 	0xf6, 0x7a, 0xd7, 0x69, 0x5d, 0x9b, 0x66, 0x2a,
@@ -56,7 +56,7 @@ var exampleUTXOCommitment = &daghash.Hash{
 	0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
 }
 
-// TestElementWire tests wire encode and decode for various element types.  This
+// TestElementWire tests wire encode and decode for various element types. This
 // is mainly to test the "fast" paths in readElement and writeElement which use
 // type assertions to avoid reflection when possible.
 func TestElementWire(t *testing.T) {
@@ -131,7 +131,7 @@ func TestElementWire(t *testing.T) {
 			[]byte{0x01, 0x00, 0x00, 0x00},
 		},
 		{
-			BitcoinNet(MainNet),
+			KaspaNet(MainNet),
 			[]byte{0xf9, 0xbe, 0xb4, 0xd9},
 		},
 		// Type not supported by the "fast" path and requires reflection.
@@ -218,7 +218,7 @@ func TestElementWireErrors(t *testing.T) {
 		},
 		{ServiceFlag(SFNodeNetwork), 0, io.ErrShortWrite, io.EOF},
 		{InvType(InvTypeTx), 0, io.ErrShortWrite, io.EOF},
-		{BitcoinNet(MainNet), 0, io.ErrShortWrite, io.EOF},
+		{KaspaNet(MainNet), 0, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -546,7 +546,7 @@ func TestVarStringWireErrors(t *testing.T) {
 
 // TestVarStringOverflowErrors performs tests to ensure deserializing variable
 // length strings intentionally crafted to use large values for the string
-// length are handled properly.  This could otherwise potentially be used as an
+// length are handled properly. This could otherwise potentially be used as an
 // attack vector.
 func TestVarStringOverflowErrors(t *testing.T) {
 	pver := ProtocolVersion
@@ -678,7 +678,7 @@ func TestVarBytesWireErrors(t *testing.T) {
 
 // TestVarBytesOverflowErrors performs tests to ensure deserializing variable
 // length byte arrays intentionally crafted to use large values for the array
-// length are handled properly.  This could otherwise potentially be used as an
+// length are handled properly. This could otherwise potentially be used as an
 // attack vector.
 func TestVarBytesOverflowErrors(t *testing.T) {
 	pver := ProtocolVersion

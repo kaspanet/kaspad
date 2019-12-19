@@ -5,11 +5,11 @@
 package rpcclient
 
 import (
-	"github.com/daglabs/btcd/logs"
-	"github.com/daglabs/btcd/util/panics"
+	"github.com/kaspanet/kaspad/logs"
+	"github.com/kaspanet/kaspad/util/panics"
 )
 
-// log is a logger that is initialized with no output filters.  This
+// log is a logger that is initialized with no output filters. This
 // means the package will not perform any logging by default until the caller
 // requests it.
 var log logs.Logger
@@ -20,17 +20,17 @@ func init() {
 	DisableLog()
 }
 
-// DisableLog disables all library log output.  Logging output is disabled
+// DisableLog disables all library log output. Logging output is disabled
 // by default until UseLogger is called.
 func DisableLog() {
 	log = logs.Disabled
-	spawn = panics.GoroutineWrapperFunc(log, nil)
+	spawn = panics.GoroutineWrapperFunc(log)
 }
 
 // UseLogger uses a specified Logger to output package logging info.
-func UseLogger(logger logs.Logger, backendLog *logs.Backend) {
+func UseLogger(logger logs.Logger) {
 	log = logger
-	spawn = panics.GoroutineWrapperFunc(log, backendLog)
+	spawn = panics.GoroutineWrapperFunc(log)
 }
 
 // LogClosure is a closure that can be printed with %s to be used to

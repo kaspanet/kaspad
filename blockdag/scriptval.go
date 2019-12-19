@@ -9,9 +9,9 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // txValidateItem holds a transaction along with which input to validate.
@@ -22,7 +22,7 @@ type txValidateItem struct {
 }
 
 // txValidator provides a type which asynchronously validates transaction
-// inputs.  It provides several channels for communication and a processing
+// inputs. It provides several channels for communication and a processing
 // function that is intended to be in run multiple goroutines.
 type txValidator struct {
 	validateChan chan *txValidateItem
@@ -34,7 +34,7 @@ type txValidator struct {
 }
 
 // sendResult sends the result of a script pair validation on the internal
-// result channel while respecting the quit channel.  This allows orderly
+// result channel while respecting the quit channel. This allows orderly
 // shutdown when the validation process is aborted early due to a validation
 // error in one of the other goroutines.
 func (v *txValidator) sendResult(result error) {
@@ -113,7 +113,7 @@ func (v *txValidator) Validate(items []*txValidateItem) error {
 	}
 
 	// Limit the number of goroutines to do script validation based on the
-	// number of processor cores.  This helps ensure the system stays
+	// number of processor cores. This helps ensure the system stays
 	// reasonably responsive under heavy load.
 	maxGoRoutines := runtime.NumCPU() * 3
 	if maxGoRoutines <= 0 {
@@ -129,7 +129,7 @@ func (v *txValidator) Validate(items []*txValidateItem) error {
 		spawn(v.validateHandler)
 	}
 
-	// Validate each of the inputs.  The quit channel is closed when any
+	// Validate each of the inputs. The quit channel is closed when any
 	// errors occur so all processing goroutines exit regardless of which
 	// input had the validation error.
 	numInputs := len(items)
@@ -137,7 +137,7 @@ func (v *txValidator) Validate(items []*txValidateItem) error {
 	processedItems := 0
 	for processedItems < numInputs {
 		// Only send items while there are still items that need to
-		// be processed.  The select statement will never select a nil
+		// be processed. The select statement will never select a nil
 		// channel.
 		var validateChan chan *txValidateItem
 		var item *txValidateItem

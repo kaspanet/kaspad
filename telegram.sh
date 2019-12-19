@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# This file is part of Continuous Integration.  When ran by
+# This file is part of Continuous Integration. When ran by
 # the CI agent, it sends a some details about the build failure
 # to a Telegram group.
 

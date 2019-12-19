@@ -11,11 +11,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/database"
-	_ "github.com/daglabs/btcd/database/ffldb"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/database"
+	_ "github.com/kaspanet/kaspad/database/ffldb"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // This example demonstrates creating a new database.
@@ -23,8 +23,8 @@ func ExampleCreate() {
 	// This example assumes the ffldb driver is imported.
 	//
 	// import (
-	// 	"github.com/daglabs/btcd/database"
-	// 	_ "github.com/daglabs/btcd/database/ffldb"
+	// 	"github.com/kaspanet/kaspad/database"
+	// 	_ "github.com/kaspanet/kaspad/database/ffldb"
 	// )
 
 	// Create a database and schedule it to be closed and removed on exit.
@@ -49,8 +49,8 @@ func Example_basicUsage() {
 	// This example assumes the ffldb driver is imported.
 	//
 	// import (
-	// 	"github.com/daglabs/btcd/database"
-	// 	_ "github.com/daglabs/btcd/database/ffldb"
+	// 	"github.com/kaspanet/kaspad/database"
+	// 	_ "github.com/kaspanet/kaspad/database/ffldb"
 	// )
 
 	// Create a database and schedule it to be closed and removed on exit.
@@ -69,7 +69,7 @@ func Example_basicUsage() {
 	defer db.Close()
 
 	// Use the Update function of the database to perform a managed
-	// read-write transaction.  The transaction will automatically be rolled
+	// read-write transaction. The transaction will automatically be rolled
 	// back if the supplied inner function returns a non-nil error.
 	err = db.Update(func(dbTx database.Tx) error {
 		// Store a key/value pair directly in the metadata bucket.
@@ -117,8 +117,8 @@ func Example_blockStorageAndRetrieval() {
 	// This example assumes the ffldb driver is imported.
 	//
 	// import (
-	// 	"github.com/daglabs/btcd/database"
-	// 	_ "github.com/daglabs/btcd/database/ffldb"
+	// 	"github.com/kaspanet/kaspad/database"
+	// 	_ "github.com/kaspanet/kaspad/database/ffldb"
 	// )
 
 	// Create a database and schedule it to be closed and removed on exit.
@@ -158,7 +158,7 @@ func Example_blockStorageAndRetrieval() {
 
 		// As documented, all data fetched from the database is only
 		// valid during a database transaction in order to support
-		// zero-copy backends.  Thus, make a copy of the data so it
+		// zero-copy backends. Thus, make a copy of the data so it
 		// can be used outside of the transaction.
 		loadedBlockBytes = make([]byte, len(blockBytes))
 		copy(loadedBlockBytes, blockBytes)
@@ -171,7 +171,7 @@ func Example_blockStorageAndRetrieval() {
 
 	// Typically at this point, the block could be deserialized via the
 	// wire.MsgBlock.Deserialize function or used in its serialized form
-	// depending on need.  However, for this example, just display the
+	// depending on need. However, for this example, just display the
 	// number of serialized bytes to show it was loaded as expected.
 	fmt.Printf("Serialized block size: %d bytes\n", len(loadedBlockBytes))
 

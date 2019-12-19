@@ -7,9 +7,9 @@ package addrmgr
 import (
 	"time"
 
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // KnownAddress tracks information about a known network address that is used
@@ -41,7 +41,7 @@ func (ka *KnownAddress) LastAttempt() time.Time {
 	return ka.lastattempt
 }
 
-// chance returns the selection probability for a known address.  The priority
+// chance returns the selection probability for a known address. The priority
 // depends upon how recently the address has been seen, how recently it was last
 // attempted and how often attempts to connect to it have failed.
 func (ka *KnownAddress) chance() float64 {

@@ -1,14 +1,14 @@
 package blockdag
 
 import (
-	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"math"
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/ecc"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // TestUTXOCollection makes sure that utxoCollection cloning and string representations work as expected.
@@ -474,7 +474,7 @@ func TestUTXODiffRules(t *testing.T) {
 	}
 }
 
-func areMultisetsEqual(a *btcec.Multiset, b *btcec.Multiset) bool {
+func areMultisetsEqual(a *ecc.Multiset, b *ecc.Multiset) bool {
 	aX, aY := a.Point()
 	bX, bY := b.Point()
 	return aX.Cmp(bX) == 0 && aY.Cmp(bY) == 0

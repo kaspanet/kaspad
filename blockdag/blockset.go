@@ -3,7 +3,7 @@ package blockdag
 import (
 	"strings"
 
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // blockSet implements a basic unsorted set of blocks
@@ -21,17 +21,6 @@ func setFromSlice(blocks ...*blockNode) blockSet {
 		set.add(block)
 	}
 	return set
-}
-
-// maxHeight returns the height of the highest block in the block set
-func (bs blockSet) maxHeight() uint64 {
-	var maxHeight uint64
-	for _, node := range bs {
-		if maxHeight < node.height {
-			maxHeight = node.height
-		}
-	}
-	return maxHeight
 }
 
 // add adds a block to this BlockSet

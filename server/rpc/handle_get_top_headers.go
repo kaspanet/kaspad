@@ -3,13 +3,13 @@ package rpc
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // handleGetTopHeaders implements the getTopHeaders command.
 func handleGetTopHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.GetTopHeadersCmd)
+	c := cmd.(*rpcmodel.GetTopHeadersCmd)
 
 	var startHash *daghash.Hash
 	if c.StartHash != nil {

@@ -3,22 +3,22 @@
 // license that can be found in the LICENSE file.
 
 /*
-btcd is a full-node bitcoin implementation written in Go.
+kaspad is a full-node kaspa implementation written in Go.
 
-The default options are sane for most users.  This means btcd will work 'out of
-the box' for most users.  However, there are also a wide variety of flags that
+The default options are sane for most users. This means kaspad will work 'out of
+the box' for most users. However, there are also a wide variety of flags that
 can be used to control it.
 
-The following section provides a usage overview which enumerates the flags.  An
+The following section provides a usage overview which enumerates the flags. An
 interesting point to note is that the long form of all of these options
 (except -C) can be specified in a configuration file that is automatically
-parsed when btcd starts up.  By default, the configuration file is located at
-~/.btcd/btcd.conf on POSIX-style operating systems and %LOCALAPPDATA%\btcd\btcd.conf
-on Windows.  The -C (--configfile) flag, as shown below, can be used to override
+parsed when kaspad starts up. By default, the configuration file is located at
+~/.kaspad/kaspad.conf on POSIX-style operating systems and %LOCALAPPDATA%\kaspad\kaspad.conf
+on Windows. The -C (--configfile) flag, as shown below, can be used to override
 this location.
 
 Usage:
-  btcd [OPTIONS]
+  kaspad [OPTIONS]
 
 Application Options:
   -V, --version             Display version information and exit
@@ -35,8 +35,8 @@ Application Options:
                             (default all interfaces port: 8333, testnet: 18333)
       --maxpeers=           Max number of inbound and outbound peers (125)
       --nobanning           Disable banning of misbehaving peers
-      --banduration=        How long to ban misbehaving peers.  Valid time units
-                            are {s, m, h}.  Minimum 1 second (24h0m0s)
+      --banduration=        How long to ban misbehaving peers. Valid time units
+                            are {s, m, h}. Minimum 1 second (24h0m0s)
       --banthreshold=       Maximum allowed ban score before disconnecting and
                             banning misbehaving peers.
       --whitelist=          Add an IP network or IP that will not be banned.
@@ -52,9 +52,6 @@ Application Options:
       --rpcmaxclients=      Max number of RPC clients for standard connections
                             (10)
       --rpcmaxwebsockets=   Max number of RPC websocket connections (25)
-      --rpcquirks           Mirror some JSON-RPC quirks of Bitcoin Core -- NOTE:
-                            Discouraged unless interoperability issues need to
-                            be worked around
       --norpc               Disable built-in RPC server -- NOTE: The RPC server
                             is disabled by default if no rpcuser/rpcpass or
                             rpclimituser/rpclimitpass is specified
@@ -76,12 +73,9 @@ Application Options:
       --testnet             Use the test network
       --regtest             Use the regression test network
       --simnet              Use the simulation test network
-      --addcheckpoint=      Add a custom checkpoint.  Format: '<height>:<hash>'
-      --nocheckpoints       Disable built-in checkpoints.  Don't do this unless
-                            you know what you're doing.
       --uacomment=          Comment to add to the user agent --
                             See BIP 14 for more information.
-      --dbtype=             Database backend to use for the Block Chain (ffldb)
+      --dbtype=             Database backend to use for the Block DAG (ffldb)
       --profile=            Enable HTTP profiling on given port -- NOTE port
                             must be between 1024 and 65536
       --cpuprofile=         Write CPU profile to the specified file
@@ -91,7 +85,7 @@ Application Options:
                             the log level for individual subsystems -- Use show
                             to list available subsystems (info)
       --upnp                Use UPnP to map our listening port outside of NAT
-      --minrelaytxfee=      The minimum transaction fee in BTC/kB to be
+      --minrelaytxfee=      The minimum transaction fee in KAS/kB to be
                             considered a non-zero fee.
       --limitfreerelay=     Limit relay of transactions with no transaction fee
                             to the given amount in thousands of bytes per
@@ -100,7 +94,7 @@ Application Options:
                             high priority for relaying
       --maxorphantx=        Max number of orphan transactions to keep in memory
                             (100)
-      --generate            Generate (mine) bitcoins using the CPU
+      --generate            Generate (mine) kaspa using the CPU
       --miningaddr=         Add the specified payment address to the list of
                             addresses to use for generated blocks -- At least
                             one address is required if the generate option is
@@ -112,7 +106,6 @@ Application Options:
       --blockprioritysize=  Size in bytes for high-priority/low-fee transactions
                             when creating a block (50000)
       --nopeerbloomfilters  Disable bloom filtering support.
-      --nocfilters          Disable committed filtering (CF) support.
       --sigcachemaxsize=    The maximum number of entries in the signature
                             verification cache.
       --blocksonly          Do not accept transactions from remote peers.

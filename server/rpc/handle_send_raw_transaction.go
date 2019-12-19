@@ -4,16 +4,16 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/mempool"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/mempool"
+	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // handleSendRawTransaction implements the sendRawTransaction command.
 func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.SendRawTransactionCmd)
+	c := cmd.(*rpcmodel.SendRawTransactionCmd)
 	// Deserialize and send off to tx relay
 	hexStr := c.HexTx
 	if len(hexStr)%2 != 0 {
@@ -26,8 +26,8 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 	var msgTx wire.MsgTx
 	err = msgTx.Deserialize(bytes.NewReader(serializedTx))
 	if err != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCDeserialization,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCDeserialization,
 			Message: "TX decode failed: " + err.Error(),
 		}
 	}
@@ -38,10 +38,10 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 	if err != nil {
 		// When the error is a rule error, it means the transaction was
 		// simply rejected as opposed to something actually going wrong,
-		// so log it as such.  Otherwise, something really did go wrong,
-		// so log it as an actual error.  In both cases, a JSON-RPC
+		// so log it as such. Otherwise, something really did go wrong,
+		// so log it as an actual error. In both cases, a JSON-RPC
 		// error is returned to the client with the deserialization
-		// error code (to match bitcoind behavior).
+		// error code
 		if _, ok := err.(mempool.RuleError); ok {
 			log.Debugf("Rejected transaction %s: %s", tx.ID(),
 				err)
@@ -49,14 +49,14 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 			log.Errorf("Failed to process transaction %s: %s",
 				tx.ID(), err)
 		}
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCVerify,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCVerify,
 			Message: "TX rejected: " + err.Error(),
 		}
 	}
 
 	// When the transaction was accepted it should be the first item in the
-	// returned array of accepted transactions.  The only way this will not
+	// returned array of accepted transactions. The only way this will not
 	// be true is if the API for ProcessTransaction changes and this code is
 	// not properly updated, but ensure the condition holds as a safeguard.
 	//

@@ -6,7 +6,7 @@ package rpcclient
 
 import (
 	"encoding/json"
-	"github.com/daglabs/btcd/btcjson"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/pkg/errors"
 )
 
@@ -38,11 +38,11 @@ func (c *Client) RawRequestAsync(method string, params []json.RawMessage) Future
 	}
 
 	// Create a raw JSON-RPC request using the provided method and params
-	// and marshal it.  This is done rather than using the sendCmd function
-	// since that relies on marshalling registered btcjson commands rather
+	// and marshal it. This is done rather than using the sendCmd function
+	// since that relies on marshalling registered jsonrpc commands rather
 	// than custom commands.
 	id := c.NextID()
-	rawRequest := &btcjson.Request{
+	rawRequest := &rpcmodel.Request{
 		JSONRPC: "1.0",
 		ID:      id,
 		Method:  method,

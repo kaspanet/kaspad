@@ -8,9 +8,9 @@ import (
 	"math"
 	"time"
 
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/util/subnetworkid"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 var genesisTxIns = []*wire.TxIn{
@@ -73,42 +73,42 @@ var genesisBlock = wire.MsgBlock{
 	Transactions: []*wire.MsgTx{genesisCoinbaseTx},
 }
 
-// regTestGenesisHash is the hash of the first block in the block chain for the
+// regTestGenesisHash is the hash of the first block in the block DAG for the
 // regression test network (genesis block).
 var regTestGenesisHash = genesisHash
 
 // regTestGenesisMerkleRoot is the hash of the first transaction in the genesis
-// block for the regression test network.  It is the same as the merkle root for
+// block for the regression test network. It is the same as the merkle root for
 // the main network.
 var regTestGenesisMerkleRoot = genesisMerkleRoot
 
-// regTestGenesisBlock defines the genesis block of the block chain which serves
+// regTestGenesisBlock defines the genesis block of the block DAG which serves
 // as the public transaction ledger for the regression test network.
 var regTestGenesisBlock = genesisBlock
 
-// testNetGenesisHash is the hash of the first block in the block chain for the
+// testNetGenesisHash is the hash of the first block in the block DAG for the
 // test network.
 var testNetGenesisHash = genesisHash
 
 // testNetGenesisMerkleRoot is the hash of the first transaction in the genesis
-// block for the test network.  It is the same as the merkle root for the main
+// block for the test network. It is the same as the merkle root for the main
 // network.
 var testNetGenesisMerkleRoot = genesisMerkleRoot
 
-// testNetGenesisBlock defines the genesis block of the block chain which
+// testNetGenesisBlock defines the genesis block of the block DAG which
 // serves as the public transaction ledger for the test network.
 var testNetGenesisBlock = genesisBlock
 
-// simNetGenesisHash is the hash of the first block in the block chain for the
+// simNetGenesisHash is the hash of the first block in the block DAG for the
 // simulation test network.
 var simNetGenesisHash = genesisHash
 
 // simNetGenesisMerkleRoot is the hash of the first transaction in the genesis
-// block for the simulation test network.  It is the same as the merkle root for
+// block for the simulation test network. It is the same as the merkle root for
 // the main network.
 var simNetGenesisMerkleRoot = genesisMerkleRoot
 
-// simNetGenesisBlock defines the genesis block of the block chain which serves
+// simNetGenesisBlock defines the genesis block of the block DAG which serves
 // as the public transaction ledger for the simulation test network.
 var simNetGenesisBlock = genesisBlock
 
@@ -129,7 +129,7 @@ var devNetGenesisHash = daghash.Hash([daghash.HashSize]byte{
 // for the devopment network.
 var devNetGenesisMerkleRoot = genesisMerkleRoot
 
-// devNetGenesisBlock defines the genesis block of the block chain which serves as the
+// devNetGenesisBlock defines the genesis block of the block DAG which serves as the
 // public transaction ledger for the development network.
 var devNetGenesisBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{

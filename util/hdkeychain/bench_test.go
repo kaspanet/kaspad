@@ -5,7 +5,7 @@
 package hdkeychain_test
 
 import (
-	"github.com/daglabs/btcd/util/hdkeychain"
+	"github.com/kaspanet/kaspad/util/hdkeychain"
 	"testing"
 )
 

@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/ecc"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // ScriptFlags is a bitmask defining additional operations or tests that will be
@@ -21,10 +21,10 @@ const (
 	ScriptNoFlags ScriptFlags = 0
 
 	// ScriptDiscourageUpgradableNops defines whether to verify that
-	// NOP1 through NOP10 are reserved for future soft-fork upgrades.  This
+	// NOP1 through NOP10 are reserved for future soft-fork upgrades. This
 	// flag must not be used for consensus critical code nor applied to
 	// blocks as this flag is only for stricter standard transaction
-	// checks.  This flag is only applied when the above opcodes are
+	// checks. This flag is only applied when the above opcodes are
 	// executed.
 	ScriptDiscourageUpgradableNops ScriptFlags = 1 << iota
 )
@@ -39,7 +39,7 @@ const (
 )
 
 // halforder is used to tame ECDSA malleability (see BIP0062).
-var halfOrder = new(big.Int).Rsh(btcec.S256().N, 1)
+var halfOrder = new(big.Int).Rsh(ecc.S256().N, 1)
 
 // Engine is the virtual machine that executes scripts.
 type Engine struct {
@@ -64,9 +64,9 @@ func (vm *Engine) hasFlag(flag ScriptFlags) bool {
 }
 
 // isBranchExecuting returns whether or not the current conditional branch is
-// actively executing.  For example, when the data stack has an OP_FALSE on it
+// actively executing. For example, when the data stack has an OP_FALSE on it
 // and an OP_IF is encountered, the branch is inactive until an OP_ELSE or
-// OP_ENDIF is encountered.  It properly handles nested conditionals.
+// OP_ENDIF is encountered. It properly handles nested conditionals.
 func (vm *Engine) isBranchExecuting() bool {
 	if len(vm.condStack) == 0 {
 		return true
@@ -74,7 +74,7 @@ func (vm *Engine) isBranchExecuting() bool {
 	return vm.condStack[len(vm.condStack)-1] == OpCondTrue
 }
 
-// executeOpcode peforms execution on the passed opcode.  It takes into account
+// executeOpcode peforms execution on the passed opcode. It takes into account
 // whether or not it is hidden by conditionals, but some rules still must be
 // tested in this case.
 func (vm *Engine) executeOpcode(pop *parsedOpcode) error {
@@ -127,8 +127,8 @@ func (vm *Engine) executeOpcode(pop *parsedOpcode) error {
 }
 
 // disasm is a helper function to produce the output for DisasmPC and
-// DisasmScript.  It produces the opcode prefixed by the program counter at the
-// provided position in the script.  It does no error checking and leaves that
+// DisasmScript. It produces the opcode prefixed by the program counter at the
+// provided position in the script. It does no error checking and leaves that
 // to the caller to provide a valid offset.
 func (vm *Engine) disasm(scriptIdx int, scriptOff int) string {
 	return fmt.Sprintf("%02x:%04x: %s", scriptIdx, scriptOff,
@@ -173,7 +173,7 @@ func (vm *Engine) DisasmPC() (string, error) {
 }
 
 // DisasmScript returns the disassembly string for the script at the requested
-// offset index.  Index 0 is the signature script and 1 is the public key
+// offset index. Index 0 is the signature script and 1 is the public key
 // script.
 func (vm *Engine) DisasmScript(idx int) (string, error) {
 	if idx < 0 {
@@ -194,10 +194,10 @@ func (vm *Engine) DisasmScript(idx int) (string, error) {
 }
 
 // CheckErrorCondition returns nil if the running script has ended and was
-// successful, leaving a a true boolean on the stack.  An error otherwise,
+// successful, leaving a a true boolean on the stack. An error otherwise,
 // including if the script has not finished.
 func (vm *Engine) CheckErrorCondition(finalScript bool) error {
-	// Check execution is actually done.  When pc is past the end of script
+	// Check execution is actually done. When pc is past the end of script
 	// array there are no more scripts to run.
 	if vm.scriptIdx < len(vm.scripts) {
 		return scriptError(ErrScriptUnfinished,
@@ -234,7 +234,7 @@ func (vm *Engine) CheckErrorCondition(finalScript bool) error {
 }
 
 // Step will execute the next instruction and move the program counter to the
-// next opcode in the script, or the next script if the current has ended.  Step
+// next opcode in the script, or the next script if the current has ended. Step
 // will return true in the case that the last opcode was successfully executed.
 //
 // The result of calling Step or any other method is undefined if an error is
@@ -437,7 +437,7 @@ func (vm *Engine) SetAltStack(data [][]byte) {
 }
 
 // NewEngine returns a new script engine for the provided public key script,
-// transaction, and input index.  The flags modify the behavior of the script
+// transaction, and input index. The flags modify the behavior of the script
 // engine according to the description provided by each flag.
 func NewEngine(scriptPubKey []byte, tx *wire.MsgTx, txIdx int, flags ScriptFlags,
 	sigCache *SigCache) (*Engine, error) {
@@ -452,7 +452,7 @@ func NewEngine(scriptPubKey []byte, tx *wire.MsgTx, txIdx int, flags ScriptFlags
 
 	// When both the signature script and public key script are empty the
 	// result is necessarily an error since the stack would end up being
-	// empty which is equivalent to a false top element.  Thus, just return
+	// empty which is equivalent to a false top element. Thus, just return
 	// the relevant error now as an optimization.
 	if len(scriptSig) == 0 && len(scriptPubKey) == 0 {
 		return nil, scriptError(ErrEvalFalse,
@@ -476,8 +476,8 @@ func NewEngine(scriptPubKey []byte, tx *wire.MsgTx, txIdx int, flags ScriptFlags
 		return nil, err
 	}
 
-	// The engine stores the scripts in parsed form using a slice.  This
-	// allows multiple scripts to be executed in sequence.  For example,
+	// The engine stores the scripts in parsed form using a slice. This
+	// allows multiple scripts to be executed in sequence. For example,
 	// with a pay-to-script-hash transaction, there will be ultimately be
 	// a third script to execute.
 	vm.scripts = [][]parsedOpcode{parsedScriptSig, parsedScriptPubKey}

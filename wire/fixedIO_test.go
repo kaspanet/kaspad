@@ -16,7 +16,7 @@ type fixedWriter struct {
 	pos int
 }
 
-// Write writes the contents of p to w.  When the contents of p would cause
+// Write writes the contents of p to w. When the contents of p would cause
 // the writer to exceed the maximum allowed size of the fixed writer,
 // io.ErrShortWrite is returned and the writer is left unchanged.
 //
@@ -52,7 +52,7 @@ type fixedReader struct {
 	iobuf *bytes.Buffer
 }
 
-// Read reads the next len(p) bytes from the fixed reader.  When the number of
+// Read reads the next len(p) bytes from the fixed reader. When the number of
 // bytes read would exceed the maximum number of allowed bytes to be read from
 // the fixed writer, an error is returned.
 //

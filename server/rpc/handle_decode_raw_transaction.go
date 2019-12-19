@@ -3,13 +3,13 @@ package rpc
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // handleDecodeRawTransaction handles decodeRawTransaction commands.
 func handleDecodeRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.DecodeRawTransactionCmd)
+	c := cmd.(*rpcmodel.DecodeRawTransactionCmd)
 
 	// Deserialize the transaction.
 	hexStr := c.HexTx
@@ -23,14 +23,14 @@ func handleDecodeRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 	var mtx wire.MsgTx
 	err = mtx.Deserialize(bytes.NewReader(serializedTx))
 	if err != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCDeserialization,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCDeserialization,
 			Message: "TX decode failed: " + err.Error(),
 		}
 	}
 
 	// Create and return the result.
-	txReply := btcjson.TxRawDecodeResult{
+	txReply := rpcmodel.TxRawDecodeResult{
 		TxID:     mtx.TxID().String(),
 		Version:  mtx.Version,
 		Locktime: mtx.LockTime,

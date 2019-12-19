@@ -5,13 +5,13 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/mining"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/mining"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 func createTransaction(t *testing.T, value uint64, originTx *wire.MsgTx, outputIndex uint32) *wire.MsgTx {
@@ -134,7 +134,7 @@ func TestTxIndexConnectBlock(t *testing.T) {
 	block3TxInBlock := regionBlockBytes[region.Offset : region.Offset+region.Len]
 
 	block3TxBuf := bytes.NewBuffer(make([]byte, 0, block3Tx.SerializeSize()))
-	block3Tx.BtcEncode(block3TxBuf, 0)
+	block3Tx.KaspaEncode(block3TxBuf, 0)
 	blockTxBytes := block3TxBuf.Bytes()
 
 	if !reflect.DeepEqual(blockTxBytes, block3TxInBlock) {

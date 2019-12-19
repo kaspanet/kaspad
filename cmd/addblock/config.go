@@ -6,16 +6,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/config"
+	"github.com/kaspanet/kaspad/config"
 	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/daglabs/btcd/database"
-	_ "github.com/daglabs/btcd/database/ffldb"
-	"github.com/daglabs/btcd/util"
 	flags "github.com/jessevdk/go-flags"
+	"github.com/kaspanet/kaspad/database"
+	_ "github.com/kaspanet/kaspad/database/ffldb"
+	"github.com/kaspanet/kaspad/util"
 )
 
 const (
@@ -25,8 +25,8 @@ const (
 )
 
 var (
-	btcdHomeDir    = util.AppDataDir("btcd", false)
-	defaultDataDir = filepath.Join(btcdHomeDir, "data")
+	kaspadHomeDir  = util.AppDataDir("kaspad", false)
+	defaultDataDir = filepath.Join(kaspadHomeDir, "data")
 	knownDbTypes   = database.SupportedDrivers()
 	activeConfig   *ConfigFlags
 )
@@ -36,12 +36,12 @@ func ActiveConfig() *ConfigFlags {
 	return activeConfig
 }
 
-// ConfigFlags defines the configuration options for findcheckpoint.
+// ConfigFlags defines the configuration options for addblock.
 //
 // See loadConfig for details on the configuration load process.
 type ConfigFlags struct {
-	DataDir   string `short:"b" long:"datadir" description:"Location of the btcd data directory"`
-	DbType    string `long:"dbtype" description:"Database backend to use for the Block Chain"`
+	DataDir   string `short:"b" long:"datadir" description:"Location of the kaspad data directory"`
+	DbType    string `long:"dbtype" description:"Database backend to use for the Block DAG"`
 	InFile    string `short:"i" long:"infile" description:"File containing the block(s)"`
 	TxIndex   bool   `long:"txindex" description:"Build a full hash-based transaction index which makes all transactions available via the getrawtransaction RPC"`
 	AddrIndex bool   `long:"addrindex" description:"Build a full address-based transaction index which makes the searchrawtransactions RPC available"`
@@ -106,7 +106,7 @@ func loadConfig() (*ConfigFlags, []string, error) {
 	}
 
 	// Append the network type to the data directory so it is "namespaced"
-	// per network.  In addition to the block database, there are other
+	// per network. In addition to the block database, there are other
 	// pieces of data that are saved to disk such as address manager state.
 	// All data is specific to a network, so namespacing the data directory
 	// means each individual piece of serialized data does not have to

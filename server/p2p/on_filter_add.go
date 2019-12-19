@@ -1,13 +1,13 @@
 package p2p
 
 import (
-	"github.com/daglabs/btcd/peer"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/peer"
+	"github.com/kaspanet/kaspad/wire"
 )
 
-// OnFilterAdd is invoked when a peer receives a filteradd bitcoin
+// OnFilterAdd is invoked when a peer receives a filteradd kaspa
 // message and is used by remote peers to add data to an already loaded bloom
-// filter.  The peer will be disconnected if a filter is not loaded when this
+// filter. The peer will be disconnected if a filter is not loaded when this
 // message is received or the server is not configured to allow bloom filters.
 func (sp *Peer) OnFilterAdd(_ *peer.Peer, msg *wire.MsgFilterAdd) {
 	// Disconnect and/or ban depending on the node bloom services flag and

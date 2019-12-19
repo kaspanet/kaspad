@@ -12,7 +12,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -23,23 +22,25 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/btcsuite/websocket"
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/blockdag/indexers"
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/config"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/mempool"
-	"github.com/daglabs/btcd/mining"
-	"github.com/daglabs/btcd/mining/cpuminer"
-	"github.com/daglabs/btcd/peer"
-	"github.com/daglabs/btcd/server/p2p"
-	"github.com/daglabs/btcd/server/serverutils"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/util/fs"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/blockdag/indexers"
+	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/mempool"
+	"github.com/kaspanet/kaspad/mining"
+	"github.com/kaspanet/kaspad/mining/cpuminer"
+	"github.com/kaspanet/kaspad/peer"
+	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/server/p2p"
+	"github.com/kaspanet/kaspad/server/serverutils"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/fs"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 const (
@@ -74,8 +75,6 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getBlockCount":         handleGetBlockCount,
 	"getBlockHeader":        handleGetBlockHeader,
 	"getBlockTemplate":      handleGetBlockTemplate,
-	"getCFilter":            handleGetCFilter,
-	"getCFilterHeader":      handleGetCFilterHeader,
 	"getChainFromBlock":     handleGetChainFromBlock,
 	"getConnectionCount":    handleGetConnectionCount,
 	"getCurrentNet":         handleGetCurrentNet,
@@ -89,7 +88,6 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getMempoolInfo":        handleGetMempoolInfo,
 	"getMiningInfo":         handleGetMiningInfo,
 	"getNetTotals":          handleGetNetTotals,
-	"getNetworkHashPs":      handleGetNetworkHashPS,
 	"getPeerInfo":           handleGetPeerInfo,
 	"getRawMempool":         handleGetRawMempool,
 	"getRawTransaction":     handleGetRawTransaction,
@@ -111,13 +109,8 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 
 // Commands that are currently unimplemented, but should ultimately be.
 var rpcUnimplemented = map[string]struct{}{
-	"estimatePriority": {},
-	"getChainTips":     {},
-	"getMempoolEntry":  {},
-	"getNetworkInfo":   {},
-	"invalidateBlock":  {},
-	"preciousBlock":    {},
-	"reconsiderBlock":  {},
+	"getMempoolEntry": {},
+	"getNetworkInfo":  {},
 }
 
 // Commands that are available to a limited user
@@ -147,15 +140,12 @@ var rpcLimited = map[string]struct{}{
 	"getBlockCount":         {},
 	"getBlockHash":          {},
 	"getBlockHeader":        {},
-	"getCFilter":            {},
-	"getCFilterHeader":      {},
 	"getChainFromBlock":     {},
 	"getCurrentNet":         {},
 	"getDifficulty":         {},
 	"getHeaders":            {},
 	"getInfo":               {},
 	"getNetTotals":          {},
-	"getNetworkHashPs":      {},
 	"getRawMempool":         {},
 	"getRawTransaction":     {},
 	"getTxOut":              {},
@@ -173,7 +163,7 @@ func handleUnimplemented(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 	return nil, ErrRPCUnimplemented
 }
 
-// Server provides a concurrent safe RPC server to a chain server.
+// Server provides a concurrent safe RPC server to a kaspa node.
 type Server struct {
 	started                int32
 	shutdown               int32
@@ -192,7 +182,7 @@ type Server struct {
 }
 
 // httpStatusLine returns a response Status-Line (RFC 2616 Section 6.1)
-// for the given request and response status code.  This function was lifted and
+// for the given request and response status code. This function was lifted and
 // adapted from the standard library HTTP server code since it's not exported.
 func (s *Server) httpStatusLine(req *http.Request, code int) string {
 	// Fast path:
@@ -269,14 +259,14 @@ func (s *Server) Stop() error {
 }
 
 // RequestedProcessShutdown returns a channel that is sent to when an authorized
-// RPC client requests the process to shutdown.  If the request can not be read
+// RPC client requests the process to shutdown. If the request can not be read
 // immediately, it is dropped.
 func (s *Server) RequestedProcessShutdown() <-chan struct{} {
 	return s.requestProcessShutdown
 }
 
 // NotifyNewTransactions notifies both websocket and getBlockTemplate long
-// poll clients of the passed transactions.  This function should be called
+// poll clients of the passed transactions. This function should be called
 // whenever new transactions are added to the mempool.
 func (s *Server) NotifyNewTransactions(txns []*mempool.TxDesc) {
 	for _, txD := range txns {
@@ -298,15 +288,15 @@ func (s *Server) limitConnections(w http.ResponseWriter, remoteAddr string) bool
 		log.Infof("Max RPC clients exceeded [%d] - "+
 			"disconnecting client %s", config.ActiveConfig().RPCMaxClients,
 			remoteAddr)
-		http.Error(w, "503 Too busy.  Try again later.",
+		http.Error(w, "503 Too busy. Try again later.",
 			http.StatusServiceUnavailable)
 		return true
 	}
 	return false
 }
 
-// incrementClients adds one to the number of connected RPC clients.  Note
-// this only applies to standard clients.  Websocket clients have their own
+// incrementClients adds one to the number of connected RPC clients. Note
+// this only applies to standard clients. Websocket clients have their own
 // limits and are tracked separately.
 //
 // This function is safe for concurrent access.
@@ -315,7 +305,7 @@ func (s *Server) incrementClients() {
 }
 
 // decrementClients subtracts one from the number of connected RPC clients.
-// Note this only applies to standard clients.  Websocket clients have their own
+// Note this only applies to standard clients. Websocket clients have their own
 // limits and are tracked separately.
 //
 // This function is safe for concurrent access.
@@ -324,7 +314,7 @@ func (s *Server) decrementClients() {
 }
 
 // checkAuth checks the HTTP Basic authentication supplied by a wallet
-// or RPC client in the HTTP request r.  If the supplied authentication
+// or RPC client in the HTTP request r. If the supplied authentication
 // does not match the username and password expected, a non-nil error is
 // returned.
 //
@@ -373,11 +363,11 @@ type parsedRPCCmd struct {
 	id     interface{}
 	method string
 	cmd    interface{}
-	err    *btcjson.RPCError
+	err    *rpcmodel.RPCError
 }
 
-// standardCmdResult checks that a parsed command is a standard Bitcoin JSON-RPC
-// command and runs the appropriate handler to reply to the command.  Any
+// standardCmdResult checks that a parsed command is a standard kaspa JSON-RPC
+// command and runs the appropriate handler to reply to the command. Any
 // commands which are not recognized or not implemented will return an error
 // suitable for use in replies.
 func (s *Server) standardCmdResult(cmd *parsedRPCCmd, closeChan <-chan struct{}) (interface{}, error) {
@@ -390,36 +380,36 @@ func (s *Server) standardCmdResult(cmd *parsedRPCCmd, closeChan <-chan struct{})
 		handler = handleUnimplemented
 		goto handled
 	}
-	return nil, btcjson.ErrRPCMethodNotFound
+	return nil, rpcmodel.ErrRPCMethodNotFound
 handled:
 
 	return handler(s, cmd.cmd, closeChan)
 }
 
-// parseCmd parses a JSON-RPC request object into known concrete command.  The
+// parseCmd parses a JSON-RPC request object into known concrete command. The
 // err field of the returned parsedRPCCmd struct will contain an RPC error that
 // is suitable for use in replies if the command is invalid in some way such as
 // an unregistered command or invalid parameters.
-func parseCmd(request *btcjson.Request) *parsedRPCCmd {
+func parseCmd(request *rpcmodel.Request) *parsedRPCCmd {
 	var parsedCmd parsedRPCCmd
 	parsedCmd.id = request.ID
 	parsedCmd.method = request.Method
 
-	cmd, err := btcjson.UnmarshalCmd(request)
+	cmd, err := rpcmodel.UnmarshalCommand(request)
 	if err != nil {
 		// When the error is because the method is not registered,
 		// produce a method not found RPC error.
-		if jerr, ok := err.(btcjson.Error); ok &&
-			jerr.ErrorCode == btcjson.ErrUnregisteredMethod {
+		if jerr, ok := err.(rpcmodel.Error); ok &&
+			jerr.ErrorCode == rpcmodel.ErrUnregisteredMethod {
 
-			parsedCmd.err = btcjson.ErrRPCMethodNotFound
+			parsedCmd.err = rpcmodel.ErrRPCMethodNotFound
 			return &parsedCmd
 		}
 
 		// Otherwise, some type of invalid parameters is the
 		// cause, so produce the equivalent RPC error.
-		parsedCmd.err = btcjson.NewRPCError(
-			btcjson.ErrRPCInvalidParams.Code, err.Error())
+		parsedCmd.err = rpcmodel.NewRPCError(
+			rpcmodel.ErrRPCInvalidParams.Code, err.Error())
 		return &parsedCmd
 	}
 
@@ -428,19 +418,19 @@ func parseCmd(request *btcjson.Request) *parsedRPCCmd {
 }
 
 // createMarshalledReply returns a new marshalled JSON-RPC response given the
-// passed parameters.  It will automatically convert errors that are not of
-// the type *btcjson.RPCError to the appropriate type as needed.
+// passed parameters. It will automatically convert errors that are not of
+// the type *rpcmodel.RPCError to the appropriate type as needed.
 func createMarshalledReply(id, result interface{}, replyErr error) ([]byte, error) {
-	var jsonErr *btcjson.RPCError
+	var jsonErr *rpcmodel.RPCError
 	if replyErr != nil {
-		if jErr, ok := replyErr.(*btcjson.RPCError); ok {
+		if jErr, ok := replyErr.(*rpcmodel.RPCError); ok {
 			jsonErr = jErr
 		} else {
 			jsonErr = internalRPCError(replyErr.Error(), "")
 		}
 	}
 
-	return btcjson.MarshalResponse(id, result, jsonErr)
+	return rpcmodel.MarshalResponse(id, result, jsonErr)
 }
 
 // jsonRPCRead handles reading and responding to RPC messages.
@@ -461,8 +451,8 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 
 	// Unfortunately, the http server doesn't provide the ability to
 	// change the read deadline for the new connection and having one breaks
-	// long polling.  However, not having a read deadline on the initial
-	// connection would mean clients can connect and idle forever.  Thus,
+	// long polling. However, not having a read deadline on the initial
+	// connection would mean clients can connect and idle forever. Thus,
 	// hijack the connecton from the HTTP server, clear the read deadline,
 	// and handle writing the response manually.
 	hj, ok := w.(http.Hijacker)
@@ -488,10 +478,10 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 	var responseID interface{}
 	var jsonErr error
 	var result interface{}
-	var request btcjson.Request
+	var request rpcmodel.Request
 	if err := json.Unmarshal(body, &request); err != nil {
-		jsonErr = &btcjson.RPCError{
-			Code:    btcjson.ErrRPCParse.Code,
+		jsonErr = &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCParse.Code,
 			Message: "Failed to parse request: " + err.Error(),
 		}
 	}
@@ -504,17 +494,9 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 		// must not be responded to. JSON-RPC 2.0 permits the null value as a
 		// valid request id, therefore such requests are not notifications.
 		//
-		// Bitcoin Core serves requests with "id":null or even an absent "id",
-		// and responds to such requests with "id":null in the response.
-		//
-		// Btcd does not respond to any request without and "id" or "id":null,
-		// regardless the indicated JSON-RPC protocol version unless RPC quirks
-		// are enabled. With RPC quirks enabled, such requests will be responded
-		// to if the reqeust does not indicate JSON-RPC version.
-		//
-		// RPC quirks can be enabled by the user to avoid compatibility issues
-		// with software relying on Core's behavior.
-		if request.ID == nil && !(config.ActiveConfig().RPCQuirks && request.JSONRPC == "") {
+		// Kaspad does not respond to any request without an "id" or "id":null,
+		// regardless the indicated JSON-RPC protocol version.
+		if request.ID == nil {
 			return
 		}
 
@@ -522,7 +504,7 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 		// set it for the response.
 		responseID = request.ID
 
-		// Setup a close notifier.  Since the connection is hijacked,
+		// Setup a close notifier. Since the connection is hijacked,
 		// the CloseNotifer on the ResponseWriter is not available.
 		closeChan := make(chan struct{}, 1)
 		spawn(func() {
@@ -535,8 +517,8 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 		// Check if the user is limited and set error if method unauthorized
 		if !isAdmin {
 			if _, ok := rpcLimited[request.Method]; !ok {
-				jsonErr = &btcjson.RPCError{
-					Code:    btcjson.ErrRPCInvalidParams.Code,
+				jsonErr = &rpcmodel.RPCError{
+					Code:    rpcmodel.ErrRPCInvalidParams.Code,
 					Message: "limited user not authorized for this method",
 				}
 			}
@@ -572,7 +554,7 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 		log.Errorf("Failed to write marshalled reply: %s", err)
 	}
 
-	// Terminate with newline to maintain compatibility with Bitcoin Core.
+	// Terminate with newline for historical reasons.
 	if err := buf.WriteByte('\n'); err != nil {
 		log.Errorf("Failed to append terminating newline to reply: %s", err)
 	}
@@ -580,7 +562,7 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 
 // jsonAuthFail sends a message back to the client if the http auth is rejected.
 func jsonAuthFail(w http.ResponseWriter) {
-	w.Header().Add("WWW-Authenticate", `Basic realm="btcd RPC"`)
+	w.Header().Add("WWW-Authenticate", `Basic realm="kaspad RPC"`)
 	http.Error(w, "401 Unauthorized.", http.StatusUnauthorized)
 }
 
@@ -684,29 +666,29 @@ type rpcserverPeer interface {
 // The interface contract requires that all of these methods are safe for
 // concurrent access.
 type rpcserverConnManager interface {
-	// Connect adds the provided address as a new outbound peer.  The
+	// Connect adds the provided address as a new outbound peer. The
 	// permanent flag indicates whether or not to make the peer persistent
-	// and reconnect if the connection is lost.  Attempting to connect to an
+	// and reconnect if the connection is lost. Attempting to connect to an
 	// already existing peer will return an error.
 	Connect(addr string, permanent bool) error
 
 	// RemoveByID removes the peer associated with the provided id from the
-	// list of persistent peers.  Attempting to remove an id that does not
+	// list of persistent peers. Attempting to remove an id that does not
 	// exist will return an error.
 	RemoveByID(id int32) error
 
 	// RemoveByAddr removes the peer associated with the provided address
-	// from the list of persistent peers.  Attempting to remove an address
+	// from the list of persistent peers. Attempting to remove an address
 	// that does not exist will return an error.
 	RemoveByAddr(addr string) error
 
 	// DisconnectByID disconnects the peer associated with the provided id.
-	// This applies to both inbound and outbound peers.  Attempting to
+	// This applies to both inbound and outbound peers. Attempting to
 	// remove an id that does not exist will return an error.
 	DisconnectByID(id int32) error
 
 	// DisconnectByAddr disconnects the peer associated with the provided
-	// address.  This applies to both inbound and outbound peers.
+	// address. This applies to both inbound and outbound peers.
 	// Attempting to remove an address that does not exist will return an
 	// error.
 	DisconnectByAddr(addr string) error
@@ -744,7 +726,7 @@ type rpcserverConnManager interface {
 // The interface contract requires that all of these methods are safe for
 // concurrent access.
 type rpcserverSyncManager interface {
-	// IsCurrent returns whether or not the sync manager believes the chain
+	// IsCurrent returns whether or not the sync manager believes the DAG
 	// is current as compared to the rest of the network.
 	IsCurrent() bool
 
@@ -763,13 +745,13 @@ type rpcserverSyncManager interface {
 	// block in the provided locators until the provided stop hash or the
 	// current tip is reached, up to a max of wire.MaxBlockHeadersPerMsg
 	// hashes.
-	GetBlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash) []*wire.BlockHeader
+	GetBlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash) ([]*wire.BlockHeader, error)
 }
 
 // rpcserverConfig is a descriptor containing the RPC server configuration.
 type rpcserverConfig struct {
 	// Listeners defines a slice of listeners for which the RPC server will
-	// take ownership of and accept connections.  Since the RPC server takes
+	// take ownership of and accept connections. Since the RPC server takes
 	// ownership of these listeners, they will be closed when the RPC server
 	// is stopped.
 	Listeners []net.Listener
@@ -778,7 +760,7 @@ type rpcserverConfig struct {
 	// the RPC server started.
 	StartupTime int64
 
-	// ConnMgr defines the connection manager for the RPC server to use.  It
+	// ConnMgr defines the connection manager for the RPC server to use. It
 	// provides the RPC server with a means to do things such as add,
 	// remove, connect, disconnect, and query peers as well as other
 	// connection-related data and tasks.
@@ -788,7 +770,7 @@ type rpcserverConfig struct {
 	SyncMgr rpcserverSyncManager
 
 	// These fields allow the RPC server to interface with the local block
-	// chain data and state.
+	// DAG data and state.
 	TimeSource blockdag.MedianTimeSource
 	DAG        *blockdag.BlockDAG
 	DAGParams  *dagconfig.Params
@@ -800,7 +782,7 @@ type rpcserverConfig struct {
 	// These fields allow the RPC server to interface with mining.
 	//
 	// Generator produces block templates and the CPUMiner solves them using
-	// the CPU.  CPU mining is typically only useful for test purposes when
+	// the CPU. CPU mining is typically only useful for test purposes when
 	// doing regression or simulation testing.
 	Generator *mining.BlkTmplGenerator
 	CPUMiner  *cpuminer.CPUMiner
@@ -810,7 +792,6 @@ type rpcserverConfig struct {
 	TxIndex         *indexers.TxIndex
 	AddrIndex       *indexers.AddrIndex
 	AcceptanceIndex *indexers.AcceptanceIndex
-	CfIndex         *indexers.CfIndex
 }
 
 // setupRPCListeners returns a slice of listeners that are configured for use
@@ -894,7 +875,6 @@ func NewRPCServer(
 		TxIndex:         p2pServer.TxIndex,
 		AddrIndex:       p2pServer.AddrIndex,
 		AcceptanceIndex: p2pServer.AcceptanceIndex,
-		CfIndex:         p2pServer.CfIndex,
 		DAG:             p2pServer.DAG,
 	}
 	rpc := Server{
@@ -921,7 +901,7 @@ func NewRPCServer(
 	return &rpc, nil
 }
 
-// Callback for notifications from blockdag.  It notifies clients that are
+// Callback for notifications from blockdag. It notifies clients that are
 // long polling for changes or subscribed to websockets notifications.
 func (s *Server) handleBlockDAGNotification(notification *blockdag.Notification) {
 	switch notification.Type {

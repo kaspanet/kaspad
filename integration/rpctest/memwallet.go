@@ -10,14 +10,14 @@ import (
 	"github.com/pkg/errors"
 	"sync"
 
-	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/rpcclient"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/util/hdkeychain"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/ecc"
+	"github.com/kaspanet/kaspad/rpcclient"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/hdkeychain"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 var (
@@ -69,7 +69,7 @@ type undoEntry struct {
 // wallet functionality to the harness. The wallet uses a hard-coded HD key
 // hierarchy which promotes reproducibility between harness test runs.
 type memWallet struct {
-	coinbaseKey  *btcec.PrivateKey
+	coinbaseKey  *ecc.PrivateKey
 	coinbaseAddr util.Address
 
 	// hdRoot is the root master private key for the wallet.
@@ -137,7 +137,7 @@ func newMemWallet(net *dagconfig.Params, harnessID uint32) (*memWallet, error) {
 	}
 
 	// Track the coinbase generation address to ensure we properly track
-	// newly generated bitcoin we can spend.
+	// newly generated kaspa we can spend.
 	addrs := make(map[uint32]util.Address)
 	addrs[0] = coinbaseAddr
 
@@ -168,7 +168,7 @@ func (m *memWallet) SyncedHeight() uint64 {
 	return m.currentHeight
 }
 
-// SetRPCClient saves the passed rpc connection to btcd as the wallet's
+// SetRPCClient saves the passed rpc connection to kaspad as the wallet's
 // personal rpc connection.
 func (m *memWallet) SetRPCClient(rpcClient *rpcclient.Client) {
 	m.rpc = rpcClient
@@ -291,7 +291,7 @@ func (m *memWallet) evalInputs(inputs []*wire.TxIn, undo *undoEntry) {
 	}
 }
 
-// newAddress returns a new address from the wallet's hd key chain.  It also
+// newAddress returns a new address from the wallet's hd key chain. It also
 // loads the address into the RPC client's transaction filter to ensure any
 // transactions that involve it are delivered via the notifications.
 func (m *memWallet) newAddress() (util.Address, error) {
@@ -333,10 +333,10 @@ func (m *memWallet) NewAddress() (util.Address, error) {
 	return m.newAddress()
 }
 
-// fundTx attempts to fund a transaction sending amt bitcoin. The coins are
+// fundTx attempts to fund a transaction sending amt kaspa. The coins are
 // selected such that the final amount spent pays enough fees as dictated by
 // the passed fee rate. The passed fee rate should be expressed in
-// satoshis-per-byte.
+// sompis-per-byte.
 //
 // NOTE: The memWallet's mutex must be held when this function is called.
 func (m *memWallet) fundTx(tx *wire.MsgTx, amt util.Amount, feeRate util.Amount) error {
@@ -404,7 +404,7 @@ func (m *memWallet) fundTx(tx *wire.MsgTx, amt util.Amount, feeRate util.Amount)
 
 // SendOutputs creates, then sends a transaction paying to the specified output
 // while observing the passed fee rate. The passed fee rate should be expressed
-// in satoshis-per-byte.
+// in sompis-per-byte.
 func (m *memWallet) SendOutputs(outputs []*wire.TxOut,
 	feeRate util.Amount) (*daghash.TxID, error) {
 
@@ -418,7 +418,7 @@ func (m *memWallet) SendOutputs(outputs []*wire.TxOut,
 
 // CreateTransaction returns a fully signed transaction paying to the specified
 // outputs while observing the desired fee rate. The passed fee rate should be
-// expressed in satoshis-per-byte.
+// expressed in sompis-per-byte.
 //
 // This function is safe for concurrent access.
 func (m *memWallet) CreateTransaction(outputs []*wire.TxOut, feeRate util.Amount) (*wire.MsgTx, error) {
@@ -520,7 +520,7 @@ func (m *memWallet) ConfirmedBalance() util.Amount {
 }
 
 // keyToAddr maps the passed private to corresponding p2pkh address.
-func keyToAddr(key *btcec.PrivateKey, net *dagconfig.Params) (util.Address, error) {
+func keyToAddr(key *ecc.PrivateKey, net *dagconfig.Params) (util.Address, error) {
 	serializedKey := key.PubKey().SerializeCompressed()
 	return util.NewAddressPubKeyHashFromPublicKey(serializedKey, net.Prefix)
 }

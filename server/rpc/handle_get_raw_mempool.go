@@ -1,10 +1,10 @@
 package rpc
 
-import "github.com/daglabs/btcd/btcjson"
+import "github.com/kaspanet/kaspad/rpcmodel"
 
 // handleGetRawMempool implements the getRawMempool command.
 func handleGetRawMempool(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.GetRawMempoolCmd)
+	c := cmd.(*rpcmodel.GetRawMempoolCmd)
 	mp := s.cfg.TxMemPool
 
 	if c.Verbose != nil && *c.Verbose {

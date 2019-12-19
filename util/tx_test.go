@@ -10,9 +10,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // TestTx tests the API for Tx.

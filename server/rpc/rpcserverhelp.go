@@ -6,12 +6,12 @@
 package rpc
 
 import (
-	"github.com/pkg/errors"
 	"sort"
 	"strings"
 	"sync"
 
-	"github.com/daglabs/btcd/btcjson"
+	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/pkg/errors"
 )
 
 // helpDescsEnUS defines the English descriptions used for the help strings.
@@ -21,7 +21,7 @@ var helpDescsEnUS = map[string]string{
 		"The levelspec can either a debug level or of the form:\n" +
 		"<subsystem>=<level>,<subsystem2>=<level2>,...\n" +
 		"The valid debug levels are trace, debug, info, warn, error, and critical.\n" +
-		"The valid subsystems are AMGR, ADXR, BCDB, BMGR, BTCD, BDAG, DISC, PEER, RPCS, SCRP, SRVR, and TXMP.\n" +
+		"The valid subsystems are AMGR, ADXR, BCDB, BMGR, KASD, BDAG, DISC, PEER, RPCS, SCRP, SRVR, and TXMP.\n" +
 		"Finally the keyword 'show' will return a list of the available subsystems.",
 	"debugLevel-levelSpec":   "The debug level(s) to use or the keyword 'show'",
 	"debugLevel--condition0": "levelspec!=show",
@@ -51,7 +51,7 @@ var helpDescsEnUS = map[string]string{
 	"createRawTransaction-amounts":        "JSON object with the destination addresses as keys and amounts as values",
 	"createRawTransaction-amounts--key":   "address",
 	"createRawTransaction-amounts--value": "n.nnn",
-	"createRawTransaction-amounts--desc":  "The destination address as the key and the amount in BTC as the value",
+	"createRawTransaction-amounts--desc":  "The destination address as the key and the amount in KAS as the value",
 	"createRawTransaction-lockTime":       "Locktime value; a non-zero value will also locktime-activate the inputs",
 	"createRawTransaction--result0":       "Hex-encoded bytes of the serialized transaction",
 
@@ -82,10 +82,10 @@ var helpDescsEnUS = map[string]string{
 	"scriptPubKeyResult-asm":     "Disassembly of the script",
 	"scriptPubKeyResult-hex":     "Hex-encoded bytes of the script",
 	"scriptPubKeyResult-type":    "The type of the script (e.g. 'pubkeyhash')",
-	"scriptPubKeyResult-address": "The bitcoin address (if any) associated with this script",
+	"scriptPubKeyResult-address": "The kaspa address (if any) associated with this script",
 
 	// Vout help.
-	"vout-value":        "The amount in BTC",
+	"vout-value":        "The amount in KAS",
 	"vout-n":            "The index of this transaction output",
 	"vout-scriptPubKey": "The public key script used to pay coins as a JSON object",
 
@@ -112,7 +112,7 @@ var helpDescsEnUS = map[string]string{
 	"decodeScriptResult-asm":     "Disassembly of the script",
 	"decodeScriptResult-type":    "The type of the script (e.g. 'pubkeyhash')",
 	"decodeScriptResult-reqSigs": "The number of required signatures",
-	"decodeScriptResult-address": "The bitcoin address (if any) associated with this script",
+	"decodeScriptResult-address": "The kaspa address (if any) associated with this script",
 	"decodeScriptResult-p2sh":    "The script hash for use in pay-to-script-hash transactions (only present if the provided redeem script is not already a pay-to-script-hash script)",
 
 	// DecodeScriptCmd help.
@@ -156,7 +156,7 @@ var helpDescsEnUS = map[string]string{
 	// GetSelectedTipCmd help.
 	"getSelectedTip--synopsis":   "Returns information about the selected tip of the blockDAG.",
 	"getSelectedTip-verbose":     "Specifies the block is returned as a JSON object instead of hex-encoded string",
-	"getSelectedTip-verboseTx":   "Specifies that each transaction is returned as a JSON object and only applies if the verbose flag is true (btcd extension)",
+	"getSelectedTip-verboseTx":   "Specifies that each transaction is returned as a JSON object and only applies if the verbose flag is true",
 	"getSelectedTip--condition0": "verbose=false",
 	"getSelectedTip--condition1": "verbose=true",
 	"getSelectedTip-acceptedTx":  "Specifies if the transaction got accepted",
@@ -170,7 +170,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlock--synopsis":   "Returns information about a block given its hash.",
 	"getBlock-hash":        "The hash of the block",
 	"getBlock-verbose":     "Specifies the block is returned as a JSON object instead of hex-encoded string",
-	"getBlock-verboseTx":   "Specifies that each transaction is returned as a JSON object and only applies if the verbose flag is true (btcd extension)",
+	"getBlock-verboseTx":   "Specifies that each transaction is returned as a JSON object and only applies if the verbose flag is true",
 	"getBlock-subnetwork":  "If passed, the returned block will be a partial block of the specified subnetwork",
 	"getBlock--condition0": "verbose=false",
 	"getBlock--condition1": "verbose=true",
@@ -194,15 +194,15 @@ var helpDescsEnUS = map[string]string{
 
 	// GetBlockDAGInfoResult help.
 	"getBlockDagInfoResult-dag":                  "The name of the DAG the daemon is on (testnet, mainnet, etc)",
-	"getBlockDagInfoResult-blocks":               "The number of blocks in the best known chain",
-	"getBlockDagInfoResult-headers":              "The number of headers that we've gathered for in the best known chain",
+	"getBlockDagInfoResult-blocks":               "The number of blocks in the DAG",
+	"getBlockDagInfoResult-headers":              "The number of headers that we've gathered for in the DAG",
 	"getBlockDagInfoResult-tipHashes":            "The block hashes for the tips in the DAG",
-	"getBlockDagInfoResult-difficulty":           "The current chain difficulty",
-	"getBlockDagInfoResult-medianTime":           "The median time from the PoV of the best block in the chain",
+	"getBlockDagInfoResult-difficulty":           "The current DAG difficulty",
+	"getBlockDagInfoResult-medianTime":           "The median time from the PoV of the selected tip in the DAG",
 	"getBlockDagInfoResult-utxoCommitment":       "Commitment to the dag's UTXOSet",
-	"getBlockDagInfoResult-verificationProgress": "An estimate for how much of the best chain we've verified",
+	"getBlockDagInfoResult-verificationProgress": "An estimate for how much of the DAG we've verified",
 	"getBlockDagInfoResult-pruned":               "A bool that indicates if the node is pruned or not",
-	"getBlockDagInfoResult-pruneHeight":          "The lowest block retained in the current pruned chain",
+	"getBlockDagInfoResult-pruneHeight":          "The lowest block retained in the current pruned DAG",
 	"getBlockDagInfoResult-dagWork":              "The total cumulative work in the DAG",
 	"getBlockDagInfoResult-softForks":            "The status of the super-majority soft-forks",
 	"getBlockDagInfoResult-bip9SoftForks":        "JSON object describing active BIP0009 deployments",
@@ -257,7 +257,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockVerboseResult-confirmations":        "The number of confirmations",
 	"getBlockVerboseResult-size":                 "The size of the block",
 	"getBlockVerboseResult-mass":                 "The mass of the block",
-	"getBlockVerboseResult-height":               "The height of the block in the block chain",
+	"getBlockVerboseResult-height":               "The height of the block in the block DAG",
 	"getBlockVerboseResult-version":              "The block version",
 	"getBlockVerboseResult-versionHex":           "The block version in hexadecimal",
 	"getBlockVerboseResult-hashMerkleRoot":       "Merkle tree reference to hash of all transactions for the block",
@@ -275,7 +275,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockVerboseResult-nextHashes":           "The hashes of the next blocks (only if there are any)",
 
 	// GetBlockCountCmd help.
-	"getBlockCount--synopsis": "Returns the number of blocks in the longest block chain.",
+	"getBlockCount--synopsis": "Returns the number of blocks in the block DAG.",
 	"getBlockCount--result0":  "The current block count",
 
 	// GetBlockHeaderCmd help.
@@ -289,7 +289,7 @@ var helpDescsEnUS = map[string]string{
 	// GetBlockHeaderVerboseResult help.
 	"getBlockHeaderVerboseResult-hash":                 "The hash of the block (same as provided)",
 	"getBlockHeaderVerboseResult-confirmations":        "The number of confirmations",
-	"getBlockHeaderVerboseResult-height":               "The height of the block in the block chain",
+	"getBlockHeaderVerboseResult-height":               "The height of the block in the block DAG",
 	"getBlockHeaderVerboseResult-version":              "The block version",
 	"getBlockHeaderVerboseResult-versionHex":           "The block version in hexadecimal",
 	"getBlockHeaderVerboseResult-hashMerkleRoot":       "Merkle tree reference to hash of all transactions for the block",
@@ -318,7 +318,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockTemplateResultTx-id":      "Hex-encoded transaction ID (little endian if treated as a 256-bit number)",
 	"getBlockTemplateResultTx-depends": "Other transactions before this one (by 1-based index in the 'transactions'  list) that must be present in the final block if this one is",
 	"getBlockTemplateResultTx-mass":    "Total mass of all transactions in the block",
-	"getBlockTemplateResultTx-fee":     "Difference in value between transaction inputs and outputs (in Satoshi)",
+	"getBlockTemplateResultTx-fee":     "Difference in value between transaction inputs and outputs (in sompi)",
 	"getBlockTemplateResultTx-sigOps":  "Total number of signature operations as counted for purposes of block limits",
 
 	// GetBlockTemplateResultAux help.
@@ -337,7 +337,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockTemplateResult-version":              "The block version",
 	"getBlockTemplateResult-coinbaseAux":          "Data that should be included in the coinbase signature script",
 	"getBlockTemplateResult-coinbaseTxn":          "Information about the coinbase transaction",
-	"getBlockTemplateResult-coinbaseValue":        "Total amount available for the coinbase in Satoshi",
+	"getBlockTemplateResult-coinbaseValue":        "Total amount available for the coinbase in sompi",
 	"getBlockTemplateResult-workId":               "This value must be returned with result if provided (not provided)",
 	"getBlockTemplateResult-longPollId":           "Identifier for long poll request which allows monitoring for expiration",
 	"getBlockTemplateResult-longPollUri":          "An alternate URI to use for long poll requests if provided (not provided)",
@@ -360,12 +360,6 @@ var helpDescsEnUS = map[string]string{
 	"getBlockTemplate--condition2": "mode=proposal, accepted",
 	"getBlockTemplate--result1":    "An error string which represents why the proposal was rejected or nothing if accepted",
 
-	// GetCFilterCmd help.
-	"getCFilter--synopsis":  "Returns a block's committed filter given its hash.",
-	"getCFilter-filterType": "The type of filter to return (0=regular, 1=extended)",
-	"getCFilter-hash":       "The hash of the block",
-	"getCFilter--result0":   "The block's committed filter",
-
 	// GetChainFromBlockCmd help.
 	"getChainFromBlock--synopsis":     "Return the selected parent chain starting from startHash up to the virtual. If startHash is not in the selected parent chain, it goes down the DAG until it does reach a hash in the selected parent chain while collecting hashes into removedChainBlockHashes.",
 	"getChainFromBlock-startHash":     "Hash of the bottom of the requested chain. If this hash is unknown or is not a chain block - returns an error.",
@@ -377,18 +371,12 @@ var helpDescsEnUS = map[string]string{
 	"getChainFromBlockResult-addedChainBlocks":        "List of ChainBlocks from Virtual.SelectedTip to StartHash (excluding StartHash) ordered bottom-to-top.",
 	"getChainFromBlockResult-blocks":                  "If includeBlocks=true - contains the contents of all chain and accepted blocks in the AddedChainBlocks. Otherwise - omitted.",
 
-	// GetCFilterHeaderCmd help.
-	"getCFilterHeader--synopsis":  "Returns a block's compact filter header given its hash.",
-	"getCFilterHeader-filterType": "The type of filter header to return (0=regular, 1=extended)",
-	"getCFilterHeader-hash":       "The hash of the block",
-	"getCFilterHeader--result0":   "The block's gcs filter header",
-
 	// GetConnectionCountCmd help.
 	"getConnectionCount--synopsis": "Returns the number of active connections to other peers.",
 	"getConnectionCount--result0":  "The number of connections",
 
 	// GetCurrentNetCmd help.
-	"getCurrentNet--synopsis": "Get bitcoin network the server is running on.",
+	"getCurrentNet--synopsis": "Get kaspa network the server is running on.",
 	"getCurrentNet--result0":  "The network identifer",
 
 	// GetDifficultyCmd help.
@@ -413,7 +401,7 @@ var helpDescsEnUS = map[string]string{
 	"infoDagResult-difficulty":      "The current target difficulty",
 	"infoDagResult-testNet":         "Whether or not server is using testnet",
 	"infoDagResult-devNet":          "Whether or not server is using devnet",
-	"infoDagResult-relayFee":        "The minimum relay fee for non-free transactions in BTC/KB",
+	"infoDagResult-relayFee":        "The minimum relay fee for non-free transactions in KAS/KB",
 	"infoDagResult-errors":          "Any current errors",
 
 	// GetTopHeadersCmd help.
@@ -446,19 +434,12 @@ var helpDescsEnUS = map[string]string{
 	"getMiningInfoResult-generate":         "Whether or not server is set to generate coins",
 	"getMiningInfoResult-genProcLimit":     "Number of processors to use for coin generation (-1 when disabled)",
 	"getMiningInfoResult-hashesPerSec":     "Recent hashes per second performance measurement while generating coins",
-	"getMiningInfoResult-networkHashPs":    "Estimated network hashes per second for the most recent blocks",
 	"getMiningInfoResult-pooledTx":         "Number of transactions in the memory pool",
 	"getMiningInfoResult-testNet":          "Whether or not server is using testnet",
 	"getMiningInfoResult-devNet":           "Whether or not server is using devnet",
 
 	// GetMiningInfoCmd help.
 	"getMiningInfo--synopsis": "Returns a JSON object containing mining-related information.",
-
-	// GetNetworkHashPSCmd help.
-	"getNetworkHashPs--synopsis": "Returns the estimated network hashes per second for the block heights provided by the parameters.",
-	"getNetworkHashPs-blocks":    "The number of blocks, or -1 for blocks since last difficulty change",
-	"getNetworkHashPs-height":    "Perform estimate ending with this height or -1 for current best chain block height",
-	"getNetworkHashPs--result0":  "Estimated hashes per second",
 
 	// GetNetTotalsCmd help.
 	"getNetTotals--synopsis": "Returns a JSON object containing network traffic statistics.",
@@ -494,7 +475,7 @@ var helpDescsEnUS = map[string]string{
 
 	// GetRawMempoolVerboseResult help.
 	"getRawMempoolVerboseResult-size":             "Transaction size in bytes",
-	"getRawMempoolVerboseResult-fee":              "Transaction fee in bitcoins",
+	"getRawMempoolVerboseResult-fee":              "Transaction fee in kaspa",
 	"getRawMempoolVerboseResult-time":             "Local time transaction entered pool in seconds since 1 Jan 1970 GMT",
 	"getRawMempoolVerboseResult-height":           "Block height when transaction entered the pool",
 	"getRawMempoolVerboseResult-startingPriority": "Priority when transaction entered the pool",
@@ -527,7 +508,7 @@ var helpDescsEnUS = map[string]string{
 	"getTxOutResult-selectedTip":   "The block hash that contains the transaction output",
 	"getTxOutResult-confirmations": "The number of confirmations (Will be 'null' if txindex is not disabled)",
 	"getTxOutResult-isInMempool":   "Whether the transaction is in the mempool",
-	"getTxOutResult-value":         "The transaction amount in BTC",
+	"getTxOutResult-value":         "The transaction amount in KAS",
 	"getTxOutResult-scriptPubKey":  "The public key script used to pay coins as a JSON object",
 	"getTxOutResult-version":       "The transaction version",
 	"getTxOutResult-coinbase":      "Whether or not the transaction is a coinbase",
@@ -560,7 +541,7 @@ var helpDescsEnUS = map[string]string{
 		"Transactions pulled from the mempool will have the 'confirmations' field set to 0.\n" +
 		"Usage of this RPC requires the optional --addrindex flag to be activated, otherwise all responses will simply return with an error stating the address index has not yet been built.\n" +
 		"Similarly, until the address index has caught up with the current best height, all requests will return an error response in order to avoid serving stale data.",
-	"searchRawTransactions-address":     "The Bitcoin address to search for",
+	"searchRawTransactions-address":     "The kaspa address to search for",
 	"searchRawTransactions-verbose":     "Specifies the transaction is returned as a JSON object instead of hex-encoded string",
 	"searchRawTransactions--condition0": "verbose=0",
 	"searchRawTransactions--condition1": "verbose=1",
@@ -568,13 +549,13 @@ var helpDescsEnUS = map[string]string{
 	"searchRawTransactions-count":       "The maximum number of transactions to return",
 	"searchRawTransactions-vinExtra":    "Specify that extra data from previous output will be returned in vin",
 	"searchRawTransactions-reverse":     "Specifies that the transactions should be returned in reverse chronological order",
-	"searchRawTransactions-filterAddrs": "Address list.  Only inputs or outputs with matching address will be returned",
+	"searchRawTransactions-filterAddrs": "Address list. Only inputs or outputs with matching address will be returned",
 	"searchRawTransactions--result0":    "Hex-encoded serialized transaction",
 
 	// SendRawTransactionCmd help.
 	"sendRawTransaction--synopsis":     "Submits the serialized, hex-encoded transaction to the local peer and relays it to the network.",
 	"sendRawTransaction-hexTx":         "Serialized, hex-encoded signed transaction",
-	"sendRawTransaction-allowHighFees": "Whether or not to allow insanely high fees (btcd does not yet implement this parameter, so it has no effect)",
+	"sendRawTransaction-allowHighFees": "Whether or not to allow insanely high fees (kaspad does not yet implement this parameter, so it has no effect)",
 	"sendRawTransaction--result0":      "The hash of the transaction",
 
 	// SetGenerateCmd help.
@@ -583,8 +564,8 @@ var helpDescsEnUS = map[string]string{
 	"setGenerate-genProcLimit": "The number of processors (cores) to limit generation to or -1 for default",
 
 	// StopCmd help.
-	"stop--synopsis": "Shutdown btcd.",
-	"stop--result0":  "The string 'btcd stopping.'",
+	"stop--synopsis": "Shutdown kaspad.",
+	"stop--result0":  "The string 'kaspad stopping.'",
 
 	// SubmitBlockOptions help.
 	"submitBlockOptions-workId": "This parameter is currently ignored",
@@ -599,11 +580,11 @@ var helpDescsEnUS = map[string]string{
 
 	// ValidateAddressResult help.
 	"validateAddressResult-isValid": "Whether or not the address is valid",
-	"validateAddressResult-address": "The bitcoin address (only when isvalid is true)",
+	"validateAddressResult-address": "The kaspa address (only when isvalid is true)",
 
 	// ValidateAddressCmd help.
 	"validateAddress--synopsis": "Verify an address is valid.",
-	"validateAddress-address":   "Bitcoin address to validate",
+	"validateAddress-address":   "Kaspa address to validate",
 
 	// -------- Websocket-specific help --------
 
@@ -612,10 +593,10 @@ var helpDescsEnUS = map[string]string{
 	"sessionResult-sessionId": "The unique session ID for a client's websocket connection.",
 
 	// NotifyBlocksCmd help.
-	"notifyBlocks--synopsis": "Request notifications for whenever a block is connected or disconnected from the main (best) chain.",
+	"notifyBlocks--synopsis": "Request notifications for whenever a block is connected to the DAG.",
 
 	// StopNotifyBlocksCmd help.
-	"stopNotifyBlocks--synopsis": "Cancel registered notifications for whenever a block is connected or disconnected from the main (best) chain.",
+	"stopNotifyBlocks--synopsis": "Cancel registered notifications for whenever a block is connected to the DAG.",
 
 	// NotifyChainChangesCmd help.
 	"notifyChainChanges--synopsis": "Request notifications for whenever the selected parent chain changes.",
@@ -643,7 +624,7 @@ var helpDescsEnUS = map[string]string{
 
 	// RescanBlocks help.
 	"rescanBlocks--synopsis":   "Rescan blocks for transactions matching the loaded transaction filter.",
-	"rescanBlocks-blockHashes": "List of hashes to rescan.  Each next block must be a child of the previous.",
+	"rescanBlocks-blockHashes": "List of hashes to rescan. Each next block must be a child of the previous.",
 	"rescanBlocks--result0":    "List of matching blocks.",
 
 	// RescannedBlock help.
@@ -670,27 +651,25 @@ var helpDescsEnUS = map[string]string{
 }
 
 // rpcResultTypes specifies the result types that each RPC command can return.
-// This information is used to generate the help.  Each result type must be a
+// This information is used to generate the help. Each result type must be a
 // pointer to the type (or nil to indicate no return value).
 var rpcResultTypes = map[string][]interface{}{
 	"addManualNode":         nil,
 	"createRawTransaction":  {(*string)(nil)},
 	"debugLevel":            {(*string)(nil), (*string)(nil)},
-	"decodeRawTransaction":  {(*btcjson.TxRawDecodeResult)(nil)},
-	"decodeScript":          {(*btcjson.DecodeScriptResult)(nil)},
+	"decodeRawTransaction":  {(*rpcmodel.TxRawDecodeResult)(nil)},
+	"decodeScript":          {(*rpcmodel.DecodeScriptResult)(nil)},
 	"generate":              {(*[]string)(nil)},
-	"getAllManualNodesInfo": {(*[]string)(nil), (*[]btcjson.GetManualNodeInfoResult)(nil)},
-	"getSelectedTip":        {(*btcjson.GetBlockVerboseResult)(nil)},
+	"getAllManualNodesInfo": {(*[]string)(nil), (*[]rpcmodel.GetManualNodeInfoResult)(nil)},
+	"getSelectedTip":        {(*rpcmodel.GetBlockVerboseResult)(nil)},
 	"getSelectedTipHash":    {(*string)(nil)},
-	"getBlock":              {(*string)(nil), (*btcjson.GetBlockVerboseResult)(nil)},
-	"getBlocks":             {(*btcjson.GetBlocksResult)(nil)},
+	"getBlock":              {(*string)(nil), (*rpcmodel.GetBlockVerboseResult)(nil)},
+	"getBlocks":             {(*rpcmodel.GetBlocksResult)(nil)},
 	"getBlockCount":         {(*int64)(nil)},
-	"getBlockHeader":        {(*string)(nil), (*btcjson.GetBlockHeaderVerboseResult)(nil)},
-	"getBlockTemplate":      {(*btcjson.GetBlockTemplateResult)(nil), (*string)(nil), nil},
-	"getBlockDagInfo":       {(*btcjson.GetBlockDAGInfoResult)(nil)},
-	"getCFilter":            {(*string)(nil)},
-	"getCFilterHeader":      {(*string)(nil)},
-	"getChainFromBlock":     {(*btcjson.GetChainFromBlockResult)(nil)},
+	"getBlockHeader":        {(*string)(nil), (*rpcmodel.GetBlockHeaderVerboseResult)(nil)},
+	"getBlockTemplate":      {(*rpcmodel.GetBlockTemplateResult)(nil), (*string)(nil), nil},
+	"getBlockDagInfo":       {(*rpcmodel.GetBlockDAGInfoResult)(nil)},
+	"getChainFromBlock":     {(*rpcmodel.GetChainFromBlockResult)(nil)},
 	"getConnectionCount":    {(*int32)(nil)},
 	"getCurrentNet":         {(*uint32)(nil)},
 	"getDifficulty":         {(*float64)(nil)},
@@ -698,40 +677,39 @@ var rpcResultTypes = map[string][]interface{}{
 	"getHashesPerSec":       {(*float64)(nil)},
 	"getTopHeaders":         {(*[]string)(nil)},
 	"getHeaders":            {(*[]string)(nil)},
-	"getInfo":               {(*btcjson.InfoDAGResult)(nil)},
-	"getManualNodeInfo":     {(*string)(nil), (*btcjson.GetManualNodeInfoResult)(nil)},
-	"getMempoolInfo":        {(*btcjson.GetMempoolInfoResult)(nil)},
-	"getMiningInfo":         {(*btcjson.GetMiningInfoResult)(nil)},
-	"getNetTotals":          {(*btcjson.GetNetTotalsResult)(nil)},
-	"getNetworkHashPs":      {(*int64)(nil)},
-	"getPeerInfo":           {(*[]btcjson.GetPeerInfoResult)(nil)},
-	"getRawMempool":         {(*[]string)(nil), (*btcjson.GetRawMempoolVerboseResult)(nil)},
-	"getRawTransaction":     {(*string)(nil), (*btcjson.TxRawResult)(nil)},
-	"getSubnetwork":         {(*btcjson.GetSubnetworkResult)(nil)},
-	"getTxOut":              {(*btcjson.GetTxOutResult)(nil)},
+	"getInfo":               {(*rpcmodel.InfoDAGResult)(nil)},
+	"getManualNodeInfo":     {(*string)(nil), (*rpcmodel.GetManualNodeInfoResult)(nil)},
+	"getMempoolInfo":        {(*rpcmodel.GetMempoolInfoResult)(nil)},
+	"getMiningInfo":         {(*rpcmodel.GetMiningInfoResult)(nil)},
+	"getNetTotals":          {(*rpcmodel.GetNetTotalsResult)(nil)},
+	"getPeerInfo":           {(*[]rpcmodel.GetPeerInfoResult)(nil)},
+	"getRawMempool":         {(*[]string)(nil), (*rpcmodel.GetRawMempoolVerboseResult)(nil)},
+	"getRawTransaction":     {(*string)(nil), (*rpcmodel.TxRawResult)(nil)},
+	"getSubnetwork":         {(*rpcmodel.GetSubnetworkResult)(nil)},
+	"getTxOut":              {(*rpcmodel.GetTxOutResult)(nil)},
 	"node":                  nil,
 	"help":                  {(*string)(nil), (*string)(nil)},
 	"ping":                  nil,
 	"removeManualNode":      nil,
-	"searchRawTransactions": {(*string)(nil), (*[]btcjson.SearchRawTransactionsResult)(nil)},
+	"searchRawTransactions": {(*string)(nil), (*[]rpcmodel.SearchRawTransactionsResult)(nil)},
 	"sendRawTransaction":    {(*string)(nil)},
 	"setGenerate":           nil,
 	"stop":                  {(*string)(nil)},
 	"submitBlock":           {nil, (*string)(nil)},
 	"uptime":                {(*int64)(nil)},
-	"validateAddress":       {(*btcjson.ValidateAddressResult)(nil)},
-	"version":               {(*map[string]btcjson.VersionResult)(nil)},
+	"validateAddress":       {(*rpcmodel.ValidateAddressResult)(nil)},
+	"version":               {(*map[string]rpcmodel.VersionResult)(nil)},
 
 	// Websocket commands.
 	"loadTxFilter":              nil,
-	"session":                   {(*btcjson.SessionResult)(nil)},
+	"session":                   {(*rpcmodel.SessionResult)(nil)},
 	"notifyBlocks":              nil,
 	"stopNotifyBlocks":          nil,
 	"notifyChainChanges":        nil,
 	"stopNotifyChainChanges":    nil,
 	"notifyNewTransactions":     nil,
 	"stopNotifyNewTransactions": nil,
-	"rescanBlocks":              {(*[]btcjson.RescannedBlock)(nil)},
+	"rescanBlocks":              {(*[]rpcmodel.RescannedBlock)(nil)},
 }
 
 // helpCacher provides a concurrent safe type that provides help and usage for
@@ -762,7 +740,7 @@ func (c *helpCacher) rpcMethodHelp(method string) (string, error) {
 	}
 
 	// Generate, cache, and return the help.
-	help, err := btcjson.GenerateHelp(method, helpDescsEnUS, resultTypes...)
+	help, err := rpcmodel.GenerateHelp(method, helpDescsEnUS, resultTypes...)
 	if err != nil {
 		return "", err
 	}
@@ -785,7 +763,7 @@ func (c *helpCacher) rpcUsage(includeWebsockets bool) (string, error) {
 	// Generate a list of one-line usage for every command.
 	usageTexts := make([]string, 0, len(rpcHandlers))
 	for k := range rpcHandlers {
-		usage, err := btcjson.MethodUsageText(k)
+		usage, err := rpcmodel.MethodUsageText(k)
 		if err != nil {
 			return "", err
 		}
@@ -795,7 +773,7 @@ func (c *helpCacher) rpcUsage(includeWebsockets bool) (string, error) {
 	// Include websockets commands if requested.
 	if includeWebsockets {
 		for k := range wsHandlers {
-			usage, err := btcjson.MethodUsageText(k)
+			usage, err := rpcmodel.MethodUsageText(k)
 			if err != nil {
 				return "", err
 			}

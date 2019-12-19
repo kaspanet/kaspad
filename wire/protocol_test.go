@@ -33,17 +33,17 @@ func TestServiceFlagStringer(t *testing.T) {
 	}
 }
 
-// TestBitcoinNetStringer tests the stringized output for bitcoin net types.
-func TestBitcoinNetStringer(t *testing.T) {
+// TestKaspaNetStringer tests the stringized output for kaspa net types.
+func TestKaspaNetStringer(t *testing.T) {
 	tests := []struct {
-		in   BitcoinNet
+		in   KaspaNet
 		want string
 	}{
 		{MainNet, "MainNet"},
 		{RegTest, "RegTest"},
 		{TestNet, "TestNet"},
 		{SimNet, "SimNet"},
-		{0xffffffff, "Unknown BitcoinNet (4294967295)"},
+		{0xffffffff, "Unknown KaspaNet (4294967295)"},
 	}
 
 	t.Logf("Running %d tests", len(tests))

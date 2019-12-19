@@ -14,11 +14,11 @@ import (
 	"runtime"
 	"time"
 
-	rpc "github.com/daglabs/btcd/rpcclient"
-	"github.com/daglabs/btcd/util"
+	rpc "github.com/kaspanet/kaspad/rpcclient"
+	"github.com/kaspanet/kaspad/util"
 )
 
-// nodeConfig contains all the args, and data required to launch a btcd process
+// nodeConfig contains all the args, and data required to launch a kaspad process
 // and connect the rpc client to it.
 type nodeConfig struct {
 	rpcUser    string
@@ -42,9 +42,9 @@ type nodeConfig struct {
 
 // newConfig returns a newConfig with all default values.
 func newConfig(prefix, certFile, keyFile string, extra []string) (*nodeConfig, error) {
-	btcdPath, err := btcdExecutablePath()
+	kaspadPath, err := kaspadExecutablePath()
 	if err != nil {
-		btcdPath = "btcd"
+		kaspadPath = "kaspad"
 	}
 
 	a := &nodeConfig{
@@ -54,7 +54,7 @@ func newConfig(prefix, certFile, keyFile string, extra []string) (*nodeConfig, e
 		rpcPass:   "pass",
 		extra:     extra,
 		prefix:    prefix,
-		exe:       btcdPath,
+		exe:       kaspadPath,
 		endpoint:  "ws",
 		certFile:  certFile,
 		keyFile:   keyFile,
@@ -87,7 +87,7 @@ func (n *nodeConfig) setDefaults() error {
 	return nil
 }
 
-// arguments returns an array of arguments that be used to launch the btcd
+// arguments returns an array of arguments that be used to launch the kaspad
 // process.
 func (n *nodeConfig) arguments() []string {
 	args := []string{}
@@ -139,13 +139,13 @@ func (n *nodeConfig) arguments() []string {
 	return args
 }
 
-// command returns the exec.Cmd which will be used to start the btcd process.
+// command returns the exec.Cmd which will be used to start the kaspad process.
 func (n *nodeConfig) command() *exec.Cmd {
 	return exec.Command(n.exe, n.arguments()...)
 }
 
 // rpcConnConfig returns the rpc connection config that can be used to connect
-// to the btcd process that is launched via Start().
+// to the kaspad process that is launched via Start().
 func (n *nodeConfig) rpcConnConfig() rpc.ConnConfig {
 	return rpc.ConnConfig{
 		Host:                 n.rpcListen,
@@ -178,7 +178,7 @@ func (n *nodeConfig) cleanup() error {
 }
 
 // node houses the necessary state required to configure, launch, and manage a
-// btcd process.
+// kaspad process.
 type node struct {
 	config *nodeConfig
 
@@ -190,7 +190,7 @@ type node struct {
 
 // newNode creates a new node instance according to the passed config. dataDir
 // will be used to hold a file recording the pid of the launched process, and
-// as the base for the log and data directories for btcd.
+// as the base for the log and data directories for kaspad.
 func newNode(config *nodeConfig, dataDir string) (*node, error) {
 	return &node{
 		config:  config,
@@ -199,7 +199,7 @@ func newNode(config *nodeConfig, dataDir string) (*node, error) {
 	}, nil
 }
 
-// start creates a new btcd process, and writes its pid in a file reserved for
+// start creates a new kaspad process, and writes its pid in a file reserved for
 // recording the pid of the launched process. This file can be used to
 // terminate the process in case of a hang, or panic. In the case of a failing
 // test case, or panic, it is important that the process be stopped via stop(),
@@ -227,7 +227,7 @@ func (n *node) start() error {
 	return nil
 }
 
-// stop interrupts the running btcd process process, and waits until it exits
+// stop interrupts the running kaspad process process, and waits until it exits
 // properly. On windows, interrupt is not supported, so a kill signal is used
 // instead
 func (n *node) stop() error {
@@ -257,7 +257,7 @@ func (n *node) cleanup() error {
 	return n.config.cleanup()
 }
 
-// shutdown terminates the running btcd process, and cleans up all
+// shutdown terminates the running kaspad process, and cleans up all
 // file/directories created by node.
 func (n *node) shutdown() error {
 	if err := n.stop(); err != nil {

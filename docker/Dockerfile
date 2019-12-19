@@ -1,9 +1,9 @@
 # -- multistage docker build: stage #1: build stage
 FROM golang:1.13-alpine AS build
 
-RUN mkdir -p /go/src/github.com/daglabs/btcd
+RUN mkdir -p /go/src/github.com/kaspanet/kaspad
 
-WORKDIR /go/src/github.com/daglabs/btcd
+WORKDIR /go/src/github.com/kaspanet/kaspad
 
 RUN apk add --no-cache curl git openssh binutils gcc musl-dev
 RUN go get -u golang.org/x/lint/golint \
@@ -25,7 +25,7 @@ RUN golint -set_exit_status ./...
 # RUN aligncheck ./...
 # RUN structcheck -e ./...
 # RUN varcheck -e ./...
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o btcd .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o kaspad .
 
 # Remove the line below and uncomment the line after it for testing with coverage
 RUN go test -gcflags='-l' ./...
@@ -37,10 +37,8 @@ WORKDIR /app
 
 RUN apk add --no-cache ca-certificates tini
 
-COPY --from=build /go/src/github.com/daglabs/btcd/btcd /app/
-COPY --from=build /go/src/github.com/daglabs/btcd/docker/rpc.cert /app/
-COPY --from=build /go/src/github.com/daglabs/btcd/docker/rpc.key /app/
-COPY --from=build /go/src/github.com/daglabs/btcd/sample-btcd.conf /app/
+COPY --from=build /go/src/github.com/kaspanet/kaspad/kaspad /app/
+COPY --from=build /go/src/github.com/kaspanet/kaspad/sample-kaspad.conf /app/
 
 USER nobody
 ENTRYPOINT [ "/sbin/tini", "--" ]

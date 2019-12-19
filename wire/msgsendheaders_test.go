@@ -36,7 +36,7 @@ func TestSendHeaders(t *testing.T) {
 
 	// Test encode with latest protocol version.
 	var buf bytes.Buffer
-	err := msg.BtcEncode(&buf, pver)
+	err := msg.KaspaEncode(&buf, pver)
 	if err != nil {
 		t.Errorf("encode of MsgSendHeaders failed %v err <%v>", msg,
 			err)
@@ -44,7 +44,7 @@ func TestSendHeaders(t *testing.T) {
 
 	// Test decode with latest protocol version.
 	readmsg := NewMsgSendHeaders()
-	err = readmsg.BtcDecode(&buf, pver)
+	err = readmsg.KaspaDecode(&buf, pver)
 	if err != nil {
 		t.Errorf("decode of MsgSendHeaders failed [%v] err <%v>", buf,
 			err)
@@ -58,7 +58,7 @@ func TestSendHeadersCrossProtocol(t *testing.T) {
 
 	// Encode with latest protocol version.
 	var buf bytes.Buffer
-	err := msg.BtcEncode(&buf, ProtocolVersion)
+	err := msg.KaspaEncode(&buf, ProtocolVersion)
 	if err != nil {
 		t.Errorf("encode of MsgSendHeaders failed %v err <%v>", msg,
 			err)
@@ -90,13 +90,13 @@ func TestSendHeadersWire(t *testing.T) {
 	for i, test := range tests {
 		// Encode the message to wire format.
 		var buf bytes.Buffer
-		err := test.in.BtcEncode(&buf, test.pver)
+		err := test.in.KaspaEncode(&buf, test.pver)
 		if err != nil {
-			t.Errorf("BtcEncode #%d error %v", i, err)
+			t.Errorf("KaspaEncode #%d error %v", i, err)
 			continue
 		}
 		if !bytes.Equal(buf.Bytes(), test.buf) {
-			t.Errorf("BtcEncode #%d\n got: %s want: %s", i,
+			t.Errorf("KaspaEncode #%d\n got: %s want: %s", i,
 				spew.Sdump(buf.Bytes()), spew.Sdump(test.buf))
 			continue
 		}
@@ -104,13 +104,13 @@ func TestSendHeadersWire(t *testing.T) {
 		// Decode the message from wire format.
 		var msg MsgSendHeaders
 		rbuf := bytes.NewReader(test.buf)
-		err = msg.BtcDecode(rbuf, test.pver)
+		err = msg.KaspaDecode(rbuf, test.pver)
 		if err != nil {
-			t.Errorf("BtcDecode #%d error %v", i, err)
+			t.Errorf("KaspaDecode #%d error %v", i, err)
 			continue
 		}
 		if !reflect.DeepEqual(&msg, test.out) {
-			t.Errorf("BtcDecode #%d\n got: %s want: %s", i,
+			t.Errorf("KaspaDecode #%d\n got: %s want: %s", i,
 				spew.Sdump(msg), spew.Sdump(test.out))
 			continue
 		}

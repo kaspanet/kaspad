@@ -2,13 +2,13 @@ package rpc
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/logger"
+	"github.com/kaspanet/kaspad/logger"
+	"github.com/kaspanet/kaspad/rpcmodel"
 )
 
 // handleDebugLevel handles debugLevel commands.
 func handleDebugLevel(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.DebugLevelCmd)
+	c := cmd.(*rpcmodel.DebugLevelCmd)
 
 	// Special show command to list supported subsystems.
 	if c.LevelSpec == "show" {
@@ -18,8 +18,8 @@ func handleDebugLevel(s *Server, cmd interface{}, closeChan <-chan struct{}) (in
 
 	err := logger.ParseAndSetDebugLevels(c.LevelSpec)
 	if err != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCInvalidParams.Code,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCInvalidParams.Code,
 			Message: err.Error(),
 		}
 	}

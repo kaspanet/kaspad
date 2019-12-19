@@ -8,20 +8,20 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/util"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util"
 )
 
 const (
 	// StandardVerifyFlags are the script flags which are used when
 	// executing transaction scripts to enforce additional checks which
-	// are required for the script to be considered standard.  These checks
+	// are required for the script to be considered standard. These checks
 	// help reduce issues related to transaction malleability as well as
-	// allow pay-to-script hash transactions.  Note these flags are
+	// allow pay-to-script hash transactions. Note these flags are
 	// different than what is required for the consensus rules in that they
 	// are more strict.
 	//
-	// TODO: This definition does not belong here.  It belongs in a policy
+	// TODO: This definition does not belong here. It belongs in a policy
 	// package.
 	StandardVerifyFlags = ScriptDiscourageUpgradableNops
 )
@@ -100,7 +100,7 @@ func expectedInputs(pops []parsedOpcode, class ScriptClass) int {
 		return 2
 
 	case ScriptHashTy:
-		// Not including script.  That is handled by the caller.
+		// Not including script. That is handled by the caller.
 		return 1
 
 	default:
@@ -128,7 +128,7 @@ type ScriptInfo struct {
 }
 
 // CalcScriptInfo returns a structure providing data about the provided script
-// pair.  It will error if the pair is in someway invalid such that they can not
+// pair. It will error if the pair is in someway invalid such that they can not
 // be analysed, i.e. if they do not parse or the scriptPubKey is not a push-only
 // script
 func CalcScriptInfo(sigScript, scriptPubKey []byte, isP2SH bool) (*ScriptInfo, error) {
@@ -254,7 +254,7 @@ func PayToScriptHashSignatureScript(redeemScript []byte, signature []byte) ([]by
 }
 
 // PushedData returns an array of byte slices containing any pushed data found
-// in the passed script.  This includes OP_0, but not OP_1 - OP_16.
+// in the passed script. This includes OP_0, but not OP_1 - OP_16.
 func PushedData(script []byte) ([][]byte, error) {
 	pops, err := parseScript(script)
 	if err != nil {
@@ -273,9 +273,9 @@ func PushedData(script []byte) ([][]byte, error) {
 }
 
 // ExtractScriptPubKeyAddress returns the type of script and its addresses.
-// Note that it only works for 'standard' transaction script types.  Any data such
+// Note that it only works for 'standard' transaction script types. Any data such
 // as public keys which are invalid will return a nil address.
-func ExtractScriptPubKeyAddress(scriptPubKey []byte, chainParams *dagconfig.Params) (ScriptClass, util.Address, error) {
+func ExtractScriptPubKeyAddress(scriptPubKey []byte, dagParams *dagconfig.Params) (ScriptClass, util.Address, error) {
 	// No valid address if the script doesn't parse.
 	pops, err := parseScript(scriptPubKey)
 	if err != nil {
@@ -290,7 +290,7 @@ func ExtractScriptPubKeyAddress(scriptPubKey []byte, chainParams *dagconfig.Para
 		// Therefore the pubkey hash is the 3rd item on the stack.
 		// If the pubkey hash is invalid for some reason, return a nil address.
 		addr, err := util.NewAddressPubKeyHash(pops[2].data,
-			chainParams.Prefix)
+			dagParams.Prefix)
 		if err != nil {
 			return scriptClass, nil, nil
 		}
@@ -302,7 +302,7 @@ func ExtractScriptPubKeyAddress(scriptPubKey []byte, chainParams *dagconfig.Para
 		// Therefore the script hash is the 2nd item on the stack.
 		// If the script hash ss invalid for some reason, return a nil address.
 		addr, err := util.NewAddressScriptHashFromHash(pops[1].data,
-			chainParams.Prefix)
+			dagParams.Prefix)
 		if err != nil {
 			return scriptClass, nil, nil
 		}
@@ -327,12 +327,12 @@ type AtomicSwapDataPushes struct {
 }
 
 // ExtractAtomicSwapDataPushes returns the data pushes from an atomic swap
-// contract.  If the script is not an atomic swap contract,
-// ExtractAtomicSwapDataPushes returns (nil, nil).  Non-nil errors are returned
+// contract. If the script is not an atomic swap contract,
+// ExtractAtomicSwapDataPushes returns (nil, nil). Non-nil errors are returned
 // for unparsable scripts.
 //
 // NOTE: Atomic swaps are not considered standard script types by the dcrd
-// mempool policy and should be used with P2SH.  The atomic swap format is also
+// mempool policy and should be used with P2SH. The atomic swap format is also
 // expected to change to use a more secure hash function in the future.
 //
 // This function is only defined in the txscript package due to API limitations

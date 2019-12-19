@@ -13,12 +13,16 @@ import (
 // subsystems using the same code paths as when an interrupt signal is received.
 var ShutdownRequestChannel = make(chan struct{})
 
+// PanicShutdownChannel is used to initiate shutdown when any thread
+// panics using the same code paths as when an interrupt signal is received.
+var PanicShutdownChannel = make(chan struct{})
+
 // interruptSignals defines the default signals to catch in order to do a proper
-// shutdown.  This may be modified during init depending on the platform.
+// shutdown. This may be modified during init depending on the platform.
 var interruptSignals = []os.Signal{os.Interrupt}
 
 // InterruptListener listens for OS Signals such as SIGINT (Ctrl+C) and shutdown
-// requests from shutdownRequestChannel.  It returns a channel that is closed
+// requests from shutdownRequestChannel. It returns a channel that is closed
 // when either signal is received.
 func InterruptListener() <-chan struct{} {
 	c := make(chan struct{})
@@ -30,11 +34,14 @@ func InterruptListener() <-chan struct{} {
 		// channel to notify the caller.
 		select {
 		case sig := <-interruptChannel:
-			btcdLog.Infof("Received signal (%s).  Shutting down...",
+			kasdLog.Infof("Received signal (%s). Shutting down...",
 				sig)
 
 		case <-ShutdownRequestChannel:
-			btcdLog.Info("Shutdown requested.  Shutting down...")
+			kasdLog.Info("Shutdown requested. Shutting down...")
+
+		case <-PanicShutdownChannel:
+			kasdLog.Info("Panic occurred. Shutting down...")
 		}
 		close(c)
 
@@ -44,12 +51,17 @@ func InterruptListener() <-chan struct{} {
 		for {
 			select {
 			case sig := <-interruptChannel:
-				btcdLog.Infof("Received signal (%s).  Already "+
+				kasdLog.Infof("Received signal (%s). Already "+
 					"shutting down...", sig)
 
 			case <-ShutdownRequestChannel:
-				btcdLog.Info("Shutdown requested.  Already " +
+				kasdLog.Info("Shutdown requested. Already " +
 					"shutting down...")
+
+			case <-PanicShutdownChannel:
+				kasdLog.Info("Panic occurred while shutting down. " +
+					"Forcing shut down...")
+				os.Exit(1)
 			}
 		}
 	}()
@@ -58,7 +70,7 @@ func InterruptListener() <-chan struct{} {
 }
 
 // InterruptRequested returns true when the channel returned by
-// InterruptListener was closed.  This simplifies early shutdown slightly since
+// InterruptListener was closed. This simplifies early shutdown slightly since
 // the caller can just use an if statement instead of a select.
 func InterruptRequested(interrupted <-chan struct{}) bool {
 	select {

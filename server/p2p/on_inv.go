@@ -1,14 +1,14 @@
 package p2p
 
 import (
-	"github.com/daglabs/btcd/config"
-	"github.com/daglabs/btcd/peer"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/peer"
+	"github.com/kaspanet/kaspad/wire"
 )
 
-// OnInv is invoked when a peer receives an inv bitcoin message and is
+// OnInv is invoked when a peer receives an inv kaspa message and is
 // used to examine the inventory being advertised by the remote peer and react
-// accordingly.  We pass the message down to blockmanager which will call
+// accordingly. We pass the message down to blockmanager which will call
 // QueueMessage with any appropriate responses.
 func (sp *Peer) OnInv(_ *peer.Peer, msg *wire.MsgInv) {
 	if !config.ActiveConfig().BlocksOnly {

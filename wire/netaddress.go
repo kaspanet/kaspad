@@ -10,10 +10,10 @@ import (
 	"net"
 	"time"
 
-	"github.com/daglabs/btcd/util/binaryserializer"
+	"github.com/kaspanet/kaspad/util/binaryserializer"
 )
 
-// maxNetAddressPayload returns the max payload size for a bitcoin NetAddress
+// maxNetAddressPayload returns the max payload size for a kaspa NetAddress
 // based on the protocol version.
 func maxNetAddressPayload(pver uint32) uint32 {
 	// Services 8 bytes + ip 16 bytes + port 2 bytes + timestamp 8 bytes.
@@ -32,7 +32,7 @@ type NetAddress struct {
 	// IP address of the peer.
 	IP net.IP
 
-	// Port the peer is using.  This is encoded in big endian on the wire
+	// Port the peer is using. This is encoded in big endian on the wire
 	// which differs from most everything else.
 	Port uint16
 }
@@ -77,7 +77,7 @@ func NewNetAddress(addr *net.TCPAddr, services ServiceFlag) *NetAddress {
 }
 
 // readNetAddress reads an encoded NetAddress from r depending on the protocol
-// version and whether or not the timestamp is included per ts.  Some messages
+// version and whether or not the timestamp is included per ts. Some messages
 // like version do not include the timestamp.
 func readNetAddress(r io.Reader, pver uint32, na *NetAddress, ts bool) error {
 	var ip [16]byte
@@ -93,7 +93,6 @@ func readNetAddress(r io.Reader, pver uint32, na *NetAddress, ts bool) error {
 	if err != nil {
 		return err
 	}
-	// Sigh.  Bitcoin protocol mixes little and big endian.
 	port, err := binaryserializer.Uint16(r, bigEndian)
 	if err != nil {
 		return err
@@ -109,7 +108,7 @@ func readNetAddress(r io.Reader, pver uint32, na *NetAddress, ts bool) error {
 }
 
 // writeNetAddress serializes a NetAddress to w depending on the protocol
-// version and whether or not the timestamp is included per ts.  Some messages
+// version and whether or not the timestamp is included per ts. Some messages
 // like version do not include the timestamp.
 func writeNetAddress(w io.Writer, pver uint32, na *NetAddress, ts bool) error {
 	if ts {
@@ -129,6 +128,5 @@ func writeNetAddress(w io.Writer, pver uint32, na *NetAddress, ts bool) error {
 		return err
 	}
 
-	// Sigh.  Bitcoin protocol mixes little and big endian.
 	return binary.Write(w, bigEndian, na.Port)
 }

@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/daglabs/btcd/util/txsort"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/util/txsort"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 // TestSort ensures the transaction sorting works according to the BIP.

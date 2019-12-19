@@ -18,13 +18,13 @@ import (
 
 	"math/rand"
 
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/util/subnetworkid"
-	"github.com/daglabs/btcd/wire"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 func TestBlockCount(t *testing.T) {
@@ -254,7 +254,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	}
 
 	// Create a utxo view with a fake utxo for the inputs used in the
-	// transactions created below.  This utxo is added such that it has an
+	// transactions created below. This utxo is added such that it has an
 	// age of 4 blocks.
 	msgTx := wire.NewNativeMsgTx(wire.TxVersion, nil, []*wire.TxOut{{ScriptPubKey: nil, Value: 10}})
 	targetTx := util.NewTx(msgTx)
@@ -267,10 +267,10 @@ func TestCalcSequenceLock(t *testing.T) {
 	}
 
 	// Create a utxo that spends the fake utxo created above for use in the
-	// transactions created in the tests.  It has an age of 4 blocks.  Note
+	// transactions created in the tests. It has an age of 4 blocks. Note
 	// that the sequence lock heights are always calculated from the same
 	// point of view that they were originally calculated from for a given
-	// utxo.  That is to say, the height prior to it.
+	// utxo. That is to say, the height prior to it.
 	utxo := wire.Outpoint{
 		TxID:  *targetTx.ID(),
 		Index: 0,
@@ -283,7 +283,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	medianTime := node.RelativeAncestor(5).PastMedianTime(dag).Unix()
 
 	// The median time calculated from the PoV of the best block in the
-	// test chain.  For unconfirmed inputs, this value will be used since
+	// test DAG. For unconfirmed inputs, this value will be used since
 	// the MTP will be calculated from the PoV of the yet-to-be-mined
 	// block.
 	nextMedianTime := node.PastMedianTime(dag).Unix()
@@ -322,9 +322,9 @@ func TestCalcSequenceLock(t *testing.T) {
 			},
 		},
 		// A transaction with a single input whose lock time is
-		// expressed in seconds.  However, the specified lock time is
+		// expressed in seconds. However, the specified lock time is
 		// below the required floor for time based lock times since
-		// they have time granularity of 512 seconds.  As a result, the
+		// they have time granularity of 512 seconds. As a result, the
 		// seconds lock-time should be just before the median time of
 		// the targeted block.
 		{
@@ -337,7 +337,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			},
 		},
 		// A transaction with a single input whose lock time is
-		// expressed in seconds.  The number of seconds should be 1023
+		// expressed in seconds. The number of seconds should be 1023
 		// seconds after the median past time of the last block in the
 		// chain.
 		{
@@ -349,11 +349,11 @@ func TestCalcSequenceLock(t *testing.T) {
 				BlockBlueScore: -1,
 			},
 		},
-		// A transaction with multiple inputs.  The first input has a
-		// lock time expressed in seconds.  The second input has a
-		// sequence lock in blocks with a value of 4.  The last input
+		// A transaction with multiple inputs. The first input has a
+		// lock time expressed in seconds. The second input has a
+		// sequence lock in blocks with a value of 4. The last input
 		// has a sequence number with a value of 5, but has the disable
-		// bit set.  So the first lock should be selected as it's the
+		// bit set. So the first lock should be selected as it's the
 		// latest lock that isn't disabled.
 		{
 			name: "multiple varied inputs",
@@ -376,8 +376,8 @@ func TestCalcSequenceLock(t *testing.T) {
 				BlockBlueScore: int64(prevUtxoChainHeight) + 3,
 			},
 		},
-		// Transaction with a single input.  The input's sequence number
-		// encodes a relative lock-time in blocks (3 blocks).  The
+		// Transaction with a single input. The input's sequence number
+		// encodes a relative lock-time in blocks (3 blocks). The
 		// sequence lock should  have a value of -1 for seconds, but a
 		// height of 2 meaning it can be included at height 3.
 		{
@@ -390,7 +390,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			},
 		},
 		// A transaction with two inputs with lock times expressed in
-		// seconds.  The selected sequence lock value for seconds should
+		// seconds. The selected sequence lock value for seconds should
 		// be the time further in the future.
 		{
 			name: "two inputs, lock-times in seconds",
@@ -408,7 +408,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			},
 		},
 		// A transaction with two inputs with lock times expressed in
-		// blocks.  The selected sequence lock value for blocks should
+		// blocks. The selected sequence lock value for blocks should
 		// be the height further in the future, so a height of 10
 		// indicating it can be included at height 11.
 		{
@@ -428,7 +428,7 @@ func TestCalcSequenceLock(t *testing.T) {
 				BlockBlueScore: int64(prevUtxoChainHeight) + 10,
 			},
 		},
-		// A transaction with multiple inputs.  Two inputs are time
+		// A transaction with multiple inputs. Two inputs are time
 		// based, and the other two are block based. The lock lying
 		// further into the future for both inputs should be chosen.
 		{
@@ -454,9 +454,9 @@ func TestCalcSequenceLock(t *testing.T) {
 				BlockBlueScore: int64(prevUtxoChainHeight) + 8,
 			},
 		},
-		// A transaction with a single unconfirmed input.  As the input
+		// A transaction with a single unconfirmed input. As the input
 		// is confirmed, the height of the input should be interpreted
-		// as the height of the *next* block.  So, a 2 block relative
+		// as the height of the *next* block. So, a 2 block relative
 		// lock means the sequence lock should be for 1 block after the
 		// *next* block height, indicating it can be included 2 blocks
 		// after that.
@@ -470,7 +470,7 @@ func TestCalcSequenceLock(t *testing.T) {
 				BlockBlueScore: int64(nextBlockChainHeight) + 1,
 			},
 		},
-		// A transaction with a single unconfirmed input.  The input has
+		// A transaction with a single unconfirmed input. The input has
 		// a time based lock, so the lock time should be based off the
 		// MTP of the *next* block.
 		{
@@ -552,7 +552,7 @@ func TestCalcPastMedianTime(t *testing.T) {
 }
 
 // nodeHashes is a convenience function that returns the hashes for all of the
-// passed indexes of the provided nodes.  It is used to construct expected hash
+// passed indexes of the provided nodes. It is used to construct expected hash
 // slices in the tests.
 func nodeHashes(nodes []*blockNode, indexes ...int) []*daghash.Hash {
 	hashes := make([]*daghash.Hash, 0, len(indexes))
@@ -563,11 +563,11 @@ func nodeHashes(nodes []*blockNode, indexes ...int) []*daghash.Hash {
 }
 
 // testNoncePrng provides a deterministic prng for the nonce in generated fake
-// nodes.  The ensures that the node have unique hashes.
+// nodes. The ensures that the node have unique hashes.
 var testNoncePrng = rand.New(rand.NewSource(0))
 
 // chainedNodes returns the specified number of nodes constructed such that each
-// subsequent node points to the previous one to create a chain.  The first node
+// subsequent node points to the previous one to create a chain. The first node
 // will point to the passed parent which can be nil if desired.
 func chainedNodes(parents blockSet, numNodes int) []*blockNode {
 	nodes := make([]*blockNode, numNodes)
@@ -594,10 +594,10 @@ func testTip(nodes []*blockNode) *blockNode {
 	return nodes[len(nodes)-1]
 }
 
-// TestHeightToHashRange ensures that fetching a range of block hashes by start
-// height and end hash works as expected.
-func TestHeightToHashRange(t *testing.T) {
-	// Construct a synthetic block chain with a block index consisting of
+// TestChainHeightToHashRange ensures that fetching a range of block hashes by start
+// chain height and end hash works as expected.
+func TestChainHeightToHashRange(t *testing.T) {
+	// Construct a synthetic block DAG with a block index consisting of
 	// the following structure.
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
@@ -610,7 +610,7 @@ func TestHeightToHashRange(t *testing.T) {
 		blockDAG.index.AddNode(node)
 	}
 	for _, node := range branch1Nodes {
-		if node.height < 18 {
+		if node.chainHeight < 18 {
 			blockDAG.index.SetStatusFlags(node, statusValid)
 		}
 		blockDAG.index.AddNode(node)
@@ -618,59 +618,59 @@ func TestHeightToHashRange(t *testing.T) {
 	blockDAG.virtual.SetTips(setFromSlice(tip(branch0Nodes)))
 
 	tests := []struct {
-		name        string
-		startHeight uint64          // locator for requested inventory
-		endHash     *daghash.Hash   // stop hash for locator
-		maxResults  int             // max to locate, 0 = wire const
-		hashes      []*daghash.Hash // expected located hashes
-		expectError bool
+		name             string
+		startChainHeight uint64          // locator for requested inventory
+		endHash          *daghash.Hash   // stop hash for locator
+		maxResults       int             // max to locate, 0 = wire const
+		hashes           []*daghash.Hash // expected located hashes
+		expectError      bool
 	}{
 		{
-			name:        "blocks below tip",
-			startHeight: 11,
-			endHash:     branch0Nodes[14].hash,
-			maxResults:  10,
-			hashes:      nodeHashes(branch0Nodes, 10, 11, 12, 13, 14),
+			name:             "blocks below tip",
+			startChainHeight: 11,
+			endHash:          branch0Nodes[14].hash,
+			maxResults:       10,
+			hashes:           nodeHashes(branch0Nodes, 10, 11, 12, 13, 14),
 		},
 		{
-			name:        "blocks on main chain",
-			startHeight: 15,
-			endHash:     branch0Nodes[17].hash,
-			maxResults:  10,
-			hashes:      nodeHashes(branch0Nodes, 14, 15, 16, 17),
+			name:             "blocks on main chain",
+			startChainHeight: 15,
+			endHash:          branch0Nodes[17].hash,
+			maxResults:       10,
+			hashes:           nodeHashes(branch0Nodes, 14, 15, 16, 17),
 		},
 		{
-			name:        "blocks on stale chain",
-			startHeight: 15,
-			endHash:     branch1Nodes[1].hash,
-			maxResults:  10,
+			name:             "blocks on stale chain",
+			startChainHeight: 15,
+			endHash:          branch1Nodes[1].hash,
+			maxResults:       10,
 			hashes: append(nodeHashes(branch0Nodes, 14),
 				nodeHashes(branch1Nodes, 0, 1)...),
 		},
 		{
-			name:        "invalid start height",
-			startHeight: 19,
-			endHash:     branch0Nodes[17].hash,
-			maxResults:  10,
-			expectError: true,
+			name:             "invalid start chain height",
+			startChainHeight: 19,
+			endHash:          branch0Nodes[17].hash,
+			maxResults:       10,
+			expectError:      true,
 		},
 		{
-			name:        "too many results",
-			startHeight: 1,
-			endHash:     branch0Nodes[17].hash,
-			maxResults:  10,
-			expectError: true,
+			name:             "too many results",
+			startChainHeight: 1,
+			endHash:          branch0Nodes[17].hash,
+			maxResults:       10,
+			expectError:      true,
 		},
 		{
-			name:        "unvalidated block",
-			startHeight: 15,
-			endHash:     branch1Nodes[2].hash,
-			maxResults:  10,
-			expectError: true,
+			name:             "unvalidated block",
+			startChainHeight: 15,
+			endHash:          branch1Nodes[2].hash,
+			maxResults:       10,
+			expectError:      true,
 		},
 	}
 	for _, test := range tests {
-		hashes, err := blockDAG.HeightToHashRange(test.startHeight, test.endHash,
+		hashes, err := blockDAG.ChainHeightToHashRange(test.startChainHeight, test.endHash,
 			test.maxResults)
 		if err != nil {
 			if !test.expectError {
@@ -689,7 +689,7 @@ func TestHeightToHashRange(t *testing.T) {
 // TestIntervalBlockHashes ensures that fetching block hashes at specified
 // intervals by end hash works as expected.
 func TestIntervalBlockHashes(t *testing.T) {
-	// Construct a synthetic block chain with a block index consisting of
+	// Construct a synthetic block DAG with a block index consisting of
 	// the following structure.
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
@@ -702,7 +702,7 @@ func TestIntervalBlockHashes(t *testing.T) {
 		dag.index.AddNode(node)
 	}
 	for _, node := range branch1Nodes {
-		if node.height < 18 {
+		if node.chainHeight < 18 {
 			dag.index.SetStatusFlags(node, statusValid)
 		}
 		dag.index.AddNode(node)
@@ -886,10 +886,10 @@ func TestNew(t *testing.T) {
 
 	config.SubnetworkID = &subnetworkid.SubnetworkID{0xff}
 	_, err = New(config)
-	expectedErrorMessage := fmt.Sprintf("Cannot start btcd with subnetwork ID %s because"+
+	expectedErrorMessage := fmt.Sprintf("Cannot start kaspad with subnetwork ID %s because"+
 		" its database is already built with subnetwork ID <nil>. If you"+
 		" want to switch to a new database, please reset the"+
-		" database by starting btcd with --reset-db flag", config.SubnetworkID)
+		" database by starting kaspad with --reset-db flag", config.SubnetworkID)
 	if err.Error() != expectedErrorMessage {
 		t.Errorf("Unexpected error. Expected error '%s' but got '%s'", expectedErrorMessage, err)
 	}

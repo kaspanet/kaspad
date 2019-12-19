@@ -28,28 +28,28 @@
 btcd is a full node bitcoin implementation written in [Go](http://golang.org),
 licensed under the [copyfree](http://www.copyfree.org) ISC License.
 
-This project is currently under active development and is in a Beta state.  It
+This project is currently under active development and is in a Beta state. It
 is extremely stable and has been in production use since October 2013.
 
 It properly downloads, validates, and serves the block chain using the exact
-rules (including consensus bugs) for block acceptance as Bitcoin Core.  We have
-taken great care to avoid btcd causing a fork to the block chain.  It includes a
+rules (including consensus bugs) for block acceptance as Bitcoin Core. We have
+taken great care to avoid btcd causing a fork to the block chain. It includes a
 full block validation testing framework which contains all of the 'official'
 block acceptance tests (and some additional ones) that is run on every pull
-request to help ensure it properly follows consensus.  Also, it passes all of
+request to help ensure it properly follows consensus. Also, it passes all of
 the JSON test data in the Bitcoin Core code.
 
 It also properly relays newly mined blocks, maintains a transaction pool, and
-relays individual transactions that have not yet made it into a block.  It
+relays individual transactions that have not yet made it into a block. It
 ensures all individual transactions admitted to the pool follow the rules
 required by the block chain and also includes more strict checks which filter
 transactions based on miner requirements ("standard" transactions).
 
 One key difference between btcd and Bitcoin Core is that btcd does *NOT* include
-wallet functionality and this was a very intentional design decision.  See the
+wallet functionality and this was a very intentional design decision. See the
 blog entry [here](https://blog.conformal.com/btcd-not-your-moms-bitcoin-daemon)
-for more details.  This means you can't actually make or receive payments
-directly with btcd.  That functionality is provided by the
+for more details. This means you can't actually make or receive payments
+directly with btcd. That functionality is provided by the
 [btcwallet](https://github.com/btcsuite/btcwallet) and
 [Paymetheus](https://github.com/btcsuite/Paymetheus) (Windows-only) projects
 which are both under active development.
@@ -62,14 +62,14 @@ which are both under active development.
 
 **2.1 Installation**
 
-The first step is to install btcd.  See one of the following sections for
+The first step is to install btcd. See one of the following sections for
 details on how to install on the supported operating systems.
 
 <a name="WindowsInstallation" />
 
 **2.1.1 Windows Installation**<br />
 
-* Install the MSI available at: https://github.com/daglabs/btcd/releases
+* Install the MSI available at: https://github.com/kaspanet/kaspad/releases
 * Launch btcd from the Start Menu
 
 <a name="PosixInstallation" />
@@ -87,22 +87,22 @@ $ go version
 $ go env GOROOT GOPATH
 ```
 
-NOTE: The `GOROOT` and `GOPATH` above must not be the same path.  It is
+NOTE: The `GOROOT` and `GOPATH` above must not be the same path. It is
 recommended that `GOPATH` is set to a directory in your home directory such as
-`~/goprojects` to avoid write permission issues.  It is also recommended to add
+`~/goprojects` to avoid write permission issues. It is also recommended to add
 `$GOPATH/bin` to your `PATH` at this point.
 
 - Run the following commands to obtain btcd, all dependencies, and install it:
 
 ```bash
 $ go get -u github.com/Masterminds/glide
-$ git clone https://github.com/daglabs/btcd $GOPATH/src/github.com/daglabs/btcd
-$ cd $GOPATH/src/github.com/daglabs/btcd
+$ git clone https://github.com/kaspanet/kaspad $GOPATH/src/github.com/kaspanet/kaspad
+$ cd $GOPATH/src/github.com/kaspanet/kaspad
 $ glide install
 $ go install . ./cmd/...
 ```
 
-- btcd (and utilities) will now be installed in ```$GOPATH/bin```.  If you did
+- btcd (and utilities) will now be installed in ```$GOPATH/bin```. If you did
   not already add the bin directory to your system path during Go installation,
   we recommend you do so now.
 
@@ -111,7 +111,7 @@ $ go install . ./cmd/...
 - Run the following commands to update btcd, all dependencies, and install it:
 
 ```bash
-$ cd $GOPATH/src/github.com/daglabs/btcd
+$ cd $GOPATH/src/github.com/kaspanet/kaspad
 $ git pull && glide install
 $ go install . ./cmd/...
 ```
@@ -129,7 +129,7 @@ $ go install . ./cmd/...
 
 **2.2 Configuration**
 
-btcd has a number of [configuration](http://godoc.org/github.com/daglabs/btcd)
+btcd has a number of [configuration](http://godoc.org/github.com/kaspanet/kaspad)
 options, which can be viewed by running: `$ btcd --help`.
 
 <a name="BtcctlConfig" />
@@ -137,7 +137,7 @@ options, which can be viewed by running: `$ btcd --help`.
 **2.3 Controlling and Querying btcd via btcctl**
 
 btcctl is a command line utility that can be used to both control and query btcd
-via [RPC](http://www.wikipedia.org/wiki/Remote_procedure_call).  btcd does
+via [RPC](http://www.wikipedia.org/wiki/Remote_procedure_call). btcd does
 **not** enable its RPC server by default;  You must configure at minimum both an
 RPC username and password or both an RPC limited username and password:
 
@@ -213,23 +213,23 @@ configuration necessary, however, there is an optional method to use a
 
 **3.1.1 bootstrap.dat**
 
-* [Using bootstrap.dat](https://github.com/daglabs/btcd/tree/master/docs/using_bootstrap_dat.md)
+* [Using bootstrap.dat](https://github.com/kaspanet/kaspad/tree/master/docs/using_bootstrap_dat.md)
 
 <a name="NetworkConfig" />
 
 **3.1.2 Network Configuration**
 
-* [What Ports Are Used by Default?](https://github.com/daglabs/btcd/tree/master/docs/default_ports.md)
-* [How To Listen on Specific Interfaces](https://github.com/daglabs/btcd/tree/master/docs/configure_peer_server_listen_interfaces.md)
-* [How To Configure RPC Server to Listen on Specific Interfaces](https://github.com/daglabs/btcd/tree/master/docs/configure_rpc_server_listen_interfaces.md)
-* [Configuring btcd with Tor](https://github.com/daglabs/btcd/tree/master/docs/configuring_tor.md)
+* [What Ports Are Used by Default?](https://github.com/kaspanet/kaspad/tree/master/docs/default_ports.md)
+* [How To Listen on Specific Interfaces](https://github.com/kaspanet/kaspad/tree/master/docs/configure_peer_server_listen_interfaces.md)
+* [How To Configure RPC Server to Listen on Specific Interfaces](https://github.com/kaspanet/kaspad/tree/master/docs/configure_rpc_server_listen_interfaces.md)
+* [Configuring btcd with Tor](https://github.com/kaspanet/kaspad/tree/master/docs/configuring_tor.md)
 
 <a name="Wallet" />
 
 **3.1 Wallet**
 
 btcd was intentionally developed without an integrated wallet for security
-reasons.  Please see [btcwallet](https://github.com/btcsuite/btcwallet) for more
+reasons. Please see [btcwallet](https://github.com/btcsuite/btcwallet) for more
 information.
 
 
@@ -258,42 +258,42 @@ information.
 
 <a name="ContributionGuidelines" />
 
-* [Code Contribution Guidelines](https://github.com/daglabs/btcd/tree/master/docs/code_contribution_guidelines.md)
+* [Code Contribution Guidelines](https://github.com/kaspanet/kaspad/tree/master/docs/code_contribution_guidelines.md)
 
 <a name="JSONRPCReference" />
 
-* [JSON-RPC Reference](https://github.com/daglabs/btcd/tree/master/docs/json_rpc_api.md)
-    * [RPC Examples](https://github.com/daglabs/btcd/tree/master/docs/json_rpc_api.md#ExampleCode)
+* [JSON-RPC Reference](https://github.com/kaspanet/kaspad/tree/master/docs/json_rpc_api.md)
+    * [RPC Examples](https://github.com/kaspanet/kaspad/tree/master/docs/json_rpc_api.md#ExampleCode)
 
 <a name="GoPackages" />
 
 * The btcsuite Bitcoin-related Go Packages:
-    * [btcrpcclient](https://github.com/daglabs/btcd/tree/master/rpcclient) - Implements a
+    * [btcrpcclient](https://github.com/kaspanet/kaspad/tree/master/rpcclient) - Implements a
       robust and easy to use Websocket-enabled Bitcoin JSON-RPC client
-    * [btcjson](https://github.com/daglabs/btcd/tree/master/btcjson) - Provides an extensive API
+    * [btcjson](https://github.com/kaspanet/kaspad/tree/master/btcjson) - Provides an extensive API
       for the underlying JSON-RPC command and return values
-    * [wire](https://github.com/daglabs/btcd/tree/master/wire) - Implements the
+    * [wire](https://github.com/kaspanet/kaspad/tree/master/wire) - Implements the
       Bitcoin wire protocol
-    * [peer](https://github.com/daglabs/btcd/tree/master/peer) -
+    * [peer](https://github.com/kaspanet/kaspad/tree/master/peer) -
       Provides a common base for creating and managing Bitcoin network peers.
-    * [blockchain](https://github.com/daglabs/btcd/tree/master/blockchain) -
+    * [blockchain](https://github.com/kaspanet/kaspad/tree/master/blockchain) -
       Implements Bitcoin block handling and chain selection rules
-    * [blockchain/fullblocktests](https://github.com/daglabs/btcd/tree/master/blockchain/fullblocktests) -
+    * [blockchain/fullblocktests](https://github.com/kaspanet/kaspad/tree/master/blockchain/fullblocktests) -
       Provides a set of block tests for testing the consensus validation rules
-    * [txscript](https://github.com/daglabs/btcd/tree/master/txscript) -
+    * [txscript](https://github.com/kaspanet/kaspad/tree/master/txscript) -
       Implements the Bitcoin transaction scripting language
-    * [btcec](https://github.com/daglabs/btcd/tree/master/btcec) - Implements
+    * [btcec](https://github.com/kaspanet/kaspad/tree/master/btcec) - Implements
       support for the elliptic curve cryptographic functions needed for the
       Bitcoin scripts
-    * [database](https://github.com/daglabs/btcd/tree/master/database) -
+    * [database](https://github.com/kaspanet/kaspad/tree/master/database) -
       Provides a database interface for the Bitcoin block chain
-    * [mempool](https://github.com/daglabs/btcd/tree/master/mempool) -
+    * [mempool](https://github.com/kaspanet/kaspad/tree/master/mempool) -
       Package mempool provides a policy-enforced pool of unmined bitcoin
       transactions.
     * [btcutil](https://github.com/daglabs/btcutil) - Provides Bitcoin-specific
       convenience functions and types
-    * [chainhash](https://github.com/daglabs/btcd/tree/master/chaincfg/chainhash) -
+    * [chainhash](https://github.com/kaspanet/kaspad/tree/master/chaincfg/chainhash) -
       Provides a generic hash type and associated functions that allows the
       specific hash algorithm to be abstracted.
-    * [connmgr](https://github.com/daglabs/btcd/tree/master/connmgr) -
+    * [connmgr](https://github.com/kaspanet/kaspad/tree/master/connmgr) -
       Package connmgr implements a generic Bitcoin network connection manager.

@@ -1,9 +1,0 @@
-1. To build docker image invoke following command from btcd root directory:
-    docker build -t txgen -f ./cmd/txgen/docker/Dockerfile .
-
-2. To run:
-    a. create folder ~/.btcd/txgen with the following files:
-        rpc.cert - certificate file that all rpc nodes accept
-        addresses - list of node addresses in the format [hostname]:[port]. One node per line
-    b. run:
-         docker run -v ~/.btcd:/root/.btcd -t txgen 

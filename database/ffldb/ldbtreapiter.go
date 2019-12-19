@@ -7,7 +7,7 @@ package ffldb
 import (
 	"github.com/btcsuite/goleveldb/leveldb/iterator"
 	"github.com/btcsuite/goleveldb/leveldb/util"
-	"github.com/daglabs/btcd/database/internal/treap"
+	"github.com/kaspanet/kaspad/database/internal/treap"
 )
 
 // ldbTreapIter wraps a treap iterator to provide the additional functionality
@@ -49,7 +49,7 @@ func (iter *ldbTreapIter) Release() {
 
 // newLdbTreapIter creates a new treap iterator for the given slice against the
 // pending keys for the passed transaction and returns it wrapped in an
-// ldbTreapIter so it can be used as a leveldb iterator.  It also adds the new
+// ldbTreapIter so it can be used as a leveldb iterator. It also adds the new
 // iterator to the list of active iterators for the transaction.
 func newLdbTreapIter(tx *transaction, slice *util.Range) *ldbTreapIter {
 	iter := tx.pendingKeys.Iterator(slice.Start, slice.Limit)

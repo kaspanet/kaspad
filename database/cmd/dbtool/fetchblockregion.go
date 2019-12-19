@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/util/daghash"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // blockRegionCmd defines the configuration options for the fetchblockregion
@@ -23,7 +23,7 @@ var (
 	blockRegionCfg = blockRegionCmd{}
 )
 
-// Execute is the main entry point for the command.  It's invoked by the parser.
+// Execute is the main entry point for the command. It's invoked by the parser.
 func (cmd *blockRegionCmd) Execute(args []string) error {
 	// Setup the global config options and ensure they are valid.
 	if err := setupGlobalConfig(); err != nil {
