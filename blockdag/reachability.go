@@ -318,7 +318,7 @@ func (ri *reachabilityInterval) split(sizes []uint64) ([]*reachabilityInterval, 
 	}
 	fractions := make([]float64, len(sizes))
 	for i, size := range sizes {
-		fractions[i] = math.Pow(2, float64(size-maxSize))
+		fractions[i] = 1 / math.Pow(2, float64(maxSize-size))
 	}
 	fractionsSum := float64(0)
 	for _, fraction := range fractions {

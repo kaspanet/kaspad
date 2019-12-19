@@ -53,7 +53,7 @@ func TestSplitFraction(t *testing.T) {
 	for i, test := range tests {
 		left, right, err := test.interval.splitFraction(test.fraction)
 		if err != nil {
-			t.Fatalf("TestSplitFraction: splitFraction unexpectedly failed: %s", err)
+			t.Fatalf("TestSplitFraction: splitFraction unexpectedly failed in test #%d: %s", i, err)
 		}
 		if !reflect.DeepEqual(left, test.expectedLeft) {
 			t.Errorf("TestSplitFraction: unexpected left in test #%d. "+
@@ -118,10 +118,107 @@ func TestSplitExact(t *testing.T) {
 	for i, test := range tests {
 		intervals, err := test.interval.splitExact(test.sizes)
 		if err != nil {
-			t.Fatalf("TestSplitExact: splitFraction unexpectedly failed: %s", err)
+			t.Fatalf("TestSplitExact: splitExact unexpectedly failed in test #%d: %s", i, err)
 		}
 		if !reflect.DeepEqual(intervals, test.expectedIntervals) {
-			t.Errorf("TestSplitFraction: unexpected intervals in test #%d. "+
+			t.Errorf("TestSplitExact: unexpected intervals in test #%d. "+
+				"want: %s, got: %s", i, test.expectedIntervals, intervals)
+		}
+	}
+}
+
+func TestSplit(t *testing.T) {
+	tests := []struct {
+		interval          *reachabilityInterval
+		sizes             []uint64
+		expectedIntervals []*reachabilityInterval
+	}{
+		{
+			interval: &reachabilityInterval{start: 1, end: 100},
+			sizes:    []uint64{100},
+			expectedIntervals: []*reachabilityInterval{
+				{start: 1, end: 100},
+			},
+		},
+		{
+			interval: &reachabilityInterval{start: 1, end: 100},
+			sizes:    []uint64{50, 50},
+			expectedIntervals: []*reachabilityInterval{
+				{start: 1, end: 50},
+				{start: 51, end: 100},
+			},
+		},
+		{
+			interval: &reachabilityInterval{start: 1, end: 100},
+			sizes:    []uint64{10, 20, 30, 40},
+			expectedIntervals: []*reachabilityInterval{
+				{start: 1, end: 10},
+				{start: 11, end: 30},
+				{start: 31, end: 60},
+				{start: 61, end: 100},
+			},
+		},
+		{
+			interval: &reachabilityInterval{start: 1, end: 100},
+			sizes:    []uint64{25, 25},
+			expectedIntervals: []*reachabilityInterval{
+				{start: 1, end: 50},
+				{start: 51, end: 100},
+			},
+		},
+		{
+			interval: &reachabilityInterval{start: 1, end: 100},
+			sizes:    []uint64{1, 1},
+			expectedIntervals: []*reachabilityInterval{
+				{start: 1, end: 50},
+				{start: 51, end: 100},
+			},
+		},
+		{
+			interval: &reachabilityInterval{start: 1, end: 100},
+			sizes:    []uint64{33, 33, 33},
+			expectedIntervals: []*reachabilityInterval{
+				{start: 1, end: 33},
+				{start: 34, end: 66},
+				{start: 67, end: 100},
+			},
+		},
+		{
+			interval: &reachabilityInterval{start: 1, end: 100},
+			sizes:    []uint64{10, 15, 25},
+			expectedIntervals: []*reachabilityInterval{
+				{start: 1, end: 10},
+				{start: 11, end: 25},
+				{start: 26, end: 100},
+			},
+		},
+		{
+			interval: &reachabilityInterval{start: 1, end: 100},
+			sizes:    []uint64{25, 15, 10},
+			expectedIntervals: []*reachabilityInterval{
+				{start: 1, end: 75},
+				{start: 76, end: 90},
+				{start: 91, end: 100},
+			},
+		},
+		{
+			interval: &reachabilityInterval{start: 1, end: 10_000},
+			sizes:    []uint64{10, 10, 20},
+			expectedIntervals: []*reachabilityInterval{
+				{start: 1, end: 20},
+				{start: 21, end: 40},
+				{start: 41, end: 10_000},
+			},
+		},
+	}
+
+	for i, test := range tests {
+		intervals, err := test.interval.split(test.sizes)
+		if err != nil {
+			t.Fatalf("TestSplit: split unexpectedly failed in test #%d: %s", i, err)
+		}
+		if !reflect.DeepEqual(intervals, test.expectedIntervals) {
+			t.Errorf("TestSplit: unexpected intervals in test #%d. "+
 				"want: %s, got: %s", i, test.expectedIntervals, intervals)
 		}
 	}
