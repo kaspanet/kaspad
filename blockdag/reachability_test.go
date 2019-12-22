@@ -1,9 +1,92 @@
 package blockdag
 
 import (
+	"math"
 	"reflect"
 	"testing"
 )
+
+func TestAddTreeChild(t *testing.T) {
+	// Scenario 1: test addTreeChild in a chain
+	//             root -> a -> b -> c...
+	// Create the root node of a new reachability tree
+	root, err := newReachabilityTreeNode(1, 100)
+	if err != nil {
+		t.Fatalf("TestAddTreeChild: newReachabilityTreeNode failed: %s", err)
+	}
+
+	// Add a chain of child nodes until a reindex occurs (2^6=64 < 100 < 2^7=128)
+	currentTip := root
+	for i := 0; i < 7; i++ {
+		node, err := newReachabilityTreeNode(1, math.MaxUint64-1)
+		if err != nil {
+			t.Fatalf("TestAddTreeChild: newReachabilityTreeNode failed: %s", err)
+		}
+		err = currentTip.addTreeChild(node)
+		if err != nil {
+			t.Fatalf("TestAddTreeChild: addTreeChild failed: %s", err)
+		}
+		currentTip = node
+	}
+
+	// Expect the tip to have an interval of 1 and remaining interval of 0
+	tipInterval := currentTip.interval.size()
+	if tipInterval != 1 {
+		t.Fatalf("TestAddTreeChild: unexpected tip interval size: want: 1, got: %d", tipInterval)
+	}
+	tipRemainingInterval := currentTip.remainingInterval.size()
+	if tipRemainingInterval != 0 {
+		t.Fatalf("TestAddTreeChild: unexpected tip interval size: want: 0, got: %d", tipRemainingInterval)
+	}
+
+	// Expect all nodes to be descendant nodes of root
+	currentNode := currentTip
+	for currentNode != nil {
+		if !root.interval.isAncestorOf(&currentNode.interval) {
+			t.Fatalf("TestAddTreeChild: currentNode is not a descendant of root")
+		}
+		currentNode = currentNode.parent
+	}
+
+	// Scenario 2: test addTreeChild where all nodes are direct descendants of root
+	//             root -> a, b, c...
+	// Create the root node of a new reachability tree
+	root, err = newReachabilityTreeNode(1, 100)
+	if err != nil {
+		t.Fatalf("TestAddTreeChild: newReachabilityTreeNode failed: %s", err)
+	}
+
+	// Add child nodes to root until a reindex occurs (2^6=64 < 100 < 2^7=128)
+	childNodes := make([]*reachabilityTreeNode, 7)
+	for i := 0; i < len(childNodes); i++ {
+		childNodes[i], err = newReachabilityTreeNode(1, math.MaxUint64-1)
+		if err != nil {
+			t.Fatalf("TestAddTreeChild: newReachabilityTreeNode failed: %s", err)
+		}
+		err = root.addTreeChild(childNodes[i])
+		if err != nil {
+			t.Fatalf("TestAddTreeChild: addTreeChild failed: %s", err)
+		}
+	}
+
+	// Expect the last-added child to have an interval of 1 and remaining interval of 0
+	lastChild := childNodes[len(childNodes)-1]
+	lastChildInterval := lastChild.interval.size()
+	if lastChildInterval != 1 {
+		t.Fatalf("TestAddTreeChild: unexpected lastChild interval size: want: 1, got: %d", lastChildInterval)
+	}
+	lastChildRemainingInterval := lastChild.remainingInterval.size()
+	if lastChildRemainingInterval != 0 {
+		t.Fatalf("TestAddTreeChild: unexpected lastChild interval size: want: 0, got: %d", lastChildRemainingInterval)
+	}
+
+	// Expect all nodes to be descendant nodes of root
+	for _, childNode := range childNodes {
+		if !root.interval.isAncestorOf(&childNode.interval) {
+			t.Fatalf("TestAddTreeChild: childNode is not a descendant of root")
+		}
+	}
+}
 
 func TestSplitFraction(t *testing.T) {
 	tests := []struct {

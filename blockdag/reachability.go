@@ -39,6 +39,18 @@ type reachabilityTreeNode struct {
 	subtreeSize uint64
 }
 
+func newReachabilityTreeNode(start uint64, end uint64) (*reachabilityTreeNode, error) {
+	interval, err := newReachabilityInterval(start, end)
+	if err != nil {
+		return nil, err
+	}
+	remainingInterval, err := newReachabilityInterval(start, end-1)
+	if err != nil {
+		return nil, err
+	}
+	return &reachabilityTreeNode{interval: *interval, remainingInterval: *remainingInterval}, nil
+}
+
 // addTreeChild adds child to this tree node. If this node has no
 // remaining interval to allocate, a reindexing is triggered.
 func (rtn *reachabilityTreeNode) addTreeChild(child *reachabilityTreeNode) error {
@@ -221,6 +233,27 @@ func (rtn *reachabilityTreeNode) applyIntervalDown(interval *reachabilityInterva
 		current.subtreeSize = 0
 	}
 	return nil
+}
+
+// String returns a string representation of a reachability tree node
+// and its children.
+func (rtn *reachabilityTreeNode) String() string {
+	nodeString := rtn.interval.String()
+	queue := []*reachabilityTreeNode{rtn}
+	for len(queue) > 0 {
+		var current *reachabilityTreeNode
+		current, queue = queue[0], queue[1:]
+		if len(current.children) == 0 {
+			break
+		}
+
+		nodeString += "\n"
+		for _, child := range current.children {
+			nodeString += child.interval.String()
+			queue = append(queue, child)
+		}
+	}
+	return nodeString
 }
 
 // reachabilityInterval represents an interval to be used within the
