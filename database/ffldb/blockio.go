@@ -215,15 +215,8 @@ func serializeBlockLoc(loc blockLocation) []byte {
 
 // blockFilePath return the file path for the provided block file number.
 func blockFilePath(dbPath string, fileNum uint32) string {
-	// The Bitcoin protocol encodes block height as int32, so max number of
-	// blocks is 2^31. Max block size per the protocol is 32MiB per block.
-	// So the theoretical max at the time this comment was written is 64PiB
-	// (pebibytes). With files @ 512MiB each, this would require a maximum
-	// of 134,217,728 files. Thus, choose 9 digits of precision for the
-	// filenames. An additional benefit is 9 digits provides 10^9 files @
-	// 512MiB each for a total of ~476.84PiB (roughly 7.4 times the current
-	// theoretical max), so there is room for the max block size to grow in
-	// the future.
+	// Choose 9 digits of precision for the filenames. 9 digits provide
+	// 10^9 files @ 512MiB each a total of ~476.84PiB.
 
 	fileName := fmt.Sprintf("%09d.fdb", fileNum)
 	return filepath.Join(dbPath, fileName)
@@ -466,7 +459,7 @@ func (s *blockStore) writeBlock(rawBlock []byte) (blockLocation, error) {
 		wc.curFile.file = file
 	}
 
-	// Bitcoin network.
+	// Kaspa network.
 	origOffset := wc.curOffset
 	hasher := crc32.New(castagnoli)
 	var scratch [4]byte

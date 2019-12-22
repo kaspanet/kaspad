@@ -97,7 +97,7 @@ address.
 
 ```text
 HiddenServiceDir /var/tor/btcd
-HiddenServicePort 8333 127.0.0.1:8333
+HiddenServicePort 16111 127.0.0.1:16111
 ```
 
 Once Tor is configured to provide the hidden service and you have obtained your

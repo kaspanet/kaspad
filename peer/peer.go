@@ -117,7 +117,7 @@ type MessageListeners struct {
 	// OnBlock is invoked when a peer receives a block kaspa message.
 	OnBlock func(p *Peer, msg *wire.MsgBlock, buf []byte)
 
-	// OnInv is invoked when a peer receives an inv bitcoin message.
+	// OnInv is invoked when a peer receives an inv kaspa message.
 	OnInv func(p *Peer, msg *wire.MsgInv)
 
 	// OnGetBlockLocator is invoked when a peer receives a getlocator kaspa message.
@@ -137,7 +137,7 @@ type MessageListeners struct {
 	// message.
 	OnGetBlockInvs func(p *Peer, msg *wire.MsgGetBlockInvs)
 
-	// OnFeeFilter is invoked when a peer receives a feefilter bitcoin message.
+	// OnFeeFilter is invoked when a peer receives a feefilter kaspa message.
 	OnFeeFilter func(p *Peer, msg *wire.MsgFeeFilter)
 
 	// OnFilterAdd is invoked when a peer receives a filteradd kaspa message.
