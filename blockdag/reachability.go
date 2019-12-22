@@ -145,8 +145,8 @@ func (rtn *reachabilityTreeNode) reindexTreeIntervals() error {
 // For each node rtn this field is initialized to 0. The field
 // has two possible states:
 // * rtn.subtreeSize > |rtn.children|:
-//	 this indicated that rtn's subtree size is already known and
-//	 calculated.
+//   this indicates that rtn's subtree size is already known and
+//   calculated.
 // * rtn.subtreeSize <= |rtn.children|:
 //   we are still in the counting stage of tracking which of
 //   rtn's children has already calculated its subtree size.
