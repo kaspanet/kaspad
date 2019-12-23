@@ -261,9 +261,11 @@ func (rtn *reachabilityTreeNode) reindexTreeIntervals() error {
 	for intervalSize < subtreeSize {
 		if current.parent == nil {
 			// If we ended up here it means that there are more
-			// than 2^64 blocks inside the finality window,
-			// something that shouldn't ever happen.
-			return errors.Errorf("missing tree parent")
+			// than 2^64 blocks, which shouldn't ever happen.
+			return errors.Errorf("missing tree parent" +
+				"during reindexing. Theoretically, this should  " +
+				"only ever happen if there are more than 2^64 " +
+				"blocks in the DAG.")
 		}
 		current = current.parent
 		intervalSize = current.interval.size()
