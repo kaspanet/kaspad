@@ -285,7 +285,7 @@ func (rtn *reachabilityTreeNode) reindexTreeIntervals() error {
 //     for _, child := range rtn.children {
 //         subtreeSize += child.countSubtreesUp()
 //     }
-//     return subtreeSize
+//     return subtreeSize + 1
 // }
 //
 // However, we are expecting (linearly) deep trees, and so a
