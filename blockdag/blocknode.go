@@ -84,8 +84,8 @@ type blockNode struct {
 	// reachabilityTreeNode is the reachabilityTree node representation of this block
 	reachabilityTreeNode reachabilityTreeNode
 
-	// futureBlocks keeps just enough future blocks for tracking block reachability in the DAG
-	futureBlocks futureBlocks
+	// futureCoveringSet keeps just enough future blocks for tracking block reachability in the DAG
+	futureCoveringSet futureCoveringBlockSet
 
 	// Some fields from block headers to aid in  reconstructing headers
 	// from memory. These must be treated as immutable and are intentionally
@@ -205,7 +205,7 @@ func (node *blockNode) RelativeAncestor(distance uint64) *blockNode {
 }
 
 // isAncestorOf returns true if this node can be reached from the other node
-// in the DAG. The complexity of this method is O(log(|node.futureBlocks|))
+// in the DAG. The complexity of this method is O(log(|node.futureCoveringBlockSet|))
 func (node *blockNode) isAncestorOf(other *blockNode) bool {
 	// First, check if this node is a reachability tree ancestor of the
 	// other node
@@ -217,7 +217,7 @@ func (node *blockNode) isAncestorOf(other *blockNode) bool {
 
 	// Otherwise, use previously registered future blocks to complete the
 	// reachability test
-	return node.futureBlocks.isFutureBlock(other)
+	return node.futureCoveringSet.isFutureBlock(other)
 }
 
 // CalcPastMedianTime returns the median time of the previous few blocks

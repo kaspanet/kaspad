@@ -308,7 +308,7 @@ func TestSplit(t *testing.T) {
 }
 
 func TestIsFutureBlock(t *testing.T) {
-	blocks := futureBlocks{
+	blocks := futureCoveringBlockSet{
 		{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 2, end: 3}}},
 		{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 4, end: 67}}},
 		{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 67, end: 77}}},
@@ -357,7 +357,7 @@ func TestIsFutureBlock(t *testing.T) {
 }
 
 func TestInsertFutureBlock(t *testing.T) {
-	blocks := futureBlocks{
+	blocks := futureCoveringBlockSet{
 		{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 1, end: 3}}},
 		{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 4, end: 67}}},
 		{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 67, end: 77}}},
@@ -368,13 +368,13 @@ func TestInsertFutureBlock(t *testing.T) {
 
 	tests := []struct {
 		toInsert       []*blockNode
-		expectedResult futureBlocks
+		expectedResult futureCoveringBlockSet
 	}{
 		{
 			toInsert: []*blockNode{
 				{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 5, end: 7}}},
 			},
-			expectedResult: futureBlocks{
+			expectedResult: futureCoveringBlockSet{
 				{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 1, end: 3}}},
 				{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 4, end: 67}}},
 				{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 67, end: 77}}},
@@ -387,7 +387,7 @@ func TestInsertFutureBlock(t *testing.T) {
 			toInsert: []*blockNode{
 				{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 65, end: 78}}},
 			},
-			expectedResult: futureBlocks{
+			expectedResult: futureCoveringBlockSet{
 				{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 1, end: 3}}},
 				{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 4, end: 67}}},
 				{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 65, end: 78}}},
@@ -400,7 +400,7 @@ func TestInsertFutureBlock(t *testing.T) {
 			toInsert: []*blockNode{
 				{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 88, end: 97}}},
 			},
-			expectedResult: futureBlocks{
+			expectedResult: futureCoveringBlockSet{
 				{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 1, end: 3}}},
 				{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 4, end: 67}}},
 				{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 67, end: 77}}},
@@ -415,7 +415,7 @@ func TestInsertFutureBlock(t *testing.T) {
 				{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 88, end: 97}}},
 				{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 3000, end: 3010}}},
 			},
-			expectedResult: futureBlocks{
+			expectedResult: futureCoveringBlockSet{
 				{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 1, end: 3}}},
 				{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 4, end: 67}}},
 				{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 67, end: 77}}},
@@ -430,7 +430,7 @@ func TestInsertFutureBlock(t *testing.T) {
 
 	for i, test := range tests {
 		// Create a clone of blocks so that we have a clean start for every test
-		blocksClone := make(futureBlocks, len(blocks))
+		blocksClone := make(futureCoveringBlockSet, len(blocks))
 		for i, block := range blocks {
 			blocksClone[i] = block
 		}
