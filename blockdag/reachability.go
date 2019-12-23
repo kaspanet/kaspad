@@ -189,7 +189,7 @@ type reachabilityTreeNode struct {
 
 	// subtreeSize is a helper field used only during reindexing
 	// (expected to be 0 any other time).
-	// See countSubtreesUp for further details.
+	// See countSubtrees for further details.
 	subtreeSize uint64
 }
 
@@ -255,7 +255,7 @@ func (rtn *reachabilityTreeNode) reindexTreeIntervals() error {
 
 	// Initial interval and subtree sizes
 	intervalSize := current.interval.size()
-	subtreeSize := current.countSubtreesUp()
+	subtreeSize := current.countSubtrees()
 
 	// Find the first ancestor that has sufficient interval space
 	for intervalSize < subtreeSize {
@@ -269,21 +269,21 @@ func (rtn *reachabilityTreeNode) reindexTreeIntervals() error {
 		}
 		current = current.parent
 		intervalSize = current.interval.size()
-		subtreeSize = current.countSubtreesUp()
+		subtreeSize = current.countSubtrees()
 	}
 
 	// Apply the interval down the subtree
-	return current.applyIntervalDown(&current.interval)
+	return current.propagateInterval(&current.interval)
 }
 
-// This method counts the size of each subtree under this node.
-// The method outcome is exactly equal to the following recursive
+// countSubtrees counts the size of each subtree under this node.
+// Its outcome is exactly equal to the following recursive
 // implementation:
 //
-// func (rtn *reachabilityTreeNode) countSubtreesUp() uint64 {
+// func (rtn *reachabilityTreeNode) countSubtrees() uint64 {
 //     subtreeSize := uint64(0)
 //     for _, child := range rtn.children {
-//         subtreeSize += child.countSubtreesUp()
+//         subtreeSize += child.countSubtrees()
 //     }
 //     return subtreeSize + 1
 // }
@@ -309,7 +309,7 @@ func (rtn *reachabilityTreeNode) reindexTreeIntervals() error {
 //   This way, once rtn.subtree_size = |rtn.children| we know we
 //   can pull subtree sizes from children and continue pushing
 //   the readiness signal further up
-func (rtn *reachabilityTreeNode) countSubtreesUp() uint64 {
+func (rtn *reachabilityTreeNode) countSubtrees() uint64 {
 	queue := []*reachabilityTreeNode{rtn}
 	for len(queue) > 0 {
 		var current *reachabilityTreeNode
@@ -349,11 +349,11 @@ func (rtn *reachabilityTreeNode) countSubtreesUp() uint64 {
 	return rtn.subtreeSize
 }
 
-// applyIntervalDown applies new intervals using a BFS traversal.
+// propagateInterval applies new intervals using a BFS traversal.
 // The intervals are allocated according to subtree sizes and the
 // 'split' allocation rule (see the split() method for further
 // details)
-func (rtn *reachabilityTreeNode) applyIntervalDown(interval *reachabilityInterval) error {
+func (rtn *reachabilityTreeNode) propagateInterval(interval *reachabilityInterval) error {
 	err := rtn.setTreeInterval(interval)
 	if err != nil {
 		return err
