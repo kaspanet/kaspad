@@ -130,17 +130,20 @@ func (ri *reachabilityInterval) split(sizes []uint64) ([]*reachabilityInterval, 
 	}
 
 	// Add a fractional bias to every size in the given sizes
-	totalBias := float64(intervalSize - sizesSum)
+	totalBias := intervalSize - sizesSum
 	remainingBias := totalBias
 	biasedSizes := make([]uint64, len(sizes))
 	for i, fraction := range fractions {
-		var bias float64
+		var bias uint64
 		if i == len(fractions)-1 {
 			bias = remainingBias
 		} else {
-			bias = math.Min(math.Round(totalBias*fraction), remainingBias)
+			bias = uint64(math.Round(float64(totalBias) * fraction))
+			if bias > remainingBias {
+				bias = remainingBias
+			}
 		}
-		biasedSizes[i] = sizes[i] + uint64(bias)
+		biasedSizes[i] = sizes[i] + bias
 		remainingBias -= bias
 	}
 	return ri.splitExact(biasedSizes)
