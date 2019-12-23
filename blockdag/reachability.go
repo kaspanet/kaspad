@@ -413,9 +413,9 @@ type futureCoveringBlockSet []*blockNode
 
 // insertBlock inserts the given block into this futureCoveringBlockSet
 // while keeping futureCoveringBlockSet ordered by interval.
-// If a block B ∈ futureCoveringBlockSet exists s.t. its interval contains
-// block's interval, block need not be added. If block's interval
-// contains B's interval, it replaces it.
+// If a block B ∈ futureCoveringBlockSet exists such that its interval
+// contains block's interval, block need not be added. If block's
+// interval contains B's interval, it replaces it.
 //
 // Notes:
 // * Intervals never intersect unless one contains the other
