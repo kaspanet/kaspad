@@ -217,7 +217,7 @@ func (node *blockNode) isAncestorOf(other *blockNode) bool {
 
 	// Otherwise, use previously registered future blocks to complete the
 	// reachability test
-	return node.futureCoveringSet.isFutureBlock(other)
+	return node.futureCoveringSet.isInFuture(other)
 }
 
 // CalcPastMedianTime returns the median time of the previous few blocks

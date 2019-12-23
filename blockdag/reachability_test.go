@@ -307,7 +307,7 @@ func TestSplit(t *testing.T) {
 	}
 }
 
-func TestIsFutureBlock(t *testing.T) {
+func TestIsInFuture(t *testing.T) {
 	blocks := futureCoveringBlockSet{
 		{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 2, end: 3}}},
 		{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 4, end: 67}}},
@@ -348,15 +348,15 @@ func TestIsFutureBlock(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		result := blocks.isFutureBlock(test.block)
+		result := blocks.isInFuture(test.block)
 		if result != test.expectedResult {
-			t.Errorf("TestIsFutureBlock: unexpected result in test #%d. Want: %t, got: %t",
+			t.Errorf("TestIsInFuture: unexpected result in test #%d. Want: %t, got: %t",
 				i, test.expectedResult, result)
 		}
 	}
 }
 
-func TestInsertFutureBlock(t *testing.T) {
+func TestInsertBlock(t *testing.T) {
 	blocks := futureCoveringBlockSet{
 		{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 1, end: 3}}},
 		{reachabilityTreeNode: reachabilityTreeNode{interval: reachabilityInterval{start: 4, end: 67}}},
@@ -436,10 +436,10 @@ func TestInsertFutureBlock(t *testing.T) {
 		}
 
 		for _, block := range test.toInsert {
-			blocksClone.insertFutureBlock(block)
+			blocksClone.insertBlock(block)
 		}
 		if !reflect.DeepEqual(blocksClone, test.expectedResult) {
-			t.Errorf("TestInsertFutureBlock: unexpected result in test #%d. Want: %s, got: %s",
+			t.Errorf("TestInsertBlock: unexpected result in test #%d. Want: %s, got: %s",
 				i, test.expectedResult, blocksClone)
 		}
 	}
