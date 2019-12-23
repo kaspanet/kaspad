@@ -6,6 +6,157 @@ import (
 	"math"
 )
 
+// reachabilityInterval represents an interval to be used within the
+// tree reachability algorithm. See reachabilityTreeNode for further
+// details.
+type reachabilityInterval struct {
+	start uint64
+	end   uint64
+}
+
+func newReachabilityInterval(start uint64, end uint64) (*reachabilityInterval, error) {
+	if start < 1 || end > math.MaxUint64-1 {
+		return nil, errors.Errorf("start must be >= 1 and end must be <= MaxUint64 -1")
+	}
+	return &reachabilityInterval{start: start, end: end}, nil
+}
+
+// size returns the size of this interval. Note that intervals are
+// inclusive from both sides.
+func (ri *reachabilityInterval) size() uint64 {
+	return ri.end - ri.start + 1
+}
+
+// splitInHalf splits this interval by a fraction of 0.5.
+// See splitFraction for further details.
+func (ri *reachabilityInterval) splitInHalf() (
+	left *reachabilityInterval, right *reachabilityInterval, err error) {
+	return ri.splitFraction(0.5)
+}
+
+// splitFraction splits this interval to two parts such that their
+// union is equal to the original interval and the first (left) part
+// contains the given fraction of the original interval's capacity.
+func (ri *reachabilityInterval) splitFraction(fraction float64) (
+	left *reachabilityInterval, right *reachabilityInterval, err error) {
+	if fraction < 0 || fraction > 1 {
+		return nil, nil, errors.Errorf("fraction must be between 0 and 1")
+	}
+	if ri.end < ri.start {
+		return ri, ri, nil
+	}
+
+	allocationSize := uint64(math.Ceil(float64(ri.size()) * fraction))
+	left, err = newReachabilityInterval(ri.start, ri.start+allocationSize-1)
+	if err != nil {
+		return nil, nil, err
+	}
+	right, err = newReachabilityInterval(ri.start+allocationSize, ri.end)
+	if err != nil {
+		return nil, nil, err
+	}
+	return left, right, nil
+}
+
+// splitExact splits this interval to exactly |sizes| parts where
+// |part_i| = sizes[i].	This method expects sum(sizes) to be exactly
+// equal to the interval's capacity.
+func (ri *reachabilityInterval) splitExact(sizes []uint64) ([]*reachabilityInterval, error) {
+	sizesSum := uint64(0)
+	for _, size := range sizes {
+		sizesSum += size
+	}
+	if sizesSum != ri.size() {
+		return nil, errors.Errorf("sum of sizes must be equal to the interval's size")
+	}
+
+	intervals := make([]*reachabilityInterval, len(sizes))
+	start := ri.start
+	var err error
+	for i, size := range sizes {
+		intervals[i], err = newReachabilityInterval(start, start+size-1)
+		if err != nil {
+			return nil, err
+		}
+		start += size
+	}
+	return intervals, nil
+}
+
+// split splits this interval to |sizes| parts by some allocation
+// rule. This method expects sum(sizes)	to be smaller or equal to
+// the interval's capacity. Every part_i is allocated at least
+// sizes[i] capacity. The remaining budget is split by an
+// exponential rule described below.
+//
+// This rule follows the GHOSTDAG protocol behavior where the child
+// with the largest subtree is expected to dominate the competition
+// for new blocks and thus grow the most. However, we may need to
+// add slack for non-largest subtrees in order to make CPU reindexing
+// attacks unworthy.
+func (ri *reachabilityInterval) split(sizes []uint64) ([]*reachabilityInterval, error) {
+	intervalSize := ri.size()
+	sizesSum := uint64(0)
+	for _, size := range sizes {
+		sizesSum += size
+	}
+	if sizesSum > intervalSize {
+		return nil, errors.Errorf("sum of sizes must be less than or equal to the interval's size")
+	}
+	if sizesSum == intervalSize {
+		return ri.splitExact(sizes)
+	}
+
+	// Give exponentially proportional allocation:
+	//   f_i = 2^x_i / sum(2^x_j)
+	// In the code below the above equation is divided by 2^max(x_i)
+	// to avoid exploding numbers.
+	maxSize := uint64(0)
+	for _, size := range sizes {
+		if size > maxSize {
+			maxSize = size
+		}
+	}
+	fractions := make([]float64, len(sizes))
+	for i, size := range sizes {
+		fractions[i] = 1 / math.Pow(2, float64(maxSize-size))
+	}
+	fractionsSum := float64(0)
+	for _, fraction := range fractions {
+		fractionsSum += fraction
+	}
+	for i, fraction := range fractions {
+		fractions[i] = fraction / fractionsSum
+	}
+
+	// Add a fractional bias to every size in the given sizes
+	totalBias := float64(intervalSize - sizesSum)
+	remainingBias := totalBias
+	biasedSizes := make([]uint64, len(sizes))
+	for i, fraction := range fractions {
+		var bias float64
+		if i == len(fractions)-1 {
+			bias = remainingBias
+		} else {
+			bias = math.Min(math.Round(totalBias*fraction), remainingBias)
+		}
+		biasedSizes[i] = sizes[i] + uint64(bias)
+		remainingBias -= bias
+	}
+	return ri.splitExact(biasedSizes)
+}
+
+// isAncestorOf checks if this interval's node is a reachability tree
+// ancestor of the other interval's node.
+func (ri *reachabilityInterval) isAncestorOf(other *reachabilityInterval) bool {
+	return ri.start <= other.end && other.end <= ri.end
+}
+
+// String returns a string representation of the interval.
+func (ri *reachabilityInterval) String() string {
+	return fmt.Sprintf("[%d,%d]", ri.start, ri.end)
+}
+
 // reachabilityTreeNode represents a node in the reachability tree
 // of some DAG block. It mainly provides the ability to query *tree*
 // reachability with O(1) query time. It does so by managing an
@@ -254,157 +405,6 @@ func (rtn *reachabilityTreeNode) String() string {
 		}
 	}
 	return nodeString
-}
-
-// reachabilityInterval represents an interval to be used within the
-// tree reachability algorithm. See reachabilityTreeNode for further
-// details.
-type reachabilityInterval struct {
-	start uint64
-	end   uint64
-}
-
-func newReachabilityInterval(start uint64, end uint64) (*reachabilityInterval, error) {
-	if start < 1 || end > math.MaxUint64-1 {
-		return nil, errors.Errorf("start must be >= 1 and end must be <= MaxUint64 -1")
-	}
-	return &reachabilityInterval{start: start, end: end}, nil
-}
-
-// size returns the size of this interval. Note that intervals are
-// inclusive from both sides.
-func (ri *reachabilityInterval) size() uint64 {
-	return ri.end - ri.start + 1
-}
-
-// splitInHalf splits this interval by a fraction of 0.5.
-// See splitFraction for further details.
-func (ri *reachabilityInterval) splitInHalf() (
-	left *reachabilityInterval, right *reachabilityInterval, err error) {
-	return ri.splitFraction(0.5)
-}
-
-// splitFraction splits this interval to two parts such that their
-// union is equal to the original interval and the first (left) part
-// contains the given fraction of the original interval's capacity.
-func (ri *reachabilityInterval) splitFraction(fraction float64) (
-	left *reachabilityInterval, right *reachabilityInterval, err error) {
-	if fraction < 0 || fraction > 1 {
-		return nil, nil, errors.Errorf("fraction must be between 0 and 1")
-	}
-	if ri.end < ri.start {
-		return ri, ri, nil
-	}
-
-	allocationSize := uint64(math.Ceil(float64(ri.size()) * fraction))
-	left, err = newReachabilityInterval(ri.start, ri.start+allocationSize-1)
-	if err != nil {
-		return nil, nil, err
-	}
-	right, err = newReachabilityInterval(ri.start+allocationSize, ri.end)
-	if err != nil {
-		return nil, nil, err
-	}
-	return left, right, nil
-}
-
-// splitExact splits this interval to exactly |sizes| parts where
-// |part_i| = sizes[i].	This method expects sum(sizes) to be exactly
-// equal to the interval's capacity.
-func (ri *reachabilityInterval) splitExact(sizes []uint64) ([]*reachabilityInterval, error) {
-	sizesSum := uint64(0)
-	for _, size := range sizes {
-		sizesSum += size
-	}
-	if sizesSum != ri.size() {
-		return nil, errors.Errorf("sum of sizes must be equal to the interval's size")
-	}
-
-	intervals := make([]*reachabilityInterval, len(sizes))
-	start := ri.start
-	var err error
-	for i, size := range sizes {
-		intervals[i], err = newReachabilityInterval(start, start+size-1)
-		if err != nil {
-			return nil, err
-		}
-		start += size
-	}
-	return intervals, nil
-}
-
-// split splits this interval to |sizes| parts by some allocation
-// rule. This method expects sum(sizes)	to be smaller or equal to
-// the interval's capacity. Every part_i is allocated at least
-// sizes[i] capacity. The remaining budget is split by an
-// exponential rule described below.
-//
-// This rule follows the GHOSTDAG protocol behavior where the child
-// with the largest subtree is expected to dominate the competition
-// for new blocks and thus grow the most. However, we may need to
-// add slack for non-largest subtrees in order to make CPU reindexing
-// attacks unworthy.
-func (ri *reachabilityInterval) split(sizes []uint64) ([]*reachabilityInterval, error) {
-	intervalSize := ri.size()
-	sizesSum := uint64(0)
-	for _, size := range sizes {
-		sizesSum += size
-	}
-	if sizesSum > intervalSize {
-		return nil, errors.Errorf("sum of sizes must be less than or equal to the interval's size")
-	}
-	if sizesSum == intervalSize {
-		return ri.splitExact(sizes)
-	}
-
-	// Give exponentially proportional allocation:
-	//   f_i = 2^x_i / sum(2^x_j)
-	// In the code below the above equation is divided by 2^max(x_i)
-	// to avoid exploding numbers.
-	maxSize := uint64(0)
-	for _, size := range sizes {
-		if size > maxSize {
-			maxSize = size
-		}
-	}
-	fractions := make([]float64, len(sizes))
-	for i, size := range sizes {
-		fractions[i] = 1 / math.Pow(2, float64(maxSize-size))
-	}
-	fractionsSum := float64(0)
-	for _, fraction := range fractions {
-		fractionsSum += fraction
-	}
-	for i, fraction := range fractions {
-		fractions[i] = fraction / fractionsSum
-	}
-
-	// Add a fractional bias to every size in the given sizes
-	totalBias := float64(intervalSize - sizesSum)
-	remainingBias := totalBias
-	biasedSizes := make([]uint64, len(sizes))
-	for i, fraction := range fractions {
-		var bias float64
-		if i == len(fractions)-1 {
-			bias = remainingBias
-		} else {
-			bias = math.Min(math.Round(totalBias*fraction), remainingBias)
-		}
-		biasedSizes[i] = sizes[i] + uint64(bias)
-		remainingBias -= bias
-	}
-	return ri.splitExact(biasedSizes)
-}
-
-// isAncestorOf checks if this interval's node is a reachability tree
-// ancestor of the other interval's node.
-func (ri *reachabilityInterval) isAncestorOf(other *reachabilityInterval) bool {
-	return ri.start <= other.end && other.end <= ri.end
-}
-
-// String returns a string representation of the interval.
-func (ri *reachabilityInterval) String() string {
-	return fmt.Sprintf("[%d,%d]", ri.start, ri.end)
 }
 
 // futureCoveringBlockSet represents a collection of blocks in the future of
