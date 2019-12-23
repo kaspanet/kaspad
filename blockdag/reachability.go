@@ -424,7 +424,7 @@ type futureCoveringBlockSet []*blockNode
 //   used for insertion/queries.
 // * Although reindexing may change a block's interval, the
 //   is-superset relation will by definition
-// be always preserved.
+//   be always preserved.
 func (fb *futureCoveringBlockSet) insertBlock(block *blockNode) {
 	blockInterval := block.reachabilityTreeNode.interval
 	i := fb.bisect(block)
