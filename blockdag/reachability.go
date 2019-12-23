@@ -14,11 +14,8 @@ type reachabilityInterval struct {
 	end   uint64
 }
 
-func newReachabilityInterval(start uint64, end uint64) (*reachabilityInterval, error) {
-	if start < 1 || end > math.MaxUint64-1 {
-		return nil, errors.Errorf("start must be >= 1 and end must be <= MaxUint64 -1")
-	}
-	return &reachabilityInterval{start: start, end: end}, nil
+func newReachabilityInterval() *reachabilityInterval {
+	return &reachabilityInterval{start: 1, end: math.MaxUint64 - 1}
 }
 
 // size returns the size of this interval. Note that intervals are
@@ -47,14 +44,8 @@ func (ri *reachabilityInterval) splitFraction(fraction float64) (
 	}
 
 	allocationSize := uint64(math.Ceil(float64(ri.size()) * fraction))
-	left, err = newReachabilityInterval(ri.start, ri.start+allocationSize-1)
-	if err != nil {
-		return nil, nil, err
-	}
-	right, err = newReachabilityInterval(ri.start+allocationSize, ri.end)
-	if err != nil {
-		return nil, nil, err
-	}
+	left = &reachabilityInterval{start: ri.start, end: ri.start + allocationSize - 1}
+	right = &reachabilityInterval{start: ri.start + allocationSize, end: ri.end}
 	return left, right, nil
 }
 
@@ -72,12 +63,8 @@ func (ri *reachabilityInterval) splitExact(sizes []uint64) ([]*reachabilityInter
 
 	intervals := make([]*reachabilityInterval, len(sizes))
 	start := ri.start
-	var err error
 	for i, size := range sizes {
-		intervals[i], err = newReachabilityInterval(start, start+size-1)
-		if err != nil {
-			return nil, err
-		}
+		intervals[i] = &reachabilityInterval{start: start, end: start + size - 1}
 		start += size
 	}
 	return intervals, nil
@@ -193,16 +180,10 @@ type reachabilityTreeNode struct {
 	subtreeSize uint64
 }
 
-func newReachabilityTreeNode(start uint64, end uint64) (*reachabilityTreeNode, error) {
-	interval, err := newReachabilityInterval(start, end)
-	if err != nil {
-		return nil, err
-	}
-	remainingInterval, err := newReachabilityInterval(start, end-1)
-	if err != nil {
-		return nil, err
-	}
-	return &reachabilityTreeNode{interval: *interval, remainingInterval: *remainingInterval}, nil
+func newReachabilityTreeNode() *reachabilityTreeNode {
+	interval := *newReachabilityInterval()
+	remainingInterval := reachabilityInterval{start: interval.start, end: interval.end - 1}
+	return &reachabilityTreeNode{interval: interval, remainingInterval: remainingInterval}
 }
 
 // addTreeChild adds child to this tree node. If this node has no
@@ -223,27 +204,20 @@ func (rtn *reachabilityTreeNode) addTreeChild(child *reachabilityTreeNode) error
 	}
 
 	// Allocate from the remaining space
-	err = child.setTreeInterval(allocated)
-	if err != nil {
-		return err
-	}
+	child.setTreeInterval(allocated)
 	rtn.remainingInterval = *remaining
 	return nil
 }
 
 // setTreeInterval sets the reachability interval for this node.
-func (rtn *reachabilityTreeNode) setTreeInterval(interval *reachabilityInterval) error {
+func (rtn *reachabilityTreeNode) setTreeInterval(interval *reachabilityInterval) {
 	rtn.interval = *interval
 
 	// Reserve a single interval index for the current node. This
 	// is necessary to ensure that ancestor intervals are strictly
 	// supersets of any descendant intervals and not equal
-	remainingInterval, err := newReachabilityInterval(interval.start, interval.end-1)
-	if err != nil {
-		return err
-	}
+	remainingInterval := &reachabilityInterval{start: interval.start, end: interval.end - 1}
 	rtn.remainingInterval = *remainingInterval
-	return nil
 }
 
 // reindexTreeInterval traverses the reachability subtree that's
@@ -354,11 +328,7 @@ func (rtn *reachabilityTreeNode) countSubtrees() uint64 {
 // 'split' allocation rule (see the split() method for further
 // details)
 func (rtn *reachabilityTreeNode) propagateInterval(interval *reachabilityInterval) error {
-	err := rtn.setTreeInterval(interval)
-	if err != nil {
-		return err
-	}
-
+	rtn.setTreeInterval(interval)
 	queue := []*reachabilityTreeNode{rtn}
 	for len(queue) > 0 {
 		var current *reachabilityTreeNode
@@ -374,10 +344,7 @@ func (rtn *reachabilityTreeNode) propagateInterval(interval *reachabilityInterva
 			}
 			for i, child := range current.children {
 				childInterval := intervals[i]
-				err := child.setTreeInterval(childInterval)
-				if err != nil {
-					return err
-				}
+				child.setTreeInterval(childInterval)
 				queue = append(queue, child)
 			}
 

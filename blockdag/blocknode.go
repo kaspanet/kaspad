@@ -82,7 +82,7 @@ type blockNode struct {
 	chainHeight uint64
 
 	// reachabilityTreeNode is the reachabilityTree node representation of this block
-	reachabilityTreeNode reachabilityTreeNode
+	reachabilityTreeNode *reachabilityTreeNode
 
 	// futureCoveringSet keeps just enough future blocks for tracking block reachability in the DAG
 	futureCoveringSet futureCoveringBlockSet
@@ -113,9 +113,10 @@ type blockNode struct {
 // initially creating a node.
 func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents blockSet, phantomK uint32) {
 	*node = blockNode{
-		parents:   parents,
-		children:  make(blockSet),
-		timestamp: time.Now().Unix(),
+		parents:              parents,
+		children:             make(blockSet),
+		timestamp:            time.Now().Unix(),
+		reachabilityTreeNode: newReachabilityTreeNode(),
 	}
 
 	// blockHeader is nil only for the virtual block
