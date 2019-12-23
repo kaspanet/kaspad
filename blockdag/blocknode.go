@@ -204,9 +204,9 @@ func (node *blockNode) RelativeAncestor(distance uint64) *blockNode {
 	return node.SelectedAncestor(node.chainHeight - distance)
 }
 
-// isInPast returns true iff this node can be reached from the other in the DAG.
-// The complexity of this method is O(log(|node.futureBlocks|))
-func (node *blockNode) isInPast(other *blockNode) bool {
+// isAncestorOf returns true if this node can be reached from the other node
+// in the DAG. The complexity of this method is O(log(|node.futureBlocks|))
+func (node *blockNode) isAncestorOf(other *blockNode) bool {
 	// First, check if this node is a reachability tree ancestor of the
 	// other node
 	thisTreeInterval := node.reachabilityTreeNode.interval
