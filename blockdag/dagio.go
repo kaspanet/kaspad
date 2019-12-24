@@ -53,6 +53,10 @@ var (
 	// diffs and diff children of blocks.
 	utxoDiffsBucketName = []byte("utxodiffs")
 
+	// reachabilityDataBucketName is the name of the db bucket used to house the
+	// reachability tree nodes and future covering sets of blocks.
+	reachabilityDataBucketName = []byte("reachability")
+
 	// subnetworksBucketName is the name of the db bucket used to store the
 	// subnetwork registry.
 	subnetworksBucketName = []byte("subnetworks")
@@ -317,6 +321,11 @@ func (dag *BlockDAG) createDAGState() error {
 			return err
 		}
 
+		_, err = meta.CreateBucket(reachabilityDataBucketName)
+		if err != nil {
+			return err
+		}
+
 		err = dbPutVersion(dbTx, utxoSetVersionKeyName,
 			latestUTXOSetBucketVersion)
 		if err != nil {
@@ -363,6 +372,11 @@ func (dag *BlockDAG) removeDAGState() error {
 		}
 
 		err = meta.DeleteBucket(utxoDiffsBucketName)
+		if err != nil {
+			return err
+		}
+
+		err = meta.DeleteBucket(reachabilityDataBucketName)
 		if err != nil {
 			return err
 		}

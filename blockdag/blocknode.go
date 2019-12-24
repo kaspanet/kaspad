@@ -81,12 +81,6 @@ type blockNode struct {
 	// chainHeight is the number of hops you need to go down the selected parent chain in order to get to the genesis block.
 	chainHeight uint64
 
-	// reachabilityTreeNode is the reachabilityTree node representation of this block
-	reachabilityTreeNode *reachabilityTreeNode
-
-	// futureCoveringSet keeps just enough future blocks for tracking block reachability in the DAG
-	futureCoveringSet futureCoveringBlockSet
-
 	// Some fields from block headers to aid in  reconstructing headers
 	// from memory. These must be treated as immutable and are intentionally
 	// ordered to avoid padding on 64-bit platforms.
@@ -113,10 +107,9 @@ type blockNode struct {
 // initially creating a node.
 func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents blockSet, phantomK uint32) {
 	*node = blockNode{
-		parents:              parents,
-		children:             make(blockSet),
-		timestamp:            time.Now().Unix(),
-		reachabilityTreeNode: newReachabilityTreeNode(),
+		parents:   parents,
+		children:  make(blockSet),
+		timestamp: time.Now().Unix(),
 	}
 
 	// blockHeader is nil only for the virtual block
@@ -203,22 +196,6 @@ func (node *blockNode) SelectedAncestor(chainHeight uint64) *blockNode {
 // This function is safe for concurrent access.
 func (node *blockNode) RelativeAncestor(distance uint64) *blockNode {
 	return node.SelectedAncestor(node.chainHeight - distance)
-}
-
-// isAncestorOf returns true if this node can be reached from the other node
-// in the DAG. The complexity of this method is O(log(|node.futureCoveringBlockSet|))
-func (node *blockNode) isAncestorOf(other *blockNode) bool {
-	// First, check if this node is a reachability tree ancestor of the
-	// other node
-	thisTreeInterval := node.reachabilityTreeNode.interval
-	otherTreeInterval := other.reachabilityTreeNode.interval
-	if thisTreeInterval.isAncestorOf(&otherTreeInterval) {
-		return true
-	}
-
-	// Otherwise, use previously registered future blocks to complete the
-	// reachability test
-	return node.futureCoveringSet.isInFuture(other)
 }
 
 // CalcPastMedianTime returns the median time of the previous few blocks

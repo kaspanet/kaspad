@@ -380,8 +380,14 @@ func (rtn *reachabilityTreeNode) String() string {
 }
 
 // futureCoveringBlockSet represents a collection of blocks in the future of
-// some block.
-type futureCoveringBlockSet []*blockNode
+// a certain block.
+type futureCoveringBlockSet []*futureCoveringBlock
+
+// futureCoveringBlock represents a block in the future of some other block.
+type futureCoveringBlock struct {
+	blockNode *blockNode
+	treeNode  *reachabilityTreeNode
+}
 
 // insertBlock inserts the given block into this futureCoveringBlockSet
 // while keeping futureCoveringBlockSet ordered by interval.
@@ -397,12 +403,12 @@ type futureCoveringBlockSet []*blockNode
 // * Although reindexing may change a block's interval, the
 //   is-superset relation will by definition
 //   be always preserved.
-func (fb *futureCoveringBlockSet) insertBlock(block *blockNode) {
-	blockInterval := block.reachabilityTreeNode.interval
+func (fb *futureCoveringBlockSet) insertBlock(block *futureCoveringBlock) {
+	blockInterval := block.treeNode.interval
 	i := fb.bisect(block)
 	if i > 0 {
 		candidate := (*fb)[i-1]
-		candidateInterval := candidate.reachabilityTreeNode.interval
+		candidateInterval := candidate.treeNode.interval
 		if candidateInterval.isAncestorOf(&blockInterval) {
 			// candidate is an ancestor of block, no need to insert
 			return
@@ -418,7 +424,7 @@ func (fb *futureCoveringBlockSet) insertBlock(block *blockNode) {
 	// a sorted-by-interval list.
 	// Note that i might be equal to len(futureCoveringBlockSet)
 	left := (*fb)[:i]
-	right := append([]*blockNode{block}, (*fb)[i:]...)
+	right := append([]*futureCoveringBlock{block}, (*fb)[i:]...)
 	*fb = append(left, right...)
 }
 
@@ -430,7 +436,7 @@ func (fb *futureCoveringBlockSet) insertBlock(block *blockNode) {
 // futureCoveringBlockSet is kept ordered by interval to efficiently perform a
 // binary search over futureCoveringBlockSet and answer the query in
 // O(log(|futureCoveringBlockSet|)).
-func (fb futureCoveringBlockSet) isInFuture(block *blockNode) bool {
+func (fb futureCoveringBlockSet) isInFuture(block *futureCoveringBlock) bool {
 	i := fb.bisect(block)
 	if i == 0 {
 		// No candidate to contain block
@@ -438,22 +444,22 @@ func (fb futureCoveringBlockSet) isInFuture(block *blockNode) bool {
 	}
 
 	candidate := fb[i-1]
-	blockInterval := block.reachabilityTreeNode.interval
-	candidateInterval := candidate.reachabilityTreeNode.interval
+	blockInterval := block.treeNode.interval
+	candidateInterval := candidate.treeNode.interval
 	return candidateInterval.isAncestorOf(&blockInterval)
 }
 
 // bisect finds the appropriate index for the given block's reachability
 // interval.
-func (fb futureCoveringBlockSet) bisect(block *blockNode) int {
-	blockInterval := block.reachabilityTreeNode.interval
+func (fb futureCoveringBlockSet) bisect(block *futureCoveringBlock) int {
+	blockInterval := block.treeNode.interval
 	end := blockInterval.end
 
 	low := 0
 	high := len(fb)
 	for low < high {
 		middle := (low + high) / 2
-		middleInterval := fb[middle].reachabilityTreeNode.interval
+		middleInterval := fb[middle].treeNode.interval
 		if end < middleInterval.start {
 			high = middle
 		} else {
@@ -467,7 +473,7 @@ func (fb futureCoveringBlockSet) bisect(block *blockNode) int {
 func (fb futureCoveringBlockSet) String() string {
 	intervalsString := ""
 	for _, block := range fb {
-		intervalsString += block.reachabilityTreeNode.interval.String()
+		intervalsString += block.treeNode.interval.String()
 	}
 	return intervalsString
 }

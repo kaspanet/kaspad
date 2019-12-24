@@ -298,40 +298,40 @@ func TestSplit(t *testing.T) {
 
 func TestIsInFuture(t *testing.T) {
 	blocks := futureCoveringBlockSet{
-		{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 2, end: 3}}},
-		{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 4, end: 67}}},
-		{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 67, end: 77}}},
-		{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 657, end: 789}}},
-		{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1000, end: 1000}}},
-		{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1920, end: 1921}}},
+		{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 2, end: 3}}},
+		{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 4, end: 67}}},
+		{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 67, end: 77}}},
+		{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 657, end: 789}}},
+		{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1000, end: 1000}}},
+		{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1920, end: 1921}}},
 	}
 
 	tests := []struct {
-		block          *blockNode
+		block          *futureCoveringBlock
 		expectedResult bool
 	}{
 		{
-			block:          &blockNode{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1, end: 1}}},
+			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1, end: 1}}},
 			expectedResult: false,
 		},
 		{
-			block:          &blockNode{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 5, end: 7}}},
+			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 5, end: 7}}},
 			expectedResult: true,
 		},
 		{
-			block:          &blockNode{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 67, end: 76}}},
+			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 67, end: 76}}},
 			expectedResult: true,
 		},
 		{
-			block:          &blockNode{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 78, end: 100}}},
+			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 78, end: 100}}},
 			expectedResult: false,
 		},
 		{
-			block:          &blockNode{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1980, end: 2000}}},
+			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1980, end: 2000}}},
 			expectedResult: false,
 		},
 		{
-			block:          &blockNode{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1920, end: 1920}}},
+			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1920, end: 1920}}},
 			expectedResult: true,
 		},
 	}
@@ -347,72 +347,72 @@ func TestIsInFuture(t *testing.T) {
 
 func TestInsertBlock(t *testing.T) {
 	blocks := futureCoveringBlockSet{
-		{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1, end: 3}}},
-		{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 4, end: 67}}},
-		{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 67, end: 77}}},
-		{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 657, end: 789}}},
-		{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1000, end: 1000}}},
-		{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1920, end: 1921}}},
+		{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1, end: 3}}},
+		{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 4, end: 67}}},
+		{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 67, end: 77}}},
+		{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 657, end: 789}}},
+		{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1000, end: 1000}}},
+		{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1920, end: 1921}}},
 	}
 
 	tests := []struct {
-		toInsert       []*blockNode
+		toInsert       []*futureCoveringBlock
 		expectedResult futureCoveringBlockSet
 	}{
 		{
-			toInsert: []*blockNode{
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 5, end: 7}}},
+			toInsert: []*futureCoveringBlock{
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 5, end: 7}}},
 			},
 			expectedResult: futureCoveringBlockSet{
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1, end: 3}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 4, end: 67}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 67, end: 77}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 657, end: 789}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1000, end: 1000}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1920, end: 1921}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1, end: 3}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 4, end: 67}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 67, end: 77}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 657, end: 789}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1000, end: 1000}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1920, end: 1921}}},
 			},
 		},
 		{
-			toInsert: []*blockNode{
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 65, end: 78}}},
+			toInsert: []*futureCoveringBlock{
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 65, end: 78}}},
 			},
 			expectedResult: futureCoveringBlockSet{
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1, end: 3}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 4, end: 67}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 65, end: 78}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 657, end: 789}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1000, end: 1000}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1920, end: 1921}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1, end: 3}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 4, end: 67}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 65, end: 78}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 657, end: 789}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1000, end: 1000}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1920, end: 1921}}},
 			},
 		},
 		{
-			toInsert: []*blockNode{
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 88, end: 97}}},
+			toInsert: []*futureCoveringBlock{
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 88, end: 97}}},
 			},
 			expectedResult: futureCoveringBlockSet{
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1, end: 3}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 4, end: 67}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 67, end: 77}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 88, end: 97}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 657, end: 789}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1000, end: 1000}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1920, end: 1921}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1, end: 3}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 4, end: 67}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 67, end: 77}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 88, end: 97}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 657, end: 789}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1000, end: 1000}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1920, end: 1921}}},
 			},
 		},
 		{
-			toInsert: []*blockNode{
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 88, end: 97}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 3000, end: 3010}}},
+			toInsert: []*futureCoveringBlock{
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 88, end: 97}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 3000, end: 3010}}},
 			},
 			expectedResult: futureCoveringBlockSet{
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1, end: 3}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 4, end: 67}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 67, end: 77}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 88, end: 97}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 657, end: 789}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1000, end: 1000}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1920, end: 1921}}},
-				{reachabilityTreeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 3000, end: 3010}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1, end: 3}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 4, end: 67}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 67, end: 77}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 88, end: 97}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 657, end: 789}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1000, end: 1000}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 1920, end: 1921}}},
+				{treeNode: &reachabilityTreeNode{interval: reachabilityInterval{start: 3000, end: 3010}}},
 			},
 		},
 	}

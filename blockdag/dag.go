@@ -134,8 +134,9 @@ type BlockDAG struct {
 
 	lastFinalityPoint *blockNode
 
-	SubnetworkStore *SubnetworkStore
-	utxoDiffStore   *utxoDiffStore
+	SubnetworkStore   *SubnetworkStore
+	utxoDiffStore     *utxoDiffStore
+	reachabilityStore *reachabilityStore
 }
 
 // HaveBlock returns whether or not the DAG instance has the block represented
@@ -606,6 +607,11 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 			return err
 		}
 
+		err = dag.reachabilityStore.flushToDB(dbTx)
+		if err != nil {
+			return err
+		}
+
 		// Update best block state.
 		state := &dagState{
 			TipHashes:         dag.TipHashes(),
@@ -925,12 +931,27 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, fast
 }
 
 func (dag *BlockDAG) updateReachability(node *blockNode) error {
+	// If this is the genesis node, simply initialize it and return
 	if node.isGenesis() {
-		return nil
+		genesisTreeNode := newReachabilityTreeNode()
+		return dag.reachabilityStore.setTreeNode(node, genesisTreeNode)
 	}
 
 	// Insert the node into the selected parent's reachability tree
-	err := node.selectedParent.reachabilityTreeNode.addTreeChild(node.reachabilityTreeNode)
+	thisTreeNode := newReachabilityTreeNode()
+	selectedParentTreeNode, err := dag.reachabilityStore.treeNodeByBlockNode(node.selectedParent)
+	if err != nil {
+		return err
+	}
+	err = selectedParentTreeNode.addTreeChild(thisTreeNode)
+	if err != nil {
+		return err
+	}
+	err = dag.reachabilityStore.setTreeNode(node, thisTreeNode)
+	if err != nil {
+		return err
+	}
+	err = dag.reachabilityStore.setTreeNode(node.selectedParent, selectedParentTreeNode)
 	if err != nil {
 		return err
 	}
@@ -950,12 +971,24 @@ func (dag *BlockDAG) updateReachability(node *blockNode) error {
 	for len(queue) > 0 {
 		var current *blockNode
 		current, queue = queue[0], queue[1:]
-		current.futureCoveringSet.insertBlock(node)
+		currentFutureCoveringSet, err := dag.reachabilityStore.futureCoveringSetByBlockNode(current)
+		if err != nil {
+			return err
+		}
+		currentFutureCoveringSet.insertBlock(&futureCoveringBlock{blockNode: node, treeNode: thisTreeNode})
+		err = dag.reachabilityStore.setFutureCoveringSet(current, currentFutureCoveringSet)
+		if err != nil {
+			return err
+		}
 		for _, parent := range current.parents {
 			if anticone.contains(parent) || past.contains(parent) {
 				continue
 			}
-			if parent.isAncestorOf(node.selectedParent) {
+			isAncestorOfSelectedParent, err := dag.isAncestorOf(parent, node.selectedParent)
+			if err != nil {
+				return err
+			}
+			if isAncestorOfSelectedParent {
 				past.add(parent)
 				continue
 			}
@@ -965,6 +998,34 @@ func (dag *BlockDAG) updateReachability(node *blockNode) error {
 	}
 
 	return nil
+}
+
+// isAncestorOf returns true if this node can be reached from the other node
+// in the DAG. The complexity of this method is O(log(|node.futureCoveringBlockSet|))
+func (dag *BlockDAG) isAncestorOf(node *blockNode, other *blockNode) (bool, error) {
+	// First, check if this node is a reachability tree ancestor of the
+	// other node
+	thisTreeNode, err := dag.reachabilityStore.treeNodeByBlockNode(node)
+	if err != nil {
+		return false, err
+	}
+	otherTreeNode, err := dag.reachabilityStore.treeNodeByBlockNode(other)
+	if err != nil {
+		return false, err
+	}
+	thisTreeInterval := thisTreeNode.interval
+	otherTreeInterval := otherTreeNode.interval
+	if thisTreeInterval.isAncestorOf(&otherTreeInterval) {
+		return true, nil
+	}
+
+	// Otherwise, use previously registered future blocks to complete the
+	// reachability test
+	thisFutureCoveringSet, err := dag.reachabilityStore.futureCoveringSetByBlockNode(node)
+	if err != nil {
+		return false, err
+	}
+	return thisFutureCoveringSet.isInFuture(&futureCoveringBlock{blockNode: other, treeNode: otherTreeNode}), nil
 }
 
 func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) error {
@@ -1955,6 +2016,7 @@ func New(config *Config) (*BlockDAG, error) {
 	}
 
 	dag.utxoDiffStore = newUTXODiffStore(&dag)
+	dag.reachabilityStore = newReachabilityStore(&dag)
 
 	// Initialize the DAG state from the passed database. When the db
 	// does not yet contain any DAG state, both it and the DAG state
