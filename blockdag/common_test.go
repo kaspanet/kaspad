@@ -108,13 +108,13 @@ func (dag *BlockDAG) TestSetCoinbaseMaturity(maturity uint64) {
 	dag.dagParams.BlockCoinbaseMaturity = maturity
 }
 
-// newTestDAG returns a DAG that is usable for syntetic tests.  It is
-// important to note that this chain has no database associated with it, so
+// newTestDAG returns a DAG that is usable for syntetic tests. It is
+// important to note that this DAG has no database associated with it, so
 // it is not usable with all functions and the tests must take care when making
 // use of it.
 func newTestDAG(params *dagconfig.Params) *BlockDAG {
 	// Create a genesis block node and block index index populated with it
-	// for use when creating the fake chain below.
+	// for use when creating the fake DAG below.
 	node := newBlockNode(&params.GenesisBlock.Header, newSet(), params.K)
 	index := newBlockIndex(nil, params)
 	index.AddNode(node)
@@ -198,7 +198,7 @@ func checkRuleError(gotErr, wantErr error) error {
 		return errors.Errorf("unexpected test error type %T", wantErr)
 	}
 
-	// Ensure the error codes match.  It's safe to use a raw type assert
+	// Ensure the error codes match. It's safe to use a raw type assert
 	// here since the code above already proved they are the same type and
 	// the want error is a script error.
 	gotErrorCode := gotErr.(RuleError).ErrorCode

@@ -24,9 +24,9 @@ import (
 	"golang.org/x/crypto/ripemd160"
 
 	"github.com/btcsuite/websocket"
-	"github.com/kaspanet/kaspad/btcjson"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -35,7 +35,7 @@ import (
 
 const (
 	// websocketSendBufferSize is the number of elements the send channel
-	// can queue before blocking.  Note that this only applies to requests
+	// can queue before blocking. Note that this only applies to requests
 	// handled directly in the websocket client input handler or the async
 	// handler since notifications have their own queuing mechanism
 	// independent of the send channel buffer.
@@ -60,7 +60,7 @@ var timeZeroVal time.Time
 type wsCommandHandler func(*wsClient, interface{}) (interface{}, error)
 
 // wsHandlers maps RPC command strings to appropriate websocket handler
-// functions.  This is set by init because help references wsHandlers and thus
+// functions. This is set by init because help references wsHandlers and thus
 // causes a dependency loop.
 var wsHandlers map[string]wsCommandHandler
 var wsHandlersBeforeInit = map[string]wsCommandHandler{
@@ -77,8 +77,8 @@ var wsHandlersBeforeInit = map[string]wsCommandHandler{
 }
 
 // WebsocketHandler handles a new websocket client by creating a new wsClient,
-// starting it, and blocking until the connection closes.  Since it blocks, it
-// must be run in a separate goroutine.  It should be invoked from the websocket
+// starting it, and blocking until the connection closes. Since it blocks, it
+// must be run in a separate goroutine. It should be invoked from the websocket
 // server handler which runs each new connection in a new goroutine thereby
 // satisfying the requirement.
 func (s *Server) WebsocketHandler(conn *websocket.Conn, remoteAddr string,
@@ -99,7 +99,7 @@ func (s *Server) WebsocketHandler(conn *websocket.Conn, remoteAddr string,
 	}
 
 	// Create a new websocket client to handle the new websocket connection
-	// and wait for it to shutdown.  Once it has shutdown (and hence
+	// and wait for it to shutdown. Once it has shutdown (and hence
 	// disconnected), remove it and any notifications it registered for.
 	client, err := newWebsocketClient(s, conn, remoteAddr, authenticated, isAdmin)
 	if err != nil {
@@ -115,12 +115,12 @@ func (s *Server) WebsocketHandler(conn *websocket.Conn, remoteAddr string,
 }
 
 // wsNotificationManager is a connection and notification manager used for
-// websockets.  It allows websocket clients to register for notifications they
-// are interested in.  When an event happens elsewhere in the code such as
+// websockets. It allows websocket clients to register for notifications they
+// are interested in. When an event happens elsewhere in the code such as
 // transactions being added to the memory pool or block connects/disconnects,
 // the notification manager is provided with the relevant details needed to
 // figure out which websocket clients need to be notified based on what they
-// have registered for and notifies them accordingly.  It is also used to keep
+// have registered for and notifies them accordingly. It is also used to keep
 // track of all connected websocket clients.
 type wsNotificationManager struct {
 	// server is the RPC server the notification manager is associated with.
@@ -143,7 +143,7 @@ type wsNotificationManager struct {
 }
 
 // queueHandler manages a queue of empty interfaces, reading from in and
-// sending the oldest unsent to out.  This handler stops when either of the
+// sending the oldest unsent to out. This handler stops when either of the
 // in or quit channels are closed, and closes out before returning, without
 // waiting to send any variables still remaining in the queue.
 func queueHandler(in <-chan interface{}, out chan<- interface{}, quit <-chan struct{}) {
@@ -230,7 +230,7 @@ func (m *wsNotificationManager) NotifyChainChanged(removedChainBlockHashes []*da
 }
 
 // NotifyMempoolTx passes a transaction accepted by mempool to the
-// notification manager for transaction notification processing.  If
+// notification manager for transaction notification processing. If
 // isNew is true, the tx is is a new transaction, rather than one
 // added to the mempool during a reorg.
 func (m *wsNotificationManager) NotifyMempoolTx(tx *util.Tx, isNew bool) {
@@ -263,7 +263,7 @@ type wsClientFilter struct {
 	uncompressedPubKeys map[[65]byte]struct{}
 
 	// A fallback address lookup map in case a fast path doesn't exist.
-	// Only exists for completeness.  If using this shows up in a profile,
+	// Only exists for completeness. If using this shows up in a profile,
 	// there's a good chance a fast path should be added.
 	otherAddresses map[string]struct{}
 
@@ -427,7 +427,7 @@ func (m *wsNotificationManager) notificationHandler() {
 	clients := make(map[chan struct{}]*wsClient)
 
 	// Maps used to hold lists of websocket clients to be notified on
-	// certain events.  Each websocket client also keeps maps for the events
+	// certain events. Each websocket client also keeps maps for the events
 	// which have multiple triggers to make removal from these lists on
 	// connection close less horrendously expensive.
 	//
@@ -571,13 +571,13 @@ func (m *wsNotificationManager) notifyChainChanged(clients map[chan struct{}]*ws
 	}
 
 	// Create the notification.
-	ntfn := btcjson.NewChainChangedNtfn(removedChainHashesStrs, addedChainBlocks)
+	ntfn := rpcmodel.NewChainChangedNtfn(removedChainHashesStrs, addedChainBlocks)
 
 	var marshalledJSON []byte
 	if len(clients) != 0 {
 		// Marshal notification
 		var err error
-		marshalledJSON, err = btcjson.MarshalCmd(nil, ntfn)
+		marshalledJSON, err = rpcmodel.MarshalCommand(nil, ntfn)
 		if err != nil {
 			log.Errorf("Failed to marshal chain changed "+
 				"notification: %s", err)
@@ -593,7 +593,7 @@ func (m *wsNotificationManager) notifyChainChanged(clients map[chan struct{}]*ws
 
 // subscribedClients returns the set of all websocket client quit channels that
 // are registered to receive notifications regarding tx, either due to tx
-// spending a watched output or outputting to a watched address.  Matching
+// spending a watched output or outputting to a watched address. Matching
 // client's filters are updated based on this transaction's outputs and output
 // addresses that may be relevant for a client.
 func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
@@ -665,7 +665,7 @@ func (m *wsNotificationManager) notifyFilteredBlockAdded(clients map[chan struct
 			"added notification: %s", err)
 		return
 	}
-	ntfn := btcjson.NewFilteredBlockAddedNtfn(block.ChainHeight(),
+	ntfn := rpcmodel.NewFilteredBlockAddedNtfn(block.ChainHeight(),
 		hex.EncodeToString(w.Bytes()), nil)
 
 	// Search for relevant transactions for each client and save them
@@ -686,7 +686,7 @@ func (m *wsNotificationManager) notifyFilteredBlockAdded(clients map[chan struct
 		ntfn.SubscribedTxs = subscribedTxs[quitChan]
 
 		// Marshal and queue notification.
-		marshalledJSON, err := btcjson.MarshalCmd(nil, ntfn)
+		marshalledJSON, err := rpcmodel.MarshalCommand(nil, ntfn)
 		if err != nil {
 			log.Errorf("Failed to marshal filtered block "+
 				"connected notification: %s", err)
@@ -719,8 +719,8 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 		amount += txOut.Value
 	}
 
-	ntfn := btcjson.NewTxAcceptedNtfn(txIDStr, util.Amount(amount).ToBTC())
-	marshalledJSON, err := btcjson.MarshalCmd(nil, ntfn)
+	ntfn := rpcmodel.NewTxAcceptedNtfn(txIDStr, util.Amount(amount).ToKAS())
+	marshalledJSON, err := rpcmodel.MarshalCommand(nil, ntfn)
 	if err != nil {
 		log.Errorf("Failed to marshal tx notification: %s", err.Error())
 		return
@@ -739,8 +739,8 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 			if err != nil {
 				return nil, false
 			}
-			verboseNtfn := btcjson.NewTxAcceptedVerboseNtfn(*rawTx)
-			marshalledJSONVerbose, err := btcjson.MarshalCmd(nil, verboseNtfn)
+			verboseNtfn := rpcmodel.NewTxAcceptedVerboseNtfn(*rawTx)
+			marshalledJSONVerbose, err := rpcmodel.MarshalCommand(nil, verboseNtfn)
 			if err != nil {
 				log.Errorf("Failed to marshal verbose tx notification: %s", err.Error())
 				return nil, false
@@ -799,7 +799,7 @@ func txHexString(tx *wire.MsgTx) string {
 
 // notifyRelevantTxAccepted examines the inputs and outputs of the passed
 // transaction, notifying websocket clients of outputs spending to a watched
-// address and inputs spending a watched outpoint.  Any outputs paying to a
+// address and inputs spending a watched outpoint. Any outputs paying to a
 // watched address result in the output being watched as well for future
 // notifications.
 func (m *wsNotificationManager) notifyRelevantTxAccepted(tx *util.Tx,
@@ -808,8 +808,8 @@ func (m *wsNotificationManager) notifyRelevantTxAccepted(tx *util.Tx,
 	clientsToNotify := m.subscribedClients(tx, clients)
 
 	if len(clientsToNotify) != 0 {
-		n := btcjson.NewRelevantTxAcceptedNtfn(txHexString(tx.MsgTx()))
-		marshalled, err := btcjson.MarshalCmd(nil, n)
+		n := rpcmodel.NewRelevantTxAcceptedNtfn(txHexString(tx.MsgTx()))
+		marshalled, err := rpcmodel.MarshalCommand(nil, n)
 		if err != nil {
 			log.Errorf("Failed to marshal notification: %s", err)
 			return
@@ -873,20 +873,20 @@ type wsResponse struct {
 	doneChan chan bool
 }
 
-// wsClient provides an abstraction for handling a websocket client.  The
+// wsClient provides an abstraction for handling a websocket client. The
 // overall data flow is split into 3 main goroutines, a possible 4th goroutine
 // for long-running operations (only started if request is made), and a
 // websocket manager which is used to allow things such as broadcasting
-// requested notifications to all connected websocket clients.   Inbound
+// requested notifications to all connected websocket clients. Inbound
 // messages are read via the inHandler goroutine and generally dispatched to
-// their own handler.  However, certain potentially long-running operations such
+// their own handler. However, certain potentially long-running operations such
 // as rescans, are sent to the asyncHander goroutine and are limited to one at a
-// time.  There are two outbound message types - one for responding to client
-// requests and another for async notifications.  Responses to client requests
+// time. There are two outbound message types - one for responding to client
+// requests and another for async notifications. Responses to client requests
 // use SendMessage which employs a buffered channel thereby limiting the number
-// of outstanding requests that can be made.  Notifications are sent via
+// of outstanding requests that can be made. Notifications are sent via
 // QueueNotification which implements a queue via notificationQueueHandler to
-// ensure sending notifications from other subsystems can't block.  Ultimately,
+// ensure sending notifications from other subsystems can't block. Ultimately,
 // all messages are sent via the outHandler.
 type wsClient struct {
 	sync.Mutex
@@ -913,7 +913,7 @@ type wsClient struct {
 	isAdmin bool
 
 	// sessionID is a random ID generated for each client when connected.
-	// These IDs may be queried by a client using the session RPC.  A change
+	// These IDs may be queried by a client using the session RPC. A change
 	// to the session ID indicates that the client reconnected.
 	sessionID uint64
 
@@ -938,7 +938,7 @@ type wsClient struct {
 	wg                sync.WaitGroup
 }
 
-// inHandler handles all incoming messages for the websocket connection.  It
+// inHandler handles all incoming messages for the websocket connection. It
 // must be run as a goroutine.
 func (c *wsClient) inHandler() {
 out:
@@ -961,15 +961,15 @@ out:
 			break out
 		}
 
-		var request btcjson.Request
+		var request rpcmodel.Request
 		err = json.Unmarshal(msg, &request)
 		if err != nil {
 			if !c.authenticated {
 				break out
 			}
 
-			jsonErr := &btcjson.RPCError{
-				Code:    btcjson.ErrRPCParse.Code,
+			jsonErr := &rpcmodel.RPCError{
+				Code:    rpcmodel.ErrRPCParse.Code,
 				Message: "Failed to parse request: " + err.Error(),
 			}
 			reply, err := createMarshalledReply(nil, nil, jsonErr)
@@ -990,17 +990,9 @@ out:
 		// must not be responded to. JSON-RPC 2.0 permits the null value as a
 		// valid request id, therefore such requests are not notifications.
 		//
-		// Bitcoin Core serves requests with "id":null or even an absent "id",
-		// and responds to such requests with "id":null in the response.
-		//
-		// Btcd does not respond to any request without and "id" or "id":null,
-		// regardless the indicated JSON-RPC protocol version unless RPC quirks
-		// are enabled. With RPC quirks enabled, such requests will be responded
-		// to if the reqeust does not indicate JSON-RPC version.
-		//
-		// RPC quirks can be enabled by the user to avoid compatibility issues
-		// with software relying on Core's behavior.
-		if request.ID == nil && !(config.ActiveConfig().RPCQuirks && request.JSONRPC == "") {
+		// Kaspad does not respond to any request without an "id" or "id":null,
+		// regardless the indicated JSON-RPC protocol version.
+		if request.ID == nil {
 			if !c.authenticated {
 				break out
 			}
@@ -1024,12 +1016,12 @@ out:
 		}
 		log.Debugf("Websocket server received command <%s> from %s", cmd.method, c.addr)
 
-		// Check auth.  The client is immediately disconnected if the
+		// Check auth. The client is immediately disconnected if the
 		// first request of an unauthentiated websocket client is not
 		// the authenticate request, an authenticate request is received
 		// when the client is already authenticated, or incorrect
 		// authentication credentials are provided in the request.
-		switch authCmd, ok := cmd.cmd.(*btcjson.AuthenticateCmd); {
+		switch authCmd, ok := cmd.cmd.(*rpcmodel.AuthenticateCmd); {
 		case c.authenticated && ok:
 			log.Warnf("Websocket client %s is already authenticated",
 				c.addr)
@@ -1067,8 +1059,8 @@ out:
 		// error when not authorized to call this RPC.
 		if !c.isAdmin {
 			if _, ok := rpcLimited[request.Method]; !ok {
-				jsonErr := &btcjson.RPCError{
-					Code:    btcjson.ErrRPCInvalidParams.Code,
+				jsonErr := &rpcmodel.RPCError{
+					Code:    rpcmodel.ErrRPCInvalidParams.Code,
 					Message: "limited user not authorized for this method",
 				}
 				// Marshal and send response.
@@ -1083,9 +1075,9 @@ out:
 			}
 		}
 
-		// Asynchronously handle the request.  A semaphore is used to
+		// Asynchronously handle the request. A semaphore is used to
 		// limit the number of concurrent requests currently being
-		// serviced.  If the semaphore can not be acquired, simply wait
+		// serviced. If the semaphore can not be acquired, simply wait
 		// until a request finished before reading the next RPC request
 		// from the websocket client.
 		//
@@ -1094,13 +1086,13 @@ out:
 		// done, the read of the next request should not be blocked by
 		// this semaphore, otherwise the next request will be read and
 		// will probably sit here for another few seconds before timing
-		// out as well.  This will cause the total timeout duration for
+		// out as well. This will cause the total timeout duration for
 		// later requests to be much longer than the check here would
 		// imply.
 		//
 		// If a timeout is added, the semaphore acquiring should be
 		// moved inside of the new goroutine with a select statement
-		// that also reads a time.After channel.  This will unblock the
+		// that also reads a time.After channel. This will unblock the
 		// read of the next request from the websocket client and allow
 		// many requests to be waited on concurrently.
 		c.serviceRequestSem.acquire()
@@ -1117,7 +1109,7 @@ out:
 }
 
 // serviceRequest services a parsed RPC request by looking up and executing the
-// appropriate RPC handler.  The response is marshalled and sent to the
+// appropriate RPC handler. The response is marshalled and sent to the
 // websocket client.
 func (c *wsClient) serviceRequest(r *parsedRPCCmd) {
 	var (
@@ -1143,19 +1135,19 @@ func (c *wsClient) serviceRequest(r *parsedRPCCmd) {
 }
 
 // notificationQueueHandler handles the queuing of outgoing notifications for
-// the websocket client.  This runs as a muxer for various sources of input to
-// ensure that queuing up notifications to be sent will not block.  Otherwise,
+// the websocket client. This runs as a muxer for various sources of input to
+// ensure that queuing up notifications to be sent will not block. Otherwise,
 // slow clients could bog down the other systems (such as the mempool or block
-// manager) which are queuing the data.  The data is passed on to outHandler to
-// actually be written.  It must be run as a goroutine.
+// manager) which are queuing the data. The data is passed on to outHandler to
+// actually be written. It must be run as a goroutine.
 func (c *wsClient) notificationQueueHandler() {
 	ntfnSentChan := make(chan bool, 1) // nonblocking sync
 
 	// pendingNtfns is used as a queue for notifications that are ready to
 	// be sent once there are no outstanding notifications currently being
-	// sent.  The waiting flag is used over simply checking for items in the
+	// sent. The waiting flag is used over simply checking for items in the
 	// pending list to ensure cleanup knows what has and hasn't been sent
-	// to the outHandler.  Currently no special cleanup is needed, however
+	// to the outHandler. Currently no special cleanup is needed, however
 	// if something like a done channel is added to notifications in the
 	// future, not knowing what has and hasn't been sent to the outHandler
 	// (and thus who should respond to the done channel) would be
@@ -1166,7 +1158,7 @@ out:
 	for {
 		select {
 		// This channel is notified when a message is being queued to
-		// be sent across the network socket.  It will either send the
+		// be sent across the network socket. It will either send the
 		// message immediately if a send is not already in progress, or
 		// queue the message to be sent once the other pending messages
 		// are sent.
@@ -1215,9 +1207,9 @@ cleanup:
 		"for %s", c.addr)
 }
 
-// outHandler handles all outgoing messages for the websocket connection.  It
-// must be run as a goroutine.  It uses a buffered channel to serialize output
-// messages while allowing the sender to continue running asynchronously.  It
+// outHandler handles all outgoing messages for the websocket connection. It
+// must be run as a goroutine. It uses a buffered channel to serialize output
+// messages while allowing the sender to continue running asynchronously. It
 // must be run as a goroutine.
 func (c *wsClient) outHandler() {
 out:
@@ -1257,10 +1249,10 @@ cleanup:
 	log.Tracef("Websocket client output handler done for %s", c.addr)
 }
 
-// SendMessage sends the passed json to the websocket client.  It is backed
+// SendMessage sends the passed json to the websocket client. It is backed
 // by a buffered channel, so it will not block until the send channel is full.
 // Note however that QueueNotification must be used for sending async
-// notifications instead of the this function.  This approach allows a limit to
+// notifications instead of the this function. This approach allows a limit to
 // the number of outstanding requests a client can make without preventing or
 // blocking on async notifications.
 func (c *wsClient) SendMessage(marshalledJSON []byte, doneChan chan bool) {
@@ -1280,13 +1272,13 @@ func (c *wsClient) SendMessage(marshalledJSON []byte, doneChan chan bool) {
 var ErrClientQuit = errors.New("client quit")
 
 // QueueNotification queues the passed notification to be sent to the websocket
-// client.  This function, as the name implies, is only intended for
+// client. This function, as the name implies, is only intended for
 // notifications since it has additional logic to prevent other subsystems, such
 // as the memory pool and block manager, from blocking even when the send
 // channel is full.
 //
 // If the client is in the process of shutting down, this function returns
-// ErrClientQuit.  This is intended to be checked by long-running notification
+// ErrClientQuit. This is intended to be checked by long-running notification
 // handlers to stop processing if there is no more work needed to be done.
 func (c *wsClient) QueueNotification(marshalledJSON []byte) error {
 	// Don't queue the message if disconnected.
@@ -1342,8 +1334,8 @@ func (c *wsClient) WaitForShutdown() {
 
 // newWebsocketClient returns a new websocket client given the notification
 // manager, websocket connection, remote address, and whether or not the client
-// has already been authenticated (via HTTP Basic access authentication).  The
-// returned client is ready to start.  Once started, the client will process
+// has already been authenticated (via HTTP Basic access authentication). The
+// returned client is ready to start. Once started, the client will process
 // incoming and outgoing messages in separate goroutines complete with queuing
 // and asynchrous handling for long-running operations.
 func newWebsocketClient(server *Server, conn *websocket.Conn,

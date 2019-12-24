@@ -4,7 +4,7 @@
 
 package logs
 
-// Logger is an interface which describes a level-based logger.  A default
+// Logger is an interface which describes a level-based logger. A default
 // implementation of Logger is implemented by this package and can be created
 // by calling (*Backend).Logger.
 type Logger interface {

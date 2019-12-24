@@ -7,21 +7,22 @@ package logger
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"os"
 	"sort"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/kaspanet/kaspad/logs"
 )
 
-// Loggers per subsystem.  A single backend logger is created and all subsytem
-// loggers created from it will write to the backend.  When adding new
+// Loggers per subsystem. A single backend logger is created and all subsytem
+// loggers created from it will write to the backend. When adding new
 // subsystems, add the subsystem logger variable here and to the
 // subsystemLoggers map.
 //
 // Loggers can not be used before the log rotator has been initialized with a
-// log file.  This must be performed early during application startup by calling
+// log file. This must be performed early during application startup by calling
 // InitLog.
 var (
 	// BackendLog is the logging backend used to create all subsystem loggers.
@@ -31,7 +32,7 @@ var (
 	amgrLog = BackendLog.Logger("AMGR")
 	cmgrLog = BackendLog.Logger("CMGR")
 	bcdbLog = BackendLog.Logger("BCDB")
-	btcdLog = BackendLog.Logger("BTCD")
+	kasdLog = BackendLog.Logger("KASD")
 	bdagLog = BackendLog.Logger("BDAG")
 	cnfgLog = BackendLog.Logger("CNFG")
 	discLog = BackendLog.Logger("DISC")
@@ -52,7 +53,7 @@ var SubsystemTags = struct {
 	AMGR,
 	CMGR,
 	BCDB,
-	BTCD,
+	KASD,
 	BDAG,
 	CNFG,
 	DISC,
@@ -70,7 +71,7 @@ var SubsystemTags = struct {
 	AMGR: "AMGR",
 	CMGR: "CMGR",
 	BCDB: "BCDB",
-	BTCD: "BTCD",
+	KASD: "KASD",
 	BDAG: "BDAG",
 	CNFG: "CNFG",
 	DISC: "DISC",
@@ -91,7 +92,7 @@ var subsystemLoggers = map[string]logs.Logger{
 	SubsystemTags.AMGR: amgrLog,
 	SubsystemTags.CMGR: cmgrLog,
 	SubsystemTags.BCDB: bcdbLog,
-	SubsystemTags.BTCD: btcdLog,
+	SubsystemTags.KASD: kasdLog,
 	SubsystemTags.BDAG: bdagLog,
 	SubsystemTags.CNFG: cnfgLog,
 	SubsystemTags.DISC: discLog,
@@ -120,8 +121,8 @@ func InitLog(logFile, errLogFile string) {
 	}
 }
 
-// SetLogLevel sets the logging level for provided subsystem.  Invalid
-// subsystems are ignored.  Uninitialized subsystems are dynamically created as
+// SetLogLevel sets the logging level for provided subsystem. Invalid
+// subsystems are ignored. Uninitialized subsystems are dynamically created as
 // needed.
 func SetLogLevel(subsystemID string, logLevel string) {
 	// Ignore invalid subsystems.
@@ -136,10 +137,10 @@ func SetLogLevel(subsystemID string, logLevel string) {
 }
 
 // SetLogLevels sets the log level for all subsystem loggers to the passed
-// level.  It also dynamically creates the subsystem loggers as needed, so it
+// level. It also dynamically creates the subsystem loggers as needed, so it
 // can be used to initialize the logging system.
 func SetLogLevels(logLevel string) {
-	// Configure all sub-systems with the new logging level.  Dynamically
+	// Configure all sub-systems with the new logging level. Dynamically
 	// create loggers as needed.
 	for subsystemID := range subsystemLoggers {
 		SetLogLevel(subsystemID, logLevel)
@@ -185,7 +186,7 @@ func Get(tag string) (logger logs.Logger, ok bool) {
 }
 
 // ParseAndSetDebugLevels attempts to parse the specified debug level and set
-// the levels accordingly.  An appropriate error is returned if anything is
+// the levels accordingly. An appropriate error is returned if anything is
 // invalid.
 func ParseAndSetDebugLevels(debugLevel string) error {
 	// When the specified string doesn't have any delimters, treat it as

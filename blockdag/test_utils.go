@@ -56,8 +56,8 @@ func FileExists(name string) bool {
 	return true
 }
 
-// DAGSetup is used to create a new db and chain instance with the genesis
-// block already inserted.  In addition to the new chain instance, it returns
+// DAGSetup is used to create a new db and DAG instance with the genesis
+// block already inserted. In addition to the new DAG instance, it returns
 // a teardown function the caller should invoke when done testing to clean up.
 func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 	if !isSupportedDbType(testDbType) {
@@ -96,7 +96,7 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 			return nil, nil, errors.Errorf("error creating db: %s", err)
 		}
 
-		// Setup a teardown function for cleaning up.  This function is
+		// Setup a teardown function for cleaning up. This function is
 		// returned to the caller to be invoked when it is done testing.
 		teardown = func() {
 			spawnWaitGroup.Wait()
@@ -183,19 +183,11 @@ func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (
 	}
 	virtual := newVirtualBlock(parents, dag.dagParams.K)
 
-	pastUTXO, acceptanceData, err := dag.pastUTXO(&virtual.blockNode)
+	pastUTXO, _, err := dag.pastUTXO(&virtual.blockNode)
 	if err != nil {
 		return nil, err
 	}
-	diffFromAcceptanceData, err := virtual.blockNode.diffFromAcceptanceData(pastUTXO, acceptanceData)
-	if err != nil {
-		return nil, err
-	}
-	utxo, err := pastUTXO.WithDiff(diffFromAcceptanceData)
-	if err != nil {
-		return nil, err
-	}
-	diffUTXO := utxo.clone().(*DiffUTXOSet)
+	diffUTXO := pastUTXO.clone().(*DiffUTXOSet)
 	err = diffUTXO.meldToBase()
 	if err != nil {
 		return nil, err
@@ -205,9 +197,8 @@ func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (
 	return VirtualForTest(virtual), nil
 }
 
-// LoadBlocks reads files containing bitcoin block data (gzipped but otherwise
-// in the format bitcoind writes) from disk and returns them as an array of
-// util.Block.  This is largely borrowed from the test code in btcdb.
+// LoadBlocks reads files containing kaspa gzipped block data from disk
+// and returns them as an array of util.Block.
 func LoadBlocks(filename string) (blocks []*util.Block, err error) {
 	var network = wire.MainNet
 	var dr io.Reader

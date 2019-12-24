@@ -15,7 +15,7 @@ import (
 )
 
 // mockRemotePeer creates a basic inbound peer listening on the simnet port for
-// use with Example_peerConnection.  It does not return until the listner is
+// use with Example_peerConnection. It does not return until the listner is
 // active.
 func mockRemotePeer() error {
 	// Configure peer to act as a simnet node that offers no services.
@@ -47,7 +47,7 @@ func mockRemotePeer() error {
 }
 
 // This example demonstrates the basic process for initializing and creating an
-// outbound peer.  Peers negotiate by exchanging version and verack messages.
+// outbound peer. Peers negotiate by exchanging version and verack messages.
 // For demonstration, a simple handler for version message is attached to the
 // peer.
 func Example_newOutboundPeer() {
@@ -62,7 +62,7 @@ func Example_newOutboundPeer() {
 
 	// Create an outbound peer that is configured to act as a simnet node
 	// that offers no services and has listeners for the version and verack
-	// messages.  The verack listener is used here to signal the code below
+	// messages. The verack listener is used here to signal the code below
 	// when the handshake has been finished by signalling a channel.
 	verack := make(chan struct{})
 	peerCfg := &peer.Config{

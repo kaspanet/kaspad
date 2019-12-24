@@ -95,12 +95,12 @@ func (bi *blockImporter) readBlock() ([]byte, error) {
 	return serializedBlock, nil
 }
 
-// processBlock potentially imports the block into the database.  It first
-// deserializes the raw block while checking for errors.  Already known blocks
-// are skipped and orphan blocks are considered errors.  Returns whether the
+// processBlock potentially imports the block into the database. It first
+// deserializes the raw block while checking for errors. Already known blocks
+// are skipped and orphan blocks are considered errors. Returns whether the
 // block was imported along with any potential errors.
 //
-// NOTE: This is not a safe import as it does not verify chain rules.
+// NOTE: This is not a safe import as it does not verify DAG rules.
 func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 	// Deserialize the block which includes checks for malformed blocks.
 	block, err := util.NewBlockFromBytes(serializedBlock)
@@ -139,11 +139,11 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 		if !exists {
 			return false, errors.Errorf("import file contains block "+
 				"%s which does not link to the available "+
-				"block chain", parentHash)
+				"block DAG", parentHash)
 		}
 	}
 
-	// Put the blocks into the database with no checking of chain rules.
+	// Put the blocks into the database with no checking of DAG rules.
 	err = bi.db.Update(func(dbTx database.Tx) error {
 		return dbTx.StoreBlock(block)
 	})
@@ -188,7 +188,7 @@ out:
 	bi.wg.Done()
 }
 
-// logProgress logs block progress as an information message.  In order to
+// logProgress logs block progress as an information message. In order to
 // prevent spam, it limits logging to one message every importCfg.Progress
 // seconds with duration and totals included.
 func (bi *blockImporter) logProgress() {
@@ -222,7 +222,7 @@ func (bi *blockImporter) logProgress() {
 	bi.lastLogTime = now
 }
 
-// processHandler is the main handler for processing blocks.  This allows block
+// processHandler is the main handler for processing blocks. This allows block
 // processing to take place in parallel with block reads from the import file.
 // It must be run as a goroutine.
 func (bi *blockImporter) processHandler() {
@@ -257,7 +257,7 @@ out:
 }
 
 // statusHandler waits for updates from the import operation and notifies
-// the passed doneChan with the results of the import.  It also causes all
+// the passed doneChan with the results of the import. It also causes all
 // goroutines to exit if an error is reported from any of them.
 func (bi *blockImporter) statusHandler(resultsChan chan *importResults) {
 	select {
@@ -282,10 +282,10 @@ func (bi *blockImporter) statusHandler(resultsChan chan *importResults) {
 }
 
 // Import is the core function which handles importing the blocks from the file
-// associated with the block importer to the database.  It returns a channel
+// associated with the block importer to the database. It returns a channel
 // on which the results will be returned when the operation has completed.
 func (bi *blockImporter) Import() chan *importResults {
-	// Start up the read and process handling goroutines.  This setup allows
+	// Start up the read and process handling goroutines. This setup allows
 	// blocks to be read from disk in parallel while being processed.
 	bi.wg.Add(2)
 	spawn(bi.readHandler)
@@ -319,7 +319,7 @@ func newBlockImporter(db database.DB, r io.ReadSeeker) *blockImporter {
 	}
 }
 
-// Execute is the main entry point for the command.  It's invoked by the parser.
+// Execute is the main entry point for the command. It's invoked by the parser.
 func (cmd *importCmd) Execute(args []string) error {
 	// Setup the global config options and ensure they are valid.
 	if err := setupGlobalConfig(); err != nil {
@@ -357,12 +357,12 @@ func (cmd *importCmd) Execute(args []string) error {
 	importer := newBlockImporter(db, fi)
 
 	// Perform the import asynchronously and signal the main goroutine when
-	// done.  This allows blocks to be processed and read in parallel.  The
+	// done. This allows blocks to be processed and read in parallel. The
 	// results channel returned from Import contains the statistics about
-	// the import including an error if something went wrong.  This is done
+	// the import including an error if something went wrong. This is done
 	// in a separate goroutine rather than waiting directly so the main
 	// goroutine can be signaled for shutdown by either completion, error,
-	// or from the main interrupt handler.  This is necessary since the main
+	// or from the main interrupt handler. This is necessary since the main
 	// goroutine must be kept running long enough for the interrupt handler
 	// goroutine to finish.
 	spawn(func() {

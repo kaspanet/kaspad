@@ -22,11 +22,11 @@
 #   - Updates project changes file with release notes
 #
 
-PROJECT=btcd
+PROJECT=kaspad
 PROJECT_UC=$(echo $PROJECT | tr '[:lower:]' '[:upper:]')
 SCRIPT=$(basename $0)
 VERFILE=../version.go
-VERFILES="$VERFILE ../cmd/btcctl/version.go"
+VERFILES="$VERFILE ../cmd/kaspactl/version.go"
 PROJ_CHANGES=../CHANGES
 
 # verify params

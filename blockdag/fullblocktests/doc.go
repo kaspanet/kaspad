@@ -6,9 +6,9 @@
 Package fullblocktests provides a set of block consensus validation tests.
 
 All of the generated test instances involve full blocks that are to be used for
-testing the consensus validation rules.  The tests are intended to be flexible
+testing the consensus validation rules. The tests are intended to be flexible
 enough to allow both unit-style tests directly against the blockchain code as
-well as integration style tests over the peer-to-peer network.  To achieve that
+well as integration style tests over the peer-to-peer network. To achieve that
 goal, each test contains additional information about the expected result,
 however that information can be ignored when doing comparison tests between two
 independent versions over the peer-to-peer network.

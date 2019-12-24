@@ -8,38 +8,38 @@ import (
 	"io"
 )
 
-// MsgVerAck defines a bitcoin verack message which is used for a peer to
+// MsgVerAck defines a kaspa verack message which is used for a peer to
 // acknowledge a version message (MsgVersion) after it has used the information
-// to negotiate parameters.  It implements the Message interface.
+// to negotiate parameters. It implements the Message interface.
 //
 // This message has no payload.
 type MsgVerAck struct{}
 
-// BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
-func (msg *MsgVerAck) BtcDecode(r io.Reader, pver uint32) error {
+func (msg *MsgVerAck) KaspaDecode(r io.Reader, pver uint32) error {
 	return nil
 }
 
-// BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
-func (msg *MsgVerAck) BtcEncode(w io.Writer, pver uint32) error {
+func (msg *MsgVerAck) KaspaEncode(w io.Writer, pver uint32) error {
 	return nil
 }
 
-// Command returns the protocol command string for the message.  This is part
+// Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgVerAck) Command() string {
 	return CmdVerAck
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
-// receiver.  This is part of the Message interface implementation.
+// receiver. This is part of the Message interface implementation.
 func (msg *MsgVerAck) MaxPayloadLength(pver uint32) uint32 {
 	return 0
 }
 
-// NewMsgVerAck returns a new bitcoin verack message that conforms to the
+// NewMsgVerAck returns a new kaspa verack message that conforms to the
 // Message interface.
 func NewMsgVerAck() *MsgVerAck {
 	return &MsgVerAck{}

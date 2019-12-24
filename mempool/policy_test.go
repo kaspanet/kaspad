@@ -44,10 +44,10 @@ func TestCalcMinRequiredTxRelayFee(t *testing.T) {
 			100000,
 		},
 		{
-			"max standard tx size with max satoshi relay fee",
+			"max standard tx size with max sompi relay fee",
 			MaxStandardTxSize,
-			util.MaxSatoshi,
-			util.MaxSatoshi,
+			util.MaxSompi,
+			util.MaxSompi,
 		},
 		{
 			"1500 bytes with 5000 relay fee",
@@ -134,9 +134,9 @@ func TestDust(t *testing.T) {
 		},
 		{
 			// Maximum allowed value is never dust.
-			"max satoshi amount is never dust",
-			wire.TxOut{Value: util.MaxSatoshi, ScriptPubKey: scriptPubKey},
-			util.MaxSatoshi,
+			"max sompi amount is never dust",
+			wire.TxOut{Value: util.MaxSompi, ScriptPubKey: scriptPubKey},
+			util.MaxSompi,
 			false,
 		},
 		{
@@ -180,7 +180,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 		Sequence:         wire.MaxTxInSequenceNum,
 	}
 	addrHash := [20]byte{0x01}
-	addr, err := util.NewAddressPubKeyHash(addrHash[:], util.Bech32PrefixDAGTest)
+	addr, err := util.NewAddressPubKeyHash(addrHash[:], util.Bech32PrefixKaspaTest)
 	if err != nil {
 		t.Fatalf("NewAddressPubKeyHash: unexpected error: %v", err)
 	}
@@ -189,7 +189,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 		t.Fatalf("PayToAddrScript: unexpected error: %v", err)
 	}
 	dummyTxOut := wire.TxOut{
-		Value:        100000000, // 1 BTC
+		Value:        100000000, // 1 KAS
 		ScriptPubKey: dummyScriptPubKey,
 	}
 

@@ -4,24 +4,24 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"strconv"
 )
 
 // handleGetBlockHeader implements the getBlockHeader command.
 func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.GetBlockHeaderCmd)
+	c := cmd.(*rpcmodel.GetBlockHeaderCmd)
 
-	// Fetch the header from chain.
+	// Fetch the header from DAG.
 	hash, err := daghash.NewHashFromStr(c.Hash)
 	if err != nil {
 		return nil, rpcDecodeHexError(c.Hash)
 	}
 	blockHeader, err := s.cfg.DAG.HeaderByHash(hash)
 	if err != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCBlockNotFound,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCBlockNotFound,
 			Message: "Block not found",
 		}
 	}
@@ -65,7 +65,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 	}
 
 	params := s.cfg.DAGParams
-	blockHeaderReply := btcjson.GetBlockHeaderVerboseResult{
+	blockHeaderReply := rpcmodel.GetBlockHeaderVerboseResult{
 		Hash:                 c.Hash,
 		Confirmations:        blockConfirmations,
 		Height:               blockChainHeight,

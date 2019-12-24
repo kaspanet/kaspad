@@ -10,13 +10,13 @@ import (
 )
 
 // MaxBlockHeadersPerMsg is the maximum number of block headers that can be in
-// a single bitcoin headers message.
+// a single kaspa headers message.
 const MaxBlockHeadersPerMsg = 2000
 
-// MsgHeaders implements the Message interface and represents a bitcoin headers
-// message.  It is used to deliver block header information in response
-// to a getheaders message (MsgGetHeaders).  The maximum number of block headers
-// per message is currently 2000.  See MsgGetHeaders for details on requesting
+// MsgHeaders implements the Message interface and represents a kaspa headers
+// message. It is used to deliver block header information in response
+// to a getheaders message (MsgGetHeaders). The maximum number of block headers
+// per message is currently 2000. See MsgGetHeaders for details on requesting
 // the headers.
 type MsgHeaders struct {
 	Headers []*BlockHeader
@@ -34,9 +34,9 @@ func (msg *MsgHeaders) AddBlockHeader(bh *BlockHeader) error {
 	return nil
 }
 
-// BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
-func (msg *MsgHeaders) BtcDecode(r io.Reader, pver uint32) error {
+func (msg *MsgHeaders) KaspaDecode(r io.Reader, pver uint32) error {
 	count, err := ReadVarInt(r)
 	if err != nil {
 		return err
@@ -46,7 +46,7 @@ func (msg *MsgHeaders) BtcDecode(r io.Reader, pver uint32) error {
 	if count > MaxBlockHeadersPerMsg {
 		str := fmt.Sprintf("too many block headers for message "+
 			"[count %d, max %d]", count, MaxBlockHeadersPerMsg)
-		return messageError("MsgHeaders.BtcDecode", str)
+		return messageError("MsgHeaders.KaspaDecode", str)
 	}
 
 	// Create a contiguous slice of headers to deserialize into in order to
@@ -69,7 +69,7 @@ func (msg *MsgHeaders) BtcDecode(r io.Reader, pver uint32) error {
 		if txCount > 0 {
 			str := fmt.Sprintf("block headers may not contain "+
 				"transactions [count %d]", txCount)
-			return messageError("MsgHeaders.BtcDecode", str)
+			return messageError("MsgHeaders.KaspaDecode", str)
 		}
 		msg.AddBlockHeader(bh)
 	}
@@ -77,15 +77,15 @@ func (msg *MsgHeaders) BtcDecode(r io.Reader, pver uint32) error {
 	return nil
 }
 
-// BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
-func (msg *MsgHeaders) BtcEncode(w io.Writer, pver uint32) error {
+func (msg *MsgHeaders) KaspaEncode(w io.Writer, pver uint32) error {
 	// Limit to max block headers per message.
 	count := len(msg.Headers)
 	if count > MaxBlockHeadersPerMsg {
 		str := fmt.Sprintf("too many block headers for message "+
 			"[count %d, max %d]", count, MaxBlockHeadersPerMsg)
-		return messageError("MsgHeaders.BtcEncode", str)
+		return messageError("MsgHeaders.KaspaEncode", str)
 	}
 
 	err := WriteVarInt(w, uint64(count))
@@ -100,7 +100,7 @@ func (msg *MsgHeaders) BtcEncode(w io.Writer, pver uint32) error {
 		}
 
 		// The wire protocol encoding always includes a 0 for the number
-		// of transactions on header messages.  This is really just an
+		// of transactions on header messages. This is really just an
 		// artifact of the way the original implementation serializes
 		// block headers, but it is required.
 		err = WriteVarInt(w, 0)
@@ -112,14 +112,14 @@ func (msg *MsgHeaders) BtcEncode(w io.Writer, pver uint32) error {
 	return nil
 }
 
-// Command returns the protocol command string for the message.  This is part
+// Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgHeaders) Command() string {
 	return CmdHeaders
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
-// receiver.  This is part of the Message interface implementation.
+// receiver. This is part of the Message interface implementation.
 func (msg *MsgHeaders) MaxPayloadLength(pver uint32) uint32 {
 	// Num headers (varInt) + max allowed headers (header length + 1 byte
 	// for the number of transactions which is always 0).
@@ -127,8 +127,8 @@ func (msg *MsgHeaders) MaxPayloadLength(pver uint32) uint32 {
 		MaxBlockHeadersPerMsg)
 }
 
-// NewMsgHeaders returns a new bitcoin headers message that conforms to the
-// Message interface.  See MsgHeaders for details.
+// NewMsgHeaders returns a new kaspa headers message that conforms to the
+// Message interface. See MsgHeaders for details.
 func NewMsgHeaders() *MsgHeaders {
 	return &MsgHeaders{
 		Headers: make([]*BlockHeader, 0, MaxBlockHeadersPerMsg),

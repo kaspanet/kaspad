@@ -24,7 +24,8 @@ const (
 	RejectNonstandard     RejectCode = 0x40
 	RejectDust            RejectCode = 0x41
 	RejectInsufficientFee RejectCode = 0x42
-	RejectCheckpoint      RejectCode = 0x43
+	RejectFinality        RejectCode = 0x43
+	RejectDifficulty      RejectCode = 0x44
 )
 
 // Map of reject codes back strings for pretty printing.
@@ -36,7 +37,8 @@ var rejectCodeStrings = map[RejectCode]string{
 	RejectNonstandard:     "REJECT_NONSTANDARD",
 	RejectDust:            "REJECT_DUST",
 	RejectInsufficientFee: "REJECT_INSUFFICIENTFEE",
-	RejectCheckpoint:      "REJECT_CHECKPOINT",
+	RejectFinality:        "REJECT_FINALITY",
+	RejectDifficulty:      "REJECT_DIFFICULTY",
 }
 
 // String returns the RejectCode in human-readable form.
@@ -48,17 +50,17 @@ func (code RejectCode) String() string {
 	return fmt.Sprintf("Unknown RejectCode (%d)", uint8(code))
 }
 
-// MsgReject implements the Message interface and represents a bitcoin reject
+// MsgReject implements the Message interface and represents a kaspa reject
 // message.
 //
 // This message was not added until protocol version RejectVersion.
 type MsgReject struct {
 	// Cmd is the command for the message which was rejected such as
-	// as CmdBlock or CmdTx.  This can be obtained from the Command function
+	// as CmdBlock or CmdTx. This can be obtained from the Command function
 	// of a Message.
 	Cmd string
 
-	// RejectCode is a code indicating why the command was rejected.  It
+	// RejectCode is a code indicating why the command was rejected. It
 	// is encoded as a uint8 on the wire.
 	Code RejectCode
 
@@ -71,9 +73,9 @@ type MsgReject struct {
 	Hash *daghash.Hash
 }
 
-// BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
+// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
-func (msg *MsgReject) BtcDecode(r io.Reader, pver uint32) error {
+func (msg *MsgReject) KaspaDecode(r io.Reader, pver uint32) error {
 	// Command that was rejected.
 	cmd, err := ReadVarString(r, pver)
 	if err != nil {
@@ -108,9 +110,9 @@ func (msg *MsgReject) BtcDecode(r io.Reader, pver uint32) error {
 	return nil
 }
 
-// BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
+// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
-func (msg *MsgReject) BtcEncode(w io.Writer, pver uint32) error {
+func (msg *MsgReject) KaspaEncode(w io.Writer, pver uint32) error {
 	// Command that was rejected.
 	err := WriteVarString(w, msg.Cmd)
 	if err != nil {
@@ -142,23 +144,23 @@ func (msg *MsgReject) BtcEncode(w io.Writer, pver uint32) error {
 	return nil
 }
 
-// Command returns the protocol command string for the message.  This is part
+// Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgReject) Command() string {
 	return CmdReject
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
-// receiver.  This is part of the Message interface implementation.
+// receiver. This is part of the Message interface implementation.
 func (msg *MsgReject) MaxPayloadLength(pver uint32) uint32 {
-	// Unfortunately the bitcoin protocol does not enforce a sane
+	// Unfortunately the kaspa protocol does not enforce a sane
 	// limit on the length of the reason, so the max payload is the
 	// overall maximum message payload.
 	return uint32(MaxMessagePayload)
 }
 
-// NewMsgReject returns a new bitcoin reject message that conforms to the
-// Message interface.  See MsgReject for details.
+// NewMsgReject returns a new kaspa reject message that conforms to the
+// Message interface. See MsgReject for details.
 func NewMsgReject(command string, code RejectCode, reason string) *MsgReject {
 	return &MsgReject{
 		Cmd:    command,

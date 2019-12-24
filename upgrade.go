@@ -4,8 +4,8 @@
 
 package main
 
-// doUpgrades performs upgrades to btcd as new versions require it.
-// currently it's a placeholder we got from btcd upstream, that does nothing
+// doUpgrades performs upgrades to kaspad as new versions require it.
+// currently it's a placeholder we got from kaspad upstream, that does nothing
 func doUpgrades() error {
 	return nil
 }

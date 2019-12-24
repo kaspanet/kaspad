@@ -11,17 +11,17 @@ import (
 func ExampleAmount() {
 
 	a := util.Amount(0)
-	fmt.Println("Zero Satoshi:", a)
+	fmt.Println("Zero Sompi:", a)
 
 	a = util.Amount(1e8)
-	fmt.Println("100,000,000 Satoshis:", a)
+	fmt.Println("100,000,000 Sompi:", a)
 
 	a = util.Amount(1e5)
-	fmt.Println("100,000 Satoshis:", a)
+	fmt.Println("100,000 Sompi:", a)
 	// Output:
-	// Zero Satoshi: 0 BTC
-	// 100,000,000 Satoshis: 1 BTC
-	// 100,000 Satoshis: 0.001 BTC
+	// Zero Sompi: 0 KAS
+	// 100,000,000 Sompi: 1 KAS
+	// 100,000 Sompi: 0.001 KAS
 }
 
 func ExampleNewAmount() {
@@ -53,34 +53,33 @@ func ExampleNewAmount() {
 	}
 	fmt.Println(amountNaN) //Output 4
 
-	// Output: 1 BTC
-	// 0.01234567 BTC
-	// 0 BTC
-	// invalid bitcoin amount
+	// Output: 1 KAS
+	// 0.01234567 KAS
+	// 0 KAS
+	// invalid kaspa amount
 }
 
 func ExampleAmount_unitConversions() {
 	amount := util.Amount(44433322211100)
 
-	fmt.Println("Satoshi to kBTC:", amount.Format(util.AmountKiloBTC))
-	fmt.Println("Satoshi to BTC:", amount)
-	fmt.Println("Satoshi to MilliBTC:", amount.Format(util.AmountMilliBTC))
-	fmt.Println("Satoshi to MicroBTC:", amount.Format(util.AmountMicroBTC))
-	fmt.Println("Satoshi to Satoshi:", amount.Format(util.AmountSatoshi))
+	fmt.Println("Sompi to kKAS:", amount.Format(util.AmountKiloKAS))
+	fmt.Println("Sompi to KAS:", amount)
+	fmt.Println("Sompi to MilliKAS:", amount.Format(util.AmountMilliKAS))
+	fmt.Println("Sompi to MicroKAS:", amount.Format(util.AmountMicroKAS))
+	fmt.Println("Sompi to Sompi:", amount.Format(util.AmountSompi))
 
 	// Output:
-	// Satoshi to kBTC: 444.333222111 kBTC
-	// Satoshi to BTC: 444333.222111 BTC
-	// Satoshi to MilliBTC: 444333222.111 mBTC
-	// Satoshi to MicroBTC: 444333222111 μBTC
-	// Satoshi to Satoshi: 44433322211100 Satoshi
+	// Sompi to kKAS: 444.333222111 kKAS
+	// Sompi to KAS: 444333.222111 KAS
+	// Sompi to MilliKAS: 444333222.111 mKAS
+	// Sompi to MicroKAS: 444333222111 μKAS
+	// Sompi to Sompi: 44433322211100 Sompi
 }
 
 // This example demonstrates how to convert the compact "bits" in a block header
 // which represent the target difficulty to a big integer and display it using
 // the typical hex notation.
 func ExampleCompactToBig() {
-	// Convert the bits from block 300000 in the main block chain.
 	bits := uint32(419465580)
 	targetDifficulty := util.CompactToBig(bits)
 
@@ -94,8 +93,8 @@ func ExampleCompactToBig() {
 // This example demonstrates how to convert a target difficulty into the compact
 // "bits" in a block header which represent that target difficulty .
 func ExampleBigToCompact() {
-	// Convert the target difficulty from block 300000 in the main block
-	// chain to compact form.
+	// Convert the target difficulty from block 300000 in the bitcoin
+	// main chain to compact form.
 	t := "0000000000000000896c00000000000000000000000000000000000000000000"
 	targetDifficulty, success := new(big.Int).SetString(t, 16)
 	if !success {

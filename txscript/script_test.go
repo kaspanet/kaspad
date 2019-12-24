@@ -3814,7 +3814,7 @@ func TestGetPreciseSigOps(t *testing.T) {
 	}
 
 	// The signature in the p2sh script is nonsensical for the tests since
-	// this script will never be executed.  What matters is that it matches
+	// this script will never be executed. What matters is that it matches
 	// the right pattern.
 	scriptPubKey := mustParseShortForm("HASH160 DATA_20 0x433ec2ac1ffa1b7b7d0" +
 		"27f564529c57197f9ae88 EQUAL")

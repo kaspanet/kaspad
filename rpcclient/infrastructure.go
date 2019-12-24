@@ -26,7 +26,7 @@ import (
 
 	"github.com/btcsuite/go-socks/socks"
 	"github.com/btcsuite/websocket"
-	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/rpcmodel"
 )
 
 var (
@@ -42,12 +42,12 @@ var (
 
 	// ErrClientNotConnected is an error to describe the condition where a
 	// websocket client has been created, but the connection was never
-	// established.  This condition differs from ErrClientDisconnect, which
+	// established. This condition differs from ErrClientDisconnect, which
 	// represents an established connection that was lost.
 	ErrClientNotConnected = errors.New("the client was never connected")
 
 	// ErrClientDisconnect is an error to describe the condition where the
-	// client has been disconnected from the RPC server.  When the
+	// client has been disconnected from the RPC server. When the
 	// DisableAutoReconnect option is not set, any outstanding futures
 	// when a client disconnect occurs will return this error as will
 	// any new requests.
@@ -55,7 +55,7 @@ var (
 
 	// ErrClientShutdown is an error to describe the condition where the
 	// client is either already shutdown, or in the process of shutting
-	// down.  Any outstanding futures when a client shutdown occurs will
+	// down. Any outstanding futures when a client shutdown occurs will
 	// return this error as will any new requests.
 	ErrClientShutdown = errors.New("the client has been shutdown")
 
@@ -112,16 +112,16 @@ type jsonRequestData struct {
 	marshalledJSON []byte
 }
 
-// Client represents a Bitcoin RPC client which allows easy access to the
-// various RPC methods available on a Bitcoin RPC server.  Each of the wrapper
+// Client represents a kaspa RPC client which allows easy access to the
+// various RPC methods available on a kaspa RPC server. Each of the wrapper
 // functions handle the details of converting the passed and return types to and
 // from the underlying JSON types which are required for the JSON-RPC
 // invocations
 //
 // The client provides each RPC in both synchronous (blocking) and asynchronous
-// (non-blocking) forms.  The asynchronous forms are based on the concept of
+// (non-blocking) forms. The asynchronous forms are based on the concept of
 // futures where they return an instance of a type that promises to deliver the
-// result of the invocation at some future time.  Invoking the Receive method on
+// result of the invocation at some future time. Invoking the Receive method on
 // the returned future will block until the result is available if it's not
 // already.
 type Client struct {
@@ -172,9 +172,9 @@ func (c *Client) Host() string {
 	return c.config.Host
 }
 
-// NextID returns the next id to be used when sending a JSON-RPC message.  This
+// NextID returns the next id to be used when sending a JSON-RPC message. This
 // ID allows responses to be associated with particular requests per the
-// JSON-RPC specification.  Typically the consumer of the client does not need
+// JSON-RPC specification. Typically the consumer of the client does not need
 // to call this function, however, if a custom request is being created and used
 // this function should be used to ensure the ID is unique amongst all requests
 // being made.
@@ -182,7 +182,7 @@ func (c *Client) NextID() uint64 {
 	return atomic.AddUint64(&c.id, 1)
 }
 
-// addRequest associates the passed jsonRequest with its id.  This allows the
+// addRequest associates the passed jsonRequest with its id. This allows the
 // response from the remote server to be unmarshalled to the appropriate type
 // and sent to the specified channel when it is received.
 //
@@ -252,13 +252,13 @@ func (c *Client) trackRegisteredNtfns(cmd interface{}) {
 	defer c.ntfnStateLock.Unlock()
 
 	switch bcmd := cmd.(type) {
-	case *btcjson.NotifyBlocksCmd:
+	case *rpcmodel.NotifyBlocksCmd:
 		c.ntfnState.notifyBlocks = true
 
-	case *btcjson.NotifyChainChangesCmd:
+	case *rpcmodel.NotifyChainChangesCmd:
 		c.ntfnState.notifyChainChanges = true
 
-	case *btcjson.NotifyNewTransactionsCmd:
+	case *rpcmodel.NotifyNewTransactionsCmd:
 		if bcmd.Verbose != nil && *bcmd.Verbose {
 			c.ntfnState.notifyNewTxVerbose = true
 		} else {
@@ -271,8 +271,8 @@ func (c *Client) trackRegisteredNtfns(cmd interface{}) {
 type (
 	// inMessage is the first type that an incoming message is unmarshaled
 	// into. It supports both requests (for notification support) and
-	// responses.  The partially-unmarshaled message is a notification if
-	// the embedded ID (from the response) is nil.  Otherwise, it is a
+	// responses. The partially-unmarshaled message is a notification if
+	// the embedded ID (from the response) is nil. Otherwise, it is a
 	// response.
 	inMessage struct {
 		ID *float64 `json:"id"`
@@ -286,11 +286,11 @@ type (
 		Params []json.RawMessage `json:"params"`
 	}
 
-	// rawResponse is a partially-unmarshaled JSON-RPC response.  For this
+	// rawResponse is a partially-unmarshaled JSON-RPC response. For this
 	// to be valid (according to JSON-RPC 1.0 spec), ID may not be nil.
 	rawResponse struct {
-		Result json.RawMessage   `json:"result"`
-		Error  *btcjson.RPCError `json:"error"`
+		Result json.RawMessage    `json:"result"`
+		Error  *rpcmodel.RPCError `json:"error"`
 	}
 )
 
@@ -302,7 +302,7 @@ type response struct {
 }
 
 // result checks whether the unmarshaled response contains a non-nil error,
-// returning an unmarshaled btcjson.RPCError (or an unmarshaling error) if so.
+// returning an unmarshaled rpcmodel.RPCError (or an unmarshaling error) if so.
 // If the response is not an error, the raw bytes of the request are
 // returned for further unmashaling into specific result types.
 func (r rawResponse) result() (result []byte, err error) {
@@ -403,12 +403,12 @@ func (c *Client) shouldLogReadError(err error) bool {
 }
 
 // wsInHandler handles all incoming messages for the websocket connection
-// associated with the client.  It must be run as a goroutine.
+// associated with the client. It must be run as a goroutine.
 func (c *Client) wsInHandler() {
 out:
 	for {
 		// Break out of the loop once the shutdown channel has been
-		// closed.  Use a non-blocking select here so we fall through
+		// closed. Use a non-blocking select here so we fall through
 		// otherwise.
 		select {
 		case <-c.shutdown:
@@ -434,7 +434,7 @@ out:
 	log.Tracef("RPC client input handler done for %s", c.config.Host)
 }
 
-// disconnectChan returns a copy of the current disconnect channel.  The channel
+// disconnectChan returns a copy of the current disconnect channel. The channel
 // is read protected by the client mutex, and is safe to call while the channel
 // is being reassigned during a reconnect.
 func (c *Client) disconnectChan() <-chan struct{} {
@@ -444,9 +444,9 @@ func (c *Client) disconnectChan() <-chan struct{} {
 	return ch
 }
 
-// wsOutHandler handles all outgoing messages for the websocket connection.  It
+// wsOutHandler handles all outgoing messages for the websocket connection. It
 // uses a buffered channel to serialize output messages while allowing the
-// sender to continue running asynchronously.  It must be run as a goroutine.
+// sender to continue running asynchronously. It must be run as a goroutine.
 func (c *Client) wsOutHandler() {
 out:
 	for {
@@ -480,7 +480,7 @@ cleanup:
 }
 
 // sendMessage sends the passed JSON to the connected server using the
-// websocket connection.  It is backed by a buffered channel, so it will not
+// websocket connection. It is backed by a buffered channel, so it will not
 // block until the send channel is full.
 func (c *Client) sendMessage(marshalledJSON []byte) {
 	// Don't send the message if disconnected.
@@ -492,7 +492,7 @@ func (c *Client) sendMessage(marshalledJSON []byte) {
 }
 
 // reregisterNtfns creates and sends commands needed to re-establish the current
-// notification state associated with the client.  It should only be called on
+// notification state associated with the client. It should only be called on
 // on reconnect by the resendRequests function.
 func (c *Client) reregisterNtfns() error {
 	// Nothing to do if the caller is not interested in notifications.
@@ -548,10 +548,10 @@ var ignoreResends = map[string]struct{}{
 }
 
 // resendRequests resends any requests that had not completed when the client
-// disconnected.  It is intended to be called once the client has reconnected as
+// disconnected. It is intended to be called once the client has reconnected as
 // a separate goroutine.
 func (c *Client) resendRequests() {
-	// Set the notification state back up.  If anything goes wrong,
+	// Set the notification state back up. If anything goes wrong,
 	// disconnect the client.
 	if err := c.reregisterNtfns(); err != nil {
 		log.Warnf("Unable to re-establish notification state: %s", err)
@@ -561,7 +561,7 @@ func (c *Client) resendRequests() {
 
 	// Since it's possible to block on send and more requests might be
 	// added by the caller while resending, make a copy of all of the
-	// requests that need to be resent now and work from the copy.  This
+	// requests that need to be resent now and work from the copy. This
 	// also allows the lock to be released quickly.
 	c.requestLock.Lock()
 	resendReqs := make([]*jsonRequest, 0, c.requestList.Len())
@@ -599,7 +599,7 @@ func (c *Client) resendRequests() {
 // to reconnect with retry interval that scales based on the number of retries.
 // It also resends any commands that had not completed when the client
 // disconnected so the disconnect/reconnect process is largely transparent to
-// the caller.  This function is not run when the DisableAutoReconnect config
+// the caller. This function is not run when the DisableAutoReconnect config
 // options is set.
 //
 // This function must be run as a goroutine.
@@ -712,8 +712,8 @@ func (c *Client) handleSendPostMessage(details *sendPostDetails) {
 }
 
 // sendPostHandler handles all outgoing messages when the client is running
-// in HTTP POST mode.  It uses a buffered channel to serialize output messages
-// while allowing the sender to continue running asynchronously.  It must be run
+// in HTTP POST mode. It uses a buffered channel to serialize output messages
+// while allowing the sender to continue running asynchronously. It must be run
 // as a goroutine.
 func (c *Client) sendPostHandler() {
 out:
@@ -750,7 +750,7 @@ cleanup:
 }
 
 // sendPostRequest sends the passed HTTP request to the RPC server using the
-// HTTP client associated with the client.  It is backed by a buffered channel,
+// HTTP client associated with the client. It is backed by a buffered channel,
 // so it will not block until the send channel is full.
 func (c *Client) sendPostRequest(httpReq *http.Request, jReq *jsonRequest) {
 	// Don't send the message if shutting down.
@@ -767,7 +767,7 @@ func (c *Client) sendPostRequest(httpReq *http.Request, jReq *jsonRequest) {
 }
 
 // newFutureError returns a new future result channel that already has the
-// passed error waitin on the channel with the reply set to nil.  This is useful
+// passed error waitin on the channel with the reply set to nil. This is useful
 // to easily return errors from the various Async functions.
 func newFutureError(err error) chan *response {
 	responseChan := make(chan *response, 1)
@@ -776,8 +776,8 @@ func newFutureError(err error) chan *response {
 }
 
 // receiveFuture receives from the passed futureResult channel to extract a
-// reply or any errors.  The examined errors include an error in the
-// futureResult and the error in the reply from the server.  This will block
+// reply or any errors. The examined errors include an error in the
+// futureResult and the error in the reply from the server. This will block
 // until the result is available on the passed channel.
 func receiveFuture(f chan *response) ([]byte, error) {
 	// Wait for a response on the returned channel.
@@ -790,7 +790,7 @@ func receiveFuture(f chan *response) ([]byte, error) {
 }
 
 // sendPost sends the passed request to the server by issuing an HTTP POST
-// request using the provided response channel for the reply.  Typically a new
+// request using the provided response channel for the reply. Typically a new
 // connection is opened and closed for each command when using this method,
 // however, the underlying HTTP client might coalesce multiple commands
 // depending on several factors including the remote server configuration.
@@ -818,7 +818,7 @@ func (c *Client) sendPost(jReq *jsonRequest) {
 }
 
 // sendRequest sends the passed json request to the associated server using the
-// provided response channel for the reply.  It handles both websocket and HTTP
+// provided response channel for the reply. It handles both websocket and HTTP
 // POST mode depending on the configuration of the client.
 func (c *Client) sendRequest(data *jsonRequestData) chan *response {
 	jReq := &jsonRequest{
@@ -833,8 +833,8 @@ func (c *Client) sendRequest(data *jsonRequestData) chan *response {
 	}
 	spawn(func() {
 		// Choose which marshal and send function to use depending on whether
-		// the client running in HTTP POST mode or not.  When running in HTTP
-		// POST mode, the command is issued via an HTTP client.  Otherwise,
+		// the client running in HTTP POST mode or not. When running in HTTP
+		// POST mode, the command is issued via an HTTP client. Otherwise,
 		// the command is issued via the asynchronous websocket channels.
 		if c.config.HTTPPostMode {
 			c.sendPost(jReq)
@@ -852,7 +852,7 @@ func (c *Client) sendRequest(data *jsonRequestData) chan *response {
 
 		// Add the request to the internal tracking map so the response from the
 		// remote server can be properly detected and routed to the response
-		// channel.  Then send the marshalled request via the websocket
+		// channel. Then send the marshalled request via the websocket
 		// connection.
 		if err := c.addRequest(jReq); err != nil {
 			jReq.responseChan <- &response{err: err}
@@ -876,18 +876,18 @@ func (c *Client) sendRequest(data *jsonRequestData) chan *response {
 
 // sendCmd sends the passed command to the associated server and returns a
 // response channel on which the reply will be delivered at some point in the
-// future.  It handles both websocket and HTTP POST mode depending on the
+// future. It handles both websocket and HTTP POST mode depending on the
 // configuration of the client.
 func (c *Client) sendCmd(cmd interface{}) chan *response {
 	// Get the method associated with the command.
-	method, err := btcjson.CmdMethod(cmd)
+	method, err := rpcmodel.CommandMethod(cmd)
 	if err != nil {
 		return newFutureError(err)
 	}
 
 	// Marshal the command.
 	id := c.NextID()
-	marshalledJSON, err := btcjson.MarshalCmd(id, cmd)
+	marshalledJSON, err := rpcmodel.MarshalCommand(id, cmd)
 	if err != nil {
 		return newFutureError(err)
 	}
@@ -904,7 +904,7 @@ func (c *Client) sendCmd(cmd interface{}) chan *response {
 }
 
 // sendCmdAndWait sends the passed command to the associated server, waits
-// for the reply, and returns the result from it.  It will return the error
+// for the reply, and returns the result from it. It will return the error
 // field in the reply if there is one.
 func (c *Client) sendCmdAndWait(cmd interface{}) (interface{}, error) {
 	// Marshal the command to JSON-RPC, send it to the connected server, and
@@ -912,7 +912,7 @@ func (c *Client) sendCmdAndWait(cmd interface{}) (interface{}, error) {
 	return receiveFuture(c.sendCmd(cmd))
 }
 
-// Disconnected returns whether or not the server is disconnected.  If a
+// Disconnected returns whether or not the server is disconnected. If a
 // websocket client was created but never connected, this also returns false.
 func (c *Client) Disconnected() bool {
 	c.mtx.Lock()
@@ -927,7 +927,7 @@ func (c *Client) Disconnected() bool {
 }
 
 // doDisconnect disconnects the websocket associated with the client if it
-// hasn't already been disconnected.  It will return false if the disconnect is
+// hasn't already been disconnected. It will return false if the disconnect is
 // not needed or the client is running in HTTP POST mode.
 //
 // This function is safe for concurrent access.
@@ -954,7 +954,7 @@ func (c *Client) doDisconnect() bool {
 }
 
 // doShutdown closes the shutdown channel and logs the shutdown unless shutdown
-// is already in progress.  It will return false if the shutdown is not needed.
+// is already in progress. It will return false if the shutdown is not needed.
 //
 // This function is safe for concurrent access.
 func (c *Client) doShutdown() bool {
@@ -971,7 +971,7 @@ func (c *Client) doShutdown() bool {
 	return true
 }
 
-// Disconnect disconnects the current websocket associated with the client.  The
+// Disconnect disconnects the current websocket associated with the client. The
 // connection will automatically be re-established unless the client was
 // created with the DisableAutoReconnect flag.
 //
@@ -1002,7 +1002,7 @@ func (c *Client) Disconnect() {
 
 // Shutdown shuts down the client by disconnecting any connections associated
 // with the client and, when automatic reconnect is enabled, preventing future
-// attempts to reconnect.  It also stops all goroutines.
+// attempts to reconnect. It also stops all goroutines.
 func (c *Client) Shutdown() {
 	// Do the shutdown under the request lock to prevent clients from
 	// adding new requests while the client shutdown process is initiated.
@@ -1066,7 +1066,7 @@ type ConnConfig struct {
 	// to.
 	Host string
 
-	// Endpoint is the websocket endpoint on the RPC server.  This is
+	// Endpoint is the websocket endpoint on the RPC server. This is
 	// typically "ws".
 	Endpoint string
 
@@ -1077,27 +1077,27 @@ type ConnConfig struct {
 	Pass string
 
 	// DisableTLS specifies whether transport layer security should be
-	// disabled.  It is recommended to always use TLS if the RPC server
+	// disabled. It is recommended to always use TLS if the RPC server
 	// supports it as otherwise your username and password is sent across
 	// the wire in cleartext.
 	DisableTLS bool
 
 	// Certificates are the bytes for a PEM-encoded certificate chain used
-	// for the TLS connection.  It has no effect if the DisableTLS parameter
+	// for the TLS connection. It has no effect if the DisableTLS parameter
 	// is true.
 	Certificates []byte
 
-	// Proxy specifies to connect through a SOCKS 5 proxy server.  It may
+	// Proxy specifies to connect through a SOCKS 5 proxy server. It may
 	// be an empty string if a proxy is not required.
 	Proxy string
 
 	// ProxyUser is an optional username to use for the proxy server if it
-	// requires authentication.  It has no effect if the Proxy parameter
+	// requires authentication. It has no effect if the Proxy parameter
 	// is not set.
 	ProxyUser string
 
 	// ProxyPass is an optional password to use for the proxy server if it
-	// requires authentication.  It has no effect if the Proxy parameter
+	// requires authentication. It has no effect if the Proxy parameter
 	// is not set.
 	ProxyPass string
 
@@ -1106,14 +1106,14 @@ type ConnConfig struct {
 	DisableAutoReconnect bool
 
 	// DisableConnectOnNew specifies that a websocket client connection
-	// should not be tried when creating the client with New.  Instead, the
+	// should not be tried when creating the client with New. Instead, the
 	// client is created and returned unconnected, and Connect must be
 	// called manually.
 	DisableConnectOnNew bool
 
 	// HTTPPostMode instructs the client to run using multiple independent
 	// connections issuing HTTP POST requests instead of using the default
-	// of websockets.  Websockets are generally preferred as some of the
+	// of websockets. Websockets are generally preferred as some of the
 	// features of the client such notifications only work with websockets,
 	// however, not all servers support the websocket extensions, so this
 	// flag can be set to true to use basic HTTP POST requests instead.
@@ -1126,10 +1126,6 @@ type ConnConfig struct {
 	// ConnectionTimeout is the time it'll take for to try to connect
 	// to the RPC server before the connection times out.
 	ConnectionTimeout time.Duration
-
-	// EnableBCInfoHacks is an option provided to enable compatibility hacks
-	// when connecting to blockchain.info RPC server
-	EnableBCInfoHacks bool
 }
 
 // newHTTPClient returns a new http client that is configured according to the
@@ -1239,12 +1235,12 @@ func dial(config *ConnConfig) (*websocket.Conn, error) {
 }
 
 // New creates a new RPC client based on the provided connection configuration
-// details.  The notification handlers parameter may be nil if you are not
+// details. The notification handlers parameter may be nil if you are not
 // interested in receiving notifications and will be ignored if the
 // configuration is set to run in HTTP POST mode.
 func New(config *ConnConfig, ntfnHandlers *NotificationHandlers) (*Client, error) {
 	// Either open a websocket connection or create an HTTP client depending
-	// on the HTTP POST mode.  Also, set the notification handlers to nil
+	// on the HTTP POST mode. Also, set the notification handlers to nil
 	// when running in HTTP POST mode.
 	var wsConn *websocket.Conn
 	var httpClient *http.Client
@@ -1299,12 +1295,12 @@ func New(config *ConnConfig, ntfnHandlers *NotificationHandlers) (*Client, error
 	return client, nil
 }
 
-// Connect establishes the initial websocket connection.  This is necessary when
+// Connect establishes the initial websocket connection. This is necessary when
 // a client was created after setting the DisableConnectOnNew field of the
 // Config struct.
 //
 // Up to tries number of connections (each after an increasing backoff) will
-// be tried if the connection can not be established.  The special value of 0
+// be tried if the connection can not be established. The special value of 0
 // indicates an unlimited number of connection attempts.
 //
 // This method will error if the client is not configured for websockets, if the
@@ -1321,7 +1317,7 @@ func (c *Client) Connect(tries int) error {
 		return ErrClientAlreadyConnected
 	}
 
-	// Begin connection attempts.  Increase the backoff after each failed
+	// Begin connection attempts. Increase the backoff after each failed
 	// attempt, up to a maximum of one minute.
 	var err error
 	var backoff time.Duration
@@ -1337,7 +1333,7 @@ func (c *Client) Connect(tries int) error {
 			continue
 		}
 
-		// Connection was established.  Set the websocket connection
+		// Connection was established. Set the websocket connection
 		// member of the client and start the goroutines necessary
 		// to run the client.
 		log.Infof("Established connection to RPC server %s",

@@ -21,7 +21,7 @@ const (
 // special handling to deal with the subtle semantics required by consensus.
 //
 // All numbers are stored on the data and alternate stacks encoded as little
-// endian with a sign bit.  All numeric opcodes such as OP_ADD, OP_SUB,
+// endian with a sign bit. All numeric opcodes such as OP_ADD, OP_SUB,
 // and OP_MUL, are only allowed to operate on 4-byte integers in the range
 // [-2^31 + 1, 2^31 - 1], however the results of numeric operations may overflow
 // and remain valid so long as they are not used as inputs to other numeric
@@ -29,7 +29,7 @@ const (
 //
 // For example, it is possible for OP_ADD to have 2^31 - 1 for its two operands
 // resulting 2^32 - 2, which overflows, but is still pushed to the stack as the
-// result of the addition.  That value can then be used as input to OP_VERIFY
+// result of the addition. That value can then be used as input to OP_VERIFY
 // which will succeed because the data is being interpreted as a boolean.
 // However, if that same value were to be used as input to another numeric
 // opcode, such as OP_SUB, it must fail.
@@ -49,9 +49,9 @@ type scriptNum int64
 // to the minimal encoding requirements.
 // An error will be returned if it will determined that
 // the encoding is not represented with the smallest possible
-// number of bytes or is the negative 0 encoding, [0x80].  For example, consider
-// the number 127.  It could be encoded as [0x7f], [0x7f 0x00],
-// [0x7f 0x00 0x00 ...], etc.  All forms except [0x7f] will return an error
+// number of bytes or is the negative 0 encoding, [0x80]. For example, consider
+// the number 127. It could be encoded as [0x7f], [0x7f 0x00],
+// [0x7f 0x00 0x00 ...], etc. All forms except [0x7f] will return an error
 func checkMinimalDataEncoding(v []byte) error {
 	if len(v) == 0 {
 		return nil
@@ -61,12 +61,12 @@ func checkMinimalDataEncoding(v []byte) error {
 	// number of bytes.
 	//
 	// If the most-significant-byte - excluding the sign bit - is zero
-	// then we're not minimal.  Note how this test also rejects the
+	// then we're not minimal. Note how this test also rejects the
 	// negative-zero encoding, [0x80].
 	if v[len(v)-1]&0x7f == 0 {
 		// One exception: if there's more than one byte and the most
 		// significant bit of the second-most-significant-byte is set
-		// it would conflict with the sign bit.  An example of this case
+		// it would conflict with the sign bit. An example of this case
 		// is +-255, which encode to 0xff00 and 0xff80 respectively.
 		// (big-endian).
 		if len(v) == 1 || v[len(v)-2]&0x80 == 0 {
@@ -107,7 +107,7 @@ func (n scriptNum) Bytes() []byte {
 		n = -n
 	}
 
-	// Encode to little endian.  The maximum number of encoded bytes is 9
+	// Encode to little endian. The maximum number of encoded bytes is 9
 	// (8 bytes for max int64 plus a potential byte for sign extension).
 	result := make([]byte, 0, 9)
 	for n > 0 {
@@ -117,7 +117,7 @@ func (n scriptNum) Bytes() []byte {
 
 	// When the most significant byte already has the high bit set, an
 	// additional high byte is required to indicate whether the number is
-	// negative or positive.  The additional byte is removed when converting
+	// negative or positive. The additional byte is removed when converting
 	// back to an integral and its high bit is used to denote the sign.
 	//
 	// Otherwise, when the most significant byte does not already have the
@@ -136,16 +136,16 @@ func (n scriptNum) Bytes() []byte {
 	return result
 }
 
-// Int32 returns the script number clamped to a valid int32.  That is to say
+// Int32 returns the script number clamped to a valid int32. That is to say
 // when the script number is higher than the max allowed int32, the max int32
-// value is returned and vice versa for the minimum value.  Note that this
+// value is returned and vice versa for the minimum value. Note that this
 // behavior is different from a simple int32 cast because that truncates
 // and the consensus rules dictate numbers which are directly cast to ints
 // provide this behavior.
 //
 // In practice, for most opcodes, the number should never be out of range since
 // it will have been created with makeScriptNum using the defaultScriptLen
-// value, which rejects them.  In case something in the future ends up calling
+// value, which rejects them. In case something in the future ends up calling
 // this function against the result of some arithmetic, which IS allowed to be
 // out of range before being reinterpreted as an integer, this will provide the
 // correct behavior.
@@ -167,13 +167,13 @@ func (n scriptNum) Int32() int32 {
 // Since the consensus rules dictate that serialized bytes interpreted as ints
 // are only allowed to be in the range determined by a maximum number of bytes,
 // on a per opcode basis, an error will be returned when the provided bytes
-// would result in a number outside of that range.  In particular, the range for
+// would result in a number outside of that range. In particular, the range for
 // the vast majority of opcodes dealing with numeric values are limited to 4
 // bytes and therefore will pass that value to this function resulting in an
 // allowed range of [-2^31 + 1, 2^31 - 1].
 //
 // The scriptNumLen is the maximum number of bytes the encoded value can be
-// before an ErrStackNumberTooBig is returned.  This effectively limits the
+// before an ErrStackNumberTooBig is returned. This effectively limits the
 // range of allowed values.
 // WARNING:  Great care should be taken if passing a value larger than
 // defaultScriptNumLen, which could lead to addition and multiplication
@@ -206,7 +206,7 @@ func makeScriptNum(v []byte, scriptNumLen int) (scriptNum, error) {
 	}
 
 	// When the most significant byte of the input bytes has the sign bit
-	// set, the result is negative.  So, remove the sign bit from the result
+	// set, the result is negative. So, remove the sign bit from the result
 	// and make it negative.
 	if v[len(v)-1]&0x80 != 0 {
 		// The maximum length of v has already been determined to be 4

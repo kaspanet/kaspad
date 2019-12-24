@@ -19,22 +19,22 @@ var (
 	compileMtx sync.Mutex
 
 	// executablePath is the path to the compiled executable. This is the empty
-	// string until btcd is compiled. This should not be accessed directly;
-	// instead use the function btcdExecutablePath().
+	// string until kaspad is compiled. This should not be accessed directly;
+	// instead use the function kaspadExecutablePath().
 	executablePath string
 )
 
-// btcdExecutablePath returns a path to the btcd executable to be used by
+// kaspadExecutablePath returns a path to the kaspad executable to be used by
 // rpctests. To ensure the code tests against the most up-to-date version of
-// btcd, this method compiles btcd the first time it is called. After that, the
+// kaspad, this method compiles kaspad the first time it is called. After that, the
 // generated binary is used for subsequent test harnesses. The executable file
 // is not cleaned up, but since it lives at a static path in a temp directory,
 // it is not a big deal.
-func btcdExecutablePath() (string, error) {
+func kaspadExecutablePath() (string, error) {
 	compileMtx.Lock()
 	defer compileMtx.Unlock()
 
-	// If btcd has already been compiled, just use that.
+	// If kaspad has already been compiled, just use that.
 	if len(executablePath) != 0 {
 		return executablePath, nil
 	}
@@ -44,27 +44,27 @@ func btcdExecutablePath() (string, error) {
 		return "", err
 	}
 
-	// Determine import path of this package. Not necessarily btcsuite/btcd if
+	// Determine import path of this package. Not necessarily kaspanet/kaspad if
 	// this is a forked repo.
 	_, rpctestDir, _, ok := runtime.Caller(1)
 	if !ok {
-		return "", errors.Errorf("Cannot get path to btcd source code")
+		return "", errors.Errorf("Cannot get path to kaspad source code")
 	}
-	btcdPkgPath := filepath.Join(rpctestDir, "..", "..", "..")
-	btcdPkg, err := build.ImportDir(btcdPkgPath, build.FindOnly)
+	kaspadPkgPath := filepath.Join(rpctestDir, "..", "..", "..")
+	kaspadPkg, err := build.ImportDir(kaspadPkgPath, build.FindOnly)
 	if err != nil {
-		return "", errors.Errorf("Failed to build btcd: %s", err)
+		return "", errors.Errorf("Failed to build kaspad: %s", err)
 	}
 
-	// Build btcd and output an executable in a static temp path.
-	outputPath := filepath.Join(testDir, "btcd")
+	// Build kaspad and output an executable in a static temp path.
+	outputPath := filepath.Join(testDir, "kaspad")
 	if runtime.GOOS == "windows" {
 		outputPath += ".exe"
 	}
-	cmd := exec.Command("go", "build", "-o", outputPath, btcdPkg.ImportPath)
+	cmd := exec.Command("go", "build", "-o", outputPath, kaspadPkg.ImportPath)
 	err = cmd.Run()
 	if err != nil {
-		return "", errors.Errorf("Failed to build btcd: %s", err)
+		return "", errors.Errorf("Failed to build kaspad: %s", err)
 	}
 
 	// Save executable path so future calls do not recompile.

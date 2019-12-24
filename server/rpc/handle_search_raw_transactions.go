@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/kaspanet/kaspad/btcjson"
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -14,9 +14,9 @@ import (
 )
 
 // retrievedTx represents a transaction that was either loaded from the
-// transaction memory pool or from the database.  When a transaction is loaded
+// transaction memory pool or from the database. When a transaction is loaded
 // from the database, it is loaded with the raw serialized bytes while the
-// mempool has the fully deserialized structure.  This structure therefore will
+// mempool has the fully deserialized structure. This structure therefore will
 // have one of the two fields set depending on where is was retrieved from.
 // This is mainly done for efficiency to avoid extra serialization steps when
 // possible.
@@ -31,27 +31,27 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 	// Respond with an error if the address index is not enabled.
 	addrIndex := s.cfg.AddrIndex
 	if addrIndex == nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCMisc,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCMisc,
 			Message: "Address index must be enabled (--addrindex)",
 		}
 	}
 
 	// Override the flag for including extra previous output information in
 	// each input if needed.
-	c := cmd.(*btcjson.SearchRawTransactionsCmd)
+	c := cmd.(*rpcmodel.SearchRawTransactionsCmd)
 	vinExtra := false
 	if c.VinExtra != nil {
 		vinExtra = *c.VinExtra
 	}
 
 	// Including the extra previous output information requires the
-	// transaction index.  Currently the address index relies on the
+	// transaction index. Currently the address index relies on the
 	// transaction index, so this check is redundant, but it's better to be
 	// safe in case the address index is ever changed to not rely on it.
 	if vinExtra && s.cfg.TxIndex == nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCMisc,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCMisc,
 			Message: "Transaction index must be enabled (--txindex)",
 		}
 	}
@@ -60,13 +60,13 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 	params := s.cfg.DAGParams
 	addr, err := util.DecodeAddress(c.Address, params.Prefix)
 	if err != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCInvalidAddressOrKey,
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCInvalidAddressOrKey,
 			Message: "Invalid address or key: " + err.Error(),
 		}
 	}
 
-	// Override the default number of requested entries if needed.  Also,
+	// Override the default number of requested entries if needed. Also,
 	// just return now if the number of requested entries is zero to avoid
 	// extra work.
 	numRequested := 100
@@ -96,10 +96,10 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 	}
 
 	// Add transactions from mempool first if client asked for reverse
-	// order.  Otherwise, they will be added last (as needed depending on
+	// order. Otherwise, they will be added last (as needed depending on
 	// the requested counts).
 	//
-	// NOTE: This code doesn't sort by dependency.  This might be something
+	// NOTE: This code doesn't sort by dependency. This might be something
 	// to do in the future for the client's convenience, or leave it to the
 	// client.
 	numSkipped := uint32(0)
@@ -134,7 +134,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 			}
 
 			// Add the transaction and the hash of the block it is
-			// contained in to the list.  Note that the transaction
+			// contained in to the list. Note that the transaction
 			// is left serialized here since the caller might have
 			// requested non-verbose output and hence there would be
 			// no point in deserializing it just to reserialize it
@@ -173,7 +173,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 
 	// Address has never been used if neither source yielded any results.
 	if len(addressTxns) == 0 {
-		return []btcjson.SearchRawTransactionsResult{}, nil
+		return []rpcmodel.SearchRawTransactionsResult{}, nil
 	}
 
 	// Serialize all of the transactions to hex.
@@ -210,7 +210,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 	}
 
 	// The verbose flag is set, so generate the JSON object and return it.
-	srtList := make([]btcjson.SearchRawTransactionsResult, len(addressTxns))
+	srtList := make([]rpcmodel.SearchRawTransactionsResult, len(addressTxns))
 	for i := range addressTxns {
 		// The deserialized transaction is needed, so deserialize the
 		// retrieved transaction if it's in serialized form (which will
@@ -244,17 +244,17 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 		result.LockTime = mtx.LockTime
 
 		// Transactions grabbed from the mempool aren't yet in a block,
-		// so conditionally fetch block details here.  This will be
+		// so conditionally fetch block details here. This will be
 		// reflected in the final JSON output (mempool won't have
 		// confirmations or block information).
 		var blkHeader *wire.BlockHeader
 		var blkHashStr string
 		if blkHash := rtx.blkHash; blkHash != nil {
-			// Fetch the header from chain.
+			// Fetch the header from DAG.
 			header, err := s.cfg.DAG.HeaderByHash(blkHash)
 			if err != nil {
-				return nil, &btcjson.RPCError{
-					Code:    btcjson.ErrRPCBlockNotFound,
+				return nil, &rpcmodel.RPCError{
+					Code:    rpcmodel.ErrRPCBlockNotFound,
 					Message: "Block not found",
 				}
 			}
@@ -265,8 +265,6 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 
 		// Add the block information to the result if there is any.
 		if blkHeader != nil {
-			// This is not a typo, they are identical in Bitcoin
-			// Core as well.
 			result.Time = uint64(blkHeader.Timestamp.Unix())
 			result.Blocktime = uint64(blkHeader.Timestamp.Unix())
 			result.BlockHash = blkHashStr
@@ -290,9 +288,9 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 
 // createVinListPrevOut returns a slice of JSON objects for the inputs of the
 // passed transaction.
-func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Params, vinExtra bool, filterAddrMap map[string]struct{}) ([]btcjson.VinPrevOut, error) {
+func createVinListPrevOut(s *Server, mtx *wire.MsgTx, dagParams *dagconfig.Params, vinExtra bool, filterAddrMap map[string]struct{}) ([]rpcmodel.VinPrevOut, error) {
 	// Use a dynamically sized list to accommodate the address filter.
-	vinList := make([]btcjson.VinPrevOut, 0, len(mtx.TxIn))
+	vinList := make([]rpcmodel.VinPrevOut, 0, len(mtx.TxIn))
 
 	// Lookup all of the referenced transaction outputs needed to populate the
 	// previous output information if requested. Coinbase transactions do not contain
@@ -316,11 +314,11 @@ func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Par
 		// previous output details which will be added later if
 		// requested and available.
 		prevOut := &txIn.PreviousOutpoint
-		vinEntry := btcjson.VinPrevOut{
+		vinEntry := rpcmodel.VinPrevOut{
 			TxID:     prevOut.TxID.String(),
 			Vout:     prevOut.Index,
 			Sequence: txIn.Sequence,
-			ScriptSig: &btcjson.ScriptSig{
+			ScriptSig: &rpcmodel.ScriptSig{
 				Asm: disbuf,
 				Hex: hex.EncodeToString(txIn.SignatureScript),
 			},
@@ -347,13 +345,13 @@ func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Par
 		// couldn't parse and there is no additional information about
 		// it anyways.
 		_, addr, _ := txscript.ExtractScriptPubKeyAddress(
-			originTxOut.ScriptPubKey, chainParams)
+			originTxOut.ScriptPubKey, dagParams)
 
 		var encodedAddr *string
 		if addr != nil {
 			// Encode the address while checking if the address passes the
 			// filter when needed.
-			encodedAddr = btcjson.String(addr.EncodeAddress())
+			encodedAddr = rpcmodel.String(addr.EncodeAddress())
 
 			// If the filter doesn't already pass, make it pass if
 			// the address exists in the filter.
@@ -376,9 +374,9 @@ func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Par
 		// requested.
 		if vinExtra {
 			vinListEntry := &vinList[len(vinList)-1]
-			vinListEntry.PrevOut = &btcjson.PrevOut{
+			vinListEntry.PrevOut = &rpcmodel.PrevOut{
 				Address: encodedAddr,
-				Value:   util.Amount(originTxOut.Value).ToBTC(),
+				Value:   util.Amount(originTxOut.Value).ToKAS(),
 			}
 		}
 	}
@@ -453,7 +451,7 @@ func fetchInputTxos(s *Server, tx *wire.MsgTx) (map[wire.Outpoint]wire.TxOut, er
 }
 
 // fetchMempoolTxnsForAddress queries the address index for all unconfirmed
-// transactions that involve the provided address.  The results will be limited
+// transactions that involve the provided address. The results will be limited
 // by the number to skip and the number requested.
 func fetchMempoolTxnsForAddress(s *Server, addr util.Address, numToSkip, numRequested uint32) ([]*util.Tx, uint32) {
 	// There are no entries to return when there are less available than the

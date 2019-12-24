@@ -2,14 +2,14 @@ package rpc
 
 import (
 	"encoding/hex"
-	"github.com/kaspanet/kaspad/btcjson"
+	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 )
 
 // handleDecodeScript handles decodeScript commands.
 func handleDecodeScript(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.DecodeScriptCmd)
+	c := cmd.(*rpcmodel.DecodeScriptCmd)
 
 	// Convert the hex script to bytes.
 	hexStr := c.HexScript
@@ -32,7 +32,7 @@ func handleDecodeScript(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 		s.cfg.DAGParams)
 	var address *string
 	if addr != nil {
-		address = btcjson.String(addr.EncodeAddress())
+		address = rpcmodel.String(addr.EncodeAddress())
 	}
 
 	// Convert the script itself to a pay-to-script-hash address.
@@ -43,7 +43,7 @@ func handleDecodeScript(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 	}
 
 	// Generate and return the reply.
-	reply := btcjson.DecodeScriptResult{
+	reply := rpcmodel.DecodeScriptResult{
 		Asm:     disbuf,
 		Type:    scriptClass.String(),
 		Address: address,

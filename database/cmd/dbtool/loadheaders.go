@@ -23,7 +23,7 @@ var (
 	}
 )
 
-// Execute is the main entry point for the command.  It's invoked by the parser.
+// Execute is the main entry point for the command. It's invoked by the parser.
 func (cmd *headersCmd) Execute(args []string) error {
 	// Setup the global config options and ensure they are valid.
 	if err := setupGlobalConfig(); err != nil {
@@ -37,7 +37,7 @@ func (cmd *headersCmd) Execute(args []string) error {
 	}
 	defer db.Close()
 
-	// NOTE: This code will only work for ffldb.  Ideally the package using
+	// NOTE: This code will only work for ffldb. Ideally the package using
 	// the database would keep a metadata index of its own.
 	blockIdxName := []byte("ffldb-blockidx")
 	if !headersCfg.Bulk {

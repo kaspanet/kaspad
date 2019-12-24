@@ -24,9 +24,9 @@ func (r *fakeRandReader) Read(p []byte) (int, error) {
 }
 
 // TestRandomUint64 exercises the randomness of the random number generator on
-// the system by ensuring the probability of the generated numbers.  If the RNG
+// the system by ensuring the probability of the generated numbers. If the RNG
 // is evenly distributed as a proper cryptographic RNG should be, there really
-// should only be 1 number < 2^56 in 2^8 tries for a 64-bit number.  However,
+// should only be 1 number < 2^56 in 2^8 tries for a 64-bit number. However,
 // use a higher number of 5 to really ensure the test doesn't fail unless the
 // RNG is just horrendous.
 func TestRandomUint64(t *testing.T) {

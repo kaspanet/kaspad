@@ -53,7 +53,7 @@ func (f *mockFile) Close() error {
 }
 
 // ReadAt reads len(b) bytes from the mock file starting at byte offset off. It
-// returns the number of bytes read and the error, if any.  ReadAt always
+// returns the number of bytes read and the error, if any. ReadAt always
 // returns a non-nil error when n < len(b). At end of file, that error is
 // io.EOF.
 //
@@ -110,7 +110,7 @@ func (f *mockFile) Truncate(size int64) error {
 }
 
 // Write writes len(b) bytes to the mock file. It returns the number of bytes
-// written and an error, if any.  Write returns a non-nil error any time
+// written and an error, if any. Write returns a non-nil error any time
 // n != len(b).
 //
 // This is part of the filer implementation.
@@ -147,7 +147,7 @@ func (f *mockFile) WriteAt(b []byte, off int64) (int, error) {
 	return int(numToWrite), nil
 }
 
-// Sync doesn't do anything for mock files.  However, it will return an error if
+// Sync doesn't do anything for mock files. However, it will return an error if
 // the mock file's forceSyncErr flag is set.
 //
 // This is part of the filer implementation.

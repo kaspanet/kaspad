@@ -38,59 +38,59 @@ var someIP = "173.194.115.66"
 func addNaTests() {
 	// IPv4
 	// Localhost
-	addNaTest("127.0.0.1", 8333, "127.0.0.1:8333")
-	addNaTest("127.0.0.1", 8334, "127.0.0.1:8334")
+	addNaTest("127.0.0.1", 16111, "127.0.0.1:16111")
+	addNaTest("127.0.0.1", 16110, "127.0.0.1:16110")
 
 	// Class A
-	addNaTest("1.0.0.1", 8333, "1.0.0.1:8333")
-	addNaTest("2.2.2.2", 8334, "2.2.2.2:8334")
+	addNaTest("1.0.0.1", 16111, "1.0.0.1:16111")
+	addNaTest("2.2.2.2", 16110, "2.2.2.2:16110")
 	addNaTest("27.253.252.251", 8335, "27.253.252.251:8335")
 	addNaTest("123.3.2.1", 8336, "123.3.2.1:8336")
 
 	// Private Class A
-	addNaTest("10.0.0.1", 8333, "10.0.0.1:8333")
-	addNaTest("10.1.1.1", 8334, "10.1.1.1:8334")
+	addNaTest("10.0.0.1", 16111, "10.0.0.1:16111")
+	addNaTest("10.1.1.1", 16110, "10.1.1.1:16110")
 	addNaTest("10.2.2.2", 8335, "10.2.2.2:8335")
 	addNaTest("10.10.10.10", 8336, "10.10.10.10:8336")
 
 	// Class B
-	addNaTest("128.0.0.1", 8333, "128.0.0.1:8333")
-	addNaTest("129.1.1.1", 8334, "129.1.1.1:8334")
+	addNaTest("128.0.0.1", 16111, "128.0.0.1:16111")
+	addNaTest("129.1.1.1", 16110, "129.1.1.1:16110")
 	addNaTest("180.2.2.2", 8335, "180.2.2.2:8335")
 	addNaTest("191.10.10.10", 8336, "191.10.10.10:8336")
 
 	// Private Class B
-	addNaTest("172.16.0.1", 8333, "172.16.0.1:8333")
-	addNaTest("172.16.1.1", 8334, "172.16.1.1:8334")
+	addNaTest("172.16.0.1", 16111, "172.16.0.1:16111")
+	addNaTest("172.16.1.1", 16110, "172.16.1.1:16110")
 	addNaTest("172.16.2.2", 8335, "172.16.2.2:8335")
 	addNaTest("172.16.172.172", 8336, "172.16.172.172:8336")
 
 	// Class C
-	addNaTest("193.0.0.1", 8333, "193.0.0.1:8333")
-	addNaTest("200.1.1.1", 8334, "200.1.1.1:8334")
+	addNaTest("193.0.0.1", 16111, "193.0.0.1:16111")
+	addNaTest("200.1.1.1", 16110, "200.1.1.1:16110")
 	addNaTest("205.2.2.2", 8335, "205.2.2.2:8335")
 	addNaTest("223.10.10.10", 8336, "223.10.10.10:8336")
 
 	// Private Class C
-	addNaTest("192.168.0.1", 8333, "192.168.0.1:8333")
-	addNaTest("192.168.1.1", 8334, "192.168.1.1:8334")
+	addNaTest("192.168.0.1", 16111, "192.168.0.1:16111")
+	addNaTest("192.168.1.1", 16110, "192.168.1.1:16110")
 	addNaTest("192.168.2.2", 8335, "192.168.2.2:8335")
 	addNaTest("192.168.192.192", 8336, "192.168.192.192:8336")
 
 	// IPv6
 	// Localhost
-	addNaTest("::1", 8333, "[::1]:8333")
-	addNaTest("fe80::1", 8334, "[fe80::1]:8334")
+	addNaTest("::1", 16111, "[::1]:16111")
+	addNaTest("fe80::1", 16110, "[fe80::1]:16110")
 
 	// Link-local
-	addNaTest("fe80::1:1", 8333, "[fe80::1:1]:8333")
-	addNaTest("fe91::2:2", 8334, "[fe91::2:2]:8334")
+	addNaTest("fe80::1:1", 16111, "[fe80::1:1]:16111")
+	addNaTest("fe91::2:2", 16110, "[fe91::2:2]:16110")
 	addNaTest("fea2::3:3", 8335, "[fea2::3:3]:8335")
 	addNaTest("feb3::4:4", 8336, "[feb3::4:4]:8336")
 
 	// Site-local
-	addNaTest("fec0::1:1", 8333, "[fec0::1:1]:8333")
-	addNaTest("fed1::2:2", 8334, "[fed1::2:2]:8334")
+	addNaTest("fec0::1:1", 16111, "[fec0::1:1]:16111")
+	addNaTest("fed1::2:2", 16110, "[fed1::2:2]:16110")
 	addNaTest("fee2::3:3", 8335, "[fee2::3:3]:8335")
 	addNaTest("fef3::4:4", 8336, "[fef3::4:4]:8336")
 }
@@ -133,7 +133,7 @@ func TestAddAddressByIP(t *testing.T) {
 		err    error
 	}{
 		{
-			someIP + ":8333",
+			someIP + ":16111",
 			nil,
 		},
 		{
@@ -154,15 +154,15 @@ func TestAddAddressByIP(t *testing.T) {
 	for i, test := range tests {
 		err := amgr.AddAddressByIP(test.addrIP, nil)
 		if test.err != nil && err == nil {
-			t.Errorf("TestGood test %d failed expected an error and got none", i)
+			t.Errorf("TestAddAddressByIP test %d failed expected an error and got none", i)
 			continue
 		}
 		if test.err == nil && err != nil {
-			t.Errorf("TestGood test %d failed expected no error and got one", i)
+			t.Errorf("TestAddAddressByIP test %d failed expected no error and got one", i)
 			continue
 		}
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
-			t.Errorf("TestGood test %d failed got %v, want %v", i,
+			t.Errorf("TestAddAddressByIP test %d failed got %v, want %v", i,
 				reflect.TypeOf(err), reflect.TypeOf(test.err))
 			continue
 		}

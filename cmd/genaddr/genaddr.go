@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kaspanet/kaspad/btcec"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/base58"
 )
 
 func main() {
 	activeNetParams := &dagconfig.DevNetParams
-	privateKey, err := btcec.NewPrivateKey(btcec.S256())
+	privateKey, err := ecc.NewPrivateKey(ecc.S256())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to generate private key: %s", err)
 		os.Exit(1)

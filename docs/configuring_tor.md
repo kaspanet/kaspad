@@ -24,14 +24,14 @@
 btcd provides full support for anonymous networking via the
 [Tor Project](https://www.torproject.org/), including [client-only](#Client)
 and [hidden service](#HiddenService) configurations along with
-[stream isolation](#TorStreamIsolation).  In addition, btcd supports a hybrid,
+[stream isolation](#TorStreamIsolation). In addition, btcd supports a hybrid,
 [bridge mode](#Bridge) which is not anonymous, but allows it to operate as a
 bridge between regular nodes and hidden service nodes without routing the
 regular connections through Tor.
 
 While it is easier to only run as a client, it is more beneficial to the Bitcoin
 network to run as both a client and a server so others may connect to you to as
-you are connecting to them.  We recommend you take the time to setup a Tor
+you are connecting to them. We recommend you take the time to setup a Tor
 hidden service for this reason.
 
 <a name="Client" />
@@ -42,12 +42,12 @@ hidden service for this reason.
 
 **2.1 Description**<br />
 
-Configuring btcd as a Tor client is straightforward.  The first step is
+Configuring btcd as a Tor client is straightforward. The first step is
 obviously to install Tor and ensure it is working. Once that is done, all that
 typically needs to be done is to specify the `--proxy` flag via the btcd command
-line or in the btcd configuration file.  Typically the Tor proxy address will be
+line or in the btcd configuration file. Typically the Tor proxy address will be
 127.0.0.1:9050 (if using standalone Tor) or 127.0.0.1:9150 (if using the Tor
-Browser Bundle).  If you have Tor configured to require a username and password,
+Browser Bundle). If you have Tor configured to require a username and password,
 you may specify them with the `--proxyuser` and `--proxypass` flags.
 
 By default, btcd assumes the proxy specified with `--proxy` is a Tor proxy and
@@ -84,9 +84,9 @@ proxy=127.0.0.1:9050
 
 **3.1 Description**<br />
 
-The first step is to configure Tor to provide a hidden service.  Documentation
+The first step is to configure Tor to provide a hidden service. Documentation
 for this can be found on the Tor project website
-[here](https://www.torproject.org/docs/tor-hidden-service.html.en).  However,
+[here](https://www.torproject.org/docs/tor-hidden-service.html.en). However,
 there is no need to install a web server locally as the linked instructions
 discuss since btcd will act as the server.
 
@@ -97,7 +97,7 @@ address.
 
 ```text
 HiddenServiceDir /var/tor/btcd
-HiddenServicePort 8333 127.0.0.1:8333
+HiddenServicePort 16111 127.0.0.1:16111
 ```
 
 Once Tor is configured to provide the hidden service and you have obtained your
@@ -138,18 +138,18 @@ externalip=fooanon.onion
 **4.1 Description**<br />
 
 btcd provides support for operating as a bridge between regular nodes and hidden
-service nodes.  In particular this means only traffic which is directed to or
+service nodes. In particular this means only traffic which is directed to or
 from a .onion address is sent through Tor while other traffic is sent normally.
 _As a result, this mode is **NOT** anonymous._
 
 This mode works by specifying an onion-specific proxy, which is pointed at Tor,
 by using the `--onion` flag via the btcd command line or in the btcd
-configuration file.  If you have Tor configured to require a username and
+configuration file. If you have Tor configured to require a username and
 password, you may specify them with the `--onionuser` and `--onionpass` flags.
 
 NOTE: This mode will also work in conjunction with a hidden service which means
 you could accept inbound connections both via the normal network and to your
-hidden service through the Tor network.  To enable your hidden service in bridge
+hidden service through the Tor network. To enable your hidden service in bridge
 mode, you only need to specify your hidden service's .onion address via the
 `--externalip` flag since traffic to and from .onion addresses are already
 routed via Tor due to the `--onion` flag.
@@ -185,7 +185,7 @@ Tor stream isolation forces Tor to build a new circuit for each connection
 making it harder to correlate connections.
 
 btcd provides support for Tor stream isolation by using the `--torisolation`
-flag.  This option requires --proxy or --onionproxy to be set.
+flag. This option requires --proxy or --onionproxy to be set.
 
 <a name="TorStreamIsolationCLIExample" />
 

@@ -311,8 +311,6 @@ func BenchmarkDeserializeTxSmall(b *testing.B) {
 // BenchmarkDeserializeTxLarge performs a benchmark on how long it takes to
 // deserialize a very large transaction.
 func BenchmarkDeserializeTxLarge(b *testing.B) {
-	// tx bb41a757f405890fb0f5856228e23b715702d714d59bf2b1feb70d8b2b4e3e08
-	// from the main block chain.
 	fi, err := os.Open("testdata/megatx.bin.bz2")
 	if err != nil {
 		b.Fatalf("Failed to read transaction data: %v", err)
@@ -386,8 +384,8 @@ func BenchmarkDecodeGetHeaders(b *testing.B) {
 
 	// Serialize it so the bytes are available to test the decode below.
 	var bb bytes.Buffer
-	if err := m.BtcEncode(&bb, pver); err != nil {
-		b.Fatalf("MsgGetHeaders.BtcEncode: unexpected error: %v", err)
+	if err := m.KaspaEncode(&bb, pver); err != nil {
+		b.Fatalf("MsgGetHeaders.KaspaEncode: unexpected error: %v", err)
 	}
 	buf := bb.Bytes()
 
@@ -396,7 +394,7 @@ func BenchmarkDecodeGetHeaders(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		r.Seek(0, 0)
-		msg.BtcDecode(r, pver)
+		msg.KaspaDecode(r, pver)
 	}
 }
 
@@ -425,8 +423,8 @@ func BenchmarkDecodeHeaders(b *testing.B) {
 
 	// Serialize it so the bytes are available to test the decode below.
 	var bb bytes.Buffer
-	if err := m.BtcEncode(&bb, pver); err != nil {
-		b.Fatalf("MsgHeaders.BtcEncode: unexpected error: %v", err)
+	if err := m.KaspaEncode(&bb, pver); err != nil {
+		b.Fatalf("MsgHeaders.KaspaEncode: unexpected error: %v", err)
 	}
 	buf := bb.Bytes()
 
@@ -435,7 +433,7 @@ func BenchmarkDecodeHeaders(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		r.Seek(0, 0)
-		msg.BtcDecode(r, pver)
+		msg.KaspaDecode(r, pver)
 	}
 }
 
@@ -449,8 +447,8 @@ func BenchmarkDecodeGetBlockInvs(b *testing.B) {
 
 	// Serialize it so the bytes are available to test the decode below.
 	var bb bytes.Buffer
-	if err := m.BtcEncode(&bb, pver); err != nil {
-		b.Fatalf("MsgGetBlockInvs.BtcEncode: unexpected error: %v", err)
+	if err := m.KaspaEncode(&bb, pver); err != nil {
+		b.Fatalf("MsgGetBlockInvs.KaspaEncode: unexpected error: %v", err)
 	}
 	buf := bb.Bytes()
 
@@ -459,7 +457,7 @@ func BenchmarkDecodeGetBlockInvs(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		r.Seek(0, 0)
-		msg.BtcDecode(r, pver)
+		msg.KaspaDecode(r, pver)
 	}
 }
 
@@ -476,8 +474,8 @@ func BenchmarkDecodeAddr(b *testing.B) {
 
 	// Serialize it so the bytes are available to test the decode below.
 	var bb bytes.Buffer
-	if err := ma.BtcEncode(&bb, pver); err != nil {
-		b.Fatalf("MsgAddr.BtcEncode: unexpected error: %v", err)
+	if err := ma.KaspaEncode(&bb, pver); err != nil {
+		b.Fatalf("MsgAddr.KaspaEncode: unexpected error: %v", err)
 	}
 	buf := bb.Bytes()
 
@@ -486,7 +484,7 @@ func BenchmarkDecodeAddr(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		r.Seek(0, 0)
-		msg.BtcDecode(r, pver)
+		msg.KaspaDecode(r, pver)
 	}
 }
 
@@ -506,8 +504,8 @@ func BenchmarkDecodeInv(b *testing.B) {
 
 	// Serialize it so the bytes are available to test the decode below.
 	var bb bytes.Buffer
-	if err := m.BtcEncode(&bb, pver); err != nil {
-		b.Fatalf("MsgInv.BtcEncode: unexpected error: %v", err)
+	if err := m.KaspaEncode(&bb, pver); err != nil {
+		b.Fatalf("MsgInv.KaspaEncode: unexpected error: %v", err)
 	}
 	buf := bb.Bytes()
 
@@ -516,7 +514,7 @@ func BenchmarkDecodeInv(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		r.Seek(0, 0)
-		msg.BtcDecode(r, pver)
+		msg.KaspaDecode(r, pver)
 	}
 }
 
@@ -536,8 +534,8 @@ func BenchmarkDecodeNotFound(b *testing.B) {
 
 	// Serialize it so the bytes are available to test the decode below.
 	var bb bytes.Buffer
-	if err := m.BtcEncode(&bb, pver); err != nil {
-		b.Fatalf("MsgNotFound.BtcEncode: unexpected error: %v", err)
+	if err := m.KaspaEncode(&bb, pver); err != nil {
+		b.Fatalf("MsgNotFound.KaspaEncode: unexpected error: %v", err)
 	}
 	buf := bb.Bytes()
 
@@ -546,7 +544,7 @@ func BenchmarkDecodeNotFound(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		r.Seek(0, 0)
-		msg.BtcDecode(r, pver)
+		msg.KaspaDecode(r, pver)
 	}
 }
 
@@ -574,8 +572,8 @@ func BenchmarkDecodeMerkleBlock(b *testing.B) {
 
 	// Serialize it so the bytes are available to test the decode below.
 	var bb bytes.Buffer
-	if err := m.BtcEncode(&bb, pver); err != nil {
-		b.Fatalf("MsgMerkleBlock.BtcEncode: unexpected error: %v", err)
+	if err := m.KaspaEncode(&bb, pver); err != nil {
+		b.Fatalf("MsgMerkleBlock.KaspaEncode: unexpected error: %v", err)
 	}
 	buf := bb.Bytes()
 
@@ -584,7 +582,7 @@ func BenchmarkDecodeMerkleBlock(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		r.Seek(0, 0)
-		msg.BtcDecode(r, pver)
+		msg.KaspaDecode(r, pver)
 	}
 }
 

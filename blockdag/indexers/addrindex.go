@@ -23,17 +23,17 @@ const (
 	addrIndexName = "address index"
 
 	// level0MaxEntries is the maximum number of transactions that are
-	// stored in level 0 of an address index entry.  Subsequent levels store
+	// stored in level 0 of an address index entry. Subsequent levels store
 	// 2^n * level0MaxEntries entries, or in words, double the maximum of
 	// the previous level.
 	level0MaxEntries = 8
 
 	// addrKeySize is the number of bytes an address key consumes in the
-	// index.  It consists of 1 byte address type + 20 bytes hash160.
+	// index. It consists of 1 byte address type + 20 bytes hash160.
 	addrKeySize = 1 + 20
 
 	// levelKeySize is the number of bytes a level key in the address index
-	// consumes.  It consists of the address key + 1 byte for the level.
+	// consumes. It consists of the address key + 1 byte for the level.
 	levelKeySize = addrKeySize + 1
 
 	// levelOffset is the offset in the level key which identifes the level.
@@ -46,12 +46,12 @@ const (
 	addrKeyTypePubKeyHash = 0
 
 	// addrKeyTypeScriptHash is the address type in an address key which
-	// represents a pay-to-script-hash address.  This is necessary because
+	// represents a pay-to-script-hash address. This is necessary because
 	// the hash of a pubkey address might be the same as that of a script
 	// hash.
 	addrKeyTypeScriptHash = 1
 
-	// Size of a transaction entry.  It consists of 8 bytes block id + 4
+	// Size of a transaction entry. It consists of 8 bytes block id + 4
 	// bytes offset + 4 bytes length.
 	txEntrySize = 8 + 4 + 4
 )
@@ -68,10 +68,10 @@ var (
 )
 
 // -----------------------------------------------------------------------------
-// The address index maps addresses referenced in the blockchain to a list of
-// all the transactions involving that address.  Transactions are stored
-// according to their order of appearance in the blockchain.  That is to say
-// first by block height and then by offset inside the block.  It is also
+// The address index maps addresses referenced in the blockDAG to a list of
+// all the transactions involving that address. Transactions are stored
+// according to their order of appearance in the blockDAG. That is to say
+// first by block height and then by offset inside the block. It is also
 // important to note that this implementation requires the transaction index
 // since it is needed in order to catch up old blocks due to the fact the spent
 // outputs will already be pruned from the utxo set.
@@ -81,24 +81,24 @@ var (
 //
 // Every address consists of one or more entries identified by a level starting
 // from 0 where each level holds a maximum number of entries such that each
-// subsequent level holds double the maximum of the previous one.  In equation
+// subsequent level holds double the maximum of the previous one. In equation
 // form, the number of entries each level holds is 2^n * firstLevelMaxSize.
 //
 // New transactions are appended to level 0 until it becomes full at which point
 // the entire level 0 entry is appended to the level 1 entry and level 0 is
-// cleared.  This process continues until level 1 becomes full at which point it
+// cleared. This process continues until level 1 becomes full at which point it
 // will be appended to level 2 and cleared and so on.
 //
 // The result of this is the lower levels contain newer transactions and the
 // transactions within each level are ordered from oldest to newest.
 //
 // The intent of this approach is to provide a balance between space efficiency
-// and indexing cost.  Storing one entry per transaction would have the lowest
+// and indexing cost. Storing one entry per transaction would have the lowest
 // indexing cost, but would waste a lot of space because the same address hash
-// would be duplicated for every transaction key.  On the other hand, storing a
+// would be duplicated for every transaction key. On the other hand, storing a
 // single entry with all transactions would be the most space efficient, but
 // would cause indexing cost to grow quadratically with the number of
-// transactions involving the same address.  The approach used here provides
+// transactions involving the same address. The approach used here provides
 // logarithmic insertion and retrieval.
 //
 // The serialized key format is:
@@ -176,7 +176,7 @@ func dbPutAddrIndexEntry(bucket internalBucket, addrKey [addrKeySize]byte, block
 	maxLevelBytes := level0MaxEntries * txEntrySize
 
 	// Simply append the new entry to level 0 and return now when it will
-	// fit.  This is the most common path.
+	// fit. This is the most common path.
 	newData := serializeAddrIndexEntry(blockID, txLoc)
 	level0Key := keyForLevel(addrKey, 0)
 	level0Data := bucket.Get(level0Key[:])
@@ -342,7 +342,7 @@ func maxEntriesForLevel(level uint8) int {
 }
 
 // dbRemoveAddrIndexEntries removes the specified number of entries from from
-// the address index for the provided key.  An assertion error will be returned
+// the address index for the provided key. An assertion error will be returned
 // if the count exceeds the total number of entries in the index.
 func dbRemoveAddrIndexEntries(bucket internalBucket, addrKey [addrKeySize]byte, count int) error {
 	// Nothing to do if no entries are being deleted.
@@ -351,7 +351,7 @@ func dbRemoveAddrIndexEntries(bucket internalBucket, addrKey [addrKeySize]byte, 
 	}
 
 	// Make use of a local map to track pending updates and define a closure
-	// to apply it to the database.  This is done in order to reduce the
+	// to apply it to the database. This is done in order to reduce the
 	// number of database reads and because there is more than one exit
 	// path that needs to apply the updates.
 	pendingUpdates := make(map[uint8][]byte)
@@ -374,7 +374,7 @@ func dbRemoveAddrIndexEntries(bucket internalBucket, addrKey [addrKeySize]byte, 
 	}
 
 	// Loop forwards through the levels while removing entries until the
-	// specified number has been removed.  This will potentially result in
+	// specified number has been removed. This will potentially result in
 	// entirely empty lower levels which will be backfilled below.
 	var highestLoadedLevel uint8
 	numRemaining := count
@@ -412,12 +412,12 @@ func dbRemoveAddrIndexEntries(bucket internalBucket, addrKey [addrKeySize]byte, 
 
 	// At this point there are one or more empty levels before the current
 	// level which need to be backfilled and the current level might have
-	// had some entries deleted from it as well.  Since all levels after
+	// had some entries deleted from it as well. Since all levels after
 	// level 0 are required to either be empty, half full, or completely
 	// full, the current level must be adjusted accordingly by backfilling
-	// each previous levels in a way which satisfies the requirements.  Any
+	// each previous levels in a way which satisfies the requirements. Any
 	// entries that are left are assigned to level 0 after the loop as they
-	// are guaranteed to fit by the logic in the loop.  In other words, this
+	// are guaranteed to fit by the logic in the loop. In other words, this
 	// effectively squashes all remaining entries in the current level into
 	// the lowest possible levels while following the level rules.
 	//
@@ -432,7 +432,7 @@ func dbRemoveAddrIndexEntries(bucket internalBucket, addrKey [addrKeySize]byte, 
 		// When there are not enough entries left in the current level
 		// for the number that would be required to reach it, clear the
 		// the current level which effectively moves them all up to the
-		// previous level on the next iteration.  Otherwise, there are
+		// previous level on the next iteration. Otherwise, there are
 		// are sufficient entries, so update the current level to
 		// contain as many entries as possible while still leaving
 		// enough remaining entries required to reach the level.
@@ -480,9 +480,9 @@ func dbRemoveAddrIndexEntries(bucket internalBucket, addrKey [addrKeySize]byte, 
 		highestLoadedLevel = level
 
 		// At this point the highest level is not empty, but it might
-		// be half full.  When that is the case, move it up a level to
+		// be half full. When that is the case, move it up a level to
 		// simplify the code below which backfills all lower levels that
-		// are still empty.  This also means the current level will be
+		// are still empty. This also means the current level will be
 		// empty, so the loop will perform another another iteration to
 		// potentially backfill this level with data from the next one.
 		curLevelMaxEntries := maxEntriesForLevel(level)
@@ -513,7 +513,7 @@ func dbRemoveAddrIndexEntries(bucket internalBucket, addrKey [addrKeySize]byte, 
 	return applyPending()
 }
 
-// addrToKey converts known address types to an addrindex key.  An error is
+// addrToKey converts known address types to an addrindex key. An error is
 // returned for unsupported types.
 func addrToKey(addr util.Address) ([addrKeySize]byte, error) {
 	switch addr := addr.(type) {
@@ -533,10 +533,10 @@ func addrToKey(addr util.Address) ([addrKeySize]byte, error) {
 	return [addrKeySize]byte{}, errUnsupportedAddressType
 }
 
-// AddrIndex implements a transaction by address index.  That is to say, it
+// AddrIndex implements a transaction by address index. That is to say, it
 // supports querying all transactions that reference a given address because
-// they are either crediting or debiting the address.  The returned transactions
-// are ordered according to their order of appearance in the blockchain.  In
+// they are either crediting or debiting the address. The returned transactions
+// are ordered according to their order of appearance in the blockDAG. In
 // other words, first by block height and then by offset inside the block.
 //
 // In addition, support is provided for a memory-only index of unconfirmed
@@ -551,7 +551,7 @@ type AddrIndex struct {
 
 	// The following fields are used to quickly link transactions and
 	// addresses that have not been included into a block yet when an
-	// address index is being maintained.  The are protected by the
+	// address index is being maintained. The are protected by the
 	// unconfirmedLock field.
 	//
 	// The txnsByAddr field is used to keep an index of all transactions
@@ -605,7 +605,7 @@ func (idx *AddrIndex) Name() string {
 }
 
 // Create is invoked when the indexer manager determines the index needs
-// to be created for the first time.  It creates the bucket for the address
+// to be created for the first time. It creates the bucket for the address
 // index.
 //
 // This is part of the Indexer interface.
@@ -616,7 +616,7 @@ func (idx *AddrIndex) Create(dbTx database.Tx) error {
 
 // writeIndexData represents the address index data to be written for one block.
 // It consists of the address mapped to an ordered list of the transactions
-// that involve the address in block.  It is ordered so the transactions can be
+// that involve the address in block. It is ordered so the transactions can be
 // stored in the order they appear in the block.
 type writeIndexData map[[addrKeySize]byte][]int
 
@@ -638,7 +638,7 @@ func (idx *AddrIndex) indexScriptPubKey(data writeIndexData, scriptPubKey []byte
 		return
 	}
 
-	// Avoid inserting the transaction more than once.  Since the
+	// Avoid inserting the transaction more than once. Since the
 	// transactions are indexed serially any duplicates will be
 	// indexed in a row, so checking the most recent entry for the
 	// address is enough to detect duplicates.
@@ -656,7 +656,7 @@ func (idx *AddrIndex) indexScriptPubKey(data writeIndexData, scriptPubKey []byte
 // the passed map.
 func (idx *AddrIndex) indexBlock(data writeIndexData, block *util.Block, dag *blockdag.BlockDAG) {
 	for txIdx, tx := range block.Transactions() {
-		// Coinbases do not reference any inputs.  Since the block is
+		// Coinbases do not reference any inputs. Since the block is
 		// required to have already gone through full validation, it has
 		// already been proven on the first transaction in the block is
 		// a coinbase.
@@ -681,7 +681,7 @@ func (idx *AddrIndex) indexBlock(data writeIndexData, block *util.Block, dag *bl
 }
 
 // ConnectBlock is invoked by the index manager when a new block has been
-// connected to the main chain.  This indexer adds a mapping for each address
+// connected to the DAG. This indexer adds a mapping for each address
 // the transactions in the block involve.
 //
 // This is part of the Indexer interface.
@@ -714,35 +714,13 @@ func (idx *AddrIndex) ConnectBlock(dbTx database.Tx, block *util.Block, blockID 
 	return nil
 }
 
-// DisconnectBlock is invoked by the index manager when a block has been
-// disconnected from the main chain.  This indexer removes the address mappings
-// each transaction in the block involve.
-//
-// This is part of the Indexer interface.
-func (idx *AddrIndex) DisconnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG) error {
-	// Build all of the address to transaction mappings in a local map.
-	addrsToTxns := make(writeIndexData)
-	idx.indexBlock(addrsToTxns, block, dag)
-
-	// Remove all of the index entries for each address.
-	bucket := dbTx.Metadata().Bucket(addrIndexKey)
-	for addrKey, txIdxs := range addrsToTxns {
-		err := dbRemoveAddrIndexEntries(bucket, addrKey, len(txIdxs))
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // TxRegionsForAddress returns a slice of block regions which identify each
 // transaction that involves the passed address according to the specified
 // number to skip, number requested, and whether or not the results should be
-// reversed.  It also returns the number actually skipped since it could be less
+// reversed. It also returns the number actually skipped since it could be less
 // in the case where there are not enough entries.
 //
-// NOTE: These results only include transactions confirmed in blocks.  See the
+// NOTE: These results only include transactions confirmed in blocks. See the
 // UnconfirmedTxnsForAddress method for obtaining unconfirmed transactions
 // that involve a given address.
 //
@@ -815,7 +793,7 @@ func (idx *AddrIndex) indexUnconfirmedAddresses(scriptPubKey []byte, tx *util.Tx
 //
 // NOTE: This transaction MUST have already been validated by the memory pool
 // before calling this function with it and have all of the inputs available in
-// the provided utxo view.  Failure to do so could result in some or all
+// the provided utxo view. Failure to do so could result in some or all
 // addresses not being indexed.
 //
 // This function is safe for concurrent access.
@@ -828,7 +806,7 @@ func (idx *AddrIndex) AddUnconfirmedTx(tx *util.Tx, utxoSet blockdag.UTXOSet) {
 	for _, txIn := range tx.MsgTx().TxIn {
 		entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
 		if !ok {
-			// Ignore missing entries.  This should never happen
+			// Ignore missing entries. This should never happen
 			// in practice since the function comments specifically
 			// call out all inputs must be available.
 			continue
@@ -880,7 +858,7 @@ func (idx *AddrIndex) UnconfirmedTxnsForAddress(addr util.Address) []*util.Tx {
 	idx.unconfirmedLock.RLock()
 	defer idx.unconfirmedLock.RUnlock()
 
-	// Return a new slice with the results if there are any.  This ensures
+	// Return a new slice with the results if there are any. This ensures
 	// safe concurrency.
 	if txns, exists := idx.txnsByAddr[addrKey]; exists {
 		addressTxns := make([]*util.Tx, 0, len(txns))
@@ -903,12 +881,12 @@ func (idx *AddrIndex) Recover(dbTx database.Tx, currentBlockID, lastKnownBlockID
 }
 
 // NewAddrIndex returns a new instance of an indexer that is used to create a
-// mapping of all addresses in the blockchain to the respective transactions
+// mapping of all addresses in the blockDAG to the respective transactions
 // that involve them.
 //
 // It implements the Indexer interface which plugs into the IndexManager that in
-// turn is used by the blockchain package.  This allows the index to be
-// seamlessly maintained along with the chain.
+// turn is used by the blockDAG package. This allows the index to be
+// seamlessly maintained along with the DAG.
 func NewAddrIndex(dagParams *dagconfig.Params) *AddrIndex {
 	return &AddrIndex{
 		dagParams:  dagParams,

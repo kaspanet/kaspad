@@ -24,9 +24,9 @@ func TestVersion(t *testing.T) {
 
 	// Create version message data.
 	selectedTip := &daghash.Hash{12, 34}
-	tcpAddrMe := &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 8333}
+	tcpAddrMe := &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 16111}
 	me := NewNetAddress(tcpAddrMe, SFNodeNetwork)
-	tcpAddrYou := &net.TCPAddr{IP: net.ParseIP("192.168.0.1"), Port: 8333}
+	tcpAddrYou := &net.TCPAddr{IP: net.ParseIP("192.168.0.1"), Port: 16111}
 	you := NewNetAddress(tcpAddrYou, SFNodeNetwork)
 	nonce, err := random.Uint64()
 	if err != nil {
@@ -164,13 +164,13 @@ func TestVersionWire(t *testing.T) {
 	for i, test := range tests {
 		// Encode the message to wire format.
 		var buf bytes.Buffer
-		err := test.in.BtcEncode(&buf, test.pver)
+		err := test.in.KaspaEncode(&buf, test.pver)
 		if err != nil {
-			t.Errorf("BtcEncode #%d error %v", i, err)
+			t.Errorf("KaspaEncode #%d error %v", i, err)
 			continue
 		}
 		if !bytes.Equal(buf.Bytes(), test.buf) {
-			t.Errorf("BtcEncode #%d\n got: %s want: %s", i,
+			t.Errorf("KaspaEncode #%d\n got: %s want: %s", i,
 				spew.Sdump(buf.Bytes()), spew.Sdump(test.buf))
 			continue
 		}
@@ -178,13 +178,13 @@ func TestVersionWire(t *testing.T) {
 		// Decode the message from wire format.
 		var msg MsgVersion
 		rbuf := bytes.NewBuffer(test.buf)
-		err = msg.BtcDecode(rbuf, test.pver)
+		err = msg.KaspaDecode(rbuf, test.pver)
 		if err != nil {
-			t.Errorf("BtcDecode #%d error %v", i, err)
+			t.Errorf("KaspaDecode #%d error %v", i, err)
 			continue
 		}
 		if !reflect.DeepEqual(&msg, test.out) {
-			t.Errorf("BtcDecode #%d\n got: %s want: %s", i,
+			t.Errorf("KaspaDecode #%d\n got: %s want: %s", i,
 				spew.Sdump(msg), spew.Sdump(test.out))
 			continue
 		}
@@ -197,12 +197,12 @@ func TestVersionWireErrors(t *testing.T) {
 	pver := ProtocolVersion
 	wireErr := &MessageError{}
 
-	// Ensure calling MsgVersion.BtcDecode with a non *bytes.Buffer returns
+	// Ensure calling MsgVersion.KaspaDecode with a non *bytes.Buffer returns
 	// error.
 	fr := newFixedReader(0, []byte{})
-	if err := baseVersion.BtcDecode(fr, pver); err == nil {
+	if err := baseVersion.KaspaDecode(fr, pver); err == nil {
 		t.Errorf("Did not received error when calling " +
-			"MsgVersion.BtcDecode with non *bytes.Buffer")
+			"MsgVersion.KaspaDecode with non *bytes.Buffer")
 	}
 
 	// Copy the base version and change the user agent to exceed max limits.
@@ -220,7 +220,7 @@ func TestVersionWireErrors(t *testing.T) {
 
 	// Make a new buffer big enough to hold the base version plus the new
 	// bytes for the bigger varint to hold the new size of the user agent
-	// and the new user agent string.  Then stitch it all together.
+	// and the new user agent string. Then stitch it all together.
 	newLen := len(baseVersionEncoded) - len(baseVersion.UserAgent)
 	newLen = newLen + len(newUAVarIntBuf.Bytes()) - 1 + len(newUA)
 	exceedUAVerEncoded := make([]byte, newLen)
@@ -265,9 +265,9 @@ func TestVersionWireErrors(t *testing.T) {
 	for i, test := range tests {
 		// Encode to wire format.
 		w := newFixedWriter(test.max)
-		err := test.in.BtcEncode(w, test.pver)
+		err := test.in.KaspaEncode(w, test.pver)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.writeErr) {
-			t.Errorf("BtcEncode #%d wrong error got: %v, want: %v",
+			t.Errorf("KaspaEncode #%d wrong error got: %v, want: %v",
 				i, err, test.writeErr)
 			continue
 		}
@@ -276,7 +276,7 @@ func TestVersionWireErrors(t *testing.T) {
 		// equality.
 		if _, ok := err.(*MessageError); !ok {
 			if err != test.writeErr {
-				t.Errorf("BtcEncode #%d wrong error got: %v, "+
+				t.Errorf("KaspaEncode #%d wrong error got: %v, "+
 					"want: %v", i, err, test.writeErr)
 				continue
 			}
@@ -285,9 +285,9 @@ func TestVersionWireErrors(t *testing.T) {
 		// Decode from wire format.
 		var msg MsgVersion
 		buf := bytes.NewBuffer(test.buf[0:test.max])
-		err = msg.BtcDecode(buf, test.pver)
+		err = msg.KaspaDecode(buf, test.pver)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.readErr) {
-			t.Errorf("BtcDecode #%d wrong error got: %v, want: %v",
+			t.Errorf("KaspaDecode #%d wrong error got: %v, want: %v",
 				i, err, test.readErr)
 			continue
 		}
@@ -296,7 +296,7 @@ func TestVersionWireErrors(t *testing.T) {
 		// equality.
 		if _, ok := err.(*MessageError); !ok {
 			if err != test.readErr {
-				t.Errorf("BtcDecode #%d wrong error got: %v, "+
+				t.Errorf("KaspaDecode #%d wrong error got: %v, "+
 					"want: %v", i, err, test.readErr)
 				continue
 			}
@@ -313,16 +313,16 @@ var baseVersion = &MsgVersion{
 		Timestamp: time.Time{}, // Zero value -- no timestamp in version
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("192.168.0.1"),
-		Port:      8333,
+		Port:      16111,
 	},
 	AddrMe: NetAddress{
 		Timestamp: time.Time{}, // Zero value -- no timestamp in version
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("127.0.0.1"),
-		Port:      8333,
+		Port:      16111,
 	},
 	Nonce:       123123, // 0x1e0f3
-	UserAgent:   "/btcdtest:0.0.1/",
+	UserAgent:   "/kaspadtest:0.0.1/",
 	SelectedTip: &daghash.Hash{0x12, 0x34},
 }
 
@@ -337,20 +337,21 @@ var baseVersionEncoded = []byte{
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0xff, 0xff, 0xc0, 0xa8, 0x00, 0x01, // IP 192.168.0.1
-	0x20, 0x8d, // Port 8333 in big-endian
+	0x3e, 0xef, // Port 16111 in big-endian
 	// AddrMe -- No timestamp for NetAddress in version message
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x01, // IP 127.0.0.1
-	0x20, 0x8d, // Port 8333 in big-endian
+	0x3e, 0xef, // Port 16111 in big-endian
 	0xf3, 0xe0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce
-	0x10, // Varint for user agent length
-	0x2f, 0x62, 0x74, 0x63, 0x64, 0x74, 0x65, 0x73,
-	0x74, 0x3a, 0x30, 0x2e, 0x30, 0x2e, 0x31, 0x2f, // User agent
-	0x12, 0x34, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x12, // Varint for user agent length
+	0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x74,
+	0x65, 0x73, 0x74, 0x3a, 0x30, 0x2e, 0x30, 0x2e, // User agent
+	0x31, 0x2f, 0x12, 0x34, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Selected Tip
+	0x00, 0x00,
 }
 
 // baseVersionWithRelayTx is used in the various tests as a baseline MsgVersion
@@ -362,16 +363,16 @@ var baseVersionWithRelayTx = &MsgVersion{
 		Timestamp: time.Time{}, // Zero value -- no timestamp in version
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("192.168.0.1"),
-		Port:      8333,
+		Port:      16111,
 	},
 	AddrMe: NetAddress{
 		Timestamp: time.Time{}, // Zero value -- no timestamp in version
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("127.0.0.1"),
-		Port:      8333,
+		Port:      16111,
 	},
 	Nonce:       123123, // 0x1e0f3
-	UserAgent:   "/btcdtest:0.0.1/",
+	UserAgent:   "/kaspadtest:0.0.1/",
 	SelectedTip: &daghash.Hash{0x12, 0x34},
 }
 
@@ -386,19 +387,20 @@ var baseVersionWithRelayTxEncoded = []byte{
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0xff, 0xff, 0xc0, 0xa8, 0x00, 0x01, // IP 192.168.0.1
-	0x20, 0x8d, // Port 8333 in big-endian
+	0x3e, 0xef, // Port 16111 in big-endian
 	// AddrMe -- No timestamp for NetAddress in version message
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x01, // IP 127.0.0.1
-	0x20, 0x8d, // Port 8333 in big-endian
+	0x3e, 0xef, // Port 16111 in big-endian
 	0xf3, 0xe0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, // Nonce
-	0x10, // Varint for user agent length
-	0x2f, 0x62, 0x74, 0x63, 0x64, 0x74, 0x65, 0x73,
-	0x74, 0x3a, 0x30, 0x2e, 0x30, 0x2e, 0x31, 0x2f, // User agent
-	0x12, 0x34, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x12, // Varint for user agent length
+	0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x74,
+	0x65, 0x73, 0x74, 0x3a, 0x30, 0x2e, 0x30, 0x2e, // User agent
+	0x31, 0x2f, 0x12, 0x34, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Selected Tip
+	0x00, 0x00,
 	0x01, // Relay tx
 }

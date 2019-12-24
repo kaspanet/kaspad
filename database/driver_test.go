@@ -14,7 +14,7 @@ import (
 
 var (
 	// ignoreDbTypes are types which should be ignored when running tests
-	// that iterate all supported DB types.  This allows some tests to add
+	// that iterate all supported DB types. This allows some tests to add
 	// bogus drivers for testing purposes while still allowing other tests
 	// to easily iterate all supported drivers.
 	ignoreDbTypes = map[string]bool{"createopenfail": true}
@@ -58,7 +58,7 @@ func TestAddDuplicateDriver(t *testing.T) {
 			"type [%v]", dbType)
 	}
 
-	// Create a driver that tries to replace an existing one.  Set its
+	// Create a driver that tries to replace an existing one. Set its
 	// create and open functions to a function that causes a test failure if
 	// they are invoked.
 	driver := database.Driver{

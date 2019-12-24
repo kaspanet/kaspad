@@ -29,9 +29,9 @@ func serializeWriteRow(curBlockFileNum, curFileOffset uint32) []byte {
 }
 
 // deserializeWriteRow deserializes the write cursor location stored in the
-// metadata.  Returns ErrCorruption if the checksum of the entry doesn't match.
+// metadata. Returns ErrCorruption if the checksum of the entry doesn't match.
 func deserializeWriteRow(writeRow []byte) (uint32, uint32, error) {
-	// Ensure the checksum matches.  The checksum is at the end.
+	// Ensure the checksum matches. The checksum is at the end.
 	gotChecksum := crc32.Checksum(writeRow[:8], castagnoli)
 	wantChecksumBytes := writeRow[8:12]
 	wantChecksum := byteOrder.Uint32(wantChecksumBytes)
@@ -47,7 +47,7 @@ func deserializeWriteRow(writeRow []byte) (uint32, uint32, error) {
 	return fileNum, fileOffset, nil
 }
 
-// reconcileDB reconciles the metadata with the flat block files on disk.  It
+// reconcileDB reconciles the metadata with the flat block files on disk. It
 // will also initialize the underlying database if the create flag is set.
 func reconcileDB(pdb *db, create bool) (database.DB, error) {
 	// Perform initial internal bucket and value creation during database
@@ -77,9 +77,9 @@ func reconcileDB(pdb *db, create bool) (database.DB, error) {
 
 	// When the write cursor position found by scanning the block files on
 	// disk is AFTER the position the metadata believes to be true, truncate
-	// the files on disk to match the metadata.  This can be a fairly common
+	// the files on disk to match the metadata. This can be a fairly common
 	// occurrence in unclean shutdown scenarios while the block files are in
-	// the middle of being written.  Since the metadata isn't updated until
+	// the middle of being written. Since the metadata isn't updated until
 	// after the block data is written, this is effectively just a rollback
 	// to the known good point before the unclean shutdown.
 	wc := pdb.store.writeCursor
@@ -96,10 +96,10 @@ func reconcileDB(pdb *db, create bool) (database.DB, error) {
 
 	// When the write cursor position found by scanning the block files on
 	// disk is BEFORE the position the metadata believes to be true, return
-	// a corruption error.  Since sync is called after each block is written
+	// a corruption error. Since sync is called after each block is written
 	// and before the metadata is updated, this should only happen in the
 	// case of missing, deleted, or truncated block files, which generally
-	// is not an easily recoverable scenario.  In the future, it might be
+	// is not an easily recoverable scenario. In the future, it might be
 	// possible to rescan and rebuild the metadata from the block files,
 	// however, that would need to happen with coordination from a higher
 	// layer since it could invalidate other metadata.

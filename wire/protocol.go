@@ -16,7 +16,7 @@ const (
 	ProtocolVersion uint32 = 1
 )
 
-// ServiceFlag identifies services supported by a bitcoin peer.
+// ServiceFlag identifies services supported by a kaspa peer.
 type ServiceFlag uint64
 
 const (
@@ -89,33 +89,33 @@ func (f ServiceFlag) String() string {
 	return s
 }
 
-// BitcoinNet represents which bitcoin network a message belongs to.
-type BitcoinNet uint32
+// KaspaNet represents which kaspa network a message belongs to.
+type KaspaNet uint32
 
-// Constants used to indicate the message bitcoin network.  They can also be
+// Constants used to indicate the message kaspa network. They can also be
 // used to seek to the next message when a stream's state is unknown, but
 // this package does not provide that functionality since it's generally a
 // better idea to simply disconnect clients that are misbehaving over TCP.
 const (
-	// MainNet represents the main bitcoin network.
-	MainNet BitcoinNet = 0xd9b4bef9
+	// MainNet represents the main kaspa network.
+	MainNet KaspaNet = 0x3ddcf71d
 
 	// TestNet represents the test network.
-	TestNet BitcoinNet = 0x0709110b
+	TestNet KaspaNet = 0xddb8af8f
 
 	// RegTest represents the regression test network.
-	RegTest BitcoinNet = 0xdab5bffa
+	RegTest KaspaNet = 0xf396cdd6
 
 	// SimNet represents the simulation test network.
-	SimNet BitcoinNet = 0x12141c16
+	SimNet KaspaNet = 0x374dcf1c
 
 	// DevNet represents the development test network.
-	DevNet BitcoinNet = 0x01020304
+	DevNet KaspaNet = 0x732d87e1
 )
 
-// bnStrings is a map of bitcoin networks back to their constant names for
+// bnStrings is a map of kaspa networks back to their constant names for
 // pretty printing.
-var bnStrings = map[BitcoinNet]string{
+var bnStrings = map[KaspaNet]string{
 	MainNet: "MainNet",
 	TestNet: "TestNet",
 	RegTest: "RegTest",
@@ -123,11 +123,11 @@ var bnStrings = map[BitcoinNet]string{
 	DevNet:  "DevNet",
 }
 
-// String returns the BitcoinNet in human-readable form.
-func (n BitcoinNet) String() string {
+// String returns the KaspaNet in human-readable form.
+func (n KaspaNet) String() string {
 	if s, ok := bnStrings[n]; ok {
 		return s
 	}
 
-	return fmt.Sprintf("Unknown BitcoinNet (%d)", uint32(n))
+	return fmt.Sprintf("Unknown KaspaNet (%d)", uint32(n))
 }

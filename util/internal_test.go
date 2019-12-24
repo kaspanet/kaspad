@@ -4,7 +4,7 @@
 
 /*
 This test file is part of the util package rather than than the
-btcutil_test package so it can bridge access to the internals to properly test
+util_test package so it can bridge access to the internals to properly test
 cases which are either not possible or can't reliably be tested via the public
 interface. The functions are only exported while the tests are being run.
 */
@@ -17,7 +17,7 @@ import (
 )
 
 // SetBlockBytes sets the internal serialized block byte buffer to the passed
-// buffer.  It is used to inject errors and is only available to the test
+// buffer. It is used to inject errors and is only available to the test
 // package.
 func (b *Block) SetBlockBytes(buf []byte) {
 	b.serializedBlock = buf
@@ -47,7 +47,7 @@ func TstAddressScriptHash(prefix Bech32Prefix, hash [ripemd160.Size]byte) *Addre
 }
 
 // TstAddressSAddr returns the expected script address bytes for
-// P2PKH and P2SH bitcoin addresses.
+// P2PKH and P2SH kaspa addresses.
 func TstAddressSAddr(addr string) []byte {
 	_, decoded, _, _ := bech32.Decode(addr)
 	return decoded[:ripemd160.Size]

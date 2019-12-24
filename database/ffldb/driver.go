@@ -15,7 +15,7 @@ const (
 )
 
 // parseArgs parses the arguments from the database Open/Create methods.
-func parseArgs(funcName string, args ...interface{}) (string, wire.BitcoinNet, error) {
+func parseArgs(funcName string, args ...interface{}) (string, wire.KaspaNet, error) {
 	if len(args) != 2 {
 		return "", 0, errors.Errorf("invalid arguments to %s.%s -- "+
 			"expected database path and block network", dbType,
@@ -28,7 +28,7 @@ func parseArgs(funcName string, args ...interface{}) (string, wire.BitcoinNet, e
 			"expected database path string", dbType, funcName)
 	}
 
-	network, ok := args[1].(wire.BitcoinNet)
+	network, ok := args[1].(wire.KaspaNet)
 	if !ok {
 		return "", 0, errors.Errorf("second argument to %s.%s is invalid -- "+
 			"expected block network", dbType, funcName)

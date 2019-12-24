@@ -71,9 +71,9 @@ type rpcConnManager struct {
 // Ensure rpcConnManager implements the rpcserverConnManager interface.
 var _ rpcserverConnManager = &rpcConnManager{}
 
-// Connect adds the provided address as a new outbound peer.  The permanent flag
+// Connect adds the provided address as a new outbound peer. The permanent flag
 // indicates whether or not to make the peer persistent and reconnect if the
-// connection is lost.  Attempting to connect to an already existing peer will
+// connection is lost. Attempting to connect to an already existing peer will
 // return an error.
 //
 // This function is safe for concurrent access and is part of the
@@ -89,7 +89,7 @@ func (cm *rpcConnManager) Connect(addr string, permanent bool) error {
 }
 
 // RemoveByID removes the peer associated with the provided id from the list of
-// persistent peers.  Attempting to remove an id that does not exist will return
+// persistent peers. Attempting to remove an id that does not exist will return
 // an error.
 //
 // This function is safe for concurrent access and is part of the
@@ -104,7 +104,7 @@ func (cm *rpcConnManager) RemoveByID(id int32) error {
 }
 
 // RemoveByAddr removes the peer associated with the provided address from the
-// list of persistent peers.  Attempting to remove an address that does not
+// list of persistent peers. Attempting to remove an address that does not
 // exist will return an error.
 //
 // This function is safe for concurrent access and is part of the
@@ -118,8 +118,8 @@ func (cm *rpcConnManager) RemoveByAddr(addr string) error {
 	return <-replyChan
 }
 
-// DisconnectByID disconnects the peer associated with the provided id.  This
-// applies to both inbound and outbound peers.  Attempting to remove an id that
+// DisconnectByID disconnects the peer associated with the provided id. This
+// applies to both inbound and outbound peers. Attempting to remove an id that
 // does not exist will return an error.
 //
 // This function is safe for concurrent access and is part of the
@@ -134,7 +134,7 @@ func (cm *rpcConnManager) DisconnectByID(id int32) error {
 }
 
 // DisconnectByAddr disconnects the peer associated with the provided address.
-// This applies to both inbound and outbound peers.  Attempting to remove an
+// This applies to both inbound and outbound peers. Attempting to remove an
 // address that does not exist will return an error.
 //
 // This function is safe for concurrent access and is part of the
@@ -234,7 +234,7 @@ type rpcSyncMgr struct {
 // Ensure rpcSyncMgr implements the rpcserverSyncManager interface.
 var _ rpcserverSyncManager = (*rpcSyncMgr)(nil)
 
-// IsCurrent returns whether or not the sync manager believes the chain is
+// IsCurrent returns whether or not the sync manager believes the DAG is
 // current as compared to the rest of the network.
 //
 // This function is safe for concurrent access and is part of the

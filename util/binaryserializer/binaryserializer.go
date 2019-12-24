@@ -9,7 +9,7 @@ import (
 // list to use for binary serialization and deserialization.
 const maxItems = 1024
 
-// Borrow returns a byte slice from the free list with a length of 8.  A new
+// Borrow returns a byte slice from the free list with a length of 8. A new
 // buffer is allocated if there are not any available on the free list.
 func Borrow() []byte {
 	var buf []byte
@@ -21,7 +21,7 @@ func Borrow() []byte {
 	return buf[:8]
 }
 
-// Return puts the provided byte slice back on the free list.  The buffer MUST
+// Return puts the provided byte slice back on the free list. The buffer MUST
 // have been obtained via the Borrow function and therefore have a cap of 8.
 func Return(buf []byte) {
 	select {
@@ -134,7 +134,7 @@ func PutUint64(w io.Writer, byteOrder binary.ByteOrder, val uint64) error {
 //
 // It defines a concurrent safe free list of byte slices (up to the
 // maximum number defined by the maxItems constant) that have a
-// cap of 8 (thus it supports up to a uint64).  It is used to provide temporary
+// cap of 8 (thus it supports up to a uint64). It is used to provide temporary
 // buffers for serializing and deserializing primitive numbers to and from their
 // binary encoding in order to greatly reduce the number of allocations
 // required.

@@ -5,7 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// OnGetBlockLocator is invoked when a peer receives a getlocator bitcoin
+// OnGetBlockLocator is invoked when a peer receives a getlocator kaspa
 // message.
 func (sp *Peer) OnGetBlockLocator(_ *peer.Peer, msg *wire.MsgGetBlockLocator) {
 	locator := sp.server.DAG.BlockLocatorFromHashes(msg.StartHash, msg.StopHash)

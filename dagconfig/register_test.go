@@ -10,7 +10,7 @@ import (
 )
 
 // Define some of the required parameters for a user-registered
-// network.  This is necessary to test the registration of and
+// network. This is necessary to test the registration of and
 // lookup of encoding magics from the network.
 var mockNetParams = Params{
 	Name: "mocknet",

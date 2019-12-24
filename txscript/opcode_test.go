@@ -41,7 +41,7 @@ func TestOpcodeDisasm(t *testing.T) {
 	// First, test the oneline disassembly.
 
 	// The expected strings for the data push opcodes are replaced in the
-	// test loops below since they involve repeating bytes.  Also, the
+	// test loops below since they involve repeating bytes. Also, the
 	// OP_NOP# and OP_UNKNOWN# are replaced below too, since it's easier
 	// than manually listing them here.
 	oneBytes := []byte{0x01}

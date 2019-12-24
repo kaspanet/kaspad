@@ -9,12 +9,12 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// RuleError identifies a rule violation.  It is used to indicate that
+// RuleError identifies a rule violation. It is used to indicate that
 // processing of a transaction failed due to one of the many validation
-// rules.  The caller can use type assertions to determine if a failure was
+// rules. The caller can use type assertions to determine if a failure was
 // specifically due to a rule violation and use the Err field to access the
 // underlying error, which will be either a TxRuleError or a
-// blockchain.RuleError.
+// blockdag.RuleError.
 type RuleError struct {
 	Err error
 }
@@ -27,9 +27,9 @@ func (e RuleError) Error() string {
 	return e.Err.Error()
 }
 
-// TxRuleError identifies a rule violation.  It is used to indicate that
+// TxRuleError identifies a rule violation. It is used to indicate that
 // processing of a transaction failed due to one of the many validation
-// rules.  The caller can use type assertions to determine if a failure was
+// rules. The caller can use type assertions to determine if a failure was
 // specifically due to a rule violation and access the ErrorCode field to
 // ascertain the specific reason for the rule violation.
 type TxRuleError struct {
@@ -59,7 +59,7 @@ func dagRuleError(dagErr blockdag.RuleError) RuleError {
 }
 
 // extractRejectCode attempts to return a relevant reject code for a given error
-// by examining the error for known types.  It will return true if a code
+// by examining the error for known types. It will return true if a code
 // was successfully extracted.
 func extractRejectCode(err error) (wire.RejectCode, bool) {
 	// Pull the underlying error out of a RuleError.
@@ -69,7 +69,7 @@ func extractRejectCode(err error) (wire.RejectCode, bool) {
 
 	switch err := err.(type) {
 	case blockdag.RuleError:
-		// Convert the chain error to a reject code.
+		// Convert the DAG error to a reject code.
 		var code wire.RejectCode
 		switch err.ErrorCode {
 		// Rejected due to duplicate.
@@ -82,11 +82,9 @@ func extractRejectCode(err error) (wire.RejectCode, bool) {
 
 		// Rejected due to being earlier than the last finality point.
 		case blockdag.ErrFinalityPointTimeTooOld:
-			fallthrough
+			code = wire.RejectFinality
 		case blockdag.ErrDifficultyTooLow:
-			fallthrough
-		case blockdag.ErrBadCheckpoint:
-			code = wire.RejectCheckpoint
+			code = wire.RejectDifficulty
 
 		// Everything else is due to the block or transaction being invalid.
 		default:
@@ -115,7 +113,7 @@ func ErrToRejectErr(err error) (wire.RejectCode, string) {
 		return rejectCode, err.Error()
 	}
 
-	// Return a generic rejected string if there is no error.  This really
+	// Return a generic rejected string if there is no error. This really
 	// should not happen unless the code elsewhere is not setting an error
 	// as it should be, but it's best to be safe and simply return a generic
 	// string rather than allowing the following code that dereferences the

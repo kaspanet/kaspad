@@ -54,8 +54,8 @@ func (status blockStatus) KnownInvalid() bool {
 type blockNode struct {
 	// NOTE: Additions, deletions, or modifications to the order of the
 	// definitions in this struct should not be changed without considering
-	// how it affects alignment on 64-bit platforms.  The current order is
-	// specifically crafted to result in minimal padding.  There will be
+	// how it affects alignment on 64-bit platforms. The current order is
+	// specifically crafted to result in minimal padding. There will be
 	// hundreds of thousands of these in memory, so a few extra bytes of
 	// padding adds up.
 
@@ -81,10 +81,9 @@ type blockNode struct {
 	// chainHeight is the number of hops you need to go down the selected parent chain in order to get to the genesis block.
 	chainHeight uint64
 
-	// Some fields from block headers to aid in best chain selection and
-	// reconstructing headers from memory.  These must be treated as
-	// immutable and are intentionally ordered to avoid padding on 64-bit
-	// platforms.
+	// Some fields from block headers to aid in  reconstructing headers
+	// from memory. These must be treated as immutable and are intentionally
+	// ordered to avoid padding on 64-bit platforms.
 	version              int32
 	bits                 uint32
 	nonce                uint64
@@ -104,7 +103,7 @@ type blockNode struct {
 }
 
 // initBlockNode initializes a block node from the given header and parent nodes.
-// This function is NOT safe for concurrent access.  It must only be called when
+// This function is NOT safe for concurrent access. It must only be called when
 // initially creating a node.
 func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents blockSet, phantomK uint32) {
 	*node = blockNode{
