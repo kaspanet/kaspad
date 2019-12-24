@@ -163,6 +163,8 @@ func (ri *reachabilityInterval) String() string {
 // case, and so reindexing should always succeed unless more than
 // 2^64 blocks are added to the DAG/tree.
 type reachabilityTreeNode struct {
+	blockNode *blockNode
+
 	children []*reachabilityTreeNode
 	parent   *reachabilityTreeNode
 
@@ -180,22 +182,24 @@ type reachabilityTreeNode struct {
 	subtreeSize uint64
 }
 
-func newReachabilityTreeNode() *reachabilityTreeNode {
+func newReachabilityTreeNode(blockNode *blockNode) *reachabilityTreeNode {
 	interval := *newReachabilityInterval()
 	remainingInterval := reachabilityInterval{start: interval.start, end: interval.end - 1}
-	return &reachabilityTreeNode{interval: interval, remainingInterval: remainingInterval}
+	return &reachabilityTreeNode{blockNode: blockNode, interval: interval, remainingInterval: remainingInterval}
 }
 
 // addTreeChild adds child to this tree node. If this node has no
 // remaining interval to allocate, a reindexing is triggered.
-func (rtn *reachabilityTreeNode) addTreeChild(child *reachabilityTreeNode) error {
+// This method returns a list of reachabilityTreeNodes modified
+// by it.
+func (rtn *reachabilityTreeNode) addTreeChild(child *reachabilityTreeNode) ([]*reachabilityTreeNode, error) {
 	// Set the parent-child relationship
 	rtn.children = append(rtn.children, child)
 	child.parent = rtn
 
 	allocated, remaining, err := rtn.remainingInterval.splitInHalf()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// No allocation space left -- reindex
@@ -206,7 +210,7 @@ func (rtn *reachabilityTreeNode) addTreeChild(child *reachabilityTreeNode) error
 	// Allocate from the remaining space
 	child.setTreeInterval(allocated)
 	rtn.remainingInterval = *remaining
-	return nil
+	return []*reachabilityTreeNode{rtn, child}, nil
 }
 
 // setTreeInterval sets the reachability interval for this node.
@@ -223,8 +227,9 @@ func (rtn *reachabilityTreeNode) setTreeInterval(interval *reachabilityInterval)
 // reindexTreeInterval traverses the reachability subtree that's
 // defined by this node and reallocates reachability interval space
 // such that another reindexing is unlikely to occur shortly
-// thereafter.
-func (rtn *reachabilityTreeNode) reindexTreeIntervals() error {
+// thereafter. This method returns a list of reachabilityTreeNodes
+// modified by it.
+func (rtn *reachabilityTreeNode) reindexTreeIntervals() ([]*reachabilityTreeNode, error) {
 	current := rtn
 
 	// Initial interval and subtree sizes
@@ -236,10 +241,10 @@ func (rtn *reachabilityTreeNode) reindexTreeIntervals() error {
 		if current.parent == nil {
 			// If we ended up here it means that there are more
 			// than 2^64 blocks, which shouldn't ever happen.
-			return errors.Errorf("missing tree parent " +
-				"during reindexing. Theoretically, this should  " +
-				"only ever happen if there are more than 2^64 " +
-				"blocks in the DAG.")
+			return nil, errors.Errorf("missing tree " +
+				"parent during reindexing. Theoretically, this " +
+				"should only ever happen if there are more " +
+				"than 2^64 blocks in the DAG.")
 		}
 		current = current.parent
 		intervalSize = current.interval.size()
@@ -326,9 +331,11 @@ func (rtn *reachabilityTreeNode) countSubtrees() uint64 {
 // propagateInterval applies new intervals using a BFS traversal.
 // The intervals are allocated according to subtree sizes and the
 // 'split' allocation rule (see the split() method for further
-// details)
-func (rtn *reachabilityTreeNode) propagateInterval(interval *reachabilityInterval) error {
+// details). This method returns a list of reachabilityTreeNodes
+// modified by it.
+func (rtn *reachabilityTreeNode) propagateInterval(interval *reachabilityInterval) ([]*reachabilityTreeNode, error) {
 	rtn.setTreeInterval(interval)
+	modifiedNodes := []*reachabilityTreeNode{rtn}
 	queue := []*reachabilityTreeNode{rtn}
 	for len(queue) > 0 {
 		var current *reachabilityTreeNode
@@ -340,7 +347,7 @@ func (rtn *reachabilityTreeNode) propagateInterval(interval *reachabilityInterva
 			}
 			intervals, err := current.remainingInterval.split(sizes)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			for i, child := range current.children {
 				childInterval := intervals[i]
@@ -352,10 +359,12 @@ func (rtn *reachabilityTreeNode) propagateInterval(interval *reachabilityInterva
 			current.remainingInterval.start = current.remainingInterval.end + 1
 		}
 
+		modifiedNodes = append(modifiedNodes, current)
+
 		// Cleanup temp info for future reindexing
 		current.subtreeSize = 0
 	}
-	return nil
+	return modifiedNodes, nil
 }
 
 // String returns a string representation of a reachability tree node

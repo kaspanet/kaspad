@@ -931,29 +931,28 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, fast
 }
 
 func (dag *BlockDAG) updateReachability(node *blockNode) error {
+	// Allocate a new reachability tree node
+	thisTreeNode := newReachabilityTreeNode(node)
+
 	// If this is the genesis node, simply initialize it and return
 	if node.isGenesis() {
-		genesisTreeNode := newReachabilityTreeNode()
-		return dag.reachabilityStore.setTreeNode(node, genesisTreeNode)
+		return dag.reachabilityStore.setTreeNode(thisTreeNode)
 	}
 
 	// Insert the node into the selected parent's reachability tree
-	thisTreeNode := newReachabilityTreeNode()
 	selectedParentTreeNode, err := dag.reachabilityStore.treeNodeByBlockNode(node.selectedParent)
 	if err != nil {
 		return err
 	}
-	err = selectedParentTreeNode.addTreeChild(thisTreeNode)
+	modifiedTreeNodes, err := selectedParentTreeNode.addTreeChild(thisTreeNode)
 	if err != nil {
 		return err
 	}
-	err = dag.reachabilityStore.setTreeNode(node, thisTreeNode)
-	if err != nil {
-		return err
-	}
-	err = dag.reachabilityStore.setTreeNode(node.selectedParent, selectedParentTreeNode)
-	if err != nil {
-		return err
+	for _, modifiedTreeNode := range modifiedTreeNodes {
+		err = dag.reachabilityStore.setTreeNode(modifiedTreeNode)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Add the block to the futureCoveringSets of all the blocks

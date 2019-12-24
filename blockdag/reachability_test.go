@@ -9,26 +9,47 @@ func TestAddTreeChild(t *testing.T) {
 	// Scenario 1: test addTreeChild in a chain
 	//             root -> a -> b -> c...
 	// Create the root node of a new reachability tree
-	root := newReachabilityTreeNode()
+	root := newReachabilityTreeNode(&blockNode{})
 	root.setTreeInterval(&reachabilityInterval{start: 1, end: 100})
 
-	// Add a chain of child nodes until a reindex occurs (2^6=64 < 100 < 2^7=128)
+	// Add a chain of child nodes just before a reindex occurs (2^6=64 < 100)
 	currentTip := root
-	for i := 0; i < 7; i++ {
-		node := newReachabilityTreeNode()
-		err := currentTip.addTreeChild(node)
+	for i := 0; i < 6; i++ {
+		node := newReachabilityTreeNode(&blockNode{})
+		modifiedNodes, err := currentTip.addTreeChild(node)
 		if err != nil {
 			t.Fatalf("TestAddTreeChild: addTreeChild failed: %s", err)
 		}
+
+		// Expect only the node and its parent to be affected
+		expectedModifiedNodes := []*reachabilityTreeNode{currentTip, node}
+		if !reflect.DeepEqual(modifiedNodes, expectedModifiedNodes) {
+			t.Fatalf("TestAddTreeChild: unexpected modifiedNodes. "+
+				"want: %s, got: %s", expectedModifiedNodes, modifiedNodes)
+		}
+
 		currentTip = node
 	}
 
+	// Add another node to the tip of the chain to trigger a reindex (100 < 2^7=128)
+	lastChild := newReachabilityTreeNode(&blockNode{})
+	modifiedNodes, err := currentTip.addTreeChild(lastChild)
+	if err != nil {
+		t.Fatalf("TestAddTreeChild: addTreeChild failed: %s", err)
+	}
+
+	// Expect more than just the node and its parent to be modified but not
+	// all the nodes
+	if len(modifiedNodes) <= 2 && len(modifiedNodes) >= 7 {
+		t.Fatalf("TestAddTreeChild: unexpected amount of modifiedNodes.")
+	}
+
 	// Expect the tip to have an interval of 1 and remaining interval of 0
-	tipInterval := currentTip.interval.size()
+	tipInterval := lastChild.interval.size()
 	if tipInterval != 1 {
 		t.Fatalf("TestAddTreeChild: unexpected tip interval size: want: 1, got: %d", tipInterval)
 	}
-	tipRemainingInterval := currentTip.remainingInterval.size()
+	tipRemainingInterval := lastChild.remainingInterval.size()
 	if tipRemainingInterval != 0 {
 		t.Fatalf("TestAddTreeChild: unexpected tip interval size: want: 0, got: %d", tipRemainingInterval)
 	}
@@ -45,21 +66,40 @@ func TestAddTreeChild(t *testing.T) {
 	// Scenario 2: test addTreeChild where all nodes are direct descendants of root
 	//             root -> a, b, c...
 	// Create the root node of a new reachability tree
-	root = newReachabilityTreeNode()
+	root = newReachabilityTreeNode(&blockNode{})
 	root.setTreeInterval(&reachabilityInterval{start: 1, end: 100})
 
-	// Add child nodes to root until a reindex occurs (2^6=64 < 100 < 2^7=128)
-	childNodes := make([]*reachabilityTreeNode, 7)
+	// Add child nodes to root just before a reindex occurs (2^6=64 < 100)
+	childNodes := make([]*reachabilityTreeNode, 6)
 	for i := 0; i < len(childNodes); i++ {
-		childNodes[i] = newReachabilityTreeNode()
-		err := root.addTreeChild(childNodes[i])
+		childNodes[i] = newReachabilityTreeNode(&blockNode{})
+		modifiedNodes, err := root.addTreeChild(childNodes[i])
 		if err != nil {
 			t.Fatalf("TestAddTreeChild: addTreeChild failed: %s", err)
 		}
+
+		// Expect only the node and the root to be affected
+		expectedModifiedNodes := []*reachabilityTreeNode{root, childNodes[i]}
+		if !reflect.DeepEqual(modifiedNodes, expectedModifiedNodes) {
+			t.Fatalf("TestAddTreeChild: unexpected modifiedNodes. "+
+				"want: %s, got: %s", expectedModifiedNodes, modifiedNodes)
+		}
+	}
+
+	// Add another node to the root to trigger a reindex (100 < 2^7=128)
+	lastChild = newReachabilityTreeNode(&blockNode{})
+	modifiedNodes, err = root.addTreeChild(lastChild)
+	if err != nil {
+		t.Fatalf("TestAddTreeChild: addTreeChild failed: %s", err)
+	}
+
+	// Expect more than just the node and the root to be modified but not
+	// all the nodes
+	if len(modifiedNodes) <= 2 && len(modifiedNodes) >= 7 {
+		t.Fatalf("TestAddTreeChild: unexpected amount of modifiedNodes.")
 	}
 
 	// Expect the last-added child to have an interval of 1 and remaining interval of 0
-	lastChild := childNodes[len(childNodes)-1]
 	lastChildInterval := lastChild.interval.size()
 	if lastChildInterval != 1 {
 		t.Fatalf("TestAddTreeChild: unexpected lastChild interval size: want: 1, got: %d", lastChildInterval)

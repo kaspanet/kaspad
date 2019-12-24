@@ -28,10 +28,11 @@ func newReachabilityStore(dag *BlockDAG) *reachabilityStore {
 	}
 }
 
-func (store *reachabilityStore) setTreeNode(node *blockNode, treeNode *reachabilityTreeNode) error {
+func (store *reachabilityStore) setTreeNode(treeNode *reachabilityTreeNode) error {
 	store.mtx.HighPriorityWriteLock()
 	defer store.mtx.HighPriorityWriteUnlock()
 	// load the reachability data from DB to store.loaded
+	node := treeNode.blockNode
 	_, exists, err := store.reachabilityDataByHash(node.hash)
 	if err != nil {
 		return err
@@ -163,10 +164,10 @@ func dbStoreReachabilityData(dbTx database.Tx, hash *daghash.Hash, reachabilityD
 	return dbTx.Metadata().Bucket(reachabilityDataBucketName).Put(hash[:], serializedReachabilyData)
 }
 
-func deserializeReachabilityData(serializedReachabilityData []byte) (*reachabilityData, error) {
+func serializeReachabilityData(reachabilityData *reachabilityData) ([]byte, error) {
 	return nil, nil
 }
 
-func serializeReachabilityData(reachabilityData *reachabilityData) ([]byte, error) {
+func deserializeReachabilityData(serializedReachabilityData []byte) (*reachabilityData, error) {
 	return nil, nil
 }
