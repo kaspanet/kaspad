@@ -1,15 +1,18 @@
 package blockdag
 
 import (
+	"bytes"
 	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/locks"
+	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
+	"io"
 )
 
 type reachabilityData struct {
 	treeNode          *reachabilityTreeNode
-	futureCoveringSet *futureCoveringBlockSet
+	futureCoveringSet futureCoveringBlockSet
 }
 
 type reachabilityStore struct {
@@ -46,7 +49,7 @@ func (store *reachabilityStore) setTreeNode(treeNode *reachabilityTreeNode) erro
 	return nil
 }
 
-func (store *reachabilityStore) setFutureCoveringSet(node *blockNode, futureCoveringSet *futureCoveringBlockSet) error {
+func (store *reachabilityStore) setFutureCoveringSet(node *blockNode, futureCoveringSet futureCoveringBlockSet) error {
 	store.mtx.HighPriorityWriteLock()
 	defer store.mtx.HighPriorityWriteUnlock()
 	// load the reachability data from DB to store.loaded
@@ -99,7 +102,7 @@ func (store *reachabilityStore) treeNodeByBlockNode(node *blockNode) (*reachabil
 	return reachabilityData.treeNode, nil
 }
 
-func (store *reachabilityStore) futureCoveringSetByBlockNode(node *blockNode) (*futureCoveringBlockSet, error) {
+func (store *reachabilityStore) futureCoveringSetByBlockNode(node *blockNode) (futureCoveringBlockSet, error) {
 	store.mtx.HighPriorityReadLock()
 	defer store.mtx.HighPriorityReadUnlock()
 	reachabilityData, exists, err := store.reachabilityDataByHash(node.hash)
@@ -165,9 +168,110 @@ func dbStoreReachabilityData(dbTx database.Tx, hash *daghash.Hash, reachabilityD
 }
 
 func serializeReachabilityData(reachabilityData *reachabilityData) ([]byte, error) {
+	w := &bytes.Buffer{}
+	err := serializeTreeNode(w, reachabilityData.treeNode)
+	if err != nil {
+		return nil, err
+	}
+	err = serializeFutureCoveringSet(w, reachabilityData.futureCoveringSet)
+	if err != nil {
+		return nil, err
+	}
+	return w.Bytes(), nil
+}
+
+func serializeTreeNode(w io.Writer, treeNode *reachabilityTreeNode) error {
+	// Serialize the interval
+	err := serializeReachabilityInterval(w, &treeNode.interval)
+	if err != nil {
+		return err
+	}
+
+	// Serialize the remaining interval
+	err = serializeReachabilityInterval(w, &treeNode.remainingInterval)
+	if err != nil {
+		return err
+	}
+
+	// Serialize the parent
+	// If this is the genesis block, write the zero hash instead
+	parentHash := &daghash.ZeroHash
+	if treeNode.parent != nil {
+		parentHash = treeNode.parent.blockNode.hash
+	}
+	err = wire.WriteElement(w, parentHash)
+	if err != nil {
+		return err
+	}
+
+	// Serialize the amount of children
+	err = wire.WriteVarInt(w, uint64(len(treeNode.children)))
+	if err != nil {
+		return err
+	}
+
+	// Serialize the children
+	for _, child := range treeNode.children {
+		err = wire.WriteElement(w, child.blockNode.hash)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func serializeReachabilityInterval(w io.Writer, interval *reachabilityInterval) error {
+	// Serialize start
+	err := wire.WriteElement(w, interval.start)
+	if err != nil {
+		return err
+	}
+
+	// Serialize end
+	err = wire.WriteElement(w, interval.end)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func serializeFutureCoveringSet(w io.Writer, futureCoveringSet futureCoveringBlockSet) error {
+	// Serialize the set size
+	err := wire.WriteVarInt(w, uint64(len(futureCoveringSet)))
+	if err != nil {
+		return err
+	}
+
+	// Serialize each block in the set
+	for _, block := range futureCoveringSet {
+		err = wire.WriteElement(w, block.blockNode.hash)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func deserializeReachabilityData(serializedReachabilityDataBytes []byte) (*reachabilityData, error) {
+	serializedReachabilityData := bytes.NewBuffer(serializedReachabilityDataBytes)
+	treeNode, err := deserializeTreeNode(serializedReachabilityData)
+	if err != nil {
+		return nil, err
+	}
+	futureCoveringSet, err := deserializeFutureConveringSet(serializedReachabilityData)
+	if err != nil {
+		return nil, err
+	}
+	return &reachabilityData{treeNode: treeNode, futureCoveringSet: futureCoveringSet}, nil
+}
+
+func deserializeTreeNode(r io.Reader) (*reachabilityTreeNode, error) {
 	return nil, nil
 }
 
-func deserializeReachabilityData(serializedReachabilityData []byte) (*reachabilityData, error) {
+func deserializeFutureConveringSet(r io.Reader) (futureCoveringBlockSet, error) {
 	return nil, nil
 }
