@@ -181,7 +181,7 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 	}
 	dag.delayedBlocksLock.RUnlock()
 	if delay != 0 {
-		return false, delay, err
+		return false, delay, nil
 	}
 
 	// Handle orphan blocks.
