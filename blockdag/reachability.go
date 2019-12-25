@@ -39,7 +39,7 @@ func (ri *reachabilityInterval) splitFraction(fraction float64) (
 	if fraction < 0 || fraction > 1 {
 		return nil, nil, errors.Errorf("fraction must be between 0 and 1")
 	}
-	if ri.end < ri.start {
+	if ri.size() == 0 {
 		return ri, ri, nil
 	}
 
