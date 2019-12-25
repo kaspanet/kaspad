@@ -999,7 +999,7 @@ func (dag *BlockDAG) updateReachability(node *blockNode) error {
 	return nil
 }
 
-// isAncestorOf returns true if this node can be reached from the other node
+// isAncestorOf returns true if this node is in the past of the other node
 // in the DAG. The complexity of this method is O(log(|node.futureCoveringBlockSet|))
 func (dag *BlockDAG) isAncestorOf(node *blockNode, other *blockNode) (bool, error) {
 	// First, check if this node is a reachability tree ancestor of the
