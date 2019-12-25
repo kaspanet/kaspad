@@ -227,8 +227,10 @@ func (rtn *reachabilityTreeNode) setInterval(interval *reachabilityInterval) {
 // reindexIntervals traverses the reachability subtree that's
 // defined by this node and reallocates reachability interval space
 // such that another reindexing is unlikely to occur shortly
-// thereafter. This method returns a list of reachabilityTreeNodes
-// modified by it.
+// thereafter. It does this by traversing down the reachability
+// tree until it finds a node with a subreeSize that's greater than
+// its interval size. See propagateInterval for further details.
+// This method returns a list of reachabilityTreeNodes modified by it.
 func (rtn *reachabilityTreeNode) reindexIntervals() ([]*reachabilityTreeNode, error) {
 	current := rtn
 
