@@ -10,7 +10,7 @@ func TestAddTreeChild(t *testing.T) {
 	//             root -> a -> b -> c...
 	// Create the root node of a new reachability tree
 	root := newReachabilityTreeNode(&blockNode{})
-	root.setTreeInterval(&reachabilityInterval{start: 1, end: 100})
+	root.setInterval(&reachabilityInterval{start: 1, end: 100})
 
 	// Add a chain of child nodes just before a reindex occurs (2^6=64 < 100)
 	currentTip := root
@@ -67,7 +67,7 @@ func TestAddTreeChild(t *testing.T) {
 	//             root -> a, b, c...
 	// Create the root node of a new reachability tree
 	root = newReachabilityTreeNode(&blockNode{})
-	root.setTreeInterval(&reachabilityInterval{start: 1, end: 100})
+	root.setInterval(&reachabilityInterval{start: 1, end: 100})
 
 	// Add child nodes to root just before a reindex occurs (2^6=64 < 100)
 	childNodes := make([]*reachabilityTreeNode, 6)

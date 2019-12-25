@@ -208,13 +208,13 @@ func (rtn *reachabilityTreeNode) addTreeChild(child *reachabilityTreeNode) ([]*r
 	}
 
 	// Allocate from the remaining space
-	child.setTreeInterval(allocated)
+	child.setInterval(allocated)
 	rtn.remainingInterval = remaining
 	return []*reachabilityTreeNode{rtn, child}, nil
 }
 
-// setTreeInterval sets the reachability interval for this node.
-func (rtn *reachabilityTreeNode) setTreeInterval(interval *reachabilityInterval) {
+// setInterval sets the reachability interval for this node.
+func (rtn *reachabilityTreeNode) setInterval(interval *reachabilityInterval) {
 	rtn.interval = interval
 
 	// Reserve a single interval index for the current node. This
@@ -334,7 +334,7 @@ func (rtn *reachabilityTreeNode) countSubtrees() uint64 {
 // details). This method returns a list of reachabilityTreeNodes
 // modified by it.
 func (rtn *reachabilityTreeNode) propagateInterval(interval *reachabilityInterval) ([]*reachabilityTreeNode, error) {
-	rtn.setTreeInterval(interval)
+	rtn.setInterval(interval)
 	modifiedNodes := []*reachabilityTreeNode{rtn}
 	queue := []*reachabilityTreeNode{rtn}
 	for len(queue) > 0 {
@@ -351,7 +351,7 @@ func (rtn *reachabilityTreeNode) propagateInterval(interval *reachabilityInterva
 			}
 			for i, child := range current.children {
 				childInterval := intervals[i]
-				child.setTreeInterval(childInterval)
+				child.setInterval(childInterval)
 				queue = append(queue, child)
 			}
 
