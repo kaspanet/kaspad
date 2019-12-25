@@ -70,7 +70,7 @@ func (ri *reachabilityInterval) splitExact(sizes []uint64) ([]*reachabilityInter
 	return intervals, nil
 }
 
-// split splits this interval to |sizes| parts by some allocation
+// split splits this interval to len(sizes) parts by some allocation
 // rule. This method expects sum(sizes)	to be smaller or equal to
 // the interval's capacity. Every part_i is allocated at least
 // sizes[i] capacity. The remaining budget is split by an
