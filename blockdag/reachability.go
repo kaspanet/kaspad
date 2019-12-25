@@ -372,8 +372,8 @@ func (rtn *reachabilityTreeNode) propagateInterval(interval *reachabilityInterva
 // String returns a string representation of a reachability tree node
 // and its children.
 func (rtn *reachabilityTreeNode) String() string {
-	nodeString := rtn.interval.String()
 	queue := []*reachabilityTreeNode{rtn}
+	lines := []string{rtn.interval.String()}
 	for len(queue) > 0 {
 		var current *reachabilityTreeNode
 		current, queue = queue[0], queue[1:]
@@ -381,12 +381,21 @@ func (rtn *reachabilityTreeNode) String() string {
 			break
 		}
 
-		nodeString += "\n"
+		line := ""
 		for _, child := range current.children {
-			nodeString += child.interval.String()
+			line += child.interval.String()
 			queue = append(queue, child)
 		}
+		lines = append(lines, line)
 	}
+
+	nodeString := ""
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := lines[i]
+		nodeString += line
+		nodeString += "\n"
+	}
+
 	return nodeString
 }
 
