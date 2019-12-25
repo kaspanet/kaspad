@@ -6,9 +6,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
-	"github.com/pkg/errors"
 	"time"
 
 	"github.com/btcsuite/winsvc/eventlog"
