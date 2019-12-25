@@ -585,6 +585,12 @@ func (dag *BlockDAG) initDAGState() error {
 		dag.lastFinalityPoint = dag.index.LookupNode(state.LastFinalityPoint)
 		dag.finalizeNodesBelowFinalityPoint(false)
 
+		// Initialize the reachability store
+		err = dag.reachabilityStore.init(dbTx)
+		if err != nil {
+			return err
+		}
+
 		// Go over any unprocessed blockNodes and process them now.
 		for _, node := range unprocessedBlockNodes {
 			// Check to see if the block exists in the block DB. If it
