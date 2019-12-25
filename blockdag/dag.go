@@ -1014,7 +1014,7 @@ func (dag *BlockDAG) isAncestorOf(node *blockNode, other *blockNode) (bool, erro
 	}
 	thisTreeInterval := thisTreeNode.interval
 	otherTreeInterval := otherTreeNode.interval
-	if thisTreeInterval.isAncestorOf(&otherTreeInterval) {
+	if thisTreeInterval.isAncestorOf(otherTreeInterval) {
 		return true, nil
 	}
 

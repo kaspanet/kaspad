@@ -170,11 +170,11 @@ type reachabilityTreeNode struct {
 
 	// interval is the index interval containing all intervals of
 	// blocks in this node's subtree
-	interval reachabilityInterval
+	interval *reachabilityInterval
 
 	// remainingInterval is the not-yet allocated interval (within
 	// this node's interval) awaiting new children
-	remainingInterval reachabilityInterval
+	remainingInterval *reachabilityInterval
 
 	// subtreeSize is a helper field used only during reindexing
 	// (expected to be 0 any other time).
@@ -185,7 +185,7 @@ type reachabilityTreeNode struct {
 func newReachabilityTreeNode(blockNode *blockNode) *reachabilityTreeNode {
 	interval := *newReachabilityInterval()
 	remainingInterval := reachabilityInterval{start: interval.start, end: interval.end - 1}
-	return &reachabilityTreeNode{blockNode: blockNode, interval: interval, remainingInterval: remainingInterval}
+	return &reachabilityTreeNode{blockNode: blockNode, interval: &interval, remainingInterval: &remainingInterval}
 }
 
 // addTreeChild adds child to this tree node. If this node has no
@@ -209,19 +209,19 @@ func (rtn *reachabilityTreeNode) addTreeChild(child *reachabilityTreeNode) ([]*r
 
 	// Allocate from the remaining space
 	child.setTreeInterval(allocated)
-	rtn.remainingInterval = *remaining
+	rtn.remainingInterval = remaining
 	return []*reachabilityTreeNode{rtn, child}, nil
 }
 
 // setTreeInterval sets the reachability interval for this node.
 func (rtn *reachabilityTreeNode) setTreeInterval(interval *reachabilityInterval) {
-	rtn.interval = *interval
+	rtn.interval = interval
 
 	// Reserve a single interval index for the current node. This
 	// is necessary to ensure that ancestor intervals are strictly
 	// supersets of any descendant intervals and not equal
 	remainingInterval := &reachabilityInterval{start: interval.start, end: interval.end - 1}
-	rtn.remainingInterval = *remainingInterval
+	rtn.remainingInterval = remainingInterval
 }
 
 // reindexTreeInterval traverses the reachability subtree that's
@@ -252,7 +252,7 @@ func (rtn *reachabilityTreeNode) reindexTreeIntervals() ([]*reachabilityTreeNode
 	}
 
 	// Apply the interval down the subtree
-	return current.propagateInterval(&current.interval)
+	return current.propagateInterval(current.interval)
 }
 
 // countSubtrees counts the size of each subtree under this node.
@@ -418,11 +418,11 @@ func (fb *futureCoveringBlockSet) insertBlock(block *futureCoveringBlock) {
 	if i > 0 {
 		candidate := (*fb)[i-1]
 		candidateInterval := candidate.treeNode.interval
-		if candidateInterval.isAncestorOf(&blockInterval) {
+		if candidateInterval.isAncestorOf(blockInterval) {
 			// candidate is an ancestor of block, no need to insert
 			return
 		}
-		if blockInterval.isAncestorOf(&candidateInterval) {
+		if blockInterval.isAncestorOf(candidateInterval) {
 			// block is an ancestor of candidate, and can thus replace it
 			(*fb)[i-1] = block
 			return
@@ -455,7 +455,7 @@ func (fb futureCoveringBlockSet) isInFuture(block *futureCoveringBlock) bool {
 	candidate := fb[i-1]
 	blockInterval := block.treeNode.interval
 	candidateInterval := candidate.treeNode.interval
-	return candidateInterval.isAncestorOf(&blockInterval)
+	return candidateInterval.isAncestorOf(blockInterval)
 }
 
 // bisect finds the appropriate index for the given block's reachability
