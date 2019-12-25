@@ -1814,11 +1814,12 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 
 // AddDelayedBlock adds a block to the delayed blocks list.
 func (dag *BlockDAG) AddDelayedBlock(block *util.Block, delay time.Duration) {
+	dag.processDelayedBlocks()
 	dag.delayedBlocksLock.Lock()
 	defer dag.delayedBlocksLock.Unlock()
 	dag.delayedBlocks[*block.Hash()] = &delayedBlock{
 		block:       block,
-		processTime: time.Now().Add(delay),
+		processTime: dag.timeSource.AdjustedTime().Add(delay),
 	}
 }
 
@@ -1827,6 +1828,20 @@ func (dag *BlockDAG) RemoveDelayedBlock(block *util.Block) {
 	dag.delayedBlocksLock.Lock()
 	defer dag.delayedBlocksLock.Unlock()
 	delete(dag.delayedBlocks, *block.Hash())
+}
+
+func (dag *BlockDAG) processDelayedBlocks() error {
+	for _, delayedBlock := range dag.delayedBlocks {
+		if dag.timeSource.AdjustedTime().After(delayedBlock.processTime) {
+			_, _, err := dag.ProcessBlock(delayedBlock.block, BFAfterDelay)
+			if err != nil {
+				log.Debugf("Error while processing delayed block (block %s)", delayedBlock.block.Hash().String())
+				return err
+			}
+			dag.RemoveDelayedBlock(delayedBlock.block)
+		}
+	}
+	return nil
 }
 
 // IndexManager provides a generic interface that is called when blocks are

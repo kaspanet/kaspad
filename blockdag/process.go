@@ -225,6 +225,13 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 		return false, 0, err
 	}
 
+	if !isDelayedBlock {
+		err = dag.processDelayedBlocks()
+		if err != nil {
+			return false, 0, err
+		}
+	}
+
 	log.Debugf("Accepted block %s", blockHash)
 
 	return false, 0, nil

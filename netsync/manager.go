@@ -18,7 +18,6 @@ import (
 	"net"
 	"sync"
 	"sync/atomic"
-	"time"
 )
 
 const (
@@ -434,7 +433,6 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	behaviorFlags := blockdag.BFNone
 	if bmsg.isDelayedBlock {
 		behaviorFlags |= blockdag.BFAfterDelay
-		defer sm.dag.RemoveDelayedBlock(bmsg.block)
 	}
 	if bmsg.peer == sm.syncPeer {
 		behaviorFlags |= blockdag.BFIsSync
@@ -476,12 +474,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	}
 
 	if delay != 0 {
-		spawn(func() {
-			sm.dag.AddDelayedBlock(bmsg.block, delay)
-			state.requestedBlocks[*blockHash] = struct{}{}
-			time.Sleep(delay)
-			sm.QueueBlock(bmsg.block, bmsg.peer, true, make(chan struct{}))
-		}, sm.handlePanic)
+		sm.dag.AddDelayedBlock(bmsg.block, delay)
 		return
 	}
 
