@@ -274,6 +274,10 @@ func (b *bogusAddress) String() string {
 	return ""
 }
 
+func (b *bogusAddress) Prefix() util.Bech32Prefix {
+	return util.Bech32PrefixUnknown
+}
+
 // TestPayToAddrScript ensures the PayToAddrScript function generates the
 // correct scripts for the various types of addresses.
 func TestPayToAddrScript(t *testing.T) {

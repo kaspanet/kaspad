@@ -3,7 +3,6 @@ package p2p
 import (
 	"github.com/kaspanet/kaspad/peer"
 	"github.com/kaspanet/kaspad/wire"
-	"github.com/prometheus/common/log"
 )
 
 // OnGetBlockInvs is invoked when a peer receives a getblockinvs kaspa
@@ -24,7 +23,7 @@ func (sp *Peer) OnGetBlockInvs(_ *peer.Peer, msg *wire.MsgGetBlockInvs) {
 	hashList, err := dag.GetBlueBlocksHashesBetween(msg.StartHash, msg.StopHash,
 		wire.MaxInvPerMsg)
 	if err != nil {
-		log.Warnf("Error getting blue blocks between %s and %s: %s", msg.StartHash, msg.StopHash, err)
+		peerLog.Warnf("Error getting blue blocks between %s and %s: %s", msg.StartHash, msg.StopHash, err)
 		sp.Disconnect()
 		return
 	}

@@ -17,13 +17,14 @@ import (
 
 func TestAddresses(t *testing.T) {
 	tests := []struct {
-		name    string
-		addr    string
-		encoded string
-		valid   bool
-		result  util.Address
-		f       func() (util.Address, error)
-		prefix  util.Bech32Prefix
+		name           string
+		addr           string
+		encoded        string
+		valid          bool
+		result         util.Address
+		f              func() (util.Address, error)
+		passedPrefix   util.Bech32Prefix
+		expectedPrefix util.Bech32Prefix
 	}{
 		// Positive P2PKH tests.
 		{
@@ -42,7 +43,8 @@ func TestAddresses(t *testing.T) {
 					0xc5, 0x4c, 0xe7, 0xd2, 0xa4, 0x91, 0xbb, 0x4a, 0x0e, 0x84}
 				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixKaspa)
 			},
-			prefix: util.Bech32PrefixKaspa,
+			passedPrefix:   util.Bech32PrefixUnknown,
+			expectedPrefix: util.Bech32PrefixKaspa,
 		},
 		{
 			name:    "mainnet p2pkh 2",
@@ -60,7 +62,8 @@ func TestAddresses(t *testing.T) {
 					0x05, 0x12, 0xbc, 0xa2, 0xce, 0xb1, 0xdd, 0x80, 0xad, 0xaa}
 				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixKaspa)
 			},
-			prefix: util.Bech32PrefixKaspa,
+			passedPrefix:   util.Bech32PrefixKaspa,
+			expectedPrefix: util.Bech32PrefixKaspa,
 		},
 		{
 			name:    "testnet p2pkh",
@@ -78,7 +81,8 @@ func TestAddresses(t *testing.T) {
 					0xe5, 0x12, 0xd3, 0x60, 0x3f, 0x1f, 0x1c, 0x8d, 0xe6, 0x8f}
 				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixKaspaTest)
 			},
-			prefix: util.Bech32PrefixKaspaTest,
+			passedPrefix:   util.Bech32PrefixKaspaTest,
+			expectedPrefix: util.Bech32PrefixKaspaTest,
 		},
 
 		// Negative P2PKH tests.
@@ -93,13 +97,15 @@ func TestAddresses(t *testing.T) {
 					0xaa}
 				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixKaspa)
 			},
-			prefix: util.Bech32PrefixKaspa,
+			passedPrefix:   util.Bech32PrefixKaspa,
+			expectedPrefix: util.Bech32PrefixKaspa,
 		},
 		{
-			name:   "p2pkh bad checksum",
-			addr:   "kaspa:qr35ennsep3hxfe7lnz5ee7j5jgmkjswss74as46gx",
-			valid:  false,
-			prefix: util.Bech32PrefixKaspa,
+			name:           "p2pkh bad checksum",
+			addr:           "kaspa:qr35ennsep3hxfe7lnz5ee7j5jgmkjswss74as46gx",
+			valid:          false,
+			passedPrefix:   util.Bech32PrefixKaspa,
+			expectedPrefix: util.Bech32PrefixKaspa,
 		},
 
 		// Positive P2SH tests.
@@ -141,7 +147,8 @@ func TestAddresses(t *testing.T) {
 					0xae}
 				return util.NewAddressScriptHash(script, util.Bech32PrefixKaspa)
 			},
-			prefix: util.Bech32PrefixKaspa,
+			passedPrefix:   util.Bech32PrefixKaspa,
+			expectedPrefix: util.Bech32PrefixKaspa,
 		},
 		{
 			// Taken from transactions:
@@ -162,7 +169,8 @@ func TestAddresses(t *testing.T) {
 					0xc0, 0x51, 0x99, 0x29, 0x01, 0x9e, 0xf8, 0x6e, 0xb5, 0xb4}
 				return util.NewAddressScriptHashFromHash(hash, util.Bech32PrefixKaspa)
 			},
-			prefix: util.Bech32PrefixKaspa,
+			passedPrefix:   util.Bech32PrefixKaspa,
+			expectedPrefix: util.Bech32PrefixKaspa,
 		},
 		{
 			name:    "testnet p2sh",
@@ -180,7 +188,8 @@ func TestAddresses(t *testing.T) {
 					0x2c, 0xdc, 0x28, 0x56, 0x17, 0x04, 0x0c, 0x92, 0x4a, 0x0a}
 				return util.NewAddressScriptHashFromHash(hash, util.Bech32PrefixKaspaTest)
 			},
-			prefix: util.Bech32PrefixKaspaTest,
+			passedPrefix:   util.Bech32PrefixKaspaTest,
+			expectedPrefix: util.Bech32PrefixKaspaTest,
 		},
 
 		// Negative P2SH tests.
@@ -195,13 +204,14 @@ func TestAddresses(t *testing.T) {
 					0x10}
 				return util.NewAddressScriptHashFromHash(hash, util.Bech32PrefixKaspa)
 			},
-			prefix: util.Bech32PrefixKaspa,
+			passedPrefix:   util.Bech32PrefixKaspa,
+			expectedPrefix: util.Bech32PrefixKaspa,
 		},
 	}
 
 	for _, test := range tests {
 		// Decode addr and compare error against valid.
-		decoded, err := util.DecodeAddress(test.addr, test.prefix)
+		decoded, err := util.DecodeAddress(test.addr, test.passedPrefix)
 		if (err == nil) != test.valid {
 			t.Errorf("%v: decoding test failed: %v", test.name, err)
 			return
@@ -262,7 +272,7 @@ func TestAddresses(t *testing.T) {
 			}
 
 			// Ensure the address is for the expected network.
-			if !decoded.IsForPrefix(test.prefix) {
+			if !decoded.IsForPrefix(test.expectedPrefix) {
 				t.Errorf("%v: calculated network does not match expected",
 					test.name)
 				return
@@ -325,6 +335,11 @@ func TestDecodeAddressErrorConditions(t *testing.T) {
 			util.Bech32PrefixKaspaReg,
 			"decoded address is of unknown size",
 		},
+		{
+			"kaspatest:qqq65mvpxcmajeq44n2n8vfn6u9f8l4zsy0xez0tzw",
+			util.Bech32PrefixKaspa,
+			"decoded address is of wrong network",
+		},
 	}
 
 	for _, test := range tests {
@@ -332,7 +347,7 @@ func TestDecodeAddressErrorConditions(t *testing.T) {
 		if err == nil {
 			t.Errorf("decodeAddress unexpectedly succeeded")
 		} else if !strings.Contains(err.Error(), test.errorMessage) {
-			t.Errorf("received mismatched error. Expected %s but got %s",
+			t.Errorf("received mismatched error. Expected '%s' but got '%s'",
 				test.errorMessage, err)
 		}
 	}

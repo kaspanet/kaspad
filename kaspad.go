@@ -49,6 +49,8 @@ var winServiceMain func() (bool, error)
 // notified with the server once it is setup so it can gracefully stop it when
 // requested from the service control manager.
 func kaspadMain(serverChan chan<- *server.Server) error {
+	interrupt := signal.InterruptListener()
+
 	// Load configuration and parse command line. This function also
 	// initializes logging and configures it accordingly.
 	err := config.LoadAndSetActiveConfig()
@@ -61,7 +63,6 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 	// Get a channel that will be closed when a shutdown signal has been
 	// triggered either from an OS signal such as SIGINT (Ctrl+C) or from
 	// another subsystem such as the RPC server.
-	interrupt := signal.InterruptListener()
 	defer kasdLog.Info("Shutdown complete")
 
 	// Show version at startup.
