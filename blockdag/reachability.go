@@ -258,8 +258,7 @@ func (rtn *reachabilityTreeNode) reindexIntervals() ([]*reachabilityTreeNode, er
 }
 
 // countSubtrees counts the size of each subtree under this node.
-// Its outcome is exactly equal to the following recursive
-// implementation:
+// It is equivalent to the following recursive implementation:
 //
 // func (rtn *reachabilityTreeNode) countSubtrees() uint64 {
 //     subtreeSize := uint64(0)
