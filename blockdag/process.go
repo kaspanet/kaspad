@@ -226,7 +226,7 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 	}
 
 	if !isDelayedBlock {
-		err = dag.processDelayedBlocks()
+		err = dag.ProcessDelayedBlocks()
 		if err != nil {
 			return false, 0, err
 		}
