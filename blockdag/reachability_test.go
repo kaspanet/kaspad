@@ -57,7 +57,7 @@ func TestAddChild(t *testing.T) {
 	// Expect all nodes to be descendant nodes of root
 	currentNode := currentTip
 	for currentNode != nil {
-		if !root.interval.isAncestorOf(currentNode.interval) {
+		if !root.isAncestorOf(currentNode) {
 			t.Fatalf("TestAddChild: currentNode is not a descendant of root")
 		}
 		currentNode = currentNode.parent
@@ -111,7 +111,7 @@ func TestAddChild(t *testing.T) {
 
 	// Expect all nodes to be descendant nodes of root
 	for _, childNode := range childNodes {
-		if !root.interval.isAncestorOf(childNode.interval) {
+		if !root.isAncestorOf(childNode) {
 			t.Fatalf("TestAddChild: childNode is not a descendant of root")
 		}
 	}

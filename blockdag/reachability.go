@@ -369,6 +369,12 @@ func (rtn *reachabilityTreeNode) propagateInterval(interval *reachabilityInterva
 	return modifiedNodes, nil
 }
 
+// isAncestorOf checks if this node is a reachability tree ancestor
+// of the other node.
+func (rtn *reachabilityTreeNode) isAncestorOf(other *reachabilityTreeNode) bool {
+	return rtn.interval.isAncestorOf(other.interval)
+}
+
 // String returns a string representation of a reachability tree node
 // and its children.
 func (rtn *reachabilityTreeNode) String() string {
