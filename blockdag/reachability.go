@@ -203,7 +203,7 @@ func (rtn *reachabilityTreeNode) addTreeChild(child *reachabilityTreeNode) ([]*r
 	}
 
 	// No allocation space left -- reindex
-	if allocated.start > allocated.end {
+	if allocated.size() == 0 {
 		return rtn.reindexIntervals()
 	}
 
