@@ -157,7 +157,7 @@ func (ri *reachabilityInterval) String() string {
 // The main challenge of maintaining such intervals is that our tree
 // is an ever-growing tree and as such pre-allocated intervals may
 // not suffice as per future events. This is where the reindexing
-// algorithm below comes in to place.
+// algorithm below comes into place.
 // We use the reasonable assumption that the initial root interval
 // (e.g., [0, 2^64-1]) should always suffice for any practical use-
 // case, and so reindexing should always succeed unless more than
