@@ -188,11 +188,11 @@ func newReachabilityTreeNode(blockNode *blockNode) *reachabilityTreeNode {
 	return &reachabilityTreeNode{blockNode: blockNode, interval: &interval, remainingInterval: &remainingInterval}
 }
 
-// addTreeChild adds child to this tree node. If this node has no
+// addChild adds child to this tree node. If this node has no
 // remaining interval to allocate, a reindexing is triggered.
 // This method returns a list of reachabilityTreeNodes modified
 // by it.
-func (rtn *reachabilityTreeNode) addTreeChild(child *reachabilityTreeNode) ([]*reachabilityTreeNode, error) {
+func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode) ([]*reachabilityTreeNode, error) {
 	// Set the parent-child relationship
 	rtn.children = append(rtn.children, child)
 	child.parent = rtn

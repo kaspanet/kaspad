@@ -944,7 +944,7 @@ func (dag *BlockDAG) updateReachability(node *blockNode) error {
 	if err != nil {
 		return err
 	}
-	modifiedTreeNodes, err := selectedParentTreeNode.addTreeChild(thisTreeNode)
+	modifiedTreeNodes, err := selectedParentTreeNode.addChild(thisTreeNode)
 	if err != nil {
 		return err
 	}

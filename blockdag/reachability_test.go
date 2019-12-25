@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-func TestAddTreeChild(t *testing.T) {
-	// Scenario 1: test addTreeChild in a chain
+func TestAddChild(t *testing.T) {
+	// Scenario 1: test addChild in a chain
 	//             root -> a -> b -> c...
 	// Create the root node of a new reachability tree
 	root := newReachabilityTreeNode(&blockNode{})
@@ -16,15 +16,15 @@ func TestAddTreeChild(t *testing.T) {
 	currentTip := root
 	for i := 0; i < 6; i++ {
 		node := newReachabilityTreeNode(&blockNode{})
-		modifiedNodes, err := currentTip.addTreeChild(node)
+		modifiedNodes, err := currentTip.addChild(node)
 		if err != nil {
-			t.Fatalf("TestAddTreeChild: addTreeChild failed: %s", err)
+			t.Fatalf("TestAddChild: addChild failed: %s", err)
 		}
 
 		// Expect only the node and its parent to be affected
 		expectedModifiedNodes := []*reachabilityTreeNode{currentTip, node}
 		if !reflect.DeepEqual(modifiedNodes, expectedModifiedNodes) {
-			t.Fatalf("TestAddTreeChild: unexpected modifiedNodes. "+
+			t.Fatalf("TestAddChild: unexpected modifiedNodes. "+
 				"want: %s, got: %s", expectedModifiedNodes, modifiedNodes)
 		}
 
@@ -33,37 +33,37 @@ func TestAddTreeChild(t *testing.T) {
 
 	// Add another node to the tip of the chain to trigger a reindex (100 < 2^7=128)
 	lastChild := newReachabilityTreeNode(&blockNode{})
-	modifiedNodes, err := currentTip.addTreeChild(lastChild)
+	modifiedNodes, err := currentTip.addChild(lastChild)
 	if err != nil {
-		t.Fatalf("TestAddTreeChild: addTreeChild failed: %s", err)
+		t.Fatalf("TestAddChild: addChild failed: %s", err)
 	}
 
 	// Expect more than just the node and its parent to be modified but not
 	// all the nodes
 	if len(modifiedNodes) <= 2 && len(modifiedNodes) >= 7 {
-		t.Fatalf("TestAddTreeChild: unexpected amount of modifiedNodes.")
+		t.Fatalf("TestAddChild: unexpected amount of modifiedNodes.")
 	}
 
 	// Expect the tip to have an interval of 1 and remaining interval of 0
 	tipInterval := lastChild.interval.size()
 	if tipInterval != 1 {
-		t.Fatalf("TestAddTreeChild: unexpected tip interval size: want: 1, got: %d", tipInterval)
+		t.Fatalf("TestAddChild: unexpected tip interval size: want: 1, got: %d", tipInterval)
 	}
 	tipRemainingInterval := lastChild.remainingInterval.size()
 	if tipRemainingInterval != 0 {
-		t.Fatalf("TestAddTreeChild: unexpected tip interval size: want: 0, got: %d", tipRemainingInterval)
+		t.Fatalf("TestAddChild: unexpected tip interval size: want: 0, got: %d", tipRemainingInterval)
 	}
 
 	// Expect all nodes to be descendant nodes of root
 	currentNode := currentTip
 	for currentNode != nil {
 		if !root.interval.isAncestorOf(currentNode.interval) {
-			t.Fatalf("TestAddTreeChild: currentNode is not a descendant of root")
+			t.Fatalf("TestAddChild: currentNode is not a descendant of root")
 		}
 		currentNode = currentNode.parent
 	}
 
-	// Scenario 2: test addTreeChild where all nodes are direct descendants of root
+	// Scenario 2: test addChild where all nodes are direct descendants of root
 	//             root -> a, b, c...
 	// Create the root node of a new reachability tree
 	root = newReachabilityTreeNode(&blockNode{})
@@ -73,46 +73,46 @@ func TestAddTreeChild(t *testing.T) {
 	childNodes := make([]*reachabilityTreeNode, 6)
 	for i := 0; i < len(childNodes); i++ {
 		childNodes[i] = newReachabilityTreeNode(&blockNode{})
-		modifiedNodes, err := root.addTreeChild(childNodes[i])
+		modifiedNodes, err := root.addChild(childNodes[i])
 		if err != nil {
-			t.Fatalf("TestAddTreeChild: addTreeChild failed: %s", err)
+			t.Fatalf("TestAddChild: addChild failed: %s", err)
 		}
 
 		// Expect only the node and the root to be affected
 		expectedModifiedNodes := []*reachabilityTreeNode{root, childNodes[i]}
 		if !reflect.DeepEqual(modifiedNodes, expectedModifiedNodes) {
-			t.Fatalf("TestAddTreeChild: unexpected modifiedNodes. "+
+			t.Fatalf("TestAddChild: unexpected modifiedNodes. "+
 				"want: %s, got: %s", expectedModifiedNodes, modifiedNodes)
 		}
 	}
 
 	// Add another node to the root to trigger a reindex (100 < 2^7=128)
 	lastChild = newReachabilityTreeNode(&blockNode{})
-	modifiedNodes, err = root.addTreeChild(lastChild)
+	modifiedNodes, err = root.addChild(lastChild)
 	if err != nil {
-		t.Fatalf("TestAddTreeChild: addTreeChild failed: %s", err)
+		t.Fatalf("TestAddChild: addChild failed: %s", err)
 	}
 
 	// Expect more than just the node and the root to be modified but not
 	// all the nodes
 	if len(modifiedNodes) <= 2 && len(modifiedNodes) >= 7 {
-		t.Fatalf("TestAddTreeChild: unexpected amount of modifiedNodes.")
+		t.Fatalf("TestAddChild: unexpected amount of modifiedNodes.")
 	}
 
 	// Expect the last-added child to have an interval of 1 and remaining interval of 0
 	lastChildInterval := lastChild.interval.size()
 	if lastChildInterval != 1 {
-		t.Fatalf("TestAddTreeChild: unexpected lastChild interval size: want: 1, got: %d", lastChildInterval)
+		t.Fatalf("TestAddChild: unexpected lastChild interval size: want: 1, got: %d", lastChildInterval)
 	}
 	lastChildRemainingInterval := lastChild.remainingInterval.size()
 	if lastChildRemainingInterval != 0 {
-		t.Fatalf("TestAddTreeChild: unexpected lastChild interval size: want: 0, got: %d", lastChildRemainingInterval)
+		t.Fatalf("TestAddChild: unexpected lastChild interval size: want: 0, got: %d", lastChildRemainingInterval)
 	}
 
 	// Expect all nodes to be descendant nodes of root
 	for _, childNode := range childNodes {
 		if !root.interval.isAncestorOf(childNode.interval) {
-			t.Fatalf("TestAddTreeChild: childNode is not a descendant of root")
+			t.Fatalf("TestAddChild: childNode is not a descendant of root")
 		}
 	}
 }
