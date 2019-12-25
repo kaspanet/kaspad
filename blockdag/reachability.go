@@ -469,8 +469,8 @@ func (fb futureCoveringBlockSet) isInFuture(block *futureCoveringBlock) bool {
 	return candidateInterval.isAncestorOf(blockInterval)
 }
 
-// bisect finds the appropriate index for the given block's reachability
-// interval.
+// bisect finds the index of the block with the maximum start that is below
+// the given block.
 func (fb futureCoveringBlockSet) bisect(block *futureCoveringBlock) int {
 	blockInterval := block.treeNode.interval
 	end := blockInterval.end
