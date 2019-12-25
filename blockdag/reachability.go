@@ -281,14 +281,15 @@ func (rtn *reachabilityTreeNode) reindexIntervals() ([]*reachabilityTreeNode, er
 // For each node rtn this field is initialized to 0. The field
 // has two possible states:
 // * rtn.subtreeSize > |rtn.children|:
-//   this indicates that rtn's subtree size is already known and
+//   indicates that rtn's subtree size is already known and
 //   calculated.
 // * rtn.subtreeSize <= |rtn.children|:
-//   we are still in the counting stage of tracking which of
-//   rtn's children has already calculated its subtree size.
+//   indicates that we are still in the counting stage of
+//   tracking which of rtn's children has already calculated
+//   its subtree size.
 //   This way, once rtn.subtree_size = |rtn.children| we know we
 //   can pull subtree sizes from children and continue pushing
-//   the readiness signal further up
+//   the readiness signal further up.
 func (rtn *reachabilityTreeNode) countSubtrees() uint64 {
 	queue := []*reachabilityTreeNode{rtn}
 	for len(queue) > 0 {
