@@ -204,7 +204,7 @@ func (rtn *reachabilityTreeNode) addTreeChild(child *reachabilityTreeNode) ([]*r
 
 	// No allocation space left -- reindex
 	if allocated.start > allocated.end {
-		return rtn.reindexTreeIntervals()
+		return rtn.reindexIntervals()
 	}
 
 	// Allocate from the remaining space
@@ -224,12 +224,12 @@ func (rtn *reachabilityTreeNode) setInterval(interval *reachabilityInterval) {
 	rtn.remainingInterval = remainingInterval
 }
 
-// reindexTreeInterval traverses the reachability subtree that's
+// reindexIntervals traverses the reachability subtree that's
 // defined by this node and reallocates reachability interval space
 // such that another reindexing is unlikely to occur shortly
 // thereafter. This method returns a list of reachabilityTreeNodes
 // modified by it.
-func (rtn *reachabilityTreeNode) reindexTreeIntervals() ([]*reachabilityTreeNode, error) {
+func (rtn *reachabilityTreeNode) reindexIntervals() ([]*reachabilityTreeNode, error) {
 	current := rtn
 
 	// Initial interval and subtree sizes
