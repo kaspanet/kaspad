@@ -95,8 +95,8 @@ func (ri *reachabilityInterval) split(sizes []uint64) ([]*reachabilityInterval, 
 	}
 
 	// Give exponentially proportional allocation:
-	//   f_i = 2^x_i / sum(2^x_j)
-	// In the code below the above equation is divided by 2^max(x_i)
+	//   fraction[i] = 2^size[i] / sum(2^size[j])
+	// In the code below the above equation is divided by 2^max(size)
 	// to avoid exploding numbers.
 	maxSize := uint64(0)
 	for _, size := range sizes {
