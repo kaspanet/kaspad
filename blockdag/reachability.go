@@ -29,6 +29,7 @@ func (ri *reachabilityInterval) size() uint64 {
 // See splitFraction for further details.
 func (ri *reachabilityInterval) splitInHalf() (
 	left *reachabilityInterval, right *reachabilityInterval, err error) {
+
 	return ri.splitFraction(0.5)
 }
 
@@ -37,6 +38,7 @@ func (ri *reachabilityInterval) splitInHalf() (
 // contains the given fraction of the original interval's capacity.
 func (ri *reachabilityInterval) splitFraction(fraction float64) (
 	left *reachabilityInterval, right *reachabilityInterval, err error) {
+
 	if fraction < 0 || fraction > 1 {
 		return nil, nil, errors.Errorf("fraction must be between 0 and 1")
 	}
@@ -335,7 +337,9 @@ func (rtn *reachabilityTreeNode) countSubtrees() uint64 {
 // 'split' allocation rule (see the split() method for further
 // details). This method returns a list of reachabilityTreeNodes
 // modified by it.
-func (rtn *reachabilityTreeNode) propagateInterval(interval *reachabilityInterval) ([]*reachabilityTreeNode, error) {
+func (rtn *reachabilityTreeNode) propagateInterval(
+	interval *reachabilityInterval) ([]*reachabilityTreeNode, error) {
+
 	rtn.setInterval(interval)
 	modifiedNodes := []*reachabilityTreeNode{rtn}
 	queue := []*reachabilityTreeNode{rtn}
