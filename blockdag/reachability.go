@@ -43,7 +43,7 @@ func (ri *reachabilityInterval) splitFraction(fraction float64) (
 		return nil, nil, errors.Errorf("fraction must be between 0 and 1")
 	}
 	if ri.size() == 0 {
-		return ri, ri, nil
+		return nil, nil, errors.Errorf("cannot split an empty interval")
 	}
 
 	allocationSize := uint64(math.Ceil(float64(ri.size()) * fraction))
@@ -200,17 +200,16 @@ func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode) ([]*reach
 	rtn.children = append(rtn.children, child)
 	child.parent = rtn
 
-	allocated, remaining, err := rtn.remainingInterval.splitInHalf()
-	if err != nil {
-		return nil, err
-	}
-
 	// No allocation space left -- reindex
-	if allocated.size() == 0 {
+	if rtn.remainingInterval.size() == 0 {
 		return rtn.reindexIntervals()
 	}
 
 	// Allocate from the remaining space
+	allocated, remaining, err := rtn.remainingInterval.splitInHalf()
+	if err != nil {
+		return nil, err
+	}
 	child.setInterval(allocated)
 	rtn.remainingInterval = remaining
 	return []*reachabilityTreeNode{rtn, child}, nil
