@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"math"
+	"strings"
 )
 
 // reachabilityInterval represents an interval to be used within the
@@ -391,17 +392,9 @@ func (rtn *reachabilityTreeNode) String() string {
 			line += child.interval.String()
 			queue = append(queue, child)
 		}
-		lines = append(lines, line)
+		lines = append([]string{line}, lines...)
 	}
-
-	nodeString := ""
-	for i := len(lines) - 1; i >= 0; i-- {
-		line := lines[i]
-		nodeString += line
-		nodeString += "\n"
-	}
-
-	return nodeString
+	return strings.Join(lines, "\n")
 }
 
 // futureCoveringBlockSet represents a collection of blocks in the future of
