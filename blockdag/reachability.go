@@ -433,7 +433,7 @@ type futureCoveringBlock struct {
 //   be always preserved.
 func (fb *futureCoveringBlockSet) insertBlock(block *futureCoveringBlock) {
 	blockInterval := block.treeNode.interval
-	i := fb.bisect(block)
+	i := fb.findIndex(block)
 	if i > 0 {
 		candidate := (*fb)[i-1]
 		candidateInterval := candidate.treeNode.interval
@@ -465,7 +465,7 @@ func (fb *futureCoveringBlockSet) insertBlock(block *futureCoveringBlock) {
 // binary search over futureCoveringBlockSet and answer the query in
 // O(log(|futureCoveringBlockSet|)).
 func (fb futureCoveringBlockSet) isInFuture(block *futureCoveringBlock) bool {
-	i := fb.bisect(block)
+	i := fb.findIndex(block)
 	if i == 0 {
 		// No candidate to contain block
 		return false
@@ -477,9 +477,9 @@ func (fb futureCoveringBlockSet) isInFuture(block *futureCoveringBlock) bool {
 	return candidateInterval.isAncestorOf(blockInterval)
 }
 
-// bisect finds the index of the block with the maximum start that is below
+// findIndex finds the index of the block with the maximum start that is below
 // the given block.
-func (fb futureCoveringBlockSet) bisect(block *futureCoveringBlock) int {
+func (fb futureCoveringBlockSet) findIndex(block *futureCoveringBlock) int {
 	blockInterval := block.treeNode.interval
 	end := blockInterval.end
 
