@@ -55,7 +55,7 @@ func (ri *reachabilityInterval) splitFraction(fraction float64) (
 }
 
 // splitExact splits this interval to exactly |sizes| parts where
-// |part_i| = sizes[i].	This method expects sum(sizes) to be exactly
+// |part_i| = sizes[i]. This method expects sum(sizes) to be exactly
 // equal to the interval's capacity.
 func (ri *reachabilityInterval) splitExact(sizes []uint64) ([]*reachabilityInterval, error) {
 	sizesSum := uint64(0)
@@ -76,7 +76,7 @@ func (ri *reachabilityInterval) splitExact(sizes []uint64) ([]*reachabilityInter
 }
 
 // split splits this interval to len(sizes) parts by some allocation
-// rule. This method expects sum(sizes)	to be smaller or equal to
+// rule. This method expects sum(sizes) to be smaller or equal to
 // the interval's capacity. Every part_i is allocated at least
 // sizes[i] capacity. The remaining budget is split by an
 // exponential rule described below.
