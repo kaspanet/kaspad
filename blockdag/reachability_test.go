@@ -325,9 +325,9 @@ func TestSplit(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		intervals, err := test.interval.split(test.sizes)
+		intervals, err := test.interval.splitExponential(test.sizes)
 		if err != nil {
-			t.Fatalf("TestSplit: split unexpectedly failed in test #%d: %s", i, err)
+			t.Fatalf("TestSplit: splitExponential unexpectedly failed in test #%d: %s", i, err)
 		}
 		if !reflect.DeepEqual(intervals, test.expectedIntervals) {
 			t.Errorf("TestSplit: unexpected intervals in test #%d. "+

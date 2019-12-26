@@ -75,18 +75,18 @@ func (ri *reachabilityInterval) splitExact(sizes []uint64) ([]*reachabilityInter
 	return intervals, nil
 }
 
-// split splits this interval to len(sizes) parts by some allocation
-// rule. This method expects sum(sizes) to be smaller or equal to
-// the interval's capacity. Every part_i is allocated at least
-// sizes[i] capacity. The remaining budget is split by an
-// exponential rule described below.
+// splitExponential splits this interval to len(sizes) parts by
+// some allocation rule. This method expects sum(sizes) to be
+// smaller or equal to the interval's capacity. Every part_i is
+// allocated at least sizes[i] capacity. The remaining budget is
+// split by an exponential rule described below.
 //
 // This rule follows the GHOSTDAG protocol behavior where the child
 // with the largest subtree is expected to dominate the competition
 // for new blocks and thus grow the most. However, we may need to
 // add slack for non-largest subtrees in order to make CPU reindexing
 // attacks unworthy.
-func (ri *reachabilityInterval) split(sizes []uint64) ([]*reachabilityInterval, error) {
+func (ri *reachabilityInterval) splitExponential(sizes []uint64) ([]*reachabilityInterval, error) {
 	intervalSize := ri.size()
 	sizesSum := uint64(0)
 	for _, size := range sizes {
@@ -335,7 +335,7 @@ func (rtn *reachabilityTreeNode) countSubtrees() uint64 {
 
 // propagateInterval applies new intervals using a BFS traversal.
 // The intervals are allocated according to subtree sizes and the
-// 'split' allocation rule (see the split() method for further
+// 'split' allocation rule (see the splitExponential() method for further
 // details). This method returns a list of reachabilityTreeNodes
 // modified by it.
 func (rtn *reachabilityTreeNode) propagateInterval(
@@ -352,7 +352,7 @@ func (rtn *reachabilityTreeNode) propagateInterval(
 			for i, child := range current.children {
 				sizes[i] = child.subtreeSize
 			}
-			intervals, err := current.remainingInterval.split(sizes)
+			intervals, err := current.remainingInterval.splitExponential(sizes)
 			if err != nil {
 				return nil, err
 			}
