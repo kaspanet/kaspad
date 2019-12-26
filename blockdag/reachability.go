@@ -36,6 +36,8 @@ func (ri *reachabilityInterval) splitInHalf() (
 // splitFraction splits this interval to two parts such that their
 // union is equal to the original interval and the first (left) part
 // contains the given fraction of the original interval's capacity.
+// Note: if the split results in fractional parts, this method rounds
+// the first part up and the last part down.
 func (ri *reachabilityInterval) splitFraction(fraction float64) (
 	left *reachabilityInterval, right *reachabilityInterval, err error) {
 
