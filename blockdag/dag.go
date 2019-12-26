@@ -1010,10 +1010,10 @@ func (dag *BlockDAG) selectedParentAnticone(node *blockNode) (blockSet, error) {
 
 // isAncestorOf returns true if this node is in the past of the other node
 // in the DAG. The complexity of this method is O(log(|node.futureCoveringBlockSet|))
-func (dag *BlockDAG) isAncestorOf(node *blockNode, other *blockNode) (bool, error) {
+func (dag *BlockDAG) isAncestorOf(this *blockNode, other *blockNode) (bool, error) {
 	// First, check if this node is a reachability tree ancestor of the
 	// other node
-	thisTreeNode, err := dag.reachabilityStore.treeNodeByBlockNode(node)
+	thisTreeNode, err := dag.reachabilityStore.treeNodeByBlockNode(this)
 	if err != nil {
 		return false, err
 	}
@@ -1027,7 +1027,7 @@ func (dag *BlockDAG) isAncestorOf(node *blockNode, other *blockNode) (bool, erro
 
 	// Otherwise, use previously registered future blocks to complete the
 	// reachability test
-	thisFutureCoveringSet, err := dag.reachabilityStore.futureCoveringSetByBlockNode(node)
+	thisFutureCoveringSet, err := dag.reachabilityStore.futureCoveringSetByBlockNode(this)
 	if err != nil {
 		return false, err
 	}
