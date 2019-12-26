@@ -99,10 +99,33 @@ func (ri *reachabilityInterval) splitExponential(sizes []uint64) ([]*reachabilit
 		return ri.splitExact(sizes)
 	}
 
-	// Give exponentially proportional allocation:
-	//   fraction[i] = 2^size[i] / sum(2^size[j])
-	// In the code below the above equation is divided by 2^max(size)
-	// to avoid exploding numbers.
+	// Add a fractional bias to every size in the given sizes
+	totalBias := intervalSize - sizesSum
+	remainingBias := totalBias
+	biasedSizes := make([]uint64, len(sizes))
+	fractions := exponentialFractions(sizes)
+	for i, fraction := range fractions {
+		var bias uint64
+		if i == len(fractions)-1 {
+			bias = remainingBias
+		} else {
+			bias = uint64(math.Round(float64(totalBias) * fraction))
+			if bias > remainingBias {
+				bias = remainingBias
+			}
+		}
+		biasedSizes[i] = sizes[i] + bias
+		remainingBias -= bias
+	}
+	return ri.splitExact(biasedSizes)
+}
+
+// exponentialFractions returns a fraction of each size in sizes
+// as follows:
+//   fraction[i] = 2^size[i] / sum(2^size[j])
+// In the code below the above equation is divided by 2^max(size)
+// to avoid exploding numbers.
+func exponentialFractions(sizes []uint64) []float64 {
 	maxSize := uint64(0)
 	for _, size := range sizes {
 		if size > maxSize {
@@ -120,25 +143,7 @@ func (ri *reachabilityInterval) splitExponential(sizes []uint64) ([]*reachabilit
 	for i, fraction := range fractions {
 		fractions[i] = fraction / fractionsSum
 	}
-
-	// Add a fractional bias to every size in the given sizes
-	totalBias := intervalSize - sizesSum
-	remainingBias := totalBias
-	biasedSizes := make([]uint64, len(sizes))
-	for i, fraction := range fractions {
-		var bias uint64
-		if i == len(fractions)-1 {
-			bias = remainingBias
-		} else {
-			bias = uint64(math.Round(float64(totalBias) * fraction))
-			if bias > remainingBias {
-				bias = remainingBias
-			}
-		}
-		biasedSizes[i] = sizes[i] + bias
-		remainingBias -= bias
-	}
-	return ri.splitExact(biasedSizes)
+	return fractions
 }
 
 // isAncestorOf checks if this interval's node is a reachability tree
