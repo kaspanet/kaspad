@@ -10,7 +10,7 @@ func TestAddChild(t *testing.T) {
 	//             root -> a -> b -> c...
 	// Create the root node of a new reachability tree
 	root := newReachabilityTreeNode(&blockNode{})
-	root.setInterval(&reachabilityInterval{start: 1, end: 100})
+	root.setInterval(newReachabilityInterval(1, 100))
 
 	// Add a chain of child nodes just before a reindex occurs (2^6=64 < 100)
 	currentTip := root
@@ -67,7 +67,7 @@ func TestAddChild(t *testing.T) {
 	//             root -> a, b, c...
 	// Create the root node of a new reachability tree
 	root = newReachabilityTreeNode(&blockNode{})
-	root.setInterval(&reachabilityInterval{start: 1, end: 100})
+	root.setInterval(newReachabilityInterval(1, 100))
 
 	// Add child nodes to root just before a reindex occurs (2^6=64 < 100)
 	childNodes := make([]*reachabilityTreeNode, 6)
@@ -125,40 +125,40 @@ func TestSplitFraction(t *testing.T) {
 		expectedRight *reachabilityInterval
 	}{
 		{
-			interval:      &reachabilityInterval{start: 1, end: 100},
+			interval:      newReachabilityInterval(1, 100),
 			fraction:      0.5,
-			expectedLeft:  &reachabilityInterval{start: 1, end: 50},
-			expectedRight: &reachabilityInterval{start: 51, end: 100},
+			expectedLeft:  newReachabilityInterval(1, 50),
+			expectedRight: newReachabilityInterval(51, 100),
 		},
 		{
-			interval:      &reachabilityInterval{start: 2, end: 100},
+			interval:      newReachabilityInterval(2, 100),
 			fraction:      0.5,
-			expectedLeft:  &reachabilityInterval{start: 2, end: 51},
-			expectedRight: &reachabilityInterval{start: 52, end: 100},
+			expectedLeft:  newReachabilityInterval(2, 51),
+			expectedRight: newReachabilityInterval(52, 100),
 		},
 		{
-			interval:      &reachabilityInterval{start: 1, end: 99},
+			interval:      newReachabilityInterval(1, 99),
 			fraction:      0.5,
-			expectedLeft:  &reachabilityInterval{start: 1, end: 50},
-			expectedRight: &reachabilityInterval{start: 51, end: 99},
+			expectedLeft:  newReachabilityInterval(1, 50),
+			expectedRight: newReachabilityInterval(51, 99),
 		},
 		{
-			interval:      &reachabilityInterval{start: 1, end: 100},
+			interval:      newReachabilityInterval(1, 100),
 			fraction:      0.2,
-			expectedLeft:  &reachabilityInterval{start: 1, end: 20},
-			expectedRight: &reachabilityInterval{start: 21, end: 100},
+			expectedLeft:  newReachabilityInterval(1, 20),
+			expectedRight: newReachabilityInterval(21, 100),
 		},
 		{
-			interval:      &reachabilityInterval{start: 1, end: 100},
+			interval:      newReachabilityInterval(1, 100),
 			fraction:      0,
-			expectedLeft:  &reachabilityInterval{start: 1, end: 0},
-			expectedRight: &reachabilityInterval{start: 1, end: 100},
+			expectedLeft:  newReachabilityInterval(1, 0),
+			expectedRight: newReachabilityInterval(1, 100),
 		},
 		{
-			interval:      &reachabilityInterval{start: 1, end: 100},
+			interval:      newReachabilityInterval(1, 100),
 			fraction:      1,
-			expectedLeft:  &reachabilityInterval{start: 1, end: 100},
-			expectedRight: &reachabilityInterval{start: 101, end: 100},
+			expectedLeft:  newReachabilityInterval(1, 100),
+			expectedRight: newReachabilityInterval(101, 100),
 		},
 	}
 
@@ -185,44 +185,44 @@ func TestSplitExact(t *testing.T) {
 		expectedIntervals []*reachabilityInterval
 	}{
 		{
-			interval: &reachabilityInterval{start: 1, end: 100},
+			interval: newReachabilityInterval(1, 100),
 			sizes:    []uint64{100},
 			expectedIntervals: []*reachabilityInterval{
-				{start: 1, end: 100},
+				newReachabilityInterval(1, 100),
 			},
 		},
 		{
-			interval: &reachabilityInterval{start: 1, end: 100},
+			interval: newReachabilityInterval(1, 100),
 			sizes:    []uint64{50, 50},
 			expectedIntervals: []*reachabilityInterval{
-				{start: 1, end: 50},
-				{start: 51, end: 100},
+				newReachabilityInterval(1, 50),
+				newReachabilityInterval(51, 100),
 			},
 		},
 		{
-			interval: &reachabilityInterval{start: 1, end: 100},
+			interval: newReachabilityInterval(1, 100),
 			sizes:    []uint64{10, 20, 30, 40},
 			expectedIntervals: []*reachabilityInterval{
-				{start: 1, end: 10},
-				{start: 11, end: 30},
-				{start: 31, end: 60},
-				{start: 61, end: 100},
+				newReachabilityInterval(1, 10),
+				newReachabilityInterval(11, 30),
+				newReachabilityInterval(31, 60),
+				newReachabilityInterval(61, 100),
 			},
 		},
 		{
-			interval: &reachabilityInterval{start: 1, end: 100},
+			interval: newReachabilityInterval(1, 100),
 			sizes:    []uint64{0, 100},
 			expectedIntervals: []*reachabilityInterval{
-				{start: 1, end: 0},
-				{start: 1, end: 100},
+				newReachabilityInterval(1, 0),
+				newReachabilityInterval(1, 100),
 			},
 		},
 		{
-			interval: &reachabilityInterval{start: 1, end: 100},
+			interval: newReachabilityInterval(1, 100),
 			sizes:    []uint64{100, 0},
 			expectedIntervals: []*reachabilityInterval{
-				{start: 1, end: 100},
-				{start: 101, end: 100},
+				newReachabilityInterval(1, 100),
+				newReachabilityInterval(101, 100),
 			},
 		},
 	}
@@ -246,80 +246,80 @@ func TestSplit(t *testing.T) {
 		expectedIntervals []*reachabilityInterval
 	}{
 		{
-			interval: &reachabilityInterval{start: 1, end: 100},
+			interval: newReachabilityInterval(1, 100),
 			sizes:    []uint64{100},
 			expectedIntervals: []*reachabilityInterval{
-				{start: 1, end: 100},
+				newReachabilityInterval(1, 100),
 			},
 		},
 		{
-			interval: &reachabilityInterval{start: 1, end: 100},
+			interval: newReachabilityInterval(1, 100),
 			sizes:    []uint64{50, 50},
 			expectedIntervals: []*reachabilityInterval{
-				{start: 1, end: 50},
-				{start: 51, end: 100},
+				newReachabilityInterval(1, 50),
+				newReachabilityInterval(51, 100),
 			},
 		},
 		{
-			interval: &reachabilityInterval{start: 1, end: 100},
+			interval: newReachabilityInterval(1, 100),
 			sizes:    []uint64{10, 20, 30, 40},
 			expectedIntervals: []*reachabilityInterval{
-				{start: 1, end: 10},
-				{start: 11, end: 30},
-				{start: 31, end: 60},
-				{start: 61, end: 100},
+				newReachabilityInterval(1, 10),
+				newReachabilityInterval(11, 30),
+				newReachabilityInterval(31, 60),
+				newReachabilityInterval(61, 100),
 			},
 		},
 		{
-			interval: &reachabilityInterval{start: 1, end: 100},
+			interval: newReachabilityInterval(1, 100),
 			sizes:    []uint64{25, 25},
 			expectedIntervals: []*reachabilityInterval{
-				{start: 1, end: 50},
-				{start: 51, end: 100},
+				newReachabilityInterval(1, 50),
+				newReachabilityInterval(51, 100),
 			},
 		},
 		{
-			interval: &reachabilityInterval{start: 1, end: 100},
+			interval: newReachabilityInterval(1, 100),
 			sizes:    []uint64{1, 1},
 			expectedIntervals: []*reachabilityInterval{
-				{start: 1, end: 50},
-				{start: 51, end: 100},
+				newReachabilityInterval(1, 50),
+				newReachabilityInterval(51, 100),
 			},
 		},
 		{
-			interval: &reachabilityInterval{start: 1, end: 100},
+			interval: newReachabilityInterval(1, 100),
 			sizes:    []uint64{33, 33, 33},
 			expectedIntervals: []*reachabilityInterval{
-				{start: 1, end: 33},
-				{start: 34, end: 66},
-				{start: 67, end: 100},
+				newReachabilityInterval(1, 33),
+				newReachabilityInterval(34, 66),
+				newReachabilityInterval(67, 100),
 			},
 		},
 		{
-			interval: &reachabilityInterval{start: 1, end: 100},
+			interval: newReachabilityInterval(1, 100),
 			sizes:    []uint64{10, 15, 25},
 			expectedIntervals: []*reachabilityInterval{
-				{start: 1, end: 10},
-				{start: 11, end: 25},
-				{start: 26, end: 100},
+				newReachabilityInterval(1, 10),
+				newReachabilityInterval(11, 25),
+				newReachabilityInterval(26, 100),
 			},
 		},
 		{
-			interval: &reachabilityInterval{start: 1, end: 100},
+			interval: newReachabilityInterval(1, 100),
 			sizes:    []uint64{25, 15, 10},
 			expectedIntervals: []*reachabilityInterval{
-				{start: 1, end: 75},
-				{start: 76, end: 90},
-				{start: 91, end: 100},
+				newReachabilityInterval(1, 75),
+				newReachabilityInterval(76, 90),
+				newReachabilityInterval(91, 100),
 			},
 		},
 		{
-			interval: &reachabilityInterval{start: 1, end: 10_000},
+			interval: newReachabilityInterval(1, 10_000),
 			sizes:    []uint64{10, 10, 20},
 			expectedIntervals: []*reachabilityInterval{
-				{start: 1, end: 20},
-				{start: 21, end: 40},
-				{start: 41, end: 10_000},
+				newReachabilityInterval(1, 20),
+				newReachabilityInterval(21, 40),
+				newReachabilityInterval(41, 10_000),
 			},
 		},
 	}
@@ -338,12 +338,12 @@ func TestSplit(t *testing.T) {
 
 func TestIsInFuture(t *testing.T) {
 	blocks := futureCoveringBlockSet{
-		{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 2, end: 3}}},
-		{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 4, end: 67}}},
-		{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 67, end: 77}}},
-		{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 657, end: 789}}},
-		{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 1000, end: 1000}}},
-		{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 1920, end: 1921}}},
+		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(2, 3)}},
+		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(4, 67)}},
+		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(67, 77)}},
+		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(657, 789)}},
+		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1000, 1000)}},
+		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1920, 1921)}},
 	}
 
 	tests := []struct {
@@ -351,27 +351,27 @@ func TestIsInFuture(t *testing.T) {
 		expectedResult bool
 	}{
 		{
-			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 1, end: 1}}},
+			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1, 1)}},
 			expectedResult: false,
 		},
 		{
-			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 5, end: 7}}},
+			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(5, 7)}},
 			expectedResult: true,
 		},
 		{
-			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 67, end: 76}}},
+			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(67, 76)}},
 			expectedResult: true,
 		},
 		{
-			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 78, end: 100}}},
+			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(78, 100)}},
 			expectedResult: false,
 		},
 		{
-			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 1980, end: 2000}}},
+			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1980, 2000)}},
 			expectedResult: false,
 		},
 		{
-			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 1920, end: 1920}}},
+			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1920, 1920)}},
 			expectedResult: true,
 		},
 	}
@@ -387,12 +387,12 @@ func TestIsInFuture(t *testing.T) {
 
 func TestInsertBlock(t *testing.T) {
 	blocks := futureCoveringBlockSet{
-		{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 1, end: 3}}},
-		{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 4, end: 67}}},
-		{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 67, end: 77}}},
-		{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 657, end: 789}}},
-		{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 1000, end: 1000}}},
-		{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 1920, end: 1921}}},
+		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1, 3)}},
+		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(4, 67)}},
+		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(67, 77)}},
+		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(657, 789)}},
+		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1000, 1000)}},
+		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1920, 1921)}},
 	}
 
 	tests := []struct {
@@ -401,58 +401,58 @@ func TestInsertBlock(t *testing.T) {
 	}{
 		{
 			toInsert: []*futureCoveringBlock{
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 5, end: 7}}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(5, 7)}},
 			},
 			expectedResult: futureCoveringBlockSet{
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 1, end: 3}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 4, end: 67}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 67, end: 77}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 657, end: 789}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 1000, end: 1000}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 1920, end: 1921}}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1, 3)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(4, 67)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(67, 77)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(657, 789)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1000, 1000)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1920, 1921)}},
 			},
 		},
 		{
 			toInsert: []*futureCoveringBlock{
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 65, end: 78}}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(65, 78)}},
 			},
 			expectedResult: futureCoveringBlockSet{
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 1, end: 3}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 4, end: 67}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 65, end: 78}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 657, end: 789}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 1000, end: 1000}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 1920, end: 1921}}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1, 3)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(4, 67)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(65, 78)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(657, 789)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1000, 1000)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1920, 1921)}},
 			},
 		},
 		{
 			toInsert: []*futureCoveringBlock{
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 88, end: 97}}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(88, 97)}},
 			},
 			expectedResult: futureCoveringBlockSet{
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 1, end: 3}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 4, end: 67}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 67, end: 77}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 88, end: 97}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 657, end: 789}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 1000, end: 1000}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 1920, end: 1921}}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1, 3)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(4, 67)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(67, 77)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(88, 97)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(657, 789)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1000, 1000)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1920, 1921)}},
 			},
 		},
 		{
 			toInsert: []*futureCoveringBlock{
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 88, end: 97}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 3000, end: 3010}}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(88, 97)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(3000, 3010)}},
 			},
 			expectedResult: futureCoveringBlockSet{
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 1, end: 3}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 4, end: 67}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 67, end: 77}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 88, end: 97}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 657, end: 789}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 1000, end: 1000}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 1920, end: 1921}}},
-				{treeNode: &reachabilityTreeNode{interval: &reachabilityInterval{start: 3000, end: 3010}}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1, 3)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(4, 67)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(67, 77)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(88, 97)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(657, 789)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1000, 1000)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1920, 1921)}},
+				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(3000, 3010)}},
 			},
 		},
 	}

@@ -14,8 +14,8 @@ type reachabilityInterval struct {
 	end   uint64
 }
 
-func newReachabilityInterval() *reachabilityInterval {
-	return &reachabilityInterval{start: 1, end: math.MaxUint64 - 1}
+func newReachabilityInterval(start uint64, end uint64) *reachabilityInterval {
+	return &reachabilityInterval{start: start, end: end}
 }
 
 // size returns the size of this interval. Note that intervals are
@@ -44,8 +44,8 @@ func (ri *reachabilityInterval) splitFraction(fraction float64) (
 	}
 
 	allocationSize := uint64(math.Ceil(float64(ri.size()) * fraction))
-	left = &reachabilityInterval{start: ri.start, end: ri.start + allocationSize - 1}
-	right = &reachabilityInterval{start: ri.start + allocationSize, end: ri.end}
+	left = newReachabilityInterval(ri.start, ri.start+allocationSize-1)
+	right = newReachabilityInterval(ri.start+allocationSize, ri.end)
 	return left, right, nil
 }
 
@@ -64,7 +64,7 @@ func (ri *reachabilityInterval) splitExact(sizes []uint64) ([]*reachabilityInter
 	intervals := make([]*reachabilityInterval, len(sizes))
 	start := ri.start
 	for i, size := range sizes {
-		intervals[i] = &reachabilityInterval{start: start, end: start + size - 1}
+		intervals[i] = newReachabilityInterval(start, start+size-1)
 		start += size
 	}
 	return intervals, nil
@@ -183,9 +183,9 @@ type reachabilityTreeNode struct {
 }
 
 func newReachabilityTreeNode(blockNode *blockNode) *reachabilityTreeNode {
-	interval := *newReachabilityInterval()
-	remainingInterval := reachabilityInterval{start: interval.start, end: interval.end - 1}
-	return &reachabilityTreeNode{blockNode: blockNode, interval: &interval, remainingInterval: &remainingInterval}
+	interval := newReachabilityInterval(1, math.MaxUint64-1)
+	remainingInterval := newReachabilityInterval(interval.start, interval.end-1)
+	return &reachabilityTreeNode{blockNode: blockNode, interval: interval, remainingInterval: remainingInterval}
 }
 
 // addChild adds child to this tree node. If this node has no
@@ -220,8 +220,7 @@ func (rtn *reachabilityTreeNode) setInterval(interval *reachabilityInterval) {
 	// Reserve a single interval index for the current node. This
 	// is necessary to ensure that ancestor intervals are strictly
 	// supersets of any descendant intervals and not equal
-	remainingInterval := &reachabilityInterval{start: interval.start, end: interval.end - 1}
-	rtn.remainingInterval = remainingInterval
+	rtn.remainingInterval = newReachabilityInterval(interval.start, interval.end-1)
 }
 
 // reindexIntervals traverses the reachability subtree that's
