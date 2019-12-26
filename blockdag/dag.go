@@ -957,6 +957,25 @@ func (dag *BlockDAG) updateReachability(node *blockNode) error {
 
 	// Add the block to the futureCoveringSets of all the blocks
 	// in the selected parent's anticone
+	anticone, err := dag.selectedParentAnticone(node)
+	if err != nil {
+		return nil
+	}
+	for _, current := range anticone {
+		currentFutureCoveringSet, err := dag.reachabilityStore.futureCoveringSetByBlockNode(current)
+		if err != nil {
+			return err
+		}
+		currentFutureCoveringSet.insertBlock(&futureCoveringBlock{blockNode: node, treeNode: newTreeNode})
+		err = dag.reachabilityStore.setFutureCoveringSet(current, currentFutureCoveringSet)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (dag *BlockDAG) selectedParentAnticone(node *blockNode) (blockSet, error) {
 	anticone := newSet()
 	past := newSet()
 	var queue []*blockNode
@@ -970,22 +989,13 @@ func (dag *BlockDAG) updateReachability(node *blockNode) error {
 	for len(queue) > 0 {
 		var current *blockNode
 		current, queue = queue[0], queue[1:]
-		currentFutureCoveringSet, err := dag.reachabilityStore.futureCoveringSetByBlockNode(current)
-		if err != nil {
-			return err
-		}
-		currentFutureCoveringSet.insertBlock(&futureCoveringBlock{blockNode: node, treeNode: newTreeNode})
-		err = dag.reachabilityStore.setFutureCoveringSet(current, currentFutureCoveringSet)
-		if err != nil {
-			return err
-		}
 		for _, parent := range current.parents {
 			if anticone.contains(parent) || past.contains(parent) {
 				continue
 			}
 			isAncestorOfSelectedParent, err := dag.isAncestorOf(parent, node.selectedParent)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			if isAncestorOfSelectedParent {
 				past.add(parent)
@@ -995,8 +1005,7 @@ func (dag *BlockDAG) updateReachability(node *blockNode) error {
 			queue = append(queue, parent)
 		}
 	}
-
-	return nil
+	return anticone, nil
 }
 
 // isAncestorOf returns true if this node is in the past of the other node
