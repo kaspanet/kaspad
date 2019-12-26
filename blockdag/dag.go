@@ -930,51 +930,6 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, fast
 	return virtualUTXODiff, virtualTxsAcceptanceData, chainUpdates, nil
 }
 
-func (dag *BlockDAG) updateReachability(node *blockNode) error {
-	// Allocate a new reachability tree node
-	newTreeNode := newReachabilityTreeNode(node)
-
-	// If this is the genesis node, simply initialize it and return
-	if node.isGenesis() {
-		return dag.reachabilityStore.addTreeNode(newTreeNode)
-	}
-
-	// Insert the node into the selected parent's reachability tree
-	selectedParentTreeNode, err := dag.reachabilityStore.treeNodeByBlockNode(node.selectedParent)
-	if err != nil {
-		return err
-	}
-	modifiedTreeNodes, err := selectedParentTreeNode.addChild(newTreeNode)
-	if err != nil {
-		return err
-	}
-	for _, modifiedTreeNode := range modifiedTreeNodes {
-		err = dag.reachabilityStore.addTreeNode(modifiedTreeNode)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Add the block to the futureCoveringSets of all the blocks
-	// in the selected parent's anticone
-	anticone, err := dag.selectedParentAnticone(node)
-	if err != nil {
-		return nil
-	}
-	for _, current := range anticone {
-		currentFutureCoveringSet, err := dag.reachabilityStore.futureCoveringSetByBlockNode(current)
-		if err != nil {
-			return err
-		}
-		currentFutureCoveringSet.insertBlock(&futureCoveringBlock{blockNode: node, treeNode: newTreeNode})
-		err = dag.reachabilityStore.setFutureCoveringSet(current, currentFutureCoveringSet)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (dag *BlockDAG) selectedParentAnticone(node *blockNode) (blockSet, error) {
 	anticone := newSet()
 	past := newSet()
@@ -1006,32 +961,6 @@ func (dag *BlockDAG) selectedParentAnticone(node *blockNode) (blockSet, error) {
 		}
 	}
 	return anticone, nil
-}
-
-// isAncestorOf returns true if this node is in the past of the other node
-// in the DAG. The complexity of this method is O(log(|node.futureCoveringBlockSet|))
-func (dag *BlockDAG) isAncestorOf(this *blockNode, other *blockNode) (bool, error) {
-	// First, check if this node is a reachability tree ancestor of the
-	// other node
-	thisTreeNode, err := dag.reachabilityStore.treeNodeByBlockNode(this)
-	if err != nil {
-		return false, err
-	}
-	otherTreeNode, err := dag.reachabilityStore.treeNodeByBlockNode(other)
-	if err != nil {
-		return false, err
-	}
-	if thisTreeNode.isAncestorOf(otherTreeNode) {
-		return true, nil
-	}
-
-	// Otherwise, use previously registered future blocks to complete the
-	// reachability test
-	thisFutureCoveringSet, err := dag.reachabilityStore.futureCoveringSetByBlockNode(this)
-	if err != nil {
-		return false, err
-	}
-	return thisFutureCoveringSet.isInFuture(&futureCoveringBlock{blockNode: other, treeNode: otherTreeNode}), nil
 }
 
 func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) error {
