@@ -30,7 +30,7 @@ func newReachabilityStore(dag *BlockDAG) *reachabilityStore {
 	}
 }
 
-func (store *reachabilityStore) setTreeNode(treeNode *reachabilityTreeNode) error {
+func (store *reachabilityStore) addTreeNode(treeNode *reachabilityTreeNode) error {
 	store.mtx.Lock()
 	defer store.mtx.Unlock()
 	// load the reachability data from DB to store.loaded

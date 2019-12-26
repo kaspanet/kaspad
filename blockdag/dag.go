@@ -936,7 +936,7 @@ func (dag *BlockDAG) updateReachability(node *blockNode) error {
 
 	// If this is the genesis node, simply initialize it and return
 	if node.isGenesis() {
-		return dag.reachabilityStore.setTreeNode(newTreeNode)
+		return dag.reachabilityStore.addTreeNode(newTreeNode)
 	}
 
 	// Insert the node into the selected parent's reachability tree
@@ -949,7 +949,7 @@ func (dag *BlockDAG) updateReachability(node *blockNode) error {
 		return err
 	}
 	for _, modifiedTreeNode := range modifiedTreeNodes {
-		err = dag.reachabilityStore.setTreeNode(modifiedTreeNode)
+		err = dag.reachabilityStore.addTreeNode(modifiedTreeNode)
 		if err != nil {
 			return err
 		}
