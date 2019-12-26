@@ -257,7 +257,9 @@ func (store *reachabilityStore) serializeFutureCoveringSet(w io.Writer, futureCo
 	return nil
 }
 
-func (store *reachabilityStore) deserializeReachabilityData(serializedReachabilityDataBytes []byte, withConnections bool) (*reachabilityData, error) {
+func (store *reachabilityStore) deserializeReachabilityData(
+	serializedReachabilityDataBytes []byte, withConnections bool) (*reachabilityData, error) {
+
 	data := &reachabilityData{}
 	serializedReachabilityData := bytes.NewBuffer(serializedReachabilityDataBytes)
 
