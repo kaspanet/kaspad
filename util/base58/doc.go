@@ -1,7 +1,3 @@
-// Copyright (c) 2014 The btcsuite developers
-// Use of this source code is governed by an ISC
-// license that can be found in the LICENSE file.
-
 /*
 Package base58 provides an API for working with modified base58 and Base58Check
 encodings.

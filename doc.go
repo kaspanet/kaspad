@@ -1,7 +1,3 @@
-// Copyright (c) 2013-2017 The btcsuite developers
-// Use of this source code is governed by an ISC
-// license that can be found in the LICENSE file.
-
 /*
 kaspad is a full-node kaspa implementation written in Go.
 
