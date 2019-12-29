@@ -129,13 +129,5 @@ Peer Statistics
 A snapshot of the current peer statistics can be obtained with the StatsSnapshot
 function. This includes statistics such as the total number of bytes read and
 written, the remote address, user agent, and negotiated protocol version.
-
-Logging
-
-This package provides extensive logging capabilities through the UseLogger
-function which allows a logs.Logger to be specified. For example, logging at
-the debug level provides summaries of every message sent and received, and
-logging at the trace level provides full dumps of parsed messages as well as the
-raw message bytes using a format similar to hexdump -C.
 */
 package peer
