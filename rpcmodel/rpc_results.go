@@ -22,6 +22,7 @@ type GetBlockHeaderVerboseResult struct {
 	Bits                 string   `json:"bits"`
 	Difficulty           float64  `json:"difficulty"`
 	ParentHashes         []string `json:"parentHashes,omitempty"`
+	SelectedParentHash   string   `json:"selectedParentHash"`
 	NextHashes           []string `json:"nextHashes,omitempty"`
 }
 
