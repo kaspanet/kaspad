@@ -272,6 +272,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockVerboseResult-bits":                 "The bits which represent the block difficulty",
 	"getBlockVerboseResult-difficulty":           "The proof-of-work difficulty as a multiple of the minimum difficulty",
 	"getBlockVerboseResult-parentHashes":         "The hashes of the parent blocks",
+	"getBlockVerboseResult-selectedParentHash":   "The selected parent hash",
 	"getBlockVerboseResult-nextHashes":           "The hashes of the next blocks (only if there are any)",
 
 	// GetBlockCountCmd help.
