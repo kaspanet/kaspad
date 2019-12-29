@@ -411,7 +411,17 @@ func (rtn *reachabilityTreeNode) String() string {
 }
 
 // futureCoveringBlockSet represents a collection of blocks in the future of
-// a certain block.
+// a certain block. Once a block B is added to the DAG, every block A_i in
+// B's anticone must register B in its futureCoveringBlockSet. This allows
+// to relatively quickly (O(log(|futureCoveringBlockSet|))) query whether B
+// is a descendent (is in the "future") of any block that previously
+// registered it.
+//
+// Note that futureCoveringBlockSet is meant to be queried only if B is not
+// a reachability tree descendant of the block in question, as reachability
+// tree queries are always O(1).
+//
+// See insertBlock, isInFuture, and dag.isAncestorOf for further details.
 type futureCoveringBlockSet []*futureCoveringBlock
 
 // futureCoveringBlock represents a block in the future of some other block.
