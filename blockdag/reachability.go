@@ -75,8 +75,8 @@ func (ri *reachabilityInterval) splitExact(sizes []uint64) ([]*reachabilityInter
 	return intervals, nil
 }
 
-// splitExponential splits this interval to len(sizes) parts by
-// some allocation rule. This method expects sum(sizes) to be
+// splitWithExponentialBias splits this interval to len(sizes) parts
+// by some allocation rule. This method expects sum(sizes) to be
 // smaller or equal to the interval's capacity. Every part_i is
 // allocated at least sizes[i] capacity. The remaining budget is
 // split by an exponential rule described below.
@@ -86,7 +86,7 @@ func (ri *reachabilityInterval) splitExact(sizes []uint64) ([]*reachabilityInter
 // for new blocks and thus grow the most. However, we may need to
 // add slack for non-largest subtrees in order to make CPU reindexing
 // attacks unworthy.
-func (ri *reachabilityInterval) splitExponential(sizes []uint64) ([]*reachabilityInterval, error) {
+func (ri *reachabilityInterval) splitWithExponentialBias(sizes []uint64) ([]*reachabilityInterval, error) {
 	intervalSize := ri.size()
 	sizesSum := uint64(0)
 	for _, size := range sizes {
@@ -343,9 +343,8 @@ func (rtn *reachabilityTreeNode) countSubtrees() uint64 {
 
 // propagateInterval applies new intervals using a BFS traversal.
 // The intervals are allocated according to subtree sizes and the
-// 'split' allocation rule (see the splitExponential() method for further
-// details). This method returns a list of reachabilityTreeNodes
-// modified by it.
+// allocation rule in splitWithExponentialBias. This method returns
+// a list of reachabilityTreeNodes modified by it.
 func (rtn *reachabilityTreeNode) propagateInterval(
 	interval *reachabilityInterval) ([]*reachabilityTreeNode, error) {
 
@@ -360,7 +359,7 @@ func (rtn *reachabilityTreeNode) propagateInterval(
 			for i, child := range current.children {
 				sizes[i] = child.subtreeSize
 			}
-			intervals, err := current.remainingInterval.splitExponential(sizes)
+			intervals, err := current.remainingInterval.splitWithExponentialBias(sizes)
 			if err != nil {
 				return nil, err
 			}
