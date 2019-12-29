@@ -931,39 +931,6 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, fast
 	return virtualUTXODiff, virtualTxsAcceptanceData, chainUpdates, nil
 }
 
-func (dag *BlockDAG) selectedParentAnticone(node *blockNode) (blockSet, error) {
-	anticone := newSet()
-	past := newSet()
-	var queue []*blockNode
-	for _, parent := range node.parents {
-		if parent == node.selectedParent {
-			continue
-		}
-		anticone.add(parent)
-		queue = append(queue, parent)
-	}
-	for len(queue) > 0 {
-		var current *blockNode
-		current, queue = queue[0], queue[1:]
-		for _, parent := range current.parents {
-			if anticone.contains(parent) || past.contains(parent) {
-				continue
-			}
-			isAncestorOfSelectedParent, err := dag.isAncestorOf(parent, node.selectedParent)
-			if err != nil {
-				return nil, err
-			}
-			if isAncestorOfSelectedParent {
-				past.add(parent)
-				continue
-			}
-			anticone.add(parent)
-			queue = append(queue, parent)
-		}
-	}
-	return anticone, nil
-}
-
 func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) error {
 	dag.utxoLock.Lock()
 	defer dag.utxoLock.Unlock()

@@ -75,6 +75,11 @@ type blockNode struct {
 	// blueScore is the count of all the blue blocks in this block's past
 	blueScore uint64
 
+	// bluesAnticoneSizes is a map holding the set of blues affected by this block and their modified blue anticone size.
+	//
+	// TODO: Use *blockNode as the map key.
+	bluesAnticoneSizes map[daghash.Hash]uint32
+
 	// hash is the double sha 256 of the block.
 	hash *daghash.Hash
 
