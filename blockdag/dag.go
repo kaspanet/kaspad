@@ -1563,6 +1563,21 @@ func (dag *BlockDAG) ChildHashesByHash(hash *daghash.Hash) ([]*daghash.Hash, err
 	return node.children.hashes(), nil
 }
 
+// SelectedParentHash returns the selected parent hash of the block with the given hash in the
+// DAG.
+//
+// This function is safe for concurrent access.
+func (dag *BlockDAG) SelectedParentHash(blockHash *daghash.Hash) (*daghash.Hash, error) {
+	node := dag.index.LookupNode(blockHash)
+	if node == nil {
+		str := fmt.Sprintf("block %s is not in the DAG", blockHash)
+		return nil, errNotInDAG(str)
+
+	}
+
+	return node.selectedParent.hash, nil
+}
+
 // ChainHeightToHashRange returns a range of block hashes for the given start chain
 // height and end hash, inclusive on both ends. The hashes are for all blocks that
 // are ancestors of endHash with height greater than or equal to startChainHeight.
