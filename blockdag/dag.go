@@ -134,8 +134,9 @@ type BlockDAG struct {
 
 	lastFinalityPoint *blockNode
 
-	SubnetworkStore *SubnetworkStore
-	utxoDiffStore   *utxoDiffStore
+	SubnetworkStore   *SubnetworkStore
+	utxoDiffStore     *utxoDiffStore
+	reachabilityStore *reachabilityStore
 }
 
 // HaveBlock returns whether or not the DAG instance has the block represented
@@ -606,6 +607,11 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 			return err
 		}
 
+		err = dag.reachabilityStore.flushToDB(dbTx)
+		if err != nil {
+			return err
+		}
+
 		// Update best block state.
 		state := &dagState{
 			TipHashes:         dag.TipHashes(),
@@ -653,6 +659,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 		return err
 	}
 	dag.utxoDiffStore.clearDirtyEntries()
+	dag.reachabilityStore.clearDirtyEntries()
 	return nil
 }
 
@@ -873,7 +880,8 @@ func (dag *BlockDAG) BlockPastUTXO(blockHash *daghash.Hash) (UTXOSet, error) {
 // 3. Updates the DAG's full UTXO set.
 // 4. Updates each of the tips' utxoDiff.
 // 5. Applies the new virtual's blue score to all the unaccepted UTXOs
-// 6. Updates the finality point of the DAG (if required).
+// 6. Adds the block to the reachability structures
+// 7. Updates the finality point of the DAG (if required).
 //
 // It returns the diff in the virtual block's UTXO set.
 //
@@ -909,12 +917,51 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, fast
 		return nil, nil, nil, errors.Wrap(err, "failed melding the virtual UTXO")
 	}
 
+	// Add the block to the reachability structures
+	err = dag.updateReachability(node)
+	if err != nil {
+		return nil, nil, nil, errors.Wrap(err, "failed updating reachability")
+	}
+
 	dag.index.SetStatusFlags(node, statusValid)
 
 	// And now we can update the finality point of the DAG (if required)
 	dag.updateFinalityPoint()
 
 	return virtualUTXODiff, virtualTxsAcceptanceData, chainUpdates, nil
+}
+
+func (dag *BlockDAG) selectedParentAnticone(node *blockNode) (blockSet, error) {
+	anticone := newSet()
+	past := newSet()
+	var queue []*blockNode
+	for _, parent := range node.parents {
+		if parent == node.selectedParent {
+			continue
+		}
+		anticone.add(parent)
+		queue = append(queue, parent)
+	}
+	for len(queue) > 0 {
+		var current *blockNode
+		current, queue = queue[0], queue[1:]
+		for _, parent := range current.parents {
+			if anticone.contains(parent) || past.contains(parent) {
+				continue
+			}
+			isAncestorOfSelectedParent, err := dag.isAncestorOf(parent, node.selectedParent)
+			if err != nil {
+				return nil, err
+			}
+			if isAncestorOfSelectedParent {
+				past.add(parent)
+				continue
+			}
+			anticone.add(parent)
+			queue = append(queue, parent)
+		}
+	}
+	return anticone, nil
 }
 
 func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) error {
@@ -1905,6 +1952,7 @@ func New(config *Config) (*BlockDAG, error) {
 	}
 
 	dag.utxoDiffStore = newUTXODiffStore(&dag)
+	dag.reachabilityStore = newReachabilityStore(&dag)
 
 	// Initialize the DAG state from the passed database. When the db
 	// does not yet contain any DAG state, both it and the DAG state
