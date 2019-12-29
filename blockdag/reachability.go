@@ -124,7 +124,7 @@ func (ri *reachabilityInterval) splitExponential(sizes []uint64) ([]*reachabilit
 // as follows:
 //   fraction[i] = 2^size[i] / sum(2^size[j])
 // In the code below the above equation is divided by 2^max(size)
-// to avoid exploding numbers. Note that in 1 / 2^(max(size)-size[i]
+// to avoid exploding numbers. Note that in 1 / 2^(max(size)-size[i])
 // we divide 1 by potentially a very large number, which will
 // result in loss of float precision. This is not a problem--all
 // numbers close to 0 bear effectively the same weight.
