@@ -66,10 +66,10 @@ The kaspa network is a magic number which is used to identify the start of a
 message and which kaspa network the message applies to. This package provides
 the following constants:
 
-	wire.MainNet
-	wire.TestNet (Test network)
-	wire.RegTest (Regression test network)
-	wire.SimNet  (Simulation test network)
+    wire.MainNet
+    wire.TestNet (Test network)
+    wire.RegTest (Regression test network)
+    wire.SimNet  (Simulation test network)
     wire.DevNet  (Development network)
 
 Determining Message Type
