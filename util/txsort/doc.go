@@ -1,5 +1,5 @@
 /*
-Package txsort provides the transaction sorting according to BIP 69.
+Package txsort provides the transaction sorting compatible with BIP 69.
 
 Overview
 
