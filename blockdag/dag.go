@@ -1843,10 +1843,16 @@ func (dag *BlockDAG) removeDelayedBlock() {
 func (dag *BlockDAG) ProcessDelayedBlocks() error {
 	dag.delayedBlocksLock.Lock()
 	defer dag.delayedBlocksLock.Unlock()
-
-	delayedBlock := dag.delayedBlocksQueue.Peek()
 	// Check if the delayed block with the earliest process time should be processed
-	for delayedBlock != nil && dag.timeSource.AdjustedTime().After(delayedBlock.processTime) {
+	for dag.delayedBlocksQueue.Len() > 0 {
+
+		delayedBlock := dag.delayedBlocksQueue.pop()
+
+		if delayedBlock.processTime.After(dag.timeSource.AdjustedTime()) {
+			dag.delayedBlocksQueue.Push(delayedBlock)
+			return nil
+		}
+
 		err := dag.maybeAcceptBlock(delayedBlock.block, BFAfterDelay)
 		if err != nil {
 			log.Debugf("Error while processing delayed block (block %s)", delayedBlock.block.Hash().String())
@@ -1854,8 +1860,8 @@ func (dag *BlockDAG) ProcessDelayedBlocks() error {
 		}
 		log.Debugf("Processed delayed block (block %s)", delayedBlock.block.Hash().String())
 		dag.removeDelayedBlock()
-		delayedBlock = dag.delayedBlocksQueue.Peek()
 	}
+
 	return nil
 }
 

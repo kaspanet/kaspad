@@ -25,12 +25,18 @@ func (h *baseDelayedBlocksHeap) Pop() interface{} {
 	return popped
 }
 
+func (h baseDelayedBlocksHeap) Peek() interface{} {
+	if h.Len() > 0 {
+		return h[h.Len()-1]
+	}
+	return nil
+}
+
 func (h baseDelayedBlocksHeap) Less(i, j int) bool {
 	return h[j].processTime.After(h[i].processTime)
 }
 
 type delayedBlocksHeap struct {
-	baseDelayedBlocksHeap
 	impl heap.Interface
 }
 
@@ -54,12 +60,4 @@ func (dbh delayedBlocksHeap) Push(block *delayedBlock) {
 // Len returns the length of this heap
 func (dbh delayedBlocksHeap) Len() int {
 	return dbh.impl.Len()
-}
-
-// Peek return the topmost block in the heap (block with the earliest process time)
-func (dbh delayedBlocksHeap) Peek() *delayedBlock {
-	if dbh.baseDelayedBlocksHeap.Len() > 0 {
-		return dbh.baseDelayedBlocksHeap[dbh.baseDelayedBlocksHeap.Len()-1]
-	}
-	return nil
 }
