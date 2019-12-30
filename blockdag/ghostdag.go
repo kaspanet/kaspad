@@ -40,18 +40,12 @@ func (dag *BlockDAG) selectedParentAnticone(node *blockNode) (*blockHeap, error)
 // blueAnticoneSize returns the blue anticone size of 'block' from the worldview of 'context'.
 // Expects 'block' to be ∈ blue-set(context)
 func (dag *BlockDAG) blueAnticoneSize(block, context *blockNode) (uint32, error) {
-	node := context
-	for {
-		if isAncestorOf, err := dag.isAncestorOf(block, node); err != nil {
-			return 0, err
-		} else if !isAncestorOf {
-			return 0, errors.Errorf("block %s is not in blue-set of %s", block.hash, context.hash)
-		}
-
+	for node := context; node != nil; node = node.selectedParent {
 		if blueAnticoneSize, ok := node.bluesAnticoneSizes[*block.hash]; ok {
 			return blueAnticoneSize, nil
 		}
 	}
+	return 0, errors.Errorf("block %s is not in blue-set of %s", block.hash, context.hash)
 }
 
 func (dag *BlockDAG) ghostdag(newNode *blockNode) (*blockHeap, error) {
@@ -72,11 +66,20 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (*blockHeap, error) {
 			chainBlockAndItsBlues = append(chainBlockAndItsBlues, chainBlock)
 			chainBlockAndItsBlues = append(chainBlockAndItsBlues, chainBlock.blues...)
 
-			if isAncestorOf, err := dag.isAncestorOf(chainBlock, blueCandidate); err != nil {
-				return nil, err
-			} else if isAncestorOf {
-				// All remaining blues are in past(chainBlock) and thus in past(blueCandidate)
-				break
+			// If blueCandidate is in the future of chainBlock, it means
+			// that all remaining blues are in past(chainBlock) and thus
+			// in past(blueCandidate). In this case we know for sure that
+			// anticone(blueCandidate) will not exceed K, and we can mark
+			// it as blue.
+			//
+			// newNode is always in the future of blueCandidate, so there's
+			// no point in checking it.
+			if chainBlock != newNode {
+				if isAncestorOf, err := dag.isAncestorOf(chainBlock, blueCandidate); err != nil {
+					return nil, err
+				} else if isAncestorOf {
+					break
+				}
 			}
 
 			for _, block := range chainBlockAndItsBlues {
