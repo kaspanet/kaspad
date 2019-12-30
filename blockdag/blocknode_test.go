@@ -9,11 +9,11 @@ func TestChainHeight(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	params := dagconfig.SimNetParams
 	params.K = 2
-	dag, teardownFunc, err := DAGSetup("TestChainUpdates", Config{
+	dag, teardownFunc, err := DAGSetup("TestChainHeight", Config{
 		DAGParams: &params,
 	})
 	if err != nil {
-		t.Fatalf("TestChainUpdates: Failed to setup DAG instance: %s", err)
+		t.Fatalf("TestChainHeight: Failed to setup DAG instance: %s", err)
 	}
 	defer teardownFunc()
 
