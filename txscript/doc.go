@@ -14,8 +14,8 @@ performing basic and bitwise arithmetic, conditional branching, comparing
 hashes, and checking cryptographic signatures. Scripts are processed from left
 to right and intentionally do not provide loops.
 
-The vast majority of kaspa scripts at the time of this writing are of several
-standard forms which consist of a spender providing a public key and a signature
+Typical kaspa scripts at the time of this writing are of several standard
+forms which consist of a spender providing a public key and a signature
 which proves the spender owns the associated private key. This information
 is used to prove the the spender is authorized to perform the transaction.
 
