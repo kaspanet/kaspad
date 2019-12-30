@@ -1,4 +1,10 @@
 /*
+Copyright (c) 2018-2019 The kaspanet developers
+Copyright (c) 2013-2018 The btcsuite developers
+Copyright (c) 2015-2016 The Decred developers
+Use of this source code is governed by an ISC
+license that can be found in the LICENSE file.
+
 kaspad is a full-node kaspa implementation written in Go.
 
 The default options are sane for most users. This means kaspad will work 'out of
