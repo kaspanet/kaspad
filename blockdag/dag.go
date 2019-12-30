@@ -890,6 +890,12 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, sele
 	virtualUTXODiff *UTXODiff, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData,
 	chainUpdates *chainUpdates, err error) {
 
+	// Add the block to the reachability structures
+	err = dag.updateReachability(node, selectedParentAnticone)
+	if err != nil {
+		return nil, nil, nil, errors.Wrap(err, "failed updating reachability")
+	}
+
 	if err = node.updateParents(dag, newBlockUTXO); err != nil {
 		return nil, nil, nil, errors.Wrapf(err, "failed updating parents of %s", node)
 	}
@@ -915,12 +921,6 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, sele
 	err = dag.meldVirtualUTXO(diffSet)
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "failed melding the virtual UTXO")
-	}
-
-	// Add the block to the reachability structures
-	err = dag.updateReachability(node, selectedParentAnticone)
-	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed updating reachability")
 	}
 
 	dag.index.SetStatusFlags(node, statusValid)
