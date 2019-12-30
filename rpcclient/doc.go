@@ -55,8 +55,8 @@ work when connected via websockets. This should intuitively make sense
 because HTTP POST mode does not keep a connection open!
 
 All notifications provided by kaspad require registration to opt-in. For example,
-if you want to be notified when funds are received by a set of addresses, you
-register the addresses via the NotifyReceived (or NotifyReceivedAsync) function.
+if you want to be notified when blocks are added to the DAG, you register the
+via the NotifyBlocks (or NotifyBlocksAsync) function.
 
 Notification Handlers
 
@@ -119,7 +119,7 @@ The third category of errors, that is errors returned by the server, can be
 detected by type asserting the error in a *rpcmodel.RPCError. For example, to
 detect if a command is unimplemented by the remote RPC server:
 
-  amount, err := client.GetBalance("")
+  amount, err := client.GetNetTotals()
   if err != nil {
   	if jerr, ok := err.(*rpcmodel.RPCError); ok {
   		switch jerr.Code {
@@ -143,7 +143,6 @@ The following full-blown client examples are in the examples directory:
    and gets the current block count
  - websockets
    Connects to a kaspad RPC server using TLS-secured websockets, registers for
-   block connected and block disconnected notifications, and gets the current
-   block count
+   block added notifications, and gets the current block count
 */
 package rpcclient
