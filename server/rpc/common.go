@@ -240,6 +240,12 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		return nil, internalRPCError(err.Error(), context)
 	}
 
+	selectedParentHash, err := s.cfg.DAG.SelectedParentHash(hash)
+	if err != nil {
+		context := "Could not get block selected parent"
+		return nil, internalRPCError(err.Error(), context)
+	}
+
 	isChainBlock := s.cfg.DAG.IsInSelectedParentChain(hash)
 
 	result := &rpcmodel.GetBlockVerboseResult{
@@ -250,6 +256,7 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		AcceptedIDMerkleRoot: blockHeader.AcceptedIDMerkleRoot.String(),
 		UTXOCommitment:       blockHeader.UTXOCommitment.String(),
 		ParentHashes:         daghash.Strings(blockHeader.ParentHashes),
+		SelectedParentHash:   selectedParentHash.String(),
 		Nonce:                blockHeader.Nonce,
 		Time:                 blockHeader.Timestamp.Unix(),
 		Confirmations:        blockConfirmations,

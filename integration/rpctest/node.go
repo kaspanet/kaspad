@@ -49,7 +49,7 @@ func newConfig(prefix, certFile, keyFile string, extra []string) (*nodeConfig, e
 
 	a := &nodeConfig{
 		listen:    "127.0.0.1:18555",
-		rpcListen: "127.0.0.1:18556",
+		rpcListen: "127.0.0.1:16510",
 		rpcUser:   "user",
 		rpcPass:   "pass",
 		extra:     extra,

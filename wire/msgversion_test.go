@@ -24,9 +24,9 @@ func TestVersion(t *testing.T) {
 
 	// Create version message data.
 	selectedTip := &daghash.Hash{12, 34}
-	tcpAddrMe := &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 8333}
+	tcpAddrMe := &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 16111}
 	me := NewNetAddress(tcpAddrMe, SFNodeNetwork)
-	tcpAddrYou := &net.TCPAddr{IP: net.ParseIP("192.168.0.1"), Port: 8333}
+	tcpAddrYou := &net.TCPAddr{IP: net.ParseIP("192.168.0.1"), Port: 16111}
 	you := NewNetAddress(tcpAddrYou, SFNodeNetwork)
 	nonce, err := random.Uint64()
 	if err != nil {
@@ -313,13 +313,13 @@ var baseVersion = &MsgVersion{
 		Timestamp: time.Time{}, // Zero value -- no timestamp in version
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("192.168.0.1"),
-		Port:      8333,
+		Port:      16111,
 	},
 	AddrMe: NetAddress{
 		Timestamp: time.Time{}, // Zero value -- no timestamp in version
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("127.0.0.1"),
-		Port:      8333,
+		Port:      16111,
 	},
 	Nonce:       123123, // 0x1e0f3
 	UserAgent:   "/kaspadtest:0.0.1/",
@@ -337,12 +337,12 @@ var baseVersionEncoded = []byte{
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0xff, 0xff, 0xc0, 0xa8, 0x00, 0x01, // IP 192.168.0.1
-	0x20, 0x8d, // Port 8333 in big-endian
+	0x3e, 0xef, // Port 16111 in big-endian
 	// AddrMe -- No timestamp for NetAddress in version message
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x01, // IP 127.0.0.1
-	0x20, 0x8d, // Port 8333 in big-endian
+	0x3e, 0xef, // Port 16111 in big-endian
 	0xf3, 0xe0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce
 	0x12, // Varint for user agent length
 	0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x74,
@@ -363,13 +363,13 @@ var baseVersionWithRelayTx = &MsgVersion{
 		Timestamp: time.Time{}, // Zero value -- no timestamp in version
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("192.168.0.1"),
-		Port:      8333,
+		Port:      16111,
 	},
 	AddrMe: NetAddress{
 		Timestamp: time.Time{}, // Zero value -- no timestamp in version
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("127.0.0.1"),
-		Port:      8333,
+		Port:      16111,
 	},
 	Nonce:       123123, // 0x1e0f3
 	UserAgent:   "/kaspadtest:0.0.1/",
@@ -387,12 +387,12 @@ var baseVersionWithRelayTxEncoded = []byte{
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0xff, 0xff, 0xc0, 0xa8, 0x00, 0x01, // IP 192.168.0.1
-	0x20, 0x8d, // Port 8333 in big-endian
+	0x3e, 0xef, // Port 16111 in big-endian
 	// AddrMe -- No timestamp for NetAddress in version message
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x01, // IP 127.0.0.1
-	0x20, 0x8d, // Port 8333 in big-endian
+	0x3e, 0xef, // Port 16111 in big-endian
 	0xf3, 0xe0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, // Nonce
 	0x12, // Varint for user agent length
 	0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x74,

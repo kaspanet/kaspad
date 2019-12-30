@@ -116,13 +116,13 @@ func normalizeAddress(addr string, useTestNet, useSimNet, useDevNet bool) string
 		var defaultPort string
 		switch {
 		case useDevNet:
-			fallthrough
+			defaultPort = "16610"
 		case useTestNet:
-			defaultPort = "18334"
+			defaultPort = "16210"
 		case useSimNet:
-			defaultPort = "18556"
+			defaultPort = "16510"
 		default:
-			defaultPort = "8334"
+			defaultPort = "16110"
 		}
 
 		return net.JoinHostPort(addr, defaultPort)
