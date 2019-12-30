@@ -248,7 +248,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	numBlocksToGenerate := 5
 	for i := 0; i < numBlocksToGenerate; i++ {
 		blockTime = blockTime.Add(time.Second)
-		node = newTestNode(setFromSlice(node), blockVersion, 0, blockTime, netParams.K)
+		node = newTestNode(dag, setFromSlice(node), blockVersion, 0, blockTime)
 		dag.index.AddNode(node)
 		dag.virtual.SetTips(setFromSlice(node))
 	}
@@ -516,7 +516,7 @@ func TestCalcPastMedianTime(t *testing.T) {
 	blockTime := dag.genesis.Header().Timestamp
 	for i := uint32(1); i < numBlocks; i++ {
 		blockTime = blockTime.Add(time.Second)
-		nodes[i] = newTestNode(setFromSlice(nodes[i-1]), blockVersion, 0, blockTime, netParams.K)
+		nodes[i] = newTestNode(dag, setFromSlice(nodes[i-1]), blockVersion, 0, blockTime)
 		dag.index.AddNode(nodes[i])
 	}
 
@@ -569,7 +569,7 @@ var testNoncePrng = rand.New(rand.NewSource(0))
 // chainedNodes returns the specified number of nodes constructed such that each
 // subsequent node points to the previous one to create a chain. The first node
 // will point to the passed parent which can be nil if desired.
-func chainedNodes(parents blockSet, numNodes int) []*blockNode {
+func chainedNodes(dag *BlockDAG, parents blockSet, numNodes int) []*blockNode {
 	nodes := make([]*blockNode, numNodes)
 	tips := parents
 	for i := 0; i < numNodes; i++ {
@@ -582,7 +582,7 @@ func chainedNodes(parents blockSet, numNodes int) []*blockNode {
 			UTXOCommitment:       &daghash.ZeroHash,
 		}
 		header.ParentHashes = tips.hashes()
-		nodes[i] = newBlockNode(&header, tips, dagconfig.SimNetParams.K)
+		nodes[i], _ = dag.newBlockNode(&header, tips)
 		tips = setFromSlice(nodes[i])
 	}
 	return nodes
@@ -602,20 +602,20 @@ func TestChainHeightToHashRange(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := testTip
-	blockDAG := newTestDAG(&dagconfig.SimNetParams)
-	branch0Nodes := chainedNodes(setFromSlice(blockDAG.genesis), 18)
-	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
+	dag := newTestDAG(&dagconfig.SimNetParams)
+	branch0Nodes := chainedNodes(dag, setFromSlice(dag.genesis), 18)
+	branch1Nodes := chainedNodes(dag, setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
-		blockDAG.index.SetStatusFlags(node, statusValid)
-		blockDAG.index.AddNode(node)
+		dag.index.SetStatusFlags(node, statusValid)
+		dag.index.AddNode(node)
 	}
 	for _, node := range branch1Nodes {
 		if node.chainHeight < 18 {
-			blockDAG.index.SetStatusFlags(node, statusValid)
+			dag.index.SetStatusFlags(node, statusValid)
 		}
-		blockDAG.index.AddNode(node)
+		dag.index.AddNode(node)
 	}
-	blockDAG.virtual.SetTips(setFromSlice(tip(branch0Nodes)))
+	dag.virtual.SetTips(setFromSlice(tip(branch0Nodes)))
 
 	tests := []struct {
 		name             string
@@ -670,7 +670,7 @@ func TestChainHeightToHashRange(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		hashes, err := blockDAG.ChainHeightToHashRange(test.startChainHeight, test.endHash,
+		hashes, err := dag.ChainHeightToHashRange(test.startChainHeight, test.endHash,
 			test.maxResults)
 		if err != nil {
 			if !test.expectError {
@@ -695,8 +695,8 @@ func TestIntervalBlockHashes(t *testing.T) {
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := testTip
 	dag := newTestDAG(&dagconfig.SimNetParams)
-	branch0Nodes := chainedNodes(setFromSlice(dag.genesis), 18)
-	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
+	branch0Nodes := chainedNodes(dag, setFromSlice(dag.genesis), 18)
+	branch1Nodes := chainedNodes(dag, setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
 		dag.index.SetStatusFlags(node, statusValid)
 		dag.index.AddNode(node)
@@ -943,7 +943,7 @@ func TestAcceptingInInit(t *testing.T) {
 
 	// Create a test blockNode with an unvalidated status
 	genesisNode := dag.index.LookupNode(genesisBlock.Hash())
-	testNode := newBlockNode(&testBlock.MsgBlock().Header, setFromSlice(genesisNode), dag.dagParams.K)
+	testNode, _ := dag.newBlockNode(&testBlock.MsgBlock().Header, setFromSlice(genesisNode))
 	testNode.status = statusDataStored
 
 	// Manually add the test block to the database
@@ -997,7 +997,7 @@ func TestConfirmations(t *testing.T) {
 	// Add a chain of blocks
 	chainBlocks := make([]*blockNode, 5)
 	chainBlocks[0] = dag.genesis
-	buildNode := buildNodeGenerator(dag.dagParams.K, true)
+	buildNode := buildNodeGenerator(dag, true)
 	for i := uint32(1); i < 5; i++ {
 		chainBlocks[i] = buildNode(setFromSlice(chainBlocks[i-1]))
 		dag.virtual.AddTip(chainBlocks[i])
@@ -1109,7 +1109,7 @@ func TestAcceptingBlock(t *testing.T) {
 	numChainBlocks := uint32(10)
 	chainBlocks := make([]*blockNode, numChainBlocks)
 	chainBlocks[0] = dag.genesis
-	buildNode := buildNodeGenerator(dag.dagParams.K, true)
+	buildNode := buildNodeGenerator(dag, true)
 	for i := uint32(1); i <= numChainBlocks-1; i++ {
 		chainBlocks[i] = buildNode(setFromSlice(chainBlocks[i-1]))
 		dag.virtual.AddTip(chainBlocks[i])
@@ -1242,7 +1242,7 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 
 	addNode := func(parent *blockNode) *blockNode {
 		blockTime = blockTime.Add(time.Second)
-		node := newTestNode(setFromSlice(parent), blockVersion, 0, blockTime, dag.dagParams.K)
+		node := newTestNode(dag, setFromSlice(parent), blockVersion, 0, blockTime)
 		node.updateParentsChildren()
 		dag.index.AddNode(node)
 

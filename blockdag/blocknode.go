@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -107,11 +108,17 @@ type blockNode struct {
 	isFinalized bool
 }
 
-// initBlockNode initializes a block node from the given header and parent nodes.
-// This function is NOT safe for concurrent access. It must only be called when
-// initially creating a node.
-func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents blockSet, phantomK uint32) {
-	*node = blockNode{
+func calculateChainHeight(node *blockNode) uint64 {
+	if node.isGenesis() {
+		return 0
+	}
+	return node.selectedParent.chainHeight + 1
+}
+
+// newBlockNode returns a new block node for the given block header and parent
+//nodes. This function is NOT safe for concurrent access.
+func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSet) (*blockNode, *blockHeap) {
+	node := &blockNode{
 		parents:   parents,
 		children:  make(blockSet),
 		timestamp: time.Now().Unix(),
@@ -131,25 +138,16 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 		node.hash = &daghash.ZeroHash
 	}
 
+	var selectedParentAnticone *blockHeap
 	if len(parents) > 0 {
-		node.blues, node.selectedParent, node.blueScore = phantom(node, phantomK)
+		var err error
+		selectedParentAnticone, err = dag.ghostdag(node)
+		if err != nil {
+			panic(errors.Wrap(err, "unexpected error in GHOSTDAG"))
+		}
 		node.chainHeight = calculateChainHeight(node)
 	}
-}
-
-func calculateChainHeight(node *blockNode) uint64 {
-	if node.isGenesis() {
-		return 0
-	}
-	return node.selectedParent.chainHeight + 1
-}
-
-// newBlockNode returns a new block node for the given block header and parent
-//nodes. This function is NOT safe for concurrent access.
-func newBlockNode(blockHeader *wire.BlockHeader, parents blockSet, phantomK uint32) *blockNode {
-	var node blockNode
-	initBlockNode(&node, blockHeader, parents, phantomK)
-	return &node
+	return node, selectedParentAnticone
 }
 
 // updateParentsChildren updates the node's parents to point to new node

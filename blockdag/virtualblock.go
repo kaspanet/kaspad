@@ -11,9 +11,9 @@ import (
 
 // virtualBlock is a virtual block whose parents are the tips of the DAG.
 type virtualBlock struct {
-	mtx      sync.Mutex
-	phantomK uint32
-	utxoSet  *FullUTXOSet
+	mtx     sync.Mutex
+	dag     *BlockDAG
+	utxoSet *FullUTXOSet
 	blockNode
 
 	// selectedParentChainSet is a block set that includes all the blocks
@@ -27,10 +27,10 @@ type virtualBlock struct {
 }
 
 // newVirtualBlock creates and returns a new VirtualBlock.
-func newVirtualBlock(tips blockSet, phantomK uint32) *virtualBlock {
+func newVirtualBlock(dag *BlockDAG, tips blockSet) *virtualBlock {
 	// The mutex is intentionally not held since this is a constructor.
 	var virtual virtualBlock
-	virtual.phantomK = phantomK
+	virtual.dag = dag
 	virtual.utxoSet = NewFullUTXOSet()
 	virtual.selectedParentChainSet = newSet()
 	virtual.selectedParentChainSlice = nil
@@ -42,7 +42,6 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *virtualBlock {
 // clone creates and returns a clone of the virtual block.
 func (v *virtualBlock) clone() *virtualBlock {
 	return &virtualBlock{
-		phantomK:               v.phantomK,
 		utxoSet:                v.utxoSet,
 		blockNode:              v.blockNode,
 		selectedParentChainSet: v.selectedParentChainSet,
@@ -56,7 +55,8 @@ func (v *virtualBlock) clone() *virtualBlock {
 // This function MUST be called with the view mutex locked (for writes).
 func (v *virtualBlock) setTips(tips blockSet) *chainUpdates {
 	oldSelectedParent := v.selectedParent
-	v.blockNode = *newBlockNode(nil, tips, v.phantomK)
+	node, _ := v.dag.newBlockNode(nil, tips)
+	v.blockNode = *node
 	return v.updateSelectedParentSet(oldSelectedParent)
 }
 

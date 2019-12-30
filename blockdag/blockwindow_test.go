@@ -107,7 +107,7 @@ func TestBlueBlockWindow(t *testing.T) {
 			parent := blockByIDMap[parentID]
 			parents.add(parent)
 		}
-		node := newTestNode(parents, blockVersion, 0, blockTime, dag.dagParams.K)
+		node := newTestNode(dag, parents, blockVersion, 0, blockTime)
 		node.hash = &daghash.Hash{} // It helps to predict hash order
 		for i, char := range blockData.id {
 			node.hash[i] = byte(char)

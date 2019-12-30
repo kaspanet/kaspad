@@ -1,12 +1,23 @@
 package blockdag
 
 import (
+	"github.com/kaspanet/kaspad/dagconfig"
 	"testing"
 )
 
 func TestChainHeight(t *testing.T) {
-	phantomK := uint32(2)
-	buildNode := buildNodeGenerator(phantomK, true)
+	// Create a new database and DAG instance to run tests against.
+	params := dagconfig.SimNetParams
+	params.K = 2
+	dag, teardownFunc, err := DAGSetup("TestChainUpdates", Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("TestChainUpdates: Failed to setup DAG instance: %s", err)
+	}
+	defer teardownFunc()
+
+	buildNode := buildNodeGenerator(dag, true)
 
 	node0 := buildNode(setFromSlice())
 	node1 := buildNode(setFromSlice(node0))

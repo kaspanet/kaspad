@@ -100,7 +100,7 @@ func TestDifficulty(t *testing.T) {
 			AcceptedIDMerkleRoot: &daghash.ZeroHash,
 			UTXOCommitment:       &daghash.ZeroHash,
 		}
-		node := newBlockNode(header, parents, dag.dagParams.K)
+		node, _ := dag.newBlockNode(header, parents)
 		node.updateParentsChildren()
 		nonce++
 		return node

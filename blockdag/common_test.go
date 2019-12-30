@@ -113,14 +113,9 @@ func (dag *BlockDAG) TestSetCoinbaseMaturity(maturity uint64) {
 // it is not usable with all functions and the tests must take care when making
 // use of it.
 func newTestDAG(params *dagconfig.Params) *BlockDAG {
-	// Create a genesis block node and block index index populated with it
-	// for use when creating the fake DAG below.
-	node := newBlockNode(&params.GenesisBlock.Header, newSet(), params.K)
 	index := newBlockIndex(nil, params)
-	index.AddNode(node)
-
 	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
-	return &BlockDAG{
+	dag := &BlockDAG{
 		dagParams:                      params,
 		timeSource:                     NewMedianTime(),
 		targetTimePerBlock:             targetTimePerBlock,
@@ -128,16 +123,23 @@ func newTestDAG(params *dagconfig.Params) *BlockDAG {
 		TimestampDeviationTolerance:    params.TimestampDeviationTolerance,
 		powMaxBits:                     util.BigToCompact(params.PowMax),
 		index:                          index,
-		virtual:                        newVirtualBlock(setFromSlice(node), params.K),
 		genesis:                        index.LookupNode(params.GenesisHash),
 		warningCaches:                  newThresholdCaches(vbNumBits),
 		deploymentCaches:               newThresholdCaches(dagconfig.DefinedDeployments),
 	}
+
+	// Create a genesis block node and block index index populated with it
+	// on the above fake DAG.
+	node, _ := dag.newBlockNode(&params.GenesisBlock.Header, newSet())
+	index.AddNode(node)
+
+	dag.virtual = newVirtualBlock(dag, setFromSlice(node))
+	return dag
 }
 
 // newTestNode creates a block node connected to the passed parent with the
 // provided fields populated and fake values for the other fields.
-func newTestNode(parents blockSet, blockVersion int32, bits uint32, timestamp time.Time, phantomK uint32) *blockNode {
+func newTestNode(dag *BlockDAG, parents blockSet, blockVersion int32, bits uint32, timestamp time.Time) *blockNode {
 	// Make up a header and create a block node from it.
 	header := &wire.BlockHeader{
 		Version:              blockVersion,
@@ -148,7 +150,8 @@ func newTestNode(parents blockSet, blockVersion int32, bits uint32, timestamp ti
 		AcceptedIDMerkleRoot: &daghash.ZeroHash,
 		UTXOCommitment:       &daghash.ZeroHash,
 	}
-	return newBlockNode(header, parents, phantomK)
+	node, _ := dag.newBlockNode(header, parents)
+	return node
 }
 
 func addNodeAsChildToParents(node *blockNode) {
@@ -157,12 +160,12 @@ func addNodeAsChildToParents(node *blockNode) {
 	}
 }
 
-func buildNodeGenerator(phantomK uint32, withChildren bool) func(parents blockSet) *blockNode {
+func buildNodeGenerator(dag *BlockDAG, withChildren bool) func(parents blockSet) *blockNode {
 	// For the purposes of these tests, we'll create blockNodes whose hashes are a
 	// series of numbers from 1 to 255.
 	hashCounter := byte(1)
 	buildNode := func(parents blockSet) *blockNode {
-		block := newBlockNode(nil, parents, phantomK)
+		block, _ := dag.newBlockNode(nil, parents)
 		block.hash = &daghash.Hash{hashCounter}
 		hashCounter++
 

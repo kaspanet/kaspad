@@ -5,14 +5,25 @@
 package blockdag
 
 import (
+	"github.com/kaspanet/kaspad/dagconfig"
 	"reflect"
 	"testing"
 )
 
 // TestVirtualBlock ensures that VirtualBlock works as expected.
 func TestVirtualBlock(t *testing.T) {
-	phantomK := uint32(1)
-	buildNode := buildNodeGenerator(phantomK, false)
+	// Create a new database and DAG instance to run tests against.
+	params := dagconfig.SimNetParams
+	params.K = 1
+	dag, teardownFunc, err := DAGSetup("TestChainUpdates", Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("TestChainUpdates: Failed to setup DAG instance: %s", err)
+	}
+	defer teardownFunc()
+
+	buildNode := buildNodeGenerator(dag, false)
 
 	// Create a DAG as follows:
 	// 0 <- 1 <- 2
@@ -72,7 +83,7 @@ func TestVirtualBlock(t *testing.T) {
 
 	for _, test := range tests {
 		// Create an empty VirtualBlock
-		virtual := newVirtualBlock(nil, phantomK)
+		virtual := newVirtualBlock(dag, nil)
 
 		// Set the tips. This will be the initial state
 		virtual.SetTips(setFromSlice(test.tipsToSet...))
@@ -100,11 +111,21 @@ func TestVirtualBlock(t *testing.T) {
 }
 
 func TestSelectedPath(t *testing.T) {
-	phantomK := uint32(1)
-	buildNode := buildNodeGenerator(phantomK, false)
+	// Create a new database and DAG instance to run tests against.
+	params := dagconfig.SimNetParams
+	params.K = 1
+	dag, teardownFunc, err := DAGSetup("TestChainUpdates", Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("TestChainUpdates: Failed to setup DAG instance: %s", err)
+	}
+	defer teardownFunc()
+
+	buildNode := buildNodeGenerator(dag, false)
 
 	// Create an empty VirtualBlock
-	virtual := newVirtualBlock(nil, phantomK)
+	virtual := newVirtualBlock(dag, nil)
 
 	tip := buildNode(setFromSlice())
 	virtual.AddTip(tip)
@@ -170,7 +191,7 @@ func TestSelectedPath(t *testing.T) {
 	}
 
 	// We call updateSelectedParentSet manually without updating the tips, to check if it panics
-	virtual2 := newVirtualBlock(nil, phantomK)
+	virtual2 := newVirtualBlock(dag, nil)
 	defer func() {
 		if r := recover(); r == nil {
 			t.Fatalf("updateSelectedParentSet didn't panic")
@@ -180,8 +201,18 @@ func TestSelectedPath(t *testing.T) {
 }
 
 func TestChainUpdates(t *testing.T) {
-	phantomK := uint32(1)
-	buildNode := buildNodeGenerator(phantomK, false)
+	// Create a new database and DAG instance to run tests against.
+	params := dagconfig.SimNetParams
+	params.K = 1
+	dag, teardownFunc, err := DAGSetup("TestChainUpdates", Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("TestChainUpdates: Failed to setup DAG instance: %s", err)
+	}
+	defer teardownFunc()
+
+	buildNode := buildNodeGenerator(dag, false)
 	genesis := buildNode(setFromSlice())
 
 	// Create a chain to be removed
@@ -193,7 +224,7 @@ func TestChainUpdates(t *testing.T) {
 	}
 
 	// Create a VirtualBlock with the toBeRemoved chain
-	virtual := newVirtualBlock(setFromSlice(toBeRemovedNodes...), phantomK)
+	virtual := newVirtualBlock(dag, setFromSlice(toBeRemovedNodes...))
 
 	// Create a chain to be added
 	var toBeAddedNodes []*blockNode

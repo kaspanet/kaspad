@@ -969,7 +969,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplateNoLock(block *util.Block) error {
 		return err
 	}
 
-	templateNode := newBlockNode(&header, dag.virtual.tips(), dag.dagParams.K)
+	templateNode, _ := dag.newBlockNode(&header, dag.virtual.tips())
 
 	_, err = dag.checkConnectToPastUTXO(templateNode,
 		dag.UTXOSet(), block.Transactions(), false)
