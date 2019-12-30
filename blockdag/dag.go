@@ -1815,7 +1815,7 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 
 // AddDelayedBlock adds a block to the delayed blocks list.
 func (dag *BlockDAG) AddDelayedBlock(block *util.Block, delay time.Duration) {
-	log.Debugf("Adding delayed block to delayed blocks queue, %s", block.Hash().String())
+	log.Debugf("Adding block to delayed blocks queue (block %s)", block.Hash().String())
 	dag.delayedBlocksLock.Lock()
 	db := &delayedBlock{
 		block:       block,
