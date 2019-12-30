@@ -43,14 +43,7 @@ interactions in no particular order.
 	getdata message (MsgGetData)            block message (MsgBlock) -or-
 	                                        tx message (MsgTx) -or-
 	                                        notfound message (MsgNotFound)
-	getheaders message (MsgGetHeaders)      headers message (MsgHeaders)
-	ping message (MsgPing)                  pong message (MsgHeaders)* -or-
-	                                        (none -- Ability to send message is enough)
-
-	NOTES:
-	* The pong message was not added until later protocol versions as defined
-	  in BIP0031. The BIP0031Version constant can be used to detect a recent
-	  enough protocol version for this purpose (version > BIP0031Version).
+	ping message (MsgPing)                  pong message (MsgPong)
 
 Common Parameters
 
@@ -74,9 +67,10 @@ message and which kaspa network the message applies to. This package provides
 the following constants:
 
 	wire.MainNet
-	wire.RegTest  (Regression test network)
 	wire.TestNet (Test network)
-	wire.SimNet   (Simulation test network)
+	wire.RegTest (Regression test network)
+	wire.SimNet  (Simulation test network)
+    wire.DevNet  (Development network)
 
 Determining Message Type
 
