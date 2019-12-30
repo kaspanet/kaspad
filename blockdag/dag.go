@@ -1062,11 +1062,11 @@ func (node *blockNode) applyBlueBlocks(acceptedSelectedParentUTXO UTXOSet, selec
 		TxAcceptanceData: selectedParentAcceptanceData,
 	}}
 
-	// Add blueBlocks to multiBlockTxsAcceptanceData bottom-to-top instead of
-	// top-to-bottom. This is so that anyone who iterates over it would process
-	// blocks (and transactions) in their order of appearance in the DAG.
+	// Add blueBlocks to multiBlockTxsAcceptanceData in topological order. This
+	// is so that anyone who iterates over it would process blocks (and transactions)
+	// in their order of appearance in the DAG.
 	// We skip the selected parent, because we calculated its UTXO before.
-	for i := len(blueBlocks) - 2; i >= 0; i-- {
+	for i := 1; i < len(blueBlocks); i++ {
 		blueBlock := blueBlocks[i]
 		transactions := blueBlock.Transactions()
 		blockTxsAcceptanceData := BlockTxsAcceptanceData{
@@ -1159,7 +1159,7 @@ func (dag *BlockDAG) pastUTXO(node *blockNode) (
 		return nil, nil, err
 	}
 
-	selectedParent := blueBlocks[len(blueBlocks)-1]
+	selectedParent := blueBlocks[0]
 	acceptedSelectedParentUTXO, selectedParentAcceptanceData, err := node.acceptSelectedParentTransactions(selectedParent, selectedParentUTXO)
 	if err != nil {
 		return nil, nil, err
