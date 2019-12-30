@@ -119,9 +119,10 @@ func calculateChainHeight(node *blockNode) uint64 {
 //nodes. This function is NOT safe for concurrent access.
 func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSet) (*blockNode, *blockHeap) {
 	node := &blockNode{
-		parents:   parents,
-		children:  make(blockSet),
-		timestamp: time.Now().Unix(),
+		parents:            parents,
+		children:           make(blockSet),
+		timestamp:          time.Now().Unix(),
+		bluesAnticoneSizes: make(map[daghash.Hash]uint32),
 	}
 
 	// blockHeader is nil only for the virtual block
