@@ -50,6 +50,8 @@ func (dag *BlockDAG) blueAnticoneSize(block, context *blockNode) (uint32, error)
 
 func (dag *BlockDAG) ghostdag(newNode *blockNode) (*blockHeap, error) {
 	newNode.selectedParent = newNode.parents.bluest()
+	newNode.bluesAnticoneSizes[*newNode.hash] = 0
+	newNode.blues = append(newNode.blues, newNode.selectedParent)
 	selectedParentAnticone, err := dag.selectedParentAnticone(newNode)
 	if err != nil {
 		return nil, err
@@ -62,10 +64,6 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (*blockHeap, error) {
 		possiblyBlue := true
 
 		for chainBlock := newNode; possiblyBlue; chainBlock = chainBlock.selectedParent {
-			chainBlockAndItsBlues := make([]*blockNode, 0, len(chainBlock.blues)+1)
-			chainBlockAndItsBlues = append(chainBlockAndItsBlues, chainBlock)
-			chainBlockAndItsBlues = append(chainBlockAndItsBlues, chainBlock.blues...)
-
 			// If blueCandidate is in the future of chainBlock, it means
 			// that all remaining blues are in past(chainBlock) and thus
 			// in past(blueCandidate). In this case we know for sure that
@@ -82,7 +80,7 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (*blockHeap, error) {
 				}
 			}
 
-			for _, block := range chainBlockAndItsBlues {
+			for _, block := range chainBlock.blues {
 				// Skip blocks that exists in the past of blueCandidate.
 				// We already checked it for chainBlock above, so if the
 				// block is chainBlock, there's no need to recheck.
@@ -116,16 +114,19 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (*blockHeap, error) {
 		if possiblyBlue {
 			// No k-cluster violation found, we can now set the candidate block as blue
 			newNode.blues = append(newNode.blues, blueCandidate)
+			newNode.bluesAnticoneSizes[*blueCandidate.hash] = candidateAnticoneSize
 			for blue, blueAnticoneSize := range candidateBluesAnticoneSizes {
-				candidateBluesAnticoneSizes[blue] = blueAnticoneSize + 1
+				newNode.bluesAnticoneSizes[*blue.hash] = blueAnticoneSize + 1
 			}
-			if uint32(len(newNode.blues)) == dag.dagParams.K {
+
+			// The maximum length of node.blues can be K+1 because
+			// it contains the selected parent.
+			if uint32(len(newNode.blues)) == dag.dagParams.K+1 {
 				break
 			}
 		}
 	}
 
-	newNode.blues = append(newNode.blues, newNode.selectedParent)
 	newNode.blueScore = newNode.selectedParent.blueScore + uint64(len(newNode.blues))
 	return selectedParentAnticone, nil
 }
