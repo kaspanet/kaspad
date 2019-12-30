@@ -109,8 +109,9 @@ type BlockDAG struct {
 	// list for the case where a new block with a valid timestamp points to a delayed block.
 	// In that case we will delay the processing of the child block so it would be processed
 	// after its parent.
-	delayedBlocks     map[daghash.Hash]*delayedBlock
-	delayedBlocksLock sync.RWMutex
+	delayedBlocks      map[daghash.Hash]*delayedBlock
+	delayedBlocksQueue delayedBlocksHeap
+	delayedBlocksLock  sync.RWMutex
 
 	// The following caches are used to efficiently keep track of the
 	// current deployment threshold state of each rule change deployment.
@@ -1814,22 +1815,25 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 
 // AddDelayedBlock adds a block to the delayed blocks list.
 func (dag *BlockDAG) AddDelayedBlock(block *util.Block, delay time.Duration) {
-	// Trigger processing of current delayed blocks when adding a new delayed block.
-	dag.ProcessDelayedBlocks()
-
+	log.Debugf("Adding delayed block to delayed blocks queue, %s", block.Hash().String())
 	dag.delayedBlocksLock.Lock()
-	defer dag.delayedBlocksLock.Unlock()
-	dag.delayedBlocks[*block.Hash()] = &delayedBlock{
+	db := &delayedBlock{
 		block:       block,
 		processTime: dag.timeSource.AdjustedTime().Add(delay),
 	}
+
+	dag.delayedBlocks[*block.Hash()] = db
+	dag.delayedBlocksQueue.Push(db)
+	dag.delayedBlocksLock.Unlock()
+	// Trigger processing of current delayed blocks when adding a new delayed block.
+	dag.ProcessDelayedBlocks()
 }
 
 // RemoveDelayedBlock removes a block from the delayed blocks list.
-func (dag *BlockDAG) RemoveDelayedBlock(block *util.Block) {
-	dag.delayedBlocksLock.Lock()
-	defer dag.delayedBlocksLock.Unlock()
-	delete(dag.delayedBlocks, *block.Hash())
+// This function must be called with delayedBlocksLock locked.
+func (dag *BlockDAG) removeDelayedBlock() {
+	toDelete := dag.delayedBlocksQueue.pop()
+	delete(dag.delayedBlocks, *toDelete.block.Hash())
 }
 
 // ProcessDelayedBlocks loops over all delayed blocks and processes blocks which are due.
@@ -1837,17 +1841,20 @@ func (dag *BlockDAG) RemoveDelayedBlock(block *util.Block) {
 // 1. When adding a new delayed block
 // 2. After processing a block (ProcessBlock method).
 func (dag *BlockDAG) ProcessDelayedBlocks() error {
-	dag.delayedBlocksLock.RLock()
-	defer dag.delayedBlocksLock.RUnlock()
-	for _, delayedBlock := range dag.delayedBlocks {
-		if dag.timeSource.AdjustedTime().After(delayedBlock.processTime) {
-			_, _, err := dag.ProcessBlock(delayedBlock.block, BFAfterDelay)
-			if err != nil {
-				log.Debugf("Error while processing delayed block (block %s)", delayedBlock.block.Hash().String())
-				return err
-			}
-			dag.RemoveDelayedBlock(delayedBlock.block)
+	dag.delayedBlocksLock.Lock()
+	defer dag.delayedBlocksLock.Unlock()
+
+	delayedBlock := dag.delayedBlocksQueue.Peek()
+	// Check if the delayed block with the earliest process time should be processed
+	for delayedBlock != nil && dag.timeSource.AdjustedTime().After(delayedBlock.processTime) {
+		err := dag.maybeAcceptBlock(delayedBlock.block, BFAfterDelay)
+		if err != nil {
+			log.Debugf("Error while processing delayed block (block %s)", delayedBlock.block.Hash().String())
+			return err
 		}
+		log.Debugf("Processed delayed block (block %s)", delayedBlock.block.Hash().String())
+		dag.removeDelayedBlock()
+		delayedBlock = dag.delayedBlocksQueue.Peek()
 	}
 	return nil
 }
@@ -1951,6 +1958,7 @@ func New(config *Config) (*BlockDAG, error) {
 		orphans:                        make(map[daghash.Hash]*orphanBlock),
 		prevOrphans:                    make(map[daghash.Hash][]*orphanBlock),
 		delayedBlocks:                  make(map[daghash.Hash]*delayedBlock),
+		delayedBlocksQueue:             newdDelayedBlocksHeap(),
 		warningCaches:                  newThresholdCaches(vbNumBits),
 		deploymentCaches:               newThresholdCaches(dagconfig.DefinedDeployments),
 		blockCount:                     0,
