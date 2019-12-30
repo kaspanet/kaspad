@@ -181,6 +181,7 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 	}
 	dag.delayedBlocksLock.RUnlock()
 	if delay != 0 {
+		// Add Nanosecond to ensure that parent process time will be after its child.
 		delay += time.Nanosecond
 		return false, delay, nil
 	}
