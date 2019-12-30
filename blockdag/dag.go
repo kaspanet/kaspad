@@ -1855,7 +1855,7 @@ func (dag *BlockDAG) ProcessDelayedBlocks() error {
 
 		err := dag.maybeAcceptBlock(delayedBlock.block, BFAfterDelay)
 		if err != nil {
-			log.Debugf("Error while processing delayed block (block %s)", delayedBlock.block.Hash().String())
+			log.Errorf("Error while processing delayed block (block %s)", delayedBlock.block.Hash().String())
 			return err
 		}
 		log.Debugf("Processed delayed block (block %s)", delayedBlock.block.Hash().String())
