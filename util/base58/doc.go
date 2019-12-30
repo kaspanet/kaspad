@@ -13,13 +13,7 @@ The modified base58 alphabet used by kaspa, and hence this package, omits the
 0, O, I, and l characters that look the same in many fonts and are therefore
 hard to humans to distinguish.
 
-Base58Check Encoding Scheme
-
-The Base58Check encoding scheme is primarily used for kaspa addresses at the
-time of this writing, however it can be used to generically encode arbitrary
-byte arrays into human-readable strings along with a version byte that can be
-used to differentiate the same payload. For kaspa addresses, the extra
-version is used to differentiate the network of otherwise identical public keys
-which helps prevent using an address intended for one network on another.
+At the time of this writing, the Base58 encoding scheme is primarily used
+for kaspa private keys.
 */
 package base58
