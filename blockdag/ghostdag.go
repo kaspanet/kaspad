@@ -99,11 +99,16 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 					return nil, err
 				}
 				candidateAnticoneSize++
-				if candidateAnticoneSize > dag.dagParams.K || candidateBluesAnticoneSizes[block] == dag.dagParams.K {
-					// Two possible k-cluster violations here:
-					// 	(i) The candidate blue anticone now became larger than k
-					//	(ii) A block in candidate's blue anticone already has k blue
-					//	blocks in its own anticone
+
+				if candidateAnticoneSize > dag.dagParams.K {
+					// k-cluster violation: The candidate blue anticone now became larger than k
+					possiblyBlue = false
+					break
+				}
+
+				if candidateBluesAnticoneSizes[block] == dag.dagParams.K {
+					// k-cluster violation: A block in candidate's blue anticone already
+					// has k blue blocks in its own anticone
 					possiblyBlue = false
 					break
 				}
