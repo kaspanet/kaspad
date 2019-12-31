@@ -174,7 +174,6 @@ func (store *reachabilityStore) loadReachabilityDataFromCursor(cursor database.C
 	// Connect the treeNode with its blockNode
 	data.treeNode.blockNode = store.dag.index.LookupNode(&hash)
 
-	store.loaded[hash] = data
 	return nil
 }
 
