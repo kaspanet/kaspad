@@ -125,14 +125,14 @@ func (store *reachabilityStore) init(dbTx database.Tx) error {
 	//   with other nodes, which are now guaranteed to exist
 	cursor := bucket.Cursor()
 	for ok := cursor.First(); ok; ok = cursor.Next() {
-		err := store.loadReachabilityDataFromCursor(cursor, false)
+		err := store.initReachabilityData(cursor)
 		if err != nil {
 			return err
 		}
 	}
 	cursor = bucket.Cursor()
 	for ok := cursor.First(); ok; ok = cursor.Next() {
-		err := store.loadReachabilityDataFromCursor(cursor, true)
+		err := store.loadReachabilityDataFromCursor(cursor)
 		if err != nil {
 			return err
 		}
@@ -140,25 +140,33 @@ func (store *reachabilityStore) init(dbTx database.Tx) error {
 	return nil
 }
 
-func (store *reachabilityStore) loadReachabilityDataFromCursor(cursor database.Cursor, withConnections bool) error {
+func (store *reachabilityStore) initReachabilityData(cursor database.Cursor) error {
 	var hash daghash.Hash
 	err := hash.SetBytes(cursor.Key())
 	if err != nil {
 		return err
 	}
 
-	var data *reachabilityData
-	if !withConnections {
-		data = &reachabilityData{}
-	} else {
-		var ok bool
-		data, ok = store.reachabilityDataByHash(&hash)
-		if !ok {
-			return errors.Errorf("cannot find reachability data for block hash: %s", hash)
-		}
+	store.loaded[hash] = &reachabilityData{
+		treeNode:          &reachabilityTreeNode{},
+		futureCoveringSet: make(futureCoveringBlockSet, 0),
+	}
+	return nil
+}
+
+func (store *reachabilityStore) loadReachabilityDataFromCursor(cursor database.Cursor) error {
+	var hash daghash.Hash
+	err := hash.SetBytes(cursor.Key())
+	if err != nil {
+		return err
 	}
 
-	err = store.deserializeReachabilityData(cursor.Value(), data, withConnections)
+	data, ok := store.reachabilityDataByHash(&hash)
+	if !ok {
+		return errors.Errorf("cannot find reachability data for block hash: %s", hash)
+	}
+
+	err = store.deserializeReachabilityData(cursor.Value(), data)
 	if err != nil {
 		return err
 	}
@@ -269,19 +277,19 @@ func (store *reachabilityStore) serializeFutureCoveringSet(w io.Writer, futureCo
 	return nil
 }
 
-func (store *reachabilityStore) deserializeReachabilityData(serializedReachabilityDataBytes []byte,
-	data *reachabilityData, withConnections bool) error {
+func (store *reachabilityStore) deserializeReachabilityData(
+	serializedReachabilityDataBytes []byte, data *reachabilityData) error {
 
 	serializedReachabilityData := bytes.NewBuffer(serializedReachabilityDataBytes)
 
 	// Deserialize the tree node
-	err := store.deserializeTreeNode(serializedReachabilityData, data, withConnections)
+	err := store.deserializeTreeNode(serializedReachabilityData, data)
 	if err != nil {
 		return err
 	}
 
 	// Deserialize the future covering set
-	err = store.deserializeFutureConveringSet(serializedReachabilityData, data, withConnections)
+	err = store.deserializeFutureCoveringSet(serializedReachabilityData, data)
 	if err != nil {
 		return err
 	}
@@ -289,18 +297,20 @@ func (store *reachabilityStore) deserializeReachabilityData(serializedReachabili
 	return nil
 }
 
-func (store *reachabilityStore) deserializeTreeNode(r io.Reader, data *reachabilityData, withConnections bool) error {
+func (store *reachabilityStore) deserializeTreeNode(r io.Reader, data *reachabilityData) error {
 	// Deserialize the interval
 	interval, err := store.deserializeReachabilityInterval(r)
 	if err != nil {
 		return err
 	}
+	data.treeNode.interval = interval
 
 	// Deserialize the remaining interval
 	remainingInterval, err := store.deserializeReachabilityInterval(r)
 	if err != nil {
 		return err
 	}
+	data.treeNode.remainingInterval = remainingInterval
 
 	// Deserialize the parent
 	// If this is the zero hash, this node is the genesis and as such doesn't have a parent
@@ -309,7 +319,7 @@ func (store *reachabilityStore) deserializeTreeNode(r io.Reader, data *reachabil
 	if err != nil {
 		return err
 	}
-	if withConnections && !daghash.ZeroHash.IsEqual(parentHash) {
+	if !daghash.ZeroHash.IsEqual(parentHash) {
 		parentReachabilityData, ok := store.reachabilityDataByHash(parentHash)
 		if !ok {
 			return errors.Errorf("parent reachability data not found for hash: %s", parentHash)
@@ -324,34 +334,20 @@ func (store *reachabilityStore) deserializeTreeNode(r io.Reader, data *reachabil
 	}
 
 	// Deserialize the children
-	childHashes := make([]*daghash.Hash, childAmount)
+	children := make([]*reachabilityTreeNode, childAmount)
 	for i := uint64(0); i < childAmount; i++ {
 		childHash := &daghash.Hash{}
 		err = wire.ReadElement(r, childHash)
 		if err != nil {
 			return err
 		}
-		childHashes[i] = childHash
-	}
-	if withConnections {
-		children := make([]*reachabilityTreeNode, childAmount)
-		for i, childHash := range childHashes {
-			childReachabilityData, ok := store.reachabilityDataByHash(childHash)
-			if !ok {
-				return errors.Errorf("child reachability data not found for hash: %s", parentHash)
-			}
-			children[i] = childReachabilityData.treeNode
+		childReachabilityData, ok := store.reachabilityDataByHash(childHash)
+		if !ok {
+			return errors.Errorf("child reachability data not found for hash: %s", parentHash)
 		}
-		data.treeNode.children = children
+		children[i] = childReachabilityData.treeNode
 	}
-
-	// treeNode doesn't exist yet--create it
-	if !withConnections {
-		data.treeNode = &reachabilityTreeNode{
-			interval:          interval,
-			remainingInterval: remainingInterval,
-		}
-	}
+	data.treeNode.children = children
 
 	return nil
 }
@@ -378,7 +374,7 @@ func (store *reachabilityStore) deserializeReachabilityInterval(r io.Reader) (*r
 	return interval, nil
 }
 
-func (store *reachabilityStore) deserializeFutureConveringSet(r io.Reader, data *reachabilityData, withConnections bool) error {
+func (store *reachabilityStore) deserializeFutureCoveringSet(r io.Reader, data *reachabilityData) error {
 	// Deserialize the set size
 	setSize, err := wire.ReadVarInt(r)
 	if err != nil {
@@ -386,32 +382,24 @@ func (store *reachabilityStore) deserializeFutureConveringSet(r io.Reader, data 
 	}
 
 	// Deserialize each block in the set
-	blockHashes := make([]*daghash.Hash, setSize)
 	for i := uint64(0); i < setSize; i++ {
 		blockHash := &daghash.Hash{}
 		err = wire.ReadElement(r, blockHash)
 		if err != nil {
 			return err
 		}
-		blockHashes[i] = blockHash
-	}
-	if withConnections {
-		for i, blockHash := range blockHashes {
-			blockNode := store.dag.index.LookupNode(blockHash)
-			if blockNode == nil {
-				return errors.Errorf("blockNode not found for hash %s", blockHash)
-			}
-			blockReachabilityData, ok := store.reachabilityDataByHash(blockHash)
-			if !ok {
-				return errors.Errorf("block reachability data not found for hash: %s", blockHash)
-			}
-			data.futureCoveringSet[i] = &futureCoveringBlock{blockNode: blockNode, treeNode: blockReachabilityData.treeNode}
+		blockNode := store.dag.index.LookupNode(blockHash)
+		if blockNode == nil {
+			return errors.Errorf("blockNode not found for hash %s", blockHash)
 		}
-	}
-
-	// futureCoveringSet doesn't exist yet--create it
-	if !withConnections {
-		data.futureCoveringSet = make(futureCoveringBlockSet, setSize)
+		blockReachabilityData, ok := store.reachabilityDataByHash(blockHash)
+		if !ok {
+			return errors.Errorf("block reachability data not found for hash: %s", blockHash)
+		}
+		data.futureCoveringSet = append(data.futureCoveringSet, &futureCoveringBlock{
+			blockNode: blockNode,
+			treeNode:  blockReachabilityData.treeNode,
+		})
 	}
 
 	return nil
