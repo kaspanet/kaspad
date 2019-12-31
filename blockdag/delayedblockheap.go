@@ -37,12 +37,14 @@ func (h baseDelayedBlocksHeap) Less(i, j int) bool {
 }
 
 type delayedBlocksHeap struct {
-	impl heap.Interface
+	baseDelayedBlocksHeap *baseDelayedBlocksHeap
+	impl                  heap.Interface
 }
 
-// newdDelayedBlocksHeap initializes and returns a new delayedBlocksHeap
-func newdDelayedBlocksHeap() delayedBlocksHeap {
-	h := delayedBlocksHeap{impl: &baseDelayedBlocksHeap{}}
+// newDelayedBlocksHeap initializes and returns a new delayedBlocksHeap
+func newDelayedBlocksHeap() delayedBlocksHeap {
+	baseHeap := &baseDelayedBlocksHeap{}
+	h := delayedBlocksHeap{impl: baseHeap, baseDelayedBlocksHeap: baseHeap}
 	heap.Init(h.impl)
 	return h
 }
@@ -60,4 +62,12 @@ func (dbh delayedBlocksHeap) Push(block *delayedBlock) {
 // Len returns the length of this heap
 func (dbh delayedBlocksHeap) Len() int {
 	return dbh.impl.Len()
+}
+
+// peek returns the topmost element in the queue without poping it
+func (dbh delayedBlocksHeap) peek() *delayedBlock {
+	if dbh.baseDelayedBlocksHeap.Peek() == nil {
+		return nil
+	}
+	return dbh.baseDelayedBlocksHeap.Peek().(*delayedBlock)
 }

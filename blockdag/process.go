@@ -168,33 +168,21 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 		}
 	}
 
-	// Handle the case of a block with a valid timestamp(non-delayed) which points to a delayed block.
-	dag.delayedBlocksLock.RLock()
-	delay = 0
+	var missingParents []*daghash.Hash
 	for _, parentHash := range block.MsgBlock().Header.ParentHashes {
-		if delayedParent, exists := dag.delayedBlocks[*parentHash]; exists {
-			parentDelay := delayedParent.processTime.Sub(dag.timeSource.AdjustedTime())
-			if parentDelay > delay {
-				delay = parentDelay
-			}
+		if !dag.BlockExists(parentHash) {
+			missingParents = append(missingParents, parentHash)
 		}
 	}
-	dag.delayedBlocksLock.RUnlock()
+
+	// Handle the case of a block with a valid timestamp(non-delayed) which points to a delayed block.
+	delay = dag.maxDelayOfParents(missingParents)
 	if delay != 0 {
-		// Add Nanosecond to ensure that parent process time will be after its child.
-		delay += time.Nanosecond
 		return false, delay, nil
 	}
 
 	// Handle orphan blocks.
-	allParentsExist := true
-	for _, parentHash := range block.MsgBlock().Header.ParentHashes {
-		if !dag.BlockExists(parentHash) {
-			allParentsExist = false
-		}
-	}
-
-	if !allParentsExist {
+	if len(missingParents) > 0 {
 		// Some orphans during netsync are a normal part of the process, since the anticone
 		// of the chain-split is never explicitly requested.
 		// Therefore, if we are during netsync - don't report orphans to default logs.

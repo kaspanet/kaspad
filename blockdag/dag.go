@@ -1815,25 +1815,20 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 
 // AddDelayedBlock adds a block to the delayed blocks list.
 func (dag *BlockDAG) AddDelayedBlock(block *util.Block, delay time.Duration) {
-	log.Debugf("Adding block to delayed blocks queue (block %s)", block.Hash().String())
 	dag.delayedBlocksLock.Lock()
+	// Trigger processing of current delayed blocks when adding a new delayed block.
+	defer dag.ProcessDelayedBlocks()
+	defer dag.delayedBlocksLock.Unlock()
+
+	processTime := dag.timeSource.AdjustedTime().Add(delay)
+	log.Debugf("Adding block to delayed blocks queue (block hash: %s, process time: %s)", block.Hash().String(), processTime)
 	db := &delayedBlock{
 		block:       block,
-		processTime: dag.timeSource.AdjustedTime().Add(delay),
+		processTime: processTime,
 	}
 
 	dag.delayedBlocks[*block.Hash()] = db
 	dag.delayedBlocksQueue.Push(db)
-	dag.delayedBlocksLock.Unlock()
-	// Trigger processing of current delayed blocks when adding a new delayed block.
-	dag.ProcessDelayedBlocks()
-}
-
-// RemoveDelayedBlock removes a block from the delayed blocks list.
-// This function must be called with delayedBlocksLock locked.
-func (dag *BlockDAG) removeDelayedBlock() {
-	toDelete := dag.delayedBlocksQueue.pop()
-	delete(dag.delayedBlocks, *toDelete.block.Hash())
 }
 
 // ProcessDelayedBlocks loops over all delayed blocks and processes blocks which are due.
@@ -1845,24 +1840,51 @@ func (dag *BlockDAG) ProcessDelayedBlocks() error {
 	defer dag.delayedBlocksLock.Unlock()
 	// Check if the delayed block with the earliest process time should be processed
 	for dag.delayedBlocksQueue.Len() > 0 {
-
-		delayedBlock := dag.delayedBlocksQueue.pop()
-
-		if delayedBlock.processTime.After(dag.timeSource.AdjustedTime()) {
-			dag.delayedBlocksQueue.Push(delayedBlock)
-			return nil
+		earliestDelayedBlockProcessTime := dag.delayedBlocksQueue.peek().processTime
+		if dag.timeSource.AdjustedTime().After(earliestDelayedBlockProcessTime) {
+			delayedBlock := dag.popDelayedBlock()
+			err := dag.maybeAcceptBlock(delayedBlock.block, BFAfterDelay)
+			if err != nil {
+				log.Errorf("Error while processing delayed block (block %s)", delayedBlock.block.Hash().String())
+				return err
+			}
+			log.Debugf("Processed delayed block (block %s)", delayedBlock.block.Hash().String())
+		} else {
+			// Nothing to process yet, delayed block should not be processed yet.
+			break
 		}
-
-		err := dag.maybeAcceptBlock(delayedBlock.block, BFAfterDelay)
-		if err != nil {
-			log.Errorf("Error while processing delayed block (block %s)", delayedBlock.block.Hash().String())
-			return err
-		}
-		log.Debugf("Processed delayed block (block %s)", delayedBlock.block.Hash().String())
-		dag.removeDelayedBlock()
 	}
 
 	return nil
+}
+
+// popDelayedBlock removes the topmost (delayed block with earliest process time) of the queue and returns it.
+func (dag *BlockDAG) popDelayedBlock() *delayedBlock {
+	db := dag.delayedBlocksQueue.pop()
+	delete(dag.delayedBlocks, *db.block.Hash())
+	return db
+}
+
+// maxDelayOfParents returns the maximum delay of the given block hashes.
+// Returns 0 if none of the parents are delayed.
+func (dag *BlockDAG) maxDelayOfParents(parentHashes []*daghash.Hash) time.Duration {
+	dag.delayedBlocksLock.RLock()
+	defer dag.delayedBlocksLock.RUnlock()
+	delay := time.Duration(0)
+	for _, parentHash := range parentHashes {
+		if delayedParent, exists := dag.delayedBlocks[*parentHash]; exists {
+			parentDelay := delayedParent.processTime.Sub(dag.timeSource.AdjustedTime())
+			if parentDelay > delay {
+				delay = parentDelay
+			}
+		}
+	}
+
+	if delay != 0 {
+		// Add Nanosecond to ensure that parent process time will be after its child.
+		delay += time.Nanosecond
+	}
+	return delay
 }
 
 // IndexManager provides a generic interface that is called when blocks are
@@ -1964,7 +1986,7 @@ func New(config *Config) (*BlockDAG, error) {
 		orphans:                        make(map[daghash.Hash]*orphanBlock),
 		prevOrphans:                    make(map[daghash.Hash][]*orphanBlock),
 		delayedBlocks:                  make(map[daghash.Hash]*delayedBlock),
-		delayedBlocksQueue:             newdDelayedBlocksHeap(),
+		delayedBlocksQueue:             newDelayedBlocksHeap(),
 		warningCaches:                  newThresholdCaches(vbNumBits),
 		deploymentCaches:               newThresholdCaches(dagconfig.DefinedDeployments),
 		blockCount:                     0,
