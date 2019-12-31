@@ -40,8 +40,8 @@ func (dag *BlockDAG) selectedParentAnticone(node *blockNode) (*blockHeap, error)
 // blueAnticoneSize returns the blue anticone size of 'block' from the worldview of 'context'.
 // Expects 'block' to be ∈ blue-set(context)
 func (dag *BlockDAG) blueAnticoneSize(block, context *blockNode) (uint32, error) {
-	for node := context; node != nil; node = node.selectedParent {
-		if blueAnticoneSize, ok := node.bluesAnticoneSizes[*block.hash]; ok {
+	for current := context; current != nil; current = current.selectedParent {
+		if blueAnticoneSize, ok := current.bluesAnticoneSizes[*block.hash]; ok {
 			return blueAnticoneSize, nil
 		}
 	}
