@@ -464,7 +464,7 @@ func LockTimeToSequence(isSeconds bool, locktime uint64) uint64 {
 //
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) addBlock(node *blockNode,
-	block *util.Block, selectedParentAnticone *blockHeap, flags BehaviorFlags) (*chainUpdates, error) {
+	block *util.Block, selectedParentAnticone []*blockNode, flags BehaviorFlags) (*chainUpdates, error) {
 	// Skip checks if node has already been fully validated.
 	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.NodeStatus(node).KnownValid()
 
@@ -533,7 +533,7 @@ func (node *blockNode) validateAcceptedIDMerkleRoot(dag *BlockDAG, txsAcceptance
 //
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) connectBlock(node *blockNode,
-	block *util.Block, selectedParentAnticone *blockHeap, fastAdd bool) (*chainUpdates, error) {
+	block *util.Block, selectedParentAnticone []*blockNode, fastAdd bool) (*chainUpdates, error) {
 	// No warnings about unknown rules or versions until the DAG is
 	// current.
 	if dag.isCurrent() {
@@ -886,7 +886,7 @@ func (dag *BlockDAG) BlockPastUTXO(blockHash *daghash.Hash) (UTXOSet, error) {
 // It returns the diff in the virtual block's UTXO set.
 //
 // This function MUST be called with the DAG state lock held (for writes).
-func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, selectedParentAnticone *blockHeap) (
+func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, selectedParentAnticone []*blockNode) (
 	virtualUTXODiff *UTXODiff, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData,
 	chainUpdates *chainUpdates, err error) {
 

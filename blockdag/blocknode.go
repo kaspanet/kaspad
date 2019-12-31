@@ -117,8 +117,8 @@ func calculateChainHeight(node *blockNode) uint64 {
 
 // newBlockNode returns a new block node for the given block header and parent
 //nodes. This function is NOT safe for concurrent access.
-func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSet) (*blockNode, *blockHeap) {
-	node := &blockNode{
+func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSet) (node *blockNode, selectedParentAnticone []*blockNode) {
+	node = &blockNode{
 		parents:            parents,
 		children:           make(blockSet),
 		timestamp:          time.Now().Unix(),
@@ -139,7 +139,6 @@ func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSe
 		node.hash = &daghash.ZeroHash
 	}
 
-	var selectedParentAnticone *blockHeap
 	if len(parents) > 0 {
 		var err error
 		selectedParentAnticone, err = dag.ghostdag(node)

@@ -518,7 +518,7 @@ func (fb futureCoveringBlockSet) String() string {
 	return intervalsString
 }
 
-func (dag *BlockDAG) updateReachability(node *blockNode, selectedParentAnticone *blockHeap) error {
+func (dag *BlockDAG) updateReachability(node *blockNode, selectedParentAnticone []*blockNode) error {
 	// Allocate a new reachability tree node
 	newTreeNode := newReachabilityTreeNode(node)
 
@@ -545,8 +545,7 @@ func (dag *BlockDAG) updateReachability(node *blockNode, selectedParentAnticone 
 
 	// Add the block to the futureCoveringSets of all the blocks
 	// in the selected parent's anticone
-	for selectedParentAnticone.Len() > 0 {
-		current := selectedParentAnticone.pop()
+	for _, current := range selectedParentAnticone {
 		currentFutureCoveringSet, err := dag.reachabilityStore.futureCoveringSetByBlockNode(current)
 		if err != nil {
 			return err
