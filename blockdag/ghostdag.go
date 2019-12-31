@@ -48,6 +48,22 @@ func (dag *BlockDAG) blueAnticoneSize(block, context *blockNode) (uint32, error)
 	return 0, errors.Errorf("block %s is not in blue-set of %s", block.hash, context.hash)
 }
 
+// ghostdag updates newNode.blues, newNode.selectedParent
+// and newNode.bluesAnticoneSizes according to the GHOSTDAG
+// protocol.
+// It updates newNode.blues by going over the anticone of
+// newNode.selectedParent (which is the parent with the
+// highest blue score) and adds it to newNode.blues if it
+// passes two conditions:
+// 1) |anticone(block) ∩ blueset(newNode)| <= K
+// 2) For every blue in blueset(newNode) |anticone(blue) ∩ blueset(newNode) ∩ {block}| <= K.
+//    We do this by maintaining for each block a map bluesAnticoneSizes which holds
+//    all the blue anticone sizes that were affected by the new added blues.
+//    So to find out what is |anticone(blue) ∩ blueset(newNode)| we just iterate in
+//    the selected parent chain of newNode until we find an existing entry in
+//    bluesAnticoneSizes.
+//
+// For further details see the article https://eprint.iacr.org/2018/104.pdf
 func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blockNode, err error) {
 	newNode.selectedParent = newNode.parents.bluest()
 	newNode.bluesAnticoneSizes[*newNode.hash] = 0
