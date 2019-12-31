@@ -146,15 +146,27 @@ func (store *reachabilityStore) loadReachabilityDataFromCursor(cursor database.C
 	if err != nil {
 		return err
 	}
-	reachabilityData, err := store.deserializeReachabilityData(cursor.Value(), withConnections)
+
+	var data *reachabilityData
+	if !withConnections {
+		data = &reachabilityData{}
+	} else {
+		var ok bool
+		data, ok = store.reachabilityDataByHash(&hash)
+		if !ok {
+			return errors.Errorf("cannot find reachability data for block hash: %s", hash)
+		}
+	}
+
+	err = store.deserializeReachabilityData(cursor.Value(), data, withConnections)
 	if err != nil {
 		return err
 	}
 
 	// Connect the treeNode with its blockNode
-	reachabilityData.treeNode.blockNode = store.dag.index.LookupNode(&hash)
+	data.treeNode.blockNode = store.dag.index.LookupNode(&hash)
 
-	store.loaded[hash] = reachabilityData
+	store.loaded[hash] = data
 	return nil
 }
 
@@ -257,89 +269,92 @@ func (store *reachabilityStore) serializeFutureCoveringSet(w io.Writer, futureCo
 	return nil
 }
 
-func (store *reachabilityStore) deserializeReachabilityData(
-	serializedReachabilityDataBytes []byte, withConnections bool) (*reachabilityData, error) {
+func (store *reachabilityStore) deserializeReachabilityData(serializedReachabilityDataBytes []byte,
+	data *reachabilityData, withConnections bool) error {
 
-	data := &reachabilityData{}
 	serializedReachabilityData := bytes.NewBuffer(serializedReachabilityDataBytes)
 
 	// Deserialize the tree node
-	treeNode, err := store.deserializeTreeNode(serializedReachabilityData, withConnections)
+	err := store.deserializeTreeNode(serializedReachabilityData, data, withConnections)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	data.treeNode = treeNode
 
 	// Deserialize the future covering set
-	futureCoveringSet, err := store.deserializeFutureConveringSet(serializedReachabilityData, withConnections)
+	err = store.deserializeFutureConveringSet(serializedReachabilityData, data, withConnections)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	data.futureCoveringSet = futureCoveringSet
 
-	return data, nil
+	return nil
 }
 
-func (store *reachabilityStore) deserializeTreeNode(r io.Reader, withConnections bool) (*reachabilityTreeNode, error) {
-	treeNode := &reachabilityTreeNode{}
-
+func (store *reachabilityStore) deserializeTreeNode(r io.Reader, data *reachabilityData, withConnections bool) error {
 	// Deserialize the interval
 	interval, err := store.deserializeReachabilityInterval(r)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	treeNode.interval = interval
 
 	// Deserialize the remaining interval
 	remainingInterval, err := store.deserializeReachabilityInterval(r)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	treeNode.remainingInterval = remainingInterval
 
 	// Deserialize the parent
 	// If this is the zero hash, this node is the genesis and as such doesn't have a parent
 	parentHash := &daghash.Hash{}
 	err = wire.ReadElement(r, parentHash)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if !daghash.ZeroHash.IsEqual(parentHash) {
 		if withConnections {
 			parentReachabilityData, ok := store.reachabilityDataByHash(parentHash)
 			if !ok {
-				return nil, errors.Errorf("parent reachability data not found for hash: %s", parentHash)
+				return errors.Errorf("parent reachability data not found for hash: %s", parentHash)
 			}
-			treeNode.parent = parentReachabilityData.treeNode
+			data.treeNode.parent = parentReachabilityData.treeNode
 		}
 	}
 
 	// Deserialize the amount of children
 	childAmount, err := wire.ReadVarInt(r)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Deserialize the children
-	children := make([]*reachabilityTreeNode, childAmount)
+	childHashes := make([]*daghash.Hash, childAmount)
 	for i := uint64(0); i < childAmount; i++ {
 		childHash := &daghash.Hash{}
 		err = wire.ReadElement(r, childHash)
 		if err != nil {
-			return nil, err
+			return err
 		}
-
-		if withConnections {
+		childHashes[i] = childHash
+	}
+	if withConnections {
+		children := make([]*reachabilityTreeNode, childAmount)
+		for i, childHash := range childHashes {
 			childReachabilityData, ok := store.reachabilityDataByHash(childHash)
 			if !ok {
-				return nil, errors.Errorf("child reachability data not found for hash: %s", parentHash)
+				return errors.Errorf("child reachability data not found for hash: %s", parentHash)
 			}
 			children[i] = childReachabilityData.treeNode
 		}
+		data.treeNode.children = children
 	}
-	treeNode.children = children
 
-	return treeNode, nil
+	if !withConnections {
+		data.treeNode = &reachabilityTreeNode{
+			interval:          interval,
+			remainingInterval: remainingInterval,
+		}
+	}
+
+	return nil
 }
 
 func (store *reachabilityStore) deserializeReachabilityInterval(r io.Reader) (*reachabilityInterval, error) {
@@ -364,11 +379,11 @@ func (store *reachabilityStore) deserializeReachabilityInterval(r io.Reader) (*r
 	return interval, nil
 }
 
-func (store *reachabilityStore) deserializeFutureConveringSet(r io.Reader, withConnections bool) (futureCoveringBlockSet, error) {
+func (store *reachabilityStore) deserializeFutureConveringSet(r io.Reader, data *reachabilityData, withConnections bool) error {
 	// Deserialize the set size
 	setSize, err := wire.ReadVarInt(r)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Deserialize each block in the set
@@ -377,21 +392,25 @@ func (store *reachabilityStore) deserializeFutureConveringSet(r io.Reader, withC
 		blockHash := &daghash.Hash{}
 		err = wire.ReadElement(r, blockHash)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		if withConnections {
 			blockNode := store.dag.index.LookupNode(blockHash)
 			if blockNode == nil {
-				return nil, errors.Errorf("blockNode not found for hash %s", blockHash)
+				return errors.Errorf("blockNode not found for hash %s", blockHash)
 			}
 			blockReachabilityData, ok := store.reachabilityDataByHash(blockHash)
 			if !ok {
-				return nil, errors.Errorf("block reachability data not found for hash: %s", blockHash)
+				return errors.Errorf("block reachability data not found for hash: %s", blockHash)
 			}
 			futureCoveringSet[i] = &futureCoveringBlock{blockNode: blockNode, treeNode: blockReachabilityData.treeNode}
 		}
 	}
 
-	return futureCoveringSet, nil
+	if !withConnections {
+		data.futureCoveringSet = futureCoveringSet
+	}
+
+	return nil
 }
