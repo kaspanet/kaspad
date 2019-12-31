@@ -116,7 +116,7 @@ func calculateChainHeight(node *blockNode) uint64 {
 }
 
 // newBlockNode returns a new block node for the given block header and parent
-//nodes. This function is NOT safe for concurrent access.
+// nodes. This function is NOT safe for concurrent access.
 func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSet) (node *blockNode, selectedParentAnticone []*blockNode) {
 	node = &blockNode{
 		parents:            parents,
