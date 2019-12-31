@@ -14,11 +14,11 @@ import (
 func TestAncestorErrors(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	params := dagconfig.SimNetParams
-	dag, teardownFunc, err := DAGSetup("TestChainUpdates", Config{
+	dag, teardownFunc, err := DAGSetup("TestAncestorErrors", Config{
 		DAGParams: &params,
 	})
 	if err != nil {
-		t.Fatalf("TestChainUpdates: Failed to setup DAG instance: %s", err)
+		t.Fatalf("TestAncestorErrors: Failed to setup DAG instance: %s", err)
 	}
 	defer teardownFunc()
 

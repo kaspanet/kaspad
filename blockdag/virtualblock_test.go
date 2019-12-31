@@ -15,11 +15,11 @@ func TestVirtualBlock(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	params := dagconfig.SimNetParams
 	params.K = 1
-	dag, teardownFunc, err := DAGSetup("TestChainUpdates", Config{
+	dag, teardownFunc, err := DAGSetup("TestVirtualBlock", Config{
 		DAGParams: &params,
 	})
 	if err != nil {
-		t.Fatalf("TestChainUpdates: Failed to setup DAG instance: %s", err)
+		t.Fatalf("TestVirtualBlock: Failed to setup DAG instance: %s", err)
 	}
 	defer teardownFunc()
 
@@ -114,11 +114,11 @@ func TestSelectedPath(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	params := dagconfig.SimNetParams
 	params.K = 1
-	dag, teardownFunc, err := DAGSetup("TestChainUpdates", Config{
+	dag, teardownFunc, err := DAGSetup("TestSelectedPath", Config{
 		DAGParams: &params,
 	})
 	if err != nil {
-		t.Fatalf("TestChainUpdates: Failed to setup DAG instance: %s", err)
+		t.Fatalf("TestSelectedPath: Failed to setup DAG instance: %s", err)
 	}
 	defer teardownFunc()
 
