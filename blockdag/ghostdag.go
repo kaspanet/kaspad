@@ -48,11 +48,11 @@ func (dag *BlockDAG) blueAnticoneSize(block, context *blockNode) (uint32, error)
 	return 0, errors.Errorf("block %s is not in blue-set of %s", block.hash, context.hash)
 }
 
-func (dag *BlockDAG) ghostdag(newNode *blockNode) (*blockHeap, error) {
+func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone *blockHeap, err error) {
 	newNode.selectedParent = newNode.parents.bluest()
 	newNode.bluesAnticoneSizes[*newNode.hash] = 0
 	newNode.blues = append(newNode.blues, newNode.selectedParent)
-	selectedParentAnticone, err := dag.selectedParentAnticone(newNode)
+	selectedParentAnticone, err = dag.selectedParentAnticone(newNode)
 	if err != nil {
 		return nil, err
 	}
