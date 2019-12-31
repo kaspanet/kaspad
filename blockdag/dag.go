@@ -1816,8 +1816,6 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 // AddDelayedBlock adds a block to the delayed blocks list.
 func (dag *BlockDAG) AddDelayedBlock(block *util.Block, delay time.Duration) {
 	dag.delayedBlocksLock.Lock()
-	// Trigger processing of current delayed blocks when adding a new delayed block.
-	defer dag.ProcessDelayedBlocks()
 	defer dag.delayedBlocksLock.Unlock()
 
 	processTime := dag.timeSource.AdjustedTime().Add(delay)
@@ -1832,9 +1830,7 @@ func (dag *BlockDAG) AddDelayedBlock(block *util.Block, delay time.Duration) {
 }
 
 // ProcessDelayedBlocks loops over all delayed blocks and processes blocks which are due.
-// This method is invoked in two scenarios:
-// 1. When adding a new delayed block
-// 2. After processing a block (ProcessBlock method).
+// This method is invoked after processing a block (ProcessBlock method).
 func (dag *BlockDAG) ProcessDelayedBlocks() error {
 	dag.delayedBlocksLock.Lock()
 	defer dag.delayedBlocksLock.Unlock()
@@ -1859,6 +1855,7 @@ func (dag *BlockDAG) ProcessDelayedBlocks() error {
 }
 
 // popDelayedBlock removes the topmost (delayed block with earliest process time) of the queue and returns it.
+// this function must be called with delayedBlocksLock held (for writes)
 func (dag *BlockDAG) popDelayedBlock() *delayedBlock {
 	db := dag.delayedBlocksQueue.pop()
 	delete(dag.delayedBlocks, *db.block.Hash())
