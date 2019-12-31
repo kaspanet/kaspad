@@ -5,7 +5,7 @@ import "github.com/pkg/errors"
 func (dag *BlockDAG) selectedParentAnticone(node *blockNode) (*blockHeap, error) {
 	anticoneSet := newSet()
 	anticoneHeap := newUpHeap()
-	past := newSet()
+	selectedParentPast := newSet()
 	var queue []*blockNode
 	for _, parent := range node.parents {
 		if parent == node.selectedParent {
@@ -18,7 +18,7 @@ func (dag *BlockDAG) selectedParentAnticone(node *blockNode) (*blockHeap, error)
 		var current *blockNode
 		current, queue = queue[0], queue[1:]
 		for _, parent := range current.parents {
-			if anticoneSet.contains(parent) || past.contains(parent) {
+			if anticoneSet.contains(parent) || selectedParentPast.contains(parent) {
 				continue
 			}
 			isAncestorOfSelectedParent, err := dag.isAncestorOf(parent, node.selectedParent)
@@ -26,7 +26,7 @@ func (dag *BlockDAG) selectedParentAnticone(node *blockNode) (*blockHeap, error)
 				return nil, err
 			}
 			if isAncestorOfSelectedParent {
-				past.add(parent)
+				selectedParentPast.add(parent)
 				continue
 			}
 			anticoneSet.add(parent)
