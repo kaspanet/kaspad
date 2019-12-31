@@ -123,17 +123,16 @@ func newTestDAG(params *dagconfig.Params) *BlockDAG {
 		TimestampDeviationTolerance:    params.TimestampDeviationTolerance,
 		powMaxBits:                     util.BigToCompact(params.PowMax),
 		index:                          index,
-		genesis:                        index.LookupNode(params.GenesisHash),
 		warningCaches:                  newThresholdCaches(vbNumBits),
 		deploymentCaches:               newThresholdCaches(dagconfig.DefinedDeployments),
 	}
 
 	// Create a genesis block node and block index index populated with it
 	// on the above fake DAG.
-	node, _ := dag.newBlockNode(&params.GenesisBlock.Header, newSet())
-	index.AddNode(node)
+	dag.genesis, _ = dag.newBlockNode(&params.GenesisBlock.Header, newSet())
+	index.AddNode(dag.genesis)
 
-	dag.virtual = newVirtualBlock(dag, setFromSlice(node))
+	dag.virtual = newVirtualBlock(dag, setFromSlice(dag.genesis))
 	return dag
 }
 
