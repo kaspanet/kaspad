@@ -197,7 +197,7 @@ func TestGHOSTDAG(t *testing.T) {
 					parents.add(parent)
 				}
 
-				block, err := PrepareBlockForTest(dag, &dagParams, parents.hashes(), nil)
+				block, err := PrepareBlockForTest(dag, parents.hashes(), nil)
 				if err != nil {
 					t.Fatalf("TestGHOSTDAG: block %v got unexpected error from PrepareBlockForTest: %v", blockData.id, err)
 				}

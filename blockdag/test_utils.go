@@ -5,7 +5,6 @@ package blockdag
 import (
 	"compress/bzip2"
 	"encoding/binary"
-	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 	"io"
@@ -259,7 +258,7 @@ func OpTrueAddress(prefix util.Bech32Prefix) (util.Address, error) {
 }
 
 // PrepareBlockForTest generates a block with the proper merkle roots, coinbase transaction etc. This function is used for test purposes only
-func PrepareBlockForTest(dag *BlockDAG, params *dagconfig.Params, parentHashes []*daghash.Hash, transactions []*wire.MsgTx) (*wire.MsgBlock, error) {
+func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*wire.MsgTx) (*wire.MsgBlock, error) {
 	newVirtual, err := GetVirtualFromParentsForTest(dag, parentHashes)
 	if err != nil {
 		return nil, err
@@ -267,7 +266,7 @@ func PrepareBlockForTest(dag *BlockDAG, params *dagconfig.Params, parentHashes [
 	oldVirtual := SetVirtualForTest(dag, newVirtual)
 	defer SetVirtualForTest(dag, oldVirtual)
 
-	OpTrueAddr, err := OpTrueAddress(params.Prefix)
+	OpTrueAddr, err := OpTrueAddress(dag.dagParams.Prefix)
 	if err != nil {
 		return nil, err
 	}
