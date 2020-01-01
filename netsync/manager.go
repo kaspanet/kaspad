@@ -474,7 +474,6 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	}
 
 	if delay != 0 {
-		sm.dag.AddDelayedBlock(bmsg.block, delay)
 		return
 	}
 

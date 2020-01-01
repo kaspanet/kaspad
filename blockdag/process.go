@@ -164,6 +164,7 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 		}
 
 		if delay != 0 {
+			dag.AddDelayedBlock(block, delay)
 			return false, delay, err
 		}
 	}
