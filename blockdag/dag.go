@@ -1813,6 +1813,100 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 	return dag.subnetworkID
 }
 
+func (dag *BlockDAG) NextCoinbaseFromAddress(payToAddress util.Address, extraData []byte) (*util.Tx, error) {
+	coinbasePayloadScriptPubKey, err := txscript.PayToAddrScript(payToAddress)
+	if err != nil {
+		return nil, err
+	}
+	coinbaseTx, err := dag.NextBlockCoinbaseTransactionNoLock(coinbasePayloadScriptPubKey, extraData)
+	if err != nil {
+		return nil, err
+	}
+	return coinbaseTx, nil
+}
+
+// MinimumMedianTime returns the minimum allowed timestamp for a block building
+// on the end of the DAG. In particular, it is one second after
+// the median timestamp of the last several blocks per the DAG consensus
+// rules.
+func MinimumMedianTime(dagMedianTime time.Time) time.Time {
+	return dagMedianTime.Add(time.Second)
+}
+
+// medianAdjustedTime returns the current time adjusted to ensure it is at least
+// one second after the median timestamp of the last several blocks per the
+// DAG consensus rules.
+func medianAdjustedTime(dagMedianTime time.Time, timeSource MedianTimeSource) time.Time {
+	// The timestamp for the block must not be before the median timestamp
+	// of the last several blocks. Thus, choose the maximum between the
+	// current time and one second after the past median time. The current
+	// timestamp is truncated to a second boundary before comparison since a
+	// block timestamp does not supported a precision greater than one
+	// second.
+	newTimestamp := timeSource.AdjustedTime()
+	minTimestamp := MinimumMedianTime(dagMedianTime)
+	if newTimestamp.Before(minTimestamp) {
+		newTimestamp = minTimestamp
+	}
+
+	return newTimestamp
+}
+
+func (dag *BlockDAG) BlockForMining(selectedTxs []*util.Tx) (*wire.MsgBlock, error) {
+	dag.Lock()
+	defer dag.Unlock()
+
+	ts := medianAdjustedTime(dag.CalcPastMedianTime(), dag.timeSource)
+	requiredDifficulty := dag.NextRequiredDifficulty(ts)
+
+	// Calculate the next expected block version based on the state of the
+	// rule change deployments.
+	nextBlockVersion, err := dag.CalcNextBlockVersion()
+	if err != nil {
+		return nil, err
+	}
+
+	// Sort transactions by subnetwork ID before building Merkle tree
+	sort.Slice(selectedTxs, func(i, j int) bool {
+		if selectedTxs[i].MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
+			return true
+		}
+		if selectedTxs[j].MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
+			return false
+		}
+		return subnetworkid.Less(&selectedTxs[i].MsgTx().SubnetworkID, &selectedTxs[j].MsgTx().SubnetworkID)
+	})
+
+	// Create a new block ready to be solved.
+	hashMerkleTree := BuildHashMerkleTreeStore(selectedTxs)
+	acceptedIDMerkleRoot, err := dag.NextAcceptedIDMerkleRootNoLock()
+	if err != nil {
+		return nil, err
+	}
+	var msgBlock wire.MsgBlock
+	for _, tx := range selectedTxs {
+		msgBlock.AddTransaction(tx.MsgTx())
+	}
+
+	utxoWithTransactions, err := dag.UTXOSet().WithTransactions(msgBlock.Transactions, UnacceptedBlueScore, false)
+	if err != nil {
+		return nil, err
+	}
+	utxoCommitment := utxoWithTransactions.Multiset().Hash()
+
+	msgBlock.Header = wire.BlockHeader{
+		Version:              nextBlockVersion,
+		ParentHashes:         dag.TipHashes(),
+		HashMerkleRoot:       hashMerkleTree.Root(),
+		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
+		UTXOCommitment:       utxoCommitment,
+		Timestamp:            ts,
+		Bits:                 requiredDifficulty,
+	}
+
+	return &msgBlock, nil
+}
+
 // IndexManager provides a generic interface that is called when blocks are
 // connected to the DAG for the purpose of supporting optional indexes.
 type IndexManager interface {

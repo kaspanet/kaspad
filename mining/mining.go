@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"github.com/pkg/errors"
-	"sort"
 	"time"
 
 	"github.com/kaspanet/kaspad/blockdag"
@@ -16,7 +15,6 @@ import (
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/wire"
 )
 
@@ -93,33 +91,6 @@ type BlockTemplate struct {
 	// NewBlockTemplate for details on which this can be useful to generate
 	// templates without a coinbase payment address.
 	ValidPayAddress bool
-}
-
-// MinimumMedianTime returns the minimum allowed timestamp for a block building
-// on the end of the DAG. In particular, it is one second after
-// the median timestamp of the last several blocks per the DAG consensus
-// rules.
-func MinimumMedianTime(dagMedianTime time.Time) time.Time {
-	return dagMedianTime.Add(time.Second)
-}
-
-// medianAdjustedTime returns the current time adjusted to ensure it is at least
-// one second after the median timestamp of the last several blocks per the
-// DAG consensus rules.
-func medianAdjustedTime(dagMedianTime time.Time, timeSource blockdag.MedianTimeSource) time.Time {
-	// The timestamp for the block must not be before the median timestamp
-	// of the last several blocks. Thus, choose the maximum between the
-	// current time and one second after the past median time. The current
-	// timestamp is truncated to a second boundary before comparison since a
-	// block timestamp does not supported a precision greater than one
-	// second.
-	newTimestamp := timeSource.AdjustedTime()
-	minTimestamp := MinimumMedianTime(dagMedianTime)
-	if newTimestamp.Before(minTimestamp) {
-		newTimestamp = minTimestamp
-	}
-
-	return newTimestamp
 }
 
 // BlkTmplGenerator provides a type that can be used to generate block templates
@@ -227,59 +198,15 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		return nil, errors.Errorf("failed to select transactions: %s", err)
 	}
 
-	// Calculate the required difficulty for the block. The timestamp
-	// is potentially adjusted to ensure it comes after the median time of
-	// the last several blocks per the DAG consensus rules.
-	ts := medianAdjustedTime(g.dag.CalcPastMedianTime(), g.timeSource)
-	requiredDifficulty := g.dag.NextRequiredDifficulty(ts)
-
-	// Calculate the next expected block version based on the state of the
-	// rule change deployments.
-	nextBlockVersion, err := g.dag.CalcNextBlockVersion()
+	msgBlock, err := g.dag.BlockForMining(txsForBlockTemplate.selectedTxs)
 	if err != nil {
 		return nil, err
-	}
-
-	// Sort transactions by subnetwork ID before building Merkle tree
-	selectedTxs := txsForBlockTemplate.selectedTxs
-	sort.Slice(selectedTxs, func(i, j int) bool {
-		if selectedTxs[i].MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
-			return true
-		}
-		if selectedTxs[j].MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
-			return false
-		}
-		return subnetworkid.Less(&selectedTxs[i].MsgTx().SubnetworkID, &selectedTxs[j].MsgTx().SubnetworkID)
-	})
-
-	// Create a new block ready to be solved.
-	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(selectedTxs)
-	acceptedIDMerkleRoot, err := g.dag.NextAcceptedIDMerkleRootNoLock()
-	if err != nil {
-		return nil, err
-	}
-	var msgBlock wire.MsgBlock
-	for _, tx := range selectedTxs {
-		msgBlock.AddTransaction(tx.MsgTx())
-	}
-	utxoCommitment, err := g.buildUTXOCommitment(msgBlock.Transactions)
-	if err != nil {
-		return nil, err
-	}
-	msgBlock.Header = wire.BlockHeader{
-		Version:              nextBlockVersion,
-		ParentHashes:         g.dag.TipHashes(),
-		HashMerkleRoot:       hashMerkleTree.Root(),
-		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
-		UTXOCommitment:       utxoCommitment,
-		Timestamp:            ts,
-		Bits:                 requiredDifficulty,
 	}
 
 	// Finally, perform a full check on the created block against the DAG
 	// consensus rules to ensure it properly connects to the DAG with no
 	// issues.
-	block := util.NewBlock(&msgBlock)
+	block := util.NewBlock(msgBlock)
 
 	if err := g.dag.CheckConnectBlockTemplateNoLock(block); err != nil {
 		return nil, err
@@ -291,7 +218,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		txsForBlockTemplate.totalMass, util.CompactToBig(msgBlock.Header.Bits))
 
 	return &BlockTemplate{
-		Block:           &msgBlock,
+		Block:           msgBlock,
 		TxMasses:        txsForBlockTemplate.txMasses,
 		Fees:            txsForBlockTemplate.txFees,
 		ValidPayAddress: payToAddress != nil,

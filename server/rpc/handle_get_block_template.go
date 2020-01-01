@@ -618,7 +618,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		// Get the minimum allowed timestamp for the block based on the
 		// median timestamp of the last several blocks per the DAG
 		// consensus rules.
-		minTimestamp := mining.MinimumMedianTime(s.cfg.DAG.CalcPastMedianTime())
+		minTimestamp := blockdag.MinimumMedianTime(s.cfg.DAG.CalcPastMedianTime())
 
 		// Update work state to ensure another block template isn't
 		// generated until needed.

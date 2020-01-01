@@ -5,6 +5,7 @@ package blockdag
 import (
 	"compress/bzip2"
 	"encoding/binary"
+	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 	"io"
@@ -250,4 +251,35 @@ func LoadBlocks(filename string) (blocks []*util.Block, err error) {
 	}
 
 	return
+}
+
+// OpTrueAddress returns an address pointing to a P2SH anyone-can-spend script
+func OpTrueAddress(prefix util.Bech32Prefix) (util.Address, error) {
+	return util.NewAddressScriptHash(OpTrueScript, prefix)
+}
+
+// PrepareBlockForTest generates a block with the proper merkle roots, coinbase transaction etc. This function is used for test purposes only
+func PrepareBlockForTest(dag *BlockDAG, params *dagconfig.Params, parentHashes []*daghash.Hash, transactions []*wire.MsgTx, forceTransactions bool) (*wire.MsgBlock, error) {
+	newVirtual, err := GetVirtualFromParentsForTest(dag, parentHashes)
+	if err != nil {
+		return nil, err
+	}
+	oldVirtual := SetVirtualForTest(dag, newVirtual)
+	defer SetVirtualForTest(dag, oldVirtual)
+
+	OpTrueAddr, err := OpTrueAddress(params.Prefix)
+	if err != nil {
+		return nil, err
+	}
+
+	blockTransactions := make([]*util.Tx, len(transactions)+1)
+	blockTransactions[0], err = dag.NextCoinbaseFromAddress(OpTrueAddr, nil)
+	if err != nil {
+		return nil, err
+	}
+	for i, tx := range transactions {
+		blockTransactions[i+1] = util.NewTx(tx)
+	}
+
+	return dag.BlockForMining(blockTransactions)
 }
