@@ -12,6 +12,7 @@ func (dag *BlockDAG) selectedParentAnticone(node *blockNode) (*blockHeap, error)
 			continue
 		}
 		anticoneSet.add(parent)
+		anticoneHeap.Push(parent)
 		queue = append(queue, parent)
 	}
 	for len(queue) > 0 {
