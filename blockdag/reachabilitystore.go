@@ -148,7 +148,7 @@ func (store *reachabilityStore) initReachabilityData(cursor database.Cursor) err
 
 	store.loaded[*hash] = &reachabilityData{
 		treeNode:          &reachabilityTreeNode{},
-		futureCoveringSet: make(futureCoveringBlockSet, 0),
+		futureCoveringSet: nil,
 	}
 	return nil
 }
@@ -379,6 +379,7 @@ func (store *reachabilityStore) deserializeFutureCoveringSet(r io.Reader, destin
 	}
 
 	// Deserialize each block in the set
+	futureCoveringSet := make(futureCoveringBlockSet, setSize)
 	for i := uint64(0); i < setSize; i++ {
 		blockHash := &daghash.Hash{}
 		err = wire.ReadElement(r, blockHash)
@@ -393,11 +394,12 @@ func (store *reachabilityStore) deserializeFutureCoveringSet(r io.Reader, destin
 		if !ok {
 			return errors.Errorf("block reachability data not found for hash: %s", blockHash)
 		}
-		destination.futureCoveringSet = append(destination.futureCoveringSet, &futureCoveringBlock{
+		futureCoveringSet[i] = &futureCoveringBlock{
 			blockNode: blockNode,
 			treeNode:  blockReachabilityData.treeNode,
-		})
+		}
 	}
+	destination.futureCoveringSet = futureCoveringSet
 
 	return nil
 }
