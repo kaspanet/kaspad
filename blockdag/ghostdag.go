@@ -92,9 +92,9 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 			// newNode is always in the future of blueCandidate, so there's
 			// no point in checking it.
 			if chainBlock != newNode {
-				if isAncestorOf, err := dag.isAncestorOf(chainBlock, blueCandidate); err != nil {
+				if isAncestorOfBlueCandidate, err := dag.isAncestorOf(chainBlock, blueCandidate); err != nil {
 					return nil, err
-				} else if isAncestorOf {
+				} else if isAncestorOfBlueCandidate {
 					break
 				}
 			}
@@ -104,9 +104,9 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 				// We already checked it for chainBlock above, so if the
 				// block is chainBlock, there's no need to recheck.
 				if block != chainBlock {
-					if isAncestorOf, err := dag.isAncestorOf(block, blueCandidate); err != nil {
+					if isAncestorOfBlueCandidate, err := dag.isAncestorOf(block, blueCandidate); err != nil {
 						return nil, err
-					} else if isAncestorOf {
+					} else if isAncestorOfBlueCandidate {
 						continue
 					}
 				}
