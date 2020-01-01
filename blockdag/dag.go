@@ -1775,16 +1775,6 @@ func (dag *BlockDAG) GetTopHeaders(startHash *daghash.Hash) ([]*wire.BlockHeader
 	return headers, nil
 }
 
-// Lock locks the DAG's UTXO set for writing.
-func (dag *BlockDAG) Lock() {
-	dag.dagLock.Lock()
-}
-
-// Unlock unlocks the DAG's UTXO set for writing.
-func (dag *BlockDAG) Unlock() {
-	dag.dagLock.Unlock()
-}
-
 // RLock locks the DAG's UTXO set for reading.
 func (dag *BlockDAG) RLock() {
 	dag.dagLock.RLock()
@@ -1877,8 +1867,8 @@ func CoinbasePayloadExtraData(extraNonce uint64, coinbaseFlags string) ([]byte, 
 // that points to the current DAG tips, that is valid from
 // all aspects except proof of work.
 func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, error) {
-	dag.Lock()
-	defer dag.Unlock()
+	dag.dagLock.Lock()
+	defer dag.dagLock.Unlock()
 
 	ts := MedianAdjustedTime(dag.CalcPastMedianTime(), dag.timeSource)
 	requiredDifficulty := dag.NextRequiredDifficulty(ts)
