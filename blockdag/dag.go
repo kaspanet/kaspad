@@ -1815,6 +1815,8 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 	return dag.subnetworkID
 }
 
+// NextCoinbaseFromAddress returns a coinbase transaction for the
+// next block with the given address and extra data in its payload.
 func (dag *BlockDAG) NextCoinbaseFromAddress(payToAddress util.Address, extraData []byte) (*util.Tx, error) {
 	coinbasePayloadScriptPubKey, err := txscript.PayToAddrScript(payToAddress)
 	if err != nil {
@@ -1871,7 +1873,10 @@ func CoinbasePayloadExtraData(extraNonce uint64, coinbaseFlags string) ([]byte, 
 	return w.Bytes(), nil
 }
 
-func (dag *BlockDAG) BlockForMining(selectedTxs []*util.Tx) (*wire.MsgBlock, error) {
+// BlockForMining returns a block with the given transactions
+// that points to the current DAG tips, that is valid from
+// all aspects except proof of work.
+func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, error) {
 	dag.Lock()
 	defer dag.Unlock()
 
@@ -1886,24 +1891,24 @@ func (dag *BlockDAG) BlockForMining(selectedTxs []*util.Tx) (*wire.MsgBlock, err
 	}
 
 	// Sort transactions by subnetwork ID before building Merkle tree
-	sort.Slice(selectedTxs, func(i, j int) bool {
-		if selectedTxs[i].MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
+	sort.Slice(transactions, func(i, j int) bool {
+		if transactions[i].MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
 			return true
 		}
-		if selectedTxs[j].MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
+		if transactions[j].MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
 			return false
 		}
-		return subnetworkid.Less(&selectedTxs[i].MsgTx().SubnetworkID, &selectedTxs[j].MsgTx().SubnetworkID)
+		return subnetworkid.Less(&transactions[i].MsgTx().SubnetworkID, &transactions[j].MsgTx().SubnetworkID)
 	})
 
 	// Create a new block ready to be solved.
-	hashMerkleTree := BuildHashMerkleTreeStore(selectedTxs)
+	hashMerkleTree := BuildHashMerkleTreeStore(transactions)
 	acceptedIDMerkleRoot, err := dag.NextAcceptedIDMerkleRootNoLock()
 	if err != nil {
 		return nil, err
 	}
 	var msgBlock wire.MsgBlock
-	for _, tx := range selectedTxs {
+	for _, tx := range transactions {
 		msgBlock.AddTransaction(tx.MsgTx())
 	}
 
