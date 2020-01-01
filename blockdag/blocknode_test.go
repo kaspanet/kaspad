@@ -2,6 +2,9 @@ package blockdag
 
 import (
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 	"testing"
 )
 
@@ -17,80 +20,103 @@ func TestChainHeight(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	buildNode := buildNodeGenerator(dag, true)
+	prepareAndProcessBlock := func(parents ...*wire.MsgBlock) *wire.MsgBlock {
+		parentHashes := make([]*daghash.Hash, len(parents))
+		for i, parent := range parents {
+			parentHashes[i] = parent.BlockHash()
+		}
+		daghash.Sort(parentHashes)
+		block, err := PrepareBlockForTest(dag, parentHashes, nil)
+		if err != nil {
+			t.Fatalf("error in PrepareBlockForTest: %s", err)
+		}
+		utilBlock := util.NewBlock(block)
+		isOrphan, delay, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
+		if err != nil {
+			t.Fatalf("error in ProcessBlock: %s", err)
+		}
+		if delay != 0 {
+			t.Fatalf("block is too far in the future")
+		}
+		if isOrphan {
+			t.Fatalf("block was unexpectedly orphan")
+		}
+		return block
+	}
 
-	node0 := buildNode(setFromSlice())
-	node1 := buildNode(setFromSlice(node0))
-	node2 := buildNode(setFromSlice(node0))
-	node3 := buildNode(setFromSlice(node0))
-	node4 := buildNode(setFromSlice(node1, node2, node3))
-	node5 := buildNode(setFromSlice(node1, node2, node3))
-	node6 := buildNode(setFromSlice(node1, node2, node3))
-	node7 := buildNode(setFromSlice(node0))
-	node8 := buildNode(setFromSlice(node7))
-	node9 := buildNode(setFromSlice(node8))
-	node10 := buildNode(setFromSlice(node9, node6))
+	node0 := dag.dagParams.GenesisBlock
+	node1 := prepareAndProcessBlock(dag.dagParams.GenesisBlock)
+	node2 := prepareAndProcessBlock(node0)
+	node3 := prepareAndProcessBlock(node0)
+	node4 := prepareAndProcessBlock(node1, node2, node3)
+	node5 := prepareAndProcessBlock(node1, node2, node3)
+	node6 := prepareAndProcessBlock(node1, node2, node3)
+	node7 := prepareAndProcessBlock(node0)
+	node8 := prepareAndProcessBlock(node7)
+	node9 := prepareAndProcessBlock(node8)
+	node10 := prepareAndProcessBlock(node9, node6)
 
 	// Because nodes 7 & 8 were mined secretly, node10's selected
 	// parent will be node6, although node9 is higher. So in this
 	// case, node10.height and node10.chainHeight will be different
 
 	tests := []struct {
-		node                *blockNode
+		block               *wire.MsgBlock
 		expectedChainHeight uint64
 	}{
 		{
-			node:                node0,
+			block:               node0,
 			expectedChainHeight: 0,
 		},
 		{
-			node:                node1,
+			block:               node1,
 			expectedChainHeight: 1,
 		},
 		{
-			node:                node2,
+			block:               node2,
 			expectedChainHeight: 1,
 		},
 		{
-			node:                node3,
+			block:               node3,
 			expectedChainHeight: 1,
 		},
 		{
-			node:                node4,
+			block:               node4,
 			expectedChainHeight: 2,
 		},
 		{
-			node:                node5,
+			block:               node5,
 			expectedChainHeight: 2,
 		},
 		{
-			node:                node6,
+			block:               node6,
 			expectedChainHeight: 2,
 		},
 		{
-			node:                node7,
+			block:               node7,
 			expectedChainHeight: 1,
 		},
 		{
-			node:                node8,
+			block:               node8,
 			expectedChainHeight: 2,
 		},
 		{
-			node:                node9,
+			block:               node9,
 			expectedChainHeight: 3,
 		},
 		{
-			node:                node10,
+			block:               node10,
 			expectedChainHeight: 3,
 		},
 	}
 
 	for _, test := range tests {
-		if test.node.chainHeight != test.expectedChainHeight {
-			t.Errorf("block %v expected chain height %v but got %v", test.node, test.expectedChainHeight, test.node.chainHeight)
+		node := dag.index.LookupNode(test.block.BlockHash())
+		if node.chainHeight != test.expectedChainHeight {
+			t.Errorf("block %s expected chain height %v but got %v", node, test.expectedChainHeight, node.chainHeight)
 		}
-		if calculateChainHeight(test.node) != test.expectedChainHeight {
-			t.Errorf("block %v expected calculated chain height %v but got %v", test.node, test.expectedChainHeight, test.node.chainHeight)
+		if calculateChainHeight(node) != test.expectedChainHeight {
+			t.Errorf("block %s expected calculated chain height %v but got %v", node, test.expectedChainHeight, node.chainHeight)
 		}
 	}
 
