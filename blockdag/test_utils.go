@@ -273,13 +273,29 @@ func PrepareBlockForTest(dag *BlockDAG, params *dagconfig.Params, parentHashes [
 	}
 
 	blockTransactions := make([]*util.Tx, len(transactions)+1)
-	blockTransactions[0], err = dag.NextCoinbaseFromAddress(OpTrueAddr, nil)
+
+	extraNonce := GenerateDeterministicExtraNonceForTest()
+	coinbasePayloadExtraData, err := CoinbasePayloadExtraData(extraNonce, "")
 	if err != nil {
 		return nil, err
 	}
+
+	blockTransactions[0], err = dag.NextCoinbaseFromAddress(OpTrueAddr, coinbasePayloadExtraData)
+	if err != nil {
+		return nil, err
+	}
+
 	for i, tx := range transactions {
 		blockTransactions[i+1] = util.NewTx(tx)
 	}
 
 	return dag.BlockForMining(blockTransactions)
 }
+
+// GenerateDeterministicExtraNonceForTest returns a unique deterministic extra nonce for coinbase data, in order to create unique coinbase transactions.
+func GenerateDeterministicExtraNonceForTest() uint64 {
+	extraNonceForTest++
+	return extraNonceForTest
+}
+
+var extraNonceForTest = uint64(0)

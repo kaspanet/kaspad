@@ -107,7 +107,7 @@ func (g *BlkTmplGenerator) newTxsForBlockTemplate(payToAddress util.Address, sou
 	if err != nil {
 		return nil, err
 	}
-	coinbasePayloadExtraData, err := CoinbasePayloadExtraData(extraNonce)
+	coinbasePayloadExtraData, err := blockdag.CoinbasePayloadExtraData(extraNonce, CoinbaseFlags)
 	if err != nil {
 		return nil, err
 	}

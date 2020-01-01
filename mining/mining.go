@@ -5,8 +5,6 @@
 package mining
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/pkg/errors"
 	"time"
 
@@ -225,23 +223,6 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	}, nil
 }
 
-// CoinbasePayloadExtraData returns coinbase payload extra data parameter
-// which is built from extra nonce and coinbase flags.
-func CoinbasePayloadExtraData(extraNonce uint64) ([]byte, error) {
-	extraNonceBytes := make([]byte, 8)
-	binary.LittleEndian.PutUint64(extraNonceBytes, extraNonce)
-	w := &bytes.Buffer{}
-	_, err := w.Write(extraNonceBytes)
-	if err != nil {
-		return nil, err
-	}
-	_, err = w.Write([]byte(CoinbaseFlags))
-	if err != nil {
-		return nil, err
-	}
-	return w.Bytes(), nil
-}
-
 func (g *BlkTmplGenerator) buildUTXOCommitment(transactions []*wire.MsgTx) (*daghash.Hash, error) {
 	utxoWithTransactions, err := g.dag.UTXOSet().WithTransactions(transactions, blockdag.UnacceptedBlueScore, false)
 	if err != nil {
@@ -262,7 +243,7 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 	// the median time of the last several blocks per the DAG consensus
 	// rules.
 	dagMedianTime := g.dag.CalcPastMedianTime()
-	newTime := medianAdjustedTime(dagMedianTime, g.timeSource)
+	newTime := blockdag.MedianAdjustedTime(dagMedianTime, g.timeSource)
 	msgBlock.Header.Timestamp = newTime
 
 	return nil
@@ -278,7 +259,7 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, extraNonce 
 		return err
 	}
 
-	coinbasePayloadExtraData, err := CoinbasePayloadExtraData(extraNonce)
+	coinbasePayloadExtraData, err := blockdag.CoinbasePayloadExtraData(extraNonce, CoinbaseFlags)
 	if err != nil {
 		return err
 	}

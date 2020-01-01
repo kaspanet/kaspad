@@ -5,6 +5,8 @@
 package blockdag
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"github.com/pkg/errors"
 	"math"
@@ -1833,10 +1835,10 @@ func MinimumMedianTime(dagMedianTime time.Time) time.Time {
 	return dagMedianTime.Add(time.Second)
 }
 
-// medianAdjustedTime returns the current time adjusted to ensure it is at least
+// MedianAdjustedTime returns the current time adjusted to ensure it is at least
 // one second after the median timestamp of the last several blocks per the
 // DAG consensus rules.
-func medianAdjustedTime(dagMedianTime time.Time, timeSource MedianTimeSource) time.Time {
+func MedianAdjustedTime(dagMedianTime time.Time, timeSource MedianTimeSource) time.Time {
 	// The timestamp for the block must not be before the median timestamp
 	// of the last several blocks. Thus, choose the maximum between the
 	// current time and one second after the past median time. The current
@@ -1852,11 +1854,28 @@ func medianAdjustedTime(dagMedianTime time.Time, timeSource MedianTimeSource) ti
 	return newTimestamp
 }
 
+// CoinbasePayloadExtraData returns coinbase payload extra data parameter
+// which is built from extra nonce and coinbase flags.
+func CoinbasePayloadExtraData(extraNonce uint64, coinbaseFlags string) ([]byte, error) {
+	extraNonceBytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(extraNonceBytes, extraNonce)
+	w := &bytes.Buffer{}
+	_, err := w.Write(extraNonceBytes)
+	if err != nil {
+		return nil, err
+	}
+	_, err = w.Write([]byte(coinbaseFlags))
+	if err != nil {
+		return nil, err
+	}
+	return w.Bytes(), nil
+}
+
 func (dag *BlockDAG) BlockForMining(selectedTxs []*util.Tx) (*wire.MsgBlock, error) {
 	dag.Lock()
 	defer dag.Unlock()
 
-	ts := medianAdjustedTime(dag.CalcPastMedianTime(), dag.timeSource)
+	ts := MedianAdjustedTime(dag.CalcPastMedianTime(), dag.timeSource)
 	requiredDifficulty := dag.NextRequiredDifficulty(ts)
 
 	// Calculate the next expected block version based on the state of the
