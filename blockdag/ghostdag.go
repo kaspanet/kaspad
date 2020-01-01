@@ -56,7 +56,7 @@ func (dag *BlockDAG) blueAnticoneSize(block, context *blockNode) (uint32, error)
 // highest blue score) and adds it to newNode.blues if it
 // passes two conditions:
 // 1) |anticone(block) ∩ blueset(newNode)| <= K
-// 2) For every blue in blueset(newNode) |anticone(blue) ∩ blueset(newNode) ∩ {block}| <= K.
+// 2) For every blue in blueset(newNode) |anticone(blue) ∩ blueset(newNode) ∪ {block}| <= K.
 //    We do this by maintaining for each block a map bluesAnticoneSizes which holds
 //    all the blue anticone sizes that were affected by the new added blues.
 //    So to find out what is |anticone(blue) ∩ blueset(newNode)| we just iterate in
