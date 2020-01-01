@@ -121,7 +121,7 @@ func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSe
 	node = &blockNode{
 		parents:            parents,
 		children:           make(blockSet),
-		timestamp:          time.Now().Unix(),
+		timestamp:          dag.timeSource.AdjustedTime().Unix(),
 		bluesAnticoneSizes: make(map[daghash.Hash]uint32),
 	}
 
