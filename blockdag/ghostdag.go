@@ -74,9 +74,9 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 	}
 
 	selectedParentAnticone = make([]*blockNode, selectedParentAnticoneHeap.Len())
-	for selectedParentAnticoneHeap.Len() > 0 {
+	for i := 0; selectedParentAnticoneHeap.Len() > 0; i++ {
 		blueCandidate := selectedParentAnticoneHeap.pop()
-		selectedParentAnticone = append(selectedParentAnticone, blueCandidate)
+		selectedParentAnticone[i] = blueCandidate
 		candidateBluesAnticoneSizes := make(map[*blockNode]uint32)
 		var candidateAnticoneSize uint32
 		possiblyBlue := true
