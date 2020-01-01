@@ -1575,6 +1575,9 @@ func (dag *BlockDAG) SelectedParentHash(blockHash *daghash.Hash) (*daghash.Hash,
 
 	}
 
+	if node.selectedParent == nil {
+		return nil, nil
+	}
 	return node.selectedParent.hash, nil
 }
 

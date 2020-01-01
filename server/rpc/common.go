@@ -245,6 +245,10 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		context := "Could not get block selected parent"
 		return nil, internalRPCError(err.Error(), context)
 	}
+	selectedParentHashStr := ""
+	if selectedParentHash != nil {
+		selectedParentHashStr = selectedParentHash.String()
+	}
 
 	isChainBlock := s.cfg.DAG.IsInSelectedParentChain(hash)
 
@@ -256,7 +260,7 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		AcceptedIDMerkleRoot: blockHeader.AcceptedIDMerkleRoot.String(),
 		UTXOCommitment:       blockHeader.UTXOCommitment.String(),
 		ParentHashes:         daghash.Strings(blockHeader.ParentHashes),
-		SelectedParentHash:   selectedParentHash.String(),
+		SelectedParentHash:   selectedParentHashStr,
 		Nonce:                blockHeader.Nonce,
 		Time:                 blockHeader.Timestamp.Unix(),
 		Confirmations:        blockConfirmations,
