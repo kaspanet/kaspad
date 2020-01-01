@@ -2,7 +2,7 @@ package blockdag
 
 import (
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 	"reflect"
 	"testing"
@@ -12,7 +12,13 @@ import (
 func TestBlueBlockWindow(t *testing.T) {
 	params := dagconfig.SimNetParams
 	params.K = 1
-	dag := newTestDAG(&params)
+	dag, teardownFunc, err := DAGSetup("TestBlueBlockWindow", Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup dag instance: %v", err)
+	}
+	defer teardownFunc()
 
 	windowSize := uint64(10)
 	genesisNode := dag.genesis
@@ -21,7 +27,6 @@ func TestBlueBlockWindow(t *testing.T) {
 	idByBlockMap := make(map[*blockNode]string)
 	blockByIDMap["A"] = genesisNode
 	idByBlockMap[genesisNode] = "A"
-	blockVersion := int32(0x10000000)
 
 	blocksData := []*struct {
 		parents                          []string
@@ -107,14 +112,27 @@ func TestBlueBlockWindow(t *testing.T) {
 			parent := blockByIDMap[parentID]
 			parents.add(parent)
 		}
-		node := newTestNode(dag, parents, blockVersion, 0, blockTime)
-		node.hash = &daghash.Hash{} // It helps to predict hash order
-		for i, char := range blockData.id {
-			node.hash[i] = byte(char)
+
+		block, err := PrepareBlockForTest(dag, parents.hashes(), nil)
+		if err != nil {
+			t.Fatalf("block %v got unexpected error from PrepareBlockForTest: %v", blockData.id, err)
+		}
+		block.Header.Timestamp = blockTime
+
+		utilBlock := util.NewBlock(block)
+		isOrphan, delay, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
+		if err != nil {
+			t.Fatalf("dag.ProcessBlock got unexpected error for block %v: %v", blockData.id, err)
+		}
+		if delay != 0 {
+			t.Fatalf("block %s "+
+				"is too far in the future", blockData.id)
+		}
+		if isOrphan {
+			t.Fatalf("block %v was unexpectedly orphan", blockData.id)
 		}
 
-		dag.index.AddNode(node)
-		node.updateParentsChildren()
+		node := dag.index.LookupNode(utilBlock.Hash())
 
 		blockByIDMap[blockData.id] = node
 		idByBlockMap[node] = blockData.id
