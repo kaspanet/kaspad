@@ -1,28 +1,21 @@
-// Copyright (c) 2013-2014 The btcsuite developers
-// Use of this source code is governed by an ISC
-// license that can be found in the LICENSE file.
-
 /*
 Package blockdag implements kaspa block handling and DAG selection rules.
 
 The kaspa block handling and DAG selection rules are an integral, and quite
-likely the most important, part of kaspa. At its core, kaspa is a
-distributed consensus of which blocks are valid and which ones will comprise the
-DAG (public ledger) that ultimately determines accepted
-transactions, so it is extremely important that fully validating nodes agree on
-all rules.
+likely the most important, part of kaspa. At its core, kaspa is a distributed
+consensus of which blocks are valid and which ones will comprise the DAG
+(public ledger) that ultimately determines accepted transactions, so it is
+extremely important that fully validating nodes agree on all rules.
 
 At a high level, this package provides support for inserting new blocks into
-the block DAG according to the aforementioned rules. It includes
-functionality such as rejecting duplicate blocks, ensuring blocks and
-transactions follow all rules, orphan handling, and DAG order along
-with reorganization.
+the block DAG according to the aforementioned rules. It includes functionality
+such as rejecting duplicate blocks, ensuring blocks and transactions follow all
+rules, orphan handling, and DAG order along with reorganization.
 
 Since this package does not deal with other kaspa specifics such as network
-communication or wallets, it provides a notification system which gives the
-caller a high level of flexibility in how they want to react to certain events
-such as orphan blocks which need their parents requested and newly connected
-DAG blocks which might result in wallet updates.
+communication, it provides a notification system which gives the caller a high
+level of flexibility in how they want to react to certain events such as orphan
+blocks which need their parents requested and newly connected DAG blocks.
 
 Kaspa DAG Processing Overview
 
