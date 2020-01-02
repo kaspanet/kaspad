@@ -346,6 +346,9 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 // height. It also recalculates and updates the new merkle root that results
 // from changing the coinbase script.
 func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, extraNonce uint64) error {
+	g.dag.Lock()
+	defer g.dag.Unlock()
+
 	coinbasePayloadScriptPubKey, _, err := blockdag.DeserializeCoinbasePayload(msgBlock.Transactions[util.CoinbaseTransactionIndex])
 	if err != nil {
 		return err
