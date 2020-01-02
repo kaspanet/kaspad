@@ -173,6 +173,7 @@ func TestGHOSTDAG(t *testing.T) {
 
 	for i, test := range tests {
 		func() {
+			resetExtraNonceForTest()
 			dagParams.K = test.k
 			dag, teardownFunc, err := DAGSetup(fmt.Sprintf("TestGHOSTDAG%d", i), Config{
 				DAGParams: &dagParams,

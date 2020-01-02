@@ -297,4 +297,8 @@ func GenerateDeterministicExtraNonceForTest() uint64 {
 	return extraNonceForTest
 }
 
+func resetExtraNonceForTest() {
+	extraNonceForTest = 0
+}
+
 var extraNonceForTest = uint64(0)

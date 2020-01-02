@@ -1091,16 +1091,8 @@ func TestAcceptingBlock(t *testing.T) {
 	defer teardownFunc()
 	dag.TestSetCoinbaseMaturity(0)
 
-	nodeByMsgBlock := func(block *wire.MsgBlock) *blockNode {
-		node := dag.index.LookupNode(block.BlockHash())
-		if node == nil {
-			t.Fatalf("Couldn't find block node with hash %s", block.BlockHash())
-		}
-		return node
-	}
-
 	acceptingBlockByMsgBlock := func(block *wire.MsgBlock) (*blockNode, error) {
-		node := nodeByMsgBlock(block)
+		node := nodeByMsgBlock(t, dag, block)
 		return dag.acceptingBlock(node)
 	}
 
@@ -1123,7 +1115,7 @@ func TestAcceptingBlock(t *testing.T) {
 
 	// Make sure that each chain block (including the genesis) is accepted by its child
 	for i, chainBlockNode := range chainBlocks[:len(chainBlocks)-1] {
-		expectedAcceptingBlockNode := nodeByMsgBlock(chainBlocks[i+1])
+		expectedAcceptingBlockNode := nodeByMsgBlock(t, dag, chainBlocks[i+1])
 		chainAcceptingBlockNode, err := acceptingBlockByMsgBlock(chainBlockNode)
 		if err != nil {
 			t.Fatalf("TestAcceptingBlock: acceptingBlock for chain block %d unexpectedly failed: %s", i, err)
@@ -1184,7 +1176,7 @@ func TestAcceptingBlock(t *testing.T) {
 	}
 
 	// Make sure that the accepting block of the parent of the branching block didn't change
-	expectedAcceptingBlock := nodeByMsgBlock(chainBlocks[2])
+	expectedAcceptingBlock := nodeByMsgBlock(t, dag, chainBlocks[2])
 	intersectionAcceptingBlock, err := acceptingBlockByMsgBlock(intersectionBlock)
 	if err != nil {
 		t.Fatalf("TestAcceptingBlock: acceptingBlock for intersection block unexpectedly failed: %s", err)

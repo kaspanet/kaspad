@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util"
 	"reflect"
 	"testing"
 )
@@ -23,7 +24,24 @@ func TestVirtualBlock(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	buildNode := buildNodeGenerator(dag, false)
+	buildNode := func(parents blockSet) *blockNode {
+		block, err := PrepareBlockForTest(dag, parents.hashes(), nil)
+		if err != nil {
+			t.Fatalf("error in PrepareBlockForTest: %s", err)
+		}
+		utilBlock := util.NewBlock(block)
+		isOrphan, delay, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
+		if err != nil {
+			t.Fatalf("unexpected error in ProcessBlock: %s", err)
+		}
+		if delay != 0 {
+			t.Fatalf("block is too far in the future")
+		}
+		if isOrphan {
+			t.Fatalf("block was unexpectedly orphan")
+		}
+		return nodeByMsgBlock(t, dag, block)
+	}
 
 	// Create a DAG as follows:
 	// 0 <- 1 <- 2
@@ -31,7 +49,7 @@ func TestVirtualBlock(t *testing.T) {
 	//   <- 3 <- 5
 	//  \    X
 	//   <- 4 <- 6
-	node0 := buildNode(setFromSlice())
+	node0 := dag.genesis
 	node1 := buildNode(setFromSlice(node0))
 	node2 := buildNode(setFromSlice(node1))
 	node3 := buildNode(setFromSlice(node0))
