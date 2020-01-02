@@ -2,13 +2,11 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/util"
 	"reflect"
 	"sort"
 	"testing"
-	"time"
-
-	"github.com/kaspanet/kaspad/dagconfig"
 )
 
 type testBlockData struct {
@@ -32,7 +30,7 @@ func TestGHOSTDAG(t *testing.T) {
 	}{
 		{
 			k:            3,
-			expectedReds: []string{"F", "G", "H", "I", "N", "P"},
+			expectedReds: []string{"F", "G", "H", "I", "N", "Q"},
 			dagData: []*testBlockData{
 				{
 					parents:                []string{"A"},
@@ -165,7 +163,7 @@ func TestGHOSTDAG(t *testing.T) {
 					id:                     "T",
 					expectedScore:          13,
 					expectedSelectedParent: "S",
-					expectedBlues:          []string{"S", "O", "Q"},
+					expectedBlues:          []string{"S", "P", "O"},
 				},
 			},
 		},
@@ -184,14 +182,12 @@ func TestGHOSTDAG(t *testing.T) {
 			defer teardownFunc()
 
 			genesisNode := dag.genesis
-			blockTime := genesisNode.Header().Timestamp
 			blockByIDMap := make(map[string]*blockNode)
 			idByBlockMap := make(map[*blockNode]string)
 			blockByIDMap["A"] = genesisNode
 			idByBlockMap[genesisNode] = "A"
 
 			for _, blockData := range test.dagData {
-				blockTime = blockTime.Add(time.Second)
 				parents := blockSet{}
 				for _, parentID := range blockData.parents {
 					parent := blockByIDMap[parentID]
@@ -202,7 +198,6 @@ func TestGHOSTDAG(t *testing.T) {
 				if err != nil {
 					t.Fatalf("TestGHOSTDAG: block %v got unexpected error from PrepareBlockForTest: %v", blockData.id, err)
 				}
-				block.Header.Timestamp = blockTime
 
 				utilBlock := util.NewBlock(block)
 				isOrphan, delay, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)

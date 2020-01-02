@@ -43,6 +43,8 @@ func TestVirtualBlock(t *testing.T) {
 	}
 	defer teardownFunc()
 
+	resetExtraNonceForTest()
+
 	// Create a DAG as follows:
 	// 0 <- 1 <- 2
 	//  \

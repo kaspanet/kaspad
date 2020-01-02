@@ -288,7 +288,7 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 		blockTransactions[i+1] = util.NewTx(tx)
 	}
 
-	return dag.BlockForMining(blockTransactions)
+	return dag.BlockForMining(blockTransactions, true)
 }
 
 // GenerateDeterministicExtraNonceForTest returns a unique deterministic extra nonce for coinbase data, in order to create unique coinbase transactions.
