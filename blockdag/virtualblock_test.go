@@ -228,7 +228,7 @@ func TestChainUpdates(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	genesis := buildNode(t, dag, setFromSlice())
+	genesis := dag.genesis
 
 	// Create a chain to be removed
 	var toBeRemovedNodes []*blockNode
