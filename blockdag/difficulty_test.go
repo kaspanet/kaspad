@@ -6,8 +6,6 @@ package blockdag
 
 import (
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 	"math/big"
 	"testing"
 	"time"
@@ -83,27 +81,38 @@ func TestCalcWork(t *testing.T) {
 func TestDifficulty(t *testing.T) {
 	params := dagconfig.SimNetParams
 	params.K = 1
-	dag := newTestDAG(&params)
-	nonce := uint64(0)
+	dag, teardownFunc, err := DAGSetup("TestDifficulty", Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
+
 	zeroTime := time.Unix(0, 0)
 	addNode := func(parents blockSet, blockTime time.Time) *blockNode {
 		bluestParent := parents.bluest()
 		if blockTime == zeroTime {
 			blockTime = time.Unix(bluestParent.timestamp+1, 0)
 		}
-		header := &wire.BlockHeader{
-			ParentHashes:         parents.hashes(),
-			Bits:                 dag.requiredDifficulty(bluestParent, blockTime),
-			Nonce:                nonce,
-			Timestamp:            blockTime,
-			HashMerkleRoot:       &daghash.ZeroHash,
-			AcceptedIDMerkleRoot: &daghash.ZeroHash,
-			UTXOCommitment:       &daghash.ZeroHash,
+		block, err := PrepareBlockForTest(dag, parents.hashes(), nil)
+		if err != nil {
+			t.Fatalf("unexpected error in PrepareBlockForTest: %s", err)
 		}
-		node, _ := dag.newBlockNode(header, parents)
-		node.updateParentsChildren()
-		nonce++
-		return node
+		block.Header.Timestamp = blockTime
+		block.Header.Bits = dag.requiredDifficulty(bluestParent, blockTime)
+
+		isOrphan, delay, err := dag.ProcessBlock(util.NewBlock(block), BFNoPoWCheck)
+		if err != nil {
+			t.Fatalf("unexpected error in ProcessBlock: %s", err)
+		}
+		if delay != 0 {
+			t.Fatalf("block is too far in the future")
+		}
+		if isOrphan {
+			t.Fatalf("block was unexpectedly orphan")
+		}
+		return dag.index.LookupNode(block.BlockHash())
 	}
 	tip := dag.genesis
 	for i := uint64(0); i < dag.difficultyAdjustmentWindowSize; i++ {

@@ -225,7 +225,7 @@ func prepareAndProcessBlock(t *testing.T, dag *BlockDAG, parents ...*wire.MsgBlo
 	utilBlock := util.NewBlock(block)
 	isOrphan, delay, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
 	if err != nil {
-		t.Fatalf("error in ProcessBlock: %s", err)
+		t.Fatalf("unexpected error in ProcessBlock: %s", err)
 	}
 	if delay != 0 {
 		t.Fatalf("block is too far in the future")
