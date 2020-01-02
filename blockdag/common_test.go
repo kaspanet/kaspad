@@ -211,3 +211,27 @@ func checkRuleError(gotErr, wantErr error) error {
 
 	return nil
 }
+
+func prepareAndProcessBlock(t *testing.T, dag *BlockDAG, parents ...*wire.MsgBlock) *wire.MsgBlock {
+	parentHashes := make([]*daghash.Hash, len(parents))
+	for i, parent := range parents {
+		parentHashes[i] = parent.BlockHash()
+	}
+	daghash.Sort(parentHashes)
+	block, err := PrepareBlockForTest(dag, parentHashes, nil)
+	if err != nil {
+		t.Fatalf("error in PrepareBlockForTest: %s", err)
+	}
+	utilBlock := util.NewBlock(block)
+	isOrphan, delay, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
+	if err != nil {
+		t.Fatalf("error in ProcessBlock: %s", err)
+	}
+	if delay != 0 {
+		t.Fatalf("block is too far in the future")
+	}
+	if isOrphan {
+		t.Fatalf("block was unexpectedly orphan")
+	}
+	return block
+}

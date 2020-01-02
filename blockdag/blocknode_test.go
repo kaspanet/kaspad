@@ -2,8 +2,6 @@ package blockdag
 
 import (
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 	"testing"
 )
@@ -20,92 +18,68 @@ func TestChainHeight(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	prepareAndProcessBlock := func(parents ...*wire.MsgBlock) *wire.MsgBlock {
-		parentHashes := make([]*daghash.Hash, len(parents))
-		for i, parent := range parents {
-			parentHashes[i] = parent.BlockHash()
-		}
-		daghash.Sort(parentHashes)
-		block, err := PrepareBlockForTest(dag, parentHashes, nil)
-		if err != nil {
-			t.Fatalf("error in PrepareBlockForTest: %s", err)
-		}
-		utilBlock := util.NewBlock(block)
-		isOrphan, delay, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
-		if err != nil {
-			t.Fatalf("error in ProcessBlock: %s", err)
-		}
-		if delay != 0 {
-			t.Fatalf("block is too far in the future")
-		}
-		if isOrphan {
-			t.Fatalf("block was unexpectedly orphan")
-		}
-		return block
-	}
+	block0 := dag.dagParams.GenesisBlock
+	block1 := prepareAndProcessBlock(t, dag, block0)
+	block2 := prepareAndProcessBlock(t, dag, block0)
+	block3 := prepareAndProcessBlock(t, dag, block0)
+	block4 := prepareAndProcessBlock(t, dag, block1, block2, block3)
+	block5 := prepareAndProcessBlock(t, dag, block1, block2, block3)
+	block6 := prepareAndProcessBlock(t, dag, block1, block2, block3)
+	block7 := prepareAndProcessBlock(t, dag, block0)
+	block8 := prepareAndProcessBlock(t, dag, block7)
+	block9 := prepareAndProcessBlock(t, dag, block8)
+	block10 := prepareAndProcessBlock(t, dag, block9, block6)
 
-	node0 := dag.dagParams.GenesisBlock
-	node1 := prepareAndProcessBlock(dag.dagParams.GenesisBlock)
-	node2 := prepareAndProcessBlock(node0)
-	node3 := prepareAndProcessBlock(node0)
-	node4 := prepareAndProcessBlock(node1, node2, node3)
-	node5 := prepareAndProcessBlock(node1, node2, node3)
-	node6 := prepareAndProcessBlock(node1, node2, node3)
-	node7 := prepareAndProcessBlock(node0)
-	node8 := prepareAndProcessBlock(node7)
-	node9 := prepareAndProcessBlock(node8)
-	node10 := prepareAndProcessBlock(node9, node6)
-
-	// Because nodes 7 & 8 were mined secretly, node10's selected
-	// parent will be node6, although node9 is higher. So in this
-	// case, node10.height and node10.chainHeight will be different
+	// Because nodes 7 & 8 were mined secretly, block10's selected
+	// parent will be block6, although block9 is higher. So in this
+	// case, block10.height and block10.chainHeight will be different
 
 	tests := []struct {
 		block               *wire.MsgBlock
 		expectedChainHeight uint64
 	}{
 		{
-			block:               node0,
+			block:               block0,
 			expectedChainHeight: 0,
 		},
 		{
-			block:               node1,
+			block:               block1,
 			expectedChainHeight: 1,
 		},
 		{
-			block:               node2,
+			block:               block2,
 			expectedChainHeight: 1,
 		},
 		{
-			block:               node3,
+			block:               block3,
 			expectedChainHeight: 1,
 		},
 		{
-			block:               node4,
+			block:               block4,
 			expectedChainHeight: 2,
 		},
 		{
-			block:               node5,
+			block:               block5,
 			expectedChainHeight: 2,
 		},
 		{
-			block:               node6,
+			block:               block6,
 			expectedChainHeight: 2,
 		},
 		{
-			block:               node7,
+			block:               block7,
 			expectedChainHeight: 1,
 		},
 		{
-			block:               node8,
+			block:               block8,
 			expectedChainHeight: 2,
 		},
 		{
-			block:               node9,
+			block:               block9,
 			expectedChainHeight: 3,
 		},
 		{
-			block:               node10,
+			block:               block10,
 			expectedChainHeight: 3,
 		},
 	}
