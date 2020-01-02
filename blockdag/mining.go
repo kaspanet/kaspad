@@ -98,7 +98,7 @@ func (dag *BlockDAG) NextCoinbaseFromAddress(payToAddress util.Address, extraDat
 	if err != nil {
 		return nil, err
 	}
-	coinbaseTx, err := dag.NextBlockCoinbaseTransactionNoLock(coinbasePayloadScriptPubKey, extraData)
+	coinbaseTx, err := dag.NextBlockCoinbaseTransaction(coinbasePayloadScriptPubKey, extraData)
 	if err != nil {
 		return nil, err
 	}
