@@ -1839,7 +1839,9 @@ func (dag *BlockDAG) ProcessDelayedBlocks() error {
 		earliestDelayedBlockProcessTime := dag.delayedBlocksQueue.peek().processTime
 		if dag.timeSource.AdjustedTime().After(earliestDelayedBlockProcessTime) {
 			delayedBlock := dag.popDelayedBlock()
-			err := dag.maybeAcceptBlock(delayedBlock.block, BFAfterDelay)
+			dag.dagLock.Unlock()
+			_, _, err := dag.ProcessBlock(delayedBlock.block, BFAfterDelay)
+			dag.dagLock.Lock()
 			if err != nil {
 				log.Errorf("Error while processing delayed block (block %s)", delayedBlock.block.Hash().String())
 				return err
