@@ -346,9 +346,6 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 // height. It also recalculates and updates the new merkle root that results
 // from changing the coinbase script.
 func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, extraNonce uint64) error {
-	g.dag.Lock()
-	defer g.dag.Unlock()
-
 	coinbasePayloadScriptPubKey, _, err := blockdag.DeserializeCoinbasePayload(msgBlock.Transactions[util.CoinbaseTransactionIndex])
 	if err != nil {
 		return err
@@ -380,10 +377,14 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, extraNonce 
 	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(block.Transactions())
 	msgBlock.Header.HashMerkleRoot = hashMerkleTree.Root()
 
-	utxoCommitment, err := g.buildUTXOCommitment(msgBlock.Transactions)
-	if err != nil {
-		return err
-	}
+	// buildUTXOCommitment is the only function in UpdateExtraNonce that
+	// requires the dagLock, and as such we lock and unlock it locally.
+	utxoCommitment, err := func() (*daghash.Hash, error) {
+		g.dag.Lock()
+		defer g.dag.Unlock()
+
+		return g.buildUTXOCommitment(msgBlock.Transactions)
+	}()
 
 	msgBlock.Header.UTXOCommitment = utxoCommitment
 
