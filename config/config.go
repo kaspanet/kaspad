@@ -9,7 +9,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"net"
 	"os"
@@ -18,6 +17,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/btcsuite/go-socks/socks"
 	"github.com/jessevdk/go-flags"
@@ -281,10 +282,11 @@ func loadConfig() (*Config, []string, error) {
 		}
 	}
 
-	// Show the version and exit if the version flag was specified.
 	appName := filepath.Base(os.Args[0])
 	appName = strings.TrimSuffix(appName, filepath.Ext(appName))
 	usageMessage := fmt.Sprintf("Use %s -h to show usage", appName)
+
+	// Show the version and exit if the version flag was specified.
 	if preCfg.ShowVersion {
 		fmt.Println(appName, "version", version.Version())
 		os.Exit(0)
