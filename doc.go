@@ -18,10 +18,10 @@ Usage:
 For an up-to-date help message:
   kaspad --help
 
-An interesting point to note is that the long form of all option flags
-(except -C) can be specified in a configuration file that is automatically
-parsed when kaspad starts up. By default, the configuration file is located at
-~/.kaspad/kaspad.conf on POSIX-style operating systems and %LOCALAPPDATA%\kaspad\kaspad.conf
-on Windows. The -C (--configfile) flag can be used to override this location.
+The long form of all option flags (except -C) can be specified in a configuration
+file that is automatically parsed when kaspad starts up. By default, the
+configuration file is located at ~/.kaspad/kaspad.conf on POSIX-style operating
+systems and %LOCALAPPDATA%\kaspad\kaspad.conf on Windows. The -C (--configfile)
+flag can be used to override this location.
 */
 package main
