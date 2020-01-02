@@ -995,34 +995,30 @@ func TestConfirmations(t *testing.T) {
 	}
 
 	// Add a chain of blocks
-	chainBlocks := make([]*blockNode, 5)
-	chainBlocks[0] = dag.genesis
-	buildNode := buildNodeGenerator(dag, true)
+	chainBlocks := make([]*wire.MsgBlock, 5)
+	chainBlocks[0] = dag.dagParams.GenesisBlock
 	for i := uint32(1); i < 5; i++ {
-		chainBlocks[i] = buildNode(setFromSlice(chainBlocks[i-1]))
-		dag.virtual.AddTip(chainBlocks[i])
+		chainBlocks[i] = prepareAndProcessBlock(t, dag, chainBlocks[i-1])
 	}
 
 	// Make sure that each one of the chain blocks has the expected confirmations number
-	for i, node := range chainBlocks {
-		confirmations, err := dag.blockConfirmations(node)
+	for i, block := range chainBlocks {
+		confirmations, err := dag.BlockConfirmationsByHash(block.BlockHash())
 		if err != nil {
-			t.Fatalf("TestConfirmations: confirmations for node 1 unexpectedly failed: %s", err)
+			t.Fatalf("TestConfirmations: confirmations for block unexpectedly failed: %s", err)
 		}
 
 		expectedConfirmations := uint64(len(chainBlocks) - i)
 		if confirmations != expectedConfirmations {
-			t.Fatalf("TestConfirmations: unexpected confirmations for node 1. "+
+			t.Fatalf("TestConfirmations: unexpected confirmations for block. "+
 				"Want: %d, got: %d", expectedConfirmations, confirmations)
 		}
 	}
 
-	branchingBlocks := make([]*blockNode, 2)
+	branchingBlocks := make([]*wire.MsgBlock, 2)
 	// Add two branching blocks
-	branchingBlocks[0] = buildNode(setFromSlice(chainBlocks[1]))
-	dag.virtual.AddTip(branchingBlocks[0])
-	branchingBlocks[1] = buildNode(setFromSlice(branchingBlocks[0]))
-	dag.virtual.AddTip(branchingBlocks[1])
+	branchingBlocks[0] = prepareAndProcessBlock(t, dag, chainBlocks[1])
+	branchingBlocks[1] = prepareAndProcessBlock(t, dag, branchingBlocks[0])
 
 	// Check that the genesis has a confirmations number == len(chainBlocks)
 	genesisConfirmations, err = dag.blockConfirmations(dag.genesis)
@@ -1055,14 +1051,13 @@ func TestConfirmations(t *testing.T) {
 	// Generate 100 blocks to force the "main" chain to become red
 	branchingChainTip := branchingBlocks[1]
 	for i := uint32(0); i < 100; i++ {
-		nextBranchingChainTip := buildNode(setFromSlice(branchingChainTip))
-		dag.virtual.AddTip(nextBranchingChainTip)
+		nextBranchingChainTip := prepareAndProcessBlock(t, dag, branchingChainTip)
 		branchingChainTip = nextBranchingChainTip
 	}
 
 	// Make sure that a red block has confirmation number = 0
 	redChainBlock := chainBlocks[3]
-	redChainBlockConfirmations, err := dag.blockConfirmations(redChainBlock)
+	redChainBlockConfirmations, err := dag.BlockConfirmationsByHash(redChainBlock.BlockHash())
 	if err != nil {
 		t.Fatalf("TestConfirmations: confirmations for red chain block unexpectedly failed: %s", err)
 	}
@@ -1073,7 +1068,7 @@ func TestConfirmations(t *testing.T) {
 
 	// Make sure that the red tip has confirmation number = 0
 	redChainTip := chainBlocks[len(chainBlocks)-1]
-	redChainTipConfirmations, err := dag.blockConfirmations(redChainTip)
+	redChainTipConfirmations, err := dag.BlockConfirmationsByHash(redChainTip.BlockHash())
 	if err != nil {
 		t.Fatalf("TestConfirmations: confirmations for red chain tip unexpectedly failed: %s", err)
 	}
