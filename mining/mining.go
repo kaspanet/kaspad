@@ -377,10 +377,14 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, extraNonce 
 	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(block.Transactions())
 	msgBlock.Header.HashMerkleRoot = hashMerkleTree.Root()
 
-	utxoCommitment, err := g.buildUTXOCommitment(msgBlock.Transactions)
-	if err != nil {
-		return err
-	}
+	// buildUTXOCommitment is the only function in UpdateExtraNonce that
+	// requires the dagLock, and as such we lock and unlock it locally.
+	utxoCommitment, err := func() (*daghash.Hash, error) {
+		g.dag.Lock()
+		defer g.dag.Unlock()
+
+		return g.buildUTXOCommitment(msgBlock.Transactions)
+	}()
 
 	msgBlock.Header.UTXOCommitment = utxoCommitment
 
