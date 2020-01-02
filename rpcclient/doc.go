@@ -119,7 +119,7 @@ The third category of errors, that is errors returned by the server, can be
 detected by type asserting the error in a *rpcmodel.RPCError. For example, to
 detect if a command is unimplemented by the remote RPC server:
 
-  amount, err := client.GetNetTotals()
+  netTotals, err := client.GetNetTotals()
   if err != nil {
   	if jerr, ok := err.(*rpcmodel.RPCError); ok {
   		switch jerr.Code {
