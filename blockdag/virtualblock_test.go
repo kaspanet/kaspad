@@ -11,6 +11,25 @@ import (
 	"testing"
 )
 
+func buildNode(t *testing.T, dag *BlockDAG, parents blockSet) *blockNode {
+	block, err := PrepareBlockForTest(dag, parents.hashes(), nil)
+	if err != nil {
+		t.Fatalf("error in PrepareBlockForTest: %s", err)
+	}
+	utilBlock := util.NewBlock(block)
+	isOrphan, delay, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
+	if err != nil {
+		t.Fatalf("unexpected error in ProcessBlock: %s", err)
+	}
+	if delay != 0 {
+		t.Fatalf("block is too far in the future")
+	}
+	if isOrphan {
+		t.Fatalf("block was unexpectedly orphan")
+	}
+	return nodeByMsgBlock(t, dag, block)
+}
+
 // TestVirtualBlock ensures that VirtualBlock works as expected.
 func TestVirtualBlock(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
@@ -24,25 +43,6 @@ func TestVirtualBlock(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	buildNode := func(parents blockSet) *blockNode {
-		block, err := PrepareBlockForTest(dag, parents.hashes(), nil)
-		if err != nil {
-			t.Fatalf("error in PrepareBlockForTest: %s", err)
-		}
-		utilBlock := util.NewBlock(block)
-		isOrphan, delay, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
-		if err != nil {
-			t.Fatalf("unexpected error in ProcessBlock: %s", err)
-		}
-		if delay != 0 {
-			t.Fatalf("block is too far in the future")
-		}
-		if isOrphan {
-			t.Fatalf("block was unexpectedly orphan")
-		}
-		return nodeByMsgBlock(t, dag, block)
-	}
-
 	// Create a DAG as follows:
 	// 0 <- 1 <- 2
 	//  \
@@ -50,12 +50,12 @@ func TestVirtualBlock(t *testing.T) {
 	//  \    X
 	//   <- 4 <- 6
 	node0 := dag.genesis
-	node1 := buildNode(setFromSlice(node0))
-	node2 := buildNode(setFromSlice(node1))
-	node3 := buildNode(setFromSlice(node0))
-	node4 := buildNode(setFromSlice(node0))
-	node5 := buildNode(setFromSlice(node3, node4))
-	node6 := buildNode(setFromSlice(node3, node4))
+	node1 := buildNode(t, dag, setFromSlice(node0))
+	node2 := buildNode(t, dag, setFromSlice(node1))
+	node3 := buildNode(t, dag, setFromSlice(node0))
+	node4 := buildNode(t, dag, setFromSlice(node0))
+	node5 := buildNode(t, dag, setFromSlice(node3, node4))
+	node6 := buildNode(t, dag, setFromSlice(node3, node4))
 
 	// Given an empty VirtualBlock, each of the following test cases will:
 	// Set its tips to tipsToSet
@@ -140,16 +140,14 @@ func TestSelectedPath(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	buildNode := buildNodeGenerator(dag, false)
-
 	// Create an empty VirtualBlock
 	virtual := newVirtualBlock(dag, nil)
 
-	tip := buildNode(setFromSlice())
+	tip := dag.genesis
 	virtual.AddTip(tip)
 	initialPath := setFromSlice(tip)
 	for i := 0; i < 5; i++ {
-		tip = buildNode(setFromSlice(tip))
+		tip = buildNode(t, dag, setFromSlice(tip))
 		initialPath.add(tip)
 		virtual.AddTip(tip)
 	}
@@ -157,7 +155,7 @@ func TestSelectedPath(t *testing.T) {
 
 	firstPath := initialPath.clone()
 	for i := 0; i < 5; i++ {
-		tip = buildNode(setFromSlice(tip))
+		tip = buildNode(t, dag, setFromSlice(tip))
 		firstPath.add(tip)
 		virtual.AddTip(tip)
 	}
@@ -175,7 +173,7 @@ func TestSelectedPath(t *testing.T) {
 	secondPath := initialPath.clone()
 	tip = initialTip
 	for i := 0; i < 100; i++ {
-		tip = buildNode(setFromSlice(tip))
+		tip = buildNode(t, dag, setFromSlice(tip))
 		secondPath.add(tip)
 		virtual.AddTip(tip)
 	}
@@ -193,7 +191,7 @@ func TestSelectedPath(t *testing.T) {
 
 	tip = initialTip
 	for i := 0; i < 3; i++ {
-		tip = buildNode(setFromSlice(tip))
+		tip = buildNode(t, dag, setFromSlice(tip))
 		virtual.AddTip(tip)
 	}
 	// Because we added a very short chain, the selected path should not be affected.
@@ -215,7 +213,7 @@ func TestSelectedPath(t *testing.T) {
 			t.Fatalf("updateSelectedParentSet didn't panic")
 		}
 	}()
-	virtual2.updateSelectedParentSet(buildNode(setFromSlice()))
+	virtual2.updateSelectedParentSet(buildNode(t, dag, setFromSlice()))
 }
 
 func TestChainUpdates(t *testing.T) {
@@ -230,14 +228,13 @@ func TestChainUpdates(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	buildNode := buildNodeGenerator(dag, false)
-	genesis := buildNode(setFromSlice())
+	genesis := buildNode(t, dag, setFromSlice())
 
 	// Create a chain to be removed
 	var toBeRemovedNodes []*blockNode
 	toBeRemovedTip := genesis
 	for i := 0; i < 5; i++ {
-		toBeRemovedTip = buildNode(setFromSlice(toBeRemovedTip))
+		toBeRemovedTip = buildNode(t, dag, setFromSlice(toBeRemovedTip))
 		toBeRemovedNodes = append(toBeRemovedNodes, toBeRemovedTip)
 	}
 
@@ -248,7 +245,7 @@ func TestChainUpdates(t *testing.T) {
 	var toBeAddedNodes []*blockNode
 	toBeAddedTip := genesis
 	for i := 0; i < 8; i++ {
-		toBeAddedTip = buildNode(setFromSlice(toBeAddedTip))
+		toBeAddedTip = buildNode(t, dag, setFromSlice(toBeAddedTip))
 		toBeAddedNodes = append(toBeAddedNodes, toBeAddedTip)
 	}
 
