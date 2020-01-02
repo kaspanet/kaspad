@@ -81,6 +81,7 @@ func TestCalcWork(t *testing.T) {
 func TestDifficulty(t *testing.T) {
 	params := dagconfig.SimNetParams
 	params.K = 1
+	params.DifficultyAdjustmentWindowSize = 264
 	dag, teardownFunc, err := DAGSetup("TestDifficulty", Config{
 		DAGParams: &params,
 	})
@@ -121,7 +122,7 @@ func TestDifficulty(t *testing.T) {
 			t.Fatalf("As long as the bluest parent's blue score is less then the difficulty adjustment window size, the difficulty should be the same as genesis'")
 		}
 	}
-	for i := uint64(0); i < dag.difficultyAdjustmentWindowSize+1000; i++ {
+	for i := uint64(0); i < dag.difficultyAdjustmentWindowSize+100; i++ {
 		tip = addNode(setFromSlice(tip), zeroTime)
 		if tip.bits != dag.genesis.bits {
 			t.Fatalf("As long as the block rate remains the same, the difficulty shouldn't change")
@@ -141,7 +142,7 @@ func TestDifficulty(t *testing.T) {
 	if compareBits(tip.bits, nodeInThePast.bits) >= 0 {
 		t.Fatalf("tip.bits should be smaller than nodeInThePast.bits because nodeInThePast increased the block rate, so the difficulty should increase as well")
 	}
-	expectedBits := uint32(0x207ff395)
+	expectedBits := uint32(0x207f83df)
 	if tip.bits != expectedBits {
 		t.Errorf("tip.bits was expected to be %x but got %x", expectedBits, tip.bits)
 	}
