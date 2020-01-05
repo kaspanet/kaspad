@@ -157,8 +157,7 @@ type BlockDAG struct {
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) HaveBlock(hash *daghash.Hash) bool {
-	exists := dag.BlockExists(hash)
-	return exists || dag.IsKnownOrphan(hash)
+	return dag.BlockExists(hash) || dag.IsKnownOrphan(hash) || dag.isKnownDelayedBlock(hash)
 }
 
 // HaveBlocks returns whether or not the DAG instances has all blocks represented
@@ -1853,7 +1852,7 @@ func (dag *BlockDAG) processDelayedBlocks() error {
 			break
 		}
 		delayedBlock := dag.popDelayedBlock()
-		err := dag.processBlockNoLock(delayedBlock.block, BFAfterDelay)
+		_, _, err := dag.processBlockNoLock(delayedBlock.block, BFAfterDelay)
 		if err != nil {
 			log.Errorf("Error while processing delayed block (block %s)", delayedBlock.block.Hash().String())
 			return err
@@ -2052,4 +2051,9 @@ func New(config *Config) (*BlockDAG, error) {
 		selectedTip.chainHeight, selectedTip.hash)
 
 	return &dag, nil
+}
+
+func (dag *BlockDAG) isKnownDelayedBlock(hash *daghash.Hash) bool {
+	_, exists := dag.delayedBlocks[*hash]
+	return exists
 }

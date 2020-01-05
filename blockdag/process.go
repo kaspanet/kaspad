@@ -137,8 +137,11 @@ func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrphan bool, isDelayed bool, err error) {
 	dag.dagLock.Lock()
 	defer dag.dagLock.Unlock()
+	return dag.processBlockNoLock(block, flags)
+}
 
-	afterDelay := flags&BFAfterDelay == BFAfterDelay
+func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) (isOrphan bool, isDelayed bool, err error) {
+	isAfterDelay := flags&BFAfterDelay == BFAfterDelay
 	wasBlockStored := flags&BFWasStored == BFWasStored
 
 	blockHash := block.Hash()
@@ -156,12 +159,12 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 		return false, false, ruleError(ErrDuplicateBlock, str)
 	}
 
-	if _, exists := dag.delayedBlocks[*blockHash]; exists {
-		dag.processDelayedBlocks()
-		return false, true, nil
+	if dag.isKnownDelayedBlock(blockHash) {
+		str := fmt.Sprintf("already have block (delayed) %s", blockHash)
+		return false, false, ruleError(ErrDuplicateBlock, str)
 	}
 
-	if !afterDelay {
+	if !isAfterDelay {
 		// Perform preliminary sanity checks on the block and its transactions.
 		delay, err := dag.checkBlockSanity(block, flags)
 		if err != nil {
@@ -224,7 +227,7 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 		return false, false, err
 	}
 
-	if !afterDelay {
+	if !isAfterDelay {
 		err = dag.processDelayedBlocks()
 		if err != nil {
 			return false, false, err
@@ -234,11 +237,4 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 	log.Debugf("Accepted block %s", blockHash)
 
 	return false, false, nil
-}
-
-func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) error {
-	dag.dagLock.Unlock()
-	defer dag.dagLock.Lock()
-	_, _, err := dag.ProcessBlock(block, flags)
-	return err
 }
