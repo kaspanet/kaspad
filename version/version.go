@@ -1,12 +1,11 @@
 package version
 
 import (
-	"bytes"
 	"fmt"
 	"strings"
 )
 
-// validAlphabet is a list of charecters valid in the appBuild string
+// validCharacters  is a list of characters valid in the appBuild string
 const validCharacters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
 
 const (
@@ -30,7 +29,7 @@ func Version() string {
 
 		// Append build metadata if there is any. The build metadata
 		// string is not appended if it contains invalid characters.
-		build := normalizeVerString(appBuild)
+		build := checkAppBuild(appBuild)
 		if build != "" {
 			version = fmt.Sprintf("%s-%s", version, build)
 		}
@@ -39,14 +38,13 @@ func Version() string {
 	return version
 }
 
-// normalizeVerString returns the passed string stripped of all characters which
-// are not in validCharacters.
-func normalizeVerString(str string) string {
-	var result bytes.Buffer
+// checkAppBuild returns the passed string unless it contains any characters not in validCharacters
+// If any invalid characters are encountered - an empty string is returned
+func checkAppBuild(str string) string {
 	for _, r := range str {
-		if strings.ContainsRune(validCharacters, r) {
-			result.WriteRune(r)
+		if !strings.ContainsRune(validCharacters, r) {
+			return ""
 		}
 	}
-	return result.String()
+	return str
 }
