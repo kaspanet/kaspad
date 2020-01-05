@@ -52,18 +52,20 @@ func (dag *BlockDAG) blueAnticoneSize(block, context *blockNode) (uint32, error)
 	return 0, errors.Errorf("block %s is not in blue-set of %s", block.hash, context.hash)
 }
 
-// ghostdag updates newNode.blues, newNode.selectedParent
-// and newNode.bluesAnticoneSizes according to the GHOSTDAG
-// protocol.
-// The function updates newNode.blues by iterating over the anticone of
-// newNode.selectedParent (which is the parent with the
-// highest blue score) and adds it to newNode.blues if
-// by adding it to newNode.blues these conditions will be
-// met:
-// 1) |anticone-of-candidate-block ∩ blueset-of-newNode| <= K
-// 2) For every blue in blueset-of-newNode |anticone-of-blue ∩ blueset-newNode ∪ {candidate-block}| <= K.
-//    We do this by maintaining for each block a map bluesAnticoneSizes which holds
-//    all the blue anticone sizes that were affected by the new added blues.
+// ghostdag runs the GHOSTDAG protocol and updates newNode.blues,
+// newNode.selectedParent and newNode.bluesAnticoneSizes accordingly.
+// The function updates newNode.blues by iterating over the blocks in
+// the anticone of newNode.selectedParent (which is the parent with the
+// highest blue score) and adds any block to newNode.blues if by adding
+// it to newNode.blues these conditions will not be violated:
+//
+// 1) |anticone-of-candidate-block ∩ blueset-of-newNode| ≤ K
+//
+// 2) For every blue block in blueset-of-newNode:
+//    |(anticone-of-blue-block ∩ blueset-newNode) ∪ {candidate-block}| ≤ K.
+//    We validate this condition by maintaining a map bluesAnticoneSizes for
+//    each block which holds all the blue anticone sizes that were affected by
+//    the new added blue blocks.
 //    So to find out what is |anticone-of-blue ∩ blueset-of-newNode| we just iterate in
 //    the selected parent chain of newNode until we find an existing entry in
 //    bluesAnticoneSizes.
