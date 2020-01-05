@@ -55,15 +55,16 @@ func (dag *BlockDAG) blueAnticoneSize(block, context *blockNode) (uint32, error)
 // ghostdag updates newNode.blues, newNode.selectedParent
 // and newNode.bluesAnticoneSizes according to the GHOSTDAG
 // protocol.
-// It updates newNode.blues by going over the anticone of
+// The function updates newNode.blues by iterating over the anticone of
 // newNode.selectedParent (which is the parent with the
-// highest blue score) and adds it to newNode.blues if it
-// passes two conditions:
-// 1) |anticone(block) ∩ blueset(newNode)| <= K
-// 2) For every blue in blueset(newNode) |anticone(blue) ∩ blueset(newNode) ∪ {block}| <= K.
+// highest blue score) and adds it to newNode.blues if
+// by adding it to newNode.blues these conditions will be
+// met:
+// 1) |anticone-of-candidate-block ∩ blueset-of-newNode| <= K
+// 2) For every blue in blueset-of-newNode |anticone-of-blue ∩ blueset-newNode ∪ {candidate-block}| <= K.
 //    We do this by maintaining for each block a map bluesAnticoneSizes which holds
 //    all the blue anticone sizes that were affected by the new added blues.
-//    So to find out what is |anticone(blue) ∩ blueset(newNode)| we just iterate in
+//    So to find out what is |anticone-of-blue ∩ blueset-of-newNode| we just iterate in
 //    the selected parent chain of newNode until we find an existing entry in
 //    bluesAnticoneSizes.
 //
@@ -86,11 +87,15 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 		var candidateAnticoneSize uint32
 		possiblyBlue := true
 
+		// Iterate over all blocks in the blueset of newNode that are not in the past
+		// of blueCandidate, and check for each one of them if blueCandidate potentially
+		// enlarges their blue anticone to be over K, or that they enlarge the blue anticone
+		// of blueCandidate to be over K.
 		for chainBlock := newNode; possiblyBlue; chainBlock = chainBlock.selectedParent {
 			// If blueCandidate is in the future of chainBlock, it means
-			// that all remaining blues are in past(chainBlock) and thus
-			// in past(blueCandidate). In this case we know for sure that
-			// anticone(blueCandidate) will not exceed K, and we can mark
+			// that all remaining blues are in the past of chainBlock and thus
+			// in the past of blueCandidate. In this case we know for sure that
+			// the anticone of blueCandidate will not exceed K, and we can mark
 			// it as blue.
 			//
 			// newNode is always in the future of blueCandidate, so there's
