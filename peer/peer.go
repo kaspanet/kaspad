@@ -1029,7 +1029,7 @@ func (p *Peer) readMessage() (wire.Message, []byte, error) {
 
 	// Use closures to log expensive operations so they are only run when
 	// the logging level requires it.
-	log.Debugf("%s", newLogClosure(func() string {
+	log.Debugf("%s", logger.NewLogClosure(func() string {
 		// Debug summary of message.
 		summary := messageSummary(msg)
 		if len(summary) > 0 {
@@ -1038,10 +1038,10 @@ func (p *Peer) readMessage() (wire.Message, []byte, error) {
 		return fmt.Sprintf("Received %s%s from %s",
 			msg.Command(), summary, p)
 	}))
-	log.Tracef("%s", newLogClosure(func() string {
+	log.Tracef("%s", logger.NewLogClosure(func() string {
 		return spew.Sdump(msg)
 	}))
-	log.Tracef("%s", newLogClosure(func() string {
+	log.Tracef("%s", logger.NewLogClosure(func() string {
 		return spew.Sdump(buf)
 	}))
 
@@ -1057,7 +1057,7 @@ func (p *Peer) writeMessage(msg wire.Message) error {
 
 	// Use closures to log expensive operations so they are only run when
 	// the logging level requires it.
-	log.Debugf("%s", newLogClosure(func() string {
+	log.Debugf("%s", logger.NewLogClosure(func() string {
 		// Debug summary of message.
 		summary := messageSummary(msg)
 		if len(summary) > 0 {
@@ -1066,10 +1066,10 @@ func (p *Peer) writeMessage(msg wire.Message) error {
 		return fmt.Sprintf("Sending %s%s to %s", msg.Command(),
 			summary, p)
 	}))
-	log.Tracef("%s", newLogClosure(func() string {
+	log.Tracef("%s", logger.NewLogClosure(func() string {
 		return spew.Sdump(msg)
 	}))
-	log.Tracef("%s", newLogClosure(func() string {
+	log.Tracef("%s", logger.NewLogClosure(func() string {
 		var buf bytes.Buffer
 		_, err := wire.WriteMessageN(&buf, msg, p.ProtocolVersion(),
 			p.cfg.DAGParams.Net)

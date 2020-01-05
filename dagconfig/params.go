@@ -5,10 +5,11 @@
 package dagconfig
 
 import (
-	"github.com/pkg/errors"
 	"math"
 	"math/big"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/hdkeychain"
@@ -184,7 +185,7 @@ var MainNetParams = Params{
 	Net:         wire.MainNet,
 	RPCPort:     "16110",
 	DefaultPort: "16111",
-	DNSSeeds:    []string{},
+	DNSSeeds:    []string{"dnsseed.kas.pa"},
 
 	// DAG parameters
 	GenesisBlock:                   &genesisBlock,
@@ -298,7 +299,7 @@ var TestNetParams = Params{
 	Net:         wire.TestNet,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
-	DNSSeeds:    []string{},
+	DNSSeeds:    []string{"testnet-dnsseed.kas.pa"},
 
 	// DAG parameters
 	GenesisBlock:                   &testNetGenesisBlock,
@@ -414,7 +415,7 @@ var DevNetParams = Params{
 	Net:         wire.DevNet,
 	RPCPort:     "16610",
 	DefaultPort: "16611",
-	DNSSeeds:    []string{},
+	DNSSeeds:    []string{}, // NOTE: There must NOT be any seeds.
 
 	// DAG parameters
 	GenesisBlock:                   &devNetGenesisBlock,

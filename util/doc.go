@@ -1,7 +1,3 @@
-// Copyright (c) 2013-2014 The btcsuite developers
-// Use of this source code is governed by an ISC
-// license that can be found in the LICENSE file.
-
 /*
 Package util provides kaspa-specific convenience functions and types.
 
@@ -24,19 +20,14 @@ Address Overview
 The Address interface provides an abstraction for a kaspa address. While the
 most common type is a pay-to-pubkey-hash, kaspa already supports others and
 may well support more in the future. This package currently provides
-implementations for the pay-to-pubkey, pay-to-pubkey-hash, and
-pay-to-script-hash address types.
+implementations for the pay-to-pubkey-hash, and pay-to-script-hash address
+types.
 
 To decode/encode an address:
 
-	// NOTE: The default network is only used for address types which do not
-	// already contain that information. At this time, that is only
-	// pay-to-pubkey addresses.
-	addrString := "04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962" +
-		"e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d57" +
-		"8a4c702b6bf11d5f"
-	defaultNet := &dagconfig.MainNetParams
-	addr, err := util.DecodeAddress(addrString, defaultNet)
+	addrString := "kaspa:qqfgqp8l9l90zwetj84k2jcac2m8falvvyy8xjtnhd"
+	defaultPrefix := util.Bech32PrefixKaspa
+	addr, err := util.DecodeAddress(addrString, defaultPrefix)
 	if err != nil {
 		fmt.Println(err)
 		return

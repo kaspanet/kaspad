@@ -1,7 +1,3 @@
-// Copyright (c) 2015 The btcsuite developers
-// Use of this source code is governed by an ISC
-// license that can be found in the LICENSE file.
-
 /*
 Package rpcmodel provides primitives for working with the kaspa JSON-RPC API.
 

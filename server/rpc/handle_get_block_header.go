@@ -64,6 +64,12 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 		return nil, internalRPCError(err.Error(), context)
 	}
 
+	selectedParentHash, err := s.cfg.DAG.SelectedParentHash(hash)
+	if err != nil {
+		context := "Could not get block selected parent"
+		return nil, internalRPCError(err.Error(), context)
+	}
+
 	params := s.cfg.DAGParams
 	blockHeaderReply := rpcmodel.GetBlockHeaderVerboseResult{
 		Hash:                 c.Hash,
@@ -75,7 +81,8 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 		AcceptedIDMerkleRoot: blockHeader.AcceptedIDMerkleRoot.String(),
 		NextHashes:           nextHashStrings,
 		ParentHashes:         daghash.Strings(blockHeader.ParentHashes),
-		Nonce:                uint64(blockHeader.Nonce),
+		SelectedParentHash:   selectedParentHash.String(),
+		Nonce:                blockHeader.Nonce,
 		Time:                 blockHeader.Timestamp.Unix(),
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
 		Difficulty:           getDifficultyRatio(blockHeader.Bits, params),

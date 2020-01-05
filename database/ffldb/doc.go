@@ -1,7 +1,3 @@
-// Copyright (c) 2015-2016 The btcsuite developers
-// Use of this source code is governed by an ISC
-// license that can be found in the LICENSE file.
-
 /*
 Package ffldb implements a driver for the database package that uses leveldb
 for the backing metadata and flat files for block storage.
