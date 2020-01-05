@@ -240,9 +240,7 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 	// The new timestamp is potentially adjusted to ensure it comes after
 	// the median time of the last several blocks per the DAG consensus
 	// rules.
-	dagMedianTime := g.dag.CalcPastMedianTime()
-	newTime := blockdag.MedianAdjustedTime(dagMedianTime, g.timeSource)
-	msgBlock.Header.Timestamp = newTime
+	msgBlock.Header.Timestamp = g.dag.MedianAdjustedTime()
 
 	return nil
 }

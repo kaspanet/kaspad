@@ -18,7 +18,7 @@ func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, er
 	dag.dagLock.Lock()
 	defer dag.dagLock.Unlock()
 
-	blockTimestamp := MinimumMedianTime(dag.CalcPastMedianTime())
+	blockTimestamp := dag.NextBlockMinimumTime()
 	requiredDifficulty := dag.NextRequiredDifficulty(blockTimestamp)
 
 	// Calculate the next expected block version based on the state of the
@@ -100,26 +100,26 @@ func (dag *BlockDAG) NextCoinbaseFromAddress(payToAddress util.Address, extraDat
 	return coinbaseTx, nil
 }
 
-// MinimumMedianTime returns the minimum allowed timestamp for a block building
+// NextBlockMinimumTime returns the minimum allowed timestamp for a block building
 // on the end of the DAG. In particular, it is one second after
 // the median timestamp of the last several blocks per the DAG consensus
 // rules.
-func MinimumMedianTime(dagMedianTime time.Time) time.Time {
-	return dagMedianTime.Add(time.Second)
+func (dag *BlockDAG) NextBlockMinimumTime() time.Time {
+	return dag.CalcPastMedianTime().Add(time.Second)
 }
 
 // MedianAdjustedTime returns the current time adjusted to ensure it is at least
 // one second after the median timestamp of the last several blocks per the
 // DAG consensus rules.
-func MedianAdjustedTime(dagMedianTime time.Time, timeSource MedianTimeSource) time.Time {
+func (dag *BlockDAG) MedianAdjustedTime() time.Time {
 	// The timestamp for the block must not be before the median timestamp
 	// of the last several blocks. Thus, choose the maximum between the
 	// current time and one second after the past median time. The current
 	// timestamp is truncated to a second boundary before comparison since a
 	// block timestamp does not supported a precision greater than one
 	// second.
-	newTimestamp := timeSource.AdjustedTime()
-	minTimestamp := MinimumMedianTime(dagMedianTime)
+	newTimestamp := dag.timeSource.AdjustedTime()
+	minTimestamp := dag.NextBlockMinimumTime()
 	if newTimestamp.Before(minTimestamp) {
 		newTimestamp = minTimestamp
 	}

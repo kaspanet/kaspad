@@ -292,7 +292,7 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 	if err != nil {
 		return nil, err
 	}
-	block.Header.Timestamp = MinimumMedianTime(dag.CalcPastMedianTime())
+	block.Header.Timestamp = dag.NextBlockMinimumTime()
 	return block, nil
 }
 
