@@ -156,6 +156,11 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 		return false, false, ruleError(ErrDuplicateBlock, str)
 	}
 
+	if _, exists := dag.delayedBlocks[*blockHash]; exists {
+		dag.processDelayedBlocks()
+		return false, true, nil
+	}
+
 	if !afterDelay {
 		// Perform preliminary sanity checks on the block and its transactions.
 		delay, err := dag.checkBlockSanity(block, flags)
