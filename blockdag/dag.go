@@ -111,7 +111,6 @@ type BlockDAG struct {
 	// after its parent.
 	delayedBlocks      map[daghash.Hash]*delayedBlock
 	delayedBlocksQueue delayedBlocksHeap
-	delayedBlocksLock  sync.RWMutex
 
 	// The following caches are used to efficiently keep track of the
 	// current deployment threshold state of each rule change deployment.
@@ -1814,9 +1813,6 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 }
 
 func (dag *BlockDAG) addDelayedBlock(block *util.Block, delay time.Duration) {
-	dag.delayedBlocksLock.Lock()
-	defer dag.delayedBlocksLock.Unlock()
-
 	processTime := dag.timeSource.AdjustedTime().Add(delay)
 	log.Debugf("Adding block to delayed blocks queue (block hash: %s, process time: %s)", block.Hash().String(), processTime)
 	delayedBlock := &delayedBlock{
@@ -1831,8 +1827,6 @@ func (dag *BlockDAG) addDelayedBlock(block *util.Block, delay time.Duration) {
 // processDelayedBlocks loops over all delayed blocks and processes blocks which are due.
 // This method is invoked after processing a block (ProcessBlock method).
 func (dag *BlockDAG) processDelayedBlocks() error {
-	dag.delayedBlocksLock.Lock()
-	defer dag.delayedBlocksLock.Unlock()
 	// Check if the delayed block with the earliest process time should be processed
 	for dag.delayedBlocksQueue.Len() > 0 {
 		earliestDelayedBlockProcessTime := dag.delayedBlocksQueue.peek().processTime
@@ -1852,7 +1846,6 @@ func (dag *BlockDAG) processDelayedBlocks() error {
 }
 
 // popDelayedBlock removes the topmost (delayed block with earliest process time) of the queue and returns it.
-// this function must be called with delayedBlocksLock held (for writes)
 func (dag *BlockDAG) popDelayedBlock() *delayedBlock {
 	db := dag.delayedBlocksQueue.pop()
 	delete(dag.delayedBlocks, *db.block.Hash())
@@ -1862,8 +1855,6 @@ func (dag *BlockDAG) popDelayedBlock() *delayedBlock {
 // maxDelayOfParents returns the maximum delay of the given block hashes.
 // Returns 0 if none of the parents are delayed.
 func (dag *BlockDAG) maxDelayOfParents(parentHashes []*daghash.Hash) (delay time.Duration, isDelayed bool) {
-	dag.delayedBlocksLock.RLock()
-	defer dag.delayedBlocksLock.RUnlock()
 	isDelayed = false
 	delay = time.Duration(0)
 	for _, parentHash := range parentHashes {
