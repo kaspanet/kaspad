@@ -1,7 +1,3 @@
-// Copyright (c) 2016 The btcsuite developers
-// Use of this source code is governed by an ISC
-// license that can be found in the LICENSE file.
-
 /*
 Package mempool provides a policy-enforced pool of unmined kaspa transactions.
 
@@ -51,14 +47,10 @@ be an exhaustive list.
  - Configurable transaction acceptance policy
    - Option to accept or reject standard transactions
    - Option to accept or reject transactions based on priority calculations
-   - Rate limiting of low-fee and free transactions
-   - Non-zero fee threshold
    - Max signature operations per transaction
-   - Max orphan transaction size
    - Max number of orphan transactions allowed
  - Additional metadata tracking for each transaction
    - Timestamp when the transaction was added to the pool
-   - Most recent block height when the transaction was added to the pool
    - The fee the transaction pays
    - The starting priority for the transaction
  - Manual control of transaction removal

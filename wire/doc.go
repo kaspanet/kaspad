@@ -1,7 +1,3 @@
-// Copyright (c) 2013-2016 The btcsuite developers
-// Use of this source code is governed by an ISC
-// license that can be found in the LICENSE file.
-
 /*
 Package wire implements the kaspa wire protocol.
 
@@ -47,14 +43,7 @@ interactions in no particular order.
 	getdata message (MsgGetData)            block message (MsgBlock) -or-
 	                                        tx message (MsgTx) -or-
 	                                        notfound message (MsgNotFound)
-	getheaders message (MsgGetHeaders)      headers message (MsgHeaders)
-	ping message (MsgPing)                  pong message (MsgHeaders)* -or-
-	                                        (none -- Ability to send message is enough)
-
-	NOTES:
-	* The pong message was not added until later protocol versions as defined
-	  in BIP0031. The BIP0031Version constant can be used to detect a recent
-	  enough protocol version for this purpose (version > BIP0031Version).
+	ping message (MsgPing)                  pong message (MsgPong)
 
 Common Parameters
 
@@ -77,10 +66,11 @@ The kaspa network is a magic number which is used to identify the start of a
 message and which kaspa network the message applies to. This package provides
 the following constants:
 
-	wire.MainNet
-	wire.RegTest  (Regression test network)
-	wire.TestNet (Test network)
-	wire.SimNet   (Simulation test network)
+    wire.MainNet
+    wire.TestNet (Test network)
+    wire.RegTest (Regression test network)
+    wire.SimNet  (Simulation test network)
+    wire.DevNet  (Development network)
 
 Determining Message Type
 

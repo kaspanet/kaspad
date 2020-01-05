@@ -4,7 +4,7 @@ dagconfig
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/kaspanet/kaspad/dagconfig)
 
-Package dagconfig defines DAG configuration parameters for the four standard
+Package dagconfig defines DAG configuration parameters for the standard
 Kaspad networks and provides the ability for callers to define their own custom
 Kaspad networks.
 
@@ -25,7 +25,7 @@ import (
 var testnet = flag.Bool("testnet", false, "operate on the testnet Kaspa network")
 
 // By default (without --testnet), use mainnet.
-var chainParams = &dagconfig.MainNetParams
+var dagParams = &dagconfig.MainNetParams
 
 func main() {
 	flag.Parse()

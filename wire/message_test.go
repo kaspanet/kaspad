@@ -79,7 +79,7 @@ func TestMessage(t *testing.T) {
 		kaspaNet KaspaNet // Network to use for wire encoding
 		bytes    int      // Expected num bytes read/written
 	}{
-		{msgVersion, msgVersion, pver, MainNet, 156},
+		{msgVersion, msgVersion, pver, MainNet, 159},
 		{msgVerack, msgVerack, pver, MainNet, 24},
 		{msgGetAddr, msgGetAddr, pver, MainNet, 26},
 		{msgAddr, msgAddr, pver, MainNet, 27},
