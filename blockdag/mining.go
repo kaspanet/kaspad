@@ -15,9 +15,6 @@ import (
 // that points to the current DAG tips, that is valid from
 // all aspects except proof of work.
 func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, error) {
-	dag.dagLock.Lock()
-	defer dag.dagLock.Unlock()
-
 	blockTimestamp := dag.NextBlockMinimumTime()
 	requiredDifficulty := dag.NextRequiredDifficulty(blockTimestamp)
 
@@ -93,7 +90,7 @@ func (dag *BlockDAG) NextCoinbaseFromAddress(payToAddress util.Address, extraDat
 	if err != nil {
 		return nil, err
 	}
-	coinbaseTx, err := dag.NextBlockCoinbaseTransaction(coinbasePayloadScriptPubKey, extraData)
+	coinbaseTx, err := dag.NextBlockCoinbaseTransactionNoLock(coinbasePayloadScriptPubKey, extraData)
 	if err != nil {
 		return nil, err
 	}

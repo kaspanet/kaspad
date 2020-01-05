@@ -1773,6 +1773,16 @@ func (dag *BlockDAG) GetTopHeaders(startHash *daghash.Hash) ([]*wire.BlockHeader
 	return headers, nil
 }
 
+// Lock locks the DAG's UTXO set for writing.
+func (dag *BlockDAG) Lock() {
+	dag.dagLock.Lock()
+}
+
+// Unlock unlocks the DAG's UTXO set for writing.
+func (dag *BlockDAG) Unlock() {
+	dag.dagLock.Unlock()
+}
+
 // RLock locks the DAG's UTXO set for reading.
 func (dag *BlockDAG) RLock() {
 	dag.dagLock.RLock()

@@ -188,6 +188,8 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 //  |  <= policy.BlockMinSize)          |   |
 //   -----------------------------------  --
 func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTemplate, error) {
+	g.dag.Lock()
+	defer g.dag.Unlock()
 
 	txsForBlockTemplate, err := g.selectTxs(payToAddress)
 	if err != nil {
@@ -204,7 +206,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// issues.
 	block := util.NewBlock(msgBlock)
 
-	if err := g.dag.CheckConnectBlockTemplate(block); err != nil {
+	if err := g.dag.CheckConnectBlockTemplateNoLock(block); err != nil {
 		return nil, err
 	}
 
