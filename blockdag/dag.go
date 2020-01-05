@@ -1840,6 +1840,7 @@ func (dag *BlockDAG) addDelayedBlock(block *util.Block, delay time.Duration) {
 
 	dag.delayedBlocks[*block.Hash()] = delayedBlock
 	dag.delayedBlocksQueue.Push(delayedBlock)
+	dag.processDelayedBlocks()
 }
 
 // processDelayedBlocks loops over all delayed blocks and processes blocks which are due.
@@ -1872,9 +1873,8 @@ func (dag *BlockDAG) popDelayedBlock() *delayedBlock {
 
 // maxDelayOfParents returns the maximum delay of the given block hashes.
 // Returns 0 if none of the parents are delayed.
-func (dag *BlockDAG) maxDelayOfParents(parentHashes []*daghash.Hash) (delay time.Duration, isDelayed bool) {
-	isDelayed = false
-	delay = time.Duration(0)
+func (dag *BlockDAG) maxDelayOfParents(parentHashes []*daghash.Hash) time.Duration {
+	var delay time.Duration
 	for _, parentHash := range parentHashes {
 		if delayedParent, exists := dag.delayedBlocks[*parentHash]; exists {
 			parentDelay := delayedParent.processTime.Sub(dag.timeSource.AdjustedTime())
@@ -1884,10 +1884,7 @@ func (dag *BlockDAG) maxDelayOfParents(parentHashes []*daghash.Hash) (delay time
 		}
 	}
 
-	if isDelayed {
-		isDelayed = true
-	}
-	return delay, isDelayed
+	return delay
 }
 
 // IndexManager provides a generic interface that is called when blocks are

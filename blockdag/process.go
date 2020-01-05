@@ -177,8 +177,8 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 	}
 
 	// Handle the case of a block with a valid timestamp(non-delayed) which points to a delayed block.
-	delay, isDelayed := dag.maxDelayOfParents(missingParents)
-	if isDelayed {
+	delay := dag.maxDelayOfParents(missingParents)
+	if delay != 0 {
 		// Add Nanosecond to ensure that parent process time will be after its child.
 		delay += time.Nanosecond
 		dag.addDelayedBlock(block, delay)
