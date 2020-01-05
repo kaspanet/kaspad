@@ -105,10 +105,9 @@ func (dag *BlockDAG) NextBlockMinimumTime() time.Time {
 	return dag.CalcPastMedianTime().Add(time.Second)
 }
 
-// MedianAdjustedTime returns the current time adjusted to ensure it is at least
-// one second after the median timestamp of the last several blocks per the
-// DAG consensus rules.
-func (dag *BlockDAG) MedianAdjustedTime() time.Time {
+// NextBlockTime returns a valid block time for the
+// next block that will point to the existing DAG tips.
+func (dag *BlockDAG) NextBlockTime() time.Time {
 	// The timestamp for the block must not be before the median timestamp
 	// of the last several blocks. Thus, choose the maximum between the
 	// current time and one second after the past median time. The current
