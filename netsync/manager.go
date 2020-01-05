@@ -439,7 +439,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	}
 
 	// Process the block to include validation, orphan handling, etc.
-	isOrphan, delay, err := sm.dag.ProcessBlock(bmsg.block, behaviorFlags)
+	isOrphan, isDelayed, err := sm.dag.ProcessBlock(bmsg.block, behaviorFlags)
 
 	// Remove block from request maps. Either DAG knows about it and
 	// so we shouldn't have any more instances of trying to fetch it, or
@@ -473,7 +473,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		return
 	}
 
-	if delay != 0 {
+	if isDelayed {
 		return
 	}
 
@@ -867,7 +867,7 @@ out:
 				msg.reply <- peerID
 
 			case processBlockMsg:
-				isOrphan, delay, err := sm.dag.ProcessBlock(
+				isOrphan, isDelayed, err := sm.dag.ProcessBlock(
 					msg.block, msg.flags)
 				if err != nil {
 					msg.reply <- processBlockResponse{
@@ -875,7 +875,7 @@ out:
 						err:      err,
 					}
 				}
-				if delay != 0 {
+				if isDelayed {
 					msg.reply <- processBlockResponse{
 						isOrphan: false,
 						err:      errors.New("Cannot process blocks from RPC beyond the allowed time offset"),

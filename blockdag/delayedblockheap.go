@@ -25,7 +25,7 @@ func (h *baseDelayedBlocksHeap) Pop() interface{} {
 	return popped
 }
 
-func (h baseDelayedBlocksHeap) Peek() interface{} {
+func (h baseDelayedBlocksHeap) peek() interface{} {
 	if h.Len() > 0 {
 		return h[h.Len()-1]
 	}
@@ -66,8 +66,8 @@ func (dbh delayedBlocksHeap) Len() int {
 
 // peek returns the topmost element in the queue without poping it
 func (dbh delayedBlocksHeap) peek() *delayedBlock {
-	if dbh.baseDelayedBlocksHeap.Peek() == nil {
+	if dbh.baseDelayedBlocksHeap.peek() == nil {
 		return nil
 	}
-	return dbh.baseDelayedBlocksHeap.Peek().(*delayedBlock)
+	return dbh.baseDelayedBlocksHeap.peek().(*delayedBlock)
 }

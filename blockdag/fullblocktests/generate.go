@@ -65,11 +65,11 @@ type TestInstance interface {
 // the blockchain either by extending the main chain, on a side chain, or as an
 // orphan.
 type AcceptedBlock struct {
-	Name     string
-	Block    *wire.MsgBlock
-	Height   uint64
-	IsOrphan bool
-	Delay    time.Duration
+	Name      string
+	Block     *wire.MsgBlock
+	Height    uint64
+	IsOrphan  bool
+	IsDelayed bool
 }
 
 // Ensure AcceptedBlock implements the TestInstance interface.
@@ -839,7 +839,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	// block to be the current tip of the block chain.
 	acceptBlock := func(blockName string, block *wire.MsgBlock, isOrphan bool) TestInstance {
 		blockHeight := g.blockHeights[blockName]
-		return AcceptedBlock{blockName, block, blockHeight, isOrphan, 0}
+		return AcceptedBlock{blockName, block, blockHeight, isOrphan, false}
 	}
 	rejectBlock := func(blockName string, block *wire.MsgBlock, code blockdag.ErrorCode) TestInstance {
 		blockHeight := g.blockHeights[blockName]

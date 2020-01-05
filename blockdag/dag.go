@@ -1813,44 +1813,39 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 	return dag.subnetworkID
 }
 
-// AddDelayedBlock adds a block to the delayed blocks list.
-func (dag *BlockDAG) AddDelayedBlock(block *util.Block, delay time.Duration) {
+func (dag *BlockDAG) addDelayedBlock(block *util.Block, delay time.Duration) {
 	dag.delayedBlocksLock.Lock()
 	defer dag.delayedBlocksLock.Unlock()
 
 	processTime := dag.timeSource.AdjustedTime().Add(delay)
 	log.Debugf("Adding block to delayed blocks queue (block hash: %s, process time: %s)", block.Hash().String(), processTime)
-	db := &delayedBlock{
+	delayedBlock := &delayedBlock{
 		block:       block,
 		processTime: processTime,
 	}
 
-	dag.delayedBlocks[*block.Hash()] = db
-	dag.delayedBlocksQueue.Push(db)
+	dag.delayedBlocks[*block.Hash()] = delayedBlock
+	dag.delayedBlocksQueue.Push(delayedBlock)
 }
 
-// ProcessDelayedBlocks loops over all delayed blocks and processes blocks which are due.
+// processDelayedBlocks loops over all delayed blocks and processes blocks which are due.
 // This method is invoked after processing a block (ProcessBlock method).
-func (dag *BlockDAG) ProcessDelayedBlocks() error {
+func (dag *BlockDAG) processDelayedBlocks() error {
 	dag.delayedBlocksLock.Lock()
 	defer dag.delayedBlocksLock.Unlock()
 	// Check if the delayed block with the earliest process time should be processed
 	for dag.delayedBlocksQueue.Len() > 0 {
 		earliestDelayedBlockProcessTime := dag.delayedBlocksQueue.peek().processTime
-		if dag.timeSource.AdjustedTime().After(earliestDelayedBlockProcessTime) {
-			delayedBlock := dag.popDelayedBlock()
-			dag.dagLock.Unlock()
-			_, _, err := dag.ProcessBlock(delayedBlock.block, BFAfterDelay)
-			dag.dagLock.Lock()
-			if err != nil {
-				log.Errorf("Error while processing delayed block (block %s)", delayedBlock.block.Hash().String())
-				return err
-			}
-			log.Debugf("Processed delayed block (block %s)", delayedBlock.block.Hash().String())
-		} else {
-			// Nothing to process yet, delayed block should not be processed yet.
+		if earliestDelayedBlockProcessTime.After(dag.timeSource.AdjustedTime()) {
 			break
 		}
+		delayedBlock := dag.popDelayedBlock()
+		err := dag.processBlockNoLock(delayedBlock.block, BFAfterDelay)
+		if err != nil {
+			log.Errorf("Error while processing delayed block (block %s)", delayedBlock.block.Hash().String())
+			return err
+		}
+		log.Debugf("Processed delayed block (block %s)", delayedBlock.block.Hash().String())
 	}
 
 	return nil
@@ -1866,10 +1861,11 @@ func (dag *BlockDAG) popDelayedBlock() *delayedBlock {
 
 // maxDelayOfParents returns the maximum delay of the given block hashes.
 // Returns 0 if none of the parents are delayed.
-func (dag *BlockDAG) maxDelayOfParents(parentHashes []*daghash.Hash) time.Duration {
+func (dag *BlockDAG) maxDelayOfParents(parentHashes []*daghash.Hash) (delay time.Duration, isDelayed bool) {
 	dag.delayedBlocksLock.RLock()
 	defer dag.delayedBlocksLock.RUnlock()
-	delay := time.Duration(0)
+	isDelayed = false
+	delay = time.Duration(0)
 	for _, parentHash := range parentHashes {
 		if delayedParent, exists := dag.delayedBlocks[*parentHash]; exists {
 			parentDelay := delayedParent.processTime.Sub(dag.timeSource.AdjustedTime())
@@ -1879,11 +1875,10 @@ func (dag *BlockDAG) maxDelayOfParents(parentHashes []*daghash.Hash) time.Durati
 		}
 	}
 
-	if delay != 0 {
-		// Add Nanosecond to ensure that parent process time will be after its child.
-		delay += time.Nanosecond
+	if isDelayed {
+		isDelayed = true
 	}
-	return delay
+	return delay, isDelayed
 }
 
 // IndexManager provides a generic interface that is called when blocks are
@@ -2024,13 +2019,11 @@ func New(config *Config) (*BlockDAG, error) {
 
 	if genesis == nil {
 		genesisBlock := util.NewBlock(dag.dagParams.GenesisBlock)
-		var isOrphan bool
-		var delay time.Duration
-		isOrphan, delay, err = dag.ProcessBlock(genesisBlock, BFNone)
+		isOrphan, isDelayed, err := dag.ProcessBlock(genesisBlock, BFNone)
 		if err != nil {
 			return nil, err
 		}
-		if delay != 0 {
+		if isDelayed {
 			return nil, errors.New("Genesis block shouldn't be in the future")
 		}
 		if isOrphan {

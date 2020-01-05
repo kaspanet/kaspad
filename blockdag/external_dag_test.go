@@ -54,11 +54,11 @@ func TestFinality(t *testing.T) {
 		}
 		block := util.NewBlock(msgBlock)
 
-		isOrphan, delay, err := dag.ProcessBlock(block, blockdag.BFNoPoWCheck)
+		isOrphan, isDelayed, err := dag.ProcessBlock(block, blockdag.BFNoPoWCheck)
 		if err != nil {
 			return nil, err
 		}
-		if delay != 0 {
+		if isDelayed {
 			return nil, errors.Errorf("ProcessBlock: block " +
 				"is too far in the future")
 		}
@@ -216,11 +216,11 @@ func TestChainedTransactions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
-	isOrphan, delay, err := dag.ProcessBlock(util.NewBlock(block1), blockdag.BFNoPoWCheck)
+	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(block1), blockdag.BFNoPoWCheck)
 	if err != nil {
 		t.Fatalf("ProcessBlock: %v", err)
 	}
-	if delay != 0 {
+	if isDelayed {
 		t.Fatalf("ProcessBlock: block1 " +
 			"is too far in the future")
 	}
@@ -266,7 +266,7 @@ func TestChainedTransactions(t *testing.T) {
 	}
 
 	//Checks that dag.ProcessBlock fails because we don't allow a transaction to spend another transaction from the same block
-	isOrphan, delay, err = dag.ProcessBlock(util.NewBlock(block2), blockdag.BFNoPoWCheck)
+	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(block2), blockdag.BFNoPoWCheck)
 	if err == nil {
 		t.Errorf("ProcessBlock expected an error")
 	} else if rErr, ok := err.(blockdag.RuleError); ok {
@@ -276,7 +276,7 @@ func TestChainedTransactions(t *testing.T) {
 	} else {
 		t.Errorf("ProcessBlock expected a blockdag.RuleError but got %v", err)
 	}
-	if delay != 0 {
+	if isDelayed {
 		t.Fatalf("ProcessBlock: block2 " +
 			"is too far in the future")
 	}
@@ -301,11 +301,11 @@ func TestChainedTransactions(t *testing.T) {
 	}
 
 	//Checks that dag.ProcessBlock doesn't fail because all of its transaction are dependant on transactions from previous blocks
-	isOrphan, delay, err = dag.ProcessBlock(util.NewBlock(block3), blockdag.BFNoPoWCheck)
+	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(block3), blockdag.BFNoPoWCheck)
 	if err != nil {
 		t.Errorf("ProcessBlock: %v", err)
 	}
-	if delay != 0 {
+	if isDelayed {
 		t.Fatalf("ProcessBlock: block3 " +
 			"is too far in the future")
 	}
@@ -359,11 +359,11 @@ func TestOrderInDiffFromAcceptanceData(t *testing.T) {
 
 		// Add the block to the DAG
 		newBlock := util.NewBlock(msgBlock)
-		isOrphan, delay, err := dag.ProcessBlock(newBlock, blockdag.BFNoPoWCheck)
+		isOrphan, isDelayed, err := dag.ProcessBlock(newBlock, blockdag.BFNoPoWCheck)
 		if err != nil {
 			t.Errorf("TestOrderInDiffFromAcceptanceData: %s", err)
 		}
-		if delay != 0 {
+		if isDelayed {
 			t.Fatalf("TestOrderInDiffFromAcceptanceData: block is too far in the future")
 		}
 		if isOrphan {
@@ -412,11 +412,11 @@ func TestGasLimit(t *testing.T) {
 		if err != nil {
 			t.Fatalf("PrepareBlockForTest: %v", err)
 		}
-		isOrphan, delay, err := dag.ProcessBlock(util.NewBlock(fundsBlock), blockdag.BFNoPoWCheck)
+		isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(fundsBlock), blockdag.BFNoPoWCheck)
 		if err != nil {
 			t.Fatalf("ProcessBlock: %v", err)
 		}
-		if delay != 0 {
+		if isDelayed {
 			t.Fatalf("ProcessBlock: the funds block " +
 				"is too far in the future")
 		}
@@ -464,7 +464,7 @@ func TestGasLimit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
-	isOrphan, delay, err := dag.ProcessBlock(util.NewBlock(overLimitBlock), blockdag.BFNoPoWCheck)
+	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(overLimitBlock), blockdag.BFNoPoWCheck)
 	if err == nil {
 		t.Fatalf("ProcessBlock expected to have an error in block that exceeds gas limit")
 	}
@@ -474,7 +474,7 @@ func TestGasLimit(t *testing.T) {
 	} else if rErr.ErrorCode != blockdag.ErrInvalidGas {
 		t.Fatalf("ProcessBlock expected error code %s but got %s", blockdag.ErrInvalidGas, rErr.ErrorCode)
 	}
-	if delay != 0 {
+	if isDelayed {
 		t.Fatalf("ProcessBlock: overLimitBlock " +
 			"is too far in the future")
 	}
@@ -499,7 +499,7 @@ func TestGasLimit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
-	isOrphan, delay, err = dag.ProcessBlock(util.NewBlock(overflowGasBlock), blockdag.BFNoPoWCheck)
+	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(overflowGasBlock), blockdag.BFNoPoWCheck)
 	if err == nil {
 		t.Fatalf("ProcessBlock expected to have an error")
 	}
@@ -532,7 +532,7 @@ func TestGasLimit(t *testing.T) {
 	}
 
 	// Here we check that we can't process a block with a transaction from a non-existent subnetwork
-	isOrphan, delay, err = dag.ProcessBlock(util.NewBlock(nonExistentSubnetworkBlock), blockdag.BFNoPoWCheck)
+	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(nonExistentSubnetworkBlock), blockdag.BFNoPoWCheck)
 	expectedErrStr := fmt.Sprintf("Error getting gas limit for subnetworkID '%s': subnetwork '%s' not found",
 		nonExistentSubnetwork, nonExistentSubnetwork)
 	if err.Error() != expectedErrStr {
@@ -544,11 +544,11 @@ func TestGasLimit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
-	isOrphan, delay, err = dag.ProcessBlock(util.NewBlock(validBlock), blockdag.BFNoPoWCheck)
+	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(validBlock), blockdag.BFNoPoWCheck)
 	if err != nil {
 		t.Fatalf("ProcessBlock: %v", err)
 	}
-	if delay != 0 {
+	if isDelayed {
 		t.Fatalf("ProcessBlock: overLimitBlock " +
 			"is too far in the future")
 	}

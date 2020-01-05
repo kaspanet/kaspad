@@ -159,7 +159,7 @@ func TestFullBlocks(t *testing.T) {
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 
-		isOrphan, delay, err := dag.ProcessBlock(block,
+		isOrphan, isDelayed, err := dag.ProcessBlock(block,
 			blockdag.BFNone)
 		if err != nil {
 			t.Fatalf("block %q (hash %s, height %d) should "+
@@ -167,11 +167,11 @@ func TestFullBlocks(t *testing.T) {
 				block.Hash(), blockHeight, err)
 		}
 
-		if delay != item.Delay {
+		if isDelayed != item.IsDelayed {
 			t.Fatalf("block %q (hash %s, height %d) unexpected "+
 				"delay -- got %v, want %v", item.Name,
-				block.Hash(), blockHeight, delay,
-				item.Delay)
+				block.Hash(), blockHeight, isDelayed,
+				item.IsDelayed)
 		}
 
 		if isOrphan != item.IsOrphan {
@@ -249,7 +249,7 @@ func TestFullBlocks(t *testing.T) {
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 
-		isOrphan, delay, err := dag.ProcessBlock(block, blockdag.BFNone)
+		isOrphan, isDelayed, err := dag.ProcessBlock(block, blockdag.BFNone)
 		if err != nil {
 			// Ensure the error code is of the expected type.
 			if _, ok := err.(blockdag.RuleError); !ok {
@@ -261,7 +261,7 @@ func TestFullBlocks(t *testing.T) {
 			}
 		}
 
-		if delay != 0 {
+		if isDelayed {
 			t.Fatalf("block %q (hash %s, height %d) "+
 				"is too far in the future",
 				item.Name, block.Hash(), blockHeight)
