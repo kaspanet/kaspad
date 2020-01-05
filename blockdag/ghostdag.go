@@ -1,10 +1,13 @@
 package blockdag
 
-import "github.com/pkg/errors"
+import (
+	"github.com/pkg/errors"
+	"sort"
+)
 
-func (dag *BlockDAG) selectedParentAnticone(node *blockNode) (*blockHeap, error) {
+func (dag *BlockDAG) selectedParentAnticone(node *blockNode) ([]*blockNode, error) {
 	anticoneSet := newSet()
-	anticoneHeap := newUpHeap()
+	var anticoneSlice []*blockNode
 	selectedParentPast := newSet()
 	var queue []*blockNode
 	for _, parent := range node.parents {
@@ -12,7 +15,7 @@ func (dag *BlockDAG) selectedParentAnticone(node *blockNode) (*blockHeap, error)
 			continue
 		}
 		anticoneSet.add(parent)
-		anticoneHeap.Push(parent)
+		anticoneSlice = append(anticoneSlice, parent)
 		queue = append(queue, parent)
 	}
 	for len(queue) > 0 {
@@ -31,11 +34,11 @@ func (dag *BlockDAG) selectedParentAnticone(node *blockNode) (*blockHeap, error)
 				continue
 			}
 			anticoneSet.add(parent)
-			anticoneHeap.Push(parent)
+			anticoneSlice = append(anticoneSlice, parent)
 			queue = append(queue, parent)
 		}
 	}
-	return &anticoneHeap, nil
+	return anticoneSlice, nil
 }
 
 // blueAnticoneSize returns the blue anticone size of 'block' from the worldview of 'context'.
@@ -69,15 +72,16 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 	newNode.selectedParent = newNode.parents.bluest()
 	newNode.bluesAnticoneSizes[*newNode.hash] = 0
 	newNode.blues = append(newNode.blues, newNode.selectedParent)
-	selectedParentAnticoneHeap, err := dag.selectedParentAnticone(newNode)
+	selectedParentAnticone, err = dag.selectedParentAnticone(newNode)
 	if err != nil {
 		return nil, err
 	}
 
-	selectedParentAnticone = make([]*blockNode, selectedParentAnticoneHeap.Len())
-	for i := 0; selectedParentAnticoneHeap.Len() > 0; i++ {
-		blueCandidate := selectedParentAnticoneHeap.pop()
-		selectedParentAnticone[i] = blueCandidate
+	sort.Slice(selectedParentAnticone, func(i, j int) bool {
+		return selectedParentAnticone[i].lessThan(selectedParentAnticone[j])
+	})
+
+	for _, blueCandidate := range selectedParentAnticone {
 		candidateBluesAnticoneSizes := make(map[*blockNode]uint32)
 		var candidateAnticoneSize uint32
 		possiblyBlue := true

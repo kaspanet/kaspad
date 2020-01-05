@@ -155,6 +155,14 @@ func (node *blockNode) updateParentsChildren() {
 	}
 }
 
+func (node *blockNode) lessThan(other *blockNode) bool {
+	if node.blueScore == other.blueScore {
+		return daghash.HashToBig(node.hash).Cmp(daghash.HashToBig(other.hash)) < 0
+	}
+
+	return node.blueScore < other.blueScore
+}
+
 // Header constructs a block header from the node and returns it.
 //
 // This function is safe for concurrent access.
