@@ -14,16 +14,11 @@ import (
 // BlockForMining returns a block with the given transactions
 // that points to the current DAG tips, that is valid from
 // all aspects except proof of work.
-func (dag *BlockDAG) BlockForMining(transactions []*util.Tx, useMinimalTime bool) (*wire.MsgBlock, error) {
+func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, error) {
 	dag.dagLock.Lock()
 	defer dag.dagLock.Unlock()
 
-	var blockTimestamp time.Time
-	if useMinimalTime {
-		blockTimestamp = MinimumMedianTime(dag.CalcPastMedianTime())
-	} else {
-		blockTimestamp = MedianAdjustedTime(dag.CalcPastMedianTime(), dag.timeSource)
-	}
+	blockTimestamp := MinimumMedianTime(dag.CalcPastMedianTime())
 	requiredDifficulty := dag.NextRequiredDifficulty(blockTimestamp)
 
 	// Calculate the next expected block version based on the state of the
