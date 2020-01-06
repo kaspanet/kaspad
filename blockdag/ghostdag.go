@@ -74,7 +74,7 @@ func (dag *BlockDAG) blueAnticoneSize(block, context *blockNode) (uint32, error)
 func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blockNode, err error) {
 	newNode.selectedParent = newNode.parents.bluest()
 	newNode.bluesAnticoneSizes[*newNode.hash] = 0
-	newNode.blues = append(newNode.blues, newNode.selectedParent)
+	newNode.blues = []*blockNode{newNode.selectedParent}
 	selectedParentAnticone, err = dag.selectedParentAnticone(newNode)
 	if err != nil {
 		return nil, err
