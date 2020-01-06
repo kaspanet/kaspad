@@ -29,9 +29,9 @@ func Version() string {
 
 		// Append build metadata if there is any. The build metadata
 		// string is not appended if it contains invalid characters.
-		build := checkAppBuild(appBuild)
-		if build != "" {
-			version = fmt.Sprintf("%s-%s", version, build)
+		checkAppBuild(appBuild)
+		if appBuild != "" {
+			version = fmt.Sprintf("%s-%s", version, appBuild)
 		}
 	}
 
@@ -40,11 +40,10 @@ func Version() string {
 
 // checkAppBuild returns the passed string unless it contains any characters not in validCharacters
 // If any invalid characters are encountered - an empty string is returned
-func checkAppBuild(str string) string {
-	for _, r := range str {
+func checkAppBuild(appBuild string) {
+	for _, r := range appBuild {
 		if !strings.ContainsRune(validCharacters, r) {
-			return ""
+			panic(fmt.Errorf("appBuild string (%s) contains forbidden characters. Only alphanumeric characters and dashes are allowed", appBuild))
 		}
 	}
-	return str
 }
