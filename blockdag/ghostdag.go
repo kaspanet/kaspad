@@ -140,6 +140,9 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 					possiblyBlue = false
 					break
 				}
+
+				// This is a sanity check that validates that a blue
+				// block blue anticone is not already larger than K.
 				if candidateBluesAnticoneSizes[block] > dag.dagParams.K {
 					return nil, errors.New("found blue anticone size larger than k")
 				}
