@@ -4,8 +4,6 @@
 # the CI agent, it sends a some details about the build failure
 # to a Discord channel.
 
-echo "HELLO I AM DISCORD DOT SH" > kaka.txt
-
 CLIENT_ID="$1"
 API_TOKEN="$2"
 BUILD_URL="$3"
