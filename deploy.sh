@@ -20,6 +20,10 @@ service atd start
 # Sends a Discord notification with some details about the failure
 # All variables in this function are set by Jenkins
 notify_discord() {
+  if [ -z "${DISCORD_CLIENT_ID}" ] || [ -z "${DISCORD_API_TOKEN}" ]; then
+    return
+  fi
+
   echo "./discord.sh \
     '${DISCORD_CLIENT_ID}' \
     '${DISCORD_API_TOKEN}' \
