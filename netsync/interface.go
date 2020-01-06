@@ -22,7 +22,7 @@ type PeerNotifier interface {
 
 	TransactionConfirmed(tx *util.Tx)
 }
-
+fgrdgd
 // Config is a configuration struct used to initialize a new SyncManager.
 type Config struct {
 	PeerNotifier PeerNotifier
