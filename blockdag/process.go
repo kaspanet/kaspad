@@ -185,8 +185,8 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 	}
 
 	// Handle the case of a block with a valid timestamp(non-delayed) which points to a delayed block.
-	delay := dag.maxDelayOfParents(missingParents)
-	if delay != 0 {
+	delay, isParentDelayed := dag.maxDelayOfParents(missingParents)
+	if isParentDelayed {
 		// Add Nanosecond to ensure that parent process time will be after its child.
 		delay += time.Nanosecond
 		dag.addDelayedBlock(block, delay)
