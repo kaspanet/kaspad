@@ -1,11 +1,9 @@
 package serverutils
 
 import (
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"net"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -34,17 +32,8 @@ type Peer struct {
 }
 
 // KaspadLookup resolves the IP of the given host using the correct DNS lookup
-// function depending on the configuration options. For example, addresses will
-// be resolved using tor when the --proxy flag was specified unless --noonion
-// was also specified in which case the normal system DNS resolver will be used.
-//
-// Any attempt to resolve a tor address (.onion) will return an error since they
-// are not intended to be resolved outside of the tor proxy.
+// function depending on the configuration options.
 func KaspadLookup(host string) ([]net.IP, error) {
-	if strings.HasSuffix(host, ".onion") {
-		return nil, errors.Errorf("attempt to resolve tor address %s", host)
-	}
-
 	return config.ActiveConfig().Lookup(host)
 }
 
@@ -73,14 +62,7 @@ func GenCertPair(certFile, keyFile string) error {
 }
 
 // KaspadDial connects to the address on the named network using the appropriate
-// dial function depending on the address and configuration options. For
-// example, .onion addresses will be dialed using the onion specific proxy if
-// one was specified, but will otherwise use the normal dial function (which
-// could itself use a proxy or not).
+// dial function depending on the address and configuration options.
 func KaspadDial(addr net.Addr) (net.Conn, error) {
-	if strings.Contains(addr.String(), ".onion:") {
-		return config.ActiveConfig().OnionDial(addr.Network(), addr.String(),
-			config.DefaultConnectTimeout)
-	}
 	return config.ActiveConfig().Dial(addr.Network(), addr.String(), config.DefaultConnectTimeout)
 }

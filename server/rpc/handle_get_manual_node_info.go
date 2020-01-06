@@ -5,7 +5,6 @@ import (
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/server/serverutils"
 	"net"
-	"strings"
 )
 
 // handleGetManualNodeInfo handles getManualNodeInfo commands.
@@ -77,7 +76,7 @@ func getManualNodesInfo(s *Server, detailsArg *bool, node string) (interface{}, 
 
 		var ipList []string
 		switch {
-		case net.ParseIP(host) != nil, strings.HasSuffix(host, ".onion"):
+		case net.ParseIP(host) != nil:
 			ipList = make([]string, 1)
 			ipList[0] = host
 		default:
