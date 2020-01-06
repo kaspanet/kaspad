@@ -5,12 +5,13 @@
 package peer_test
 
 import (
-	"github.com/pkg/errors"
 	"io"
 	"net"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/btcsuite/go-socks/socks"
 	"github.com/kaspanet/kaspad/dagconfig"
@@ -241,8 +242,8 @@ func TestPeerConnection(t *testing.T) {
 		wantLastPingNonce:   uint64(0),
 		wantLastPingMicros:  int64(0),
 		wantTimeOffset:      int64(0),
-		wantBytesSent:       201, // 177 version + 24 verack
-		wantBytesReceived:   201,
+		wantBytesSent:       195, // 171 version + 24 verack
+		wantBytesReceived:   195,
 	}
 	wantStats2 := peerStats{
 		wantUserAgent:       wire.DefaultUserAgent + "peer:1.0(comment)/",
@@ -255,8 +256,8 @@ func TestPeerConnection(t *testing.T) {
 		wantLastPingNonce:   uint64(0),
 		wantLastPingMicros:  int64(0),
 		wantTimeOffset:      int64(0),
-		wantBytesSent:       201, // 177 version + 24 verack
-		wantBytesReceived:   201,
+		wantBytesSent:       195, // 171 version + 24 verack
+		wantBytesReceived:   195,
 	}
 
 	tests := []struct {

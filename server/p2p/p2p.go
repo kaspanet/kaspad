@@ -65,7 +65,7 @@ var (
 
 	// userAgentVersion is the user agent version and is used to help
 	// identify ourselves to other kaspa peers.
-	userAgentVersion = fmt.Sprintf("%d.%d.%d", version.AppMajor, version.AppMinor, version.AppPatch)
+	userAgentVersion = version.Version()
 )
 
 // simpleAddr implements the net.Addr interface with two struct fields
