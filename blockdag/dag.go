@@ -1865,9 +1865,9 @@ func (dag *BlockDAG) processDelayedBlocks() error {
 
 // popDelayedBlock removes the topmost (delayed block with earliest process time) of the queue and returns it.
 func (dag *BlockDAG) popDelayedBlock() *delayedBlock {
-	db := dag.delayedBlocksQueue.pop()
-	delete(dag.delayedBlocks, *db.block.Hash())
-	return db
+	delayedBlock := dag.delayedBlocksQueue.pop()
+	delete(dag.delayedBlocks, *delayedBlock.block.Hash())
+	return delayedBlock
 }
 
 // maxDelayOfParents returns the maximum delay of the given block hashes.
