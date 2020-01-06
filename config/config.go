@@ -122,14 +122,14 @@ type Flags struct {
 	DisableDNSSeed       bool          `long:"nodnsseed" description:"Disable DNS seeding for peers"`
 	DNSSeed              string        `long:"dnsseed" description:"Override DNS seeds with specified hostname (Only 1 hostname allowed)"`
 	ExternalIPs          []string      `long:"externalip" description:"Add an ip to the list of local addresses we claim to listen on to peers"`
-	Proxy                string        // DISABLED UNTIL DECISION ABOUT TOR`long:"proxy" description:"Connect via SOCKS5 proxy (eg. 127.0.0.1:9050)"`
-	ProxyUser            string        // DISABLED UNTIL DECISION ABOUT TOR`long:"proxyuser" description:"Username for proxy server"`
-	ProxyPass            string        // DISABLED UNTIL DECISION ABOUT TOR`long:"proxypass" default-mask:"-" description:"Password for proxy server"`
-	OnionProxy           string        // DISABLED UNTIL DECISION ABOUT TOR`long:"onion" description:"Connect to tor hidden services via SOCKS5 proxy (eg. 127.0.0.1:9050)"`
-	OnionProxyUser       string        // DISABLED UNTIL DECISION ABOUT TOR`long:"onionuser" description:"Username for onion proxy server"`
-	OnionProxyPass       string        // DISABLED UNTIL DECISION ABOUT TOR`long:"onionpass" default-mask:"-" description:"Password for onion proxy server"`
-	NoOnion              bool          // DISABLED UNTIL DECISION ABOUT TOR`long:"noonion" description:"Disable connecting to tor hidden services"`
-	TorIsolation         bool          // DISABLED UNTIL DECISION ABOUT TOR`long:"torisolation" description:"Enable Tor stream isolation by randomizing user credentials for each connection."`
+	Proxy                string        `long:"proxy" description:"Connect via SOCKS5 proxy (eg. 127.0.0.1:9050)"`
+	ProxyUser            string        `long:"proxyuser" description:"Username for proxy server"`
+	ProxyPass            string        `long:"proxypass" default-mask:"-" description:"Password for proxy server"`
+	OnionProxy           string        // DISABLED UNTIL DECISION ABOUT TOR `long:"onion" description:"Connect to tor hidden services via SOCKS5 proxy (eg. 127.0.0.1:9050)"`
+	OnionProxyUser       string        // DISABLED UNTIL DECISION ABOUT TOR `long:"onionuser" description:"Username for onion proxy server"`
+	OnionProxyPass       string        // DISABLED UNTIL DECISION ABOUT TOR `long:"onionpass" default-mask:"-" description:"Password for onion proxy server"`
+	NoOnion              bool          // DISABLED UNTIL DECISION ABOUT TOR `long:"noonion" description:"Disable connecting to tor hidden services"`
+	TorIsolation         bool          // DISABLED UNTIL DECISION ABOUT TOR `long:"torisolation" description:"Enable Tor stream isolation by randomizing user credentials for each connection."`
 	DbType               string        `long:"dbtype" description:"Database backend to use for the Block DAG"`
 	Profile              string        `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
 	CPUProfile           string        `long:"cpuprofile" description:"Write CPU profile to the specified file"`
