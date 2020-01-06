@@ -112,14 +112,10 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 
 			for _, block := range chainBlock.blues {
 				// Skip blocks that exists in the past of blueCandidate.
-				// We already checked it for chainBlock above, so if the
-				// block is chainBlock, there's no need to recheck.
-				if block != chainBlock {
-					if isAncestorOfBlueCandidate, err := dag.isAncestorOf(block, blueCandidate); err != nil {
-						return nil, err
-					} else if isAncestorOfBlueCandidate {
-						continue
-					}
+				if isAncestorOfBlueCandidate, err := dag.isAncestorOf(block, blueCandidate); err != nil {
+					return nil, err
+				} else if isAncestorOfBlueCandidate {
+					continue
 				}
 
 				candidateBluesAnticoneSizes[block], err = dag.blueAnticoneSize(block, newNode)
