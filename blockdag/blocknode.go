@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -75,6 +76,9 @@ type blockNode struct {
 	// blueScore is the count of all the blue blocks in this block's past
 	blueScore uint64
 
+	// bluesAnticoneSizes is a map holding the set of blues affected by this block and their modified blue anticone size.
+	bluesAnticoneSizes map[daghash.Hash]uint32
+
 	// hash is the double sha 256 of the block.
 	hash *daghash.Hash
 
@@ -102,14 +106,21 @@ type blockNode struct {
 	isFinalized bool
 }
 
-// initBlockNode initializes a block node from the given header and parent nodes.
-// This function is NOT safe for concurrent access. It must only be called when
-// initially creating a node.
-func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents blockSet, phantomK uint32) {
-	*node = blockNode{
-		parents:   parents,
-		children:  make(blockSet),
-		timestamp: time.Now().Unix(),
+func calculateChainHeight(node *blockNode) uint64 {
+	if node.isGenesis() {
+		return 0
+	}
+	return node.selectedParent.chainHeight + 1
+}
+
+// newBlockNode returns a new block node for the given block header and parent
+// nodes. This function is NOT safe for concurrent access.
+func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSet) (node *blockNode, selectedParentAnticone []*blockNode) {
+	node = &blockNode{
+		parents:            parents,
+		children:           make(blockSet),
+		timestamp:          dag.timeSource.AdjustedTime().Unix(),
+		bluesAnticoneSizes: make(map[daghash.Hash]uint32),
 	}
 
 	// blockHeader is nil only for the virtual block
@@ -127,24 +138,14 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 	}
 
 	if len(parents) > 0 {
-		node.blues, node.selectedParent, node.blueScore = phantom(node, phantomK)
+		var err error
+		selectedParentAnticone, err = dag.ghostdag(node)
+		if err != nil {
+			panic(errors.Wrap(err, "unexpected error in GHOSTDAG"))
+		}
 		node.chainHeight = calculateChainHeight(node)
 	}
-}
-
-func calculateChainHeight(node *blockNode) uint64 {
-	if node.isGenesis() {
-		return 0
-	}
-	return node.selectedParent.chainHeight + 1
-}
-
-// newBlockNode returns a new block node for the given block header and parent
-//nodes. This function is NOT safe for concurrent access.
-func newBlockNode(blockHeader *wire.BlockHeader, parents blockSet, phantomK uint32) *blockNode {
-	var node blockNode
-	initBlockNode(&node, blockHeader, parents, phantomK)
-	return &node
+	return node, selectedParentAnticone
 }
 
 // updateParentsChildren updates the node's parents to point to new node
@@ -152,6 +153,14 @@ func (node *blockNode) updateParentsChildren() {
 	for _, parent := range node.parents {
 		parent.children.add(node)
 	}
+}
+
+func (node *blockNode) less(other *blockNode) bool {
+	if node.blueScore == other.blueScore {
+		return daghash.HashToBig(node.hash).Cmp(daghash.HashToBig(other.hash)) < 0
+	}
+
+	return node.blueScore < other.blueScore
 }
 
 // Header constructs a block header from the node and returns it.

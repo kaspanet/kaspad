@@ -463,13 +463,13 @@ func LockTimeToSequence(isSeconds bool, locktime uint64) uint64 {
 //  - BFFastAdd: Avoids several expensive transaction validation operations.
 //
 // This function MUST be called with the DAG state lock held (for writes).
-func (dag *BlockDAG) addBlock(node *blockNode, parentNodes blockSet,
-	block *util.Block, flags BehaviorFlags) (*chainUpdates, error) {
+func (dag *BlockDAG) addBlock(node *blockNode,
+	block *util.Block, selectedParentAnticone []*blockNode, flags BehaviorFlags) (*chainUpdates, error) {
 	// Skip checks if node has already been fully validated.
 	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.NodeStatus(node).KnownValid()
 
 	// Connect the block to the DAG.
-	chainUpdates, err := dag.connectBlock(node, block, fastAdd)
+	chainUpdates, err := dag.connectBlock(node, block, selectedParentAnticone, fastAdd)
 	if err != nil {
 		if _, ok := err.(RuleError); ok {
 			dag.index.SetStatusFlags(node, statusValidateFailed)
@@ -533,7 +533,7 @@ func (node *blockNode) validateAcceptedIDMerkleRoot(dag *BlockDAG, txsAcceptance
 //
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) connectBlock(node *blockNode,
-	block *util.Block, fastAdd bool) (*chainUpdates, error) {
+	block *util.Block, selectedParentAnticone []*blockNode, fastAdd bool) (*chainUpdates, error) {
 	// No warnings about unknown rules or versions until the DAG is
 	// current.
 	if dag.isCurrent() {
@@ -573,7 +573,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	}
 
 	// Apply all changes to the DAG.
-	virtualUTXODiff, virtualTxsAcceptanceData, chainUpdates, err := dag.applyDAGChanges(node, newBlockUTXO, fastAdd)
+	virtualUTXODiff, virtualTxsAcceptanceData, chainUpdates, err := dag.applyDAGChanges(node, newBlockUTXO, selectedParentAnticone)
 	if err != nil {
 		// Since all validation logic has already ran, if applyDAGChanges errors out,
 		// this means we have a problem in the internal structure of the DAG - a problem which is
@@ -886,9 +886,15 @@ func (dag *BlockDAG) BlockPastUTXO(blockHash *daghash.Hash) (UTXOSet, error) {
 // It returns the diff in the virtual block's UTXO set.
 //
 // This function MUST be called with the DAG state lock held (for writes).
-func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, fastAdd bool) (
+func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, selectedParentAnticone []*blockNode) (
 	virtualUTXODiff *UTXODiff, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData,
 	chainUpdates *chainUpdates, err error) {
+
+	// Add the block to the reachability structures
+	err = dag.updateReachability(node, selectedParentAnticone)
+	if err != nil {
+		return nil, nil, nil, errors.Wrap(err, "failed updating reachability")
+	}
 
 	if err = node.updateParents(dag, newBlockUTXO); err != nil {
 		return nil, nil, nil, errors.Wrapf(err, "failed updating parents of %s", node)
@@ -917,51 +923,12 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, fast
 		return nil, nil, nil, errors.Wrap(err, "failed melding the virtual UTXO")
 	}
 
-	// Add the block to the reachability structures
-	err = dag.updateReachability(node)
-	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed updating reachability")
-	}
-
 	dag.index.SetStatusFlags(node, statusValid)
 
 	// And now we can update the finality point of the DAG (if required)
 	dag.updateFinalityPoint()
 
 	return virtualUTXODiff, virtualTxsAcceptanceData, chainUpdates, nil
-}
-
-func (dag *BlockDAG) selectedParentAnticone(node *blockNode) (blockSet, error) {
-	anticone := newSet()
-	past := newSet()
-	var queue []*blockNode
-	for _, parent := range node.parents {
-		if parent == node.selectedParent {
-			continue
-		}
-		anticone.add(parent)
-		queue = append(queue, parent)
-	}
-	for len(queue) > 0 {
-		var current *blockNode
-		current, queue = queue[0], queue[1:]
-		for _, parent := range current.parents {
-			if anticone.contains(parent) || past.contains(parent) {
-				continue
-			}
-			isAncestorOfSelectedParent, err := dag.isAncestorOf(parent, node.selectedParent)
-			if err != nil {
-				return nil, err
-			}
-			if isAncestorOfSelectedParent {
-				past.add(parent)
-				continue
-			}
-			anticone.add(parent)
-			queue = append(queue, parent)
-		}
-	}
-	return anticone, nil
 }
 
 func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) error {
@@ -1095,11 +1062,11 @@ func (node *blockNode) applyBlueBlocks(acceptedSelectedParentUTXO UTXOSet, selec
 		TxAcceptanceData: selectedParentAcceptanceData,
 	}}
 
-	// Add blueBlocks to multiBlockTxsAcceptanceData bottom-to-top instead of
-	// top-to-bottom. This is so that anyone who iterates over it would process
-	// blocks (and transactions) in their order of appearance in the DAG.
+	// Add blueBlocks to multiBlockTxsAcceptanceData in topological order. This
+	// is so that anyone who iterates over it would process blocks (and transactions)
+	// in their order of appearance in the DAG.
 	// We skip the selected parent, because we calculated its UTXO before.
-	for i := len(blueBlocks) - 2; i >= 0; i-- {
+	for i := 1; i < len(blueBlocks); i++ {
 		blueBlock := blueBlocks[i]
 		transactions := blueBlock.Transactions()
 		blockTxsAcceptanceData := BlockTxsAcceptanceData{
@@ -1192,7 +1159,7 @@ func (dag *BlockDAG) pastUTXO(node *blockNode) (
 		return nil, nil, err
 	}
 
-	selectedParent := blueBlocks[len(blueBlocks)-1]
+	selectedParent := blueBlocks[0]
 	acceptedSelectedParentUTXO, selectedParentAcceptanceData, err := node.acceptSelectedParentTransactions(selectedParent, selectedParentUTXO)
 	if err != nil {
 		return nil, nil, err
@@ -1930,7 +1897,7 @@ func New(config *Config) (*BlockDAG, error) {
 	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
 
 	index := newBlockIndex(config.DB, params)
-	dag := BlockDAG{
+	dag := &BlockDAG{
 		db:                             config.DB,
 		dagParams:                      params,
 		timeSource:                     config.TimeSource,
@@ -1941,7 +1908,6 @@ func New(config *Config) (*BlockDAG, error) {
 		TimestampDeviationTolerance:    params.TimestampDeviationTolerance,
 		powMaxBits:                     util.BigToCompact(params.PowMax),
 		index:                          index,
-		virtual:                        newVirtualBlock(nil, params.K),
 		orphans:                        make(map[daghash.Hash]*orphanBlock),
 		prevOrphans:                    make(map[daghash.Hash][]*orphanBlock),
 		warningCaches:                  newThresholdCaches(vbNumBits),
@@ -1951,8 +1917,9 @@ func New(config *Config) (*BlockDAG, error) {
 		subnetworkID:                   config.SubnetworkID,
 	}
 
-	dag.utxoDiffStore = newUTXODiffStore(&dag)
-	dag.reachabilityStore = newReachabilityStore(&dag)
+	dag.virtual = newVirtualBlock(dag, nil)
+	dag.utxoDiffStore = newUTXODiffStore(dag)
+	dag.reachabilityStore = newReachabilityStore(dag)
 
 	// Initialize the DAG state from the passed database. When the db
 	// does not yet contain any DAG state, both it and the DAG state
@@ -1973,7 +1940,7 @@ func New(config *Config) (*BlockDAG, error) {
 	// Initialize and catch up all of the currently active optional indexes
 	// as needed.
 	if config.IndexManager != nil {
-		err = config.IndexManager.Init(dag.db, &dag, config.Interrupt)
+		err = config.IndexManager.Init(dag.db, dag, config.Interrupt)
 		if err != nil {
 			return nil, err
 		}
@@ -2011,5 +1978,5 @@ func New(config *Config) (*BlockDAG, error) {
 	log.Infof("DAG state (chain height %d, hash %s)",
 		selectedTip.chainHeight, selectedTip.hash)
 
-	return &dag, nil
+	return dag, nil
 }

@@ -563,6 +563,12 @@ func (dag *BlockDAG) initDAGState() error {
 			fullUTXOCollection[*outpoint] = entry
 		}
 
+		// Initialize the reachability store
+		err = dag.reachabilityStore.init(dbTx)
+		if err != nil {
+			return err
+		}
+
 		// Apply the loaded utxoCollection to the virtual block.
 		dag.virtual.utxoSet, err = newFullUTXOSetFromUTXOCollection(fullUTXOCollection)
 		if err != nil {
@@ -584,12 +590,6 @@ func (dag *BlockDAG) initDAGState() error {
 		// Set the last finality point
 		dag.lastFinalityPoint = dag.index.LookupNode(state.LastFinalityPoint)
 		dag.finalizeNodesBelowFinalityPoint(false)
-
-		// Initialize the reachability store
-		err = dag.reachabilityStore.init(dbTx)
-		if err != nil {
-			return err
-		}
 
 		// Go over any unprocessed blockNodes and process them now.
 		for _, node := range unprocessedBlockNodes {
@@ -700,6 +700,23 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		node.blues[i] = dag.index.LookupNode(hash)
 	}
 
+	bluesAnticoneSizesLen, err := wire.ReadVarInt(buffer)
+	if err != nil {
+		return nil, err
+	}
+
+	node.bluesAnticoneSizes = make(map[daghash.Hash]uint32)
+	for i := uint64(0); i < bluesAnticoneSizesLen; i++ {
+		hash := &daghash.Hash{}
+		if _, err := io.ReadFull(buffer, hash[:]); err != nil {
+			return nil, err
+		}
+		node.bluesAnticoneSizes[*hash], err = binaryserializer.Uint32(buffer, byteOrder)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	node.chainHeight = calculateChainHeight(node)
 
 	return node, nil
@@ -761,6 +778,22 @@ func dbStoreBlockNode(dbTx database.Tx, node *blockNode) error {
 
 	for _, blue := range node.blues {
 		_, err = w.Write(blue.hash[:])
+		if err != nil {
+			return err
+		}
+	}
+
+	err = wire.WriteVarInt(w, uint64(len(node.bluesAnticoneSizes)))
+	if err != nil {
+		return err
+	}
+	for blockHash, blueAnticoneSize := range node.bluesAnticoneSizes {
+		_, err = w.Write(blockHash[:])
+		if err != nil {
+			return err
+		}
+
+		err = binaryserializer.PutUint32(w, byteOrder, blueAnticoneSize)
 		if err != nil {
 			return err
 		}

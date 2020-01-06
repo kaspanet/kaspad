@@ -2,7 +2,6 @@ package mining
 
 import (
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/random"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -104,19 +103,15 @@ func (g *BlkTmplGenerator) newTxsForBlockTemplate(payToAddress util.Address, sou
 		txFees:      make([]uint64, 0),
 	}
 
-	coinbasePayloadScriptPubKey, err := txscript.PayToAddrScript(payToAddress)
-	if err != nil {
-		return nil, err
-	}
 	extraNonce, err := random.Uint64()
 	if err != nil {
 		return nil, err
 	}
-	coinbasePayloadExtraData, err := CoinbasePayloadExtraData(extraNonce)
+	coinbasePayloadExtraData, err := blockdag.CoinbasePayloadExtraData(extraNonce, CoinbaseFlags)
 	if err != nil {
 		return nil, err
 	}
-	coinbaseTx, err := g.dag.NextBlockCoinbaseTransactionNoLock(coinbasePayloadScriptPubKey, coinbasePayloadExtraData)
+	coinbaseTx, err := g.dag.NextCoinbaseFromAddress(payToAddress, coinbasePayloadExtraData)
 	if err != nil {
 		return nil, err
 	}

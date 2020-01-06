@@ -2,7 +2,7 @@ package blockdag
 
 import (
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 	"reflect"
 	"testing"
@@ -12,7 +12,15 @@ import (
 func TestBlueBlockWindow(t *testing.T) {
 	params := dagconfig.SimNetParams
 	params.K = 1
-	dag := newTestDAG(&params)
+	dag, teardownFunc, err := DAGSetup("TestBlueBlockWindow", Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup dag instance: %v", err)
+	}
+	defer teardownFunc()
+
+	resetExtraNonceForTest()
 
 	windowSize := uint64(10)
 	genesisNode := dag.genesis
@@ -21,7 +29,6 @@ func TestBlueBlockWindow(t *testing.T) {
 	idByBlockMap := make(map[*blockNode]string)
 	blockByIDMap["A"] = genesisNode
 	idByBlockMap[genesisNode] = "A"
-	blockVersion := int32(0x10000000)
 
 	blocksData := []*struct {
 		parents                          []string
@@ -46,12 +53,12 @@ func TestBlueBlockWindow(t *testing.T) {
 		{
 			parents:                          []string{"C", "D"},
 			id:                               "E",
-			expectedWindowWithGenesisPadding: []string{"D", "C", "B", "A", "A", "A", "A", "A", "A", "A"},
+			expectedWindowWithGenesisPadding: []string{"C", "D", "B", "A", "A", "A", "A", "A", "A", "A"},
 		},
 		{
 			parents:                          []string{"C", "D"},
 			id:                               "F",
-			expectedWindowWithGenesisPadding: []string{"D", "C", "B", "A", "A", "A", "A", "A", "A", "A"},
+			expectedWindowWithGenesisPadding: []string{"C", "D", "B", "A", "A", "A", "A", "A", "A", "A"},
 		},
 		{
 			parents:                          []string{"A"},
@@ -66,37 +73,37 @@ func TestBlueBlockWindow(t *testing.T) {
 		{
 			parents:                          []string{"H", "F"},
 			id:                               "I",
-			expectedWindowWithGenesisPadding: []string{"F", "D", "C", "B", "A", "A", "A", "A", "A", "A"},
+			expectedWindowWithGenesisPadding: []string{"F", "C", "D", "B", "A", "A", "A", "A", "A", "A"},
 		},
 		{
 			parents:                          []string{"I"},
 			id:                               "J",
-			expectedWindowWithGenesisPadding: []string{"I", "F", "D", "C", "B", "A", "A", "A", "A", "A"},
+			expectedWindowWithGenesisPadding: []string{"I", "F", "C", "D", "B", "A", "A", "A", "A", "A"},
 		},
 		{
 			parents:                          []string{"J"},
 			id:                               "K",
-			expectedWindowWithGenesisPadding: []string{"J", "I", "F", "D", "C", "B", "A", "A", "A", "A"},
+			expectedWindowWithGenesisPadding: []string{"J", "I", "F", "C", "D", "B", "A", "A", "A", "A"},
 		},
 		{
 			parents:                          []string{"K"},
 			id:                               "L",
-			expectedWindowWithGenesisPadding: []string{"K", "J", "I", "F", "D", "C", "B", "A", "A", "A"},
+			expectedWindowWithGenesisPadding: []string{"K", "J", "I", "F", "C", "D", "B", "A", "A", "A"},
 		},
 		{
 			parents:                          []string{"L"},
 			id:                               "M",
-			expectedWindowWithGenesisPadding: []string{"L", "K", "J", "I", "F", "D", "C", "B", "A", "A"},
+			expectedWindowWithGenesisPadding: []string{"L", "K", "J", "I", "F", "C", "D", "B", "A", "A"},
 		},
 		{
 			parents:                          []string{"M"},
 			id:                               "N",
-			expectedWindowWithGenesisPadding: []string{"M", "L", "K", "J", "I", "F", "D", "C", "B", "A"},
+			expectedWindowWithGenesisPadding: []string{"M", "L", "K", "J", "I", "F", "C", "D", "B", "A"},
 		},
 		{
 			parents:                          []string{"N"},
 			id:                               "O",
-			expectedWindowWithGenesisPadding: []string{"N", "M", "L", "K", "J", "I", "F", "D", "C", "B"},
+			expectedWindowWithGenesisPadding: []string{"N", "M", "L", "K", "J", "I", "F", "C", "D", "B"},
 		},
 	}
 
@@ -107,14 +114,26 @@ func TestBlueBlockWindow(t *testing.T) {
 			parent := blockByIDMap[parentID]
 			parents.add(parent)
 		}
-		node := newTestNode(parents, blockVersion, 0, blockTime, dag.dagParams.K)
-		node.hash = &daghash.Hash{} // It helps to predict hash order
-		for i, char := range blockData.id {
-			node.hash[i] = byte(char)
+
+		block, err := PrepareBlockForTest(dag, parents.hashes(), nil)
+		if err != nil {
+			t.Fatalf("block %v got unexpected error from PrepareBlockForTest: %v", blockData.id, err)
 		}
 
-		dag.index.AddNode(node)
-		node.updateParentsChildren()
+		utilBlock := util.NewBlock(block)
+		isOrphan, delay, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
+		if err != nil {
+			t.Fatalf("dag.ProcessBlock got unexpected error for block %v: %v", blockData.id, err)
+		}
+		if delay != 0 {
+			t.Fatalf("block %s "+
+				"is too far in the future", blockData.id)
+		}
+		if isOrphan {
+			t.Fatalf("block %v was unexpectedly orphan", blockData.id)
+		}
+
+		node := dag.index.LookupNode(utilBlock.Hash())
 
 		blockByIDMap[blockData.id] = node
 		idByBlockMap[node] = blockData.id

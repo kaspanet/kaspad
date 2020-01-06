@@ -112,10 +112,10 @@ func TestTxIndexConnectBlock(t *testing.T) {
 	if err != nil {
 		t.Errorf("TestTxIndexConnectBlock: TxAcceptedInBlock: %v", err)
 	}
-	block3AHash := block3A.BlockHash()
-	if !block2TxAcceptedBlock.IsEqual(block3AHash) {
+
+	if !block2TxAcceptedBlock.IsEqual(block3Hash) {
 		t.Errorf("TestTxIndexConnectBlock: block2Tx should've "+
-			"been accepted in block %v but instead got accepted in block %v", block3AHash, block2TxAcceptedBlock)
+			"been accepted in block %v but instead got accepted in block %v", block3Hash, block2TxAcceptedBlock)
 	}
 
 	region, err := txIndex.TxFirstBlockRegion(block3TxID)

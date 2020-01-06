@@ -248,7 +248,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	numBlocksToGenerate := 5
 	for i := 0; i < numBlocksToGenerate; i++ {
 		blockTime = blockTime.Add(time.Second)
-		node = newTestNode(setFromSlice(node), blockVersion, 0, blockTime, netParams.K)
+		node = newTestNode(dag, setFromSlice(node), blockVersion, 0, blockTime)
 		dag.index.AddNode(node)
 		dag.virtual.SetTips(setFromSlice(node))
 	}
@@ -516,7 +516,7 @@ func TestCalcPastMedianTime(t *testing.T) {
 	blockTime := dag.genesis.Header().Timestamp
 	for i := uint32(1); i < numBlocks; i++ {
 		blockTime = blockTime.Add(time.Second)
-		nodes[i] = newTestNode(setFromSlice(nodes[i-1]), blockVersion, 0, blockTime, netParams.K)
+		nodes[i] = newTestNode(dag, setFromSlice(nodes[i-1]), blockVersion, 0, blockTime)
 		dag.index.AddNode(nodes[i])
 	}
 
@@ -569,7 +569,7 @@ var testNoncePrng = rand.New(rand.NewSource(0))
 // chainedNodes returns the specified number of nodes constructed such that each
 // subsequent node points to the previous one to create a chain. The first node
 // will point to the passed parent which can be nil if desired.
-func chainedNodes(parents blockSet, numNodes int) []*blockNode {
+func chainedNodes(dag *BlockDAG, parents blockSet, numNodes int) []*blockNode {
 	nodes := make([]*blockNode, numNodes)
 	tips := parents
 	for i := 0; i < numNodes; i++ {
@@ -582,7 +582,7 @@ func chainedNodes(parents blockSet, numNodes int) []*blockNode {
 			UTXOCommitment:       &daghash.ZeroHash,
 		}
 		header.ParentHashes = tips.hashes()
-		nodes[i] = newBlockNode(&header, tips, dagconfig.SimNetParams.K)
+		nodes[i], _ = dag.newBlockNode(&header, tips)
 		tips = setFromSlice(nodes[i])
 	}
 	return nodes
@@ -602,20 +602,20 @@ func TestChainHeightToHashRange(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := testTip
-	blockDAG := newTestDAG(&dagconfig.SimNetParams)
-	branch0Nodes := chainedNodes(setFromSlice(blockDAG.genesis), 18)
-	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
+	dag := newTestDAG(&dagconfig.SimNetParams)
+	branch0Nodes := chainedNodes(dag, setFromSlice(dag.genesis), 18)
+	branch1Nodes := chainedNodes(dag, setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
-		blockDAG.index.SetStatusFlags(node, statusValid)
-		blockDAG.index.AddNode(node)
+		dag.index.SetStatusFlags(node, statusValid)
+		dag.index.AddNode(node)
 	}
 	for _, node := range branch1Nodes {
 		if node.chainHeight < 18 {
-			blockDAG.index.SetStatusFlags(node, statusValid)
+			dag.index.SetStatusFlags(node, statusValid)
 		}
-		blockDAG.index.AddNode(node)
+		dag.index.AddNode(node)
 	}
-	blockDAG.virtual.SetTips(setFromSlice(tip(branch0Nodes)))
+	dag.virtual.SetTips(setFromSlice(tip(branch0Nodes)))
 
 	tests := []struct {
 		name             string
@@ -670,7 +670,7 @@ func TestChainHeightToHashRange(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		hashes, err := blockDAG.ChainHeightToHashRange(test.startChainHeight, test.endHash,
+		hashes, err := dag.ChainHeightToHashRange(test.startChainHeight, test.endHash,
 			test.maxResults)
 		if err != nil {
 			if !test.expectError {
@@ -695,8 +695,8 @@ func TestIntervalBlockHashes(t *testing.T) {
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := testTip
 	dag := newTestDAG(&dagconfig.SimNetParams)
-	branch0Nodes := chainedNodes(setFromSlice(dag.genesis), 18)
-	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
+	branch0Nodes := chainedNodes(dag, setFromSlice(dag.genesis), 18)
+	branch1Nodes := chainedNodes(dag, setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
 		dag.index.SetStatusFlags(node, statusValid)
 		dag.index.AddNode(node)
@@ -943,7 +943,7 @@ func TestAcceptingInInit(t *testing.T) {
 
 	// Create a test blockNode with an unvalidated status
 	genesisNode := dag.index.LookupNode(genesisBlock.Hash())
-	testNode := newBlockNode(&testBlock.MsgBlock().Header, setFromSlice(genesisNode), dag.dagParams.K)
+	testNode, _ := dag.newBlockNode(&testBlock.MsgBlock().Header, setFromSlice(genesisNode))
 	testNode.status = statusDataStored
 
 	// Manually add the test block to the database
@@ -995,34 +995,30 @@ func TestConfirmations(t *testing.T) {
 	}
 
 	// Add a chain of blocks
-	chainBlocks := make([]*blockNode, 5)
-	chainBlocks[0] = dag.genesis
-	buildNode := buildNodeGenerator(dag.dagParams.K, true)
+	chainBlocks := make([]*wire.MsgBlock, 5)
+	chainBlocks[0] = dag.dagParams.GenesisBlock
 	for i := uint32(1); i < 5; i++ {
-		chainBlocks[i] = buildNode(setFromSlice(chainBlocks[i-1]))
-		dag.virtual.AddTip(chainBlocks[i])
+		chainBlocks[i] = prepareAndProcessBlock(t, dag, chainBlocks[i-1])
 	}
 
 	// Make sure that each one of the chain blocks has the expected confirmations number
-	for i, node := range chainBlocks {
-		confirmations, err := dag.blockConfirmations(node)
+	for i, block := range chainBlocks {
+		confirmations, err := dag.BlockConfirmationsByHash(block.BlockHash())
 		if err != nil {
-			t.Fatalf("TestConfirmations: confirmations for node 1 unexpectedly failed: %s", err)
+			t.Fatalf("TestConfirmations: confirmations for block unexpectedly failed: %s", err)
 		}
 
 		expectedConfirmations := uint64(len(chainBlocks) - i)
 		if confirmations != expectedConfirmations {
-			t.Fatalf("TestConfirmations: unexpected confirmations for node 1. "+
+			t.Fatalf("TestConfirmations: unexpected confirmations for block. "+
 				"Want: %d, got: %d", expectedConfirmations, confirmations)
 		}
 	}
 
-	branchingBlocks := make([]*blockNode, 2)
+	branchingBlocks := make([]*wire.MsgBlock, 2)
 	// Add two branching blocks
-	branchingBlocks[0] = buildNode(setFromSlice(chainBlocks[1]))
-	dag.virtual.AddTip(branchingBlocks[0])
-	branchingBlocks[1] = buildNode(setFromSlice(branchingBlocks[0]))
-	dag.virtual.AddTip(branchingBlocks[1])
+	branchingBlocks[0] = prepareAndProcessBlock(t, dag, chainBlocks[1])
+	branchingBlocks[1] = prepareAndProcessBlock(t, dag, branchingBlocks[0])
 
 	// Check that the genesis has a confirmations number == len(chainBlocks)
 	genesisConfirmations, err = dag.blockConfirmations(dag.genesis)
@@ -1055,14 +1051,13 @@ func TestConfirmations(t *testing.T) {
 	// Generate 100 blocks to force the "main" chain to become red
 	branchingChainTip := branchingBlocks[1]
 	for i := uint32(0); i < 100; i++ {
-		nextBranchingChainTip := buildNode(setFromSlice(branchingChainTip))
-		dag.virtual.AddTip(nextBranchingChainTip)
+		nextBranchingChainTip := prepareAndProcessBlock(t, dag, branchingChainTip)
 		branchingChainTip = nextBranchingChainTip
 	}
 
 	// Make sure that a red block has confirmation number = 0
 	redChainBlock := chainBlocks[3]
-	redChainBlockConfirmations, err := dag.blockConfirmations(redChainBlock)
+	redChainBlockConfirmations, err := dag.BlockConfirmationsByHash(redChainBlock.BlockHash())
 	if err != nil {
 		t.Fatalf("TestConfirmations: confirmations for red chain block unexpectedly failed: %s", err)
 	}
@@ -1073,7 +1068,7 @@ func TestConfirmations(t *testing.T) {
 
 	// Make sure that the red tip has confirmation number = 0
 	redChainTip := chainBlocks[len(chainBlocks)-1]
-	redChainTipConfirmations, err := dag.blockConfirmations(redChainTip)
+	redChainTipConfirmations, err := dag.BlockConfirmationsByHash(redChainTip.BlockHash())
 	if err != nil {
 		t.Fatalf("TestConfirmations: confirmations for red chain tip unexpectedly failed: %s", err)
 	}
@@ -1096,6 +1091,11 @@ func TestAcceptingBlock(t *testing.T) {
 	defer teardownFunc()
 	dag.TestSetCoinbaseMaturity(0)
 
+	acceptingBlockByMsgBlock := func(block *wire.MsgBlock) (*blockNode, error) {
+		node := nodeByMsgBlock(t, dag, block)
+		return dag.acceptingBlock(node)
+	}
+
 	// Check that the genesis block of a DAG with only the genesis block in it is accepted by the virtual.
 	genesisAcceptingBlock, err := dag.acceptingBlock(dag.genesis)
 	if err != nil {
@@ -1107,18 +1107,16 @@ func TestAcceptingBlock(t *testing.T) {
 	}
 
 	numChainBlocks := uint32(10)
-	chainBlocks := make([]*blockNode, numChainBlocks)
-	chainBlocks[0] = dag.genesis
-	buildNode := buildNodeGenerator(dag.dagParams.K, true)
+	chainBlocks := make([]*wire.MsgBlock, numChainBlocks)
+	chainBlocks[0] = dag.dagParams.GenesisBlock
 	for i := uint32(1); i <= numChainBlocks-1; i++ {
-		chainBlocks[i] = buildNode(setFromSlice(chainBlocks[i-1]))
-		dag.virtual.AddTip(chainBlocks[i])
+		chainBlocks[i] = prepareAndProcessBlock(t, dag, chainBlocks[i-1])
 	}
 
 	// Make sure that each chain block (including the genesis) is accepted by its child
 	for i, chainBlockNode := range chainBlocks[:len(chainBlocks)-1] {
-		expectedAcceptingBlockNode := chainBlocks[i+1]
-		chainAcceptingBlockNode, err := dag.acceptingBlock(chainBlockNode)
+		expectedAcceptingBlockNode := nodeByMsgBlock(t, dag, chainBlocks[i+1])
+		chainAcceptingBlockNode, err := acceptingBlockByMsgBlock(chainBlockNode)
 		if err != nil {
 			t.Fatalf("TestAcceptingBlock: acceptingBlock for chain block %d unexpectedly failed: %s", i, err)
 		}
@@ -1129,7 +1127,7 @@ func TestAcceptingBlock(t *testing.T) {
 	}
 
 	// Make sure that the selected tip doesn't have an accepting
-	tipAcceptingBlock, err := dag.acceptingBlock(chainBlocks[len(chainBlocks)-1])
+	tipAcceptingBlock, err := acceptingBlockByMsgBlock(chainBlocks[len(chainBlocks)-1])
 	if err != nil {
 		t.Fatalf("TestAcceptingBlock: acceptingBlock for tip unexpectedly failed: %s", err)
 	}
@@ -1138,25 +1136,19 @@ func TestAcceptingBlock(t *testing.T) {
 			"Want: nil, got: %s", tipAcceptingBlock.hash)
 	}
 
-	// Generate side-chain of dag.dagParams.K + 1 blocks so its tip
-	// will be in the blues of the virtual but in the anticone of
-	// the selected tip.
-	branchingChainTip := chainBlocks[len(chainBlocks)-2]
-	for i := uint32(0); i < dag.dagParams.K+1; i++ {
-		nextBranchingChainTip := buildNode(setFromSlice(branchingChainTip))
-		dag.virtual.AddTip(nextBranchingChainTip)
-		branchingChainTip = nextBranchingChainTip
-	}
+	// Generate a chain tip that will be in the anticone of the selected tip but in
+	// in dag.virtual.blues.
+	branchingChainTip := prepareAndProcessBlock(t, dag, chainBlocks[len(chainBlocks)-3])
 
 	// Make sure that branchingChainTip is not in the selected parent chain
-	if dag.IsInSelectedParentChain(branchingChainTip.hash) {
+	if dag.IsInSelectedParentChain(branchingChainTip.BlockHash()) {
 		t.Fatalf("TestAcceptingBlock: branchingChainTip wasn't expected to be in the selected parent chain")
 	}
 
 	// Make sure that branchingChainTip is in the virtual blues
 	isVirtualBlue := false
 	for _, virtualBlue := range dag.virtual.blues {
-		if branchingChainTip == virtualBlue {
+		if branchingChainTip.BlockHash().IsEqual(virtualBlue.hash) {
 			isVirtualBlue = true
 			break
 		}
@@ -1167,7 +1159,7 @@ func TestAcceptingBlock(t *testing.T) {
 
 	// Make sure that a block that is in the anticone of the selected tip and
 	// in the blues of the virtual doesn't have an accepting block
-	branchingChainTipAcceptionBlock, err := dag.acceptingBlock(branchingChainTip)
+	branchingChainTipAcceptionBlock, err := acceptingBlockByMsgBlock(branchingChainTip)
 	if err != nil {
 		t.Fatalf("TestAcceptingBlock: acceptingBlock for red chain block unexpectedly failed: %s", err)
 	}
@@ -1176,18 +1168,16 @@ func TestAcceptingBlock(t *testing.T) {
 			"Want: nil, got: %s", branchingChainTipAcceptionBlock.hash)
 	}
 
-	// Add K + 1 branching blocks
+	// Add shorter side-chain
 	intersectionBlock := chainBlocks[1]
-	sideChainTip := buildNode(setFromSlice(intersectionBlock))
-	i := uint32(0)
-	for ; i < dag.dagParams.K+1; sideChainTip = buildNode(setFromSlice(sideChainTip)) {
-		dag.virtual.AddTip(sideChainTip)
-		i++
+	sideChainTip := intersectionBlock
+	for i := 0; i < len(chainBlocks)-3; i++ {
+		sideChainTip = prepareAndProcessBlock(t, dag, sideChainTip)
 	}
 
 	// Make sure that the accepting block of the parent of the branching block didn't change
-	expectedAcceptingBlock := chainBlocks[2]
-	intersectionAcceptingBlock, err := dag.acceptingBlock(intersectionBlock)
+	expectedAcceptingBlock := nodeByMsgBlock(t, dag, chainBlocks[2])
+	intersectionAcceptingBlock, err := acceptingBlockByMsgBlock(intersectionBlock)
 	if err != nil {
 		t.Fatalf("TestAcceptingBlock: acceptingBlock for intersection block unexpectedly failed: %s", err)
 	}
@@ -1198,10 +1188,9 @@ func TestAcceptingBlock(t *testing.T) {
 
 	// Make sure that a block that is found in the red set of the selected tip
 	// doesn't have an accepting block
-	newTip := buildNode(setFromSlice(sideChainTip, chainBlocks[len(chainBlocks)-1]))
-	dag.virtual.AddTip(newTip)
+	prepareAndProcessBlock(t, dag, sideChainTip, chainBlocks[len(chainBlocks)-1])
 
-	sideChainTipAcceptingBlock, err := dag.acceptingBlock(sideChainTip)
+	sideChainTipAcceptingBlock, err := acceptingBlockByMsgBlock(sideChainTip)
 	if err != nil {
 		t.Fatalf("TestAcceptingBlock: acceptingBlock for sideChainTip unexpectedly failed: %s", err)
 	}
@@ -1242,7 +1231,7 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 
 	addNode := func(parent *blockNode) *blockNode {
 		blockTime = blockTime.Add(time.Second)
-		node := newTestNode(setFromSlice(parent), blockVersion, 0, blockTime, dag.dagParams.K)
+		node := newTestNode(dag, setFromSlice(parent), blockVersion, 0, blockTime)
 		node.updateParentsChildren()
 		dag.index.AddNode(node)
 
