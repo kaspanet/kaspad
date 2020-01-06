@@ -65,7 +65,7 @@ var (
 
 	// userAgentVersion is the user agent version and is used to help
 	// identify ourselves to other kaspa peers.
-	userAgentVersion = fmt.Sprintf("%d.%d.%d", version.AppMajor, version.AppMinor, version.AppPatch)
+	userAgentVersion = version.Version()
 )
 
 // onionAddr implements the net.Addr interface and represents a tor address.

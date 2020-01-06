@@ -417,7 +417,7 @@ type GetWorkResult struct {
 
 // InfoDAGResult models the data returned by the kaspa rpc server getinfo command.
 type InfoDAGResult struct {
-	Version         int32   `json:"version"`
+	Version         string  `json:"version"`
 	ProtocolVersion int32   `json:"protocolVersion"`
 	Blocks          uint64  `json:"blocks"`
 	TimeOffset      int64   `json:"timeOffset"`
