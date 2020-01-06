@@ -29,8 +29,9 @@ func Version() string {
 
 		// Append build metadata if there is any. The build metadata
 		// string is not appended if it contains invalid characters.
-		checkAppBuild(appBuild)
 		if appBuild != "" {
+			checkAppBuild(appBuild)
+
 			version = fmt.Sprintf("%s-%s", version, appBuild)
 		}
 	}
