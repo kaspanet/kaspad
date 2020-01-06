@@ -125,7 +125,7 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 				candidateAnticoneSize++
 
 				if candidateAnticoneSize > dag.dagParams.K {
-					// k-cluster violation: The candidate blue anticone now became larger than k
+					// k-cluster violation: The candidate's blue anticone exceeded k
 					possiblyBlue = false
 					break
 				}
