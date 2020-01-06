@@ -1847,7 +1847,7 @@ func (dag *BlockDAG) addDelayedBlock(block *util.Block, delay time.Duration) {
 func (dag *BlockDAG) processDelayedBlocks() error {
 	// Check if the delayed block with the earliest process time should be processed
 	for dag.delayedBlocksQueue.Len() > 0 {
-		earliestDelayedBlockProcessTime := dag.delayedBlocksQueue.peek().processTime
+		earliestDelayedBlockProcessTime := dag.peekDelayedBlock().processTime
 		if earliestDelayedBlockProcessTime.After(dag.timeSource.AdjustedTime()) {
 			break
 		}
@@ -1870,20 +1870,8 @@ func (dag *BlockDAG) popDelayedBlock() *delayedBlock {
 	return delayedBlock
 }
 
-// maxDelayOfParents returns the maximum delay of the given block hashes.
-// Note that delay could be 0, but isDelayed will return true. This is the case where the parent process time is due.
-func (dag *BlockDAG) maxDelayOfParents(parentHashes []*daghash.Hash) (delay time.Duration, isDelayed bool) {
-	for _, parentHash := range parentHashes {
-		if delayedParent, exists := dag.delayedBlocks[*parentHash]; exists {
-			isDelayed = true
-			parentDelay := delayedParent.processTime.Sub(dag.timeSource.AdjustedTime())
-			if parentDelay > delay {
-				delay = parentDelay
-			}
-		}
-	}
-
-	return delay, isDelayed
+func (dag *BlockDAG) peekDelayedBlock() *delayedBlock {
+	return dag.delayedBlocksQueue.peek()
 }
 
 // IndexManager provides a generic interface that is called when blocks are
