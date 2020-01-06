@@ -26,14 +26,14 @@ func (h *baseHeap) Pop() interface{} {
 type upHeap struct{ baseHeap }
 
 func (h upHeap) Less(i, j int) bool {
-	return h.baseHeap[i].lessThan(h.baseHeap[j])
+	return h.baseHeap[i].less(h.baseHeap[j])
 }
 
 // downHeap extends baseHeap to include Less operation that traverses from top to bottom
 type downHeap struct{ baseHeap }
 
 func (h downHeap) Less(i, j int) bool {
-	return !h.baseHeap[i].lessThan(h.baseHeap[j])
+	return !h.baseHeap[i].less(h.baseHeap[j])
 }
 
 // blockHeap represents a mutable heap of Blocks, sorted by their height

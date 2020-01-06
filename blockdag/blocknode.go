@@ -155,7 +155,7 @@ func (node *blockNode) updateParentsChildren() {
 	}
 }
 
-func (node *blockNode) lessThan(other *blockNode) bool {
+func (node *blockNode) less(other *blockNode) bool {
 	if node.blueScore == other.blueScore {
 		return daghash.HashToBig(node.hash).Cmp(daghash.HashToBig(other.hash)) < 0
 	}

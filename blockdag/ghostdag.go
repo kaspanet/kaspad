@@ -81,7 +81,7 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 	}
 
 	sort.Slice(selectedParentAnticone, func(i, j int) bool {
-		return selectedParentAnticone[i].lessThan(selectedParentAnticone[j])
+		return selectedParentAnticone[i].less(selectedParentAnticone[j])
 	})
 
 	for _, blueCandidate := range selectedParentAnticone {
