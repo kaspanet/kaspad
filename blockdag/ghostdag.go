@@ -5,53 +5,6 @@ import (
 	"sort"
 )
 
-func (dag *BlockDAG) selectedParentAnticone(node *blockNode) ([]*blockNode, error) {
-	anticoneSet := newSet()
-	var anticoneSlice []*blockNode
-	selectedParentPast := newSet()
-	var queue []*blockNode
-	for _, parent := range node.parents {
-		if parent == node.selectedParent {
-			continue
-		}
-		anticoneSet.add(parent)
-		anticoneSlice = append(anticoneSlice, parent)
-		queue = append(queue, parent)
-	}
-	for len(queue) > 0 {
-		var current *blockNode
-		current, queue = queue[0], queue[1:]
-		for _, parent := range current.parents {
-			if anticoneSet.contains(parent) || selectedParentPast.contains(parent) {
-				continue
-			}
-			isAncestorOfSelectedParent, err := dag.isAncestorOf(parent, node.selectedParent)
-			if err != nil {
-				return nil, err
-			}
-			if isAncestorOfSelectedParent {
-				selectedParentPast.add(parent)
-				continue
-			}
-			anticoneSet.add(parent)
-			anticoneSlice = append(anticoneSlice, parent)
-			queue = append(queue, parent)
-		}
-	}
-	return anticoneSlice, nil
-}
-
-// blueAnticoneSize returns the blue anticone size of 'block' from the worldview of 'context'.
-// Expects 'block' to be ∈ blue-set(context)
-func (dag *BlockDAG) blueAnticoneSize(block, context *blockNode) (uint32, error) {
-	for current := context; current != nil; current = current.selectedParent {
-		if blueAnticoneSize, ok := current.bluesAnticoneSizes[*block.hash]; ok {
-			return blueAnticoneSize, nil
-		}
-	}
-	return 0, errors.Errorf("block %s is not in blue-set of %s", block.hash, context.hash)
-}
-
 // ghostdag runs the GHOSTDAG protocol and updates newNode.blues,
 // newNode.selectedParent and newNode.bluesAnticoneSizes accordingly.
 // The function updates newNode.blues by iterating over the blocks in
@@ -59,14 +12,14 @@ func (dag *BlockDAG) blueAnticoneSize(block, context *blockNode) (uint32, error)
 // highest blue score) and adds any block to newNode.blues if by adding
 // it to newNode.blues these conditions will not be violated:
 //
-// 1) |anticone-of-candidate-block ∩ blueset-of-newNode| ≤ K
+// 1) |anticone-of-candidate-block ∩ blueSet-of-newNode| ≤ K
 //
-// 2) For every blue block in blueset-of-newNode:
-//    |(anticone-of-blue-block ∩ blueset-newNode) ∪ {candidate-block}| ≤ K.
+// 2) For every blue block in blueSet-of-newNode:
+//    |(anticone-of-blue-block ∩ blueSet-newNode) ∪ {candidate-block}| ≤ K.
 //    We validate this condition by maintaining a map bluesAnticoneSizes for
 //    each block which holds all the blue anticone sizes that were affected by
 //    the new added blue blocks.
-//    So to find out what is |anticone-of-blue ∩ blueset-of-newNode| we just iterate in
+//    So to find out what is |anticone-of-blue ∩ blueSet-of-newNode| we just iterate in
 //    the selected parent chain of newNode until we find an existing entry in
 //    bluesAnticoneSizes.
 //
@@ -89,7 +42,7 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 		var candidateAnticoneSize uint32
 		possiblyBlue := true
 
-		// Iterate over all blocks in the blueset of newNode that are not in the past
+		// Iterate over all blocks in the blueSet of newNode that are not in the past
 		// of blueCandidate, and check for each one of them if blueCandidate potentially
 		// enlarges their blue anticone to be over K, or that they enlarge the blue anticone
 		// of blueCandidate to be over K.
@@ -111,7 +64,7 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 			}
 
 			for _, block := range chainBlock.blues {
-				// Skip blocks that exists in the past of blueCandidate.
+				// Skip blocks that exist in the past of blueCandidate.
 				if isAncestorOfBlueCandidate, err := dag.isAncestorOf(block, blueCandidate); err != nil {
 					return nil, err
 				} else if isAncestorOfBlueCandidate {
@@ -163,4 +116,60 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 
 	newNode.blueScore = newNode.selectedParent.blueScore + uint64(len(newNode.blues))
 	return selectedParentAnticone, nil
+}
+
+// selectedParentAnticone returns the blocks in the anticone of the selected parent of the given node.
+// The function work as follows.
+// We start by adding all parents of the node (other than the selected parent) to a process queue.
+// For each node in the queue:
+//   we check whether it is in the past of the selected parent.
+//   If not, we add the node to the resulting anticone-set and add queue it for processing.
+func (dag *BlockDAG) selectedParentAnticone(node *blockNode) ([]*blockNode, error) {
+	anticoneSet := newSet()
+	var anticoneSlice []*blockNode
+	selectedParentPast := newSet()
+	var queue []*blockNode
+	// Queueing all parents (other than the selected parent itself) for processing.
+	for _, parent := range node.parents {
+		if parent == node.selectedParent {
+			continue
+		}
+		anticoneSet.add(parent)
+		anticoneSlice = append(anticoneSlice, parent)
+		queue = append(queue, parent)
+	}
+	for len(queue) > 0 {
+		var current *blockNode
+		current, queue = queue[0], queue[1:]
+		// For each parent of a the current node we check whether it is in the past of the selected parent. If not,
+		// we add the it to the resulting anticone-set and queue it for further processing.
+		for _, parent := range current.parents {
+			if anticoneSet.contains(parent) || selectedParentPast.contains(parent) {
+				continue
+			}
+			isAncestorOfSelectedParent, err := dag.isAncestorOf(parent, node.selectedParent)
+			if err != nil {
+				return nil, err
+			}
+			if isAncestorOfSelectedParent {
+				selectedParentPast.add(parent)
+				continue
+			}
+			anticoneSet.add(parent)
+			anticoneSlice = append(anticoneSlice, parent)
+			queue = append(queue, parent)
+		}
+	}
+	return anticoneSlice, nil
+}
+
+// blueAnticoneSize returns the blue anticone size of 'block' from the worldview of 'context'.
+// Expects 'block' to be ∈ blue-set(context)
+func (dag *BlockDAG) blueAnticoneSize(block, context *blockNode) (uint32, error) {
+	for current := context; current != nil; current = current.selectedParent {
+		if blueAnticoneSize, ok := current.bluesAnticoneSizes[*block.hash]; ok {
+			return blueAnticoneSize, nil
+		}
+	}
+	return 0, errors.Errorf("block %s is not in blue-set of %s", block.hash, context.hash)
 }

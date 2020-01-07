@@ -1136,7 +1136,7 @@ func TestAcceptingBlock(t *testing.T) {
 			"Want: nil, got: %s", tipAcceptingBlock.hash)
 	}
 
-	// Generate a chain tip that will be in the anticone of the selected tip but in
+	// Generate a chain tip that will be in the anticone of the selected tip and
 	// in dag.virtual.blues.
 	branchingChainTip := prepareAndProcessBlock(t, dag, chainBlocks[len(chainBlocks)-3])
 

@@ -1065,7 +1065,7 @@ func (node *blockNode) applyBlueBlocks(acceptedSelectedParentUTXO UTXOSet, selec
 	// Add blueBlocks to multiBlockTxsAcceptanceData in topological order. This
 	// is so that anyone who iterates over it would process blocks (and transactions)
 	// in their order of appearance in the DAG.
-	// We skip the selected parent, because we calculated its UTXO before.
+	// We skip the selected parent, because we calculated its UTXO in acceptSelectedParentTransactions.
 	for i := 1; i < len(blueBlocks); i++ {
 		blueBlock := blueBlocks[i]
 		transactions := blueBlock.Transactions()

@@ -76,8 +76,8 @@ func (ri *reachabilityInterval) splitExact(sizes []uint64) ([]*reachabilityInter
 }
 
 // splitWithExponentialBias splits this interval to len(sizes) parts
-// by some allocation rule. This method expects sum(sizes) to be
-// smaller or equal to the interval's capacity. Every part_i is
+// by the allocation rule described below. This method expects sum(sizes)
+// to be smaller or equal to the interval's capacity. Every part_i is
 // allocated at least sizes[i] capacity. The remaining budget is
 // split by an exponential rule described below.
 //
@@ -126,7 +126,7 @@ func (ri *reachabilityInterval) splitWithExponentialBias(sizes []uint64) ([]*rea
 // In the code below the above equation is divided by 2^max(size)
 // to avoid exploding numbers. Note that in 1 / 2^(max(size)-size[i])
 // we divide 1 by potentially a very large number, which will
-// result in loss of float precision. This is not a problem--all
+// result in loss of float precision. This is not a problem - all
 // numbers close to 0 bear effectively the same weight.
 func exponentialFractions(sizes []uint64) []float64 {
 	maxSize := uint64(0)
@@ -197,6 +197,8 @@ type reachabilityTreeNode struct {
 
 func newReachabilityTreeNode(blockNode *blockNode) *reachabilityTreeNode {
 	interval := newReachabilityInterval(1, math.MaxUint64-1)
+	// We subtract 1 from the end of the remaining interval to prevent the node from allocating
+	// the entire interval to its child, so its interval would *strictly* contain the interval of its child.
 	remainingInterval := newReachabilityInterval(interval.start, interval.end-1)
 	return &reachabilityTreeNode{blockNode: blockNode, interval: interval, remainingInterval: remainingInterval}
 }
@@ -560,7 +562,7 @@ func (dag *BlockDAG) updateReachability(node *blockNode, selectedParentAnticone 
 }
 
 // isAncestorOf returns true if this node is in the past of the other node
-// in the DAG. The complexity of this method is O(log(|node.futureCoveringBlockSet|))
+// in the DAG. The complexity of this method is O(log(|this.futureCoveringBlockSet|))
 func (dag *BlockDAG) isAncestorOf(this *blockNode, other *blockNode) (bool, error) {
 	// First, check if this node is a reachability tree ancestor of the
 	// other node

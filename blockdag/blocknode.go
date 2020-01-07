@@ -76,7 +76,8 @@ type blockNode struct {
 	// blueScore is the count of all the blue blocks in this block's past
 	blueScore uint64
 
-	// bluesAnticoneSizes is a map holding the set of blues affected by this block and their modified blue anticone size.
+	// bluesAnticoneSizes is a map holding the set of blues affected by this block and their
+	// modified blue anticone size.
 	bluesAnticoneSizes map[daghash.Hash]uint32
 
 	// hash is the double sha 256 of the block.
@@ -113,7 +114,9 @@ func calculateChainHeight(node *blockNode) uint64 {
 	return node.selectedParent.chainHeight + 1
 }
 
-// newBlockNode returns a new block node for the given block header and parent
+// newBlockNode returns a new block node for the given block header and parents, and the
+// anticone of its selected parent (parent with highest blue score).
+// selectedParentAnticone is used to update reachability data we store for future reachability queries.
 // nodes. This function is NOT safe for concurrent access.
 func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSet) (node *blockNode, selectedParentAnticone []*blockNode) {
 	node = &blockNode{

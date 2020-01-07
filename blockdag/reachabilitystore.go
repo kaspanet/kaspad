@@ -119,7 +119,7 @@ func (store *reachabilityStore) init(dbTx database.Tx) error {
 	bucket := dbTx.Metadata().Bucket(reachabilityDataBucketName)
 
 	// TODO: (Stas) This is a quick and dirty hack.
-	// We deserialize the entire bucket twice:
+	// We iterate over the entire bucket twice:
 	// * First, populate the loaded set with all entries
 	// * Second, connect the parent/children pointers in each entry
 	//   with other nodes, which are now guaranteed to exist

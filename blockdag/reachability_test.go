@@ -239,7 +239,7 @@ func TestSplitExact(t *testing.T) {
 	}
 }
 
-func TestSplit(t *testing.T) {
+func TestSplitWithExponentialBias(t *testing.T) {
 	tests := []struct {
 		interval          *reachabilityInterval
 		sizes             []uint64
@@ -327,10 +327,10 @@ func TestSplit(t *testing.T) {
 	for i, test := range tests {
 		intervals, err := test.interval.splitWithExponentialBias(test.sizes)
 		if err != nil {
-			t.Fatalf("TestSplit: splitWithExponentialBias unexpectedly failed in test #%d: %s", i, err)
+			t.Fatalf("TestSplitWithExponentialBias: splitWithExponentialBias unexpectedly failed in test #%d: %s", i, err)
 		}
 		if !reflect.DeepEqual(intervals, test.expectedIntervals) {
-			t.Errorf("TestSplit: unexpected intervals in test #%d. "+
+			t.Errorf("TestSplitWithExponentialBias: unexpected intervals in test #%d. "+
 				"want: %s, got: %s", i, test.expectedIntervals, intervals)
 		}
 	}

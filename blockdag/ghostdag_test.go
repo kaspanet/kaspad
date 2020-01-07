@@ -11,7 +11,7 @@ import (
 
 type testBlockData struct {
 	parents                []string
-	id                     string //id is a virtual entity that is used only for tests so we can define relations between blocks without knowing their hash
+	id                     string // id is a virtual entity that is used only for tests so we can define relations between blocks without knowing their hash
 	expectedScore          uint64
 	expectedSelectedParent string
 	expectedBlues          []string
@@ -25,8 +25,8 @@ func TestGHOSTDAG(t *testing.T) {
 
 	tests := []struct {
 		k            uint32
-		dagData      []*testBlockData
 		expectedReds []string
+		dagData      []*testBlockData
 	}{
 		{
 			k:            3,
