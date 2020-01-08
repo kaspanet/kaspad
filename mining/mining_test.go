@@ -215,7 +215,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	gasLimitPatch.Unpatch()
 
 	if err != nil {
-		t.Errorf("NewBlockTemplate: unexpected error: %v", err)
+		t.Fatalf("NewBlockTemplate: unexpected error: %v", err)
 	}
 
 	expectedTxs := map[daghash.TxID]bool{
