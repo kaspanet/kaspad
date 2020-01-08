@@ -9,7 +9,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"net"
 	"os"
@@ -18,6 +17,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/btcsuite/go-socks/socks"
 	"github.com/jessevdk/go-flags"
@@ -124,11 +125,11 @@ type Flags struct {
 	Proxy                string        `long:"proxy" description:"Connect via SOCKS5 proxy (eg. 127.0.0.1:9050)"`
 	ProxyUser            string        `long:"proxyuser" description:"Username for proxy server"`
 	ProxyPass            string        `long:"proxypass" default-mask:"-" description:"Password for proxy server"`
-	OnionProxy           string        `long:"onion" description:"Connect to tor hidden services via SOCKS5 proxy (eg. 127.0.0.1:9050)"`
-	OnionProxyUser       string        `long:"onionuser" description:"Username for onion proxy server"`
-	OnionProxyPass       string        `long:"onionpass" default-mask:"-" description:"Password for onion proxy server"`
-	NoOnion              bool          `long:"noonion" description:"Disable connecting to tor hidden services"`
-	TorIsolation         bool          `long:"torisolation" description:"Enable Tor stream isolation by randomizing user credentials for each connection."`
+	OnionProxy           string        // DISABLED UNTIL DECISION ABOUT TOR `long:"onion" description:"Connect to tor hidden services via SOCKS5 proxy (eg. 127.0.0.1:9050)"`
+	OnionProxyUser       string        // DISABLED UNTIL DECISION ABOUT TOR `long:"onionuser" description:"Username for onion proxy server"`
+	OnionProxyPass       string        // DISABLED UNTIL DECISION ABOUT TOR `long:"onionpass" default-mask:"-" description:"Password for onion proxy server"`
+	NoOnion              bool          // DISABLED UNTIL DECISION ABOUT TOR `long:"noonion" description:"Disable connecting to tor hidden services"`
+	TorIsolation         bool          // DISABLED UNTIL DECISION ABOUT TOR `long:"torisolation" description:"Enable Tor stream isolation by randomizing user credentials for each connection."`
 	DbType               string        `long:"dbtype" description:"Database backend to use for the Block DAG"`
 	Profile              string        `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
 	CPUProfile           string        `long:"cpuprofile" description:"Write CPU profile to the specified file"`
@@ -281,10 +282,11 @@ func loadConfig() (*Config, []string, error) {
 		}
 	}
 
-	// Show the version and exit if the version flag was specified.
 	appName := filepath.Base(os.Args[0])
 	appName = strings.TrimSuffix(appName, filepath.Ext(appName))
 	usageMessage := fmt.Sprintf("Use %s -h to show usage", appName)
+
+	// Show the version and exit if the version flag was specified.
 	if preCfg.ShowVersion {
 		fmt.Println(appName, "version", version.Version())
 		os.Exit(0)

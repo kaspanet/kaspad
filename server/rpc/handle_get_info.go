@@ -10,7 +10,7 @@ import (
 // that are not related to wallet functionality.
 func handleGetInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	ret := &rpcmodel.InfoDAGResult{
-		Version:         int32(1000000*version.AppMajor + 10000*version.AppMinor + 100*version.AppPatch),
+		Version:         version.Version(),
 		ProtocolVersion: int32(maxProtocolVersion),
 		Blocks:          s.cfg.DAG.BlockCount(),
 		TimeOffset:      int64(s.cfg.TimeSource.Offset().Seconds()),
