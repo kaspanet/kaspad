@@ -571,7 +571,7 @@ func TestPastMedianTime(t *testing.T) {
 }
 
 func TestValidateParents(t *testing.T) {
-	dag := newTestDAG(&dagconfig.SimNetParams)
+	dag := newTestDAG(&dagconfig.SimnetParams)
 	genesisNode := dag.genesis
 	blockVersion := int32(0x10000000)
 

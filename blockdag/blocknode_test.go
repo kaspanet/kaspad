@@ -8,7 +8,7 @@ import (
 
 func TestChainHeight(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
-	params := dagconfig.SimNetParams
+	params := dagconfig.SimnetParams
 	params.K = 2
 	dag, teardownFunc, err := DAGSetup("TestChainHeight", Config{
 		DAGParams: &params,

@@ -21,7 +21,7 @@ type testBlockData struct {
 // that the blue score, blue set and selected parent of each
 // block are calculated as expected.
 func TestGHOSTDAG(t *testing.T) {
-	dagParams := dagconfig.SimNetParams
+	dagParams := dagconfig.SimnetParams
 
 	tests := []struct {
 		k            uint32
