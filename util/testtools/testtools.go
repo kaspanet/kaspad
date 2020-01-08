@@ -27,12 +27,12 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 	}
 
 	addBlockToDAG := func(block *util.Block) error {
-		isOrphan, delay, err := dag.ProcessBlock(block, blockdag.BFNoPoWCheck)
+		isOrphan, isDelayed, err := dag.ProcessBlock(block, blockdag.BFNoPoWCheck)
 		if err != nil {
 			return err
 		}
 
-		if delay != 0 {
+		if isDelayed {
 			return errors.Errorf("ProcessBlock: block is is too far in the future")
 		}
 

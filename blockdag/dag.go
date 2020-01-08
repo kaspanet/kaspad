@@ -6,11 +6,12 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"math"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
@@ -34,6 +35,12 @@ const (
 type orphanBlock struct {
 	block      *util.Block
 	expiration time.Time
+}
+
+// delayedBlock represents a block which has a delayed timestamp and will be processed at processTime
+type delayedBlock struct {
+	block       *util.Block
+	processTime time.Time
 }
 
 // chainUpdates represents the updates made to the selected parent chain after
@@ -99,6 +106,13 @@ type BlockDAG struct {
 	prevOrphans  map[daghash.Hash][]*orphanBlock
 	newestOrphan *orphanBlock
 
+	// delayedBlocks is a list of all delayed blocks. We are maintaining this
+	// list for the case where a new block with a valid timestamp points to a delayed block.
+	// In that case we will delay the processing of the child block so it would be processed
+	// after its parent.
+	delayedBlocks      map[daghash.Hash]*delayedBlock
+	delayedBlocksQueue delayedBlocksHeap
+
 	// The following caches are used to efficiently keep track of the
 	// current deployment threshold state of each rule change deployment.
 	//
@@ -144,8 +158,7 @@ type BlockDAG struct {
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) HaveBlock(hash *daghash.Hash) bool {
-	exists := dag.BlockExists(hash)
-	return exists || dag.IsKnownOrphan(hash)
+	return dag.BlockExists(hash) || dag.IsKnownOrphan(hash) || dag.isKnownDelayedBlock(hash)
 }
 
 // HaveBlocks returns whether or not the DAG instances has all blocks represented
@@ -1817,6 +1830,55 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 	return dag.subnetworkID
 }
 
+func (dag *BlockDAG) addDelayedBlock(block *util.Block, delay time.Duration) error {
+	processTime := dag.timeSource.AdjustedTime().Add(delay)
+	log.Debugf("Adding block to delayed blocks queue (block hash: %s, process time: %s)", block.Hash().String(), processTime)
+	delayedBlock := &delayedBlock{
+		block:       block,
+		processTime: processTime,
+	}
+
+	dag.delayedBlocks[*block.Hash()] = delayedBlock
+	dag.delayedBlocksQueue.Push(delayedBlock)
+	return dag.processDelayedBlocks()
+}
+
+// processDelayedBlocks loops over all delayed blocks and processes blocks which are due.
+// This method is invoked after processing a block (ProcessBlock method).
+func (dag *BlockDAG) processDelayedBlocks() error {
+	// Check if the delayed block with the earliest process time should be processed
+	for dag.delayedBlocksQueue.Len() > 0 {
+		earliestDelayedBlockProcessTime := dag.peekDelayedBlock().processTime
+		if earliestDelayedBlockProcessTime.After(dag.timeSource.AdjustedTime()) {
+			break
+		}
+		delayedBlock := dag.popDelayedBlock()
+		_, _, err := dag.processBlockNoLock(delayedBlock.block, BFAfterDelay)
+		if err != nil {
+			log.Errorf("Error while processing delayed block (block %s)", delayedBlock.block.Hash().String())
+			// Rule errors should not be propagated as they refer only to the delayed block,
+			// while this function runs in the context of another block
+			if _, ok := err.(RuleError); !ok {
+				return err
+			}
+		}
+		log.Debugf("Processed delayed block (block %s)", delayedBlock.block.Hash().String())
+	}
+
+	return nil
+}
+
+// popDelayedBlock removes the topmost (delayed block with earliest process time) of the queue and returns it.
+func (dag *BlockDAG) popDelayedBlock() *delayedBlock {
+	delayedBlock := dag.delayedBlocksQueue.pop()
+	delete(dag.delayedBlocks, *delayedBlock.block.Hash())
+	return delayedBlock
+}
+
+func (dag *BlockDAG) peekDelayedBlock() *delayedBlock {
+	return dag.delayedBlocksQueue.peek()
+}
+
 // IndexManager provides a generic interface that is called when blocks are
 // connected to the DAG for the purpose of supporting optional indexes.
 type IndexManager interface {
@@ -1915,6 +1977,8 @@ func New(config *Config) (*BlockDAG, error) {
 		virtual:                        newVirtualBlock(nil, params.K),
 		orphans:                        make(map[daghash.Hash]*orphanBlock),
 		prevOrphans:                    make(map[daghash.Hash][]*orphanBlock),
+		delayedBlocks:                  make(map[daghash.Hash]*delayedBlock),
+		delayedBlocksQueue:             newDelayedBlocksHeap(),
 		warningCaches:                  newThresholdCaches(vbNumBits),
 		deploymentCaches:               newThresholdCaches(dagconfig.DefinedDeployments),
 		blockCount:                     0,
@@ -1953,13 +2017,11 @@ func New(config *Config) (*BlockDAG, error) {
 
 	if genesis == nil {
 		genesisBlock := util.NewBlock(dag.dagParams.GenesisBlock)
-		var isOrphan bool
-		var delay time.Duration
-		isOrphan, delay, err = dag.ProcessBlock(genesisBlock, BFNone)
+		isOrphan, isDelayed, err := dag.ProcessBlock(genesisBlock, BFNone)
 		if err != nil {
 			return nil, err
 		}
-		if delay != 0 {
+		if isDelayed {
 			return nil, errors.New("Genesis block shouldn't be in the future")
 		}
 		if isOrphan {
@@ -1982,4 +2044,9 @@ func New(config *Config) (*BlockDAG, error) {
 		selectedTip.chainHeight, selectedTip.hash)
 
 	return &dag, nil
+}
+
+func (dag *BlockDAG) isKnownDelayedBlock(hash *daghash.Hash) bool {
+	_, exists := dag.delayedBlocks[*hash]
+	return exists
 }

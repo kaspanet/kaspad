@@ -57,11 +57,11 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 
 	// Add a valid block and mark it as invalid
 	block1 := blocks[1]
-	isOrphan, delay, err := dag.ProcessBlock(block1, BFNone)
+	isOrphan, isDelayed, err := dag.ProcessBlock(block1, BFNone)
 	if err != nil {
 		t.Fatalf("TestMaybeAcceptBlockErrors: Valid block unexpectedly returned an error: %s", err)
 	}
-	if delay != 0 {
+	if isDelayed {
 		t.Fatalf("TestMaybeAcceptBlockErrors: block 1 is too far in the future")
 	}
 	if isOrphan {

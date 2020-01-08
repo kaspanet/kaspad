@@ -116,12 +116,12 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 	}
 
 	// Ensure the blocks follows all of the DAG rules.
-	isOrphan, delay, err := bi.dag.ProcessBlock(block,
+	isOrphan, isDelayed, err := bi.dag.ProcessBlock(block,
 		blockdag.BFFastAdd)
 	if err != nil {
 		return false, err
 	}
-	if delay != 0 {
+	if isDelayed {
 		return false, errors.Errorf("import file contains a block that is too far in the future")
 	}
 	if isOrphan {

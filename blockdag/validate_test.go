@@ -101,12 +101,12 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	}
 
 	for i := 1; i <= 3; i++ {
-		_, delay, err := dag.ProcessBlock(blocks[i], BFNone)
+		_, isDelayed, err := dag.ProcessBlock(blocks[i], BFNone)
 		if err != nil {
 			t.Fatalf("CheckConnectBlockTemplate: Received unexpected error "+
 				"processing block %d: %v", i, err)
 		}
-		if delay != 0 {
+		if isDelayed {
 			t.Fatalf("CheckConnectBlockTemplate: block %d is too far in the future", i)
 		}
 	}
