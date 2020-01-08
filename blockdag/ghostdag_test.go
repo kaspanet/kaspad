@@ -21,7 +21,7 @@ type testBlockData struct {
 // that the blue score, blue set and selected parent of each
 // block are calculated as expected.
 func TestGHOSTDAG(t *testing.T) {
-	dagParams := dagconfig.SimNetParams
+	dagParams := dagconfig.SimnetParams
 
 	tests := []struct {
 		k            uint32
@@ -30,7 +30,7 @@ func TestGHOSTDAG(t *testing.T) {
 	}{
 		{
 			k:            3,
-			expectedReds: []string{"F", "G", "H", "I", "N", "Q"},
+			expectedReds: []string{"F", "G", "H", "I", "O", "P"},
 			dagData: []*testBlockData{
 				{
 					parents:                []string{"A"},
@@ -163,7 +163,7 @@ func TestGHOSTDAG(t *testing.T) {
 					id:                     "T",
 					expectedScore:          13,
 					expectedSelectedParent: "S",
-					expectedBlues:          []string{"S", "P", "O"},
+					expectedBlues:          []string{"S", "N", "Q"},
 				},
 			},
 		},

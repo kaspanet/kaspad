@@ -108,13 +108,13 @@ func New(activeNet *dagconfig.Params, handlers *rpcclient.NotificationHandlers,
 	// Add a flag for the appropriate network type based on the provided
 	// chain params.
 	switch activeNet.Net {
-	case wire.MainNet:
+	case wire.Mainnet:
 		// No extra flags since mainnet is the default
-	case wire.TestNet:
+	case wire.Testnet:
 		extraArgs = append(extraArgs, "--testnet")
-	case wire.RegTest:
+	case wire.Regtest:
 		extraArgs = append(extraArgs, "--regtest")
-	case wire.SimNet:
+	case wire.Simnet:
 		extraArgs = append(extraArgs, "--simnet")
 	default:
 		return nil, errors.Errorf("rpctest.New must be called with one " +

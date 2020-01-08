@@ -33,7 +33,7 @@ func buildNode(t *testing.T, dag *BlockDAG, parents blockSet) *blockNode {
 // TestVirtualBlock ensures that VirtualBlock works as expected.
 func TestVirtualBlock(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
-	params := dagconfig.SimNetParams
+	params := dagconfig.SimnetParams
 	params.K = 1
 	dag, teardownFunc, err := DAGSetup("TestVirtualBlock", Config{
 		DAGParams: &params,
@@ -132,7 +132,7 @@ func TestVirtualBlock(t *testing.T) {
 
 func TestSelectedPath(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
-	params := dagconfig.SimNetParams
+	params := dagconfig.SimnetParams
 	params.K = 1
 	dag, teardownFunc, err := DAGSetup("TestSelectedPath", Config{
 		DAGParams: &params,
@@ -220,7 +220,7 @@ func TestSelectedPath(t *testing.T) {
 
 func TestChainUpdates(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
-	params := dagconfig.SimNetParams
+	params := dagconfig.SimnetParams
 	params.K = 1
 	dag, teardownFunc, err := DAGSetup("TestChainUpdates", Config{
 		DAGParams: &params,

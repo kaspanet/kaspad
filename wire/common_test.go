@@ -15,27 +15,27 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// mainNetGenesisHash is the hash of the first block in the block DAG for the
+// mainnetGenesisHash is the hash of the first block in the block DAG for the
 // main network (genesis block).
-var mainNetGenesisHash = &daghash.Hash{
+var mainnetGenesisHash = &daghash.Hash{
 	0xdc, 0x5f, 0x5b, 0x5b, 0x1d, 0xc2, 0xa7, 0x25,
 	0x49, 0xd5, 0x1d, 0x4d, 0xee, 0xd7, 0xa4, 0x8b,
 	0xaf, 0xd3, 0x14, 0x4b, 0x56, 0x78, 0x98, 0xb1,
 	0x8c, 0xfd, 0x9f, 0x69, 0xdd, 0xcf, 0xbb, 0x63,
 }
 
-// simNetGenesisHash is the hash of the first block in the block DAG for the
+// simnetGenesisHash is the hash of the first block in the block DAG for the
 // simulation test network.
-var simNetGenesisHash = &daghash.Hash{
+var simnetGenesisHash = &daghash.Hash{
 	0xf6, 0x7a, 0xd7, 0x69, 0x5d, 0x9b, 0x66, 0x2a,
 	0x72, 0xff, 0x3d, 0x8e, 0xdb, 0xbb, 0x2d, 0xe0,
 	0xbf, 0xa6, 0x7b, 0x13, 0x97, 0x4b, 0xb9, 0x91,
 	0x0d, 0x11, 0x6d, 0x5c, 0xbd, 0x86, 0x3e, 0x68,
 }
 
-// mainNetGenesisMerkleRoot is the hash of the first transaction in the genesis
+// mainnetGenesisMerkleRoot is the hash of the first transaction in the genesis
 // block for the main network.
-var mainNetGenesisMerkleRoot = &daghash.Hash{
+var mainnetGenesisMerkleRoot = &daghash.Hash{
 	0x4a, 0x5e, 0x1e, 0x4b, 0xaa, 0xb8, 0x9f, 0x3a,
 	0x32, 0x51, 0x8a, 0x88, 0xc3, 0x1b, 0xc8, 0x7f,
 	0x61, 0x8f, 0x76, 0x67, 0x3e, 0x2c, 0xc7, 0x7a,
@@ -131,7 +131,7 @@ func TestElementWire(t *testing.T) {
 			[]byte{0x01, 0x00, 0x00, 0x00},
 		},
 		{
-			KaspaNet(MainNet),
+			KaspaNet(Mainnet),
 			[]byte{0x1d, 0xf7, 0xdc, 0x3d},
 		},
 		// Type not supported by the "fast" path and requires reflection.
@@ -218,7 +218,7 @@ func TestElementWireErrors(t *testing.T) {
 		},
 		{ServiceFlag(SFNodeNetwork), 0, io.ErrShortWrite, io.EOF},
 		{InvType(InvTypeTx), 0, io.ErrShortWrite, io.EOF},
-		{KaspaNet(MainNet), 0, io.ErrShortWrite, io.EOF},
+		{KaspaNet(Mainnet), 0, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))

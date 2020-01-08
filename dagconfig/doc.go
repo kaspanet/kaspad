@@ -34,14 +34,14 @@ variable (either directly, or hidden in a library call).
  var testnet = flag.Bool("testnet", false, "operate on the testnet Kaspa network")
 
  // By default (without --testnet), use mainnet.
- var dagParams = &dagconfig.MainNetParams
+ var dagParams = &dagconfig.MainnetParams
 
  func main() {
  	flag.Parse()
 
  	// Modify active network parameters if operating on testnet.
  	if *testnet {
- 		dagParams = &dagconfig.TestNetParams
+ 		dagParams = &dagconfig.TestnetParams
  	}
 
  	// later...

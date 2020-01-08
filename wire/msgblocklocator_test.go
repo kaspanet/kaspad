@@ -195,10 +195,10 @@ func TestBlockLocatorWireErrors(t *testing.T) {
 	// block locator hashes.
 	maxGetBlocks := NewMsgBlockLocator()
 	for i := 0; i < MaxBlockLocatorsPerMsg; i++ {
-		maxGetBlocks.AddBlockLocatorHash(mainNetGenesisHash)
+		maxGetBlocks.AddBlockLocatorHash(mainnetGenesisHash)
 	}
 	maxGetBlocks.BlockLocatorHashes = append(maxGetBlocks.BlockLocatorHashes,
-		mainNetGenesisHash)
+		mainnetGenesisHash)
 	maxGetBlocksEncoded := []byte{
 		0xfd, 0xf5, 0x01, // Varint for number of block loc hashes (501)
 	}

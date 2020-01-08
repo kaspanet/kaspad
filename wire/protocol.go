@@ -97,30 +97,30 @@ type KaspaNet uint32
 // this package does not provide that functionality since it's generally a
 // better idea to simply disconnect clients that are misbehaving over TCP.
 const (
-	// MainNet represents the main kaspa network.
-	MainNet KaspaNet = 0x3ddcf71d
+	// Mainnet represents the main kaspa network.
+	Mainnet KaspaNet = 0x3ddcf71d
 
-	// TestNet represents the test network.
-	TestNet KaspaNet = 0xddb8af8f
+	// Testnet represents the test network.
+	Testnet KaspaNet = 0xddb8af8f
 
-	// RegTest represents the regression test network.
-	RegTest KaspaNet = 0xf396cdd6
+	// Regtest represents the regression test network.
+	Regtest KaspaNet = 0xf396cdd6
 
-	// SimNet represents the simulation test network.
-	SimNet KaspaNet = 0x374dcf1c
+	// Simnet represents the simulation test network.
+	Simnet KaspaNet = 0x374dcf1c
 
-	// DevNet represents the development test network.
-	DevNet KaspaNet = 0x732d87e1
+	// Devnet represents the development test network.
+	Devnet KaspaNet = 0x732d87e1
 )
 
 // bnStrings is a map of kaspa networks back to their constant names for
 // pretty printing.
 var bnStrings = map[KaspaNet]string{
-	MainNet: "MainNet",
-	TestNet: "TestNet",
-	RegTest: "RegTest",
-	SimNet:  "SimNet",
-	DevNet:  "DevNet",
+	Mainnet: "Mainnet",
+	Testnet: "Testnet",
+	Regtest: "Regtest",
+	Simnet:  "Simnet",
+	Devnet:  "Devnet",
 }
 
 // String returns the KaspaNet in human-readable form.

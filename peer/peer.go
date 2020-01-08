@@ -1094,7 +1094,7 @@ func (p *Peer) writeMessage(msg wire.Message) error {
 // to send malformed messages without the peer being disconnected.
 func (p *Peer) isAllowedReadError(err error) bool {
 	// Only allow read errors in regression test mode.
-	if p.cfg.DAGParams.Net != wire.RegTest {
+	if p.cfg.DAGParams.Net != wire.Regtest {
 		return false
 	}
 
@@ -1963,7 +1963,7 @@ func newPeerBase(origCfg *Config, inbound bool) *Peer {
 
 	// Set the DAG parameters to testnet if the caller did not specify any.
 	if cfg.DAGParams == nil {
-		cfg.DAGParams = &dagconfig.TestNetParams
+		cfg.DAGParams = &dagconfig.TestnetParams
 	}
 
 	p := Peer{

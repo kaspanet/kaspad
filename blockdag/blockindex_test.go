@@ -13,7 +13,7 @@ import (
 
 func TestAncestorErrors(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
-	params := dagconfig.SimNetParams
+	params := dagconfig.SimnetParams
 	dag, teardownFunc, err := DAGSetup("TestAncestorErrors", Config{
 		DAGParams: &params,
 	})
@@ -33,7 +33,7 @@ func TestAncestorErrors(t *testing.T) {
 func TestFlushToDBErrors(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("TestFlushToDBErrors", Config{
-		DAGParams: &dagconfig.SimNetParams,
+		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
 		t.Fatalf("TestFlushToDBErrors: Failed to setup DAG instance: %s", err)

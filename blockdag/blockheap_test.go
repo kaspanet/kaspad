@@ -11,14 +11,14 @@ import (
 func TestBlockHeap(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("TestBlockHeap", Config{
-		DAGParams: &dagconfig.MainNetParams,
+		DAGParams: &dagconfig.MainnetParams,
 	})
 	if err != nil {
 		t.Fatalf("TestBlockHeap: Failed to setup DAG instance: %s", err)
 	}
 	defer teardownFunc()
 
-	block0Header := dagconfig.MainNetParams.GenesisBlock.Header
+	block0Header := dagconfig.MainnetParams.GenesisBlock.Header
 	block0, _ := dag.newBlockNode(&block0Header, newSet())
 
 	block100000Header := Block100000.Header

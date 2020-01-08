@@ -303,7 +303,7 @@ func loadConfig() (*Config, []string, error) {
 	activeConfig = &Config{
 		Flags: &cfgFlags,
 	}
-	if !(preCfg.RegressionTest || preCfg.SimNet) || preCfg.ConfigFile !=
+	if !(preCfg.RegressionTest || preCfg.Simnet) || preCfg.ConfigFile !=
 		defaultConfigFile {
 
 		if _, err := os.Stat(preCfg.ConfigFile); os.IsNotExist(err) {

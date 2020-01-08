@@ -215,7 +215,7 @@ func TestPeerConnection(t *testing.T) {
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
-		DAGParams:         &dagconfig.MainNetParams,
+		DAGParams:         &dagconfig.MainnetParams,
 		ProtocolVersion:   wire.ProtocolVersion, // Configure with older version
 		Services:          0,
 		SelectedTip:       fakeSelectedTipFn,
@@ -225,7 +225,7 @@ func TestPeerConnection(t *testing.T) {
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
-		DAGParams:         &dagconfig.MainNetParams,
+		DAGParams:         &dagconfig.MainnetParams,
 		ProtocolVersion:   wire.ProtocolVersion + 1,
 		Services:          wire.SFNodeNetwork,
 		SelectedTip:       fakeSelectedTipFn,
@@ -401,7 +401,7 @@ func TestPeerListeners(t *testing.T) {
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
-		DAGParams:         &dagconfig.MainNetParams,
+		DAGParams:         &dagconfig.MainnetParams,
 		Services:          wire.SFNodeBloom,
 		SelectedTip:       fakeSelectedTipFn,
 	}
@@ -534,7 +534,7 @@ func TestOutboundPeer(t *testing.T) {
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
-		DAGParams:         &dagconfig.MainNetParams,
+		DAGParams:         &dagconfig.MainnetParams,
 		Services:          0,
 	}
 
@@ -643,7 +643,7 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
-		DAGParams:         &dagconfig.MainNetParams,
+		DAGParams:         &dagconfig.MainnetParams,
 		Services:          0,
 		SelectedTip:       fakeSelectedTipFn,
 	}

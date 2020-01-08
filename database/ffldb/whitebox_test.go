@@ -28,7 +28,7 @@ import (
 
 var (
 	// blockDataNet is the expected network in the test block data.
-	blockDataNet = wire.MainNet
+	blockDataNet = wire.Mainnet
 
 	// blockDataFile is the path to a file containing the first 256 blocks
 	// of the block DAG.
@@ -57,7 +57,7 @@ func loadBlocks(t *testing.T, dataFile string, network wire.KaspaNet) ([]*util.B
 
 	// Set the first block as the genesis block.
 	blocks := make([]*util.Block, 0, 256)
-	genesis := util.NewBlock(dagconfig.MainNetParams.GenesisBlock)
+	genesis := util.NewBlock(dagconfig.MainnetParams.GenesisBlock)
 	blocks = append(blocks, genesis)
 
 	// Load the remaining blocks.

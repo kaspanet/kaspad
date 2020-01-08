@@ -27,7 +27,7 @@ func (sp *Peer) OnVersion(_ *peer.Peer, msg *wire.MsgVersion) {
 	// on the simulation test network since it is only intended to connect
 	// to specified peers and actively avoids advertising and connecting to
 	// discovered peers.
-	if !config.ActiveConfig().SimNet {
+	if !config.ActiveConfig().Simnet {
 		addrManager := sp.server.addrManager
 
 		// Outbound connections.

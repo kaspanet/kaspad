@@ -10,7 +10,7 @@ import (
 )
 
 func TestBlueBlockWindow(t *testing.T) {
-	params := dagconfig.SimNetParams
+	params := dagconfig.SimnetParams
 	params.K = 1
 	dag, teardownFunc, err := DAGSetup("TestBlueBlockWindow", Config{
 		DAGParams: &params,

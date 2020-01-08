@@ -21,7 +21,7 @@ import (
 )
 
 func TestNewBlockTemplate(t *testing.T) {
-	params := dagconfig.SimNetParams
+	params := dagconfig.SimnetParams
 	params.BlockCoinbaseMaturity = 0
 
 	dag, teardownFunc, err := blockdag.DAGSetup("TestNewBlockTemplate", blockdag.Config{
@@ -215,7 +215,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	gasLimitPatch.Unpatch()
 
 	if err != nil {
-		t.Errorf("NewBlockTemplate: unexpected error: %v", err)
+		t.Fatalf("NewBlockTemplate: unexpected error: %v", err)
 	}
 
 	expectedTxs := map[daghash.TxID]bool{

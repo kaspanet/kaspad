@@ -19,14 +19,14 @@ of "ffldb". The parameters the Open and Create functions take are the
 database path as a string and the block network.
 
 ```Go
-db, err := database.Open("ffldb", "path/to/database", wire.MainNet)
+db, err := database.Open("ffldb", "path/to/database", wire.Mainnet)
 if err != nil {
 	// Handle error
 }
 ```
 
 ```Go
-db, err := database.Create("ffldb", "path/to/database", wire.MainNet)
+db, err := database.Create("ffldb", "path/to/database", wire.Mainnet)
 if err != nil {
 	// Handle error
 }

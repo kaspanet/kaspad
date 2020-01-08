@@ -33,8 +33,8 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 		GenProcLimit:     s.cfg.CPUMiner.NumWorkers(),
 		HashesPerSec:     int64(s.cfg.CPUMiner.HashesPerSecond()),
 		PooledTx:         uint64(s.cfg.TxMemPool.Count()),
-		TestNet:          config.ActiveConfig().TestNet,
-		DevNet:           config.ActiveConfig().DevNet,
+		Testnet:          config.ActiveConfig().Testnet,
+		Devnet:           config.ActiveConfig().Devnet,
 	}
 	return &result, nil
 }

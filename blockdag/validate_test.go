@@ -71,7 +71,7 @@ func TestSequenceLocksActive(t *testing.T) {
 func TestCheckConnectBlockTemplate(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("checkconnectblocktemplate", Config{
-		DAGParams: &dagconfig.SimNetParams,
+		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
 		t.Errorf("Failed to setup dag instance: %v", err)
@@ -162,7 +162,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 func TestCheckBlockSanity(t *testing.T) {
 	// Create a new database and dag instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("TestCheckBlockSanity", Config{
-		DAGParams: &dagconfig.SimNetParams,
+		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
 		t.Errorf("Failed to setup dag instance: %v", err)
@@ -502,7 +502,7 @@ func TestCheckBlockSanity(t *testing.T) {
 }
 
 func TestPastMedianTime(t *testing.T) {
-	dag := newTestDAG(&dagconfig.MainNetParams)
+	dag := newTestDAG(&dagconfig.MainnetParams)
 	tip := dag.genesis
 	blockVersion := int32(0x10000000)
 
@@ -571,7 +571,7 @@ func TestPastMedianTime(t *testing.T) {
 }
 
 func TestValidateParents(t *testing.T) {
-	dag := newTestDAG(&dagconfig.SimNetParams)
+	dag := newTestDAG(&dagconfig.SimnetParams)
 	genesisNode := dag.genesis
 	blockVersion := int32(0x10000000)
 

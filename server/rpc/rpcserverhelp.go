@@ -401,8 +401,8 @@ var helpDescsEnUS = map[string]string{
 	"infoDagResult-connections":     "The number of connected peers",
 	"infoDagResult-proxy":           "The proxy used by the server",
 	"infoDagResult-difficulty":      "The current target difficulty",
-	"infoDagResult-testNet":         "Whether or not server is using testnet",
-	"infoDagResult-devNet":          "Whether or not server is using devnet",
+	"infoDagResult-testnet":         "Whether or not server is using testnet",
+	"infoDagResult-devnet":          "Whether or not server is using devnet",
 	"infoDagResult-relayFee":        "The minimum relay fee for non-free transactions in KAS/KB",
 	"infoDagResult-errors":          "Any current errors",
 
@@ -437,8 +437,8 @@ var helpDescsEnUS = map[string]string{
 	"getMiningInfoResult-genProcLimit":     "Number of processors to use for coin generation (-1 when disabled)",
 	"getMiningInfoResult-hashesPerSec":     "Recent hashes per second performance measurement while generating coins",
 	"getMiningInfoResult-pooledTx":         "Number of transactions in the memory pool",
-	"getMiningInfoResult-testNet":          "Whether or not server is using testnet",
-	"getMiningInfoResult-devNet":           "Whether or not server is using devnet",
+	"getMiningInfoResult-testnet":          "Whether or not server is using testnet",
+	"getMiningInfoResult-devnet":           "Whether or not server is using devnet",
 
 	// GetMiningInfoCmd help.
 	"getMiningInfo--synopsis": "Returns a JSON object containing mining-related information.",

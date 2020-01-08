@@ -44,7 +44,7 @@ func TestBIP0032Vectors(t *testing.T) {
 			path:        []uint32{},
 			wantPub:     "xpub661MyMwAqRbcGTTa4Jdtmttwg6yq1xoxNMPqCMT4iasLkbMDJHwHX6GGExBu9TXWSs2W7YNtQciJWhDuE2yJSDbHKSptjnBNnHMGxg5ybMW",
 			wantPriv:    "xprv9s21ZrQH143K3yP6xH6tQkxD859LcW6718UEPy3TAFLMso24kkd2yHwnPeKuxD5MyK3YvXTJsqgXVp6hdrhYNabhhgxSPNbh3N69w5WrGT1",
-			hdKeyIDPair: HDKeyPairMainNet,
+			hdKeyIDPair: HDKeyPairMainnet,
 		},
 		{
 			name:        "test vector 1 chain m/0H",
@@ -52,7 +52,7 @@ func TestBIP0032Vectors(t *testing.T) {
 			path:        []uint32{hkStart},
 			wantPub:     "xpub69KEapfQ6NaCMD2hCspTKoAv2or3Ti3Uu5mXf84w5pFskMpPvNKWyBELokM6pCz51Pjw6gLor1troP7eeUgczktnzewPcdXVh9j6aPJhfH8",
 			wantPriv:    "xprv9vKtBK8WG11u8ixE6rHSxfEBUn1Z4FKdXrqvrjfKXUitsZVFNq1GRNurxUUZ5Rhrw5MpM6nbBQJJMnA2qoQD3j2JbbG4BS594GcQsToQaiB",
-			hdKeyIDPair: HDKeyPairMainNet,
+			hdKeyIDPair: HDKeyPairMainnet,
 		},
 		{
 			name:        "test vector 1 chain m/0H/1",
@@ -60,7 +60,7 @@ func TestBIP0032Vectors(t *testing.T) {
 			path:        []uint32{hkStart, 1},
 			wantPub:     "xpub6AjVQFnusUq1NAzf6s5HAfHnxPZAaXNvCD2dxb5mr68GYMYSTBsGYL1sqe1NERKsdZPA2CQeASih53Ms3XXQgwagHCVCM8jwvMTsrdBTUsi",
 			wantPriv:    "xprv9wk8zkG237Gi9gvBzqYGoXM4QMigB4f4pz73ACgAHkbHfZDHueZ1zXhPzMWScvVYsHvckXUViA3BfUiKiyTJuRnbWEkKCD1LNvzYQkjzAg6",
-			hdKeyIDPair: HDKeyPairMainNet,
+			hdKeyIDPair: HDKeyPairMainnet,
 		},
 		{
 			name:        "test vector 1 chain m/0H/1/2H",
@@ -68,7 +68,7 @@ func TestBIP0032Vectors(t *testing.T) {
 			path:        []uint32{hkStart, 1, hkStart + 2},
 			wantPub:     "xpub6BqBypWNhDSbEmsBUrkmQhBfpxAQN4HvStjopj7pdQSTHcG5z5yQhxR2qYQQa4J3FAfjK5nzPocGKzkjWxtEKDL5Gom4rfWkqxzR26QnsSk",
 			wantPriv:    "xprv9xqqaJyUrqtJ2HniNqDm3ZEwGvKuxba55fpD2LiD54uUQovwSYfAAA6YzHAPgpojwoc4webEpkbhyzrq6xKY18HrfZYbTb5F1ZchyoNTSJh",
-			hdKeyIDPair: HDKeyPairMainNet,
+			hdKeyIDPair: HDKeyPairMainnet,
 		},
 		{
 			name:        "test vector 1 chain m/0H/1/2H/2",
@@ -76,7 +76,7 @@ func TestBIP0032Vectors(t *testing.T) {
 			path:        []uint32{hkStart, 1, hkStart + 2, 2},
 			wantPub:     "xpub6EgqrrZKS9A48mXpZtsWQ57Evxzt3sPHwP41p3TmqynQABtGcspvs1ivvHTiQWnuarDsCBPvMK6hf3rnqefXkVTtcs1JZdYSrL5WFtmm92b",
 			wantPriv:    "xprvA1hVTM2RbmbkvHTMTsLW2wAWNwAPeQfSaA8R1f4AHeFRHPZ85LWgKDQT53tf7QeCfrh679CxyJZSasHJHJg6Tqed8qo4gTDmapTY9RQEQLJ",
-			hdKeyIDPair: HDKeyPairMainNet,
+			hdKeyIDPair: HDKeyPairMainnet,
 		},
 		{
 			name:        "test vector 1 chain m/0H/1/2H/2/1000000000",
@@ -84,7 +84,7 @@ func TestBIP0032Vectors(t *testing.T) {
 			path:        []uint32{hkStart, 1, hkStart + 2, 2, 1000000000},
 			wantPub:     "xpub6HJ4G6aN3TxzUM7jp992qnKyJR3eSwvPAL2YASqBmR3GnoxUGFjZWdCv8ZfuY3XxkJiq4ukTdfzMDLDrcSGL9QE51a6pWSNFi579DEGbdqQ",
 			wantPriv:    "xprvA4Jhrb3UD6QhFs3Gi7c2UePEkPDA3VCXo76wN4RaD5WHv1dKiiRJxptSHJYEBqf9DnhBy5Acj9ECL2Fi3vcr78ivPMes5qoELfw9xuENti1",
-			hdKeyIDPair: HDKeyPairMainNet,
+			hdKeyIDPair: HDKeyPairMainnet,
 		},
 
 		// Test vector 2
@@ -94,7 +94,7 @@ func TestBIP0032Vectors(t *testing.T) {
 			path:        []uint32{},
 			wantPub:     "xpub661MyMwAqRbcGgMhBVBjF9Nmm7gem3XyVKNwpxEUVoreyzfksY8hvVjTHvxgNw5fZznRPrGE9xf1WR2vHkBB3Gc8oBDpiaC2vScCKGcdA1d",
 			wantPriv:    "xprv9s21ZrQH143K4CHE5Teit1S3D5rAMap886TM2ZprwUKg7CLcKzpTNhQySeBnY7R7LL6kZyZPjHGkc9ouLY4Dhy6e9UFP2KJ6j3TiBXACRSB",
-			hdKeyIDPair: HDKeyPairMainNet,
+			hdKeyIDPair: HDKeyPairMainnet,
 		},
 		{
 			name:        "test vector 2 chain m/0",
@@ -102,7 +102,7 @@ func TestBIP0032Vectors(t *testing.T) {
 			path:        []uint32{0},
 			wantPub:     "xpub6912QQoTAjwVLJiaMFhPbu4maaaieUN2FQrSWCYSBtBSeM5yd6eK7pCFFHXLUPeh6iAaGR6ErHjJ8x2VKW7F4Htu9iVWzAtvj88UQKNvxj6",
 			wantPriv:    "xprv9v1fzuGZLNPC7pe7FEAPEm832YkEF1eAtBvqhp8pdYeTmYkq5ZL4a1smPzv3LKVArYkYvPgLgP947tJmH38NqCWcpkzNbXvQ9joq6FQePaw",
-			hdKeyIDPair: HDKeyPairMainNet,
+			hdKeyIDPair: HDKeyPairMainnet,
 		},
 		{
 			name:        "test vector 2 chain m/0/2147483647H",
@@ -110,7 +110,7 @@ func TestBIP0032Vectors(t *testing.T) {
 			path:        []uint32{0, hkStart + 2147483647},
 			wantPub:     "xpub6B9QvMX5vvu5y1aEfyJHpPymeL81y9cdU3eo8EA55ftMuqaJG6HNaznyxDXX1WaQPWQjRahRz5VsGNtJRRWTkhtxgKHCm4PhTsrYz11cdm7",
 			wantPriv:    "xprv9xA4WqzC6ZLnkXVmZwmHTG336JHXZgtn6pjCKqkTXLMP33F9iYy83CUW6ySkBGQtHhBGqZpqzStP5C3Xq5rvqNrhPCuPEsqUXPNQnTKyiax",
-			hdKeyIDPair: HDKeyPairMainNet,
+			hdKeyIDPair: HDKeyPairMainnet,
 		},
 		{
 			name:        "test vector 2 chain m/0/2147483647H/1",
@@ -118,7 +118,7 @@ func TestBIP0032Vectors(t *testing.T) {
 			path:        []uint32{0, hkStart + 2147483647, 1},
 			wantPub:     "xpub6CPAoCUuVd4VKDE39r1aGoRndRdBqD9QXWXt4hYxKWDznaR1nJXgjbnb5DQNmzYt83SmvCe9zmGXWRwi1M5rqCUkwNDLsjc4jUJcjqbKgSW",
 			wantPriv:    "xprv9yPpPgx1fFWC6j9a3pUZufV45PnhRkRZAHcHGK9LmAh1un5sEmDSBoU7DwtYAvgsUoewLkJRhXhWZjxJ6TuPDSL3tXSuAkz3nFEw83F9PNX",
-			hdKeyIDPair: HDKeyPairMainNet,
+			hdKeyIDPair: HDKeyPairMainnet,
 		},
 		{
 			name:        "test vector 2 chain m/0/2147483647H/1/2147483646H",
@@ -126,7 +126,7 @@ func TestBIP0032Vectors(t *testing.T) {
 			path:        []uint32{0, hkStart + 2147483647, 1, hkStart + 2147483646},
 			wantPub:     "xpub6EGnnakCt69xbT83sUN5BhrRr933BtTd4cMUiqzyrkRWkNhnKeMifJN1G9gjbART8QA86KxyYSijp9DpEi12oFnznwS7H1vFjGVcta65Ru1",
 			wantPriv:    "xprvA1HSP5DK3ibfNy3amSq4pZuhJ7CYnRjmhPRsvTbNJQtXsaNdn73U7W3XQszDCEKwRrgGTSe8R2nFcTje7eBeyP9V8264EHeuvt8mXLbdQWQ",
-			hdKeyIDPair: HDKeyPairMainNet,
+			hdKeyIDPair: HDKeyPairMainnet,
 		},
 		{
 			name:        "test vector 2 chain m/0/2147483647H/1/2147483646H/2",
@@ -134,7 +134,7 @@ func TestBIP0032Vectors(t *testing.T) {
 			path:        []uint32{0, hkStart + 2147483647, 1, hkStart + 2147483646, 2},
 			wantPub:     "xpub6GyY8YKU9JoxnwgqbusBYvJByXBiY2FWE2HMrXQDunVs61Rr5ojSBkeLxwnsQ9mMkMY1JVvRdMtoY5KHSwv8jWypeFX5tWzkhiH4qj5xEhr",
 			wantPriv:    "xprvA3zBj2naJwFfaTcNVtLBBnMTRVME8ZXeroMm48zcMSxtDD6hYGRBdxKs7e1j3oih75fyXXkPLPcCoBt6GmfdgZQqTw3Zt7i18j1CTQnDCYs",
-			hdKeyIDPair: HDKeyPairMainNet,
+			hdKeyIDPair: HDKeyPairMainnet,
 		},
 
 		// Test vector 3
@@ -144,7 +144,7 @@ func TestBIP0032Vectors(t *testing.T) {
 			path:        []uint32{},
 			wantPub:     "xpub661MyMwAqRbcH1Qh3yC3Zk1eESmJ1QpoXt8HK2h3MTA5QTMsKYD4guWkaqDdrmiHFRssCPRaUA9CD2tXhNtmN1aT7eV18q8BoExXbo4mEtZ",
 			wantPriv:    "xprv9s21ZrQH143K4XLDwwf3Cc4ugQvobx6xAfCgWeHRo7d6Xf2imztp97CGjX9Yu7gpv9tfoNNx99bEUTkinzeXKrdafDkuhqwK5TeViwMWZ6i",
-			hdKeyIDPair: HDKeyPairMainNet,
+			hdKeyIDPair: HDKeyPairMainnet,
 		},
 		{
 			name:        "test vector 3 chain m/0H",
@@ -152,7 +152,7 @@ func TestBIP0032Vectors(t *testing.T) {
 			path:        []uint32{hkStart},
 			wantPub:     "xpub68sNRZc1xTrER4A1q2buYUQyfaRMv8FgXDvR2xQhtEhCzVMaFoXbquRd5JPfCQv3dN48d7Cuq3fCdTXzrxXZxbZoEwhBAz6xKwFUc3vRgg4",
 			wantPriv:    "xprv9ut2245886HwCa5Yj14uBLUF7YasWfXq9zzpEa16KuAE7h2RiGDMJ779E4cv62x55XQNiZ4jaUbes1G9nYoBKAE8b6Ud8mrhABo9fxLRuad",
-			hdKeyIDPair: HDKeyPairMainNet,
+			hdKeyIDPair: HDKeyPairMainnet,
 		},
 
 		// Test vector 1 - Testnet
@@ -162,7 +162,7 @@ func TestBIP0032Vectors(t *testing.T) {
 			path:        []uint32{},
 			wantPub:     "tpubD6NzVbkrYhZ4YFeRWVcyypEK1E5V1MK1uyz8YuWD4VdEVt1vNWnNfXw6UzGgfxUkEmZQj7tkwiYMCsiWctpYKf3aP3aCRJqcNEwgienHE4w",
 			wantPriv:    "tprv8ZgxMBicQKsPencdcqxPaQaCSCZYr287LgPMGPTueDpqfPm9k7xnV3KEJpVZxaTgLkaKvd553CGKxfeSm53VBdsJELAk3jKjxTqaNj93jhF",
-			hdKeyIDPair: HDKeyPairTestNet,
+			hdKeyIDPair: HDKeyPairTestnet,
 		},
 		{
 			name:        "test vector 1 chain m/0H - testnet",
@@ -170,7 +170,7 @@ func TestBIP0032Vectors(t *testing.T) {
 			path:        []uint32{hkStart},
 			wantPub:     "tpubD9gs74V5oeXed1DYf4oYXiWHMvwhT6YYSiMq1g85Rj1mVeV6zbAc7cuB3nRtLhwJoJGqiFrgP7iuVZcG3LXrtCM64FghJABjH7KWLRMoCvo",
 			wantPriv:    "tprv8czpxeSqfGqyjYBkmR8x8JrAnuRmHmMdsQm3jA5n1TDNfAELNCM1w8HJseeD5o6BJWtbMCQMLkt6pdhmy1k9rnHu8EUMqnoByNMqKA1yKAG",
-			hdKeyIDPair: HDKeyPairTestNet,
+			hdKeyIDPair: HDKeyPairTestnet,
 		},
 		{
 			name:        "test vector 1 chain m/0H/1 - testnet",
@@ -178,7 +178,7 @@ func TestBIP0032Vectors(t *testing.T) {
 			path:        []uint32{hkStart, 1},
 			wantPub:     "tpubDB77vVcbaknTdyBWZ44NNadAHWepZusyjqcwK98vBztAHeD9XQiMgmgi5g69kvH7RTv4dmvWhYYjmDrUSPNeaP2yLoEW2fQBWK4HceSHWLM",
 			wantPriv:    "tprv8eR5n5aMSP6nkW9ifQPmyAy3iV8tQah5AY2A2d6cmj5mT9xNu1tmWH4quXg6dHssEjTPkd6FsWcz8LG4rBoFiV4C2sxcrZjPJ2jxrRiSdSz",
-			hdKeyIDPair: HDKeyPairTestNet,
+			hdKeyIDPair: HDKeyPairTestnet,
 		},
 		{
 			name:        "test vector 1 chain m/0H/1/2H - testnet",
@@ -186,7 +186,7 @@ func TestBIP0032Vectors(t *testing.T) {
 			path:        []uint32{hkStart, 1, hkStart + 2},
 			wantPub:     "tpubDCCpW4L4QVQ3Wa42w3jrccX3A5G4MSnyzXL7BHAxyKCM2tvo4JpVrQ5s5aVC6ZFH35CdvfJrvuSK2BFLupjUCenNLQWNYCAzRvapn4MGur7",
 			wantPriv:    "tprv8fWnMeHpG7iNd72F3Q5GDCrvb3k8C7c5RDjKtm8fZ3PxCQg2RuzufuTzuTL3hCC4KF8qwkCzz7BWSrQaEAfUpBZTCCku7woHvfN8RSEDVA8",
-			hdKeyIDPair: HDKeyPairTestNet,
+			hdKeyIDPair: HDKeyPairTestnet,
 		},
 		{
 			name:        "test vector 1 chain m/0H/1/2H/2 - testnet",
@@ -194,7 +194,7 @@ func TestBIP0032Vectors(t *testing.T) {
 			path:        []uint32{hkStart, 1, hkStart + 2, 2},
 			wantPub:     "tpubDF4UP6P19R7WQZig25rbbzScG66Y3FtMV1eKAbWvBtYHuUYyh6g21TPmAKYVw1k9NkkmokuntQvkMEMQEWWmdvvBgTkcFACgSHfv1ze714s",
 			wantPriv:    "tprv8iNSEgLm13RqX6gt8SC1CanVh4absvhSui3Xt5Ucmcju4zJD4hrRpxmtzE4K7n2X3JDs7Epj8f9F3iq3QX23GtvDfV1NLowpVvCxb7VMUpG",
-			hdKeyIDPair: HDKeyPairTestNet,
+			hdKeyIDPair: HDKeyPairTestnet,
 		},
 		{
 			name:        "test vector 1 chain m/0H/1/2H/2/1000000000 - testnet",
@@ -202,7 +202,7 @@ func TestBIP0032Vectors(t *testing.T) {
 			path:        []uint32{hkStart, 1, hkStart + 2, 2, 1000000000},
 			wantPub:     "tpubDHfgnLQ3kjvSk9JbGL883hfLdY9JSLRShxcqWztL7KoAY6dBLUaef4skNbkh4YVCYDFjgVGLAmpPuWiU1J7a2qgN5Ar8By2VJ2hYyEPjRX2",
 			wantPriv:    "tprv8kyedvMocNEmrgGoNgTXeJ1E4WdNH1EY8f24EUr2h3zmhcNQi5m4UaFtCUhtCD3TbEDxyAnNtVoznsoTB8xnvBzWuzsAkCXHFmgaQbL7CbH",
-			hdKeyIDPair: HDKeyPairTestNet,
+			hdKeyIDPair: HDKeyPairTestnet,
 		},
 	}
 
@@ -679,8 +679,8 @@ func TestNet(t *testing.T) {
 		{
 			name:            "mainnet -> simnet",
 			key:             "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi",
-			origHDKeyIDPair: HDKeyPairMainNet,
-			newHDKeyIDPair:  HDKeyPairSimNet,
+			origHDKeyIDPair: HDKeyPairMainnet,
+			newHDKeyIDPair:  HDKeyPairSimnet,
 			newPriv:         "sprv8Erh3X3hFeKunvVdAGQQtambRPapECWiTDtvsTGdyrhzhbYgnSZajRRWbihzvq4AM4ivm6uso31VfKaukwJJUs3GYihXP8ebhMb3F2AHu3P",
 			newPub:          "spub4Tr3T2ab61tD1Qa6GHwRFiiKyRRJdfEZpSpXfqgFYCEyaPsqKysqHDjzSzMJSiUEGbcsG3w2SLMoTqn44B8x6u3MLRRkYfACTUBnHK79THk",
 			isPrivate:       true,
@@ -688,8 +688,8 @@ func TestNet(t *testing.T) {
 		{
 			name:            "simnet -> mainnet",
 			key:             "sprv8Erh3X3hFeKunvVdAGQQtambRPapECWiTDtvsTGdyrhzhbYgnSZajRRWbihzvq4AM4ivm6uso31VfKaukwJJUs3GYihXP8ebhMb3F2AHu3P",
-			origHDKeyIDPair: HDKeyPairSimNet,
-			newHDKeyIDPair:  HDKeyPairMainNet,
+			origHDKeyIDPair: HDKeyPairSimnet,
+			newHDKeyIDPair:  HDKeyPairMainnet,
 			newPriv:         "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi",
 			newPub:          "xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8",
 			isPrivate:       true,
@@ -697,7 +697,7 @@ func TestNet(t *testing.T) {
 		{
 			name:            "mainnet -> regtest",
 			key:             "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi",
-			origHDKeyIDPair: HDKeyPairMainNet,
+			origHDKeyIDPair: HDKeyPairMainnet,
 			newHDKeyIDPair:  HDKeyPairRegressionNet,
 			newPriv:         "tprv8ZgxMBicQKsPeDgjzdC36fs6bMjGApWDNLR9erAXMs5skhMv36j9MV5ecvfavji5khqjWaWSFhN3YcCUUdiKH6isR4Pwy3U5y5egddBr16m",
 			newPub:          "tpubD6NzVbkrYhZ4XgiXtGrdW5XDAPFCL9h7we1vwNCpn8tGbBcgfVYjXyhWo4E1xkh56hjod1RhGjxbaTLV3X4FyWuejifB9jusQ46QzG87VKp",
@@ -707,7 +707,7 @@ func TestNet(t *testing.T) {
 			name:            "regtest -> mainnet",
 			key:             "tprv8ZgxMBicQKsPeDgjzdC36fs6bMjGApWDNLR9erAXMs5skhMv36j9MV5ecvfavji5khqjWaWSFhN3YcCUUdiKH6isR4Pwy3U5y5egddBr16m",
 			origHDKeyIDPair: HDKeyPairRegressionNet,
-			newHDKeyIDPair:  HDKeyPairMainNet,
+			newHDKeyIDPair:  HDKeyPairMainnet,
 			newPriv:         "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi",
 			newPub:          "xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8",
 			isPrivate:       true,
@@ -717,23 +717,23 @@ func TestNet(t *testing.T) {
 		{
 			name:            "mainnet -> simnet",
 			key:             "xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8",
-			origHDKeyIDPair: HDKeyPairMainNet,
-			newHDKeyIDPair:  HDKeyPairSimNet,
+			origHDKeyIDPair: HDKeyPairMainnet,
+			newHDKeyIDPair:  HDKeyPairSimnet,
 			newPub:          "spub4Tr3T2ab61tD1Qa6GHwRFiiKyRRJdfEZpSpXfqgFYCEyaPsqKysqHDjzSzMJSiUEGbcsG3w2SLMoTqn44B8x6u3MLRRkYfACTUBnHK79THk",
 			isPrivate:       false,
 		},
 		{
 			name:            "simnet -> mainnet",
 			key:             "spub4Tr3T2ab61tD1Qa6GHwRFiiKyRRJdfEZpSpXfqgFYCEyaPsqKysqHDjzSzMJSiUEGbcsG3w2SLMoTqn44B8x6u3MLRRkYfACTUBnHK79THk",
-			origHDKeyIDPair: HDKeyPairSimNet,
-			newHDKeyIDPair:  HDKeyPairMainNet,
+			origHDKeyIDPair: HDKeyPairSimnet,
+			newHDKeyIDPair:  HDKeyPairMainnet,
 			newPub:          "xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8",
 			isPrivate:       false,
 		},
 		{
 			name:            "mainnet -> regtest",
 			key:             "xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8",
-			origHDKeyIDPair: HDKeyPairMainNet,
+			origHDKeyIDPair: HDKeyPairMainnet,
 			newHDKeyIDPair:  HDKeyPairRegressionNet,
 			newPub:          "tpubD6NzVbkrYhZ4XgiXtGrdW5XDAPFCL9h7we1vwNCpn8tGbBcgfVYjXyhWo4E1xkh56hjod1RhGjxbaTLV3X4FyWuejifB9jusQ46QzG87VKp",
 			isPrivate:       false,
@@ -742,7 +742,7 @@ func TestNet(t *testing.T) {
 			name:            "regtest -> mainnet",
 			key:             "tpubD6NzVbkrYhZ4XgiXtGrdW5XDAPFCL9h7we1vwNCpn8tGbBcgfVYjXyhWo4E1xkh56hjod1RhGjxbaTLV3X4FyWuejifB9jusQ46QzG87VKp",
 			origHDKeyIDPair: HDKeyPairRegressionNet,
-			newHDKeyIDPair:  HDKeyPairMainNet,
+			newHDKeyIDPair:  HDKeyPairMainnet,
 			newPub:          "xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8",
 			isPrivate:       false,
 		},
@@ -802,7 +802,7 @@ func TestNet(t *testing.T) {
 // the errors are handled properly.
 func TestErrors(t *testing.T) {
 	// Should get an error when seed has too few bytes.
-	hdKeyIDPair := HDKeyPairMainNet
+	hdKeyIDPair := HDKeyPairMainnet
 	_, err := NewMaster(bytes.Repeat([]byte{0x00}, 15), hdKeyIDPair.PrivateKeyID)
 	if err != ErrInvalidSeedLen {
 		t.Fatalf("NewMaster: mismatched error -- got: %v, want: %v",
@@ -903,7 +903,7 @@ func TestZero(t *testing.T) {
 			name:        "test vector 1 chain m",
 			master:      "000102030405060708090a0b0c0d0e0f",
 			extKey:      "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi",
-			hdKeyIDPair: HDKeyPairMainNet,
+			hdKeyIDPair: HDKeyPairMainnet,
 		},
 
 		// Test vector 2
@@ -911,7 +911,7 @@ func TestZero(t *testing.T) {
 			name:        "test vector 2 chain m",
 			master:      "fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c999693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542",
 			extKey:      "xprv9s21ZrQH143K31xYSDQpPDxsXRTUcvj2iNHm5NUtrGiGG5e2DtALGdso3pGz6ssrdK4PFmM8NSpSBHNqPqm55Qn3LqFtT2emdEXVYsCzC2U",
-			hdKeyIDPair: HDKeyPairMainNet,
+			hdKeyIDPair: HDKeyPairMainnet,
 		},
 	}
 
@@ -1042,7 +1042,7 @@ func TestZero(t *testing.T) {
 // uint8 to encode the depth. This implicitly bounds the depth of the tree to
 // 255 derivations. Here we test that an error is returned after 'max uint8'.
 func TestMaximumDepth(t *testing.T) {
-	extKey, err := NewMaster([]byte(`abcd1234abcd1234abcd1234abcd1234`), HDKeyPairMainNet.PrivateKeyID)
+	extKey, err := NewMaster([]byte(`abcd1234abcd1234abcd1234abcd1234`), HDKeyPairMainnet.PrivateKeyID)
 	if err != nil {
 		t.Fatalf("NewMaster: unexpected error: %v", err)
 	}

@@ -22,7 +22,7 @@ func TestIPTypes(t *testing.T) {
 		return &config.Config{
 			Flags: &config.Flags{
 				NetworkFlags: config.NetworkFlags{
-					ActiveNetParams: &dagconfig.SimNetParams},
+					ActiveNetParams: &dagconfig.SimnetParams},
 			},
 		}
 	})
@@ -162,7 +162,7 @@ func TestGroupKey(t *testing.T) {
 		return &config.Config{
 			Flags: &config.Flags{
 				NetworkFlags: config.NetworkFlags{
-					ActiveNetParams: &dagconfig.SimNetParams},
+					ActiveNetParams: &dagconfig.SimnetParams},
 			},
 		}
 	})

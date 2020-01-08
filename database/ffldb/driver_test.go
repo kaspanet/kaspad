@@ -171,8 +171,8 @@ func TestPersistence(t *testing.T) {
 		"b1key2": "foo2",
 		"b1key3": "foo3",
 	}
-	genesisBlock := util.NewBlock(dagconfig.MainNetParams.GenesisBlock)
-	genesisHash := dagconfig.MainNetParams.GenesisHash
+	genesisBlock := util.NewBlock(dagconfig.MainnetParams.GenesisBlock)
+	genesisHash := dagconfig.MainnetParams.GenesisHash
 	err = db.Update(func(dbTx database.Tx) error {
 		metadataBucket := dbTx.Metadata()
 		if metadataBucket == nil {

@@ -79,7 +79,7 @@ func TestCalcWork(t *testing.T) {
 }
 
 func TestDifficulty(t *testing.T) {
-	params := dagconfig.SimNetParams
+	params := dagconfig.SimnetParams
 	params.K = 1
 	params.DifficultyAdjustmentWindowSize = 264
 	dag, teardownFunc, err := DAGSetup("TestDifficulty", Config{

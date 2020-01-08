@@ -13,7 +13,7 @@ import (
 
 func TestProcessBlock(t *testing.T) {
 	dag, teardownFunc, err := DAGSetup("TestProcessBlock", Config{
-		DAGParams: &dagconfig.SimNetParams,
+		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
 		t.Errorf("Failed to setup dag instance: %v", err)
@@ -61,8 +61,8 @@ func TestProcessBlock(t *testing.T) {
 		t.Errorf("ProcessBlock: Didn't expected checkBlockSanity to be called")
 	}
 
-	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(dagconfig.SimNetParams.GenesisBlock), BFNone)
-	expectedErrMsg := fmt.Sprintf("already have block %s", dagconfig.SimNetParams.GenesisHash)
+	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(dagconfig.SimnetParams.GenesisBlock), BFNone)
+	expectedErrMsg := fmt.Sprintf("already have block %s", dagconfig.SimnetParams.GenesisHash)
 	if err == nil || err.Error() != expectedErrMsg {
 		t.Errorf("ProcessBlock: Expected error \"%s\" but got \"%s\"", expectedErrMsg, err)
 	}
@@ -70,7 +70,7 @@ func TestProcessBlock(t *testing.T) {
 
 func TestProcessOrphans(t *testing.T) {
 	dag, teardownFunc, err := DAGSetup("TestProcessOrphans", Config{
-		DAGParams: &dagconfig.SimNetParams,
+		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
 		t.Errorf("Failed to setup dag instance: %v", err)

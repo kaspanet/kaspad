@@ -34,7 +34,7 @@ func main() {
 }
 
 func generateBlocks(out *os.File, numBlocks int) {
-	lastBlock := dagconfig.MainNetParams.GenesisBlock
+	lastBlock := dagconfig.MainnetParams.GenesisBlock
 
 	for i := 0; i < numBlocks; i++ {
 		lastBlock = generateBlock(lastBlock)
@@ -81,7 +81,7 @@ func writeBlock(out *os.File, block *wire.MsgBlock) {
 }
 
 func writeNet(out *os.File) {
-	err := binary.Write(out, binary.LittleEndian, wire.MainNet)
+	err := binary.Write(out, binary.LittleEndian, wire.Mainnet)
 	if err != nil {
 		panic(errors.Errorf("error writing net to file: %s", err))
 	}

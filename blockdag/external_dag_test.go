@@ -37,7 +37,7 @@ import (
 // gets rejected because it doesn't have the last finality point in
 // its selected parent chain.
 func TestFinality(t *testing.T) {
-	params := dagconfig.SimNetParams
+	params := dagconfig.SimnetParams
 	params.K = 1
 	params.FinalityInterval = 100
 	dag, teardownFunc, err := blockdag.DAGSetup("TestFinality", blockdag.Config{
@@ -167,15 +167,15 @@ func TestFinality(t *testing.T) {
 // a getblocks message it should always be able to send
 // all the necessary invs.
 func TestFinalityInterval(t *testing.T) {
-	params := dagconfig.SimNetParams
+	params := dagconfig.SimnetParams
 	if params.FinalityInterval > wire.MaxInvPerMsg {
-		t.Errorf("dagconfig.SimNetParams.FinalityInterval should be lower or equal to wire.MaxInvPerMsg")
+		t.Errorf("dagconfig.SimnetParams.FinalityInterval should be lower or equal to wire.MaxInvPerMsg")
 	}
 }
 
 // TestSubnetworkRegistry tests the full subnetwork registry flow
 func TestSubnetworkRegistry(t *testing.T) {
-	params := dagconfig.SimNetParams
+	params := dagconfig.SimnetParams
 	params.K = 1
 	params.BlockCoinbaseMaturity = 0
 	dag, teardownFunc, err := blockdag.DAGSetup("TestSubnetworkRegistry", blockdag.Config{
@@ -201,7 +201,7 @@ func TestSubnetworkRegistry(t *testing.T) {
 }
 
 func TestChainedTransactions(t *testing.T) {
-	params := dagconfig.SimNetParams
+	params := dagconfig.SimnetParams
 	params.BlockCoinbaseMaturity = 0
 	// Create a new database and dag instance to run tests against.
 	dag, teardownFunc, err := blockdag.DAGSetup("TestChainedTransactions", blockdag.Config{
@@ -319,7 +319,7 @@ func TestChainedTransactions(t *testing.T) {
 // before txB.
 func TestOrderInDiffFromAcceptanceData(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
-	params := dagconfig.SimNetParams
+	params := dagconfig.SimnetParams
 	params.K = math.MaxUint32
 	dag, teardownFunc, err := blockdag.DAGSetup("TestOrderInDiffFromAcceptanceData", blockdag.Config{
 		DAGParams: &params,
@@ -388,7 +388,7 @@ func TestOrderInDiffFromAcceptanceData(t *testing.T) {
 
 // TestGasLimit tests the gas limit rules
 func TestGasLimit(t *testing.T) {
-	params := dagconfig.SimNetParams
+	params := dagconfig.SimnetParams
 	params.K = 1
 	params.BlockCoinbaseMaturity = 0
 	dag, teardownFunc, err := blockdag.DAGSetup("TestSubnetworkRegistry", blockdag.Config{
