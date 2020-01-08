@@ -664,8 +664,8 @@ func TestExtendedKeyAPI(t *testing.T) {
 	}
 }
 
-// Testnet ensures the network related APIs work as intended.
-func Testnet(t *testing.T) {
+// TestNet ensures the network related APIs work as intended.
+func TestNet(t *testing.T) {
 	tests := []struct {
 		name            string
 		key             string
