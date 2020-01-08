@@ -47,7 +47,7 @@ var (
 	devNetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
 )
 
-const phantomK = 10
+const ghostdagK = 10
 const difficultyAdjustmentWindowSize = 2640
 const timestampDeviationTolerance = 132
 
@@ -180,7 +180,7 @@ type Params struct {
 
 // MainNetParams defines the network parameters for the main Kaspa network.
 var MainNetParams = Params{
-	K:           phantomK,
+	K:           ghostdagK,
 	Name:        "mainnet",
 	Net:         wire.MainNet,
 	RPCPort:     "16110",
@@ -238,7 +238,7 @@ var MainNetParams = Params{
 // Kaspa network. Not to be confused with the test Kaspa network (version
 // 3), this network is sometimes simply called "testnet".
 var RegressionNetParams = Params{
-	K:           phantomK,
+	K:           ghostdagK,
 	Name:        "regtest",
 	Net:         wire.RegTest,
 	RPCPort:     "16210",
@@ -294,7 +294,7 @@ var RegressionNetParams = Params{
 
 // TestNetParams defines the network parameters for the test Kaspa network.
 var TestNetParams = Params{
-	K:           phantomK,
+	K:           ghostdagK,
 	Name:        "testnet",
 	Net:         wire.TestNet,
 	RPCPort:     "16210",
@@ -356,7 +356,7 @@ var TestNetParams = Params{
 // following normal discovery rules. This is important as otherwise it would
 // just turn into another public testnet.
 var SimNetParams = Params{
-	K:           phantomK,
+	K:           ghostdagK,
 	Name:        "simnet",
 	Net:         wire.SimNet,
 	RPCPort:     "16510",
@@ -410,7 +410,7 @@ var SimNetParams = Params{
 
 // DevNetParams defines the network parameters for the development Kaspa network.
 var DevNetParams = Params{
-	K:           phantomK,
+	K:           ghostdagK,
 	Name:        "devnet",
 	Net:         wire.DevNet,
 	RPCPort:     "16610",

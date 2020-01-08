@@ -181,7 +181,7 @@ func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (
 		}
 		parents.add(parent)
 	}
-	virtual := newVirtualBlock(parents, dag.dagParams.K)
+	virtual := newVirtualBlock(dag, parents)
 
 	pastUTXO, _, err := dag.pastUTXO(&virtual.blockNode)
 	if err != nil {
@@ -251,3 +251,61 @@ func LoadBlocks(filename string) (blocks []*util.Block, err error) {
 
 	return
 }
+
+// opTrueAddress returns an address pointing to a P2SH anyone-can-spend script
+func opTrueAddress(prefix util.Bech32Prefix) (util.Address, error) {
+	return util.NewAddressScriptHash(OpTrueScript, prefix)
+}
+
+// PrepareBlockForTest generates a block with the proper merkle roots, coinbase transaction etc. This function is used for test purposes only
+func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*wire.MsgTx) (*wire.MsgBlock, error) {
+	newVirtual, err := GetVirtualFromParentsForTest(dag, parentHashes)
+	if err != nil {
+		return nil, err
+	}
+	oldVirtual := SetVirtualForTest(dag, newVirtual)
+	defer SetVirtualForTest(dag, oldVirtual)
+
+	OpTrueAddr, err := opTrueAddress(dag.dagParams.Prefix)
+	if err != nil {
+		return nil, err
+	}
+
+	blockTransactions := make([]*util.Tx, len(transactions)+1)
+
+	extraNonce := generateDeterministicExtraNonceForTest()
+	coinbasePayloadExtraData, err := CoinbasePayloadExtraData(extraNonce, "")
+	if err != nil {
+		return nil, err
+	}
+
+	blockTransactions[0], err = dag.NextCoinbaseFromAddress(OpTrueAddr, coinbasePayloadExtraData)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, tx := range transactions {
+		blockTransactions[i+1] = util.NewTx(tx)
+	}
+
+	block, err := dag.BlockForMining(blockTransactions)
+	if err != nil {
+		return nil, err
+	}
+	block.Header.Timestamp = dag.NextBlockMinimumTime()
+	block.Header.Bits = dag.NextRequiredDifficulty(block.Header.Timestamp)
+
+	return block, nil
+}
+
+// generateDeterministicExtraNonceForTest returns a unique deterministic extra nonce for coinbase data, in order to create unique coinbase transactions.
+func generateDeterministicExtraNonceForTest() uint64 {
+	extraNonceForTest++
+	return extraNonceForTest
+}
+
+func resetExtraNonceForTest() {
+	extraNonceForTest = 0
+}
+
+var extraNonceForTest = uint64(0)

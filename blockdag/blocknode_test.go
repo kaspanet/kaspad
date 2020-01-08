@@ -1,85 +1,96 @@
 package blockdag
 
 import (
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/wire"
 	"testing"
 )
 
 func TestChainHeight(t *testing.T) {
-	phantomK := uint32(2)
-	buildNode := buildNodeGenerator(phantomK, true)
+	// Create a new database and DAG instance to run tests against.
+	params := dagconfig.SimNetParams
+	params.K = 2
+	dag, teardownFunc, err := DAGSetup("TestChainHeight", Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("TestChainHeight: Failed to setup DAG instance: %s", err)
+	}
+	defer teardownFunc()
 
-	node0 := buildNode(setFromSlice())
-	node1 := buildNode(setFromSlice(node0))
-	node2 := buildNode(setFromSlice(node0))
-	node3 := buildNode(setFromSlice(node0))
-	node4 := buildNode(setFromSlice(node1, node2, node3))
-	node5 := buildNode(setFromSlice(node1, node2, node3))
-	node6 := buildNode(setFromSlice(node1, node2, node3))
-	node7 := buildNode(setFromSlice(node0))
-	node8 := buildNode(setFromSlice(node7))
-	node9 := buildNode(setFromSlice(node8))
-	node10 := buildNode(setFromSlice(node9, node6))
+	block0 := dag.dagParams.GenesisBlock
+	block1 := prepareAndProcessBlock(t, dag, block0)
+	block2 := prepareAndProcessBlock(t, dag, block0)
+	block3 := prepareAndProcessBlock(t, dag, block0)
+	block4 := prepareAndProcessBlock(t, dag, block1, block2, block3)
+	block5 := prepareAndProcessBlock(t, dag, block1, block2, block3)
+	block6 := prepareAndProcessBlock(t, dag, block1, block2, block3)
+	block7 := prepareAndProcessBlock(t, dag, block0)
+	block8 := prepareAndProcessBlock(t, dag, block7)
+	block9 := prepareAndProcessBlock(t, dag, block8)
+	block10 := prepareAndProcessBlock(t, dag, block9, block6)
 
-	// Because nodes 7 & 8 were mined secretly, node10's selected
-	// parent will be node6, although node9 is higher. So in this
-	// case, node10.height and node10.chainHeight will be different
+	// Because nodes 7 & 8 were mined secretly, block10's selected
+	// parent will be block6, although block9 is higher. So in this
+	// case, block10.height and block10.chainHeight will be different
 
 	tests := []struct {
-		node                *blockNode
+		block               *wire.MsgBlock
 		expectedChainHeight uint64
 	}{
 		{
-			node:                node0,
+			block:               block0,
 			expectedChainHeight: 0,
 		},
 		{
-			node:                node1,
+			block:               block1,
 			expectedChainHeight: 1,
 		},
 		{
-			node:                node2,
+			block:               block2,
 			expectedChainHeight: 1,
 		},
 		{
-			node:                node3,
+			block:               block3,
 			expectedChainHeight: 1,
 		},
 		{
-			node:                node4,
+			block:               block4,
 			expectedChainHeight: 2,
 		},
 		{
-			node:                node5,
+			block:               block5,
 			expectedChainHeight: 2,
 		},
 		{
-			node:                node6,
+			block:               block6,
 			expectedChainHeight: 2,
 		},
 		{
-			node:                node7,
+			block:               block7,
 			expectedChainHeight: 1,
 		},
 		{
-			node:                node8,
+			block:               block8,
 			expectedChainHeight: 2,
 		},
 		{
-			node:                node9,
+			block:               block9,
 			expectedChainHeight: 3,
 		},
 		{
-			node:                node10,
+			block:               block10,
 			expectedChainHeight: 3,
 		},
 	}
 
 	for _, test := range tests {
-		if test.node.chainHeight != test.expectedChainHeight {
-			t.Errorf("block %v expected chain height %v but got %v", test.node, test.expectedChainHeight, test.node.chainHeight)
+		node := dag.index.LookupNode(test.block.BlockHash())
+		if node.chainHeight != test.expectedChainHeight {
+			t.Errorf("block %s expected chain height %v but got %v", node, test.expectedChainHeight, node.chainHeight)
 		}
-		if calculateChainHeight(test.node) != test.expectedChainHeight {
-			t.Errorf("block %v expected calculated chain height %v but got %v", test.node, test.expectedChainHeight, test.node.chainHeight)
+		if calculateChainHeight(node) != test.expectedChainHeight {
+			t.Errorf("block %s expected calculated chain height %v but got %v", node, test.expectedChainHeight, node.chainHeight)
 		}
 	}
 

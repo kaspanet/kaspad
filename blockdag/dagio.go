@@ -33,7 +33,7 @@ const (
 )
 
 var (
-	// blockIndexBucketName is the name of the db bucket used to house to the
+	// blockIndexBucketName is the name of the database bucket used to house the
 	// block headers and contextual information.
 	blockIndexBucketName = []byte("blockheaderidx")
 
@@ -45,15 +45,19 @@ var (
 	// version of the utxo set currently in the database.
 	utxoSetVersionKeyName = []byte("utxosetversion")
 
-	// utxoSetBucketName is the name of the db bucket used to house the
+	// utxoSetBucketName is the name of the database bucket used to house the
 	// unspent transaction output set.
 	utxoSetBucketName = []byte("utxoset")
 
-	// utxoDiffsBucketName is the name of the db bucket used to house the
+	// utxoDiffsBucketName is the name of the database bucket used to house the
 	// diffs and diff children of blocks.
 	utxoDiffsBucketName = []byte("utxodiffs")
 
-	// subnetworksBucketName is the name of the db bucket used to store the
+	// reachabilityDataBucketName is the name of the database bucket used to house the
+	// reachability tree nodes and future covering sets of blocks.
+	reachabilityDataBucketName = []byte("reachability")
+
+	// subnetworksBucketName is the name of the database bucket used to store the
 	// subnetwork registry.
 	subnetworksBucketName = []byte("subnetworks")
 
@@ -317,6 +321,11 @@ func (dag *BlockDAG) createDAGState() error {
 			return err
 		}
 
+		_, err = meta.CreateBucket(reachabilityDataBucketName)
+		if err != nil {
+			return err
+		}
+
 		err = dbPutVersion(dbTx, utxoSetVersionKeyName,
 			latestUTXOSetBucketVersion)
 		if err != nil {
@@ -363,6 +372,11 @@ func (dag *BlockDAG) removeDAGState() error {
 		}
 
 		err = meta.DeleteBucket(utxoDiffsBucketName)
+		if err != nil {
+			return err
+		}
+
+		err = meta.DeleteBucket(reachabilityDataBucketName)
 		if err != nil {
 			return err
 		}
@@ -549,6 +563,12 @@ func (dag *BlockDAG) initDAGState() error {
 			fullUTXOCollection[*outpoint] = entry
 		}
 
+		// Initialize the reachability store
+		err = dag.reachabilityStore.init(dbTx)
+		if err != nil {
+			return err
+		}
+
 		// Apply the loaded utxoCollection to the virtual block.
 		dag.virtual.utxoSet, err = newFullUTXOSetFromUTXOCollection(fullUTXOCollection)
 		if err != nil {
@@ -680,6 +700,23 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		node.blues[i] = dag.index.LookupNode(hash)
 	}
 
+	bluesAnticoneSizesLen, err := wire.ReadVarInt(buffer)
+	if err != nil {
+		return nil, err
+	}
+
+	node.bluesAnticoneSizes = make(map[daghash.Hash]uint32)
+	for i := uint64(0); i < bluesAnticoneSizesLen; i++ {
+		hash := &daghash.Hash{}
+		if _, err := io.ReadFull(buffer, hash[:]); err != nil {
+			return nil, err
+		}
+		node.bluesAnticoneSizes[*hash], err = binaryserializer.Uint32(buffer, byteOrder)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	node.chainHeight = calculateChainHeight(node)
 
 	return node, nil
@@ -741,6 +778,22 @@ func dbStoreBlockNode(dbTx database.Tx, node *blockNode) error {
 
 	for _, blue := range node.blues {
 		_, err = w.Write(blue.hash[:])
+		if err != nil {
+			return err
+		}
+	}
+
+	err = wire.WriteVarInt(w, uint64(len(node.bluesAnticoneSizes)))
+	if err != nil {
+		return err
+	}
+	for blockHash, blueAnticoneSize := range node.bluesAnticoneSizes {
+		_, err = w.Write(blockHash[:])
+		if err != nil {
+			return err
+		}
+
+		err = binaryserializer.PutUint32(w, byteOrder, blueAnticoneSize)
 		if err != nil {
 			return err
 		}

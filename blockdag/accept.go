@@ -12,7 +12,7 @@ import (
 
 func (dag *BlockDAG) addNodeToIndexWithInvalidAncestor(block *util.Block) error {
 	blockHeader := &block.MsgBlock().Header
-	newNode := newBlockNode(blockHeader, newSet(), dag.dagParams.K)
+	newNode, _ := dag.newBlockNode(blockHeader, newSet())
 	newNode.status = statusInvalidAncestor
 	dag.index.AddNode(newNode)
 	return dag.index.flushToDB()
@@ -47,7 +47,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	}
 
 	// Create a new block node for the block and add it to the node index.
-	newNode := newBlockNode(&block.MsgBlock().Header, parents, dag.dagParams.K)
+	newNode, selectedParentAnticone := dag.newBlockNode(&block.MsgBlock().Header, parents)
 	newNode.status = statusDataStored
 	dag.index.AddNode(newNode)
 
@@ -84,7 +84,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 
 	// Connect the passed block to the DAG. This also handles validation of the
 	// transaction scripts.
-	chainUpdates, err := dag.addBlock(newNode, parents, block, flags)
+	chainUpdates, err := dag.addBlock(newNode, block, selectedParentAnticone, flags)
 	if err != nil {
 		return err
 	}
