@@ -134,7 +134,7 @@ var devNetGenesisBlock = wire.MsgBlock{
 	Transactions: []*wire.MsgTx{devNetGenesisCoinbaseTx},
 }
 
-var regNetGenesisTxIns = []*wire.TxIn{
+var regTestGenesisTxIns = []*wire.TxIn{
 	{
 		PreviousOutpoint: wire.Outpoint{
 			TxID:  daghash.TxID{},
@@ -147,9 +147,9 @@ var regNetGenesisTxIns = []*wire.TxIn{
 		Sequence: math.MaxUint64,
 	},
 }
-var regNetGenesisTxOuts = []*wire.TxOut{}
+var regTestGenesisTxOuts = []*wire.TxOut{}
 
-var regNetGenesisTxPayload = []byte{
+var regTestGenesisTxPayload = []byte{
 	0x17,                                           // Varint
 	0xa9, 0x14, 0xda, 0x17, 0x45, 0xe9, 0xb5, 0x49, // OP-TRUE p2sh
 	0xbd, 0x0b, 0xfa, 0x1a, 0x56, 0x99, 0x71, 0xc7,
@@ -159,7 +159,7 @@ var regNetGenesisTxPayload = []byte{
 
 // regTestGenesisCoinbaseTx is the coinbase transaction for
 // the genesis blocks for the regTest network.
-var regTestGenesisCoinbaseTx = wire.NewSubnetworkMsgTx(1, regNetGenesisTxIns, regNetGenesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, regNetGenesisTxPayload)
+var regTestGenesisCoinbaseTx = wire.NewSubnetworkMsgTx(1, regTestGenesisTxIns, regTestGenesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, regTestGenesisTxPayload)
 
 // devGenesisHash is the hash of the first block in the block DAG for the development
 // network (genesis block).
@@ -255,7 +255,7 @@ var simNetGenesisBlock = wire.MsgBlock{
 	Transactions: []*wire.MsgTx{simNetGenesisCoinbaseTx},
 }
 
-var testnetGenesisTxIns = []*wire.TxIn{
+var testNetGenesisTxIns = []*wire.TxIn{
 	{
 		PreviousOutpoint: wire.Outpoint{
 			TxID:  daghash.TxID{},
@@ -268,16 +268,16 @@ var testnetGenesisTxIns = []*wire.TxIn{
 		Sequence: math.MaxUint64,
 	},
 }
-var testnetGenesisTxOuts = []*wire.TxOut{}
+var testNetGenesisTxOuts = []*wire.TxOut{}
 
-var testnetGenesisTxPayload = []byte{
+var testNetGenesisTxPayload = []byte{
 	0x01,                                                                         // Varint
 	0x00,                                                                         // OP-FALSE
 	0x6b, 0x61, 0x73, 0x70, 0x61, 0x2d, 0x74, 0x65, 0x73, 0x74, 0x6e, 0x65, 0x74, // kaspa-testnet
 }
 
-// testNetGenesisCoinbaseTx is the coinbase transaction for the testnet genesis block.
-var testNetGenesisCoinbaseTx = wire.NewSubnetworkMsgTx(1, testnetGenesisTxIns, testnetGenesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, testnetGenesisTxPayload)
+// testNetGenesisCoinbaseTx is the coinbase transaction for the test net genesis block.
+var testNetGenesisCoinbaseTx = wire.NewSubnetworkMsgTx(1, testNetGenesisTxIns, testNetGenesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, testNetGenesisTxPayload)
 
 // testNetGenesisHash is the hash of the first block in the block DAG for the test
 // network (genesis block).
@@ -289,7 +289,7 @@ var testNetGenesisHash = daghash.Hash{
 }
 
 // testNetGenesisMerkleRoot is the hash of the first transaction in the genesis block
-// for testnet.
+// for test net.
 var testNetGenesisMerkleRoot = daghash.Hash{
 	0x88, 0x05, 0xd0, 0xe7, 0x8f, 0x41, 0x77, 0x39,
 	0x2c, 0xb6, 0xbb, 0xb4, 0x19, 0xa8, 0x48, 0x4a,
@@ -298,7 +298,7 @@ var testNetGenesisMerkleRoot = daghash.Hash{
 }
 
 // testNetGenesisBlock defines the genesis block of the block DAG which serves as the
-// public transaction ledger for testnet.
+// public transaction ledger for test net.
 var testNetGenesisBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{
 		Version:              1,
