@@ -125,11 +125,6 @@ type Flags struct {
 	Proxy                string        `long:"proxy" description:"Connect via SOCKS5 proxy (eg. 127.0.0.1:9050)"`
 	ProxyUser            string        `long:"proxyuser" description:"Username for proxy server"`
 	ProxyPass            string        `long:"proxypass" default-mask:"-" description:"Password for proxy server"`
-	OnionProxy           string        // DISABLED UNTIL DECISION ABOUT TOR `long:"onion" description:"Connect to tor hidden services via SOCKS5 proxy (eg. 127.0.0.1:9050)"`
-	OnionProxyUser       string        // DISABLED UNTIL DECISION ABOUT TOR `long:"onionuser" description:"Username for onion proxy server"`
-	OnionProxyPass       string        // DISABLED UNTIL DECISION ABOUT TOR `long:"onionpass" default-mask:"-" description:"Password for onion proxy server"`
-	NoOnion              bool          // DISABLED UNTIL DECISION ABOUT TOR `long:"noonion" description:"Disable connecting to tor hidden services"`
-	TorIsolation         bool          // DISABLED UNTIL DECISION ABOUT TOR `long:"torisolation" description:"Enable Tor stream isolation by randomizing user credentials for each connection."`
 	DbType               string        `long:"dbtype" description:"Database backend to use for the Block DAG"`
 	Profile              string        `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
 	CPUProfile           string        `long:"cpuprofile" description:"Write CPU profile to the specified file"`
@@ -163,7 +158,6 @@ type Flags struct {
 type Config struct {
 	*Flags
 	Lookup        func(string) ([]net.IP, error)
-	OnionDial     func(string, string, time.Duration) (net.Conn, error)
 	Dial          func(string, string, time.Duration) (net.Conn, error)
 	MiningAddrs   []util.Address
 	MinRelayTxFee util.Amount
@@ -779,31 +773,11 @@ func loadConfig() (*Config, []string, error) {
 	activeConfig.ConnectPeers = network.NormalizeAddresses(activeConfig.ConnectPeers,
 		activeConfig.NetParams().DefaultPort)
 
-	// --noonion and --onion do not mix.
-	if activeConfig.NoOnion && activeConfig.OnionProxy != "" {
-		err := errors.Errorf("%s: the --noonion and --onion options may "+
-			"not be activated at the same time", funcName)
-		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
-	}
-
-	// Tor stream isolation requires either proxy or onion proxy to be set.
-	if activeConfig.TorIsolation && activeConfig.Proxy == "" && activeConfig.OnionProxy == "" {
-		str := "%s: Tor stream isolation requires either proxy or " +
-			"onionproxy to be set"
-		err := errors.Errorf(str, funcName)
-		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
-	}
-
 	// Setup dial and DNS resolution (lookup) functions depending on the
 	// specified options. The default is to use the standard
 	// net.DialTimeout function as well as the system DNS resolver. When a
 	// proxy is specified, the dial function is set to the proxy specific
-	// dial function and the lookup is set to use tor (unless --noonion is
-	// specified in which case the system DNS resolver is used).
+	// dial function.
 	activeConfig.Dial = net.DialTimeout
 	activeConfig.Lookup = net.LookupIP
 	if activeConfig.Proxy != "" {
@@ -816,90 +790,12 @@ func loadConfig() (*Config, []string, error) {
 			return nil, nil, err
 		}
 
-		// Tor isolation flag means proxy credentials will be overridden
-		// unless there is also an onion proxy configured in which case
-		// that one will be overridden.
-		torIsolation := false
-		if activeConfig.TorIsolation && activeConfig.OnionProxy == "" &&
-			(activeConfig.ProxyUser != "" || activeConfig.ProxyPass != "") {
-
-			torIsolation = true
-			fmt.Fprintln(os.Stderr, "Tor isolation set -- "+
-				"overriding specified proxy user credentials")
-		}
-
 		proxy := &socks.Proxy{
-			Addr:         activeConfig.Proxy,
-			Username:     activeConfig.ProxyUser,
-			Password:     activeConfig.ProxyPass,
-			TorIsolation: torIsolation,
+			Addr:     activeConfig.Proxy,
+			Username: activeConfig.ProxyUser,
+			Password: activeConfig.ProxyPass,
 		}
 		activeConfig.Dial = proxy.DialTimeout
-
-		// Treat the proxy as tor and perform DNS resolution through it
-		// unless the --noonion flag is set or there is an
-		// onion-specific proxy configured.
-		if !activeConfig.NoOnion && activeConfig.OnionProxy == "" {
-			activeConfig.Lookup = func(host string) ([]net.IP, error) {
-				return network.TorLookupIP(host, activeConfig.Proxy)
-			}
-		}
-	}
-
-	// Setup onion address dial function depending on the specified options.
-	// The default is to use the same dial function selected above. However,
-	// when an onion-specific proxy is specified, the onion address dial
-	// function is set to use the onion-specific proxy while leaving the
-	// normal dial function as selected above. This allows .onion address
-	// traffic to be routed through a different proxy than normal traffic.
-	if activeConfig.OnionProxy != "" {
-		_, _, err := net.SplitHostPort(activeConfig.OnionProxy)
-		if err != nil {
-			str := "%s: Onion proxy address '%s' is invalid: %s"
-			err := errors.Errorf(str, funcName, activeConfig.OnionProxy, err)
-			fmt.Fprintln(os.Stderr, err)
-			fmt.Fprintln(os.Stderr, usageMessage)
-			return nil, nil, err
-		}
-
-		// Tor isolation flag means onion proxy credentials will be
-		// overridden.
-		if activeConfig.TorIsolation &&
-			(activeConfig.OnionProxyUser != "" || activeConfig.OnionProxyPass != "") {
-			fmt.Fprintln(os.Stderr, "Tor isolation set -- "+
-				"overriding specified onionproxy user "+
-				"credentials ")
-		}
-
-		activeConfig.OnionDial = func(network, addr string, timeout time.Duration) (net.Conn, error) {
-			proxy := &socks.Proxy{
-				Addr:         activeConfig.OnionProxy,
-				Username:     activeConfig.OnionProxyUser,
-				Password:     activeConfig.OnionProxyPass,
-				TorIsolation: activeConfig.TorIsolation,
-			}
-			return proxy.DialTimeout(network, addr, timeout)
-		}
-
-		// When configured in bridge mode (both --onion and --proxy are
-		// configured), it means that the proxy configured by --proxy is
-		// not a tor proxy, so override the DNS resolution to use the
-		// onion-specific proxy.
-		if activeConfig.Proxy != "" {
-			activeConfig.Lookup = func(host string) ([]net.IP, error) {
-				return network.TorLookupIP(host, activeConfig.OnionProxy)
-			}
-		}
-	} else {
-		activeConfig.OnionDial = activeConfig.Dial
-	}
-
-	// Specifying --noonion means the onion address dial function results in
-	// an error.
-	if activeConfig.NoOnion {
-		activeConfig.OnionDial = func(a, b string, t time.Duration) (net.Conn, error) {
-			return nil, errors.New("tor has been disabled")
-		}
 	}
 
 	// Warn about missing config file only after all other configuration is
