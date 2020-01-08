@@ -252,8 +252,8 @@ func LoadBlocks(filename string) (blocks []*util.Block, err error) {
 	return
 }
 
-// OpTrueAddress returns an address pointing to a P2SH anyone-can-spend script
-func OpTrueAddress(prefix util.Bech32Prefix) (util.Address, error) {
+// opTrueAddress returns an address pointing to a P2SH anyone-can-spend script
+func opTrueAddress(prefix util.Bech32Prefix) (util.Address, error) {
 	return util.NewAddressScriptHash(OpTrueScript, prefix)
 }
 
@@ -266,14 +266,14 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 	oldVirtual := SetVirtualForTest(dag, newVirtual)
 	defer SetVirtualForTest(dag, oldVirtual)
 
-	OpTrueAddr, err := OpTrueAddress(dag.dagParams.Prefix)
+	OpTrueAddr, err := opTrueAddress(dag.dagParams.Prefix)
 	if err != nil {
 		return nil, err
 	}
 
 	blockTransactions := make([]*util.Tx, len(transactions)+1)
 
-	extraNonce := GenerateDeterministicExtraNonceForTest()
+	extraNonce := generateDeterministicExtraNonceForTest()
 	coinbasePayloadExtraData, err := CoinbasePayloadExtraData(extraNonce, "")
 	if err != nil {
 		return nil, err
@@ -292,12 +292,14 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 	if err != nil {
 		return nil, err
 	}
-	block.Header.Timestamp = dag.NextBlockMinimumTime()
+	block.Header.Timestamp = dag.NextBlockTime()
+	block.Header.Bits = dag.NextRequiredDifficulty(block.Header.Timestamp)
+
 	return block, nil
 }
 
-// GenerateDeterministicExtraNonceForTest returns a unique deterministic extra nonce for coinbase data, in order to create unique coinbase transactions.
-func GenerateDeterministicExtraNonceForTest() uint64 {
+// generateDeterministicExtraNonceForTest returns a unique deterministic extra nonce for coinbase data, in order to create unique coinbase transactions.
+func generateDeterministicExtraNonceForTest() uint64 {
 	extraNonceForTest++
 	return extraNonceForTest
 }

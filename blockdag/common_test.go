@@ -159,27 +159,6 @@ func addNodeAsChildToParents(node *blockNode) {
 	}
 }
 
-func buildNodeGenerator(dag *BlockDAG, withChildren bool) func(parents blockSet) *blockNode {
-	// For the purposes of these tests, we'll create blockNodes whose hashes are a
-	// series of numbers from 1 to 255.
-	hashCounter := byte(1)
-	buildNode := func(parents blockSet) *blockNode {
-		block, _ := dag.newBlockNode(nil, parents)
-		block.hash = &daghash.Hash{hashCounter}
-		hashCounter++
-
-		return block
-	}
-	if withChildren {
-		return func(parents blockSet) *blockNode {
-			node := buildNode(parents)
-			addNodeAsChildToParents(node)
-			return node
-		}
-	}
-	return buildNode
-}
-
 // checkRuleError ensures the type of the two passed errors are of the
 // same type (either both nil or both of type RuleError) and their error codes
 // match when not nil.

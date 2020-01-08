@@ -35,7 +35,7 @@ func (ri *reachabilityInterval) splitInHalf() (
 
 // splitFraction splits this interval to two parts such that their
 // union is equal to the original interval and the first (left) part
-// contains the given fraction of the original interval's capacity.
+// contains the given fraction of the original interval's size.
 // Note: if the split results in fractional parts, this method rounds
 // the first part up and the last part down.
 func (ri *reachabilityInterval) splitFraction(fraction float64) (
@@ -56,7 +56,7 @@ func (ri *reachabilityInterval) splitFraction(fraction float64) (
 
 // splitExact splits this interval to exactly |sizes| parts where
 // |part_i| = sizes[i]. This method expects sum(sizes) to be exactly
-// equal to the interval's capacity.
+// equal to the interval's size.
 func (ri *reachabilityInterval) splitExact(sizes []uint64) ([]*reachabilityInterval, error) {
 	sizesSum := uint64(0)
 	for _, size := range sizes {
@@ -75,11 +75,11 @@ func (ri *reachabilityInterval) splitExact(sizes []uint64) ([]*reachabilityInter
 	return intervals, nil
 }
 
-// splitWithExponentialBias splits this interval to len(sizes) parts
+// splitWithExponentialBias splits this interval to |sizes| parts
 // by the allocation rule described below. This method expects sum(sizes)
-// to be smaller or equal to the interval's capacity. Every part_i is
+// to be smaller or equal to the interval's size. Every part_i is
 // allocated at least sizes[i] capacity. The remaining budget is
-// split by an exponential rule described below.
+// split by an exponentially biased rule described below.
 //
 // This rule follows the GHOSTDAG protocol behavior where the child
 // with the largest subtree is expected to dominate the competition
@@ -266,7 +266,7 @@ func (rtn *reachabilityTreeNode) reindexIntervals() ([]*reachabilityTreeNode, er
 		subtreeSize = current.countSubtrees()
 	}
 
-	// Apply the interval down the subtree
+	// Propagate the interval down the subtree
 	return current.propagateInterval(current.interval)
 }
 
@@ -343,9 +343,9 @@ func (rtn *reachabilityTreeNode) countSubtrees() uint64 {
 	return rtn.subtreeSize
 }
 
-// propagateInterval applies new intervals using a BFS traversal.
-// The intervals are allocated according to subtree sizes and the
-// allocation rule in splitWithExponentialBias. This method returns
+// propagateInterval propagates the new interval using a BFS traversal.
+// Subtree intervals are recursively allocated according to subtree sizes and
+// the allocation rule in splitWithExponentialBias. This method returns
 // a list of reachabilityTreeNodes modified by it.
 func (rtn *reachabilityTreeNode) propagateInterval(
 	interval *reachabilityInterval) ([]*reachabilityTreeNode, error) {
@@ -413,7 +413,7 @@ func (rtn *reachabilityTreeNode) String() string {
 
 // futureCoveringBlockSet represents a collection of blocks in the future of
 // a certain block. Once a block B is added to the DAG, every block A_i in
-// B's anticone must register B in its futureCoveringBlockSet. This allows
+// B's selected parent anticone must register B in its futureCoveringBlockSet. This allows
 // to relatively quickly (O(log(|futureCoveringBlockSet|))) query whether B
 // is a descendent (is in the "future") of any block that previously
 // registered it.

@@ -15,7 +15,7 @@ import (
 // that points to the current DAG tips, that is valid from
 // all aspects except proof of work.
 func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, error) {
-	blockTimestamp := dag.NextBlockMinimumTime()
+	blockTimestamp := dag.NextBlockTime()
 	requiredDifficulty := dag.NextRequiredDifficulty(blockTimestamp)
 
 	// Calculate the next expected block version based on the state of the

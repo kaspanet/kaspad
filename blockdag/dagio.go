@@ -33,7 +33,7 @@ const (
 )
 
 var (
-	// blockIndexBucketName is the name of the db bucket used to house to the
+	// blockIndexBucketName is the name of the database bucket used to house to the
 	// block headers and contextual information.
 	blockIndexBucketName = []byte("blockheaderidx")
 
@@ -45,19 +45,19 @@ var (
 	// version of the utxo set currently in the database.
 	utxoSetVersionKeyName = []byte("utxosetversion")
 
-	// utxoSetBucketName is the name of the db bucket used to house the
+	// utxoSetBucketName is the name of the database bucket used to house the
 	// unspent transaction output set.
 	utxoSetBucketName = []byte("utxoset")
 
-	// utxoDiffsBucketName is the name of the db bucket used to house the
+	// utxoDiffsBucketName is the name of the database bucket used to house the
 	// diffs and diff children of blocks.
 	utxoDiffsBucketName = []byte("utxodiffs")
 
-	// reachabilityDataBucketName is the name of the db bucket used to house the
+	// reachabilityDataBucketName is the name of the database bucket used to house the
 	// reachability tree nodes and future covering sets of blocks.
 	reachabilityDataBucketName = []byte("reachability")
 
-	// subnetworksBucketName is the name of the db bucket used to store the
+	// subnetworksBucketName is the name of the database bucket used to store the
 	// subnetwork registry.
 	subnetworksBucketName = []byte("subnetworks")
 

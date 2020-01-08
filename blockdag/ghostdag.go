@@ -26,7 +26,7 @@ import (
 // For further details see the article https://eprint.iacr.org/2018/104.pdf
 func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blockNode, err error) {
 	newNode.selectedParent = newNode.parents.bluest()
-	newNode.bluesAnticoneSizes[*newNode.hash] = 0
+	newNode.bluesAnticoneSizes[*newNode.selectedParent.hash] = 0
 	newNode.blues = []*blockNode{newNode.selectedParent}
 	selectedParentAnticone, err = dag.selectedParentAnticone(newNode)
 	if err != nil {
@@ -164,7 +164,7 @@ func (dag *BlockDAG) selectedParentAnticone(node *blockNode) ([]*blockNode, erro
 }
 
 // blueAnticoneSize returns the blue anticone size of 'block' from the worldview of 'context'.
-// Expects 'block' to be ∈ blue-set(context)
+// Expects 'block' to be in the blueSet of 'context'
 func (dag *BlockDAG) blueAnticoneSize(block, context *blockNode) (uint32, error) {
 	for current := context; current != nil; current = current.selectedParent {
 		if blueAnticoneSize, ok := current.bluesAnticoneSizes[*block.hash]; ok {

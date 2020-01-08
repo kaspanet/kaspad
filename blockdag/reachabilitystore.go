@@ -277,16 +277,16 @@ func (store *reachabilityStore) serializeFutureCoveringSet(w io.Writer, futureCo
 func (store *reachabilityStore) deserializeReachabilityData(
 	serializedReachabilityDataBytes []byte, destination *reachabilityData) error {
 
-	serializedReachabilityData := bytes.NewBuffer(serializedReachabilityDataBytes)
+	r := bytes.NewBuffer(serializedReachabilityDataBytes)
 
 	// Deserialize the tree node
-	err := store.deserializeTreeNode(serializedReachabilityData, destination)
+	err := store.deserializeTreeNode(r, destination)
 	if err != nil {
 		return err
 	}
 
 	// Deserialize the future covering set
-	err = store.deserializeFutureCoveringSet(serializedReachabilityData, destination)
+	err = store.deserializeFutureCoveringSet(r, destination)
 	if err != nil {
 		return err
 	}
@@ -325,14 +325,14 @@ func (store *reachabilityStore) deserializeTreeNode(r io.Reader, destination *re
 	}
 
 	// Deserialize the amount of children
-	childAmount, err := wire.ReadVarInt(r)
+	childCount, err := wire.ReadVarInt(r)
 	if err != nil {
 		return err
 	}
 
 	// Deserialize the children
-	children := make([]*reachabilityTreeNode, childAmount)
-	for i := uint64(0); i < childAmount; i++ {
+	children := make([]*reachabilityTreeNode, childCount)
+	for i := uint64(0); i < childCount; i++ {
 		childHash := &daghash.Hash{}
 		err = wire.ReadElement(r, childHash)
 		if err != nil {
