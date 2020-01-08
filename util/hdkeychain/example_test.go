@@ -22,7 +22,7 @@ func ExampleNewMaster() {
 	}
 
 	// Generate a new master node using the seed.
-	key, err := hdkeychain.NewMaster(seed, hdkeychain.HDKeyPairMainNet.PrivateKeyID)
+	key, err := hdkeychain.NewMaster(seed, hdkeychain.HDKeyPairMainnet.PrivateKeyID)
 	if err != nil {
 		fmt.Println(err)
 		return

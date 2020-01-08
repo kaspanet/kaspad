@@ -47,7 +47,7 @@ func TestBlockCount(t *testing.T) {
 
 	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("TestBlockCount", Config{
-		DAGParams: &dagconfig.SimNetParams,
+		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
@@ -100,7 +100,7 @@ func TestHaveBlock(t *testing.T) {
 
 	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("haveblock", Config{
-		DAGParams: &dagconfig.SimNetParams,
+		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
@@ -206,7 +206,7 @@ func TestHaveBlock(t *testing.T) {
 		want bool
 	}{
 		// Genesis block should be present.
-		{hash: dagconfig.SimNetParams.GenesisHash.String(), want: true},
+		{hash: dagconfig.SimnetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
 		{hash: "264176fb6072e2362db18f92d3f4b739cff071a206736df7c407c0bf9a1d7fef", want: true},
@@ -237,7 +237,7 @@ func TestHaveBlock(t *testing.T) {
 // combinations of inputs to the CalcSequenceLock function in order to ensure
 // the returned SequenceLocks are correct for each test instance.
 func TestCalcSequenceLock(t *testing.T) {
-	netParams := &dagconfig.SimNetParams
+	netParams := &dagconfig.SimnetParams
 
 	blockVersion := int32(0x10000000)
 
@@ -505,7 +505,7 @@ func TestCalcSequenceLock(t *testing.T) {
 }
 
 func TestCalcPastMedianTime(t *testing.T) {
-	netParams := &dagconfig.SimNetParams
+	netParams := &dagconfig.SimnetParams
 
 	blockVersion := int32(0x10000000)
 
@@ -582,7 +582,7 @@ func chainedNodes(parents blockSet, numNodes int) []*blockNode {
 			UTXOCommitment:       &daghash.ZeroHash,
 		}
 		header.ParentHashes = tips.hashes()
-		nodes[i] = newBlockNode(&header, tips, dagconfig.SimNetParams.K)
+		nodes[i] = newBlockNode(&header, tips, dagconfig.SimnetParams.K)
 		tips = setFromSlice(nodes[i])
 	}
 	return nodes
@@ -602,7 +602,7 @@ func TestChainHeightToHashRange(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := testTip
-	blockDAG := newTestDAG(&dagconfig.SimNetParams)
+	blockDAG := newTestDAG(&dagconfig.SimnetParams)
 	branch0Nodes := chainedNodes(setFromSlice(blockDAG.genesis), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
@@ -694,7 +694,7 @@ func TestIntervalBlockHashes(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := testTip
-	dag := newTestDAG(&dagconfig.SimNetParams)
+	dag := newTestDAG(&dagconfig.SimnetParams)
 	branch0Nodes := chainedNodes(setFromSlice(dag.genesis), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
@@ -812,7 +812,7 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 
 	// Create a new database and dag instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("testErrorThroughPatching", Config{
-		DAGParams: &dagconfig.SimNetParams,
+		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup dag instance: %v", err)
@@ -874,7 +874,7 @@ func TestNew(t *testing.T) {
 		os.RemoveAll(testDbRoot)
 	}()
 	config := &Config{
-		DAGParams:  &dagconfig.SimNetParams,
+		DAGParams:  &dagconfig.SimnetParams,
 		DB:         db,
 		TimeSource: NewMedianTime(),
 		SigCache:   txscript.NewSigCache(1000),
@@ -923,7 +923,7 @@ func TestAcceptingInInit(t *testing.T) {
 
 	// Create a DAG to add the test block into
 	config := &Config{
-		DAGParams:  &dagconfig.SimNetParams,
+		DAGParams:  &dagconfig.SimnetParams,
 		DB:         db,
 		TimeSource: NewMedianTime(),
 		SigCache:   txscript.NewSigCache(1000),
@@ -974,7 +974,7 @@ func TestAcceptingInInit(t *testing.T) {
 
 func TestConfirmations(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
-	params := dagconfig.SimNetParams
+	params := dagconfig.SimnetParams
 	params.K = 1
 	dag, teardownFunc, err := DAGSetup("TestConfirmations", Config{
 		DAGParams: &params,
@@ -1085,7 +1085,7 @@ func TestConfirmations(t *testing.T) {
 
 func TestAcceptingBlock(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
-	params := dagconfig.SimNetParams
+	params := dagconfig.SimnetParams
 	params.K = 3
 	dag, teardownFunc, err := DAGSetup("TestAcceptingBlock", Config{
 		DAGParams: &params,
@@ -1217,7 +1217,7 @@ func TestFinalizeNodesBelowFinalityPoint(t *testing.T) {
 }
 
 func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
-	params := dagconfig.SimNetParams
+	params := dagconfig.SimnetParams
 	params.K = 1
 	dag, teardownFunc, err := DAGSetup("testFinalizeNodesBelowFinalityPoint", Config{
 		DAGParams: &params,
@@ -1303,7 +1303,7 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 }
 
 func TestDAGIndexFailedStatus(t *testing.T) {
-	params := dagconfig.SimNetParams
+	params := dagconfig.SimnetParams
 	dag, teardownFunc, err := DAGSetup("TestDAGIndexFailedStatus", Config{
 		DAGParams: &params,
 	})

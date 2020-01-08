@@ -30,7 +30,7 @@ const (
 	testDbRoot = "testdbs"
 
 	// blockDataNet is the expected network in the test block data.
-	blockDataNet = wire.MainNet
+	blockDataNet = wire.Mainnet
 )
 
 // isSupportedDbType returns whether or not the passed database type is
@@ -200,7 +200,7 @@ func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (
 // LoadBlocks reads files containing kaspa gzipped block data from disk
 // and returns them as an array of util.Block.
 func LoadBlocks(filename string) (blocks []*util.Block, err error) {
-	var network = wire.MainNet
+	var network = wire.Mainnet
 	var dr io.Reader
 	var fi io.ReadCloser
 

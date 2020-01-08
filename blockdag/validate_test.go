@@ -71,7 +71,7 @@ func TestSequenceLocksActive(t *testing.T) {
 func TestCheckConnectBlockTemplate(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("checkconnectblocktemplate", Config{
-		DAGParams: &dagconfig.SimNetParams,
+		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
 		t.Errorf("Failed to setup dag instance: %v", err)
@@ -162,7 +162,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 func TestCheckBlockSanity(t *testing.T) {
 	// Create a new database and dag instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("TestCheckBlockSanity", Config{
-		DAGParams: &dagconfig.SimNetParams,
+		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
 		t.Errorf("Failed to setup dag instance: %v", err)
@@ -502,7 +502,7 @@ func TestCheckBlockSanity(t *testing.T) {
 }
 
 func TestPastMedianTime(t *testing.T) {
-	dag := newTestDAG(&dagconfig.MainNetParams)
+	dag := newTestDAG(&dagconfig.MainnetParams)
 	tip := dag.genesis
 	blockVersion := int32(0x10000000)
 
@@ -514,7 +514,7 @@ func TestPastMedianTime(t *testing.T) {
 			blockVersion,
 			0,
 			blockTime,
-			dagconfig.MainNetParams.K)
+			dagconfig.MainnetParams.K)
 	}
 
 	// Checks that a block is valid if it has timestamp equals to past median time
@@ -523,7 +523,7 @@ func TestPastMedianTime(t *testing.T) {
 		blockVersion,
 		dag.powMaxBits,
 		tip.PastMedianTime(dag),
-		dagconfig.MainNetParams.K)
+		dagconfig.MainnetParams.K)
 
 	header := node.Header()
 	err := dag.checkBlockHeaderContext(header, node.parents.bluest(), chainHeight, false)
@@ -538,7 +538,7 @@ func TestPastMedianTime(t *testing.T) {
 		blockVersion,
 		dag.powMaxBits,
 		tip.PastMedianTime(dag).Add(time.Second),
-		dagconfig.MainNetParams.K)
+		dagconfig.MainnetParams.K)
 
 	header = node.Header()
 	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), chainHeight, false)
@@ -553,7 +553,7 @@ func TestPastMedianTime(t *testing.T) {
 		blockVersion,
 		0,
 		tip.PastMedianTime(dag).Add(-time.Second),
-		dagconfig.MainNetParams.K)
+		dagconfig.MainnetParams.K)
 
 	header = node.Header()
 	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), chainHeight, false)
@@ -575,7 +575,7 @@ func TestPastMedianTime(t *testing.T) {
 }
 
 func TestValidateParents(t *testing.T) {
-	blockDAG := newTestDAG(&dagconfig.SimNetParams)
+	blockDAG := newTestDAG(&dagconfig.SimnetParams)
 	genesisNode := blockDAG.genesis
 	blockVersion := int32(0x10000000)
 
@@ -588,7 +588,7 @@ func TestValidateParents(t *testing.T) {
 			blockVersion,
 			0,
 			blockTime,
-			dagconfig.SimNetParams.K)
+			dagconfig.SimnetParams.K)
 	}
 
 	a := generateNode(genesisNode)

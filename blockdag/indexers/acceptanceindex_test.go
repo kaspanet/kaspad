@@ -71,7 +71,7 @@ func TestAcceptanceIndexSerializationAndDeserialization(t *testing.T) {
 //   comparing dag1's last block acceptance data and dag3's last block acceptance
 //   data.
 func TestAcceptanceIndexRecover(t *testing.T) {
-	params := &dagconfig.SimNetParams
+	params := &dagconfig.SimnetParams
 	params.BlockCoinbaseMaturity = 0
 
 	testFiles := []string{

@@ -120,7 +120,7 @@ func TestAddAddressByIP(t *testing.T) {
 		return &config.Config{
 			Flags: &config.Flags{
 				NetworkFlags: config.NetworkFlags{
-					ActiveNetParams: &dagconfig.SimNetParams},
+					ActiveNetParams: &dagconfig.SimnetParams},
 			},
 		}
 	})
@@ -174,7 +174,7 @@ func TestAddLocalAddress(t *testing.T) {
 		return &config.Config{
 			Flags: &config.Flags{
 				NetworkFlags: config.NetworkFlags{
-					ActiveNetParams: &dagconfig.SimNetParams},
+					ActiveNetParams: &dagconfig.SimnetParams},
 			},
 		}
 	})
@@ -237,7 +237,7 @@ func TestAttempt(t *testing.T) {
 		return &config.Config{
 			Flags: &config.Flags{
 				NetworkFlags: config.NetworkFlags{
-					ActiveNetParams: &dagconfig.SimNetParams},
+					ActiveNetParams: &dagconfig.SimnetParams},
 			},
 		}
 	})
@@ -269,7 +269,7 @@ func TestConnected(t *testing.T) {
 		return &config.Config{
 			Flags: &config.Flags{
 				NetworkFlags: config.NetworkFlags{
-					ActiveNetParams: &dagconfig.SimNetParams},
+					ActiveNetParams: &dagconfig.SimnetParams},
 			},
 		}
 	})
@@ -299,7 +299,7 @@ func TestNeedMoreAddresses(t *testing.T) {
 		return &config.Config{
 			Flags: &config.Flags{
 				NetworkFlags: config.NetworkFlags{
-					ActiveNetParams: &dagconfig.SimNetParams},
+					ActiveNetParams: &dagconfig.SimnetParams},
 			},
 		}
 	})
@@ -341,7 +341,7 @@ func TestGood(t *testing.T) {
 		return &config.Config{
 			Flags: &config.Flags{
 				NetworkFlags: config.NetworkFlags{
-					ActiveNetParams: &dagconfig.SimNetParams},
+					ActiveNetParams: &dagconfig.SimnetParams},
 			},
 		}
 	})
@@ -398,7 +398,7 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 		return &config.Config{
 			Flags: &config.Flags{
 				NetworkFlags: config.NetworkFlags{
-					ActiveNetParams: &dagconfig.SimNetParams},
+					ActiveNetParams: &dagconfig.SimnetParams},
 			},
 		}
 	})
@@ -477,7 +477,7 @@ func TestGetAddress(t *testing.T) {
 		return &config.Config{
 			Flags: &config.Flags{
 				NetworkFlags: config.NetworkFlags{
-					ActiveNetParams: &dagconfig.SimNetParams},
+					ActiveNetParams: &dagconfig.SimnetParams},
 			},
 		}
 	})
@@ -559,7 +559,7 @@ func TestGetBestLocalAddress(t *testing.T) {
 		return &config.Config{
 			Flags: &config.Flags{
 				NetworkFlags: config.NetworkFlags{
-					ActiveNetParams: &dagconfig.SimNetParams},
+					ActiveNetParams: &dagconfig.SimnetParams},
 			},
 		}
 	})
@@ -670,7 +670,7 @@ func TestGetBestLocalAddress(t *testing.T) {
 	*/
 }
 
-func TestNetAddressKey(t *testing.T) {
+func TestnetAddressKey(t *testing.T) {
 	addNaTests()
 
 	t.Logf("Running %d tests", len(naTests))

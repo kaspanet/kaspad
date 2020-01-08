@@ -16,7 +16,7 @@ import (
 func TestGenesisBlock(t *testing.T) {
 	// Encode the genesis block to raw bytes.
 	var buf bytes.Buffer
-	err := MainNetParams.GenesisBlock.Serialize(&buf)
+	err := MainnetParams.GenesisBlock.Serialize(&buf)
 	if err != nil {
 		t.Fatalf("TestGenesisBlock: %v", err)
 	}
@@ -29,119 +29,119 @@ func TestGenesisBlock(t *testing.T) {
 	}
 
 	// Check hash of the block against expected hash.
-	hash := MainNetParams.GenesisBlock.BlockHash()
-	if !MainNetParams.GenesisHash.IsEqual(hash) {
+	hash := MainnetParams.GenesisBlock.BlockHash()
+	if !MainnetParams.GenesisHash.IsEqual(hash) {
 		t.Fatalf("TestGenesisBlock: Genesis block hash does not "+
 			"appear valid - got %v, want %v", spew.Sdump(hash),
-			spew.Sdump(MainNetParams.GenesisHash))
+			spew.Sdump(MainnetParams.GenesisHash))
 	}
 }
 
-// TestRegTestGenesisBlock tests the genesis block of the regression test
+// TestRegtestGenesisBlock tests the genesis block of the regression test
 // network for validity by checking the encoded bytes and hashes.
-func TestRegTestGenesisBlock(t *testing.T) {
+func TestRegtestGenesisBlock(t *testing.T) {
 	// Encode the genesis block to raw bytes.
 	var buf bytes.Buffer
 	err := RegressionNetParams.GenesisBlock.Serialize(&buf)
 	if err != nil {
-		t.Fatalf("TestRegTestGenesisBlock: %v", err)
+		t.Fatalf("TestRegtestGenesisBlock: %v", err)
 	}
 
 	// Ensure the encoded block matches the expected bytes.
-	if !bytes.Equal(buf.Bytes(), regTestGenesisBlockBytes) {
-		t.Fatalf("TestRegTestGenesisBlock: Genesis block does not "+
+	if !bytes.Equal(buf.Bytes(), regtestGenesisBlockBytes) {
+		t.Fatalf("TestRegtestGenesisBlock: Genesis block does not "+
 			"appear valid - got %v, want %v",
 			spew.Sdump(buf.Bytes()),
-			spew.Sdump(regTestGenesisBlockBytes))
+			spew.Sdump(regtestGenesisBlockBytes))
 	}
 
 	// Check hash of the block against expected hash.
 	hash := RegressionNetParams.GenesisBlock.BlockHash()
 	if !RegressionNetParams.GenesisHash.IsEqual(hash) {
-		t.Fatalf("TestRegTestGenesisBlock: Genesis block hash does "+
+		t.Fatalf("TestRegtestGenesisBlock: Genesis block hash does "+
 			"not appear valid - got %v, want %v", spew.Sdump(hash),
 			spew.Sdump(RegressionNetParams.GenesisHash))
 	}
 }
 
-// TestTestNetGenesisBlock tests the genesis block of the test network for
+// TestTestnetGenesisBlock tests the genesis block of the test network for
 // validity by checking the encoded bytes and hashes.
-func TestTestNetGenesisBlock(t *testing.T) {
+func TestTestnetGenesisBlock(t *testing.T) {
 	// Encode the genesis block to raw bytes.
 	var buf bytes.Buffer
-	err := TestNetParams.GenesisBlock.Serialize(&buf)
+	err := TestnetParams.GenesisBlock.Serialize(&buf)
 	if err != nil {
-		t.Fatalf("TestTestNetGenesisBlock: %v", err)
+		t.Fatalf("TestTestnetGenesisBlock: %v", err)
 	}
 
 	// Ensure the encoded block matches the expected bytes.
-	if !bytes.Equal(buf.Bytes(), testNetGenesisBlockBytes) {
-		t.Fatalf("TestTestNetGenesisBlock: Genesis block does not "+
+	if !bytes.Equal(buf.Bytes(), testnetGenesisBlockBytes) {
+		t.Fatalf("TestTestnetGenesisBlock: Genesis block does not "+
 			"appear valid - got %v, want %v",
 			spew.Sdump(buf.Bytes()),
-			spew.Sdump(testNetGenesisBlockBytes))
+			spew.Sdump(testnetGenesisBlockBytes))
 	}
 
 	// Check hash of the block against expected hash.
-	hash := TestNetParams.GenesisBlock.BlockHash()
-	if !TestNetParams.GenesisHash.IsEqual(hash) {
-		t.Fatalf("TestTestNetGenesisBlock: Genesis block hash does "+
+	hash := TestnetParams.GenesisBlock.BlockHash()
+	if !TestnetParams.GenesisHash.IsEqual(hash) {
+		t.Fatalf("TestTestnetGenesisBlock: Genesis block hash does "+
 			"not appear valid - got %v, want %v", spew.Sdump(hash),
-			spew.Sdump(TestNetParams.GenesisHash))
+			spew.Sdump(TestnetParams.GenesisHash))
 	}
 }
 
-// TestSimNetGenesisBlock tests the genesis block of the simulation test network
+// TestSimnetGenesisBlock tests the genesis block of the simulation test network
 // for validity by checking the encoded bytes and hashes.
-func TestSimNetGenesisBlock(t *testing.T) {
+func TestSimnetGenesisBlock(t *testing.T) {
 	// Encode the genesis block to raw bytes.
 	var buf bytes.Buffer
-	err := SimNetParams.GenesisBlock.Serialize(&buf)
+	err := SimnetParams.GenesisBlock.Serialize(&buf)
 	if err != nil {
-		t.Fatalf("TestSimNetGenesisBlock: %v", err)
+		t.Fatalf("TestSimnetGenesisBlock: %v", err)
 	}
 
 	// Ensure the encoded block matches the expected bytes.
-	if !bytes.Equal(buf.Bytes(), simNetGenesisBlockBytes) {
-		t.Fatalf("TestSimNetGenesisBlock: Genesis block does not "+
+	if !bytes.Equal(buf.Bytes(), simnetGenesisBlockBytes) {
+		t.Fatalf("TestSimnetGenesisBlock: Genesis block does not "+
 			"appear valid - got %v, want %v",
 			spew.Sdump(buf.Bytes()),
-			spew.Sdump(simNetGenesisBlockBytes))
+			spew.Sdump(simnetGenesisBlockBytes))
 	}
 
 	// Check hash of the block against expected hash.
-	hash := SimNetParams.GenesisBlock.BlockHash()
-	if !SimNetParams.GenesisHash.IsEqual(hash) {
-		t.Fatalf("TestSimNetGenesisBlock: Genesis block hash does "+
+	hash := SimnetParams.GenesisBlock.BlockHash()
+	if !SimnetParams.GenesisHash.IsEqual(hash) {
+		t.Fatalf("TestSimnetGenesisBlock: Genesis block hash does "+
 			"not appear valid - got %v, want %v", spew.Sdump(hash),
-			spew.Sdump(SimNetParams.GenesisHash))
+			spew.Sdump(SimnetParams.GenesisHash))
 	}
 }
 
-// TestDevNetGenesisBlock tests the genesis block of the development network
+// TestDevnetGenesisBlock tests the genesis block of the development network
 // for validity by checking the encoded bytes and hashes.
-func TestDevNetGenesisBlock(t *testing.T) {
+func TestDevnetGenesisBlock(t *testing.T) {
 	// Encode the genesis block to raw bytes.
 	var buf bytes.Buffer
-	err := DevNetParams.GenesisBlock.Serialize(&buf)
+	err := DevnetParams.GenesisBlock.Serialize(&buf)
 	if err != nil {
-		t.Fatalf("TestDevNetGenesisBlock: %v", err)
+		t.Fatalf("TestDevnetGenesisBlock: %v", err)
 	}
 
 	// Ensure the encoded block matches the expected bytes.
-	if !bytes.Equal(buf.Bytes(), devNetGenesisBlockBytes) {
-		t.Fatalf("TestDevNetGenesisBlock: Genesis block does not "+
+	if !bytes.Equal(buf.Bytes(), devnetGenesisBlockBytes) {
+		t.Fatalf("TestDevnetGenesisBlock: Genesis block does not "+
 			"appear valid - got %v, want %v",
 			spew.Sdump(buf.Bytes()),
-			spew.Sdump(simNetGenesisBlockBytes))
+			spew.Sdump(simnetGenesisBlockBytes))
 	}
 
 	// Check hash of the block against expected hash.
-	hash := DevNetParams.GenesisBlock.BlockHash()
-	if !DevNetParams.GenesisHash.IsEqual(hash) {
-		t.Fatalf("TestDevNetGenesisBlock: Genesis block hash does "+
+	hash := DevnetParams.GenesisBlock.BlockHash()
+	if !DevnetParams.GenesisHash.IsEqual(hash) {
+		t.Fatalf("TestDevnetGenesisBlock: Genesis block hash does "+
 			"not appear valid - got %v, want %v", spew.Sdump(hash),
-			spew.Sdump(DevNetParams.GenesisHash))
+			spew.Sdump(DevnetParams.GenesisHash))
 	}
 }
 
@@ -168,9 +168,9 @@ var genesisBlockBytes = []byte{
 	0xc7, 0x7e, 0xba, 0x30, 0xcd, 0x5a, 0x4b, 0x87,
 }
 
-// regTestGenesisBlockBytes are the wire encoded bytes for the genesis block of
+// regtestGenesisBlockBytes are the wire encoded bytes for the genesis block of
 // the regression test network as of protocol version 1.
-var regTestGenesisBlockBytes = []byte{
+var regtestGenesisBlockBytes = []byte{
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x3a, 0x9f, 0x62,
 	0xc9, 0x2b, 0x16, 0x17, 0xb3, 0x41, 0x6d, 0x9e,
 	0x2d, 0x87, 0x93, 0xfd, 0x72, 0x77, 0x4d, 0x1d,
@@ -210,9 +210,9 @@ var regTestGenesisBlockBytes = []byte{
 	0x67, 0x74, 0x65, 0x73, 0x74,
 }
 
-// testNetGenesisBlockBytes are the wire encoded bytes for the genesis block of
+// testnetGenesisBlockBytes are the wire encoded bytes for the genesis block of
 // the test network as of protocol version 1.
-var testNetGenesisBlockBytes = []byte{
+var testnetGenesisBlockBytes = []byte{
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x88, 0x05, 0xd0,
 	0xe7, 0x8f, 0x41, 0x77, 0x39, 0x2c, 0xb6, 0xbb,
 	0xb4, 0x19, 0xa8, 0x48, 0x4a, 0xdf, 0x77, 0xb0,
@@ -249,9 +249,9 @@ var testNetGenesisBlockBytes = []byte{
 	0x74, 0x65, 0x73, 0x74, 0x6e, 0x65, 0x74,
 }
 
-// simNetGenesisBlockBytes are the wire encoded bytes for the genesis block of
+// simnetGenesisBlockBytes are the wire encoded bytes for the genesis block of
 // the simulation test network as of protocol version 1.
-var simNetGenesisBlockBytes = []byte{
+var simnetGenesisBlockBytes = []byte{
 	0x01, 0x00, 0x00, 0x00, 0x00, 0xb0, 0x1c, 0x3b,
 	0x9e, 0x0d, 0x9a, 0xc0, 0x80, 0x0a, 0x08, 0x42,
 	0x50, 0x02, 0xa3, 0xea, 0xdb, 0xed, 0xc8, 0xd0,
@@ -291,9 +291,9 @@ var simNetGenesisBlockBytes = []byte{
 	0x6d, 0x6e, 0x65, 0x74,
 }
 
-// devNetGenesisBlockBytes are the wire encoded bytes for the genesis block of
+// devnetGenesisBlockBytes are the wire encoded bytes for the genesis block of
 // the development network as of protocol version 1.
-var devNetGenesisBlockBytes = []byte{
+var devnetGenesisBlockBytes = []byte{
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x16, 0x0a, 0xc6,
 	0x8b, 0x77, 0x08, 0xf4, 0x96, 0xa3, 0x07, 0x05,
 	0xbc, 0x92, 0xda, 0xee, 0x73, 0x26, 0x5e, 0xd0,

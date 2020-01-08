@@ -24,7 +24,7 @@ type testBlockData struct {
 //that the blue score, blue set and selected parent of each
 //block calculated as expected
 func TestPhantom(t *testing.T) {
-	netParams := dagconfig.SimNetParams
+	netParams := dagconfig.SimnetParams
 
 	blockVersion := int32(0x10000000)
 

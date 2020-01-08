@@ -15,8 +15,8 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
-// TestNetAddress tests the NetAddress API.
-func TestNetAddress(t *testing.T) {
+// TestnetAddress tests the NetAddress API.
+func TestnetAddress(t *testing.T) {
 	ip := net.ParseIP("127.0.0.1")
 	port := 16111
 
@@ -60,9 +60,9 @@ func TestNetAddress(t *testing.T) {
 	}
 }
 
-// TestNetAddressWire tests the NetAddress wire encode and decode for various
+// TestnetAddressWire tests the NetAddress wire encode and decode for various
 // protocol versions and timestamp flag combinations.
-func TestNetAddressWire(t *testing.T) {
+func TestnetAddressWire(t *testing.T) {
 	// baseNetAddr is used in the various tests as a baseline NetAddress.
 	baseNetAddr := NetAddress{
 		Timestamp: time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
@@ -150,9 +150,9 @@ func TestNetAddressWire(t *testing.T) {
 	}
 }
 
-// TestNetAddressWireErrors performs negative tests against wire encode and
+// TestnetAddressWireErrors performs negative tests against wire encode and
 // decode NetAddress to confirm error paths work correctly.
-func TestNetAddressWireErrors(t *testing.T) {
+func TestnetAddressWireErrors(t *testing.T) {
 	pver := ProtocolVersion
 
 	// baseNetAddr is used in the various tests as a baseline NetAddress.

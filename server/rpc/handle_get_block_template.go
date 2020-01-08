@@ -173,7 +173,7 @@ func handleGetBlockTemplateRequest(s *Server, request *rpcmodel.TemplateRequest,
 	// way to relay a found block or receive transactions to work on.
 	// However, allow this state when running in the regression test or
 	// simulation test mode.
-	if !(config.ActiveConfig().RegressionTest || config.ActiveConfig().SimNet) &&
+	if !(config.ActiveConfig().RegressionTest || config.ActiveConfig().Simnet) &&
 		s.cfg.ConnMgr.ConnectedCount() == 0 {
 
 		return nil, &rpcmodel.RPCError{

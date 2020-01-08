@@ -352,9 +352,9 @@ func TestMaxRetryDuration(t *testing.T) {
 	}
 }
 
-// TestNetworkFailure tests that the connection manager handles a network
+// TestnetworkFailure tests that the connection manager handles a network
 // failure gracefully.
-func TestNetworkFailure(t *testing.T) {
+func TestnetworkFailure(t *testing.T) {
 	var dials uint32
 	errDialer := func(net net.Addr) (net.Conn, error) {
 		atomic.AddUint32(&dials, 1)

@@ -22,7 +22,7 @@ func mockRemotePeer() error {
 	peerCfg := &peer.Config{
 		UserAgentName:    "peer",  // User agent name to advertise.
 		UserAgentVersion: "1.0.0", // User agent version to advertise.
-		DAGParams:        &dagconfig.SimNetParams,
+		DAGParams:        &dagconfig.SimnetParams,
 		SelectedTip:      fakeSelectedTipFn,
 	}
 
@@ -68,7 +68,7 @@ func Example_newOutboundPeer() {
 	peerCfg := &peer.Config{
 		UserAgentName:    "peer",  // User agent name to advertise.
 		UserAgentVersion: "1.0.0", // User agent version to advertise.
-		DAGParams:        &dagconfig.SimNetParams,
+		DAGParams:        &dagconfig.SimnetParams,
 		Services:         0,
 		Listeners: peer.MessageListeners{
 			OnVersion: func(p *peer.Peer, msg *wire.MsgVersion) {

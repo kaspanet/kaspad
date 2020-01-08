@@ -1714,7 +1714,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 	// discovered peers in order to prevent it from becoming a public test
 	// network.
 	var newAddressFunc func() (net.Addr, error)
-	if !config.ActiveConfig().SimNet && len(config.ActiveConfig().ConnectPeers) == 0 {
+	if !config.ActiveConfig().Simnet && len(config.ActiveConfig().ConnectPeers) == 0 {
 		newAddressFunc = func() (net.Addr, error) {
 			for tries := 0; tries < 100; tries++ {
 				addr := s.addrManager.GetAddress()

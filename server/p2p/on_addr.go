@@ -14,7 +14,7 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 	// helps prevent the network from becoming another public test network
 	// since it will not be able to learn about other peers that have not
 	// specifically been provided.
-	if config.ActiveConfig().SimNet {
+	if config.ActiveConfig().Simnet {
 		return
 	}
 

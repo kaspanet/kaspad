@@ -61,7 +61,7 @@ func ExampleExtractScriptPubKeyAddress() {
 
 	// Extract and print details from the script.
 	scriptClass, address, err := txscript.ExtractScriptPubKeyAddress(
-		script, &dagconfig.MainNetParams)
+		script, &dagconfig.MainnetParams)
 	if err != nil {
 		fmt.Println(err)
 		return

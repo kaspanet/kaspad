@@ -10,10 +10,10 @@ import (
 
 // NetworkFlags holds the network configuration, that is which network is selected.
 type NetworkFlags struct {
-	TestNet         bool `long:"testnet" description:"Use the test network"`
+	Testnet         bool `long:"testnet" description:"Use the test network"`
 	RegressionTest  bool `long:"regtest" description:"Use the regression test network"`
-	SimNet          bool `long:"simnet" description:"Use the simulation test network"`
-	DevNet          bool `long:"devnet" description:"Use the development test network"`
+	Simnet          bool `long:"simnet" description:"Use the simulation test network"`
+	Devnet          bool `long:"devnet" description:"Use the development test network"`
 	ActiveNetParams *dagconfig.Params
 }
 
@@ -21,27 +21,27 @@ type NetworkFlags struct {
 // It returns error if more than one network was selected, nil otherwise.
 func (networkFlags *NetworkFlags) ResolveNetwork(parser *flags.Parser) error {
 	//NetParams holds the selected network parameters. Default value is main-net.
-	networkFlags.ActiveNetParams = &dagconfig.MainNetParams
+	networkFlags.ActiveNetParams = &dagconfig.MainnetParams
 	// Multiple networks can't be selected simultaneously.
 	numNets := 0
 	// default net is main net
 	// Count number of network flags passed; assign active network params
 	// while we're at it
-	if networkFlags.TestNet {
+	if networkFlags.Testnet {
 		numNets++
-		networkFlags.ActiveNetParams = &dagconfig.TestNetParams
+		networkFlags.ActiveNetParams = &dagconfig.TestnetParams
 	}
 	if networkFlags.RegressionTest {
 		numNets++
 		networkFlags.ActiveNetParams = &dagconfig.RegressionNetParams
 	}
-	if networkFlags.SimNet {
+	if networkFlags.Simnet {
 		numNets++
-		networkFlags.ActiveNetParams = &dagconfig.SimNetParams
+		networkFlags.ActiveNetParams = &dagconfig.SimnetParams
 	}
-	if networkFlags.DevNet {
+	if networkFlags.Devnet {
 		numNets++
-		networkFlags.ActiveNetParams = &dagconfig.DevNetParams
+		networkFlags.ActiveNetParams = &dagconfig.DevnetParams
 	}
 	if numNets > 1 {
 		message := "Multiple networks parameters (testnet, simnet, devnet, etc.) cannot be used" +

@@ -43,7 +43,7 @@ func TestRegister(t *testing.T) {
 			register: []registerTest{
 				{
 					name:   "duplicate mainnet",
-					params: &MainNetParams,
+					params: &MainnetParams,
 					err:    ErrDuplicateNet,
 				},
 				{
@@ -53,24 +53,24 @@ func TestRegister(t *testing.T) {
 				},
 				{
 					name:   "duplicate testnet",
-					params: &TestNetParams,
+					params: &TestnetParams,
 					err:    ErrDuplicateNet,
 				},
 				{
 					name:   "duplicate simnet",
-					params: &SimNetParams,
+					params: &SimnetParams,
 					err:    ErrDuplicateNet,
 				},
 			},
 			hdMagics: []hdTest{
 				{
-					priv: MainNetParams.HDKeyIDPair.PrivateKeyID[:],
-					want: MainNetParams.HDKeyIDPair.PublicKeyID[:],
+					priv: MainnetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: MainnetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
-					priv: TestNetParams.HDKeyIDPair.PrivateKeyID[:],
-					want: TestNetParams.HDKeyIDPair.PublicKeyID[:],
+					priv: TestnetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: TestnetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
@@ -79,8 +79,8 @@ func TestRegister(t *testing.T) {
 					err:  nil,
 				},
 				{
-					priv: SimNetParams.HDKeyIDPair.PrivateKeyID[:],
-					want: SimNetParams.HDKeyIDPair.PublicKeyID[:],
+					priv: SimnetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: SimnetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
@@ -119,7 +119,7 @@ func TestRegister(t *testing.T) {
 			register: []registerTest{
 				{
 					name:   "duplicate mainnet",
-					params: &MainNetParams,
+					params: &MainnetParams,
 					err:    ErrDuplicateNet,
 				},
 				{
@@ -129,12 +129,12 @@ func TestRegister(t *testing.T) {
 				},
 				{
 					name:   "duplicate testnet",
-					params: &TestNetParams,
+					params: &TestnetParams,
 					err:    ErrDuplicateNet,
 				},
 				{
 					name:   "duplicate simnet",
-					params: &SimNetParams,
+					params: &SimnetParams,
 					err:    ErrDuplicateNet,
 				},
 				{
@@ -145,13 +145,13 @@ func TestRegister(t *testing.T) {
 			},
 			hdMagics: []hdTest{
 				{
-					priv: MainNetParams.HDKeyIDPair.PrivateKeyID[:],
-					want: MainNetParams.HDKeyIDPair.PublicKeyID[:],
+					priv: MainnetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: MainnetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
-					priv: TestNetParams.HDKeyIDPair.PrivateKeyID[:],
-					want: TestNetParams.HDKeyIDPair.PublicKeyID[:],
+					priv: TestnetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: TestnetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
@@ -160,8 +160,8 @@ func TestRegister(t *testing.T) {
 					err:  nil,
 				},
 				{
-					priv: SimNetParams.HDKeyIDPair.PrivateKeyID[:],
-					want: SimNetParams.HDKeyIDPair.PublicKeyID[:],
+					priv: SimnetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: SimnetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
@@ -182,15 +182,15 @@ func TestRegister(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		for _, regTest := range test.register {
-			err := Register(regTest.params)
+		for _, regtest := range test.register {
+			err := Register(regtest.params)
 
 			// HDKeyIDPairs must be registered separately
-			hdkeychain.RegisterHDKeyIDPair(regTest.params.HDKeyIDPair)
+			hdkeychain.RegisterHDKeyIDPair(regtest.params.HDKeyIDPair)
 
-			if err != regTest.err {
+			if err != regtest.err {
 				t.Errorf("%s:%s: Registered network with unexpected error: got %v expected %v",
-					test.name, regTest.name, err, regTest.err)
+					test.name, regtest.name, err, regtest.err)
 			}
 		}
 		for i, magTest := range test.hdMagics {

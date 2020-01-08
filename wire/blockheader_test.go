@@ -22,9 +22,9 @@ func TestBlockHeader(t *testing.T) {
 		t.Errorf("random.Uint64: Error generating nonce: %v", err)
 	}
 
-	hashes := []*daghash.Hash{mainNetGenesisHash, simNetGenesisHash}
+	hashes := []*daghash.Hash{mainnetGenesisHash, simnetGenesisHash}
 
-	merkleHash := mainNetGenesisMerkleRoot
+	merkleHash := mainnetGenesisMerkleRoot
 	acceptedIDMerkleRoot := exampleAcceptedIDMerkleRoot
 	bits := uint32(0x1d00ffff)
 	bh := NewBlockHeader(1, hashes, merkleHash, acceptedIDMerkleRoot, exampleUTXOCommitment, bits, nonce)
@@ -58,8 +58,8 @@ func TestBlockHeaderWire(t *testing.T) {
 	bits := uint32(0x1d00ffff)
 	baseBlockHdr := &BlockHeader{
 		Version:              1,
-		ParentHashes:         []*daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
-		HashMerkleRoot:       mainNetGenesisMerkleRoot,
+		ParentHashes:         []*daghash.Hash{mainnetGenesisHash, simnetGenesisHash},
+		HashMerkleRoot:       mainnetGenesisMerkleRoot,
 		AcceptedIDMerkleRoot: exampleAcceptedIDMerkleRoot,
 		UTXOCommitment:       exampleUTXOCommitment,
 		Timestamp:            time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
@@ -71,11 +71,11 @@ func TestBlockHeaderWire(t *testing.T) {
 	baseBlockHdrEncoded := []byte{
 		0x01, 0x00, 0x00, 0x00, // Version 1
 		0x02,                                           // NumParentBlocks
-		0xdc, 0x5f, 0x5b, 0x5b, 0x1d, 0xc2, 0xa7, 0x25, // mainNetGenesisHash
+		0xdc, 0x5f, 0x5b, 0x5b, 0x1d, 0xc2, 0xa7, 0x25, // mainnetGenesisHash
 		0x49, 0xd5, 0x1d, 0x4d, 0xee, 0xd7, 0xa4, 0x8b,
 		0xaf, 0xd3, 0x14, 0x4b, 0x56, 0x78, 0x98, 0xb1,
 		0x8c, 0xfd, 0x9f, 0x69, 0xdd, 0xcf, 0xbb, 0x63,
-		0xf6, 0x7a, 0xd7, 0x69, 0x5d, 0x9b, 0x66, 0x2a, // simNetGenesisHash
+		0xf6, 0x7a, 0xd7, 0x69, 0x5d, 0x9b, 0x66, 0x2a, // simnetGenesisHash
 		0x72, 0xff, 0x3d, 0x8e, 0xdb, 0xbb, 0x2d, 0xe0,
 		0xbf, 0xa6, 0x7b, 0x13, 0x97, 0x4b, 0xb9, 0x91,
 		0x0d, 0x11, 0x6d, 0x5c, 0xbd, 0x86, 0x3e, 0x68,
@@ -174,8 +174,8 @@ func TestBlockHeaderSerialize(t *testing.T) {
 	bits := uint32(0x1d00ffff)
 	baseBlockHdr := &BlockHeader{
 		Version:              1,
-		ParentHashes:         []*daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
-		HashMerkleRoot:       mainNetGenesisMerkleRoot,
+		ParentHashes:         []*daghash.Hash{mainnetGenesisHash, simnetGenesisHash},
+		HashMerkleRoot:       mainnetGenesisMerkleRoot,
 		AcceptedIDMerkleRoot: exampleAcceptedIDMerkleRoot,
 		UTXOCommitment:       exampleUTXOCommitment,
 		Timestamp:            time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
@@ -187,11 +187,11 @@ func TestBlockHeaderSerialize(t *testing.T) {
 	baseBlockHdrEncoded := []byte{
 		0x01, 0x00, 0x00, 0x00, // Version 1
 		0x02,                                           // NumParentBlocks
-		0xdc, 0x5f, 0x5b, 0x5b, 0x1d, 0xc2, 0xa7, 0x25, // mainNetGenesisHash
+		0xdc, 0x5f, 0x5b, 0x5b, 0x1d, 0xc2, 0xa7, 0x25, // mainnetGenesisHash
 		0x49, 0xd5, 0x1d, 0x4d, 0xee, 0xd7, 0xa4, 0x8b,
 		0xaf, 0xd3, 0x14, 0x4b, 0x56, 0x78, 0x98, 0xb1,
 		0x8c, 0xfd, 0x9f, 0x69, 0xdd, 0xcf, 0xbb, 0x63,
-		0xf6, 0x7a, 0xd7, 0x69, 0x5d, 0x9b, 0x66, 0x2a, // simNetGenesisHash
+		0xf6, 0x7a, 0xd7, 0x69, 0x5d, 0x9b, 0x66, 0x2a, // simnetGenesisHash
 		0x72, 0xff, 0x3d, 0x8e, 0xdb, 0xbb, 0x2d, 0xe0,
 		0xbf, 0xa6, 0x7b, 0x13, 0x97, 0x4b, 0xb9, 0x91,
 		0x0d, 0x11, 0x6d, 0x5c, 0xbd, 0x86, 0x3e, 0x68,
@@ -263,8 +263,8 @@ func TestBlockHeaderSerializeSize(t *testing.T) {
 	timestamp := time.Unix(0x495fab29, 0) // 2009-01-03 12:15:05 -0600 CST
 	baseBlockHdr := &BlockHeader{
 		Version:              1,
-		ParentHashes:         []*daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
-		HashMerkleRoot:       mainNetGenesisMerkleRoot,
+		ParentHashes:         []*daghash.Hash{mainnetGenesisHash, simnetGenesisHash},
+		HashMerkleRoot:       mainnetGenesisMerkleRoot,
 		AcceptedIDMerkleRoot: &daghash.ZeroHash,
 		UTXOCommitment:       &daghash.ZeroHash,
 		Timestamp:            timestamp,
@@ -275,7 +275,7 @@ func TestBlockHeaderSerializeSize(t *testing.T) {
 	genesisBlockHdr := &BlockHeader{
 		Version:              1,
 		ParentHashes:         []*daghash.Hash{},
-		HashMerkleRoot:       mainNetGenesisMerkleRoot,
+		HashMerkleRoot:       mainnetGenesisMerkleRoot,
 		AcceptedIDMerkleRoot: &daghash.ZeroHash,
 		UTXOCommitment:       &daghash.ZeroHash,
 		Timestamp:            timestamp,
@@ -312,8 +312,8 @@ func TestIsGenesis(t *testing.T) {
 
 	baseBlockHdr := &BlockHeader{
 		Version:        1,
-		ParentHashes:   []*daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
-		HashMerkleRoot: mainNetGenesisMerkleRoot,
+		ParentHashes:   []*daghash.Hash{mainnetGenesisHash, simnetGenesisHash},
+		HashMerkleRoot: mainnetGenesisMerkleRoot,
 		Timestamp:      timestamp,
 		Bits:           bits,
 		Nonce:          nonce,
@@ -321,7 +321,7 @@ func TestIsGenesis(t *testing.T) {
 	genesisBlockHdr := &BlockHeader{
 		Version:        1,
 		ParentHashes:   []*daghash.Hash{},
-		HashMerkleRoot: mainNetGenesisMerkleRoot,
+		HashMerkleRoot: mainnetGenesisMerkleRoot,
 		Timestamp:      timestamp,
 		Bits:           bits,
 		Nonce:          nonce,

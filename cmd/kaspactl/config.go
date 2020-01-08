@@ -110,16 +110,16 @@ type ConfigFlags struct {
 
 // normalizeAddress returns addr with the passed default port appended if
 // there is not already a port specified.
-func normalizeAddress(addr string, useTestNet, useSimNet, useDevNet bool) string {
+func normalizeAddress(addr string, useTestnet, useSimnet, useDevnet bool) string {
 	_, _, err := net.SplitHostPort(addr)
 	if err != nil {
 		var defaultPort string
 		switch {
-		case useDevNet:
+		case useDevnet:
 			defaultPort = "16610"
-		case useTestNet:
+		case useTestnet:
 			defaultPort = "16210"
-		case useSimNet:
+		case useSimnet:
 			defaultPort = "16510"
 		default:
 			defaultPort = "16110"
@@ -242,8 +242,8 @@ func loadConfig() (*ConfigFlags, []string, error) {
 
 	// Add default port to RPC server based on --testnet and --simnet flags
 	// if needed.
-	activeConfig.RPCServer = normalizeAddress(activeConfig.RPCServer, activeConfig.TestNet,
-		activeConfig.SimNet, activeConfig.DevNet)
+	activeConfig.RPCServer = normalizeAddress(activeConfig.RPCServer, activeConfig.Testnet,
+		activeConfig.Simnet, activeConfig.Devnet)
 
 	return activeConfig, remainingArgs, nil
 }

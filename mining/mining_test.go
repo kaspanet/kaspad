@@ -21,7 +21,7 @@ import (
 )
 
 func TestNewBlockTemplate(t *testing.T) {
-	params := dagconfig.SimNetParams
+	params := dagconfig.SimnetParams
 	params.BlockCoinbaseMaturity = 0
 
 	dag, teardownFunc, err := blockdag.DAGSetup("TestNewBlockTemplate", blockdag.Config{

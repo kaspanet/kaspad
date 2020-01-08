@@ -13,9 +13,9 @@ import (
 	"testing"
 )
 
-// mainNetGenesisHash is the hash of the first block in the block DAG for the
+// mainnetGenesisHash is the hash of the first block in the block DAG for the
 // main network (genesis block).
-var mainNetGenesisHash = Hash([HashSize]byte{
+var mainnetGenesisHash = Hash([HashSize]byte{
 	0xdc, 0x5f, 0x5b, 0x5b, 0x1d, 0xc2, 0xa7, 0x25,
 	0x49, 0xd5, 0x1d, 0x4d, 0xee, 0xd7, 0xa4, 0x8b,
 	0xaf, 0xd3, 0x14, 0x4b, 0x56, 0x78, 0x98, 0xb1,
@@ -153,14 +153,14 @@ func TestNewHashFromStr(t *testing.T) {
 		// Genesis hash.
 		{
 			"63bbcfdd699ffd8cb19878564b14d3af8ba4d7ee4d1dd54925a7c21d5b5b5fdc",
-			mainNetGenesisHash,
+			mainnetGenesisHash,
 			nil,
 		},
 
 		// Genesis hash with stripped leading zeros.
 		{
 			"63bbcfdd699ffd8cb19878564b14d3af8ba4d7ee4d1dd54925a7c21d5b5b5fdc",
-			mainNetGenesisHash,
+			mainnetGenesisHash,
 			nil,
 		},
 

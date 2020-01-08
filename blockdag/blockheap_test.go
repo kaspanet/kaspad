@@ -9,13 +9,13 @@ import (
 
 // TestBlockHeap tests pushing, popping, and determining the length of the heap.
 func TestBlockHeap(t *testing.T) {
-	block0Header := dagconfig.MainNetParams.GenesisBlock.Header
-	block0 := newBlockNode(&block0Header, newSet(), dagconfig.MainNetParams.K)
+	block0Header := dagconfig.MainnetParams.GenesisBlock.Header
+	block0 := newBlockNode(&block0Header, newSet(), dagconfig.MainnetParams.K)
 
 	block100000Header := Block100000.Header
-	block100000 := newBlockNode(&block100000Header, setFromSlice(block0), dagconfig.MainNetParams.K)
+	block100000 := newBlockNode(&block100000Header, setFromSlice(block0), dagconfig.MainnetParams.K)
 
-	block0smallHash := newBlockNode(&block0Header, newSet(), dagconfig.MainNetParams.K)
+	block0smallHash := newBlockNode(&block0Header, newSet(), dagconfig.MainnetParams.K)
 	block0smallHash.hash = &daghash.Hash{}
 
 	tests := []struct {

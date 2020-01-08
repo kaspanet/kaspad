@@ -68,7 +68,7 @@ func TestMessage(t *testing.T) {
 	msgFilterAdd := NewMsgFilterAdd([]byte{0x01})
 	msgFilterClear := NewMsgFilterClear()
 	msgFilterLoad := NewMsgFilterLoad([]byte{0x01}, 10, 0, BloomUpdateNone)
-	bh := NewBlockHeader(1, []*daghash.Hash{mainNetGenesisHash, simNetGenesisHash}, &daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, 0, 0)
+	bh := NewBlockHeader(1, []*daghash.Hash{mainnetGenesisHash, simnetGenesisHash}, &daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, 0, 0)
 	msgMerkleBlock := NewMsgMerkleBlock(bh)
 	msgReject := NewMsgReject("block", RejectDuplicate, "duplicate block")
 
@@ -79,29 +79,29 @@ func TestMessage(t *testing.T) {
 		kaspaNet KaspaNet // Network to use for wire encoding
 		bytes    int      // Expected num bytes read/written
 	}{
-		{msgVersion, msgVersion, pver, MainNet, 153},
-		{msgVerack, msgVerack, pver, MainNet, 24},
-		{msgGetAddr, msgGetAddr, pver, MainNet, 26},
-		{msgAddr, msgAddr, pver, MainNet, 27},
-		{msgGetBlockInvs, msgGetBlockInvs, pver, MainNet, 88},
-		{msgBlock, msgBlock, pver, MainNet, 372},
-		{msgInv, msgInv, pver, MainNet, 25},
-		{msgGetData, msgGetData, pver, MainNet, 25},
-		{msgNotFound, msgNotFound, pver, MainNet, 25},
-		{msgTx, msgTx, pver, MainNet, 58},
-		{msgPing, msgPing, pver, MainNet, 32},
-		{msgPong, msgPong, pver, MainNet, 32},
-		{msgGetHeaders, msgGetHeaders, pver, MainNet, 88},
-		{msgGetBlockLocator, msgGetBlockLocator, pver, MainNet, 88},
-		{msgBlockLocator, msgBlockLocator, pver, MainNet, 25},
-		{msgSendHeaders, msgSendHeaders, pver, MainNet, 24},
-		{msgFeeFilter, msgFeeFilter, pver, MainNet, 32},
-		{msgHeaders, msgHeaders, pver, MainNet, 25},
-		{msgFilterAdd, msgFilterAdd, pver, MainNet, 26},
-		{msgFilterClear, msgFilterClear, pver, MainNet, 24},
-		{msgFilterLoad, msgFilterLoad, pver, MainNet, 35},
-		{msgMerkleBlock, msgMerkleBlock, pver, MainNet, 215},
-		{msgReject, msgReject, pver, MainNet, 79},
+		{msgVersion, msgVersion, pver, Mainnet, 153},
+		{msgVerack, msgVerack, pver, Mainnet, 24},
+		{msgGetAddr, msgGetAddr, pver, Mainnet, 26},
+		{msgAddr, msgAddr, pver, Mainnet, 27},
+		{msgGetBlockInvs, msgGetBlockInvs, pver, Mainnet, 88},
+		{msgBlock, msgBlock, pver, Mainnet, 372},
+		{msgInv, msgInv, pver, Mainnet, 25},
+		{msgGetData, msgGetData, pver, Mainnet, 25},
+		{msgNotFound, msgNotFound, pver, Mainnet, 25},
+		{msgTx, msgTx, pver, Mainnet, 58},
+		{msgPing, msgPing, pver, Mainnet, 32},
+		{msgPong, msgPong, pver, Mainnet, 32},
+		{msgGetHeaders, msgGetHeaders, pver, Mainnet, 88},
+		{msgGetBlockLocator, msgGetBlockLocator, pver, Mainnet, 88},
+		{msgBlockLocator, msgBlockLocator, pver, Mainnet, 25},
+		{msgSendHeaders, msgSendHeaders, pver, Mainnet, 24},
+		{msgFeeFilter, msgFeeFilter, pver, Mainnet, 32},
+		{msgHeaders, msgHeaders, pver, Mainnet, 25},
+		{msgFilterAdd, msgFilterAdd, pver, Mainnet, 26},
+		{msgFilterClear, msgFilterClear, pver, Mainnet, 24},
+		{msgFilterLoad, msgFilterLoad, pver, Mainnet, 35},
+		{msgMerkleBlock, msgMerkleBlock, pver, Mainnet, 215},
+		{msgReject, msgReject, pver, Mainnet, 79},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -173,7 +173,7 @@ func TestMessage(t *testing.T) {
 // concrete messages to confirm error paths work correctly.
 func TestReadMessageWireErrors(t *testing.T) {
 	pver := ProtocolVersion
-	kaspaNet := MainNet
+	kaspaNet := Mainnet
 
 	// Ensure message errors are as expected with no function specified.
 	wantErr := "something bad happened"
@@ -192,7 +192,7 @@ func TestReadMessageWireErrors(t *testing.T) {
 	}
 
 	// Wire encoded bytes for main and testnet networks magic identifiers.
-	testNetBytes := makeHeader(TestNet, "", 0, 0)
+	testnetBytes := makeHeader(Testnet, "", 0, 0)
 
 	// Wire encoded bytes for a message that exceeds max overall message
 	// length.
@@ -250,12 +250,12 @@ func TestReadMessageWireErrors(t *testing.T) {
 			0,
 		},
 
-		// Wrong network. Want MainNet, but giving TestNet.
+		// Wrong network. Want Mainnet, but giving Testnet.
 		{
-			testNetBytes,
+			testnetBytes,
 			pver,
 			kaspaNet,
-			len(testNetBytes),
+			len(testnetBytes),
 			&MessageError{},
 			24,
 		},
@@ -375,7 +375,7 @@ func TestReadMessageWireErrors(t *testing.T) {
 // concrete messages to confirm error paths work correctly.
 func TestWriteMessageWireErrors(t *testing.T) {
 	pver := ProtocolVersion
-	kaspaNet := MainNet
+	kaspaNet := Mainnet
 	wireErr := &MessageError{}
 
 	// Fake message with a command that is too long.

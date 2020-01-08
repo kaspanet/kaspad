@@ -39,10 +39,10 @@ func TestKaspaNetStringer(t *testing.T) {
 		in   KaspaNet
 		want string
 	}{
-		{MainNet, "MainNet"},
-		{RegTest, "RegTest"},
-		{TestNet, "TestNet"},
-		{SimNet, "SimNet"},
+		{Mainnet, "Mainnet"},
+		{Regtest, "Regtest"},
+		{Testnet, "Testnet"},
+		{Simnet, "Simnet"},
 		{0xffffffff, "Unknown KaspaNet (4294967295)"},
 	}
 

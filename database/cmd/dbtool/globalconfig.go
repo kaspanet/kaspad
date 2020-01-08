@@ -19,7 +19,7 @@ import (
 var (
 	kaspadHomeDir   = util.AppDataDir("kaspad", false)
 	knownDbTypes    = database.SupportedDrivers()
-	activeNetParams = &dagconfig.MainNetParams
+	activeNetParams = &dagconfig.MainnetParams
 
 	// Default global config.
 	cfg = &config{
@@ -32,10 +32,10 @@ var (
 type config struct {
 	DataDir        string `short:"b" long:"datadir" description:"Location of the kaspad data directory"`
 	DbType         string `long:"dbtype" description:"Database backend to use for the Block DAG"`
-	TestNet        bool   `long:"testnet" description:"Use the test network"`
+	Testnet        bool   `long:"testnet" description:"Use the test network"`
 	RegressionTest bool   `long:"regtest" description:"Use the regression test network"`
-	SimNet         bool   `long:"simnet" description:"Use the simulation test network"`
-	DevNet         bool   `long:"devnet" description:"Use the development test network"`
+	Simnet         bool   `long:"simnet" description:"Use the simulation test network"`
+	Devnet         bool   `long:"devnet" description:"Use the development test network"`
 }
 
 // fileExists reports whether the named file or directory exists.
@@ -67,21 +67,21 @@ func setupGlobalConfig() error {
 	// Count number of network flags passed; assign active network params
 	// while we're at it
 	numNets := 0
-	if cfg.TestNet {
+	if cfg.Testnet {
 		numNets++
-		activeNetParams = &dagconfig.TestNetParams
+		activeNetParams = &dagconfig.TestnetParams
 	}
 	if cfg.RegressionTest {
 		numNets++
 		activeNetParams = &dagconfig.RegressionNetParams
 	}
-	if cfg.SimNet {
+	if cfg.Simnet {
 		numNets++
-		activeNetParams = &dagconfig.SimNetParams
+		activeNetParams = &dagconfig.SimnetParams
 	}
-	if cfg.DevNet {
+	if cfg.Devnet {
 		numNets++
-		activeNetParams = &dagconfig.DevNetParams
+		activeNetParams = &dagconfig.DevnetParams
 	}
 	if numNets > 1 {
 		return errors.New("The testnet, regtest, simnet and devnet params " +

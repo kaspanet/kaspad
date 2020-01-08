@@ -109,7 +109,7 @@ func TestMain(m *testing.M) {
 	// ensure that non-standard transactions aren't accepted into the
 	// mempool or relayed.
 	kaspadCfg := []string{"--rejectnonstd"}
-	primaryHarness, err = rpctest.New(&dagconfig.SimNetParams, nil, kaspadCfg)
+	primaryHarness, err = rpctest.New(&dagconfig.SimnetParams, nil, kaspadCfg)
 	if err != nil {
 		fmt.Println("unable to create primary harness: ", err)
 		os.Exit(1)

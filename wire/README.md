@@ -32,7 +32,7 @@ to a remote node running a kaspa peer. Example syntax is:
 	// Use the most recent protocol version supported by the package and the
 	// main kaspa network.
 	pver := wire.ProtocolVersion
-	kaspanet := wire.MainNet
+	kaspanet := wire.Mainnet
 
 	// Reads and validates the next kaspa message from conn using the
 	// protocol version pver and the kaspa network kaspanet. The returns
@@ -57,7 +57,7 @@ from a remote peer is:
 	// Use the most recent protocol version supported by the package and the
 	// main bitcoin network.
 	pver := wire.ProtocolVersion
-	kaspanet := wire.MainNet
+	kaspanet := wire.Mainnet
 
 	// Create a new getaddr kaspa message.
 	msg := wire.NewMsgGetAddr()

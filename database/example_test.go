@@ -32,7 +32,7 @@ func ExampleCreate() {
 	// this, nor put it in the temp directory, but it's done here to ensure
 	// the example cleans up after itself.
 	dbPath := filepath.Join(os.TempDir(), "examplecreate")
-	db, err := database.Create("ffldb", dbPath, wire.MainNet)
+	db, err := database.Create("ffldb", dbPath, wire.Mainnet)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -60,7 +60,7 @@ func Example_basicUsage() {
 	dbPath := filepath.Join(os.TempDir(), "exampleusage")
 	// ensure that DB does not exist before test starts
 	os.RemoveAll(dbPath)
-	db, err := database.Create("ffldb", dbPath, wire.MainNet)
+	db, err := database.Create("ffldb", dbPath, wire.Mainnet)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -126,7 +126,7 @@ func Example_blockStorageAndRetrieval() {
 	// this, nor put it in the temp directory, but it's done here to ensure
 	// the example cleans up after itself.
 	dbPath := filepath.Join(os.TempDir(), "exampleblkstorage")
-	db, err := database.Create("ffldb", dbPath, wire.MainNet)
+	db, err := database.Create("ffldb", dbPath, wire.Mainnet)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -138,7 +138,7 @@ func Example_blockStorageAndRetrieval() {
 	// read-write transaction and store a genesis block in the database as
 	// and example.
 	err = db.Update(func(dbTx database.Tx) error {
-		genesisBlock := dagconfig.MainNetParams.GenesisBlock
+		genesisBlock := dagconfig.MainnetParams.GenesisBlock
 		return dbTx.StoreBlock(util.NewBlock(genesisBlock))
 	})
 	if err != nil {
@@ -150,7 +150,7 @@ func Example_blockStorageAndRetrieval() {
 	// transaction and fetch the block stored above.
 	var loadedBlockBytes []byte
 	err = db.Update(func(dbTx database.Tx) error {
-		genesisHash := dagconfig.MainNetParams.GenesisHash
+		genesisHash := dagconfig.MainnetParams.GenesisHash
 		blockBytes, err := dbTx.FetchBlock(genesisHash)
 		if err != nil {
 			return err

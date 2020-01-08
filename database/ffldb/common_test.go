@@ -19,7 +19,7 @@ func newTestDb(testName string, t *testing.T) *db {
 		t.Fatalf("%s: Error deleting database folder before starting: %s", testName, err)
 	}
 
-	network := wire.SimNet
+	network := wire.Simnet
 
 	opts := opt.Options{
 		ErrorIfExist: true,

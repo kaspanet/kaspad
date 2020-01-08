@@ -98,7 +98,7 @@ func TestBIP0113(t *testing.T) {
 	t.Parallel()
 
 	kaspadCfg := []string{"--rejectnonstd"}
-	r, err := rpctest.New(&dagconfig.SimNetParams, nil, kaspadCfg)
+	r, err := rpctest.New(&dagconfig.SimnetParams, nil, kaspadCfg)
 	if err != nil {
 		t.Fatal("unable to create primary harness: ", err)
 	}
@@ -351,7 +351,7 @@ func TestBIP0068AndCsv(t *testing.T) {
 	// relative lock times.
 
 	kaspadCfg := []string{"--rejectnonstd"}
-	r, err := rpctest.New(&dagconfig.SimNetParams, nil, kaspadCfg)
+	r, err := rpctest.New(&dagconfig.SimnetParams, nil, kaspadCfg)
 	if err != nil {
 		t.Fatal("unable to create primary harness: ", err)
 	}

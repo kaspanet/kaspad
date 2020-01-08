@@ -29,7 +29,7 @@ func (dd testTxDescDefinition) String() string {
 }
 
 func TestSelectTxs(t *testing.T) {
-	params := dagconfig.SimNetParams
+	params := dagconfig.SimnetParams
 	params.BlockCoinbaseMaturity = 0
 
 	dag, teardownFunc, err := blockdag.DAGSetup("TestSelectTxs", blockdag.Config{
