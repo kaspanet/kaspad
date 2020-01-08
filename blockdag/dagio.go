@@ -33,7 +33,7 @@ const (
 )
 
 var (
-	// blockIndexBucketName is the name of the database bucket used to house to the
+	// blockIndexBucketName is the name of the database bucket used to house the
 	// block headers and contextual information.
 	blockIndexBucketName = []byte("blockheaderidx")
 

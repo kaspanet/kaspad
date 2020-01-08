@@ -12,14 +12,14 @@ import (
 // highest blue score) and adds any block to newNode.blues if by adding
 // it to newNode.blues these conditions will not be violated:
 //
-// 1) |anticone-of-candidate-block ∩ blueSet-of-newNode| ≤ K
+// 1) |anticone-of-candidate-block ∩ blue-set-of-newNode| ≤ K
 //
-// 2) For every blue block in blueSet-of-newNode:
-//    |(anticone-of-blue-block ∩ blueSet-newNode) ∪ {candidate-block}| ≤ K.
+// 2) For every blue block in blue-set-of-newNode:
+//    |(anticone-of-blue-block ∩ blue-set-newNode) ∪ {candidate-block}| ≤ K.
 //    We validate this condition by maintaining a map bluesAnticoneSizes for
 //    each block which holds all the blue anticone sizes that were affected by
 //    the new added blue blocks.
-//    So to find out what is |anticone-of-blue ∩ blueSet-of-newNode| we just iterate in
+//    So to find out what is |anticone-of-blue ∩ blue-set-of-newNode| we just iterate in
 //    the selected parent chain of newNode until we find an existing entry in
 //    bluesAnticoneSizes.
 //
@@ -42,7 +42,7 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 		var candidateAnticoneSize uint32
 		possiblyBlue := true
 
-		// Iterate over all blocks in the blueSet of newNode that are not in the past
+		// Iterate over all blocks in the blue set of newNode that are not in the past
 		// of blueCandidate, and check for each one of them if blueCandidate potentially
 		// enlarges their blue anticone to be over K, or that they enlarge the blue anticone
 		// of blueCandidate to be over K.
@@ -123,7 +123,7 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 // We start by adding all parents of the node (other than the selected parent) to a process queue.
 // For each node in the queue:
 //   we check whether it is in the past of the selected parent.
-//   If not, we add the node to the resulting anticone-set and add queue it for processing.
+//   If not, we add the node to the resulting anticone-set and queue it for processing.
 func (dag *BlockDAG) selectedParentAnticone(node *blockNode) ([]*blockNode, error) {
 	anticoneSet := newSet()
 	var anticoneSlice []*blockNode
@@ -164,12 +164,12 @@ func (dag *BlockDAG) selectedParentAnticone(node *blockNode) ([]*blockNode, erro
 }
 
 // blueAnticoneSize returns the blue anticone size of 'block' from the worldview of 'context'.
-// Expects 'block' to be in the blueSet of 'context'
+// Expects 'block' to be in the blue set of 'context'
 func (dag *BlockDAG) blueAnticoneSize(block, context *blockNode) (uint32, error) {
 	for current := context; current != nil; current = current.selectedParent {
 		if blueAnticoneSize, ok := current.bluesAnticoneSizes[*block.hash]; ok {
 			return blueAnticoneSize, nil
 		}
 	}
-	return 0, errors.Errorf("block %s is not in blue-set of %s", block.hash, context.hash)
+	return 0, errors.Errorf("block %s is not in blue set of %s", block.hash, context.hash)
 }

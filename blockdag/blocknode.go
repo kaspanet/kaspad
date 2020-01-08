@@ -117,7 +117,7 @@ func calculateChainHeight(node *blockNode) uint64 {
 // newBlockNode returns a new block node for the given block header and parents, and the
 // anticone of its selected parent (parent with highest blue score).
 // selectedParentAnticone is used to update reachability data we store for future reachability queries.
-// nodes. This function is NOT safe for concurrent access.
+// This function is NOT safe for concurrent access.
 func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSet) (node *blockNode, selectedParentAnticone []*blockNode) {
 	node = &blockNode{
 		parents:            parents,
