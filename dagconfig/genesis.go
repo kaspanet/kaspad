@@ -73,45 +73,6 @@ var genesisBlock = wire.MsgBlock{
 	Transactions: []*wire.MsgTx{genesisCoinbaseTx},
 }
 
-// regTestGenesisHash is the hash of the first block in the block DAG for the
-// regression test network (genesis block).
-var regTestGenesisHash = genesisHash
-
-// regTestGenesisMerkleRoot is the hash of the first transaction in the genesis
-// block for the regression test network. It is the same as the merkle root for
-// the main network.
-var regTestGenesisMerkleRoot = genesisMerkleRoot
-
-// regTestGenesisBlock defines the genesis block of the block DAG which serves
-// as the public transaction ledger for the regression test network.
-var regTestGenesisBlock = genesisBlock
-
-// testNetGenesisHash is the hash of the first block in the block DAG for the
-// test network.
-var testNetGenesisHash = genesisHash
-
-// testNetGenesisMerkleRoot is the hash of the first transaction in the genesis
-// block for the test network. It is the same as the merkle root for the main
-// network.
-var testNetGenesisMerkleRoot = genesisMerkleRoot
-
-// testNetGenesisBlock defines the genesis block of the block DAG which
-// serves as the public transaction ledger for the test network.
-var testNetGenesisBlock = genesisBlock
-
-// simNetGenesisHash is the hash of the first block in the block DAG for the
-// simulation test network.
-var simNetGenesisHash = genesisHash
-
-// simNetGenesisMerkleRoot is the hash of the first transaction in the genesis
-// block for the simulation test network. It is the same as the merkle root for
-// the main network.
-var simNetGenesisMerkleRoot = genesisMerkleRoot
-
-// simNetGenesisBlock defines the genesis block of the block DAG which serves
-// as the public transaction ledger for the simulation test network.
-var simNetGenesisBlock = genesisBlock
-
 // devNetGenesisCoinbaseTx is the coinbase transaction for the genesis blocks for
 // the main network, regression test network, and test network.
 var devNetGenesisCoinbaseTx = genesisCoinbaseTx
@@ -143,4 +104,103 @@ var devNetGenesisBlock = wire.MsgBlock{
 		Nonce:                0x5221,
 	},
 	Transactions: []*wire.MsgTx{devNetGenesisCoinbaseTx},
+}
+
+// devNetGenesisCoinbaseTx is the coinbase transaction for the genesis blocks for
+// the main network, regression test network, and test network.
+var regTestGenesisCoinbaseTx = genesisCoinbaseTx
+
+// devGenesisHash is the hash of the first block in the block DAG for the development
+// network (genesis block).
+var regTestGenesisHash = daghash.Hash([daghash.HashSize]byte{
+	0xf4, 0xd6, 0x37, 0x0b, 0xc6, 0x67, 0x41, 0x90,
+	0x06, 0x57, 0xef, 0x65, 0x45, 0x07, 0x3a, 0x50,
+	0xb7, 0x85, 0x21, 0xb9, 0xa2, 0xe3, 0xf5, 0x9e,
+	0xe0, 0x45, 0x9b, 0xb0, 0xab, 0x33, 0x00, 0x00,
+})
+
+// regTestGenesisMerkleRoot is the hash of the first transaction in the genesis block
+// for the devopment network.
+var regTestGenesisMerkleRoot = genesisMerkleRoot
+
+// regTestGenesisBlock defines the genesis block of the block DAG which serves as the
+// public transaction ledger for the development network.
+var regTestGenesisBlock = wire.MsgBlock{
+	Header: wire.BlockHeader{
+		Version:              1,
+		ParentHashes:         []*daghash.Hash{},
+		HashMerkleRoot:       &regTestGenesisMerkleRoot,
+		AcceptedIDMerkleRoot: &daghash.Hash{},
+		UTXOCommitment:       &daghash.ZeroHash,
+		Timestamp:            time.Unix(0x5d021d3e, 0),
+		Bits:                 0x1e7fffff,
+		Nonce:                0x5221,
+	},
+	Transactions: []*wire.MsgTx{regTestGenesisCoinbaseTx},
+}
+
+// simNetGenesisCoinbaseTx is the coinbase transaction for the genesis blocks for
+// the main network, regression test network, and test network.
+var simNetGenesisCoinbaseTx = genesisCoinbaseTx
+
+// devGenesisHash is the hash of the first block in the block DAG for the development
+// network (genesis block).
+var simNetGenesisHash = daghash.Hash([daghash.HashSize]byte{
+	0xf4, 0xd6, 0x37, 0x0b, 0xc6, 0x67, 0x41, 0x90,
+	0x06, 0x57, 0xef, 0x65, 0x45, 0x07, 0x3a, 0x50,
+	0xb7, 0x85, 0x21, 0xb9, 0xa2, 0xe3, 0xf5, 0x9e,
+	0xe0, 0x45, 0x9b, 0xb0, 0xab, 0x33, 0x00, 0x00,
+})
+
+// simNetGenesisMerkleRoot is the hash of the first transaction in the genesis block
+// for the devopment network.
+var simNetGenesisMerkleRoot = genesisMerkleRoot
+
+// simNetGenesisBlock defines the genesis block of the block DAG which serves as the
+// public transaction ledger for the development network.
+var simNetGenesisBlock = wire.MsgBlock{
+	Header: wire.BlockHeader{
+		Version:              1,
+		ParentHashes:         []*daghash.Hash{},
+		HashMerkleRoot:       &simNetGenesisMerkleRoot,
+		AcceptedIDMerkleRoot: &daghash.Hash{},
+		UTXOCommitment:       &daghash.ZeroHash,
+		Timestamp:            time.Unix(0x5d021d3e, 0),
+		Bits:                 0x1e7fffff,
+		Nonce:                0x5221,
+	},
+	Transactions: []*wire.MsgTx{simNetGenesisCoinbaseTx},
+}
+
+// testNetGenesisCoinbaseTx is the coinbase transaction for the genesis blocks for
+// the main network, regression test network, and test network.
+var testNetGenesisCoinbaseTx = genesisCoinbaseTx
+
+// devGenesisHash is the hash of the first block in the block DAG for the development
+// network (genesis block).
+var testNetGenesisHash = daghash.Hash([daghash.HashSize]byte{
+	0xf4, 0xd6, 0x37, 0x0b, 0xc6, 0x67, 0x41, 0x90,
+	0x06, 0x57, 0xef, 0x65, 0x45, 0x07, 0x3a, 0x50,
+	0xb7, 0x85, 0x21, 0xb9, 0xa2, 0xe3, 0xf5, 0x9e,
+	0xe0, 0x45, 0x9b, 0xb0, 0xab, 0x33, 0x00, 0x00,
+})
+
+// testNetGenesisMerkleRoot is the hash of the first transaction in the genesis block
+// for the devopment network.
+var testNetGenesisMerkleRoot = genesisMerkleRoot
+
+// testNetGenesisBlock defines the genesis block of the block DAG which serves as the
+// public transaction ledger for the development network.
+var testNetGenesisBlock = wire.MsgBlock{
+	Header: wire.BlockHeader{
+		Version:              1,
+		ParentHashes:         []*daghash.Hash{},
+		HashMerkleRoot:       &testNetGenesisMerkleRoot,
+		AcceptedIDMerkleRoot: &daghash.Hash{},
+		UTXOCommitment:       &daghash.ZeroHash,
+		Timestamp:            time.Unix(0x5d021d3e, 0),
+		Bits:                 0x1e7fffff,
+		Nonce:                0x5221,
+	},
+	Transactions: []*wire.MsgTx{testNetGenesisCoinbaseTx},
 }
