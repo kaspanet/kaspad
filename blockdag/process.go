@@ -173,7 +173,10 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 
 		if delay != 0 {
 			err = dag.addDelayedBlock(block, delay)
-			return false, true, err
+			if err != nil {
+				return false, false, err
+			}
+			return false, true, nil
 		}
 	}
 
