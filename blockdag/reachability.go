@@ -268,7 +268,7 @@ func (rtn *reachabilityTreeNode) reindexIntervals() ([]*reachabilityTreeNode, er
 		subtreeSize = current.countSubtrees()
 	}
 
-	// Propagate the interval down the subtree
+	// Propagate the interval up the subtree
 	return current.propagateInterval()
 }
 
