@@ -243,6 +243,7 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 	// the median time of the last several blocks per the DAG consensus
 	// rules.
 	msgBlock.Header.Timestamp = g.dag.NextBlockTime()
+	msgBlock.Header.Bits = g.dag.NextRequiredDifficulty(msgBlock.Header.Timestamp)
 
 	return nil
 }

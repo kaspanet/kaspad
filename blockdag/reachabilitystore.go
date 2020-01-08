@@ -7,7 +7,6 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 	"io"
-	"sync"
 )
 
 type reachabilityData struct {
@@ -19,7 +18,6 @@ type reachabilityStore struct {
 	dag    *BlockDAG
 	dirty  map[daghash.Hash]struct{}
 	loaded map[daghash.Hash]*reachabilityData
-	mtx    sync.RWMutex
 }
 
 func newReachabilityStore(dag *BlockDAG) *reachabilityStore {
@@ -31,8 +29,6 @@ func newReachabilityStore(dag *BlockDAG) *reachabilityStore {
 }
 
 func (store *reachabilityStore) setTreeNode(treeNode *reachabilityTreeNode) error {
-	store.mtx.Lock()
-	defer store.mtx.Unlock()
 	// load the reachability data from DB to store.loaded
 	node := treeNode.blockNode
 	_, exists := store.reachabilityDataByHash(node.hash)
@@ -46,8 +42,6 @@ func (store *reachabilityStore) setTreeNode(treeNode *reachabilityTreeNode) erro
 }
 
 func (store *reachabilityStore) setFutureCoveringSet(node *blockNode, futureCoveringSet futureCoveringBlockSet) error {
-	store.mtx.Lock()
-	defer store.mtx.Unlock()
 	// load the reachability data from DB to store.loaded
 	_, exists := store.reachabilityDataByHash(node.hash)
 	if !exists {
@@ -68,8 +62,6 @@ func reachabilityNotFoundError(node *blockNode) error {
 }
 
 func (store *reachabilityStore) treeNodeByBlockNode(node *blockNode) (*reachabilityTreeNode, error) {
-	store.mtx.RLock()
-	defer store.mtx.RUnlock()
 	reachabilityData, exists := store.reachabilityDataByHash(node.hash)
 	if !exists {
 		return nil, reachabilityNotFoundError(node)
@@ -78,8 +70,6 @@ func (store *reachabilityStore) treeNodeByBlockNode(node *blockNode) (*reachabil
 }
 
 func (store *reachabilityStore) futureCoveringSetByBlockNode(node *blockNode) (futureCoveringBlockSet, error) {
-	store.mtx.RLock()
-	defer store.mtx.RUnlock()
 	reachabilityData, exists := store.reachabilityDataByHash(node.hash)
 	if !exists {
 		return nil, reachabilityNotFoundError(node)
@@ -92,11 +82,8 @@ func (store *reachabilityStore) reachabilityDataByHash(hash *daghash.Hash) (*rea
 	return reachabilityData, ok
 }
 
-// flushToDB writes all dirty reachability data to the database. If all writes
-// succeed, this clears the dirty set.
+// flushToDB writes all dirty reachability data to the database.
 func (store *reachabilityStore) flushToDB(dbTx database.Tx) error {
-	store.mtx.Lock()
-	defer store.mtx.Unlock()
 	if len(store.dirty) == 0 {
 		return nil
 	}

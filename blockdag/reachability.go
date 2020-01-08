@@ -122,7 +122,7 @@ func (ri *reachabilityInterval) splitWithExponentialBias(sizes []uint64) ([]*rea
 
 // exponentialFractions returns a fraction of each size in sizes
 // as follows:
-//   fraction[i] = 2^size[i] / sum(2^size[j])
+//   fraction[i] = 2^size[i] / sum_j(2^size[j])
 // In the code below the above equation is divided by 2^max(size)
 // to avoid exploding numbers. Note that in 1 / 2^(max(size)-size[i])
 // we divide 1 by potentially a very large number, which will
@@ -150,7 +150,9 @@ func exponentialFractions(sizes []uint64) []float64 {
 }
 
 // isAncestorOf checks if this interval's node is a reachability tree
-// ancestor of the other interval's node.
+// ancestor of the other interval's node. The condition below is relaying on the
+// property of reachability intervals that intervals are either completely disjoint,
+// or one strictly contains the other.
 func (ri *reachabilityInterval) isAncestorOf(other *reachabilityInterval) bool {
 	return ri.start <= other.end && other.end <= ri.end
 }
@@ -267,7 +269,7 @@ func (rtn *reachabilityTreeNode) reindexIntervals() ([]*reachabilityTreeNode, er
 	}
 
 	// Propagate the interval down the subtree
-	return current.propagateInterval(current.interval)
+	return current.propagateInterval()
 }
 
 // countSubtrees counts the size of each subtree under this node.
@@ -347,10 +349,9 @@ func (rtn *reachabilityTreeNode) countSubtrees() uint64 {
 // Subtree intervals are recursively allocated according to subtree sizes and
 // the allocation rule in splitWithExponentialBias. This method returns
 // a list of reachabilityTreeNodes modified by it.
-func (rtn *reachabilityTreeNode) propagateInterval(
-	interval *reachabilityInterval) ([]*reachabilityTreeNode, error) {
+func (rtn *reachabilityTreeNode) propagateInterval() ([]*reachabilityTreeNode, error) {
 
-	rtn.setInterval(interval)
+	rtn.setInterval(rtn.interval)
 	modifiedNodes := []*reachabilityTreeNode{rtn}
 	queue := []*reachabilityTreeNode{rtn}
 	for len(queue) > 0 {
