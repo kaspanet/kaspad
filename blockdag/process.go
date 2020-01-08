@@ -193,6 +193,9 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 		// Add Nanosecond to ensure that parent process time will be after its child.
 		delay += time.Nanosecond
 		err := dag.addDelayedBlock(block, delay)
+		if err != nil {
+			return false, false, err
+		}
 		return false, true, err
 	}
 
