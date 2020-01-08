@@ -577,7 +577,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 			return nil, ruleError(err.ErrorCode, newErrString)
 		}
 		return nil, errors.New(newErrString)
-	}fdgfsgd
+	}fdgfsgdfdsgsd
 
 	err = node.validateCoinbaseTransaction(dag, block, txsAcceptanceData)
 	if err != nil {
