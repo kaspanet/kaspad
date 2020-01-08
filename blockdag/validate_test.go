@@ -101,12 +101,12 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	}
 
 	for i := 1; i <= 3; i++ {
-		_, delay, err := dag.ProcessBlock(blocks[i], BFNone)
+		_, isDelayed, err := dag.ProcessBlock(blocks[i], BFNone)
 		if err != nil {
 			t.Fatalf("CheckConnectBlockTemplate: Received unexpected error "+
 				"processing block %d: %v", i, err)
 		}
-		if delay != 0 {
+		if isDelayed {
 			t.Fatalf("CheckConnectBlockTemplate: block %d is too far in the future", i)
 		}
 	}
@@ -510,20 +510,18 @@ func TestPastMedianTime(t *testing.T) {
 
 	for i := 0; i < 100; i++ {
 		blockTime = blockTime.Add(time.Second)
-		tip = newTestNode(setFromSlice(tip),
+		tip = newTestNode(dag, setFromSlice(tip),
 			blockVersion,
 			0,
-			blockTime,
-			dagconfig.MainnetParams.K)
+			blockTime)
 	}
 
 	// Checks that a block is valid if it has timestamp equals to past median time
 	chainHeight := tip.chainHeight + 1
-	node := newTestNode(setFromSlice(tip),
+	node := newTestNode(dag, setFromSlice(tip),
 		blockVersion,
 		dag.powMaxBits,
-		tip.PastMedianTime(dag),
-		dagconfig.MainnetParams.K)
+		tip.PastMedianTime(dag))
 
 	header := node.Header()
 	err := dag.checkBlockHeaderContext(header, node.parents.bluest(), chainHeight, false)
@@ -534,11 +532,10 @@ func TestPastMedianTime(t *testing.T) {
 
 	// Checks that a block is valid if its timestamp is after past median time
 	chainHeight = tip.chainHeight + 1
-	node = newTestNode(setFromSlice(tip),
+	node = newTestNode(dag, setFromSlice(tip),
 		blockVersion,
 		dag.powMaxBits,
-		tip.PastMedianTime(dag).Add(time.Second),
-		dagconfig.MainnetParams.K)
+		tip.PastMedianTime(dag).Add(time.Second))
 
 	header = node.Header()
 	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), chainHeight, false)
@@ -549,11 +546,10 @@ func TestPastMedianTime(t *testing.T) {
 
 	// Checks that a block is invalid if its timestamp is before past median time
 	chainHeight = tip.chainHeight + 1
-	node = newTestNode(setFromSlice(tip),
+	node = newTestNode(dag, setFromSlice(tip),
 		blockVersion,
 		0,
-		tip.PastMedianTime(dag).Add(-time.Second),
-		dagconfig.MainnetParams.K)
+		tip.PastMedianTime(dag).Add(-time.Second))
 
 	header = node.Header()
 	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), chainHeight, false)
@@ -575,8 +571,8 @@ func TestPastMedianTime(t *testing.T) {
 }
 
 func TestValidateParents(t *testing.T) {
-	blockDAG := newTestDAG(&dagconfig.SimnetParams)
-	genesisNode := blockDAG.genesis
+	dag := newTestDAG(&dagconfig.SimNetParams)
+	genesisNode := dag.genesis
 	blockVersion := int32(0x10000000)
 
 	blockTime := genesisNode.Header().Timestamp
@@ -584,11 +580,10 @@ func TestValidateParents(t *testing.T) {
 	generateNode := func(parents ...*blockNode) *blockNode {
 		// The timestamp of each block is changed to prevent a situation where two blocks share the same hash
 		blockTime = blockTime.Add(time.Second)
-		return newTestNode(setFromSlice(parents...),
+		return newTestNode(dag, setFromSlice(parents...),
 			blockVersion,
 			0,
-			blockTime,
-			dagconfig.SimnetParams.K)
+			blockTime)
 	}
 
 	a := generateNode(genesisNode)

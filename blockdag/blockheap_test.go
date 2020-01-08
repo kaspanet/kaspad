@@ -9,13 +9,22 @@ import (
 
 // TestBlockHeap tests pushing, popping, and determining the length of the heap.
 func TestBlockHeap(t *testing.T) {
+	// Create a new database and DAG instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("TestBlockHeap", Config{
+		DAGParams: &dagconfig.MainnetParams,
+	})
+	if err != nil {
+		t.Fatalf("TestBlockHeap: Failed to setup DAG instance: %s", err)
+	}
+	defer teardownFunc()
+
 	block0Header := dagconfig.MainnetParams.GenesisBlock.Header
-	block0 := newBlockNode(&block0Header, newSet(), dagconfig.MainnetParams.K)
+	block0, _ := dag.newBlockNode(&block0Header, newSet())
 
 	block100000Header := Block100000.Header
-	block100000 := newBlockNode(&block100000Header, setFromSlice(block0), dagconfig.MainnetParams.K)
+	block100000, _ := dag.newBlockNode(&block100000Header, setFromSlice(block0))
 
-	block0smallHash := newBlockNode(&block0Header, newSet(), dagconfig.MainnetParams.K)
+	block0smallHash, _ := dag.newBlockNode(&block0Header, newSet())
 	block0smallHash.hash = &daghash.Hash{}
 
 	tests := []struct {

@@ -262,11 +262,11 @@ func (tc *testContext) mineTransactions(transactions []*util.Tx, numberOfBlocks 
 			tc.t.Fatalf("PrepareBlockForTest: %s", err)
 		}
 		utilBlock := util.NewBlock(block)
-		isOrphan, delay, err := tc.harness.txPool.cfg.DAG.ProcessBlock(utilBlock, blockdag.BFNoPoWCheck)
+		isOrphan, isDelayed, err := tc.harness.txPool.cfg.DAG.ProcessBlock(utilBlock, blockdag.BFNoPoWCheck)
 		if err != nil {
 			tc.t.Fatalf("ProcessBlock: %s", err)
 		}
-		if delay != 0 {
+		if isDelayed {
 			tc.t.Fatalf("ProcessBlock: block %s "+
 				"is too far in the future", block.BlockHash())
 		}

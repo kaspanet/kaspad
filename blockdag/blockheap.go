@@ -2,8 +2,6 @@ package blockdag
 
 import (
 	"container/heap"
-
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // baseHeap is an implementation for heap.Interface that sorts blocks by their height
@@ -28,22 +26,14 @@ func (h *baseHeap) Pop() interface{} {
 type upHeap struct{ baseHeap }
 
 func (h upHeap) Less(i, j int) bool {
-	if h.baseHeap[i].blueScore == h.baseHeap[j].blueScore {
-		return daghash.HashToBig(h.baseHeap[i].hash).Cmp(daghash.HashToBig(h.baseHeap[j].hash)) < 0
-	}
-
-	return h.baseHeap[i].blueScore < h.baseHeap[j].blueScore
+	return h.baseHeap[i].less(h.baseHeap[j])
 }
 
 // downHeap extends baseHeap to include Less operation that traverses from top to bottom
 type downHeap struct{ baseHeap }
 
 func (h downHeap) Less(i, j int) bool {
-	if h.baseHeap[i].blueScore == h.baseHeap[j].blueScore {
-		return daghash.HashToBig(h.baseHeap[i].hash).Cmp(daghash.HashToBig(h.baseHeap[j].hash)) > 0
-	}
-
-	return h.baseHeap[i].blueScore > h.baseHeap[j].blueScore
+	return !h.baseHeap[i].less(h.baseHeap[j])
 }
 
 // blockHeap represents a mutable heap of Blocks, sorted by their height

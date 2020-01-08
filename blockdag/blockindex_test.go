@@ -12,7 +12,17 @@ import (
 )
 
 func TestAncestorErrors(t *testing.T) {
-	node := newTestNode(newSet(), int32(0x10000000), 0, time.Unix(0, 0), dagconfig.MainnetParams.K)
+	// Create a new database and DAG instance to run tests against.
+	params := dagconfig.SimnetParams
+	dag, teardownFunc, err := DAGSetup("TestAncestorErrors", Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("TestAncestorErrors: Failed to setup DAG instance: %s", err)
+	}
+	defer teardownFunc()
+
+	node := newTestNode(dag, newSet(), int32(0x10000000), 0, time.Unix(0, 0))
 	node.chainHeight = 2
 	ancestor := node.SelectedAncestor(3)
 	if ancestor != nil {

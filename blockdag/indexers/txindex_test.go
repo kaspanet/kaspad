@@ -63,11 +63,11 @@ func TestTxIndexConnectBlock(t *testing.T) {
 		}
 		utilBlock := util.NewBlock(block)
 		blocks[*block.BlockHash()] = utilBlock
-		isOrphan, delay, err := dag.ProcessBlock(utilBlock, blockdag.BFNoPoWCheck)
+		isOrphan, isDelayed, err := dag.ProcessBlock(utilBlock, blockdag.BFNoPoWCheck)
 		if err != nil {
 			t.Fatalf("TestTxIndexConnectBlock: dag.ProcessBlock got unexpected error for block %v: %v", blockName, err)
 		}
-		if delay != 0 {
+		if isDelayed {
 			t.Fatalf("TestTxIndexConnectBlock: block %s "+
 				"is too far in the future", blockName)
 		}
@@ -112,10 +112,10 @@ func TestTxIndexConnectBlock(t *testing.T) {
 	if err != nil {
 		t.Errorf("TestTxIndexConnectBlock: TxAcceptedInBlock: %v", err)
 	}
-	block3AHash := block3A.BlockHash()
-	if !block2TxAcceptedBlock.IsEqual(block3AHash) {
+
+	if !block2TxAcceptedBlock.IsEqual(block3Hash) {
 		t.Errorf("TestTxIndexConnectBlock: block2Tx should've "+
-			"been accepted in block %v but instead got accepted in block %v", block3AHash, block2TxAcceptedBlock)
+			"been accepted in block %v but instead got accepted in block %v", block3Hash, block2TxAcceptedBlock)
 	}
 
 	region, err := txIndex.TxFirstBlockRegion(block3TxID)

@@ -202,9 +202,9 @@ func TestGroupKey(t *testing.T) {
 		{name: "ipv6 rfc6145 translated ipv4", ip: "::ffff:0:0c01:0203", expected: "12.1.0.0"},
 
 		// Tor.
-		{name: "ipv6 tor onioncat", ip: "fd87:d87e:eb43:1234::5678", expected: "tor:2"},
-		{name: "ipv6 tor onioncat 2", ip: "fd87:d87e:eb43:1245::6789", expected: "tor:2"},
-		{name: "ipv6 tor onioncat 3", ip: "fd87:d87e:eb43:1345::6789", expected: "tor:3"},
+		{name: "ipv6 tor onioncat", ip: "fd87:d87e:eb43:1234::5678", expected: "unroutable"},
+		{name: "ipv6 tor onioncat 2", ip: "fd87:d87e:eb43:1245::6789", expected: "unroutable"},
+		{name: "ipv6 tor onioncat 3", ip: "fd87:d87e:eb43:1345::6789", expected: "unroutable"},
 
 		// IPv6 normal.
 		{name: "ipv6 normal", ip: "2602:100::1", expected: "2602:100::"},

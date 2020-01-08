@@ -113,14 +113,9 @@ func (dag *BlockDAG) TestSetCoinbaseMaturity(maturity uint64) {
 // it is not usable with all functions and the tests must take care when making
 // use of it.
 func newTestDAG(params *dagconfig.Params) *BlockDAG {
-	// Create a genesis block node and block index index populated with it
-	// for use when creating the fake DAG below.
-	node := newBlockNode(&params.GenesisBlock.Header, newSet(), params.K)
 	index := newBlockIndex(nil, params)
-	index.AddNode(node)
-
 	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
-	return &BlockDAG{
+	dag := &BlockDAG{
 		dagParams:                      params,
 		timeSource:                     NewMedianTime(),
 		targetTimePerBlock:             targetTimePerBlock,
@@ -128,16 +123,22 @@ func newTestDAG(params *dagconfig.Params) *BlockDAG {
 		TimestampDeviationTolerance:    params.TimestampDeviationTolerance,
 		powMaxBits:                     util.BigToCompact(params.PowMax),
 		index:                          index,
-		virtual:                        newVirtualBlock(setFromSlice(node), params.K),
-		genesis:                        index.LookupNode(params.GenesisHash),
 		warningCaches:                  newThresholdCaches(vbNumBits),
 		deploymentCaches:               newThresholdCaches(dagconfig.DefinedDeployments),
 	}
+
+	// Create a genesis block node and block index index populated with it
+	// on the above fake DAG.
+	dag.genesis, _ = dag.newBlockNode(&params.GenesisBlock.Header, newSet())
+	index.AddNode(dag.genesis)
+
+	dag.virtual = newVirtualBlock(dag, setFromSlice(dag.genesis))
+	return dag
 }
 
 // newTestNode creates a block node connected to the passed parent with the
 // provided fields populated and fake values for the other fields.
-func newTestNode(parents blockSet, blockVersion int32, bits uint32, timestamp time.Time, phantomK uint32) *blockNode {
+func newTestNode(dag *BlockDAG, parents blockSet, blockVersion int32, bits uint32, timestamp time.Time) *blockNode {
 	// Make up a header and create a block node from it.
 	header := &wire.BlockHeader{
 		Version:              blockVersion,
@@ -148,34 +149,14 @@ func newTestNode(parents blockSet, blockVersion int32, bits uint32, timestamp ti
 		AcceptedIDMerkleRoot: &daghash.ZeroHash,
 		UTXOCommitment:       &daghash.ZeroHash,
 	}
-	return newBlockNode(header, parents, phantomK)
+	node, _ := dag.newBlockNode(header, parents)
+	return node
 }
 
 func addNodeAsChildToParents(node *blockNode) {
 	for _, parent := range node.parents {
 		parent.children.add(node)
 	}
-}
-
-func buildNodeGenerator(phantomK uint32, withChildren bool) func(parents blockSet) *blockNode {
-	// For the purposes of these tests, we'll create blockNodes whose hashes are a
-	// series of numbers from 1 to 255.
-	hashCounter := byte(1)
-	buildNode := func(parents blockSet) *blockNode {
-		block := newBlockNode(nil, parents, phantomK)
-		block.hash = &daghash.Hash{hashCounter}
-		hashCounter++
-
-		return block
-	}
-	if withChildren {
-		return func(parents blockSet) *blockNode {
-			node := buildNode(parents)
-			addNodeAsChildToParents(node)
-			return node
-		}
-	}
-	return buildNode
 }
 
 // checkRuleError ensures the type of the two passed errors are of the
@@ -208,4 +189,36 @@ func checkRuleError(gotErr, wantErr error) error {
 	}
 
 	return nil
+}
+
+func prepareAndProcessBlock(t *testing.T, dag *BlockDAG, parents ...*wire.MsgBlock) *wire.MsgBlock {
+	parentHashes := make([]*daghash.Hash, len(parents))
+	for i, parent := range parents {
+		parentHashes[i] = parent.BlockHash()
+	}
+	daghash.Sort(parentHashes)
+	block, err := PrepareBlockForTest(dag, parentHashes, nil)
+	if err != nil {
+		t.Fatalf("error in PrepareBlockForTest: %s", err)
+	}
+	utilBlock := util.NewBlock(block)
+	isOrphan, isDelayed, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
+	if err != nil {
+		t.Fatalf("unexpected error in ProcessBlock: %s", err)
+	}
+	if isDelayed {
+		t.Fatalf("block is too far in the future")
+	}
+	if isOrphan {
+		t.Fatalf("block was unexpectedly orphan")
+	}
+	return block
+}
+
+func nodeByMsgBlock(t *testing.T, dag *BlockDAG, block *wire.MsgBlock) *blockNode {
+	node := dag.index.LookupNode(block.BlockHash())
+	if node == nil {
+		t.Fatalf("couldn't find block node with hash %s", block.BlockHash())
+	}
+	return node
 }

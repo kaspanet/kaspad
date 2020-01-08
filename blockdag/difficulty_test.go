@@ -6,8 +6,6 @@ package blockdag
 
 import (
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 	"math/big"
 	"testing"
 	"time"
@@ -83,27 +81,39 @@ func TestCalcWork(t *testing.T) {
 func TestDifficulty(t *testing.T) {
 	params := dagconfig.SimnetParams
 	params.K = 1
-	dag := newTestDAG(&params)
-	nonce := uint64(0)
+	params.DifficultyAdjustmentWindowSize = 264
+	dag, teardownFunc, err := DAGSetup("TestDifficulty", Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
+
 	zeroTime := time.Unix(0, 0)
 	addNode := func(parents blockSet, blockTime time.Time) *blockNode {
 		bluestParent := parents.bluest()
 		if blockTime == zeroTime {
 			blockTime = time.Unix(bluestParent.timestamp+1, 0)
 		}
-		header := &wire.BlockHeader{
-			ParentHashes:         parents.hashes(),
-			Bits:                 dag.requiredDifficulty(bluestParent, blockTime),
-			Nonce:                nonce,
-			Timestamp:            blockTime,
-			HashMerkleRoot:       &daghash.ZeroHash,
-			AcceptedIDMerkleRoot: &daghash.ZeroHash,
-			UTXOCommitment:       &daghash.ZeroHash,
+		block, err := PrepareBlockForTest(dag, parents.hashes(), nil)
+		if err != nil {
+			t.Fatalf("unexpected error in PrepareBlockForTest: %s", err)
 		}
-		node := newBlockNode(header, parents, dag.dagParams.K)
-		node.updateParentsChildren()
-		nonce++
-		return node
+		block.Header.Timestamp = blockTime
+		block.Header.Bits = dag.requiredDifficulty(bluestParent, blockTime)
+
+		isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(block), BFNoPoWCheck)
+		if err != nil {
+			t.Fatalf("unexpected error in ProcessBlock: %s", err)
+		}
+		if isDelayed {
+			t.Fatalf("block is too far in the future")
+		}
+		if isOrphan {
+			t.Fatalf("block was unexpectedly orphan")
+		}
+		return dag.index.LookupNode(block.BlockHash())
 	}
 	tip := dag.genesis
 	for i := uint64(0); i < dag.difficultyAdjustmentWindowSize; i++ {
@@ -112,7 +122,7 @@ func TestDifficulty(t *testing.T) {
 			t.Fatalf("As long as the bluest parent's blue score is less then the difficulty adjustment window size, the difficulty should be the same as genesis'")
 		}
 	}
-	for i := uint64(0); i < dag.difficultyAdjustmentWindowSize+1000; i++ {
+	for i := uint64(0); i < dag.difficultyAdjustmentWindowSize+100; i++ {
 		tip = addNode(setFromSlice(tip), zeroTime)
 		if tip.bits != dag.genesis.bits {
 			t.Fatalf("As long as the block rate remains the same, the difficulty shouldn't change")
@@ -132,7 +142,7 @@ func TestDifficulty(t *testing.T) {
 	if compareBits(tip.bits, nodeInThePast.bits) >= 0 {
 		t.Fatalf("tip.bits should be smaller than nodeInThePast.bits because nodeInThePast increased the block rate, so the difficulty should increase as well")
 	}
-	expectedBits := uint32(0x207ff395)
+	expectedBits := uint32(0x207f83df)
 	if tip.bits != expectedBits {
 		t.Errorf("tip.bits was expected to be %x but got %x", expectedBits, tip.bits)
 	}

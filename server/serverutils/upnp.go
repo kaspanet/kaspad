@@ -35,13 +35,15 @@ package serverutils
 import (
 	"bytes"
 	"encoding/xml"
-	"github.com/pkg/errors"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // NAT is an interface representing a NAT traversal options for example UPNP or
@@ -313,8 +315,13 @@ func soapRequest(url, function, message string) (replyXML []byte, err error) {
 	}
 
 	if r.StatusCode >= 400 {
-		// log.Stderr(function, r.StatusCode)
-		err = errors.New("Error " + strconv.Itoa(r.StatusCode) + " for " + function)
+		data, readErr := ioutil.ReadAll(r.Body)
+		if readErr != nil {
+			err = errors.Wrapf(readErr, "Error %d for %s", r.StatusCode, function)
+		} else {
+			err = errors.Errorf("Error %d for %s. Response: %s", r.StatusCode, function, data)
+		}
+
 		r = nil
 		return
 	}

@@ -33,21 +33,21 @@ var (
 	// can have for the regression test network. It is the value 2^255 - 1.
 	regressionPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
-	// testnetPowMax is the highest proof of work value a Kaspa block
-	// can have for the test network. It is the value 2^239 - 1.
-	testnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
+	// testNetPowMax is the highest proof of work value a Kaspa block
+	// can have for the test network. It is the value 2^255 - 1.
+	testNetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
-	// simnetPowMax is the highest proof of work value a Kaspa block
+	// simNetPowMax is the highest proof of work value a Kaspa block
 	// can have for the simulation test network. It is the value 2^255 - 1.
-	simnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
+	simNetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
-	// devnetPowMax is the highest proof of work value a Kaspa block
+	// devNetPowMax is the highest proof of work value a Kaspa block
 	// can have for the development network. It is the value
 	// 2^239 - 1.
-	devnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
+	devNetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
 )
 
-const phantomK = 10
+const ghostdagK = 10
 const difficultyAdjustmentWindowSize = 2640
 const timestampDeviationTolerance = 132
 
@@ -178,11 +178,11 @@ type Params struct {
 	HDCoinType uint32
 }
 
-// MainnetParams defines the network parameters for the main Kaspa network.
-var MainnetParams = Params{
-	K:           phantomK,
+// MainNetParams defines the network parameters for the main Kaspa network.
+var MainNetParams = Params{
+	K:           ghostdagK,
 	Name:        "mainnet",
-	Net:         wire.Mainnet,
+	Net:         wire.MainNet,
 	RPCPort:     "16110",
 	DefaultPort: "16111",
 	DNSSeeds:    []string{"dnsseed.kas.pa"},
@@ -227,7 +227,7 @@ var MainnetParams = Params{
 	PrivateKeyID: 0x80, // starts with 5 (uncompressed) or K (compressed)
 
 	// BIP32 hierarchical deterministic extended key magics
-	HDKeyIDPair: hdkeychain.HDKeyPairMainnet,
+	HDKeyIDPair: hdkeychain.HDKeyPairMainNet,
 
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
@@ -238,16 +238,16 @@ var MainnetParams = Params{
 // Kaspa network. Not to be confused with the test Kaspa network (version
 // 3), this network is sometimes simply called "testnet".
 var RegressionNetParams = Params{
-	K:           phantomK,
+	K:           ghostdagK,
 	Name:        "regtest",
-	Net:         wire.Regtest,
+	Net:         wire.RegTest,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
 	DNSSeeds:    []string{},
 
 	// DAG parameters
-	GenesisBlock:                   &regtestGenesisBlock,
-	GenesisHash:                    &regtestGenesisHash,
+	GenesisBlock:                   &regTestGenesisBlock,
+	GenesisHash:                    &regTestGenesisHash,
 	PowMax:                         regressionPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       150,
@@ -292,19 +292,19 @@ var RegressionNetParams = Params{
 	HDCoinType: 1,
 }
 
-// TestnetParams defines the network parameters for the test Kaspa network.
-var TestnetParams = Params{
-	K:           phantomK,
+// TestNetParams defines the network parameters for the test Kaspa network.
+var TestNetParams = Params{
+	K:           ghostdagK,
 	Name:        "testnet",
-	Net:         wire.Testnet,
+	Net:         wire.TestNet,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
 	DNSSeeds:    []string{"testnet-dnsseed.kas.pa"},
 
 	// DAG parameters
-	GenesisBlock:                   &testnetGenesisBlock,
-	GenesisHash:                    &testnetGenesisHash,
-	PowMax:                         testnetPowMax,
+	GenesisBlock:                   &testNetGenesisBlock,
+	GenesisHash:                    &testNetGenesisHash,
+	PowMax:                         testNetPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
@@ -341,32 +341,32 @@ var TestnetParams = Params{
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
 
 	// BIP32 hierarchical deterministic extended key magics
-	HDKeyIDPair: hdkeychain.HDKeyPairTestnet,
+	HDKeyIDPair: hdkeychain.HDKeyPairTestNet,
 
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
 	HDCoinType: 1,
 }
 
-// SimnetParams defines the network parameters for the simulation test Kaspa
+// SimNetParams defines the network parameters for the simulation test Kaspa
 // network. This network is similar to the normal test network except it is
 // intended for private use within a group of individuals doing simulation
 // testing. The functionality is intended to differ in that the only nodes
 // which are specifically specified are used to create the network rather than
 // following normal discovery rules. This is important as otherwise it would
 // just turn into another public testnet.
-var SimnetParams = Params{
-	K:           phantomK,
+var SimNetParams = Params{
+	K:           ghostdagK,
 	Name:        "simnet",
-	Net:         wire.Simnet,
+	Net:         wire.SimNet,
 	RPCPort:     "16510",
 	DefaultPort: "16511",
 	DNSSeeds:    []string{}, // NOTE: There must NOT be any seeds.
 
 	// DAG parameters
-	GenesisBlock:                   &simnetGenesisBlock,
-	GenesisHash:                    &simnetGenesisHash,
-	PowMax:                         simnetPowMax,
+	GenesisBlock:                   &simNetGenesisBlock,
+	GenesisHash:                    &simNetGenesisHash,
+	PowMax:                         simNetPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
@@ -401,26 +401,26 @@ var SimnetParams = Params{
 	Prefix: util.Bech32PrefixKaspaSim,
 
 	// BIP32 hierarchical deterministic extended key magics
-	HDKeyIDPair: hdkeychain.HDKeyPairSimnet,
+	HDKeyIDPair: hdkeychain.HDKeyPairSimNet,
 
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
 	HDCoinType: 115, // ASCII for s
 }
 
-// DevnetParams defines the network parameters for the development Kaspa network.
-var DevnetParams = Params{
-	K:           phantomK,
+// DevNetParams defines the network parameters for the development Kaspa network.
+var DevNetParams = Params{
+	K:           ghostdagK,
 	Name:        "devnet",
-	Net:         wire.Devnet,
+	Net:         wire.DevNet,
 	RPCPort:     "16610",
 	DefaultPort: "16611",
 	DNSSeeds:    []string{}, // NOTE: There must NOT be any seeds.
 
 	// DAG parameters
-	GenesisBlock:                   &devnetGenesisBlock,
-	GenesisHash:                    &devnetGenesisHash,
-	PowMax:                         devnetPowMax,
+	GenesisBlock:                   &devNetGenesisBlock,
+	GenesisHash:                    &devNetGenesisHash,
+	PowMax:                         devNetPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
@@ -457,7 +457,7 @@ var DevnetParams = Params{
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
 
 	// BIP32 hierarchical deterministic extended key magics
-	HDKeyIDPair: hdkeychain.HDKeyPairDevnet,
+	HDKeyIDPair: hdkeychain.HDKeyPairDevNet,
 
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
@@ -522,8 +522,8 @@ func newHashFromStr(hexStr string) *daghash.Hash {
 
 func init() {
 	// Register all default networks when the package is initialized.
-	mustRegister(&MainnetParams)
-	mustRegister(&TestnetParams)
+	mustRegister(&MainNetParams)
+	mustRegister(&TestNetParams)
 	mustRegister(&RegressionNetParams)
-	mustRegister(&SimnetParams)
+	mustRegister(&SimNetParams)
 }

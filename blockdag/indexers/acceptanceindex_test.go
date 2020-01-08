@@ -116,11 +116,11 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 	}
 
 	for i := 1; i < len(blocks)-2; i++ {
-		isOrphan, delay, err := db1DAG.ProcessBlock(blocks[i], blockdag.BFNone)
+		isOrphan, isDelayed, err := db1DAG.ProcessBlock(blocks[i], blockdag.BFNone)
 		if err != nil {
 			t.Fatalf("ProcessBlock fail on block %v: %v\n", i, err)
 		}
-		if delay != 0 {
+		if isDelayed {
 			t.Fatalf("ProcessBlock: block %d "+
 				"is too far in the future", i)
 		}
@@ -147,11 +147,11 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 	}
 
 	for i := len(blocks) - 2; i < len(blocks); i++ {
-		isOrphan, delay, err := db1DAG.ProcessBlock(blocks[i], blockdag.BFNone)
+		isOrphan, isDelayed, err := db1DAG.ProcessBlock(blocks[i], blockdag.BFNone)
 		if err != nil {
 			t.Fatalf("ProcessBlock fail on block %v: %v\n", i, err)
 		}
-		if delay != 0 {
+		if isDelayed {
 			t.Fatalf("ProcessBlock: block %d "+
 				"is too far in the future", i)
 		}
@@ -185,11 +185,11 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 	}
 
 	for i := len(blocks) - 2; i < len(blocks); i++ {
-		isOrphan, delay, err := db2DAG.ProcessBlock(blocks[i], blockdag.BFNone)
+		isOrphan, isDelayed, err := db2DAG.ProcessBlock(blocks[i], blockdag.BFNone)
 		if err != nil {
 			t.Fatalf("ProcessBlock fail on block %v: %v\n", i, err)
 		}
-		if delay != 0 {
+		if isDelayed {
 			t.Fatalf("ProcessBlock: block %d "+
 				"is too far in the future", i)
 		}

@@ -5,7 +5,7 @@ Connection Manager Overview
 
 Connection Manager handles all the general connection concerns such as
 maintaining a set number of outbound connections, sourcing peers, banning,
-limiting max connections, tor lookup, etc.
+limiting max connections, etc.
 
 The package provides a generic connection manager which is able to accept
 connection requests from a source or a set of given addresses, dial them and

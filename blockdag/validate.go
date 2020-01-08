@@ -6,10 +6,11 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"math"
 	"sort"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/txscript"
@@ -432,6 +433,8 @@ func (dag *BlockDAG) checkBlockHeaderSanity(header *wire.BlockHeader, flags Beha
 
 	// Ensure the block time is not too far in the future. If it's too far, return
 	// the duration of time that should be waited before the block becomes valid.
+	// This check needs to be last as it does not return an error but rather marks the
+	// header as delayed (and valid).
 	maxTimestamp := dag.timeSource.AdjustedTime().Add(time.Second *
 		time.Duration(int64(dag.TimestampDeviationTolerance)*dag.targetTimePerBlock))
 	if header.Timestamp.After(maxTimestamp) {
@@ -969,7 +972,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplateNoLock(block *util.Block) error {
 		return err
 	}
 
-	templateNode := newBlockNode(&header, dag.virtual.tips(), dag.dagParams.K)
+	templateNode, _ := dag.newBlockNode(&header, dag.virtual.tips())
 
 	_, err = dag.checkConnectToPastUTXO(templateNode,
 		dag.UTXOSet(), block.Transactions(), false)
