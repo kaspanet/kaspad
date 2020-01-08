@@ -486,9 +486,7 @@ func (fb futureCoveringBlockSet) isInFuture(block *futureCoveringBlock) bool {
 	}
 
 	candidate := fb[i-1]
-	blockInterval := block.treeNode.interval
-	candidateInterval := candidate.treeNode.interval
-	return candidateInterval.isAncestorOf(blockInterval)
+	return candidate.treeNode.isAncestorOf(block.treeNode)
 }
 
 // findIndex finds the index of the block with the maximum start that is below
