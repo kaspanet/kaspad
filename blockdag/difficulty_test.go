@@ -103,11 +103,11 @@ func TestDifficulty(t *testing.T) {
 		block.Header.Timestamp = blockTime
 		block.Header.Bits = dag.requiredDifficulty(bluestParent, blockTime)
 
-		isOrphan, delay, err := dag.ProcessBlock(util.NewBlock(block), BFNoPoWCheck)
+		isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(block), BFNoPoWCheck)
 		if err != nil {
 			t.Fatalf("unexpected error in ProcessBlock: %s", err)
 		}
-		if delay != 0 {
+		if isDelayed {
 			t.Fatalf("block is too far in the future")
 		}
 		if isOrphan {

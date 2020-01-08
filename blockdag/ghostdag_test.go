@@ -200,11 +200,11 @@ func TestGHOSTDAG(t *testing.T) {
 				}
 
 				utilBlock := util.NewBlock(block)
-				isOrphan, delay, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
+				isOrphan, isDelayed, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
 				if err != nil {
 					t.Fatalf("TestGHOSTDAG: dag.ProcessBlock got unexpected error for block %v: %v", blockData.id, err)
 				}
-				if delay != 0 {
+				if isDelayed {
 					t.Fatalf("TestGHOSTDAG: block %s "+
 						"is too far in the future", blockData.id)
 				}
