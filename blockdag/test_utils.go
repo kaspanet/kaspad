@@ -292,7 +292,7 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 	if err != nil {
 		return nil, err
 	}
-	block.Header.Timestamp = dag.NextBlockTime()
+	block.Header.Timestamp = dag.NextBlockMinimumTime()
 	block.Header.Bits = dag.NextRequiredDifficulty(block.Header.Timestamp)
 
 	return block, nil
