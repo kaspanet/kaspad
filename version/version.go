@@ -1,72 +1,50 @@
-// Copyright (c) 2013-2014 The btcsuite developers
-// Use of this source code is governed by an ISC
-// license that can be found in the LICENSE file.
-
 package version
 
 import (
-	"bytes"
 	"fmt"
 	"strings"
 )
 
-// semanticAlphabet
-const semanticAlphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
+// validCharacters  is a list of characters valid in the appBuild string
+const validCharacters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
 
-// These constants define the application version and follow the semantic
-// versioning 2.0.0 spec (http://semver.org/).
 const (
-	AppMajor uint = 0
-	AppMinor uint = 12
-	AppPatch uint = 0
-
-	// appPreRelease MUST only contain characters from semanticAlphabet
-	// per the semantic versioning spec.
-	appPreRelease = "beta"
+	appMajor uint = 0
+	appMinor uint = 1
+	appPatch uint = 0
 )
 
 // appBuild is defined as a variable so it can be overridden during the build
-// process with '-ldflags "-X main.appBuild foo' if needed. It MUST only
-// contain characters from semanticAlphabet per the semantic versioning spec.
+// process with '-ldflags "-X github.com/kaspanet/kaspad/version.appBuild=foo"' if needed.
+// It MUST only contain characters from validCharacters.
 var appBuild string
 
-// Version returns the application version as a properly formed string per the
-// semantic versioning 2.0.0 spec (http://semver.org/).
+var version = "" // string used for memoization of version
+
+// Version returns the application version as a properly formed string
 func Version() string {
-	// Start with the major, minor, and patch versions.
-	version := fmt.Sprintf("%d.%d.%d", AppMajor, AppMinor, AppPatch)
+	if version == "" {
+		// Start with the major, minor, and patch versions.
+		version = fmt.Sprintf("%d.%d.%d", appMajor, appMinor, appPatch)
 
-	// Append pre-release version if there is one. The hyphen called for
-	// by the semantic versioning spec is automatically appended and should
-	// not be contained in the pre-release string. The pre-release version
-	// is not appended if it contains invalid characters.
-	preRelease := normalizeVerString(appPreRelease)
-	if preRelease != "" {
-		version = fmt.Sprintf("%s-%s", version, preRelease)
-	}
+		// Append build metadata if there is any.
+		// Panic if any invalid characters are encountered
+		if appBuild != "" {
+			checkAppBuild(appBuild)
 
-	// Append build metadata if there is any. The plus called for
-	// by the semantic versioning spec is automatically appended and should
-	// not be contained in the build metadata string. The build metadata
-	// string is not appended if it contains invalid characters.
-	build := normalizeVerString(appBuild)
-	if build != "" {
-		version = fmt.Sprintf("%s+%s", version, build)
+			version = fmt.Sprintf("%s-%s", version, appBuild)
+		}
 	}
 
 	return version
 }
 
-// normalizeVerString returns the passed string stripped of all characters which
-// are not valid according to the semantic versioning guidelines for pre-release
-// version and build metadata strings. In particular they MUST only contain
-// characters in semanticAlphabet.
-func normalizeVerString(str string) string {
-	var result bytes.Buffer
-	for _, r := range str {
-		if strings.ContainsRune(semanticAlphabet, r) {
-			result.WriteRune(r)
+// checkAppBuild verifies that appBuild does not contain any characters outside of validCharacters.
+// In case of any invalid characters checkAppBuild panics
+func checkAppBuild(appBuild string) {
+	for _, r := range appBuild {
+		if !strings.ContainsRune(validCharacters, r) {
+			panic(fmt.Errorf("appBuild string (%s) contains forbidden characters. Only alphanumeric characters and dashes are allowed", appBuild))
 		}
 	}
-	return result.String()
 }

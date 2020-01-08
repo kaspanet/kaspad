@@ -7,6 +7,7 @@ package wire
 import (
 	"bytes"
 	"fmt"
+	"github.com/kaspanet/kaspad/version"
 	"github.com/pkg/errors"
 	"io"
 	"strings"
@@ -21,7 +22,7 @@ import (
 const MaxUserAgentLen = 256
 
 // DefaultUserAgent for wire in the stack
-const DefaultUserAgent = "/kaspawire:0.1.0/"
+var DefaultUserAgent = fmt.Sprintf("/kaspad:%s/", version.Version())
 
 // MsgVersion implements the Message interface and represents a kaspa version
 // message. It is used for a peer to advertise itself as soon as an outbound

@@ -22,6 +22,7 @@ type GetBlockHeaderVerboseResult struct {
 	Bits                 string   `json:"bits"`
 	Difficulty           float64  `json:"difficulty"`
 	ParentHashes         []string `json:"parentHashes,omitempty"`
+	SelectedParentHash   string   `json:"selectedParentHash"`
 	NextHashes           []string `json:"nextHashes,omitempty"`
 }
 
@@ -47,6 +48,7 @@ type GetBlockVerboseResult struct {
 	Bits                 string        `json:"bits"`
 	Difficulty           float64       `json:"difficulty"`
 	ParentHashes         []string      `json:"parentHashes"`
+	SelectedParentHash   string        `json:"selectedParentHash,omitempty"`
 	NextHashes           []string      `json:"nextHashes,omitempty"`
 }
 
@@ -415,7 +417,7 @@ type GetWorkResult struct {
 
 // InfoDAGResult models the data returned by the kaspa rpc server getinfo command.
 type InfoDAGResult struct {
-	Version         int32   `json:"version"`
+	Version         string  `json:"version"`
 	ProtocolVersion int32   `json:"protocolVersion"`
 	Blocks          uint64  `json:"blocks"`
 	TimeOffset      int64   `json:"timeOffset"`

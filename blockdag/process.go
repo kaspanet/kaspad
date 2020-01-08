@@ -134,11 +134,14 @@ func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 // whether or not the block is an orphan.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrphan bool, delay time.Duration, err error) {
+func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrphan bool, isDelayed bool, err error) {
 	dag.dagLock.Lock()
 	defer dag.dagLock.Unlock()
+	return dag.processBlockNoLock(block, flags)
+}
 
-	isDelayedBlock := flags&BFAfterDelay == BFAfterDelay
+func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) (isOrphan bool, isDelayed bool, err error) {
+	isAfterDelay := flags&BFAfterDelay == BFAfterDelay
 	wasBlockStored := flags&BFWasStored == BFWasStored
 
 	blockHash := block.Hash()
@@ -147,36 +150,57 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 	// The block must not already exist in the DAG.
 	if dag.BlockExists(blockHash) && !wasBlockStored {
 		str := fmt.Sprintf("already have block %s", blockHash)
-		return false, 0, ruleError(ErrDuplicateBlock, str)
+		return false, false, ruleError(ErrDuplicateBlock, str)
 	}
 
 	// The block must not already exist as an orphan.
 	if _, exists := dag.orphans[*blockHash]; exists {
 		str := fmt.Sprintf("already have block (orphan) %s", blockHash)
-		return false, 0, ruleError(ErrDuplicateBlock, str)
+		return false, false, ruleError(ErrDuplicateBlock, str)
 	}
 
-	if !isDelayedBlock {
+	if dag.isKnownDelayedBlock(blockHash) {
+		str := fmt.Sprintf("already have block (delayed) %s", blockHash)
+		return false, false, ruleError(ErrDuplicateBlock, str)
+	}
+
+	if !isAfterDelay {
 		// Perform preliminary sanity checks on the block and its transactions.
 		delay, err := dag.checkBlockSanity(block, flags)
 		if err != nil {
-			return false, 0, err
+			return false, false, err
 		}
 
 		if delay != 0 {
-			return false, delay, err
+			err = dag.addDelayedBlock(block, delay)
+			if err != nil {
+				return false, false, err
+			}
+			return false, true, nil
 		}
+	}
+
+	var missingParents []*daghash.Hash
+	for _, parentHash := range block.MsgBlock().Header.ParentHashes {
+		if !dag.BlockExists(parentHash) {
+			missingParents = append(missingParents, parentHash)
+		}
+	}
+
+	// Handle the case of a block with a valid timestamp(non-delayed) which points to a delayed block.
+	delay, isParentDelayed := dag.maxDelayOfParents(missingParents)
+	if isParentDelayed {
+		// Add Nanosecond to ensure that parent process time will be after its child.
+		delay += time.Nanosecond
+		err := dag.addDelayedBlock(block, delay)
+		if err != nil {
+			return false, false, err
+		}
+		return false, true, err
 	}
 
 	// Handle orphan blocks.
-	allParentsExist := true
-	for _, parentHash := range block.MsgBlock().Header.ParentHashes {
-		if !dag.BlockExists(parentHash) {
-			allParentsExist = false
-		}
-	}
-
-	if !allParentsExist {
+	if len(missingParents) > 0 {
 		// Some orphans during netsync are a normal part of the process, since the anticone
 		// of the chain-split is never explicitly requested.
 		// Therefore, if we are during netsync - don't report orphans to default logs.
@@ -191,14 +215,14 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 		}
 		dag.addOrphanBlock(block)
 
-		return true, 0, nil
+		return true, false, nil
 	}
 
 	// The block has passed all context independent checks and appears sane
 	// enough to potentially accept it into the block DAG.
 	err = dag.maybeAcceptBlock(block, flags)
 	if err != nil {
-		return false, 0, err
+		return false, false, err
 	}
 
 	// Accept any orphan blocks that depend on this block (they are
@@ -206,10 +230,33 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 	// there are no more.
 	err = dag.processOrphans(blockHash, flags)
 	if err != nil {
-		return false, 0, err
+		return false, false, err
+	}
+
+	if !isAfterDelay {
+		err = dag.processDelayedBlocks()
+		if err != nil {
+			return false, false, err
+		}
 	}
 
 	log.Debugf("Accepted block %s", blockHash)
 
-	return false, 0, nil
+	return false, false, nil
+}
+
+// maxDelayOfParents returns the maximum delay of the given block hashes.
+// Note that delay could be 0, but isDelayed will return true. This is the case where the parent process time is due.
+func (dag *BlockDAG) maxDelayOfParents(parentHashes []*daghash.Hash) (delay time.Duration, isDelayed bool) {
+	for _, parentHash := range parentHashes {
+		if delayedParent, exists := dag.delayedBlocks[*parentHash]; exists {
+			isDelayed = true
+			parentDelay := delayedParent.processTime.Sub(dag.timeSource.AdjustedTime())
+			if parentDelay > delay {
+				delay = parentDelay
+			}
+		}
+	}
+
+	return delay, isDelayed
 }

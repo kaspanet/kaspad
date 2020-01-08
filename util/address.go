@@ -115,6 +115,9 @@ type Address interface {
 	// when inserting the address into a txout's script.
 	ScriptAddress() []byte
 
+	// Prefix returns the prefix for this address
+	Prefix() Bech32Prefix
+
 	// IsForPrefix returns whether or not the address is associated with the
 	// passed kaspa network.
 	IsForPrefix(prefix Bech32Prefix) bool
@@ -123,10 +126,9 @@ type Address interface {
 // DecodeAddress decodes the string encoding of an address and returns
 // the Address if addr is a valid encoding for a known address type.
 //
-// The kaspa network address is associated with is extracted if possible.
-// When the address does not encode the network, such as in the case of a raw
-// public key, the address will be associated with the passed defaultNet.
-func DecodeAddress(addr string, defaultPrefix Bech32Prefix) (Address, error) {
+// If any expectedPrefix except Bech32PrefixUnknown is passed, it is compared to the
+// prefix extracted from the address, and if the two do not match - an error is returned
+func DecodeAddress(addr string, expectedPrefix Bech32Prefix) (Address, error) {
 	prefixString, decoded, version, err := bech32.Decode(addr)
 	if err != nil {
 		return nil, errors.Errorf("decoded address is of unknown format: %s", err)
@@ -136,7 +138,7 @@ func DecodeAddress(addr string, defaultPrefix Bech32Prefix) (Address, error) {
 	if err != nil {
 		return nil, errors.Errorf("decoded address's prefix could not be parsed: %s", err)
 	}
-	if defaultPrefix != prefix {
+	if expectedPrefix != Bech32PrefixUnknown && expectedPrefix != prefix {
 		return nil, errors.Errorf("decoded address is of wrong network: %s", err)
 	}
 
@@ -145,9 +147,9 @@ func DecodeAddress(addr string, defaultPrefix Bech32Prefix) (Address, error) {
 	case ripemd160.Size: // P2PKH or P2SH
 		switch version {
 		case pubKeyHashAddrID:
-			return newAddressPubKeyHash(defaultPrefix, decoded)
+			return newAddressPubKeyHash(prefix, decoded)
 		case scriptHashAddrID:
-			return newAddressScriptHashFromHash(defaultPrefix, decoded)
+			return newAddressScriptHashFromHash(prefix, decoded)
 		default:
 			return nil, ErrUnknownAddressType
 		}
@@ -207,6 +209,11 @@ func (a *AddressPubKeyHash) ScriptAddress() []byte {
 // with the passed kaspa network.
 func (a *AddressPubKeyHash) IsForPrefix(prefix Bech32Prefix) bool {
 	return a.prefix == prefix
+}
+
+// Prefix returns the prefix for this address
+func (a *AddressPubKeyHash) Prefix() Bech32Prefix {
+	return a.prefix
 }
 
 // String returns a human-readable string for the pay-to-pubkey-hash address.
@@ -274,6 +281,11 @@ func (a *AddressScriptHash) ScriptAddress() []byte {
 // with the passed kaspa network.
 func (a *AddressScriptHash) IsForPrefix(prefix Bech32Prefix) bool {
 	return a.prefix == prefix
+}
+
+// Prefix returns the prefix for this address
+func (a *AddressScriptHash) Prefix() Bech32Prefix {
+	return a.prefix
 }
 
 // String returns a human-readable string for the pay-to-script-hash address.

@@ -1,7 +1,3 @@
-// Copyright (c) 2015-2016 The btcsuite developers
-// Use of this source code is governed by an ISC
-// license that can be found in the LICENSE file.
-
 /*
 Package treap implements a treap data structure that is used to hold ordered
 key/value pairs using a combination of binary search tree and heap semantics.

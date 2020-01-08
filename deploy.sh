@@ -17,12 +17,16 @@ IMAGE_NAME=${ECR_SERVER}/${SERVICE_NAME}
 # Start atd
 service atd start
 
-# Sends a Telegram notification with some details about the failure
+# Sends a Discord notification with some details about the failure
 # All variables in this function are set by Jenkins
-notify_telegram() {
-  echo "./telegram.sh \
-    '${TELEGRAM_API_TOKEN}' \
-    '${TELEGRAM_CHAT_ID}' \
+notify_discord() {
+  if [ -z "${DISCORD_CLIENT_ID}" ] || [ -z "${DISCORD_API_TOKEN}" ]; then
+    return
+  fi
+
+  echo "./discord.sh \
+    '${DISCORD_CLIENT_ID}' \
+    '${DISCORD_API_TOKEN}' \
     '${BUILD_URL}' \
     '${ghprbActualCommitAuthor}' \
     '${ghprbPullTitle}' \
@@ -32,7 +36,7 @@ notify_telegram() {
 trap "exit 1" INT
 fatal() {
   echo "ERROR: $*" >&2
-  notify_telegram
+  notify_discord
 
   exit 1
 }

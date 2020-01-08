@@ -607,7 +607,7 @@ func (dag *BlockDAG) initDAGState() error {
 
 			// Attempt to accept the block.
 			block, err := dbFetchBlockByNode(dbTx, node)
-			isOrphan, delay, err := dag.ProcessBlock(block, BFWasStored)
+			isOrphan, isDelayed, err := dag.ProcessBlock(block, BFWasStored)
 			if err != nil {
 				log.Warnf("Block %s, which was not previously processed, "+
 					"failed to be accepted to the DAG: %s", node.hash, err)
@@ -621,7 +621,7 @@ func (dag *BlockDAG) initDAGState() error {
 					"previously processed, turned out to be an orphan, which is "+
 					"impossible.", node.hash))
 			}
-			if delay != 0 {
+			if isDelayed {
 				return AssertError(fmt.Sprintf("Block %s, which was not "+
 					"previously processed, turned out to be delayed, which is "+
 					"impossible.", node.hash))

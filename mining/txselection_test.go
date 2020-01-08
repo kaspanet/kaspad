@@ -55,11 +55,11 @@ func TestSelectTxs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewBlockTemplate: %v", err)
 	}
-	isOrphan, delay, err := dag.ProcessBlock(util.NewBlock(template.Block), blockdag.BFNoPoWCheck)
+	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(template.Block), blockdag.BFNoPoWCheck)
 	if err != nil {
 		t.Fatalf("ProcessBlock: %v", err)
 	}
-	if delay != 0 {
+	if isDelayed {
 		t.Fatalf("ProcessBlock: template " +
 			"is too far in the future")
 	}
