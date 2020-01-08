@@ -27,8 +27,8 @@ func Version() string {
 		// Start with the major, minor, and patch versions.
 		version = fmt.Sprintf("%d.%d.%d", appMajor, appMinor, appPatch)
 
-		// Append build metadata if there is any. The build metadata
-		// string is not appended if it contains invalid characters.
+		// Append build metadata if there is any.
+		// Panic if any invalid characters are encountered
 		if appBuild != "" {
 			checkAppBuild(appBuild)
 
@@ -39,8 +39,8 @@ func Version() string {
 	return version
 }
 
-// checkAppBuild returns the passed string unless it contains any characters not in validCharacters
-// If any invalid characters are encountered - an empty string is returned
+// checkAppBuild verifies that appBuild does not contain any characters outside of validCharacters.
+// In case of any invalid characters checkAppBuild panics
 func checkAppBuild(appBuild string) {
 	for _, r := range appBuild {
 		if !strings.ContainsRune(validCharacters, r) {
