@@ -34,8 +34,8 @@ var (
 	regressionPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
 	// testNetPowMax is the highest proof of work value a Kaspa block
-	// can have for the test network. It is the value 2^255 - 1.
-	testNetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
+	// can have for the test network. It is the value 2^239 - 1.
+	testNetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
 
 	// simNetPowMax is the highest proof of work value a Kaspa block
 	// can have for the simulation test network. It is the value 2^255 - 1.
