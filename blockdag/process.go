@@ -172,7 +172,7 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 		}
 
 		if delay != 0 {
-			dag.addDelayedBlock(block, delay)
+			err = dag.addDelayedBlock(block, delay)
 			return false, true, err
 		}
 	}
@@ -189,8 +189,8 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 	if isParentDelayed {
 		// Add Nanosecond to ensure that parent process time will be after its child.
 		delay += time.Nanosecond
-		dag.addDelayedBlock(block, delay)
-		return false, true, nil
+		err := dag.addDelayedBlock(block, delay)
+		return false, true, err
 	}
 
 	// Handle orphan blocks.

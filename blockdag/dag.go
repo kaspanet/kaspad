@@ -6,11 +6,12 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"math"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
@@ -1829,7 +1830,7 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 	return dag.subnetworkID
 }
 
-func (dag *BlockDAG) addDelayedBlock(block *util.Block, delay time.Duration) {
+func (dag *BlockDAG) addDelayedBlock(block *util.Block, delay time.Duration) error {
 	processTime := dag.timeSource.AdjustedTime().Add(delay)
 	log.Debugf("Adding block to delayed blocks queue (block hash: %s, process time: %s)", block.Hash().String(), processTime)
 	delayedBlock := &delayedBlock{
@@ -1839,7 +1840,7 @@ func (dag *BlockDAG) addDelayedBlock(block *util.Block, delay time.Duration) {
 
 	dag.delayedBlocks[*block.Hash()] = delayedBlock
 	dag.delayedBlocksQueue.Push(delayedBlock)
-	dag.processDelayedBlocks()
+	return dag.processDelayedBlocks()
 }
 
 // processDelayedBlocks loops over all delayed blocks and processes blocks which are due.
@@ -1855,7 +1856,11 @@ func (dag *BlockDAG) processDelayedBlocks() error {
 		_, _, err := dag.processBlockNoLock(delayedBlock.block, BFAfterDelay)
 		if err != nil {
 			log.Errorf("Error while processing delayed block (block %s)", delayedBlock.block.Hash().String())
-			return err
+			// Rule errors should not be propagated as they refer only to the delayed block,
+			// while this function runs in the context of another block
+			if _, ok := err.(RuleError); !ok {
+				return err
+			}
 		}
 		log.Debugf("Processed delayed block (block %s)", delayedBlock.block.Hash().String())
 	}
