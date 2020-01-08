@@ -160,7 +160,7 @@ func (node *blockNode) updateParentsChildren() {
 
 func (node *blockNode) less(other *blockNode) bool {
 	if node.blueScore == other.blueScore {
-		return daghash.HashToBig(node.hash).Cmp(daghash.HashToBig(other.hash)) < 0
+		return daghash.Less(node.hash, other.hash)
 	}
 
 	return node.blueScore < other.blueScore
