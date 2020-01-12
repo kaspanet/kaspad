@@ -86,7 +86,7 @@ const (
 // used by Kaspa applications to differentiate networks as well as addresses
 // and keys for one network from those intended for use on another network.
 type Params struct {
-	K uint32
+	K uint8
 
 	// Name defines a human-readable identifier for the network.
 	Name string

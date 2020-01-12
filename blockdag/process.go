@@ -208,7 +208,7 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 		// The number K*2 was chosen since in peace times anticone is limited to K blocks,
 		// while some red block can make it a bit bigger, but much more than that indicates
 		// there might be some problem with the netsync process.
-		if flags&BFIsSync == BFIsSync && uint32(len(dag.orphans)) < dag.dagParams.K*2 {
+		if flags&BFIsSync == BFIsSync && uint8(len(dag.orphans)) < dag.dagParams.K*2 {
 			log.Debugf("Adding orphan block %s. This is normal part of netsync process", blockHash)
 		} else {
 			log.Infof("Adding orphan block %s", blockHash)

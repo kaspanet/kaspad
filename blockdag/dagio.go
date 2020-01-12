@@ -705,13 +705,13 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		return nil, err
 	}
 
-	node.bluesAnticoneSizes = make(map[daghash.Hash]uint32)
+	node.bluesAnticoneSizes = make(map[daghash.Hash]uint8)
 	for i := uint64(0); i < bluesAnticoneSizesLen; i++ {
 		hash := &daghash.Hash{}
 		if _, err := io.ReadFull(buffer, hash[:]); err != nil {
 			return nil, err
 		}
-		node.bluesAnticoneSizes[*hash], err = binaryserializer.Uint32(buffer, byteOrder)
+		node.bluesAnticoneSizes[*hash], err = binaryserializer.Uint8(buffer)
 		if err != nil {
 			return nil, err
 		}
@@ -793,7 +793,7 @@ func dbStoreBlockNode(dbTx database.Tx, node *blockNode) error {
 			return err
 		}
 
-		err = binaryserializer.PutUint32(w, byteOrder, blueAnticoneSize)
+		err = binaryserializer.PutUint8(w, blueAnticoneSize)
 		if err != nil {
 			return err
 		}

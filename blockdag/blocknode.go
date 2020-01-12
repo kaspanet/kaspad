@@ -78,7 +78,7 @@ type blockNode struct {
 
 	// bluesAnticoneSizes is a map holding the set of blues affected by this block and their
 	// modified blue anticone size.
-	bluesAnticoneSizes map[daghash.Hash]uint32
+	bluesAnticoneSizes map[daghash.Hash]uint8
 
 	// hash is the double sha 256 of the block.
 	hash *daghash.Hash
@@ -123,7 +123,7 @@ func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSe
 		parents:            parents,
 		children:           make(blockSet),
 		timestamp:          dag.timeSource.AdjustedTime().Unix(),
-		bluesAnticoneSizes: make(map[daghash.Hash]uint32),
+		bluesAnticoneSizes: make(map[daghash.Hash]uint8),
 	}
 
 	// blockHeader is nil only for the virtual block
