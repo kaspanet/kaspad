@@ -706,14 +706,14 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		return nil, err
 	}
 
-	node.bluesAnticoneSizes = make(map[daghash.Hash]dagconfig.K)
+	node.bluesAnticoneSizes = make(map[daghash.Hash]dagconfig.KSize)
 	for i := uint64(0); i < bluesAnticoneSizesLen; i++ {
 		hash := &daghash.Hash{}
 		if _, err := io.ReadFull(buffer, hash[:]); err != nil {
 			return nil, err
 		}
 		bluesAnticoneSize, err := binaryserializer.Uint8(buffer)
-		node.bluesAnticoneSizes[*hash] = dagconfig.K(bluesAnticoneSize)
+		node.bluesAnticoneSizes[*hash] = dagconfig.KSize(bluesAnticoneSize)
 		if err != nil {
 			return nil, err
 		}
