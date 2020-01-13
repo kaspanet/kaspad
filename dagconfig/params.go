@@ -82,11 +82,16 @@ const (
 	DefinedDeployments
 )
 
+// K defines the K parameter for GHOSTDAG consensus algorithm.
+// See ghostdag.go for further details.
+type K uint8
+
 // Params defines a Kaspa network by its parameters. These parameters may be
 // used by Kaspa applications to differentiate networks as well as addresses
 // and keys for one network from those intended for use on another network.
 type Params struct {
-	K uint32
+	// K defines the K parameter for GHOSTDAG consensus algorithm.
+	K K
 
 	// Name defines a human-readable identifier for the network.
 	Name string

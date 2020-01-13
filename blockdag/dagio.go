@@ -9,6 +9,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/pkg/errors"
 	"io"
 	"sync"
@@ -705,13 +706,14 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		return nil, err
 	}
 
-	node.bluesAnticoneSizes = make(map[daghash.Hash]uint32)
+	node.bluesAnticoneSizes = make(map[daghash.Hash]dagconfig.K)
 	for i := uint64(0); i < bluesAnticoneSizesLen; i++ {
 		hash := &daghash.Hash{}
 		if _, err := io.ReadFull(buffer, hash[:]); err != nil {
 			return nil, err
 		}
-		node.bluesAnticoneSizes[*hash], err = binaryserializer.Uint32(buffer, byteOrder)
+		bluesAnticoneSizes, err := binaryserializer.Uint8(buffer)
+		node.bluesAnticoneSizes[*hash] = dagconfig.K(bluesAnticoneSizes)
 		if err != nil {
 			return nil, err
 		}
@@ -793,7 +795,7 @@ func dbStoreBlockNode(dbTx database.Tx, node *blockNode) error {
 			return err
 		}
 
-		err = binaryserializer.PutUint32(w, byteOrder, blueAnticoneSize)
+		err = binaryserializer.PutUint8(w, uint8(blueAnticoneSize))
 		if err != nil {
 			return err
 		}

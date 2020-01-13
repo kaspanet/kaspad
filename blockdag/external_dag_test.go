@@ -320,7 +320,7 @@ func TestChainedTransactions(t *testing.T) {
 func TestOrderInDiffFromAcceptanceData(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	params := dagconfig.SimnetParams
-	params.K = math.MaxUint32
+	params.K = math.MaxUint8
 	dag, teardownFunc, err := blockdag.DAGSetup("TestOrderInDiffFromAcceptanceData", blockdag.Config{
 		DAGParams: &params,
 	})

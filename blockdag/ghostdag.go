@@ -1,6 +1,7 @@
 package blockdag
 
 import (
+	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/pkg/errors"
 	"sort"
 )
@@ -38,8 +39,8 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 	})
 
 	for _, blueCandidate := range selectedParentAnticone {
-		candidateBluesAnticoneSizes := make(map[*blockNode]uint32)
-		var candidateAnticoneSize uint32
+		candidateBluesAnticoneSizes := make(map[*blockNode]dagconfig.K)
+		var candidateAnticoneSize dagconfig.K
 		possiblyBlue := true
 
 		// Iterate over all blocks in the blue set of newNode that are not in the past
@@ -108,7 +109,7 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 
 			// The maximum length of node.blues can be K+1 because
 			// it contains the selected parent.
-			if uint32(len(newNode.blues)) == dag.dagParams.K+1 {
+			if uint8(len(newNode.blues)) == uint8(dag.dagParams.K+1) {
 				break
 			}
 		}
@@ -165,7 +166,7 @@ func (dag *BlockDAG) selectedParentAnticone(node *blockNode) ([]*blockNode, erro
 
 // blueAnticoneSize returns the blue anticone size of 'block' from the worldview of 'context'.
 // Expects 'block' to be in the blue set of 'context'
-func (dag *BlockDAG) blueAnticoneSize(block, context *blockNode) (uint32, error) {
+func (dag *BlockDAG) blueAnticoneSize(block, context *blockNode) (dagconfig.K, error) {
 	for current := context; current != nil; current = current.selectedParent {
 		if blueAnticoneSize, ok := current.bluesAnticoneSizes[*block.hash]; ok {
 			return blueAnticoneSize, nil
