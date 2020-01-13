@@ -712,8 +712,8 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		if _, err := io.ReadFull(buffer, hash[:]); err != nil {
 			return nil, err
 		}
-		bluesAnticoneSizes, err := binaryserializer.Uint8(buffer)
-		node.bluesAnticoneSizes[*hash] = dagconfig.K(bluesAnticoneSizes)
+		bluesAnticoneSize, err := binaryserializer.Uint8(buffer)
+		node.bluesAnticoneSizes[*hash] = dagconfig.K(bluesAnticoneSize)
 		if err != nil {
 			return nil, err
 		}
