@@ -1,15 +1,10 @@
 package blockdag
 
 import (
-	"github.com/pkg/errors"
 	"path/filepath"
-	"strings"
 	"testing"
 
-	"bou.ke/monkey"
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/database"
-	"github.com/kaspanet/kaspad/util"
 )
 
 func TestMaybeAcceptBlockErrors(t *testing.T) {
@@ -107,37 +102,4 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 
 	// Set block2's bits back to valid for next tests
 	block2.MsgBlock().Header.Bits = originalBits
-
-	// Test rejecting the node due to database error
-	databaseErrorMessage := "database error"
-	guard := monkey.Patch(dbStoreBlock, func(dbTx database.Tx, block *util.Block) error {
-		return errors.New(databaseErrorMessage)
-	})
-	defer guard.Unpatch()
-	err = dag.maybeAcceptBlock(block2, BFNone)
-	if err == nil {
-		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the node due to database error: "+
-			"Expected: %s, got: <nil>", databaseErrorMessage)
-	}
-	if !strings.Contains(err.Error(), databaseErrorMessage) {
-		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the node due to database error: "+
-			"Unexpected error. Want: %s, got: %s", databaseErrorMessage, err)
-	}
-	guard.Unpatch()
-
-	// Test rejecting the node due to index error
-	indexErrorMessage := "index error"
-	guard = monkey.Patch((*blockIndex).flushToDB, func(_ *blockIndex) error {
-		return errors.New(indexErrorMessage)
-	})
-	defer guard.Unpatch()
-	err = dag.maybeAcceptBlock(block2, BFNone)
-	if err == nil {
-		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the node due to index error: "+
-			"Expected %s, got: <nil>", indexErrorMessage)
-	}
-	if !strings.Contains(err.Error(), indexErrorMessage) {
-		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the node due to index error: "+
-			"Unexpected error. Want: %s, got: %s", indexErrorMessage, err)
-	}
 }
