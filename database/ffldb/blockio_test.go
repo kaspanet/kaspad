@@ -1,13 +1,9 @@
 package ffldb
 
 import (
-	"container/list"
-	"github.com/pkg/errors"
 	"os"
-	"sync"
 	"testing"
 
-	"bou.ke/monkey"
 	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -73,22 +69,12 @@ func TestHandleRollbackErrors(t *testing.T) {
 
 	testBlockSize := uint32(testBlock.MsgBlock().SerializeSize())
 	tests := []struct {
-		name        string
-		fileNum     uint32
-		offset      uint32
-		target      interface{}
-		replacement interface{}
+		name    string
+		fileNum uint32
+		offset  uint32
 	}{
 		// offset should be size of block + 12 bytes for block network, size and checksum
-		{"Nothing to rollback", 1, testBlockSize + 12, nil, nil},
-		{"deleteFile fails", 0, 0, (*blockStore).deleteFile,
-			func(*blockStore, uint32) error { return errors.New("error in blockstore.deleteFile") }},
-		{"openWriteFile fails", 0, 0, (*blockStore).openWriteFile,
-			func(*blockStore, uint32) (filer, error) { return nil, errors.New("error in blockstore.openWriteFile") }},
-		{"file.Truncate fails", 0, 0, (*os.File).Truncate,
-			func(*os.File, int64) error { return errors.New("error in file.Truncate") }},
-		{"file.Sync fails", 0, 0, (*os.File).Sync,
-			func(*os.File) error { return errors.New("error in file.Sync") }},
+		{"Nothing to rollback", 1, testBlockSize + 12},
 	}
 
 	for _, test := range tests {
@@ -106,11 +92,6 @@ func TestHandleRollbackErrors(t *testing.T) {
 				t.Fatalf("TestHandleRollbackErrors: %s: Error adding test block to database: %s", test.name, err)
 			}
 
-			if test.target != nil && test.replacement != nil {
-				patch := monkey.Patch(test.target, test.replacement)
-				defer patch.Unpatch()
-			}
-
 			pdb.store.handleRollback(test.fileNum, test.offset)
 
 			if pdb.store.writeCursor.curFileNum != test.fileNum {
@@ -124,59 +105,4 @@ func TestHandleRollbackErrors(t *testing.T) {
 			}
 		}()
 	}
-}
-
-// TestBlockFileSingleThread tests a certain branch of blockStore.blockFile() that never gets hit in
-// computers with a single CPU, since the number of goroutines is determined by number of CPUs.
-func TestBlockFileSingleCPU(t *testing.T) {
-	pdb := newTestDb("TestBlockFileSingleCPU", t)
-	defer pdb.Close()
-
-	// Write empty block to database, so that 0 file is created
-	_, err := pdb.store.writeBlock([]byte{})
-	if err != nil {
-		t.Fatalf("TestBlockFileSingleCPU: Error writing block: %s", err)
-	}
-	// Close the file, and clear the openBlocksLRU
-	pdb.store.writeCursor.curFile.file.Close()
-	pdb.store.writeCursor.curFile.file = nil
-	pdb.store.openBlocksLRU = &list.List{}
-
-	blockFileCompleteChan := make(chan bool)
-	runlockedChan := make(chan bool)
-
-	// patch RLocks so that they don't interfere
-	patchRLock := monkey.Patch((*sync.RWMutex).RLock, func(*sync.RWMutex) {})
-	defer patchRLock.Unpatch()
-
-	// patch RUnlocks to know where are we standing in the execution of blockFile()
-	patchRUnlock := monkey.Patch((*sync.RWMutex).RUnlock, func(mutex *sync.RWMutex) {
-		runlockedChan <- true
-	})
-	defer patchRUnlock.Unpatch()
-
-	// Lock obfMutex for writing, so that we can open the file before blockFile() obtains the write mutex
-	pdb.store.obfMutex.Lock()
-
-	// Launch blockFile in separate goroutine so that we can open file in the interim
-	go func() {
-		pdb.store.blockFile(0)
-		blockFileCompleteChan <- true
-	}()
-
-	// Read twice from runlockedChan, for both wc and obfMutex unlocks
-	<-runlockedChan
-	<-runlockedChan
-
-	// Open file
-	_, err = pdb.store.openFileFunc(0)
-	if err != nil {
-		t.Fatalf("TestBlockFileSingleCPU: Error openning file: %s", err)
-	}
-
-	// Unlock write mutex to let blockFile() continue exection
-	pdb.store.obfMutex.Unlock()
-
-	// Wait for blockFile() to complete
-	<-blockFileCompleteChan
 }

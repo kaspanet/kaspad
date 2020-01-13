@@ -6,15 +6,11 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
-
-	"bou.ke/monkey"
 
 	"math/rand"
 
@@ -755,99 +751,6 @@ func TestIntervalBlockHashes(t *testing.T) {
 			t.Errorf("%s: unxpected hashes -- got %v, want %v",
 				test.name, hashes, test.hashes)
 		}
-	}
-}
-
-// TestApplyUTXOChangesErrors tests that
-// dag.applyUTXOChanges panics when unexpected
-// error occurs
-func TestApplyUTXOChangesPanic(t *testing.T) {
-	targetErrorMessage := "updateParents error"
-	defer func() {
-		if recover() == nil {
-			t.Errorf("Got no panic on past UTXO error, while expected panic")
-		}
-	}()
-	testErrorThroughPatching(
-		t,
-		targetErrorMessage,
-		(*blockNode).updateParents,
-		func(_ *blockNode, _ *virtualBlock, _ UTXOSet) error {
-			return errors.New(targetErrorMessage)
-		},
-	)
-}
-
-// TestRestoreUTXOErrors tests all error-cases in restoreUTXO.
-// The non-error-cases are tested in the more general tests.
-func TestRestoreUTXOErrors(t *testing.T) {
-	targetErrorMessage := "WithDiff error"
-	testErrorThroughPatching(
-		t,
-		targetErrorMessage,
-		(*FullUTXOSet).WithDiff,
-		func(fus *FullUTXOSet, other *UTXODiff) (UTXOSet, error) {
-			return nil, errors.New(targetErrorMessage)
-		},
-	)
-}
-
-func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetFunction interface{}, replacementFunction interface{}) {
-	// Load up blocks such that there is a fork in the DAG.
-	// (genesis block) -> 1 -> 2 -> 3 -> 4
-	//                          \-> 3b
-	testFiles := []string{
-		"blk_0_to_4.dat",
-		"blk_3B.dat",
-	}
-
-	var blocks []*util.Block
-	for _, file := range testFiles {
-		blockTmp, err := LoadBlocks(filepath.Join("testdata/", file))
-		if err != nil {
-			t.Fatalf("Error loading file: %v\n", err)
-		}
-		blocks = append(blocks, blockTmp...)
-	}
-
-	// Create a new database and dag instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("testErrorThroughPatching", Config{
-		DAGParams: &dagconfig.SimnetParams,
-	})
-	if err != nil {
-		t.Fatalf("Failed to setup dag instance: %v", err)
-	}
-	defer teardownFunc()
-
-	// Since we're not dealing with the real block DAG, set the coinbase
-	// maturity to 0.
-	dag.TestSetCoinbaseMaturity(0)
-
-	guard := monkey.Patch(targetFunction, replacementFunction)
-	defer guard.Unpatch()
-
-	for i := 1; i < len(blocks); i++ {
-		var isOrphan, isDelayed bool
-		isOrphan, isDelayed, err = dag.ProcessBlock(blocks[i], BFNone)
-		if isDelayed {
-			t.Fatalf("ProcessBlock: block %d "+
-				"is too far in the future", i)
-		}
-		if isOrphan {
-			t.Fatalf("ProcessBlock incorrectly returned block %v "+
-				"is an orphan\n", i)
-		}
-		if err != nil {
-			break
-		}
-	}
-	if err == nil {
-		t.Errorf("ProcessBlock unexpectedly succeeded. "+
-			"Expected: %s", expectedErrorMessage)
-	}
-	if !strings.Contains(err.Error(), expectedErrorMessage) {
-		t.Errorf("ProcessBlock returned wrong error. "+
-			"Want: %s, got: %s", expectedErrorMessage, err)
 	}
 }
 

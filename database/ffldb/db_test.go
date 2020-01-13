@@ -2,10 +2,10 @@ package ffldb
 
 import (
 	"bytes"
-	"github.com/pkg/errors"
 	"testing"
 
-	"bou.ke/monkey"
+	"github.com/pkg/errors"
+
 	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -296,32 +296,20 @@ func TestCreateBucketErrors(t *testing.T) {
 	tests := []struct {
 		name        string
 		key         []byte
-		target      interface{}
-		replacement interface{}
 		isWritable  bool
 		isClosed    bool
 		expectedErr database.ErrorCode
 	}{
-		{"empty key", []byte{}, nil, nil, true, false, database.ErrBucketNameRequired},
-		{"transaction is closed", testKey, nil, nil, true, true, database.ErrTxClosed},
-		{"transaction is not writable", testKey, nil, nil, false, false, database.ErrTxNotWritable},
-		{"key already exists", blockIdxBucketName, nil, nil, true, false, database.ErrBucketExists},
-		{"nextBucketID error", testKey, (*transaction).nextBucketID,
-			func(*transaction) ([4]byte, error) {
-				return [4]byte{}, makeDbErr(database.ErrTxClosed, "error in newBucketID", nil)
-			},
-			true, false, database.ErrTxClosed},
+		{"empty key", []byte{}, true, false, database.ErrBucketNameRequired},
+		{"transaction is closed", testKey, true, true, database.ErrTxClosed},
+		{"transaction is not writable", testKey, false, false, database.ErrTxNotWritable},
+		{"key already exists", blockIdxBucketName, true, false, database.ErrBucketExists},
 	}
 
 	for _, test := range tests {
 		func() {
 			pdb := newTestDb("TestCreateBucketErrors", t)
 			defer pdb.Close()
-
-			if test.target != nil && test.replacement != nil {
-				patch := monkey.Patch(test.target, test.replacement)
-				defer patch.Unpatch()
-			}
 
 			tx, err := pdb.Begin(test.isWritable)
 			defer tx.Commit()
@@ -556,31 +544,18 @@ func TestStoreBlockErrors(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		target      interface{}
-		replacement interface{}
 		isWritable  bool
 		isClosed    bool
 		expectedErr database.ErrorCode
 	}{
-		{"transaction is closed", nil, nil, true, true, database.ErrTxClosed},
-		{"transaction is not writable", nil, nil, false, false, database.ErrTxNotWritable},
-		{"block exists", (*transaction).hasBlock,
-			func(*transaction, *daghash.Hash) bool { return true },
-			true, false, database.ErrBlockExists},
-		{"error in block.Bytes", (*util.Block).Bytes,
-			func(*util.Block) ([]byte, error) { return nil, errors.New("Error in block.Bytes()") },
-			true, false, database.ErrDriverSpecific},
+		{"transaction is closed", true, true, database.ErrTxClosed},
+		{"transaction is not writable", false, false, database.ErrTxNotWritable},
 	}
 
 	for _, test := range tests {
 		func() {
 			pdb := newTestDb("TestStoreBlockErrors", t)
 			defer pdb.Close()
-
-			if test.target != nil && test.replacement != nil {
-				patch := monkey.Patch(test.target, test.replacement)
-				defer patch.Unpatch()
-			}
 
 			tx, err := pdb.Begin(test.isWritable)
 			defer tx.Commit()
@@ -679,48 +654,5 @@ func TestDeleteDoubleNestedBucket(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("TestDeleteDoubleNestedBucket: Error in actual test pdb.Update: %s", err)
-	}
-}
-
-// TestWritePendingAndCommitErrors tests some error-cases in *tx.writePendingAndCommit().
-// The non-error-cases are tested in the more general tests.
-func TestWritePendingAndCommitErrors(t *testing.T) {
-	putPatch := monkey.Patch((*bucket).Put,
-		func(_ *bucket, _, _ []byte) error { return errors.New("Error in bucket.Put") })
-	defer putPatch.Unpatch()
-
-	rollbackCalled := false
-	var rollbackPatch *monkey.PatchGuard
-	rollbackPatch = monkey.Patch((*blockStore).handleRollback,
-		func(s *blockStore, oldBlockFileNum, oldBlockOffset uint32) {
-			rollbackPatch.Unpatch()
-			defer rollbackPatch.Restore()
-
-			rollbackCalled = true
-			s.handleRollback(oldBlockFileNum, oldBlockOffset)
-		})
-	defer rollbackPatch.Unpatch()
-
-	pdb := newTestDb("TestWritePendingAndCommitErrors", t)
-	defer pdb.Close()
-
-	err := pdb.Update(func(dbTx database.Tx) error { return nil })
-	if err == nil {
-		t.Errorf("No error returned when metaBucket.Put() should have returned an error")
-	}
-	if !rollbackCalled {
-		t.Errorf("No rollback called when metaBucket.Put() have returned an error")
-	}
-
-	rollbackCalled = false
-	err = pdb.Update(func(dbTx database.Tx) error {
-		return dbTx.StoreBlock(util.NewBlock(wire.NewMsgBlock(
-			wire.NewBlockHeader(1, []*daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, 0, 0))))
-	})
-	if err == nil {
-		t.Errorf("No error returned when blockIdx.Put() should have returned an error")
-	}
-	if !rollbackCalled {
-		t.Errorf("No rollback called when blockIdx.Put() have returned an error")
 	}
 }
