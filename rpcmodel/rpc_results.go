@@ -265,7 +265,6 @@ type GetRawMempoolVerboseResult struct {
 	Size    int32    `json:"size"`
 	Fee     float64  `json:"fee"`
 	Time    int64    `json:"time"`
-	Height  uint64   `json:"height"`
 	Depends []string `json:"depends"`
 }
 
