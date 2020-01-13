@@ -109,7 +109,7 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 
 			// The maximum length of node.blues can be K+1 because
 			// it contains the selected parent.
-			if uint8(len(newNode.blues)) == uint8(dag.dagParams.K+1) {
+			if dagconfig.KSize(len(newNode.blues)) == dag.dagParams.K+1 {
 				break
 			}
 		}
