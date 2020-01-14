@@ -183,18 +183,18 @@ func (node *blockNode) Header() *wire.BlockHeader {
 	}
 }
 
-// SelectedAncestor returns the ancestor block node at the provided chain-height by following
+// SelectedAncestor returns the ancestor block node at the provided blue score by following
 // the selected-parents chain backwards from this node. The returned block will be nil when a
-// height is requested that is after the height of the passed node.
+// blue score is requested that is after the blue score of the passed node.
 //
 // This function is safe for concurrent access.
-func (node *blockNode) SelectedAncestor(chainHeight uint64) *blockNode {
-	if chainHeight < 0 || chainHeight > node.chainHeight {
+func (node *blockNode) SelectedAncestor(blueScore uint64) *blockNode {
+	if blueScore < 0 || blueScore > node.blueScore {
 		return nil
 	}
 
 	n := node
-	for ; n != nil && n.chainHeight != chainHeight; n = n.selectedParent {
+	for ; n != nil && n.blueScore > blueScore; n = n.selectedParent {
 		// Intentionally left blank
 	}
 
@@ -203,11 +203,11 @@ func (node *blockNode) SelectedAncestor(chainHeight uint64) *blockNode {
 
 // RelativeAncestor returns the ancestor block node a relative 'distance' of
 // chain-blocks before this node. This is equivalent to calling Ancestor with
-// the node's chain-height minus provided distance.
+// the node's blue score minus provided distance.
 //
 // This function is safe for concurrent access.
 func (node *blockNode) RelativeAncestor(distance uint64) *blockNode {
-	return node.SelectedAncestor(node.chainHeight - distance)
+	return node.SelectedAncestor(node.blueScore - distance)
 }
 
 // CalcPastMedianTime returns the median time of the previous few blocks

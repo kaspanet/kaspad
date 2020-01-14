@@ -268,7 +268,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		TxID:  *targetTx.ID(),
 		Index: 0,
 	}
-	prevUtxoChainHeight := uint64(numBlocksToGenerate) - 4
+	prevUtxoBlueScore := uint64(numBlocksToGenerate) - 4
 
 	// Obtain the past median time from the PoV of the input created above.
 	// The past median time for the input is the past median time from the PoV
@@ -366,7 +366,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:        medianTime + (5 << wire.SequenceLockTimeGranularity) - 1,
-				BlockBlueScore: int64(prevUtxoChainHeight) + 3,
+				BlockBlueScore: int64(prevUtxoBlueScore) + 3,
 			},
 		},
 		// Transaction with a single input. The input's sequence number
@@ -379,7 +379,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:        -1,
-				BlockBlueScore: int64(prevUtxoChainHeight) + 2,
+				BlockBlueScore: int64(prevUtxoBlueScore) + 2,
 			},
 		},
 		// A transaction with two inputs with lock times expressed in
@@ -418,7 +418,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:        -1,
-				BlockBlueScore: int64(prevUtxoChainHeight) + 10,
+				BlockBlueScore: int64(prevUtxoBlueScore) + 10,
 			},
 		},
 		// A transaction with multiple inputs. Two inputs are time
@@ -444,7 +444,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:        medianTime + (13 << wire.SequenceLockTimeGranularity) - 1,
-				BlockBlueScore: int64(prevUtxoChainHeight) + 8,
+				BlockBlueScore: int64(prevUtxoBlueScore) + 8,
 			},
 		},
 		// A transaction with a single unconfirmed input. As the input
