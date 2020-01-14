@@ -35,14 +35,13 @@ func TestRPCServerWebsocketNotifications(t *testing.T) {
 		{
 			name: "filteredBlockAdded",
 			newNtfn: func() (interface{}, error) {
-				return rpcmodel.NewCommand("filteredBlockAdded", 100000, "header", []string{"tx0", "tx1"})
+				return rpcmodel.NewCommand("filteredBlockAdded", "header", []string{"tx0", "tx1"})
 			},
 			staticNtfn: func() interface{} {
-				return rpcmodel.NewFilteredBlockAddedNtfn(100000, "header", []string{"tx0", "tx1"})
+				return rpcmodel.NewFilteredBlockAddedNtfn("header", []string{"tx0", "tx1"})
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"filteredBlockAdded","params":[100000,"header",["tx0","tx1"]],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"filteredBlockAdded","params":["header",["tx0","tx1"]],"id":null}`,
 			unmarshalled: &rpcmodel.FilteredBlockAddedNtfn{
-				ChainHeight:   100000,
 				Header:        "header",
 				SubscribedTxs: []string{"tx0", "tx1"},
 			},

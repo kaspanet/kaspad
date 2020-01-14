@@ -440,17 +440,14 @@ func (h *Harness) GenerateAndSubmitBlockWithCustomCoinbaseOutputs(
 		return nil, err
 	}
 
-	selectedTipBlueScore := selectedTip.BlueScore
 	mBlock, err := h.Node.GetBlock(selectedTipHash, nil)
 	if err != nil {
 		return nil, err
 	}
-
 	parentBlock := util.NewBlock(mBlock)
-	parentBlock.SetChainHeight(selectedTipBlueScore)
 
 	// Create a new block including the specified transactions
-	newBlock, err := CreateBlock(parentBlock, txns, blockVersion,
+	newBlock, err := CreateBlock(parentBlock, selectedTip.BlueScore, txns, blockVersion,
 		blockTime, h.wallet.coinbaseAddr, mineTo, h.ActiveNet, h.powMaxBits)
 	if err != nil {
 		return nil, err

@@ -665,8 +665,7 @@ func (m *wsNotificationManager) notifyFilteredBlockAdded(clients map[chan struct
 			"added notification: %s", err)
 		return
 	}
-	ntfn := rpcmodel.NewFilteredBlockAddedNtfn(block.ChainHeight(),
-		hex.EncodeToString(w.Bytes()), nil)
+	ntfn := rpcmodel.NewFilteredBlockAddedNtfn(hex.EncodeToString(w.Bytes()), nil)
 
 	// Search for relevant transactions for each client and save them
 	// serialized in hex encoding for the notification.
