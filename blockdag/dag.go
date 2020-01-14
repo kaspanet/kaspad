@@ -1560,20 +1560,6 @@ func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*wire.BlockHeader, error)
 	return node.Header(), nil
 }
 
-// BlockChainHeightByHash returns the chain height of the block with the given
-// hash in the DAG.
-//
-// This function is safe for concurrent access.
-func (dag *BlockDAG) BlockChainHeightByHash(hash *daghash.Hash) (uint64, error) {
-	node := dag.index.LookupNode(hash)
-	if node == nil {
-		str := fmt.Sprintf("block %s is not in the DAG", hash)
-		return 0, errNotInDAG(str)
-	}
-
-	return node.chainHeight, nil
-}
-
 // ChildHashesByHash returns the child hashes of the block with the given hash in the
 // DAG.
 //
@@ -1979,8 +1965,8 @@ func New(config *Config) (*BlockDAG, error) {
 	}
 
 	selectedTip := dag.selectedTip()
-	log.Infof("DAG state (chain height %d, hash %s)",
-		selectedTip.chainHeight, selectedTip.hash)
+	log.Infof("DAG state (blue score %d, hash %s)",
+		selectedTip.blueScore, selectedTip.hash)
 
 	return dag, nil
 }
