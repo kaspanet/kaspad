@@ -40,8 +40,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 
 	// The verbose flag is set, so generate the JSON object and return it.
 
-	// Get the block chain height from chain.
-	blockChainHeight, err := s.cfg.DAG.BlockChainHeightByHash(hash)
+	blockBlueScore, err := s.cfg.DAG.BlueScoreByBlockHash(hash)
 	if err != nil {
 		context := "Failed to obtain block height"
 		return nil, internalRPCError(err.Error(), context)
@@ -49,7 +48,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 
 	// Get the hashes for the next blocks unless there are none.
 	var nextHashStrings []string
-	if blockChainHeight < s.cfg.DAG.ChainHeight() { //TODO: (Ori) This is probably wrong. Done only for compilation
+	if blockBlueScore < s.cfg.DAG.SelectedTipBlueScore() {
 		childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
 		if err != nil {
 			context := "No next block"
@@ -74,7 +73,6 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 	blockHeaderReply := rpcmodel.GetBlockHeaderVerboseResult{
 		Hash:                 c.Hash,
 		Confirmations:        blockConfirmations,
-		Height:               blockChainHeight,
 		Version:              blockHeader.Version,
 		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version),
 		HashMerkleRoot:       blockHeader.HashMerkleRoot.String(),

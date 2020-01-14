@@ -1516,10 +1516,9 @@ func (dag *BlockDAG) SelectedParentChain(startHash *daghash.Hash) ([]*daghash.Ha
 	return removedChainHashes, addedChainHashes, nil
 }
 
-// ChainHeight return the chain-height of the selected tip. In other words - it returns
-// the length of the dag's selected-parent chain
-func (dag *BlockDAG) ChainHeight() uint64 {
-	return dag.selectedTip().chainHeight
+// SelectedTipBlueScore returns the blue score of the selected tip.
+func (dag *BlockDAG) SelectedTipBlueScore() uint64 {
+	return dag.selectedTip().blueScore
 }
 
 // VirtualBlueScore returns the blue score of the current virtual block

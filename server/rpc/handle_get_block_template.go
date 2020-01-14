@@ -106,11 +106,11 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 
 	// No point in generating templates or processing proposals before
 	// the DAG is synced. Note that we make a special check for when
-	// we have nothing besides the genesis block (chainHeight == 0),
+	// we have nothing besides the genesis block (blueScore == 0),
 	// because in that state IsCurrent may still return true.
-	currentChainHeight := s.cfg.DAG.ChainHeight()
-	if (currentChainHeight != 0 && !s.cfg.SyncMgr.IsCurrent()) ||
-		(currentChainHeight == 0 && !s.cfg.CPUMiner.ShouldMineOnGenesis()) {
+	currentBlueScore := s.cfg.DAG.SelectedTipBlueScore()
+	if (currentBlueScore != 0 && !s.cfg.SyncMgr.IsCurrent()) ||
+		(currentBlueScore == 0 && !s.cfg.CPUMiner.ShouldMineOnGenesis()) {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCClientInInitialDownload,
 			Message: "Kaspa is downloading blocks...",

@@ -210,16 +210,15 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 	params := s.cfg.DAGParams
 	blockHeader := block.MsgBlock().Header
 
-	// Get the block chain height.
-	blockChainHeight, err := s.cfg.DAG.BlockChainHeightByHash(hash)
+	blockBlueScore, err := s.cfg.DAG.BlueScoreByBlockHash(hash)
 	if err != nil {
-		context := "Failed to obtain block height"
+		context := "Could not get block blue score"
 		return nil, internalRPCError(err.Error(), context)
 	}
 
 	// Get the hashes for the next blocks unless there are none.
 	var nextHashStrings []string
-	if blockChainHeight < s.cfg.DAG.ChainHeight() { //TODO: (Ori) This is probably wrong. Done only for compilation
+	if blockBlueScore < s.cfg.DAG.SelectedTipBlueScore() {
 		childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
 		if err != nil {
 			context := "No next block"
@@ -231,12 +230,6 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 	blockConfirmations, err := s.cfg.DAG.BlockConfirmationsByHashNoLock(hash)
 	if err != nil {
 		context := "Could not get block confirmations"
-		return nil, internalRPCError(err.Error(), context)
-	}
-
-	blockBlueScore, err := s.cfg.DAG.BlueScoreByBlockHash(hash)
-	if err != nil {
-		context := "Could not get block blue score"
 		return nil, internalRPCError(err.Error(), context)
 	}
 
@@ -264,7 +257,6 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		Nonce:                blockHeader.Nonce,
 		Time:                 blockHeader.Timestamp.Unix(),
 		Confirmations:        blockConfirmations,
-		Height:               blockChainHeight,
 		BlueScore:            blockBlueScore,
 		IsChainBlock:         isChainBlock,
 		Size:                 int32(block.MsgBlock().SerializeSize()),

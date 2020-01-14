@@ -12,7 +12,6 @@ import "encoding/json"
 type GetBlockHeaderVerboseResult struct {
 	Hash                 string   `json:"hash"`
 	Confirmations        uint64   `json:"confirmations"`
-	Height               uint64   `json:"height"`
 	Version              int32    `json:"version"`
 	VersionHex           string   `json:"versionHex"`
 	HashMerkleRoot       string   `json:"hashMerkleRoot"`
@@ -33,7 +32,6 @@ type GetBlockVerboseResult struct {
 	Hash                 string        `json:"hash"`
 	Confirmations        uint64        `json:"confirmations"`
 	Size                 int32         `json:"size"`
-	Height               uint64        `json:"height"`
 	BlueScore            uint64        `json:"blueScore"`
 	IsChainBlock         bool          `json:"isChainBlock"`
 	Version              int32         `json:"version"`
