@@ -183,8 +183,8 @@ func (node *blockNode) SelectedAncestor(blueScore uint64) *blockNode {
 	}
 
 	n := node
-	for ; n != nil && n.blueScore > blueScore; n = n.selectedParent {
-		// Intentionally left blank
+	for n != nil && n.blueScore > blueScore {
+		n = n.selectedParent
 	}
 
 	return n
