@@ -110,7 +110,7 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 	// because in that state IsCurrent may still return true.
 	currentChainHeight := s.cfg.DAG.ChainHeight()
 	if (currentChainHeight != 0 && !s.cfg.SyncMgr.IsCurrent()) ||
-		(currentChainHeight == 0 && !s.cfg.CPUMiner.ShouldMineOnGenesis()) {
+		(currentChainHeight == 0 && !s.cfg.shouldMineOnGenesis()) {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCClientInInitialDownload,
 			Message: "Kaspa is downloading blocks...",
