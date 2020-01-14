@@ -42,7 +42,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 
 	blockBlueScore, err := s.cfg.DAG.BlueScoreByBlockHash(hash)
 	if err != nil {
-		context := "Failed to obtain block height"
+		context := "Failed to obtain block blue score"
 		return nil, internalRPCError(err.Error(), context)
 	}
 
