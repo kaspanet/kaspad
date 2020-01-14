@@ -28,35 +28,35 @@ func TestSequenceLocksActive(t *testing.T) {
 	}
 
 	tests := []struct {
-		seqLock          *SequenceLock
-		blockChainHeight uint64
-		mtp              time.Time
+		seqLock        *SequenceLock
+		blockBlueScore uint64
+		mtp            time.Time
 
 		want bool
 	}{
-		// Block based sequence lock with equal block height.
-		{seqLock: seqLock(1000, -1), blockChainHeight: 1001, mtp: time.Unix(9, 0), want: true},
+		// Block based sequence lock with equal block blue score.
+		{seqLock: seqLock(1000, -1), blockBlueScore: 1001, mtp: time.Unix(9, 0), want: true},
 
 		// Time based sequence lock with mtp past the absolute time.
-		{seqLock: seqLock(-1, 30), blockChainHeight: 2, mtp: time.Unix(31, 0), want: true},
+		{seqLock: seqLock(-1, 30), blockBlueScore: 2, mtp: time.Unix(31, 0), want: true},
 
-		// Block based sequence lock with current height below seq lock block height.
-		{seqLock: seqLock(1000, -1), blockChainHeight: 90, mtp: time.Unix(9, 0), want: false},
+		// Block based sequence lock with current blue score below seq lock block blue score.
+		{seqLock: seqLock(1000, -1), blockBlueScore: 90, mtp: time.Unix(9, 0), want: false},
 
 		// Time based sequence lock with current time before lock time.
-		{seqLock: seqLock(-1, 30), blockChainHeight: 2, mtp: time.Unix(29, 0), want: false},
+		{seqLock: seqLock(-1, 30), blockBlueScore: 2, mtp: time.Unix(29, 0), want: false},
 
-		// Block based sequence lock at the same height, so shouldn't yet be active.
-		{seqLock: seqLock(1000, -1), blockChainHeight: 1000, mtp: time.Unix(9, 0), want: false},
+		// Block based sequence lock at the same blue score, so shouldn't yet be active.
+		{seqLock: seqLock(1000, -1), blockBlueScore: 1000, mtp: time.Unix(9, 0), want: false},
 
 		// Time based sequence lock with current time equal to lock time, so shouldn't yet be active.
-		{seqLock: seqLock(-1, 30), blockChainHeight: 2, mtp: time.Unix(30, 0), want: false},
+		{seqLock: seqLock(-1, 30), blockBlueScore: 2, mtp: time.Unix(30, 0), want: false},
 	}
 
 	t.Logf("Running %d sequence locks tests", len(tests))
 	for i, test := range tests {
 		got := SequenceLockActive(test.seqLock,
-			test.blockChainHeight, test.mtp)
+			test.blockBlueScore, test.mtp)
 		if got != test.want {
 			t.Fatalf("SequenceLockActive #%d got %v want %v", i,
 				got, test.want)

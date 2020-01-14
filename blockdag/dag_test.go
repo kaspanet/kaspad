@@ -280,7 +280,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	// the MTP will be calculated from the PoV of the yet-to-be-mined
 	// block.
 	nextMedianTime := node.PastMedianTime(dag).Unix()
-	nextBlockChainHeight := int32(numBlocksToGenerate) + 1
+	nextBlockBlueScore := int32(numBlocksToGenerate) + 1
 
 	// Add an additional transaction which will serve as our unconfirmed
 	// output.
@@ -460,7 +460,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			mempool: true,
 			want: &SequenceLock{
 				Seconds:        -1,
-				BlockBlueScore: int64(nextBlockChainHeight) + 1,
+				BlockBlueScore: int64(nextBlockBlueScore) + 1,
 			},
 		},
 		// A transaction with a single unconfirmed input. The input has

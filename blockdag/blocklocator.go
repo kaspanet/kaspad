@@ -67,7 +67,7 @@ func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) (BlockLocator,
 	// numbers are derived.
 
 	// startNode.hash + stopNode.hash.
-	// Then floor(log2(K*(startNode.chainHeight-stopNode.chainHeight))) entries for the skip portion.
+	// Then floor(log2(K*(startNode.blueScore-stopNode.blueScore))) entries for the skip portion.
 	maxEntries := 2 + util.FastLog2Floor(uint64(dag.dagParams.K)*(startNode.blueScore-stopNode.blueScore))
 	locator := make(BlockLocator, 0, maxEntries)
 
@@ -90,7 +90,7 @@ func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) (BlockLocator,
 			break
 		}
 
-		// Calculate chainHeight of previous node to include ensuring the
+		// Calculate blueScore of previous node to include ensuring the
 		// final node is stopNode.
 		nextBlueScore := node.blueScore - step
 		if nextBlueScore < stopNode.blueScore {
