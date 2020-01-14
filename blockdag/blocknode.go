@@ -83,9 +83,6 @@ type blockNode struct {
 	// hash is the double sha 256 of the block.
 	hash *daghash.Hash
 
-	// chainHeight is the number of hops you need to go down the selected parent chain in order to get to the genesis block.
-	chainHeight uint64
-
 	// Some fields from block headers to aid in  reconstructing headers
 	// from memory. These must be treated as immutable and are intentionally
 	// ordered to avoid padding on 64-bit platforms.
@@ -105,13 +102,6 @@ type blockNode struct {
 
 	// isFinalized determines whether the node is below the finality point.
 	isFinalized bool
-}
-
-func calculateChainHeight(node *blockNode) uint64 {
-	if node.isGenesis() {
-		return 0
-	}
-	return node.selectedParent.chainHeight + 1
 }
 
 // newBlockNode returns a new block node for the given block header and parents, and the
@@ -146,7 +136,6 @@ func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSe
 		if err != nil {
 			panic(errors.Wrap(err, "unexpected error in GHOSTDAG"))
 		}
-		node.chainHeight = calculateChainHeight(node)
 	}
 	return node, selectedParentAnticone
 }

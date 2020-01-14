@@ -717,8 +717,6 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		}
 	}
 
-	node.chainHeight = calculateChainHeight(node)
-
 	return node, nil
 }
 

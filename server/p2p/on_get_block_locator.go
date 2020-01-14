@@ -8,15 +8,18 @@ import (
 // OnGetBlockLocator is invoked when a peer receives a getlocator kaspa
 // message.
 func (sp *Peer) OnGetBlockLocator(_ *peer.Peer, msg *wire.MsgGetBlockLocator) {
-	locator := sp.server.DAG.BlockLocatorFromHashes(msg.StartHash, msg.StopHash)
-
+	locator, err := sp.server.DAG.BlockLocatorFromHashes(msg.StartHash, msg.StopHash)
+	if err != nil {
+		peerLog.Infof("Couldn't build a block locator between blocks %s and %s "+
+			"that was requested from peer %s: %s", sp, err)
+	}
 	if len(locator) == 0 {
-		peerLog.Infof("Couldn't build a block locator between blocks %s and %s"+
-			" that was requested from peer %s",
-			sp)
+		peerLog.Infof("Couldn't build a block locator between blocks %s and %s "+
+			"that was requested from peer %s", sp)
 		return
 	}
-	err := sp.PushBlockLocatorMsg(locator)
+
+	err = sp.PushBlockLocatorMsg(locator)
 	if err != nil {
 		peerLog.Errorf("Failed to send block locator message to peer %s: %s",
 			sp, err)

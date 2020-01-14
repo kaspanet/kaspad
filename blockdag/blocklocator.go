@@ -3,6 +3,7 @@ package blockdag
 import (
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/pkg/errors"
 )
 
 // BlockLocator is used to help locate a specific block. The algorithm for
@@ -29,7 +30,7 @@ type BlockLocator []*daghash.Hash
 // known.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) BlockLocatorFromHashes(startHash, stopHash *daghash.Hash) BlockLocator {
+func (dag *BlockDAG) BlockLocatorFromHashes(startHash, stopHash *daghash.Hash) (BlockLocator, error) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 	startNode := dag.index.LookupNode(startHash)
@@ -40,15 +41,6 @@ func (dag *BlockDAG) BlockLocatorFromHashes(startHash, stopHash *daghash.Hash) B
 	return dag.blockLocator(startNode, stopNode)
 }
 
-// LatestBlockLocator returns a block locator for the current tips of the DAG.
-//
-// This function is safe for concurrent access.
-func (dag *BlockDAG) LatestBlockLocator() BlockLocator {
-	dag.dagLock.RLock()
-	defer dag.dagLock.RUnlock()
-	return dag.blockLocator(nil, nil)
-}
-
 // blockLocator returns a block locator for the passed start and stop nodes.
 // The default value for the start node is the selected tip, and the default
 // values of the stop node is the genesis block.
@@ -56,7 +48,7 @@ func (dag *BlockDAG) LatestBlockLocator() BlockLocator {
 // See the BlockLocator type comments for more details.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) BlockLocator {
+func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) (BlockLocator, error) {
 	// Use the selected tip if requested.
 	if startNode == nil {
 		startNode = dag.virtual.selectedParent
@@ -85,15 +77,14 @@ func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) BlockLocator {
 		locator = append(locator, node.hash)
 
 		if node.blueScore < stopNode.blueScore {
-			log.Warnf("blockLocator: startNode and stopNode are not " +
+			return nil, errors.Errorf("startNode and stopNode are not " +
 				"in the same selected parent chain.")
-			break
 		}
 
 		// Nothing more to add once the stop node has been added.
 		if node.blueScore == stopNode.blueScore {
 			if node.hash != stopNode.hash {
-				log.Warnf("blockLocator: startNode and stopNode are " +
+				return nil, errors.Errorf("startNode and stopNode are " +
 					"not in the same selected parent chain.")
 			}
 			break
@@ -113,7 +104,7 @@ func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) BlockLocator {
 		step *= 2
 	}
 
-	return locator
+	return locator, nil
 }
 
 // FindNextLocatorBoundaries returns the lowest unknown block locator, hash
