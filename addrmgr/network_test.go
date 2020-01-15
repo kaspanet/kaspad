@@ -5,11 +5,11 @@
 package addrmgr_test
 
 import (
-	"bou.ke/monkey"
-	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/dagconfig"
 	"net"
 	"testing"
+
+	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/dagconfig"
 
 	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/wire"
@@ -18,15 +18,14 @@ import (
 // TestIPTypes ensures the various functions which determine the type of an IP
 // address based on RFCs work as intended.
 func TestIPTypes(t *testing.T) {
-	activeConfigPatch := monkey.Patch(config.ActiveConfig, func() *config.Config {
-		return &config.Config{
-			Flags: &config.Flags{
-				NetworkFlags: config.NetworkFlags{
-					ActiveNetParams: &dagconfig.SimnetParams},
-			},
-		}
+	originalConfig := config.ActiveConfig()
+	config.SetActiveConfig(&config.Config{
+		Flags: &config.Flags{
+			NetworkFlags: config.NetworkFlags{
+				ActiveNetParams: &dagconfig.SimnetParams},
+		},
 	})
-	defer activeConfigPatch.Unpatch()
+	defer func() { config.SetActiveConfig(originalConfig) }()
 
 	type ipTest struct {
 		in       wire.NetAddress
@@ -158,15 +157,14 @@ func TestIPTypes(t *testing.T) {
 // TestGroupKey tests the GroupKey function to ensure it properly groups various
 // IP addresses.
 func TestGroupKey(t *testing.T) {
-	activeConfigPatch := monkey.Patch(config.ActiveConfig, func() *config.Config {
-		return &config.Config{
-			Flags: &config.Flags{
-				NetworkFlags: config.NetworkFlags{
-					ActiveNetParams: &dagconfig.SimnetParams},
-			},
-		}
+	originalConfig := config.ActiveConfig()
+	config.SetActiveConfig(&config.Config{
+		Flags: &config.Flags{
+			NetworkFlags: config.NetworkFlags{
+				ActiveNetParams: &dagconfig.SimnetParams},
+		},
 	})
-	defer activeConfigPatch.Unpatch()
+	defer func() { config.SetActiveConfig(originalConfig) }()
 
 	tests := []struct {
 		name     string
