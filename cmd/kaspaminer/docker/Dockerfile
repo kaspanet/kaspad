@@ -22,9 +22,7 @@ RUN go vet ./...
 RUN golint -set_exit_status ./...
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o kaspaminer .
 
-# Remove the line below and uncomment the line after it for testing with coverage
 RUN go test -gcflags='-l' ./...
-# RUN ./test.sh
 
 # --- multistage docker build: stage #2: runtime image
 FROM alpine
