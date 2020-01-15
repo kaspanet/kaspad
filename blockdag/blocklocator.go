@@ -1,7 +1,6 @@
 package blockdag
 
 import (
-	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 )
@@ -62,17 +61,9 @@ func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) (BlockLocator,
 	// block locator won't contain the start node.
 	startNode = startNode.selectedParent
 
-	// Calculate the max number of entries that could possibly be in the
-	// block locator. See the description of the algorithm for how these
-	// numbers are derived.
-
-	// startNode.hash + stopNode.hash.
-	// Then floor(log2(K*(startNode.blueScore-stopNode.blueScore))) entries for the skip portion.
-	maxEntries := 2 + util.FastLog2Floor(uint64(dag.dagParams.K)*(startNode.blueScore-stopNode.blueScore))
-	locator := make(BlockLocator, 0, maxEntries)
-
 	node := startNode
 	step := uint64(1)
+	locator := make(BlockLocator, 0)
 	for node != nil {
 		locator = append(locator, node.hash)
 
