@@ -20,6 +20,50 @@ import (
 
 var random = rand.New(rand.NewSource(time.Now().UnixNano()))
 
+func mineLoop(client *minerClient, numberOfBlocks uint64) error {
+	errChan := make(chan error)
+
+	templateStopChan := make(chan struct{})
+
+	doneChan := make(chan struct{})
+	spawn(func() {
+		for i := uint64(0); numberOfBlocks == 0 || i < numberOfBlocks; i++ {
+			foundBlock := make(chan *util.Block)
+			mineNextBlock(client, foundBlock, templateStopChan, errChan)
+			block := <-foundBlock
+			templateStopChan <- struct{}{}
+			err := handleFoundBlock(client, block)
+			if err != nil {
+				errChan <- err
+			}
+		}
+		doneChan <- struct{}{}
+	})
+
+	select {
+	case err := <-errChan:
+		return err
+	case <-doneChan:
+		return nil
+	}
+}
+
+func mineNextBlock(client *minerClient, foundBlock chan *util.Block, templateStopChan chan struct{}, errChan chan error) {
+	newTemplateChan := make(chan *rpcmodel.GetBlockTemplateResult)
+	go templatesLoop(client, newTemplateChan, errChan, templateStopChan)
+	go solveLoop(newTemplateChan, foundBlock, errChan)
+}
+
+func handleFoundBlock(client *minerClient, block *util.Block) error {
+	log.Infof("Found block %s with parents %s. Submitting to %s", block.Hash(), block.MsgBlock().Header.ParentHashes, client.Host())
+
+	err := client.SubmitBlock(block, &rpcmodel.SubmitBlockOptions{})
+	if err != nil {
+		return errors.Errorf("Error submitting block %s to %s: %s", block.Hash(), client.Host(), err)
+	}
+	return nil
+}
+
 func parseBlock(template *rpcmodel.GetBlockTemplateResult) (*util.Block, error) {
 	// parse parent hashes
 	parentHashes := make([]*daghash.Hash, len(template.ParentHashes))
@@ -86,10 +130,6 @@ func solveBlock(block *util.Block, stopChan chan struct{}, foundBlock chan *util
 
 }
 
-func getBlockTemplate(client *minerClient, longPollID string) (*rpcmodel.GetBlockTemplateResult, error) {
-	return client.GetBlockTemplate([]string{"coinbasetxn"}, longPollID)
-}
-
 func templatesLoop(client *minerClient, newTemplateChan chan *rpcmodel.GetBlockTemplateResult, errChan chan error, stopChan chan struct{}) {
 	longPollID := ""
 	getBlockTemplateLongPoll := func() {
@@ -126,6 +166,10 @@ func templatesLoop(client *minerClient, newTemplateChan chan *rpcmodel.GetBlockT
 	}
 }
 
+func getBlockTemplate(client *minerClient, longPollID string) (*rpcmodel.GetBlockTemplateResult, error) {
+	return client.GetBlockTemplate([]string{"coinbasetxn"}, longPollID)
+}
+
 func solveLoop(newTemplateChan chan *rpcmodel.GetBlockTemplateResult, foundBlock chan *util.Block, errChan chan error) {
 	var stopOldTemplateSolving chan struct{}
 	for template := range newTemplateChan {
@@ -143,49 +187,5 @@ func solveLoop(newTemplateChan chan *rpcmodel.GetBlockTemplateResult, foundBlock
 	}
 	if stopOldTemplateSolving != nil {
 		close(stopOldTemplateSolving)
-	}
-}
-
-func mineNextBlock(client *minerClient, foundBlock chan *util.Block, templateStopChan chan struct{}, errChan chan error) {
-	newTemplateChan := make(chan *rpcmodel.GetBlockTemplateResult)
-	go templatesLoop(client, newTemplateChan, errChan, templateStopChan)
-	go solveLoop(newTemplateChan, foundBlock, errChan)
-}
-
-func handleFoundBlock(client *minerClient, block *util.Block) error {
-	log.Infof("Found block %s with parents %s. Submitting to %s", block.Hash(), block.MsgBlock().Header.ParentHashes, client.Host())
-
-	err := client.SubmitBlock(block, &rpcmodel.SubmitBlockOptions{})
-	if err != nil {
-		return errors.Errorf("Error submitting block %s to %s: %s", block.Hash(), client.Host(), err)
-	}
-	return nil
-}
-
-func mineLoop(client *minerClient, numberOfBlocks uint64) error {
-	errChan := make(chan error)
-
-	templateStopChan := make(chan struct{})
-
-	doneChan := make(chan struct{})
-	spawn(func() {
-		for i := uint64(0); numberOfBlocks == 0 || i < numberOfBlocks; i++ {
-			foundBlock := make(chan *util.Block)
-			mineNextBlock(client, foundBlock, templateStopChan, errChan)
-			block := <-foundBlock
-			templateStopChan <- struct{}{}
-			err := handleFoundBlock(client, block)
-			if err != nil {
-				errChan <- err
-			}
-		}
-		doneChan <- struct{}{}
-	})
-
-	select {
-	case err := <-errChan:
-		return err
-	case <-doneChan:
-		return nil
 	}
 }
