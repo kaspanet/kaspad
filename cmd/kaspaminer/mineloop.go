@@ -174,11 +174,7 @@ func mineLoop(client *minerClient, numberOfBlocks uint64) error {
 		for i := uint64(0); numberOfBlocks == 0 || i < numberOfBlocks; i++ {
 			foundBlock := make(chan *util.Block)
 			mineNextBlock(client, foundBlock, templateStopChan, errChan)
-			block, ok := <-foundBlock
-			if !ok {
-				errChan <- nil
-				return
-			}
+			block := <-foundBlock
 			templateStopChan <- struct{}{}
 			wg.Add(1)
 			spawn(func() {
