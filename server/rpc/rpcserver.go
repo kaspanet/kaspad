@@ -776,7 +776,7 @@ type rpcserverConfig struct {
 	// These fields allow the RPC server to interface with mining.
 	//
 	// Generator produces block templates that can be retrieved
-	// by getBlockTemplate command.
+	// by the getBlockTemplate command.
 	Generator *mining.BlkTmplGenerator
 
 	// These fields define any optional indexes the RPC server can make use

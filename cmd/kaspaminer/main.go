@@ -38,7 +38,7 @@ func main() {
 	spawn(func() {
 		err = mineLoop(client, cfg.NumberOfBlocks)
 		if err != nil {
-			panic(errors.Errorf("Error in main loop: %s", err))
+			panic(errors.Errorf("Error in mine loop: %s", err))
 		}
 		doneChan <- struct{}{}
 	})
