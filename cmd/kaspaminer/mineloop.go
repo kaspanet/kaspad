@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/kaspanet/kaspad/rpcclient"
@@ -20,24 +21,37 @@ import (
 
 var random = rand.New(rand.NewSource(time.Now().UnixNano()))
 
-func mineLoop(client *minerClient, numberOfBlocks uint64) error {
+func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64) error {
 	errChan := make(chan error)
 
 	templateStopChan := make(chan struct{})
 
 	doneChan := make(chan struct{})
 	spawn(func() {
+		wg := sync.WaitGroup{}
 		for i := uint64(0); numberOfBlocks == 0 || i < numberOfBlocks; i++ {
 			foundBlock := make(chan *util.Block)
 			mineNextBlock(client, foundBlock, templateStopChan, errChan)
 			block := <-foundBlock
 			templateStopChan <- struct{}{}
-			err := handleFoundBlock(client, block)
-			if err != nil {
-				errChan <- err
-			}
+			wg.Add(1)
+			spawn(func() {
+				if blockDelay != 0 {
+					time.Sleep(time.Duration(blockDelay) * time.Millisecond)
+				}
+				err := handleFoundBlock(client, block)
+				if err != nil {
+					errChan <- err
+				}
+				wg.Done()
+			})
 		}
+		wg.Wait()
 		doneChan <- struct{}{}
+	})
+
+	spawn(func() {
+
 	})
 
 	select {

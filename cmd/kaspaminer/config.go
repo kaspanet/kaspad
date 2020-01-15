@@ -36,6 +36,7 @@ type configFlags struct {
 	DisableTLS     bool   `long:"notls" description:"Disable TLS"`
 	Verbose        bool   `long:"verbose" short:"v" description:"Enable logging of RPC requests"`
 	NumberOfBlocks uint64 `short:"n" long:"numblocks" description:"Number of blocks to mine. If omitted, will mine until the process is interrupted."`
+	BlockDelay     uint64 `long:"block-delay" description:"Delay for block submission (in milliseconds). This is used only for testing purposes."`
 	config.NetworkFlags
 }
 
