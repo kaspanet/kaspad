@@ -174,7 +174,7 @@ func (node *blockNode) Header() *wire.BlockHeader {
 
 // SelectedAncestor returns the ancestor block node at the provided blue score by following
 // the selected-parents chain backwards from this node. The returned block will be nil when a
-// blue score is requested that is after the blue score of the passed node.
+// blue score is requested that is higher than the blue score of the passed node.
 //
 // This function is safe for concurrent access.
 func (node *blockNode) SelectedAncestor(blueScore uint64) *blockNode {
