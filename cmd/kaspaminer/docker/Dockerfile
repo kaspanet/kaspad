@@ -1,0 +1,38 @@
+# -- multistage docker build: stage #1: build stage
+FROM golang:1.13-alpine AS build
+
+RUN mkdir -p /go/src/github.com/kaspanet/kaspad
+
+WORKDIR /go/src/github.com/kaspanet/kaspad
+
+RUN apk add --no-cache curl git openssh binutils gcc musl-dev
+RUN go get -u golang.org/x/lint/golint
+
+COPY go.mod .
+COPY go.sum .
+
+RUN go mod download
+
+COPY . .
+
+WORKDIR /go/src/github.com/kaspanet/kaspad/cmd/kaspaminer
+
+RUN GOFMT_RESULT=`go fmt ./...`; echo $GOFMT_RESULT; test -z "$GOFMT_RESULT"
+RUN go vet ./...
+RUN golint -set_exit_status ./...
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o kaspaminer .
+
+# Remove the line below and uncomment the line after it for testing with coverage
+RUN go test -gcflags='-l' ./...
+# RUN ./test.sh
+
+# --- multistage docker build: stage #2: runtime image
+FROM alpine
+WORKDIR /app
+
+RUN apk add --no-cache ca-certificates tini
+
+COPY --from=build /go/src/github.com/kaspanet/kaspad/cmd/kaspaminer/kaspaminer /app/
+
+USER nobody
+ENTRYPOINT [ "/sbin/tini", "--" ]
