@@ -50,10 +50,6 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64) err
 		doneChan <- struct{}{}
 	})
 
-	spawn(func() {
-
-	})
-
 	select {
 	case err := <-errChan:
 		return err
