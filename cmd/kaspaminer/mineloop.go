@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/kaspanet/kaspad/rpcclient"
@@ -170,22 +169,16 @@ func mineLoop(client *minerClient, numberOfBlocks uint64) error {
 
 	doneChan := make(chan struct{})
 	spawn(func() {
-		wg := sync.WaitGroup{}
 		for i := uint64(0); numberOfBlocks == 0 || i < numberOfBlocks; i++ {
 			foundBlock := make(chan *util.Block)
 			mineNextBlock(client, foundBlock, templateStopChan, errChan)
 			block := <-foundBlock
 			templateStopChan <- struct{}{}
-			wg.Add(1)
-			spawn(func() {
-				err := handleFoundBlock(client, block)
-				if err != nil {
-					errChan <- err
-				}
-				wg.Done()
-			})
+			err := handleFoundBlock(client, block)
+			if err != nil {
+				errChan <- err
+			}
 		}
-		wg.Wait()
 		doneChan <- struct{}{}
 	})
 
