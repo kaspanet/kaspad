@@ -32,11 +32,11 @@ func parseBlock(template *rpcmodel.GetBlockTemplateResult) (*util.Block, error) 
 	}
 
 	// parse Bits
-	bitsInt64, err := strconv.ParseInt(template.Bits, 16, 32)
+	bitsUint64, err := strconv.ParseUint(template.Bits, 16, 32)
 	if err != nil {
 		return nil, errors.Errorf("Error decoding bits %s: %s", template.Bits, err)
 	}
-	bits := uint32(bitsInt64)
+	bits := uint32(bitsUint64)
 
 	// parseAcceptedIDMerkleRoot
 	acceptedIDMerkleRoot, err := daghash.NewHashFromStr(template.AcceptedIDMerkleRoot)
