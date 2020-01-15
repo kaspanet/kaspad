@@ -3,6 +3,8 @@ package ffldb
 import (
 	"reflect"
 	"testing"
+
+	"bou.ke/monkey"
 )
 
 func TestSerializeWriteRow(t *testing.T) {
@@ -135,6 +137,40 @@ func TestReconcileErrors(t *testing.T) {
 	// Restore previous writeRow
 	setWriteRow(pdb, serializeWriteRow(0, 0), t)
 
+	// Test with writeLoc in metadata before the actual cursor position
+	handleRollbackCalled := false
+	patch := monkey.Patch((*blockStore).handleRollback,
+		func(s *blockStore, oldBlockFileNum, oldBlockOffset uint32) {
+			handleRollbackCalled = true
+		})
+	defer patch.Unpatch()
+
+	pdb.store.writeCursor.curFileNum = 1
+	_, err = reconcileDB(pdb, false)
+	if err != nil {
+		t.Errorf("TestReconcileErrors: Error in ReconcileDB() when curFileNum before " +
+			"the actual cursor position ")
+	}
+	if !handleRollbackCalled {
+		t.Errorf("TestReconcileErrors: handleRollback was not called when curFileNum before " +
+			"the actual cursor position ")
+	}
+
+	pdb.store.writeCursor.curFileNum = 0
+	pdb.store.writeCursor.curOffset = 1
+	_, err = reconcileDB(pdb, false)
+	if err != nil {
+		t.Errorf("TestReconcileErrors: Error in ReconcileDB() when curOffset before " +
+			"the actual cursor position ")
+	}
+	if !handleRollbackCalled {
+		t.Errorf("TestReconcileErrors: handleRollback was not called when curOffset before " +
+			"the actual cursor position ")
+	}
+
+	// Restore previous writeCursor location
+	pdb.store.writeCursor.curFileNum = 0
+	pdb.store.writeCursor.curOffset = 0
 	// Test create with closed DB to force initDB to fail
 	pdb.Close()
 	_, err = reconcileDB(pdb, true)

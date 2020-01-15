@@ -5,6 +5,8 @@
 package blockdag
 
 import (
+	"bou.ke/monkey"
+	"github.com/pkg/errors"
 	"math"
 	"path/filepath"
 	"testing"
@@ -554,6 +556,18 @@ func TestPastMedianTime(t *testing.T) {
 	if err == nil {
 		t.Errorf("TestPastMedianTime: unexpected success: block should be invalid if its timestamp is before past median time")
 	}
+
+	guard := monkey.Patch(blockWindow.medianTimestamp, func(_ blockWindow) (int64, error) {
+		return 0, errors.New("medianTimestamp error")
+	})
+	defer guard.Unpatch()
+	defer func() {
+		if recover() == nil {
+			t.Errorf("Got no panic on PastMedianTime, while expected panic")
+		}
+	}()
+	node.PastMedianTime(dag)
+
 }
 
 func TestValidateParents(t *testing.T) {
