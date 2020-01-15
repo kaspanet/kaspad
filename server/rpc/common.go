@@ -217,15 +217,12 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 	}
 
 	// Get the hashes for the next blocks unless there are none.
-	var nextHashStrings []string
-	if blockBlueScore < s.cfg.DAG.SelectedTipBlueScore() {
-		childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
-		if err != nil {
-			context := "No next block"
-			return nil, internalRPCError(err.Error(), context)
-		}
-		nextHashStrings = daghash.Strings(childHashes)
+	childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
+	if err != nil {
+		context := "No next block"
+		return nil, internalRPCError(err.Error(), context)
 	}
+	childHashStrings := daghash.Strings(childHashes)
 
 	blockConfirmations, err := s.cfg.DAG.BlockConfirmationsByHashNoLock(hash)
 	if err != nil {
@@ -262,7 +259,7 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		Size:                 int32(block.MsgBlock().SerializeSize()),
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
 		Difficulty:           getDifficultyRatio(blockHeader.Bits, params),
-		NextHashes:           nextHashStrings,
+		NextHashes:           childHashStrings,
 	}
 
 	if isVerboseTx {

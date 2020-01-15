@@ -40,22 +40,13 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 
 	// The verbose flag is set, so generate the JSON object and return it.
 
-	blockBlueScore, err := s.cfg.DAG.BlueScoreByBlockHash(hash)
+	// Get the hashes for the next blocks unless there are none.
+	childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
 	if err != nil {
-		context := "Failed to obtain block blue score"
+		context := "No next block"
 		return nil, internalRPCError(err.Error(), context)
 	}
-
-	// Get the hashes for the next blocks unless there are none.
-	var nextHashStrings []string
-	if blockBlueScore < s.cfg.DAG.SelectedTipBlueScore() {
-		childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
-		if err != nil {
-			context := "No next block"
-			return nil, internalRPCError(err.Error(), context)
-		}
-		nextHashStrings = daghash.Strings(childHashes)
-	}
+	childHashStrings := daghash.Strings(childHashes)
 
 	blockConfirmations, err := s.cfg.DAG.BlockConfirmationsByHash(hash)
 	if err != nil {
@@ -77,7 +68,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version),
 		HashMerkleRoot:       blockHeader.HashMerkleRoot.String(),
 		AcceptedIDMerkleRoot: blockHeader.AcceptedIDMerkleRoot.String(),
-		NextHashes:           nextHashStrings,
+		NextHashes:           childHashStrings,
 		ParentHashes:         daghash.Strings(blockHeader.ParentHashes),
 		SelectedParentHash:   selectedParentHash.String(),
 		Nonce:                blockHeader.Nonce,
