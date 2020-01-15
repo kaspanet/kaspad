@@ -67,13 +67,8 @@ func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) (BlockLocator,
 	for node != nil {
 		locator = append(locator, node.hash)
 
-		if node.blueScore < stopNode.blueScore {
-			return nil, errors.Errorf("startNode and stopNode are not " +
-				"in the same selected parent chain.")
-		}
-
 		// Nothing more to add once the stop node has been added.
-		if node.blueScore == stopNode.blueScore {
+		if node.blueScore <= stopNode.blueScore {
 			if node.hash != stopNode.hash {
 				return nil, errors.Errorf("startNode and stopNode are " +
 					"not in the same selected parent chain.")
