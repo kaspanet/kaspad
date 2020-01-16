@@ -250,9 +250,9 @@ func (dag *BlockDAG) warnUnknownRuleActivations(node *blockNode) error {
 
 		case ThresholdLockedIn:
 			window := checker.MinerConfirmationWindow()
-			activationChainHeight := window - (node.chainHeight % window)
+			activationBlueScore := window - (node.blueScore % window)
 			log.Warnf("Unknown new rules are about to activate in "+
-				"%d blocks (bit %d)", activationChainHeight, bit)
+				"%d blueScore (bit %d)", activationBlueScore, bit)
 		}
 	}
 

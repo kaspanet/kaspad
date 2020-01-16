@@ -19,7 +19,7 @@ func TestAncestorErrors(t *testing.T) {
 	defer teardownFunc()
 
 	node := newTestNode(dag, newSet(), int32(0x10000000), 0, time.Unix(0, 0))
-	node.chainHeight = 2
+	node.blueScore = 2
 	ancestor := node.SelectedAncestor(3)
 	if ancestor != nil {
 		t.Errorf("TestAncestorErrors: Ancestor() unexpectedly returned a node. Expected: <nil>")

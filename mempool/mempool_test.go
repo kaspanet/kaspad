@@ -349,7 +349,6 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 				MaxTxVersion:    1,
 			},
 			DAGParams:              &params,
-			DAGChainHeight:         fDAG.BlueScore,
 			MedianTimePast:         fDAG.MedianTimePast,
 			CalcSequenceLockNoLock: calcSequenceLock,
 			SigCache:               nil,
@@ -542,8 +541,8 @@ func TestProcessTransaction(t *testing.T) {
 	}
 
 	//Checks that a coinbase transaction cannot be added to the mempool
-	curHeight := harness.dag.BlueScore()
-	coinbase, err := harness.CreateCoinbaseTx(curHeight+1, 1)
+	currentBlueScore := harness.dag.BlueScore()
+	coinbase, err := harness.CreateCoinbaseTx(currentBlueScore+1, 1)
 	if err != nil {
 		t.Errorf("CreateCoinbaseTx: %v", err)
 	}
@@ -638,7 +637,7 @@ func TestProcessTransaction(t *testing.T) {
 		t.Fatalf("PayToAddrScript: unexpected error: %v", err)
 	}
 	p2shTx := util.NewTx(wire.NewNativeMsgTx(1, nil, []*wire.TxOut{{Value: 5000000000, ScriptPubKey: p2shScriptPubKey}}))
-	if isAccepted, err := harness.txPool.mpUTXOSet.AddTx(p2shTx.MsgTx(), curHeight+1); err != nil {
+	if isAccepted, err := harness.txPool.mpUTXOSet.AddTx(p2shTx.MsgTx(), currentBlueScore+1); err != nil {
 		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
 	} else if !isAccepted {
 		t.Fatalf("AddTx unexpectedly didn't add tx %s", p2shTx.ID())

@@ -87,14 +87,14 @@ func solveBlock(header *wire.BlockHeader, targetDifficulty *big.Int) bool {
 
 // standardCoinbaseScript returns a standard script suitable for use as the
 // signature script of the coinbase transaction of a new block. In particular,
-// it starts with the block height that is required by version 2 blocks.
-func standardCoinbaseScript(nextBlockHeight uint64, extraNonce uint64) ([]byte, error) {
-	return txscript.NewScriptBuilder().AddInt64(int64(nextBlockHeight)).
+// it starts with the block blue score.
+func standardCoinbaseScript(nextBlueScore uint64, extraNonce uint64) ([]byte, error) {
+	return txscript.NewScriptBuilder().AddInt64(int64(nextBlueScore)).
 		AddInt64(int64(extraNonce)).Script()
 }
 
 // createCoinbaseTx returns a coinbase transaction paying an appropriate
-// subsidy based on the passed block height to the provided address.
+// subsidy based on the passed block blue score to the provided address.
 func createCoinbaseTx(coinbaseScript []byte, nextBlueScore uint64,
 	addr util.Address, mineTo []wire.TxOut,
 	net *dagconfig.Params) (*util.Tx, error) {
@@ -133,27 +133,27 @@ func createCoinbaseTx(coinbaseScript []byte, nextBlueScore uint64,
 // initialized), then the timestamp of the previous block will be used plus 1
 // second is used. Passing nil for the previous block results in a block that
 // builds off of the genesis block for the specified chain.
-func CreateBlock(parentBlock *util.Block, inclusionTxs []*util.Tx,
-	blockVersion int32, blockTime time.Time, miningAddr util.Address,
-	mineTo []wire.TxOut, net *dagconfig.Params, powMaxBits uint32) (*util.Block, error) {
+func CreateBlock(parentBlock *util.Block, parentBlueScore uint64,
+	inclusionTxs []*util.Tx, blockVersion int32, blockTime time.Time,
+	miningAddr util.Address, mineTo []wire.TxOut, net *dagconfig.Params,
+	powMaxBits uint32) (*util.Block, error) {
 
 	var (
-		parentHash       *daghash.Hash
-		blockChainHeight uint64
-		parentBlockTime  time.Time
+		parentHash      *daghash.Hash
+		blockBlueScore  uint64
+		parentBlockTime time.Time
 	)
 
 	// If the parent block isn't specified, then we'll construct a block
 	// that builds off of the genesis block for the chain.
 	if parentBlock == nil {
 		parentHash = net.GenesisHash
-		blockChainHeight = 1
 		parentBlockTime = net.GenesisBlock.Header.Timestamp.Add(time.Minute)
 	} else {
 		parentHash = parentBlock.Hash()
-		blockChainHeight = parentBlock.ChainHeight() + 1
 		parentBlockTime = parentBlock.MsgBlock().Header.Timestamp
 	}
+	blockBlueScore = parentBlueScore + 1
 
 	// If a target block time was specified, then use that as the header's
 	// timestamp. Otherwise, add one second to the parent block unless
@@ -167,11 +167,11 @@ func CreateBlock(parentBlock *util.Block, inclusionTxs []*util.Tx,
 	}
 
 	extraNonce := uint64(0)
-	coinbaseScript, err := standardCoinbaseScript(blockChainHeight, extraNonce)
+	coinbaseScript, err := standardCoinbaseScript(blockBlueScore, extraNonce)
 	if err != nil {
 		return nil, err
 	}
-	coinbaseTx, err := createCoinbaseTx(coinbaseScript, blockChainHeight,
+	coinbaseTx, err := createCoinbaseTx(coinbaseScript, blockBlueScore,
 		miningAddr, mineTo, net)
 	if err != nil {
 		return nil, err
