@@ -20,7 +20,7 @@ func newMinerClient(connCfg *rpcclient.ConnConfig) (*minerClient, error) {
 		onBlockAdded: make(chan struct{}, 1),
 	}
 	notificationHandlers := &rpcclient.NotificationHandlers{
-		OnFilteredBlockAdded: func(height uint64, header *wire.BlockHeader,
+		OnFilteredBlockAdded: func(_ uint64, header *wire.BlockHeader,
 			txs []*util.Tx) {
 			client.onBlockAdded <- struct{}{}
 		},
