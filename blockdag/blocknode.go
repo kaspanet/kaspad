@@ -191,7 +191,7 @@ func (node *blockNode) SelectedAncestor(blueScore uint64) *blockNode {
 }
 
 // RelativeAncestor returns the ancestor block node a relative 'distance' of
-// chain-blocks before this node. This is equivalent to calling Ancestor with
+// blue blocks before this node. This is equivalent to calling Ancestor with
 // the node's blue score minus provided distance.
 //
 // This function is safe for concurrent access.
