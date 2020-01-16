@@ -6,8 +6,6 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-const badGetBlockLocatorBanScore = 50
-
 // OnGetBlockLocator is invoked when a peer receives a getlocator kaspa
 // message.
 func (sp *Peer) OnGetBlockLocator(_ *peer.Peer, msg *wire.MsgGetBlockLocator) {
@@ -19,7 +17,7 @@ func (sp *Peer) OnGetBlockLocator(_ *peer.Peer, msg *wire.MsgGetBlockLocator) {
 			warning = fmt.Sprintf("%s: %s", warning, err)
 		}
 		peerLog.Warnf(warning)
-		sp.addBanScore(0, badGetBlockLocatorBanScore, "getBlockLocator")
+		sp.Disconnect()
 		return
 	}
 
