@@ -38,6 +38,7 @@ type Block struct {
 	blockHash       *daghash.Hash  // Cached block hash
 	transactions    []*Tx          // Transactions
 	txnsGenerated   bool           // ALL wrapped transactions generated
+	blueScore       uint64         // Blue score
 }
 
 // MsgBlock returns the underlying wire.MsgBlock for the Block.
@@ -196,6 +197,16 @@ func (b *Block) CoinbaseTransaction() *Tx {
 // Timestamp returns this block's timestamp
 func (b *Block) Timestamp() time.Time {
 	return b.msgBlock.Header.Timestamp
+}
+
+// BlueScore returns this block's blue score.
+func (b *Block) BlueScore() uint64 {
+	return b.blueScore
+}
+
+// SetBlueScore sets the blue score of the block.
+func (b *Block) SetBlueScore(blueScore uint64) {
+	b.blueScore = blueScore
 }
 
 // NewBlock returns a new instance of a kaspa block given an underlying

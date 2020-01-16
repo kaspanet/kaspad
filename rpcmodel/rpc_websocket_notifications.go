@@ -37,14 +37,16 @@ const (
 // FilteredBlockAddedNtfn defines the filteredBlockAdded JSON-RPC
 // notification.
 type FilteredBlockAddedNtfn struct {
+	BlueScore     uint64
 	Header        string
 	SubscribedTxs []string
 }
 
 // NewFilteredBlockAddedNtfn returns a new instance which can be used to
 // issue a filteredBlockAdded JSON-RPC notification.
-func NewFilteredBlockAddedNtfn(header string, subscribedTxs []string) *FilteredBlockAddedNtfn {
+func NewFilteredBlockAddedNtfn(blueScore uint64, header string, subscribedTxs []string) *FilteredBlockAddedNtfn {
 	return &FilteredBlockAddedNtfn{
+		BlueScore:     blueScore,
 		Header:        header,
 		SubscribedTxs: subscribedTxs,
 	}

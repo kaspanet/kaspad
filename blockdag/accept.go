@@ -80,6 +80,8 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 		}
 	}
 
+	block.SetBlueScore(newNode.blueScore)
+
 	// Connect the passed block to the DAG. This also handles validation of the
 	// transaction scripts.
 	chainUpdates, err := dag.addBlock(newNode, block, selectedParentAnticone, flags)
