@@ -29,14 +29,6 @@ func TestBlock(t *testing.T) {
 			spew.Sdump(msgBlock), spew.Sdump(&Block100000))
 	}
 
-	// Ensure block chain height set and get work properly.
-	wantChainHeight := uint64(100000)
-	b.SetChainHeight(wantChainHeight)
-	if gotChainHeight := b.ChainHeight(); gotChainHeight != wantChainHeight {
-		t.Errorf("ChainHeight: mismatched chain height - got %v, want %v",
-			gotChainHeight, wantChainHeight)
-	}
-
 	// Hash for block 100,000.
 	wantHashStr := "839a8e072e6d402128f6f9a32ffc012e471e071e8ef8405552b1e58ef7b681f0"
 	wantHash, err := daghash.NewHashFromStr(wantHashStr)

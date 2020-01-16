@@ -58,10 +58,6 @@ type Config struct {
 	// associated with.
 	DAGParams *dagconfig.Params
 
-	// DAGChainHeight defines the function to use to access the chain
-	// height of the DAG
-	DAGChainHeight func() uint64
-
 	// MedianTimePast defines the function to use in order to access the
 	// median time past calculated from the point-of-view of the current
 	// selected tip.
@@ -683,14 +679,13 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 // helper for maybeAcceptTransaction.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, blueScore uint64, fee uint64, parentsInPool []*wire.Outpoint) (*TxDesc, error) {
+func (mp *TxPool) addTransaction(tx *util.Tx, fee uint64, parentsInPool []*wire.Outpoint) (*TxDesc, error) {
 	// Add the transaction to the pool and mark the referenced outpoints
 	// as spent by the pool.
 	txD := &TxDesc{
 		TxDesc: mining.TxDesc{
 			Tx:       tx,
 			Added:    time.Now(),
-			Height:   height,
 			Fee:      fee,
 			FeePerKB: fee * 1000 / uint64(tx.MsgTx().SerializeSize()),
 		},
@@ -789,7 +784,7 @@ func (mp *TxPool) FetchTransaction(txID *daghash.TxID) (*util.Tx, error) {
 // more details.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rejectDupOrphans bool) ([]*daghash.TxID, *TxDesc, error) {
+func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]*daghash.TxID, *TxDesc, error) {
 	txID := tx.ID()
 
 	// Don't accept the transaction if it already exists in the pool. This
@@ -1018,8 +1013,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rejectDupOrphans bo
 	}
 
 	// Add to transaction pool.
-	bestHeight := mp.cfg.DAGChainHeight()
-	txD, err := mp.addTransaction(tx, bestHeight, nextBlockBlueScore, txFee, parentsInPool)
+	txD, err := mp.addTransaction(tx, txFee, parentsInPool)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1047,7 +1041,7 @@ func (mp *TxPool) MaybeAcceptTransaction(tx *util.Tx, isNew bool) ([]*daghash.Tx
 	defer mp.cfg.DAG.RUnlock()
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
-	hashes, txD, err := mp.maybeAcceptTransaction(tx, isNew, true)
+	hashes, txD, err := mp.maybeAcceptTransaction(tx, true)
 
 	return hashes, txD, err
 }
@@ -1089,7 +1083,7 @@ func (mp *TxPool) processOrphans(acceptedTx *util.Tx) []*TxDesc {
 			// Potentially accept an orphan into the tx pool.
 			for _, tx := range orphans {
 				missing, txD, err := mp.maybeAcceptTransaction(
-					tx, true, false)
+					tx, false)
 				if err != nil {
 					// The orphan is now invalid, so there
 					// is no way any other orphans which
@@ -1176,7 +1170,7 @@ func (mp *TxPool) ProcessTransaction(tx *util.Tx, allowOrphan bool, tag Tag) ([]
 	defer mp.mtx.Unlock()
 
 	// Potentially accept the transaction to the memory pool.
-	missingParents, txD, err := mp.maybeAcceptTransaction(tx, true, true)
+	missingParents, txD, err := mp.maybeAcceptTransaction(tx, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1315,7 +1309,6 @@ func (mp *TxPool) RawMempoolVerbose() map[string]*rpcmodel.GetRawMempoolVerboseR
 			Size:    int32(tx.MsgTx().SerializeSize()),
 			Fee:     util.Amount(desc.Fee).ToKAS(),
 			Time:    desc.Added.Unix(),
-			Height:  desc.Height,
 			Depends: make([]string, 0),
 		}
 		for _, txIn := range tx.MsgTx().TxIn {

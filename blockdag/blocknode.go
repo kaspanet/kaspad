@@ -83,9 +83,6 @@ type blockNode struct {
 	// hash is the double sha 256 of the block.
 	hash *daghash.Hash
 
-	// chainHeight is the number of hops you need to go down the selected parent chain in order to get to the genesis block.
-	chainHeight uint64
-
 	// Some fields from block headers to aid in  reconstructing headers
 	// from memory. These must be treated as immutable and are intentionally
 	// ordered to avoid padding on 64-bit platforms.
@@ -105,13 +102,6 @@ type blockNode struct {
 
 	// isFinalized determines whether the node is below the finality point.
 	isFinalized bool
-}
-
-func calculateChainHeight(node *blockNode) uint64 {
-	if node.isGenesis() {
-		return 0
-	}
-	return node.selectedParent.chainHeight + 1
 }
 
 // newBlockNode returns a new block node for the given block header and parents, and the
@@ -146,7 +136,6 @@ func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSe
 		if err != nil {
 			panic(errors.Wrap(err, "unexpected error in GHOSTDAG"))
 		}
-		node.chainHeight = calculateChainHeight(node)
 	}
 	return node, selectedParentAnticone
 }
@@ -183,31 +172,31 @@ func (node *blockNode) Header() *wire.BlockHeader {
 	}
 }
 
-// SelectedAncestor returns the ancestor block node at the provided chain-height by following
+// SelectedAncestor returns the ancestor block node at the provided blue score by following
 // the selected-parents chain backwards from this node. The returned block will be nil when a
-// height is requested that is after the height of the passed node.
+// blue score is requested that is higher than the blue score of the passed node.
 //
 // This function is safe for concurrent access.
-func (node *blockNode) SelectedAncestor(chainHeight uint64) *blockNode {
-	if chainHeight < 0 || chainHeight > node.chainHeight {
+func (node *blockNode) SelectedAncestor(blueScore uint64) *blockNode {
+	if blueScore < 0 || blueScore > node.blueScore {
 		return nil
 	}
 
 	n := node
-	for ; n != nil && n.chainHeight != chainHeight; n = n.selectedParent {
-		// Intentionally left blank
+	for n != nil && n.blueScore > blueScore {
+		n = n.selectedParent
 	}
 
 	return n
 }
 
 // RelativeAncestor returns the ancestor block node a relative 'distance' of
-// chain-blocks before this node. This is equivalent to calling Ancestor with
-// the node's chain-height minus provided distance.
+// blue blocks before this node. This is equivalent to calling Ancestor with
+// the node's blue score minus provided distance.
 //
 // This function is safe for concurrent access.
 func (node *blockNode) RelativeAncestor(distance uint64) *blockNode {
-	return node.SelectedAncestor(node.chainHeight - distance)
+	return node.SelectedAncestor(node.blueScore - distance)
 }
 
 // CalcPastMedianTime returns the median time of the previous few blocks

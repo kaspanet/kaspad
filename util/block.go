@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"math"
 	"time"
 
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -20,10 +19,6 @@ import (
 type OutOfRangeError string
 
 const (
-	// BlockHeightUnknown is the value returned for a block height that is unknown.
-	// This is typically because the block has not been inserted into the DAG yet.
-	BlockHeightUnknown = math.MaxUint64
-
 	// CoinbaseTransactionIndex is the index of the coinbase transaction in every block
 	CoinbaseTransactionIndex = 0
 )
@@ -41,9 +36,9 @@ type Block struct {
 	msgBlock        *wire.MsgBlock // Underlying MsgBlock
 	serializedBlock []byte         // Serialized bytes for the block
 	blockHash       *daghash.Hash  // Cached block hash
-	chainHeight     uint64         // Selected-chain height
 	transactions    []*Tx          // Transactions
 	txnsGenerated   bool           // ALL wrapped transactions generated
+	blueScore       uint64         // Blue score
 }
 
 // MsgBlock returns the underlying wire.MsgBlock for the Block.
@@ -189,17 +184,6 @@ func (b *Block) TxLoc() ([]wire.TxLoc, error) {
 	return txLocs, err
 }
 
-// ChainHeight returns the saved chan height of the block . This value
-// will be BlockHeightUnknown if it hasn't already explicitly been set.
-func (b *Block) ChainHeight() uint64 {
-	return b.chainHeight
-}
-
-// SetChainHeight sets the chain height of the block.
-func (b *Block) SetChainHeight(chainHeight uint64) {
-	b.chainHeight = chainHeight
-}
-
 // IsGenesis returns whether or not this block is the genesis block.
 func (b *Block) IsGenesis() bool {
 	return b.MsgBlock().Header.IsGenesis()
@@ -215,12 +199,21 @@ func (b *Block) Timestamp() time.Time {
 	return b.msgBlock.Header.Timestamp
 }
 
+// BlueScore returns this block's blue score.
+func (b *Block) BlueScore() uint64 {
+	return b.blueScore
+}
+
+// SetBlueScore sets the blue score of the block.
+func (b *Block) SetBlueScore(blueScore uint64) {
+	b.blueScore = blueScore
+}
+
 // NewBlock returns a new instance of a kaspa block given an underlying
 // wire.MsgBlock. See Block.
 func NewBlock(msgBlock *wire.MsgBlock) *Block {
 	return &Block{
-		msgBlock:    msgBlock,
-		chainHeight: BlockHeightUnknown,
+		msgBlock: msgBlock,
 	}
 }
 

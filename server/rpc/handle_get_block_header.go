@@ -40,23 +40,13 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 
 	// The verbose flag is set, so generate the JSON object and return it.
 
-	// Get the block chain height from chain.
-	blockChainHeight, err := s.cfg.DAG.BlockChainHeightByHash(hash)
+	// Get the hashes for the next blocks unless there are none.
+	childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
 	if err != nil {
-		context := "Failed to obtain block height"
+		context := "No next block"
 		return nil, internalRPCError(err.Error(), context)
 	}
-
-	// Get the hashes for the next blocks unless there are none.
-	var nextHashStrings []string
-	if blockChainHeight < s.cfg.DAG.ChainHeight() { //TODO: (Ori) This is probably wrong. Done only for compilation
-		childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
-		if err != nil {
-			context := "No next block"
-			return nil, internalRPCError(err.Error(), context)
-		}
-		nextHashStrings = daghash.Strings(childHashes)
-	}
+	childHashStrings := daghash.Strings(childHashes)
 
 	blockConfirmations, err := s.cfg.DAG.BlockConfirmationsByHash(hash)
 	if err != nil {
@@ -74,12 +64,11 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 	blockHeaderReply := rpcmodel.GetBlockHeaderVerboseResult{
 		Hash:                 c.Hash,
 		Confirmations:        blockConfirmations,
-		Height:               blockChainHeight,
 		Version:              blockHeader.Version,
 		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version),
 		HashMerkleRoot:       blockHeader.HashMerkleRoot.String(),
 		AcceptedIDMerkleRoot: blockHeader.AcceptedIDMerkleRoot.String(),
-		NextHashes:           nextHashStrings,
+		NextHashes:           childHashStrings,
 		ParentHashes:         daghash.Strings(blockHeader.ParentHashes),
 		SelectedParentHash:   selectedParentHash.String(),
 		Nonce:                blockHeader.Nonce,

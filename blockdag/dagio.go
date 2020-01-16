@@ -469,8 +469,6 @@ func (dag *BlockDAG) initDAGState() error {
 
 		blockIndexBucket := dbTx.Metadata().Bucket(blockIndexBucketName)
 
-		var i int32
-		var lastNode *blockNode
 		var unprocessedBlockNodes []*blockNode
 		cursor := blockIndexBucket.Cursor()
 		for ok := cursor.First(); ok; ok = cursor.Next() {
@@ -486,7 +484,14 @@ func (dag *BlockDAG) initDAGState() error {
 				continue
 			}
 
-			if lastNode == nil {
+			// If the node is known to be invalid add it as-is to the block
+			// index and continue.
+			if node.status.KnownInvalid() {
+				dag.index.addNode(node)
+				continue
+			}
+
+			if dag.blockCount == 0 {
 				if !node.hash.IsEqual(dag.dagParams.GenesisHash) {
 					return AssertError(fmt.Sprintf("initDAGState: Expected "+
 						"first entry in block index to be genesis block, "+
@@ -504,12 +509,7 @@ func (dag *BlockDAG) initDAGState() error {
 			node.updateParentsChildren()
 			dag.index.addNode(node)
 
-			if node.status.KnownValid() {
-				dag.blockCount++
-			}
-
-			lastNode = node
-			i++
+			dag.blockCount++
 		}
 
 		// Load all of the known UTXO entries and construct the full
@@ -716,8 +716,6 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 			return nil, err
 		}
 	}
-
-	node.chainHeight = calculateChainHeight(node)
 
 	return node, nil
 }

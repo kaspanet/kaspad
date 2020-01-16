@@ -5,8 +5,6 @@
 package blockdag
 
 import (
-	"bou.ke/monkey"
-	"github.com/pkg/errors"
 	"math"
 	"path/filepath"
 	"testing"
@@ -30,35 +28,35 @@ func TestSequenceLocksActive(t *testing.T) {
 	}
 
 	tests := []struct {
-		seqLock          *SequenceLock
-		blockChainHeight uint64
-		mtp              time.Time
+		seqLock        *SequenceLock
+		blockBlueScore uint64
+		mtp            time.Time
 
 		want bool
 	}{
-		// Block based sequence lock with equal block height.
-		{seqLock: seqLock(1000, -1), blockChainHeight: 1001, mtp: time.Unix(9, 0), want: true},
+		// Block based sequence lock with equal block blue score.
+		{seqLock: seqLock(1000, -1), blockBlueScore: 1001, mtp: time.Unix(9, 0), want: true},
 
 		// Time based sequence lock with mtp past the absolute time.
-		{seqLock: seqLock(-1, 30), blockChainHeight: 2, mtp: time.Unix(31, 0), want: true},
+		{seqLock: seqLock(-1, 30), blockBlueScore: 2, mtp: time.Unix(31, 0), want: true},
 
-		// Block based sequence lock with current height below seq lock block height.
-		{seqLock: seqLock(1000, -1), blockChainHeight: 90, mtp: time.Unix(9, 0), want: false},
+		// Block based sequence lock with current blue score below seq lock block blue score.
+		{seqLock: seqLock(1000, -1), blockBlueScore: 90, mtp: time.Unix(9, 0), want: false},
 
 		// Time based sequence lock with current time before lock time.
-		{seqLock: seqLock(-1, 30), blockChainHeight: 2, mtp: time.Unix(29, 0), want: false},
+		{seqLock: seqLock(-1, 30), blockBlueScore: 2, mtp: time.Unix(29, 0), want: false},
 
-		// Block based sequence lock at the same height, so shouldn't yet be active.
-		{seqLock: seqLock(1000, -1), blockChainHeight: 1000, mtp: time.Unix(9, 0), want: false},
+		// Block based sequence lock at the same blue score, so shouldn't yet be active.
+		{seqLock: seqLock(1000, -1), blockBlueScore: 1000, mtp: time.Unix(9, 0), want: false},
 
 		// Time based sequence lock with current time equal to lock time, so shouldn't yet be active.
-		{seqLock: seqLock(-1, 30), blockChainHeight: 2, mtp: time.Unix(30, 0), want: false},
+		{seqLock: seqLock(-1, 30), blockBlueScore: 2, mtp: time.Unix(30, 0), want: false},
 	}
 
 	t.Logf("Running %d sequence locks tests", len(tests))
 	for i, test := range tests {
 		got := SequenceLockActive(test.seqLock,
-			test.blockChainHeight, test.mtp)
+			test.blockBlueScore, test.mtp)
 		if got != test.want {
 			t.Fatalf("SequenceLockActive #%d got %v want %v", i,
 				got, test.want)
@@ -517,57 +515,42 @@ func TestPastMedianTime(t *testing.T) {
 	}
 
 	// Checks that a block is valid if it has timestamp equals to past median time
-	chainHeight := tip.chainHeight + 1
 	node := newTestNode(dag, setFromSlice(tip),
 		blockVersion,
 		dag.powMaxBits,
 		tip.PastMedianTime(dag))
 
 	header := node.Header()
-	err := dag.checkBlockHeaderContext(header, node.parents.bluest(), chainHeight, false)
+	err := dag.checkBlockHeaderContext(header, node.parents.bluest(), false)
 	if err != nil {
 		t.Errorf("TestPastMedianTime: unexpected error from checkBlockHeaderContext: %v"+
 			"(a block with timestamp equals to past median time should be valid)", err)
 	}
 
 	// Checks that a block is valid if its timestamp is after past median time
-	chainHeight = tip.chainHeight + 1
 	node = newTestNode(dag, setFromSlice(tip),
 		blockVersion,
 		dag.powMaxBits,
 		tip.PastMedianTime(dag).Add(time.Second))
 
 	header = node.Header()
-	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), chainHeight, false)
+	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), false)
 	if err != nil {
 		t.Errorf("TestPastMedianTime: unexpected error from checkBlockHeaderContext: %v"+
 			"(a block with timestamp bigger than past median time should be valid)", err)
 	}
 
 	// Checks that a block is invalid if its timestamp is before past median time
-	chainHeight = tip.chainHeight + 1
 	node = newTestNode(dag, setFromSlice(tip),
 		blockVersion,
 		0,
 		tip.PastMedianTime(dag).Add(-time.Second))
 
 	header = node.Header()
-	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), chainHeight, false)
+	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), false)
 	if err == nil {
 		t.Errorf("TestPastMedianTime: unexpected success: block should be invalid if its timestamp is before past median time")
 	}
-
-	guard := monkey.Patch(blockWindow.medianTimestamp, func(_ blockWindow) (int64, error) {
-		return 0, errors.New("medianTimestamp error")
-	})
-	defer guard.Unpatch()
-	defer func() {
-		if recover() == nil {
-			t.Errorf("Got no panic on PastMedianTime, while expected panic")
-		}
-	}()
-	node.PastMedianTime(dag)
-
 }
 
 func TestValidateParents(t *testing.T) {

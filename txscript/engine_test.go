@@ -7,7 +7,6 @@ package txscript
 import (
 	"testing"
 
-	"bou.ke/monkey"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -80,18 +79,13 @@ func TestCheckErrorCondition(t *testing.T) {
 		script      string
 		finalScript bool
 		stepCount   int
-		source      interface{}
-		replacement interface{}
 		expectedErr error
 	}{
-		{"OP_1", true, 1, nil, nil, nil},
-		{"NOP", true, 0, nil, nil, scriptError(ErrScriptUnfinished, "")},
-		{"NOP", true, 1, nil, nil, scriptError(ErrEmptyStack, "")},
-		{"OP_1 OP_1", true, 2, nil, nil, scriptError(ErrCleanStack, "")},
-		{"OP_0", true, 1, nil, nil, scriptError(ErrEvalFalse, "")},
-		{"OP_1", true, 1, (*stack).PopBool,
-			func(*stack) (bool, error) { return false, scriptError(ErrInvalidStackOperation, "") },
-			scriptError(ErrInvalidStackOperation, "")},
+		{"OP_1", true, 1, nil},
+		{"NOP", true, 0, scriptError(ErrScriptUnfinished, "")},
+		{"NOP", true, 1, scriptError(ErrEmptyStack, "")},
+		{"OP_1 OP_1", true, 2, scriptError(ErrCleanStack, "")},
+		{"OP_0", true, 1, scriptError(ErrEvalFalse, "")},
 	}
 
 	for i, test := range tests {
@@ -141,11 +135,6 @@ func TestCheckErrorCondition(t *testing.T) {
 						return
 					}
 				}
-			}
-
-			if test.source != nil {
-				patch := monkey.Patch(test.source, test.replacement)
-				defer patch.Unpatch()
 			}
 
 			err = vm.CheckErrorCondition(test.finalScript)

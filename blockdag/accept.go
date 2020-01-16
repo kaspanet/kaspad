@@ -80,7 +80,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 		}
 	}
 
-	block.SetChainHeight(newNode.chainHeight)
+	block.SetBlueScore(newNode.blueScore)
 
 	// Connect the passed block to the DAG. This also handles validation of the
 	// transaction scripts.

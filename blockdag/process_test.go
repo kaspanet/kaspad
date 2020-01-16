@@ -1,72 +1,12 @@
 package blockdag
 
 import (
-	"bou.ke/monkey"
-	"fmt"
-	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"path/filepath"
 	"testing"
-	"time"
+
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
-
-func TestProcessBlock(t *testing.T) {
-	dag, teardownFunc, err := DAGSetup("TestProcessBlock", Config{
-		DAGParams: &dagconfig.SimnetParams,
-	})
-	if err != nil {
-		t.Errorf("Failed to setup dag instance: %v", err)
-		return
-	}
-	defer teardownFunc()
-
-	// Check that BFAfterDelay skip checkBlockSanity
-	called := false
-	guard := monkey.Patch((*BlockDAG).checkBlockSanity, func(_ *BlockDAG, _ *util.Block, _ BehaviorFlags) (time.Duration, error) {
-		called = true
-		return 0, nil
-	})
-	defer guard.Unpatch()
-
-	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(&Block100000), BFNoPoWCheck)
-	if err != nil {
-		t.Errorf("ProcessBlock: %s", err)
-	}
-	if isDelayed {
-		t.Errorf("ProcessBlock: block is too far in the future")
-	}
-	if !isOrphan {
-		t.Errorf("ProcessBlock: unexpected returned non orphan block")
-	}
-	if !called {
-		t.Errorf("ProcessBlock: expected checkBlockSanity to be called")
-	}
-
-	Block100000Copy := Block100000
-	// Change nonce to change block hash
-	Block100000Copy.Header.Nonce++
-	called = false
-	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(&Block100000Copy), BFAfterDelay|BFNoPoWCheck)
-	if err != nil {
-		t.Errorf("ProcessBlock: %s", err)
-	}
-	if isDelayed {
-		t.Errorf("ProcessBlock: block is too far in the future")
-	}
-	if !isOrphan {
-		t.Errorf("ProcessBlock: unexpected returned non orphan block")
-	}
-	if called {
-		t.Errorf("ProcessBlock: Didn't expected checkBlockSanity to be called")
-	}
-
-	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(dagconfig.SimnetParams.GenesisBlock), BFNone)
-	expectedErrMsg := fmt.Sprintf("already have block %s", dagconfig.SimnetParams.GenesisHash)
-	if err == nil || err.Error() != expectedErrMsg {
-		t.Errorf("ProcessBlock: Expected error \"%s\" but got \"%s\"", expectedErrMsg, err)
-	}
-}
 
 func TestProcessOrphans(t *testing.T) {
 	dag, teardownFunc, err := DAGSetup("TestProcessOrphans", Config{

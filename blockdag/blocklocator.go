@@ -1,8 +1,8 @@
 package blockdag
 
 import (
-	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/pkg/errors"
 )
 
 // BlockLocator is used to help locate a specific block. The algorithm for
@@ -29,7 +29,7 @@ type BlockLocator []*daghash.Hash
 // known.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) BlockLocatorFromHashes(startHash, stopHash *daghash.Hash) BlockLocator {
+func (dag *BlockDAG) BlockLocatorFromHashes(startHash, stopHash *daghash.Hash) (BlockLocator, error) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 	startNode := dag.index.LookupNode(startHash)
@@ -40,15 +40,6 @@ func (dag *BlockDAG) BlockLocatorFromHashes(startHash, stopHash *daghash.Hash) B
 	return dag.blockLocator(startNode, stopNode)
 }
 
-// LatestBlockLocator returns a block locator for the current tips of the DAG.
-//
-// This function is safe for concurrent access.
-func (dag *BlockDAG) LatestBlockLocator() BlockLocator {
-	dag.dagLock.RLock()
-	defer dag.dagLock.RUnlock()
-	return dag.blockLocator(nil, nil)
-}
-
 // blockLocator returns a block locator for the passed start and stop nodes.
 // The default value for the start node is the selected tip, and the default
 // values of the stop node is the genesis block.
@@ -56,7 +47,7 @@ func (dag *BlockDAG) LatestBlockLocator() BlockLocator {
 // See the BlockLocator type comments for more details.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) BlockLocator {
+func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) (BlockLocator, error) {
 	// Use the selected tip if requested.
 	if startNode == nil {
 		startNode = dag.virtual.selectedParent
@@ -70,51 +61,36 @@ func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) BlockLocator {
 	// block locator won't contain the start node.
 	startNode = startNode.selectedParent
 
-	// If the start node or the stop node are not in the
-	// virtual's selected parent chain, we replace them with their
-	// closest selected parent that is part of the virtual's
-	// selected parent chain.
-	for !dag.IsInSelectedParentChain(stopNode.hash) {
-		stopNode = stopNode.selectedParent
-	}
-
-	for !dag.IsInSelectedParentChain(startNode.hash) {
-		startNode = startNode.selectedParent
-	}
-
-	// Calculate the max number of entries that will ultimately be in the
-	// block locator. See the description of the algorithm for how these
-	// numbers are derived.
-
-	// startNode.hash + stopNode.hash.
-	// Then floor(log2(startNode.chainHeight-stopNode.chainHeight)) entries for the skip portion.
-	maxEntries := 2 + util.FastLog2Floor(startNode.chainHeight-stopNode.chainHeight)
-	locator := make(BlockLocator, 0, maxEntries)
-
+	node := startNode
 	step := uint64(1)
-	for node := startNode; node != nil; {
+	locator := make(BlockLocator, 0)
+	for node != nil {
 		locator = append(locator, node.hash)
 
 		// Nothing more to add once the stop node has been added.
-		if node.chainHeight == stopNode.chainHeight {
+		if node.blueScore <= stopNode.blueScore {
+			if node != stopNode {
+				return nil, errors.Errorf("startNode and stopNode are " +
+					"not in the same selected parent chain.")
+			}
 			break
 		}
 
-		// Calculate chainHeight of previous node to include ensuring the
+		// Calculate blueScore of previous node to include ensuring the
 		// final node is stopNode.
-		nextChainHeight := node.chainHeight - step
-		if nextChainHeight < stopNode.chainHeight {
-			nextChainHeight = stopNode.chainHeight
+		nextBlueScore := node.blueScore - step
+		if nextBlueScore < stopNode.blueScore {
+			nextBlueScore = stopNode.blueScore
 		}
 
 		// walk backwards through the nodes to the correct ancestor.
-		node = node.SelectedAncestor(nextChainHeight)
+		node = node.SelectedAncestor(nextBlueScore)
 
 		// Double the distance between included hashes.
 		step *= 2
 	}
 
-	return locator
+	return locator, nil
 }
 
 // FindNextLocatorBoundaries returns the lowest unknown block locator, hash
