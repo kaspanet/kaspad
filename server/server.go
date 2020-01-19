@@ -9,7 +9,6 @@ import (
 	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/mining"
-	"github.com/kaspanet/kaspad/mining/cpuminer"
 	"github.com/kaspanet/kaspad/server/p2p"
 	"github.com/kaspanet/kaspad/server/rpc"
 	"github.com/kaspanet/kaspad/signal"
@@ -19,7 +18,6 @@ import (
 type Server struct {
 	rpcServer   *rpc.Server
 	p2pServer   *p2p.Server
-	cpuminer    *cpuminer.CPUMiner
 	startupTime int64
 
 	started, shutdown int32
@@ -39,14 +37,9 @@ func (s *Server) Start() {
 
 	s.p2pServer.Start()
 
-	// Start the CPU miner if generation is enabled.
 	cfg := config.ActiveConfig()
-	if cfg.Generate {
-		s.cpuminer.Start()
-	}
 
 	if !cfg.DisableRPC {
-
 		s.rpcServer.Start()
 	}
 }
@@ -61,9 +54,6 @@ func (s *Server) Stop() error {
 	}
 
 	log.Warnf("Server shutting down")
-
-	// Stop the CPU miner if needed
-	s.cpuminer.Stop()
 
 	s.p2pServer.Stop()
 
@@ -97,32 +87,18 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 
 	// Create the mining policy and block template generator based on the
 	// configuration options.
-	//
-	// NOTE: The CPU miner relies on the mempool, so the mempool has to be
-	// created before calling the function to create the CPU miner.
 	policy := mining.Policy{
 		BlockMaxMass: cfg.BlockMaxMass,
 	}
 	blockTemplateGenerator := mining.NewBlkTmplGenerator(&policy,
 		s.p2pServer.DAGParams, s.p2pServer.TxMemPool, s.p2pServer.DAG, s.p2pServer.TimeSource, s.p2pServer.SigCache)
-	s.cpuminer = cpuminer.New(&cpuminer.Config{
-		DAGParams:              dagParams,
-		BlockTemplateGenerator: blockTemplateGenerator,
-		MiningAddrs:            cfg.MiningAddrs,
-		ProcessBlock:           s.p2pServer.SyncManager.ProcessBlock,
-		ConnectedCount:         s.p2pServer.ConnectedCount,
-		ShouldMineOnGenesis:    s.p2pServer.ShouldMineOnGenesis,
-		IsCurrent:              s.p2pServer.SyncManager.IsCurrent,
-	})
 
 	if !cfg.DisableRPC {
-
 		s.rpcServer, err = rpc.NewRPCServer(
 			s.startupTime,
 			s.p2pServer,
 			db,
 			blockTemplateGenerator,
-			s.cpuminer,
 		)
 		if err != nil {
 			return nil, err

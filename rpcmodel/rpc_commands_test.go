@@ -371,28 +371,6 @@ func TestRPCServerCommands(t *testing.T) {
 			unmarshalled: &rpcmodel.GetDifficultyCmd{},
 		},
 		{
-			name: "getGenerate",
-			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getGenerate")
-			},
-			staticCmd: func() interface{} {
-				return rpcmodel.NewGetGenerateCmd()
-			},
-			marshalled:   `{"jsonrpc":"1.0","method":"getGenerate","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetGenerateCmd{},
-		},
-		{
-			name: "getHashesPerSec",
-			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getHashesPerSec")
-			},
-			staticCmd: func() interface{} {
-				return rpcmodel.NewGetHashesPerSecCmd()
-			},
-			marshalled:   `{"jsonrpc":"1.0","method":"getHashesPerSec","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetHashesPerSecCmd{},
-		},
-		{
 			name: "getInfo",
 			newCmd: func() (interface{}, error) {
 				return rpcmodel.NewCommand("getInfo")
@@ -440,17 +418,6 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"getMempoolInfo","params":[],"id":1}`,
 			unmarshalled: &rpcmodel.GetMempoolInfoCmd{},
-		},
-		{
-			name: "getMiningInfo",
-			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getMiningInfo")
-			},
-			staticCmd: func() interface{} {
-				return rpcmodel.NewGetMiningInfoCmd()
-			},
-			marshalled:   `{"jsonrpc":"1.0","method":"getMiningInfo","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetMiningInfoCmd{},
 		},
 		{
 			name: "getNetworkInfo",
@@ -809,34 +776,6 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 		},
 		{
-			name: "setGenerate",
-			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("setGenerate", true)
-			},
-			staticCmd: func() interface{} {
-				return rpcmodel.NewSetGenerateCmd(true, nil)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"setGenerate","params":[true],"id":1}`,
-			unmarshalled: &rpcmodel.SetGenerateCmd{
-				Generate:     true,
-				GenProcLimit: rpcmodel.Int(-1),
-			},
-		},
-		{
-			name: "setGenerate optional",
-			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("setGenerate", true, 6)
-			},
-			staticCmd: func() interface{} {
-				return rpcmodel.NewSetGenerateCmd(true, rpcmodel.Int(6))
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"setGenerate","params":[true,6],"id":1}`,
-			unmarshalled: &rpcmodel.SetGenerateCmd{
-				Generate:     true,
-				GenProcLimit: rpcmodel.Int(6),
-			},
-		},
-		{
 			name: "stop",
 			newCmd: func() (interface{}, error) {
 				return rpcmodel.NewCommand("stop")
@@ -973,19 +912,6 @@ func TestRPCServerCommands(t *testing.T) {
 				SubCmd:        rpcmodel.NConnect,
 				Target:        "1.1.1.1",
 				ConnectSubCmd: rpcmodel.String("temp"),
-			},
-		},
-		{
-			name: "generate",
-			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("generate", 1)
-			},
-			staticCmd: func() interface{} {
-				return rpcmodel.NewGenerateCmd(1)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"generate","params":[1],"id":1}`,
-			unmarshalled: &rpcmodel.GenerateCmd{
-				NumBlocks: 1,
 			},
 		},
 		{

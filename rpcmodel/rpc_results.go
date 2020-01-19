@@ -389,21 +389,6 @@ type Vout struct {
 	ScriptPubKey ScriptPubKeyResult `json:"scriptPubKey"`
 }
 
-// GetMiningInfoResult models the data from the getmininginfo command.
-type GetMiningInfoResult struct {
-	Blocks           int64   `json:"blocks"`
-	CurrentBlockSize uint64  `json:"currentBlockSize"`
-	CurrentBlockTx   uint64  `json:"currentBlockTx"`
-	Difficulty       float64 `json:"difficulty"`
-	Errors           string  `json:"errors"`
-	Generate         bool    `json:"generate"`
-	GenProcLimit     int32   `json:"genProcLimit"`
-	HashesPerSec     int64   `json:"hashesPerSec"`
-	PooledTx         uint64  `json:"pooledTx"`
-	Testnet          bool    `json:"testnet"`
-	Devnet           bool    `json:"devnet"`
-}
-
 // GetWorkResult models the data from the getwork command.
 type GetWorkResult struct {
 	Data     string `json:"data"`

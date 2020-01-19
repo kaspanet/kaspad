@@ -110,7 +110,7 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 	// because in that state IsCurrent may still return true.
 	currentBlueScore := s.cfg.DAG.SelectedTipBlueScore()
 	if (currentBlueScore != 0 && !s.cfg.SyncMgr.IsCurrent()) ||
-		(currentBlueScore == 0 && !s.cfg.CPUMiner.ShouldMineOnGenesis()) {
+		(currentBlueScore == 0 && !s.cfg.shouldMineOnGenesis()) {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCClientInInitialDownload,
 			Message: "Kaspa is downloading blocks...",
