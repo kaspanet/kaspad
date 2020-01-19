@@ -147,8 +147,8 @@ func messageSummary(msg wire.Message) string {
 			msg.StopHash)
 
 	case *wire.MsgGetBlockLocator:
-		return fmt.Sprintf("start hash %s, stop hash %s", msg.StartHash,
-			msg.StopHash)
+		return fmt.Sprintf("start hash %s, stop hash %s", msg.HighHash,
+			msg.LowHash)
 
 	case *wire.MsgBlockLocator:
 		if len(msg.BlockLocatorHashes) > 0 {

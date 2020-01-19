@@ -21,7 +21,7 @@ import (
 //  [17 16 14 11 7 2 genesis]
 type BlockLocator []*daghash.Hash
 
-// BlockLocatorFromHashes returns a block locator from start and stop hash.
+// BlockLocatorFromHashes returns a block locator from high and low hash.
 // See BlockLocator for details on the algorithm used to create a block locator.
 //
 // In addition to the general algorithm referenced above, this function will
@@ -32,55 +32,55 @@ type BlockLocator []*daghash.Hash
 func (dag *BlockDAG) BlockLocatorFromHashes(startHash, stopHash *daghash.Hash) (BlockLocator, error) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
-	startNode := dag.index.LookupNode(startHash)
-	var stopNode *blockNode
+	highNode := dag.index.LookupNode(startHash)
+	var lowNode *blockNode
 	if !stopHash.IsEqual(&daghash.ZeroHash) {
-		stopNode = dag.index.LookupNode(stopHash)
+		lowNode = dag.index.LookupNode(stopHash)
 	}
-	return dag.blockLocator(startNode, stopNode)
+	return dag.blockLocator(highNode, lowNode)
 }
 
-// blockLocator returns a block locator for the passed start and stop nodes.
-// The default value for the start node is the selected tip, and the default
-// values of the stop node is the genesis block.
+// blockLocator returns a block locator for the passed high and low nodes.
+// The default value for the high node is the selected tip, and the default
+// values of the low node is the genesis block.
 //
 // See the BlockLocator type comments for more details.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) (BlockLocator, error) {
+func (dag *BlockDAG) blockLocator(highNode, lowNode *blockNode) (BlockLocator, error) {
 	// Use the selected tip if requested.
-	if startNode == nil {
-		startNode = dag.virtual.selectedParent
+	if highNode == nil {
+		highNode = dag.virtual.selectedParent
 	}
 
-	if stopNode == nil {
-		stopNode = dag.genesis
+	if lowNode == nil {
+		lowNode = dag.genesis
 	}
 
-	// We use the selected parent of the start node, so the
-	// block locator won't contain the start node.
-	startNode = startNode.selectedParent
+	// We use the selected parent of the high node, so the
+	// block locator won't contain the high node.
+	highNode = highNode.selectedParent
 
-	node := startNode
+	node := highNode
 	step := uint64(1)
 	locator := make(BlockLocator, 0)
 	for node != nil {
 		locator = append(locator, node.hash)
 
 		// Nothing more to add once the stop node has been added.
-		if node.blueScore <= stopNode.blueScore {
-			if node != stopNode {
-				return nil, errors.Errorf("startNode and stopNode are " +
+		if node.blueScore <= lowNode.blueScore {
+			if node != lowNode {
+				return nil, errors.Errorf("highNode and lowNode are " +
 					"not in the same selected parent chain.")
 			}
 			break
 		}
 
 		// Calculate blueScore of previous node to include ensuring the
-		// final node is stopNode.
+		// final node is lowNode.
 		nextBlueScore := node.blueScore - step
-		if nextBlueScore < stopNode.blueScore {
-			nextBlueScore = stopNode.blueScore
+		if nextBlueScore < lowNode.blueScore {
+			nextBlueScore = lowNode.blueScore
 		}
 
 		// walk backwards through the nodes to the correct ancestor.
@@ -99,21 +99,21 @@ func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) (BlockLocator,
 // sync peer.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) FindNextLocatorBoundaries(locator BlockLocator) (startHash, stopHash *daghash.Hash) {
+func (dag *BlockDAG) FindNextLocatorBoundaries(locator BlockLocator) (highHash, stopHash *daghash.Hash) {
 	// Find the most recent locator block hash in the DAG. In the case none of
 	// the hashes in the locator are in the DAG, fall back to the genesis block.
-	stopNode := dag.genesis
+	lowNode := dag.genesis
 	nextBlockLocatorIndex := int64(len(locator) - 1)
 	for i, hash := range locator {
 		node := dag.index.LookupNode(hash)
 		if node != nil {
-			stopNode = node
+			lowNode = node
 			nextBlockLocatorIndex = int64(i) - 1
 			break
 		}
 	}
 	if nextBlockLocatorIndex < 0 {
-		return nil, stopNode.hash
+		return nil, lowNode.hash
 	}
-	return locator[nextBlockLocatorIndex], stopNode.hash
+	return locator[nextBlockLocatorIndex], lowNode.hash
 }

@@ -9,10 +9,10 @@ import (
 // OnGetBlockLocator is invoked when a peer receives a getlocator kaspa
 // message.
 func (sp *Peer) OnGetBlockLocator(_ *peer.Peer, msg *wire.MsgGetBlockLocator) {
-	locator, err := sp.server.DAG.BlockLocatorFromHashes(msg.StartHash, msg.StopHash)
+	locator, err := sp.server.DAG.BlockLocatorFromHashes(msg.HighHash, msg.LowHash)
 	if err != nil || len(locator) == 0 {
 		warning := fmt.Sprintf("Couldn't build a block locator between blocks "+
-			"%s and %s that was requested from peer %s", msg.StartHash, msg.StopHash, sp)
+			"%s and %s that was requested from peer %s", msg.HighHash, msg.LowHash, sp)
 		if err != nil {
 			warning = fmt.Sprintf("%s: %s", warning, err)
 		}
