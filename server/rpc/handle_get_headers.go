@@ -25,7 +25,7 @@ func handleGetHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (in
 			return nil, rpcDecodeHexError(c.StopHash)
 		}
 	}
-	headers, err := s.cfg.SyncMgr.GetBlueBlocksHeadersBetween(startHash, stopHash)
+	headers, err := s.cfg.SyncMgr.BlueBlocksHeadersBetween(startHash, stopHash)
 	if err != nil {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCMisc,
