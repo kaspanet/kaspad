@@ -7,6 +7,7 @@ package blockdag
 import (
 	"fmt"
 	"github.com/pkg/errors"
+	"math"
 	"time"
 
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -112,6 +113,7 @@ func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSe
 	node = &blockNode{
 		parents:            parents,
 		children:           make(blockSet),
+		blueScore:          math.MaxUint64, // Initialized to the max value to avoid collisions with the genesis block
 		timestamp:          dag.timeSource.AdjustedTime().Unix(),
 		bluesAnticoneSizes: make(map[daghash.Hash]uint32),
 	}
@@ -130,12 +132,16 @@ func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSe
 		node.hash = &daghash.ZeroHash
 	}
 
-	if len(parents) > 0 {
-		var err error
-		selectedParentAnticone, err = dag.ghostdag(node)
-		if err != nil {
-			panic(errors.Wrap(err, "unexpected error in GHOSTDAG"))
-		}
+	if len(parents) == 0 {
+		// The genesis block is defined to have a blueScore of 0
+		node.blueScore = 0
+		return node, nil
+	}
+
+	var err error
+	selectedParentAnticone, err = dag.ghostdag(node)
+	if err != nil {
+		panic(errors.Wrap(err, "unexpected error in GHOSTDAG"))
 	}
 	return node, selectedParentAnticone
 }
