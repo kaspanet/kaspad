@@ -189,7 +189,7 @@ func (sm *SyncManager) startSync() {
 		log.Infof("Syncing to block %s from peer %s",
 			bestPeer.SelectedTip(), bestPeer.Addr())
 
-		bestPeer.PushGetBlockLocatorMsg(&daghash.ZeroHash, sm.dagParams.GenesisHash)
+		bestPeer.PushGetBlockLocatorMsg(bestPeer.SelectedTip(), sm.dagParams.GenesisHash)
 		sm.syncPeer = bestPeer
 	} else {
 		log.Warnf("No sync peer candidates available")
