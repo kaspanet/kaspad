@@ -24,19 +24,14 @@ type BlockLocator []*daghash.Hash
 // BlockLocatorFromHashes returns a block locator from high and low hash.
 // See BlockLocator for details on the algorithm used to create a block locator.
 //
-// In addition to the general algorithm referenced above, this function will
-// return the block locator for the selected tip if the passed hash is not currently
-// known.
-//
 // This function is safe for concurrent access.
-func (dag *BlockDAG) BlockLocatorFromHashes(startHash, stopHash *daghash.Hash) (BlockLocator, error) {
+func (dag *BlockDAG) BlockLocatorFromHashes(highHash, lowHash *daghash.Hash) (BlockLocator, error) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
-	highNode := dag.index.LookupNode(startHash)
-	var lowNode *blockNode
-	if !stopHash.IsEqual(&daghash.ZeroHash) {
-		lowNode = dag.index.LookupNode(stopHash)
-	}
+
+	highNode := dag.index.LookupNode(highHash)
+	lowNode := dag.index.LookupNode(lowHash)
+
 	return dag.blockLocator(highNode, lowNode)
 }
 
