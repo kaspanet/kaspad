@@ -1593,13 +1593,13 @@ func (dag *BlockDAG) SelectedParentHash(blockHash *daghash.Hash) (*daghash.Hash,
 	return node.selectedParent.hash, nil
 }
 
-// getBlueBlocksHashesBetween returns the hashes of the blocks after the provided
+// blueBlocksHashesBetween returns the hashes of the blocks after the provided
 // start hash until the provided stop hash is reached, or up to the
 // provided max number of block hashes.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) getBlueBlocksHashesBetween(startHash, stopHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
-	nodes, err := dag.getBlueBlocksBetween(startHash, stopHash, maxHashes)
+func (dag *BlockDAG) blueBlocksHashesBetween(startHash, stopHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
+	nodes, err := dag.blueBlocksBetween(startHash, stopHash, maxHashes)
 	if err != nil {
 		return nil, err
 	}
@@ -1610,7 +1610,7 @@ func (dag *BlockDAG) getBlueBlocksHashesBetween(startHash, stopHash *daghash.Has
 	return hashes, nil
 }
 
-func (dag *BlockDAG) getBlueBlocksBetween(startHash, stopHash *daghash.Hash, maxEntries uint64) ([]*blockNode, error) {
+func (dag *BlockDAG) blueBlocksBetween(startHash, stopHash *daghash.Hash, maxEntries uint64) ([]*blockNode, error) {
 	startNode := dag.index.LookupNode(startHash)
 	if startNode == nil {
 		return nil, errors.Errorf("Couldn't find start hash %s", startHash)
@@ -1656,14 +1656,14 @@ func (dag *BlockDAG) getBlueBlocksBetween(startHash, stopHash *daghash.Hash, max
 	return reversedNodes, nil
 }
 
-// GetBlueBlocksHashesBetween returns the hashes of the blue blocks after the
+// BlueBlocksHashesBetween returns the hashes of the blue blocks after the
 // provided start hash until the provided stop hash is reached, or up to the
 // provided max number of block hashes.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) GetBlueBlocksHashesBetween(startHash, stopHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
+func (dag *BlockDAG) BlueBlocksHashesBetween(startHash, stopHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
 	dag.dagLock.RLock()
-	hashes, err := dag.getBlueBlocksHashesBetween(startHash, stopHash, maxHashes)
+	hashes, err := dag.blueBlocksHashesBetween(startHash, stopHash, maxHashes)
 	if err != nil {
 		return nil, err
 	}
@@ -1671,13 +1671,13 @@ func (dag *BlockDAG) GetBlueBlocksHashesBetween(startHash, stopHash *daghash.Has
 	return hashes, nil
 }
 
-// getBlueBlocksHeadersBetween returns the headers of the blue blocks after the
+// blueBlocksHeadersBetween returns the headers of the blue blocks after the
 // provided start hash until the provided stop hash is reached, or up to the
 // provided max number of block headers.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) getBlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
-	nodes, err := dag.getBlueBlocksBetween(startHash, stopHash, maxHeaders)
+func (dag *BlockDAG) blueBlocksHeadersBetween(startHash, stopHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
+	nodes, err := dag.blueBlocksBetween(startHash, stopHash, maxHeaders)
 	if err != nil {
 		return nil, err
 	}
@@ -1734,14 +1734,14 @@ func (dag *BlockDAG) RUnlock() {
 	dag.dagLock.RUnlock()
 }
 
-// GetBlueBlocksHeadersBetween returns the headers of the blocks after the provided
+// BlueBlocksHeadersBetween returns the headers of the blocks after the provided
 // start hash until the provided stop hash is reached, or up to the
 // provided max number of block headers.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) GetBlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash) ([]*wire.BlockHeader, error) {
+func (dag *BlockDAG) BlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash) ([]*wire.BlockHeader, error) {
 	dag.dagLock.RLock()
-	headers, err := dag.getBlueBlocksHeadersBetween(startHash, stopHash, wire.MaxBlockHeadersPerMsg)
+	headers, err := dag.blueBlocksHeadersBetween(startHash, stopHash, wire.MaxBlockHeadersPerMsg)
 	if err != nil {
 		return nil, err
 	}

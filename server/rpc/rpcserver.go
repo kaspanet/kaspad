@@ -735,7 +735,7 @@ type rpcserverSyncManager interface {
 	// used to sync from or 0 if there is none.
 	SyncPeerID() int32
 
-	// GetBlueBlocksHeadersBetween returns the headers of the blocks after the first known
+	// BlueBlocksHeadersBetween returns the headers of the blocks after the first known
 	// block in the provided locators until the provided stop hash or the
 	// current tip is reached, up to a max of wire.MaxBlockHeadersPerMsg
 	// hashes.

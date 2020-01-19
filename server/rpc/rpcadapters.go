@@ -269,12 +269,12 @@ func (b *rpcSyncMgr) SyncPeerID() int32 {
 	return b.syncMgr.SyncPeerID()
 }
 
-// GetBlueBlocksHeadersBetween returns the headers of the blocks after the provided
+// BlueBlocksHeadersBetween returns the headers of the blocks after the provided
 // start hash until the provided stop hash is reached, or up to the
 // provided max number of block headers.
 //
 // This function is safe for concurrent access and is part of the
 // rpcserverSyncManager interface implementation.
 func (b *rpcSyncMgr) GetBlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash) ([]*wire.BlockHeader, error) {
-	return b.server.DAG.GetBlueBlocksHeadersBetween(startHash, stopHash)
+	return b.server.DAG.BlueBlocksHeadersBetween(startHash, stopHash)
 }
