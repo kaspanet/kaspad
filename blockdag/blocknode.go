@@ -138,8 +138,7 @@ func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSe
 		return node, nil
 	}
 
-	var err error
-	selectedParentAnticone, err = dag.ghostdag(node)
+	selectedParentAnticone, err := dag.ghostdag(node)
 	if err != nil {
 		panic(errors.Wrap(err, "unexpected error in GHOSTDAG"))
 	}
