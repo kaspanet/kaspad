@@ -32,9 +32,9 @@ func TestGetBlockInvs(t *testing.T) {
 
 	// Ensure we get the same data back out.
 	msg := NewMsgGetBlockInvs(startHash, stopHash)
-	if !msg.StopHash.IsEqual(stopHash) {
+	if !msg.HighHash.IsEqual(stopHash) {
 		t.Errorf("NewMsgGetBlockInvs: wrong stop hash - got %v, want %v",
-			msg.StopHash, stopHash)
+			msg.HighHash, stopHash)
 	}
 
 	// Ensure the command is expected value.

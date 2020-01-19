@@ -667,29 +667,29 @@ func NewGetCurrentNetCmd() *GetCurrentNetCmd {
 
 // GetTopHeadersCmd defined the getTopHeaders JSON-RPC command.
 type GetTopHeadersCmd struct {
-	StartHash *string `json:"startHash"`
+	HighHash *string `json:"highHash"`
 }
 
 // NewGetTopHeadersCmd returns a new instance which can be used to issue a
 // getTopHeaders JSON-RPC command.
-func NewGetTopHeadersCmd(startHash *string) *GetTopHeadersCmd {
+func NewGetTopHeadersCmd(highHash *string) *GetTopHeadersCmd {
 	return &GetTopHeadersCmd{
-		StartHash: startHash,
+		HighHash: highHash,
 	}
 }
 
 // GetHeadersCmd defines the getHeaders JSON-RPC command.
 type GetHeadersCmd struct {
-	StartHash string `json:"startHash"`
-	StopHash  string `json:"stopHash"`
+	LowHash  string `json:"lowHash"`
+	HighHash string `json:"highHash"`
 }
 
 // NewGetHeadersCmd returns a new instance which can be used to issue a
 // getHeaders JSON-RPC command.
-func NewGetHeadersCmd(startHash, stopHash string) *GetHeadersCmd {
+func NewGetHeadersCmd(lowHash, highHash string) *GetHeadersCmd {
 	return &GetHeadersCmd{
-		StartHash: startHash,
-		StopHash:  stopHash,
+		LowHash:  lowHash,
+		HighHash: highHash,
 	}
 }
 

@@ -7,23 +7,23 @@ import (
 
 // OnGetBlockInvs is invoked when a peer receives a getblockinvs kaspa
 // message.
-// It finds the blue future between msg.StartHash and msg.StopHash
+// It finds the blue future between msg.LowHash and msg.HighHash
 // and send the invs to the requesting peer.
 func (sp *Peer) OnGetBlockInvs(_ *peer.Peer, msg *wire.MsgGetBlockInvs) {
 	dag := sp.server.DAG
 	// We want to prevent a situation where the syncing peer needs
-	// to call getblocks once again, but the block we sent him
-	// won't affect his selected chain, so next time it'll try
+	// to call getblocks once again, but the block we sent it
+	// won't affect its selected chain, so next time it'll try
 	// to find the highest shared chain block, it'll find the
 	// same one as before.
 	// To prevent that we use blockdag.FinalityInterval as maxHashes.
 	// This way, if one getblocks is not enough to get the peer
 	// synced, we can know for sure that its selected chain will
 	// change, so we'll have higher shared chain block.
-	hashList, err := dag.BlueBlocksHashesBetween(msg.StartHash, msg.StopHash,
+	hashList, err := dag.BlueBlocksHashesBetween(msg.LowHash, msg.HighHash,
 		wire.MaxInvPerMsg)
 	if err != nil {
-		peerLog.Warnf("Error getting blue blocks between %s and %s: %s", msg.StartHash, msg.StopHash, err)
+		peerLog.Warnf("Error getting blue blocks between %s and %s: %s", msg.LowHash, msg.HighHash, err)
 		sp.Disconnect()
 		return
 	}

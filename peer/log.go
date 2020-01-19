@@ -139,8 +139,8 @@ func messageSummary(msg wire.Message) string {
 		return invSummary(msg.InvList)
 
 	case *wire.MsgGetBlockInvs:
-		return fmt.Sprintf("start hash %s, stop hash %s", msg.StartHash,
-			msg.StopHash)
+		return fmt.Sprintf("start hash %s, stop hash %s", msg.LowHash,
+			msg.HighHash)
 
 	case *wire.MsgGetHeaders:
 		return fmt.Sprintf("start hash %s, stop hash %s", msg.StartHash,

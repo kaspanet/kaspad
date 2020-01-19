@@ -952,8 +952,8 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getHeaders","params":["",""],"id":1}`,
 			unmarshalled: &rpcmodel.GetHeadersCmd{
-				StartHash: "",
-				StopHash:  "",
+				LowHash:  "",
+				HighHash: "",
 			},
 		},
 		{
@@ -969,8 +969,8 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getHeaders","params":["000000000000000001f1739002418e2f9a84c47a4fd2a0eb7a787a6b7dc12f16","000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"],"id":1}`,
 			unmarshalled: &rpcmodel.GetHeadersCmd{
-				StartHash: "000000000000000001f1739002418e2f9a84c47a4fd2a0eb7a787a6b7dc12f16",
-				StopHash:  "000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7",
+				LowHash:  "000000000000000001f1739002418e2f9a84c47a4fd2a0eb7a787a6b7dc12f16",
+				HighHash: "000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7",
 			},
 		},
 		{
@@ -998,7 +998,7 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getTopHeaders","params":["000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"],"id":1}`,
 			unmarshalled: &rpcmodel.GetTopHeadersCmd{
-				StartHash: rpcmodel.String("000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"),
+				HighHash: rpcmodel.String("000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"),
 			},
 		},
 		{

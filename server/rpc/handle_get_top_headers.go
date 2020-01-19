@@ -11,15 +11,15 @@ import (
 func handleGetTopHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*rpcmodel.GetTopHeadersCmd)
 
-	var startHash *daghash.Hash
-	if c.StartHash != nil {
-		startHash = &daghash.Hash{}
-		err := daghash.Decode(startHash, *c.StartHash)
+	var highHash *daghash.Hash
+	if c.HighHash != nil {
+		highHash = &daghash.Hash{}
+		err := daghash.Decode(highHash, *c.HighHash)
 		if err != nil {
-			return nil, rpcDecodeHexError(*c.StartHash)
+			return nil, rpcDecodeHexError(*c.HighHash)
 		}
 	}
-	headers, err := s.cfg.DAG.GetTopHeaders(startHash)
+	headers, err := s.cfg.DAG.GetTopHeaders(highHash)
 	if err != nil {
 		return nil, internalRPCError(err.Error(),
 			"Failed to get top headers")
