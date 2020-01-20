@@ -1646,8 +1646,8 @@ func (dag *BlockDAG) blueBlocksBetween(lowHash, highHash *daghash.Hash, maxEntri
 		current = current.selectedParent
 	}
 	if current != lowNode {
-		return nil, errors.Errorf("the start hash is not found in the " +
-			"selected parent chain of the stop hash")
+		return nil, errors.Errorf("the low hash is not found in the " +
+			"selected parent chain of the high hash")
 	}
 	reversedNodes := make([]*blockNode, len(nodes))
 	for i, node := range nodes {
