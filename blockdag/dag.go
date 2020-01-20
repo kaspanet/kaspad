@@ -1630,30 +1630,79 @@ func (dag *BlockDAG) blueBlocksBetween(lowHash, highHash *daghash.Hash, maxEntri
 	// first iterate on the selected parent chain of the highNode
 	// until we find a new highNode
 	// where highNode.blueScore-lowNode.blueScore+1 <= maxEntries
-
+	//
+	// We also keep track of highNode's selected parent chain child
+	// in case we need to calculate highNode's anticone (see below)
+	var highNodeSelectedParentChainChild *blockNode
 	for highNode.blueScore-lowNode.blueScore+1 > maxEntries {
+		highNodeSelectedParentChainChild = highNode
 		highNode = highNode.selectedParent
 	}
 
-	// Populate and return the found nodes.
-	nodes := make([]*blockNode, 0, highNode.blueScore-lowNode.blueScore+1)
-	nodes = append(nodes, highNode)
-	current := highNode
-	for current.blueScore > lowNode.blueScore {
-		for _, blue := range current.blues {
-			nodes = append(nodes, blue)
+	// Collect every node in highNode's past (including itself) but
+	// NOT in the lowNode's past (excluding itself) into an UpHeap
+	// (a heap sorted by blueScore from lowest to greatest).
+	visited := newSet()
+	highNodeAntiFuture := newUpHeap()
+	queue := []*blockNode{highNode}
+	for len(queue) > 0 {
+		var current *blockNode
+		current, queue = queue[0], queue[1:]
+		for _, parent := range current.parents {
+			if visited.contains(parent) {
+				continue
+			}
+			isAncestorOfLowNode, err := dag.isAncestorOf(parent, lowNode)
+			if err != nil {
+				return nil, err
+			}
+			if !isAncestorOfLowNode {
+				queue = append(queue, parent)
+			}
 		}
-		current = current.selectedParent
+		visited.add(current)
+		highNodeAntiFuture.Push(current)
 	}
-	if current != lowNode {
-		return nil, errors.Errorf("the low hash is not found in the " +
-			"selected parent chain of the high hash")
+
+	// If we visited less than maxEntries nodes in the above
+	// traversal then we also add highNode's anticone
+	if len(visited) < int(maxEntries) {
+		// If we initially (from the function args) received
+		// highNode.blueScore-lowNode.blueScore+1 < maxEntries
+		// then we don't immediately know the selected parent
+		// chain child of highNode. To find it, we iterate
+		// over highNode's children until we stumble upon a
+		// child whose selectedParent is highNode.
+		if highNodeSelectedParentChainChild == nil {
+			for _, child := range highNode.children {
+				if child.selectedParent == highNode {
+					highNodeSelectedParentChainChild = child
+					break
+				}
+			}
+		}
+
+		// If we still couldn't find a selected parent chain
+		// child for highNode, there's nothing to do but give
+		// up on adding highNode's anticone.
+		if highNodeSelectedParentChainChild != nil {
+			highNodeAnticone, err := dag.selectedParentAnticone(highNodeSelectedParentChainChild)
+			if err != nil {
+				return nil, err
+			}
+			for _, node := range highNodeAnticone {
+				highNodeAntiFuture.Push(node)
+			}
+		}
 	}
-	reversedNodes := make([]*blockNode, len(nodes))
-	for i, node := range nodes {
-		reversedNodes[len(reversedNodes)-i-1] = node
+
+	// Pop highNodeAntiFuture into a slice. Since highNodeAntiFuture
+	// is an UpHeap, it's guaranteed to be ordered from low to high
+	nodes := make([]*blockNode, 0, highNode.blueScore-lowNode.blueScore+1)
+	for highNodeAntiFuture.Len() > 0 && len(nodes) < int(maxEntries) {
+		nodes = append(nodes, highNodeAntiFuture.pop())
 	}
-	return reversedNodes, nil
+	return nodes, nil
 }
 
 // BlueBlockHashesBetween returns the hashes of the blue blocks after the
@@ -1688,7 +1737,7 @@ func (dag *BlockDAG) blueBlockHeadersBetween(lowHash, highHash *daghash.Hash, ma
 	return headers, nil
 }
 
-// GetTopHeaders returns the top wire.MaxBlockHeadersPerMsg block headers ordered by height.
+// GetTopHeaders returns the top wire.MaxBlockHeadersPerMsg block headers ordered by blue score.
 func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash) ([]*wire.BlockHeader, error) {
 	highNode := &dag.virtual.blockNode
 	if highHash != nil {
