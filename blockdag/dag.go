@@ -1278,6 +1278,10 @@ func (dag *BlockDAG) isCurrent() bool {
 	return dagTimestamp >= minus24Hours
 }
 
+func (dag *BlockDAG) AdjustedTime() time.Time {
+	return dag.timeSource.AdjustedTime()
+}
+
 // IsCurrent returns whether or not the DAG believes it is current. Several
 // factors are used to guess, but the key factors that allow the DAG to
 // believe it is current are:
@@ -1310,7 +1314,7 @@ func (dag *BlockDAG) SelectedTipHeader() *wire.BlockHeader {
 	return selectedTip.Header()
 }
 
-// SelectedTipHash returns the hash of the current selected tip for the DAG.
+// SelectedTip returns the hash of the current selected tip for the DAG.
 // It will return nil if there is no tip.
 //
 // This function is safe for concurrent access.

@@ -168,6 +168,10 @@ type MessageListeners struct {
 	// message.
 	OnSendHeaders func(p *Peer, msg *wire.MsgSendHeaders)
 
+	OnGetSelectedTip func()
+
+	OnSelectedTip func(p *Peer, msg *wire.MsgSelectedTip)
+
 	// OnRead is invoked when a peer receives a kaspa message. It
 	// consists of the number of bytes read, the message, and whether or not
 	// an error in the read occurred. Typically, callers will opt to use
@@ -190,7 +194,7 @@ type Config struct {
 	// to the peer as needed.
 	SelectedTip func() *daghash.Hash
 
-	// SelectedTip specifies a callback which provides the selected tip
+	// SelectedTipHashAndBlueScore specifies a callback which provides the selected tip
 	// to the peer as needed.
 	BlockExists func(*daghash.Hash) bool
 
@@ -633,7 +637,7 @@ func (p *Peer) ProtocolVersion() uint32 {
 	return protocolVersion
 }
 
-// SelectedTip returns the selected tip of the peer.
+// SelectedTipHashAndBlueScore returns the selected tip of the peer.
 //
 // This function is safe for concurrent access.
 func (p *Peer) SelectedTip() *daghash.Hash {
@@ -644,10 +648,18 @@ func (p *Peer) SelectedTip() *daghash.Hash {
 	return selectedTip
 }
 
-// IsSyncCandidate returns whether or not this peer is a sync candidate.
+func (p *Peer) SetSelectedTip(selectedTip *daghash.Hash) {
+	p.statsMtx.Lock()
+	defer p.statsMtx.Unlock()
+
+	p.selectedTip = selectedTip
+}
+
+// IsSelectedTipKnown returns whether or not this peer selected
+// tip is a known block.
 //
 // This function is safe for concurrent access.
-func (p *Peer) IsSyncCandidate() bool {
+func (p *Peer) IsSelectedTipKnown() bool {
 	return !p.cfg.BlockExists(p.selectedTip)
 }
 
@@ -718,7 +730,7 @@ func (p *Peer) WantsHeaders() bool {
 // localVersionMsg creates a version message that can be used to send to the
 // remote peer.
 func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
-	selectedTip := p.cfg.SelectedTip()
+	selectedTipHash := p.cfg.SelectedTip()
 	theirNA := p.na
 
 	// If we are behind a proxy and the connection comes from the proxy then
@@ -754,7 +766,7 @@ func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
 	subnetworkID := p.cfg.SubnetworkID
 
 	// Version message.
-	msg := wire.NewMsgVersion(ourNA, theirNA, nonce, selectedTip, subnetworkID)
+	msg := wire.NewMsgVersion(ourNA, theirNA, nonce, selectedTipHash, subnetworkID)
 	msg.AddUserAgent(p.cfg.UserAgentName, p.cfg.UserAgentVersion,
 		p.cfg.UserAgentComments...)
 
@@ -1172,6 +1184,10 @@ func (p *Peer) maybeAddDeadline(pendingResponses map[string]time.Time, msgCmd st
 		// headers.
 		deadline = time.Now().Add(stallResponseTimeout * 3)
 		pendingResponses[wire.CmdHeaders] = deadline
+
+	case wire.CmdGetSelectedTip:
+		// Expects a selected tip message.
+		pendingResponses[wire.CmdSelectedTip] = deadline
 	}
 }
 
@@ -1498,6 +1514,16 @@ out:
 
 			if p.cfg.Listeners.OnSendHeaders != nil {
 				p.cfg.Listeners.OnSendHeaders(p, msg)
+			}
+
+		case *wire.MsgGetSelectedTip:
+			if p.cfg.Listeners.OnGetSelectedTip != nil {
+				p.cfg.Listeners.OnGetSelectedTip()
+			}
+
+		case *wire.MsgSelectedTip:
+			if p.cfg.Listeners.OnSelectedTip != nil {
+				p.cfg.Listeners.OnSelectedTip(p, msg)
 			}
 
 		default:

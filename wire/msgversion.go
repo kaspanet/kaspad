@@ -223,14 +223,12 @@ func (msg *MsgVersion) Command() string {
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver. This is part of the Message interface implementation.
 func (msg *MsgVersion) MaxPayloadLength(pver uint32) uint32 {
-	// XXX: <= 106 different
-
 	// Protocol version 4 bytes + services 8 bytes + timestamp 16 bytes +
 	// remote and local net addresses + nonce 8 bytes + length of user
-	// agent (varInt) + max allowed useragent length + last block 4 bytes +
+	// agent (varInt) + max allowed useragent length + selected tip hash length +
 	// relay transactions flag 1 byte.
-	return 33 + (maxNetAddressPayload(pver) * 2) + MaxVarIntPayload +
-		MaxUserAgentLen
+	return 29 + (maxNetAddressPayload(pver) * 2) + MaxVarIntPayload +
+		MaxUserAgentLen + daghash.HashSize
 }
 
 // NewMsgVersion returns a new kaspa version message that conforms to the

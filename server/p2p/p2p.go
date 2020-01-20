@@ -1046,6 +1046,8 @@ func newPeerConfig(sp *Peer) *peer.Config {
 			OnFilterLoad:      sp.OnFilterLoad,
 			OnGetAddr:         sp.OnGetAddr,
 			OnAddr:            sp.OnAddr,
+			OnGetSelectedTip:  sp.OnGetSelectedTip,
+			OnSelectedTip:     sp.OnSelectedTip,
 			OnRead:            sp.OnRead,
 			OnWrite:           sp.OnWrite,
 		},

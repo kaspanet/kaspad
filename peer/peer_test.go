@@ -568,7 +568,7 @@ func TestOutboundPeer(t *testing.T) {
 	<-done
 	p.Disconnect()
 
-	// Test SelectedTip
+	// Test SelectedTipHashAndBlueScore
 	var selectedTip = func() *daghash.Hash {
 		hashStr := "14a0810ac680a3eb3f82edc878cea25ec41d6b790744e5daeef"
 		hash, err := daghash.NewHashFromStr(hashStr)

@@ -18,6 +18,7 @@ import (
 	"net"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 const (
@@ -121,11 +122,13 @@ type requestQueueAndSet struct {
 // peerSyncState stores additional information that the SyncManager tracks
 // about a peer.
 type peerSyncState struct {
-	syncCandidate   bool
-	requestQueueMtx sync.Mutex
-	requestQueues   map[wire.InvType]*requestQueueAndSet
-	requestedTxns   map[daghash.TxID]struct{}
-	requestedBlocks map[daghash.Hash]struct{}
+	syncCandidate          bool
+	isSelectedTipKnown     bool
+	lastSelectedTipRequest time.Time
+	requestQueueMtx        sync.Mutex
+	requestQueues          map[wire.InvType]*requestQueueAndSet
+	requestedTxns          map[daghash.TxID]struct{}
+	requestedBlocks        map[daghash.Hash]struct{}
 }
 
 // SyncManager is used to communicate block related messages with peers. The
@@ -153,11 +156,11 @@ type SyncManager struct {
 	peerStates      map[*peerpkg.Peer]*peerSyncState
 }
 
-// startSync will choose the sync peer among the available candidate peers to
+// StartSync will choose the sync peer among the available candidate peers to
 // download/sync the blockDAG from. When syncing is already running, it
 // simply returns. It also examines the candidates for any which are no longer
 // candidates and removes them as needed.
-func (sm *SyncManager) startSync() {
+func (sm *SyncManager) StartSync() {
 	// Return now if we're already syncing.
 	if sm.syncPeer != nil {
 		return
@@ -165,12 +168,12 @@ func (sm *SyncManager) startSync() {
 
 	var syncPeer *peerpkg.Peer
 	for peer, state := range sm.peerStates {
-		if !state.syncCandidate {
+		if !state.syncCandidate || state.isSelectedTipKnown {
 			continue
 		}
 
-		if !peer.IsSyncCandidate() {
-			state.syncCandidate = false
+		if !peer.IsSelectedTipKnown() {
+			state.isSelectedTipKnown = true
 			continue
 		}
 
@@ -191,9 +194,25 @@ func (sm *SyncManager) startSync() {
 
 		syncPeer.PushGetBlockLocatorMsg(syncPeer.SelectedTip(), sm.dagParams.GenesisHash)
 		sm.syncPeer = syncPeer
-	} else {
-		log.Warnf("No sync peer candidates available")
+		return
 	}
+
+	log.Warnf("No sync peer candidates available")
+	if sm.dag.AdjustedTime().Sub(sm.dag.CalcPastMedianTime()) > time.Minute {
+		for peer, state := range sm.peerStates {
+			if !state.syncCandidate {
+				continue
+			}
+
+			if time.Now().Sub(state.lastSelectedTipRequest) < time.Minute {
+				continue
+			}
+
+			state.lastSelectedTipRequest = time.Now()
+			peer.QueueMessage(wire.NewMsgGetSelectedTip(), nil)
+		}
+	}
+	return
 }
 
 // isSyncCandidate returns whether or not the peer is a candidate to consider
@@ -255,7 +274,7 @@ func (sm *SyncManager) handleNewPeerMsg(peer *peerpkg.Peer) {
 
 	// Start syncing by choosing the best candidate if needed.
 	if isSyncCandidate && sm.syncPeer == nil {
-		sm.startSync()
+		sm.StartSync()
 	}
 }
 
@@ -297,7 +316,7 @@ func (sm *SyncManager) stopSyncFromPeer(peer *peerpkg.Peer) {
 	// sync peer.
 	if sm.syncPeer == peer {
 		sm.syncPeer = nil
-		sm.startSync()
+		sm.StartSync()
 	}
 }
 
@@ -402,7 +421,7 @@ func (sm *SyncManager) restartSyncIfNeeded() {
 	}
 
 	sm.syncPeer = nil
-	sm.startSync()
+	sm.StartSync()
 }
 
 // handleBlockMsg handles block messages from all peers.
