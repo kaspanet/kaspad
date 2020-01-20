@@ -1621,14 +1621,14 @@ func (dag *BlockDAG) blueBlocksBetween(lowHash, highHash *daghash.Hash, maxEntri
 	}
 
 	// In order to get no more then maxEntries of blue blocks from
-	// the future of the low node (including itself), we iterate
+	// the future of the lowNode (including itself), we iterate
 	// the selected parent chain of the highNode and add the blues
 	// each node (including the highNode itself). This is why the
 	// number of returned blocks will be
 	// highNode.blueScore-lowNode.blueScore+1.
 	// If highNode.blueScore-lowNode.blueScore+1 > maxEntries, we
-	// first iterate on the selected parent chain of the high node
-	// until we find a new high node
+	// first iterate on the selected parent chain of the highNode
+	// until we find a new highNode
 	// where highNode.blueScore-lowNode.blueScore+1 <= maxEntries
 
 	for highNode.blueScore-lowNode.blueScore+1 > maxEntries {
