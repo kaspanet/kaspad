@@ -139,7 +139,7 @@ func messageSummary(msg wire.Message) string {
 		return invSummary(msg.InvList)
 
 	case *wire.MsgGetBlockInvs:
-		return fmt.Sprintf("start hash %s, stop hash %s", msg.LowHash,
+		return fmt.Sprintf("low hash %s, high hash %s", msg.LowHash,
 			msg.HighHash)
 
 	case *wire.MsgGetHeaders:
@@ -147,7 +147,7 @@ func messageSummary(msg wire.Message) string {
 			msg.StopHash)
 
 	case *wire.MsgGetBlockLocator:
-		return fmt.Sprintf("start hash %s, stop hash %s", msg.HighHash,
+		return fmt.Sprintf("high hash %s, low hash %s", msg.HighHash,
 			msg.LowHash)
 
 	case *wire.MsgBlockLocator:
