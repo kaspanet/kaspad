@@ -1698,8 +1698,12 @@ func (dag *BlockDAG) blueBlocksBetween(lowHash, highHash *daghash.Hash, maxEntri
 
 	// Pop highNodeAntiFuture into a slice. Since highNodeAntiFuture
 	// is an UpHeap, it's guaranteed to be ordered from low to high
-	nodes := make([]*blockNode, 0, highNode.blueScore-lowNode.blueScore+1)
-	for highNodeAntiFuture.Len() > 0 && len(nodes) < int(maxEntries) {
+	nodesLen := int(maxEntries)
+	if highNodeAntiFuture.Len() < nodesLen {
+		nodesLen = highNodeAntiFuture.Len()
+	}
+	nodes := make([]*blockNode, 0, nodesLen)
+	for len(nodes) <= nodesLen {
 		nodes = append(nodes, highNodeAntiFuture.pop())
 	}
 	return nodes, nil
