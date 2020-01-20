@@ -1664,9 +1664,9 @@ func (dag *BlockDAG) blueBlocksBetween(lowHash, highHash *daghash.Hash, maxEntri
 		}
 	}
 
-	// If we visited less than maxEntries nodes in the above
+	// If we collected less than maxEntries nodes in the above
 	// traversal then we also add highNode's anticone
-	if len(visited) < int(maxEntries) {
+	if highNodeAntiFuture.Len() < int(maxEntries) {
 		// If we initially (from the function args) received
 		// highNode.blueScore-lowNode.blueScore+1 < maxEntries
 		// then we don't immediately know the selected parent
