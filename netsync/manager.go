@@ -153,7 +153,7 @@ type SyncManager struct {
 	peerStates      map[*peerpkg.Peer]*peerSyncState
 }
 
-// startSync will choose the best peer among the available candidate peers to
+// startSync will choose the sync peer among the available candidate peers to
 // download/sync the blockDAG from. When syncing is already running, it
 // simply returns. It also examines the candidates for any which are no longer
 // candidates and removes them as needed.
@@ -174,12 +174,12 @@ func (sm *SyncManager) startSync() {
 			continue
 		}
 
-		// TODO(davec): Use a better algorithm to choose the best peer.
+		// TODO(davec): Use a better algorithm to choose the sync peer.
 		// For now, just pick the first available candidate.
 		syncPeer = peer
 	}
 
-	// Start syncing from the best peer if one was selected.
+	// Start syncing from the sync peer if one was selected.
 	if syncPeer != nil {
 		// Clear the requestedBlocks if the sync peer changes, otherwise
 		// we may ignore blocks we need that the last sync peer failed
