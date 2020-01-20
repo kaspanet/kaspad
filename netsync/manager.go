@@ -163,7 +163,7 @@ func (sm *SyncManager) startSync() {
 		return
 	}
 
-	var bestPeer *peerpkg.Peer
+	var syncPeer *peerpkg.Peer
 	for peer, state := range sm.peerStates {
 		if !state.syncCandidate {
 			continue
@@ -176,21 +176,21 @@ func (sm *SyncManager) startSync() {
 
 		// TODO(davec): Use a better algorithm to choose the best peer.
 		// For now, just pick the first available candidate.
-		bestPeer = peer
+		syncPeer = peer
 	}
 
 	// Start syncing from the best peer if one was selected.
-	if bestPeer != nil {
+	if syncPeer != nil {
 		// Clear the requestedBlocks if the sync peer changes, otherwise
 		// we may ignore blocks we need that the last sync peer failed
 		// to send.
 		sm.requestedBlocks = make(map[daghash.Hash]struct{})
 
 		log.Infof("Syncing to block %s from peer %s",
-			bestPeer.SelectedTip(), bestPeer.Addr())
+			syncPeer.SelectedTip(), syncPeer.Addr())
 
-		bestPeer.PushGetBlockLocatorMsg(bestPeer.SelectedTip(), sm.dagParams.GenesisHash)
-		sm.syncPeer = bestPeer
+		syncPeer.PushGetBlockLocatorMsg(syncPeer.SelectedTip(), sm.dagParams.GenesisHash)
+		sm.syncPeer = syncPeer
 	} else {
 		log.Warnf("No sync peer candidates available")
 	}
