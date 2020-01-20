@@ -1644,24 +1644,24 @@ func (dag *BlockDAG) blueBlocksBetween(lowHash, highHash *daghash.Hash, maxEntri
 	// (a heap sorted by blueScore from lowest to greatest).
 	visited := newSet()
 	highNodeAntiFuture := newUpHeap()
-	queue := []*blockNode{highNode}
-	for len(queue) > 0 {
-		var current *blockNode
-		current, queue = queue[0], queue[1:]
-		for _, parent := range current.parents {
-			if visited.contains(parent) {
-				continue
-			}
-			isAncestorOfLowNode, err := dag.isAncestorOf(parent, lowNode)
-			if err != nil {
-				return nil, err
-			}
-			if !isAncestorOfLowNode {
-				queue = append(queue, parent)
-			}
+	queue := newDownHeap()
+	queue.Push(highNode)
+	for queue.Len() > 0 {
+		current := queue.pop()
+		if visited.contains(current) {
+			continue
 		}
 		visited.add(current)
-		highNodeAntiFuture.Push(current)
+		isCurrentAncestorOfLowNode, err := dag.isAncestorOf(current, lowNode)
+		if err != nil {
+			return nil, err
+		}
+		if !isCurrentAncestorOfLowNode {
+			highNodeAntiFuture.Push(current)
+			for _, parent := range current.parents {
+				queue.Push(parent)
+			}
+		}
 	}
 
 	// If we visited less than maxEntries nodes in the above
