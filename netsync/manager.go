@@ -686,7 +686,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 				// Request blocks after the first block's ancestor that exists
 				// in the selected path chain, one up to the
 				// final one the remote peer knows about.
-				peer.PushGetBlockLocatorMsg(iv.Hash, &daghash.ZeroHash)
+				peer.PushGetBlockLocatorMsg(iv.Hash, sm.dagParams.GenesisHash)
 			}
 		}
 	}

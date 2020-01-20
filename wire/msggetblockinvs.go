@@ -14,32 +14,32 @@ import (
 // getblockinvs message. It is used to request a list of blocks starting after the
 // start hash and until the stop hash.
 type MsgGetBlockInvs struct {
-	StartHash *daghash.Hash
-	StopHash  *daghash.Hash
+	LowHash  *daghash.Hash
+	HighHash *daghash.Hash
 }
 
 // KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgGetBlockInvs) KaspaDecode(r io.Reader, pver uint32) error {
-	msg.StartHash = &daghash.Hash{}
-	err := ReadElement(r, msg.StartHash)
+	msg.LowHash = &daghash.Hash{}
+	err := ReadElement(r, msg.LowHash)
 	if err != nil {
 		return err
 	}
 
-	msg.StopHash = &daghash.Hash{}
-	return ReadElement(r, msg.StopHash)
+	msg.HighHash = &daghash.Hash{}
+	return ReadElement(r, msg.HighHash)
 }
 
 // KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgGetBlockInvs) KaspaEncode(w io.Writer, pver uint32) error {
-	err := WriteElement(w, msg.StartHash)
+	err := WriteElement(w, msg.LowHash)
 	if err != nil {
 		return err
 	}
 
-	return WriteElement(w, msg.StopHash)
+	return WriteElement(w, msg.HighHash)
 }
 
 // Command returns the protocol command string for the message. This is part
@@ -58,9 +58,9 @@ func (msg *MsgGetBlockInvs) MaxPayloadLength(pver uint32) uint32 {
 // NewMsgGetBlockInvs returns a new kaspa getblockinvs message that conforms to the
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
-func NewMsgGetBlockInvs(startHash, stopHash *daghash.Hash) *MsgGetBlockInvs {
+func NewMsgGetBlockInvs(lowHash, highHash *daghash.Hash) *MsgGetBlockInvs {
 	return &MsgGetBlockInvs{
-		StartHash: startHash,
-		StopHash:  stopHash,
+		LowHash:  lowHash,
+		HighHash: highHash,
 	}
 }

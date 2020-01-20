@@ -12,21 +12,21 @@ import (
 //
 // This message has no payload.
 type MsgGetBlockLocator struct {
-	StartHash *daghash.Hash
-	StopHash  *daghash.Hash
+	HighHash *daghash.Hash
+	LowHash  *daghash.Hash
 }
 
 // KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgGetBlockLocator) KaspaDecode(r io.Reader, pver uint32) error {
-	msg.StartHash = &daghash.Hash{}
-	err := ReadElement(r, msg.StartHash)
+	msg.HighHash = &daghash.Hash{}
+	err := ReadElement(r, msg.HighHash)
 	if err != nil {
 		return err
 	}
 
-	msg.StopHash = &daghash.Hash{}
-	err = ReadElement(r, msg.StopHash)
+	msg.LowHash = &daghash.Hash{}
+	err = ReadElement(r, msg.LowHash)
 	if err != nil {
 		return err
 	}
@@ -36,12 +36,12 @@ func (msg *MsgGetBlockLocator) KaspaDecode(r io.Reader, pver uint32) error {
 // KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgGetBlockLocator) KaspaEncode(w io.Writer, pver uint32) error {
-	err := WriteElement(w, msg.StartHash)
+	err := WriteElement(w, msg.HighHash)
 	if err != nil {
 		return err
 	}
 
-	err = WriteElement(w, msg.StopHash)
+	err = WriteElement(w, msg.LowHash)
 	if err != nil {
 		return err
 	}
@@ -63,9 +63,9 @@ func (msg *MsgGetBlockLocator) MaxPayloadLength(pver uint32) uint32 {
 // NewMsgGetBlockLocator returns a new getlocator message that conforms to the
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
-func NewMsgGetBlockLocator(startHash, stopHash *daghash.Hash) *MsgGetBlockLocator {
+func NewMsgGetBlockLocator(highHash, lowHash *daghash.Hash) *MsgGetBlockLocator {
 	return &MsgGetBlockLocator{
-		StartHash: startHash,
-		StopHash:  stopHash,
+		HighHash: highHash,
+		LowHash:  lowHash,
 	}
 }

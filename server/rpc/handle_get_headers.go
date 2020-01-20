@@ -11,21 +11,21 @@ import (
 func handleGetHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*rpcmodel.GetHeadersCmd)
 
-	startHash := &daghash.ZeroHash
-	if c.StartHash != "" {
-		err := daghash.Decode(startHash, c.StartHash)
+	lowHash := &daghash.ZeroHash
+	if c.LowHash != "" {
+		err := daghash.Decode(lowHash, c.LowHash)
 		if err != nil {
-			return nil, rpcDecodeHexError(c.StopHash)
+			return nil, rpcDecodeHexError(c.HighHash)
 		}
 	}
-	stopHash := &daghash.ZeroHash
-	if c.StopHash != "" {
-		err := daghash.Decode(stopHash, c.StopHash)
+	highHash := &daghash.ZeroHash
+	if c.HighHash != "" {
+		err := daghash.Decode(highHash, c.HighHash)
 		if err != nil {
-			return nil, rpcDecodeHexError(c.StopHash)
+			return nil, rpcDecodeHexError(c.HighHash)
 		}
 	}
-	headers, err := s.cfg.SyncMgr.GetBlueBlocksHeadersBetween(startHash, stopHash)
+	headers, err := s.cfg.SyncMgr.BlueBlockHeadersBetween(lowHash, highHash)
 	if err != nil {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCMisc,
