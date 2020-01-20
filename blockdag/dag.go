@@ -1621,14 +1621,14 @@ func (dag *BlockDAG) blueBlocksBetween(lowHash, highHash *daghash.Hash, maxEntri
 	}
 
 	// In order to get no more then maxEntries of blue blocks from
-	// the future of the start node (including itself), we iterate
+	// the future of the low node (including itself), we iterate
 	// the selected parent chain of the highNode and add the blues
 	// each node (including the highNode itself). This is why the
 	// number of returned blocks will be
 	// highNode.blueScore-lowNode.blueScore+1.
 	// If highNode.blueScore-lowNode.blueScore+1 > maxEntries, we
-	// first iterate on the selected parent chain of the stop node
-	// until we find a new stop node
+	// first iterate on the selected parent chain of the high node
+	// until we find a new high node
 	// where highNode.blueScore-lowNode.blueScore+1 <= maxEntries
 
 	for highNode.blueScore-lowNode.blueScore+1 > maxEntries {
@@ -1690,16 +1690,16 @@ func (dag *BlockDAG) blueBlocksHeadersBetween(lowHash, highHash *daghash.Hash, m
 
 // GetTopHeaders returns the top wire.MaxBlockHeadersPerMsg block headers ordered by height.
 func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash) ([]*wire.BlockHeader, error) {
-	startNode := &dag.virtual.blockNode
+	highNode := &dag.virtual.blockNode
 	if highHash != nil {
-		startNode = dag.index.LookupNode(highHash)
-		if startNode == nil {
+		highNode = dag.index.LookupNode(highHash)
+		if highNode == nil {
 			return nil, errors.Errorf("Couldn't find the high hash %s in the dag", highHash)
 		}
 	}
-	headers := make([]*wire.BlockHeader, 0, startNode.blueScore)
+	headers := make([]*wire.BlockHeader, 0, highNode.blueScore)
 	queue := newDownHeap()
-	queue.pushSet(startNode.parents)
+	queue.pushSet(highNode.parents)
 
 	visited := newSet()
 	for i := uint32(0); queue.Len() > 0 && len(headers) < wire.MaxBlockHeadersPerMsg; i++ {

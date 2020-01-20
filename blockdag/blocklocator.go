@@ -62,7 +62,7 @@ func (dag *BlockDAG) blockLocator(highNode, lowNode *blockNode) (BlockLocator, e
 	for node != nil {
 		locator = append(locator, node.hash)
 
-		// Nothing more to add once the stop node has been added.
+		// Nothing more to add once the low node has been added.
 		if node.blueScore <= lowNode.blueScore {
 			if node != lowNode {
 				return nil, errors.Errorf("highNode and lowNode are " +
