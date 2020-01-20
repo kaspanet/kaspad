@@ -1593,12 +1593,12 @@ func (dag *BlockDAG) SelectedParentHash(blockHash *daghash.Hash) (*daghash.Hash,
 	return node.selectedParent.hash, nil
 }
 
-// blueBlocksHashesBetween returns the hashes of the blocks after the provided
+// blueBlockHashesBetween returns the hashes of the blocks after the provided
 // low hash until the provided high hash is reached, or up to the
 // provided max number of block hashes.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) blueBlocksHashesBetween(lowHash, highHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
+func (dag *BlockDAG) blueBlockHashesBetween(lowHash, highHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
 	nodes, err := dag.blueBlocksBetween(lowHash, highHash, maxHashes)
 	if err != nil {
 		return nil, err
@@ -1656,14 +1656,14 @@ func (dag *BlockDAG) blueBlocksBetween(lowHash, highHash *daghash.Hash, maxEntri
 	return reversedNodes, nil
 }
 
-// BlueBlocksHashesBetween returns the hashes of the blue blocks after the
+// BlueBlockHashesBetween returns the hashes of the blue blocks after the
 // provided low hash until the provided high hash is reached, or up to the
 // provided max number of block hashes.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) BlueBlocksHashesBetween(lowHash, highHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
+func (dag *BlockDAG) BlueBlockHashesBetween(lowHash, highHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
 	dag.dagLock.RLock()
-	hashes, err := dag.blueBlocksHashesBetween(lowHash, highHash, maxHashes)
+	hashes, err := dag.blueBlockHashesBetween(lowHash, highHash, maxHashes)
 	if err != nil {
 		return nil, err
 	}
@@ -1671,12 +1671,12 @@ func (dag *BlockDAG) BlueBlocksHashesBetween(lowHash, highHash *daghash.Hash, ma
 	return hashes, nil
 }
 
-// blueBlocksHeadersBetween returns the headers of the blue blocks after the
+// blueBlockHeadersBetween returns the headers of the blue blocks after the
 // provided low hash until the provided high hash is reached, or up to the
 // provided max number of block headers.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) blueBlocksHeadersBetween(lowHash, highHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
+func (dag *BlockDAG) blueBlockHeadersBetween(lowHash, highHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
 	nodes, err := dag.blueBlocksBetween(lowHash, highHash, maxHeaders)
 	if err != nil {
 		return nil, err
@@ -1734,14 +1734,14 @@ func (dag *BlockDAG) RUnlock() {
 	dag.dagLock.RUnlock()
 }
 
-// BlueBlocksHeadersBetween returns the headers of the blocks after the provided
+// BlueBlockHeadersBetween returns the headers of the blocks after the provided
 // low hash until the provided high hash is reached, or up to the
 // provided max number of block headers.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) BlueBlocksHeadersBetween(lowHash, highHash *daghash.Hash) ([]*wire.BlockHeader, error) {
+func (dag *BlockDAG) BlueBlockHeadersBetween(lowHash, highHash *daghash.Hash) ([]*wire.BlockHeader, error) {
 	dag.dagLock.RLock()
-	headers, err := dag.blueBlocksHeadersBetween(lowHash, highHash, wire.MaxBlockHeadersPerMsg)
+	headers, err := dag.blueBlockHeadersBetween(lowHash, highHash, wire.MaxBlockHeadersPerMsg)
 	if err != nil {
 		return nil, err
 	}
