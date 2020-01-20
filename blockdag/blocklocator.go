@@ -94,7 +94,7 @@ func (dag *BlockDAG) blockLocator(highNode, lowNode *blockNode) (BlockLocator, e
 // sync peer.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) FindNextLocatorBoundaries(locator BlockLocator) (highHash, stopHash *daghash.Hash) {
+func (dag *BlockDAG) FindNextLocatorBoundaries(locator BlockLocator) (highHash, lowHash *daghash.Hash) {
 	// Find the most recent locator block hash in the DAG. In the case none of
 	// the hashes in the locator are in the DAG, fall back to the genesis block.
 	lowNode := dag.genesis

@@ -1472,44 +1472,44 @@ func (dag *BlockDAG) IsInSelectedParentChain(blockHash *daghash.Hash) bool {
 	return dag.virtual.selectedParentChainSet.containsHash(blockHash)
 }
 
-// SelectedParentChain returns the selected parent chain starting from startHash (exclusive)
-// up to the virtual (exclusive). If startHash is nil then the genesis block is used. If
-// startHash is not within the select parent chain, go down its own selected parent chain,
+// SelectedParentChain returns the selected parent chain starting from lowHash (exclusive)
+// up to the virtual (exclusive). If lowHash is nil then the genesis block is used. If
+// lowHash is not within the select parent chain, go down its own selected parent chain,
 // while collecting each block hash in removedChainHashes, until reaching a block within
 // the main selected parent chain.
 //
 // This method MUST be called with the DAG lock held
-func (dag *BlockDAG) SelectedParentChain(startHash *daghash.Hash) ([]*daghash.Hash, []*daghash.Hash, error) {
-	if startHash == nil {
-		startHash = dag.genesis.hash
+func (dag *BlockDAG) SelectedParentChain(lowHash *daghash.Hash) ([]*daghash.Hash, []*daghash.Hash, error) {
+	if lowHash == nil {
+		lowHash = dag.genesis.hash
 	}
-	if !dag.BlockExists(startHash) {
-		return nil, nil, errors.Errorf("startHash %s does not exist in the DAG", startHash)
+	if !dag.BlockExists(lowHash) {
+		return nil, nil, errors.Errorf("lowHash %s does not exist in the DAG", lowHash)
 	}
 
-	// If startHash is not in the selected parent chain, go down its selected parent chain
+	// If lowHash is not in the selected parent chain, go down its selected parent chain
 	// until we find a block that is in the main selected parent chain.
 	var removedChainHashes []*daghash.Hash
-	for !dag.IsInSelectedParentChain(startHash) {
-		removedChainHashes = append(removedChainHashes, startHash)
+	for !dag.IsInSelectedParentChain(lowHash) {
+		removedChainHashes = append(removedChainHashes, lowHash)
 
-		node := dag.index.LookupNode(startHash)
-		startHash = node.selectedParent.hash
+		node := dag.index.LookupNode(lowHash)
+		lowHash = node.selectedParent.hash
 	}
 
-	// Find the index of the startHash in the selectedParentChainSlice
-	startHashIndex := len(dag.virtual.selectedParentChainSlice) - 1
-	for startHashIndex >= 0 {
-		node := dag.virtual.selectedParentChainSlice[startHashIndex]
-		if node.hash.IsEqual(startHash) {
+	// Find the index of the lowHash in the selectedParentChainSlice
+	lowHashIndex := len(dag.virtual.selectedParentChainSlice) - 1
+	for lowHashIndex >= 0 {
+		node := dag.virtual.selectedParentChainSlice[lowHashIndex]
+		if node.hash.IsEqual(lowHash) {
 			break
 		}
-		startHashIndex--
+		lowHashIndex--
 	}
 
-	// Copy all the addedChainHashes starting from startHashIndex (exclusive)
-	addedChainHashes := make([]*daghash.Hash, len(dag.virtual.selectedParentChainSlice)-startHashIndex-1)
-	for i, node := range dag.virtual.selectedParentChainSlice[startHashIndex+1:] {
+	// Copy all the addedChainHashes starting from lowHashIndex (exclusive)
+	addedChainHashes := make([]*daghash.Hash, len(dag.virtual.selectedParentChainSlice)-lowHashIndex-1)
+	for i, node := range dag.virtual.selectedParentChainSlice[lowHashIndex+1:] {
 		addedChainHashes[i] = node.hash
 	}
 
