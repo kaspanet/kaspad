@@ -1278,6 +1278,9 @@ func (dag *BlockDAG) isCurrent() bool {
 	return dagTimestamp >= minus24Hours
 }
 
+// AdjustedTime returns the adjusted time according to
+// dag.timeSource. See MedianTimeSource.AdjustedTime for
+// more details.
 func (dag *BlockDAG) AdjustedTime() time.Time {
 	return dag.timeSource.AdjustedTime()
 }
@@ -1314,7 +1317,7 @@ func (dag *BlockDAG) SelectedTipHeader() *wire.BlockHeader {
 	return selectedTip.Header()
 }
 
-// SelectedTip returns the hash of the current selected tip for the DAG.
+// SelectedTipHash returns the hash of the current selected tip for the DAG.
 // It will return nil if there is no tip.
 //
 // This function is safe for concurrent access.

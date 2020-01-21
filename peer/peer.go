@@ -637,7 +637,7 @@ func (p *Peer) ProtocolVersion() uint32 {
 	return protocolVersion
 }
 
-// SelectedTipHashAndBlueScore returns the selected tip of the peer.
+// SelectedTip returns the selected tip of the peer.
 //
 // This function is safe for concurrent access.
 func (p *Peer) SelectedTip() *daghash.Hash {
@@ -649,9 +649,6 @@ func (p *Peer) SelectedTip() *daghash.Hash {
 }
 
 func (p *Peer) SetSelectedTip(selectedTip *daghash.Hash) {
-	p.statsMtx.Lock()
-	defer p.statsMtx.Unlock()
-
 	p.selectedTip = selectedTip
 }
 

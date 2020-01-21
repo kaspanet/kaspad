@@ -114,6 +114,12 @@ type pauseMsg struct {
 	unpause <-chan struct{}
 }
 
+type selectedTipMsg struct {
+	selectedTip *daghash.Hash
+	peer        *peerpkg.Peer
+	reply       chan struct{}
+}
+
 type requestQueueAndSet struct {
 	queue []*wire.InvVect
 	set   map[daghash.Hash]struct{}
@@ -122,12 +128,13 @@ type requestQueueAndSet struct {
 // peerSyncState stores additional information that the SyncManager tracks
 // about a peer.
 type peerSyncState struct {
-	syncCandidate          bool
-	lastSelectedTipRequest time.Time
-	requestQueueMtx        sync.Mutex
-	requestQueues          map[wire.InvType]*requestQueueAndSet
-	requestedTxns          map[daghash.TxID]struct{}
-	requestedBlocks        map[daghash.Hash]struct{}
+	syncCandidate           bool
+	lastSelectedTipRequest  time.Time
+	isPendingForSelectedTip bool
+	requestQueueMtx         sync.Mutex
+	requestQueues           map[wire.InvType]*requestQueueAndSet
+	requestedTxns           map[daghash.TxID]struct{}
+	requestedBlocks         map[daghash.Hash]struct{}
 }
 
 // SyncManager is used to communicate block related messages with peers. The
@@ -155,11 +162,11 @@ type SyncManager struct {
 	peerStates      map[*peerpkg.Peer]*peerSyncState
 }
 
-// StartSync will choose the sync peer among the available candidate peers to
+// startSync will choose the sync peer among the available candidate peers to
 // download/sync the blockDAG from. When syncing is already running, it
 // simply returns. It also examines the candidates for any which are no longer
 // candidates and removes them as needed.
-func (sm *SyncManager) StartSync() {
+func (sm *SyncManager) startSync() {
 	// Return now if we're already syncing.
 	if sm.syncPeer != nil {
 		return
@@ -207,6 +214,7 @@ func (sm *SyncManager) StartSync() {
 			}
 
 			state.lastSelectedTipRequest = time.Now()
+			state.isPendingForSelectedTip = true
 			peer.QueueMessage(wire.NewMsgGetSelectedTip(), nil)
 		}
 	}
@@ -272,7 +280,7 @@ func (sm *SyncManager) handleNewPeerMsg(peer *peerpkg.Peer) {
 
 	// Start syncing by choosing the best candidate if needed.
 	if isSyncCandidate && sm.syncPeer == nil {
-		sm.StartSync()
+		sm.startSync()
 	}
 }
 
@@ -314,7 +322,7 @@ func (sm *SyncManager) stopSyncFromPeer(peer *peerpkg.Peer) {
 	// sync peer.
 	if sm.syncPeer == peer {
 		sm.syncPeer = nil
-		sm.StartSync()
+		sm.startSync()
 	}
 }
 
@@ -419,7 +427,7 @@ func (sm *SyncManager) restartSyncIfNeeded() {
 	}
 
 	sm.syncPeer = nil
-	sm.StartSync()
+	sm.startSync()
 }
 
 // handleBlockMsg handles block messages from all peers.
@@ -844,6 +852,24 @@ func (sm *SyncManager) limitHashMap(m map[daghash.Hash]struct{}, limit int) {
 	}
 }
 
+func (sm *SyncManager) handleSelectedTipMsg(msg *selectedTipMsg) {
+	peer := msg.peer
+	selectedTip := msg.selectedTip
+	state := sm.peerStates[peer]
+	if !state.isPendingForSelectedTip {
+		log.Warnf("Got unrequested selected tip message from %s -- "+
+			"disconnecting", peer.Addr())
+		peer.Disconnect()
+	}
+	state.isPendingForSelectedTip = false
+	if selectedTip.IsEqual(peer.SelectedTip()) {
+		return
+	}
+	peer.SetSelectedTip(selectedTip)
+	sm.startSync()
+	msg.reply <- struct{}{}
+}
+
 // blockHandler is the main handler for the sync manager. It must be run as a
 // goroutine. It processes block and inv messages in a separate goroutine
 // from the peer handlers so the block (MsgBlock) messages are handled by a
@@ -910,6 +936,9 @@ out:
 			case pauseMsg:
 				// Wait until the sender unpauses the manager.
 				<-msg.unpause
+
+			case *selectedTipMsg:
+				sm.handleSelectedTipMsg(msg)
 
 			default:
 				log.Warnf("Invalid message type in block "+
@@ -1007,6 +1036,14 @@ func (sm *SyncManager) QueueInv(inv *wire.MsgInv, peer *peerpkg.Peer) {
 	}
 
 	sm.msgChan <- &invMsg{inv: inv, peer: peer}
+}
+
+func (sm *SyncManager) QueueSelectedTipMsg(msg *wire.MsgSelectedTip, peer *peerpkg.Peer, done chan struct{}) {
+	sm.msgChan <- &selectedTipMsg{
+		selectedTip: msg.SelectedTip,
+		peer:        peer,
+		reply:       done,
+	}
 }
 
 // DonePeer informs the blockmanager that a peer has disconnected.
