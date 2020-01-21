@@ -35,6 +35,8 @@ const (
 	maxRequestedTxns = wire.MaxInvPerMsg
 
 	minGetSelectedTipInterval = time.Minute
+
+	minDAGTimeDelay = time.Minute
 )
 
 // newPeerMsg signifies a newly connected peer to the block handler.
@@ -222,7 +224,7 @@ func (sm *SyncManager) startSync() {
 }
 
 func (sm *SyncManager) shouldQueryPeerSelectedTips() bool {
-	return sm.dag.AdjustedTime().Sub(sm.dag.CalcPastMedianTime()) > time.Minute
+	return sm.dag.AdjustedTime().Sub(sm.dag.CalcPastMedianTime()) > minDAGTimeDelay
 }
 
 func queueMsgGetSelectedTip(peer *peerpkg.Peer, state *peerSyncState) {
