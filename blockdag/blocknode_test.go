@@ -98,8 +98,8 @@ func TestChainHeight(t *testing.T) {
 
 }
 
-// This test is to ensure the size BlueAnticoneSizesSize is uint8 after it blocknode goes through serialization.
-// We verify that by trying to overflow its value and make sure we stay within the expected range.
+// This test is to ensure the size BlueAnticoneSizesSize is limited to uint8.
+// We verify that by serializing and deserializing the block while we make sure that we stay within the expected range.
 func TestBlueAnticoneSizesSize(t *testing.T) {
 	dag, teardownFunc, err := DAGSetup("TestBlueAnticoneSizesSize", Config{
 		DAGParams: &dagconfig.SimnetParams,
@@ -111,7 +111,8 @@ func TestBlueAnticoneSizesSize(t *testing.T) {
 	blockHeader := dagconfig.SimnetParams.GenesisBlock.Header
 	block, _ := dag.newBlockNode(&blockHeader, newSet())
 
-	expected := dagconfig.KType(42)
+	maxKsize := dagconfig.KType(math.MaxUint8)
+	expected := maxKsize
 	block.bluesAnticoneSizes[daghash.Hash{1}] = expected
 	serializedNode, _ := serializeBlockNode(block)
 	deserializedNode, _ := dag.deserializeBlockNode(serializedNode)
@@ -120,15 +121,12 @@ func TestBlueAnticoneSizesSize(t *testing.T) {
 			expected, deserializedNode.bluesAnticoneSizes[daghash.Hash{1}])
 	}
 
-	block.bluesAnticoneSizes[daghash.Hash{1}] = math.MaxUint8
 	block.bluesAnticoneSizes[daghash.Hash{1}]++
+	size := block.bluesAnticoneSizes[daghash.Hash{1}]
 	serializedNode, _ = serializeBlockNode(block)
 	deserializedNode, _ = dag.deserializeBlockNode(serializedNode)
-	if deserializedNode.bluesAnticoneSizes[daghash.Hash{1}] < 0 {
-		t.Fatalf("TestBlueAnticoneSizesSize: BlueAnticoneSize could not be negative (KType is unsigned)")
-	}
-
-	if deserializedNode.bluesAnticoneSizes[daghash.Hash{1}] > math.MaxUint8 {
-		t.Fatalf("TestBlueAnticoneSizes: BlueAnticoneSize could not larger than 255 (KType is of size uint8)")
+	if deserializedNode.bluesAnticoneSizes[daghash.Hash{1}] != size {
+		t.Fatalf("TestBlueAnticoneSizesSize: BlueAnticoneSize should not be larger than MaxUint8. Expected: %v but got %v",
+			deserializedNode.bluesAnticoneSizes[daghash.Hash{1}], size)
 	}
 }
