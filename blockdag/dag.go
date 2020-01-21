@@ -1630,12 +1630,7 @@ func (dag *BlockDAG) blueBlocksBetween(lowHash, highHash *daghash.Hash, maxEntri
 	// first iterate on the selected parent chain of the highNode
 	// until we find a new highNode
 	// where highNode.blueScore-lowNode.blueScore+1 <= maxEntries
-	//
-	// We also keep track of highNode's selected parent chain child
-	// in case we need to calculate highNode's anticone (see below)
-	var highNodeSelectedParentChainChild *blockNode
 	for highNode.blueScore-lowNode.blueScore+1 > maxEntries {
-		highNodeSelectedParentChainChild = highNode
 		highNode = highNode.selectedParent
 	}
 
@@ -1660,38 +1655,6 @@ func (dag *BlockDAG) blueBlocksBetween(lowHash, highHash *daghash.Hash, maxEntri
 			highNodeAntiFuture.Push(current)
 			for _, parent := range current.parents {
 				queue.Push(parent)
-			}
-		}
-	}
-
-	// If we collected less than maxEntries nodes in the above
-	// traversal then we also add highNode's anticone
-	if highNodeAntiFuture.Len() < int(maxEntries) {
-		// If we initially (from the function args) received
-		// highNode.blueScore-lowNode.blueScore+1 < maxEntries
-		// then we don't immediately know the selected parent
-		// chain child of highNode. To find it, we iterate
-		// over highNode's children until we stumble upon a
-		// child whose selectedParent is highNode.
-		if highNodeSelectedParentChainChild == nil {
-			for _, child := range highNode.children {
-				if child.selectedParent == highNode {
-					highNodeSelectedParentChainChild = child
-					break
-				}
-			}
-		}
-
-		// If we still couldn't find a selected parent chain
-		// child for highNode, there's nothing to do but give
-		// up on adding highNode's anticone.
-		if highNodeSelectedParentChainChild != nil {
-			highNodeAnticone, err := dag.selectedParentAnticone(highNodeSelectedParentChainChild)
-			if err != nil {
-				return nil, err
-			}
-			for _, node := range highNodeAnticone {
-				highNodeAntiFuture.Push(node)
 			}
 		}
 	}
