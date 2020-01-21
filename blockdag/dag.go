@@ -1669,7 +1669,7 @@ func (dag *BlockDAG) blueBlocksBetween(lowHash, highHash *daghash.Hash, maxEntri
 		nodesLen = candidateNodes.Len()
 	}
 	nodes := make([]*blockNode, 0, nodesLen)
-	for len(nodes) <= nodesLen {
+	for len(nodes) < nodesLen {
 		nodes = append(nodes, candidateNodes.pop())
 	}
 	return nodes, nil
