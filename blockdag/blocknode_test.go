@@ -4,7 +4,6 @@ import (
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
-	"math"
 	"testing"
 )
 
@@ -111,8 +110,8 @@ func TestBlueAnticoneSizesSize(t *testing.T) {
 	blockHeader := dagconfig.SimnetParams.GenesisBlock.Header
 	block, _ := dag.newBlockNode(&blockHeader, newSet())
 
-	maxKsize := dagconfig.KType(math.MaxUint8)
-	expected := maxKsize
+	maxKType := ^dagconfig.KType(0)
+	expected := maxKType
 	block.bluesAnticoneSizes[daghash.Hash{1}] = expected
 	serializedNode, _ := serializeBlockNode(block)
 	deserializedNode, _ := dag.deserializeBlockNode(serializedNode)
