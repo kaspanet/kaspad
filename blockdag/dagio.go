@@ -742,20 +742,17 @@ func dbFetchBlockByNode(dbTx database.Tx, node *blockNode) (*util.Block, error) 
 	return block, nil
 }
 
-// dbStoreBlockNode stores the block node data into the block
-// index bucket. This overwrites the current entry if there exists one.
-func dbStoreBlockNode(dbTx database.Tx, node *blockNode) error {
-	// Serialize block data to be stored.
+func serializeBlockNode(node *blockNode) ([]byte, error) {
 	w := bytes.NewBuffer(make([]byte, 0, blockHdrSize+1))
 	header := node.Header()
 	err := header.Serialize(w)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = w.WriteByte(byte(node.status))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Because genesis doesn't have selected parent, it's serialized as zero hash
@@ -765,48 +762,55 @@ func dbStoreBlockNode(dbTx database.Tx, node *blockNode) error {
 	}
 	_, err = w.Write(selectedParentHash[:])
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = binaryserializer.PutUint64(w, byteOrder, node.blueScore)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = wire.WriteVarInt(w, uint64(len(node.blues)))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, blue := range node.blues {
 		_, err = w.Write(blue.hash[:])
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	err = wire.WriteVarInt(w, uint64(len(node.bluesAnticoneSizes)))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for blockHash, blueAnticoneSize := range node.bluesAnticoneSizes {
 		_, err = w.Write(blockHash[:])
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		err = binaryserializer.PutUint8(w, uint8(blueAnticoneSize))
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
+	return w.Bytes(), nil
+}
 
-	value := w.Bytes()
-
+// dbStoreBlockNode stores the block node data into the block
+// index bucket. This overwrites the current entry if there exists one.
+func dbStoreBlockNode(dbTx database.Tx, node *blockNode) error {
+	serializedNode, err := serializeBlockNode(node)
+	if err != nil {
+		return err
+	}
 	// Write block header data to block index bucket.
 	blockIndexBucket := dbTx.Metadata().Bucket(blockIndexBucketName)
 	key := BlockIndexKey(node.hash, node.blueScore)
-	return blockIndexBucket.Put(key, value)
+	return blockIndexBucket.Put(key, serializedNode)
 }
 
 // dbStoreBlock stores the provided block in the database if it is not already
