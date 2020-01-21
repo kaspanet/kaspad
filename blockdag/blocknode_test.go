@@ -101,7 +101,6 @@ func TestChainHeight(t *testing.T) {
 // This test is to ensure the size BlueAnticoneSizesSize is uint8 after it blocknode goes through serialization.
 // We verify that by trying to overflow its value and make sure we stay within the expected range.
 func TestBlueAnticoneSizesSize(t *testing.T) {
-
 	dag, teardownFunc, err := DAGSetup("TestBlueAnticoneSizesSize", Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
@@ -116,7 +115,6 @@ func TestBlueAnticoneSizesSize(t *testing.T) {
 	block.bluesAnticoneSizes[daghash.Hash{1}] = expected
 	serializedNode, _ := serializeBlockNode(block)
 	deserializedNode, _ := dag.deserializeBlockNode(serializedNode)
-
 	if deserializedNode.bluesAnticoneSizes[daghash.Hash{1}] != expected {
 		t.Fatalf("TestBlueAnticoneSizesSize: BlueAnticoneSize should not change when deserilizing. Expected: %v but got %v",
 			expected, deserializedNode.bluesAnticoneSizes[daghash.Hash{1}])
@@ -124,10 +122,8 @@ func TestBlueAnticoneSizesSize(t *testing.T) {
 
 	block.bluesAnticoneSizes[daghash.Hash{1}] = math.MaxUint8
 	block.bluesAnticoneSizes[daghash.Hash{1}]++
-
 	serializedNode, _ = serializeBlockNode(block)
 	deserializedNode, _ = dag.deserializeBlockNode(serializedNode)
-
 	if deserializedNode.bluesAnticoneSizes[daghash.Hash{1}] < 0 {
 		t.Fatalf("TestBlueAnticoneSizesSize: BlueAnticoneSize could not be negative (KType is unsigned)")
 	}
