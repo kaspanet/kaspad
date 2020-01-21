@@ -1638,7 +1638,7 @@ func (dag *BlockDAG) blueBlocksBetween(lowHash, highHash *daghash.Hash, maxEntri
 	// NOT in the lowNode's past (excluding itself) into an UpHeap
 	// (a heap sorted by blueScore from lowest to greatest).
 	visited := newSet()
-	highNodeAntiFuture := newUpHeap()
+	candidateNodes := newUpHeap()
 	queue := newDownHeap()
 	queue.Push(highNode)
 	for queue.Len() > 0 {
@@ -1651,23 +1651,24 @@ func (dag *BlockDAG) blueBlocksBetween(lowHash, highHash *daghash.Hash, maxEntri
 		if err != nil {
 			return nil, err
 		}
-		if !isCurrentAncestorOfLowNode {
-			highNodeAntiFuture.Push(current)
-			for _, parent := range current.parents {
-				queue.Push(parent)
-			}
+		if isCurrentAncestorOfLowNode {
+			continue
+		}
+		candidateNodes.Push(current)
+		for _, parent := range current.parents {
+			queue.Push(parent)
 		}
 	}
 
-	// Pop highNodeAntiFuture into a slice. Since highNodeAntiFuture
-	// is an UpHeap, it's guaranteed to be ordered from low to high
+	// Pop candidateNodes into a slice. Since candidateNodes is
+	// an UpHeap, it's guaranteed to be ordered from low to high
 	nodesLen := int(maxEntries)
-	if highNodeAntiFuture.Len() < nodesLen {
-		nodesLen = highNodeAntiFuture.Len()
+	if candidateNodes.Len() < nodesLen {
+		nodesLen = candidateNodes.Len()
 	}
 	nodes := make([]*blockNode, 0, nodesLen)
 	for len(nodes) <= nodesLen {
-		nodes = append(nodes, highNodeAntiFuture.pop())
+		nodes = append(nodes, candidateNodes.pop())
 	}
 	return nodes, nil
 }
