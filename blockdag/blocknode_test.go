@@ -112,12 +112,14 @@ func TestBlueAnticoneSizesSize(t *testing.T) {
 	blockHeader := dagconfig.SimnetParams.GenesisBlock.Header
 	block, _ := dag.newBlockNode(&blockHeader, newSet())
 
-	block.bluesAnticoneSizes[daghash.Hash{1}] = 42
+	expected := dagconfig.KType(42)
+	block.bluesAnticoneSizes[daghash.Hash{1}] = expected
 	serializedNode, _ := serializeBlockNode(block)
 	deserializedNode, _ := dag.deserializeBlockNode(serializedNode)
 
-	if deserializedNode.bluesAnticoneSizes[daghash.Hash{1}] != 42 {
-		t.Fatalf("TestBlueAnticoneSizesSize: BlueAnticoneSize should not change when deserilizing)")
+	if deserializedNode.bluesAnticoneSizes[daghash.Hash{1}] != expected {
+		t.Fatalf("TestBlueAnticoneSizesSize: BlueAnticoneSize should not change when deserilizing. Expected: %v but got %v",
+			expected, deserializedNode.bluesAnticoneSizes[daghash.Hash{1}])
 	}
 
 	block.bluesAnticoneSizes[daghash.Hash{1}] = math.MaxUint8
