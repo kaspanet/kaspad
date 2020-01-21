@@ -1,16 +1,11 @@
-// Copyright (c) 2013-2015 The btcsuite developers
-// Use of this source code is governed by an ISC
-// license that can be found in the LICENSE file.
-
 package wire
 
 import (
 	"io"
 )
 
-// MsgVerAck defines a kaspa verack message which is used for a peer to
-// acknowledge a version message (MsgVersion) after it has used the information
-// to negotiate parameters. It implements the Message interface.
+// MsgGetSelectedTip implements the Message interface and represents a kaspa
+// getseltip message. It is used to request the selected tip of another tip.
 //
 // This message has no payload.
 type MsgGetSelectedTip struct{}
@@ -39,7 +34,7 @@ func (msg *MsgGetSelectedTip) MaxPayloadLength(pver uint32) uint32 {
 	return 0
 }
 
-// NewMsgVerAck returns a new kaspa verack message that conforms to the
+// NewMsgGetSelectedTip returns a new kaspa getseltip message that conforms to the
 // Message interface.
 func NewMsgGetSelectedTip() *MsgGetSelectedTip {
 	return &MsgGetSelectedTip{}

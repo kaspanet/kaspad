@@ -9,8 +9,10 @@ import (
 	"io"
 )
 
+// MsgSelectedTip implements the Message interface and represents a kaspa
+// selectedtip message. It is used to answer getseltip messages and tell
+// the asking peer what is your selected tip.
 type MsgSelectedTip struct {
-
 	// The selected tip of the generator of the message.
 	SelectedTip *daghash.Hash
 }
@@ -48,9 +50,11 @@ func (msg *MsgSelectedTip) Command() string {
 // receiver. This is part of the Message interface implementation.
 func (msg *MsgSelectedTip) MaxPayloadLength(_ uint32) uint32 {
 	// selected tip hash 32 bytes
-	return 32
+	return daghash.HashSize
 }
 
+// NewMsgSelectedTip returns a new kaspa selectedtip message that conforms to the
+// Message interface.
 func NewMsgSelectedTip(selectedTipHash *daghash.Hash) *MsgSelectedTip {
 	return &MsgSelectedTip{
 		SelectedTip: selectedTipHash,

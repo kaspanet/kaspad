@@ -1038,6 +1038,9 @@ func (sm *SyncManager) QueueInv(inv *wire.MsgInv, peer *peerpkg.Peer) {
 	sm.msgChan <- &invMsg{inv: inv, peer: peer}
 }
 
+// QueueSelectedTipMsg adds the passed selected tip message and peer to the
+// block handling queue. Responds to the done channel argument after it finished
+// handling the message.
 func (sm *SyncManager) QueueSelectedTipMsg(msg *wire.MsgSelectedTip, peer *peerpkg.Peer, done chan struct{}) {
 	sm.msgChan <- &selectedTipMsg{
 		selectedTip: msg.SelectedTip,

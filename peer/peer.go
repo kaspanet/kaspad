@@ -648,6 +648,7 @@ func (p *Peer) SelectedTip() *daghash.Hash {
 	return selectedTip
 }
 
+// SetSelectedTip sets the selected tip of the peer.
 func (p *Peer) SetSelectedTip(selectedTip *daghash.Hash) {
 	p.selectedTip = selectedTip
 }
