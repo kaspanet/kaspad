@@ -33,6 +33,8 @@ const (
 	// maxRequestedTxns is the maximum number of requested transactions
 	// hashes to store in memory.
 	maxRequestedTxns = wire.MaxInvPerMsg
+
+	minGetSelectedTipInterval = time.Minute
 )
 
 // newPeerMsg signifies a newly connected peer to the block handler.
@@ -203,22 +205,30 @@ func (sm *SyncManager) startSync() {
 	}
 
 	log.Warnf("No sync peer candidates available")
-	if sm.dag.AdjustedTime().Sub(sm.dag.CalcPastMedianTime()) > time.Minute {
+	if sm.shouldQueryPeerSelectedTips() {
 		for peer, state := range sm.peerStates {
 			if !state.syncCandidate {
 				continue
 			}
 
-			if time.Now().Sub(state.lastSelectedTipRequest) < time.Minute {
+			if time.Now().Sub(state.lastSelectedTipRequest) < minGetSelectedTipInterval {
 				continue
 			}
 
-			state.lastSelectedTipRequest = time.Now()
-			state.isPendingForSelectedTip = true
-			peer.QueueMessage(wire.NewMsgGetSelectedTip(), nil)
+			queueMsgGetSelectedTip(peer, state)
 		}
 	}
 	return
+}
+
+func (sm *SyncManager) shouldQueryPeerSelectedTips() bool {
+	return sm.dag.AdjustedTime().Sub(sm.dag.CalcPastMedianTime()) > time.Minute
+}
+
+func queueMsgGetSelectedTip(peer *peerpkg.Peer, state *peerSyncState) {
+	state.lastSelectedTipRequest = time.Now()
+	state.isPendingForSelectedTip = true
+	peer.QueueMessage(wire.NewMsgGetSelectedTip(), nil)
 }
 
 // isSyncCandidate returns whether or not the peer is a candidate to consider
