@@ -1472,54 +1472,53 @@ func (dag *BlockDAG) IsInSelectedParentChain(blockHash *daghash.Hash) bool {
 	return dag.virtual.selectedParentChainSet.containsHash(blockHash)
 }
 
-// SelectedParentChain returns the selected parent chain starting from startHash (exclusive)
-// up to the virtual (exclusive). If startHash is nil then the genesis block is used. If
-// startHash is not within the select parent chain, go down its own selected parent chain,
+// SelectedParentChain returns the selected parent chain starting from blockHash (exclusive)
+// up to the virtual (exclusive). If blockHash is nil then the genesis block is used. If
+// blockHash is not within the select parent chain, go down its own selected parent chain,
 // while collecting each block hash in removedChainHashes, until reaching a block within
 // the main selected parent chain.
 //
 // This method MUST be called with the DAG lock held
-func (dag *BlockDAG) SelectedParentChain(startHash *daghash.Hash) ([]*daghash.Hash, []*daghash.Hash, error) {
-	if startHash == nil {
-		startHash = dag.genesis.hash
+func (dag *BlockDAG) SelectedParentChain(blockHash *daghash.Hash) ([]*daghash.Hash, []*daghash.Hash, error) {
+	if blockHash == nil {
+		blockHash = dag.genesis.hash
 	}
-	if !dag.BlockExists(startHash) {
-		return nil, nil, errors.Errorf("startHash %s does not exist in the DAG", startHash)
+	if !dag.BlockExists(blockHash) {
+		return nil, nil, errors.Errorf("blockHash %s does not exist in the DAG", blockHash)
 	}
 
-	// If startHash is not in the selected parent chain, go down its selected parent chain
+	// If blockHash is not in the selected parent chain, go down its selected parent chain
 	// until we find a block that is in the main selected parent chain.
 	var removedChainHashes []*daghash.Hash
-	for !dag.IsInSelectedParentChain(startHash) {
-		removedChainHashes = append(removedChainHashes, startHash)
+	for !dag.IsInSelectedParentChain(blockHash) {
+		removedChainHashes = append(removedChainHashes, blockHash)
 
-		node := dag.index.LookupNode(startHash)
-		startHash = node.selectedParent.hash
+		node := dag.index.LookupNode(blockHash)
+		blockHash = node.selectedParent.hash
 	}
 
-	// Find the index of the startHash in the selectedParentChainSlice
-	startHashIndex := len(dag.virtual.selectedParentChainSlice) - 1
-	for startHashIndex >= 0 {
-		node := dag.virtual.selectedParentChainSlice[startHashIndex]
-		if node.hash.IsEqual(startHash) {
+	// Find the index of the blockHash in the selectedParentChainSlice
+	blockHashIndex := len(dag.virtual.selectedParentChainSlice) - 1
+	for blockHashIndex >= 0 {
+		node := dag.virtual.selectedParentChainSlice[blockHashIndex]
+		if node.hash.IsEqual(blockHash) {
 			break
 		}
-		startHashIndex--
+		blockHashIndex--
 	}
 
-	// Copy all the addedChainHashes starting from startHashIndex (exclusive)
-	addedChainHashes := make([]*daghash.Hash, len(dag.virtual.selectedParentChainSlice)-startHashIndex-1)
-	for i, node := range dag.virtual.selectedParentChainSlice[startHashIndex+1:] {
+	// Copy all the addedChainHashes starting from blockHashIndex (exclusive)
+	addedChainHashes := make([]*daghash.Hash, len(dag.virtual.selectedParentChainSlice)-blockHashIndex-1)
+	for i, node := range dag.virtual.selectedParentChainSlice[blockHashIndex+1:] {
 		addedChainHashes[i] = node.hash
 	}
 
 	return removedChainHashes, addedChainHashes, nil
 }
 
-// ChainHeight return the chain-height of the selected tip. In other words - it returns
-// the length of the dag's selected-parent chain
-func (dag *BlockDAG) ChainHeight() uint64 {
-	return dag.selectedTip().chainHeight
+// SelectedTipBlueScore returns the blue score of the selected tip.
+func (dag *BlockDAG) SelectedTipBlueScore() uint64 {
+	return dag.selectedTip().blueScore
 }
 
 // VirtualBlueScore returns the blue score of the current virtual block
@@ -1561,20 +1560,6 @@ func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*wire.BlockHeader, error)
 	return node.Header(), nil
 }
 
-// BlockChainHeightByHash returns the chain height of the block with the given
-// hash in the DAG.
-//
-// This function is safe for concurrent access.
-func (dag *BlockDAG) BlockChainHeightByHash(hash *daghash.Hash) (uint64, error) {
-	node := dag.index.LookupNode(hash)
-	if node == nil {
-		str := fmt.Sprintf("block %s is not in the DAG", hash)
-		return 0, errNotInDAG(str)
-	}
-
-	return node.chainHeight, nil
-}
-
 // ChildHashesByHash returns the child hashes of the block with the given hash in the
 // DAG.
 //
@@ -1608,88 +1593,13 @@ func (dag *BlockDAG) SelectedParentHash(blockHash *daghash.Hash) (*daghash.Hash,
 	return node.selectedParent.hash, nil
 }
 
-// ChainHeightToHashRange returns a range of block hashes for the given start chain
-// height and end hash, inclusive on both ends. The hashes are for all blocks that
-// are ancestors of endHash with height greater than or equal to startChainHeight.
-// The end hash must belong to a block that is known to be valid.
-//
-// This function is safe for concurrent access.
-func (dag *BlockDAG) ChainHeightToHashRange(startChainHeight uint64,
-	endHash *daghash.Hash, maxResults int) ([]*daghash.Hash, error) {
-
-	endNode := dag.index.LookupNode(endHash)
-	if endNode == nil {
-		return nil, errors.Errorf("no known block header with hash %s", endHash)
-	}
-	if !dag.index.NodeStatus(endNode).KnownValid() {
-		return nil, errors.Errorf("block %s is not yet validated", endHash)
-	}
-	endChainHeight := endNode.chainHeight
-
-	if startChainHeight < 0 {
-		return nil, errors.Errorf("start chain height (%d) is below 0", startChainHeight)
-	}
-	if startChainHeight > endChainHeight {
-		return nil, errors.Errorf("start chain height (%d) is past end chain height (%d)",
-			startChainHeight, endChainHeight)
-	}
-
-	resultsLength := int(endChainHeight - startChainHeight + 1)
-	if resultsLength > maxResults {
-		return nil, errors.Errorf("number of results (%d) would exceed max (%d)",
-			resultsLength, maxResults)
-	}
-
-	// Walk backwards from endChainHeight to startChainHeight, collecting block hashes.
-	node := endNode
-	hashes := make([]*daghash.Hash, resultsLength)
-	for i := resultsLength - 1; i >= 0; i-- {
-		hashes[i] = node.hash
-		node = node.selectedParent
-	}
-	return hashes, nil
-}
-
-// IntervalBlockHashes returns hashes for all blocks that are ancestors of
-// endHash where the block height is a positive multiple of interval.
-//
-// This function is safe for concurrent access.
-func (dag *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval uint64,
-) ([]*daghash.Hash, error) {
-
-	endNode := dag.index.LookupNode(endHash)
-	if endNode == nil {
-		return nil, errors.Errorf("no known block header with hash %s", endHash)
-	}
-	if !dag.index.NodeStatus(endNode).KnownValid() {
-		return nil, errors.Errorf("block %s is not yet validated", endHash)
-	}
-	endChainHeight := endNode.chainHeight
-
-	resultsLength := endChainHeight / interval
-	hashes := make([]*daghash.Hash, resultsLength)
-
-	dag.virtual.mtx.Lock()
-	defer dag.virtual.mtx.Unlock()
-
-	blockNode := endNode
-	for index := endChainHeight / interval; index > 0; index-- {
-		blockHeight := index * interval
-		blockNode = blockNode.SelectedAncestor(blockHeight)
-
-		hashes[index-1] = blockNode.hash
-	}
-
-	return hashes, nil
-}
-
-// getBlueBlocksHashesBetween returns the hashes of the blocks after the provided
-// start hash until the provided stop hash is reached, or up to the
+// blueBlockHashesBetween returns the hashes of the blocks after the provided
+// low hash until the provided high hash is reached, or up to the
 // provided max number of block hashes.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) getBlueBlocksHashesBetween(startHash, stopHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
-	nodes, err := dag.getBlueBlocksBetween(startHash, stopHash, maxHashes)
+func (dag *BlockDAG) blueBlockHashesBetween(lowHash, highHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
+	nodes, err := dag.blueBlocksBetween(lowHash, highHash, maxHashes)
 	if err != nil {
 		return nil, err
 	}
@@ -1700,44 +1610,44 @@ func (dag *BlockDAG) getBlueBlocksHashesBetween(startHash, stopHash *daghash.Has
 	return hashes, nil
 }
 
-func (dag *BlockDAG) getBlueBlocksBetween(startHash, stopHash *daghash.Hash, maxEntries uint64) ([]*blockNode, error) {
-	startNode := dag.index.LookupNode(startHash)
-	if startNode == nil {
-		return nil, errors.Errorf("Couldn't find start hash %s", startHash)
+func (dag *BlockDAG) blueBlocksBetween(lowHash, highHash *daghash.Hash, maxEntries uint64) ([]*blockNode, error) {
+	lowNode := dag.index.LookupNode(lowHash)
+	if lowNode == nil {
+		return nil, errors.Errorf("Couldn't find low hash %s", lowHash)
 	}
-	stopNode := dag.index.LookupNode(stopHash)
-	if stopNode == nil {
-		return nil, errors.Errorf("Couldn't find stop hash %s", stopHash)
+	highNode := dag.index.LookupNode(highHash)
+	if highNode == nil {
+		return nil, errors.Errorf("Couldn't find high hash %s", highHash)
 	}
 
 	// In order to get no more then maxEntries of blue blocks from
-	// the future of the start node (including itself), we iterate
-	// the selected parent chain of the stopNode and add the blues
-	// each node (including the stopNode itself). This is why the
+	// the future of the lowNode (including itself), we iterate
+	// the selected parent chain of the highNode and add the blues
+	// each node (including the highNode itself). This is why the
 	// number of returned blocks will be
-	// stopNode.blueScore-startNode.blueScore+1.
-	// If stopNode.blueScore-startNode.blueScore+1 > maxEntries, we
-	// first iterate on the selected parent chain of the stop node
-	// until we find a new stop node
-	// where stopNode.blueScore-startNode.blueScore+1 <= maxEntries
+	// highNode.blueScore-lowNode.blueScore+1.
+	// If highNode.blueScore-lowNode.blueScore+1 > maxEntries, we
+	// first iterate on the selected parent chain of the highNode
+	// until we find a new highNode
+	// where highNode.blueScore-lowNode.blueScore+1 <= maxEntries
 
-	for stopNode.blueScore-startNode.blueScore+1 > maxEntries {
-		stopNode = stopNode.selectedParent
+	for highNode.blueScore-lowNode.blueScore+1 > maxEntries {
+		highNode = highNode.selectedParent
 	}
 
 	// Populate and return the found nodes.
-	nodes := make([]*blockNode, 0, stopNode.blueScore-startNode.blueScore+1)
-	nodes = append(nodes, stopNode)
-	current := stopNode
-	for current.blueScore > startNode.blueScore {
+	nodes := make([]*blockNode, 0, highNode.blueScore-lowNode.blueScore+1)
+	nodes = append(nodes, highNode)
+	current := highNode
+	for current.blueScore > lowNode.blueScore {
 		for _, blue := range current.blues {
 			nodes = append(nodes, blue)
 		}
 		current = current.selectedParent
 	}
-	if current != startNode {
-		return nil, errors.Errorf("the start hash is not found in the " +
-			"selected parent chain of the stop hash")
+	if current != lowNode {
+		return nil, errors.Errorf("the low hash is not found in the " +
+			"selected parent chain of the high hash")
 	}
 	reversedNodes := make([]*blockNode, len(nodes))
 	for i, node := range nodes {
@@ -1746,14 +1656,14 @@ func (dag *BlockDAG) getBlueBlocksBetween(startHash, stopHash *daghash.Hash, max
 	return reversedNodes, nil
 }
 
-// GetBlueBlocksHashesBetween returns the hashes of the blue blocks after the
-// provided start hash until the provided stop hash is reached, or up to the
+// BlueBlockHashesBetween returns the hashes of the blue blocks after the
+// provided low hash until the provided high hash is reached, or up to the
 // provided max number of block hashes.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) GetBlueBlocksHashesBetween(startHash, stopHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
+func (dag *BlockDAG) BlueBlockHashesBetween(lowHash, highHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
 	dag.dagLock.RLock()
-	hashes, err := dag.getBlueBlocksHashesBetween(startHash, stopHash, maxHashes)
+	hashes, err := dag.blueBlockHashesBetween(lowHash, highHash, maxHashes)
 	if err != nil {
 		return nil, err
 	}
@@ -1761,13 +1671,13 @@ func (dag *BlockDAG) GetBlueBlocksHashesBetween(startHash, stopHash *daghash.Has
 	return hashes, nil
 }
 
-// getBlueBlocksHeadersBetween returns the headers of the blue blocks after the
-// provided start hash until the provided stop hash is reached, or up to the
+// blueBlockHeadersBetween returns the headers of the blue blocks after the
+// provided low hash until the provided high hash is reached, or up to the
 // provided max number of block headers.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) getBlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
-	nodes, err := dag.getBlueBlocksBetween(startHash, stopHash, maxHeaders)
+func (dag *BlockDAG) blueBlockHeadersBetween(lowHash, highHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
+	nodes, err := dag.blueBlocksBetween(lowHash, highHash, maxHeaders)
 	if err != nil {
 		return nil, err
 	}
@@ -1779,17 +1689,17 @@ func (dag *BlockDAG) getBlueBlocksHeadersBetween(startHash, stopHash *daghash.Ha
 }
 
 // GetTopHeaders returns the top wire.MaxBlockHeadersPerMsg block headers ordered by height.
-func (dag *BlockDAG) GetTopHeaders(startHash *daghash.Hash) ([]*wire.BlockHeader, error) {
-	startNode := &dag.virtual.blockNode
-	if startHash != nil {
-		startNode = dag.index.LookupNode(startHash)
-		if startNode == nil {
-			return nil, errors.Errorf("Couldn't find the start hash %s in the dag", startHash)
+func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash) ([]*wire.BlockHeader, error) {
+	highNode := &dag.virtual.blockNode
+	if highHash != nil {
+		highNode = dag.index.LookupNode(highHash)
+		if highNode == nil {
+			return nil, errors.Errorf("Couldn't find the high hash %s in the dag", highHash)
 		}
 	}
-	headers := make([]*wire.BlockHeader, 0, startNode.blueScore)
+	headers := make([]*wire.BlockHeader, 0, highNode.blueScore)
 	queue := newDownHeap()
-	queue.pushSet(startNode.parents)
+	queue.pushSet(highNode.parents)
 
 	visited := newSet()
 	for i := uint32(0); queue.Len() > 0 && len(headers) < wire.MaxBlockHeadersPerMsg; i++ {
@@ -1824,14 +1734,14 @@ func (dag *BlockDAG) RUnlock() {
 	dag.dagLock.RUnlock()
 }
 
-// GetBlueBlocksHeadersBetween returns the headers of the blocks after the provided
-// start hash until the provided stop hash is reached, or up to the
+// BlueBlockHeadersBetween returns the headers of the blocks after the provided
+// low hash until the provided high hash is reached, or up to the
 // provided max number of block headers.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) GetBlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash) ([]*wire.BlockHeader, error) {
+func (dag *BlockDAG) BlueBlockHeadersBetween(lowHash, highHash *daghash.Hash) ([]*wire.BlockHeader, error) {
 	dag.dagLock.RLock()
-	headers, err := dag.getBlueBlocksHeadersBetween(startHash, stopHash, wire.MaxBlockHeadersPerMsg)
+	headers, err := dag.blueBlockHeadersBetween(lowHash, highHash, wire.MaxBlockHeadersPerMsg)
 	if err != nil {
 		return nil, err
 	}
@@ -2055,8 +1965,8 @@ func New(config *Config) (*BlockDAG, error) {
 	}
 
 	selectedTip := dag.selectedTip()
-	log.Infof("DAG state (chain height %d, hash %s)",
-		selectedTip.chainHeight, selectedTip.hash)
+	log.Infof("DAG state (blue score %d, hash %s)",
+		selectedTip.blueScore, selectedTip.hash)
 
 	return dag, nil
 }

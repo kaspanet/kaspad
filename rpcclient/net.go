@@ -464,18 +464,18 @@ func (r FutureGetHeadersResult) Receive() ([]wire.BlockHeader, error) {
 // of the RPC at some future time by invoking the Receive function on the returned instance.
 //
 // See GetTopHeaders for the blocking version and more details.
-func (c *Client) GetTopHeadersAsync(startHash *daghash.Hash) FutureGetHeadersResult {
+func (c *Client) GetTopHeadersAsync(highHash *daghash.Hash) FutureGetHeadersResult {
 	var hash *string
-	if startHash != nil {
-		hash = rpcmodel.String(startHash.String())
+	if highHash != nil {
+		hash = rpcmodel.String(highHash.String())
 	}
 	cmd := rpcmodel.NewGetTopHeadersCmd(hash)
 	return c.sendCmd(cmd)
 }
 
 // GetTopHeaders sends a getTopHeaders rpc command to the server.
-func (c *Client) GetTopHeaders(startHash *daghash.Hash) ([]wire.BlockHeader, error) {
-	return c.GetTopHeadersAsync(startHash).Receive()
+func (c *Client) GetTopHeaders(highHash *daghash.Hash) ([]wire.BlockHeader, error) {
+	return c.GetTopHeadersAsync(highHash).Receive()
 }
 
 // GetHeadersAsync returns an instance of a type that can be used to get the result

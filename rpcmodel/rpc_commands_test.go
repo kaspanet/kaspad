@@ -371,28 +371,6 @@ func TestRPCServerCommands(t *testing.T) {
 			unmarshalled: &rpcmodel.GetDifficultyCmd{},
 		},
 		{
-			name: "getGenerate",
-			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getGenerate")
-			},
-			staticCmd: func() interface{} {
-				return rpcmodel.NewGetGenerateCmd()
-			},
-			marshalled:   `{"jsonrpc":"1.0","method":"getGenerate","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetGenerateCmd{},
-		},
-		{
-			name: "getHashesPerSec",
-			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getHashesPerSec")
-			},
-			staticCmd: func() interface{} {
-				return rpcmodel.NewGetHashesPerSecCmd()
-			},
-			marshalled:   `{"jsonrpc":"1.0","method":"getHashesPerSec","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetHashesPerSecCmd{},
-		},
-		{
 			name: "getInfo",
 			newCmd: func() (interface{}, error) {
 				return rpcmodel.NewCommand("getInfo")
@@ -440,17 +418,6 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"getMempoolInfo","params":[],"id":1}`,
 			unmarshalled: &rpcmodel.GetMempoolInfoCmd{},
-		},
-		{
-			name: "getMiningInfo",
-			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getMiningInfo")
-			},
-			staticCmd: func() interface{} {
-				return rpcmodel.NewGetMiningInfoCmd()
-			},
-			marshalled:   `{"jsonrpc":"1.0","method":"getMiningInfo","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetMiningInfoCmd{},
 		},
 		{
 			name: "getNetworkInfo",
@@ -809,34 +776,6 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 		},
 		{
-			name: "setGenerate",
-			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("setGenerate", true)
-			},
-			staticCmd: func() interface{} {
-				return rpcmodel.NewSetGenerateCmd(true, nil)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"setGenerate","params":[true],"id":1}`,
-			unmarshalled: &rpcmodel.SetGenerateCmd{
-				Generate:     true,
-				GenProcLimit: rpcmodel.Int(-1),
-			},
-		},
-		{
-			name: "setGenerate optional",
-			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("setGenerate", true, 6)
-			},
-			staticCmd: func() interface{} {
-				return rpcmodel.NewSetGenerateCmd(true, rpcmodel.Int(6))
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"setGenerate","params":[true,6],"id":1}`,
-			unmarshalled: &rpcmodel.SetGenerateCmd{
-				Generate:     true,
-				GenProcLimit: rpcmodel.Int(6),
-			},
-		},
-		{
 			name: "stop",
 			newCmd: func() (interface{}, error) {
 				return rpcmodel.NewCommand("stop")
@@ -976,19 +915,6 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 		},
 		{
-			name: "generate",
-			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("generate", 1)
-			},
-			staticCmd: func() interface{} {
-				return rpcmodel.NewGenerateCmd(1)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"generate","params":[1],"id":1}`,
-			unmarshalled: &rpcmodel.GenerateCmd{
-				NumBlocks: 1,
-			},
-		},
-		{
 			name: "getSelectedTip",
 			newCmd: func() (interface{}, error) {
 				return rpcmodel.NewCommand("getSelectedTip")
@@ -1026,8 +952,8 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getHeaders","params":["",""],"id":1}`,
 			unmarshalled: &rpcmodel.GetHeadersCmd{
-				StartHash: "",
-				StopHash:  "",
+				LowHash:  "",
+				HighHash: "",
 			},
 		},
 		{
@@ -1043,8 +969,8 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getHeaders","params":["000000000000000001f1739002418e2f9a84c47a4fd2a0eb7a787a6b7dc12f16","000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"],"id":1}`,
 			unmarshalled: &rpcmodel.GetHeadersCmd{
-				StartHash: "000000000000000001f1739002418e2f9a84c47a4fd2a0eb7a787a6b7dc12f16",
-				StopHash:  "000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7",
+				LowHash:  "000000000000000001f1739002418e2f9a84c47a4fd2a0eb7a787a6b7dc12f16",
+				HighHash: "000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7",
 			},
 		},
 		{
@@ -1072,7 +998,7 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getTopHeaders","params":["000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"],"id":1}`,
 			unmarshalled: &rpcmodel.GetTopHeadersCmd{
-				StartHash: rpcmodel.String("000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"),
+				HighHash: rpcmodel.String("000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"),
 			},
 		},
 		{

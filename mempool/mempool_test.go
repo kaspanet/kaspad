@@ -19,9 +19,7 @@ import (
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/util/testtools"
 
-	"bou.ke/monkey"
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/blockdag/indexers"
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/mining"
 	"github.com/kaspanet/kaspad/txscript"
@@ -351,7 +349,6 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 				MaxTxVersion:    1,
 			},
 			DAGParams:              &params,
-			DAGChainHeight:         fDAG.BlueScore,
 			MedianTimePast:         fDAG.MedianTimePast,
 			CalcSequenceLockNoLock: calcSequenceLock,
 			SigCache:               nil,
@@ -544,8 +541,8 @@ func TestProcessTransaction(t *testing.T) {
 	}
 
 	//Checks that a coinbase transaction cannot be added to the mempool
-	curHeight := harness.dag.BlueScore()
-	coinbase, err := harness.CreateCoinbaseTx(curHeight+1, 1)
+	currentBlueScore := harness.dag.BlueScore()
+	coinbase, err := harness.CreateCoinbaseTx(currentBlueScore+1, 1)
 	if err != nil {
 		t.Errorf("CreateCoinbaseTx: %v", err)
 	}
@@ -640,7 +637,7 @@ func TestProcessTransaction(t *testing.T) {
 		t.Fatalf("PayToAddrScript: unexpected error: %v", err)
 	}
 	p2shTx := util.NewTx(wire.NewNativeMsgTx(1, nil, []*wire.TxOut{{Value: 5000000000, ScriptPubKey: p2shScriptPubKey}}))
-	if isAccepted, err := harness.txPool.mpUTXOSet.AddTx(p2shTx.MsgTx(), curHeight+1); err != nil {
+	if isAccepted, err := harness.txPool.mpUTXOSet.AddTx(p2shTx.MsgTx(), currentBlueScore+1); err != nil {
 		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
 	} else if !isAccepted {
 		t.Fatalf("AddTx unexpectedly didn't add tx %s", p2shTx.ID())
@@ -740,48 +737,6 @@ func TestProcessTransaction(t *testing.T) {
 	}
 	if code, _ := extractRejectCode(err); code != wire.RejectNonstandard {
 		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectNonstandard, code)
-	}
-}
-
-func TestAddrIndex(t *testing.T) {
-	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.MainnetParams, 2, "TestAddrIndex")
-	if err != nil {
-		t.Fatalf("unable to create test pool: %v", err)
-	}
-	defer teardownFunc()
-	harness := tc.harness
-	harness.txPool.cfg.AddrIndex = &indexers.AddrIndex{}
-	enteredAddUnconfirmedTx := false
-	guard := monkey.Patch((*indexers.AddrIndex).AddUnconfirmedTx, func(idx *indexers.AddrIndex, tx *util.Tx, utxoSet blockdag.UTXOSet) {
-		enteredAddUnconfirmedTx = true
-	})
-	defer guard.Unpatch()
-	enteredRemoveUnconfirmedTx := false
-	guard = monkey.Patch((*indexers.AddrIndex).RemoveUnconfirmedTx, func(_ *indexers.AddrIndex, _ *daghash.TxID) {
-		enteredRemoveUnconfirmedTx = true
-	})
-	defer guard.Unpatch()
-
-	tx, err := harness.createTx(spendableOuts[0], uint64(txRelayFeeForTest), 1)
-	if err != nil {
-		t.Fatalf("unable to create transaction: %v", err)
-	}
-	_, err = harness.txPool.ProcessTransaction(tx, false, 0)
-	if err != nil {
-		t.Errorf("ProcessTransaction: unexpected error: %v", err)
-	}
-
-	if !enteredAddUnconfirmedTx {
-		t.Errorf("TestAddrIndex: (*indexers.AddrIndex).AddUnconfirmedTx was not called")
-	}
-
-	err = harness.txPool.RemoveTransaction(tx, false, false)
-	if err != nil {
-		t.Errorf("TestAddrIndex: unexpected error: %v", err)
-	}
-
-	if !enteredRemoveUnconfirmedTx {
-		t.Errorf("TestAddrIndex: (*indexers.AddrIndex).RemoveUnconfirmedTx was not called")
 	}
 }
 
@@ -1109,22 +1064,6 @@ func TestRemoveTransaction(t *testing.T) {
 	testPoolMembership(tc, chainedTxns[2], false, false, false)
 	testPoolMembership(tc, chainedTxns[3], false, false, false)
 	testPoolMembership(tc, chainedTxns[4], false, false, false)
-
-	fakeWithDiffErr := "error from WithDiff"
-	guard := monkey.Patch((*blockdag.DiffUTXOSet).WithDiff, func(_ *blockdag.DiffUTXOSet, _ *blockdag.UTXODiff) (blockdag.UTXOSet, error) {
-		return nil, errors.New(fakeWithDiffErr)
-	})
-	defer guard.Unpatch()
-
-	tx, err := harness.CreateSignedTx(outputs[1:], 1)
-	_, err = harness.txPool.ProcessTransaction(tx, true, 0)
-	if err != nil {
-		t.Fatalf("ProcessTransaction: %v", err)
-	}
-	err = harness.txPool.RemoveTransaction(tx, false, false)
-	if err == nil || err.Error() != fakeWithDiffErr {
-		t.Errorf("RemoveTransaction: expected error %v but got %v", fakeWithDiffErr, err)
-	}
 }
 
 // TestOrphanEviction ensures that exceeding the maximum number of orphans

@@ -1662,7 +1662,6 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 			MaxTxVersion:    1,
 		},
 		DAGParams:      dagParams,
-		DAGChainHeight: func() uint64 { return s.DAG.ChainHeight() },
 		MedianTimePast: func() time.Time { return s.DAG.CalcPastMedianTime() },
 		CalcSequenceLockNoLock: func(tx *util.Tx, utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 			return s.DAG.CalcSequenceLockNoLock(tx, utxoSet, true)

@@ -470,8 +470,6 @@ func (dag *BlockDAG) initDAGState() error {
 
 		blockIndexBucket := dbTx.Metadata().Bucket(blockIndexBucketName)
 
-		var i int32
-		var lastNode *blockNode
 		var unprocessedBlockNodes []*blockNode
 		cursor := blockIndexBucket.Cursor()
 		for ok := cursor.First(); ok; ok = cursor.Next() {
@@ -487,7 +485,14 @@ func (dag *BlockDAG) initDAGState() error {
 				continue
 			}
 
-			if lastNode == nil {
+			// If the node is known to be invalid add it as-is to the block
+			// index and continue.
+			if node.status.KnownInvalid() {
+				dag.index.addNode(node)
+				continue
+			}
+
+			if dag.blockCount == 0 {
 				if !node.hash.IsEqual(dag.dagParams.GenesisHash) {
 					return AssertError(fmt.Sprintf("initDAGState: Expected "+
 						"first entry in block index to be genesis block, "+
@@ -505,12 +510,7 @@ func (dag *BlockDAG) initDAGState() error {
 			node.updateParentsChildren()
 			dag.index.addNode(node)
 
-			if node.status.KnownValid() {
-				dag.blockCount++
-			}
-
-			lastNode = node
-			i++
+			dag.blockCount++
 		}
 
 		// Load all of the known UTXO entries and construct the full
@@ -719,8 +719,6 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		}
 	}
 
-	node.chainHeight = calculateChainHeight(node)
-
 	return node, nil
 }
 
@@ -862,33 +860,33 @@ func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
 	return block, err
 }
 
-// BlockHashesFrom returns a slice of blocks starting from startHash
-// ordered by blueScore. If startHash is nil then the genesis block is used.
+// BlockHashesFrom returns a slice of blocks starting from lowHash
+// ordered by blueScore. If lowHash is nil then the genesis block is used.
 //
 // This method MUST be called with the DAG lock held
-func (dag *BlockDAG) BlockHashesFrom(startHash *daghash.Hash, limit int) ([]*daghash.Hash, error) {
+func (dag *BlockDAG) BlockHashesFrom(lowHash *daghash.Hash, limit int) ([]*daghash.Hash, error) {
 	blockHashes := make([]*daghash.Hash, 0, limit)
-	if startHash == nil {
-		startHash = dag.genesis.hash
+	if lowHash == nil {
+		lowHash = dag.genesis.hash
 
 		// If we're starting from the beginning we should include the
 		// genesis hash in the result
 		blockHashes = append(blockHashes, dag.genesis.hash)
 	}
-	if !dag.BlockExists(startHash) {
-		return nil, errors.Errorf("block %s not found", startHash)
+	if !dag.BlockExists(lowHash) {
+		return nil, errors.Errorf("block %s not found", lowHash)
 	}
-	blueScore, err := dag.BlueScoreByBlockHash(startHash)
+	blueScore, err := dag.BlueScoreByBlockHash(lowHash)
 	if err != nil {
 		return nil, err
 	}
 
 	err = dag.index.db.View(func(dbTx database.Tx) error {
 		blockIndexBucket := dbTx.Metadata().Bucket(blockIndexBucketName)
-		startKey := BlockIndexKey(startHash, blueScore)
+		lowKey := BlockIndexKey(lowHash, blueScore)
 
 		cursor := blockIndexBucket.Cursor()
-		cursor.Seek(startKey)
+		cursor.Seek(lowKey)
 		for ok := cursor.Next(); ok; ok = cursor.Next() {
 			key := cursor.Key()
 			blockHash, err := blockHashFromBlockIndexKey(key)
