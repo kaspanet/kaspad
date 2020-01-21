@@ -1593,13 +1593,13 @@ func (dag *BlockDAG) SelectedParentHash(blockHash *daghash.Hash) (*daghash.Hash,
 	return node.selectedParent.hash, nil
 }
 
-// blueBlockHashesBetween returns the hashes of the blocks after the provided
-// low hash until the provided high hash is reached, or up to the
-// provided max number of block hashes.
+// antiPastHashesBetween returns the hashes of the blocks between the
+// lowHash's antiPast and highHash's antiPast, or up to the provided
+// max number of block hashes.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) blueBlockHashesBetween(lowHash, highHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
-	nodes, err := dag.blueBlocksBetween(lowHash, highHash, maxHashes)
+func (dag *BlockDAG) antiPastHashesBetween(lowHash, highHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
+	nodes, err := dag.antiPastBetween(lowHash, highHash, maxHashes)
 	if err != nil {
 		return nil, err
 	}
@@ -1610,7 +1610,11 @@ func (dag *BlockDAG) blueBlockHashesBetween(lowHash, highHash *daghash.Hash, max
 	return hashes, nil
 }
 
-func (dag *BlockDAG) blueBlocksBetween(lowHash, highHash *daghash.Hash, maxEntries uint64) ([]*blockNode, error) {
+// antiPastBetween returns the blockNodes between the lowHash's antiPast
+// and highHash's antiPast, or up to the provided max number of blocks.
+//
+// This function MUST be called with the DAG state lock held (for reads).
+func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries uint64) ([]*blockNode, error) {
 	lowNode := dag.index.LookupNode(lowHash)
 	if lowNode == nil {
 		return nil, errors.Errorf("Couldn't find low hash %s", lowHash)
@@ -1675,14 +1679,14 @@ func (dag *BlockDAG) blueBlocksBetween(lowHash, highHash *daghash.Hash, maxEntri
 	return nodes, nil
 }
 
-// BlueBlockHashesBetween returns the hashes of the blue blocks after the
-// provided low hash until the provided high hash is reached, or up to the
-// provided max number of block hashes.
+// AntiPastHashesBetween returns the hashes of the blocks between the
+// lowHash's antiPast and highHash's antiPast, or up to the provided
+// max number of block hashes.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) BlueBlockHashesBetween(lowHash, highHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
+func (dag *BlockDAG) AntiPastHashesBetween(lowHash, highHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
 	dag.dagLock.RLock()
-	hashes, err := dag.blueBlockHashesBetween(lowHash, highHash, maxHashes)
+	hashes, err := dag.antiPastHashesBetween(lowHash, highHash, maxHashes)
 	if err != nil {
 		return nil, err
 	}
@@ -1690,13 +1694,13 @@ func (dag *BlockDAG) BlueBlockHashesBetween(lowHash, highHash *daghash.Hash, max
 	return hashes, nil
 }
 
-// blueBlockHeadersBetween returns the headers of the blue blocks after the
-// provided low hash until the provided high hash is reached, or up to the
-// provided max number of block headers.
+// antiPastHeadersBetween returns the headers of the blocks between the
+// lowHash's antiPast and highHash's antiPast, or up to the provided
+// max number of block headers.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) blueBlockHeadersBetween(lowHash, highHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
-	nodes, err := dag.blueBlocksBetween(lowHash, highHash, maxHeaders)
+func (dag *BlockDAG) antiPastHeadersBetween(lowHash, highHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
+	nodes, err := dag.antiPastBetween(lowHash, highHash, maxHeaders)
 	if err != nil {
 		return nil, err
 	}
@@ -1753,14 +1757,14 @@ func (dag *BlockDAG) RUnlock() {
 	dag.dagLock.RUnlock()
 }
 
-// BlueBlockHeadersBetween returns the headers of the blocks after the provided
-// low hash until the provided high hash is reached, or up to the
-// provided max number of block headers.
+// AntiPastHeadersBetween returns the headers of the blocks between the
+// lowHash's antiPast and highHash's antiPast, or up to
+// wire.MaxBlockHeadersPerMsg block headers.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) BlueBlockHeadersBetween(lowHash, highHash *daghash.Hash) ([]*wire.BlockHeader, error) {
+func (dag *BlockDAG) AntiPastHeadersBetween(lowHash, highHash *daghash.Hash) ([]*wire.BlockHeader, error) {
 	dag.dagLock.RLock()
-	headers, err := dag.blueBlockHeadersBetween(lowHash, highHash, wire.MaxBlockHeadersPerMsg)
+	headers, err := dag.antiPastHeadersBetween(lowHash, highHash, wire.MaxBlockHeadersPerMsg)
 	if err != nil {
 		return nil, err
 	}

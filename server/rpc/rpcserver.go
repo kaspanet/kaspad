@@ -735,11 +735,10 @@ type rpcserverSyncManager interface {
 	// used to sync from or 0 if there is none.
 	SyncPeerID() int32
 
-	// BlueBlockHeadersBetween returns the headers of the blocks after the first known
-	// block in the provided locators until the provided high hash or the
-	// current tip is reached, up to a max of wire.MaxBlockHeadersPerMsg
-	// hashes.
-	BlueBlockHeadersBetween(lowHash, highHash *daghash.Hash) ([]*wire.BlockHeader, error)
+	// AntiPastHeadersBetween returns the headers of the blocks between the
+	// lowHash's antiPast and highHash's antiPast, or up to
+	// wire.MaxBlockHeadersPerMsg block headers.
+	AntiPastHeadersBetween(lowHash, highHash *daghash.Hash) ([]*wire.BlockHeader, error)
 }
 
 // rpcserverConfig is a descriptor containing the RPC server configuration.
