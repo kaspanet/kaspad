@@ -114,7 +114,7 @@ func (dag *BlockDAG) NextBlockTime() time.Time {
 	// timestamp is truncated to a second boundary before comparison since a
 	// block timestamp does not supported a precision greater than one
 	// second.
-	newTimestamp := dag.timeSource.AdjustedTime()
+	newTimestamp := dag.AdjustedTime()
 	minTimestamp := dag.NextBlockMinimumTime()
 	if newTimestamp.Before(minTimestamp) {
 		newTimestamp = minTimestamp
