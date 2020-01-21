@@ -97,7 +97,16 @@ func TestChainHeight(t *testing.T) {
 
 }
 
-// This test is to ensure the size BlueAnticoneSizesSize is limited to uint8.
+func TestKTypeIsUnsigned(t *testing.T) {
+	k := dagconfig.KType(0)
+	k--
+
+	if k < dagconfig.KType(0) {
+		t.Fatalf("KType must be unsigned")
+	}
+}
+
+// This test is to ensure the size BlueAnticoneSizesSize is serialized to the size of KType.
 // We verify that by serializing and deserializing the block while we make sure that we stay within the expected range.
 func TestBlueAnticoneSizesSize(t *testing.T) {
 	dag, teardownFunc, err := DAGSetup("TestBlueAnticoneSizesSize", Config{
@@ -108,24 +117,27 @@ func TestBlueAnticoneSizesSize(t *testing.T) {
 	}
 	defer teardownFunc()
 	blockHeader := dagconfig.SimnetParams.GenesisBlock.Header
-	block, _ := dag.newBlockNode(&blockHeader, newSet())
+	node, _ := dag.newBlockNode(&blockHeader, newSet())
+	hash := daghash.Hash{1}
 
+	// Setting maxKType to maximum value fo KType
 	maxKType := ^dagconfig.KType(0)
-	expected := maxKType
-	block.bluesAnticoneSizes[daghash.Hash{1}] = expected
-	serializedNode, _ := serializeBlockNode(block)
+	node.bluesAnticoneSizes[hash] = maxKType
+	serializedNode, _ := serializeBlockNode(node)
 	deserializedNode, _ := dag.deserializeBlockNode(serializedNode)
-	if deserializedNode.bluesAnticoneSizes[daghash.Hash{1}] != expected {
+	if deserializedNode.bluesAnticoneSizes[hash] != maxKType {
 		t.Fatalf("TestBlueAnticoneSizesSize: BlueAnticoneSize should not change when deserilizing. Expected: %v but got %v",
-			expected, deserializedNode.bluesAnticoneSizes[daghash.Hash{1}])
+			maxKType, deserializedNode.bluesAnticoneSizes[hash])
 	}
 
-	block.bluesAnticoneSizes[daghash.Hash{1}]++
-	size := block.bluesAnticoneSizes[daghash.Hash{1}]
-	serializedNode, _ = serializeBlockNode(block)
+	// Increasing bluesAnticoneSizes by 1 to make it overflow
+	node.bluesAnticoneSizes[hash]++
+	expected := node.bluesAnticoneSizes[hash]
+	serializedNode, _ = serializeBlockNode(node)
 	deserializedNode, _ = dag.deserializeBlockNode(serializedNode)
-	if deserializedNode.bluesAnticoneSizes[daghash.Hash{1}] != size {
-		t.Fatalf("TestBlueAnticoneSizesSize: BlueAnticoneSize should not be larger than MaxUint8. Expected: %v but got %v",
-			deserializedNode.bluesAnticoneSizes[daghash.Hash{1}], size)
+	if deserializedNode.bluesAnticoneSizes[hash] != expected {
+		t.Fatalf("TestBlueAnticoneSizesSize: BlueAnticoneSize should not be larger than MaxKType. Expected: %v but got %v",
+			deserializedNode.bluesAnticoneSizes[hash], expected)
 	}
+
 }
