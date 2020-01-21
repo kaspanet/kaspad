@@ -190,7 +190,7 @@ type MessageListeners struct {
 
 // Config is the struct to hold configuration options useful to Peer.
 type Config struct {
-	// SelectedTip specifies a callback which provides the selected tip
+	// SelectedTipHash specifies a callback which provides the selected tip
 	// to the peer as needed.
 	SelectedTip func() *daghash.Hash
 
@@ -427,13 +427,13 @@ type Peer struct {
 
 	// These fields keep track of statistics for the peer and are protected
 	// by the statsMtx mutex.
-	statsMtx       sync.RWMutex
-	timeOffset     int64
-	timeConnected  time.Time
-	selectedTip    *daghash.Hash
-	lastPingNonce  uint64    // Set to nonce if we have a pending ping.
-	lastPingTime   time.Time // Time we sent last ping.
-	lastPingMicros int64     // Time for last ping to return.
+	statsMtx        sync.RWMutex
+	timeOffset      int64
+	timeConnected   time.Time
+	selectedTipHash *daghash.Hash
+	lastPingNonce   uint64    // Set to nonce if we have a pending ping.
+	lastPingTime    time.Time // Time we sent last ping.
+	lastPingMicros  int64     // Time for last ping to return.
 
 	stallControl  chan stallControlMsg
 	outputQueue   chan outMsg
@@ -490,7 +490,7 @@ func (p *Peer) StatsSnapshot() *StatsSnap {
 		TimeOffset:     p.timeOffset,
 		Version:        protocolVersion,
 		Inbound:        p.inbound,
-		SelectedTip:    p.selectedTip,
+		SelectedTip:    p.selectedTipHash,
 		LastPingNonce:  p.lastPingNonce,
 		LastPingMicros: p.lastPingMicros,
 		LastPingTime:   p.lastPingTime,
@@ -637,20 +637,20 @@ func (p *Peer) ProtocolVersion() uint32 {
 	return protocolVersion
 }
 
-// SelectedTip returns the selected tip of the peer.
+// SelectedTipHash returns the selected tip of the peer.
 //
 // This function is safe for concurrent access.
-func (p *Peer) SelectedTip() *daghash.Hash {
+func (p *Peer) SelectedTipHash() *daghash.Hash {
 	p.statsMtx.RLock()
-	selectedTip := p.selectedTip
+	selectedTip := p.selectedTipHash
 	p.statsMtx.RUnlock()
 
 	return selectedTip
 }
 
-// SetSelectedTip sets the selected tip of the peer.
-func (p *Peer) SetSelectedTip(selectedTip *daghash.Hash) {
-	p.selectedTip = selectedTip
+// SetSelectedTipHash sets the selected tip of the peer.
+func (p *Peer) SetSelectedTipHash(selectedTipHash *daghash.Hash) {
+	p.selectedTipHash = selectedTipHash
 }
 
 // IsSelectedTipKnown returns whether or not this peer selected
@@ -658,7 +658,7 @@ func (p *Peer) SetSelectedTip(selectedTip *daghash.Hash) {
 //
 // This function is safe for concurrent access.
 func (p *Peer) IsSelectedTipKnown() bool {
-	return !p.cfg.BlockExists(p.selectedTip)
+	return !p.cfg.BlockExists(p.selectedTipHash)
 }
 
 // LastSend returns the last send time of the peer.
@@ -970,7 +970,7 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 	// Updating a bunch of stats including block based stats, and the
 	// peer's time offset.
 	p.statsMtx.Lock()
-	p.selectedTip = msg.SelectedTip
+	p.selectedTipHash = msg.SelectedTipHash
 	p.timeOffset = msg.Timestamp.Unix() - time.Now().Unix()
 	p.statsMtx.Unlock()
 

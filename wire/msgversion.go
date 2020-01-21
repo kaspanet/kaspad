@@ -56,7 +56,7 @@ type MsgVersion struct {
 	UserAgent string
 
 	// The selected tip of the generator of the version message.
-	SelectedTip *daghash.Hash
+	SelectedTipHash *daghash.Hash
 
 	// Don't announce transactions to peer.
 	DisableRelayTx bool
@@ -137,8 +137,8 @@ func (msg *MsgVersion) KaspaDecode(r io.Reader, pver uint32) error {
 	}
 	msg.UserAgent = userAgent
 
-	msg.SelectedTip = &daghash.Hash{}
-	err = ReadElement(buf, msg.SelectedTip)
+	msg.SelectedTipHash = &daghash.Hash{}
+	err = ReadElement(buf, msg.SelectedTipHash)
 	if err != nil {
 		return err
 	}
@@ -200,7 +200,7 @@ func (msg *MsgVersion) KaspaEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 
-	err = WriteElement(w, msg.SelectedTip)
+	err = WriteElement(w, msg.SelectedTipHash)
 	if err != nil {
 		return err
 	}
@@ -235,7 +235,7 @@ func (msg *MsgVersion) MaxPayloadLength(pver uint32) uint32 {
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
 func NewMsgVersion(me *NetAddress, you *NetAddress, nonce uint64,
-	selectedTip *daghash.Hash, subnetworkID *subnetworkid.SubnetworkID) *MsgVersion {
+	selectedTipHash *daghash.Hash, subnetworkID *subnetworkid.SubnetworkID) *MsgVersion {
 
 	// Limit the timestamp to one second precision since the protocol
 	// doesn't support better.
@@ -247,7 +247,7 @@ func NewMsgVersion(me *NetAddress, you *NetAddress, nonce uint64,
 		AddrMe:          *me,
 		Nonce:           nonce,
 		UserAgent:       DefaultUserAgent,
-		SelectedTip:     selectedTip,
+		SelectedTipHash: selectedTipHash,
 		DisableRelayTx:  false,
 		SubnetworkID:    subnetworkID,
 	}

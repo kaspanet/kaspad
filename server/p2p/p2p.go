@@ -296,8 +296,8 @@ func newServerPeer(s *Server, isPersistent bool) *Peer {
 	}
 }
 
-// selectedTip returns the current selected tip
-func (sp *Peer) selectedTip() *daghash.Hash {
+// selectedTipHash returns the current selected tip
+func (sp *Peer) selectedTipHash() *daghash.Hash {
 	return sp.server.DAG.SelectedTipHash()
 }
 
@@ -894,7 +894,7 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 		shouldMineOnGenesis := true
 		if state.Count() != 0 {
 			shouldMineOnGenesis = state.forAllPeers(func(sp *Peer) bool {
-				if !sp.SelectedTip().IsEqual(s.DAGParams.GenesisHash) {
+				if !sp.SelectedTipHash().IsEqual(s.DAGParams.GenesisHash) {
 					return false
 				}
 				return true
@@ -1051,7 +1051,7 @@ func newPeerConfig(sp *Peer) *peer.Config {
 			OnRead:            sp.OnRead,
 			OnWrite:           sp.OnWrite,
 		},
-		SelectedTip:       sp.selectedTip,
+		SelectedTip:       sp.selectedTipHash,
 		BlockExists:       sp.blockExists,
 		HostToNetAddress:  sp.server.addrManager.HostToNetAddress,
 		Proxy:             config.ActiveConfig().Proxy,

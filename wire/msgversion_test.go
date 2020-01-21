@@ -55,9 +55,9 @@ func TestVersion(t *testing.T) {
 		t.Errorf("NewMsgVersion: wrong user agent - got %v, want %v",
 			msg.UserAgent, DefaultUserAgent)
 	}
-	if !msg.SelectedTip.IsEqual(selectedTip) {
+	if !msg.SelectedTipHash.IsEqual(selectedTip) {
 		t.Errorf("NewMsgVersion: wrong selected tip - got %s, want %s",
-			msg.SelectedTip, selectedTip)
+			msg.SelectedTipHash, selectedTip)
 	}
 	if msg.DisableRelayTx {
 		t.Errorf("NewMsgVersion: disable relay tx is not false by "+
@@ -321,9 +321,9 @@ var baseVersion = &MsgVersion{
 		IP:        net.ParseIP("127.0.0.1"),
 		Port:      16111,
 	},
-	Nonce:       123123, // 0x1e0f3
-	UserAgent:   "/kaspadtest:0.0.1/",
-	SelectedTip: &daghash.Hash{0x12, 0x34},
+	Nonce:           123123, // 0x1e0f3
+	UserAgent:       "/kaspadtest:0.0.1/",
+	SelectedTipHash: &daghash.Hash{0x12, 0x34},
 }
 
 // baseVersionEncoded is the wire encoded bytes for baseVersion using protocol
@@ -371,9 +371,9 @@ var baseVersionWithRelayTx = &MsgVersion{
 		IP:        net.ParseIP("127.0.0.1"),
 		Port:      16111,
 	},
-	Nonce:       123123, // 0x1e0f3
-	UserAgent:   "/kaspadtest:0.0.1/",
-	SelectedTip: &daghash.Hash{0x12, 0x34},
+	Nonce:           123123, // 0x1e0f3
+	UserAgent:       "/kaspadtest:0.0.1/",
+	SelectedTipHash: &daghash.Hash{0x12, 0x34},
 }
 
 // baseVersionWithRelayTxEncoded is the wire encoded bytes for

@@ -117,9 +117,9 @@ type pauseMsg struct {
 }
 
 type selectedTipMsg struct {
-	selectedTip *daghash.Hash
-	peer        *peerpkg.Peer
-	reply       chan struct{}
+	selectedTipHash *daghash.Hash
+	peer            *peerpkg.Peer
+	reply           chan struct{}
 }
 
 type requestQueueAndSet struct {
@@ -197,9 +197,9 @@ func (sm *SyncManager) startSync() {
 		sm.requestedBlocks = make(map[daghash.Hash]struct{})
 
 		log.Infof("Syncing to block %s from peer %s",
-			syncPeer.SelectedTip(), syncPeer.Addr())
+			syncPeer.SelectedTipHash(), syncPeer.Addr())
 
-		syncPeer.PushGetBlockLocatorMsg(syncPeer.SelectedTip(), sm.dagParams.GenesisHash)
+		syncPeer.PushGetBlockLocatorMsg(syncPeer.SelectedTipHash(), sm.dagParams.GenesisHash)
 		sm.syncPeer = syncPeer
 		return
 	}
@@ -864,7 +864,7 @@ func (sm *SyncManager) limitHashMap(m map[daghash.Hash]struct{}, limit int) {
 
 func (sm *SyncManager) handleSelectedTipMsg(msg *selectedTipMsg) {
 	peer := msg.peer
-	selectedTip := msg.selectedTip
+	selectedTipHash := msg.selectedTipHash
 	state := sm.peerStates[peer]
 	if !state.isPendingForSelectedTip {
 		log.Warnf("Got unrequested selected tip message from %s -- "+
@@ -872,10 +872,10 @@ func (sm *SyncManager) handleSelectedTipMsg(msg *selectedTipMsg) {
 		peer.Disconnect()
 	}
 	state.isPendingForSelectedTip = false
-	if selectedTip.IsEqual(peer.SelectedTip()) {
+	if selectedTipHash.IsEqual(peer.SelectedTipHash()) {
 		return
 	}
-	peer.SetSelectedTip(selectedTip)
+	peer.SetSelectedTipHash(selectedTipHash)
 	sm.startSync()
 	msg.reply <- struct{}{}
 }
@@ -1053,9 +1053,9 @@ func (sm *SyncManager) QueueInv(inv *wire.MsgInv, peer *peerpkg.Peer) {
 // handling the message.
 func (sm *SyncManager) QueueSelectedTipMsg(msg *wire.MsgSelectedTip, peer *peerpkg.Peer, done chan struct{}) {
 	sm.msgChan <- &selectedTipMsg{
-		selectedTip: msg.SelectedTip,
-		peer:        peer,
-		reply:       done,
+		selectedTipHash: msg.SelectedTipHash,
+		peer:            peer,
+		reply:           done,
 	}
 }
 

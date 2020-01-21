@@ -13,8 +13,8 @@ import (
 // selectedtip message. It is used to answer getseltip messages and tell
 // the asking peer what is your selected tip.
 type MsgSelectedTip struct {
-	// The selected tip of the generator of the message.
-	SelectedTip *daghash.Hash
+	// The selected tip hash of the generator of the message.
+	SelectedTipHash *daghash.Hash
 }
 
 // KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
@@ -25,8 +25,8 @@ type MsgSelectedTip struct {
 //
 // This is part of the Message interface implementation.
 func (msg *MsgSelectedTip) KaspaDecode(r io.Reader, pver uint32) error {
-	msg.SelectedTip = &daghash.Hash{}
-	err := ReadElement(r, msg.SelectedTip)
+	msg.SelectedTipHash = &daghash.Hash{}
+	err := ReadElement(r, msg.SelectedTipHash)
 	if err != nil {
 		return err
 	}
@@ -37,7 +37,7 @@ func (msg *MsgSelectedTip) KaspaDecode(r io.Reader, pver uint32) error {
 // KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgSelectedTip) KaspaEncode(w io.Writer, pver uint32) error {
-	return WriteElement(w, msg.SelectedTip)
+	return WriteElement(w, msg.SelectedTipHash)
 }
 
 // Command returns the protocol command string for the message. This is part
@@ -57,6 +57,6 @@ func (msg *MsgSelectedTip) MaxPayloadLength(_ uint32) uint32 {
 // Message interface.
 func NewMsgSelectedTip(selectedTipHash *daghash.Hash) *MsgSelectedTip {
 	return &MsgSelectedTip{
-		SelectedTip: selectedTipHash,
+		SelectedTipHash: selectedTipHash,
 	}
 }
