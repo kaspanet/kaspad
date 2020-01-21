@@ -123,7 +123,6 @@ type requestQueueAndSet struct {
 // about a peer.
 type peerSyncState struct {
 	syncCandidate          bool
-	isSelectedTipKnown     bool
 	lastSelectedTipRequest time.Time
 	requestQueueMtx        sync.Mutex
 	requestQueues          map[wire.InvType]*requestQueueAndSet
@@ -168,12 +167,11 @@ func (sm *SyncManager) StartSync() {
 
 	var syncPeer *peerpkg.Peer
 	for peer, state := range sm.peerStates {
-		if !state.syncCandidate || state.isSelectedTipKnown {
+		if !state.syncCandidate {
 			continue
 		}
 
 		if !peer.IsSelectedTipKnown() {
-			state.isSelectedTipKnown = true
 			continue
 		}
 
