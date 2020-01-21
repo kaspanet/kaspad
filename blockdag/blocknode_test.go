@@ -107,20 +107,20 @@ func TestBlueAnticoneSizesSize(t *testing.T) {
 		t.Fatalf("TestBlueAnticoneSizesSize: Failed to setup DAG instance: %s", err)
 	}
 	defer teardownFunc()
-
-	block, _ := dag.newBlockNode(nil, newSet())
-
-	block.bluesAnticoneSizes[daghash.Hash{1}] = 0
-	block.bluesAnticoneSizes[daghash.Hash{1}]--
-
-	if block.bluesAnticoneSizes[daghash.Hash{1}] < 0 {
-		t.Fatalf("TestBlueAnticoneSizesSize: BlueAnticoneSize could not be negative (type KSize is unsigned)")
-	}
+	blockHeader := dagconfig.SimnetParams.GenesisBlock.Header
+	block, _ := dag.newBlockNode(&blockHeader, newSet())
 
 	block.bluesAnticoneSizes[daghash.Hash{1}] = math.MaxUint8
 	block.bluesAnticoneSizes[daghash.Hash{1}]++
 
-	if block.bluesAnticoneSizes[daghash.Hash{1}] > math.MaxUint8 {
+	serializedNode, _ := serializeBlockNode(block)
+	deserializedNode, _ := dag.deserializeBlockNode(serializedNode)
+
+	if deserializedNode.bluesAnticoneSizes[daghash.Hash{1}] < 0 {
+		t.Fatalf("TestBlueAnticoneSizesSize: BlueAnticoneSize could not be negative (type KSize is unsigned)")
+	}
+
+	if deserializedNode.bluesAnticoneSizes[daghash.Hash{1}] > math.MaxUint8 {
 		t.Fatalf("TestBlueAnticoneSizes: BlueAnticoneSize could not larger than 255 (type KSize is of size uint8)")
 	}
 }
