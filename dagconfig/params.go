@@ -142,9 +142,6 @@ type Params struct {
 	// to calculate the required difficulty of each block.
 	DifficultyAdjustmentWindowSize uint64
 
-	// GenerateSupported specifies whether or not CPU mining is allowed.
-	GenerateSupported bool
-
 	// These fields are related to voting on consensus rule changes as
 	// defined by BIP0009.
 	//
@@ -202,7 +199,6 @@ var MainnetParams = Params{
 	FinalityInterval:               1000,
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
-	GenerateSupported:              false,
 
 	// Consensus rule change deployments.
 	//
@@ -260,7 +256,6 @@ var RegressionNetParams = Params{
 	FinalityInterval:               1000,
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
-	GenerateSupported:              true,
 
 	// Consensus rule change deployments.
 	//
@@ -316,7 +311,6 @@ var TestnetParams = Params{
 	FinalityInterval:               1000,
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
-	GenerateSupported:              true,
 
 	// Consensus rule change deployments.
 	//
@@ -378,7 +372,6 @@ var SimnetParams = Params{
 	FinalityInterval:               1000,
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
-	GenerateSupported:              true,
 
 	// Consensus rule change deployments.
 	//
@@ -432,7 +425,6 @@ var DevnetParams = Params{
 	FinalityInterval:               1000,
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
-	GenerateSupported:              true,
 
 	// Consensus rule change deployments.
 	//

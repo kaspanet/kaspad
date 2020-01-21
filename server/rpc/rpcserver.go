@@ -32,7 +32,6 @@ import (
 	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/mining"
-	"github.com/kaspanet/kaspad/mining/cpuminer"
 	"github.com/kaspanet/kaspad/peer"
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/server/p2p"
@@ -65,7 +64,6 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"debugLevel":            handleDebugLevel,
 	"decodeRawTransaction":  handleDecodeRawTransaction,
 	"decodeScript":          handleDecodeScript,
-	"generate":              handleGenerate,
 	"getAllManualNodesInfo": handleGetAllManualNodesInfo,
 	"getSelectedTip":        handleGetSelectedTip,
 	"getSelectedTipHash":    handleGetSelectedTipHash,
@@ -79,14 +77,11 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getConnectionCount":    handleGetConnectionCount,
 	"getCurrentNet":         handleGetCurrentNet,
 	"getDifficulty":         handleGetDifficulty,
-	"getGenerate":           handleGetGenerate,
-	"getHashesPerSec":       handleGetHashesPerSec,
 	"getHeaders":            handleGetHeaders,
 	"getTopHeaders":         handleGetTopHeaders,
 	"getInfo":               handleGetInfo,
 	"getManualNodeInfo":     handleGetManualNodeInfo,
 	"getMempoolInfo":        handleGetMempoolInfo,
-	"getMiningInfo":         handleGetMiningInfo,
 	"getNetTotals":          handleGetNetTotals,
 	"getPeerInfo":           handleGetPeerInfo,
 	"getRawMempool":         handleGetRawMempool,
@@ -99,7 +94,6 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"removeManualNode":      handleRemoveManualNode,
 	"searchRawTransactions": handleSearchRawTransactions,
 	"sendRawTransaction":    handleSendRawTransaction,
-	"setGenerate":           handleSetGenerate,
 	"stop":                  handleStop,
 	"submitBlock":           handleSubmitBlock,
 	"uptime":                handleUptime,
@@ -741,11 +735,11 @@ type rpcserverSyncManager interface {
 	// used to sync from or 0 if there is none.
 	SyncPeerID() int32
 
-	// GetBlueBlocksHeadersBetween returns the headers of the blocks after the first known
-	// block in the provided locators until the provided stop hash or the
+	// BlueBlockHeadersBetween returns the headers of the blocks after the first known
+	// block in the provided locators until the provided high hash or the
 	// current tip is reached, up to a max of wire.MaxBlockHeadersPerMsg
 	// hashes.
-	GetBlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash) ([]*wire.BlockHeader, error)
+	BlueBlockHeadersBetween(lowHash, highHash *daghash.Hash) ([]*wire.BlockHeader, error)
 }
 
 // rpcserverConfig is a descriptor containing the RPC server configuration.
@@ -781,17 +775,17 @@ type rpcserverConfig struct {
 
 	// These fields allow the RPC server to interface with mining.
 	//
-	// Generator produces block templates and the CPUMiner solves them using
-	// the CPU. CPU mining is typically only useful for test purposes when
-	// doing regression or simulation testing.
+	// Generator produces block templates that can be retrieved
+	// by the getBlockTemplate command.
 	Generator *mining.BlkTmplGenerator
-	CPUMiner  *cpuminer.CPUMiner
 
 	// These fields define any optional indexes the RPC server can make use
 	// of to provide additional data when queried.
 	TxIndex         *indexers.TxIndex
 	AddrIndex       *indexers.AddrIndex
 	AcceptanceIndex *indexers.AcceptanceIndex
+
+	shouldMineOnGenesis func() bool
 }
 
 // setupRPCListeners returns a slice of listeners that are configured for use
@@ -849,7 +843,6 @@ func NewRPCServer(
 	p2pServer *p2p.Server,
 	db database.DB,
 	blockTemplateGenerator *mining.BlkTmplGenerator,
-	cpuminer *cpuminer.CPUMiner,
 
 ) (*Server, error) {
 	// Setup listeners for the configured RPC listen addresses and
@@ -862,20 +855,20 @@ func NewRPCServer(
 		return nil, errors.New("RPCS: No valid listen address")
 	}
 	cfg := &rpcserverConfig{
-		Listeners:       rpcListeners,
-		StartupTime:     startupTime,
-		ConnMgr:         &rpcConnManager{p2pServer},
-		SyncMgr:         &rpcSyncMgr{p2pServer, p2pServer.SyncManager},
-		TimeSource:      p2pServer.TimeSource,
-		DAGParams:       p2pServer.DAGParams,
-		DB:              db,
-		TxMemPool:       p2pServer.TxMemPool,
-		Generator:       blockTemplateGenerator,
-		CPUMiner:        cpuminer,
-		TxIndex:         p2pServer.TxIndex,
-		AddrIndex:       p2pServer.AddrIndex,
-		AcceptanceIndex: p2pServer.AcceptanceIndex,
-		DAG:             p2pServer.DAG,
+		Listeners:           rpcListeners,
+		StartupTime:         startupTime,
+		ConnMgr:             &rpcConnManager{p2pServer},
+		SyncMgr:             &rpcSyncMgr{p2pServer, p2pServer.SyncManager},
+		TimeSource:          p2pServer.TimeSource,
+		DAGParams:           p2pServer.DAGParams,
+		DB:                  db,
+		TxMemPool:           p2pServer.TxMemPool,
+		Generator:           blockTemplateGenerator,
+		TxIndex:             p2pServer.TxIndex,
+		AddrIndex:           p2pServer.AddrIndex,
+		AcceptanceIndex:     p2pServer.AcceptanceIndex,
+		DAG:                 p2pServer.DAG,
+		shouldMineOnGenesis: p2pServer.ShouldMineOnGenesis,
 	}
 	rpc := Server{
 		cfg:                    *cfg,

@@ -555,7 +555,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 //  - BFFastAdd: No checks are performed.
 //
 // This function MUST be called with the dag state lock held (for writes).
-func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestParent *blockNode, blockChainHeight uint64, fastAdd bool) error {
+func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestParent *blockNode, fastAdd bool) error {
 	if !fastAdd {
 		if err := dag.validateDifficulty(header, bluestParent); err != nil {
 			return err
@@ -661,7 +661,7 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, flag
 
 	// Perform all block header related validation checks.
 	header := &block.MsgBlock().Header
-	if err = dag.checkBlockHeaderContext(header, bluestParent, block.ChainHeight(), fastAdd); err != nil {
+	if err = dag.checkBlockHeaderContext(header, bluestParent, fastAdd); err != nil {
 		return err
 	}
 

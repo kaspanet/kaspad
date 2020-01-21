@@ -413,13 +413,13 @@ type Peer struct {
 	sendHeadersPreferred bool   // peer sent a sendheaders message
 	verAckReceived       bool
 
-	knownInventory        *mruInventoryMap
-	prevGetBlockInvsMtx   sync.Mutex
-	prevGetBlockInvsStart *daghash.Hash
-	prevGetBlockInvsStop  *daghash.Hash
-	prevGetHdrsMtx        sync.Mutex
-	prevGetHdrsStart      *daghash.Hash
-	prevGetHdrsStop       *daghash.Hash
+	knownInventory       *mruInventoryMap
+	prevGetBlockInvsMtx  sync.Mutex
+	prevGetBlockInvsLow  *daghash.Hash
+	prevGetBlockInvsHigh *daghash.Hash
+	prevGetHdrsMtx       sync.Mutex
+	prevGetHdrsStart     *daghash.Hash
+	prevGetHdrsStop      *daghash.Hash
 
 	// These fields keep track of statistics for the peer and are protected
 	// by the statsMtx mutex.
@@ -808,42 +808,42 @@ func (p *Peer) PushAddrMsg(addresses []*wire.NetAddress, subnetworkID *subnetwor
 	return msg.AddrList, nil
 }
 
-// PushGetBlockLocatorMsg sends a getlocator message for the provided start
-// and stop hash.
+// PushGetBlockLocatorMsg sends a getlocator message for the provided high
+// and low hash.
 //
 // This function is safe for concurrent access.
-func (p *Peer) PushGetBlockLocatorMsg(startHash, stopHash *daghash.Hash) {
-	msg := wire.NewMsgGetBlockLocator(startHash, stopHash)
+func (p *Peer) PushGetBlockLocatorMsg(highHash, lowHash *daghash.Hash) {
+	msg := wire.NewMsgGetBlockLocator(highHash, lowHash)
 	p.QueueMessage(msg, nil)
 }
 
 // PushGetBlockInvsMsg sends a getblockinvs message for the provided block locator
-// and stop hash. It will ignore back-to-back duplicate requests.
+// and high hash. It will ignore back-to-back duplicate requests.
 //
 // This function is safe for concurrent access.
-func (p *Peer) PushGetBlockInvsMsg(startHash, stopHash *daghash.Hash) error {
+func (p *Peer) PushGetBlockInvsMsg(lowHash, highHash *daghash.Hash) error {
 	// Filter duplicate getblockinvs requests.
 	p.prevGetBlockInvsMtx.Lock()
-	isDuplicate := p.prevGetBlockInvsStop != nil && p.prevGetBlockInvsStart != nil &&
-		startHash != nil && stopHash.IsEqual(p.prevGetBlockInvsStop) &&
-		startHash.IsEqual(p.prevGetBlockInvsStart)
+	isDuplicate := p.prevGetBlockInvsHigh != nil && p.prevGetBlockInvsLow != nil &&
+		lowHash != nil && highHash.IsEqual(p.prevGetBlockInvsHigh) &&
+		lowHash.IsEqual(p.prevGetBlockInvsLow)
 	p.prevGetBlockInvsMtx.Unlock()
 
 	if isDuplicate {
-		log.Tracef("Filtering duplicate [getblockinvs] with start "+
-			"hash %s, stop hash %s", startHash, stopHash)
+		log.Tracef("Filtering duplicate [getblockinvs] with low "+
+			"hash %s, high hash %s", lowHash, highHash)
 		return nil
 	}
 
 	// Construct the getblockinvs request and queue it to be sent.
-	msg := wire.NewMsgGetBlockInvs(startHash, stopHash)
+	msg := wire.NewMsgGetBlockInvs(lowHash, highHash)
 	p.QueueMessage(msg, nil)
 
 	// Update the previous getblockinvs request information for filtering
 	// duplicates.
 	p.prevGetBlockInvsMtx.Lock()
-	p.prevGetBlockInvsStart = startHash
-	p.prevGetBlockInvsStop = stopHash
+	p.prevGetBlockInvsLow = lowHash
+	p.prevGetBlockInvsHigh = highHash
 	p.prevGetBlockInvsMtx.Unlock()
 	return nil
 }

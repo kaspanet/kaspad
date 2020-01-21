@@ -87,8 +87,8 @@ type NotificationHandlers struct {
 	// bloackDAG. It will only be invoked if a preceding call to
 	// NotifyBlocks has been made to register for the notification and the
 	// function is non-nil. Its parameters differ from OnBlockAdded: it
-	// receives the block's height, header, and relevant transactions.
-	OnFilteredBlockAdded func(height uint64, header *wire.BlockHeader,
+	// receives the block's blueScore, header, and relevant transactions.
+	OnFilteredBlockAdded func(blueScore uint64, header *wire.BlockHeader,
 		txs []*util.Tx)
 
 	// OnChainChanged is invoked when the selected parent chain of the
@@ -160,7 +160,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 			return
 		}
 
-		blockHeight, blockHeader, transactions, err :=
+		blockBlueScore, blockHeader, transactions, err :=
 			parseFilteredBlockAddedParams(ntfn.Params)
 		if err != nil {
 			log.Warnf("Received invalid filtered block "+
@@ -168,7 +168,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 			return
 		}
 
-		c.ntfnHandlers.OnFilteredBlockAdded(blockHeight,
+		c.ntfnHandlers.OnFilteredBlockAdded(blockBlueScore,
 			blockHeader, transactions)
 
 	// OnRelevantTxAccepted

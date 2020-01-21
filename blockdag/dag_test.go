@@ -6,17 +6,10 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
-	"reflect"
-	"strings"
 	"testing"
 	"time"
-
-	"bou.ke/monkey"
-
-	"math/rand"
 
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/database"
@@ -275,7 +268,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		TxID:  *targetTx.ID(),
 		Index: 0,
 	}
-	prevUtxoChainHeight := uint64(numBlocksToGenerate) - 4
+	prevUtxoBlueScore := uint64(numBlocksToGenerate) - 4
 
 	// Obtain the past median time from the PoV of the input created above.
 	// The past median time for the input is the past median time from the PoV
@@ -287,7 +280,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	// the MTP will be calculated from the PoV of the yet-to-be-mined
 	// block.
 	nextMedianTime := node.PastMedianTime(dag).Unix()
-	nextBlockChainHeight := int32(numBlocksToGenerate) + 1
+	nextBlockBlueScore := int32(numBlocksToGenerate) + 1
 
 	// Add an additional transaction which will serve as our unconfirmed
 	// output.
@@ -373,7 +366,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:        medianTime + (5 << wire.SequenceLockTimeGranularity) - 1,
-				BlockBlueScore: int64(prevUtxoChainHeight) + 3,
+				BlockBlueScore: int64(prevUtxoBlueScore) + 3,
 			},
 		},
 		// Transaction with a single input. The input's sequence number
@@ -386,7 +379,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:        -1,
-				BlockBlueScore: int64(prevUtxoChainHeight) + 2,
+				BlockBlueScore: int64(prevUtxoBlueScore) + 2,
 			},
 		},
 		// A transaction with two inputs with lock times expressed in
@@ -425,7 +418,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:        -1,
-				BlockBlueScore: int64(prevUtxoChainHeight) + 10,
+				BlockBlueScore: int64(prevUtxoBlueScore) + 10,
 			},
 		},
 		// A transaction with multiple inputs. Two inputs are time
@@ -451,7 +444,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:        medianTime + (13 << wire.SequenceLockTimeGranularity) - 1,
-				BlockBlueScore: int64(prevUtxoChainHeight) + 8,
+				BlockBlueScore: int64(prevUtxoBlueScore) + 8,
 			},
 		},
 		// A transaction with a single unconfirmed input. As the input
@@ -467,7 +460,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			mempool: true,
 			want: &SequenceLock{
 				Seconds:        -1,
-				BlockBlueScore: int64(nextBlockChainHeight) + 1,
+				BlockBlueScore: int64(nextBlockBlueScore) + 1,
 			},
 		},
 		// A transaction with a single unconfirmed input. The input has
@@ -547,307 +540,6 @@ func TestCalcPastMedianTime(t *testing.T) {
 		if secondsSinceGenesis != test.expectedSecondsSinceGenesis {
 			t.Errorf("TestCalcPastMedianTime: expected past median time of block %v to be %v seconds from genesis but got %v", test.blockNumber, test.expectedSecondsSinceGenesis, secondsSinceGenesis)
 		}
-	}
-
-}
-
-// nodeHashes is a convenience function that returns the hashes for all of the
-// passed indexes of the provided nodes. It is used to construct expected hash
-// slices in the tests.
-func nodeHashes(nodes []*blockNode, indexes ...int) []*daghash.Hash {
-	hashes := make([]*daghash.Hash, 0, len(indexes))
-	for _, idx := range indexes {
-		hashes = append(hashes, nodes[idx].hash)
-	}
-	return hashes
-}
-
-// testNoncePrng provides a deterministic prng for the nonce in generated fake
-// nodes. The ensures that the node have unique hashes.
-var testNoncePrng = rand.New(rand.NewSource(0))
-
-// chainedNodes returns the specified number of nodes constructed such that each
-// subsequent node points to the previous one to create a chain. The first node
-// will point to the passed parent which can be nil if desired.
-func chainedNodes(dag *BlockDAG, parents blockSet, numNodes int) []*blockNode {
-	nodes := make([]*blockNode, numNodes)
-	tips := parents
-	for i := 0; i < numNodes; i++ {
-		// This is invalid, but all that is needed is enough to get the
-		// synthetic tests to work.
-		header := wire.BlockHeader{
-			Nonce:                testNoncePrng.Uint64(),
-			HashMerkleRoot:       &daghash.ZeroHash,
-			AcceptedIDMerkleRoot: &daghash.ZeroHash,
-			UTXOCommitment:       &daghash.ZeroHash,
-		}
-		header.ParentHashes = tips.hashes()
-		nodes[i], _ = dag.newBlockNode(&header, tips)
-		tips = setFromSlice(nodes[i])
-	}
-	return nodes
-}
-
-// testTip is a convenience function to grab the tip of a chain of block nodes
-// created via chainedNodes.
-func testTip(nodes []*blockNode) *blockNode {
-	return nodes[len(nodes)-1]
-}
-
-// TestChainHeightToHashRange ensures that fetching a range of block hashes by start
-// chain height and end hash works as expected.
-func TestChainHeightToHashRange(t *testing.T) {
-	// Construct a synthetic block DAG with a block index consisting of
-	// the following structure.
-	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
-	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
-	tip := testTip
-	dag := newTestDAG(&dagconfig.SimnetParams)
-	branch0Nodes := chainedNodes(dag, setFromSlice(dag.genesis), 18)
-	branch1Nodes := chainedNodes(dag, setFromSlice(branch0Nodes[14]), 3)
-	for _, node := range branch0Nodes {
-		dag.index.SetStatusFlags(node, statusValid)
-		dag.index.AddNode(node)
-	}
-	for _, node := range branch1Nodes {
-		if node.chainHeight < 18 {
-			dag.index.SetStatusFlags(node, statusValid)
-		}
-		dag.index.AddNode(node)
-	}
-	dag.virtual.SetTips(setFromSlice(tip(branch0Nodes)))
-
-	tests := []struct {
-		name             string
-		startChainHeight uint64          // locator for requested inventory
-		endHash          *daghash.Hash   // stop hash for locator
-		maxResults       int             // max to locate, 0 = wire const
-		hashes           []*daghash.Hash // expected located hashes
-		expectError      bool
-	}{
-		{
-			name:             "blocks below tip",
-			startChainHeight: 11,
-			endHash:          branch0Nodes[14].hash,
-			maxResults:       10,
-			hashes:           nodeHashes(branch0Nodes, 10, 11, 12, 13, 14),
-		},
-		{
-			name:             "blocks on main chain",
-			startChainHeight: 15,
-			endHash:          branch0Nodes[17].hash,
-			maxResults:       10,
-			hashes:           nodeHashes(branch0Nodes, 14, 15, 16, 17),
-		},
-		{
-			name:             "blocks on stale chain",
-			startChainHeight: 15,
-			endHash:          branch1Nodes[1].hash,
-			maxResults:       10,
-			hashes: append(nodeHashes(branch0Nodes, 14),
-				nodeHashes(branch1Nodes, 0, 1)...),
-		},
-		{
-			name:             "invalid start chain height",
-			startChainHeight: 19,
-			endHash:          branch0Nodes[17].hash,
-			maxResults:       10,
-			expectError:      true,
-		},
-		{
-			name:             "too many results",
-			startChainHeight: 1,
-			endHash:          branch0Nodes[17].hash,
-			maxResults:       10,
-			expectError:      true,
-		},
-		{
-			name:             "unvalidated block",
-			startChainHeight: 15,
-			endHash:          branch1Nodes[2].hash,
-			maxResults:       10,
-			expectError:      true,
-		},
-	}
-	for _, test := range tests {
-		hashes, err := dag.ChainHeightToHashRange(test.startChainHeight, test.endHash,
-			test.maxResults)
-		if err != nil {
-			if !test.expectError {
-				t.Errorf("%s: unexpected error: %v", test.name, err)
-			}
-			continue
-		}
-
-		if !reflect.DeepEqual(hashes, test.hashes) {
-			t.Errorf("%s: unxpected hashes -- got %v, want %v",
-				test.name, hashes, test.hashes)
-		}
-	}
-}
-
-// TestIntervalBlockHashes ensures that fetching block hashes at specified
-// intervals by end hash works as expected.
-func TestIntervalBlockHashes(t *testing.T) {
-	// Construct a synthetic block DAG with a block index consisting of
-	// the following structure.
-	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
-	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
-	tip := testTip
-	dag := newTestDAG(&dagconfig.SimnetParams)
-	branch0Nodes := chainedNodes(dag, setFromSlice(dag.genesis), 18)
-	branch1Nodes := chainedNodes(dag, setFromSlice(branch0Nodes[14]), 3)
-	for _, node := range branch0Nodes {
-		dag.index.SetStatusFlags(node, statusValid)
-		dag.index.AddNode(node)
-	}
-	for _, node := range branch1Nodes {
-		if node.chainHeight < 18 {
-			dag.index.SetStatusFlags(node, statusValid)
-		}
-		dag.index.AddNode(node)
-	}
-	dag.virtual.SetTips(setFromSlice(tip(branch0Nodes)))
-
-	tests := []struct {
-		name        string
-		endHash     *daghash.Hash
-		interval    uint64
-		hashes      []*daghash.Hash
-		expectError bool
-	}{
-		{
-			name:     "blocks on main chain",
-			endHash:  branch0Nodes[17].hash,
-			interval: 8,
-			hashes:   nodeHashes(branch0Nodes, 7, 15),
-		},
-		{
-			name:     "blocks on stale chain",
-			endHash:  branch1Nodes[1].hash,
-			interval: 8,
-			hashes: append(nodeHashes(branch0Nodes, 7),
-				nodeHashes(branch1Nodes, 0)...),
-		},
-		{
-			name:     "no results",
-			endHash:  branch0Nodes[17].hash,
-			interval: 20,
-			hashes:   []*daghash.Hash{},
-		},
-		{
-			name:        "unvalidated block",
-			endHash:     branch1Nodes[2].hash,
-			interval:    8,
-			expectError: true,
-		},
-	}
-	for _, test := range tests {
-		hashes, err := dag.IntervalBlockHashes(test.endHash, test.interval)
-		if err != nil {
-			if !test.expectError {
-				t.Errorf("%s: unexpected error: %v", test.name, err)
-			}
-			continue
-		}
-
-		if !reflect.DeepEqual(hashes, test.hashes) {
-			t.Errorf("%s: unxpected hashes -- got %v, want %v",
-				test.name, hashes, test.hashes)
-		}
-	}
-}
-
-// TestApplyUTXOChangesErrors tests that
-// dag.applyUTXOChanges panics when unexpected
-// error occurs
-func TestApplyUTXOChangesPanic(t *testing.T) {
-	targetErrorMessage := "updateParents error"
-	defer func() {
-		if recover() == nil {
-			t.Errorf("Got no panic on past UTXO error, while expected panic")
-		}
-	}()
-	testErrorThroughPatching(
-		t,
-		targetErrorMessage,
-		(*blockNode).updateParents,
-		func(_ *blockNode, _ *virtualBlock, _ UTXOSet) error {
-			return errors.New(targetErrorMessage)
-		},
-	)
-}
-
-// TestRestoreUTXOErrors tests all error-cases in restoreUTXO.
-// The non-error-cases are tested in the more general tests.
-func TestRestoreUTXOErrors(t *testing.T) {
-	targetErrorMessage := "WithDiff error"
-	testErrorThroughPatching(
-		t,
-		targetErrorMessage,
-		(*FullUTXOSet).WithDiff,
-		func(fus *FullUTXOSet, other *UTXODiff) (UTXOSet, error) {
-			return nil, errors.New(targetErrorMessage)
-		},
-	)
-}
-
-func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetFunction interface{}, replacementFunction interface{}) {
-	// Load up blocks such that there is a fork in the DAG.
-	// (genesis block) -> 1 -> 2 -> 3 -> 4
-	//                          \-> 3b
-	testFiles := []string{
-		"blk_0_to_4.dat",
-		"blk_3B.dat",
-	}
-
-	var blocks []*util.Block
-	for _, file := range testFiles {
-		blockTmp, err := LoadBlocks(filepath.Join("testdata/", file))
-		if err != nil {
-			t.Fatalf("Error loading file: %v\n", err)
-		}
-		blocks = append(blocks, blockTmp...)
-	}
-
-	// Create a new database and dag instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("testErrorThroughPatching", Config{
-		DAGParams: &dagconfig.SimnetParams,
-	})
-	if err != nil {
-		t.Fatalf("Failed to setup dag instance: %v", err)
-	}
-	defer teardownFunc()
-
-	// Since we're not dealing with the real block DAG, set the coinbase
-	// maturity to 0.
-	dag.TestSetCoinbaseMaturity(0)
-
-	guard := monkey.Patch(targetFunction, replacementFunction)
-	defer guard.Unpatch()
-
-	for i := 1; i < len(blocks); i++ {
-		var isOrphan, isDelayed bool
-		isOrphan, isDelayed, err = dag.ProcessBlock(blocks[i], BFNone)
-		if isDelayed {
-			t.Fatalf("ProcessBlock: block %d "+
-				"is too far in the future", i)
-		}
-		if isOrphan {
-			t.Fatalf("ProcessBlock incorrectly returned block %v "+
-				"is an orphan\n", i)
-		}
-		if err != nil {
-			break
-		}
-	}
-	if err == nil {
-		t.Errorf("ProcessBlock unexpectedly succeeded. "+
-			"Expected: %s", expectedErrorMessage)
-	}
-	if !strings.Contains(err.Error(), expectedErrorMessage) {
-		t.Errorf("ProcessBlock returned wrong error. "+
-			"Want: %s, got: %s", expectedErrorMessage, err)
 	}
 }
 

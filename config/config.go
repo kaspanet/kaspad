@@ -51,7 +51,6 @@ const (
 	blockMaxMassMin              = 1000
 	blockMaxMassMax              = 10000000
 	defaultMinRelayTxFee         = 1e-5 // 1 sompi per byte
-	defaultGenerate              = false
 	defaultMaxOrphanTransactions = 100
 	//DefaultMaxOrphanTxSize is the default maximum size for an orphan transaction
 	DefaultMaxOrphanTxSize = 100000
@@ -132,7 +131,6 @@ type Flags struct {
 	Upnp                 bool          `long:"upnp" description:"Use UPnP to map our listening port outside of NAT"`
 	MinRelayTxFee        float64       `long:"minrelaytxfee" description:"The minimum transaction fee in KAS/kB to be considered a non-zero fee."`
 	MaxOrphanTxs         int           `long:"maxorphantx" description:"Max number of orphan transactions to keep in memory"`
-	Generate             bool          `long:"generate" description:"Generate (mine) kaspa using the CPU"`
 	MiningAddrs          []string      `long:"miningaddr" description:"Add the specified payment address to the list of addresses to use for generated blocks -- At least one address is required if the generate option is set"`
 	BlockMaxMass         uint64        `long:"blockmaxmass" description:"Maximum transaction mass to be used when creating a block"`
 	UserAgentComments    []string      `long:"uacomment" description:"Comment to add to the user agent -- See BIP 14 for more information."`
@@ -253,7 +251,6 @@ func loadConfig() (*Config, []string, error) {
 		MaxOrphanTxs:         defaultMaxOrphanTransactions,
 		SigCacheMaxSize:      defaultSigCacheMaxSize,
 		MinRelayTxFee:        defaultMinRelayTxFee,
-		Generate:             defaultGenerate,
 		TxIndex:              defaultTxIndex,
 		AddrIndex:            defaultAddrIndex,
 		AcceptanceIndex:      defaultAcceptanceIndex,
@@ -704,26 +701,6 @@ func loadConfig() (*Config, []string, error) {
 		}
 	} else {
 		activeConfig.SubnetworkID = nil
-	}
-
-	// Check that 'generate' and 'subnetwork' flags do not conflict
-	if activeConfig.Generate && activeConfig.SubnetworkID != nil {
-		str := "%s: both generate flag and subnetwork filtering are set "
-		err := errors.Errorf(str, funcName)
-		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
-	}
-
-	// Ensure there is at least one mining address when the generate flag is
-	// set.
-	if activeConfig.Generate && len(activeConfig.MiningAddrs) == 0 {
-		str := "%s: the generate flag is set, but there are no mining " +
-			"addresses specified "
-		err := errors.Errorf(str, funcName)
-		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
 	}
 
 	// Add default port to all listener addresses if needed and remove

@@ -17,7 +17,7 @@ import (
 // limited by a specific hash to stop at or the maximum number of block headers
 // per message, which is currently 2000.
 //
-// Set the StopHash field to the hash at which to stop and use
+// Set the HighHash field to the hash at which to stop and use
 // AddBlockLocatorHash to build up the list of block locator hashes.
 //
 // The algorithm for building the block locator hashes should be to add the

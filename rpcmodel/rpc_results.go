@@ -12,7 +12,6 @@ import "encoding/json"
 type GetBlockHeaderVerboseResult struct {
 	Hash                 string   `json:"hash"`
 	Confirmations        uint64   `json:"confirmations"`
-	Height               uint64   `json:"height"`
 	Version              int32    `json:"version"`
 	VersionHex           string   `json:"versionHex"`
 	HashMerkleRoot       string   `json:"hashMerkleRoot"`
@@ -33,7 +32,6 @@ type GetBlockVerboseResult struct {
 	Hash                 string        `json:"hash"`
 	Confirmations        uint64        `json:"confirmations"`
 	Size                 int32         `json:"size"`
-	Height               uint64        `json:"height"`
 	BlueScore            uint64        `json:"blueScore"`
 	IsChainBlock         bool          `json:"isChainBlock"`
 	Version              int32         `json:"version"`
@@ -265,7 +263,6 @@ type GetRawMempoolVerboseResult struct {
 	Size    int32    `json:"size"`
 	Fee     float64  `json:"fee"`
 	Time    int64    `json:"time"`
-	Height  uint64   `json:"height"`
 	Depends []string `json:"depends"`
 }
 
@@ -390,21 +387,6 @@ type Vout struct {
 	Value        uint64             `json:"value"`
 	N            uint32             `json:"n"`
 	ScriptPubKey ScriptPubKeyResult `json:"scriptPubKey"`
-}
-
-// GetMiningInfoResult models the data from the getmininginfo command.
-type GetMiningInfoResult struct {
-	Blocks           int64   `json:"blocks"`
-	CurrentBlockSize uint64  `json:"currentBlockSize"`
-	CurrentBlockTx   uint64  `json:"currentBlockTx"`
-	Difficulty       float64 `json:"difficulty"`
-	Errors           string  `json:"errors"`
-	Generate         bool    `json:"generate"`
-	GenProcLimit     int32   `json:"genProcLimit"`
-	HashesPerSec     int64   `json:"hashesPerSec"`
-	PooledTx         uint64  `json:"pooledTx"`
-	Testnet          bool    `json:"testnet"`
-	Devnet           bool    `json:"devnet"`
 }
 
 // GetWorkResult models the data from the getwork command.

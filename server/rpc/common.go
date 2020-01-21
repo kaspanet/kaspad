@@ -210,33 +210,23 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 	params := s.cfg.DAGParams
 	blockHeader := block.MsgBlock().Header
 
-	// Get the block chain height.
-	blockChainHeight, err := s.cfg.DAG.BlockChainHeightByHash(hash)
+	blockBlueScore, err := s.cfg.DAG.BlueScoreByBlockHash(hash)
 	if err != nil {
-		context := "Failed to obtain block height"
+		context := "Could not get block blue score"
 		return nil, internalRPCError(err.Error(), context)
 	}
 
 	// Get the hashes for the next blocks unless there are none.
-	var nextHashStrings []string
-	if blockChainHeight < s.cfg.DAG.ChainHeight() { //TODO: (Ori) This is probably wrong. Done only for compilation
-		childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
-		if err != nil {
-			context := "No next block"
-			return nil, internalRPCError(err.Error(), context)
-		}
-		nextHashStrings = daghash.Strings(childHashes)
+	childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
+	if err != nil {
+		context := "No next block"
+		return nil, internalRPCError(err.Error(), context)
 	}
+	childHashStrings := daghash.Strings(childHashes)
 
 	blockConfirmations, err := s.cfg.DAG.BlockConfirmationsByHashNoLock(hash)
 	if err != nil {
 		context := "Could not get block confirmations"
-		return nil, internalRPCError(err.Error(), context)
-	}
-
-	blockBlueScore, err := s.cfg.DAG.BlueScoreByBlockHash(hash)
-	if err != nil {
-		context := "Could not get block blue score"
 		return nil, internalRPCError(err.Error(), context)
 	}
 
@@ -264,13 +254,12 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		Nonce:                blockHeader.Nonce,
 		Time:                 blockHeader.Timestamp.Unix(),
 		Confirmations:        blockConfirmations,
-		Height:               blockChainHeight,
 		BlueScore:            blockBlueScore,
 		IsChainBlock:         isChainBlock,
 		Size:                 int32(block.MsgBlock().SerializeSize()),
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
 		Difficulty:           getDifficultyRatio(blockHeader.Bits, params),
-		NextHashes:           nextHashStrings,
+		NextHashes:           childHashStrings,
 	}
 
 	if isVerboseTx {

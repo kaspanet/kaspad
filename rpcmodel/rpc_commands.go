@@ -332,24 +332,6 @@ func NewGetDifficultyCmd() *GetDifficultyCmd {
 	return &GetDifficultyCmd{}
 }
 
-// GetGenerateCmd defines the getGenerate JSON-RPC command.
-type GetGenerateCmd struct{}
-
-// NewGetGenerateCmd returns a new instance which can be used to issue a
-// getGenerate JSON-RPC command.
-func NewGetGenerateCmd() *GetGenerateCmd {
-	return &GetGenerateCmd{}
-}
-
-// GetHashesPerSecCmd defines the getHashesPerSec JSON-RPC command.
-type GetHashesPerSecCmd struct{}
-
-// NewGetHashesPerSecCmd returns a new instance which can be used to issue a
-// getHashesPerSec JSON-RPC command.
-func NewGetHashesPerSecCmd() *GetHashesPerSecCmd {
-	return &GetHashesPerSecCmd{}
-}
-
 // GetInfoCmd defines the getInfo JSON-RPC command.
 type GetInfoCmd struct{}
 
@@ -379,15 +361,6 @@ type GetMempoolInfoCmd struct{}
 // getmempool JSON-RPC command.
 func NewGetMempoolInfoCmd() *GetMempoolInfoCmd {
 	return &GetMempoolInfoCmd{}
-}
-
-// GetMiningInfoCmd defines the getMiningInfo JSON-RPC command.
-type GetMiningInfoCmd struct{}
-
-// NewGetMiningInfoCmd returns a new instance which can be used to issue a
-// getMiningInfo JSON-RPC command.
-func NewGetMiningInfoCmd() *GetMiningInfoCmd {
-	return &GetMiningInfoCmd{}
 }
 
 // GetNetworkInfoCmd defines the getNetworkInfo JSON-RPC command.
@@ -564,24 +537,6 @@ func NewSendRawTransactionCmd(hexTx string, allowHighFees *bool) *SendRawTransac
 	}
 }
 
-// SetGenerateCmd defines the setGenerate JSON-RPC command.
-type SetGenerateCmd struct {
-	Generate     bool
-	GenProcLimit *int `jsonrpcdefault:"-1"`
-}
-
-// NewSetGenerateCmd returns a new instance which can be used to issue a
-// setGenerate JSON-RPC command.
-//
-// The parameters which are pointers indicate they are optional. Passing nil
-// for optional parameters will use the default value.
-func NewSetGenerateCmd(generate bool, genProcLimit *int) *SetGenerateCmd {
-	return &SetGenerateCmd{
-		Generate:     generate,
-		GenProcLimit: genProcLimit,
-	}
-}
-
 // StopCmd defines the stop JSON-RPC command.
 type StopCmd struct{}
 
@@ -686,19 +641,6 @@ func NewDebugLevelCmd(levelSpec string) *DebugLevelCmd {
 	}
 }
 
-// GenerateCmd defines the generate JSON-RPC command.
-type GenerateCmd struct {
-	NumBlocks uint32
-}
-
-// NewGenerateCmd returns a new instance which can be used to issue a generate
-// JSON-RPC command.
-func NewGenerateCmd(numBlocks uint32) *GenerateCmd {
-	return &GenerateCmd{
-		NumBlocks: numBlocks,
-	}
-}
-
 // GetSelectedTipCmd defines the getSelectedTip JSON-RPC command.
 type GetSelectedTipCmd struct {
 	Verbose   *bool `jsonrpcdefault:"true"`
@@ -725,29 +667,29 @@ func NewGetCurrentNetCmd() *GetCurrentNetCmd {
 
 // GetTopHeadersCmd defined the getTopHeaders JSON-RPC command.
 type GetTopHeadersCmd struct {
-	StartHash *string `json:"startHash"`
+	HighHash *string `json:"highHash"`
 }
 
 // NewGetTopHeadersCmd returns a new instance which can be used to issue a
 // getTopHeaders JSON-RPC command.
-func NewGetTopHeadersCmd(startHash *string) *GetTopHeadersCmd {
+func NewGetTopHeadersCmd(highHash *string) *GetTopHeadersCmd {
 	return &GetTopHeadersCmd{
-		StartHash: startHash,
+		HighHash: highHash,
 	}
 }
 
 // GetHeadersCmd defines the getHeaders JSON-RPC command.
 type GetHeadersCmd struct {
-	StartHash string `json:"startHash"`
-	StopHash  string `json:"stopHash"`
+	LowHash  string `json:"lowHash"`
+	HighHash string `json:"highHash"`
 }
 
 // NewGetHeadersCmd returns a new instance which can be used to issue a
 // getHeaders JSON-RPC command.
-func NewGetHeadersCmd(startHash, stopHash string) *GetHeadersCmd {
+func NewGetHeadersCmd(lowHash, highHash string) *GetHeadersCmd {
 	return &GetHeadersCmd{
-		StartHash: startHash,
-		StopHash:  stopHash,
+		LowHash:  lowHash,
+		HighHash: highHash,
 	}
 }
 
@@ -778,13 +720,10 @@ func init() {
 	MustRegisterCommand("getDagTips", (*GetDAGTipsCmd)(nil), flags)
 	MustRegisterCommand("getConnectionCount", (*GetConnectionCountCmd)(nil), flags)
 	MustRegisterCommand("getDifficulty", (*GetDifficultyCmd)(nil), flags)
-	MustRegisterCommand("getGenerate", (*GetGenerateCmd)(nil), flags)
-	MustRegisterCommand("getHashesPerSec", (*GetHashesPerSecCmd)(nil), flags)
 	MustRegisterCommand("getInfo", (*GetInfoCmd)(nil), flags)
 	MustRegisterCommand("getManualNodeInfo", (*GetManualNodeInfoCmd)(nil), flags)
 	MustRegisterCommand("getMempoolEntry", (*GetMempoolEntryCmd)(nil), flags)
 	MustRegisterCommand("getMempoolInfo", (*GetMempoolInfoCmd)(nil), flags)
-	MustRegisterCommand("getMiningInfo", (*GetMiningInfoCmd)(nil), flags)
 	MustRegisterCommand("getNetworkInfo", (*GetNetworkInfoCmd)(nil), flags)
 	MustRegisterCommand("getNetTotals", (*GetNetTotalsCmd)(nil), flags)
 	MustRegisterCommand("getPeerInfo", (*GetPeerInfoCmd)(nil), flags)
@@ -798,14 +737,12 @@ func init() {
 	MustRegisterCommand("removeManualNode", (*RemoveManualNodeCmd)(nil), flags)
 	MustRegisterCommand("searchRawTransactions", (*SearchRawTransactionsCmd)(nil), flags)
 	MustRegisterCommand("sendRawTransaction", (*SendRawTransactionCmd)(nil), flags)
-	MustRegisterCommand("setGenerate", (*SetGenerateCmd)(nil), flags)
 	MustRegisterCommand("stop", (*StopCmd)(nil), flags)
 	MustRegisterCommand("submitBlock", (*SubmitBlockCmd)(nil), flags)
 	MustRegisterCommand("uptime", (*UptimeCmd)(nil), flags)
 	MustRegisterCommand("validateAddress", (*ValidateAddressCmd)(nil), flags)
 	MustRegisterCommand("debugLevel", (*DebugLevelCmd)(nil), flags)
 	MustRegisterCommand("node", (*NodeCmd)(nil), flags)
-	MustRegisterCommand("generate", (*GenerateCmd)(nil), flags)
 	MustRegisterCommand("getSelectedTip", (*GetSelectedTipCmd)(nil), flags)
 	MustRegisterCommand("getCurrentNet", (*GetCurrentNetCmd)(nil), flags)
 	MustRegisterCommand("getHeaders", (*GetHeadersCmd)(nil), flags)
