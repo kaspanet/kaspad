@@ -1620,12 +1620,14 @@ func (dag *BlockDAG) blueBlocksBetween(lowHash, highHash *daghash.Hash, maxEntri
 		return nil, errors.Errorf("Couldn't find high hash %s", highHash)
 	}
 
-	// In order to get no more then maxEntries of blue blocks from
-	// the future of the lowNode (including itself), we iterate
-	// the selected parent chain of the highNode and add the blues
-	// each node (including the highNode itself). This is why the
-	// number of returned blocks will be
+	// In order to get no more then maxEntries blocks from the
+	// future of the lowNode (including itself), we iterate the
+	// selected parent chain of the highNode and add each node
+	// (including the highNode itself). This is why the number of
+	// returned blocks will be approximately
 	// highNode.blueScore-lowNode.blueScore+1.
+	// This approximation is considered to be fairly accurate
+	// because we presume that most DAG blocks are blue.
 	// If highNode.blueScore-lowNode.blueScore+1 > maxEntries, we
 	// first iterate on the selected parent chain of the highNode
 	// until we find a new highNode
