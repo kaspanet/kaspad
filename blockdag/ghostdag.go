@@ -39,8 +39,8 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 	})
 
 	for _, blueCandidate := range selectedParentAnticone {
-		candidateBluesAnticoneSizes := make(map[*blockNode]dagconfig.KSize)
-		var candidateAnticoneSize dagconfig.KSize
+		candidateBluesAnticoneSizes := make(map[*blockNode]dagconfig.KType)
+		var candidateAnticoneSize dagconfig.KType
 		possiblyBlue := true
 
 		// Iterate over all blocks in the blue set of newNode that are not in the past
@@ -109,7 +109,7 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 
 			// The maximum length of node.blues can be K+1 because
 			// it contains the selected parent.
-			if dagconfig.KSize(len(newNode.blues)) == dag.dagParams.K+1 {
+			if dagconfig.KType(len(newNode.blues)) == dag.dagParams.K+1 {
 				break
 			}
 		}
@@ -166,7 +166,7 @@ func (dag *BlockDAG) selectedParentAnticone(node *blockNode) ([]*blockNode, erro
 
 // blueAnticoneSize returns the blue anticone size of 'block' from the worldview of 'context'.
 // Expects 'block' to be in the blue set of 'context'
-func (dag *BlockDAG) blueAnticoneSize(block, context *blockNode) (dagconfig.KSize, error) {
+func (dag *BlockDAG) blueAnticoneSize(block, context *blockNode) (dagconfig.KType, error) {
 	for current := context; current != nil; current = current.selectedParent {
 		if blueAnticoneSize, ok := current.bluesAnticoneSizes[*block.hash]; ok {
 			return blueAnticoneSize, nil

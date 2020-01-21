@@ -117,10 +117,10 @@ func TestBlueAnticoneSizesSize(t *testing.T) {
 	deserializedNode, _ := dag.deserializeBlockNode(serializedNode)
 
 	if deserializedNode.bluesAnticoneSizes[daghash.Hash{1}] < 0 {
-		t.Fatalf("TestBlueAnticoneSizesSize: BlueAnticoneSize could not be negative (type KSize is unsigned)")
+		t.Fatalf("TestBlueAnticoneSizesSize: BlueAnticoneSize could not be negative (type KType is unsigned)")
 	}
 
 	if deserializedNode.bluesAnticoneSizes[daghash.Hash{1}] > math.MaxUint8 {
-		t.Fatalf("TestBlueAnticoneSizes: BlueAnticoneSize could not larger than 255 (type KSize is of size uint8)")
+		t.Fatalf("TestBlueAnticoneSizes: BlueAnticoneSize could not larger than 255 (type KType is of size uint8)")
 	}
 }
