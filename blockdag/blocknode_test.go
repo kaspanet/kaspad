@@ -98,6 +98,8 @@ func TestChainHeight(t *testing.T) {
 
 }
 
+// This test is to ensure the size BlueAnticoneSizesSize is uint8 after it blocknode goes through serialization.
+// We verify that by trying to overflow its value and make sure we stay within the expected range.
 func TestBlueAnticoneSizesSize(t *testing.T) {
 
 	dag, teardownFunc, err := DAGSetup("TestBlueAnticoneSizesSize", Config{
@@ -110,17 +112,25 @@ func TestBlueAnticoneSizesSize(t *testing.T) {
 	blockHeader := dagconfig.SimnetParams.GenesisBlock.Header
 	block, _ := dag.newBlockNode(&blockHeader, newSet())
 
-	block.bluesAnticoneSizes[daghash.Hash{1}] = math.MaxUint8
-	block.bluesAnticoneSizes[daghash.Hash{1}]++
-
+	block.bluesAnticoneSizes[daghash.Hash{1}] = 42
 	serializedNode, _ := serializeBlockNode(block)
 	deserializedNode, _ := dag.deserializeBlockNode(serializedNode)
 
+	if deserializedNode.bluesAnticoneSizes[daghash.Hash{1}] != 42 {
+		t.Fatalf("TestBlueAnticoneSizesSize: BlueAnticoneSize should not change when deserilizing)")
+	}
+
+	block.bluesAnticoneSizes[daghash.Hash{1}] = math.MaxUint8
+	block.bluesAnticoneSizes[daghash.Hash{1}]++
+
+	serializedNode, _ = serializeBlockNode(block)
+	deserializedNode, _ = dag.deserializeBlockNode(serializedNode)
+
 	if deserializedNode.bluesAnticoneSizes[daghash.Hash{1}] < 0 {
-		t.Fatalf("TestBlueAnticoneSizesSize: BlueAnticoneSize could not be negative (type KType is unsigned)")
+		t.Fatalf("TestBlueAnticoneSizesSize: BlueAnticoneSize could not be negative (KType is unsigned)")
 	}
 
 	if deserializedNode.bluesAnticoneSizes[daghash.Hash{1}] > math.MaxUint8 {
-		t.Fatalf("TestBlueAnticoneSizes: BlueAnticoneSize could not larger than 255 (type KType is of size uint8)")
+		t.Fatalf("TestBlueAnticoneSizes: BlueAnticoneSize could not larger than 255 (KType is of size uint8)")
 	}
 }
