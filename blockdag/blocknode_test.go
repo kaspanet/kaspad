@@ -2,7 +2,9 @@ package blockdag
 
 import (
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
+	"math"
 	"testing"
 )
 
@@ -94,4 +96,31 @@ func TestChainHeight(t *testing.T) {
 		}
 	}
 
+}
+
+func TestBlueAnticoneSizesSize(t *testing.T) {
+
+	dag, teardownFunc, err := DAGSetup("TestBlueAnticoneSizesSize", Config{
+		DAGParams: &dagconfig.SimnetParams,
+	})
+	if err != nil {
+		t.Fatalf("TestBlueAnticoneSizesSize: Failed to setup DAG instance: %s", err)
+	}
+	defer teardownFunc()
+
+	block, _ := dag.newBlockNode(nil, newSet())
+
+	block.bluesAnticoneSizes[daghash.Hash{1}] = 0
+	block.bluesAnticoneSizes[daghash.Hash{1}]--
+
+	if block.bluesAnticoneSizes[daghash.Hash{1}] < 0 {
+		t.Fatalf("TestBlueAnticoneSizesSize: BlueAnticoneSize could not be negative (type KSize is unsigned)")
+	}
+
+	block.bluesAnticoneSizes[daghash.Hash{1}] = math.MaxUint8
+	block.bluesAnticoneSizes[daghash.Hash{1}]++
+
+	if block.bluesAnticoneSizes[daghash.Hash{1}] > math.MaxUint8 {
+		t.Fatalf("TestBlueAnticoneSizes: BlueAnticoneSize could not larger than 255 (type KSize is of size uint8)")
+	}
 }
