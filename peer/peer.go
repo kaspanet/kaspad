@@ -865,7 +865,7 @@ func (p *Peer) PushBlockLocatorMsg(locator blockdag.BlockLocator) error {
 }
 
 // PushGetHeadersMsg sends a getblockinvs message for the provided block locator
-// and low hash. It will  back-to-back duplicate requests.
+// and low hash. It will ignore back-to-back duplicate requests.
 //
 // This function is safe for concurrent access.
 func (p *Peer) PushGetHeadersMsg(lowHash, highHash *daghash.Hash) error {
