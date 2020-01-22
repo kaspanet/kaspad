@@ -879,7 +879,6 @@ func (sm *SyncManager) handleSelectedTipMsg(msg *selectedTipMsg) {
 	}
 	peer.SetSelectedTipHash(selectedTipHash)
 	sm.startSync()
-	msg.reply <- struct{}{}
 }
 
 // blockHandler is the main handler for the sync manager. It must be run as a
@@ -951,6 +950,7 @@ out:
 
 			case *selectedTipMsg:
 				sm.handleSelectedTipMsg(msg)
+				msg.reply <- struct{}{}
 
 			default:
 				log.Warnf("Invalid message type in block "+
