@@ -1626,16 +1626,11 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 
 	// In order to get no more then maxEntries blocks from the
 	// future of the lowNode (including itself), we iterate the
-	// selected parent chain of the highNode and add each node
-	// (including the highNode itself). This is why the number of
-	// returned blocks will be approximately
-	// highNode.blueScore-lowNode.blueScore+1.
-	// This approximation is considered to be fairly accurate
-	// because we presume that most DAG blocks are blue.
-	// If highNode.blueScore-lowNode.blueScore+1 > maxEntries, we
-	// first iterate on the selected parent chain of the highNode
-	// until we find a new highNode
-	// where highNode.blueScore-lowNode.blueScore+1 <= maxEntries
+	// selected parent chain of the highNode and stop once we reach
+	// highNode.blueScore-lowNode.blueScore+1 <= maxEntries.
+	// Using blueScore as an approximation is considered to be
+	// fairly accurate because we presume that most DAG blocks are
+	// blue.
 	for highNode.blueScore-lowNode.blueScore+1 > maxEntries {
 		highNode = highNode.selectedParent
 	}
