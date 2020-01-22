@@ -96,7 +96,7 @@ func messageSummary(msg wire.Message) string {
 	switch msg := msg.(type) {
 	case *wire.MsgVersion:
 		return fmt.Sprintf("agent %s, pver %d, selected tip %s",
-			msg.UserAgent, msg.ProtocolVersion, msg.SelectedTip)
+			msg.UserAgent, msg.ProtocolVersion, msg.SelectedTipHash)
 
 	case *wire.MsgVerAck:
 		// No summary.

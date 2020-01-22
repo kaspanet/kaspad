@@ -23,7 +23,7 @@ func mockRemotePeer() error {
 		UserAgentName:    "peer",  // User agent name to advertise.
 		UserAgentVersion: "1.0.0", // User agent version to advertise.
 		DAGParams:        &dagconfig.SimnetParams,
-		SelectedTip:      fakeSelectedTipFn,
+		SelectedTipHash:  fakeSelectedTipFn,
 	}
 
 	// Accept connections on the simnet port.
@@ -78,7 +78,7 @@ func Example_newOutboundPeer() {
 				verack <- struct{}{}
 			},
 		},
-		SelectedTip: fakeSelectedTipFn,
+		SelectedTipHash: fakeSelectedTipFn,
 	}
 	p, err := peer.NewOutboundPeer(peerCfg, "127.0.0.1:18555")
 	if err != nil {

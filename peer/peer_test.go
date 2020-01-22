@@ -218,7 +218,7 @@ func TestPeerConnection(t *testing.T) {
 		DAGParams:         &dagconfig.MainnetParams,
 		ProtocolVersion:   wire.ProtocolVersion, // Configure with older version
 		Services:          0,
-		SelectedTip:       fakeSelectedTipFn,
+		SelectedTipHash:   fakeSelectedTipFn,
 	}
 	peer2Cfg := &peer.Config{
 		Listeners:         peer1Cfg.Listeners,
@@ -228,7 +228,7 @@ func TestPeerConnection(t *testing.T) {
 		DAGParams:         &dagconfig.MainnetParams,
 		ProtocolVersion:   wire.ProtocolVersion + 1,
 		Services:          wire.SFNodeNetwork,
-		SelectedTip:       fakeSelectedTipFn,
+		SelectedTipHash:   fakeSelectedTipFn,
 	}
 
 	wantStats1 := peerStats{
@@ -403,7 +403,7 @@ func TestPeerListeners(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		DAGParams:         &dagconfig.MainnetParams,
 		Services:          wire.SFNodeBloom,
-		SelectedTip:       fakeSelectedTipFn,
+		SelectedTipHash:   fakeSelectedTipFn,
 	}
 	inConn, outConn := pipe(
 		&conn{raddr: "10.0.0.1:16111"},
@@ -528,7 +528,7 @@ func TestPeerListeners(t *testing.T) {
 // TestOutboundPeer tests that the outbound peer works as expected.
 func TestOutboundPeer(t *testing.T) {
 	peerCfg := &peer.Config{
-		SelectedTip: func() *daghash.Hash {
+		SelectedTipHash: func() *daghash.Hash {
 			return &daghash.ZeroHash
 		},
 		UserAgentName:     "peer",
@@ -568,8 +568,8 @@ func TestOutboundPeer(t *testing.T) {
 	<-done
 	p.Disconnect()
 
-	// Test SelectedTip
-	var selectedTip = func() *daghash.Hash {
+	// Test SelectedTipHashAndBlueScore
+	var selectedTipHash = func() *daghash.Hash {
 		hashStr := "14a0810ac680a3eb3f82edc878cea25ec41d6b790744e5daeef"
 		hash, err := daghash.NewHashFromStr(hashStr)
 		if err != nil {
@@ -578,7 +578,7 @@ func TestOutboundPeer(t *testing.T) {
 		return hash
 	}
 
-	peerCfg.SelectedTip = selectedTip
+	peerCfg.SelectedTipHash = selectedTipHash
 	r1, w1 := io.Pipe()
 	c1 := &conn{raddr: "10.0.0.1:16111", Writer: w1, Reader: r1}
 	p1, err := peer.NewOutboundPeer(peerCfg, "10.0.0.1:16111")
@@ -645,7 +645,7 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		DAGParams:         &dagconfig.MainnetParams,
 		Services:          0,
-		SelectedTip:       fakeSelectedTipFn,
+		SelectedTipHash:   fakeSelectedTipFn,
 	}
 
 	localNA := wire.NewNetAddressIPPort(

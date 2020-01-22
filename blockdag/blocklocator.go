@@ -36,22 +36,10 @@ func (dag *BlockDAG) BlockLocatorFromHashes(highHash, lowHash *daghash.Hash) (Bl
 }
 
 // blockLocator returns a block locator for the passed high and low nodes.
-// The default value for the high node is the selected tip, and the default
-// values of the low node is the genesis block.
-//
 // See the BlockLocator type comments for more details.
 //
 // This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) blockLocator(highNode, lowNode *blockNode) (BlockLocator, error) {
-	// Use the selected tip if requested.
-	if highNode == nil {
-		highNode = dag.virtual.selectedParent
-	}
-
-	if lowNode == nil {
-		lowNode = dag.genesis
-	}
-
 	// We use the selected parent of the high node, so the
 	// block locator won't contain the high node.
 	highNode = highNode.selectedParent

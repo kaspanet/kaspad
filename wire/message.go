@@ -52,6 +52,8 @@ const (
 	CmdFeeFilter       = "feefilter"
 	CmdGetBlockLocator = "getlocator"
 	CmdBlockLocator    = "locator"
+	CmdSelectedTip     = "selectedtip"
+	CmdGetSelectedTip  = "getseltip"
 )
 
 // Message is an interface that describes a kaspa message. A type that
@@ -138,6 +140,12 @@ func makeEmptyMessage(command string) (Message, error) {
 
 	case CmdFeeFilter:
 		msg = &MsgFeeFilter{}
+
+	case CmdGetSelectedTip:
+		msg = &MsgGetSelectedTip{}
+
+	case CmdSelectedTip:
+		msg = &MsgSelectedTip{}
 
 	default:
 		return nil, errors.Errorf("unhandled command [%s]", command)

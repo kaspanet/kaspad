@@ -364,7 +364,7 @@ var helpDescsEnUS = map[string]string{
 
 	// GetChainFromBlockResult help.
 	"getChainFromBlockResult-removedChainBlockHashes": "List chain-block hashes that were removed from the selected parent chain in top-to-bottom order",
-	"getChainFromBlockResult-addedChainBlocks":        "List of ChainBlocks from Virtual.SelectedTip to LowHash (excluding LowHash) ordered bottom-to-top.",
+	"getChainFromBlockResult-addedChainBlocks":        "List of ChainBlocks from Virtual.SelectedTipHashAndBlueScore to LowHash (excluding LowHash) ordered bottom-to-top.",
 	"getChainFromBlockResult-blocks":                  "If includeBlocks=true - contains the contents of all chain and accepted blocks in the AddedChainBlocks. Otherwise - omitted.",
 
 	// GetConnectionCountCmd help.

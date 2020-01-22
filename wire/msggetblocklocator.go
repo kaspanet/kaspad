@@ -9,8 +9,6 @@ import (
 // MsgGetBlockLocator implements the Message interface and represents a kaspa
 // getlocator message. It is used to request a block locator between high and low hash.
 // The locator is returned via a locator message (MsgBlockLocator).
-//
-// This message has no payload.
 type MsgGetBlockLocator struct {
 	HighHash *daghash.Hash
 	LowHash  *daghash.Hash
