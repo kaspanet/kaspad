@@ -157,16 +157,16 @@ func NewGetBlockCmd(hash string, verbose, verboseTx *bool, subnetworkID *string)
 type GetBlocksCmd struct {
 	IncludeRawBlockData     bool    `json:"includeRawBlockData"`
 	IncludeVerboseBlockData bool    `json:"includeVerboseBlockData"`
-	StartHash               *string `json:"startHash"`
+	LowHash                 *string `json:"lowHash"`
 }
 
 // NewGetBlocksCmd returns a new instance which can be used to issue a
 // GetGetBlocks JSON-RPC command.
-func NewGetBlocksCmd(includeRawBlockData bool, includeVerboseBlockData bool, startHash *string) *GetBlocksCmd {
+func NewGetBlocksCmd(includeRawBlockData bool, includeVerboseBlockData bool, lowHash *string) *GetBlocksCmd {
 	return &GetBlocksCmd{
 		IncludeRawBlockData:     includeRawBlockData,
 		IncludeVerboseBlockData: includeVerboseBlockData,
-		StartHash:               startHash,
+		LowHash:                 lowHash,
 	}
 }
 

@@ -482,24 +482,24 @@ func (c *Client) GetTopHeaders(highHash *daghash.Hash) ([]wire.BlockHeader, erro
 // of the RPC at some future time by invoking the Receive function on the returned instance.
 //
 // See GetHeaders for the blocking version and more details.
-func (c *Client) GetHeadersAsync(startHash, stopHash *daghash.Hash) FutureGetHeadersResult {
-	startHashStr := ""
-	if startHash != nil {
-		startHashStr = startHash.String()
+func (c *Client) GetHeadersAsync(lowHash, highHash *daghash.Hash) FutureGetHeadersResult {
+	lowHashStr := ""
+	if lowHash != nil {
+		lowHashStr = lowHash.String()
 	}
-	stopHashStr := ""
-	if stopHash != nil {
-		stopHashStr = stopHash.String()
+	highHashStr := ""
+	if highHash != nil {
+		highHashStr = highHash.String()
 	}
-	cmd := rpcmodel.NewGetHeadersCmd(startHashStr, stopHashStr)
+	cmd := rpcmodel.NewGetHeadersCmd(lowHashStr, highHashStr)
 	return c.sendCmd(cmd)
 }
 
 // GetHeaders mimics the wire protocol getheaders and headers messages by
 // returning all headers in the DAG after the first known block in the
-// locators, up until a block hash matches stopHash.
-func (c *Client) GetHeaders(startHash, stopHash *daghash.Hash) ([]wire.BlockHeader, error) {
-	return c.GetHeadersAsync(startHash, stopHash).Receive()
+// locators, up until a block hash matches highHash.
+func (c *Client) GetHeaders(lowHash, highHash *daghash.Hash) ([]wire.BlockHeader, error) {
+	return c.GetHeadersAsync(lowHash, highHash).Receive()
 }
 
 // FutureSessionResult is a future promise to deliver the result of a

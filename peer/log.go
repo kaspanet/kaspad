@@ -143,8 +143,8 @@ func messageSummary(msg wire.Message) string {
 			msg.HighHash)
 
 	case *wire.MsgGetHeaders:
-		return fmt.Sprintf("start hash %s, stop hash %s", msg.StartHash,
-			msg.StopHash)
+		return fmt.Sprintf("low hash %s, high hash %s", msg.LowHash,
+			msg.HighHash)
 
 	case *wire.MsgGetBlockLocator:
 		return fmt.Sprintf("high hash %s, low hash %s", msg.HighHash,

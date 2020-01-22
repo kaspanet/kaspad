@@ -116,7 +116,7 @@ func (c *Client) GetBlock(blockHash *daghash.Hash, subnetworkID *string) (*wire.
 type FutureGetBlocksResult chan *response
 
 // Receive waits for the response promised by the future and returns the blocks
-// starting from startHash up to the virtual ordered by blue score.
+// starting from lowHash up to the virtual ordered by blue score.
 func (r FutureGetBlocksResult) Receive() (*rpcmodel.GetBlocksResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
@@ -135,15 +135,15 @@ func (r FutureGetBlocksResult) Receive() (*rpcmodel.GetBlocksResult, error) {
 // returned instance.
 //
 // See GetBlocks for the blocking version and more details.
-func (c *Client) GetBlocksAsync(includeRawBlockData bool, IncludeVerboseBlockData bool, startHash *string) FutureGetBlocksResult {
-	cmd := rpcmodel.NewGetBlocksCmd(includeRawBlockData, IncludeVerboseBlockData, startHash)
+func (c *Client) GetBlocksAsync(includeRawBlockData bool, IncludeVerboseBlockData bool, lowHash *string) FutureGetBlocksResult {
+	cmd := rpcmodel.NewGetBlocksCmd(includeRawBlockData, IncludeVerboseBlockData, lowHash)
 	return c.sendCmd(cmd)
 }
 
-// GetBlocks returns the blocks starting from startHash up to the virtual ordered
+// GetBlocks returns the blocks starting from lowHash up to the virtual ordered
 // by blue score.
-func (c *Client) GetBlocks(includeRawBlockData bool, includeVerboseBlockData bool, startHash *string) (*rpcmodel.GetBlocksResult, error) {
-	return c.GetBlocksAsync(includeRawBlockData, includeVerboseBlockData, startHash).Receive()
+func (c *Client) GetBlocks(includeRawBlockData bool, includeVerboseBlockData bool, lowHash *string) (*rpcmodel.GetBlocksResult, error) {
+	return c.GetBlocksAsync(includeRawBlockData, includeVerboseBlockData, lowHash).Receive()
 }
 
 // FutureGetBlockVerboseResult is a future promise to deliver the result of a

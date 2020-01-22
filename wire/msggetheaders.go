@@ -27,32 +27,32 @@ import (
 // exponentially decrease the number of hashes the further away from head and
 // closer to the genesis block you get.
 type MsgGetHeaders struct {
-	StartHash *daghash.Hash
-	StopHash  *daghash.Hash
+	LowHash  *daghash.Hash
+	HighHash *daghash.Hash
 }
 
 // KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgGetHeaders) KaspaDecode(r io.Reader, pver uint32) error {
-	msg.StartHash = &daghash.Hash{}
-	err := ReadElement(r, msg.StartHash)
+	msg.LowHash = &daghash.Hash{}
+	err := ReadElement(r, msg.LowHash)
 	if err != nil {
 		return err
 	}
 
-	msg.StopHash = &daghash.Hash{}
-	return ReadElement(r, msg.StopHash)
+	msg.HighHash = &daghash.Hash{}
+	return ReadElement(r, msg.HighHash)
 }
 
 // KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgGetHeaders) KaspaEncode(w io.Writer, pver uint32) error {
-	err := WriteElement(w, msg.StartHash)
+	err := WriteElement(w, msg.LowHash)
 	if err != nil {
 		return err
 	}
 
-	return WriteElement(w, msg.StopHash)
+	return WriteElement(w, msg.HighHash)
 }
 
 // Command returns the protocol command string for the message. This is part
@@ -64,15 +64,15 @@ func (msg *MsgGetHeaders) Command() string {
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver. This is part of the Message interface implementation.
 func (msg *MsgGetHeaders) MaxPayloadLength(pver uint32) uint32 {
-	// start hash + stop hash.
+	// low hash + high hash.
 	return 2 * daghash.HashSize
 }
 
 // NewMsgGetHeaders returns a new kaspa getheaders message that conforms to
 // the Message interface. See MsgGetHeaders for details.
-func NewMsgGetHeaders(startHash, stopHash *daghash.Hash) *MsgGetHeaders {
+func NewMsgGetHeaders(lowHash, highHash *daghash.Hash) *MsgGetHeaders {
 	return &MsgGetHeaders{
-		StartHash: startHash,
-		StopHash:  stopHash,
+		LowHash:  lowHash,
+		HighHash: highHash,
 	}
 }

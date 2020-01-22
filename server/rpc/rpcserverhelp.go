@@ -172,11 +172,11 @@ var helpDescsEnUS = map[string]string{
 	"getBlock--result0":    "Hex-encoded bytes of the serialized block",
 
 	// GetBlocksCmd help.
-	"getBlocks--synopsis":               "Return the blocks starting from startHash up to the virtual ordered by blue score.",
+	"getBlocks--synopsis":               "Return the blocks starting from lowHash up to the virtual ordered by blue score.",
 	"getBlocks-includeRawBlockData":     "If set to true - the raw block data would be also included.",
 	"getBlocks-includeVerboseBlockData": "If set to true - the verbose block data would also be included.",
-	"getBlocks-startHash":               "Hash of the block with the bottom blue score. If this hash is unknown - returns an error.",
-	"getBlocks--result0":                "Blocks starting from startHash. The result may contains up to 1000 blocks. For the remainder, call the command again with the bluest block's hash.",
+	"getBlocks-lowHash":                 "Hash of the block with the bottom blue score. If this hash is unknown - returns an error.",
+	"getBlocks--result0":                "Blocks starting from lowHash. The result may contains up to 1000 blocks. For the remainder, call the command again with the bluest block's hash.",
 
 	// GetChainFromBlockResult help.
 	"getBlocksResult-hashes":        "List of hashes from StartHash (excluding StartHash) ordered by smallest blue score to greatest.",
@@ -393,7 +393,7 @@ var helpDescsEnUS = map[string]string{
 	"infoDagResult-errors":          "Any current errors",
 
 	// GetTopHeadersCmd help.
-	"getTopHeaders--synopsis": "Returns the top block headers starting with the provided start hash (not inclusive)",
+	"getTopHeaders--synopsis": "Returns the top block headers starting with the provided high hash (not inclusive)",
 	"getTopHeaders-highHash":  "Block hash to start including block headers from; if not found, it'll start from the virtual.",
 	"getTopHeaders--result0":  "Serialized block headers of all located blocks, limited to some arbitrary maximum number of hashes (currently 2000, which matches the wire protocol headers message, but this is not guaranteed)",
 

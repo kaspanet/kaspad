@@ -201,7 +201,7 @@ func TestRPCServerCommands(t *testing.T) {
 			unmarshalled: &rpcmodel.GetBlocksCmd{
 				IncludeRawBlockData:     true,
 				IncludeVerboseBlockData: true,
-				StartHash:               rpcmodel.String("123"),
+				LowHash:                 rpcmodel.String("123"),
 			},
 		},
 		{
@@ -987,7 +987,7 @@ func TestRPCServerCommands(t *testing.T) {
 			unmarshalled: &rpcmodel.GetTopHeadersCmd{},
 		},
 		{
-			name: "getTopHeaders - with start hash",
+			name: "getTopHeaders - with high hash",
 			newCmd: func() (interface{}, error) {
 				return rpcmodel.NewCommand("getTopHeaders", "000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7")
 			},
