@@ -1668,7 +1668,7 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 	if candidateNodes.Len() < nodesLen {
 		nodesLen = candidateNodes.Len()
 	}
-	nodes := make([]*blockNode, 0, nodesLen)
+	nodes := make([]*blockNode, nodesLen)
 	for i := 0; i < nodesLen; i++ {
 		nodes[i] = candidateNodes.pop()
 	}
