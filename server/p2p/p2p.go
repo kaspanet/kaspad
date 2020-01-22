@@ -296,7 +296,7 @@ func newServerPeer(s *Server, isPersistent bool) *Peer {
 	}
 }
 
-// selectedTipHash returns the current selected tip
+// selectedTipHash returns the current selected tip hash
 func (sp *Peer) selectedTipHash() *daghash.Hash {
 	return sp.server.DAG.SelectedTipHash()
 }

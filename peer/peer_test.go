@@ -569,7 +569,7 @@ func TestOutboundPeer(t *testing.T) {
 	p.Disconnect()
 
 	// Test SelectedTipHashAndBlueScore
-	var selectedTip = func() *daghash.Hash {
+	var selectedTipHash = func() *daghash.Hash {
 		hashStr := "14a0810ac680a3eb3f82edc878cea25ec41d6b790744e5daeef"
 		hash, err := daghash.NewHashFromStr(hashStr)
 		if err != nil {
@@ -578,7 +578,7 @@ func TestOutboundPeer(t *testing.T) {
 		return hash
 	}
 
-	peerCfg.SelectedTipHash = selectedTip
+	peerCfg.SelectedTipHash = selectedTipHash
 	r1, w1 := io.Pipe()
 	c1 := &conn{raddr: "10.0.0.1:16111", Writer: w1, Reader: r1}
 	p1, err := peer.NewOutboundPeer(peerCfg, "10.0.0.1:16111")
