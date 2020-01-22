@@ -24,7 +24,7 @@ func TestGHOSTDAG(t *testing.T) {
 	dagParams := dagconfig.SimnetParams
 
 	tests := []struct {
-		k            uint32
+		k            dagconfig.KType
 		expectedReds []string
 		dagData      []*testBlockData
 	}{

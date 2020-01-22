@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/pkg/errors"
 	"math"
 	"time"
@@ -79,7 +80,7 @@ type blockNode struct {
 
 	// bluesAnticoneSizes is a map holding the set of blues affected by this block and their
 	// modified blue anticone size.
-	bluesAnticoneSizes map[daghash.Hash]uint32
+	bluesAnticoneSizes map[daghash.Hash]dagconfig.KType
 
 	// hash is the double sha 256 of the block.
 	hash *daghash.Hash
@@ -115,7 +116,7 @@ func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSe
 		children:           make(blockSet),
 		blueScore:          math.MaxUint64, // Initialized to the max value to avoid collisions with the genesis block
 		timestamp:          dag.AdjustedTime().Unix(),
-		bluesAnticoneSizes: make(map[daghash.Hash]uint32),
+		bluesAnticoneSizes: make(map[daghash.Hash]dagconfig.KType),
 	}
 
 	// blockHeader is nil only for the virtual block
