@@ -12,7 +12,7 @@ import (
 
 // MsgGetBlockInvs implements the Message interface and represents a kaspa
 // getblockinvs message. It is used to request a list of blocks starting after the
-// start hash and until the stop hash.
+// low hash and until the high hash.
 type MsgGetBlockInvs struct {
 	LowHash  *daghash.Hash
 	HighHash *daghash.Hash
@@ -51,7 +51,7 @@ func (msg *MsgGetBlockInvs) Command() string {
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver. This is part of the Message interface implementation.
 func (msg *MsgGetBlockInvs) MaxPayloadLength(pver uint32) uint32 {
-	// start hash + stop hash.
+	// low hash + high hash.
 	return 2 * daghash.HashSize
 }
 

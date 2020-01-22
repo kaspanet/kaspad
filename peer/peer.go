@@ -418,8 +418,8 @@ type Peer struct {
 	prevGetBlockInvsLow  *daghash.Hash
 	prevGetBlockInvsHigh *daghash.Hash
 	prevGetHdrsMtx       sync.Mutex
-	prevGetHdrsStart     *daghash.Hash
-	prevGetHdrsStop      *daghash.Hash
+	prevGetHdrsLow       *daghash.Hash
+	prevGetHdrsHigh      *daghash.Hash
 
 	// These fields keep track of statistics for the peer and are protected
 	// by the statsMtx mutex.
@@ -865,32 +865,32 @@ func (p *Peer) PushBlockLocatorMsg(locator blockdag.BlockLocator) error {
 }
 
 // PushGetHeadersMsg sends a getblockinvs message for the provided block locator
-// and stop hash. It will ignore back-to-back duplicate requests.
+// and low hash. It will  back-to-back duplicate requests.
 //
 // This function is safe for concurrent access.
-func (p *Peer) PushGetHeadersMsg(startHash, stopHash *daghash.Hash) error {
+func (p *Peer) PushGetHeadersMsg(lowHash, highHash *daghash.Hash) error {
 	// Filter duplicate getheaders requests.
 	p.prevGetHdrsMtx.Lock()
-	isDuplicate := p.prevGetHdrsStop != nil && p.prevGetHdrsStart != nil &&
-		startHash != nil && stopHash.IsEqual(p.prevGetHdrsStop) &&
-		startHash.IsEqual(p.prevGetHdrsStart)
+	isDuplicate := p.prevGetHdrsHigh != nil && p.prevGetHdrsLow != nil &&
+		lowHash != nil && highHash.IsEqual(p.prevGetHdrsHigh) &&
+		lowHash.IsEqual(p.prevGetHdrsLow)
 	p.prevGetHdrsMtx.Unlock()
 
 	if isDuplicate {
-		log.Tracef("Filtering duplicate [getheaders] with start hash %s",
-			startHash)
+		log.Tracef("Filtering duplicate [getheaders] with low hash %s",
+			lowHash)
 		return nil
 	}
 
 	// Construct the getheaders request and queue it to be sent.
-	msg := wire.NewMsgGetHeaders(startHash, stopHash)
+	msg := wire.NewMsgGetHeaders(lowHash, highHash)
 	p.QueueMessage(msg, nil)
 
 	// Update the previous getheaders request information for filtering
 	// duplicates.
 	p.prevGetHdrsMtx.Lock()
-	p.prevGetHdrsStart = startHash
-	p.prevGetHdrsStop = stopHash
+	p.prevGetHdrsLow = lowHash
+	p.prevGetHdrsHigh = highHash
 	p.prevGetHdrsMtx.Unlock()
 	return nil
 }

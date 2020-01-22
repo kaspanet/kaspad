@@ -379,8 +379,8 @@ func BenchmarkWriteBlockHeader(b *testing.B) {
 func BenchmarkDecodeGetHeaders(b *testing.B) {
 	pver := ProtocolVersion
 	var m MsgGetHeaders
-	m.StartHash = &daghash.Hash{1}
-	m.StopHash = &daghash.Hash{1}
+	m.LowHash = &daghash.Hash{1}
+	m.HighHash = &daghash.Hash{1}
 
 	// Serialize it so the bytes are available to test the decode below.
 	var bb bytes.Buffer

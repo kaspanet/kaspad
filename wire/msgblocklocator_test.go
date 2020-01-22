@@ -175,7 +175,7 @@ func TestBlockLocatorWireErrors(t *testing.T) {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
-	// MsgBlockLocator message with multiple block locators and a stop hash.
+	// MsgBlockLocator message with multiple block locators and a low hash.
 	baseGetBlocks := NewMsgBlockLocator()
 	baseGetBlocks.AddBlockLocatorHash(hashLocator2)
 	baseGetBlocks.AddBlockLocatorHash(hashLocator)
