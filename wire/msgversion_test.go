@@ -23,7 +23,7 @@ func TestVersion(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Create version message data.
-	selectedTip := &daghash.Hash{12, 34}
+	selectedTipHash := &daghash.Hash{12, 34}
 	tcpAddrMe := &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 16111}
 	me := NewNetAddress(tcpAddrMe, SFNodeNetwork)
 	tcpAddrYou := &net.TCPAddr{IP: net.ParseIP("192.168.0.1"), Port: 16111}
@@ -34,7 +34,7 @@ func TestVersion(t *testing.T) {
 	}
 
 	// Ensure we get the correct data back out.
-	msg := NewMsgVersion(me, you, nonce, selectedTip, nil)
+	msg := NewMsgVersion(me, you, nonce, selectedTipHash, nil)
 	if msg.ProtocolVersion != int32(pver) {
 		t.Errorf("NewMsgVersion: wrong protocol version - got %v, want %v",
 			msg.ProtocolVersion, pver)
@@ -55,9 +55,9 @@ func TestVersion(t *testing.T) {
 		t.Errorf("NewMsgVersion: wrong user agent - got %v, want %v",
 			msg.UserAgent, DefaultUserAgent)
 	}
-	if !msg.SelectedTip.IsEqual(selectedTip) {
-		t.Errorf("NewMsgVersion: wrong selected tip - got %s, want %s",
-			msg.SelectedTip, selectedTip)
+	if !msg.SelectedTipHash.IsEqual(selectedTipHash) {
+		t.Errorf("NewMsgVersion: wrong selected tip hash - got %s, want %s",
+			msg.SelectedTipHash, selectedTipHash)
 	}
 	if msg.DisableRelayTx {
 		t.Errorf("NewMsgVersion: disable relay tx is not false by "+
@@ -106,10 +106,10 @@ func TestVersion(t *testing.T) {
 
 	// Ensure max payload is expected value.
 	// Protocol version 4 bytes + services 8 bytes + timestamp 16 bytes +
-	// remote and local net addresses + nonce 8 bytes + length of user agent
-	// (varInt) + max allowed user agent length + last block 4 bytes +
+	// remote and local net addresses + nonce 8 bytes + length of user
+	// agent (varInt) + max allowed useragent length + selected tip hash length +
 	// relay transactions flag 1 byte.
-	wantPayload := uint32(366)
+	wantPayload := uint32(394)
 	maxPayload := msg.MaxPayloadLength(pver)
 	if maxPayload != wantPayload {
 		t.Errorf("MaxPayloadLength: wrong max payload length for "+
@@ -321,9 +321,9 @@ var baseVersion = &MsgVersion{
 		IP:        net.ParseIP("127.0.0.1"),
 		Port:      16111,
 	},
-	Nonce:       123123, // 0x1e0f3
-	UserAgent:   "/kaspadtest:0.0.1/",
-	SelectedTip: &daghash.Hash{0x12, 0x34},
+	Nonce:           123123, // 0x1e0f3
+	UserAgent:       "/kaspadtest:0.0.1/",
+	SelectedTipHash: &daghash.Hash{0x12, 0x34},
 }
 
 // baseVersionEncoded is the wire encoded bytes for baseVersion using protocol
@@ -371,9 +371,9 @@ var baseVersionWithRelayTx = &MsgVersion{
 		IP:        net.ParseIP("127.0.0.1"),
 		Port:      16111,
 	},
-	Nonce:       123123, // 0x1e0f3
-	UserAgent:   "/kaspadtest:0.0.1/",
-	SelectedTip: &daghash.Hash{0x12, 0x34},
+	Nonce:           123123, // 0x1e0f3
+	UserAgent:       "/kaspadtest:0.0.1/",
+	SelectedTipHash: &daghash.Hash{0x12, 0x34},
 }
 
 // baseVersionWithRelayTxEncoded is the wire encoded bytes for

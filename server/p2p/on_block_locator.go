@@ -33,7 +33,7 @@ func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgBlockLocator) {
 		// This is not a mistake. The invs we desire start from the highest
 		// hash that we know of and end at the highest hash that the peer
 		// knows of.
-		err := sp.Peer.PushGetBlockInvsMsg(highHash, sp.Peer.SelectedTip())
+		err := sp.Peer.PushGetBlockInvsMsg(highHash, sp.Peer.SelectedTipHash())
 		if err != nil {
 			peerLog.Errorf("Failed pushing get blocks message for peer %s: %s",
 				sp, err)

@@ -1274,8 +1274,15 @@ func (dag *BlockDAG) isCurrent() bool {
 	} else {
 		dagTimestamp = selectedTip.timestamp
 	}
-	minus24Hours := dag.timeSource.AdjustedTime().Add(-24 * time.Hour).Unix()
+	minus24Hours := dag.AdjustedTime().Add(-24 * time.Hour).Unix()
 	return dagTimestamp >= minus24Hours
+}
+
+// AdjustedTime returns the adjusted time according to
+// dag.timeSource. See MedianTimeSource.AdjustedTime for
+// more details.
+func (dag *BlockDAG) AdjustedTime() time.Time {
+	return dag.timeSource.AdjustedTime()
 }
 
 // IsCurrent returns whether or not the DAG believes it is current. Several
@@ -1774,7 +1781,7 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 }
 
 func (dag *BlockDAG) addDelayedBlock(block *util.Block, delay time.Duration) error {
-	processTime := dag.timeSource.AdjustedTime().Add(delay)
+	processTime := dag.AdjustedTime().Add(delay)
 	log.Debugf("Adding block to delayed blocks queue (block hash: %s, process time: %s)", block.Hash().String(), processTime)
 	delayedBlock := &delayedBlock{
 		block:       block,
@@ -1792,7 +1799,7 @@ func (dag *BlockDAG) processDelayedBlocks() error {
 	// Check if the delayed block with the earliest process time should be processed
 	for dag.delayedBlocksQueue.Len() > 0 {
 		earliestDelayedBlockProcessTime := dag.peekDelayedBlock().processTime
-		if earliestDelayedBlockProcessTime.After(dag.timeSource.AdjustedTime()) {
+		if earliestDelayedBlockProcessTime.After(dag.AdjustedTime()) {
 			break
 		}
 		delayedBlock := dag.popDelayedBlock()
