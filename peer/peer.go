@@ -172,7 +172,7 @@ type MessageListeners struct {
 	// message.
 	OnGetSelectedTip func()
 
-	// OnSelectedTip is invoked when a peer receives a selectedTipHash kaspa
+	// OnSelectedTip is invoked when a peer receives a selectedTip kaspa
 	// message.
 	OnSelectedTip func(p *Peer, msg *wire.MsgSelectedTip)
 
@@ -196,10 +196,10 @@ type MessageListeners struct {
 type Config struct {
 	// SelectedTipHash specifies a callback which provides the selected tip
 	// to the peer as needed.
-	SelectedTip func() *daghash.Hash
+	SelectedTipHash func() *daghash.Hash
 
-	// SelectedTipHashAndBlueScore specifies a callback which provides the selected tip
-	// to the peer as needed.
+	// BlockExists determines whether a block with the given hash exists in
+	// the DAG.
 	BlockExists func(*daghash.Hash) bool
 
 	// HostToNetAddress returns the netaddress for the given host. This can be
@@ -337,22 +337,22 @@ type stallControlMsg struct {
 
 // StatsSnap is a snapshot of peer stats at a point in time.
 type StatsSnap struct {
-	ID             int32
-	Addr           string
-	Services       wire.ServiceFlag
-	LastSend       time.Time
-	LastRecv       time.Time
-	BytesSent      uint64
-	BytesRecv      uint64
-	ConnTime       time.Time
-	TimeOffset     int64
-	Version        uint32
-	UserAgent      string
-	Inbound        bool
-	SelectedTip    *daghash.Hash
-	LastPingNonce  uint64
-	LastPingTime   time.Time
-	LastPingMicros int64
+	ID              int32
+	Addr            string
+	Services        wire.ServiceFlag
+	LastSend        time.Time
+	LastRecv        time.Time
+	BytesSent       uint64
+	BytesRecv       uint64
+	ConnTime        time.Time
+	TimeOffset      int64
+	Version         uint32
+	UserAgent       string
+	Inbound         bool
+	SelectedTipHash *daghash.Hash
+	LastPingNonce   uint64
+	LastPingTime    time.Time
+	LastPingMicros  int64
 }
 
 // HashFunc is a function which returns a block hash, height and error
@@ -482,22 +482,22 @@ func (p *Peer) StatsSnapshot() *StatsSnap {
 
 	// Get a copy of all relevant flags and stats.
 	statsSnap := &StatsSnap{
-		ID:             id,
-		Addr:           addr,
-		UserAgent:      userAgent,
-		Services:       services,
-		LastSend:       p.LastSend(),
-		LastRecv:       p.LastRecv(),
-		BytesSent:      p.BytesSent(),
-		BytesRecv:      p.BytesReceived(),
-		ConnTime:       p.timeConnected,
-		TimeOffset:     p.timeOffset,
-		Version:        protocolVersion,
-		Inbound:        p.inbound,
-		SelectedTip:    p.selectedTipHash,
-		LastPingNonce:  p.lastPingNonce,
-		LastPingMicros: p.lastPingMicros,
-		LastPingTime:   p.lastPingTime,
+		ID:              id,
+		Addr:            addr,
+		UserAgent:       userAgent,
+		Services:        services,
+		LastSend:        p.LastSend(),
+		LastRecv:        p.LastRecv(),
+		BytesSent:       p.BytesSent(),
+		BytesRecv:       p.BytesReceived(),
+		ConnTime:        p.timeConnected,
+		TimeOffset:      p.timeOffset,
+		Version:         protocolVersion,
+		Inbound:         p.inbound,
+		SelectedTipHash: p.selectedTipHash,
+		LastPingNonce:   p.lastPingNonce,
+		LastPingMicros:  p.lastPingMicros,
+		LastPingTime:    p.lastPingTime,
 	}
 
 	p.statsMtx.RUnlock()
@@ -646,10 +646,10 @@ func (p *Peer) ProtocolVersion() uint32 {
 // This function is safe for concurrent access.
 func (p *Peer) SelectedTipHash() *daghash.Hash {
 	p.statsMtx.RLock()
-	selectedTip := p.selectedTipHash
+	selectedTipHash := p.selectedTipHash
 	p.statsMtx.RUnlock()
 
-	return selectedTip
+	return selectedTipHash
 }
 
 // SetSelectedTipHash sets the selected tip of the peer.
@@ -732,7 +732,7 @@ func (p *Peer) WantsHeaders() bool {
 // localVersionMsg creates a version message that can be used to send to the
 // remote peer.
 func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
-	selectedTipHash := p.cfg.SelectedTip()
+	selectedTipHash := p.cfg.SelectedTipHash()
 	theirNA := p.na
 
 	// If we are behind a proxy and the connection comes from the proxy then

@@ -5,7 +5,7 @@ import (
 )
 
 // MsgGetSelectedTip implements the Message interface and represents a kaspa
-// getseltip message. It is used to request the selected tip of another tip.
+// getseltip message. It is used to request the selected tip of another peer.
 //
 // This message has no payload.
 type MsgGetSelectedTip struct{}

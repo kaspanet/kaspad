@@ -5,7 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// OnSelectedTip is invoked when a peer receives a selectedTipHash kaspa
+// OnSelectedTip is invoked when a peer receives a selectedTip kaspa
 // message.
 func (sp *Peer) OnSelectedTip(peer *peer.Peer, msg *wire.MsgSelectedTip) {
 	done := make(chan struct{})

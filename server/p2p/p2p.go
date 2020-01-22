@@ -1051,7 +1051,7 @@ func newPeerConfig(sp *Peer) *peer.Config {
 			OnRead:            sp.OnRead,
 			OnWrite:           sp.OnWrite,
 		},
-		SelectedTip:       sp.selectedTipHash,
+		SelectedTipHash:   sp.selectedTipHash,
 		BlockExists:       sp.blockExists,
 		HostToNetAddress:  sp.server.addrManager.HostToNetAddress,
 		Proxy:             config.ActiveConfig().Proxy,

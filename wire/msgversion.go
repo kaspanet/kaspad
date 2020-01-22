@@ -55,7 +55,7 @@ type MsgVersion struct {
 	// on the wire. This has a max length of MaxUserAgentLen.
 	UserAgent string
 
-	// The selected tip of the generator of the version message.
+	// The selected tip hash of the generator of the version message.
 	SelectedTipHash *daghash.Hash
 
 	// Don't announce transactions to peer.
