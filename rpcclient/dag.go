@@ -256,7 +256,7 @@ func (c *Client) GetBlockCount() (int64, error) {
 type FutureGetChainFromBlockResult chan *response
 
 // Receive waits for the response promised by the future and returns the selected
-// parent chain starting from lowHash up to the virtual. If lowHash is not in
+// parent chain starting from startHash up to the virtual. If startHash is not in
 // the selected parent chain, it goes down the DAG until it does reach a hash in
 // the selected parent chain while collecting hashes into RemovedChainBlockHashes.
 func (r FutureGetChainFromBlockResult) Receive() (*rpcmodel.GetChainFromBlockResult, error) {
@@ -277,17 +277,17 @@ func (r FutureGetChainFromBlockResult) Receive() (*rpcmodel.GetChainFromBlockRes
 // returned instance.
 //
 // See GetChainFromBlock for the blocking version and more details.
-func (c *Client) GetChainFromBlockAsync(includeBlocks bool, lowHash *string) FutureGetChainFromBlockResult {
-	cmd := rpcmodel.NewGetChainFromBlockCmd(includeBlocks, lowHash)
+func (c *Client) GetChainFromBlockAsync(includeBlocks bool, startHash *string) FutureGetChainFromBlockResult {
+	cmd := rpcmodel.NewGetChainFromBlockCmd(includeBlocks, startHash)
 	return c.sendCmd(cmd)
 }
 
-// GetChainFromBlock returns the selected parent chain starting from lowHash
-// up to the virtual. If lowHash is not in the selected parent chain, it goes
+// GetChainFromBlock returns the selected parent chain starting from startHash
+// up to the virtual. If startHash is not in the selected parent chain, it goes
 // down the DAG until it does reach a hash in the selected parent chain while
 // collecting hashes into RemovedChainBlockHashes.
-func (c *Client) GetChainFromBlock(includeBlocks bool, lowHash *string) (*rpcmodel.GetChainFromBlockResult, error) {
-	return c.GetChainFromBlockAsync(includeBlocks, lowHash).Receive()
+func (c *Client) GetChainFromBlock(includeBlocks bool, startHash *string) (*rpcmodel.GetChainFromBlockResult, error) {
+	return c.GetChainFromBlockAsync(includeBlocks, startHash).Receive()
 }
 
 // FutureGetDifficultyResult is a future promise to deliver the result of a
