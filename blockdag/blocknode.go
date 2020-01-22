@@ -115,7 +115,7 @@ func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSe
 		parents:            parents,
 		children:           make(blockSet),
 		blueScore:          math.MaxUint64, // Initialized to the max value to avoid collisions with the genesis block
-		timestamp:          dag.timeSource.AdjustedTime().Unix(),
+		timestamp:          dag.AdjustedTime().Unix(),
 		bluesAnticoneSizes: make(map[daghash.Hash]dagconfig.KType),
 	}
 

@@ -18,6 +18,7 @@ import (
 	"net"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 const (
@@ -32,6 +33,10 @@ const (
 	// maxRequestedTxns is the maximum number of requested transactions
 	// hashes to store in memory.
 	maxRequestedTxns = wire.MaxInvPerMsg
+
+	minGetSelectedTipInterval = time.Minute
+
+	minDAGTimeDelay = time.Minute
 )
 
 // newPeerMsg signifies a newly connected peer to the block handler.
@@ -113,6 +118,12 @@ type pauseMsg struct {
 	unpause <-chan struct{}
 }
 
+type selectedTipMsg struct {
+	selectedTipHash *daghash.Hash
+	peer            *peerpkg.Peer
+	reply           chan struct{}
+}
+
 type requestQueueAndSet struct {
 	queue []*wire.InvVect
 	set   map[daghash.Hash]struct{}
@@ -121,11 +132,13 @@ type requestQueueAndSet struct {
 // peerSyncState stores additional information that the SyncManager tracks
 // about a peer.
 type peerSyncState struct {
-	syncCandidate   bool
-	requestQueueMtx sync.Mutex
-	requestQueues   map[wire.InvType]*requestQueueAndSet
-	requestedTxns   map[daghash.TxID]struct{}
-	requestedBlocks map[daghash.Hash]struct{}
+	syncCandidate           bool
+	lastSelectedTipRequest  time.Time
+	isPendingForSelectedTip bool
+	requestQueueMtx         sync.Mutex
+	requestQueues           map[wire.InvType]*requestQueueAndSet
+	requestedTxns           map[daghash.TxID]struct{}
+	requestedBlocks         map[daghash.Hash]struct{}
 }
 
 // SyncManager is used to communicate block related messages with peers. The
@@ -169,8 +182,7 @@ func (sm *SyncManager) startSync() {
 			continue
 		}
 
-		if !peer.IsSyncCandidate() {
-			state.syncCandidate = false
+		if !peer.IsSelectedTipKnown() {
 			continue
 		}
 
@@ -187,13 +199,38 @@ func (sm *SyncManager) startSync() {
 		sm.requestedBlocks = make(map[daghash.Hash]struct{})
 
 		log.Infof("Syncing to block %s from peer %s",
-			syncPeer.SelectedTip(), syncPeer.Addr())
+			syncPeer.SelectedTipHash(), syncPeer.Addr())
 
-		syncPeer.PushGetBlockLocatorMsg(syncPeer.SelectedTip(), sm.dagParams.GenesisHash)
+		syncPeer.PushGetBlockLocatorMsg(syncPeer.SelectedTipHash(), sm.dagParams.GenesisHash)
 		sm.syncPeer = syncPeer
-	} else {
-		log.Warnf("No sync peer candidates available")
+		return
 	}
+
+	log.Warnf("No sync peer candidates available")
+	if sm.shouldQueryPeerSelectedTips() {
+		for peer, state := range sm.peerStates {
+			if !state.syncCandidate {
+				continue
+			}
+
+			if time.Now().Sub(state.lastSelectedTipRequest) < minGetSelectedTipInterval {
+				continue
+			}
+
+			queueMsgGetSelectedTip(peer, state)
+		}
+	}
+	return
+}
+
+func (sm *SyncManager) shouldQueryPeerSelectedTips() bool {
+	return sm.dag.AdjustedTime().Sub(sm.dag.CalcPastMedianTime()) > minDAGTimeDelay
+}
+
+func queueMsgGetSelectedTip(peer *peerpkg.Peer, state *peerSyncState) {
+	state.lastSelectedTipRequest = time.Now()
+	state.isPendingForSelectedTip = true
+	peer.QueueMessage(wire.NewMsgGetSelectedTip(), nil)
 }
 
 // isSyncCandidate returns whether or not the peer is a candidate to consider
@@ -827,6 +864,23 @@ func (sm *SyncManager) limitHashMap(m map[daghash.Hash]struct{}, limit int) {
 	}
 }
 
+func (sm *SyncManager) handleSelectedTipMsg(msg *selectedTipMsg) {
+	peer := msg.peer
+	selectedTipHash := msg.selectedTipHash
+	state := sm.peerStates[peer]
+	if !state.isPendingForSelectedTip {
+		log.Warnf("Got unrequested selected tip message from %s -- "+
+			"disconnecting", peer.Addr())
+		peer.Disconnect()
+	}
+	state.isPendingForSelectedTip = false
+	if selectedTipHash.IsEqual(peer.SelectedTipHash()) {
+		return
+	}
+	peer.SetSelectedTipHash(selectedTipHash)
+	sm.startSync()
+}
+
 // blockHandler is the main handler for the sync manager. It must be run as a
 // goroutine. It processes block and inv messages in a separate goroutine
 // from the peer handlers so the block (MsgBlock) messages are handled by a
@@ -893,6 +947,10 @@ out:
 			case pauseMsg:
 				// Wait until the sender unpauses the manager.
 				<-msg.unpause
+
+			case *selectedTipMsg:
+				sm.handleSelectedTipMsg(msg)
+				msg.reply <- struct{}{}
 
 			default:
 				log.Warnf("Invalid message type in block "+
@@ -990,6 +1048,17 @@ func (sm *SyncManager) QueueInv(inv *wire.MsgInv, peer *peerpkg.Peer) {
 	}
 
 	sm.msgChan <- &invMsg{inv: inv, peer: peer}
+}
+
+// QueueSelectedTipMsg adds the passed selected tip message and peer to the
+// block handling queue. Responds to the done channel argument after it finished
+// handling the message.
+func (sm *SyncManager) QueueSelectedTipMsg(msg *wire.MsgSelectedTip, peer *peerpkg.Peer, done chan struct{}) {
+	sm.msgChan <- &selectedTipMsg{
+		selectedTipHash: msg.SelectedTipHash,
+		peer:            peer,
+		reply:           done,
+	}
 }
 
 // DonePeer informs the blockmanager that a peer has disconnected.

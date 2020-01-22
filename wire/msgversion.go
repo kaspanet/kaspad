@@ -55,8 +55,8 @@ type MsgVersion struct {
 	// on the wire. This has a max length of MaxUserAgentLen.
 	UserAgent string
 
-	// The selected tip of the generator of the version message.
-	SelectedTip *daghash.Hash
+	// The selected tip hash of the generator of the version message.
+	SelectedTipHash *daghash.Hash
 
 	// Don't announce transactions to peer.
 	DisableRelayTx bool
@@ -137,8 +137,8 @@ func (msg *MsgVersion) KaspaDecode(r io.Reader, pver uint32) error {
 	}
 	msg.UserAgent = userAgent
 
-	msg.SelectedTip = &daghash.Hash{}
-	err = ReadElement(buf, msg.SelectedTip)
+	msg.SelectedTipHash = &daghash.Hash{}
+	err = ReadElement(buf, msg.SelectedTipHash)
 	if err != nil {
 		return err
 	}
@@ -200,7 +200,7 @@ func (msg *MsgVersion) KaspaEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 
-	err = WriteElement(w, msg.SelectedTip)
+	err = WriteElement(w, msg.SelectedTipHash)
 	if err != nil {
 		return err
 	}
@@ -223,21 +223,19 @@ func (msg *MsgVersion) Command() string {
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver. This is part of the Message interface implementation.
 func (msg *MsgVersion) MaxPayloadLength(pver uint32) uint32 {
-	// XXX: <= 106 different
-
 	// Protocol version 4 bytes + services 8 bytes + timestamp 16 bytes +
 	// remote and local net addresses + nonce 8 bytes + length of user
-	// agent (varInt) + max allowed useragent length + last block 4 bytes +
+	// agent (varInt) + max allowed useragent length + selected tip hash length +
 	// relay transactions flag 1 byte.
-	return 33 + (maxNetAddressPayload(pver) * 2) + MaxVarIntPayload +
-		MaxUserAgentLen
+	return 29 + (maxNetAddressPayload(pver) * 2) + MaxVarIntPayload +
+		MaxUserAgentLen + daghash.HashSize
 }
 
 // NewMsgVersion returns a new kaspa version message that conforms to the
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
 func NewMsgVersion(me *NetAddress, you *NetAddress, nonce uint64,
-	selectedTip *daghash.Hash, subnetworkID *subnetworkid.SubnetworkID) *MsgVersion {
+	selectedTipHash *daghash.Hash, subnetworkID *subnetworkid.SubnetworkID) *MsgVersion {
 
 	// Limit the timestamp to one second precision since the protocol
 	// doesn't support better.
@@ -249,7 +247,7 @@ func NewMsgVersion(me *NetAddress, you *NetAddress, nonce uint64,
 		AddrMe:          *me,
 		Nonce:           nonce,
 		UserAgent:       DefaultUserAgent,
-		SelectedTip:     selectedTip,
+		SelectedTipHash: selectedTipHash,
 		DisableRelayTx:  false,
 		SubnetworkID:    subnetworkID,
 	}
