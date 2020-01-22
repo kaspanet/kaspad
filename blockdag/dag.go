@@ -1641,7 +1641,7 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 	}
 
 	// Collect every node in highNode's past (including itself) but
-	// NOT in the lowNode's past (excluding itself) into an upHeap
+	// NOT in the lowNode's past (excluding itself) into an up-heap
 	// (a heap sorted by blueScore from lowest to greatest).
 	visited := newSet()
 	candidateNodes := newUpHeap()
@@ -1667,7 +1667,7 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 	}
 
 	// Pop candidateNodes into a slice. Since candidateNodes is
-	// an upHeap, it's guaranteed to be ordered from low to high
+	// an up-heap, it's guaranteed to be ordered from low to high
 	nodesLen := int(maxEntries)
 	if candidateNodes.Len() < nodesLen {
 		nodesLen = candidateNodes.Len()
