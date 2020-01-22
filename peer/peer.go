@@ -168,8 +168,12 @@ type MessageListeners struct {
 	// message.
 	OnSendHeaders func(p *Peer, msg *wire.MsgSendHeaders)
 
+	// OnGetSelectedTip is invoked when a peer receives a getSelectedTip kaspa
+	// message.
 	OnGetSelectedTip func()
 
+	// OnSelectedTip is invoked when a peer receives a selectedTipHash kaspa
+	// message.
 	OnSelectedTip func(p *Peer, msg *wire.MsgSelectedTip)
 
 	// OnRead is invoked when a peer receives a kaspa message. It
