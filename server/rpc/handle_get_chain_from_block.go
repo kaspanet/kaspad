@@ -24,21 +24,21 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 	}
 
 	c := cmd.(*rpcmodel.GetChainFromBlockCmd)
-	var lowHash *daghash.Hash
-	if c.LowHash != nil {
-		lowHash = &daghash.Hash{}
-		err := daghash.Decode(lowHash, *c.LowHash)
+	var startHash *daghash.Hash
+	if c.StartHash != nil {
+		startHash = &daghash.Hash{}
+		err := daghash.Decode(startHash, *c.StartHash)
 		if err != nil {
-			return nil, rpcDecodeHexError(*c.LowHash)
+			return nil, rpcDecodeHexError(*c.StartHash)
 		}
 	}
 
 	s.cfg.DAG.RLock()
 	defer s.cfg.DAG.RUnlock()
 
-	// If lowHash is not in the selected parent chain, there's nothing
+	// If startHash is not in the selected parent chain, there's nothing
 	// to do; return an error.
-	if lowHash != nil && !s.cfg.DAG.BlockExists(lowHash) {
+	if startHash != nil && !s.cfg.DAG.BlockExists(startHash) {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCBlockNotFound,
 			Message: "Block not found in the DAG",
@@ -46,7 +46,7 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 	}
 
 	// Retrieve the selected parent chain.
-	removedChainHashes, addedChainHashes, err := s.cfg.DAG.SelectedParentChain(lowHash)
+	removedChainHashes, addedChainHashes, err := s.cfg.DAG.SelectedParentChain(startHash)
 	if err != nil {
 		return nil, err
 	}

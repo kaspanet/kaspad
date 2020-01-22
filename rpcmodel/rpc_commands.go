@@ -293,15 +293,15 @@ func NewGetBlockTemplateCmd(request *TemplateRequest) *GetBlockTemplateCmd {
 // GetChainFromBlockCmd defines the getChainFromBlock JSON-RPC command.
 type GetChainFromBlockCmd struct {
 	IncludeBlocks bool    `json:"includeBlocks"`
-	LowHash       *string `json:"lowHash"`
+	StartHash     *string `json:"startHash"`
 }
 
 // NewGetChainFromBlockCmd returns a new instance which can be used to issue a
 // GetChainFromBlock JSON-RPC command.
-func NewGetChainFromBlockCmd(includeBlocks bool, lowHash *string) *GetChainFromBlockCmd {
+func NewGetChainFromBlockCmd(includeBlocks bool, startHash *string) *GetChainFromBlockCmd {
 	return &GetChainFromBlockCmd{
 		IncludeBlocks: includeBlocks,
-		LowHash:       lowHash,
+		StartHash:     startHash,
 	}
 }
 

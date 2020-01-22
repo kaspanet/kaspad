@@ -334,7 +334,7 @@ func TestRPCServerCommands(t *testing.T) {
 			marshalled: `{"jsonrpc":"1.0","method":"getChainFromBlock","params":[true,"123"],"id":1}`,
 			unmarshalled: &rpcmodel.GetChainFromBlockCmd{
 				IncludeBlocks: true,
-				LowHash:       rpcmodel.String("123"),
+				StartHash:     rpcmodel.String("123"),
 			},
 		},
 		{
