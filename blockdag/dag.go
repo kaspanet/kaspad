@@ -1627,7 +1627,8 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 	// In order to get no more then maxEntries blocks from the
 	// future of the lowNode (including itself), we iterate the
 	// selected parent chain of the highNode and stop once we reach
-	// highNode.blueScore-lowNode.blueScore+1 <= maxEntries.
+	// highNode.blueScore-lowNode.blueScore+1 <= maxEntries. That
+	// stop point becomes the new highNode.
 	// Using blueScore as an approximation is considered to be
 	// fairly accurate because we presume that most DAG blocks are
 	// blue.
