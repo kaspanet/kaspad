@@ -20,10 +20,10 @@ func (sp *Peer) OnGetBlockInvs(_ *peer.Peer, msg *wire.MsgGetBlockInvs) {
 	// This way, if one getblocks is not enough to get the peer
 	// synced, we can know for sure that its selected chain will
 	// change, so we'll have higher shared chain block.
-	hashList, err := dag.BlueBlockHashesBetween(msg.LowHash, msg.HighHash,
+	hashList, err := dag.AntiPastHashesBetween(msg.LowHash, msg.HighHash,
 		wire.MaxInvPerMsg)
 	if err != nil {
-		peerLog.Warnf("Error getting blue blocks between %s and %s: %s", msg.LowHash, msg.HighHash, err)
+		peerLog.Warnf("Error getting antiPast hashes between %s and %s: %s", msg.LowHash, msg.HighHash, err)
 		sp.Disconnect()
 		return
 	}

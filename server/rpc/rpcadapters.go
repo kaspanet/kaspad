@@ -269,12 +269,12 @@ func (b *rpcSyncMgr) SyncPeerID() int32 {
 	return b.syncMgr.SyncPeerID()
 }
 
-// BlueBlockHeadersBetween returns the headers of the blocks after the provided
-// low hash until the provided high hash is reached, or up to the
-// provided max number of block headers.
+// AntiPastHeadersBetween returns the headers of the blocks between the
+// lowHash's antiPast and highHash's antiPast, or up to
+// wire.MaxBlockHeadersPerMsg block headers.
 //
 // This function is safe for concurrent access and is part of the
 // rpcserverSyncManager interface implementation.
-func (b *rpcSyncMgr) BlueBlockHeadersBetween(lowHash, highHash *daghash.Hash) ([]*wire.BlockHeader, error) {
-	return b.server.DAG.BlueBlockHeadersBetween(lowHash, highHash)
+func (b *rpcSyncMgr) AntiPastHeadersBetween(lowHash, highHash *daghash.Hash) ([]*wire.BlockHeader, error) {
+	return b.server.DAG.AntiPastHeadersBetween(lowHash, highHash)
 }
