@@ -219,9 +219,11 @@ func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdCondit
 			// on by the miners, so iterate backwards through the
 			// confirmation window to count all of the votes in it.
 			var count uint64
-			countNode := prevNode
-			for i := uint64(0); i < confirmationWindow; i++ {
-				condition, err := checker.Condition(countNode)
+			windowNodes := make([]*blockNode, 0, confirmationWindow)
+			windowNodes = append(windowNodes, prevNode)
+			windowNodes = append(windowNodes, blueBlockWindow(prevNode, confirmationWindow-1)...)
+			for _, current := range windowNodes {
+				condition, err := checker.Condition(current)
 				if err != nil {
 					return ThresholdFailed, err
 				}
@@ -230,7 +232,7 @@ func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdCondit
 				}
 
 				// Get the previous block node.
-				countNode = countNode.selectedParent
+				current = current.selectedParent
 			}
 
 			// The state is locked in if the number of blocks in the
