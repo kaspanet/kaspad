@@ -46,7 +46,7 @@ func GoroutineWrapperFuncWithPanicHandler(log logs.Logger) func(func(), func()) 
 	}
 }
 
-// AfterFuncWrapperFunc returns a time.AfterFunc wrapper function that handles panics,
+// AfterFuncWrapperFunc returns a time.AfterFunc wrapper function that handles panics.
 func AfterFuncWrapperFunc(log logs.Logger) func(d time.Duration, f func()) *time.Timer {
 	return func(d time.Duration, f func()) *time.Timer {
 		stackTrace := debug.Stack()
