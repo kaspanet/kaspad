@@ -1397,9 +1397,6 @@ func (dag *BlockDAG) UTXOCommitment() string {
 // * If the node is the selected tip			-> 1
 // * Otherwise									-> selectedTip.blueScore - acceptingBlock.blueScore + 2
 func (dag *BlockDAG) blockConfirmations(node *blockNode) (uint64, error) {
-	if node == dag.selectedTip() {
-		return 1, nil
-	}
 	acceptingBlock, err := dag.acceptingBlock(node)
 	if err != nil {
 		return 0, err
@@ -1410,7 +1407,7 @@ func (dag *BlockDAG) blockConfirmations(node *blockNode) (uint64, error) {
 		return 0, nil
 	}
 
-	return dag.selectedTip().blueScore - acceptingBlock.blueScore + 2, nil
+	return dag.selectedTip().blueScore - acceptingBlock.blueScore + 1, nil
 }
 
 // acceptingBlock finds the node in the selected-parent chain that had accepted
