@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/logs"
 	"github.com/kaspanet/kaspad/signal"
 	"runtime/debug"
+	"time"
 )
 
 // HandlePanic recovers panics, log them, runs an optional panicHandler,
@@ -22,7 +23,7 @@ func HandlePanic(log logs.Logger, goroutineStackTrace []byte, panicHandler func(
 	}
 }
 
-// GoroutineWrapperFunc returns a goroutine wrapper function that handles panics and write them to the log.
+// GoroutineWrapperFunc returns a goroutine wrapper function that handles panics and writes them to the log.
 func GoroutineWrapperFunc(log logs.Logger) func(func()) {
 	return func(f func()) {
 		stackTrace := debug.Stack()
@@ -34,7 +35,7 @@ func GoroutineWrapperFunc(log logs.Logger) func(func()) {
 }
 
 // GoroutineWrapperFuncWithPanicHandler returns a goroutine wrapper function that handles panics,
-// write them to the log, and executes a handler function for panics.
+// writes them to the log, and executes a handler function for panics.
 func GoroutineWrapperFuncWithPanicHandler(log logs.Logger) func(func(), func()) {
 	return func(f func(), panicHandler func()) {
 		stackTrace := debug.Stack()
@@ -42,5 +43,28 @@ func GoroutineWrapperFuncWithPanicHandler(log logs.Logger) func(func(), func()) 
 			defer HandlePanic(log, stackTrace, panicHandler)
 			f()
 		}()
+	}
+}
+
+// AfterFuncWrapperFunc returns a time.AfterFunc wrapper function that handles panics,
+func AfterFuncWrapperFunc(log logs.Logger) func(d time.Duration, f func()) *time.Timer {
+	return func(d time.Duration, f func()) *time.Timer {
+		stackTrace := debug.Stack()
+		return time.AfterFunc(d, func() {
+			defer HandlePanic(log, stackTrace, nil)
+			f()
+		})
+	}
+}
+
+// AfterFuncWrapperFuncWithPanicHandler returns a time.AfterFunc wrapper function that handles panics,
+// writes them to the log, and executes a handler function for panics.
+func AfterFuncWrapperFuncWithPanicHandler(log logs.Logger) func(d time.Duration, f func(), panicHandler func()) *time.Timer {
+	return func(d time.Duration, f func(), panicHandler func()) *time.Timer {
+		stackTrace := debug.Stack()
+		return time.AfterFunc(d, func() {
+			defer HandlePanic(log, stackTrace, panicHandler)
+			f()
+		})
 	}
 }
