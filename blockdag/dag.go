@@ -1630,6 +1630,10 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 	if highNode == nil {
 		return nil, errors.Errorf("Couldn't find high hash %s", highHash)
 	}
+	if lowNode.blueScore >= highNode.blueScore {
+		return nil, errors.Errorf("Low hash blueScore >= high hash blueScore (%d >= %d)",
+			lowNode.blueScore, highNode.blueScore)
+	}
 
 	// In order to get no more then maxEntries blocks from the
 	// future of the lowNode (including itself), we iterate the
