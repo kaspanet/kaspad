@@ -43,6 +43,9 @@ const (
 	// Prefix for the main network.
 	Bech32PrefixKaspa
 
+	// Prefix for the dev network.
+	Bech32PrefixKaspaDev
+
 	// Prefix for the regression test network.
 	Bech32PrefixKaspaReg
 
@@ -56,6 +59,7 @@ const (
 // Map from strings to Bech32 address prefix constants for parsing purposes.
 var stringsToBech32Prefixes = map[string]Bech32Prefix{
 	"kaspa":     Bech32PrefixKaspa,
+	"kaspadev":  Bech32PrefixKaspaDev,
 	"kaspareg":  Bech32PrefixKaspaReg,
 	"kaspatest": Bech32PrefixKaspaTest,
 	"kaspasim":  Bech32PrefixKaspaSim,

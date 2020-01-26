@@ -448,7 +448,7 @@ var DevnetParams = Params{
 	AcceptUnroutable: true,
 
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.Bech32PrefixKaspaTest,
+	Prefix: util.Bech32PrefixKaspaDev,
 
 	// Address encoding magics
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
