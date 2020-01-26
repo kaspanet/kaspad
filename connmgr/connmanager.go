@@ -232,7 +232,7 @@ func (cm *ConnManager) handleFailedConn(c *ConnReq, err error) {
 		if shouldWriteLog {
 			log.Debugf("Retrying further connections to %s every %s", c, d)
 		}
-		afterFunc(d, func() {
+		spawnAfter(d, func() {
 			cm.Connect(c)
 		}, nil)
 	} else if cm.cfg.GetNewAddress != nil {
@@ -243,7 +243,7 @@ func (cm *ConnManager) handleFailedConn(c *ConnReq, err error) {
 					"-- retrying further connections every %s", maxFailedAttempts,
 					cm.cfg.RetryDuration)
 			}
-			afterFunc(cm.cfg.RetryDuration, cm.NewConnReq, cm.handlePanic)
+			spawnAfter(cm.cfg.RetryDuration, cm.NewConnReq, cm.handlePanic)
 		} else {
 			spawn(cm.NewConnReq, cm.handlePanic)
 		}

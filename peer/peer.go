@@ -1346,7 +1346,7 @@ cleanup:
 func (p *Peer) inHandler() {
 	// The timer is stopped when a new message is received and reset after it
 	// is processed.
-	idleTimer := afterFunc(idleTimeout, func() {
+	idleTimer := spawnAfter(idleTimeout, func() {
 		log.Warnf("Peer %s no answer for %s -- disconnecting", p, idleTimeout)
 		p.Disconnect()
 	})
