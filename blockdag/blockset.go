@@ -7,11 +7,11 @@ import (
 )
 
 // blockSet implements a basic unsorted set of blocks
-type blockSet map[daghash.Hash]*blockNode
+type blockSet map[*blockNode]struct{}
 
 // newSet creates a new, empty BlockSet
 func newSet() blockSet {
-	return map[daghash.Hash]*blockNode{}
+	return map[*blockNode]struct{}{}
 }
 
 // setFromSlice converts a slice of blocks into an unordered set represented as map
@@ -25,19 +25,19 @@ func setFromSlice(blocks ...*blockNode) blockSet {
 
 // add adds a block to this BlockSet
 func (bs blockSet) add(block *blockNode) {
-	bs[*block.hash] = block
+	bs[block] = struct{}{}
 }
 
 // remove removes a block from this BlockSet, if exists
 // Does nothing if this set does not contain the block
 func (bs blockSet) remove(block *blockNode) {
-	delete(bs, *block.hash)
+	delete(bs, block)
 }
 
 // clone clones thie block set
 func (bs blockSet) clone() blockSet {
 	clone := newSet()
-	for _, block := range bs {
+	for block := range bs {
 		clone.add(block)
 	}
 	return clone
@@ -46,7 +46,7 @@ func (bs blockSet) clone() blockSet {
 // subtract returns the difference between the BlockSet and another BlockSet
 func (bs blockSet) subtract(other blockSet) blockSet {
 	diff := newSet()
-	for _, block := range bs {
+	for block := range bs {
 		if !other.contains(block) {
 			diff.add(block)
 		}
@@ -56,7 +56,7 @@ func (bs blockSet) subtract(other blockSet) blockSet {
 
 // addSet adds all blocks in other set to this set
 func (bs blockSet) addSet(other blockSet) {
-	for _, block := range other {
+	for block := range other {
 		bs.add(block)
 	}
 }
@@ -80,14 +80,18 @@ func (bs blockSet) union(other blockSet) blockSet {
 
 // contains returns true iff this set contains block
 func (bs blockSet) contains(block *blockNode) bool {
-	_, ok := bs[*block.hash]
+	_, ok := bs[block]
 	return ok
 }
 
 // containsHash returns true iff this set contains a block hash
 func (bs blockSet) containsHash(hash *daghash.Hash) bool {
-	_, ok := bs[*hash]
-	return ok
+	for block := range bs {
+		if block.hash.IsEqual(hash) {
+			return true
+		}
+	}
+	return false
 }
 
 // hashesEqual returns true if the given hashes are equal to the hashes
@@ -99,7 +103,7 @@ func (bs blockSet) hashesEqual(hashes []*daghash.Hash) bool {
 	}
 
 	for _, hash := range hashes {
-		if _, wasFound := bs[*hash]; !wasFound {
+		if contains := bs.containsHash(hash); !contains {
 			return false
 		}
 	}
@@ -110,24 +114,24 @@ func (bs blockSet) hashesEqual(hashes []*daghash.Hash) bool {
 // hashes returns the hashes of the blocks in this set.
 func (bs blockSet) hashes() []*daghash.Hash {
 	hashes := make([]*daghash.Hash, 0, len(bs))
-	for _, node := range bs {
-		hashes = append(hashes, node.hash)
+	for block := range bs {
+		hashes = append(hashes, block.hash)
 	}
 	daghash.Sort(hashes)
 	return hashes
 }
 
 func (bs blockSet) String() string {
-	nodeStrs := make([]string, 0, len(bs))
-	for _, node := range bs {
-		nodeStrs = append(nodeStrs, node.String())
+	blockStrs := make([]string, 0, len(bs))
+	for block := range bs {
+		blockStrs = append(blockStrs, block.String())
 	}
-	return strings.Join(nodeStrs, ",")
+	return strings.Join(blockStrs, ",")
 }
 
 // anyChildInSet returns true iff any child of block is contained within this set
 func (bs blockSet) anyChildInSet(block *blockNode) bool {
-	for _, child := range block.children {
+	for child := range block.children {
 		if bs.contains(child) {
 			return true
 		}
@@ -139,12 +143,12 @@ func (bs blockSet) anyChildInSet(block *blockNode) bool {
 func (bs blockSet) bluest() *blockNode {
 	var bluestNode *blockNode
 	var maxScore uint64
-	for _, node := range bs {
+	for block := range bs {
 		if bluestNode == nil ||
-			node.blueScore > maxScore ||
-			(node.blueScore == maxScore && daghash.Less(node.hash, bluestNode.hash)) {
-			bluestNode = node
-			maxScore = node.blueScore
+			block.blueScore > maxScore ||
+			(block.blueScore == maxScore && daghash.Less(block.hash, bluestNode.hash)) {
+			bluestNode = block
+			maxScore = block.blueScore
 		}
 	}
 	return bluestNode

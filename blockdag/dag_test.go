@@ -723,7 +723,7 @@ func TestConfirmations(t *testing.T) {
 
 	// Check that each of the blue tips has a confirmation number of 1, and each of the red tips has 0 confirmations.
 	tips := dag.virtual.tips()
-	for _, tip := range tips {
+	for tip := range tips {
 		tipConfirmations, err := dag.blockConfirmations(tip)
 		if err != nil {
 			t.Fatalf("TestConfirmations: confirmations for tip unexpectedly failed: %s", err)

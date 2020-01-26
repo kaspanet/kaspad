@@ -154,7 +154,7 @@ func newTestNode(dag *BlockDAG, parents blockSet, blockVersion int32, bits uint3
 }
 
 func addNodeAsChildToParents(node *blockNode) {
-	for _, parent := range node.parents {
+	for parent := range node.parents {
 		parent.children.add(node)
 	}
 }

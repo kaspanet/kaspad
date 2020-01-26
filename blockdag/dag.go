@@ -773,7 +773,7 @@ func (dag *BlockDAG) updateFinalityPoint() {
 
 func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
 	queue := make([]*blockNode, 0, len(dag.lastFinalityPoint.parents))
-	for _, parent := range dag.lastFinalityPoint.parents {
+	for parent := range dag.lastFinalityPoint.parents {
 		queue = append(queue, parent)
 	}
 	var blockHashesToDelete []*daghash.Hash
@@ -788,7 +788,7 @@ func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
 			if deleteDiffData {
 				blockHashesToDelete = append(blockHashesToDelete, current.hash)
 			}
-			for _, parent := range current.parents {
+			for parent := range current.parents {
 				queue = append(queue, parent)
 			}
 		}
@@ -1125,7 +1125,7 @@ func (node *blockNode) updateParentsDiffs(dag *BlockDAG, newBlockUTXO UTXOSet) e
 		return err
 	}
 
-	for _, parent := range node.parents {
+	for parent := range node.parents {
 		diffChild, err := dag.utxoDiffStore.diffChildByNode(parent)
 		if err != nil {
 			return err
@@ -1236,7 +1236,7 @@ func (dag *BlockDAG) restoreUTXO(node *blockNode) (UTXOSet, error) {
 
 // updateTipsUTXO builds and applies new diff UTXOs for all the DAG's tips
 func updateTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
-	for _, tip := range dag.virtual.parents {
+	for tip := range dag.virtual.parents {
 		tipUTXO, err := dag.restoreUTXO(tip)
 		if err != nil {
 			return err
@@ -1427,7 +1427,7 @@ func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 			// If the node is the selected tip, it doesn't have an accepting block
 			return nil, nil
 		}
-		for _, child := range node.children {
+		for child := range node.children {
 			if dag.IsInSelectedParentChain(child.hash) {
 				return child, nil
 			}
@@ -1547,7 +1547,7 @@ func (dag *BlockDAG) TipHashes() []*daghash.Hash {
 func (dag *BlockDAG) CurrentBits() uint32 {
 	tips := dag.virtual.tips()
 	minBits := uint32(math.MaxUint32)
-	for _, tip := range tips {
+	for tip := range tips {
 		if minBits > tip.Header().Bits {
 			minBits = tip.Header().Bits
 		}
@@ -1668,7 +1668,7 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 			continue
 		}
 		candidateNodes.Push(current)
-		for _, parent := range current.parents {
+		for parent := range current.parents {
 			queue.Push(parent)
 		}
 	}
