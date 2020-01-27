@@ -19,26 +19,25 @@ import (
 // 	hasDiffChild | Boolean   | Indicates if a diff child exist
 //  diffChild    | Hash      | The diffChild's hash. Empty if hasDiffChild is true.
 //  diff		 | UTXODiff  | The diff data's diff
-func serializeBlockUTXODiffData(diffData *blockUTXODiffData) ([]byte, error) {
-	w := &bytes.Buffer{}
+func serializeBlockUTXODiffData(buffer *bytes.Buffer, diffData *blockUTXODiffData) error {
 	hasDiffChild := diffData.diffChild != nil
-	err := wire.WriteElement(w, hasDiffChild)
+	err := wire.WriteElement(buffer, hasDiffChild)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if hasDiffChild {
-		err := wire.WriteElement(w, diffData.diffChild.hash)
+		err := wire.WriteElement(buffer, diffData.diffChild.hash)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	err = serializeUTXODiff(w, diffData.diff)
+	err = serializeUTXODiff(buffer, diffData.diff)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return w.Bytes(), nil
+	return nil
 }
 
 // utxoEntryHeaderCode returns the calculated header code to be used when
