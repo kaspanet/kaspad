@@ -1480,7 +1480,8 @@ func (dag *BlockDAG) oldestChainBlockWithBlueScoreGreaterThan(blueScore uint64) 
 }
 
 // IsInSelectedParentChain returns whether or not a block hash is found in the selected
-// parent chain.
+// parent chain. Note that this method returns an error if the given blockHash does not
+// exist within the block index.
 //
 // This method MUST be called with the DAG lock held
 func (dag *BlockDAG) IsInSelectedParentChain(blockHash *daghash.Hash) (bool, error) {
