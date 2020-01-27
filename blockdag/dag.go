@@ -1517,6 +1517,11 @@ func (dag *BlockDAG) SelectedParentChain(blockHash *daghash.Hash) ([]*daghash.Ha
 
 		node := dag.index.LookupNode(blockHash)
 		blockHash = node.selectedParent.hash
+
+		isBlockInSelectedParentChain, err = dag.IsInSelectedParentChain(blockHash)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
 	// Find the index of the blockHash in the selectedParentChainSlice
