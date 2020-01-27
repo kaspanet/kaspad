@@ -680,7 +680,7 @@ func TestConfirmations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("TestConfirmations: confirmations for genesis block unexpectedly failed: %s", err)
 	}
-	if genesisConfirmations != 1 {
+	if genesisConfirmations != 0 {
 		t.Fatalf("TestConfirmations: unexpected confirmations for genesis block. Want: 1, got: %d", genesisConfirmations)
 	}
 
@@ -698,7 +698,7 @@ func TestConfirmations(t *testing.T) {
 			t.Fatalf("TestConfirmations: confirmations for block unexpectedly failed: %s", err)
 		}
 
-		expectedConfirmations := uint64(len(chainBlocks) - i)
+		expectedConfirmations := uint64(len(chainBlocks) - i - 1)
 		if confirmations != expectedConfirmations {
 			t.Fatalf("TestConfirmations: unexpected confirmations for block. "+
 				"Want: %d, got: %d", expectedConfirmations, confirmations)
@@ -715,13 +715,13 @@ func TestConfirmations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("TestConfirmations: confirmations for genesis block unexpectedly failed: %s", err)
 	}
-	expectedGenesisConfirmations := uint64(len(chainBlocks))
+	expectedGenesisConfirmations := uint64(len(chainBlocks)) - 1
 	if genesisConfirmations != expectedGenesisConfirmations {
 		t.Fatalf("TestConfirmations: unexpected confirmations for genesis block. "+
 			"Want: %d, got: %d", expectedGenesisConfirmations, genesisConfirmations)
 	}
 
-	// Check that each of the blue tips has a confirmation number of 1, and each of the red tips has 0 confirmations.
+	// Check that each of the tips has a 0 confirmations
 	tips := dag.virtual.tips()
 	for _, tip := range tips {
 		tipConfirmations, err := dag.blockConfirmations(tip)
@@ -729,9 +729,6 @@ func TestConfirmations(t *testing.T) {
 			t.Fatalf("TestConfirmations: confirmations for tip unexpectedly failed: %s", err)
 		}
 		expectedConfirmations := uint64(0)
-		if tip == dag.selectedTip() {
-			expectedConfirmations = 1
-		}
 		if tipConfirmations != expectedConfirmations {
 			t.Fatalf("TestConfirmations: unexpected confirmations for tip. "+
 				"Want: %d, got: %d", expectedConfirmations, tipConfirmations)
