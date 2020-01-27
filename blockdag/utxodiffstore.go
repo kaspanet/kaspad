@@ -199,7 +199,7 @@ func dbStoreDiffData(dbTx database.Tx, buffer *bytes.Buffer, hash *daghash.Hash,
 	// Bucket.Put doesn't copy on its own, so we manually
 	// copy here. We do so because we expect the buffer
 	// to be reused once we're done with it.
-	serializedDiffData := make([]byte, 0, buffer.Len()-bufferFrom)
+	serializedDiffData := make([]byte, buffer.Len()-bufferFrom)
 	copy(serializedDiffData, buffer.Bytes()[bufferFrom:])
 
 	return dbTx.Metadata().Bucket(utxoDiffsBucketName).Put(hash[:], serializedDiffData)
