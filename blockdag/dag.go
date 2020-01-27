@@ -773,7 +773,7 @@ func (dag *BlockDAG) updateFinalityPoint() {
 
 func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
 	queue := make([]*blockNode, 0, len(dag.lastFinalityPoint.parents))
-	for _, parent := range dag.lastFinalityPoint.parents {
+	for parent := range dag.lastFinalityPoint.parents {
 		queue = append(queue, parent)
 	}
 	var blockHashesToDelete []*daghash.Hash
@@ -788,7 +788,7 @@ func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
 			if deleteDiffData {
 				blockHashesToDelete = append(blockHashesToDelete, current.hash)
 			}
-			for _, parent := range current.parents {
+			for parent := range current.parents {
 				queue = append(queue, parent)
 			}
 		}
@@ -1125,7 +1125,7 @@ func (node *blockNode) updateParentsDiffs(dag *BlockDAG, newBlockUTXO UTXOSet) e
 		return err
 	}
 
-	for _, parent := range node.parents {
+	for parent := range node.parents {
 		diffChild, err := dag.utxoDiffStore.diffChildByNode(parent)
 		if err != nil {
 			return err
@@ -1236,7 +1236,7 @@ func (dag *BlockDAG) restoreUTXO(node *blockNode) (UTXOSet, error) {
 
 // updateTipsUTXO builds and applies new diff UTXOs for all the DAG's tips
 func updateTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
-	for _, tip := range dag.virtual.parents {
+	for tip := range dag.virtual.parents {
 		tipUTXO, err := dag.restoreUTXO(tip)
 		if err != nil {
 			return err
@@ -1419,13 +1419,21 @@ func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 	}
 
 	// If the node is a chain-block itself, the accepting block is its chain-child
-	if dag.IsInSelectedParentChain(node.hash) {
+	isNodeInSelectedParentChain, err := dag.IsInSelectedParentChain(node.hash)
+	if err != nil {
+		return nil, err
+	}
+	if isNodeInSelectedParentChain {
 		if len(node.children) == 0 {
 			// If the node is the selected tip, it doesn't have an accepting block
 			return nil, nil
 		}
-		for _, child := range node.children {
-			if dag.IsInSelectedParentChain(child.hash) {
+		for child := range node.children {
+			isChildInSelectedParentChain, err := dag.IsInSelectedParentChain(child.hash)
+			if err != nil {
+				return nil, err
+			}
+			if isChildInSelectedParentChain {
 				return child, nil
 			}
 		}
@@ -1469,11 +1477,17 @@ func (dag *BlockDAG) oldestChainBlockWithBlueScoreGreaterThan(blueScore uint64) 
 }
 
 // IsInSelectedParentChain returns whether or not a block hash is found in the selected
-// parent chain.
+// parent chain. Note that this method returns an error if the given blockHash does not
+// exist within the block index.
 //
 // This method MUST be called with the DAG lock held
-func (dag *BlockDAG) IsInSelectedParentChain(blockHash *daghash.Hash) bool {
-	return dag.virtual.selectedParentChainSet.containsHash(blockHash)
+func (dag *BlockDAG) IsInSelectedParentChain(blockHash *daghash.Hash) (bool, error) {
+	blockNode := dag.index.LookupNode(blockHash)
+	if blockNode == nil {
+		str := fmt.Sprintf("block %s is not in the DAG", blockHash)
+		return false, errNotInDAG(str)
+	}
+	return dag.virtual.selectedParentChainSet.contains(blockNode), nil
 }
 
 // SelectedParentChain returns the selected parent chain starting from blockHash (exclusive)
@@ -1494,7 +1508,11 @@ func (dag *BlockDAG) SelectedParentChain(blockHash *daghash.Hash) ([]*daghash.Ha
 	// If blockHash is not in the selected parent chain, go down its selected parent chain
 	// until we find a block that is in the main selected parent chain.
 	var removedChainHashes []*daghash.Hash
-	for !dag.IsInSelectedParentChain(blockHash) {
+	isBlockInSelectedParentChain, err := dag.IsInSelectedParentChain(blockHash)
+	if err != nil {
+		return nil, nil, err
+	}
+	for !isBlockInSelectedParentChain {
 		removedChainHashes = append(removedChainHashes, blockHash)
 
 		node := dag.index.LookupNode(blockHash)
@@ -1544,7 +1562,7 @@ func (dag *BlockDAG) TipHashes() []*daghash.Hash {
 func (dag *BlockDAG) CurrentBits() uint32 {
 	tips := dag.virtual.tips()
 	minBits := uint32(math.MaxUint32)
-	for _, tip := range tips {
+	for tip := range tips {
 		if minBits > tip.Header().Bits {
 			minBits = tip.Header().Bits
 		}
@@ -1665,7 +1683,7 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 			continue
 		}
 		candidateNodes.Push(current)
-		for _, parent := range current.parents {
+		for parent := range current.parents {
 			queue.Push(parent)
 		}
 	}

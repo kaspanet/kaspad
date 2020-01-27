@@ -124,7 +124,8 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	}
 
 	blockNode3 := dag.index.LookupNode(blocks[3].Hash())
-	if blockNode3.children.containsHash(blocks[4].Hash()) {
+	blockNode4 := dag.index.LookupNode(blocks[4].Hash())
+	if blockNode3.children.contains(blockNode4) {
 		t.Errorf("Block 4 wasn't successfully detached as a child from block3")
 	}
 

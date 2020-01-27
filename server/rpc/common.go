@@ -240,7 +240,11 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		selectedParentHashStr = selectedParentHash.String()
 	}
 
-	isChainBlock := s.cfg.DAG.IsInSelectedParentChain(hash)
+	isChainBlock, err := s.cfg.DAG.IsInSelectedParentChain(hash)
+	if err != nil {
+		context := "Could not get whether block is in the selected parent chain"
+		return nil, internalRPCError(err.Error(), context)
+	}
 
 	result := &rpcmodel.GetBlockVerboseResult{
 		Hash:                 hash.String(),

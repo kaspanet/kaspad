@@ -602,7 +602,7 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 	minBlueScore := uint64(math.MaxUint64)
 	queue := newDownHeap()
 	visited := newSet()
-	for _, parent := range parents {
+	for parent := range parents {
 		// isFinalized might be false-negative because node finality status is
 		// updated in a separate goroutine. This is why later the block is
 		// checked more thoroughly on the finality rules in dag.checkFinalityRules.
@@ -612,7 +612,7 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 		if parent.blueScore < minBlueScore {
 			minBlueScore = parent.blueScore
 		}
-		for _, grandParent := range parent.parents {
+		for grandParent := range parent.parents {
 			if !visited.contains(grandParent) {
 				queue.Push(grandParent)
 				visited.add(grandParent)
@@ -628,7 +628,7 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 				blockHeader.BlockHash()))
 		}
 		if current.blueScore > minBlueScore {
-			for _, parent := range current.parents {
+			for parent := range current.parents {
 				if !visited.contains(parent) {
 					queue.Push(parent)
 					visited.add(parent)

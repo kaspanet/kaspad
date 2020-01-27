@@ -723,7 +723,7 @@ func TestConfirmations(t *testing.T) {
 
 	// Check that each of the tips has a 0 confirmations
 	tips := dag.virtual.tips()
-	for _, tip := range tips {
+	for tip := range tips {
 		tipConfirmations, err := dag.blockConfirmations(tip)
 		if err != nil {
 			t.Fatalf("TestConfirmations: confirmations for tip unexpectedly failed: %s", err)
@@ -828,7 +828,11 @@ func TestAcceptingBlock(t *testing.T) {
 	branchingChainTip := prepareAndProcessBlock(t, dag, chainBlocks[len(chainBlocks)-3])
 
 	// Make sure that branchingChainTip is not in the selected parent chain
-	if dag.IsInSelectedParentChain(branchingChainTip.BlockHash()) {
+	isBranchingChainTipInSelectedParentChain, err := dag.IsInSelectedParentChain(branchingChainTip.BlockHash())
+	if err != nil {
+		t.Fatalf("TestAcceptingBlock: IsInSelectedParentChain unexpectedly failed: %s", err)
+	}
+	if isBranchingChainTipInSelectedParentChain {
 		t.Fatalf("TestAcceptingBlock: branchingChainTip wasn't expected to be in the selected parent chain")
 	}
 

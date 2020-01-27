@@ -134,7 +134,7 @@ func (v *virtualBlock) SetTips(tips blockSet) {
 // This function MUST be called with the view mutex locked (for writes).
 func (v *virtualBlock) addTip(newTip *blockNode) *chainUpdates {
 	updatedTips := v.tips().clone()
-	for _, parent := range newTip.parents {
+	for parent := range newTip.parents {
 		updatedTips.remove(parent)
 	}
 

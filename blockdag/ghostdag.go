@@ -131,7 +131,7 @@ func (dag *BlockDAG) selectedParentAnticone(node *blockNode) ([]*blockNode, erro
 	selectedParentPast := newSet()
 	var queue []*blockNode
 	// Queueing all parents (other than the selected parent itself) for processing.
-	for _, parent := range node.parents {
+	for parent := range node.parents {
 		if parent == node.selectedParent {
 			continue
 		}
@@ -144,7 +144,7 @@ func (dag *BlockDAG) selectedParentAnticone(node *blockNode) ([]*blockNode, erro
 		current, queue = queue[0], queue[1:]
 		// For each parent of a the current node we check whether it is in the past of the selected parent. If not,
 		// we add the it to the resulting anticone-set and queue it for further processing.
-		for _, parent := range current.parents {
+		for parent := range current.parents {
 			if anticoneSet.contains(parent) || selectedParentPast.contains(parent) {
 				continue
 			}

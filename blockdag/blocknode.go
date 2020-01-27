@@ -148,7 +148,7 @@ func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSe
 
 // updateParentsChildren updates the node's parents to point to new node
 func (node *blockNode) updateParentsChildren() {
-	for _, parent := range node.parents {
+	for parent := range node.parents {
 		parent.children.add(node)
 	}
 }
