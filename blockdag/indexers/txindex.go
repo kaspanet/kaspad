@@ -389,7 +389,11 @@ func dbFetchTxAcceptingBlock(dbTx database.Tx, txID *daghash.TxID, dag *blockdag
 		if err != nil {
 			return nil, err
 		}
-		if dag.IsInSelectedParentChain(blockHash) {
+		isBlockInSelectedParentChain, err := dag.IsInSelectedParentChain(blockHash)
+		if err != nil {
+			return nil, err
+		}
+		if isBlockInSelectedParentChain {
 			return blockHash, nil
 		}
 	}

@@ -831,7 +831,11 @@ func TestAcceptingBlock(t *testing.T) {
 	branchingChainTip := prepareAndProcessBlock(t, dag, chainBlocks[len(chainBlocks)-3])
 
 	// Make sure that branchingChainTip is not in the selected parent chain
-	if dag.IsInSelectedParentChain(branchingChainTip.BlockHash()) {
+	isBranchingChainTipInSelectedParentChain, err := dag.IsInSelectedParentChain(branchingChainTip.BlockHash())
+	if err != nil {
+		t.Fatalf("TestAcceptingBlock: IsInSelectedParentChain unexpectedly failed: %s", err)
+	}
+	if isBranchingChainTipInSelectedParentChain {
 		t.Fatalf("TestAcceptingBlock: branchingChainTip wasn't expected to be in the selected parent chain")
 	}
 

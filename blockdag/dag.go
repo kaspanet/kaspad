@@ -1422,13 +1422,21 @@ func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 	}
 
 	// If the node is a chain-block itself, the accepting block is its chain-child
-	if dag.IsInSelectedParentChain(node.hash) {
+	isNodeInSelectedParentChain, err := dag.IsInSelectedParentChain(node.hash)
+	if err != nil {
+		return nil, err
+	}
+	if isNodeInSelectedParentChain {
 		if len(node.children) == 0 {
 			// If the node is the selected tip, it doesn't have an accepting block
 			return nil, nil
 		}
 		for child := range node.children {
-			if dag.IsInSelectedParentChain(child.hash) {
+			isChildInSelectedParentChain, err := dag.IsInSelectedParentChain(child.hash)
+			if err != nil {
+				return nil, err
+			}
+			if isChildInSelectedParentChain {
 				return child, nil
 			}
 		}
@@ -1475,8 +1483,13 @@ func (dag *BlockDAG) oldestChainBlockWithBlueScoreGreaterThan(blueScore uint64) 
 // parent chain.
 //
 // This method MUST be called with the DAG lock held
-func (dag *BlockDAG) IsInSelectedParentChain(blockHash *daghash.Hash) bool {
-	return dag.virtual.selectedParentChainSet.containsHash(blockHash)
+func (dag *BlockDAG) IsInSelectedParentChain(blockHash *daghash.Hash) (bool, error) {
+	blockNode := dag.index.LookupNode(blockHash)
+	if blockNode == nil {
+		str := fmt.Sprintf("block %s is not in the DAG", blockHash)
+		return false, errNotInDAG(str)
+	}
+	return dag.virtual.selectedParentChainSet.contains(blockNode), nil
 }
 
 // SelectedParentChain returns the selected parent chain starting from blockHash (exclusive)
@@ -1497,7 +1510,11 @@ func (dag *BlockDAG) SelectedParentChain(blockHash *daghash.Hash) ([]*daghash.Ha
 	// If blockHash is not in the selected parent chain, go down its selected parent chain
 	// until we find a block that is in the main selected parent chain.
 	var removedChainHashes []*daghash.Hash
-	for !dag.IsInSelectedParentChain(blockHash) {
+	isBlockInSelectedParentChain, err := dag.IsInSelectedParentChain(blockHash)
+	if err != nil {
+		return nil, nil, err
+	}
+	for !isBlockInSelectedParentChain {
 		removedChainHashes = append(removedChainHashes, blockHash)
 
 		node := dag.index.LookupNode(blockHash)
