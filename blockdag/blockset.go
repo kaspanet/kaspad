@@ -84,33 +84,6 @@ func (bs blockSet) contains(node *blockNode) bool {
 	return ok
 }
 
-// containsHash returns true iff this set contains a block hash
-func (bs blockSet) containsHash(hash *daghash.Hash) bool {
-	for node := range bs {
-		if node.hash.IsEqual(hash) {
-			return true
-		}
-	}
-	return false
-}
-
-// hashesEqual returns true if the given hashes are equal to the hashes
-// of the blockNodes in this set.
-// NOTE: The given hash slice must not contain duplicates.
-func (bs blockSet) hashesEqual(hashes []*daghash.Hash) bool {
-	if len(hashes) != len(bs) {
-		return false
-	}
-
-	for _, hash := range hashes {
-		if contains := bs.containsHash(hash); !contains {
-			return false
-		}
-	}
-
-	return true
-}
-
 // hashes returns the hashes of the blockNodes in this set.
 func (bs blockSet) hashes() []*daghash.Hash {
 	hashes := make([]*daghash.Hash, 0, len(bs))
