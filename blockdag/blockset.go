@@ -141,15 +141,15 @@ func (bs blockSet) anyChildInSet(block *blockNode) bool {
 }
 
 func (bs blockSet) bluest() *blockNode {
-	var bluestNode *blockNode
+	var bluestBlock *blockNode
 	var maxScore uint64
 	for block := range bs {
-		if bluestNode == nil ||
+		if bluestBlock == nil ||
 			block.blueScore > maxScore ||
-			(block.blueScore == maxScore && daghash.Less(block.hash, bluestNode.hash)) {
-			bluestNode = block
+			(block.blueScore == maxScore && daghash.Less(block.hash, bluestBlock.hash)) {
+			bluestBlock = block
 			maxScore = block.blueScore
 		}
 	}
-	return bluestNode
+	return bluestBlock
 }
