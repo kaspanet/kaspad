@@ -1987,7 +1987,8 @@ func New(config *Config) (*BlockDAG, error) {
 
 	if genesis == nil {
 		genesisBlock := util.NewBlock(dag.dagParams.GenesisBlock)
-		isOrphan, isDelayed, err := dag.ProcessBlock(genesisBlock, BFNone)
+		var isOrphan, isDelayed bool
+		isOrphan, isDelayed, err = dag.ProcessBlock(genesisBlock, BFNone)
 		if err != nil {
 			return nil, err
 		}
