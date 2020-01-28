@@ -1992,7 +1992,10 @@ func New(config *Config) (*BlockDAG, error) {
 
 	if genesis == nil {
 		genesisBlock := util.NewBlock(dag.dagParams.GenesisBlock)
-		isOrphan, isDelayed, err := dag.ProcessBlock(genesisBlock, BFNone)
+		// To prevent the creation of a new err variable unintentionally so the
+		// defered function above could read err - declare isOrphan and isDelayed explicitly.
+		var isOrphan, isDelayed bool
+		isOrphan, isDelayed, err = dag.ProcessBlock(genesisBlock, BFNone)
 		if err != nil {
 			return nil, err
 		}
