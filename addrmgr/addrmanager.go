@@ -42,7 +42,6 @@ type AddrManager struct {
 	addrNewFullNodes   newBucket
 	addrTried          map[subnetworkid.SubnetworkID]*triedBucket
 	addrTriedFullNodes triedBucket
-	addrTrying         map[*KnownAddress]bool
 	started            int32
 	shutdown           int32
 	wg                 sync.WaitGroup
@@ -869,7 +868,6 @@ func (a *AddrManager) AddressCache(includeAllSubnetworks bool, subnetworkID *sub
 // reset resets the address manager by reinitialising the random source
 // and allocating fresh empty bucket storage.
 func (a *AddrManager) reset() {
-
 	a.addrIndex = make(map[string]*KnownAddress)
 
 	// fill key with bytes from a good random source.
@@ -888,8 +886,6 @@ func (a *AddrManager) reset() {
 	}
 	a.nNewFullNodes = 0
 	a.nTriedFullNodes = 0
-
-	a.addrTrying = make(map[*KnownAddress]bool)
 }
 
 // HostToNetAddress returns a netaddress given a host address. If
@@ -935,13 +931,6 @@ func (a *AddrManager) GetAddress() *KnownAddress {
 		subnetworkID := *a.localSubnetworkID
 		knownAddress = a.getAddress(a.addrTried[subnetworkID], a.nTried[subnetworkID],
 			a.addrNew[subnetworkID], a.nNew[subnetworkID])
-	}
-
-	if knownAddress != nil {
-		if a.addrTrying[knownAddress] {
-			return nil
-		}
-		a.addrTrying[knownAddress] = true
 	}
 
 	return knownAddress
@@ -1028,8 +1017,6 @@ func (a *AddrManager) Attempt(addr *wire.NetAddress) {
 	// set last tried time to now
 	ka.attempts++
 	ka.lastattempt = time.Now()
-
-	delete(a.addrTrying, ka)
 }
 
 // Connected Marks the given address as currently connected and working at the
