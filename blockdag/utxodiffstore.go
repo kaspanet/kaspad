@@ -1,6 +1,7 @@
 package blockdag
 
 import (
+	"bytes"
 	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/locks"
@@ -161,9 +162,13 @@ func (diffStore *utxoDiffStore) flushToDB(dbTx database.Tx) error {
 		return nil
 	}
 
+	// Allocate a buffer here to avoid needless allocations/grows
+	// while writing each entry.
+	buffer := &bytes.Buffer{}
 	for hash := range diffStore.dirty {
+		buffer.Reset()
 		diffData := diffStore.loaded[hash]
-		err := dbStoreDiffData(dbTx, &hash, diffData)
+		err := dbStoreDiffData(dbTx, buffer, &hash, diffData)
 		if err != nil {
 			return err
 		}
@@ -177,11 +182,22 @@ func (diffStore *utxoDiffStore) clearDirtyEntries() {
 
 // dbStoreDiffData stores the UTXO diff data to the database.
 // This overwrites the current entry if there exists one.
-func dbStoreDiffData(dbTx database.Tx, hash *daghash.Hash, diffData *blockUTXODiffData) error {
-	serializedDiffData, err := serializeBlockUTXODiffData(diffData)
+func dbStoreDiffData(dbTx database.Tx, writeBuffer *bytes.Buffer, hash *daghash.Hash, diffData *blockUTXODiffData) error {
+	// To avoid a ton of allocs, use the given writeBuffer
+	// instead of allocating one. We expect the buffer to
+	// already be initalized and, in most cases, to already
+	// be large enough to accommodate the serialized data
+	// without growing.
+	err := serializeBlockUTXODiffData(writeBuffer, diffData)
 	if err != nil {
 		return err
 	}
+
+	// Bucket.Put doesn't copy on its own, so we manually
+	// copy here. We do so because we expect the buffer
+	// to be reused once we're done with it.
+	serializedDiffData := make([]byte, writeBuffer.Len())
+	copy(serializedDiffData, writeBuffer.Bytes())
 
 	return dbTx.Metadata().Bucket(utxoDiffsBucketName).Put(hash[:], serializedDiffData)
 }
