@@ -19,20 +19,20 @@ import (
 // 	hasDiffChild | Boolean   | Indicates if a diff child exist
 //  diffChild    | Hash      | The diffChild's hash. Empty if hasDiffChild is true.
 //  diff		 | UTXODiff  | The diff data's diff
-func serializeBlockUTXODiffData(buffer *bytes.Buffer, diffData *blockUTXODiffData) error {
+func serializeBlockUTXODiffData(w io.Writer, diffData *blockUTXODiffData) error {
 	hasDiffChild := diffData.diffChild != nil
-	err := wire.WriteElement(buffer, hasDiffChild)
+	err := wire.WriteElement(w, hasDiffChild)
 	if err != nil {
 		return err
 	}
 	if hasDiffChild {
-		err := wire.WriteElement(buffer, diffData.diffChild.hash)
+		err := wire.WriteElement(w, diffData.diffChild.hash)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = serializeUTXODiff(buffer, diffData.diff)
+	err = serializeUTXODiff(w, diffData.diff)
 	if err != nil {
 		return err
 	}

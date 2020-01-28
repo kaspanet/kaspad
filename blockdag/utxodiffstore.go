@@ -20,20 +20,14 @@ type utxoDiffStore struct {
 	dirty  map[daghash.Hash]struct{}
 	loaded map[daghash.Hash]*blockUTXODiffData
 	mtx    *locks.PriorityMutex
-
-	// writeBuffer is a buffer to be used in flushToDB.
-	// It's used to avoid needless allocations/grows
-	// while writing to the utxoDiffStore DB bucket.
-	writeBuffer *bytes.Buffer
 }
 
 func newUTXODiffStore(dag *BlockDAG) *utxoDiffStore {
 	return &utxoDiffStore{
-		dag:         dag,
-		dirty:       make(map[daghash.Hash]struct{}),
-		loaded:      make(map[daghash.Hash]*blockUTXODiffData),
-		mtx:         locks.NewPriorityMutex(),
-		writeBuffer: &bytes.Buffer{},
+		dag:    dag,
+		dirty:  make(map[daghash.Hash]struct{}),
+		loaded: make(map[daghash.Hash]*blockUTXODiffData),
+		mtx:    locks.NewPriorityMutex(),
 	}
 }
 
@@ -168,10 +162,13 @@ func (diffStore *utxoDiffStore) flushToDB(dbTx database.Tx) error {
 		return nil
 	}
 
-	diffStore.writeBuffer.Reset()
+	// Allocate a buffer here to avoid needless allocations/grows
+	// while writing each entry.
+	buffer := &bytes.Buffer{}
 	for hash := range diffStore.dirty {
+		buffer.Reset()
 		diffData := diffStore.loaded[hash]
-		err := dbStoreDiffData(dbTx, diffStore.writeBuffer, &hash, diffData)
+		err := dbStoreDiffData(dbTx, buffer, &hash, diffData)
 		if err != nil {
 			return err
 		}
@@ -185,13 +182,13 @@ func (diffStore *utxoDiffStore) clearDirtyEntries() {
 
 // dbStoreDiffData stores the UTXO diff data to the database.
 // This overwrites the current entry if there exists one.
-func dbStoreDiffData(dbTx database.Tx, buffer *bytes.Buffer, hash *daghash.Hash, diffData *blockUTXODiffData) error {
-	// To avoid a ton of allocs, reuse the given buffer.
-	// We expect the buffer, in most cases, to already
+func dbStoreDiffData(dbTx database.Tx, writeBuffer *bytes.Buffer, hash *daghash.Hash, diffData *blockUTXODiffData) error {
+	// To avoid a ton of allocs, use the given writeBuffer
+	// instead of allocating one. We expect the buffer to
+	// already be initalized and, in most cases, to already
 	// be large enough to accommodate the serialized data
 	// without growing.
-	bufferFrom := buffer.Len()
-	err := serializeBlockUTXODiffData(buffer, diffData)
+	err := serializeBlockUTXODiffData(writeBuffer, diffData)
 	if err != nil {
 		return err
 	}
@@ -199,8 +196,8 @@ func dbStoreDiffData(dbTx database.Tx, buffer *bytes.Buffer, hash *daghash.Hash,
 	// Bucket.Put doesn't copy on its own, so we manually
 	// copy here. We do so because we expect the buffer
 	// to be reused once we're done with it.
-	serializedDiffData := make([]byte, buffer.Len()-bufferFrom)
-	copy(serializedDiffData, buffer.Bytes()[bufferFrom:])
+	serializedDiffData := make([]byte, writeBuffer.Len())
+	copy(serializedDiffData, writeBuffer.Bytes())
 
 	return dbTx.Metadata().Bucket(utxoDiffsBucketName).Put(hash[:], serializedDiffData)
 }
