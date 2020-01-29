@@ -828,11 +828,9 @@ func createDefaultConfigFile(destinationPath string) error {
 	// installed using go install, simply create the destination
 	// file and write the RPC credentials into it as is.
 	if _, err := os.Stat(sampleConfigPath); os.IsNotExist(err) {
-		lines := []string{rpcUserString, rpcPassString}
-		for _, line := range lines {
-			if _, err := dest.WriteString(line); err != nil {
-				return err
-			}
+		toWrite := rpcUserString + rpcPassString
+		if _, err := dest.WriteString(toWrite); err != nil {
+			return err
 		}
 		return nil
 	}
