@@ -808,18 +808,14 @@ func createDefaultConfigFile(destinationPath string) error {
 		return err
 	}
 	generatedRPCUser := base64.StdEncoding.EncodeToString(randomBytes)
+	rpcUserString := fmt.Sprintf("rpcuser=%s\n", generatedRPCUser)
 
 	_, err = rand.Read(randomBytes)
 	if err != nil {
 		return err
 	}
 	generatedRPCPass := base64.StdEncoding.EncodeToString(randomBytes)
-
-	src, err := os.Open(sampleConfigPath)
-	if err != nil {
-		return err
-	}
-	defer src.Close()
+	rpcPassString := fmt.Sprintf("rpcpass=%s\n", generatedRPCPass)
 
 	dest, err := os.OpenFile(destinationPath,
 		os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
@@ -827,6 +823,25 @@ func createDefaultConfigFile(destinationPath string) error {
 		return err
 	}
 	defer dest.Close()
+
+	// If the sample config file is missing because e.g. kaspad was
+	// installed using go install, simply create the destination
+	// file and write the RPC credentials into it as is.
+	if _, err := os.Stat(sampleConfigPath); os.IsNotExist(err) {
+		lines := []string{rpcUserString, rpcPassString}
+		for _, line := range lines {
+			if _, err := dest.WriteString(line); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	src, err := os.Open(sampleConfigPath)
+	if err != nil {
+		return err
+	}
+	defer src.Close()
 
 	// We copy every line from the sample config file to the destination,
 	// only replacing the two lines for rpcuser and rpcpass
@@ -839,9 +854,9 @@ func createDefaultConfigFile(destinationPath string) error {
 		}
 
 		if strings.Contains(line, "rpcuser=") {
-			line = "rpcuser=" + generatedRPCUser + "\n"
+			line = rpcUserString
 		} else if strings.Contains(line, "rpcpass=") {
-			line = "rpcpass=" + generatedRPCPass + "\n"
+			line = rpcPassString
 		}
 
 		if _, err := dest.WriteString(line); err != nil {
