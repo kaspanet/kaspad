@@ -322,6 +322,15 @@ func TestSplitWithExponentialBias(t *testing.T) {
 				newReachabilityInterval(41, 10_000),
 			},
 		},
+		{
+			interval: newReachabilityInterval(1, 100_000),
+			sizes:    []uint64{31_000, 31_000, 30_001},
+			expectedIntervals: []*reachabilityInterval{
+				newReachabilityInterval(1, 35_000),
+				newReachabilityInterval(35_001, 69_999),
+				newReachabilityInterval(70_000, 100_000),
+			},
+		},
 	}
 
 	for i, test := range tests {
@@ -471,5 +480,63 @@ func TestInsertBlock(t *testing.T) {
 			t.Errorf("TestInsertBlock: unexpected result in test #%d. Want: %s, got: %s",
 				i, test.expectedResult, blocksClone)
 		}
+	}
+}
+
+func TestSplitFractionErrors(t *testing.T) {
+	interval := newReachabilityInterval(100, 200)
+
+	// Negative fraction
+	_, _, err := interval.splitFraction(-0.5)
+	if err == nil {
+		t.Errorf("TestSplitFractionErrors: splitFraction unexpectedly " +
+			"didn't return an error")
+	}
+
+	// Fraction > 1
+	_, _, err = interval.splitFraction(1.5)
+	if err == nil {
+		t.Errorf("TestSplitFractionErrors: splitFraction unexpectedly " +
+			"didn't return an error")
+	}
+
+	// Splitting an empty interval
+	emptyInterval := newReachabilityInterval(1, 0)
+	_, _, err = emptyInterval.splitFraction(0.5)
+	if err == nil {
+		t.Errorf("TestSplitFractionErrors: splitFraction unexpectedly " +
+			"didn't return an error")
+	}
+}
+
+func TestSplitExactErrors(t *testing.T) {
+	interval := newReachabilityInterval(100, 199)
+
+	// Sum of sizes greater than the size of the interval
+	sizes := []uint64{50, 51}
+	_, err := interval.splitExact(sizes)
+	if err == nil {
+		t.Errorf("TestSplitExactErrors: splitExact unexpectedly " +
+			"didn't return an error")
+	}
+
+	// Sum of sizes smaller than the size of the interval
+	sizes = []uint64{50, 49}
+	_, err = interval.splitExact(sizes)
+	if err == nil {
+		t.Errorf("TestSplitExactErrors: splitExact unexpectedly " +
+			"didn't return an error")
+	}
+}
+
+func TestSplitWithExponentialBiasErrors(t *testing.T) {
+	interval := newReachabilityInterval(100, 199)
+
+	// Sum of sizes greater than the size of the interval
+	sizes := []uint64{50, 51}
+	_, err := interval.splitWithExponentialBias(sizes)
+	if err == nil {
+		t.Errorf("TestSplitWithExponentialBiasErrors: splitWithExponentialBias " +
+			"unexpectedly didn't return an error")
 	}
 }
