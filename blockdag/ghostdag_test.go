@@ -3,6 +3,7 @@ package blockdag
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"reflect"
@@ -336,5 +337,88 @@ func TestBlueAnticoneSizeErrors(t *testing.T) {
 	_, err = dag.blueAnticoneSize(blockNodeA, blockNodeB)
 	if err == nil {
 		t.Fatalf("TestBlueAnticoneSizeErrors: blueAnticoneSize unexpectedly succeeded")
+	}
+}
+
+func TestGHOSTDAGErrors(t *testing.T) {
+	// Create a new database and DAG instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("TestGHOSTDAGErrors", Config{
+		DAGParams: &dagconfig.SimnetParams,
+	})
+	if err != nil {
+		t.Fatalf("TestGHOSTDAGErrors: Failed to setup DAG instance: %s", err)
+	}
+	defer teardownFunc()
+
+	// Add a child block to the genesis
+	block1, err := PrepareBlockForTest(dag, []*daghash.Hash{dag.genesis.hash}, nil)
+	if err != nil {
+		t.Fatalf("TestGHOSTDAGErrors: PrepareBlockForTest failed: %s", err)
+	}
+	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(block1), BFNoPoWCheck)
+	if isOrphan {
+		t.Fatalf("TestGHOSTDAGErrors: block was unexpectedly orphaned")
+	}
+	if isDelayed {
+		t.Fatalf("TestGHOSTDAGErrors: block was unexpectedly delayed")
+	}
+	if err != nil {
+		t.Fatalf("TestGHOSTDAGErrors: ProcessBlock failed: %s", err)
+	}
+
+	// Add another child block to the genesis
+	block2, err := PrepareBlockForTest(dag, []*daghash.Hash{dag.genesis.hash}, nil)
+	if err != nil {
+		t.Fatalf("TestGHOSTDAGErrors: PrepareBlockForTest failed: %s", err)
+	}
+	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(block2), BFNoPoWCheck)
+	if isOrphan {
+		t.Fatalf("TestGHOSTDAGErrors: block was unexpectedly orphaned")
+	}
+	if isDelayed {
+		t.Fatalf("TestGHOSTDAGErrors: block was unexpectedly delayed")
+	}
+	if err != nil {
+		t.Fatalf("TestGHOSTDAGErrors: ProcessBlock failed: %s", err)
+	}
+
+	// Add a child block to the previous two blocks
+	block3, err := PrepareBlockForTest(dag, []*daghash.Hash{block1.BlockHash(), block2.BlockHash()}, nil)
+	if err != nil {
+		t.Fatalf("TestGHOSTDAGErrors: PrepareBlockForTest failed: %s", err)
+	}
+	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(block3), BFNoPoWCheck)
+	if isOrphan {
+		t.Fatalf("TestGHOSTDAGErrors: block was unexpectedly orphaned")
+	}
+	if isDelayed {
+		t.Fatalf("TestGHOSTDAGErrors: block was unexpectedly delayed")
+	}
+	if err != nil {
+		t.Fatalf("TestGHOSTDAGErrors: ProcessBlock failed: %s", err)
+	}
+
+	// Clear the reachability store
+	dag.reachabilityStore.loaded = map[daghash.Hash]*reachabilityData{}
+	err = dag.db.Update(func(dbTx database.Tx) error {
+		bucket := dbTx.Metadata().Bucket(reachabilityDataBucketName)
+		cursor := bucket.Cursor()
+		for ok := cursor.First(); ok; ok = cursor.Next() {
+			err := bucket.Delete(cursor.Key())
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("TestGHOSTDAGErrors: db.Update failed: %s", err)
+	}
+
+	// Try to rerun GHOSTDAG on the last block
+	blockNode3 := dag.index.LookupNode(block3.BlockHash())
+	_, err = dag.ghostdag(blockNode3)
+	if err == nil {
+		t.Fatalf("TestGHOSTDAGErrors: ghostdag unexpectedly succeeded")
 	}
 }
