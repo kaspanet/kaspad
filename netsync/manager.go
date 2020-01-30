@@ -591,7 +591,7 @@ func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 		fallthrough
 	case wire.InvTypeBlock:
 		// Ask DAG if the block is known to it in any form (in DAG or as an orphan).
-		return sm.dag.HaveBlock(invVect.Hash), nil
+		return sm.dag.IsKnownBlock(invVect.Hash), nil
 
 	case wire.InvTypeTx:
 		// Ask the transaction memory pool if the transaction is known

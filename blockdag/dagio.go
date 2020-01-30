@@ -873,7 +873,7 @@ func (dag *BlockDAG) BlockHashesFrom(lowHash *daghash.Hash, limit int) ([]*dagha
 		// genesis hash in the result
 		blockHashes = append(blockHashes, dag.genesis.hash)
 	}
-	if !dag.BlockExists(lowHash) {
+	if !dag.IsInDAG(lowHash) {
 		return nil, errors.Errorf("block %s not found", lowHash)
 	}
 	blueScore, err := dag.BlueScoreByBlockHash(lowHash)

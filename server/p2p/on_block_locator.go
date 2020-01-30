@@ -21,7 +21,7 @@ func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgBlockLocator) {
 	// If the first hash of the block locator is known, it means we found
 	// the highest shared block.
 	highHash := msg.BlockLocatorHashes[0]
-	if dag.BlockExists(highHash) {
+	if dag.IsInDAG(highHash) {
 		if dag.IsKnownFinalizedBlock(highHash) {
 			peerLog.Debugf("Cannot sync with peer %s because the highest"+
 				" shared chain block (%s) is below the finality point", sp, highHash)

@@ -304,7 +304,7 @@ func (sp *Peer) selectedTipHash() *daghash.Hash {
 // blockExists determines whether a block with the given hash exists in
 // the DAG.
 func (sp *Peer) blockExists(hash *daghash.Hash) bool {
-	return sp.server.DAG.BlockExists(hash)
+	return sp.server.DAG.IsInDAG(hash)
 }
 
 // addKnownAddresses adds the given addresses to the set of known addresses to

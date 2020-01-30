@@ -29,7 +29,7 @@ func handleGetBlocks(s *Server, cmd interface{}, closeChan <-chan struct{}) (int
 	defer s.cfg.DAG.RUnlock()
 
 	// If lowHash is not in the DAG, there's nothing to do; return an error.
-	if lowHash != nil && !s.cfg.DAG.HaveBlock(lowHash) {
+	if lowHash != nil && !s.cfg.DAG.IsKnownBlock(lowHash) {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCBlockNotFound,
 			Message: "Block not found",

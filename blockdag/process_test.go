@@ -157,11 +157,11 @@ func TestProcessDelayedBlocks(t *testing.T) {
 			"is not delayed\n")
 	}
 
-	if dag2.BlockExists(delayedBlock.BlockHash()) {
-		t.Errorf("dag.BlockExists should return false for a delayed block")
+	if dag2.IsInDAG(delayedBlock.BlockHash()) {
+		t.Errorf("dag.IsInDAG should return false for a delayed block")
 	}
-	if !dag2.HaveBlock(delayedBlock.BlockHash()) {
-		t.Errorf("dag.HaveBlock should return true for a a delayed block")
+	if !dag2.IsKnownBlock(delayedBlock.BlockHash()) {
+		t.Errorf("dag.IsKnownBlock should return true for a a delayed block")
 	}
 
 	isOrphan, isDelayed, err = dag2.ProcessBlock(util.NewBlock(delayedBlockChild), BFNoPoWCheck)
@@ -177,11 +177,11 @@ func TestProcessDelayedBlocks(t *testing.T) {
 			"is not delayed\n")
 	}
 
-	if dag2.BlockExists(delayedBlockChild.BlockHash()) {
-		t.Errorf("dag.BlockExists should return false for a child of a delayed block")
+	if dag2.IsInDAG(delayedBlockChild.BlockHash()) {
+		t.Errorf("dag.IsInDAG should return false for a child of a delayed block")
 	}
-	if !dag2.HaveBlock(delayedBlockChild.BlockHash()) {
-		t.Errorf("dag.HaveBlock should return true for a child of a delayed block")
+	if !dag2.IsKnownBlock(delayedBlockChild.BlockHash()) {
+		t.Errorf("dag.IsKnownBlock should return true for a child of a delayed block")
 	}
 
 	blockBeforeDelay, err := PrepareBlockForTest(dag2, []*daghash.Hash{dag2.dagParams.GenesisBlock.BlockHash()}, nil)
@@ -201,10 +201,10 @@ func TestProcessDelayedBlocks(t *testing.T) {
 			"is delayed\n")
 	}
 
-	if dag2.BlockExists(delayedBlock.BlockHash()) {
+	if dag2.IsInDAG(delayedBlock.BlockHash()) {
 		t.Errorf("delayedBlock shouldn't be added to the DAG because its time hasn't reached yet")
 	}
-	if dag2.BlockExists(delayedBlockChild.BlockHash()) {
+	if dag2.IsInDAG(delayedBlockChild.BlockHash()) {
 		t.Errorf("delayedBlockChild shouldn't be added to the DAG because its parent is not in the DAG")
 	}
 
@@ -228,10 +228,10 @@ func TestProcessDelayedBlocks(t *testing.T) {
 			"is not delayed\n")
 	}
 
-	if !dag2.BlockExists(delayedBlock.BlockHash()) {
+	if !dag2.IsInDAG(delayedBlock.BlockHash()) {
 		t.Fatalf("delayedBlock should be added to the DAG because its time has been reached")
 	}
-	if !dag2.BlockExists(delayedBlockChild.BlockHash()) {
+	if !dag2.IsInDAG(delayedBlockChild.BlockHash()) {
 		t.Errorf("delayedBlockChild shouldn't be added to the DAG because its parent has been added to the DAG")
 	}
 }

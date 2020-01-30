@@ -198,7 +198,7 @@ type Config struct {
 	// to the peer as needed.
 	SelectedTipHash func() *daghash.Hash
 
-	// BlockExists determines whether a block with the given hash exists in
+	// IsInDAG determines whether a block with the given hash exists in
 	// the DAG.
 	BlockExists func(*daghash.Hash) bool
 

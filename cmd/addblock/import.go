@@ -101,7 +101,7 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 
 	// Skip blocks that already exist.
 	blockHash := block.Hash()
-	if bi.dag.HaveBlock(blockHash) {
+	if bi.dag.IsKnownBlock(blockHash) {
 		return false, nil
 	}
 
