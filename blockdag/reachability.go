@@ -509,7 +509,8 @@ func (dag *BlockDAG) updateReachability(node *blockNode, selectedParentAnticone 
 
 	// If this is the genesis node, simply initialize it and return
 	if node.isGenesis() {
-		return dag.reachabilityStore.setTreeNode(newTreeNode)
+		dag.reachabilityStore.setTreeNode(newTreeNode)
+		return nil
 	}
 
 	// Insert the node into the selected parent's reachability tree
@@ -522,10 +523,7 @@ func (dag *BlockDAG) updateReachability(node *blockNode, selectedParentAnticone 
 		return err
 	}
 	for _, modifiedTreeNode := range modifiedTreeNodes {
-		err = dag.reachabilityStore.setTreeNode(modifiedTreeNode)
-		if err != nil {
-			return err
-		}
+		dag.reachabilityStore.setTreeNode(modifiedTreeNode)
 	}
 
 	// Add the block to the futureCoveringSets of all the blocks
