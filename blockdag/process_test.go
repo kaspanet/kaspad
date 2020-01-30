@@ -87,6 +87,9 @@ func (fts fakeTimeSource) Offset() time.Duration {
 }
 
 func TestProcessDelayedBlocks(t *testing.T) {
+	// We use dag1 so we can build the test blocks with the proper
+	// block header (UTXO commitment, acceptedIDMerkleroot, etc), and
+	// then we use dag2 for the actual test.
 	dag1, teardownFunc, err := DAGSetup("TestProcessDelayedBlocks1", Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
@@ -96,6 +99,9 @@ func TestProcessDelayedBlocks(t *testing.T) {
 	defer teardownFunc()
 
 	oldTimeSource := dag1.timeSource
+	// Here we use a fake time source that returns a timestamp
+	// one hour into the future to make delayedBlock artificially
+	// valid.
 	dag1.timeSource = fakeTimeSource{}
 
 	delayedBlock, err := PrepareBlockForTest(dag1, []*daghash.Hash{dag1.dagParams.GenesisBlock.BlockHash()}, nil)
@@ -124,6 +130,10 @@ func TestProcessDelayedBlocks(t *testing.T) {
 		t.Fatalf("error in PrepareBlockForTest: %s", err)
 	}
 
+	// Here the actual test begins. We add a delayed block and
+	// its child and check that they are not added to the DAG,
+	// and check that they're added only if we add a new block
+	// after the delayed block timestamp is valid.
 	dag2, teardownFunc2, err := DAGSetup("TestProcessDelayedBlocks2", Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
@@ -196,9 +206,9 @@ func TestProcessDelayedBlocks(t *testing.T) {
 		t.Errorf("delayedBlockChild shouldn't be added to the DAG because its parent is not in the DAG")
 	}
 
-	secondsUntilDelayedBlockIsValid := delayedBlock.Header.Timestamp.Unix() - int64(dag2.TimestampDeviationTolerance) - dag2.AdjustedTime().Unix()
+	secondsUntilDelayedBlockIsValid := delayedBlock.Header.Timestamp.Unix() - int64(dag2.TimestampDeviationTolerance) - dag2.AdjustedTime().Unix() + 1
 	if secondsUntilDelayedBlockIsValid < 0 {
-		t.Fatalf("secondsUntilDelayedBlockIsValid is negative")
+		t.Fatalf("the test took too much time, so delayedBlock timestamp is accidently valid now")
 	}
 	time.Sleep(time.Duration(secondsUntilDelayedBlockIsValid) * time.Second)
 
