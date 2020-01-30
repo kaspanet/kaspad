@@ -301,16 +301,14 @@ func (rtn *reachabilityTreeNode) countSubtrees(subTreeSizeMap map[*reachabilityT
 		if len(current.children) == 0 {
 			// We reached a leaf
 			subTreeSizeMap[current] = 1
-		} else {
-			if calculatedChildrenCount[current] <= uint64(len(current.children)) {
-				// We haven't yet calculated the subtree size of
-				// the current node. Add all its children to the
-				// queue
-				for _, child := range current.children {
-					queue = append(queue, child)
-				}
-				continue
+		} else if calculatedChildrenCount[current] <= uint64(len(current.children)) {
+			// We haven't yet calculated the subtree size of
+			// the current node. Add all its children to the
+			// queue
+			for _, child := range current.children {
+				queue = append(queue, child)
 			}
+			continue
 		}
 
 		// We reached a leaf or a pre-calculated subtree.
