@@ -190,11 +190,6 @@ type reachabilityTreeNode struct {
 	// remainingInterval is the not-yet allocated interval (within
 	// this node's interval) awaiting new children
 	remainingInterval *reachabilityInterval
-
-	// subtreeSize is a helper field used only during reindexing
-	// (expected to be 0 any other time).
-	// See countSubtrees for further details.
-	subtreeSize uint64
 }
 
 func newReachabilityTreeNode(blockNode *blockNode) *reachabilityTreeNode {
@@ -253,10 +248,12 @@ func (rtn *reachabilityTreeNode) reindexIntervals() ([]*reachabilityTreeNode, er
 
 	// Initial interval and subtree sizes
 	intervalSize := current.interval.size()
-	subtreeSize := current.countSubtrees()
+	subTreeSizeMap := make(map[*reachabilityTreeNode]uint64)
+	current.countSubtrees(subTreeSizeMap)
+	currentSubtreeSize := subTreeSizeMap[current]
 
 	// Find the first ancestor that has sufficient interval space
-	for intervalSize < subtreeSize {
+	for intervalSize < currentSubtreeSize {
 		if current.parent == nil {
 			// If we ended up here it means that there are more
 			// than 2^64 blocks, which shouldn't ever happen.
@@ -267,14 +264,16 @@ func (rtn *reachabilityTreeNode) reindexIntervals() ([]*reachabilityTreeNode, er
 		}
 		current = current.parent
 		intervalSize = current.interval.size()
-		subtreeSize = current.countSubtrees()
+		current.countSubtrees(subTreeSizeMap)
+		currentSubtreeSize = subTreeSizeMap[current]
 	}
 
 	// Propagate the interval to the subtree
-	return current.propagateInterval()
+	return current.propagateInterval(subTreeSizeMap)
 }
 
-// countSubtrees counts the size of each subtree under this node.
+// countSubtrees counts the size of each subtree under this node,
+// and populates the provided subTreeSizeMap with the results.
 // It is equivalent to the following recursive implementation:
 //
 // func (rtn *reachabilityTreeNode) countSubtrees() uint64 {
@@ -293,30 +292,16 @@ func (rtn *reachabilityTreeNode) reindexIntervals() ([]*reachabilityTreeNode, er
 // intermediate updates from leaves via parent chains until all
 // size information is gathered at the root of the operation
 // (i.e. at rtn).
-//
-// Note the role of the subtreeSize field in the algorithm.
-// For each node rtn this field is initialized to 0. The field
-// has two possible states:
-// * rtn.subtreeSize > |rtn.children|:
-//   indicates that rtn's subtree size is already known and
-//   calculated.
-// * rtn.subtreeSize <= |rtn.children|:
-//   indicates that we are still in the counting stage of
-//   tracking which of rtn's children has already calculated
-//   its subtree size.
-//   This way, once rtn.subtree_size = |rtn.children| we know we
-//   can pull subtree sizes from children and continue pushing
-//   the readiness signal further up.
-func (rtn *reachabilityTreeNode) countSubtrees() uint64 {
+func (rtn *reachabilityTreeNode) countSubtrees(subTreeSizeMap map[*reachabilityTreeNode]uint64) {
 	queue := []*reachabilityTreeNode{rtn}
+	calculatedChildrenCount := make(map[*reachabilityTreeNode]uint64)
 	for len(queue) > 0 {
 		var current *reachabilityTreeNode
 		current, queue = queue[0], queue[1:]
 		if len(current.children) == 0 {
 			// We reached a leaf
-			current.subtreeSize = 1
-		}
-		if current.subtreeSize <= uint64(len(current.children)) {
+			subTreeSizeMap[current] = 1
+		} else if calculatedChildrenCount[current] <= uint64(len(current.children)) {
 			// We haven't yet calculated the subtree size of
 			// the current node. Add all its children to the
 			// queue
@@ -330,28 +315,28 @@ func (rtn *reachabilityTreeNode) countSubtrees() uint64 {
 		// Push information up
 		for current != rtn {
 			current = current.parent
-			current.subtreeSize++
-			if current.subtreeSize != uint64(len(current.children)) {
+			calculatedChildrenCount[current]++
+			if calculatedChildrenCount[current] != uint64(len(current.children)) {
 				// Not all subtrees of the current node are ready
 				break
 			}
-			// All subtrees of current have reported readiness.
-			// Count actual subtree size and continue pushing up.
+			// All children of `current` have calculated their subtree size.
+			// Sum them all together and add 1 to get the sub tree size of
+			// `current`.
 			childSubtreeSizeSum := uint64(0)
 			for _, child := range current.children {
-				childSubtreeSizeSum += child.subtreeSize
+				childSubtreeSizeSum += subTreeSizeMap[child]
 			}
-			current.subtreeSize = childSubtreeSizeSum + 1
+			subTreeSizeMap[current] = childSubtreeSizeSum + 1
 		}
 	}
-	return rtn.subtreeSize
 }
 
 // propagateInterval propagates the new interval using a BFS traversal.
 // Subtree intervals are recursively allocated according to subtree sizes and
 // the allocation rule in splitWithExponentialBias. This method returns
 // a list of reachabilityTreeNodes modified by it.
-func (rtn *reachabilityTreeNode) propagateInterval() ([]*reachabilityTreeNode, error) {
+func (rtn *reachabilityTreeNode) propagateInterval(subTreeSizeMap map[*reachabilityTreeNode]uint64) ([]*reachabilityTreeNode, error) {
 	// We set the interval to reset its remainingInterval, so we could reallocate it while reindexing.
 	rtn.setInterval(rtn.interval)
 	modifiedNodes := []*reachabilityTreeNode{rtn}
@@ -362,7 +347,7 @@ func (rtn *reachabilityTreeNode) propagateInterval() ([]*reachabilityTreeNode, e
 		if len(current.children) > 0 {
 			sizes := make([]uint64, len(current.children))
 			for i, child := range current.children {
-				sizes[i] = child.subtreeSize
+				sizes[i] = subTreeSizeMap[child]
 			}
 			intervals, err := current.remainingInterval.splitWithExponentialBias(sizes)
 			if err != nil {
@@ -379,9 +364,6 @@ func (rtn *reachabilityTreeNode) propagateInterval() ([]*reachabilityTreeNode, e
 		}
 
 		modifiedNodes = append(modifiedNodes, current)
-
-		// Cleanup temp info for future reindexing
-		current.subtreeSize = 0
 	}
 	return modifiedNodes, nil
 }
