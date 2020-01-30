@@ -544,15 +544,9 @@ func TestCalcPastMedianTime(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
-	// Create the root directory for test databases.
-	if !FileExists(testDbRoot) {
-		if err := os.MkdirAll(testDbRoot, 0700); err != nil {
-			t.Fatalf("unable to create test db "+
-				"root: %s", err)
-		}
-	}
+	tempDir := os.TempDir()
 
-	dbPath := filepath.Join(testDbRoot, "TestNew")
+	dbPath := filepath.Join(tempDir, "TestNew")
 	_ = os.RemoveAll(dbPath)
 	db, err := database.Create(testDbType, dbPath, blockDataNet)
 	if err != nil {
@@ -561,7 +555,6 @@ func TestNew(t *testing.T) {
 	defer func() {
 		db.Close()
 		os.RemoveAll(dbPath)
-		os.RemoveAll(testDbRoot)
 	}()
 	config := &Config{
 		DAGParams:  &dagconfig.SimnetParams,
@@ -590,16 +583,10 @@ func TestNew(t *testing.T) {
 // occur when the node shuts down improperly while a block is being
 // validated.
 func TestAcceptingInInit(t *testing.T) {
-	// Create the root directory for test databases.
-	if !FileExists(testDbRoot) {
-		if err := os.MkdirAll(testDbRoot, 0700); err != nil {
-			t.Fatalf("unable to create test db "+
-				"root: %s", err)
-		}
-	}
+	tempDir := os.TempDir()
 
 	// Create a test database
-	dbPath := filepath.Join(testDbRoot, "TestAcceptingInInit")
+	dbPath := filepath.Join(tempDir, "TestAcceptingInInit")
 	_ = os.RemoveAll(dbPath)
 	db, err := database.Create(testDbType, dbPath, blockDataNet)
 	if err != nil {
@@ -608,7 +595,6 @@ func TestAcceptingInInit(t *testing.T) {
 	defer func() {
 		db.Close()
 		os.RemoveAll(dbPath)
-		os.RemoveAll(testDbRoot)
 	}()
 
 	// Create a DAG to add the test block into
