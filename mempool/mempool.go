@@ -811,7 +811,8 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 	// transactions are allowed into blocks.
 	err := blockdag.CheckTransactionSanity(tx, subnetworkID)
 	if err != nil {
-		if cerr, ok := err.(blockdag.RuleError); ok {
+		var cerr blockdag.RuleError
+		if ok := errors.As(err, &cerr); ok {
 			return nil, nil, dagRuleError(cerr)
 		}
 		return nil, nil, err
@@ -918,7 +919,8 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 	// with respect to its defined relative lock times.
 	sequenceLock, err := mp.cfg.CalcSequenceLockNoLock(tx, mp.mpUTXOSet)
 	if err != nil {
-		if cerr, ok := err.(blockdag.RuleError); ok {
+		var cerr blockdag.RuleError
+		if ok := errors.As(err, &cerr); ok {
 			return nil, nil, dagRuleError(cerr)
 		}
 		return nil, nil, err
@@ -933,7 +935,8 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 	// transaction mass.
 	err = blockdag.ValidateTxMass(tx, mp.mpUTXOSet)
 	if err != nil {
-		if ruleError, ok := err.(blockdag.RuleError); ok {
+		var ruleError blockdag.RuleError
+		if ok := errors.As(err, &ruleError); ok {
 			return nil, nil, dagRuleError(ruleError)
 		}
 		return nil, nil, err
@@ -946,7 +949,8 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 	txFee, err := blockdag.CheckTransactionInputsAndCalulateFee(tx, nextBlockBlueScore,
 		mp.mpUTXOSet, mp.cfg.DAGParams, false)
 	if err != nil {
-		if cerr, ok := err.(blockdag.RuleError); ok {
+		var cerr blockdag.RuleError
+		if ok := errors.As(err, &cerr); ok {
 			return nil, nil, dagRuleError(cerr)
 		}
 		return nil, nil, err
@@ -1006,7 +1010,8 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 	err = blockdag.ValidateTransactionScripts(tx, mp.mpUTXOSet,
 		txscript.StandardVerifyFlags, mp.cfg.SigCache)
 	if err != nil {
-		if cerr, ok := err.(blockdag.RuleError); ok {
+		var cerr blockdag.RuleError
+		if ok := errors.As(err, &cerr); ok {
 			return nil, nil, dagRuleError(cerr)
 		}
 		return nil, nil, err

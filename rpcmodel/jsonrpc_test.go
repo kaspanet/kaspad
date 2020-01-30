@@ -6,6 +6,7 @@ package rpcmodel_test
 
 import (
 	"encoding/json"
+	"github.com/pkg/errors"
 	"reflect"
 	"testing"
 
@@ -114,7 +115,8 @@ func TestMiscErrors(t *testing.T) {
 	// supported.
 	wantErr := rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType}
 	_, err = rpcmodel.MarshalResponse(make(chan int), nil, nil)
-	if jerr, ok := err.(rpcmodel.Error); !ok || jerr.ErrorCode != wantErr.ErrorCode {
+	var jerr rpcmodel.Error
+	if ok := errors.As(err, &jerr); !ok || jerr.ErrorCode != wantErr.ErrorCode {
 		t.Errorf("MarshalResult: did not receive expected error - got "+
 			"%v (%[1]T), want %v (%[2]T)", err, wantErr)
 		return

@@ -7,6 +7,7 @@ package rpcmodel
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"reflect"
 	"strconv"
 	"strings"
@@ -136,7 +137,8 @@ func UnmarshalCommand(r *Request) (interface{}, error) {
 			// The most common error is the wrong type, so
 			// explicitly detect that error and make it nicer.
 			fieldName := strings.ToLower(rt.Field(i).Name)
-			if jerr, ok := err.(*json.UnmarshalTypeError); ok {
+			var jerr *json.UnmarshalTypeError
+			if ok := errors.As(err, &jerr); ok {
 				str := fmt.Sprintf("parameter #%d '%s' must "+
 					"be type %s (got %s)", i+1, fieldName,
 					jerr.Type, jerr.Value)

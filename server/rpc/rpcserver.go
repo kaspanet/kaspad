@@ -393,7 +393,8 @@ func parseCmd(request *rpcmodel.Request) *parsedRPCCmd {
 	if err != nil {
 		// When the error is because the method is not registered,
 		// produce a method not found RPC error.
-		if jerr, ok := err.(rpcmodel.Error); ok &&
+		var jerr rpcmodel.Error
+		if ok := errors.As(err, &jerr); ok &&
 			jerr.ErrorCode == rpcmodel.ErrUnregisteredMethod {
 
 			parsedCmd.err = rpcmodel.ErrRPCMethodNotFound

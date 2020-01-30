@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -1023,7 +1024,8 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	invalidBlockChild := util.NewBlock(invalidMsgBlockChild)
 
 	isOrphan, isDelayed, err = dag.ProcessBlock(invalidBlockChild, BFNoPoWCheck)
-	if rErr, ok := err.(RuleError); !ok || rErr.ErrorCode != ErrInvalidAncestorBlock {
+	var rErr RuleError
+	if ok := errors.As(err, &rErr); !ok || rErr.ErrorCode != ErrInvalidAncestorBlock {
 		t.Fatalf("ProcessBlock: expected a rule error but got %s instead", err)
 	}
 	if isDelayed {
@@ -1051,7 +1053,7 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	invalidBlockGrandChild := util.NewBlock(invalidMsgBlockGrandChild)
 
 	isOrphan, isDelayed, err = dag.ProcessBlock(invalidBlockGrandChild, BFNoPoWCheck)
-	if rErr, ok := err.(RuleError); !ok || rErr.ErrorCode != ErrInvalidAncestorBlock {
+	if ok := errors.As(err, &rErr); !ok || rErr.ErrorCode != ErrInvalidAncestorBlock {
 		t.Fatalf("ProcessBlock: expected a rule error but got %s instead", err)
 	}
 	if isDelayed {

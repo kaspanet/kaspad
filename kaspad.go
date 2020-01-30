@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -293,7 +294,8 @@ func loadBlockDB() (database.DB, error) {
 	if err != nil {
 		// Return the error if it's not because the database doesn't
 		// exist.
-		if dbErr, ok := err.(database.Error); !ok || dbErr.ErrorCode !=
+		var dbErr database.Error
+		if ok := errors.As(err, &dbErr); !ok || dbErr.ErrorCode !=
 			database.ErrDbDoesNotExist {
 
 			return nil, err

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -110,7 +111,8 @@ func main() {
 		// rpcmodel.Error as it reallistcally will always be since the
 		// NewCommand function is only supposed to return errors of that
 		// type.
-		if jerr, ok := err.(rpcmodel.Error); ok {
+		var jerr rpcmodel.Error
+		if ok := errors.As(err, &jerr); ok {
 			fmt.Fprintf(os.Stderr, "%s error: %s (command code: %s)\n",
 				method, err, jerr.ErrorCode)
 			commandUsage(method)

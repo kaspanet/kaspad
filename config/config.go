@@ -267,7 +267,8 @@ func loadConfig() (*Config, []string, error) {
 	preParser := newConfigParser(&preCfg, &serviceOpts, flags.HelpFlag)
 	_, err := preParser.Parse()
 	if err != nil {
-		if e, ok := err.(*flags.Error); ok && e.Type == flags.ErrHelp {
+		var e *flags.Error
+		if ok := errors.As(err, &e); ok && e.Type == flags.ErrHelp {
 			fmt.Fprintln(os.Stderr, err)
 			return nil, nil, err
 		}
@@ -331,7 +332,8 @@ func loadConfig() (*Config, []string, error) {
 	// Parse command line options again to ensure they take precedence.
 	remainingArgs, err := parser.Parse()
 	if err != nil {
-		if e, ok := err.(*flags.Error); !ok || e.Type != flags.ErrHelp {
+		var e *flags.Error
+		if ok := errors.As(err, &e); !ok || e.Type != flags.ErrHelp {
 			fmt.Fprintln(os.Stderr, usageMessage)
 		}
 		return nil, nil, err
@@ -344,7 +346,8 @@ func loadConfig() (*Config, []string, error) {
 		// Show a nicer error message if it's because a symlink is
 		// linked to a directory that does not exist (probably because
 		// it's not mounted).
-		if e, ok := err.(*os.PathError); ok && os.IsExist(err) {
+		var e *os.PathError
+		if ok := errors.As(err, &e); ok && os.IsExist(err) {
 			if link, lerr := os.Readlink(e.Path); lerr == nil {
 				str := "is symlink %s -> %s mounted?"
 				err = errors.Errorf(str, e.Path, link)

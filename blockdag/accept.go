@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/pkg/errors"
 )
 
 func (dag *BlockDAG) addNodeToIndexWithInvalidAncestor(block *util.Block) error {
@@ -30,7 +31,8 @@ func (dag *BlockDAG) addNodeToIndexWithInvalidAncestor(block *util.Block) error 
 func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) error {
 	parents, err := lookupParentNodes(block, dag)
 	if err != nil {
-		if rErr, ok := err.(RuleError); ok && rErr.ErrorCode == ErrInvalidAncestorBlock {
+		var rErr RuleError
+		if ok := errors.As(err, &rErr); ok && rErr.ErrorCode == ErrInvalidAncestorBlock {
 			err := dag.addNodeToIndexWithInvalidAncestor(block)
 			if err != nil {
 				return err

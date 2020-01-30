@@ -7,6 +7,7 @@ package blockdag
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/kaspanet/kaspad/util"
@@ -95,7 +96,8 @@ func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 			// still missing.
 			_, err := lookupParentNodes(orphan.block, dag)
 			if err != nil {
-				if ruleErr, ok := err.(RuleError); ok && ruleErr.ErrorCode == ErrParentBlockUnknown {
+				var ruleErr RuleError
+				if ok := errors.As(err, &ruleErr); ok && ruleErr.ErrorCode == ErrParentBlockUnknown {
 					continue
 				}
 				return err

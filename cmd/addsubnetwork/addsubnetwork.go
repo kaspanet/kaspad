@@ -68,7 +68,8 @@ func waitForSubnetworkToBecomeAccepted(client *rpcclient.Client, subnetworkID *s
 	for {
 		_, err := client.GetSubnetwork(subnetworkID.String())
 		if err != nil {
-			if rpcError, ok := err.(*rpcmodel.RPCError); ok && rpcError.Code == rpcmodel.ErrRPCSubnetworkNotFound {
+			var rpcError *rpcmodel.RPCError
+			if ok := errors.As(err, &rpcError); ok && rpcError.Code == rpcmodel.ErrRPCSubnetworkNotFound {
 				log.Infof("Subnetwork not found")
 
 				retries++

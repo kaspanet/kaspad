@@ -498,7 +498,8 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 			log.Errorf("Failed to process block %s: %s",
 				blockHash, err)
 		}
-		if dbErr, ok := err.(database.Error); ok && dbErr.ErrorCode ==
+		var dbErr database.Error
+		if ok := errors.As(err, &dbErr); ok && dbErr.ErrorCode ==
 			database.ErrCorruption {
 			panic(dbErr)
 		}

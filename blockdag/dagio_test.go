@@ -248,7 +248,8 @@ func TestDAGStateDeserializeErrors(t *testing.T) {
 				test.name, err, test.errType)
 			continue
 		}
-		if derr, ok := err.(database.Error); ok {
+		var derr database.Error
+		if ok := errors.As(err, &derr); ok {
 			tderr := test.errType.(database.Error)
 			if derr.ErrorCode != tderr.ErrorCode {
 				t.Errorf("deserializeDAGState (%s): "+

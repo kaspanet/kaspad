@@ -7,6 +7,7 @@ package mempool
 import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
 )
 
 // RuleError identifies a rule violation. It is used to indicate that
@@ -63,7 +64,8 @@ func dagRuleError(dagErr blockdag.RuleError) RuleError {
 // was successfully extracted.
 func extractRejectCode(err error) (wire.RejectCode, bool) {
 	// Pull the underlying error out of a RuleError.
-	if rerr, ok := err.(RuleError); ok {
+	var rerr RuleError
+	if ok := errors.As(err, &rerr); ok {
 		err = rerr.Err
 	}
 

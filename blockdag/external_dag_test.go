@@ -269,12 +269,15 @@ func TestChainedTransactions(t *testing.T) {
 	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(block2), blockdag.BFNoPoWCheck)
 	if err == nil {
 		t.Errorf("ProcessBlock expected an error")
-	} else if rErr, ok := err.(blockdag.RuleError); ok {
-		if rErr.ErrorCode != blockdag.ErrMissingTxOut {
-			t.Errorf("ProcessBlock expected an %v error code but got %v", blockdag.ErrMissingTxOut, rErr.ErrorCode)
-		}
 	} else {
-		t.Errorf("ProcessBlock expected a blockdag.RuleError but got %v", err)
+		var rErr blockdag.RuleError
+		if ok := errors.As(err, &rErr); ok {
+			if rErr.ErrorCode != blockdag.ErrMissingTxOut {
+				t.Errorf("ProcessBlock expected an %v error code but got %v", blockdag.ErrMissingTxOut, rErr.ErrorCode)
+			}
+		} else {
+			t.Errorf("ProcessBlock expected a blockdag.RuleError but got %v", err)
+		}
 	}
 	if isDelayed {
 		t.Fatalf("ProcessBlock: block2 " +
