@@ -8,7 +8,6 @@ import (
 
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/util/daghash"
-	_ "net/http/pprof"
 )
 
 func TestProcessOrphans(t *testing.T) {
