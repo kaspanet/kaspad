@@ -566,3 +566,41 @@ func TestReindexIntervalErrors(t *testing.T) {
 			"returned an expected error: %s", err)
 	}
 }
+
+func TestFutureCoveringBlockSetString(t *testing.T) {
+	treeNodeA := newReachabilityTreeNode(&blockNode{})
+	treeNodeA.setInterval(newReachabilityInterval(123, 456))
+	treeNodeB := newReachabilityTreeNode(&blockNode{})
+	treeNodeB.setInterval(newReachabilityInterval(457, 789))
+	futureCoveringSet := futureCoveringBlockSet{
+		&futureCoveringBlock{treeNode: treeNodeA},
+		&futureCoveringBlock{treeNode: treeNodeB},
+	}
+
+	str := futureCoveringSet.String()
+	expectedStr := "[123,456][457,789]"
+	if str != expectedStr {
+		t.Fatalf("TestFutureCoveringBlockSetString: unexpected "+
+			"string. Want: %s, got: %s", expectedStr, str)
+	}
+}
+
+func TestReachabilityTreeNodeString(t *testing.T) {
+	treeNodeA := newReachabilityTreeNode(&blockNode{})
+	treeNodeA.setInterval(newReachabilityInterval(100, 199))
+	treeNodeB1 := newReachabilityTreeNode(&blockNode{})
+	treeNodeB1.setInterval(newReachabilityInterval(100, 150))
+	treeNodeB2 := newReachabilityTreeNode(&blockNode{})
+	treeNodeB2.setInterval(newReachabilityInterval(150, 199))
+	treeNodeC := newReachabilityTreeNode(&blockNode{})
+	treeNodeC.setInterval(newReachabilityInterval(100, 149))
+	treeNodeA.children = []*reachabilityTreeNode{treeNodeB1, treeNodeB2}
+	treeNodeB2.children = []*reachabilityTreeNode{treeNodeC}
+
+	str := treeNodeA.String()
+	expectedStr := "[100,149]\n[100,150][150,199]\n[100,199]"
+	if str != expectedStr {
+		t.Fatalf("TestReachabilityTreeNodeString: unexpected "+
+			"string. Want: %s, got: %s", expectedStr, str)
+	}
+}

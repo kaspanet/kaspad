@@ -401,7 +401,7 @@ func (rtn *reachabilityTreeNode) String() string {
 		var current *reachabilityTreeNode
 		current, queue = queue[0], queue[1:]
 		if len(current.children) == 0 {
-			break
+			continue
 		}
 
 		line := ""
