@@ -125,7 +125,7 @@ func TestMiscErrors(t *testing.T) {
 	// Force an error in MarshalResponse by giving it a result type that
 	// can't be marshalled.
 	_, err = rpcmodel.MarshalResponse(1, make(chan int), nil)
-	if _, ok := err.(*json.UnsupportedTypeError); !ok {
+	if !errors.As(err, &*json.UnsupportedTypeError{}) {
 		wantErr := &json.UnsupportedTypeError{}
 		t.Errorf("MarshalResult: did not receive expected error - got "+
 			"%v (%[1]T), want %T", err, wantErr)

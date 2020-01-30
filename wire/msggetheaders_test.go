@@ -195,7 +195,7 @@ func TestGetHeadersWireErrors(t *testing.T) {
 
 		// For errors which are not of type MessageError, check them for
 		// equality.
-		if _, ok := err.(*MessageError); !ok {
+		if !errors.As(err, &*MessageError{}) {
 			if err != test.writeErr {
 				t.Errorf("KaspaEncode #%d wrong error got: %v, "+
 					"want: %v", i, err, test.writeErr)
@@ -215,7 +215,7 @@ func TestGetHeadersWireErrors(t *testing.T) {
 
 		// For errors which are not of type MessageError, check them for
 		// equality.
-		if _, ok := err.(*MessageError); !ok {
+		if !errors.As(err, &*MessageError{}) {
 			if err != test.readErr {
 				t.Errorf("KaspaDecode #%d wrong error got: %v, "+
 					"want: %v", i, err, test.readErr)

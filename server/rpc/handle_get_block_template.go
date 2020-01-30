@@ -343,7 +343,7 @@ func handleGetBlockTemplateProposal(s *Server, request *rpcmodel.TemplateRequest
 	}
 
 	if err := s.cfg.DAG.CheckConnectBlockTemplate(block); err != nil {
-		if _, ok := err.(blockdag.RuleError); !ok {
+		if !errors.As(err, &blockdag.RuleError{}) {
 			errStr := fmt.Sprintf("Failed to process block proposal: %s", err)
 			log.Error(errStr)
 			return nil, &rpcmodel.RPCError{

@@ -260,24 +260,24 @@ func TestBlockErrors(t *testing.T) {
 
 	// Ensure TxHash returns expected error on invalid indices.
 	_, err = b.TxHash(-1)
-	if _, ok := err.(util.OutOfRangeError); !ok {
+	if !errors.As(err, &util.OutOfRangeError{}) {
 		t.Errorf("TxHash: wrong error - got: %v <%T>, "+
 			"want: <%T>", err, err, util.OutOfRangeError(""))
 	}
 	_, err = b.TxHash(len(Block100000.Transactions) + 1)
-	if _, ok := err.(util.OutOfRangeError); !ok {
+	if !errors.As(err, &util.OutOfRangeError{}) {
 		t.Errorf("TxHash: wrong error - got: %v <%T>, "+
 			"want: <%T>", err, err, util.OutOfRangeError(""))
 	}
 
 	// Ensure Tx returns expected error on invalid indices.
 	_, err = b.Tx(-1)
-	if _, ok := err.(util.OutOfRangeError); !ok {
+	if !errors.As(err, &util.OutOfRangeError{}) {
 		t.Errorf("Tx: wrong error - got: %v <%T>, "+
 			"want: <%T>", err, err, util.OutOfRangeError(""))
 	}
 	_, err = b.Tx(len(Block100000.Transactions) + 1)
-	if _, ok := err.(util.OutOfRangeError); !ok {
+	if !errors.As(err, &util.OutOfRangeError{}) {
 		t.Errorf("Tx: wrong error - got: %v <%T>, "+
 			"want: <%T>", err, err, util.OutOfRangeError(""))
 	}

@@ -1113,7 +1113,7 @@ func (p *Peer) isAllowedReadError(err error) bool {
 	}
 
 	// Don't allow the error if it's not specifically a malformed message error.
-	if _, ok := err.(*wire.MessageError); !ok {
+	if !errors.As(err, &*wire.MessageError{}) {
 		return false
 	}
 

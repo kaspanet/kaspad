@@ -995,7 +995,7 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	invalidBlock := util.NewBlock(invalidMsgBlock)
 	isOrphan, isDelayed, err := dag.ProcessBlock(invalidBlock, BFNoPoWCheck)
 
-	if _, ok := err.(RuleError); !ok {
+	if !errors.As(err, &RuleError{}) {
 		t.Fatalf("ProcessBlock: expected a rule error but got %s instead", err)
 	}
 	if isDelayed {

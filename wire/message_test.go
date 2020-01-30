@@ -360,7 +360,7 @@ func TestReadMessageWireErrors(t *testing.T) {
 
 		// For errors which are not of type MessageError, check them for
 		// equality.
-		if _, ok := err.(*MessageError); !ok {
+		if !errors.As(err, &*MessageError{}) {
 			if err != test.readErr {
 				t.Errorf("ReadMessage #%d wrong error got: %v <%T>, "+
 					"want: %v <%T>", i, err, err,
@@ -438,7 +438,7 @@ func TestWriteMessageWireErrors(t *testing.T) {
 
 		// For errors which are not of type MessageError, check them for
 		// equality.
-		if _, ok := err.(*MessageError); !ok {
+		if !errors.As(err, &*MessageError{}) {
 			if err != test.err {
 				t.Errorf("ReadMessage #%d wrong error got: %v <%T>, "+
 					"want: %v <%T>", i, err, err,

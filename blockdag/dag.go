@@ -1833,7 +1833,7 @@ func (dag *BlockDAG) processDelayedBlocks() error {
 			log.Errorf("Error while processing delayed block (block %s)", delayedBlock.block.Hash().String())
 			// Rule errors should not be propagated as they refer only to the delayed block,
 			// while this function runs in the context of another block
-			if _, ok := err.(RuleError); !ok {
+			if !errors.As(err, &RuleError{}) {
 				return err
 			}
 		}

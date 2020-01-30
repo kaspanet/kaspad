@@ -611,7 +611,7 @@ func (s *Server) Start() {
 		// using the default size for read/write buffers.
 		ws, err := websocket.Upgrade(w, r, nil, 0, 0)
 		if err != nil {
-			if _, ok := err.(websocket.HandshakeError); !ok {
+			if !errors.As(err, &websocket.HandshakeError{}) {
 				log.Errorf("Unexpected websocket error: %s",
 					err)
 			}
