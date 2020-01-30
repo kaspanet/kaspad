@@ -2,6 +2,7 @@ package blockdag
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -538,5 +539,30 @@ func TestSplitWithExponentialBiasErrors(t *testing.T) {
 	if err == nil {
 		t.Errorf("TestSplitWithExponentialBiasErrors: splitWithExponentialBias " +
 			"unexpectedly didn't return an error")
+	}
+}
+
+func TestReindexIntervalErrors(t *testing.T) {
+	treeNode := newReachabilityTreeNode(&blockNode{})
+	treeNode.setInterval(newReachabilityInterval(0, 99))
+
+	var err error
+	currentTreeNode := treeNode
+	for i := 0; i < 100; i++ {
+		childTreeNode := newReachabilityTreeNode(&blockNode{})
+		_, err = currentTreeNode.addChild(childTreeNode)
+		if err != nil {
+			break
+		}
+		currentTreeNode = childTreeNode
+	}
+
+	if err == nil {
+		t.Fatalf("TestReindexIntervalErrors: reindexIntervals " +
+			"unexpectedly didn't return an error")
+	}
+	if !strings.Contains(err.Error(), "missing tree parent during reindexing") {
+		t.Fatalf("TestReindexIntervalErrors: reindexIntervals "+
+			"returned an expected error: %s", err)
 	}
 }
