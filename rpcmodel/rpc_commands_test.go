@@ -7,6 +7,7 @@ package rpcmodel_test
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -1122,12 +1123,15 @@ func TestRPCServerCommandErrors(t *testing.T) {
 			continue
 		}
 
-		if terr, ok := test.err.(rpcmodel.Error); ok {
-			gotErrorCode := err.(rpcmodel.Error).ErrorCode
-			if gotErrorCode != terr.ErrorCode {
+		var testErr rpcmodel.Error
+		if errors.As(err, &testErr) {
+			var gotRPCModelErr rpcmodel.Error
+			errors.As(err, &gotRPCModelErr)
+			gotErrorCode := gotRPCModelErr.ErrorCode
+			if gotErrorCode != testErr.ErrorCode {
 				t.Errorf("Test #%d (%s) mismatched error code "+
 					"- got %v (%v), want %v", i, test.name,
-					gotErrorCode, terr, terr.ErrorCode)
+					gotErrorCode, testErr, testErr.ErrorCode)
 				continue
 			}
 		}

@@ -165,7 +165,8 @@ func TestHaveBlock(t *testing.T) {
 	if err == nil {
 		t.Fatalf("ProcessBlock for block 3D has no error when expected to have an error\n")
 	}
-	rErr, ok := err.(RuleError)
+	var rErr RuleError
+	ok := errors.As(err, &rErr)
 	if !ok {
 		t.Fatalf("ProcessBlock for block 3D expected a RuleError, but got %v\n", err)
 	}

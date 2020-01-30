@@ -137,8 +137,8 @@ func TestFinality(t *testing.T) {
 	if err == nil {
 		t.Errorf("TestFinality: buildNodeToDag expected an error but got <nil>")
 	}
-	rErr, ok := err.(blockdag.RuleError)
-	if ok {
+	var rErr blockdag.RuleError
+	if errors.As(err, &rErr) {
 		if rErr.ErrorCode != blockdag.ErrFinality {
 			t.Errorf("TestFinality: buildNodeToDag expected an error with code %v but instead got %v", blockdag.ErrFinality, rErr.ErrorCode)
 		}
@@ -152,8 +152,7 @@ func TestFinality(t *testing.T) {
 	if err == nil {
 		t.Errorf("TestFinality: buildNodeToDag expected an error but got <nil>")
 	}
-	rErr, ok = err.(blockdag.RuleError)
-	if ok {
+	if errors.As(err, &rErr) {
 		if rErr.ErrorCode != blockdag.ErrFinality {
 			t.Errorf("TestFinality: buildNodeToDag expected an error with code %v but instead got %v", blockdag.ErrFinality, rErr.ErrorCode)
 		}
@@ -471,8 +470,8 @@ func TestGasLimit(t *testing.T) {
 	if err == nil {
 		t.Fatalf("ProcessBlock expected to have an error in block that exceeds gas limit")
 	}
-	rErr, ok := err.(blockdag.RuleError)
-	if !ok {
+	var rErr blockdag.RuleError
+	if !errors.As(err, &rErr) {
 		t.Fatalf("ProcessBlock expected a RuleError, but got %v", err)
 	} else if rErr.ErrorCode != blockdag.ErrInvalidGas {
 		t.Fatalf("ProcessBlock expected error code %s but got %s", blockdag.ErrInvalidGas, rErr.ErrorCode)
@@ -506,8 +505,7 @@ func TestGasLimit(t *testing.T) {
 	if err == nil {
 		t.Fatalf("ProcessBlock expected to have an error")
 	}
-	rErr, ok = err.(blockdag.RuleError)
-	if !ok {
+	if !errors.As(err, &rErr) {
 		t.Fatalf("ProcessBlock expected a RuleError, but got %v", err)
 	} else if rErr.ErrorCode != blockdag.ErrInvalidGas {
 		t.Fatalf("ProcessBlock expected error code %s but got %s", blockdag.ErrInvalidGas, rErr.ErrorCode)

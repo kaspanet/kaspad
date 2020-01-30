@@ -2,6 +2,7 @@ package wire
 
 import (
 	"bytes"
+	"github.com/pkg/errors"
 	"io"
 	"reflect"
 	"testing"

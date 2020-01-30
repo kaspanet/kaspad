@@ -7,6 +7,7 @@ package wire
 import (
 	"bytes"
 	"crypto/rand"
+	"github.com/pkg/errors"
 	"io"
 	"reflect"
 	"testing"

@@ -9,6 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
 )
 
 // handleSendRawTransaction implements the sendRawTransaction command.
@@ -42,7 +43,7 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 		// so log it as an actual error. In both cases, a JSON-RPC
 		// error is returned to the client with the deserialization
 		// error code
-		if _, ok := err.(mempool.RuleError); ok {
+		if errors.As(err, &mempool.RuleError{}) {
 			log.Debugf("Rejected transaction %s: %s", tx.ID(),
 				err)
 		} else {

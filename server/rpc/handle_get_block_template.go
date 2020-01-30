@@ -365,8 +365,8 @@ func handleGetBlockTemplateProposal(s *Server, request *rpcmodel.TemplateRequest
 func dagErrToGBTErrString(err error) string {
 	// When the passed error is not a RuleError, just return a generic
 	// rejected string with the error text.
-	ruleErr, ok := err.(blockdag.RuleError)
-	if !ok {
+	var ruleErr blockdag.RuleError
+	if !errors.As(err, &ruleErr) {
 		return "rejected: " + err.Error()
 	}
 

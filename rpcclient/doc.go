@@ -121,8 +121,9 @@ detect if a command is unimplemented by the remote RPC server:
 
   netTotals, err := client.GetNetTotals()
   if err != nil {
-  	if jerr, ok := err.(*rpcmodel.RPCError); ok {
-  		switch jerr.Code {
+	var jErr *rpcmodel.RPCError
+  	if errors.As(err, jErr) {
+  		switch jErr.Code {
   		case rpcmodel.ErrRPCUnimplemented:
   			// Handle not implemented error
 

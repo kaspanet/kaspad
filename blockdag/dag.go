@@ -484,7 +484,7 @@ func (dag *BlockDAG) addBlock(node *blockNode,
 	// Connect the block to the DAG.
 	chainUpdates, err := dag.connectBlock(node, block, selectedParentAnticone, fastAdd)
 	if err != nil {
-		if _, ok := err.(RuleError); ok {
+		if errors.As(err, &RuleError{}) {
 			dag.index.SetStatusFlags(node, statusValidateFailed)
 		} else {
 			return nil, err

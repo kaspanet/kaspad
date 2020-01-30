@@ -6,6 +6,7 @@ package mempool
 
 import (
 	"bytes"
+	"github.com/pkg/errors"
 	"testing"
 	"time"
 
@@ -313,24 +314,24 @@ func TestCheckTransactionStandard(t *testing.T) {
 		}
 
 		// Ensure error type is a TxRuleError inside of a RuleError.
-		rerr, ok := err.(RuleError)
-		if !ok {
+		var rErr RuleError
+		if !errors.As(err, &rErr) {
 			t.Errorf("checkTransactionStandard (%s): unexpected "+
 				"error type - got %T", test.name, err)
 			continue
 		}
-		txrerr, ok := rerr.Err.(TxRuleError)
+		txRuleErr, ok := rErr.Err.(TxRuleError)
 		if !ok {
 			t.Errorf("checkTransactionStandard (%s): unexpected "+
-				"error type - got %T", test.name, rerr.Err)
+				"error type - got %T", test.name, rErr.Err)
 			continue
 		}
 
 		// Ensure the reject code is the expected one.
-		if txrerr.RejectCode != test.code {
+		if txRuleErr.RejectCode != test.code {
 			t.Errorf("checkTransactionStandard (%s): unexpected "+
 				"error code - got %v, want %v", test.name,
-				txrerr.RejectCode, test.code)
+				txRuleErr.RejectCode, test.code)
 			continue
 		}
 	}

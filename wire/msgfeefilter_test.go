@@ -6,6 +6,7 @@ package wire
 
 import (
 	"bytes"
+	"github.com/pkg/errors"
 	"io"
 	"math/rand"
 	"reflect"
