@@ -208,6 +208,7 @@ func TestProcessDelayedBlocks(t *testing.T) {
 		t.Errorf("delayedBlockChild shouldn't be added to the DAG because its parent is not in the DAG")
 	}
 
+	// We advance the clock to the point where delayedBlock timestamp is valid.
 	secondsUntilDelayedBlockIsValid := delayedBlock.Header.Timestamp.Unix() - int64(dag2.TimestampDeviationTolerance) - dag2.AdjustedTime().Unix() + 1
 	dag2.timeSource = &fakeTimeSource{initialTime.Add(time.Duration(secondsUntilDelayedBlockIsValid) * time.Second)}
 
