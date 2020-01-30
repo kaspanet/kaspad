@@ -108,7 +108,7 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 	// Don't bother trying to process orphans.
 	parentHashes := block.MsgBlock().Header.ParentHashes
 	if len(parentHashes) > 0 {
-		if !bi.dag.HaveBlocks(parentHashes) {
+		if !bi.dag.AreKnownBlocks(parentHashes) {
 			return false, errors.Errorf("import file contains block "+
 				"%v which does not link to the available "+
 				"block DAG", parentHashes)

@@ -1052,7 +1052,7 @@ func newPeerConfig(sp *Peer) *peer.Config {
 			OnWrite:           sp.OnWrite,
 		},
 		SelectedTipHash:   sp.selectedTipHash,
-		BlockExists:       sp.blockExists,
+		IsInDAG:           sp.blockExists,
 		HostToNetAddress:  sp.server.addrManager.HostToNetAddress,
 		Proxy:             config.ActiveConfig().Proxy,
 		UserAgentName:     userAgentName,

@@ -38,7 +38,7 @@ func newBlockIndex(db database.DB, dagParams *dagconfig.Params) *blockIndex {
 	}
 }
 
-// IsKnownBlock returns whether or not the block index contains the provided hash.
+// HaveBlock returns whether or not the block index contains the provided hash.
 //
 // This function is safe for concurrent access.
 func (bi *blockIndex) HaveBlock(hash *daghash.Hash) bool {

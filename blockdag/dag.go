@@ -162,12 +162,12 @@ func (dag *BlockDAG) IsKnownBlock(hash *daghash.Hash) bool {
 	return dag.IsInDAG(hash) || dag.IsKnownOrphan(hash) || dag.isKnownDelayedBlock(hash)
 }
 
-// HaveBlocks returns whether or not the DAG instances has all blocks represented
+// AreKnownBlocks returns whether or not the DAG instances has all blocks represented
 // by the passed hashes. This includes checking the various places a block can
 // be in, like part of the DAG or the orphan pool.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) HaveBlocks(hashes []*daghash.Hash) bool {
+func (dag *BlockDAG) AreKnownBlocks(hashes []*daghash.Hash) bool {
 	for _, hash := range hashes {
 		haveBlock := dag.IsKnownBlock(hash)
 		if !haveBlock {
