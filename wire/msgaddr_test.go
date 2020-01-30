@@ -281,7 +281,7 @@ func TestAddrWireErrors(t *testing.T) {
 
 		// For errors which are not of type MessageError, check them for
 		// equality.
-		if !errors.As(err, &*MessageError{}) {
+		if mErr := &(MessageError{}); !errors.As(err, &mErr) {
 			if err != test.writeErr {
 				t.Errorf("KaspaEncode #%d wrong error got: %v, "+
 					"want: %v", i, err, test.writeErr)
@@ -301,7 +301,7 @@ func TestAddrWireErrors(t *testing.T) {
 
 		// For errors which are not of type MessageError, check them for
 		// equality.
-		if !errors.As(err, &*MessageError{}) {
+		if mErr := &(MessageError{}); !errors.As(err, &mErr) {
 			if err != test.readErr {
 				t.Errorf("KaspaDecode #%d wrong error got: %v, "+
 					"want: %v", i, err, test.readErr)

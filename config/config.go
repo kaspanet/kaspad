@@ -314,7 +314,7 @@ func loadConfig() (*Config, []string, error) {
 
 		err := flags.NewIniParser(parser).ParseFile(preCfg.ConfigFile)
 		if err != nil {
-			if !errors.As(err, &*os.PathError{}) {
+			if pErr := &(os.PathError{}); !errors.As(err, pErr) {
 				fmt.Fprintf(os.Stderr, "Error parsing config "+
 					"file: %s\n", err)
 				fmt.Fprintln(os.Stderr, usageMessage)

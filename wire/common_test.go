@@ -6,6 +6,7 @@ package wire
 
 import (
 	"bytes"
+	"github.com/pkg/errors"
 	"io"
 	"reflect"
 	"strings"
@@ -397,7 +398,7 @@ func TestVarIntNonCanonical(t *testing.T) {
 		// Decode from wire format.
 		rbuf := bytes.NewReader(test.in)
 		val, err := ReadVarInt(rbuf)
-		if !errors.As(err, &*MessageError{}) {
+		if mErr := &(MessageError{}); !errors.As(err, &mErr) {
 			t.Errorf("ReadVarInt #%d (%s) unexpected error %v", i,
 				test.name, err)
 			continue

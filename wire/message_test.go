@@ -7,6 +7,7 @@ package wire
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/pkg/errors"
 	"io"
 	"net"
 	"reflect"
@@ -360,7 +361,7 @@ func TestReadMessageWireErrors(t *testing.T) {
 
 		// For errors which are not of type MessageError, check them for
 		// equality.
-		if !errors.As(err, &*MessageError{}) {
+		if mErr := &(MessageError{}); !errors.As(err, &mErr) {
 			if err != test.readErr {
 				t.Errorf("ReadMessage #%d wrong error got: %v <%T>, "+
 					"want: %v <%T>", i, err, err,
@@ -438,7 +439,7 @@ func TestWriteMessageWireErrors(t *testing.T) {
 
 		// For errors which are not of type MessageError, check them for
 		// equality.
-		if !errors.As(err, &*MessageError{}) {
+		if mErr := &(MessageError{}); !errors.As(err, &mErr) {
 			if err != test.err {
 				t.Errorf("ReadMessage #%d wrong error got: %v <%T>, "+
 					"want: %v <%T>", i, err, err,
