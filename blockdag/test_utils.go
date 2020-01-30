@@ -26,9 +26,6 @@ const (
 	// testDbType is the database backend type to use for the tests.
 	testDbType = "ffldb"
 
-	// testDbRoot is the root directory used to create all test databases.
-	testDbRoot = "testdbs"
-
 	// blockDataNet is the expected network in the test block data.
 	blockDataNet = wire.Mainnet
 )
@@ -79,16 +76,9 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 	}
 
 	if config.DB == nil {
-		// Create the root directory for test databases.
-		if !FileExists(testDbRoot) {
-			if err := os.MkdirAll(testDbRoot, 0700); err != nil {
-				err := errors.Errorf("unable to create test db "+
-					"root: %s", err)
-				return nil, nil, err
-			}
-		}
+		tmpDir := os.TempDir()
 
-		dbPath := filepath.Join(testDbRoot, dbName)
+		dbPath := filepath.Join(tmpDir, dbName)
 		_ = os.RemoveAll(dbPath)
 		var err error
 		config.DB, err = database.Create(testDbType, dbPath, blockDataNet)
@@ -103,7 +93,6 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 			spawn = realSpawn
 			config.DB.Close()
 			os.RemoveAll(dbPath)
-			os.RemoveAll(testDbRoot)
 		}
 	} else {
 		teardown = func() {
