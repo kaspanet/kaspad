@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
 	"reflect"
 	"sort"
 	"testing"
@@ -275,4 +276,65 @@ func checkReds(expectedReds []string, reds map[string]bool) bool {
 		}
 	}
 	return true
+}
+
+func TestBlueAnticoneSizeErrors(t *testing.T) {
+	// Create a new database and DAG instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("TestBlueAnticoneSizeErrors", Config{
+		DAGParams: &dagconfig.SimnetParams,
+	})
+	if err != nil {
+		t.Fatalf("TestBlueAnticoneSizeErrors: Failed to setup DAG instance: %s", err)
+	}
+	defer teardownFunc()
+
+	// Prepare a block chain with size K beginning with the genesis block
+	currentHashA := dag.genesis.hash
+	for i := dagconfig.KType(0); i < dag.dagParams.K; i++ {
+		newBlock, err := PrepareBlockForTest(dag, []*daghash.Hash{currentHashA}, nil)
+		if err != nil {
+			t.Fatalf("TestBlueAnticoneSizeErrors: PrepareBlockForTest failed: %s", err)
+		}
+		isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(newBlock), BFNoPoWCheck)
+		if isOrphan {
+			t.Fatalf("TestBlueAnticoneSizeErrors: block was unexpectedly orphaned")
+		}
+		if isDelayed {
+			t.Fatalf("TestBlueAnticoneSizeErrors: block was unexpectedly delayed")
+		}
+		if err != nil {
+			t.Fatalf("TestBlueAnticoneSizeErrors: ProcessBlock failed: %s", err)
+		}
+		currentHashA = newBlock.BlockHash()
+	}
+
+	// Prepare another block chain with size K beginning with the genesis block
+	currentHashB := dag.genesis.hash
+	for i := dagconfig.KType(0); i < dag.dagParams.K; i++ {
+		newBlock, err := PrepareBlockForTest(dag, []*daghash.Hash{currentHashB}, nil)
+		if err != nil {
+			t.Fatalf("TestBlueAnticoneSizeErrors: PrepareBlockForTest failed: %s", err)
+		}
+		isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(newBlock), BFNoPoWCheck)
+		if isOrphan {
+			t.Fatalf("TestBlueAnticoneSizeErrors: block was unexpectedly orphaned")
+		}
+		if isDelayed {
+			t.Fatalf("TestBlueAnticoneSizeErrors: block was unexpectedly delayed")
+		}
+		if err != nil {
+			t.Fatalf("TestBlueAnticoneSizeErrors: ProcessBlock failed: %s", err)
+		}
+		currentHashB = newBlock.BlockHash()
+	}
+
+	// Get references to the tips of the two chains
+	blockNodeA := dag.index.LookupNode(currentHashA)
+	blockNodeB := dag.index.LookupNode(currentHashB)
+
+	// Try getting the blueAnticoneSize between them--this should fail
+	_, err = dag.blueAnticoneSize(blockNodeA, blockNodeB)
+	if err == nil {
+		t.Fatalf("TestBlueAnticoneSizeErrors: blueAnticoneSize unexpectedly succeeded")
+	}
 }
