@@ -67,7 +67,7 @@ func (bh blockHeap) Push(block *blockNode) {
 
 // pushSet pushes a blockset to the heap.
 func (bh blockHeap) pushSet(bs blockSet) {
-	for _, block := range bs {
+	for block := range bs {
 		heap.Push(bh.impl, block)
 	}
 }
