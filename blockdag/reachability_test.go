@@ -490,23 +490,38 @@ func TestSplitFractionErrors(t *testing.T) {
 	// Negative fraction
 	_, _, err := interval.splitFraction(-0.5)
 	if err == nil {
-		t.Errorf("TestSplitFractionErrors: splitFraction unexpectedly " +
+		t.Fatalf("TestSplitFractionErrors: splitFraction unexpectedly " +
 			"didn't return an error")
+	}
+	expectedErrSubstring := "fraction must be between 0 and 1"
+	if !strings.Contains(err.Error(), expectedErrSubstring) {
+		t.Fatalf("TestSplitFractionErrors: splitFraction returned wrong error. "+
+			"Want: %s, got: %s", expectedErrSubstring, err)
 	}
 
 	// Fraction > 1
 	_, _, err = interval.splitFraction(1.5)
 	if err == nil {
-		t.Errorf("TestSplitFractionErrors: splitFraction unexpectedly " +
+		t.Fatalf("TestSplitFractionErrors: splitFraction unexpectedly " +
 			"didn't return an error")
+	}
+	expectedErrSubstring = "fraction must be between 0 and 1"
+	if !strings.Contains(err.Error(), expectedErrSubstring) {
+		t.Fatalf("TestSplitFractionErrors: splitFraction returned wrong error. "+
+			"Want: %s, got: %s", expectedErrSubstring, err)
 	}
 
 	// Splitting an empty interval
 	emptyInterval := newReachabilityInterval(1, 0)
 	_, _, err = emptyInterval.splitFraction(0.5)
 	if err == nil {
-		t.Errorf("TestSplitFractionErrors: splitFraction unexpectedly " +
+		t.Fatalf("TestSplitFractionErrors: splitFraction unexpectedly " +
 			"didn't return an error")
+	}
+	expectedErrSubstring = "cannot split an empty interval"
+	if !strings.Contains(err.Error(), expectedErrSubstring) {
+		t.Fatalf("TestSplitFractionErrors: splitFraction returned wrong error. "+
+			"Want: %s, got: %s", expectedErrSubstring, err)
 	}
 }
 
