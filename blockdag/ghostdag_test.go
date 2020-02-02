@@ -331,53 +331,12 @@ func TestGHOSTDAGErrors(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	// Add a child block to the genesis
-	block1, err := PrepareBlockForTest(dag, []*daghash.Hash{dag.genesis.hash}, nil)
-	if err != nil {
-		t.Fatalf("TestGHOSTDAGErrors: PrepareBlockForTest failed: %s", err)
-	}
-	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(block1), BFNoPoWCheck)
-	if isOrphan {
-		t.Fatalf("TestGHOSTDAGErrors: block was unexpectedly orphaned")
-	}
-	if isDelayed {
-		t.Fatalf("TestGHOSTDAGErrors: block was unexpectedly delayed")
-	}
-	if err != nil {
-		t.Fatalf("TestGHOSTDAGErrors: ProcessBlock failed: %s", err)
-	}
-
-	// Add another child block to the genesis
-	block2, err := PrepareBlockForTest(dag, []*daghash.Hash{dag.genesis.hash}, nil)
-	if err != nil {
-		t.Fatalf("TestGHOSTDAGErrors: PrepareBlockForTest failed: %s", err)
-	}
-	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(block2), BFNoPoWCheck)
-	if isOrphan {
-		t.Fatalf("TestGHOSTDAGErrors: block was unexpectedly orphaned")
-	}
-	if isDelayed {
-		t.Fatalf("TestGHOSTDAGErrors: block was unexpectedly delayed")
-	}
-	if err != nil {
-		t.Fatalf("TestGHOSTDAGErrors: ProcessBlock failed: %s", err)
-	}
+	// Add two child blocks to the genesis
+	block1 := prepareAndProcessBlock(t, dag, dag.dagParams.GenesisBlock)
+	block2 := prepareAndProcessBlock(t, dag, dag.dagParams.GenesisBlock)
 
 	// Add a child block to the previous two blocks
-	block3, err := PrepareBlockForTest(dag, []*daghash.Hash{block1.BlockHash(), block2.BlockHash()}, nil)
-	if err != nil {
-		t.Fatalf("TestGHOSTDAGErrors: PrepareBlockForTest failed: %s", err)
-	}
-	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(block3), BFNoPoWCheck)
-	if isOrphan {
-		t.Fatalf("TestGHOSTDAGErrors: block was unexpectedly orphaned")
-	}
-	if isDelayed {
-		t.Fatalf("TestGHOSTDAGErrors: block was unexpectedly delayed")
-	}
-	if err != nil {
-		t.Fatalf("TestGHOSTDAGErrors: ProcessBlock failed: %s", err)
-	}
+	block3 := prepareAndProcessBlock(t, dag, block1, block2)
 
 	// Clear the reachability store
 	dag.reachabilityStore.loaded = map[daghash.Hash]*reachabilityData{}
@@ -396,10 +355,16 @@ func TestGHOSTDAGErrors(t *testing.T) {
 		t.Fatalf("TestGHOSTDAGErrors: db.Update failed: %s", err)
 	}
 
-	// Try to rerun GHOSTDAG on the last block
+	// Try to rerun GHOSTDAG on the last block. GHOSTDAG uses
+	// reachability data, so we expect it to fail.
 	blockNode3 := dag.index.LookupNode(block3.BlockHash())
 	_, err = dag.ghostdag(blockNode3)
 	if err == nil {
 		t.Fatalf("TestGHOSTDAGErrors: ghostdag unexpectedly succeeded")
+	}
+	expectedErrSubstring := "Couldn't find reachability data"
+	if !strings.Contains(err.Error(), expectedErrSubstring) {
+		t.Fatalf("TestGHOSTDAGErrors: ghostdag returned wrong error. "+
+			"Want: %s, got: %s", expectedErrSubstring, err)
 	}
 }
