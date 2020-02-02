@@ -267,8 +267,8 @@ func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdCondit
 // This function is safe for concurrent access.
 func (dag *BlockDAG) ThresholdState(deploymentID uint32) (ThresholdState, error) {
 	dag.dagLock.Lock()
+	defer dag.dagLock.Unlock()
 	state, err := dag.deploymentState(dag.selectedTip(), deploymentID)
-	dag.dagLock.Unlock()
 
 	return state, err
 }
