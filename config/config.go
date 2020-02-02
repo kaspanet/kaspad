@@ -267,8 +267,8 @@ func loadConfig() (*Config, []string, error) {
 	preParser := newConfigParser(&preCfg, &serviceOpts, flags.HelpFlag)
 	_, err := preParser.Parse()
 	if err != nil {
-		var e *flags.Error
-		if ok := errors.As(err, &e); ok && e.Type == flags.ErrHelp {
+		var flagsErr *flags.Error
+		if ok := errors.As(err, &flagsErr); ok && flagsErr.Type == flags.ErrHelp {
 			fmt.Fprintln(os.Stderr, err)
 			return nil, nil, err
 		}
@@ -332,8 +332,8 @@ func loadConfig() (*Config, []string, error) {
 	// Parse command line options again to ensure they take precedence.
 	remainingArgs, err := parser.Parse()
 	if err != nil {
-		var e *flags.Error
-		if ok := errors.As(err, &e); !ok || e.Type != flags.ErrHelp {
+		var flagsErr *flags.Error
+		if ok := errors.As(err, &flagsErr); !ok || flagsErr.Type != flags.ErrHelp {
 			fmt.Fprintln(os.Stderr, usageMessage)
 		}
 		return nil, nil, err

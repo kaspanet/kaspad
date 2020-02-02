@@ -172,8 +172,8 @@ func loadConfig() (*ConfigFlags, []string, error) {
 	preParser := flags.NewParser(preCfg, flags.HelpFlag)
 	_, err := preParser.Parse()
 	if err != nil {
-		var e *flags.Error
-		if ok := errors.As(err, &e); ok && e.Type == flags.ErrHelp {
+		var flagsErr *flags.Error
+		if ok := errors.As(err, &flagsErr); ok && flagsErr.Type == flags.ErrHelp {
 			fmt.Fprintln(os.Stderr, err)
 			fmt.Fprintln(os.Stderr, "")
 			fmt.Fprintln(os.Stderr, "The special parameter `-` "+
@@ -228,8 +228,8 @@ func loadConfig() (*ConfigFlags, []string, error) {
 	// Parse command line options again to ensure they take precedence.
 	remainingArgs, err := parser.Parse()
 	if err != nil {
-		var e *flags.Error
-		if ok := errors.As(err, &e); !ok || e.Type != flags.ErrHelp {
+		var flagsErr *flags.Error
+		if ok := errors.As(err, &flagsErr); !ok || flagsErr.Type != flags.ErrHelp {
 			fmt.Fprintln(os.Stderr, usageMessage)
 		}
 		return nil, nil, err

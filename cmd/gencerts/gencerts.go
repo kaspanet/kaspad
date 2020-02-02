@@ -33,8 +33,8 @@ func main() {
 	parser := flags.NewParser(&cfg, flags.Default)
 	_, err := parser.Parse()
 	if err != nil {
-		var e *flags.Error
-		if ok := errors.As(err, &e); !ok || e.Type != flags.ErrHelp {
+		var flagsErr *flags.Error
+		if ok := errors.As(err, &flagsErr); !ok || flagsErr.Type != flags.ErrHelp {
 			parser.WriteHelp(os.Stderr)
 		}
 		return

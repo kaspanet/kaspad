@@ -98,8 +98,8 @@ func realMain() error {
 	// Parse command line and invoke the Execute function for the specified
 	// command.
 	if _, err := parser.Parse(); err != nil {
-		var e *flags.Error
-		if ok := errors.As(err, &e); ok && e.Type == flags.ErrHelp {
+		var flagsErr *flags.Error
+		if ok := errors.As(err, &flagsErr); ok && flagsErr.Type == flags.ErrHelp {
 			parser.WriteHelp(os.Stderr)
 		} else {
 			log.Error(err)
