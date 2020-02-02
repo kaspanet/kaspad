@@ -573,9 +573,11 @@ func TestSplitWithExponentialBiasErrors(t *testing.T) {
 }
 
 func TestReindexIntervalErrors(t *testing.T) {
+	// Create a treeNode and give it size = 100
 	treeNode := newReachabilityTreeNode(&blockNode{})
 	treeNode.setInterval(newReachabilityInterval(0, 99))
 
+	// Add a chain of 100 child treeNodes to treeNode
 	var err error
 	currentTreeNode := treeNode
 	for i := 0; i < 100; i++ {
@@ -587,6 +589,11 @@ func TestReindexIntervalErrors(t *testing.T) {
 		currentTreeNode = childTreeNode
 	}
 
+	// At the 100th addChild we expect a reindex. This reindex should
+	// fail because our initial treeNode only has size = 100, and the
+	// reindex requires size > 100.
+	// This simulates the case when (somehow) there's more than 2^64
+	// blocks in the DAG, since the genesis block has size = 2^64.
 	if err == nil {
 		t.Fatalf("TestReindexIntervalErrors: reindexIntervals " +
 			"unexpectedly didn't return an error")
