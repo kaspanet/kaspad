@@ -115,8 +115,8 @@ func TestMiscErrors(t *testing.T) {
 	// supported.
 	wantErr := rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType}
 	_, err = rpcmodel.MarshalResponse(make(chan int), nil, nil)
-	var jerr rpcmodel.Error
-	if ok := errors.As(err, &jerr); !ok || jerr.ErrorCode != wantErr.ErrorCode {
+	var rpcModelErr rpcmodel.Error
+	if ok := errors.As(err, &rpcModelErr); !ok || rpcModelErr.ErrorCode != wantErr.ErrorCode {
 		t.Errorf("MarshalResult: did not receive expected error - got "+
 			"%v (%[1]T), want %v (%[2]T)", err, wantErr)
 		return

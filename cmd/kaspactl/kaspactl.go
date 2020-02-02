@@ -111,10 +111,10 @@ func main() {
 		// rpcmodel.Error as it reallistcally will always be since the
 		// NewCommand function is only supposed to return errors of that
 		// type.
-		var jerr rpcmodel.Error
-		if ok := errors.As(err, &jerr); ok {
+		var rpcModelErr rpcmodel.Error
+		if ok := errors.As(err, &rpcModelErr); ok {
 			fmt.Fprintf(os.Stderr, "%s error: %s (command code: %s)\n",
-				method, err, jerr.ErrorCode)
+				method, err, rpcModelErr.ErrorCode)
 			commandUsage(method)
 			os.Exit(1)
 		}
