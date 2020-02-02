@@ -31,8 +31,8 @@ func (dag *BlockDAG) addNodeToIndexWithInvalidAncestor(block *util.Block) error 
 func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) error {
 	parents, err := lookupParentNodes(block, dag)
 	if err != nil {
-		var rErr RuleError
-		if ok := errors.As(err, &rErr); ok && rErr.ErrorCode == ErrInvalidAncestorBlock {
+		var ruleErr RuleError
+		if ok := errors.As(err, &ruleErr); ok && ruleErr.ErrorCode == ErrInvalidAncestorBlock {
 			err := dag.addNodeToIndexWithInvalidAncestor(block)
 			if err != nil {
 				return err

@@ -314,16 +314,16 @@ func TestCheckTransactionStandard(t *testing.T) {
 		}
 
 		// Ensure error type is a TxRuleError inside of a RuleError.
-		var rErr RuleError
-		if !errors.As(err, &rErr) {
+		var ruleErr RuleError
+		if !errors.As(err, &ruleErr) {
 			t.Errorf("checkTransactionStandard (%s): unexpected "+
 				"error type - got %T", test.name, err)
 			continue
 		}
-		txRuleErr, ok := rErr.Err.(TxRuleError)
+		txRuleErr, ok := ruleErr.Err.(TxRuleError)
 		if !ok {
 			t.Errorf("checkTransactionStandard (%s): unexpected "+
-				"error type - got %T", test.name, rErr.Err)
+				"error type - got %T", test.name, ruleErr.Err)
 			continue
 		}
 

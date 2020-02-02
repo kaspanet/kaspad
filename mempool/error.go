@@ -64,9 +64,9 @@ func dagRuleError(dagErr blockdag.RuleError) RuleError {
 // was successfully extracted.
 func extractRejectCode(err error) (wire.RejectCode, bool) {
 	// Pull the underlying error out of a RuleError.
-	var rErr RuleError
-	if ok := errors.As(err, &rErr); ok {
-		err = rErr.Err
+	var ruleErr RuleError
+	if ok := errors.As(err, &ruleErr); ok {
+		err = ruleErr.Err
 	}
 
 	var bdRuleErr blockdag.RuleError
