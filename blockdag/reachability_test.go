@@ -532,16 +532,26 @@ func TestSplitExactErrors(t *testing.T) {
 	sizes := []uint64{50, 51}
 	_, err := interval.splitExact(sizes)
 	if err == nil {
-		t.Errorf("TestSplitExactErrors: splitExact unexpectedly " +
+		t.Fatalf("TestSplitExactErrors: splitExact unexpectedly " +
 			"didn't return an error")
+	}
+	expectedErrSubstring := "sum of sizes must be equal to the interval's size"
+	if !strings.Contains(err.Error(), expectedErrSubstring) {
+		t.Fatalf("TestSplitExactErrors: splitExact returned wrong error. "+
+			"Want: %s, got: %s", expectedErrSubstring, err)
 	}
 
 	// Sum of sizes smaller than the size of the interval
 	sizes = []uint64{50, 49}
 	_, err = interval.splitExact(sizes)
 	if err == nil {
-		t.Errorf("TestSplitExactErrors: splitExact unexpectedly " +
+		t.Fatalf("TestSplitExactErrors: splitExact unexpectedly " +
 			"didn't return an error")
+	}
+	expectedErrSubstring = "sum of sizes must be equal to the interval's size"
+	if !strings.Contains(err.Error(), expectedErrSubstring) {
+		t.Fatalf("TestSplitExactErrors: splitExact returned wrong error. "+
+			"Want: %s, got: %s", expectedErrSubstring, err)
 	}
 }
 
@@ -552,8 +562,13 @@ func TestSplitWithExponentialBiasErrors(t *testing.T) {
 	sizes := []uint64{50, 51}
 	_, err := interval.splitWithExponentialBias(sizes)
 	if err == nil {
-		t.Errorf("TestSplitWithExponentialBiasErrors: splitWithExponentialBias " +
+		t.Fatalf("TestSplitWithExponentialBiasErrors: splitWithExponentialBias " +
 			"unexpectedly didn't return an error")
+	}
+	expectedErrSubstring := "sum of sizes must be less than or equal to the interval's size"
+	if !strings.Contains(err.Error(), expectedErrSubstring) {
+		t.Fatalf("TestSplitWithExponentialBiasErrors: splitWithExponentialBias "+
+			"returned wrong error. Want: %s, got: %s", expectedErrSubstring, err)
 	}
 }
 
