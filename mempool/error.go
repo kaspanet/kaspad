@@ -69,11 +69,11 @@ func extractRejectCode(err error) (wire.RejectCode, bool) {
 		err = ruleErr.Err
 	}
 
-	var bdRuleErr blockdag.RuleError
-	if errors.As(err, &bdRuleErr) {
+	var dagRuleErr blockdag.RuleError
+	if errors.As(err, &dagRuleErr) {
 		// Convert the DAG error to a reject code.
 		var code wire.RejectCode
-		switch bdRuleErr.ErrorCode {
+		switch dagRuleErr.ErrorCode {
 		// Rejected due to duplicate.
 		case blockdag.ErrDuplicateBlock:
 			code = wire.RejectDuplicate
