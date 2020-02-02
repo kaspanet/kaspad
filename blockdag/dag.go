@@ -1713,11 +1713,11 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 // This function is safe for concurrent access.
 func (dag *BlockDAG) AntiPastHashesBetween(lowHash, highHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
 	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
 	hashes, err := dag.antiPastHashesBetween(lowHash, highHash, maxHashes)
 	if err != nil {
 		return nil, err
 	}
-	dag.dagLock.RUnlock()
 	return hashes, nil
 }
 
@@ -1791,11 +1791,11 @@ func (dag *BlockDAG) RUnlock() {
 // This function is safe for concurrent access.
 func (dag *BlockDAG) AntiPastHeadersBetween(lowHash, highHash *daghash.Hash) ([]*wire.BlockHeader, error) {
 	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
 	headers, err := dag.antiPastHeadersBetween(lowHash, highHash, wire.MaxBlockHeadersPerMsg)
 	if err != nil {
 		return nil, err
 	}
-	dag.dagLock.RUnlock()
 	return headers, nil
 }
 
