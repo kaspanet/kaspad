@@ -277,7 +277,7 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 		blockTransactions[i+1] = util.NewTx(tx)
 	}
 
-	block, err := dag.BlockForMining(blockTransactions)
+	block, err := dag.BlockForMining(blockTransactions, true)
 	if err != nil {
 		return nil, err
 	}

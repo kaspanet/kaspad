@@ -192,7 +192,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		return nil, errors.Errorf("failed to select transactions: %s", err)
 	}
 
-	msgBlock, err := g.dag.BlockForMining(txsForBlockTemplate.selectedTxs)
+	msgBlock, err := g.dag.BlockForMining(txsForBlockTemplate.selectedTxs, false)
 	if err != nil {
 		return nil, err
 	}

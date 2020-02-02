@@ -9,7 +9,6 @@ import (
 	"encoding/hex"
 	"github.com/pkg/errors"
 	"math/big"
-	"sort"
 )
 
 // IDLength of array used to store the subnetwork ID. See SubnetworkID.
@@ -200,11 +199,4 @@ func (id *SubnetworkID) IsBuiltIn() bool {
 // Less returns true iff id a is less than id b
 func Less(a *SubnetworkID, b *SubnetworkID) bool {
 	return a.Cmp(b) < 0
-}
-
-// Sort sorts a slice of ids
-func Sort(ids []SubnetworkID) {
-	sort.Slice(ids, func(i, j int) bool {
-		return Less(&ids[i], &ids[j])
-	})
 }
