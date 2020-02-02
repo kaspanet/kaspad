@@ -398,7 +398,7 @@ func TestVarIntNonCanonical(t *testing.T) {
 		// Decode from wire format.
 		rbuf := bytes.NewReader(test.in)
 		val, err := ReadVarInt(rbuf)
-		if mErr := &(MessageError{}); !errors.As(err, &mErr) {
+		if msgErr := &(MessageError{}); !errors.As(err, &msgErr) {
 			t.Errorf("ReadVarInt #%d (%s) unexpected error %v", i,
 				test.name, err)
 			continue

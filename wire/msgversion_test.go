@@ -82,7 +82,7 @@ func TestVersion(t *testing.T) {
 	// accounting for ":", "/"
 	err = msg.AddUserAgent(strings.Repeat("t",
 		MaxUserAgentLen-len(customUserAgent)-2+1), "")
-	if mErr := &(MessageError{}); !errors.As(err, &mErr) {
+	if msgErr := &(MessageError{}); !errors.As(err, &msgErr) {
 		t.Errorf("AddUserAgent: expected error not received "+
 			"- got %v, want %T", err, MessageError{})
 
@@ -275,7 +275,7 @@ func TestVersionWireErrors(t *testing.T) {
 
 		// For errors which are not of type MessageError, check them for
 		// equality.
-		if mErr := &(MessageError{}); !errors.As(err, &mErr) {
+		if msgErr := &(MessageError{}); !errors.As(err, &msgErr) {
 			if err != test.writeErr {
 				t.Errorf("KaspaEncode #%d wrong error got: %v, "+
 					"want: %v", i, err, test.writeErr)
@@ -295,7 +295,7 @@ func TestVersionWireErrors(t *testing.T) {
 
 		// For errors which are not of type MessageError, check them for
 		// equality.
-		if mErr := &(MessageError{}); !errors.As(err, &mErr) {
+		if msgErr := &(MessageError{}); !errors.As(err, &msgErr) {
 			if err != test.readErr {
 				t.Errorf("KaspaDecode #%d wrong error got: %v, "+
 					"want: %v", i, err, test.readErr)
