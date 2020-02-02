@@ -8,6 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 	"reflect"
 	"sort"
+	"strings"
 	"testing"
 )
 
@@ -290,53 +291,33 @@ func TestBlueAnticoneSizeErrors(t *testing.T) {
 	defer teardownFunc()
 
 	// Prepare a block chain with size K beginning with the genesis block
-	currentHashA := dag.genesis.hash
+	currentBlockA := dag.dagParams.GenesisBlock
 	for i := dagconfig.KType(0); i < dag.dagParams.K; i++ {
-		newBlock, err := PrepareBlockForTest(dag, []*daghash.Hash{currentHashA}, nil)
-		if err != nil {
-			t.Fatalf("TestBlueAnticoneSizeErrors: PrepareBlockForTest failed: %s", err)
-		}
-		isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(newBlock), BFNoPoWCheck)
-		if isOrphan {
-			t.Fatalf("TestBlueAnticoneSizeErrors: block was unexpectedly orphaned")
-		}
-		if isDelayed {
-			t.Fatalf("TestBlueAnticoneSizeErrors: block was unexpectedly delayed")
-		}
-		if err != nil {
-			t.Fatalf("TestBlueAnticoneSizeErrors: ProcessBlock failed: %s", err)
-		}
-		currentHashA = newBlock.BlockHash()
+		newBlock := prepareAndProcessBlock(t, dag, currentBlockA)
+		currentBlockA = newBlock
 	}
 
 	// Prepare another block chain with size K beginning with the genesis block
-	currentHashB := dag.genesis.hash
+	currentBlockB := dag.dagParams.GenesisBlock
 	for i := dagconfig.KType(0); i < dag.dagParams.K; i++ {
-		newBlock, err := PrepareBlockForTest(dag, []*daghash.Hash{currentHashB}, nil)
-		if err != nil {
-			t.Fatalf("TestBlueAnticoneSizeErrors: PrepareBlockForTest failed: %s", err)
-		}
-		isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(newBlock), BFNoPoWCheck)
-		if isOrphan {
-			t.Fatalf("TestBlueAnticoneSizeErrors: block was unexpectedly orphaned")
-		}
-		if isDelayed {
-			t.Fatalf("TestBlueAnticoneSizeErrors: block was unexpectedly delayed")
-		}
-		if err != nil {
-			t.Fatalf("TestBlueAnticoneSizeErrors: ProcessBlock failed: %s", err)
-		}
-		currentHashB = newBlock.BlockHash()
+		newBlock := prepareAndProcessBlock(t, dag, currentBlockB)
+		currentBlockB = newBlock
 	}
 
 	// Get references to the tips of the two chains
-	blockNodeA := dag.index.LookupNode(currentHashA)
-	blockNodeB := dag.index.LookupNode(currentHashB)
+	blockNodeA := dag.index.LookupNode(currentBlockA.BlockHash())
+	blockNodeB := dag.index.LookupNode(currentBlockB.BlockHash())
 
-	// Try getting the blueAnticoneSize between them--this should fail
+	// Try getting the blueAnticoneSize between them. Since the two
+	// blocks are not in the anticones of eachother, this should fail.
 	_, err = dag.blueAnticoneSize(blockNodeA, blockNodeB)
 	if err == nil {
 		t.Fatalf("TestBlueAnticoneSizeErrors: blueAnticoneSize unexpectedly succeeded")
+	}
+	expectedErrSubstring := "is not in blue set of"
+	if !strings.Contains(err.Error(), expectedErrSubstring) {
+		t.Fatalf("TestBlueAnticoneSizeErrors: blueAnticoneSize returned wrong error. "+
+			"Want: %s, got: %s", expectedErrSubstring, err)
 	}
 }
 
