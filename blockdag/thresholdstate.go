@@ -279,8 +279,8 @@ func (dag *BlockDAG) ThresholdState(deploymentID uint32) (ThresholdState, error)
 // This function is safe for concurrent access.
 func (dag *BlockDAG) IsDeploymentActive(deploymentID uint32) (bool, error) {
 	dag.dagLock.Lock()
+	defer dag.dagLock.Unlock()
 	state, err := dag.deploymentState(dag.selectedTip(), deploymentID)
-	dag.dagLock.Unlock()
 	if err != nil {
 		return false, err
 	}
