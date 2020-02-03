@@ -5,9 +5,7 @@ import (
 	"encoding/binary"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/wire"
-	"sort"
 	"time"
 )
 
@@ -24,17 +22,6 @@ func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, er
 	if err != nil {
 		return nil, err
 	}
-
-	// Sort transactions by subnetwork ID before building Merkle tree
-	sort.Slice(transactions, func(i, j int) bool {
-		if transactions[i].MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
-			return true
-		}
-		if transactions[j].MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
-			return false
-		}
-		return subnetworkid.Less(&transactions[i].MsgTx().SubnetworkID, &transactions[j].MsgTx().SubnetworkID)
-	})
 
 	// Create a new block ready to be solved.
 	hashMerkleTree := BuildHashMerkleTreeStore(transactions)

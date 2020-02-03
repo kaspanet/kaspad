@@ -234,6 +234,7 @@ func (g *BlkTmplGenerator) populateTemplateFromCandidates(candidateTxs []*candid
 		usedP += candidateTx.p
 	}
 
+	selectedTxs := make([]*candidateTx, 0)
 	for len(candidateTxs)-usedCount > 0 {
 		// Rebalance the candidates if it's required
 		if usedP >= rebalanceThreshold*totalP {
@@ -301,16 +302,24 @@ func (g *BlkTmplGenerator) populateTemplateFromCandidates(candidateTxs []*candid
 		// Add the transaction to the result, increment counters, and
 		// save the masses, fees, and signature operation counts to the
 		// result.
-		txsForBlockTemplate.selectedTxs = append(txsForBlockTemplate.selectedTxs, tx)
+		selectedTxs = append(selectedTxs, selectedTx)
 		txsForBlockTemplate.totalMass += selectedTx.txMass
 		txsForBlockTemplate.totalFees += selectedTx.txDesc.Fee
-		txsForBlockTemplate.txMasses = append(txsForBlockTemplate.txMasses, selectedTx.txMass)
-		txsForBlockTemplate.txFees = append(txsForBlockTemplate.txFees, selectedTx.txDesc.Fee)
 
 		log.Tracef("Adding tx %s (feePerKB %.2f)",
 			tx.ID(), selectedTx.txDesc.FeePerKB)
 
 		markCandidateTxForDeletion(selectedTx)
+	}
+
+	sort.Slice(selectedTxs, func(i, j int) bool {
+		return subnetworkid.Less(&selectedTxs[i].txDesc.Tx.MsgTx().SubnetworkID,
+			&selectedTxs[j].txDesc.Tx.MsgTx().SubnetworkID)
+	})
+	for _, selectedTx := range selectedTxs {
+		txsForBlockTemplate.selectedTxs = append(txsForBlockTemplate.selectedTxs, selectedTx.txDesc.Tx)
+		txsForBlockTemplate.txMasses = append(txsForBlockTemplate.txMasses, selectedTx.txMass)
+		txsForBlockTemplate.txFees = append(txsForBlockTemplate.txFees, selectedTx.txDesc.Fee)
 	}
 }
 
