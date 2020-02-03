@@ -5,16 +5,14 @@ import (
 	"encoding/binary"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/wire"
-	"sort"
 	"time"
 )
 
 // BlockForMining returns a block with the given transactions
 // that points to the current DAG tips, that is valid from
 // all aspects except proof of work.
-func (dag *BlockDAG) BlockForMining(transactions []*util.Tx, sortTransactions bool) (*wire.MsgBlock, error) {
+func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, error) {
 	blockTimestamp := dag.NextBlockTime()
 	requiredDifficulty := dag.NextRequiredDifficulty(blockTimestamp)
 
@@ -23,19 +21,6 @@ func (dag *BlockDAG) BlockForMining(transactions []*util.Tx, sortTransactions bo
 	nextBlockVersion, err := dag.CalcNextBlockVersion()
 	if err != nil {
 		return nil, err
-	}
-
-	if sortTransactions {
-		// Sort transactions by subnetwork ID before building Merkle tree
-		sort.Slice(transactions, func(i, j int) bool {
-			if transactions[i].MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
-				return true
-			}
-			if transactions[j].MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
-				return false
-			}
-			return subnetworkid.Less(&transactions[i].MsgTx().SubnetworkID, &transactions[j].MsgTx().SubnetworkID)
-		})
 	}
 
 	// Create a new block ready to be solved.

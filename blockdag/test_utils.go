@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 
@@ -277,7 +278,18 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 		blockTransactions[i+1] = util.NewTx(tx)
 	}
 
-	block, err := dag.BlockForMining(blockTransactions, true)
+	// Sort transactions by subnetwork ID
+	sort.Slice(blockTransactions, func(i, j int) bool {
+		if blockTransactions[i].MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
+			return true
+		}
+		if blockTransactions[j].MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
+			return false
+		}
+		return subnetworkid.Less(&blockTransactions[i].MsgTx().SubnetworkID, &blockTransactions[j].MsgTx().SubnetworkID)
+	})
+
+	block, err := dag.BlockForMining(blockTransactions)
 	if err != nil {
 		return nil, err
 	}
