@@ -39,8 +39,6 @@ const (
 	CmdNotFound        = "notfound"
 	CmdBlock           = "block"
 	CmdTx              = "tx"
-	CmdGetHeaders      = "getheaders"
-	CmdHeaders         = "headers"
 	CmdPing            = "ping"
 	CmdPong            = "pong"
 	CmdFilterAdd       = "filteradd"
@@ -48,7 +46,6 @@ const (
 	CmdFilterLoad      = "filterload"
 	CmdMerkleBlock     = "merkleblock"
 	CmdReject          = "reject"
-	CmdSendHeaders     = "sendheaders"
 	CmdFeeFilter       = "feefilter"
 	CmdGetBlockLocator = "getlocator"
 	CmdBlockLocator    = "locator"
@@ -114,12 +111,6 @@ func makeEmptyMessage(command string) (Message, error) {
 	case CmdPong:
 		msg = &MsgPong{}
 
-	case CmdGetHeaders:
-		msg = &MsgGetHeaders{}
-
-	case CmdHeaders:
-		msg = &MsgHeaders{}
-
 	case CmdFilterAdd:
 		msg = &MsgFilterAdd{}
 
@@ -134,9 +125,6 @@ func makeEmptyMessage(command string) (Message, error) {
 
 	case CmdReject:
 		msg = &MsgReject{}
-
-	case CmdSendHeaders:
-		msg = &MsgSendHeaders{}
 
 	case CmdFeeFilter:
 		msg = &MsgFeeFilter{}

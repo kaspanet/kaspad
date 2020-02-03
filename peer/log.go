@@ -143,10 +143,6 @@ func messageSummary(msg wire.Message) string {
 		return fmt.Sprintf("low hash %s, high hash %s", msg.LowHash,
 			msg.HighHash)
 
-	case *wire.MsgGetHeaders:
-		return fmt.Sprintf("low hash %s, high hash %s", msg.LowHash,
-			msg.HighHash)
-
 	case *wire.MsgGetBlockLocator:
 		return fmt.Sprintf("high hash %s, low hash %s", msg.HighHash,
 			msg.LowHash)
@@ -156,9 +152,6 @@ func messageSummary(msg wire.Message) string {
 			return fmt.Sprintf("locator first hash: %s, last hash: %s", msg.BlockLocatorHashes[0], msg.BlockLocatorHashes[len(msg.BlockLocatorHashes)-1])
 		}
 		return fmt.Sprintf("no locator")
-
-	case *wire.MsgHeaders:
-		return fmt.Sprintf("num %d", len(msg.Headers))
 
 	case *wire.MsgReject:
 		// Ensure the variable length strings don't contain any

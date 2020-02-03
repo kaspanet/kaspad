@@ -275,6 +275,6 @@ func (b *rpcSyncMgr) SyncPeerID() int32 {
 //
 // This function is safe for concurrent access and is part of the
 // rpcserverSyncManager interface implementation.
-func (b *rpcSyncMgr) AntiPastHeadersBetween(lowHash, highHash *daghash.Hash) ([]*wire.BlockHeader, error) {
-	return b.server.DAG.AntiPastHeadersBetween(lowHash, highHash)
+func (b *rpcSyncMgr) AntiPastHeadersBetween(lowHash, highHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
+	return b.server.DAG.AntiPastHeadersBetween(lowHash, highHash, maxHeaders)
 }

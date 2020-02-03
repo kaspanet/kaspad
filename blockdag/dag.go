@@ -1741,7 +1741,7 @@ func (dag *BlockDAG) antiPastHeadersBetween(lowHash, highHash *daghash.Hash, max
 }
 
 // GetTopHeaders returns the top wire.MaxBlockHeadersPerMsg block headers ordered by blue score.
-func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash) ([]*wire.BlockHeader, error) {
+func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
 	highNode := &dag.virtual.blockNode
 	if highHash != nil {
 		highNode = dag.index.LookupNode(highHash)
@@ -1754,7 +1754,7 @@ func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash) ([]*wire.BlockHeader,
 	queue.pushSet(highNode.parents)
 
 	visited := newSet()
-	for i := uint32(0); queue.Len() > 0 && len(headers) < wire.MaxBlockHeadersPerMsg; i++ {
+	for i := uint32(0); queue.Len() > 0 && uint64(len(headers)) < maxHeaders; i++ {
 		var current *blockNode
 		current = queue.pop()
 		if !visited.contains(current) {
@@ -1791,9 +1791,9 @@ func (dag *BlockDAG) RUnlock() {
 // wire.MaxBlockHeadersPerMsg block headers.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) AntiPastHeadersBetween(lowHash, highHash *daghash.Hash) ([]*wire.BlockHeader, error) {
+func (dag *BlockDAG) AntiPastHeadersBetween(lowHash, highHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
 	dag.dagLock.RLock()
-	headers, err := dag.antiPastHeadersBetween(lowHash, highHash, wire.MaxBlockHeadersPerMsg)
+	headers, err := dag.antiPastHeadersBetween(lowHash, highHash, maxHeaders)
 	if err != nil {
 		return nil, err
 	}

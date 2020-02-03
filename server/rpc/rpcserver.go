@@ -739,7 +739,7 @@ type rpcserverSyncManager interface {
 	// AntiPastHeadersBetween returns the headers of the blocks between the
 	// lowHash's antiPast and highHash's antiPast, or up to
 	// wire.MaxBlockHeadersPerMsg block headers.
-	AntiPastHeadersBetween(lowHash, highHash *daghash.Hash) ([]*wire.BlockHeader, error)
+	AntiPastHeadersBetween(lowHash, highHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error)
 }
 
 // rpcserverConfig is a descriptor containing the RPC server configuration.

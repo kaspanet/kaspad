@@ -7,6 +7,8 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
+const getTopHeadersMaxHeaders = 2000
+
 // handleGetTopHeaders implements the getTopHeaders command.
 func handleGetTopHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*rpcmodel.GetTopHeadersCmd)
@@ -19,7 +21,7 @@ func handleGetTopHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 			return nil, rpcDecodeHexError(*c.HighHash)
 		}
 	}
-	headers, err := s.cfg.DAG.GetTopHeaders(highHash)
+	headers, err := s.cfg.DAG.GetTopHeaders(highHash, getTopHeadersMaxHeaders)
 	if err != nil {
 		return nil, internalRPCError(err.Error(),
 			"Failed to get top headers")
