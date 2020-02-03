@@ -303,11 +303,8 @@ func (g *BlkTmplGenerator) populateTemplateFromCandidates(candidateTxs []*candid
 		// save the masses, fees, and signature operation counts to the
 		// result.
 		selectedTxs = append(selectedTxs, selectedTx)
-		txsForBlockTemplate.selectedTxs = append(txsForBlockTemplate.selectedTxs, tx)
 		txsForBlockTemplate.totalMass += selectedTx.txMass
 		txsForBlockTemplate.totalFees += selectedTx.txDesc.Fee
-		txsForBlockTemplate.txMasses = append(txsForBlockTemplate.txMasses, selectedTx.txMass)
-		txsForBlockTemplate.txFees = append(txsForBlockTemplate.txFees, selectedTx.txDesc.Fee)
 
 		log.Tracef("Adding tx %s (feePerKB %.2f)",
 			tx.ID(), selectedTx.txDesc.FeePerKB)
