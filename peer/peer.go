@@ -198,9 +198,9 @@ type Config struct {
 	// to the peer as needed.
 	SelectedTipHash func() *daghash.Hash
 
-	// BlockExists determines whether a block with the given hash exists in
+	// IsInDAG determines whether a block with the given hash exists in
 	// the DAG.
-	BlockExists func(*daghash.Hash) bool
+	IsInDAG func(*daghash.Hash) bool
 
 	// HostToNetAddress returns the netaddress for the given host. This can be
 	// nil in  which case the host will be parsed as an IP address.
@@ -662,7 +662,7 @@ func (p *Peer) SetSelectedTipHash(selectedTipHash *daghash.Hash) {
 //
 // This function is safe for concurrent access.
 func (p *Peer) IsSelectedTipKnown() bool {
-	return !p.cfg.BlockExists(p.selectedTipHash)
+	return !p.cfg.IsInDAG(p.selectedTipHash)
 }
 
 // LastSend returns the last send time of the peer.

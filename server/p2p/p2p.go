@@ -304,7 +304,7 @@ func (sp *Peer) selectedTipHash() *daghash.Hash {
 // blockExists determines whether a block with the given hash exists in
 // the DAG.
 func (sp *Peer) blockExists(hash *daghash.Hash) bool {
-	return sp.server.DAG.BlockExists(hash)
+	return sp.server.DAG.IsInDAG(hash)
 }
 
 // addKnownAddresses adds the given addresses to the set of known addresses to
@@ -1052,7 +1052,7 @@ func newPeerConfig(sp *Peer) *peer.Config {
 			OnWrite:           sp.OnWrite,
 		},
 		SelectedTipHash:   sp.selectedTipHash,
-		BlockExists:       sp.blockExists,
+		IsInDAG:           sp.blockExists,
 		HostToNetAddress:  sp.server.addrManager.HostToNetAddress,
 		Proxy:             config.ActiveConfig().Proxy,
 		UserAgentName:     userAgentName,

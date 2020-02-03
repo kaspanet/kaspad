@@ -72,8 +72,8 @@ func TestBlockCount(t *testing.T) {
 	}
 }
 
-// TestHaveBlock tests the HaveBlock API to ensure proper functionality.
-func TestHaveBlock(t *testing.T) {
+// TestIsKnownBlock tests the IsKnownBlock API to ensure proper functionality.
+func TestIsKnownBlock(t *testing.T) {
 	// Load up blocks such that there is a fork in the DAG.
 	// (genesis block) -> 1 -> 2 -> 3 -> 4
 	//                          \-> 3b
@@ -217,9 +217,9 @@ func TestHaveBlock(t *testing.T) {
 			t.Fatalf("NewHashFromStr: %v", err)
 		}
 
-		result := dag.HaveBlock(hash)
+		result := dag.IsKnownBlock(hash)
 		if result != test.want {
-			t.Fatalf("HaveBlock #%d got %v want %v", i, result,
+			t.Fatalf("IsKnownBlock #%d got %v want %v", i, result,
 				test.want)
 		}
 	}

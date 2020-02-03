@@ -48,11 +48,11 @@ const (
 	BFNone BehaviorFlags = 0
 )
 
-// BlockExists determines whether a block with the given hash exists in
+// IsInDAG determines whether a block with the given hash exists in
 // the DAG.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) BlockExists(hash *daghash.Hash) bool {
+func (dag *BlockDAG) IsInDAG(hash *daghash.Hash) bool {
 	return dag.index.HaveBlock(hash)
 }
 
@@ -149,7 +149,7 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 	log.Tracef("Processing block %s", blockHash)
 
 	// The block must not already exist in the DAG.
-	if dag.BlockExists(blockHash) && !wasBlockStored {
+	if dag.IsInDAG(blockHash) && !wasBlockStored {
 		str := fmt.Sprintf("already have block %s", blockHash)
 		return false, false, ruleError(ErrDuplicateBlock, str)
 	}
@@ -183,7 +183,7 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 
 	var missingParents []*daghash.Hash
 	for _, parentHash := range block.MsgBlock().Header.ParentHashes {
-		if !dag.BlockExists(parentHash) {
+		if !dag.IsInDAG(parentHash) {
 			missingParents = append(missingParents, parentHash)
 		}
 	}

@@ -153,23 +153,23 @@ type BlockDAG struct {
 	reachabilityStore *reachabilityStore
 }
 
-// HaveBlock returns whether or not the DAG instance has the block represented
+// IsKnownBlock returns whether or not the DAG instance has the block represented
 // by the passed hash. This includes checking the various places a block can
 // be in, like part of the DAG or the orphan pool.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) HaveBlock(hash *daghash.Hash) bool {
-	return dag.BlockExists(hash) || dag.IsKnownOrphan(hash) || dag.isKnownDelayedBlock(hash)
+func (dag *BlockDAG) IsKnownBlock(hash *daghash.Hash) bool {
+	return dag.IsInDAG(hash) || dag.IsKnownOrphan(hash) || dag.isKnownDelayedBlock(hash)
 }
 
-// HaveBlocks returns whether or not the DAG instances has all blocks represented
+// AreKnownBlocks returns whether or not the DAG instances has all blocks represented
 // by the passed hashes. This includes checking the various places a block can
 // be in, like part of the DAG or the orphan pool.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) HaveBlocks(hashes []*daghash.Hash) bool {
+func (dag *BlockDAG) AreKnownBlocks(hashes []*daghash.Hash) bool {
 	for _, hash := range hashes {
-		haveBlock := dag.HaveBlock(hash)
+		haveBlock := dag.IsKnownBlock(hash)
 		if !haveBlock {
 			return false
 		}
@@ -234,7 +234,7 @@ func (dag *BlockDAG) GetOrphanMissingAncestorHashes(orphanHash *daghash.Hash) ([
 					queue = append(queue, parentHash)
 				}
 			} else {
-				if !dag.BlockExists(current) && current != orphanHash {
+				if !dag.IsInDAG(current) && current != orphanHash {
 					missingAncestorsHashes = append(missingAncestorsHashes, current)
 				}
 			}
@@ -1501,7 +1501,7 @@ func (dag *BlockDAG) SelectedParentChain(blockHash *daghash.Hash) ([]*daghash.Ha
 	if blockHash == nil {
 		blockHash = dag.genesis.hash
 	}
-	if !dag.BlockExists(blockHash) {
+	if !dag.IsInDAG(blockHash) {
 		return nil, nil, errors.Errorf("blockHash %s does not exist in the DAG", blockHash)
 	}
 

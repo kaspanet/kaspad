@@ -38,7 +38,7 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 
 	// If startHash is not in the selected parent chain, there's nothing
 	// to do; return an error.
-	if startHash != nil && !s.cfg.DAG.BlockExists(startHash) {
+	if startHash != nil && !s.cfg.DAG.IsInDAG(startHash) {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCBlockNotFound,
 			Message: "Block not found in the DAG",
