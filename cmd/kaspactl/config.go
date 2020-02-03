@@ -172,7 +172,8 @@ func loadConfig() (*ConfigFlags, []string, error) {
 	preParser := flags.NewParser(preCfg, flags.HelpFlag)
 	_, err := preParser.Parse()
 	if err != nil {
-		if e, ok := err.(*flags.Error); ok && e.Type == flags.ErrHelp {
+		var flagsErr *flags.Error
+		if ok := errors.As(err, &flagsErr); ok && flagsErr.Type == flags.ErrHelp {
 			fmt.Fprintln(os.Stderr, err)
 			fmt.Fprintln(os.Stderr, "")
 			fmt.Fprintln(os.Stderr, "The special parameter `-` "+
@@ -216,7 +217,7 @@ func loadConfig() (*ConfigFlags, []string, error) {
 	parser := flags.NewParser(activeConfig, flags.Default)
 	err = flags.NewIniParser(parser).ParseFile(preCfg.ConfigFile)
 	if err != nil {
-		if _, ok := err.(*os.PathError); !ok {
+		if pErr := &(os.PathError{}); !errors.As(err, pErr) {
 			fmt.Fprintf(os.Stderr, "Error parsing config file: %s\n",
 				err)
 			fmt.Fprintln(os.Stderr, usageMessage)
@@ -227,7 +228,8 @@ func loadConfig() (*ConfigFlags, []string, error) {
 	// Parse command line options again to ensure they take precedence.
 	remainingArgs, err := parser.Parse()
 	if err != nil {
-		if e, ok := err.(*flags.Error); !ok || e.Type != flags.ErrHelp {
+		var flagsErr *flags.Error
+		if ok := errors.As(err, &flagsErr); !ok || flagsErr.Type != flags.ErrHelp {
 			fmt.Fprintln(os.Stderr, usageMessage)
 		}
 		return nil, nil, err

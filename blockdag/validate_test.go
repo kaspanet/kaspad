@@ -5,6 +5,7 @@
 package blockdag
 
 import (
+	"github.com/pkg/errors"
 	"math"
 	"path/filepath"
 	"testing"
@@ -186,8 +187,8 @@ func TestCheckBlockSanity(t *testing.T) {
 	if err == nil {
 		t.Errorf("CheckBlockSanity: transactions disorder is not detected")
 	}
-	ruleErr, ok := err.(RuleError)
-	if !ok {
+	var ruleErr RuleError
+	if !errors.As(err, &ruleErr) {
 		t.Errorf("CheckBlockSanity: wrong error returned, expect RuleError, got %T", err)
 	} else if ruleErr.ErrorCode != ErrTransactionsNotSorted {
 		t.Errorf("CheckBlockSanity: wrong error returned, expect ErrTransactionsNotSorted, got %v, err %s", ruleErr.ErrorCode, err)
@@ -479,8 +480,10 @@ func TestCheckBlockSanity(t *testing.T) {
 	if err == nil {
 		t.Errorf("CheckBlockSanity: error is nil when it shouldn't be")
 	}
-	rError := err.(RuleError)
-	if rError.ErrorCode != ErrWrongParentsOrder {
+	var rError RuleError
+	if !errors.As(err, &rError) {
+		t.Fatalf("CheckBlockSanity: expected a RuleError, but got %s", err)
+	} else if rError.ErrorCode != ErrWrongParentsOrder {
 		t.Errorf("CheckBlockSanity: Expected error was ErrWrongParentsOrder but got %v", err)
 	}
 	if delay != 0 {

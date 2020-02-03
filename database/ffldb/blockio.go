@@ -11,6 +11,7 @@ import (
 	"container/list"
 	"encoding/binary"
 	"fmt"
+	"github.com/pkg/errors"
 	"hash/crc32"
 	"io"
 	"os"
@@ -379,7 +380,8 @@ func (s *blockStore) writeData(data []byte, fieldName string) error {
 	n, err := wc.curFile.file.WriteAt(data, int64(wc.curOffset))
 	wc.curOffset += uint32(n)
 	if err != nil {
-		if pathErr, isOk := err.(*os.PathError); isOk && pathErr.Err == syscall.ENOSPC {
+		var pathErr *os.PathError
+		if ok := errors.As(err, &pathErr); ok && pathErr.Err == syscall.ENOSPC {
 			log.Errorf("No space left on the hard disk, exiting...")
 			os.Exit(1)
 		}

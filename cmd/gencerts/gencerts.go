@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -32,7 +33,8 @@ func main() {
 	parser := flags.NewParser(&cfg, flags.Default)
 	_, err := parser.Parse()
 	if err != nil {
-		if e, ok := err.(*flags.Error); !ok || e.Type != flags.ErrHelp {
+		var flagsErr *flags.Error
+		if ok := errors.As(err, &flagsErr); !ok || flagsErr.Type != flags.ErrHelp {
 			parser.WriteHelp(os.Stderr)
 		}
 		return

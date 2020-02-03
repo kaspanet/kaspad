@@ -5,6 +5,7 @@
 package rpcmodel_test
 
 import (
+	"github.com/pkg/errors"
 	"reflect"
 	"testing"
 
@@ -703,7 +704,9 @@ func TestGenerateHelpErrors(t *testing.T) {
 				"want %T", i, test.name, err, test.err)
 			continue
 		}
-		gotErrorCode := err.(rpcmodel.Error).ErrorCode
+		var gotRPCModelErr rpcmodel.Error
+		errors.As(err, &gotRPCModelErr)
+		gotErrorCode := gotRPCModelErr.ErrorCode
 		if gotErrorCode != test.err.ErrorCode {
 			t.Errorf("Test #%d (%s) mismatched error code - got "+
 				"%v (%v), want %v", i, test.name, gotErrorCode,

@@ -4,7 +4,10 @@
 
 package database
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/pkg/errors"
+)
 
 // ErrorCode identifies a kind of error.
 type ErrorCode int
@@ -199,8 +202,9 @@ func makeError(c ErrorCode, desc string, err error) Error {
 // IsErrorCode returns whether or not the provided error is a script error with
 // the provided error code.
 func IsErrorCode(err error, c ErrorCode) bool {
-	if err, ok := err.(Error); ok {
-		return err.ErrorCode == c
+	var errError Error
+	if ok := errors.As(err, &errError); ok {
+		return errError.ErrorCode == c
 	}
 
 	return false

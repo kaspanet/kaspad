@@ -6,6 +6,7 @@ package main
 
 import (
 	"github.com/kaspanet/kaspad/util/panics"
+	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -39,7 +40,8 @@ func loadBlockDB() (database.DB, error) {
 	if err != nil {
 		// Return the error if it's not because the database doesn't
 		// exist.
-		if dbErr, ok := err.(database.Error); !ok || dbErr.ErrorCode !=
+		var dbErr database.Error
+		if ok := errors.As(err, &dbErr); !ok || dbErr.ErrorCode !=
 			database.ErrDbDoesNotExist {
 
 			return nil, err
@@ -96,7 +98,8 @@ func realMain() error {
 	// Parse command line and invoke the Execute function for the specified
 	// command.
 	if _, err := parser.Parse(); err != nil {
-		if e, ok := err.(*flags.Error); ok && e.Type == flags.ErrHelp {
+		var flagsErr *flags.Error
+		if ok := errors.As(err, &flagsErr); ok && flagsErr.Type == flags.ErrHelp {
 			parser.WriteHelp(os.Stderr)
 		} else {
 			log.Error(err)

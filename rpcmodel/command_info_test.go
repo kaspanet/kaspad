@@ -5,6 +5,7 @@
 package rpcmodel_test
 
 import (
+	"github.com/pkg/errors"
 	"reflect"
 	"testing"
 
@@ -48,12 +49,17 @@ func TestCommandMethod(t *testing.T) {
 			continue
 		}
 		if err != nil {
-			gotErrorCode := err.(rpcmodel.Error).ErrorCode
-			if gotErrorCode != test.err.(rpcmodel.Error).ErrorCode {
+			var gotRPCModelErr rpcmodel.Error
+			errors.As(err, &gotRPCModelErr)
+			gotErrorCode := gotRPCModelErr.ErrorCode
+			var testRPCModelErr rpcmodel.Error
+			errors.As(err, &testRPCModelErr)
+			testErrorCode := testRPCModelErr.ErrorCode
+			if gotErrorCode != testErrorCode {
 				t.Errorf("Test #%d (%s) mismatched error code "+
 					"- got %v (%v), want %v", i, test.name,
 					gotErrorCode, err,
-					test.err.(rpcmodel.Error).ErrorCode)
+					testErrorCode)
 				continue
 			}
 
@@ -101,12 +107,17 @@ func TestMethodUsageFlags(t *testing.T) {
 			continue
 		}
 		if err != nil {
-			gotErrorCode := err.(rpcmodel.Error).ErrorCode
-			if gotErrorCode != test.err.(rpcmodel.Error).ErrorCode {
+			var gotRPCModelErr rpcmodel.Error
+			errors.As(err, &gotRPCModelErr)
+			gotErrorCode := gotRPCModelErr.ErrorCode
+			var testRPCModelErr rpcmodel.Error
+			errors.As(err, &testRPCModelErr)
+			testErrorCode := testRPCModelErr.ErrorCode
+			if gotErrorCode != testErrorCode {
 				t.Errorf("Test #%d (%s) mismatched error code "+
 					"- got %v (%v), want %v", i, test.name,
 					gotErrorCode, err,
-					test.err.(rpcmodel.Error).ErrorCode)
+					testErrorCode)
 				continue
 			}
 
@@ -159,12 +170,17 @@ func TestMethodUsageText(t *testing.T) {
 			continue
 		}
 		if err != nil {
-			gotErrorCode := err.(rpcmodel.Error).ErrorCode
-			if gotErrorCode != test.err.(rpcmodel.Error).ErrorCode {
+			var gotRPCModelErr rpcmodel.Error
+			errors.As(err, &gotRPCModelErr)
+			gotErrorCode := gotRPCModelErr.ErrorCode
+			var testRPCModelErr rpcmodel.Error
+			errors.As(err, &testRPCModelErr)
+			testErrorCode := testRPCModelErr.ErrorCode
+			if gotErrorCode != testErrorCode {
 				t.Errorf("Test #%d (%s) mismatched error code "+
 					"- got %v (%v), want %v", i, test.name,
 					gotErrorCode, err,
-					test.err.(rpcmodel.Error).ErrorCode)
+					testErrorCode)
 				continue
 			}
 

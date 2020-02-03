@@ -393,8 +393,9 @@ func parseCmd(request *rpcmodel.Request) *parsedRPCCmd {
 	if err != nil {
 		// When the error is because the method is not registered,
 		// produce a method not found RPC error.
-		if jerr, ok := err.(rpcmodel.Error); ok &&
-			jerr.ErrorCode == rpcmodel.ErrUnregisteredMethod {
+		var rpcModelErr rpcmodel.Error
+		if ok := errors.As(err, &rpcModelErr); ok &&
+			rpcModelErr.ErrorCode == rpcmodel.ErrUnregisteredMethod {
 
 			parsedCmd.err = rpcmodel.ErrRPCMethodNotFound
 			return &parsedCmd
@@ -610,7 +611,7 @@ func (s *Server) Start() {
 		// using the default size for read/write buffers.
 		ws, err := websocket.Upgrade(w, r, nil, 0, 0)
 		if err != nil {
-			if _, ok := err.(websocket.HandshakeError); !ok {
+			if !errors.As(err, &websocket.HandshakeError{}) {
 				log.Errorf("Unexpected websocket error: %s",
 					err)
 			}

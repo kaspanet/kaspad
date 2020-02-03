@@ -484,7 +484,7 @@ func (dag *BlockDAG) addBlock(node *blockNode,
 	// Connect the block to the DAG.
 	chainUpdates, err := dag.connectBlock(node, block, selectedParentAnticone, fastAdd)
 	if err != nil {
-		if _, ok := err.(RuleError); ok {
+		if errors.As(err, &RuleError{}) {
 			dag.index.SetStatusFlags(node, statusValidateFailed)
 		} else {
 			return nil, err
@@ -574,8 +574,9 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	newBlockUTXO, txsAcceptanceData, newBlockFeeData, err := node.verifyAndBuildUTXO(dag, block.Transactions(), fastAdd)
 	if err != nil {
 		newErrString := fmt.Sprintf("error verifying UTXO for %s: %s", node, err)
-		if err, ok := err.(RuleError); ok {
-			return nil, ruleError(err.ErrorCode, newErrString)
+		var ruleErr RuleError
+		if ok := errors.As(err, &ruleErr); ok {
+			return nil, ruleError(ruleErr.ErrorCode, newErrString)
 		}
 		return nil, errors.New(newErrString)
 	}
@@ -1832,7 +1833,7 @@ func (dag *BlockDAG) processDelayedBlocks() error {
 			log.Errorf("Error while processing delayed block (block %s)", delayedBlock.block.Hash().String())
 			// Rule errors should not be propagated as they refer only to the delayed block,
 			// while this function runs in the context of another block
-			if _, ok := err.(RuleError); !ok {
+			if !errors.As(err, &RuleError{}) {
 				return err
 			}
 		}

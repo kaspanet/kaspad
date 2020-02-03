@@ -41,7 +41,8 @@ func collectTransactions(client *rpcclient.Client, addrPubKeyHash *util.AddressP
 		results, err := client.SearchRawTransactionsVerbose(addrPubKeyHash, skip, resultsCount, true, false, nil)
 		if err != nil {
 			// Break when there are no further txs
-			if rpcError, ok := err.(*rpcmodel.RPCError); ok && rpcError.Code == rpcmodel.ErrRPCNoTxInfo {
+			var rpcError *rpcmodel.RPCError
+			if ok := errors.As(err, &rpcError); ok && rpcError.Code == rpcmodel.ErrRPCNoTxInfo {
 				break
 			}
 

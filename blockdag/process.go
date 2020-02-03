@@ -7,6 +7,7 @@ package blockdag
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/kaspanet/kaspad/util"
@@ -95,7 +96,8 @@ func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 			// still missing.
 			_, err := lookupParentNodes(orphan.block, dag)
 			if err != nil {
-				if ruleErr, ok := err.(RuleError); ok && ruleErr.ErrorCode == ErrParentBlockUnknown {
+				var ruleErr RuleError
+				if ok := errors.As(err, &ruleErr); ok && ruleErr.ErrorCode == ErrParentBlockUnknown {
 					continue
 				}
 				return err
@@ -111,7 +113,7 @@ func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 			if err != nil {
 				// Since we don't want to reject the original block because of
 				// a bad unorphaned child, only return an error if it's not a RuleError.
-				if _, ok := err.(RuleError); !ok {
+				if !errors.As(err, &RuleError{}) {
 					return err
 				}
 				log.Warnf("Verification failed for orphan block %s: %s", orphanHash, err)

@@ -1,6 +1,7 @@
 package blockdag
 
 import (
+	"errors"
 	"path/filepath"
 	"testing"
 
@@ -33,8 +34,8 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are missing: "+
 			"Expected: %s, got: <nil>", ErrParentBlockUnknown)
 	}
-	ruleErr, ok := err.(RuleError)
-	if !ok {
+	var ruleErr RuleError
+	if ok := errors.As(err, &ruleErr); !ok {
 		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are missing: "+
 			"Expected RuleError but got %s", err)
 	} else if ruleErr.ErrorCode != ErrParentBlockUnknown {
@@ -71,8 +72,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are invalid: "+
 			"Expected: %s, got: <nil>", ErrInvalidAncestorBlock)
 	}
-	ruleErr, ok = err.(RuleError)
-	if !ok {
+	if ok := errors.As(err, &ruleErr); !ok {
 		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are invalid: "+
 			"Expected RuleError but got %s", err)
 	} else if ruleErr.ErrorCode != ErrInvalidAncestorBlock {
@@ -91,8 +91,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block due to bad context: "+
 			"Expected: %s, got: <nil>", ErrUnexpectedDifficulty)
 	}
-	ruleErr, ok = err.(RuleError)
-	if !ok {
+	if ok := errors.As(err, &ruleErr); !ok {
 		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block due to bad context: "+
 			"Expected RuleError but got %s", err)
 	} else if ruleErr.ErrorCode != ErrUnexpectedDifficulty {

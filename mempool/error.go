@@ -7,6 +7,7 @@ package mempool
 import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
 )
 
 // RuleError identifies a rule violation. It is used to indicate that
@@ -63,15 +64,16 @@ func dagRuleError(dagErr blockdag.RuleError) RuleError {
 // was successfully extracted.
 func extractRejectCode(err error) (wire.RejectCode, bool) {
 	// Pull the underlying error out of a RuleError.
-	if rerr, ok := err.(RuleError); ok {
-		err = rerr.Err
+	var ruleErr RuleError
+	if ok := errors.As(err, &ruleErr); ok {
+		err = ruleErr.Err
 	}
 
-	switch err := err.(type) {
-	case blockdag.RuleError:
+	var dagRuleErr blockdag.RuleError
+	if errors.As(err, &dagRuleErr) {
 		// Convert the DAG error to a reject code.
 		var code wire.RejectCode
-		switch err.ErrorCode {
+		switch dagRuleErr.ErrorCode {
 		// Rejected due to duplicate.
 		case blockdag.ErrDuplicateBlock:
 			code = wire.RejectDuplicate
@@ -92,11 +94,14 @@ func extractRejectCode(err error) (wire.RejectCode, bool) {
 		}
 
 		return code, true
+	}
 
-	case TxRuleError:
-		return err.RejectCode, true
+	var trErr TxRuleError
+	if errors.As(err, &trErr) {
+		return trErr.RejectCode, true
+	}
 
-	case nil:
+	if err == nil {
 		return wire.RejectInvalid, false
 	}
 

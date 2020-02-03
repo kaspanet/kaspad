@@ -6,6 +6,7 @@ package wire
 
 import (
 	"bytes"
+	"github.com/pkg/errors"
 	"io"
 	"reflect"
 	"testing"
@@ -126,7 +127,7 @@ func TestFilterAddWireErrors(t *testing.T) {
 
 		// For errors which are not of type MessageError, check them for
 		// equality.
-		if _, ok := err.(*MessageError); !ok {
+		if msgErr := &(MessageError{}); !errors.As(err, &msgErr) {
 			if err != test.writeErr {
 				t.Errorf("KaspaEncode #%d wrong error got: %v, "+
 					"want: %v", i, err, test.writeErr)
@@ -146,7 +147,7 @@ func TestFilterAddWireErrors(t *testing.T) {
 
 		// For errors which are not of type MessageError, check them for
 		// equality.
-		if _, ok := err.(*MessageError); !ok {
+		if msgErr := &(MessageError{}); !errors.As(err, &msgErr) {
 			if err != test.readErr {
 				t.Errorf("KaspaDecode #%d wrong error got: %v, "+
 					"want: %v", i, err, test.readErr)

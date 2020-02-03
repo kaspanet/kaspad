@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -164,12 +165,13 @@ func TestIsKnownBlock(t *testing.T) {
 	if err == nil {
 		t.Fatalf("ProcessBlock for block 3D has no error when expected to have an error\n")
 	}
-	rErr, ok := err.(RuleError)
+	var ruleErr RuleError
+	ok := errors.As(err, &ruleErr)
 	if !ok {
 		t.Fatalf("ProcessBlock for block 3D expected a RuleError, but got %v\n", err)
 	}
-	if !ok || rErr.ErrorCode != ErrDuplicateTxInputs {
-		t.Fatalf("ProcessBlock for block 3D expected error code %s but got %s\n", ErrDuplicateTxInputs, rErr.ErrorCode)
+	if !ok || ruleErr.ErrorCode != ErrDuplicateTxInputs {
+		t.Fatalf("ProcessBlock for block 3D expected error code %s but got %s\n", ErrDuplicateTxInputs, ruleErr.ErrorCode)
 	}
 	if isDelayed {
 		t.Fatalf("ProcessBlock: block 3D " +
@@ -994,7 +996,7 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	invalidBlock := util.NewBlock(invalidMsgBlock)
 	isOrphan, isDelayed, err := dag.ProcessBlock(invalidBlock, BFNoPoWCheck)
 
-	if _, ok := err.(RuleError); !ok {
+	if !errors.As(err, &RuleError{}) {
 		t.Fatalf("ProcessBlock: expected a rule error but got %s instead", err)
 	}
 	if isDelayed {
@@ -1023,7 +1025,8 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	invalidBlockChild := util.NewBlock(invalidMsgBlockChild)
 
 	isOrphan, isDelayed, err = dag.ProcessBlock(invalidBlockChild, BFNoPoWCheck)
-	if rErr, ok := err.(RuleError); !ok || rErr.ErrorCode != ErrInvalidAncestorBlock {
+	var ruleErr RuleError
+	if ok := errors.As(err, &ruleErr); !ok || ruleErr.ErrorCode != ErrInvalidAncestorBlock {
 		t.Fatalf("ProcessBlock: expected a rule error but got %s instead", err)
 	}
 	if isDelayed {
@@ -1051,7 +1054,7 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	invalidBlockGrandChild := util.NewBlock(invalidMsgBlockGrandChild)
 
 	isOrphan, isDelayed, err = dag.ProcessBlock(invalidBlockGrandChild, BFNoPoWCheck)
-	if rErr, ok := err.(RuleError); !ok || rErr.ErrorCode != ErrInvalidAncestorBlock {
+	if ok := errors.As(err, &ruleErr); !ok || ruleErr.ErrorCode != ErrInvalidAncestorBlock {
 		t.Fatalf("ProcessBlock: expected a rule error but got %s instead", err)
 	}
 	if isDelayed {

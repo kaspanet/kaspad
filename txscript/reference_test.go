@@ -334,9 +334,10 @@ func testScripts(t *testing.T, tests [][]interface{}, useSigCache bool) {
 			}
 		}
 		if !success {
-			if serr, ok := err.(Error); ok {
+			var scriptErr Error
+			if ok := errors.As(err, &scriptErr); ok {
 				t.Errorf("%s: want error codes %v, got %v", name,
-					allowedErrorCodes, serr.ErrorCode)
+					allowedErrorCodes, scriptErr.ErrorCode)
 				continue
 			}
 			t.Errorf("%s: want error codes %v, got err: %v (%T)",

@@ -83,8 +83,8 @@ func (e errNotInDAG) Error() string {
 // isNotInDAGErr returns whether or not the passed error is an
 // errNotInDAG error.
 func isNotInDAGErr(err error) bool {
-	_, ok := err.(errNotInDAG)
-	return ok
+	var notInDAGErr errNotInDAG
+	return errors.As(err, &notInDAGErr)
 }
 
 // errDeserialize signifies that a problem was encountered when deserializing
@@ -99,8 +99,8 @@ func (e errDeserialize) Error() string {
 // isDeserializeErr returns whether or not the passed error is an errDeserialize
 // error.
 func isDeserializeErr(err error) bool {
-	_, ok := err.(errDeserialize)
-	return ok
+	var deserializeErr errDeserialize
+	return errors.As(err, &deserializeErr)
 }
 
 // dbPutVersion uses an existing database transaction to update the provided

@@ -84,7 +84,8 @@ func loadConfig() (*ConfigFlags, []string, error) {
 	parser := flags.NewParser(&activeConfig, flags.Default)
 	remainingArgs, err := parser.Parse()
 	if err != nil {
-		if e, ok := err.(*flags.Error); !ok || e.Type != flags.ErrHelp {
+		var flagsErr *flags.Error
+		if ok := errors.As(err, &flagsErr); !ok || flagsErr.Type != flags.ErrHelp {
 			parser.WriteHelp(os.Stderr)
 		}
 		return nil, nil, err

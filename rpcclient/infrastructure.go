@@ -395,7 +395,8 @@ func (c *Client) shouldLogReadError(err error) bool {
 	if err == io.EOF {
 		return false
 	}
-	if opErr, ok := err.(*net.OpError); ok && !opErr.Temporary() {
+	var opErr *net.OpError
+	if ok := errors.As(err, &opErr); ok && !opErr.Temporary() {
 		return false
 	}
 

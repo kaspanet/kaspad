@@ -392,7 +392,7 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 		// simply rejected as opposed to something actually going wrong,
 		// so log it as such. Otherwise, something really did go wrong,
 		// so log it as an actual error.
-		if _, ok := err.(mempool.RuleError); ok {
+		if errors.As(err, &mempool.RuleError{}) {
 			log.Debugf("Rejected transaction %s from %s: %s",
 				txID, peer, err)
 		} else {
@@ -491,14 +491,15 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		// rejected as opposed to something actually going wrong, so log
 		// it as such. Otherwise, something really did go wrong, so log
 		// it as an actual error.
-		if _, ok := err.(blockdag.RuleError); ok {
+		if errors.As(err, &blockdag.RuleError{}) {
 			log.Infof("Rejected block %s from %s: %s", blockHash,
 				peer, err)
 		} else {
 			log.Errorf("Failed to process block %s: %s",
 				blockHash, err)
 		}
-		if dbErr, ok := err.(database.Error); ok && dbErr.ErrorCode ==
+		var dbErr database.Error
+		if ok := errors.As(err, &dbErr); ok && dbErr.ErrorCode ==
 			database.ErrCorruption {
 			panic(dbErr)
 		}
