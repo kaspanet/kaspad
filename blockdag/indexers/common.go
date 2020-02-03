@@ -85,8 +85,8 @@ func (e errDeserialize) Error() string {
 // isDeserializeErr returns whether or not the passed error is an errDeserialize
 // error.
 func isDeserializeErr(err error) bool {
-	var dErr errDeserialize
-	return errors.As(err, &dErr)
+	var deserializeErr errDeserialize
+	return errors.As(err, &deserializeErr)
 }
 
 // internalBucket is an abstraction over a database bucket. It is used to make
