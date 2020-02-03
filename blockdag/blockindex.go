@@ -134,8 +134,9 @@ func (bi *blockIndex) flushToDBWithTx(dbTx database.Tx) error {
 			return err
 		}
 	}
-
-	// If write was successful, clear the dirty set.
-	bi.dirty = make(map[*blockNode]struct{})
 	return nil
+}
+
+func (bi *blockIndex) clearDirtyEntries() {
+	bi.dirty = make(map[*blockNode]struct{})
 }
