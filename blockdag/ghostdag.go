@@ -27,7 +27,7 @@ import (
 // For further details see the article https://eprint.iacr.org/2018/104.pdf
 func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blockNode, err error) {
 	newNode.selectedParent = newNode.parents.bluest()
-	newNode.bluesAnticoneSizes[*newNode.selectedParent.hash] = 0
+	newNode.bluesAnticoneSizes[newNode.selectedParent] = 0
 	newNode.blues = []*blockNode{newNode.selectedParent}
 	selectedParentAnticone, err = dag.selectedParentAnticone(newNode)
 	if err != nil {
@@ -102,9 +102,9 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 		if possiblyBlue {
 			// No k-cluster violation found, we can now set the candidate block as blue
 			newNode.blues = append(newNode.blues, blueCandidate)
-			newNode.bluesAnticoneSizes[*blueCandidate.hash] = candidateAnticoneSize
+			newNode.bluesAnticoneSizes[blueCandidate] = candidateAnticoneSize
 			for blue, blueAnticoneSize := range candidateBluesAnticoneSizes {
-				newNode.bluesAnticoneSizes[*blue.hash] = blueAnticoneSize + 1
+				newNode.bluesAnticoneSizes[blue] = blueAnticoneSize + 1
 			}
 
 			// The maximum length of node.blues can be K+1 because
@@ -168,7 +168,7 @@ func (dag *BlockDAG) selectedParentAnticone(node *blockNode) ([]*blockNode, erro
 // Expects 'block' to be in the blue set of 'context'
 func (dag *BlockDAG) blueAnticoneSize(block, context *blockNode) (dagconfig.KType, error) {
 	for current := context; current != nil; current = current.selectedParent {
-		if blueAnticoneSize, ok := current.bluesAnticoneSizes[*block.hash]; ok {
+		if blueAnticoneSize, ok := current.bluesAnticoneSizes[block]; ok {
 			return blueAnticoneSize, nil
 		}
 	}

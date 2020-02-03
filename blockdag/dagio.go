@@ -706,17 +706,21 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		return nil, err
 	}
 
-	node.bluesAnticoneSizes = make(map[daghash.Hash]dagconfig.KType)
+	node.bluesAnticoneSizes = make(map[*blockNode]dagconfig.KType)
 	for i := uint64(0); i < bluesAnticoneSizesLen; i++ {
 		hash := &daghash.Hash{}
 		if _, err := io.ReadFull(buffer, hash[:]); err != nil {
 			return nil, err
 		}
 		bluesAnticoneSize, err := binaryserializer.Uint8(buffer)
-		node.bluesAnticoneSizes[*hash] = dagconfig.KType(bluesAnticoneSize)
 		if err != nil {
 			return nil, err
 		}
+		blue := dag.index.LookupNode(hash)
+		if blue == nil {
+			return nil, errors.Errorf("couldn't find block with hash %s", hash)
+		}
+		node.bluesAnticoneSizes[blue] = dagconfig.KType(bluesAnticoneSize)
 	}
 
 	return node, nil
@@ -784,8 +788,8 @@ func serializeBlockNode(node *blockNode) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	for blockHash, blueAnticoneSize := range node.bluesAnticoneSizes {
-		_, err = w.Write(blockHash[:])
+	for blue, blueAnticoneSize := range node.bluesAnticoneSizes {
+		_, err = w.Write(blue.hash[:])
 		if err != nil {
 			return nil, err
 		}

@@ -26,15 +26,16 @@ func TestBlueAnticoneSizesSize(t *testing.T) {
 
 	blockHeader := dagconfig.SimnetParams.GenesisBlock.Header
 	node, _ := dag.newBlockNode(&blockHeader, newSet())
-	hash := daghash.Hash{1}
+	fakeBlue := &blockNode{hash: &daghash.Hash{1}}
+	dag.index.AddNode(fakeBlue)
 	// Setting maxKType to maximum value of KType.
 	// As we verify above that KType is unsigned we can be sure that maxKType is indeed the maximum value of KType.
 	maxKType := ^dagconfig.KType(0)
-	node.bluesAnticoneSizes[hash] = maxKType
+	node.bluesAnticoneSizes[fakeBlue] = maxKType
 	serializedNode, _ := serializeBlockNode(node)
 	deserializedNode, _ := dag.deserializeBlockNode(serializedNode)
-	if deserializedNode.bluesAnticoneSizes[hash] != maxKType {
+	if deserializedNode.bluesAnticoneSizes[fakeBlue] != maxKType {
 		t.Fatalf("TestBlueAnticoneSizesSize: BlueAnticoneSize should not change when deserializing. Expected: %v but got %v",
-			maxKType, deserializedNode.bluesAnticoneSizes[hash])
+			maxKType, deserializedNode.bluesAnticoneSizes[fakeBlue])
 	}
 }
