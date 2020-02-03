@@ -60,12 +60,9 @@ func TestMessage(t *testing.T) {
 	msgTx := NewNativeMsgTx(1, nil, nil)
 	msgPing := NewMsgPing(123123)
 	msgPong := NewMsgPong(123123)
-	msgGetHeaders := NewMsgGetHeaders(&daghash.Hash{}, &daghash.Hash{})
 	msgGetBlockLocator := NewMsgGetBlockLocator(&daghash.ZeroHash, &daghash.ZeroHash)
 	msgBlockLocator := NewMsgBlockLocator()
-	msgSendHeaders := NewMsgSendHeaders()
 	msgFeeFilter := NewMsgFeeFilter(123456)
-	msgHeaders := NewMsgHeaders()
 	msgFilterAdd := NewMsgFilterAdd([]byte{0x01})
 	msgFilterClear := NewMsgFilterClear()
 	msgFilterLoad := NewMsgFilterLoad([]byte{0x01}, 10, 0, BloomUpdateNone)
@@ -92,12 +89,9 @@ func TestMessage(t *testing.T) {
 		{msgTx, msgTx, pver, Mainnet, 58},
 		{msgPing, msgPing, pver, Mainnet, 32},
 		{msgPong, msgPong, pver, Mainnet, 32},
-		{msgGetHeaders, msgGetHeaders, pver, Mainnet, 88},
 		{msgGetBlockLocator, msgGetBlockLocator, pver, Mainnet, 88},
 		{msgBlockLocator, msgBlockLocator, pver, Mainnet, 25},
-		{msgSendHeaders, msgSendHeaders, pver, Mainnet, 24},
 		{msgFeeFilter, msgFeeFilter, pver, Mainnet, 32},
-		{msgHeaders, msgHeaders, pver, Mainnet, 25},
 		{msgFilterAdd, msgFilterAdd, pver, Mainnet, 26},
 		{msgFilterClear, msgFilterClear, pver, Mainnet, 24},
 		{msgFilterLoad, msgFilterLoad, pver, Mainnet, 35},
