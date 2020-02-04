@@ -923,7 +923,7 @@ out:
 
 			case processBlockMsg:
 				isOrphan, _, err := sm.dag.ProcessBlock(
-					msg.block, msg.flags|blockdag.BFBlockFromRPC)
+					msg.block, msg.flags|blockdag.BFDisallowDelay)
 				if err != nil {
 					msg.reply <- processBlockResponse{
 						isOrphan: false,

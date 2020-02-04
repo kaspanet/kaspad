@@ -218,8 +218,9 @@ const (
 	// is also an ancestor of another parent
 	ErrInvalidParentsRelation
 
-	// ErrDelayedBlockFromRPC indicates that a block with a delayed timestamp was sent through RPC
-	ErrDelayedBlockFromRPC
+	// ErrDelayedBlockisNotAllowed indicates that a block with a delayed timestamp was
+	// submitted and should be rejected.
+	ErrDelayedBlockisNotAllowed
 )
 
 // Map of ErrorCode values back to their constant names for pretty printing.
@@ -267,7 +268,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrInvalidPayload:            "ErrInvalidPayload",
 	ErrInvalidPayloadHash:        "ErrInvalidPayloadHash",
 	ErrInvalidParentsRelation:    "ErrInvalidParentsRelation",
-	ErrDelayedBlockFromRPC:       "ErrDelayedBlockFromRPC",
+	ErrDelayedBlockisNotAllowed:  "ErrDelayedBlockisNotAllowed",
 }
 
 // String returns the ErrorCode as a human-readable name.
