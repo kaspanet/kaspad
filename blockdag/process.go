@@ -45,6 +45,9 @@ const (
 	// in the block index but was never fully processed
 	BFWasStored
 
+	// BFBlockFromRPC is set to indicate that a block was submitted through RPC.
+	BFBlockFromRPC
+
 	// BFNone is a convenience value to specifically indicate no flags.
 	BFNone BehaviorFlags = 0
 )
@@ -146,6 +149,7 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) (isOrphan bool, isDelayed bool, err error) {
 	isAfterDelay := flags&BFAfterDelay == BFAfterDelay
 	wasBlockStored := flags&BFWasStored == BFWasStored
+	wasBlockSubmittedThroughRPC := flags&BFBlockFromRPC == BFBlockFromRPC
 
 	blockHash := block.Hash()
 	log.Tracef("Processing block %s", blockHash)
@@ -172,6 +176,11 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 		delay, err := dag.checkBlockSanity(block, flags)
 		if err != nil {
 			return false, false, err
+		}
+
+		if delay != 0 && wasBlockSubmittedThroughRPC {
+			str := fmt.Sprintf("Cannot process blocks from RPC beyond the allowed time offset %s", blockHash)
+			return false, true, ruleError(ErrDelayedBlockFromRPC, str)
 		}
 
 		if delay != 0 {

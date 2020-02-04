@@ -922,19 +922,14 @@ out:
 				msg.reply <- peerID
 
 			case processBlockMsg:
-				isOrphan, isDelayed, err := sm.dag.ProcessBlock(
-					msg.block, msg.flags)
+				isOrphan, _, err := sm.dag.ProcessBlock(
+					msg.block, msg.flags|blockdag.BFBlockFromRPC)
 				if err != nil {
 					msg.reply <- processBlockResponse{
 						isOrphan: false,
 						err:      err,
 					}
-				}
-				if isDelayed {
-					msg.reply <- processBlockResponse{
-						isOrphan: false,
-						err:      errors.New("Cannot process blocks from RPC beyond the allowed time offset"),
-					}
+					continue
 				}
 
 				msg.reply <- processBlockResponse{
