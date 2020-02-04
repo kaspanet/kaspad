@@ -7,7 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-const getTopHeadersMaxHeaders = 2000
+const getTopHeadersMaxHeaders = getHeadersMaxHeaders
 
 // handleGetTopHeaders implements the getTopHeaders command.
 func handleGetTopHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
