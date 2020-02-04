@@ -750,26 +750,6 @@ func (s *Server) handleRelayInvMsg(state *peerState, msg relayMsg) {
 			return true
 		}
 
-		// If the inventory is a block and the peer prefers headers,
-		// generate and send a headers message instead of an inventory
-		// message.
-		if msg.invVect.Type == wire.InvTypeBlock && sp.WantsHeaders() {
-			blockHeader, ok := msg.data.(wire.BlockHeader)
-			if !ok {
-				peerLog.Warnf("Underlying data for headers" +
-					" is not a block header")
-				return true
-			}
-			msgHeaders := wire.NewMsgHeaders()
-			if err := msgHeaders.AddBlockHeader(&blockHeader); err != nil {
-				peerLog.Errorf("Failed to add block"+
-					" header: %s", err)
-				return true
-			}
-			sp.QueueMessage(msgHeaders, nil)
-			return true
-		}
-
 		if msg.invVect.Type == wire.InvTypeTx {
 			// Don't relay the transaction to the peer when it has
 			// transaction relaying disabled.

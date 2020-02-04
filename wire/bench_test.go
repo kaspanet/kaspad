@@ -374,69 +374,6 @@ func BenchmarkWriteBlockHeader(b *testing.B) {
 	}
 }
 
-// BenchmarkDecodeGetHeaders performs a benchmark on how long it takes to
-// decode a getheaders message.
-func BenchmarkDecodeGetHeaders(b *testing.B) {
-	pver := ProtocolVersion
-	var m MsgGetHeaders
-	m.LowHash = &daghash.Hash{1}
-	m.HighHash = &daghash.Hash{1}
-
-	// Serialize it so the bytes are available to test the decode below.
-	var bb bytes.Buffer
-	if err := m.KaspaEncode(&bb, pver); err != nil {
-		b.Fatalf("MsgGetHeaders.KaspaEncode: unexpected error: %v", err)
-	}
-	buf := bb.Bytes()
-
-	r := bytes.NewReader(buf)
-	var msg MsgGetHeaders
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		r.Seek(0, 0)
-		msg.KaspaDecode(r, pver)
-	}
-}
-
-// BenchmarkDecodeHeaders performs a benchmark on how long it takes to
-// decode a headers message with the maximum number of headers and maximum number of
-// parent hashes per header.
-func BenchmarkDecodeHeaders(b *testing.B) {
-	// Create a message with the maximum number of headers.
-	pver := ProtocolVersion
-	var m MsgHeaders
-	for i := 0; i < MaxBlockHeadersPerMsg; i++ {
-		hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x", i))
-		if err != nil {
-			b.Fatalf("NewHashFromStr: unexpected error: %v", err)
-		}
-		parentHashes := make([]*daghash.Hash, MaxNumParentBlocks)
-		for j := byte(0); j < MaxNumParentBlocks; j++ {
-			hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x%x", i, j))
-			if err != nil {
-				b.Fatalf("NewHashFromStr: unexpected error: %v", err)
-			}
-			parentHashes[i] = hash
-		}
-		m.AddBlockHeader(NewBlockHeader(1, parentHashes, hash, hash, hash, 0, uint64(i)))
-	}
-
-	// Serialize it so the bytes are available to test the decode below.
-	var bb bytes.Buffer
-	if err := m.KaspaEncode(&bb, pver); err != nil {
-		b.Fatalf("MsgHeaders.KaspaEncode: unexpected error: %v", err)
-	}
-	buf := bb.Bytes()
-
-	r := bytes.NewReader(buf)
-	var msg MsgHeaders
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		r.Seek(0, 0)
-		msg.KaspaDecode(r, pver)
-	}
-}
-
 // BenchmarkDecodeGetBlockInvs performs a benchmark on how long it takes to
 // decode a getblockinvs message.
 func BenchmarkDecodeGetBlockInvs(b *testing.B) {

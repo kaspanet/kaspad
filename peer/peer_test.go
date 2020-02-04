@@ -394,9 +394,6 @@ func TestPeerListeners(t *testing.T) {
 			OnReject: func(p *peer.Peer, msg *wire.MsgReject) {
 				ok <- msg
 			},
-			OnSendHeaders: func(p *peer.Peer, msg *wire.MsgSendHeaders) {
-				ok <- msg
-			},
 		},
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
@@ -504,10 +501,6 @@ func TestPeerListeners(t *testing.T) {
 		{
 			"OnReject",
 			wire.NewMsgReject("block", wire.RejectDuplicate, "dupe block"),
-		},
-		{
-			"OnSendHeaders",
-			wire.NewMsgSendHeaders(),
 		},
 	}
 	t.Logf("Running %d tests", len(tests))
@@ -618,10 +611,6 @@ func TestOutboundPeer(t *testing.T) {
 		t.Errorf("PushGetBlockInvsMsg: unexpected err %v\n", err)
 		return
 	}
-	if err := p2.PushGetHeadersMsg(nil, &daghash.Hash{}); err != nil {
-		t.Errorf("PushGetHeadersMsg: unexpected err %v\n", err)
-		return
-	}
 
 	p2.PushRejectMsg("block", wire.RejectMalformed, "malformed", nil, false)
 	p2.PushRejectMsg("block", wire.RejectInvalid, "invalid", nil, false)
@@ -630,7 +619,6 @@ func TestOutboundPeer(t *testing.T) {
 	p2.QueueMessage(wire.NewMsgGetAddr(false, nil), nil)
 	p2.QueueMessage(wire.NewMsgPing(1), nil)
 	p2.QueueMessage(wire.NewMsgGetData(), nil)
-	p2.QueueMessage(wire.NewMsgGetHeaders(&daghash.ZeroHash, &daghash.ZeroHash), nil)
 	p2.QueueMessage(wire.NewMsgFeeFilter(20000), nil)
 
 	p2.Disconnect()

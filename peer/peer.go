@@ -164,10 +164,6 @@ type MessageListeners struct {
 	// OnReject is invoked when a peer receives a reject kaspa message.
 	OnReject func(p *Peer, msg *wire.MsgReject)
 
-	// OnSendHeaders is invoked when a peer receives a sendheaders kaspa
-	// message.
-	OnSendHeaders func(p *Peer, msg *wire.MsgSendHeaders)
-
 	// OnGetSelectedTip is invoked when a peer receives a getSelectedTip kaspa
 	// message.
 	OnGetSelectedTip func()
@@ -410,16 +406,15 @@ type Peer struct {
 	cfg     Config
 	inbound bool
 
-	flagsMtx             sync.Mutex // protects the peer flags below
-	na                   *wire.NetAddress
-	id                   int32
-	userAgent            string
-	services             wire.ServiceFlag
-	versionKnown         bool
-	advertisedProtoVer   uint32 // protocol version advertised by remote
-	protocolVersion      uint32 // negotiated protocol version
-	sendHeadersPreferred bool   // peer sent a sendheaders message
-	verAckReceived       bool
+	flagsMtx           sync.Mutex // protects the peer flags below
+	na                 *wire.NetAddress
+	id                 int32
+	userAgent          string
+	services           wire.ServiceFlag
+	versionKnown       bool
+	advertisedProtoVer uint32 // protocol version advertised by remote
+	protocolVersion    uint32 // negotiated protocol version
+	verAckReceived     bool
 
 	knownInventory       *mruInventoryMap
 	prevGetBlockInvsMtx  sync.Mutex
@@ -717,18 +712,6 @@ func (p *Peer) TimeOffset() int64 {
 	return timeOffset
 }
 
-// WantsHeaders returns if the peer wants header messages instead of
-// inventory vectors for blocks.
-//
-// This function is safe for concurrent access.
-func (p *Peer) WantsHeaders() bool {
-	p.flagsMtx.Lock()
-	sendHeadersPreferred := p.sendHeadersPreferred
-	p.flagsMtx.Unlock()
-
-	return sendHeadersPreferred
-}
-
 // localVersionMsg creates a version message that can be used to send to the
 // remote peer.
 func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
@@ -875,37 +858,6 @@ func (p *Peer) PushBlockLocatorMsg(locator blockdag.BlockLocator) error {
 		}
 	}
 	p.QueueMessage(msg, nil)
-	return nil
-}
-
-// PushGetHeadersMsg sends a getblockinvs message for the provided block locator
-// and low hash. It will ignore back-to-back duplicate requests.
-//
-// This function is safe for concurrent access.
-func (p *Peer) PushGetHeadersMsg(lowHash, highHash *daghash.Hash) error {
-	// Filter duplicate getheaders requests.
-	p.prevGetHdrsMtx.Lock()
-	isDuplicate := p.prevGetHdrsHigh != nil && p.prevGetHdrsLow != nil &&
-		lowHash != nil && highHash.IsEqual(p.prevGetHdrsHigh) &&
-		lowHash.IsEqual(p.prevGetHdrsLow)
-	p.prevGetHdrsMtx.Unlock()
-
-	if isDuplicate {
-		log.Tracef("Filtering duplicate [getheaders] with low hash %s",
-			lowHash)
-		return nil
-	}
-
-	// Construct the getheaders request and queue it to be sent.
-	msg := wire.NewMsgGetHeaders(lowHash, highHash)
-	p.QueueMessage(msg, nil)
-
-	// Update the previous getheaders request information for filtering
-	// duplicates.
-	p.prevGetHdrsMtx.Lock()
-	p.prevGetHdrsLow = lowHash
-	p.prevGetHdrsHigh = highHash
-	p.prevGetHdrsMtx.Unlock()
 	return nil
 }
 
@@ -1180,13 +1132,6 @@ func (p *Peer) maybeAddDeadline(pendingResponses map[string]time.Time, msgCmd st
 		pendingResponses[wire.CmdMerkleBlock] = deadline
 		pendingResponses[wire.CmdTx] = deadline
 		pendingResponses[wire.CmdNotFound] = deadline
-
-	case wire.CmdGetHeaders:
-		// Expects a headers message. Use a longer deadline since it
-		// can take a while for the remote peer to load all of the
-		// headers.
-		deadline = time.Now().Add(stallResponseTimeout * 3)
-		pendingResponses[wire.CmdHeaders] = deadline
 
 	case wire.CmdGetSelectedTip:
 		// Expects a selected tip message.
@@ -1508,15 +1453,6 @@ out:
 		case *wire.MsgReject:
 			if p.cfg.Listeners.OnReject != nil {
 				p.cfg.Listeners.OnReject(p, msg)
-			}
-
-		case *wire.MsgSendHeaders:
-			p.flagsMtx.Lock()
-			p.sendHeadersPreferred = true
-			p.flagsMtx.Unlock()
-
-			if p.cfg.Listeners.OnSendHeaders != nil {
-				p.cfg.Listeners.OnSendHeaders(p, msg)
 			}
 
 		case *wire.MsgGetSelectedTip:
