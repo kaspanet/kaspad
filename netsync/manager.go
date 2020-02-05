@@ -867,7 +867,7 @@ func (sm *SyncManager) limitHashMap(m map[daghash.Hash]struct{}, limit int) {
 
 func (sm *SyncManager) handleProcessBlockMsg(msg processBlockMsg) (isOrphan bool, err error) {
 	isOrphan, isDelayed, err := sm.dag.ProcessBlock(
-		msg.block, msg.flags)
+		msg.block, msg.flags|blockdag.BFDisallowDelay)
 	if err != nil {
 		return false, err
 	}
