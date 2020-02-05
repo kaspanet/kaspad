@@ -180,7 +180,7 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 		}
 
 		if delay != 0 && disallowDelay {
-			str := fmt.Sprintf("Cannot process blocks beyond the allowed time offset while the DisallowDelay flag is raised %s", blockHash)
+			str := fmt.Sprintf("Cannot process blocks beyond the allowed time offset while the BFDisallowDelay flag is raised %s", blockHash)
 			return false, true, ruleError(ErrDelayedBlockIsNotAllowed, str)
 		}
 
