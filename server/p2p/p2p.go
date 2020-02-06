@@ -688,8 +688,8 @@ func (s *Server) handleAddPeerMsg(state *peerState, sp *Peer) bool {
 		}
 	}
 
-	// Reset the connection manager's failed attempt counter
-	s.connManager.ResetFailedAttempts()
+	// Notify the connection manager.
+	s.connManager.NotifyConnectionRequestComplete()
 
 	return true
 }

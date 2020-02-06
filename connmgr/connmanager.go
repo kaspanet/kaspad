@@ -428,10 +428,10 @@ out:
 	log.Trace("Connection handler done")
 }
 
-// ResetFailedAttempts sets the failed connection attempts counter
-// to zero. This method is expected to be called after every time
-// a peer had been successfully connected and marked as good.
-func (cm *ConnManager) ResetFailedAttempts() {
+// NotifyConnectionRequestComplete notifies the connection
+// manager that a peer had been successfully connected and
+// marked as good.
+func (cm *ConnManager) NotifyConnectionRequestComplete() {
 	cm.failedAttempts = 0
 }
 
