@@ -504,12 +504,12 @@ func TestSplitFractionErrors(t *testing.T) {
 	_, _, err = interval.splitFraction(1.5)
 	if err == nil {
 		t.Fatalf("TestSplitFractionErrors: splitFraction unexpectedly " +
-			"didn't return an error for a >1 fraction")
+			"didn't return an error for a fraction greater than 1")
 	}
 	expectedErrSubstring = "fraction must be between 0 and 1"
 	if !strings.Contains(err.Error(), expectedErrSubstring) {
 		t.Fatalf("TestSplitFractionErrors: splitFraction returned wrong error "+
-			"for a >1 fraction. "+
+			"for a fraction greater than 1. "+
 			"Want: %s, got: %s", expectedErrSubstring, err)
 	}
 
@@ -536,12 +536,12 @@ func TestSplitExactErrors(t *testing.T) {
 	_, err := interval.splitExact(sizes)
 	if err == nil {
 		t.Fatalf("TestSplitExactErrors: splitExact unexpectedly " +
-			"didn't return an error for sum of sizes > size of interval")
+			"didn't return an error for (sum of sizes) > (size of interval)")
 	}
 	expectedErrSubstring := "sum of sizes must be equal to the interval's size"
 	if !strings.Contains(err.Error(), expectedErrSubstring) {
 		t.Fatalf("TestSplitExactErrors: splitExact returned wrong error "+
-			"for sum of sizes > size of interval. "+
+			"for (sum of sizes) > (size of interval). "+
 			"Want: %s, got: %s", expectedErrSubstring, err)
 	}
 
@@ -550,12 +550,12 @@ func TestSplitExactErrors(t *testing.T) {
 	_, err = interval.splitExact(sizes)
 	if err == nil {
 		t.Fatalf("TestSplitExactErrors: splitExact unexpectedly " +
-			"didn't return an error for sum of sizes < size of interval")
+			"didn't return an error for (sum of sizes) < (size of interval)")
 	}
 	expectedErrSubstring = "sum of sizes must be equal to the interval's size"
 	if !strings.Contains(err.Error(), expectedErrSubstring) {
 		t.Fatalf("TestSplitExactErrors: splitExact returned wrong error "+
-			"for sum of sizes < size of interval. "+
+			"for (sum of sizes) < (size of interval). "+
 			"Want: %s, got: %s", expectedErrSubstring, err)
 	}
 }
