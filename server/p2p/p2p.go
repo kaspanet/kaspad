@@ -688,6 +688,9 @@ func (s *Server) handleAddPeerMsg(state *peerState, sp *Peer) bool {
 		}
 	}
 
+	// Notify the connection manager.
+	s.connManager.NotifyConnectionRequestComplete()
+
 	return true
 }
 

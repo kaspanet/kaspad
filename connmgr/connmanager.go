@@ -336,7 +336,6 @@ out:
 				conns[connReq.id] = connReq
 				log.Debugf("Connected to %s", connReq)
 				connReq.retryCount = 0
-				cm.failedAttempts = 0
 
 				delete(pending, connReq.id)
 
@@ -427,6 +426,13 @@ out:
 
 	cm.wg.Done()
 	log.Trace("Connection handler done")
+}
+
+// NotifyConnectionRequestComplete notifies the connection
+// manager that a peer had been successfully connected and
+// marked as good.
+func (cm *ConnManager) NotifyConnectionRequestComplete() {
+	cm.failedAttempts = 0
 }
 
 // NewConnReq creates a new connection request and connects to the
