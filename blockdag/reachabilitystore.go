@@ -28,7 +28,7 @@ func newReachabilityStore(dag *BlockDAG) *reachabilityStore {
 	}
 }
 
-func (store *reachabilityStore) setTreeNode(treeNode *reachabilityTreeNode) error {
+func (store *reachabilityStore) setTreeNode(treeNode *reachabilityTreeNode) {
 	// load the reachability data from DB to store.loaded
 	node := treeNode.blockNode
 	_, exists := store.reachabilityDataByHash(node.hash)
@@ -38,7 +38,6 @@ func (store *reachabilityStore) setTreeNode(treeNode *reachabilityTreeNode) erro
 
 	store.loaded[*node.hash].treeNode = treeNode
 	store.setBlockAsDirty(node.hash)
-	return nil
 }
 
 func (store *reachabilityStore) setFutureCoveringSet(node *blockNode, futureCoveringSet futureCoveringBlockSet) error {

@@ -2,6 +2,7 @@ package blockdag
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -322,6 +323,15 @@ func TestSplitWithExponentialBias(t *testing.T) {
 				newReachabilityInterval(41, 10_000),
 			},
 		},
+		{
+			interval: newReachabilityInterval(1, 100_000),
+			sizes:    []uint64{31_000, 31_000, 30_001},
+			expectedIntervals: []*reachabilityInterval{
+				newReachabilityInterval(1, 35_000),
+				newReachabilityInterval(35_001, 69_999),
+				newReachabilityInterval(70_000, 100_000),
+			},
+		},
 	}
 
 	for i, test := range tests {
@@ -471,5 +481,168 @@ func TestInsertBlock(t *testing.T) {
 			t.Errorf("TestInsertBlock: unexpected result in test #%d. Want: %s, got: %s",
 				i, test.expectedResult, blocksClone)
 		}
+	}
+}
+
+func TestSplitFractionErrors(t *testing.T) {
+	interval := newReachabilityInterval(100, 200)
+
+	// Negative fraction
+	_, _, err := interval.splitFraction(-0.5)
+	if err == nil {
+		t.Fatalf("TestSplitFractionErrors: splitFraction unexpectedly " +
+			"didn't return an error for a negative fraction")
+	}
+	expectedErrSubstring := "fraction must be between 0 and 1"
+	if !strings.Contains(err.Error(), expectedErrSubstring) {
+		t.Fatalf("TestSplitFractionErrors: splitFraction returned wrong error "+
+			"for a negative fraction. "+
+			"Want: %s, got: %s", expectedErrSubstring, err)
+	}
+
+	// Fraction > 1
+	_, _, err = interval.splitFraction(1.5)
+	if err == nil {
+		t.Fatalf("TestSplitFractionErrors: splitFraction unexpectedly " +
+			"didn't return an error for a fraction greater than 1")
+	}
+	expectedErrSubstring = "fraction must be between 0 and 1"
+	if !strings.Contains(err.Error(), expectedErrSubstring) {
+		t.Fatalf("TestSplitFractionErrors: splitFraction returned wrong error "+
+			"for a fraction greater than 1. "+
+			"Want: %s, got: %s", expectedErrSubstring, err)
+	}
+
+	// Splitting an empty interval
+	emptyInterval := newReachabilityInterval(1, 0)
+	_, _, err = emptyInterval.splitFraction(0.5)
+	if err == nil {
+		t.Fatalf("TestSplitFractionErrors: splitFraction unexpectedly " +
+			"didn't return an error for an empty interval")
+	}
+	expectedErrSubstring = "cannot split an empty interval"
+	if !strings.Contains(err.Error(), expectedErrSubstring) {
+		t.Fatalf("TestSplitFractionErrors: splitFraction returned wrong error "+
+			"for an empty interval. "+
+			"Want: %s, got: %s", expectedErrSubstring, err)
+	}
+}
+
+func TestSplitExactErrors(t *testing.T) {
+	interval := newReachabilityInterval(100, 199)
+
+	// Sum of sizes greater than the size of the interval
+	sizes := []uint64{50, 51}
+	_, err := interval.splitExact(sizes)
+	if err == nil {
+		t.Fatalf("TestSplitExactErrors: splitExact unexpectedly " +
+			"didn't return an error for (sum of sizes) > (size of interval)")
+	}
+	expectedErrSubstring := "sum of sizes must be equal to the interval's size"
+	if !strings.Contains(err.Error(), expectedErrSubstring) {
+		t.Fatalf("TestSplitExactErrors: splitExact returned wrong error "+
+			"for (sum of sizes) > (size of interval). "+
+			"Want: %s, got: %s", expectedErrSubstring, err)
+	}
+
+	// Sum of sizes smaller than the size of the interval
+	sizes = []uint64{50, 49}
+	_, err = interval.splitExact(sizes)
+	if err == nil {
+		t.Fatalf("TestSplitExactErrors: splitExact unexpectedly " +
+			"didn't return an error for (sum of sizes) < (size of interval)")
+	}
+	expectedErrSubstring = "sum of sizes must be equal to the interval's size"
+	if !strings.Contains(err.Error(), expectedErrSubstring) {
+		t.Fatalf("TestSplitExactErrors: splitExact returned wrong error "+
+			"for (sum of sizes) < (size of interval). "+
+			"Want: %s, got: %s", expectedErrSubstring, err)
+	}
+}
+
+func TestSplitWithExponentialBiasErrors(t *testing.T) {
+	interval := newReachabilityInterval(100, 199)
+
+	// Sum of sizes greater than the size of the interval
+	sizes := []uint64{50, 51}
+	_, err := interval.splitWithExponentialBias(sizes)
+	if err == nil {
+		t.Fatalf("TestSplitWithExponentialBiasErrors: splitWithExponentialBias " +
+			"unexpectedly didn't return an error")
+	}
+	expectedErrSubstring := "sum of sizes must be less than or equal to the interval's size"
+	if !strings.Contains(err.Error(), expectedErrSubstring) {
+		t.Fatalf("TestSplitWithExponentialBiasErrors: splitWithExponentialBias "+
+			"returned wrong error. Want: %s, got: %s", expectedErrSubstring, err)
+	}
+}
+
+func TestReindexIntervalErrors(t *testing.T) {
+	// Create a treeNode and give it size = 100
+	treeNode := newReachabilityTreeNode(&blockNode{})
+	treeNode.setInterval(newReachabilityInterval(0, 99))
+
+	// Add a chain of 100 child treeNodes to treeNode
+	var err error
+	currentTreeNode := treeNode
+	for i := 0; i < 100; i++ {
+		childTreeNode := newReachabilityTreeNode(&blockNode{})
+		_, err = currentTreeNode.addChild(childTreeNode)
+		if err != nil {
+			break
+		}
+		currentTreeNode = childTreeNode
+	}
+
+	// At the 100th addChild we expect a reindex. This reindex should
+	// fail because our initial treeNode only has size = 100, and the
+	// reindex requires size > 100.
+	// This simulates the case when (somehow) there's more than 2^64
+	// blocks in the DAG, since the genesis block has size = 2^64.
+	if err == nil {
+		t.Fatalf("TestReindexIntervalErrors: reindexIntervals " +
+			"unexpectedly didn't return an error")
+	}
+	if !strings.Contains(err.Error(), "missing tree parent during reindexing") {
+		t.Fatalf("TestReindexIntervalErrors: reindexIntervals "+
+			"returned an expected error: %s", err)
+	}
+}
+
+func TestFutureCoveringBlockSetString(t *testing.T) {
+	treeNodeA := newReachabilityTreeNode(&blockNode{})
+	treeNodeA.setInterval(newReachabilityInterval(123, 456))
+	treeNodeB := newReachabilityTreeNode(&blockNode{})
+	treeNodeB.setInterval(newReachabilityInterval(457, 789))
+	futureCoveringSet := futureCoveringBlockSet{
+		&futureCoveringBlock{treeNode: treeNodeA},
+		&futureCoveringBlock{treeNode: treeNodeB},
+	}
+
+	str := futureCoveringSet.String()
+	expectedStr := "[123,456][457,789]"
+	if str != expectedStr {
+		t.Fatalf("TestFutureCoveringBlockSetString: unexpected "+
+			"string. Want: %s, got: %s", expectedStr, str)
+	}
+}
+
+func TestReachabilityTreeNodeString(t *testing.T) {
+	treeNodeA := newReachabilityTreeNode(&blockNode{})
+	treeNodeA.setInterval(newReachabilityInterval(100, 199))
+	treeNodeB1 := newReachabilityTreeNode(&blockNode{})
+	treeNodeB1.setInterval(newReachabilityInterval(100, 150))
+	treeNodeB2 := newReachabilityTreeNode(&blockNode{})
+	treeNodeB2.setInterval(newReachabilityInterval(150, 199))
+	treeNodeC := newReachabilityTreeNode(&blockNode{})
+	treeNodeC.setInterval(newReachabilityInterval(100, 149))
+	treeNodeA.children = []*reachabilityTreeNode{treeNodeB1, treeNodeB2}
+	treeNodeB2.children = []*reachabilityTreeNode{treeNodeC}
+
+	str := treeNodeA.String()
+	expectedStr := "[100,149]\n[100,150][150,199]\n[100,199]"
+	if str != expectedStr {
+		t.Fatalf("TestReachabilityTreeNodeString: unexpected "+
+			"string. Want: %s, got: %s", expectedStr, str)
 	}
 }
