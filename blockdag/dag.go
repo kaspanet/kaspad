@@ -27,6 +27,8 @@ const (
 	// maxOrphanBlocks is the maximum number of orphan blocks that can be
 	// queued.
 	maxOrphanBlocks = 100
+
+	isDAGCurrentMaxDiff = 12 * time.Hour
 )
 
 // orphanBlock represents a block that we don't yet have the parent for. It
@@ -1274,8 +1276,8 @@ func (dag *BlockDAG) isCurrent() bool {
 	} else {
 		dagTimestamp = selectedTip.timestamp
 	}
-	minus24Hours := dag.AdjustedTime().Add(-24 * time.Hour).Unix()
-	return dagTimestamp >= minus24Hours
+	dagTime := time.Unix(dagTimestamp, 0)
+	return dag.AdjustedTime().Sub(dagTime) <= isDAGCurrentMaxDiff
 }
 
 // AdjustedTime returns the adjusted time according to
