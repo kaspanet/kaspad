@@ -60,8 +60,8 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64) err
 
 func mineNextBlock(client *minerClient, foundBlock chan *util.Block, templateStopChan chan struct{}, errChan chan error) {
 	newTemplateChan := make(chan *rpcmodel.GetBlockTemplateResult)
-	go templatesLoop(client, newTemplateChan, errChan, templateStopChan)
-	go solveLoop(newTemplateChan, foundBlock, errChan)
+	spawn(func() { templatesLoop(client, newTemplateChan, errChan, templateStopChan) })
+	spawn(func() { solveLoop(newTemplateChan, foundBlock, errChan) })
 }
 
 func handleFoundBlock(client *minerClient, block *util.Block) error {
@@ -193,7 +193,7 @@ func solveLoop(newTemplateChan chan *rpcmodel.GetBlockTemplateResult, foundBlock
 			return
 		}
 
-		go solveBlock(block, stopOldTemplateSolving, foundBlock)
+		spawn(func() { solveBlock(block, stopOldTemplateSolving, foundBlock) })
 	}
 	if stopOldTemplateSolving != nil {
 		close(stopOldTemplateSolving)

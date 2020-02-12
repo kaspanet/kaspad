@@ -595,7 +595,7 @@ func (cm *ConnManager) Start() {
 	if cm.cfg.OnAccept != nil {
 		for _, listner := range cm.cfg.Listeners {
 			cm.wg.Add(1)
-			go cm.listenHandler(listner)
+			spawn(func() { cm.listenHandler(listner) }, cm.handlePanic)
 		}
 	}
 
