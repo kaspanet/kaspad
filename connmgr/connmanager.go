@@ -598,9 +598,12 @@ func (cm *ConnManager) Start() {
 	// provided a callback to be invoked when connections are accepted.
 	if cm.cfg.OnAccept != nil {
 		for _, listner := range cm.cfg.Listeners {
+			// Declaring this variable is necessary so the anonymous function below will use it
+			// rather then the last element in the for loop.
+			var l = listner
 			cm.wg.Add(1)
 			spawn(func() {
-				cm.listenHandler(listner)
+				cm.listenHandler(l)
 			}, cm.handlePanic)
 		}
 	}
