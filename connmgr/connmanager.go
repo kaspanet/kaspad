@@ -375,7 +375,7 @@ out:
 				}
 
 				if cm.cfg.OnDisconnection != nil {
-					go cm.cfg.OnDisconnection(connReq)
+					spawn(func() { cm.cfg.OnDisconnection(connReq) }, cm.handlePanic)
 				}
 
 				// All internal state has been cleaned up, if
@@ -572,7 +572,7 @@ func (cm *ConnManager) listenHandler(listener net.Listener) {
 			}
 			continue
 		}
-		go cm.cfg.OnAccept(conn)
+		spawn(func() { cm.cfg.OnAccept(conn) }, cm.handlePanic)
 	}
 
 	cm.wg.Done()
