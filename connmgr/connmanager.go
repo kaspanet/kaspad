@@ -597,10 +597,10 @@ func (cm *ConnManager) Start() {
 	// Start all the listeners so long as the caller requested them and
 	// provided a callback to be invoked when connections are accepted.
 	if cm.cfg.OnAccept != nil {
-		for _, listner := range cm.cfg.Listeners {
-			// Declaring this variable is necessary so the anonymous function below will use it
-			// rather then the last element in the for loop.
-			var l = listner
+		for _, listener := range cm.cfg.Listeners {
+			// Declaring this variable is necessary as it needs be declared in the same
+			// scope of the anonymous function below it.
+			var l = listener
 			cm.wg.Add(1)
 			spawn(func() {
 				cm.listenHandler(l)
