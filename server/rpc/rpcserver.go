@@ -623,12 +623,12 @@ func (s *Server) Start() {
 
 	for _, listener := range s.cfg.Listeners {
 		s.wg.Add(1)
-		go func(listener net.Listener) {
+		spawn(func() {
 			log.Infof("RPC server listening on %s", listener.Addr())
 			httpServer.Serve(listener)
 			log.Tracef("RPC listener done for %s", listener.Addr())
 			s.wg.Done()
-		}(listener)
+		})
 	}
 
 	s.ntfnMgr.Start()
