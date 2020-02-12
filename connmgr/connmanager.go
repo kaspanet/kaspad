@@ -375,7 +375,9 @@ out:
 				}
 
 				if cm.cfg.OnDisconnection != nil {
-					spawn(func() { cm.cfg.OnDisconnection(connReq) }, cm.handlePanic)
+					spawn(func() {
+						cm.cfg.OnDisconnection(connReq)
+					}, cm.handlePanic)
 				}
 
 				// All internal state has been cleaned up, if
@@ -572,7 +574,9 @@ func (cm *ConnManager) listenHandler(listener net.Listener) {
 			}
 			continue
 		}
-		spawn(func() { cm.cfg.OnAccept(conn) }, cm.handlePanic)
+		spawn(func() {
+			cm.cfg.OnAccept(conn)
+		}, cm.handlePanic)
 	}
 
 	cm.wg.Done()
@@ -595,7 +599,9 @@ func (cm *ConnManager) Start() {
 	if cm.cfg.OnAccept != nil {
 		for _, listner := range cm.cfg.Listeners {
 			cm.wg.Add(1)
-			spawn(func() { cm.listenHandler(listner) }, cm.handlePanic)
+			spawn(func() {
+				cm.listenHandler(listner)
+			}, cm.handlePanic)
 		}
 	}
 

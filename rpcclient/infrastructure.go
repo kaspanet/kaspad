@@ -426,7 +426,9 @@ out:
 			}
 			break out
 		}
-		spawn(func() { c.handleMessage(msg) })
+		spawn(func() {
+			c.handleMessage(msg)
+		})
 	}
 
 	// Ensure the connection is closed.
