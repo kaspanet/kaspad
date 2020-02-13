@@ -375,7 +375,9 @@ out:
 				}
 
 				if cm.cfg.OnDisconnection != nil {
-					go cm.cfg.OnDisconnection(connReq)
+					spawn(func() {
+						cm.cfg.OnDisconnection(connReq)
+					}, cm.handlePanic)
 				}
 
 				// All internal state has been cleaned up, if
@@ -572,7 +574,9 @@ func (cm *ConnManager) listenHandler(listener net.Listener) {
 			}
 			continue
 		}
-		go cm.cfg.OnAccept(conn)
+		spawn(func() {
+			cm.cfg.OnAccept(conn)
+		}, cm.handlePanic)
 	}
 
 	cm.wg.Done()
@@ -593,9 +597,14 @@ func (cm *ConnManager) Start() {
 	// Start all the listeners so long as the caller requested them and
 	// provided a callback to be invoked when connections are accepted.
 	if cm.cfg.OnAccept != nil {
-		for _, listner := range cm.cfg.Listeners {
+		for _, listener := range cm.cfg.Listeners {
+			// Declaring this variable is necessary as it needs be declared in the same
+			// scope of the anonymous function below it.
+			listenerCopy := listener
 			cm.wg.Add(1)
-			go cm.listenHandler(listner)
+			spawn(func() {
+				cm.listenHandler(listenerCopy)
+			}, cm.handlePanic)
 		}
 	}
 

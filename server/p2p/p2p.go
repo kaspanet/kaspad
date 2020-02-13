@@ -923,9 +923,11 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 		}
 
 		// TODO: if too many, nuke a non-perm peer.
-		go s.connManager.Connect(&connmgr.ConnReq{
-			Addr:      netAddr,
-			Permanent: msg.Permanent,
+		spawn(func() {
+			s.connManager.Connect(&connmgr.ConnReq{
+				Addr:      netAddr,
+				Permanent: msg.Permanent,
+			})
 		})
 		msg.Reply <- nil
 	case RemoveNodeMsg:
@@ -1751,9 +1753,11 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 			return nil, err
 		}
 
-		go s.connManager.Connect(&connmgr.ConnReq{
-			Addr:      netAddr,
-			Permanent: true,
+		spawn(func() {
+			s.connManager.Connect(&connmgr.ConnReq{
+				Addr:      netAddr,
+				Permanent: true,
+			})
 		})
 	}
 

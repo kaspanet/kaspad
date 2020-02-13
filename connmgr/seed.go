@@ -66,7 +66,7 @@ func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag, incl
 			}
 		}
 
-		go func(host string) {
+		spawn(func() {
 			randSource := mrand.New(mrand.NewSource(time.Now().UnixNano()))
 
 			seedpeers, err := lookupFn(host)
@@ -94,6 +94,6 @@ func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag, incl
 			}
 
 			seedFn(addresses)
-		}(host)
+		}, nil)
 	}
 }

@@ -623,12 +623,15 @@ func (s *Server) Start() {
 
 	for _, listener := range s.cfg.Listeners {
 		s.wg.Add(1)
-		go func(listener net.Listener) {
-			log.Infof("RPC server listening on %s", listener.Addr())
-			httpServer.Serve(listener)
-			log.Tracef("RPC listener done for %s", listener.Addr())
+		// Declaring this variable is necessary as it needs be declared in the same
+		// scope of the anonymous function below it.
+		listenerCopy := listener
+		spawn(func() {
+			log.Infof("RPC server listening on %s", listenerCopy.Addr())
+			httpServer.Serve(listenerCopy)
+			log.Tracef("RPC listener done for %s", listenerCopy.Addr())
 			s.wg.Done()
-		}(listener)
+		})
 	}
 
 	s.ntfnMgr.Start()
