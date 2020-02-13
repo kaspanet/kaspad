@@ -600,10 +600,10 @@ func (cm *ConnManager) Start() {
 		for _, listener := range cm.cfg.Listeners {
 			// Declaring this variable is necessary as it needs be declared in the same
 			// scope of the anonymous function below it.
-			var l = listener
+			lst := listener
 			cm.wg.Add(1)
 			spawn(func() {
-				cm.listenHandler(l)
+				cm.listenHandler(lst)
 			}, cm.handlePanic)
 		}
 	}
