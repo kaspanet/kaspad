@@ -623,10 +623,13 @@ func (s *Server) Start() {
 
 	for _, listener := range s.cfg.Listeners {
 		s.wg.Add(1)
+		// Declaring this variable is necessary as it needs be declared in the same
+		// scope of the anonymous function below it.
+		var l = listener
 		spawn(func() {
-			log.Infof("RPC server listening on %s", listener.Addr())
-			httpServer.Serve(listener)
-			log.Tracef("RPC listener done for %s", listener.Addr())
+			log.Infof("RPC server listening on %s", l.Addr())
+			httpServer.Serve(l)
+			log.Tracef("RPC listener done for %s", l.Addr())
 			s.wg.Done()
 		})
 	}
