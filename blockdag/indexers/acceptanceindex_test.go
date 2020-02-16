@@ -298,13 +298,23 @@ func copyDirectory(scrDir, dest string) error {
 // This function is copied and modified from this stackoverflow answer: https://stackoverflow.com/a/56314145/2413761
 func copyFile(srcFile, dstFile string) error {
 	out, err := os.Create(dstFile)
-	defer out.Close()
+	defer func() {
+		err := out.Close()
+		if err != nil {
+			panic(errors.Wrapf(err, "couldn't close destination file"))
+		}
+	}()
 	if err != nil {
 		return err
 	}
 
 	in, err := os.Open(srcFile)
-	defer in.Close()
+	defer func() {
+		err := in.Close()
+		if err != nil {
+			panic(errors.Wrapf(err, "couldn't close source file"))
+		}
+	}()
 	if err != nil {
 		return err
 	}

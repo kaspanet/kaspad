@@ -79,15 +79,6 @@ var activeConfig *Config
 // to parse and execute service commands specified via the -s flag.
 var RunServiceCommand func(string) error
 
-// minUint32 is a helper function to return the minimum of two uint32s.
-// This avoids a math import and the need to cast to floats.
-func minUint32(a, b uint32) uint32 {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 // Flags defines the configuration options for kaspad.
 //
 // See loadConfig for details on the configuration load process.
@@ -591,7 +582,7 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// Disallow 0 and negative min tx fees.
-	if activeConfig.MinRelayTxFee <= 0 {
+	if activeConfig.MinRelayTxFee == 0 {
 		str := "%s: The minrelaytxfee option must be greater than 0 -- parsed [%d]"
 		err := errors.Errorf(str, funcName, activeConfig.MinRelayTxFee)
 		fmt.Fprintln(os.Stderr, err)

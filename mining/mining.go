@@ -288,6 +288,9 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, extraNonce 
 
 		return g.buildUTXOCommitment(msgBlock.Transactions)
 	}()
+	if err != nil {
+		return err
+	}
 
 	msgBlock.Header.UTXOCommitment = utxoCommitment
 

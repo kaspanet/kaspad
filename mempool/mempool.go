@@ -148,8 +148,6 @@ type TxPool struct {
 	orphans       map[daghash.TxID]*orphanTx
 	orphansByPrev map[wire.Outpoint]map[daghash.TxID]*util.Tx
 	outpoints     map[wire.Outpoint]*util.Tx
-	pennyTotal    float64 // exponentially decaying total for penny spends.
-	lastPennyUnix int64   // unix time of last ``penny spend''
 
 	// nextExpireScan is the time after which the orphan pool will be
 	// scanned in order to evict orphans. This is NOT a hard deadline as

@@ -8,6 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
 	"os"
 )
 
@@ -53,6 +54,9 @@ func parsePrivateKey(privateKeyHex string) (*ecc.PrivateKey, error) {
 
 func parseTransaction(transactionHex string) (*wire.MsgTx, error) {
 	serializedTx, err := hex.DecodeString(transactionHex)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
 	var transaction wire.MsgTx
 	err = transaction.Deserialize(bytes.NewReader(serializedTx))
 	return &transaction, err
@@ -60,6 +64,9 @@ func parseTransaction(transactionHex string) (*wire.MsgTx, error) {
 
 func createScriptPubKey(publicKey *ecc.PublicKey) ([]byte, error) {
 	p2pkhAddress, err := util.NewAddressPubKeyHashFromPublicKey(publicKey.SerializeCompressed(), ActiveConfig().NetParams().Prefix)
+	if err != nil {
+		return nil, err
+	}
 	scriptPubKey, err := txscript.PayToAddrScript(p2pkhAddress)
 	return scriptPubKey, err
 }

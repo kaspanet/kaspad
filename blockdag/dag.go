@@ -230,9 +230,7 @@ func (dag *BlockDAG) GetOrphanMissingAncestorHashes(orphanHash *daghash.Hash) ([
 			visited[*current] = true
 			orphan, orphanExists := dag.orphans[*current]
 			if orphanExists {
-				for _, parentHash := range orphan.block.MsgBlock().Header.ParentHashes {
-					queue = append(queue, parentHash)
-				}
+				queue = append(queue, orphan.block.MsgBlock().Header.ParentHashes...)
 			} else {
 				if !dag.IsInDAG(current) && current != orphanHash {
 					missingAncestorsHashes = append(missingAncestorsHashes, current)
@@ -1755,8 +1753,7 @@ func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash, maxHeaders uint64) ([
 
 	visited := newSet()
 	for i := uint32(0); queue.Len() > 0 && uint64(len(headers)) < maxHeaders; i++ {
-		var current *blockNode
-		current = queue.pop()
+		current := queue.pop()
 		if !visited.contains(current) {
 			visited.add(current)
 			headers = append(headers, current.Header())

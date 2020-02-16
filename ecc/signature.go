@@ -14,12 +14,6 @@ import (
 	"math/big"
 )
 
-// Errors returned by canonicalPadding.
-var (
-	errNegativeValue          = errors.New("value may be interpreted as negative")
-	errExcessivelyPaddedValue = errors.New("value is excessively padded")
-)
-
 // Signature is a type representing a Schnorr signature.
 type Signature struct {
 	R *big.Int

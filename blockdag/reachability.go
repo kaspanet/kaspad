@@ -305,9 +305,7 @@ func (rtn *reachabilityTreeNode) countSubtrees(subTreeSizeMap map[*reachabilityT
 			// We haven't yet calculated the subtree size of
 			// the current node. Add all its children to the
 			// queue
-			for _, child := range current.children {
-				queue = append(queue, child)
-			}
+			queue = append(queue, current.children...)
 			continue
 		}
 

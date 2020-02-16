@@ -53,16 +53,10 @@ func parseConfig() (*ConfigFlags, error) {
 		return nil, err
 	}
 
-	if activeConfig.GasLimit < 0 {
-		return nil, errors.Errorf("gaslimit may not be smaller than 0")
-	}
 	if activeConfig.GasLimit == 0 {
 		activeConfig.GasLimit = defaultSubnetworkGasLimit
 	}
 
-	if activeConfig.RegistryTxFee < 0 {
-		return nil, errors.Errorf("regtxfee may not be smaller than 0")
-	}
 	if activeConfig.RegistryTxFee == 0 {
 		activeConfig.RegistryTxFee = defaultRegistryTxFee
 	}

@@ -37,16 +37,6 @@ const (
 	// must be less than 2^32 (4 GiB). This is also why it's a typed
 	// constant.
 	maxBlockFileSize uint32 = 512 * 1024 * 1024 // 512 MiB
-
-	// blockLocSize is the number of bytes the serialized block location
-	// data that is stored in the block index.
-	//
-	// The serialized block location format is:
-	//
-	//  [0:4]  Block file (4 bytes)
-	//  [4:8]  File offset (4 bytes)
-	//  [8:12] Block length (4 bytes)
-	blockLocSize = 12
 )
 
 var (

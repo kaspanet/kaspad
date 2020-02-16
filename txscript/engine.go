@@ -7,9 +7,6 @@ package txscript
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/logger"
-	"math/big"
-
-	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/wire"
 )
 
@@ -38,9 +35,6 @@ const (
 	// MaxScriptSize is the maximum allowed length of a raw script.
 	MaxScriptSize = 10000
 )
-
-// halforder is used to tame ECDSA malleability (see BIP0062).
-var halfOrder = new(big.Int).Rsh(ecc.S256().N, 1)
 
 // Engine is the virtual machine that executes scripts.
 type Engine struct {

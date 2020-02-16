@@ -420,9 +420,6 @@ type Peer struct {
 	prevGetBlockInvsMtx  sync.Mutex
 	prevGetBlockInvsLow  *daghash.Hash
 	prevGetBlockInvsHigh *daghash.Hash
-	prevGetHdrsMtx       sync.Mutex
-	prevGetHdrsLow       *daghash.Hash
-	prevGetHdrsHigh      *daghash.Hash
 
 	// These fields keep track of statistics for the peer and are protected
 	// by the statsMtx mutex.

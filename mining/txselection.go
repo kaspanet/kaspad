@@ -254,7 +254,7 @@ func (g *BlkTmplGenerator) populateTemplateFromCandidates(candidateTxs []*candid
 
 		// If isMarkedForDeletion is set, it means we got a collision.
 		// Ignore and select another Tx.
-		if selectedTx.isMarkedForDeletion == true {
+		if selectedTx.isMarkedForDeletion {
 			continue
 		}
 		tx := selectedTx.txDesc.Tx

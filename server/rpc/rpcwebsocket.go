@@ -345,36 +345,6 @@ func (f *wsClientFilter) existsAddress(a util.Address) bool {
 	return ok
 }
 
-// removeAddress removes the passed address, if it exists, from the
-// wsClientFilter.
-//
-// NOTE: This extension was ported from github.com/decred/dcrd
-func (f *wsClientFilter) removeAddress(a util.Address) {
-	switch a := a.(type) {
-	case *util.AddressPubKeyHash:
-		delete(f.pubKeyHashes, *a.Hash160())
-		return
-	case *util.AddressScriptHash:
-		delete(f.scriptHashes, *a.Hash160())
-		return
-	}
-
-	delete(f.otherAddresses, a.EncodeAddress())
-}
-
-// removeAddressStr parses an address from a string and then removes it from the
-// wsClientFilter using removeAddress.
-//
-// NOTE: This extension was ported from github.com/decred/dcrd
-func (f *wsClientFilter) removeAddressStr(s string, params *dagconfig.Params) {
-	a, err := util.DecodeAddress(s, params.Prefix)
-	if err == nil {
-		f.removeAddress(a)
-	} else {
-		delete(f.otherAddresses, s)
-	}
-}
-
 // addUnspentOutpoint adds an outpoint to the wsClientFilter.
 //
 // NOTE: This extension was ported from github.com/decred/dcrd
@@ -389,14 +359,6 @@ func (f *wsClientFilter) addUnspentOutpoint(op *wire.Outpoint) {
 func (f *wsClientFilter) existsUnspentOutpoint(op *wire.Outpoint) bool {
 	_, ok := f.unspent[*op]
 	return ok
-}
-
-// removeUnspentOutpoint removes the passed outpoint, if it exists, from the
-// wsClientFilter.
-//
-// NOTE: This extension was ported from github.com/decred/dcrd
-func (f *wsClientFilter) removeUnspentOutpoint(op *wire.Outpoint) {
-	delete(f.unspent, *op)
 }
 
 // Notification types
