@@ -1,8 +1,4 @@
-// Copyright (c) 2014 The btcsuite developers
-// Use of this source code is governed by an ISC
-// license that can be found in the LICENSE file.
-
-package rpcmodel
+package copytopointer
 
 // Bool is a helper routine that allocates a new bool value to store v and
 // returns a pointer to it. This is useful when assigning optional parameters.

@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"github.com/kaspanet/kaspad/util/copytopointer"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 
@@ -31,7 +32,7 @@ func (r FutureAddNodeResult) Receive() error {
 //
 // See AddNode for the blocking version and more details.
 func (c *Client) AddManualNodeAsync(host string) FutureAddNodeResult {
-	cmd := rpcmodel.NewAddManualNodeCmd(host, rpcmodel.Bool(false))
+	cmd := rpcmodel.NewAddManualNodeCmd(host, copytopointer.Bool(false))
 	return c.sendCmd(cmd)
 }
 
@@ -112,7 +113,7 @@ func (r FutureGetManualNodeInfoNoDNSResult) Receive() ([]string, error) {
 //
 // See GetManualNodeInfoNoDNS for the blocking version and more details.
 func (c *Client) GetManualNodeInfoNoDNSAsync(peer string) FutureGetManualNodeInfoNoDNSResult {
-	cmd := rpcmodel.NewGetManualNodeInfoCmd(peer, rpcmodel.Bool(false))
+	cmd := rpcmodel.NewGetManualNodeInfoCmd(peer, copytopointer.Bool(false))
 	return c.sendCmd(cmd)
 }
 
@@ -349,7 +350,7 @@ func (r FutureGetSelectedTipResult) Receive() (*wire.MsgBlock, error) {
 //
 // See GetSelectedTip for the blocking version and more details.
 func (c *Client) GetSelectedTipAsync() FutureGetSelectedTipResult {
-	cmd := rpcmodel.NewGetSelectedTipCmd(rpcmodel.Bool(false), rpcmodel.Bool(false))
+	cmd := rpcmodel.NewGetSelectedTipCmd(copytopointer.Bool(false), copytopointer.Bool(false))
 	return c.sendCmd(cmd)
 }
 
@@ -385,7 +386,7 @@ func (r FutureGetSelectedTipVerboseResult) Receive() (*rpcmodel.GetBlockVerboseR
 //
 // See GeSelectedTipBlockVerbose for the blocking version and more details.
 func (c *Client) GetSelectedTipVerboseAsync() FutureGetSelectedTipVerboseResult {
-	cmd := rpcmodel.NewGetSelectedTipCmd(rpcmodel.Bool(true), rpcmodel.Bool(false))
+	cmd := rpcmodel.NewGetSelectedTipCmd(copytopointer.Bool(true), copytopointer.Bool(false))
 	return c.sendCmd(cmd)
 }
 
@@ -467,7 +468,7 @@ func (r FutureGetHeadersResult) Receive() ([]wire.BlockHeader, error) {
 func (c *Client) GetTopHeadersAsync(highHash *daghash.Hash) FutureGetHeadersResult {
 	var hash *string
 	if highHash != nil {
-		hash = rpcmodel.String(highHash.String())
+		hash = copytopointer.String(highHash.String())
 	}
 	cmd := rpcmodel.NewGetTopHeadersCmd(hash)
 	return c.sendCmd(cmd)

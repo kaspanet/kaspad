@@ -6,6 +6,7 @@ package rpcmodel_test
 
 import (
 	"encoding/json"
+	"github.com/kaspanet/kaspad/util/copytopointer"
 	"testing"
 
 	"github.com/kaspanet/kaspad/rpcmodel"
@@ -53,7 +54,7 @@ func TestRPCServerCustomResults(t *testing.T) {
 					Hex: "00",
 				},
 				PrevOut: &rpcmodel.PrevOut{
-					Address: rpcmodel.String("addr1"),
+					Address: copytopointer.String("addr1"),
 					Value:   0,
 				},
 				Sequence: 4294967295,

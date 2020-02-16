@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/copytopointer"
 )
 
 // handleDecodeScript handles decodeScript commands.
@@ -32,7 +33,7 @@ func handleDecodeScript(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 		s.cfg.DAGParams)
 	var address *string
 	if addr != nil {
-		address = rpcmodel.String(addr.EncodeAddress())
+		address = copytopointer.String(addr.EncodeAddress())
 	}
 
 	// Convert the script itself to a pay-to-script-hash address.

@@ -8,6 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/copytopointer"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
@@ -110,7 +111,7 @@ func createVoutList(mtx *wire.MsgTx, dagParams *dagconfig.Params, filterAddrMap 
 		passesFilter := len(filterAddrMap) == 0
 		var encodedAddr *string
 		if addr != nil {
-			encodedAddr = rpcmodel.String(addr.EncodeAddress())
+			encodedAddr = copytopointer.String(addr.EncodeAddress())
 
 			// If the filter doesn't already pass, make it pass if
 			// the address exists in the filter.
@@ -177,7 +178,7 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 	txReply.Confirmations = confirmations
 	txReply.IsInMempool = isInMempool
 	if acceptingBlock != nil {
-		txReply.AcceptedBy = rpcmodel.String(acceptingBlock.String())
+		txReply.AcceptedBy = copytopointer.String(acceptingBlock.String())
 	}
 
 	return txReply, nil
