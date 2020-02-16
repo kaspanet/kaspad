@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/kaspanet/kaspad/rpcclient"
@@ -20,6 +21,7 @@ import (
 )
 
 var random = rand.New(rand.NewSource(time.Now().UnixNano()))
+var hashesTried uint64
 
 func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64) error {
 	errChan := make(chan error)
@@ -48,6 +50,19 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64) err
 		}
 		wg.Wait()
 		doneChan <- struct{}{}
+	})
+
+	spawn(func() {
+		lastCheck := time.Now()
+		for range time.Tick(time.Second) {
+			currentHashesTried := hashesTried
+			currentTime := time.Now()
+			hashRate := float64(currentHashesTried) / currentTime.Sub(lastCheck).Seconds()
+			log.Infof("Current hash rate is %.2f hashes per second", hashRate)
+			lastCheck = currentTime
+			// subtract from hashesTried the hashes we already sampled
+			atomic.AddUint64(&hashesTried, -currentHashesTried)
+		}
 	})
 
 	select {
@@ -131,6 +146,7 @@ func solveBlock(block *util.Block, stopChan chan struct{}, foundBlock chan *util
 		default:
 			msgBlock.Header.Nonce = i
 			hash := msgBlock.BlockHash()
+			atomic.AddUint64(&hashesTried, 1)
 			if daghash.HashToBig(hash).Cmp(targetDifficulty) <= 0 {
 				foundBlock <- block
 				return
