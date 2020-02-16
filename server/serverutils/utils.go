@@ -7,22 +7,8 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/connmgr"
-	"github.com/kaspanet/kaspad/peer"
 	"github.com/kaspanet/kaspad/util"
 )
-
-// Peer extends the peer to maintain state shared by the server and
-// the blockmanager.
-type Peer struct {
-	*peer.Peer
-
-	// The following variables must only be used atomically
-	FeeFilter int64
-
-	DynamicBanScore connmgr.DynamicBanScore
-	DisableRelayTx  bool
-}
 
 // KaspadLookup resolves the IP of the given host using the correct DNS lookup
 // function depending on the configuration options.

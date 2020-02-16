@@ -833,16 +833,6 @@ func (dag *BlockDAG) NextBlockCoinbaseTransactionNoLock(scriptPubKey []byte, ext
 	return dag.virtual.blockNode.expectedCoinbaseTransaction(dag, txsAcceptanceData, scriptPubKey, extraData)
 }
 
-// NextAcceptedIDMerkleRoot prepares the acceptedIDMerkleRoot for the next mined block
-//
-// This function CAN'T be called with the DAG lock held.
-func (dag *BlockDAG) NextAcceptedIDMerkleRoot() (*daghash.Hash, error) {
-	dag.dagLock.RLock()
-	defer dag.dagLock.RUnlock()
-
-	return dag.NextAcceptedIDMerkleRootNoLock()
-}
-
 // NextAcceptedIDMerkleRootNoLock prepares the acceptedIDMerkleRoot for the next mined block
 //
 // This function MUST be called with the DAG read-lock held
@@ -873,18 +863,6 @@ func (dag *BlockDAG) TxsAcceptedByBlockHash(blockHash *daghash.Hash) (MultiBlock
 	}
 	_, txsAcceptanceData, err := dag.pastUTXO(node)
 	return txsAcceptanceData, err
-}
-
-// BlockPastUTXO retrieves the past UTXO of this block
-//
-// This function MUST be called with the DAG read-lock held
-func (dag *BlockDAG) BlockPastUTXO(blockHash *daghash.Hash) (UTXOSet, error) {
-	node := dag.index.LookupNode(blockHash)
-	if node == nil {
-		return nil, errors.Errorf("Couldn't find block %s", blockHash)
-	}
-	pastUTXO, _, err := dag.pastUTXO(node)
-	return pastUTXO, err
 }
 
 // applyDAGChanges does the following:

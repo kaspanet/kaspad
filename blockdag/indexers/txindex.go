@@ -316,44 +316,6 @@ func (idx *TxIndex) TxFirstBlockRegion(txID *daghash.TxID) (*database.BlockRegio
 	return region, err
 }
 
-// TxBlocks returns the hashes of the blocks where the transaction exists
-func (idx *TxIndex) TxBlocks(txHash *daghash.Hash) ([]*daghash.Hash, error) {
-	blockHashes := make([]*daghash.Hash, 0)
-	err := idx.db.View(func(dbTx database.Tx) error {
-		var err error
-		blockHashes, err = dbFetchTxBlocks(dbTx, txHash)
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-	return blockHashes, err
-}
-
-func dbFetchTxBlocks(dbTx database.Tx, txHash *daghash.Hash) ([]*daghash.Hash, error) {
-	blockHashes := make([]*daghash.Hash, 0)
-	bucket := dbTx.Metadata().Bucket(includingBlocksIndexKey).Bucket(txHash[:])
-	if bucket == nil {
-		return nil, database.Error{
-			ErrorCode: database.ErrCorruption,
-			Description: fmt.Sprintf("No including blocks "+
-				"were found for %s", txHash),
-		}
-	}
-	err := bucket.ForEach(func(serializedBlockID, _ []byte) error {
-		blockHash, err := blockdag.DBFetchBlockHashBySerializedID(dbTx, serializedBlockID)
-		if err != nil {
-			return err
-		}
-		blockHashes = append(blockHashes, blockHash)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return blockHashes, nil
-}
-
 // BlockThatAcceptedTx returns the hash of the block where the transaction got accepted (from the virtual block point of view)
 func (idx *TxIndex) BlockThatAcceptedTx(dag *blockdag.BlockDAG, txID *daghash.TxID) (*daghash.Hash, error) {
 	var acceptingBlock *daghash.Hash

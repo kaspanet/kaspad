@@ -297,16 +297,6 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, extraNonce 
 	return nil
 }
 
-// VirtualBlueScore returns the virtual block's current blue score
-func (g *BlkTmplGenerator) VirtualBlueScore() uint64 {
-	return g.dag.VirtualBlueScore()
-}
-
-// TipHashes returns the hashes of the DAG's tips
-func (g *BlkTmplGenerator) TipHashes() []*daghash.Hash {
-	return g.dag.TipHashes()
-}
-
 // TxSource returns the associated transaction source.
 //
 // This function is safe for concurrent access.

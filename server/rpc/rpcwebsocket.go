@@ -722,11 +722,7 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 
 		// Third, build again, now with the modified mtx, for a Partial version
 		marshalledJSONVerbosePartial, ok = build()
-		if !ok {
-			return false
-		}
-
-		return true
+		return ok
 	}
 
 	for _, wsc := range clients {
