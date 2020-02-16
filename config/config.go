@@ -218,6 +218,12 @@ func ActiveConfig() *Config {
 	return activeConfig
 }
 
+// SetActiveConfig sets the active config
+// to the given config.
+func SetActiveConfig(cfg *Config) {
+	activeConfig = cfg
+}
+
 // loadConfig initializes and parses the config using a config file and command
 // line options.
 //
