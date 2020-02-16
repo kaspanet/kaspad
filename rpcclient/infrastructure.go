@@ -864,8 +864,10 @@ func (c *Client) sendRequest(data *jsonRequestData) chan *response {
 	})
 	if cancelOnTimeout {
 		spawn(func() {
+			ticker := time.NewTicker(c.config.RequestTimeout)
+			defer ticker.Stop()
 			select {
-			case <-time.Tick(c.config.RequestTimeout):
+			case <-ticker.C:
 				responseChan <- &response{err: errors.WithStack(ErrResponseTimedOut)}
 			case resp := <-jReq.responseChan:
 				responseChan <- resp
