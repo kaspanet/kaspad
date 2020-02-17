@@ -73,7 +73,7 @@ func TestFinality(t *testing.T) {
 	currentNode := genesis
 
 	// First we build a chain of params.FinalityInterval blocks for future use
-	for i := 0; i < params.FinalityInterval; i++ {
+	for i := uint64(0); i < params.FinalityInterval; i++ {
 		currentNode, err = buildNodeToDag([]*daghash.Hash{currentNode.Hash()})
 		if err != nil {
 			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
@@ -85,7 +85,7 @@ func TestFinality(t *testing.T) {
 	// Now we build a new chain of 2 * params.FinalityInterval blocks, pointed to genesis, and
 	// we expect the block with height 1 * params.FinalityInterval to be the last finality point
 	currentNode = genesis
-	for i := 0; i < params.FinalityInterval; i++ {
+	for i := uint64(0); i < params.FinalityInterval; i++ {
 		currentNode, err = buildNodeToDag([]*daghash.Hash{currentNode.Hash()})
 		if err != nil {
 			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
@@ -94,7 +94,7 @@ func TestFinality(t *testing.T) {
 
 	expectedFinalityPoint := currentNode
 
-	for i := 0; i < params.FinalityInterval; i++ {
+	for i := uint64(0); i < params.FinalityInterval; i++ {
 		currentNode, err = buildNodeToDag([]*daghash.Hash{currentNode.Hash()})
 		if err != nil {
 			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
@@ -166,9 +166,17 @@ func TestFinality(t *testing.T) {
 // a getblocks message it should always be able to send
 // all the necessary invs.
 func TestFinalityInterval(t *testing.T) {
-	params := dagconfig.SimnetParams
-	if params.FinalityInterval > wire.MaxInvPerMsg {
-		t.Errorf("dagconfig.SimnetParams.FinalityInterval should be lower or equal to wire.MaxInvPerMsg")
+	netParams := []*dagconfig.Params{
+		&dagconfig.MainnetParams,
+		&dagconfig.TestnetParams,
+		&dagconfig.DevnetParams,
+		&dagconfig.RegressionNetParams,
+		&dagconfig.SimnetParams,
+	}
+	for _, params := range netParams {
+		if params.FinalityInterval > wire.MaxInvPerMsg {
+			t.Errorf("FinalityInterval in %s should be lower or equal to wire.MaxInvPerMsg", params.Name)
+		}
 	}
 }
 

@@ -926,7 +926,7 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 	nodes := make([]*blockNode, 0, finalityInterval)
 	currentNode := dag.genesis
 	nodes = append(nodes, currentNode)
-	for i := 0; i <= finalityInterval*2; i++ {
+	for i := uint64(0); i <= finalityInterval*2; i++ {
 		currentNode = addNode(currentNode)
 		nodes = append(nodes, currentNode)
 	}
@@ -1071,5 +1071,20 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	}
 	if invalidBlockGrandChildNode.status&statusInvalidAncestor != statusInvalidAncestor {
 		t.Fatalf("invalidBlockGrandChildNode status to have %b flags raised (got %b)", statusInvalidAncestor, invalidBlockGrandChildNode.status)
+	}
+}
+
+func TestIsDAGCurrentMaxDiff(t *testing.T) {
+	netParams := []*dagconfig.Params{
+		&dagconfig.MainnetParams,
+		&dagconfig.TestnetParams,
+		&dagconfig.DevnetParams,
+		&dagconfig.RegressionNetParams,
+		&dagconfig.SimnetParams,
+	}
+	for _, params := range netParams {
+		if params.TargetTimePerBlock*time.Duration(params.FinalityInterval) < isDAGCurrentMaxDiff {
+			t.Errorf("in %s, a DAG can be considered current even if it's below the finality point", params.Name)
+		}
 	}
 }
