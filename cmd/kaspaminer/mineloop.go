@@ -57,8 +57,9 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64) err
 		for range time.Tick(time.Second) {
 			currentHashesTried := hashesTried
 			currentTime := time.Now()
-			hashRate := float64(currentHashesTried) / currentTime.Sub(lastCheck).Seconds()
-			log.Infof("Current hash rate is %.2f hashes per second", hashRate)
+			kiloHashesTried := float64(currentHashesTried) / 1000.0
+			hashRate := kiloHashesTried / currentTime.Sub(lastCheck).Seconds()
+			log.Infof("Current hash rate is %.2f Khash/s", hashRate)
 			lastCheck = currentTime
 			// subtract from hashesTried the hashes we already sampled
 			atomic.AddUint64(&hashesTried, -currentHashesTried)
