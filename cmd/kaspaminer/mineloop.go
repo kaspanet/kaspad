@@ -54,7 +54,7 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64) err
 
 	spawn(func() {
 		lastCheck := time.Now()
-		for range time.Tick(time.Second) {
+		for range time.Tick(10 * time.Second) {
 			currentHashesTried := hashesTried
 			currentTime := time.Now()
 			kiloHashesTried := float64(currentHashesTried) / 1000.0
