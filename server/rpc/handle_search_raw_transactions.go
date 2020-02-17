@@ -9,8 +9,8 @@ import (
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/copytopointer"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/pointers"
 	"github.com/kaspanet/kaspad/wire"
 )
 
@@ -352,7 +352,7 @@ func createVinListPrevOut(s *Server, mtx *wire.MsgTx, dagParams *dagconfig.Param
 		if addr != nil {
 			// Encode the address while checking if the address passes the
 			// filter when needed.
-			encodedAddr = copytopointer.String(addr.EncodeAddress())
+			encodedAddr = pointers.String(addr.EncodeAddress())
 
 			// If the filter doesn't already pass, make it pass if
 			// the address exists in the filter.

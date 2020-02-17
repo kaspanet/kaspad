@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/kaspanet/kaspad/util/copytopointer"
+	"github.com/kaspanet/kaspad/util/pointers"
 	"reflect"
 	"testing"
 
@@ -40,7 +40,7 @@ func TestRPCServerCommands(t *testing.T) {
 				return rpcmodel.NewAddManualNodeCmd("127.0.0.1", nil)
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"addManualNode","params":["127.0.0.1"],"id":1}`,
-			unmarshalled: &rpcmodel.AddManualNodeCmd{Addr: "127.0.0.1", OneTry: copytopointer.Bool(false)},
+			unmarshalled: &rpcmodel.AddManualNodeCmd{Addr: "127.0.0.1", OneTry: pointers.Bool(false)},
 		},
 		{
 			name: "createRawTransaction",
@@ -72,13 +72,13 @@ func TestRPCServerCommands(t *testing.T) {
 					{TxID: "123", Vout: 1},
 				}
 				amounts := map[string]float64{"456": .0123}
-				return rpcmodel.NewCreateRawTransactionCmd(txInputs, amounts, copytopointer.Uint64(12312333333))
+				return rpcmodel.NewCreateRawTransactionCmd(txInputs, amounts, pointers.Uint64(12312333333))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"createRawTransaction","params":[[{"txId":"123","vout":1}],{"456":0.0123},12312333333],"id":1}`,
 			unmarshalled: &rpcmodel.CreateRawTransactionCmd{
 				Inputs:   []rpcmodel.TransactionInput{{TxID: "123", Vout: 1}},
 				Amounts:  map[string]float64{"456": .0123},
-				LockTime: copytopointer.Uint64(12312333333),
+				LockTime: pointers.Uint64(12312333333),
 			},
 		},
 
@@ -113,7 +113,7 @@ func TestRPCServerCommands(t *testing.T) {
 				return rpcmodel.NewGetAllManualNodesInfoCmd(nil)
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"getAllManualNodesInfo","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetAllManualNodesInfoCmd{Details: copytopointer.Bool(true)},
+			unmarshalled: &rpcmodel.GetAllManualNodesInfoCmd{Details: pointers.Bool(true)},
 		},
 		{
 			name: "getSelectedTipHash",
@@ -137,8 +137,8 @@ func TestRPCServerCommands(t *testing.T) {
 			marshalled: `{"jsonrpc":"1.0","method":"getBlock","params":["123"],"id":1}`,
 			unmarshalled: &rpcmodel.GetBlockCmd{
 				Hash:      "123",
-				Verbose:   copytopointer.Bool(true),
-				VerboseTx: copytopointer.Bool(false),
+				Verbose:   pointers.Bool(true),
+				VerboseTx: pointers.Bool(false),
 			},
 		},
 		{
@@ -147,17 +147,17 @@ func TestRPCServerCommands(t *testing.T) {
 				// Intentionally use a source param that is
 				// more pointers than the destination to
 				// exercise that path.
-				verbosePtr := copytopointer.Bool(true)
+				verbosePtr := pointers.Bool(true)
 				return rpcmodel.NewCommand("getBlock", "123", &verbosePtr)
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetBlockCmd("123", copytopointer.Bool(true), nil, nil)
+				return rpcmodel.NewGetBlockCmd("123", pointers.Bool(true), nil, nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getBlock","params":["123",true],"id":1}`,
 			unmarshalled: &rpcmodel.GetBlockCmd{
 				Hash:      "123",
-				Verbose:   copytopointer.Bool(true),
-				VerboseTx: copytopointer.Bool(false),
+				Verbose:   pointers.Bool(true),
+				VerboseTx: pointers.Bool(false),
 			},
 		},
 		{
@@ -166,13 +166,13 @@ func TestRPCServerCommands(t *testing.T) {
 				return rpcmodel.NewCommand("getBlock", "123", true, true)
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetBlockCmd("123", copytopointer.Bool(true), copytopointer.Bool(true), nil)
+				return rpcmodel.NewGetBlockCmd("123", pointers.Bool(true), pointers.Bool(true), nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getBlock","params":["123",true,true],"id":1}`,
 			unmarshalled: &rpcmodel.GetBlockCmd{
 				Hash:      "123",
-				Verbose:   copytopointer.Bool(true),
-				VerboseTx: copytopointer.Bool(true),
+				Verbose:   pointers.Bool(true),
+				VerboseTx: pointers.Bool(true),
 			},
 		},
 		{
@@ -181,14 +181,14 @@ func TestRPCServerCommands(t *testing.T) {
 				return rpcmodel.NewCommand("getBlock", "123", true, true, "456")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetBlockCmd("123", copytopointer.Bool(true), copytopointer.Bool(true), copytopointer.String("456"))
+				return rpcmodel.NewGetBlockCmd("123", pointers.Bool(true), pointers.Bool(true), pointers.String("456"))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getBlock","params":["123",true,true,"456"],"id":1}`,
 			unmarshalled: &rpcmodel.GetBlockCmd{
 				Hash:       "123",
-				Verbose:    copytopointer.Bool(true),
-				VerboseTx:  copytopointer.Bool(true),
-				Subnetwork: copytopointer.String("456"),
+				Verbose:    pointers.Bool(true),
+				VerboseTx:  pointers.Bool(true),
+				Subnetwork: pointers.String("456"),
 			},
 		},
 		{
@@ -197,13 +197,13 @@ func TestRPCServerCommands(t *testing.T) {
 				return rpcmodel.NewCommand("getBlocks", true, true, "123")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetBlocksCmd(true, true, copytopointer.String("123"))
+				return rpcmodel.NewGetBlocksCmd(true, true, pointers.String("123"))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getBlocks","params":[true,true,"123"],"id":1}`,
 			unmarshalled: &rpcmodel.GetBlocksCmd{
 				IncludeRawBlockData:     true,
 				IncludeVerboseBlockData: true,
-				LowHash:                 copytopointer.String("123"),
+				LowHash:                 pointers.String("123"),
 			},
 		},
 		{
@@ -239,7 +239,7 @@ func TestRPCServerCommands(t *testing.T) {
 			marshalled: `{"jsonrpc":"1.0","method":"getBlockHeader","params":["123"],"id":1}`,
 			unmarshalled: &rpcmodel.GetBlockHeaderCmd{
 				Hash:    "123",
-				Verbose: copytopointer.Bool(true),
+				Verbose: pointers.Bool(true),
 			},
 		},
 		{
@@ -331,12 +331,12 @@ func TestRPCServerCommands(t *testing.T) {
 				return rpcmodel.NewCommand("getChainFromBlock", true, "123")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetChainFromBlockCmd(true, copytopointer.String("123"))
+				return rpcmodel.NewGetChainFromBlockCmd(true, pointers.String("123"))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getChainFromBlock","params":[true,"123"],"id":1}`,
 			unmarshalled: &rpcmodel.GetChainFromBlockCmd{
 				IncludeBlocks: true,
-				StartHash:     copytopointer.String("123"),
+				StartHash:     pointers.String("123"),
 			},
 		},
 		{
@@ -394,7 +394,7 @@ func TestRPCServerCommands(t *testing.T) {
 			marshalled: `{"jsonrpc":"1.0","method":"getManualNodeInfo","params":["127.0.0.1"],"id":1}`,
 			unmarshalled: &rpcmodel.GetManualNodeInfoCmd{
 				Node:    "127.0.0.1",
-				Details: copytopointer.Bool(true),
+				Details: pointers.Bool(true),
 			},
 		},
 		{
@@ -464,7 +464,7 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getRawMempool","params":[],"id":1}`,
 			unmarshalled: &rpcmodel.GetRawMempoolCmd{
-				Verbose: copytopointer.Bool(false),
+				Verbose: pointers.Bool(false),
 			},
 		},
 		{
@@ -473,11 +473,11 @@ func TestRPCServerCommands(t *testing.T) {
 				return rpcmodel.NewCommand("getRawMempool", false)
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetRawMempoolCmd(copytopointer.Bool(false))
+				return rpcmodel.NewGetRawMempoolCmd(pointers.Bool(false))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getRawMempool","params":[false],"id":1}`,
 			unmarshalled: &rpcmodel.GetRawMempoolCmd{
-				Verbose: copytopointer.Bool(false),
+				Verbose: pointers.Bool(false),
 			},
 		},
 		{
@@ -491,7 +491,7 @@ func TestRPCServerCommands(t *testing.T) {
 			marshalled: `{"jsonrpc":"1.0","method":"getRawTransaction","params":["123"],"id":1}`,
 			unmarshalled: &rpcmodel.GetRawTransactionCmd{
 				TxID:    "123",
-				Verbose: copytopointer.Int(0),
+				Verbose: pointers.Int(0),
 			},
 		},
 		{
@@ -500,12 +500,12 @@ func TestRPCServerCommands(t *testing.T) {
 				return rpcmodel.NewCommand("getRawTransaction", "123", 1)
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetRawTransactionCmd("123", copytopointer.Int(1))
+				return rpcmodel.NewGetRawTransactionCmd("123", pointers.Int(1))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getRawTransaction","params":["123",1],"id":1}`,
 			unmarshalled: &rpcmodel.GetRawTransactionCmd{
 				TxID:    "123",
-				Verbose: copytopointer.Int(1),
+				Verbose: pointers.Int(1),
 			},
 		},
 		{
@@ -533,7 +533,7 @@ func TestRPCServerCommands(t *testing.T) {
 			unmarshalled: &rpcmodel.GetTxOutCmd{
 				TxID:           "123",
 				Vout:           1,
-				IncludeMempool: copytopointer.Bool(true),
+				IncludeMempool: pointers.Bool(true),
 			},
 		},
 		{
@@ -542,13 +542,13 @@ func TestRPCServerCommands(t *testing.T) {
 				return rpcmodel.NewCommand("getTxOut", "123", 1, true)
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetTxOutCmd("123", 1, copytopointer.Bool(true))
+				return rpcmodel.NewGetTxOutCmd("123", 1, pointers.Bool(true))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getTxOut","params":["123",1,true],"id":1}`,
 			unmarshalled: &rpcmodel.GetTxOutCmd{
 				TxID:           "123",
 				Vout:           1,
-				IncludeMempool: copytopointer.Bool(true),
+				IncludeMempool: pointers.Bool(true),
 			},
 		},
 		{
@@ -581,11 +581,11 @@ func TestRPCServerCommands(t *testing.T) {
 				return rpcmodel.NewCommand("help", "getBlock")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewHelpCmd(copytopointer.String("getBlock"))
+				return rpcmodel.NewHelpCmd(pointers.String("getBlock"))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"help","params":["getBlock"],"id":1}`,
 			unmarshalled: &rpcmodel.HelpCmd{
-				Command: copytopointer.String("getBlock"),
+				Command: pointers.String("getBlock"),
 			},
 		},
 		{
@@ -621,11 +621,11 @@ func TestRPCServerCommands(t *testing.T) {
 			marshalled: `{"jsonrpc":"1.0","method":"searchRawTransactions","params":["1Address"],"id":1}`,
 			unmarshalled: &rpcmodel.SearchRawTransactionsCmd{
 				Address:     "1Address",
-				Verbose:     copytopointer.Bool(true),
-				Skip:        copytopointer.Int(0),
-				Count:       copytopointer.Int(100),
-				VinExtra:    copytopointer.Bool(false),
-				Reverse:     copytopointer.Bool(false),
+				Verbose:     pointers.Bool(true),
+				Skip:        pointers.Int(0),
+				Count:       pointers.Int(100),
+				VinExtra:    pointers.Bool(false),
+				Reverse:     pointers.Bool(false),
 				FilterAddrs: nil,
 			},
 		},
@@ -636,16 +636,16 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 			staticCmd: func() interface{} {
 				return rpcmodel.NewSearchRawTransactionsCmd("1Address",
-					copytopointer.Bool(false), nil, nil, nil, nil, nil)
+					pointers.Bool(false), nil, nil, nil, nil, nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"searchRawTransactions","params":["1Address",false],"id":1}`,
 			unmarshalled: &rpcmodel.SearchRawTransactionsCmd{
 				Address:     "1Address",
-				Verbose:     copytopointer.Bool(false),
-				Skip:        copytopointer.Int(0),
-				Count:       copytopointer.Int(100),
-				VinExtra:    copytopointer.Bool(false),
-				Reverse:     copytopointer.Bool(false),
+				Verbose:     pointers.Bool(false),
+				Skip:        pointers.Int(0),
+				Count:       pointers.Int(100),
+				VinExtra:    pointers.Bool(false),
+				Reverse:     pointers.Bool(false),
 				FilterAddrs: nil,
 			},
 		},
@@ -656,16 +656,16 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 			staticCmd: func() interface{} {
 				return rpcmodel.NewSearchRawTransactionsCmd("1Address",
-					copytopointer.Bool(false), copytopointer.Int(5), nil, nil, nil, nil)
+					pointers.Bool(false), pointers.Int(5), nil, nil, nil, nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"searchRawTransactions","params":["1Address",false,5],"id":1}`,
 			unmarshalled: &rpcmodel.SearchRawTransactionsCmd{
 				Address:     "1Address",
-				Verbose:     copytopointer.Bool(false),
-				Skip:        copytopointer.Int(5),
-				Count:       copytopointer.Int(100),
-				VinExtra:    copytopointer.Bool(false),
-				Reverse:     copytopointer.Bool(false),
+				Verbose:     pointers.Bool(false),
+				Skip:        pointers.Int(5),
+				Count:       pointers.Int(100),
+				VinExtra:    pointers.Bool(false),
+				Reverse:     pointers.Bool(false),
 				FilterAddrs: nil,
 			},
 		},
@@ -676,16 +676,16 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 			staticCmd: func() interface{} {
 				return rpcmodel.NewSearchRawTransactionsCmd("1Address",
-					copytopointer.Bool(false), copytopointer.Int(5), copytopointer.Int(10), nil, nil, nil)
+					pointers.Bool(false), pointers.Int(5), pointers.Int(10), nil, nil, nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"searchRawTransactions","params":["1Address",false,5,10],"id":1}`,
 			unmarshalled: &rpcmodel.SearchRawTransactionsCmd{
 				Address:     "1Address",
-				Verbose:     copytopointer.Bool(false),
-				Skip:        copytopointer.Int(5),
-				Count:       copytopointer.Int(10),
-				VinExtra:    copytopointer.Bool(false),
-				Reverse:     copytopointer.Bool(false),
+				Verbose:     pointers.Bool(false),
+				Skip:        pointers.Int(5),
+				Count:       pointers.Int(10),
+				VinExtra:    pointers.Bool(false),
+				Reverse:     pointers.Bool(false),
 				FilterAddrs: nil,
 			},
 		},
@@ -696,16 +696,16 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 			staticCmd: func() interface{} {
 				return rpcmodel.NewSearchRawTransactionsCmd("1Address",
-					copytopointer.Bool(false), copytopointer.Int(5), copytopointer.Int(10), copytopointer.Bool(true), nil, nil)
+					pointers.Bool(false), pointers.Int(5), pointers.Int(10), pointers.Bool(true), nil, nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"searchRawTransactions","params":["1Address",false,5,10,true],"id":1}`,
 			unmarshalled: &rpcmodel.SearchRawTransactionsCmd{
 				Address:     "1Address",
-				Verbose:     copytopointer.Bool(false),
-				Skip:        copytopointer.Int(5),
-				Count:       copytopointer.Int(10),
-				VinExtra:    copytopointer.Bool(true),
-				Reverse:     copytopointer.Bool(false),
+				Verbose:     pointers.Bool(false),
+				Skip:        pointers.Int(5),
+				Count:       pointers.Int(10),
+				VinExtra:    pointers.Bool(true),
+				Reverse:     pointers.Bool(false),
 				FilterAddrs: nil,
 			},
 		},
@@ -716,16 +716,16 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 			staticCmd: func() interface{} {
 				return rpcmodel.NewSearchRawTransactionsCmd("1Address",
-					copytopointer.Bool(false), copytopointer.Int(5), copytopointer.Int(10), copytopointer.Bool(true), copytopointer.Bool(true), nil)
+					pointers.Bool(false), pointers.Int(5), pointers.Int(10), pointers.Bool(true), pointers.Bool(true), nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"searchRawTransactions","params":["1Address",false,5,10,true,true],"id":1}`,
 			unmarshalled: &rpcmodel.SearchRawTransactionsCmd{
 				Address:     "1Address",
-				Verbose:     copytopointer.Bool(false),
-				Skip:        copytopointer.Int(5),
-				Count:       copytopointer.Int(10),
-				VinExtra:    copytopointer.Bool(true),
-				Reverse:     copytopointer.Bool(true),
+				Verbose:     pointers.Bool(false),
+				Skip:        pointers.Int(5),
+				Count:       pointers.Int(10),
+				VinExtra:    pointers.Bool(true),
+				Reverse:     pointers.Bool(true),
 				FilterAddrs: nil,
 			},
 		},
@@ -736,16 +736,16 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 			staticCmd: func() interface{} {
 				return rpcmodel.NewSearchRawTransactionsCmd("1Address",
-					copytopointer.Bool(false), copytopointer.Int(5), copytopointer.Int(10), copytopointer.Bool(true), copytopointer.Bool(true), &[]string{"1Address"})
+					pointers.Bool(false), pointers.Int(5), pointers.Int(10), pointers.Bool(true), pointers.Bool(true), &[]string{"1Address"})
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"searchRawTransactions","params":["1Address",false,5,10,true,true,["1Address"]],"id":1}`,
 			unmarshalled: &rpcmodel.SearchRawTransactionsCmd{
 				Address:     "1Address",
-				Verbose:     copytopointer.Bool(false),
-				Skip:        copytopointer.Int(5),
-				Count:       copytopointer.Int(10),
-				VinExtra:    copytopointer.Bool(true),
-				Reverse:     copytopointer.Bool(true),
+				Verbose:     pointers.Bool(false),
+				Skip:        pointers.Int(5),
+				Count:       pointers.Int(10),
+				VinExtra:    pointers.Bool(true),
+				Reverse:     pointers.Bool(true),
 				FilterAddrs: &[]string{"1Address"},
 			},
 		},
@@ -760,7 +760,7 @@ func TestRPCServerCommands(t *testing.T) {
 			marshalled: `{"jsonrpc":"1.0","method":"sendRawTransaction","params":["1122"],"id":1}`,
 			unmarshalled: &rpcmodel.SendRawTransactionCmd{
 				HexTx:         "1122",
-				AllowHighFees: copytopointer.Bool(false),
+				AllowHighFees: pointers.Bool(false),
 			},
 		},
 		{
@@ -769,12 +769,12 @@ func TestRPCServerCommands(t *testing.T) {
 				return rpcmodel.NewCommand("sendRawTransaction", "1122", false)
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewSendRawTransactionCmd("1122", copytopointer.Bool(false))
+				return rpcmodel.NewSendRawTransactionCmd("1122", pointers.Bool(false))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"sendRawTransaction","params":["1122",false],"id":1}`,
 			unmarshalled: &rpcmodel.SendRawTransactionCmd{
 				HexTx:         "1122",
-				AllowHighFees: copytopointer.Bool(false),
+				AllowHighFees: pointers.Bool(false),
 			},
 		},
 		{
@@ -892,13 +892,13 @@ func TestRPCServerCommands(t *testing.T) {
 				return rpcmodel.NewCommand("node", rpcmodel.NConnect, "1.1.1.1", "perm")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewNodeCmd("connect", "1.1.1.1", copytopointer.String("perm"))
+				return rpcmodel.NewNodeCmd("connect", "1.1.1.1", pointers.String("perm"))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"node","params":["connect","1.1.1.1","perm"],"id":1}`,
 			unmarshalled: &rpcmodel.NodeCmd{
 				SubCmd:        rpcmodel.NConnect,
 				Target:        "1.1.1.1",
-				ConnectSubCmd: copytopointer.String("perm"),
+				ConnectSubCmd: pointers.String("perm"),
 			},
 		},
 		{
@@ -907,13 +907,13 @@ func TestRPCServerCommands(t *testing.T) {
 				return rpcmodel.NewCommand("node", rpcmodel.NConnect, "1.1.1.1", "temp")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewNodeCmd("connect", "1.1.1.1", copytopointer.String("temp"))
+				return rpcmodel.NewNodeCmd("connect", "1.1.1.1", pointers.String("temp"))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"node","params":["connect","1.1.1.1","temp"],"id":1}`,
 			unmarshalled: &rpcmodel.NodeCmd{
 				SubCmd:        rpcmodel.NConnect,
 				Target:        "1.1.1.1",
-				ConnectSubCmd: copytopointer.String("temp"),
+				ConnectSubCmd: pointers.String("temp"),
 			},
 		},
 		{
@@ -926,8 +926,8 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getSelectedTip","params":[],"id":1}`,
 			unmarshalled: &rpcmodel.GetSelectedTipCmd{
-				Verbose:   copytopointer.Bool(true),
-				VerboseTx: copytopointer.Bool(false),
+				Verbose:   pointers.Bool(true),
+				VerboseTx: pointers.Bool(false),
 			},
 		},
 		{
@@ -995,12 +995,12 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 			staticCmd: func() interface{} {
 				return rpcmodel.NewGetTopHeadersCmd(
-					copytopointer.String("000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"),
+					pointers.String("000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"),
 				)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getTopHeaders","params":["000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"],"id":1}`,
 			unmarshalled: &rpcmodel.GetTopHeadersCmd{
-				HighHash: copytopointer.String("000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"),
+				HighHash: pointers.String("000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"),
 			},
 		},
 		{

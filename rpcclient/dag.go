@@ -9,7 +9,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/kaspanet/kaspad/util/copytopointer"
+	"github.com/kaspanet/kaspad/util/pointers"
 
 	"github.com/pkg/errors"
 
@@ -100,7 +100,7 @@ func (c *Client) GetBlockAsync(blockHash *daghash.Hash, subnetworkID *string) Fu
 		hash = blockHash.String()
 	}
 
-	cmd := rpcmodel.NewGetBlockCmd(hash, copytopointer.Bool(false), copytopointer.Bool(false), subnetworkID)
+	cmd := rpcmodel.NewGetBlockCmd(hash, pointers.Bool(false), pointers.Bool(false), subnetworkID)
 	return c.sendCmd(cmd)
 }
 
@@ -179,7 +179,7 @@ func (c *Client) GetBlockVerboseAsync(blockHash *daghash.Hash, subnetworkID *str
 		hash = blockHash.String()
 	}
 
-	cmd := rpcmodel.NewGetBlockCmd(hash, copytopointer.Bool(true), copytopointer.Bool(false), subnetworkID)
+	cmd := rpcmodel.NewGetBlockCmd(hash, pointers.Bool(true), pointers.Bool(false), subnetworkID)
 	return c.sendCmd(cmd)
 }
 
@@ -203,7 +203,7 @@ func (c *Client) GetBlockVerboseTxAsync(blockHash *daghash.Hash, subnetworkID *s
 		hash = blockHash.String()
 	}
 
-	cmd := rpcmodel.NewGetBlockCmd(hash, copytopointer.Bool(true), copytopointer.Bool(true), subnetworkID)
+	cmd := rpcmodel.NewGetBlockCmd(hash, pointers.Bool(true), pointers.Bool(true), subnetworkID)
 	return c.sendCmd(cmd)
 }
 
@@ -430,7 +430,7 @@ func (c *Client) GetBlockHeaderAsync(blockHash *daghash.Hash) FutureGetBlockHead
 		hash = blockHash.String()
 	}
 
-	cmd := rpcmodel.NewGetBlockHeaderCmd(hash, copytopointer.Bool(false))
+	cmd := rpcmodel.NewGetBlockHeaderCmd(hash, pointers.Bool(false))
 	return c.sendCmd(cmd)
 }
 
@@ -475,7 +475,7 @@ func (c *Client) GetBlockHeaderVerboseAsync(blockHash *daghash.Hash) FutureGetBl
 		hash = blockHash.String()
 	}
 
-	cmd := rpcmodel.NewGetBlockHeaderCmd(hash, copytopointer.Bool(true))
+	cmd := rpcmodel.NewGetBlockHeaderCmd(hash, pointers.Bool(true))
 	return c.sendCmd(cmd)
 }
 
@@ -564,7 +564,7 @@ func (r FutureGetRawMempoolResult) Receive() ([]*daghash.Hash, error) {
 //
 // See GetRawMempool for the blocking version and more details.
 func (c *Client) GetRawMempoolAsync() FutureGetRawMempoolResult {
-	cmd := rpcmodel.NewGetRawMempoolCmd(copytopointer.Bool(false))
+	cmd := rpcmodel.NewGetRawMempoolCmd(pointers.Bool(false))
 	return c.sendCmd(cmd)
 }
 
@@ -605,7 +605,7 @@ func (r FutureGetRawMempoolVerboseResult) Receive() (map[string]rpcmodel.GetRawM
 //
 // See GetRawMempoolVerbose for the blocking version and more details.
 func (c *Client) GetRawMempoolVerboseAsync() FutureGetRawMempoolVerboseResult {
-	cmd := rpcmodel.NewGetRawMempoolCmd(copytopointer.Bool(true))
+	cmd := rpcmodel.NewGetRawMempoolCmd(pointers.Bool(true))
 	return c.sendCmd(cmd)
 }
 

@@ -4,7 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/logger"
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/server/serverutils"
-	"github.com/kaspanet/kaspad/util/copytopointer"
+	"github.com/kaspanet/kaspad/util/pointers"
 	"net"
 )
 
@@ -65,7 +65,7 @@ func getManualNodesInfo(s *Server, detailsArg *bool, node string) (interface{}, 
 		peer := rpcPeer.ToPeer()
 		var result rpcmodel.GetManualNodeInfoResult
 		result.ManualNode = peer.Addr()
-		result.Connected = copytopointer.Bool(peer.Connected())
+		result.Connected = pointers.Bool(peer.Connected())
 
 		// Split the address into host and port portions so we can do
 		// a DNS lookup against the host. When no port is specified in
