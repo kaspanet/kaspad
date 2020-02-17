@@ -55,7 +55,7 @@ func parsePrivateKey(privateKeyHex string) (*ecc.PrivateKey, error) {
 func parseTransaction(transactionHex string) (*wire.MsgTx, error) {
 	serializedTx, err := hex.DecodeString(transactionHex)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.Wrap(err, "couldn't decode transaction hex")
 	}
 	var transaction wire.MsgTx
 	err = transaction.Deserialize(bytes.NewReader(serializedTx))
