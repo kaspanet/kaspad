@@ -41,24 +41,23 @@ type fakeDAG struct {
 // instance.
 func (s *fakeDAG) BlueScore() uint64 {
 	s.RLock()
-	blueScore := s.currentBlueScore
-	s.RUnlock()
-	return blueScore
+	defer s.RUnlock()
+	return s.currentBlueScore
 }
 
 // SetBlueScore sets the current blueScore associated with the fake DAG instance.
 func (s *fakeDAG) SetBlueScore(blueScore uint64) {
 	s.Lock()
+	defer s.Unlock()
 	s.currentBlueScore = blueScore
-	s.Unlock()
 }
 
 // MedianTimePast returns the current median time past associated with the fake
 // DAG instance.
 func (s *fakeDAG) MedianTimePast() time.Time {
 	s.RLock()
+	defer s.RUnlock()
 	mtp := s.medianTimePast
-	s.RUnlock()
 	return mtp
 }
 
@@ -66,8 +65,8 @@ func (s *fakeDAG) MedianTimePast() time.Time {
 // DAG instance.
 func (s *fakeDAG) SetMedianTimePast(mtp time.Time) {
 	s.Lock()
+	defer s.Unlock()
 	s.medianTimePast = mtp
-	s.Unlock()
 }
 
 func calcSequenceLock(tx *util.Tx,
@@ -1296,9 +1295,11 @@ func TestOrphanChainRemoval(t *testing.T) {
 	// Remove the first orphan that starts the orphan chain without the
 	// remove redeemer flag set and ensure that only the first orphan was
 	// removed.
-	harness.txPool.mtx.Lock()
-	harness.txPool.removeOrphan(chainedTxns[1], false)
-	harness.txPool.mtx.Unlock()
+	func() {
+		harness.txPool.mtx.Lock()
+		defer harness.txPool.mtx.Unlock()
+		harness.txPool.removeOrphan(chainedTxns[1], false)
+	}()
 	testPoolMembership(tc, chainedTxns[1], false, false, false)
 	for _, tx := range chainedTxns[2 : maxOrphans+1] {
 		testPoolMembership(tc, tx, true, false, false)
@@ -1306,9 +1307,11 @@ func TestOrphanChainRemoval(t *testing.T) {
 
 	// Remove the first remaining orphan that starts the orphan chain with
 	// the remove redeemer flag set and ensure they are all removed.
-	harness.txPool.mtx.Lock()
-	harness.txPool.removeOrphan(chainedTxns[2], true)
-	harness.txPool.mtx.Unlock()
+	func() {
+		harness.txPool.mtx.Lock()
+		defer harness.txPool.mtx.Unlock()
+		harness.txPool.removeOrphan(chainedTxns[2], true)
+	}()
 	for _, tx := range chainedTxns[2 : maxOrphans+1] {
 		testPoolMembership(tc, tx, false, false, false)
 	}

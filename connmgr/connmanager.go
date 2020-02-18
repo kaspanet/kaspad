@@ -89,8 +89,8 @@ type ConnReq struct {
 // updateState updates the state of the connection request.
 func (c *ConnReq) updateState(state ConnState) {
 	c.stateMtx.Lock()
+	defer c.stateMtx.Unlock()
 	c.state = state
-	c.stateMtx.Unlock()
 }
 
 // ID returns a unique identifier for the connection request.
@@ -101,8 +101,8 @@ func (c *ConnReq) ID() uint64 {
 // State is the connection state of the requested connection.
 func (c *ConnReq) State() ConnState {
 	c.stateMtx.RLock()
+	defer c.stateMtx.RUnlock()
 	state := c.state
-	c.stateMtx.RUnlock()
 	return state
 }
 

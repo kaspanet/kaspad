@@ -442,8 +442,8 @@ out:
 // is being reassigned during a reconnect.
 func (c *Client) disconnectChan() <-chan struct{} {
 	c.mtx.Lock()
+	defer c.mtx.Unlock()
 	ch := c.disconnect
-	c.mtx.Unlock()
 	return ch
 }
 
@@ -511,9 +511,11 @@ func (c *Client) reregisterNtfns() error {
 	// the notification state (while not under the lock of course) which
 	// also register it with the remote RPC server, so this prevents double
 	// registrations.
-	c.ntfnStateLock.Lock()
-	stateCopy := c.ntfnState.Copy()
-	c.ntfnStateLock.Unlock()
+	stateCopy := func() *notificationState {
+		c.ntfnStateLock.Lock()
+		defer c.ntfnStateLock.Unlock()
+		return c.ntfnState.Copy()
+	}()
 
 	// Reregister notifyblocks if needed.
 	if stateCopy.notifyBlocks {
@@ -566,24 +568,27 @@ func (c *Client) resendRequests() {
 	// added by the caller while resending, make a copy of all of the
 	// requests that need to be resent now and work from the copy. This
 	// also allows the lock to be released quickly.
-	c.requestLock.Lock()
-	resendReqs := make([]*jsonRequest, 0, c.requestList.Len())
-	var nextElem *list.Element
-	for e := c.requestList.Front(); e != nil; e = nextElem {
-		nextElem = e.Next()
+	resendReqs := func() []*jsonRequest {
+		c.requestLock.Lock()
+		defer c.requestLock.Unlock()
+		resendReqs := make([]*jsonRequest, 0, c.requestList.Len())
+		var nextElem *list.Element
+		for e := c.requestList.Front(); e != nil; e = nextElem {
+			nextElem = e.Next()
 
-		jReq := e.Value.(*jsonRequest)
-		if _, ok := ignoreResends[jReq.method]; ok {
-			// If a request is not sent on reconnect, remove it
-			// from the request structures, since no reply is
-			// expected.
-			delete(c.requestMap, jReq.id)
-			c.requestList.Remove(e)
-		} else {
-			resendReqs = append(resendReqs, jReq)
+			jReq := e.Value.(*jsonRequest)
+			if _, ok := ignoreResends[jReq.method]; ok {
+				// If a request is not sent on reconnect, remove it
+				// from the request structures, since no reply is
+				// expected.
+				delete(c.requestMap, jReq.id)
+				c.requestList.Remove(e)
+			} else {
+				resendReqs = append(resendReqs, jReq)
+			}
 		}
-	}
-	c.requestLock.Unlock()
+		return resendReqs
+	}()
 
 	for _, jReq := range resendReqs {
 		// Stop resending commands if the client disconnected again
@@ -654,10 +659,12 @@ out:
 			c.wsConn = wsConn
 			c.retryCount = 0
 
-			c.mtx.Lock()
-			c.disconnect = make(chan struct{})
-			c.disconnected = false
-			c.mtx.Unlock()
+			func() {
+				c.mtx.Lock()
+				defer c.mtx.Unlock()
+				c.disconnect = make(chan struct{})
+				c.disconnected = false
+			}()
 
 			// Start processing input and output for the
 			// new connection.
