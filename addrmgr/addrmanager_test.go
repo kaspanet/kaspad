@@ -5,8 +5,14 @@
 package addrmgr
 
 import (
+	"fmt"
+	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"net"
+	"reflect"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -103,6 +109,551 @@ func TestStartStop(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Address Manager failed to stop: %v", err)
 	}
+}
+
+func TestAddAddressByIP(t *testing.T) {
+	originalActiveCfg := config.ActiveConfig()
+	config.SetActiveConfig(&config.Config{
+		Flags: &config.Flags{
+			NetworkFlags: config.NetworkFlags{
+				ActiveNetParams: &dagconfig.SimnetParams},
+		},
+	})
+	defer config.SetActiveConfig(originalActiveCfg)
+
+	fmtErr := errors.Errorf("")
+	addrErr := &net.AddrError{}
+	var tests = []struct {
+		addrIP string
+		err    error
+	}{
+		{
+			someIP + ":16111",
+			nil,
+		},
+		{
+			someIP,
+			addrErr,
+		},
+		{
+			someIP[:12] + ":8333",
+			fmtErr,
+		},
+		{
+			someIP + ":abcd",
+			fmtErr,
+		},
+	}
+
+	amgr := New("testaddressbyip", nil, nil)
+	for i, test := range tests {
+		err := amgr.AddAddressByIP(test.addrIP, nil)
+		if test.err != nil && err == nil {
+			t.Errorf("TestAddAddressByIP test %d failed expected an error and got none", i)
+			continue
+		}
+		if test.err == nil && err != nil {
+			t.Errorf("TestAddAddressByIP test %d failed expected no error and got one", i)
+			continue
+		}
+		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
+			t.Errorf("TestAddAddressByIP test %d failed got %v, want %v", i,
+				reflect.TypeOf(err), reflect.TypeOf(test.err))
+			continue
+		}
+	}
+}
+
+func TestAddLocalAddress(t *testing.T) {
+	originalActiveCfg := config.ActiveConfig()
+	config.SetActiveConfig(&config.Config{
+		Flags: &config.Flags{
+			NetworkFlags: config.NetworkFlags{
+				ActiveNetParams: &dagconfig.SimnetParams},
+		},
+	})
+	defer config.SetActiveConfig(originalActiveCfg)
+
+	var tests = []struct {
+		address  wire.NetAddress
+		priority AddressPriority
+		valid    bool
+	}{
+		{
+			wire.NetAddress{IP: net.ParseIP("192.168.0.100")},
+			InterfacePrio,
+			false,
+		},
+		{
+			wire.NetAddress{IP: net.ParseIP("204.124.1.1")},
+			InterfacePrio,
+			true,
+		},
+		{
+			wire.NetAddress{IP: net.ParseIP("204.124.1.1")},
+			BoundPrio,
+			true,
+		},
+		{
+			wire.NetAddress{IP: net.ParseIP("::1")},
+			InterfacePrio,
+			false,
+		},
+		{
+			wire.NetAddress{IP: net.ParseIP("fe80::1")},
+			InterfacePrio,
+			false,
+		},
+		{
+			wire.NetAddress{IP: net.ParseIP("2620:100::1")},
+			InterfacePrio,
+			true,
+		},
+	}
+	amgr := New("testaddlocaladdress", nil, nil)
+	for x, test := range tests {
+		result := amgr.AddLocalAddress(&test.address, test.priority)
+		if result == nil && !test.valid {
+			t.Errorf("TestAddLocalAddress test #%d failed: %s should have "+
+				"been accepted", x, test.address.IP)
+			continue
+		}
+		if result != nil && test.valid {
+			t.Errorf("TestAddLocalAddress test #%d failed: %s should not have "+
+				"been accepted", x, test.address.IP)
+			continue
+		}
+	}
+}
+
+func TestAttempt(t *testing.T) {
+	originalActiveCfg := config.ActiveConfig()
+	config.SetActiveConfig(&config.Config{
+		Flags: &config.Flags{
+			NetworkFlags: config.NetworkFlags{
+				ActiveNetParams: &dagconfig.SimnetParams},
+		},
+	})
+	defer config.SetActiveConfig(originalActiveCfg)
+
+	n := New("testattempt", lookupFunc, nil)
+
+	// Add a new address and get it
+	err := n.AddAddressByIP(someIP+":8333", nil)
+	if err != nil {
+		t.Fatalf("Adding address failed: %v", err)
+	}
+	ka := n.GetAddress()
+
+	if !ka.LastAttempt().IsZero() {
+		t.Errorf("Address should not have attempts, but does")
+	}
+
+	na := ka.NetAddress()
+	n.Attempt(na)
+
+	if ka.LastAttempt().IsZero() {
+		t.Errorf("Address should have an attempt, but does not")
+	}
+}
+
+func TestConnected(t *testing.T) {
+	originalActiveCfg := config.ActiveConfig()
+	config.SetActiveConfig(&config.Config{
+		Flags: &config.Flags{
+			NetworkFlags: config.NetworkFlags{
+				ActiveNetParams: &dagconfig.SimnetParams},
+		},
+	})
+	defer config.SetActiveConfig(originalActiveCfg)
+
+	n := New("testconnected", lookupFunc, nil)
+
+	// Add a new address and get it
+	err := n.AddAddressByIP(someIP+":8333", nil)
+	if err != nil {
+		t.Fatalf("Adding address failed: %v", err)
+	}
+	ka := n.GetAddress()
+	na := ka.NetAddress()
+	// make it an hour ago
+	na.Timestamp = time.Unix(time.Now().Add(time.Hour*-1).Unix(), 0)
+
+	n.Connected(na)
+
+	if !ka.NetAddress().Timestamp.After(na.Timestamp) {
+		t.Errorf("Address should have a new timestamp, but does not")
+	}
+}
+
+func TestNeedMoreAddresses(t *testing.T) {
+	originalActiveCfg := config.ActiveConfig()
+	config.SetActiveConfig(&config.Config{
+		Flags: &config.Flags{
+			NetworkFlags: config.NetworkFlags{
+				ActiveNetParams: &dagconfig.SimnetParams},
+		},
+	})
+	defer config.SetActiveConfig(originalActiveCfg)
+
+	n := New("testneedmoreaddresses", lookupFunc, nil)
+	addrsToAdd := 1500
+	b := n.NeedMoreAddresses()
+	if !b {
+		t.Errorf("Expected that we need more addresses")
+	}
+	addrs := make([]*wire.NetAddress, addrsToAdd)
+
+	var err error
+	for i := 0; i < addrsToAdd; i++ {
+		s := fmt.Sprintf("%d.%d.173.147:8333", i/128+60, i%128+60)
+		addrs[i], err = n.DeserializeNetAddress(s)
+		if err != nil {
+			t.Errorf("Failed to turn %s into an address: %v", s, err)
+		}
+	}
+
+	srcAddr := wire.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
+
+	n.AddAddresses(addrs, srcAddr, nil)
+	numAddrs := n.TotalNumAddresses()
+	if numAddrs > addrsToAdd {
+		t.Errorf("Number of addresses is too many %d vs %d", numAddrs, addrsToAdd)
+	}
+
+	b = n.NeedMoreAddresses()
+	if b {
+		t.Errorf("Expected that we don't need more addresses")
+	}
+}
+
+func TestGood(t *testing.T) {
+	originalActiveCfg := config.ActiveConfig()
+	config.SetActiveConfig(&config.Config{
+		Flags: &config.Flags{
+			NetworkFlags: config.NetworkFlags{
+				ActiveNetParams: &dagconfig.SimnetParams},
+		},
+	})
+	defer config.SetActiveConfig(originalActiveCfg)
+
+	n := New("testgood", lookupFunc, nil)
+	addrsToAdd := 64 * 64
+	addrs := make([]*wire.NetAddress, addrsToAdd)
+	subnetworkCount := 32
+	subnetworkIDs := make([]*subnetworkid.SubnetworkID, subnetworkCount)
+
+	var err error
+	for i := 0; i < addrsToAdd; i++ {
+		s := fmt.Sprintf("%d.173.147.%d:8333", i/64+60, i%64+60)
+		addrs[i], err = n.DeserializeNetAddress(s)
+		if err != nil {
+			t.Errorf("Failed to turn %s into an address: %v", s, err)
+		}
+	}
+
+	for i := 0; i < subnetworkCount; i++ {
+		subnetworkIDs[i] = &subnetworkid.SubnetworkID{0xff - byte(i)}
+	}
+
+	srcAddr := wire.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
+
+	n.AddAddresses(addrs, srcAddr, nil)
+	for i, addr := range addrs {
+		n.Good(addr, subnetworkIDs[i%subnetworkCount])
+	}
+
+	numAddrs := n.TotalNumAddresses()
+	if numAddrs >= addrsToAdd {
+		t.Errorf("Number of addresses is too many: %d vs %d", numAddrs, addrsToAdd)
+	}
+
+	numCache := len(n.AddressCache(true, nil))
+	if numCache == 0 || numCache >= numAddrs/4 {
+		t.Errorf("Number of addresses in cache: got %d, want positive and less than %d",
+			numCache, numAddrs/4)
+	}
+
+	for i := 0; i < subnetworkCount; i++ {
+		numCache = len(n.AddressCache(false, subnetworkIDs[i]))
+		if numCache == 0 || numCache >= numAddrs/subnetworkCount {
+			t.Errorf("Number of addresses in subnetwork cache: got %d, want positive and less than %d",
+				numCache, numAddrs/4/subnetworkCount)
+		}
+	}
+}
+
+func TestGoodChangeSubnetworkID(t *testing.T) {
+	originalActiveCfg := config.ActiveConfig()
+	config.SetActiveConfig(&config.Config{
+		Flags: &config.Flags{
+			NetworkFlags: config.NetworkFlags{
+				ActiveNetParams: &dagconfig.SimnetParams},
+		},
+	})
+	defer config.SetActiveConfig(originalActiveCfg)
+
+	n := New("test_good_change_subnetwork_id", lookupFunc, nil)
+	addr := wire.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
+	addrKey := NetAddressKey(addr)
+	srcAddr := wire.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
+
+	oldSubnetwork := subnetworkid.SubnetworkIDNative
+	n.AddAddress(addr, srcAddr, oldSubnetwork)
+	n.Good(addr, oldSubnetwork)
+
+	// make sure address was saved to addrIndex under oldSubnetwork
+	ka := n.find(addr)
+	if ka == nil {
+		t.Fatalf("Address was not found after first time .Good called")
+	}
+	if !ka.SubnetworkID().IsEqual(oldSubnetwork) {
+		t.Fatalf("Address index did not point to oldSubnetwork")
+	}
+
+	// make sure address was added to correct bucket under oldSubnetwork
+	bucket := n.addrTried[*oldSubnetwork][n.getTriedBucket(addr)]
+	wasFound := false
+	for e := bucket.Front(); e != nil; e = e.Next() {
+		if NetAddressKey(e.Value.(*KnownAddress).NetAddress()) == addrKey {
+			wasFound = true
+		}
+	}
+	if !wasFound {
+		t.Fatalf("Address was not found in the correct bucket in oldSubnetwork")
+	}
+
+	// now call .Good again with a different subnetwork
+	newSubnetwork := subnetworkid.SubnetworkIDRegistry
+	n.Good(addr, newSubnetwork)
+
+	// make sure address was updated in addrIndex under newSubnetwork
+	ka = n.find(addr)
+	if ka == nil {
+		t.Fatalf("Address was not found after second time .Good called")
+	}
+	if !ka.SubnetworkID().IsEqual(newSubnetwork) {
+		t.Fatalf("Address index did not point to newSubnetwork")
+	}
+
+	// make sure address was removed from bucket under oldSubnetwork
+	bucket = n.addrTried[*oldSubnetwork][n.getTriedBucket(addr)]
+	wasFound = false
+	for e := bucket.Front(); e != nil; e = e.Next() {
+		if NetAddressKey(e.Value.(*KnownAddress).NetAddress()) == addrKey {
+			wasFound = true
+		}
+	}
+	if wasFound {
+		t.Fatalf("Address was not removed from bucket in oldSubnetwork")
+	}
+
+	// make sure address was added to correct bucket under newSubnetwork
+	bucket = n.addrTried[*newSubnetwork][n.getTriedBucket(addr)]
+	wasFound = false
+	for e := bucket.Front(); e != nil; e = e.Next() {
+		if NetAddressKey(e.Value.(*KnownAddress).NetAddress()) == addrKey {
+			wasFound = true
+		}
+	}
+	if !wasFound {
+		t.Fatalf("Address was not found in the correct bucket in newSubnetwork")
+	}
+}
+
+func TestGetAddress(t *testing.T) {
+	originalActiveCfg := config.ActiveConfig()
+	config.SetActiveConfig(&config.Config{
+		Flags: &config.Flags{
+			NetworkFlags: config.NetworkFlags{
+				ActiveNetParams: &dagconfig.SimnetParams},
+		},
+	})
+	defer config.SetActiveConfig(originalActiveCfg)
+
+	localSubnetworkID := &subnetworkid.SubnetworkID{0xff}
+	n := New("testgetaddress", lookupFunc, localSubnetworkID)
+
+	// Get an address from an empty set (should error)
+	if rv := n.GetAddress(); rv != nil {
+		t.Errorf("GetAddress failed: got: %v want: %v\n", rv, nil)
+	}
+
+	// Add a new address and get it
+	err := n.AddAddressByIP(someIP+":8332", localSubnetworkID)
+	if err != nil {
+		t.Fatalf("Adding address failed: %v", err)
+	}
+	ka := n.GetAddress()
+	if ka == nil {
+		t.Fatalf("Did not get an address where there is one in the pool")
+	}
+	n.Attempt(ka.NetAddress())
+
+	// Checks that we don't get it if we find that it has other subnetwork ID than expected.
+	actualSubnetworkID := &subnetworkid.SubnetworkID{0xfe}
+	n.Good(ka.NetAddress(), actualSubnetworkID)
+	ka = n.GetAddress()
+	if ka != nil {
+		t.Errorf("Didn't expect to get an address because there shouldn't be any address from subnetwork ID %s or nil", localSubnetworkID)
+	}
+
+	// Checks that the total number of addresses incremented although the new address is not full node or a partial node of the same subnetwork as the local node.
+	numAddrs := n.TotalNumAddresses()
+	if numAddrs != 1 {
+		t.Errorf("Wrong number of addresses: got %d, want %d", numAddrs, 1)
+	}
+
+	// Now we repeat the same process, but now the address has the expected subnetwork ID.
+
+	// Add a new address and get it
+	err = n.AddAddressByIP(someIP+":8333", localSubnetworkID)
+	if err != nil {
+		t.Fatalf("Adding address failed: %v", err)
+	}
+	ka = n.GetAddress()
+	if ka == nil {
+		t.Fatalf("Did not get an address where there is one in the pool")
+	}
+	if ka.NetAddress().IP.String() != someIP {
+		t.Errorf("Wrong IP: got %v, want %v", ka.NetAddress().IP.String(), someIP)
+	}
+	if !ka.SubnetworkID().IsEqual(localSubnetworkID) {
+		t.Errorf("Wrong Subnetwork ID: got %v, want %v", *ka.SubnetworkID(), localSubnetworkID)
+	}
+	n.Attempt(ka.NetAddress())
+
+	// Mark this as a good address and get it
+	n.Good(ka.NetAddress(), localSubnetworkID)
+	ka = n.GetAddress()
+	if ka == nil {
+		t.Fatalf("Did not get an address where there is one in the pool")
+	}
+	if ka.NetAddress().IP.String() != someIP {
+		t.Errorf("Wrong IP: got %v, want %v", ka.NetAddress().IP.String(), someIP)
+	}
+	if *ka.SubnetworkID() != *localSubnetworkID {
+		t.Errorf("Wrong Subnetwork ID: got %v, want %v", ka.SubnetworkID(), localSubnetworkID)
+	}
+
+	numAddrs = n.TotalNumAddresses()
+	if numAddrs != 2 {
+		t.Errorf("Wrong number of addresses: got %d, want %d", numAddrs, 1)
+	}
+}
+
+func TestGetBestLocalAddress(t *testing.T) {
+	originalActiveCfg := config.ActiveConfig()
+	config.SetActiveConfig(&config.Config{
+		Flags: &config.Flags{
+			NetworkFlags: config.NetworkFlags{
+				ActiveNetParams: &dagconfig.SimnetParams},
+		},
+	})
+	defer config.SetActiveConfig(originalActiveCfg)
+
+	localAddrs := []wire.NetAddress{
+		{IP: net.ParseIP("192.168.0.100")},
+		{IP: net.ParseIP("::1")},
+		{IP: net.ParseIP("fe80::1")},
+		{IP: net.ParseIP("2001:470::1")},
+	}
+
+	var tests = []struct {
+		remoteAddr wire.NetAddress
+		want0      wire.NetAddress
+		want1      wire.NetAddress
+		want2      wire.NetAddress
+		want3      wire.NetAddress
+	}{
+		{
+			// Remote connection from public IPv4
+			wire.NetAddress{IP: net.ParseIP("204.124.8.1")},
+			wire.NetAddress{IP: net.IPv4zero},
+			wire.NetAddress{IP: net.IPv4zero},
+			wire.NetAddress{IP: net.ParseIP("204.124.8.100")},
+			wire.NetAddress{IP: net.ParseIP("fd87:d87e:eb43:25::1")},
+		},
+		{
+			// Remote connection from private IPv4
+			wire.NetAddress{IP: net.ParseIP("172.16.0.254")},
+			wire.NetAddress{IP: net.IPv4zero},
+			wire.NetAddress{IP: net.IPv4zero},
+			wire.NetAddress{IP: net.IPv4zero},
+			wire.NetAddress{IP: net.IPv4zero},
+		},
+		{
+			// Remote connection from public IPv6
+			wire.NetAddress{IP: net.ParseIP("2602:100:abcd::102")},
+			wire.NetAddress{IP: net.IPv6zero},
+			wire.NetAddress{IP: net.ParseIP("2001:470::1")},
+			wire.NetAddress{IP: net.ParseIP("2001:470::1")},
+			wire.NetAddress{IP: net.ParseIP("2001:470::1")},
+		},
+		/* XXX
+		{
+			// Remote connection from Tor
+			wire.NetAddress{IP: net.ParseIP("fd87:d87e:eb43::100")},
+			wire.NetAddress{IP: net.IPv4zero},
+			wire.NetAddress{IP: net.ParseIP("204.124.8.100")},
+			wire.NetAddress{IP: net.ParseIP("fd87:d87e:eb43:25::1")},
+		},
+		*/
+	}
+
+	amgr := New("testgetbestlocaladdress", nil, nil)
+
+	// Test against default when there's no address
+	for x, test := range tests {
+		got := amgr.GetBestLocalAddress(&test.remoteAddr)
+		if !test.want0.IP.Equal(got.IP) {
+			t.Errorf("TestGetBestLocalAddress test1 #%d failed for remote address %s: want %s got %s",
+				x, test.remoteAddr.IP, test.want1.IP, got.IP)
+			continue
+		}
+	}
+
+	for _, localAddr := range localAddrs {
+		amgr.AddLocalAddress(&localAddr, InterfacePrio)
+	}
+
+	// Test against want1
+	for x, test := range tests {
+		got := amgr.GetBestLocalAddress(&test.remoteAddr)
+		if !test.want1.IP.Equal(got.IP) {
+			t.Errorf("TestGetBestLocalAddress test1 #%d failed for remote address %s: want %s got %s",
+				x, test.remoteAddr.IP, test.want1.IP, got.IP)
+			continue
+		}
+	}
+
+	// Add a public IP to the list of local addresses.
+	localAddr := wire.NetAddress{IP: net.ParseIP("204.124.8.100")}
+	amgr.AddLocalAddress(&localAddr, InterfacePrio)
+
+	// Test against want2
+	for x, test := range tests {
+		got := amgr.GetBestLocalAddress(&test.remoteAddr)
+		if !test.want2.IP.Equal(got.IP) {
+			t.Errorf("TestGetBestLocalAddress test2 #%d failed for remote address %s: want %s got %s",
+				x, test.remoteAddr.IP, test.want2.IP, got.IP)
+			continue
+		}
+	}
+	/*
+		// Add a Tor generated IP address
+		localAddr = wire.NetAddress{IP: net.ParseIP("fd87:d87e:eb43:25::1")}
+		amgr.AddLocalAddress(&localAddr, ManualPrio)
+		// Test against want3
+		for x, test := range tests {
+			got := amgr.GetBestLocalAddress(&test.remoteAddr)
+			if !test.want3.IP.Equal(got.IP) {
+				t.Errorf("TestGetBestLocalAddress test3 #%d failed for remote address %s: want %s got %s",
+					x, test.remoteAddr.IP, test.want3.IP, got.IP)
+				continue
+			}
+		}
+	*/
 }
 
 func TestNetAddressKey(t *testing.T) {
