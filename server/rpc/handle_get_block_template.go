@@ -109,7 +109,7 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 	// we have nothing besides the genesis block (blueScore == 0),
 	// because in that state IsCurrent may still return true.
 	currentBlueScore := s.cfg.DAG.SelectedTipBlueScore()
-	if (currentBlueScore != 0 && !s.cfg.SyncMgr.IsCurrent()) ||
+	if (currentBlueScore != 0 && !s.cfg.DAG.IsCurrent()) ||
 		(currentBlueScore == 0 && !s.cfg.shouldMineOnGenesis()) {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCClientInInitialDownload,
