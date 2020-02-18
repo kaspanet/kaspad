@@ -339,8 +339,8 @@ func (rtn *reachabilityTreeNode) countSubtrees(subTreeSizeMap map[*reachabilityT
 func (rtn *reachabilityTreeNode) propagateInterval(subTreeSizeMap map[*reachabilityTreeNode]uint64) ([]*reachabilityTreeNode, error) {
 	// We set the interval to reset its remainingInterval, so we could reallocate it while reindexing.
 	rtn.setInterval(rtn.interval)
-	modifiedNodes := []*reachabilityTreeNode{rtn}
 	queue := []*reachabilityTreeNode{rtn}
+	var modifiedNodes []*reachabilityTreeNode
 	for len(queue) > 0 {
 		var current *reachabilityTreeNode
 		current, queue = queue[0], queue[1:]
