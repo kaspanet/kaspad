@@ -4,32 +4,11 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/connmgr"
-	"github.com/kaspanet/kaspad/peer"
 	"github.com/kaspanet/kaspad/util"
 )
-
-// Peer extends the peer to maintain state shared by the server and
-// the blockmanager.
-type Peer struct {
-	*peer.Peer
-
-	// The following variables must only be used atomically
-	FeeFilter int64
-
-	relayMtx        sync.Mutex
-	DynamicBanScore connmgr.DynamicBanScore
-	quit            chan struct{}
-	DisableRelayTx  bool
-
-	// The following chans are used to sync blockmanager and server.
-	txProcessed    chan struct{}
-	blockProcessed chan struct{}
-}
 
 // KaspadLookup resolves the IP of the given host using the correct DNS lookup
 // function depending on the configuration options.

@@ -521,6 +521,10 @@ func TestGasLimit(t *testing.T) {
 	if isOrphan {
 		t.Fatalf("ProcessBlock: overLimitBlock got unexpectedly orphan")
 	}
+	if isDelayed {
+		t.Fatalf("ProcessBlock: overflowGasBlock " +
+			"is too far in the future")
+	}
 
 	nonExistentSubnetwork := &subnetworkid.SubnetworkID{123}
 	nonExistentSubnetworkTxIn := &wire.TxIn{
@@ -546,6 +550,13 @@ func TestGasLimit(t *testing.T) {
 		nonExistentSubnetwork, nonExistentSubnetwork)
 	if err.Error() != expectedErrStr {
 		t.Fatalf("ProcessBlock expected error \"%v\" but got \"%v\"", expectedErrStr, err)
+	}
+	if isDelayed {
+		t.Fatalf("ProcessBlock: nonExistentSubnetworkBlock " +
+			"is too far in the future")
+	}
+	if isOrphan {
+		t.Fatalf("ProcessBlock: nonExistentSubnetworkBlock got unexpectedly orphan")
 	}
 
 	// Here we check that we can process a block with a transaction that doesn't exceed the gas limit

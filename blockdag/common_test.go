@@ -23,17 +23,6 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-func loadBlocksWithLog(t *testing.T, filename string) ([]*util.Block, error) {
-	blocks, err := LoadBlocks(filename)
-	if err == nil {
-		t.Logf("Loaded %d blocks from file %s", len(blocks), filename)
-		for i, b := range blocks {
-			t.Logf("Block #%d: %s", i, b.Hash())
-		}
-	}
-	return blocks, err
-}
-
 // loadUTXOSet returns a utxo view loaded from a file.
 func loadUTXOSet(filename string) (UTXOSet, error) {
 	// The utxostore file format is:

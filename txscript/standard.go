@@ -196,13 +196,6 @@ func payToScriptHashScript(scriptHash []byte) ([]byte, error) {
 		AddOp(OpEqual).Script()
 }
 
-// payToPubkeyScript creates a new script to pay a transaction output to a
-// public key. It is expected that the input is a valid pubkey.
-func payToPubKeyScript(serializedPubKey []byte) ([]byte, error) {
-	return NewScriptBuilder().AddData(serializedPubKey).
-		AddOp(OpCheckSig).Script()
-}
-
 // PayToAddrScript creates a new script to pay a transaction output to a the
 // specified address.
 func PayToAddrScript(addr util.Address) ([]byte, error) {

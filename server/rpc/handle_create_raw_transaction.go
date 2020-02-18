@@ -12,15 +12,6 @@ import (
 func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*rpcmodel.CreateRawTransactionCmd)
 
-	// Validate the locktime, if given.
-	if c.LockTime != nil &&
-		(*c.LockTime < 0 || *c.LockTime > wire.MaxTxInSequenceNum) {
-		return nil, &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCInvalidParameter,
-			Message: "Locktime out of range",
-		}
-	}
-
 	txIns := []*wire.TxIn{}
 	// Add all transaction inputs to a new transaction after performing
 	// some validity checks.

@@ -28,17 +28,8 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-const (
-	// metadataDbName is the name used for the metadata database.
-	metadataDbName = "metadata"
-
-	// blockHdrOffset defines the offsets into a block index row for the
-	// block header.
-	//
-	// The serialized block index row format is:
-	//   <blocklocation><blockheader>
-	blockHdrOffset = blockLocSize
-)
+// metadataDbName is the name used for the metadata database.
+const metadataDbName = "metadata"
 
 var (
 	// byteOrder is the preferred byte order used through the database and

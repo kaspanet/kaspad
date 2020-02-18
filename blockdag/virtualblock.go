@@ -39,15 +39,6 @@ func newVirtualBlock(dag *BlockDAG, tips blockSet) *virtualBlock {
 	return &virtual
 }
 
-// clone creates and returns a clone of the virtual block.
-func (v *virtualBlock) clone() *virtualBlock {
-	return &virtualBlock{
-		utxoSet:                v.utxoSet,
-		blockNode:              v.blockNode,
-		selectedParentChainSet: v.selectedParentChainSet,
-	}
-}
-
 // setTips replaces the tips of the virtual block with the blocks in the
 // given blockSet. This only differs from the exported version in that it
 // is up to the caller to ensure the lock is held.

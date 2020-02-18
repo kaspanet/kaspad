@@ -31,11 +31,6 @@ const (
 	// statusInvalidAncestor indicates that one of the block's ancestors has
 	// has failed validation, thus the block is also invalid.
 	statusInvalidAncestor
-
-	// statusNone indicates that the block has no validation state flags set.
-	//
-	// NOTE: This must be defined last in order to avoid influencing iota.
-	statusNone blockStatus = 0
 )
 
 // KnownValid returns whether the block is known to be valid. This will return
@@ -184,7 +179,7 @@ func (node *blockNode) Header() *wire.BlockHeader {
 //
 // This function is safe for concurrent access.
 func (node *blockNode) SelectedAncestor(blueScore uint64) *blockNode {
-	if blueScore < 0 || blueScore > node.blueScore {
+	if blueScore > node.blueScore {
 		return nil
 	}
 

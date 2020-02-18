@@ -446,9 +446,9 @@ func (dag *BlockDAG) checkBlockHeaderSanity(header *wire.BlockHeader, flags Beha
 
 //checkBlockParentsOrder ensures that the block's parents are ordered by hash
 func checkBlockParentsOrder(header *wire.BlockHeader) error {
-	sortedHashes := make([]*daghash.Hash, 0, header.NumParentBlocks())
-	for _, hash := range header.ParentHashes {
-		sortedHashes = append(sortedHashes, hash)
+	sortedHashes := make([]*daghash.Hash, header.NumParentBlocks())
+	for i, hash := range header.ParentHashes {
+		sortedHashes[i] = hash
 	}
 	sort.Slice(sortedHashes, func(i, j int) bool {
 		return daghash.Less(sortedHashes[i], sortedHashes[j])
