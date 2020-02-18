@@ -6,6 +6,11 @@ package netsync
 
 import (
 	"fmt"
+	"net"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/database"
@@ -15,10 +20,6 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
-	"net"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 const (

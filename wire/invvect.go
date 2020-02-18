@@ -14,7 +14,7 @@ import (
 const (
 	// MaxInvPerMsg is the maximum number of inventory vectors that can be in a
 	// single kaspa inv message.
-	MaxInvPerMsg = 1 << 16
+	MaxInvPerMsg = 1 << 17
 
 	// MaxSyncBlockInvPerGetDataMsg is the maximum number of sync block inventory
 	// vectors that can be in a single getData message.

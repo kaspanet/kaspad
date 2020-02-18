@@ -47,9 +47,14 @@ var (
 	devnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
 )
 
-const ghostdagK = 10
-const difficultyAdjustmentWindowSize = 2640
-const timestampDeviationTolerance = 132
+const (
+	ghostdagK                      = 10
+	difficultyAdjustmentWindowSize = 2640
+	timestampDeviationTolerance    = 132
+	finalityDuration               = 24 * time.Hour
+	targetTimePerBlock             = 1 * time.Second
+	finalityInterval               = uint64(finalityDuration / targetTimePerBlock)
+)
 
 // ConsensusDeployment defines details related to a specific consensus rule
 // change that is voted in. This is part of BIP0009.
@@ -132,7 +137,7 @@ type Params struct {
 	TargetTimePerBlock time.Duration
 
 	// FinalityInterval is the interval that determines the finality window of the DAG.
-	FinalityInterval int
+	FinalityInterval uint64
 
 	// TimestampDeviationTolerance is the maximum offset a block timestamp
 	// is allowed to be in the future before it gets delayed
@@ -195,8 +200,8 @@ var MainnetParams = Params{
 	PowMax:                         mainPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
-	TargetTimePerBlock:             time.Second * 1, // 1 second
-	FinalityInterval:               1000,
+	TargetTimePerBlock:             targetTimePerBlock,
+	FinalityInterval:               finalityInterval,
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 
@@ -252,8 +257,8 @@ var RegressionNetParams = Params{
 	PowMax:                         regressionPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       150,
-	TargetTimePerBlock:             time.Second * 1, // 1 second
-	FinalityInterval:               1000,
+	TargetTimePerBlock:             targetTimePerBlock,
+	FinalityInterval:               finalityInterval,
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 
@@ -307,8 +312,8 @@ var TestnetParams = Params{
 	PowMax:                         testnetPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
-	TargetTimePerBlock:             time.Second * 1, // 1 second
-	FinalityInterval:               1000,
+	TargetTimePerBlock:             targetTimePerBlock,
+	FinalityInterval:               finalityInterval,
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 
@@ -368,8 +373,8 @@ var SimnetParams = Params{
 	PowMax:                         simnetPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
-	TargetTimePerBlock:             time.Second * 1, // 1 second
-	FinalityInterval:               1000,
+	TargetTimePerBlock:             targetTimePerBlock,
+	FinalityInterval:               finalityInterval,
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 
@@ -421,8 +426,8 @@ var DevnetParams = Params{
 	PowMax:                         devnetPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
-	TargetTimePerBlock:             time.Second * 1, // 1 second
-	FinalityInterval:               1000,
+	TargetTimePerBlock:             targetTimePerBlock,
+	FinalityInterval:               finalityInterval,
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 

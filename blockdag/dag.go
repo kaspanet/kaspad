@@ -27,6 +27,8 @@ const (
 	// maxOrphanBlocks is the maximum number of orphan blocks that can be
 	// queued.
 	maxOrphanBlocks = 100
+
+	isDAGCurrentMaxDiff = 12 * time.Hour
 )
 
 // orphanBlock represents a block that we don't yet have the parent for. It
@@ -1276,8 +1278,8 @@ func (dag *BlockDAG) isCurrent() bool {
 	} else {
 		dagTimestamp = selectedTip.timestamp
 	}
-	minus24Hours := dag.AdjustedTime().Add(-24 * time.Hour).Unix()
-	return dagTimestamp >= minus24Hours
+	dagTime := time.Unix(dagTimestamp, 0)
+	return dag.AdjustedTime().Sub(dagTime) <= isDAGCurrentMaxDiff
 }
 
 // AdjustedTime returns the adjusted time according to
@@ -1715,11 +1717,11 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 // This function is safe for concurrent access.
 func (dag *BlockDAG) AntiPastHashesBetween(lowHash, highHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
 	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
 	hashes, err := dag.antiPastHashesBetween(lowHash, highHash, maxHashes)
 	if err != nil {
 		return nil, err
 	}
-	dag.dagLock.RUnlock()
 	return hashes, nil
 }
 
@@ -1793,11 +1795,11 @@ func (dag *BlockDAG) RUnlock() {
 // This function is safe for concurrent access.
 func (dag *BlockDAG) AntiPastHeadersBetween(lowHash, highHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
 	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
 	headers, err := dag.antiPastHeadersBetween(lowHash, highHash, maxHeaders)
 	if err != nil {
 		return nil, err
 	}
-	dag.dagLock.RUnlock()
 	return headers, nil
 }
 
