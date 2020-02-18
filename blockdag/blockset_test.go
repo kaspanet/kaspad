@@ -8,7 +8,7 @@ import (
 )
 
 func TestHashes(t *testing.T) {
-	bs := setFromSlice(
+	bs := blockSetFromSlice(
 		&blockNode{
 			hash: &daghash.Hash{3},
 		},
@@ -49,33 +49,33 @@ func TestBlockSetSubtract(t *testing.T) {
 	}{
 		{
 			name:           "both sets empty",
-			setA:           setFromSlice(),
-			setB:           setFromSlice(),
-			expectedResult: setFromSlice(),
+			setA:           blockSetFromSlice(),
+			setB:           blockSetFromSlice(),
+			expectedResult: blockSetFromSlice(),
 		},
 		{
 			name:           "subtract an empty set",
-			setA:           setFromSlice(node1),
-			setB:           setFromSlice(),
-			expectedResult: setFromSlice(node1),
+			setA:           blockSetFromSlice(node1),
+			setB:           blockSetFromSlice(),
+			expectedResult: blockSetFromSlice(node1),
 		},
 		{
 			name:           "subtract from empty set",
-			setA:           setFromSlice(),
-			setB:           setFromSlice(node1),
-			expectedResult: setFromSlice(),
+			setA:           blockSetFromSlice(),
+			setB:           blockSetFromSlice(node1),
+			expectedResult: blockSetFromSlice(),
 		},
 		{
 			name:           "subtract unrelated set",
-			setA:           setFromSlice(node1),
-			setB:           setFromSlice(node2),
-			expectedResult: setFromSlice(node1),
+			setA:           blockSetFromSlice(node1),
+			setB:           blockSetFromSlice(node2),
+			expectedResult: blockSetFromSlice(node1),
 		},
 		{
 			name:           "typical case",
-			setA:           setFromSlice(node1, node2),
-			setB:           setFromSlice(node2, node3),
-			expectedResult: setFromSlice(node1),
+			setA:           blockSetFromSlice(node1, node2),
+			setB:           blockSetFromSlice(node2, node3),
+			expectedResult: blockSetFromSlice(node1),
 		},
 	}
 
@@ -101,33 +101,33 @@ func TestBlockSetAddSet(t *testing.T) {
 	}{
 		{
 			name:           "both sets empty",
-			setA:           setFromSlice(),
-			setB:           setFromSlice(),
-			expectedResult: setFromSlice(),
+			setA:           blockSetFromSlice(),
+			setB:           blockSetFromSlice(),
+			expectedResult: blockSetFromSlice(),
 		},
 		{
 			name:           "add an empty set",
-			setA:           setFromSlice(node1),
-			setB:           setFromSlice(),
-			expectedResult: setFromSlice(node1),
+			setA:           blockSetFromSlice(node1),
+			setB:           blockSetFromSlice(),
+			expectedResult: blockSetFromSlice(node1),
 		},
 		{
 			name:           "add to empty set",
-			setA:           setFromSlice(),
-			setB:           setFromSlice(node1),
-			expectedResult: setFromSlice(node1),
+			setA:           blockSetFromSlice(),
+			setB:           blockSetFromSlice(node1),
+			expectedResult: blockSetFromSlice(node1),
 		},
 		{
 			name:           "add already added member",
-			setA:           setFromSlice(node1, node2),
-			setB:           setFromSlice(node1),
-			expectedResult: setFromSlice(node1, node2),
+			setA:           blockSetFromSlice(node1, node2),
+			setB:           blockSetFromSlice(node1),
+			expectedResult: blockSetFromSlice(node1, node2),
 		},
 		{
 			name:           "typical case",
-			setA:           setFromSlice(node1, node2),
-			setB:           setFromSlice(node2, node3),
-			expectedResult: setFromSlice(node1, node2, node3),
+			setA:           blockSetFromSlice(node1, node2),
+			setB:           blockSetFromSlice(node2, node3),
+			expectedResult: blockSetFromSlice(node1, node2, node3),
 		},
 	}
 
@@ -153,33 +153,33 @@ func TestBlockSetAddSlice(t *testing.T) {
 	}{
 		{
 			name:           "add empty slice to empty set",
-			set:            setFromSlice(),
+			set:            blockSetFromSlice(),
 			slice:          []*blockNode{},
-			expectedResult: setFromSlice(),
+			expectedResult: blockSetFromSlice(),
 		},
 		{
 			name:           "add an empty slice",
-			set:            setFromSlice(node1),
+			set:            blockSetFromSlice(node1),
 			slice:          []*blockNode{},
-			expectedResult: setFromSlice(node1),
+			expectedResult: blockSetFromSlice(node1),
 		},
 		{
 			name:           "add to empty set",
-			set:            setFromSlice(),
+			set:            blockSetFromSlice(),
 			slice:          []*blockNode{node1},
-			expectedResult: setFromSlice(node1),
+			expectedResult: blockSetFromSlice(node1),
 		},
 		{
 			name:           "add already added member",
-			set:            setFromSlice(node1, node2),
+			set:            blockSetFromSlice(node1, node2),
 			slice:          []*blockNode{node1},
-			expectedResult: setFromSlice(node1, node2),
+			expectedResult: blockSetFromSlice(node1, node2),
 		},
 		{
 			name:           "typical case",
-			set:            setFromSlice(node1, node2),
+			set:            blockSetFromSlice(node1, node2),
 			slice:          []*blockNode{node2, node3},
-			expectedResult: setFromSlice(node1, node2, node3),
+			expectedResult: blockSetFromSlice(node1, node2, node3),
 		},
 	}
 
@@ -205,33 +205,33 @@ func TestBlockSetUnion(t *testing.T) {
 	}{
 		{
 			name:           "both sets empty",
-			setA:           setFromSlice(),
-			setB:           setFromSlice(),
-			expectedResult: setFromSlice(),
+			setA:           blockSetFromSlice(),
+			setB:           blockSetFromSlice(),
+			expectedResult: blockSetFromSlice(),
 		},
 		{
 			name:           "union against an empty set",
-			setA:           setFromSlice(node1),
-			setB:           setFromSlice(),
-			expectedResult: setFromSlice(node1),
+			setA:           blockSetFromSlice(node1),
+			setB:           blockSetFromSlice(),
+			expectedResult: blockSetFromSlice(node1),
 		},
 		{
 			name:           "union from an empty set",
-			setA:           setFromSlice(),
-			setB:           setFromSlice(node1),
-			expectedResult: setFromSlice(node1),
+			setA:           blockSetFromSlice(),
+			setB:           blockSetFromSlice(node1),
+			expectedResult: blockSetFromSlice(node1),
 		},
 		{
 			name:           "union with subset",
-			setA:           setFromSlice(node1, node2),
-			setB:           setFromSlice(node1),
-			expectedResult: setFromSlice(node1, node2),
+			setA:           blockSetFromSlice(node1, node2),
+			setB:           blockSetFromSlice(node1),
+			expectedResult: blockSetFromSlice(node1, node2),
 		},
 		{
 			name:           "typical case",
-			setA:           setFromSlice(node1, node2),
-			setB:           setFromSlice(node2, node3),
-			expectedResult: setFromSlice(node1, node2, node3),
+			setA:           blockSetFromSlice(node1, node2),
+			setB:           blockSetFromSlice(node2, node3),
+			expectedResult: blockSetFromSlice(node1, node2, node3),
 		},
 	}
 

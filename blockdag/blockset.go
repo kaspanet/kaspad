@@ -9,14 +9,14 @@ import (
 // blockSet implements a basic unsorted set of blocks
 type blockSet map[*blockNode]struct{}
 
-// newSet creates a new, empty BlockSet
-func newSet() blockSet {
+// newBlockSet creates a new, empty BlockSet
+func newBlockSet() blockSet {
 	return map[*blockNode]struct{}{}
 }
 
-// setFromSlice converts a slice of blockNodes into an unordered set represented as map
-func setFromSlice(nodes ...*blockNode) blockSet {
-	set := newSet()
+// blockSetFromSlice converts a slice of blockNodes into an unordered set represented as map
+func blockSetFromSlice(nodes ...*blockNode) blockSet {
+	set := newBlockSet()
 	for _, node := range nodes {
 		set.add(node)
 	}
@@ -36,7 +36,7 @@ func (bs blockSet) remove(node *blockNode) {
 
 // clone clones thie block set
 func (bs blockSet) clone() blockSet {
-	clone := newSet()
+	clone := newBlockSet()
 	for node := range bs {
 		clone.add(node)
 	}
@@ -45,7 +45,7 @@ func (bs blockSet) clone() blockSet {
 
 // subtract returns the difference between the BlockSet and another BlockSet
 func (bs blockSet) subtract(other blockSet) blockSet {
-	diff := newSet()
+	diff := newBlockSet()
 	for node := range bs {
 		if !other.contains(node) {
 			diff.add(node)

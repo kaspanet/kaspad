@@ -19,12 +19,12 @@ func TestBlockHeap(t *testing.T) {
 	defer teardownFunc()
 
 	block0Header := dagconfig.MainnetParams.GenesisBlock.Header
-	block0, _ := dag.newBlockNode(&block0Header, newSet())
+	block0, _ := dag.newBlockNode(&block0Header, newBlockSet())
 
 	block100000Header := Block100000.Header
-	block100000, _ := dag.newBlockNode(&block100000Header, setFromSlice(block0))
+	block100000, _ := dag.newBlockNode(&block100000Header, blockSetFromSlice(block0))
 
-	block0smallHash, _ := dag.newBlockNode(&block0Header, newSet())
+	block0smallHash, _ := dag.newBlockNode(&block0Header, newBlockSet())
 	block0smallHash.hash = &daghash.Hash{}
 
 	tests := []struct {

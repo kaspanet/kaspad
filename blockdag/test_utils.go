@@ -163,7 +163,7 @@ func SetVirtualForTest(dag *BlockDAG, virtual VirtualForTest) VirtualForTest {
 
 // GetVirtualFromParentsForTest generates a virtual block with the given parents.
 func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (VirtualForTest, error) {
-	parents := newSet()
+	parents := newBlockSet()
 	for _, hash := range parentHashes {
 		parent := dag.index.LookupNode(hash)
 		if parent == nil {

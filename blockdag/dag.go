@@ -1674,7 +1674,7 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 	// Collect every node in highNode's past (including itself) but
 	// NOT in the lowNode's past (excluding itself) into an up-heap
 	// (a heap sorted by blueScore from lowest to greatest).
-	visited := newSet()
+	visited := newBlockSet()
 	candidateNodes := newUpHeap()
 	queue := newDownHeap()
 	queue.Push(highNode)
@@ -1755,7 +1755,7 @@ func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash, maxHeaders uint64) ([
 	queue := newDownHeap()
 	queue.pushSet(highNode.parents)
 
-	visited := newSet()
+	visited := newBlockSet()
 	for i := uint32(0); queue.Len() > 0 && uint64(len(headers)) < maxHeaders; i++ {
 		var current *blockNode
 		current = queue.pop()

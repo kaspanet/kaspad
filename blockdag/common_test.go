@@ -129,10 +129,10 @@ func newTestDAG(params *dagconfig.Params) *BlockDAG {
 
 	// Create a genesis block node and block index index populated with it
 	// on the above fake DAG.
-	dag.genesis, _ = dag.newBlockNode(&params.GenesisBlock.Header, newSet())
+	dag.genesis, _ = dag.newBlockNode(&params.GenesisBlock.Header, newBlockSet())
 	index.AddNode(dag.genesis)
 
-	dag.virtual = newVirtualBlock(dag, setFromSlice(dag.genesis))
+	dag.virtual = newVirtualBlock(dag, blockSetFromSlice(dag.genesis))
 	return dag
 }
 

@@ -577,7 +577,7 @@ func (dag *BlockDAG) initDAGState() error {
 		}
 
 		// Apply the stored tips to the virtual block.
-		tips := newSet()
+		tips := newBlockSet()
 		for _, tipHash := range state.TipHashes {
 			tip := dag.index.LookupNode(tipHash)
 			if tip == nil {
@@ -654,8 +654,8 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		utxoCommitment:       header.UTXOCommitment,
 	}
 
-	node.children = newSet()
-	node.parents = newSet()
+	node.children = newBlockSet()
+	node.parents = newBlockSet()
 
 	for _, hash := range header.ParentHashes {
 		parent := dag.index.LookupNode(hash)
