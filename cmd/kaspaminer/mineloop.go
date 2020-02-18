@@ -23,6 +23,8 @@ import (
 var random = rand.New(rand.NewSource(time.Now().UnixNano()))
 var hashesTried uint64
 
+const logHashRateInterval = 10 * time.Second
+
 func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64) error {
 	errChan := make(chan error)
 
@@ -65,7 +67,7 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64) err
 func logHashRate() {
 	spawn(func() {
 		lastCheck := time.Now()
-		for range time.Tick(10 * time.Second) {
+		for range time.Tick(logHashRateInterval) {
 			currentHashesTried := hashesTried
 			currentTime := time.Now()
 			kiloHashesTried := float64(currentHashesTried) / 1000.0
