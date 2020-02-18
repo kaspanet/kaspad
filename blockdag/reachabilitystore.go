@@ -88,6 +88,7 @@ func (store *reachabilityStore) flushToDB(dbTx database.Tx) error {
 	}
 
 	for hash := range store.dirty {
+		hash := hash // Copy hash to a new variable to avoid passing the same pointer
 		reachabilityData := store.loaded[hash]
 		err := store.dbStoreReachabilityData(dbTx, &hash, reachabilityData)
 		if err != nil {

@@ -166,6 +166,7 @@ func (diffStore *utxoDiffStore) flushToDB(dbTx database.Tx) error {
 	// while writing each entry.
 	buffer := &bytes.Buffer{}
 	for hash := range diffStore.dirty {
+		hash := hash // Copy hash to a new variable to avoid passing the same pointer
 		buffer.Reset()
 		diffData := diffStore.loaded[hash]
 		err := dbStoreDiffData(dbTx, buffer, &hash, diffData)
