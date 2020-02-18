@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/pointers"
 	"github.com/kaspanet/kaspad/wire"
 )
 
@@ -104,7 +105,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		s.cfg.DAGParams)
 	var address *string
 	if addr != nil {
-		address = rpcmodel.String(addr.EncodeAddress())
+		address = pointers.String(addr.EncodeAddress())
 	}
 
 	txOutReply := &rpcmodel.GetTxOutResult{

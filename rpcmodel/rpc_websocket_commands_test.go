@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/kaspanet/kaspad/util/pointers"
 	"reflect"
 	"testing"
 
@@ -95,7 +96,7 @@ func TestRPCServerWebsocketCommands(t *testing.T) {
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"notifyNewTransactions","params":[],"id":1}`,
 			unmarshalled: &rpcmodel.NotifyNewTransactionsCmd{
-				Verbose: rpcmodel.Bool(false),
+				Verbose: pointers.Bool(false),
 			},
 		},
 		{
@@ -104,11 +105,11 @@ func TestRPCServerWebsocketCommands(t *testing.T) {
 				return rpcmodel.NewCommand("notifyNewTransactions", true)
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewNotifyNewTransactionsCmd(rpcmodel.Bool(true), nil)
+				return rpcmodel.NewNotifyNewTransactionsCmd(pointers.Bool(true), nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"notifyNewTransactions","params":[true],"id":1}`,
 			unmarshalled: &rpcmodel.NotifyNewTransactionsCmd{
-				Verbose: rpcmodel.Bool(true),
+				Verbose: pointers.Bool(true),
 			},
 		},
 		{
@@ -117,12 +118,12 @@ func TestRPCServerWebsocketCommands(t *testing.T) {
 				return rpcmodel.NewCommand("notifyNewTransactions", true, "0000000000000000000000000000000000000123")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewNotifyNewTransactionsCmd(rpcmodel.Bool(true), rpcmodel.String("0000000000000000000000000000000000000123"))
+				return rpcmodel.NewNotifyNewTransactionsCmd(pointers.Bool(true), pointers.String("0000000000000000000000000000000000000123"))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"notifyNewTransactions","params":[true,"0000000000000000000000000000000000000123"],"id":1}`,
 			unmarshalled: &rpcmodel.NotifyNewTransactionsCmd{
-				Verbose:    rpcmodel.Bool(true),
-				Subnetwork: rpcmodel.String("0000000000000000000000000000000000000123"),
+				Verbose:    pointers.Bool(true),
+				Subnetwork: pointers.String("0000000000000000000000000000000000000123"),
 			},
 		},
 		{
