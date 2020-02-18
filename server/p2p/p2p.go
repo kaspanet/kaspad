@@ -220,8 +220,7 @@ func (ps *peerState) forAllPeers(callback func(sp *Peer) bool) bool {
 	if !shouldContinue {
 		return false
 	}
-	ps.forAllOutboundPeers(callback)
-	return true
+	return ps.forAllOutboundPeers(callback)
 }
 
 // cfHeaderKV is a tuple of a filter header and its associated block hash. The
