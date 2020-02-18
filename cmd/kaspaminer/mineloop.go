@@ -52,6 +52,17 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64) err
 		doneChan <- struct{}{}
 	})
 
+	logHashRate()
+
+	select {
+	case err := <-errChan:
+		return err
+	case <-doneChan:
+		return nil
+	}
+}
+
+func logHashRate() {
 	spawn(func() {
 		lastCheck := time.Now()
 		for range time.Tick(10 * time.Second) {
@@ -65,13 +76,6 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64) err
 			atomic.AddUint64(&hashesTried, -currentHashesTried)
 		}
 	})
-
-	select {
-	case err := <-errChan:
-		return err
-	case <-doneChan:
-		return nil
-	}
 }
 
 func mineNextBlock(client *minerClient, foundBlock chan *util.Block, templateStopChan chan struct{}, errChan chan error) {
