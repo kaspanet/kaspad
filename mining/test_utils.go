@@ -96,9 +96,7 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 		}
 	}
 	if forceTransactions && len(txsToAdd) > 0 {
-		for _, tx := range txsToAdd {
-			template.Block.Transactions = append(template.Block.Transactions, tx)
-		}
+		template.Block.Transactions = append(template.Block.Transactions, txsToAdd...)
 	}
 	updateHeaderFields := forceTransactions && len(txsToAdd) > 0
 	if updateHeaderFields {

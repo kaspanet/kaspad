@@ -556,6 +556,9 @@ func TestProcessTransaction(t *testing.T) {
 
 	//Checks that non standard transactions are rejected from the mempool
 	nonStdTx, err := harness.createTx(spendableOuts[0], 0, 1)
+	if err != nil {
+		t.Fatalf("Unexpected error from harness.createTx: %s", err)
+	}
 	nonStdTx.MsgTx().Version = wire.TxVersion + 1
 	_, err = harness.txPool.ProcessTransaction(nonStdTx, true, 0)
 	if err == nil {
@@ -968,14 +971,28 @@ func TestOrphanExpiration(t *testing.T) {
 		amount:   util.Amount(5000000000),
 		outpoint: wire.Outpoint{TxID: daghash.TxID{}, Index: 0},
 	}}, 1)
-	harness.txPool.ProcessTransaction(expiredTx, true, 0)
+	if err != nil {
+		t.Fatalf("Unexpected error on harness.CreateSignedTx: %s", err)
+	}
+
+	_, err = harness.txPool.ProcessTransaction(expiredTx, true, 0)
+	if err != nil {
+		t.Fatalf("Unexpected error on harness.ProcessTransaction: %s", err)
+	}
 	harness.txPool.orphans[*expiredTx.ID()].expiration = time.Unix(0, 0)
 
 	tx1, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
 		outpoint: wire.Outpoint{TxID: daghash.TxID{1}, Index: 0},
 	}}, 1)
-	harness.txPool.ProcessTransaction(tx1, true, 0)
+	if err != nil {
+		t.Fatalf("Unexpected error on harness.CreateSignedTx: %s", err)
+	}
+
+	_, err = harness.txPool.ProcessTransaction(tx1, true, 0)
+	if err != nil {
+		t.Fatalf("Unexpected error on harness.ProcessTransaction: %s", err)
+	}
 
 	//First check that expired orphan transactions are not removed before nextExpireScan
 	testPoolMembership(tc, tx1, true, false, false)
@@ -989,7 +1006,13 @@ func TestOrphanExpiration(t *testing.T) {
 		amount:   util.Amount(5000000000),
 		outpoint: wire.Outpoint{TxID: daghash.TxID{2}, Index: 0},
 	}}, 1)
-	harness.txPool.ProcessTransaction(tx2, true, 0)
+	if err != nil {
+		t.Fatalf("Unexpected error on harness.CreateSignedTx: %s", err)
+	}
+	_, err = harness.txPool.ProcessTransaction(tx2, true, 0)
+	if err != nil {
+		t.Fatalf("Unexpected error on harness.ProcessTransaction: %s", err)
+	}
 	//Check that only expired orphan transactions are removed
 	testPoolMembership(tc, tx1, true, false, false)
 	testPoolMembership(tc, tx2, true, false, false)

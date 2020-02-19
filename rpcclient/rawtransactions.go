@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"github.com/kaspanet/kaspad/util/pointers"
 
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util"
@@ -59,7 +60,7 @@ func (c *Client) GetRawTransactionAsync(txID *daghash.TxID) FutureGetRawTransact
 		id = txID.String()
 	}
 
-	cmd := rpcmodel.NewGetRawTransactionCmd(id, rpcmodel.Int(0))
+	cmd := rpcmodel.NewGetRawTransactionCmd(id, pointers.Int(0))
 	return c.sendCmd(cmd)
 }
 
@@ -105,7 +106,7 @@ func (c *Client) GetRawTransactionVerboseAsync(txID *daghash.TxID) FutureGetRawT
 		id = txID.String()
 	}
 
-	cmd := rpcmodel.NewGetRawTransactionCmd(id, rpcmodel.Int(1))
+	cmd := rpcmodel.NewGetRawTransactionCmd(id, pointers.Int(1))
 	return c.sendCmd(cmd)
 }
 
@@ -310,7 +311,7 @@ func (r FutureSearchRawTransactionsResult) Receive() ([]*wire.MsgTx, error) {
 // See SearchRawTransactions for the blocking version and more details.
 func (c *Client) SearchRawTransactionsAsync(address util.Address, skip, count int, reverse bool, filterAddrs []string) FutureSearchRawTransactionsResult {
 	addr := address.EncodeAddress()
-	verbose := rpcmodel.Bool(false)
+	verbose := pointers.Bool(false)
 	cmd := rpcmodel.NewSearchRawTransactionsCmd(addr, verbose, &skip, &count,
 		nil, &reverse, &filterAddrs)
 	return c.sendCmd(cmd)
@@ -359,10 +360,10 @@ func (c *Client) SearchRawTransactionsVerboseAsync(address util.Address, skip,
 	count int, includePrevOut, reverse bool, filterAddrs *[]string) FutureSearchRawTransactionsVerboseResult {
 
 	addr := address.EncodeAddress()
-	verbose := rpcmodel.Bool(true)
+	verbose := pointers.Bool(true)
 	var prevOut *bool
 	if includePrevOut {
-		prevOut = rpcmodel.Bool(true)
+		prevOut = pointers.Bool(true)
 	}
 	cmd := rpcmodel.NewSearchRawTransactionsCmd(addr, verbose, &skip, &count,
 		prevOut, &reverse, filterAddrs)

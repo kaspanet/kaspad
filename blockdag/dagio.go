@@ -608,6 +608,9 @@ func (dag *BlockDAG) initDAGState() error {
 
 			// Attempt to accept the block.
 			block, err := dbFetchBlockByNode(dbTx, node)
+			if err != nil {
+				return err
+			}
 			isOrphan, isDelayed, err := dag.ProcessBlock(block, BFWasStored)
 			if err != nil {
 				log.Warnf("Block %s, which was not previously processed, "+

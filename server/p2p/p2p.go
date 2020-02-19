@@ -117,18 +117,6 @@ type outboundPeerConnectedMsg struct {
 	conn    net.Conn
 }
 
-// updatePeerHeightsMsg is a message sent from the blockmanager to the server
-// after a new block has been accepted. The purpose of the message is to update
-// the heights of peers that were known to announce the block before we
-// connected it to the DAG or recognized it as an orphan. With these
-// updates, peer heights will be kept up to date, allowing for fresh data when
-// selecting sync peer candidacy.
-type updatePeerHeightsMsg struct {
-	newHash    *daghash.Hash
-	newHeight  int32
-	originPeer *peer.Peer
-}
-
 // Peer extends the peer to maintain state shared by the server and
 // the blockmanager.
 type Peer struct {
@@ -220,15 +208,7 @@ func (ps *peerState) forAllPeers(callback func(sp *Peer) bool) bool {
 	if !shouldContinue {
 		return false
 	}
-	ps.forAllOutboundPeers(callback)
-	return true
-}
-
-// cfHeaderKV is a tuple of a filter header and its associated block hash. The
-// struct is used to cache cfcheckpt responses.
-type cfHeaderKV struct {
-	blockHash    *daghash.Hash
-	filterHeader *daghash.Hash
+	return ps.forAllOutboundPeers(callback)
 }
 
 // Server provides a kaspa server for handling communications to and from
@@ -238,7 +218,6 @@ type Server struct {
 	// Putting the uint64s first makes them 64-bit aligned for 32-bit systems.
 	bytesReceived uint64 // Total bytes received from all peers since start.
 	bytesSent     uint64 // Total bytes sent by all peers since start.
-	started       int32
 	shutdown      int32
 	shutdownSched int32
 
@@ -279,7 +258,6 @@ type Server struct {
 	AcceptanceIndex *indexers.AcceptanceIndex
 
 	notifyNewTransactions func(txns []*mempool.TxDesc)
-	isRPCServerActive     bool
 }
 
 // newServerPeer returns a new serverPeer instance. The peer needs to be set by
@@ -877,10 +855,7 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 		shouldMineOnGenesis := true
 		if state.Count() != 0 {
 			shouldMineOnGenesis = state.forAllPeers(func(sp *Peer) bool {
-				if !sp.SelectedTipHash().IsEqual(s.DAGParams.GenesisHash) {
-					return false
-				}
-				return true
+				return sp.SelectedTipHash().IsEqual(s.DAGParams.GenesisHash)
 			})
 		} else {
 			shouldMineOnGenesis = false
@@ -1316,9 +1291,7 @@ out:
 			// When an InvVect has been added to a block, we can
 			// now remove it, if it was present.
 			case broadcastInventoryDel:
-				if _, ok := pendingInvs[*msg]; ok {
-					delete(pendingInvs, *msg)
-				}
+				delete(pendingInvs, *msg)
 			}
 
 		case <-timer.C:

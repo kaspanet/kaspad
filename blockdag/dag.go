@@ -232,9 +232,7 @@ func (dag *BlockDAG) GetOrphanMissingAncestorHashes(orphanHash *daghash.Hash) ([
 			visited[*current] = true
 			orphan, orphanExists := dag.orphans[*current]
 			if orphanExists {
-				for _, parentHash := range orphan.block.MsgBlock().Header.ParentHashes {
-					queue = append(queue, parentHash)
-				}
+				queue = append(queue, orphan.block.MsgBlock().Header.ParentHashes...)
 			} else {
 				if !dag.IsInDAG(current) && current != orphanHash {
 					missingAncestorsHashes = append(missingAncestorsHashes, current)
@@ -837,16 +835,6 @@ func (dag *BlockDAG) NextBlockCoinbaseTransactionNoLock(scriptPubKey []byte, ext
 	return dag.virtual.blockNode.expectedCoinbaseTransaction(dag, txsAcceptanceData, scriptPubKey, extraData)
 }
 
-// NextAcceptedIDMerkleRoot prepares the acceptedIDMerkleRoot for the next mined block
-//
-// This function CAN'T be called with the DAG lock held.
-func (dag *BlockDAG) NextAcceptedIDMerkleRoot() (*daghash.Hash, error) {
-	dag.dagLock.RLock()
-	defer dag.dagLock.RUnlock()
-
-	return dag.NextAcceptedIDMerkleRootNoLock()
-}
-
 // NextAcceptedIDMerkleRootNoLock prepares the acceptedIDMerkleRoot for the next mined block
 //
 // This function MUST be called with the DAG read-lock held
@@ -877,18 +865,6 @@ func (dag *BlockDAG) TxsAcceptedByBlockHash(blockHash *daghash.Hash) (MultiBlock
 	}
 	_, txsAcceptanceData, err := dag.pastUTXO(node)
 	return txsAcceptanceData, err
-}
-
-// BlockPastUTXO retrieves the past UTXO of this block
-//
-// This function MUST be called with the DAG read-lock held
-func (dag *BlockDAG) BlockPastUTXO(blockHash *daghash.Hash) (UTXOSet, error) {
-	node := dag.index.LookupNode(blockHash)
-	if node == nil {
-		return nil, errors.Errorf("Couldn't find block %s", blockHash)
-	}
-	pastUTXO, _, err := dag.pastUTXO(node)
-	return pastUTXO, err
 }
 
 // applyDAGChanges does the following:
@@ -1757,8 +1733,7 @@ func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash, maxHeaders uint64) ([
 
 	visited := newSet()
 	for i := uint32(0); queue.Len() > 0 && uint64(len(headers)) < maxHeaders; i++ {
-		var current *blockNode
-		current = queue.pop()
+		current := queue.pop()
 		if !visited.contains(current) {
 			visited.add(current)
 			headers = append(headers, current.Header())

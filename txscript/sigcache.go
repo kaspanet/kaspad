@@ -74,7 +74,7 @@ func (s *SigCache) Add(sigHash daghash.Hash, sig *ecc.Signature, pubKey *ecc.Pub
 	s.Lock()
 	defer s.Unlock()
 
-	if s.maxEntries <= 0 {
+	if s.maxEntries == 0 {
 		return
 	}
 

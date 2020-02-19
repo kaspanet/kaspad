@@ -531,15 +531,6 @@ func (c *Client) NotifyChainChanges() error {
 	return c.NotifyChainChangesAsync().Receive()
 }
 
-// newOutpointFromWire constructs the jsonrpc representation of a transaction
-// outpoint from the wire type.
-func newOutpointFromWire(op *wire.Outpoint) rpcmodel.Outpoint {
-	return rpcmodel.Outpoint{
-		TxID:  op.TxID.String(),
-		Index: op.Index,
-	}
-}
-
 // FutureNotifyNewTransactionsResult is a future promise to deliver the result
 // of a NotifyNewTransactionsAsync RPC invocation (or an applicable error).
 type FutureNotifyNewTransactionsResult chan *response

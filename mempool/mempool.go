@@ -148,8 +148,6 @@ type TxPool struct {
 	orphans       map[daghash.TxID]*orphanTx
 	orphansByPrev map[wire.Outpoint]map[daghash.TxID]*util.Tx
 	outpoints     map[wire.Outpoint]*util.Tx
-	pennyTotal    float64 // exponentially decaying total for penny spends.
-	lastPennyUnix int64   // unix time of last ``penny spend''
 
 	// nextExpireScan is the time after which the orphan pool will be
 	// scanned in order to evict orphans. This is NOT a hard deadline as
@@ -779,9 +777,15 @@ func (mp *TxPool) FetchTransaction(txID *daghash.TxID) (*util.Tx, error) {
 	return nil, errors.Errorf("transaction is not in the pool")
 }
 
-// maybeAcceptTransaction is the internal function which implements the public
-// MaybeAcceptTransaction. See the comment for MaybeAcceptTransaction for
-// more details.
+// maybeAcceptTransaction is the main workhorse for handling insertion of new
+// free-standing transactions into a memory pool. It includes functionality
+// such as rejecting duplicate transactions, ensuring transactions follow all
+// rules, detecting orphan transactions, and insertion into the memory pool.
+//
+// If the transaction is an orphan (missing parent transactions), the
+// transaction is NOT added to the orphan pool, but each unknown referenced
+// parent is returned. Use ProcessTransaction instead if new orphans should
+// be added to the orphan pool.
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]*daghash.TxID, *TxDesc, error) {
@@ -1027,28 +1031,6 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 		len(mp.pool))
 
 	return nil, txD, nil
-}
-
-// MaybeAcceptTransaction is the main workhorse for handling insertion of new
-// free-standing transactions into a memory pool. It includes functionality
-// such as rejecting duplicate transactions, ensuring transactions follow all
-// rules, detecting orphan transactions, and insertion into the memory pool.
-//
-// If the transaction is an orphan (missing parent transactions), the
-// transaction is NOT added to the orphan pool, but each unknown referenced
-// parent is returned. Use ProcessTransaction instead if new orphans should
-// be added to the orphan pool.
-//
-// This function is safe for concurrent access.
-func (mp *TxPool) MaybeAcceptTransaction(tx *util.Tx, isNew bool) ([]*daghash.TxID, *TxDesc, error) {
-	// Protect concurrent access.
-	mp.cfg.DAG.RLock()
-	defer mp.cfg.DAG.RUnlock()
-	mp.mtx.Lock()
-	defer mp.mtx.Unlock()
-	hashes, txD, err := mp.maybeAcceptTransaction(tx, true)
-
-	return hashes, txD, err
 }
 
 // processOrphans is the internal function which implements the public

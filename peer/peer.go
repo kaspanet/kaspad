@@ -351,13 +351,6 @@ type StatsSnap struct {
 	LastPingMicros  int64
 }
 
-// HashFunc is a function which returns a block hash, height and error
-// It is used as a callback to get newest block details.
-type HashFunc func() (hash *daghash.Hash, height int32, err error)
-
-// AddrFunc is a func which takes an address and returns a related address.
-type AddrFunc func(remoteAddr *wire.NetAddress) *wire.NetAddress
-
 // HostToNetAddrFunc is a func which takes a host, port, services and returns
 // the netaddress.
 type HostToNetAddrFunc func(host string, port uint16,
@@ -420,9 +413,6 @@ type Peer struct {
 	prevGetBlockInvsMtx  sync.Mutex
 	prevGetBlockInvsLow  *daghash.Hash
 	prevGetBlockInvsHigh *daghash.Hash
-	prevGetHdrsMtx       sync.Mutex
-	prevGetHdrsLow       *daghash.Hash
-	prevGetHdrsHigh      *daghash.Hash
 
 	// These fields keep track of statistics for the peer and are protected
 	// by the statsMtx mutex.

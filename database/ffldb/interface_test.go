@@ -754,7 +754,7 @@ func testMetadataManualTxInterface(tc *testContext) bool {
 	deleteValues := func(values []keyPair) bool {
 		tx, err := tc.db.Begin(true)
 		if err != nil {
-
+			tc.t.Fatalf("tc.db.Begin: %s", err)
 		}
 		defer rollbackOnPanic(tc.t, tx)
 

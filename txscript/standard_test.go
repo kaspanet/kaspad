@@ -136,10 +136,8 @@ func TestExtractScriptPubKeyAddrs(t *testing.T) {
 
 	t.Logf("Running %d tests.", len(tests))
 	for i, test := range tests {
-		class, addr, err := ExtractScriptPubKeyAddress(
+		class, addr, _ := ExtractScriptPubKeyAddress(
 			test.script, &dagconfig.MainnetParams)
-		if err != nil {
-		}
 
 		if !reflect.DeepEqual(addr, test.addr) {
 			t.Errorf("ExtractScriptPubKeyAddress #%d (%s) unexpected "+

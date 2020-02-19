@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"github.com/kaspanet/kaspad/util/pointers"
 
 	"github.com/pkg/errors"
 
@@ -33,7 +34,7 @@ func (r FutureGetSelectedTipHashResult) Receive() (*daghash.Hash, error) {
 	var txHashStr string
 	err = json.Unmarshal(res, &txHashStr)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.Wrap(err, "couldn't decode getSelectedTip response")
 	}
 	return daghash.NewHashFromStr(txHashStr)
 }
@@ -70,13 +71,13 @@ func (r FutureGetBlockResult) Receive() (*wire.MsgBlock, error) {
 	var blockHex string
 	err = json.Unmarshal(res, &blockHex)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.Wrap(err, "couldn't decode getBlock response")
 	}
 
 	// Decode the serialized block hex to raw bytes.
 	serializedBlock, err := hex.DecodeString(blockHex)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.Wrap(err, "couldn't decode block hex")
 	}
 
 	// Deserialize the block and return it.
@@ -99,7 +100,7 @@ func (c *Client) GetBlockAsync(blockHash *daghash.Hash, subnetworkID *string) Fu
 		hash = blockHash.String()
 	}
 
-	cmd := rpcmodel.NewGetBlockCmd(hash, rpcmodel.Bool(false), rpcmodel.Bool(false), subnetworkID)
+	cmd := rpcmodel.NewGetBlockCmd(hash, pointers.Bool(false), pointers.Bool(false), subnetworkID)
 	return c.sendCmd(cmd)
 }
 
@@ -125,7 +126,7 @@ func (r FutureGetBlocksResult) Receive() (*rpcmodel.GetBlocksResult, error) {
 
 	var result rpcmodel.GetBlocksResult
 	if err := json.Unmarshal(res, &result); err != nil {
-		return nil, errors.Wrapf(err, "%s", string(res))
+		return nil, errors.Wrap(err, string(res))
 	}
 	return &result, nil
 }
@@ -162,7 +163,7 @@ func (r FutureGetBlockVerboseResult) Receive() (*rpcmodel.GetBlockVerboseResult,
 	var blockResult rpcmodel.GetBlockVerboseResult
 	err = json.Unmarshal(res, &blockResult)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.Wrap(err, "couldn't decode getBlock response")
 	}
 	return &blockResult, nil
 }
@@ -178,7 +179,7 @@ func (c *Client) GetBlockVerboseAsync(blockHash *daghash.Hash, subnetworkID *str
 		hash = blockHash.String()
 	}
 
-	cmd := rpcmodel.NewGetBlockCmd(hash, rpcmodel.Bool(true), rpcmodel.Bool(false), subnetworkID)
+	cmd := rpcmodel.NewGetBlockCmd(hash, pointers.Bool(true), pointers.Bool(false), subnetworkID)
 	return c.sendCmd(cmd)
 }
 
@@ -202,7 +203,7 @@ func (c *Client) GetBlockVerboseTxAsync(blockHash *daghash.Hash, subnetworkID *s
 		hash = blockHash.String()
 	}
 
-	cmd := rpcmodel.NewGetBlockCmd(hash, rpcmodel.Bool(true), rpcmodel.Bool(true), subnetworkID)
+	cmd := rpcmodel.NewGetBlockCmd(hash, pointers.Bool(true), pointers.Bool(true), subnetworkID)
 	return c.sendCmd(cmd)
 }
 
@@ -267,7 +268,7 @@ func (r FutureGetChainFromBlockResult) Receive() (*rpcmodel.GetChainFromBlockRes
 
 	var result rpcmodel.GetChainFromBlockResult
 	if err := json.Unmarshal(res, &result); err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.Wrap(err, "couldn't decode getChainFromBlock response")
 	}
 	return &result, nil
 }
@@ -341,7 +342,7 @@ func (r FutureGetBlockDAGInfoResult) Receive() (*rpcmodel.GetBlockDAGInfoResult,
 
 	var dagInfo rpcmodel.GetBlockDAGInfoResult
 	if err := json.Unmarshal(res, &dagInfo); err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.Wrap(err, "couldn't decode getBlockDagInfo response")
 	}
 	return &dagInfo, nil
 }
@@ -400,12 +401,12 @@ func (r FutureGetBlockHeaderResult) Receive() (*wire.BlockHeader, error) {
 	var bhHex string
 	err = json.Unmarshal(res, &bhHex)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.Wrap(err, "couldn't decode getBlockHeader response")
 	}
 
 	serializedBH, err := hex.DecodeString(bhHex)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.Wrap(err, "couldn't decode block header hex")
 	}
 
 	// Deserialize the blockheader and return it.
@@ -429,7 +430,7 @@ func (c *Client) GetBlockHeaderAsync(blockHash *daghash.Hash) FutureGetBlockHead
 		hash = blockHash.String()
 	}
 
-	cmd := rpcmodel.NewGetBlockHeaderCmd(hash, rpcmodel.Bool(false))
+	cmd := rpcmodel.NewGetBlockHeaderCmd(hash, pointers.Bool(false))
 	return c.sendCmd(cmd)
 }
 
@@ -457,7 +458,7 @@ func (r FutureGetBlockHeaderVerboseResult) Receive() (*rpcmodel.GetBlockHeaderVe
 	var bh rpcmodel.GetBlockHeaderVerboseResult
 	err = json.Unmarshal(res, &bh)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.Wrap(err, "couldn't decode getBlockHeader response")
 	}
 
 	return &bh, nil
@@ -474,7 +475,7 @@ func (c *Client) GetBlockHeaderVerboseAsync(blockHash *daghash.Hash) FutureGetBl
 		hash = blockHash.String()
 	}
 
-	cmd := rpcmodel.NewGetBlockHeaderCmd(hash, rpcmodel.Bool(true))
+	cmd := rpcmodel.NewGetBlockHeaderCmd(hash, pointers.Bool(true))
 	return c.sendCmd(cmd)
 }
 
@@ -503,7 +504,7 @@ func (r FutureGetMempoolEntryResult) Receive() (*rpcmodel.GetMempoolEntryResult,
 	var mempoolEntryResult rpcmodel.GetMempoolEntryResult
 	err = json.Unmarshal(res, &mempoolEntryResult)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.Wrap(err, "couldn't decode getMempoolEntry response")
 	}
 
 	return &mempoolEntryResult, nil
@@ -541,7 +542,7 @@ func (r FutureGetRawMempoolResult) Receive() ([]*daghash.Hash, error) {
 	var txHashStrs []string
 	err = json.Unmarshal(res, &txHashStrs)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.Wrap(err, "couldn't decode getRawMempool response")
 	}
 
 	// Create a slice of ShaHash arrays from the string slice.
@@ -563,7 +564,7 @@ func (r FutureGetRawMempoolResult) Receive() ([]*daghash.Hash, error) {
 //
 // See GetRawMempool for the blocking version and more details.
 func (c *Client) GetRawMempoolAsync() FutureGetRawMempoolResult {
-	cmd := rpcmodel.NewGetRawMempoolCmd(rpcmodel.Bool(false))
+	cmd := rpcmodel.NewGetRawMempoolCmd(pointers.Bool(false))
 	return c.sendCmd(cmd)
 }
 
@@ -593,7 +594,7 @@ func (r FutureGetRawMempoolVerboseResult) Receive() (map[string]rpcmodel.GetRawM
 	var mempoolItems map[string]rpcmodel.GetRawMempoolVerboseResult
 	err = json.Unmarshal(res, &mempoolItems)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.Wrap(err, "couldn't decode getRawMempool response")
 	}
 	return mempoolItems, nil
 }
@@ -604,7 +605,7 @@ func (r FutureGetRawMempoolVerboseResult) Receive() (map[string]rpcmodel.GetRawM
 //
 // See GetRawMempoolVerbose for the blocking version and more details.
 func (c *Client) GetRawMempoolVerboseAsync() FutureGetRawMempoolVerboseResult {
-	cmd := rpcmodel.NewGetRawMempoolCmd(rpcmodel.Bool(true))
+	cmd := rpcmodel.NewGetRawMempoolCmd(pointers.Bool(true))
 	return c.sendCmd(cmd)
 }
 
@@ -633,7 +634,7 @@ func (r FutureGetSubnetworkResult) Receive() (*rpcmodel.GetSubnetworkResult, err
 	var getSubnetworkResult *rpcmodel.GetSubnetworkResult
 	err = json.Unmarshal(res, &getSubnetworkResult)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.Wrap(err, "couldn't decode getSubnetwork response")
 	}
 
 	return getSubnetworkResult, nil
@@ -676,7 +677,7 @@ func (r FutureGetTxOutResult) Receive() (*rpcmodel.GetTxOutResult, error) {
 	var txOutInfo *rpcmodel.GetTxOutResult
 	err = json.Unmarshal(res, &txOutInfo)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.Wrap(err, "couldn't decode getTxOut response")
 	}
 
 	return txOutInfo, nil
@@ -718,7 +719,7 @@ func (r FutureRescanBlocksResult) Receive() ([]rpcmodel.RescannedBlock, error) {
 	var rescanBlocksResult []rpcmodel.RescannedBlock
 	err = json.Unmarshal(res, &rescanBlocksResult)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.Wrap(err, "couldn't decode rescanBlocks response")
 	}
 
 	return rescanBlocksResult, nil
