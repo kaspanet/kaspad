@@ -30,6 +30,9 @@ type naTest struct {
 // method.
 var naTests = make([]naTest, 0)
 
+// Put some IP in here for convenience. Points to google.
+var someIP = "173.194.115.66"
+
 // addNaTests
 func addNaTests() {
 	// IPv4
