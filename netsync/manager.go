@@ -214,14 +214,13 @@ func (sm *SyncManager) startSync() {
 				continue
 			}
 
-			if time.Now().Sub(state.lastSelectedTipRequest) < minGetSelectedTipInterval {
+			if time.Since(state.lastSelectedTipRequest) < minGetSelectedTipInterval {
 				continue
 			}
 
 			queueMsgGetSelectedTip(peer, state)
 		}
 	}
-	return
 }
 
 func (sm *SyncManager) shouldQueryPeerSelectedTips() bool {

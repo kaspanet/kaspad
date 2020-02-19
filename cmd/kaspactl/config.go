@@ -36,11 +36,6 @@ var (
 	activeConfig       *ConfigFlags
 )
 
-// ActiveConfig returns the active configuration struct
-func ActiveConfig() *ConfigFlags {
-	return activeConfig
-}
-
 // listCommands categorizes and lists all of the usable commands along with
 // their one-line usage.
 func listCommands() {

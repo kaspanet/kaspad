@@ -530,6 +530,10 @@ func (msg *MsgTx) KaspaDecode(r io.Reader, pver uint32) error {
 
 		msg.Payload = make([]byte, payloadLength)
 		_, err = io.ReadFull(r, msg.Payload)
+		if err != nil {
+			returnScriptBuffers()
+			return err
+		}
 	}
 
 	// Create a single allocation to house all of the scripts and set each

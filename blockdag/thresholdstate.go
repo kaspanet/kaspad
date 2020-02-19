@@ -230,9 +230,6 @@ func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdCondit
 				if condition {
 					count++
 				}
-
-				// Get the previous block node.
-				current = current.selectedParent
 			}
 
 			// The state is locked in if the number of blocks in the

@@ -74,7 +74,3 @@ func (b *blockProgressLogger) LogBlockBlueScore(block *util.Block, blueScore uin
 	b.receivedLogTx = 0
 	b.lastBlockLogTime = now
 }
-
-func (b *blockProgressLogger) SetLastLogTime(time time.Time) {
-	b.lastBlockLogTime = time
-}

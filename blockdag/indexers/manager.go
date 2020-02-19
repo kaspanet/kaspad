@@ -363,6 +363,9 @@ func dropIndex(db database.DB, idxKey []byte, idxName string, interrupt <-chan s
 			}
 			return bucket.DeleteBucket(bucketName[len(bucketName)-1])
 		})
+		if err != nil {
+			return err
+		}
 	}
 
 	// Remove the index tip, index bucket, and in-progress drop flag now

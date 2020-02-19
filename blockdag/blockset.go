@@ -102,17 +102,6 @@ func (bs blockSet) String() string {
 	return strings.Join(nodeStrs, ",")
 }
 
-// anyChildInSet returns true iff any child of node is contained within this set
-func (bs blockSet) anyChildInSet(node *blockNode) bool {
-	for child := range node.children {
-		if bs.contains(child) {
-			return true
-		}
-	}
-
-	return false
-}
-
 func (bs blockSet) bluest() *blockNode {
 	var bluestNode *blockNode
 	var maxScore uint64

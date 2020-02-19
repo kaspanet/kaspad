@@ -14,7 +14,7 @@ func handleNotifyNewTransactions(wsc *wsClient, icmd interface{}) (interface{}, 
 	}
 
 	isVerbose := cmd.Verbose != nil && *cmd.Verbose
-	if isVerbose == false && cmd.Subnetwork != nil {
+	if !isVerbose && cmd.Subnetwork != nil {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCInvalidParameter,
 			Message: "Subnetwork switch is only allowed if verbose=true",
