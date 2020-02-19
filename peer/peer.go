@@ -805,21 +805,21 @@ func (p *Peer) PushGetBlockLocatorMsg(highHash, lowHash *daghash.Hash) {
 	p.QueueMessage(msg, nil)
 }
 
+func (p *Peer) isDuplicateGetBlockInvsMsg(lowHash, highHash *daghash.Hash) bool {
+	p.prevGetBlockInvsMtx.Lock()
+	defer p.prevGetBlockInvsMtx.Unlock()
+	return p.prevGetBlockInvsHigh != nil && p.prevGetBlockInvsLow != nil &&
+		lowHash != nil && highHash.IsEqual(p.prevGetBlockInvsHigh) &&
+		lowHash.IsEqual(p.prevGetBlockInvsLow)
+}
+
 // PushGetBlockInvsMsg sends a getblockinvs message for the provided block locator
 // and high hash. It will ignore back-to-back duplicate requests.
 //
 // This function is safe for concurrent access.
 func (p *Peer) PushGetBlockInvsMsg(lowHash, highHash *daghash.Hash) error {
 	// Filter duplicate getblockinvs requests.
-	isDuplicate := func() bool {
-		p.prevGetBlockInvsMtx.Lock()
-		defer p.prevGetBlockInvsMtx.Unlock()
-		return p.prevGetBlockInvsHigh != nil && p.prevGetBlockInvsLow != nil &&
-			lowHash != nil && highHash.IsEqual(p.prevGetBlockInvsHigh) &&
-			lowHash.IsEqual(p.prevGetBlockInvsLow)
-	}()
-
-	if isDuplicate {
+	if p.isDuplicateGetBlockInvsMsg(lowHash, highHash) {
 		log.Tracef("Filtering duplicate [getblockinvs] with low "+
 			"hash %s, high hash %s", lowHash, highHash)
 		return nil
@@ -916,39 +916,41 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 		return errors.New("incompatible subnetworks")
 	}
 
-	// Updating a bunch of stats including block based stats, and the
-	// peer's time offset.
-	func() {
-		p.statsMtx.Lock()
-		defer p.statsMtx.Unlock()
-		p.selectedTipHash = msg.SelectedTipHash
-		p.timeOffset = msg.Timestamp.Unix() - time.Now().Unix()
-	}()
-
-	// Negotiate the protocol version.
-	func() {
-		p.flagsMtx.Lock()
-		defer p.flagsMtx.Unlock()
-
-		p.advertisedProtoVer = uint32(msg.ProtocolVersion)
-		p.protocolVersion = minUint32(p.protocolVersion, p.advertisedProtoVer)
-		p.versionKnown = true
-		log.Debugf("Negotiated protocol version %d for peer %s",
-			p.protocolVersion, p)
-
-		// Set the peer's ID.
-		p.id = atomic.AddInt32(&nodeCount, 1)
-
-		// Set the supported services for the peer to what the remote peer
-		// advertised.
-		p.services = msg.Services
-
-		// Set the remote peer's user agent.
-		p.userAgent = msg.UserAgent
-
-	}()
+	p.updateStatsFromVersionMsg(msg)
+	p.updateFlagsFromVersionMsg(msg)
 
 	return nil
+}
+
+// updateStatsFromVersionMsg updates a bunch of stats including block based stats, and the
+// peer's time offset.
+func (p *Peer) updateStatsFromVersionMsg(msg *wire.MsgVersion) {
+	p.statsMtx.Lock()
+	defer p.statsMtx.Unlock()
+	p.selectedTipHash = msg.SelectedTipHash
+	p.timeOffset = msg.Timestamp.Unix() - time.Now().Unix()
+}
+
+func (p *Peer) updateFlagsFromVersionMsg(msg *wire.MsgVersion) {
+	// Negotiate the protocol version.
+	p.flagsMtx.Lock()
+	defer p.flagsMtx.Unlock()
+
+	p.advertisedProtoVer = uint32(msg.ProtocolVersion)
+	p.protocolVersion = minUint32(p.protocolVersion, p.advertisedProtoVer)
+	p.versionKnown = true
+	log.Debugf("Negotiated protocol version %d for peer %s",
+		p.protocolVersion, p)
+
+	// Set the peer's ID.
+	p.id = atomic.AddInt32(&nodeCount, 1)
+
+	// Set the supported services for the peer to what the remote peer
+	// advertised.
+	p.services = msg.Services
+
+	// Set the remote peer's user agent.
+	p.userAgent = msg.UserAgent
 }
 
 // handlePingMsg is invoked when a peer receives a ping kaspa message. For
@@ -1354,11 +1356,7 @@ out:
 					"disconnecting", p)
 				break out
 			}
-			func() {
-				p.flagsMtx.Lock()
-				defer p.flagsMtx.Unlock()
-				p.verAckReceived = true
-			}()
+			p.markVerAckReceived()
 			if p.cfg.Listeners.OnVerAck != nil {
 				p.cfg.Listeners.OnVerAck(p, msg)
 			}
@@ -1483,6 +1481,12 @@ out:
 
 	close(p.inQuit)
 	log.Tracef("Peer input handler done for %s", p)
+}
+
+func (p *Peer) markVerAckReceived() {
+	p.flagsMtx.Lock()
+	defer p.flagsMtx.Unlock()
+	p.verAckReceived = true
 }
 
 // queueHandler handles the queuing of outgoing data for the peer. This runs as

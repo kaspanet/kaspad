@@ -552,6 +552,28 @@ var ignoreResends = map[string]struct{}{
 	"rescan": {},
 }
 
+func (c *Client) collectResendRequests() []*jsonRequest {
+	c.requestLock.Lock()
+	defer c.requestLock.Unlock()
+	resendReqs := make([]*jsonRequest, 0, c.requestList.Len())
+	var nextElem *list.Element
+	for e := c.requestList.Front(); e != nil; e = nextElem {
+		nextElem = e.Next()
+
+		jReq := e.Value.(*jsonRequest)
+		if _, ok := ignoreResends[jReq.method]; ok {
+			// If a request is not sent on reconnect, remove it
+			// from the request structures, since no reply is
+			// expected.
+			delete(c.requestMap, jReq.id)
+			c.requestList.Remove(e)
+		} else {
+			resendReqs = append(resendReqs, jReq)
+		}
+	}
+	return resendReqs
+}
+
 // resendRequests resends any requests that had not completed when the client
 // disconnected. It is intended to be called once the client has reconnected as
 // a separate goroutine.
@@ -568,27 +590,7 @@ func (c *Client) resendRequests() {
 	// added by the caller while resending, make a copy of all of the
 	// requests that need to be resent now and work from the copy. This
 	// also allows the lock to be released quickly.
-	resendReqs := func() []*jsonRequest {
-		c.requestLock.Lock()
-		defer c.requestLock.Unlock()
-		resendReqs := make([]*jsonRequest, 0, c.requestList.Len())
-		var nextElem *list.Element
-		for e := c.requestList.Front(); e != nil; e = nextElem {
-			nextElem = e.Next()
-
-			jReq := e.Value.(*jsonRequest)
-			if _, ok := ignoreResends[jReq.method]; ok {
-				// If a request is not sent on reconnect, remove it
-				// from the request structures, since no reply is
-				// expected.
-				delete(c.requestMap, jReq.id)
-				c.requestList.Remove(e)
-			} else {
-				resendReqs = append(resendReqs, jReq)
-			}
-		}
-		return resendReqs
-	}()
+	resendReqs := c.collectResendRequests()
 
 	for _, jReq := range resendReqs {
 		// Stop resending commands if the client disconnected again
