@@ -391,6 +391,12 @@ func (f *wsClientFilter) existsUnspentOutpoint(op *wire.Outpoint) bool {
 	return ok
 }
 
+func (f *wsClientFilter) existsUnspentOutpointWithLock(op *wire.Outpoint) bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.existsUnspentOutpoint(op)
+}
+
 // removeUnspentOutpoint removes the passed outpoint, if it exists, from the
 // wsClientFilter.
 //
@@ -610,11 +616,9 @@ func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
 			if filter == nil {
 				continue
 			}
-			filter.mu.Lock()
-			if filter.existsUnspentOutpoint(&input.PreviousOutpoint) {
+			if filter.existsUnspentOutpointWithLock(&input.PreviousOutpoint) {
 				subscribed[quitChan] = struct{}{}
 			}
-			filter.mu.Unlock()
 		}
 	}
 
@@ -631,16 +635,18 @@ func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
 			if filter == nil {
 				continue
 			}
-			filter.mu.Lock()
-			if filter.existsAddress(addr) {
-				subscribed[quitChan] = struct{}{}
-				op := wire.Outpoint{
-					TxID:  *tx.ID(),
-					Index: uint32(i),
+			func() {
+				filter.mu.Lock()
+				defer filter.mu.Unlock()
+				if filter.existsAddress(addr) {
+					subscribed[quitChan] = struct{}{}
+					op := wire.Outpoint{
+						TxID:  *tx.ID(),
+						Index: uint32(i),
+					}
+					filter.addUnspentOutpoint(&op)
 				}
-				filter.addUnspentOutpoint(&op)
-			}
-			filter.mu.Unlock()
+			}()
 		}
 	}
 
