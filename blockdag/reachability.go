@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"math"
 	"strings"
+	"time"
 )
 
 // reachabilityInterval represents an interval to be used within the
@@ -213,7 +214,16 @@ func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode) ([]*reach
 
 	// No allocation space left -- reindex
 	if rtn.remainingInterval.size() == 0 {
-		return rtn.reindexIntervals()
+		reindexStartTime := time.Now()
+		modifiedNodes, err := rtn.reindexIntervals()
+		if err != nil {
+			return nil, err
+		}
+		reindexTimeElapsed := time.Since(reindexStartTime)
+		log.Debugf("Reachability reindex triggered for "+
+			"block %s. Modified %d tree nodes and took %dms.",
+			rtn.blockNode.hash, len(modifiedNodes), reindexTimeElapsed.Milliseconds())
+		return modifiedNodes, nil
 	}
 
 	// Allocate from the remaining space
