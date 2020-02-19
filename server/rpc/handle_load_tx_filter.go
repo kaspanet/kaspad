@@ -30,17 +30,18 @@ func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
 
 	params := wsc.server.cfg.DAGParams
 
-	shouldReloadFilterData := cmd.Reload || wsc.filterData == nil
-	func() {
+	reloadedFilterData := func() bool {
 		wsc.Lock()
 		defer wsc.Unlock()
-		if shouldReloadFilterData {
+		if cmd.Reload || wsc.filterData == nil {
 			wsc.filterData = newWSClientFilter(cmd.Addresses, outpoints,
 				params)
+			return true
 		}
+		return false
 	}()
 
-	if !shouldReloadFilterData {
+	if !reloadedFilterData {
 		func() {
 			wsc.filterData.mu.Lock()
 			defer wsc.filterData.mu.Unlock()
