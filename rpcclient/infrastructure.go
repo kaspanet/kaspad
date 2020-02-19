@@ -696,11 +696,14 @@ func (c *Client) handleSendPostMessage(details *sendPostDetails) {
 	}
 
 	// Read the raw bytes and close the response.
-	respBytes, err := ioutil.ReadAll(httpResponse.Body)
-	httpResponse.Body.Close()
+	respBytes, err := func() ([]byte, error) {
+		defer httpResponse.Body.Close()
+		return ioutil.ReadAll(httpResponse.Body)
+	}()
 	if err != nil {
-		err = errors.Errorf("error reading json reply: %s", err)
-		jReq.responseChan <- &response{err: err}
+		jReq.responseChan <- &response{
+			err: errors.Wrap(err, "error reading json reply"),
+		}
 		return
 	}
 
