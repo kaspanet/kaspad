@@ -39,9 +39,7 @@ func makeParams(rt reflect.Type, rv reflect.Value) []interface{} {
 func MarshalCommand(id interface{}, cmd interface{}) ([]byte, error) {
 	// Look up the cmd type and error out if not registered.
 	rt := reflect.TypeOf(cmd)
-	registerLock.RLock()
-	method, ok := concreteTypeToMethod[rt]
-	registerLock.RUnlock()
+	method, ok := concreteTypeToMethodWithRLock(rt)
 	if !ok {
 		str := fmt.Sprintf("%q is not registered", method)
 		return nil, makeError(ErrUnregisteredMethod, str)
@@ -109,10 +107,7 @@ func populateDefaults(numParams int, info *methodInfo, rv reflect.Value) {
 // so long as the method type contained within the marshalled request is
 // registered.
 func UnmarshalCommand(r *Request) (interface{}, error) {
-	registerLock.RLock()
-	rtp, ok := methodToConcreteType[r.Method]
-	info := methodToInfo[r.Method]
-	registerLock.RUnlock()
+	rtp, info, ok := methodConcreteTypeAndInfoWithRLock(r.Method)
 	if !ok {
 		str := fmt.Sprintf("%q is not registered", r.Method)
 		return nil, makeError(ErrUnregisteredMethod, str)
@@ -513,10 +508,7 @@ func assignField(paramNum int, fieldName string, dest reflect.Value, src reflect
 func NewCommand(method string, args ...interface{}) (interface{}, error) {
 	// Look up details about the provided method. Any methods that aren't
 	// registered are an error.
-	registerLock.RLock()
-	rtp, ok := methodToConcreteType[method]
-	info := methodToInfo[method]
-	registerLock.RUnlock()
+	rtp, info, ok := methodConcreteTypeAndInfoWithRLock(method)
 	if !ok {
 		str := fmt.Sprintf("%q is not registered", method)
 		return nil, makeError(ErrUnregisteredMethod, str)
