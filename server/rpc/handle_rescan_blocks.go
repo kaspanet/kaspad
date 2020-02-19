@@ -17,9 +17,7 @@ func handleRescanBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	}
 
 	// Load client's transaction filter. Must exist in order to continue.
-	wsc.Lock()
-	filter := wsc.filterData
-	wsc.Unlock()
+	filter := wsc.filterDataWithLock()
 	if filter == nil {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCMisc,

@@ -606,9 +606,7 @@ func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
 	msgTx := tx.MsgTx()
 	for _, input := range msgTx.TxIn {
 		for quitChan, wsc := range clients {
-			wsc.Lock()
-			filter := wsc.filterData
-			wsc.Unlock()
+			filter := wsc.filterDataWithLock()
 			if filter == nil {
 				continue
 			}
@@ -629,9 +627,7 @@ func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
 			continue
 		}
 		for quitChan, wsc := range clients {
-			wsc.Lock()
-			filter := wsc.filterData
-			wsc.Unlock()
+			filter := wsc.filterDataWithLock()
 			if filter == nil {
 				continue
 			}
@@ -1329,6 +1325,12 @@ func (c *wsClient) Start() {
 // and the connection is closed.
 func (c *wsClient) WaitForShutdown() {
 	c.wg.Wait()
+}
+
+func (c *wsClient) filterDataWithLock() *wsClientFilter {
+	c.Lock()
+	defer c.Unlock()
+	return c.filterData
 }
 
 // newWebsocketClient returns a new websocket client given the notification
