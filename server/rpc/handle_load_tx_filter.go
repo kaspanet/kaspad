@@ -38,14 +38,16 @@ func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	} else {
 		wsc.Unlock()
 
-		wsc.filterData.mu.Lock()
-		for _, a := range cmd.Addresses {
-			wsc.filterData.addAddressStr(a, params)
-		}
-		for i := range outpoints {
-			wsc.filterData.addUnspentOutpoint(&outpoints[i])
-		}
-		wsc.filterData.mu.Unlock()
+		func() {
+			wsc.filterData.mu.Lock()
+			defer wsc.filterData.mu.Unlock()
+			for _, a := range cmd.Addresses {
+				wsc.filterData.addAddressStr(a, params)
+			}
+			for i := range outpoints {
+				wsc.filterData.addUnspentOutpoint(&outpoints[i])
+			}
+		}()
 	}
 
 	return nil, nil

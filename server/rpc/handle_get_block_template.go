@@ -218,12 +218,12 @@ func handleGetBlockTemplateRequest(s *Server, request *rpcmodel.TemplateRequest,
 func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseValue bool, closeChan <-chan struct{}) (interface{}, error) {
 	state := s.gbtWorkState
 	state.Lock()
+	defer state.Unlock()
 	// The state unlock is intentionally not deferred here since it needs to
 	// be manually unlocked before waiting for a notification about block
 	// template changes.
 
 	if err := state.updateBlockTemplate(s, useCoinbaseValue); err != nil {
-		state.Unlock()
 		return nil, err
 	}
 
@@ -233,11 +233,9 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 	if err != nil {
 		result, err := state.blockTemplateResult(s.cfg.DAG, useCoinbaseValue, nil)
 		if err != nil {
-			state.Unlock()
 			return nil, err
 		}
 
-		state.Unlock()
 		return result, nil
 	}
 
@@ -255,11 +253,9 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 		result, err := state.blockTemplateResult(s.cfg.DAG, useCoinbaseValue,
 			&submitOld)
 		if err != nil {
-			state.Unlock()
 			return nil, err
 		}
 
-		state.Unlock()
 		return result, nil
 	}
 
@@ -283,7 +279,6 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 
 	// Get the lastest block template
 	state.Lock()
-	defer state.Unlock()
 
 	if err := state.updateBlockTemplate(s, useCoinbaseValue); err != nil {
 		return nil, err

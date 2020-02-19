@@ -936,24 +936,27 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 	}()
 
 	// Negotiate the protocol version.
-	p.flagsMtx.Lock()
-	p.advertisedProtoVer = uint32(msg.ProtocolVersion)
-	p.protocolVersion = minUint32(p.protocolVersion, p.advertisedProtoVer)
-	p.versionKnown = true
-	log.Debugf("Negotiated protocol version %d for peer %s",
-		p.protocolVersion, p)
+	func() {
+		p.flagsMtx.Lock()
+		defer p.flagsMtx.Unlock()
 
-	// Set the peer's ID.
-	p.id = atomic.AddInt32(&nodeCount, 1)
+		p.advertisedProtoVer = uint32(msg.ProtocolVersion)
+		p.protocolVersion = minUint32(p.protocolVersion, p.advertisedProtoVer)
+		p.versionKnown = true
+		log.Debugf("Negotiated protocol version %d for peer %s",
+			p.protocolVersion, p)
 
-	// Set the supported services for the peer to what the remote peer
-	// advertised.
-	p.services = msg.Services
+		// Set the peer's ID.
+		p.id = atomic.AddInt32(&nodeCount, 1)
 
-	// Set the remote peer's user agent.
-	p.userAgent = msg.UserAgent
+		// Set the supported services for the peer to what the remote peer
+		// advertised.
+		p.services = msg.Services
 
-	p.flagsMtx.Unlock()
+		// Set the remote peer's user agent.
+		p.userAgent = msg.UserAgent
+
+	}()
 
 	return nil
 }

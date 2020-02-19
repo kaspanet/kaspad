@@ -16,6 +16,7 @@ func rescanBlockFilter(filter *wsClientFilter, block *util.Block, params *dagcon
 	var transactions []string
 
 	filter.mu.Lock()
+	defer filter.mu.Unlock()
 	for _, tx := range block.Transactions() {
 		msgTx := tx.MsgTx()
 
@@ -65,7 +66,6 @@ func rescanBlockFilter(filter *wsClientFilter, block *util.Block, params *dagcon
 			}
 		}
 	}
-	filter.mu.Unlock()
 
 	return transactions
 }
