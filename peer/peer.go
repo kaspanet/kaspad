@@ -507,9 +507,7 @@ func (p *Peer) ID() int32 {
 func (p *Peer) NA() *wire.NetAddress {
 	p.flagsMtx.Lock()
 	defer p.flagsMtx.Unlock()
-	na := p.na
-
-	return na
+	return p.na
 }
 
 // Addr returns the peer address.
@@ -534,9 +532,7 @@ func (p *Peer) Inbound() bool {
 func (p *Peer) Services() wire.ServiceFlag {
 	p.flagsMtx.Lock()
 	defer p.flagsMtx.Unlock()
-	services := p.services
-
-	return services
+	return p.services
 }
 
 // UserAgent returns the user agent of the remote peer.
@@ -545,18 +541,14 @@ func (p *Peer) Services() wire.ServiceFlag {
 func (p *Peer) UserAgent() string {
 	p.flagsMtx.Lock()
 	defer p.flagsMtx.Unlock()
-	userAgent := p.userAgent
-
-	return userAgent
+	return p.userAgent
 }
 
 // SubnetworkID returns peer subnetwork ID
 func (p *Peer) SubnetworkID() *subnetworkid.SubnetworkID {
 	p.flagsMtx.Lock()
 	defer p.flagsMtx.Unlock()
-	subnetworkID := p.cfg.SubnetworkID
-
-	return subnetworkID
+	return p.cfg.SubnetworkID
 }
 
 // LastPingNonce returns the last ping nonce of the remote peer.
@@ -565,9 +557,7 @@ func (p *Peer) SubnetworkID() *subnetworkid.SubnetworkID {
 func (p *Peer) LastPingNonce() uint64 {
 	p.statsMtx.RLock()
 	defer p.statsMtx.RUnlock()
-	lastPingNonce := p.lastPingNonce
-
-	return lastPingNonce
+	return p.lastPingNonce
 }
 
 // LastPingTime returns the last ping time of the remote peer.
@@ -576,9 +566,7 @@ func (p *Peer) LastPingNonce() uint64 {
 func (p *Peer) LastPingTime() time.Time {
 	p.statsMtx.RLock()
 	defer p.statsMtx.RUnlock()
-	lastPingTime := p.lastPingTime
-
-	return lastPingTime
+	return p.lastPingTime
 }
 
 // LastPingMicros returns the last ping micros of the remote peer.
@@ -587,9 +575,7 @@ func (p *Peer) LastPingTime() time.Time {
 func (p *Peer) LastPingMicros() int64 {
 	p.statsMtx.RLock()
 	defer p.statsMtx.RUnlock()
-	lastPingMicros := p.lastPingMicros
-
-	return lastPingMicros
+	return p.lastPingMicros
 }
 
 // VersionKnown returns the whether or not the version of a peer is known
@@ -599,9 +585,7 @@ func (p *Peer) LastPingMicros() int64 {
 func (p *Peer) VersionKnown() bool {
 	p.flagsMtx.Lock()
 	defer p.flagsMtx.Unlock()
-	versionKnown := p.versionKnown
-
-	return versionKnown
+	return p.versionKnown
 }
 
 // VerAckReceived returns whether or not a verack message was received by the
@@ -611,9 +595,7 @@ func (p *Peer) VersionKnown() bool {
 func (p *Peer) VerAckReceived() bool {
 	p.flagsMtx.Lock()
 	defer p.flagsMtx.Unlock()
-	verAckReceived := p.verAckReceived
-
-	return verAckReceived
+	return p.verAckReceived
 }
 
 // ProtocolVersion returns the negotiated peer protocol version.
@@ -622,9 +604,7 @@ func (p *Peer) VerAckReceived() bool {
 func (p *Peer) ProtocolVersion() uint32 {
 	p.flagsMtx.Lock()
 	defer p.flagsMtx.Unlock()
-	protocolVersion := p.protocolVersion
-
-	return protocolVersion
+	return p.protocolVersion
 }
 
 // SelectedTipHash returns the selected tip of the peer.
@@ -633,13 +613,13 @@ func (p *Peer) ProtocolVersion() uint32 {
 func (p *Peer) SelectedTipHash() *daghash.Hash {
 	p.statsMtx.RLock()
 	defer p.statsMtx.RUnlock()
-	selectedTipHash := p.selectedTipHash
-
-	return selectedTipHash
+	return p.selectedTipHash
 }
 
 // SetSelectedTipHash sets the selected tip of the peer.
 func (p *Peer) SetSelectedTipHash(selectedTipHash *daghash.Hash) {
+	p.statsMtx.Lock()
+	defer p.statsMtx.Unlock()
 	p.selectedTipHash = selectedTipHash
 }
 
@@ -685,9 +665,7 @@ func (p *Peer) BytesReceived() uint64 {
 func (p *Peer) TimeConnected() time.Time {
 	p.statsMtx.RLock()
 	defer p.statsMtx.RUnlock()
-	timeConnected := p.timeConnected
-
-	return timeConnected
+	return p.timeConnected
 }
 
 // TimeOffset returns the number of seconds the local time was offset from the
@@ -698,9 +676,7 @@ func (p *Peer) TimeConnected() time.Time {
 func (p *Peer) TimeOffset() int64 {
 	p.statsMtx.RLock()
 	defer p.statsMtx.RUnlock()
-	timeOffset := p.timeOffset
-
-	return timeOffset
+	return p.timeOffset
 }
 
 // localVersionMsg creates a version message that can be used to send to the
