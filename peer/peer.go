@@ -496,9 +496,7 @@ func (p *Peer) StatsSnapshot() *StatsSnap {
 func (p *Peer) ID() int32 {
 	p.flagsMtx.Lock()
 	defer p.flagsMtx.Unlock()
-	id := p.id
-
-	return id
+	return p.id
 }
 
 // NA returns the peer network address.
