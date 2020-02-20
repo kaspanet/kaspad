@@ -1198,20 +1198,25 @@ func (dag *BlockDAG) restoreUTXO(node *blockNode) (UTXOSet, error) {
 		}
 	}
 
-	utxo := UTXOSet(dag.virtual.utxoSet)
+	last, stack := stack[len(stack)-1], stack[:len(stack)-1]
+	bigDiff, err := dag.utxoDiffStore.diffByNode(last)
+	if err != nil {
+		return nil, err
+	}
+	bigDiff = bigDiff.clone()
 
 	for i := len(stack) - 1; i >= 0; i-- {
 		diff, err := dag.utxoDiffStore.diffByNode(stack[i])
 		if err != nil {
 			return nil, err
 		}
-		utxo, err = utxo.WithDiff(diff)
+		err = bigDiff.WithDiffInPlace(diff)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return utxo, nil
+	return NewDiffUTXOSet(dag.virtual.utxoSet, bigDiff), nil
 }
 
 // updateTipsUTXO builds and applies new diff UTXOs for all the DAG's tips
