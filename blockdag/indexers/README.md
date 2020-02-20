@@ -1,7 +1,7 @@
 indexers
 ========
 
-[![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
+[![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](https://choosealicense.com/licenses/isc/)
 [![GoDoc](https://godoc.org/github.com/kaspanet/kaspad/blockdag/indexers?status.png)](http://godoc.org/github.com/kaspanet/kaspad/blockdag/indexers)
 
 Package indexers implements optional block chain indexes.
