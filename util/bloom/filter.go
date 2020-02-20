@@ -157,8 +157,7 @@ func (bf *Filter) matches(data []byte) bool {
 func (bf *Filter) Matches(data []byte) bool {
 	bf.mtx.Lock()
 	defer bf.mtx.Unlock()
-	match := bf.matches(data)
-	return match
+	return bf.matches(data)
 }
 
 // matchesOutpoint returns true if the bloom filter might contain the passed
@@ -181,8 +180,7 @@ func (bf *Filter) matchesOutpoint(outpoint *wire.Outpoint) bool {
 func (bf *Filter) MatchesOutpoint(outpoint *wire.Outpoint) bool {
 	bf.mtx.Lock()
 	defer bf.mtx.Unlock()
-	match := bf.matchesOutpoint(outpoint)
-	return match
+	return bf.matchesOutpoint(outpoint)
 }
 
 // add adds the passed byte slice to the bloom filter.
@@ -331,8 +329,7 @@ func (bf *Filter) matchTxAndUpdate(tx *util.Tx) bool {
 func (bf *Filter) MatchTxAndUpdate(tx *util.Tx) bool {
 	bf.mtx.Lock()
 	defer bf.mtx.Unlock()
-	match := bf.matchTxAndUpdate(tx)
-	return match
+	return bf.matchTxAndUpdate(tx)
 }
 
 // MsgFilterLoad returns the underlying wire.MsgFilterLoad for the bloom
@@ -342,6 +339,5 @@ func (bf *Filter) MatchTxAndUpdate(tx *util.Tx) bool {
 func (bf *Filter) MsgFilterLoad() *wire.MsgFilterLoad {
 	bf.mtx.Lock()
 	defer bf.mtx.Unlock()
-	msg := bf.msgFilterLoad
-	return msg
+	return bf.msgFilterLoad
 }

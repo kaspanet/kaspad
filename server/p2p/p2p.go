@@ -313,9 +313,7 @@ func (sp *Peer) setDisableRelayTx(disable bool) {
 func (sp *Peer) relayTxDisabled() bool {
 	sp.relayMtx.Lock()
 	defer sp.relayMtx.Unlock()
-	isDisabled := sp.DisableRelayTx
-
-	return isDisabled
+	return sp.DisableRelayTx
 }
 
 // pushAddrMsg sends an addr message to the connected peer using the provided

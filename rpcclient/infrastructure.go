@@ -443,8 +443,7 @@ out:
 func (c *Client) disconnectChan() <-chan struct{} {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
-	ch := c.disconnect
-	return ch
+	return c.disconnect
 }
 
 // wsOutHandler handles all outgoing messages for the websocket connection. It
