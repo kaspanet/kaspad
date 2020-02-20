@@ -126,9 +126,9 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 //   we check whether it is in the past of the selected parent.
 //   If not, we add the node to the resulting anticone-set and queue it for processing.
 func (dag *BlockDAG) selectedParentAnticone(node *blockNode) ([]*blockNode, error) {
-	anticoneSet := newSet()
+	anticoneSet := newBlockSet()
 	var anticoneSlice []*blockNode
-	selectedParentPast := newSet()
+	selectedParentPast := newBlockSet()
 	var queue []*blockNode
 	// Queueing all parents (other than the selected parent itself) for processing.
 	for parent := range node.parents {

@@ -32,7 +32,7 @@ func newVirtualBlock(dag *BlockDAG, tips blockSet) *virtualBlock {
 	var virtual virtualBlock
 	virtual.dag = dag
 	virtual.utxoSet = NewFullUTXOSet()
-	virtual.selectedParentChainSet = newSet()
+	virtual.selectedParentChainSet = newBlockSet()
 	virtual.selectedParentChainSlice = nil
 	virtual.setTips(tips)
 

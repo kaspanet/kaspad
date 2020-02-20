@@ -601,7 +601,7 @@ func (dag *BlockDAG) validateDifficulty(header *wire.BlockHeader, bluestParent *
 func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 	minBlueScore := uint64(math.MaxUint64)
 	queue := newDownHeap()
-	visited := newSet()
+	visited := newBlockSet()
 	for parent := range parents {
 		// isFinalized might be false-negative because node finality status is
 		// updated in a separate goroutine. This is why later the block is

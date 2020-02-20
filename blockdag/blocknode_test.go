@@ -25,7 +25,7 @@ func TestBlueAnticoneSizesSize(t *testing.T) {
 	}
 
 	blockHeader := dagconfig.SimnetParams.GenesisBlock.Header
-	node, _ := dag.newBlockNode(&blockHeader, newSet())
+	node, _ := dag.newBlockNode(&blockHeader, newBlockSet())
 	fakeBlue := &blockNode{hash: &daghash.Hash{1}}
 	dag.index.AddNode(fakeBlue)
 	// Setting maxKType to maximum value of KType.

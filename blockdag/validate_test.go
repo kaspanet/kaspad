@@ -512,14 +512,14 @@ func TestPastMedianTime(t *testing.T) {
 
 	for i := 0; i < 100; i++ {
 		blockTime = blockTime.Add(time.Second)
-		tip = newTestNode(dag, setFromSlice(tip),
+		tip = newTestNode(dag, blockSetFromSlice(tip),
 			blockVersion,
 			0,
 			blockTime)
 	}
 
 	// Checks that a block is valid if it has timestamp equals to past median time
-	node := newTestNode(dag, setFromSlice(tip),
+	node := newTestNode(dag, blockSetFromSlice(tip),
 		blockVersion,
 		dag.powMaxBits,
 		tip.PastMedianTime(dag))
@@ -532,7 +532,7 @@ func TestPastMedianTime(t *testing.T) {
 	}
 
 	// Checks that a block is valid if its timestamp is after past median time
-	node = newTestNode(dag, setFromSlice(tip),
+	node = newTestNode(dag, blockSetFromSlice(tip),
 		blockVersion,
 		dag.powMaxBits,
 		tip.PastMedianTime(dag).Add(time.Second))
@@ -545,7 +545,7 @@ func TestPastMedianTime(t *testing.T) {
 	}
 
 	// Checks that a block is invalid if its timestamp is before past median time
-	node = newTestNode(dag, setFromSlice(tip),
+	node = newTestNode(dag, blockSetFromSlice(tip),
 		blockVersion,
 		0,
 		tip.PastMedianTime(dag).Add(-time.Second))
@@ -567,7 +567,7 @@ func TestValidateParents(t *testing.T) {
 	generateNode := func(parents ...*blockNode) *blockNode {
 		// The timestamp of each block is changed to prevent a situation where two blocks share the same hash
 		blockTime = blockTime.Add(time.Second)
-		return newTestNode(dag, setFromSlice(parents...),
+		return newTestNode(dag, blockSetFromSlice(parents...),
 			blockVersion,
 			0,
 			blockTime)
@@ -584,19 +584,19 @@ func TestValidateParents(t *testing.T) {
 	}
 
 	// Check direct parents relation
-	err := validateParents(fakeBlockHeader, setFromSlice(a, b))
+	err := validateParents(fakeBlockHeader, blockSetFromSlice(a, b))
 	if err == nil {
 		t.Errorf("validateParents: `a` is a parent of `b`, so an error is expected")
 	}
 
 	// Check indirect parents relation
-	err = validateParents(fakeBlockHeader, setFromSlice(genesisNode, b))
+	err = validateParents(fakeBlockHeader, blockSetFromSlice(genesisNode, b))
 	if err == nil {
 		t.Errorf("validateParents: `genesis` and `b` are indirectly related, so an error is expected")
 	}
 
 	// Check parents with no relation
-	err = validateParents(fakeBlockHeader, setFromSlice(b, c))
+	err = validateParents(fakeBlockHeader, blockSetFromSlice(b, c))
 	if err != nil {
 		t.Errorf("validateParents: unexpected error: %v", err)
 	}

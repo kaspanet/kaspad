@@ -13,7 +13,7 @@ import (
 
 func (dag *BlockDAG) addNodeToIndexWithInvalidAncestor(block *util.Block) error {
 	blockHeader := &block.MsgBlock().Header
-	newNode, _ := dag.newBlockNode(blockHeader, newSet())
+	newNode, _ := dag.newBlockNode(blockHeader, newBlockSet())
 	newNode.status = statusInvalidAncestor
 	dag.index.AddNode(newNode)
 	return dag.index.flushToDB()
@@ -114,7 +114,7 @@ func lookupParentNodes(block *util.Block, blockDAG *BlockDAG) (blockSet, error) 
 	header := block.MsgBlock().Header
 	parentHashes := header.ParentHashes
 
-	nodes := newSet()
+	nodes := newBlockSet()
 	for _, parentHash := range parentHashes {
 		node := blockDAG.index.LookupNode(parentHash)
 		if node == nil {
