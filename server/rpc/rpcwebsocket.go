@@ -352,19 +352,19 @@ func (f *wsClientFilter) addUnspentOutpoint(op *wire.Outpoint) {
 	f.unspent[*op] = struct{}{}
 }
 
-// existsUnspentOutpoint returns true if the passed outpoint has been added to
+// existsUnspentOutpointNoLock returns true if the passed outpoint has been added to
 // the wsClientFilter.
 //
 // NOTE: This extension was ported from github.com/decred/dcrd
-func (f *wsClientFilter) existsUnspentOutpoint(op *wire.Outpoint) bool {
+func (f *wsClientFilter) existsUnspentOutpointNoLock(op *wire.Outpoint) bool {
 	_, ok := f.unspent[*op]
 	return ok
 }
 
-func (f *wsClientFilter) existsUnspentOutpointWithLock(op *wire.Outpoint) bool {
+func (f *wsClientFilter) existsUnspentOutpoint(op *wire.Outpoint) bool {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	return f.existsUnspentOutpoint(op)
+	return f.existsUnspentOutpointNoLock(op)
 }
 
 // Notification types
@@ -578,7 +578,7 @@ func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
 			if filter == nil {
 				continue
 			}
-			if filter.existsUnspentOutpointWithLock(&input.PreviousOutpoint) {
+			if filter.existsUnspentOutpoint(&input.PreviousOutpoint) {
 				subscribed[quitChan] = struct{}{}
 			}
 		}

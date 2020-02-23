@@ -27,7 +27,7 @@ func rescanBlockFilter(filter *wsClientFilter, block *util.Block, params *dagcon
 		// Scan inputs if not a coinbase transaction.
 		if !msgTx.IsCoinBase() {
 			for _, input := range msgTx.TxIn {
-				if !filter.existsUnspentOutpoint(&input.PreviousOutpoint) {
+				if !filter.existsUnspentOutpointNoLock(&input.PreviousOutpoint) {
 					continue
 				}
 				if !added {
