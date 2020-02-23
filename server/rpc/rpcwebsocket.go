@@ -574,7 +574,7 @@ func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
 	msgTx := tx.MsgTx()
 	for _, input := range msgTx.TxIn {
 		for quitChan, wsc := range clients {
-			filter := wsc.filterDataWithLock()
+			filter := wsc.FilterData()
 			if filter == nil {
 				continue
 			}
@@ -593,7 +593,7 @@ func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
 			continue
 		}
 		for quitChan, wsc := range clients {
-			filter := wsc.filterDataWithLock()
+			filter := wsc.FilterData()
 			if filter == nil {
 				continue
 			}
@@ -1289,7 +1289,8 @@ func (c *wsClient) WaitForShutdown() {
 	c.wg.Wait()
 }
 
-func (c *wsClient) filterDataWithLock() *wsClientFilter {
+// FilterData returns the websocket client filter data.
+func (c *wsClient) FilterData() *wsClientFilter {
 	c.Lock()
 	defer c.Unlock()
 	return c.filterData
