@@ -233,7 +233,7 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 	case <-closeChan:
 		return nil, ErrClientQuit
 
-		// Wait until signal received to send the reply.
+	// Wait until signal received to send the reply.
 	case <-longPollChan:
 		// Fallthrough
 	}
@@ -258,7 +258,7 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 }
 
 // blockTemplateOrLongPollChan returns a block template if the
-// template identified by the provided long poll ID is stael or
+// template identified by the provided long poll ID is stale or
 // invalid. Otherwise, it returns a channel that will notify
 // when there's a more current template.
 func blockTemplateOrLongPollChan(s *Server, longPollID string, useCoinbaseValue bool) (*rpcmodel.GetBlockTemplateResult, chan struct{}, error) {
