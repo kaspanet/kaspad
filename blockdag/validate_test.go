@@ -512,14 +512,14 @@ func TestPastMedianTime(t *testing.T) {
 
 	for i := 0; i < 100; i++ {
 		blockTime = blockTime.Add(time.Second)
-		tip = newTestNode(dag, setFromSlice(tip),
+		tip = newTestNode(dag, blockSetFromSlice(tip),
 			blockVersion,
 			0,
 			blockTime)
 	}
 
 	// Checks that a block is valid if it has timestamp equals to past median time
-	node := newTestNode(dag, setFromSlice(tip),
+	node := newTestNode(dag, blockSetFromSlice(tip),
 		blockVersion,
 		dag.powMaxBits,
 		tip.PastMedianTime(dag))
@@ -532,7 +532,7 @@ func TestPastMedianTime(t *testing.T) {
 	}
 
 	// Checks that a block is valid if its timestamp is after past median time
-	node = newTestNode(dag, setFromSlice(tip),
+	node = newTestNode(dag, blockSetFromSlice(tip),
 		blockVersion,
 		dag.powMaxBits,
 		tip.PastMedianTime(dag).Add(time.Second))
@@ -545,7 +545,7 @@ func TestPastMedianTime(t *testing.T) {
 	}
 
 	// Checks that a block is invalid if its timestamp is before past median time
-	node = newTestNode(dag, setFromSlice(tip),
+	node = newTestNode(dag, blockSetFromSlice(tip),
 		blockVersion,
 		0,
 		tip.PastMedianTime(dag).Add(-time.Second))
@@ -583,19 +583,19 @@ func TestValidateParents(t *testing.T) {
 	}
 
 	// Check direct parents relation
-	err = dag.validateParents(fakeBlockHeader, setFromSlice(aNode, bNode))
+	err = dag.validateParents(fakeBlockHeader, blockSetFromSlice(aNode, bNode))
 	if err == nil {
 		t.Errorf("validateParents: `a` is a parent of `b`, so an error is expected")
 	}
 
 	// Check indirect parents relation
-	err = dag.validateParents(fakeBlockHeader, setFromSlice(dag.genesis, bNode))
+	err = dag.validateParents(fakeBlockHeader, blockSetFromSlice(dag.genesis, bNode))
 	if err == nil {
 		t.Errorf("validateParents: `genesis` and `b` are indirectly related, so an error is expected")
 	}
 
 	// Check parents with no relation
-	err = dag.validateParents(fakeBlockHeader, setFromSlice(bNode, cNode))
+	err = dag.validateParents(fakeBlockHeader, blockSetFromSlice(bNode, cNode))
 	if err != nil {
 		t.Errorf("validateParents: unexpected error: %v", err)
 	}

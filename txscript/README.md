@@ -1,7 +1,7 @@
 txscript
 ========
 
-[![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
+[![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](https://choosealicense.com/licenses/isc/)
 [![GoDoc](https://godoc.org/github.com/kaspanet/kaspad/txscript?status.png)](http://godoc.org/github.com/kaspanet/kaspad/txscript)
 
 Package txscript implements the kaspa transaction script language. There is
