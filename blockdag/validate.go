@@ -604,7 +604,8 @@ func (dag *BlockDAG) validateParents(blockHeader *wire.BlockHeader, parents bloc
 		// updated in a separate goroutine. This is why later the block is
 		// checked more thoroughly on the finality rules in dag.checkFinalityRules.
 		if parentA.isFinalized {
-			return ruleError(ErrFinality, fmt.Sprintf("block %s is a finalized parent of block %s", parentA.hash, blockHeader.BlockHash()))
+			return ruleError(ErrFinality, fmt.Sprintf("block %s is a finalized "+
+				"parent of block %s", parentA.hash, blockHeader.BlockHash()))
 		}
 
 		for parentB := range parents {
