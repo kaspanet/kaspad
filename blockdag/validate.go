@@ -613,10 +613,6 @@ func (dag *BlockDAG) validateParents(blockHeader *wire.BlockHeader, parents bloc
 				continue
 			}
 
-			if dag.virtual.tips().contains(parentA) && dag.virtual.tips().contains(parentB) {
-				continue
-			}
-
 			isAncestorOf, err := dag.isAncestorOf(parentA, parentB)
 			if err != nil {
 				return err
