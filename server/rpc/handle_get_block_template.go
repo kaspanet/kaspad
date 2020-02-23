@@ -204,7 +204,7 @@ func handleGetBlockTemplateRequest(s *Server, request *rpcmodel.TemplateRequest,
 	if err := state.updateBlockTemplate(s, useCoinbaseValue); err != nil {
 		return nil, err
 	}
-	return state.blockTemplateResult(s.cfg.DAG, useCoinbaseValue, nil)
+	return state.blockTemplateResult(s.cfg.DAG, useCoinbaseValue)
 }
 
 // handleGetBlockTemplateLongPoll is a helper for handleGetBlockTemplateRequest
@@ -217,54 +217,15 @@ func handleGetBlockTemplateRequest(s *Server, request *rpcmodel.TemplateRequest,
 // has passed without finding a solution.
 func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseValue bool, closeChan <-chan struct{}) (interface{}, error) {
 	state := s.gbtWorkState
-	state.Lock()
-	defer state.Unlock()
-	// The state unlock is intentionally not deferred here since it needs to
-	// be manually unlocked before waiting for a notification about block
-	// template changes.
 
-	if err := state.updateBlockTemplate(s, useCoinbaseValue); err != nil {
+	result, longPollChan, err := blockTemplateOrLongPollChan(s, longPollID, useCoinbaseValue)
+	if err != nil {
 		return nil, err
 	}
 
-	// Just return the current block template if the long poll ID provided by
-	// the caller is invalid.
-	parentHashes, lastGenerated, err := decodeLongPollID(longPollID)
-	if err != nil {
-		result, err := state.blockTemplateResult(s.cfg.DAG, useCoinbaseValue, nil)
-		if err != nil {
-			return nil, err
-		}
-
+	if result != nil {
 		return result, nil
 	}
-
-	// Return the block template now if the specific block template
-	// identified by the long poll ID no longer matches the current block
-	// template as this means the provided template is stale.
-	areHashesEqual := daghash.AreEqual(state.template.Block.Header.ParentHashes, parentHashes)
-	if !areHashesEqual ||
-		lastGenerated != state.lastGenerated.Unix() {
-
-		// Include whether or not it is valid to submit work against the
-		// old block template depending on whether or not a solution has
-		// already been found and added to the block DAG.
-		submitOld := areHashesEqual
-		result, err := state.blockTemplateResult(s.cfg.DAG, useCoinbaseValue,
-			&submitOld)
-		if err != nil {
-			return nil, err
-		}
-
-		return result, nil
-	}
-
-	// Register the parent hashes and last generated time for notifications
-	// Get a channel that will be notified when the template associated with
-	// the provided ID is stale and a new block template should be returned to
-	// the caller.
-	longPollChan := state.templateUpdateChan(parentHashes, lastGenerated)
-	state.Unlock()
 
 	select {
 	// When the client closes before it's time to send a reply, just return
@@ -279,6 +240,7 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 
 	// Get the lastest block template
 	state.Lock()
+	defer state.Unlock()
 
 	if err := state.updateBlockTemplate(s, useCoinbaseValue); err != nil {
 		return nil, err
@@ -287,13 +249,67 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 	// Include whether or not it is valid to submit work against the old
 	// block template depending on whether or not a solution has already
 	// been found and added to the block DAG.
-	submitOld := areHashesEqual
-	result, err := state.blockTemplateResult(s.cfg.DAG, useCoinbaseValue, &submitOld)
+	result, err = state.blockTemplateResult(s.cfg.DAG, useCoinbaseValue)
 	if err != nil {
 		return nil, err
 	}
 
 	return result, nil
+}
+
+// blockTemplateOrLongPollChan returns a block template if the
+// template identified by the provided long poll ID is stael or
+// invalid. Otherwise, it returns a channel that will notify
+// when there's a more current template.
+func blockTemplateOrLongPollChan(s *Server, longPollID string, useCoinbaseValue bool) (*rpcmodel.GetBlockTemplateResult, chan struct{}, error) {
+	state := s.gbtWorkState
+
+	state.Lock()
+	defer state.Unlock()
+	// The state unlock is intentionally not deferred here since it needs to
+	// be manually unlocked before waiting for a notification about block
+	// template changes.
+
+	if err := state.updateBlockTemplate(s, useCoinbaseValue); err != nil {
+		return nil, nil, err
+	}
+
+	// Just return the current block template if the long poll ID provided by
+	// the caller is invalid.
+	parentHashes, lastGenerated, err := decodeLongPollID(longPollID)
+	if err != nil {
+		result, err := state.blockTemplateResult(s.cfg.DAG, useCoinbaseValue)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return result, nil, nil
+	}
+
+	// Return the block template now if the specific block template
+	// identified by the long poll ID no longer matches the current block
+	// template as this means the provided template is stale.
+	areHashesEqual := daghash.AreEqual(state.template.Block.Header.ParentHashes, parentHashes)
+	if !areHashesEqual ||
+		lastGenerated != state.lastGenerated.Unix() {
+
+		// Include whether or not it is valid to submit work against the
+		// old block template depending on whether or not a solution has
+		// already been found and added to the block DAG.
+		result, err := state.blockTemplateResult(s.cfg.DAG, useCoinbaseValue)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return result, nil, nil
+	}
+
+	// Register the parent hashes and last generated time for notifications
+	// Get a channel that will be notified when the template associated with
+	// the provided ID is stale and a new block template should be returned to
+	// the caller.
+	longPollChan := state.templateUpdateChan(parentHashes, lastGenerated)
+	return nil, longPollChan, nil
 }
 
 // handleGetBlockTemplateProposal is a helper for handleGetBlockTemplate which
@@ -688,7 +704,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 // and returned to the caller.
 //
 // This function MUST be called with the state locked.
-func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinbaseValue bool, submitOld *bool) (*rpcmodel.GetBlockTemplateResult, error) {
+func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinbaseValue bool) (*rpcmodel.GetBlockTemplateResult, error) {
 	// Ensure the timestamps are still in valid range for the template.
 	// This should really only ever happen if the local clock is changed
 	// after the template is generated, but it's important to avoid serving
@@ -774,7 +790,6 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 		UTXOCommitment:       header.UTXOCommitment.String(),
 		Version:              header.Version,
 		LongPollID:           longPollID,
-		SubmitOld:            submitOld,
 		Target:               targetDifficulty,
 		MinTime:              state.minTimestamp.Unix(),
 		MaxTime:              maxTime.Unix(),
