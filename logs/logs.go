@@ -335,13 +335,13 @@ func (b *Backend) printf(lvl Level, tag string, format string, args ...interface
 
 func (b *Backend) write(lvl Level, bytesToWrite []byte) {
 	b.mu.Lock()
+	defer b.mu.Unlock()
 	os.Stdout.Write(bytesToWrite)
 	for _, r := range b.rotators {
 		if lvl >= r.logLevel {
 			r.Write(bytesToWrite)
 		}
 	}
-	b.mu.Unlock()
 }
 
 // Close finalizes all log rotators for this backend

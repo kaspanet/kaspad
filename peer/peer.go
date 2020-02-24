@@ -456,14 +456,16 @@ func (p *Peer) AddKnownInventory(invVect *wire.InvVect) {
 // This function is safe for concurrent access.
 func (p *Peer) StatsSnapshot() *StatsSnap {
 	p.statsMtx.RLock()
+	defer p.statsMtx.RUnlock()
 
 	p.flagsMtx.Lock()
+	defer p.flagsMtx.Unlock()
+
 	id := p.id
 	addr := p.addr
 	userAgent := p.userAgent
 	services := p.services
 	protocolVersion := p.advertisedProtoVer
-	p.flagsMtx.Unlock()
 
 	// Get a copy of all relevant flags and stats.
 	statsSnap := &StatsSnap{
@@ -485,7 +487,6 @@ func (p *Peer) StatsSnapshot() *StatsSnap {
 		LastPingTime:    p.lastPingTime,
 	}
 
-	p.statsMtx.RUnlock()
 	return statsSnap
 }
 
@@ -494,10 +495,8 @@ func (p *Peer) StatsSnapshot() *StatsSnap {
 // This function is safe for concurrent access.
 func (p *Peer) ID() int32 {
 	p.flagsMtx.Lock()
-	id := p.id
-	p.flagsMtx.Unlock()
-
-	return id
+	defer p.flagsMtx.Unlock()
+	return p.id
 }
 
 // NA returns the peer network address.
@@ -505,10 +504,8 @@ func (p *Peer) ID() int32 {
 // This function is safe for concurrent access.
 func (p *Peer) NA() *wire.NetAddress {
 	p.flagsMtx.Lock()
-	na := p.na
-	p.flagsMtx.Unlock()
-
-	return na
+	defer p.flagsMtx.Unlock()
+	return p.na
 }
 
 // Addr returns the peer address.
@@ -532,10 +529,8 @@ func (p *Peer) Inbound() bool {
 // This function is safe for concurrent access.
 func (p *Peer) Services() wire.ServiceFlag {
 	p.flagsMtx.Lock()
-	services := p.services
-	p.flagsMtx.Unlock()
-
-	return services
+	defer p.flagsMtx.Unlock()
+	return p.services
 }
 
 // UserAgent returns the user agent of the remote peer.
@@ -543,19 +538,15 @@ func (p *Peer) Services() wire.ServiceFlag {
 // This function is safe for concurrent access.
 func (p *Peer) UserAgent() string {
 	p.flagsMtx.Lock()
-	userAgent := p.userAgent
-	p.flagsMtx.Unlock()
-
-	return userAgent
+	defer p.flagsMtx.Unlock()
+	return p.userAgent
 }
 
 // SubnetworkID returns peer subnetwork ID
 func (p *Peer) SubnetworkID() *subnetworkid.SubnetworkID {
 	p.flagsMtx.Lock()
-	subnetworkID := p.cfg.SubnetworkID
-	p.flagsMtx.Unlock()
-
-	return subnetworkID
+	defer p.flagsMtx.Unlock()
+	return p.cfg.SubnetworkID
 }
 
 // LastPingNonce returns the last ping nonce of the remote peer.
@@ -563,10 +554,8 @@ func (p *Peer) SubnetworkID() *subnetworkid.SubnetworkID {
 // This function is safe for concurrent access.
 func (p *Peer) LastPingNonce() uint64 {
 	p.statsMtx.RLock()
-	lastPingNonce := p.lastPingNonce
-	p.statsMtx.RUnlock()
-
-	return lastPingNonce
+	defer p.statsMtx.RUnlock()
+	return p.lastPingNonce
 }
 
 // LastPingTime returns the last ping time of the remote peer.
@@ -574,10 +563,8 @@ func (p *Peer) LastPingNonce() uint64 {
 // This function is safe for concurrent access.
 func (p *Peer) LastPingTime() time.Time {
 	p.statsMtx.RLock()
-	lastPingTime := p.lastPingTime
-	p.statsMtx.RUnlock()
-
-	return lastPingTime
+	defer p.statsMtx.RUnlock()
+	return p.lastPingTime
 }
 
 // LastPingMicros returns the last ping micros of the remote peer.
@@ -585,10 +572,8 @@ func (p *Peer) LastPingTime() time.Time {
 // This function is safe for concurrent access.
 func (p *Peer) LastPingMicros() int64 {
 	p.statsMtx.RLock()
-	lastPingMicros := p.lastPingMicros
-	p.statsMtx.RUnlock()
-
-	return lastPingMicros
+	defer p.statsMtx.RUnlock()
+	return p.lastPingMicros
 }
 
 // VersionKnown returns the whether or not the version of a peer is known
@@ -597,10 +582,8 @@ func (p *Peer) LastPingMicros() int64 {
 // This function is safe for concurrent access.
 func (p *Peer) VersionKnown() bool {
 	p.flagsMtx.Lock()
-	versionKnown := p.versionKnown
-	p.flagsMtx.Unlock()
-
-	return versionKnown
+	defer p.flagsMtx.Unlock()
+	return p.versionKnown
 }
 
 // VerAckReceived returns whether or not a verack message was received by the
@@ -609,10 +592,8 @@ func (p *Peer) VersionKnown() bool {
 // This function is safe for concurrent access.
 func (p *Peer) VerAckReceived() bool {
 	p.flagsMtx.Lock()
-	verAckReceived := p.verAckReceived
-	p.flagsMtx.Unlock()
-
-	return verAckReceived
+	defer p.flagsMtx.Unlock()
+	return p.verAckReceived
 }
 
 // ProtocolVersion returns the negotiated peer protocol version.
@@ -620,10 +601,8 @@ func (p *Peer) VerAckReceived() bool {
 // This function is safe for concurrent access.
 func (p *Peer) ProtocolVersion() uint32 {
 	p.flagsMtx.Lock()
-	protocolVersion := p.protocolVersion
-	p.flagsMtx.Unlock()
-
-	return protocolVersion
+	defer p.flagsMtx.Unlock()
+	return p.protocolVersion
 }
 
 // SelectedTipHash returns the selected tip of the peer.
@@ -631,14 +610,14 @@ func (p *Peer) ProtocolVersion() uint32 {
 // This function is safe for concurrent access.
 func (p *Peer) SelectedTipHash() *daghash.Hash {
 	p.statsMtx.RLock()
-	selectedTipHash := p.selectedTipHash
-	p.statsMtx.RUnlock()
-
-	return selectedTipHash
+	defer p.statsMtx.RUnlock()
+	return p.selectedTipHash
 }
 
 // SetSelectedTipHash sets the selected tip of the peer.
 func (p *Peer) SetSelectedTipHash(selectedTipHash *daghash.Hash) {
+	p.statsMtx.Lock()
+	defer p.statsMtx.Unlock()
 	p.selectedTipHash = selectedTipHash
 }
 
@@ -683,10 +662,8 @@ func (p *Peer) BytesReceived() uint64 {
 // This function is safe for concurrent access.
 func (p *Peer) TimeConnected() time.Time {
 	p.statsMtx.RLock()
-	timeConnected := p.timeConnected
-	p.statsMtx.RUnlock()
-
-	return timeConnected
+	defer p.statsMtx.RUnlock()
+	return p.timeConnected
 }
 
 // TimeOffset returns the number of seconds the local time was offset from the
@@ -696,10 +673,8 @@ func (p *Peer) TimeConnected() time.Time {
 // This function is safe for concurrent access.
 func (p *Peer) TimeOffset() int64 {
 	p.statsMtx.RLock()
-	timeOffset := p.timeOffset
-	p.statsMtx.RUnlock()
-
-	return timeOffset
+	defer p.statsMtx.RUnlock()
+	return p.timeOffset
 }
 
 // localVersionMsg creates a version message that can be used to send to the
@@ -804,19 +779,21 @@ func (p *Peer) PushGetBlockLocatorMsg(highHash, lowHash *daghash.Hash) {
 	p.QueueMessage(msg, nil)
 }
 
+func (p *Peer) isDuplicateGetBlockInvsMsg(lowHash, highHash *daghash.Hash) bool {
+	p.prevGetBlockInvsMtx.Lock()
+	defer p.prevGetBlockInvsMtx.Unlock()
+	return p.prevGetBlockInvsHigh != nil && p.prevGetBlockInvsLow != nil &&
+		lowHash != nil && highHash.IsEqual(p.prevGetBlockInvsHigh) &&
+		lowHash.IsEqual(p.prevGetBlockInvsLow)
+}
+
 // PushGetBlockInvsMsg sends a getblockinvs message for the provided block locator
 // and high hash. It will ignore back-to-back duplicate requests.
 //
 // This function is safe for concurrent access.
 func (p *Peer) PushGetBlockInvsMsg(lowHash, highHash *daghash.Hash) error {
 	// Filter duplicate getblockinvs requests.
-	p.prevGetBlockInvsMtx.Lock()
-	isDuplicate := p.prevGetBlockInvsHigh != nil && p.prevGetBlockInvsLow != nil &&
-		lowHash != nil && highHash.IsEqual(p.prevGetBlockInvsHigh) &&
-		lowHash.IsEqual(p.prevGetBlockInvsLow)
-	p.prevGetBlockInvsMtx.Unlock()
-
-	if isDuplicate {
+	if p.isDuplicateGetBlockInvsMsg(lowHash, highHash) {
 		log.Tracef("Filtering duplicate [getblockinvs] with low "+
 			"hash %s, high hash %s", lowHash, highHash)
 		return nil
@@ -829,9 +806,9 @@ func (p *Peer) PushGetBlockInvsMsg(lowHash, highHash *daghash.Hash) error {
 	// Update the previous getblockinvs request information for filtering
 	// duplicates.
 	p.prevGetBlockInvsMtx.Lock()
+	defer p.prevGetBlockInvsMtx.Unlock()
 	p.prevGetBlockInvsLow = lowHash
 	p.prevGetBlockInvsHigh = highHash
-	p.prevGetBlockInvsMtx.Unlock()
 	return nil
 }
 
@@ -913,15 +890,26 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 		return errors.New("incompatible subnetworks")
 	}
 
-	// Updating a bunch of stats including block based stats, and the
-	// peer's time offset.
+	p.updateStatsFromVersionMsg(msg)
+	p.updateFlagsFromVersionMsg(msg)
+
+	return nil
+}
+
+// updateStatsFromVersionMsg updates a bunch of stats including block based stats, and the
+// peer's time offset.
+func (p *Peer) updateStatsFromVersionMsg(msg *wire.MsgVersion) {
 	p.statsMtx.Lock()
+	defer p.statsMtx.Unlock()
 	p.selectedTipHash = msg.SelectedTipHash
 	p.timeOffset = msg.Timestamp.Unix() - time.Now().Unix()
-	p.statsMtx.Unlock()
+}
 
+func (p *Peer) updateFlagsFromVersionMsg(msg *wire.MsgVersion) {
 	// Negotiate the protocol version.
 	p.flagsMtx.Lock()
+	defer p.flagsMtx.Unlock()
+
 	p.advertisedProtoVer = uint32(msg.ProtocolVersion)
 	p.protocolVersion = minUint32(p.protocolVersion, p.advertisedProtoVer)
 	p.versionKnown = true
@@ -937,10 +925,6 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 
 	// Set the remote peer's user agent.
 	p.userAgent = msg.UserAgent
-
-	p.flagsMtx.Unlock()
-
-	return nil
 }
 
 // handlePingMsg is invoked when a peer receives a ping kaspa message. For
@@ -963,12 +947,12 @@ func (p *Peer) handlePongMsg(msg *wire.MsgPong) {
 	// without large usage of the ping rpc call since we ping infrequently
 	// enough that if they overlap we would have timed out the peer.
 	p.statsMtx.Lock()
+	defer p.statsMtx.Unlock()
 	if p.lastPingNonce != 0 && msg.Nonce == p.lastPingNonce {
 		p.lastPingMicros = time.Since(p.lastPingTime).Nanoseconds()
 		p.lastPingMicros /= 1000 // convert to usec.
 		p.lastPingNonce = 0
 	}
-	p.statsMtx.Unlock()
 }
 
 // readMessage reads the next kaspa message from the peer with logging.
@@ -1346,9 +1330,7 @@ out:
 					"disconnecting", p)
 				break out
 			}
-			p.flagsMtx.Lock()
-			p.verAckReceived = true
-			p.flagsMtx.Unlock()
+			p.markVerAckReceived()
 			if p.cfg.Listeners.OnVerAck != nil {
 				p.cfg.Listeners.OnVerAck(p, msg)
 			}
@@ -1473,6 +1455,12 @@ out:
 
 	close(p.inQuit)
 	log.Tracef("Peer input handler done for %s", p)
+}
+
+func (p *Peer) markVerAckReceived() {
+	p.flagsMtx.Lock()
+	defer p.flagsMtx.Unlock()
+	p.verAckReceived = true
 }
 
 // queueHandler handles the queuing of outgoing data for the peer. This runs as
@@ -1622,10 +1610,12 @@ out:
 		case msg := <-p.sendQueue:
 			switch m := msg.msg.(type) {
 			case *wire.MsgPing:
-				p.statsMtx.Lock()
-				p.lastPingNonce = m.Nonce
-				p.lastPingTime = time.Now()
-				p.statsMtx.Unlock()
+				func() {
+					p.statsMtx.Lock()
+					defer p.statsMtx.Unlock()
+					p.lastPingNonce = m.Nonce
+					p.lastPingTime = time.Now()
+				}()
 			}
 
 			p.stallControl <- stallControlMsg{sccSendMessage, msg.msg}

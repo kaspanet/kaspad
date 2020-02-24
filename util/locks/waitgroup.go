@@ -84,11 +84,11 @@ func (wg *waitGroup) done() {
 	// if there is a listener to wg.releaseWait.
 	if atomic.LoadInt64(&wg.counter) == 0 {
 		wg.isReleaseWaitWaitingLock.Lock()
+		defer wg.isReleaseWaitWaitingLock.Unlock()
 		if atomic.LoadInt64(&wg.isReleaseWaitWaiting) == 1 {
 			wg.releaseWait <- struct{}{}
 			<-wg.releaseDone
 		}
-		wg.isReleaseWaitWaitingLock.Unlock()
 	}
 }
 
@@ -96,6 +96,7 @@ func (wg *waitGroup) wait() {
 	wg.mainWaitLock.Lock()
 	defer wg.mainWaitLock.Unlock()
 	wg.isReleaseWaitWaitingLock.Lock()
+	defer wg.isReleaseWaitWaitingLock.Unlock()
 	for atomic.LoadInt64(&wg.counter) != 0 {
 		atomic.StoreInt64(&wg.isReleaseWaitWaiting, 1)
 		wg.isReleaseWaitWaitingLock.Unlock()
@@ -104,5 +105,4 @@ func (wg *waitGroup) wait() {
 		wg.releaseDone <- struct{}{}
 		wg.isReleaseWaitWaitingLock.Lock()
 	}
-	wg.isReleaseWaitWaitingLock.Unlock()
 }

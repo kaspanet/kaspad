@@ -57,8 +57,8 @@ type Notification struct {
 // NotificationType for details on the types and contents of notifications.
 func (dag *BlockDAG) Subscribe(callback NotificationCallback) {
 	dag.notificationsLock.Lock()
+	defer dag.notificationsLock.Unlock()
 	dag.notifications = append(dag.notifications, callback)
-	dag.notificationsLock.Unlock()
 }
 
 // sendNotification sends a notification with the passed type and data if the
@@ -68,10 +68,10 @@ func (dag *BlockDAG) sendNotification(typ NotificationType, data interface{}) {
 	// Generate and send the notification.
 	n := Notification{Type: typ, Data: data}
 	dag.notificationsLock.RLock()
+	defer dag.notificationsLock.RUnlock()
 	for _, callback := range dag.notifications {
 		callback(&n)
 	}
-	dag.notificationsLock.RUnlock()
 }
 
 // BlockAddedNotificationData defines data to be sent along with a BlockAdded

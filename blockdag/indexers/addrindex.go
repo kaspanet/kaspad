@@ -771,6 +771,7 @@ func (idx *AddrIndex) indexUnconfirmedAddresses(scriptPubKey []byte, tx *util.Tx
 
 	// Add a mapping from the address to the transaction.
 	idx.unconfirmedLock.Lock()
+	defer idx.unconfirmedLock.Unlock()
 	addrIndexEntry := idx.txnsByAddr[addrKey]
 	if addrIndexEntry == nil {
 		addrIndexEntry = make(map[daghash.TxID]*util.Tx)
@@ -785,7 +786,6 @@ func (idx *AddrIndex) indexUnconfirmedAddresses(scriptPubKey []byte, tx *util.Tx
 		idx.addrsByTx[*tx.ID()] = addrsByTxEntry
 	}
 	addrsByTxEntry[addrKey] = struct{}{}
-	idx.unconfirmedLock.Unlock()
 }
 
 // AddUnconfirmedTx adds all addresses related to the transaction to the

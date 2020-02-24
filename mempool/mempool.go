@@ -375,8 +375,8 @@ func (mp *TxPool) isTransactionInPool(hash *daghash.TxID) bool {
 func (mp *TxPool) IsTransactionInPool(hash *daghash.TxID) bool {
 	// Protect concurrent access.
 	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
 	inPool := mp.isTransactionInPool(hash)
-	mp.mtx.RUnlock()
 
 	return inPool
 }
@@ -423,8 +423,8 @@ func (mp *TxPool) isOrphanInPool(hash *daghash.TxID) bool {
 func (mp *TxPool) IsOrphanInPool(hash *daghash.TxID) bool {
 	// Protect concurrent access.
 	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
 	inPool := mp.isOrphanInPool(hash)
-	mp.mtx.RUnlock()
 
 	return inPool
 }
@@ -444,8 +444,8 @@ func (mp *TxPool) haveTransaction(hash *daghash.TxID) bool {
 func (mp *TxPool) HaveTransaction(hash *daghash.TxID) bool {
 	// Protect concurrent access.
 	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
 	haveTx := mp.haveTransaction(hash)
-	mp.mtx.RUnlock()
 
 	return haveTx
 }
@@ -745,8 +745,8 @@ func (mp *TxPool) checkPoolDoubleSpend(tx *util.Tx) error {
 // be returned, if not nil will be returned.
 func (mp *TxPool) CheckSpend(op wire.Outpoint) *util.Tx {
 	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
 	txR := mp.outpoints[op]
-	mp.mtx.RUnlock()
 
 	return txR
 }
@@ -1207,8 +1207,8 @@ func (mp *TxPool) ProcessTransaction(tx *util.Tx, allowOrphan bool, tag Tag) ([]
 // This function is safe for concurrent access.
 func (mp *TxPool) Count() int {
 	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
 	count := len(mp.pool)
-	mp.mtx.RUnlock()
 
 	return count
 }
@@ -1229,6 +1229,7 @@ func (mp *TxPool) DepCount() int {
 // This function is safe for concurrent access.
 func (mp *TxPool) TxIDs() []*daghash.TxID {
 	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
 	ids := make([]*daghash.TxID, len(mp.pool))
 	i := 0
 	for txID := range mp.pool {
@@ -1236,7 +1237,6 @@ func (mp *TxPool) TxIDs() []*daghash.TxID {
 		ids[i] = &idCopy
 		i++
 	}
-	mp.mtx.RUnlock()
 
 	return ids
 }
@@ -1247,13 +1247,13 @@ func (mp *TxPool) TxIDs() []*daghash.TxID {
 // This function is safe for concurrent access.
 func (mp *TxPool) TxDescs() []*TxDesc {
 	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
 	descs := make([]*TxDesc, len(mp.pool))
 	i := 0
 	for _, desc := range mp.pool {
 		descs[i] = desc
 		i++
 	}
-	mp.mtx.RUnlock()
 
 	return descs
 }
@@ -1265,13 +1265,13 @@ func (mp *TxPool) TxDescs() []*TxDesc {
 // concurrent access as required by the interface contract.
 func (mp *TxPool) MiningDescs() []*mining.TxDesc {
 	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
 	descs := make([]*mining.TxDesc, len(mp.pool))
 	i := 0
 	for _, desc := range mp.pool {
 		descs[i] = &desc.TxDesc
 		i++
 	}
-	mp.mtx.RUnlock()
 
 	return descs
 }

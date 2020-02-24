@@ -30,22 +30,28 @@ func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
 
 	params := wsc.server.cfg.DAGParams
 
-	wsc.Lock()
-	if cmd.Reload || wsc.filterData == nil {
-		wsc.filterData = newWSClientFilter(cmd.Addresses, outpoints,
-			params)
-		wsc.Unlock()
-	} else {
-		wsc.Unlock()
+	reloadedFilterData := func() bool {
+		wsc.Lock()
+		defer wsc.Unlock()
+		if cmd.Reload || wsc.filterData == nil {
+			wsc.filterData = newWSClientFilter(cmd.Addresses, outpoints,
+				params)
+			return true
+		}
+		return false
+	}()
 
-		wsc.filterData.mu.Lock()
-		for _, a := range cmd.Addresses {
-			wsc.filterData.addAddressStr(a, params)
-		}
-		for i := range outpoints {
-			wsc.filterData.addUnspentOutpoint(&outpoints[i])
-		}
-		wsc.filterData.mu.Unlock()
+	if !reloadedFilterData {
+		func() {
+			wsc.filterData.mu.Lock()
+			defer wsc.filterData.mu.Unlock()
+			for _, a := range cmd.Addresses {
+				wsc.filterData.addAddressStr(a, params)
+			}
+			for i := range outpoints {
+				wsc.filterData.addUnspentOutpoint(&outpoints[i])
+			}
+		}()
 	}
 
 	return nil, nil

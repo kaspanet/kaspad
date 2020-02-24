@@ -155,7 +155,6 @@ type GetBlockTemplateResult struct {
 	// Optional long polling from BIP 0022.
 	LongPollID  string `json:"longPollId,omitempty"`
 	LongPollURI string `json:"longPollUri,omitempty"`
-	SubmitOld   *bool  `json:"submitOld,omitempty"`
 
 	// Basic pool extension from BIP 0023.
 	Target  string `json:"target,omitempty"`

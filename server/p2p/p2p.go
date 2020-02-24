@@ -303,8 +303,8 @@ func (sp *Peer) addressKnown(na *wire.NetAddress) bool {
 // It is safe for concurrent access.
 func (sp *Peer) setDisableRelayTx(disable bool) {
 	sp.relayMtx.Lock()
+	defer sp.relayMtx.Unlock()
 	sp.DisableRelayTx = disable
-	sp.relayMtx.Unlock()
 }
 
 // relayTxDisabled returns whether or not relaying of transactions for the given
@@ -312,10 +312,8 @@ func (sp *Peer) setDisableRelayTx(disable bool) {
 // It is safe for concurrent access.
 func (sp *Peer) relayTxDisabled() bool {
 	sp.relayMtx.Lock()
-	isDisabled := sp.DisableRelayTx
-	sp.relayMtx.Unlock()
-
-	return isDisabled
+	defer sp.relayMtx.Unlock()
+	return sp.DisableRelayTx
 }
 
 // pushAddrMsg sends an addr message to the connected peer using the provided

@@ -113,8 +113,8 @@ func (v *virtualBlock) updateSelectedParentSet(oldSelectedParent *blockNode) *ch
 // This function is safe for concurrent access.
 func (v *virtualBlock) SetTips(tips blockSet) {
 	v.mtx.Lock()
+	defer v.mtx.Unlock()
 	v.setTips(tips)
-	v.mtx.Unlock()
 }
 
 // addTip adds the given tip to the set of tips in the virtual block.
