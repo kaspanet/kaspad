@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/kaspanet/kaspad/rpcclient"
@@ -20,6 +21,9 @@ import (
 )
 
 var random = rand.New(rand.NewSource(time.Now().UnixNano()))
+var hashesTried uint64
+
+const logHashRateInterval = 10 * time.Second
 
 func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64) error {
 	errChan := make(chan error)
@@ -50,12 +54,30 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64) err
 		doneChan <- struct{}{}
 	})
 
+	logHashRate()
+
 	select {
 	case err := <-errChan:
 		return err
 	case <-doneChan:
 		return nil
 	}
+}
+
+func logHashRate() {
+	spawn(func() {
+		lastCheck := time.Now()
+		for range time.Tick(logHashRateInterval) {
+			currentHashesTried := hashesTried
+			currentTime := time.Now()
+			kiloHashesTried := float64(currentHashesTried) / 1000.0
+			hashRate := kiloHashesTried / currentTime.Sub(lastCheck).Seconds()
+			log.Infof("Current hash rate is %.2f Khash/s", hashRate)
+			lastCheck = currentTime
+			// subtract from hashesTried the hashes we already sampled
+			atomic.AddUint64(&hashesTried, -currentHashesTried)
+		}
+	})
 }
 
 func mineNextBlock(client *minerClient, foundBlock chan *util.Block, templateStopChan chan struct{}, errChan chan error) {
@@ -135,6 +157,7 @@ func solveBlock(block *util.Block, stopChan chan struct{}, foundBlock chan *util
 		default:
 			msgBlock.Header.Nonce = i
 			hash := msgBlock.BlockHash()
+			atomic.AddUint64(&hashesTried, 1)
 			if daghash.HashToBig(hash).Cmp(targetDifficulty) <= 0 {
 				foundBlock <- block
 				return
