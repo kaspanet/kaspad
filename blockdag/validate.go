@@ -598,41 +598,32 @@ func (dag *BlockDAG) validateDifficulty(header *wire.BlockHeader, bluestParent *
 }
 
 // validateParents validates that no parent is an ancestor of another parent, and no parent is finalized
-func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
-	minBlueScore := uint64(math.MaxUint64)
-	queue := newDownHeap()
-	visited := newBlockSet()
-	for parent := range parents {
+func (dag *BlockDAG) validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
+	for parentA := range parents {
 		// isFinalized might be false-negative because node finality status is
 		// updated in a separate goroutine. This is why later the block is
 		// checked more thoroughly on the finality rules in dag.checkFinalityRules.
-		if parent.isFinalized {
-			return ruleError(ErrFinality, fmt.Sprintf("block %s is a finalized parent of block %s", parent.hash, blockHeader.BlockHash()))
+		if parentA.isFinalized {
+			return ruleError(ErrFinality, fmt.Sprintf("block %s is a finalized "+
+				"parent of block %s", parentA.hash, blockHeader.BlockHash()))
 		}
-		if parent.blueScore < minBlueScore {
-			minBlueScore = parent.blueScore
-		}
-		for grandParent := range parent.parents {
-			if !visited.contains(grandParent) {
-				queue.Push(grandParent)
-				visited.add(grandParent)
+
+		for parentB := range parents {
+			if parentA == parentB {
+				continue
 			}
-		}
-	}
-	for queue.Len() > 0 {
-		current := queue.pop()
-		if parents.contains(current) {
-			return ruleError(ErrInvalidParentsRelation, fmt.Sprintf("block %s is both a parent of %s and an"+
-				" ancestor of another parent",
-				current.hash,
-				blockHeader.BlockHash()))
-		}
-		if current.blueScore > minBlueScore {
-			for parent := range current.parents {
-				if !visited.contains(parent) {
-					queue.Push(parent)
-					visited.add(parent)
-				}
+
+			isAncestorOf, err := dag.isAncestorOf(parentA, parentB)
+			if err != nil {
+				return err
+			}
+			if isAncestorOf {
+				return ruleError(ErrInvalidParentsRelation, fmt.Sprintf("block %s is both a parent of %s and an"+
+					" ancestor of another parent %s",
+					parentA.hash,
+					blockHeader.BlockHash(),
+					parentB.hash,
+				))
 			}
 		}
 	}
@@ -654,7 +645,7 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, flag
 	bluestParent := parents.bluest()
 	fastAdd := flags&BFFastAdd == BFFastAdd
 
-	err := validateParents(&block.MsgBlock().Header, parents)
+	err := dag.validateParents(&block.MsgBlock().Header, parents)
 	if err != nil {
 		return err
 	}

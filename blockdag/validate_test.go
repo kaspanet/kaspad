@@ -558,24 +558,23 @@ func TestPastMedianTime(t *testing.T) {
 }
 
 func TestValidateParents(t *testing.T) {
-	dag := newTestDAG(&dagconfig.SimnetParams)
-	genesisNode := dag.genesis
-	blockVersion := int32(0x10000000)
-
-	blockTime := genesisNode.Header().Timestamp
-
-	generateNode := func(parents ...*blockNode) *blockNode {
-		// The timestamp of each block is changed to prevent a situation where two blocks share the same hash
-		blockTime = blockTime.Add(time.Second)
-		return newTestNode(dag, blockSetFromSlice(parents...),
-			blockVersion,
-			0,
-			blockTime)
+	// Create a new database and dag instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("TestCheckBlockSanity", Config{
+		DAGParams: &dagconfig.SimnetParams,
+	})
+	if err != nil {
+		t.Errorf("Failed to setup dag instance: %v", err)
+		return
 	}
+	defer teardownFunc()
 
-	a := generateNode(genesisNode)
-	b := generateNode(a)
-	c := generateNode(genesisNode)
+	a := prepareAndProcessBlock(t, dag, dag.dagParams.GenesisBlock)
+	b := prepareAndProcessBlock(t, dag, a)
+	c := prepareAndProcessBlock(t, dag, dag.dagParams.GenesisBlock)
+
+	aNode := nodeByMsgBlock(t, dag, a)
+	bNode := nodeByMsgBlock(t, dag, b)
+	cNode := nodeByMsgBlock(t, dag, c)
 
 	fakeBlockHeader := &wire.BlockHeader{
 		HashMerkleRoot:       &daghash.ZeroHash,
@@ -584,19 +583,19 @@ func TestValidateParents(t *testing.T) {
 	}
 
 	// Check direct parents relation
-	err := validateParents(fakeBlockHeader, blockSetFromSlice(a, b))
+	err = dag.validateParents(fakeBlockHeader, blockSetFromSlice(aNode, bNode))
 	if err == nil {
 		t.Errorf("validateParents: `a` is a parent of `b`, so an error is expected")
 	}
 
 	// Check indirect parents relation
-	err = validateParents(fakeBlockHeader, blockSetFromSlice(genesisNode, b))
+	err = dag.validateParents(fakeBlockHeader, blockSetFromSlice(dag.genesis, bNode))
 	if err == nil {
 		t.Errorf("validateParents: `genesis` and `b` are indirectly related, so an error is expected")
 	}
 
 	// Check parents with no relation
-	err = validateParents(fakeBlockHeader, blockSetFromSlice(b, c))
+	err = dag.validateParents(fakeBlockHeader, blockSetFromSlice(bNode, cNode))
 	if err != nil {
 		t.Errorf("validateParents: unexpected error: %v", err)
 	}
