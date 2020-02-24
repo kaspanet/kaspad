@@ -68,9 +68,9 @@ type DynamicBanScore struct {
 // String returns the ban score as a human-readable string.
 func (s *DynamicBanScore) String() string {
 	s.mtx.Lock()
+	defer s.mtx.Unlock()
 	r := fmt.Sprintf("persistent %d + transient %f at %d = %d as of now",
 		s.persistent, s.transient, s.lastUnix, s.Int())
-	s.mtx.Unlock()
 	return r
 }
 
@@ -80,8 +80,8 @@ func (s *DynamicBanScore) String() string {
 // This function is safe for concurrent access.
 func (s *DynamicBanScore) Int() uint32 {
 	s.mtx.Lock()
+	defer s.mtx.Unlock()
 	r := s.int(time.Now())
-	s.mtx.Unlock()
 	return r
 }
 
@@ -91,8 +91,8 @@ func (s *DynamicBanScore) Int() uint32 {
 // This function is safe for concurrent access.
 func (s *DynamicBanScore) Increase(persistent, transient uint32) uint32 {
 	s.mtx.Lock()
+	defer s.mtx.Unlock()
 	r := s.increase(persistent, transient, time.Now())
-	s.mtx.Unlock()
 	return r
 }
 
@@ -101,10 +101,10 @@ func (s *DynamicBanScore) Increase(persistent, transient uint32) uint32 {
 // This function is safe for concurrent access.
 func (s *DynamicBanScore) Reset() {
 	s.mtx.Lock()
+	defer s.mtx.Unlock()
 	s.persistent = 0
 	s.transient = 0
 	s.lastUnix = 0
-	s.mtx.Unlock()
 }
 
 // int returns the ban score, the sum of the persistent and decaying scores at a

@@ -10,15 +10,38 @@ import (
 	"strings"
 )
 
+func concreteTypeToMethodWithRLock(rt reflect.Type) (string, bool) {
+	registerLock.RLock()
+	defer registerLock.RUnlock()
+	method, ok := concreteTypeToMethod[rt]
+	return method, ok
+}
+
+func methodToInfoWithRLock(method string) (methodInfo, bool) {
+	registerLock.RLock()
+	defer registerLock.RUnlock()
+	info, ok := methodToInfo[method]
+	return info, ok
+}
+
+func methodConcreteTypeAndInfoWithRLock(method string) (reflect.Type, methodInfo, bool) {
+	registerLock.RLock()
+	defer registerLock.RUnlock()
+	rtp, ok := methodToConcreteType[method]
+	if !ok {
+		return nil, methodInfo{}, false
+	}
+	info := methodToInfo[method]
+	return rtp, info, ok
+}
+
 // CommandMethod returns the method for the passed command. The provided command
 // type must be a registered type. All commands provided by this package are
 // registered by default.
 func CommandMethod(cmd interface{}) (string, error) {
 	// Look up the cmd type and error out if not registered.
 	rt := reflect.TypeOf(cmd)
-	registerLock.RLock()
-	method, ok := concreteTypeToMethod[rt]
-	registerLock.RUnlock()
+	method, ok := concreteTypeToMethodWithRLock(rt)
 	if !ok {
 		str := fmt.Sprintf("%q is not registered", method)
 		return "", makeError(ErrUnregisteredMethod, str)
@@ -33,9 +56,7 @@ func CommandMethod(cmd interface{}) (string, error) {
 func MethodUsageFlags(method string) (UsageFlag, error) {
 	// Look up details about the provided method and error out if not
 	// registered.
-	registerLock.RLock()
-	info, ok := methodToInfo[method]
-	registerLock.RUnlock()
+	info, ok := methodToInfoWithRLock(method)
 	if !ok {
 		str := fmt.Sprintf("%q is not registered", method)
 		return 0, makeError(ErrUnregisteredMethod, str)
@@ -225,9 +246,9 @@ func MethodUsageText(method string) (string, error) {
 	// Look up details about the provided method and error out if not
 	// registered.
 	registerLock.RLock()
+	defer registerLock.RUnlock()
 	rtp, ok := methodToConcreteType[method]
 	info := methodToInfo[method]
-	registerLock.RUnlock()
 	if !ok {
 		str := fmt.Sprintf("%q is not registered", method)
 		return "", makeError(ErrUnregisteredMethod, str)
@@ -241,9 +262,7 @@ func MethodUsageText(method string) (string, error) {
 
 	// Generate and store the usage string for future calls and return it.
 	usage := methodUsageText(rtp, info.defaults, method)
-	registerLock.Lock()
 	info.usage = usage
 	methodToInfo[method] = info
-	registerLock.Unlock()
 	return usage, nil
 }

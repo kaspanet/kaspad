@@ -194,8 +194,8 @@ func (dag *BlockDAG) IsKnownOrphan(hash *daghash.Hash) bool {
 	// Protect concurrent access. Using a read lock only so multiple
 	// readers can query without blocking each other.
 	dag.orphanLock.RLock()
+	defer dag.orphanLock.RUnlock()
 	_, exists := dag.orphans[*hash]
-	dag.orphanLock.RUnlock()
 
 	return exists
 }

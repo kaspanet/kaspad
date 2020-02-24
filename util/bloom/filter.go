@@ -89,8 +89,8 @@ func LoadFilter(filter *wire.MsgFilterLoad) *Filter {
 // This function is safe for concurrent access.
 func (bf *Filter) IsLoaded() bool {
 	bf.mtx.Lock()
+	defer bf.mtx.Unlock()
 	loaded := bf.msgFilterLoad != nil
-	bf.mtx.Unlock()
 	return loaded
 }
 
@@ -99,8 +99,8 @@ func (bf *Filter) IsLoaded() bool {
 // This function is safe for concurrent access.
 func (bf *Filter) Reload(filter *wire.MsgFilterLoad) {
 	bf.mtx.Lock()
+	defer bf.mtx.Unlock()
 	bf.msgFilterLoad = filter
-	bf.mtx.Unlock()
 }
 
 // Unload unloads the bloom filter.
@@ -108,8 +108,8 @@ func (bf *Filter) Reload(filter *wire.MsgFilterLoad) {
 // This function is safe for concurrent access.
 func (bf *Filter) Unload() {
 	bf.mtx.Lock()
+	defer bf.mtx.Unlock()
 	bf.msgFilterLoad = nil
-	bf.mtx.Unlock()
 }
 
 // hash returns the bit offset in the bloom filter which corresponds to the
@@ -156,9 +156,8 @@ func (bf *Filter) matches(data []byte) bool {
 // This function is safe for concurrent access.
 func (bf *Filter) Matches(data []byte) bool {
 	bf.mtx.Lock()
-	match := bf.matches(data)
-	bf.mtx.Unlock()
-	return match
+	defer bf.mtx.Unlock()
+	return bf.matches(data)
 }
 
 // matchesOutpoint returns true if the bloom filter might contain the passed
@@ -180,9 +179,8 @@ func (bf *Filter) matchesOutpoint(outpoint *wire.Outpoint) bool {
 // This function is safe for concurrent access.
 func (bf *Filter) MatchesOutpoint(outpoint *wire.Outpoint) bool {
 	bf.mtx.Lock()
-	match := bf.matchesOutpoint(outpoint)
-	bf.mtx.Unlock()
-	return match
+	defer bf.mtx.Unlock()
+	return bf.matchesOutpoint(outpoint)
 }
 
 // add adds the passed byte slice to the bloom filter.
@@ -211,8 +209,8 @@ func (bf *Filter) add(data []byte) {
 // This function is safe for concurrent access.
 func (bf *Filter) Add(data []byte) {
 	bf.mtx.Lock()
+	defer bf.mtx.Unlock()
 	bf.add(data)
-	bf.mtx.Unlock()
 }
 
 // AddHash adds the passed daghash.Hash to the Filter.
@@ -220,8 +218,8 @@ func (bf *Filter) Add(data []byte) {
 // This function is safe for concurrent access.
 func (bf *Filter) AddHash(hash *daghash.Hash) {
 	bf.mtx.Lock()
+	defer bf.mtx.Unlock()
 	bf.add(hash[:])
-	bf.mtx.Unlock()
 }
 
 // addOutpoint adds the passed transaction outpoint to the bloom filter.
@@ -241,8 +239,8 @@ func (bf *Filter) addOutpoint(outpoint *wire.Outpoint) {
 // This function is safe for concurrent access.
 func (bf *Filter) AddOutpoint(outpoint *wire.Outpoint) {
 	bf.mtx.Lock()
+	defer bf.mtx.Unlock()
 	bf.addOutpoint(outpoint)
-	bf.mtx.Unlock()
 }
 
 // maybeAddOutpoint potentially adds the passed outpoint to the bloom filter
@@ -330,9 +328,8 @@ func (bf *Filter) matchTxAndUpdate(tx *util.Tx) bool {
 // This function is safe for concurrent access.
 func (bf *Filter) MatchTxAndUpdate(tx *util.Tx) bool {
 	bf.mtx.Lock()
-	match := bf.matchTxAndUpdate(tx)
-	bf.mtx.Unlock()
-	return match
+	defer bf.mtx.Unlock()
+	return bf.matchTxAndUpdate(tx)
 }
 
 // MsgFilterLoad returns the underlying wire.MsgFilterLoad for the bloom
@@ -341,7 +338,6 @@ func (bf *Filter) MatchTxAndUpdate(tx *util.Tx) bool {
 // This function is safe for concurrent access.
 func (bf *Filter) MsgFilterLoad() *wire.MsgFilterLoad {
 	bf.mtx.Lock()
-	msg := bf.msgFilterLoad
-	bf.mtx.Unlock()
-	return msg
+	defer bf.mtx.Unlock()
+	return bf.msgFilterLoad
 }

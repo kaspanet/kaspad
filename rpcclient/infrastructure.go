@@ -442,9 +442,8 @@ out:
 // is being reassigned during a reconnect.
 func (c *Client) disconnectChan() <-chan struct{} {
 	c.mtx.Lock()
-	ch := c.disconnect
-	c.mtx.Unlock()
-	return ch
+	defer c.mtx.Unlock()
+	return c.disconnect
 }
 
 // wsOutHandler handles all outgoing messages for the websocket connection. It
@@ -511,9 +510,11 @@ func (c *Client) reregisterNtfns() error {
 	// the notification state (while not under the lock of course) which
 	// also register it with the remote RPC server, so this prevents double
 	// registrations.
-	c.ntfnStateLock.Lock()
-	stateCopy := c.ntfnState.Copy()
-	c.ntfnStateLock.Unlock()
+	stateCopy := func() *notificationState {
+		c.ntfnStateLock.Lock()
+		defer c.ntfnStateLock.Unlock()
+		return c.ntfnState.Copy()
+	}()
 
 	// Reregister notifyblocks if needed.
 	if stateCopy.notifyBlocks {
@@ -550,23 +551,9 @@ var ignoreResends = map[string]struct{}{
 	"rescan": {},
 }
 
-// resendRequests resends any requests that had not completed when the client
-// disconnected. It is intended to be called once the client has reconnected as
-// a separate goroutine.
-func (c *Client) resendRequests() {
-	// Set the notification state back up. If anything goes wrong,
-	// disconnect the client.
-	if err := c.reregisterNtfns(); err != nil {
-		log.Warnf("Unable to re-establish notification state: %s", err)
-		c.Disconnect()
-		return
-	}
-
-	// Since it's possible to block on send and more requests might be
-	// added by the caller while resending, make a copy of all of the
-	// requests that need to be resent now and work from the copy. This
-	// also allows the lock to be released quickly.
+func (c *Client) collectResendRequests() []*jsonRequest {
 	c.requestLock.Lock()
+	defer c.requestLock.Unlock()
 	resendReqs := make([]*jsonRequest, 0, c.requestList.Len())
 	var nextElem *list.Element
 	for e := c.requestList.Front(); e != nil; e = nextElem {
@@ -583,7 +570,26 @@ func (c *Client) resendRequests() {
 			resendReqs = append(resendReqs, jReq)
 		}
 	}
-	c.requestLock.Unlock()
+	return resendReqs
+}
+
+// resendRequests resends any requests that had not completed when the client
+// disconnected. It is intended to be called once the client has reconnected as
+// a separate goroutine.
+func (c *Client) resendRequests() {
+	// Set the notification state back up. If anything goes wrong,
+	// disconnect the client.
+	if err := c.reregisterNtfns(); err != nil {
+		log.Warnf("Unable to re-establish notification state: %s", err)
+		c.Disconnect()
+		return
+	}
+
+	// Since it's possible to block on send and more requests might be
+	// added by the caller while resending, make a copy of all of the
+	// requests that need to be resent now and work from the copy. This
+	// also allows the lock to be released quickly.
+	resendReqs := c.collectResendRequests()
 
 	for _, jReq := range resendReqs {
 		// Stop resending commands if the client disconnected again
@@ -654,10 +660,12 @@ out:
 			c.wsConn = wsConn
 			c.retryCount = 0
 
-			c.mtx.Lock()
-			c.disconnect = make(chan struct{})
-			c.disconnected = false
-			c.mtx.Unlock()
+			func() {
+				c.mtx.Lock()
+				defer c.mtx.Unlock()
+				c.disconnect = make(chan struct{})
+				c.disconnected = false
+			}()
 
 			// Start processing input and output for the
 			// new connection.
@@ -689,11 +697,14 @@ func (c *Client) handleSendPostMessage(details *sendPostDetails) {
 	}
 
 	// Read the raw bytes and close the response.
-	respBytes, err := ioutil.ReadAll(httpResponse.Body)
-	httpResponse.Body.Close()
+	respBytes, err := func() ([]byte, error) {
+		defer httpResponse.Body.Close()
+		return ioutil.ReadAll(httpResponse.Body)
+	}()
 	if err != nil {
-		err = errors.Errorf("error reading json reply: %s", err)
-		jReq.responseChan <- &response{err: err}
+		jReq.responseChan <- &response{
+			err: errors.Wrap(err, "error reading json reply"),
+		}
 		return
 	}
 

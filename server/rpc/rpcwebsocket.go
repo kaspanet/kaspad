@@ -352,13 +352,19 @@ func (f *wsClientFilter) addUnspentOutpoint(op *wire.Outpoint) {
 	f.unspent[*op] = struct{}{}
 }
 
-// existsUnspentOutpoint returns true if the passed outpoint has been added to
+// existsUnspentOutpointNoLock returns true if the passed outpoint has been added to
 // the wsClientFilter.
 //
 // NOTE: This extension was ported from github.com/decred/dcrd
-func (f *wsClientFilter) existsUnspentOutpoint(op *wire.Outpoint) bool {
+func (f *wsClientFilter) existsUnspentOutpointNoLock(op *wire.Outpoint) bool {
 	_, ok := f.unspent[*op]
 	return ok
+}
+
+func (f *wsClientFilter) existsUnspentOutpoint(op *wire.Outpoint) bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.existsUnspentOutpointNoLock(op)
 }
 
 // Notification types
@@ -568,17 +574,13 @@ func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
 	msgTx := tx.MsgTx()
 	for _, input := range msgTx.TxIn {
 		for quitChan, wsc := range clients {
-			wsc.Lock()
-			filter := wsc.filterData
-			wsc.Unlock()
+			filter := wsc.FilterData()
 			if filter == nil {
 				continue
 			}
-			filter.mu.Lock()
 			if filter.existsUnspentOutpoint(&input.PreviousOutpoint) {
 				subscribed[quitChan] = struct{}{}
 			}
-			filter.mu.Unlock()
 		}
 	}
 
@@ -591,22 +593,22 @@ func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
 			continue
 		}
 		for quitChan, wsc := range clients {
-			wsc.Lock()
-			filter := wsc.filterData
-			wsc.Unlock()
+			filter := wsc.FilterData()
 			if filter == nil {
 				continue
 			}
-			filter.mu.Lock()
-			if filter.existsAddress(addr) {
-				subscribed[quitChan] = struct{}{}
-				op := wire.Outpoint{
-					TxID:  *tx.ID(),
-					Index: uint32(i),
+			func() {
+				filter.mu.Lock()
+				defer filter.mu.Unlock()
+				if filter.existsAddress(addr) {
+					subscribed[quitChan] = struct{}{}
+					op := wire.Outpoint{
+						TxID:  *tx.ID(),
+						Index: uint32(i),
+					}
+					filter.addUnspentOutpoint(&op)
 				}
-				filter.addUnspentOutpoint(&op)
-			}
-			filter.mu.Unlock()
+			}()
 		}
 	}
 
@@ -1250,10 +1252,8 @@ func (c *wsClient) QueueNotification(marshalledJSON []byte) error {
 // Disconnected returns whether or not the websocket client is disconnected.
 func (c *wsClient) Disconnected() bool {
 	c.Lock()
-	isDisconnected := c.disconnected
-	c.Unlock()
-
-	return isDisconnected
+	defer c.Unlock()
+	return c.disconnected
 }
 
 // Disconnect disconnects the websocket client.
@@ -1287,6 +1287,13 @@ func (c *wsClient) Start() {
 // and the connection is closed.
 func (c *wsClient) WaitForShutdown() {
 	c.wg.Wait()
+}
+
+// FilterData returns the websocket client filter data.
+func (c *wsClient) FilterData() *wsClientFilter {
+	c.Lock()
+	defer c.Unlock()
+	return c.filterData
 }
 
 // newWebsocketClient returns a new websocket client given the notification

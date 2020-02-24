@@ -507,10 +507,7 @@ func isValidResultType(kind reflect.Kind) bool {
 func GenerateHelp(method string, descs map[string]string, resultTypes ...interface{}) (string, error) {
 	// Look up details about the provided method and error out if not
 	// registered.
-	registerLock.RLock()
-	rtp, ok := methodToConcreteType[method]
-	info := methodToInfo[method]
-	registerLock.RUnlock()
+	rtp, info, ok := methodConcreteTypeAndInfoWithRLock(method)
 	if !ok {
 		str := fmt.Sprintf("%q is not registered", method)
 		return "", makeError(ErrUnregisteredMethod, str)

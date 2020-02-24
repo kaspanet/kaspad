@@ -185,9 +185,12 @@ func (s *Server) httpStatusLine(req *http.Request, code int) string {
 	if !proto11 {
 		key = -key
 	}
-	s.statusLock.RLock()
-	line, ok := s.statusLines[key]
-	s.statusLock.RUnlock()
+	line, ok := func() (string, bool) {
+		s.statusLock.RLock()
+		defer s.statusLock.RUnlock()
+		line, ok := s.statusLines[key]
+		return line, ok
+	}()
 	if ok {
 		return line
 	}
@@ -202,8 +205,8 @@ func (s *Server) httpStatusLine(req *http.Request, code int) string {
 	if text != "" {
 		line = proto + " " + codeStr + " " + text + "\r\n"
 		s.statusLock.Lock()
+		defer s.statusLock.Unlock()
 		s.statusLines[key] = line
-		s.statusLock.Unlock()
 	} else {
 		text = "status code " + codeStr
 		line = proto + " " + codeStr + " " + text + "\r\n"
