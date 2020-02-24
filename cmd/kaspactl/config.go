@@ -212,7 +212,8 @@ func loadConfig() (*ConfigFlags, []string, error) {
 	parser := flags.NewParser(activeConfig, flags.Default)
 	err = flags.NewIniParser(parser).ParseFile(preCfg.ConfigFile)
 	if err != nil {
-		if pErr := &(os.PathError{}); !errors.As(err, pErr) {
+		pErr := os.PathError{}.Err
+		if !errors.As(err, &pErr) {
 			fmt.Fprintf(os.Stderr, "Error parsing config file: %s\n",
 				err)
 			fmt.Fprintln(os.Stderr, usageMessage)
