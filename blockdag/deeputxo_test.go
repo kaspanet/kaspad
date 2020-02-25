@@ -2,7 +2,9 @@ package blockdag
 
 import (
 	"fmt"
+	"os"
 	"path"
+	"runtime/pprof"
 	"testing"
 
 	"github.com/kaspanet/kaspad/logs"
@@ -31,6 +33,14 @@ func loadDAG() (*BlockDAG, error) {
 
 type nodeSelector func(dag *BlockDAG) *blockNode
 
+func profile(b *testing.B) {
+	profileFile, err := os.Create("/tmp/profile")
+	pprof.StartCPUProfile(profileFile)
+	if err != nil {
+		b.Fatalf("Error creating profile file: %s", err)
+	}
+}
+
 func benchmarkRestoreUTXO(b *testing.B, selector nodeSelector) {
 	log.SetLevel(logs.LevelOff)
 
@@ -41,13 +51,11 @@ func benchmarkRestoreUTXO(b *testing.B, selector nodeSelector) {
 	defer dag.db.Close()
 
 	node := selector(dag)
-	//	profileFile, err := os.Create("/tmp/profile")
-	//	pprof.StartCPUProfile(profileFile)
-	//	defer pprof.StopCPUProfile()
-	//  if err != nil {
-	//  	b.Fatalf("Error creating profile file: %s", err)
-	//  }
 	b.ResetTimer()
+
+	profile(b)
+	defer pprof.StopCPUProfile()
+
 	for i := 0; i < b.N; i++ {
 		_, err := dag.restoreUTXO(node)
 		if err != nil {
@@ -60,6 +68,9 @@ func benchmarkNRestoreUTXO(b *testing.B, n int) {
 	selector := func(dag *BlockDAG) *blockNode {
 		current := dag.selectedTip()
 		for i := 0; i < n; i++ {
+			if current == nil {
+				b.Fatalf("We are down %d, and there's nowhere else to go", i)
+			}
 			current = current.selectedParent
 		}
 		return current
@@ -73,29 +84,30 @@ func BenchmarkDeepRestoreUTXO(b *testing.B) {
 
 func BenchmarkRestoreUTXO(b *testing.B) {
 	ns := []int{
-		0,
-		1,
-		2,
-		3,
-		4,
-		5,
-		10,
-		20,
-		50,
-		100,
-		150,
-		200,
-		300,
-		400,
-		500,
-		600,
-		700,
-		800,
-		900,
-		1000,
+		//0,
+		//1,
+		//2,
+		//3,
+		//4,
+		//5,
+		//10,
+		//20,
+		//50,
+		//100,
+		//150,
+		//200,
+		//300,
+		//400,
+		//500,
+		//600,
+		//700,
+		//800,
+		//900,
+		//1000,
+		15918, // The deepest we can go in current setup
 	}
-	for _, n := range ns {
-		b.Run(fmt.Sprintf("Benchmark%dRestoreUtxo", n),
-			func(b *testing.B) { benchmarkNRestoreUTXO(b, n) })
+	for _, n := range ns { // The deepest we can go in current setup
+		b.Run(fmt.Sprintf("Benchmark%dRestoreUtxo", n), // The deepest we can go in current setup
+			func(b *testing.B) { benchmarkNRestoreUTXO(b, n) }) // The deepest we can go in current setup
 	}
 }

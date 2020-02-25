@@ -285,6 +285,8 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	return &result, nil
 }
 
+// WithDiffInPlace applies provided diff to this diff in-place, that would be the result if
+// first d, and than diff were applied to the same base
 func (d *UTXODiff) WithDiffInPlace(diff *UTXODiff) error {
 	//	fmt.Println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 	for outpoint, utxoToAdd := range diff.toAdd {
