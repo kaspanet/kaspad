@@ -31,7 +31,7 @@ var (
 	adxrLog = BackendLog.Logger("ADXR")
 	amgrLog = BackendLog.Logger("AMGR")
 	cmgrLog = BackendLog.Logger("CMGR")
-	bcdbLog = BackendLog.Logger("BCDB")
+	ksdbLog = BackendLog.Logger("KSDB")
 	kasdLog = BackendLog.Logger("KASD")
 	bdagLog = BackendLog.Logger("BDAG")
 	cnfgLog = BackendLog.Logger("CNFG")
@@ -52,7 +52,7 @@ var SubsystemTags = struct {
 	ADXR,
 	AMGR,
 	CMGR,
-	BCDB,
+	KSDB,
 	KASD,
 	BDAG,
 	CNFG,
@@ -70,7 +70,7 @@ var SubsystemTags = struct {
 	ADXR: "ADXR",
 	AMGR: "AMGR",
 	CMGR: "CMGR",
-	BCDB: "BCDB",
+	KSDB: "KSDB",
 	KASD: "KASD",
 	BDAG: "BDAG",
 	CNFG: "CNFG",
@@ -91,7 +91,7 @@ var subsystemLoggers = map[string]logs.Logger{
 	SubsystemTags.ADXR: adxrLog,
 	SubsystemTags.AMGR: amgrLog,
 	SubsystemTags.CMGR: cmgrLog,
-	SubsystemTags.BCDB: bcdbLog,
+	SubsystemTags.KSDB: ksdbLog,
 	SubsystemTags.KASD: kasdLog,
 	SubsystemTags.BDAG: bdagLog,
 	SubsystemTags.CNFG: cnfgLog,
