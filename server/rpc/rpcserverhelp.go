@@ -267,7 +267,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockVerboseResult-difficulty":           "The proof-of-work difficulty as a multiple of the minimum difficulty",
 	"getBlockVerboseResult-parentHashes":         "The hashes of the parent blocks",
 	"getBlockVerboseResult-selectedParentHash":   "The selected parent hash",
-	"getBlockVerboseResult-childHashes":          "The hashes of the children blocks (only if there are any)",
+	"getBlockVerboseResult-childHashes":          "The hashes of the child blocks (only if there are any)",
 
 	// GetBlockCountCmd help.
 	"getBlockCount--synopsis": "Returns the number of blocks in the block DAG.",
@@ -295,7 +295,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockHeaderVerboseResult-difficulty":           "The proof-of-work difficulty as a multiple of the minimum difficulty",
 	"getBlockHeaderVerboseResult-parentHashes":         "The hashes of the parent blocks",
 	"getBlockHeaderVerboseResult-selectedParentHash":   "The selected parent hash",
-	"getBlockHeaderVerboseResult-childHashes":          "The hashes of the children blocks (only if there are any)",
+	"getBlockHeaderVerboseResult-childHashes":          "The hashes of the child blocks (only if there are any)",
 
 	// TemplateRequest help.
 	"templateRequest-mode":         "This is 'template', 'proposal', or omitted",
