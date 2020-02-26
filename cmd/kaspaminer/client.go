@@ -44,7 +44,7 @@ func connectToServer(cfg *configFlags) (*minerClient, error) {
 	}
 
 	connCfg := &rpcclient.ConnConfig{
-		Host:           normalizeRPCServerAddress(cfg.RPCServer, cfg),
+		Host:           cfg.NetParams().NormalizeRPCServerAddress(cfg.RPCServer),
 		Endpoint:       "ws",
 		User:           cfg.RPCUser,
 		Pass:           cfg.RPCPassword,
