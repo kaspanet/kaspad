@@ -207,7 +207,10 @@ func (sm *SyncManager) startSync() {
 		return
 	}
 
-	log.Warnf("No sync peer candidates available")
+	if !sm.current() {
+		log.Warnf("No sync peer candidates available")
+	}
+
 	if sm.shouldQueryPeerSelectedTips() {
 		for peer, state := range sm.peerStates {
 			if !state.syncCandidate {
