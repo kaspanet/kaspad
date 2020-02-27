@@ -70,7 +70,7 @@ func realMain() error {
 	defer os.Stdout.Sync()
 	log = backendLogger.Logger("MAIN")
 	spawn = panics.GoroutineWrapperFunc(log)
-	dbLog, _ := logger.Get(logger.SubsystemTags.BCDB)
+	dbLog, _ := logger.Get(logger.SubsystemTags.KSDB)
 	dbLog.SetLevel(logs.LevelDebug)
 
 	// Setup the parser options and commands.
