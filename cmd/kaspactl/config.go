@@ -7,6 +7,7 @@ package main
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/version"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"net"
@@ -184,7 +185,7 @@ func loadConfig() (*ConfigFlags, []string, error) {
 	appName = strings.TrimSuffix(appName, filepath.Ext(appName))
 	usageMessage := fmt.Sprintf("Use %s -h to show options", appName)
 	if preCfg.ShowVersion {
-		fmt.Println(appName, "version", version())
+		fmt.Println(appName, "version", version.Version())
 		os.Exit(0)
 	}
 

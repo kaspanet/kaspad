@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/version"
 	"os"
 
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/cmd/kaspaminer/version"
 	"github.com/kaspanet/kaspad/signal"
 	"github.com/kaspanet/kaspad/util/panics"
 )
