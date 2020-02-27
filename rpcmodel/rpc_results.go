@@ -22,7 +22,7 @@ type GetBlockHeaderVerboseResult struct {
 	Difficulty           float64  `json:"difficulty"`
 	ParentHashes         []string `json:"parentHashes,omitempty"`
 	SelectedParentHash   string   `json:"selectedParentHash"`
-	NextHashes           []string `json:"nextHashes,omitempty"`
+	ChildHashes          []string `json:"childHashes,omitempty"`
 }
 
 // GetBlockVerboseResult models the data from the getblock command when the
@@ -47,7 +47,7 @@ type GetBlockVerboseResult struct {
 	Difficulty           float64       `json:"difficulty"`
 	ParentHashes         []string      `json:"parentHashes"`
 	SelectedParentHash   string        `json:"selectedParentHash,omitempty"`
-	NextHashes           []string      `json:"nextHashes,omitempty"`
+	ChildHashes          []string      `json:"childHashes,omitempty"`
 }
 
 // CreateMultiSigResult models the data returned from the createmultisig

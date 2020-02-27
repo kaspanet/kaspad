@@ -264,7 +264,7 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		Size:                 int32(block.MsgBlock().SerializeSize()),
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
 		Difficulty:           getDifficultyRatio(blockHeader.Bits, params),
-		NextHashes:           childHashStrings,
+		ChildHashes:          childHashStrings,
 	}
 
 	if isVerboseTx {
