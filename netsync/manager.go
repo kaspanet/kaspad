@@ -207,18 +207,22 @@ func (sm *SyncManager) startSync() {
 		return
 	}
 
-	log.Warnf("No sync peer candidates available")
 	if sm.shouldQueryPeerSelectedTips() {
+		hasSyncCandidates := false
 		for peer, state := range sm.peerStates {
 			if !state.syncCandidate {
 				continue
 			}
+			hasSyncCandidates = true
 
 			if time.Since(state.lastSelectedTipRequest) < minGetSelectedTipInterval {
 				continue
 			}
 
 			queueMsgGetSelectedTip(peer, state)
+		}
+		if !hasSyncCandidates {
+			log.Warnf("No sync peer candidates available")
 		}
 	}
 }
