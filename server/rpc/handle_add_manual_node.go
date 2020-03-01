@@ -11,8 +11,14 @@ func handleAddManualNode(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 
 	oneTry := c.OneTry != nil && *c.OneTry
 
-	addr := network.NormalizeAddress(c.Addr, s.cfg.DAGParams.DefaultPort)
-	var err error
+	addr, err := network.NormalizeAddress(c.Addr, s.cfg.DAGParams.DefaultPort)
+	if err != nil {
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCInvalidParameter,
+			Message: err.Error(),
+		}
+	}
+
 	if oneTry {
 		err = s.cfg.ConnMgr.Connect(addr, false)
 	} else {

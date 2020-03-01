@@ -10,7 +10,6 @@ import (
 	"github.com/kaspanet/kaspad/version"
 	"github.com/pkg/errors"
 	"io/ioutil"
-	"net"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -102,28 +101,6 @@ type ConfigFlags struct {
 	ProxyPass     string `long:"proxypass" default-mask:"-" description:"Password for proxy server"`
 	TLSSkipVerify bool   `long:"skipverify" description:"Do not verify tls certificates (not recommended!)"`
 	config.NetworkFlags
-}
-
-// normalizeAddress returns addr with the passed default port appended if
-// there is not already a port specified.
-func normalizeAddress(addr string, useTestnet, useSimnet, useDevnet bool) string {
-	_, _, err := net.SplitHostPort(addr)
-	if err != nil {
-		var defaultPort string
-		switch {
-		case useDevnet:
-			defaultPort = "16610"
-		case useTestnet:
-			defaultPort = "16210"
-		case useSimnet:
-			defaultPort = "16510"
-		default:
-			defaultPort = "16110"
-		}
-
-		return net.JoinHostPort(addr, defaultPort)
-	}
-	return addr
 }
 
 // cleanAndExpandPath expands environement variables and leading ~ in the
@@ -240,8 +217,10 @@ func loadConfig() (*ConfigFlags, []string, error) {
 
 	// Add default port to RPC server based on --testnet and --simnet flags
 	// if needed.
-	activeConfig.RPCServer = normalizeAddress(activeConfig.RPCServer, activeConfig.Testnet,
-		activeConfig.Simnet, activeConfig.Devnet)
+	activeConfig.RPCServer, err = activeConfig.NetParams().NormalizeRPCServerAddress(activeConfig.RPCServer)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	return activeConfig, remainingArgs, nil
 }
