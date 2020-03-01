@@ -6,8 +6,9 @@ import (
 	"runtime/debug"
 )
 
-func goroutineIDAndCallerToMutex() string {
-	re := regexp.MustCompile("goroutine (\\d+)(.+\n){7}(.+)\n(.+)")
+func goroutineIDAndCallerToMutex(mutexFileName string) string {
+	pattern := fmt.Sprintf("goroutine (\\d+)(.|\n)*%s.*\n(.+)\n(.+)", mutexFileName)
+	re := regexp.MustCompile(pattern)
 	stack := string(debug.Stack())
 	matches := re.FindStringSubmatch(stack)
 	goroutineID := matches[1]
