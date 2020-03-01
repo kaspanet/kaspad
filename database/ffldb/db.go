@@ -8,12 +8,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"os"
-	"path/filepath"
-	"runtime"
-	"sort"
-	"sync"
-
 	"github.com/btcsuite/goleveldb/leveldb"
 	"github.com/btcsuite/goleveldb/leveldb/comparer"
 	ldberrors "github.com/btcsuite/goleveldb/leveldb/errors"
@@ -25,7 +19,12 @@ import (
 	"github.com/kaspanet/kaspad/database/internal/treap"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/kaspanet/kaspad/wire"
+	"os"
+	"path/filepath"
+	"runtime"
+	"sort"
 )
 
 // metadataDbName is the name used for the metadata database.
@@ -965,7 +964,7 @@ type transaction struct {
 	// Active iterators that need to be notified when the pending keys have
 	// been updated so the cursors can properly handle updates to the
 	// transaction state.
-	activeIterLock sync.RWMutex
+	activeIterLock locks.RWMutexWithLog
 	activeIters    []*treap.Iterator
 }
 
@@ -1770,11 +1769,11 @@ func (tx *transaction) Rollback() error {
 // the database.DB interface. All database access is performed through
 // transactions which are obtained through the specific Namespace.
 type db struct {
-	writeLock sync.Mutex   // Limit to one write transaction at a time.
-	closeLock sync.RWMutex // Make database close block while txns active.
-	closed    bool         // Is the database closed?
-	store     *blockStore  // Handles read/writing blocks to flat files.
-	cache     *dbCache     // Cache layer which wraps underlying leveldb DB.
+	writeLock locks.MutexWithLog   // Limit to one write transaction at a time.
+	closeLock locks.RWMutexWithLog // Make database close block while txns active.
+	closed    bool                 // Is the database closed?
+	store     *blockStore          // Handles read/writing blocks to flat files.
+	cache     *dbCache             // Cache layer which wraps underlying leveldb DB.
 }
 
 // Enforce db implements the database.DB interface.

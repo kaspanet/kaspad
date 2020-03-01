@@ -11,12 +11,12 @@ import (
 	"container/list"
 	"encoding/binary"
 	"fmt"
+	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/pkg/errors"
 	"hash/crc32"
 	"io"
 	"os"
 	"path/filepath"
-	"sync"
 	"syscall"
 
 	"github.com/kaspanet/kaspad/database"
@@ -59,7 +59,7 @@ type filer interface {
 // read or read/write access. It also contains a read-write mutex to support
 // multiple concurrent readers.
 type lockableFile struct {
-	sync.RWMutex
+	locks.RWMutexWithLog
 	file filer
 }
 
@@ -67,7 +67,7 @@ type lockableFile struct {
 // for performing all writes. It also contains a read-write mutex to support
 // multiple concurrent readers which can reuse the file handle.
 type writeCursor struct {
-	sync.RWMutex
+	locks.RWMutexWithLog
 
 	// curFile is the current block file that will be appended to when
 	// writing new blocks.
@@ -145,8 +145,8 @@ type blockStore struct {
 	//
 	// Due to the high performance and multi-read concurrency requirements,
 	// write locks should only be held for the minimum time necessary.
-	obfMutex         sync.RWMutex
-	lruMutex         sync.Mutex
+	obfMutex         locks.RWMutexWithLog
+	lruMutex         locks.MutexWithLog
 	openBlocksLRU    *list.List // Contains uint32 block file numbers.
 	fileNumToLRUElem map[uint32]*list.Element
 	openBlockFiles   map[uint32]*lockableFile

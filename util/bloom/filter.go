@@ -6,13 +6,12 @@ package bloom
 
 import (
 	"encoding/binary"
-	"math"
-	"sync"
-
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/kaspanet/kaspad/wire"
+	"math"
 )
 
 // ln2Squared is simply the square of the natural log of 2.
@@ -30,7 +29,7 @@ func minUint32(a, b uint32) uint32 {
 // Filter defines a kaspa bloom filter that provides easy manipulation of raw
 // filter data.
 type Filter struct {
-	mtx           sync.Mutex
+	mtx           locks.MutexWithLog
 	msgFilterLoad *wire.MsgFilterLoad
 }
 

@@ -7,10 +7,10 @@ package mempool
 import (
 	"bytes"
 	"fmt"
+	"github.com/kaspanet/kaspad/util/locks"
 	"math"
 	"reflect"
 	"runtime"
-	"sync"
 	"testing"
 	"time"
 
@@ -32,7 +32,7 @@ import (
 // a current faked blueScore to the pool callbacks. This, in turn, allows
 // transactions to appear as though they are spending completely valid utxos.
 type fakeDAG struct {
-	sync.RWMutex
+	locks.RWMutexWithLog
 	currentBlueScore uint64
 	medianTimePast   time.Time
 }

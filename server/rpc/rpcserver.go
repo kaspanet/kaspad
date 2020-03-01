@@ -12,6 +12,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/kaspanet/kaspad/util/locks"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -167,7 +168,7 @@ type Server struct {
 	ntfnMgr                *wsNotificationManager
 	numClients             int32
 	statusLines            map[int]string
-	statusLock             sync.RWMutex
+	statusLock             locks.RWMutexWithLog
 	wg                     sync.WaitGroup
 	gbtWorkState           *gbtWorkState
 	helpCacher             *helpCacher

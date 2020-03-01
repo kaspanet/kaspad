@@ -8,12 +8,12 @@ import (
 	"bytes"
 	"container/list"
 	"fmt"
+	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/pkg/errors"
 	"io"
 	"math/rand"
 	"net"
 	"strconv"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -399,7 +399,7 @@ type Peer struct {
 	cfg     Config
 	inbound bool
 
-	flagsMtx           sync.Mutex // protects the peer flags below
+	flagsMtx           locks.MutexWithLog // protects the peer flags below
 	na                 *wire.NetAddress
 	id                 int32
 	userAgent          string
@@ -410,13 +410,13 @@ type Peer struct {
 	verAckReceived     bool
 
 	knownInventory       *mruInventoryMap
-	prevGetBlockInvsMtx  sync.Mutex
+	prevGetBlockInvsMtx  locks.MutexWithLog
 	prevGetBlockInvsLow  *daghash.Hash
 	prevGetBlockInvsHigh *daghash.Hash
 
 	// These fields keep track of statistics for the peer and are protected
 	// by the statsMtx mutex.
-	statsMtx        sync.RWMutex
+	statsMtx        locks.RWMutexWithLog
 	timeOffset      int64
 	timeConnected   time.Time
 	selectedTipHash *daghash.Hash

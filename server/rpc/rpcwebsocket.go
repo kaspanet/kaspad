@@ -13,6 +13,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/pkg/errors"
 	"io"
 	"sync"
@@ -254,7 +255,7 @@ func (m *wsNotificationManager) NotifyMempoolTx(tx *util.Tx, isNew bool) {
 //
 // NOTE: This extension was ported from github.com/decred/dcrd
 type wsClientFilter struct {
-	mu sync.Mutex
+	mu locks.MutexWithLog
 
 	// Implemented fast paths for address lookup.
 	pubKeyHashes        map[[ripemd160.Size]byte]struct{}
@@ -848,7 +849,7 @@ type wsResponse struct {
 // ensure sending notifications from other subsystems can't block. Ultimately,
 // all messages are sent via the outHandler.
 type wsClient struct {
-	sync.Mutex
+	locks.MutexWithLog
 
 	// server is the RPC server that is servicing the client.
 	server *Server

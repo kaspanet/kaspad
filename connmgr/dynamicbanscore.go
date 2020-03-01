@@ -6,8 +6,8 @@ package connmgr
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/util/locks"
 	"math"
-	"sync"
 	"time"
 )
 
@@ -62,7 +62,7 @@ type DynamicBanScore struct {
 	lastUnix   int64
 	transient  float64
 	persistent uint32
-	mtx        sync.Mutex
+	mtx        locks.MutexWithLog
 }
 
 // String returns the ban score as a human-readable string.

@@ -6,9 +6,9 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/util/locks"
 	"math"
 	"sort"
-	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -80,9 +80,9 @@ type BlockDAG struct {
 
 	// dagLock protects concurrent access to the vast majority of the
 	// fields in this struct below this point.
-	dagLock sync.RWMutex
+	dagLock locks.RWMutexWithLog
 
-	utxoLock sync.RWMutex
+	utxoLock locks.RWMutexWithLog
 
 	// index and virtual are related to the memory block index. They both
 	// have their own locks, however they are often also protected by the
@@ -103,7 +103,7 @@ type BlockDAG struct {
 
 	// These fields are related to handling of orphan blocks. They are
 	// protected by a combination of the DAG lock and the orphan lock.
-	orphanLock   sync.RWMutex
+	orphanLock   locks.RWMutexWithLog
 	orphans      map[daghash.Hash]*orphanBlock
 	prevOrphans  map[daghash.Hash][]*orphanBlock
 	newestOrphan *orphanBlock
@@ -145,7 +145,7 @@ type BlockDAG struct {
 
 	// The notifications field stores a slice of callbacks to be executed on
 	// certain blockDAG events.
-	notificationsLock sync.RWMutex
+	notificationsLock locks.RWMutexWithLog
 	notifications     []NotificationCallback
 
 	lastFinalityPoint *blockNode

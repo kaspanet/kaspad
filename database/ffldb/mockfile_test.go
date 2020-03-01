@@ -8,9 +8,9 @@
 package ffldb
 
 import (
+	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/pkg/errors"
 	"io"
-	"sync"
 )
 
 // Errors used for the mock file.
@@ -30,7 +30,7 @@ var (
 // the database code related to reading and writing from the flat block files.
 // A maxSize of -1 is unlimited.
 type mockFile struct {
-	sync.RWMutex
+	locks.RWMutexWithLog
 	maxSize      int64
 	data         []byte
 	forceSyncErr bool

@@ -7,6 +7,7 @@ package connmgr
 import (
 	nativeerrors "errors"
 	"fmt"
+	"github.com/kaspanet/kaspad/util/locks"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -82,7 +83,7 @@ type ConnReq struct {
 
 	conn       net.Conn
 	state      ConnState
-	stateMtx   sync.RWMutex
+	stateMtx   locks.RWMutexWithLog
 	retryCount uint32
 }
 
@@ -197,7 +198,7 @@ type ConnManager struct {
 	start        int32
 	stop         int32
 
-	newConnReqMtx sync.Mutex
+	newConnReqMtx locks.MutexWithLog
 
 	cfg            Config
 	wg             sync.WaitGroup

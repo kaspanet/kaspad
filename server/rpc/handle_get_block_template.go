@@ -11,12 +11,12 @@ import (
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 	"math/rand"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -62,7 +62,7 @@ var (
 // gbtWorkState houses state that is used in between multiple RPC invocations to
 // getBlockTemplate.
 type gbtWorkState struct {
-	sync.Mutex
+	locks.MutexWithLog
 	lastTxUpdate  time.Time
 	lastGenerated time.Time
 	tipHashes     []*daghash.Hash

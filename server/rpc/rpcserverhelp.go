@@ -6,12 +6,11 @@
 package rpc
 
 import (
+	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/util/locks"
+	"github.com/pkg/errors"
 	"sort"
 	"strings"
-	"sync"
-
-	"github.com/kaspanet/kaspad/rpcmodel"
-	"github.com/pkg/errors"
 )
 
 // helpDescsEnUS defines the English descriptions used for the help strings.
@@ -677,7 +676,7 @@ var rpcResultTypes = map[string][]interface{}{
 // helpCacher provides a concurrent safe type that provides help and usage for
 // the RPC server commands and caches the results for future calls.
 type helpCacher struct {
-	sync.Mutex
+	locks.MutexWithLog
 	usage      string
 	methodHelp map[string]string
 }

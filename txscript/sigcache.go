@@ -5,10 +5,9 @@
 package txscript
 
 import (
-	"sync"
-
 	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/locks"
 )
 
 // sigCacheEntry represents an entry in the SigCache. Entries within the
@@ -33,7 +32,7 @@ type sigCacheEntry struct {
 // optimization which speeds up the validation of transactions within a block,
 // if they've already been seen and verified within the mempool.
 type SigCache struct {
-	sync.RWMutex
+	locks.RWMutexWithLog
 	validSigs  map[daghash.Hash]sigCacheEntry
 	maxEntries uint
 }

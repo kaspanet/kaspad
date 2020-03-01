@@ -5,9 +5,9 @@
 package blockdag
 
 import (
+	"github.com/kaspanet/kaspad/util/locks"
 	"math"
 	"sort"
-	"sync"
 	"time"
 )
 
@@ -72,7 +72,7 @@ func (s int64Sorter) Less(i, j int) bool {
 
 // medianTime provides an implementation of the MedianTimeSource interface.
 type medianTime struct {
-	mtx                sync.Mutex
+	mtx                locks.MutexWithLog
 	knownIDs           map[string]struct{}
 	offsets            []int64
 	offsetSecs         int64

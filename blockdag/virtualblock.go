@@ -6,12 +6,12 @@ package blockdag
 
 import (
 	"github.com/kaspanet/kaspad/util/daghash"
-	"sync"
+	"github.com/kaspanet/kaspad/util/locks"
 )
 
 // virtualBlock is a virtual block whose parents are the tips of the DAG.
 type virtualBlock struct {
-	mtx     sync.Mutex
+	mtx     locks.MutexWithLog
 	dag     *BlockDAG
 	utxoSet *FullUTXOSet
 	blockNode

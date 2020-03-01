@@ -6,6 +6,7 @@ package netsync
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/util/locks"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -136,7 +137,7 @@ type peerSyncState struct {
 	syncCandidate           bool
 	lastSelectedTipRequest  time.Time
 	isPendingForSelectedTip bool
-	requestQueueMtx         sync.Mutex
+	requestQueueMtx         locks.MutexWithLog
 	requestQueues           map[wire.InvType]*requestQueueAndSet
 	requestedTxns           map[daghash.TxID]struct{}
 	requestedBlocks         map[daghash.Hash]struct{}

@@ -5,11 +5,10 @@
 package blockdag
 
 import (
-	"sync"
-
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/locks"
 )
 
 // blockIndex provides facilities for keeping track of an in-memory index of the
@@ -21,7 +20,7 @@ type blockIndex struct {
 	db        database.DB
 	dagParams *dagconfig.Params
 
-	sync.RWMutex
+	locks.RWMutexWithLog
 	index map[daghash.Hash]*blockNode
 	dirty map[*blockNode]struct{}
 }

@@ -10,6 +10,7 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
+	"github.com/kaspanet/kaspad/util/locks"
 	"math"
 	"net"
 	"runtime"
@@ -128,7 +129,7 @@ type Peer struct {
 	connReq         *connmgr.ConnReq
 	server          *Server
 	persistent      bool
-	relayMtx        sync.Mutex
+	relayMtx        locks.MutexWithLog
 	DisableRelayTx  bool
 	sentAddrs       bool
 	isWhitelisted   bool

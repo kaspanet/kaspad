@@ -7,7 +7,7 @@ package ffldb
 import (
 	"bytes"
 	"fmt"
-	"sync"
+	"github.com/kaspanet/kaspad/util/locks"
 	"time"
 
 	"github.com/btcsuite/goleveldb/leveldb"
@@ -373,7 +373,7 @@ type dbCache struct {
 	// stored using immutable treaps to support O(1) MVCC snapshots against
 	// the cached data. The cacheLock is used to protect concurrent access
 	// for cache updates and snapshots.
-	cacheLock    sync.RWMutex
+	cacheLock    locks.RWMutexWithLog
 	cachedKeys   *treap.Immutable
 	cachedRemove *treap.Immutable
 }

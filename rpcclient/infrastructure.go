@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	nativeerrors "errors"
 	"fmt"
+	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
@@ -139,7 +140,7 @@ type Client struct {
 	httpClient *http.Client
 
 	// mtx is a mutex to protect access to connection related fields.
-	mtx sync.Mutex
+	mtx locks.MutexWithLog
 
 	// disconnected indicated whether or not the server is disconnected.
 	disconnected bool
@@ -149,13 +150,13 @@ type Client struct {
 	retryCount int64
 
 	// Track command and their response channels by ID.
-	requestLock sync.Mutex
+	requestLock locks.MutexWithLog
 	requestMap  map[uint64]*list.Element
 	requestList *list.List
 
 	// Notifications.
 	ntfnHandlers  *NotificationHandlers
-	ntfnStateLock sync.Mutex
+	ntfnStateLock locks.MutexWithLog
 	ntfnState     *notificationState
 
 	// Networking infrastructure.

@@ -5,7 +5,7 @@
 package netsync
 
 import (
-	"sync"
+	"github.com/kaspanet/kaspad/util/locks"
 	"time"
 
 	"github.com/kaspanet/kaspad/logs"
@@ -22,7 +22,7 @@ type blockProgressLogger struct {
 
 	subsystemLogger logs.Logger
 	progressAction  string
-	sync.Mutex
+	locks.MutexWithLog
 }
 
 // newBlockProgressLogger returns a new block progress logger.

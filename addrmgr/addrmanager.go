@@ -9,6 +9,7 @@ import (
 	crand "crypto/rand" // for seeding
 	"encoding/binary"
 	"encoding/json"
+	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/pkg/errors"
 	"io"
 	"math/rand"
@@ -32,7 +33,7 @@ type triedBucket [triedBucketCount]*list.List
 // AddrManager provides a concurrency safe address manager for caching potential
 // peers on the Kaspa network.
 type AddrManager struct {
-	mtx                sync.Mutex
+	mtx                locks.MutexWithLog
 	peersFile          string
 	lookupFunc         func(string) ([]net.IP, error)
 	rand               *rand.Rand
@@ -50,7 +51,7 @@ type AddrManager struct {
 	nNew               map[subnetworkid.SubnetworkID]int
 	nTriedFullNodes    int
 	nNewFullNodes      int
-	lamtx              sync.Mutex
+	lamtx              locks.MutexWithLog
 	localAddresses     map[string]*localAddress
 	localSubnetworkID  *subnetworkid.SubnetworkID
 }

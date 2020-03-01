@@ -8,8 +8,7 @@ import (
 	"bytes"
 	"container/list"
 	"fmt"
-	"sync"
-
+	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/kaspanet/kaspad/wire"
 )
 
@@ -17,7 +16,7 @@ import (
 // number of items with eviction for the oldest entry when the limit is
 // exceeded.
 type mruInventoryMap struct {
-	invMtx  sync.Mutex
+	invMtx  locks.MutexWithLog
 	invMap  map[wire.InvVect]*list.Element // nearly O(1) lookups
 	invList *list.List                     // O(1) insert, update, delete
 	limit   uint

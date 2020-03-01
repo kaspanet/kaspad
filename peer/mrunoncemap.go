@@ -8,14 +8,14 @@ import (
 	"bytes"
 	"container/list"
 	"fmt"
-	"sync"
+	"github.com/kaspanet/kaspad/util/locks"
 )
 
 // mruNonceMap provides a concurrency safe map that is limited to a maximum
 // number of items with eviction for the oldest entry when the limit is
 // exceeded.
 type mruNonceMap struct {
-	mtx       sync.Mutex
+	mtx       locks.MutexWithLog
 	nonceMap  map[uint64]*list.Element // nearly O(1) lookups
 	nonceList *list.List               // O(1) insert, update, delete
 	limit     uint

@@ -6,16 +6,15 @@ package indexers
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
-	"sync"
-
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -562,7 +561,7 @@ type AddrIndex struct {
 	// keep an index of all addresses which a given transaction involves.
 	// This allows fairly efficient updates when transactions are removed
 	// once they are included into a block.
-	unconfirmedLock sync.RWMutex
+	unconfirmedLock locks.RWMutexWithLog
 	txnsByAddr      map[[addrKeySize]byte]map[daghash.TxID]*util.Tx
 	addrsByTx       map[daghash.TxID]map[[addrKeySize]byte]struct{}
 }

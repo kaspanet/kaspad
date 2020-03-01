@@ -7,8 +7,8 @@ package mempool
 import (
 	"container/list"
 	"fmt"
+	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/pkg/errors"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -140,7 +140,7 @@ type TxPool struct {
 	// The following variables must only be used atomically.
 	lastUpdated int64 // last time pool was updated
 
-	mtx           sync.RWMutex
+	mtx           locks.RWMutexWithLog
 	cfg           Config
 	pool          map[daghash.TxID]*TxDesc
 	depends       map[daghash.TxID]*TxDesc
