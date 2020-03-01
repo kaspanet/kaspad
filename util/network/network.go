@@ -22,12 +22,9 @@ func NormalizeAddresses(addrs []string, defaultPort string) ([]string, error) {
 // there is not already a port specified.
 func NormalizeAddress(addr, defaultPort string) (string, error) {
 	_, _, err := net.SplitHostPort(addr)
-	// net.SplitHostPort returns an error
-	// if the given host is missing a
-	// port, but theoretically it can
-	// return an error for other reasons,
-	// and this is why we check addrWithPort
-	// for validity.
+	// net.SplitHostPort returns an error if the given host is missing a
+	// port, but theoretically it can return an error for other reasons,
+	// and this is why we check addrWithPort for validity.
 	if err != nil {
 		addrWithPort := net.JoinHostPort(addr, defaultPort)
 		_, _, err := net.SplitHostPort(addrWithPort)
