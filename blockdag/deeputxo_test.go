@@ -33,8 +33,8 @@ func loadDAG() (*BlockDAG, error) {
 
 type nodeSelector func(dag *BlockDAG) *blockNode
 
-func profile(b *testing.B) {
-	profileFile, err := os.Create("/tmp/profile")
+func profile(b *testing.B, filename string) {
+	profileFile, err := os.Create(filename)
 	pprof.StartCPUProfile(profileFile)
 	if err != nil {
 		b.Fatalf("Error creating profile file: %s", err)
@@ -53,7 +53,13 @@ func benchmarkRestoreUTXO(b *testing.B, selector nodeSelector) {
 	node := selector(dag)
 	b.ResetTimer()
 
-	profile(b)
+	profile(b, "/tmp/profile_before")
+	_, err = dag.restoreUTXO(node)
+	if err != nil {
+		b.Fatalf("Error restoringUTXO: %s", err)
+	}
+	pprof.StopCPUProfile()
+	profile(b, "/tmp/profile_after")
 	defer pprof.StopCPUProfile()
 
 	for i := 0; i < b.N; i++ {
