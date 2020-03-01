@@ -6,7 +6,6 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 	"io/ioutil"
-	"net"
 	"time"
 )
 
@@ -43,8 +42,13 @@ func connectToServer(cfg *configFlags) (*minerClient, error) {
 		return nil, err
 	}
 
+	rpcAddr, err := cfg.NetParams().NormalizeRPCServerAddress(cfg.RPCServer)
+	if err != nil {
+		return nil, err
+	}
+
 	connCfg := &rpcclient.ConnConfig{
-		Host:           cfg.NetParams().NormalizeRPCServerAddress(cfg.RPCServer),
+		Host:           rpcAddr,
 		Endpoint:       "ws",
 		User:           cfg.RPCUser,
 		Pass:           cfg.RPCPassword,
@@ -61,16 +65,6 @@ func connectToServer(cfg *configFlags) (*minerClient, error) {
 	log.Infof("Connected to server %s", client.Host())
 
 	return client, nil
-}
-
-// normalizeRPCServerAddress returns addr with the current network default
-// port appended if there is not already a port specified.
-func normalizeRPCServerAddress(addr string, cfg *configFlags) string {
-	_, _, err := net.SplitHostPort(addr)
-	if err != nil {
-		return net.JoinHostPort(addr, cfg.NetParams().RPCPort)
-	}
-	return addr
 }
 
 func readCert(cfg *configFlags) ([]byte, error) {

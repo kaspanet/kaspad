@@ -216,7 +216,10 @@ func loadConfig() (*ConfigFlags, []string, error) {
 
 	// Add default port to RPC server based on --testnet and --simnet flags
 	// if needed.
-	activeConfig.RPCServer = activeConfig.NetParams().NormalizeRPCServerAddress(activeConfig.RPCServer)
+	activeConfig.RPCServer, err = activeConfig.NetParams().NormalizeRPCServerAddress(activeConfig.RPCServer)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	return activeConfig, remainingArgs, nil
 }

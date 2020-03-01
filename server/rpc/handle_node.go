@@ -24,7 +24,11 @@ func handleNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 			err = s.cfg.ConnMgr.DisconnectByID(int32(nodeID))
 		} else {
 			if _, _, errP := net.SplitHostPort(c.Target); errP == nil || net.ParseIP(c.Target) != nil {
-				addr = network.NormalizeAddress(c.Target, params.DefaultPort)
+				addr, err = network.NormalizeAddress(c.Target, params.DefaultPort)
+				if err != nil {
+					break
+				}
+
 				err = s.cfg.ConnMgr.DisconnectByAddr(addr)
 			} else {
 				return nil, &rpcmodel.RPCError{
@@ -49,7 +53,11 @@ func handleNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 			err = s.cfg.ConnMgr.RemoveByID(int32(nodeID))
 		} else {
 			if _, _, errP := net.SplitHostPort(c.Target); errP == nil || net.ParseIP(c.Target) != nil {
-				addr = network.NormalizeAddress(c.Target, params.DefaultPort)
+				addr, err = network.NormalizeAddress(c.Target, params.DefaultPort)
+				if err != nil {
+					break
+				}
+
 				err = s.cfg.ConnMgr.RemoveByAddr(addr)
 			} else {
 				return nil, &rpcmodel.RPCError{
@@ -66,7 +74,10 @@ func handleNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 		}
 
 	case "connect":
-		addr = network.NormalizeAddress(c.Target, params.DefaultPort)
+		addr, err = network.NormalizeAddress(c.Target, params.DefaultPort)
+		if err != nil {
+			break
+		}
 
 		// Default to temporary connections.
 		subCmd := "temp"

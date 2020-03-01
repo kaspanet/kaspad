@@ -5,9 +5,9 @@
 package dagconfig
 
 import (
+	"github.com/kaspanet/kaspad/util/network"
 	"math"
 	"math/big"
-	"net"
 	"time"
 
 	"github.com/pkg/errors"
@@ -188,12 +188,8 @@ type Params struct {
 
 // NormalizeRPCServerAddress returns addr with the current network default
 // port appended if there is not already a port specified.
-func (p *Params) NormalizeRPCServerAddress(addr string) string {
-	_, _, err := net.SplitHostPort(addr)
-	if err != nil {
-		return net.JoinHostPort(addr, p.RPCPort)
-	}
-	return addr
+func (p *Params) NormalizeRPCServerAddress(addr string) (string, error) {
+	return network.NormalizeAddress(addr, p.RPCPort)
 }
 
 // MainnetParams defines the network parameters for the main Kaspa network.

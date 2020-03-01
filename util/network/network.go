@@ -6,22 +6,38 @@ import (
 
 // NormalizeAddresses returns a new slice with all the passed peer addresses
 // normalized with the given default port, and all duplicates removed.
-func NormalizeAddresses(addrs []string, defaultPort string) []string {
+func NormalizeAddresses(addrs []string, defaultPort string) ([]string, error) {
 	for i, addr := range addrs {
-		addrs[i] = NormalizeAddress(addr, defaultPort)
+		var err error
+		addrs[i], err = NormalizeAddress(addr, defaultPort)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return removeDuplicateAddresses(addrs)
+	return removeDuplicateAddresses(addrs), nil
 }
 
 // NormalizeAddress returns addr with the passed default port appended if
 // there is not already a port specified.
-func NormalizeAddress(addr, defaultPort string) string {
+func NormalizeAddress(addr, defaultPort string) (string, error) {
 	_, _, err := net.SplitHostPort(addr)
+	// net.SplitHostPort returns an error
+	// if the given host is missing a
+	// port, but theoretically it can
+	// return an error for other reasons,
+	// and this is why we check addrWithPort
+	// for validity.
 	if err != nil {
-		return net.JoinHostPort(addr, defaultPort)
+		addrWithPort := net.JoinHostPort(addr, defaultPort)
+		_, _, err := net.SplitHostPort(addrWithPort)
+		if err != nil {
+			return "", err
+		}
+
+		return addrWithPort, nil
 	}
-	return addr
+	return addr, nil
 }
 
 // removeDuplicateAddresses returns a new slice with all duplicate entries in
