@@ -512,6 +512,9 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		// send it.
 		code, reason := mempool.ErrToRejectErr(err)
 		peer.PushRejectMsg(wire.CmdBlock, code, reason, blockHash, false)
+
+		// Disconnect from the possibly-misbehaving peer.
+		peer.Disconnect()
 		return
 	}
 
