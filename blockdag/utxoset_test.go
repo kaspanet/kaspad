@@ -1,10 +1,11 @@
 package blockdag
 
 import (
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"math"
 	"reflect"
 	"testing"
+
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 
 	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -458,6 +459,24 @@ func TestUTXODiffRules(t *testing.T) {
 		if isWithDiffOk && !withDiffResult.equal(expectedWithDiffResult) {
 			t.Errorf("unexpected WithDiff result in test \"%s\". "+
 				"Expected: \"%v\", got: \"%v\".", test.name, expectedWithDiffResult, withDiffResult)
+		}
+
+		// Repeat WithDiff check this time using WithDiffInPlace
+		thisClone := this.clone()
+		err = thisClone.WithDiffInPlace(other)
+
+		// Test whether WithDiffInPlace returned an error
+		isWithDiffInPlaceOk := err == nil
+		expectedIsWithDiffInPlaceOk := expectedWithDiffResult != nil
+		if isWithDiffInPlaceOk != expectedIsWithDiffInPlaceOk {
+			t.Errorf("unexpected WithDiffInPlace error in test \"%s\". "+
+				"Expected: \"%t\", got: \"%t\".", test.name, expectedIsWithDiffInPlaceOk, isWithDiffInPlaceOk)
+		}
+
+		// If not error, test the WithDiffInPlace result
+		if isWithDiffInPlaceOk && !thisClone.equal(expectedWithDiffResult) {
+			t.Errorf("unexpected WithDiffInPlace result in test \"%s\". "+
+				"Expected: \"%v\", got: \"%v\".", test.name, expectedWithDiffResult, thisClone)
 		}
 
 		// Make sure that diffFrom after WithDiff results in the original other
