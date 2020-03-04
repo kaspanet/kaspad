@@ -331,10 +331,7 @@ func TestUTXODiffRules(t *testing.T) {
 				toAdd:    utxoCollection{},
 				toRemove: utxoCollection{outpoint0: utxoEntry2},
 			},
-			expectedDiffFromResult: &UTXODiff{
-				toAdd:    utxoCollection{outpoint0: utxoEntry1},
-				toRemove: utxoCollection{outpoint0: utxoEntry2},
-			},
+			expectedDiffFromResult: nil,
 			expectedWithDiffResult: nil,
 		},
 		{
@@ -618,7 +615,7 @@ func TestUTXODiffRules(t *testing.T) {
 				t.Errorf("diffFrom(withDiffResult) unexpectedly failed in test \"%s\": %s", test.name, err)
 			}
 			if !other.equal(otherResult) {
-				t.Errorf("unexpected diffFrom(withDiffResult) in test \"%s\". "+
+				t.Errorf("unexpected diffFrom(withDiffResult) result in test \"%s\". "+
 					"Expected: \"%v\", got: \"%v\".", test.name, other, otherResult)
 			}
 		}
