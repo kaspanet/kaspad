@@ -387,8 +387,7 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 			// or diff.toRemove.
 			// These are just "updates" to accepted blue score
 			if diffEntry.blockBlueScore != utxoEntry.blockBlueScore &&
-				(d.toRemove.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) ||
-					diff.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)) {
+				diff.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
 				continue
 			}
 			return nil, ruleError(ErrWithDiff, fmt.Sprintf("WithDiff: outpoint %s both in d.toAdd and in other.toAdd", outpoint))
@@ -409,8 +408,7 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 			// or diff.toAdd.
 			// These are just "updates" to accepted blue score
 			if diffEntry.blockBlueScore != utxoEntry.blockBlueScore &&
-				(d.toAdd.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) ||
-					diff.toAdd.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)) {
+				d.toAdd.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) {
 				continue
 			}
 			return nil, ruleError(ErrWithDiff, "WithDiff: transaction both in d.toRemove and in other.toRemove")
