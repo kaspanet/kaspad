@@ -225,6 +225,10 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	for outpoint, utxoEntry := range d.toAdd {
 		if !other.toAdd.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
 			result.toRemove.add(outpoint, utxoEntry)
+		} else if (d.toRemove.contains(outpoint) && !other.toRemove.contains(outpoint)) ||
+			(!d.toRemove.contains(outpoint) && other.toRemove.contains(outpoint)) {
+			return nil, errors.New(
+				"diffFrom: transaction both in d.toAdd, other.toAdd, and only one of d.toRemove and other.toRemove")
 		}
 		if diffEntry, ok := other.toRemove.get(outpoint); ok {
 			// An exception is made for entries with unequal blue scores
