@@ -290,23 +290,14 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 func (d *UTXODiff) WithDiffInPlace(diff *UTXODiff) error {
 	//	fmt.Println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 	for outpoint, utxoToAdd := range diff.toAdd {
-		if oldUTXO, ok := d.toAdd.get(outpoint); ok {
-			if oldUTXO.blockBlueScore == utxoToAdd.blockBlueScore {
-				// If already exists with same blue score - this is an error
-				return ruleError(ErrWithDiff, fmt.Sprintf(
-					"WithDiffInPlace: outpoint %s both in d.toAdd and in diff.toAdd with same blueScore", outpoint))
-			}
-			// If already exists but with another blue score - update blue score
-			//			fmt.Printf("~~~~~~~ d.toAdd: Removing %s:(%d) and adding %d instead\n", outpoint, oldUTXO.blockBlueScore, utxoToAdd.blockBlueScore)
-			d.toAdd.remove(outpoint)
-			d.toAdd.add(outpoint, utxoToAdd)
-			continue
-		}
 		if d.toRemove.containsWithBlueScore(outpoint, utxoToAdd.blockBlueScore) {
 			// If already exists in toRemove with the same blueScore - remove from toRemove
 			//	fmt.Printf("~~~~~~~ d.toRemove: Removing %s(%d)\n", outpoint, utxoToAdd.blockBlueScore)
 			d.toRemove.remove(outpoint)
-			continue
+		} else if d.toAdd.contains(outpoint) {
+			// If already exists - this is an error
+			return ruleError(ErrWithDiff, fmt.Sprintf(
+				"WithDiffInPlace: outpoint %s both in d.toAdd and in diff.toAdd", outpoint))
 		}
 
 		// If not exists neither in toAdd nor in toRemove, or exists in toRemove with different blueScore - add to toAdd
@@ -315,33 +306,14 @@ func (d *UTXODiff) WithDiffInPlace(diff *UTXODiff) error {
 	}
 
 	for outpoint, utxoToRemove := range diff.toRemove {
-		if oldUTXO, ok := d.toRemove.get(outpoint); ok {
-			if oldUTXO.blockBlueScore == utxoToRemove.blockBlueScore {
-				// If already exists with same blue score - this is an error
-				return ruleError(ErrWithDiff, fmt.Sprintf(
-					"WithDiffInPlace: outpoint %s both in d.toRemove and in diff.toRemove with same blueScore", outpoint))
-			}
-			// If already exists but with another blue score - update blue score
-			//	fmt.Printf("~~~~~~~ d.toRemove: Removing %s:(%d) and adding %d instead\n", outpoint, oldUTXO.blockBlueScore, utxoToRemove.blockBlueScore)
-			d.toRemove.remove(outpoint)
-			d.toRemove.add(outpoint, utxoToRemove)
-			continue
-		}
-		if utxoToAdd, ok := d.toAdd.get(outpoint); ok &&
-			!diff.toAdd.containsWithBlueScore(outpoint, utxoToAdd.blockBlueScore) { // Make sure utxo was not just added in the previous loop
-			if utxoToAdd.blockBlueScore != utxoToRemove.blockBlueScore {
-				// If already exists in toAdd with different blue score and no respective
-				// outpoint in toRemove (a.k.a. is not blueScore update) - this is an error
-				// We know for sure that if we reached this point - there's no respective
-				// outpoint in toRemove, because of the `continue` in the respective clause
-				return ruleError(ErrWithDiff, fmt.Sprintf(
-					"WithDiffInPlace: outpoint %s both in d.toAdd and in diff.toRemove with different blueScore", outpoint))
-			}
-
+		if d.toAdd.containsWithBlueScore(outpoint, utxoToRemove.blockBlueScore) {
 			// If already exists in toAdd with the same blueScore - remove from toAdd
-			log.Infof("d.toAdd: Removing %s(%d)", outpoint, utxoToRemove.blockBlueScore)
+			//			log.Infof("~~~~~~~ d.toAdd: Removing %s(%d)", outpoint, utxoToRemove.blockBlueScore)
 			d.toAdd.remove(outpoint)
-			continue
+		} else if d.toRemove.contains(outpoint) {
+			// If already exists - this is an error
+			return ruleError(ErrWithDiff, fmt.Sprintf(
+				"WithDiffInPlace: outpoint %s both in d.toRemove and in diff.toRemove", outpoint))
 		}
 
 		// If not exists neither in toAdd nor in toRemove - add to toRemove
