@@ -615,10 +615,10 @@ func TestUTXODiffRules(t *testing.T) {
 		if isWithDiffOk {
 			otherResult, err := this.diffFrom(withDiffResult)
 			if err != nil {
-				t.Errorf("diffFrom unexpectedly failed in test \"%s\": %s", test.name, err)
+				t.Errorf("diffFrom(withDiffResult) unexpectedly failed in test \"%s\": %s", test.name, err)
 			}
 			if !other.equal(otherResult) {
-				t.Errorf("unexpected diffFrom result in test \"%s\". "+
+				t.Errorf("unexpected diffFrom(withDiffResult) in test \"%s\". "+
 					"Expected: \"%v\", got: \"%v\".", test.name, other, otherResult)
 			}
 		}
