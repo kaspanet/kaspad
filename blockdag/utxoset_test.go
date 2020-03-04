@@ -534,8 +534,8 @@ func TestUTXODiffRules(t *testing.T) {
 				toRemove: utxoCollection{outpoint0: utxoEntry2},
 			},
 			expectedDiffFromResult: &UTXODiff{
-				toAdd:    utxoCollection{outpoint0: utxoEntry1},
-				toRemove: utxoCollection{},
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{outpoint0: utxoEntry1},
 			},
 			expectedWithDiffResult: nil,
 		},
