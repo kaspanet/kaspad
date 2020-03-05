@@ -10,5 +10,5 @@ import (
 )
 
 var log, _ = logger.Get(logger.SubsystemTags.CMGR)
-var spawn = panics.GoroutineWrapperFunc(logger.BackendLog)
-var spawnAfter = panics.AfterFuncWrapperFunc(logger.BackendLog)
+var spawn = panics.GoroutineWrapperFunc(log)
+var spawnAfter = panics.AfterFuncWrapperFunc(log)

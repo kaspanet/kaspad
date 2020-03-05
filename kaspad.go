@@ -6,7 +6,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/logger"
 	"github.com/pkg/errors"
 	"net"
 	"net/http"
@@ -60,7 +59,7 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 		return err
 	}
 	cfg = config.ActiveConfig()
-	defer panics.HandlePanic(logger.BackendLog, nil)
+	defer panics.HandlePanic(kasdLog, nil)
 
 	// Get a channel that will be closed when a shutdown signal has been
 	// triggered either from an OS signal such as SIGINT (Ctrl+C) or from

@@ -10,4 +10,4 @@ import (
 )
 
 var log, _ = logger.Get(logger.SubsystemTags.BDAG)
-var spawn = panics.GoroutineWrapperFunc(logger.BackendLog)
+var spawn = panics.GoroutineWrapperFunc(log)

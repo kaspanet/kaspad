@@ -11,5 +11,5 @@ import (
 
 var (
 	log, _ = logger.Get(logger.SubsystemTags.RPCS)
-	spawn  = panics.GoroutineWrapperFunc(logger.BackendLog)
+	spawn  = panics.GoroutineWrapperFunc(log)
 )

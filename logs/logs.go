@@ -482,3 +482,8 @@ func (l *Logger) Level() Level {
 func (l *Logger) SetLevel(level Level) {
 	atomic.StoreUint32((*uint32)(&l.lvl), uint32(level))
 }
+
+// Backend returns the log backend
+func (l *Logger) Backend() *Backend {
+	return l.b
+}

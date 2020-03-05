@@ -12,7 +12,7 @@ import (
 // log is a logger that is initialized with no output filters. This
 // means the package will not perform any logging by default until the caller
 // requests it.
-var log logs.Logger
+var log *logs.Logger
 var spawn func(func())
 
 const logSubsytem = "RPCC"
@@ -28,12 +28,12 @@ func DisableLog() {
 	backend := logs.NewBackend()
 	log = backend.Logger(logSubsytem)
 	log.SetLevel(logs.LevelOff)
-	spawn = panics.GoroutineWrapperFunc(backend)
+	spawn = panics.GoroutineWrapperFunc(log)
 }
 
 // UseLogger uses a specified Logger to output package logging info.
 func UseLogger(backend *logs.Backend, level logs.Level) {
 	log = backend.Logger(logSubsytem)
 	log.SetLevel(level)
-	spawn = panics.GoroutineWrapperFunc(backend)
+	spawn = panics.GoroutineWrapperFunc(log)
 }

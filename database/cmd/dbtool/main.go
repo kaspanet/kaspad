@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	log             logs.Logger
+	log             *logs.Logger
 	spawn           func(func())
 	shutdownChannel = make(chan error)
 )
@@ -69,7 +69,7 @@ func realMain() error {
 	backendLogger := logs.NewBackend()
 	defer os.Stdout.Sync()
 	log = backendLogger.Logger("MAIN")
-	spawn = panics.GoroutineWrapperFunc(backendLogger)
+	spawn = panics.GoroutineWrapperFunc(log)
 	dbLog, _ := logger.Get(logger.SubsystemTags.KSDB)
 	dbLog.SetLevel(logs.LevelDebug)
 

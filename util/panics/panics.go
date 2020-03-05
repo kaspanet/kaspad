@@ -10,7 +10,7 @@ import (
 
 // HandlePanic recovers panics, log them, runs an optional panicHandler,
 // and then initiates a clean shutdown.
-func HandlePanic(backend *logs.Backend, goroutineStackTrace []byte) {
+func HandlePanic(log *logs.Logger, goroutineStackTrace []byte) {
 	err := recover()
 	if err == nil {
 		return
@@ -18,14 +18,12 @@ func HandlePanic(backend *logs.Backend, goroutineStackTrace []byte) {
 
 	panicHandlerDone := make(chan struct{})
 	go func() {
-		const panicSubsystem = "PANC"
-		log := backend.Logger(panicSubsystem)
 		log.Criticalf("Fatal error: %+v", err)
 		if goroutineStackTrace != nil {
 			log.Criticalf("Goroutine stack trace: %s", goroutineStackTrace)
 		}
 		log.Criticalf("Stack trace: %s", debug.Stack())
-		backend.Close()
+		log.Backend().Close()
 		panicHandlerDone <- struct{}{}
 	}()
 
@@ -39,22 +37,22 @@ func HandlePanic(backend *logs.Backend, goroutineStackTrace []byte) {
 }
 
 // GoroutineWrapperFunc returns a goroutine wrapper function that handles panics and writes them to the log.
-func GoroutineWrapperFunc(backend *logs.Backend) func(func()) {
+func GoroutineWrapperFunc(log *logs.Logger) func(func()) {
 	return func(f func()) {
 		stackTrace := debug.Stack()
 		go func() {
-			defer HandlePanic(backend, stackTrace)
+			defer HandlePanic(log, stackTrace)
 			f()
 		}()
 	}
 }
 
 // AfterFuncWrapperFunc returns a time.AfterFunc wrapper function that handles panics.
-func AfterFuncWrapperFunc(backend *logs.Backend) func(d time.Duration, f func()) *time.Timer {
+func AfterFuncWrapperFunc(log *logs.Logger) func(d time.Duration, f func()) *time.Timer {
 	return func(d time.Duration, f func()) *time.Timer {
 		stackTrace := debug.Stack()
 		return time.AfterFunc(d, func() {
-			defer HandlePanic(backend, stackTrace)
+			defer HandlePanic(log, stackTrace)
 			f()
 		})
 	}

@@ -23,7 +23,7 @@ const (
 
 var (
 	cfg   *ConfigFlags
-	log   logs.Logger
+	log   *logs.Logger
 	spawn func(func())
 )
 
@@ -74,7 +74,7 @@ func realMain() error {
 	backendLogger := logs.NewBackend()
 	defer os.Stdout.Sync()
 	log = backendLogger.Logger("MAIN")
-	spawn = panics.GoroutineWrapperFunc(backendLogger)
+	spawn = panics.GoroutineWrapperFunc(log)
 
 	// Load the block database.
 	db, err := loadBlockDB()

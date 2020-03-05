@@ -11,7 +11,7 @@ import (
 var (
 	backendLog = logs.NewBackend()
 	log        = backendLog.Logger("KSMN")
-	spawn      = panics.GoroutineWrapperFunc(backendLog)
+	spawn      = panics.GoroutineWrapperFunc(log)
 )
 
 func initLog(logFile, errLogFile string) {
