@@ -234,7 +234,7 @@ func (cm *ConnManager) handleFailedConn(c *ConnReq, err error) {
 		}
 		spawnAfter(d, func() {
 			cm.Connect(c)
-		}, nil)
+		})
 	} else if cm.cfg.GetNewAddress != nil {
 		cm.failedAttempts++
 		if cm.failedAttempts >= maxFailedAttempts {
@@ -243,9 +243,9 @@ func (cm *ConnManager) handleFailedConn(c *ConnReq, err error) {
 					"-- retrying further connections every %s", maxFailedAttempts,
 					cm.cfg.RetryDuration)
 			}
-			spawnAfter(cm.cfg.RetryDuration, cm.NewConnReq, cm.handlePanic)
+			spawnAfter(cm.cfg.RetryDuration, cm.NewConnReq)
 		} else {
-			spawn(cm.NewConnReq, cm.handlePanic)
+			spawn(cm.NewConnReq)
 		}
 	}
 }
@@ -377,7 +377,7 @@ out:
 				if cm.cfg.OnDisconnection != nil {
 					spawn(func() {
 						cm.cfg.OnDisconnection(connReq)
-					}, cm.handlePanic)
+					})
 				}
 
 				// All internal state has been cleaned up, if
@@ -576,7 +576,7 @@ func (cm *ConnManager) listenHandler(listener net.Listener) {
 		}
 		spawn(func() {
 			cm.cfg.OnAccept(conn)
-		}, cm.handlePanic)
+		})
 	}
 
 	cm.wg.Done()
@@ -592,7 +592,7 @@ func (cm *ConnManager) Start() {
 
 	log.Trace("Connection manager started")
 	cm.wg.Add(1)
-	spawn(cm.connHandler, cm.handlePanic)
+	spawn(cm.connHandler)
 
 	// Start all the listeners so long as the caller requested them and
 	// provided a callback to be invoked when connections are accepted.
@@ -604,22 +604,18 @@ func (cm *ConnManager) Start() {
 			cm.wg.Add(1)
 			spawn(func() {
 				cm.listenHandler(listenerCopy)
-			}, cm.handlePanic)
+			})
 		}
 	}
 
 	for i := atomic.LoadUint64(&cm.connReqCount); i < uint64(cm.cfg.TargetOutbound); i++ {
-		spawn(cm.NewConnReq, cm.handlePanic)
+		spawn(cm.NewConnReq)
 	}
 }
 
 // Wait blocks until the connection manager halts gracefully.
 func (cm *ConnManager) Wait() {
 	cm.wg.Wait()
-}
-
-func (cm *ConnManager) handlePanic() {
-	atomic.AddInt32(&cm.stop, 1)
 }
 
 // Stop gracefully shuts down the connection manager.

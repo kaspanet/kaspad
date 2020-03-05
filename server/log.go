@@ -11,5 +11,5 @@ import (
 
 var (
 	log, _ = logger.Get(logger.SubsystemTags.SRVR)
-	spawn  = panics.GoroutineWrapperFunc(log)
+	spawn  = panics.GoroutineWrapperFunc(logger.BackendLog)
 )

@@ -22,8 +22,8 @@ const (
 )
 
 var log, _ = logger.Get(logger.SubsystemTags.PEER)
-var spawn = panics.GoroutineWrapperFunc(log)
-var spawnAfter = panics.AfterFuncWrapperFunc(log)
+var spawn = panics.GoroutineWrapperFunc(logger.BackendLog)
+var spawnAfter = panics.AfterFuncWrapperFunc(logger.BackendLog)
 
 // formatLockTime returns a transaction lock time as a human-readable string.
 func formatLockTime(lockTime uint64) string {

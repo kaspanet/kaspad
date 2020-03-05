@@ -11,5 +11,5 @@ import (
 )
 
 var kasdLog, _ = logger.Get(logger.SubsystemTags.KASD)
-var spawn = panics.GoroutineWrapperFunc(kasdLog)
+var spawn = panics.GoroutineWrapperFunc(logger.BackendLog)
 var srvrLog, _ = logger.Get(logger.SubsystemTags.SRVR)

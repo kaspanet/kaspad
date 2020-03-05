@@ -995,7 +995,7 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 			if err != nil {
 				panic(fmt.Sprintf("HandleNewBlock failed to handle block %s", block.Hash()))
 			}
-		}, sm.handlePanic)
+		})
 
 		// Relay if we are current and the block was not just now unorphaned.
 		// Otherwise peers that are current should already know about it
@@ -1098,11 +1098,7 @@ func (sm *SyncManager) Start() {
 
 	log.Trace("Starting sync manager")
 	sm.wg.Add(1)
-	spawn(sm.messageHandler, sm.handlePanic)
-}
-
-func (sm *SyncManager) handlePanic() {
-	atomic.AddInt32(&sm.shutdown, 1)
+	spawn(sm.messageHandler)
 }
 
 // Stop gracefully shuts down the sync manager by stopping all asynchronous
