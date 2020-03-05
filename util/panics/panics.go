@@ -11,9 +11,6 @@ import (
 // HandlePanic recovers panics, log them, runs an optional panicHandler,
 // and then initiates a clean shutdown.
 func HandlePanic(backend *logs.Backend, goroutineStackTrace []byte) {
-	const panicSubsystem = "PANC"
-
-	log := backend.Logger(panicSubsystem)
 	err := recover()
 	if err == nil {
 		return
@@ -21,6 +18,8 @@ func HandlePanic(backend *logs.Backend, goroutineStackTrace []byte) {
 
 	panicHandlerDone := make(chan struct{})
 	go func() {
+		const panicSubsystem = "PANC"
+		log := backend.Logger(panicSubsystem)
 		log.Criticalf("Fatal error: %+v", err)
 		if goroutineStackTrace != nil {
 			log.Criticalf("Goroutine stack trace: %s", goroutineStackTrace)
