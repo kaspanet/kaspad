@@ -300,27 +300,12 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 // first d, and than diff were applied to the same base
 func (d *UTXODiff) WithDiffInPlace(diff *UTXODiff) error {
 	//	fmt.Println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-	for outpoint, utxoToAdd := range diff.toAdd {
-		if d.toRemove.containsWithBlueScore(outpoint, utxoToAdd.blockBlueScore) {
-			// If already exists in toRemove with the same blueScore - remove from toRemove
-			//	fmt.Printf("~~~~~~~ d.toRemove: Removing %s(%d)\n", outpoint, utxoToAdd.blockBlueScore)
-			d.toRemove.remove(outpoint)
-		} else if d.toAdd.contains(outpoint) {
-			// If already exists - this is an error
-			return ruleError(ErrWithDiff, fmt.Sprintf(
-				"WithDiffInPlace: outpoint %s both in d.toAdd and in diff.toAdd", outpoint))
-		}
-
-		// If not exists neither in toAdd nor in toRemove, or exists in toRemove with different blueScore - add to toAdd
-		//	fmt.Printf("~~~~~~~ d.toAdd: Adding %s(%d)\n", outpoint, utxoToAdd.blockBlueScore)
-		d.toAdd.add(outpoint, utxoToAdd)
-	}
-
 	for outpoint, utxoToRemove := range diff.toRemove {
 		if d.toAdd.containsWithBlueScore(outpoint, utxoToRemove.blockBlueScore) {
 			// If already exists in toAdd with the same blueScore - remove from toAdd
 			//			log.Infof("~~~~~~~ d.toAdd: Removing %s(%d)", outpoint, utxoToRemove.blockBlueScore)
 			d.toAdd.remove(outpoint)
+			continue
 		} else if d.toRemove.contains(outpoint) {
 			// If already exists - this is an error
 			return ruleError(ErrWithDiff, fmt.Sprintf(
@@ -330,6 +315,31 @@ func (d *UTXODiff) WithDiffInPlace(diff *UTXODiff) error {
 		// If not exists neither in toAdd nor in toRemove - add to toRemove
 		//	fmt.Printf("~~~~~~~ d.toRemove: Adding %s(%d)\n", outpoint, utxoToRemove.blockBlueScore)
 		d.toRemove.add(outpoint, utxoToRemove)
+	}
+
+	for outpoint, utxoToAdd := range diff.toAdd {
+		if d.toRemove.containsWithBlueScore(outpoint, utxoToAdd.blockBlueScore) {
+			// If already exists in toRemove with the same blueScore - remove from toRemove
+			//	fmt.Printf("~~~~~~~ d.toRemove: Removing %s(%d)\n", outpoint, utxoToAdd.blockBlueScore)
+			if d.toAdd.contains(outpoint) && !diff.toRemove.contains(outpoint) {
+				return ruleError(ErrWithDiff, fmt.Sprintf(
+					"WithDiffInPlace: outpoint %s both in d.toAdd and in diff.toAdd with no "+
+						"corresponding entry in diff.toRemove", outpoint))
+			}
+			d.toRemove.remove(outpoint)
+			continue
+		} else if existingUTXO, ok := d.toAdd.get(outpoint); ok &&
+			(existingUTXO.blockBlueScore == utxoToAdd.blockBlueScore ||
+				!diff.toRemove.containsWithBlueScore(outpoint, existingUTXO.blockBlueScore)) {
+			//} else if d.toAdd.contains(outpoint) {
+			// If already exists - this is an error
+			return ruleError(ErrWithDiff, fmt.Sprintf(
+				"WithDiffInPlace: outpoint %s both in d.toAdd and in diff.toAdd", outpoint))
+		}
+
+		// If not exists neither in toAdd nor in toRemove, or exists in toRemove with different blueScore - add to toAdd
+		// fmt.Printf("~~~~~~~ d.toAdd: Adding %s(%d)\n", outpoint, utxoToAdd.blockBlueScore)
+		d.toAdd.add(outpoint, utxoToAdd)
 	}
 
 	// Apply diff.diffMultiset to d.diffMultiset
