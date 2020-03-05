@@ -1199,7 +1199,7 @@ out:
 				handlerActive = false
 
 			default:
-				log.Warnf("Unsupported message command %s",
+				log.Warnf("Unsupported message command %d",
 					msg.command)
 			}
 
