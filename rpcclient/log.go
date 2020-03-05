@@ -15,6 +15,8 @@ import (
 var log logs.Logger
 var spawn func(func())
 
+const logSubsytem = "RPCC"
+
 // The default amount of logging is none.
 func init() {
 	DisableLog()
@@ -23,12 +25,14 @@ func init() {
 // DisableLog disables all library log output. Logging output is disabled
 // by default until UseLogger is called.
 func DisableLog() {
-	log = logs.Disabled
-	spawn = panics.GoroutineWrapperFunc(log)
+	backend := logs.NewBackend()
+	log = backend.Logger(logSubsytem)
+	spawn = panics.GoroutineWrapperFunc(backend)
 }
 
 // UseLogger uses a specified Logger to output package logging info.
-func UseLogger(logger logs.Logger) {
-	log = logger
-	spawn = panics.GoroutineWrapperFunc(log)
+func UseLogger(backend *logs.Backend, level logs.Level) {
+	log = backend.Logger(logSubsytem)
+	log.SetLevel(level)
+	spawn = panics.GoroutineWrapperFunc(backend)
 }

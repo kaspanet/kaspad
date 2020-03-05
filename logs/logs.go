@@ -510,10 +510,3 @@ func (l *slog) Level() Level {
 func (l *slog) SetLevel(level Level) {
 	atomic.StoreUint32((*uint32)(&l.lvl), uint32(level))
 }
-
-// Disabled is a Logger that will never output anything.
-var Disabled Logger
-
-func init() {
-	Disabled = &slog{lvl: LevelOff, b: NewBackend()}
-}

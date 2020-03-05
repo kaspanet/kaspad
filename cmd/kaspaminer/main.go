@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	defer panics.HandlePanic(log, nil, nil)
+	defer panics.HandlePanic(backendLog, nil)
 	interrupt := signal.InterruptListener()
 
 	cfg, err := parseConfig()
