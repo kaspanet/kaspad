@@ -27,6 +27,7 @@ func init() {
 func DisableLog() {
 	backend := logs.NewBackend()
 	log = backend.Logger(logSubsytem)
+	log.SetLevel(logs.LevelOff)
 	spawn = panics.GoroutineWrapperFunc(backend)
 }
 
