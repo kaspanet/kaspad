@@ -28,7 +28,5 @@ func initLog(logFile, errLogFile string) {
 }
 
 func enableRPCLogging() {
-	rpclog := backendLog.Logger("RPCC")
-	rpclog.SetLevel(logs.LevelTrace)
-	rpcclient.UseLogger(rpclog)
+	rpcclient.UseLogger(backendLog, logs.LevelTrace)
 }

@@ -10,4 +10,4 @@ import (
 )
 
 var log, _ = logger.Get(logger.SubsystemTags.ADXR)
-var spawn = panics.GoroutineWrapperFuncWithPanicHandler(log)
+var spawn = panics.GoroutineWrapperFunc(log)

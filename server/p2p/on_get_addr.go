@@ -21,16 +21,14 @@ func (sp *Peer) OnGetAddr(_ *peer.Peer, msg *wire.MsgGetAddr) {
 	// Do not accept getaddr requests from outbound peers. This reduces
 	// fingerprinting attacks.
 	if !sp.Inbound() {
-		peerLog.Debugf("Ignoring getaddr request from outbound peer ",
-			"%s", sp)
+		peerLog.Debugf("Ignoring getaddr request from outbound peer %s", sp)
 		return
 	}
 
 	// Only allow one getaddr request per connection to discourage
 	// address stamping of inv announcements.
 	if sp.sentAddrs {
-		peerLog.Debugf("Ignoring repeated getaddr request from peer ",
-			"%s", sp)
+		peerLog.Debugf("Ignoring repeated getaddr request from peer %s", sp)
 		return
 	}
 	sp.sentAddrs = true

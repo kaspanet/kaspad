@@ -23,7 +23,7 @@ const (
 
 var (
 	cfg   *ConfigFlags
-	log   logs.Logger
+	log   *logs.Logger
 	spawn func(func())
 )
 

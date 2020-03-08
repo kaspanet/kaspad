@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	log             logs.Logger
+	log             *logs.Logger
 	spawn           func(func())
 	shutdownChannel = make(chan error)
 )

@@ -94,6 +94,6 @@ func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag, incl
 			}
 
 			seedFn(addresses)
-		}, nil)
+		})
 	}
 }

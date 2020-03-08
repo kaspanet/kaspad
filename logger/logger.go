@@ -87,7 +87,7 @@ var SubsystemTags = struct {
 }
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
-var subsystemLoggers = map[string]logs.Logger{
+var subsystemLoggers = map[string]*logs.Logger{
 	SubsystemTags.ADXR: adxrLog,
 	SubsystemTags.AMGR: amgrLog,
 	SubsystemTags.CMGR: cmgrLog,
@@ -180,7 +180,7 @@ func SupportedSubsystems() []string {
 }
 
 // Get returns a logger of a specific sub system
-func Get(tag string) (logger logs.Logger, ok bool) {
+func Get(tag string) (logger *logs.Logger, ok bool) {
 	logger, ok = subsystemLoggers[tag]
 	return
 }

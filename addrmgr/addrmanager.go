@@ -717,11 +717,7 @@ func (a *AddrManager) Start() {
 
 	// Start the address ticker to save addresses periodically.
 	a.wg.Add(1)
-	spawn(a.addressHandler, a.handlePanic)
-}
-
-func (a *AddrManager) handlePanic() {
-	atomic.AddInt32(&a.shutdown, 1)
+	spawn(a.addressHandler)
 }
 
 // Stop gracefully shuts down the address manager by stopping the main handler.

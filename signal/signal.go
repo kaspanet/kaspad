@@ -13,10 +13,6 @@ import (
 // subsystems using the same code paths as when an interrupt signal is received.
 var ShutdownRequestChannel = make(chan struct{})
 
-// PanicShutdownChannel is used to initiate shutdown when any thread
-// panics using the same code paths as when an interrupt signal is received.
-var PanicShutdownChannel = make(chan struct{})
-
 // interruptSignals defines the default signals to catch in order to do a proper
 // shutdown. This may be modified during init depending on the platform.
 var interruptSignals = []os.Signal{os.Interrupt}
@@ -39,9 +35,6 @@ func InterruptListener() <-chan struct{} {
 
 		case <-ShutdownRequestChannel:
 			kasdLog.Info("Shutdown requested. Shutting down...")
-
-		case <-PanicShutdownChannel:
-			kasdLog.Info("Panic occurred. Shutting down...")
 		}
 		close(c)
 
@@ -57,11 +50,6 @@ func InterruptListener() <-chan struct{} {
 			case <-ShutdownRequestChannel:
 				kasdLog.Info("Shutdown requested. Already " +
 					"shutting down...")
-
-			case <-PanicShutdownChannel:
-				kasdLog.Info("Panic occurred while shutting down. " +
-					"Forcing shut down...")
-				os.Exit(1)
 			}
 		}
 	}()

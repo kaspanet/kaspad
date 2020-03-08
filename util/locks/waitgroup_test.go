@@ -7,7 +7,6 @@ package locks
 import (
 	"sync/atomic"
 	"testing"
-	"time"
 )
 
 // All of the tests, except TestAddAfterWait and
@@ -16,29 +15,6 @@ import (
 // minor changes), to check that the new waitGroup
 // behaves the same, except enabling the use of add()
 // concurrently with wait()
-
-func spawnPatch(t *testing.T) (checkIfRunningSpawnsAreLeft func()) {
-	realSpawn := spawn
-	runningSpawns := int32(0)
-	spawn = func(f func()) {
-		atomic.AddInt32(&runningSpawns, 1)
-		realSpawn(func() {
-			f()
-			atomic.AddInt32(&runningSpawns, -1)
-		})
-	}
-	return func() {
-		defer func() {
-			spawn = realSpawn
-		}()
-		if runningSpawns != 0 {
-			time.Sleep(10 * time.Millisecond)
-			if runningSpawns != 0 {
-				t.Fatalf("%d running spawns left", runningSpawns)
-			}
-		}
-	}
-}
 
 func testWaitGroup(t *testing.T, wg1 *waitGroup, wg2 *waitGroup) {
 	n := int64(16)
@@ -67,8 +43,6 @@ func testWaitGroup(t *testing.T, wg1 *waitGroup, wg2 *waitGroup) {
 }
 
 func TestWaitGroup(t *testing.T) {
-	checkIfRunningSpawnsAreLeft := spawnPatch(t)
-	defer checkIfRunningSpawnsAreLeft()
 	wg1 := newWaitGroup()
 	wg2 := newWaitGroup()
 
@@ -94,8 +68,6 @@ func TestWaitGroupMisuse(t *testing.T) {
 }
 
 func TestAddAfterWait(t *testing.T) {
-	checkIfRunningSpawnsAreLeft := spawnPatch(t)
-	defer checkIfRunningSpawnsAreLeft()
 	wg := newWaitGroup()
 	wg.add(1)
 	syncChan := make(chan struct{})
@@ -113,8 +85,6 @@ func TestAddAfterWait(t *testing.T) {
 }
 
 func TestWaitGroupRace(t *testing.T) {
-	checkIfRunningSpawnsAreLeft := spawnPatch(t)
-	defer checkIfRunningSpawnsAreLeft()
 	// Run this test for about 1ms.
 	for i := 0; i < 1000; i++ {
 		wg := newWaitGroup()
@@ -141,8 +111,6 @@ func TestWaitGroupRace(t *testing.T) {
 }
 
 func TestWaitGroupAlign(t *testing.T) {
-	checkIfRunningSpawnsAreLeft := spawnPatch(t)
-	defer checkIfRunningSpawnsAreLeft()
 	type X struct {
 		x  byte
 		wg *waitGroup
@@ -157,8 +125,6 @@ func TestWaitGroupAlign(t *testing.T) {
 }
 
 func TestWaitAfterAddDoneCounterHasReset(t *testing.T) {
-	checkIfRunningSpawnsAreLeft := spawnPatch(t)
-	defer checkIfRunningSpawnsAreLeft()
 	wg := newWaitGroup()
 	wg.add(1)
 	wg.done()
