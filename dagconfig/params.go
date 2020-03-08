@@ -5,6 +5,7 @@
 package dagconfig
 
 import (
+	"github.com/kaspanet/kaspad/util/network"
 	"math"
 	"math/big"
 	"time"
@@ -183,6 +184,12 @@ type Params struct {
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
 	HDCoinType uint32
+}
+
+// NormalizeRPCServerAddress returns addr with the current network default
+// port appended if there is not already a port specified.
+func (p *Params) NormalizeRPCServerAddress(addr string) (string, error) {
+	return network.NormalizeAddress(addr, p.RPCPort)
 }
 
 // MainnetParams defines the network parameters for the main Kaspa network.

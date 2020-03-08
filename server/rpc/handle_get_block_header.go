@@ -68,7 +68,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version),
 		HashMerkleRoot:       blockHeader.HashMerkleRoot.String(),
 		AcceptedIDMerkleRoot: blockHeader.AcceptedIDMerkleRoot.String(),
-		NextHashes:           childHashStrings,
+		ChildHashes:          childHashStrings,
 		ParentHashes:         daghash.Strings(blockHeader.ParentHashes),
 		SelectedParentHash:   selectedParentHash.String(),
 		Nonce:                blockHeader.Nonce,

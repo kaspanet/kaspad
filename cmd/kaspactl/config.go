@@ -7,9 +7,9 @@ package main
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/version"
 	"github.com/pkg/errors"
 	"io/ioutil"
-	"net"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -103,28 +103,6 @@ type ConfigFlags struct {
 	config.NetworkFlags
 }
 
-// normalizeAddress returns addr with the passed default port appended if
-// there is not already a port specified.
-func normalizeAddress(addr string, useTestnet, useSimnet, useDevnet bool) string {
-	_, _, err := net.SplitHostPort(addr)
-	if err != nil {
-		var defaultPort string
-		switch {
-		case useDevnet:
-			defaultPort = "16610"
-		case useTestnet:
-			defaultPort = "16210"
-		case useSimnet:
-			defaultPort = "16510"
-		default:
-			defaultPort = "16110"
-		}
-
-		return net.JoinHostPort(addr, defaultPort)
-	}
-	return addr
-}
-
 // cleanAndExpandPath expands environement variables and leading ~ in the
 // passed path, cleans the result, and returns it.
 func cleanAndExpandPath(path string) string {
@@ -184,7 +162,7 @@ func loadConfig() (*ConfigFlags, []string, error) {
 	appName = strings.TrimSuffix(appName, filepath.Ext(appName))
 	usageMessage := fmt.Sprintf("Use %s -h to show options", appName)
 	if preCfg.ShowVersion {
-		fmt.Println(appName, "version", version())
+		fmt.Println(appName, "version", version.Version())
 		os.Exit(0)
 	}
 
@@ -212,7 +190,7 @@ func loadConfig() (*ConfigFlags, []string, error) {
 	parser := flags.NewParser(activeConfig, flags.Default)
 	err = flags.NewIniParser(parser).ParseFile(preCfg.ConfigFile)
 	if err != nil {
-		if pErr := &(os.PathError{}); !errors.As(err, pErr) {
+		if pErr := &(os.PathError{}); !errors.As(err, &pErr) {
 			fmt.Fprintf(os.Stderr, "Error parsing config file: %s\n",
 				err)
 			fmt.Fprintln(os.Stderr, usageMessage)
@@ -239,8 +217,10 @@ func loadConfig() (*ConfigFlags, []string, error) {
 
 	// Add default port to RPC server based on --testnet and --simnet flags
 	// if needed.
-	activeConfig.RPCServer = normalizeAddress(activeConfig.RPCServer, activeConfig.Testnet,
-		activeConfig.Simnet, activeConfig.Devnet)
+	activeConfig.RPCServer, err = activeConfig.NetParams().NormalizeRPCServerAddress(activeConfig.RPCServer)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	return activeConfig, remainingArgs, nil
 }

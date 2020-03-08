@@ -21,7 +21,7 @@ var helpDescsEnUS = map[string]string{
 		"The levelspec can either a debug level or of the form:\n" +
 		"<subsystem>=<level>,<subsystem2>=<level2>,...\n" +
 		"The valid debug levels are trace, debug, info, warn, error, and critical.\n" +
-		"The valid subsystems are AMGR, ADXR, BCDB, BMGR, KASD, BDAG, DISC, PEER, RPCS, SCRP, SRVR, and TXMP.\n" +
+		"The valid subsystems are AMGR, ADXR, KSDB, BMGR, KASD, BDAG, DISC, PEER, RPCS, SCRP, SRVR, and TXMP.\n" +
 		"Finally the keyword 'show' will return a list of the available subsystems.",
 	"debugLevel-levelSpec":   "The debug level(s) to use or the keyword 'show'",
 	"debugLevel--condition0": "levelspec!=show",
@@ -267,7 +267,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockVerboseResult-difficulty":           "The proof-of-work difficulty as a multiple of the minimum difficulty",
 	"getBlockVerboseResult-parentHashes":         "The hashes of the parent blocks",
 	"getBlockVerboseResult-selectedParentHash":   "The selected parent hash",
-	"getBlockVerboseResult-nextHashes":           "The hashes of the next blocks (only if there are any)",
+	"getBlockVerboseResult-childHashes":          "The hashes of the child blocks (only if there are any)",
 
 	// GetBlockCountCmd help.
 	"getBlockCount--synopsis": "Returns the number of blocks in the block DAG.",
@@ -295,7 +295,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockHeaderVerboseResult-difficulty":           "The proof-of-work difficulty as a multiple of the minimum difficulty",
 	"getBlockHeaderVerboseResult-parentHashes":         "The hashes of the parent blocks",
 	"getBlockHeaderVerboseResult-selectedParentHash":   "The selected parent hash",
-	"getBlockHeaderVerboseResult-nextHashes":           "The hashes of the next blocks (only if there are any)",
+	"getBlockHeaderVerboseResult-childHashes":          "The hashes of the child blocks (only if there are any)",
 
 	// TemplateRequest help.
 	"templateRequest-mode":         "This is 'template', 'proposal', or omitted",

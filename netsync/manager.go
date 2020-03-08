@@ -207,18 +207,22 @@ func (sm *SyncManager) startSync() {
 		return
 	}
 
-	log.Warnf("No sync peer candidates available")
 	if sm.shouldQueryPeerSelectedTips() {
+		hasSyncCandidates := false
 		for peer, state := range sm.peerStates {
 			if !state.syncCandidate {
 				continue
 			}
+			hasSyncCandidates = true
 
 			if time.Since(state.lastSelectedTipRequest) < minGetSelectedTipInterval {
 				continue
 			}
 
 			queueMsgGetSelectedTip(peer, state)
+		}
+		if !hasSyncCandidates {
+			log.Warnf("No sync peer candidates available")
 		}
 	}
 }
@@ -508,6 +512,9 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		// send it.
 		code, reason := mempool.ErrToRejectErr(err)
 		peer.PushRejectMsg(wire.CmdBlock, code, reason, blockHash, false)
+
+		// Disconnect from the misbehaving peer.
+		peer.Disconnect()
 		return
 	}
 

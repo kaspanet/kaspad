@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"testing"
 
-	ldbutil "github.com/btcsuite/goleveldb/leveldb/util"
 	"github.com/kaspanet/kaspad/database"
+	ldbutil "github.com/syndtr/goleveldb/leveldb/util"
 )
 
 func TestExhaustedDbCacheIterator(t *testing.T) {

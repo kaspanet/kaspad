@@ -311,7 +311,7 @@ func loadConfig() (*Config, []string, error) {
 
 		err := flags.NewIniParser(parser).ParseFile(preCfg.ConfigFile)
 		if err != nil {
-			if pErr := &(os.PathError{}); !errors.As(err, pErr) {
+			if pErr := &(os.PathError{}); !errors.As(err, &pErr) {
 				fmt.Fprintf(os.Stderr, "Error parsing config "+
 					"file: %s\n", err)
 				fmt.Fprintln(os.Stderr, usageMessage)
@@ -705,13 +705,19 @@ func loadConfig() (*Config, []string, error) {
 
 	// Add default port to all listener addresses if needed and remove
 	// duplicate addresses.
-	activeConfig.Listeners = network.NormalizeAddresses(activeConfig.Listeners,
+	activeConfig.Listeners, err = network.NormalizeAddresses(activeConfig.Listeners,
 		activeConfig.NetParams().DefaultPort)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// Add default port to all rpc listener addresses if needed and remove
 	// duplicate addresses.
-	activeConfig.RPCListeners = network.NormalizeAddresses(activeConfig.RPCListeners,
+	activeConfig.RPCListeners, err = network.NormalizeAddresses(activeConfig.RPCListeners,
 		activeConfig.NetParams().RPCPort)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// Only allow TLS to be disabled if the RPC is bound to localhost
 	// addresses.
@@ -745,10 +751,17 @@ func loadConfig() (*Config, []string, error) {
 
 	// Add default port to all added peer addresses if needed and remove
 	// duplicate addresses.
-	activeConfig.AddPeers = network.NormalizeAddresses(activeConfig.AddPeers,
+	activeConfig.AddPeers, err = network.NormalizeAddresses(activeConfig.AddPeers,
 		activeConfig.NetParams().DefaultPort)
-	activeConfig.ConnectPeers = network.NormalizeAddresses(activeConfig.ConnectPeers,
+	if err != nil {
+		return nil, nil, err
+	}
+
+	activeConfig.ConnectPeers, err = network.NormalizeAddresses(activeConfig.ConnectPeers,
 		activeConfig.NetParams().DefaultPort)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// Setup dial and DNS resolution (lookup) functions depending on the
 	// specified options. The default is to use the standard
