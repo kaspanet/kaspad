@@ -785,7 +785,6 @@ type rpcserverConfig struct {
 
 	// These fields define any optional indexes the RPC server can make use
 	// of to provide additional data when queried.
-	AddrIndex       *indexers.AddrIndex
 	AcceptanceIndex *indexers.AcceptanceIndex
 
 	shouldMineOnGenesis func() bool
@@ -867,7 +866,6 @@ func NewRPCServer(
 		DB:                  db,
 		TxMemPool:           p2pServer.TxMemPool,
 		Generator:           blockTemplateGenerator,
-		AddrIndex:           p2pServer.AddrIndex,
 		AcceptanceIndex:     p2pServer.AcceptanceIndex,
 		DAG:                 p2pServer.DAG,
 		shouldMineOnGenesis: p2pServer.ShouldMineOnGenesis,

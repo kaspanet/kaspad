@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/blockdag/indexers"
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/logger"
 	"github.com/kaspanet/kaspad/mining"
@@ -76,11 +75,6 @@ type Config struct {
 
 	// SigCache defines a signature cache to use.
 	SigCache *txscript.SigCache
-
-	// AddrIndex defines the optional address index instance to use for
-	// indexing the unconfirmed transactions in the memory pool.
-	// This can be nil if the address index is not enabled.
-	AddrIndex *indexers.AddrIndex
 
 	// DAG is the BlockDAG we want to use (mainly for UTXO checks)
 	DAG *blockdag.BlockDAG
@@ -531,12 +525,6 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeDependants bool, restoreI
 func (mp *TxPool) removeTransactionWithDiff(tx *util.Tx, diff *blockdag.UTXODiff, restoreInputs bool) error {
 	txID := tx.ID()
 
-	// Remove unconfirmed address index entries associated with the
-	// transaction if enabled.
-	if mp.cfg.AddrIndex != nil {
-		mp.cfg.AddrIndex.RemoveUnconfirmedTx(txID)
-	}
-
 	err := mp.removeTransactionUTXOEntriesFromDiff(tx, diff)
 	if err != nil {
 		return errors.Errorf("could not remove UTXOEntry from diff: %s", err)
@@ -711,12 +699,6 @@ func (mp *TxPool) addTransaction(tx *util.Tx, fee uint64, parentsInPool []*wire.
 		return nil, errors.Errorf("unexpectedly failed to add tx %s to the mempool utxo set", tx.ID())
 	}
 	atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
-
-	// Add unconfirmed address index entries associated with the transaction
-	// if enabled.
-	if mp.cfg.AddrIndex != nil {
-		mp.cfg.AddrIndex.AddUnconfirmedTx(tx, mp.mpUTXOSet)
-	}
 
 	return txD, nil
 }

@@ -351,7 +351,6 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 			MedianTimePast:         fDAG.MedianTimePast,
 			CalcSequenceLockNoLock: calcSequenceLock,
 			SigCache:               nil,
-			AddrIndex:              nil,
 		}),
 	}
 

@@ -56,7 +56,6 @@ const (
 	DefaultMaxOrphanTxSize = 100000
 	defaultSigCacheMaxSize = 100000
 	sampleConfigFilename   = "sample-kaspad.conf"
-	defaultAddrIndex       = false
 	defaultAcceptanceIndex = false
 )
 
@@ -127,8 +126,6 @@ type Flags struct {
 	NoPeerBloomFilters   bool          `long:"nopeerbloomfilters" description:"Disable bloom filtering support"`
 	SigCacheMaxSize      uint          `long:"sigcachemaxsize" description:"The maximum number of entries in the signature verification cache"`
 	BlocksOnly           bool          `long:"blocksonly" description:"Do not accept transactions from remote peers."`
-	AddrIndex            bool          `long:"addrindex" description:"Maintain a full address-based transaction index which makes the searchrawtransactions RPC available"`
-	DropAddrIndex        bool          `long:"dropaddrindex" description:"Deletes the address-based transaction index from the database on start up and then exits."`
 	AcceptanceIndex      bool          `long:"acceptanceindex" description:"Maintain a full hash-based acceptance index which makes the getChainByBlock RPC available"`
 	DropAcceptanceIndex  bool          `long:"dropacceptanceindex" description:"Deletes the hash-based acceptance index from the database on start up and then exits."`
 	RelayNonStd          bool          `long:"relaynonstd" description:"Relay non-standard transactions regardless of the default settings for the active network."`
@@ -245,7 +242,6 @@ func loadConfig() (*Config, []string, error) {
 		MaxOrphanTxs:         defaultMaxOrphanTransactions,
 		SigCacheMaxSize:      defaultSigCacheMaxSize,
 		MinRelayTxFee:        defaultMinRelayTxFee,
-		AddrIndex:            defaultAddrIndex,
 		AcceptanceIndex:      defaultAcceptanceIndex,
 	}
 
@@ -625,16 +621,6 @@ func loadConfig() (*Config, []string, error) {
 			fmt.Fprintln(os.Stderr, usageMessage)
 			return nil, nil, err
 		}
-	}
-
-	// --addrindex and --dropaddrindex do not mix.
-	if activeConfig.AddrIndex && activeConfig.DropAddrIndex {
-		err := errors.Errorf("%s: the --addrindex and --dropaddrindex "+
-			"options may not be activated at the same time",
-			funcName)
-		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
 	}
 
 	// --acceptanceindex and --dropacceptanceindex do not mix.
