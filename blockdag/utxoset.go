@@ -248,13 +248,18 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	// If they are not in other.toRemove - should be added in result.toAdd
 	// If they are in other.toAdd - base utxoSet is not the same
 	for outpoint, utxoEntry := range d.toRemove {
-		if diffEntry, ok := other.toRemove.get(outpoint); !ok || utxoEntry.blockBlueScore != diffEntry.blockBlueScore {
-			result.toAdd.add(outpoint, utxoEntry)
-			if ok && !d.toAdd.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) {
+		diffEntry, ok := other.toRemove.get(outpoint)
+		if ok {
+			// if have the same entry in d.toRemove - simply don't copy.
+			// unless existing entry is with different blue score, in this case - this is an error
+			if utxoEntry.blockBlueScore != diffEntry.blockBlueScore {
 				return nil, errors.New("diffFrom: transaction both in d.toRemove and other.toRemove with different " +
 					"blue scores, with no corresponding transaction in d.toAdd")
 			}
+		} else { // if no existing entry - add to result.toAdd
+			result.toAdd.add(outpoint, utxoEntry)
 		}
+
 		if !other.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
 			result.toAdd.add(outpoint, utxoEntry)
 		}
