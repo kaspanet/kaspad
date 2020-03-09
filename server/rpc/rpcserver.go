@@ -139,7 +139,6 @@ var rpcLimited = map[string]struct{}{
 	"getInfo":               {},
 	"getNetTotals":          {},
 	"getRawMempool":         {},
-	"getRawTransaction":     {},
 	"getTxOut":              {},
 	"searchRawTransactions": {},
 	"sendRawTransaction":    {},

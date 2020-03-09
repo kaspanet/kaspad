@@ -481,34 +481,6 @@ func TestRPCServerCommands(t *testing.T) {
 			},
 		},
 		{
-			name: "getRawTransaction",
-			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getRawTransaction", "123")
-			},
-			staticCmd: func() interface{} {
-				return rpcmodel.NewGetRawTransactionCmd("123", nil)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getRawTransaction","params":["123"],"id":1}`,
-			unmarshalled: &rpcmodel.GetRawTransactionCmd{
-				TxID:    "123",
-				Verbose: pointers.Int(0),
-			},
-		},
-		{
-			name: "getRawTransaction optional",
-			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getRawTransaction", "123", 1)
-			},
-			staticCmd: func() interface{} {
-				return rpcmodel.NewGetRawTransactionCmd("123", pointers.Int(1))
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getRawTransaction","params":["123",1],"id":1}`,
-			unmarshalled: &rpcmodel.GetRawTransactionCmd{
-				TxID:    "123",
-				Verbose: pointers.Int(1),
-			},
-		},
-		{
 			name: "getSubnetwork",
 			newCmd: func() (interface{}, error) {
 				return rpcmodel.NewCommand("getSubnetwork", "123")

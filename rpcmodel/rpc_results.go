@@ -304,7 +304,7 @@ type ScriptSig struct {
 }
 
 // Vin models parts of the tx data. It is defined separately since
-// getrawtransaction, decoderawtransaction, and searchrawtransaction use the
+// decoderawtransaction, and searchrawtransaction use the
 // same structure.
 type Vin struct {
 	TxID      string     `json:"txId"`
@@ -379,8 +379,8 @@ func (v *VinPrevOut) MarshalJSON() ([]byte, error) {
 	return json.Marshal(txStruct)
 }
 
-// Vout models parts of the tx data. It is defined separately since both
-// getrawtransaction and decoderawtransaction use the same structure.
+// Vout models parts of the tx data. It is defined separately since
+// decoderawtransaction uses the same structure.
 type Vout struct {
 	Value        uint64             `json:"value"`
 	N            uint32             `json:"n"`
@@ -410,7 +410,7 @@ type InfoDAGResult struct {
 	Errors          string  `json:"errors"`
 }
 
-// TxRawResult models the data from the getrawtransaction command.
+// TxRawResult models transaction result data.
 type TxRawResult struct {
 	Hex         string  `json:"hex"`
 	TxID        string  `json:"txId"`
