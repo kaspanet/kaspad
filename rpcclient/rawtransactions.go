@@ -8,8 +8,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/kaspanet/kaspad/util/pointers"
-
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -160,126 +158,6 @@ func (c *Client) SendRawTransactionAsync(tx *wire.MsgTx, allowHighFees bool) Fut
 // then relay it to the network.
 func (c *Client) SendRawTransaction(tx *wire.MsgTx, allowHighFees bool) (*daghash.TxID, error) {
 	return c.SendRawTransactionAsync(tx, allowHighFees).Receive()
-}
-
-// FutureSearchRawTransactionsResult is a future promise to deliver the result
-// of the SearchRawTransactionsAsync RPC invocation (or an applicable error).
-type FutureSearchRawTransactionsResult chan *response
-
-// Receive waits for the response promised by the future and returns the
-// found raw transactions.
-func (r FutureSearchRawTransactionsResult) Receive() ([]*wire.MsgTx, error) {
-	res, err := receiveFuture(r)
-	if err != nil {
-		return nil, err
-	}
-
-	// Unmarshal as an array of strings.
-	var searchRawTxnsResult []string
-	err = json.Unmarshal(res, &searchRawTxnsResult)
-	if err != nil {
-		return nil, err
-	}
-
-	// Decode and deserialize each transaction.
-	msgTxns := make([]*wire.MsgTx, 0, len(searchRawTxnsResult))
-	for _, hexTx := range searchRawTxnsResult {
-		// Decode the serialized transaction hex to raw bytes.
-		serializedTx, err := hex.DecodeString(hexTx)
-		if err != nil {
-			return nil, err
-		}
-
-		// Deserialize the transaction and add it to the result slice.
-		var msgTx wire.MsgTx
-		err = msgTx.Deserialize(bytes.NewReader(serializedTx))
-		if err != nil {
-			return nil, err
-		}
-		msgTxns = append(msgTxns, &msgTx)
-	}
-
-	return msgTxns, nil
-}
-
-// SearchRawTransactionsAsync returns an instance of a type that can be used to
-// get the result of the RPC at some future time by invoking the Receive
-// function on the returned instance.
-//
-// See SearchRawTransactions for the blocking version and more details.
-func (c *Client) SearchRawTransactionsAsync(address util.Address, skip, count int, reverse bool, filterAddrs []string) FutureSearchRawTransactionsResult {
-	addr := address.EncodeAddress()
-	verbose := pointers.Bool(false)
-	cmd := rpcmodel.NewSearchRawTransactionsCmd(addr, verbose, &skip, &count,
-		nil, &reverse, &filterAddrs)
-	return c.sendCmd(cmd)
-}
-
-// SearchRawTransactions returns transactions that involve the passed address.
-//
-// NOTE: RPC servers do not typically provide this capability unless it has
-// specifically been enabled.
-//
-// See SearchRawTransactionsVerbose to retrieve a list of data structures with
-// information about the transactions instead of the transactions themselves.
-func (c *Client) SearchRawTransactions(address util.Address, skip, count int, reverse bool, filterAddrs []string) ([]*wire.MsgTx, error) {
-	return c.SearchRawTransactionsAsync(address, skip, count, reverse, filterAddrs).Receive()
-}
-
-// FutureSearchRawTransactionsVerboseResult is a future promise to deliver the
-// result of the SearchRawTransactionsVerboseAsync RPC invocation (or an
-// applicable error).
-type FutureSearchRawTransactionsVerboseResult chan *response
-
-// Receive waits for the response promised by the future and returns the
-// found raw transactions.
-func (r FutureSearchRawTransactionsVerboseResult) Receive() ([]*rpcmodel.SearchRawTransactionsResult, error) {
-	res, err := receiveFuture(r)
-	if err != nil {
-		return nil, err
-	}
-
-	// Unmarshal as an array of raw transaction results.
-	var result []*rpcmodel.SearchRawTransactionsResult
-	err = json.Unmarshal(res, &result)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
-// SearchRawTransactionsVerboseAsync returns an instance of a type that can be
-// used to get the result of the RPC at some future time by invoking the Receive
-// function on the returned instance.
-//
-// See SearchRawTransactionsVerbose for the blocking version and more details.
-func (c *Client) SearchRawTransactionsVerboseAsync(address util.Address, skip,
-	count int, includePrevOut, reverse bool, filterAddrs *[]string) FutureSearchRawTransactionsVerboseResult {
-
-	addr := address.EncodeAddress()
-	verbose := pointers.Bool(true)
-	var prevOut *bool
-	if includePrevOut {
-		prevOut = pointers.Bool(true)
-	}
-	cmd := rpcmodel.NewSearchRawTransactionsCmd(addr, verbose, &skip, &count,
-		prevOut, &reverse, filterAddrs)
-	return c.sendCmd(cmd)
-}
-
-// SearchRawTransactionsVerbose returns a list of data structures that describe
-// transactions which involve the passed address.
-//
-// NOTE: RPC servers do not typically provide this capability unless it has
-// specifically been enabled.
-//
-// See SearchRawTransactions to retrieve a list of raw transactions instead.
-func (c *Client) SearchRawTransactionsVerbose(address util.Address, skip,
-	count int, includePrevOut, reverse bool, filterAddrs []string) ([]*rpcmodel.SearchRawTransactionsResult, error) {
-
-	return c.SearchRawTransactionsVerboseAsync(address, skip, count,
-		includePrevOut, reverse, &filterAddrs).Receive()
 }
 
 // FutureDecodeScriptResult is a future promise to deliver the result

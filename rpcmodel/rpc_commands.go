@@ -473,34 +473,6 @@ func NewPingCmd() *PingCmd {
 	return &PingCmd{}
 }
 
-// SearchRawTransactionsCmd defines the searchRawTransactions JSON-RPC command.
-type SearchRawTransactionsCmd struct {
-	Address     string
-	Verbose     *bool `jsonrpcdefault:"true"`
-	Skip        *int  `jsonrpcdefault:"0"`
-	Count       *int  `jsonrpcdefault:"100"`
-	VinExtra    *bool `jsonrpcdefault:"false"`
-	Reverse     *bool `jsonrpcdefault:"false"`
-	FilterAddrs *[]string
-}
-
-// NewSearchRawTransactionsCmd returns a new instance which can be used to issue a
-// sendRawTransaction JSON-RPC command.
-//
-// The parameters which are pointers indicate they are optional. Passing nil
-// for optional parameters will use the default value.
-func NewSearchRawTransactionsCmd(address string, verbose *bool, skip, count *int, vinExtra, reverse *bool, filterAddrs *[]string) *SearchRawTransactionsCmd {
-	return &SearchRawTransactionsCmd{
-		Address:     address,
-		Verbose:     verbose,
-		Skip:        skip,
-		Count:       count,
-		VinExtra:    vinExtra,
-		Reverse:     reverse,
-		FilterAddrs: filterAddrs,
-	}
-}
-
 // SendRawTransactionCmd defines the sendRawTransaction JSON-RPC command.
 type SendRawTransactionCmd struct {
 	HexTx         string
@@ -716,7 +688,6 @@ func init() {
 	MustRegisterCommand("help", (*HelpCmd)(nil), flags)
 	MustRegisterCommand("ping", (*PingCmd)(nil), flags)
 	MustRegisterCommand("removeManualNode", (*RemoveManualNodeCmd)(nil), flags)
-	MustRegisterCommand("searchRawTransactions", (*SearchRawTransactionsCmd)(nil), flags)
 	MustRegisterCommand("sendRawTransaction", (*SendRawTransactionCmd)(nil), flags)
 	MustRegisterCommand("stop", (*StopCmd)(nil), flags)
 	MustRegisterCommand("submitBlock", (*SubmitBlockCmd)(nil), flags)

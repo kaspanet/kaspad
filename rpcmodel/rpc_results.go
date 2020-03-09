@@ -303,9 +303,7 @@ type ScriptSig struct {
 	Hex string `json:"hex"`
 }
 
-// Vin models parts of the tx data. It is defined separately since
-// decoderawtransaction, and searchrawtransaction use the
-// same structure.
+// Vin models parts of the tx data.
 type Vin struct {
 	TxID      string     `json:"txId"`
 	Vout      uint32     `json:"vout"`
@@ -335,7 +333,7 @@ type PrevOut struct {
 	Value   float64 `json:"value"`
 }
 
-// VinPrevOut is like Vin except it includes PrevOut. It is used by searchrawtransaction
+// VinPrevOut is like Vin except it includes PrevOut.
 type VinPrevOut struct {
 	Coinbase  string     `json:"coinbase"`
 	TxID      string     `json:"txId"`
@@ -429,24 +427,6 @@ type TxRawResult struct {
 	IsInMempool bool    `json:"isInMempool"`
 	Time        uint64  `json:"time,omitempty"`
 	BlockTime   uint64  `json:"blockTime,omitempty"`
-}
-
-// SearchRawTransactionsResult models the data from the searchrawtransaction
-// command.
-type SearchRawTransactionsResult struct {
-	Hex           string       `json:"hex,omitempty"`
-	TxID          string       `json:"txId"`
-	Hash          string       `json:"hash"`
-	Size          string       `json:"size"`
-	Version       int32        `json:"version"`
-	LockTime      uint64       `json:"lockTime"`
-	Vin           []VinPrevOut `json:"vin"`
-	Vout          []Vout       `json:"vout"`
-	BlockHash     string       `json:"blockHash,omitempty"`
-	Confirmations *uint64      `json:"confirmations,omitempty"`
-	IsInMempool   bool         `json:"isInMempool"`
-	Time          uint64       `json:"time,omitempty"`
-	Blocktime     uint64       `json:"blockTime,omitempty"`
 }
 
 // TxRawDecodeResult models the data from the decoderawtransaction command.
