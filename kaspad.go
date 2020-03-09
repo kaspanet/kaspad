@@ -141,14 +141,6 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 
 		return nil
 	}
-	if cfg.DropTxIndex {
-		if err := indexers.DropTxIndex(db, interrupt); err != nil {
-			kasdLog.Errorf("%s", err)
-			return err
-		}
-
-		return nil
-	}
 	if cfg.DropAcceptanceIndex {
 		if err := indexers.DropAcceptanceIndex(db, interrupt); err != nil {
 			kasdLog.Errorf("%s", err)

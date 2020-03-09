@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/blockdag/indexers"
 	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/wire"
@@ -288,41 +287,10 @@ func (bi *blockImporter) Import() chan *importResults {
 // newBlockImporter returns a new importer for the provided file reader seeker
 // and database.
 func newBlockImporter(db database.DB, r io.ReadSeeker) (*blockImporter, error) {
-	// Create the transaction and address indexes if needed.
-	//
-	// CAUTION: the txindex needs to be first in the indexes array because
-	// the addrindex uses data from the txindex during catchup. If the
-	// addrindex is run first, it may not have the transactions from the
-	// current block indexed.
-	var indexes []indexers.Indexer
-	if cfg.TxIndex || cfg.AddrIndex {
-		// Enable transaction index if address index is enabled since it
-		// requires it.
-		if !cfg.TxIndex {
-			log.Infof("Transaction index enabled because it is " +
-				"required by the address index")
-			cfg.TxIndex = true
-		} else {
-			log.Info("Transaction index is enabled")
-		}
-		indexes = append(indexes, indexers.NewTxIndex())
-	}
-	if cfg.AddrIndex {
-		log.Info("Address index is enabled")
-		indexes = append(indexes, indexers.NewAddrIndex(ActiveConfig().NetParams()))
-	}
-
-	// Create an index manager if any of the optional indexes are enabled.
-	var indexManager blockdag.IndexManager
-	if len(indexes) > 0 {
-		indexManager = indexers.NewManager(indexes)
-	}
-
 	dag, err := blockdag.New(&blockdag.Config{
-		DB:           db,
-		DAGParams:    ActiveConfig().NetParams(),
-		TimeSource:   blockdag.NewMedianTime(),
-		IndexManager: indexManager,
+		DB:         db,
+		DAGParams:  ActiveConfig().NetParams(),
+		TimeSource: blockdag.NewMedianTime(),
 	})
 	if err != nil {
 		return nil, err

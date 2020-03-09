@@ -253,7 +253,6 @@ type Server struct {
 	// if the associated index is not enabled. These fields are set during
 	// initial creation of the server and never changed afterwards, so they
 	// do not need to be protected for concurrent access.
-	TxIndex         *indexers.TxIndex
 	AddrIndex       *indexers.AddrIndex
 	AcceptanceIndex *indexers.AcceptanceIndex
 
@@ -1565,20 +1564,6 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 	// addrindex is run first, it may not have the transactions from the
 	// current block indexed.
 	var indexes []indexers.Indexer
-	if config.ActiveConfig().TxIndex || config.ActiveConfig().AddrIndex {
-		// Enable transaction index if address index is enabled since it
-		// requires it.
-		if !config.ActiveConfig().TxIndex {
-			indxLog.Infof("Transaction index enabled because it " +
-				"is required by the address index")
-			config.ActiveConfig().TxIndex = true
-		} else {
-			indxLog.Info("Transaction index is enabled")
-		}
-
-		s.TxIndex = indexers.NewTxIndex()
-		indexes = append(indexes, s.TxIndex)
-	}
 	if config.ActiveConfig().AddrIndex {
 		indxLog.Info("Address index is enabled")
 		s.AddrIndex = indexers.NewAddrIndex(dagParams)
