@@ -137,8 +137,11 @@ func TestUTXODiffRules(t *testing.T) {
 	// For each of the following test cases, we will:
 	// this.diffFrom(other) and compare it to expectedDiffFromResult
 	// this.WithDiff(other) and compare it to expectedWithDiffResult
+	// this.WithDiffInPlace(other) and compare it to expectedWithDiffResult
 	//
 	// Note: an expected nil result means that we expect the respective operation to fail
+	// See the following spreadsheet for a summary of all test-cases:
+	// https://docs.google.com/spreadsheets/d/1E8G3mp5y1-yifouwLLXRLueSRfXdDRwRKFieYE07buY/edit?usp=sharing
 	tests := []struct {
 		name                   string
 		this                   *UTXODiff
