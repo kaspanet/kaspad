@@ -377,8 +377,7 @@ func (v *VinPrevOut) MarshalJSON() ([]byte, error) {
 	return json.Marshal(txStruct)
 }
 
-// Vout models parts of the tx data. It is defined separately since
-// decoderawtransaction uses the same structure.
+// Vout models parts of the tx data
 type Vout struct {
 	Value        uint64             `json:"value"`
 	N            uint32             `json:"n"`
