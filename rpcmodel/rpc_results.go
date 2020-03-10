@@ -410,24 +410,23 @@ type InfoDAGResult struct {
 
 // TxRawResult models transaction result data.
 type TxRawResult struct {
-	Hex           string  `json:"hex"`
-	TxID          string  `json:"txId"`
-	Hash          string  `json:"hash,omitempty"`
-	Size          int32   `json:"size,omitempty"`
-	Version       int32   `json:"version"`
-	LockTime      uint64  `json:"lockTime"`
-	Subnetwork    string  `json:"subnetwork"`
-	Gas           uint64  `json:"gas"`
-	PayloadHash   string  `json:"payloadHash"`
-	Payload       string  `json:"payload"`
-	Vin           []Vin   `json:"vin"`
-	Vout          []Vout  `json:"vout"`
-	BlockHash     string  `json:"blockHash,omitempty"`
-	Confirmations *uint64 `json:"confirmations,omitempty"`
-	AcceptedBy    *string `json:"acceptedBy,omitempty"`
-	IsInMempool   bool    `json:"isInMempool"`
-	Time          uint64  `json:"time,omitempty"`
-	BlockTime     uint64  `json:"blockTime,omitempty"`
+	Hex         string  `json:"hex"`
+	TxID        string  `json:"txId"`
+	Hash        string  `json:"hash,omitempty"`
+	Size        int32   `json:"size,omitempty"`
+	Version     int32   `json:"version"`
+	LockTime    uint64  `json:"lockTime"`
+	Subnetwork  string  `json:"subnetwork"`
+	Gas         uint64  `json:"gas"`
+	PayloadHash string  `json:"payloadHash"`
+	Payload     string  `json:"payload"`
+	Vin         []Vin   `json:"vin"`
+	Vout        []Vout  `json:"vout"`
+	BlockHash   string  `json:"blockHash,omitempty"`
+	AcceptedBy  *string `json:"acceptedBy,omitempty"`
+	IsInMempool bool    `json:"isInMempool"`
+	Time        uint64  `json:"time,omitempty"`
+	BlockTime   uint64  `json:"blockTime,omitempty"`
 }
 
 // TxRawDecodeResult models the data from the decoderawtransaction command.
