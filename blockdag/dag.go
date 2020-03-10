@@ -1366,6 +1366,23 @@ func (dag *BlockDAG) BlockConfirmationsByHashNoLock(hash *daghash.Hash) (uint64,
 	return dag.blockConfirmations(node)
 }
 
+// TxConfirmations returns the confirmations for the given outpoint, if it exists
+// in the DAG.
+//
+// This function is safe for concurrent access.
+func (dag *BlockDAG) TxConfirmations(outpoint *wire.Outpoint) (uint64, bool) {
+	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
+
+	utxoEntry, ok := dag.GetUTXOEntry(*outpoint)
+	if !ok {
+		return 0, false
+	}
+	confirmations := dag.SelectedTipBlueScore() - utxoEntry.BlockBlueScore() + 1
+
+	return confirmations, true
+}
+
 // UTXOCommitment returns a commitment to the dag's current UTXOSet
 func (dag *BlockDAG) UTXOCommitment() string {
 	return dag.UTXOSet().UTXOMultiset.Hash().String()
