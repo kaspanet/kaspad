@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	// blockDbNamePrefix is the prefix for the kaspad block database.
-	blockDbNamePrefix = "blocks"
+	// blockDBNamePrefix is the prefix for the kaspad block database.
+	blockDBNamePrefix = "blocks"
 )
 
 var (
@@ -30,11 +30,11 @@ var (
 // loadBlockDB opens the block database and returns a handle to it.
 func loadBlockDB() (database.DB, error) {
 	// The database name is based on the database type.
-	dbName := blockDbNamePrefix + "_" + cfg.DbType
+	dbName := blockDBNamePrefix + "_" + cfg.DBType
 	dbPath := filepath.Join(cfg.DataDir, dbName)
 
 	log.Infof("Loading block database from '%s'", dbPath)
-	db, err := database.Open(cfg.DbType, dbPath, ActiveConfig().NetParams().Net)
+	db, err := database.Open(cfg.DBType, dbPath, ActiveConfig().NetParams().Net)
 	if err != nil {
 		// Return the error if it's not because the database doesn't
 		// exist.
@@ -50,7 +50,7 @@ func loadBlockDB() (database.DB, error) {
 		if err != nil {
 			return nil, err
 		}
-		db, err = database.Create(cfg.DbType, dbPath, ActiveConfig().NetParams().Net)
+		db, err = database.Create(cfg.DBType, dbPath, ActiveConfig().NetParams().Net)
 		if err != nil {
 			return nil, err
 		}
