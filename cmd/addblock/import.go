@@ -6,6 +6,7 @@ package main
 
 import (
 	"encoding/binary"
+	"github.com/kaspanet/kaspad/blockdag/indexers"
 	"github.com/pkg/errors"
 	"io"
 	"sync"
@@ -287,10 +288,24 @@ func (bi *blockImporter) Import() chan *importResults {
 // newBlockImporter returns a new importer for the provided file reader seeker
 // and database.
 func newBlockImporter(db database.DB, r io.ReadSeeker) (*blockImporter, error) {
+	// Create the acceptance index if needed.
+	var indexes []indexers.Indexer
+	if cfg.AcceptanceIndex {
+		log.Info("Acceptance index is enabled")
+		indexes = append(indexes, indexers.NewAcceptanceIndex())
+	}
+
+	// Create an index manager if any of the optional indexes are enabled.
+	var indexManager blockdag.IndexManager
+	if len(indexes) > 0 {
+		indexManager = indexers.NewManager(indexes)
+	}
+
 	dag, err := blockdag.New(&blockdag.Config{
-		DB:         db,
-		DAGParams:  ActiveConfig().NetParams(),
-		TimeSource: blockdag.NewMedianTime(),
+		DB:           db,
+		DAGParams:    ActiveConfig().NetParams(),
+		TimeSource:   blockdag.NewMedianTime(),
+		IndexManager: indexManager,
 	})
 	if err != nil {
 		return nil, err

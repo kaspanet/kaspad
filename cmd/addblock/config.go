@@ -40,10 +40,11 @@ func ActiveConfig() *ConfigFlags {
 //
 // See loadConfig for details on the configuration load process.
 type ConfigFlags struct {
-	DataDir  string `short:"b" long:"datadir" description:"Location of the kaspad data directory"`
-	DBType   string `long:"dbtype" description:"Database backend to use for the Block DAG"`
-	InFile   string `short:"i" long:"infile" description:"File containing the block(s)"`
-	Progress int    `short:"p" long:"progress" description:"Show a progress message each time this number of seconds have passed -- Use 0 to disable progress announcements"`
+	DataDir         string `short:"b" long:"datadir" description:"Location of the kaspad data directory"`
+	DBType          string `long:"dbtype" description:"Database backend to use for the Block DAG"`
+	InFile          string `short:"i" long:"infile" description:"File containing the block(s)"`
+	Progress        int    `short:"p" long:"progress" description:"Show a progress message each time this number of seconds have passed -- Use 0 to disable progress announcements"`
+	AcceptanceIndex bool   `long:"acceptanceindex" description:"Maintain a full hash-based acceptance index which makes the getChainByBlock RPC available"`
 	config.NetworkFlags
 }
 
