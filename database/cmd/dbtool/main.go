@@ -79,15 +79,6 @@ func realMain() error {
 	parserFlags := flags.Options(flags.HelpFlag | flags.PassDoubleDash)
 	parser := flags.NewNamedParser(appName, parserFlags)
 	parser.AddGroup("Global Options", "", cfg)
-	parser.AddCommand("insecureimport",
-		"Insecurely import bulk block data from bootstrap.dat",
-		"Insecurely import bulk block data from bootstrap.dat. "+
-			"WARNING: This is NOT secure because it does NOT "+
-			"verify DAG rules. It is only provided for testing "+
-			"purposes.", &importCfg)
-	parser.AddCommand("loadheaders",
-		"Time how long to load headers for all blocks in the database",
-		"", &headersCfg)
 	parser.AddCommand("fetchblock",
 		"Fetch the specific block hash from the database", "",
 		&fetchBlockCfg)
