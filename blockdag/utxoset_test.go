@@ -483,7 +483,7 @@ func TestUTXODiffRules(t *testing.T) {
 			},
 		},
 		{
-			name: "empty this, one toRemove in other",
+			name: "empty this, first in toRemove in other",
 			this: &UTXODiff{
 				toAdd:    utxoCollection{},
 				toRemove: utxoCollection{},
