@@ -126,7 +126,7 @@ type Flags struct {
 	NoPeerBloomFilters   bool          `long:"nopeerbloomfilters" description:"Disable bloom filtering support"`
 	SigCacheMaxSize      uint          `long:"sigcachemaxsize" description:"The maximum number of entries in the signature verification cache"`
 	BlocksOnly           bool          `long:"blocksonly" description:"Do not accept transactions from remote peers."`
-	AcceptanceIndex      bool          `long:"acceptanceindex" description:"Maintain a full hash-based acceptance index which makes the getChainByBlock RPC available"`
+	AcceptanceIndex      bool          `long:"acceptanceindex" description:"Maintain a full hash-based acceptance index which makes the getChainFromBlock RPC available"`
 	DropAcceptanceIndex  bool          `long:"dropacceptanceindex" description:"Deletes the hash-based acceptance index from the database on start up and then exits."`
 	RelayNonStd          bool          `long:"relaynonstd" description:"Relay non-standard transactions regardless of the default settings for the active network."`
 	RejectNonStd         bool          `long:"rejectnonstd" description:"Reject non-standard transactions regardless of the default settings for the active network."`
