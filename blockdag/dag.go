@@ -1189,6 +1189,8 @@ func (node *blockNode) acceptSelectedParentTransactions(selectedParent *util.Blo
 func (dag *BlockDAG) restoreUTXO(node *blockNode) (UTXOSet, error) {
 	stack := []*blockNode{}
 
+	// Iterate over the chain of diff-childs from node till virtual and add them
+	// all into a stack
 	for current := node; current != nil; {
 		stack = append(stack, current)
 		var err error
@@ -1198,20 +1200,28 @@ func (dag *BlockDAG) restoreUTXO(node *blockNode) (UTXOSet, error) {
 		}
 	}
 
-	utxo := UTXOSet(dag.virtual.utxoSet)
+	// Start with the top item in the stack, going over it top-to-bottom,
+	// applying the UTXO-diff one-by-one.
+	topNode, stack := stack[len(stack)-1], stack[:len(stack)-1] // pop the top item in the stack
+	topNodeDiff, err := dag.utxoDiffStore.diffByNode(topNode)
+	if err != nil {
+		return nil, err
+	}
+	accumulatedDiff := topNodeDiff.clone()
 
 	for i := len(stack) - 1; i >= 0; i-- {
 		diff, err := dag.utxoDiffStore.diffByNode(stack[i])
 		if err != nil {
 			return nil, err
 		}
-		utxo, err = utxo.WithDiff(diff)
+		// Use WithDiffInPlace, otherwise copying the diffs again and again create a polynomial overhead
+		err = accumulatedDiff.WithDiffInPlace(diff)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return utxo, nil
+	return NewDiffUTXOSet(dag.virtual.utxoSet, accumulatedDiff), nil
 }
 
 // updateTipsUTXO builds and applies new diff UTXOs for all the DAG's tips
