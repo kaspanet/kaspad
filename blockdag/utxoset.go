@@ -309,7 +309,8 @@ func (d *UTXODiff) WithDiffInPlace(diff *UTXODiff) error {
 			// If already exists in toAdd with the same blueScore - remove from toAdd
 			d.toAdd.remove(outpoint)
 			continue
-		} else if d.toRemove.contains(outpoint) {
+		}
+		if d.toRemove.contains(outpoint) {
 			// If already exists - this is an error
 			return ruleError(ErrWithDiff, fmt.Sprintf(
 				"WithDiffInPlace: outpoint %s both in d.toRemove and in diff.toRemove", outpoint))
