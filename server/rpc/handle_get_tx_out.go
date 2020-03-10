@@ -24,6 +24,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	// If requested and the tx is available in the mempool try to fetch it
 	// from there, otherwise attempt to fetch from the block database.
 	var selectedTipHash string
+	var confirmations *uint64
 	var value uint64
 	var scriptPubKey []byte
 	var isCoinbase bool
@@ -77,6 +78,13 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 			return nil, nil
 		}
 
+		txConfirmations, ok := s.cfg.DAG.TxConfirmations(&out)
+		if !ok {
+			errStr := fmt.Sprintf("Cannot get confirmations for tx id %s", txID)
+			return nil, internalRPCError(errStr, "")
+		}
+		confirmations = &txConfirmations
+
 		selectedTipHash = s.cfg.DAG.SelectedTipHash().String()
 		value = entry.Amount()
 		scriptPubKey = entry.ScriptPubKey()
@@ -99,9 +107,10 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	}
 
 	txOutReply := &rpcmodel.GetTxOutResult{
-		SelectedTip: selectedTipHash,
-		IsInMempool: isInMempool,
-		Value:       util.Amount(value).ToKAS(),
+		SelectedTip:   selectedTipHash,
+		Confirmations: confirmations,
+		IsInMempool:   isInMempool,
+		Value:         util.Amount(value).ToKAS(),
 		ScriptPubKey: rpcmodel.ScriptPubKeyResult{
 			Asm:     disbuf,
 			Hex:     hex.EncodeToString(scriptPubKey),
