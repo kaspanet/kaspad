@@ -78,7 +78,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 			return nil, nil
 		}
 
-		txConfirmations, ok := s.cfg.DAG.TxConfirmations(&out)
+		txConfirmations, ok := s.cfg.DAG.UTXOConfirmations(&out)
 		if !ok {
 			errStr := fmt.Sprintf("Cannot get confirmations for tx id %s", txID)
 			return nil, internalRPCError(errStr, "")

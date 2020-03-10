@@ -1366,11 +1366,11 @@ func (dag *BlockDAG) BlockConfirmationsByHashNoLock(hash *daghash.Hash) (uint64,
 	return dag.blockConfirmations(node)
 }
 
-// TxConfirmations returns the confirmations for the given outpoint, if it exists
-// in the DAG.
+// UTXOConfirmations returns the confirmations for the given outpoint, if it exists
+// in the DAG's UTXO set.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) TxConfirmations(outpoint *wire.Outpoint) (uint64, bool) {
+func (dag *BlockDAG) UTXOConfirmations(outpoint *wire.Outpoint) (uint64, bool) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 
