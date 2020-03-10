@@ -253,8 +253,6 @@ type Server struct {
 	// if the associated index is not enabled. These fields are set during
 	// initial creation of the server and never changed afterwards, so they
 	// do not need to be protected for concurrent access.
-	TxIndex         *indexers.TxIndex
-	AddrIndex       *indexers.AddrIndex
 	AcceptanceIndex *indexers.AcceptanceIndex
 
 	notifyNewTransactions func(txns []*mempool.TxDesc)
@@ -1558,32 +1556,8 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		notifyNewTransactions: notifyNewTransactions,
 	}
 
-	// Create the transaction and address indexes if needed.
-	//
-	// CAUTION: the txindex needs to be first in the indexes array because
-	// the addrindex uses data from the txindex during catchup. If the
-	// addrindex is run first, it may not have the transactions from the
-	// current block indexed.
+	// Create indexes if needed.
 	var indexes []indexers.Indexer
-	if config.ActiveConfig().TxIndex || config.ActiveConfig().AddrIndex {
-		// Enable transaction index if address index is enabled since it
-		// requires it.
-		if !config.ActiveConfig().TxIndex {
-			indxLog.Infof("Transaction index enabled because it " +
-				"is required by the address index")
-			config.ActiveConfig().TxIndex = true
-		} else {
-			indxLog.Info("Transaction index is enabled")
-		}
-
-		s.TxIndex = indexers.NewTxIndex()
-		indexes = append(indexes, s.TxIndex)
-	}
-	if config.ActiveConfig().AddrIndex {
-		indxLog.Info("Address index is enabled")
-		s.AddrIndex = indexers.NewAddrIndex(dagParams)
-		indexes = append(indexes, s.AddrIndex)
-	}
 	if config.ActiveConfig().AcceptanceIndex {
 		indxLog.Info("acceptance index is enabled")
 		s.AcceptanceIndex = indexers.NewAcceptanceIndex()
@@ -1626,7 +1600,6 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		},
 		IsDeploymentActive: s.DAG.IsDeploymentActive,
 		SigCache:           s.SigCache,
-		AddrIndex:          s.AddrIndex,
 		DAG:                s.DAG,
 	}
 	s.TxMemPool = mempool.New(&txC)

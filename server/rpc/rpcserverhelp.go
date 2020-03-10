@@ -211,40 +211,24 @@ var helpDescsEnUS = map[string]string{
 	"-status":                     "A bool which indicates if the soft fork is active",
 
 	// TxRawResult help.
-	"txRawResult-hex":           "Hex-encoded transaction",
-	"txRawResult-txId":          "The hash of the transaction",
-	"txRawResult-version":       "The transaction version",
-	"txRawResult-lockTime":      "The transaction lock time",
-	"txRawResult-subnetwork":    "The transaction subnetwork",
-	"txRawResult-gas":           "The transaction gas",
-	"txRawResult-mass":          "The transaction mass",
-	"txRawResult-payloadHash":   "The transaction payload hash",
-	"txRawResult-payload":       "The transaction payload",
-	"txRawResult-vin":           "The transaction inputs as JSON objects",
-	"txRawResult-vout":          "The transaction outputs as JSON objects",
-	"txRawResult-blockHash":     "Hash of the block the transaction is part of",
-	"txRawResult-confirmations": "Number of confirmations of the block (Will be 'null' if txindex is not disabled)",
-	"txRawResult-isInMempool":   "Whether the transaction is in the mempool",
-	"txRawResult-time":          "Transaction time in seconds since 1 Jan 1970 GMT",
-	"txRawResult-blockTime":     "Block time in seconds since the 1 Jan 1970 GMT",
-	"txRawResult-size":          "The size of the transaction in bytes",
-	"txRawResult-hash":          "The wtxid of the transaction",
-	"txRawResult-acceptedBy":    "The block in which the transaction got accepted in (Will be 'null' if txindex is not disabled)",
-
-	// SearchRawTransactionsResult help.
-	"searchRawTransactionsResult-hex":           "Hex-encoded transaction",
-	"searchRawTransactionsResult-txId":          "The hash of the transaction",
-	"searchRawTransactionsResult-hash":          "The wxtid of the transaction",
-	"searchRawTransactionsResult-version":       "The transaction version",
-	"searchRawTransactionsResult-lockTime":      "The transaction lock time",
-	"searchRawTransactionsResult-vin":           "The transaction inputs as JSON objects",
-	"searchRawTransactionsResult-vout":          "The transaction outputs as JSON objects",
-	"searchRawTransactionsResult-blockHash":     "Hash of the block the transaction is part of",
-	"searchRawTransactionsResult-confirmations": "Number of confirmations of the block (Will be 'null' if txindex is not disabled)",
-	"searchRawTransactionsResult-isInMempool":   "Whether the transaction is in the mempool",
-	"searchRawTransactionsResult-time":          "Transaction time in seconds since 1 Jan 1970 GMT",
-	"searchRawTransactionsResult-blockTime":     "Block time in seconds since the 1 Jan 1970 GMT",
-	"searchRawTransactionsResult-size":          "The size of the transaction in bytes",
+	"txRawResult-hex":         "Hex-encoded transaction",
+	"txRawResult-txId":        "The hash of the transaction",
+	"txRawResult-version":     "The transaction version",
+	"txRawResult-lockTime":    "The transaction lock time",
+	"txRawResult-subnetwork":  "The transaction subnetwork",
+	"txRawResult-gas":         "The transaction gas",
+	"txRawResult-mass":        "The transaction mass",
+	"txRawResult-payloadHash": "The transaction payload hash",
+	"txRawResult-payload":     "The transaction payload",
+	"txRawResult-vin":         "The transaction inputs as JSON objects",
+	"txRawResult-vout":        "The transaction outputs as JSON objects",
+	"txRawResult-blockHash":   "Hash of the block the transaction is part of",
+	"txRawResult-isInMempool": "Whether the transaction is in the mempool",
+	"txRawResult-time":        "Transaction time in seconds since 1 Jan 1970 GMT",
+	"txRawResult-blockTime":   "Block time in seconds since the 1 Jan 1970 GMT",
+	"txRawResult-size":        "The size of the transaction in bytes",
+	"txRawResult-hash":        "The wtxid of the transaction",
+	"txRawResult-acceptedBy":  "The block in which the transaction got accepted in",
 
 	// GetBlockVerboseResult help.
 	"getBlockVerboseResult-hash":                 "The hash of the block (same as provided)",
@@ -461,14 +445,6 @@ var helpDescsEnUS = map[string]string{
 	"getRawMempool--condition1": "verbose=true",
 	"getRawMempool--result0":    "Array of transaction hashes",
 
-	// GetRawTransactionCmd help.
-	"getRawTransaction--synopsis":   "Returns information about a transaction given its hash.",
-	"getRawTransaction-txId":        "The hash of the transaction",
-	"getRawTransaction-verbose":     "Specifies the transaction is returned as a JSON object instead of a hex-encoded string",
-	"getRawTransaction--condition0": "verbose=false",
-	"getRawTransaction--condition1": "verbose=true",
-	"getRawTransaction--result0":    "Hex-encoded bytes of the serialized transaction",
-
 	// GetSubnetworkCmd help.
 	"getSubnetwork--synopsis":    "Returns information about a subnetwork given its ID.",
 	"getSubnetwork-subnetworkId": "The ID of the subnetwork",
@@ -478,7 +454,7 @@ var helpDescsEnUS = map[string]string{
 
 	// GetTxOutResult help.
 	"getTxOutResult-selectedTip":   "The block hash that contains the transaction output",
-	"getTxOutResult-confirmations": "The number of confirmations (Will be 'null' if txindex is not disabled)",
+	"getTxOutResult-confirmations": "The number of confirmations",
 	"getTxOutResult-isInMempool":   "Whether the transaction is in the mempool",
 	"getTxOutResult-value":         "The transaction amount in KAS",
 	"getTxOutResult-scriptPubKey":  "The public key script used to pay coins as a JSON object",
@@ -506,23 +482,6 @@ var helpDescsEnUS = map[string]string{
 	// RemoveManualNodeCmd help.
 	"removeManualNode--synopsis": "Removes a peer from the manual nodes list",
 	"removeManualNode-addr":      "IP address and port of the peer to remove",
-
-	// SearchRawTransactionsCmd help.
-	"searchRawTransactions--synopsis": "Returns raw data for transactions involving the passed address.\n" +
-		"Returned transactions are pulled from both the database, and transactions currently in the mempool.\n" +
-		"Transactions pulled from the mempool will have the 'confirmations' field set to 0.\n" +
-		"Usage of this RPC requires the optional --addrindex flag to be activated, otherwise all responses will simply return with an error stating the address index has not yet been built.\n" +
-		"Similarly, until the address index has caught up with the current best height, all requests will return an error response in order to avoid serving stale data.",
-	"searchRawTransactions-address":     "The kaspa address to search for",
-	"searchRawTransactions-verbose":     "Specifies the transaction is returned as a JSON object instead of hex-encoded string",
-	"searchRawTransactions--condition0": "verbose=0",
-	"searchRawTransactions--condition1": "verbose=1",
-	"searchRawTransactions-skip":        "The number of leading transactions to leave out of the final response",
-	"searchRawTransactions-count":       "The maximum number of transactions to return",
-	"searchRawTransactions-vinExtra":    "Specify that extra data from previous output will be returned in vin",
-	"searchRawTransactions-reverse":     "Specifies that the transactions should be returned in reverse chronological order",
-	"searchRawTransactions-filterAddrs": "Address list. Only inputs or outputs with matching address will be returned",
-	"searchRawTransactions--result0":    "Hex-encoded serialized transaction",
 
 	// SendRawTransactionCmd help.
 	"sendRawTransaction--synopsis":     "Submits the serialized, hex-encoded transaction to the local peer and relays it to the network.",
@@ -647,14 +606,12 @@ var rpcResultTypes = map[string][]interface{}{
 	"getNetTotals":          {(*rpcmodel.GetNetTotalsResult)(nil)},
 	"getPeerInfo":           {(*[]rpcmodel.GetPeerInfoResult)(nil)},
 	"getRawMempool":         {(*[]string)(nil), (*rpcmodel.GetRawMempoolVerboseResult)(nil)},
-	"getRawTransaction":     {(*string)(nil), (*rpcmodel.TxRawResult)(nil)},
 	"getSubnetwork":         {(*rpcmodel.GetSubnetworkResult)(nil)},
 	"getTxOut":              {(*rpcmodel.GetTxOutResult)(nil)},
 	"node":                  nil,
 	"help":                  {(*string)(nil), (*string)(nil)},
 	"ping":                  nil,
 	"removeManualNode":      nil,
-	"searchRawTransactions": {(*string)(nil), (*[]rpcmodel.SearchRawTransactionsResult)(nil)},
 	"sendRawTransaction":    {(*string)(nil)},
 	"stop":                  {(*string)(nil)},
 	"submitBlock":           {nil, (*string)(nil)},

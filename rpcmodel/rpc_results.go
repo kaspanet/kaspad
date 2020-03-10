@@ -304,9 +304,7 @@ type ScriptSig struct {
 	Hex string `json:"hex"`
 }
 
-// Vin models parts of the tx data. It is defined separately since
-// getrawtransaction, decoderawtransaction, and searchrawtransaction use the
-// same structure.
+// Vin models parts of the tx data.
 type Vin struct {
 	TxID      string     `json:"txId"`
 	Vout      uint32     `json:"vout"`
@@ -336,7 +334,7 @@ type PrevOut struct {
 	Value   float64 `json:"value"`
 }
 
-// VinPrevOut is like Vin except it includes PrevOut. It is used by searchrawtransaction
+// VinPrevOut is like Vin except it includes PrevOut.
 type VinPrevOut struct {
 	Coinbase  string     `json:"coinbase"`
 	TxID      string     `json:"txId"`
@@ -380,8 +378,7 @@ func (v *VinPrevOut) MarshalJSON() ([]byte, error) {
 	return json.Marshal(txStruct)
 }
 
-// Vout models parts of the tx data. It is defined separately since both
-// getrawtransaction and decoderawtransaction use the same structure.
+// Vout models parts of the tx data
 type Vout struct {
 	Value        uint64             `json:"value"`
 	N            uint32             `json:"n"`
@@ -411,44 +408,25 @@ type InfoDAGResult struct {
 	Errors          string  `json:"errors"`
 }
 
-// TxRawResult models the data from the getrawtransaction command.
+// TxRawResult models transaction result data.
 type TxRawResult struct {
-	Hex           string  `json:"hex"`
-	TxID          string  `json:"txId"`
-	Hash          string  `json:"hash,omitempty"`
-	Size          int32   `json:"size,omitempty"`
-	Version       int32   `json:"version"`
-	LockTime      uint64  `json:"lockTime"`
-	Subnetwork    string  `json:"subnetwork"`
-	Gas           uint64  `json:"gas"`
-	PayloadHash   string  `json:"payloadHash"`
-	Payload       string  `json:"payload"`
-	Vin           []Vin   `json:"vin"`
-	Vout          []Vout  `json:"vout"`
-	BlockHash     string  `json:"blockHash,omitempty"`
-	Confirmations *uint64 `json:"confirmations,omitempty"`
-	AcceptedBy    *string `json:"acceptedBy,omitempty"`
-	IsInMempool   bool    `json:"isInMempool"`
-	Time          uint64  `json:"time,omitempty"`
-	BlockTime     uint64  `json:"blockTime,omitempty"`
-}
-
-// SearchRawTransactionsResult models the data from the searchrawtransaction
-// command.
-type SearchRawTransactionsResult struct {
-	Hex           string       `json:"hex,omitempty"`
-	TxID          string       `json:"txId"`
-	Hash          string       `json:"hash"`
-	Size          string       `json:"size"`
-	Version       int32        `json:"version"`
-	LockTime      uint64       `json:"lockTime"`
-	Vin           []VinPrevOut `json:"vin"`
-	Vout          []Vout       `json:"vout"`
-	BlockHash     string       `json:"blockHash,omitempty"`
-	Confirmations *uint64      `json:"confirmations,omitempty"`
-	IsInMempool   bool         `json:"isInMempool"`
-	Time          uint64       `json:"time,omitempty"`
-	Blocktime     uint64       `json:"blockTime,omitempty"`
+	Hex         string  `json:"hex"`
+	TxID        string  `json:"txId"`
+	Hash        string  `json:"hash,omitempty"`
+	Size        int32   `json:"size,omitempty"`
+	Version     int32   `json:"version"`
+	LockTime    uint64  `json:"lockTime"`
+	Subnetwork  string  `json:"subnetwork"`
+	Gas         uint64  `json:"gas"`
+	PayloadHash string  `json:"payloadHash"`
+	Payload     string  `json:"payload"`
+	Vin         []Vin   `json:"vin"`
+	Vout        []Vout  `json:"vout"`
+	BlockHash   string  `json:"blockHash,omitempty"`
+	AcceptedBy  *string `json:"acceptedBy,omitempty"`
+	IsInMempool bool    `json:"isInMempool"`
+	Time        uint64  `json:"time,omitempty"`
+	BlockTime   uint64  `json:"blockTime,omitempty"`
 }
 
 // TxRawDecodeResult models the data from the decoderawtransaction command.

@@ -85,14 +85,12 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getNetTotals":          handleGetNetTotals,
 	"getPeerInfo":           handleGetPeerInfo,
 	"getRawMempool":         handleGetRawMempool,
-	"getRawTransaction":     handleGetRawTransaction,
 	"getSubnetwork":         handleGetSubnetwork,
 	"getTxOut":              handleGetTxOut,
 	"help":                  handleHelp,
 	"node":                  handleNode,
 	"ping":                  handlePing,
 	"removeManualNode":      handleRemoveManualNode,
-	"searchRawTransactions": handleSearchRawTransactions,
 	"sendRawTransaction":    handleSendRawTransaction,
 	"stop":                  handleStop,
 	"submitBlock":           handleSubmitBlock,
@@ -124,31 +122,29 @@ var rpcLimited = map[string]struct{}{
 	"help": {},
 
 	// HTTP/S-only commands
-	"createRawTransaction":  {},
-	"decodeRawTransaction":  {},
-	"decodeScript":          {},
-	"getSelectedTip":        {},
-	"getSelectedTipHash":    {},
-	"getBlock":              {},
-	"getBlocks":             {},
-	"getBlockCount":         {},
-	"getBlockHash":          {},
-	"getBlockHeader":        {},
-	"getChainFromBlock":     {},
-	"getCurrentNet":         {},
-	"getDifficulty":         {},
-	"getHeaders":            {},
-	"getInfo":               {},
-	"getNetTotals":          {},
-	"getRawMempool":         {},
-	"getRawTransaction":     {},
-	"getTxOut":              {},
-	"searchRawTransactions": {},
-	"sendRawTransaction":    {},
-	"submitBlock":           {},
-	"uptime":                {},
-	"validateAddress":       {},
-	"version":               {},
+	"createRawTransaction": {},
+	"decodeRawTransaction": {},
+	"decodeScript":         {},
+	"getSelectedTip":       {},
+	"getSelectedTipHash":   {},
+	"getBlock":             {},
+	"getBlocks":            {},
+	"getBlockCount":        {},
+	"getBlockHash":         {},
+	"getBlockHeader":       {},
+	"getChainFromBlock":    {},
+	"getCurrentNet":        {},
+	"getDifficulty":        {},
+	"getHeaders":           {},
+	"getInfo":              {},
+	"getNetTotals":         {},
+	"getRawMempool":        {},
+	"getTxOut":             {},
+	"sendRawTransaction":   {},
+	"submitBlock":          {},
+	"uptime":               {},
+	"validateAddress":      {},
+	"version":              {},
 }
 
 // handleUnimplemented is the handler for commands that should ultimately be
@@ -787,8 +783,6 @@ type rpcserverConfig struct {
 
 	// These fields define any optional indexes the RPC server can make use
 	// of to provide additional data when queried.
-	TxIndex         *indexers.TxIndex
-	AddrIndex       *indexers.AddrIndex
 	AcceptanceIndex *indexers.AcceptanceIndex
 
 	shouldMineOnGenesis func() bool
@@ -870,8 +864,6 @@ func NewRPCServer(
 		DB:                  db,
 		TxMemPool:           p2pServer.TxMemPool,
 		Generator:           blockTemplateGenerator,
-		TxIndex:             p2pServer.TxIndex,
-		AddrIndex:           p2pServer.AddrIndex,
 		AcceptanceIndex:     p2pServer.AcceptanceIndex,
 		DAG:                 p2pServer.DAG,
 		shouldMineOnGenesis: p2pServer.ShouldMineOnGenesis,

@@ -406,24 +406,6 @@ func NewGetRawMempoolCmd(verbose *bool) *GetRawMempoolCmd {
 	}
 }
 
-// GetRawTransactionCmd defines the getRawTransaction JSON-RPC command.
-type GetRawTransactionCmd struct {
-	TxID    string
-	Verbose *int `jsonrpcdefault:"0"`
-}
-
-// NewGetRawTransactionCmd returns a new instance which can be used to issue a
-// getRawTransaction JSON-RPC command.
-//
-// The parameters which are pointers indicate they are optional. Passing nil
-// for optional parameters will use the default value.
-func NewGetRawTransactionCmd(txID string, verbose *int) *GetRawTransactionCmd {
-	return &GetRawTransactionCmd{
-		TxID:    txID,
-		Verbose: verbose,
-	}
-}
-
 // GetSubnetworkCmd defines the getSubnetwork JSON-RPC command.
 type GetSubnetworkCmd struct {
 	SubnetworkID string
@@ -489,34 +471,6 @@ type PingCmd struct{}
 // command.
 func NewPingCmd() *PingCmd {
 	return &PingCmd{}
-}
-
-// SearchRawTransactionsCmd defines the searchRawTransactions JSON-RPC command.
-type SearchRawTransactionsCmd struct {
-	Address     string
-	Verbose     *bool `jsonrpcdefault:"true"`
-	Skip        *int  `jsonrpcdefault:"0"`
-	Count       *int  `jsonrpcdefault:"100"`
-	VinExtra    *bool `jsonrpcdefault:"false"`
-	Reverse     *bool `jsonrpcdefault:"false"`
-	FilterAddrs *[]string
-}
-
-// NewSearchRawTransactionsCmd returns a new instance which can be used to issue a
-// sendRawTransaction JSON-RPC command.
-//
-// The parameters which are pointers indicate they are optional. Passing nil
-// for optional parameters will use the default value.
-func NewSearchRawTransactionsCmd(address string, verbose *bool, skip, count *int, vinExtra, reverse *bool, filterAddrs *[]string) *SearchRawTransactionsCmd {
-	return &SearchRawTransactionsCmd{
-		Address:     address,
-		Verbose:     verbose,
-		Skip:        skip,
-		Count:       count,
-		VinExtra:    vinExtra,
-		Reverse:     reverse,
-		FilterAddrs: filterAddrs,
-	}
 }
 
 // SendRawTransactionCmd defines the sendRawTransaction JSON-RPC command.
@@ -728,14 +682,12 @@ func init() {
 	MustRegisterCommand("getNetTotals", (*GetNetTotalsCmd)(nil), flags)
 	MustRegisterCommand("getPeerInfo", (*GetPeerInfoCmd)(nil), flags)
 	MustRegisterCommand("getRawMempool", (*GetRawMempoolCmd)(nil), flags)
-	MustRegisterCommand("getRawTransaction", (*GetRawTransactionCmd)(nil), flags)
 	MustRegisterCommand("getSubnetwork", (*GetSubnetworkCmd)(nil), flags)
 	MustRegisterCommand("getTxOut", (*GetTxOutCmd)(nil), flags)
 	MustRegisterCommand("getTxOutSetInfo", (*GetTxOutSetInfoCmd)(nil), flags)
 	MustRegisterCommand("help", (*HelpCmd)(nil), flags)
 	MustRegisterCommand("ping", (*PingCmd)(nil), flags)
 	MustRegisterCommand("removeManualNode", (*RemoveManualNodeCmd)(nil), flags)
-	MustRegisterCommand("searchRawTransactions", (*SearchRawTransactionsCmd)(nil), flags)
 	MustRegisterCommand("sendRawTransaction", (*SendRawTransactionCmd)(nil), flags)
 	MustRegisterCommand("stop", (*StopCmd)(nil), flags)
 	MustRegisterCommand("submitBlock", (*SubmitBlockCmd)(nil), flags)

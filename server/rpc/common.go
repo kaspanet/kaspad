@@ -11,7 +11,6 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/pointers"
 	"github.com/kaspanet/kaspad/wire"
-	"github.com/pkg/errors"
 	"math/big"
 	"strconv"
 )
@@ -142,7 +141,7 @@ func createVoutList(mtx *wire.MsgTx, dagParams *dagconfig.Params, filterAddrMap 
 // to a raw transaction JSON object.
 func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 	txID string, blkHeader *wire.BlockHeader, blkHash string,
-	acceptingBlock *daghash.Hash, confirmations *uint64, isInMempool bool) (*rpcmodel.TxRawResult, error) {
+	acceptingBlock *daghash.Hash, isInMempool bool) (*rpcmodel.TxRawResult, error) {
 
 	mtxHex, err := messageToHex(mtx)
 	if err != nil {
@@ -175,7 +174,6 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 		txReply.BlockHash = blkHash
 	}
 
-	txReply.Confirmations = confirmations
 	txReply.IsInMempool = isInMempool
 	if acceptingBlock != nil {
 		txReply.AcceptedBy = pointers.String(acceptingBlock.String())
@@ -280,7 +278,7 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		rawTxns := make([]rpcmodel.TxRawResult, len(txns))
 		for i, tx := range txns {
 			rawTxn, err := createTxRawResult(params, tx.MsgTx(), tx.ID().String(),
-				&blockHeader, hash.String(), nil, nil, false)
+				&blockHeader, hash.String(), nil, false)
 			if err != nil {
 				return nil, err
 			}
@@ -351,37 +349,4 @@ func hashesToGetBlockVerboseResults(s *Server, hashes []*daghash.Hash) ([]rpcmod
 		getBlockVerboseResults = append(getBlockVerboseResults, *getBlockVerboseResult)
 	}
 	return getBlockVerboseResults, nil
-}
-
-// txConfirmationsNoLock returns the confirmations number for the given transaction
-// The confirmations number is defined as follows:
-// If the transaction is in the mempool/in a red block/is a double spend -> 0
-// Otherwise -> The confirmations number of the accepting block
-//
-// This function MUST be called with the DAG state lock held (for reads).
-func txConfirmationsNoLock(s *Server, txID *daghash.TxID) (uint64, error) {
-	if s.cfg.TxIndex == nil {
-		return 0, errors.New("transaction index must be enabled (--txindex)")
-	}
-
-	acceptingBlock, err := s.cfg.TxIndex.BlockThatAcceptedTx(s.cfg.DAG, txID)
-	if err != nil {
-		return 0, errors.Errorf("could not get block that accepted tx %s: %s", txID, err)
-	}
-	if acceptingBlock == nil {
-		return 0, nil
-	}
-
-	confirmations, err := s.cfg.DAG.BlockConfirmationsByHashNoLock(acceptingBlock)
-	if err != nil {
-		return 0, errors.Errorf("could not get confirmations for block that accepted tx %s: %s", txID, err)
-	}
-
-	return confirmations, nil
-}
-
-func txConfirmations(s *Server, txID *daghash.TxID) (uint64, error) {
-	s.cfg.DAG.RLock()
-	defer s.cfg.DAG.RUnlock()
-	return txConfirmationsNoLock(s, txID)
 }

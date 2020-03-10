@@ -130,25 +130,6 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 	}
 
 	// Drop indexes and exit if requested.
-	//
-	// NOTE: The order is important here because dropping the tx index also
-	// drops the address index since it relies on it.
-	if cfg.DropAddrIndex {
-		if err := indexers.DropAddrIndex(db, interrupt); err != nil {
-			kasdLog.Errorf("%s", err)
-			return err
-		}
-
-		return nil
-	}
-	if cfg.DropTxIndex {
-		if err := indexers.DropTxIndex(db, interrupt); err != nil {
-			kasdLog.Errorf("%s", err)
-			return err
-		}
-
-		return nil
-	}
 	if cfg.DropAcceptanceIndex {
 		if err := indexers.DropAcceptanceIndex(db, interrupt); err != nil {
 			kasdLog.Errorf("%s", err)

@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	defaultDbType   = "ffldb"
+	defaultDBType   = "ffldb"
 	defaultDataFile = "bootstrap.dat"
 	defaultProgress = 10
 )
@@ -40,12 +40,11 @@ func ActiveConfig() *ConfigFlags {
 //
 // See loadConfig for details on the configuration load process.
 type ConfigFlags struct {
-	DataDir   string `short:"b" long:"datadir" description:"Location of the kaspad data directory"`
-	DbType    string `long:"dbtype" description:"Database backend to use for the Block DAG"`
-	InFile    string `short:"i" long:"infile" description:"File containing the block(s)"`
-	TxIndex   bool   `long:"txindex" description:"Build a full hash-based transaction index which makes all transactions available via the getrawtransaction RPC"`
-	AddrIndex bool   `long:"addrindex" description:"Build a full address-based transaction index which makes the searchrawtransactions RPC available"`
-	Progress  int    `short:"p" long:"progress" description:"Show a progress message each time this number of seconds have passed -- Use 0 to disable progress announcements"`
+	DataDir         string `short:"b" long:"datadir" description:"Location of the kaspad data directory"`
+	DBType          string `long:"dbtype" description:"Database backend to use for the Block DAG"`
+	InFile          string `short:"i" long:"infile" description:"File containing the block(s)"`
+	Progress        int    `short:"p" long:"progress" description:"Show a progress message each time this number of seconds have passed -- Use 0 to disable progress announcements"`
+	AcceptanceIndex bool   `long:"acceptanceindex" description:"Maintain a full hash-based acceptance index which makes the getChainFromBlock RPC available"`
 	config.NetworkFlags
 }
 
@@ -75,7 +74,7 @@ func loadConfig() (*ConfigFlags, []string, error) {
 	// Default config.
 	activeConfig = &ConfigFlags{
 		DataDir:  defaultDataDir,
-		DbType:   defaultDbType,
+		DBType:   defaultDBType,
 		InFile:   defaultDataFile,
 		Progress: defaultProgress,
 	}
@@ -97,10 +96,10 @@ func loadConfig() (*ConfigFlags, []string, error) {
 	}
 
 	// Validate database type.
-	if !validDbType(activeConfig.DbType) {
+	if !validDbType(activeConfig.DBType) {
 		str := "%s: The specified database type [%s] is invalid -- " +
 			"supported types %s"
-		err := errors.Errorf(str, "loadConfig", activeConfig.DbType, strings.Join(knownDbTypes, ", "))
+		err := errors.Errorf(str, "loadConfig", activeConfig.DBType, strings.Join(knownDbTypes, ", "))
 		fmt.Fprintln(os.Stderr, err)
 		parser.WriteHelp(os.Stderr)
 		return nil, nil, err
