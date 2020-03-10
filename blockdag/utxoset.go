@@ -304,8 +304,8 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 // WithDiffInPlace applies provided diff to this diff in-place, that would be the result if
 // first d, and than diff were applied to the same base
 func (d *UTXODiff) WithDiffInPlace(diff *UTXODiff) error {
-	for outpoint, utxoToRemove := range diff.toRemove {
-		if d.toAdd.containsWithBlueScore(outpoint, utxoToRemove.blockBlueScore) {
+	for outpoint, entryToRemove := range diff.toRemove {
+		if d.toAdd.containsWithBlueScore(outpoint, entryToRemove.blockBlueScore) {
 			// If already exists in toAdd with the same blueScore - remove from toAdd
 			d.toAdd.remove(outpoint)
 			continue
@@ -316,11 +316,11 @@ func (d *UTXODiff) WithDiffInPlace(diff *UTXODiff) error {
 		}
 
 		// If not exists neither in toAdd nor in toRemove - add to toRemove
-		d.toRemove.add(outpoint, utxoToRemove)
+		d.toRemove.add(outpoint, entryToRemove)
 	}
 
-	for outpoint, utxoToAdd := range diff.toAdd {
-		if d.toRemove.containsWithBlueScore(outpoint, utxoToAdd.blockBlueScore) {
+	for outpoint, entryToAdd := range diff.toAdd {
+		if d.toRemove.containsWithBlueScore(outpoint, entryToAdd.blockBlueScore) {
 			// If already exists in toRemove with the same blueScore - remove from toRemove
 			if d.toAdd.contains(outpoint) && !diff.toRemove.contains(outpoint) {
 				return ruleError(ErrWithDiff, fmt.Sprintf(
@@ -330,7 +330,7 @@ func (d *UTXODiff) WithDiffInPlace(diff *UTXODiff) error {
 			d.toRemove.remove(outpoint)
 			continue
 		} else if existingUTXO, ok := d.toAdd.get(outpoint); ok &&
-			(existingUTXO.blockBlueScore == utxoToAdd.blockBlueScore ||
+			(existingUTXO.blockBlueScore == entryToAdd.blockBlueScore ||
 				!diff.toRemove.containsWithBlueScore(outpoint, existingUTXO.blockBlueScore)) {
 			// If already exists - this is an error
 			return ruleError(ErrWithDiff, fmt.Sprintf(
@@ -338,7 +338,7 @@ func (d *UTXODiff) WithDiffInPlace(diff *UTXODiff) error {
 		}
 
 		// If not exists neither in toAdd nor in toRemove, or exists in toRemove with different blueScore - add to toAdd
-		d.toAdd.add(outpoint, utxoToAdd)
+		d.toAdd.add(outpoint, entryToAdd)
 	}
 
 	// Apply diff.diffMultiset to d.diffMultiset
@@ -420,7 +420,7 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 				d.toAdd.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) {
 				continue
 			}
-			return nil, ruleError(ErrWithDiff, "WithDiff: transaction both in d.toRemove and in other.toRemove")
+			return nil, ruleError(ErrWithDiff, "WithDiff: outpoint both in d.toRemove and in other.toRemove")
 		}
 	}
 
