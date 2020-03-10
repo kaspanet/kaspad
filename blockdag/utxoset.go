@@ -330,9 +330,10 @@ func (d *UTXODiff) WithDiffInPlace(diff *UTXODiff) error {
 			}
 			d.toRemove.remove(outpoint)
 			continue
-		} else if existingUTXO, ok := d.toAdd.get(outpoint); ok &&
-			(existingUTXO.blockBlueScore == entryToAdd.blockBlueScore ||
-				!diff.toRemove.containsWithBlueScore(outpoint, existingUTXO.blockBlueScore)) {
+		}
+		if existingEntry, ok := d.toAdd.get(outpoint); ok &&
+			(existingEntry.blockBlueScore == entryToAdd.blockBlueScore ||
+				!diff.toRemove.containsWithBlueScore(outpoint, existingEntry.blockBlueScore)) {
 			// If already exists - this is an error
 			return ruleError(ErrWithDiff, fmt.Sprintf(
 				"WithDiffInPlace: outpoint %s both in d.toAdd and in diff.toAdd", outpoint))
