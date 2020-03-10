@@ -228,7 +228,7 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 		} else if (d.toRemove.contains(outpoint) && !other.toRemove.contains(outpoint)) ||
 			(!d.toRemove.contains(outpoint) && other.toRemove.contains(outpoint)) {
 			return nil, errors.New(
-				"diffFrom: transaction both in d.toAdd, other.toAdd, and only one of d.toRemove and other.toRemove")
+				"diffFrom: outpoint both in d.toAdd, other.toAdd, and only one of d.toRemove and other.toRemove")
 		}
 		if diffEntry, ok := other.toRemove.get(outpoint); ok {
 			// An exception is made for entries with unequal blue scores
@@ -253,8 +253,8 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 			// if have the same entry in d.toRemove - simply don't copy.
 			// unless existing entry is with different blue score, in this case - this is an error
 			if utxoEntry.blockBlueScore != diffEntry.blockBlueScore {
-				return nil, errors.New("diffFrom: transaction both in d.toRemove and other.toRemove with different " +
-					"blue scores, with no corresponding transaction in d.toAdd")
+				return nil, errors.New("diffFrom: outpoint both in d.toRemove and other.toRemove with different " +
+					"blue scores, with no corresponding entry in d.toAdd")
 			}
 		} else { // if no existing entry - add to result.toAdd
 			result.toAdd.add(outpoint, utxoEntry)
@@ -273,7 +273,7 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 					other.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)) {
 				continue
 			}
-			return nil, errors.New("diffFrom: transaction both in d.toRemove and in other.toAdd")
+			return nil, errors.New("diffFrom: outpoint both in d.toRemove and in other.toAdd")
 		}
 	}
 
