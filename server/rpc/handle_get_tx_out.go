@@ -78,12 +78,13 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 			return nil, nil
 		}
 
-		txConfirmations, ok := s.cfg.DAG.UTXOConfirmations(&out)
+		utxoConfirmations, ok := s.cfg.DAG.UTXOConfirmations(&out)
 		if !ok {
-			errStr := fmt.Sprintf("Cannot get confirmations for tx id %s", txID)
+			errStr := fmt.Sprintf("Cannot get confirmations for tx id %s, index %d",
+				out.TxID, out.Index)
 			return nil, internalRPCError(errStr, "")
 		}
-		confirmations = &txConfirmations
+		confirmations = &utxoConfirmations
 
 		selectedTipHash = s.cfg.DAG.SelectedTipHash().String()
 		value = entry.Amount()
