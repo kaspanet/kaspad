@@ -459,7 +459,7 @@ func (mp *TxPool) removeTransactions(txs []*util.Tx) error {
 	for _, tx := range txs {
 		txID := tx.ID()
 
-		if _, exists := mp.fetchTransaction(txID); !exists {
+		if _, exists := mp.fetchTxDesc(txID); !exists {
 			continue
 		}
 
@@ -498,7 +498,7 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeDependants bool, restoreI
 		}
 	}
 
-	if _, exists := mp.fetchTransaction(txID); !exists {
+	if _, exists := mp.fetchTxDesc(txID); !exists {
 		return nil
 	}
 
@@ -535,7 +535,7 @@ func (mp *TxPool) removeTransactionWithDiff(tx *util.Tx, diff *blockdag.UTXODiff
 		return errors.Errorf("could not mark transaction output as unspent: %s", err)
 	}
 
-	txDesc, _ := mp.fetchTransaction(txID)
+	txDesc, _ := mp.fetchTxDesc(txID)
 	if txDesc.depCount == 0 {
 		delete(mp.pool, *txID)
 	} else {
@@ -734,12 +734,28 @@ func (mp *TxPool) CheckSpend(op wire.Outpoint) *util.Tx {
 }
 
 // This function MUST be called with the mempool lock held (for reads).
-func (mp *TxPool) fetchTransaction(txID *daghash.TxID) (*TxDesc, bool) {
+func (mp *TxPool) fetchTxDesc(txID *daghash.TxID) (*TxDesc, bool) {
 	txDesc, exists := mp.pool[*txID]
 	if !exists {
 		txDesc, exists = mp.depends[*txID]
 	}
 	return txDesc, exists
+}
+
+// FetchTxDesc returns the requested TxDesc from the transaction pool.
+// This only fetches from the main transaction pool and does not include
+// orphans.
+//
+// This function is safe for concurrent access.
+func (mp *TxPool) FetchTxDesc(txID *daghash.TxID) (*TxDesc, error) {
+	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
+
+	if txDesc, exists := mp.fetchTxDesc(txID); exists {
+		return txDesc, nil
+	}
+
+	return nil, errors.Errorf("transaction is not in the pool")
 }
 
 // FetchTransaction returns the requested transaction from the transaction pool.
@@ -752,7 +768,7 @@ func (mp *TxPool) FetchTransaction(txID *daghash.TxID) (*util.Tx, error) {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
-	if txDesc, exists := mp.fetchTransaction(txID); exists {
+	if txDesc, exists := mp.fetchTxDesc(txID); exists {
 		return txDesc.Tx, nil
 	}
 

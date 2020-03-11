@@ -227,7 +227,7 @@ var helpDescsEnUS = map[string]string{
 	"txRawResult-time":        "Transaction time in seconds since 1 Jan 1970 GMT",
 	"txRawResult-blockTime":   "Block time in seconds since the 1 Jan 1970 GMT",
 	"txRawResult-size":        "The size of the transaction in bytes",
-	"txRawResult-hash":        "The wtxid of the transaction",
+	"txRawResult-hash":        "The hash of the transaction",
 	"txRawResult-acceptedBy":  "The block in which the transaction got accepted in",
 
 	// GetBlockVerboseResult help.
@@ -389,6 +389,15 @@ var helpDescsEnUS = map[string]string{
 
 	// GetInfoCmd help.
 	"getInfo--synopsis": "Returns a JSON object containing various state info.",
+
+	// getMempoolEntry help.
+	"getMempoolEntry--synopsis": "Returns mempool data for given transaction",
+	"getMempoolEntry-txId":      "The transaction ID",
+
+	// getMempoolEntryResult help.
+	"getMempoolEntryResult-fee":   "Transaction fee in sompis",
+	"getMempoolEntryResult-time":  "Local time transaction entered pool in seconds since 1 Jan 1970 GMT",
+	"getMempoolEntryResult-rawTx": "The transaction as a JSON object",
 
 	// GetMempoolInfoCmd help.
 	"getMempoolInfo--synopsis": "Returns memory pool information",
@@ -603,6 +612,7 @@ var rpcResultTypes = map[string][]interface{}{
 	"getInfo":               {(*rpcmodel.InfoDAGResult)(nil)},
 	"getManualNodeInfo":     {(*string)(nil), (*rpcmodel.GetManualNodeInfoResult)(nil)},
 	"getMempoolInfo":        {(*rpcmodel.GetMempoolInfoResult)(nil)},
+	"getMempoolEntry":       {(*rpcmodel.GetMempoolEntryResult)(nil)},
 	"getNetTotals":          {(*rpcmodel.GetNetTotalsResult)(nil)},
 	"getPeerInfo":           {(*[]rpcmodel.GetPeerInfoResult)(nil)},
 	"getRawMempool":         {(*[]string)(nil), (*rpcmodel.GetRawMempoolVerboseResult)(nil)},

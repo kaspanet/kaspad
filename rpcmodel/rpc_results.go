@@ -171,23 +171,12 @@ type GetBlockTemplateResult struct {
 	RejectReasion string   `json:"rejectReason,omitempty"`
 }
 
-// GetMempoolEntryResult models the data returned from the getmempoolentry
+// GetMempoolEntryResult models the data returned from the getMempoolEntry
 // command.
 type GetMempoolEntryResult struct {
-	Size             int32    `json:"size"`
-	Fee              float64  `json:"fee"`
-	ModifiedFee      float64  `json:"modifiedFee"`
-	Time             int64    `json:"time"`
-	Height           uint64   `json:"height"`
-	StartingPriority float64  `json:"startingPriority"`
-	CurrentPriority  float64  `json:"currentPriority"`
-	DescendantCount  int64    `json:"descendantCount"`
-	DescendantSize   int64    `json:"descendantSize"`
-	DescendantFees   float64  `json:"descendantFees"`
-	AncestorCount    int64    `json:"ancestorCount"`
-	AncestorSize     int64    `json:"ancestorSize"`
-	AncestorFees     float64  `json:"ancestorFees"`
-	Depends          []string `json:"depends"`
+	Fee   uint64      `json:"fee"`
+	Time  int64       `json:"time"`
+	RawTx TxRawResult `json:"rawTx"`
 }
 
 // GetMempoolInfoResult models the data returned from the getmempoolinfo
