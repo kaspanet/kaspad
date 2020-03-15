@@ -435,7 +435,7 @@ func (dag *BlockDAG) checkBlockHeaderSanity(header *wire.BlockHeader, flags Beha
 	// the duration of time that should be waited before the block becomes valid.
 	// This check needs to be last as it does not return an error but rather marks the
 	// header as delayed (and valid).
-	maxTimestamp := dag.AdjustedTime().Add(time.Second *
+	maxTimestamp := dag.Now().Add(time.Second *
 		time.Duration(int64(dag.TimestampDeviationTolerance)*dag.targetTimePerBlock))
 	if header.Timestamp.After(maxTimestamp) {
 		return header.Timestamp.Sub(maxTimestamp), nil

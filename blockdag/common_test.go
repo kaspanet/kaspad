@@ -106,7 +106,7 @@ func newTestDAG(params *dagconfig.Params) *BlockDAG {
 	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
 	dag := &BlockDAG{
 		dagParams:                      params,
-		timeSource:                     NewMedianTime(),
+		timeSource:                     NewTimeSource(),
 		targetTimePerBlock:             targetTimePerBlock,
 		difficultyAdjustmentWindowSize: params.DifficultyAdjustmentWindowSize,
 		TimestampDeviationTolerance:    params.TimestampDeviationTolerance,
@@ -210,4 +210,16 @@ func nodeByMsgBlock(t *testing.T, dag *BlockDAG, block *wire.MsgBlock) *blockNod
 		t.Fatalf("couldn't find block node with hash %s", block.BlockHash())
 	}
 	return node
+}
+
+type fakeTimeSource struct {
+	time time.Time
+}
+
+func (fts *fakeTimeSource) Now() time.Time {
+	return time.Unix(fts.time.Unix(), 0)
+}
+
+func newFakeTimeSource(fakeTime time.Time) TimeSource {
+	return &fakeTimeSource{time: fakeTime}
 }

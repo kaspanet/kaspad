@@ -768,7 +768,7 @@ type rpcserverConfig struct {
 
 	// These fields allow the RPC server to interface with the local block
 	// DAG data and state.
-	TimeSource blockdag.MedianTimeSource
+	TimeSource blockdag.TimeSource
 	DAG        *blockdag.BlockDAG
 	DAGParams  *dagconfig.Params
 	DB         database.DB

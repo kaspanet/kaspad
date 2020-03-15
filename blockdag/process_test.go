@@ -72,21 +72,6 @@ func TestProcessOrphans(t *testing.T) {
 	}
 }
 
-type fakeTimeSource struct {
-	time time.Time
-}
-
-func (fts *fakeTimeSource) AdjustedTime() time.Time {
-	return fts.time
-}
-
-func (fts *fakeTimeSource) AddTimeSample(_ string, _ time.Time) {
-}
-
-func (fts *fakeTimeSource) Offset() time.Duration {
-	return 0
-}
-
 func TestProcessDelayedBlocks(t *testing.T) {
 	// We use dag1 so we can build the test blocks with the proper
 	// block header (UTXO commitment, acceptedIDMerkleroot, etc), and
@@ -103,7 +88,7 @@ func TestProcessDelayedBlocks(t *testing.T) {
 	// Here we use a fake time source that returns a timestamp
 	// one hour into the future to make delayedBlock artificially
 	// valid.
-	dag1.timeSource = &fakeTimeSource{initialTime.Add(time.Hour)}
+	dag1.timeSource = newFakeTimeSource(initialTime.Add(time.Hour))
 
 	delayedBlock, err := PrepareBlockForTest(dag1, []*daghash.Hash{dag1.dagParams.GenesisBlock.BlockHash()}, nil)
 	if err != nil {
@@ -142,7 +127,7 @@ func TestProcessDelayedBlocks(t *testing.T) {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
 	}
 	defer teardownFunc2()
-	dag2.timeSource = &fakeTimeSource{initialTime}
+	dag2.timeSource = newFakeTimeSource(initialTime)
 
 	isOrphan, isDelayed, err = dag2.ProcessBlock(util.NewBlock(delayedBlock), BFNoPoWCheck)
 	if err != nil {
@@ -209,8 +194,8 @@ func TestProcessDelayedBlocks(t *testing.T) {
 	}
 
 	// We advance the clock to the point where delayedBlock timestamp is valid.
-	secondsUntilDelayedBlockIsValid := delayedBlock.Header.Timestamp.Unix() - int64(dag2.TimestampDeviationTolerance) - dag2.AdjustedTime().Unix() + 1
-	dag2.timeSource = &fakeTimeSource{initialTime.Add(time.Duration(secondsUntilDelayedBlockIsValid) * time.Second)}
+	secondsUntilDelayedBlockIsValid := delayedBlock.Header.Timestamp.Unix() - int64(dag2.TimestampDeviationTolerance) - dag2.Now().Unix() + 1
+	dag2.timeSource = newFakeTimeSource(initialTime.Add(time.Duration(secondsUntilDelayedBlockIsValid) * time.Second))
 
 	blockAfterDelay, err := PrepareBlockForTest(dag2, []*daghash.Hash{dag2.dagParams.GenesisBlock.BlockHash()}, nil)
 	if err != nil {
