@@ -1895,12 +1895,8 @@ type Config struct {
 	// This field is required.
 	DAGParams *dagconfig.Params
 
-	// TimeSource defines the median time source to use for things such as
+	// TimeSource defines the time source to use for things such as
 	// block processing and determining whether or not the DAG is current.
-	//
-	// The caller is expected to keep a reference to the time source as well
-	// and add time samples from other peers on the network so the local
-	// time is adjusted to be in agreement with other peers.
 	TimeSource TimeSource
 
 	// SigCache defines a signature cache to use when when validating
