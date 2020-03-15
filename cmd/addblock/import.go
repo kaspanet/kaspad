@@ -304,7 +304,7 @@ func newBlockImporter(db database.DB, r io.ReadSeeker) (*blockImporter, error) {
 	dag, err := blockdag.New(&blockdag.Config{
 		DB:           db,
 		DAGParams:    ActiveConfig().NetParams(),
-		TimeSource:   blockdag.NewMedianTime(),
+		TimeSource:   blockdag.NewTimeSource(),
 		IndexManager: indexManager,
 	})
 	if err != nil {

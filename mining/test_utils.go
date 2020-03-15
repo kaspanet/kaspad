@@ -61,7 +61,7 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 	}
 
 	blockTemplateGenerator := NewBlkTmplGenerator(&policy,
-		params, txSource, dag, blockdag.NewMedianTime(), txscript.NewSigCache(100000))
+		params, txSource, dag, blockdag.NewTimeSource(), txscript.NewSigCache(100000))
 
 	OpTrueAddr, err := OpTrueAddress(params.Prefix)
 	if err != nil {

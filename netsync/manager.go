@@ -228,7 +228,7 @@ func (sm *SyncManager) startSync() {
 }
 
 func (sm *SyncManager) shouldQueryPeerSelectedTips() bool {
-	return sm.dag.AdjustedTime().Sub(sm.dag.CalcPastMedianTime()) > minDAGTimeDelay
+	return sm.dag.Now().Sub(sm.dag.CalcPastMedianTime()) > minDAGTimeDelay
 }
 
 func queueMsgGetSelectedTip(peer *peerpkg.Peer, state *peerSyncState) {

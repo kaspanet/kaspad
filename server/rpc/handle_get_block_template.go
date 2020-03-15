@@ -69,12 +69,12 @@ type gbtWorkState struct {
 	minTimestamp  time.Time
 	template      *mining.BlockTemplate
 	notifyMap     map[string]map[int64]chan struct{}
-	timeSource    blockdag.MedianTimeSource
+	timeSource    blockdag.TimeSource
 }
 
 // newGbtWorkState returns a new instance of a gbtWorkState with all internal
 // fields initialized and ready to use.
-func newGbtWorkState(timeSource blockdag.MedianTimeSource) *gbtWorkState {
+func newGbtWorkState(timeSource blockdag.TimeSource) *gbtWorkState {
 	return &gbtWorkState{
 		notifyMap:  make(map[string]map[int64]chan struct{}),
 		timeSource: timeSource,
@@ -712,7 +712,7 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 	template := state.template
 	msgBlock := template.Block
 	header := &msgBlock.Header
-	adjustedTime := state.timeSource.AdjustedTime()
+	adjustedTime := state.timeSource.Now()
 	maxTime := adjustedTime.Add(time.Second * time.Duration(dag.TimestampDeviationTolerance))
 	if header.Timestamp.After(maxTime) {
 		return nil, &rpcmodel.RPCError{
