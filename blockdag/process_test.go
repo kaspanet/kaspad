@@ -95,7 +95,7 @@ func TestProcessDelayedBlocks(t *testing.T) {
 		t.Fatalf("error in PrepareBlockForTest: %s", err)
 	}
 
-	blockDelay := time.Duration(dag1.dagParams.TimestampDeviationTolerance+5) * time.Second
+	blockDelay := time.Duration(dag1.dagParams.TimestampDeviationTolerance*uint64(dag1.targetTimePerBlock)+5) * time.Second
 	delayedBlock.Header.Timestamp = initialTime.Add(blockDelay)
 
 	isOrphan, isDelayed, err := dag1.ProcessBlock(util.NewBlock(delayedBlock), BFNoPoWCheck)
