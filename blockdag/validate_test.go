@@ -493,7 +493,7 @@ func TestCheckBlockSanity(t *testing.T) {
 
 	blockInTheFuture := Block100000
 	expectedDelay := 10 * time.Second
-	blockInTheFuture.Header.Timestamp = dag.timeSource.Now().Add(time.Duration(dag.TimestampDeviationTolerance)*time.Second + expectedDelay)
+	blockInTheFuture.Header.Timestamp = dag.Now().Add(time.Duration(dag.TimestampDeviationTolerance*uint64(dag.targetTimePerBlock))*time.Second + expectedDelay)
 	delay, err = dag.checkBlockSanity(util.NewBlock(&blockInTheFuture), BFNoPoWCheck)
 	if err != nil {
 		t.Errorf("CheckBlockSanity: %v", err)
