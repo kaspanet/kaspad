@@ -240,7 +240,7 @@ type Server struct {
 	wg                    sync.WaitGroup
 	nat                   serverutils.NAT
 	db                    database.DB
-	TimeSource            blockdag.MedianTimeSource
+	TimeSource            blockdag.TimeSource
 	services              wire.ServiceFlag
 
 	// We add to quitWaitGroup before every instance in which we wait for
@@ -1550,7 +1550,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		newOutboundConnection: make(chan *outboundPeerConnectedMsg, config.ActiveConfig().TargetOutboundPeers),
 		nat:                   nat,
 		db:                    db,
-		TimeSource:            blockdag.NewMedianTime(),
+		TimeSource:            blockdag.NewTimeSource(),
 		services:              services,
 		SigCache:              txscript.NewSigCache(config.ActiveConfig().SigCacheMaxSize),
 		notifyNewTransactions: notifyNewTransactions,

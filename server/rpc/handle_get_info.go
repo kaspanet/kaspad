@@ -13,7 +13,6 @@ func handleGetInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (inter
 		Version:         version.Version(),
 		ProtocolVersion: int32(maxProtocolVersion),
 		Blocks:          s.cfg.DAG.BlockCount(),
-		TimeOffset:      int64(s.cfg.TimeSource.Offset().Seconds()),
 		Connections:     s.cfg.ConnMgr.ConnectedCount(),
 		Proxy:           config.ActiveConfig().Proxy,
 		Difficulty:      getDifficultyRatio(s.cfg.DAG.CurrentBits(), s.cfg.DAGParams),

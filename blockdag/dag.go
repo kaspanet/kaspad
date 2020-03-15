@@ -61,7 +61,7 @@ type BlockDAG struct {
 	// separate mutex.
 	db           database.DB
 	dagParams    *dagconfig.Params
-	timeSource   MedianTimeSource
+	timeSource   TimeSource
 	sigCache     *txscript.SigCache
 	indexManager IndexManager
 	genesis      *blockNode
@@ -1265,14 +1265,14 @@ func (dag *BlockDAG) isCurrent() bool {
 		dagTimestamp = selectedTip.timestamp
 	}
 	dagTime := time.Unix(dagTimestamp, 0)
-	return dag.AdjustedTime().Sub(dagTime) <= isDAGCurrentMaxDiff
+	return dag.Now().Sub(dagTime) <= isDAGCurrentMaxDiff
 }
 
-// AdjustedTime returns the adjusted time according to
-// dag.timeSource. See MedianTimeSource.AdjustedTime for
+// Now returns the adjusted time according to
+// dag.timeSource. See TimeSource.Now for
 // more details.
-func (dag *BlockDAG) AdjustedTime() time.Time {
-	return dag.timeSource.AdjustedTime()
+func (dag *BlockDAG) Now() time.Time {
+	return dag.timeSource.Now()
 }
 
 // IsCurrent returns whether or not the DAG believes it is current. Several
@@ -1811,7 +1811,7 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 }
 
 func (dag *BlockDAG) addDelayedBlock(block *util.Block, delay time.Duration) error {
-	processTime := dag.AdjustedTime().Add(delay)
+	processTime := dag.Now().Add(delay)
 	log.Debugf("Adding block to delayed blocks queue (block hash: %s, process time: %s)", block.Hash().String(), processTime)
 	delayedBlock := &delayedBlock{
 		block:       block,
@@ -1829,7 +1829,7 @@ func (dag *BlockDAG) processDelayedBlocks() error {
 	// Check if the delayed block with the earliest process time should be processed
 	for dag.delayedBlocksQueue.Len() > 0 {
 		earliestDelayedBlockProcessTime := dag.peekDelayedBlock().processTime
-		if earliestDelayedBlockProcessTime.After(dag.AdjustedTime()) {
+		if earliestDelayedBlockProcessTime.After(dag.Now()) {
 			break
 		}
 		delayedBlock := dag.popDelayedBlock()
@@ -1895,13 +1895,9 @@ type Config struct {
 	// This field is required.
 	DAGParams *dagconfig.Params
 
-	// TimeSource defines the median time source to use for things such as
+	// TimeSource defines the time source to use for things such as
 	// block processing and determining whether or not the DAG is current.
-	//
-	// The caller is expected to keep a reference to the time source as well
-	// and add time samples from other peers on the network so the local
-	// time is adjusted to be in agreement with other peers.
-	TimeSource MedianTimeSource
+	TimeSource TimeSource
 
 	// SigCache defines a signature cache to use when when validating
 	// signatures. This is typically most useful when individual

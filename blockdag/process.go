@@ -264,7 +264,7 @@ func (dag *BlockDAG) maxDelayOfParents(parentHashes []*daghash.Hash) (delay time
 	for _, parentHash := range parentHashes {
 		if delayedParent, exists := dag.delayedBlocks[*parentHash]; exists {
 			isDelayed = true
-			parentDelay := delayedParent.processTime.Sub(dag.AdjustedTime())
+			parentDelay := delayedParent.processTime.Sub(dag.Now())
 			if parentDelay > delay {
 				delay = parentDelay
 			}

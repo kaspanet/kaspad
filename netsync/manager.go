@@ -13,7 +13,6 @@ import (
 
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/mempool"
 	peerpkg "github.com/kaspanet/kaspad/peer"
 	"github.com/kaspanet/kaspad/util"
@@ -228,7 +227,7 @@ func (sm *SyncManager) startSync() {
 }
 
 func (sm *SyncManager) shouldQueryPeerSelectedTips() bool {
-	return sm.dag.AdjustedTime().Sub(sm.dag.CalcPastMedianTime()) > minDAGTimeDelay
+	return sm.dag.Now().Sub(sm.dag.CalcPastMedianTime()) > minDAGTimeDelay
 }
 
 func queueMsgGetSelectedTip(peer *peerpkg.Peer, state *peerSyncState) {
@@ -495,18 +494,12 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		// rejected as opposed to something actually going wrong, so log
 		// it as such. Otherwise, something really did go wrong, so log
 		// it as an actual error.
-		if errors.As(err, &blockdag.RuleError{}) {
-			log.Infof("Rejected block %s from %s: %s", blockHash,
-				peer, err)
-		} else {
-			log.Errorf("Failed to process block %s: %s",
-				blockHash, err)
+		if !errors.As(err, &blockdag.RuleError{}) {
+			panic(errors.Wrapf(err, "Failed to process block %s",
+				blockHash))
 		}
-		var dbErr database.Error
-		if ok := errors.As(err, &dbErr); ok && dbErr.ErrorCode ==
-			database.ErrCorruption {
-			panic(dbErr)
-		}
+		log.Infof("Rejected block %s from %s: %s", blockHash,
+			peer, err)
 
 		// Convert the error into an appropriate reject message and
 		// send it.

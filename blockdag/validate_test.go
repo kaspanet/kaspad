@@ -169,6 +169,7 @@ func TestCheckBlockSanity(t *testing.T) {
 		return
 	}
 	defer teardownFunc()
+	dag.timeSource = newFakeTimeSource(time.Now())
 
 	block := util.NewBlock(&Block100000)
 	if len(block.Transactions()) < 3 {
@@ -492,8 +493,7 @@ func TestCheckBlockSanity(t *testing.T) {
 
 	blockInTheFuture := Block100000
 	expectedDelay := 10 * time.Second
-	now := time.Unix(time.Now().Unix(), 0)
-	blockInTheFuture.Header.Timestamp = now.Add(time.Duration(dag.TimestampDeviationTolerance)*time.Second + expectedDelay)
+	blockInTheFuture.Header.Timestamp = dag.timeSource.Now().Add(time.Duration(dag.TimestampDeviationTolerance)*time.Second + expectedDelay)
 	delay, err = dag.checkBlockSanity(util.NewBlock(&blockInTheFuture), BFNoPoWCheck)
 	if err != nil {
 		t.Errorf("CheckBlockSanity: %v", err)

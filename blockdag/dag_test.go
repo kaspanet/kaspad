@@ -561,7 +561,7 @@ func TestNew(t *testing.T) {
 	config := &Config{
 		DAGParams:  &dagconfig.SimnetParams,
 		DB:         db,
-		TimeSource: NewMedianTime(),
+		TimeSource: NewTimeSource(),
 		SigCache:   txscript.NewSigCache(1000),
 	}
 	_, err = New(config)
@@ -603,7 +603,7 @@ func TestAcceptingInInit(t *testing.T) {
 	config := &Config{
 		DAGParams:  &dagconfig.SimnetParams,
 		DB:         db,
-		TimeSource: NewMedianTime(),
+		TimeSource: NewTimeSource(),
 		SigCache:   txscript.NewSigCache(1000),
 	}
 	dag, err := New(config)

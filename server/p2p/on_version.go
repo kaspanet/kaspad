@@ -11,10 +11,6 @@ import (
 // and is used to negotiate the protocol version details as well as kick start
 // the communications.
 func (sp *Peer) OnVersion(_ *peer.Peer, msg *wire.MsgVersion) {
-	// Add the remote peer time as a sample for creating an offset against
-	// the local clock to keep the network time in sync.
-	sp.server.TimeSource.AddTimeSample(sp.Addr(), msg.Timestamp)
-
 	// Signal the sync manager this peer is a new sync candidate.
 	sp.server.SyncManager.NewPeer(sp.Peer)
 
