@@ -192,7 +192,8 @@ func TestCheckBlockSanity(t *testing.T) {
 	if !errors.As(err, &ruleErr) {
 		t.Errorf("CheckBlockSanity: wrong error returned, expect RuleError, got %T", err)
 	} else if ruleErr.ErrorCode != ErrTransactionsNotSorted {
-		t.Errorf("CheckBlockSanity: wrong error returned, expect ErrTransactionsNotSorted, got %v, err %s", ruleErr.ErrorCode, err)
+		t.Errorf("CheckBlockSanity: wrong error returned, expect ErrTransactionsNotSorted, got"+
+			" %v, err %s", ruleErr.ErrorCode, err)
 	}
 	if delay != 0 {
 		t.Errorf("CheckBlockSanity: unexpected return %s delay", delay)
@@ -493,7 +494,8 @@ func TestCheckBlockSanity(t *testing.T) {
 
 	blockInTheFuture := Block100000
 	expectedDelay := 10 * time.Second
-	blockInTheFuture.Header.Timestamp = dag.timeSource.Now().Add(time.Duration(dag.TimestampDeviationTolerance)*time.Second + expectedDelay)
+	deviationTolerance := time.Duration(dag.TimestampDeviationTolerance*uint64(dag.targetTimePerBlock)) * time.Second
+	blockInTheFuture.Header.Timestamp = dag.Now().Add(deviationTolerance + expectedDelay)
 	delay, err = dag.checkBlockSanity(util.NewBlock(&blockInTheFuture), BFNoPoWCheck)
 	if err != nil {
 		t.Errorf("CheckBlockSanity: %v", err)

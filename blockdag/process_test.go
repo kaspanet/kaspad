@@ -95,7 +95,7 @@ func TestProcessDelayedBlocks(t *testing.T) {
 		t.Fatalf("error in PrepareBlockForTest: %s", err)
 	}
 
-	blockDelay := time.Duration(dag1.dagParams.TimestampDeviationTolerance+5) * time.Second
+	blockDelay := time.Duration(dag1.dagParams.TimestampDeviationTolerance*uint64(dag1.targetTimePerBlock)+5) * time.Second
 	delayedBlock.Header.Timestamp = initialTime.Add(blockDelay)
 
 	isOrphan, isDelayed, err := dag1.ProcessBlock(util.NewBlock(delayedBlock), BFNoPoWCheck)
@@ -194,10 +194,13 @@ func TestProcessDelayedBlocks(t *testing.T) {
 	}
 
 	// We advance the clock to the point where delayedBlock timestamp is valid.
-	secondsUntilDelayedBlockIsValid := delayedBlock.Header.Timestamp.Unix() - int64(dag2.TimestampDeviationTolerance) - dag2.Now().Unix() + 1
+	deviationTolerance := int64(dag2.TimestampDeviationTolerance) * dag2.targetTimePerBlock
+	secondsUntilDelayedBlockIsValid := delayedBlock.Header.Timestamp.Unix() - deviationTolerance - dag2.Now().Unix() + 1
 	dag2.timeSource = newFakeTimeSource(initialTime.Add(time.Duration(secondsUntilDelayedBlockIsValid) * time.Second))
 
-	blockAfterDelay, err := PrepareBlockForTest(dag2, []*daghash.Hash{dag2.dagParams.GenesisBlock.BlockHash()}, nil)
+	blockAfterDelay, err := PrepareBlockForTest(dag2,
+		[]*daghash.Hash{dag2.dagParams.GenesisBlock.BlockHash()},
+		nil)
 	if err != nil {
 		t.Fatalf("error in PrepareBlockForTest: %s", err)
 	}
