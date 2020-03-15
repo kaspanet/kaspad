@@ -94,7 +94,8 @@ func TestDifficulty(t *testing.T) {
 	addNode := func(parents blockSet, blockTime time.Time) *blockNode {
 		bluestParent := parents.bluest()
 		if blockTime == zeroTime {
-			blockTime = time.Unix(bluestParent.timestamp+1, 0)
+			blockTime = time.Unix(bluestParent.timestamp, 0)
+			blockTime = blockTime.Add(params.TargetTimePerBlock)
 		}
 		block, err := PrepareBlockForTest(dag, parents.hashes(), nil)
 		if err != nil {
@@ -167,7 +168,9 @@ func TestDifficulty(t *testing.T) {
 			sameBitsCount = 0
 		}
 	}
-	slowNode := addNode(blockSetFromSlice(tip), time.Unix(tip.timestamp+2, 0))
+	slowBlockTime := time.Unix(tip.timestamp, 0)
+	slowBlockTime = slowBlockTime.Add(params.TargetTimePerBlock + time.Second)
+	slowNode := addNode(blockSetFromSlice(tip), slowBlockTime)
 	if slowNode.bits != tip.bits {
 		t.Fatalf("The difficulty should only change when slowNode is in the past of a block bluest parent")
 	}
