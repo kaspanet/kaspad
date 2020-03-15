@@ -194,7 +194,7 @@ func TestProcessDelayedBlocks(t *testing.T) {
 	}
 
 	// We advance the clock to the point where delayedBlock timestamp is valid.
-	secondsUntilDelayedBlockIsValid := delayedBlock.Header.Timestamp.Unix() - int64(dag2.TimestampDeviationTolerance) - dag2.Now().Unix() + 1
+	secondsUntilDelayedBlockIsValid := delayedBlock.Header.Timestamp.Unix() - int64(dag2.TimestampDeviationTolerance)*dag2.targetTimePerBlock - dag2.Now().Unix() + 1
 	dag2.timeSource = newFakeTimeSource(initialTime.Add(time.Duration(secondsUntilDelayedBlockIsValid) * time.Second))
 
 	blockAfterDelay, err := PrepareBlockForTest(dag2, []*daghash.Hash{dag2.dagParams.GenesisBlock.BlockHash()}, nil)
