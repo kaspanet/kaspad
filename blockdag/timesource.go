@@ -1,7 +1,3 @@
-// Copyright (c) 2013-2014 The btcsuite developers
-// Use of this source code is governed by an ISC
-// license that can be found in the LICENSE file.
-
 package blockdag
 
 import (
@@ -17,9 +13,6 @@ type TimeSource interface {
 // timeSource provides an implementation of the TimeSource interface
 // that simply returns the current local time.
 type timeSource struct{}
-
-// Ensure the timeSource type implements the TimeSource interface.
-var _ TimeSource = (*timeSource)(nil)
 
 // Now returns the current local time, with one second precision.
 func (m *timeSource) Now() time.Time {
