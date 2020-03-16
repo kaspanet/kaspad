@@ -2,8 +2,11 @@ package flatfile
 
 import (
 	"container/list"
+	"fmt"
 	"hash/crc32"
 	"io"
+	"os"
+	"path/filepath"
 	"sync"
 )
 
@@ -124,4 +127,56 @@ type writeCursor struct {
 	// currentOffset is the offset in the current file where the next new
 	// data will be written.
 	currentOffset uint32
+}
+
+// newFlatFileStore returns a new flat file store with the current file number
+// and offset set and all fields initialized.
+func newFlatFileStore(basePath string, storeName string) *flatFileStore {
+	// Look for the end of the latest file to determine what the write cursor
+	// position is from the viewpoint of the flat files on disk.
+	fileNumber, fileOffset := scanFlatFiles(basePath, storeName)
+
+	store := &flatFileStore{
+		basePath:         basePath,
+		storeName:        storeName,
+		openFiles:        make(map[uint32]*lockableFile),
+		openFilesLRU:     list.New(),
+		fileNumToLRUElem: make(map[uint32]*list.Element),
+
+		writeCursor: &writeCursor{
+			currentFile:       &lockableFile{},
+			currentFileNumber: uint32(fileNumber),
+			currentOffset:     fileOffset,
+		},
+	}
+	return store
+}
+
+// scanFlatFiles searches the database directory for all flat files for a given
+// store to find the end of the most recent file. This position is considered
+// the current write cursor.
+func scanFlatFiles(dbPath string, storeName string) (fileNumber uint32, fileLength uint32) {
+	for {
+		filePath := flatFilePath(dbPath, storeName, fileNumber)
+		stat, err := os.Stat(filePath)
+		if err != nil {
+			break
+		}
+		fileLength = uint32(stat.Size())
+
+		fileNumber++
+	}
+
+	log.Tracef("Scan for store '%s' found latest file #%d with length %d",
+		storeName, fileNumber, fileLength)
+	return fileNumber, fileLength
+}
+
+// flatFilePath return the file path for the provided store's flat file number.
+func flatFilePath(dbPath string, storeName string, fileNumber uint32) string {
+	// Choose 9 digits of precision for the filenames. 9 digits provide
+	// 10^9 files @ 512MiB each a total of ~476.84PiB.
+
+	fileName := fmt.Sprintf("%s-%09d.fdb", storeName, fileNumber)
+	return filepath.Join(dbPath, fileName)
 }
