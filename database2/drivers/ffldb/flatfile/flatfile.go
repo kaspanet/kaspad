@@ -88,10 +88,10 @@ type flatFileStore struct {
 	// Due to the high performance and multi-read concurrency requirements,
 	// write locks should only be held for the minimum time necessary.
 	openFilesMutex         sync.RWMutex
+	openFiles              map[uint32]*lockableFile
 	lruMutex               sync.Mutex
 	openFilesLRU           *list.List // Contains uint32 file numbers.
 	fileNumberToLRUElement map[uint32]*list.Element
-	openFiles              map[uint32]*lockableFile
 
 	// writeCursor houses the state for the current file and location that
 	// new data is written to.
