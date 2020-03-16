@@ -1,4 +1,4 @@
-package ffldb
+package bucket
 
 import (
 	"reflect"
