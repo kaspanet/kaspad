@@ -6,10 +6,6 @@ type Database interface {
 	Rollback() error
 
 	Commit() error
-
-	Get(key string) ([]byte, error)
-
-	Put(key string, value []byte) error
 }
 
 func DB() (Database, error) {
