@@ -62,7 +62,8 @@ func (s *flatFileStore) rollback(targetFileNumber uint32, targetFileOffset uint3
 		cursor.currentFile.Unlock()
 	}
 	for cursor.currentFileNumber > targetFileNumber {
-		if err := s.deleteFile(cursor.currentFileNumber); err != nil {
+		err := s.deleteFile(cursor.currentFileNumber)
+		if err != nil {
 			log.Warnf("ROLLBACK: Failed to delete file "+
 				"number %d in store '%s': %s", cursor.currentFileNumber,
 				s.storeName, err)

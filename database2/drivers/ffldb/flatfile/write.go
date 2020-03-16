@@ -78,20 +78,31 @@ func (s *flatFileStore) write(data []byte) (*flatFileLocation, error) {
 
 	// Data length.
 	byteOrder.PutUint32(scratch[:], dataLength)
-	if err := s.writeData(scratch[:], "data length"); err != nil {
+	err := s.writeData(scratch[:], "data length")
+	if err != nil {
 		return nil, err
 	}
 	_, _ = hasher.Write(scratch[:])
 
 	// Data.
-	if err := s.writeData(data[:], "data"); err != nil {
+	err = s.writeData(data[:], "data")
+	if err != nil {
 		return nil, err
 	}
 	_, _ = hasher.Write(data)
 
 	// Castagnoli CRC-32 as a checksum of all the previous.
-	if err := s.writeData(hasher.Sum(nil), "checksum"); err != nil {
+	err = s.writeData(hasher.Sum(nil), "checksum")
+	if err != nil {
 		return nil, err
+	}
+
+	// Sync the file to disk.
+	err = cursor.currentFile.file.Sync()
+	if err != nil {
+		return nil, errors.Errorf("failed to sync file %d "+
+			"in store '%s': %s", cursor.currentFileNumber, s.storeName,
+			err)
 	}
 
 	location := &flatFileLocation{
