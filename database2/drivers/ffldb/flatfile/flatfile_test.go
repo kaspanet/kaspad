@@ -1,6 +1,39 @@
 package flatfile
 
-import "testing"
+import (
+	"os"
+	"reflect"
+	"testing"
+)
+
+func TestFlatFileStoreSanity(t *testing.T) {
+	// Open a test store
+	path := os.TempDir()
+	name := "test"
+	store := newFlatFileStore(path, name)
+
+	// Write something to the store
+	writeData := []byte("Hello world!")
+	location, err := store.write(writeData)
+	if err != nil {
+		t.Fatalf("TestFlatFileStoreSanity: write returned "+
+			"unexpected error: %s", err)
+	}
+
+	// Read from the location previously written to
+	readData, err := store.read(location)
+	if err != nil {
+		t.Fatalf("TestFlatFileStoreSanity: read returned "+
+			"unexpected error: %s", err)
+	}
+
+	// Make sure that the written data and the read data are equal
+	if !reflect.DeepEqual(readData, writeData) {
+		t.Fatalf("TestFlatFileStoreSanity: read data and "+
+			"write data are not equal. Wrote: %s, read: %s",
+			string(writeData), string(readData))
+	}
+}
 
 func TestFlatFilePath(t *testing.T) {
 	tests := []struct {

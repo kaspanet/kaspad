@@ -13,7 +13,7 @@ import (
 // within the maximum allowed open files limit.
 //
 // Format: <data length><data><checksum>
-func (s *flatFileStore) read(location flatFileLocation) ([]byte, error) {
+func (s *flatFileStore) read(location *flatFileLocation) ([]byte, error) {
 	// Get the referenced flat file handle opening the file as needed. The
 	// function also handles closing files as needed to avoid going over the
 	// max allowed open files.
