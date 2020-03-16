@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/database2"
 	"github.com/pkg/errors"
 	"net"
 	"net/http"
@@ -122,6 +123,22 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 		// Ensure the database is sync'd and closed on shutdown.
 		kasdLog.Infof("Gracefully shutting down the database...")
 		db.Close()
+	}()
+
+	// Open the database
+	dbPath := filepath.Join(cfg.DataDir, "db")
+	kasdLog.Infof("Loading database from '%s'", dbPath)
+	err = database2.Open(dbPath)
+	if err != nil {
+		kasdLog.Errorf("%s", err)
+		return err
+	}
+	defer func() {
+		kasdLog.Infof("Gracefully shutting down the database...")
+		err := database2.Close()
+		if err != nil {
+			kasdLog.Infof("Failed to close the database: %s", err)
+		}
 	}()
 
 	// Return now if an interrupt signal was triggered.

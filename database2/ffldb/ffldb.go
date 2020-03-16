@@ -18,7 +18,7 @@ func Open(path string) *Database {
 }
 
 func (db *Database) Close() error {
-	return db.Close()
+	return nil
 }
 
 func (db *Database) Begin() *Database {
