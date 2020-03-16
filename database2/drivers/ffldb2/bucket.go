@@ -1,4 +1,4 @@
-package dbaccess
+package ffldb2
 
 var separator = []byte("/")
 
