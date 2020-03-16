@@ -2,18 +2,22 @@ package ffldb
 
 import (
 	"github.com/kaspanet/kaspad/database2/ffldb/flatfile"
+	"github.com/kaspanet/kaspad/database2/ffldb/leveldb"
 )
 
 const blockStoreName = "block"
 
 type Database struct {
-	blockStore *flatfile.FlatFileStore
+	blockStore    *flatfile.FlatFileStore
+	metadataStore *leveldb.LevelDB
 }
 
 func Open(path string) *Database {
 	blockStore := flatfile.NewFlatFileStore(path, blockStoreName)
+	metadataStore := leveldb.NewLevelDB(path)
 	return &Database{
-		blockStore: blockStore,
+		blockStore:    blockStore,
+		metadataStore: metadataStore,
 	}
 }
 
