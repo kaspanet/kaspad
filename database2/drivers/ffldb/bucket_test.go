@@ -1,4 +1,4 @@
-package ffldb2
+package ffldb
 
 import (
 	"reflect"
