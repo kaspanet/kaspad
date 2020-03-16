@@ -27,7 +27,7 @@ import (
 //
 // Therefore, any errors are simply logged at a warning level rather than being
 // returned since there is nothing more that could be done about it anyways.
-func (s *flatFileStore) rollback(targetFileNumber uint32, targetFileOffset uint32) {
+func (s *FlatFileStore) rollback(targetFileNumber uint32, targetFileOffset uint32) {
 	// Grab the write cursor mutex since it is modified throughout this
 	// function.
 	cursor := s.writeCursor
@@ -107,7 +107,7 @@ func (s *flatFileStore) rollback(targetFileNumber uint32, targetFileOffset uint3
 // deleteFile removes the file for the passed flat file number. The file must
 // already be closed and it is the responsibility of the caller to do any
 // other state cleanup necessary.
-func (s *flatFileStore) deleteFile(fileNumber uint32) error {
+func (s *FlatFileStore) deleteFile(fileNumber uint32) error {
 	filePath := flatFilePath(s.basePath, s.storeName, fileNumber)
 
 	return os.Remove(filePath)

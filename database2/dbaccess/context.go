@@ -2,17 +2,18 @@ package dbaccess
 
 import (
 	"github.com/kaspanet/kaspad/database2"
+	"github.com/kaspanet/kaspad/database2/ffldb"
 )
 
 type Context interface {
-	db() (database2.Database, error)
+	db() (*ffldb.Database, error)
 }
 
 type noTxContext struct{}
 
 var noTxContextSingleton = &noTxContext{}
 
-func (*noTxContext) db() (database2.Database, error) {
+func (*noTxContext) db() (*ffldb.Database, error) {
 	return database2.DB()
 }
 
@@ -23,10 +24,10 @@ func NoTx() Context {
 
 // TxContext represents a database context with an attached database transaction
 type TxContext struct {
-	dbInstance database2.Database
+	dbInstance *ffldb.Database
 }
 
-func (ctx *TxContext) db() (database2.Database, error) {
+func (ctx *TxContext) db() (*ffldb.Database, error) {
 	return ctx.dbInstance, nil
 }
 

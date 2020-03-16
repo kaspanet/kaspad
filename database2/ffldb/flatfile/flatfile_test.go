@@ -10,7 +10,7 @@ func TestFlatFileStoreSanity(t *testing.T) {
 	// Open a test store
 	path := os.TempDir()
 	name := "test"
-	store := newFlatFileStore(path, name)
+	store := NewFlatFileStore(path, name)
 
 	// Write something to the store
 	writeData := []byte("Hello world!")
