@@ -1,7 +1,6 @@
 package flatfile
 
 import (
-	"encoding/binary"
 	"github.com/pkg/errors"
 	"hash/crc32"
 	"os"
@@ -34,7 +33,7 @@ func (s *flatFileStore) read(location flatFileLocation) ([]byte, error) {
 
 	// Calculate the checksum of the read data and ensure it matches the
 	// serialized checksum.
-	serializedChecksum := binary.BigEndian.Uint32(data[n-4:])
+	serializedChecksum := crc32ByteOrder.Uint32(data[n-4:])
 	calculatedChecksum := crc32.Checksum(data[:n-4], castagnoli)
 	if serializedChecksum != calculatedChecksum {
 		return nil, errors.Errorf("data in store '%s' does not match "+

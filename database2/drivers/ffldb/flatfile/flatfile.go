@@ -31,6 +31,9 @@ var (
 	// integer values.
 	byteOrder = binary.LittleEndian
 
+	// crc32ByteOrder is the byte order used for CRC-32 checksums.
+	crc32ByteOrder = binary.BigEndian
+
 	// castagnoli houses the Catagnoli polynomial used for CRC-32 checksums.
 	castagnoli = crc32.MakeTable(crc32.Castagnoli)
 )
