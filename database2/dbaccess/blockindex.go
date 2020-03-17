@@ -8,7 +8,7 @@ func StoreBlockIndexBlock(context Context, blockIndexBlock *dbmodel.DBBlockIndex
 		return err
 	}
 	serialized := serializeBlockIndexBlock(blockIndexBlock)
-	return db.Put("kaka", serialized)
+	return db.Put([]byte("kaka"), serialized)
 }
 
 func serializeBlockIndexBlock(blockIndexBlock *dbmodel.DBBlockIndexBlock) []byte {

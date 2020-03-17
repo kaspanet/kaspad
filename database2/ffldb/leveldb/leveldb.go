@@ -44,3 +44,11 @@ func NewLevelDB(path string, storeName string) (*LevelDB, error) {
 func (db *LevelDB) Close() error {
 	return db.ldb.Close()
 }
+
+func (db *LevelDB) Put(key []byte, value []byte) error {
+	return db.ldb.Put(key, value, nil)
+}
+
+func (db *LevelDB) Get(key []byte) ([]byte, error) {
+	return db.ldb.Get(key, nil)
+}

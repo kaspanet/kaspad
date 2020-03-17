@@ -52,10 +52,10 @@ func (db *Database) BucketKey(buckets ...[]byte) []byte {
 	return bucket.BuildBucketKey(buckets...)
 }
 
-func (db *Database) Put(key string, value []byte) error {
-	return nil
+func (db *Database) Put(key []byte, value []byte) error {
+	return db.metadataStore.Put(key, value)
 }
 
-func (db *Database) Get(key string) ([]byte, error) {
-	return nil, nil
+func (db *Database) Get(key []byte) ([]byte, error) {
+	return db.metadataStore.Get(key)
 }
