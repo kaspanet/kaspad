@@ -6,9 +6,9 @@ import (
 )
 
 // db is the kaspad database
-var db *ffldb.Database
+var db *ffldb.FFLDB
 
-func DB() (*ffldb.Database, error) {
+func DB() (*ffldb.FFLDB, error) {
 	if db == nil {
 		return nil, errors.New("database is not open")
 	}
