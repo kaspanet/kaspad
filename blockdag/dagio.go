@@ -12,6 +12,7 @@ import (
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/pkg/errors"
 	"io"
+	"math"
 	"sync"
 
 	"github.com/kaspanet/kaspad/database"
@@ -215,6 +216,36 @@ func outpointKey(outpoint wire.Outpoint) *[]byte {
 	copy(*key, outpoint.TxID[:])
 	putVLQ((*key)[daghash.HashSize:], idx)
 	return key
+}
+
+func serializeOutpoint(w io.Writer, outpoint *wire.Outpoint) error {
+	_, err := w.Write(outpoint.TxID[:])
+	if err != nil {
+		return err
+	}
+
+	return wire.WriteVarInt(w, uint64(outpoint.Index))
+}
+
+func deserializeOutpointTag(r io.Reader) (*wire.Outpoint, error) {
+	outpoint := &wire.Outpoint{}
+	_, err := r.Read(outpoint.TxID[:])
+	if err != nil {
+		return nil, err
+	}
+
+	idx, err := wire.ReadVarInt(r)
+	if err != nil {
+		return nil, err
+	}
+
+	if idx > math.MaxUint32 {
+		return nil, errors.Errorf("%d is not a valid outpoint index", idx)
+	}
+
+	outpoint.Index = uint32(idx)
+
+	return outpoint, nil
 }
 
 // recycleOutpointKey puts the provided byte slice, which should have been
