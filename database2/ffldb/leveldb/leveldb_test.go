@@ -64,6 +64,7 @@ func TestLevelDBTransactionSanity(t *testing.T) {
 		}
 	}()
 
+	// Case 1. Write in tx and then read directly from the DB
 	// Begin a new transaction
 	tx, err := ldb.Begin()
 	if err != nil {
@@ -80,6 +81,14 @@ func TestLevelDBTransactionSanity(t *testing.T) {
 			"returned unexpected error: %s", err)
 	}
 
+	// Get from the key previously put to. Since the tx is not
+	// yet committed, this should fail.
+	getData, err := ldb.Get(key)
+	if err != nil {
+		t.Fatalf("TestLevelDBTransactionSanity: Get "+
+			"returned unexpected error: %s", err)
+	}
+
 	// Commit the transaction
 	err = tx.Commit()
 	if err != nil {
@@ -87,10 +96,49 @@ func TestLevelDBTransactionSanity(t *testing.T) {
 			"returned unexpected error: %s", err)
 	}
 
-	// Get from the key previously put to
-	getData, err := ldb.Get(key)
+	// Get from the key previously put to. Now that the tx was
+	// committed, this should succeed.
+	getData, err = ldb.Get(key)
 	if err != nil {
 		t.Fatalf("TestLevelDBTransactionSanity: Get "+
+			"returned unexpected error: %s", err)
+	}
+
+	// Make sure that the put data and the get data are equal
+	if !reflect.DeepEqual(getData, putData) {
+		t.Fatalf("TestLevelDBTransactionSanity: get "+
+			"data and put data are not equal. Put: %s, got: %s",
+			string(putData), string(getData))
+	}
+
+	// Case 2. Write directly to the DB and then read from a tx
+	// Put something into the db
+	key = []byte("key2")
+	putData = []byte("Goodbye world!")
+	err = ldb.Put(key, putData)
+	if err != nil {
+		t.Fatalf("TestLevelDBTransactionSanity: Put "+
+			"returned unexpected error: %s", err)
+	}
+
+	// Begin a new transaction
+	tx, err = ldb.Begin()
+	if err != nil {
+		t.Fatalf("TestLevelDBTransactionSanity: Begin "+
+			"unexpectedly failed: %s", err)
+	}
+
+	// Get from the key previously put to
+	getData, err = tx.Get(key)
+	if err != nil {
+		t.Fatalf("TestLevelDBTransactionSanity: Get "+
+			"returned unexpected error: %s", err)
+	}
+
+	// Rollback the transaction
+	err = tx.Rollback()
+	if err != nil {
+		t.Fatalf("TestLevelDBTransactionSanity: Rollback "+
 			"returned unexpected error: %s", err)
 	}
 
