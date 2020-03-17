@@ -20,7 +20,13 @@ func Open(path string) error {
 	if db != nil {
 		return errors.New("database is already open")
 	}
-	db = ffldb.Open(path)
+
+	openedDB, err := ffldb.Open(path)
+	if err != nil {
+		return err
+	}
+
+	db = openedDB
 	return nil
 }
 

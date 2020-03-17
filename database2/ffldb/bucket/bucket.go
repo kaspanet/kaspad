@@ -2,7 +2,7 @@ package bucket
 
 var separator = []byte("/")
 
-func buildKey(buckets ...[]byte) []byte {
+func BuildKey(buckets ...[]byte) []byte {
 	size := (len(buckets) - 1) * len(separator) // initialized to include the size of the separators
 	for _, bucket := range buckets {
 		size += len(bucket)
@@ -23,8 +23,8 @@ func buildKey(buckets ...[]byte) []byte {
 	return key
 }
 
-func buildBucketKey(buckets ...[]byte) []byte {
-	key := buildKey(buckets...)
+func BuildBucketKey(buckets ...[]byte) []byte {
+	key := BuildKey(buckets...)
 	size := len(key) + len(separator)
 	bucketKey := make([]byte, size)
 

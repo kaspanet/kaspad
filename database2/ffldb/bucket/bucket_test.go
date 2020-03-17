@@ -21,7 +21,7 @@ func TestBuildBucketKey(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		resultKey := buildBucketKey(test.buckets...)
+		resultKey := BuildBucketKey(test.buckets...)
 		if !reflect.DeepEqual(resultKey, test.expectedKey) {
 			t.Errorf("TestBuildBucketKey: got wrong key. Want: %s, got: %s",
 				string(test.expectedKey), string(resultKey))
