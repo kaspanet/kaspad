@@ -139,13 +139,6 @@ type writeCursor struct {
 	currentOffset uint32
 }
 
-// flatFileLocation identifies a particular flat file location.
-type flatFileLocation struct {
-	fileNumber uint32
-	fileOffset uint32
-	fileLength uint32
-}
-
 // NewFlatFileStore returns a new flat file store with the current file number
 // and offset set and all fields initialized.
 func NewFlatFileStore(basePath string, storeName string) *FlatFileStore {

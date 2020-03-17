@@ -12,6 +12,8 @@ const metadataStoreName = "metadata"
 type Database interface {
 	Put(key []byte, value []byte) error
 	Get(key []byte) ([]byte, error)
+	AppendBlock(data []byte) ([]byte, error)
+	RetrieveBlock(location []byte) ([]byte, error)
 }
 
 type FFLDB struct {
@@ -45,8 +47,17 @@ func (db *FFLDB) Get(key []byte) ([]byte, error) {
 	return db.metadataStore.Get(key)
 }
 
+func (db *FFLDB) AppendBlock(data []byte) ([]byte, error) {
+	return appendBlock(db.blockStore, data)
+}
+
+func (db *FFLDB) RetrieveBlock(serializedLocation []byte) ([]byte, error) {
+	return retrieveBlock(db.blockStore, serializedLocation)
+}
+
 type Transaction struct {
-	ldbTx *leveldb.LevelDBTransaction
+	ldbTx      *leveldb.LevelDBTransaction
+	blockStore *flatfile.FlatFileStore
 }
 
 func (db *FFLDB) Begin() (*Transaction, error) {
@@ -56,7 +67,8 @@ func (db *FFLDB) Begin() (*Transaction, error) {
 	}
 
 	transaction := &Transaction{
-		ldbTx: ldbTx,
+		ldbTx:      ldbTx,
+		blockStore: db.blockStore,
 	}
 	return transaction, nil
 }
@@ -69,12 +81,36 @@ func (tx *Transaction) Get(key []byte) ([]byte, error) {
 	return tx.ldbTx.Get(key)
 }
 
+func (tx *Transaction) AppendBlock(data []byte) ([]byte, error) {
+	return appendBlock(tx.blockStore, data)
+}
+
+func (tx *Transaction) RetrieveBlock(serializedLocation []byte) ([]byte, error) {
+	return retrieveBlock(tx.blockStore, serializedLocation)
+}
+
 func (tx *Transaction) Rollback() error {
 	return tx.ldbTx.Rollback()
 }
 
 func (tx *Transaction) Commit() error {
 	return tx.ldbTx.Commit()
+}
+
+func appendBlock(blockStore *flatfile.FlatFileStore, data []byte) ([]byte, error) {
+	location, err := blockStore.Write(data)
+	if err != nil {
+		return nil, err
+	}
+	return flatfile.SerializeLocation(location), nil
+}
+
+func retrieveBlock(blockStore *flatfile.FlatFileStore, serializedLocation []byte) ([]byte, error) {
+	location, err := flatfile.DeserializeLocation(serializedLocation)
+	if err != nil {
+		return nil, err
+	}
+	return blockStore.Read(location)
 }
 
 func Key(buckets ...[]byte) []byte {

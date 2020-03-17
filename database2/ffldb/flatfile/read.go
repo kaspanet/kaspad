@@ -6,14 +6,14 @@ import (
 	"os"
 )
 
-// read reads the specified flat file record and returns the data. It ensures
+// Read reads the specified flat file record and returns the data. It ensures
 // the integrity of the data by comparing the calculated checksum against the
 // one stored in the flat file. This function also automatically handles all
 // file management such as opening and closing files as necessary to stay
 // within the maximum allowed open files limit.
 //
 // Format: <data length><data><checksum>
-func (s *FlatFileStore) read(location *flatFileLocation) ([]byte, error) {
+func (s *FlatFileStore) Read(location *FlatFileLocation) ([]byte, error) {
 	// Get the referenced flat file handle opening the file as needed. The
 	// function also handles closing files as needed to avoid going over the
 	// max allowed open files.
@@ -22,7 +22,7 @@ func (s *FlatFileStore) read(location *flatFileLocation) ([]byte, error) {
 		return nil, err
 	}
 
-	data := make([]byte, location.fileLength)
+	data := make([]byte, location.dataLength)
 	n, err := flatFile.file.ReadAt(data, int64(location.fileOffset))
 	flatFile.RUnlock()
 	if err != nil {

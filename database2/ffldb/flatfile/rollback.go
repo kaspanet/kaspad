@@ -4,7 +4,7 @@ import (
 	"os"
 )
 
-// rollback rolls the flat files on disk back to the provided file number
+// Rollback rolls the flat files on disk back to the provided file number
 // and offset. This involves potentially deleting and truncating the files that
 // were partially written.
 //
@@ -27,7 +27,7 @@ import (
 //
 // Therefore, any errors are simply logged at a warning level rather than being
 // returned since there is nothing more that could be done about it anyways.
-func (s *FlatFileStore) rollback(targetFileNumber uint32, targetFileOffset uint32) {
+func (s *FlatFileStore) Rollback(targetFileNumber uint32, targetFileOffset uint32) {
 	// Grab the write cursor mutex since it is modified throughout this
 	// function.
 	cursor := s.writeCursor

@@ -7,7 +7,7 @@ import (
 	"syscall"
 )
 
-// write appends the specified rdata bytes to the store's write cursor location
+// Write appends the specified rdata bytes to the store's write cursor location
 // and increments it accordingly. When the data would exceed the max file size
 // for the current flat file, this function will close the current file, create
 // the next file, update the write cursor, and write the data to the new file.
@@ -16,7 +16,7 @@ import (
 // in the event of failure.
 //
 // Format: <data length><data><checksum>
-func (s *FlatFileStore) write(data []byte) (*flatFileLocation, error) {
+func (s *FlatFileStore) Write(data []byte) (*FlatFileLocation, error) {
 	// Compute how many bytes will be written.
 	// 4 bytes for data length + length of the data + 4 bytes for checksum.
 	dataLength := uint32(len(data))
@@ -105,10 +105,10 @@ func (s *FlatFileStore) write(data []byte) (*flatFileLocation, error) {
 			err)
 	}
 
-	location := &flatFileLocation{
+	location := &FlatFileLocation{
 		fileNumber: cursor.currentFileNumber,
 		fileOffset: originalOffset,
-		fileLength: fullLength,
+		dataLength: fullLength,
 	}
 	return location, nil
 }

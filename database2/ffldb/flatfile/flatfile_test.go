@@ -14,16 +14,16 @@ func TestFlatFileStoreSanity(t *testing.T) {
 
 	// Write something to the store
 	writeData := []byte("Hello world!")
-	location, err := store.write(writeData)
+	location, err := store.Write(writeData)
 	if err != nil {
-		t.Fatalf("TestFlatFileStoreSanity: write returned "+
+		t.Fatalf("TestFlatFileStoreSanity: Write returned "+
 			"unexpected error: %s", err)
 	}
 
 	// Read from the location previously written to
-	readData, err := store.read(location)
+	readData, err := store.Read(location)
 	if err != nil {
-		t.Fatalf("TestFlatFileStoreSanity: read returned "+
+		t.Fatalf("TestFlatFileStoreSanity: Read returned "+
 			"unexpected error: %s", err)
 	}
 
