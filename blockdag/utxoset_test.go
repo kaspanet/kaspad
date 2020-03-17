@@ -137,7 +137,7 @@ func TestUTXODiffRules(t *testing.T) {
 	// For each of the following test cases, we will:
 	// this.diffFrom(other) and compare it to expectedDiffFromResult
 	// this.WithDiff(other) and compare it to expectedWithDiffResult
-	// this.WithDiffInPlace(other) and compare it to expectedWithDiffResult
+	// this.withDiffInPlace(other) and compare it to expectedWithDiffResult
 	//
 	// Note: an expected nil result means that we expect the respective operation to fail
 	// See the following spreadsheet for a summary of all test-cases:
@@ -593,21 +593,21 @@ func TestUTXODiffRules(t *testing.T) {
 				"Expected: \"%v\", got: \"%v\".", test.name, expectedWithDiffResult, withDiffResult)
 		}
 
-		// Repeat WithDiff check this time using WithDiffInPlace
+		// Repeat WithDiff check this time using withDiffInPlace
 		thisClone := this.clone()
-		err = thisClone.WithDiffInPlace(other)
+		err = thisClone.withDiffInPlace(other)
 
-		// Test whether WithDiffInPlace returned an error
+		// Test whether withDiffInPlace returned an error
 		isWithDiffInPlaceOk := err == nil
 		expectedIsWithDiffInPlaceOk := expectedWithDiffResult != nil
 		if isWithDiffInPlaceOk != expectedIsWithDiffInPlaceOk {
-			t.Errorf("unexpected WithDiffInPlace error in test \"%s\". "+
+			t.Errorf("unexpected withDiffInPlace error in test \"%s\". "+
 				"Expected: \"%t\", got: \"%t\".", test.name, expectedIsWithDiffInPlaceOk, isWithDiffInPlaceOk)
 		}
 
-		// If not error, test the WithDiffInPlace result
+		// If not error, test the withDiffInPlace result
 		if isWithDiffInPlaceOk && !thisClone.equal(expectedWithDiffResult) {
-			t.Errorf("unexpected WithDiffInPlace result in test \"%s\". "+
+			t.Errorf("unexpected withDiffInPlace result in test \"%s\". "+
 				"Expected: \"%v\", got: \"%v\".", test.name, expectedWithDiffResult, thisClone)
 		}
 

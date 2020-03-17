@@ -1202,8 +1202,8 @@ func (dag *BlockDAG) restoreUTXO(node *blockNode) (UTXOSet, error) {
 		if err != nil {
 			return nil, err
 		}
-		// Use WithDiffInPlace, otherwise copying the diffs again and again create a polynomial overhead
-		err = accumulatedDiff.WithDiffInPlace(diff)
+		// Use withDiffInPlace, otherwise copying the diffs again and again create a polynomial overhead
+		err = accumulatedDiff.withDiffInPlace(diff)
 		if err != nil {
 			return nil, err
 		}
