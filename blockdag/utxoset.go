@@ -301,9 +301,9 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	return &result, nil
 }
 
-// WithDiffInPlace applies provided diff to this diff in-place, that would be the result if
+// withDiffInPlace applies provided diff to this diff in-place, that would be the result if
 // first d, and than diff were applied to the same base
-func (d *UTXODiff) WithDiffInPlace(diff *UTXODiff) error {
+func (d *UTXODiff) withDiffInPlace(diff *UTXODiff) error {
 	for outpoint, entryToRemove := range diff.toRemove {
 		if d.toAdd.containsWithBlueScore(outpoint, entryToRemove.blockBlueScore) {
 			// If already exists in toAdd with the same blueScore - remove from toAdd
@@ -313,7 +313,7 @@ func (d *UTXODiff) WithDiffInPlace(diff *UTXODiff) error {
 		if d.toRemove.contains(outpoint) {
 			// If already exists - this is an error
 			return ruleError(ErrWithDiff, fmt.Sprintf(
-				"WithDiffInPlace: outpoint %s both in d.toRemove and in diff.toRemove", outpoint))
+				"withDiffInPlace: outpoint %s both in d.toRemove and in diff.toRemove", outpoint))
 		}
 
 		// If not exists neither in toAdd nor in toRemove - add to toRemove
@@ -325,7 +325,7 @@ func (d *UTXODiff) WithDiffInPlace(diff *UTXODiff) error {
 			// If already exists in toRemove with the same blueScore - remove from toRemove
 			if d.toAdd.contains(outpoint) && !diff.toRemove.contains(outpoint) {
 				return ruleError(ErrWithDiff, fmt.Sprintf(
-					"WithDiffInPlace: outpoint %s both in d.toAdd and in diff.toAdd with no "+
+					"withDiffInPlace: outpoint %s both in d.toAdd and in diff.toAdd with no "+
 						"corresponding entry in diff.toRemove", outpoint))
 			}
 			d.toRemove.remove(outpoint)
@@ -336,7 +336,7 @@ func (d *UTXODiff) WithDiffInPlace(diff *UTXODiff) error {
 				!diff.toRemove.containsWithBlueScore(outpoint, existingEntry.blockBlueScore)) {
 			// If already exists - this is an error
 			return ruleError(ErrWithDiff, fmt.Sprintf(
-				"WithDiffInPlace: outpoint %s both in d.toAdd and in diff.toAdd", outpoint))
+				"withDiffInPlace: outpoint %s both in d.toAdd and in diff.toAdd", outpoint))
 		}
 
 		// If not exists neither in toAdd nor in toRemove, or exists in toRemove with different blueScore - add to toAdd
@@ -356,7 +356,7 @@ func (d *UTXODiff) WithDiffInPlace(diff *UTXODiff) error {
 func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 	clone := d.clone()
 
-	err := clone.WithDiffInPlace(diff)
+	err := clone.withDiffInPlace(diff)
 	if err != nil {
 		return nil, err
 	}
