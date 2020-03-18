@@ -103,10 +103,10 @@ func (tx *Transaction) Commit() error {
 	return tx.ldbTx.Commit()
 }
 
-func Key(buckets ...[]byte) []byte {
-	return bucket.BuildKey(buckets...)
+func Key(key []byte, buckets ...[]byte) []byte {
+	return bucket.BuildKey(key, buckets...)
 }
 
-func BucketKey(buckets ...[]byte) []byte {
-	return bucket.BuildBucketKey(buckets...)
+func BucketPath(buckets ...[]byte) []byte {
+	return bucket.BuildBucketPath(buckets...)
 }

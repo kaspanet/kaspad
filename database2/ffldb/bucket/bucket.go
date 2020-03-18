@@ -2,34 +2,31 @@ package bucket
 
 var separator = []byte("/")
 
-func BuildKey(buckets ...[]byte) []byte {
-	size := (len(buckets) - 1) * len(separator) // initialized to include the size of the separators
+func BuildKey(key []byte, buckets ...[]byte) []byte {
+	bucketPath := BuildBucketPath(buckets...)
+
+	fullKeyLength := len(bucketPath) + len(key)
+	fullKey := make([]byte, fullKeyLength)
+	copy(fullKey, bucketPath)
+	copy(fullKey[len(bucketPath):], key)
+
+	return fullKey
+}
+
+func BuildBucketPath(buckets ...[]byte) []byte {
+	bucketPathlength := (len(buckets)) * len(separator) // length of all the separators
 	for _, bucket := range buckets {
-		size += len(bucket)
+		bucketPathlength += len(bucket)
 	}
 
-	key := make([]byte, size)
+	bucketPath := make([]byte, bucketPathlength)
 	offset := 0
-	for i, bucket := range buckets {
-		copy(key[offset:], bucket)
+	for _, bucket := range buckets {
+		copy(bucketPath[offset:], bucket)
 		offset += len(bucket)
-		if i == len(buckets)-1 {
-			break
-		}
-		copy(key[offset:], separator)
+		copy(bucketPath[offset:], separator)
 		offset += len(separator)
 	}
 
-	return key
-}
-
-func BuildBucketKey(buckets ...[]byte) []byte {
-	key := BuildKey(buckets...)
-	size := len(key) + len(separator)
-	bucketKey := make([]byte, size)
-
-	copy(bucketKey, key)
-	copy(bucketKey[len(key):], separator)
-
-	return bucketKey
+	return bucketPath
 }
