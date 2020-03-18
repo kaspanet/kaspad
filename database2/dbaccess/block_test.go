@@ -4,15 +4,19 @@ import (
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/database2"
 	"github.com/kaspanet/kaspad/util"
-	"os"
+	"io/ioutil"
 	"reflect"
 	"testing"
 )
 
 func TestStoreBlock(t *testing.T) {
 	// Create a temp db to run tests against
-	path := os.TempDir()
-	err := database2.Open(path)
+	path, err := ioutil.TempDir("", "TestStoreBlock")
+	if err != nil {
+		t.Fatalf("TestStoreBlock: TempDir unexpectedly "+
+			"failed: %s", err)
+	}
+	err = database2.Open(path)
 	if err != nil {
 		t.Fatalf("TestStoreBlock: Open unexpectedly "+
 			"failed: %s", err)

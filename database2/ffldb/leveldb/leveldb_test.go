@@ -1,6 +1,7 @@
 package leveldb
 
 import (
+	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -8,7 +9,11 @@ import (
 
 func TestLevelDBSanity(t *testing.T) {
 	// Open a test db
-	path := os.TempDir()
+	path, err := ioutil.TempDir("", "TestLevelDBSanity")
+	if err != nil {
+		t.Fatalf("TestLevelDBSanity: TempDir unexpectedly "+
+			"failed: %s", err)
+	}
 	ldb, err := NewLevelDB(path)
 	if err != nil {
 		t.Fatalf("TestLevelDBSanity: NewLevelDB "+

@@ -1,14 +1,18 @@
 package flatfile
 
 import (
-	"os"
+	"io/ioutil"
 	"reflect"
 	"testing"
 )
 
 func TestFlatFileStoreSanity(t *testing.T) {
 	// Open a test store
-	path := os.TempDir()
+	path, err := ioutil.TempDir("", "TestFlatFileStoreSanity")
+	if err != nil {
+		t.Fatalf("TestFlatFileStoreSanity: TempDir unexpectedly "+
+			"failed: %s", err)
+	}
 	name := "test"
 	store := openFlatFileStore(path, name)
 
