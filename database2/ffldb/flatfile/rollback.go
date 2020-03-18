@@ -48,6 +48,14 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 		return nil
 	}
 
+	// If the rollback point is greater than the current write cursor then
+	// something has gone very wrong, e.g. database corruption.
+	if cursor.currentFileNumber < targetFileNumber ||
+		(cursor.currentFileNumber == targetFileNumber && cursor.currentOffset < targetFileOffset) {
+		return errors.Errorf("targetLocation is greater than the " +
+			"current write cursor")
+	}
+
 	// Regardless of any failures that happen below, reposition the write
 	// cursor to the old flat file and offset.
 	defer func() {

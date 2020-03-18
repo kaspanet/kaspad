@@ -7,6 +7,7 @@ package main
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/database2"
+	"github.com/kaspanet/kaspad/database2/dbaccess"
 	"github.com/pkg/errors"
 	"net"
 	"net/http"
@@ -126,9 +127,7 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 	}()
 
 	// Open the database
-	dbPath := filepath.Join(cfg.DataDir, "db")
-	kasdLog.Infof("Loading database from '%s'", dbPath)
-	err = database2.Open(dbPath)
+	err = openDB()
 	if err != nil {
 		kasdLog.Errorf("%s", err)
 		return err
@@ -312,6 +311,20 @@ func loadBlockDB() (database.DB, error) {
 
 	kasdLog.Info("Block database loaded")
 	return db, nil
+}
+
+func openDB() error {
+	dbPath := filepath.Join(cfg.DataDir, "db")
+	kasdLog.Infof("Loading database from '%s'", dbPath)
+	err := database2.Open(dbPath)
+	if err != nil {
+		return err
+	}
+	err = dbaccess.InitBlockStore(dbaccess.NoTx())
+	if err != nil {
+		return errors.Errorf("Database corruption detected: %s", err)
+	}
+	return nil
 }
 
 func main() {
