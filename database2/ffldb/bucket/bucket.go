@@ -2,6 +2,12 @@ package bucket
 
 var separator = []byte("/")
 
+// BuildKey builds a key using the given key value and the
+// given path of buckets.
+// Example:
+// * key: aaa
+// * buckets: bbb, ccc
+// * Result: bbb/ccc/aaa
 func BuildKey(key []byte, buckets ...[]byte) []byte {
 	bucketPath := BuildBucketPath(buckets...)
 
@@ -13,6 +19,11 @@ func BuildKey(key []byte, buckets ...[]byte) []byte {
 	return fullKey
 }
 
+// BuildBucketPath builds a compound path using the given
+// path of buckets.
+// Example:
+// * buckets: bbb, ccc
+// * Result: bbb/ccc/
 func BuildBucketPath(buckets ...[]byte) []byte {
 	bucketPathlength := (len(buckets)) * len(separator) // length of all the separators
 	for _, bucket := range buckets {

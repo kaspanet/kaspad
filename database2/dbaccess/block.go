@@ -16,6 +16,9 @@ var (
 	currentBlockLocationKeyName = []byte("current-block-location")
 )
 
+// InitBlockStore initializes the database to accept blocks. If this function
+// fails it is irrecoverable, and likely indicates that database corruption
+// had previously occurred.
 func InitBlockStore(context Context) error {
 	db, err := context.db()
 	if err != nil {
@@ -50,6 +53,7 @@ func InitBlockStore(context Context) error {
 	return db.RollbackFlatData(blockStoreName, currentBlockLocation)
 }
 
+// StoreBlock stores the given block in the database.
 func StoreBlock(context Context, block *util.Block) error {
 	db, err := context.db()
 	if err != nil {
@@ -116,6 +120,8 @@ func StoreBlock(context Context, block *util.Block) error {
 	return nil
 }
 
+// HasBlock returns whether the block of the given hash has been
+// previously inserted into the database.
 func HasBlock(context Context, hash *daghash.Hash) (bool, error) {
 	db, err := context.db()
 	if err != nil {
@@ -127,6 +133,9 @@ func HasBlock(context Context, hash *daghash.Hash) (bool, error) {
 	return db.Has(blockLocationsKey)
 }
 
+// FetchBlock returns the block of the given hash. Returns an
+// error if the block had not been previously inserted into the
+// database.
 func FetchBlock(context Context, hash *daghash.Hash) (*util.Block, error) {
 	db, err := context.db()
 	if err != nil {

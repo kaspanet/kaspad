@@ -5,6 +5,9 @@ import (
 	"github.com/kaspanet/kaspad/database2/ffldb"
 )
 
+// Context is an interface type representing the context in which queries run, currently relating to the
+// existence or non-existence of a database transaction
+// Call `.NoTx()` or `.NewTx()` to acquire a Context
 type Context interface {
 	db() (ffldb.Database, error)
 }
