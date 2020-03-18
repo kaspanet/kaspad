@@ -41,6 +41,12 @@ func (ffdb *FlatFileDB) Read(storeName string, serializedLocation []byte) ([]byt
 	return store.read(location)
 }
 
+func (ffdb *FlatFileDB) CurrentLocation(storeName string) []byte {
+	store := ffdb.store(storeName)
+	currentLocation := store.currentLocation()
+	return serializeLocation(currentLocation)
+}
+
 func (ffdb *FlatFileDB) Rollback(storeName string, serializedLocation []byte) error {
 	store := ffdb.store(storeName)
 	location, err := deserializeLocation(serializedLocation)

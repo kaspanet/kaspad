@@ -175,6 +175,14 @@ func (s *flatFileStore) Close() error {
 	return nil
 }
 
+func (s *flatFileStore) currentLocation() *flatFileLocation {
+	return &flatFileLocation{
+		fileNumber: s.writeCursor.currentFileNumber,
+		fileOffset: s.writeCursor.currentOffset,
+		dataLength: 0,
+	}
+}
+
 // scanFlatFiles searches the database directory for all flat files for a given
 // store to find the end of the most recent file. This position is considered
 // the current write cursor.
