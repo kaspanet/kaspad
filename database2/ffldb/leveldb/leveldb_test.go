@@ -9,8 +9,7 @@ import (
 func TestLevelDBSanity(t *testing.T) {
 	// Open a test db
 	path := os.TempDir()
-	name := "test"
-	ldb, err := NewLevelDB(path, name)
+	ldb, err := NewLevelDB(path)
 	if err != nil {
 		t.Fatalf("TestLevelDBSanity: NewLevelDB "+
 			"unexpectedly failed: %s", err)
@@ -50,8 +49,7 @@ func TestLevelDBSanity(t *testing.T) {
 func TestLevelDBTransactionSanity(t *testing.T) {
 	// Open a test db
 	path := os.TempDir()
-	name := "test"
-	ldb, err := NewLevelDB(path, name)
+	ldb, err := NewLevelDB(path)
 	if err != nil {
 		t.Fatalf("TestLevelDBTransactionSanity: NewLevelDB "+
 			"unexpectedly failed: %s", err)
@@ -138,7 +136,7 @@ func TestLevelDBTransactionSanity(t *testing.T) {
 	// Rollback the transaction
 	err = tx.Rollback()
 	if err != nil {
-		t.Fatalf("TestLevelDBTransactionSanity: Rollback "+
+		t.Fatalf("TestLevelDBTransactionSanity: rollback "+
 			"returned unexpected error: %s", err)
 	}
 

@@ -6,14 +6,14 @@ import (
 	"os"
 )
 
-// Read reads the specified flat file record and returns the data. It ensures
+// read reads the specified flat file record and returns the data. It ensures
 // the integrity of the data by comparing the calculated checksum against the
 // one stored in the flat file. This function also automatically handles all
 // file management such as opening and closing files as necessary to stay
 // within the maximum allowed open files limit.
 //
 // Format: <data length><data><checksum>
-func (s *FlatFileStore) Read(location *FlatFileLocation) ([]byte, error) {
+func (s *flatFileStore) read(location *flatFileLocation) ([]byte, error) {
 	// Get the referenced flat file handle opening the file as needed. The
 	// function also handles closing files as needed to avoid going over the
 	// max allowed open files.
@@ -55,7 +55,7 @@ func (s *FlatFileStore) Read(location *FlatFileLocation) ([]byte, error) {
 // operations. This is necessary because otherwise it would be possible for a
 // separate goroutine to close the file after it is returned from here, but
 // before the caller has acquired a read lock.
-func (s *FlatFileStore) flatFile(fileNumber uint32) (*lockableFile, error) {
+func (s *flatFileStore) flatFile(fileNumber uint32) (*lockableFile, error) {
 	// When the requested flat file is open for writes, return it.
 	cursor := s.writeCursor
 	cursor.RLock()
@@ -109,7 +109,7 @@ func (s *FlatFileStore) flatFile(fileNumber uint32) (*lockableFile, error) {
 //
 // This function MUST be called with the open files mutex (s.openFilesMutex)
 // locked for WRITES.
-func (s *FlatFileStore) openFile(fileNumber uint32) (*lockableFile, error) {
+func (s *flatFileStore) openFile(fileNumber uint32) (*lockableFile, error) {
 	// Open the appropriate file as read-only.
 	filePath := flatFilePath(s.basePath, s.storeName, fileNumber)
 	file, err := os.Open(filePath)

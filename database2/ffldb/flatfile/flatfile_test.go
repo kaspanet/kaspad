@@ -10,20 +10,20 @@ func TestFlatFileStoreSanity(t *testing.T) {
 	// Open a test store
 	path := os.TempDir()
 	name := "test"
-	store := NewFlatFileStore(path, name)
+	store := openFlatFileStore(path, name)
 
 	// Write something to the store
 	writeData := []byte("Hello world!")
-	location, err := store.Write(writeData)
+	location, err := store.write(writeData)
 	if err != nil {
 		t.Fatalf("TestFlatFileStoreSanity: Write returned "+
 			"unexpected error: %s", err)
 	}
 
 	// Read from the location previously written to
-	readData, err := store.Read(location)
+	readData, err := store.read(location)
 	if err != nil {
-		t.Fatalf("TestFlatFileStoreSanity: Read returned "+
+		t.Fatalf("TestFlatFileStoreSanity: read returned "+
 			"unexpected error: %s", err)
 	}
 

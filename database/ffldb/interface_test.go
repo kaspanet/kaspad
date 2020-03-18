@@ -694,7 +694,7 @@ func testMetadataManualTxInterface(tc *testContext) bool {
 			if rollback {
 				// Rollback the transaction.
 				if err := tx.Rollback(); err != nil {
-					tc.t.Errorf("Rollback: unexpected "+
+					tc.t.Errorf("rollback: unexpected "+
 						"error %v", err)
 					return false
 				}
@@ -870,7 +870,7 @@ func testManagedTxPanics(tc *testContext) bool {
 		})
 	})
 	if !paniced {
-		tc.t.Error("Rollback called inside View did not panic")
+		tc.t.Error("rollback called inside View did not panic")
 		return false
 	}
 
@@ -894,7 +894,7 @@ func testManagedTxPanics(tc *testContext) bool {
 		})
 	})
 	if !paniced {
-		tc.t.Error("Rollback called inside Update did not panic")
+		tc.t.Error("rollback called inside Update did not panic")
 		return false
 	}
 
@@ -1981,7 +1981,7 @@ func testTxClosed(tc *testContext) bool {
 	}
 	defer rollbackOnPanic(tc.t, tx)
 	if err := tx.Rollback(); err != nil {
-		tc.t.Errorf("Rollback: unexpected error: %v", err)
+		tc.t.Errorf("rollback: unexpected error: %v", err)
 		return false
 	}
 

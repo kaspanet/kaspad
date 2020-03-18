@@ -7,7 +7,7 @@ import (
 	"syscall"
 )
 
-// Write appends the specified rdata bytes to the store's write cursor location
+// write appends the specified rdata bytes to the store's write cursor location
 // and increments it accordingly. When the data would exceed the max file size
 // for the current flat file, this function will close the current file, create
 // the next file, update the write cursor, and write the data to the new file.
@@ -16,7 +16,7 @@ import (
 // in the event of failure.
 //
 // Format: <data length><data><checksum>
-func (s *FlatFileStore) Write(data []byte) (*FlatFileLocation, error) {
+func (s *flatFileStore) write(data []byte) (*flatFileLocation, error) {
 	// Compute how many bytes will be written.
 	// 4 bytes for data length + length of the data + 4 bytes for checksum.
 	dataLength := uint32(len(data))
@@ -105,7 +105,7 @@ func (s *FlatFileStore) Write(data []byte) (*FlatFileLocation, error) {
 			err)
 	}
 
-	location := &FlatFileLocation{
+	location := &flatFileLocation{
 		fileNumber: cursor.currentFileNumber,
 		fileOffset: originalOffset,
 		dataLength: fullLength,
@@ -118,7 +118,7 @@ func (s *FlatFileStore) Write(data []byte) (*FlatFileLocation, error) {
 // for the current file that will have all new data appended. Unlike openFile,
 // this function does not keep track of the open file and it is not subject to
 // the maxOpenFiles limit.
-func (s *FlatFileStore) openWriteFile(fileNumber uint32) (filer, error) {
+func (s *flatFileStore) openWriteFile(fileNumber uint32) (filer, error) {
 	// The current flat file needs to be read-write so it is possible to
 	// append to it. Also, it shouldn't be part of the least recently used
 	// file.
@@ -143,7 +143,7 @@ func (s *FlatFileStore) openWriteFile(fileNumber uint32) (filer, error) {
 // NOTE: This function MUST be called with the write cursor current file lock
 // held and must only be called during a write transaction so it is effectively
 // locked for writes. Also, the write cursor current file must NOT be nil.
-func (s *FlatFileStore) writeData(data []byte, fieldName string) error {
+func (s *flatFileStore) writeData(data []byte, fieldName string) error {
 	cursor := s.writeCursor
 	n, err := cursor.currentFile.file.WriteAt(data, int64(cursor.currentOffset))
 	cursor.currentOffset += uint32(n)

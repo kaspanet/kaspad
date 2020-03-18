@@ -38,9 +38,9 @@ var (
 	castagnoli = crc32.MakeTable(crc32.Castagnoli)
 )
 
-// FlatFileStore houses information used to handle reading and writing data
+// flatFileStore houses information used to handle reading and writing data
 // into flat files with support for multiple concurrent readers.
-type FlatFileStore struct {
+type flatFileStore struct {
 	// basePath is the base path used for the flat files.
 	basePath string
 
@@ -139,14 +139,14 @@ type writeCursor struct {
 	currentOffset uint32
 }
 
-// NewFlatFileStore returns a new flat file store with the current file number
+// openFlatFileStore returns a new flat file store with the current file number
 // and offset set and all fields initialized.
-func NewFlatFileStore(basePath string, storeName string) *FlatFileStore {
+func openFlatFileStore(basePath string, storeName string) *flatFileStore {
 	// Look for the end of the latest file to determine what the write cursor
 	// position is from the viewpoint of the flat files on disk.
 	fileNumber, fileOffset := scanFlatFiles(basePath, storeName)
 
-	store := &FlatFileStore{
+	store := &flatFileStore{
 		basePath:               basePath,
 		storeName:              storeName,
 		openFiles:              make(map[uint32]*lockableFile),

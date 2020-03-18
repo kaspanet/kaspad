@@ -6,69 +6,66 @@ import (
 	"github.com/kaspanet/kaspad/database2/ffldb/leveldb"
 )
 
-const blockStoreName = "block"
-const metadataStoreName = "metadata"
-
 type Database interface {
 	Put(key []byte, value []byte) error
 	Get(key []byte) ([]byte, error)
-	AppendBlock(data []byte) ([]byte, error)
-	RetrieveBlock(location []byte) ([]byte, error)
+	AppendFlatData(storeName string, data []byte) ([]byte, error)
+	RetrieveFlatData(storeName string, location []byte) ([]byte, error)
 }
 
 type FFLDB struct {
-	blockStore    *flatfile.FlatFileStore
-	metadataStore *leveldb.LevelDB
+	ffdb *flatfile.FlatFileDB
+	ldb  *leveldb.LevelDB
 }
 
 func Open(path string) (*FFLDB, error) {
-	blockStore := flatfile.NewFlatFileStore(path, blockStoreName)
-	metadataStore, err := leveldb.NewLevelDB(path, metadataStoreName)
+	ffdb := flatfile.NewFlatFileDB(path)
+	ldb, err := leveldb.NewLevelDB(path)
 	if err != nil {
 		return nil, err
 	}
 
 	db := &FFLDB{
-		blockStore:    blockStore,
-		metadataStore: metadataStore,
+		ffdb: ffdb,
+		ldb:  ldb,
 	}
 	return db, nil
 }
 
 func (db *FFLDB) Close() error {
-	return db.metadataStore.Close()
+	return db.ldb.Close()
 }
 
 func (db *FFLDB) Put(key []byte, value []byte) error {
-	return db.metadataStore.Put(key, value)
+	return db.ldb.Put(key, value)
 }
 
 func (db *FFLDB) Get(key []byte) ([]byte, error) {
-	return db.metadataStore.Get(key)
+	return db.ldb.Get(key)
 }
 
-func (db *FFLDB) AppendBlock(data []byte) ([]byte, error) {
-	return appendBlock(db.blockStore, data)
+func (db *FFLDB) AppendFlatData(storeName string, data []byte) ([]byte, error) {
+	return db.ffdb.Write(storeName, data)
 }
 
-func (db *FFLDB) RetrieveBlock(serializedLocation []byte) ([]byte, error) {
-	return retrieveBlock(db.blockStore, serializedLocation)
+func (db *FFLDB) RetrieveFlatData(storeName string, location []byte) ([]byte, error) {
+	return db.ffdb.Read(storeName, location)
 }
 
 type Transaction struct {
-	ldbTx      *leveldb.LevelDBTransaction
-	blockStore *flatfile.FlatFileStore
+	ldbTx *leveldb.LevelDBTransaction
+	ffdb  *flatfile.FlatFileDB
 }
 
 func (db *FFLDB) Begin() (*Transaction, error) {
-	ldbTx, err := db.metadataStore.Begin()
+	ldbTx, err := db.ldb.Begin()
 	if err != nil {
 		return nil, err
 	}
 
 	transaction := &Transaction{
-		ldbTx:      ldbTx,
-		blockStore: db.blockStore,
+		ldbTx: ldbTx,
+		ffdb:  db.ffdb,
 	}
 	return transaction, nil
 }
@@ -81,12 +78,12 @@ func (tx *Transaction) Get(key []byte) ([]byte, error) {
 	return tx.ldbTx.Get(key)
 }
 
-func (tx *Transaction) AppendBlock(data []byte) ([]byte, error) {
-	return appendBlock(tx.blockStore, data)
+func (tx *Transaction) AppendFlatData(storeName string, data []byte) ([]byte, error) {
+	return tx.ffdb.Write(storeName, data)
 }
 
-func (tx *Transaction) RetrieveBlock(serializedLocation []byte) ([]byte, error) {
-	return retrieveBlock(tx.blockStore, serializedLocation)
+func (tx *Transaction) RetrieveFlatData(storeName string, location []byte) ([]byte, error) {
+	return tx.ffdb.Read(storeName, location)
 }
 
 func (tx *Transaction) Rollback() error {
@@ -95,22 +92,6 @@ func (tx *Transaction) Rollback() error {
 
 func (tx *Transaction) Commit() error {
 	return tx.ldbTx.Commit()
-}
-
-func appendBlock(blockStore *flatfile.FlatFileStore, data []byte) ([]byte, error) {
-	location, err := blockStore.Write(data)
-	if err != nil {
-		return nil, err
-	}
-	return flatfile.SerializeLocation(location), nil
-}
-
-func retrieveBlock(blockStore *flatfile.FlatFileStore, serializedLocation []byte) ([]byte, error) {
-	location, err := flatfile.DeserializeLocation(serializedLocation)
-	if err != nil {
-		return nil, err
-	}
-	return blockStore.Read(location)
 }
 
 func Key(buckets ...[]byte) []byte {

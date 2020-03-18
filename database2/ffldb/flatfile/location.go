@@ -2,21 +2,21 @@ package flatfile
 
 import "github.com/pkg/errors"
 
-// FlatFileLocation identifies a particular flat file location.
-type FlatFileLocation struct {
+// flatFileLocation identifies a particular flat file location.
+type flatFileLocation struct {
 	fileNumber uint32
 	fileOffset uint32
 	dataLength uint32
 }
 
-// SerializeLocation returns the serialization of the passed flat file location
+// serializeLocation returns the serialization of the passed flat file location
 // of certain data. This to later on be used for retrieval of said data.
 // The serialized location format is:
 //
 //  [0:4]  File Number (4 bytes)
 //  [4:8]  File offset (4 bytes)
 //  [8:12] Data length (4 bytes)
-func SerializeLocation(location *FlatFileLocation) []byte {
+func serializeLocation(location *flatFileLocation) []byte {
 	var serializedLocation [12]byte
 	byteOrder.PutUint32(serializedLocation[0:4], location.fileNumber)
 	byteOrder.PutUint32(serializedLocation[4:8], location.fileOffset)
@@ -24,14 +24,14 @@ func SerializeLocation(location *FlatFileLocation) []byte {
 	return serializedLocation[:]
 }
 
-// DeserializeLocation deserializes the passed serialized flat file location.
-// See SerializeLocation for further details.
-func DeserializeLocation(serializedLocation []byte) (*FlatFileLocation, error) {
+// deserializeLocation deserializes the passed serialized flat file location.
+// See serializeLocation for further details.
+func deserializeLocation(serializedLocation []byte) (*flatFileLocation, error) {
 	if len(serializedLocation) != 12 {
 		return nil, errors.Errorf("unexpected serializedLocation length: %d",
 			len(serializedLocation))
 	}
-	location := &FlatFileLocation{
+	location := &flatFileLocation{
 		fileNumber: byteOrder.Uint32(serializedLocation[0:4]),
 		fileOffset: byteOrder.Uint32(serializedLocation[4:8]),
 		dataLength: byteOrder.Uint32(serializedLocation[8:12]),

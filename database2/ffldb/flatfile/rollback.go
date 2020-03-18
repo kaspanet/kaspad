@@ -4,7 +4,7 @@ import (
 	"os"
 )
 
-// Rollback rolls the flat files on disk back to the provided file number
+// rollback rolls the flat files on disk back to the provided file number
 // and offset. This involves potentially deleting and truncating the files that
 // were partially written.
 //
@@ -27,7 +27,7 @@ import (
 //
 // Therefore, any errors are simply logged at a warning level rather than being
 // returned since there is nothing more that could be done about it anyways.
-func (s *FlatFileStore) Rollback(targetFileNumber uint32, targetFileOffset uint32) {
+func (s *flatFileStore) rollback(targetLocation *flatFileLocation) {
 	// Grab the write cursor mutex since it is modified throughout this
 	// function.
 	cursor := s.writeCursor
@@ -36,6 +36,8 @@ func (s *FlatFileStore) Rollback(targetFileNumber uint32, targetFileOffset uint3
 
 	// Nothing to do if the rollback point is the same as the current write
 	// cursor.
+	targetFileNumber := targetLocation.fileNumber
+	targetFileOffset := targetLocation.fileOffset
 	if cursor.currentFileNumber == targetFileNumber && cursor.currentOffset == targetFileOffset {
 		return
 	}
@@ -107,7 +109,7 @@ func (s *FlatFileStore) Rollback(targetFileNumber uint32, targetFileOffset uint3
 // deleteFile removes the file for the passed flat file number. The file must
 // already be closed and it is the responsibility of the caller to do any
 // other state cleanup necessary.
-func (s *FlatFileStore) deleteFile(fileNumber uint32) error {
+func (s *flatFileStore) deleteFile(fileNumber uint32) error {
 	filePath := flatFilePath(s.basePath, s.storeName, fileNumber)
 
 	return os.Remove(filePath)
