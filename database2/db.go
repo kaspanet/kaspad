@@ -8,6 +8,7 @@ import (
 // db is the kaspad database
 var db *ffldb.FFLDB
 
+// DB returns a reference to the database
 func DB() (*ffldb.FFLDB, error) {
 	if db == nil {
 		return nil, errors.New("database is not open")
