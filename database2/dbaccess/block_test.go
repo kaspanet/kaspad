@@ -9,42 +9,49 @@ import (
 	"testing"
 )
 
-func TestStoreBlock(t *testing.T) {
+func TestBlockStoreSanity(t *testing.T) {
 	// Create a temp db to run tests against
-	path, err := ioutil.TempDir("", "TestStoreBlock")
+	path, err := ioutil.TempDir("", "TestBlockStoreSanity")
 	if err != nil {
-		t.Fatalf("TestStoreBlock: TempDir unexpectedly "+
+		t.Fatalf("TestBlockStoreSanity: TempDir unexpectedly "+
 			"failed: %s", err)
 	}
 	err = database2.Open(path)
 	if err != nil {
-		t.Fatalf("TestStoreBlock: Open unexpectedly "+
+		t.Fatalf("TestBlockStoreSanity: Open unexpectedly "+
 			"failed: %s", err)
 	}
 	defer func() {
 		err := database2.Close()
 		if err != nil {
-			t.Fatalf("TestStoreBlock: Close unexpectedly "+
+			t.Fatalf("TestBlockStoreSanity: Close unexpectedly "+
 				"failed: %s", err)
 		}
 	}()
+
+	// Initialize the block store
+	err = InitBlockStore(NoTx())
+	if err != nil {
+		t.Fatalf("TestBlockStoreSanity: InitBlockStore unexpectedly "+
+			"failed: %s", err)
+	}
 
 	// Store the genesis block
 	genesis := util.NewBlock(dagconfig.MainnetParams.GenesisBlock)
 	err = StoreBlock(NoTx(), genesis)
 	if err != nil {
-		t.Fatalf("TestStoreBlock: StoreBlock unexpectedly "+
+		t.Fatalf("TestBlockStoreSanity: StoreBlock unexpectedly "+
 			"failed: %s", err)
 	}
 
 	// Make sure the genesis block now exists in the db
 	exists, err := HasBlock(NoTx(), genesis.Hash())
 	if err != nil {
-		t.Fatalf("TestStoreBlock: HasBlock unexpectedly "+
+		t.Fatalf("TestBlockStoreSanity: HasBlock unexpectedly "+
 			"failed: %s", err)
 	}
 	if !exists {
-		t.Fatalf("TestStoreBlock: just-inserted block is " +
+		t.Fatalf("TestBlockStoreSanity: just-inserted block is " +
 			"missing from the database")
 	}
 
@@ -52,11 +59,18 @@ func TestStoreBlock(t *testing.T) {
 	// that it's equal to the original
 	fetchedGenesis, err := FetchBlock(NoTx(), genesis.Hash())
 	if err != nil {
-		t.Fatalf("TestStoreBlock: FetchBlock unexpectedly "+
+		t.Fatalf("TestBlockStoreSanity: FetchBlock unexpectedly "+
 			"failed: %s", err)
 	}
 	if !reflect.DeepEqual(genesis.MsgBlock(), fetchedGenesis.MsgBlock()) {
-		t.Fatalf("TestStoreBlock: just-inserted block is " +
+		t.Fatalf("TestBlockStoreSanity: just-inserted block is " +
 			"not equal to its database counterpart.")
+	}
+
+	// Init the block store again to make sure it's still synced
+	err = InitBlockStore(NoTx())
+	if err != nil {
+		t.Fatalf("TestBlockStoreSanity: InitBlockStore unexpectedly "+
+			"failed: %s", err)
 	}
 }

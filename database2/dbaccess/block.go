@@ -16,6 +16,40 @@ var (
 	currentBlockLocationKeyName = []byte("current-block-location")
 )
 
+func InitBlockStore(context Context) error {
+	db, err := context.db()
+	if err != nil {
+		return err
+	}
+
+	// If the current block location is missing this must be the first time
+	// kaspad has ran. Simply initialize the currentBlockLocation value and
+	// exit.
+	exists, err := db.Has(currentBlockLocationKeyName)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		currentBlockLocation := db.CurrentFlatDataLocation(blockStoreName)
+		return db.Put(currentBlockLocationKeyName, currentBlockLocation)
+	}
+
+	// Sync block store and current block location value.
+	// Possible scenarios:
+	// a. currentBlockLocation and the block store are synced. RollbackFlatData
+	//    does nothing.
+	// b. currentBlockLocation is smaller than the block store's location.
+	//    RollbackFlatData truncates the flat file store.
+	// c. currentBlockLocation is greater than the block store's location.
+	//    RollbackFlatData returns an error. This indicates definite database
+	//    corruption and is unrecoverable.
+	currentBlockLocation, err := db.Get(currentBlockLocationKeyName)
+	if err != nil {
+		return err
+	}
+	return db.RollbackFlatData(blockStoreName, currentBlockLocation)
+}
+
 func StoreBlock(context Context, block *util.Block) error {
 	db, err := context.db()
 	if err != nil {
@@ -110,40 +144,6 @@ func FetchBlock(context Context, hash *daghash.Hash) (*util.Block, error) {
 	}
 
 	return util.NewBlockFromBytes(bytes)
-}
-
-func InitBlockStore(context Context) error {
-	db, err := context.db()
-	if err != nil {
-		return err
-	}
-
-	// If the current block location is missing this must be the first time
-	// kaspad has ran. Simply initialize the currentBlockLocation value and
-	// exit.
-	exists, err := db.Has(currentBlockLocationKeyName)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		currentBlockLocation := db.CurrentFlatDataLocation(blockStoreName)
-		return db.Put(currentBlockLocationKeyName, currentBlockLocation)
-	}
-
-	// Sync block store and current block location value.
-	// Possible scenarios:
-	// a. currentBlockLocation and the block store are synced. RollbackFlatData
-	//    does nothing.
-	// b. currentBlockLocation is smaller than the block store's location.
-	//    RollbackFlatData truncates the flat file store.
-	// c. currentBlockLocation is greater than the block store's location.
-	//    RollbackFlatData returns an error. This indicates definite database
-	//    corruption and is unrecoverable.
-	currentBlockLocation, err := db.Get(currentBlockLocationKeyName)
-	if err != nil {
-		return err
-	}
-	return db.RollbackFlatData(blockStoreName, currentBlockLocation)
 }
 
 func blockLocationKey(hash *daghash.Hash) []byte {
