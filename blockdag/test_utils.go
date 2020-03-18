@@ -103,7 +103,7 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 		}
 	}
 
-	config.TimeSource = NewMedianTime()
+	config.TimeSource = NewTimeSource()
 	config.SigCache = txscript.NewSigCache(1000)
 
 	// Create the DAG instance.

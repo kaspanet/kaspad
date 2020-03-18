@@ -387,7 +387,6 @@ type InfoDAGResult struct {
 	Version         string  `json:"version"`
 	ProtocolVersion int32   `json:"protocolVersion"`
 	Blocks          uint64  `json:"blocks"`
-	TimeOffset      int64   `json:"timeOffset"`
 	Connections     int32   `json:"connections"`
 	Proxy           string  `json:"proxy"`
 	Difficulty      float64 `json:"difficulty"`

@@ -301,9 +301,9 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	return &result, nil
 }
 
-// WithDiffInPlace applies provided diff to this diff in-place, that would be the result if
+// withDiffInPlace applies provided diff to this diff in-place, that would be the result if
 // first d, and than diff were applied to the same base
-func (d *UTXODiff) WithDiffInPlace(diff *UTXODiff) error {
+func (d *UTXODiff) withDiffInPlace(diff *UTXODiff) error {
 	for outpoint, entryToRemove := range diff.toRemove {
 		if d.toAdd.containsWithBlueScore(outpoint, entryToRemove.blockBlueScore) {
 			// If already exists in toAdd with the same blueScore - remove from toAdd
@@ -313,7 +313,7 @@ func (d *UTXODiff) WithDiffInPlace(diff *UTXODiff) error {
 		if d.toRemove.contains(outpoint) {
 			// If already exists - this is an error
 			return ruleError(ErrWithDiff, fmt.Sprintf(
-				"WithDiffInPlace: outpoint %s both in d.toRemove and in diff.toRemove", outpoint))
+				"withDiffInPlace: outpoint %s both in d.toRemove and in diff.toRemove", outpoint))
 		}
 
 		// If not exists neither in toAdd nor in toRemove - add to toRemove
@@ -325,7 +325,7 @@ func (d *UTXODiff) WithDiffInPlace(diff *UTXODiff) error {
 			// If already exists in toRemove with the same blueScore - remove from toRemove
 			if d.toAdd.contains(outpoint) && !diff.toRemove.contains(outpoint) {
 				return ruleError(ErrWithDiff, fmt.Sprintf(
-					"WithDiffInPlace: outpoint %s both in d.toAdd and in diff.toAdd with no "+
+					"withDiffInPlace: outpoint %s both in d.toAdd and in diff.toAdd with no "+
 						"corresponding entry in diff.toRemove", outpoint))
 			}
 			d.toRemove.remove(outpoint)
@@ -336,7 +336,7 @@ func (d *UTXODiff) WithDiffInPlace(diff *UTXODiff) error {
 				!diff.toRemove.containsWithBlueScore(outpoint, existingEntry.blockBlueScore)) {
 			// If already exists - this is an error
 			return ruleError(ErrWithDiff, fmt.Sprintf(
-				"WithDiffInPlace: outpoint %s both in d.toAdd and in diff.toAdd", outpoint))
+				"withDiffInPlace: outpoint %s both in d.toAdd and in diff.toAdd", outpoint))
 		}
 
 		// If not exists neither in toAdd nor in toRemove, or exists in toRemove with different blueScore - add to toAdd
@@ -352,102 +352,16 @@ func (d *UTXODiff) WithDiffInPlace(diff *UTXODiff) error {
 }
 
 // WithDiff applies provided diff to this diff, creating a new utxoDiff, that would be the result if
-// first d, and than diff were applied to the same base
-//
-// WithDiff follows a set of rules represented by the following 3 by 3 table:
-//
-//          |           | this      |           |
-// ---------+-----------+-----------+-----------+-----------
-//          |           | toAdd     | toRemove  | None
-// ---------+-----------+-----------+-----------+-----------
-// other    | toAdd     | X         | -         | toAdd
-// ---------+-----------+-----------+-----------+-----------
-//          | toRemove  | -         | X         | toRemove
-// ---------+-----------+-----------+-----------+-----------
-//          | None      | toAdd     | toRemove  | -
-//
-// Key:
-// -		Don't add anything to the result
-// X		Return an error
-// toAdd	Add the UTXO into the toAdd collection of the result
-// toRemove	Add the UTXO into the toRemove collection of the result
-//
-// Examples:
-// 1. This diff contains a UTXO in toAdd, and the other diff contains it in toRemove
-//    WithDiff results in nothing being added
-// 2. This diff contains a UTXO in toRemove, and the other diff does not contain it
-//    WithDiff results in the UTXO being added to toRemove
+// first d, and than diff were applied to some base
 func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
-	result := UTXODiff{
-		toAdd:       make(utxoCollection, len(d.toAdd)+len(diff.toAdd)),
-		toRemove:    make(utxoCollection, len(d.toRemove)+len(diff.toRemove)),
-		useMultiset: d.useMultiset,
+	clone := d.clone()
+
+	err := clone.withDiffInPlace(diff)
+	if err != nil {
+		return nil, err
 	}
 
-	// All transactions in d.toAdd:
-	// If they are not in diff.toRemove - should be added in result.toAdd
-	// If they are in diff.toAdd - should throw an error
-	// Otherwise - should be ignored
-	for outpoint, utxoEntry := range d.toAdd {
-		if !diff.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
-			result.toAdd.add(outpoint, utxoEntry)
-		}
-		if diffEntry, ok := diff.toAdd.get(outpoint); ok {
-			// An exception is made for entries with unequal blue scores
-			// as long as the appropriate entry exists in either d.toRemove
-			// or diff.toRemove.
-			// These are just "updates" to accepted blue score
-			if diffEntry.blockBlueScore != utxoEntry.blockBlueScore &&
-				diff.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
-				continue
-			}
-			return nil, ruleError(ErrWithDiff, fmt.Sprintf("WithDiff: outpoint %s both in d.toAdd and in other.toAdd", outpoint))
-		}
-	}
-
-	// All transactions in d.toRemove:
-	// If they are not in diff.toAdd - should be added in result.toRemove
-	// If they are in diff.toRemove - should throw an error
-	// Otherwise - should be ignored
-	for outpoint, utxoEntry := range d.toRemove {
-		if !diff.toAdd.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
-			result.toRemove.add(outpoint, utxoEntry)
-		}
-		if diffEntry, ok := diff.toRemove.get(outpoint); ok {
-			// An exception is made for entries with unequal blue scores
-			// as long as the appropriate entry exists in either d.toAdd
-			// or diff.toAdd.
-			// These are just "updates" to accepted blue score
-			if diffEntry.blockBlueScore != utxoEntry.blockBlueScore &&
-				d.toAdd.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) {
-				continue
-			}
-			return nil, ruleError(ErrWithDiff, "WithDiff: outpoint both in d.toRemove and in other.toRemove")
-		}
-	}
-
-	// All transactions in diff.toAdd:
-	// If they are not in d.toRemove - should be added in result.toAdd
-	for outpoint, utxoEntry := range diff.toAdd {
-		if !d.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
-			result.toAdd.add(outpoint, utxoEntry)
-		}
-	}
-
-	// All transactions in diff.toRemove:
-	// If they are not in d.toAdd - should be added in result.toRemove
-	for outpoint, utxoEntry := range diff.toRemove {
-		if !d.toAdd.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
-			result.toRemove.add(outpoint, utxoEntry)
-		}
-	}
-
-	// Apply diff.diffMultiset to d.diffMultiset
-	if d.useMultiset {
-		result.diffMultiset = d.diffMultiset.Union(diff.diffMultiset)
-	}
-
-	return &result, nil
+	return clone, nil
 }
 
 // clone returns a clone of this utxoDiff

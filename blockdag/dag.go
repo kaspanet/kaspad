@@ -61,7 +61,7 @@ type BlockDAG struct {
 	// separate mutex.
 	db           database.DB
 	dagParams    *dagconfig.Params
-	timeSource   MedianTimeSource
+	timeSource   TimeSource
 	sigCache     *txscript.SigCache
 	indexManager IndexManager
 	genesis      *blockNode
@@ -486,25 +486,14 @@ func (dag *BlockDAG) addBlock(node *blockNode,
 	if err != nil {
 		if errors.As(err, &RuleError{}) {
 			dag.index.SetStatusFlags(node, statusValidateFailed)
-		} else {
-			return nil, err
+			err := dag.index.flushToDB()
+			if err != nil {
+				return nil, err
+			}
 		}
-	} else {
-		dag.blockCount++
-	}
-
-	// Intentionally ignore errors writing updated node status to DB. If
-	// it fails to write, it's not the end of the world. If the block is
-	// invalid, the worst that can happen is we revalidate the block
-	// after a restart.
-	if writeErr := dag.index.flushToDB(); writeErr != nil {
-		log.Warnf("Error flushing block index changes to disk: %s",
-			writeErr)
-	}
-	// If dag.connectBlock returned a rule error, return it here after updating DB
-	if err != nil {
 		return nil, err
 	}
+	dag.blockCount++
 	return chainUpdates, nil
 }
 
@@ -608,15 +597,14 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 	txsAcceptanceData MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData,
 	feeData compactFeeData) error {
 
-	// Write any block status changes to DB before updating the DAG state.
-	err := dag.index.flushToDB()
-	if err != nil {
-		return err
-	}
-
 	// Atomically insert info into the database.
-	err = dag.db.Update(func(dbTx database.Tx) error {
-		err := dag.utxoDiffStore.flushToDB(dbTx)
+	err := dag.db.Update(func(dbTx database.Tx) error {
+		err := dag.index.flushToDBWithTx(dbTx)
+		if err != nil {
+			return err
+		}
+
+		err = dag.utxoDiffStore.flushToDB(dbTx)
 		if err != nil {
 			return err
 		}
@@ -1214,8 +1202,8 @@ func (dag *BlockDAG) restoreUTXO(node *blockNode) (UTXOSet, error) {
 		if err != nil {
 			return nil, err
 		}
-		// Use WithDiffInPlace, otherwise copying the diffs again and again create a polynomial overhead
-		err = accumulatedDiff.WithDiffInPlace(diff)
+		// Use withDiffInPlace, otherwise copying the diffs again and again create a polynomial overhead
+		err = accumulatedDiff.withDiffInPlace(diff)
 		if err != nil {
 			return nil, err
 		}
@@ -1265,14 +1253,14 @@ func (dag *BlockDAG) isCurrent() bool {
 		dagTimestamp = selectedTip.timestamp
 	}
 	dagTime := time.Unix(dagTimestamp, 0)
-	return dag.AdjustedTime().Sub(dagTime) <= isDAGCurrentMaxDiff
+	return dag.Now().Sub(dagTime) <= isDAGCurrentMaxDiff
 }
 
-// AdjustedTime returns the adjusted time according to
-// dag.timeSource. See MedianTimeSource.AdjustedTime for
+// Now returns the adjusted time according to
+// dag.timeSource. See TimeSource.Now for
 // more details.
-func (dag *BlockDAG) AdjustedTime() time.Time {
-	return dag.timeSource.AdjustedTime()
+func (dag *BlockDAG) Now() time.Time {
+	return dag.timeSource.Now()
 }
 
 // IsCurrent returns whether or not the DAG believes it is current. Several
@@ -1811,7 +1799,7 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 }
 
 func (dag *BlockDAG) addDelayedBlock(block *util.Block, delay time.Duration) error {
-	processTime := dag.AdjustedTime().Add(delay)
+	processTime := dag.Now().Add(delay)
 	log.Debugf("Adding block to delayed blocks queue (block hash: %s, process time: %s)", block.Hash().String(), processTime)
 	delayedBlock := &delayedBlock{
 		block:       block,
@@ -1829,7 +1817,7 @@ func (dag *BlockDAG) processDelayedBlocks() error {
 	// Check if the delayed block with the earliest process time should be processed
 	for dag.delayedBlocksQueue.Len() > 0 {
 		earliestDelayedBlockProcessTime := dag.peekDelayedBlock().processTime
-		if earliestDelayedBlockProcessTime.After(dag.AdjustedTime()) {
+		if earliestDelayedBlockProcessTime.After(dag.Now()) {
 			break
 		}
 		delayedBlock := dag.popDelayedBlock()
@@ -1895,13 +1883,9 @@ type Config struct {
 	// This field is required.
 	DAGParams *dagconfig.Params
 
-	// TimeSource defines the median time source to use for things such as
+	// TimeSource defines the time source to use for things such as
 	// block processing and determining whether or not the DAG is current.
-	//
-	// The caller is expected to keep a reference to the time source as well
-	// and add time samples from other peers on the network so the local
-	// time is adjusted to be in agreement with other peers.
-	TimeSource MedianTimeSource
+	TimeSource TimeSource
 
 	// SigCache defines a signature cache to use when when validating
 	// signatures. This is typically most useful when individual

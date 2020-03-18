@@ -141,7 +141,7 @@ func (g *BlkTmplGenerator) collectCandidatesTxs(sourceTxs []*TxDesc) []*candidat
 
 		// A block can't contain non-finalized transactions.
 		if !blockdag.IsFinalizedTransaction(tx, nextBlockBlueScore,
-			g.timeSource.AdjustedTime()) {
+			g.timeSource.Now()) {
 			log.Debugf("Skipping non-finalized tx %s", tx.ID())
 			continue
 		}

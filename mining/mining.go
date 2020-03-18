@@ -96,7 +96,7 @@ type BlkTmplGenerator struct {
 	dagParams  *dagconfig.Params
 	txSource   TxSource
 	dag        *blockdag.BlockDAG
-	timeSource blockdag.MedianTimeSource
+	timeSource blockdag.TimeSource
 	sigCache   *txscript.SigCache
 }
 
@@ -108,7 +108,7 @@ type BlkTmplGenerator struct {
 // consensus rules.
 func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 	txSource TxSource, dag *blockdag.BlockDAG,
-	timeSource blockdag.MedianTimeSource,
+	timeSource blockdag.TimeSource,
 	sigCache *txscript.SigCache) *BlkTmplGenerator {
 
 	return &BlkTmplGenerator{
