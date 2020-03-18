@@ -1,6 +1,7 @@
 package flatfile
 
 import (
+	"github.com/pkg/errors"
 	"os"
 )
 
@@ -27,7 +28,12 @@ import (
 //
 // Therefore, any errors are simply logged at a warning level rather than being
 // returned since there is nothing more that could be done about it anyways.
-func (s *flatFileStore) rollback(targetLocation *flatFileLocation) {
+func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
+	if s.isClosed {
+		return errors.Errorf("cannot rollback a closed store %s",
+			s.storeName)
+	}
+
 	// Grab the write cursor mutex since it is modified throughout this
 	// function.
 	cursor := s.writeCursor
@@ -39,7 +45,7 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) {
 	targetFileNumber := targetLocation.fileNumber
 	targetFileOffset := targetLocation.fileOffset
 	if cursor.currentFileNumber == targetFileNumber && cursor.currentOffset == targetFileOffset {
-		return
+		return nil
 	}
 
 	// Regardless of any failures that happen below, reposition the write
@@ -69,7 +75,7 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) {
 			log.Warnf("ROLLBACK: Failed to delete file "+
 				"number %d in store '%s': %s", cursor.currentFileNumber,
 				s.storeName, err)
-			return
+			return nil
 		}
 		cursor.currentFileNumber--
 	}
@@ -81,7 +87,7 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) {
 		if err != nil {
 			cursor.currentFile.Unlock()
 			log.Warnf("ROLLBACK: %s", err)
-			return
+			return nil
 		}
 		cursor.currentFile.file = openFile
 	}
@@ -93,7 +99,7 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) {
 		log.Warnf("ROLLBACK: Failed to truncate file %d "+
 			"in store '%s': %s", cursor.currentFileNumber, s.storeName,
 			err)
-		return
+		return nil
 	}
 
 	// Sync the file to disk.
@@ -102,8 +108,9 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) {
 	if err != nil {
 		log.Warnf("ROLLBACK: Failed to sync file %d in "+
 			"store '%s': %s", cursor.currentFileNumber, s.storeName, err)
-		return
+		return nil
 	}
+	return nil
 }
 
 // deleteFile removes the file for the passed flat file number. The file must

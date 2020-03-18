@@ -14,6 +14,11 @@ import (
 //
 // Format: <data length><data><checksum>
 func (s *flatFileStore) read(location *flatFileLocation) ([]byte, error) {
+	if s.isClosed {
+		return nil, errors.Errorf("cannot read from a closed store %s",
+			s.storeName)
+	}
+
 	// Get the referenced flat file handle opening the file as needed. The
 	// function also handles closing files as needed to avoid going over the
 	// max allowed open files.

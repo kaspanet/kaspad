@@ -12,6 +12,16 @@ func NewFlatFileDB(path string) *FlatFileDB {
 	}
 }
 
+func (ffdb *FlatFileDB) Close() error {
+	for _, store := range ffdb.flatFileStores {
+		err := store.Close()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (ffdb *FlatFileDB) Write(storeName string, data []byte) ([]byte, error) {
 	store := ffdb.store(storeName)
 	location, err := store.write(data)
@@ -37,8 +47,7 @@ func (ffdb *FlatFileDB) Rollback(storeName string, serializedLocation []byte) er
 	if err != nil {
 		return err
 	}
-	store.rollback(location)
-	return nil
+	return store.rollback(location)
 }
 
 func (ffdb *FlatFileDB) store(storeName string) *flatFileStore {

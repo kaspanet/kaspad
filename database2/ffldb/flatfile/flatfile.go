@@ -4,8 +4,8 @@ import (
 	"container/list"
 	"encoding/binary"
 	"fmt"
+	"github.com/pkg/errors"
 	"hash/crc32"
-	"io"
 	"os"
 	"path/filepath"
 	"sync"
@@ -99,25 +99,10 @@ type flatFileStore struct {
 	// writeCursor houses the state for the current file and location that
 	// new data is written to.
 	writeCursor *writeCursor
-}
 
-// lockableFile represents a flat file on disk that has been opened for either
-// read or read/write access. It also contains a read-write mutex to support
-// multiple concurrent readers.
-type lockableFile struct {
-	sync.RWMutex
-	file filer
-}
-
-// filer is an interface which acts very similar to a *os.File and is typically
-// implemented by it. It exists so the test code can provide mock files for
-// properly testing corruption and file system issues.
-type filer interface {
-	io.Closer
-	io.WriterAt
-	io.ReaderAt
-	Truncate(size int64) error
-	Sync() error
+	// isClosed is true when the store is closed. Any operations on a closed
+	// store will fail.
+	isClosed bool
 }
 
 // writeCursor represents the current file and offset of the flat file on disk
@@ -158,8 +143,36 @@ func openFlatFileStore(basePath string, storeName string) *flatFileStore {
 			currentFileNumber: fileNumber,
 			currentOffset:     fileOffset,
 		},
+
+		isClosed: false,
 	}
 	return store
+}
+
+func (s *flatFileStore) Close() error {
+	if s.isClosed {
+		return errors.Errorf("cannot close a closed store %s",
+			s.storeName)
+	}
+	s.isClosed = true
+
+	// Close the write cursor. We lock the write cursor here
+	// to let it finish any undergoing writing.
+	s.writeCursor.Lock()
+	defer s.writeCursor.Unlock()
+	err := s.writeCursor.currentFile.Close()
+	if err != nil {
+		return err
+	}
+
+	// Close all open files
+	for _, openFile := range s.openFiles {
+		err := openFile.Close()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // scanFlatFiles searches the database directory for all flat files for a given

@@ -17,6 +17,11 @@ import (
 //
 // Format: <data length><data><checksum>
 func (s *flatFileStore) write(data []byte) (*flatFileLocation, error) {
+	if s.isClosed {
+		return nil, errors.Errorf("cannot write to a closed store %s",
+			s.storeName)
+	}
+
 	// Compute how many bytes will be written.
 	// 4 bytes for data length + length of the data + 4 bytes for checksum.
 	dataLength := uint32(len(data))

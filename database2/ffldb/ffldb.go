@@ -35,6 +35,10 @@ func Open(path string) (*FFLDB, error) {
 }
 
 func (db *FFLDB) Close() error {
+	err := db.ffdb.Close()
+	if err != nil {
+		return err
+	}
 	return db.ldb.Close()
 }
 
