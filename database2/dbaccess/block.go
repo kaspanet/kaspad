@@ -32,8 +32,21 @@ func StoreBlock(context Context, block *util.Block) error {
 	return db.Put(blockLocationsKey, blockLocation)
 }
 
-func FetchBlock(context Context, hash *daghash.Hash) ([]byte, error) {
-	return nil, nil
+func FetchBlock(context Context, hash *daghash.Hash) (*util.Block, error) {
+	db, err := context.db()
+	if err != nil {
+		return nil, err
+	}
+	blockLocationsKey := blockLocationKey(hash)
+	blockLocation, err := db.Get(blockLocationsKey)
+	if err != nil {
+		return nil, err
+	}
+	bytes, err := db.RetrieveFlatData(blockStoreName, blockLocation)
+	if err != nil {
+		return nil, err
+	}
+	return util.NewBlockFromBytes(bytes)
 }
 
 func HasBlock(context Context, hash *daghash.Hash) (bool, error) {
