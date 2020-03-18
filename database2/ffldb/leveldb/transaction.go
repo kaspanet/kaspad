@@ -67,3 +67,11 @@ func (tx *LevelDBTransaction) Get(key []byte) ([]byte, error) {
 
 	return tx.snapshot.Get(key, nil)
 }
+
+func (tx *LevelDBTransaction) Has(key []byte) (bool, error) {
+	if tx.isClosed {
+		return false, errors.New("cannot has from a closed transaction")
+	}
+
+	return tx.snapshot.Has(key, nil)
+}

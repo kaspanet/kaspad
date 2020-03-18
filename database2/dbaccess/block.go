@@ -19,16 +19,17 @@ func StoreBlock(context Context, block *util.Block) error {
 	if err != nil {
 		return err
 	}
+
 	bytes, err := block.Bytes()
 	if err != nil {
 		return err
 	}
-
 	blockLocation, err := db.AppendFlatData(blockStoreName, bytes)
 	if err != nil {
 		return err
 	}
 	blockLocationsKey := blockLocationKey(block.Hash())
+
 	return db.Put(blockLocationsKey, blockLocation)
 }
 
@@ -37,6 +38,7 @@ func FetchBlock(context Context, hash *daghash.Hash) (*util.Block, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	blockLocationsKey := blockLocationKey(hash)
 	blockLocation, err := db.Get(blockLocationsKey)
 	if err != nil {
@@ -46,11 +48,19 @@ func FetchBlock(context Context, hash *daghash.Hash) (*util.Block, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return util.NewBlockFromBytes(bytes)
 }
 
 func HasBlock(context Context, hash *daghash.Hash) (bool, error) {
-	return false, nil
+	db, err := context.db()
+	if err != nil {
+		return false, err
+	}
+
+	blockLocationsKey := blockLocationKey(hash)
+
+	return db.Has(blockLocationsKey)
 }
 
 func blockLocationKey(hash *daghash.Hash) []byte {

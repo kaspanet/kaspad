@@ -9,6 +9,7 @@ import (
 type Database interface {
 	Put(key []byte, value []byte) error
 	Get(key []byte) ([]byte, error)
+	Has(key []byte) (bool, error)
 	AppendFlatData(storeName string, data []byte) ([]byte, error)
 	RetrieveFlatData(storeName string, location []byte) ([]byte, error)
 	RollbackFlatData(storeName string, location []byte) error
@@ -43,6 +44,10 @@ func (db *FFLDB) Put(key []byte, value []byte) error {
 
 func (db *FFLDB) Get(key []byte) ([]byte, error) {
 	return db.ldb.Get(key)
+}
+
+func (db *FFLDB) Has(key []byte) (bool, error) {
+	return db.ldb.Has(key)
 }
 
 func (db *FFLDB) AppendFlatData(storeName string, data []byte) ([]byte, error) {
@@ -81,6 +86,10 @@ func (tx *Transaction) Put(key []byte, value []byte) error {
 
 func (tx *Transaction) Get(key []byte) ([]byte, error) {
 	return tx.ldbTx.Get(key)
+}
+
+func (tx *Transaction) Has(key []byte) (bool, error) {
+	return tx.ldbTx.Has(key)
 }
 
 func (tx *Transaction) AppendFlatData(storeName string, data []byte) ([]byte, error) {

@@ -49,3 +49,7 @@ func (db *LevelDB) Put(key []byte, value []byte) error {
 func (db *LevelDB) Get(key []byte) ([]byte, error) {
 	return db.ldb.Get(key, nil)
 }
+
+func (db *LevelDB) Has(key []byte) (bool, error) {
+	return db.ldb.Has(key, nil)
+}
