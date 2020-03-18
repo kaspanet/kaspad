@@ -11,6 +11,7 @@ type Database interface {
 	Get(key []byte) ([]byte, error)
 	AppendFlatData(storeName string, data []byte) ([]byte, error)
 	RetrieveFlatData(storeName string, location []byte) ([]byte, error)
+	RollbackFlatData(storeName string, location []byte) error
 }
 
 type FFLDB struct {
@@ -52,6 +53,10 @@ func (db *FFLDB) RetrieveFlatData(storeName string, location []byte) ([]byte, er
 	return db.ffdb.Read(storeName, location)
 }
 
+func (db *FFLDB) RollbackFlatData(storeName string, location []byte) error {
+	return db.ffdb.Rollback(storeName, location)
+}
+
 type Transaction struct {
 	ldbTx *leveldb.LevelDBTransaction
 	ffdb  *flatfile.FlatFileDB
@@ -84,6 +89,10 @@ func (tx *Transaction) AppendFlatData(storeName string, data []byte) ([]byte, er
 
 func (tx *Transaction) RetrieveFlatData(storeName string, location []byte) ([]byte, error) {
 	return tx.ffdb.Read(storeName, location)
+}
+
+func (tx *Transaction) RollbackFlatData(storeName string, location []byte) error {
+	return tx.ffdb.Rollback(storeName, location)
 }
 
 func (tx *Transaction) Rollback() error {
