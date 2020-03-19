@@ -6,8 +6,8 @@ Overview
 This package provides a database layer to store and retrieve data in a simple
 and efficient manner.
 
-The default ffldb, makes use of leveldb, flat files, and strict checksums in
-key areas to ensure data integrity.
+The backend is ffldb, which makes use of leveldb, flat files, and strict
+checksums in key areas to ensure data integrity.
 
 Database
 
