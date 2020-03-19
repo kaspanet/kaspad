@@ -1,15 +1,16 @@
 package dbaccess
 
 import (
+	"github.com/kaspanet/kaspad/database2"
 	"github.com/kaspanet/kaspad/database2/ffldb"
 	"github.com/pkg/errors"
 )
 
 // dbSingleton is an instance of the kaspad database
-var dbSingleton *ffldb.FFLDB
+var dbSingleton database2.DatabaseHandle
 
 // db returns a reference to the database
-func db() (*ffldb.FFLDB, error) {
+func db() (database2.DatabaseHandle, error) {
 	if dbSingleton == nil {
 		return nil, errors.New("database is not open")
 	}

@@ -2,7 +2,6 @@ package dbaccess
 
 import (
 	"github.com/kaspanet/kaspad/database2"
-	"github.com/kaspanet/kaspad/database2/ffldb"
 )
 
 // Context is an interface type representing the context in which queries run, currently relating to the
@@ -27,7 +26,7 @@ func NoTx() Context {
 
 // TxContext represents a database context with an attached database transaction
 type TxContext struct {
-	dbTransaction *ffldb.Transaction
+	dbTransaction database2.Transaction
 }
 
 func (ctx *TxContext) db() (database2.Database, error) {
