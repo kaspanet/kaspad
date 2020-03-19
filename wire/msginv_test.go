@@ -240,7 +240,7 @@ func TestInvWireErrors(t *testing.T) {
 		// For errors which are not of type MessageError, check them for
 		// equality.
 		if msgErr := &(MessageError{}); !errors.As(err, &msgErr) {
-			if err != test.writeErr {
+			if !errors.Is(err, test.writeErr) {
 				t.Errorf("KaspaEncode #%d wrong error got: %v, "+
 					"want: %v", i, err, test.writeErr)
 				continue
@@ -260,7 +260,7 @@ func TestInvWireErrors(t *testing.T) {
 		// For errors which are not of type MessageError, check them for
 		// equality.
 		if msgErr := &(MessageError{}); !errors.As(err, &msgErr) {
-			if err != test.readErr {
+			if !errors.Is(err, test.readErr) {
 				t.Errorf("KaspaDecode #%d wrong error got: %v, "+
 					"want: %v", i, err, test.readErr)
 				continue

@@ -36,9 +36,9 @@ func TestErrNotInDAG(t *testing.T) {
 	}
 }
 
-// TestUtxoSerialization ensures serializing and deserializing unspent
+// TestUTXOSerialization ensures serializing and deserializing unspent
 // trasaction output entries works as expected.
-func TestUtxoSerialization(t *testing.T) {
+func TestUTXOSerialization(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -64,13 +64,21 @@ func TestUtxoSerialization(t *testing.T) {
 				blockBlueScore: 100001,
 				packedFlags:    0,
 			},
-			serialized: hexToBytes("8b99420700ee8bd501094a7d5ca318da2506de35e1cb025ddc"),
+			serialized: hexToBytes("fe420d03000700ee8bd501094a7d5ca318da2506de35e1cb025ddc"),
 		},
 	}
 
 	for i, test := range tests {
 		// Ensure the utxo entry serializes to the expected value.
-		gotBytes := serializeUTXOEntry(test.entry)
+		w := &bytes.Buffer{}
+		err := serializeUTXOEntry(w, test.entry)
+		if err != nil {
+			t.Errorf("serializeUTXOEntry #%d (%s) unexpected "+
+				"error: %v", i, test.name, err)
+			continue
+		}
+
+		gotBytes := w.Bytes()
 		if !bytes.Equal(gotBytes, test.serialized) {
 			t.Errorf("serializeUTXOEntry #%d (%s): mismatched "+
 				"bytes - got %x, want %x", i, test.name,
@@ -79,7 +87,7 @@ func TestUtxoSerialization(t *testing.T) {
 		}
 
 		// Deserialize to a utxo entry.
-		utxoEntry, err := deserializeUTXOEntry(test.serialized)
+		utxoEntry, err := deserializeUTXOEntry(bytes.NewReader(test.serialized))
 		if err != nil {
 			t.Errorf("deserializeUTXOEntry #%d (%s) unexpected "+
 				"error: %v", i, test.name, err)
@@ -124,28 +132,24 @@ func TestUtxoEntryDeserializeErrors(t *testing.T) {
 	tests := []struct {
 		name       string
 		serialized []byte
-		errType    error
 	}{
 		{
 			name:       "no data after header code",
 			serialized: hexToBytes("02"),
-			errType:    errDeserialize(""),
 		},
 		{
 			name:       "incomplete compressed txout",
 			serialized: hexToBytes("0232"),
-			errType:    errDeserialize(""),
 		},
 	}
 
 	for _, test := range tests {
 		// Ensure the expected error type is returned and the returned
 		// entry is nil.
-		entry, err := deserializeUTXOEntry(test.serialized)
-		if reflect.TypeOf(err) != reflect.TypeOf(test.errType) {
-			t.Errorf("deserializeUTXOEntry (%s): expected error "+
-				"type does not match - got %T, want %T",
-				test.name, err, test.errType)
+		entry, err := deserializeUTXOEntry(bytes.NewReader(test.serialized))
+		if err == nil {
+			t.Errorf("deserializeUTXOEntry (%s): didn't return an error",
+				test.name)
 			continue
 		}
 		if entry != nil {

@@ -341,11 +341,6 @@ func TestReadMessageWireErrors(t *testing.T) {
 		// Decode from wire format.
 		r := newFixedReader(test.max, test.buf)
 		nr, _, _, err := ReadMessageN(r, test.pver, test.kaspaNet)
-		if reflect.TypeOf(err) != reflect.TypeOf(test.readErr) {
-			t.Errorf("ReadMessage #%d wrong error got: %v <%T>, "+
-				"want: %T", i, err, err, test.readErr)
-			continue
-		}
 
 		// Ensure the number of bytes written match the expected value.
 		if nr != test.bytes {
@@ -356,7 +351,7 @@ func TestReadMessageWireErrors(t *testing.T) {
 		// For errors which are not of type MessageError, check them for
 		// equality.
 		if msgErr := &(MessageError{}); !errors.As(err, &msgErr) {
-			if err != test.readErr {
+			if !errors.Is(err, test.readErr) {
 				t.Errorf("ReadMessage #%d wrong error got: %v <%T>, "+
 					"want: %v <%T>", i, err, err,
 					test.readErr, test.readErr)

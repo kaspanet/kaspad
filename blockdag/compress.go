@@ -241,31 +241,6 @@ func isPubKey(script []byte) (bool, []byte) {
 	return false, nil
 }
 
-// compressedScriptSize returns the number of bytes the passed script would take
-// when encoded with the domain specific compression algorithm described above.
-func compressedScriptSize(scriptPubKey []byte) int {
-	// Pay-to-pubkey-hash script.
-	if valid, _ := isPubKeyHash(scriptPubKey); valid {
-		return 21
-	}
-
-	// Pay-to-script-hash script.
-	if valid, _ := isScriptHash(scriptPubKey); valid {
-		return 21
-	}
-
-	// Pay-to-pubkey (compressed or uncompressed) script.
-	if valid, _ := isPubKey(scriptPubKey); valid {
-		return 33
-	}
-
-	// When none of the above special cases apply, encode the script as is
-	// preceded by the sum of its size and the number of special cases
-	// encoded as a variable length quantity.
-	return serializeSizeVLQ(uint64(len(scriptPubKey)+numSpecialScripts)) +
-		len(scriptPubKey)
-}
-
 const (
 	cstPayToPubKeyHashLen = 21
 	cstPayToScriptHashLen = 21
@@ -276,42 +251,6 @@ const (
 	cstPayToPubKeyUncomp4Len = 33
 	cstPayToPubKeyUncomp5Len = 33
 )
-
-// decodeCompressedScriptSize treats the passed serialized bytes as a compressed
-// script, possibly followed by other data, and returns the number of bytes it
-// occupies taking into account the special encoding of the script size by the
-// domain specific compression algorithm described above.
-func decodeCompressedScriptSize(serialized []byte) int {
-	scriptSize, bytesRead := deserializeVLQ(serialized)
-	if bytesRead == 0 {
-		return 0
-	}
-
-	switch scriptSize {
-	case cstPayToPubKeyHash:
-		return cstPayToPubKeyHashLen
-
-	case cstPayToScriptHash:
-		return cstPayToScriptHashLen
-
-	case cstPayToPubKeyComp2:
-		return cstPayToPubKeyComp2Len
-
-	case cstPayToPubKeyComp3:
-		return cstPayToPubKeyComp3Len
-
-	case cstPayToPubKeyUncomp4:
-		return cstPayToPubKeyUncomp4Len
-
-	case cstPayToPubKeyUncomp5:
-		return cstPayToPubKeyUncomp5Len
-
-	}
-
-	scriptSize -= numSpecialScripts
-	scriptSize += uint64(bytesRead)
-	return int(scriptSize)
-}
 
 const (
 	pubKeyHashLen         = 20
@@ -336,20 +275,26 @@ func putCompressedScript(w io.Writer, scriptPubKey []byte) error {
 			return err
 		}
 		_, err = w.Write(hash)
-		return err
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		return nil
 	}
 
 	// Pay-to-script-hash script.
 	if valid, hash := isScriptHash(scriptPubKey); valid {
 		if len(hash) != scriptHashLen {
-			panic(errors.Errorf("public key hash is not %d bytes", scriptHashLen))
+			panic(errors.Errorf("script hash is not %d bytes", scriptHashLen))
 		}
 		_, err := w.Write([]byte{cstPayToScriptHash})
 		if err != nil {
 			return err
 		}
 		_, err = w.Write(hash)
-		return err
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		return nil
 	}
 
 	// Pay-to-pubkey (compressed or uncompressed) script.
@@ -362,7 +307,7 @@ func putCompressedScript(w io.Writer, scriptPubKey []byte) error {
 				return err
 			}
 			_, err = w.Write(serializedPubKey[1 : 1+pubKeyXLen])
-			return err
+			return errors.WithStack(err)
 		case 0x04:
 			// Encode the oddness of the serialized pubkey into the
 			// compressed script type.
@@ -372,7 +317,7 @@ func putCompressedScript(w io.Writer, scriptPubKey []byte) error {
 				return err
 			}
 			_, err = w.Write(serializedPubKey[1 : 1+pubKeyXLen])
-			return err
+			return errors.WithStack(err)
 		}
 	}
 
@@ -386,7 +331,10 @@ func putCompressedScript(w io.Writer, scriptPubKey []byte) error {
 	}
 
 	_, err = w.Write(scriptPubKey)
-	return err
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
 }
 
 // decompressScript returns the original script obtained by decompressing the
@@ -485,6 +433,10 @@ func decompressScript(r io.Reader) ([]byte, error) {
 	// the general format, so reduce the script size by the number of
 	// special cases and return the unmodified script.
 	scriptSize := int(encodedScriptSize - numSpecialScripts)
+	if scriptSize == 0 {
+		return nil, nil
+	}
+
 	scriptPubKey := make([]byte, scriptSize)
 	_, err = r.Read(scriptPubKey)
 	if err != nil {
@@ -613,13 +565,6 @@ func decompressTxOutAmount(amount uint64) uint64 {
 //     compressed amount   VLQ      variable
 //     compressed script   []byte   variable
 // -----------------------------------------------------------------------------
-
-// compressedTxOutSize returns the number of bytes the passed transaction output
-// fields would take when encoded with the format described above.
-func compressedTxOutSize(amount uint64, scriptPubKey []byte) int {
-	return serializeSizeVLQ(compressTxOutAmount(amount)) +
-		compressedScriptSize(scriptPubKey)
-}
 
 // putCompressedTxOut compresses the passed amount and script according to their
 // domain specific compression algorithms and encodes them directly into the

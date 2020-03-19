@@ -88,22 +88,6 @@ func isNotInDAGErr(err error) bool {
 	return errors.As(err, &notInDAGErr)
 }
 
-// errDeserialize signifies that a problem was encountered when deserializing
-// data.
-type errDeserialize string
-
-// Error implements the error interface.
-func (e errDeserialize) Error() string {
-	return string(e)
-}
-
-// isDeserializeErr returns whether or not the passed error is an errDeserialize
-// error.
-func isDeserializeErr(err error) bool {
-	var deserializeErr errDeserialize
-	return errors.As(err, &deserializeErr)
-}
-
 // dbPutVersion uses an existing database transaction to update the provided
 // key in the metadata bucket to the given version. It is primarily used to
 // track versions on entities such as buckets.
@@ -596,30 +580,12 @@ func (dag *BlockDAG) initDAGState() error {
 			// Deserialize the outpoint
 			outpoint, err := deserializeOutpoint(bytes.NewReader(cursor.Key()))
 			if err != nil {
-				// Ensure any deserialization errors are returned as database
-				// corruption errors.
-				if isDeserializeErr(err) {
-					return database.Error{
-						ErrorCode:   database.ErrCorruption,
-						Description: fmt.Sprintf("corrupt outpoint: %s", err),
-					}
-				}
-
 				return err
 			}
 
 			// Deserialize the utxo entry
 			entry, err := deserializeUTXOEntry(bytes.NewReader(cursor.Value()))
 			if err != nil {
-				// Ensure any deserialization errors are returned as database
-				// corruption errors.
-				if isDeserializeErr(err) {
-					return database.Error{
-						ErrorCode:   database.ErrCorruption,
-						Description: fmt.Sprintf("corrupt utxo entry: %s", err),
-					}
-				}
-
 				return err
 			}
 
