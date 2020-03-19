@@ -187,35 +187,12 @@ func dbPutVersion(dbTx database.Tx, key []byte, version uint32) error {
 //    - 0x1d...e6: script hash
 // -----------------------------------------------------------------------------
 
-// maxUint32VLQSerializeSize is the maximum number of bytes a max uint32 takes
-// to serialize as a VLQ.
-var maxUint32VLQSerializeSize = serializeSizeVLQ(1<<32 - 1)
-
 // outpointKeyPool defines a concurrent safe free list of byte slices used to
 // provide temporary buffers for outpoint database keys.
 var outpointKeyPool = sync.Pool{
 	New: func() interface{} {
-		b := make([]byte, daghash.HashSize+maxUint32VLQSerializeSize)
-		return &b // Pointer to slice to avoid boxing alloc.
+		return &bytes.Buffer{} // Pointer to a buffer to avoid boxing alloc.
 	},
-}
-
-// outpointKey returns a key suitable for use as a database key in the UTXO set
-// while making use of a free list. A new buffer is allocated if there are not
-// already any available on the free list. The returned byte slice should be
-// returned to the free list by using the recycleOutpointKey function when the
-// caller is done with it _unless_ the slice will need to live for longer than
-// the caller can calculate such as when used to write to the database.
-func outpointKey(outpoint wire.Outpoint) *[]byte {
-	// A VLQ employs an MSB encoding, so they are useful not only to reduce
-	// the amount of storage space, but also so iteration of UTXOs when
-	// doing byte-wise comparisons will produce them in order.
-	key := outpointKeyPool.Get().(*[]byte)
-	idx := uint64(outpoint.Index)
-	*key = (*key)[:daghash.HashSize+serializeSizeVLQ(idx)]
-	copy(*key, outpoint.TxID[:])
-	putVLQ((*key)[daghash.HashSize:], idx)
-	return key
 }
 
 func serializeOutpoint(w io.Writer, outpoint *wire.Outpoint) error {
@@ -227,7 +204,12 @@ func serializeOutpoint(w io.Writer, outpoint *wire.Outpoint) error {
 	return wire.WriteVarInt(w, uint64(outpoint.Index))
 }
 
-func deserializeOutpointTag(r io.Reader) (*wire.Outpoint, error) {
+var outpointMaxSerializeSize = daghash.TxIDSize + wire.VarIntSerializeSize(math.MaxUint32)
+
+// deserializeOutpoint decodes an outpoint from the passed serialized byte
+// slice into a new wire.Outpoint using a format that is suitable for long-
+// term storage. this format is described in detail above.
+func deserializeOutpoint(r io.Reader) (*wire.Outpoint, error) {
 	outpoint := &wire.Outpoint{}
 	_, err := r.Read(outpoint.TxID[:])
 	if err != nil {
@@ -248,12 +230,6 @@ func deserializeOutpointTag(r io.Reader) (*wire.Outpoint, error) {
 	return outpoint, nil
 }
 
-// recycleOutpointKey puts the provided byte slice, which should have been
-// obtained via the outpointKey function, back on the free list.
-func recycleOutpointKey(key *[]byte) {
-	outpointKeyPool.Put(key)
-}
-
 // dbPutUTXODiff uses an existing database transaction to update the UTXO set
 // in the database based on the provided UTXO view contents and state. In
 // particular, only the entries that have been marked as modified are written
@@ -261,20 +237,42 @@ func recycleOutpointKey(key *[]byte) {
 func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 	utxoBucket := dbTx.Metadata().Bucket(utxoSetBucketName)
 	for outpoint := range diff.toRemove {
-		key := outpointKey(outpoint)
-		err := utxoBucket.Delete(*key)
-		recycleOutpointKey(key)
+		w := outpointKeyPool.Get().(*bytes.Buffer)
+		w.Reset()
+		err := serializeOutpoint(w, &outpoint)
 		if err != nil {
 			return err
 		}
+
+		key := w.Bytes()
+		err = utxoBucket.Delete(key)
+		if err != nil {
+			return err
+		}
+		outpointKeyPool.Put(w)
 	}
 
+	// We are preallocating for P2PKH entries because they are the most common ones.
+	// If we have entries with a compressed script bigger than P2PKH's, the buffer will grow.
+	bytesToPreallocate := (p2pkhUTXOEntryMaxSerializeSize + outpointMaxSerializeSize) * len(diff.toAdd)
+	buff := bytes.NewBuffer(make([]byte, bytesToPreallocate))
 	for outpoint, entry := range diff.toAdd {
 		// Serialize and store the UTXO entry.
-		serialized := serializeUTXOEntry(entry)
+		sBuff := newSubBuffer(buff)
+		err := serializeUTXOEntry(sBuff, entry)
+		if err != nil {
+			return err
+		}
+		serializedEntry := sBuff.bytes()
 
-		key := outpointKey(outpoint)
-		err := utxoBucket.Put(*key, serialized)
+		sBuff = newSubBuffer(buff)
+		err = serializeOutpoint(buff, &outpoint)
+		if err != nil {
+			return err
+		}
+
+		key := sBuff.bytes()
+		err = utxoBucket.Put(key, serializedEntry)
 		// NOTE: The key is intentionally not recycled here since the
 		// database interface contract prohibits modifications. It will
 		// be garbage collected normally when the database is done with
@@ -285,6 +283,39 @@ func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 	}
 
 	return nil
+}
+
+type subBuffer struct {
+	buff       *bytes.Buffer
+	start, end int
+}
+
+func (s *subBuffer) bytes() []byte {
+	return s.buff.Bytes()[s.start:s.end]
+}
+
+func (s *subBuffer) Write(p []byte) (int, error) {
+	if s.buff.Len() > s.end || s.buff.Len() < s.start {
+		return 0, errors.New("a sub buffer cannot be written after another entity wrote or read from its " +
+			"underlying buffer")
+	}
+
+	n, err := s.buff.Write(p)
+	if err != nil {
+		return 0, err
+	}
+
+	s.end += n
+
+	return n, nil
+}
+
+func newSubBuffer(buff *bytes.Buffer) *subBuffer {
+	return &subBuffer{
+		buff:  buff,
+		start: buff.Len(),
+		end:   buff.Len(),
+	}
 }
 
 type dagState struct {
@@ -563,7 +594,7 @@ func (dag *BlockDAG) initDAGState() error {
 		fullUTXOCollection := make(utxoCollection, utxoEntryCount)
 		for ok := cursor.First(); ok; ok = cursor.Next() {
 			// Deserialize the outpoint
-			outpoint, err := deserializeOutpoint(cursor.Key())
+			outpoint, err := deserializeOutpoint(bytes.NewReader(cursor.Key()))
 			if err != nil {
 				// Ensure any deserialization errors are returned as database
 				// corruption errors.
@@ -578,7 +609,7 @@ func (dag *BlockDAG) initDAGState() error {
 			}
 
 			// Deserialize the utxo entry
-			entry, err := deserializeUTXOEntry(cursor.Value())
+			entry, err := deserializeUTXOEntry(bytes.NewReader(cursor.Value()))
 			if err != nil {
 				// Ensure any deserialization errors are returned as database
 				// corruption errors.

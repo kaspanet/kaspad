@@ -7,6 +7,9 @@ package blockdag
 import (
 	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
+	"io"
 )
 
 // -----------------------------------------------------------------------------
@@ -263,6 +266,17 @@ func compressedScriptSize(scriptPubKey []byte) int {
 		len(scriptPubKey)
 }
 
+const (
+	cstPayToPubKeyHashLen = 21
+	cstPayToScriptHashLen = 21
+
+	cstPayToPubKeyComp2Len = 33
+	cstPayToPubKeyComp3Len = 33
+
+	cstPayToPubKeyUncomp4Len = 33
+	cstPayToPubKeyUncomp5Len = 33
+)
+
 // decodeCompressedScriptSize treats the passed serialized bytes as a compressed
 // script, possibly followed by other data, and returns the number of bytes it
 // occupies taking into account the special encoding of the script size by the
@@ -275,14 +289,23 @@ func decodeCompressedScriptSize(serialized []byte) int {
 
 	switch scriptSize {
 	case cstPayToPubKeyHash:
-		return 21
+		return cstPayToPubKeyHashLen
 
 	case cstPayToScriptHash:
-		return 21
+		return cstPayToScriptHashLen
 
-	case cstPayToPubKeyComp2, cstPayToPubKeyComp3, cstPayToPubKeyUncomp4,
-		cstPayToPubKeyUncomp5:
-		return 33
+	case cstPayToPubKeyComp2:
+		return cstPayToPubKeyComp2Len
+
+	case cstPayToPubKeyComp3:
+		return cstPayToPubKeyComp3Len
+
+	case cstPayToPubKeyUncomp4:
+		return cstPayToPubKeyUncomp4Len
+
+	case cstPayToPubKeyUncomp5:
+		return cstPayToPubKeyUncomp5Len
+
 	}
 
 	scriptSize -= numSpecialScripts
@@ -290,24 +313,43 @@ func decodeCompressedScriptSize(serialized []byte) int {
 	return int(scriptSize)
 }
 
+const (
+	pubKeyHashLen         = 20
+	scriptHashLen         = 20
+	pubKeyXLen            = 32
+	uncompressedPubKeyLen = 64
+)
+
 // putCompressedScript compresses the passed script according to the domain
 // specific compression algorithm described above directly into the passed
 // target byte slice. The target byte slice must be at least large enough to
 // handle the number of bytes returned by the compressedScriptSize function or
 // it will panic.
-func putCompressedScript(target, scriptPubKey []byte) int {
+func putCompressedScript(w io.Writer, scriptPubKey []byte) error {
 	// Pay-to-pubkey-hash script.
 	if valid, hash := isPubKeyHash(scriptPubKey); valid {
-		target[0] = cstPayToPubKeyHash
-		copy(target[1:21], hash)
-		return 21
+		if len(hash) != pubKeyHashLen {
+			panic(errors.Errorf("public key hash is not %d bytes", pubKeyHashLen))
+		}
+		_, err := w.Write([]byte{cstPayToPubKeyHash})
+		if err != nil {
+			return err
+		}
+		_, err = w.Write(hash)
+		return err
 	}
 
 	// Pay-to-script-hash script.
 	if valid, hash := isScriptHash(scriptPubKey); valid {
-		target[0] = cstPayToScriptHash
-		copy(target[1:21], hash)
-		return 21
+		if len(hash) != scriptHashLen {
+			panic(errors.Errorf("public key hash is not %d bytes", scriptHashLen))
+		}
+		_, err := w.Write([]byte{cstPayToScriptHash})
+		if err != nil {
+			return err
+		}
+		_, err = w.Write(hash)
+		return err
 	}
 
 	// Pay-to-pubkey (compressed or uncompressed) script.
@@ -315,15 +357,22 @@ func putCompressedScript(target, scriptPubKey []byte) int {
 		pubKeyFormat := serializedPubKey[0]
 		switch pubKeyFormat {
 		case 0x02, 0x03:
-			target[0] = pubKeyFormat
-			copy(target[1:33], serializedPubKey[1:33])
-			return 33
+			_, err := w.Write([]byte{pubKeyFormat})
+			if err != nil {
+				return err
+			}
+			_, err = w.Write(serializedPubKey[1 : 1+pubKeyXLen])
+			return err
 		case 0x04:
 			// Encode the oddness of the serialized pubkey into the
 			// compressed script type.
-			target[0] = pubKeyFormat | (serializedPubKey[64] & 0x01)
-			copy(target[1:33], serializedPubKey[1:33])
-			return 33
+			cst := pubKeyFormat | (serializedPubKey[64] & 0x01)
+			_, err := w.Write([]byte{cst})
+			if err != nil {
+				return err
+			}
+			_, err = w.Write(serializedPubKey[1 : 1+pubKeyXLen])
+			return err
 		}
 	}
 
@@ -331,9 +380,13 @@ func putCompressedScript(target, scriptPubKey []byte) int {
 	// script preceded by the sum of its size and the number of special
 	// cases encoded as a variable length quantity.
 	encodedSize := uint64(len(scriptPubKey) + numSpecialScripts)
-	vlqSizeLen := putVLQ(target, encodedSize)
-	copy(target[vlqSizeLen:], scriptPubKey)
-	return vlqSizeLen + len(scriptPubKey)
+	err := wire.WriteVarInt(w, encodedSize)
+	if err != nil {
+		return err
+	}
+
+	_, err = w.Write(scriptPubKey)
+	return err
 }
 
 // decompressScript returns the original script obtained by decompressing the
@@ -343,50 +396,62 @@ func putCompressedScript(target, scriptPubKey []byte) int {
 // NOTE: The script parameter must already have been proven to be long enough
 // to contain the number of bytes returned by decodeCompressedScriptSize or it
 // will panic. This is acceptable since it is only an internal function.
-func decompressScript(compressedScriptPubKey []byte) []byte {
-	// In practice this function will not be called with a zero-length or
-	// nil script since the nil script encoding includes the length, however
-	// the code below assumes the length exists, so just return nil now if
-	// the function ever ends up being called with a nil script in the
-	// future.
-	if len(compressedScriptPubKey) == 0 {
-		return nil
-	}
-
+func decompressScript(r io.Reader) ([]byte, error) {
 	// Decode the script size and examine it for the special cases.
-	encodedScriptSize, bytesRead := deserializeVLQ(compressedScriptPubKey)
+	encodedScriptSize, err := wire.ReadVarInt(r)
+	if err != nil {
+		return nil, err
+	}
 	switch encodedScriptSize {
 	// Pay-to-pubkey-hash script. The resulting script is:
 	// <OP_DUP><OP_HASH160><20 byte hash><OP_EQUALVERIFY><OP_CHECKSIG>
 	case cstPayToPubKeyHash:
-		scriptPubKey := make([]byte, 25)
+		hash := make([]byte, pubKeyHashLen)
+		_, err := r.Read(hash)
+		if err != nil {
+			return nil, err
+		}
+
+		scriptPubKey := make([]byte, pubKeyHashLen+5)
 		scriptPubKey[0] = txscript.OpDup
 		scriptPubKey[1] = txscript.OpHash160
 		scriptPubKey[2] = txscript.OpData20
-		copy(scriptPubKey[3:], compressedScriptPubKey[bytesRead:bytesRead+20])
+		copy(scriptPubKey[3:], hash)
 		scriptPubKey[23] = txscript.OpEqualVerify
 		scriptPubKey[24] = txscript.OpCheckSig
-		return scriptPubKey
+		return scriptPubKey, nil
 
 	// Pay-to-script-hash script. The resulting script is:
 	// <OP_HASH160><20 byte script hash><OP_EQUAL>
 	case cstPayToScriptHash:
+		hash := make([]byte, pubKeyHashLen)
+		_, err := r.Read(hash)
+		if err != nil {
+			return nil, err
+		}
+
 		scriptPubKey := make([]byte, 23)
 		scriptPubKey[0] = txscript.OpHash160
 		scriptPubKey[1] = txscript.OpData20
-		copy(scriptPubKey[2:], compressedScriptPubKey[bytesRead:bytesRead+20])
-		scriptPubKey[22] = txscript.OpEqual
-		return scriptPubKey
+		copy(scriptPubKey[2:], hash)
+		scriptPubKey[pubKeyHashLen+2] = txscript.OpEqual
+		return scriptPubKey, nil
 
 	// Pay-to-compressed-pubkey script. The resulting script is:
 	// <OP_DATA_33><33 byte compressed pubkey><OP_CHECKSIG>
 	case cstPayToPubKeyComp2, cstPayToPubKeyComp3:
+		pubKeyX := make([]byte, pubKeyXLen)
+		_, err := r.Read(pubKeyX)
+		if err != nil {
+			return nil, err
+		}
+
 		scriptPubKey := make([]byte, 35)
 		scriptPubKey[0] = txscript.OpData33
 		scriptPubKey[1] = byte(encodedScriptSize)
-		copy(scriptPubKey[2:], compressedScriptPubKey[bytesRead:bytesRead+32])
-		scriptPubKey[34] = txscript.OpCheckSig
-		return scriptPubKey
+		copy(scriptPubKey[2:], pubKeyX)
+		scriptPubKey[pubKeyXLen+2] = txscript.OpCheckSig
+		return scriptPubKey, nil
 
 	// Pay-to-uncompressed-pubkey script. The resulting script is:
 	// <OP_DATA_65><65 byte uncompressed pubkey><OP_CHECKSIG>
@@ -397,17 +462,23 @@ func decompressScript(compressedScriptPubKey []byte) []byte {
 		// encoding ensures it is valid before compressing to this type.
 		compressedKey := make([]byte, 33)
 		compressedKey[0] = byte(encodedScriptSize - 2)
-		copy(compressedKey[1:], compressedScriptPubKey[1:])
+
+		pubKeyX := make([]byte, pubKeyXLen)
+		_, err := r.Read(pubKeyX)
+		if err != nil {
+			return nil, err
+		}
+		copy(compressedKey[1:], pubKeyX)
 		key, err := ecc.ParsePubKey(compressedKey, ecc.S256())
 		if err != nil {
-			return nil
+			return nil, err
 		}
 
 		scriptPubKey := make([]byte, 67)
 		scriptPubKey[0] = txscript.OpData65
 		copy(scriptPubKey[1:], key.SerializeUncompressed())
-		scriptPubKey[66] = txscript.OpCheckSig
-		return scriptPubKey
+		scriptPubKey[uncompressedPubKeyLen+2] = txscript.OpCheckSig
+		return scriptPubKey, nil
 	}
 
 	// When none of the special cases apply, the script was encoded using
@@ -415,8 +486,12 @@ func decompressScript(compressedScriptPubKey []byte) []byte {
 	// special cases and return the unmodified script.
 	scriptSize := int(encodedScriptSize - numSpecialScripts)
 	scriptPubKey := make([]byte, scriptSize)
-	copy(scriptPubKey, compressedScriptPubKey[bytesRead:bytesRead+scriptSize])
-	return scriptPubKey
+	_, err = r.Read(scriptPubKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return scriptPubKey, nil
 }
 
 // -----------------------------------------------------------------------------
@@ -551,34 +626,30 @@ func compressedTxOutSize(amount uint64, scriptPubKey []byte) int {
 // passed target byte slice with the format described above. The target byte
 // slice must be at least large enough to handle the number of bytes returned by
 // the compressedTxOutSize function or it will panic.
-func putCompressedTxOut(target []byte, amount uint64, scriptPubKey []byte) int {
-	offset := putVLQ(target, compressTxOutAmount(amount))
-	offset += putCompressedScript(target[offset:], scriptPubKey)
-	return offset
+func putCompressedTxOut(w io.Writer, amount uint64, scriptPubKey []byte) error {
+	err := wire.WriteVarInt(w, compressTxOutAmount(amount))
+	if err != nil {
+		return err
+	}
+	return putCompressedScript(w, scriptPubKey)
 }
 
 // decodeCompressedTxOut decodes the passed compressed txout, possibly followed
 // by other data, into its uncompressed amount and script and returns them along
 // with the number of bytes they occupied prior to decompression.
-func decodeCompressedTxOut(serialized []byte) (uint64, []byte, int, error) {
+func decodeCompressedTxOut(r io.Reader) (uint64, []byte, error) {
 	// Deserialize the compressed amount and ensure there are bytes
 	// remaining for the compressed script.
-	compressedAmount, bytesRead := deserializeVLQ(serialized)
-	if bytesRead >= len(serialized) {
-		return 0, nil, bytesRead, errDeserialize("unexpected end of " +
-			"data after compressed amount")
-	}
-
-	// Decode the compressed script size and ensure there are enough bytes
-	// left in the slice for it.
-	scriptSize := decodeCompressedScriptSize(serialized[bytesRead:])
-	if len(serialized[bytesRead:]) < scriptSize {
-		return 0, nil, bytesRead, errDeserialize("unexpected end of " +
-			"data after script size")
+	compressedAmount, err := wire.ReadVarInt(r)
+	if err != nil {
+		return 0, nil, err
 	}
 
 	// Decompress and return the amount and script.
 	amount := decompressTxOutAmount(compressedAmount)
-	script := decompressScript(serialized[bytesRead : bytesRead+scriptSize])
-	return amount, script, bytesRead + scriptSize, nil
+	scriptPubKey, err := decompressScript(r)
+	if err != nil {
+		return 0, nil, err
+	}
+	return amount, scriptPubKey, nil
 }

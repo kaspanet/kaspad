@@ -3,10 +3,9 @@ package blockdag
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
-	"github.com/kaspanet/kaspad/util/binaryserializer"
 	"github.com/pkg/errors"
 	"io"
+	"math"
 	"math/big"
 
 	"github.com/kaspanet/kaspad/ecc"
@@ -123,12 +122,12 @@ func deserializeUTXOCollection(r io.Reader) (utxoCollection, error) {
 }
 
 func deserializeUTXO(r io.Reader) (*UTXOEntry, *wire.Outpoint, error) {
-	outpoint, err := deserializeOutpointTag(r)
+	outpoint, err := deserializeOutpoint(r)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	utxoEntry, err := deserializeUTXOEntryTag(r)
+	utxoEntry, err := deserializeUTXOEntry(r)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -223,34 +222,20 @@ func serializeUTXO(w io.Writer, entry *UTXOEntry, outpoint *wire.Outpoint) error
 		return err
 	}
 
-	err = serializeUTXOEntryTag(w, entry)
+	err = serializeUTXOEntry(w, entry)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
+// p2pkhUTXOEntryMaxSerializeSize is the maximum serialized size for a P2PKH UTXO entry.
+// Varint (header code) + 8 bytes (amount) + compressed P2PKH script size.
+var p2pkhUTXOEntryMaxSerializeSize = wire.VarIntSerializeSize(math.MaxUint64) + 8 + cstPayToPubKeyHashLen
+
 // serializeUTXOEntry returns the entry serialized to a format that is suitable
 // for long-term storage. The format is described in detail above.
-func serializeUTXOEntry(entry *UTXOEntry) []byte {
-	// Encode the header code.
-	headerCode := utxoEntryHeaderCode(entry)
-
-	// Calculate the size needed to serialize the entry.
-	size := serializeSizeVLQ(headerCode) +
-		compressedTxOutSize(uint64(entry.Amount()), entry.ScriptPubKey())
-
-	// Serialize the header code followed by the compressed unspent
-	// transaction output.
-	serialized := make([]byte, size)
-	offset := putVLQ(serialized, headerCode)
-	offset += putCompressedTxOut(serialized[offset:], uint64(entry.Amount()),
-		entry.ScriptPubKey())
-
-	return serialized
-}
-
-func serializeUTXOEntryTag(w io.Writer, entry *UTXOEntry) error {
+func serializeUTXOEntry(w io.Writer, entry *UTXOEntry) error {
 	// Encode the header code.
 	headerCode := utxoEntryHeaderCode(entry)
 
@@ -259,25 +244,13 @@ func serializeUTXOEntryTag(w io.Writer, entry *UTXOEntry) error {
 		return err
 	}
 
-	err = binaryserializer.PutUint64(w, byteOrder, entry.Amount())
-	if err != nil {
-		return err
-	}
-
-	err = wire.WriteVarInt(w, uint64(len(entry.ScriptPubKey())))
-	if err != nil {
-		return err
-	}
-
-	_, err = w.Write(entry.ScriptPubKey())
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return putCompressedTxOut(w, entry.Amount(), entry.ScriptPubKey())
 }
 
-func deserializeUTXOEntryTag(r io.Reader) (*UTXOEntry, error) {
+// deserializeUTXOEntry decodes a UTXO entry from the passed serialized byte
+// slice into a new UTXOEntry using a format that is suitable for long-term
+// storage. The format is described in detail above.
+func deserializeUTXOEntry(r io.Reader) (*UTXOEntry, error) {
 	// Deserialize the header code.
 	headerCode, err := wire.ReadVarInt(r)
 	if err != nil {
@@ -291,75 +264,9 @@ func deserializeUTXOEntryTag(r io.Reader) (*UTXOEntry, error) {
 	isCoinbase := headerCode&0x01 != 0
 	blockBlueScore := headerCode >> 1
 
-	amount, err := binaryserializer.Uint64(r, byteOrder)
+	amount, scriptPubKey, err := decodeCompressedTxOut(r)
 	if err != nil {
 		return nil, err
-	}
-
-	scriptPubKeyLen, err := wire.ReadVarInt(r)
-	if err != nil {
-		return nil, err
-	}
-
-	if scriptPubKeyLen == 0 {
-		return nil, errors.New("scriptPubKey cannot be empty")
-	}
-
-	scriptPubKey := make([]byte, scriptPubKeyLen)
-	_, err = r.Read(scriptPubKey)
-	if err != nil {
-		return nil, err
-	}
-
-	entry := &UTXOEntry{
-		amount:         amount,
-		scriptPubKey:   scriptPubKey,
-		blockBlueScore: blockBlueScore,
-		packedFlags:    0,
-	}
-	if isCoinbase {
-		entry.packedFlags |= tfCoinbase
-	}
-
-	return entry, nil
-}
-
-// deserializeOutpoint decodes an outpoint from the passed serialized byte
-// slice into a new wire.Outpoint using a format that is suitable for long-
-// term storage. this format is described in detail above.
-func deserializeOutpoint(serialized []byte) (*wire.Outpoint, error) {
-	if len(serialized) <= daghash.HashSize {
-		return nil, errDeserialize("unexpected end of data")
-	}
-
-	txID := daghash.TxID{}
-	txID.SetBytes(serialized[:daghash.HashSize])
-	index, _ := deserializeVLQ(serialized[daghash.HashSize:])
-	return wire.NewOutpoint(&txID, uint32(index)), nil
-}
-
-// deserializeUTXOEntry decodes a UTXO entry from the passed serialized byte
-// slice into a new UTXOEntry using a format that is suitable for long-term
-// storage. The format is described in detail above.
-func deserializeUTXOEntry(serialized []byte) (*UTXOEntry, error) {
-	// Deserialize the header code.
-	code, offset := deserializeVLQ(serialized)
-	if offset >= len(serialized) {
-		return nil, errDeserialize("unexpected end of data after header")
-	}
-
-	// Decode the header code.
-	//
-	// Bit 0 indicates whether the containing transaction is a coinbase.
-	// Bits 1-x encode blue score of the containing transaction.
-	isCoinbase := code&0x01 != 0
-	blockBlueScore := code >> 1
-
-	// Decode the compressed unspent transaction output.
-	amount, scriptPubKey, _, err := decodeCompressedTxOut(serialized[offset:])
-	if err != nil {
-		return nil, errDeserialize(fmt.Sprintf("unable to decode "+
-			"UTXO: %s", err))
 	}
 
 	entry := &UTXOEntry{
