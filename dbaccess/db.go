@@ -6,11 +6,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-// dbSingleton is an instance of the kaspad database
-var dbSingleton database2.DatabaseHandle
+// dbSingleton is a handle to an instance of the kaspad database
+var dbSingleton database2.Handle
 
-// db returns a reference to the database
-func db() (database2.DatabaseHandle, error) {
+// db returns a handle to the database
+func db() (database2.Handle, error) {
 	if dbSingleton == nil {
 		return nil, errors.New("database is not open")
 	}

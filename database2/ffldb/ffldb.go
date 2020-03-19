@@ -14,7 +14,7 @@ type ffldb struct {
 }
 
 // Open opens a new ffldb with the given path.
-func Open(path string) (database2.DatabaseHandle, error) {
+func Open(path string) (database2.Handle, error) {
 	ffdb := ff.NewFlatFileDB(path)
 	ldb, err := ldb.NewLevelDB(path)
 	if err != nil {
@@ -29,7 +29,7 @@ func Open(path string) (database2.DatabaseHandle, error) {
 }
 
 // Close closes the database.
-// This method is part of the DatabaseHandle interface.
+// This method is part of the Handle interface.
 func (db *ffldb) Close() error {
 	err := db.ffdb.Close()
 	if err != nil {
@@ -96,7 +96,7 @@ func (db *ffldb) RollbackFlatData(storeName string, location []byte) error {
 }
 
 // Begin begins a new ffldb transaction.
-// This method is part of the DatabaseHandle interface.
+// This method is part of the Handle interface.
 func (db *ffldb) Begin() (database2.Transaction, error) {
 	ldbTx, err := db.ldb.Begin()
 	if err != nil {

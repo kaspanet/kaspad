@@ -4,7 +4,7 @@ package database2
 // transaction.
 type Transaction interface {
 	// A transaction needs to be able to do anything that the
-	// underlying the database can do.
+	// underlying database can do.
 	Database
 
 	// Rollback rolls back whatever changes were made to the
