@@ -5,6 +5,9 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
+// LevelDBTransaction is a thin wrapper around native
+// leveldb batches and snapshots. It supports both get
+// and put.
 type LevelDBTransaction struct {
 	ldb      *leveldb.DB
 	snapshot *leveldb.Snapshot
@@ -13,6 +16,7 @@ type LevelDBTransaction struct {
 	isClosed bool
 }
 
+// Begin begins a new transaction.
 func (db *LevelDB) Begin() (*LevelDBTransaction, error) {
 	snapshot, err := db.ldb.GetSnapshot()
 	if err != nil {
@@ -30,6 +34,8 @@ func (db *LevelDB) Begin() (*LevelDBTransaction, error) {
 	return transaction, nil
 }
 
+// Commit commits whatever changes were made to the database
+// within this transaction.
 func (tx *LevelDBTransaction) Commit() error {
 	if tx.isClosed {
 		return errors.New("cannot commit a closed transaction")
@@ -40,6 +46,8 @@ func (tx *LevelDBTransaction) Commit() error {
 	return tx.ldb.Write(tx.batch, nil)
 }
 
+// Rollback rolls back whatever changes were made to the
+// database within this transaction.
 func (tx *LevelDBTransaction) Rollback() error {
 	if tx.isClosed {
 		return errors.New("cannot rollback a closed transaction")
@@ -51,6 +59,8 @@ func (tx *LevelDBTransaction) Rollback() error {
 	return nil
 }
 
+// Put sets the value for the given key. It overwrites
+// any previous value for that key.
 func (tx *LevelDBTransaction) Put(key []byte, value []byte) error {
 	if tx.isClosed {
 		return errors.New("cannot put into a closed transaction")
@@ -60,6 +70,8 @@ func (tx *LevelDBTransaction) Put(key []byte, value []byte) error {
 	return nil
 }
 
+// Get gets the value for the given key. It returns an
+// error if the given key does not exist.
 func (tx *LevelDBTransaction) Get(key []byte) ([]byte, error) {
 	if tx.isClosed {
 		return nil, errors.New("cannot get from a closed transaction")
@@ -68,6 +80,8 @@ func (tx *LevelDBTransaction) Get(key []byte) ([]byte, error) {
 	return tx.snapshot.Get(key, nil)
 }
 
+// Has returns true if the database does contains the
+// given key.
 func (tx *LevelDBTransaction) Has(key []byte) (bool, error) {
 	if tx.isClosed {
 		return false, errors.New("cannot has from a closed transaction")

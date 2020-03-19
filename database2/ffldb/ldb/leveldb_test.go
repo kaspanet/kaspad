@@ -86,10 +86,10 @@ func TestLevelDBTransactionSanity(t *testing.T) {
 
 	// Get from the key previously put to. Since the tx is not
 	// yet committed, this should fail.
-	getData, err := ldb.Get(key)
-	if err != nil {
-		t.Fatalf("TestLevelDBTransactionSanity: Get "+
-			"returned unexpected error: %s", err)
+	_, err = ldb.Get(key)
+	if err == nil {
+		t.Fatalf("TestLevelDBTransactionSanity: Get " +
+			"unexpectedly didn't return an error")
 	}
 
 	// Commit the transaction
@@ -101,7 +101,7 @@ func TestLevelDBTransactionSanity(t *testing.T) {
 
 	// Get from the key previously put to. Now that the tx was
 	// committed, this should succeed.
-	getData, err = ldb.Get(key)
+	getData, err := ldb.Get(key)
 	if err != nil {
 		t.Fatalf("TestLevelDBTransactionSanity: Get "+
 			"returned unexpected error: %s", err)

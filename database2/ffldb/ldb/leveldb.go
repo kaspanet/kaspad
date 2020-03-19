@@ -5,10 +5,12 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/errors"
 )
 
+// LevelDB defines a thin wrapper around leveldb.
 type LevelDB struct {
 	ldb *leveldb.DB
 }
 
+// NewLevelDB opens a leveldb instance defined by the given path.
 func NewLevelDB(path string) (*LevelDB, error) {
 	// Open leveldb. If it doesn't exist, create it.
 	ldb, err := leveldb.OpenFile(path, nil)
@@ -38,18 +40,25 @@ func NewLevelDB(path string) (*LevelDB, error) {
 	return db, nil
 }
 
+// Close closes the leveldb instance.
 func (db *LevelDB) Close() error {
 	return db.ldb.Close()
 }
 
+// Put sets the value for the given key. It overwrites
+// any previous value for that key.
 func (db *LevelDB) Put(key []byte, value []byte) error {
 	return db.ldb.Put(key, value, nil)
 }
 
+// Get gets the value for the given key. It returns an
+// error if the given key does not exist.
 func (db *LevelDB) Get(key []byte) ([]byte, error) {
 	return db.ldb.Get(key, nil)
 }
 
+// Has returns true if the database does contains the
+// given key.
 func (db *LevelDB) Has(key []byte) (bool, error) {
 	return db.ldb.Has(key, nil)
 }
