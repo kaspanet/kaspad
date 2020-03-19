@@ -7,7 +7,7 @@ package main
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/database2"
-	"github.com/kaspanet/kaspad/database2/dbaccess"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
 	"net"
 	"net/http"

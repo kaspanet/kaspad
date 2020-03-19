@@ -156,5 +156,5 @@ func FetchBlock(context Context, hash *daghash.Hash) (*util.Block, error) {
 }
 
 func blockLocationKey(hash *daghash.Hash) []byte {
-	return ffldb.Key(hash[:], blockLocationsBucketName)
+	return ffldb.Key(blockLocationsBucketName, hash[:])
 }
