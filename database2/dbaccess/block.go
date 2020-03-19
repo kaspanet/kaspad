@@ -37,7 +37,7 @@ func InitBlockStore(context Context) error {
 		return db.Put(currentBlockLocationKeyName, currentBlockLocation)
 	}
 
-	// Sync block store and current block location value.
+	// Sync the block store and the current block location value.
 	// Possible scenarios:
 	// a. currentBlockLocation and the block store are synced. RollbackFlatData
 	//    does nothing.
@@ -45,7 +45,7 @@ func InitBlockStore(context Context) error {
 	//    RollbackFlatData truncates the flat file store.
 	// c. currentBlockLocation is greater than the block store's location.
 	//    RollbackFlatData returns an error. This indicates definite database
-	//    corruption and is unrecoverable.
+	//    corruption and is irrecoverable.
 	currentBlockLocation, err := db.Get(currentBlockLocationKeyName)
 	if err != nil {
 		return err
@@ -105,8 +105,8 @@ func StoreBlock(context Context, block *util.Block) error {
 	}
 
 	// Write the new block location. We use it to sync the
-	// block store and the block locations bucket when kaspad
-	// restarts. Rollback if this fails.
+	// block store and the current block location value when
+	// kaspad restarts. Rollback if this fails.
 	currentBlockLocation := db.CurrentFlatDataLocation(blockStoreName)
 	err = db.Put(currentBlockLocationKeyName, currentBlockLocation)
 	if err != nil {
