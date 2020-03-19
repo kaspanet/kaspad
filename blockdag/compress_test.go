@@ -319,7 +319,7 @@ func TestCompressedTxOut(t *testing.T) {
 			name:         "pay-to-pubkey-hash dust",
 			amount:       546,
 			scriptPubKey: hexToBytes("76a9141018853670f9f3b0582c5b9ee8ce93764ac32b9388ac"),
-			compressed:   hexToBytes("a52f001018853670f9f3b0582c5b9ee8ce93764ac32b93"),
+			compressed:   hexToBytes("fd2f13001018853670f9f3b0582c5b9ee8ce93764ac32b93"),
 		},
 		{
 			name:         "pay-to-pubkey uncompressed 1 KAS",
