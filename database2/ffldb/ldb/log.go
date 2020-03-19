@@ -1,4 +1,4 @@
-package leveldb
+package ldb
 
 import "github.com/kaspanet/kaspad/logger"
 

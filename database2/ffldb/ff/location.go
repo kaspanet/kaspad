@@ -1,4 +1,4 @@
-package flatfile
+package ff
 
 import "github.com/pkg/errors"
 

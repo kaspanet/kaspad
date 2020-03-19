@@ -1,4 +1,4 @@
-package bucket
+package ldb
 
 var separator = []byte("/")
 

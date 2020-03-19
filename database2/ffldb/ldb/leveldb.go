@@ -1,15 +1,15 @@
-package leveldb
+package ldb
 
 import (
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 )
 
-type LDB struct {
+type LevelDB struct {
 	ldb *leveldb.DB
 }
 
-func NewLevelDB(path string) (*LDB, error) {
+func NewLevelDB(path string) (*LevelDB, error) {
 	// Open leveldb. If it doesn't exist, create it.
 	ldb, err := leveldb.OpenFile(path, nil)
 
@@ -32,24 +32,24 @@ func NewLevelDB(path string) (*LDB, error) {
 		return nil, err
 	}
 
-	db := &LDB{
+	db := &LevelDB{
 		ldb: ldb,
 	}
 	return db, nil
 }
 
-func (db *LDB) Close() error {
+func (db *LevelDB) Close() error {
 	return db.ldb.Close()
 }
 
-func (db *LDB) Put(key []byte, value []byte) error {
+func (db *LevelDB) Put(key []byte, value []byte) error {
 	return db.ldb.Put(key, value, nil)
 }
 
-func (db *LDB) Get(key []byte) ([]byte, error) {
+func (db *LevelDB) Get(key []byte) ([]byte, error) {
 	return db.ldb.Get(key, nil)
 }
 
-func (db *LDB) Has(key []byte) (bool, error) {
+func (db *LevelDB) Has(key []byte) (bool, error) {
 	return db.ldb.Has(key, nil)
 }

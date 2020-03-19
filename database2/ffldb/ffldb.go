@@ -1,9 +1,8 @@
 package ffldb
 
 import (
-	"github.com/kaspanet/kaspad/database2/ffldb/bucket"
-	"github.com/kaspanet/kaspad/database2/ffldb/flatfile"
-	"github.com/kaspanet/kaspad/database2/ffldb/leveldb"
+	"github.com/kaspanet/kaspad/database2/ffldb/ff"
+	"github.com/kaspanet/kaspad/database2/ffldb/ldb"
 )
 
 // Database defines the interface of the ffldb database.
@@ -48,14 +47,14 @@ type Database interface {
 // FFLDB is a database that's both LevelDB and a flat-file
 // database.
 type FFLDB struct {
-	ffdb *flatfile.FFDB
-	ldb  *leveldb.LDB
+	ffdb *ff.FlatFileDB
+	ldb  *ldb.LevelDB
 }
 
 // Open opens a new ffldb with the given path.
 func Open(path string) (*FFLDB, error) {
-	ffdb := flatfile.NewFlatFileDatabase(path)
-	ldb, err := leveldb.NewLevelDB(path)
+	ffdb := ff.NewFlatFileDB(path)
+	ldb, err := ldb.NewLevelDB(path)
 	if err != nil {
 		return nil, err
 	}
@@ -135,8 +134,8 @@ func (db *FFLDB) RollbackFlatData(storeName string, location []byte) error {
 
 // Transaction is an ffldb transaction.
 type Transaction struct {
-	ldbTx *leveldb.LDBTransaction
-	ffdb  *flatfile.FFDB
+	ldbTx *ldb.LevelDBTransaction
+	ffdb  *ff.FlatFileDB
 }
 
 // Begin begins a new ffldb transaction.
@@ -229,7 +228,7 @@ func (tx *Transaction) Commit() error {
 // * buckets: bbb, ccc
 // * Result: bbb/ccc/aaa
 func Key(key []byte, buckets ...[]byte) []byte {
-	return bucket.BuildKey(key, buckets...)
+	return ldb.BuildKey(key, buckets...)
 }
 
 // BucketPath returns a compound path using the given
@@ -238,5 +237,5 @@ func Key(key []byte, buckets ...[]byte) []byte {
 // * buckets: bbb, ccc
 // * Result: bbb/ccc/
 func BucketPath(buckets ...[]byte) []byte {
-	return bucket.BuildBucketPath(buckets...)
+	return ldb.BuildBucketPath(buckets...)
 }

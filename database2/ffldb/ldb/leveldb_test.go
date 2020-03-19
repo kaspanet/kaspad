@@ -1,4 +1,4 @@
-package leveldb
+package ldb
 
 import (
 	"io/ioutil"
