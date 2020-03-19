@@ -14,7 +14,7 @@ type ffldb struct {
 }
 
 // Open opens a new ffldb with the given path.
-func Open(path string) (*ffldb, error) {
+func Open(path string) (database2.DatabaseHandle, error) {
 	ffdb := ff.NewFlatFileDB(path)
 	ldb, err := ldb.NewLevelDB(path)
 	if err != nil {
