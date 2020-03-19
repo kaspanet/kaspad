@@ -225,31 +225,25 @@ func TestBlockLocatorWireErrors(t *testing.T) {
 		// Encode to wire format.
 		w := newFixedWriter(test.max)
 		err := test.in.KaspaEncode(w, test.pver)
-		if reflect.TypeOf(err) != reflect.TypeOf(test.writeErr) {
-			t.Errorf("KaspaEncode #%d wrong error got: %v, want: %v",
-				i, err, test.writeErr)
-			continue
-		}
 
 		// For errors which are not of type MessageError, check them for
 		// equality.
 		if msgErr := &(MessageError{}); !errors.As(err, &msgErr) {
-			if err != test.writeErr {
+			if !errors.Is(err, test.writeErr) {
 				t.Errorf("KaspaEncode #%d wrong error got: %v, "+
 					"want: %v", i, err, test.writeErr)
 				continue
 			}
+		} else if reflect.TypeOf(msgErr) != reflect.TypeOf(test.writeErr) {
+			t.Errorf("ReadMessage #%d wrong error type got: %T, "+
+				"want: %T", i, msgErr, test.writeErr)
+			continue
 		}
 
 		// Decode from wire format.
 		var msg MsgBlockLocator
 		r := newFixedReader(test.max, test.buf)
 		err = msg.KaspaDecode(r, test.pver)
-		if reflect.TypeOf(err) != reflect.TypeOf(test.readErr) {
-			t.Errorf("KaspaDecode #%d wrong error got: %v, want: %v",
-				i, err, test.readErr)
-			continue
-		}
 
 		// For errors which are not of type MessageError, check them for
 		// equality.
@@ -259,6 +253,10 @@ func TestBlockLocatorWireErrors(t *testing.T) {
 					"want: %v", i, err, test.readErr)
 				continue
 			}
+		} else if reflect.TypeOf(msgErr) != reflect.TypeOf(test.readErr) {
+			t.Errorf("ReadMessage #%d wrong error type got: %T, "+
+				"want: %T", i, msgErr, test.readErr)
+			continue
 		}
 	}
 }

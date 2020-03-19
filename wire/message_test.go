@@ -357,6 +357,10 @@ func TestReadMessageWireErrors(t *testing.T) {
 					test.readErr, test.readErr)
 				continue
 			}
+		} else if reflect.TypeOf(msgErr) != reflect.TypeOf(test.readErr) {
+			t.Errorf("ReadMessage #%d wrong error type got: %T, "+
+				"want: %T", i, msgErr, test.readErr)
+			continue
 		}
 	}
 }
