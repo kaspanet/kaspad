@@ -1,7 +1,7 @@
 package dbaccess
 
 import (
-	"github.com/kaspanet/kaspad/database2/ffldb"
+	"github.com/kaspanet/kaspad/database2"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
@@ -12,8 +12,8 @@ const (
 )
 
 var (
-	blockLocationsBucketName    = []byte("block-locations")
-	currentBlockLocationKeyName = []byte("current-block-location")
+	blockLocationsBucket    = database2.MakeBucket([]byte("block-locations"))
+	currentBlockLocationKey = []byte("current-block-location")
 )
 
 // InitBlockStore initializes the database to accept blocks. If this function
@@ -28,13 +28,13 @@ func InitBlockStore(context Context) error {
 	// If the current block location is missing this must be the first time
 	// kaspad has ran. Simply initialize the currentBlockLocation value and
 	// exit.
-	exists, err := db.Has(currentBlockLocationKeyName)
+	exists, err := db.Has(currentBlockLocationKey)
 	if err != nil {
 		return err
 	}
 	if !exists {
 		currentBlockLocation := db.CurrentFlatDataLocation(blockStoreName)
-		return db.Put(currentBlockLocationKeyName, currentBlockLocation)
+		return db.Put(currentBlockLocationKey, currentBlockLocation)
 	}
 
 	// Sync the block store and the current block location value.
@@ -46,7 +46,7 @@ func InitBlockStore(context Context) error {
 	// c. currentBlockLocation is greater than the block store's location.
 	//    RollbackFlatData returns an error. This indicates definite database
 	//    corruption and is irrecoverable.
-	currentBlockLocation, err := db.Get(currentBlockLocationKeyName)
+	currentBlockLocation, err := db.Get(currentBlockLocationKey)
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func StoreBlock(context Context, block *util.Block) error {
 	// block store and the current block location value when
 	// kaspad restarts. Rollback if this fails.
 	currentBlockLocation := db.CurrentFlatDataLocation(blockStoreName)
-	err = db.Put(currentBlockLocationKeyName, currentBlockLocation)
+	err = db.Put(currentBlockLocationKey, currentBlockLocation)
 	if err != nil {
 		rollbackErr := rollback()
 		if rollbackErr != nil {
@@ -156,5 +156,5 @@ func FetchBlock(context Context, hash *daghash.Hash) (*util.Block, error) {
 }
 
 func blockLocationKey(hash *daghash.Hash) []byte {
-	return ffldb.Key(blockLocationsBucketName, hash[:])
+	return blockLocationsBucket.Key(hash[:])
 }

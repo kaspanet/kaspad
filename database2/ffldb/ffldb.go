@@ -109,22 +109,3 @@ func (db *ffldb) Begin() (database2.Transaction, error) {
 	}
 	return transaction, nil
 }
-
-// Key returns a key using the given key value and the
-// given path of buckets.
-// Example:
-// * key: aaa
-// * buckets: bbb, ccc
-// * Result: bbb/ccc/aaa
-func Key(key []byte, buckets ...[]byte) []byte {
-	return ldb.BuildKey(key, buckets...)
-}
-
-// BucketPath returns a compound path using the given
-// path of buckets.
-// Example:
-// * buckets: bbb, ccc
-// * Result: bbb/ccc/
-func BucketPath(buckets ...[]byte) []byte {
-	return ldb.BuildBucketPath(buckets...)
-}
