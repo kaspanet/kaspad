@@ -5,7 +5,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
-type LevelDBTransaction struct {
+type LDBTransaction struct {
 	ldb      *leveldb.DB
 	snapshot *leveldb.Snapshot
 	batch    *leveldb.Batch
@@ -13,14 +13,14 @@ type LevelDBTransaction struct {
 	isClosed bool
 }
 
-func (db *LevelDB) Begin() (*LevelDBTransaction, error) {
+func (db *LDB) Begin() (*LDBTransaction, error) {
 	snapshot, err := db.ldb.GetSnapshot()
 	if err != nil {
 		return nil, err
 	}
 	batch := new(leveldb.Batch)
 
-	transaction := &LevelDBTransaction{
+	transaction := &LDBTransaction{
 		ldb:      db.ldb,
 		snapshot: snapshot,
 		batch:    batch,
@@ -30,7 +30,7 @@ func (db *LevelDB) Begin() (*LevelDBTransaction, error) {
 	return transaction, nil
 }
 
-func (tx *LevelDBTransaction) Commit() error {
+func (tx *LDBTransaction) Commit() error {
 	if tx.isClosed {
 		return errors.New("cannot commit a closed transaction")
 	}
@@ -40,7 +40,7 @@ func (tx *LevelDBTransaction) Commit() error {
 	return tx.ldb.Write(tx.batch, nil)
 }
 
-func (tx *LevelDBTransaction) Rollback() error {
+func (tx *LDBTransaction) Rollback() error {
 	if tx.isClosed {
 		return errors.New("cannot rollback a closed transaction")
 	}
@@ -51,7 +51,7 @@ func (tx *LevelDBTransaction) Rollback() error {
 	return nil
 }
 
-func (tx *LevelDBTransaction) Put(key []byte, value []byte) error {
+func (tx *LDBTransaction) Put(key []byte, value []byte) error {
 	if tx.isClosed {
 		return errors.New("cannot put into a closed transaction")
 	}
@@ -60,7 +60,7 @@ func (tx *LevelDBTransaction) Put(key []byte, value []byte) error {
 	return nil
 }
 
-func (tx *LevelDBTransaction) Get(key []byte) ([]byte, error) {
+func (tx *LDBTransaction) Get(key []byte) ([]byte, error) {
 	if tx.isClosed {
 		return nil, errors.New("cannot get from a closed transaction")
 	}
@@ -68,7 +68,7 @@ func (tx *LevelDBTransaction) Get(key []byte) ([]byte, error) {
 	return tx.snapshot.Get(key, nil)
 }
 
-func (tx *LevelDBTransaction) Has(key []byte) (bool, error) {
+func (tx *LDBTransaction) Has(key []byte) (bool, error) {
 	if tx.isClosed {
 		return false, errors.New("cannot has from a closed transaction")
 	}

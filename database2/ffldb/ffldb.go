@@ -40,20 +40,21 @@ type Database interface {
 	CurrentFlatDataLocation(storeName string) []byte
 
 	// RollbackFlatData truncates the flat file store defined
-	// by the given storeName to the given serialized
-	// location handle.
+	// by the given storeName to the location defined by the
+	// given serialized location handle.
 	RollbackFlatData(storeName string, location []byte) error
 }
 
-// FFLDB is a database that's both LevelDB and a flat file DB.
+// FFLDB is a database that's both LevelDB and a flat-file
+// database.
 type FFLDB struct {
-	ffdb *flatfile.FlatFileDB
-	ldb  *leveldb.LevelDB
+	ffdb *flatfile.FFDB
+	ldb  *leveldb.LDB
 }
 
 // Open opens a new ffldb with the given path.
 func Open(path string) (*FFLDB, error) {
-	ffdb := flatfile.NewFlatFileDB(path)
+	ffdb := flatfile.NewFlatFileDatabase(path)
 	ldb, err := leveldb.NewLevelDB(path)
 	if err != nil {
 		return nil, err
@@ -125,8 +126,8 @@ func (db *FFLDB) CurrentFlatDataLocation(storeName string) []byte {
 }
 
 // RollbackFlatData truncates the flat file store defined
-// by the given storeName to the given serialized
-// location handle.
+// by the given storeName to the location defined by the
+// given serialized location handle.
 // This method is part of the Database interface.
 func (db *FFLDB) RollbackFlatData(storeName string, location []byte) error {
 	return db.ffdb.Rollback(storeName, location)
@@ -134,8 +135,8 @@ func (db *FFLDB) RollbackFlatData(storeName string, location []byte) error {
 
 // Transaction is an ffldb transaction.
 type Transaction struct {
-	ldbTx *leveldb.LevelDBTransaction
-	ffdb  *flatfile.FlatFileDB
+	ldbTx *leveldb.LDBTransaction
+	ffdb  *flatfile.FFDB
 }
 
 // Begin begins a new ffldb transaction.
@@ -202,8 +203,8 @@ func (tx *Transaction) CurrentFlatDataLocation(storeName string) []byte {
 }
 
 // RollbackFlatData truncates the flat file store defined
-// by the given storeName to the given serialized
-// location handle.
+// by the given storeName to the location defined by the
+// given serialized location handle.
 // This method is part of the Database interface.
 func (tx *Transaction) RollbackFlatData(storeName string, location []byte) error {
 	return tx.ffdb.Rollback(storeName, location)

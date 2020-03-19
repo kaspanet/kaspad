@@ -7,7 +7,7 @@ import (
 	"syscall"
 )
 
-// write appends the specified rdata bytes to the store's write cursor location
+// write appends the specified data bytes to the store's write cursor location
 // and increments it accordingly. When the data would exceed the max file size
 // for the current flat file, this function will close the current file, create
 // the next file, update the write cursor, and write the data to the new file.
