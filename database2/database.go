@@ -14,17 +14,16 @@ type Database interface {
 	// given key.
 	Has(key []byte) (bool, error)
 
-	// AppendFlatData appends the given data to the flat
-	// file store defined by storeName. This function
-	// returns a serialized location handle that's meant
-	// to be stored and later used when querying the data
-	// that has just now been inserted.
-	AppendFlatData(storeName string, data []byte) ([]byte, error)
+	// AppendToStore appends the given data to the store
+	// defined by storeName. This function returns a serialized
+	// location handle that's meant to be stored and later used
+	// when querying the data that has just now been inserted.
+	AppendToStore(storeName string, data []byte) ([]byte, error)
 
-	// RetrieveFlatData retrieves data from the flat file
-	// stored defined by storeName using the given serialized
-	// location handle. See AppendFlatData for further details.
-	RetrieveFlatData(storeName string, location []byte) ([]byte, error)
+	// RetrieveFromStore retrieves data from the store defined by
+	// storeName using the given serialized location handle. See
+	// AppendToStore for further details.
+	RetrieveFromStore(storeName string, location []byte) ([]byte, error)
 
 	// CurrentFlatDataLocation returns the serialized
 	// location handle to the current location within

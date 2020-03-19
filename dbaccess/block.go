@@ -83,7 +83,7 @@ func StoreBlock(context Context, block *util.Block) error {
 	if err != nil {
 		return err
 	}
-	blockLocation, err := db.AppendFlatData(blockStoreName, bytes)
+	blockLocation, err := db.AppendToStore(blockStoreName, bytes)
 	if err != nil {
 		rollbackErr := rollback()
 		if rollbackErr != nil {
@@ -147,7 +147,7 @@ func FetchBlock(context Context, hash *daghash.Hash) (*util.Block, error) {
 	if err != nil {
 		return nil, err
 	}
-	bytes, err := db.RetrieveFlatData(blockStoreName, blockLocation)
+	bytes, err := db.RetrieveFromStore(blockStoreName, blockLocation)
 	if err != nil {
 		return nil, err
 	}

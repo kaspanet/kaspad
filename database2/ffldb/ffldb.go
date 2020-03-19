@@ -59,21 +59,21 @@ func (db *ffldb) Has(key []byte) (bool, error) {
 	return db.ldb.Has(key)
 }
 
-// AppendFlatData appends the given data to the flat
+// AppendToStore appends the given data to the flat
 // file store defined by storeName. This function
 // returns a serialized location handle that's meant
 // to be stored and later used when querying the data
 // that has just now been inserted.
 // This method is part of the Database interface.
-func (db *ffldb) AppendFlatData(storeName string, data []byte) ([]byte, error) {
+func (db *ffldb) AppendToStore(storeName string, data []byte) ([]byte, error) {
 	return db.ffdb.Write(storeName, data)
 }
 
-// RetrieveFlatData retrieves data from the flat file
+// RetrieveFromStore retrieves data from the flat file
 // stored defined by storeName using the given serialized
-// location handle. See AppendFlatData for further details.
+// location handle. See AppendToStore for further details.
 // This method is part of the Database interface.
-func (db *ffldb) RetrieveFlatData(storeName string, location []byte) ([]byte, error) {
+func (db *ffldb) RetrieveFromStore(storeName string, location []byte) ([]byte, error) {
 	return db.ffdb.Read(storeName, location)
 }
 
