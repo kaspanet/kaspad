@@ -266,7 +266,7 @@ func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 		serializedEntry := sBuff.bytes()
 
 		sBuff = newSubBuffer(buff)
-		err = serializeOutpoint(buff, &outpoint)
+		err = serializeOutpoint(sBuff, &outpoint)
 		if err != nil {
 			return err
 		}
