@@ -1,6 +1,7 @@
 package dbaccess
 
 import (
+	"github.com/kaspanet/kaspad/database2"
 	"github.com/kaspanet/kaspad/database2/ffldb"
 )
 
@@ -8,14 +9,14 @@ import (
 // existence or non-existence of a database transaction
 // Call `.NoTx()` or `.NewTx()` to acquire a Context
 type Context interface {
-	db() (ffldb.Database, error)
+	db() (database2.Database, error)
 }
 
 type noTxContext struct{}
 
 var noTxContextSingleton = &noTxContext{}
 
-func (*noTxContext) db() (ffldb.Database, error) {
+func (*noTxContext) db() (database2.Database, error) {
 	return db()
 }
 
@@ -29,7 +30,7 @@ type TxContext struct {
 	dbTransaction *ffldb.Transaction
 }
 
-func (ctx *TxContext) db() (ffldb.Database, error) {
+func (ctx *TxContext) db() (database2.Database, error) {
 	return ctx.dbTransaction, nil
 }
 
