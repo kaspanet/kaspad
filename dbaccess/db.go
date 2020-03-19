@@ -1,24 +1,24 @@
-package database2
+package dbaccess
 
 import (
 	"github.com/kaspanet/kaspad/database2/ffldb"
 	"github.com/pkg/errors"
 )
 
-// db is the kaspad database
-var db *ffldb.FFLDB
+// dbSingleton is an instance of the kaspad database
+var dbSingleton *ffldb.FFLDB
 
-// DB returns a reference to the database
-func DB() (*ffldb.FFLDB, error) {
-	if db == nil {
+// db returns a reference to the database
+func db() (*ffldb.FFLDB, error) {
+	if dbSingleton == nil {
 		return nil, errors.New("database is not open")
 	}
-	return db, nil
+	return dbSingleton, nil
 }
 
 // Open opens to the database for given path
 func Open(path string) error {
-	if db != nil {
+	if dbSingleton != nil {
 		return errors.New("database is already open")
 	}
 
@@ -27,16 +27,16 @@ func Open(path string) error {
 		return err
 	}
 
-	db = openedDB
+	dbSingleton = openedDB
 	return nil
 }
 
 // Close closes the database, if it's open
 func Close() error {
-	if db == nil {
+	if dbSingleton == nil {
 		return nil
 	}
-	err := db.Close()
-	db = nil
+	err := dbSingleton.Close()
+	dbSingleton = nil
 	return err
 }

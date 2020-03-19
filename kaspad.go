@@ -6,7 +6,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/database2"
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
 	"net"
@@ -134,7 +133,7 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 	}
 	defer func() {
 		kasdLog.Infof("Gracefully shutting down the database...")
-		err := database2.Close()
+		err := dbaccess.Close()
 		if err != nil {
 			kasdLog.Infof("Failed to close the database: %s", err)
 		}
@@ -316,7 +315,7 @@ func loadBlockDB() (database.DB, error) {
 func openDB() error {
 	dbPath := filepath.Join(cfg.DataDir, "db")
 	kasdLog.Infof("Loading database from '%s'", dbPath)
-	err := database2.Open(dbPath)
+	err := dbaccess.Open(dbPath)
 	if err != nil {
 		return err
 	}

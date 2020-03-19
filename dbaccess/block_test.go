@@ -2,7 +2,6 @@ package dbaccess
 
 import (
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/database2"
 	"github.com/kaspanet/kaspad/util"
 	"io/ioutil"
 	"reflect"
@@ -16,13 +15,13 @@ func TestBlockStoreSanity(t *testing.T) {
 		t.Fatalf("TestBlockStoreSanity: TempDir unexpectedly "+
 			"failed: %s", err)
 	}
-	err = database2.Open(path)
+	err = Open(path)
 	if err != nil {
 		t.Fatalf("TestBlockStoreSanity: Open unexpectedly "+
 			"failed: %s", err)
 	}
 	defer func() {
-		err := database2.Close()
+		err := Close()
 		if err != nil {
 			t.Fatalf("TestBlockStoreSanity: Close unexpectedly "+
 				"failed: %s", err)

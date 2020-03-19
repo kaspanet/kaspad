@@ -1,7 +1,6 @@
 package dbaccess
 
 import (
-	"github.com/kaspanet/kaspad/database2"
 	"github.com/kaspanet/kaspad/database2/ffldb"
 )
 
@@ -17,7 +16,7 @@ type noTxContext struct{}
 var noTxContextSingleton = &noTxContext{}
 
 func (*noTxContext) db() (ffldb.Database, error) {
-	return database2.DB()
+	return db()
 }
 
 // NoTx creates and returns an instance of dbaccess.Context without an attached database transaction
@@ -46,7 +45,7 @@ func (ctx *TxContext) Rollback() error {
 
 // NewTx returns an instance of TxContext with a new database transaction
 func NewTx() (*TxContext, error) {
-	db, err := database2.DB()
+	db, err := db()
 	if err != nil {
 		return nil, err
 	}
