@@ -1,6 +1,6 @@
 module github.com/kaspanet/kaspad
 
-go 1.13
+go 1.14
 
 require (
 	github.com/btcsuite/go-socks v0.0.0-20170105172521-4720035b7bfd
