@@ -349,7 +349,8 @@ func TestReadMessageWireErrors(t *testing.T) {
 		}
 
 		// For errors which are not of type MessageError, check them for
-		// equality.
+		// equality. If the error is a MessageError, check only if it's
+		// the expected type.
 		if msgErr := &(MessageError{}); !errors.As(err, &msgErr) {
 			if !errors.Is(err, test.readErr) {
 				t.Errorf("ReadMessage #%d wrong error got: %v <%T>, "+
@@ -431,7 +432,8 @@ func TestWriteMessageWireErrors(t *testing.T) {
 		}
 
 		// For errors which are not of type MessageError, check them for
-		// equality.
+		// equality. If the error is a MessageError, check only if it's
+		// the expected type.
 		if msgErr := &(MessageError{}); !errors.As(err, &msgErr) {
 			if err != test.err {
 				t.Errorf("ReadMessage #%d wrong error got: %v <%T>, "+

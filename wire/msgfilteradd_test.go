@@ -121,7 +121,8 @@ func TestFilterAddWireErrors(t *testing.T) {
 		err := test.in.KaspaEncode(w, test.pver)
 
 		// For errors which are not of type MessageError, check them for
-		// equality.
+		// equality. If the error is a MessageError, check only if it's
+		// the expected type.
 		if msgErr := &(MessageError{}); !errors.As(err, &msgErr) {
 			if !errors.Is(err, test.writeErr) {
 				t.Errorf("KaspaEncode #%d wrong error got: %v, "+
@@ -139,7 +140,8 @@ func TestFilterAddWireErrors(t *testing.T) {
 		r := newFixedReader(test.max, test.buf)
 		err = msg.KaspaDecode(r, test.pver)
 		// For errors which are not of type MessageError, check them for
-		// equality.
+		// equality. If the error is a MessageError, check only if it's
+		// the expected type.
 		if msgErr := &(MessageError{}); !errors.As(err, &msgErr) {
 			if !errors.Is(err, test.readErr) {
 				t.Errorf("KaspaDecode #%d wrong error got: %v, "+
