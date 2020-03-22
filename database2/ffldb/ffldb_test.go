@@ -18,6 +18,16 @@ func TestRepairFlatFiles(t *testing.T) {
 		t.Fatalf("TestRepairFlatFiles: Open unexpectedly "+
 			"failed: %s", err)
 	}
+	isOpen := true
+	defer func() {
+		if isOpen {
+			err := db.Close()
+			if err != nil {
+				t.Fatalf("TestRepairFlatFiles: Close unexpectedly "+
+					"failed: %s", err)
+			}
+		}
+	}()
 
 	// Append data to the same store
 	storeName := "test"
@@ -57,11 +67,13 @@ func TestRepairFlatFiles(t *testing.T) {
 		t.Fatalf("TestRepairFlatFiles: Close unexpectedly "+
 			"failed: %s", err)
 	}
+	isOpen = false
 	db, err = Open(path)
 	if err != nil {
 		t.Fatalf("TestRepairFlatFiles: Open unexpectedly "+
 			"failed: %s", err)
 	}
+	isOpen = true
 
 	// Make sure that the current location rolled back as expected
 	currentLocation := db.CurrentStoreLocation(storeName)
