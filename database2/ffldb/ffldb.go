@@ -6,6 +6,13 @@ import (
 	"github.com/kaspanet/kaspad/database2/ffldb/ldb"
 )
 
+var (
+	// flatFilesBucket keeps an index flat-file stores and their
+	// current locations. This is used to repair the database in
+	// case a corruption occurs.
+	flatFilesBucket = database2.MakeBucket([]byte("flat-files"))
+)
+
 // ffldb is a database that's both LevelDB and a flat-file
 // database.
 type ffldb struct {
@@ -25,6 +32,12 @@ func Open(path string) (database2.Handle, error) {
 		ffdb: ffdb,
 		ldb:  ldb,
 	}
+
+	err = db.initialize()
+	if err != nil {
+		return nil, err
+	}
+
 	return db, nil
 }
 
@@ -66,7 +79,18 @@ func (db *ffldb) Has(key []byte) (bool, error) {
 // that has just now been inserted.
 // This method is part of the Database interface.
 func (db *ffldb) AppendToStore(storeName string, data []byte) ([]byte, error) {
-	return db.ffdb.Write(storeName, data)
+	location, err := db.ffdb.Write(storeName, data)
+	if err != nil {
+		return nil, err
+	}
+
+	locationKey := flatFilesBucket.Key([]byte(storeName))
+	err = db.Put(locationKey, location)
+	if err != nil {
+		return nil, err
+	}
+
+	return location, err
 }
 
 // RetrieveFromStore retrieves data from the flat file
@@ -77,21 +101,21 @@ func (db *ffldb) RetrieveFromStore(storeName string, location []byte) ([]byte, e
 	return db.ffdb.Read(storeName, location)
 }
 
-// CurrentFlatDataLocation returns the serialized
+// CurrentStoreLocation returns the serialized
 // location handle to the current location within
 // the flat file store defined storeName. It is mainly
 // to be used to rollback flat file stores in case
 // of data incongruency.
 // This method is part of the Database interface.
-func (db *ffldb) CurrentFlatDataLocation(storeName string) []byte {
+func (db *ffldb) CurrentStoreLocation(storeName string) []byte {
 	return db.ffdb.CurrentLocation(storeName)
 }
 
-// RollbackFlatData truncates the flat file store defined
+// RollbackStore truncates the flat file store defined
 // by the given storeName to the location defined by the
 // given serialized location handle.
 // This method is part of the Database interface.
-func (db *ffldb) RollbackFlatData(storeName string, location []byte) error {
+func (db *ffldb) RollbackStore(storeName string, location []byte) error {
 	return db.ffdb.Rollback(storeName, location)
 }
 

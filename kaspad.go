@@ -319,10 +319,6 @@ func openDB() error {
 	if err != nil {
 		return err
 	}
-	err = dbaccess.InitBlockStore(dbaccess.NoTx())
-	if err != nil {
-		return errors.Errorf("Database corruption detected: %s", err)
-	}
 	return nil
 }
 

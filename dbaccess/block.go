@@ -12,46 +12,8 @@ const (
 )
 
 var (
-	blockLocationsBucket    = database2.MakeBucket([]byte("block-locations"))
-	currentBlockLocationKey = []byte("current-block-location")
+	blockLocationsBucket = database2.MakeBucket([]byte("block-locations"))
 )
-
-// InitBlockStore initializes the database to accept blocks. If this function
-// fails it is irrecoverable, and likely indicates that database corruption
-// had previously occurred.
-func InitBlockStore(context Context) error {
-	db, err := context.db()
-	if err != nil {
-		return err
-	}
-
-	// If the current block location is missing this must be the first time
-	// kaspad has ran. Simply initialize the currentBlockLocation value and
-	// exit.
-	exists, err := db.Has(currentBlockLocationKey)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		currentBlockLocation := db.CurrentFlatDataLocation(blockStoreName)
-		return db.Put(currentBlockLocationKey, currentBlockLocation)
-	}
-
-	// Sync the block store and the current block location value.
-	// Possible scenarios:
-	// a. currentBlockLocation and the block store are synced. RollbackFlatData
-	//    does nothing.
-	// b. currentBlockLocation is smaller than the block store's location.
-	//    RollbackFlatData truncates the flat file store.
-	// c. currentBlockLocation is greater than the block store's location.
-	//    RollbackFlatData returns an error. This indicates definite database
-	//    corruption and is irrecoverable.
-	currentBlockLocation, err := db.Get(currentBlockLocationKey)
-	if err != nil {
-		return err
-	}
-	return db.RollbackFlatData(blockStoreName, currentBlockLocation)
-}
 
 // StoreBlock stores the given block in the database.
 func StoreBlock(context Context, block *util.Block) error {
@@ -72,9 +34,9 @@ func StoreBlock(context Context, block *util.Block) error {
 
 	// Save a reference to the current block location in case
 	// we fail and need to rollback.
-	previousBlockLocation := db.CurrentFlatDataLocation(blockStoreName)
+	previousBlockLocation := db.CurrentStoreLocation(blockStoreName)
 	rollback := func() error {
-		return db.RollbackFlatData(blockStoreName, previousBlockLocation)
+		return db.RollbackStore(blockStoreName, previousBlockLocation)
 	}
 
 	// Write the block's bytes to the block store and rollback
@@ -96,19 +58,6 @@ func StoreBlock(context Context, block *util.Block) error {
 	// rollback if there's an error.
 	blockLocationsKey := blockLocationKey(hash)
 	err = db.Put(blockLocationsKey, blockLocation)
-	if err != nil {
-		rollbackErr := rollback()
-		if rollbackErr != nil {
-			return rollbackErr
-		}
-		return err
-	}
-
-	// Write the new block location. We use it to sync the
-	// block store and the current block location value when
-	// kaspad restarts. Rollback if this fails.
-	currentBlockLocation := db.CurrentFlatDataLocation(blockStoreName)
-	err = db.Put(currentBlockLocationKey, currentBlockLocation)
 	if err != nil {
 		rollbackErr := rollback()
 		if rollbackErr != nil {

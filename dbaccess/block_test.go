@@ -28,13 +28,6 @@ func TestBlockStoreSanity(t *testing.T) {
 		}
 	}()
 
-	// Initialize the block store
-	err = InitBlockStore(NoTx())
-	if err != nil {
-		t.Fatalf("TestBlockStoreSanity: InitBlockStore unexpectedly "+
-			"failed: %s", err)
-	}
-
 	// Store the genesis block
 	genesis := util.NewBlock(dagconfig.MainnetParams.GenesisBlock)
 	err = StoreBlock(NoTx(), genesis)
@@ -64,12 +57,5 @@ func TestBlockStoreSanity(t *testing.T) {
 	if !reflect.DeepEqual(genesis.MsgBlock(), fetchedGenesis.MsgBlock()) {
 		t.Fatalf("TestBlockStoreSanity: just-inserted block is " +
 			"not equal to its database counterpart.")
-	}
-
-	// Init the block store again to make sure it's still synced
-	err = InitBlockStore(NoTx())
-	if err != nil {
-		t.Fatalf("TestBlockStoreSanity: InitBlockStore unexpectedly "+
-			"failed: %s", err)
 	}
 }

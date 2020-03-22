@@ -25,15 +25,15 @@ type Database interface {
 	// AppendToStore for further details.
 	RetrieveFromStore(storeName string, location []byte) ([]byte, error)
 
-	// CurrentFlatDataLocation returns the serialized
+	// CurrentStoreLocation returns the serialized
 	// location handle to the current location within
 	// the flat file store defined storeName. It is mainly
 	// to be used to rollback flat file stores in case
 	// of data incongruency.
-	CurrentFlatDataLocation(storeName string) []byte
+	CurrentStoreLocation(storeName string) []byte
 
-	// RollbackFlatData truncates the flat file store defined
+	// RollbackStore truncates the flat file store defined
 	// by the given storeName to the location defined by the
 	// given serialized location handle.
-	RollbackFlatData(storeName string, location []byte) error
+	RollbackStore(storeName string, location []byte) error
 }

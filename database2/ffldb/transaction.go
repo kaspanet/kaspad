@@ -50,21 +50,21 @@ func (tx *transaction) RetrieveFromStore(storeName string, location []byte) ([]b
 	return tx.ffdb.Read(storeName, location)
 }
 
-// CurrentFlatDataLocation returns the serialized
+// CurrentStoreLocation returns the serialized
 // location handle to the current location within
 // the flat file store defined storeName. It is mainly
 // to be used to rollback flat file stores in case
 // of data incongruency.
 // This method is part of the Database interface.
-func (tx *transaction) CurrentFlatDataLocation(storeName string) []byte {
+func (tx *transaction) CurrentStoreLocation(storeName string) []byte {
 	return tx.ffdb.CurrentLocation(storeName)
 }
 
-// RollbackFlatData truncates the flat file store defined
+// RollbackStore truncates the flat file store defined
 // by the given storeName to the location defined by the
 // given serialized location handle.
 // This method is part of the Database interface.
-func (tx *transaction) RollbackFlatData(storeName string, location []byte) error {
+func (tx *transaction) RollbackStore(storeName string, location []byte) error {
 	return tx.ffdb.Rollback(storeName, location)
 }
 
