@@ -187,15 +187,20 @@ func (s *flatFileStore) currentLocation() *flatFileLocation {
 // store to find the end of the most recent file. This position is considered
 // the current write cursor.
 func scanFlatFiles(dbPath string, storeName string) (fileNumber uint32, fileLength uint32) {
+	currentFileNumber := uint32(0)
+	currentFileLength := uint32(0)
 	for {
-		filePath := flatFilePath(dbPath, storeName, fileNumber)
-		stat, err := os.Stat(filePath)
+		currentFilePath := flatFilePath(dbPath, storeName, currentFileNumber)
+		stat, err := os.Stat(currentFilePath)
 		if err != nil {
+			if currentFileNumber > 0 {
+				fileNumber = currentFileNumber - 1
+			}
+			fileLength = currentFileLength
 			break
 		}
-		fileLength = uint32(stat.Size())
-
-		fileNumber++
+		currentFileLength = uint32(stat.Size())
+		currentFileNumber++
 	}
 
 	log.Tracef("Scan for store '%s' found latest file #%d with length %d",
