@@ -109,3 +109,13 @@ func (db *ffldb) Begin() (database2.Transaction, error) {
 	}
 	return transaction, nil
 }
+
+// Cursor begins a new cursor over the given bucket.
+func (db *ffldb) Cursor(bucket []byte) (database2.Cursor, error) {
+	ldbCursor := db.ldb.Cursor(bucket)
+	cursor := &cursor{
+		ldbCursor: ldbCursor,
+	}
+
+	return cursor, nil
+}

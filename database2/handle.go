@@ -15,6 +15,9 @@ type Handle interface {
 	// Begin begins a new database transaction.
 	Begin() (Transaction, error)
 
+	// Cursor begins a new cursor over the given bucket.
+	Cursor(bucket []byte) (Cursor, error)
+
 	// Close closes the database.
 	Close() error
 }
