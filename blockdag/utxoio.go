@@ -3,6 +3,7 @@ package blockdag
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/kaspanet/kaspad/util/binaryserializer"
 	"github.com/pkg/errors"
 	"io"
 	"math"
@@ -112,7 +113,7 @@ func deserializeUTXOCollection(r io.Reader) (utxoCollection, error) {
 	}
 	collection := utxoCollection{}
 	for i := uint64(0); i < count; i++ {
-		utxoEntry, outpoint, err := deserializeUTXO(r)
+		utxoEntry, outpoint, err := deserializeUTXO(r, true)
 		if err != nil {
 			return nil, err
 		}
@@ -121,13 +122,13 @@ func deserializeUTXOCollection(r io.Reader) (utxoCollection, error) {
 	return collection, nil
 }
 
-func deserializeUTXO(r io.Reader) (*UTXOEntry, *wire.Outpoint, error) {
+func deserializeUTXO(r io.Reader, useCompression bool) (*UTXOEntry, *wire.Outpoint, error) {
 	outpoint, err := deserializeOutpoint(r)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	utxoEntry, err := deserializeUTXOEntry(r)
+	utxoEntry, err := deserializeUTXOEntry(r, useCompression)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -184,7 +185,7 @@ func serializeUTXOCollection(w io.Writer, collection utxoCollection) error {
 		return err
 	}
 	for outpoint, utxoEntry := range collection {
-		err := serializeUTXO(w, utxoEntry, &outpoint)
+		err := serializeUTXO(w, utxoEntry, &outpoint, true)
 		if err != nil {
 			return err
 		}
@@ -216,13 +217,13 @@ func serializeMultiset(w io.Writer, ms *ecc.Multiset) error {
 }
 
 // serializeUTXO serializes a utxo entry-outpoint pair
-func serializeUTXO(w io.Writer, entry *UTXOEntry, outpoint *wire.Outpoint) error {
+func serializeUTXO(w io.Writer, entry *UTXOEntry, outpoint *wire.Outpoint, compressEntries bool) error {
 	err := serializeOutpoint(w, outpoint)
 	if err != nil {
 		return err
 	}
 
-	err = serializeUTXOEntry(w, entry)
+	err = serializeUTXOEntry(w, entry, compressEntries)
 	if err != nil {
 		return err
 	}
@@ -235,7 +236,7 @@ var p2pkhUTXOEntryMaxSerializeSize = wire.VarIntSerializeSize(math.MaxUint64) + 
 
 // serializeUTXOEntry returns the entry serialized to a format that is suitable
 // for long-term storage. The format is described in detail above.
-func serializeUTXOEntry(w io.Writer, entry *UTXOEntry) error {
+func serializeUTXOEntry(w io.Writer, entry *UTXOEntry, useCompression bool) error {
 	// Encode the header code.
 	headerCode := utxoEntryHeaderCode(entry)
 
@@ -244,13 +245,32 @@ func serializeUTXOEntry(w io.Writer, entry *UTXOEntry) error {
 		return err
 	}
 
-	return putCompressedTxOut(w, entry.Amount(), entry.ScriptPubKey())
+	if useCompression {
+		return putCompressedTxOut(w, entry.Amount(), entry.ScriptPubKey())
+	}
+
+	err = binaryserializer.PutUint64(w, byteOrder, entry.Amount())
+	if err != nil {
+		return err
+	}
+
+	err = wire.WriteVarIntLittleEndian(w, uint64(len(entry.ScriptPubKey())))
+	if err != nil {
+		return err
+	}
+
+	_, err = w.Write(entry.ScriptPubKey())
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }
 
 // deserializeUTXOEntry decodes a UTXO entry from the passed serialized byte
 // slice into a new UTXOEntry using a format that is suitable for long-term
 // storage. The format is described in detail above.
-func deserializeUTXOEntry(r io.Reader) (*UTXOEntry, error) {
+func deserializeUTXOEntry(r io.Reader, useCompression bool) (*UTXOEntry, error) {
 	// Deserialize the header code.
 	headerCode, err := wire.ReadVarIntLittleEndian(r)
 	if err != nil {
@@ -264,19 +284,38 @@ func deserializeUTXOEntry(r io.Reader) (*UTXOEntry, error) {
 	isCoinbase := headerCode&0x01 != 0
 	blockBlueScore := headerCode >> 1
 
-	amount, scriptPubKey, err := decodeCompressedTxOut(r)
+	entry := &UTXOEntry{
+		blockBlueScore: blockBlueScore,
+		packedFlags:    0,
+	}
+
+	if isCoinbase {
+		entry.packedFlags |= tfCoinbase
+	}
+
+	if useCompression {
+		entry.amount, entry.scriptPubKey, err = decodeCompressedTxOut(r)
+		if err != nil {
+			return nil, err
+		}
+
+		return entry, nil
+	}
+
+	entry.amount, err = binaryserializer.Uint64(r, byteOrder)
 	if err != nil {
 		return nil, err
 	}
 
-	entry := &UTXOEntry{
-		amount:         amount,
-		scriptPubKey:   scriptPubKey,
-		blockBlueScore: blockBlueScore,
-		packedFlags:    0,
+	scriptPubKeyLen, err := wire.ReadVarIntLittleEndian(r)
+	if err != nil {
+		return nil, err
 	}
-	if isCoinbase {
-		entry.packedFlags |= tfCoinbase
+
+	entry.scriptPubKey = make([]byte, scriptPubKeyLen)
+	_, err = r.Read(entry.scriptPubKey)
+	if err != nil {
+		return nil, errors.WithStack(err)
 	}
 
 	return entry, nil

@@ -229,7 +229,7 @@ func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 	for outpoint, entry := range diff.toAdd {
 		// Serialize and store the UTXO entry.
 		sBuff := newSubBuffer(buff)
-		err := serializeUTXOEntry(sBuff, entry)
+		err := serializeUTXOEntry(sBuff, entry, true)
 		if err != nil {
 			return err
 		}
@@ -570,7 +570,7 @@ func (dag *BlockDAG) initDAGState() error {
 			}
 
 			// Deserialize the utxo entry
-			entry, err := deserializeUTXOEntry(bytes.NewReader(cursor.Value()))
+			entry, err := deserializeUTXOEntry(bytes.NewReader(cursor.Value()), true)
 			if err != nil {
 				return err
 			}
