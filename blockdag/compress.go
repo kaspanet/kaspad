@@ -286,7 +286,7 @@ func decompressScript(r io.Reader) ([]byte, error) {
 //
 // While this is simply exchanging one uint64 for another, the resulting value
 // for typical amounts has a much smaller magnitude which results in fewer bytes
-// when encoded as variable length quantity. For example, consider the amount
+// when encoded as a varint. For example, consider the amount
 // of 0.1 KAS which is 10000000 sompi. Encoding 10000000 as a varint would take
 // 5 bytes while encoding the compressed value of 8 as a varint only takes 1 byte.
 //
@@ -395,7 +395,7 @@ func decompressTxOutAmount(amount uint64) uint64 {
 //   <compressed amount><compressed script>
 //
 //   Field                 Type     Size
-//     compressed amount   VLQ      variable
+//     compressed amount   varint   variable
 //     compressed script   []byte   variable
 // -----------------------------------------------------------------------------
 
