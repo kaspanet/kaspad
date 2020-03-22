@@ -103,30 +103,30 @@ func dbPutVersion(dbTx database.Tx, key []byte, version uint32) error {
 // specific compression algorithms.
 //
 // Each entry is keyed by an outpoint as specified below. It is important to
-// note that the key encoding uses a VLQ, which employs an MSB encoding so
-// iteration of UTXOs when doing byte-wise comparisons will produce them in
-// order.
+// note that the key encoding uses a varint big-endian encoding, which employs
+// an MSB encoding so iteration of UTXOs when doing byte-wise comparisons will
+// produce them in order.
 //
 // The serialized key format is:
 //   <hash><output index>
 //
 //   Field                Type             Size
-//   hash                 daghash.Hash   daghash.HashSize
-//   output index         VLQ              variable
+//   hash                 daghash.Hash     daghash.HashSize
+//   output index         varint           variable
 //
 // The serialized value format is:
 //
 //   <header code><compressed txout>
 //
 //   Field                Type     Size
-//   header code          VLQ      variable
+//   header code          varint   variable
 //   compressed txout
-//     compressed amount  VLQ      variable
+//     compressed amount  varint   variable
 //     compressed script  []byte   variable
 //
 // The serialized header code format is:
 //   bit 0 - containing transaction is a coinbase
-//   bits 1-x - height of the block that contains the unspent txout
+//   bits 1-x - blue score of the block that accepted the unspent txout
 //
 // Example 1:
 // b7c3332bc138e2c9429818f5fed500bcc1746544218772389054dc8047d7cd3f:0
@@ -136,9 +136,9 @@ func dbPutVersion(dbTx database.Tx, key []byte, version uint32) error {
 //     |                                          |
 //   header code                         compressed txout
 //
-//  - header code: 0x03 (coinbase, height 1)
+//  - header code: 0x03 (coinbase, blue score 1)
 //  - compressed txout:
-//    - 0x32: VLQ-encoded compressed amount for 5000000000 (50 KAS)
+//    - 0x32: Varint-encoded compressed amount for 5000000000 (50 KAS)
 //    - 0x04: special script type pay-to-pubkey
 //    - 0x96...52: x-coordinate of the pubkey
 //
@@ -164,7 +164,7 @@ func dbPutVersion(dbTx database.Tx, key []byte, version uint32) error {
 //      |                             |
 //   header code             compressed txout
 //
-//  - header code: 0xa8a258 (not coinbase, height 338156)
+//  - header code: 0xa8a258 (not coinbase, blue score 338156)
 //  - compressed txout:
 //    - 0x8ba5b9e763: VLQ-encoded compressed amount for 366875659 (3.66875659 KAS)
 //    - 0x01: special script type pay-to-script-hash
@@ -185,7 +185,7 @@ func serializeOutpoint(w io.Writer, outpoint *wire.Outpoint) error {
 		return err
 	}
 
-	return wire.WriteVarIntLittleEndian(w, uint64(outpoint.Index))
+	return wire.WriteVarIntBigEndian(w, uint64(outpoint.Index))
 }
 
 var outpointMaxSerializeSize = daghash.TxIDSize + wire.VarIntSerializeSize(math.MaxUint32)
@@ -200,7 +200,7 @@ func deserializeOutpoint(r io.Reader) (*wire.Outpoint, error) {
 		return nil, err
 	}
 
-	idx, err := wire.ReadVarIntLittleEndian(r)
+	idx, err := wire.ReadVarIntBigEndian(r)
 	if err != nil {
 		return nil, err
 	}
