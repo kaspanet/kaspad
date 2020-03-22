@@ -134,16 +134,6 @@ func TestScriptCompressionErrors(t *testing.T) {
 	if _, err := decompressScript(bytes.NewReader(nil)); err == nil {
 		t.Fatalf("decompressScript expects an error for an empty reader")
 	}
-
-	// A compressed script for a pay-to-pubkey (uncompressed) that results
-	// in an invalid pubkey must result in a nil decompressed script.
-	compressedScript := hexToBytes("04012d74d0cb94344c9569c2e77901573d8d" +
-		"7903c3ebec3a957724895dca52c6b4")
-	if _, err := decompressScript(bytes.NewReader(compressedScript)); err == nil {
-		t.Fatalf("decompressScript with compressed pay-to-" +
-			"uncompressed-pubkey that is invalid did not return " +
-			"an error")
-	}
 }
 
 // TestAmountCompression ensures the domain-specific transaction output amount
@@ -245,7 +235,7 @@ func TestCompressedTxOut(t *testing.T) {
 			name:         "pay-to-pubkey uncompressed 1 KAS",
 			amount:       100000000,
 			scriptPubKey: hexToBytes("4104192d74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b40d45264838c0bd96852662ce6a847b197376830160c6d2eb5e6a4c44d33f453eac"),
-			compressed:   hexToBytes("0904192d74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b4"),
+			compressed:   hexToBytes("09454104192d74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b40d45264838c0bd96852662ce6a847b197376830160c6d2eb5e6a4c44d33f453eac"),
 		},
 	}
 
