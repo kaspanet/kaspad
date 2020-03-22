@@ -52,29 +52,9 @@ const (
 	// cstPayToScriptHash identifies a compressed pay-to-script-hash script.
 	cstPayToScriptHash = 1
 
-	// cstPayToPubKeyComp2 identifies a compressed pay-to-pubkey script to
-	// a compressed pubkey. Bit 0 specifies which y-coordinate to use
-	// to reconstruct the full uncompressed pubkey.
-	cstPayToPubKeyComp2 = 2
-
-	// cstPayToPubKeyComp3 identifies a compressed pay-to-pubkey script to
-	// a compressed pubkey. Bit 0 specifies which y-coordinate to use
-	// to reconstruct the full uncompressed pubkey.
-	cstPayToPubKeyComp3 = 3
-
-	// cstPayToPubKeyUncomp4 identifies a compressed pay-to-pubkey script to
-	// an uncompressed pubkey. Bit 0 specifies which y-coordinate to use
-	// to reconstruct the full uncompressed pubkey.
-	cstPayToPubKeyUncomp4 = 4
-
-	// cstPayToPubKeyUncomp5 identifies a compressed pay-to-pubkey script to
-	// an uncompressed pubkey. Bit 0 specifies which y-coordinate to use
-	// to reconstruct the full uncompressed pubkey.
-	cstPayToPubKeyUncomp5 = 5
-
 	// numSpecialScripts is the number of special scripts recognized by the
 	// domain-specific script compression algorithm.
-	numSpecialScripts = 6
+	numSpecialScripts = 2
 )
 
 // isPubKeyHash returns whether or not the passed public key script is a
@@ -147,20 +127,12 @@ func isPubKey(script []byte) (bool, []byte) {
 
 const (
 	cstPayToPubKeyHashLen = 21
-	cstPayToScriptHashLen = 21
-
-	cstPayToPubKeyComp2Len = 33
-	cstPayToPubKeyComp3Len = 33
-
-	cstPayToPubKeyUncomp4Len = 33
-	cstPayToPubKeyUncomp5Len = 33
 )
 
 const (
-	pubKeyHashLen         = 20
-	scriptHashLen         = 20
-	pubKeyXLen            = 32
-	uncompressedPubKeyLen = 64
+	pubKeyHashLen = 20
+	scriptHashLen = 20
+	pubKeyXLen    = 32
 )
 
 // putCompressedScript compresses the passed script according to the domain
@@ -287,49 +259,6 @@ func decompressScript(r io.Reader) ([]byte, error) {
 		scriptPubKey[1] = txscript.OpData20
 		copy(scriptPubKey[2:], hash)
 		scriptPubKey[pubKeyHashLen+2] = txscript.OpEqual
-		return scriptPubKey, nil
-
-	// Pay-to-compressed-pubkey script. The resulting script is:
-	// <OP_DATA_33><33 byte compressed pubkey><OP_CHECKSIG>
-	case cstPayToPubKeyComp2, cstPayToPubKeyComp3:
-		pubKeyX := make([]byte, pubKeyXLen)
-		_, err := r.Read(pubKeyX)
-		if err != nil {
-			return nil, err
-		}
-
-		scriptPubKey := make([]byte, 35)
-		scriptPubKey[0] = txscript.OpData33
-		scriptPubKey[1] = byte(encodedScriptSize)
-		copy(scriptPubKey[2:], pubKeyX)
-		scriptPubKey[pubKeyXLen+2] = txscript.OpCheckSig
-		return scriptPubKey, nil
-
-	// Pay-to-uncompressed-pubkey script. The resulting script is:
-	// <OP_DATA_65><65 byte uncompressed pubkey><OP_CHECKSIG>
-	case cstPayToPubKeyUncomp4, cstPayToPubKeyUncomp5:
-		// Change the leading byte to the appropriate compressed pubkey
-		// identifier (0x02 or 0x03) so it can be decoded as a
-		// compressed pubkey. This really should never fail since the
-		// encoding ensures it is valid before compressing to this type.
-		compressedKey := make([]byte, 33)
-		compressedKey[0] = byte(encodedScriptSize - 2)
-
-		pubKeyX := make([]byte, pubKeyXLen)
-		_, err := r.Read(pubKeyX)
-		if err != nil {
-			return nil, err
-		}
-		copy(compressedKey[1:], pubKeyX)
-		key, err := ecc.ParsePubKey(compressedKey, ecc.S256())
-		if err != nil {
-			return nil, err
-		}
-
-		scriptPubKey := make([]byte, 67)
-		scriptPubKey[0] = txscript.OpData65
-		copy(scriptPubKey[1:], key.SerializeUncompressed())
-		scriptPubKey[uncompressedPubKeyLen+2] = txscript.OpCheckSig
 		return scriptPubKey, nil
 	}
 
