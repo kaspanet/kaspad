@@ -35,7 +35,7 @@ func TestScriptCompression(t *testing.T) {
 		{
 			name:         "nil",
 			uncompressed: nil,
-			compressed:   hexToBytes("06"),
+			compressed:   hexToBytes("02"),
 		},
 		{
 			name:         "pay-to-pubkey-hash 1",
@@ -60,34 +60,34 @@ func TestScriptCompression(t *testing.T) {
 		{
 			name:         "pay-to-pubkey compressed 0x02",
 			uncompressed: hexToBytes("2102192d74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b4ac"),
-			compressed:   hexToBytes("02192d74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b4"),
+			compressed:   hexToBytes("252102192d74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b4ac"),
 		},
 		{
 			name:         "pay-to-pubkey compressed 0x03",
 			uncompressed: hexToBytes("2103b0bd634234abbb1ba1e986e884185c61cf43e001f9137f23c2c409273eb16e65ac"),
-			compressed:   hexToBytes("03b0bd634234abbb1ba1e986e884185c61cf43e001f9137f23c2c409273eb16e65"),
+			compressed:   hexToBytes("252103b0bd634234abbb1ba1e986e884185c61cf43e001f9137f23c2c409273eb16e65ac"),
 		},
 		{
 			name:         "pay-to-pubkey uncompressed 0x04 even",
 			uncompressed: hexToBytes("4104192d74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b40d45264838c0bd96852662ce6a847b197376830160c6d2eb5e6a4c44d33f453eac"),
-			compressed:   hexToBytes("04192d74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b4"),
+			compressed:   hexToBytes("454104192d74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b40d45264838c0bd96852662ce6a847b197376830160c6d2eb5e6a4c44d33f453eac"),
 		},
 		{
 			name:         "pay-to-pubkey uncompressed 0x04 odd",
 			uncompressed: hexToBytes("410411db93e1dcdb8a016b49840f8c53bc1eb68a382e97b1482ecad7b148a6909a5cb2e0eaddfb84ccf9744464f82e160bfa9b8b64f9d4c03f999b8643f656b412a3ac"),
-			compressed:   hexToBytes("0511db93e1dcdb8a016b49840f8c53bc1eb68a382e97b1482ecad7b148a6909a5c"),
+			compressed:   hexToBytes("45410411db93e1dcdb8a016b49840f8c53bc1eb68a382e97b1482ecad7b148a6909a5cb2e0eaddfb84ccf9744464f82e160bfa9b8b64f9d4c03f999b8643f656b412a3ac"),
 		},
 		{
 			name:         "pay-to-pubkey invalid pubkey",
 			uncompressed: hexToBytes("3302aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaac"),
-			compressed:   hexToBytes("293302aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaac"),
+			compressed:   hexToBytes("253302aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaac"),
 		},
 		{
 			name:         "requires 2 size bytes - data push 200 bytes",
 			uncompressed: append(hexToBytes("4cc8"), bytes.Repeat([]byte{0x00}, 200)...),
-			// [0x80, 0x50] = 208 as a variable length quantity
+			// [0x80, 0x50] = 204 as a varint
 			// [0x4c, 0xc8] = OP_PUSHDATA1 200
-			compressed: append(hexToBytes("d04cc8"), bytes.Repeat([]byte{0x00}, 200)...),
+			compressed: append(hexToBytes("cc4cc8"), bytes.Repeat([]byte{0x00}, 200)...),
 		},
 	}
 

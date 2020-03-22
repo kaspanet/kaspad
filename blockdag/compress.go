@@ -173,30 +173,6 @@ func putCompressedScript(w io.Writer, scriptPubKey []byte) error {
 		return nil
 	}
 
-	// Pay-to-pubkey (compressed or uncompressed) script.
-	if valid, serializedPubKey := isPubKey(scriptPubKey); valid {
-		pubKeyFormat := serializedPubKey[0]
-		switch pubKeyFormat {
-		case 0x02, 0x03:
-			_, err := w.Write([]byte{pubKeyFormat})
-			if err != nil {
-				return err
-			}
-			_, err = w.Write(serializedPubKey[1 : 1+pubKeyXLen])
-			return errors.WithStack(err)
-		case 0x04:
-			// Encode the oddness of the serialized pubkey into the
-			// compressed script type.
-			cst := pubKeyFormat | (serializedPubKey[64] & 0x01)
-			_, err := w.Write([]byte{cst})
-			if err != nil {
-				return err
-			}
-			_, err = w.Write(serializedPubKey[1 : 1+pubKeyXLen])
-			return errors.WithStack(err)
-		}
-	}
-
 	// When none of the above special cases apply, encode the unmodified
 	// script preceded by the sum of its size and the number of special
 	// cases encoded as a varint.
