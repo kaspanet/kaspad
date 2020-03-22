@@ -251,33 +251,32 @@ func TestElementWireErrors(t *testing.T) {
 // TestVarIntWire tests wire encode and decode for variable length integers.
 func TestVarIntWire(t *testing.T) {
 	tests := []struct {
-		in              uint64 // Value to encode
-		out             uint64 // Expected decoded value
+		value           uint64 // Value to encode
 		bufLittleEndian []byte // Little endian wire encoding
 		bufBigEndian    []byte // Big Endian wire encoding
 	}{
 		// Latest protocol version.
 		// Single byte
-		{0, 0, []byte{0x00}, []byte{0x00}},
+		{0, []byte{0x00}, []byte{0x00}},
 		// Max single byte
-		{0xfc, 0xfc, []byte{0xfc}, []byte{0xfc}},
+		{0xfc, []byte{0xfc}, []byte{0xfc}},
 		// Min 2-byte
-		{0xfd, 0xfd, []byte{0xfd, 0x0fd, 0x00}, []byte{0xfd, 0x00, 0xfd}},
+		{0xfd, []byte{0xfd, 0x0fd, 0x00}, []byte{0xfd, 0x00, 0xfd}},
 		// Max 2-byte
-		{0xffff, 0xffff, []byte{0xfd, 0xff, 0xff}, []byte{0xfd, 0xff, 0xff}},
+		{0xffff, []byte{0xfd, 0xff, 0xff}, []byte{0xfd, 0xff, 0xff}},
 		// Min 4-byte
-		{0x10000, 0x10000, []byte{0xfe, 0x00, 0x00, 0x01, 0x00}, []byte{0xfe, 0x00, 0x01, 0x00, 0x00}},
+		{0x10000, []byte{0xfe, 0x00, 0x00, 0x01, 0x00}, []byte{0xfe, 0x00, 0x01, 0x00, 0x00}},
 		// Max 4-byte
-		{0xffffffff, 0xffffffff, []byte{0xfe, 0xff, 0xff, 0xff, 0xff}, []byte{0xfe, 0xff, 0xff, 0xff, 0xff}},
+		{0xffffffff, []byte{0xfe, 0xff, 0xff, 0xff, 0xff}, []byte{0xfe, 0xff, 0xff, 0xff, 0xff}},
 		// Min 8-byte
 		{
-			0x100000000, 0x100000000,
+			0x100000000,
 			[]byte{0xff, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00},
 			[]byte{0xff, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00},
 		},
 		// Max 8-byte
 		{
-			0xffffffffffffffff, 0xffffffffffffffff,
+			0xffffffffffffffff,
 			[]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
 			[]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
 		},
@@ -287,7 +286,7 @@ func TestVarIntWire(t *testing.T) {
 	for i, test := range tests {
 		// Encode to wire format in little endian.
 		buf := &bytes.Buffer{}
-		err := WriteVarIntLittleEndian(buf, test.in)
+		err := WriteVarIntLittleEndian(buf, test.value)
 		if err != nil {
 			t.Errorf("WriteVarIntLittleEndian #%d error %v", i, err)
 			continue
@@ -300,7 +299,7 @@ func TestVarIntWire(t *testing.T) {
 
 		// Encode to wire format in big endian.
 		buf = &bytes.Buffer{}
-		err = WriteVarIntBigEndian(buf, test.in)
+		err = WriteVarIntBigEndian(buf, test.value)
 		if err != nil {
 			t.Errorf("WriteVarIntBigEndian #%d error %v", i, err)
 			continue
@@ -318,9 +317,9 @@ func TestVarIntWire(t *testing.T) {
 			t.Errorf("ReadVarIntLittleEndian #%d error %v", i, err)
 			continue
 		}
-		if val != test.out {
+		if val != test.value {
 			t.Errorf("ReadVarIntLittleEndian #%d\n got: %x want: %x", i,
-				val, test.out)
+				val, test.value)
 			continue
 		}
 
@@ -331,9 +330,9 @@ func TestVarIntWire(t *testing.T) {
 			t.Errorf("ReadVarIntBigEndian #%d error %v", i, err)
 			continue
 		}
-		if val != test.out {
+		if val != test.value {
 			t.Errorf("ReadVarIntBigEndian #%d\n got: %x want: %x", i,
-				val, test.out)
+				val, test.value)
 			continue
 		}
 	}
