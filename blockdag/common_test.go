@@ -73,7 +73,7 @@ func loadUTXOSet(filename string) (UTXOSet, error) {
 			return nil, err
 		}
 
-		// Deserialize it and add it to the view.
+		// Deserialize the UTXO entry and add it to the UTXO set.
 		entry, err := deserializeUTXOEntry(r)
 		if err != nil {
 			return nil, err

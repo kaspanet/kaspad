@@ -194,9 +194,9 @@ func TestNotFoundWireErrors(t *testing.T) {
 	maxNotFound.InvList = append(maxNotFound.InvList, iv)
 
 	w := &bytes.Buffer{}
-	err = WriteVarInt(w, MaxInvPerMsg+1)
+	err = WriteVarIntLittleEndian(w, MaxInvPerMsg+1)
 	if err != nil {
-		t.Fatalf("WriteVarInt: %s", err)
+		t.Fatalf("WriteVarIntLittleEndian: %s", err)
 	}
 	maxNotFoundEncoded := w.Bytes()
 

@@ -66,7 +66,7 @@ func (msg *MsgBlock) KaspaDecode(r io.Reader, pver uint32) error {
 		return err
 	}
 
-	txCount, err := ReadVarInt(r)
+	txCount, err := ReadVarIntLittleEndian(r)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func (msg *MsgBlock) DeserializeTxLoc(r *bytes.Buffer) ([]TxLoc, error) {
 		return nil, err
 	}
 
-	txCount, err := ReadVarInt(r)
+	txCount, err := ReadVarIntLittleEndian(r)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +166,7 @@ func (msg *MsgBlock) KaspaEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 
-	err = WriteVarInt(w, uint64(len(msg.Transactions)))
+	err = WriteVarIntLittleEndian(w, uint64(len(msg.Transactions)))
 	if err != nil {
 		return err
 	}

@@ -46,7 +46,7 @@ func (msg *MsgInv) AddInvVect(iv *InvVect) error {
 // KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgInv) KaspaDecode(r io.Reader, pver uint32) error {
-	count, err := ReadVarInt(r)
+	count, err := ReadVarIntLittleEndian(r)
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func (msg *MsgInv) KaspaEncode(w io.Writer, pver uint32) error {
 		return messageError("MsgInv.KaspaEncode", str)
 	}
 
-	err := WriteVarInt(w, uint64(count))
+	err := WriteVarIntLittleEndian(w, uint64(count))
 	if err != nil {
 		return err
 	}

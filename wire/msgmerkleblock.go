@@ -54,7 +54,7 @@ func (msg *MsgMerkleBlock) KaspaDecode(r io.Reader, pver uint32) error {
 	}
 
 	// Read num block locator hashes and limit to max.
-	count, err := ReadVarInt(r)
+	count, err := ReadVarIntLittleEndian(r)
 	if err != nil {
 		return err
 	}
@@ -110,7 +110,7 @@ func (msg *MsgMerkleBlock) KaspaEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 
-	err = WriteVarInt(w, uint64(numHashes))
+	err = WriteVarIntLittleEndian(w, uint64(numHashes))
 	if err != nil {
 		return err
 	}

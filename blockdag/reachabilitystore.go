@@ -211,7 +211,7 @@ func (store *reachabilityStore) serializeTreeNode(w io.Writer, treeNode *reachab
 	}
 
 	// Serialize the amount of children
-	err = wire.WriteVarInt(w, uint64(len(treeNode.children)))
+	err = wire.WriteVarIntLittleEndian(w, uint64(len(treeNode.children)))
 	if err != nil {
 		return err
 	}
@@ -245,7 +245,7 @@ func (store *reachabilityStore) serializeReachabilityInterval(w io.Writer, inter
 
 func (store *reachabilityStore) serializeFutureCoveringSet(w io.Writer, futureCoveringSet futureCoveringBlockSet) error {
 	// Serialize the set size
-	err := wire.WriteVarInt(w, uint64(len(futureCoveringSet)))
+	err := wire.WriteVarIntLittleEndian(w, uint64(len(futureCoveringSet)))
 	if err != nil {
 		return err
 	}
@@ -312,7 +312,7 @@ func (store *reachabilityStore) deserializeTreeNode(r io.Reader, destination *re
 	}
 
 	// Deserialize the amount of children
-	childCount, err := wire.ReadVarInt(r)
+	childCount, err := wire.ReadVarIntLittleEndian(r)
 	if err != nil {
 		return err
 	}
@@ -360,7 +360,7 @@ func (store *reachabilityStore) deserializeReachabilityInterval(r io.Reader) (*r
 
 func (store *reachabilityStore) deserializeFutureCoveringSet(r io.Reader, destination *reachabilityData) error {
 	// Deserialize the set size
-	setSize, err := wire.ReadVarInt(r)
+	setSize, err := wire.ReadVarIntLittleEndian(r)
 	if err != nil {
 		return err
 	}

@@ -185,7 +185,7 @@ func serializeOutpoint(w io.Writer, outpoint *wire.Outpoint) error {
 		return err
 	}
 
-	return wire.WriteVarInt(w, uint64(outpoint.Index))
+	return wire.WriteVarIntLittleEndian(w, uint64(outpoint.Index))
 }
 
 var outpointMaxSerializeSize = daghash.TxIDSize + wire.VarIntSerializeSize(math.MaxUint32)
@@ -200,7 +200,7 @@ func deserializeOutpoint(r io.Reader) (*wire.Outpoint, error) {
 		return nil, err
 	}
 
-	idx, err := wire.ReadVarInt(r)
+	idx, err := wire.ReadVarIntLittleEndian(r)
 	if err != nil {
 		return nil, err
 	}
@@ -718,7 +718,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		return nil, err
 	}
 
-	bluesCount, err := wire.ReadVarInt(buffer)
+	bluesCount, err := wire.ReadVarIntLittleEndian(buffer)
 	if err != nil {
 		return nil, err
 	}
@@ -732,7 +732,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		node.blues[i] = dag.index.LookupNode(hash)
 	}
 
-	bluesAnticoneSizesLen, err := wire.ReadVarInt(buffer)
+	bluesAnticoneSizesLen, err := wire.ReadVarIntLittleEndian(buffer)
 	if err != nil {
 		return nil, err
 	}
@@ -803,7 +803,7 @@ func serializeBlockNode(node *blockNode) ([]byte, error) {
 		return nil, err
 	}
 
-	err = wire.WriteVarInt(w, uint64(len(node.blues)))
+	err = wire.WriteVarIntLittleEndian(w, uint64(len(node.blues)))
 	if err != nil {
 		return nil, err
 	}
@@ -815,7 +815,7 @@ func serializeBlockNode(node *blockNode) ([]byte, error) {
 		}
 	}
 
-	err = wire.WriteVarInt(w, uint64(len(node.bluesAnticoneSizes)))
+	err = wire.WriteVarIntLittleEndian(w, uint64(len(node.bluesAnticoneSizes)))
 	if err != nil {
 		return nil, err
 	}

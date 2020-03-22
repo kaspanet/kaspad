@@ -409,7 +409,7 @@ func (msg *MsgTx) KaspaDecode(r io.Reader, pver uint32) error {
 	}
 	msg.Version = int32(version)
 
-	count, err := ReadVarInt(r)
+	count, err := ReadVarIntLittleEndian(r)
 	if err != nil {
 		return err
 	}
@@ -461,7 +461,7 @@ func (msg *MsgTx) KaspaDecode(r io.Reader, pver uint32) error {
 		totalScriptSize += uint64(len(ti.SignatureScript))
 	}
 
-	count, err = ReadVarInt(r)
+	count, err = ReadVarIntLittleEndian(r)
 	if err != nil {
 		returnScriptBuffers()
 		return err
@@ -522,7 +522,7 @@ func (msg *MsgTx) KaspaDecode(r io.Reader, pver uint32) error {
 		}
 		msg.PayloadHash = &payloadHash
 
-		payloadLength, err := ReadVarInt(r)
+		payloadLength, err := ReadVarIntLittleEndian(r)
 		if err != nil {
 			returnScriptBuffers()
 			return err
@@ -620,7 +620,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 	}
 
 	count := uint64(len(msg.TxIn))
-	err = WriteVarInt(w, count)
+	err = WriteVarIntLittleEndian(w, count)
 	if err != nil {
 		return err
 	}
@@ -633,7 +633,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 	}
 
 	count = uint64(len(msg.TxOut))
-	err = WriteVarInt(w, count)
+	err = WriteVarIntLittleEndian(w, count)
 	if err != nil {
 		return err
 	}
@@ -672,10 +672,10 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 		}
 
 		if encodingFlags&txEncodingExcludePayload != txEncodingExcludePayload {
-			err = WriteVarInt(w, uint64(len(msg.Payload)))
+			err = WriteVarIntLittleEndian(w, uint64(len(msg.Payload)))
 			w.Write(msg.Payload)
 		} else {
-			err = WriteVarInt(w, 0)
+			err = WriteVarIntLittleEndian(w, 0)
 		}
 		if err != nil {
 			return err
@@ -914,7 +914,7 @@ func writeOutpoint(w io.Writer, pver uint32, version int32, op *Outpoint) error 
 // fieldName parameter is only used for the error message so it provides more
 // context in the error.
 func readScript(r io.Reader, pver uint32, maxAllowed uint32, fieldName string) ([]byte, error) {
-	count, err := ReadVarInt(r)
+	count, err := ReadVarIntLittleEndian(r)
 	if err != nil {
 		return nil, err
 	}

@@ -106,7 +106,7 @@ func deserializeUTXODiff(r io.Reader) (*UTXODiff, error) {
 }
 
 func deserializeUTXOCollection(r io.Reader) (utxoCollection, error) {
-	count, err := wire.ReadVarInt(r)
+	count, err := wire.ReadVarIntLittleEndian(r)
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +179,7 @@ func serializeUTXODiff(w io.Writer, diff *UTXODiff) error {
 // the utxo entries and serializing them and their corresponding outpoint
 // prefixed by a varint that indicates their size.
 func serializeUTXOCollection(w io.Writer, collection utxoCollection) error {
-	err := wire.WriteVarInt(w, uint64(len(collection)))
+	err := wire.WriteVarIntLittleEndian(w, uint64(len(collection)))
 	if err != nil {
 		return err
 	}
@@ -239,7 +239,7 @@ func serializeUTXOEntry(w io.Writer, entry *UTXOEntry) error {
 	// Encode the header code.
 	headerCode := utxoEntryHeaderCode(entry)
 
-	err := wire.WriteVarInt(w, headerCode)
+	err := wire.WriteVarIntLittleEndian(w, headerCode)
 	if err != nil {
 		return err
 	}
@@ -252,7 +252,7 @@ func serializeUTXOEntry(w io.Writer, entry *UTXOEntry) error {
 // storage. The format is described in detail above.
 func deserializeUTXOEntry(r io.Reader) (*UTXOEntry, error) {
 	// Deserialize the header code.
-	headerCode, err := wire.ReadVarInt(r)
+	headerCode, err := wire.ReadVarIntLittleEndian(r)
 	if err != nil {
 		return nil, err
 	}

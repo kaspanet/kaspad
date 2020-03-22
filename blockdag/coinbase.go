@@ -177,7 +177,7 @@ func (node *blockNode) expectedCoinbaseTransaction(dag *BlockDAG, txsAcceptanceD
 // SerializeCoinbasePayload builds the coinbase payload based on the provided scriptPubKey and extra data.
 func SerializeCoinbasePayload(scriptPubKey []byte, extraData []byte) ([]byte, error) {
 	w := &bytes.Buffer{}
-	err := wire.WriteVarInt(w, uint64(len(scriptPubKey)))
+	err := wire.WriteVarIntLittleEndian(w, uint64(len(scriptPubKey)))
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func SerializeCoinbasePayload(scriptPubKey []byte, extraData []byte) ([]byte, er
 // DeserializeCoinbasePayload deserialize the coinbase payload to its component (scriptPubKey and extra data).
 func DeserializeCoinbasePayload(tx *wire.MsgTx) (scriptPubKey []byte, extraData []byte, err error) {
 	r := bytes.NewReader(tx.Payload)
-	scriptPubKeyLen, err := wire.ReadVarInt(r)
+	scriptPubKeyLen, err := wire.ReadVarIntLittleEndian(r)
 	if err != nil {
 		return nil, nil, err
 	}

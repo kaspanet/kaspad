@@ -22,7 +22,7 @@ import (
 //   <script size or type><script data>
 //
 //   Field                 Type     Size
-//   script size or type   VLQ      variable
+//   script size or type   varint      variable
 //   script data           []byte   variable
 //
 // The specific serialized format for each recognized standard script is:
@@ -227,9 +227,9 @@ func putCompressedScript(w io.Writer, scriptPubKey []byte) error {
 
 	// When none of the above special cases apply, encode the unmodified
 	// script preceded by the sum of its size and the number of special
-	// cases encoded as a variable length quantity.
+	// cases encoded as a varint.
 	encodedSize := uint64(len(scriptPubKey) + numSpecialScripts)
-	err := wire.WriteVarInt(w, encodedSize)
+	err := wire.WriteVarIntLittleEndian(w, encodedSize)
 	if err != nil {
 		return err
 	}
@@ -250,7 +250,7 @@ func putCompressedScript(w io.Writer, scriptPubKey []byte) error {
 // will panic. This is acceptable since it is only an internal function.
 func decompressScript(r io.Reader) ([]byte, error) {
 	// Decode the script size and examine it for the special cases.
-	encodedScriptSize, err := wire.ReadVarInt(r)
+	encodedScriptSize, err := wire.ReadVarIntLittleEndian(r)
 	if err != nil {
 		return nil, err
 	}
@@ -358,8 +358,8 @@ func decompressScript(r io.Reader) ([]byte, error) {
 // While this is simply exchanging one uint64 for another, the resulting value
 // for typical amounts has a much smaller magnitude which results in fewer bytes
 // when encoded as variable length quantity. For example, consider the amount
-// of 0.1 KAS which is 10000000 sompi. Encoding 10000000 as a VLQ would take
-// 4 bytes while encoding the compressed value of 8 as a VLQ only takes 1 byte.
+// of 0.1 KAS which is 10000000 sompi. Encoding 10000000 as a varint would take
+// 5 bytes while encoding the compressed value of 8 as a varint only takes 1 byte.
 //
 // Essentially the compression is achieved by splitting the value into an
 // exponent in the range [0-9] and a digit in the range [1-9], when possible,
@@ -376,13 +376,13 @@ func decompressScript(r io.Reader) ([]byte, error) {
 //   1 + 10*(n-1) + e   ==   10 + 10*(n-1)
 //
 // Example encodings:
-// (The numbers in parenthesis are the number of bytes when serialized as a VLQ)
+// (The numbers in parenthesis are the number of bytes when serialized as a varint)
 //            0 (1) -> 0        (1)           *  0.00000000 KAS
-//         1000 (2) -> 4        (1)           *  0.00001000 KAS
-//        10000 (2) -> 5        (1)           *  0.00010000 KAS
-//     12345678 (4) -> 111111101(4)           *  0.12345678 KAS
-//     50000000 (4) -> 47       (1)           *  0.50000000 KAS
-//    100000000 (4) -> 9        (1)           *  1.00000000 KAS
+//         1000 (3) -> 4        (1)           *  0.00001000 KAS
+//        10000 (3) -> 5        (1)           *  0.00010000 KAS
+//     12345678 (5) -> 111111101(5)           *  0.12345678 KAS
+//     50000000 (5) -> 47       (1)           *  0.50000000 KAS
+//    100000000 (5) -> 9        (1)           *  1.00000000 KAS
 //    500000000 (5) -> 49       (1)           *  5.00000000 KAS
 //   1000000000 (5) -> 10       (1)           * 10.00000000 KAS
 // -----------------------------------------------------------------------------
@@ -476,7 +476,7 @@ func decompressTxOutAmount(amount uint64) uint64 {
 // slice must be at least large enough to handle the number of bytes returned by
 // the compressedTxOutSize function or it will panic.
 func putCompressedTxOut(w io.Writer, amount uint64, scriptPubKey []byte) error {
-	err := wire.WriteVarInt(w, compressTxOutAmount(amount))
+	err := wire.WriteVarIntLittleEndian(w, compressTxOutAmount(amount))
 	if err != nil {
 		return err
 	}
@@ -489,7 +489,7 @@ func putCompressedTxOut(w io.Writer, amount uint64, scriptPubKey []byte) error {
 func decodeCompressedTxOut(r io.Reader) (uint64, []byte, error) {
 	// Deserialize the compressed amount and ensure there are bytes
 	// remaining for the compressed script.
-	compressedAmount, err := wire.ReadVarInt(r)
+	compressedAmount, err := wire.ReadVarIntLittleEndian(r)
 	if err != nil {
 		return 0, nil, err
 	}
