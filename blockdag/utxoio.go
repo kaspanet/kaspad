@@ -230,12 +230,12 @@ func serializeUTXO(w io.Writer, entry *UTXOEntry, outpoint *wire.Outpoint, compr
 	return nil
 }
 
-// p2pkhUTXOEntryMaxSerializeSize is the maximum serialized size for a P2PKH UTXO entry.
+// p2pkhCompressedUTXOEntryMaxSerializeSize is the maximum serialized size for a P2PKH UTXO entry.
 // Varint (header code) + 8 bytes (amount) + compressed P2PKH script size.
-var p2pkhUTXOEntryMaxSerializeSize = wire.VarIntSerializeSize(math.MaxUint64) + 8 + cstPayToPubKeyHashLen
+var p2pkhCompressedUTXOEntryMaxSerializeSize = wire.VarIntSerializeSize(math.MaxUint64) + 8 + cstPayToPubKeyHashLen
 
-// serializeUTXOEntry returns the entry serialized to a format that is suitable
-// for long-term storage. The format is described in detail above.
+// serializeUTXOEntry encodes the entry to the given io.Writer and use compression if useCompression is true.
+// The compression format is described in detail above.
 func serializeUTXOEntry(w io.Writer, entry *UTXOEntry, useCompression bool) error {
 	// Encode the header code.
 	headerCode := utxoEntryHeaderCode(entry)
@@ -267,10 +267,11 @@ func serializeUTXOEntry(w io.Writer, entry *UTXOEntry, useCompression bool) erro
 	return nil
 }
 
-// deserializeUTXOEntry decodes a UTXO entry from the passed serialized byte
-// slice into a new UTXOEntry using a format that is suitable for long-term
-// storage. The format is described in detail above.
-func deserializeUTXOEntry(r io.Reader, useCompression bool) (*UTXOEntry, error) {
+// deserializeUTXOEntry decodes a UTXO entry from the passed reader
+// into a new UTXOEntry. If isCompressed is used it will decompress
+// the entry according to the format that is described in detail
+// above.
+func deserializeUTXOEntry(r io.Reader, isCompressed bool) (*UTXOEntry, error) {
 	// Deserialize the header code.
 	headerCode, err := wire.ReadVarIntLittleEndian(r)
 	if err != nil {
@@ -293,7 +294,7 @@ func deserializeUTXOEntry(r io.Reader, useCompression bool) (*UTXOEntry, error) 
 		entry.packedFlags |= tfCoinbase
 	}
 
-	if useCompression {
+	if isCompressed {
 		entry.amount, entry.scriptPubKey, err = decodeCompressedTxOut(r)
 		if err != nil {
 			return nil, err

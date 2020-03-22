@@ -130,7 +130,7 @@ func TestScriptCompression(t *testing.T) {
 func TestScriptCompressionErrors(t *testing.T) {
 	t.Parallel()
 
-	// A nil script must result in a nil decompressed script.
+	// A nil script must result in an error.
 	if _, err := decompressScript(bytes.NewReader(nil)); err == nil {
 		t.Fatalf("decompressScript expects an error for an empty reader")
 	}

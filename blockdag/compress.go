@@ -29,10 +29,6 @@ import (
 //
 // - Pay-to-pubkey-hash: (21 bytes) - <0><20-byte pubkey hash>
 // - Pay-to-script-hash: (21 bytes) - <1><20-byte script hash>
-// - Pay-to-pubkey**:    (33 bytes) - <2, 3, 4, or 5><32-byte pubkey X value>
-//   2, 3 = compressed pubkey with bit 0 specifying the y coordinate to use
-//   4, 5 = uncompressed pubkey with bit 0 specifying the y coordinate to use
-//   ** Only valid public keys starting with 0x02, 0x03, and 0x04 are supported.
 //
 // Any scripts which are not recognized as one of the aforementioned standard
 // scripts are encoded using the general serialized format and encode the script
@@ -132,7 +128,6 @@ const (
 const (
 	pubKeyHashLen = 20
 	scriptHashLen = 20
-	pubKeyXLen    = 32
 )
 
 // putCompressedScript compresses the passed script according to the domain
@@ -192,10 +187,6 @@ func putCompressedScript(w io.Writer, scriptPubKey []byte) error {
 // decompressScript returns the original script obtained by decompressing the
 // passed compressed script according to the domain specific compression
 // algorithm described above.
-//
-// NOTE: The script parameter must already have been proven to be long enough
-// to contain the number of bytes returned by decodeCompressedScriptSize or it
-// will panic. This is acceptable since it is only an internal function.
 func decompressScript(r io.Reader) ([]byte, error) {
 	// Decode the script size and examine it for the special cases.
 	encodedScriptSize, err := wire.ReadVarIntLittleEndian(r)
@@ -376,10 +367,8 @@ func decompressTxOutAmount(amount uint64) uint64 {
 // -----------------------------------------------------------------------------
 
 // putCompressedTxOut compresses the passed amount and script according to their
-// domain specific compression algorithms and encodes them directly into the
-// passed target byte slice with the format described above. The target byte
-// slice must be at least large enough to handle the number of bytes returned by
-// the compressedTxOutSize function or it will panic.
+// domain specific compression algorithms and writes them directly into the
+// passed io.Writer with the format described above.
 func putCompressedTxOut(w io.Writer, amount uint64, scriptPubKey []byte) error {
 	err := wire.WriteVarIntLittleEndian(w, compressTxOutAmount(amount))
 	if err != nil {
@@ -388,9 +377,9 @@ func putCompressedTxOut(w io.Writer, amount uint64, scriptPubKey []byte) error {
 	return putCompressedScript(w, scriptPubKey)
 }
 
-// decodeCompressedTxOut decodes the passed compressed txout, possibly followed
-// by other data, into its uncompressed amount and script and returns them along
-// with the number of bytes they occupied prior to decompression.
+// decodeCompressedTxOut decodes a compressed txout from the passed
+// io.Reader, possibly followed by other data, into its uncompressed
+// amount and script and returns them.
 func decodeCompressedTxOut(r io.Reader) (uint64, []byte, error) {
 	// Deserialize the compressed amount and ensure there are bytes
 	// remaining for the compressed script.

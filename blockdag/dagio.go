@@ -224,7 +224,7 @@ func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 
 	// We are preallocating for P2PKH entries because they are the most common ones.
 	// If we have entries with a compressed script bigger than P2PKH's, the buffer will grow.
-	bytesToPreallocate := (p2pkhUTXOEntryMaxSerializeSize + outpointMaxSerializeSize) * len(diff.toAdd)
+	bytesToPreallocate := (p2pkhCompressedUTXOEntryMaxSerializeSize + outpointMaxSerializeSize) * len(diff.toAdd)
 	buff := bytes.NewBuffer(make([]byte, bytesToPreallocate))
 	for outpoint, entry := range diff.toAdd {
 		// Serialize and store the UTXO entry.
