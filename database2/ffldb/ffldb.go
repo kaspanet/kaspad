@@ -8,8 +8,8 @@ import (
 
 var (
 	// flatFilesBucket keeps an index flat-file stores and their
-	// current locations. This is used to repair the database in
-	// case a corruption occurs.
+	// current locations. Among other things, it is used to repair
+	// the database in case a corruption occurs.
 	flatFilesBucket = database2.MakeBucket([]byte("flat-files"))
 )
 
