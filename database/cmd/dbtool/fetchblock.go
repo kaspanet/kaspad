@@ -6,10 +6,10 @@ package main
 
 import (
 	"encoding/hex"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
 	"time"
 
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -43,17 +43,19 @@ func (cmd *fetchBlockCmd) Execute(args []string) error {
 	}
 	defer db.Close()
 
-	return db.View(func(dbTx database.Tx) error {
-		log.Infof("Fetching block %s", blockHash)
-		startTime := time.Now()
-		blockBytes, err := dbTx.FetchBlock(blockHash)
-		if err != nil {
-			return err
-		}
-		log.Infof("Loaded block in %s", time.Since(startTime))
-		log.Infof("Block Hex: %s", hex.EncodeToString(blockBytes))
-		return nil
-	})
+	log.Infof("Fetching block %s", blockHash)
+	startTime := time.Now()
+	block, err := dbaccess.FetchBlock(dbaccess.NoTx(), blockHash)
+	if err != nil {
+		return err
+	}
+	blockBytes, err := block.Bytes()
+	if err != nil {
+		return err
+	}
+	log.Infof("Loaded block in %s", time.Since(startTime))
+	log.Infof("Block Hex: %s", hex.EncodeToString(blockBytes))
+	return nil
 }
 
 // Usage overrides the usage display for the command.

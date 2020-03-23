@@ -608,7 +608,7 @@ func (dag *BlockDAG) initDAGState() error {
 			}
 
 			// Attempt to accept the block.
-			block, err := dbFetchBlockByNode(dbTx, node)
+			block, err := dbaccess.FetchBlock(dbaccess.NoTx(), node.hash)
 			if err != nil {
 				return err
 			}
@@ -730,24 +730,6 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 	return node, nil
 }
 
-// dbFetchBlockByNode uses an existing database transaction to retrieve the
-// raw block for the provided node, deserialize it, and return a util.Block
-// of it.
-func dbFetchBlockByNode(dbTx database.Tx, node *blockNode) (*util.Block, error) {
-	// Load the raw block bytes from the database.
-	blockBytes, err := dbTx.FetchBlock(node.hash)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create the encapsulated block.
-	block, err := util.NewBlockFromBytes(blockBytes)
-	if err != nil {
-		return nil, err
-	}
-	return block, nil
-}
-
 func serializeBlockNode(node *blockNode) ([]byte, error) {
 	w := bytes.NewBuffer(make([]byte, 0, blockHdrSize+1))
 	header := node.Header()
@@ -846,13 +828,7 @@ func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
 	}
 
 	// Load the block from the database and return it.
-	var block *util.Block
-	err := dag.db.View(func(dbTx database.Tx) error {
-		var err error
-		block, err = dbFetchBlockByNode(dbTx, node)
-		return err
-	})
-	return block, err
+	return dbaccess.FetchBlock(dbaccess.NoTx(), node.hash)
 }
 
 // BlockHashesFrom returns a slice of blocks starting from lowHash

@@ -5,12 +5,11 @@ import (
 	"bytes"
 	"encoding/hex"
 	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // handleGetBlock implements the getBlock command.
@@ -39,16 +38,18 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		}
 	}
 
-	var blkBytes []byte
-	err = s.cfg.DB.View(func(dbTx database.Tx) error {
-		var err error
-		blkBytes, err = dbTx.FetchBlock(hash)
-		return err
-	})
+	block, err := dbaccess.FetchBlock(dbaccess.NoTx(), hash)
 	if err != nil {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCBlockNotFound,
 			Message: "Block not found",
+		}
+	}
+	blkBytes, err := block.Bytes()
+	if err != nil {
+		return nil, &rpcmodel.RPCError{
+			Code:    rpcmodel.ErrRPCBlockInvalid,
+			Message: "Failed to get block bytes",
 		}
 	}
 
@@ -74,12 +75,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 				// nothing to do - partial node stores partial blocks
 			} else {
 				// Deserialize the block.
-				var msgBlock wire.MsgBlock
-				err = msgBlock.Deserialize(bytes.NewReader(blkBytes))
-				if err != nil {
-					context := "Failed to deserialize block"
-					return nil, internalRPCError(err.Error(), context)
-				}
+				msgBlock := block.MsgBlock()
 				msgBlock.ConvertToPartial(requestSubnetworkID)
 				var b bytes.Buffer
 				msgBlock.Serialize(bufio.NewWriter(&b))

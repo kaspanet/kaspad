@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"math"
 	"sort"
 	"sync"
@@ -1016,19 +1017,15 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 
 func (node *blockNode) fetchBlueBlocks(db database.DB) ([]*util.Block, error) {
 	blueBlocks := make([]*util.Block, len(node.blues))
-	err := db.View(func(dbTx database.Tx) error {
-		for i, blueBlockNode := range node.blues {
-			blueBlock, err := dbFetchBlockByNode(dbTx, blueBlockNode)
-			if err != nil {
-				return err
-			}
-
-			blueBlocks[i] = blueBlock
+	for i, blueBlockNode := range node.blues {
+		blueBlock, err := dbaccess.FetchBlock(dbaccess.NoTx(), blueBlockNode.hash)
+		if err != nil {
+			return nil, err
 		}
 
-		return nil
-	})
-	return blueBlocks, err
+		blueBlocks[i] = blueBlock
+	}
+	return blueBlocks, nil
 }
 
 // applyBlueBlocks adds all transactions in the blue blocks to the selectedParent's UTXO set
