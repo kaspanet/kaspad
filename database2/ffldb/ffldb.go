@@ -13,8 +13,8 @@ var (
 	flatFilesBucket = database2.MakeBucket([]byte("flat-files"))
 )
 
-// ffldb is a database that's both LevelDB and a flat-file
-// database.
+// ffldb is a database utilizing LevelDB for key-value data and
+// flat-files for raw data storage.
 type ffldb struct {
 	ffdb *ff.FlatFileDB
 	ldb  *ldb.LevelDB
