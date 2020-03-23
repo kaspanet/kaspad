@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
 	"io"
 	"sync"
@@ -596,7 +597,7 @@ func (dag *BlockDAG) initDAGState() error {
 		for _, node := range unprocessedBlockNodes {
 			// Check to see if the block exists in the block DB. If it
 			// doesn't, the database has certainly been corrupted.
-			blockExists, err := dbTx.HasBlock(node.hash)
+			blockExists, err := dbaccess.HasBlock(dbaccess.NoTx(), node.hash)
 			if err != nil {
 				return AssertError(fmt.Sprintf("initDAGState: HasBlock "+
 					"for block %s failed: %s", node.hash, err))
