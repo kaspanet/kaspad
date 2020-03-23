@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
@@ -626,7 +627,7 @@ func TestAcceptingInInit(t *testing.T) {
 
 	// Manually add the test block to the database
 	err = db.Update(func(dbTx database.Tx) error {
-		err := dbStoreBlock(dbTx, testBlock)
+		err := dbaccess.StoreBlock(dbaccess.NoTx(), testBlock)
 		if err != nil {
 			return err
 		}

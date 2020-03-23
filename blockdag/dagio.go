@@ -819,19 +819,6 @@ func dbStoreBlockNode(dbTx database.Tx, node *blockNode) error {
 	return blockIndexBucket.Put(key, serializedNode)
 }
 
-// dbStoreBlock stores the provided block in the database if it is not already
-// there. The full block data is written to ffldb.
-func dbStoreBlock(dbTx database.Tx, block *util.Block) error {
-	hasBlock, err := dbTx.HasBlock(block.Hash())
-	if err != nil {
-		return err
-	}
-	if hasBlock {
-		return nil
-	}
-	return dbTx.StoreBlock(block)
-}
-
 // BlockIndexKey generates the binary key for an entry in the block index
 // bucket. The key is composed of the block blue score encoded as a big-endian
 // 64-bit unsigned int followed by the 32 byte block hash.

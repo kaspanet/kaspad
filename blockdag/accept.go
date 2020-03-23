@@ -7,6 +7,7 @@ package blockdag
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
@@ -63,7 +64,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	// such as making blocks that never become part of the DAG or
 	// blocks that fail to connect available for further analysis.
 	err = dag.db.Update(func(dbTx database.Tx) error {
-		err := dbStoreBlock(dbTx, block)
+		err := dbaccess.StoreBlock(dbaccess.NoTx(), block)
 		if err != nil {
 			return err
 		}
