@@ -71,8 +71,7 @@ func (ffdb *FlatFileDB) CurrentLocation(storeName string) ([]byte, error) {
 		return nil, err
 	}
 	currentLocation := store.currentLocation()
-	serializedCurrentLocation := serializeLocation(currentLocation)
-	return serializedCurrentLocation, nil
+	return serializeLocation(currentLocation), nil
 }
 
 // Rollback truncates the flat-file store defined by the given
