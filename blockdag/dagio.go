@@ -157,7 +157,7 @@ func dbPutVersion(dbTx database.Tx, key []byte, version uint32) error {
 //    - 0x1d...e6: script hash
 // -----------------------------------------------------------------------------
 
-// outpointKeyPool defines a concurrent safe free list of byte slices used to
+// outpointKeyPool defines a concurrent safe free list of byte buffers used to
 // provide temporary buffers for outpoint database keys.
 var outpointKeyPool = sync.Pool{
 	New: func() interface{} {
@@ -178,7 +178,7 @@ var outpointMaxSerializeSize = daghash.TxIDSize + wire.VarIntSerializeSize(math.
 
 // deserializeOutpoint decodes an outpoint from the passed serialized byte
 // slice into a new wire.Outpoint using a format that is suitable for long-
-// term storage. this format is described in detail above.
+// term storage. This format is described in detail above.
 func deserializeOutpoint(r io.Reader) (*wire.Outpoint, error) {
 	outpoint := &wire.Outpoint{}
 	_, err := r.Read(outpoint.TxID[:])
