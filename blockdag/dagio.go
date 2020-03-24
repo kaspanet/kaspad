@@ -165,13 +165,18 @@ var outpointKeyPool = sync.Pool{
 	},
 }
 
+// outpointIndexByteOrder is the byte order for serializing the outpoint index.
+// It uses big endian to ensure that when outpoint is used as database key, the
+// keys will be iterated in an ascending order by the outpoint index.
+var outpointIndexByteOrder = binary.BigEndian
+
 func serializeOutpoint(w io.Writer, outpoint *wire.Outpoint) error {
 	_, err := w.Write(outpoint.TxID[:])
 	if err != nil {
 		return err
 	}
 
-	return binaryserializer.PutUint32(w, binary.BigEndian, outpoint.Index)
+	return binaryserializer.PutUint32(w, outpointIndexByteOrder, outpoint.Index)
 }
 
 var outpointMaxSerializeSize = daghash.TxIDSize + wire.VarIntSerializeSize(math.MaxUint32)
@@ -186,7 +191,7 @@ func deserializeOutpoint(r io.Reader) (*wire.Outpoint, error) {
 		return nil, err
 	}
 
-	outpoint.Index, err = binaryserializer.Uint32(r, binary.BigEndian)
+	outpoint.Index, err = binaryserializer.Uint32(r, outpointIndexByteOrder)
 	if err != nil {
 		return nil, err
 	}
