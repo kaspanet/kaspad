@@ -105,9 +105,8 @@ func (s *flatFileStore) write(data []byte) (*flatFileLocation, error) {
 	// Sync the file to disk.
 	err = cursor.currentFile.file.Sync()
 	if err != nil {
-		return nil, errors.Errorf("failed to sync file %d "+
-			"in store '%s': %s", cursor.currentFileNumber, s.storeName,
-			err)
+		return nil, errors.Wrapf(err, "failed to sync file %d "+
+			"in store '%s'", cursor.currentFileNumber, s.storeName)
 	}
 
 	location := &flatFileLocation{
@@ -130,8 +129,8 @@ func (s *flatFileStore) openWriteFile(fileNumber uint32) (filer, error) {
 	filePath := flatFilePath(s.basePath, s.storeName, fileNumber)
 	file, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
-		return nil, errors.Errorf("failed to open file %q: %s",
-			filePath, err)
+		return nil, errors.Wrapf(err, "failed to open file %q: %s",
+			filePath)
 	}
 
 	return file, nil
@@ -157,9 +156,9 @@ func (s *flatFileStore) writeData(data []byte, fieldName string) error {
 		if ok := errors.As(err, &pathErr); ok && pathErr.Err == syscall.ENOSPC {
 			panic("No space left on the hard disk, exiting...")
 		}
-		return errors.Errorf("failed to write %s in store %s to file %d "+
+		return errors.Wrapf(err, "failed to write %s in store %s to file %d "+
 			"at offset %d: %s", fieldName, s.storeName, cursor.currentFileNumber,
-			cursor.currentOffset-uint32(n), err)
+			cursor.currentOffset-uint32(n))
 	}
 
 	return nil

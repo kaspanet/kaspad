@@ -29,9 +29,9 @@ func (s *flatFileStore) read(location *flatFileLocation) ([]byte, error) {
 	n, err := flatFile.file.ReadAt(data, int64(location.fileOffset))
 	flatFile.RUnlock()
 	if err != nil {
-		return nil, errors.Errorf("failed to read data in store '%s' "+
-			"from file %d, offset %d: %s", s.storeName, location.fileNumber,
-			location.fileOffset, err)
+		return nil, errors.Wrapf(err, "failed to read data in store '%s' "+
+			"from file %d, offset %d", s.storeName, location.fileNumber,
+			location.fileOffset)
 	}
 
 	// Calculate the checksum of the read data and ensure it matches the
