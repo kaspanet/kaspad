@@ -19,9 +19,7 @@ func (s *flatFileStore) read(location *flatFileLocation) ([]byte, error) {
 			s.storeName)
 	}
 
-	// Get the referenced flat file handle opening the file as needed. The
-	// function also handles closing files as needed to avoid going over the
-	// max allowed open files.
+	// Get the referenced flat file.
 	flatFile, err := s.flatFile(location.fileNumber)
 	if err != nil {
 		return nil, err
@@ -53,7 +51,8 @@ func (s *flatFileStore) read(location *flatFileLocation) ([]byte, error) {
 // flatFile attempts to return an existing file handle for the passed flat file
 // number if it is already open as well as marking it as most recently used. It
 // will also open the file when it's not already open subject to the rules
-// described in openFile.
+// described in openFile. Also handles closing files as needed to avoid going
+// over the max allowed open files.
 //
 // NOTE: The returned flat file will already have the read lock acquired and
 // the caller MUST call .RUnlock() to release it once it has finished all read
