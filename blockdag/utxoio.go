@@ -6,7 +6,6 @@ import (
 	"github.com/kaspanet/kaspad/util/binaryserializer"
 	"github.com/pkg/errors"
 	"io"
-	"math"
 	"math/big"
 
 	"github.com/kaspanet/kaspad/ecc"
@@ -113,7 +112,7 @@ func deserializeUTXOCollection(r io.Reader) (utxoCollection, error) {
 	}
 	collection := utxoCollection{}
 	for i := uint64(0); i < count; i++ {
-		utxoEntry, outpoint, err := deserializeUTXO(r, true)
+		utxoEntry, outpoint, err := deserializeUTXO(r)
 		if err != nil {
 			return nil, err
 		}
@@ -122,13 +121,13 @@ func deserializeUTXOCollection(r io.Reader) (utxoCollection, error) {
 	return collection, nil
 }
 
-func deserializeUTXO(r io.Reader, useCompression bool) (*UTXOEntry, *wire.Outpoint, error) {
+func deserializeUTXO(r io.Reader) (*UTXOEntry, *wire.Outpoint, error) {
 	outpoint, err := deserializeOutpoint(r)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	utxoEntry, err := deserializeUTXOEntry(r, useCompression)
+	utxoEntry, err := deserializeUTXOEntry(r)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -185,7 +184,7 @@ func serializeUTXOCollection(w io.Writer, collection utxoCollection) error {
 		return err
 	}
 	for outpoint, utxoEntry := range collection {
-		err := serializeUTXO(w, utxoEntry, &outpoint, true)
+		err := serializeUTXO(w, utxoEntry, &outpoint)
 		if err != nil {
 			return err
 		}
@@ -217,36 +216,32 @@ func serializeMultiset(w io.Writer, ms *ecc.Multiset) error {
 }
 
 // serializeUTXO serializes a utxo entry-outpoint pair
-func serializeUTXO(w io.Writer, entry *UTXOEntry, outpoint *wire.Outpoint, compressEntries bool) error {
+func serializeUTXO(w io.Writer, entry *UTXOEntry, outpoint *wire.Outpoint) error {
 	err := serializeOutpoint(w, outpoint)
 	if err != nil {
 		return err
 	}
 
-	err = serializeUTXOEntry(w, entry, compressEntries)
+	err = serializeUTXOEntry(w, entry)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-// p2pkhCompressedUTXOEntryMaxSerializeSize is the maximum serialized size for a P2PKH UTXO entry.
-// Varint (header code) + 8 bytes (amount) + compressed P2PKH script size.
-var p2pkhCompressedUTXOEntryMaxSerializeSize = wire.VarIntSerializeSize(math.MaxUint64) + 8 + cstPayToPubKeyHashLen
+// p2pkhUTXOEntrySerializeSize is the serialized size for a P2PKH UTXO entry.
+// 8 bytes (header code) + 8 bytes (amount) + varint for script pub key length of 25 (for P2PKH) + 25 bytes for P2PKH script.
+var p2pkhUTXOEntrySerializeSize = 8 + 8 + wire.VarIntSerializeSize(25) + 25
 
 // serializeUTXOEntry encodes the entry to the given io.Writer and use compression if useCompression is true.
 // The compression format is described in detail above.
-func serializeUTXOEntry(w io.Writer, entry *UTXOEntry, useCompression bool) error {
+func serializeUTXOEntry(w io.Writer, entry *UTXOEntry) error {
 	// Encode the header code.
 	headerCode := utxoEntryHeaderCode(entry)
 
-	err := wire.WriteVarIntLittleEndian(w, headerCode)
+	err := binaryserializer.PutUint64(w, byteOrder, headerCode)
 	if err != nil {
 		return err
-	}
-
-	if useCompression {
-		return putCompressedTxOut(w, entry.Amount(), entry.ScriptPubKey())
 	}
 
 	err = binaryserializer.PutUint64(w, byteOrder, entry.Amount())
@@ -271,9 +266,9 @@ func serializeUTXOEntry(w io.Writer, entry *UTXOEntry, useCompression bool) erro
 // into a new UTXOEntry. If isCompressed is used it will decompress
 // the entry according to the format that is described in detail
 // above.
-func deserializeUTXOEntry(r io.Reader, isCompressed bool) (*UTXOEntry, error) {
+func deserializeUTXOEntry(r io.Reader) (*UTXOEntry, error) {
 	// Deserialize the header code.
-	headerCode, err := wire.ReadVarIntLittleEndian(r)
+	headerCode, err := binaryserializer.Uint64(r, byteOrder)
 	if err != nil {
 		return nil, err
 	}
@@ -292,15 +287,6 @@ func deserializeUTXOEntry(r io.Reader, isCompressed bool) (*UTXOEntry, error) {
 
 	if isCoinbase {
 		entry.packedFlags |= tfCoinbase
-	}
-
-	if isCompressed {
-		entry.amount, entry.scriptPubKey, err = decodeCompressedTxOut(r)
-		if err != nil {
-			return nil, err
-		}
-
-		return entry, nil
 	}
 
 	entry.amount, err = binaryserializer.Uint64(r, byteOrder)

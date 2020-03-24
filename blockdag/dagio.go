@@ -171,7 +171,7 @@ func serializeOutpoint(w io.Writer, outpoint *wire.Outpoint) error {
 		return err
 	}
 
-	return wire.WriteVarIntBigEndian(w, uint64(outpoint.Index))
+	return binaryserializer.PutUint32(w, binary.BigEndian, outpoint.Index)
 }
 
 var outpointMaxSerializeSize = daghash.TxIDSize + wire.VarIntSerializeSize(math.MaxUint32)
@@ -186,16 +186,10 @@ func deserializeOutpoint(r io.Reader) (*wire.Outpoint, error) {
 		return nil, err
 	}
 
-	idx, err := wire.ReadVarIntBigEndian(r)
+	outpoint.Index, err = binaryserializer.Uint32(r, binary.BigEndian)
 	if err != nil {
 		return nil, err
 	}
-
-	if idx > math.MaxUint32 {
-		return nil, errors.Errorf("%d is not a valid outpoint index", idx)
-	}
-
-	outpoint.Index = uint32(idx)
 
 	return outpoint, nil
 }
@@ -224,12 +218,12 @@ func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 
 	// We are preallocating for P2PKH entries because they are the most common ones.
 	// If we have entries with a compressed script bigger than P2PKH's, the buffer will grow.
-	bytesToPreallocate := (p2pkhCompressedUTXOEntryMaxSerializeSize + outpointMaxSerializeSize) * len(diff.toAdd)
+	bytesToPreallocate := (p2pkhUTXOEntrySerializeSize + outpointMaxSerializeSize) * len(diff.toAdd)
 	buff := bytes.NewBuffer(make([]byte, bytesToPreallocate))
 	for outpoint, entry := range diff.toAdd {
 		// Serialize and store the UTXO entry.
 		sBuff := newSubBuffer(buff)
-		err := serializeUTXOEntry(sBuff, entry, true)
+		err := serializeUTXOEntry(sBuff, entry)
 		if err != nil {
 			return err
 		}
@@ -570,7 +564,7 @@ func (dag *BlockDAG) initDAGState() error {
 			}
 
 			// Deserialize the utxo entry
-			entry, err := deserializeUTXOEntry(bytes.NewReader(cursor.Value()), true)
+			entry, err := deserializeUTXOEntry(bytes.NewReader(cursor.Value()))
 			if err != nil {
 				return err
 			}

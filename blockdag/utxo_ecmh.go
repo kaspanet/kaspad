@@ -16,7 +16,7 @@ var (
 
 func utxoMultiset(entry *UTXOEntry, outpoint *wire.Outpoint) (*ecc.Multiset, error) {
 	w := &bytes.Buffer{}
-	err := serializeUTXO(w, entry, outpoint, false)
+	err := serializeUTXO(w, entry, outpoint)
 	if err != nil {
 		return nil, err
 	}

@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"bytes"
+	"encoding/hex"
 	"github.com/pkg/errors"
 	"reflect"
 	"testing"
@@ -36,16 +37,27 @@ func TestErrNotInDAG(t *testing.T) {
 	}
 }
 
+// hexToBytes converts the passed hex string into bytes and will panic if there
+// is an error. This is only provided for the hard-coded constants so errors in
+// the source code can be detected. It will only (and must only) be called with
+// hard-coded values.
+func hexToBytes(s string) []byte {
+	b, err := hex.DecodeString(s)
+	if err != nil {
+		panic("invalid hex in source file: " + s)
+	}
+	return b
+}
+
 // TestUTXOSerialization ensures serializing and deserializing unspent
 // trasaction output entries works as expected.
 func TestUTXOSerialization(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name                              string
-		entry                             *UTXOEntry
-		serializedWithEntryCompression    []byte
-		serializedWithoutEntryCompression []byte
+		name       string
+		entry      *UTXOEntry
+		serialized []byte
 	}{
 		{
 			name: "blue score 1, coinbase",
@@ -55,8 +67,7 @@ func TestUTXOSerialization(t *testing.T) {
 				blockBlueScore: 1,
 				packedFlags:    tfCoinbase,
 			},
-			serializedWithEntryCompression:    hexToBytes("033245410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac"),
-			serializedWithoutEntryCompression: hexToBytes("0300f2052a0100000043410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac"),
+			serialized: hexToBytes("0300f2052a0100000043410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac"),
 		},
 		{
 			name: "blue score 100001, not coinbase",
@@ -66,79 +77,62 @@ func TestUTXOSerialization(t *testing.T) {
 				blockBlueScore: 100001,
 				packedFlags:    0,
 			},
-			serializedWithEntryCompression:    hexToBytes("fe420d03000700ee8bd501094a7d5ca318da2506de35e1cb025ddc"),
-			serializedWithoutEntryCompression: hexToBytes("fe420d030040420f00000000001976a914ee8bd501094a7d5ca318da2506de35e1cb025ddc88ac"),
+			serialized: hexToBytes("fe420d030040420f00000000001976a914ee8bd501094a7d5ca318da2506de35e1cb025ddc88ac"),
 		},
 	}
 
 	for i, test := range tests {
-		innerTests := []struct {
-			serialized          []byte
-			useEntryCompression bool
-		}{
-			{
-				serialized:          test.serializedWithEntryCompression,
-				useEntryCompression: true,
-			},
-			{
-				serialized:          test.serializedWithoutEntryCompression,
-				useEntryCompression: false,
-			},
+		// Ensure the utxo entry serializes to the expected value.
+		w := &bytes.Buffer{}
+		err := serializeUTXOEntry(w, test.entry)
+		if err != nil {
+			t.Errorf("serializeUTXOEntry #%d (%s) unexpected "+
+				"error: %v", i, test.name, err)
+			continue
 		}
 
-		for _, innerTest := range innerTests {
-			// Ensure the utxo entry serializes to the expected value.
-			w := &bytes.Buffer{}
-			err := serializeUTXOEntry(w, test.entry, innerTest.useEntryCompression)
-			if err != nil {
-				t.Errorf("serializeUTXOEntry #%d (%s) (entry compression:%t) unexpected "+
-					"error: %v", i, test.name, innerTest.useEntryCompression, err)
-				continue
-			}
+		gotBytes := w.Bytes()
+		if !bytes.Equal(gotBytes, test.serialized) {
+			t.Errorf("serializeUTXOEntry #%d (%s): mismatched "+
+				"bytes - got %x, want %x", i, test.name,
+				gotBytes, test.serialized)
+			continue
+		}
 
-			gotBytes := w.Bytes()
-			if !bytes.Equal(gotBytes, innerTest.serialized) {
-				t.Errorf("serializeUTXOEntry #%d (%s) (entry compression:%t): mismatched "+
-					"bytes - got %x, want %x", i, test.name, innerTest.useEntryCompression,
-					gotBytes, innerTest.serialized)
-				continue
-			}
+		// Deserialize to a utxo entry.gotBytes
+		utxoEntry, err := deserializeUTXOEntry(bytes.NewReader(test.serialized))
+		if err != nil {
+			t.Errorf("deserializeUTXOEntry #%d (%s) unexpected "+
+				"error: %v", i, test.name, err)
+			continue
+		}
 
-			// Deserialize to a utxo entry.gotBytes
-			utxoEntry, err := deserializeUTXOEntry(bytes.NewReader(innerTest.serialized), innerTest.useEntryCompression)
-			if err != nil {
-				t.Errorf("deserializeUTXOEntry #%d (%s) (entry compression:%t) unexpected "+
-					"error: %v", i, test.name, innerTest.useEntryCompression, err)
-				continue
-			}
+		// Ensure the deserialized entry has the same properties as the
+		// ones in the test entry.
+		if utxoEntry.Amount() != test.entry.Amount() {
+			t.Errorf("deserializeUTXOEntry #%d (%s) mismatched "+
+				"amounts: got %d, want %d", i, test.name,
+				utxoEntry.Amount(), test.entry.Amount())
+			continue
+		}
 
-			// Ensure the deserialized entry has the same properties as the
-			// ones in the test entry.
-			if utxoEntry.Amount() != test.entry.Amount() {
-				t.Errorf("deserializeUTXOEntry #%d (%s) (entry compression:%t) mismatched "+
-					"amounts: got %d, want %d", i, test.name, innerTest.useEntryCompression,
-					utxoEntry.Amount(), test.entry.Amount())
-				continue
-			}
-
-			if !bytes.Equal(utxoEntry.ScriptPubKey(), test.entry.ScriptPubKey()) {
-				t.Errorf("deserializeUTXOEntry #%d (%s) (entry compression:%t) mismatched "+
-					"scripts: got %x, want %x", i, test.name, innerTest.useEntryCompression,
-					utxoEntry.ScriptPubKey(), test.entry.ScriptPubKey())
-				continue
-			}
-			if utxoEntry.BlockBlueScore() != test.entry.BlockBlueScore() {
-				t.Errorf("deserializeUTXOEntry #%d (%s) (entry compression:%t) mismatched "+
-					"block blue score: got %d, want %d", i, test.name, innerTest.useEntryCompression,
-					utxoEntry.BlockBlueScore(), test.entry.BlockBlueScore())
-				continue
-			}
-			if utxoEntry.IsCoinbase() != test.entry.IsCoinbase() {
-				t.Errorf("deserializeUTXOEntry #%d (%s) (entry compression:%t) mismatched "+
-					"coinbase flag: got %v, want %v", i, test.name, innerTest.useEntryCompression,
-					utxoEntry.IsCoinbase(), test.entry.IsCoinbase())
-				continue
-			}
+		if !bytes.Equal(utxoEntry.ScriptPubKey(), test.entry.ScriptPubKey()) {
+			t.Errorf("deserializeUTXOEntry #%d (%s) mismatched "+
+				"scripts: got %x, want %x", i, test.name,
+				utxoEntry.ScriptPubKey(), test.entry.ScriptPubKey())
+			continue
+		}
+		if utxoEntry.BlockBlueScore() != test.entry.BlockBlueScore() {
+			t.Errorf("deserializeUTXOEntry #%d (%s) mismatched "+
+				"block blue score: got %d, want %d", i, test.name,
+				utxoEntry.BlockBlueScore(), test.entry.BlockBlueScore())
+			continue
+		}
+		if utxoEntry.IsCoinbase() != test.entry.IsCoinbase() {
+			t.Errorf("deserializeUTXOEntry #%d (%s) mismatched "+
+				"coinbase flag: got %v, want %v", i, test.name,
+				utxoEntry.IsCoinbase(), test.entry.IsCoinbase())
+			continue
 		}
 	}
 }
@@ -165,7 +159,7 @@ func TestUtxoEntryDeserializeErrors(t *testing.T) {
 	for _, test := range tests {
 		// Ensure the expected error type is returned and the returned
 		// entry is nil.
-		entry, err := deserializeUTXOEntry(bytes.NewReader(test.serialized), true)
+		entry, err := deserializeUTXOEntry(bytes.NewReader(test.serialized))
 		if err == nil {
 			t.Errorf("deserializeUTXOEntry (%s): didn't return an error",
 				test.name)
