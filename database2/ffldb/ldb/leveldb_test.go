@@ -2,7 +2,6 @@ package ldb
 
 import (
 	"io/ioutil"
-	"os"
 	"reflect"
 	"testing"
 )
@@ -53,7 +52,11 @@ func TestLevelDBSanity(t *testing.T) {
 
 func TestLevelDBTransactionSanity(t *testing.T) {
 	// Open a test db
-	path := os.TempDir()
+	path, err := ioutil.TempDir("", "TestLevelDBTransactionSanity")
+	if err != nil {
+		t.Fatalf("TestLevelDBTransactionSanity: TempDir unexpectedly "+
+			"failed: %s", err)
+	}
 	ldb, err := NewLevelDB(path)
 	if err != nil {
 		t.Fatalf("TestLevelDBTransactionSanity: NewLevelDB "+
@@ -85,11 +88,15 @@ func TestLevelDBTransactionSanity(t *testing.T) {
 	}
 
 	// Get from the key previously put to. Since the tx is not
-	// yet committed, this should fail.
-	_, err = ldb.Get(key)
-	if err == nil {
+	// yet committed, this should return nil.
+	getData, err := ldb.Get(key)
+	if err != nil {
+		t.Fatalf("TestLevelDBTransactionSanity: Get "+
+			"returned unexpected error: %s", err)
+	}
+	if getData != nil {
 		t.Fatalf("TestLevelDBTransactionSanity: Get " +
-			"unexpectedly didn't return an error")
+			"unexpectedly returned non-nil data")
 	}
 
 	// Commit the transaction
@@ -101,7 +108,7 @@ func TestLevelDBTransactionSanity(t *testing.T) {
 
 	// Get from the key previously put to. Now that the tx was
 	// committed, this should succeed.
-	getData, err := ldb.Get(key)
+	getData, err = ldb.Get(key)
 	if err != nil {
 		t.Fatalf("TestLevelDBTransactionSanity: Get "+
 			"returned unexpected error: %s", err)

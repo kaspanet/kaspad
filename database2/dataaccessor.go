@@ -7,8 +7,8 @@ type DataAccessor interface {
 	// any previous value for that key.
 	Put(key []byte, value []byte) error
 
-	// Get gets the value for the given key. It returns an
-	// error if the given key does not exist.
+	// Get gets the value for the given key. It returns nil if
+	// the given key does not exist.
 	Get(key []byte) ([]byte, error)
 
 	// Has returns true if the database does contains the

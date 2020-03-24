@@ -22,8 +22,8 @@ func (tx *transaction) Put(key []byte, value []byte) error {
 	return tx.ldbTx.Put(key, value)
 }
 
-// Get gets the value for the given key. It returns an
-// error if the given key does not exist.
+// Get gets the value for the given key. It returns nil if
+// the given key does not exist.
 // This method is part of the Database interface.
 func (tx *transaction) Get(key []byte) ([]byte, error) {
 	return tx.ldbTx.Get(key)

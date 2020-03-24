@@ -73,14 +73,21 @@ func (tx *LevelDBTransaction) Put(key []byte, value []byte) error {
 	return nil
 }
 
-// Get gets the value for the given key. It returns an
-// error if the given key does not exist.
+// Get gets the value for the given key. It returns nil if
+// the given key does not exist.
 func (tx *LevelDBTransaction) Get(key []byte) ([]byte, error) {
 	if tx.isClosed {
 		return nil, errors.New("cannot get from a closed transaction")
 	}
 
-	return tx.snapshot.Get(key, nil)
+	data, err := tx.snapshot.Get(key, nil)
+	if err != nil {
+		if errors.Is(err, leveldb.ErrNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return data, nil
 }
 
 // Has returns true if the database does contains the

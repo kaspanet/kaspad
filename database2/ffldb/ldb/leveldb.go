@@ -1,8 +1,9 @@
 package ldb
 
 import (
+	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
-	"github.com/syndtr/goleveldb/leveldb/errors"
+	ldbErrors "github.com/syndtr/goleveldb/leveldb/errors"
 )
 
 // LevelDB defines a thin wrapper around leveldb.
@@ -16,7 +17,7 @@ func NewLevelDB(path string) (*LevelDB, error) {
 	ldb, err := leveldb.OpenFile(path, nil)
 
 	// If the database is corrupted, attempt to recover.
-	if _, corrupted := err.(*errors.ErrCorrupted); corrupted {
+	if _, corrupted := err.(*ldbErrors.ErrCorrupted); corrupted {
 		log.Warnf("LevelDB corruption detected for path %s: %s",
 			path, err)
 		var err error
@@ -51,10 +52,17 @@ func (db *LevelDB) Put(key []byte, value []byte) error {
 	return db.ldb.Put(key, value, nil)
 }
 
-// Get gets the value for the given key. It returns an
-// error if the given key does not exist.
+// Get gets the value for the given key. It returns nil if
+// the given key does not exist.
 func (db *LevelDB) Get(key []byte) ([]byte, error) {
-	return db.ldb.Get(key, nil)
+	data, err := db.ldb.Get(key, nil)
+	if err != nil {
+		if errors.Is(err, leveldb.ErrNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return data, nil
 }
 
 // Has returns true if the database does contains the
