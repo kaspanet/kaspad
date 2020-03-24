@@ -18,7 +18,11 @@ func MakeBucket(path ...[]byte) Bucket {
 // Bucket returns the sub-bucket of the current bucket
 // defined by bucketBytes.
 func (b Bucket) Bucket(bucketBytes []byte) Bucket {
-	return append(b, bucketBytes)
+	newBucket := make(Bucket, len(b)+1)
+	copy(newBucket, b)
+	copy(newBucket[len(b):], [][]byte{bucketBytes})
+
+	return newBucket
 }
 
 // Key returns the key inside of the current bucket.
