@@ -1,5 +1,7 @@
 package database2
 
+import "bytes"
+
 var separator = []byte("/")
 
 // Bucket is a helper struct meant to combine buckets,
@@ -35,19 +37,11 @@ func (b *Bucket) Key(key []byte) []byte {
 
 // Path returns the full path of the current bucket.
 func (b *Bucket) Path() []byte {
-	bucketPathlength := (len(b.path)) * len(separator) // length of all the separators
-	for _, bucket := range b.path {
-		bucketPathlength += len(bucket)
-	}
+	bucketPath := bytes.Join(b.path, separator)
 
-	bucketPath := make([]byte, bucketPathlength)
-	offset := 0
-	for _, bucket := range b.path {
-		copy(bucketPath[offset:], bucket)
-		offset += len(bucket)
-		copy(bucketPath[offset:], separator)
-		offset += len(separator)
-	}
+	bucketPathWithFinalSeperator := make([]byte, len(bucketPath)+len(separator))
+	copy(bucketPathWithFinalSeperator, bucketPath)
+	copy(bucketPathWithFinalSeperator[len(bucketPath):], separator)
 
-	return bucketPath
+	return bucketPathWithFinalSeperator
 }
