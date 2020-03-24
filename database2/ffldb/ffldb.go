@@ -156,9 +156,6 @@ func (db *ffldb) Begin() (database2.Transaction, error) {
 // This method is part of the Database interface.
 func (db *ffldb) Cursor(bucket []byte) (database2.Cursor, error) {
 	ldbCursor := db.ldb.Cursor(bucket)
-	cursor := &cursor{
-		ldbCursor: ldbCursor,
-	}
 
-	return cursor, nil
+	return ldbCursor, nil
 }
