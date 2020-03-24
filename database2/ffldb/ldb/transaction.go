@@ -19,7 +19,14 @@ type LevelDBTransaction struct {
 	isClosed bool
 }
 
-// Begin begins a new transaction.
+// Begin begins a new transaction. A transaction wraps two
+// leveldb primitives: snapshots and batches. Snapshots provide
+// a frozen view of the database at the moment the transaction
+// begins. On the other hand, batches provide a mechanism to
+// combine several database writes into one write, which
+// seemlessly rolls back the database in case any individual
+// write fails. Together the two forms a logic unit similar
+// to what one might expect from a classic database transaction.
 func (db *LevelDB) Begin() (*LevelDBTransaction, error) {
 	snapshot, err := db.ldb.GetSnapshot()
 	if err != nil {
