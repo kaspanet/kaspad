@@ -90,7 +90,8 @@ func (db *ffldb) AppendToStore(storeName string, data []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	err = db.updateCurrentStoreLocation(storeName, location)
+	currentLocation := db.ffdb.CurrentLocation(storeName)
+	err = db.updateCurrentStoreLocation(storeName, currentLocation)
 	if err != nil {
 		return nil, err
 	}
