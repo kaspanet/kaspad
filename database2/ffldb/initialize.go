@@ -47,7 +47,7 @@ func (db *ffldb) flatFiles() (map[string][]byte, error) {
 	return flatFiles, nil
 }
 
-// tryRepair attempts to sync the block store with the current location value.
+// tryRepair attempts to sync the store with the current location value.
 // Possible scenarios:
 // a. currentLocation and the store are synced. Rollback does nothing.
 // b. currentLocation is smaller than the store's location. Rollback truncates
