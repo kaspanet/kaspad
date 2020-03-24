@@ -126,10 +126,13 @@ type writeCursor struct {
 
 // openFlatFileStore returns a new flat file store with the current file number
 // and offset set and all fields initialized.
-func openFlatFileStore(basePath string, storeName string) *flatFileStore {
+func openFlatFileStore(basePath string, storeName string) (*flatFileStore, error) {
 	// Look for the end of the latest file to determine what the write cursor
 	// position is from the viewpoint of the flat files on disk.
-	fileNumber, fileOffset := scanFlatFiles(basePath, storeName)
+	fileNumber, fileOffset, err := scanFlatFiles(basePath, storeName)
+	if err != nil {
+		return nil, err
+	}
 
 	store := &flatFileStore{
 		basePath:               basePath,
@@ -144,7 +147,7 @@ func openFlatFileStore(basePath string, storeName string) *flatFileStore {
 		},
 		isClosed: false,
 	}
-	return store
+	return store, nil
 }
 
 func (s *flatFileStore) Close() error {
@@ -184,13 +187,16 @@ func (s *flatFileStore) currentLocation() *flatFileLocation {
 // scanFlatFiles searches the database directory for all flat files for a given
 // store to find the end of the most recent file. This position is considered
 // the current write cursor.
-func scanFlatFiles(dbPath string, storeName string) (fileNumber uint32, fileLength uint32) {
+func scanFlatFiles(dbPath string, storeName string) (fileNumber uint32, fileLength uint32, err error) {
 	currentFileNumber := uint32(0)
 	currentFileLength := uint32(0)
 	for {
 		currentFilePath := flatFilePath(dbPath, storeName, currentFileNumber)
 		stat, err := os.Stat(currentFilePath)
 		if err != nil {
+			if !os.IsNotExist(err) {
+				return 0, 0, err
+			}
 			if currentFileNumber > 0 {
 				fileNumber = currentFileNumber - 1
 			}
@@ -203,7 +209,7 @@ func scanFlatFiles(dbPath string, storeName string) (fileNumber uint32, fileLeng
 
 	log.Tracef("Scan for store '%s' found latest file #%d with length %d",
 		storeName, fileNumber, fileLength)
-	return fileNumber, fileLength
+	return fileNumber, fileLength, nil
 }
 
 // flatFilePath return the file path for the provided store's flat file number.

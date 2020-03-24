@@ -99,7 +99,10 @@ func (db *ffldb) AppendToStore(storeName string, data []byte) ([]byte, error) {
 }
 
 func updateCurrentStoreLocation(accessor database2.DataAccessor, storeName string) error {
-	currentLocation := accessor.CurrentStoreLocation(storeName)
+	currentLocation, err := accessor.CurrentStoreLocation(storeName)
+	if err != nil {
+		return err
+	}
 	return setCurrentStoreLocation(accessor, storeName, currentLocation)
 }
 
@@ -122,7 +125,7 @@ func (db *ffldb) RetrieveFromStore(storeName string, location []byte) ([]byte, e
 // to be used to rollback flat file stores in case
 // of data incongruency.
 // This method is part of the DataAccessor interface.
-func (db *ffldb) CurrentStoreLocation(storeName string) []byte {
+func (db *ffldb) CurrentStoreLocation(storeName string) ([]byte, error) {
 	return db.ffdb.CurrentLocation(storeName)
 }
 

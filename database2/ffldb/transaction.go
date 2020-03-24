@@ -70,7 +70,7 @@ func (tx *transaction) RetrieveFromStore(storeName string, location []byte) ([]b
 // to be used to rollback flat file stores in case
 // of data incongruency.
 // This method is part of the Database interface.
-func (tx *transaction) CurrentStoreLocation(storeName string) []byte {
+func (tx *transaction) CurrentStoreLocation(storeName string) ([]byte, error) {
 	return tx.ffdb.CurrentLocation(storeName)
 }
 

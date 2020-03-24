@@ -34,7 +34,10 @@ func StoreBlock(context Context, block *util.Block) error {
 
 	// Save a reference to the current block location in case
 	// we fail and need to rollback.
-	previousBlockLocation := db.CurrentStoreLocation(blockStoreName)
+	previousBlockLocation, err := db.CurrentStoreLocation(blockStoreName)
+	if err != nil {
+		return err
+	}
 	rollback := func() error {
 		return db.RollbackStore(blockStoreName, previousBlockLocation)
 	}

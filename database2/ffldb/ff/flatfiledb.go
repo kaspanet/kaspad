@@ -34,7 +34,10 @@ func (ffdb *FlatFileDB) Close() error {
 // been inserted.
 // See flatFileStore.write() for further details.
 func (ffdb *FlatFileDB) Write(storeName string, data []byte) ([]byte, error) {
-	store := ffdb.store(storeName)
+	store, err := ffdb.store(storeName)
+	if err != nil {
+		return nil, err
+	}
 	location, err := store.write(data)
 	if err != nil {
 		return nil, err
@@ -47,7 +50,10 @@ func (ffdb *FlatFileDB) Write(storeName string, data []byte) ([]byte, error) {
 // location specified by the given serialized location handle.
 // See flatFileStore.read() for further details.
 func (ffdb *FlatFileDB) Read(storeName string, serializedLocation []byte) ([]byte, error) {
-	store := ffdb.store(storeName)
+	store, err := ffdb.store(storeName)
+	if err != nil {
+		return nil, err
+	}
 	location, err := deserializeLocation(serializedLocation)
 	if err != nil {
 		return nil, err
@@ -59,17 +65,24 @@ func (ffdb *FlatFileDB) Read(storeName string, serializedLocation []byte) ([]byt
 // the current location within the flat file store defined
 // storeName. It is mainly to be used to rollback flat-file
 // stores in case of data incongruency.
-func (ffdb *FlatFileDB) CurrentLocation(storeName string) []byte {
-	store := ffdb.store(storeName)
+func (ffdb *FlatFileDB) CurrentLocation(storeName string) ([]byte, error) {
+	store, err := ffdb.store(storeName)
+	if err != nil {
+		return nil, err
+	}
 	currentLocation := store.currentLocation()
-	return serializeLocation(currentLocation)
+	serializedCurrentLocation := serializeLocation(currentLocation)
+	return serializedCurrentLocation, nil
 }
 
 // Rollback truncates the flat-file store defined by the given
 // storeName to the location defined by the given serialized
 // location handle.
 func (ffdb *FlatFileDB) Rollback(storeName string, serializedLocation []byte) error {
-	store := ffdb.store(storeName)
+	store, err := ffdb.store(storeName)
+	if err != nil {
+		return err
+	}
 	location, err := deserializeLocation(serializedLocation)
 	if err != nil {
 		return err
@@ -77,11 +90,15 @@ func (ffdb *FlatFileDB) Rollback(storeName string, serializedLocation []byte) er
 	return store.rollback(location)
 }
 
-func (ffdb *FlatFileDB) store(storeName string) *flatFileStore {
+func (ffdb *FlatFileDB) store(storeName string) (*flatFileStore, error) {
 	store, ok := ffdb.flatFileStores[storeName]
 	if !ok {
-		store = openFlatFileStore(ffdb.path, storeName)
+		var err error
+		store, err = openFlatFileStore(ffdb.path, storeName)
+		if err != nil {
+			return nil, err
+		}
 		ffdb.flatFileStores[storeName] = store
 	}
-	return store
+	return store, nil
 }

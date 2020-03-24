@@ -31,7 +31,7 @@ type DataAccessor interface {
 	// the flat file store defined storeName. It is mainly
 	// to be used to rollback flat file stores in case
 	// of data incongruency.
-	CurrentStoreLocation(storeName string) []byte
+	CurrentStoreLocation(storeName string) ([]byte, error)
 
 	// RollbackStore truncates the flat file store defined
 	// by the given storeName to the location defined by the

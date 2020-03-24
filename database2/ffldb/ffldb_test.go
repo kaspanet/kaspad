@@ -38,7 +38,11 @@ func TestRepairFlatFiles(t *testing.T) {
 	}
 
 	// Grab the current location to test against later
-	oldCurrentLocation := db.CurrentStoreLocation(storeName)
+	oldCurrentLocation, err := db.CurrentStoreLocation(storeName)
+	if err != nil {
+		t.Fatalf("TestRepairFlatFiles: CurrentStoreLocation "+
+			"unexpectedly failed: %s", err)
+	}
 
 	// Append more data to the same store. We expect this to disappear later.
 	location2, err := db.AppendToStore(storeName, []byte("data2"))
@@ -76,7 +80,11 @@ func TestRepairFlatFiles(t *testing.T) {
 	isOpen = true
 
 	// Make sure that the current location rolled back as expected
-	currentLocation := db.CurrentStoreLocation(storeName)
+	currentLocation, err := db.CurrentStoreLocation(storeName)
+	if err != nil {
+		t.Fatalf("TestRepairFlatFiles: CurrentStoreLocation "+
+			"unexpectedly failed: %s", err)
+	}
 	if !reflect.DeepEqual(oldCurrentLocation, currentLocation) {
 		t.Fatalf("TestRepairFlatFiles: currentLocation did " +
 			"not roll back")
