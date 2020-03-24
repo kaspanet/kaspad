@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/database2"
 	"github.com/kaspanet/kaspad/database2/ffldb/ff"
 	"github.com/kaspanet/kaspad/database2/ffldb/ldb"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -46,6 +47,11 @@ func Open(path string) (database2.Database, error) {
 func (db *ffldb) Close() error {
 	err := db.ffdb.Close()
 	if err != nil {
+		ldbCloseErr := db.ldb.Close()
+		if ldbCloseErr != nil {
+			return errors.Errorf("flat file db and leveldb both failed to close. "+
+				"Errors: `%s`, `%s`", err, ldbCloseErr)
+		}
 		return err
 	}
 	return db.ldb.Close()
