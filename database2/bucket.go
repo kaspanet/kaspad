@@ -37,9 +37,9 @@ func (b Bucket) Key(key []byte) []byte {
 func (b Bucket) Path() []byte {
 	bucketPath := bytes.Join(b, separator)
 
-	bucketPathWithFinalSeperator := make([]byte, len(bucketPath)+len(separator))
-	copy(bucketPathWithFinalSeperator, bucketPath)
-	copy(bucketPathWithFinalSeperator[len(bucketPath):], separator)
+	bucketPathWithFinalSeparator := make([]byte, len(bucketPath)+len(separator))
+	copy(bucketPathWithFinalSeparator, bucketPath)
+	copy(bucketPathWithFinalSeparator[len(bucketPath):], separator)
 
-	return bucketPathWithFinalSeperator
+	return bucketPathWithFinalSeparator
 }
