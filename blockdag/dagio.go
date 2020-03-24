@@ -698,7 +698,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		return nil, err
 	}
 
-	bluesCount, err := wire.ReadVarIntLittleEndian(buffer)
+	bluesCount, err := wire.ReadVarInt(buffer)
 	if err != nil {
 		return nil, err
 	}
@@ -712,7 +712,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		node.blues[i] = dag.index.LookupNode(hash)
 	}
 
-	bluesAnticoneSizesLen, err := wire.ReadVarIntLittleEndian(buffer)
+	bluesAnticoneSizesLen, err := wire.ReadVarInt(buffer)
 	if err != nil {
 		return nil, err
 	}

@@ -195,7 +195,7 @@ func SerializeCoinbasePayload(scriptPubKey []byte, extraData []byte) ([]byte, er
 // DeserializeCoinbasePayload deserialize the coinbase payload to its component (scriptPubKey and extra data).
 func DeserializeCoinbasePayload(tx *wire.MsgTx) (scriptPubKey []byte, extraData []byte, err error) {
 	r := bytes.NewReader(tx.Payload)
-	scriptPubKeyLen, err := wire.ReadVarIntLittleEndian(r)
+	scriptPubKeyLen, err := wire.ReadVarInt(r)
 	if err != nil {
 		return nil, nil, err
 	}

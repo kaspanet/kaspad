@@ -296,13 +296,13 @@ func TestVarIntWire(t *testing.T) {
 
 		// Decode from wire format.
 		rbuf := bytes.NewReader(test.buf)
-		val, err := ReadVarIntLittleEndian(rbuf)
+		val, err := ReadVarInt(rbuf)
 		if err != nil {
-			t.Errorf("ReadVarIntLittleEndian #%d error %v", i, err)
+			t.Errorf("ReadVarInt #%d error %v", i, err)
 			continue
 		}
 		if val != test.value {
-			t.Errorf("ReadVarIntLittleEndian #%d\n got: %x want: %x", i,
+			t.Errorf("ReadVarInt #%d\n got: %x want: %x", i,
 				val, test.value)
 			continue
 		}
@@ -345,9 +345,9 @@ func TestVarIntWireErrors(t *testing.T) {
 
 		// Decode from wire format.
 		r := newFixedReader(test.max, test.buf)
-		_, err = ReadVarIntLittleEndian(r)
+		_, err = ReadVarInt(r)
 		if !errors.Is(err, test.readErr) {
-			t.Errorf("ReadVarIntLittleEndian #%d wrong error got: %v, want: %v",
+			t.Errorf("ReadVarInt #%d wrong error got: %v, want: %v",
 				i, err, test.readErr)
 			continue
 		}
@@ -396,14 +396,14 @@ func TestVarIntNonCanonical(t *testing.T) {
 	for i, test := range tests {
 		// Decode from wire format.
 		rbuf := bytes.NewReader(test.in)
-		val, err := ReadVarIntLittleEndian(rbuf)
+		val, err := ReadVarInt(rbuf)
 		if msgErr := &(MessageError{}); !errors.As(err, &msgErr) {
-			t.Errorf("ReadVarIntLittleEndian #%d (%s) unexpected error %v", i,
+			t.Errorf("ReadVarInt #%d (%s) unexpected error %v", i,
 				test.name, err)
 			continue
 		}
 		if val != 0 {
-			t.Errorf("ReadVarIntLittleEndian #%d (%s)\n got: %d want: 0", i,
+			t.Errorf("ReadVarInt #%d (%s)\n got: %d want: 0", i,
 				test.name, val)
 			continue
 		}

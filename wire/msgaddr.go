@@ -86,7 +86,7 @@ func (msg *MsgAddr) KaspaDecode(r io.Reader, pver uint32) error {
 	}
 
 	// Read addresses array
-	count, err := ReadVarIntLittleEndian(r)
+	count, err := ReadVarInt(r)
 	if err != nil {
 		return err
 	}

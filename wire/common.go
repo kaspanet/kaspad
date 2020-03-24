@@ -330,8 +330,8 @@ func writeElements(w io.Writer, elements ...interface{}) error {
 	return nil
 }
 
-// ReadVarIntLittleEndian reads a variable length integer from r and returns it as a uint64.
-func ReadVarIntLittleEndian(r io.Reader) (uint64, error) {
+// ReadVarInt reads a variable length integer from r and returns it as a uint64.
+func ReadVarInt(r io.Reader) (uint64, error) {
 	discriminant, err := binaryserializer.Uint8(r)
 	if err != nil {
 		return 0, err
@@ -391,7 +391,7 @@ func ReadVarIntLittleEndian(r io.Reader) (uint64, error) {
 	return rv, nil
 }
 
-// writeVarInt serializes val to w using a variable number of bytes depending
+// WriteVarInt serializes val to w using a variable number of bytes depending
 // on its value.
 func WriteVarInt(w io.Writer, val uint64) error {
 	if val < 0xfd {
@@ -451,7 +451,7 @@ func VarIntSerializeSize(val uint64) int {
 // maximum block payload size since it helps protect against memory exhaustion
 // attacks and forced panics through malformed messages.
 func ReadVarString(r io.Reader, pver uint32) (string, error) {
-	count, err := ReadVarIntLittleEndian(r)
+	count, err := ReadVarInt(r)
 	if err != nil {
 		return "", err
 	}
@@ -495,7 +495,7 @@ func WriteVarString(w io.Writer, str string) error {
 func ReadVarBytes(r io.Reader, pver uint32, maxAllowed uint32,
 	fieldName string) ([]byte, error) {
 
-	count, err := ReadVarIntLittleEndian(r)
+	count, err := ReadVarInt(r)
 	if err != nil {
 		return nil, err
 	}

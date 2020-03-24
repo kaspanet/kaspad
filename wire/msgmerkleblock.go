@@ -54,7 +54,7 @@ func (msg *MsgMerkleBlock) KaspaDecode(r io.Reader, pver uint32) error {
 	}
 
 	// Read num block locator hashes and limit to max.
-	count, err := ReadVarIntLittleEndian(r)
+	count, err := ReadVarInt(r)
 	if err != nil {
 		return err
 	}

@@ -106,7 +106,7 @@ func deserializeUTXODiff(r io.Reader) (*UTXODiff, error) {
 }
 
 func deserializeUTXOCollection(r io.Reader) (utxoCollection, error) {
-	count, err := wire.ReadVarIntLittleEndian(r)
+	count, err := wire.ReadVarInt(r)
 	if err != nil {
 		return nil, err
 	}
@@ -294,7 +294,7 @@ func deserializeUTXOEntry(r io.Reader) (*UTXOEntry, error) {
 		return nil, err
 	}
 
-	scriptPubKeyLen, err := wire.ReadVarIntLittleEndian(r)
+	scriptPubKeyLen, err := wire.ReadVarInt(r)
 	if err != nil {
 		return nil, err
 	}

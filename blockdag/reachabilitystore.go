@@ -312,7 +312,7 @@ func (store *reachabilityStore) deserializeTreeNode(r io.Reader, destination *re
 	}
 
 	// Deserialize the amount of children
-	childCount, err := wire.ReadVarIntLittleEndian(r)
+	childCount, err := wire.ReadVarInt(r)
 	if err != nil {
 		return err
 	}
@@ -360,7 +360,7 @@ func (store *reachabilityStore) deserializeReachabilityInterval(r io.Reader) (*r
 
 func (store *reachabilityStore) deserializeFutureCoveringSet(r io.Reader, destination *reachabilityData) error {
 	// Deserialize the set size
-	setSize, err := wire.ReadVarIntLittleEndian(r)
+	setSize, err := wire.ReadVarInt(r)
 	if err != nil {
 		return err
 	}

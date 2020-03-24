@@ -409,7 +409,7 @@ func (msg *MsgTx) KaspaDecode(r io.Reader, pver uint32) error {
 	}
 	msg.Version = int32(version)
 
-	count, err := ReadVarIntLittleEndian(r)
+	count, err := ReadVarInt(r)
 	if err != nil {
 		return err
 	}
@@ -461,7 +461,7 @@ func (msg *MsgTx) KaspaDecode(r io.Reader, pver uint32) error {
 		totalScriptSize += uint64(len(ti.SignatureScript))
 	}
 
-	count, err = ReadVarIntLittleEndian(r)
+	count, err = ReadVarInt(r)
 	if err != nil {
 		returnScriptBuffers()
 		return err
@@ -522,7 +522,7 @@ func (msg *MsgTx) KaspaDecode(r io.Reader, pver uint32) error {
 		}
 		msg.PayloadHash = &payloadHash
 
-		payloadLength, err := ReadVarIntLittleEndian(r)
+		payloadLength, err := ReadVarInt(r)
 		if err != nil {
 			returnScriptBuffers()
 			return err
@@ -914,7 +914,7 @@ func writeOutpoint(w io.Writer, pver uint32, version int32, op *Outpoint) error 
 // fieldName parameter is only used for the error message so it provides more
 // context in the error.
 func readScript(r io.Reader, pver uint32, maxAllowed uint32, fieldName string) ([]byte, error) {
-	count, err := ReadVarIntLittleEndian(r)
+	count, err := ReadVarInt(r)
 	if err != nil {
 		return nil, err
 	}

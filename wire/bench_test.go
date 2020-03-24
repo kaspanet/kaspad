@@ -97,7 +97,7 @@ func BenchmarkReadVarInt1(b *testing.B) {
 	r := bytes.NewReader(buf)
 	for i := 0; i < b.N; i++ {
 		r.Seek(0, 0)
-		ReadVarIntLittleEndian(r)
+		ReadVarInt(r)
 	}
 }
 
@@ -108,7 +108,7 @@ func BenchmarkReadVarInt3(b *testing.B) {
 	r := bytes.NewReader(buf)
 	for i := 0; i < b.N; i++ {
 		r.Seek(0, 0)
-		ReadVarIntLittleEndian(r)
+		ReadVarInt(r)
 	}
 }
 
@@ -119,7 +119,7 @@ func BenchmarkReadVarInt5(b *testing.B) {
 	r := bytes.NewReader(buf)
 	for i := 0; i < b.N; i++ {
 		r.Seek(0, 0)
-		ReadVarIntLittleEndian(r)
+		ReadVarInt(r)
 	}
 }
 
@@ -130,7 +130,7 @@ func BenchmarkReadVarInt9(b *testing.B) {
 	r := bytes.NewReader(buf)
 	for i := 0; i < b.N; i++ {
 		r.Seek(0, 0)
-		ReadVarIntLittleEndian(r)
+		ReadVarInt(r)
 	}
 }
 
