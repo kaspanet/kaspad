@@ -42,8 +42,7 @@ func (ffdb *FlatFileDB) Write(storeName string, data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	serializedLocation := serializeLocation(location)
-	return serializedLocation, nil
+	return serializeLocation(location), nil
 }
 
 // Read reads data from the specified flat file store at the
