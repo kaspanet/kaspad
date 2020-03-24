@@ -7,9 +7,7 @@ package database2
 // NO guarantee that if one puts data into the transaction then
 // it will be available to get within the same transaction.
 type Transaction interface {
-	// A transaction needs to be able to do anything that the
-	// underlying database can do.
-	Database
+	DataAccessor
 
 	// Rollback rolls back whatever changes were made to the
 	// database within this transaction.
