@@ -57,7 +57,7 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 	}
 
 	// Regardless of any failures that happen below, reposition the write
-	// cursor to the old flat file and offset.
+	// cursor to the target flat file and offset.
 	defer func() {
 		cursor.currentFileNumber = targetFileNumber
 		cursor.currentOffset = targetFileOffset
