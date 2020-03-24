@@ -1,7 +1,7 @@
 package ldb
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
@@ -67,6 +67,16 @@ func (tx *LevelDBTransaction) Rollback() error {
 	tx.snapshot.Release()
 	tx.batch.Reset()
 	return nil
+}
+
+// RollbackUnlessClosed rolls back changes that were made to
+// the database within the transaction, unless the transaction
+// had already been closed using either Rollback or Commit.
+func (tx *LevelDBTransaction) RollbackUnlessClosed() error {
+	if tx.isClosed {
+		return nil
+	}
+	return tx.Rollback()
 }
 
 // Put sets the value for the given key. It overwrites

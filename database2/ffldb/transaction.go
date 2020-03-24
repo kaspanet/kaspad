@@ -96,3 +96,10 @@ func (tx *transaction) Rollback() error {
 func (tx *transaction) Commit() error {
 	return tx.ldbTx.Commit()
 }
+
+// RollbackUnlessClosed rolls back changes that were made to
+// the database within the transaction, unless the transaction
+// had already been closed using either Rollback or Commit.
+func (tx *transaction) RollbackUnlessClosed() error {
+	return tx.ldbTx.RollbackUnlessClosed()
+}

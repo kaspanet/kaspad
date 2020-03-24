@@ -17,4 +17,9 @@ type Transaction interface {
 	// Commit commits whatever changes were made to the database
 	// within this transaction.
 	Commit() error
+
+	// RollbackUnlessClosed rolls back changes that were made to
+	// the database within the transaction, unless the transaction
+	// had already been closed using either Rollback or Commit.
+	RollbackUnlessClosed() error
 }
