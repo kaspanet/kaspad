@@ -75,7 +75,7 @@ func (msg *MsgGetData) KaspaEncode(w io.Writer, pver uint32) error {
 		return messageError("MsgGetData.KaspaEncode", str)
 	}
 
-	err := WriteVarIntLittleEndian(w, uint64(count))
+	err := WriteVarInt(w, uint64(count))
 	if err != nil {
 		return err
 	}

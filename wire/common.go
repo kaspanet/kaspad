@@ -330,20 +330,8 @@ func writeElements(w io.Writer, elements ...interface{}) error {
 	return nil
 }
 
-// ReadVarIntLittleEndian reads a little-endian variable length integer
-// from r and returns it as a uint64.
+// ReadVarIntLittleEndian reads a variable length integer from r and returns it as a uint64.
 func ReadVarIntLittleEndian(r io.Reader) (uint64, error) {
-	return readVarInt(r, littleEndian)
-}
-
-// ReadVarIntBigEndian reads a big-endian variable length integer
-// from r and returns it as a uint64.
-func ReadVarIntBigEndian(r io.Reader) (uint64, error) {
-	return readVarInt(r, bigEndian)
-}
-
-// readVarInt reads a variable length integer from r and returns it as a uint64.
-func readVarInt(r io.Reader, byteOrder binary.ByteOrder) (uint64, error) {
 	discriminant, err := binaryserializer.Uint8(r)
 	if err != nil {
 		return 0, err
@@ -352,7 +340,7 @@ func readVarInt(r io.Reader, byteOrder binary.ByteOrder) (uint64, error) {
 	var rv uint64
 	switch discriminant {
 	case 0xff:
-		sv, err := binaryserializer.Uint64(r, byteOrder)
+		sv, err := binaryserializer.Uint64(r, littleEndian)
 		if err != nil {
 			return 0, err
 		}
@@ -367,7 +355,7 @@ func readVarInt(r io.Reader, byteOrder binary.ByteOrder) (uint64, error) {
 		}
 
 	case 0xfe:
-		sv, err := binaryserializer.Uint32(r, byteOrder)
+		sv, err := binaryserializer.Uint32(r, littleEndian)
 		if err != nil {
 			return 0, err
 		}
@@ -382,7 +370,7 @@ func readVarInt(r io.Reader, byteOrder binary.ByteOrder) (uint64, error) {
 		}
 
 	case 0xfd:
-		sv, err := binaryserializer.Uint16(r, byteOrder)
+		sv, err := binaryserializer.Uint16(r, littleEndian)
 		if err != nil {
 			return 0, err
 		}
@@ -403,21 +391,9 @@ func readVarInt(r io.Reader, byteOrder binary.ByteOrder) (uint64, error) {
 	return rv, nil
 }
 
-// WriteVarIntLittleEndian serializes val to w using a variable number of bytes depending
-// on its value using little endian encoding.
-func WriteVarIntLittleEndian(w io.Writer, val uint64) error {
-	return writeVarInt(w, val, littleEndian)
-}
-
-// WriteVarIntBigEndian serializes val to w using a variable number of bytes depending
-// on its value using big endian encoding.
-func WriteVarIntBigEndian(w io.Writer, val uint64) error {
-	return writeVarInt(w, val, bigEndian)
-}
-
 // writeVarInt serializes val to w using a variable number of bytes depending
 // on its value.
-func writeVarInt(w io.Writer, val uint64, byteOrder binary.ByteOrder) error {
+func WriteVarInt(w io.Writer, val uint64) error {
 	if val < 0xfd {
 		return binaryserializer.PutUint8(w, uint8(val))
 	}
@@ -427,7 +403,7 @@ func writeVarInt(w io.Writer, val uint64, byteOrder binary.ByteOrder) error {
 		if err != nil {
 			return err
 		}
-		return binaryserializer.PutUint16(w, byteOrder, uint16(val))
+		return binaryserializer.PutUint16(w, littleEndian, uint16(val))
 	}
 
 	if val <= math.MaxUint32 {
@@ -435,14 +411,14 @@ func writeVarInt(w io.Writer, val uint64, byteOrder binary.ByteOrder) error {
 		if err != nil {
 			return err
 		}
-		return binaryserializer.PutUint32(w, byteOrder, uint32(val))
+		return binaryserializer.PutUint32(w, littleEndian, uint32(val))
 	}
 
 	err := binaryserializer.PutUint8(w, 0xff)
 	if err != nil {
 		return err
 	}
-	return binaryserializer.PutUint64(w, byteOrder, val)
+	return binaryserializer.PutUint64(w, littleEndian, val)
 }
 
 // VarIntSerializeSize returns the number of bytes it would take to serialize
@@ -501,7 +477,7 @@ func ReadVarString(r io.Reader, pver uint32) (string, error) {
 // the length of the string followed by the bytes that represent the string
 // itself.
 func WriteVarString(w io.Writer, str string) error {
-	err := WriteVarIntLittleEndian(w, uint64(len(str)))
+	err := WriteVarInt(w, uint64(len(str)))
 	if err != nil {
 		return err
 	}
@@ -545,7 +521,7 @@ func ReadVarBytes(r io.Reader, pver uint32, maxAllowed uint32,
 // containing the number of bytes, followed by the bytes themselves.
 func WriteVarBytes(w io.Writer, pver uint32, bytes []byte) error {
 	slen := uint64(len(bytes))
-	err := WriteVarIntLittleEndian(w, slen)
+	err := WriteVarInt(w, slen)
 	if err != nil {
 		return err
 	}

@@ -179,7 +179,7 @@ func serializeUTXODiff(w io.Writer, diff *UTXODiff) error {
 // the utxo entries and serializing them and their corresponding outpoint
 // prefixed by a varint that indicates their size.
 func serializeUTXOCollection(w io.Writer, collection utxoCollection) error {
-	err := wire.WriteVarIntLittleEndian(w, uint64(len(collection)))
+	err := wire.WriteVarInt(w, uint64(len(collection)))
 	if err != nil {
 		return err
 	}
@@ -249,7 +249,7 @@ func serializeUTXOEntry(w io.Writer, entry *UTXOEntry) error {
 		return err
 	}
 
-	err = wire.WriteVarIntLittleEndian(w, uint64(len(entry.ScriptPubKey())))
+	err = wire.WriteVarInt(w, uint64(len(entry.ScriptPubKey())))
 	if err != nil {
 		return err
 	}

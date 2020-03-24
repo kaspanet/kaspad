@@ -203,9 +203,9 @@ func TestGetDataWireErrors(t *testing.T) {
 	maxGetData.InvList = append(maxGetData.InvList, iv)
 
 	w := &bytes.Buffer{}
-	err = WriteVarIntLittleEndian(w, MaxInvPerMsg+1)
+	err = WriteVarInt(w, MaxInvPerMsg+1)
 	if err != nil {
-		t.Fatalf("WriteVarIntLittleEndian: %s", err)
+		t.Fatalf("WriteVarInt: %s", err)
 	}
 	maxGetDataEncoded := w.Bytes()
 

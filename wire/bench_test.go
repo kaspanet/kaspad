@@ -62,7 +62,7 @@ var genesisCoinbaseTx = NewNativeMsgTx(1, genesisCoinbaseTxIns, genesisCoinbaseT
 // a single byte variable length integer.
 func BenchmarkWriteVarInt1(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		WriteVarIntLittleEndian(ioutil.Discard, 1)
+		WriteVarInt(ioutil.Discard, 1)
 	}
 }
 
@@ -70,7 +70,7 @@ func BenchmarkWriteVarInt1(b *testing.B) {
 // a three byte variable length integer.
 func BenchmarkWriteVarInt3(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		WriteVarIntLittleEndian(ioutil.Discard, 65535)
+		WriteVarInt(ioutil.Discard, 65535)
 	}
 }
 
@@ -78,7 +78,7 @@ func BenchmarkWriteVarInt3(b *testing.B) {
 // a five byte variable length integer.
 func BenchmarkWriteVarInt5(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		WriteVarIntLittleEndian(ioutil.Discard, 4294967295)
+		WriteVarInt(ioutil.Discard, 4294967295)
 	}
 }
 
@@ -86,7 +86,7 @@ func BenchmarkWriteVarInt5(b *testing.B) {
 // a nine byte variable length integer.
 func BenchmarkWriteVarInt9(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		WriteVarIntLittleEndian(ioutil.Discard, 18446744073709551615)
+		WriteVarInt(ioutil.Discard, 18446744073709551615)
 	}
 }
 

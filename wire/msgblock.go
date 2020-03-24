@@ -166,7 +166,7 @@ func (msg *MsgBlock) KaspaEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 
-	err = WriteVarIntLittleEndian(w, uint64(len(msg.Transactions)))
+	err = WriteVarInt(w, uint64(len(msg.Transactions)))
 	if err != nil {
 		return err
 	}

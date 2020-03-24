@@ -141,7 +141,7 @@ func (msg *MsgAddr) KaspaEncode(w io.Writer, pver uint32) error {
 		}
 	}
 
-	err = WriteVarIntLittleEndian(w, uint64(count))
+	err = WriteVarInt(w, uint64(count))
 	if err != nil {
 		return err
 	}

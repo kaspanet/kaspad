@@ -783,7 +783,7 @@ func serializeBlockNode(node *blockNode) ([]byte, error) {
 		return nil, err
 	}
 
-	err = wire.WriteVarIntLittleEndian(w, uint64(len(node.blues)))
+	err = wire.WriteVarInt(w, uint64(len(node.blues)))
 	if err != nil {
 		return nil, err
 	}
@@ -795,7 +795,7 @@ func serializeBlockNode(node *blockNode) ([]byte, error) {
 		}
 	}
 
-	err = wire.WriteVarIntLittleEndian(w, uint64(len(node.bluesAnticoneSizes)))
+	err = wire.WriteVarInt(w, uint64(len(node.bluesAnticoneSizes)))
 	if err != nil {
 		return nil, err
 	}

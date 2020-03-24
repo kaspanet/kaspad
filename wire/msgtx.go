@@ -620,7 +620,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 	}
 
 	count := uint64(len(msg.TxIn))
-	err = WriteVarIntLittleEndian(w, count)
+	err = WriteVarInt(w, count)
 	if err != nil {
 		return err
 	}
@@ -633,7 +633,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 	}
 
 	count = uint64(len(msg.TxOut))
-	err = WriteVarIntLittleEndian(w, count)
+	err = WriteVarInt(w, count)
 	if err != nil {
 		return err
 	}
@@ -672,10 +672,10 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 		}
 
 		if encodingFlags&txEncodingExcludePayload != txEncodingExcludePayload {
-			err = WriteVarIntLittleEndian(w, uint64(len(msg.Payload)))
+			err = WriteVarInt(w, uint64(len(msg.Payload)))
 			w.Write(msg.Payload)
 		} else {
-			err = WriteVarIntLittleEndian(w, 0)
+			err = WriteVarInt(w, 0)
 		}
 		if err != nil {
 			return err

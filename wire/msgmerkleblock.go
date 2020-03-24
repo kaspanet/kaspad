@@ -110,7 +110,7 @@ func (msg *MsgMerkleBlock) KaspaEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 
-	err = WriteVarIntLittleEndian(w, uint64(numHashes))
+	err = WriteVarInt(w, uint64(numHashes))
 	if err != nil {
 		return err
 	}
