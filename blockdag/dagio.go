@@ -12,7 +12,6 @@ import (
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/pkg/errors"
 	"io"
-	"math"
 	"sync"
 
 	"github.com/kaspanet/kaspad/database"
@@ -119,7 +118,7 @@ func serializeOutpoint(w io.Writer, outpoint *wire.Outpoint) error {
 	return binaryserializer.PutUint32(w, outpointIndexByteOrder, outpoint.Index)
 }
 
-var outpointMaxSerializeSize = daghash.TxIDSize + wire.VarIntSerializeSize(math.MaxUint32)
+var outpointSerializeSize = daghash.TxIDSize + 4
 
 // deserializeOutpoint decodes an outpoint from the passed serialized byte
 // slice into a new wire.Outpoint using a format that is suitable for long-
@@ -163,7 +162,7 @@ func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 
 	// We are preallocating for P2PKH entries because they are the most common ones.
 	// If we have entries with a compressed script bigger than P2PKH's, the buffer will grow.
-	bytesToPreallocate := (p2pkhUTXOEntrySerializeSize + outpointMaxSerializeSize) * len(diff.toAdd)
+	bytesToPreallocate := (p2pkhUTXOEntrySerializeSize + outpointSerializeSize) * len(diff.toAdd)
 	buff := bytes.NewBuffer(make([]byte, bytesToPreallocate))
 	for outpoint, entry := range diff.toAdd {
 		// Serialize and store the UTXO entry.
