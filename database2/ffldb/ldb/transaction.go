@@ -16,7 +16,6 @@ type LevelDBTransaction struct {
 	ldb      *leveldb.DB
 	snapshot *leveldb.Snapshot
 	batch    *leveldb.Batch
-
 	isClosed bool
 }
 
