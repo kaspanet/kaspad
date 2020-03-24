@@ -67,7 +67,7 @@ func TestUTXOSerialization(t *testing.T) {
 				blockBlueScore: 1,
 				packedFlags:    tfCoinbase,
 			},
-			serialized: hexToBytes("0300f2052a0100000043410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac"),
+			serialized: hexToBytes("030000000000000000f2052a0100000043410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac"),
 		},
 		{
 			name: "blue score 100001, not coinbase",
@@ -77,7 +77,7 @@ func TestUTXOSerialization(t *testing.T) {
 				blockBlueScore: 100001,
 				packedFlags:    0,
 			},
-			serialized: hexToBytes("fe420d030040420f00000000001976a914ee8bd501094a7d5ca318da2506de35e1cb025ddc88ac"),
+			serialized: hexToBytes("420d03000000000040420f00000000001976a914ee8bd501094a7d5ca318da2506de35e1cb025ddc88ac"),
 		},
 	}
 
