@@ -129,7 +129,7 @@ func (s *flatFileStore) openWriteFile(fileNumber uint32) (filer, error) {
 	filePath := flatFilePath(s.basePath, s.storeName, fileNumber)
 	file, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to open file %q: %s",
+		return nil, errors.Wrapf(err, "failed to open file %q",
 			filePath)
 	}
 
@@ -157,7 +157,7 @@ func (s *flatFileStore) writeData(data []byte, fieldName string) error {
 			panic("No space left on the hard disk, exiting...")
 		}
 		return errors.Wrapf(err, "failed to write %s in store %s to file %d "+
-			"at offset %d: %s", fieldName, s.storeName, cursor.currentFileNumber,
+			"at offset %d", fieldName, s.storeName, cursor.currentFileNumber,
 			cursor.currentOffset-uint32(n))
 	}
 
