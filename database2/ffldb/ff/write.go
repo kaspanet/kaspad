@@ -15,7 +15,7 @@ import (
 // The write cursor will also be advanced the number of bytes actually written
 // in the event of failure.
 //
-// Format: <data length><data><checksum>
+// Format: <data><checksum>
 func (s *flatFileStore) write(data []byte) (*flatFileLocation, error) {
 	if s.isClosed {
 		return nil, errors.Errorf("cannot write to a closed store %s",
@@ -23,9 +23,9 @@ func (s *flatFileStore) write(data []byte) (*flatFileLocation, error) {
 	}
 
 	// Compute how many bytes will be written.
-	// 4 bytes for data length + length of the data + 4 bytes for checksum.
+	// length of the data + 4 bytes for checksum.
 	dataLength := uint32(len(data))
-	fullLength := dataLength + 8
+	fullLength := dataLength + 4
 
 	// Move to the next file if adding the new data would exceed the max
 	// allowed size for the current flat file. Also detect overflow because
@@ -79,18 +79,9 @@ func (s *flatFileStore) write(data []byte) (*flatFileLocation, error) {
 
 	originalOffset := cursor.currentOffset
 	hasher := crc32.New(castagnoli)
-	var scratch [4]byte
-
-	// Data length.
-	byteOrder.PutUint32(scratch[:], dataLength)
-	err := s.writeData(scratch[:], "data length")
-	if err != nil {
-		return nil, err
-	}
-	_, _ = hasher.Write(scratch[:])
 
 	// Data.
-	err = s.writeData(data[:], "data")
+	err := s.writeData(data[:], "data")
 	if err != nil {
 		return nil, err
 	}
