@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util/buffers"
 	"github.com/pkg/errors"
 	"io"
 	"sync"
@@ -166,20 +167,20 @@ func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 	buff := bytes.NewBuffer(make([]byte, bytesToPreallocate))
 	for outpoint, entry := range diff.toAdd {
 		// Serialize and store the UTXO entry.
-		sBuff := newSubBuffer(buff)
+		sBuff := buffers.NewSubBuffer(buff)
 		err := serializeUTXOEntry(sBuff, entry)
 		if err != nil {
 			return err
 		}
-		serializedEntry := sBuff.bytes()
+		serializedEntry := sBuff.Bytes()
 
-		sBuff = newSubBuffer(buff)
+		sBuff = buffers.NewSubBuffer(buff)
 		err = serializeOutpoint(sBuff, &outpoint)
 		if err != nil {
 			return err
 		}
 
-		key := sBuff.bytes()
+		key := sBuff.Bytes()
 		err = utxoBucket.Put(key, serializedEntry)
 		// NOTE: The key is intentionally not recycled here since the
 		// database interface contract prohibits modifications. It will
@@ -191,39 +192,6 @@ func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 	}
 
 	return nil
-}
-
-type subBuffer struct {
-	buff       *bytes.Buffer
-	start, end int
-}
-
-func (s *subBuffer) bytes() []byte {
-	return s.buff.Bytes()[s.start:s.end]
-}
-
-func (s *subBuffer) Write(p []byte) (int, error) {
-	if s.buff.Len() > s.end || s.buff.Len() < s.start {
-		return 0, errors.New("a sub buffer cannot be written after another entity wrote or read from its " +
-			"underlying buffer")
-	}
-
-	n, err := s.buff.Write(p)
-	if err != nil {
-		return 0, err
-	}
-
-	s.end += n
-
-	return n, nil
-}
-
-func newSubBuffer(buff *bytes.Buffer) *subBuffer {
-	return &subBuffer{
-		buff:  buff,
-		start: buff.Len(),
-		end:   buff.Len(),
-	}
 }
 
 type dagState struct {
