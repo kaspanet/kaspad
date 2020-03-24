@@ -63,7 +63,7 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 		cursor.currentOffset = targetFileOffset
 	}()
 
-	log.Debugf("ROLLBACK: Rolling back to file %d, offset %d",
+	log.Warnf("ROLLBACK: Rolling back to file %d, offset %d",
 		targetFileNumber, targetFileOffset)
 
 	// Close the current write file if it needs to be deleted. Then delete
