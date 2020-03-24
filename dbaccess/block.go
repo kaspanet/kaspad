@@ -52,7 +52,7 @@ func StoreBlock(context Context, block *util.Block) error {
 	if err != nil {
 		rollbackErr := rollback()
 		if rollbackErr != nil {
-			return rollbackErr
+			return errors.Wrapf(err, "error occurred during rollback: %s", rollbackErr)
 		}
 		return err
 	}
@@ -64,7 +64,7 @@ func StoreBlock(context Context, block *util.Block) error {
 	if err != nil {
 		rollbackErr := rollback()
 		if rollbackErr != nil {
-			return rollbackErr
+			return errors.Wrapf(err, "error occurred during rollback: %s", rollbackErr)
 		}
 		return err
 	}

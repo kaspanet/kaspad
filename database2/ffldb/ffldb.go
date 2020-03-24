@@ -49,8 +49,7 @@ func (db *ffldb) Close() error {
 	if err != nil {
 		ldbCloseErr := db.ldb.Close()
 		if ldbCloseErr != nil {
-			return errors.Errorf("flat file db and leveldb both failed to close. "+
-				"Errors: `%s`, `%s`", err, ldbCloseErr)
+			return errors.Wrapf(err, "err occurred during leveldb close: %s", ldbCloseErr)
 		}
 		return err
 	}
