@@ -137,13 +137,11 @@ func openFlatFileStore(basePath string, storeName string) *flatFileStore {
 		openFiles:              make(map[uint32]*lockableFile),
 		openFilesLRU:           list.New(),
 		fileNumberToLRUElement: make(map[uint32]*list.Element),
-
 		writeCursor: &writeCursor{
 			currentFile:       &lockableFile{},
 			currentFileNumber: fileNumber,
 			currentOffset:     fileOffset,
 		},
-
 		isClosed: false,
 	}
 	return store
