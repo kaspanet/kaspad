@@ -97,66 +97,6 @@ func dbPutVersion(dbTx database.Tx, key []byte, version uint32) error {
 	return dbTx.Metadata().Put(key, serialized[:])
 }
 
-// -----------------------------------------------------------------------------
-// The unspent transaction output (UTXO) set consists of an entry for each
-// unspent output using a format that is optimized to reduce space using domain
-// specific compression algorithms.
-//
-// Each entry is keyed by an outpoint as specified below. It is important to
-// note that the key encoding uses a varint big-endian encoding, which employs
-// an MSB encoding so iteration of UTXOs when doing byte-wise comparisons will
-// produce them in order.
-//
-// The serialized key format is:
-//   <hash><output index>
-//
-//   Field                Type             Size
-//   hash                 daghash.Hash     daghash.HashSize
-//   output index         varint           variable
-//
-// The serialized value format is:
-//
-//   <header code><compressed txout>
-//
-//   Field                Type     Size
-//   header code          varint   variable
-//   compressed txout
-//     compressed amount  varint   variable
-//     compressed script  []byte   variable
-//
-// The serialized header code format is:
-//   bit 0 - containing transaction is a coinbase
-//   bits 1-x - blue score of the block that accepted the unspent txout
-//
-// Example 1:
-// 4a16969aa4764dd7507fc1de7f0baa4850a246de90c45e59a3207f9a26b5036f:2
-//
-//    8cf3168900b8025be1b3efc63b0ad48e7f9f10e87544528d58
-//    <----><------------------------------------------>
-//      |                             |
-//   header code             compressed txout
-//
-//  - header code: 0x8cf316 (not coinbase, height 113931)
-//  - compressed txout:
-//    - 0x89: Varint-encoded compressed amount for 15000000 (0.15 KAS)
-//    - 0x00: special script type pay-to-pubkey-hash
-//    - 0xb8...58: pubkey hash
-//
-// Example 2:
-// 1b02d1c8cfef60a189017b9a420c682cf4a0028175f2f563209e4ff61c8c3620:22
-//
-//    a8a258fe63b4cec4011dd46a006572d820e448e12d2bbb38640bc718e6
-//    <----><-------------------------------------------------->
-//      |                             |
-//   header code             compressed txout
-//
-//  - header code: 0xa8a258 (not coinbase, blue score 338156)
-//  - compressed txout:
-//    - 0xfe63b4cec4: Varint-encoded compressed amount for 366875659 (3.66875659 KAS)
-//    - 0x01: special script type pay-to-script-hash
-//    - 0x1d...e6: script hash
-// -----------------------------------------------------------------------------
-
 // outpointKeyPool defines a concurrent safe free list of byte buffers used to
 // provide temporary buffers for outpoint database keys.
 var outpointKeyPool = sync.Pool{
