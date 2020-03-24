@@ -100,7 +100,7 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 		cursor.currentFile.file = openFile
 	}
 
-	// Truncate the to the provided rollback offset.
+	// Truncate the file to the provided target offset.
 	err := cursor.currentFile.file.Truncate(int64(targetFileOffset))
 	if err != nil {
 		cursor.currentFile.Unlock()
