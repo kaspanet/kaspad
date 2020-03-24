@@ -2,7 +2,8 @@ package database2
 
 // Database defines the interface of a database that can begin
 // transactions, open cursors, and close itself.
-// Important: this is not part of the DataAccessor interface
+//
+// Important: This is not part of the DataAccessor interface
 // because the Transaction interface includes it. Were we to
 // merge Database with DataAccessor, implementors of the
 // Transaction interface would be forced to implement methods

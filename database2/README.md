@@ -25,7 +25,8 @@ Database
 --------
 This defines the interface of a database that can begin transactions, open cursors,
 and close itself.
-Important: this is not part of the DataAccessor interface because the Transaction
+
+Important: This is not part of the DataAccessor interface because the Transaction
 interface implements it as well. Were we to merge Database with DataAccessor,
 implementors of the Transaction interface would be forced to implement methods
 such as Begin and Close, which is undesirable.
@@ -33,7 +34,8 @@ such as Begin and Close, which is undesirable.
 Transaction
 -----------
 This defines the interface of a generic kaspad database transaction.
-Note: transactions provide data consistency over the state of the database as it was
+
+Note: Transactions provide data consistency over the state of the database as it was
 when the transaction started. There is NO guarantee that if one puts data into the
 transaction then it will be available to get within the same transaction.
 
