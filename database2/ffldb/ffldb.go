@@ -90,8 +90,7 @@ func (db *ffldb) AppendToStore(storeName string, data []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	currentLocation := db.ffdb.CurrentLocation(storeName)
-	err = db.updateCurrentStoreLocation(storeName, currentLocation)
+	err = updateCurrentStoreLocation(db, storeName)
 	if err != nil {
 		return nil, err
 	}
@@ -99,9 +98,14 @@ func (db *ffldb) AppendToStore(storeName string, data []byte) ([]byte, error) {
 	return location, err
 }
 
-func (db *ffldb) updateCurrentStoreLocation(storeName string, location []byte) error {
+func updateCurrentStoreLocation(accessor database2.DataAccessor, storeName string) error {
+	currentLocation := accessor.CurrentStoreLocation(storeName)
+	return setCurrentStoreLocation(accessor, storeName, currentLocation)
+}
+
+func setCurrentStoreLocation(accessor database2.DataAccessor, storeName string, location []byte) error {
 	locationKey := flatFilesBucket.Key([]byte(storeName))
-	return db.Put(locationKey, location)
+	return accessor.Put(locationKey, location)
 }
 
 // RetrieveFromStore retrieves data from the flat file

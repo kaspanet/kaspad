@@ -43,7 +43,17 @@ func (tx *transaction) Has(key []byte) (bool, error) {
 // that has just now been inserted.
 // This method is part of the Database interface.
 func (tx *transaction) AppendToStore(storeName string, data []byte) ([]byte, error) {
-	return tx.ffdb.Write(storeName, data)
+	location, err := tx.ffdb.Write(storeName, data)
+	if err != nil {
+		return nil, err
+	}
+
+	err = updateCurrentStoreLocation(tx, storeName)
+	if err != nil {
+		return nil, err
+	}
+
+	return location, err
 }
 
 // RetrieveFromStore retrieves data from the flat file

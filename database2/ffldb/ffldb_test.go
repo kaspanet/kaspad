@@ -55,9 +55,9 @@ func TestRepairFlatFiles(t *testing.T) {
 	}
 
 	// Manually update the current location to point to the first piece of data
-	err = ffldb.updateCurrentStoreLocation(storeName, oldCurrentLocation)
+	err = setCurrentStoreLocation(ffldb, storeName, oldCurrentLocation)
 	if err != nil {
-		t.Fatalf("TestRepairFlatFiles: updateCurrentStoreLocation "+
+		t.Fatalf("TestRepairFlatFiles: setCurrentStoreLocation "+
 			"unexpectedly failed: %s", err)
 	}
 
