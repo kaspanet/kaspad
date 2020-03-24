@@ -254,7 +254,7 @@ func TestBlockErrors(t *testing.T) {
 	// Truncate the block byte buffer to force errors.
 	shortBytes := block100000Bytes[:186]
 	_, err = util.NewBlockFromBytes(shortBytes)
-	if err != io.EOF {
+	if !errors.Is(err, io.EOF) {
 		t.Errorf("NewBlockFromBytes: did not get expected error - "+
 			"got %v, want %v", err, io.EOF)
 	}
@@ -289,7 +289,7 @@ func TestBlockErrors(t *testing.T) {
 	// inject a short byte buffer.
 	b.SetBlockBytes(shortBytes)
 	_, err = b.TxLoc()
-	if err != io.EOF {
+	if !errors.Is(err, io.EOF) {
 		t.Errorf("TxLoc: did not get expected error - "+
 			"got %v, want %v", err, io.EOF)
 	}

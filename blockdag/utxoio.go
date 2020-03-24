@@ -3,7 +3,7 @@ package blockdag
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
+	"github.com/kaspanet/kaspad/util/binaryserializer"
 	"github.com/pkg/errors"
 	"io"
 	"math/big"
@@ -54,40 +54,26 @@ func utxoEntryHeaderCode(entry *UTXOEntry) uint64 {
 	return headerCode
 }
 
-func (diffStore *utxoDiffStore) deserializeBlockUTXODiffData(serializedDiffDataBytes []byte) (*blockUTXODiffData, error) {
+func (diffStore *utxoDiffStore) deserializeBlockUTXODiffData(serializedDiffData []byte) (*blockUTXODiffData, error) {
 	diffData := &blockUTXODiffData{}
-	serializedDiffData := bytes.NewBuffer(serializedDiffDataBytes)
+	r := bytes.NewBuffer(serializedDiffData)
 
 	var hasDiffChild bool
-	err := wire.ReadElement(serializedDiffData, &hasDiffChild)
+	err := wire.ReadElement(r, &hasDiffChild)
 	if err != nil {
 		return nil, err
 	}
 
 	if hasDiffChild {
 		hash := &daghash.Hash{}
-		err := wire.ReadElement(serializedDiffData, hash)
+		err := wire.ReadElement(r, hash)
 		if err != nil {
 			return nil, err
 		}
 		diffData.diffChild = diffStore.dag.index.LookupNode(hash)
 	}
 
-	diffData.diff = &UTXODiff{
-		useMultiset: true,
-	}
-
-	diffData.diff.toAdd, err = deserializeDiffEntries(serializedDiffData)
-	if err != nil {
-		return nil, err
-	}
-
-	diffData.diff.toRemove, err = deserializeDiffEntries(serializedDiffData)
-	if err != nil {
-		return nil, err
-	}
-
-	diffData.diff.diffMultiset, err = deserializeMultiset(serializedDiffData)
+	diffData.diff, err = deserializeUTXODiff(r)
 	if err != nil {
 		return nil, err
 	}
@@ -95,44 +81,57 @@ func (diffStore *utxoDiffStore) deserializeBlockUTXODiffData(serializedDiffDataB
 	return diffData, nil
 }
 
-func deserializeDiffEntries(r io.Reader) (utxoCollection, error) {
+func deserializeUTXODiff(r io.Reader) (*UTXODiff, error) {
+	diff := &UTXODiff{
+		useMultiset: true,
+	}
+
+	var err error
+	diff.toAdd, err = deserializeUTXOCollection(r)
+	if err != nil {
+		return nil, err
+	}
+
+	diff.toRemove, err = deserializeUTXOCollection(r)
+	if err != nil {
+		return nil, err
+	}
+
+	diff.diffMultiset, err = deserializeMultiset(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return diff, nil
+}
+
+func deserializeUTXOCollection(r io.Reader) (utxoCollection, error) {
 	count, err := wire.ReadVarInt(r)
 	if err != nil {
 		return nil, err
 	}
 	collection := utxoCollection{}
 	for i := uint64(0); i < count; i++ {
-		outpointSize, err := wire.ReadVarInt(r)
-		if err != nil {
-			return nil, err
-		}
-
-		serializedOutpoint := make([]byte, outpointSize)
-		err = binary.Read(r, byteOrder, serializedOutpoint)
-		if err != nil {
-			return nil, err
-		}
-		outpoint, err := deserializeOutpoint(serializedOutpoint)
-		if err != nil {
-			return nil, err
-		}
-
-		utxoEntrySize, err := wire.ReadVarInt(r)
-		if err != nil {
-			return nil, err
-		}
-		serializedEntry := make([]byte, utxoEntrySize)
-		err = binary.Read(r, byteOrder, serializedEntry)
-		if err != nil {
-			return nil, err
-		}
-		utxoEntry, err := deserializeUTXOEntry(serializedEntry)
+		utxoEntry, outpoint, err := deserializeUTXO(r)
 		if err != nil {
 			return nil, err
 		}
 		collection.add(*outpoint, utxoEntry)
 	}
 	return collection, nil
+}
+
+func deserializeUTXO(r io.Reader) (*UTXOEntry, *wire.Outpoint, error) {
+	outpoint, err := deserializeOutpoint(r)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	utxoEntry, err := deserializeUTXOEntry(r)
+	if err != nil {
+		return nil, nil, err
+	}
+	return utxoEntry, outpoint, nil
 }
 
 // deserializeMultiset deserializes an EMCH multiset.
@@ -218,95 +217,92 @@ func serializeMultiset(w io.Writer, ms *ecc.Multiset) error {
 
 // serializeUTXO serializes a utxo entry-outpoint pair
 func serializeUTXO(w io.Writer, entry *UTXOEntry, outpoint *wire.Outpoint) error {
-	serializedOutpoint := *outpointKey(*outpoint)
-	err := wire.WriteVarInt(w, uint64(len(serializedOutpoint)))
+	err := serializeOutpoint(w, outpoint)
 	if err != nil {
 		return err
 	}
 
-	err = binary.Write(w, byteOrder, serializedOutpoint)
-	if err != nil {
-		return err
-	}
-
-	serializedUTXOEntry := serializeUTXOEntry(entry)
-	err = wire.WriteVarInt(w, uint64(len(serializedUTXOEntry)))
-	if err != nil {
-		return err
-	}
-	err = binary.Write(w, byteOrder, serializedUTXOEntry)
+	err = serializeUTXOEntry(w, entry)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-// serializeUTXOEntry returns the entry serialized to a format that is suitable
-// for long-term storage. The format is described in detail above.
-func serializeUTXOEntry(entry *UTXOEntry) []byte {
+// p2pkhUTXOEntrySerializeSize is the serialized size for a P2PKH UTXO entry.
+// 8 bytes (header code) + 8 bytes (amount) + varint for script pub key length of 25 (for P2PKH) + 25 bytes for P2PKH script.
+var p2pkhUTXOEntrySerializeSize = 8 + 8 + wire.VarIntSerializeSize(25) + 25
+
+// serializeUTXOEntry encodes the entry to the given io.Writer and use compression if useCompression is true.
+// The compression format is described in detail above.
+func serializeUTXOEntry(w io.Writer, entry *UTXOEntry) error {
 	// Encode the header code.
 	headerCode := utxoEntryHeaderCode(entry)
 
-	// Calculate the size needed to serialize the entry.
-	size := serializeSizeVLQ(headerCode) +
-		compressedTxOutSize(uint64(entry.Amount()), entry.ScriptPubKey())
-
-	// Serialize the header code followed by the compressed unspent
-	// transaction output.
-	serialized := make([]byte, size)
-	offset := putVLQ(serialized, headerCode)
-	offset += putCompressedTxOut(serialized[offset:], uint64(entry.Amount()),
-		entry.ScriptPubKey())
-
-	return serialized
-}
-
-// deserializeOutpoint decodes an outpoint from the passed serialized byte
-// slice into a new wire.Outpoint using a format that is suitable for long-
-// term storage. this format is described in detail above.
-func deserializeOutpoint(serialized []byte) (*wire.Outpoint, error) {
-	if len(serialized) <= daghash.HashSize {
-		return nil, errDeserialize("unexpected end of data")
+	err := binaryserializer.PutUint64(w, byteOrder, headerCode)
+	if err != nil {
+		return err
 	}
 
-	txID := daghash.TxID{}
-	txID.SetBytes(serialized[:daghash.HashSize])
-	index, _ := deserializeVLQ(serialized[daghash.HashSize:])
-	return wire.NewOutpoint(&txID, uint32(index)), nil
+	err = binaryserializer.PutUint64(w, byteOrder, entry.Amount())
+	if err != nil {
+		return err
+	}
+
+	err = wire.WriteVarInt(w, uint64(len(entry.ScriptPubKey())))
+	if err != nil {
+		return err
+	}
+
+	_, err = w.Write(entry.ScriptPubKey())
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }
 
-// deserializeUTXOEntry decodes a UTXO entry from the passed serialized byte
-// slice into a new UTXOEntry using a format that is suitable for long-term
-// storage. The format is described in detail above.
-func deserializeUTXOEntry(serialized []byte) (*UTXOEntry, error) {
+// deserializeUTXOEntry decodes a UTXO entry from the passed reader
+// into a new UTXOEntry. If isCompressed is used it will decompress
+// the entry according to the format that is described in detail
+// above.
+func deserializeUTXOEntry(r io.Reader) (*UTXOEntry, error) {
 	// Deserialize the header code.
-	code, offset := deserializeVLQ(serialized)
-	if offset >= len(serialized) {
-		return nil, errDeserialize("unexpected end of data after header")
+	headerCode, err := binaryserializer.Uint64(r, byteOrder)
+	if err != nil {
+		return nil, err
 	}
 
 	// Decode the header code.
 	//
 	// Bit 0 indicates whether the containing transaction is a coinbase.
 	// Bits 1-x encode blue score of the containing transaction.
-	isCoinbase := code&0x01 != 0
-	blockBlueScore := code >> 1
-
-	// Decode the compressed unspent transaction output.
-	amount, scriptPubKey, _, err := decodeCompressedTxOut(serialized[offset:])
-	if err != nil {
-		return nil, errDeserialize(fmt.Sprintf("unable to decode "+
-			"UTXO: %s", err))
-	}
+	isCoinbase := headerCode&0x01 != 0
+	blockBlueScore := headerCode >> 1
 
 	entry := &UTXOEntry{
-		amount:         amount,
-		scriptPubKey:   scriptPubKey,
 		blockBlueScore: blockBlueScore,
 		packedFlags:    0,
 	}
+
 	if isCoinbase {
 		entry.packedFlags |= tfCoinbase
+	}
+
+	entry.amount, err = binaryserializer.Uint64(r, byteOrder)
+	if err != nil {
+		return nil, err
+	}
+
+	scriptPubKeyLen, err := wire.ReadVarInt(r)
+	if err != nil {
+		return nil, err
+	}
+
+	entry.scriptPubKey = make([]byte, scriptPubKeyLen)
+	_, err = r.Read(entry.scriptPubKey)
+	if err != nil {
+		return nil, errors.WithStack(err)
 	}
 
 	return entry, nil

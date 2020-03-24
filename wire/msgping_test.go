@@ -6,6 +6,7 @@ package wire
 
 import (
 	"bytes"
+	"github.com/pkg/errors"
 	"io"
 	"reflect"
 	"testing"
@@ -145,7 +146,7 @@ func TestPingWireErrors(t *testing.T) {
 		// Encode to wire format.
 		w := newFixedWriter(test.max)
 		err := test.in.KaspaEncode(w, test.pver)
-		if err != test.writeErr {
+		if !errors.Is(err, test.writeErr) {
 			t.Errorf("KaspaEncode #%d wrong error got: %v, want: %v",
 				i, err, test.writeErr)
 			continue
@@ -155,7 +156,7 @@ func TestPingWireErrors(t *testing.T) {
 		var msg MsgPing
 		r := newFixedReader(test.max, test.buf)
 		err = msg.KaspaDecode(r, test.pver)
-		if err != test.readErr {
+		if !errors.Is(err, test.readErr) {
 			t.Errorf("KaspaDecode #%d wrong error got: %v, want: %v",
 				i, err, test.readErr)
 			continue

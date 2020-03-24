@@ -350,7 +350,7 @@ func ReadVarInt(r io.Reader) (uint64, error) {
 		// encoded using fewer bytes.
 		min := uint64(0x100000000)
 		if rv < min {
-			return 0, messageError("ReadVarInt", fmt.Sprintf(
+			return 0, messageError("readVarInt", fmt.Sprintf(
 				errNonCanonicalVarInt, rv, discriminant, min))
 		}
 
@@ -365,7 +365,7 @@ func ReadVarInt(r io.Reader) (uint64, error) {
 		// encoded using fewer bytes.
 		min := uint64(0x10000)
 		if rv < min {
-			return 0, messageError("ReadVarInt", fmt.Sprintf(
+			return 0, messageError("readVarInt", fmt.Sprintf(
 				errNonCanonicalVarInt, rv, discriminant, min))
 		}
 
@@ -380,7 +380,7 @@ func ReadVarInt(r io.Reader) (uint64, error) {
 		// encoded using fewer bytes.
 		min := uint64(0xfd)
 		if rv < min {
-			return 0, messageError("ReadVarInt", fmt.Sprintf(
+			return 0, messageError("readVarInt", fmt.Sprintf(
 				errNonCanonicalVarInt, rv, discriminant, min))
 		}
 
