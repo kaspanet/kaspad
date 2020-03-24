@@ -84,25 +84,52 @@ func (db *ffldb) Has(key []byte) (bool, error) {
 // that has just now been inserted.
 // This method is part of the DataAccessor interface.
 func (db *ffldb) AppendToStore(storeName string, data []byte) ([]byte, error) {
-	location, err := db.ffdb.Write(storeName, data)
+	return appendToStore(db, db.ffdb, storeName, data)
+}
+
+func appendToStore(accessor database2.DataAccessor, ffdb *ff.FlatFileDB, storeName string, data []byte) ([]byte, error) {
+	// Save a reference to the current block location in case
+	// we fail and need to rollback.
+	previousBlockLocation, err := ffdb.CurrentLocation(storeName)
 	if err != nil {
 		return nil, err
 	}
+	rollback := func() error {
+		return ffdb.Rollback(storeName, previousBlockLocation)
+	}
 
-	err = updateCurrentStoreLocation(db, storeName)
+	// Append the data to the store and rollback in case of an error.
+	location, err := ffdb.Write(storeName, data)
 	if err != nil {
+		rollbackErr := rollback()
+		if rollbackErr != nil {
+			return nil, errors.Wrapf(err, "error occurred during rollback: %s", rollbackErr)
+		}
+		return nil, err
+	}
+
+	// Get the new location. If this fails we won't be able to update
+	// the current store location, in which case we roll back.
+	currentLocation, err := ffdb.CurrentLocation(storeName)
+	if err != nil {
+		rollbackErr := rollback()
+		if rollbackErr != nil {
+			return nil, errors.Wrapf(err, "error occurred during rollback: %s", rollbackErr)
+		}
+		return nil, err
+	}
+
+	// Set the current store location and roll back in case an error.
+	err = setCurrentStoreLocation(accessor, storeName, currentLocation)
+	if err != nil {
+		rollbackErr := rollback()
+		if rollbackErr != nil {
+			return nil, errors.Wrapf(err, "error occurred during rollback: %s", rollbackErr)
+		}
 		return nil, err
 	}
 
 	return location, err
-}
-
-func updateCurrentStoreLocation(accessor database2.DataAccessor, storeName string) error {
-	currentLocation, err := accessor.CurrentStoreLocation(storeName)
-	if err != nil {
-		return err
-	}
-	return setCurrentStoreLocation(accessor, storeName, currentLocation)
 }
 
 func setCurrentStoreLocation(accessor database2.DataAccessor, storeName string, location []byte) error {
@@ -116,24 +143,6 @@ func setCurrentStoreLocation(accessor database2.DataAccessor, storeName string, 
 // This method is part of the DataAccessor interface.
 func (db *ffldb) RetrieveFromStore(storeName string, location []byte) ([]byte, error) {
 	return db.ffdb.Read(storeName, location)
-}
-
-// CurrentStoreLocation returns the serialized
-// location handle to the current location within
-// the flat file store defined storeName. It is mainly
-// to be used to rollback flat file stores in case
-// of data incongruency.
-// This method is part of the DataAccessor interface.
-func (db *ffldb) CurrentStoreLocation(storeName string) ([]byte, error) {
-	return db.ffdb.CurrentLocation(storeName)
-}
-
-// RollbackStore truncates the flat file store defined
-// by the given storeName to the location defined by the
-// given serialized location handle.
-// This method is part of the DataAccessor interface.
-func (db *ffldb) RollbackStore(storeName string, location []byte) error {
-	return db.ffdb.Rollback(storeName, location)
 }
 
 // Begin begins a new ffldb transaction.

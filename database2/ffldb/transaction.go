@@ -44,17 +44,7 @@ func (tx *transaction) Has(key []byte) (bool, error) {
 // that has just now been inserted.
 // This method is part of the Database interface.
 func (tx *transaction) AppendToStore(storeName string, data []byte) ([]byte, error) {
-	location, err := tx.ffdb.Write(storeName, data)
-	if err != nil {
-		return nil, err
-	}
-
-	err = updateCurrentStoreLocation(tx, storeName)
-	if err != nil {
-		return nil, err
-	}
-
-	return location, err
+	return appendToStore(tx, tx.ffdb, storeName, data)
 }
 
 // RetrieveFromStore retrieves data from the flat file
@@ -63,24 +53,6 @@ func (tx *transaction) AppendToStore(storeName string, data []byte) ([]byte, err
 // This method is part of the Database interface.
 func (tx *transaction) RetrieveFromStore(storeName string, location []byte) ([]byte, error) {
 	return tx.ffdb.Read(storeName, location)
-}
-
-// CurrentStoreLocation returns the serialized
-// location handle to the current location within
-// the flat file store defined storeName. It is mainly
-// to be used to rollback flat file stores in case
-// of data incongruency.
-// This method is part of the Database interface.
-func (tx *transaction) CurrentStoreLocation(storeName string) ([]byte, error) {
-	return tx.ffdb.CurrentLocation(storeName)
-}
-
-// RollbackStore truncates the flat file store defined
-// by the given storeName to the location defined by the
-// given serialized location handle.
-// This method is part of the Database interface.
-func (tx *transaction) RollbackStore(storeName string, location []byte) error {
-	return tx.ffdb.Rollback(storeName, location)
 }
 
 // Rollback rolls back whatever changes were made to the
