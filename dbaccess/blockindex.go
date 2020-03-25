@@ -1,6 +1,7 @@
 package dbaccess
 
 import (
+	"encoding/binary"
 	"github.com/kaspanet/kaspad/database2"
 	"github.com/kaspanet/kaspad/dbaccess/model"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -21,7 +22,7 @@ func StoreIndexBlock(context Context, blockHash *daghash.Hash, block *model.Bloc
 		return err
 	}
 
-	blockIndexKey := blockIndexKey(blockHash)
+	blockIndexKey := blockIndexKey(blockHash, block.BlueScore)
 	return db.Put(blockIndexKey, dbBlock)
 }
 
@@ -34,6 +35,10 @@ func BlockIndexCursor(context Context) (database2.Cursor, error) {
 	return db.Cursor(blockIndexBucket.Path())
 }
 
-func blockIndexKey(hash *daghash.Hash) []byte {
-	return blockIndexBucket.Key(hash[:])
+func blockIndexKey(blockHash *daghash.Hash, blueScore uint64) []byte {
+	key := make([]byte, daghash.HashSize+8)
+	binary.BigEndian.PutUint64(key[0:8], blueScore)
+	copy(key[8:daghash.HashSize+8], blockHash[:])
+
+	return blockIndexBucket.Key(key)
 }
