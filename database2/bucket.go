@@ -1,28 +1,32 @@
 package database2
 
+import "bytes"
+
 var separator = []byte("/")
 
-// Bucket is a helper struct meant to combine buckets,
+// Bucket is a helper type meant to combine buckets,
 // sub-buckets, and keys into a single full key-value
 // database key.
-type Bucket struct {
-	path [][]byte
-}
+type Bucket [][]byte
 
 // MakeBucket creates a new Bucket using the given path
 // of buckets.
-func MakeBucket(path ...[]byte) *Bucket {
-	return &Bucket{path: path}
+func MakeBucket(path ...[]byte) Bucket {
+	return path
 }
 
 // Bucket returns the sub-bucket of the current bucket
 // defined by bucketBytes.
-func (b *Bucket) Bucket(bucketBytes []byte) *Bucket {
-	return &Bucket{path: append(b.path, bucketBytes)}
+func (b Bucket) Bucket(bucketBytes []byte) Bucket {
+	newBucket := make(Bucket, len(b)+1)
+	copy(newBucket, b)
+	copy(newBucket[len(b):], [][]byte{bucketBytes})
+
+	return newBucket
 }
 
 // Key returns the key inside of the current bucket.
-func (b *Bucket) Key(key []byte) []byte {
+func (b Bucket) Key(key []byte) []byte {
 	bucketPath := b.Path()
 
 	fullKeyLength := len(bucketPath) + len(key)
@@ -34,20 +38,12 @@ func (b *Bucket) Key(key []byte) []byte {
 }
 
 // Path returns the full path of the current bucket.
-func (b *Bucket) Path() []byte {
-	bucketPathlength := (len(b.path)) * len(separator) // length of all the separators
-	for _, bucket := range b.path {
-		bucketPathlength += len(bucket)
-	}
+func (b Bucket) Path() []byte {
+	bucketPath := bytes.Join(b, separator)
 
-	bucketPath := make([]byte, bucketPathlength)
-	offset := 0
-	for _, bucket := range b.path {
-		copy(bucketPath[offset:], bucket)
-		offset += len(bucket)
-		copy(bucketPath[offset:], separator)
-		offset += len(separator)
-	}
+	bucketPathWithFinalSeparator := make([]byte, len(bucketPath)+len(separator))
+	copy(bucketPathWithFinalSeparator, bucketPath)
+	copy(bucketPathWithFinalSeparator[len(bucketPath):], separator)
 
-	return bucketPath
+	return bucketPathWithFinalSeparator
 }

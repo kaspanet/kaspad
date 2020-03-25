@@ -25,9 +25,6 @@ import (
 // the system eventually recovers (perhaps the hard drive is reconnected), it
 // will also lead to any data which failed to be undone being overwritten and
 // thus behaves as desired.
-//
-// Therefore, any errors are simply logged at a warning level rather than being
-// returned since there is nothing more that could be done about it anyways.
 func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 	if s.isClosed {
 		return errors.Errorf("cannot rollback a closed store %s",
@@ -57,13 +54,13 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 	}
 
 	// Regardless of any failures that happen below, reposition the write
-	// cursor to the old flat file and offset.
+	// cursor to the target flat file and offset.
 	defer func() {
 		cursor.currentFileNumber = targetFileNumber
 		cursor.currentOffset = targetFileOffset
 	}()
 
-	log.Debugf("ROLLBACK: Rolling back to file %d, offset %d",
+	log.Warnf("ROLLBACK: Rolling back to file %d, offset %d",
 		targetFileNumber, targetFileOffset)
 
 	// Close the current write file if it needs to be deleted. Then delete
@@ -80,10 +77,9 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 	for cursor.currentFileNumber > targetFileNumber {
 		err := s.deleteFile(cursor.currentFileNumber)
 		if err != nil {
-			log.Warnf("ROLLBACK: Failed to delete file "+
-				"number %d in store '%s': %s", cursor.currentFileNumber,
-				s.storeName, err)
-			return nil
+			return errors.Wrapf(err, "ROLLBACK: Failed to delete file "+
+				"number %d in store '%s'", cursor.currentFileNumber,
+				s.storeName)
 		}
 		cursor.currentFileNumber--
 	}
@@ -94,29 +90,25 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 		openFile, err := s.openWriteFile(cursor.currentFileNumber)
 		if err != nil {
 			cursor.currentFile.Unlock()
-			log.Warnf("ROLLBACK: %s", err)
-			return nil
+			return err
 		}
 		cursor.currentFile.file = openFile
 	}
 
-	// Truncate the to the provided rollback offset.
+	// Truncate the file to the provided target offset.
 	err := cursor.currentFile.file.Truncate(int64(targetFileOffset))
 	if err != nil {
 		cursor.currentFile.Unlock()
-		log.Warnf("ROLLBACK: Failed to truncate file %d "+
-			"in store '%s': %s", cursor.currentFileNumber, s.storeName,
-			err)
-		return nil
+		return errors.Wrapf(err, "ROLLBACK: Failed to truncate file %d "+
+			"in store '%s'", cursor.currentFileNumber, s.storeName)
 	}
 
 	// Sync the file to disk.
 	err = cursor.currentFile.file.Sync()
 	cursor.currentFile.Unlock()
 	if err != nil {
-		log.Warnf("ROLLBACK: Failed to sync file %d in "+
-			"store '%s': %s", cursor.currentFileNumber, s.storeName, err)
-		return nil
+		return errors.Wrapf(err, "ROLLBACK: Failed to sync file %d in "+
+			"store '%s'", cursor.currentFileNumber, s.storeName)
 	}
 	return nil
 }
@@ -127,5 +119,5 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 func (s *flatFileStore) deleteFile(fileNumber uint32) error {
 	filePath := flatFilePath(s.basePath, s.storeName, fileNumber)
 
-	return os.Remove(filePath)
+	return errors.WithStack(os.Remove(filePath))
 }

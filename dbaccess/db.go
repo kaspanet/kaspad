@@ -7,10 +7,10 @@ import (
 )
 
 // dbSingleton is a handle to an instance of the kaspad database
-var dbSingleton database2.Handle
+var dbSingleton database2.Database
 
 // db returns a handle to the database
-func db() (database2.Handle, error) {
+func db() (database2.Database, error) {
 	if dbSingleton == nil {
 		return nil, errors.New("database is not open")
 	}

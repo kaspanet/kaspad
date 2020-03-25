@@ -6,7 +6,8 @@ import (
 )
 
 // transaction is an ffldb transaction.
-// Note: transactions provide data consistency over the state of
+//
+// Note: Transactions provide data consistency over the state of
 // the database as it was when the transaction started. There is
 // NO guarantee that if one puts data into the transaction then
 // it will be available to get within the same transaction.
@@ -22,8 +23,8 @@ func (tx *transaction) Put(key []byte, value []byte) error {
 	return tx.ldbTx.Put(key, value)
 }
 
-// Get gets the value for the given key. It returns an
-// error if the given key does not exist.
+// Get gets the value for the given key. It returns nil if
+// the given key does not exist.
 // This method is part of the Database interface.
 func (tx *transaction) Get(key []byte) ([]byte, error) {
 	return tx.ldbTx.Get(key)
@@ -43,7 +44,7 @@ func (tx *transaction) Has(key []byte) (bool, error) {
 // that has just now been inserted.
 // This method is part of the Database interface.
 func (tx *transaction) AppendToStore(storeName string, data []byte) ([]byte, error) {
-	return tx.ffdb.Write(storeName, data)
+	return appendToStore(tx, tx.ffdb, storeName, data)
 }
 
 // RetrieveFromStore retrieves data from the flat file
@@ -52,24 +53,6 @@ func (tx *transaction) AppendToStore(storeName string, data []byte) ([]byte, err
 // This method is part of the Database interface.
 func (tx *transaction) RetrieveFromStore(storeName string, location []byte) ([]byte, error) {
 	return tx.ffdb.Read(storeName, location)
-}
-
-// CurrentStoreLocation returns the serialized
-// location handle to the current location within
-// the flat file store defined storeName. It is mainly
-// to be used to rollback flat file stores in case
-// of data incongruency.
-// This method is part of the Database interface.
-func (tx *transaction) CurrentStoreLocation(storeName string) []byte {
-	return tx.ffdb.CurrentLocation(storeName)
-}
-
-// RollbackStore truncates the flat file store defined
-// by the given storeName to the location defined by the
-// given serialized location handle.
-// This method is part of the Database interface.
-func (tx *transaction) RollbackStore(storeName string, location []byte) error {
-	return tx.ffdb.Rollback(storeName, location)
 }
 
 // Rollback rolls back whatever changes were made to the
@@ -84,4 +67,11 @@ func (tx *transaction) Rollback() error {
 // This method is part of the Transaction interface.
 func (tx *transaction) Commit() error {
 	return tx.ldbTx.Commit()
+}
+
+// RollbackUnlessClosed rolls back changes that were made to
+// the database within the transaction, unless the transaction
+// had already been closed using either Rollback or Commit.
+func (tx *transaction) RollbackUnlessClosed() error {
+	return tx.ldbTx.RollbackUnlessClosed()
 }

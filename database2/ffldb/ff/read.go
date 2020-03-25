@@ -12,16 +12,14 @@ import (
 // file management such as opening and closing files as necessary to stay
 // within the maximum allowed open files limit.
 //
-// Format: <data length><data><checksum>
+// Format: <data><checksum>
 func (s *flatFileStore) read(location *flatFileLocation) ([]byte, error) {
 	if s.isClosed {
 		return nil, errors.Errorf("cannot read from a closed store %s",
 			s.storeName)
 	}
 
-	// Get the referenced flat file handle opening the file as needed. The
-	// function also handles closing files as needed to avoid going over the
-	// max allowed open files.
+	// Get the referenced flat file.
 	flatFile, err := s.flatFile(location.fileNumber)
 	if err != nil {
 		return nil, err
@@ -31,9 +29,9 @@ func (s *flatFileStore) read(location *flatFileLocation) ([]byte, error) {
 	n, err := flatFile.file.ReadAt(data, int64(location.fileOffset))
 	flatFile.RUnlock()
 	if err != nil {
-		return nil, errors.Errorf("failed to read data in store '%s' "+
-			"from file %d, offset %d: %s", s.storeName, location.fileNumber,
-			location.fileOffset, err)
+		return nil, errors.Wrapf(err, "failed to read data in store '%s' "+
+			"from file %d, offset %d", s.storeName, location.fileNumber,
+			location.fileOffset)
 	}
 
 	// Calculate the checksum of the read data and ensure it matches the
@@ -46,14 +44,15 @@ func (s *flatFileStore) read(location *flatFileLocation) ([]byte, error) {
 			serializedChecksum)
 	}
 
-	// The data excludes the length of the data and the checksum.
-	return data[4 : n-4], nil
+	// The data excludes the checksum.
+	return data[:n-4], nil
 }
 
 // flatFile attempts to return an existing file handle for the passed flat file
 // number if it is already open as well as marking it as most recently used. It
 // will also open the file when it's not already open subject to the rules
-// described in openFile.
+// described in openFile. Also handles closing files as needed to avoid going
+// over the max allowed open files.
 //
 // NOTE: The returned flat file will already have the read lock acquired and
 // the caller MUST call .RUnlock() to release it once it has finished all read
@@ -119,7 +118,7 @@ func (s *flatFileStore) openFile(fileNumber uint32) (*lockableFile, error) {
 	filePath := flatFilePath(s.basePath, s.storeName, fileNumber)
 	file, err := os.Open(filePath)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	flatFile := &lockableFile{file: file}
 

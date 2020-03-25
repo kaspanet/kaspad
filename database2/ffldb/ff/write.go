@@ -15,7 +15,7 @@ import (
 // The write cursor will also be advanced the number of bytes actually written
 // in the event of failure.
 //
-// Format: <data length><data><checksum>
+// Format: <data><checksum>
 func (s *flatFileStore) write(data []byte) (*flatFileLocation, error) {
 	if s.isClosed {
 		return nil, errors.Errorf("cannot write to a closed store %s",
@@ -23,9 +23,9 @@ func (s *flatFileStore) write(data []byte) (*flatFileLocation, error) {
 	}
 
 	// Compute how many bytes will be written.
-	// 4 bytes for data length + length of the data + 4 bytes for checksum.
+	// length of the data + 4 bytes for checksum.
 	dataLength := uint32(len(data))
-	fullLength := dataLength + 8
+	fullLength := dataLength + 4
 
 	// Move to the next file if adding the new data would exceed the max
 	// allowed size for the current flat file. Also detect overflow because
@@ -79,18 +79,9 @@ func (s *flatFileStore) write(data []byte) (*flatFileLocation, error) {
 
 	originalOffset := cursor.currentOffset
 	hasher := crc32.New(castagnoli)
-	var scratch [4]byte
-
-	// Data length.
-	byteOrder.PutUint32(scratch[:], dataLength)
-	err := s.writeData(scratch[:], "data length")
-	if err != nil {
-		return nil, err
-	}
-	_, _ = hasher.Write(scratch[:])
 
 	// Data.
-	err = s.writeData(data[:], "data")
+	err := s.writeData(data[:], "data")
 	if err != nil {
 		return nil, err
 	}
@@ -105,9 +96,8 @@ func (s *flatFileStore) write(data []byte) (*flatFileLocation, error) {
 	// Sync the file to disk.
 	err = cursor.currentFile.file.Sync()
 	if err != nil {
-		return nil, errors.Errorf("failed to sync file %d "+
-			"in store '%s': %s", cursor.currentFileNumber, s.storeName,
-			err)
+		return nil, errors.Wrapf(err, "failed to sync file %d "+
+			"in store '%s'", cursor.currentFileNumber, s.storeName)
 	}
 
 	location := &flatFileLocation{
@@ -130,8 +120,8 @@ func (s *flatFileStore) openWriteFile(fileNumber uint32) (filer, error) {
 	filePath := flatFilePath(s.basePath, s.storeName, fileNumber)
 	file, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
-		return nil, errors.Errorf("failed to open file %q: %s",
-			filePath, err)
+		return nil, errors.Wrapf(err, "failed to open file %q",
+			filePath)
 	}
 
 	return file, nil
@@ -157,9 +147,9 @@ func (s *flatFileStore) writeData(data []byte, fieldName string) error {
 		if ok := errors.As(err, &pathErr); ok && pathErr.Err == syscall.ENOSPC {
 			panic("No space left on the hard disk, exiting...")
 		}
-		return errors.Errorf("failed to write %s in store %s to file %d "+
-			"at offset %d: %s", fieldName, s.storeName, cursor.currentFileNumber,
-			cursor.currentOffset-uint32(n), err)
+		return errors.Wrapf(err, "failed to write %s in store %s to file %d "+
+			"at offset %d", fieldName, s.storeName, cursor.currentFileNumber,
+			cursor.currentOffset-uint32(n))
 	}
 
 	return nil

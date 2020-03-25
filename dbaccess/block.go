@@ -32,37 +32,20 @@ func StoreBlock(context Context, block *util.Block) error {
 		return errors.Errorf("block %s already exists", hash)
 	}
 
-	// Save a reference to the current block location in case
-	// we fail and need to rollback.
-	previousBlockLocation := db.CurrentStoreLocation(blockStoreName)
-	rollback := func() error {
-		return db.RollbackStore(blockStoreName, previousBlockLocation)
-	}
-
-	// Write the block's bytes to the block store and rollback
-	// if there's an error.
+	// Write the block's bytes to the block store
 	bytes, err := block.Bytes()
 	if err != nil {
 		return err
 	}
 	blockLocation, err := db.AppendToStore(blockStoreName, bytes)
 	if err != nil {
-		rollbackErr := rollback()
-		if rollbackErr != nil {
-			return rollbackErr
-		}
 		return err
 	}
 
-	// Write the block's hash to the blockLocations bucket and
-	// rollback if there's an error.
+	// Write the block's hash to the blockLocations bucket
 	blockLocationsKey := blockLocationKey(hash)
 	err = db.Put(blockLocationsKey, blockLocation)
 	if err != nil {
-		rollbackErr := rollback()
-		if rollbackErr != nil {
-			return rollbackErr
-		}
 		return err
 	}
 
@@ -95,6 +78,9 @@ func FetchBlock(context Context, hash *daghash.Hash) (*util.Block, error) {
 	blockLocation, err := db.Get(blockLocationsKey)
 	if err != nil {
 		return nil, err
+	}
+	if blockLocation == nil {
+		return nil, errors.Errorf("block %s not found", hash)
 	}
 	bytes, err := db.RetrieveFromStore(blockStoreName, blockLocation)
 	if err != nil {

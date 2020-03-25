@@ -2,6 +2,8 @@ package ff
 
 import "github.com/pkg/errors"
 
+const flatFileLocationSerializedSize = 12
+
 // flatFileLocation identifies a particular flat file location.
 type flatFileLocation struct {
 	fileNumber uint32
@@ -17,7 +19,7 @@ type flatFileLocation struct {
 //  [4:8]  File offset (4 bytes)
 //  [8:12] Data length (4 bytes)
 func serializeLocation(location *flatFileLocation) []byte {
-	var serializedLocation [12]byte
+	var serializedLocation [flatFileLocationSerializedSize]byte
 	byteOrder.PutUint32(serializedLocation[0:4], location.fileNumber)
 	byteOrder.PutUint32(serializedLocation[4:8], location.fileOffset)
 	byteOrder.PutUint32(serializedLocation[8:12], location.dataLength)
@@ -27,7 +29,7 @@ func serializeLocation(location *flatFileLocation) []byte {
 // deserializeLocation deserializes the passed serialized flat file location.
 // See serializeLocation for further details.
 func deserializeLocation(serializedLocation []byte) (*flatFileLocation, error) {
-	if len(serializedLocation) != 12 {
+	if len(serializedLocation) != flatFileLocationSerializedSize {
 		return nil, errors.Errorf("unexpected serializedLocation length: %d",
 			len(serializedLocation))
 	}

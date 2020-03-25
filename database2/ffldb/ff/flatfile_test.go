@@ -14,7 +14,11 @@ func TestFlatFileStoreSanity(t *testing.T) {
 			"failed: %s", err)
 	}
 	name := "test"
-	store := openFlatFileStore(path, name)
+	store, err := openFlatFileStore(path, name)
+	if err != nil {
+		t.Fatalf("TestFlatFileStoreSanity: openFlatFileStore "+
+			"unexpectedly failed: %s", err)
+	}
 
 	// Write something to the store
 	writeData := []byte("Hello world!")
