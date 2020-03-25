@@ -1015,7 +1015,7 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 	return genesisPastUTXO
 }
 
-func (node *blockNode) fetchBlueBlocks(db database.DB) ([]*util.Block, error) {
+func (node *blockNode) fetchBlueBlocks() ([]*util.Block, error) {
 	blueBlocks := make([]*util.Block, len(node.blues))
 	for i, blueBlockNode := range node.blues {
 		blueBlock, err := dbaccess.FetchBlock(dbaccess.NoTx(), blueBlockNode.hash)
@@ -1132,7 +1132,7 @@ func (dag *BlockDAG) pastUTXO(node *blockNode) (
 		return nil, nil, err
 	}
 
-	blueBlocks, err := node.fetchBlueBlocks(dag.db)
+	blueBlocks, err := node.fetchBlueBlocks()
 	if err != nil {
 		return nil, nil, err
 	}

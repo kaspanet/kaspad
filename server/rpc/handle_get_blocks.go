@@ -76,9 +76,14 @@ func handleGetBlocks(s *Server, cmd interface{}, closeChan <-chan struct{}) (int
 }
 
 func hashesToBlockBytes(s *Server, hashes []*daghash.Hash) ([][]byte, error) {
+	dbTx, err := dbaccess.NewTx()
+	if err != nil {
+		return nil, err
+	}
+
 	blocks := make([][]byte, len(hashes))
 	for i, hash := range hashes {
-		block, err := dbaccess.FetchBlock(dbaccess.NoTx(), hash)
+		block, err := dbaccess.FetchBlock(dbTx, hash)
 		if err != nil {
 			return nil, err
 		}
