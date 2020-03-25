@@ -38,7 +38,6 @@ func (db *LevelDB) Begin() (*LevelDBTransaction, error) {
 		ldb:      db.ldb,
 		snapshot: snapshot,
 		batch:    batch,
-
 		isClosed: false,
 	}
 	return transaction, nil
