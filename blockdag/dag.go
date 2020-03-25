@@ -610,8 +610,15 @@ func (node *blockNode) calcMultiset(dag *BlockDAG, transactions []*util.Tx, acce
 	return ms, nil
 }
 
+func (node *blockNode) selectParentMultiSet(dag *BlockDAG) (*ecc.Multiset, error) {
+	if node.isGenesis() {
+		return ecc.NewMultiset(ecc.S256()), nil
+	}
+	return dag.multisetStore.multisetByBlockNode(node.selectedParent)
+}
+
 func (node *blockNode) pastUTXOMultiSet(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData, selectedParentUTXO UTXOSet) (*ecc.Multiset, error) {
-	ms, err := dag.multisetStore.multisetByBlockNode(node)
+	ms, err := node.selectParentMultiSet(dag)
 	if err != nil {
 		return nil, err
 	}
