@@ -79,6 +79,9 @@ func FetchBlock(context Context, hash *daghash.Hash) (*util.Block, error) {
 	if err != nil {
 		return nil, err
 	}
+	if blockLocation == nil {
+		return nil, errors.Errorf("block %s not found", hash)
+	}
 	bytes, err := db.RetrieveFromStore(blockStoreName, blockLocation)
 	if err != nil {
 		return nil, err
