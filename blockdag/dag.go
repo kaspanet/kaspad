@@ -642,17 +642,19 @@ func (node *blockNode) pastUTXOMultiSet(dag *BlockDAG, acceptanceData MultiBlock
 }
 
 func addTxToMultiset(ms *ecc.Multiset, tx *wire.MsgTx, pastUTXO UTXOSet, blockBlueScore uint64) (*ecc.Multiset, error) {
-	for _, txIn := range tx.TxIn {
-		outpoint := *wire.NewOutpoint(&txIn.PreviousOutpoint.TxID, txIn.PreviousOutpoint.Index)
-		entry, ok := pastUTXO.Get(outpoint)
-		if !ok {
-			return nil, errors.Errorf("Couldn't find entry for outpoint %s", outpoint)
-		}
+	if !tx.IsCoinBase() {
+		for _, txIn := range tx.TxIn {
+			outpoint := *wire.NewOutpoint(&txIn.PreviousOutpoint.TxID, txIn.PreviousOutpoint.Index)
+			entry, ok := pastUTXO.Get(outpoint)
+			if !ok {
+				return nil, errors.Errorf("Couldn't find entry for outpoint %s", outpoint)
+			}
 
-		var err error
-		ms, err = removeUTXOFromMultiset(ms, entry, &outpoint)
-		if err != nil {
-			return nil, err
+			var err error
+			ms, err = removeUTXOFromMultiset(ms, entry, &outpoint)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
