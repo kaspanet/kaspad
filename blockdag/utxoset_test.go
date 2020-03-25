@@ -7,7 +7,6 @@ import (
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -80,49 +79,40 @@ func TestUTXODiff(t *testing.T) {
 	utxoEntry0 := NewUTXOEntry(&wire.TxOut{ScriptPubKey: []byte{}, Value: 10}, true, 0)
 	utxoEntry1 := NewUTXOEntry(&wire.TxOut{ScriptPubKey: []byte{}, Value: 20}, false, 1)
 
-	for i := 0; i < 2; i++ {
-		withMultiset := i == 0
-		// Test utxoDiff creation
-		var diff *UTXODiff
-		if withMultiset {
-			diff = NewUTXODiff()
-		} else {
-			diff = NewUTXODiffWithoutMultiset()
-		}
-		if len(diff.toAdd) != 0 || len(diff.toRemove) != 0 {
-			t.Errorf("new diff is not empty")
-		}
+	// Test utxoDiff creation
 
-		err := diff.AddEntry(outpoint0, utxoEntry0)
-		if err != nil {
-			t.Fatalf("error adding entry to utxo diff: %s", err)
-		}
+	diff := NewUTXODiff()
 
-		err = diff.RemoveEntry(outpoint1, utxoEntry1)
-		if err != nil {
-			t.Fatalf("error adding entry to utxo diff: %s", err)
-		}
+	if len(diff.toAdd) != 0 || len(diff.toRemove) != 0 {
+		t.Errorf("new diff is not empty")
+	}
 
-		// Test utxoDiff cloning
-		clonedDiff := diff.clone()
-		if clonedDiff == diff {
-			t.Errorf("cloned diff is reference-equal to the original")
-		}
-		if !reflect.DeepEqual(clonedDiff, diff) {
-			t.Errorf("cloned diff not equal to the original"+
-				"Original: \"%v\", cloned: \"%v\".", diff, clonedDiff)
-		}
+	err := diff.AddEntry(outpoint0, utxoEntry0)
+	if err != nil {
+		t.Fatalf("error adding entry to utxo diff: %s", err)
+	}
 
-		// Test utxoDiff string representation
-		expectedDiffString := "toAdd: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ]; toRemove: [ (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20, blueScore: 1 ]"
-		if withMultiset {
-			expectedDiffString = "toAdd: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ]; toRemove: [ (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20, blueScore: 1 ], Multiset-Hash: 75cb5bbca4e52a9e478dd3c5af3c856ed0f61b848088014c8c52e70432233a57"
-		}
-		diffString := clonedDiff.String()
-		if diffString != expectedDiffString {
-			t.Errorf("unexpected diff string. "+
-				"Expected: \"%s\", got: \"%s\".", expectedDiffString, diffString)
-		}
+	err = diff.RemoveEntry(outpoint1, utxoEntry1)
+	if err != nil {
+		t.Fatalf("error adding entry to utxo diff: %s", err)
+	}
+
+	// Test utxoDiff cloning
+	clonedDiff := diff.clone()
+	if clonedDiff == diff {
+		t.Errorf("cloned diff is reference-equal to the original")
+	}
+	if !reflect.DeepEqual(clonedDiff, diff) {
+		t.Errorf("cloned diff not equal to the original"+
+			"Original: \"%v\", cloned: \"%v\".", diff, clonedDiff)
+	}
+
+	// Test utxoDiff string representation
+	expectedDiffString := "toAdd: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ]; toRemove: [ (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20, blueScore: 1 ]"
+	diffString := clonedDiff.String()
+	if diffString != expectedDiffString {
+		t.Errorf("unexpected diff string. "+
+			"Expected: \"%s\", got: \"%s\".", expectedDiffString, diffString)
 	}
 }
 
@@ -625,25 +615,17 @@ func TestUTXODiffRules(t *testing.T) {
 	}
 }
 
-func areMultisetsEqual(a *ecc.Multiset, b *ecc.Multiset) bool {
-	aX, aY := a.Point()
-	bX, bY := b.Point()
-	return aX.Cmp(bX) == 0 && aY.Cmp(bY) == 0
-}
-
 func (d *UTXODiff) equal(other *UTXODiff) bool {
 	if d == nil || other == nil {
 		return d == other
 	}
 
 	return reflect.DeepEqual(d.toAdd, other.toAdd) &&
-		reflect.DeepEqual(d.toRemove, other.toRemove) &&
-		areMultisetsEqual(d.diffMultiset, other.diffMultiset)
+		reflect.DeepEqual(d.toRemove, other.toRemove)
 }
 
 func (fus *FullUTXOSet) equal(other *FullUTXOSet) bool {
-	return reflect.DeepEqual(fus.utxoCollection, other.utxoCollection) &&
-		areMultisetsEqual(fus.UTXOMultiset, other.UTXOMultiset)
+	return reflect.DeepEqual(fus.utxoCollection, other.utxoCollection)
 }
 
 func (dus *DiffUTXOSet) equal(other *DiffUTXOSet) bool {

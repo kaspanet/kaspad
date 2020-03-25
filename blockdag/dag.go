@@ -1469,11 +1469,6 @@ func (dag *BlockDAG) UTXOConfirmations(outpoint *wire.Outpoint) (uint64, bool) {
 	return confirmations, true
 }
 
-// UTXOCommitment returns a commitment to the dag's current UTXOSet
-func (dag *BlockDAG) UTXOCommitment() string {
-	return dag.UTXOSet().UTXOMultiset.Hash().String()
-}
-
 // blockConfirmations returns the current confirmations number of the given node
 // The confirmations number is defined as follows:
 // * If the node is in the selected tip red set	-> 0

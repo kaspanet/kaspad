@@ -78,9 +78,7 @@ func (diffStore *utxoDiffStore) deserializeBlockUTXODiffData(serializedDiffData 
 }
 
 func deserializeUTXODiff(r io.Reader) (*UTXODiff, error) {
-	diff := &UTXODiff{
-		useMultiset: true,
-	}
+	diff := &UTXODiff{}
 
 	var err error
 	diff.toAdd, err = deserializeUTXOCollection(r)
@@ -89,11 +87,6 @@ func deserializeUTXODiff(r io.Reader) (*UTXODiff, error) {
 	}
 
 	diff.toRemove, err = deserializeUTXOCollection(r)
-	if err != nil {
-		return nil, err
-	}
-
-	diff.diffMultiset, err = deserializeMultiset(r)
 	if err != nil {
 		return nil, err
 	}
@@ -133,9 +126,6 @@ func deserializeUTXO(r io.Reader) (*UTXOEntry, *wire.Outpoint, error) {
 // serializeUTXODiff serializes UTXODiff by serializing
 // UTXODiff.toAdd, UTXODiff.toRemove and UTXODiff.Multiset one after the other.
 func serializeUTXODiff(w io.Writer, diff *UTXODiff) error {
-	if !diff.useMultiset {
-		return errors.New("Cannot serialize a UTXO diff without a multiset")
-	}
 	err := serializeUTXOCollection(w, diff.toAdd)
 	if err != nil {
 		return err
@@ -145,10 +135,7 @@ func serializeUTXODiff(w io.Writer, diff *UTXODiff) error {
 	if err != nil {
 		return err
 	}
-	err = serializeMultiset(w, diff.diffMultiset)
-	if err != nil {
-		return err
-	}
+
 	return nil
 }
 
