@@ -626,13 +626,12 @@ func TestAcceptingInInit(t *testing.T) {
 	testNode.status = statusDataStored
 
 	// Manually add the test block to the database
-	err = db.Update(func(dbTx database.Tx) error {
-		err := dbaccess.StoreBlock(dbaccess.NoTx(), testBlock)
-		if err != nil {
-			return err
-		}
-		return dbStoreBlockNode(dbTx, testNode)
-	})
+	err = dbaccess.StoreBlock(dbaccess.NoTx(), testBlock)
+	if err != nil {
+		t.Fatalf("Failed to store block: %s", err)
+	}
+	dbTestNode := toDBBlockNode(testNode)
+	err = dbaccess.StoreIndexBlock(dbaccess.NoTx(), testNode.hash, dbTestNode)
 	if err != nil {
 		t.Fatalf("Failed to update block index: %s", err)
 	}

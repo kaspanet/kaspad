@@ -5,6 +5,7 @@
 package blockdag
 
 import (
+	"github.com/kaspanet/kaspad/dbaccess"
 	"sync"
 
 	"github.com/kaspanet/kaspad/dagconfig"
@@ -114,14 +115,12 @@ func (bi *blockIndex) UnsetStatusFlags(node *blockNode, flags blockStatus) {
 // flushToDB writes all dirty block nodes to the database. If all writes
 // succeed, this clears the dirty set.
 func (bi *blockIndex) flushToDB() error {
-	return bi.db.Update(func(dbTx database.Tx) error {
-		return bi.flushToDBWithTx(dbTx)
-	})
+	return bi.flushToDBWithContext(dbaccess.NoTx())
 }
 
-// flushToDBWithTx writes all dirty block nodes to the database. If all
+// flushToDBWithContext writes all dirty block nodes to the database. If all
 // writes succeed, this clears the dirty set.
-func (bi *blockIndex) flushToDBWithTx(dbTx database.Tx) error {
+func (bi *blockIndex) flushToDBWithContext(context dbaccess.Context) error {
 	bi.Lock()
 	defer bi.Unlock()
 	if len(bi.dirty) == 0 {
@@ -129,7 +128,8 @@ func (bi *blockIndex) flushToDBWithTx(dbTx database.Tx) error {
 	}
 
 	for node := range bi.dirty {
-		err := dbStoreBlockNode(dbTx, node)
+		dbNode := toDBBlockNode(node)
+		err := dbaccess.StoreIndexBlock(context, node.hash, dbNode)
 		if err != nil {
 			return err
 		}

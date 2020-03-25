@@ -638,7 +638,7 @@ func (dag *BlockDAG) initDAGState() error {
 	})
 }
 
-func (dag *BlockDAG) toDBBlockNode(node *blockNode) *model.BlockNode {
+func toDBBlockNode(node *blockNode) *model.BlockNode {
 	dbNode := model.BlockNode{}
 
 	dbNode.Header = *node.Header()
