@@ -13,6 +13,8 @@ import (
 // BlockForMining returns a block with the given transactions
 // that points to the current DAG tips, that is valid from
 // all aspects except proof of work.
+//
+// This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, error) {
 	blockTimestamp := dag.NextBlockTime()
 	requiredDifficulty := dag.NextRequiredDifficulty(blockTimestamp)
@@ -35,7 +37,7 @@ func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, er
 		msgBlock.AddTransaction(tx.MsgTx())
 	}
 
-	ms, err := dag.nextBlockMultiset(transactions)
+	ms, err := dag.NextBlockMultiset(transactions)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +55,11 @@ func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, er
 	return &msgBlock, nil
 }
 
-func (dag *BlockDAG) nextBlockMultiset(transactions []*util.Tx) (*ecc.Multiset, error) {
+// NextBlockMultiset returns the multiset of an assumed next block
+// built on top of the current tips, with the given transactions.
+//
+// This function MUST be called with the DAG state lock held (for reads).
+func (dag *BlockDAG) NextBlockMultiset(transactions []*util.Tx) (*ecc.Multiset, error) {
 	pastUTXO, selectedParentUTXO, txsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
 	if err != nil {
 		return nil, err
