@@ -25,4 +25,7 @@ type DataAccessor interface {
 	// storeName using the given serialized location handle. See
 	// AppendToStore for further details.
 	RetrieveFromStore(storeName string, location []byte) ([]byte, error)
+
+	// Cursor begins a new cursor over the given bucket.
+	Cursor(bucket []byte) (Cursor, error)
 }

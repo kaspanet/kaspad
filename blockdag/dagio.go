@@ -863,19 +863,6 @@ func serializeBlockNode(node *blockNode) ([]byte, error) {
 	return w.Bytes(), nil
 }
 
-// dbStoreBlockNode stores the block node data into the block
-// index bucket. This overwrites the current entry if there exists one.
-func dbStoreBlockNode(dbTx database.Tx, node *blockNode) error {
-	serializedNode, err := serializeBlockNode(node)
-	if err != nil {
-		return err
-	}
-	// Write block header data to block index bucket.
-	blockIndexBucket := dbTx.Metadata().Bucket(blockIndexBucketName)
-	key := BlockIndexKey(node.hash, node.blueScore)
-	return blockIndexBucket.Put(key, serializedNode)
-}
-
 // BlockIndexKey generates the binary key for an entry in the block index
 // bucket. The key is composed of the block blue score encoded as a big-endian
 // 64-bit unsigned int followed by the 32 byte block hash.

@@ -13,7 +13,7 @@ import (
 // currently implemented, if one puts data into the transaction
 // then it will not be available to get within the same transaction.
 type LevelDBTransaction struct {
-	ldb      *leveldb.DB
+	db       *LevelDB
 	snapshot *leveldb.Snapshot
 	batch    *leveldb.Batch
 	isClosed bool
@@ -35,7 +35,7 @@ func (db *LevelDB) Begin() (*LevelDBTransaction, error) {
 	batch := new(leveldb.Batch)
 
 	transaction := &LevelDBTransaction{
-		ldb:      db.ldb,
+		db:       db,
 		snapshot: snapshot,
 		batch:    batch,
 		isClosed: false,
@@ -52,7 +52,7 @@ func (tx *LevelDBTransaction) Commit() error {
 
 	tx.isClosed = true
 	tx.snapshot.Release()
-	return tx.ldb.Write(tx.batch, nil)
+	return tx.db.ldb.Write(tx.batch, nil)
 }
 
 // Rollback rolls back whatever changes were made to the
@@ -114,4 +114,13 @@ func (tx *LevelDBTransaction) Has(key []byte) (bool, error) {
 	}
 
 	return tx.snapshot.Has(key, nil)
+}
+
+// Cursor begins a new cursor over the given bucket.
+func (tx *LevelDBTransaction) Cursor(bucket []byte) (*LevelDBCursor, error) {
+	if tx.isClosed {
+		return nil, errors.New("cannot open a cursor from a closed transaction")
+	}
+
+	return tx.db.Cursor(bucket), nil
 }
