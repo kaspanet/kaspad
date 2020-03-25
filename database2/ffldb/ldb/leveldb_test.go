@@ -145,17 +145,17 @@ func TestLevelDBTransactionSanity(t *testing.T) {
 			"returned unexpected error: %s", err)
 	}
 
-	// Rollback the transaction
-	err = tx.Rollback()
-	if err != nil {
-		t.Fatalf("TestLevelDBTransactionSanity: rollback "+
-			"returned unexpected error: %s", err)
-	}
-
 	// Make sure that the put data and the get data are equal
 	if !reflect.DeepEqual(getData, putData) {
 		t.Fatalf("TestLevelDBTransactionSanity: get "+
 			"data and put data are not equal. Put: %s, got: %s",
 			string(putData), string(getData))
+	}
+
+	// Rollback the transaction
+	err = tx.Rollback()
+	if err != nil {
+		t.Fatalf("TestLevelDBTransactionSanity: rollback "+
+			"returned unexpected error: %s", err)
 	}
 }
