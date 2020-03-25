@@ -3,6 +3,7 @@ package blockdag
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/wire"
@@ -34,23 +35,31 @@ func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, er
 		msgBlock.AddTransaction(tx.MsgTx())
 	}
 
-	utxoWithTransactions, err := dag.UTXOSet().WithTransactions(msgBlock.Transactions, UnacceptedBlueScore, false)
+	ms, err := dag.nextBlockMultiset(transactions)
 	if err != nil {
 		return nil, err
 	}
-	utxoCommitment := utxoWithTransactions.Multiset().Hash()
 
 	msgBlock.Header = wire.BlockHeader{
 		Version:              nextBlockVersion,
 		ParentHashes:         dag.TipHashes(),
 		HashMerkleRoot:       hashMerkleTree.Root(),
 		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
-		UTXOCommitment:       utxoCommitment,
+		UTXOCommitment:       ms.Hash(),
 		Timestamp:            blockTimestamp,
 		Bits:                 requiredDifficulty,
 	}
 
 	return &msgBlock, nil
+}
+
+func (dag *BlockDAG) nextBlockMultiset(transactions []*util.Tx) (*ecc.Multiset, error) {
+	pastUTXO, selectedParentUTXO, txsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
+	if err != nil {
+		return nil, err
+	}
+
+	return dag.virtual.blockNode.calcMultiset(dag, transactions, txsAcceptanceData, selectedParentUTXO, pastUTXO)
 }
 
 // CoinbasePayloadExtraData returns coinbase payload extra data parameter

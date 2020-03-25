@@ -59,6 +59,10 @@ var (
 	// reachability tree nodes and future covering sets of blocks.
 	reachabilityDataBucketName = []byte("reachability")
 
+	// multisetBucketName is the name of the database bucket used to house the
+	// ECMH multisets of blocks.
+	multisetBucketName = []byte("multiset")
+
 	// subnetworksBucketName is the name of the database bucket used to store the
 	// subnetwork registry.
 	subnetworksBucketName = []byte("subnetworks")
@@ -485,7 +489,15 @@ func (dag *BlockDAG) initDAGState() error {
 		}
 
 		// Initialize the reachability store
+		log.Infof("Loading reachability data...")
 		err = dag.reachabilityStore.init(dbTx)
+		if err != nil {
+			return err
+		}
+
+		// Initialize the multiset store
+		log.Infof("Loading multiset data...")
+		err = dag.multisetStore.init(dbTx)
 		if err != nil {
 			return err
 		}

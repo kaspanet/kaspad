@@ -867,19 +867,3 @@ func (dus *DiffUTXOSet) WithTransactions(transactions []*wire.MsgTx, blockBlueSc
 	}
 	return UTXOSet(diffSet), nil
 }
-
-func addUTXOToMultiset(ms *ecc.Multiset, entry *UTXOEntry, outpoint *wire.Outpoint) (*ecc.Multiset, error) {
-	utxoMS, err := utxoMultiset(entry, outpoint)
-	if err != nil {
-		return nil, err
-	}
-	return ms.Union(utxoMS), nil
-}
-
-func removeUTXOFromMultiset(ms *ecc.Multiset, entry *UTXOEntry, outpoint *wire.Outpoint) (*ecc.Multiset, error) {
-	utxoMS, err := utxoMultiset(entry, outpoint)
-	if err != nil {
-		return nil, err
-	}
-	return ms.Subtract(utxoMS), nil
-}
