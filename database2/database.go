@@ -9,8 +9,6 @@ package database2
 // Transaction interface would be forced to implement methods
 // such as Begin and Close, which is undesirable.
 type Database interface {
-	// A handle to the database needs to be able to do
-	// anything that the underlying database can do.
 	DataAccessor
 
 	// Begin begins a new database transaction.
