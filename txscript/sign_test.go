@@ -6,29 +6,29 @@ package txscript
 
 import (
 	"fmt"
+	"github.com/kaspanet/go-secp256k1"
 	"github.com/pkg/errors"
 	"testing"
 
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
 
 type addressToKey struct {
-	key        *ecc.PrivateKey
+	key        *secp256k1.PrivateKey
 	compressed bool
 }
 
 func mkGetKey(keys map[string]addressToKey) KeyDB {
 	if keys == nil {
-		return KeyClosure(func(addr util.Address) (*ecc.PrivateKey,
+		return KeyClosure(func(addr util.Address) (*secp256k1.PrivateKey,
 			bool, error) {
 			return nil, false, errors.New("nope")
 		})
 	}
-	return KeyClosure(func(addr util.Address) (*ecc.PrivateKey,
+	return KeyClosure(func(addr util.Address) (*secp256k1.PrivateKey,
 		bool, error) {
 		a2k, ok := keys[addr.EncodeAddress()]
 		if !ok {
@@ -139,17 +139,29 @@ func TestSignTxOutput(t *testing.T) {
 	for _, hashType := range hashTypes {
 		for i := range tx.TxIn {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
-			key, err := ecc.NewPrivateKey(ecc.S256())
+			key, err := secp256k1.GeneratePrivateKey()
 			if err != nil {
-				t.Errorf("failed to make privKey for %s: %v",
+				t.Errorf("failed to make privKey for %s: %s",
 					msg, err)
 				break
 			}
 
-			pk := (*ecc.PublicKey)(&key.PublicKey).
-				SerializeUncompressed()
+			pubKey, err := key.SchnorrPublicKey()
+			if err != nil {
+				t.Errorf("failed to make a publickey for %s: %s",
+					key, err)
+				break
+			}
+
+			uncompressedPubKey, err := pubKey.SerializeUncompressed()
+			if err != nil {
+				t.Errorf("failed to make a pubkey for %s: %s",
+					key, err)
+				break
+			}
+
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), util.Bech32PrefixKaspaTest)
+				util.Hash160(uncompressedPubKey), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -176,17 +188,28 @@ func TestSignTxOutput(t *testing.T) {
 	for _, hashType := range hashTypes {
 		for i := range tx.TxIn {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
-			key, err := ecc.NewPrivateKey(ecc.S256())
+			key, err := secp256k1.GeneratePrivateKey()
 			if err != nil {
-				t.Errorf("failed to make privKey for %s: %v",
+				t.Errorf("failed to make privKey for %s: %s",
 					msg, err)
 				break
 			}
 
-			pk := (*ecc.PublicKey)(&key.PublicKey).
-				SerializeUncompressed()
+			pubKey, err := key.SchnorrPublicKey()
+			if err != nil {
+				t.Errorf("failed to make a publickey for %s: %s",
+					key, err)
+				break
+			}
+
+			uncompressedPubKey, err := pubKey.SerializeUncompressed()
+			if err != nil {
+				t.Errorf("failed to make a pubkey for %s: %s",
+					key, err)
+				break
+			}
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), util.Bech32PrefixKaspaTest)
+				util.Hash160(uncompressedPubKey), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -237,17 +260,29 @@ func TestSignTxOutput(t *testing.T) {
 		for i := range tx.TxIn {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
 
-			key, err := ecc.NewPrivateKey(ecc.S256())
+			key, err := secp256k1.GeneratePrivateKey()
 			if err != nil {
-				t.Errorf("failed to make privKey for %s: %v",
+				t.Errorf("failed to make privKey for %s: %s",
 					msg, err)
 				break
 			}
 
-			pk := (*ecc.PublicKey)(&key.PublicKey).
-				SerializeCompressed()
+			pubKey, err := key.SchnorrPublicKey()
+			if err != nil {
+				t.Errorf("failed to make a publickey for %s: %s",
+					key, err)
+				break
+			}
+
+			compressedPubKey, err := pubKey.SerializeCompressed()
+			if err != nil {
+				t.Errorf("failed to make a pubkey for %s: %s",
+					key, err)
+				break
+			}
+
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), util.Bech32PrefixKaspaTest)
+				util.Hash160(compressedPubKey), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -275,17 +310,29 @@ func TestSignTxOutput(t *testing.T) {
 		for i := range tx.TxIn {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
 
-			key, err := ecc.NewPrivateKey(ecc.S256())
+			key, err := secp256k1.GeneratePrivateKey()
 			if err != nil {
-				t.Errorf("failed to make privKey for %s: %v",
+				t.Errorf("failed to make privKey for %s: %s",
 					msg, err)
 				break
 			}
 
-			pk := (*ecc.PublicKey)(&key.PublicKey).
-				SerializeCompressed()
+			pubKey, err := key.SchnorrPublicKey()
+			if err != nil {
+				t.Errorf("failed to make a publickey for %s: %s",
+					key, err)
+				break
+			}
+
+			compressedPubKey, err := pubKey.SerializeCompressed()
+			if err != nil {
+				t.Errorf("failed to make a pubkey for %s: %s",
+					key, err)
+				break
+			}
+
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), util.Bech32PrefixKaspaTest)
+				util.Hash160(compressedPubKey), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -336,17 +383,29 @@ func TestSignTxOutput(t *testing.T) {
 	for _, hashType := range hashTypes {
 		for i := range tx.TxIn {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
-			key, err := ecc.NewPrivateKey(ecc.S256())
+			key, err := secp256k1.GeneratePrivateKey()
 			if err != nil {
-				t.Errorf("failed to make privKey for %s: %v",
+				t.Errorf("failed to make privKey for %s: %s",
 					msg, err)
 				break
 			}
 
-			pk := (*ecc.PublicKey)(&key.PublicKey).
-				SerializeUncompressed()
+			pubKey, err := key.SchnorrPublicKey()
+			if err != nil {
+				t.Errorf("failed to make a publickey for %s: %s",
+					key, err)
+				break
+			}
+
+			uncompressedPubKey, err := pubKey.SerializeUncompressed()
+			if err != nil {
+				t.Errorf("failed to make a pubkey for %s: %s",
+					key, err)
+				break
+			}
+
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), util.Bech32PrefixKaspaTest)
+				util.Hash160(uncompressedPubKey), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -392,17 +451,29 @@ func TestSignTxOutput(t *testing.T) {
 	for _, hashType := range hashTypes {
 		for i := range tx.TxIn {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
-			key, err := ecc.NewPrivateKey(ecc.S256())
+			key, err := secp256k1.GeneratePrivateKey()
 			if err != nil {
-				t.Errorf("failed to make privKey for %s: %v",
+				t.Errorf("failed to make privKey for %s: %s",
 					msg, err)
 				break
 			}
 
-			pk := (*ecc.PublicKey)(&key.PublicKey).
-				SerializeUncompressed()
+			pubKey, err := key.SchnorrPublicKey()
+			if err != nil {
+				t.Errorf("failed to make a publickey for %s: %s",
+					key, err)
+				break
+			}
+
+			uncompressedPubKey, err := pubKey.SerializeUncompressed()
+			if err != nil {
+				t.Errorf("failed to make a pubkey for %s: %s",
+					key, err)
+				break
+			}
+
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), util.Bech32PrefixKaspaTest)
+				util.Hash160(uncompressedPubKey), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -474,17 +545,29 @@ func TestSignTxOutput(t *testing.T) {
 		for i := range tx.TxIn {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
 
-			key, err := ecc.NewPrivateKey(ecc.S256())
+			key, err := secp256k1.GeneratePrivateKey()
 			if err != nil {
-				t.Errorf("failed to make privKey for %s: %v",
+				t.Errorf("failed to make privKey for %s: %s",
 					msg, err)
 				break
 			}
 
-			pk := (*ecc.PublicKey)(&key.PublicKey).
-				SerializeCompressed()
+			pubKey, err := key.SchnorrPublicKey()
+			if err != nil {
+				t.Errorf("failed to make a publickey for %s: %s",
+					key, err)
+				break
+			}
+
+			compressedPubKey, err := pubKey.SerializeCompressed()
+			if err != nil {
+				t.Errorf("failed to make a pubkey for %s: %s",
+					key, err)
+				break
+			}
+
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), util.Bech32PrefixKaspaTest)
+				util.Hash160(compressedPubKey), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -530,17 +613,29 @@ func TestSignTxOutput(t *testing.T) {
 		for i := range tx.TxIn {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
 
-			key, err := ecc.NewPrivateKey(ecc.S256())
+			key, err := secp256k1.GeneratePrivateKey()
 			if err != nil {
-				t.Errorf("failed to make privKey for %s: %v",
+				t.Errorf("failed to make privKey for %s: %s",
 					msg, err)
 				break
 			}
 
-			pk := (*ecc.PublicKey)(&key.PublicKey).
-				SerializeCompressed()
+			pubKey, err := key.SchnorrPublicKey()
+			if err != nil {
+				t.Errorf("failed to make a publickey for %s: %s",
+					key, err)
+				break
+			}
+
+			compressedPubKey, err := pubKey.SerializeCompressed()
+			if err != nil {
+				t.Errorf("failed to make a pubkey for %s: %s",
+					key, err)
+				break
+			}
+
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), util.Bech32PrefixKaspaTest)
+				util.Hash160(compressedPubKey), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -629,7 +724,7 @@ var coinbaseOutpoint = &wire.Outpoint{
 // Pregenerated private key, with associated public key and scriptPubKeys
 // for the uncompressed and compressed hash160.
 var (
-	privKeyD = []byte{0x6b, 0x0f, 0xd8, 0xda, 0x54, 0x22, 0xd0, 0xb7,
+	privKeyD = secp256k1.SerializedPrivateKey{0x6b, 0x0f, 0xd8, 0xda, 0x54, 0x22, 0xd0, 0xb7,
 		0xb4, 0xfc, 0x4e, 0x55, 0xd4, 0x88, 0x42, 0xb3, 0xa1, 0x65,
 		0xac, 0x70, 0x7f, 0x3d, 0xa4, 0x39, 0x5e, 0xcb, 0x3b, 0xb0,
 		0xd6, 0x0e, 0x06, 0x92}
@@ -864,7 +959,7 @@ var sigScriptTests = []tstSigScript{
 func TestSignatureScript(t *testing.T) {
 	t.Parallel()
 
-	privKey, _ := ecc.PrivKeyFromBytes(ecc.S256(), privKeyD)
+	privKey, _ := secp256k1.DeserializePrivateKey(&privKeyD)
 
 nexttest:
 	for i := range sigScriptTests {

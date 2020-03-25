@@ -5,10 +5,8 @@
 package txscript
 
 import (
+	"github.com/kaspanet/go-secp256k1"
 	"sync"
-
-	"github.com/kaspanet/kaspad/ecc"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // sigCacheEntry represents an entry in the SigCache. Entries within the
@@ -18,8 +16,8 @@ import (
 // match. In the occasion that two sigHashes collide, the newer sigHash will
 // simply overwrite the existing entry.
 type sigCacheEntry struct {
-	sig    *ecc.Signature
-	pubKey *ecc.PublicKey
+	sig    *secp256k1.SchnorrSignature
+	pubKey *secp256k1.SchnorrPublicKey
 }
 
 // SigCache implements an ECDSA signature verification cache with a randomized
@@ -34,7 +32,7 @@ type sigCacheEntry struct {
 // if they've already been seen and verified within the mempool.
 type SigCache struct {
 	sync.RWMutex
-	validSigs  map[daghash.Hash]sigCacheEntry
+	validSigs  map[secp256k1.Hash]sigCacheEntry
 	maxEntries uint
 }
 
@@ -45,7 +43,7 @@ type SigCache struct {
 // cache to exceed the max.
 func NewSigCache(maxEntries uint) *SigCache {
 	return &SigCache{
-		validSigs:  make(map[daghash.Hash]sigCacheEntry, maxEntries),
+		validSigs:  make(map[secp256k1.Hash]sigCacheEntry, maxEntries),
 		maxEntries: maxEntries,
 	}
 }
@@ -55,7 +53,7 @@ func NewSigCache(maxEntries uint) *SigCache {
 //
 // NOTE: This function is safe for concurrent access. Readers won't be blocked
 // unless there exists a writer, adding an entry to the SigCache.
-func (s *SigCache) Exists(sigHash daghash.Hash, sig *ecc.Signature, pubKey *ecc.PublicKey) bool {
+func (s *SigCache) Exists(sigHash secp256k1.Hash, sig *secp256k1.SchnorrSignature, pubKey *secp256k1.SchnorrPublicKey) bool {
 	s.RLock()
 	defer s.RUnlock()
 	entry, ok := s.validSigs[sigHash]
@@ -70,7 +68,7 @@ func (s *SigCache) Exists(sigHash daghash.Hash, sig *ecc.Signature, pubKey *ecc.
 //
 // NOTE: This function is safe for concurrent access. Writers will block
 // simultaneous readers until function execution has concluded.
-func (s *SigCache) Add(sigHash daghash.Hash, sig *ecc.Signature, pubKey *ecc.PublicKey) {
+func (s *SigCache) Add(sigHash secp256k1.Hash, sig *secp256k1.SchnorrSignature, pubKey *secp256k1.SchnorrPublicKey) {
 	s.Lock()
 	defer s.Unlock()
 
