@@ -1,7 +1,7 @@
 package database2
 
 // Database defines the interface of a database that can begin
-// transactions, open cursors, and close itself.
+// transactions and close itself.
 //
 // Important: This is not part of the DataAccessor interface
 // because the Transaction interface includes it. Were we to
@@ -13,9 +13,6 @@ type Database interface {
 
 	// Begin begins a new database transaction.
 	Begin() (Transaction, error)
-
-	// Cursor begins a new cursor over the given bucket.
-	Cursor(bucket []byte) (Cursor, error)
 
 	// Close closes the database.
 	Close() error

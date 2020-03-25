@@ -145,6 +145,14 @@ func (db *ffldb) RetrieveFromStore(storeName string, location []byte) ([]byte, e
 	return db.ffdb.Read(storeName, location)
 }
 
+// Cursor begins a new cursor over the given bucket.
+// This method is part of the DataAccessor interface.
+func (db *ffldb) Cursor(bucket []byte) (database2.Cursor, error) {
+	ldbCursor := db.ldb.Cursor(bucket)
+
+	return ldbCursor, nil
+}
+
 // Begin begins a new ffldb transaction.
 // This method is part of the Database interface.
 func (db *ffldb) Begin() (database2.Transaction, error) {
@@ -158,12 +166,4 @@ func (db *ffldb) Begin() (database2.Transaction, error) {
 		ffdb:  db.ffdb,
 	}
 	return transaction, nil
-}
-
-// Cursor begins a new cursor over the given bucket.
-// This method is part of the Database interface.
-func (db *ffldb) Cursor(bucket []byte) (database2.Cursor, error) {
-	ldbCursor := db.ldb.Cursor(bucket)
-
-	return ldbCursor, nil
 }

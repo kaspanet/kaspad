@@ -1,6 +1,7 @@
 package ffldb
 
 import (
+	"github.com/kaspanet/kaspad/database2"
 	"github.com/kaspanet/kaspad/database2/ffldb/ff"
 	"github.com/kaspanet/kaspad/database2/ffldb/ldb"
 )
@@ -18,21 +19,21 @@ type transaction struct {
 
 // Put sets the value for the given key. It overwrites
 // any previous value for that key.
-// This method is part of the Database interface.
+// This method is part of the DataAccessor interface.
 func (tx *transaction) Put(key []byte, value []byte) error {
 	return tx.ldbTx.Put(key, value)
 }
 
 // Get gets the value for the given key. It returns nil if
 // the given key does not exist.
-// This method is part of the Database interface.
+// This method is part of the DataAccessor interface.
 func (tx *transaction) Get(key []byte) ([]byte, error) {
 	return tx.ldbTx.Get(key)
 }
 
 // Has returns true if the database does contains the
 // given key.
-// This method is part of the Database interface.
+// This method is part of the DataAccessor interface.
 func (tx *transaction) Has(key []byte) (bool, error) {
 	return tx.ldbTx.Has(key)
 }
@@ -42,7 +43,7 @@ func (tx *transaction) Has(key []byte) (bool, error) {
 // returns a serialized location handle that's meant
 // to be stored and later used when querying the data
 // that has just now been inserted.
-// This method is part of the Database interface.
+// This method is part of the DataAccessor interface.
 func (tx *transaction) AppendToStore(storeName string, data []byte) ([]byte, error) {
 	return appendToStore(tx, tx.ffdb, storeName, data)
 }
@@ -50,9 +51,15 @@ func (tx *transaction) AppendToStore(storeName string, data []byte) ([]byte, err
 // RetrieveFromStore retrieves data from the flat file
 // stored defined by storeName using the given serialized
 // location handle. See AppendToStore for further details.
-// This method is part of the Database interface.
+// This method is part of the DataAccessor interface.
 func (tx *transaction) RetrieveFromStore(storeName string, location []byte) ([]byte, error) {
 	return tx.ffdb.Read(storeName, location)
+}
+
+// Cursor begins a new cursor over the given bucket.
+// This method is part of the DataAccessor interface.
+func (tx *transaction) Cursor(bucket []byte) (database2.Cursor, error) {
+	return tx.ldbTx.Cursor(bucket)
 }
 
 // Rollback rolls back whatever changes were made to the
