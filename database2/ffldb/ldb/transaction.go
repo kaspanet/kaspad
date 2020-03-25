@@ -30,7 +30,7 @@ type LevelDBTransaction struct {
 func (db *LevelDB) Begin() (*LevelDBTransaction, error) {
 	snapshot, err := db.ldb.GetSnapshot()
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	batch := new(leveldb.Batch)
 
@@ -102,7 +102,7 @@ func (tx *LevelDBTransaction) Get(key []byte) ([]byte, error) {
 		if errors.Is(err, leveldb.ErrNotFound) {
 			return nil, nil
 		}
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	return data, nil
 }

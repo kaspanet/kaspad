@@ -127,5 +127,5 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 func (s *flatFileStore) deleteFile(fileNumber uint32) error {
 	filePath := flatFilePath(s.basePath, s.storeName, fileNumber)
 
-	return os.Remove(filePath)
+	return errors.WithStack(os.Remove(filePath))
 }

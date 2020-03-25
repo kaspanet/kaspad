@@ -195,7 +195,7 @@ func scanFlatFiles(dbPath string, storeName string) (fileNumber uint32, fileLeng
 		stat, err := os.Stat(currentFilePath)
 		if err != nil {
 			if !os.IsNotExist(err) {
-				return 0, 0, err
+				return 0, 0, errors.WithStack(err)
 			}
 			if currentFileNumber > 0 {
 				fileNumber = currentFileNumber - 1

@@ -34,7 +34,7 @@ func (c *LevelDBCursor) Next() bool {
 // Error returns any accumulated error. Exhausting all the key/value pairs
 // is not considered to be an error.
 func (c *LevelDBCursor) Error() error {
-	return c.ldbIterator.Error()
+	return errors.WithStack(c.ldbIterator.Error())
 }
 
 // Key returns the key of the current key/value pair, or nil if done. The caller

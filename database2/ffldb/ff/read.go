@@ -118,7 +118,7 @@ func (s *flatFileStore) openFile(fileNumber uint32) (*lockableFile, error) {
 	filePath := flatFilePath(s.basePath, s.storeName, fileNumber)
 	file, err := os.Open(filePath)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	flatFile := &lockableFile{file: file}
 
