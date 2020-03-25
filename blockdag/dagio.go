@@ -643,8 +643,11 @@ func toDBBlockNode(node *blockNode) *model.BlockNode {
 
 	dbNode.Header = *node.Header()
 	dbNode.Status = uint8(node.status)
-	dbNode.SelectedParentHash = *node.selectedParent.hash
 	dbNode.BlueScore = node.blueScore
+
+	if node.selectedParent != nil {
+		dbNode.SelectedParentHash = *node.selectedParent.hash
+	}
 
 	blueHashes := make([]daghash.Hash, 0, len(node.blues))
 	for i := 0; i < len(node.blues); i++ {

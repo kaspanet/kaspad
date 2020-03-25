@@ -5,6 +5,7 @@ package blockdag
 import (
 	"compress/bzip2"
 	"encoding/binary"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 	"io"
@@ -83,6 +84,10 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 		_ = os.RemoveAll(dbPath)
 		var err error
 		config.DB, err = database.Create(testDbType, dbPath, blockDataNet)
+		if err != nil {
+			return nil, nil, errors.Errorf("error creating db: %s", err)
+		}
+		err = dbaccess.Open(dbPath)
 		if err != nil {
 			return nil, nil, errors.Errorf("error creating db: %s", err)
 		}
