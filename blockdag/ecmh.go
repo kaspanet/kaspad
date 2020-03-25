@@ -3,6 +3,7 @@ package blockdag
 import (
 	"bytes"
 	"github.com/kaspanet/kaspad/ecc"
+	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
 
@@ -13,7 +14,8 @@ func addUTXOToMultiset(ms *ecc.Multiset, entry *UTXOEntry, outpoint *wire.Outpoi
 		return nil, err
 	}
 	serializedUTXO := w.Bytes()
-	return ms.Add(serializedUTXO), nil
+	utxoHash := daghash.DoubleHashH(serializedUTXO)
+	return ms.Add(utxoHash[:]), nil
 }
 
 func removeUTXOFromMultiset(ms *ecc.Multiset, entry *UTXOEntry, outpoint *wire.Outpoint) (*ecc.Multiset, error) {
@@ -23,5 +25,6 @@ func removeUTXOFromMultiset(ms *ecc.Multiset, entry *UTXOEntry, outpoint *wire.O
 		return nil, err
 	}
 	serializedUTXO := w.Bytes()
-	return ms.Remove(serializedUTXO), nil
+	utxoHash := daghash.DoubleHashH(serializedUTXO)
+	return ms.Remove(utxoHash[:]), nil
 }
