@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/kaspanet/kaspad/dbaccess/model"
 	"github.com/pkg/errors"
 	"io"
 	"sync"
@@ -635,6 +636,77 @@ func (dag *BlockDAG) initDAGState() error {
 
 		return nil
 	})
+}
+
+func (dag *BlockDAG) toDBBlockNode(node *blockNode) *model.BlockNode {
+	dbNode := model.BlockNode{}
+
+	dbNode.Header = *node.Header()
+	dbNode.Status = uint8(node.status)
+	dbNode.SelectedParentHash = *node.selectedParent.hash
+	dbNode.BlueScore = node.blueScore
+
+	blueHashes := make([]daghash.Hash, 0, len(node.blues))
+	for i := 0; i < len(node.blues); i++ {
+		blueHashes[i] = *node.blues[i].hash
+	}
+	dbNode.BlueHashes = blueHashes
+
+	bluesAnticoneSizes := make(map[daghash.Hash]dagconfig.KType, len(node.bluesAnticoneSizes))
+	for blue, blueAnticoneSize := range node.bluesAnticoneSizes {
+		bluesAnticoneSizes[*blue.hash] = blueAnticoneSize
+	}
+	dbNode.BluesAnticoneSizes = bluesAnticoneSizes
+
+	return &dbNode
+}
+
+func (dag *BlockDAG) fromDBBlockNode(dbNode *model.BlockNode) (*blockNode, error) {
+	node := blockNode{}
+
+	node.hash = dbNode.Header.BlockHash()
+	node.version = dbNode.Header.Version
+	node.bits = dbNode.Header.Bits
+	node.nonce = dbNode.Header.Nonce
+	node.timestamp = dbNode.Header.Timestamp.Unix()
+	node.hashMerkleRoot = dbNode.Header.HashMerkleRoot
+	node.acceptedIDMerkleRoot = dbNode.Header.AcceptedIDMerkleRoot
+	node.utxoCommitment = dbNode.Header.UTXOCommitment
+
+	node.children = newBlockSet()
+	node.status = blockStatus(dbNode.Status)
+	node.blueScore = dbNode.BlueScore
+
+	node.parents = newBlockSet()
+	for _, hash := range dbNode.Header.ParentHashes {
+		parent := dag.index.LookupNode(hash)
+		if parent == nil {
+			return nil, AssertError(fmt.Sprintf("fromDBBlockNode: Could "+
+				"not find parent %s for block %s", hash, dbNode.Header.BlockHash()))
+		}
+		node.parents.add(parent)
+	}
+
+	// Zero hash means it's the genesis block, which means that it has no parents.
+	if !dbNode.SelectedParentHash.IsEqual(&daghash.ZeroHash) {
+		node.selectedParent = dag.index.LookupNode(&dbNode.SelectedParentHash)
+	}
+
+	node.blues = make([]*blockNode, len(dbNode.BlueHashes))
+	for i := 0; i < len(dbNode.BlueHashes); i++ {
+		node.blues[i] = dag.index.LookupNode(&dbNode.BlueHashes[i])
+	}
+
+	node.bluesAnticoneSizes = make(map[*blockNode]dagconfig.KType, len(dbNode.BluesAnticoneSizes))
+	for blueHash, blueAnticoneSize := range dbNode.BluesAnticoneSizes {
+		blue := dag.index.LookupNode(&blueHash)
+		if blue == nil {
+			return nil, errors.Errorf("couldn't find block with hash %s", blueHash)
+		}
+		node.bluesAnticoneSizes[blue] = blueAnticoneSize
+	}
+
+	return &node, nil
 }
 
 // deserializeBlockNode parses a value in the block index bucket and returns a block node.

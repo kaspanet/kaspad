@@ -12,59 +12,59 @@ import (
 const blockNodeSerializeSize = wire.MaxBlockHeaderPayload
 
 type BlockNode struct {
-	header             wire.BlockHeader
-	status             byte
-	selectedParentHash daghash.Hash
-	blueScore          uint64
-	blueHashes         []daghash.Hash
-	bluesAnticoneSizes map[daghash.Hash]dagconfig.KType
+	Header             wire.BlockHeader
+	Status             byte
+	SelectedParentHash daghash.Hash
+	BlueScore          uint64
+	BlueHashes         []daghash.Hash
+	BluesAnticoneSizes map[daghash.Hash]dagconfig.KType
 }
 
 func SerializeBlockNode(node *BlockNode) ([]byte, error) {
 	w := bytes.NewBuffer(make([]byte, 0, blockNodeSerializeSize))
 
-	// Serialize the header
-	err := node.header.Serialize(w)
+	// Serialize Header
+	err := node.Header.Serialize(w)
 	if err != nil {
 		return nil, err
 	}
 
-	// Serialize the status
-	err = w.WriteByte(node.status)
+	// Serialize Status
+	err = w.WriteByte(node.Status)
 	if err != nil {
 		return nil, err
 	}
 
-	// Serialize the selectedParentHash
-	_, err = w.Write(node.selectedParentHash[:])
+	// Serialize SelectedParentHash
+	_, err = w.Write(node.SelectedParentHash[:])
 	if err != nil {
 		return nil, err
 	}
 
-	// Serialize the blueScore
-	err = binaryserializer.PutUint64(w, byteOrder, node.blueScore)
+	// Serialize BlueScore
+	err = binaryserializer.PutUint64(w, byteOrder, node.BlueScore)
 	if err != nil {
 		return nil, err
 	}
 
-	// Serialize the blueHashes
-	err = binaryserializer.PutUint64(w, byteOrder, uint64(len(node.blueHashes)))
+	// Serialize BlueHashes
+	err = binaryserializer.PutUint64(w, byteOrder, uint64(len(node.BlueHashes)))
 	if err != nil {
 		return nil, err
 	}
-	for _, blueHash := range node.blueHashes {
+	for _, blueHash := range node.BlueHashes {
 		_, err = w.Write(blueHash[:])
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	// Serialize the bluesAnticoneSizes
-	err = binaryserializer.PutUint64(w, byteOrder, uint64(len(node.bluesAnticoneSizes)))
+	// Serialize BluesAnticoneSizes
+	err = binaryserializer.PutUint64(w, byteOrder, uint64(len(node.BluesAnticoneSizes)))
 	if err != nil {
 		return nil, err
 	}
-	for blueHash, blueAnticoneSize := range node.bluesAnticoneSizes {
+	for blueHash, blueAnticoneSize := range node.BluesAnticoneSizes {
 		_, err = w.Write(blueHash[:])
 		if err != nil {
 			return nil, err
@@ -82,37 +82,37 @@ func DeserializeBlockNode(serializedBlockNode []byte) (*BlockNode, error) {
 	buffer := bytes.NewReader(serializedBlockNode)
 	node := &BlockNode{}
 
-	// Deserialize the header
+	// Deserialize Header
 	var header wire.BlockHeader
 	err := header.Deserialize(buffer)
 	if err != nil {
 		return nil, err
 	}
-	node.header = header
+	node.Header = header
 
-	// Deserialize the status
+	// Deserialize Status
 	status, err := buffer.ReadByte()
 	if err != nil {
 		return nil, err
 	}
-	node.status = status
+	node.Status = status
 
-	// Deserialize the selectedParentHash
+	// Deserialize SelectedParentHash
 	selectedParentHash := daghash.Hash{}
 	_, err = io.ReadFull(buffer, selectedParentHash[:])
 	if err != nil {
 		return nil, err
 	}
-	node.selectedParentHash = selectedParentHash
+	node.SelectedParentHash = selectedParentHash
 
-	// Deserialize the blueScore
+	// Deserialize BlueScore
 	blueScore, err := binaryserializer.Uint64(buffer, byteOrder)
 	if err != nil {
 		return nil, err
 	}
-	node.blueScore = blueScore
+	node.BlueScore = blueScore
 
-	// Deserialize the blueHashes
+	// Deserialize BlueHashes
 	blueHashesCount, err := binaryserializer.Uint64(buffer, byteOrder)
 	if err != nil {
 		return nil, err
@@ -126,9 +126,9 @@ func DeserializeBlockNode(serializedBlockNode []byte) (*BlockNode, error) {
 		}
 		blueHashes[i] = blueHash
 	}
-	node.blueHashes = blueHashes
+	node.BlueHashes = blueHashes
 
-	// Deserialize the bluesAnticoneSizes
+	// Deserialize BluesAnticoneSizes
 	bluesAnticoneSizesCount, err := binaryserializer.Uint64(buffer, byteOrder)
 	if err != nil {
 		return nil, err
@@ -146,7 +146,7 @@ func DeserializeBlockNode(serializedBlockNode []byte) (*BlockNode, error) {
 		}
 		bluesAnticoneSizes[blueHash] = dagconfig.KType(bluesAnticoneSize)
 	}
-	node.bluesAnticoneSizes = bluesAnticoneSizes
+	node.BluesAnticoneSizes = bluesAnticoneSizes
 
 	return node, nil
 }
