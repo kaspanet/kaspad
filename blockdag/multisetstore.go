@@ -79,7 +79,7 @@ func (store *multisetStore) flushToDB(dbTx database.Tx) error {
 	return nil
 }
 
-func (store *multisetStore) clearDirtyEntries() {
+func (store *multisetStore) clearNewEntries() {
 	store.new = make(map[daghash.Hash]struct{})
 }
 

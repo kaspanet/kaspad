@@ -746,6 +746,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 	dag.index.clearDirtyEntries()
 	dag.utxoDiffStore.clearDirtyEntries()
 	dag.reachabilityStore.clearDirtyEntries()
+	dag.multisetStore.clearNewEntries()
 	return nil
 }
 
