@@ -98,6 +98,7 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 			spawnWaitGroup.Wait()
 			spawn = realSpawn
 			config.DB.Close()
+			dbaccess.Close()
 			os.RemoveAll(dbPath)
 		}
 	} else {

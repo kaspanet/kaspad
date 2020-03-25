@@ -649,7 +649,7 @@ func toDBBlockNode(node *blockNode) *model.BlockNode {
 		dbNode.SelectedParentHash = *node.selectedParent.hash
 	}
 
-	blueHashes := make([]daghash.Hash, 0, len(node.blues))
+	blueHashes := make([]daghash.Hash, len(node.blues))
 	for i := 0; i < len(node.blues); i++ {
 		blueHashes[i] = *node.blues[i].hash
 	}
