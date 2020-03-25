@@ -12,7 +12,7 @@ import (
 // file management such as opening and closing files as necessary to stay
 // within the maximum allowed open files limit.
 //
-// Format: <data><checksum>
+// Format: <data length><data><checksum>
 func (s *flatFileStore) read(location *flatFileLocation) ([]byte, error) {
 	if s.isClosed {
 		return nil, errors.Errorf("cannot read from a closed store %s",
@@ -44,8 +44,8 @@ func (s *flatFileStore) read(location *flatFileLocation) ([]byte, error) {
 			serializedChecksum)
 	}
 
-	// The data excludes the checksum.
-	return data[:n-4], nil
+	// The data excludes the length of the data and the checksum.
+	return data[4 : n-4], nil
 }
 
 // flatFile attempts to return an existing file handle for the passed flat file
