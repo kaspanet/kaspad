@@ -642,7 +642,8 @@ func (node *blockNode) pastUTXOMultiSet(dag *BlockDAG, acceptanceData MultiBlock
 }
 
 func addTxToMultiset(ms *ecc.Multiset, tx *wire.MsgTx, pastUTXO UTXOSet, blockBlueScore uint64) (*ecc.Multiset, error) {
-	if !tx.IsCoinBase() {
+	isCoinbase := tx.IsCoinBase()
+	if !isCoinbase {
 		for _, txIn := range tx.TxIn {
 			outpoint := *wire.NewOutpoint(&txIn.PreviousOutpoint.TxID, txIn.PreviousOutpoint.Index)
 			entry, ok := pastUTXO.Get(outpoint)
@@ -660,7 +661,7 @@ func addTxToMultiset(ms *ecc.Multiset, tx *wire.MsgTx, pastUTXO UTXOSet, blockBl
 
 	for i, txOut := range tx.TxOut {
 		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
-		entry := NewUTXOEntry(txOut, false, blockBlueScore)
+		entry := NewUTXOEntry(txOut, isCoinbase, blockBlueScore)
 
 		var err error
 		ms, err = addUTXOToMultiset(ms, entry, &outpoint)
