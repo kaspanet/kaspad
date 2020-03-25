@@ -762,7 +762,7 @@ func TestDiffUTXOSet(t *testing.T) {
 					toRemove: utxoCollection{},
 				},
 			},
-			expectedString:     "{Base: [  ], To Add: [  ], To Remove: [  ], Multiset-Hash:0000000000000000000000000000000000000000000000000000000000000000}",
+			expectedString:     "{Base: [  ], To Add: [  ], To Remove: [  ]}",
 			expectedCollection: utxoCollection{},
 		},
 		{
@@ -781,7 +781,7 @@ func TestDiffUTXOSet(t *testing.T) {
 					toRemove: utxoCollection{},
 				},
 			},
-			expectedString:     "{Base: [  ], To Add: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ], To Remove: [  ], Multiset-Hash:2103b44fd413f5c28b5ad9afe7c3bebf19afae01cc202ea63b2f29d26252948d}",
+			expectedString:     "{Base: [  ], To Add: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ], To Remove: [  ]}",
 			expectedCollection: utxoCollection{outpoint0: utxoEntry0},
 		},
 		{
@@ -794,7 +794,7 @@ func TestDiffUTXOSet(t *testing.T) {
 				},
 			},
 			expectedMeldSet:         nil,
-			expectedString:          "{Base: [  ], To Add: [  ], To Remove: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ], Multiset-Hash:bae77d5370880c238265d07b80bdadbc6085990b2d2543a5f8beb2e3bd99b25b}",
+			expectedString:          "{Base: [  ], To Add: [  ], To Remove: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ]}",
 			expectedCollection:      utxoCollection{},
 			expectedMeldToBaseError: "Couldn't remove outpoint 0000000000000000000000000000000000000000000000000000000000000000:0 because it doesn't exist in the DiffUTXOSet base",
 		},
@@ -819,7 +819,7 @@ func TestDiffUTXOSet(t *testing.T) {
 					toRemove: utxoCollection{},
 				},
 			},
-			expectedString: "{Base: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ], To Add: [ (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20, blueScore: 1 ], To Remove: [  ], Multiset-Hash:c9932064f2f4ba1940d63b747e4a18053d0b022d66894a2ec1bbf88f74570e93}",
+			expectedString: "{Base: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ], To Add: [ (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20, blueScore: 1 ], To Remove: [  ]}",
 			expectedCollection: utxoCollection{
 				outpoint0: utxoEntry0,
 				outpoint1: utxoEntry1,
@@ -843,7 +843,7 @@ func TestDiffUTXOSet(t *testing.T) {
 					toRemove: utxoCollection{},
 				},
 			},
-			expectedString:     "{Base: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ], To Add: [  ], To Remove: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ], Multiset-Hash:0000000000000000000000000000000000000000000000000000000000000000}",
+			expectedString:     "{Base: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ], To Add: [  ], To Remove: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ]}",
 			expectedCollection: utxoCollection{},
 		},
 	}
