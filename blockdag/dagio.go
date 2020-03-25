@@ -269,6 +269,11 @@ func (dag *BlockDAG) createDAGState() error {
 			return err
 		}
 
+		_, err = meta.CreateBucket(multisetBucketName)
+		if err != nil {
+			return err
+		}
+
 		err = dbPutVersion(dbTx, utxoSetVersionKeyName,
 			latestUTXOSetBucketVersion)
 		if err != nil {
@@ -320,6 +325,11 @@ func (dag *BlockDAG) removeDAGState() error {
 		}
 
 		err = meta.DeleteBucket(reachabilityDataBucketName)
+		if err != nil {
+			return err
+		}
+
+		err = meta.DeleteBucket(multisetBucketName)
 		if err != nil {
 			return err
 		}
