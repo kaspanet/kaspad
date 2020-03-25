@@ -601,7 +601,7 @@ func (node *blockNode) calcMultiset(dag *BlockDAG, transactions []*util.Tx, acce
 	}
 
 	for _, tx := range transactions {
-		ms, err = addTxToMultiset(ms, tx.MsgTx(), pastUTXO, node.blueScore)
+		ms, err = addTxToMultiset(ms, tx.MsgTx(), pastUTXO, UnacceptedBlueScore)
 		if err != nil {
 			return nil, err
 		}
