@@ -470,12 +470,21 @@ func (dag *BlockDAG) initDAGState() error {
 		// pressure on the GC.
 		log.Infof("Loading block index...")
 
-		blockIndexBucket := dbTx.Metadata().Bucket(blockIndexBucketName)
-
 		var unprocessedBlockNodes []*blockNode
-		cursor := blockIndexBucket.Cursor()
-		for ok := cursor.First(); ok; ok = cursor.Next() {
-			node, err := dag.deserializeBlockNode(cursor.Value())
+		blockIndexCursor, err := dbaccess.BlockIndexCursor(dbaccess.NoTx())
+		if err != nil {
+			return err
+		}
+		for blockIndexCursor.Next() {
+			serializedDBNode, err := blockIndexCursor.Value()
+			if err != nil {
+				return err
+			}
+			dbNode, err := model.DeserializeBlockNode(serializedDBNode)
+			if err != nil {
+				return err
+			}
+			node, err := dag.fromDBBlockNode(dbNode)
 			if err != nil {
 				return err
 			}
@@ -526,7 +535,7 @@ func (dag *BlockDAG) initDAGState() error {
 		// Determine how many UTXO entries will be loaded into the index so we can
 		// allocate the right amount.
 		var utxoEntryCount int32
-		cursor = utxoEntryBucket.Cursor()
+		cursor := utxoEntryBucket.Cursor()
 		for ok := cursor.First(); ok; ok = cursor.Next() {
 			utxoEntryCount++
 		}

@@ -25,6 +25,15 @@ func StoreIndexBlock(context Context, blockHash *daghash.Hash, block *model.Bloc
 	return db.Put(blockIndexKey, dbBlock)
 }
 
+func BlockIndexCursor(context Context) (database2.Cursor, error) {
+	db, err := context.db()
+	if err != nil {
+		return nil, err
+	}
+
+	return db.Cursor(blockIndexBucket.Path())
+}
+
 func blockIndexKey(hash *daghash.Hash) []byte {
 	return blockIndexBucket.Key(hash[:])
 }
