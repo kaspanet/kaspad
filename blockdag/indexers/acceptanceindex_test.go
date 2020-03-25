@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
@@ -97,6 +98,10 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 	defer os.RemoveAll(db1Path)
 
 	db1, err := database.Create("ffldb", db1Path, params.Net)
+	if err != nil {
+		t.Fatalf("error creating db: %s", err)
+	}
+	err = dbaccess.Open(db1Path)
 	if err != nil {
 		t.Fatalf("error creating db: %s", err)
 	}
