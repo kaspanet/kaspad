@@ -2,8 +2,8 @@ package blockdag
 
 import (
 	"bytes"
+	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/database"
-	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/pkg/errors"
@@ -12,7 +12,7 @@ import (
 type multisetStore struct {
 	dag    *BlockDAG
 	new    map[daghash.Hash]struct{}
-	loaded map[daghash.Hash]*ecc.Multiset
+	loaded map[daghash.Hash]secp256k1.MultiSet
 	mtx    *locks.PriorityMutex
 }
 
@@ -20,12 +20,12 @@ func newMultisetStore(dag *BlockDAG) *multisetStore {
 	return &multisetStore{
 		dag:    dag,
 		new:    make(map[daghash.Hash]struct{}),
-		loaded: make(map[daghash.Hash]*ecc.Multiset),
+		loaded: make(map[daghash.Hash]secp256k1.MultiSet),
 	}
 }
 
-func (store *multisetStore) setMultiset(node *blockNode, ms *ecc.Multiset) {
-	store.loaded[*node.hash] = ms
+func (store *multisetStore) setMultiset(node *blockNode, ms *secp256k1.MultiSet) {
+	store.loaded[*node.hash] = *ms
 	store.addToNewBlocks(node.hash)
 }
 
@@ -37,7 +37,7 @@ func multisetNotFoundError(blockHash *daghash.Hash) error {
 	return errors.Errorf("Couldn't find multiset data for block %s", blockHash)
 }
 
-func (store *multisetStore) multisetByBlockNode(node *blockNode) (*ecc.Multiset, error) {
+func (store *multisetStore) multisetByBlockNode(node *blockNode) (*secp256k1.MultiSet, error) {
 	ms, exists := store.multisetByBlockHash(node.hash)
 	if !exists {
 		return nil, multisetNotFoundError(node.hash)
@@ -45,9 +45,9 @@ func (store *multisetStore) multisetByBlockNode(node *blockNode) (*ecc.Multiset,
 	return ms, nil
 }
 
-func (store *multisetStore) multisetByBlockHash(hash *daghash.Hash) (*ecc.Multiset, bool) {
+func (store *multisetStore) multisetByBlockHash(hash *daghash.Hash) (*secp256k1.MultiSet, bool) {
 	ms, ok := store.loaded[*hash]
-	return ms, ok
+	return &ms, ok
 }
 
 // flushToDB writes all new multiset data to the database.
@@ -66,7 +66,7 @@ func (store *multisetStore) flushToDB(dbTx database.Tx) error {
 			return multisetNotFoundError(&hash)
 		}
 
-		err := serializeMultiset(w, ms)
+		err := serializeMultiset(w, &ms)
 		if err != nil {
 			return err
 		}
@@ -97,7 +97,7 @@ func (store *multisetStore) init(dbTx database.Tx) error {
 			return err
 		}
 
-		store.loaded[*hash] = ms
+		store.loaded[*hash] = *ms
 	}
 	return nil
 }

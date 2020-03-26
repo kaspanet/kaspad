@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/ecc"
+	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/wire"
 )
 
@@ -485,7 +485,7 @@ func NewFullUTXOSet() *FullUTXOSet {
 // newFullUTXOSetFromUTXOCollection converts a utxoCollection to a FullUTXOSet
 func newFullUTXOSetFromUTXOCollection(collection utxoCollection) (*FullUTXOSet, error) {
 	var err error
-	multiset := ecc.NewMultiset(ecc.S256())
+	multiset := secp256k1.NewMultiset()
 	for outpoint, utxoEntry := range collection {
 		multiset, err = addUTXOToMultiset(multiset, utxoEntry, &outpoint)
 		if err != nil {

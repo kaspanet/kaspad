@@ -109,7 +109,7 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 			return nil, err
 		}
 
-		template.Block.Header.UTXOCommitment = ms.Hash()
+		template.Block.Header.UTXOCommitment = (*daghash.Hash)(ms.Finalize())
 	}
 	return template.Block, nil
 }

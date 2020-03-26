@@ -6,7 +6,6 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/ecc"
 	"math"
 	"sort"
 	"sync"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
+	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/txscript"
@@ -595,7 +595,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 }
 
 // calcMultiset returns the multiset of the UTXO of the given block with the given transactions.
-func (node *blockNode) calcMultiset(dag *BlockDAG, transactions []*util.Tx, acceptanceData MultiBlockTxsAcceptanceData, selectedParentUTXO, pastUTXO UTXOSet) (*ecc.Multiset, error) {
+func (node *blockNode) calcMultiset(dag *BlockDAG, transactions []*util.Tx, acceptanceData MultiBlockTxsAcceptanceData, selectedParentUTXO, pastUTXO UTXOSet) (*secp256k1.MultiSet, error) {
 	ms, err := node.pastUTXOMultiSet(dag, acceptanceData, selectedParentUTXO)
 	if err != nil {
 		return nil, err
@@ -615,10 +615,10 @@ func (node *blockNode) calcMultiset(dag *BlockDAG, transactions []*util.Tx, acce
 // parent, replaces all the selected parent outputs' blue score with
 // the block blue score and returns the result.
 func (node *blockNode) acceptedSelectedParentMultiset(dag *BlockDAG,
-	acceptanceData MultiBlockTxsAcceptanceData) (*ecc.Multiset, error) {
+	acceptanceData MultiBlockTxsAcceptanceData) (*secp256k1.MultiSet, error) {
 
 	if node.isGenesis() {
-		return ecc.NewMultiset(ecc.S256()), nil
+		return secp256k1.NewMultiset(), nil
 	}
 
 	ms, err := dag.multisetStore.multisetByBlockNode(node.selectedParent)
@@ -656,7 +656,7 @@ func (node *blockNode) acceptedSelectedParentMultiset(dag *BlockDAG,
 	return ms, nil
 }
 
-func (node *blockNode) pastUTXOMultiSet(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData, selectedParentUTXO UTXOSet) (*ecc.Multiset, error) {
+func (node *blockNode) pastUTXOMultiSet(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData, selectedParentUTXO UTXOSet) (*secp256k1.MultiSet, error) {
 	ms, err := node.acceptedSelectedParentMultiset(dag, acceptanceData)
 	if err != nil {
 		return nil, err
@@ -684,7 +684,7 @@ func (node *blockNode) pastUTXOMultiSet(dag *BlockDAG, acceptanceData MultiBlock
 	return ms, nil
 }
 
-func addTxToMultiset(ms *ecc.Multiset, tx *wire.MsgTx, pastUTXO UTXOSet, blockBlueScore uint64) (*ecc.Multiset, error) {
+func addTxToMultiset(ms *secp256k1.MultiSet, tx *wire.MsgTx, pastUTXO UTXOSet, blockBlueScore uint64) (*secp256k1.MultiSet, error) {
 	isCoinbase := tx.IsCoinBase()
 	if !isCoinbase {
 		for _, txIn := range tx.TxIn {
@@ -995,7 +995,7 @@ func (dag *BlockDAG) TxsAcceptedByBlockHash(blockHash *daghash.Hash) (MultiBlock
 // It returns the diff in the virtual block's UTXO set.
 //
 // This function MUST be called with the DAG state lock held (for writes).
-func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, newBlockMultiset *ecc.Multiset, selectedParentAnticone []*blockNode) (
+func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, newBlockMultiset *secp256k1.MultiSet, selectedParentAnticone []*blockNode) (
 	virtualUTXODiff *UTXODiff, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData,
 	chainUpdates *chainUpdates, err error) {
 
@@ -1069,7 +1069,7 @@ func (node *blockNode) diffFromTxs(pastUTXO UTXOSet, transactions []*util.Tx) (*
 // to save extra traversals it returns the transactions acceptance data, the compactFeeData
 // for the new block and its multiset.
 func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
-	newBlockUTXO UTXOSet, txsAcceptanceData MultiBlockTxsAcceptanceData, newBlockFeeData compactFeeData, multiset *ecc.Multiset, err error) {
+	newBlockUTXO UTXOSet, txsAcceptanceData MultiBlockTxsAcceptanceData, newBlockFeeData compactFeeData, multiset *secp256k1.MultiSet, err error) {
 
 	pastUTXO, selectedParentUTXO, txsAcceptanceData, err := dag.pastUTXO(node)
 	if err != nil {
@@ -1100,7 +1100,7 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 		return nil, nil, nil, nil, err
 	}
 
-	calculatedMultisetHash := multiset.Hash()
+	calculatedMultisetHash := daghash.Hash(*multiset.Finalize())
 	if !calculatedMultisetHash.IsEqual(node.utxoCommitment) {
 		str := fmt.Sprintf("block %s UTXO commitment is invalid - block "+
 			"header indicates %s, but calculated value is %s", node.hash,

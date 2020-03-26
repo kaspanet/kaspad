@@ -221,8 +221,13 @@ func TestFilterInsertKey(t *testing.T) {
 	}
 
 	f := bloom.NewFilter(2, 0, 0.001, wire.BloomUpdateAll)
-	f.Add(wif.SerializePubKey())
-	f.Add(util.Hash160(wif.SerializePubKey()))
+	serializedPubKey, err := wif.SerializePubKey()
+	if err != nil {
+		t.Errorf("TestFilterInsertKey SerializePubKey failed: %v", err)
+		return
+	}
+	f.Add(serializedPubKey)
+	f.Add(util.Hash160(serializedPubKey))
 
 	want, err := hex.DecodeString("038fc16b080000000000000001")
 	if err != nil {
