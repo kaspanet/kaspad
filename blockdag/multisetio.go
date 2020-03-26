@@ -10,10 +10,7 @@ import (
 const multisetPointSize = 32
 
 // serializeMultiset serializes an ECMH multiset. The serialization
-// is done by taking the (x,y) coordinnates of the multiset point and
-// padding each one of them with 32 byte (it'll be 32 byte in most
-// cases anyway except one of the coordinates is zero) and writing
-// them one after the other.
+// uses the following format: <x (32 bytes)><y (32 bytes)>.
 func serializeMultiset(w io.Writer, ms *ecc.Multiset) error {
 	x, y := ms.Point()
 	xBytes := make([]byte, multisetPointSize)

@@ -594,6 +594,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	return chainUpdates, nil
 }
 
+// calcMultiset returns the multiset of the UTXO of the given block with the given transactions.
 func (node *blockNode) calcMultiset(dag *BlockDAG, transactions []*util.Tx, acceptanceData MultiBlockTxsAcceptanceData, selectedParentUTXO, pastUTXO UTXOSet) (*ecc.Multiset, error) {
 	ms, err := node.pastUTXOMultiSet(dag, acceptanceData, selectedParentUTXO)
 	if err != nil {
@@ -610,15 +611,20 @@ func (node *blockNode) calcMultiset(dag *BlockDAG, transactions []*util.Tx, acce
 	return ms, nil
 }
 
-func (node *blockNode) selectParentMultiSet(dag *BlockDAG) (*ecc.Multiset, error) {
+func (node *blockNode) selectedParentMultiSet(dag *BlockDAG) (*ecc.Multiset, error) {
 	if node.isGenesis() {
 		return ecc.NewMultiset(ecc.S256()), nil
 	}
 	return dag.multisetStore.multisetByBlockNode(node.selectedParent)
 }
 
-func (node *blockNode) acceptedSelectedParentMultiset(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData) (*ecc.Multiset, error) {
-	ms, err := node.selectParentMultiSet(dag)
+// acceptedSelectedParentMultiset takes the multiset of the selected
+// parent, replaces all the selected parent outputs' blue score with
+// the block blue score and returns the result.
+func (node *blockNode) acceptedSelectedParentMultiset(dag *BlockDAG,
+	acceptanceData MultiBlockTxsAcceptanceData) (*ecc.Multiset, error) {
+
+	ms, err := node.selectedParentMultiSet(dag)
 	if err != nil {
 		return nil, err
 	}
@@ -989,7 +995,8 @@ func (dag *BlockDAG) TxsAcceptedByBlockHash(blockHash *daghash.Hash) (MultiBlock
 // 4. Updates each of the tips' utxoDiff.
 // 5. Applies the new virtual's blue score to all the unaccepted UTXOs
 // 6. Adds the block to the reachability structures
-// 7. Updates the finality point of the DAG (if required).
+// 7. Adds the multiset of the block to the multiset store.
+// 8. Updates the finality point of the DAG (if required).
 //
 // It returns the diff in the virtual block's UTXO set.
 //

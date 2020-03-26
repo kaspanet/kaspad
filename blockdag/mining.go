@@ -37,7 +37,7 @@ func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, er
 		msgBlock.AddTransaction(tx.MsgTx())
 	}
 
-	ms, err := dag.NextBlockMultiset(transactions)
+	multiset, err := dag.NextBlockMultiset(transactions)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, er
 		ParentHashes:         dag.TipHashes(),
 		HashMerkleRoot:       hashMerkleTree.Root(),
 		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
-		UTXOCommitment:       ms.Hash(),
+		UTXOCommitment:       multiset.Hash(),
 		Timestamp:            blockTimestamp,
 		Bits:                 requiredDifficulty,
 	}
