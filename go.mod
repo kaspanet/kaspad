@@ -11,7 +11,7 @@ require (
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/jrick/logrotate v1.0.0
-	github.com/kaspanet/go-secp256k1 v0.0.0-20200326113007-add33b62838a
+	github.com/kaspanet/go-secp256k1 v0.0.2
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/syndtr/goleveldb v1.0.0

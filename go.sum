@@ -21,8 +21,8 @@ github.com/jessevdk/go-flags v1.4.0 h1:4IU2WS7AumrZ/40jfhf4QVDMsQwqA7VEHozFRrGAR
 github.com/jessevdk/go-flags v1.4.0/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
 github.com/jrick/logrotate v1.0.0 h1:lQ1bL/n9mBNeIXoTUoYRlK4dHuNJVofX9oWqBtPnSzI=
 github.com/jrick/logrotate v1.0.0/go.mod h1:LNinyqDIJnpAur+b8yyulnQw/wDuN1+BYKlTRt3OuAQ=
-github.com/kaspanet/go-secp256k1 v0.0.0-20200326113007-add33b62838a h1:/7JHxqxFvfuUr+u8k8kZ4R8Gjyb0TZnvYXrMyGjEAN0=
-github.com/kaspanet/go-secp256k1 v0.0.0-20200326113007-add33b62838a/go.mod h1:W9OcWBKzH8P/PN2WAUn9k2YmZG/Uc660WAL1NTS3G3M=
+github.com/kaspanet/go-secp256k1 v0.0.2 h1:KZGXddYHxzS02rx6EPPQYYe2tZ/rREj4P6XxgQQwQIw=
+github.com/kaspanet/go-secp256k1 v0.0.2/go.mod h1:W9OcWBKzH8P/PN2WAUn9k2YmZG/Uc660WAL1NTS3G3M=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
