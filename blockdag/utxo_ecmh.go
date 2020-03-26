@@ -2,31 +2,24 @@ package blockdag
 
 import (
 	"bytes"
-	"github.com/golang/groupcache/lru"
 	"github.com/kaspanet/kaspad/ecc"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
 
-const ecmhCacheSize = 4_000_000
-
-var (
-	utxoToECMHCache = lru.New(ecmhCacheSize)
-)
-
-func utxoMultiset(entry *UTXOEntry, outpoint *wire.Outpoint) (*ecc.Multiset, error) {
+func addUTXOToMultiset(ms *ecc.Multiset, entry *UTXOEntry, outpoint *wire.Outpoint) (*ecc.Multiset, error) {
 	w := &bytes.Buffer{}
 	err := serializeUTXO(w, entry, outpoint)
 	if err != nil {
 		return nil, err
 	}
-	serializedUTXO := w.Bytes()
-	utxoHash := daghash.DoubleHashH(serializedUTXO)
+	return ms.Add(w.Bytes()), nil
+}
 
-	if cachedMSPoint, ok := utxoToECMHCache.Get(utxoHash); ok {
-		return cachedMSPoint.(*ecc.Multiset), nil
+func removeUTXOFromMultiset(ms *ecc.Multiset, entry *UTXOEntry, outpoint *wire.Outpoint) (*ecc.Multiset, error) {
+	w := &bytes.Buffer{}
+	err := serializeUTXO(w, entry, outpoint)
+	if err != nil {
+		return nil, err
 	}
-	msPoint := ecc.NewMultiset(ecc.S256()).Add(serializedUTXO)
-	utxoToECMHCache.Add(utxoHash, msPoint)
-	return msPoint, nil
+	return ms.Remove(w.Bytes()), nil
 }

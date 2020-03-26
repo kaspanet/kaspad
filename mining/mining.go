@@ -183,11 +183,11 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 //  |  transactions (while block size   |   |
 //  |  <= policy.BlockMinSize)          |   |
 //   -----------------------------------  --
-func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTemplate, error) {
+func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address, extraNonce uint64) (*BlockTemplate, error) {
 	g.dag.Lock()
 	defer g.dag.Unlock()
 
-	txsForBlockTemplate, err := g.selectTxs(payToAddress)
+	txsForBlockTemplate, err := g.selectTxs(payToAddress, extraNonce)
 	if err != nil {
 		return nil, errors.Errorf("failed to select transactions: %s", err)
 	}
@@ -219,15 +219,6 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	}, nil
 }
 
-func (g *BlkTmplGenerator) buildUTXOCommitment(transactions []*wire.MsgTx) (*daghash.Hash, error) {
-	utxoWithTransactions, err := g.dag.UTXOSet().WithTransactions(transactions, blockdag.UnacceptedBlueScore, false)
-	if err != nil {
-		return nil, err
-	}
-
-	return utxoWithTransactions.Multiset().Hash(), nil
-}
-
 // UpdateBlockTime updates the timestamp in the header of the passed block to
 // the current time while taking into account the median time of the last
 // several blocks to ensure the new time is after that time per the DAG
@@ -240,59 +231,6 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 	// rules.
 	msgBlock.Header.Timestamp = g.dag.NextBlockTime()
 	msgBlock.Header.Bits = g.dag.NextRequiredDifficulty(msgBlock.Header.Timestamp)
-
-	return nil
-}
-
-// UpdateExtraNonce updates the extra nonce in the coinbase script of the passed
-// block by regenerating the coinbase script with the passed value and block
-// height. It also recalculates and updates the new merkle root that results
-// from changing the coinbase script.
-func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, extraNonce uint64) error {
-	coinbasePayloadScriptPubKey, _, err := blockdag.DeserializeCoinbasePayload(msgBlock.Transactions[util.CoinbaseTransactionIndex])
-	if err != nil {
-		return err
-	}
-
-	coinbasePayloadExtraData, err := blockdag.CoinbasePayloadExtraData(extraNonce, CoinbaseFlags)
-	if err != nil {
-		return err
-	}
-	coinbasePayload, err := blockdag.SerializeCoinbasePayload(coinbasePayloadScriptPubKey, coinbasePayloadExtraData)
-	if err != nil {
-		return err
-	}
-	if len(coinbasePayload) > blockdag.MaxCoinbasePayloadLen {
-		return errors.Errorf("coinbase transaction script length "+
-			"of %d is out of range (max: %d)",
-			len(coinbasePayload),
-			blockdag.MaxCoinbasePayloadLen)
-	}
-	oldCoinbaseTx := msgBlock.Transactions[util.CoinbaseTransactionIndex]
-	msgBlock.Transactions[util.CoinbaseTransactionIndex] = wire.NewSubnetworkMsgTx(oldCoinbaseTx.Version, oldCoinbaseTx.TxIn, oldCoinbaseTx.TxOut, &oldCoinbaseTx.SubnetworkID, oldCoinbaseTx.Gas, coinbasePayload)
-
-	// TODO(davec): A util.Block should use saved in the state to avoid
-	// recalculating all of the other transaction hashes.
-	// block.Transactions[util.CoinbaseTransactionIndex].InvalidateCache()
-
-	// Recalculate the merkle roots with the updated extra nonce.
-	block := util.NewBlock(msgBlock)
-	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(block.Transactions())
-	msgBlock.Header.HashMerkleRoot = hashMerkleTree.Root()
-
-	// buildUTXOCommitment is the only function in UpdateExtraNonce that
-	// requires the dagLock, and as such we lock and unlock it locally.
-	utxoCommitment, err := func() (*daghash.Hash, error) {
-		g.dag.Lock()
-		defer g.dag.Unlock()
-
-		return g.buildUTXOCommitment(msgBlock.Transactions)
-	}()
-	if err != nil {
-		return err
-	}
-
-	msgBlock.Header.UTXOCommitment = utxoCommitment
 
 	return nil
 }

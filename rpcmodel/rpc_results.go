@@ -108,7 +108,6 @@ type GetBlockDAGInfoResult struct {
 	TipHashes            []string                            `json:"tipHashes"`
 	Difficulty           float64                             `json:"difficulty"`
 	MedianTime           int64                               `json:"medianTime"`
-	UTXOCommitment       string                              `json:"utxoCommitment"`
 	VerificationProgress float64                             `json:"verificationProgress,omitempty"`
 	Pruned               bool                                `json:"pruned"`
 	PruneHeight          uint64                              `json:"pruneHeight,omitempty"`
