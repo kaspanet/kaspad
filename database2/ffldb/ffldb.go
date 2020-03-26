@@ -95,14 +95,14 @@ func (db *ffldb) AppendToStore(storeName string, data []byte) ([]byte, error) {
 }
 
 func appendToStore(accessor database2.DataAccessor, ffdb *ff.FlatFileDB, storeName string, data []byte) ([]byte, error) {
-	// Save a reference to the current block location in case
+	// Save a reference to the current location in case
 	// we fail and need to rollback.
-	previousBlockLocation, err := ffdb.CurrentLocation(storeName)
+	previousLocation, err := ffdb.CurrentLocation(storeName)
 	if err != nil {
 		return nil, err
 	}
 	rollback := func() error {
-		return ffdb.Rollback(storeName, previousBlockLocation)
+		return ffdb.Rollback(storeName, previousLocation)
 	}
 
 	// Append the data to the store and rollback in case of an error.
