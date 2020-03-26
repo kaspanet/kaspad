@@ -611,51 +611,46 @@ func (node *blockNode) calcMultiset(dag *BlockDAG, transactions []*util.Tx, acce
 	return ms, nil
 }
 
-func (node *blockNode) selectedParentMultiSet(dag *BlockDAG) (*ecc.Multiset, error) {
-	if node.isGenesis() {
-		return ecc.NewMultiset(ecc.S256()), nil
-	}
-	return dag.multisetStore.multisetByBlockNode(node.selectedParent)
-}
-
 // acceptedSelectedParentMultiset takes the multiset of the selected
 // parent, replaces all the selected parent outputs' blue score with
 // the block blue score and returns the result.
 func (node *blockNode) acceptedSelectedParentMultiset(dag *BlockDAG,
 	acceptanceData MultiBlockTxsAcceptanceData) (*ecc.Multiset, error) {
 
-	ms, err := node.selectedParentMultiSet(dag)
+	if node.isGenesis() {
+		return ecc.NewMultiset(ecc.S256()), nil
+	}
+
+	ms, err := dag.multisetStore.multisetByBlockNode(node.selectedParent)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, blockAcceptanceData := range acceptanceData {
-		if !blockAcceptanceData.BlockHash.IsEqual(node.selectedParent.hash) {
-			continue
-		}
-		for _, txAcceptanceData := range blockAcceptanceData.TxAcceptanceData {
-			tx := txAcceptanceData.Tx
-			msgTx := tx.MsgTx()
-			isCoinbase := tx.IsCoinBase()
-			for i, txOut := range msgTx.TxOut {
-				outpoint := *wire.NewOutpoint(tx.ID(), uint32(i))
+	selectedParentAcceptanceData, exists := acceptanceData.FindAcceptanceData(node.selectedParent.hash)
+	if !exists {
+		return nil, errors.Errorf("couldn't find selected parent acceptance data for block %s", node)
+	}
+	for _, txAcceptanceData := range selectedParentAcceptanceData.TxAcceptanceData {
+		tx := txAcceptanceData.Tx
+		msgTx := tx.MsgTx()
+		isCoinbase := tx.IsCoinBase()
+		for i, txOut := range msgTx.TxOut {
+			outpoint := *wire.NewOutpoint(tx.ID(), uint32(i))
 
-				unacceptedEntry := NewUTXOEntry(txOut, isCoinbase, UnacceptedBlueScore)
-				acceptedEntry := NewUTXOEntry(txOut, isCoinbase, node.blueScore)
+			unacceptedEntry := NewUTXOEntry(txOut, isCoinbase, UnacceptedBlueScore)
+			acceptedEntry := NewUTXOEntry(txOut, isCoinbase, node.blueScore)
 
-				var err error
-				ms, err = removeUTXOFromMultiset(ms, unacceptedEntry, &outpoint)
-				if err != nil {
-					return nil, err
-				}
+			var err error
+			ms, err = removeUTXOFromMultiset(ms, unacceptedEntry, &outpoint)
+			if err != nil {
+				return nil, err
+			}
 
-				ms, err = addUTXOToMultiset(ms, acceptedEntry, &outpoint)
-				if err != nil {
-					return nil, err
-				}
+			ms, err = addUTXOToMultiset(ms, acceptedEntry, &outpoint)
+			if err != nil {
+				return nil, err
 			}
 		}
-		break
 	}
 
 	return ms, nil
