@@ -688,14 +688,13 @@ func addTxToMultiset(ms *ecc.Multiset, tx *wire.MsgTx, pastUTXO UTXOSet, blockBl
 	isCoinbase := tx.IsCoinBase()
 	if !isCoinbase {
 		for _, txIn := range tx.TxIn {
-			outpoint := *wire.NewOutpoint(&txIn.PreviousOutpoint.TxID, txIn.PreviousOutpoint.Index)
-			entry, ok := pastUTXO.Get(outpoint)
+			entry, ok := pastUTXO.Get(txIn.PreviousOutpoint)
 			if !ok {
-				return nil, errors.Errorf("Couldn't find entry for outpoint %s", outpoint)
+				return nil, errors.Errorf("Couldn't find entry for outpoint %s", txIn.PreviousOutpoint)
 			}
 
 			var err error
-			ms, err = removeUTXOFromMultiset(ms, entry, &outpoint)
+			ms, err = removeUTXOFromMultiset(ms, entry, &txIn.PreviousOutpoint)
 			if err != nil {
 				return nil, err
 			}

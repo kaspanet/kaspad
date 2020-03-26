@@ -530,8 +530,7 @@ func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blueScore uint64) (isAccepted bool
 		}
 
 		for _, txIn := range tx.TxIn {
-			outpoint := *wire.NewOutpoint(&txIn.PreviousOutpoint.TxID, txIn.PreviousOutpoint.Index)
-			fus.remove(outpoint)
+			fus.remove(txIn.PreviousOutpoint)
 		}
 	}
 
@@ -636,12 +635,11 @@ func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockBlueScore uint64) (bool, erro
 func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockBlueScore uint64, isCoinbase bool) error {
 	if !isCoinbase {
 		for _, txIn := range tx.TxIn {
-			outpoint := *wire.NewOutpoint(&txIn.PreviousOutpoint.TxID, txIn.PreviousOutpoint.Index)
-			entry, ok := dus.Get(outpoint)
+			entry, ok := dus.Get(txIn.PreviousOutpoint)
 			if !ok {
-				return errors.Errorf("Couldn't find entry for outpoint %s", outpoint)
+				return errors.Errorf("Couldn't find entry for outpoint %s", txIn.PreviousOutpoint)
 			}
-			err := dus.UTXODiff.RemoveEntry(outpoint, entry)
+			err := dus.UTXODiff.RemoveEntry(txIn.PreviousOutpoint, entry)
 			if err != nil {
 				return err
 			}
