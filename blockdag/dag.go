@@ -617,13 +617,55 @@ func (node *blockNode) selectParentMultiSet(dag *BlockDAG) (*ecc.Multiset, error
 	return dag.multisetStore.multisetByBlockNode(node.selectedParent)
 }
 
-func (node *blockNode) pastUTXOMultiSet(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData, selectedParentUTXO UTXOSet) (*ecc.Multiset, error) {
+func (node *blockNode) acceptedSelectedParentMultiset(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData) (*ecc.Multiset, error) {
 	ms, err := node.selectParentMultiSet(dag)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, blockAcceptanceData := range acceptanceData {
+		if !blockAcceptanceData.BlockHash.IsEqual(node.selectedParent.hash) {
+			continue
+		}
+		for _, txAcceptanceData := range blockAcceptanceData.TxAcceptanceData {
+			tx := txAcceptanceData.Tx
+			msgTx := tx.MsgTx()
+			isCoinbase := tx.IsCoinBase()
+			for i, txOut := range msgTx.TxOut {
+				outpoint := *wire.NewOutpoint(tx.ID(), uint32(i))
+
+				unacceptedEntry := NewUTXOEntry(txOut, isCoinbase, UnacceptedBlueScore)
+				acceptedEntry := NewUTXOEntry(txOut, isCoinbase, node.blueScore)
+
+				var err error
+				ms, err = removeUTXOFromMultiset(ms, unacceptedEntry, &outpoint)
+				if err != nil {
+					return nil, err
+				}
+
+				ms, err = addUTXOToMultiset(ms, acceptedEntry, &outpoint)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+		break
+	}
+
+	return ms, nil
+}
+
+func (node *blockNode) pastUTXOMultiSet(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData, selectedParentUTXO UTXOSet) (*ecc.Multiset, error) {
+	ms, err := node.acceptedSelectedParentMultiset(dag, acceptanceData)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, blockAcceptanceData := range acceptanceData {
+		if blockAcceptanceData.BlockHash.IsEqual(node.selectedParent.hash) {
+			continue
+		}
+
 		for _, txAcceptanceData := range blockAcceptanceData.TxAcceptanceData {
 			if !txAcceptanceData.IsAccepted {
 				continue
