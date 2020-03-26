@@ -1,6 +1,7 @@
 package dbaccess
 
 import (
+	"encoding/hex"
 	"github.com/kaspanet/kaspad/database2"
 	"github.com/pkg/errors"
 )
@@ -26,7 +27,7 @@ func StoreBlock(context Context, hash []byte, blockBytes []byte) error {
 		return err
 	}
 	if exists {
-		return errors.Errorf("block %s already exists", hash)
+		return errors.Errorf("block %s already exists", hex.EncodeToString(hash))
 	}
 
 	// Write the block's bytes to the block store
@@ -73,7 +74,7 @@ func FetchBlock(context Context, hash []byte) ([]byte, error) {
 		return nil, err
 	}
 	if blockLocation == nil {
-		return nil, errors.Errorf("block %s not found", hash)
+		return nil, errors.Errorf("block %s not found", hex.EncodeToString(hash))
 	}
 	bytes, err := db.RetrieveFromStore(blockStoreName, blockLocation)
 	if err != nil {

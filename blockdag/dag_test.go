@@ -601,6 +601,9 @@ func TestAcceptingInInit(t *testing.T) {
 		t.Fatalf("error creating db: %s", err)
 	}
 	err = dbaccess.Open(dbPath)
+	if err != nil {
+		t.Fatalf("error creating db: %s", err)
+	}
 	defer func() {
 		db.Close()
 		dbaccess.Close()
