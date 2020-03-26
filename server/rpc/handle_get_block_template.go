@@ -620,14 +620,14 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 
 		extraNonce, err := random.Uint64()
 		if err != nil {
-			return internalRPCError("Failed to randomize "+
-				"extra nonce: "+err.Error(), "")
+			return internalRPCError(fmt.Sprintf("Failed to randomize "+
+				"extra nonce: %s", err.Error()), "")
 		}
 
 		blkTemplate, err := generator.NewBlockTemplate(payAddr, extraNonce)
 		if err != nil {
-			return internalRPCError("Failed to create new block "+
-				"template: "+err.Error(), "")
+			return internalRPCError(fmt.Sprintf("Failed to create new block "+
+				"template: %s", err.Error()), "")
 		}
 		template = blkTemplate
 		msgBlock = template.Block
