@@ -254,7 +254,7 @@ func (tc *testContext) mineTransactions(transactions []*util.Tx, numberOfBlocks 
 		if i == 0 {
 			blockTxs = msgTxs
 		}
-		block, err := mining.PrepareBlockForTest(tc.harness.txPool.cfg.DAG, tc.harness.txPool.cfg.DAGParams, tc.harness.txPool.cfg.DAG.TipHashes(), blockTxs, true)
+		block, err := mining.PrepareBlockForTest(tc.harness.txPool.cfg.DAG, tc.harness.txPool.cfg.DAGParams, tc.harness.txPool.cfg.DAG.TipHashes(), blockTxs, false)
 		if err != nil {
 			tc.t.Fatalf("PrepareBlockForTest: %s", err)
 		}
