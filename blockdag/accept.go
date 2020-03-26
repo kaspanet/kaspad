@@ -66,13 +66,19 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	if err != nil {
 		return err
 	}
-	blockBytes, err := block.Bytes()
+	blockExists, err := dbaccess.HasBlock(dbTx, block.Hash()[:])
 	if err != nil {
 		return err
 	}
-	err = dbaccess.StoreBlock(dbaccess.NoTx(), block.Hash()[:], blockBytes)
-	if err != nil {
-		return err
+	if !blockExists {
+		blockBytes, err := block.Bytes()
+		if err != nil {
+			return err
+		}
+		err = dbaccess.StoreBlock(dbaccess.NoTx(), block.Hash()[:], blockBytes)
+		if err != nil {
+			return err
+		}
 	}
 	err = dag.index.flushToDBWithContext(dbTx)
 	if err != nil {
