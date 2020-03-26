@@ -2,8 +2,6 @@ package dbaccess
 
 import (
 	"github.com/kaspanet/kaspad/database2"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 )
 
@@ -16,14 +14,13 @@ var (
 )
 
 // StoreBlock stores the given block in the database.
-func StoreBlock(context Context, block *util.Block) error {
+func StoreBlock(context Context, hash []byte, blockBytes []byte) error {
 	db, err := context.db()
 	if err != nil {
 		return err
 	}
 
 	// Make sure that the block does not already exist.
-	hash := block.Hash()
 	exists, err := HasBlock(context, hash)
 	if err != nil {
 		return err
@@ -33,11 +30,7 @@ func StoreBlock(context Context, block *util.Block) error {
 	}
 
 	// Write the block's bytes to the block store
-	bytes, err := block.Bytes()
-	if err != nil {
-		return err
-	}
-	blockLocation, err := db.AppendToStore(blockStoreName, bytes)
+	blockLocation, err := db.AppendToStore(blockStoreName, blockBytes)
 	if err != nil {
 		return err
 	}
@@ -54,7 +47,7 @@ func StoreBlock(context Context, block *util.Block) error {
 
 // HasBlock returns whether the block of the given hash has been
 // previously inserted into the database.
-func HasBlock(context Context, hash *daghash.Hash) (bool, error) {
+func HasBlock(context Context, hash []byte) (bool, error) {
 	db, err := context.db()
 	if err != nil {
 		return false, err
@@ -68,7 +61,7 @@ func HasBlock(context Context, hash *daghash.Hash) (bool, error) {
 // FetchBlock returns the block of the given hash. Returns an
 // error if the block had not been previously inserted into the
 // database.
-func FetchBlock(context Context, hash *daghash.Hash) (*util.Block, error) {
+func FetchBlock(context Context, hash []byte) ([]byte, error) {
 	db, err := context.db()
 	if err != nil {
 		return nil, err
@@ -87,9 +80,9 @@ func FetchBlock(context Context, hash *daghash.Hash) (*util.Block, error) {
 		return nil, err
 	}
 
-	return util.NewBlockFromBytes(bytes)
+	return bytes, nil
 }
 
-func blockLocationKey(hash *daghash.Hash) []byte {
-	return blockLocationsBucket.Key(hash[:])
+func blockLocationKey(hash []byte) []byte {
+	return blockLocationsBucket.Key(hash)
 }

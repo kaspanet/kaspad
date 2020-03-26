@@ -45,11 +45,7 @@ func (cmd *fetchBlockCmd) Execute(args []string) error {
 
 	log.Infof("Fetching block %s", blockHash)
 	startTime := time.Now()
-	block, err := dbaccess.FetchBlock(dbaccess.NoTx(), blockHash)
-	if err != nil {
-		return err
-	}
-	blockBytes, err := block.Bytes()
+	blockBytes, err := dbaccess.FetchBlock(dbaccess.NoTx(), blockHash[:])
 	if err != nil {
 		return err
 	}

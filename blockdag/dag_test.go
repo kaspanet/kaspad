@@ -633,12 +633,19 @@ func TestAcceptingInInit(t *testing.T) {
 	testNode.status = statusDataStored
 
 	// Manually add the test block to the database
-	err = dbaccess.StoreBlock(dbaccess.NoTx(), testBlock)
+	testBlockBytes, err := testBlock.Bytes()
+	if err != nil {
+		t.Fatalf("Failed to get block bytes: %s", err)
+	}
+	err = dbaccess.StoreBlock(dbaccess.NoTx(), testBlock.Hash()[:], testBlockBytes)
 	if err != nil {
 		t.Fatalf("Failed to store block: %s", err)
 	}
-	dbTestNode := toDBBlockNode(testNode)
-	err = dbaccess.StoreIndexBlock(dbaccess.NoTx(), testNode.hash, dbTestNode)
+	dbTestNode, err := serializeBlockNode(testNode)
+	if err != nil {
+		t.Fatalf("Failed to serialize blockNode: %s", err)
+	}
+	err = dbaccess.StoreIndexBlock(dbaccess.NoTx(), testNode.hash[:], testNode.blueScore, dbTestNode)
 	if err != nil {
 		t.Fatalf("Failed to update block index: %s", err)
 	}

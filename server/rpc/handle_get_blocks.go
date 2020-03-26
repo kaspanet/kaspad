@@ -83,11 +83,7 @@ func hashesToBlockBytes(s *Server, hashes []*daghash.Hash) ([][]byte, error) {
 
 	blocks := make([][]byte, len(hashes))
 	for i, hash := range hashes {
-		block, err := dbaccess.FetchBlock(dbTx, hash)
-		if err != nil {
-			return nil, err
-		}
-		blockBytes, err := block.Bytes()
+		blockBytes, err := dbaccess.FetchBlock(dbTx, hash[:])
 		if err != nil {
 			return nil, err
 		}

@@ -38,18 +38,18 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		}
 	}
 
-	block, err := dbaccess.FetchBlock(dbaccess.NoTx(), hash)
+	blkBytes, err := dbaccess.FetchBlock(dbaccess.NoTx(), hash[:])
 	if err != nil {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCBlockNotFound,
 			Message: "Block not found",
 		}
 	}
-	blkBytes, err := block.Bytes()
+	block, err := util.NewBlockFromBytes(blkBytes)
 	if err != nil {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCBlockInvalid,
-			Message: "Failed to get block bytes",
+			Message: "Cannot deserialize block",
 		}
 	}
 

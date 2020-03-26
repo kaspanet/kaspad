@@ -30,14 +30,20 @@ func TestBlockStoreSanity(t *testing.T) {
 
 	// Store the genesis block
 	genesis := util.NewBlock(dagconfig.MainnetParams.GenesisBlock)
-	err = StoreBlock(NoTx(), genesis)
+	genesisHash := genesis.Hash()
+	genesisBytes, err := genesis.Bytes()
+	if err != nil {
+		t.Fatalf("TestBlockStoreSanity: util.Block.Bytes unexpectedly "+
+			"failed: %s", err)
+	}
+	err = StoreBlock(NoTx(), genesisHash[:], genesisBytes)
 	if err != nil {
 		t.Fatalf("TestBlockStoreSanity: StoreBlock unexpectedly "+
 			"failed: %s", err)
 	}
 
 	// Make sure the genesis block now exists in the db
-	exists, err := HasBlock(NoTx(), genesis.Hash())
+	exists, err := HasBlock(NoTx(), genesisHash[:])
 	if err != nil {
 		t.Fatalf("TestBlockStoreSanity: HasBlock unexpectedly "+
 			"failed: %s", err)
@@ -49,9 +55,14 @@ func TestBlockStoreSanity(t *testing.T) {
 
 	// Fetch the genesis block back from the db and make sure
 	// that it's equal to the original
-	fetchedGenesis, err := FetchBlock(NoTx(), genesis.Hash())
+	fetchedGenesisBytes, err := FetchBlock(NoTx(), genesisHash[:])
 	if err != nil {
 		t.Fatalf("TestBlockStoreSanity: FetchBlock unexpectedly "+
+			"failed: %s", err)
+	}
+	fetchedGenesis, err := util.NewBlockFromBytes(fetchedGenesisBytes)
+	if err != nil {
+		t.Fatalf("TestBlockStoreSanity: NewBlockFromBytes unexpectedly "+
 			"failed: %s", err)
 	}
 	if !reflect.DeepEqual(genesis.MsgBlock(), fetchedGenesis.MsgBlock()) {

@@ -1018,7 +1018,11 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 func (node *blockNode) fetchBlueBlocks() ([]*util.Block, error) {
 	blueBlocks := make([]*util.Block, len(node.blues))
 	for i, blueBlockNode := range node.blues {
-		blueBlock, err := dbaccess.FetchBlock(dbaccess.NoTx(), blueBlockNode.hash)
+		blueBlockBytes, err := dbaccess.FetchBlock(dbaccess.NoTx(), blueBlockNode.hash[:])
+		if err != nil {
+			return nil, err
+		}
+		blueBlock, err := util.NewBlockFromBytes(blueBlockBytes)
 		if err != nil {
 			return nil, err
 		}

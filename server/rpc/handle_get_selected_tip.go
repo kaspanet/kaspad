@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/util"
 )
 
 // handleGetSelectedTip implements the getSelectedTip command.
@@ -11,18 +12,18 @@ func handleGetSelectedTip(s *Server, cmd interface{}, closeChan <-chan struct{})
 	getSelectedTipCmd := cmd.(*rpcmodel.GetSelectedTipCmd)
 	selectedTipHash := s.cfg.DAG.SelectedTipHash()
 
-	blk, err := dbaccess.FetchBlock(dbaccess.NoTx(), selectedTipHash)
+	blockBytes, err := dbaccess.FetchBlock(dbaccess.NoTx(), selectedTipHash[:])
 	if err != nil {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCBlockNotFound,
 			Message: "Block not found",
 		}
 	}
-	blockBytes, err := blk.Bytes()
+	blk, err := util.NewBlockFromBytes(blockBytes)
 	if err != nil {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCBlockInvalid,
-			Message: "Failed to get block bytes",
+			Message: "Cannot deserialize block",
 		}
 	}
 

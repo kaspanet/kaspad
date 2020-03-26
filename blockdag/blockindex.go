@@ -128,8 +128,11 @@ func (bi *blockIndex) flushToDBWithContext(context dbaccess.Context) error {
 	}
 
 	for node := range bi.dirty {
-		dbNode := toDBBlockNode(node)
-		err := dbaccess.StoreIndexBlock(context, node.hash, dbNode)
+		serializedBlockNode, err := serializeBlockNode(node)
+		if err != nil {
+			return err
+		}
+		err = dbaccess.StoreIndexBlock(context, node.hash[:], node.blueScore, serializedBlockNode)
 		if err != nil {
 			return err
 		}

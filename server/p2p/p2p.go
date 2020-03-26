@@ -498,7 +498,17 @@ func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- stru
 	waitChan <-chan struct{}) error {
 
 	// Fetch the block from the database.
-	block, err := dbaccess.FetchBlock(dbaccess.NoTx(), hash)
+	blockBytes, err := dbaccess.FetchBlock(dbaccess.NoTx(), hash[:])
+	if err != nil {
+		peerLog.Tracef("Unable to fetch requested block hash %s: %s",
+			hash, err)
+
+		if doneChan != nil {
+			doneChan <- struct{}{}
+		}
+		return err
+	}
+	block, err := util.NewBlockFromBytes(blockBytes)
 	if err != nil {
 		peerLog.Tracef("Unable to fetch requested block hash %s: %s",
 			hash, err)
