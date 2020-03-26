@@ -3,9 +3,10 @@ package blockdag
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/kaspanet/kaspad/ecc"
+	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 	"time"
 )
@@ -47,7 +48,7 @@ func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, er
 		ParentHashes:         dag.TipHashes(),
 		HashMerkleRoot:       hashMerkleTree.Root(),
 		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
-		UTXOCommitment:       multiset.Hash(),
+		UTXOCommitment:       (*daghash.Hash)(multiset.Finalize()),
 		Timestamp:            blockTimestamp,
 		Bits:                 requiredDifficulty,
 	}
@@ -59,7 +60,7 @@ func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, er
 // built on top of the current tips, with the given transactions.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) NextBlockMultiset(transactions []*util.Tx) (*ecc.Multiset, error) {
+func (dag *BlockDAG) NextBlockMultiset(transactions []*util.Tx) (*secp256k1.MultiSet, error) {
 	pastUTXO, selectedParentUTXO, txsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
 	if err != nil {
 		return nil, err
