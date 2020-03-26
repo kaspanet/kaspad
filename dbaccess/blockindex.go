@@ -9,6 +9,8 @@ var (
 	blockIndexBucket = database2.MakeBucket([]byte("block-index"))
 )
 
+// StoreIndexBlock stores a block in block-index
+// representation to the database.
 func StoreIndexBlock(context Context, blockHash []byte, blockBlueScore uint64, block []byte) error {
 	db, err := context.db()
 	if err != nil {
@@ -19,6 +21,8 @@ func StoreIndexBlock(context Context, blockHash []byte, blockBlueScore uint64, b
 	return db.Put(blockIndexKey, block)
 }
 
+// BlockIndexCursor opens a cursor over all the blocks-index
+// blocks that have been previously added to the database.
 func BlockIndexCursor(context Context) (database2.Cursor, error) {
 	db, err := context.db()
 	if err != nil {
