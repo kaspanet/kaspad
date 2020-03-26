@@ -38,6 +38,13 @@ func (tx *transaction) Has(key []byte) (bool, error) {
 	return tx.ldbTx.Has(key)
 }
 
+// Delete deletes the value for the given key. Will not
+// return an error if the key doesn't exist.
+// This method is part of the DataAccessor interface.
+func (tx *transaction) Delete(key []byte) error {
+	return tx.ldbTx.Delete(key)
+}
+
 // AppendToStore appends the given data to the flat
 // file store defined by storeName. This function
 // returns a serialized location handle that's meant

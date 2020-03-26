@@ -74,3 +74,9 @@ func (db *LevelDB) Has(key []byte) (bool, error) {
 	}
 	return exists, nil
 }
+
+// Delete deletes the value for the given key. Will not
+// return an error if the key doesn't exist.
+func (db *LevelDB) Delete(key []byte) error {
+	return errors.WithStack(db.ldb.Delete(key, nil))
+}

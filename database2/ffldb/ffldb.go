@@ -77,6 +77,13 @@ func (db *ffldb) Has(key []byte) (bool, error) {
 	return db.ldb.Has(key)
 }
 
+// Delete deletes the value for the given key. Will not
+// return an error if the key doesn't exist.
+// This method is part of the DataAccessor interface.
+func (db *ffldb) Delete(key []byte) error {
+	return db.ldb.Delete(key)
+}
+
 // AppendToStore appends the given data to the flat
 // file store defined by storeName. This function
 // returns a serialized location handle that's meant

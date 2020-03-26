@@ -116,6 +116,17 @@ func (tx *LevelDBTransaction) Has(key []byte) (bool, error) {
 	return tx.snapshot.Has(key, nil)
 }
 
+// Delete deletes the value for the given key. Will not
+// return an error if the key doesn't exist.
+func (tx *LevelDBTransaction) Delete(key []byte) error {
+	if tx.isClosed {
+		return errors.New("cannot delete from a closed transaction")
+	}
+
+	tx.batch.Delete(key)
+	return nil
+}
+
 // Cursor begins a new cursor over the given bucket.
 func (tx *LevelDBTransaction) Cursor(bucket []byte) (*LevelDBCursor, error) {
 	if tx.isClosed {
