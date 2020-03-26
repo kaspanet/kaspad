@@ -8,6 +8,13 @@ import (
 // LevelDBTransaction is a thin wrapper around native leveldb
 // batches and snapshots. It supports both get and put.
 //
+// Snapshots provide a frozen view of the database at the moment
+// the transaction begins. On the other hand, batches provide a
+// mechanism to combine several database writes into one write,
+// which seamlessly rolls back the database in case any individual
+// write fails. Together the two forms a logic unit similar
+// to what one might expect from a classic database transaction.
+//
 // Note: Transactions provide data consistency over the state of
 // the database as it was when the transaction started. As it's
 // currently implemented, if one puts data into the transaction
@@ -19,14 +26,7 @@ type LevelDBTransaction struct {
 	isClosed bool
 }
 
-// Begin begins a new transaction. A transaction wraps two
-// leveldb primitives: snapshots and batches. Snapshots provide
-// a frozen view of the database at the moment the transaction
-// begins. On the other hand, batches provide a mechanism to
-// combine several database writes into one write, which
-// seemlessly rolls back the database in case any individual
-// write fails. Together the two forms a logic unit similar
-// to what one might expect from a classic database transaction.
+// Begin begins a new transaction.
 func (db *LevelDB) Begin() (*LevelDBTransaction, error) {
 	snapshot, err := db.ldb.GetSnapshot()
 	if err != nil {
@@ -114,6 +114,17 @@ func (tx *LevelDBTransaction) Has(key []byte) (bool, error) {
 	}
 
 	return tx.snapshot.Has(key, nil)
+}
+
+// Delete deletes the value for the given key. Will not
+// return an error if the key doesn't exist.
+func (tx *LevelDBTransaction) Delete(key []byte) error {
+	if tx.isClosed {
+		return errors.New("cannot delete from a closed transaction")
+	}
+
+	tx.batch.Delete(key)
+	return nil
 }
 
 // Cursor begins a new cursor over the given bucket.

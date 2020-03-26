@@ -15,6 +15,10 @@ type DataAccessor interface {
 	// given key.
 	Has(key []byte) (bool, error)
 
+	// Delete deletes the value for the given key. Will not
+	// return an error if the key doesn't exist.
+	Delete(key []byte) error
+
 	// AppendToStore appends the given data to the store
 	// defined by storeName. This function returns a serialized
 	// location handle that's meant to be stored and later used
