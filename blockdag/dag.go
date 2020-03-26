@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"math"
 	"sort"
 	"sync"
@@ -598,6 +599,10 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 	feeData compactFeeData) error {
 
 	// Atomically insert info into the database.
+	dbTx2, err := dbaccess.NewTx()
+	if err != nil {
+		return err
+	}
 	err := dag.db.Update(func(dbTx database.Tx) error {
 		err := dag.index.flushToDBWithTx(dbTx)
 		if err != nil {
@@ -655,7 +660,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 		}
 
 		// Apply the fee data into the database
-		return dbStoreFeeData(dbTx, block.Hash(), feeData)
+		return dbaccess.StoreFeeData(dbTx2, block.Hash(), feeData)
 	})
 	if err != nil {
 		return err
