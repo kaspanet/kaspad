@@ -59,7 +59,7 @@ func (tx *transaction) AppendToStore(storeName string, data []byte) ([]byte, err
 // stored defined by storeName using the given serialized
 // location handle. See AppendToStore for further details.
 // This method is part of the DataAccessor interface.
-func (tx *transaction) RetrieveFromStore(storeName string, location []byte) ([]byte, error) {
+func (tx *transaction) RetrieveFromStore(storeName string, location []byte) (data []byte, found bool, err error) {
 	return tx.ffdb.Read(storeName, location)
 }
 

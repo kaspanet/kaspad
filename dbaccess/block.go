@@ -82,9 +82,12 @@ func FetchBlock(context Context, hash *daghash.Hash) (block *util.Block, found b
 	if !found {
 		return nil, false, nil
 	}
-	bytes, err := accessor.RetrieveFromStore(blockStoreName, blockLocation)
+	bytes, found, err := accessor.RetrieveFromStore(blockStoreName, blockLocation)
 	if err != nil {
 		return nil, false, err
+	}
+	if !found {
+		return nil, false, nil
 	}
 
 	block, err = util.NewBlockFromBytes(bytes)

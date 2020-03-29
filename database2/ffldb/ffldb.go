@@ -148,7 +148,7 @@ func setCurrentStoreLocation(accessor database2.DataAccessor, storeName string, 
 // stored defined by storeName using the given serialized
 // location handle. See AppendToStore for further details.
 // This method is part of the DataAccessor interface.
-func (db *ffldb) RetrieveFromStore(storeName string, location []byte) ([]byte, error) {
+func (db *ffldb) RetrieveFromStore(storeName string, location []byte) (data []byte, found bool, err error) {
 	return db.ffdb.Read(storeName, location)
 }
 

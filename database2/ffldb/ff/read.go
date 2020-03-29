@@ -13,23 +13,31 @@ import (
 // within the maximum allowed open files limit.
 //
 // Format: <data length><data><checksum>
-func (s *flatFileStore) read(location *flatFileLocation) ([]byte, error) {
+func (s *flatFileStore) read(location *flatFileLocation) (data []byte, found bool, err error) {
 	if s.isClosed {
-		return nil, errors.Errorf("cannot read from a closed store %s",
+		return nil, false, errors.Errorf("cannot read from a closed store %s",
 			s.storeName)
+	}
+
+	// Return not-found if the location is greater than or equal to
+	// the current write cursor.
+	cursor := s.writeCursor
+	if cursor.currentFileNumber < location.fileNumber ||
+		(cursor.currentFileNumber == location.fileNumber && cursor.currentOffset <= location.fileOffset) {
+		return nil, false, nil
 	}
 
 	// Get the referenced flat file.
 	flatFile, err := s.flatFile(location.fileNumber)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	data := make([]byte, location.dataLength)
+	data = make([]byte, location.dataLength)
 	n, err := flatFile.file.ReadAt(data, int64(location.fileOffset))
 	flatFile.RUnlock()
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to read data in store '%s' "+
+		return nil, false, errors.Wrapf(err, "failed to read data in store '%s' "+
 			"from file %d, offset %d", s.storeName, location.fileNumber,
 			location.fileOffset)
 	}
@@ -39,13 +47,13 @@ func (s *flatFileStore) read(location *flatFileLocation) ([]byte, error) {
 	serializedChecksum := crc32ByteOrder.Uint32(data[n-4:])
 	calculatedChecksum := crc32.Checksum(data[:n-4], castagnoli)
 	if serializedChecksum != calculatedChecksum {
-		return nil, errors.Errorf("data in store '%s' does not match "+
+		return nil, false, errors.Errorf("data in store '%s' does not match "+
 			"checksum - got %x, want %x", s.storeName, calculatedChecksum,
 			serializedChecksum)
 	}
 
 	// The data excludes the length of the data and the checksum.
-	return data[4 : n-4], nil
+	return data[4 : n-4], true, nil
 }
 
 // flatFile attempts to return an existing file handle for the passed flat file
