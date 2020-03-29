@@ -4,31 +4,20 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util"
 
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/wire"
 )
-
-// SubnetworkStore stores the subnetworks data
-type SubnetworkStore struct {
-	db database.DB
-}
-
-func newSubnetworkStore(db database.DB) *SubnetworkStore {
-	return &SubnetworkStore{
-		db: db,
-	}
-}
 
 // registerSubnetworks scans a list of transactions, singles out
 // subnetwork registry transactions, validates them, and registers a new
 // subnetwork based on it.
 // This function returns an error if one or more transactions are invalid
-func registerSubnetworks(dbTx database.Tx, txs []*util.Tx) error {
+func registerSubnetworks(context dbaccess.Context, txs []*util.Tx) error {
 	subnetworkRegistryTxs := make([]*wire.MsgTx, 0)
 	for _, tx := range txs {
 		msgTx := tx.MsgTx()
@@ -50,13 +39,13 @@ func registerSubnetworks(dbTx database.Tx, txs []*util.Tx) error {
 		if err != nil {
 			return err
 		}
-		sNet, err := dbGetSubnetwork(dbTx, subnetworkID)
+		exists, err := dbaccess.SubnetworkExists(context, subnetworkID)
 		if err != nil {
 			return err
 		}
-		if sNet == nil {
+		if !exists {
 			createdSubnetwork := newSubnetwork(registryTx)
-			err := dbRegisterSubnetwork(dbTx, subnetworkID, createdSubnetwork)
+			err := dbRegisterSubnetwork(context, subnetworkID, createdSubnetwork)
 			if err != nil {
 				return errors.Errorf("failed registering subnetwork"+
 					"for tx '%s': %s", registryTx.TxHash(), err)
@@ -85,33 +74,32 @@ func TxToSubnetworkID(tx *wire.MsgTx) (*subnetworkid.SubnetworkID, error) {
 	return subnetworkid.New(util.Hash160(txHash[:]))
 }
 
-// subnetwork returns a registered subnetwork. If the subnetwork does not exist
-// this method returns an error.
-func (s *SubnetworkStore) subnetwork(subnetworkID *subnetworkid.SubnetworkID) (*subnetwork, error) {
-	var sNet *subnetwork
-	var err error
-	dbErr := s.db.View(func(dbTx database.Tx) error {
-		sNet, err = dbGetSubnetwork(dbTx, subnetworkID)
-		return nil
-	})
-	if dbErr != nil {
-		return nil, errors.Errorf("could not retrieve subnetwork '%d': %s", subnetworkID, dbErr)
-	}
+// dbFetchSubnetwork returns a registered subnetwork.
+func dbFetchSubnetwork(subnetworkID *subnetworkid.SubnetworkID) (subnet *subnetwork, exists bool, err error) {
+	serializedSubnetwork, exists, err := dbaccess.FetchSubnetworkData(dbaccess.NoTx(), subnetworkID)
 	if err != nil {
-		return nil, errors.Errorf("could not retrieve subnetwork '%d': %s", subnetworkID, err)
+		return nil, false, err
+	}
+	if !exists {
+		return nil, false, nil
 	}
 
-	return sNet, nil
+	subnet, err = deserializeSubnetwork(serializedSubnetwork)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return subnet, true, nil
 }
 
 // GasLimit returns the gas limit of a registered subnetwork. If the subnetwork does not
 // exist this method returns an error.
-func (s *SubnetworkStore) GasLimit(subnetworkID *subnetworkid.SubnetworkID) (uint64, error) {
-	sNet, err := s.subnetwork(subnetworkID)
+func GasLimit(subnetworkID *subnetworkid.SubnetworkID) (uint64, error) {
+	sNet, exists, err := dbFetchSubnetwork(subnetworkID)
 	if err != nil {
 		return 0, err
 	}
-	if sNet == nil {
+	if !exists {
 		return 0, errors.Errorf("subnetwork '%s' not found", subnetworkID)
 	}
 
@@ -119,7 +107,7 @@ func (s *SubnetworkStore) GasLimit(subnetworkID *subnetworkid.SubnetworkID) (uin
 }
 
 // dbRegisterSubnetwork stores mappings from ID of the subnetwork to the subnetwork data.
-func dbRegisterSubnetwork(dbTx database.Tx, subnetworkID *subnetworkid.SubnetworkID, network *subnetwork) error {
+func dbRegisterSubnetwork(context dbaccess.Context, subnetworkID *subnetworkid.SubnetworkID, network *subnetwork) error {
 	// Serialize the subnetwork
 	serializedSubnetwork, err := serializeSubnetwork(network)
 	if err != nil {
@@ -127,24 +115,25 @@ func dbRegisterSubnetwork(dbTx database.Tx, subnetworkID *subnetworkid.Subnetwor
 	}
 
 	// Store the subnetwork
-	subnetworksBucket := dbTx.Metadata().Bucket(subnetworksBucketName)
-	err = subnetworksBucket.Put(subnetworkID[:], serializedSubnetwork)
-	if err != nil {
-		return errors.Errorf("failed to write sub-netowrk '%s': %s", subnetworkID, err)
-	}
-
-	return nil
+	return dbaccess.RegisterSubnetwork(context, subnetworkID, serializedSubnetwork)
 }
 
 // dbGetSubnetwork returns the subnetwork associated with subnetworkID or nil if the subnetwork was not found.
-func dbGetSubnetwork(dbTx database.Tx, subnetworkID *subnetworkid.SubnetworkID) (*subnetwork, error) {
-	bucket := dbTx.Metadata().Bucket(subnetworksBucketName)
-	serializedSubnetwork := bucket.Get(subnetworkID[:])
-	if serializedSubnetwork == nil {
-		return nil, nil
+func dbGetSubnetwork(context dbaccess.Context, subnetworkID *subnetworkid.SubnetworkID) (deserializedSubnetwork *subnetwork, exists bool, err error) {
+	serializedSubnetwork, exists, err := dbaccess.FetchSubnetworkData(context, subnetworkID)
+	if err != nil {
+		return nil, false, err
+	}
+	if !exists {
+		return nil, false, nil
 	}
 
-	return deserializeSubnetwork(serializedSubnetwork)
+	deserializedSubnetwork, err = deserializeSubnetwork(serializedSubnetwork)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return deserializedSubnetwork, true, nil
 }
 
 type subnetwork struct {

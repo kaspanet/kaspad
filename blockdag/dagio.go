@@ -55,10 +55,6 @@ var (
 	// ECMH multisets of blocks.
 	multisetBucketName = []byte("multiset")
 
-	// subnetworksBucketName is the name of the database bucket used to store the
-	// subnetwork registry.
-	subnetworksBucketName = []byte("subnetworks")
-
 	// localSubnetworkKeyName is the name of the db key used to store the
 	// node's local subnetwork ID.
 	localSubnetworkKeyName = []byte("localsubnetworkidkey")

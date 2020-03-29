@@ -152,7 +152,6 @@ type BlockDAG struct {
 
 	lastFinalityPoint *blockNode
 
-	SubnetworkStore   *SubnetworkStore
 	utxoDiffStore     *utxoDiffStore
 	reachabilityStore *reachabilityStore
 	multisetStore     *multisetStore
@@ -818,7 +817,7 @@ func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
 		if !msgTx.SubnetworkID.IsEqual(currentSubnetworkID) {
 			currentSubnetworkID = &msgTx.SubnetworkID
 			currentGasUsage = 0
-			currentSubnetworkGasLimit, err = dag.SubnetworkStore.GasLimit(currentSubnetworkID)
+			currentSubnetworkGasLimit, err = GasLimit(currentSubnetworkID)
 			if err != nil {
 				return errors.Errorf("Error getting gas limit for subnetworkID '%s': %s", currentSubnetworkID, err)
 			}
@@ -2087,7 +2086,6 @@ func New(config *Config) (*BlockDAG, error) {
 		warningCaches:                  newThresholdCaches(vbNumBits),
 		deploymentCaches:               newThresholdCaches(dagconfig.DefinedDeployments),
 		blockCount:                     0,
-		SubnetworkStore:                newSubnetworkStore(config.DB),
 		subnetworkID:                   config.SubnetworkID,
 	}
 
