@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -83,9 +84,13 @@ func hashesToBlockBytes(s *Server, hashes []*daghash.Hash) ([][]byte, error) {
 
 	blocks := make([][]byte, len(hashes))
 	for i, hash := range hashes {
-		blockBytes, err := dbaccess.FetchBlock(dbTx, hash[:])
+		blockBytes, found, err := dbaccess.FetchBlock(dbTx, hash[:])
 		if err != nil {
 			return nil, err
+		}
+		if !found {
+			return nil, errors.Errorf("block %s not found",
+				hash)
 		}
 		blocks[i] = blockBytes
 	}

@@ -31,12 +31,7 @@ func StoreBlock(context Context, hash []byte, blockBytes []byte) error {
 	}
 
 	// Write the block's bytes to the block store
-	blockLocation, err := db.AppendToStore(blockStoreName, blockBytes)
-	bytes, err := block.Bytes()
-	if err != nil {
-		return err
-	}
-	blockLocation, err := accessor.AppendToStore(blockStoreName, bytes)
+	blockLocation, err := accessor.AppendToStore(blockStoreName, blockBytes)
 	if err != nil {
 		return err
 	}
@@ -89,7 +84,7 @@ func FetchBlock(context Context, hash []byte) (block []byte, found bool, err err
 		return nil, false, nil
 	}
 
-	return bytes, nil
+	return bytes, true, nil
 }
 
 func blockLocationKey(hash []byte) []byte {

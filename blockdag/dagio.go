@@ -613,9 +613,13 @@ func (dag *BlockDAG) initDAGState() error {
 			}
 
 			// Attempt to accept the block.
-			blockBytes, err := dbaccess.FetchBlock(dbaccess.NoTx(), node.hash[:])
+			blockBytes, found, err := dbaccess.FetchBlock(dbaccess.NoTx(), node.hash[:])
 			if err != nil {
 				return err
+			}
+			if !found {
+				return errors.Errorf("block %s not found",
+					node.hash)
 			}
 			block, err := util.NewBlockFromBytes(blockBytes)
 			if err != nil {
@@ -824,9 +828,13 @@ func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
 	}
 
 	// Load the block from the database, deserialize it, and return it.
-	blockBytes, err := dbaccess.FetchBlock(dbaccess.NoTx(), node.hash[:])
+	blockBytes, found, err := dbaccess.FetchBlock(dbaccess.NoTx(), node.hash[:])
 	if err != nil {
 		return nil, err
+	}
+	if !found {
+		return nil, errors.Errorf("block %s not found",
+			node.hash)
 	}
 	return util.NewBlockFromBytes(blockBytes)
 }

@@ -12,8 +12,8 @@ func handleGetSelectedTip(s *Server, cmd interface{}, closeChan <-chan struct{})
 	getSelectedTipCmd := cmd.(*rpcmodel.GetSelectedTipCmd)
 	selectedTipHash := s.cfg.DAG.SelectedTipHash()
 
-	blockBytes, err := dbaccess.FetchBlock(dbaccess.NoTx(), selectedTipHash[:])
-	if err != nil {
+	blockBytes, found, err := dbaccess.FetchBlock(dbaccess.NoTx(), selectedTipHash[:])
+	if err != nil || !found {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCBlockNotFound,
 			Message: "Block not found",

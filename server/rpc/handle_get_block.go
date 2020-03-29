@@ -38,8 +38,8 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		}
 	}
 
-	blkBytes, err := dbaccess.FetchBlock(dbaccess.NoTx(), hash[:])
-	if err != nil {
+	blkBytes, found, err := dbaccess.FetchBlock(dbaccess.NoTx(), hash[:])
+	if err != nil || !found {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCBlockNotFound,
 			Message: "Block not found",

@@ -12,24 +12,24 @@ var (
 // StoreIndexBlock stores a block in block-index
 // representation to the database.
 func StoreIndexBlock(context Context, blockHash []byte, blockBlueScore uint64, block []byte) error {
-	db, err := context.db()
+	accessor, err := context.accessor()
 	if err != nil {
 		return err
 	}
 
 	blockIndexKey := blockIndexKey(blockHash, blockBlueScore)
-	return db.Put(blockIndexKey, block)
+	return accessor.Put(blockIndexKey, block)
 }
 
 // BlockIndexCursor opens a cursor over all the blocks-index
 // blocks that have been previously added to the database.
 func BlockIndexCursor(context Context) (database2.Cursor, error) {
-	db, err := context.db()
+	accessor, err := context.accessor()
 	if err != nil {
 		return nil, err
 	}
 
-	return db.Cursor(blockIndexBucket.Path())
+	return accessor.Cursor(blockIndexBucket.Path())
 }
 
 func blockIndexKey(blockHash []byte, blueScore uint64) []byte {
