@@ -37,13 +37,13 @@ func (c *LevelDBCursor) Error() error {
 	return errors.WithStack(c.ldbIterator.Error())
 }
 
-// First moves the iterator to the first key/value pair. It returns whether
-// such pair exist.
-func (c *LevelDBCursor) First() (bool, error) {
+// First moves the iterator to the first key/value pair. It returns false if
+// such a pair does not exist or if the cursor is closed.
+func (c *LevelDBCursor) First() bool {
 	if c.isClosed {
-		return false, errors.New("cannot go to first on a closed cursor")
+		return false
 	}
-	return c.ldbIterator.First(), nil
+	return c.ldbIterator.First()
 }
 
 // Seek moves the iterator to the first key/value pair whose key is greater
