@@ -1,14 +1,8 @@
 package dbaccess
 
 import (
-<<<<<<< HEAD
 	"encoding/hex"
 	"github.com/kaspanet/kaspad/database2"
-=======
-	"github.com/kaspanet/kaspad/database2"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
->>>>>>> origin/nod-805-database-redesign
 	"github.com/pkg/errors"
 )
 
@@ -21,43 +15,23 @@ var (
 )
 
 // StoreBlock stores the given block in the database.
-<<<<<<< HEAD
 func StoreBlock(context Context, hash []byte, blockBytes []byte) error {
-=======
-func StoreBlock(context Context, block *util.Block) error {
->>>>>>> origin/nod-805-database-redesign
 	accessor, err := context.accessor()
 	if err != nil {
 		return err
 	}
 
 	// Make sure that the block does not already exist.
-<<<<<<< HEAD
-=======
-	hash := block.Hash()
->>>>>>> origin/nod-805-database-redesign
 	exists, err := HasBlock(context, hash)
 	if err != nil {
 		return err
 	}
 	if exists {
-<<<<<<< HEAD
 		return errors.Errorf("block %s already exists", hex.EncodeToString(hash))
 	}
 
 	// Write the block's bytes to the block store
 	blockLocation, err := accessor.AppendToStore(blockStoreName, blockBytes)
-=======
-		return errors.Errorf("block %s already exists", hash)
-	}
-
-	// Write the block's bytes to the block store
-	bytes, err := block.Bytes()
-	if err != nil {
-		return err
-	}
-	blockLocation, err := accessor.AppendToStore(blockStoreName, bytes)
->>>>>>> origin/nod-805-database-redesign
 	if err != nil {
 		return err
 	}
@@ -74,11 +48,7 @@ func StoreBlock(context Context, block *util.Block) error {
 
 // HasBlock returns whether the block of the given hash has been
 // previously inserted into the database.
-<<<<<<< HEAD
 func HasBlock(context Context, hash []byte) (bool, error) {
-=======
-func HasBlock(context Context, hash *daghash.Hash) (bool, error) {
->>>>>>> origin/nod-805-database-redesign
 	accessor, err := context.accessor()
 	if err != nil {
 		return false, err
@@ -92,11 +62,7 @@ func HasBlock(context Context, hash *daghash.Hash) (bool, error) {
 // FetchBlock returns the block of the given hash. Returns
 // found=false if the block had not been previously inserted
 // into the database.
-<<<<<<< HEAD
 func FetchBlock(context Context, hash []byte) (block []byte, found bool, err error) {
-=======
-func FetchBlock(context Context, hash *daghash.Hash) (block *util.Block, found bool, err error) {
->>>>>>> origin/nod-805-database-redesign
 	accessor, err := context.accessor()
 	if err != nil {
 		return nil, false, err
@@ -118,21 +84,9 @@ func FetchBlock(context Context, hash *daghash.Hash) (block *util.Block, found b
 		return nil, false, nil
 	}
 
-<<<<<<< HEAD
 	return bytes, true, nil
 }
 
 func blockLocationKey(hash []byte) []byte {
 	return blockLocationsBucket.Key(hash)
-=======
-	block, err = util.NewBlockFromBytes(bytes)
-	if err != nil {
-		return nil, false, err
-	}
-	return block, true, nil
-}
-
-func blockLocationKey(hash *daghash.Hash) []byte {
-	return blockLocationsBucket.Key(hash[:])
->>>>>>> origin/nod-805-database-redesign
 }

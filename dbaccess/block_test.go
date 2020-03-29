@@ -30,7 +30,6 @@ func TestBlockStoreSanity(t *testing.T) {
 
 	// Store the genesis block
 	genesis := util.NewBlock(dagconfig.MainnetParams.GenesisBlock)
-<<<<<<< HEAD
 	genesisHash := genesis.Hash()
 	genesisBytes, err := genesis.Bytes()
 	if err != nil {
@@ -38,20 +37,13 @@ func TestBlockStoreSanity(t *testing.T) {
 			"failed: %s", err)
 	}
 	err = StoreBlock(NoTx(), genesisHash[:], genesisBytes)
-=======
-	err = StoreBlock(NoTx(), genesis)
->>>>>>> origin/nod-805-database-redesign
 	if err != nil {
 		t.Fatalf("TestBlockStoreSanity: StoreBlock unexpectedly "+
 			"failed: %s", err)
 	}
 
 	// Make sure the genesis block now exists in the db
-<<<<<<< HEAD
 	exists, err := HasBlock(NoTx(), genesisHash[:])
-=======
-	exists, err := HasBlock(NoTx(), genesis.Hash())
->>>>>>> origin/nod-805-database-redesign
 	if err != nil {
 		t.Fatalf("TestBlockStoreSanity: HasBlock unexpectedly "+
 			"failed: %s", err)
@@ -63,11 +55,7 @@ func TestBlockStoreSanity(t *testing.T) {
 
 	// Fetch the genesis block back from the db and make sure
 	// that it's equal to the original
-<<<<<<< HEAD
 	fetchedGenesisBytes, found, err := FetchBlock(NoTx(), genesisHash[:])
-=======
-	fetchedGenesis, found, err := FetchBlock(NoTx(), genesis.Hash())
->>>>>>> origin/nod-805-database-redesign
 	if err != nil {
 		t.Fatalf("TestBlockStoreSanity: FetchBlock unexpectedly "+
 			"failed: %s", err)
@@ -76,14 +64,11 @@ func TestBlockStoreSanity(t *testing.T) {
 		t.Fatalf("TestBlockStoreSanity: just-inserted block is " +
 			"not found in the database")
 	}
-<<<<<<< HEAD
 	fetchedGenesis, err := util.NewBlockFromBytes(fetchedGenesisBytes)
 	if err != nil {
 		t.Fatalf("TestBlockStoreSanity: NewBlockFromBytes unexpectedly "+
 			"failed: %s", err)
 	}
-=======
->>>>>>> origin/nod-805-database-redesign
 	if !reflect.DeepEqual(genesis.MsgBlock(), fetchedGenesis.MsgBlock()) {
 		t.Fatalf("TestBlockStoreSanity: just-inserted block is " +
 			"not equal to its database counterpart.")
