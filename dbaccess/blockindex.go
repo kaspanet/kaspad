@@ -16,7 +16,8 @@ func StoreIndexBlock(context Context, blockIndexKey []byte, block []byte) error 
 		return err
 	}
 
-	return accessor.Put(blockIndexKey, block)
+	key := blockIndexBucket.Key(blockIndexKey)
+	return accessor.Put(key, block)
 }
 
 // BlockIndexCursor opens a cursor over all the blocks-index
