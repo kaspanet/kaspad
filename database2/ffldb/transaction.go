@@ -24,10 +24,10 @@ func (tx *transaction) Put(key []byte, value []byte) error {
 	return tx.ldbTx.Put(key, value)
 }
 
-// Get gets the value for the given key. It returns nil if
+// Get gets the value for the given key. It returns false if
 // the given key does not exist.
 // This method is part of the DataAccessor interface.
-func (tx *transaction) Get(key []byte) ([]byte, error) {
+func (tx *transaction) Get(key []byte) ([]byte, bool, error) {
 	return tx.ldbTx.Get(key)
 }
 
