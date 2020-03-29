@@ -9,6 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -78,11 +79,14 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 	}
 
 	if config.DB == nil {
-		tmpDir := os.TempDir()
+		var err error
+		tmpDir, err := ioutil.TempDir("", "")
+		if err != nil {
+			return nil, nil, errors.Errorf("error creating temp dir: %s", err)
+		}
 
 		dbPath := filepath.Join(tmpDir, dbName)
 		_ = os.RemoveAll(dbPath)
-		var err error
 		config.DB, err = database.Create(testDbType, dbPath, blockDataNet)
 		if err != nil {
 			return nil, nil, errors.Errorf("error creating db: %s", err)
