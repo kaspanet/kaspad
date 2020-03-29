@@ -23,13 +23,6 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-const (
-	// blockHdrSize is the size of a block header. This is simply the
-	// constant from wire and is only provided here for convenience since
-	// wire.MaxBlockHeaderPayload is quite long.
-	blockHdrSize = wire.MaxBlockHeaderPayload
-)
-
 var (
 	// utxoSetBucketName is the name of the database bucket used to house the
 	// unspent transaction output set.
@@ -82,15 +75,6 @@ func (e errDeserialize) Error() string {
 func isDeserializeErr(err error) bool {
 	var deserializeErr errDeserialize
 	return errors.As(err, &deserializeErr)
-}
-
-// dbPutVersion uses an existing database transaction to update the provided
-// key in the metadata bucket to the given version. It is primarily used to
-// track versions on entities such as buckets.
-func dbPutVersion(dbTx database.Tx, key []byte, version uint32) error {
-	var serialized [4]byte
-	byteOrder.PutUint32(serialized[:], version)
-	return dbTx.Metadata().Put(key, serialized[:])
 }
 
 // -----------------------------------------------------------------------------
@@ -668,7 +652,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 }
 
 func serializeBlockNode(node *blockNode) ([]byte, error) {
-	w := bytes.NewBuffer(make([]byte, 0, blockHdrSize+1))
+	w := bytes.NewBuffer(make([]byte, 0, wire.MaxBlockHeaderPayload+1))
 	header := node.Header()
 	err := header.Serialize(w)
 	if err != nil {
