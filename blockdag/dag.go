@@ -615,7 +615,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 			return err
 		}
 
-		// Update best block state.
+		// Update DAG state.
 		state := &dagState{
 			TipHashes:         dag.TipHashes(),
 			LastFinalityPoint: dag.lastFinalityPoint.hash,
