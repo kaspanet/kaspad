@@ -132,7 +132,8 @@ func (bi *blockIndex) flushToDBWithContext(context dbaccess.Context) error {
 		if err != nil {
 			return err
 		}
-		err = dbaccess.StoreIndexBlock(context, node.hash[:], node.blueScore, serializedBlockNode)
+		key := BlockIndexKey(node.hash, node.blueScore)
+		err = dbaccess.StoreIndexBlock(context, key, serializedBlockNode)
 		if err != nil {
 			return err
 		}

@@ -35,10 +35,6 @@ const (
 )
 
 var (
-	// blockIndexBucketName is the name of the database bucket used to house the
-	// block headers and contextual information.
-	blockIndexBucketName = []byte("blockheaderidx")
-
 	// dagStateKeyName is the name of the db key used to store the DAG
 	// tip hashes.
 	dagStateKeyName = []byte("dagstate")
@@ -305,15 +301,9 @@ func (dag *BlockDAG) createDAGState() error {
 	err := dag.db.Update(func(dbTx database.Tx) error {
 		meta := dbTx.Metadata()
 
-		// Create the bucket that houses the block index data.
-		_, err := meta.CreateBucket(blockIndexBucketName)
-		if err != nil {
-			return err
-		}
-
 		// Create the buckets that house the utxo set, the utxo diffs, and their
 		// version.
-		_, err = meta.CreateBucket(utxoSetBucketName)
+		_, err := meta.CreateBucket(utxoSetBucketName)
 		if err != nil {
 			return err
 		}
@@ -363,12 +353,7 @@ func (dag *BlockDAG) removeDAGState() error {
 	err := dag.db.Update(func(dbTx database.Tx) error {
 		meta := dbTx.Metadata()
 
-		err := meta.DeleteBucket(blockIndexBucketName)
-		if err != nil {
-			return err
-		}
-
-		err = meta.DeleteBucket(utxoSetBucketName)
+		err := meta.DeleteBucket(utxoSetBucketName)
 		if err != nil {
 			return err
 		}
@@ -860,27 +845,26 @@ func (dag *BlockDAG) BlockHashesFrom(lowHash *daghash.Hash, limit int) ([]*dagha
 		return nil, err
 	}
 
-	err = dag.index.db.View(func(dbTx database.Tx) error {
-		blockIndexBucket := dbTx.Metadata().Bucket(blockIndexBucketName)
-		lowKey := BlockIndexKey(lowHash, blueScore)
-
-		cursor := blockIndexBucket.Cursor()
-		cursor.Seek(lowKey)
-		for ok := cursor.Next(); ok; ok = cursor.Next() {
-			key := cursor.Key()
-			blockHash, err := blockHashFromBlockIndexKey(key)
-			if err != nil {
-				return err
-			}
-			blockHashes = append(blockHashes, blockHash)
-			if len(blockHashes) == limit {
-				break
-			}
-		}
-		return nil
-	})
+	key := BlockIndexKey(lowHash, blueScore)
+	cursor, found, err := dbaccess.BlockIndexCursorFrom(dbaccess.NoTx(), key)
 	if err != nil {
 		return nil, err
 	}
+	if !found {
+		return nil, errors.Errorf("block %s not in block index", lowHash)
+	}
+
+	for cursor.Next() && len(blockHashes) < limit {
+		key, err := cursor.Key()
+		if err != nil {
+			return nil, err
+		}
+		blockHash, err := blockHashFromBlockIndexKey(key)
+		if err != nil {
+			return nil, err
+		}
+		blockHashes = append(blockHashes, blockHash)
+	}
+
 	return blockHashes, nil
 }
