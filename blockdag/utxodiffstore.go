@@ -64,9 +64,9 @@ func (diffStore *utxoDiffStore) setBlockDiffChild(node *blockNode, diffChild *bl
 	return nil
 }
 
-func (diffStore *utxoDiffStore) removeBlocksDiffData(dbTx database.Tx, blockHashes []*daghash.Hash) error {
+func (diffStore *utxoDiffStore) removeBlocksDiffData(context dbaccess.Context, blockHashes []*daghash.Hash) error {
 	for _, hash := range blockHashes {
-		err := diffStore.removeBlockDiffData(dbTx, hash)
+		err := diffStore.removeBlockDiffData(context, hash)
 		if err != nil {
 			return err
 		}
@@ -134,27 +134,27 @@ func (diffStore *utxoDiffStore) diffChildByNode(node *blockNode) (*blockNode, er
 	return diffData.diffChild, nil
 }
 
-func (diffStore *utxoDiffStore) diffDataFromDB(hash *daghash.Hash) (*blockUTXODiffData, error) {
-	var diffData *blockUTXODiffData
-	err := diffStore.dag.db.View(func(dbTx database.Tx) error {
-		bucket := dbTx.Metadata().Bucket(utxoDiffsBucketName)
-		serializedBlockDiffData := bucket.Get(hash[:])
-		if serializedBlockDiffData != nil {
-			var err error
-			diffData, err = diffStore.deserializeBlockUTXODiffData(serializedBlockDiffData)
-			return err
-		}
-		return nil
-	})
+func (diffStore *utxoDiffStore) diffDataFromDB(hash *daghash.Hash) (diffData *blockUTXODiffData, found bool, err error) {
+	serializedBlockDiffData, found, err := dbaccess.FetchUTXODiffData(dbaccess.NoTx(), hash)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	return diffData, nil
+
+	if !found {
+		return nil, false, nil
+	}
+
+	diffData, err = diffStore.deserializeBlockUTXODiffData(serializedBlockDiffData)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return diffData, true, nil
 }
 
 // flushToDB writes all dirty diff data to the database. If all writes
 // succeed, this clears the dirty set.
-func (diffStore *utxoDiffStore) flushToDB(dbTx database.Tx) error {
+func (diffStore *utxoDiffStore) flushToDB(context dbaccess.Context) error {
 	diffStore.mtx.HighPriorityWriteLock()
 	defer diffStore.mtx.HighPriorityWriteUnlock()
 	if len(diffStore.dirty) == 0 {
@@ -168,7 +168,7 @@ func (diffStore *utxoDiffStore) flushToDB(dbTx database.Tx) error {
 		hash := hash // Copy hash to a new variable to avoid passing the same pointer
 		buffer.Reset()
 		diffData := diffStore.loaded[hash]
-		err := dbStoreDiffData(dbTx, buffer, &hash, diffData)
+		err := dbStoreDiffData(context, buffer, &hash, diffData)
 		if err != nil {
 			return err
 		}

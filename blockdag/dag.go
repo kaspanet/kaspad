@@ -730,12 +730,12 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 			return err
 		}
 
-		err = dag.utxoDiffStore.flushToDB(dbTx)
+		err = dag.utxoDiffStore.flushToDB(dbTx2)
 		if err != nil {
 			return err
 		}
 
-		err = dag.reachabilityStore.flushToDB(dbTx)
+		err = dag.reachabilityStore.flushToDB(dbTx2)
 		if err != nil {
 			return err
 		}

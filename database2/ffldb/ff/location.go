@@ -2,6 +2,8 @@ package ff
 
 import "github.com/pkg/errors"
 
+// flatFileLocationSerializedSize is the size in bytes of a serialized flat
+// file location. See serializeLocation for further details.
 const flatFileLocationSerializedSize = 12
 
 // flatFileLocation identifies a particular flat file location.

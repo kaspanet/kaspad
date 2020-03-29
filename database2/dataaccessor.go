@@ -7,9 +7,9 @@ type DataAccessor interface {
 	// any previous value for that key.
 	Put(key []byte, value []byte) error
 
-	// Get gets the value for the given key. It returns nil if
-	// the given key does not exist.
-	Get(key []byte) ([]byte, error)
+	// Get gets the value for the given key. It returns
+	// found=false if the given key does not exist.
+	Get(key []byte) (data []byte, found bool, err error)
 
 	// Has returns true if the database does contains the
 	// given key.
@@ -28,7 +28,7 @@ type DataAccessor interface {
 	// RetrieveFromStore retrieves data from the store defined by
 	// storeName using the given serialized location handle. See
 	// AppendToStore for further details.
-	RetrieveFromStore(storeName string, location []byte) ([]byte, error)
+	RetrieveFromStore(storeName string, location []byte) (data []byte, found bool, err error)
 
 	// Cursor begins a new cursor over the given bucket.
 	Cursor(bucket []byte) (Cursor, error)

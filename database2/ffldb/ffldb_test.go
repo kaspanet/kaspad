@@ -96,9 +96,13 @@ func TestRepairFlatFiles(t *testing.T) {
 	}
 
 	// Make sure that we can't get data that no longer exists
-	_, err = ffldbInstance.RetrieveFromStore(storeName, location2)
-	if err == nil {
-		t.Fatalf("TestRepairFlatFiles: RetrieveFromStore " +
-			"unexpectedly succeeded.")
+	_, found, err := ffldbInstance.RetrieveFromStore(storeName, location2)
+	if err != nil {
+		t.Fatalf("TestRepairFlatFiles: RetrieveFromStore "+
+			"unexpectedly failed: %s", err)
+	}
+	if found {
+		t.Fatalf("TestRepairFlatFiles: unexpectedly found " +
+			"data in store")
 	}
 }
