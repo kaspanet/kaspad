@@ -24,10 +24,6 @@ import (
 )
 
 var (
-	// utxoSetBucketName is the name of the database bucket used to house the
-	// unspent transaction output set.
-	utxoSetBucketName = []byte("utxoset")
-
 	// utxoDiffsBucketName is the name of the database bucket used to house the
 	// diffs and diff children of blocks.
 	utxoDiffsBucketName = []byte("utxodiffs")
@@ -188,31 +184,23 @@ func recycleOutpointKey(key *[]byte) {
 	outpointKeyPool.Put(key)
 }
 
-// dbPutUTXODiff uses an existing database transaction to update the UTXO set
-// in the database based on the provided UTXO view contents and state. In
-// particular, only the entries that have been marked as modified are written
-// to the database.
-func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
-	utxoBucket := dbTx.Metadata().Bucket(utxoSetBucketName)
-	for outpoint := range diff.toRemove {
+// dbUpdateUTXOSet updates the UTXO set in the database based on the provided
+// UTXO diff.
+func dbUpdateUTXOSet(context dbaccess.Context, virtualUTXODiff *UTXODiff) error {
+	for outpoint := range virtualUTXODiff.toRemove {
 		key := outpointKey(outpoint)
-		err := utxoBucket.Delete(*key)
+		err := dbaccess.RemoveFromUTXOSet(context, *key)
 		recycleOutpointKey(key)
 		if err != nil {
 			return err
 		}
 	}
 
-	for outpoint, entry := range diff.toAdd {
-		// Serialize and store the UTXO entry.
+	for outpoint, entry := range virtualUTXODiff.toAdd {
 		serialized := serializeUTXOEntry(entry)
-
 		key := outpointKey(outpoint)
-		err := utxoBucket.Put(*key, serialized)
-		// NOTE: The key is intentionally not recycled here since the
-		// database interface contract prohibits modifications. It will
-		// be garbage collected normally when the database is done with
-		// it.
+		err := dbaccess.AddToUTXOSet(context, *key, serialized)
+		recycleOutpointKey(key)
 		if err != nil {
 			return err
 		}
@@ -269,14 +257,8 @@ func (dag *BlockDAG) createDAGState() error {
 	err := dag.db.Update(func(dbTx database.Tx) error {
 		meta := dbTx.Metadata()
 
-		// Create the buckets that house the utxo set, the utxo diffs, and their
-		// version.
-		_, err := meta.CreateBucket(utxoSetBucketName)
-		if err != nil {
-			return err
-		}
-
-		_, err = meta.CreateBucket(utxoDiffsBucketName)
+		// Create the buckets that house the utxo diffs.
+		_, err := meta.CreateBucket(utxoDiffsBucketName)
 		if err != nil {
 			return err
 		}
@@ -311,12 +293,7 @@ func (dag *BlockDAG) removeDAGState() error {
 	err := dag.db.Update(func(dbTx database.Tx) error {
 		meta := dbTx.Metadata()
 
-		err := meta.DeleteBucket(utxoSetBucketName)
-		if err != nil {
-			return err
-		}
-
-		err = meta.DeleteBucket(utxoDiffsBucketName)
+		err := meta.DeleteBucket(utxoDiffsBucketName)
 		if err != nil {
 			return err
 		}
@@ -419,65 +396,77 @@ func (dag *BlockDAG) initDAGState() error {
 		dag.blockCount++
 	}
 
+	// Load all of the headers from the data for the known DAG
+	// and construct the block index accordingly. Since the
+	// number of nodes are already known, perform a single alloc
+	// for them versus a whole bunch of little ones to reduce
+	// pressure on the GC.
+
+	// Load all of the known UTXO entries and construct the full
+	// UTXO set accordingly. Since the number of entries is already
+	// known, perform a single alloc for them versus a whole bunch
+	// of little ones to reduce pressure on the GC.
+	log.Infof("Loading UTXO set...")
+
+	// Determine how many UTXO entries will be loaded into the index so we can
+	// allocate the right amount.
+	var utxoEntryCount int32
+	cursor, err := dbaccess.UTXOSetCursor(dbaccess.NoTx())
+	if err != nil {
+		return err
+	}
+	for cursor.Next() {
+		utxoEntryCount++
+	}
+
+	fullUTXOCollection := make(utxoCollection, utxoEntryCount)
+	_, err = cursor.First()
+	for cursor.Next() {
+		key, err := cursor.Key()
+		if err != nil {
+			return err
+		}
+
+		// Deserialize the outpoint
+		outpoint, err := deserializeOutpoint(key)
+		if err != nil {
+			// Ensure any deserialization errors are returned as database
+			// corruption errors.
+			if isDeserializeErr(err) {
+				return database.Error{
+					ErrorCode:   database.ErrCorruption,
+					Description: fmt.Sprintf("corrupt outpoint: %s", err),
+				}
+			}
+
+			return err
+		}
+
+		value, err := cursor.Value()
+		if err != nil {
+			return err
+		}
+
+		// Deserialize the utxo entry
+		entry, err := deserializeUTXOEntry(value)
+		if err != nil {
+			// Ensure any deserialization errors are returned as database
+			// corruption errors.
+			if isDeserializeErr(err) {
+				return database.Error{
+					ErrorCode:   database.ErrCorruption,
+					Description: fmt.Sprintf("corrupt utxo entry: %s", err),
+				}
+			}
+
+			return err
+		}
+
+		fullUTXOCollection[*outpoint] = entry
+	}
+
 	// Attempt to load the DAG state from the database.
 	return dag.db.View(func(dbTx database.Tx) error {
-		// Load all of the headers from the data for the known DAG
-		// and construct the block index accordingly. Since the
-		// number of nodes are already known, perform a single alloc
-		// for them versus a whole bunch of little ones to reduce
-		// pressure on the GC.
-
-		// Load all of the known UTXO entries and construct the full
-		// UTXO set accordingly. Since the number of entries is already
-		// known, perform a single alloc for them versus a whole bunch
-		// of little ones to reduce pressure on the GC.
-		log.Infof("Loading UTXO set...")
-
-		utxoEntryBucket := dbTx.Metadata().Bucket(utxoSetBucketName)
-
-		// Determine how many UTXO entries will be loaded into the index so we can
-		// allocate the right amount.
-		var utxoEntryCount int32
-		cursor := utxoEntryBucket.Cursor()
-		for ok := cursor.First(); ok; ok = cursor.Next() {
-			utxoEntryCount++
-		}
-
-		fullUTXOCollection := make(utxoCollection, utxoEntryCount)
-		for ok := cursor.First(); ok; ok = cursor.Next() {
-			// Deserialize the outpoint
-			outpoint, err := deserializeOutpoint(cursor.Key())
-			if err != nil {
-				// Ensure any deserialization errors are returned as database
-				// corruption errors.
-				if isDeserializeErr(err) {
-					return database.Error{
-						ErrorCode:   database.ErrCorruption,
-						Description: fmt.Sprintf("corrupt outpoint: %s", err),
-					}
-				}
-
-				return err
-			}
-
-			// Deserialize the utxo entry
-			entry, err := deserializeUTXOEntry(cursor.Value())
-			if err != nil {
-				// Ensure any deserialization errors are returned as database
-				// corruption errors.
-				if isDeserializeErr(err) {
-					return database.Error{
-						ErrorCode:   database.ErrCorruption,
-						Description: fmt.Sprintf("corrupt utxo entry: %s", err),
-					}
-				}
-
-				return err
-			}
-
-			fullUTXOCollection[*outpoint] = entry
-		}
-
 		// Initialize the reachability store
 		err = dag.reachabilityStore.init(dbTx)
 		if err != nil {

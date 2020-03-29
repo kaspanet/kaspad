@@ -628,7 +628,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 
 		// Update the UTXO set using the diffSet that was melded into the
 		// full UTXO set.
-		err = dbPutUTXODiff(dbTx, virtualUTXODiff)
+		err = dbUpdateUTXOSet(dbaccess.NoTx(), virtualUTXODiff) // TODO: (Stas) Replace this with a tx context
 		if err != nil {
 			return err
 		}
