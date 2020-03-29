@@ -37,6 +37,15 @@ func (c *LevelDBCursor) Error() error {
 	return errors.WithStack(c.ldbIterator.Error())
 }
 
+// Seek moves the iterator to the first key/value pair whose key is greater
+// than or equal to the given key. It returns whether such pair exist.
+func (c *LevelDBCursor) Seek(key []byte) (bool, error) {
+	if c.isClosed {
+		return false, errors.New("cannot seek a closed cursor")
+	}
+	return c.ldbIterator.Seek(key), nil
+}
+
 // Key returns the key of the current key/value pair, or nil if done. The caller
 // should not modify the contents of the returned slice, and its contents may
 // change on the next call to Next.
