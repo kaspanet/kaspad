@@ -55,10 +55,6 @@ var (
 	// diffs and diff children of blocks.
 	utxoDiffsBucketName = []byte("utxodiffs")
 
-	// reachabilityDataBucketName is the name of the database bucket used to house the
-	// reachability tree nodes and future covering sets of blocks.
-	reachabilityDataBucketName = []byte("reachability")
-
 	// multisetBucketName is the name of the database bucket used to house the
 	// ECMH multisets of blocks.
 	multisetBucketName = []byte("multiset")
@@ -244,108 +240,13 @@ func (dag *BlockDAG) createDAGState() error {
 	// Create the initial the database DAG state including creating the
 	// necessary index buckets and inserting the genesis block.
 	err := dag.db.Update(func(dbTx database.Tx) error {
-		meta := dbTx.Metadata()
-
-		// Create the bucket that houses the block index data.
-		_, err := meta.CreateBucket(blockIndexBucketName)
-		if err != nil {
-			return err
-		}
-
-		// Create the buckets that house the utxo set, the utxo diffs, and their
-		// version.
-		_, err = meta.CreateBucket(utxoSetBucketName)
-		if err != nil {
-			return err
-		}
-
-		_, err = meta.CreateBucket(utxoDiffsBucketName)
-		if err != nil {
-			return err
-		}
-
-		_, err = meta.CreateBucket(reachabilityDataBucketName)
-		if err != nil {
-			return err
-		}
-
-		_, err = meta.CreateBucket(multisetBucketName)
-		if err != nil {
-			return err
-		}
-
-		err = dbPutVersion(dbTx, utxoSetVersionKeyName,
+		err := dbPutVersion(dbTx, utxoSetVersionKeyName,
 			latestUTXOSetBucketVersion)
 		if err != nil {
 			return err
 		}
 
-		// Create the bucket that houses the registered subnetworks.
-		_, err = meta.CreateBucket(subnetworksBucketName)
-		if err != nil {
-			return err
-		}
-
 		if err := dbPutLocalSubnetworkID(dbTx, dag.subnetworkID); err != nil {
-			return err
-		}
-
-		if _, err := meta.CreateBucketIfNotExists(idByHashIndexBucketName); err != nil {
-			return err
-		}
-		if _, err := meta.CreateBucketIfNotExists(hashByIDIndexBucketName); err != nil {
-			return err
-		}
-		return nil
-	})
-
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (dag *BlockDAG) removeDAGState() error {
-	err := dag.db.Update(func(dbTx database.Tx) error {
-		meta := dbTx.Metadata()
-
-		err := meta.DeleteBucket(blockIndexBucketName)
-		if err != nil {
-			return err
-		}
-
-		err = meta.DeleteBucket(utxoSetBucketName)
-		if err != nil {
-			return err
-		}
-
-		err = meta.DeleteBucket(utxoDiffsBucketName)
-		if err != nil {
-			return err
-		}
-
-		err = meta.DeleteBucket(reachabilityDataBucketName)
-		if err != nil {
-			return err
-		}
-
-		err = meta.DeleteBucket(multisetBucketName)
-		if err != nil {
-			return err
-		}
-
-		err = dbTx.Metadata().Delete(utxoSetVersionKeyName)
-		if err != nil {
-			return err
-		}
-
-		err = meta.DeleteBucket(subnetworksBucketName)
-		if err != nil {
-			return err
-		}
-
-		err = dbTx.Metadata().Delete(localSubnetworkKeyName)
-		if err != nil {
 			return err
 		}
 

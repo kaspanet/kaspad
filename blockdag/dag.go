@@ -2103,14 +2103,6 @@ func New(config *Config) (*BlockDAG, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if err != nil {
-			err := dag.removeDAGState()
-			if err != nil {
-				panic(fmt.Sprintf("Couldn't remove the DAG State: %s", err))
-			}
-		}
-	}()
 
 	// Initialize and catch up all of the currently active optional indexes
 	// as needed.
