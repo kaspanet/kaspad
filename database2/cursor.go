@@ -10,6 +10,10 @@ type Cursor interface {
 	// is not considered to be an error.
 	Error() error
 
+	// First moves the iterator to the first key/value pair. It returns whether
+	// such pair exist.
+	First() (bool, error)
+
 	// Seek moves the iterator to the first key/value pair whose key is greater
 	// than or equal to the given key. It returns whether such pair exist.
 	Seek(key []byte) (bool, error)

@@ -37,6 +37,15 @@ func (c *LevelDBCursor) Error() error {
 	return errors.WithStack(c.ldbIterator.Error())
 }
 
+// First moves the iterator to the first key/value pair. It returns whether
+// such pair exist.
+func (c *LevelDBCursor) First() (bool, error) {
+	if c.isClosed {
+		return false, errors.New("cannot go to first on a closed cursor")
+	}
+	return c.ldbIterator.First(), nil
+}
+
 // Seek moves the iterator to the first key/value pair whose key is greater
 // than or equal to the given key. It returns whether such pair exist.
 func (c *LevelDBCursor) Seek(key []byte) (bool, error) {
