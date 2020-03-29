@@ -421,6 +421,9 @@ func (dag *BlockDAG) initDAGState() error {
 
 	fullUTXOCollection := make(utxoCollection, utxoEntryCount)
 	_, err = cursor.First()
+	if err != nil {
+		return err
+	}
 	for cursor.Next() {
 		key, err := cursor.Key()
 		if err != nil {
