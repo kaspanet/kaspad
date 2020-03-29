@@ -28,17 +28,9 @@ const (
 	// constant from wire and is only provided here for convenience since
 	// wire.MaxBlockHeaderPayload is quite long.
 	blockHdrSize = wire.MaxBlockHeaderPayload
-
-	// latestUTXOSetBucketVersion is the current version of the UTXO set
-	// bucket that is used to track all unspent outputs.
-	latestUTXOSetBucketVersion = 1
 )
 
 var (
-	// utxoSetVersionKeyName is the name of the db key used to store the
-	// version of the utxo set currently in the database.
-	utxoSetVersionKeyName = []byte("utxosetversion")
-
 	// utxoSetBucketName is the name of the database bucket used to house the
 	// unspent transaction output set.
 	utxoSetBucketName = []byte("utxoset")
@@ -313,12 +305,6 @@ func (dag *BlockDAG) createDAGState() error {
 			return err
 		}
 
-		err = dbPutVersion(dbTx, utxoSetVersionKeyName,
-			latestUTXOSetBucketVersion)
-		if err != nil {
-			return err
-		}
-
 		// Create the bucket that houses the registered subnetworks.
 		_, err = meta.CreateBucket(subnetworksBucketName)
 		if err != nil {
@@ -359,11 +345,6 @@ func (dag *BlockDAG) removeDAGState() error {
 		}
 
 		err = meta.DeleteBucket(reachabilityDataBucketName)
-		if err != nil {
-			return err
-		}
-
-		err = dbTx.Metadata().Delete(utxoSetVersionKeyName)
 		if err != nil {
 			return err
 		}
