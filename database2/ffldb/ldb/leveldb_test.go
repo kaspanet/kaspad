@@ -36,10 +36,14 @@ func TestLevelDBSanity(t *testing.T) {
 	}
 
 	// Get from the key previously put to
-	getData, err := ldb.Get(key)
+	getData, found, err := ldb.Get(key)
 	if err != nil {
 		t.Fatalf("TestLevelDBSanity: Get returned "+
 			"unexpected error: %s", err)
+	}
+	if !found {
+		t.Fatalf("TestLevelDBSanity: key unexpectedly " +
+			"not found")
 	}
 
 	// Make sure that the put data and the get data are equal
@@ -88,15 +92,15 @@ func TestLevelDBTransactionSanity(t *testing.T) {
 	}
 
 	// Get from the key previously put to. Since the tx is not
-	// yet committed, this should return nil.
-	getData, err := ldb.Get(key)
+	// yet committed, this should return false (key not found).
+	getData, found, err := ldb.Get(key)
 	if err != nil {
 		t.Fatalf("TestLevelDBTransactionSanity: Get "+
 			"returned unexpected error: %s", err)
 	}
-	if getData != nil {
-		t.Fatalf("TestLevelDBTransactionSanity: Get " +
-			"unexpectedly returned non-nil data")
+	if found {
+		t.Fatalf("TestLevelDBSanity: key unexpectedly " +
+			"found")
 	}
 
 	// Commit the transaction
@@ -108,10 +112,14 @@ func TestLevelDBTransactionSanity(t *testing.T) {
 
 	// Get from the key previously put to. Now that the tx was
 	// committed, this should succeed.
-	getData, err = ldb.Get(key)
+	getData, found, err = ldb.Get(key)
 	if err != nil {
 		t.Fatalf("TestLevelDBTransactionSanity: Get "+
 			"returned unexpected error: %s", err)
+	}
+	if !found {
+		t.Fatalf("TestLevelDBSanity: key unexpectedly " +
+			"not found")
 	}
 
 	// Make sure that the put data and the get data are equal
@@ -139,10 +147,14 @@ func TestLevelDBTransactionSanity(t *testing.T) {
 	}
 
 	// Get from the key previously put to
-	getData, err = tx.Get(key)
+	getData, found, err = tx.Get(key)
 	if err != nil {
 		t.Fatalf("TestLevelDBTransactionSanity: Get "+
 			"returned unexpected error: %s", err)
+	}
+	if !found {
+		t.Fatalf("TestLevelDBTransactionSanity: key " +
+			"unexpectedly not found")
 	}
 
 	// Make sure that the put data and the get data are equal

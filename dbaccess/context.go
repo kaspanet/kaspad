@@ -8,14 +8,14 @@ import (
 // existence or non-existence of a database transaction
 // Call `.NoTx()` or `.NewTx()` to acquire a Context
 type Context interface {
-	db() (database2.DataAccessor, error)
+	accessor() (database2.DataAccessor, error)
 }
 
 type noTxContext struct{}
 
 var noTxContextSingleton = &noTxContext{}
 
-func (*noTxContext) db() (database2.DataAccessor, error) {
+func (*noTxContext) accessor() (database2.DataAccessor, error) {
 	return db()
 }
 
@@ -29,7 +29,7 @@ type TxContext struct {
 	dbTransaction database2.Transaction
 }
 
-func (ctx *TxContext) db() (database2.DataAccessor, error) {
+func (ctx *TxContext) accessor() (database2.DataAccessor, error) {
 	return ctx.dbTransaction, nil
 }
 

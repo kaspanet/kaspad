@@ -16,7 +16,7 @@ var (
 
 // StoreBlock stores the given block in the database.
 func StoreBlock(context Context, hash []byte, blockBytes []byte) error {
-	db, err := context.db()
+	accessor, err := context.accessor()
 	if err != nil {
 		return err
 	}
@@ -32,13 +32,18 @@ func StoreBlock(context Context, hash []byte, blockBytes []byte) error {
 
 	// Write the block's bytes to the block store
 	blockLocation, err := db.AppendToStore(blockStoreName, blockBytes)
+	bytes, err := block.Bytes()
+	if err != nil {
+		return err
+	}
+	blockLocation, err := accessor.AppendToStore(blockStoreName, bytes)
 	if err != nil {
 		return err
 	}
 
 	// Write the block's hash to the blockLocations bucket
 	blockLocationsKey := blockLocationKey(hash)
-	err = db.Put(blockLocationsKey, blockLocation)
+	err = accessor.Put(blockLocationsKey, blockLocation)
 	if err != nil {
 		return err
 	}
@@ -49,36 +54,39 @@ func StoreBlock(context Context, hash []byte, blockBytes []byte) error {
 // HasBlock returns whether the block of the given hash has been
 // previously inserted into the database.
 func HasBlock(context Context, hash []byte) (bool, error) {
-	db, err := context.db()
+	accessor, err := context.accessor()
 	if err != nil {
 		return false, err
 	}
 
 	blockLocationsKey := blockLocationKey(hash)
 
-	return db.Has(blockLocationsKey)
+	return accessor.Has(blockLocationsKey)
 }
 
-// FetchBlock returns the block of the given hash. Returns an
-// error if the block had not been previously inserted into the
-// database.
-func FetchBlock(context Context, hash []byte) ([]byte, error) {
-	db, err := context.db()
+// FetchBlock returns the block of the given hash. Returns
+// found=false if the block had not been previously inserted
+// into the database.
+func FetchBlock(context Context, hash []byte) (block []byte, found bool, err error) {
+	accessor, err := context.accessor()
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	blockLocationsKey := blockLocationKey(hash)
-	blockLocation, err := db.Get(blockLocationsKey)
+	blockLocation, found, err := accessor.Get(blockLocationsKey)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	if blockLocation == nil {
-		return nil, errors.Errorf("block %s not found", hex.EncodeToString(hash))
+	if !found {
+		return nil, false, nil
 	}
-	bytes, err := db.RetrieveFromStore(blockStoreName, blockLocation)
+	bytes, found, err := accessor.RetrieveFromStore(blockStoreName, blockLocation)
 	if err != nil {
-		return nil, err
+		return nil, false, err
+	}
+	if !found {
+		return nil, false, nil
 	}
 
 	return bytes, nil

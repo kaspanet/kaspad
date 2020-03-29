@@ -63,10 +63,10 @@ func (db *ffldb) Put(key []byte, value []byte) error {
 	return db.ldb.Put(key, value)
 }
 
-// Get gets the value for the given key. It returns nil if
-// the given key does not exist.
+// Get gets the value for the given key. It returns
+// found=false if the given key does not exist.
 // This method is part of the DataAccessor interface.
-func (db *ffldb) Get(key []byte) ([]byte, error) {
+func (db *ffldb) Get(key []byte) (data []byte, found bool, err error) {
 	return db.ldb.Get(key)
 }
 
@@ -95,14 +95,14 @@ func (db *ffldb) AppendToStore(storeName string, data []byte) ([]byte, error) {
 }
 
 func appendToStore(accessor database2.DataAccessor, ffdb *ff.FlatFileDB, storeName string, data []byte) ([]byte, error) {
-	// Save a reference to the current block location in case
+	// Save a reference to the current location in case
 	// we fail and need to rollback.
-	previousBlockLocation, err := ffdb.CurrentLocation(storeName)
+	previousLocation, err := ffdb.CurrentLocation(storeName)
 	if err != nil {
 		return nil, err
 	}
 	rollback := func() error {
-		return ffdb.Rollback(storeName, previousBlockLocation)
+		return ffdb.Rollback(storeName, previousLocation)
 	}
 
 	// Append the data to the store and rollback in case of an error.
@@ -148,7 +148,7 @@ func setCurrentStoreLocation(accessor database2.DataAccessor, storeName string, 
 // stored defined by storeName using the given serialized
 // location handle. See AppendToStore for further details.
 // This method is part of the DataAccessor interface.
-func (db *ffldb) RetrieveFromStore(storeName string, location []byte) ([]byte, error) {
+func (db *ffldb) RetrieveFromStore(storeName string, location []byte) (data []byte, found bool, err error) {
 	return db.ffdb.Read(storeName, location)
 }
 

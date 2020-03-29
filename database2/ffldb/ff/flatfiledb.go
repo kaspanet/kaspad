@@ -48,14 +48,14 @@ func (ffdb *FlatFileDB) Write(storeName string, data []byte) ([]byte, error) {
 // Read reads data from the specified flat file store at the
 // location specified by the given serialized location handle.
 // See flatFileStore.read() for further details.
-func (ffdb *FlatFileDB) Read(storeName string, serializedLocation []byte) ([]byte, error) {
+func (ffdb *FlatFileDB) Read(storeName string, serializedLocation []byte) (data []byte, found bool, err error) {
 	store, err := ffdb.store(storeName)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	location, err := deserializeLocation(serializedLocation)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	return store.read(location)
 }
