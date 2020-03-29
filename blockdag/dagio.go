@@ -47,10 +47,6 @@ var (
 	// subnetwork registry.
 	subnetworksBucketName = []byte("subnetworks")
 
-	// localSubnetworkKeyName is the name of the db key used to store the
-	// node's local subnetwork ID.
-	localSubnetworkKeyName = []byte("localsubnetworkidkey")
-
 	// byteOrder is the preferred byte order used for serializing numeric
 	// fields for storage in the database.
 	byteOrder = binary.LittleEndian
@@ -244,6 +240,7 @@ func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 type dagState struct {
 	TipHashes         []*daghash.Hash
 	LastFinalityPoint *daghash.Hash
+	localSubnetworkID *subnetworkid.SubnetworkID
 }
 
 // serializeDAGState returns the serialization of the DAG state.
@@ -311,10 +308,6 @@ func (dag *BlockDAG) createDAGState() error {
 			return err
 		}
 
-		if err := dbPutLocalSubnetworkID(dbTx, dag.subnetworkID); err != nil {
-			return err
-		}
-
 		if _, err := meta.CreateBucketIfNotExists(idByHashIndexBucketName); err != nil {
 			return err
 		}
@@ -354,11 +347,6 @@ func (dag *BlockDAG) removeDAGState() error {
 			return err
 		}
 
-		err = dbTx.Metadata().Delete(localSubnetworkKeyName)
-		if err != nil {
-			return err
-		}
-
 		return nil
 	})
 
@@ -368,125 +356,92 @@ func (dag *BlockDAG) removeDAGState() error {
 	return nil
 }
 
-func dbPutLocalSubnetworkID(dbTx database.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
-	if subnetworkID == nil {
-		return dbTx.Metadata().Put(localSubnetworkKeyName, []byte{})
-	}
-	return dbTx.Metadata().Put(localSubnetworkKeyName, subnetworkID[:])
-}
-
 // initDAGState attempts to load and initialize the DAG state from the
 // database. When the db does not yet contain any DAG state, both it and the
 // DAG state are initialized to the genesis block.
 func (dag *BlockDAG) initDAGState() error {
-	// Determine the state of the DAG database. We may need to initialize
-	// everything from scratch or upgrade certain buckets.
-	initialized, err := dbaccess.HasDAGState(dbaccess.NoTx())
+	// Fetch the stored DAG state from the database metadata.
+	// When it doesn't exist, it means the database hasn't been
+	// initialized for use with the DAG yet.
+	serializedDAGState, found, err := dbaccess.FetchDAGState(dbaccess.NoTx())
 	if err != nil {
 		return err
 	}
-	err = dag.db.View(func(dbTx database.Tx) error {
-		if initialized {
-			var localSubnetworkID *subnetworkid.SubnetworkID
-			localSubnetworkIDBytes := dbTx.Metadata().Get(localSubnetworkKeyName)
-			if len(localSubnetworkIDBytes) != 0 {
-				localSubnetworkID = &subnetworkid.SubnetworkID{}
-				localSubnetworkID.SetBytes(localSubnetworkIDBytes)
-			}
-			if !localSubnetworkID.IsEqual(dag.subnetworkID) {
-				return errors.Errorf("Cannot start kaspad with subnetwork ID %s because"+
-					" its database is already built with subnetwork ID %s. If you"+
-					" want to switch to a new database, please reset the"+
-					" database by starting kaspad with --reset-db flag", dag.subnetworkID, localSubnetworkID)
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
-	if !initialized {
+	if !found {
 		// At this point the database has not already been initialized, so
 		// initialize both it and the DAG state to the genesis block.
 		return dag.createDAGState()
 	}
 
-	// Attempt to load the DAG state from the database.
-	return dag.db.View(func(dbTx database.Tx) error {
-		// Fetch the stored DAG tipHashes from the database metadata.
-		// When it doesn't exist, it means the database hasn't been
-		// initialized for use with the DAG yet, so break out now to allow
-		// that to happen under a writable database transaction.
-		serializedData, found, err := dbaccess.FetchDAGState(dbaccess.NoTx())
+	dagState, err := deserializeDAGState(serializedDAGState)
+	if err != nil {
+		return err
+	}
+	if !dagState.localSubnetworkID.IsEqual(dag.subnetworkID) {
+		return errors.Errorf("Cannot start kaspad with subnetwork ID %s because"+
+			" its database is already built with subnetwork ID %s. If you"+
+			" want to switch to a new database, please reset the"+
+			" database by starting kaspad with --reset-db flag", dag.subnetworkID, dagState.localSubnetworkID)
+	}
+
+	log.Infof("Loading block index...")
+	var unprocessedBlockNodes []*blockNode
+	blockIndexCursor, err := dbaccess.BlockIndexCursor(dbaccess.NoTx())
+	if err != nil {
+		return err
+	}
+	for blockIndexCursor.Next() {
+		serializedDBNode, err := blockIndexCursor.Value()
 		if err != nil {
 			return err
 		}
-		if !found {
-			return errors.New("DAG state not found")
-		}
-		log.Tracef("Serialized DAG tip hashes: %x", serializedData)
-		state, err := deserializeDAGState(serializedData)
+		node, err := dag.deserializeBlockNode(serializedDBNode)
 		if err != nil {
 			return err
 		}
 
+		// Check to see if this node had been stored in the the block DB
+		// but not yet accepted. If so, add it to a slice to be processed later.
+		if node.status == statusDataStored {
+			unprocessedBlockNodes = append(unprocessedBlockNodes, node)
+			continue
+		}
+
+		// If the node is known to be invalid add it as-is to the block
+		// index and continue.
+		if node.status.KnownInvalid() {
+			dag.index.addNode(node)
+			continue
+		}
+
+		if dag.blockCount == 0 {
+			if !node.hash.IsEqual(dag.dagParams.GenesisHash) {
+				return AssertError(fmt.Sprintf("initDAGState: Expected "+
+					"first entry in block index to be genesis block, "+
+					"found %s", node.hash))
+			}
+		} else {
+			if len(node.parents) == 0 {
+				return AssertError(fmt.Sprintf("initDAGState: Could "+
+					"not find any parent for block %s", node.hash))
+			}
+		}
+
+		// Add the node to its parents children, connect it,
+		// and add it to the block index.
+		node.updateParentsChildren()
+		dag.index.addNode(node)
+
+		dag.blockCount++
+	}
+
+	// Attempt to load the DAG state from the database.
+	return dag.db.View(func(dbTx database.Tx) error {
 		// Load all of the headers from the data for the known DAG
 		// and construct the block index accordingly. Since the
 		// number of nodes are already known, perform a single alloc
 		// for them versus a whole bunch of little ones to reduce
 		// pressure on the GC.
-		log.Infof("Loading block index...")
-
-		var unprocessedBlockNodes []*blockNode
-		blockIndexCursor, err := dbaccess.BlockIndexCursor(dbaccess.NoTx())
-		if err != nil {
-			return err
-		}
-		for blockIndexCursor.Next() {
-			serializedDBNode, err := blockIndexCursor.Value()
-			if err != nil {
-				return err
-			}
-			node, err := dag.deserializeBlockNode(serializedDBNode)
-			if err != nil {
-				return err
-			}
-
-			// Check to see if this node had been stored in the the block DB
-			// but not yet accepted. If so, add it to a slice to be processed later.
-			if node.status == statusDataStored {
-				unprocessedBlockNodes = append(unprocessedBlockNodes, node)
-				continue
-			}
-
-			// If the node is known to be invalid add it as-is to the block
-			// index and continue.
-			if node.status.KnownInvalid() {
-				dag.index.addNode(node)
-				continue
-			}
-
-			if dag.blockCount == 0 {
-				if !node.hash.IsEqual(dag.dagParams.GenesisHash) {
-					return AssertError(fmt.Sprintf("initDAGState: Expected "+
-						"first entry in block index to be genesis block, "+
-						"found %s", node.hash))
-				}
-			} else {
-				if len(node.parents) == 0 {
-					return AssertError(fmt.Sprintf("initDAGState: Could "+
-						"not find any parent for block %s", node.hash))
-				}
-			}
-
-			// Add the node to its parents children, connect it,
-			// and add it to the block index.
-			node.updateParentsChildren()
-			dag.index.addNode(node)
-
-			dag.blockCount++
-		}
 
 		// Load all of the known UTXO entries and construct the full
 		// UTXO set accordingly. Since the number of entries is already
@@ -553,18 +508,18 @@ func (dag *BlockDAG) initDAGState() error {
 
 		// Apply the stored tips to the virtual block.
 		tips := newBlockSet()
-		for _, tipHash := range state.TipHashes {
+		for _, tipHash := range dagState.TipHashes {
 			tip := dag.index.LookupNode(tipHash)
 			if tip == nil {
 				return AssertError(fmt.Sprintf("initDAGState: cannot find "+
-					"DAG tip %s in block index", state.TipHashes))
+					"DAG tip %s in block index", dagState.TipHashes))
 			}
 			tips.add(tip)
 		}
 		dag.virtual.SetTips(tips)
 
 		// Set the last finality point
-		dag.lastFinalityPoint = dag.index.LookupNode(state.LastFinalityPoint)
+		dag.lastFinalityPoint = dag.index.LookupNode(dagState.LastFinalityPoint)
 		dag.finalizeNodesBelowFinalityPoint(false)
 
 		// Go over any unprocessed blockNodes and process them now.
