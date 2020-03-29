@@ -18,15 +18,14 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 	dag := s.cfg.DAG
 
 	dagInfo := &rpcmodel.GetBlockDAGInfoResult{
-		DAG:            params.Name,
-		Blocks:         dag.BlockCount(),
-		Headers:        dag.BlockCount(),
-		TipHashes:      daghash.Strings(dag.TipHashes()),
-		Difficulty:     getDifficultyRatio(dag.CurrentBits(), params),
-		MedianTime:     dag.CalcPastMedianTime().Unix(),
-		UTXOCommitment: dag.UTXOCommitment(),
-		Pruned:         false,
-		Bip9SoftForks:  make(map[string]*rpcmodel.Bip9SoftForkDescription),
+		DAG:           params.Name,
+		Blocks:        dag.BlockCount(),
+		Headers:       dag.BlockCount(),
+		TipHashes:     daghash.Strings(dag.TipHashes()),
+		Difficulty:    getDifficultyRatio(dag.CurrentBits(), params),
+		MedianTime:    dag.CalcPastMedianTime().Unix(),
+		Pruned:        false,
+		Bip9SoftForks: make(map[string]*rpcmodel.Bip9SoftForkDescription),
 	}
 
 	// Finally, query the BIP0009 version bits state for all currently

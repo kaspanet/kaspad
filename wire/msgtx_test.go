@@ -7,6 +7,7 @@ package wire
 import (
 	"bytes"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"math"
 	"reflect"
@@ -365,7 +366,7 @@ func TestTxWireErrors(t *testing.T) {
 		// Encode to wire format.
 		w := newFixedWriter(test.max)
 		err := test.in.KaspaEncode(w, test.pver)
-		if err != test.writeErr {
+		if !errors.Is(err, test.writeErr) {
 			t.Errorf("KaspaEncode #%d wrong error got: %v, want: %v",
 				i, err, test.writeErr)
 			continue
@@ -375,7 +376,7 @@ func TestTxWireErrors(t *testing.T) {
 		var msg MsgTx
 		r := newFixedReader(test.max, test.buf)
 		err = msg.KaspaDecode(r, test.pver)
-		if err != test.readErr {
+		if !errors.Is(err, test.readErr) {
 			t.Errorf("KaspaDecode #%d wrong error got: %v, want: %v",
 				i, err, test.readErr)
 			continue
@@ -568,7 +569,7 @@ func TestTxSerializeErrors(t *testing.T) {
 		// Serialize the transaction.
 		w := newFixedWriter(test.max)
 		err := test.in.Serialize(w)
-		if err != test.writeErr {
+		if !errors.Is(err, test.writeErr) {
 			t.Errorf("Serialize #%d wrong error got: %v, want: %v",
 				i, err, test.writeErr)
 			continue
@@ -578,7 +579,7 @@ func TestTxSerializeErrors(t *testing.T) {
 		var tx MsgTx
 		r := newFixedReader(test.max, test.buf)
 		err = tx.Deserialize(r)
-		if err != test.readErr {
+		if !errors.Is(err, test.readErr) {
 			t.Errorf("Deserialize #%d wrong error got: %v, want: %v",
 				i, err, test.readErr)
 			continue

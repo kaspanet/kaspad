@@ -2,10 +2,11 @@ package panics
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/logs"
 	"os"
 	"runtime/debug"
 	"time"
+
+	"github.com/kaspanet/kaspad/logs"
 )
 
 // HandlePanic recovers panics, log them, runs an optional panicHandler,
@@ -24,15 +25,16 @@ func HandlePanic(log *logs.Logger, goroutineStackTrace []byte) {
 		}
 		log.Criticalf("Stack trace: %s", debug.Stack())
 		log.Backend().Close()
-		panicHandlerDone <- struct{}{}
+		close(panicHandlerDone)
 	}()
 
 	const panicHandlerTimeout = 5 * time.Second
 	select {
-	case <-time.Tick(panicHandlerTimeout):
+	case <-time.After(panicHandlerTimeout):
 		fmt.Fprintln(os.Stderr, "Couldn't handle a fatal error. Exiting...")
 	case <-panicHandlerDone:
 	}
+	log.Criticalf("Exiting")
 	os.Exit(1)
 }
 

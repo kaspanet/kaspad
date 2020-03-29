@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"bytes"
+	"encoding/hex"
 	"github.com/pkg/errors"
 	"reflect"
 	"testing"
@@ -36,9 +37,21 @@ func TestErrNotInDAG(t *testing.T) {
 	}
 }
 
-// TestUtxoSerialization ensures serializing and deserializing unspent
+// hexToBytes converts the passed hex string into bytes and will panic if there
+// is an error. This is only provided for the hard-coded constants so errors in
+// the source code can be detected. It will only (and must only) be called with
+// hard-coded values.
+func hexToBytes(s string) []byte {
+	b, err := hex.DecodeString(s)
+	if err != nil {
+		panic("invalid hex in source file: " + s)
+	}
+	return b
+}
+
+// TestUTXOSerialization ensures serializing and deserializing unspent
 // trasaction output entries works as expected.
-func TestUtxoSerialization(t *testing.T) {
+func TestUTXOSerialization(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -54,7 +67,7 @@ func TestUtxoSerialization(t *testing.T) {
 				blockBlueScore: 1,
 				packedFlags:    tfCoinbase,
 			},
-			serialized: hexToBytes("03320496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52"),
+			serialized: hexToBytes("030000000000000000f2052a0100000043410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac"),
 		},
 		{
 			name: "blue score 100001, not coinbase",
@@ -64,13 +77,21 @@ func TestUtxoSerialization(t *testing.T) {
 				blockBlueScore: 100001,
 				packedFlags:    0,
 			},
-			serialized: hexToBytes("8b99420700ee8bd501094a7d5ca318da2506de35e1cb025ddc"),
+			serialized: hexToBytes("420d03000000000040420f00000000001976a914ee8bd501094a7d5ca318da2506de35e1cb025ddc88ac"),
 		},
 	}
 
 	for i, test := range tests {
 		// Ensure the utxo entry serializes to the expected value.
-		gotBytes := serializeUTXOEntry(test.entry)
+		w := &bytes.Buffer{}
+		err := serializeUTXOEntry(w, test.entry)
+		if err != nil {
+			t.Errorf("serializeUTXOEntry #%d (%s) unexpected "+
+				"error: %v", i, test.name, err)
+			continue
+		}
+
+		gotBytes := w.Bytes()
 		if !bytes.Equal(gotBytes, test.serialized) {
 			t.Errorf("serializeUTXOEntry #%d (%s): mismatched "+
 				"bytes - got %x, want %x", i, test.name,
@@ -78,8 +99,8 @@ func TestUtxoSerialization(t *testing.T) {
 			continue
 		}
 
-		// Deserialize to a utxo entry.
-		utxoEntry, err := deserializeUTXOEntry(test.serialized)
+		// Deserialize to a utxo entry.gotBytes
+		utxoEntry, err := deserializeUTXOEntry(bytes.NewReader(test.serialized))
 		if err != nil {
 			t.Errorf("deserializeUTXOEntry #%d (%s) unexpected "+
 				"error: %v", i, test.name, err)
@@ -124,28 +145,24 @@ func TestUtxoEntryDeserializeErrors(t *testing.T) {
 	tests := []struct {
 		name       string
 		serialized []byte
-		errType    error
 	}{
 		{
 			name:       "no data after header code",
 			serialized: hexToBytes("02"),
-			errType:    errDeserialize(""),
 		},
 		{
 			name:       "incomplete compressed txout",
 			serialized: hexToBytes("0232"),
-			errType:    errDeserialize(""),
 		},
 	}
 
 	for _, test := range tests {
 		// Ensure the expected error type is returned and the returned
 		// entry is nil.
-		entry, err := deserializeUTXOEntry(test.serialized)
-		if reflect.TypeOf(err) != reflect.TypeOf(test.errType) {
-			t.Errorf("deserializeUTXOEntry (%s): expected error "+
-				"type does not match - got %T, want %T",
-				test.name, err, test.errType)
+		entry, err := deserializeUTXOEntry(bytes.NewReader(test.serialized))
+		if err == nil {
+			t.Errorf("deserializeUTXOEntry (%s): didn't return an error",
+				test.name)
 			continue
 		}
 		if entry != nil {

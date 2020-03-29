@@ -2,6 +2,7 @@ package binaryserializer
 
 import (
 	"encoding/binary"
+	"github.com/pkg/errors"
 	"io"
 )
 
@@ -37,7 +38,7 @@ func Uint8(r io.Reader) (uint8, error) {
 	buf := Borrow()[:1]
 	if _, err := io.ReadFull(r, buf); err != nil {
 		Return(buf)
-		return 0, err
+		return 0, errors.WithStack(err)
 	}
 	rv := buf[0]
 	Return(buf)
@@ -51,7 +52,7 @@ func Uint16(r io.Reader, byteOrder binary.ByteOrder) (uint16, error) {
 	buf := Borrow()[:2]
 	if _, err := io.ReadFull(r, buf); err != nil {
 		Return(buf)
-		return 0, err
+		return 0, errors.WithStack(err)
 	}
 	rv := byteOrder.Uint16(buf)
 	Return(buf)
@@ -65,7 +66,7 @@ func Uint32(r io.Reader, byteOrder binary.ByteOrder) (uint32, error) {
 	buf := Borrow()[:4]
 	if _, err := io.ReadFull(r, buf); err != nil {
 		Return(buf)
-		return 0, err
+		return 0, errors.WithStack(err)
 	}
 	rv := byteOrder.Uint32(buf)
 	Return(buf)
@@ -79,7 +80,7 @@ func Uint64(r io.Reader, byteOrder binary.ByteOrder) (uint64, error) {
 	buf := Borrow()[:8]
 	if _, err := io.ReadFull(r, buf); err != nil {
 		Return(buf)
-		return 0, err
+		return 0, errors.WithStack(err)
 	}
 	rv := byteOrder.Uint64(buf)
 	Return(buf)
@@ -93,7 +94,7 @@ func PutUint8(w io.Writer, val uint8) error {
 	buf[0] = val
 	_, err := w.Write(buf)
 	Return(buf)
-	return err
+	return errors.WithStack(err)
 }
 
 // PutUint16 serializes the provided uint16 using the given byte order into a
@@ -104,7 +105,7 @@ func PutUint16(w io.Writer, byteOrder binary.ByteOrder, val uint16) error {
 	byteOrder.PutUint16(buf, val)
 	_, err := w.Write(buf)
 	Return(buf)
-	return err
+	return errors.WithStack(err)
 }
 
 // PutUint32 serializes the provided uint32 using the given byte order into a
@@ -115,7 +116,7 @@ func PutUint32(w io.Writer, byteOrder binary.ByteOrder, val uint32) error {
 	byteOrder.PutUint32(buf, val)
 	_, err := w.Write(buf)
 	Return(buf)
-	return err
+	return errors.WithStack(err)
 }
 
 // PutUint64 serializes the provided uint64 using the given byte order into a
@@ -126,7 +127,7 @@ func PutUint64(w io.Writer, byteOrder binary.ByteOrder, val uint64) error {
 	byteOrder.PutUint64(buf, val)
 	_, err := w.Write(buf)
 	Return(buf)
-	return err
+	return errors.WithStack(err)
 }
 
 // binaryFreeList provides a free list of buffers to use for serializing and

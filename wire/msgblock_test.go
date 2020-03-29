@@ -6,6 +6,7 @@ package wire
 
 import (
 	"bytes"
+	"github.com/pkg/errors"
 	"io"
 	"math"
 	"reflect"
@@ -239,7 +240,7 @@ func TestBlockWireErrors(t *testing.T) {
 		// Encode to wire format.
 		w := newFixedWriter(test.max)
 		err := test.in.KaspaEncode(w, test.pver)
-		if err != test.writeErr {
+		if !errors.Is(err, test.writeErr) {
 			t.Errorf("KaspaEncode #%d wrong error got: %v, want: %v",
 				i, err, test.writeErr)
 			continue
@@ -249,7 +250,7 @@ func TestBlockWireErrors(t *testing.T) {
 		var msg MsgBlock
 		r := newFixedReader(test.max, test.buf)
 		err = msg.KaspaDecode(r, test.pver)
-		if err != test.readErr {
+		if !errors.Is(err, test.readErr) {
 			t.Errorf("KaspaDecode #%d wrong error got: %v, want: %v",
 				i, err, test.readErr)
 			continue
@@ -365,7 +366,7 @@ func TestBlockSerializeErrors(t *testing.T) {
 		// Serialize the block.
 		w := newFixedWriter(test.max)
 		err := test.in.Serialize(w)
-		if err != test.writeErr {
+		if !errors.Is(err, test.writeErr) {
 			t.Errorf("Serialize #%d wrong error got: %v, want: %v",
 				i, err, test.writeErr)
 			continue
@@ -375,7 +376,7 @@ func TestBlockSerializeErrors(t *testing.T) {
 		var block MsgBlock
 		r := newFixedReader(test.max, test.buf)
 		err = block.Deserialize(r)
-		if err != test.readErr {
+		if !errors.Is(err, test.readErr) {
 			t.Errorf("Deserialize #%d wrong error got: %v, want: %v",
 				i, err, test.readErr)
 			continue
@@ -384,7 +385,7 @@ func TestBlockSerializeErrors(t *testing.T) {
 		var txLocBlock MsgBlock
 		br := bytes.NewBuffer(test.buf[0:test.max])
 		_, err = txLocBlock.DeserializeTxLoc(br)
-		if err != test.readErr {
+		if !errors.Is(err, test.readErr) {
 			t.Errorf("DeserializeTxLoc #%d wrong error got: %v, want: %v",
 				i, err, test.readErr)
 			continue

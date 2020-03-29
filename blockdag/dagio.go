@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util/buffers"
 	"github.com/pkg/errors"
 	"io"
 	"sync"
@@ -58,6 +59,10 @@ var (
 	// reachability tree nodes and future covering sets of blocks.
 	reachabilityDataBucketName = []byte("reachability")
 
+	// multisetBucketName is the name of the database bucket used to house the
+	// ECMH multisets of blocks.
+	multisetBucketName = []byte("multiset")
+
 	// subnetworksBucketName is the name of the database bucket used to store the
 	// subnetwork registry.
 	subnetworksBucketName = []byte("subnetworks")
@@ -87,22 +92,6 @@ func isNotInDAGErr(err error) bool {
 	return errors.As(err, &notInDAGErr)
 }
 
-// errDeserialize signifies that a problem was encountered when deserializing
-// data.
-type errDeserialize string
-
-// Error implements the error interface.
-func (e errDeserialize) Error() string {
-	return string(e)
-}
-
-// isDeserializeErr returns whether or not the passed error is an errDeserialize
-// error.
-func isDeserializeErr(err error) bool {
-	var deserializeErr errDeserialize
-	return errors.As(err, &deserializeErr)
-}
-
 // dbPutVersion uses an existing database transaction to update the provided
 // key in the metadata bucket to the given version. It is primarily used to
 // track versions on entities such as buckets.
@@ -112,115 +101,46 @@ func dbPutVersion(dbTx database.Tx, key []byte, version uint32) error {
 	return dbTx.Metadata().Put(key, serialized[:])
 }
 
-// -----------------------------------------------------------------------------
-// The unspent transaction output (UTXO) set consists of an entry for each
-// unspent output using a format that is optimized to reduce space using domain
-// specific compression algorithms.
-//
-// Each entry is keyed by an outpoint as specified below. It is important to
-// note that the key encoding uses a VLQ, which employs an MSB encoding so
-// iteration of UTXOs when doing byte-wise comparisons will produce them in
-// order.
-//
-// The serialized key format is:
-//   <hash><output index>
-//
-//   Field                Type             Size
-//   hash                 daghash.Hash   daghash.HashSize
-//   output index         VLQ              variable
-//
-// The serialized value format is:
-//
-//   <header code><compressed txout>
-//
-//   Field                Type     Size
-//   header code          VLQ      variable
-//   compressed txout
-//     compressed amount  VLQ      variable
-//     compressed script  []byte   variable
-//
-// The serialized header code format is:
-//   bit 0 - containing transaction is a coinbase
-//   bits 1-x - height of the block that contains the unspent txout
-//
-// Example 1:
-// b7c3332bc138e2c9429818f5fed500bcc1746544218772389054dc8047d7cd3f:0
-//
-//    03320496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52
-//    <><------------------------------------------------------------------>
-//     |                                          |
-//   header code                         compressed txout
-//
-//  - header code: 0x03 (coinbase, height 1)
-//  - compressed txout:
-//    - 0x32: VLQ-encoded compressed amount for 5000000000 (50 KAS)
-//    - 0x04: special script type pay-to-pubkey
-//    - 0x96...52: x-coordinate of the pubkey
-//
-// Example 2:
-// 4a16969aa4764dd7507fc1de7f0baa4850a246de90c45e59a3207f9a26b5036f:2
-//
-//    8cf316800900b8025be1b3efc63b0ad48e7f9f10e87544528d58
-//    <----><------------------------------------------>
-//      |                             |
-//   header code             compressed txout
-//
-//  - header code: 0x8cf316 (not coinbase, height 113931)
-//  - compressed txout:
-//    - 0x8009: VLQ-encoded compressed amount for 15000000 (0.15 KAS)
-//    - 0x00: special script type pay-to-pubkey-hash
-//    - 0xb8...58: pubkey hash
-//
-// Example 3:
-// 1b02d1c8cfef60a189017b9a420c682cf4a0028175f2f563209e4ff61c8c3620:22
-//
-//    a8a2588ba5b9e763011dd46a006572d820e448e12d2bbb38640bc718e6
-//    <----><-------------------------------------------------->
-//      |                             |
-//   header code             compressed txout
-//
-//  - header code: 0xa8a258 (not coinbase, height 338156)
-//  - compressed txout:
-//    - 0x8ba5b9e763: VLQ-encoded compressed amount for 366875659 (3.66875659 KAS)
-//    - 0x01: special script type pay-to-script-hash
-//    - 0x1d...e6: script hash
-// -----------------------------------------------------------------------------
-
-// maxUint32VLQSerializeSize is the maximum number of bytes a max uint32 takes
-// to serialize as a VLQ.
-var maxUint32VLQSerializeSize = serializeSizeVLQ(1<<32 - 1)
-
-// outpointKeyPool defines a concurrent safe free list of byte slices used to
+// outpointKeyPool defines a concurrent safe free list of byte buffers used to
 // provide temporary buffers for outpoint database keys.
 var outpointKeyPool = sync.Pool{
 	New: func() interface{} {
-		b := make([]byte, daghash.HashSize+maxUint32VLQSerializeSize)
-		return &b // Pointer to slice to avoid boxing alloc.
+		return &bytes.Buffer{} // Pointer to a buffer to avoid boxing alloc.
 	},
 }
 
-// outpointKey returns a key suitable for use as a database key in the UTXO set
-// while making use of a free list. A new buffer is allocated if there are not
-// already any available on the free list. The returned byte slice should be
-// returned to the free list by using the recycleOutpointKey function when the
-// caller is done with it _unless_ the slice will need to live for longer than
-// the caller can calculate such as when used to write to the database.
-func outpointKey(outpoint wire.Outpoint) *[]byte {
-	// A VLQ employs an MSB encoding, so they are useful not only to reduce
-	// the amount of storage space, but also so iteration of UTXOs when
-	// doing byte-wise comparisons will produce them in order.
-	key := outpointKeyPool.Get().(*[]byte)
-	idx := uint64(outpoint.Index)
-	*key = (*key)[:daghash.HashSize+serializeSizeVLQ(idx)]
-	copy(*key, outpoint.TxID[:])
-	putVLQ((*key)[daghash.HashSize:], idx)
-	return key
+// outpointIndexByteOrder is the byte order for serializing the outpoint index.
+// It uses big endian to ensure that when outpoint is used as database key, the
+// keys will be iterated in an ascending order by the outpoint index.
+var outpointIndexByteOrder = binary.BigEndian
+
+func serializeOutpoint(w io.Writer, outpoint *wire.Outpoint) error {
+	_, err := w.Write(outpoint.TxID[:])
+	if err != nil {
+		return err
+	}
+
+	return binaryserializer.PutUint32(w, outpointIndexByteOrder, outpoint.Index)
 }
 
-// recycleOutpointKey puts the provided byte slice, which should have been
-// obtained via the outpointKey function, back on the free list.
-func recycleOutpointKey(key *[]byte) {
-	outpointKeyPool.Put(key)
+var outpointSerializeSize = daghash.TxIDSize + 4
+
+// deserializeOutpoint decodes an outpoint from the passed serialized byte
+// slice into a new wire.Outpoint using a format that is suitable for long-
+// term storage. This format is described in detail above.
+func deserializeOutpoint(r io.Reader) (*wire.Outpoint, error) {
+	outpoint := &wire.Outpoint{}
+	_, err := r.Read(outpoint.TxID[:])
+	if err != nil {
+		return nil, err
+	}
+
+	outpoint.Index, err = binaryserializer.Uint32(r, outpointIndexByteOrder)
+	if err != nil {
+		return nil, err
+	}
+
+	return outpoint, nil
 }
 
 // dbPutUTXODiff uses an existing database transaction to update the UTXO set
@@ -230,20 +150,42 @@ func recycleOutpointKey(key *[]byte) {
 func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 	utxoBucket := dbTx.Metadata().Bucket(utxoSetBucketName)
 	for outpoint := range diff.toRemove {
-		key := outpointKey(outpoint)
-		err := utxoBucket.Delete(*key)
-		recycleOutpointKey(key)
+		w := outpointKeyPool.Get().(*bytes.Buffer)
+		w.Reset()
+		err := serializeOutpoint(w, &outpoint)
 		if err != nil {
 			return err
 		}
+
+		key := w.Bytes()
+		err = utxoBucket.Delete(key)
+		if err != nil {
+			return err
+		}
+		outpointKeyPool.Put(w)
 	}
 
+	// We are preallocating for P2PKH entries because they are the most common ones.
+	// If we have entries with a compressed script bigger than P2PKH's, the buffer will grow.
+	bytesToPreallocate := (p2pkhUTXOEntrySerializeSize + outpointSerializeSize) * len(diff.toAdd)
+	buff := bytes.NewBuffer(make([]byte, bytesToPreallocate))
 	for outpoint, entry := range diff.toAdd {
 		// Serialize and store the UTXO entry.
-		serialized := serializeUTXOEntry(entry)
+		sBuff := buffers.NewSubBuffer(buff)
+		err := serializeUTXOEntry(sBuff, entry)
+		if err != nil {
+			return err
+		}
+		serializedEntry := sBuff.Bytes()
 
-		key := outpointKey(outpoint)
-		err := utxoBucket.Put(*key, serialized)
+		sBuff = buffers.NewSubBuffer(buff)
+		err = serializeOutpoint(sBuff, &outpoint)
+		if err != nil {
+			return err
+		}
+
+		key := sBuff.Bytes()
+		err = utxoBucket.Put(key, serializedEntry)
 		// NOTE: The key is intentionally not recycled here since the
 		// database interface contract prohibits modifications. It will
 		// be garbage collected normally when the database is done with
@@ -327,6 +269,11 @@ func (dag *BlockDAG) createDAGState() error {
 			return err
 		}
 
+		_, err = meta.CreateBucket(multisetBucketName)
+		if err != nil {
+			return err
+		}
+
 		err = dbPutVersion(dbTx, utxoSetVersionKeyName,
 			latestUTXOSetBucketVersion)
 		if err != nil {
@@ -378,6 +325,11 @@ func (dag *BlockDAG) removeDAGState() error {
 		}
 
 		err = meta.DeleteBucket(reachabilityDataBucketName)
+		if err != nil {
+			return err
+		}
+
+		err = meta.DeleteBucket(multisetBucketName)
 		if err != nil {
 			return err
 		}
@@ -532,32 +484,14 @@ func (dag *BlockDAG) initDAGState() error {
 		fullUTXOCollection := make(utxoCollection, utxoEntryCount)
 		for ok := cursor.First(); ok; ok = cursor.Next() {
 			// Deserialize the outpoint
-			outpoint, err := deserializeOutpoint(cursor.Key())
+			outpoint, err := deserializeOutpoint(bytes.NewReader(cursor.Key()))
 			if err != nil {
-				// Ensure any deserialization errors are returned as database
-				// corruption errors.
-				if isDeserializeErr(err) {
-					return database.Error{
-						ErrorCode:   database.ErrCorruption,
-						Description: fmt.Sprintf("corrupt outpoint: %s", err),
-					}
-				}
-
 				return err
 			}
 
 			// Deserialize the utxo entry
-			entry, err := deserializeUTXOEntry(cursor.Value())
+			entry, err := deserializeUTXOEntry(bytes.NewReader(cursor.Value()))
 			if err != nil {
-				// Ensure any deserialization errors are returned as database
-				// corruption errors.
-				if isDeserializeErr(err) {
-					return database.Error{
-						ErrorCode:   database.ErrCorruption,
-						Description: fmt.Sprintf("corrupt utxo entry: %s", err),
-					}
-				}
-
 				return err
 			}
 
@@ -565,7 +499,15 @@ func (dag *BlockDAG) initDAGState() error {
 		}
 
 		// Initialize the reachability store
+		log.Infof("Loading reachability data...")
 		err = dag.reachabilityStore.init(dbTx)
+		if err != nil {
+			return err
+		}
+
+		// Initialize the multiset store
+		log.Infof("Loading multiset data...")
+		err = dag.multisetStore.init(dbTx)
 		if err != nil {
 			return err
 		}
