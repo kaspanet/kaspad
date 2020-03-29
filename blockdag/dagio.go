@@ -51,10 +51,6 @@ var (
 	// unspent transaction output set.
 	utxoSetBucketName = []byte("utxoset")
 
-	// utxoDiffsBucketName is the name of the database bucket used to house the
-	// diffs and diff children of blocks.
-	utxoDiffsBucketName = []byte("utxodiffs")
-
 	// multisetBucketName is the name of the database bucket used to house the
 	// ECMH multisets of blocks.
 	multisetBucketName = []byte("multiset")

@@ -3,6 +3,7 @@ package blockdag
 import (
 	"bytes"
 	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/pkg/errors"
@@ -73,11 +74,11 @@ func (diffStore *utxoDiffStore) removeBlocksDiffData(dbTx database.Tx, blockHash
 	return nil
 }
 
-func (diffStore *utxoDiffStore) removeBlockDiffData(dbTx database.Tx, blockHash *daghash.Hash) error {
+func (diffStore *utxoDiffStore) removeBlockDiffData(context dbaccess.Context, blockHash *daghash.Hash) error {
 	diffStore.mtx.LowPriorityWriteLock()
 	defer diffStore.mtx.LowPriorityWriteUnlock()
 	delete(diffStore.loaded, *blockHash)
-	err := dbRemoveDiffData(dbTx, blockHash)
+	err := dbaccess.RemoveDiffData(context, blockHash)
 	if err != nil {
 		return err
 	}
@@ -181,26 +182,16 @@ func (diffStore *utxoDiffStore) clearDirtyEntries() {
 
 // dbStoreDiffData stores the UTXO diff data to the database.
 // This overwrites the current entry if there exists one.
-func dbStoreDiffData(dbTx database.Tx, writeBuffer *bytes.Buffer, hash *daghash.Hash, diffData *blockUTXODiffData) error {
-	// To avoid a ton of allocs, use the given writeBuffer
+func dbStoreDiffData(context dbaccess.Context, w *bytes.Buffer, hash *daghash.Hash, diffData *blockUTXODiffData) error {
+	// To avoid a ton of allocs, use the io.Writer
 	// instead of allocating one. We expect the buffer to
 	// already be initalized and, in most cases, to already
 	// be large enough to accommodate the serialized data
 	// without growing.
-	err := serializeBlockUTXODiffData(writeBuffer, diffData)
+	err := serializeBlockUTXODiffData(w, diffData)
 	if err != nil {
 		return err
 	}
 
-	// Bucket.Put doesn't copy on its own, so we manually
-	// copy here. We do so because we expect the buffer
-	// to be reused once we're done with it.
-	serializedDiffData := make([]byte, writeBuffer.Len())
-	copy(serializedDiffData, writeBuffer.Bytes())
-
-	return dbTx.Metadata().Bucket(utxoDiffsBucketName).Put(hash[:], serializedDiffData)
-}
-
-func dbRemoveDiffData(dbTx database.Tx, hash *daghash.Hash) error {
-	return dbTx.Metadata().Bucket(utxoDiffsBucketName).Delete(hash[:])
+	return dbaccess.StoreUTXODiffData(context, hash, w.Bytes())
 }
