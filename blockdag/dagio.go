@@ -35,10 +35,6 @@ const (
 )
 
 var (
-	// dagStateKeyName is the name of the db key used to store the DAG
-	// tip hashes.
-	dagStateKeyName = []byte("dagstate")
-
 	// utxoSetVersionKeyName is the name of the db key used to store the
 	// version of the utxo set currently in the database.
 	utxoSetVersionKeyName = []byte("utxosetversion")
@@ -282,14 +278,13 @@ func deserializeDAGState(serializedData []byte) (*dagState, error) {
 
 // dbPutDAGState uses an existing database transaction to store the latest
 // tip hashes of the DAG.
-func dbPutDAGState(dbTx database.Tx, state *dagState) error {
-	serializedData, err := serializeDAGState(state)
-
+func dbPutDAGState(context dbaccess.Context, state *dagState) error {
+	serializedDAGState, err := serializeDAGState(state)
 	if err != nil {
 		return err
 	}
 
-	return dbTx.Metadata().Put(dagStateKeyName, serializedData)
+	return dbaccess.StoreDAGState(context, serializedDAGState)
 }
 
 // createDAGState initializes both the database and the DAG state to the
@@ -405,9 +400,11 @@ func dbPutLocalSubnetworkID(dbTx database.Tx, subnetworkID *subnetworkid.Subnetw
 func (dag *BlockDAG) initDAGState() error {
 	// Determine the state of the DAG database. We may need to initialize
 	// everything from scratch or upgrade certain buckets.
-	var initialized bool
-	err := dag.db.View(func(dbTx database.Tx) error {
-		initialized = dbTx.Metadata().Get(dagStateKeyName) != nil
+	initialized, err := dbaccess.HasDAGState(dbaccess.NoTx())
+	if err != nil {
+		return err
+	}
+	err = dag.db.View(func(dbTx database.Tx) error {
 		if initialized {
 			var localSubnetworkID *subnetworkid.SubnetworkID
 			localSubnetworkIDBytes := dbTx.Metadata().Get(localSubnetworkKeyName)
@@ -440,7 +437,13 @@ func (dag *BlockDAG) initDAGState() error {
 		// When it doesn't exist, it means the database hasn't been
 		// initialized for use with the DAG yet, so break out now to allow
 		// that to happen under a writable database transaction.
-		serializedData := dbTx.Metadata().Get(dagStateKeyName)
+		serializedData, found, err := dbaccess.FetchDAGState(dbaccess.NoTx())
+		if err != nil {
+			return err
+		}
+		if !found {
+			return errors.New("DAG state not found")
+		}
 		log.Tracef("Serialized DAG tip hashes: %x", serializedData)
 		state, err := deserializeDAGState(serializedData)
 		if err != nil {

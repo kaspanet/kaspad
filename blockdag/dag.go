@@ -620,7 +620,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 			TipHashes:         dag.TipHashes(),
 			LastFinalityPoint: dag.lastFinalityPoint.hash,
 		}
-		err = dbPutDAGState(dbTx, state)
+		err = dbPutDAGState(dbaccess.NoTx(), state) // TODO: (Stas) Replace this with a tx context
 		if err != nil {
 			return err
 		}
