@@ -6,9 +6,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
-	"net"
-	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"path/filepath"
@@ -16,6 +13,8 @@ import (
 	"runtime/debug"
 	"runtime/pprof"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/blockdag/indexers"
 	"github.com/kaspanet/kaspad/config"
@@ -26,6 +25,7 @@ import (
 	"github.com/kaspanet/kaspad/signal"
 	"github.com/kaspanet/kaspad/util/fs"
 	"github.com/kaspanet/kaspad/util/panics"
+	"github.com/kaspanet/kaspad/util/profiling"
 	"github.com/kaspanet/kaspad/version"
 )
 
@@ -72,12 +72,7 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 	// Enable http profiling server if requested.
 	if cfg.Profile != "" {
 		spawn(func() {
-			listenAddr := net.JoinHostPort("", cfg.Profile)
-			kasdLog.Infof("Profile server listening on %s", listenAddr)
-			profileRedirect := http.RedirectHandler("/debug/pprof",
-				http.StatusSeeOther)
-			http.Handle("/", profileRedirect)
-			kasdLog.Errorf("%s", http.ListenAndServe(listenAddr, nil))
+			profiling.Start(cfg.Profile)
 		})
 	}
 
