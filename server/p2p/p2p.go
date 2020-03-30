@@ -9,7 +9,6 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
-	"github.com/kaspanet/kaspad/dbaccess"
 	"math"
 	"net"
 	"runtime"
@@ -498,27 +497,7 @@ func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- stru
 	waitChan <-chan struct{}) error {
 
 	// Fetch the block from the database.
-	blockBytes, found, err := dbaccess.FetchBlock(dbaccess.NoTx(), hash[:])
-	if err != nil {
-		peerLog.Tracef("Unable to fetch requested block hash %s: %s",
-			hash, err)
-
-		if doneChan != nil {
-			doneChan <- struct{}{}
-		}
-		return err
-	}
-	if !found {
-		peerLog.Tracef("Unable to fetch requested block hash %s: %s",
-			hash, err)
-
-		if doneChan != nil {
-			doneChan <- struct{}{}
-		}
-		return errors.Errorf("block %s not found",
-			hash)
-	}
-	block, err := util.NewBlockFromBytes(blockBytes)
+	block, err := s.DAG.BlockByHash(hash)
 	if err != nil {
 		peerLog.Tracef("Unable to fetch requested block hash %s: %s",
 			hash, err)

@@ -487,7 +487,7 @@ func (dag *BlockDAG) addBlock(node *blockNode,
 	if err != nil {
 		if errors.As(err, &RuleError{}) {
 			dag.index.SetStatusFlags(node, statusValidateFailed)
-			err := dag.index.flushToDB()
+			err := dag.index.flushToDB(dbaccess.NoTx())
 			if err != nil {
 				return nil, err
 			}
@@ -600,7 +600,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 
 	// Atomically insert info into the database.
 	err := dag.db.Update(func(dbTx database.Tx) error {
-		err := dag.index.flushToDBWithContext(dbaccess.NoTx()) // TODO: (Stas) Replace this with a tx context
+		err := dag.index.flushToDB(dbaccess.NoTx())
 		if err != nil {
 			return err
 		}
@@ -1019,17 +1019,13 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 func (node *blockNode) fetchBlueBlocks() ([]*util.Block, error) {
 	blueBlocks := make([]*util.Block, len(node.blues))
 	for i, blueBlockNode := range node.blues {
-		blueBlockBytes, found, err := dbaccess.FetchBlock(dbaccess.NoTx(), blueBlockNode.hash[:])
+		blueBlock, found, err := dbFetchBlockByHash(dbaccess.NoTx(), blueBlockNode.hash)
 		if err != nil {
 			return nil, err
 		}
 		if !found {
 			return nil, errors.Errorf("block %s not found",
 				blueBlockNode.hash)
-		}
-		blueBlock, err := util.NewBlockFromBytes(blueBlockBytes)
-		if err != nil {
-			return nil, err
 		}
 
 		blueBlocks[i] = blueBlock

@@ -2,11 +2,9 @@ package rpc
 
 import (
 	"encoding/hex"
-	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -77,20 +75,15 @@ func handleGetBlocks(s *Server, cmd interface{}, closeChan <-chan struct{}) (int
 }
 
 func hashesToBlockBytes(s *Server, hashes []*daghash.Hash) ([][]byte, error) {
-	dbTx, err := dbaccess.NewTx()
-	if err != nil {
-		return nil, err
-	}
-
 	blocks := make([][]byte, len(hashes))
 	for i, hash := range hashes {
-		blockBytes, found, err := dbaccess.FetchBlock(dbTx, hash[:])
+		block, err := s.cfg.DAG.BlockByHash(hash)
 		if err != nil {
 			return nil, err
 		}
-		if !found {
-			return nil, errors.Errorf("block %s not found",
-				hash)
+		blockBytes, err := block.Bytes()
+		if err != nil {
+			return nil, err
 		}
 		blocks[i] = blockBytes
 	}

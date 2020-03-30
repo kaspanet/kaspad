@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -38,18 +37,18 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		}
 	}
 
-	blkBytes, found, err := dbaccess.FetchBlock(dbaccess.NoTx(), hash[:])
-	if err != nil || !found {
+	block, err := s.cfg.DAG.BlockByHash(hash)
+	if err != nil {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCBlockNotFound,
 			Message: "Block not found",
 		}
 	}
-	block, err := util.NewBlockFromBytes(blkBytes)
+	blkBytes, err := block.Bytes()
 	if err != nil {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCBlockInvalid,
-			Message: "Cannot deserialize block",
+			Message: "Cannot serialize block",
 		}
 	}
 

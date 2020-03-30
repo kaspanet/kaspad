@@ -112,15 +112,9 @@ func (bi *blockIndex) UnsetStatusFlags(node *blockNode, flags blockStatus) {
 	bi.dirty[node] = struct{}{}
 }
 
-// flushToDB writes all dirty block nodes to the database. If all writes
-// succeed, this clears the dirty set.
-func (bi *blockIndex) flushToDB() error {
-	return bi.flushToDBWithContext(dbaccess.NoTx())
-}
-
-// flushToDBWithContext writes all dirty block nodes to the database. If all
+// flushToDB writes all dirty block nodes to the database. If all
 // writes succeed, this clears the dirty set.
-func (bi *blockIndex) flushToDBWithContext(context dbaccess.Context) error {
+func (bi *blockIndex) flushToDB(context dbaccess.Context) error {
 	bi.Lock()
 	defer bi.Unlock()
 	if len(bi.dirty) == 0 {

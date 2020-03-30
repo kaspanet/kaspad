@@ -80,7 +80,7 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 
 	if config.DB == nil {
 		var err error
-		tmpDir, err := ioutil.TempDir("", "")
+		tmpDir, err := ioutil.TempDir("", "DAGSetup")
 		if err != nil {
 			return nil, nil, errors.Errorf("error creating temp dir: %s", err)
 		}

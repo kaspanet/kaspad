@@ -498,7 +498,7 @@ func (dag *BlockDAG) initDAGState() error {
 		for _, node := range unprocessedBlockNodes {
 			// Check to see if the block exists in the block DB. If it
 			// doesn't, the database has certainly been corrupted.
-			blockExists, err := dbaccess.HasBlock(dbaccess.NoTx(), node.hash[:])
+			blockExists, err := dbaccess.HasBlock(dbaccess.NoTx(), node.hash)
 			if err != nil {
 				return AssertError(fmt.Sprintf("initDAGState: HasBlock "+
 					"for block %s failed: %s", node.hash, err))
@@ -509,17 +509,13 @@ func (dag *BlockDAG) initDAGState() error {
 			}
 
 			// Attempt to accept the block.
-			blockBytes, found, err := dbaccess.FetchBlock(dbaccess.NoTx(), node.hash[:])
+			block, found, err := dbFetchBlockByHash(dbaccess.NoTx(), node.hash)
 			if err != nil {
 				return err
 			}
 			if !found {
 				return errors.Errorf("block %s not found",
 					node.hash)
-			}
-			block, err := util.NewBlockFromBytes(blockBytes)
-			if err != nil {
-				return err
 			}
 			isOrphan, isDelayed, err := dag.ProcessBlock(block, BFWasStored)
 			if err != nil {
@@ -639,6 +635,33 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 	return node, nil
 }
 
+// dbFetchBlockByHash retrieves the raw block for the provided hash,
+// deserialize it, and return a util.Block of it.
+func dbFetchBlockByHash(context dbaccess.Context, hash *daghash.Hash) (block *util.Block, found bool, err error) {
+	blockBytes, found, err := dbaccess.FetchBlock(context, hash)
+	if err != nil {
+		return nil, false, err
+	}
+	if !found {
+		return nil, false, nil
+	}
+
+	// Create the encapsulated block.
+	block, err = util.NewBlockFromBytes(blockBytes)
+	if err != nil {
+		return nil, false, err
+	}
+	return block, true, nil
+}
+
+func dbStoreBlock(context dbaccess.Context, block *util.Block) error {
+	blockBytes, err := block.Bytes()
+	if err != nil {
+		return err
+	}
+	return dbaccess.StoreBlock(context, block.Hash(), blockBytes)
+}
+
 func serializeBlockNode(node *blockNode) ([]byte, error) {
 	w := bytes.NewBuffer(make([]byte, 0, wire.MaxBlockHeaderPayload+1))
 	header := node.Header()
@@ -723,8 +746,7 @@ func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
 		return nil, errNotInDAG(str)
 	}
 
-	// Load the block from the database, deserialize it, and return it.
-	blockBytes, found, err := dbaccess.FetchBlock(dbaccess.NoTx(), node.hash[:])
+	block, found, err := dbFetchBlockByHash(dbaccess.NoTx(), node.hash)
 	if err != nil {
 		return nil, err
 	}
@@ -732,7 +754,7 @@ func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
 		return nil, errors.Errorf("block %s not found",
 			node.hash)
 	}
-	return util.NewBlockFromBytes(blockBytes)
+	return block, err
 }
 
 // BlockHashesFrom returns a slice of blocks starting from lowHash
