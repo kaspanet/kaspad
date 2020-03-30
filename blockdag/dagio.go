@@ -758,6 +758,14 @@ func dbFetchBlockByHash(context dbaccess.Context, hash *daghash.Hash) (block *ut
 	return block, true, nil
 }
 
+func dbStoreBlock(context dbaccess.Context, block *util.Block) error {
+	blockBytes, err := block.Bytes()
+	if err != nil {
+		return err
+	}
+	return dbaccess.StoreBlock(context, block.Hash(), blockBytes)
+}
+
 func serializeBlockNode(node *blockNode) ([]byte, error) {
 	w := bytes.NewBuffer(make([]byte, 0, blockHdrSize+1))
 	header := node.Header()
