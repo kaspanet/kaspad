@@ -139,7 +139,7 @@ func dbUpdateUTXOSet(context dbaccess.Context, virtualUTXODiff *UTXODiff) error 
 type dagState struct {
 	TipHashes         []*daghash.Hash
 	LastFinalityPoint *daghash.Hash
-	localSubnetworkID *subnetworkid.SubnetworkID
+	LocalSubnetworkID *subnetworkid.SubnetworkID
 }
 
 // serializeDAGState returns the serialization of the DAG state.
@@ -175,6 +175,16 @@ func dbPutDAGState(context dbaccess.Context, state *dagState) error {
 	return dbaccess.StoreDAGState(context, serializedDAGState)
 }
 
+// createDAGState initializes the DAG state to the
+// genesis block and the node's local subnetwork id.'
+func (dag *BlockDAG) createDAGState(localSubnetworkID *subnetworkid.SubnetworkID) error {
+	return dbPutDAGState(dbaccess.NoTx(), &dagState{
+		TipHashes:         []*daghash.Hash{dag.dagParams.GenesisHash},
+		LastFinalityPoint: dag.dagParams.GenesisHash,
+		LocalSubnetworkID: localSubnetworkID,
+	})
+}
+
 // initDAGState attempts to load and initialize the DAG state from the
 // database. When the db does not yet contain any DAG state, both it and the
 // DAG state are initialized to the genesis block.
@@ -186,7 +196,7 @@ func (dag *BlockDAG) initDAGState() error {
 	if dbaccess.IsNotFoundError(err) {
 		// At this point the database has not already been initialized, so
 		// initialize both it and the DAG state to the genesis block.
-		return dag.createDAGState()
+		return dag.createDAGState(dag.subnetworkID)
 	}
 	if err != nil {
 		return err
@@ -196,11 +206,11 @@ func (dag *BlockDAG) initDAGState() error {
 	if err != nil {
 		return err
 	}
-	if !dagState.localSubnetworkID.IsEqual(dag.subnetworkID) {
+	if !dagState.LocalSubnetworkID.IsEqual(dag.subnetworkID) {
 		return errors.Errorf("Cannot start kaspad with subnetwork ID %s because"+
 			" its database is already built with subnetwork ID %s. If you"+
 			" want to switch to a new database, please reset the"+
-			" database by starting kaspad with --reset-db flag", dag.subnetworkID, dagState.localSubnetworkID)
+			" database by starting kaspad with --reset-db flag", dag.subnetworkID, dagState.LocalSubnetworkID)
 	}
 
 	// Load all of the block data for the known DAG and construct
