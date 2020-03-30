@@ -61,7 +61,7 @@ func (db *LevelDB) Get(key []byte) ([]byte, error) {
 	if err != nil {
 		if errors.Is(err, leveldb.ErrNotFound) {
 			return nil, errors.Wrapf(database2.ErrNotFound,
-				"key % not found", hex.EncodeToString(key))
+				"key %s not found", hex.EncodeToString(key))
 		}
 		return nil, errors.WithStack(err)
 	}
