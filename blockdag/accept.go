@@ -66,6 +66,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	if err != nil {
 		return err
 	}
+	defer dbTx.RollbackUnlessClosed()
 	blockExists, err := dbaccess.HasBlock(dbTx, block.Hash())
 	if err != nil {
 		return err
