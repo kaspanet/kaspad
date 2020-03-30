@@ -339,8 +339,8 @@ func (dag *BlockDAG) initDAGState() error {
 			}
 		} else {
 			if len(node.parents) == 0 {
-				return AssertError(fmt.Sprintf("initDAGState: Could "+
-					"not find any parent for block %s", node.hash))
+				return AssertError(fmt.Sprintf("initDAGState: block %s "+
+					"has no parents but it's not the genesis block", node.hash))
 			}
 		}
 
