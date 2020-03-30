@@ -2,7 +2,6 @@ package dbaccess
 
 import (
 	"github.com/kaspanet/kaspad/database2"
-	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 )
@@ -16,14 +15,13 @@ var (
 )
 
 // StoreBlock stores the given block in the database.
-func StoreBlock(context Context, block *util.Block) error {
+func StoreBlock(context Context, hash *daghash.Hash, blockBytes []byte) error {
 	accessor, err := context.accessor()
 	if err != nil {
 		return err
 	}
 
 	// Make sure that the block does not already exist.
-	hash := block.Hash()
 	exists, err := HasBlock(context, hash)
 	if err != nil {
 		return err
@@ -33,11 +31,7 @@ func StoreBlock(context Context, block *util.Block) error {
 	}
 
 	// Write the block's bytes to the block store
-	bytes, err := block.Bytes()
-	if err != nil {
-		return err
-	}
-	blockLocation, err := accessor.AppendToStore(blockStoreName, bytes)
+	blockLocation, err := accessor.AppendToStore(blockStoreName, blockBytes)
 	if err != nil {
 		return err
 	}
@@ -66,35 +60,29 @@ func HasBlock(context Context, hash *daghash.Hash) (bool, error) {
 }
 
 // FetchBlock returns the block of the given hash. Returns
-// found=false if the block had not been previously inserted
+// ErrNotFound if the block had not been previously inserted
 // into the database.
-func FetchBlock(context Context, hash *daghash.Hash) (block *util.Block, found bool, err error) {
+func FetchBlock(context Context, hash *daghash.Hash) ([]byte, error) {
 	accessor, err := context.accessor()
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	blockLocationsKey := blockLocationKey(hash)
-	blockLocation, found, err := accessor.Get(blockLocationsKey)
+	blockLocation, err := accessor.Get(blockLocationsKey)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
-	if !found {
-		return nil, false, nil
+	if database2.IsNotFoundError(err) {
+		return nil, errors.Wrapf(err,
+			"block %s not found", hash)
 	}
-	bytes, found, err := accessor.RetrieveFromStore(blockStoreName, blockLocation)
+	bytes, err := accessor.RetrieveFromStore(blockStoreName, blockLocation)
 	if err != nil {
-		return nil, false, err
-	}
-	if !found {
-		return nil, false, nil
+		return nil, err
 	}
 
-	block, err = util.NewBlockFromBytes(bytes)
-	if err != nil {
-		return nil, false, err
-	}
-	return block, true, nil
+	return bytes, nil
 }
 
 func blockLocationKey(hash *daghash.Hash) []byte {

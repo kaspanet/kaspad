@@ -82,9 +82,6 @@ func realMain() error {
 	parser.AddCommand("fetchblock",
 		"Fetch the specific block hash from the database", "",
 		&fetchBlockCfg)
-	parser.AddCommand("fetchblockregion",
-		"Fetch the specified block region from the database", "",
-		&blockRegionCfg)
 
 	// Parse command line and invoke the Execute function for the specified
 	// command.

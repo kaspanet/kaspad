@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
@@ -554,8 +555,13 @@ func TestNew(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error creating db: %s", err)
 	}
+	err = dbaccess.Open(dbPath)
+	if err != nil {
+		t.Fatalf("error creating db: %s", err)
+	}
 	defer func() {
 		db.Close()
+		dbaccess.Close()
 		os.RemoveAll(dbPath)
 	}()
 	config := &Config{
@@ -594,8 +600,13 @@ func TestAcceptingInInit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error creating db: %s", err)
 	}
+	err = dbaccess.Open(dbPath)
+	if err != nil {
+		t.Fatalf("error creating db: %s", err)
+	}
 	defer func() {
 		db.Close()
+		dbaccess.Close()
 		os.RemoveAll(dbPath)
 	}()
 
@@ -625,13 +636,16 @@ func TestAcceptingInInit(t *testing.T) {
 	testNode.status = statusDataStored
 
 	// Manually add the test block to the database
-	err = db.Update(func(dbTx database.Tx) error {
-		err := dbStoreBlock(dbTx, testBlock)
-		if err != nil {
-			return err
-		}
-		return dbStoreBlockNode(dbTx, testNode)
-	})
+	err = dbStoreBlock(dbaccess.NoTx(), testBlock)
+	if err != nil {
+		t.Fatalf("Failed to store block: %s", err)
+	}
+	dbTestNode, err := serializeBlockNode(testNode)
+	if err != nil {
+		t.Fatalf("Failed to serialize blockNode: %s", err)
+	}
+	key := blockIndexKey(testNode.hash, testNode.blueScore)
+	err = dbaccess.StoreIndexBlock(dbaccess.NoTx(), key, dbTestNode)
 	if err != nil {
 		t.Fatalf("Failed to update block index: %s", err)
 	}

@@ -488,7 +488,7 @@ func (dag *BlockDAG) addBlock(node *blockNode,
 	if err != nil {
 		if errors.As(err, &RuleError{}) {
 			dag.index.SetStatusFlags(node, statusValidateFailed)
-			err := dag.index.flushToDB()
+			err := dag.index.flushToDB(dbaccess.NoTx())
 			if err != nil {
 				return nil, err
 			}
@@ -724,7 +724,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 		return err
 	}
 	err := dag.db.Update(func(dbTx database.Tx) error {
-		err := dag.index.flushToDBWithTx(dbTx)
+		err := dag.index.flushToDB(dbaccess.NoTx())
 		if err != nil {
 			return err
 		}
@@ -744,19 +744,20 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 			return err
 		}
 
-		// Update best block state.
+		// Update DAG state.
 		state := &dagState{
 			TipHashes:         dag.TipHashes(),
 			LastFinalityPoint: dag.lastFinalityPoint.hash,
+			localSubnetworkID: dag.subnetworkID,
 		}
-		err = dbPutDAGState(dbTx, state)
+		err = dbPutDAGState(dbaccess.NoTx(), state)
 		if err != nil {
 			return err
 		}
 
 		// Update the UTXO set using the diffSet that was melded into the
 		// full UTXO set.
-		err = dbPutUTXODiff(dbTx, virtualUTXODiff)
+		err = dbUpdateUTXOSet(dbaccess.NoTx(), virtualUTXODiff)
 		if err != nil {
 			return err
 		}
@@ -1155,21 +1156,17 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 	return genesisPastUTXO
 }
 
-func (node *blockNode) fetchBlueBlocks(db database.DB) ([]*util.Block, error) {
+func (node *blockNode) fetchBlueBlocks() ([]*util.Block, error) {
 	blueBlocks := make([]*util.Block, len(node.blues))
-	err := db.View(func(dbTx database.Tx) error {
-		for i, blueBlockNode := range node.blues {
-			blueBlock, err := dbFetchBlockByNode(dbTx, blueBlockNode)
-			if err != nil {
-				return err
-			}
-
-			blueBlocks[i] = blueBlock
+	for i, blueBlockNode := range node.blues {
+		blueBlock, err := dbFetchBlockByHash(dbaccess.NoTx(), blueBlockNode.hash)
+		if err != nil {
+			return nil, err
 		}
 
-		return nil
-	})
-	return blueBlocks, err
+		blueBlocks[i] = blueBlock
+	}
+	return blueBlocks, nil
 }
 
 // applyBlueBlocks adds all transactions in the blue blocks to the selectedParent's UTXO set
@@ -1276,7 +1273,7 @@ func (dag *BlockDAG) pastUTXO(node *blockNode) (
 		return nil, nil, nil, err
 	}
 
-	blueBlocks, err := node.fetchBlueBlocks(dag.db)
+	blueBlocks, err := node.fetchBlueBlocks()
 	if err != nil {
 		return nil, nil, nil, err
 	}
