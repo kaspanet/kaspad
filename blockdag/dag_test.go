@@ -644,7 +644,7 @@ func TestAcceptingInInit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to serialize blockNode: %s", err)
 	}
-	key := BlockIndexKey(testNode.hash, testNode.blueScore)
+	key := blockIndexKey(testNode.hash, testNode.blueScore)
 	err = dbaccess.StoreIndexBlock(dbaccess.NoTx(), key, dbTestNode)
 	if err != nil {
 		t.Fatalf("Failed to update block index: %s", err)
