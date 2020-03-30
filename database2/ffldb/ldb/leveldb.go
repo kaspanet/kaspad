@@ -1,6 +1,8 @@
 package ldb
 
 import (
+	"encoding/hex"
+	"github.com/kaspanet/kaspad/database2"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 	ldbErrors "github.com/syndtr/goleveldb/leveldb/errors"
@@ -53,16 +55,17 @@ func (db *LevelDB) Put(key []byte, value []byte) error {
 }
 
 // Get gets the value for the given key. It returns
-// found=false if the given key does not exist.
-func (db *LevelDB) Get(key []byte) (data []byte, found bool, err error) {
-	data, err = db.ldb.Get(key, nil)
+// ErrNotFound if the given key does not exist.
+func (db *LevelDB) Get(key []byte) ([]byte, error) {
+	data, err := db.ldb.Get(key, nil)
 	if err != nil {
 		if errors.Is(err, leveldb.ErrNotFound) {
-			return nil, false, nil
+			return nil, errors.Wrapf(database2.ErrNotFound,
+				"key %s not found", hex.EncodeToString(key))
 		}
-		return nil, false, errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
-	return data, true, nil
+	return data, nil
 }
 
 // Has returns true if the database does contains the

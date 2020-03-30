@@ -1,6 +1,7 @@
 package ffldb
 
 import (
+	"github.com/kaspanet/kaspad/database2"
 	"io/ioutil"
 	"reflect"
 	"testing"
@@ -96,13 +97,13 @@ func TestRepairFlatFiles(t *testing.T) {
 	}
 
 	// Make sure that we can't get data that no longer exists
-	_, found, err := ffldbInstance.RetrieveFromStore(storeName, location2)
-	if err != nil {
-		t.Fatalf("TestRepairFlatFiles: RetrieveFromStore "+
-			"unexpectedly failed: %s", err)
+	_, err = ffldbInstance.RetrieveFromStore(storeName, location2)
+	if err == nil {
+		t.Fatalf("TestRepairFlatFiles: RetrieveFromStore " +
+			"unexpectedly succeeded")
 	}
-	if found {
-		t.Fatalf("TestRepairFlatFiles: unexpectedly found " +
-			"data in store")
+	if !database2.IsNotFoundError(err) {
+		t.Fatalf("TestRepairFlatFiles: RetrieveFromStore "+
+			"returned wrong error: %s", err)
 	}
 }

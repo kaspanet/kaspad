@@ -8,8 +8,8 @@ type DataAccessor interface {
 	Put(key []byte, value []byte) error
 
 	// Get gets the value for the given key. It returns
-	// found=false if the given key does not exist.
-	Get(key []byte) (data []byte, found bool, err error)
+	// ErrNotFound if the given key does not exist.
+	Get(key []byte) ([]byte, error)
 
 	// Has returns true if the database does contains the
 	// given key.
@@ -26,9 +26,10 @@ type DataAccessor interface {
 	AppendToStore(storeName string, data []byte) ([]byte, error)
 
 	// RetrieveFromStore retrieves data from the store defined by
-	// storeName using the given serialized location handle. See
+	// storeName using the given serialized location handle. It
+	// returns ErrNotFound if the location does not exist. See
 	// AppendToStore for further details.
-	RetrieveFromStore(storeName string, location []byte) (data []byte, found bool, err error)
+	RetrieveFromStore(storeName string, location []byte) ([]byte, error)
 
 	// Cursor begins a new cursor over the given bucket.
 	Cursor(bucket []byte) (Cursor, error)

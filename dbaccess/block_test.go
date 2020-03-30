@@ -49,14 +49,10 @@ func TestBlockStoreSanity(t *testing.T) {
 
 	// Fetch the genesis block back from the db and make sure
 	// that it's equal to the original
-	fetchedGenesis, found, err := FetchBlock(NoTx(), genesis.Hash())
+	fetchedGenesis, err := FetchBlock(NoTx(), genesis.Hash())
 	if err != nil {
 		t.Fatalf("TestBlockStoreSanity: FetchBlock unexpectedly "+
 			"failed: %s", err)
-	}
-	if !found {
-		t.Fatalf("TestBlockStoreSanity: just-inserted block is " +
-			"not found in the database")
 	}
 	if !reflect.DeepEqual(genesis.MsgBlock(), fetchedGenesis.MsgBlock()) {
 		t.Fatalf("TestBlockStoreSanity: just-inserted block is " +
