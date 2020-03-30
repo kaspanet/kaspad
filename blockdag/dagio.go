@@ -356,19 +356,12 @@ func (dag *BlockDAG) initDAGState() error {
 	// UTXO set accordingly.
 	log.Infof("Loading UTXO set...")
 
-	// Determine how many UTXO entries will be loaded into the index so we can
-	// allocate the right amount.
-	var utxoEntryCount int32
+	fullUTXOCollection := make(utxoCollection)
 	cursor, err := dbaccess.UTXOSetCursor(dbaccess.NoTx())
 	if err != nil {
 		return err
 	}
 	for cursor.Next() {
-		utxoEntryCount++
-	}
-
-	fullUTXOCollection := make(utxoCollection, utxoEntryCount)
-	for ok := cursor.First(); ok; ok = cursor.Next() {
 		// Deserialize the outpoint
 		key, err := cursor.Key()
 		if err != nil {
