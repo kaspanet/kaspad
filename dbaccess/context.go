@@ -43,6 +43,12 @@ func (ctx *TxContext) Rollback() error {
 	return ctx.dbTransaction.Rollback()
 }
 
+// Rollback rolls-back the transaction attached to this TxContext,
+// unless the transaction had already been closed using either Rollback or Commit.
+func (ctx *TxContext) RollbackUnlessClosed() error {
+	return ctx.dbTransaction.RollbackUnlessClosed()
+}
+
 // NewTx returns an instance of TxContext with a new database transaction
 func NewTx() (*TxContext, error) {
 	db, err := db()
