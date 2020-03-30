@@ -740,7 +740,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 }
 
 // dbFetchBlockByHash retrieves the raw block for the provided hash,
-// deserialize it, and return a util.Block of it.
+// deserializes it, and returns a util.Block of it.
 func dbFetchBlockByHash(context dbaccess.Context, hash *daghash.Hash) (block *util.Block, found bool, err error) {
 	blockBytes, found, err := dbaccess.FetchBlock(context, hash)
 	if err != nil {
