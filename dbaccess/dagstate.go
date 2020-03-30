@@ -14,10 +14,10 @@ func StoreDAGState(context Context, dagState []byte) error {
 }
 
 // FetchDAGState retrieves the DAG state from the database.
-func FetchDAGState(context Context) (data []byte, found bool, err error) {
+func FetchDAGState(context Context) ([]byte, error) {
 	accessor, err := context.accessor()
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	return accessor.Get(dagStateKey)
 }

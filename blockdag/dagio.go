@@ -324,14 +324,14 @@ func (dag *BlockDAG) initDAGState() error {
 	// Fetch the stored DAG state from the database metadata.
 	// When it doesn't exist, it means the database hasn't been
 	// initialized for use with the DAG yet.
-	serializedDAGState, found, err := dbaccess.FetchDAGState(dbaccess.NoTx())
-	if err != nil {
-		return err
-	}
-	if !found {
+	serializedDAGState, err := dbaccess.FetchDAGState(dbaccess.NoTx())
+	if dbaccess.IsNotFoundError(err) {
 		// At this point the database has not already been initialized, so
 		// initialize both it and the DAG state to the genesis block.
 		return dag.createDAGState()
+	}
+	if err != nil {
+		return err
 	}
 
 	dagState, err := deserializeDAGState(serializedDAGState)
