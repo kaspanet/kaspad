@@ -6,7 +6,6 @@
 package p2p
 
 import (
-	"bytes"
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
@@ -497,13 +496,8 @@ func (s *Server) pushTxMsg(sp *Peer, txID *daghash.TxID, doneChan chan<- struct{
 func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- struct{},
 	waitChan <-chan struct{}) error {
 
-	// Fetch the raw block bytes from the database.
-	var blockBytes []byte
-	err := sp.server.db.View(func(dbTx database.Tx) error {
-		var err error
-		blockBytes, err = dbTx.FetchBlock(hash)
-		return err
-	})
+	// Fetch the block from the database.
+	block, err := s.DAG.BlockByHash(hash)
 	if err != nil {
 		peerLog.Tracef("Unable to fetch requested block hash %s: %s",
 			hash, err)
@@ -513,19 +507,7 @@ func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- stru
 		}
 		return err
 	}
-
-	// Deserialize the block.
-	var msgBlock wire.MsgBlock
-	err = msgBlock.Deserialize(bytes.NewReader(blockBytes))
-	if err != nil {
-		peerLog.Tracef("Unable to deserialize requested block hash "+
-			"%s: %s", hash, err)
-
-		if doneChan != nil {
-			doneChan <- struct{}{}
-		}
-		return err
-	}
+	msgBlock := block.MsgBlock()
 
 	// If we are a full node and the peer is a partial node, we must convert
 	// the block to a partial block.
@@ -542,7 +524,7 @@ func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- stru
 		<-waitChan
 	}
 
-	sp.QueueMessage(&msgBlock, doneChan)
+	sp.QueueMessage(msgBlock, doneChan)
 
 	return nil
 }

@@ -5,9 +5,11 @@ package blockdag
 import (
 	"compress/bzip2"
 	"encoding/binary"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -77,12 +79,19 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 	}
 
 	if config.DB == nil {
-		tmpDir := os.TempDir()
+		var err error
+		tmpDir, err := ioutil.TempDir("", "DAGSetup")
+		if err != nil {
+			return nil, nil, errors.Errorf("error creating temp dir: %s", err)
+		}
 
 		dbPath := filepath.Join(tmpDir, dbName)
 		_ = os.RemoveAll(dbPath)
-		var err error
 		config.DB, err = database.Create(testDbType, dbPath, blockDataNet)
+		if err != nil {
+			return nil, nil, errors.Errorf("error creating db: %s", err)
+		}
+		err = dbaccess.Open(dbPath)
 		if err != nil {
 			return nil, nil, errors.Errorf("error creating db: %s", err)
 		}
@@ -93,6 +102,7 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 			spawnWaitGroup.Wait()
 			spawn = realSpawn
 			config.DB.Close()
+			dbaccess.Close()
 			os.RemoveAll(dbPath)
 		}
 	} else {

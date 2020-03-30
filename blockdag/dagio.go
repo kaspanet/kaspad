@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
 	"io"
 	"sync"
@@ -468,12 +469,17 @@ func (dag *BlockDAG) initDAGState() error {
 		// pressure on the GC.
 		log.Infof("Loading block index...")
 
-		blockIndexBucket := dbTx.Metadata().Bucket(blockIndexBucketName)
-
 		var unprocessedBlockNodes []*blockNode
-		cursor := blockIndexBucket.Cursor()
-		for ok := cursor.First(); ok; ok = cursor.Next() {
-			node, err := dag.deserializeBlockNode(cursor.Value())
+		blockIndexCursor, err := dbaccess.BlockIndexCursor(dbaccess.NoTx())
+		if err != nil {
+			return err
+		}
+		for blockIndexCursor.Next() {
+			serializedDBNode, err := blockIndexCursor.Value()
+			if err != nil {
+				return err
+			}
+			node, err := dag.deserializeBlockNode(serializedDBNode)
 			if err != nil {
 				return err
 			}
@@ -524,7 +530,7 @@ func (dag *BlockDAG) initDAGState() error {
 		// Determine how many UTXO entries will be loaded into the index so we can
 		// allocate the right amount.
 		var utxoEntryCount int32
-		cursor = utxoEntryBucket.Cursor()
+		cursor := utxoEntryBucket.Cursor()
 		for ok := cursor.First(); ok; ok = cursor.Next() {
 			utxoEntryCount++
 		}
@@ -596,7 +602,7 @@ func (dag *BlockDAG) initDAGState() error {
 		for _, node := range unprocessedBlockNodes {
 			// Check to see if the block exists in the block DB. If it
 			// doesn't, the database has certainly been corrupted.
-			blockExists, err := dbTx.HasBlock(node.hash)
+			blockExists, err := dbaccess.HasBlock(dbaccess.NoTx(), node.hash)
 			if err != nil {
 				return AssertError(fmt.Sprintf("initDAGState: HasBlock "+
 					"for block %s failed: %s", node.hash, err))
@@ -607,7 +613,7 @@ func (dag *BlockDAG) initDAGState() error {
 			}
 
 			// Attempt to accept the block.
-			block, err := dbFetchBlockByNode(dbTx, node)
+			block, err := dbFetchBlockByHash(dbaccess.NoTx(), node.hash)
 			if err != nil {
 				return err
 			}
@@ -729,22 +735,22 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 	return node, nil
 }
 
-// dbFetchBlockByNode uses an existing database transaction to retrieve the
-// raw block for the provided node, deserialize it, and return a util.Block
-// of it.
-func dbFetchBlockByNode(dbTx database.Tx, node *blockNode) (*util.Block, error) {
-	// Load the raw block bytes from the database.
-	blockBytes, err := dbTx.FetchBlock(node.hash)
+// dbFetchBlockByHash retrieves the raw block for the provided hash,
+// deserializes it, and returns a util.Block of it.
+func dbFetchBlockByHash(context dbaccess.Context, hash *daghash.Hash) (*util.Block, error) {
+	blockBytes, err := dbaccess.FetchBlock(context, hash)
 	if err != nil {
 		return nil, err
 	}
+	return util.NewBlockFromBytes(blockBytes)
+}
 
-	// Create the encapsulated block.
-	block, err := util.NewBlockFromBytes(blockBytes)
+func dbStoreBlock(context dbaccess.Context, block *util.Block) error {
+	blockBytes, err := block.Bytes()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return block, nil
+	return dbaccess.StoreBlock(context, block.Hash(), blockBytes)
 }
 
 func serializeBlockNode(node *blockNode) ([]byte, error) {
@@ -805,32 +811,6 @@ func serializeBlockNode(node *blockNode) ([]byte, error) {
 	return w.Bytes(), nil
 }
 
-// dbStoreBlockNode stores the block node data into the block
-// index bucket. This overwrites the current entry if there exists one.
-func dbStoreBlockNode(dbTx database.Tx, node *blockNode) error {
-	serializedNode, err := serializeBlockNode(node)
-	if err != nil {
-		return err
-	}
-	// Write block header data to block index bucket.
-	blockIndexBucket := dbTx.Metadata().Bucket(blockIndexBucketName)
-	key := BlockIndexKey(node.hash, node.blueScore)
-	return blockIndexBucket.Put(key, serializedNode)
-}
-
-// dbStoreBlock stores the provided block in the database if it is not already
-// there. The full block data is written to ffldb.
-func dbStoreBlock(dbTx database.Tx, block *util.Block) error {
-	hasBlock, err := dbTx.HasBlock(block.Hash())
-	if err != nil {
-		return err
-	}
-	if hasBlock {
-		return nil
-	}
-	return dbTx.StoreBlock(block)
-}
-
 // BlockIndexKey generates the binary key for an entry in the block index
 // bucket. The key is composed of the block blue score encoded as a big-endian
 // 64-bit unsigned int followed by the 32 byte block hash.
@@ -857,13 +837,10 @@ func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
 		return nil, errNotInDAG(str)
 	}
 
-	// Load the block from the database and return it.
-	var block *util.Block
-	err := dag.db.View(func(dbTx database.Tx) error {
-		var err error
-		block, err = dbFetchBlockByNode(dbTx, node)
-		return err
-	})
+	block, err := dbFetchBlockByHash(dbaccess.NoTx(), node.hash)
+	if err != nil {
+		return nil, err
+	}
 	return block, err
 }
 

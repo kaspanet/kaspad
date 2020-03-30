@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
@@ -100,6 +101,10 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error creating db: %s", err)
 	}
+	err = dbaccess.Open(db1Path)
+	if err != nil {
+		t.Fatalf("error creating db: %s", err)
+	}
 
 	db1Config := blockdag.Config{
 		IndexManager: db1IndexManager,
@@ -171,6 +176,12 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 		t.Fatalf("Error opening database: %s", err)
 	}
 
+	err = dbaccess.Close()
+	if err != nil {
+		t.Fatalf("Error closing the database: %s", err)
+	}
+	dbaccess.Open(db2Path)
+
 	db2Config := blockdag.Config{
 		DAGParams: params,
 		DB:        db2,
@@ -217,6 +228,12 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error opening database: %s", err)
 	}
+
+	err = dbaccess.Close()
+	if err != nil {
+		t.Fatalf("Error closing the database: %s", err)
+	}
+	dbaccess.Open(db3Path)
 
 	db3AcceptanceIndex := NewAcceptanceIndex()
 	db3IndexManager := NewManager([]Indexer{db3AcceptanceIndex})
