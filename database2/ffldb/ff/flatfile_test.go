@@ -29,14 +29,10 @@ func TestFlatFileStoreSanity(t *testing.T) {
 	}
 
 	// Read from the location previously written to
-	readData, found, err := store.read(location)
+	readData, err := store.read(location)
 	if err != nil {
 		t.Fatalf("TestFlatFileStoreSanity: read returned "+
 			"unexpected error: %s", err)
-	}
-	if !found {
-		t.Fatalf("TestFlatFileStoreSanity: location unexpectedly " +
-			"not found in store")
 	}
 
 	// Make sure that the written data and the read data are equal
