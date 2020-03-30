@@ -176,10 +176,6 @@ type Params struct {
 
 	// Address encoding magics
 	PrivateKeyID byte // First byte of a WIF private key
-
-	// BIP44 coin type used in the hierarchical deterministic path for
-	// address generation.
-	HDCoinType uint32
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default
@@ -234,10 +230,6 @@ var MainnetParams = Params{
 
 	// Address encoding magics
 	PrivateKeyID: 0x80, // starts with 5 (uncompressed) or K (compressed)
-
-	// BIP44 coin type used in the hierarchical deterministic path for
-	// address generation.
-	HDCoinType: 0,
 }
 
 // RegressionNetParams defines the network parameters for the regression test
@@ -288,10 +280,6 @@ var RegressionNetParams = Params{
 
 	// Address encoding magics
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
-
-	// BIP44 coin type used in the hierarchical deterministic path for
-	// address generation.
-	HDCoinType: 1,
 }
 
 // TestnetParams defines the network parameters for the test Kaspa network.
@@ -340,10 +328,6 @@ var TestnetParams = Params{
 
 	// Address encoding magics
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
-
-	// BIP44 coin type used in the hierarchical deterministic path for
-	// address generation.
-	HDCoinType: 1,
 }
 
 // SimnetParams defines the network parameters for the simulation test Kaspa
@@ -396,10 +380,6 @@ var SimnetParams = Params{
 	PrivateKeyID: 0x64, // starts with 4 (uncompressed) or F (compressed)
 	// Human-readable part for Bech32 encoded addresses
 	Prefix: util.Bech32PrefixKaspaSim,
-
-	// BIP44 coin type used in the hierarchical deterministic path for
-	// address generation.
-	HDCoinType: 115, // ASCII for s
 }
 
 // DevnetParams defines the network parameters for the development Kaspa network.
@@ -448,10 +428,6 @@ var DevnetParams = Params{
 
 	// Address encoding magics
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
-
-	// BIP44 coin type used in the hierarchical deterministic path for
-	// address generation.
-	HDCoinType: 1,
 }
 
 var (
