@@ -11,7 +11,7 @@ import (
 // the integrity of the data by comparing the calculated checksum against the
 // one stored in the flat file. This function also automatically handles all
 // file management such as opening and closing files as necessary to stay
-// within the maximum allowed open files limit.  It returns ErrNotFound if the
+// within the maximum allowed open files limit. It returns ErrNotFound if the
 // location does not exist.
 //
 // Format: <data length><data><checksum>
