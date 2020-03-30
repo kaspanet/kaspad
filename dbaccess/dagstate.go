@@ -14,6 +14,7 @@ func StoreDAGState(context Context, dagState []byte) error {
 }
 
 // FetchDAGState retrieves the DAG state from the database.
+// Returns ErrNotFound if the state is missing from the database.
 func FetchDAGState(context Context) ([]byte, error) {
 	accessor, err := context.accessor()
 	if err != nil {

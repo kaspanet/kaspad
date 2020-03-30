@@ -762,12 +762,12 @@ func (dag *BlockDAG) BlockHashesFrom(lowHash *daghash.Hash, limit int) ([]*dagha
 	}
 
 	key := BlockIndexKey(lowHash, blueScore)
-	cursor, found, err := dbaccess.BlockIndexCursorFrom(dbaccess.NoTx(), key)
+	cursor, err := dbaccess.BlockIndexCursorFrom(dbaccess.NoTx(), key)
+	if dbaccess.IsNotFoundError(err) {
+		return nil, errors.Wrapf(err, "block %s not in block index", lowHash)
+	}
 	if err != nil {
 		return nil, err
-	}
-	if !found {
-		return nil, errors.Errorf("block %s not in block index", lowHash)
 	}
 
 	for cursor.Next() && len(blockHashes) < limit {

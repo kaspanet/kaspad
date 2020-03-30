@@ -1,7 +1,9 @@
 package dbaccess
 
 import (
+	"encoding/hex"
 	"github.com/kaspanet/kaspad/database2"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -33,20 +35,22 @@ func BlockIndexCursor(context Context) (database2.Cursor, error) {
 
 // BlockIndexCursorFrom opens a cursor over blocks-index blocks
 // starting from the block with the given blockHash and
-// blockBlueScore.
-func BlockIndexCursorFrom(context Context, blockIndexKey []byte) (cursor database2.Cursor, found bool, err error) {
-	cursor, err = BlockIndexCursor(context)
+// blockBlueScore. Returns ErrNotFound if blockIndexKey is missing
+// from the database.
+func BlockIndexCursorFrom(context Context, blockIndexKey []byte) (database2.Cursor, error) {
+	cursor, err := BlockIndexCursor(context)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
-	found, err = cursor.Seek(blockIndexKey)
+	found, err := cursor.Seek(blockIndexKey)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	if !found {
-		return nil, false, nil
+		return nil, errors.Wrapf(database2.ErrNotFound,
+			"entry not found for %s", hex.EncodeToString(blockIndexKey))
 	}
 
-	return cursor, true, nil
+	return cursor, nil
 }
