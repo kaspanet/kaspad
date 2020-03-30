@@ -75,32 +75,26 @@ func TxToSubnetworkID(tx *wire.MsgTx) (*subnetworkid.SubnetworkID, error) {
 }
 
 // dbFetchSubnetwork returns a registered subnetwork.
-func dbFetchSubnetwork(subnetworkID *subnetworkid.SubnetworkID) (subnet *subnetwork, exists bool, err error) {
-	serializedSubnetwork, exists, err := dbaccess.FetchSubnetworkData(dbaccess.NoTx(), subnetworkID)
+func dbFetchSubnetwork(subnetworkID *subnetworkid.SubnetworkID) (*subnetwork, error) {
+	serializedSubnetwork, err := dbaccess.FetchSubnetworkData(dbaccess.NoTx(), subnetworkID)
 	if err != nil {
-		return nil, false, err
-	}
-	if !exists {
-		return nil, false, nil
+		return nil, err
 	}
 
-	subnet, err = deserializeSubnetwork(serializedSubnetwork)
+	subnet, err := deserializeSubnetwork(serializedSubnetwork)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
-	return subnet, true, nil
+	return subnet, nil
 }
 
 // GasLimit returns the gas limit of a registered subnetwork. If the subnetwork does not
 // exist this method returns an error.
 func GasLimit(subnetworkID *subnetworkid.SubnetworkID) (uint64, error) {
-	sNet, exists, err := dbFetchSubnetwork(subnetworkID)
+	sNet, err := dbFetchSubnetwork(subnetworkID)
 	if err != nil {
 		return 0, err
-	}
-	if !exists {
-		return 0, errors.Errorf("subnetwork '%s' not found", subnetworkID)
 	}
 
 	return sNet.gasLimit, nil
@@ -116,24 +110,6 @@ func dbRegisterSubnetwork(context dbaccess.Context, subnetworkID *subnetworkid.S
 
 	// Store the subnetwork
 	return dbaccess.RegisterSubnetwork(context, subnetworkID, serializedSubnetwork)
-}
-
-// dbGetSubnetwork returns the subnetwork associated with subnetworkID or nil if the subnetwork was not found.
-func dbGetSubnetwork(context dbaccess.Context, subnetworkID *subnetworkid.SubnetworkID) (deserializedSubnetwork *subnetwork, exists bool, err error) {
-	serializedSubnetwork, exists, err := dbaccess.FetchSubnetworkData(context, subnetworkID)
-	if err != nil {
-		return nil, false, err
-	}
-	if !exists {
-		return nil, false, nil
-	}
-
-	deserializedSubnetwork, err = deserializeSubnetwork(serializedSubnetwork)
-	if err != nil {
-		return nil, false, err
-	}
-
-	return deserializedSubnetwork, true, nil
 }
 
 type subnetwork struct {

@@ -2,7 +2,6 @@ package blockdag
 
 import (
 	"bytes"
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/locks"
@@ -134,22 +133,13 @@ func (diffStore *utxoDiffStore) diffChildByNode(node *blockNode) (*blockNode, er
 	return diffData.diffChild, nil
 }
 
-func (diffStore *utxoDiffStore) diffDataFromDB(hash *daghash.Hash) (diffData *blockUTXODiffData, found bool, err error) {
-	serializedBlockDiffData, found, err := dbaccess.FetchUTXODiffData(dbaccess.NoTx(), hash)
+func (diffStore *utxoDiffStore) diffDataFromDB(hash *daghash.Hash) (*blockUTXODiffData, error) {
+	serializedBlockDiffData, err := dbaccess.FetchUTXODiffData(dbaccess.NoTx(), hash)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
-	if !found {
-		return nil, false, nil
-	}
-
-	diffData, err = diffStore.deserializeBlockUTXODiffData(serializedBlockDiffData)
-	if err != nil {
-		return nil, false, err
-	}
-
-	return diffData, true, nil
+	return diffStore.deserializeBlockUTXODiffData(serializedBlockDiffData)
 }
 
 // flushToDB writes all dirty diff data to the database. If all writes

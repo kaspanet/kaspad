@@ -3,6 +3,7 @@ package dbaccess
 import (
 	"github.com/kaspanet/kaspad/database2"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/pkg/errors"
 )
 
 var utxoDiffsBucket = database2.MakeBucket([]byte("utxodiffs"))
@@ -31,12 +32,16 @@ func RemoveDiffData(context Context, blockHash *daghash.Hash) error {
 }
 
 // FetchUTXODiffData returns the UTXO diff data of a block by its hash.
-func FetchUTXODiffData(context Context, blockHash *daghash.Hash) (diffData []byte, found bool, err error) {
+func FetchUTXODiffData(context Context, blockHash *daghash.Hash) ([]byte, error) {
 	accessor, err := context.accessor()
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	key := utxoDiffsBucket.Key(blockHash[:])
-	return accessor.Get(key)
+	diffData, err := accessor.Get(key)
+	if IsNotFoundError(err) {
+		return nil, errors.Wrapf(err, "couldn't find diff data for block %s", blockHash)
+	}
+	return diffData, err
 }

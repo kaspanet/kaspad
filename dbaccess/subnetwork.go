@@ -8,10 +8,10 @@ import (
 var subnetworkBucket = database2.MakeBucket([]byte("subnetworks"))
 
 // FetchSubnetworkData returns the subnetwork data by its ID.
-func FetchSubnetworkData(context Context, subnetworkID *subnetworkid.SubnetworkID) (subnetworkData []byte, found bool, err error) {
+func FetchSubnetworkData(context Context, subnetworkID *subnetworkid.SubnetworkID) ([]byte, error) {
 	accessor, err := context.accessor()
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	key := subnetworkBucket.Key(subnetworkID[:])
@@ -37,10 +37,14 @@ func SubnetworkExists(context Context, subnetworkID *subnetworkid.SubnetworkID) 
 	}
 
 	key := subnetworkBucket.Key(subnetworkID[:])
-	_, exists, err := accessor.Get(key)
+	_, err = accessor.Get(key)
+	if IsNotFoundError(err) {
+		return false, nil
+	}
+
 	if err != nil {
 		return false, err
 	}
 
-	return exists, nil
+	return true, nil
 }
