@@ -344,12 +344,6 @@ func (dag *BlockDAG) createDAGState() error {
 			return err
 		}
 
-		if _, err := meta.CreateBucketIfNotExists(idByHashIndexBucketName); err != nil {
-			return err
-		}
-		if _, err := meta.CreateBucketIfNotExists(hashByIDIndexBucketName); err != nil {
-			return err
-		}
 		return nil
 	})
 

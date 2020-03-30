@@ -86,9 +86,9 @@ func (idx *AcceptanceIndex) Init(db database.DB, dag *blockdag.BlockDAG) error {
 // connected to the DAG.
 //
 // This is part of the Indexer interface.
-func (idx *AcceptanceIndex) ConnectBlock(dbTx database.Tx, _ *util.Block, blockID uint64, _ *blockdag.BlockDAG,
+func (idx *AcceptanceIndex) ConnectBlock(dbTx database.Tx, _ *util.Block, _ *blockdag.BlockDAG,
 	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData, _ blockdag.MultiBlockTxsAcceptanceData) error {
-	return dbPutTxsAcceptanceData(dbTx, blockID, txsAcceptanceData)
+	return dbPutTxsAcceptanceData(dbTx, txsAcceptanceData)
 }
 
 // TxsAcceptanceData returns the acceptance data of all the transactions that
@@ -120,7 +120,7 @@ func (idx *AcceptanceIndex) Recover(dbTx database.Tx, currentBlockID, lastKnownB
 		if err != nil {
 			return err
 		}
-		err = idx.ConnectBlock(dbTx, nil, blockID, nil, txAcceptanceData, nil)
+		err = idx.ConnectBlock(dbTx, nil, nil, txAcceptanceData, nil)
 		if err != nil {
 			return err
 		}
@@ -128,8 +128,7 @@ func (idx *AcceptanceIndex) Recover(dbTx database.Tx, currentBlockID, lastKnownB
 	return nil
 }
 
-func dbPutTxsAcceptanceData(dbTx database.Tx, blockID uint64,
-	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
+func dbPutTxsAcceptanceData(dbTx database.Tx, txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
 	serializedTxsAcceptanceData, err := serializeMultiBlockTxsAcceptanceData(txsAcceptanceData)
 	if err != nil {
 		return err

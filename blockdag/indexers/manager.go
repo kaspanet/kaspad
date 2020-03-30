@@ -8,7 +8,6 @@ import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 var (
@@ -174,20 +173,20 @@ func (m *Manager) Init(db database.DB, blockDAG *blockdag.BlockDAG, interrupt <-
 // the case, recovers the missing blocks from the index.
 func (m *Manager) recoverIfNeeded() error {
 	return m.db.Update(func(dbTx database.Tx) error {
-		lastKnownBlockID := blockdag.DBFetchCurrentBlockID(dbTx)
-		for _, indexer := range m.enabledIndexes {
-			serializedCurrentIdxBlockID := dbTx.Metadata().Bucket(indexCurrentBlockIDBucketName).Get(indexer.Key())
-			currentIdxBlockID := uint64(0)
-			if serializedCurrentIdxBlockID != nil {
-				currentIdxBlockID = blockdag.DeserializeBlockID(serializedCurrentIdxBlockID)
-			}
-			if lastKnownBlockID > currentIdxBlockID {
-				err := indexer.Recover(dbTx, currentIdxBlockID, lastKnownBlockID)
-				if err != nil {
-					return err
-				}
-			}
-		}
+		//lastKnownBlockID := blockdag.DBFetchCurrentBlockID(dbTx)
+		//for _, indexer := range m.enabledIndexes {
+		//	serializedCurrentIdxBlockID := dbTx.Metadata().Bucket(indexCurrentBlockIDBucketName).Get(indexer.Key())
+		//	currentIdxBlockID := uint64(0)
+		//	if serializedCurrentIdxBlockID != nil {
+		//		currentIdxBlockID = blockdag.DeserializeBlockID(serializedCurrentIdxBlockID)
+		//	}
+		//	if lastKnownBlockID > currentIdxBlockID {
+		//		err := indexer.Recover(dbTx, currentIdxBlockID, lastKnownBlockID)
+		//		if err != nil {
+		//			return err
+		//		}
+		//	}
+		//}
 		return nil
 	})
 }
@@ -197,32 +196,14 @@ func (m *Manager) recoverIfNeeded() error {
 // checks, and invokes each indexer.
 //
 // This is part of the blockdag.IndexManager interface.
-func (m *Manager) ConnectBlock(dbTx database.Tx, block *util.Block, blockID uint64, dag *blockdag.BlockDAG,
+func (m *Manager) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG,
 	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
 
 	// Call each of the currently active optional indexes with the block
 	// being connected so they can update accordingly.
 	for _, index := range m.enabledIndexes {
 		// Notify the indexer with the connected block so it can index it.
-		if err := index.ConnectBlock(dbTx, block, blockID, dag, txsAcceptanceData, virtualTxsAcceptanceData); err != nil {
-			return err
-		}
-	}
-
-	// Add the new block ID index entry for the block being connected and
-	// update the current internal block ID accordingly.
-	err := m.updateIndexersWithCurrentBlockID(dbTx, block.Hash(), blockID)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m *Manager) updateIndexersWithCurrentBlockID(dbTx database.Tx, blockHash *daghash.Hash, blockID uint64) error {
-	serializedBlockID := blockdag.SerializeBlockID(blockID)
-	for _, index := range m.enabledIndexes {
-		err := dbTx.Metadata().Bucket(indexCurrentBlockIDBucketName).Put(index.Key(), serializedBlockID)
-		if err != nil {
+		if err := index.ConnectBlock(dbTx, block, dag, txsAcceptanceData, virtualTxsAcceptanceData); err != nil {
 			return err
 		}
 	}

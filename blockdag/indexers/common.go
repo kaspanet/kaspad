@@ -53,7 +53,6 @@ type Indexer interface {
 	// block has been connected to the DAG.
 	ConnectBlock(dbTx database.Tx,
 		block *util.Block,
-		blockID uint64,
 		dag *blockdag.BlockDAG,
 		acceptedTxsData blockdag.MultiBlockTxsAcceptanceData,
 		virtualTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error
