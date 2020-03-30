@@ -227,7 +227,7 @@ func TestElementWireErrors(t *testing.T) {
 		// Encode to wire format.
 		w := newFixedWriter(test.max)
 		err := WriteElement(w, test.in)
-		if err != test.writeErr {
+		if !errors.Is(err, test.writeErr) {
 			t.Errorf("writeElement #%d wrong error got: %v, want: %v",
 				i, err, test.writeErr)
 			continue
@@ -240,7 +240,7 @@ func TestElementWireErrors(t *testing.T) {
 			val = reflect.New(reflect.TypeOf(test.in)).Interface()
 		}
 		err = ReadElement(r, val)
-		if err != test.readErr {
+		if !errors.Is(err, test.readErr) {
 			t.Errorf("readElement #%d wrong error got: %v, want: %v",
 				i, err, test.readErr)
 			continue
@@ -251,31 +251,30 @@ func TestElementWireErrors(t *testing.T) {
 // TestVarIntWire tests wire encode and decode for variable length integers.
 func TestVarIntWire(t *testing.T) {
 	tests := []struct {
-		in  uint64 // Value to encode
-		out uint64 // Expected decoded value
-		buf []byte // Wire encoding
+		value uint64 // Value to encode
+		buf   []byte // Wire encoding
 	}{
 		// Latest protocol version.
 		// Single byte
-		{0, 0, []byte{0x00}},
+		{0, []byte{0x00}},
 		// Max single byte
-		{0xfc, 0xfc, []byte{0xfc}},
+		{0xfc, []byte{0xfc}},
 		// Min 2-byte
-		{0xfd, 0xfd, []byte{0xfd, 0x0fd, 0x00}},
+		{0xfd, []byte{0xfd, 0x0fd, 0x00}},
 		// Max 2-byte
-		{0xffff, 0xffff, []byte{0xfd, 0xff, 0xff}},
+		{0xffff, []byte{0xfd, 0xff, 0xff}},
 		// Min 4-byte
-		{0x10000, 0x10000, []byte{0xfe, 0x00, 0x00, 0x01, 0x00}},
+		{0x10000, []byte{0xfe, 0x00, 0x00, 0x01, 0x00}},
 		// Max 4-byte
-		{0xffffffff, 0xffffffff, []byte{0xfe, 0xff, 0xff, 0xff, 0xff}},
+		{0xffffffff, []byte{0xfe, 0xff, 0xff, 0xff, 0xff}},
 		// Min 8-byte
 		{
-			0x100000000, 0x100000000,
+			0x100000000,
 			[]byte{0xff, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00},
 		},
 		// Max 8-byte
 		{
-			0xffffffffffffffff, 0xffffffffffffffff,
+			0xffffffffffffffff,
 			[]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
 		},
 	}
@@ -283,8 +282,8 @@ func TestVarIntWire(t *testing.T) {
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
 		// Encode to wire format.
-		var buf bytes.Buffer
-		err := WriteVarInt(&buf, test.in)
+		buf := &bytes.Buffer{}
+		err := WriteVarInt(buf, test.value)
 		if err != nil {
 			t.Errorf("WriteVarInt #%d error %v", i, err)
 			continue
@@ -302,9 +301,9 @@ func TestVarIntWire(t *testing.T) {
 			t.Errorf("ReadVarInt #%d error %v", i, err)
 			continue
 		}
-		if val != test.out {
-			t.Errorf("ReadVarInt #%d\n got: %d want: %d", i,
-				val, test.out)
+		if val != test.value {
+			t.Errorf("ReadVarInt #%d\n got: %x want: %x", i,
+				val, test.value)
 			continue
 		}
 	}
@@ -338,7 +337,7 @@ func TestVarIntWireErrors(t *testing.T) {
 		// Encode to wire format.
 		w := newFixedWriter(test.max)
 		err := WriteVarInt(w, test.in)
-		if err != test.writeErr {
+		if !errors.Is(err, test.writeErr) {
 			t.Errorf("WriteVarInt #%d wrong error got: %v, want: %v",
 				i, err, test.writeErr)
 			continue
@@ -347,7 +346,7 @@ func TestVarIntWireErrors(t *testing.T) {
 		// Decode from wire format.
 		r := newFixedReader(test.max, test.buf)
 		_, err = ReadVarInt(r)
-		if err != test.readErr {
+		if !errors.Is(err, test.readErr) {
 			t.Errorf("ReadVarInt #%d wrong error got: %v, want: %v",
 				i, err, test.readErr)
 			continue
@@ -528,7 +527,7 @@ func TestVarStringWireErrors(t *testing.T) {
 		// Encode to wire format.
 		w := newFixedWriter(test.max)
 		err := WriteVarString(w, test.in)
-		if err != test.writeErr {
+		if !errors.Is(err, test.writeErr) {
 			t.Errorf("WriteVarString #%d wrong error got: %v, want: %v",
 				i, err, test.writeErr)
 			continue
@@ -537,7 +536,7 @@ func TestVarStringWireErrors(t *testing.T) {
 		// Decode from wire format.
 		r := newFixedReader(test.max, test.buf)
 		_, err = ReadVarString(r, test.pver)
-		if err != test.readErr {
+		if !errors.Is(err, test.readErr) {
 			t.Errorf("ReadVarString #%d wrong error got: %v, want: %v",
 				i, err, test.readErr)
 			continue
@@ -659,7 +658,7 @@ func TestVarBytesWireErrors(t *testing.T) {
 		// Encode to wire format.
 		w := newFixedWriter(test.max)
 		err := WriteVarBytes(w, test.pver, test.in)
-		if err != test.writeErr {
+		if !errors.Is(err, test.writeErr) {
 			t.Errorf("WriteVarBytes #%d wrong error got: %v, want: %v",
 				i, err, test.writeErr)
 			continue
@@ -669,7 +668,7 @@ func TestVarBytesWireErrors(t *testing.T) {
 		r := newFixedReader(test.max, test.buf)
 		_, err = ReadVarBytes(r, test.pver, MaxMessagePayload,
 			"test payload")
-		if err != test.readErr {
+		if !errors.Is(err, test.readErr) {
 			t.Errorf("ReadVarBytes #%d wrong error got: %v, want: %v",
 				i, err, test.readErr)
 			continue

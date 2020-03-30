@@ -11,6 +11,7 @@ import (
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/random"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 	"math/rand"
@@ -616,10 +617,17 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		// block template doesn't include the coinbase, so the caller
 		// will ultimately create their own coinbase which pays to the
 		// appropriate address(es).
-		blkTemplate, err := generator.NewBlockTemplate(payAddr)
+
+		extraNonce, err := random.Uint64()
 		if err != nil {
-			return internalRPCError("Failed to create new block "+
-				"template: "+err.Error(), "")
+			return internalRPCError(fmt.Sprintf("Failed to randomize "+
+				"extra nonce: %s", err.Error()), "")
+		}
+
+		blkTemplate, err := generator.NewBlockTemplate(payAddr, extraNonce)
+		if err != nil {
+			return internalRPCError(fmt.Sprintf("Failed to create new block "+
+				"template: %s", err.Error()), "")
 		}
 		template = blkTemplate
 		msgBlock = template.Block

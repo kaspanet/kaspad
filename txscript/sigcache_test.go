@@ -6,32 +6,35 @@ package txscript
 
 import (
 	"crypto/rand"
+	"github.com/kaspanet/go-secp256k1"
 	"testing"
-
-	"github.com/kaspanet/kaspad/ecc"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // genRandomSig returns a random message, a signature of the message under the
 // public key and the public key. This function is used to generate randomized
 // test data.
-func genRandomSig() (*daghash.Hash, *ecc.Signature, *ecc.PublicKey, error) {
-	privKey, err := ecc.NewPrivateKey(ecc.S256())
+func genRandomSig() (*secp256k1.Hash, *secp256k1.SchnorrSignature, *secp256k1.SchnorrPublicKey, error) {
+	privKey, err := secp256k1.GeneratePrivateKey()
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	var msgHash daghash.Hash
+	msgHash := &secp256k1.Hash{}
 	if _, err := rand.Read(msgHash[:]); err != nil {
 		return nil, nil, nil, err
 	}
 
-	sig, err := privKey.Sign(msgHash[:])
+	sig, err := privKey.SchnorrSign(msgHash)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	return &msgHash, sig, privKey.PubKey(), nil
+	pubkey, err := privKey.SchnorrPublicKey()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return msgHash, sig, pubkey, nil
 }
 
 // TestSigCacheAddExists tests the ability to add, and later check the
@@ -42,15 +45,16 @@ func TestSigCacheAddExists(t *testing.T) {
 	// Generate a random sigCache entry triplet.
 	msg1, sig1, key1, err := genRandomSig()
 	if err != nil {
-		t.Errorf("unable to generate random signature test data")
+		t.Fatalf("unable to generate random signature test data")
 	}
 
 	// Add the triplet to the signature cache.
 	sigCache.Add(*msg1, sig1, key1)
 
 	// The previously added triplet should now be found within the sigcache.
-	sig1Copy, _ := ecc.ParseSignature(sig1.Serialize())
-	key1Copy, _ := ecc.ParsePubKey(key1.SerializeCompressed(), ecc.S256())
+	sig1Copy := secp256k1.DeserializeSchnorrSignature(sig1.Serialize())
+	key1Serialized, _ := key1.SerializeCompressed()
+	key1Copy, _ := secp256k1.DeserializeSchnorrPubKey(key1Serialized)
 	if !sigCache.Exists(*msg1, sig1Copy, key1Copy) {
 		t.Errorf("previously added item not found in signature cache")
 	}
@@ -73,8 +77,9 @@ func TestSigCacheAddEvictEntry(t *testing.T) {
 
 		sigCache.Add(*msg, sig, key)
 
-		sigCopy, _ := ecc.ParseSignature(sig.Serialize())
-		keyCopy, _ := ecc.ParsePubKey(key.SerializeCompressed(), ecc.S256())
+		sigCopy := secp256k1.DeserializeSchnorrSignature(sig.Serialize())
+		keySerialized, _ := key.SerializeCompressed()
+		keyCopy, _ := secp256k1.DeserializeSchnorrPubKey(keySerialized)
 		if !sigCache.Exists(*msg, sigCopy, keyCopy) {
 			t.Errorf("previously added item not found in signature" +
 				"cache")
@@ -102,8 +107,9 @@ func TestSigCacheAddEvictEntry(t *testing.T) {
 	}
 
 	// The entry added above should be found within the sigcache.
-	sigNewCopy, _ := ecc.ParseSignature(sigNew.Serialize())
-	keyNewCopy, _ := ecc.ParsePubKey(keyNew.SerializeCompressed(), ecc.S256())
+	sigNewCopy := secp256k1.DeserializeSchnorrSignature(sigNew.Serialize())
+	keyNewSerialized, _ := keyNew.SerializeCompressed()
+	keyNewCopy, _ := secp256k1.DeserializeSchnorrPubKey(keyNewSerialized)
 	if !sigCache.Exists(*msgNew, sigNewCopy, keyNewCopy) {
 		t.Fatalf("previously added item not found in signature cache")
 	}
@@ -118,15 +124,16 @@ func TestSigCacheAddMaxEntriesZeroOrNegative(t *testing.T) {
 	// Generate a random sigCache entry triplet.
 	msg1, sig1, key1, err := genRandomSig()
 	if err != nil {
-		t.Errorf("unable to generate random signature test data")
+		t.Fatalf("unable to generate random signature test data")
 	}
 
 	// Add the triplet to the signature cache.
 	sigCache.Add(*msg1, sig1, key1)
 
 	// The generated triplet should not be found.
-	sig1Copy, _ := ecc.ParseSignature(sig1.Serialize())
-	key1Copy, _ := ecc.ParsePubKey(key1.SerializeCompressed(), ecc.S256())
+	sig1Copy := secp256k1.DeserializeSchnorrSignature(sig1.Serialize())
+	key1Serialized, _ := key1.SerializeCompressed()
+	key1Copy, _ := secp256k1.DeserializeSchnorrPubKey(key1Serialized)
 	if sigCache.Exists(*msg1, sig1Copy, key1Copy) {
 		t.Errorf("previously added signature found in sigcache, but" +
 			"shouldn't have been")

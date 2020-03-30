@@ -6,6 +6,7 @@ package util_test
 
 import (
 	"bytes"
+	"github.com/pkg/errors"
 	"io"
 	"reflect"
 	"testing"
@@ -107,7 +108,7 @@ func TestTxErrors(t *testing.T) {
 	// Truncate the transaction byte buffer to force errors.
 	shortBytes := testTxBytes[:4]
 	_, err = util.NewTxFromBytes(shortBytes)
-	if err != io.EOF {
+	if !errors.Is(err, io.EOF) {
 		t.Errorf("NewTxFromBytes: did not get expected error - "+
 			"got %v, want %v", err, io.EOF)
 	}

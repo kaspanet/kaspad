@@ -1,5 +1,5 @@
 # -- multistage docker build: stage #1: build stage
-FROM golang:1.13-alpine AS build
+FROM golang:1.14-alpine AS build
 
 RUN mkdir -p /go/src/github.com/kaspanet/kaspad
 
@@ -20,7 +20,7 @@ WORKDIR /go/src/github.com/kaspanet/kaspad/cmd/kaspaminer
 RUN GOFMT_RESULT=`go fmt ./...`; echo $GOFMT_RESULT; test -z "$GOFMT_RESULT"
 RUN go vet ./...
 RUN golint -set_exit_status ./...
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o kaspaminer .
+RUN GOOS=linux go build -a -installsuffix cgo -o kaspaminer .
 
 # --- multistage docker build: stage #2: runtime image
 FROM alpine
