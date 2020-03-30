@@ -116,7 +116,7 @@ func dbUpdateUTXOSet(context dbaccess.Context, virtualUTXODiff *UTXODiff) error 
 		}
 
 		key := w.Bytes()
-		err = utxoBucket.Delete(key)
+		err = dbaccess.RemoveFromUTXOSet(context, key)
 		if err != nil {
 			return err
 		}
@@ -125,7 +125,7 @@ func dbUpdateUTXOSet(context dbaccess.Context, virtualUTXODiff *UTXODiff) error 
 
 	// We are preallocating for P2PKH entries because they are the most common ones.
 	// If we have entries with a compressed script bigger than P2PKH's, the buffer will grow.
-	bytesToPreallocate := (p2pkhUTXOEntrySerializeSize + outpointSerializeSize) * len(diff.toAdd)
+	bytesToPreallocate := (p2pkhUTXOEntrySerializeSize + outpointSerializeSize) * len(virtualUTXODiff.toAdd)
 	buff := bytes.NewBuffer(make([]byte, bytesToPreallocate))
 	for outpoint, entry := range virtualUTXODiff.toAdd {
 		// Serialize and store the UTXO entry.
@@ -143,11 +143,7 @@ func dbUpdateUTXOSet(context dbaccess.Context, virtualUTXODiff *UTXODiff) error 
 		}
 
 		key := sBuff.Bytes()
-		err = utxoBucket.Put(key, serializedEntry)
-		// NOTE: The key is intentionally not recycled here since the
-		// database interface contract prohibits modifications. It will
-		// be garbage collected normally when the database is done with
-		// it.
+		err = dbaccess.AddToUTXOSet(context, key, serializedEntry)
 		if err != nil {
 			return err
 		}
@@ -215,6 +211,11 @@ func (dag *BlockDAG) createDAGState() error {
 			return err
 		}
 
+		_, err = meta.CreateBucket(multisetBucketName)
+		if err != nil {
+			return err
+		}
+
 		// Create the bucket that houses the registered subnetworks.
 		_, err = meta.CreateBucket(subnetworksBucketName)
 		if err != nil {
@@ -246,6 +247,11 @@ func (dag *BlockDAG) removeDAGState() error {
 		}
 
 		err = meta.DeleteBucket(reachabilityDataBucketName)
+		if err != nil {
+			return err
+		}
+
+		err = meta.DeleteBucket(multisetBucketName)
 		if err != nil {
 			return err
 		}
@@ -369,13 +375,21 @@ func (dag *BlockDAG) initDAGState() error {
 	fullUTXOCollection := make(utxoCollection, utxoEntryCount)
 	for ok := cursor.First(); ok; ok = cursor.Next() {
 		// Deserialize the outpoint
-		outpoint, err := deserializeOutpoint(bytes.NewReader(cursor.Key()))
+		key, err := cursor.Key()
+		if err != nil {
+			return err
+		}
+		outpoint, err := deserializeOutpoint(bytes.NewReader(key))
 		if err != nil {
 			return err
 		}
 
 		// Deserialize the utxo entry
-		entry, err := deserializeUTXOEntry(bytes.NewReader(cursor.Value()))
+		value, err := cursor.Value()
+		if err != nil {
+			return err
+		}
+		entry, err := deserializeUTXOEntry(bytes.NewReader(value))
 		if err != nil {
 			return err
 		}
