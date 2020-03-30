@@ -613,17 +613,13 @@ func (dag *BlockDAG) initDAGState() error {
 			}
 
 			// Attempt to accept the block.
-			blockBytes, found, err := dbaccess.FetchBlock(dbaccess.NoTx(), node.hash[:])
+			block, found, err := dbFetchBlockByHash(dbaccess.NoTx(), node.hash)
 			if err != nil {
 				return err
 			}
 			if !found {
 				return errors.Errorf("block %s not found",
 					node.hash)
-			}
-			block, err := util.NewBlockFromBytes(blockBytes)
-			if err != nil {
-				return err
 			}
 			isOrphan, isDelayed, err := dag.ProcessBlock(block, BFWasStored)
 			if err != nil {
@@ -743,6 +739,25 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 	return node, nil
 }
 
+// dbFetchBlockByHash retrieves the raw block for the provided hash,
+// deserialize it, and return a util.Block of it.
+func dbFetchBlockByHash(context dbaccess.Context, hash *daghash.Hash) (block *util.Block, found bool, err error) {
+	blockBytes, found, err := dbaccess.FetchBlock(context, hash[:])
+	if err != nil {
+		return nil, false, err
+	}
+	if !found {
+		return nil, false, nil
+	}
+
+	// Create the encapsulated block.
+	block, err = util.NewBlockFromBytes(blockBytes)
+	if err != nil {
+		return nil, false, err
+	}
+	return block, true, nil
+}
+
 func serializeBlockNode(node *blockNode) ([]byte, error) {
 	w := bytes.NewBuffer(make([]byte, 0, blockHdrSize+1))
 	header := node.Header()
@@ -827,8 +842,7 @@ func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
 		return nil, errNotInDAG(str)
 	}
 
-	// Load the block from the database, deserialize it, and return it.
-	blockBytes, found, err := dbaccess.FetchBlock(dbaccess.NoTx(), node.hash[:])
+	block, found, err := dbFetchBlockByHash(dbaccess.NoTx(), node.hash)
 	if err != nil {
 		return nil, err
 	}
@@ -836,7 +850,7 @@ func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
 		return nil, errors.Errorf("block %s not found",
 			node.hash)
 	}
-	return util.NewBlockFromBytes(blockBytes)
+	return block, err
 }
 
 // BlockHashesFrom returns a slice of blocks starting from lowHash
