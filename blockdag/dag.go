@@ -621,14 +621,14 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 			LastFinalityPoint: dag.lastFinalityPoint.hash,
 			localSubnetworkID: dag.subnetworkID,
 		}
-		err = dbPutDAGState(dbaccess.NoTx(), state) // TODO: (Stas) Replace this with a tx context
+		err = dbPutDAGState(dbaccess.NoTx(), state)
 		if err != nil {
 			return err
 		}
 
 		// Update the UTXO set using the diffSet that was melded into the
 		// full UTXO set.
-		err = dbUpdateUTXOSet(dbaccess.NoTx(), virtualUTXODiff) // TODO: (Stas) Replace this with a tx context
+		err = dbUpdateUTXOSet(dbaccess.NoTx(), virtualUTXODiff)
 		if err != nil {
 			return err
 		}
