@@ -64,9 +64,9 @@ func (db *ffldb) Put(key []byte, value []byte) error {
 }
 
 // Get gets the value for the given key. It returns
-// found=false if the given key does not exist.
+// ErrNotFound if the given key does not exist.
 // This method is part of the DataAccessor interface.
-func (db *ffldb) Get(key []byte) (data []byte, found bool, err error) {
+func (db *ffldb) Get(key []byte) ([]byte, error) {
 	return db.ldb.Get(key)
 }
 
@@ -144,11 +144,12 @@ func setCurrentStoreLocation(accessor database2.DataAccessor, storeName string, 
 	return accessor.Put(locationKey, location)
 }
 
-// RetrieveFromStore retrieves data from the flat file
-// stored defined by storeName using the given serialized
-// location handle. See AppendToStore for further details.
+// RetrieveFromStore retrieves data from the store defined by
+// storeName using the given serialized location handle. It
+// returns ErrNotFound if the location does not exist. See
+// AppendToStore for further details.
 // This method is part of the DataAccessor interface.
-func (db *ffldb) RetrieveFromStore(storeName string, location []byte) (data []byte, found bool, err error) {
+func (db *ffldb) RetrieveFromStore(storeName string, location []byte) ([]byte, error) {
 	return db.ffdb.Read(storeName, location)
 }
 

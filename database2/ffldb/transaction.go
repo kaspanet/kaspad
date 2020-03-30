@@ -24,10 +24,10 @@ func (tx *transaction) Put(key []byte, value []byte) error {
 	return tx.ldbTx.Put(key, value)
 }
 
-// Get gets the value for the given key. It returns false if
-// the given key does not exist.
+// Get gets the value for the given key. It returns
+// ErrNotFound if the given key does not exist.
 // This method is part of the DataAccessor interface.
-func (tx *transaction) Get(key []byte) ([]byte, bool, error) {
+func (tx *transaction) Get(key []byte) ([]byte, error) {
 	return tx.ldbTx.Get(key)
 }
 
@@ -55,11 +55,12 @@ func (tx *transaction) AppendToStore(storeName string, data []byte) ([]byte, err
 	return appendToStore(tx, tx.ffdb, storeName, data)
 }
 
-// RetrieveFromStore retrieves data from the flat file
-// stored defined by storeName using the given serialized
-// location handle. See AppendToStore for further details.
+// RetrieveFromStore retrieves data from the store defined by
+// storeName using the given serialized location handle. It
+// returns ErrNotFound if the location does not exist. See
+// AppendToStore for further details.
 // This method is part of the DataAccessor interface.
-func (tx *transaction) RetrieveFromStore(storeName string, location []byte) (data []byte, found bool, err error) {
+func (tx *transaction) RetrieveFromStore(storeName string, location []byte) ([]byte, error) {
 	return tx.ffdb.Read(storeName, location)
 }
 

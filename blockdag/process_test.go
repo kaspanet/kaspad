@@ -82,7 +82,12 @@ func TestProcessDelayedBlocks(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
 	}
-	defer teardownFunc()
+	isDAG1Open := true
+	defer func() {
+		if isDAG1Open {
+			teardownFunc()
+		}
+	}()
 
 	initialTime := dag1.dagParams.GenesisBlock.Header.Timestamp
 	// Here we use a fake time source that returns a timestamp
@@ -115,6 +120,9 @@ func TestProcessDelayedBlocks(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error in PrepareBlockForTest: %s", err)
 	}
+
+	teardownFunc()
+	isDAG1Open = false
 
 	// Here the actual test begins. We add a delayed block and
 	// its child and check that they are not added to the DAG,
