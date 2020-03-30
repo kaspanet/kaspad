@@ -16,7 +16,7 @@ func (dag *BlockDAG) addNodeToIndexWithInvalidAncestor(block *util.Block) error 
 	newNode, _ := dag.newBlockNode(blockHeader, newBlockSet())
 	newNode.status = statusInvalidAncestor
 	dag.index.AddNode(newNode)
-	return dag.index.flushToDB()
+	return dag.index.flushToDB(dbaccess.NoTx())
 }
 
 // maybeAcceptBlock potentially accepts a block into the block DAG. It
@@ -80,7 +80,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 			return err
 		}
 	}
-	err = dag.index.flushToDBWithContext(dbTx)
+	err = dag.index.flushToDB(dbTx)
 	if err != nil {
 		return err
 	}
