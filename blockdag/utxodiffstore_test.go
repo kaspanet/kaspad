@@ -3,7 +3,7 @@ package blockdag
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 	"reflect"
@@ -63,9 +63,7 @@ func TestUTXODiffStore(t *testing.T) {
 
 	// Flush changes to db, delete them from the dag.utxoDiffStore.loaded
 	// map, and check if the diff data is re-fetched from the database.
-	err = dag.db.Update(func(dbTx database.Tx) error {
-		return dag.utxoDiffStore.flushToDB(dbTx)
-	})
+	err = dag.utxoDiffStore.flushToDB(dbaccess.NoTx())
 	if err != nil {
 		t.Fatalf("Error flushing utxoDiffStore data to DB: %s", err)
 	}

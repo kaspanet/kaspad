@@ -913,9 +913,7 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 	blockTime := dag.genesis.Header().Timestamp
 
 	flushUTXODiffStore := func() {
-		err := dag.db.Update(func(dbTx database.Tx) error {
-			return dag.utxoDiffStore.flushToDB(dbTx)
-		})
+		err := dag.utxoDiffStore.flushToDB(dbaccess.NoTx())
 		if err != nil {
 			t.Fatalf("Error flushing utxoDiffStore data to DB: %s", err)
 		}

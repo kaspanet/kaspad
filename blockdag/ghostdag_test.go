@@ -3,9 +3,7 @@ package blockdag
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"reflect"
 	"sort"
 	"strings"
@@ -317,54 +315,6 @@ func TestBlueAnticoneSizeErrors(t *testing.T) {
 	expectedErrSubstring := "is not in blue set of"
 	if !strings.Contains(err.Error(), expectedErrSubstring) {
 		t.Fatalf("TestBlueAnticoneSizeErrors: blueAnticoneSize returned wrong error. "+
-			"Want: %s, got: %s", expectedErrSubstring, err)
-	}
-}
-
-func TestGHOSTDAGErrors(t *testing.T) {
-	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestGHOSTDAGErrors", Config{
-		DAGParams: &dagconfig.SimnetParams,
-	})
-	if err != nil {
-		t.Fatalf("TestGHOSTDAGErrors: Failed to setup DAG instance: %s", err)
-	}
-	defer teardownFunc()
-
-	// Add two child blocks to the genesis
-	block1 := prepareAndProcessBlock(t, dag, dag.dagParams.GenesisBlock)
-	block2 := prepareAndProcessBlock(t, dag, dag.dagParams.GenesisBlock)
-
-	// Add a child block to the previous two blocks
-	block3 := prepareAndProcessBlock(t, dag, block1, block2)
-
-	// Clear the reachability store
-	dag.reachabilityStore.loaded = map[daghash.Hash]*reachabilityData{}
-	err = dag.db.Update(func(dbTx database.Tx) error {
-		bucket := dbTx.Metadata().Bucket(reachabilityDataBucketName)
-		cursor := bucket.Cursor()
-		for ok := cursor.First(); ok; ok = cursor.Next() {
-			err := bucket.Delete(cursor.Key())
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatalf("TestGHOSTDAGErrors: db.Update failed: %s", err)
-	}
-
-	// Try to rerun GHOSTDAG on the last block. GHOSTDAG uses
-	// reachability data, so we expect it to fail.
-	blockNode3 := dag.index.LookupNode(block3.BlockHash())
-	_, err = dag.ghostdag(blockNode3)
-	if err == nil {
-		t.Fatalf("TestGHOSTDAGErrors: ghostdag unexpectedly succeeded")
-	}
-	expectedErrSubstring := "Couldn't find reachability data"
-	if !strings.Contains(err.Error(), expectedErrSubstring) {
-		t.Fatalf("TestGHOSTDAGErrors: ghostdag returned wrong error. "+
 			"Want: %s, got: %s", expectedErrSubstring, err)
 	}
 }

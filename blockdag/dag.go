@@ -723,7 +723,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 	if err != nil {
 		return err
 	}
-	err := dag.db.Update(func(dbTx database.Tx) error {
+	err = dag.db.Update(func(dbTx database.Tx) error {
 		err := dag.index.flushToDB(dbTx2)
 		if err != nil {
 			return err
@@ -748,16 +748,16 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 		state := &dagState{
 			TipHashes:         dag.TipHashes(),
 			LastFinalityPoint: dag.lastFinalityPoint.hash,
-			localSubnetworkID: dag.subnetworkID,
+			LocalSubnetworkID: dag.subnetworkID,
 		}
-		err = dbPutDAGState(dbaccess.NoTx(), state)
+		err = dbPutDAGState(dbTx2, state)
 		if err != nil {
 			return err
 		}
 
 		// Update the UTXO set using the diffSet that was melded into the
 		// full UTXO set.
-		err = dbUpdateUTXOSet(dbaccess.NoTx(), virtualUTXODiff)
+		err = dbUpdateUTXOSet(dbTx2, virtualUTXODiff)
 		if err != nil {
 			return err
 		}
@@ -765,7 +765,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 		// Scan all accepted transactions and register any subnetwork registry
 		// transaction. If any subnetwork registry transaction is not well-formed,
 		// fail the entire block.
-		err = registerSubnetworks(dbTx, block.Transactions())
+		err = registerSubnetworks(dbTx2, block.Transactions())
 		if err != nil {
 			return err
 		}
@@ -916,9 +916,7 @@ func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
 		}
 	}
 	if deleteDiffData {
-		err := dag.db.Update(func(dbTx database.Tx) error {
-			return dag.utxoDiffStore.removeBlocksDiffData(dbTx, blockHashesToDelete)
-		})
+		err := dag.utxoDiffStore.removeBlocksDiffData(dbaccess.NoTx(), blockHashesToDelete)
 		if err != nil {
 			panic(fmt.Sprintf("Error removing diff data from utxoDiffStore: %s", err))
 		}

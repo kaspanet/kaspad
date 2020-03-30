@@ -304,14 +304,14 @@ func (dag *BlockDAG) initDAGState() error {
 	return dag.db.View(func(dbTx database.Tx) error {
 		// Initialize the reachability store
 		log.Infof("Loading reachability data...")
-		err = dag.reachabilityStore.init(dbTx)
+		err = dag.reachabilityStore.init(dbaccess.NoTx())
 		if err != nil {
 			return err
 		}
 
 		// Initialize the multiset store
 		log.Infof("Loading multiset data...")
-		err = dag.multisetStore.init(dbTx)
+		err = dag.multisetStore.init(dbaccess.NoTx())
 		if err != nil {
 			return err
 		}
