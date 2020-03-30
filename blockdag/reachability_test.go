@@ -609,6 +609,34 @@ func TestReindexIntervalErrors(t *testing.T) {
 	}
 }
 
+func BenchmarkReindexInterval(b *testing.B) {
+	b.StopTimer()
+
+	root := newReachabilityTreeNode(&blockNode{})
+
+	const subTreeSize = 70000
+	root.setInterval(newReachabilityInterval(0, subTreeSize*2))
+
+	currentTreeNode := root
+	for i := 0; i < subTreeSize; i++ {
+		childTreeNode := newReachabilityTreeNode(&blockNode{})
+		_, err := currentTreeNode.addChild(childTreeNode)
+		if err != nil {
+			b.Fatalf("addChild: %s", err)
+		}
+
+		currentTreeNode = childTreeNode
+	}
+
+	childTreeNode := newReachabilityTreeNode(&blockNode{})
+	b.StartTimer()
+	_, err := currentTreeNode.addChild(childTreeNode)
+	b.StopTimer()
+	if err != nil {
+		b.Fatalf("addChild: %s", err)
+	}
+}
+
 func TestFutureCoveringBlockSetString(t *testing.T) {
 	treeNodeA := newReachabilityTreeNode(&blockNode{})
 	treeNodeA.setInterval(newReachabilityInterval(123, 456))
