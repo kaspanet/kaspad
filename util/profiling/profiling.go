@@ -6,10 +6,14 @@ import (
 
 	// Required for profiling
 	_ "net/http/pprof"
+
+	"github.com/kaspanet/kaspad/logs"
+	"github.com/kaspanet/kaspad/util/panics"
 )
 
 // Start starts the profiling server
-func Start(port string) {
+func Start(port string, log *logs.Logger) {
+	spawn := panics.GoroutineWrapperFunc(log)
 	spawn(func() {
 		listenAddr := net.JoinHostPort("", port)
 		log.Infof("Profile server listening on %s", listenAddr)

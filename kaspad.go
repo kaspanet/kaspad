@@ -72,7 +72,7 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 	// Enable http profiling server if requested.
 	if cfg.Profile != "" {
 		spawn(func() {
-			profiling.Start(cfg.Profile)
+			profiling.Start(cfg.Profile, kasdLog)
 		})
 	}
 
