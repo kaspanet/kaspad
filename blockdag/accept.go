@@ -66,7 +66,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	if err != nil {
 		return err
 	}
-	blockExists, err := dbaccess.HasBlock(dbTx, block.Hash()[:])
+	blockExists, err := dbaccess.HasBlock(dbTx, block.Hash())
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 		if err != nil {
 			return err
 		}
-		err = dbaccess.StoreBlock(dbaccess.NoTx(), block.Hash()[:], blockBytes)
+		err = dbaccess.StoreBlock(dbaccess.NoTx(), block.Hash(), blockBytes)
 		if err != nil {
 			return err
 		}

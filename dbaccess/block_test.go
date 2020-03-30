@@ -36,14 +36,14 @@ func TestBlockStoreSanity(t *testing.T) {
 		t.Fatalf("TestBlockStoreSanity: util.Block.Bytes unexpectedly "+
 			"failed: %s", err)
 	}
-	err = StoreBlock(NoTx(), genesisHash[:], genesisBytes)
+	err = StoreBlock(NoTx(), genesisHash, genesisBytes)
 	if err != nil {
 		t.Fatalf("TestBlockStoreSanity: StoreBlock unexpectedly "+
 			"failed: %s", err)
 	}
 
 	// Make sure the genesis block now exists in the db
-	exists, err := HasBlock(NoTx(), genesisHash[:])
+	exists, err := HasBlock(NoTx(), genesisHash)
 	if err != nil {
 		t.Fatalf("TestBlockStoreSanity: HasBlock unexpectedly "+
 			"failed: %s", err)
@@ -55,7 +55,7 @@ func TestBlockStoreSanity(t *testing.T) {
 
 	// Fetch the genesis block back from the db and make sure
 	// that it's equal to the original
-	fetchedGenesisBytes, found, err := FetchBlock(NoTx(), genesisHash[:])
+	fetchedGenesisBytes, found, err := FetchBlock(NoTx(), genesisHash)
 	if err != nil {
 		t.Fatalf("TestBlockStoreSanity: FetchBlock unexpectedly "+
 			"failed: %s", err)

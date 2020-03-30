@@ -1,8 +1,8 @@
 package dbaccess
 
 import (
-	"encoding/hex"
 	"github.com/kaspanet/kaspad/database2"
+	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 )
 
@@ -15,7 +15,7 @@ var (
 )
 
 // StoreBlock stores the given block in the database.
-func StoreBlock(context Context, hash []byte, blockBytes []byte) error {
+func StoreBlock(context Context, hash *daghash.Hash, blockBytes []byte) error {
 	accessor, err := context.accessor()
 	if err != nil {
 		return err
@@ -27,7 +27,7 @@ func StoreBlock(context Context, hash []byte, blockBytes []byte) error {
 		return err
 	}
 	if exists {
-		return errors.Errorf("block %s already exists", hex.EncodeToString(hash))
+		return errors.Errorf("block %s already exists", hash)
 	}
 
 	// Write the block's bytes to the block store
@@ -48,7 +48,7 @@ func StoreBlock(context Context, hash []byte, blockBytes []byte) error {
 
 // HasBlock returns whether the block of the given hash has been
 // previously inserted into the database.
-func HasBlock(context Context, hash []byte) (bool, error) {
+func HasBlock(context Context, hash *daghash.Hash) (bool, error) {
 	accessor, err := context.accessor()
 	if err != nil {
 		return false, err
@@ -62,7 +62,7 @@ func HasBlock(context Context, hash []byte) (bool, error) {
 // FetchBlock returns the block of the given hash. Returns
 // found=false if the block had not been previously inserted
 // into the database.
-func FetchBlock(context Context, hash []byte) (block []byte, found bool, err error) {
+func FetchBlock(context Context, hash *daghash.Hash) (block []byte, found bool, err error) {
 	accessor, err := context.accessor()
 	if err != nil {
 		return nil, false, err
@@ -87,6 +87,6 @@ func FetchBlock(context Context, hash []byte) (block []byte, found bool, err err
 	return bytes, true, nil
 }
 
-func blockLocationKey(hash []byte) []byte {
-	return blockLocationsBucket.Key(hash)
+func blockLocationKey(hash *daghash.Hash) []byte {
+	return blockLocationsBucket.Key(hash[:])
 }

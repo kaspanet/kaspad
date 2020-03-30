@@ -640,7 +640,7 @@ func TestAcceptingInInit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get block bytes: %s", err)
 	}
-	err = dbaccess.StoreBlock(dbaccess.NoTx(), testBlock.Hash()[:], testBlockBytes)
+	err = dbaccess.StoreBlock(dbaccess.NoTx(), testBlock.Hash(), testBlockBytes)
 	if err != nil {
 		t.Fatalf("Failed to store block: %s", err)
 	}

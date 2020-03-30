@@ -602,7 +602,7 @@ func (dag *BlockDAG) initDAGState() error {
 		for _, node := range unprocessedBlockNodes {
 			// Check to see if the block exists in the block DB. If it
 			// doesn't, the database has certainly been corrupted.
-			blockExists, err := dbaccess.HasBlock(dbaccess.NoTx(), node.hash[:])
+			blockExists, err := dbaccess.HasBlock(dbaccess.NoTx(), node.hash)
 			if err != nil {
 				return AssertError(fmt.Sprintf("initDAGState: HasBlock "+
 					"for block %s failed: %s", node.hash, err))
@@ -742,7 +742,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 // dbFetchBlockByHash retrieves the raw block for the provided hash,
 // deserialize it, and return a util.Block of it.
 func dbFetchBlockByHash(context dbaccess.Context, hash *daghash.Hash) (block *util.Block, found bool, err error) {
-	blockBytes, found, err := dbaccess.FetchBlock(context, hash[:])
+	blockBytes, found, err := dbaccess.FetchBlock(context, hash)
 	if err != nil {
 		return nil, false, err
 	}
