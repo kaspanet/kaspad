@@ -8,8 +8,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-var multisetPointSize = 32
-
 type blockUTXODiffData struct {
 	diff      *UTXODiff
 	diffChild *blockNode

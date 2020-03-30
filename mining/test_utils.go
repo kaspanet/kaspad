@@ -68,13 +68,11 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 		return nil, err
 	}
 
-	template, err := blockTemplateGenerator.NewBlockTemplate(OpTrueAddr)
-	if err != nil {
-		return nil, err
-	}
+	// We create a deterministic extra nonce in order of
+	// creating deterministic coinbase tx ids.
+	extraNonce := GenerateDeterministicExtraNonceForTest()
 
-	// In order of creating deterministic coinbase tx ids.
-	err = blockTemplateGenerator.UpdateExtraNonce(template.Block, GenerateDeterministicExtraNonceForTest())
+	template, err := blockTemplateGenerator.NewBlockTemplate(OpTrueAddr, extraNonce)
 	if err != nil {
 		return nil, err
 	}
@@ -106,10 +104,12 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 		}
 		template.Block.Header.HashMerkleRoot = blockdag.BuildHashMerkleTreeStore(utilTxs).Root()
 
-		template.Block.Header.UTXOCommitment, err = blockTemplateGenerator.buildUTXOCommitment(template.Block.Transactions)
+		ms, err := dag.NextBlockMultiset(utilTxs)
 		if err != nil {
 			return nil, err
 		}
+
+		template.Block.Header.UTXOCommitment = (*daghash.Hash)(ms.Finalize())
 	}
 	return template.Block, nil
 }

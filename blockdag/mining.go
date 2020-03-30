@@ -3,8 +3,10 @@ package blockdag
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 	"time"
 )
@@ -12,6 +14,8 @@ import (
 // BlockForMining returns a block with the given transactions
 // that points to the current DAG tips, that is valid from
 // all aspects except proof of work.
+//
+// This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, error) {
 	blockTimestamp := dag.NextBlockTime()
 	requiredDifficulty := dag.NextRequiredDifficulty(blockTimestamp)
@@ -34,23 +38,35 @@ func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, er
 		msgBlock.AddTransaction(tx.MsgTx())
 	}
 
-	utxoWithTransactions, err := dag.UTXOSet().WithTransactions(msgBlock.Transactions, UnacceptedBlueScore, false)
+	multiset, err := dag.NextBlockMultiset(transactions)
 	if err != nil {
 		return nil, err
 	}
-	utxoCommitment := utxoWithTransactions.Multiset().Hash()
 
 	msgBlock.Header = wire.BlockHeader{
 		Version:              nextBlockVersion,
 		ParentHashes:         dag.TipHashes(),
 		HashMerkleRoot:       hashMerkleTree.Root(),
 		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
-		UTXOCommitment:       utxoCommitment,
+		UTXOCommitment:       (*daghash.Hash)(multiset.Finalize()),
 		Timestamp:            blockTimestamp,
 		Bits:                 requiredDifficulty,
 	}
 
 	return &msgBlock, nil
+}
+
+// NextBlockMultiset returns the multiset of an assumed next block
+// built on top of the current tips, with the given transactions.
+//
+// This function MUST be called with the DAG state lock held (for reads).
+func (dag *BlockDAG) NextBlockMultiset(transactions []*util.Tx) (*secp256k1.MultiSet, error) {
+	pastUTXO, selectedParentUTXO, txsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
+	if err != nil {
+		return nil, err
+	}
+
+	return dag.virtual.blockNode.calcMultiset(dag, transactions, txsAcceptanceData, selectedParentUTXO, pastUTXO)
 }
 
 // CoinbasePayloadExtraData returns coinbase payload extra data parameter

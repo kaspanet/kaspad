@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/kaspanet/kaspad/ecc"
+	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/wire"
@@ -28,7 +28,11 @@ func main() {
 		printErrorAndExit(err, "Failed to decode transaction")
 	}
 
-	scriptPubKey, err := createScriptPubKey(privateKey.PubKey())
+	pubkey, err := privateKey.SchnorrPublicKey()
+	if err != nil {
+		printErrorAndExit(err, "Failed to generate a public key")
+	}
+	scriptPubKey, err := createScriptPubKey(pubkey)
 	if err != nil {
 		printErrorAndExit(err, "Failed to create scriptPubKey")
 	}
@@ -46,10 +50,12 @@ func main() {
 	fmt.Printf("Signed Transaction (hex): %s\n\n", serializedTransaction)
 }
 
-func parsePrivateKey(privateKeyHex string) (*ecc.PrivateKey, error) {
+func parsePrivateKey(privateKeyHex string) (*secp256k1.PrivateKey, error) {
 	privateKeyBytes, err := hex.DecodeString(privateKeyHex)
-	privateKey, _ := ecc.PrivKeyFromBytes(ecc.S256(), privateKeyBytes)
-	return privateKey, err
+	if err != nil {
+		return nil, errors.Errorf("'%s' isn't a valid hex. err: '%s' ", privateKeyHex, err)
+	}
+	return secp256k1.DeserializePrivateKeyFromSlice(privateKeyBytes)
 }
 
 func parseTransaction(transactionHex string) (*wire.MsgTx, error) {
@@ -62,8 +68,12 @@ func parseTransaction(transactionHex string) (*wire.MsgTx, error) {
 	return &transaction, err
 }
 
-func createScriptPubKey(publicKey *ecc.PublicKey) ([]byte, error) {
-	p2pkhAddress, err := util.NewAddressPubKeyHashFromPublicKey(publicKey.SerializeCompressed(), ActiveConfig().NetParams().Prefix)
+func createScriptPubKey(publicKey *secp256k1.SchnorrPublicKey) ([]byte, error) {
+	serializedKey, err := publicKey.SerializeCompressed()
+	if err != nil {
+		return nil, err
+	}
+	p2pkhAddress, err := util.NewAddressPubKeyHashFromPublicKey(serializedKey, ActiveConfig().NetParams().Prefix)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +81,7 @@ func createScriptPubKey(publicKey *ecc.PublicKey) ([]byte, error) {
 	return scriptPubKey, err
 }
 
-func signTransaction(transaction *wire.MsgTx, privateKey *ecc.PrivateKey, scriptPubKey []byte) error {
+func signTransaction(transaction *wire.MsgTx, privateKey *secp256k1.PrivateKey, scriptPubKey []byte) error {
 	for i, transactionInput := range transaction.TxIn {
 		signatureScript, err := txscript.SignatureScript(transaction, i, scriptPubKey, txscript.SigHashAll, privateKey, true)
 		if err != nil {

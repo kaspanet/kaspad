@@ -3,7 +3,6 @@ package mining
 import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/random"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"math"
 	"math/rand"
@@ -65,13 +64,13 @@ type txsForBlockTemplate struct {
 //   Once the sum of probabilities of marked transactions is greater than
 //   rebalanceThreshold percent of the sum of probabilities of all transactions,
 //   rebalance.
-func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTemplate, error) {
+func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address, extraNonce uint64) (*txsForBlockTemplate, error) {
 	// Fetch the source transactions.
 	sourceTxs := g.txSource.MiningDescs()
 
 	// Create a new txsForBlockTemplate struct, onto which all selectedTxs
 	// will be appended.
-	txsForBlockTemplate, err := g.newTxsForBlockTemplate(payToAddress, sourceTxs)
+	txsForBlockTemplate, err := g.newTxsForBlockTemplate(payToAddress, extraNonce)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +90,7 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 
 // newTxsForBlockTemplate creates a txsForBlockTemplate and initializes it
 // with a coinbase transaction.
-func (g *BlkTmplGenerator) newTxsForBlockTemplate(payToAddress util.Address, sourceTxs []*TxDesc) (*txsForBlockTemplate, error) {
+func (g *BlkTmplGenerator) newTxsForBlockTemplate(payToAddress util.Address, extraNonce uint64) (*txsForBlockTemplate, error) {
 	// Create a new txsForBlockTemplate struct. The struct holds the mass,
 	// the fees, and number of signature operations for each of the selected
 	// transactions and adds an entry for the coinbase. This allows the code
@@ -103,10 +102,6 @@ func (g *BlkTmplGenerator) newTxsForBlockTemplate(payToAddress util.Address, sou
 		txFees:      make([]uint64, 0),
 	}
 
-	extraNonce, err := random.Uint64()
-	if err != nil {
-		return nil, err
-	}
 	coinbasePayloadExtraData, err := blockdag.CoinbasePayloadExtraData(extraNonce, CoinbaseFlags)
 	if err != nil {
 		return nil, err

@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/config"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+
+	"github.com/kaspanet/kaspad/config"
 
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
@@ -37,6 +39,7 @@ type configFlags struct {
 	Verbose        bool   `long:"verbose" short:"v" description:"Enable logging of RPC requests"`
 	NumberOfBlocks uint64 `short:"n" long:"numblocks" description:"Number of blocks to mine. If omitted, will mine until the process is interrupted."`
 	BlockDelay     uint64 `long:"block-delay" description:"Delay for block submission (in milliseconds). This is used only for testing purposes."`
+	Profile        string `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
 	config.NetworkFlags
 }
 
@@ -76,6 +79,13 @@ func parseConfig() (*configFlags, error) {
 	}
 	if cfg.RPCCert != "" && cfg.DisableTLS {
 		return nil, errors.New("--rpccert should be omitted if --notls is used")
+	}
+
+	if cfg.Profile != "" {
+		profilePort, err := strconv.Atoi(cfg.Profile)
+		if err != nil || profilePort < 1024 || profilePort > 65535 {
+			return nil, errors.New("The profile port must be between 1024 and 65535")
+		}
 	}
 
 	initLog(defaultLogFile, defaultErrLogFile)

@@ -267,10 +267,18 @@ func TestChainedTransactions(t *testing.T) {
 	}
 	chainedTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{chainedTxIn}, []*wire.TxOut{chainedTxOut})
 
-	block2, err := mining.PrepareBlockForTest(dag, &params, []*daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{tx, chainedTx}, true)
+	block2, err := mining.PrepareBlockForTest(dag, &params, []*daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{tx}, false)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
+
+	// Manually add a chained transaction to block2
+	block2.Transactions = append(block2.Transactions, chainedTx)
+	block2UtilTxs := make([]*util.Tx, len(block2.Transactions))
+	for i, tx := range block2.Transactions {
+		block2UtilTxs[i] = util.NewTx(tx)
+	}
+	block2.Header.HashMerkleRoot = blockdag.BuildHashMerkleTreeStore(block2UtilTxs).Root()
 
 	//Checks that dag.ProcessBlock fails because we don't allow a transaction to spend another transaction from the same block
 	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(block2), blockdag.BFNoPoWCheck)

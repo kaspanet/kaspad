@@ -7,7 +7,6 @@ import (
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -80,49 +79,40 @@ func TestUTXODiff(t *testing.T) {
 	utxoEntry0 := NewUTXOEntry(&wire.TxOut{ScriptPubKey: []byte{}, Value: 10}, true, 0)
 	utxoEntry1 := NewUTXOEntry(&wire.TxOut{ScriptPubKey: []byte{}, Value: 20}, false, 1)
 
-	for i := 0; i < 2; i++ {
-		withMultiset := i == 0
-		// Test utxoDiff creation
-		var diff *UTXODiff
-		if withMultiset {
-			diff = NewUTXODiff()
-		} else {
-			diff = NewUTXODiffWithoutMultiset()
-		}
-		if len(diff.toAdd) != 0 || len(diff.toRemove) != 0 {
-			t.Errorf("new diff is not empty")
-		}
+	// Test utxoDiff creation
 
-		err := diff.AddEntry(outpoint0, utxoEntry0)
-		if err != nil {
-			t.Fatalf("error adding entry to utxo diff: %s", err)
-		}
+	diff := NewUTXODiff()
 
-		err = diff.RemoveEntry(outpoint1, utxoEntry1)
-		if err != nil {
-			t.Fatalf("error adding entry to utxo diff: %s", err)
-		}
+	if len(diff.toAdd) != 0 || len(diff.toRemove) != 0 {
+		t.Errorf("new diff is not empty")
+	}
 
-		// Test utxoDiff cloning
-		clonedDiff := diff.clone()
-		if clonedDiff == diff {
-			t.Errorf("cloned diff is reference-equal to the original")
-		}
-		if !reflect.DeepEqual(clonedDiff, diff) {
-			t.Errorf("cloned diff not equal to the original"+
-				"Original: \"%v\", cloned: \"%v\".", diff, clonedDiff)
-		}
+	err := diff.AddEntry(outpoint0, utxoEntry0)
+	if err != nil {
+		t.Fatalf("error adding entry to utxo diff: %s", err)
+	}
 
-		// Test utxoDiff string representation
-		expectedDiffString := "toAdd: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ]; toRemove: [ (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20, blueScore: 1 ]"
-		if withMultiset {
-			expectedDiffString = "toAdd: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ]; toRemove: [ (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20, blueScore: 1 ], Multiset-Hash: 7cb61e48005b0c817211d04589d719bff87d86a6a6ce2454515f57265382ded7"
-		}
-		diffString := clonedDiff.String()
-		if diffString != expectedDiffString {
-			t.Errorf("unexpected diff string. "+
-				"Expected: \"%s\", got: \"%s\".", expectedDiffString, diffString)
-		}
+	err = diff.RemoveEntry(outpoint1, utxoEntry1)
+	if err != nil {
+		t.Fatalf("error adding entry to utxo diff: %s", err)
+	}
+
+	// Test utxoDiff cloning
+	clonedDiff := diff.clone()
+	if clonedDiff == diff {
+		t.Errorf("cloned diff is reference-equal to the original")
+	}
+	if !reflect.DeepEqual(clonedDiff, diff) {
+		t.Errorf("cloned diff not equal to the original"+
+			"Original: \"%v\", cloned: \"%v\".", diff, clonedDiff)
+	}
+
+	// Test utxoDiff string representation
+	expectedDiffString := "toAdd: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ]; toRemove: [ (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20, blueScore: 1 ]"
+	diffString := clonedDiff.String()
+	if diffString != expectedDiffString {
+		t.Errorf("unexpected diff string. "+
+			"Expected: \"%s\", got: \"%s\".", expectedDiffString, diffString)
 	}
 }
 
@@ -542,93 +532,82 @@ func TestUTXODiffRules(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		this := addMultisetToDiff(t, test.this)
-		other := addMultisetToDiff(t, test.other)
-		expectedDiffFromResult := addMultisetToDiff(t, test.expectedDiffFromResult)
-		expectedWithDiffResult := addMultisetToDiff(t, test.expectedWithDiffResult)
-
-		// diffFrom from this to other
-		diffResult, err := this.diffFrom(other)
+		// diffFrom from test.this to test.other
+		diffResult, err := test.this.diffFrom(test.other)
 
 		// Test whether diffFrom returned an error
 		isDiffFromOk := err == nil
-		expectedIsDiffFromOk := expectedDiffFromResult != nil
+		expectedIsDiffFromOk := test.expectedDiffFromResult != nil
 		if isDiffFromOk != expectedIsDiffFromOk {
 			t.Errorf("unexpected diffFrom error in test \"%s\". "+
 				"Expected: \"%t\", got: \"%t\".", test.name, expectedIsDiffFromOk, isDiffFromOk)
 		}
 
 		// If not error, test the diffFrom result
-		if isDiffFromOk && !expectedDiffFromResult.equal(diffResult) {
+		if isDiffFromOk && !test.expectedDiffFromResult.equal(diffResult) {
 			t.Errorf("unexpected diffFrom result in test \"%s\". "+
-				"Expected: \"%v\", got: \"%v\".", test.name, expectedDiffFromResult, diffResult)
+				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedDiffFromResult, diffResult)
 		}
 
-		// Make sure that WithDiff after diffFrom results in the original other
+		// Make sure that WithDiff after diffFrom results in the original test.other
 		if isDiffFromOk {
-			otherResult, err := this.WithDiff(diffResult)
+			otherResult, err := test.this.WithDiff(diffResult)
 			if err != nil {
 				t.Errorf("WithDiff unexpectedly failed in test \"%s\": %s", test.name, err)
 			}
-			if !other.equal(otherResult) {
+			if !test.other.equal(otherResult) {
 				t.Errorf("unexpected WithDiff result in test \"%s\". "+
-					"Expected: \"%v\", got: \"%v\".", test.name, other, otherResult)
+					"Expected: \"%v\", got: \"%v\".", test.name, test.other, otherResult)
 			}
 		}
 
-		// WithDiff from this to other
-		withDiffResult, err := this.WithDiff(other)
+		// WithDiff from test.this to test.other
+		withDiffResult, err := test.this.WithDiff(test.other)
 
 		// Test whether WithDiff returned an error
 		isWithDiffOk := err == nil
-		expectedIsWithDiffOk := expectedWithDiffResult != nil
+		expectedIsWithDiffOk := test.expectedWithDiffResult != nil
 		if isWithDiffOk != expectedIsWithDiffOk {
 			t.Errorf("unexpected WithDiff error in test \"%s\". "+
 				"Expected: \"%t\", got: \"%t\".", test.name, expectedIsWithDiffOk, isWithDiffOk)
 		}
 
 		// If not error, test the WithDiff result
-		if isWithDiffOk && !withDiffResult.equal(expectedWithDiffResult) {
+		if isWithDiffOk && !withDiffResult.equal(test.expectedWithDiffResult) {
 			t.Errorf("unexpected WithDiff result in test \"%s\". "+
-				"Expected: \"%v\", got: \"%v\".", test.name, expectedWithDiffResult, withDiffResult)
+				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedWithDiffResult, withDiffResult)
 		}
 
-		// Repeat WithDiff check this time using withDiffInPlace
-		thisClone := this.clone()
-		err = thisClone.withDiffInPlace(other)
+		// Repeat WithDiff check test.this time using withDiffInPlace
+		thisClone := test.this.clone()
+		err = thisClone.withDiffInPlace(test.other)
 
 		// Test whether withDiffInPlace returned an error
 		isWithDiffInPlaceOk := err == nil
-		expectedIsWithDiffInPlaceOk := expectedWithDiffResult != nil
+		expectedIsWithDiffInPlaceOk := test.expectedWithDiffResult != nil
 		if isWithDiffInPlaceOk != expectedIsWithDiffInPlaceOk {
 			t.Errorf("unexpected withDiffInPlace error in test \"%s\". "+
 				"Expected: \"%t\", got: \"%t\".", test.name, expectedIsWithDiffInPlaceOk, isWithDiffInPlaceOk)
 		}
 
 		// If not error, test the withDiffInPlace result
-		if isWithDiffInPlaceOk && !thisClone.equal(expectedWithDiffResult) {
+		if isWithDiffInPlaceOk && !thisClone.equal(test.expectedWithDiffResult) {
 			t.Errorf("unexpected withDiffInPlace result in test \"%s\". "+
-				"Expected: \"%v\", got: \"%v\".", test.name, expectedWithDiffResult, thisClone)
+				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedWithDiffResult, thisClone)
 		}
 
-		// Make sure that diffFrom after WithDiff results in the original other
+		// Make sure that diffFrom after WithDiff results in the original test.other
 		if isWithDiffOk {
-			otherResult, err := this.diffFrom(withDiffResult)
+			otherResult, err := test.this.diffFrom(withDiffResult)
 			if err != nil {
 				t.Errorf("diffFrom unexpectedly failed in test \"%s\": %s", test.name, err)
 			}
-			if !other.equal(otherResult) {
+			if !test.other.equal(otherResult) {
 				t.Errorf("unexpected diffFrom result in test \"%s\". "+
-					"Expected: \"%v\", got: \"%v\".", test.name, other, otherResult)
+					"Expected: \"%v\", got: \"%v\".", test.name, test.other, otherResult)
 			}
 		}
 	}
-}
-
-func areMultisetsEqual(a *ecc.Multiset, b *ecc.Multiset) bool {
-	aX, aY := a.Point()
-	bX, bY := b.Point()
-	return aX.Cmp(bX) == 0 && aY.Cmp(bY) == 0
 }
 
 func (d *UTXODiff) equal(other *UTXODiff) bool {
@@ -637,60 +616,15 @@ func (d *UTXODiff) equal(other *UTXODiff) bool {
 	}
 
 	return reflect.DeepEqual(d.toAdd, other.toAdd) &&
-		reflect.DeepEqual(d.toRemove, other.toRemove) &&
-		areMultisetsEqual(d.diffMultiset, other.diffMultiset)
+		reflect.DeepEqual(d.toRemove, other.toRemove)
 }
 
 func (fus *FullUTXOSet) equal(other *FullUTXOSet) bool {
-	return reflect.DeepEqual(fus.utxoCollection, other.utxoCollection) &&
-		areMultisetsEqual(fus.UTXOMultiset, other.UTXOMultiset)
+	return reflect.DeepEqual(fus.utxoCollection, other.utxoCollection)
 }
 
 func (dus *DiffUTXOSet) equal(other *DiffUTXOSet) bool {
 	return dus.base.equal(other.base) && dus.UTXODiff.equal(other.UTXODiff)
-}
-
-func addMultisetToDiff(t *testing.T, diff *UTXODiff) *UTXODiff {
-	if diff == nil {
-		return nil
-	}
-	diffWithMs := NewUTXODiff()
-	for outpoint, entry := range diff.toAdd {
-		err := diffWithMs.AddEntry(outpoint, entry)
-		if err != nil {
-			t.Fatalf("Error with diffWithMs.AddEntry: %s", err)
-		}
-	}
-	for outpoint, entry := range diff.toRemove {
-		err := diffWithMs.RemoveEntry(outpoint, entry)
-		if err != nil {
-			t.Fatalf("Error with diffWithMs.removeEntry: %s", err)
-		}
-	}
-	return diffWithMs
-}
-
-func addMultisetToFullUTXOSet(t *testing.T, fus *FullUTXOSet) *FullUTXOSet {
-	if fus == nil {
-		return nil
-	}
-	fusWithMs := NewFullUTXOSet()
-	for outpoint, entry := range fus.utxoCollection {
-		err := fusWithMs.addAndUpdateMultiset(outpoint, entry)
-		if err != nil {
-			t.Fatalf("Error with diffWithMs.AddEntry: %s", err)
-		}
-	}
-	return fusWithMs
-}
-
-func addMultisetToDiffUTXOSet(t *testing.T, diffSet *DiffUTXOSet) *DiffUTXOSet {
-	if diffSet == nil {
-		return nil
-	}
-	diffWithMs := addMultisetToDiff(t, diffSet.UTXODiff)
-	baseWithMs := addMultisetToFullUTXOSet(t, diffSet.base)
-	return NewDiffUTXOSet(baseWithMs, diffWithMs)
 }
 
 // TestFullUTXOSet makes sure that fullUTXOSet is working as expected.
@@ -703,10 +637,10 @@ func TestFullUTXOSet(t *testing.T) {
 	txOut1 := &wire.TxOut{ScriptPubKey: []byte{}, Value: 20}
 	utxoEntry0 := NewUTXOEntry(txOut0, true, 0)
 	utxoEntry1 := NewUTXOEntry(txOut1, false, 1)
-	diff := addMultisetToDiff(t, &UTXODiff{
+	diff := &UTXODiff{
 		toAdd:    utxoCollection{outpoint0: utxoEntry0},
 		toRemove: utxoCollection{outpoint1: utxoEntry1},
-	})
+	}
 
 	// Test fullUTXOSet creation
 	emptySet := NewFullUTXOSet()
@@ -735,7 +669,7 @@ func TestFullUTXOSet(t *testing.T) {
 	} else if isAccepted {
 		t.Errorf("addTx unexpectedly succeeded")
 	}
-	emptySet = addMultisetToFullUTXOSet(t, &FullUTXOSet{utxoCollection: utxoCollection{outpoint0: utxoEntry0}})
+	emptySet = &FullUTXOSet{utxoCollection: utxoCollection{outpoint0: utxoEntry0}}
 	if isAccepted, err := emptySet.AddTx(transaction0, 0); err != nil {
 		t.Errorf("addTx unexpectedly failed. Error: %s", err)
 	} else if !isAccepted {
@@ -767,10 +701,10 @@ func TestDiffUTXOSet(t *testing.T) {
 	txOut1 := &wire.TxOut{ScriptPubKey: []byte{}, Value: 20}
 	utxoEntry0 := NewUTXOEntry(txOut0, true, 0)
 	utxoEntry1 := NewUTXOEntry(txOut1, false, 1)
-	diff := addMultisetToDiff(t, &UTXODiff{
+	diff := &UTXODiff{
 		toAdd:    utxoCollection{outpoint0: utxoEntry0},
 		toRemove: utxoCollection{outpoint1: utxoEntry1},
-	})
+	}
 
 	// Test diffUTXOSet creation
 	emptySet := NewDiffUTXOSet(NewFullUTXOSet(), NewUTXODiff())
@@ -828,7 +762,7 @@ func TestDiffUTXOSet(t *testing.T) {
 					toRemove: utxoCollection{},
 				},
 			},
-			expectedString:     "{Base: [  ], To Add: [  ], To Remove: [  ], Multiset-Hash:0000000000000000000000000000000000000000000000000000000000000000}",
+			expectedString:     "{Base: [  ], To Add: [  ], To Remove: [  ]}",
 			expectedCollection: utxoCollection{},
 		},
 		{
@@ -847,7 +781,7 @@ func TestDiffUTXOSet(t *testing.T) {
 					toRemove: utxoCollection{},
 				},
 			},
-			expectedString:     "{Base: [  ], To Add: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ], To Remove: [  ], Multiset-Hash:da4768bd0359c3426268d6707c1fc17a68c45ef1ea734331b07568418234487f}",
+			expectedString:     "{Base: [  ], To Add: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ], To Remove: [  ]}",
 			expectedCollection: utxoCollection{outpoint0: utxoEntry0},
 		},
 		{
@@ -860,7 +794,7 @@ func TestDiffUTXOSet(t *testing.T) {
 				},
 			},
 			expectedMeldSet:         nil,
-			expectedString:          "{Base: [  ], To Add: [  ], To Remove: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ], Multiset-Hash:046242cb1bb1e6d3fd91d0f181e1b2d4a597ac57fa2584fc3c2eb0e0f46c9369}",
+			expectedString:          "{Base: [  ], To Add: [  ], To Remove: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ]}",
 			expectedCollection:      utxoCollection{},
 			expectedMeldToBaseError: "Couldn't remove outpoint 0000000000000000000000000000000000000000000000000000000000000000:0 because it doesn't exist in the DiffUTXOSet base",
 		},
@@ -885,7 +819,7 @@ func TestDiffUTXOSet(t *testing.T) {
 					toRemove: utxoCollection{},
 				},
 			},
-			expectedString: "{Base: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ], To Add: [ (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20, blueScore: 1 ], To Remove: [  ], Multiset-Hash:556cc61fd4d7e74d7807ca2298c5320375a6a20310a18920e54667220924baff}",
+			expectedString: "{Base: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ], To Add: [ (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20, blueScore: 1 ], To Remove: [  ]}",
 			expectedCollection: utxoCollection{
 				outpoint0: utxoEntry0,
 				outpoint1: utxoEntry1,
@@ -909,24 +843,21 @@ func TestDiffUTXOSet(t *testing.T) {
 					toRemove: utxoCollection{},
 				},
 			},
-			expectedString:     "{Base: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ], To Add: [  ], To Remove: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ], Multiset-Hash:0000000000000000000000000000000000000000000000000000000000000000}",
+			expectedString:     "{Base: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ], To Add: [  ], To Remove: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ]}",
 			expectedCollection: utxoCollection{},
 		},
 	}
 
 	for _, test := range tests {
-		diffSet := addMultisetToDiffUTXOSet(t, test.diffSet)
-		expectedMeldSet := addMultisetToDiffUTXOSet(t, test.expectedMeldSet)
-
 		// Test string representation
-		setString := diffSet.String()
+		setString := test.diffSet.String()
 		if setString != test.expectedString {
 			t.Errorf("unexpected string in test \"%s\". "+
 				"Expected: \"%s\", got: \"%s\".", test.name, test.expectedString, setString)
 		}
 
 		// Test meldToBase
-		meldSet := diffSet.clone().(*DiffUTXOSet)
+		meldSet := test.diffSet.clone().(*DiffUTXOSet)
 		err := meldSet.meldToBase()
 		errString := ""
 		if err != nil {
@@ -938,27 +869,27 @@ func TestDiffUTXOSet(t *testing.T) {
 		if err != nil {
 			continue
 		}
-		if !meldSet.equal(expectedMeldSet) {
+		if !meldSet.equal(test.expectedMeldSet) {
 			t.Errorf("unexpected melded set in test \"%s\". "+
-				"Expected: \"%v\", got: \"%v\".", test.name, expectedMeldSet, meldSet)
+				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedMeldSet, meldSet)
 		}
 
 		// Test collection
-		setCollection, err := diffSet.collection()
+		setCollection, err := test.diffSet.collection()
 		if err != nil {
-			t.Errorf("Error getting diffSet collection: %s", err)
+			t.Errorf("Error getting test.diffSet collection: %s", err)
 		} else if !reflect.DeepEqual(setCollection, test.expectedCollection) {
 			t.Errorf("unexpected set collection in test \"%s\". "+
 				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedCollection, setCollection)
 		}
 
 		// Test cloning
-		clonedSet := diffSet.clone().(*DiffUTXOSet)
-		if !reflect.DeepEqual(clonedSet, diffSet) {
+		clonedSet := test.diffSet.clone().(*DiffUTXOSet)
+		if !reflect.DeepEqual(clonedSet, test.diffSet) {
 			t.Errorf("unexpected set clone in test \"%s\". "+
-				"Expected: \"%v\", got: \"%v\".", test.name, diffSet, clonedSet)
+				"Expected: \"%v\", got: \"%v\".", test.name, test.diffSet, clonedSet)
 		}
-		if clonedSet == diffSet {
+		if clonedSet == test.diffSet {
 			t.Errorf("cloned set is reference-equal to the original")
 		}
 	}
@@ -1159,10 +1090,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 
 testLoop:
 	for _, test := range tests {
-		startSet := addMultisetToDiffUTXOSet(t, test.startSet)
-		expectedSet := addMultisetToDiffUTXOSet(t, test.expectedSet)
-
-		diffSet := startSet.clone()
+		diffSet := test.startSet.clone()
 
 		// Apply all transactions to diffSet, in order, with the initial block height startHeight
 		for i, transaction := range test.toAdd {
@@ -1174,18 +1102,18 @@ testLoop:
 			}
 		}
 
-		// Make sure that the result diffSet equals to the expectedSet
-		if !diffSet.(*DiffUTXOSet).equal(expectedSet) {
+		// Make sure that the result diffSet equals to test.expectedSet
+		if !diffSet.(*DiffUTXOSet).equal(test.expectedSet) {
 			t.Errorf("unexpected diffSet in test \"%s\". "+
-				"Expected: \"%v\", got: \"%v\".", test.name, expectedSet, diffSet)
+				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedSet, diffSet)
 		}
 	}
 }
 
 func TestDiffFromTx(t *testing.T) {
-	fus := addMultisetToFullUTXOSet(t, &FullUTXOSet{
+	fus := &FullUTXOSet{
 		utxoCollection: utxoCollection{},
-	})
+	}
 
 	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutpoint: wire.Outpoint{TxID: *txID0, Index: math.MaxUint32}, Sequence: 0}
@@ -1241,10 +1169,10 @@ func TestDiffFromTx(t *testing.T) {
 	}
 
 	//Test that we get an error if the outpoint is inside diffUTXOSet's toRemove
-	diff2 := addMultisetToDiff(t, &UTXODiff{
+	diff2 := &UTXODiff{
 		toAdd:    utxoCollection{},
 		toRemove: utxoCollection{},
-	})
+	}
 	dus := NewDiffUTXOSet(fus, diff2)
 	if isAccepted, err := dus.AddTx(tx, 2); err != nil {
 		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
@@ -1321,7 +1249,6 @@ func TestUTXOSetAddEntry(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		expectedUTXODiff := addMultisetToDiff(t, test.expectedUTXODiff)
 		err := utxoDiff.AddEntry(*test.outpointToAdd, test.utxoEntryToAdd)
 		errString := ""
 		if err != nil {
@@ -1330,9 +1257,9 @@ func TestUTXOSetAddEntry(t *testing.T) {
 		if errString != test.expectedError {
 			t.Fatalf("utxoDiff.AddEntry: unexpected err in test \"%s\". Expected: %s but got: %s", test.name, test.expectedError, err)
 		}
-		if err == nil && !utxoDiff.equal(expectedUTXODiff) {
+		if err == nil && !utxoDiff.equal(test.expectedUTXODiff) {
 			t.Fatalf("utxoDiff.AddEntry: unexpected utxoDiff in test \"%s\". "+
-				"Expected: %v, got: %v", test.name, expectedUTXODiff, utxoDiff)
+				"Expected: %v, got: %v", test.name, test.expectedUTXODiff, utxoDiff)
 		}
 	}
 }

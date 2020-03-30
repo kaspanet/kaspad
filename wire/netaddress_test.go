@@ -6,6 +6,7 @@ package wire
 
 import (
 	"bytes"
+	"github.com/pkg/errors"
 	"io"
 	"net"
 	"reflect"
@@ -198,7 +199,7 @@ func TestNetAddressWireErrors(t *testing.T) {
 		// Encode to wire format.
 		w := newFixedWriter(test.max)
 		err := writeNetAddress(w, test.pver, test.in, test.ts)
-		if err != test.writeErr {
+		if !errors.Is(err, test.writeErr) {
 			t.Errorf("writeNetAddress #%d wrong error got: %v, want: %v",
 				i, err, test.writeErr)
 			continue
@@ -208,7 +209,7 @@ func TestNetAddressWireErrors(t *testing.T) {
 		var na NetAddress
 		r := newFixedReader(test.max, test.buf)
 		err = readNetAddress(r, test.pver, &na, test.ts)
-		if err != test.readErr {
+		if !errors.Is(err, test.readErr) {
 			t.Errorf("readNetAddress #%d wrong error got: %v, want: %v",
 				i, err, test.readErr)
 			continue
