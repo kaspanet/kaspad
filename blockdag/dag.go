@@ -724,7 +724,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 		return err
 	}
 	err := dag.db.Update(func(dbTx database.Tx) error {
-		err := dag.index.flushToDB(dbaccess.NoTx())
+		err := dag.index.flushToDB(dbTx2)
 		if err != nil {
 			return err
 		}
@@ -739,7 +739,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 			return err
 		}
 
-		err = dag.multisetStore.flushToDB(dbTx)
+		err = dag.multisetStore.flushToDB(dbTx2)
 		if err != nil {
 			return err
 		}
