@@ -66,35 +66,29 @@ func HasBlock(context Context, hash *daghash.Hash) (bool, error) {
 }
 
 // FetchBlock returns the block of the given hash. Returns
-// found=false if the block had not been previously inserted
+// ErrNotFound if the block had not been previously inserted
 // into the database.
-func FetchBlock(context Context, hash *daghash.Hash) (block *util.Block, found bool, err error) {
+func FetchBlock(context Context, hash *daghash.Hash) (*util.Block, error) {
 	accessor, err := context.accessor()
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	blockLocationsKey := blockLocationKey(hash)
-	blockLocation, found, err := accessor.Get(blockLocationsKey)
+	blockLocation, err := accessor.Get(blockLocationsKey)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
-	if !found {
-		return nil, false, nil
-	}
-	bytes, found, err := accessor.RetrieveFromStore(blockStoreName, blockLocation)
+	bytes, err := accessor.RetrieveFromStore(blockStoreName, blockLocation)
 	if err != nil {
-		return nil, false, err
-	}
-	if !found {
-		return nil, false, nil
+		return nil, err
 	}
 
-	block, err = util.NewBlockFromBytes(bytes)
+	block, err := util.NewBlockFromBytes(bytes)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
-	return block, true, nil
+	return block, nil
 }
 
 func blockLocationKey(hash *daghash.Hash) []byte {

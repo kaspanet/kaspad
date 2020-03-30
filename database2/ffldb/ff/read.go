@@ -1,6 +1,7 @@
 package ff
 
 import (
+	"github.com/kaspanet/kaspad/database2"
 	"github.com/pkg/errors"
 	"hash/crc32"
 	"os"
@@ -10,12 +11,13 @@ import (
 // the integrity of the data by comparing the calculated checksum against the
 // one stored in the flat file. This function also automatically handles all
 // file management such as opening and closing files as necessary to stay
-// within the maximum allowed open files limit.
+// within the maximum allowed open files limit.  It returns ErrNotFound if the
+// location does not exist.
 //
 // Format: <data length><data><checksum>
-func (s *flatFileStore) read(location *flatFileLocation) (data []byte, found bool, err error) {
+func (s *flatFileStore) read(location *flatFileLocation) ([]byte, error) {
 	if s.isClosed {
-		return nil, false, errors.Errorf("cannot read from a closed store %s",
+		return nil, errors.Errorf("cannot read from a closed store %s",
 			s.storeName)
 	}
 
@@ -24,20 +26,20 @@ func (s *flatFileStore) read(location *flatFileLocation) (data []byte, found boo
 	cursor := s.writeCursor
 	if cursor.currentFileNumber < location.fileNumber ||
 		(cursor.currentFileNumber == location.fileNumber && cursor.currentOffset <= location.fileOffset) {
-		return nil, false, nil
+		return nil, database2.ErrNotFound
 	}
 
 	// Get the referenced flat file.
 	flatFile, err := s.flatFile(location.fileNumber)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
-	data = make([]byte, location.dataLength)
+	data := make([]byte, location.dataLength)
 	n, err := flatFile.file.ReadAt(data, int64(location.fileOffset))
 	flatFile.RUnlock()
 	if err != nil {
-		return nil, false, errors.Wrapf(err, "failed to read data in store '%s' "+
+		return nil, errors.Wrapf(err, "failed to read data in store '%s' "+
 			"from file %d, offset %d", s.storeName, location.fileNumber,
 			location.fileOffset)
 	}
@@ -47,13 +49,13 @@ func (s *flatFileStore) read(location *flatFileLocation) (data []byte, found boo
 	serializedChecksum := crc32ByteOrder.Uint32(data[n-4:])
 	calculatedChecksum := crc32.Checksum(data[:n-4], castagnoli)
 	if serializedChecksum != calculatedChecksum {
-		return nil, false, errors.Errorf("data in store '%s' does not match "+
+		return nil, errors.Errorf("data in store '%s' does not match "+
 			"checksum - got %x, want %x", s.storeName, calculatedChecksum,
 			serializedChecksum)
 	}
 
 	// The data excludes the length of the data and the checksum.
-	return data[4 : n-4], true, nil
+	return data[4 : n-4], nil
 }
 
 // flatFile attempts to return an existing file handle for the passed flat file

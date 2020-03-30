@@ -1,6 +1,7 @@
 package ldb
 
 import (
+	"github.com/kaspanet/kaspad/database2"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -90,20 +91,20 @@ func (tx *LevelDBTransaction) Put(key []byte, value []byte) error {
 }
 
 // Get gets the value for the given key. It returns
-// found=false if the given key does not exist.
-func (tx *LevelDBTransaction) Get(key []byte) (data []byte, found bool, err error) {
+// ErrNotFound if the given key does not exist.
+func (tx *LevelDBTransaction) Get(key []byte) ([]byte, error) {
 	if tx.isClosed {
-		return nil, false, errors.New("cannot get from a closed transaction")
+		return nil, errors.New("cannot get from a closed transaction")
 	}
 
-	data, err = tx.snapshot.Get(key, nil)
+	data, err := tx.snapshot.Get(key, nil)
 	if err != nil {
 		if errors.Is(err, leveldb.ErrNotFound) {
-			return nil, false, nil
+			return nil, database2.ErrNotFound
 		}
-		return nil, false, errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
-	return data, true, nil
+	return data, nil
 }
 
 // Has returns true if the database does contains the
