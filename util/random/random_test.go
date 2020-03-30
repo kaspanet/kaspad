@@ -2,6 +2,7 @@ package random
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"testing"
 )
@@ -62,7 +63,7 @@ func TestRandomUint64Errors(t *testing.T) {
 	// Test short reads.
 	fr := &fakeRandReader{n: 2, err: io.EOF}
 	nonce, err := randomUint64(fr)
-	if err != io.ErrUnexpectedEOF {
+	if !errors.Is(err, io.ErrUnexpectedEOF) {
 		t.Errorf("Error not expected value of %v [%v]",
 			io.ErrUnexpectedEOF, err)
 	}

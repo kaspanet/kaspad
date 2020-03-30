@@ -10,11 +10,11 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
+	"github.com/kaspanet/go-secp256k1"
 	"hash"
 
 	"golang.org/x/crypto/ripemd160"
 
-	"github.com/kaspanet/kaspad/ecc"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -2033,36 +2033,34 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	script := vm.currentScript()
 
 	// Generate the signature hash based on the signature hash type.
-	hash, err := calcSignatureHash(script, hashType, &vm.tx, vm.txIdx)
+	sigHash, err := calcSignatureHash(script, hashType, &vm.tx, vm.txIdx)
 	if err != nil {
 		vm.dstack.PushBool(false)
 		return nil
 	}
 
-	pubKey, err := ecc.ParsePubKey(pkBytes, ecc.S256())
+	pubKey, err := secp256k1.DeserializeSchnorrPubKey(pkBytes)
 	if err != nil {
 		vm.dstack.PushBool(false)
 		return nil
 	}
-
-	signature, err := ecc.ParseSignature(sigBytes)
+	signature, err := secp256k1.DeserializeSchnorrSignatureFromSlice(sigBytes)
 	if err != nil {
 		vm.dstack.PushBool(false)
 		return nil
 	}
 
 	var valid bool
+	secpHash := secp256k1.Hash(*sigHash)
 	if vm.sigCache != nil {
-		var sigHash daghash.Hash
-		copy(sigHash[:], hash)
 
-		valid = vm.sigCache.Exists(sigHash, signature, pubKey)
-		if !valid && signature.Verify(hash, pubKey) {
-			vm.sigCache.Add(sigHash, signature, pubKey)
+		valid = vm.sigCache.Exists(secpHash, signature, pubKey)
+		if !valid && pubKey.SchnorrVerify(&secpHash, signature) {
+			vm.sigCache.Add(secpHash, signature, pubKey)
 			valid = true
 		}
 	} else {
-		valid = signature.Verify(hash, pubKey)
+		valid = pubKey.SchnorrVerify(&secpHash, signature)
 	}
 
 	if !valid && len(sigBytes) > 0 {
@@ -2092,7 +2090,7 @@ func opcodeCheckSigVerify(op *parsedOpcode, vm *Engine) error {
 // the same signature multiple times when verifying a multisig.
 type parsedSigInfo struct {
 	signature       []byte
-	parsedSignature *ecc.Signature
+	parsedSignature *secp256k1.SchnorrSignature
 	parsed          bool
 }
 
@@ -2204,7 +2202,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		signature := rawSig[:len(rawSig)-1]
 
 		// Only parse and check the signature encoding once.
-		var parsedSig *ecc.Signature
+		var parsedSig *secp256k1.SchnorrSignature
 		if !sigInfo.parsed {
 			if err := vm.checkHashTypeEncoding(hashType); err != nil {
 				return err
@@ -2214,13 +2212,12 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 			}
 
 			// Parse the signature.
-			var err error
-			parsedSig, err = ecc.ParseSignature(signature)
-
+			parsedSig, err = secp256k1.DeserializeSchnorrSignatureFromSlice(signature)
 			sigInfo.parsed = true
 			if err != nil {
 				continue
 			}
+
 			sigInfo.parsedSignature = parsedSig
 		} else {
 			// Skip to the next pubkey if the signature is invalid.
@@ -2237,29 +2234,28 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		}
 
 		// Parse the pubkey.
-		parsedPubKey, err := ecc.ParsePubKey(pubKey, ecc.S256())
+		parsedPubKey, err := secp256k1.DeserializeSchnorrPubKey(pubKey)
 		if err != nil {
 			continue
 		}
 
 		// Generate the signature hash based on the signature hash type.
-		hash, err := calcSignatureHash(script, hashType, &vm.tx, vm.txIdx)
+		sigHash, err := calcSignatureHash(script, hashType, &vm.tx, vm.txIdx)
 		if err != nil {
 			return err
 		}
 
+		secpHash := secp256k1.Hash(*sigHash)
 		var valid bool
 		if vm.sigCache != nil {
-			var sigHash daghash.Hash
-			copy(sigHash[:], hash)
 
-			valid = vm.sigCache.Exists(sigHash, parsedSig, parsedPubKey)
-			if !valid && parsedSig.Verify(hash, parsedPubKey) {
-				vm.sigCache.Add(sigHash, parsedSig, parsedPubKey)
+			valid = vm.sigCache.Exists(secpHash, parsedSig, parsedPubKey)
+			if !valid && parsedPubKey.SchnorrVerify(&secpHash, parsedSig) {
+				vm.sigCache.Add(secpHash, parsedSig, parsedPubKey)
 				valid = true
 			}
 		} else {
-			valid = parsedSig.Verify(hash, parsedPubKey)
+			valid = parsedPubKey.SchnorrVerify(&secpHash, parsedSig)
 		}
 
 		if valid {
