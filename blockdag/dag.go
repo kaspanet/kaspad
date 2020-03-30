@@ -600,7 +600,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 
 	// Atomically insert info into the database.
 	err := dag.db.Update(func(dbTx database.Tx) error {
-		err := dag.index.flushToDB(dbaccess.NoTx()) // TODO: (Stas) Replace this with a tx context
+		err := dag.index.flushToDB(dbaccess.NoTx())
 		if err != nil {
 			return err
 		}
