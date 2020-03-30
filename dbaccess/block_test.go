@@ -55,14 +55,10 @@ func TestBlockStoreSanity(t *testing.T) {
 
 	// Fetch the genesis block back from the db and make sure
 	// that it's equal to the original
-	fetchedGenesisBytes, found, err := FetchBlock(NoTx(), genesisHash)
+	fetchedGenesisBytes, err := FetchBlock(NoTx(), genesisHash)
 	if err != nil {
 		t.Fatalf("TestBlockStoreSanity: FetchBlock unexpectedly "+
 			"failed: %s", err)
-	}
-	if !found {
-		t.Fatalf("TestBlockStoreSanity: just-inserted block is " +
-			"not found in the database")
 	}
 	fetchedGenesis, err := util.NewBlockFromBytes(fetchedGenesisBytes)
 	if err != nil {

@@ -509,13 +509,9 @@ func (dag *BlockDAG) initDAGState() error {
 			}
 
 			// Attempt to accept the block.
-			block, found, err := dbFetchBlockByHash(dbaccess.NoTx(), node.hash)
+			block, err := dbFetchBlockByHash(dbaccess.NoTx(), node.hash)
 			if err != nil {
 				return err
-			}
-			if !found {
-				return errors.Errorf("block %s not found",
-					node.hash)
 			}
 			isOrphan, isDelayed, err := dag.ProcessBlock(block, BFWasStored)
 			if err != nil {
@@ -636,22 +632,13 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 }
 
 // dbFetchBlockByHash retrieves the raw block for the provided hash,
-// deserialize it, and return a util.Block of it.
-func dbFetchBlockByHash(context dbaccess.Context, hash *daghash.Hash) (block *util.Block, found bool, err error) {
-	blockBytes, found, err := dbaccess.FetchBlock(context, hash)
+// deserializes it, and returns a util.Block of it.
+func dbFetchBlockByHash(context dbaccess.Context, hash *daghash.Hash) (*util.Block, error) {
+	blockBytes, err := dbaccess.FetchBlock(context, hash)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
-	if !found {
-		return nil, false, nil
-	}
-
-	// Create the encapsulated block.
-	block, err = util.NewBlockFromBytes(blockBytes)
-	if err != nil {
-		return nil, false, err
-	}
-	return block, true, nil
+	return util.NewBlockFromBytes(blockBytes)
 }
 
 func dbStoreBlock(context dbaccess.Context, block *util.Block) error {
@@ -746,13 +733,9 @@ func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
 		return nil, errNotInDAG(str)
 	}
 
-	block, found, err := dbFetchBlockByHash(dbaccess.NoTx(), node.hash)
+	block, err := dbFetchBlockByHash(dbaccess.NoTx(), node.hash)
 	if err != nil {
 		return nil, err
-	}
-	if !found {
-		return nil, errors.Errorf("block %s not found",
-			node.hash)
 	}
 	return block, err
 }
