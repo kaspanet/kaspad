@@ -298,7 +298,10 @@ func (dag *BlockDAG) initDAGState() error {
 			" database by starting kaspad with --reset-db flag", dag.subnetworkID, dagState.localSubnetworkID)
 	}
 
+	// Load all of the block data for the known DAG and construct
+	// the block index accordingly.
 	log.Infof("Loading block index...")
+
 	var unprocessedBlockNodes []*blockNode
 	blockIndexCursor, err := dbaccess.BlockIndexCursor(dbaccess.NoTx())
 	if err != nil {
@@ -349,16 +352,8 @@ func (dag *BlockDAG) initDAGState() error {
 		dag.blockCount++
 	}
 
-	// Load all of the headers from the data for the known DAG
-	// and construct the block index accordingly. Since the
-	// number of nodes are already known, perform a single alloc
-	// for them versus a whole bunch of little ones to reduce
-	// pressure on the GC.
-
 	// Load all of the known UTXO entries and construct the full
-	// UTXO set accordingly. Since the number of entries is already
-	// known, perform a single alloc for them versus a whole bunch
-	// of little ones to reduce pressure on the GC.
+	// UTXO set accordingly.
 	log.Infof("Loading UTXO set...")
 
 	// Determine how many UTXO entries will be loaded into the index so we can
