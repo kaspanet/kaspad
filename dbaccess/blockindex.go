@@ -31,7 +31,7 @@ func BlockIndexCursor(context Context) (database2.Cursor, error) {
 	return accessor.Cursor(blockIndexBucket.Path())
 }
 
-// BlockIndexCursor opens a cursor over blocks-index blocks
+// BlockIndexCursorFrom opens a cursor over blocks-index blocks
 // starting from the block with the given blockHash and
 // blockBlueScore.
 func BlockIndexCursorFrom(context Context, blockIndexKey []byte) (cursor database2.Cursor, found bool, err error) {
