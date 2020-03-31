@@ -39,7 +39,7 @@ func registerSubnetworks(context dbaccess.Context, txs []*util.Tx) error {
 		if err != nil {
 			return err
 		}
-		exists, err := dbaccess.SubnetworkExists(context, subnetworkID)
+		exists, err := dbaccess.HasSubnetwork(context, subnetworkID)
 		if err != nil {
 			return err
 		}

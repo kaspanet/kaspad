@@ -29,8 +29,8 @@ func StoreSubnetwork(context Context, subnetworkID *subnetworkid.SubnetworkID, s
 	return accessor.Put(key, subnetworkData)
 }
 
-// SubnetworkExists returns whether the subnetwork exists in the database.
-func SubnetworkExists(context Context, subnetworkID *subnetworkid.SubnetworkID) (bool, error) {
+// HasSubnetwork returns whether the subnetwork exists in the database.
+func HasSubnetwork(context Context, subnetworkID *subnetworkid.SubnetworkID) (bool, error) {
 	accessor, err := context.accessor()
 	if err != nil {
 		return false, err
