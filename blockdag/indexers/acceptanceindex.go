@@ -81,11 +81,6 @@ func (idx *AcceptanceIndex) recover() error {
 // This is part of the Indexer interface.
 func (idx *AcceptanceIndex) ConnectBlock(context *dbaccess.TxContext, blockHash *daghash.Hash,
 	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
-	return dbPutTxsAcceptanceData(context, blockHash, txsAcceptanceData)
-}
-
-func dbPutTxsAcceptanceData(context *dbaccess.TxContext, blockHash *daghash.Hash,
-	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
 	serializedTxsAcceptanceData, err := serializeMultiBlockTxsAcceptanceData(txsAcceptanceData)
 	if err != nil {
 		return err
@@ -96,11 +91,7 @@ func dbPutTxsAcceptanceData(context *dbaccess.TxContext, blockHash *daghash.Hash
 // TxsAcceptanceData returns the acceptance data of all the transactions that
 // were accepted by the block with hash blockHash.
 func (idx *AcceptanceIndex) TxsAcceptanceData(blockHash *daghash.Hash) (blockdag.MultiBlockTxsAcceptanceData, error) {
-	return dbFetchTxsAcceptance(blockHash)
-}
-
-func dbFetchTxsAcceptance(hash *daghash.Hash) (blockdag.MultiBlockTxsAcceptanceData, error) {
-	serializedTxsAcceptanceData, err := dbaccess.FetchAcceptanceData(dbaccess.NoTx(), hash)
+	serializedTxsAcceptanceData, err := dbaccess.FetchAcceptanceData(dbaccess.NoTx(), blockHash)
 	if err != nil {
 		return nil, err
 	}
