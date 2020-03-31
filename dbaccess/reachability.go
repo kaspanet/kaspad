@@ -29,10 +29,16 @@ func StoreReachabilityData(context Context, blockHash *daghash.Hash, reachabilit
 	return accessor.Put(key, reachabilityData)
 }
 
-// ClearAllReachabilityData clears all the reachability data
+// ClearReachabilityData clears the reachability data
 // from database.
-func ClearAllReachabilityData(context Context) error {
-	accessor, err := context.accessor()
+func ClearReachabilityData() error {
+	dbTx, err := NewTx()
+	if err != nil {
+		return err
+	}
+	defer dbTx.RollbackUnlessClosed()
+
+	accessor, err := dbTx.accessor()
 	if err != nil {
 		return err
 	}
@@ -54,7 +60,7 @@ func ClearAllReachabilityData(context Context) error {
 		}
 	}
 
-	return nil
+	return dbTx.Commit()
 }
 
 func reachabilityKey(hash *daghash.Hash) []byte {
