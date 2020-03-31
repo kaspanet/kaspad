@@ -4,18 +4,10 @@ import (
 	"bytes"
 	"encoding/gob"
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
-	"github.com/pkg/errors"
-)
-
-var (
-	// acceptanceIndexKey is the key of the acceptance index and the db bucket used
-	// to house it.
-	acceptanceIndexKey = []byte("acceptanceidx")
 )
 
 // AcceptanceIndex implements a txAcceptanceData by block hash index. That is to say,
@@ -49,85 +41,65 @@ func DropAcceptanceIndex() error {
 // This is part of the Indexer interface.
 func (idx *AcceptanceIndex) Init(dag *blockdag.BlockDAG) error {
 	idx.dag = dag
-	return nil
+	return idx.recover()
+}
+
+// recover attempts to insert any missing data that's missing
+// from the acceptance index.
+//
+// This is part of the Indexer interface.
+func (idx *AcceptanceIndex) recover() error {
+	dbTx, err := dbaccess.NewTx()
+	if err != nil {
+		return err
+	}
+	defer dbTx.RollbackUnlessClosed()
+
+	return idx.dag.ForEachHash(func(hash daghash.Hash) error {
+		exists, err := dbaccess.HasAcceptanceData(dbTx, &hash)
+		if err != nil {
+			return err
+		}
+		if exists {
+			return nil
+		}
+		txAcceptanceData, err := idx.dag.TxsAcceptedByBlockHash(&hash)
+		if err != nil {
+			return err
+		}
+		return idx.ConnectBlock(dbTx, nil, txAcceptanceData, nil)
+	})
 }
 
 // ConnectBlock is invoked by the index manager when a new block has been
 // connected to the DAG.
 //
 // This is part of the Indexer interface.
-func (idx *AcceptanceIndex) ConnectBlock(context *dbaccess.TxContext, _ *util.Block,
+func (idx *AcceptanceIndex) ConnectBlock(context *dbaccess.TxContext, block *util.Block,
 	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData, _ blockdag.MultiBlockTxsAcceptanceData) error {
-	return dbPutTxsAcceptanceData(context, txsAcceptanceData)
+	return dbPutTxsAcceptanceData(context, block.Hash(), txsAcceptanceData)
+}
+
+func dbPutTxsAcceptanceData(context *dbaccess.TxContext, blockHash *daghash.Hash,
+	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
+	serializedTxsAcceptanceData, err := serializeMultiBlockTxsAcceptanceData(txsAcceptanceData)
+	if err != nil {
+		return err
+	}
+	return dbaccess.StoreAcceptanceData(context, blockHash, serializedTxsAcceptanceData)
 }
 
 // TxsAcceptanceData returns the acceptance data of all the transactions that
 // were accepted by the block with hash blockHash.
 func (idx *AcceptanceIndex) TxsAcceptanceData(blockHash *daghash.Hash) (blockdag.MultiBlockTxsAcceptanceData, error) {
-	var txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData
-	err := idx.db.View(func(dbTx database.Tx) error {
-		var err error
-		txsAcceptanceData, err = dbFetchTxsAcceptanceDataByHash(dbTx, blockHash)
-		return err
-	})
+	return dbFetchTxsAcceptance(blockHash)
+}
+
+func dbFetchTxsAcceptance(hash *daghash.Hash) (blockdag.MultiBlockTxsAcceptanceData, error) {
+	serializedTxsAcceptanceData, err := dbaccess.FetchAcceptanceData(dbaccess.NoTx(), hash)
 	if err != nil {
 		return nil, err
 	}
-	return txsAcceptanceData, nil
-}
-
-// Recover is invoked when the indexer wasn't turned on for several blocks
-// and the indexer needs to close the gaps.
-//
-// This is part of the Indexer interface.
-func (idx *AcceptanceIndex) Recover(dbTx database.Tx, currentBlockID, lastKnownBlockID uint64) error {
-	for blockID := currentBlockID + 1; blockID <= lastKnownBlockID; blockID++ {
-		hash, err := blockdag.DBFetchBlockHashByID(dbTx, currentBlockID)
-		if err != nil {
-			return err
-		}
-		txAcceptanceData, err := idx.dag.TxsAcceptedByBlockHash(hash)
-		if err != nil {
-			return err
-		}
-		err = idx.ConnectBlock(dbTx, nil, txAcceptanceData, nil)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func dbPutTxsAcceptanceData(context *dbaccess.TxContext, txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
-	serializedTxsAcceptanceData, err := serializeMultiBlockTxsAcceptanceData(txsAcceptanceData)
-	if err != nil {
-		return err
-	}
-
-	bucket := dbTx.Metadata().Bucket(acceptanceIndexKey)
-	return bucket.Put(blockdag.SerializeBlockID(blockID), serializedTxsAcceptanceData)
-}
-
-func dbFetchTxsAcceptanceDataByHash(dbTx database.Tx,
-	hash *daghash.Hash) (blockdag.MultiBlockTxsAcceptanceData, error) {
-
-	blockID, err := blockdag.DBFetchBlockIDByHash(dbTx, hash)
-	if err != nil {
-		return nil, err
-	}
-
-	return dbFetchTxsAcceptanceDataByID(dbTx, blockID)
-}
-
-func dbFetchTxsAcceptanceDataByID(dbTx database.Tx,
-	blockID uint64) (blockdag.MultiBlockTxsAcceptanceData, error) {
-	serializedBlockID := blockdag.SerializeBlockID(blockID)
-	bucket := dbTx.Metadata().Bucket(acceptanceIndexKey)
-	serializedTxsAcceptanceData := bucket.Get(serializedBlockID)
-	if serializedTxsAcceptanceData == nil {
-		return nil, errors.Errorf("no entry in the accpetance index for block id %d", blockID)
-	}
-
 	return deserializeMultiBlockTxsAcceptanceData(serializedTxsAcceptanceData)
 }
 

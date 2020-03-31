@@ -1934,6 +1934,16 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 	return dag.subnetworkID
 }
 
+func (dag *BlockDAG) ForEachHash(fn func(hash daghash.Hash) error) error {
+	for hash := range dag.index.index {
+		err := fn(hash)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (dag *BlockDAG) addDelayedBlock(block *util.Block, delay time.Duration) error {
 	processTime := dag.Now().Add(delay)
 	log.Debugf("Adding block to delayed blocks queue (block hash: %s, process time: %s)", block.Hash().String(), processTime)
