@@ -8,7 +8,7 @@ import (
 
 var utxoDiffsBucket = database2.MakeBucket([]byte("utxo-diffs"))
 
-// StoreUTXODiff stores the UTXO diff data of a block by its hash.
+// StoreUTXODiffData stores the UTXO diff data of a block by its hash.
 func StoreUTXODiffData(context Context, blockHash *daghash.Hash, diffData []byte) error {
 	accessor, err := context.accessor()
 	if err != nil {

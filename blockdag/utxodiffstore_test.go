@@ -1,7 +1,6 @@
 package blockdag
 
 import (
-	"fmt"
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -31,9 +30,12 @@ func TestUTXODiffStore(t *testing.T) {
 	// Check that an error is returned when asking for non existing node
 	nonExistingNode := createNode()
 	_, err = dag.utxoDiffStore.diffByNode(nonExistingNode)
-	expectedErrString := fmt.Sprintf("Couldn't find diff data for block %s", nonExistingNode.hash)
-	if err == nil || err.Error() != expectedErrString {
-		t.Errorf("diffByNode: expected error %s but got %s", expectedErrString, err)
+	if !dbaccess.IsNotFoundError(err) {
+		if err != nil {
+			t.Errorf("diffByNode: %s", err)
+		} else {
+			t.Errorf("diffByNode: unexpectedly found diff data")
+		}
 	}
 
 	// Add node's diff data to the utxoDiffStore and check if it's checked correctly.
