@@ -116,7 +116,7 @@ func (store *multisetStore) init(context dbaccess.Context) error {
 
 // dbStoreMultiset stores the multiset data to the database.
 func (store *multisetStore) dbStoreMultiset(context dbaccess.Context, blockHash *daghash.Hash, serializedMS []byte) error {
-	exists, err := dbaccess.MultisetExists(context, blockHash)
+	exists, err := dbaccess.HasMultiset(context, blockHash)
 	if err != nil {
 		return err
 	}

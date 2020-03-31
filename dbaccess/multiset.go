@@ -29,25 +29,16 @@ func StoreMultiset(context Context, blockHash *daghash.Hash, multiset []byte) er
 	return accessor.Put(key, multiset)
 }
 
-// MultisetExists returns whether the multiset of
+// HasMultiset returns whether the multiset of
 // the given block exists in the database.
-func MultisetExists(context Context, blockHash *daghash.Hash) (bool, error) {
+func HasMultiset(context Context, blockHash *daghash.Hash) (bool, error) {
 	accessor, err := context.accessor()
 	if err != nil {
 		return false, err
 	}
 
 	key := multisetKey(blockHash)
-	_, err = accessor.Get(key)
-	if IsNotFoundError(err) {
-		return false, nil
-	}
-
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
+	return accessor.Has(key)
 }
 
 func multisetKey(hash *daghash.Hash) []byte {

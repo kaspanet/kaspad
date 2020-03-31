@@ -37,16 +37,7 @@ func SubnetworkExists(context Context, subnetworkID *subnetworkid.SubnetworkID) 
 	}
 
 	key := subnetworkKey(subnetworkID)
-	_, err = accessor.Get(key)
-	if IsNotFoundError(err) {
-		return false, nil
-	}
-
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
+	return accessor.Has(key)
 }
 
 func subnetworkKey(subnetworkID *subnetworkid.SubnetworkID) []byte {
