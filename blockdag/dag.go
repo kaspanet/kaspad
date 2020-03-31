@@ -1981,11 +1981,8 @@ func (dag *BlockDAG) peekDelayedBlock() *delayedBlock {
 // connected to the DAG for the purpose of supporting optional indexes.
 type IndexManager interface {
 	// Init is invoked during DAG initialize in order to allow the index
-	// manager to initialize itself and any indexes it is managing. The
-	// channel parameter specifies a channel the caller can close to signal
-	// that the process should be interrupted. It can be nil if that
-	// behavior is not desired.
-	Init(database.DB, *BlockDAG, <-chan struct{}) error
+	// manager to initialize itself and any indexes it is managing.
+	Init(*BlockDAG) error
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
@@ -2103,7 +2100,7 @@ func New(config *Config) (*BlockDAG, error) {
 	// Initialize and catch up all of the currently active optional indexes
 	// as needed.
 	if config.IndexManager != nil {
-		err = config.IndexManager.Init(dag.db, dag, config.Interrupt)
+		err = config.IndexManager.Init(dag)
 		if err != nil {
 			return nil, err
 		}

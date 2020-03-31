@@ -5,15 +5,11 @@ import (
 	"encoding/gob"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
-)
-
-const (
-	// acceptanceIndexName is the human-readable name for the index.
-	acceptanceIndexName = "acceptance index"
 )
 
 var (
@@ -26,7 +22,6 @@ var (
 // it stores a mapping between a block's hash and the set of transactions that the
 // block accepts among its blue blocks.
 type AcceptanceIndex struct {
-	db  database.DB
 	dag *blockdag.BlockDAG
 }
 
@@ -45,39 +40,14 @@ func NewAcceptanceIndex() *AcceptanceIndex {
 
 // DropAcceptanceIndex drops the acceptance index from the provided database if it
 // exists.
-func DropAcceptanceIndex(db database.DB, interrupt <-chan struct{}) error {
-	return dropIndex(db, acceptanceIndexKey, acceptanceIndexName, interrupt)
-}
-
-// Key returns the database key to use for the index as a byte slice.
-//
-// This is part of the Indexer interface.
-func (idx *AcceptanceIndex) Key() []byte {
-	return acceptanceIndexKey
-}
-
-// Name returns the human-readable name of the index.
-//
-// This is part of the Indexer interface.
-func (idx *AcceptanceIndex) Name() string {
-	return acceptanceIndexName
-}
-
-// Create is invoked when the indexer manager determines the index needs
-// to be created for the first time. It creates the bucket for the
-// acceptance index.
-//
-// This is part of the Indexer interface.
-func (idx *AcceptanceIndex) Create(dbTx database.Tx) error {
-	_, err := dbTx.Metadata().CreateBucket(acceptanceIndexKey)
-	return err
+func DropAcceptanceIndex() error {
+	return dbaccess.ClearAcceptanceIndex()
 }
 
 // Init initializes the hash-based acceptance index.
 //
 // This is part of the Indexer interface.
-func (idx *AcceptanceIndex) Init(db database.DB, dag *blockdag.BlockDAG) error {
-	idx.db = db
+func (idx *AcceptanceIndex) Init(dag *blockdag.BlockDAG) error {
 	idx.dag = dag
 	return nil
 }

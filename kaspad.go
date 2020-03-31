@@ -146,7 +146,7 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 
 	// Drop indexes and exit if requested.
 	if cfg.DropAcceptanceIndex {
-		if err := indexers.DropAcceptanceIndex(db, interrupt); err != nil {
+		if err := indexers.DropAcceptanceIndex(); err != nil {
 			kasdLog.Errorf("%s", err)
 			return err
 		}
