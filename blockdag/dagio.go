@@ -16,7 +16,6 @@ import (
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/binaryserializer"
 	"github.com/kaspanet/kaspad/util/buffers"
@@ -156,10 +155,7 @@ func deserializeDAGState(serializedData []byte) (*dagState, error) {
 	var state *dagState
 	err := json.Unmarshal(serializedData, &state)
 	if err != nil {
-		return nil, database.Error{
-			ErrorCode:   database.ErrCorruption,
-			Description: "corrupt DAG state",
-		}
+		return nil, err
 	}
 
 	return state, nil
