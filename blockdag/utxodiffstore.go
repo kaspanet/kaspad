@@ -5,7 +5,6 @@ import (
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/locks"
-	"github.com/pkg/errors"
 )
 
 type blockUTXODiffData struct {
@@ -33,12 +32,11 @@ func (diffStore *utxoDiffStore) setBlockDiff(node *blockNode, diff *UTXODiff) er
 	diffStore.mtx.HighPriorityWriteLock()
 	defer diffStore.mtx.HighPriorityWriteUnlock()
 	// load the diff data from DB to diffStore.loaded
-	_, exists, err := diffStore.diffDataByHash(node.hash)
-	if err != nil {
-		return err
-	}
-	if !exists {
+	_, err := diffStore.diffDataByHash(node.hash)
+	if dbaccess.IsNotFoundError(err) {
 		diffStore.loaded[*node.hash] = &blockUTXODiffData{}
+	} else if err != nil {
+		return err
 	}
 
 	diffStore.loaded[*node.hash].diff = diff
@@ -50,12 +48,9 @@ func (diffStore *utxoDiffStore) setBlockDiffChild(node *blockNode, diffChild *bl
 	diffStore.mtx.HighPriorityWriteLock()
 	defer diffStore.mtx.HighPriorityWriteUnlock()
 	// load the diff data from DB to diffStore.loaded
-	_, exists, err := diffStore.diffDataByHash(node.hash)
+	_, err := diffStore.diffDataByHash(node.hash)
 	if err != nil {
 		return err
-	}
-	if !exists {
-		return diffNotFoundError(node)
 	}
 
 	diffStore.loaded[*node.hash].diffChild = diffChild
@@ -88,34 +83,24 @@ func (diffStore *utxoDiffStore) setBlockAsDirty(blockHash *daghash.Hash) {
 	diffStore.dirty[*blockHash] = struct{}{}
 }
 
-func (diffStore *utxoDiffStore) diffDataByHash(hash *daghash.Hash) (*blockUTXODiffData, bool, error) {
+func (diffStore *utxoDiffStore) diffDataByHash(hash *daghash.Hash) (*blockUTXODiffData, error) {
 	if diffData, ok := diffStore.loaded[*hash]; ok {
-		return diffData, true, nil
+		return diffData, nil
 	}
 	diffData, err := diffStore.diffDataFromDB(hash)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
-	exists := diffData != nil
-	if exists {
-		diffStore.loaded[*hash] = diffData
-	}
-	return diffData, exists, nil
-}
-
-func diffNotFoundError(node *blockNode) error {
-	return errors.Errorf("Couldn't find diff data for block %s", node.hash)
+	diffStore.loaded[*hash] = diffData
+	return diffData, nil
 }
 
 func (diffStore *utxoDiffStore) diffByNode(node *blockNode) (*UTXODiff, error) {
 	diffStore.mtx.HighPriorityReadLock()
 	defer diffStore.mtx.HighPriorityReadUnlock()
-	diffData, exists, err := diffStore.diffDataByHash(node.hash)
+	diffData, err := diffStore.diffDataByHash(node.hash)
 	if err != nil {
 		return nil, err
-	}
-	if !exists {
-		return nil, diffNotFoundError(node)
 	}
 	return diffData.diff, nil
 }
@@ -123,12 +108,9 @@ func (diffStore *utxoDiffStore) diffByNode(node *blockNode) (*UTXODiff, error) {
 func (diffStore *utxoDiffStore) diffChildByNode(node *blockNode) (*blockNode, error) {
 	diffStore.mtx.HighPriorityReadLock()
 	defer diffStore.mtx.HighPriorityReadUnlock()
-	diffData, exists, err := diffStore.diffDataByHash(node.hash)
+	diffData, err := diffStore.diffDataByHash(node.hash)
 	if err != nil {
 		return nil, err
-	}
-	if !exists {
-		return nil, diffNotFoundError(node)
 	}
 	return diffData.diffChild, nil
 }
