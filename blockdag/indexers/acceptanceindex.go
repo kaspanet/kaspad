@@ -43,8 +43,8 @@ func (idx *AcceptanceIndex) Init(dag *blockdag.BlockDAG) error {
 	return idx.recover()
 }
 
-// recover attempts to insert any missing data that's missing
-// from the acceptance index.
+// recover attempts to insert any data that's missing from the
+// acceptance index.
 //
 // This is part of the Indexer interface.
 func (idx *AcceptanceIndex) recover() error {
