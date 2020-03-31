@@ -741,19 +741,20 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 			return err
 		}
 
-		// Update best block state.
+		// Update DAG state.
 		state := &dagState{
 			TipHashes:         dag.TipHashes(),
 			LastFinalityPoint: dag.lastFinalityPoint.hash,
+			localSubnetworkID: dag.subnetworkID,
 		}
-		err = dbPutDAGState(dbTx, state)
+		err = dbPutDAGState(dbaccess.NoTx(), state)
 		if err != nil {
 			return err
 		}
 
 		// Update the UTXO set using the diffSet that was melded into the
 		// full UTXO set.
-		err = dbPutUTXODiff(dbTx, virtualUTXODiff)
+		err = dbUpdateUTXOSet(dbaccess.NoTx(), virtualUTXODiff)
 		if err != nil {
 			return err
 		}

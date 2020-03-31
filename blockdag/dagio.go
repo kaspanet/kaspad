@@ -25,34 +25,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-const (
-	// blockHdrSize is the size of a block header. This is simply the
-	// constant from wire and is only provided here for convenience since
-	// wire.MaxBlockHeaderPayload is quite long.
-	blockHdrSize = wire.MaxBlockHeaderPayload
-
-	// latestUTXOSetBucketVersion is the current version of the UTXO set
-	// bucket that is used to track all unspent outputs.
-	latestUTXOSetBucketVersion = 1
-)
-
 var (
-	// blockIndexBucketName is the name of the database bucket used to house the
-	// block headers and contextual information.
-	blockIndexBucketName = []byte("blockheaderidx")
-
-	// dagStateKeyName is the name of the db key used to store the DAG
-	// tip hashes.
-	dagStateKeyName = []byte("dagstate")
-
-	// utxoSetVersionKeyName is the name of the db key used to store the
-	// version of the utxo set currently in the database.
-	utxoSetVersionKeyName = []byte("utxosetversion")
-
-	// utxoSetBucketName is the name of the database bucket used to house the
-	// unspent transaction output set.
-	utxoSetBucketName = []byte("utxoset")
-
 	// utxoDiffsBucketName is the name of the database bucket used to house the
 	// diffs and diff children of blocks.
 	utxoDiffsBucketName = []byte("utxodiffs")
@@ -68,10 +41,6 @@ var (
 	// subnetworksBucketName is the name of the database bucket used to store the
 	// subnetwork registry.
 	subnetworksBucketName = []byte("subnetworks")
-
-	// localSubnetworkKeyName is the name of the db key used to store the
-	// node's local subnetwork ID.
-	localSubnetworkKeyName = []byte("localsubnetworkidkey")
 
 	// byteOrder is the preferred byte order used for serializing numeric
 	// fields for storage in the database.
@@ -92,15 +61,6 @@ func (e errNotInDAG) Error() string {
 func isNotInDAGErr(err error) bool {
 	var notInDAGErr errNotInDAG
 	return errors.As(err, &notInDAGErr)
-}
-
-// dbPutVersion uses an existing database transaction to update the provided
-// key in the metadata bucket to the given version. It is primarily used to
-// track versions on entities such as buckets.
-func dbPutVersion(dbTx database.Tx, key []byte, version uint32) error {
-	var serialized [4]byte
-	byteOrder.PutUint32(serialized[:], version)
-	return dbTx.Metadata().Put(key, serialized[:])
 }
 
 // outpointKeyPool defines a concurrent safe free list of byte buffers used to
@@ -145,13 +105,10 @@ func deserializeOutpoint(r io.Reader) (*wire.Outpoint, error) {
 	return outpoint, nil
 }
 
-// dbPutUTXODiff uses an existing database transaction to update the UTXO set
-// in the database based on the provided UTXO view contents and state. In
-// particular, only the entries that have been marked as modified are written
-// to the database.
-func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
-	utxoBucket := dbTx.Metadata().Bucket(utxoSetBucketName)
-	for outpoint := range diff.toRemove {
+// dbUpdateUTXOSet updates the UTXO set in the database based on the provided
+// UTXO diff.
+func dbUpdateUTXOSet(context dbaccess.Context, virtualUTXODiff *UTXODiff) error {
+	for outpoint := range virtualUTXODiff.toRemove {
 		w := outpointKeyPool.Get().(*bytes.Buffer)
 		w.Reset()
 		err := serializeOutpoint(w, &outpoint)
@@ -160,7 +117,7 @@ func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 		}
 
 		key := w.Bytes()
-		err = utxoBucket.Delete(key)
+		err = dbaccess.RemoveFromUTXOSet(context, key)
 		if err != nil {
 			return err
 		}
@@ -169,9 +126,9 @@ func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 
 	// We are preallocating for P2PKH entries because they are the most common ones.
 	// If we have entries with a compressed script bigger than P2PKH's, the buffer will grow.
-	bytesToPreallocate := (p2pkhUTXOEntrySerializeSize + outpointSerializeSize) * len(diff.toAdd)
+	bytesToPreallocate := (p2pkhUTXOEntrySerializeSize + outpointSerializeSize) * len(virtualUTXODiff.toAdd)
 	buff := bytes.NewBuffer(make([]byte, bytesToPreallocate))
-	for outpoint, entry := range diff.toAdd {
+	for outpoint, entry := range virtualUTXODiff.toAdd {
 		// Serialize and store the UTXO entry.
 		sBuff := buffers.NewSubBuffer(buff)
 		err := serializeUTXOEntry(sBuff, entry)
@@ -187,11 +144,7 @@ func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 		}
 
 		key := sBuff.Bytes()
-		err = utxoBucket.Put(key, serializedEntry)
-		// NOTE: The key is intentionally not recycled here since the
-		// database interface contract prohibits modifications. It will
-		// be garbage collected normally when the database is done with
-		// it.
+		err = dbaccess.AddToUTXOSet(context, key, serializedEntry)
 		if err != nil {
 			return err
 		}
@@ -203,6 +156,7 @@ func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 type dagState struct {
 	TipHashes         []*daghash.Hash
 	LastFinalityPoint *daghash.Hash
+	localSubnetworkID *subnetworkid.SubnetworkID
 }
 
 // serializeDAGState returns the serialization of the DAG state.
@@ -229,14 +183,13 @@ func deserializeDAGState(serializedData []byte) (*dagState, error) {
 
 // dbPutDAGState uses an existing database transaction to store the latest
 // tip hashes of the DAG.
-func dbPutDAGState(dbTx database.Tx, state *dagState) error {
-	serializedData, err := serializeDAGState(state)
-
+func dbPutDAGState(context dbaccess.Context, state *dagState) error {
+	serializedDAGState, err := serializeDAGState(state)
 	if err != nil {
 		return err
 	}
 
-	return dbTx.Metadata().Put(dagStateKeyName, serializedData)
+	return dbaccess.StoreDAGState(context, serializedDAGState)
 }
 
 // createDAGState initializes both the database and the DAG state to the
@@ -248,20 +201,8 @@ func (dag *BlockDAG) createDAGState() error {
 	err := dag.db.Update(func(dbTx database.Tx) error {
 		meta := dbTx.Metadata()
 
-		// Create the bucket that houses the block index data.
-		_, err := meta.CreateBucket(blockIndexBucketName)
-		if err != nil {
-			return err
-		}
-
-		// Create the buckets that house the utxo set, the utxo diffs, and their
-		// version.
-		_, err = meta.CreateBucket(utxoSetBucketName)
-		if err != nil {
-			return err
-		}
-
-		_, err = meta.CreateBucket(utxoDiffsBucketName)
+		// Create the buckets that house the utxo diffs.
+		_, err := meta.CreateBucket(utxoDiffsBucketName)
 		if err != nil {
 			return err
 		}
@@ -276,19 +217,9 @@ func (dag *BlockDAG) createDAGState() error {
 			return err
 		}
 
-		err = dbPutVersion(dbTx, utxoSetVersionKeyName,
-			latestUTXOSetBucketVersion)
-		if err != nil {
-			return err
-		}
-
 		// Create the bucket that houses the registered subnetworks.
 		_, err = meta.CreateBucket(subnetworksBucketName)
 		if err != nil {
-			return err
-		}
-
-		if err := dbPutLocalSubnetworkID(dbTx, dag.subnetworkID); err != nil {
 			return err
 		}
 
@@ -305,17 +236,7 @@ func (dag *BlockDAG) removeDAGState() error {
 	err := dag.db.Update(func(dbTx database.Tx) error {
 		meta := dbTx.Metadata()
 
-		err := meta.DeleteBucket(blockIndexBucketName)
-		if err != nil {
-			return err
-		}
-
-		err = meta.DeleteBucket(utxoSetBucketName)
-		if err != nil {
-			return err
-		}
-
-		err = meta.DeleteBucket(utxoDiffsBucketName)
+		err := meta.DeleteBucket(utxoDiffsBucketName)
 		if err != nil {
 			return err
 		}
@@ -330,17 +251,7 @@ func (dag *BlockDAG) removeDAGState() error {
 			return err
 		}
 
-		err = dbTx.Metadata().Delete(utxoSetVersionKeyName)
-		if err != nil {
-			return err
-		}
-
 		err = meta.DeleteBucket(subnetworksBucketName)
-		if err != nil {
-			return err
-		}
-
-		err = dbTx.Metadata().Delete(localSubnetworkKeyName)
 		if err != nil {
 			return err
 		}
@@ -354,151 +265,123 @@ func (dag *BlockDAG) removeDAGState() error {
 	return nil
 }
 
-func dbPutLocalSubnetworkID(dbTx database.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
-	if subnetworkID == nil {
-		return dbTx.Metadata().Put(localSubnetworkKeyName, []byte{})
-	}
-	return dbTx.Metadata().Put(localSubnetworkKeyName, subnetworkID[:])
-}
-
 // initDAGState attempts to load and initialize the DAG state from the
 // database. When the db does not yet contain any DAG state, both it and the
 // DAG state are initialized to the genesis block.
 func (dag *BlockDAG) initDAGState() error {
-	// Determine the state of the DAG database. We may need to initialize
-	// everything from scratch or upgrade certain buckets.
-	var initialized bool
-	err := dag.db.View(func(dbTx database.Tx) error {
-		initialized = dbTx.Metadata().Get(dagStateKeyName) != nil
-		if initialized {
-			var localSubnetworkID *subnetworkid.SubnetworkID
-			localSubnetworkIDBytes := dbTx.Metadata().Get(localSubnetworkKeyName)
-			if len(localSubnetworkIDBytes) != 0 {
-				localSubnetworkID = &subnetworkid.SubnetworkID{}
-				localSubnetworkID.SetBytes(localSubnetworkIDBytes)
-			}
-			if !localSubnetworkID.IsEqual(dag.subnetworkID) {
-				return errors.Errorf("Cannot start kaspad with subnetwork ID %s because"+
-					" its database is already built with subnetwork ID %s. If you"+
-					" want to switch to a new database, please reset the"+
-					" database by starting kaspad with --reset-db flag", dag.subnetworkID, localSubnetworkID)
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
-	if !initialized {
+	// Fetch the stored DAG state from the database metadata.
+	// When it doesn't exist, it means the database hasn't been
+	// initialized for use with the DAG yet.
+	serializedDAGState, err := dbaccess.FetchDAGState(dbaccess.NoTx())
+	if dbaccess.IsNotFoundError(err) {
 		// At this point the database has not already been initialized, so
 		// initialize both it and the DAG state to the genesis block.
 		return dag.createDAGState()
 	}
+	if err != nil {
+		return err
+	}
+
+	dagState, err := deserializeDAGState(serializedDAGState)
+	if err != nil {
+		return err
+	}
+	if !dagState.localSubnetworkID.IsEqual(dag.subnetworkID) {
+		return errors.Errorf("Cannot start kaspad with subnetwork ID %s because"+
+			" its database is already built with subnetwork ID %s. If you"+
+			" want to switch to a new database, please reset the"+
+			" database by starting kaspad with --reset-db flag", dag.subnetworkID, dagState.localSubnetworkID)
+	}
+
+	// Load all of the block data for the known DAG and construct
+	// the block index accordingly.
+	log.Infof("Loading block index...")
+
+	var unprocessedBlockNodes []*blockNode
+	blockIndexCursor, err := dbaccess.BlockIndexCursor(dbaccess.NoTx())
+	if err != nil {
+		return err
+	}
+	for blockIndexCursor.Next() {
+		serializedDBNode, err := blockIndexCursor.Value()
+		if err != nil {
+			return err
+		}
+		node, err := dag.deserializeBlockNode(serializedDBNode)
+		if err != nil {
+			return err
+		}
+
+		// Check to see if this node had been stored in the the block DB
+		// but not yet accepted. If so, add it to a slice to be processed later.
+		if node.status == statusDataStored {
+			unprocessedBlockNodes = append(unprocessedBlockNodes, node)
+			continue
+		}
+
+		// If the node is known to be invalid add it as-is to the block
+		// index and continue.
+		if node.status.KnownInvalid() {
+			dag.index.addNode(node)
+			continue
+		}
+
+		if dag.blockCount == 0 {
+			if !node.hash.IsEqual(dag.dagParams.GenesisHash) {
+				return AssertError(fmt.Sprintf("initDAGState: Expected "+
+					"first entry in block index to be genesis block, "+
+					"found %s", node.hash))
+			}
+		} else {
+			if len(node.parents) == 0 {
+				return AssertError(fmt.Sprintf("initDAGState: block %s "+
+					"has no parents but it's not the genesis block", node.hash))
+			}
+		}
+
+		// Add the node to its parents children, connect it,
+		// and add it to the block index.
+		node.updateParentsChildren()
+		dag.index.addNode(node)
+
+		dag.blockCount++
+	}
+
+	// Load all of the known UTXO entries and construct the full
+	// UTXO set accordingly.
+	log.Infof("Loading UTXO set...")
+
+	fullUTXOCollection := make(utxoCollection)
+	cursor, err := dbaccess.UTXOSetCursor(dbaccess.NoTx())
+	if err != nil {
+		return err
+	}
+	for cursor.Next() {
+		// Deserialize the outpoint
+		key, err := cursor.Key()
+		if err != nil {
+			return err
+		}
+		outpoint, err := deserializeOutpoint(bytes.NewReader(key))
+		if err != nil {
+			return err
+		}
+
+		// Deserialize the utxo entry
+		value, err := cursor.Value()
+		if err != nil {
+			return err
+		}
+		entry, err := deserializeUTXOEntry(bytes.NewReader(value))
+		if err != nil {
+			return err
+		}
+
+		fullUTXOCollection[*outpoint] = entry
+	}
 
 	// Attempt to load the DAG state from the database.
 	return dag.db.View(func(dbTx database.Tx) error {
-		// Fetch the stored DAG tipHashes from the database metadata.
-		// When it doesn't exist, it means the database hasn't been
-		// initialized for use with the DAG yet, so break out now to allow
-		// that to happen under a writable database transaction.
-		serializedData := dbTx.Metadata().Get(dagStateKeyName)
-		log.Tracef("Serialized DAG tip hashes: %x", serializedData)
-		state, err := deserializeDAGState(serializedData)
-		if err != nil {
-			return err
-		}
-
-		// Load all of the headers from the data for the known DAG
-		// and construct the block index accordingly. Since the
-		// number of nodes are already known, perform a single alloc
-		// for them versus a whole bunch of little ones to reduce
-		// pressure on the GC.
-		log.Infof("Loading block index...")
-
-		var unprocessedBlockNodes []*blockNode
-		blockIndexCursor, err := dbaccess.BlockIndexCursor(dbaccess.NoTx())
-		if err != nil {
-			return err
-		}
-		for blockIndexCursor.Next() {
-			serializedDBNode, err := blockIndexCursor.Value()
-			if err != nil {
-				return err
-			}
-			node, err := dag.deserializeBlockNode(serializedDBNode)
-			if err != nil {
-				return err
-			}
-
-			// Check to see if this node had been stored in the the block DB
-			// but not yet accepted. If so, add it to a slice to be processed later.
-			if node.status == statusDataStored {
-				unprocessedBlockNodes = append(unprocessedBlockNodes, node)
-				continue
-			}
-
-			// If the node is known to be invalid add it as-is to the block
-			// index and continue.
-			if node.status.KnownInvalid() {
-				dag.index.addNode(node)
-				continue
-			}
-
-			if dag.blockCount == 0 {
-				if !node.hash.IsEqual(dag.dagParams.GenesisHash) {
-					return AssertError(fmt.Sprintf("initDAGState: Expected "+
-						"first entry in block index to be genesis block, "+
-						"found %s", node.hash))
-				}
-			} else {
-				if len(node.parents) == 0 {
-					return AssertError(fmt.Sprintf("initDAGState: Could "+
-						"not find any parent for block %s", node.hash))
-				}
-			}
-
-			// Add the node to its parents children, connect it,
-			// and add it to the block index.
-			node.updateParentsChildren()
-			dag.index.addNode(node)
-
-			dag.blockCount++
-		}
-
-		// Load all of the known UTXO entries and construct the full
-		// UTXO set accordingly. Since the number of entries is already
-		// known, perform a single alloc for them versus a whole bunch
-		// of little ones to reduce pressure on the GC.
-		log.Infof("Loading UTXO set...")
-
-		utxoEntryBucket := dbTx.Metadata().Bucket(utxoSetBucketName)
-
-		// Determine how many UTXO entries will be loaded into the index so we can
-		// allocate the right amount.
-		var utxoEntryCount int32
-		cursor := utxoEntryBucket.Cursor()
-		for ok := cursor.First(); ok; ok = cursor.Next() {
-			utxoEntryCount++
-		}
-
-		fullUTXOCollection := make(utxoCollection, utxoEntryCount)
-		for ok := cursor.First(); ok; ok = cursor.Next() {
-			// Deserialize the outpoint
-			outpoint, err := deserializeOutpoint(bytes.NewReader(cursor.Key()))
-			if err != nil {
-				return err
-			}
-
-			// Deserialize the utxo entry
-			entry, err := deserializeUTXOEntry(bytes.NewReader(cursor.Value()))
-			if err != nil {
-				return err
-			}
-
-			fullUTXOCollection[*outpoint] = entry
-		}
-
 		// Initialize the reachability store
 		log.Infof("Loading reachability data...")
 		err = dag.reachabilityStore.init(dbTx)
@@ -521,18 +404,18 @@ func (dag *BlockDAG) initDAGState() error {
 
 		// Apply the stored tips to the virtual block.
 		tips := newBlockSet()
-		for _, tipHash := range state.TipHashes {
+		for _, tipHash := range dagState.TipHashes {
 			tip := dag.index.LookupNode(tipHash)
 			if tip == nil {
 				return AssertError(fmt.Sprintf("initDAGState: cannot find "+
-					"DAG tip %s in block index", state.TipHashes))
+					"DAG tip %s in block index", dagState.TipHashes))
 			}
 			tips.add(tip)
 		}
 		dag.virtual.SetTips(tips)
 
 		// Set the last finality point
-		dag.lastFinalityPoint = dag.index.LookupNode(state.LastFinalityPoint)
+		dag.lastFinalityPoint = dag.index.LookupNode(dagState.LastFinalityPoint)
 		dag.finalizeNodesBelowFinalityPoint(false)
 
 		// Go over any unprocessed blockNodes and process them now.
@@ -691,7 +574,7 @@ func dbStoreBlock(context dbaccess.Context, block *util.Block) error {
 }
 
 func serializeBlockNode(node *blockNode) ([]byte, error) {
-	w := bytes.NewBuffer(make([]byte, 0, blockHdrSize+1))
+	w := bytes.NewBuffer(make([]byte, 0, wire.MaxBlockHeaderPayload+1))
 	header := node.Header()
 	err := header.Serialize(w)
 	if err != nil {
@@ -748,11 +631,11 @@ func serializeBlockNode(node *blockNode) ([]byte, error) {
 	return w.Bytes(), nil
 }
 
-// BlockIndexKey generates the binary key for an entry in the block index
+// blockIndexKey generates the binary key for an entry in the block index
 // bucket. The key is composed of the block blue score encoded as a big-endian
 // 64-bit unsigned int followed by the 32 byte block hash.
 // The blue score component is important for iteration order.
-func BlockIndexKey(blockHash *daghash.Hash, blueScore uint64) []byte {
+func blockIndexKey(blockHash *daghash.Hash, blueScore uint64) []byte {
 	indexKey := make([]byte, daghash.HashSize+8)
 	binary.BigEndian.PutUint64(indexKey[0:8], blueScore)
 	copy(indexKey[8:daghash.HashSize+8], blockHash[:])
@@ -802,27 +685,26 @@ func (dag *BlockDAG) BlockHashesFrom(lowHash *daghash.Hash, limit int) ([]*dagha
 		return nil, err
 	}
 
-	err = dag.index.db.View(func(dbTx database.Tx) error {
-		blockIndexBucket := dbTx.Metadata().Bucket(blockIndexBucketName)
-		lowKey := BlockIndexKey(lowHash, blueScore)
-
-		cursor := blockIndexBucket.Cursor()
-		cursor.Seek(lowKey)
-		for ok := cursor.Next(); ok; ok = cursor.Next() {
-			key := cursor.Key()
-			blockHash, err := blockHashFromBlockIndexKey(key)
-			if err != nil {
-				return err
-			}
-			blockHashes = append(blockHashes, blockHash)
-			if len(blockHashes) == limit {
-				break
-			}
-		}
-		return nil
-	})
+	key := blockIndexKey(lowHash, blueScore)
+	cursor, err := dbaccess.BlockIndexCursorFrom(dbaccess.NoTx(), key)
+	if dbaccess.IsNotFoundError(err) {
+		return nil, errors.Wrapf(err, "block %s not in block index", lowHash)
+	}
 	if err != nil {
 		return nil, err
 	}
+
+	for cursor.Next() && len(blockHashes) < limit {
+		key, err := cursor.Key()
+		if err != nil {
+			return nil, err
+		}
+		blockHash, err := blockHashFromBlockIndexKey(key)
+		if err != nil {
+			return nil, err
+		}
+		blockHashes = append(blockHashes, blockHash)
+	}
+
 	return blockHashes, nil
 }

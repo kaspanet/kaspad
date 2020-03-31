@@ -1,8 +1,9 @@
 package dbaccess
 
 import (
-	"encoding/binary"
+	"encoding/hex"
 	"github.com/kaspanet/kaspad/database2"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -11,14 +12,14 @@ var (
 
 // StoreIndexBlock stores a block in block-index
 // representation to the database.
-func StoreIndexBlock(context Context, blockHash []byte, blockBlueScore uint64, block []byte) error {
+func StoreIndexBlock(context Context, blockIndexKey []byte, block []byte) error {
 	accessor, err := context.accessor()
 	if err != nil {
 		return err
 	}
 
-	blockIndexKey := blockIndexKey(blockHash, blockBlueScore)
-	return accessor.Put(blockIndexKey, block)
+	key := blockIndexBucket.Key(blockIndexKey)
+	return accessor.Put(key, block)
 }
 
 // BlockIndexCursor opens a cursor over all the blocks-index
@@ -32,10 +33,24 @@ func BlockIndexCursor(context Context) (database2.Cursor, error) {
 	return accessor.Cursor(blockIndexBucket.Path())
 }
 
-func blockIndexKey(blockHash []byte, blueScore uint64) []byte {
-	key := make([]byte, 40)
-	binary.BigEndian.PutUint64(key[0:8], blueScore)
-	copy(key[8:40], blockHash[:])
+// BlockIndexCursorFrom opens a cursor over blocks-index blocks
+// starting from the block with the given blockHash and
+// blockBlueScore. Returns ErrNotFound if blockIndexKey is missing
+// from the database.
+func BlockIndexCursorFrom(context Context, blockIndexKey []byte) (database2.Cursor, error) {
+	cursor, err := BlockIndexCursor(context)
+	if err != nil {
+		return nil, err
+	}
 
-	return blockIndexBucket.Key(key)
+	found, err := cursor.Seek(blockIndexKey)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, errors.Wrapf(database2.ErrNotFound,
+			"entry not found for %s", hex.EncodeToString(blockIndexKey))
+	}
+
+	return cursor, nil
 }
