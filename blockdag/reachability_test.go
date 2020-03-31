@@ -610,8 +610,6 @@ func TestReindexIntervalErrors(t *testing.T) {
 }
 
 func BenchmarkReindexInterval(b *testing.B) {
-	b.StopTimer()
-
 	root := newReachabilityTreeNode(&blockNode{})
 
 	const subTreeSize = 70000
@@ -636,7 +634,7 @@ func BenchmarkReindexInterval(b *testing.B) {
 	// After we added subTreeSize nodes, adding the next
 	// node should lead to a reindex from root.
 	fullReindexTriggeringNode := newReachabilityTreeNode(&blockNode{})
-	b.StartTimer()
+	b.ResetTimer()
 	_, err := currentTreeNode.addChild(fullReindexTriggeringNode)
 	b.StopTimer()
 	if err != nil {
