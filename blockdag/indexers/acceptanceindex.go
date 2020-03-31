@@ -55,7 +55,7 @@ func (idx *AcceptanceIndex) recover() error {
 	}
 	defer dbTx.RollbackUnlessClosed()
 
-	return idx.dag.ForEachHash(func(hash daghash.Hash) error {
+	err = idx.dag.ForEachHash(func(hash daghash.Hash) error {
 		exists, err := dbaccess.HasAcceptanceData(dbTx, &hash)
 		if err != nil {
 			return err
@@ -69,6 +69,11 @@ func (idx *AcceptanceIndex) recover() error {
 		}
 		return idx.ConnectBlock(dbTx, &hash, txAcceptanceData)
 	})
+	if err != nil {
+		return err
+	}
+
+	return dbTx.Commit()
 }
 
 // ConnectBlock is invoked by the index manager when a new block has been
