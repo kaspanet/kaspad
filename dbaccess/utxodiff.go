@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var utxoDiffsBucket = database2.MakeBucket([]byte("utxodiffs"))
+var utxoDiffsBucket = database2.MakeBucket([]byte("utxo-diffs"))
 
 // StoreUTXODiff stores the UTXO diff data of a block by its hash.
 func StoreUTXODiffData(context Context, blockHash *daghash.Hash, diffData []byte) error {
