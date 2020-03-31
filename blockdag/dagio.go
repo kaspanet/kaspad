@@ -9,11 +9,12 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"io"
+	"sync"
+
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
-	"io"
-	"sync"
 
 	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util"
@@ -222,12 +223,6 @@ func (dag *BlockDAG) createDAGState() error {
 			return err
 		}
 
-		if _, err := meta.CreateBucketIfNotExists(idByHashIndexBucketName); err != nil {
-			return err
-		}
-		if _, err := meta.CreateBucketIfNotExists(hashByIDIndexBucketName); err != nil {
-			return err
-		}
 		return nil
 	})
 

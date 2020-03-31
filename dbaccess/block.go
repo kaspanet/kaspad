@@ -71,11 +71,11 @@ func FetchBlock(context Context, hash *daghash.Hash) ([]byte, error) {
 	blockLocationsKey := blockLocationKey(hash)
 	blockLocation, err := accessor.Get(blockLocationsKey)
 	if err != nil {
+		if database2.IsNotFoundError(err) {
+			return nil, errors.Wrapf(err,
+				"block %s not found", hash)
+		}
 		return nil, err
-	}
-	if database2.IsNotFoundError(err) {
-		return nil, errors.Wrapf(err,
-			"block %s not found", hash)
 	}
 	bytes, err := accessor.RetrieveFromStore(blockStoreName, blockLocation)
 	if err != nil {

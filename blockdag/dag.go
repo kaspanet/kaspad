@@ -578,7 +578,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	}
 
 	// Apply all changes to the DAG.
-	virtualUTXODiff, virtualTxsAcceptanceData, chainUpdates, err := dag.applyDAGChanges(node, newBlockUTXO, newBlockMultiSet, selectedParentAnticone)
+	virtualUTXODiff, _, chainUpdates, err := dag.applyDAGChanges(node, newBlockUTXO, newBlockMultiSet, selectedParentAnticone)
 	if err != nil {
 		// Since all validation logic has already ran, if applyDAGChanges errors out,
 		// this means we have a problem in the internal structure of the DAG - a problem which is
@@ -587,7 +587,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 		panic(err)
 	}
 
-	err = dag.saveChangesFromBlock(block, virtualUTXODiff, txsAcceptanceData, virtualTxsAcceptanceData, newBlockFeeData)
+	err = dag.saveChangesFromBlock(block, virtualUTXODiff, txsAcceptanceData, newBlockFeeData)
 	if err != nil {
 		return nil, err
 	}
@@ -716,12 +716,17 @@ func addTxToMultiset(ms *secp256k1.MultiSet, tx *wire.MsgTx, pastUTXO UTXOSet, b
 }
 
 func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UTXODiff,
-	txsAcceptanceData MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData,
-	feeData compactFeeData) error {
+	txsAcceptanceData MultiBlockTxsAcceptanceData, feeData compactFeeData) error {
+
+	databaseTx, err := dbaccess.NewTx()
+	if err != nil {
+		return err
+	}
+	defer databaseTx.RollbackUnlessClosed()
 
 	// Atomically insert info into the database.
-	err := dag.db.Update(func(dbTx database.Tx) error {
-		err := dag.index.flushToDB(dbaccess.NoTx())
+	err = dag.db.Update(func(dbTx database.Tx) error {
+		err := dag.index.flushToDB(databaseTx)
 		if err != nil {
 			return err
 		}
@@ -747,14 +752,14 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 			LastFinalityPoint: dag.lastFinalityPoint.hash,
 			localSubnetworkID: dag.subnetworkID,
 		}
-		err = dbPutDAGState(dbaccess.NoTx(), state)
+		err = dbPutDAGState(databaseTx, state)
 		if err != nil {
 			return err
 		}
 
 		// Update the UTXO set using the diffSet that was melded into the
 		// full UTXO set.
-		err = dbUpdateUTXOSet(dbaccess.NoTx(), virtualUTXODiff)
+		err = dbUpdateUTXOSet(databaseTx, virtualUTXODiff)
 		if err != nil {
 			return err
 		}
@@ -767,16 +772,11 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 			return err
 		}
 
-		blockID, err := createBlockID(dbTx, block.Hash())
-		if err != nil {
-			return err
-		}
-
 		// Allow the index manager to call each of the currently active
 		// optional indexes with the block being connected so they can
 		// update themselves accordingly.
 		if dag.indexManager != nil {
-			err := dag.indexManager.ConnectBlock(dbTx, block, blockID, dag, txsAcceptanceData, virtualTxsAcceptanceData)
+			err := dag.indexManager.ConnectBlock(databaseTx, block.Hash(), txsAcceptanceData)
 			if err != nil {
 				return err
 			}
@@ -792,7 +792,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 	dag.utxoDiffStore.clearDirtyEntries()
 	dag.reachabilityStore.clearDirtyEntries()
 	dag.multisetStore.clearNewEntries()
-	return nil
+	return databaseTx.Commit()
 }
 
 func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
@@ -1933,6 +1933,21 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 	return dag.subnetworkID
 }
 
+// ForEachHash runs the given fn on every hash that's currently known to
+// the DAG.
+//
+// This function is NOT safe for concurrent access. It is meant to be
+// used either on initialization or when the dag lock is held for reads.
+func (dag *BlockDAG) ForEachHash(fn func(hash daghash.Hash) error) error {
+	for hash := range dag.index.index {
+		err := fn(hash)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (dag *BlockDAG) addDelayedBlock(block *util.Block, delay time.Duration) error {
 	processTime := dag.Now().Add(delay)
 	log.Debugf("Adding block to delayed blocks queue (block hash: %s, process time: %s)", block.Hash().String(), processTime)
@@ -1986,15 +2001,12 @@ func (dag *BlockDAG) peekDelayedBlock() *delayedBlock {
 // connected to the DAG for the purpose of supporting optional indexes.
 type IndexManager interface {
 	// Init is invoked during DAG initialize in order to allow the index
-	// manager to initialize itself and any indexes it is managing. The
-	// channel parameter specifies a channel the caller can close to signal
-	// that the process should be interrupted. It can be nil if that
-	// behavior is not desired.
-	Init(database.DB, *BlockDAG, <-chan struct{}) error
+	// manager to initialize itself and any indexes it is managing.
+	Init(*BlockDAG) error
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
-	ConnectBlock(dbTx database.Tx, block *util.Block, blockID uint64, dag *BlockDAG, acceptedTxsData MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData) error
+	ConnectBlock(context *dbaccess.TxContext, blockHash *daghash.Hash, acceptedTxsData MultiBlockTxsAcceptanceData) error
 }
 
 // Config is a descriptor which specifies the blockDAG instance configuration.
@@ -2108,7 +2120,7 @@ func New(config *Config) (*BlockDAG, error) {
 	// Initialize and catch up all of the currently active optional indexes
 	// as needed.
 	if config.IndexManager != nil {
-		err = config.IndexManager.Init(dag.db, dag, config.Interrupt)
+		err = config.IndexManager.Init(dag)
 		if err != nil {
 			return nil, err
 		}
