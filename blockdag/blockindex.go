@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -19,7 +18,6 @@ type blockIndex struct {
 	// The following fields are set when the instance is created and can't
 	// be changed afterwards, so there is no need to protect them with a
 	// separate mutex.
-	db        database.DB
 	dagParams *dagconfig.Params
 
 	sync.RWMutex
@@ -30,9 +28,8 @@ type blockIndex struct {
 // newBlockIndex returns a new empty instance of a block index. The index will
 // be dynamically populated as block nodes are loaded from the database and
 // manually added.
-func newBlockIndex(db database.DB, dagParams *dagconfig.Params) *blockIndex {
+func newBlockIndex(dagParams *dagconfig.Params) *blockIndex {
 	return &blockIndex{
-		db:        db,
 		dagParams: dagParams,
 		index:     make(map[daghash.Hash]*blockNode),
 		dirty:     make(map[*blockNode]struct{}),

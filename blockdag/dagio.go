@@ -302,85 +302,84 @@ func (dag *BlockDAG) initDAGState() error {
 	}
 
 	// Attempt to load the DAG state from the database.
-	return dag.db.View(func(dbTx database.Tx) error {
-		// Initialize the reachability store
-		log.Infof("Loading reachability data...")
-		err = dag.reachabilityStore.init(dbaccess.NoTx())
+
+	// Initialize the reachability store
+	log.Infof("Loading reachability data...")
+	err = dag.reachabilityStore.init(dbaccess.NoTx())
+	if err != nil {
+		return err
+	}
+
+	// Initialize the multiset store
+	log.Infof("Loading multiset data...")
+	err = dag.multisetStore.init(dbaccess.NoTx())
+	if err != nil {
+		return err
+	}
+
+	// Apply the loaded utxoCollection to the virtual block.
+	dag.virtual.utxoSet, err = newFullUTXOSetFromUTXOCollection(fullUTXOCollection)
+	if err != nil {
+		return AssertError(fmt.Sprintf("Error loading UTXOSet: %s", err))
+	}
+
+	// Apply the stored tips to the virtual block.
+	tips := newBlockSet()
+	for _, tipHash := range dagState.TipHashes {
+		tip := dag.index.LookupNode(tipHash)
+		if tip == nil {
+			return AssertError(fmt.Sprintf("initDAGState: cannot find "+
+				"DAG tip %s in block index", dagState.TipHashes))
+		}
+		tips.add(tip)
+	}
+	dag.virtual.SetTips(tips)
+
+	// Set the last finality point
+	dag.lastFinalityPoint = dag.index.LookupNode(dagState.LastFinalityPoint)
+	dag.finalizeNodesBelowFinalityPoint(false)
+
+	// Go over any unprocessed blockNodes and process them now.
+	for _, node := range unprocessedBlockNodes {
+		// Check to see if the block exists in the block DB. If it
+		// doesn't, the database has certainly been corrupted.
+		blockExists, err := dbaccess.HasBlock(dbaccess.NoTx(), node.hash)
+		if err != nil {
+			return AssertError(fmt.Sprintf("initDAGState: HasBlock "+
+				"for block %s failed: %s", node.hash, err))
+		}
+		if !blockExists {
+			return AssertError(fmt.Sprintf("initDAGState: block %s "+
+				"exists in block index but not in block db", node.hash))
+		}
+
+		// Attempt to accept the block.
+		block, err := dbFetchBlockByHash(dbaccess.NoTx(), node.hash)
 		if err != nil {
 			return err
 		}
-
-		// Initialize the multiset store
-		log.Infof("Loading multiset data...")
-		err = dag.multisetStore.init(dbaccess.NoTx())
+		isOrphan, isDelayed, err := dag.ProcessBlock(block, BFWasStored)
 		if err != nil {
-			return err
+			log.Warnf("Block %s, which was not previously processed, "+
+				"failed to be accepted to the DAG: %s", node.hash, err)
+			continue
 		}
 
-		// Apply the loaded utxoCollection to the virtual block.
-		dag.virtual.utxoSet, err = newFullUTXOSetFromUTXOCollection(fullUTXOCollection)
-		if err != nil {
-			return AssertError(fmt.Sprintf("Error loading UTXOSet: %s", err))
+		// If the block is an orphan or is delayed then it couldn't have
+		// possibly been written to the block index in the first place.
+		if isOrphan {
+			return AssertError(fmt.Sprintf("Block %s, which was not "+
+				"previously processed, turned out to be an orphan, which is "+
+				"impossible.", node.hash))
 		}
-
-		// Apply the stored tips to the virtual block.
-		tips := newBlockSet()
-		for _, tipHash := range dagState.TipHashes {
-			tip := dag.index.LookupNode(tipHash)
-			if tip == nil {
-				return AssertError(fmt.Sprintf("initDAGState: cannot find "+
-					"DAG tip %s in block index", dagState.TipHashes))
-			}
-			tips.add(tip)
+		if isDelayed {
+			return AssertError(fmt.Sprintf("Block %s, which was not "+
+				"previously processed, turned out to be delayed, which is "+
+				"impossible.", node.hash))
 		}
-		dag.virtual.SetTips(tips)
+	}
 
-		// Set the last finality point
-		dag.lastFinalityPoint = dag.index.LookupNode(dagState.LastFinalityPoint)
-		dag.finalizeNodesBelowFinalityPoint(false)
-
-		// Go over any unprocessed blockNodes and process them now.
-		for _, node := range unprocessedBlockNodes {
-			// Check to see if the block exists in the block DB. If it
-			// doesn't, the database has certainly been corrupted.
-			blockExists, err := dbaccess.HasBlock(dbaccess.NoTx(), node.hash)
-			if err != nil {
-				return AssertError(fmt.Sprintf("initDAGState: HasBlock "+
-					"for block %s failed: %s", node.hash, err))
-			}
-			if !blockExists {
-				return AssertError(fmt.Sprintf("initDAGState: block %s "+
-					"exists in block index but not in block db", node.hash))
-			}
-
-			// Attempt to accept the block.
-			block, err := dbFetchBlockByHash(dbaccess.NoTx(), node.hash)
-			if err != nil {
-				return err
-			}
-			isOrphan, isDelayed, err := dag.ProcessBlock(block, BFWasStored)
-			if err != nil {
-				log.Warnf("Block %s, which was not previously processed, "+
-					"failed to be accepted to the DAG: %s", node.hash, err)
-				continue
-			}
-
-			// If the block is an orphan or is delayed then it couldn't have
-			// possibly been written to the block index in the first place.
-			if isOrphan {
-				return AssertError(fmt.Sprintf("Block %s, which was not "+
-					"previously processed, turned out to be an orphan, which is "+
-					"impossible.", node.hash))
-			}
-			if isDelayed {
-				return AssertError(fmt.Sprintf("Block %s, which was not "+
-					"previously processed, turned out to be delayed, which is "+
-					"impossible.", node.hash))
-			}
-		}
-
-		return nil
-	})
+	return nil
 }
 
 // deserializeBlockNode parses a value in the block index bucket and returns a block node.

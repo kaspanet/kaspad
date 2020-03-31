@@ -7,7 +7,6 @@ package main
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/dbaccess"
-	"github.com/pkg/errors"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -20,7 +19,6 @@ import (
 
 	"github.com/kaspanet/kaspad/blockdag/indexers"
 	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/database"
 	_ "github.com/kaspanet/kaspad/database/ffldb"
 	"github.com/kaspanet/kaspad/limits"
 	"github.com/kaspanet/kaspad/server"
@@ -113,18 +111,6 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 		}
 	}
 
-	// Load the block database.
-	db, err := loadBlockDB()
-	if err != nil {
-		kasdLog.Errorf("%s", err)
-		return err
-	}
-	defer func() {
-		// Ensure the database is sync'd and closed on shutdown.
-		kasdLog.Infof("Gracefully shutting down the database...")
-		db.Close()
-	}()
-
 	// Open the database
 	err = openDB()
 	if err != nil {
@@ -155,7 +141,7 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 	}
 
 	// Create server and start it.
-	server, err := server.NewServer(cfg.Listeners, db, config.ActiveConfig().NetParams(),
+	server, err := server.NewServer(cfg.Listeners, config.ActiveConfig().NetParams(),
 		interrupt)
 	if err != nil {
 		// TODO: this logging could do with some beautifying.
@@ -256,60 +242,6 @@ func warnMultipleDBs() {
 			"additional database is located at %s", selectedDbPath,
 			strings.Join(duplicateDbPaths, ", "))
 	}
-}
-
-// loadBlockDB loads (or creates when needed) the block database taking into
-// account the selected database backend and returns a handle to it. It also
-// contains additional logic such warning the user if there are multiple
-// databases which consume space on the file system and ensuring the regression
-// test database is clean when in regression test mode.
-func loadBlockDB() (database.DB, error) {
-	// The memdb backend does not have a file path associated with it, so
-	// handle it uniquely. We also don't want to worry about the multiple
-	// database type warnings when running with the memory database.
-	if cfg.DbType == "memdb" {
-		kasdLog.Infof("Creating block database in memory.")
-		db, err := database.Create(cfg.DbType)
-		if err != nil {
-			return nil, err
-		}
-		return db, nil
-	}
-
-	warnMultipleDBs()
-
-	// The database name is based on the database type.
-	dbPath := blockDbPath(cfg.DbType)
-
-	// The regression test is special in that it needs a clean database for
-	// each run, so remove it now if it already exists.
-	removeRegressionDB(dbPath)
-
-	kasdLog.Infof("Loading block database from '%s'", dbPath)
-	db, err := database.Open(cfg.DbType, dbPath, config.ActiveConfig().NetParams().Net)
-	if err != nil {
-		// Return the error if it's not because the database doesn't
-		// exist.
-		var dbErr database.Error
-		if ok := errors.As(err, &dbErr); !ok || dbErr.ErrorCode !=
-			database.ErrDbDoesNotExist {
-
-			return nil, err
-		}
-
-		// Create the db if it does not exist.
-		err = os.MkdirAll(cfg.DataDir, 0700)
-		if err != nil {
-			return nil, err
-		}
-		db, err = database.Create(cfg.DbType, dbPath, config.ActiveConfig().NetParams().Net)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	kasdLog.Info("Block database loaded")
-	return db, nil
 }
 
 func openDB() error {

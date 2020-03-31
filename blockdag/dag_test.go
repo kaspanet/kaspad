@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -551,22 +550,16 @@ func TestNew(t *testing.T) {
 
 	dbPath := filepath.Join(tempDir, "TestNew")
 	_ = os.RemoveAll(dbPath)
-	db, err := database.Create(testDbType, dbPath, blockDataNet)
-	if err != nil {
-		t.Fatalf("error creating db: %s", err)
-	}
-	err = dbaccess.Open(dbPath)
+	err := dbaccess.Open(dbPath)
 	if err != nil {
 		t.Fatalf("error creating db: %s", err)
 	}
 	defer func() {
-		db.Close()
 		dbaccess.Close()
 		os.RemoveAll(dbPath)
 	}()
 	config := &Config{
 		DAGParams:  &dagconfig.SimnetParams,
-		DB:         db,
 		TimeSource: NewTimeSource(),
 		SigCache:   txscript.NewSigCache(1000),
 	}
@@ -596,16 +589,11 @@ func TestAcceptingInInit(t *testing.T) {
 	// Create a test database
 	dbPath := filepath.Join(tempDir, "TestAcceptingInInit")
 	_ = os.RemoveAll(dbPath)
-	db, err := database.Create(testDbType, dbPath, blockDataNet)
-	if err != nil {
-		t.Fatalf("error creating db: %s", err)
-	}
-	err = dbaccess.Open(dbPath)
+	err := dbaccess.Open(dbPath)
 	if err != nil {
 		t.Fatalf("error creating db: %s", err)
 	}
 	defer func() {
-		db.Close()
 		dbaccess.Close()
 		os.RemoveAll(dbPath)
 	}()
@@ -613,7 +601,6 @@ func TestAcceptingInInit(t *testing.T) {
 	// Create a DAG to add the test block into
 	config := &Config{
 		DAGParams:  &dagconfig.SimnetParams,
-		DB:         db,
 		TimeSource: NewTimeSource(),
 		SigCache:   txscript.NewSigCache(1000),
 	}

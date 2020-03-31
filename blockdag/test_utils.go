@@ -60,10 +60,6 @@ func FileExists(name string) bool {
 // block already inserted. In addition to the new DAG instance, it returns
 // a teardown function the caller should invoke when done testing to clean up.
 func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
-	if !isSupportedDbType(testDbType) {
-		return nil, nil, errors.Errorf("unsupported db type %s", testDbType)
-	}
-
 	var teardown func()
 
 	// To make sure that the teardown function is not called before any goroutines finished to run -
@@ -78,39 +74,26 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 		})
 	}
 
-	if config.DB == nil {
-		var err error
-		tmpDir, err := ioutil.TempDir("", "DAGSetup")
-		if err != nil {
-			return nil, nil, errors.Errorf("error creating temp dir: %s", err)
-		}
+	var err error
+	tmpDir, err := ioutil.TempDir("", "DAGSetup")
+	if err != nil {
+		return nil, nil, errors.Errorf("error creating temp dir: %s", err)
+	}
 
-		dbPath := filepath.Join(tmpDir, dbName)
-		_ = os.RemoveAll(dbPath)
-		config.DB, err = database.Create(testDbType, dbPath, blockDataNet)
-		if err != nil {
-			return nil, nil, errors.Errorf("error creating db: %s", err)
-		}
-		err = dbaccess.Open(dbPath)
-		if err != nil {
-			return nil, nil, errors.Errorf("error creating db: %s", err)
-		}
+	dbPath := filepath.Join(tmpDir, dbName)
+	_ = os.RemoveAll(dbPath)
+	err = dbaccess.Open(dbPath)
+	if err != nil {
+		return nil, nil, errors.Errorf("error creating db: %s", err)
+	}
 
-		// Setup a teardown function for cleaning up. This function is
-		// returned to the caller to be invoked when it is done testing.
-		teardown = func() {
-			spawnWaitGroup.Wait()
-			spawn = realSpawn
-			config.DB.Close()
-			dbaccess.Close()
-			os.RemoveAll(dbPath)
-		}
-	} else {
-		teardown = func() {
-			spawnWaitGroup.Wait()
-			spawn = realSpawn
-			config.DB.Close()
-		}
+	// Setup a teardown function for cleaning up. This function is
+	// returned to the caller to be invoked when it is done testing.
+	teardown = func() {
+		spawnWaitGroup.Wait()
+		spawn = realSpawn
+		dbaccess.Close()
+		os.RemoveAll(dbPath)
 	}
 
 	config.TimeSource = NewTimeSource()

@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -28,7 +27,6 @@ type importResults struct {
 // blockImporter houses information about an ongoing import from a block data
 // file to the block database.
 type blockImporter struct {
-	db                database.DB
 	dag               *blockdag.BlockDAG
 	r                 io.ReadSeeker
 	processQueue      chan []byte
@@ -287,7 +285,7 @@ func (bi *blockImporter) Import() chan *importResults {
 
 // newBlockImporter returns a new importer for the provided file reader seeker
 // and database.
-func newBlockImporter(db database.DB, r io.ReadSeeker) (*blockImporter, error) {
+func newBlockImporter(r io.ReadSeeker) (*blockImporter, error) {
 	// Create the acceptance index if needed.
 	var indexes []indexers.Indexer
 	if cfg.AcceptanceIndex {
@@ -302,7 +300,6 @@ func newBlockImporter(db database.DB, r io.ReadSeeker) (*blockImporter, error) {
 	}
 
 	dag, err := blockdag.New(&blockdag.Config{
-		DB:           db,
 		DAGParams:    ActiveConfig().NetParams(),
 		TimeSource:   blockdag.NewTimeSource(),
 		IndexManager: indexManager,
@@ -312,7 +309,6 @@ func newBlockImporter(db database.DB, r io.ReadSeeker) (*blockImporter, error) {
 	}
 
 	return &blockImporter{
-		db:           db,
 		r:            r,
 		processQueue: make(chan []byte, 2),
 		doneChan:     make(chan bool),

@@ -76,14 +76,6 @@ func realMain() error {
 	log = backendLogger.Logger("MAIN")
 	spawn = panics.GoroutineWrapperFunc(log)
 
-	// Load the block database.
-	db, err := loadBlockDB()
-	if err != nil {
-		log.Errorf("Failed to load database: %s", err)
-		return err
-	}
-	defer db.Close()
-
 	fi, err := os.Open(cfg.InFile)
 	if err != nil {
 		log.Errorf("Failed to open file %s: %s", cfg.InFile, err)
@@ -94,7 +86,7 @@ func realMain() error {
 	// Create a block importer for the database and input file and start it.
 	// The done channel returned from start will contain an error if
 	// anything went wrong.
-	importer, err := newBlockImporter(db, fi)
+	importer, err := newBlockImporter(fi)
 	if err != nil {
 		log.Errorf("Failed create block importer: %s", err)
 		return err

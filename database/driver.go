@@ -29,20 +29,6 @@ type Driver struct {
 // driverList holds all of the registered database backends.
 var drivers = make(map[string]*Driver)
 
-// RegisterDriver adds a backend database driver to available interfaces.
-// ErrDbTypeRegistered will be returned if the database type for the driver has
-// already been registered.
-func RegisterDriver(driver Driver) error {
-	if _, exists := drivers[driver.DbType]; exists {
-		str := fmt.Sprintf("driver %q is already registered",
-			driver.DbType)
-		return makeError(ErrDbTypeRegistered, str, nil)
-	}
-
-	drivers[driver.DbType] = &driver
-	return nil
-}
-
 // SupportedDrivers returns a slice of strings that represent the database
 // drivers that have been registered and are therefore supported.
 func SupportedDrivers() []string {
