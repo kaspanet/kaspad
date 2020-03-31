@@ -25,7 +25,7 @@ func StoreReachabilityData(context Context, blockHash *daghash.Hash, reachabilit
 		return err
 	}
 
-	key := reachabilityDataBucket.Key(blockHash[:])
+	key := reachabilityKey(blockHash)
 	return accessor.Put(key, reachabilityData)
 }
 
@@ -55,4 +55,8 @@ func ClearAllReachabilityData(context Context) error {
 	}
 
 	return nil
+}
+
+func reachabilityKey(hash *daghash.Hash) []byte {
+	return reachabilityDataBucket.Key(hash[:])
 }

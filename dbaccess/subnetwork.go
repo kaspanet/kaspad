@@ -14,7 +14,7 @@ func FetchSubnetworkData(context Context, subnetworkID *subnetworkid.SubnetworkI
 		return nil, err
 	}
 
-	key := subnetworkBucket.Key(subnetworkID[:])
+	key := subnetworkKey(subnetworkID)
 	return accessor.Get(key)
 }
 
@@ -25,7 +25,7 @@ func RegisterSubnetwork(context Context, subnetworkID *subnetworkid.SubnetworkID
 		return err
 	}
 
-	key := subnetworkBucket.Key(subnetworkID[:])
+	key := subnetworkKey(subnetworkID)
 	return accessor.Put(key, subnetworkData)
 }
 
@@ -36,7 +36,7 @@ func SubnetworkExists(context Context, subnetworkID *subnetworkid.SubnetworkID) 
 		return false, err
 	}
 
-	key := subnetworkBucket.Key(subnetworkID[:])
+	key := subnetworkKey(subnetworkID)
 	_, err = accessor.Get(key)
 	if IsNotFoundError(err) {
 		return false, nil
@@ -47,4 +47,8 @@ func SubnetworkExists(context Context, subnetworkID *subnetworkid.SubnetworkID) 
 	}
 
 	return true, nil
+}
+
+func subnetworkKey(subnetworkID *subnetworkid.SubnetworkID) []byte {
+	return subnetworkBucket.Key(subnetworkID[:])
 }

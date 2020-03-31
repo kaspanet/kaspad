@@ -15,7 +15,7 @@ func FetchFeeData(context Context, blockHash *daghash.Hash) ([]byte, error) {
 		return nil, err
 	}
 
-	key := feeBucket.Key(blockHash[:])
+	key := feeDataKey(blockHash)
 	feeData, err := accessor.Get(key)
 	if IsNotFoundError(err) {
 		return nil, errors.Wrapf(err, "couldn't find fee data for block %s", blockHash)
@@ -30,6 +30,10 @@ func StoreFeeData(context Context, blockHash *daghash.Hash, feeData []byte) erro
 		return err
 	}
 
-	key := feeBucket.Key(blockHash[:])
+	key := feeDataKey(blockHash)
 	return accessor.Put(key, feeData)
+}
+
+func feeDataKey(hash *daghash.Hash) []byte {
+	return feeBucket.Key(hash[:])
 }

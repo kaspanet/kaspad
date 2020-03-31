@@ -25,7 +25,7 @@ func StoreMultiset(context Context, blockHash *daghash.Hash, multiset []byte) er
 		return err
 	}
 
-	key := multisetBucket.Key(blockHash[:])
+	key := multisetKey(blockHash)
 	return accessor.Put(key, multiset)
 }
 
@@ -37,7 +37,7 @@ func MultisetExists(context Context, blockHash *daghash.Hash) (bool, error) {
 		return false, err
 	}
 
-	key := multisetBucket.Key(blockHash[:])
+	key := multisetKey(blockHash)
 	_, err = accessor.Get(key)
 	if IsNotFoundError(err) {
 		return false, nil
@@ -48,4 +48,8 @@ func MultisetExists(context Context, blockHash *daghash.Hash) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func multisetKey(hash *daghash.Hash) []byte {
+	return multisetBucket.Key(hash[:])
 }

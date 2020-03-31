@@ -15,7 +15,7 @@ func StoreUTXODiffData(context Context, blockHash *daghash.Hash, diffData []byte
 		return err
 	}
 
-	key := utxoDiffsBucket.Key(blockHash[:])
+	key := utxoDiffKey(blockHash)
 	return accessor.Put(key, diffData)
 }
 
@@ -27,7 +27,7 @@ func RemoveDiffData(context Context, blockHash *daghash.Hash) error {
 		return err
 	}
 
-	key := utxoDiffsBucket.Key(blockHash[:])
+	key := utxoDiffKey(blockHash)
 	return accessor.Delete(key)
 }
 
@@ -38,10 +38,14 @@ func FetchUTXODiffData(context Context, blockHash *daghash.Hash) ([]byte, error)
 		return nil, err
 	}
 
-	key := utxoDiffsBucket.Key(blockHash[:])
+	key := utxoDiffKey(blockHash)
 	diffData, err := accessor.Get(key)
 	if IsNotFoundError(err) {
 		return nil, errors.Wrapf(err, "couldn't find diff data for block %s", blockHash)
 	}
 	return diffData, err
+}
+
+func utxoDiffKey(hash *daghash.Hash) []byte {
+	return utxoDiffsBucket.Key(hash[:])
 }
