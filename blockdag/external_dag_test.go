@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"math"
+	"strings"
 	"testing"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -556,7 +557,7 @@ func TestGasLimit(t *testing.T) {
 	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(nonExistentSubnetworkBlock), blockdag.BFNoPoWCheck)
 	expectedErrStr := fmt.Sprintf("Error getting gas limit for subnetworkID '%s': subnetwork '%s' not found",
 		nonExistentSubnetwork, nonExistentSubnetwork)
-	if err.Error() != expectedErrStr {
+	if strings.Contains(err.Error(), expectedErrStr) {
 		t.Fatalf("ProcessBlock expected error \"%v\" but got \"%v\"", expectedErrStr, err)
 	}
 	if isDelayed {
