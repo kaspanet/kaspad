@@ -615,6 +615,10 @@ func BenchmarkReindexInterval(b *testing.B) {
 	root := newReachabilityTreeNode(&blockNode{})
 
 	const subTreeSize = 70000
+	// We set the interval of the root to subTreeSize*2 because
+	// its first child gets half of the interval, so a reindex
+	// from the root should happen after adding subTreeSize
+	// nodes.
 	root.setInterval(newReachabilityInterval(0, subTreeSize*2))
 
 	currentTreeNode := root
@@ -628,12 +632,19 @@ func BenchmarkReindexInterval(b *testing.B) {
 		currentTreeNode = childTreeNode
 	}
 
-	childTreeNode := newReachabilityTreeNode(&blockNode{})
+	remainingIntervalBefore := *root.remainingInterval
+	// After we added subTreeSize nodes, adding the next
+	// node should lead to a reindex from root.
+	fullReindexTriggeringNode := newReachabilityTreeNode(&blockNode{})
 	b.StartTimer()
-	_, err := currentTreeNode.addChild(childTreeNode)
+	_, err := currentTreeNode.addChild(fullReindexTriggeringNode)
 	b.StopTimer()
 	if err != nil {
 		b.Fatalf("addChild: %s", err)
+	}
+
+	if *root.remainingInterval == remainingIntervalBefore {
+		b.Fatal("Expected a reindex from root, but it didn't happen")
 	}
 }
 
