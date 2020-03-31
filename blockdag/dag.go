@@ -578,7 +578,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	}
 
 	// Apply all changes to the DAG.
-	virtualUTXODiff, virtualTxsAcceptanceData, chainUpdates, err := dag.applyDAGChanges(node, newBlockUTXO, newBlockMultiSet, selectedParentAnticone)
+	virtualUTXODiff, _, chainUpdates, err := dag.applyDAGChanges(node, newBlockUTXO, newBlockMultiSet, selectedParentAnticone)
 	if err != nil {
 		// Since all validation logic has already ran, if applyDAGChanges errors out,
 		// this means we have a problem in the internal structure of the DAG - a problem which is
@@ -587,7 +587,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 		panic(err)
 	}
 
-	err = dag.saveChangesFromBlock(block, virtualUTXODiff, txsAcceptanceData, virtualTxsAcceptanceData, newBlockFeeData)
+	err = dag.saveChangesFromBlock(block, virtualUTXODiff, txsAcceptanceData, newBlockFeeData)
 	if err != nil {
 		return nil, err
 	}
@@ -716,8 +716,7 @@ func addTxToMultiset(ms *secp256k1.MultiSet, tx *wire.MsgTx, pastUTXO UTXOSet, b
 }
 
 func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UTXODiff,
-	txsAcceptanceData MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData,
-	feeData compactFeeData) error {
+	txsAcceptanceData MultiBlockTxsAcceptanceData, feeData compactFeeData) error {
 
 	databaseTx, err := dbaccess.NewTx()
 	if err != nil {
@@ -777,7 +776,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 		// optional indexes with the block being connected so they can
 		// update themselves accordingly.
 		if dag.indexManager != nil {
-			err := dag.indexManager.ConnectBlock(databaseTx, block, txsAcceptanceData, virtualTxsAcceptanceData)
+			err := dag.indexManager.ConnectBlock(databaseTx, block.Hash(), txsAcceptanceData)
 			if err != nil {
 				return err
 			}
@@ -2002,7 +2001,7 @@ type IndexManager interface {
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
-	ConnectBlock(context *dbaccess.TxContext, block *util.Block, acceptedTxsData MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData) error
+	ConnectBlock(context *dbaccess.TxContext, blockHash *daghash.Hash, acceptedTxsData MultiBlockTxsAcceptanceData) error
 }
 
 // Config is a descriptor which specifies the blockDAG instance configuration.

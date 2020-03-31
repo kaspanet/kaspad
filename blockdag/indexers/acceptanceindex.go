@@ -67,11 +67,7 @@ func (idx *AcceptanceIndex) recover() error {
 		if err != nil {
 			return err
 		}
-		block, err := idx.dag.BlockByHash(&hash)
-		if err != nil {
-			return err
-		}
-		return idx.ConnectBlock(dbTx, block, txAcceptanceData, nil)
+		return idx.ConnectBlock(dbTx, &hash, txAcceptanceData)
 	})
 }
 
@@ -79,9 +75,9 @@ func (idx *AcceptanceIndex) recover() error {
 // connected to the DAG.
 //
 // This is part of the Indexer interface.
-func (idx *AcceptanceIndex) ConnectBlock(context *dbaccess.TxContext, block *util.Block,
-	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData, _ blockdag.MultiBlockTxsAcceptanceData) error {
-	return dbPutTxsAcceptanceData(context, block.Hash(), txsAcceptanceData)
+func (idx *AcceptanceIndex) ConnectBlock(context *dbaccess.TxContext, blockHash *daghash.Hash,
+	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
+	return dbPutTxsAcceptanceData(context, blockHash, txsAcceptanceData)
 }
 
 func dbPutTxsAcceptanceData(context *dbaccess.TxContext, blockHash *daghash.Hash,

@@ -10,7 +10,7 @@ package indexers
 import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/dbaccess"
-	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // Indexer provides a generic interface for an indexer that is managed by an
@@ -23,7 +23,6 @@ type Indexer interface {
 	// ConnectBlock is invoked when the index manager is notified that a new
 	// block has been connected to the DAG.
 	ConnectBlock(context *dbaccess.TxContext,
-		block *util.Block,
-		acceptedTxsData blockdag.MultiBlockTxsAcceptanceData,
-		virtualTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error
+		blockHash *daghash.Hash,
+		acceptedTxsData blockdag.MultiBlockTxsAcceptanceData) error
 }
