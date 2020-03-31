@@ -10,6 +10,7 @@ var (
 	acceptanceIndexBucket = database2.MakeBucket([]byte("acceptance-index"))
 )
 
+// StoreAcceptanceData stores the given acceptanceData in the database.
 func StoreAcceptanceData(context Context, hash *daghash.Hash, acceptanceData []byte) error {
 	accessor, err := context.accessor()
 	if err != nil {
@@ -20,6 +21,8 @@ func StoreAcceptanceData(context Context, hash *daghash.Hash, acceptanceData []b
 	return accessor.Put(key, acceptanceData)
 }
 
+// HasAcceptanceData returns whether the acceptanceData of the given hash
+// has been previously inserted into the database.
 func HasAcceptanceData(context Context, hash *daghash.Hash) (bool, error) {
 	accessor, err := context.accessor()
 	if err != nil {
@@ -30,6 +33,9 @@ func HasAcceptanceData(context Context, hash *daghash.Hash) (bool, error) {
 	return accessor.Has(key)
 }
 
+// FetchAcceptanceData returns the acceptanceData of the given hash.
+// Returns ErrNotFound if the acceptanceData had not been previously
+// inserted into the database.
 func FetchAcceptanceData(context Context, hash *daghash.Hash) ([]byte, error) {
 	accessor, err := context.accessor()
 	if err != nil {
@@ -52,6 +58,7 @@ func acceptanceIndexKey(hash *daghash.Hash) []byte {
 	return acceptanceIndexBucket.Key(hash[:])
 }
 
+// ClearAcceptanceIndex completely removes all acceptanceData entries.
 func ClearAcceptanceIndex() error {
 	context, err := NewTx()
 	if err != nil {

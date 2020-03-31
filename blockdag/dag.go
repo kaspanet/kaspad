@@ -1933,6 +1933,10 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 	return dag.subnetworkID
 }
 
+// ForEachHash runs the given fn on every hash that's currently known to
+// the DAG.
+//
+// This function is NOT safe for cuncurrent access.
 func (dag *BlockDAG) ForEachHash(fn func(hash daghash.Hash) error) error {
 	for hash := range dag.index.index {
 		err := fn(hash)
