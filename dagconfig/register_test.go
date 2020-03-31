@@ -1,9 +1,6 @@
 package dagconfig_test
 
 import (
-	"bytes"
-	"github.com/kaspanet/kaspad/util/hdkeychain"
-	"reflect"
 	"testing"
 
 	. "github.com/kaspanet/kaspad/dagconfig"
@@ -15,10 +12,6 @@ import (
 var mockNetParams = Params{
 	Name: "mocknet",
 	Net:  1<<32 - 1,
-	HDKeyIDPair: hdkeychain.HDKeyIDPair{
-		PrivateKeyID: [4]byte{0x01, 0x02, 0x03, 0x04},
-		PublicKeyID:  [4]byte{0x05, 0x06, 0x07, 0x08},
-	},
 }
 
 func TestRegister(t *testing.T) {
@@ -27,16 +20,10 @@ func TestRegister(t *testing.T) {
 		params *Params
 		err    error
 	}
-	type hdTest struct {
-		priv []byte
-		want []byte
-		err  error
-	}
 
 	tests := []struct {
 		name     string
 		register []registerTest
-		hdMagics []hdTest
 	}{
 		{
 			name: "default networks",
@@ -62,40 +49,6 @@ func TestRegister(t *testing.T) {
 					err:    ErrDuplicateNet,
 				},
 			},
-			hdMagics: []hdTest{
-				{
-					priv: MainnetParams.HDKeyIDPair.PrivateKeyID[:],
-					want: MainnetParams.HDKeyIDPair.PublicKeyID[:],
-					err:  nil,
-				},
-				{
-					priv: TestnetParams.HDKeyIDPair.PrivateKeyID[:],
-					want: TestnetParams.HDKeyIDPair.PublicKeyID[:],
-					err:  nil,
-				},
-				{
-					priv: RegressionNetParams.HDKeyIDPair.PrivateKeyID[:],
-					want: RegressionNetParams.HDKeyIDPair.PublicKeyID[:],
-					err:  nil,
-				},
-				{
-					priv: SimnetParams.HDKeyIDPair.PrivateKeyID[:],
-					want: SimnetParams.HDKeyIDPair.PublicKeyID[:],
-					err:  nil,
-				},
-				{
-					priv: mockNetParams.HDKeyIDPair.PrivateKeyID[:],
-					err:  hdkeychain.ErrUnknownHDKeyID,
-				},
-				{
-					priv: []byte{0xff, 0xff, 0xff, 0xff},
-					err:  hdkeychain.ErrUnknownHDKeyID,
-				},
-				{
-					priv: []byte{0xff},
-					err:  hdkeychain.ErrUnknownHDKeyID,
-				},
-			},
 		},
 		{
 			name: "register mocknet",
@@ -104,13 +57,6 @@ func TestRegister(t *testing.T) {
 					name:   "mocknet",
 					params: &mockNetParams,
 					err:    nil,
-				},
-			},
-			hdMagics: []hdTest{
-				{
-					priv: mockNetParams.HDKeyIDPair.PrivateKeyID[:],
-					want: mockNetParams.HDKeyIDPair.PublicKeyID[:],
-					err:  nil,
 				},
 			},
 		},
@@ -143,41 +89,6 @@ func TestRegister(t *testing.T) {
 					err:    ErrDuplicateNet,
 				},
 			},
-			hdMagics: []hdTest{
-				{
-					priv: MainnetParams.HDKeyIDPair.PrivateKeyID[:],
-					want: MainnetParams.HDKeyIDPair.PublicKeyID[:],
-					err:  nil,
-				},
-				{
-					priv: TestnetParams.HDKeyIDPair.PrivateKeyID[:],
-					want: TestnetParams.HDKeyIDPair.PublicKeyID[:],
-					err:  nil,
-				},
-				{
-					priv: RegressionNetParams.HDKeyIDPair.PrivateKeyID[:],
-					want: RegressionNetParams.HDKeyIDPair.PublicKeyID[:],
-					err:  nil,
-				},
-				{
-					priv: SimnetParams.HDKeyIDPair.PrivateKeyID[:],
-					want: SimnetParams.HDKeyIDPair.PublicKeyID[:],
-					err:  nil,
-				},
-				{
-					priv: mockNetParams.HDKeyIDPair.PrivateKeyID[:],
-					want: mockNetParams.HDKeyIDPair.PublicKeyID[:],
-					err:  nil,
-				},
-				{
-					priv: []byte{0xff, 0xff, 0xff, 0xff},
-					err:  hdkeychain.ErrUnknownHDKeyID,
-				},
-				{
-					priv: []byte{0xff},
-					err:  hdkeychain.ErrUnknownHDKeyID,
-				},
-			},
 		},
 	}
 
@@ -185,24 +96,9 @@ func TestRegister(t *testing.T) {
 		for _, regtest := range test.register {
 			err := Register(regtest.params)
 
-			// HDKeyIDPairs must be registered separately
-			hdkeychain.RegisterHDKeyIDPair(regtest.params.HDKeyIDPair)
-
 			if err != regtest.err {
 				t.Errorf("%s:%s: Registered network with unexpected error: got %v expected %v",
 					test.name, regtest.name, err, regtest.err)
-			}
-		}
-		for i, magTest := range test.hdMagics {
-			pubKey, err := hdkeychain.HDPrivateKeyToPublicKeyID(magTest.priv[:])
-			if !reflect.DeepEqual(err, magTest.err) {
-				t.Errorf("%s: HD magic %d mismatched error: got %v expected %v ",
-					test.name, i, err, magTest.err)
-				continue
-			}
-			if magTest.err == nil && !bytes.Equal(pubKey, magTest.want[:]) {
-				t.Errorf("%s: HD magic %d private and public mismatch: got %v expected %v ",
-					test.name, i, pubKey, magTest.want[:])
 			}
 		}
 	}
