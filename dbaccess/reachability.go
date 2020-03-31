@@ -28,3 +28,31 @@ func StoreReachabilityData(context Context, blockHash *daghash.Hash, reachabilit
 	key := reachabilityDataBucket.Key(blockHash[:])
 	return accessor.Put(key, reachabilityData)
 }
+
+// ClearAllReachabilityData clears all the reachability data
+// from database.
+func ClearAllReachabilityData(context Context) error {
+	accessor, err := context.accessor()
+	if err != nil {
+		return err
+	}
+
+	cursor, err := accessor.Cursor(reachabilityDataBucket.Path())
+	if err != nil {
+		return err
+	}
+
+	for ok := cursor.First(); ok; ok = cursor.Next() {
+		key, err := cursor.Key()
+		if err != nil {
+			return err
+		}
+
+		err = accessor.Delete(key)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
