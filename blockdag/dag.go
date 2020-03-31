@@ -719,9 +719,15 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 	txsAcceptanceData MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData,
 	feeData compactFeeData) error {
 
+	databaseTx, err := dbaccess.NewTx()
+	if err != nil {
+		return err
+	}
+	defer databaseTx.RollbackUnlessClosed()
+
 	// Atomically insert info into the database.
-	err := dag.db.Update(func(dbTx database.Tx) error {
-		err := dag.index.flushToDB(dbaccess.NoTx())
+	err = dag.db.Update(func(dbTx database.Tx) error {
+		err := dag.index.flushToDB(databaseTx)
 		if err != nil {
 			return err
 		}
@@ -747,14 +753,14 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 			LastFinalityPoint: dag.lastFinalityPoint.hash,
 			localSubnetworkID: dag.subnetworkID,
 		}
-		err = dbPutDAGState(dbaccess.NoTx(), state)
+		err = dbPutDAGState(databaseTx, state)
 		if err != nil {
 			return err
 		}
 
 		// Update the UTXO set using the diffSet that was melded into the
 		// full UTXO set.
-		err = dbUpdateUTXOSet(dbaccess.NoTx(), virtualUTXODiff)
+		err = dbUpdateUTXOSet(databaseTx, virtualUTXODiff)
 		if err != nil {
 			return err
 		}
@@ -771,7 +777,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 		// optional indexes with the block being connected so they can
 		// update themselves accordingly.
 		if dag.indexManager != nil {
-			err := dag.indexManager.ConnectBlock(dbTx, block, dag, txsAcceptanceData, virtualTxsAcceptanceData)
+			err := dag.indexManager.ConnectBlock(databaseTx, block, txsAcceptanceData, virtualTxsAcceptanceData)
 			if err != nil {
 				return err
 			}
@@ -787,7 +793,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 	dag.utxoDiffStore.clearDirtyEntries()
 	dag.reachabilityStore.clearDirtyEntries()
 	dag.multisetStore.clearNewEntries()
-	return nil
+	return databaseTx.Commit()
 }
 
 func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
@@ -1986,7 +1992,7 @@ type IndexManager interface {
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
-	ConnectBlock(dbTx database.Tx, block *util.Block, dag *BlockDAG, acceptedTxsData MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData) error
+	ConnectBlock(context *dbaccess.TxContext, block *util.Block, acceptedTxsData MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData) error
 }
 
 // Config is a descriptor which specifies the blockDAG instance configuration.

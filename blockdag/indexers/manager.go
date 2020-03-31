@@ -6,7 +6,7 @@ package indexers
 
 import (
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 )
 
@@ -37,14 +37,14 @@ func (m *Manager) Init(blockDAG *blockdag.BlockDAG) error {
 // checks, and invokes each indexer.
 //
 // This is part of the blockdag.IndexManager interface.
-func (m *Manager) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG,
-	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
+func (m *Manager) ConnectBlock(context *dbaccess.TxContext, block *util.Block, txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData,
+	virtualTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
 
 	// Call each of the currently active optional indexes with the block
 	// being connected so they can update accordingly.
 	for _, index := range m.enabledIndexes {
 		// Notify the indexer with the connected block so it can index it.
-		if err := index.ConnectBlock(dbTx, block, dag, txsAcceptanceData, virtualTxsAcceptanceData); err != nil {
+		if err := index.ConnectBlock(context, block, txsAcceptanceData, virtualTxsAcceptanceData); err != nil {
 			return err
 		}
 	}
