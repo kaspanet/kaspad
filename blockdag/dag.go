@@ -1936,7 +1936,8 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 // ForEachHash runs the given fn on every hash that's currently known to
 // the DAG.
 //
-// This function is NOT safe for cuncurrent access.
+// This function is NOT safe for concurrent access. It is meant to be
+// used either on initialization or when the dag lock is held for reads.
 func (dag *BlockDAG) ForEachHash(fn func(hash daghash.Hash) error) error {
 	for hash := range dag.index.index {
 		err := fn(hash)
