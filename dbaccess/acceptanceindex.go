@@ -70,7 +70,9 @@ func DropAcceptanceIndex() error {
 		return err
 	}
 
-	// Collect all of the keys
+	// Collect all of the keys before deleting them. We do this
+	// as to not modify the cursor while we're still iterating
+	// over it.
 	keys := make([][]byte, 0)
 	cursor, err := accessor.Cursor(acceptanceIndexBucket.Path())
 	if err != nil {
