@@ -18,8 +18,8 @@ func FetchSubnetworkData(context Context, subnetworkID *subnetworkid.SubnetworkI
 	return accessor.Get(key)
 }
 
-// RegisterSubnetwork stores mappings from ID of the subnetwork to the subnetwork data.
-func RegisterSubnetwork(context Context, subnetworkID *subnetworkid.SubnetworkID, subnetworkData []byte) error {
+// StoreSubnetwork stores mappings from ID of the subnetwork to the subnetwork data.
+func StoreSubnetwork(context Context, subnetworkID *subnetworkid.SubnetworkID, subnetworkData []byte) error {
 	accessor, err := context.accessor()
 	if err != nil {
 		return err

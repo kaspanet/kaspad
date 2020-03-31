@@ -109,7 +109,7 @@ func dbRegisterSubnetwork(context dbaccess.Context, subnetworkID *subnetworkid.S
 	}
 
 	// Store the subnetwork
-	return dbaccess.RegisterSubnetwork(context, subnetworkID, serializedSubnetwork)
+	return dbaccess.StoreSubnetwork(context, subnetworkID, serializedSubnetwork)
 }
 
 type subnetwork struct {
