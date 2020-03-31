@@ -30,8 +30,7 @@ func NewAcceptanceIndex() *AcceptanceIndex {
 	return &AcceptanceIndex{}
 }
 
-// DropAcceptanceIndex drops the acceptance index from the provided database if it
-// exists.
+// DropAcceptanceIndex drops the acceptance index.
 func DropAcceptanceIndex() error {
 	return dbaccess.ClearAcceptanceIndex()
 }
