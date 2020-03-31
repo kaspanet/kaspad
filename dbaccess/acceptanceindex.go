@@ -3,6 +3,7 @@ package dbaccess
 import (
 	"github.com/kaspanet/kaspad/database2"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -36,7 +37,15 @@ func FetchAcceptanceData(context Context, hash *daghash.Hash) ([]byte, error) {
 	}
 
 	key := acceptanceIndexKey(hash)
-	return accessor.Get(key)
+	acceptanceData, err := accessor.Get(key)
+	if err != nil {
+		if database2.IsNotFoundError(err) {
+			return nil, errors.Wrapf(err, "acceptance data not found for hash %s", hash)
+		}
+		return nil, err
+	}
+
+	return acceptanceData, nil
 }
 
 func acceptanceIndexKey(hash *daghash.Hash) []byte {

@@ -67,7 +67,11 @@ func (idx *AcceptanceIndex) recover() error {
 		if err != nil {
 			return err
 		}
-		return idx.ConnectBlock(dbTx, nil, txAcceptanceData, nil)
+		block, err := idx.dag.BlockByHash(&hash)
+		if err != nil {
+			return err
+		}
+		return idx.ConnectBlock(dbTx, block, txAcceptanceData, nil)
 	})
 }
 
