@@ -58,8 +58,8 @@ func acceptanceIndexKey(hash *daghash.Hash) []byte {
 	return acceptanceIndexBucket.Key(hash[:])
 }
 
-// ClearAcceptanceIndex completely removes all acceptanceData entries.
-func ClearAcceptanceIndex() error {
+// DropAcceptanceIndex completely removes all acceptanceData entries.
+func DropAcceptanceIndex() error {
 	context, err := NewTx()
 	if err != nil {
 		return err
