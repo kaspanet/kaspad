@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/dagconfig"
-	_ "github.com/kaspanet/kaspad/database/ffldb"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"

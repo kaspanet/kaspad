@@ -5,12 +5,9 @@
 package main
 
 import (
-	"github.com/pkg/errors"
 	"os"
-	"path/filepath"
 	"runtime"
 
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/limits"
 	"github.com/kaspanet/kaspad/logs"
 	"github.com/kaspanet/kaspad/util/panics"
@@ -26,39 +23,6 @@ var (
 	log   *logs.Logger
 	spawn func(func())
 )
-
-// loadBlockDB opens the block database and returns a handle to it.
-func loadBlockDB() (database.DB, error) {
-	// The database name is based on the database type.
-	dbName := blockDBNamePrefix + "_" + cfg.DBType
-	dbPath := filepath.Join(cfg.DataDir, dbName)
-
-	log.Infof("Loading block database from '%s'", dbPath)
-	db, err := database.Open(cfg.DBType, dbPath, ActiveConfig().NetParams().Net)
-	if err != nil {
-		// Return the error if it's not because the database doesn't
-		// exist.
-		var dbErr database.Error
-		if ok := errors.As(err, &dbErr); !ok || dbErr.ErrorCode !=
-			database.ErrDbDoesNotExist {
-
-			return nil, err
-		}
-
-		// Create the db if it does not exist.
-		err = os.MkdirAll(cfg.DataDir, 0700)
-		if err != nil {
-			return nil, err
-		}
-		db, err = database.Create(cfg.DBType, dbPath, ActiveConfig().NetParams().Net)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	log.Info("Block database loaded")
-	return db, nil
-}
 
 // realMain is the real main function for the utility. It is necessary to work
 // around the fact that deferred functions do not run when os.Exit() is called.

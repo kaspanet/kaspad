@@ -22,7 +22,6 @@ import (
 
 	"github.com/btcsuite/go-socks/socks"
 	"github.com/jessevdk/go-flags"
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/logger"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/network"
@@ -46,7 +45,6 @@ const (
 	defaultMaxRPCClients         = 10
 	defaultMaxRPCWebsockets      = 25
 	defaultMaxRPCConcurrentReqs  = 20
-	defaultDbType                = "ffldb"
 	defaultBlockMaxMass          = 10000000
 	blockMaxMassMin              = 1000
 	blockMaxMassMax              = 10000000
@@ -65,7 +63,6 @@ var (
 
 	defaultConfigFile  = filepath.Join(DefaultHomeDir, defaultConfigFilename)
 	defaultDataDir     = filepath.Join(DefaultHomeDir, defaultDataDirname)
-	knownDbTypes       = database.SupportedDrivers()
 	defaultRPCKeyFile  = filepath.Join(DefaultHomeDir, "rpc.key")
 	defaultRPCCertFile = filepath.Join(DefaultHomeDir, "rpc.cert")
 	defaultLogDir      = filepath.Join(DefaultHomeDir, defaultLogDirname)
@@ -168,17 +165,6 @@ func cleanAndExpandPath(path string) string {
 	return filepath.Clean(os.ExpandEnv(path))
 }
 
-// validDbType returns whether or not dbType is a supported database type.
-func validDbType(dbType string) bool {
-	for _, knownType := range knownDbTypes {
-		if dbType == knownType {
-			return true
-		}
-	}
-
-	return false
-}
-
 // newConfigParser returns a new command line flags parser.
 func newConfigParser(cfgFlags *Flags, so *serviceOptions, options flags.Options) *flags.Parser {
 	parser := flags.NewParser(cfgFlags, options)
@@ -235,7 +221,6 @@ func loadConfig() (*Config, []string, error) {
 		RPCMaxConcurrentReqs: defaultMaxRPCConcurrentReqs,
 		DataDir:              defaultDataDir,
 		LogDir:               defaultLogDir,
-		DbType:               defaultDbType,
 		RPCKey:               defaultRPCKeyFile,
 		RPCCert:              defaultRPCCertFile,
 		BlockMaxMass:         defaultBlockMaxMass,
@@ -419,16 +404,6 @@ func loadConfig() (*Config, []string, error) {
 	// Parse, validate, and set debug log level(s).
 	if err := logger.ParseAndSetDebugLevels(activeConfig.DebugLevel); err != nil {
 		err := errors.Errorf("%s: %s", funcName, err.Error())
-		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
-	}
-
-	// Validate database type.
-	if !validDbType(activeConfig.DbType) {
-		str := "%s: The specified database type [%s] is invalid -- " +
-			"supported types %s"
-		err := errors.Errorf(str, funcName, activeConfig.DbType, knownDbTypes)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
 		return nil, nil, err

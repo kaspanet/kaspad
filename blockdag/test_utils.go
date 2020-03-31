@@ -18,33 +18,10 @@ import (
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/kaspanet/kaspad/database"
-	_ "github.com/kaspanet/kaspad/database/ffldb" // blank import ffldb so that its init() function runs before tests
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
-
-const (
-	// testDbType is the database backend type to use for the tests.
-	testDbType = "ffldb"
-
-	// blockDataNet is the expected network in the test block data.
-	blockDataNet = wire.Mainnet
-)
-
-// isSupportedDbType returns whether or not the passed database type is
-// currently supported.
-func isSupportedDbType(dbType string) bool {
-	supportedDrivers := database.SupportedDrivers()
-	for _, driver := range supportedDrivers {
-		if dbType == driver {
-			return true
-		}
-	}
-
-	return false
-}
 
 // FileExists returns whether or not the named file or directory exists.
 func FileExists(name string) bool {

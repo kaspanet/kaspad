@@ -19,7 +19,6 @@ import (
 
 	"github.com/kaspanet/kaspad/blockdag/indexers"
 	"github.com/kaspanet/kaspad/config"
-	_ "github.com/kaspanet/kaspad/database/ffldb"
 	"github.com/kaspanet/kaspad/limits"
 	"github.com/kaspanet/kaspad/server"
 	"github.com/kaspanet/kaspad/signal"
