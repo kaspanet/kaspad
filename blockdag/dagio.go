@@ -161,9 +161,9 @@ func deserializeDAGState(serializedData []byte) (*dagState, error) {
 	return state, nil
 }
 
-// putDAGState uses an existing database transaction to store the latest
+// saveDAGState uses an existing database context to store the latest
 // tip hashes of the DAG.
-func putDAGState(context dbaccess.Context, state *dagState) error {
+func saveDAGState(context dbaccess.Context, state *dagState) error {
 	serializedDAGState, err := serializeDAGState(state)
 	if err != nil {
 		return err
@@ -175,7 +175,7 @@ func putDAGState(context dbaccess.Context, state *dagState) error {
 // createDAGState initializes the DAG state to the
 // genesis block and the node's local subnetwork id.'
 func (dag *BlockDAG) createDAGState(localSubnetworkID *subnetworkid.SubnetworkID) error {
-	return putDAGState(dbaccess.NoTx(), &dagState{
+	return saveDAGState(dbaccess.NoTx(), &dagState{
 		TipHashes:         []*daghash.Hash{dag.dagParams.GenesisHash},
 		LastFinalityPoint: dag.dagParams.GenesisHash,
 		LocalSubnetworkID: localSubnetworkID,

@@ -747,7 +747,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 		LastFinalityPoint: dag.lastFinalityPoint.hash,
 		LocalSubnetworkID: dag.subnetworkID,
 	}
-	err = putDAGState(dbTx, state)
+	err = saveDAGState(dbTx, state)
 	if err != nil {
 		return err
 	}
