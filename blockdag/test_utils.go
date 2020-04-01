@@ -36,7 +36,7 @@ func FileExists(name string) bool {
 // DAGSetup is used to create a new db and DAG instance with the genesis
 // block already inserted. In addition to the new DAG instance, it returns
 // a teardown function the caller should invoke when done testing to clean up.
-func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
+func DAGSetup(dbName string, openDb bool, config Config) (*BlockDAG, func(), error) {
 	var teardown func()
 
 	// To make sure that the teardown function is not called before any goroutines finished to run -
@@ -51,26 +51,33 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 		})
 	}
 
-	var err error
-	tmpDir, err := ioutil.TempDir("", "DAGSetup")
-	if err != nil {
-		return nil, nil, errors.Errorf("error creating temp dir: %s", err)
-	}
+	if openDb {
+		var err error
+		tmpDir, err := ioutil.TempDir("", "DAGSetup")
+		if err != nil {
+			return nil, nil, errors.Errorf("error creating temp dir: %s", err)
+		}
 
-	dbPath := filepath.Join(tmpDir, dbName)
-	_ = os.RemoveAll(dbPath)
-	err = dbaccess.Open(dbPath)
-	if err != nil {
-		return nil, nil, errors.Errorf("error creating db: %s", err)
-	}
+		dbPath := filepath.Join(tmpDir, dbName)
+		_ = os.RemoveAll(dbPath)
+		err = dbaccess.Open(dbPath)
+		if err != nil {
+			return nil, nil, errors.Errorf("error creating db: %s", err)
+		}
 
-	// Setup a teardown function for cleaning up. This function is
-	// returned to the caller to be invoked when it is done testing.
-	teardown = func() {
-		spawnWaitGroup.Wait()
-		spawn = realSpawn
-		dbaccess.Close()
-		os.RemoveAll(dbPath)
+		// Setup a teardown function for cleaning up. This function is
+		// returned to the caller to be invoked when it is done testing.
+		teardown = func() {
+			spawnWaitGroup.Wait()
+			spawn = realSpawn
+			dbaccess.Close()
+			os.RemoveAll(dbPath)
+		}
+	} else {
+		teardown = func() {
+			spawnWaitGroup.Wait()
+			spawn = realSpawn
+		}
 	}
 
 	config.TimeSource = NewTimeSource()

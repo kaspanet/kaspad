@@ -69,7 +69,7 @@ func TestSequenceLocksActive(t *testing.T) {
 // ensure it fails.
 func TestCheckConnectBlockTemplate(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("checkconnectblocktemplate", Config{
+	dag, teardownFunc, err := DAGSetup("checkconnectblocktemplate", true, Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
@@ -161,7 +161,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 // as expected.
 func TestCheckBlockSanity(t *testing.T) {
 	// Create a new database and dag instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestCheckBlockSanity", Config{
+	dag, teardownFunc, err := DAGSetup("TestCheckBlockSanity", true, Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
@@ -561,7 +561,7 @@ func TestPastMedianTime(t *testing.T) {
 
 func TestValidateParents(t *testing.T) {
 	// Create a new database and dag instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestCheckBlockSanity", Config{
+	dag, teardownFunc, err := DAGSetup("TestCheckBlockSanity", true, Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {

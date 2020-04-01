@@ -40,7 +40,7 @@ func TestBlockCount(t *testing.T) {
 	}
 
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestBlockCount", Config{
+	dag, teardownFunc, err := DAGSetup("TestBlockCount", true, Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
@@ -93,7 +93,7 @@ func TestIsKnownBlock(t *testing.T) {
 	}
 
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("haveblock", Config{
+	dag, teardownFunc, err := DAGSetup("haveblock", true, Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
@@ -655,7 +655,7 @@ func TestConfirmations(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	params := dagconfig.SimnetParams
 	params.K = 1
-	dag, teardownFunc, err := DAGSetup("TestConfirmations", Config{
+	dag, teardownFunc, err := DAGSetup("TestConfirmations", true, Config{
 		DAGParams: &params,
 	})
 	if err != nil {
@@ -758,7 +758,7 @@ func TestAcceptingBlock(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	params := dagconfig.SimnetParams
 	params.K = 3
-	dag, teardownFunc, err := DAGSetup("TestAcceptingBlock", Config{
+	dag, teardownFunc, err := DAGSetup("TestAcceptingBlock", true, Config{
 		DAGParams: &params,
 	})
 	if err != nil {
@@ -888,7 +888,7 @@ func TestFinalizeNodesBelowFinalityPoint(t *testing.T) {
 func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 	params := dagconfig.SimnetParams
 	params.K = 1
-	dag, teardownFunc, err := DAGSetup("testFinalizeNodesBelowFinalityPoint", Config{
+	dag, teardownFunc, err := DAGSetup("testFinalizeNodesBelowFinalityPoint", true, Config{
 		DAGParams: &params,
 	})
 	if err != nil {
@@ -981,7 +981,7 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 
 func TestDAGIndexFailedStatus(t *testing.T) {
 	params := dagconfig.SimnetParams
-	dag, teardownFunc, err := DAGSetup("TestDAGIndexFailedStatus", Config{
+	dag, teardownFunc, err := DAGSetup("TestDAGIndexFailedStatus", true, Config{
 		DAGParams: &params,
 	})
 	if err != nil {

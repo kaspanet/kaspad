@@ -9,7 +9,7 @@ import (
 // This test is to ensure the size BlueAnticoneSizesSize is serialized to the size of KType.
 // We verify that by serializing and deserializing the block while making sure that we stay within the expected range.
 func TestBlueAnticoneSizesSize(t *testing.T) {
-	dag, teardownFunc, err := DAGSetup("TestBlueAnticoneSizesSize", Config{
+	dag, teardownFunc, err := DAGSetup("TestBlueAnticoneSizesSize", true, Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {

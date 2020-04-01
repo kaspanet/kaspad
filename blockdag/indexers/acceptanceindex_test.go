@@ -106,7 +106,7 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 		DAGParams:    params,
 	}
 
-	db1DAG, teardown, err := blockdag.DAGSetup("", db1Config)
+	db1DAG, teardown, err := blockdag.DAGSetup("", false, db1Config)
 	if err != nil {
 		t.Fatalf("TestAcceptanceIndexRecover: Failed to setup DAG instance: %v", err)
 	}
@@ -170,7 +170,7 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 		DAGParams: params,
 	}
 
-	db2DAG, teardown, err := blockdag.DAGSetup("", db2Config)
+	db2DAG, teardown, err := blockdag.DAGSetup("", false, db2Config)
 	if err != nil {
 		t.Fatalf("TestAcceptanceIndexRecover: Failed to setup DAG instance: %v", err)
 	}
@@ -216,7 +216,7 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 		DAGParams:    params,
 	}
 
-	_, teardown, err = blockdag.DAGSetup("", db3Config)
+	_, teardown, err = blockdag.DAGSetup("", false, db3Config)
 	if err != nil {
 		t.Fatalf("TestAcceptanceIndexRecover: Failed to setup DAG instance: %v", err)
 	}

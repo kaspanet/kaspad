@@ -10,7 +10,7 @@ import (
 // TestBlockHeap tests pushing, popping, and determining the length of the heap.
 func TestBlockHeap(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestBlockHeap", Config{
+	dag, teardownFunc, err := DAGSetup("TestBlockHeap", true, Config{
 		DAGParams: &dagconfig.MainnetParams,
 	})
 	if err != nil {

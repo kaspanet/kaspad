@@ -10,7 +10,7 @@ import (
 
 func TestMaybeAcceptBlockErrors(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestMaybeAcceptBlockErrors", Config{
+	dag, teardownFunc, err := DAGSetup("TestMaybeAcceptBlockErrors", true, Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {

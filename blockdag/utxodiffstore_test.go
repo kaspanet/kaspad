@@ -11,7 +11,7 @@ import (
 
 func TestUTXODiffStore(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestUTXODiffStore", Config{
+	dag, teardownFunc, err := DAGSetup("TestUTXODiffStore", true, Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
