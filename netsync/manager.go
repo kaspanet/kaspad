@@ -743,8 +743,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 	if haveUnknownInvBlock && !sm.current() {
 		// If one of the  an inv message is an unknown block
 		// it is an indication that one of our peers has more
-		// up-to-date date than we, so it triggers
-		// sm.restartSyncIfNeeded().
+		// up-to-date date than us, sm.restartSyncIfNeeded().
 		sm.restartSyncIfNeeded()
 	}
 }
