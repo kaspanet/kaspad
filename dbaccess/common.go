@@ -2,13 +2,7 @@ package dbaccess
 
 import "github.com/kaspanet/kaspad/database2"
 
-func clearBucket(bucket *database2.Bucket) error {
-	dbTx, err := NewTx()
-	if err != nil {
-		return err
-	}
-	defer dbTx.RollbackUnlessClosed()
-
+func clearBucket(dbTx *TxContext, bucket *database2.Bucket) error {
 	accessor, err := dbTx.accessor()
 	if err != nil {
 		return err

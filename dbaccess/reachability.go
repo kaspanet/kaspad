@@ -31,8 +31,8 @@ func StoreReachabilityData(context Context, blockHash *daghash.Hash, reachabilit
 
 // ClearReachabilityData clears the reachability data
 // from database.
-func ClearReachabilityData() error {
-	return clearBucket(reachabilityDataBucket)
+func ClearReachabilityData(dbTx *TxContext) error {
+	return clearBucket(dbTx, reachabilityDataBucket)
 }
 
 func reachabilityKey(hash *daghash.Hash) []byte {

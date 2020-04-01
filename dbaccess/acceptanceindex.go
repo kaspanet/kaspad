@@ -59,6 +59,6 @@ func acceptanceIndexKey(hash *daghash.Hash) []byte {
 }
 
 // DropAcceptanceIndex completely removes all acceptanceData entries.
-func DropAcceptanceIndex() error {
-	return clearBucket(acceptanceIndexBucket)
+func DropAcceptanceIndex(dbTx *TxContext) error {
+	return clearBucket(dbTx, acceptanceIndexBucket)
 }
