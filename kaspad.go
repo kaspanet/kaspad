@@ -7,8 +7,6 @@ package main
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/dbaccess"
-	"net"
-	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"path/filepath"
@@ -16,8 +14,6 @@ import (
 	"runtime/debug"
 	"runtime/pprof"
 	"strings"
-
-	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/blockdag/indexers"
 	"github.com/kaspanet/kaspad/config"
