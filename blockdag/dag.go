@@ -747,14 +747,14 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 		LastFinalityPoint: dag.lastFinalityPoint.hash,
 		LocalSubnetworkID: dag.subnetworkID,
 	}
-	err = dbPutDAGState(dbTx, state)
+	err = putDAGState(dbTx, state)
 	if err != nil {
 		return err
 	}
 
 	// Update the UTXO set using the diffSet that was melded into the
 	// full UTXO set.
-	err = dbUpdateUTXOSet(dbTx, virtualUTXODiff)
+	err = updateUTXOSet(dbTx, virtualUTXODiff)
 	if err != nil {
 		return err
 	}
@@ -1161,7 +1161,7 @@ func (node *blockNode) fetchBlueBlocks() ([]*util.Block, error) {
 
 	blueBlocks := make([]*util.Block, len(node.blues))
 	for i, blueBlockNode := range node.blues {
-		blueBlock, err := dbFetchBlockByHash(dbTx, blueBlockNode.hash)
+		blueBlock, err := fetchBlockByHash(dbTx, blueBlockNode.hash)
 		if err != nil {
 			return nil, err
 		}

@@ -88,9 +88,9 @@ func deserializeOutpoint(r io.Reader) (*wire.Outpoint, error) {
 	return outpoint, nil
 }
 
-// dbUpdateUTXOSet updates the UTXO set in the database based on the provided
+// updateUTXOSet updates the UTXO set in the database based on the provided
 // UTXO diff.
-func dbUpdateUTXOSet(context dbaccess.Context, virtualUTXODiff *UTXODiff) error {
+func updateUTXOSet(context dbaccess.Context, virtualUTXODiff *UTXODiff) error {
 	for outpoint := range virtualUTXODiff.toRemove {
 		w := outpointKeyPool.Get().(*bytes.Buffer)
 		w.Reset()
@@ -161,9 +161,9 @@ func deserializeDAGState(serializedData []byte) (*dagState, error) {
 	return state, nil
 }
 
-// dbPutDAGState uses an existing database transaction to store the latest
+// putDAGState uses an existing database transaction to store the latest
 // tip hashes of the DAG.
-func dbPutDAGState(context dbaccess.Context, state *dagState) error {
+func putDAGState(context dbaccess.Context, state *dagState) error {
 	serializedDAGState, err := serializeDAGState(state)
 	if err != nil {
 		return err
@@ -175,7 +175,7 @@ func dbPutDAGState(context dbaccess.Context, state *dagState) error {
 // createDAGState initializes the DAG state to the
 // genesis block and the node's local subnetwork id.'
 func (dag *BlockDAG) createDAGState(localSubnetworkID *subnetworkid.SubnetworkID) error {
-	return dbPutDAGState(dbaccess.NoTx(), &dagState{
+	return putDAGState(dbaccess.NoTx(), &dagState{
 		TipHashes:         []*daghash.Hash{dag.dagParams.GenesisHash},
 		LastFinalityPoint: dag.dagParams.GenesisHash,
 		LocalSubnetworkID: localSubnetworkID,
@@ -356,7 +356,7 @@ func (dag *BlockDAG) initDAGState() error {
 		}
 
 		// Attempt to accept the block.
-		block, err := dbFetchBlockByHash(dbTx, node.hash)
+		block, err := fetchBlockByHash(dbTx, node.hash)
 		if err != nil {
 			return err
 		}
@@ -477,9 +477,9 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 	return node, nil
 }
 
-// dbFetchBlockByHash retrieves the raw block for the provided hash,
+// fetchBlockByHash retrieves the raw block for the provided hash,
 // deserializes it, and returns a util.Block of it.
-func dbFetchBlockByHash(context dbaccess.Context, hash *daghash.Hash) (*util.Block, error) {
+func fetchBlockByHash(context dbaccess.Context, hash *daghash.Hash) (*util.Block, error) {
 	blockBytes, err := dbaccess.FetchBlock(context, hash)
 	if err != nil {
 		return nil, err
@@ -487,7 +487,7 @@ func dbFetchBlockByHash(context dbaccess.Context, hash *daghash.Hash) (*util.Blo
 	return util.NewBlockFromBytes(blockBytes)
 }
 
-func dbStoreBlock(context dbaccess.Context, block *util.Block) error {
+func storeBlock(context dbaccess.Context, block *util.Block) error {
 	blockBytes, err := block.Bytes()
 	if err != nil {
 		return err
@@ -579,7 +579,7 @@ func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
 		return nil, errNotInDAG(str)
 	}
 
-	block, err := dbFetchBlockByHash(dbaccess.NoTx(), node.hash)
+	block, err := fetchBlockByHash(dbaccess.NoTx(), node.hash)
 	if err != nil {
 		return nil, err
 	}

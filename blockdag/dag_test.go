@@ -623,7 +623,7 @@ func TestAcceptingInInit(t *testing.T) {
 	testNode.status = statusDataStored
 
 	// Manually add the test block to the database
-	err = dbStoreBlock(dbaccess.NoTx(), testBlock)
+	err = storeBlock(dbaccess.NoTx(), testBlock)
 	if err != nil {
 		t.Fatalf("Failed to store block: %s", err)
 	}
