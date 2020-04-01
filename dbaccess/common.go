@@ -32,5 +32,5 @@ func clearBucket(dbTx *TxContext, bucket *database2.Bucket) error {
 		}
 	}
 
-	return dbTx.Commit()
+	return nil
 }
