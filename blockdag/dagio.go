@@ -192,9 +192,8 @@ func (dag *BlockDAG) initDAGState() error {
 	}
 	defer dbTx.RollbackUnlessClosed()
 
-	// Fetch the stored DAG state from the database metadata.
-	// When it doesn't exist, it means the database hasn't been
-	// initialized for use with the DAG yet.
+	// Fetch the stored DAG state from the database. When it doesn't exist,
+	// it means the database hasn't been initialized for use with the DAG yet.
 	serializedDAGState, err := dbaccess.FetchDAGState(dbTx)
 	if dbaccess.IsNotFoundError(err) {
 		// At this point the database has not already been initialized, so
@@ -216,10 +215,7 @@ func (dag *BlockDAG) initDAGState() error {
 			" database by starting kaspad with --reset-db flag", dag.subnetworkID, dagState.LocalSubnetworkID)
 	}
 
-	// Load all of the block data for the known DAG and construct
-	// the block index accordingly.
-	log.Infof("Loading block index...")
-
+	log.Debugf("Loading block index...")
 	var unprocessedBlockNodes []*blockNode
 	blockIndexCursor, err := dbaccess.BlockIndexCursor(dbTx)
 	if err != nil {
@@ -270,10 +266,7 @@ func (dag *BlockDAG) initDAGState() error {
 		dag.blockCount++
 	}
 
-	// Load all of the known UTXO entries and construct the full
-	// UTXO set accordingly.
-	log.Infof("Loading UTXO set...")
-
+	log.Debugf("Loading UTXO set...")
 	fullUTXOCollection := make(utxoCollection)
 	cursor, err := dbaccess.UTXOSetCursor(dbTx)
 	if err != nil {
@@ -303,29 +296,25 @@ func (dag *BlockDAG) initDAGState() error {
 		fullUTXOCollection[*outpoint] = entry
 	}
 
-	// Attempt to load the DAG state from the database.
-
-	// Initialize the reachability store
-	log.Infof("Loading reachability data...")
+	log.Debugf("Loading reachability data...")
 	err = dag.reachabilityStore.init(dbTx)
 	if err != nil {
 		return err
 	}
 
-	// Initialize the multiset store
-	log.Infof("Loading multiset data...")
+	log.Debugf("Loading multiset data...")
 	err = dag.multisetStore.init(dbTx)
 	if err != nil {
 		return err
 	}
 
-	// Apply the loaded utxoCollection to the virtual block.
+	log.Debugf("Applying the loaded utxoCollection to the virtual block...")
 	dag.virtual.utxoSet, err = newFullUTXOSetFromUTXOCollection(fullUTXOCollection)
 	if err != nil {
 		return AssertError(fmt.Sprintf("Error loading UTXOSet: %s", err))
 	}
 
-	// Apply the stored tips to the virtual block.
+	log.Debugf("Applying the stored tips to the virtual block...")
 	tips := newBlockSet()
 	for _, tipHash := range dagState.TipHashes {
 		tip := dag.index.LookupNode(tipHash)
@@ -337,11 +326,11 @@ func (dag *BlockDAG) initDAGState() error {
 	}
 	dag.virtual.SetTips(tips)
 
-	// Set the last finality point
+	log.Debugf("Setting the last finality point...")
 	dag.lastFinalityPoint = dag.index.LookupNode(dagState.LastFinalityPoint)
 	dag.finalizeNodesBelowFinalityPoint(false)
 
-	// Go over any unprocessed blockNodes and process them now.
+	log.Debugf("Processing unprocessed blockNodes...")
 	for _, node := range unprocessedBlockNodes {
 		// Check to see if the block exists in the block DB. If it
 		// doesn't, the database has certainly been corrupted.
@@ -380,6 +369,8 @@ func (dag *BlockDAG) initDAGState() error {
 				"impossible.", node.hash))
 		}
 	}
+
+	log.Infof("DAG state initialized.")
 
 	return nil
 }
