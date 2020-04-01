@@ -45,7 +45,7 @@ func registerSubnetworks(context dbaccess.Context, txs []*util.Tx) error {
 		}
 		if !exists {
 			createdSubnetwork := newSubnetwork(registryTx)
-			err := dbRegisterSubnetwork(context, subnetworkID, createdSubnetwork)
+			err := registerSubnetwork(context, subnetworkID, createdSubnetwork)
 			if err != nil {
 				return errors.Errorf("failed registering subnetwork"+
 					"for tx '%s': %s", registryTx.TxHash(), err)
@@ -74,8 +74,8 @@ func TxToSubnetworkID(tx *wire.MsgTx) (*subnetworkid.SubnetworkID, error) {
 	return subnetworkid.New(util.Hash160(txHash[:]))
 }
 
-// dbFetchSubnetwork returns a registered subnetwork.
-func dbFetchSubnetwork(subnetworkID *subnetworkid.SubnetworkID) (*subnetwork, error) {
+// fetchSubnetwork returns a registered subnetwork.
+func fetchSubnetwork(subnetworkID *subnetworkid.SubnetworkID) (*subnetwork, error) {
 	serializedSubnetwork, err := dbaccess.FetchSubnetworkData(dbaccess.NoTx(), subnetworkID)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func dbFetchSubnetwork(subnetworkID *subnetworkid.SubnetworkID) (*subnetwork, er
 // GasLimit returns the gas limit of a registered subnetwork. If the subnetwork does not
 // exist this method returns an error.
 func GasLimit(subnetworkID *subnetworkid.SubnetworkID) (uint64, error) {
-	sNet, err := dbFetchSubnetwork(subnetworkID)
+	sNet, err := fetchSubnetwork(subnetworkID)
 	if err != nil {
 		return 0, err
 	}
@@ -100,15 +100,12 @@ func GasLimit(subnetworkID *subnetworkid.SubnetworkID) (uint64, error) {
 	return sNet.gasLimit, nil
 }
 
-// dbRegisterSubnetwork stores mappings from ID of the subnetwork to the subnetwork data.
-func dbRegisterSubnetwork(context dbaccess.Context, subnetworkID *subnetworkid.SubnetworkID, network *subnetwork) error {
-	// Serialize the subnetwork
+func registerSubnetwork(context dbaccess.Context, subnetworkID *subnetworkid.SubnetworkID, network *subnetwork) error {
 	serializedSubnetwork, err := serializeSubnetwork(network)
 	if err != nil {
 		return errors.Errorf("failed to serialize sub-netowrk '%s': %s", subnetworkID, err)
 	}
 
-	// Store the subnetwork
 	return dbaccess.StoreSubnetwork(context, subnetworkID, serializedSubnetwork)
 }
 

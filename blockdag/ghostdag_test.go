@@ -340,9 +340,21 @@ func TestGHOSTDAGErrors(t *testing.T) {
 
 	// Clear the reachability store
 	dag.reachabilityStore.loaded = map[daghash.Hash]*reachabilityData{}
-	err = dbaccess.ClearReachabilityData()
+
+	dbTx, err := dbaccess.NewTx()
+	if err != nil {
+		t.Fatalf("NewTx: %s", err)
+	}
+	defer dbTx.RollbackUnlessClosed()
+
+	err = dbaccess.ClearReachabilityData(dbTx)
 	if err != nil {
 		t.Fatalf("ClearReachabilityData: %s", err)
+	}
+
+	err = dbTx.Commit()
+	if err != nil {
+		t.Fatalf("Commit: %s", err)
 	}
 
 	// Try to rerun GHOSTDAG on the last block. GHOSTDAG uses

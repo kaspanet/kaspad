@@ -91,7 +91,7 @@ func (store *reachabilityStore) flushToDB(context dbaccess.Context) error {
 	for hash := range store.dirty {
 		hash := hash // Copy hash to a new variable to avoid passing the same pointer
 		reachabilityData := store.loaded[hash]
-		err := store.dbStoreReachabilityData(context, &hash, reachabilityData)
+		err := store.storeReachabilityData(context, &hash, reachabilityData)
 		if err != nil {
 			return err
 		}
@@ -182,9 +182,9 @@ func (store *reachabilityStore) loadReachabilityDataFromCursor(cursor database.C
 	return nil
 }
 
-// dbStoreReachabilityData stores the reachability data to the database.
+// storeReachabilityData stores the reachability data to the database.
 // This overwrites the current entry if there exists one.
-func (store *reachabilityStore) dbStoreReachabilityData(context dbaccess.Context, hash *daghash.Hash, reachabilityData *reachabilityData) error {
+func (store *reachabilityStore) storeReachabilityData(context dbaccess.Context, hash *daghash.Hash, reachabilityData *reachabilityData) error {
 	serializedReachabilyData, err := store.serializeReachabilityData(reachabilityData)
 	if err != nil {
 		return err
