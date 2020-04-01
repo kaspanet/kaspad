@@ -176,7 +176,7 @@ func TestGHOSTDAG(t *testing.T) {
 		func() {
 			resetExtraNonceForTest()
 			dagParams.K = test.k
-			dag, teardownFunc, err := DAGSetup(fmt.Sprintf("TestGHOSTDAG%d", i), Config{
+			dag, teardownFunc, err := DAGSetup(fmt.Sprintf("TestGHOSTDAG%d", i), true, Config{
 				DAGParams: &dagParams,
 			})
 			if err != nil {
@@ -282,7 +282,7 @@ func checkReds(expectedReds []string, reds map[string]bool) bool {
 
 func TestBlueAnticoneSizeErrors(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestBlueAnticoneSizeErrors", Config{
+	dag, teardownFunc, err := DAGSetup("TestBlueAnticoneSizeErrors", true, Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
@@ -323,7 +323,7 @@ func TestBlueAnticoneSizeErrors(t *testing.T) {
 
 func TestGHOSTDAGErrors(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestGHOSTDAGErrors", Config{
+	dag, teardownFunc, err := DAGSetup("TestGHOSTDAGErrors", true, Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {

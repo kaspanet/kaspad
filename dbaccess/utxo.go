@@ -1,9 +1,9 @@
 package dbaccess
 
-import "github.com/kaspanet/kaspad/database2"
+import "github.com/kaspanet/kaspad/database"
 
 var (
-	utxoBucket = database2.MakeBucket([]byte("utxo"))
+	utxoBucket = database.MakeBucket([]byte("utxo"))
 )
 
 // AddToUTXOSet adds the given outpoint-utxoEntry pair to
@@ -32,7 +32,7 @@ func RemoveFromUTXOSet(context Context, outpointKey []byte) error {
 
 // UTXOSetCursor opens a cursor over all the UTXO entries
 // that have been previously added to the database.
-func UTXOSetCursor(context Context) (database2.Cursor, error) {
+func UTXOSetCursor(context Context) (database.Cursor, error) {
 	accessor, err := context.accessor()
 	if err != nil {
 		return nil, err

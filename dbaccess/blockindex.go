@@ -2,12 +2,12 @@ package dbaccess
 
 import (
 	"encoding/hex"
-	"github.com/kaspanet/kaspad/database2"
+	"github.com/kaspanet/kaspad/database"
 	"github.com/pkg/errors"
 )
 
 var (
-	blockIndexBucket = database2.MakeBucket([]byte("block-index"))
+	blockIndexBucket = database.MakeBucket([]byte("block-index"))
 )
 
 // StoreIndexBlock stores a block in block-index
@@ -24,7 +24,7 @@ func StoreIndexBlock(context Context, blockIndexKey []byte, block []byte) error 
 
 // BlockIndexCursor opens a cursor over all the blocks-index
 // blocks that have been previously added to the database.
-func BlockIndexCursor(context Context) (database2.Cursor, error) {
+func BlockIndexCursor(context Context) (database.Cursor, error) {
 	accessor, err := context.accessor()
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func BlockIndexCursor(context Context) (database2.Cursor, error) {
 // starting from the block with the given blockHash and
 // blockBlueScore. Returns ErrNotFound if blockIndexKey is missing
 // from the database.
-func BlockIndexCursorFrom(context Context, blockIndexKey []byte) (database2.Cursor, error) {
+func BlockIndexCursorFrom(context Context, blockIndexKey []byte) (database.Cursor, error) {
 	cursor, err := BlockIndexCursor(context)
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func BlockIndexCursorFrom(context Context, blockIndexKey []byte) (database2.Curs
 		return nil, err
 	}
 	if !found {
-		return nil, errors.Wrapf(database2.ErrNotFound,
+		return nil, errors.Wrapf(database.ErrNotFound,
 			"entry not found for %s", hex.EncodeToString(blockIndexKey))
 	}
 

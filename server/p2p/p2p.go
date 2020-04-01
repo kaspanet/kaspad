@@ -28,7 +28,6 @@ import (
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/connmgr"
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/logger"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/netsync"
@@ -238,7 +237,6 @@ type Server struct {
 	broadcast             chan broadcastMsg
 	wg                    sync.WaitGroup
 	nat                   serverutils.NAT
-	db                    database.DB
 	TimeSource            blockdag.TimeSource
 	services              wire.ServiceFlag
 
@@ -1495,7 +1493,7 @@ out:
 // NewServer returns a new kaspad server configured to listen on addr for the
 // kaspa network type specified by dagParams. Use start to begin accepting
 // connections from peers.
-func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params, interrupt <-chan struct{}, notifyNewTransactions func(txns []*mempool.TxDesc)) (*Server, error) {
+func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-chan struct{}, notifyNewTransactions func(txns []*mempool.TxDesc)) (*Server, error) {
 	services := defaultServices
 	if config.ActiveConfig().NoPeerBloomFilters {
 		services &^= wire.SFNodeBloom
@@ -1531,7 +1529,6 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		modifyRebroadcastInv:  make(chan interface{}),
 		newOutboundConnection: make(chan *outboundPeerConnectedMsg, config.ActiveConfig().TargetOutboundPeers),
 		nat:                   nat,
-		db:                    db,
 		TimeSource:            blockdag.NewTimeSource(),
 		services:              services,
 		SigCache:              txscript.NewSigCache(config.ActiveConfig().SigCacheMaxSize),
@@ -1555,7 +1552,6 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 	// Create a new block DAG instance with the appropriate configuration.
 	var err error
 	s.DAG, err = blockdag.New(&blockdag.Config{
-		DB:           s.db,
 		Interrupt:    interrupt,
 		DAGParams:    s.DAGParams,
 		TimeSource:   s.TimeSource,

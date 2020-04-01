@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -41,7 +40,7 @@ func TestBlockCount(t *testing.T) {
 	}
 
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestBlockCount", Config{
+	dag, teardownFunc, err := DAGSetup("TestBlockCount", true, Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
@@ -94,7 +93,7 @@ func TestIsKnownBlock(t *testing.T) {
 	}
 
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("haveblock", Config{
+	dag, teardownFunc, err := DAGSetup("haveblock", true, Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
@@ -551,22 +550,16 @@ func TestNew(t *testing.T) {
 
 	dbPath := filepath.Join(tempDir, "TestNew")
 	_ = os.RemoveAll(dbPath)
-	db, err := database.Create(testDbType, dbPath, blockDataNet)
-	if err != nil {
-		t.Fatalf("error creating db: %s", err)
-	}
-	err = dbaccess.Open(dbPath)
+	err := dbaccess.Open(dbPath)
 	if err != nil {
 		t.Fatalf("error creating db: %s", err)
 	}
 	defer func() {
-		db.Close()
 		dbaccess.Close()
 		os.RemoveAll(dbPath)
 	}()
 	config := &Config{
 		DAGParams:  &dagconfig.SimnetParams,
-		DB:         db,
 		TimeSource: NewTimeSource(),
 		SigCache:   txscript.NewSigCache(1000),
 	}
@@ -596,16 +589,11 @@ func TestAcceptingInInit(t *testing.T) {
 	// Create a test database
 	dbPath := filepath.Join(tempDir, "TestAcceptingInInit")
 	_ = os.RemoveAll(dbPath)
-	db, err := database.Create(testDbType, dbPath, blockDataNet)
-	if err != nil {
-		t.Fatalf("error creating db: %s", err)
-	}
-	err = dbaccess.Open(dbPath)
+	err := dbaccess.Open(dbPath)
 	if err != nil {
 		t.Fatalf("error creating db: %s", err)
 	}
 	defer func() {
-		db.Close()
 		dbaccess.Close()
 		os.RemoveAll(dbPath)
 	}()
@@ -613,7 +601,6 @@ func TestAcceptingInInit(t *testing.T) {
 	// Create a DAG to add the test block into
 	config := &Config{
 		DAGParams:  &dagconfig.SimnetParams,
-		DB:         db,
 		TimeSource: NewTimeSource(),
 		SigCache:   txscript.NewSigCache(1000),
 	}
@@ -636,7 +623,7 @@ func TestAcceptingInInit(t *testing.T) {
 	testNode.status = statusDataStored
 
 	// Manually add the test block to the database
-	err = dbStoreBlock(dbaccess.NoTx(), testBlock)
+	err = storeBlock(dbaccess.NoTx(), testBlock)
 	if err != nil {
 		t.Fatalf("Failed to store block: %s", err)
 	}
@@ -668,7 +655,7 @@ func TestConfirmations(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	params := dagconfig.SimnetParams
 	params.K = 1
-	dag, teardownFunc, err := DAGSetup("TestConfirmations", Config{
+	dag, teardownFunc, err := DAGSetup("TestConfirmations", true, Config{
 		DAGParams: &params,
 	})
 	if err != nil {
@@ -771,7 +758,7 @@ func TestAcceptingBlock(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	params := dagconfig.SimnetParams
 	params.K = 3
-	dag, teardownFunc, err := DAGSetup("TestAcceptingBlock", Config{
+	dag, teardownFunc, err := DAGSetup("TestAcceptingBlock", true, Config{
 		DAGParams: &params,
 	})
 	if err != nil {
@@ -901,7 +888,7 @@ func TestFinalizeNodesBelowFinalityPoint(t *testing.T) {
 func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 	params := dagconfig.SimnetParams
 	params.K = 1
-	dag, teardownFunc, err := DAGSetup("testFinalizeNodesBelowFinalityPoint", Config{
+	dag, teardownFunc, err := DAGSetup("testFinalizeNodesBelowFinalityPoint", true, Config{
 		DAGParams: &params,
 	})
 	if err != nil {
@@ -994,7 +981,7 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 
 func TestDAGIndexFailedStatus(t *testing.T) {
 	params := dagconfig.SimnetParams
-	dag, teardownFunc, err := DAGSetup("TestDAGIndexFailedStatus", Config{
+	dag, teardownFunc, err := DAGSetup("TestDAGIndexFailedStatus", true, Config{
 		DAGParams: &params,
 	})
 	if err != nil {

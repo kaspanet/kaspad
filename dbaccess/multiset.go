@@ -1,15 +1,15 @@
 package dbaccess
 
 import (
-	"github.com/kaspanet/kaspad/database2"
+	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-var multisetBucket = database2.MakeBucket([]byte("multiset"))
+var multisetBucket = database.MakeBucket([]byte("multiset"))
 
 // MultisetCursor opens a cursor over all the
 // multiset entries.
-func MultisetCursor(context Context) (database2.Cursor, error) {
+func MultisetCursor(context Context) (database.Cursor, error) {
 	accessor, err := context.accessor()
 	if err != nil {
 		return nil, err

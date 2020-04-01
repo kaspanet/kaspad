@@ -1,11 +1,11 @@
 package dbaccess
 
 import (
-	"github.com/kaspanet/kaspad/database2"
+	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
-var subnetworkBucket = database2.MakeBucket([]byte("subnetworks"))
+var subnetworkBucket = database.MakeBucket([]byte("subnetworks"))
 
 // FetchSubnetworkData returns the subnetwork data by its ID.
 func FetchSubnetworkData(context Context, subnetworkID *subnetworkid.SubnetworkID) ([]byte, error) {

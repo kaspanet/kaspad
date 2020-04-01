@@ -41,7 +41,7 @@ func TestFinality(t *testing.T) {
 	params := dagconfig.SimnetParams
 	params.K = 1
 	params.FinalityInterval = 100
-	dag, teardownFunc, err := blockdag.DAGSetup("TestFinality", blockdag.Config{
+	dag, teardownFunc, err := blockdag.DAGSetup("TestFinality", true, blockdag.Config{
 		DAGParams: &params,
 	})
 	if err != nil {
@@ -186,7 +186,7 @@ func TestSubnetworkRegistry(t *testing.T) {
 	params := dagconfig.SimnetParams
 	params.K = 1
 	params.BlockCoinbaseMaturity = 0
-	dag, teardownFunc, err := blockdag.DAGSetup("TestSubnetworkRegistry", blockdag.Config{
+	dag, teardownFunc, err := blockdag.DAGSetup("TestSubnetworkRegistry", true, blockdag.Config{
 		DAGParams: &params,
 	})
 	if err != nil {
@@ -212,7 +212,7 @@ func TestChainedTransactions(t *testing.T) {
 	params := dagconfig.SimnetParams
 	params.BlockCoinbaseMaturity = 0
 	// Create a new database and dag instance to run tests against.
-	dag, teardownFunc, err := blockdag.DAGSetup("TestChainedTransactions", blockdag.Config{
+	dag, teardownFunc, err := blockdag.DAGSetup("TestChainedTransactions", true, blockdag.Config{
 		DAGParams: &params,
 	})
 	if err != nil {
@@ -340,7 +340,7 @@ func TestOrderInDiffFromAcceptanceData(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	params := dagconfig.SimnetParams
 	params.K = math.MaxUint8
-	dag, teardownFunc, err := blockdag.DAGSetup("TestOrderInDiffFromAcceptanceData", blockdag.Config{
+	dag, teardownFunc, err := blockdag.DAGSetup("TestOrderInDiffFromAcceptanceData", true, blockdag.Config{
 		DAGParams: &params,
 	})
 	if err != nil {
@@ -410,7 +410,7 @@ func TestGasLimit(t *testing.T) {
 	params := dagconfig.SimnetParams
 	params.K = 1
 	params.BlockCoinbaseMaturity = 0
-	dag, teardownFunc, err := blockdag.DAGSetup("TestSubnetworkRegistry", blockdag.Config{
+	dag, teardownFunc, err := blockdag.DAGSetup("TestSubnetworkRegistry", true, blockdag.Config{
 		DAGParams: &params,
 	})
 	if err != nil {

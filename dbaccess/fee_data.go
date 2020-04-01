@@ -1,12 +1,12 @@
 package dbaccess
 
 import (
-	"github.com/kaspanet/kaspad/database2"
+	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 )
 
-var feeBucket = database2.MakeBucket([]byte("fees"))
+var feeBucket = database.MakeBucket([]byte("fees"))
 
 // FetchFeeData returns the fee data of a block by its hash.
 func FetchFeeData(context Context, blockHash *daghash.Hash) ([]byte, error) {

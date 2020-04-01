@@ -3,7 +3,6 @@ package indexers
 import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -97,10 +96,6 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 	}
 	defer os.RemoveAll(db1Path)
 
-	db1, err := database.Create("ffldb", db1Path, params.Net)
-	if err != nil {
-		t.Fatalf("error creating db: %s", err)
-	}
 	err = dbaccess.Open(db1Path)
 	if err != nil {
 		t.Fatalf("error creating db: %s", err)
@@ -109,10 +104,9 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 	db1Config := blockdag.Config{
 		IndexManager: db1IndexManager,
 		DAGParams:    params,
-		DB:           db1,
 	}
 
-	db1DAG, teardown, err := blockdag.DAGSetup("", db1Config)
+	db1DAG, teardown, err := blockdag.DAGSetup("", false, db1Config)
 	if err != nil {
 		t.Fatalf("TestAcceptanceIndexRecover: Failed to setup DAG instance: %v", err)
 	}
@@ -133,11 +127,6 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 			t.Fatalf("ProcessBlock incorrectly returned block %v "+
 				"is an orphan\n", i)
 		}
-	}
-
-	err = db1.FlushCache()
-	if err != nil {
-		t.Fatalf("Error flushing database to disk: %s", err)
 	}
 
 	db2Path, err := ioutil.TempDir("", "TestAcceptanceIndexRecover2")
@@ -171,11 +160,6 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 		t.Fatalf("Error fetching acceptance data: %s", err)
 	}
 
-	db2, err := database.Open("ffldb", db2Path, params.Net)
-	if err != nil {
-		t.Fatalf("Error opening database: %s", err)
-	}
-
 	err = dbaccess.Close()
 	if err != nil {
 		t.Fatalf("Error closing the database: %s", err)
@@ -184,10 +168,9 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 
 	db2Config := blockdag.Config{
 		DAGParams: params,
-		DB:        db2,
 	}
 
-	db2DAG, teardown, err := blockdag.DAGSetup("", db2Config)
+	db2DAG, teardown, err := blockdag.DAGSetup("", false, db2Config)
 	if err != nil {
 		t.Fatalf("TestAcceptanceIndexRecover: Failed to setup DAG instance: %v", err)
 	}
@@ -210,10 +193,6 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 		}
 	}
 
-	err = db2.FlushCache()
-	if err != nil {
-		t.Fatalf("Error flushing database to disk: %s", err)
-	}
 	db3Path, err := ioutil.TempDir("", "TestAcceptanceIndexRecover3")
 	if err != nil {
 		t.Fatalf("Error creating temporary directory: %s", err)
@@ -222,11 +201,6 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 	err = copyDirectory(db2Path, db3Path)
 	if err != nil {
 		t.Fatalf("copyDirectory: %s", err)
-	}
-
-	db3, err := database.Open("ffldb", db3Path, params.Net)
-	if err != nil {
-		t.Fatalf("Error opening database: %s", err)
 	}
 
 	err = dbaccess.Close()
@@ -240,10 +214,9 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 	db3Config := blockdag.Config{
 		IndexManager: db3IndexManager,
 		DAGParams:    params,
-		DB:           db3,
 	}
 
-	_, teardown, err = blockdag.DAGSetup("", db3Config)
+	_, teardown, err = blockdag.DAGSetup("", false, db3Config)
 	if err != nil {
 		t.Fatalf("TestAcceptanceIndexRecover: Failed to setup DAG instance: %v", err)
 	}

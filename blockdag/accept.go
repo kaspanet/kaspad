@@ -72,7 +72,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 		return err
 	}
 	if !blockExists {
-		err := dbStoreBlock(dbTx, block)
+		err := storeBlock(dbTx, block)
 		if err != nil {
 			return err
 		}

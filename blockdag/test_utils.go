@@ -18,33 +18,10 @@ import (
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/kaspanet/kaspad/database"
-	_ "github.com/kaspanet/kaspad/database/ffldb" // blank import ffldb so that its init() function runs before tests
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
-
-const (
-	// testDbType is the database backend type to use for the tests.
-	testDbType = "ffldb"
-
-	// blockDataNet is the expected network in the test block data.
-	blockDataNet = wire.Mainnet
-)
-
-// isSupportedDbType returns whether or not the passed database type is
-// currently supported.
-func isSupportedDbType(dbType string) bool {
-	supportedDrivers := database.SupportedDrivers()
-	for _, driver := range supportedDrivers {
-		if dbType == driver {
-			return true
-		}
-	}
-
-	return false
-}
 
 // FileExists returns whether or not the named file or directory exists.
 func FileExists(name string) bool {
@@ -59,11 +36,10 @@ func FileExists(name string) bool {
 // DAGSetup is used to create a new db and DAG instance with the genesis
 // block already inserted. In addition to the new DAG instance, it returns
 // a teardown function the caller should invoke when done testing to clean up.
-func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
-	if !isSupportedDbType(testDbType) {
-		return nil, nil, errors.Errorf("unsupported db type %s", testDbType)
-	}
-
+// The openDB parameter instructs DAGSetup whether or not to also open the
+// database. Setting it to false is useful in tests that handle database
+// opening/closing by themselves.
+func DAGSetup(dbName string, openDb bool, config Config) (*BlockDAG, func(), error) {
 	var teardown func()
 
 	// To make sure that the teardown function is not called before any goroutines finished to run -
@@ -78,7 +54,7 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 		})
 	}
 
-	if config.DB == nil {
+	if openDb {
 		var err error
 		tmpDir, err := ioutil.TempDir("", "DAGSetup")
 		if err != nil {
@@ -87,10 +63,6 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 
 		dbPath := filepath.Join(tmpDir, dbName)
 		_ = os.RemoveAll(dbPath)
-		config.DB, err = database.Create(testDbType, dbPath, blockDataNet)
-		if err != nil {
-			return nil, nil, errors.Errorf("error creating db: %s", err)
-		}
 		err = dbaccess.Open(dbPath)
 		if err != nil {
 			return nil, nil, errors.Errorf("error creating db: %s", err)
@@ -101,7 +73,6 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 		teardown = func() {
 			spawnWaitGroup.Wait()
 			spawn = realSpawn
-			config.DB.Close()
 			dbaccess.Close()
 			os.RemoveAll(dbPath)
 		}
@@ -109,7 +80,6 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 		teardown = func() {
 			spawnWaitGroup.Wait()
 			spawn = realSpawn
-			config.DB.Close()
 		}
 	}
 

@@ -18,7 +18,6 @@ import (
 
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -61,7 +60,6 @@ type BlockDAG struct {
 	// The following fields are set when the instance is created and can't
 	// be changed afterwards, so there is no need to protect them with a
 	// separate mutex.
-	db           database.DB
 	dagParams    *dagconfig.Params
 	timeSource   TimeSource
 	sigCache     *txscript.SigCache
@@ -749,14 +747,14 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 		LastFinalityPoint: dag.lastFinalityPoint.hash,
 		LocalSubnetworkID: dag.subnetworkID,
 	}
-	err = dbPutDAGState(dbTx, state)
+	err = saveDAGState(dbTx, state)
 	if err != nil {
 		return err
 	}
 
 	// Update the UTXO set using the diffSet that was melded into the
 	// full UTXO set.
-	err = dbUpdateUTXOSet(dbTx, virtualUTXODiff)
+	err = updateUTXOSet(dbTx, virtualUTXODiff)
 	if err != nil {
 		return err
 	}
@@ -1157,7 +1155,7 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 func (node *blockNode) fetchBlueBlocks() ([]*util.Block, error) {
 	blueBlocks := make([]*util.Block, len(node.blues))
 	for i, blueBlockNode := range node.blues {
-		blueBlock, err := dbFetchBlockByHash(dbaccess.NoTx(), blueBlockNode.hash)
+		blueBlock, err := fetchBlockByHash(dbaccess.NoTx(), blueBlockNode.hash)
 		if err != nil {
 			return nil, err
 		}
@@ -2012,12 +2010,6 @@ type IndexManager interface {
 
 // Config is a descriptor which specifies the blockDAG instance configuration.
 type Config struct {
-	// DB defines the database which houses the blocks and will be used to
-	// store all metadata created by this package such as the utxo set.
-	//
-	// This field is required.
-	DB database.DB
-
 	// Interrupt specifies a channel the caller can close to signal that
 	// long running operations, such as catching up indexes or performing
 	// database migrations, should be interrupted.
@@ -2061,9 +2053,6 @@ type Config struct {
 // New returns a BlockDAG instance using the provided configuration details.
 func New(config *Config) (*BlockDAG, error) {
 	// Enforce required config fields.
-	if config.DB == nil {
-		return nil, AssertError("BlockDAG.New database is nil")
-	}
 	if config.DAGParams == nil {
 		return nil, AssertError("BlockDAG.New DAG parameters nil")
 	}
@@ -2074,9 +2063,8 @@ func New(config *Config) (*BlockDAG, error) {
 	params := config.DAGParams
 	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
 
-	index := newBlockIndex(config.DB, params)
+	index := newBlockIndex(params)
 	dag := &BlockDAG{
-		db:                             config.DB,
 		dagParams:                      params,
 		timeSource:                     config.TimeSource,
 		sigCache:                       config.SigCache,

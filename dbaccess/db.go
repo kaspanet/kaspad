@@ -1,16 +1,16 @@
 package dbaccess
 
 import (
-	"github.com/kaspanet/kaspad/database2"
-	"github.com/kaspanet/kaspad/database2/ffldb"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/database/ffldb"
 	"github.com/pkg/errors"
 )
 
 // dbSingleton is a handle to an instance of the kaspad database
-var dbSingleton database2.Database
+var dbSingleton database.Database
 
 // db returns a handle to the database
-func db() (database2.Database, error) {
+func db() (database.Database, error) {
 	if dbSingleton == nil {
 		return nil, errors.New("database is not open")
 	}

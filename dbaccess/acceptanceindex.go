@@ -1,13 +1,13 @@
 package dbaccess
 
 import (
-	"github.com/kaspanet/kaspad/database2"
+	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 )
 
 var (
-	acceptanceIndexBucket = database2.MakeBucket([]byte("acceptance-index"))
+	acceptanceIndexBucket = database.MakeBucket([]byte("acceptance-index"))
 )
 
 // StoreAcceptanceData stores the given acceptanceData in the database.
@@ -45,7 +45,7 @@ func FetchAcceptanceData(context Context, hash *daghash.Hash) ([]byte, error) {
 	key := acceptanceIndexKey(hash)
 	acceptanceData, err := accessor.Get(key)
 	if err != nil {
-		if database2.IsNotFoundError(err) {
+		if database.IsNotFoundError(err) {
 			return nil, errors.Wrapf(err, "acceptance data not found for hash %s", hash)
 		}
 		return nil, err

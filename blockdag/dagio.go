@@ -16,7 +16,6 @@ import (
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/binaryserializer"
 	"github.com/kaspanet/kaspad/util/buffers"
@@ -89,9 +88,9 @@ func deserializeOutpoint(r io.Reader) (*wire.Outpoint, error) {
 	return outpoint, nil
 }
 
-// dbUpdateUTXOSet updates the UTXO set in the database based on the provided
+// updateUTXOSet updates the UTXO set in the database based on the provided
 // UTXO diff.
-func dbUpdateUTXOSet(context dbaccess.Context, virtualUTXODiff *UTXODiff) error {
+func updateUTXOSet(context dbaccess.Context, virtualUTXODiff *UTXODiff) error {
 	for outpoint := range virtualUTXODiff.toRemove {
 		w := outpointKeyPool.Get().(*bytes.Buffer)
 		w.Reset()
@@ -156,18 +155,15 @@ func deserializeDAGState(serializedData []byte) (*dagState, error) {
 	var state *dagState
 	err := json.Unmarshal(serializedData, &state)
 	if err != nil {
-		return nil, database.Error{
-			ErrorCode:   database.ErrCorruption,
-			Description: "corrupt DAG state",
-		}
+		return nil, err
 	}
 
 	return state, nil
 }
 
-// dbPutDAGState uses an existing database transaction to store the latest
+// saveDAGState uses an existing database context to store the latest
 // tip hashes of the DAG.
-func dbPutDAGState(context dbaccess.Context, state *dagState) error {
+func saveDAGState(context dbaccess.Context, state *dagState) error {
 	serializedDAGState, err := serializeDAGState(state)
 	if err != nil {
 		return err
@@ -179,7 +175,7 @@ func dbPutDAGState(context dbaccess.Context, state *dagState) error {
 // createDAGState initializes the DAG state to the
 // genesis block and the node's local subnetwork id.'
 func (dag *BlockDAG) createDAGState(localSubnetworkID *subnetworkid.SubnetworkID) error {
-	return dbPutDAGState(dbaccess.NoTx(), &dagState{
+	return saveDAGState(dbaccess.NoTx(), &dagState{
 		TipHashes:         []*daghash.Hash{dag.dagParams.GenesisHash},
 		LastFinalityPoint: dag.dagParams.GenesisHash,
 		LocalSubnetworkID: localSubnetworkID,
@@ -190,9 +186,8 @@ func (dag *BlockDAG) createDAGState(localSubnetworkID *subnetworkid.SubnetworkID
 // database. When the db does not yet contain any DAG state, both it and the
 // DAG state are initialized to the genesis block.
 func (dag *BlockDAG) initDAGState() error {
-	// Fetch the stored DAG state from the database metadata.
-	// When it doesn't exist, it means the database hasn't been
-	// initialized for use with the DAG yet.
+	// Fetch the stored DAG state from the database. When it doesn't exist,
+	// it means the database hasn't been initialized for use with the DAG yet.
 	serializedDAGState, err := dbaccess.FetchDAGState(dbaccess.NoTx())
 	if dbaccess.IsNotFoundError(err) {
 		// At this point the database has not already been initialized, so
@@ -214,10 +209,7 @@ func (dag *BlockDAG) initDAGState() error {
 			" database by starting kaspad with --reset-db flag", dag.subnetworkID, dagState.LocalSubnetworkID)
 	}
 
-	// Load all of the block data for the known DAG and construct
-	// the block index accordingly.
-	log.Infof("Loading block index...")
-
+	log.Debugf("Loading block index...")
 	var unprocessedBlockNodes []*blockNode
 	blockIndexCursor, err := dbaccess.BlockIndexCursor(dbaccess.NoTx())
 	if err != nil {
@@ -268,10 +260,7 @@ func (dag *BlockDAG) initDAGState() error {
 		dag.blockCount++
 	}
 
-	// Load all of the known UTXO entries and construct the full
-	// UTXO set accordingly.
-	log.Infof("Loading UTXO set...")
-
+	log.Debugf("Loading UTXO set...")
 	fullUTXOCollection := make(utxoCollection)
 	cursor, err := dbaccess.UTXOSetCursor(dbaccess.NoTx())
 	if err != nil {
@@ -301,86 +290,83 @@ func (dag *BlockDAG) initDAGState() error {
 		fullUTXOCollection[*outpoint] = entry
 	}
 
-	// Attempt to load the DAG state from the database.
-	return dag.db.View(func(dbTx database.Tx) error {
-		// Initialize the reachability store
-		log.Infof("Loading reachability data...")
-		err = dag.reachabilityStore.init(dbaccess.NoTx())
+	log.Debugf("Loading reachability data...")
+	err = dag.reachabilityStore.init(dbaccess.NoTx())
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Loading multiset data...")
+	err = dag.multisetStore.init(dbaccess.NoTx())
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Applying the loaded utxoCollection to the virtual block...")
+	dag.virtual.utxoSet, err = newFullUTXOSetFromUTXOCollection(fullUTXOCollection)
+	if err != nil {
+		return AssertError(fmt.Sprintf("Error loading UTXOSet: %s", err))
+	}
+
+	log.Debugf("Applying the stored tips to the virtual block...")
+	tips := newBlockSet()
+	for _, tipHash := range dagState.TipHashes {
+		tip := dag.index.LookupNode(tipHash)
+		if tip == nil {
+			return AssertError(fmt.Sprintf("initDAGState: cannot find "+
+				"DAG tip %s in block index", dagState.TipHashes))
+		}
+		tips.add(tip)
+	}
+	dag.virtual.SetTips(tips)
+
+	log.Debugf("Setting the last finality point...")
+	dag.lastFinalityPoint = dag.index.LookupNode(dagState.LastFinalityPoint)
+	dag.finalizeNodesBelowFinalityPoint(false)
+
+	log.Debugf("Processing unprocessed blockNodes...")
+	for _, node := range unprocessedBlockNodes {
+		// Check to see if the block exists in the block DB. If it
+		// doesn't, the database has certainly been corrupted.
+		blockExists, err := dbaccess.HasBlock(dbaccess.NoTx(), node.hash)
+		if err != nil {
+			return AssertError(fmt.Sprintf("initDAGState: HasBlock "+
+				"for block %s failed: %s", node.hash, err))
+		}
+		if !blockExists {
+			return AssertError(fmt.Sprintf("initDAGState: block %s "+
+				"exists in block index but not in block db", node.hash))
+		}
+
+		// Attempt to accept the block.
+		block, err := fetchBlockByHash(dbaccess.NoTx(), node.hash)
 		if err != nil {
 			return err
 		}
-
-		// Initialize the multiset store
-		log.Infof("Loading multiset data...")
-		err = dag.multisetStore.init(dbaccess.NoTx())
+		isOrphan, isDelayed, err := dag.ProcessBlock(block, BFWasStored)
 		if err != nil {
-			return err
+			log.Warnf("Block %s, which was not previously processed, "+
+				"failed to be accepted to the DAG: %s", node.hash, err)
+			continue
 		}
 
-		// Apply the loaded utxoCollection to the virtual block.
-		dag.virtual.utxoSet, err = newFullUTXOSetFromUTXOCollection(fullUTXOCollection)
-		if err != nil {
-			return AssertError(fmt.Sprintf("Error loading UTXOSet: %s", err))
+		// If the block is an orphan or is delayed then it couldn't have
+		// possibly been written to the block index in the first place.
+		if isOrphan {
+			return AssertError(fmt.Sprintf("Block %s, which was not "+
+				"previously processed, turned out to be an orphan, which is "+
+				"impossible.", node.hash))
 		}
-
-		// Apply the stored tips to the virtual block.
-		tips := newBlockSet()
-		for _, tipHash := range dagState.TipHashes {
-			tip := dag.index.LookupNode(tipHash)
-			if tip == nil {
-				return AssertError(fmt.Sprintf("initDAGState: cannot find "+
-					"DAG tip %s in block index", dagState.TipHashes))
-			}
-			tips.add(tip)
+		if isDelayed {
+			return AssertError(fmt.Sprintf("Block %s, which was not "+
+				"previously processed, turned out to be delayed, which is "+
+				"impossible.", node.hash))
 		}
-		dag.virtual.SetTips(tips)
+	}
 
-		// Set the last finality point
-		dag.lastFinalityPoint = dag.index.LookupNode(dagState.LastFinalityPoint)
-		dag.finalizeNodesBelowFinalityPoint(false)
+	log.Infof("DAG state initialized.")
 
-		// Go over any unprocessed blockNodes and process them now.
-		for _, node := range unprocessedBlockNodes {
-			// Check to see if the block exists in the block DB. If it
-			// doesn't, the database has certainly been corrupted.
-			blockExists, err := dbaccess.HasBlock(dbaccess.NoTx(), node.hash)
-			if err != nil {
-				return AssertError(fmt.Sprintf("initDAGState: HasBlock "+
-					"for block %s failed: %s", node.hash, err))
-			}
-			if !blockExists {
-				return AssertError(fmt.Sprintf("initDAGState: block %s "+
-					"exists in block index but not in block db", node.hash))
-			}
-
-			// Attempt to accept the block.
-			block, err := dbFetchBlockByHash(dbaccess.NoTx(), node.hash)
-			if err != nil {
-				return err
-			}
-			isOrphan, isDelayed, err := dag.ProcessBlock(block, BFWasStored)
-			if err != nil {
-				log.Warnf("Block %s, which was not previously processed, "+
-					"failed to be accepted to the DAG: %s", node.hash, err)
-				continue
-			}
-
-			// If the block is an orphan or is delayed then it couldn't have
-			// possibly been written to the block index in the first place.
-			if isOrphan {
-				return AssertError(fmt.Sprintf("Block %s, which was not "+
-					"previously processed, turned out to be an orphan, which is "+
-					"impossible.", node.hash))
-			}
-			if isDelayed {
-				return AssertError(fmt.Sprintf("Block %s, which was not "+
-					"previously processed, turned out to be delayed, which is "+
-					"impossible.", node.hash))
-			}
-		}
-
-		return nil
-	})
+	return nil
 }
 
 // deserializeBlockNode parses a value in the block index bucket and returns a block node.
@@ -476,9 +462,9 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 	return node, nil
 }
 
-// dbFetchBlockByHash retrieves the raw block for the provided hash,
+// fetchBlockByHash retrieves the raw block for the provided hash,
 // deserializes it, and returns a util.Block of it.
-func dbFetchBlockByHash(context dbaccess.Context, hash *daghash.Hash) (*util.Block, error) {
+func fetchBlockByHash(context dbaccess.Context, hash *daghash.Hash) (*util.Block, error) {
 	blockBytes, err := dbaccess.FetchBlock(context, hash)
 	if err != nil {
 		return nil, err
@@ -486,7 +472,7 @@ func dbFetchBlockByHash(context dbaccess.Context, hash *daghash.Hash) (*util.Blo
 	return util.NewBlockFromBytes(blockBytes)
 }
 
-func dbStoreBlock(context dbaccess.Context, block *util.Block) error {
+func storeBlock(context dbaccess.Context, block *util.Block) error {
 	blockBytes, err := block.Bytes()
 	if err != nil {
 		return err
@@ -578,7 +564,7 @@ func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
 		return nil, errNotInDAG(str)
 	}
 
-	block, err := dbFetchBlockByHash(dbaccess.NoTx(), node.hash)
+	block, err := fetchBlockByHash(dbaccess.NoTx(), node.hash)
 	if err != nil {
 		return nil, err
 	}
