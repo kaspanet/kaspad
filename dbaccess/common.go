@@ -1,8 +1,8 @@
 package dbaccess
 
-import "github.com/kaspanet/kaspad/database2"
+import "github.com/kaspanet/kaspad/database"
 
-func clearBucket(dbTx *TxContext, bucket *database2.Bucket) error {
+func clearBucket(dbTx *TxContext, bucket *database.Bucket) error {
 	accessor, err := dbTx.accessor()
 	if err != nil {
 		return err
