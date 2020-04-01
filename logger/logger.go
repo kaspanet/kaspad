@@ -45,6 +45,7 @@ var (
 	syncLog = BackendLog.Logger("SYNC")
 	txmpLog = BackendLog.Logger("TXMP")
 	utilLog = BackendLog.Logger("UTIL")
+	profLog = BackendLog.Logger("PROF")
 )
 
 // SubsystemTags is an enum of all sub system tags
@@ -65,7 +66,8 @@ var SubsystemTags = struct {
 	SRVR,
 	SYNC,
 	TXMP,
-	UTIL string
+	UTIL,
+	PROF string
 }{
 	ADXR: "ADXR",
 	AMGR: "AMGR",
@@ -84,6 +86,7 @@ var SubsystemTags = struct {
 	SYNC: "SYNC",
 	TXMP: "TXMP",
 	UTIL: "UTIL",
+	PROF: "PROF",
 }
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
@@ -105,6 +108,7 @@ var subsystemLoggers = map[string]*logs.Logger{
 	SubsystemTags.SYNC: syncLog,
 	SubsystemTags.TXMP: txmpLog,
 	SubsystemTags.UTIL: utilLog,
+	SubsystemTags.PROF: profLog,
 }
 
 // InitLog attaches log file and error log file to the backend log.

@@ -609,6 +609,46 @@ func TestReindexIntervalErrors(t *testing.T) {
 	}
 }
 
+func BenchmarkReindexInterval(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		root := newReachabilityTreeNode(&blockNode{})
+
+		const subTreeSize = 70000
+		// We set the interval of the root to subTreeSize*2 because
+		// its first child gets half of the interval, so a reindex
+		// from the root should happen after adding subTreeSize
+		// nodes.
+		root.setInterval(newReachabilityInterval(0, subTreeSize*2))
+
+		currentTreeNode := root
+		for i := 0; i < subTreeSize; i++ {
+			childTreeNode := newReachabilityTreeNode(&blockNode{})
+			_, err := currentTreeNode.addChild(childTreeNode)
+			if err != nil {
+				b.Fatalf("addChild: %s", err)
+			}
+
+			currentTreeNode = childTreeNode
+		}
+
+		remainingIntervalBefore := *root.remainingInterval
+		// After we added subTreeSize nodes, adding the next
+		// node should lead to a reindex from root.
+		fullReindexTriggeringNode := newReachabilityTreeNode(&blockNode{})
+		b.StartTimer()
+		_, err := currentTreeNode.addChild(fullReindexTriggeringNode)
+		b.StopTimer()
+		if err != nil {
+			b.Fatalf("addChild: %s", err)
+		}
+
+		if *root.remainingInterval == remainingIntervalBefore {
+			b.Fatal("Expected a reindex from root, but it didn't happen")
+		}
+	}
+}
+
 func TestFutureCoveringBlockSetString(t *testing.T) {
 	treeNodeA := newReachabilityTreeNode(&blockNode{})
 	treeNodeA.setInterval(newReachabilityInterval(123, 456))
