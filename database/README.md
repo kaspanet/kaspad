@@ -23,13 +23,7 @@ database. Both the Database and the Transaction interfaces (see below) implement
 
 Database
 --------
-This defines the interface of a database that can begin transactions, open cursors,
-and close itself.
-
-Important: This is not part of the DataAccessor interface because the Transaction
-interface implements it as well. Were we to merge Database with DataAccessor,
-implementors of the Transaction interface would be forced to implement methods
-such as Begin and Close, which is undesirable.
+This defines the interface of a database that can begin transactions and close itself.
 
 Transaction
 -----------
