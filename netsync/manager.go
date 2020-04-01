@@ -650,6 +650,8 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		}
 	}
 
+	haveUnknownInvBlock := false
+
 	// Request the advertised inventory if we don't already have it. Also,
 	// request parent blocks of orphans if we receive one we already have.
 	// Finally, attempt to detect potential stalls due to big orphan DAGs
@@ -687,6 +689,10 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 				if _, exists := state.requestedTxns[daghash.TxID(*iv.Hash)]; exists {
 					continue
 				}
+			}
+
+			if iv.Type == wire.InvTypeBlock {
+				haveUnknownInvBlock = true
 			}
 
 			// Add it to the request queue.
@@ -734,10 +740,11 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		log.Errorf("Failed to send invs from queue: %s", err)
 	}
 
-	if !sm.current() {
-		// Getting an inv message is an indication that
-		// one of your peers has more up-to-date than
-		// you have, so it triggers sm.restartSyncIfNeeded()
+	if haveUnknownInvBlock && !sm.current() {
+		// If one of the  an inv message is an unknown block
+		// it is an indication that one of our peers has more
+		// up-to-date date than we, so it triggers
+		// sm.restartSyncIfNeeded().
 		sm.restartSyncIfNeeded()
 	}
 }
