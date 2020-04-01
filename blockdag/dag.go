@@ -1153,15 +1153,9 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 }
 
 func (node *blockNode) fetchBlueBlocks() ([]*util.Block, error) {
-	dbTx, err := dbaccess.NewTx()
-	if err != nil {
-		return nil, err
-	}
-	defer dbTx.RollbackUnlessClosed()
-
 	blueBlocks := make([]*util.Block, len(node.blues))
 	for i, blueBlockNode := range node.blues {
-		blueBlock, err := fetchBlockByHash(dbTx, blueBlockNode.hash)
+		blueBlock, err := fetchBlockByHash(dbaccess.NoTx(), blueBlockNode.hash)
 		if err != nil {
 			return nil, err
 		}

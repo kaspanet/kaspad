@@ -186,15 +186,9 @@ func (dag *BlockDAG) createDAGState(localSubnetworkID *subnetworkid.SubnetworkID
 // database. When the db does not yet contain any DAG state, both it and the
 // DAG state are initialized to the genesis block.
 func (dag *BlockDAG) initDAGState() error {
-	dbTx, err := dbaccess.NewTx()
-	if err != nil {
-		return err
-	}
-	defer dbTx.RollbackUnlessClosed()
-
 	// Fetch the stored DAG state from the database. When it doesn't exist,
 	// it means the database hasn't been initialized for use with the DAG yet.
-	serializedDAGState, err := dbaccess.FetchDAGState(dbTx)
+	serializedDAGState, err := dbaccess.FetchDAGState(dbaccess.NoTx())
 	if dbaccess.IsNotFoundError(err) {
 		// At this point the database has not already been initialized, so
 		// initialize both it and the DAG state to the genesis block.
@@ -217,7 +211,7 @@ func (dag *BlockDAG) initDAGState() error {
 
 	log.Debugf("Loading block index...")
 	var unprocessedBlockNodes []*blockNode
-	blockIndexCursor, err := dbaccess.BlockIndexCursor(dbTx)
+	blockIndexCursor, err := dbaccess.BlockIndexCursor(dbaccess.NoTx())
 	if err != nil {
 		return err
 	}
@@ -268,7 +262,7 @@ func (dag *BlockDAG) initDAGState() error {
 
 	log.Debugf("Loading UTXO set...")
 	fullUTXOCollection := make(utxoCollection)
-	cursor, err := dbaccess.UTXOSetCursor(dbTx)
+	cursor, err := dbaccess.UTXOSetCursor(dbaccess.NoTx())
 	if err != nil {
 		return err
 	}
@@ -297,13 +291,13 @@ func (dag *BlockDAG) initDAGState() error {
 	}
 
 	log.Debugf("Loading reachability data...")
-	err = dag.reachabilityStore.init(dbTx)
+	err = dag.reachabilityStore.init(dbaccess.NoTx())
 	if err != nil {
 		return err
 	}
 
 	log.Debugf("Loading multiset data...")
-	err = dag.multisetStore.init(dbTx)
+	err = dag.multisetStore.init(dbaccess.NoTx())
 	if err != nil {
 		return err
 	}
@@ -334,7 +328,7 @@ func (dag *BlockDAG) initDAGState() error {
 	for _, node := range unprocessedBlockNodes {
 		// Check to see if the block exists in the block DB. If it
 		// doesn't, the database has certainly been corrupted.
-		blockExists, err := dbaccess.HasBlock(dbTx, node.hash)
+		blockExists, err := dbaccess.HasBlock(dbaccess.NoTx(), node.hash)
 		if err != nil {
 			return AssertError(fmt.Sprintf("initDAGState: HasBlock "+
 				"for block %s failed: %s", node.hash, err))
@@ -345,7 +339,7 @@ func (dag *BlockDAG) initDAGState() error {
 		}
 
 		// Attempt to accept the block.
-		block, err := fetchBlockByHash(dbTx, node.hash)
+		block, err := fetchBlockByHash(dbaccess.NoTx(), node.hash)
 		if err != nil {
 			return err
 		}
