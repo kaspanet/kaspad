@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"math"
+	"strings"
 	"testing"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -198,7 +199,7 @@ func TestSubnetworkRegistry(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not register network: %s", err)
 	}
-	limit, err := dag.SubnetworkStore.GasLimit(subnetworkID)
+	limit, err := blockdag.GasLimit(subnetworkID)
 	if err != nil {
 		t.Fatalf("could not retrieve gas limit: %s", err)
 	}
@@ -556,7 +557,7 @@ func TestGasLimit(t *testing.T) {
 	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(nonExistentSubnetworkBlock), blockdag.BFNoPoWCheck)
 	expectedErrStr := fmt.Sprintf("Error getting gas limit for subnetworkID '%s': subnetwork '%s' not found",
 		nonExistentSubnetwork, nonExistentSubnetwork)
-	if err.Error() != expectedErrStr {
+	if strings.Contains(err.Error(), expectedErrStr) {
 		t.Fatalf("ProcessBlock expected error \"%v\" but got \"%v\"", expectedErrStr, err)
 	}
 	if isDelayed {

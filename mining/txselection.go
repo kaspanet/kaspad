@@ -157,7 +157,7 @@ func (g *BlkTmplGenerator) collectCandidatesTxs(sourceTxs []*TxDesc) []*candidat
 		gasLimit := uint64(0)
 		if !tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) && !tx.MsgTx().SubnetworkID.IsBuiltIn() {
 			subnetworkID := tx.MsgTx().SubnetworkID
-			gasLimit, err = g.dag.SubnetworkStore.GasLimit(&subnetworkID)
+			gasLimit, err = blockdag.GasLimit(&subnetworkID)
 			if err != nil {
 				log.Warnf("Skipping tx %s due to error in "+
 					"GasLimit: %s", tx.ID(), err)
@@ -207,7 +207,7 @@ func (g *BlkTmplGenerator) calcTxValue(tx *util.Tx, fee uint64) (float64, error)
 	}
 
 	gas := msgTx.Gas
-	gasLimit, err := g.dag.SubnetworkStore.GasLimit(&msgTx.SubnetworkID)
+	gasLimit, err := blockdag.GasLimit(&msgTx.SubnetworkID)
 	if err != nil {
 		return 0, err
 	}

@@ -913,9 +913,7 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 	blockTime := dag.genesis.Header().Timestamp
 
 	flushUTXODiffStore := func() {
-		err := dag.db.Update(func(dbTx database.Tx) error {
-			return dag.utxoDiffStore.flushToDB(dbTx)
-		})
+		err := dag.utxoDiffStore.flushToDB(dbaccess.NoTx())
 		if err != nil {
 			t.Fatalf("Error flushing utxoDiffStore data to DB: %s", err)
 		}
@@ -960,12 +958,22 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 		} else if !deleteDiffData && !ok {
 			t.Errorf("The diff data of node with blue score %d shouldn't have been unloaded if deleteDiffData is %T", node.blueScore, deleteDiffData)
 		}
-		if diffData, err := dag.utxoDiffStore.diffDataFromDB(node.hash); err != nil {
+
+		_, err := dag.utxoDiffStore.diffDataFromDB(node.hash)
+		exists := !dbaccess.IsNotFoundError(err)
+		if exists && err != nil {
 			t.Errorf("diffDataFromDB: %s", err)
-		} else if deleteDiffData && diffData != nil {
+			continue
+		}
+
+		if deleteDiffData && exists {
 			t.Errorf("The diff data of node with blue score %d should have been deleted from the database if deleteDiffData is %T", node.blueScore, deleteDiffData)
-		} else if !deleteDiffData && diffData == nil {
+			continue
+		}
+
+		if !deleteDiffData && !exists {
 			t.Errorf("The diff data of node with blue score %d shouldn't have been deleted from the database if deleteDiffData is %T", node.blueScore, deleteDiffData)
+			continue
 		}
 	}
 

@@ -32,7 +32,18 @@ func NewAcceptanceIndex() *AcceptanceIndex {
 
 // DropAcceptanceIndex drops the acceptance index.
 func DropAcceptanceIndex() error {
-	return dbaccess.DropAcceptanceIndex()
+	dbTx, err := dbaccess.NewTx()
+	if err != nil {
+		return err
+	}
+	defer dbTx.RollbackUnlessClosed()
+
+	err = dbaccess.DropAcceptanceIndex(dbTx)
+	if err != nil {
+		return err
+	}
+
+	return dbTx.Commit()
 }
 
 // Init initializes the hash-based acceptance index.

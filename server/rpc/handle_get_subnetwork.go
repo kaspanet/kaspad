@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
@@ -17,7 +18,7 @@ func handleGetSubnetwork(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 	var gasLimit *uint64
 	if !subnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) &&
 		!subnetworkID.IsBuiltIn() {
-		limit, err := s.cfg.DAG.SubnetworkStore.GasLimit(subnetworkID)
+		limit, err := blockdag.GasLimit(subnetworkID)
 		if err != nil {
 			return nil, &rpcmodel.RPCError{
 				Code:    rpcmodel.ErrRPCSubnetworkNotFound,

@@ -152,7 +152,6 @@ type BlockDAG struct {
 
 	lastFinalityPoint *blockNode
 
-	SubnetworkStore   *SubnetworkStore
 	utxoDiffStore     *utxoDiffStore
 	reachabilityStore *reachabilityStore
 	multisetStore     *multisetStore
@@ -718,81 +717,85 @@ func addTxToMultiset(ms *secp256k1.MultiSet, tx *wire.MsgTx, pastUTXO UTXOSet, b
 func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UTXODiff,
 	txsAcceptanceData MultiBlockTxsAcceptanceData, feeData compactFeeData) error {
 
-	databaseTx, err := dbaccess.NewTx()
+	dbTx, err := dbaccess.NewTx()
 	if err != nil {
 		return err
 	}
-	defer databaseTx.RollbackUnlessClosed()
+	defer dbTx.RollbackUnlessClosed()
 
-	// Atomically insert info into the database.
-	err = dag.db.Update(func(dbTx database.Tx) error {
-		err := dag.index.flushToDB(databaseTx)
-		if err != nil {
-			return err
-		}
-
-		err = dag.utxoDiffStore.flushToDB(dbTx)
-		if err != nil {
-			return err
-		}
-
-		err = dag.reachabilityStore.flushToDB(dbTx)
-		if err != nil {
-			return err
-		}
-
-		err = dag.multisetStore.flushToDB(dbTx)
-		if err != nil {
-			return err
-		}
-
-		// Update DAG state.
-		state := &dagState{
-			TipHashes:         dag.TipHashes(),
-			LastFinalityPoint: dag.lastFinalityPoint.hash,
-			localSubnetworkID: dag.subnetworkID,
-		}
-		err = dbPutDAGState(databaseTx, state)
-		if err != nil {
-			return err
-		}
-
-		// Update the UTXO set using the diffSet that was melded into the
-		// full UTXO set.
-		err = dbUpdateUTXOSet(databaseTx, virtualUTXODiff)
-		if err != nil {
-			return err
-		}
-
-		// Scan all accepted transactions and register any subnetwork registry
-		// transaction. If any subnetwork registry transaction is not well-formed,
-		// fail the entire block.
-		err = registerSubnetworks(dbTx, block.Transactions())
-		if err != nil {
-			return err
-		}
-
-		// Allow the index manager to call each of the currently active
-		// optional indexes with the block being connected so they can
-		// update themselves accordingly.
-		if dag.indexManager != nil {
-			err := dag.indexManager.ConnectBlock(databaseTx, block.Hash(), txsAcceptanceData)
-			if err != nil {
-				return err
-			}
-		}
-
-		// Apply the fee data into the database
-		return dbStoreFeeData(dbTx, block.Hash(), feeData)
-	})
+	err = dag.index.flushToDB(dbTx)
 	if err != nil {
 		return err
 	}
+
+	err = dag.utxoDiffStore.flushToDB(dbTx)
+	if err != nil {
+		return err
+	}
+
+	err = dag.reachabilityStore.flushToDB(dbTx)
+	if err != nil {
+		return err
+	}
+
+	err = dag.multisetStore.flushToDB(dbTx)
+	if err != nil {
+		return err
+	}
+
+	// Update DAG state.
+	state := &dagState{
+		TipHashes:         dag.TipHashes(),
+		LastFinalityPoint: dag.lastFinalityPoint.hash,
+		LocalSubnetworkID: dag.subnetworkID,
+	}
+	err = dbPutDAGState(dbTx, state)
+	if err != nil {
+		return err
+	}
+
+	// Update the UTXO set using the diffSet that was melded into the
+	// full UTXO set.
+	err = dbUpdateUTXOSet(dbTx, virtualUTXODiff)
+	if err != nil {
+		return err
+	}
+
+	// Scan all accepted transactions and register any subnetwork registry
+	// transaction. If any subnetwork registry transaction is not well-formed,
+	// fail the entire block.
+	err = registerSubnetworks(dbTx, block.Transactions())
+	if err != nil {
+		return err
+	}
+
+	// Allow the index manager to call each of the currently active
+	// optional indexes with the block being connected so they can
+	// update themselves accordingly.
+	if dag.indexManager != nil {
+		err := dag.indexManager.ConnectBlock(dbTx, block.Hash(), txsAcceptanceData)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Apply the fee data into the database
+	err = dbaccess.StoreFeeData(dbTx, block.Hash(), feeData)
+	if err != nil {
+		return err
+	}
+
+	err = dbTx.Commit()
+	if err != nil {
+		return err
+	}
+
 	dag.index.clearDirtyEntries()
 	dag.utxoDiffStore.clearDirtyEntries()
 	dag.reachabilityStore.clearDirtyEntries()
 	dag.multisetStore.clearNewEntries()
-	return databaseTx.Commit()
+
+	return nil
 }
 
 func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
@@ -815,7 +818,7 @@ func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
 		if !msgTx.SubnetworkID.IsEqual(currentSubnetworkID) {
 			currentSubnetworkID = &msgTx.SubnetworkID
 			currentGasUsage = 0
-			currentSubnetworkGasLimit, err = dag.SubnetworkStore.GasLimit(currentSubnetworkID)
+			currentSubnetworkGasLimit, err = GasLimit(currentSubnetworkID)
 			if err != nil {
 				return errors.Errorf("Error getting gas limit for subnetworkID '%s': %s", currentSubnetworkID, err)
 			}
@@ -913,9 +916,7 @@ func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
 		}
 	}
 	if deleteDiffData {
-		err := dag.db.Update(func(dbTx database.Tx) error {
-			return dag.utxoDiffStore.removeBlocksDiffData(dbTx, blockHashesToDelete)
-		})
+		err := dag.utxoDiffStore.removeBlocksDiffData(dbaccess.NoTx(), blockHashesToDelete)
 		if err != nil {
 			panic(fmt.Sprintf("Error removing diff data from utxoDiffStore: %s", err))
 		}
@@ -2092,7 +2093,6 @@ func New(config *Config) (*BlockDAG, error) {
 		warningCaches:                  newThresholdCaches(vbNumBits),
 		deploymentCaches:               newThresholdCaches(dagconfig.DefinedDeployments),
 		blockCount:                     0,
-		SubnetworkStore:                newSubnetworkStore(config.DB),
 		subnetworkID:                   config.SubnetworkID,
 	}
 
@@ -2108,14 +2108,6 @@ func New(config *Config) (*BlockDAG, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if err != nil {
-			err := dag.removeDAGState()
-			if err != nil {
-				panic(fmt.Sprintf("Couldn't remove the DAG State: %s", err))
-			}
-		}
-	}()
 
 	// Initialize and catch up all of the currently active optional indexes
 	// as needed.

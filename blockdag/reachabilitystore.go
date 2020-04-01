@@ -2,7 +2,8 @@ package blockdag
 
 import (
 	"bytes"
-	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/database2"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
@@ -82,7 +83,7 @@ func (store *reachabilityStore) reachabilityDataByHash(hash *daghash.Hash) (*rea
 }
 
 // flushToDB writes all dirty reachability data to the database.
-func (store *reachabilityStore) flushToDB(dbTx database.Tx) error {
+func (store *reachabilityStore) flushToDB(context dbaccess.Context) error {
 	if len(store.dirty) == 0 {
 		return nil
 	}
@@ -90,7 +91,7 @@ func (store *reachabilityStore) flushToDB(dbTx database.Tx) error {
 	for hash := range store.dirty {
 		hash := hash // Copy hash to a new variable to avoid passing the same pointer
 		reachabilityData := store.loaded[hash]
-		err := store.dbStoreReachabilityData(dbTx, &hash, reachabilityData)
+		err := store.storeReachabilityData(context, &hash, reachabilityData)
 		if err != nil {
 			return err
 		}
@@ -102,22 +103,26 @@ func (store *reachabilityStore) clearDirtyEntries() {
 	store.dirty = make(map[daghash.Hash]struct{})
 }
 
-func (store *reachabilityStore) init(dbTx database.Tx) error {
-	bucket := dbTx.Metadata().Bucket(reachabilityDataBucketName)
+func (store *reachabilityStore) init(context dbaccess.Context) error {
 
 	// TODO: (Stas) This is a quick and dirty hack.
 	// We iterate over the entire bucket twice:
 	// * First, populate the loaded set with all entries
 	// * Second, connect the parent/children pointers in each entry
 	//   with other nodes, which are now guaranteed to exist
-	cursor := bucket.Cursor()
+	cursor, err := dbaccess.ReachabilityDataCursor(context)
+	if err != nil {
+		return err
+	}
+	defer cursor.Close()
+
 	for ok := cursor.First(); ok; ok = cursor.Next() {
 		err := store.initReachabilityData(cursor)
 		if err != nil {
 			return err
 		}
 	}
-	cursor = bucket.Cursor()
+
 	for ok := cursor.First(); ok; ok = cursor.Next() {
 		err := store.loadReachabilityDataFromCursor(cursor)
 		if err != nil {
@@ -127,8 +132,13 @@ func (store *reachabilityStore) init(dbTx database.Tx) error {
 	return nil
 }
 
-func (store *reachabilityStore) initReachabilityData(cursor database.Cursor) error {
-	hash, err := daghash.NewHash(cursor.Key())
+func (store *reachabilityStore) initReachabilityData(cursor database2.Cursor) error {
+	key, err := cursor.Key()
+	if err != nil {
+		return err
+	}
+
+	hash, err := daghash.NewHash(key)
 	if err != nil {
 		return err
 	}
@@ -140,8 +150,13 @@ func (store *reachabilityStore) initReachabilityData(cursor database.Cursor) err
 	return nil
 }
 
-func (store *reachabilityStore) loadReachabilityDataFromCursor(cursor database.Cursor) error {
-	hash, err := daghash.NewHash(cursor.Key())
+func (store *reachabilityStore) loadReachabilityDataFromCursor(cursor database2.Cursor) error {
+	key, err := cursor.Key()
+	if err != nil {
+		return err
+	}
+
+	hash, err := daghash.NewHash(key)
 	if err != nil {
 		return err
 	}
@@ -151,7 +166,12 @@ func (store *reachabilityStore) loadReachabilityDataFromCursor(cursor database.C
 		return errors.Errorf("cannot find reachability data for block hash: %s", hash)
 	}
 
-	err = store.deserializeReachabilityData(cursor.Value(), reachabilityData)
+	serializedReachabilityData, err := cursor.Value()
+	if err != nil {
+		return err
+	}
+
+	err = store.deserializeReachabilityData(serializedReachabilityData, reachabilityData)
 	if err != nil {
 		return err
 	}
@@ -162,15 +182,15 @@ func (store *reachabilityStore) loadReachabilityDataFromCursor(cursor database.C
 	return nil
 }
 
-// dbStoreReachabilityData stores the reachability data to the database.
+// storeReachabilityData stores the reachability data to the database.
 // This overwrites the current entry if there exists one.
-func (store *reachabilityStore) dbStoreReachabilityData(dbTx database.Tx, hash *daghash.Hash, reachabilityData *reachabilityData) error {
+func (store *reachabilityStore) storeReachabilityData(context dbaccess.Context, hash *daghash.Hash, reachabilityData *reachabilityData) error {
 	serializedReachabilyData, err := store.serializeReachabilityData(reachabilityData)
 	if err != nil {
 		return err
 	}
 
-	return dbTx.Metadata().Bucket(reachabilityDataBucketName).Put(hash[:], serializedReachabilyData)
+	return dbaccess.StoreReachabilityData(context, hash, serializedReachabilyData)
 }
 
 func (store *reachabilityStore) serializeReachabilityData(reachabilityData *reachabilityData) ([]byte, error) {

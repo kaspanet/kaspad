@@ -3,7 +3,7 @@ package blockdag
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"reflect"
@@ -340,19 +340,21 @@ func TestGHOSTDAGErrors(t *testing.T) {
 
 	// Clear the reachability store
 	dag.reachabilityStore.loaded = map[daghash.Hash]*reachabilityData{}
-	err = dag.db.Update(func(dbTx database.Tx) error {
-		bucket := dbTx.Metadata().Bucket(reachabilityDataBucketName)
-		cursor := bucket.Cursor()
-		for ok := cursor.First(); ok; ok = cursor.Next() {
-			err := bucket.Delete(cursor.Key())
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
+
+	dbTx, err := dbaccess.NewTx()
 	if err != nil {
-		t.Fatalf("TestGHOSTDAGErrors: db.Update failed: %s", err)
+		t.Fatalf("NewTx: %s", err)
+	}
+	defer dbTx.RollbackUnlessClosed()
+
+	err = dbaccess.ClearReachabilityData(dbTx)
+	if err != nil {
+		t.Fatalf("ClearReachabilityData: %s", err)
+	}
+
+	err = dbTx.Commit()
+	if err != nil {
+		t.Fatalf("Commit: %s", err)
 	}
 
 	// Try to rerun GHOSTDAG on the last block. GHOSTDAG uses

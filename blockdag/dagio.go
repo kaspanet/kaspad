@@ -26,22 +26,6 @@ import (
 )
 
 var (
-	// utxoDiffsBucketName is the name of the database bucket used to house the
-	// diffs and diff children of blocks.
-	utxoDiffsBucketName = []byte("utxodiffs")
-
-	// reachabilityDataBucketName is the name of the database bucket used to house the
-	// reachability tree nodes and future covering sets of blocks.
-	reachabilityDataBucketName = []byte("reachability")
-
-	// multisetBucketName is the name of the database bucket used to house the
-	// ECMH multisets of blocks.
-	multisetBucketName = []byte("multiset")
-
-	// subnetworksBucketName is the name of the database bucket used to store the
-	// subnetwork registry.
-	subnetworksBucketName = []byte("subnetworks")
-
 	// byteOrder is the preferred byte order used for serializing numeric
 	// fields for storage in the database.
 	byteOrder = binary.LittleEndian
@@ -156,7 +140,7 @@ func dbUpdateUTXOSet(context dbaccess.Context, virtualUTXODiff *UTXODiff) error 
 type dagState struct {
 	TipHashes         []*daghash.Hash
 	LastFinalityPoint *daghash.Hash
-	localSubnetworkID *subnetworkid.SubnetworkID
+	LocalSubnetworkID *subnetworkid.SubnetworkID
 }
 
 // serializeDAGState returns the serialization of the DAG state.
@@ -192,77 +176,14 @@ func dbPutDAGState(context dbaccess.Context, state *dagState) error {
 	return dbaccess.StoreDAGState(context, serializedDAGState)
 }
 
-// createDAGState initializes both the database and the DAG state to the
-// genesis block. This includes creating the necessary buckets, so it
-// must only be called on an uninitialized database.
-func (dag *BlockDAG) createDAGState() error {
-	// Create the initial the database DAG state including creating the
-	// necessary index buckets and inserting the genesis block.
-	err := dag.db.Update(func(dbTx database.Tx) error {
-		meta := dbTx.Metadata()
-
-		// Create the buckets that house the utxo diffs.
-		_, err := meta.CreateBucket(utxoDiffsBucketName)
-		if err != nil {
-			return err
-		}
-
-		_, err = meta.CreateBucket(reachabilityDataBucketName)
-		if err != nil {
-			return err
-		}
-
-		_, err = meta.CreateBucket(multisetBucketName)
-		if err != nil {
-			return err
-		}
-
-		// Create the bucket that houses the registered subnetworks.
-		_, err = meta.CreateBucket(subnetworksBucketName)
-		if err != nil {
-			return err
-		}
-
-		return nil
+// createDAGState initializes the DAG state to the
+// genesis block and the node's local subnetwork id.'
+func (dag *BlockDAG) createDAGState(localSubnetworkID *subnetworkid.SubnetworkID) error {
+	return dbPutDAGState(dbaccess.NoTx(), &dagState{
+		TipHashes:         []*daghash.Hash{dag.dagParams.GenesisHash},
+		LastFinalityPoint: dag.dagParams.GenesisHash,
+		LocalSubnetworkID: localSubnetworkID,
 	})
-
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (dag *BlockDAG) removeDAGState() error {
-	err := dag.db.Update(func(dbTx database.Tx) error {
-		meta := dbTx.Metadata()
-
-		err := meta.DeleteBucket(utxoDiffsBucketName)
-		if err != nil {
-			return err
-		}
-
-		err = meta.DeleteBucket(reachabilityDataBucketName)
-		if err != nil {
-			return err
-		}
-
-		err = meta.DeleteBucket(multisetBucketName)
-		if err != nil {
-			return err
-		}
-
-		err = meta.DeleteBucket(subnetworksBucketName)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // initDAGState attempts to load and initialize the DAG state from the
@@ -276,7 +197,7 @@ func (dag *BlockDAG) initDAGState() error {
 	if dbaccess.IsNotFoundError(err) {
 		// At this point the database has not already been initialized, so
 		// initialize both it and the DAG state to the genesis block.
-		return dag.createDAGState()
+		return dag.createDAGState(dag.subnetworkID)
 	}
 	if err != nil {
 		return err
@@ -286,11 +207,11 @@ func (dag *BlockDAG) initDAGState() error {
 	if err != nil {
 		return err
 	}
-	if !dagState.localSubnetworkID.IsEqual(dag.subnetworkID) {
+	if !dagState.LocalSubnetworkID.IsEqual(dag.subnetworkID) {
 		return errors.Errorf("Cannot start kaspad with subnetwork ID %s because"+
 			" its database is already built with subnetwork ID %s. If you"+
 			" want to switch to a new database, please reset the"+
-			" database by starting kaspad with --reset-db flag", dag.subnetworkID, dagState.localSubnetworkID)
+			" database by starting kaspad with --reset-db flag", dag.subnetworkID, dagState.LocalSubnetworkID)
 	}
 
 	// Load all of the block data for the known DAG and construct
@@ -384,14 +305,14 @@ func (dag *BlockDAG) initDAGState() error {
 	return dag.db.View(func(dbTx database.Tx) error {
 		// Initialize the reachability store
 		log.Infof("Loading reachability data...")
-		err = dag.reachabilityStore.init(dbTx)
+		err = dag.reachabilityStore.init(dbaccess.NoTx())
 		if err != nil {
 			return err
 		}
 
 		// Initialize the multiset store
 		log.Infof("Loading multiset data...")
-		err = dag.multisetStore.init(dbTx)
+		err = dag.multisetStore.init(dbaccess.NoTx())
 		if err != nil {
 			return err
 		}
