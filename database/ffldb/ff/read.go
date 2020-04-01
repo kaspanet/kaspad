@@ -1,7 +1,7 @@
 package ff
 
 import (
-	"github.com/kaspanet/kaspad/database2"
+	"github.com/kaspanet/kaspad/database"
 	"github.com/pkg/errors"
 	"hash/crc32"
 	"os"
@@ -26,7 +26,7 @@ func (s *flatFileStore) read(location *flatFileLocation) ([]byte, error) {
 	cursor := s.writeCursor
 	if cursor.currentFileNumber < location.fileNumber ||
 		(cursor.currentFileNumber == location.fileNumber && cursor.currentOffset <= location.fileOffset) {
-		return nil, database2.ErrNotFound
+		return nil, database.ErrNotFound
 	}
 
 	// Get the referenced flat file.

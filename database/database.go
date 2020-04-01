@@ -1,4 +1,4 @@
-package database2
+package database
 
 // Database defines the interface of a database that can begin
 // transactions and close itself.

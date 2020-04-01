@@ -1,7 +1,7 @@
 package ffldb
 
 import (
-	"github.com/kaspanet/kaspad/database2"
+	"github.com/kaspanet/kaspad/database"
 	"io/ioutil"
 	"reflect"
 	"testing"
@@ -102,7 +102,7 @@ func TestRepairFlatFiles(t *testing.T) {
 		t.Fatalf("TestRepairFlatFiles: RetrieveFromStore " +
 			"unexpectedly succeeded")
 	}
-	if !database2.IsNotFoundError(err) {
+	if !database.IsNotFoundError(err) {
 		t.Fatalf("TestRepairFlatFiles: RetrieveFromStore "+
 			"returned wrong error: %s", err)
 	}

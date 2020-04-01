@@ -1,7 +1,7 @@
 package dbaccess
 
 import (
-	"github.com/kaspanet/kaspad/database2"
+	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 )
@@ -11,7 +11,7 @@ const (
 )
 
 var (
-	blockLocationsBucket = database2.MakeBucket([]byte("block-locations"))
+	blockLocationsBucket = database.MakeBucket([]byte("block-locations"))
 )
 
 // StoreBlock stores the given block in the database.
@@ -71,7 +71,7 @@ func FetchBlock(context Context, hash *daghash.Hash) ([]byte, error) {
 	blockLocationsKey := blockLocationKey(hash)
 	blockLocation, err := accessor.Get(blockLocationsKey)
 	if err != nil {
-		if database2.IsNotFoundError(err) {
+		if database.IsNotFoundError(err) {
 			return nil, errors.Wrapf(err,
 				"block %s not found", hash)
 		}

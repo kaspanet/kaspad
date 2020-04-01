@@ -1,4 +1,4 @@
-package database2
+package database
 
 // Cursor iterates over database entries given some bucket.
 type Cursor interface {

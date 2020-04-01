@@ -1,15 +1,15 @@
 package dbaccess
 
 import (
-	"github.com/kaspanet/kaspad/database2"
+	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-var reachabilityDataBucket = database2.MakeBucket([]byte("reachability"))
+var reachabilityDataBucket = database.MakeBucket([]byte("reachability"))
 
 // ReachabilityDataCursor opens a cursor over all the
 // reachability data entries.
-func ReachabilityDataCursor(context Context) (database2.Cursor, error) {
+func ReachabilityDataCursor(context Context) (database.Cursor, error) {
 	accessor, err := context.accessor()
 	if err != nil {
 		return nil, err

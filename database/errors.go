@@ -1,4 +1,4 @@
-package database2
+package database
 
 import "errors"
 

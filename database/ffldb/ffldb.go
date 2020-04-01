@@ -1,9 +1,9 @@
 package ffldb
 
 import (
-	"github.com/kaspanet/kaspad/database2"
-	"github.com/kaspanet/kaspad/database2/ffldb/ff"
-	"github.com/kaspanet/kaspad/database2/ffldb/ldb"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/database/ffldb/ff"
+	"github.com/kaspanet/kaspad/database/ffldb/ldb"
 	"github.com/pkg/errors"
 )
 
@@ -11,7 +11,7 @@ var (
 	// flatFilesBucket keeps an index flat-file stores and their
 	// current locations. Among other things, it is used to repair
 	// the database in case a corruption occurs.
-	flatFilesBucket = database2.MakeBucket([]byte("flat-files"))
+	flatFilesBucket = database.MakeBucket([]byte("flat-files"))
 )
 
 // ffldb is a database utilizing LevelDB for key-value data and
@@ -22,7 +22,7 @@ type ffldb struct {
 }
 
 // Open opens a new ffldb with the given path.
-func Open(path string) (database2.Database, error) {
+func Open(path string) (database.Database, error) {
 	ffdb := ff.NewFlatFileDB(path)
 	ldb, err := ldb.NewLevelDB(path)
 	if err != nil {
@@ -94,7 +94,7 @@ func (db *ffldb) AppendToStore(storeName string, data []byte) ([]byte, error) {
 	return appendToStore(db, db.ffdb, storeName, data)
 }
 
-func appendToStore(accessor database2.DataAccessor, ffdb *ff.FlatFileDB, storeName string, data []byte) ([]byte, error) {
+func appendToStore(accessor database.DataAccessor, ffdb *ff.FlatFileDB, storeName string, data []byte) ([]byte, error) {
 	// Save a reference to the current location in case
 	// we fail and need to rollback.
 	previousLocation, err := ffdb.CurrentLocation(storeName)
@@ -139,7 +139,7 @@ func appendToStore(accessor database2.DataAccessor, ffdb *ff.FlatFileDB, storeNa
 	return location, err
 }
 
-func setCurrentStoreLocation(accessor database2.DataAccessor, storeName string, location []byte) error {
+func setCurrentStoreLocation(accessor database.DataAccessor, storeName string, location []byte) error {
 	locationKey := flatFilesBucket.Key([]byte(storeName))
 	return accessor.Put(locationKey, location)
 }
@@ -155,7 +155,7 @@ func (db *ffldb) RetrieveFromStore(storeName string, location []byte) ([]byte, e
 
 // Cursor begins a new cursor over the given bucket.
 // This method is part of the DataAccessor interface.
-func (db *ffldb) Cursor(bucket []byte) (database2.Cursor, error) {
+func (db *ffldb) Cursor(bucket []byte) (database.Cursor, error) {
 	ldbCursor := db.ldb.Cursor(bucket)
 
 	return ldbCursor, nil
@@ -163,7 +163,7 @@ func (db *ffldb) Cursor(bucket []byte) (database2.Cursor, error) {
 
 // Begin begins a new ffldb transaction.
 // This method is part of the Database interface.
-func (db *ffldb) Begin() (database2.Transaction, error) {
+func (db *ffldb) Begin() (database.Transaction, error) {
 	ldbTx, err := db.ldb.Begin()
 	if err != nil {
 		return nil, err

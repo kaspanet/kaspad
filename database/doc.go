@@ -1,5 +1,5 @@
 /*
-Package database2 provides a database for kaspad.
+Package database provides a database for kaspad.
 
 Overview
 
@@ -36,4 +36,4 @@ Cursor
 
 This iterates over database entries given some bucket.
 */
-package database2
+package database

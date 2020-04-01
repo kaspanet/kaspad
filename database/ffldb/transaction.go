@@ -1,9 +1,9 @@
 package ffldb
 
 import (
-	"github.com/kaspanet/kaspad/database2"
-	"github.com/kaspanet/kaspad/database2/ffldb/ff"
-	"github.com/kaspanet/kaspad/database2/ffldb/ldb"
+	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/database/ffldb/ff"
+	"github.com/kaspanet/kaspad/database/ffldb/ldb"
 )
 
 // transaction is an ffldb transaction.
@@ -66,7 +66,7 @@ func (tx *transaction) RetrieveFromStore(storeName string, location []byte) ([]b
 
 // Cursor begins a new cursor over the given bucket.
 // This method is part of the DataAccessor interface.
-func (tx *transaction) Cursor(bucket []byte) (database2.Cursor, error) {
+func (tx *transaction) Cursor(bucket []byte) (database.Cursor, error) {
 	return tx.ldbTx.Cursor(bucket)
 }
 

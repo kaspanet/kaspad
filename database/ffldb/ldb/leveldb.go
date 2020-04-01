@@ -2,7 +2,7 @@ package ldb
 
 import (
 	"encoding/hex"
-	"github.com/kaspanet/kaspad/database2"
+	"github.com/kaspanet/kaspad/database"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 	ldbErrors "github.com/syndtr/goleveldb/leveldb/errors"
@@ -60,7 +60,7 @@ func (db *LevelDB) Get(key []byte) ([]byte, error) {
 	data, err := db.ldb.Get(key, nil)
 	if err != nil {
 		if errors.Is(err, leveldb.ErrNotFound) {
-			return nil, errors.Wrapf(database2.ErrNotFound,
+			return nil, errors.Wrapf(database.ErrNotFound,
 				"key %s not found", hex.EncodeToString(key))
 		}
 		return nil, errors.WithStack(err)

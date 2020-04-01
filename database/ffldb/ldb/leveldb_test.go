@@ -1,7 +1,7 @@
 package ldb
 
 import (
-	"github.com/kaspanet/kaspad/database2"
+	"github.com/kaspanet/kaspad/database"
 	"io/ioutil"
 	"reflect"
 	"testing"
@@ -95,7 +95,7 @@ func TestLevelDBTransactionSanity(t *testing.T) {
 		t.Fatalf("TestLevelDBTransactionSanity: Get " +
 			"unexpectedly succeeded")
 	}
-	if !database2.IsNotFoundError(err) {
+	if !database.IsNotFoundError(err) {
 		t.Fatalf("TestLevelDBTransactionSanity: Get "+
 			"returned wrong error: %s", err)
 	}

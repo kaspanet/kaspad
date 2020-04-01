@@ -1,12 +1,12 @@
 package dbaccess
 
 import (
-	"github.com/kaspanet/kaspad/database2"
+	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 )
 
-var utxoDiffsBucket = database2.MakeBucket([]byte("utxo-diffs"))
+var utxoDiffsBucket = database.MakeBucket([]byte("utxo-diffs"))
 
 // StoreUTXODiffData stores the UTXO diff data of a block by its hash.
 func StoreUTXODiffData(context Context, blockHash *daghash.Hash, diffData []byte) error {

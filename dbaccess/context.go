@@ -1,21 +1,21 @@
 package dbaccess
 
 import (
-	"github.com/kaspanet/kaspad/database2"
+	"github.com/kaspanet/kaspad/database"
 )
 
 // Context is an interface type representing the context in which queries run, currently relating to the
 // existence or non-existence of a database transaction
 // Call `.NoTx()` or `.NewTx()` to acquire a Context
 type Context interface {
-	accessor() (database2.DataAccessor, error)
+	accessor() (database.DataAccessor, error)
 }
 
 type noTxContext struct{}
 
 var noTxContextSingleton = &noTxContext{}
 
-func (*noTxContext) accessor() (database2.DataAccessor, error) {
+func (*noTxContext) accessor() (database.DataAccessor, error) {
 	return db()
 }
 
@@ -26,10 +26,10 @@ func NoTx() Context {
 
 // TxContext represents a database context with an attached database transaction
 type TxContext struct {
-	dbTransaction database2.Transaction
+	dbTransaction database.Transaction
 }
 
-func (ctx *TxContext) accessor() (database2.DataAccessor, error) {
+func (ctx *TxContext) accessor() (database.DataAccessor, error) {
 	return ctx.dbTransaction, nil
 }
 

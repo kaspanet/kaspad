@@ -2,7 +2,7 @@ package blockdag
 
 import (
 	"bytes"
-	"github.com/kaspanet/kaspad/database2"
+	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
@@ -132,7 +132,7 @@ func (store *reachabilityStore) init(context dbaccess.Context) error {
 	return nil
 }
 
-func (store *reachabilityStore) initReachabilityData(cursor database2.Cursor) error {
+func (store *reachabilityStore) initReachabilityData(cursor database.Cursor) error {
 	key, err := cursor.Key()
 	if err != nil {
 		return err
@@ -150,7 +150,7 @@ func (store *reachabilityStore) initReachabilityData(cursor database2.Cursor) er
 	return nil
 }
 
-func (store *reachabilityStore) loadReachabilityDataFromCursor(cursor database2.Cursor) error {
+func (store *reachabilityStore) loadReachabilityDataFromCursor(cursor database.Cursor) error {
 	key, err := cursor.Key()
 	if err != nil {
 		return err

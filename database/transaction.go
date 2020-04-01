@@ -1,4 +1,4 @@
-package database2
+package database
 
 // Transaction defines the interface of a generic kaspad database
 // transaction.

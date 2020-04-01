@@ -1,4 +1,4 @@
-package database2
+package database
 
 // DataAccessor defines the common interface by which data gets
 // accessed in a generic kaspad database.
