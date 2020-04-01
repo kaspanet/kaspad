@@ -36,6 +36,9 @@ func FileExists(name string) bool {
 // DAGSetup is used to create a new db and DAG instance with the genesis
 // block already inserted. In addition to the new DAG instance, it returns
 // a teardown function the caller should invoke when done testing to clean up.
+// The openDB parameter instructs DAGSetup whether or not to also open the
+// database. Setting it to false is useful in tests that handle database
+// opening/closing by themselves.
 func DAGSetup(dbName string, openDb bool, config Config) (*BlockDAG, func(), error) {
 	var teardown func()
 
