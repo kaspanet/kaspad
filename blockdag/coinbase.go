@@ -78,9 +78,14 @@ func (cfr *compactFeeIterator) next() (uint64, error) {
 // used to calculate the fees this blockNode needs to pay
 func (node *blockNode) getBluesFeeData(dag *BlockDAG) (map[daghash.Hash]compactFeeData, error) {
 	bluesFeeData := make(map[daghash.Hash]compactFeeData)
+	dbTx, err := dbaccess.NewTx()
+	if err != nil {
+		return nil, err
+	}
+	defer dbTx.RollbackUnlessClosed()
 
 	for _, blueBlock := range node.blues {
-		feeData, err := dbaccess.FetchFeeData(dbaccess.NoTx(), blueBlock.hash)
+		feeData, err := dbaccess.FetchFeeData(dbTx, blueBlock.hash)
 		if err != nil {
 			return nil, err
 		}
