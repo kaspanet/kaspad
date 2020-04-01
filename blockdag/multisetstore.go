@@ -71,7 +71,7 @@ func (store *multisetStore) flushToDB(context dbaccess.Context) error {
 			return err
 		}
 
-		err = store.dbStoreMultiset(context, &hash, w.Bytes())
+		err = store.storeMultiset(context, &hash, w.Bytes())
 		if err != nil {
 			return err
 		}
@@ -114,8 +114,8 @@ func (store *multisetStore) init(context dbaccess.Context) error {
 	return nil
 }
 
-// dbStoreMultiset stores the multiset data to the database.
-func (store *multisetStore) dbStoreMultiset(context dbaccess.Context, blockHash *daghash.Hash, serializedMS []byte) error {
+// storeMultiset stores the multiset data to the database.
+func (store *multisetStore) storeMultiset(context dbaccess.Context, blockHash *daghash.Hash, serializedMS []byte) error {
 	exists, err := dbaccess.HasMultiset(context, blockHash)
 	if err != nil {
 		return err

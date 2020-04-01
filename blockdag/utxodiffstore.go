@@ -140,7 +140,7 @@ func (diffStore *utxoDiffStore) flushToDB(context dbaccess.Context) error {
 		hash := hash // Copy hash to a new variable to avoid passing the same pointer
 		buffer.Reset()
 		diffData := diffStore.loaded[hash]
-		err := dbStoreDiffData(context, buffer, &hash, diffData)
+		err := storeDiffData(context, buffer, &hash, diffData)
 		if err != nil {
 			return err
 		}
@@ -152,9 +152,9 @@ func (diffStore *utxoDiffStore) clearDirtyEntries() {
 	diffStore.dirty = make(map[daghash.Hash]struct{})
 }
 
-// dbStoreDiffData stores the UTXO diff data to the database.
+// storeDiffData stores the UTXO diff data to the database.
 // This overwrites the current entry if there exists one.
-func dbStoreDiffData(context dbaccess.Context, w *bytes.Buffer, hash *daghash.Hash, diffData *blockUTXODiffData) error {
+func storeDiffData(context dbaccess.Context, w *bytes.Buffer, hash *daghash.Hash, diffData *blockUTXODiffData) error {
 	// To avoid a ton of allocs, use the io.Writer
 	// instead of allocating one. We expect the buffer to
 	// already be initalized and, in most cases, to already
