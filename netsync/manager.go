@@ -733,6 +733,13 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 	if err != nil {
 		log.Errorf("Failed to send invs from queue: %s", err)
 	}
+
+	if !sm.current() {
+		// Getting an inv message is an indication that
+		// one of your peers has more up-to-date than
+		// you have, so it triggers sm.restartSyncIfNeeded()
+		sm.restartSyncIfNeeded()
+	}
 }
 
 func (sm *SyncManager) addInvsToGetDataMessageFromQueue(gdmsg *wire.MsgGetData, state *peerSyncState, invType wire.InvType, maxInvsToAdd int) error {
