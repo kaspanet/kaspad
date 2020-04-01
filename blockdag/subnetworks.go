@@ -101,13 +101,11 @@ func GasLimit(subnetworkID *subnetworkid.SubnetworkID) (uint64, error) {
 }
 
 func registerSubnetwork(context dbaccess.Context, subnetworkID *subnetworkid.SubnetworkID, network *subnetwork) error {
-	// Serialize the subnetwork
 	serializedSubnetwork, err := serializeSubnetwork(network)
 	if err != nil {
 		return errors.Errorf("failed to serialize sub-netowrk '%s': %s", subnetworkID, err)
 	}
 
-	// Store the subnetwork
 	return dbaccess.StoreSubnetwork(context, subnetworkID, serializedSubnetwork)
 }
 
