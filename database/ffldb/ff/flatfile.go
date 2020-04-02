@@ -129,7 +129,7 @@ type writeCursor struct {
 func openFlatFileStore(basePath string, storeName string) (*flatFileStore, error) {
 	// Look for the end of the latest file to determine what the write cursor
 	// position is from the viewpoint of the flat files on disk.
-	fileNumber, fileOffset, err := scanFlatFiles(basePath, storeName)
+	fileNumber, fileOffset, err := findCurrentLocation(basePath, storeName)
 	if err != nil {
 		return nil, err
 	}
@@ -184,10 +184,10 @@ func (s *flatFileStore) currentLocation() *flatFileLocation {
 	}
 }
 
-// scanFlatFiles searches the database directory for all flat files for a given
+// findCurrentLocation searches the database directory for all flat files for a given
 // store to find the end of the most recent file. This position is considered
 // the current write cursor.
-func scanFlatFiles(dbPath string, storeName string) (fileNumber uint32, fileLength uint32, err error) {
+func findCurrentLocation(dbPath string, storeName string) (fileNumber uint32, fileLength uint32, err error) {
 	currentFileNumber := uint32(0)
 	currentFileLength := uint32(0)
 	for {
