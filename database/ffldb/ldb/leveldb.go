@@ -46,13 +46,15 @@ func NewLevelDB(path string) (*LevelDB, error) {
 
 // Close closes the leveldb instance.
 func (db *LevelDB) Close() error {
-	return errors.WithStack(db.ldb.Close())
+	err := db.ldb.Close()
+	return errors.WithStack(err)
 }
 
 // Put sets the value for the given key. It overwrites
 // any previous value for that key.
 func (db *LevelDB) Put(key []byte, value []byte) error {
-	return errors.WithStack(db.ldb.Put(key, value, nil))
+	err := db.ldb.Put(key, value, nil)
+	return errors.WithStack(err)
 }
 
 // Get gets the value for the given key. It returns
@@ -82,5 +84,6 @@ func (db *LevelDB) Has(key []byte) (bool, error) {
 // Delete deletes the value for the given key. Will not
 // return an error if the key doesn't exist.
 func (db *LevelDB) Delete(key []byte) error {
-	return errors.WithStack(db.ldb.Delete(key, nil))
+	err := db.ldb.Delete(key, nil)
+	return errors.WithStack(err)
 }
