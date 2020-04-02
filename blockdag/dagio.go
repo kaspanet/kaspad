@@ -187,7 +187,7 @@ func (dag *BlockDAG) createDAGState(localSubnetworkID *subnetworkid.SubnetworkID
 // DAG state are initialized to the genesis block.
 func (dag *BlockDAG) initDAGState() error {
 	// Fetch the stored DAG state from the database. If it doesn't exist,
-	// it means that we're running for the first time.
+	// it means that kaspad is running for the first time.
 	serializedDAGState, err := dbaccess.FetchDAGState(dbaccess.NoTx())
 	if dbaccess.IsNotFoundError(err) {
 		// Initialize the database and the DAG state to the genesis block.
