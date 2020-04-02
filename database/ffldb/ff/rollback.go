@@ -66,7 +66,7 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 	if s.writeCursor.currentFileNumber > targetFileNumber {
 		s.writeCursor.currentFile.Lock()
 		if s.writeCursor.currentFile.file != nil {
-			_ = s.writeCursor.currentFile.file.Close()
+			s.writeCursor.currentFile.file.Close()
 			s.writeCursor.currentFile.file = nil
 		}
 		s.writeCursor.currentFile.Unlock()
