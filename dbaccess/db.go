@@ -23,12 +23,12 @@ func Open(path string) error {
 		return errors.New("database is already open")
 	}
 
-	openDB, err := ffldb.Open(path)
+	db, err := ffldb.Open(path)
 	if err != nil {
 		return err
 	}
 
-	dbSingleton = openDB
+	dbSingleton = db
 	return nil
 }
 
