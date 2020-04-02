@@ -59,6 +59,8 @@ func (c *LevelDBCursor) Seek(key []byte) error {
 	if !found {
 		return notFoundErr
 	}
+
+	// Use c.ldbIterator.Key because c.Key removes the prefix from the key
 	currentKey := c.ldbIterator.Key()
 	if currentKey == nil {
 		return notFoundErr
