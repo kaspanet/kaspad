@@ -575,7 +575,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	}
 
 	// Apply all changes to the DAG.
-	virtualUTXODiff, _, chainUpdates, err := dag.applyDAGChanges(node, newBlockUTXO, newBlockMultiSet, selectedParentAnticone)
+	virtualUTXODiff, chainUpdates, err := dag.applyDAGChanges(node, newBlockUTXO, newBlockMultiSet, selectedParentAnticone)
 	if err != nil {
 		// Since all validation logic has already ran, if applyDAGChanges errors out,
 		// this means we have a problem in the internal structure of the DAG - a problem which is
@@ -997,34 +997,33 @@ func (dag *BlockDAG) TxsAcceptedByBlockHash(blockHash *daghash.Hash) (MultiBlock
 //
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, newBlockMultiset *secp256k1.MultiSet, selectedParentAnticone []*blockNode) (
-	virtualUTXODiff *UTXODiff, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData,
-	chainUpdates *chainUpdates, err error) {
+	virtualUTXODiff *UTXODiff, chainUpdates *chainUpdates, err error) {
 
 	// Add the block to the reachability structures
 	err = dag.updateReachability(node, selectedParentAnticone)
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed updating reachability")
+		return nil, nil, errors.Wrap(err, "failed updating reachability")
 	}
 
 	dag.multisetStore.setMultiset(node, newBlockMultiset)
 
 	if err = node.updateParents(dag, newBlockUTXO); err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "failed updating parents of %s", node)
+		return nil, nil, errors.Wrapf(err, "failed updating parents of %s", node)
 	}
 
 	// Update the virtual block's parents (the DAG tips) to include the new block.
 	chainUpdates = dag.virtual.AddTip(node)
 
 	// Build a UTXO set for the new virtual block
-	newVirtualUTXO, _, virtualTxsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
+	newVirtualUTXO, _, _, err := dag.pastUTXO(&dag.virtual.blockNode)
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "could not restore past UTXO for virtual")
+		return nil, nil, errors.Wrap(err, "could not restore past UTXO for virtual")
 	}
 
 	// Apply new utxoDiffs to all the tips
 	err = updateTipsUTXO(dag, newVirtualUTXO)
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed updating the tips' UTXO")
+		return nil, nil, errors.Wrap(err, "failed updating the tips' UTXO")
 	}
 
 	// It is now safe to meld the UTXO set to base.
@@ -1032,7 +1031,7 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, newB
 	virtualUTXODiff = diffSet.UTXODiff
 	err = dag.meldVirtualUTXO(diffSet)
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed melding the virtual UTXO")
+		return nil, nil, errors.Wrap(err, "failed melding the virtual UTXO")
 	}
 
 	dag.index.SetStatusFlags(node, statusValid)
@@ -1040,7 +1039,7 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, newB
 	// And now we can update the finality point of the DAG (if required)
 	dag.updateFinalityPoint()
 
-	return virtualUTXODiff, virtualTxsAcceptanceData, chainUpdates, nil
+	return virtualUTXODiff, chainUpdates, nil
 }
 
 func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) error {
