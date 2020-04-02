@@ -164,7 +164,10 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error closing the database: %s", err)
 	}
-	dbaccess.Open(db2Path)
+	err = dbaccess.Open(db2Path)
+	if err != nil {
+		t.Fatalf("error creating db: %s", err)
+	}
 
 	db2Config := blockdag.Config{
 		DAGParams: params,
@@ -207,7 +210,10 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error closing the database: %s", err)
 	}
-	dbaccess.Open(db3Path)
+	err = dbaccess.Open(db3Path)
+	if err != nil {
+		t.Fatalf("error creating db: %s", err)
+	}
 
 	db3AcceptanceIndex := NewAcceptanceIndex()
 	db3IndexManager := NewManager([]Indexer{db3AcceptanceIndex})
