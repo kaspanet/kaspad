@@ -23,9 +23,8 @@ func (s *flatFileStore) read(location *flatFileLocation) ([]byte, error) {
 
 	// Return not-found if the location is greater than or equal to
 	// the current write cursor.
-	cursor := s.writeCursor
-	if cursor.currentFileNumber < location.fileNumber ||
-		(cursor.currentFileNumber == location.fileNumber && cursor.currentOffset <= location.fileOffset) {
+	if s.writeCursor.currentFileNumber < location.fileNumber ||
+		(s.writeCursor.currentFileNumber == location.fileNumber && s.writeCursor.currentOffset <= location.fileOffset) {
 		return nil, database.ErrNotFound
 	}
 
@@ -71,15 +70,14 @@ func (s *flatFileStore) read(location *flatFileLocation) ([]byte, error) {
 // before the caller has acquired a read lock.
 func (s *flatFileStore) flatFile(fileNumber uint32) (*lockableFile, error) {
 	// When the requested flat file is open for writes, return it.
-	cursor := s.writeCursor
-	cursor.RLock()
-	if fileNumber == cursor.currentFileNumber && cursor.currentFile.file != nil {
-		openFile := cursor.currentFile
+	s.writeCursor.RLock()
+	if fileNumber == s.writeCursor.currentFileNumber && s.writeCursor.currentFile.file != nil {
+		openFile := s.writeCursor.currentFile
 		openFile.RLock()
-		cursor.RUnlock()
+		s.writeCursor.RUnlock()
 		return openFile, nil
 	}
-	cursor.RUnlock()
+	s.writeCursor.RUnlock()
 
 	// Try to return an open file under the overall files read lock.
 	s.openFilesMutex.RLock()

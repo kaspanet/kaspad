@@ -33,22 +33,21 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 
 	// Grab the write cursor mutex since it is modified throughout this
 	// function.
-	cursor := s.writeCursor
-	cursor.Lock()
-	defer cursor.Unlock()
+	s.writeCursor.Lock()
+	defer s.writeCursor.Unlock()
 
 	// Nothing to do if the rollback point is the same as the current write
 	// cursor.
 	targetFileNumber := targetLocation.fileNumber
 	targetFileOffset := targetLocation.fileOffset
-	if cursor.currentFileNumber == targetFileNumber && cursor.currentOffset == targetFileOffset {
+	if s.writeCursor.currentFileNumber == targetFileNumber && s.writeCursor.currentOffset == targetFileOffset {
 		return nil
 	}
 
 	// If the rollback point is greater than the current write cursor then
 	// something has gone very wrong, e.g. database corruption.
-	if cursor.currentFileNumber < targetFileNumber ||
-		(cursor.currentFileNumber == targetFileNumber && cursor.currentOffset < targetFileOffset) {
+	if s.writeCursor.currentFileNumber < targetFileNumber ||
+		(s.writeCursor.currentFileNumber == targetFileNumber && s.writeCursor.currentOffset < targetFileOffset) {
 		return errors.Errorf("targetLocation is greater than the " +
 			"current write cursor")
 	}
@@ -56,21 +55,21 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 	// Regardless of any failures that happen below, reposition the write
 	// cursor to the target flat file and offset.
 	defer func() {
-		cursor.currentFileNumber = targetFileNumber
-		cursor.currentOffset = targetFileOffset
+		s.writeCursor.currentFileNumber = targetFileNumber
+		s.writeCursor.currentOffset = targetFileOffset
 	}()
 
 	log.Warnf("ROLLBACK: Rolling back to file %d, offset %d",
 		targetFileNumber, targetFileOffset)
 
 	// Close the current write file if it needs to be deleted.
-	if cursor.currentFileNumber > targetFileNumber {
-		cursor.currentFile.Lock()
-		if cursor.currentFile.file != nil {
-			_ = cursor.currentFile.file.Close()
-			cursor.currentFile.file = nil
+	if s.writeCursor.currentFileNumber > targetFileNumber {
+		s.writeCursor.currentFile.Lock()
+		if s.writeCursor.currentFile.file != nil {
+			_ = s.writeCursor.currentFile.file.Close()
+			s.writeCursor.currentFile.file = nil
 		}
-		cursor.currentFile.Unlock()
+		s.writeCursor.currentFile.Unlock()
 	}
 
 	// Delete all files that are newer than the provided rollback file
@@ -79,41 +78,41 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 	defer s.lruMutex.Unlock()
 	s.openFilesMutex.Lock()
 	defer s.openFilesMutex.Unlock()
-	for cursor.currentFileNumber > targetFileNumber {
-		err := s.deleteFile(cursor.currentFileNumber)
+	for s.writeCursor.currentFileNumber > targetFileNumber {
+		err := s.deleteFile(s.writeCursor.currentFileNumber)
 		if err != nil {
 			return errors.Wrapf(err, "ROLLBACK: Failed to delete file "+
-				"number %d in store '%s'", cursor.currentFileNumber,
+				"number %d in store '%s'", s.writeCursor.currentFileNumber,
 				s.storeName)
 		}
-		cursor.currentFileNumber--
+		s.writeCursor.currentFileNumber--
 	}
 
 	// Open the file for the current write cursor if needed.
-	cursor.currentFile.Lock()
-	if cursor.currentFile.file == nil {
-		openFile, err := s.openWriteFile(cursor.currentFileNumber)
+	s.writeCursor.currentFile.Lock()
+	if s.writeCursor.currentFile.file == nil {
+		openFile, err := s.openWriteFile(s.writeCursor.currentFileNumber)
 		if err != nil {
-			cursor.currentFile.Unlock()
+			s.writeCursor.currentFile.Unlock()
 			return err
 		}
-		cursor.currentFile.file = openFile
+		s.writeCursor.currentFile.file = openFile
 	}
 
 	// Truncate the file to the provided target offset.
-	err := cursor.currentFile.file.Truncate(int64(targetFileOffset))
+	err := s.writeCursor.currentFile.file.Truncate(int64(targetFileOffset))
 	if err != nil {
-		cursor.currentFile.Unlock()
+		s.writeCursor.currentFile.Unlock()
 		return errors.Wrapf(err, "ROLLBACK: Failed to truncate file %d "+
-			"in store '%s'", cursor.currentFileNumber, s.storeName)
+			"in store '%s'", s.writeCursor.currentFileNumber, s.storeName)
 	}
 
 	// Sync the file to disk.
-	err = cursor.currentFile.file.Sync()
-	cursor.currentFile.Unlock()
+	err = s.writeCursor.currentFile.file.Sync()
+	s.writeCursor.currentFile.Unlock()
 	if err != nil {
 		return errors.Wrapf(err, "ROLLBACK: Failed to sync file %d in "+
-			"store '%s'", cursor.currentFileNumber, s.storeName)
+			"store '%s'", s.writeCursor.currentFileNumber, s.storeName)
 	}
 	return nil
 }
