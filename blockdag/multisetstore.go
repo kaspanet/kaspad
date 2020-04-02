@@ -88,6 +88,8 @@ func (store *multisetStore) init(context dbaccess.Context) error {
 	if err != nil {
 		return err
 	}
+	defer cursor.Close()
+
 	for ok := cursor.First(); ok; ok = cursor.Next() {
 		key, err := cursor.Key()
 		if err != nil {

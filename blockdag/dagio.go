@@ -215,6 +215,7 @@ func (dag *BlockDAG) initDAGState() error {
 	if err != nil {
 		return err
 	}
+	defer blockIndexCursor.Close()
 	for blockIndexCursor.Next() {
 		serializedDBNode, err := blockIndexCursor.Value()
 		if err != nil {
@@ -266,6 +267,8 @@ func (dag *BlockDAG) initDAGState() error {
 	if err != nil {
 		return err
 	}
+	defer cursor.Close()
+
 	for cursor.Next() {
 		// Deserialize the outpoint
 		key, err := cursor.Key()
@@ -600,6 +603,7 @@ func (dag *BlockDAG) BlockHashesFrom(lowHash *daghash.Hash, limit int) ([]*dagha
 	if err != nil {
 		return nil, err
 	}
+	defer cursor.Close()
 
 	for cursor.Next() && len(blockHashes) < limit {
 		key, err := cursor.Key()

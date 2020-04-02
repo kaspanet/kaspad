@@ -104,7 +104,6 @@ func (store *reachabilityStore) clearDirtyEntries() {
 }
 
 func (store *reachabilityStore) init(context dbaccess.Context) error {
-
 	// TODO: (Stas) This is a quick and dirty hack.
 	// We iterate over the entire bucket twice:
 	// * First, populate the loaded set with all entries

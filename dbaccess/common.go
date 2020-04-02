@@ -16,6 +16,8 @@ func clearBucket(dbTx *TxContext, bucket *database.Bucket) error {
 	if err != nil {
 		return err
 	}
+	defer cursor.Close()
+
 	for cursor.Next() {
 		key, err := cursor.Key()
 		if err != nil {

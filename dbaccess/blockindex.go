@@ -48,6 +48,7 @@ func BlockIndexCursorFrom(context Context, blockIndexKey []byte) (database.Curso
 		return nil, err
 	}
 	if !found {
+		cursor.Close()
 		return nil, errors.Wrapf(database.ErrNotFound,
 			"entry not found for %s", hex.EncodeToString(blockIndexKey))
 	}
