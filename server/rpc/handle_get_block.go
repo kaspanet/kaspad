@@ -92,7 +92,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	// The verbose flag is set, so generate the JSON object and return it.
 
 	// Deserialize the block.
-	blk, err := util.NewBlockFromBytes(blockBytes)
+	block, err = util.NewBlockFromBytes(blockBytes)
 	if err != nil {
 		context := "Failed to deserialize block"
 		return nil, internalRPCError(err.Error(), context)
@@ -100,7 +100,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 
 	s.cfg.DAG.RLock()
 	defer s.cfg.DAG.RUnlock()
-	blockReply, err := buildGetBlockVerboseResult(s, blk, c.VerboseTx == nil || !*c.VerboseTx)
+	blockReply, err := buildGetBlockVerboseResult(s, block, c.VerboseTx == nil || !*c.VerboseTx)
 	if err != nil {
 		return nil, err
 	}
