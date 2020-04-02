@@ -54,7 +54,7 @@ func (c *LevelDBCursor) Seek(key []byte) (bool, error) {
 }
 
 // Key returns the key of the current key/value pair, or ErrNotFound if done.
-// Not that the key is trimmed to not include the prefix the cursor was opened
+// Note that the key is trimmed to not include the prefix the cursor was opened
 // with. The caller should not modify the contents of the returned slice, and
 // its contents may change on the next call to Next.
 func (c *LevelDBCursor) Key() ([]byte, error) {
