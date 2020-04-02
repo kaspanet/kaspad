@@ -22,9 +22,9 @@ var _ blockdag.IndexManager = (*Manager)(nil)
 
 // Init initializes the enabled indexes.
 // This is part of the blockdag.IndexManager interface.
-func (m *Manager) Init(blockDAG *blockdag.BlockDAG) error {
+func (m *Manager) Init(dag *blockdag.BlockDAG) error {
 	for _, indexer := range m.enabledIndexes {
-		if err := indexer.Init(blockDAG); err != nil {
+		if err := indexer.Init(dag); err != nil {
 			return err
 		}
 	}
