@@ -29,7 +29,7 @@ func (s *flatFileStore) write(data []byte) (*flatFileLocation, error) {
 
 	// Move to the next file if adding the new data would exceed the max
 	// allowed size for the current flat file. Also detect overflow because
-	// even though it isn't possible currently, numbers/ might change in
+	// even though it isn't possible currently, numbers might change in
 	// the future to make it possible.
 	//
 	// NOTE: The writeCursor.currentOffset field isn't protected by the
