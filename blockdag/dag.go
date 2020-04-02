@@ -486,7 +486,17 @@ func (dag *BlockDAG) addBlock(node *blockNode,
 	if err != nil {
 		if errors.As(err, &RuleError{}) {
 			dag.index.SetStatusFlags(node, statusValidateFailed)
-			err := dag.index.flushToDB(dbaccess.NoTx())
+
+			dbTx, err := dbaccess.NewTx()
+			if err != nil {
+				return nil, err
+			}
+			defer dbTx.RollbackUnlessClosed()
+			err = dag.index.flushToDB(dbTx)
+			if err != nil {
+				return nil, err
+			}
+			err = dbTx.Commit()
 			if err != nil {
 				return nil, err
 			}

@@ -51,7 +51,7 @@ func (store *multisetStore) multisetByBlockHash(hash *daghash.Hash) (*secp256k1.
 }
 
 // flushToDB writes all new multiset data to the database.
-func (store *multisetStore) flushToDB(context dbaccess.Context) error {
+func (store *multisetStore) flushToDB(context *dbaccess.TxContext) error {
 	if len(store.new) == 0 {
 		return nil
 	}

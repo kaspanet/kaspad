@@ -911,11 +911,20 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 	blockTime := dag.genesis.Header().Timestamp
 
 	flushUTXODiffStore := func() {
-		err := dag.utxoDiffStore.flushToDB(dbaccess.NoTx())
+		dbTx, err := dbaccess.NewTx()
+		if err != nil {
+			t.Fatalf("Failed to open database transaction: %s", err)
+		}
+		defer dbTx.RollbackUnlessClosed()
+		err = dag.utxoDiffStore.flushToDB(dbTx)
 		if err != nil {
 			t.Fatalf("Error flushing utxoDiffStore data to DB: %s", err)
 		}
 		dag.utxoDiffStore.clearDirtyEntries()
+		err = dbTx.Commit()
+		if err != nil {
+			t.Fatalf("Failed to commit database transaction: %s", err)
+		}
 	}
 
 	addNode := func(parent *blockNode) *blockNode {

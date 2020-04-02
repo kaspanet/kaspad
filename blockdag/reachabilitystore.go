@@ -83,7 +83,7 @@ func (store *reachabilityStore) reachabilityDataByHash(hash *daghash.Hash) (*rea
 }
 
 // flushToDB writes all dirty reachability data to the database.
-func (store *reachabilityStore) flushToDB(context dbaccess.Context) error {
+func (store *reachabilityStore) flushToDB(context *dbaccess.TxContext) error {
 	if len(store.dirty) == 0 {
 		return nil
 	}

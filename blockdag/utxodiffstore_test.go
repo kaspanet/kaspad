@@ -65,10 +65,16 @@ func TestUTXODiffStore(t *testing.T) {
 
 	// Flush changes to db, delete them from the dag.utxoDiffStore.loaded
 	// map, and check if the diff data is re-fetched from the database.
-	err = dag.utxoDiffStore.flushToDB(dbaccess.NoTx())
+	dbTx, err := dbaccess.NewTx()
+	if err != nil {
+		t.Fatalf("Failed to open database transaction: %s", err)
+	}
+	defer dbTx.RollbackUnlessClosed()
+	err = dag.utxoDiffStore.flushToDB(dbTx)
 	if err != nil {
 		t.Fatalf("Error flushing utxoDiffStore data to DB: %s", err)
 	}
+	dbTx.Commit()
 	delete(dag.utxoDiffStore.loaded, *node.hash)
 
 	if storeDiff, err := dag.utxoDiffStore.diffByNode(node); err != nil {
