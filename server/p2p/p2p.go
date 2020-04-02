@@ -6,7 +6,6 @@
 package p2p
 
 import (
-	"bytes"
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
@@ -29,7 +28,6 @@ import (
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/connmgr"
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/logger"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/netsync"
@@ -239,7 +237,6 @@ type Server struct {
 	broadcast             chan broadcastMsg
 	wg                    sync.WaitGroup
 	nat                   serverutils.NAT
-	db                    database.DB
 	TimeSource            blockdag.TimeSource
 	services              wire.ServiceFlag
 
@@ -497,13 +494,8 @@ func (s *Server) pushTxMsg(sp *Peer, txID *daghash.TxID, doneChan chan<- struct{
 func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- struct{},
 	waitChan <-chan struct{}) error {
 
-	// Fetch the raw block bytes from the database.
-	var blockBytes []byte
-	err := sp.server.db.View(func(dbTx database.Tx) error {
-		var err error
-		blockBytes, err = dbTx.FetchBlock(hash)
-		return err
-	})
+	// Fetch the block from the database.
+	block, err := s.DAG.BlockByHash(hash)
 	if err != nil {
 		peerLog.Tracef("Unable to fetch requested block hash %s: %s",
 			hash, err)
@@ -513,19 +505,7 @@ func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- stru
 		}
 		return err
 	}
-
-	// Deserialize the block.
-	var msgBlock wire.MsgBlock
-	err = msgBlock.Deserialize(bytes.NewReader(blockBytes))
-	if err != nil {
-		peerLog.Tracef("Unable to deserialize requested block hash "+
-			"%s: %s", hash, err)
-
-		if doneChan != nil {
-			doneChan <- struct{}{}
-		}
-		return err
-	}
+	msgBlock := block.MsgBlock()
 
 	// If we are a full node and the peer is a partial node, we must convert
 	// the block to a partial block.
@@ -542,7 +522,7 @@ func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- stru
 		<-waitChan
 	}
 
-	sp.QueueMessage(&msgBlock, doneChan)
+	sp.QueueMessage(msgBlock, doneChan)
 
 	return nil
 }
@@ -1513,7 +1493,7 @@ out:
 // NewServer returns a new kaspad server configured to listen on addr for the
 // kaspa network type specified by dagParams. Use start to begin accepting
 // connections from peers.
-func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params, interrupt <-chan struct{}, notifyNewTransactions func(txns []*mempool.TxDesc)) (*Server, error) {
+func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-chan struct{}, notifyNewTransactions func(txns []*mempool.TxDesc)) (*Server, error) {
 	services := defaultServices
 	if config.ActiveConfig().NoPeerBloomFilters {
 		services &^= wire.SFNodeBloom
@@ -1549,7 +1529,6 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		modifyRebroadcastInv:  make(chan interface{}),
 		newOutboundConnection: make(chan *outboundPeerConnectedMsg, config.ActiveConfig().TargetOutboundPeers),
 		nat:                   nat,
-		db:                    db,
 		TimeSource:            blockdag.NewTimeSource(),
 		services:              services,
 		SigCache:              txscript.NewSigCache(config.ActiveConfig().SigCacheMaxSize),
@@ -1573,7 +1552,6 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 	// Create a new block DAG instance with the appropriate configuration.
 	var err error
 	s.DAG, err = blockdag.New(&blockdag.Config{
-		DB:           s.db,
 		Interrupt:    interrupt,
 		DAGParams:    s.DAGParams,
 		TimeSource:   s.TimeSource,

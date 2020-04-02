@@ -6,7 +6,6 @@ import (
 
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/mining"
 	"github.com/kaspanet/kaspad/server/p2p"
@@ -68,7 +67,7 @@ func (s *Server) Stop() error {
 // NewServer returns a new kaspad server configured to listen on addr for the
 // kaspa network type specified by dagParams. Use start to begin accepting
 // connections from peers.
-func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params, interrupt <-chan struct{}) (*Server, error) {
+func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-chan struct{}) (*Server, error) {
 	s := &Server{}
 	var err error
 	notifyNewTransactions := func(txns []*mempool.TxDesc) {
@@ -78,7 +77,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 			s.rpcServer.NotifyNewTransactions(txns)
 		}
 	}
-	s.p2pServer, err = p2p.NewServer(listenAddrs, db, dagParams, interrupt, notifyNewTransactions)
+	s.p2pServer, err = p2p.NewServer(listenAddrs, dagParams, interrupt, notifyNewTransactions)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +96,6 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		s.rpcServer, err = rpc.NewRPCServer(
 			s.startupTime,
 			s.p2pServer,
-			db,
 			blockTemplateGenerator,
 		)
 		if err != nil {

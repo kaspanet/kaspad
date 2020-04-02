@@ -1,9 +1,8 @@
 package blockdag
 
 import (
-	"fmt"
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 	"reflect"
@@ -12,7 +11,7 @@ import (
 
 func TestUTXODiffStore(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestUTXODiffStore", Config{
+	dag, teardownFunc, err := DAGSetup("TestUTXODiffStore", true, Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
@@ -31,9 +30,12 @@ func TestUTXODiffStore(t *testing.T) {
 	// Check that an error is returned when asking for non existing node
 	nonExistingNode := createNode()
 	_, err = dag.utxoDiffStore.diffByNode(nonExistingNode)
-	expectedErrString := fmt.Sprintf("Couldn't find diff data for block %s", nonExistingNode.hash)
-	if err == nil || err.Error() != expectedErrString {
-		t.Errorf("diffByNode: expected error %s but got %s", expectedErrString, err)
+	if !dbaccess.IsNotFoundError(err) {
+		if err != nil {
+			t.Errorf("diffByNode: %s", err)
+		} else {
+			t.Errorf("diffByNode: unexpectedly found diff data")
+		}
 	}
 
 	// Add node's diff data to the utxoDiffStore and check if it's checked correctly.
@@ -63,11 +65,18 @@ func TestUTXODiffStore(t *testing.T) {
 
 	// Flush changes to db, delete them from the dag.utxoDiffStore.loaded
 	// map, and check if the diff data is re-fetched from the database.
-	err = dag.db.Update(func(dbTx database.Tx) error {
-		return dag.utxoDiffStore.flushToDB(dbTx)
-	})
+	dbTx, err := dbaccess.NewTx()
+	if err != nil {
+		t.Fatalf("Failed to open database transaction: %s", err)
+	}
+	defer dbTx.RollbackUnlessClosed()
+	err = dag.utxoDiffStore.flushToDB(dbTx)
 	if err != nil {
 		t.Fatalf("Error flushing utxoDiffStore data to DB: %s", err)
+	}
+	err = dbTx.Commit()
+	if err != nil {
+		t.Fatalf("Failed to commit database transaction: %s", err)
 	}
 	delete(dag.utxoDiffStore.loaded, *node.hash)
 

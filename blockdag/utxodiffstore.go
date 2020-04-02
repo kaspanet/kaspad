@@ -2,10 +2,9 @@ package blockdag
 
 import (
 	"bytes"
-	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/locks"
-	"github.com/pkg/errors"
 )
 
 type blockUTXODiffData struct {
@@ -33,12 +32,11 @@ func (diffStore *utxoDiffStore) setBlockDiff(node *blockNode, diff *UTXODiff) er
 	diffStore.mtx.HighPriorityWriteLock()
 	defer diffStore.mtx.HighPriorityWriteUnlock()
 	// load the diff data from DB to diffStore.loaded
-	_, exists, err := diffStore.diffDataByHash(node.hash)
-	if err != nil {
-		return err
-	}
-	if !exists {
+	_, err := diffStore.diffDataByHash(node.hash)
+	if dbaccess.IsNotFoundError(err) {
 		diffStore.loaded[*node.hash] = &blockUTXODiffData{}
+	} else if err != nil {
+		return err
 	}
 
 	diffStore.loaded[*node.hash].diff = diff
@@ -50,12 +48,9 @@ func (diffStore *utxoDiffStore) setBlockDiffChild(node *blockNode, diffChild *bl
 	diffStore.mtx.HighPriorityWriteLock()
 	defer diffStore.mtx.HighPriorityWriteUnlock()
 	// load the diff data from DB to diffStore.loaded
-	_, exists, err := diffStore.diffDataByHash(node.hash)
+	_, err := diffStore.diffDataByHash(node.hash)
 	if err != nil {
 		return err
-	}
-	if !exists {
-		return diffNotFoundError(node)
 	}
 
 	diffStore.loaded[*node.hash].diffChild = diffChild
@@ -63,9 +58,9 @@ func (diffStore *utxoDiffStore) setBlockDiffChild(node *blockNode, diffChild *bl
 	return nil
 }
 
-func (diffStore *utxoDiffStore) removeBlocksDiffData(dbTx database.Tx, blockHashes []*daghash.Hash) error {
+func (diffStore *utxoDiffStore) removeBlocksDiffData(dbContext dbaccess.Context, blockHashes []*daghash.Hash) error {
 	for _, hash := range blockHashes {
-		err := diffStore.removeBlockDiffData(dbTx, hash)
+		err := diffStore.removeBlockDiffData(dbContext, hash)
 		if err != nil {
 			return err
 		}
@@ -73,11 +68,11 @@ func (diffStore *utxoDiffStore) removeBlocksDiffData(dbTx database.Tx, blockHash
 	return nil
 }
 
-func (diffStore *utxoDiffStore) removeBlockDiffData(dbTx database.Tx, blockHash *daghash.Hash) error {
+func (diffStore *utxoDiffStore) removeBlockDiffData(dbContext dbaccess.Context, blockHash *daghash.Hash) error {
 	diffStore.mtx.LowPriorityWriteLock()
 	defer diffStore.mtx.LowPriorityWriteUnlock()
 	delete(diffStore.loaded, *blockHash)
-	err := dbRemoveDiffData(dbTx, blockHash)
+	err := dbaccess.RemoveDiffData(dbContext, blockHash)
 	if err != nil {
 		return err
 	}
@@ -88,34 +83,24 @@ func (diffStore *utxoDiffStore) setBlockAsDirty(blockHash *daghash.Hash) {
 	diffStore.dirty[*blockHash] = struct{}{}
 }
 
-func (diffStore *utxoDiffStore) diffDataByHash(hash *daghash.Hash) (*blockUTXODiffData, bool, error) {
+func (diffStore *utxoDiffStore) diffDataByHash(hash *daghash.Hash) (*blockUTXODiffData, error) {
 	if diffData, ok := diffStore.loaded[*hash]; ok {
-		return diffData, true, nil
+		return diffData, nil
 	}
 	diffData, err := diffStore.diffDataFromDB(hash)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
-	exists := diffData != nil
-	if exists {
-		diffStore.loaded[*hash] = diffData
-	}
-	return diffData, exists, nil
-}
-
-func diffNotFoundError(node *blockNode) error {
-	return errors.Errorf("Couldn't find diff data for block %s", node.hash)
+	diffStore.loaded[*hash] = diffData
+	return diffData, nil
 }
 
 func (diffStore *utxoDiffStore) diffByNode(node *blockNode) (*UTXODiff, error) {
 	diffStore.mtx.HighPriorityReadLock()
 	defer diffStore.mtx.HighPriorityReadUnlock()
-	diffData, exists, err := diffStore.diffDataByHash(node.hash)
+	diffData, err := diffStore.diffDataByHash(node.hash)
 	if err != nil {
 		return nil, err
-	}
-	if !exists {
-		return nil, diffNotFoundError(node)
 	}
 	return diffData.diff, nil
 }
@@ -123,37 +108,24 @@ func (diffStore *utxoDiffStore) diffByNode(node *blockNode) (*UTXODiff, error) {
 func (diffStore *utxoDiffStore) diffChildByNode(node *blockNode) (*blockNode, error) {
 	diffStore.mtx.HighPriorityReadLock()
 	defer diffStore.mtx.HighPriorityReadUnlock()
-	diffData, exists, err := diffStore.diffDataByHash(node.hash)
+	diffData, err := diffStore.diffDataByHash(node.hash)
 	if err != nil {
 		return nil, err
-	}
-	if !exists {
-		return nil, diffNotFoundError(node)
 	}
 	return diffData.diffChild, nil
 }
 
 func (diffStore *utxoDiffStore) diffDataFromDB(hash *daghash.Hash) (*blockUTXODiffData, error) {
-	var diffData *blockUTXODiffData
-	err := diffStore.dag.db.View(func(dbTx database.Tx) error {
-		bucket := dbTx.Metadata().Bucket(utxoDiffsBucketName)
-		serializedBlockDiffData := bucket.Get(hash[:])
-		if serializedBlockDiffData != nil {
-			var err error
-			diffData, err = diffStore.deserializeBlockUTXODiffData(serializedBlockDiffData)
-			return err
-		}
-		return nil
-	})
+	serializedBlockDiffData, err := dbaccess.FetchUTXODiffData(dbaccess.NoTx(), hash)
 	if err != nil {
 		return nil, err
 	}
-	return diffData, nil
+
+	return diffStore.deserializeBlockUTXODiffData(serializedBlockDiffData)
 }
 
-// flushToDB writes all dirty diff data to the database. If all writes
-// succeed, this clears the dirty set.
-func (diffStore *utxoDiffStore) flushToDB(dbTx database.Tx) error {
+// flushToDB writes all dirty diff data to the database.
+func (diffStore *utxoDiffStore) flushToDB(dbContext *dbaccess.TxContext) error {
 	diffStore.mtx.HighPriorityWriteLock()
 	defer diffStore.mtx.HighPriorityWriteUnlock()
 	if len(diffStore.dirty) == 0 {
@@ -167,7 +139,7 @@ func (diffStore *utxoDiffStore) flushToDB(dbTx database.Tx) error {
 		hash := hash // Copy hash to a new variable to avoid passing the same pointer
 		buffer.Reset()
 		diffData := diffStore.loaded[hash]
-		err := dbStoreDiffData(dbTx, buffer, &hash, diffData)
+		err := storeDiffData(dbContext, buffer, &hash, diffData)
 		if err != nil {
 			return err
 		}
@@ -179,28 +151,18 @@ func (diffStore *utxoDiffStore) clearDirtyEntries() {
 	diffStore.dirty = make(map[daghash.Hash]struct{})
 }
 
-// dbStoreDiffData stores the UTXO diff data to the database.
+// storeDiffData stores the UTXO diff data to the database.
 // This overwrites the current entry if there exists one.
-func dbStoreDiffData(dbTx database.Tx, writeBuffer *bytes.Buffer, hash *daghash.Hash, diffData *blockUTXODiffData) error {
-	// To avoid a ton of allocs, use the given writeBuffer
+func storeDiffData(dbContext dbaccess.Context, w *bytes.Buffer, hash *daghash.Hash, diffData *blockUTXODiffData) error {
+	// To avoid a ton of allocs, use the io.Writer
 	// instead of allocating one. We expect the buffer to
 	// already be initalized and, in most cases, to already
 	// be large enough to accommodate the serialized data
 	// without growing.
-	err := serializeBlockUTXODiffData(writeBuffer, diffData)
+	err := serializeBlockUTXODiffData(w, diffData)
 	if err != nil {
 		return err
 	}
 
-	// Bucket.Put doesn't copy on its own, so we manually
-	// copy here. We do so because we expect the buffer
-	// to be reused once we're done with it.
-	serializedDiffData := make([]byte, writeBuffer.Len())
-	copy(serializedDiffData, writeBuffer.Bytes())
-
-	return dbTx.Metadata().Bucket(utxoDiffsBucketName).Put(hash[:], serializedDiffData)
-}
-
-func dbRemoveDiffData(dbTx database.Tx, hash *daghash.Hash) error {
-	return dbTx.Metadata().Bucket(utxoDiffsBucketName).Delete(hash[:])
+	return dbaccess.StoreUTXODiffData(dbContext, hash, w.Bytes())
 }

@@ -3,7 +3,7 @@ package blockdag
 import (
 	"bytes"
 	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/pkg/errors"
@@ -51,7 +51,7 @@ func (store *multisetStore) multisetByBlockHash(hash *daghash.Hash) (*secp256k1.
 }
 
 // flushToDB writes all new multiset data to the database.
-func (store *multisetStore) flushToDB(dbTx database.Tx) error {
+func (store *multisetStore) flushToDB(dbContext *dbaccess.TxContext) error {
 	if len(store.new) == 0 {
 		return nil
 	}
@@ -71,7 +71,7 @@ func (store *multisetStore) flushToDB(dbTx database.Tx) error {
 			return err
 		}
 
-		err = store.dbStoreMultiset(dbTx, &hash, w.Bytes())
+		err = store.storeMultiset(dbContext, &hash, w.Bytes())
 		if err != nil {
 			return err
 		}
@@ -83,16 +83,30 @@ func (store *multisetStore) clearNewEntries() {
 	store.new = make(map[daghash.Hash]struct{})
 }
 
-func (store *multisetStore) init(dbTx database.Tx) error {
-	bucket := dbTx.Metadata().Bucket(multisetBucketName)
-	cursor := bucket.Cursor()
+func (store *multisetStore) init(dbContext dbaccess.Context) error {
+	cursor, err := dbaccess.MultisetCursor(dbContext)
+	if err != nil {
+		return err
+	}
+	defer cursor.Close()
+
 	for ok := cursor.First(); ok; ok = cursor.Next() {
-		hash, err := daghash.NewHash(cursor.Key())
+		key, err := cursor.Key()
 		if err != nil {
 			return err
 		}
 
-		ms, err := deserializeMultiset(bytes.NewReader(cursor.Value()))
+		hash, err := daghash.NewHash(key)
+		if err != nil {
+			return err
+		}
+
+		serializedMS, err := cursor.Value()
+		if err != nil {
+			return err
+		}
+
+		ms, err := deserializeMultiset(bytes.NewReader(serializedMS))
 		if err != nil {
 			return err
 		}
@@ -102,11 +116,16 @@ func (store *multisetStore) init(dbTx database.Tx) error {
 	return nil
 }
 
-// dbStoreMultiset stores the multiset data to the database.
-func (store *multisetStore) dbStoreMultiset(dbTx database.Tx, blockHash *daghash.Hash, serializedMS []byte) error {
-	bucket := dbTx.Metadata().Bucket(multisetBucketName)
-	if bucket.Get(blockHash[:]) != nil {
+// storeMultiset stores the multiset data to the database.
+func (store *multisetStore) storeMultiset(dbContext dbaccess.Context, blockHash *daghash.Hash, serializedMS []byte) error {
+	exists, err := dbaccess.HasMultiset(dbContext, blockHash)
+	if err != nil {
+		return err
+	}
+
+	if exists {
 		return errors.Errorf("Can't override an existing multiset database entry for block %s", blockHash)
 	}
-	return bucket.Put(blockHash[:], serializedMS)
+
+	return dbaccess.StoreMultiset(dbContext, blockHash, serializedMS)
 }

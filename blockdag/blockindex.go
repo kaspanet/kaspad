@@ -5,10 +5,10 @@
 package blockdag
 
 import (
+	"github.com/kaspanet/kaspad/dbaccess"
 	"sync"
 
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -18,7 +18,6 @@ type blockIndex struct {
 	// The following fields are set when the instance is created and can't
 	// be changed afterwards, so there is no need to protect them with a
 	// separate mutex.
-	db        database.DB
 	dagParams *dagconfig.Params
 
 	sync.RWMutex
@@ -29,9 +28,8 @@ type blockIndex struct {
 // newBlockIndex returns a new empty instance of a block index. The index will
 // be dynamically populated as block nodes are loaded from the database and
 // manually added.
-func newBlockIndex(db database.DB, dagParams *dagconfig.Params) *blockIndex {
+func newBlockIndex(dagParams *dagconfig.Params) *blockIndex {
 	return &blockIndex{
-		db:        db,
 		dagParams: dagParams,
 		index:     make(map[daghash.Hash]*blockNode),
 		dirty:     make(map[*blockNode]struct{}),
@@ -111,17 +109,8 @@ func (bi *blockIndex) UnsetStatusFlags(node *blockNode, flags blockStatus) {
 	bi.dirty[node] = struct{}{}
 }
 
-// flushToDB writes all dirty block nodes to the database. If all writes
-// succeed, this clears the dirty set.
-func (bi *blockIndex) flushToDB() error {
-	return bi.db.Update(func(dbTx database.Tx) error {
-		return bi.flushToDBWithTx(dbTx)
-	})
-}
-
-// flushToDBWithTx writes all dirty block nodes to the database. If all
-// writes succeed, this clears the dirty set.
-func (bi *blockIndex) flushToDBWithTx(dbTx database.Tx) error {
+// flushToDB writes all dirty block nodes to the database.
+func (bi *blockIndex) flushToDB(dbContext *dbaccess.TxContext) error {
 	bi.Lock()
 	defer bi.Unlock()
 	if len(bi.dirty) == 0 {
@@ -129,7 +118,12 @@ func (bi *blockIndex) flushToDBWithTx(dbTx database.Tx) error {
 	}
 
 	for node := range bi.dirty {
-		err := dbStoreBlockNode(dbTx, node)
+		serializedBlockNode, err := serializeBlockNode(node)
+		if err != nil {
+			return err
+		}
+		key := blockIndexKey(node.hash, node.blueScore)
+		err = dbaccess.StoreIndexBlock(dbContext, key, serializedBlockNode)
 		if err != nil {
 			return err
 		}

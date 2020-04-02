@@ -11,7 +11,7 @@ import (
 )
 
 func TestProcessOrphans(t *testing.T) {
-	dag, teardownFunc, err := DAGSetup("TestProcessOrphans", Config{
+	dag, teardownFunc, err := DAGSetup("TestProcessOrphans", true, Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
@@ -76,13 +76,18 @@ func TestProcessDelayedBlocks(t *testing.T) {
 	// We use dag1 so we can build the test blocks with the proper
 	// block header (UTXO commitment, acceptedIDMerkleroot, etc), and
 	// then we use dag2 for the actual test.
-	dag1, teardownFunc, err := DAGSetup("TestProcessDelayedBlocks1", Config{
+	dag1, teardownFunc, err := DAGSetup("TestProcessDelayedBlocks1", true, Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
 	}
-	defer teardownFunc()
+	isDAG1Open := true
+	defer func() {
+		if isDAG1Open {
+			teardownFunc()
+		}
+	}()
 
 	initialTime := dag1.dagParams.GenesisBlock.Header.Timestamp
 	// Here we use a fake time source that returns a timestamp
@@ -116,11 +121,14 @@ func TestProcessDelayedBlocks(t *testing.T) {
 		t.Fatalf("error in PrepareBlockForTest: %s", err)
 	}
 
+	teardownFunc()
+	isDAG1Open = false
+
 	// Here the actual test begins. We add a delayed block and
 	// its child and check that they are not added to the DAG,
 	// and check that they're added only if we add a new block
 	// after the delayed block timestamp is valid.
-	dag2, teardownFunc2, err := DAGSetup("TestProcessDelayedBlocks2", Config{
+	dag2, teardownFunc2, err := DAGSetup("TestProcessDelayedBlocks2", true, Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {

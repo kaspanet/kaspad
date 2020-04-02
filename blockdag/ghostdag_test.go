@@ -3,7 +3,7 @@ package blockdag
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"reflect"
@@ -176,7 +176,7 @@ func TestGHOSTDAG(t *testing.T) {
 		func() {
 			resetExtraNonceForTest()
 			dagParams.K = test.k
-			dag, teardownFunc, err := DAGSetup(fmt.Sprintf("TestGHOSTDAG%d", i), Config{
+			dag, teardownFunc, err := DAGSetup(fmt.Sprintf("TestGHOSTDAG%d", i), true, Config{
 				DAGParams: &dagParams,
 			})
 			if err != nil {
@@ -282,7 +282,7 @@ func checkReds(expectedReds []string, reds map[string]bool) bool {
 
 func TestBlueAnticoneSizeErrors(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestBlueAnticoneSizeErrors", Config{
+	dag, teardownFunc, err := DAGSetup("TestBlueAnticoneSizeErrors", true, Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
@@ -323,7 +323,7 @@ func TestBlueAnticoneSizeErrors(t *testing.T) {
 
 func TestGHOSTDAGErrors(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestGHOSTDAGErrors", Config{
+	dag, teardownFunc, err := DAGSetup("TestGHOSTDAGErrors", true, Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
@@ -340,19 +340,21 @@ func TestGHOSTDAGErrors(t *testing.T) {
 
 	// Clear the reachability store
 	dag.reachabilityStore.loaded = map[daghash.Hash]*reachabilityData{}
-	err = dag.db.Update(func(dbTx database.Tx) error {
-		bucket := dbTx.Metadata().Bucket(reachabilityDataBucketName)
-		cursor := bucket.Cursor()
-		for ok := cursor.First(); ok; ok = cursor.Next() {
-			err := bucket.Delete(cursor.Key())
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
+
+	dbTx, err := dbaccess.NewTx()
 	if err != nil {
-		t.Fatalf("TestGHOSTDAGErrors: db.Update failed: %s", err)
+		t.Fatalf("NewTx: %s", err)
+	}
+	defer dbTx.RollbackUnlessClosed()
+
+	err = dbaccess.ClearReachabilityData(dbTx)
+	if err != nil {
+		t.Fatalf("ClearReachabilityData: %s", err)
+	}
+
+	err = dbTx.Commit()
+	if err != nil {
+		t.Fatalf("Commit: %s", err)
 	}
 
 	// Try to rerun GHOSTDAG on the last block. GHOSTDAG uses

@@ -10,7 +10,7 @@ import (
 func TestAncestorErrors(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	params := dagconfig.SimnetParams
-	dag, teardownFunc, err := DAGSetup("TestAncestorErrors", Config{
+	dag, teardownFunc, err := DAGSetup("TestAncestorErrors", true, Config{
 		DAGParams: &params,
 	})
 	if err != nil {

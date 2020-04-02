@@ -314,7 +314,7 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 	params.BlockCoinbaseMaturity = 0
 
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := blockdag.DAGSetup(dbName, blockdag.Config{
+	dag, teardownFunc, err := blockdag.DAGSetup(dbName, true, blockdag.Config{
 		DAGParams: &params,
 	})
 	if err != nil {

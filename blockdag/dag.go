@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"math"
 	"sort"
 	"sync"
@@ -17,7 +18,6 @@ import (
 
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -60,7 +60,6 @@ type BlockDAG struct {
 	// The following fields are set when the instance is created and can't
 	// be changed afterwards, so there is no need to protect them with a
 	// separate mutex.
-	db           database.DB
 	dagParams    *dagconfig.Params
 	timeSource   TimeSource
 	sigCache     *txscript.SigCache
@@ -151,7 +150,6 @@ type BlockDAG struct {
 
 	lastFinalityPoint *blockNode
 
-	SubnetworkStore   *SubnetworkStore
 	utxoDiffStore     *utxoDiffStore
 	reachabilityStore *reachabilityStore
 	multisetStore     *multisetStore
@@ -488,7 +486,17 @@ func (dag *BlockDAG) addBlock(node *blockNode,
 	if err != nil {
 		if errors.As(err, &RuleError{}) {
 			dag.index.SetStatusFlags(node, statusValidateFailed)
-			err := dag.index.flushToDB()
+
+			dbTx, err := dbaccess.NewTx()
+			if err != nil {
+				return nil, err
+			}
+			defer dbTx.RollbackUnlessClosed()
+			err = dag.index.flushToDB(dbTx)
+			if err != nil {
+				return nil, err
+			}
+			err = dbTx.Commit()
 			if err != nil {
 				return nil, err
 			}
@@ -577,7 +585,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	}
 
 	// Apply all changes to the DAG.
-	virtualUTXODiff, virtualTxsAcceptanceData, chainUpdates, err := dag.applyDAGChanges(node, newBlockUTXO, newBlockMultiSet, selectedParentAnticone)
+	virtualUTXODiff, chainUpdates, err := dag.applyDAGChanges(node, newBlockUTXO, newBlockMultiSet, selectedParentAnticone)
 	if err != nil {
 		// Since all validation logic has already ran, if applyDAGChanges errors out,
 		// this means we have a problem in the internal structure of the DAG - a problem which is
@@ -586,7 +594,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 		panic(err)
 	}
 
-	err = dag.saveChangesFromBlock(block, virtualUTXODiff, txsAcceptanceData, virtualTxsAcceptanceData, newBlockFeeData)
+	err = dag.saveChangesFromBlock(block, virtualUTXODiff, txsAcceptanceData, newBlockFeeData)
 	if err != nil {
 		return nil, err
 	}
@@ -715,81 +723,86 @@ func addTxToMultiset(ms *secp256k1.MultiSet, tx *wire.MsgTx, pastUTXO UTXOSet, b
 }
 
 func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UTXODiff,
-	txsAcceptanceData MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData,
-	feeData compactFeeData) error {
+	txsAcceptanceData MultiBlockTxsAcceptanceData, feeData compactFeeData) error {
 
-	// Atomically insert info into the database.
-	err := dag.db.Update(func(dbTx database.Tx) error {
-		err := dag.index.flushToDBWithTx(dbTx)
-		if err != nil {
-			return err
-		}
-
-		err = dag.utxoDiffStore.flushToDB(dbTx)
-		if err != nil {
-			return err
-		}
-
-		err = dag.reachabilityStore.flushToDB(dbTx)
-		if err != nil {
-			return err
-		}
-
-		err = dag.multisetStore.flushToDB(dbTx)
-		if err != nil {
-			return err
-		}
-
-		// Update best block state.
-		state := &dagState{
-			TipHashes:         dag.TipHashes(),
-			LastFinalityPoint: dag.lastFinalityPoint.hash,
-		}
-		err = dbPutDAGState(dbTx, state)
-		if err != nil {
-			return err
-		}
-
-		// Update the UTXO set using the diffSet that was melded into the
-		// full UTXO set.
-		err = dbPutUTXODiff(dbTx, virtualUTXODiff)
-		if err != nil {
-			return err
-		}
-
-		// Scan all accepted transactions and register any subnetwork registry
-		// transaction. If any subnetwork registry transaction is not well-formed,
-		// fail the entire block.
-		err = registerSubnetworks(dbTx, block.Transactions())
-		if err != nil {
-			return err
-		}
-
-		blockID, err := createBlockID(dbTx, block.Hash())
-		if err != nil {
-			return err
-		}
-
-		// Allow the index manager to call each of the currently active
-		// optional indexes with the block being connected so they can
-		// update themselves accordingly.
-		if dag.indexManager != nil {
-			err := dag.indexManager.ConnectBlock(dbTx, block, blockID, dag, txsAcceptanceData, virtualTxsAcceptanceData)
-			if err != nil {
-				return err
-			}
-		}
-
-		// Apply the fee data into the database
-		return dbStoreFeeData(dbTx, block.Hash(), feeData)
-	})
+	dbTx, err := dbaccess.NewTx()
 	if err != nil {
 		return err
 	}
+	defer dbTx.RollbackUnlessClosed()
+
+	err = dag.index.flushToDB(dbTx)
+	if err != nil {
+		return err
+	}
+
+	err = dag.utxoDiffStore.flushToDB(dbTx)
+	if err != nil {
+		return err
+	}
+
+	err = dag.reachabilityStore.flushToDB(dbTx)
+	if err != nil {
+		return err
+	}
+
+	err = dag.multisetStore.flushToDB(dbTx)
+	if err != nil {
+		return err
+	}
+
+	// Update DAG state.
+	state := &dagState{
+		TipHashes:         dag.TipHashes(),
+		LastFinalityPoint: dag.lastFinalityPoint.hash,
+		LocalSubnetworkID: dag.subnetworkID,
+	}
+	err = saveDAGState(dbTx, state)
+	if err != nil {
+		return err
+	}
+
+	// Update the UTXO set using the diffSet that was melded into the
+	// full UTXO set.
+	err = updateUTXOSet(dbTx, virtualUTXODiff)
+	if err != nil {
+		return err
+	}
+
+	// Scan all accepted transactions and register any subnetwork registry
+	// transaction. If any subnetwork registry transaction is not well-formed,
+	// fail the entire block.
+	err = registerSubnetworks(dbTx, block.Transactions())
+	if err != nil {
+		return err
+	}
+
+	// Allow the index manager to call each of the currently active
+	// optional indexes with the block being connected so they can
+	// update themselves accordingly.
+	if dag.indexManager != nil {
+		err := dag.indexManager.ConnectBlock(dbTx, block.Hash(), txsAcceptanceData)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Apply the fee data into the database
+	err = dbaccess.StoreFeeData(dbTx, block.Hash(), feeData)
+	if err != nil {
+		return err
+	}
+
+	err = dbTx.Commit()
+	if err != nil {
+		return err
+	}
+
 	dag.index.clearDirtyEntries()
 	dag.utxoDiffStore.clearDirtyEntries()
 	dag.reachabilityStore.clearDirtyEntries()
 	dag.multisetStore.clearNewEntries()
+
 	return nil
 }
 
@@ -813,7 +826,7 @@ func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
 		if !msgTx.SubnetworkID.IsEqual(currentSubnetworkID) {
 			currentSubnetworkID = &msgTx.SubnetworkID
 			currentGasUsage = 0
-			currentSubnetworkGasLimit, err = dag.SubnetworkStore.GasLimit(currentSubnetworkID)
+			currentSubnetworkGasLimit, err = GasLimit(currentSubnetworkID)
 			if err != nil {
 				return errors.Errorf("Error getting gas limit for subnetworkID '%s': %s", currentSubnetworkID, err)
 			}
@@ -911,9 +924,7 @@ func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
 		}
 	}
 	if deleteDiffData {
-		err := dag.db.Update(func(dbTx database.Tx) error {
-			return dag.utxoDiffStore.removeBlocksDiffData(dbTx, blockHashesToDelete)
-		})
+		err := dag.utxoDiffStore.removeBlocksDiffData(dbaccess.NoTx(), blockHashesToDelete)
 		if err != nil {
 			panic(fmt.Sprintf("Error removing diff data from utxoDiffStore: %s", err))
 		}
@@ -996,34 +1007,33 @@ func (dag *BlockDAG) TxsAcceptedByBlockHash(blockHash *daghash.Hash) (MultiBlock
 //
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, newBlockMultiset *secp256k1.MultiSet, selectedParentAnticone []*blockNode) (
-	virtualUTXODiff *UTXODiff, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData,
-	chainUpdates *chainUpdates, err error) {
+	virtualUTXODiff *UTXODiff, chainUpdates *chainUpdates, err error) {
 
 	// Add the block to the reachability structures
 	err = dag.updateReachability(node, selectedParentAnticone)
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed updating reachability")
+		return nil, nil, errors.Wrap(err, "failed updating reachability")
 	}
 
 	dag.multisetStore.setMultiset(node, newBlockMultiset)
 
 	if err = node.updateParents(dag, newBlockUTXO); err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "failed updating parents of %s", node)
+		return nil, nil, errors.Wrapf(err, "failed updating parents of %s", node)
 	}
 
 	// Update the virtual block's parents (the DAG tips) to include the new block.
 	chainUpdates = dag.virtual.AddTip(node)
 
 	// Build a UTXO set for the new virtual block
-	newVirtualUTXO, _, virtualTxsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
+	newVirtualUTXO, _, _, err := dag.pastUTXO(&dag.virtual.blockNode)
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "could not restore past UTXO for virtual")
+		return nil, nil, errors.Wrap(err, "could not restore past UTXO for virtual")
 	}
 
 	// Apply new utxoDiffs to all the tips
 	err = updateTipsUTXO(dag, newVirtualUTXO)
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed updating the tips' UTXO")
+		return nil, nil, errors.Wrap(err, "failed updating the tips' UTXO")
 	}
 
 	// It is now safe to meld the UTXO set to base.
@@ -1031,7 +1041,7 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, newB
 	virtualUTXODiff = diffSet.UTXODiff
 	err = dag.meldVirtualUTXO(diffSet)
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed melding the virtual UTXO")
+		return nil, nil, errors.Wrap(err, "failed melding the virtual UTXO")
 	}
 
 	dag.index.SetStatusFlags(node, statusValid)
@@ -1039,7 +1049,7 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, newB
 	// And now we can update the finality point of the DAG (if required)
 	dag.updateFinalityPoint()
 
-	return virtualUTXODiff, virtualTxsAcceptanceData, chainUpdates, nil
+	return virtualUTXODiff, chainUpdates, nil
 }
 
 func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) error {
@@ -1151,21 +1161,17 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 	return genesisPastUTXO
 }
 
-func (node *blockNode) fetchBlueBlocks(db database.DB) ([]*util.Block, error) {
+func (node *blockNode) fetchBlueBlocks() ([]*util.Block, error) {
 	blueBlocks := make([]*util.Block, len(node.blues))
-	err := db.View(func(dbTx database.Tx) error {
-		for i, blueBlockNode := range node.blues {
-			blueBlock, err := dbFetchBlockByNode(dbTx, blueBlockNode)
-			if err != nil {
-				return err
-			}
-
-			blueBlocks[i] = blueBlock
+	for i, blueBlockNode := range node.blues {
+		blueBlock, err := fetchBlockByHash(dbaccess.NoTx(), blueBlockNode.hash)
+		if err != nil {
+			return nil, err
 		}
 
-		return nil
-	})
-	return blueBlocks, err
+		blueBlocks[i] = blueBlock
+	}
+	return blueBlocks, nil
 }
 
 // applyBlueBlocks adds all transactions in the blue blocks to the selectedParent's UTXO set
@@ -1272,7 +1278,7 @@ func (dag *BlockDAG) pastUTXO(node *blockNode) (
 		return nil, nil, nil, err
 	}
 
-	blueBlocks, err := node.fetchBlueBlocks(dag.db)
+	blueBlocks, err := node.fetchBlueBlocks()
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -1935,6 +1941,21 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 	return dag.subnetworkID
 }
 
+// ForEachHash runs the given fn on every hash that's currently known to
+// the DAG.
+//
+// This function is NOT safe for concurrent access. It is meant to be
+// used either on initialization or when the dag lock is held for reads.
+func (dag *BlockDAG) ForEachHash(fn func(hash daghash.Hash) error) error {
+	for hash := range dag.index.index {
+		err := fn(hash)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (dag *BlockDAG) addDelayedBlock(block *util.Block, delay time.Duration) error {
 	processTime := dag.Now().Add(delay)
 	log.Debugf("Adding block to delayed blocks queue (block hash: %s, process time: %s)", block.Hash().String(), processTime)
@@ -1988,25 +2009,16 @@ func (dag *BlockDAG) peekDelayedBlock() *delayedBlock {
 // connected to the DAG for the purpose of supporting optional indexes.
 type IndexManager interface {
 	// Init is invoked during DAG initialize in order to allow the index
-	// manager to initialize itself and any indexes it is managing. The
-	// channel parameter specifies a channel the caller can close to signal
-	// that the process should be interrupted. It can be nil if that
-	// behavior is not desired.
-	Init(database.DB, *BlockDAG, <-chan struct{}) error
+	// manager to initialize itself and any indexes it is managing.
+	Init(*BlockDAG) error
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
-	ConnectBlock(dbTx database.Tx, block *util.Block, blockID uint64, dag *BlockDAG, acceptedTxsData MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData) error
+	ConnectBlock(dbContext *dbaccess.TxContext, blockHash *daghash.Hash, acceptedTxsData MultiBlockTxsAcceptanceData) error
 }
 
 // Config is a descriptor which specifies the blockDAG instance configuration.
 type Config struct {
-	// DB defines the database which houses the blocks and will be used to
-	// store all metadata created by this package such as the utxo set.
-	//
-	// This field is required.
-	DB database.DB
-
 	// Interrupt specifies a channel the caller can close to signal that
 	// long running operations, such as catching up indexes or performing
 	// database migrations, should be interrupted.
@@ -2050,9 +2062,6 @@ type Config struct {
 // New returns a BlockDAG instance using the provided configuration details.
 func New(config *Config) (*BlockDAG, error) {
 	// Enforce required config fields.
-	if config.DB == nil {
-		return nil, AssertError("BlockDAG.New database is nil")
-	}
 	if config.DAGParams == nil {
 		return nil, AssertError("BlockDAG.New DAG parameters nil")
 	}
@@ -2063,9 +2072,8 @@ func New(config *Config) (*BlockDAG, error) {
 	params := config.DAGParams
 	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
 
-	index := newBlockIndex(config.DB, params)
+	index := newBlockIndex(params)
 	dag := &BlockDAG{
-		db:                             config.DB,
 		dagParams:                      params,
 		timeSource:                     config.TimeSource,
 		sigCache:                       config.SigCache,
@@ -2082,7 +2090,6 @@ func New(config *Config) (*BlockDAG, error) {
 		warningCaches:                  newThresholdCaches(vbNumBits),
 		deploymentCaches:               newThresholdCaches(dagconfig.DefinedDeployments),
 		blockCount:                     0,
-		SubnetworkStore:                newSubnetworkStore(config.DB),
 		subnetworkID:                   config.SubnetworkID,
 	}
 
@@ -2098,19 +2105,11 @@ func New(config *Config) (*BlockDAG, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if err != nil {
-			err := dag.removeDAGState()
-			if err != nil {
-				panic(fmt.Sprintf("Couldn't remove the DAG State: %s", err))
-			}
-		}
-	}()
 
 	// Initialize and catch up all of the currently active optional indexes
 	// as needed.
 	if config.IndexManager != nil {
-		err = config.IndexManager.Init(dag.db, dag, config.Interrupt)
+		err = config.IndexManager.Init(dag)
 		if err != nil {
 			return nil, err
 		}

@@ -35,7 +35,7 @@ func TestVirtualBlock(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	params := dagconfig.SimnetParams
 	params.K = 1
-	dag, teardownFunc, err := DAGSetup("TestVirtualBlock", Config{
+	dag, teardownFunc, err := DAGSetup("TestVirtualBlock", true, Config{
 		DAGParams: &params,
 	})
 	if err != nil {
@@ -134,7 +134,7 @@ func TestSelectedPath(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	params := dagconfig.SimnetParams
 	params.K = 1
-	dag, teardownFunc, err := DAGSetup("TestSelectedPath", Config{
+	dag, teardownFunc, err := DAGSetup("TestSelectedPath", true, Config{
 		DAGParams: &params,
 	})
 	if err != nil {
@@ -222,7 +222,7 @@ func TestChainUpdates(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	params := dagconfig.SimnetParams
 	params.K = 1
-	dag, teardownFunc, err := DAGSetup("TestChainUpdates", Config{
+	dag, teardownFunc, err := DAGSetup("TestChainUpdates", true, Config{
 		DAGParams: &params,
 	})
 	if err != nil {

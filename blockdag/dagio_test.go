@@ -11,7 +11,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -189,7 +188,7 @@ func TestDAGStateSerialization(t *testing.T) {
 				TipHashes:         []*daghash.Hash{newHashFromStr("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")},
 				LastFinalityPoint: newHashFromStr("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"),
 			},
-			serialized: []byte("{\"TipHashes\":[[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,79,147,30,131,101,225,90,8,156,104,214,25,0,0,0,0,0]],\"LastFinalityPoint\":[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,79,147,30,131,101,225,90,8,156,104,214,25,0,0,0,0,0]}"),
+			serialized: []byte("{\"TipHashes\":[[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,79,147,30,131,101,225,90,8,156,104,214,25,0,0,0,0,0]],\"LastFinalityPoint\":[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,79,147,30,131,101,225,90,8,156,104,214,25,0,0,0,0,0],\"LocalSubnetworkID\":null}"),
 		},
 		{
 			name: "block 1",
@@ -197,7 +196,7 @@ func TestDAGStateSerialization(t *testing.T) {
 				TipHashes:         []*daghash.Hash{newHashFromStr("00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048")},
 				LastFinalityPoint: newHashFromStr("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"),
 			},
-			serialized: []byte("{\"TipHashes\":[[72,96,235,24,191,27,22,32,227,126,148,144,252,138,66,117,20,65,111,215,81,89,171,134,104,142,154,131,0,0,0,0]],\"LastFinalityPoint\":[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,79,147,30,131,101,225,90,8,156,104,214,25,0,0,0,0,0]}"),
+			serialized: []byte("{\"TipHashes\":[[72,96,235,24,191,27,22,32,227,126,148,144,252,138,66,117,20,65,111,215,81,89,171,134,104,142,154,131,0,0,0,0]],\"LastFinalityPoint\":[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,79,147,30,131,101,225,90,8,156,104,214,25,0,0,0,0,0],\"LocalSubnetworkID\":null}"),
 		},
 	}
 
@@ -230,51 +229,6 @@ func TestDAGStateSerialization(t *testing.T) {
 				"mismatched state - got %v, want %v", i,
 				test.name, state, test.state)
 			continue
-		}
-	}
-}
-
-// TestDAGStateDeserializeErrors performs negative tests against
-// deserializing the DAG state to ensure error paths work as expected.
-func TestDAGStateDeserializeErrors(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name       string
-		serialized []byte
-		errType    error
-	}{
-		{
-			name:       "nothing serialized",
-			serialized: hexToBytes(""),
-			errType:    database.Error{ErrorCode: database.ErrCorruption},
-		},
-		{
-			name:       "corrupted data",
-			serialized: []byte("[[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,7"),
-			errType:    database.Error{ErrorCode: database.ErrCorruption},
-		},
-	}
-
-	for _, test := range tests {
-		// Ensure the expected error type and code is returned.
-		_, err := deserializeDAGState(test.serialized)
-		if reflect.TypeOf(err) != reflect.TypeOf(test.errType) {
-			t.Errorf("deserializeDAGState (%s): expected "+
-				"error type does not match - got %T, want %T",
-				test.name, err, test.errType)
-			continue
-		}
-		var dbErr database.Error
-		if ok := errors.As(err, &dbErr); ok {
-			tderr := test.errType.(database.Error)
-			if dbErr.ErrorCode != tderr.ErrorCode {
-				t.Errorf("deserializeDAGState (%s): "+
-					"wrong error code got: %v, want: %v",
-					test.name, dbErr.ErrorCode,
-					tderr.ErrorCode)
-				continue
-			}
 		}
 	}
 }

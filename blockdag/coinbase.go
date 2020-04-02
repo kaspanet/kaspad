@@ -4,12 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/pkg/errors"
 	"io"
 	"math"
 
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/txsort"
@@ -73,53 +73,22 @@ func (cfr *compactFeeIterator) next() (uint64, error) {
 }
 
 // The following functions relate to storing and retrieving fee data from the database
-var feeBucket = []byte("fees")
 
 // getBluesFeeData returns the compactFeeData for all nodes's blues,
 // used to calculate the fees this blockNode needs to pay
 func (node *blockNode) getBluesFeeData(dag *BlockDAG) (map[daghash.Hash]compactFeeData, error) {
 	bluesFeeData := make(map[daghash.Hash]compactFeeData)
 
-	err := dag.db.View(func(dbTx database.Tx) error {
-		for _, blueBlock := range node.blues {
-			feeData, err := dbFetchFeeData(dbTx, blueBlock.hash)
-			if err != nil {
-				return errors.Errorf("Error getting fee data for block %s: %s", blueBlock.hash, err)
-			}
-
-			bluesFeeData[*blueBlock.hash] = feeData
+	for _, blueBlock := range node.blues {
+		feeData, err := dbaccess.FetchFeeData(dbaccess.NoTx(), blueBlock.hash)
+		if err != nil {
+			return nil, err
 		}
 
-		return nil
-	})
-	if err != nil {
-		return nil, err
+		bluesFeeData[*blueBlock.hash] = feeData
 	}
 
 	return bluesFeeData, nil
-}
-
-func dbStoreFeeData(dbTx database.Tx, blockHash *daghash.Hash, feeData compactFeeData) error {
-	feeBucket, err := dbTx.Metadata().CreateBucketIfNotExists(feeBucket)
-	if err != nil {
-		return errors.Errorf("Error creating or retrieving fee bucket: %s", err)
-	}
-
-	return feeBucket.Put(blockHash.CloneBytes(), feeData)
-}
-
-func dbFetchFeeData(dbTx database.Tx, blockHash *daghash.Hash) (compactFeeData, error) {
-	feeBucket := dbTx.Metadata().Bucket(feeBucket)
-	if feeBucket == nil {
-		return nil, errors.New("Fee bucket does not exist")
-	}
-
-	feeData := feeBucket.Get(blockHash.CloneBytes())
-	if feeData == nil {
-		return nil, errors.Errorf("No fee data found for block %s", blockHash)
-	}
-
-	return feeData, nil
 }
 
 // The following functions deal with building and validating the coinbase transaction

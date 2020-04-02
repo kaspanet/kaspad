@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"math"
+	"strings"
 	"testing"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -40,7 +41,7 @@ func TestFinality(t *testing.T) {
 	params := dagconfig.SimnetParams
 	params.K = 1
 	params.FinalityInterval = 100
-	dag, teardownFunc, err := blockdag.DAGSetup("TestFinality", blockdag.Config{
+	dag, teardownFunc, err := blockdag.DAGSetup("TestFinality", true, blockdag.Config{
 		DAGParams: &params,
 	})
 	if err != nil {
@@ -185,7 +186,7 @@ func TestSubnetworkRegistry(t *testing.T) {
 	params := dagconfig.SimnetParams
 	params.K = 1
 	params.BlockCoinbaseMaturity = 0
-	dag, teardownFunc, err := blockdag.DAGSetup("TestSubnetworkRegistry", blockdag.Config{
+	dag, teardownFunc, err := blockdag.DAGSetup("TestSubnetworkRegistry", true, blockdag.Config{
 		DAGParams: &params,
 	})
 	if err != nil {
@@ -198,7 +199,7 @@ func TestSubnetworkRegistry(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not register network: %s", err)
 	}
-	limit, err := dag.SubnetworkStore.GasLimit(subnetworkID)
+	limit, err := blockdag.GasLimit(subnetworkID)
 	if err != nil {
 		t.Fatalf("could not retrieve gas limit: %s", err)
 	}
@@ -211,7 +212,7 @@ func TestChainedTransactions(t *testing.T) {
 	params := dagconfig.SimnetParams
 	params.BlockCoinbaseMaturity = 0
 	// Create a new database and dag instance to run tests against.
-	dag, teardownFunc, err := blockdag.DAGSetup("TestChainedTransactions", blockdag.Config{
+	dag, teardownFunc, err := blockdag.DAGSetup("TestChainedTransactions", true, blockdag.Config{
 		DAGParams: &params,
 	})
 	if err != nil {
@@ -339,7 +340,7 @@ func TestOrderInDiffFromAcceptanceData(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	params := dagconfig.SimnetParams
 	params.K = math.MaxUint8
-	dag, teardownFunc, err := blockdag.DAGSetup("TestOrderInDiffFromAcceptanceData", blockdag.Config{
+	dag, teardownFunc, err := blockdag.DAGSetup("TestOrderInDiffFromAcceptanceData", true, blockdag.Config{
 		DAGParams: &params,
 	})
 	if err != nil {
@@ -409,7 +410,7 @@ func TestGasLimit(t *testing.T) {
 	params := dagconfig.SimnetParams
 	params.K = 1
 	params.BlockCoinbaseMaturity = 0
-	dag, teardownFunc, err := blockdag.DAGSetup("TestSubnetworkRegistry", blockdag.Config{
+	dag, teardownFunc, err := blockdag.DAGSetup("TestSubnetworkRegistry", true, blockdag.Config{
 		DAGParams: &params,
 	})
 	if err != nil {
@@ -556,7 +557,7 @@ func TestGasLimit(t *testing.T) {
 	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(nonExistentSubnetworkBlock), blockdag.BFNoPoWCheck)
 	expectedErrStr := fmt.Sprintf("Error getting gas limit for subnetworkID '%s': subnetwork '%s' not found",
 		nonExistentSubnetwork, nonExistentSubnetwork)
-	if err.Error() != expectedErrStr {
+	if strings.Contains(err.Error(), expectedErrStr) {
 		t.Fatalf("ProcessBlock expected error \"%v\" but got \"%v\"", expectedErrStr, err)
 	}
 	if isDelayed {

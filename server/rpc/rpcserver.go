@@ -29,7 +29,6 @@ import (
 	"github.com/kaspanet/kaspad/blockdag/indexers"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/mining"
 	"github.com/kaspanet/kaspad/peer"
@@ -771,7 +770,6 @@ type rpcserverConfig struct {
 	TimeSource blockdag.TimeSource
 	DAG        *blockdag.BlockDAG
 	DAGParams  *dagconfig.Params
-	DB         database.DB
 
 	// TxMemPool defines the transaction memory pool to interact with.
 	TxMemPool *mempool.TxPool
@@ -842,7 +840,6 @@ func setupRPCListeners() ([]net.Listener, error) {
 func NewRPCServer(
 	startupTime int64,
 	p2pServer *p2p.Server,
-	db database.DB,
 	blockTemplateGenerator *mining.BlkTmplGenerator,
 
 ) (*Server, error) {
@@ -862,7 +859,6 @@ func NewRPCServer(
 		SyncMgr:             &rpcSyncMgr{p2pServer, p2pServer.SyncManager},
 		TimeSource:          p2pServer.TimeSource,
 		DAGParams:           p2pServer.DAGParams,
-		DB:                  db,
 		TxMemPool:           p2pServer.TxMemPool,
 		Generator:           blockTemplateGenerator,
 		AcceptanceIndex:     p2pServer.AcceptanceIndex,

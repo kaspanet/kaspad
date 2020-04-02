@@ -6,7 +6,7 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
@@ -16,7 +16,17 @@ func (dag *BlockDAG) addNodeToIndexWithInvalidAncestor(block *util.Block) error 
 	newNode, _ := dag.newBlockNode(blockHeader, newBlockSet())
 	newNode.status = statusInvalidAncestor
 	dag.index.AddNode(newNode)
-	return dag.index.flushToDB()
+
+	dbTx, err := dbaccess.NewTx()
+	if err != nil {
+		return err
+	}
+	defer dbTx.RollbackUnlessClosed()
+	err = dag.index.flushToDB(dbTx)
+	if err != nil {
+		return err
+	}
+	return dbTx.Commit()
 }
 
 // maybeAcceptBlock potentially accepts a block into the block DAG. It
@@ -62,13 +72,26 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	// expensive connection logic. It also has some other nice properties
 	// such as making blocks that never become part of the DAG or
 	// blocks that fail to connect available for further analysis.
-	err = dag.db.Update(func(dbTx database.Tx) error {
-		err := dbStoreBlock(dbTx, block)
+	dbTx, err := dbaccess.NewTx()
+	if err != nil {
+		return err
+	}
+	defer dbTx.RollbackUnlessClosed()
+	blockExists, err := dbaccess.HasBlock(dbTx, block.Hash())
+	if err != nil {
+		return err
+	}
+	if !blockExists {
+		err := storeBlock(dbTx, block)
 		if err != nil {
 			return err
 		}
-		return dag.index.flushToDBWithTx(dbTx)
-	})
+	}
+	err = dag.index.flushToDB(dbTx)
+	if err != nil {
+		return err
+	}
+	err = dbTx.Commit()
 	if err != nil {
 		return err
 	}

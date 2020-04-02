@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
@@ -13,7 +14,6 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -40,7 +40,7 @@ func TestBlockCount(t *testing.T) {
 	}
 
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestBlockCount", Config{
+	dag, teardownFunc, err := DAGSetup("TestBlockCount", true, Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
@@ -93,7 +93,7 @@ func TestIsKnownBlock(t *testing.T) {
 	}
 
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("haveblock", Config{
+	dag, teardownFunc, err := DAGSetup("haveblock", true, Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
@@ -550,17 +550,16 @@ func TestNew(t *testing.T) {
 
 	dbPath := filepath.Join(tempDir, "TestNew")
 	_ = os.RemoveAll(dbPath)
-	db, err := database.Create(testDbType, dbPath, blockDataNet)
+	err := dbaccess.Open(dbPath)
 	if err != nil {
 		t.Fatalf("error creating db: %s", err)
 	}
 	defer func() {
-		db.Close()
+		dbaccess.Close()
 		os.RemoveAll(dbPath)
 	}()
 	config := &Config{
 		DAGParams:  &dagconfig.SimnetParams,
-		DB:         db,
 		TimeSource: NewTimeSource(),
 		SigCache:   txscript.NewSigCache(1000),
 	}
@@ -590,19 +589,18 @@ func TestAcceptingInInit(t *testing.T) {
 	// Create a test database
 	dbPath := filepath.Join(tempDir, "TestAcceptingInInit")
 	_ = os.RemoveAll(dbPath)
-	db, err := database.Create(testDbType, dbPath, blockDataNet)
+	err := dbaccess.Open(dbPath)
 	if err != nil {
 		t.Fatalf("error creating db: %s", err)
 	}
 	defer func() {
-		db.Close()
+		dbaccess.Close()
 		os.RemoveAll(dbPath)
 	}()
 
 	// Create a DAG to add the test block into
 	config := &Config{
 		DAGParams:  &dagconfig.SimnetParams,
-		DB:         db,
 		TimeSource: NewTimeSource(),
 		SigCache:   txscript.NewSigCache(1000),
 	}
@@ -625,15 +623,29 @@ func TestAcceptingInInit(t *testing.T) {
 	testNode.status = statusDataStored
 
 	// Manually add the test block to the database
-	err = db.Update(func(dbTx database.Tx) error {
-		err := dbStoreBlock(dbTx, testBlock)
-		if err != nil {
-			return err
-		}
-		return dbStoreBlockNode(dbTx, testNode)
-	})
+	dbTx, err := dbaccess.NewTx()
+	if err != nil {
+		t.Fatalf("Failed to open database "+
+			"transaction: %s", err)
+	}
+	defer dbTx.RollbackUnlessClosed()
+	err = storeBlock(dbTx, testBlock)
+	if err != nil {
+		t.Fatalf("Failed to store block: %s", err)
+	}
+	dbTestNode, err := serializeBlockNode(testNode)
+	if err != nil {
+		t.Fatalf("Failed to serialize blockNode: %s", err)
+	}
+	key := blockIndexKey(testNode.hash, testNode.blueScore)
+	err = dbaccess.StoreIndexBlock(dbTx, key, dbTestNode)
 	if err != nil {
 		t.Fatalf("Failed to update block index: %s", err)
+	}
+	err = dbTx.Commit()
+	if err != nil {
+		t.Fatalf("Failed to commit database "+
+			"transaction: %s", err)
 	}
 
 	// Create a new DAG. We expect this DAG to process the
@@ -654,7 +666,7 @@ func TestConfirmations(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	params := dagconfig.SimnetParams
 	params.K = 1
-	dag, teardownFunc, err := DAGSetup("TestConfirmations", Config{
+	dag, teardownFunc, err := DAGSetup("TestConfirmations", true, Config{
 		DAGParams: &params,
 	})
 	if err != nil {
@@ -757,7 +769,7 @@ func TestAcceptingBlock(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	params := dagconfig.SimnetParams
 	params.K = 3
-	dag, teardownFunc, err := DAGSetup("TestAcceptingBlock", Config{
+	dag, teardownFunc, err := DAGSetup("TestAcceptingBlock", true, Config{
 		DAGParams: &params,
 	})
 	if err != nil {
@@ -887,7 +899,7 @@ func TestFinalizeNodesBelowFinalityPoint(t *testing.T) {
 func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 	params := dagconfig.SimnetParams
 	params.K = 1
-	dag, teardownFunc, err := DAGSetup("testFinalizeNodesBelowFinalityPoint", Config{
+	dag, teardownFunc, err := DAGSetup("testFinalizeNodesBelowFinalityPoint", true, Config{
 		DAGParams: &params,
 	})
 	if err != nil {
@@ -899,13 +911,20 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 	blockTime := dag.genesis.Header().Timestamp
 
 	flushUTXODiffStore := func() {
-		err := dag.db.Update(func(dbTx database.Tx) error {
-			return dag.utxoDiffStore.flushToDB(dbTx)
-		})
+		dbTx, err := dbaccess.NewTx()
+		if err != nil {
+			t.Fatalf("Failed to open database transaction: %s", err)
+		}
+		defer dbTx.RollbackUnlessClosed()
+		err = dag.utxoDiffStore.flushToDB(dbTx)
 		if err != nil {
 			t.Fatalf("Error flushing utxoDiffStore data to DB: %s", err)
 		}
 		dag.utxoDiffStore.clearDirtyEntries()
+		err = dbTx.Commit()
+		if err != nil {
+			t.Fatalf("Failed to commit database transaction: %s", err)
+		}
 	}
 
 	addNode := func(parent *blockNode) *blockNode {
@@ -946,12 +965,22 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 		} else if !deleteDiffData && !ok {
 			t.Errorf("The diff data of node with blue score %d shouldn't have been unloaded if deleteDiffData is %T", node.blueScore, deleteDiffData)
 		}
-		if diffData, err := dag.utxoDiffStore.diffDataFromDB(node.hash); err != nil {
+
+		_, err := dag.utxoDiffStore.diffDataFromDB(node.hash)
+		exists := !dbaccess.IsNotFoundError(err)
+		if exists && err != nil {
 			t.Errorf("diffDataFromDB: %s", err)
-		} else if deleteDiffData && diffData != nil {
+			continue
+		}
+
+		if deleteDiffData && exists {
 			t.Errorf("The diff data of node with blue score %d should have been deleted from the database if deleteDiffData is %T", node.blueScore, deleteDiffData)
-		} else if !deleteDiffData && diffData == nil {
+			continue
+		}
+
+		if !deleteDiffData && !exists {
 			t.Errorf("The diff data of node with blue score %d shouldn't have been deleted from the database if deleteDiffData is %T", node.blueScore, deleteDiffData)
+			continue
 		}
 	}
 
@@ -972,7 +1001,7 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 
 func TestDAGIndexFailedStatus(t *testing.T) {
 	params := dagconfig.SimnetParams
-	dag, teardownFunc, err := DAGSetup("TestDAGIndexFailedStatus", Config{
+	dag, teardownFunc, err := DAGSetup("TestDAGIndexFailedStatus", true, Config{
 		DAGParams: &params,
 	})
 	if err != nil {
