@@ -114,7 +114,7 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 		kasdLog.Infof("Gracefully shutting down the database...")
 		err := dbaccess.Close()
 		if err != nil {
-			kasdLog.Infof("Failed to close the database: %s", err)
+			kasdLog.Errorf("Failed to close the database: %s", err)
 		}
 	}()
 
