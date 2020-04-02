@@ -122,24 +122,17 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 func (s *flatFileStore) deleteFile(fileNumber uint32) error {
 	// Cleanup the file before deleting it
 	if file, ok := s.openFiles[fileNumber]; ok {
-		err := func() error {
-			file.Lock()
-			defer file.Unlock()
-			err := file.Close()
-			if err != nil {
-				return err
-			}
-
-			lruElement := s.fileNumberToLRUElement[fileNumber]
-			s.openFilesLRU.Remove(lruElement)
-			delete(s.openFiles, fileNumber)
-			delete(s.fileNumberToLRUElement, fileNumber)
-
-			return nil
-		}()
+		file.Lock()
+		defer file.Unlock()
+		err := file.Close()
 		if err != nil {
 			return err
 		}
+
+		lruElement := s.fileNumberToLRUElement[fileNumber]
+		s.openFilesLRU.Remove(lruElement)
+		delete(s.openFiles, fileNumber)
+		delete(s.fileNumberToLRUElement, fileNumber)
 	}
 
 	// Delete the file from disk
