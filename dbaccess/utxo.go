@@ -1,10 +1,16 @@
 package dbaccess
 
-import "github.com/kaspanet/kaspad/database"
+import (
+	"github.com/kaspanet/kaspad/database"
+)
 
 var (
 	utxoBucket = database.MakeBucket([]byte("utxo"))
 )
+
+func utxoKey(outpointKey []byte) []byte {
+	return utxoBucket.Key(outpointKey)
+}
 
 // AddToUTXOSet adds the given outpoint-utxoEntry pair to
 // the database's UTXO set.
@@ -14,7 +20,7 @@ func AddToUTXOSet(context Context, outpointKey []byte, utxoEntry []byte) error {
 		return err
 	}
 
-	key := utxoBucket.Key(outpointKey)
+	key := utxoKey(outpointKey)
 	return accessor.Put(key, utxoEntry)
 }
 
@@ -26,7 +32,7 @@ func RemoveFromUTXOSet(context Context, outpointKey []byte) error {
 		return err
 	}
 
-	key := utxoBucket.Key(outpointKey)
+	key := utxoKey(outpointKey)
 	return accessor.Delete(key)
 }
 
