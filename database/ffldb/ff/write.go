@@ -25,7 +25,7 @@ func (s *flatFileStore) write(data []byte) (*flatFileLocation, error) {
 	// Compute how many bytes will be written.
 	// 4 bytes for data length + length of the data + 4 bytes for checksum.
 	dataLength := uint32(len(data))
-	fullLength := dataLength + 8
+	fullLength := uint32(dataLengthLength) + dataLength + uint32(crc32ChecksumLength)
 
 	// Move to the next file if adding the new data would exceed the max
 	// allowed size for the current flat file. Also detect overflow because

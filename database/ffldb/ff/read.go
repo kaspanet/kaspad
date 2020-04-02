@@ -46,8 +46,8 @@ func (s *flatFileStore) read(location *flatFileLocation) ([]byte, error) {
 
 	// Calculate the checksum of the read data and ensure it matches the
 	// serialized checksum.
-	serializedChecksum := crc32ByteOrder.Uint32(data[n-4:])
-	calculatedChecksum := crc32.Checksum(data[:n-4], castagnoli)
+	serializedChecksum := crc32ByteOrder.Uint32(data[n-crc32ChecksumLength:])
+	calculatedChecksum := crc32.Checksum(data[:n-crc32ChecksumLength], castagnoli)
 	if serializedChecksum != calculatedChecksum {
 		return nil, errors.Errorf("data in store '%s' does not match "+
 			"checksum - got %x, want %x", s.storeName, calculatedChecksum,
@@ -55,7 +55,7 @@ func (s *flatFileStore) read(location *flatFileLocation) ([]byte, error) {
 	}
 
 	// The data excludes the length of the data and the checksum.
-	return data[4 : n-4], nil
+	return data[dataLengthLength : n-crc32ChecksumLength], nil
 }
 
 // flatFile attempts to return an existing file handle for the passed flat file

@@ -34,6 +34,13 @@ var (
 	// crc32ByteOrder is the byte order used for CRC-32 checksums.
 	crc32ByteOrder = binary.BigEndian
 
+	// crc32ChecksumLength is the length in bytes of a CRC-32 checksum.
+	crc32ChecksumLength = 4
+
+	// dataLengthLength is the length in bytes of the "data length" section
+	// of a serialized entry in a flat file store.
+	dataLengthLength = 4
+
 	// castagnoli houses the Catagnoli polynomial used for CRC-32 checksums.
 	castagnoli = crc32.MakeTable(crc32.Castagnoli)
 )
