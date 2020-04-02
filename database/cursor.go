@@ -6,10 +6,6 @@ type Cursor interface {
 	// iterator is exhausted. Returns false if the cursor is closed.
 	Next() bool
 
-	// Error returns any accumulated error. Exhausting all the key/value pairs
-	// is not considered to be an error.
-	Error() error
-
 	// First moves the iterator to the first key/value pair. It returns false if
 	// such a pair does not exist or if the cursor is closed.
 	First() bool

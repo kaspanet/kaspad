@@ -34,12 +34,6 @@ func (c *LevelDBCursor) Next() bool {
 	return c.ldbIterator.Next()
 }
 
-// Error returns any accumulated error. Exhausting all the key/value pairs
-// is not considered to be an error.
-func (c *LevelDBCursor) Error() error {
-	return errors.WithStack(c.ldbIterator.Error())
-}
-
 // First moves the iterator to the first key/value pair. It returns false if
 // such a pair does not exist or if the cursor is closed.
 func (c *LevelDBCursor) First() bool {
