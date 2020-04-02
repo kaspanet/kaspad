@@ -22,10 +22,11 @@ func NewLevelDB(path string) (*LevelDB, error) {
 	if _, corrupted := err.(*ldbErrors.ErrCorrupted); corrupted {
 		log.Warnf("LevelDB corruption detected for path %s: %s",
 			path, err)
-		var err error
-		ldb, err = leveldb.RecoverFile(path, nil)
-		if err != nil {
-			return nil, errors.WithStack(err)
+		var recoverErr error
+		ldb, recoverErr = leveldb.RecoverFile(path, nil)
+		if recoverErr != nil {
+			return nil, errors.Wrapf(err, "failed recovering from "+
+				"database corruption: %s", recoverErr)
 		}
 		log.Warnf("LevelDB recovered from corruption for path %s",
 			path)
