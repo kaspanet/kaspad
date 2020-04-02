@@ -186,12 +186,11 @@ func (dag *BlockDAG) createDAGState(localSubnetworkID *subnetworkid.SubnetworkID
 // database. When the db does not yet contain any DAG state, both it and the
 // DAG state are initialized to the genesis block.
 func (dag *BlockDAG) initDAGState() error {
-	// Fetch the stored DAG state from the database. When it doesn't exist,
-	// it means the database hasn't been initialized for use with the DAG yet.
+	// Fetch the stored DAG state from the database. If it doesn't exist,
+	// it means that we're running for the first time.
 	serializedDAGState, err := dbaccess.FetchDAGState(dbaccess.NoTx())
 	if dbaccess.IsNotFoundError(err) {
-		// At this point the database has not already been initialized, so
-		// initialize both it and the DAG state to the genesis block.
+		// Initialize the database and the DAG state to the genesis block.
 		return dag.createDAGState(dag.subnetworkID)
 	}
 	if err != nil {
