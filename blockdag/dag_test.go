@@ -623,7 +623,13 @@ func TestAcceptingInInit(t *testing.T) {
 	testNode.status = statusDataStored
 
 	// Manually add the test block to the database
-	err = storeBlock(dbaccess.NoTx(), testBlock)
+	dbTx, err := dbaccess.NewTx()
+	if err != nil {
+		t.Fatalf("Failed to open database "+
+			"transaction: %s", err)
+	}
+	defer dbTx.RollbackUnlessClosed()
+	err = storeBlock(dbTx, testBlock)
 	if err != nil {
 		t.Fatalf("Failed to store block: %s", err)
 	}
@@ -632,9 +638,14 @@ func TestAcceptingInInit(t *testing.T) {
 		t.Fatalf("Failed to serialize blockNode: %s", err)
 	}
 	key := blockIndexKey(testNode.hash, testNode.blueScore)
-	err = dbaccess.StoreIndexBlock(dbaccess.NoTx(), key, dbTestNode)
+	err = dbaccess.StoreIndexBlock(dbTx, key, dbTestNode)
 	if err != nil {
 		t.Fatalf("Failed to update block index: %s", err)
+	}
+	err = dbTx.Commit()
+	if err != nil {
+		t.Fatalf("Failed to commit database "+
+			"transaction: %s", err)
 	}
 
 	// Create a new DAG. We expect this DAG to process the

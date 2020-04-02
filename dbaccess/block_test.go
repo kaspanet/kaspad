@@ -36,10 +36,21 @@ func TestBlockStoreSanity(t *testing.T) {
 		t.Fatalf("TestBlockStoreSanity: util.Block.Bytes unexpectedly "+
 			"failed: %s", err)
 	}
-	err = StoreBlock(NoTx(), genesisHash, genesisBytes)
+	dbTx, err := NewTx()
+	if err != nil {
+		t.Fatalf("Failed to open database "+
+			"transaction: %s", err)
+	}
+	defer dbTx.RollbackUnlessClosed()
+	err = StoreBlock(dbTx, genesisHash, genesisBytes)
 	if err != nil {
 		t.Fatalf("TestBlockStoreSanity: StoreBlock unexpectedly "+
 			"failed: %s", err)
+	}
+	err = dbTx.Commit()
+	if err != nil {
+		t.Fatalf("Failed to commit database "+
+			"transaction: %s", err)
 	}
 
 	// Make sure the genesis block now exists in the db

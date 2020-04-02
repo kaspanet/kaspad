@@ -15,7 +15,7 @@ var (
 )
 
 // StoreBlock stores the given block in the database.
-func StoreBlock(context Context, hash *daghash.Hash, blockBytes []byte) error {
+func StoreBlock(context *TxContext, hash *daghash.Hash, blockBytes []byte) error {
 	accessor, err := context.accessor()
 	if err != nil {
 		return err

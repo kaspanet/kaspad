@@ -475,7 +475,7 @@ func fetchBlockByHash(context dbaccess.Context, hash *daghash.Hash) (*util.Block
 	return util.NewBlockFromBytes(blockBytes)
 }
 
-func storeBlock(context dbaccess.Context, block *util.Block) error {
+func storeBlock(context *dbaccess.TxContext, block *util.Block) error {
 	blockBytes, err := block.Bytes()
 	if err != nil {
 		return err
