@@ -46,7 +46,7 @@ func TestRepairFlatFiles(t *testing.T) {
 	}
 
 	// Grab the current location to test against later
-	oldCurrentLocation, err := ffldbInstance.flatFileDb.CurrentLocation(storeName)
+	oldCurrentLocation, err := ffldbInstance.flatFileDB.CurrentLocation(storeName)
 	if err != nil {
 		t.Fatalf("TestRepairFlatFiles: CurrentStoreLocation "+
 			"unexpectedly failed: %s", err)
@@ -86,7 +86,7 @@ func TestRepairFlatFiles(t *testing.T) {
 	}
 
 	// Make sure that the current location rolled back as expected
-	currentLocation, err := ffldbInstance.flatFileDb.CurrentLocation(storeName)
+	currentLocation, err := ffldbInstance.flatFileDB.CurrentLocation(storeName)
 	if err != nil {
 		t.Fatalf("TestRepairFlatFiles: CurrentStoreLocation "+
 			"unexpectedly failed: %s", err)

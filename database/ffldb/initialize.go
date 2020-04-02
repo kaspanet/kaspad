@@ -52,5 +52,5 @@ func (db *ffldb) flatFiles() (map[string][]byte, error) {
 // c. currentLocation is greater than the store's location. Rollback returns an
 //    error. This indicates definite database corruption and is irrecoverable.
 func (db *ffldb) tryRepair(storeName string, currentLocation []byte) error {
-	return db.flatFileDb.Rollback(storeName, currentLocation)
+	return db.flatFileDB.Rollback(storeName, currentLocation)
 }

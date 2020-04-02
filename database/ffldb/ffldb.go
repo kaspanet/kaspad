@@ -17,7 +17,7 @@ var (
 // ffldb is a database utilizing LevelDB for key-value data and
 // flat-files for raw data storage.
 type ffldb struct {
-	flatFileDb *ff.FlatFileDB
+	flatFileDB *ff.FlatFileDB
 	levelDB    *ldb.LevelDB
 }
 
@@ -30,7 +30,7 @@ func Open(path string) (database.Database, error) {
 	}
 
 	db := &ffldb{
-		flatFileDb: flatFileDB,
+		flatFileDB: flatFileDB,
 		levelDB:    levelDB,
 	}
 
@@ -45,7 +45,7 @@ func Open(path string) (database.Database, error) {
 // Close closes the database.
 // This method is part of the Database interface.
 func (db *ffldb) Close() error {
-	err := db.flatFileDb.Close()
+	err := db.flatFileDB.Close()
 	if err != nil {
 		ldbCloseErr := db.levelDB.Close()
 		if ldbCloseErr != nil {
@@ -91,7 +91,7 @@ func (db *ffldb) Delete(key []byte) error {
 // that has just now been inserted.
 // This method is part of the DataAccessor interface.
 func (db *ffldb) AppendToStore(storeName string, data []byte) ([]byte, error) {
-	return appendToStore(db, db.flatFileDb, storeName, data)
+	return appendToStore(db, db.flatFileDB, storeName, data)
 }
 
 func appendToStore(accessor database.DataAccessor, ffdb *ff.FlatFileDB, storeName string, data []byte) ([]byte, error) {
@@ -150,7 +150,7 @@ func setCurrentStoreLocation(accessor database.DataAccessor, storeName string, l
 // AppendToStore for further details.
 // This method is part of the DataAccessor interface.
 func (db *ffldb) RetrieveFromStore(storeName string, location []byte) ([]byte, error) {
-	return db.flatFileDb.Read(storeName, location)
+	return db.flatFileDB.Read(storeName, location)
 }
 
 // Cursor begins a new cursor over the given bucket.
@@ -171,7 +171,7 @@ func (db *ffldb) Begin() (database.Transaction, error) {
 
 	transaction := &transaction{
 		ldbTx: ldbTx,
-		ffdb:  db.flatFileDb,
+		ffdb:  db.flatFileDB,
 	}
 	return transaction, nil
 }
