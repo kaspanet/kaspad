@@ -1,7 +1,5 @@
 package ffldb
 
-import "strings"
-
 // initialize initializes the database. If this function fails it is
 // irrecoverable, and likely indicates that database corruption had
 // previously occurred.
@@ -36,7 +34,7 @@ func (db *ffldb) flatFiles() (map[string][]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		storeName := strings.TrimPrefix(string(storeNameKey), string(flatFilesBucketPath))
+		storeName := string(storeNameKey)
 
 		currentLocation, err := flatFilesCursor.Value()
 		if err != nil {
