@@ -53,18 +53,18 @@ func (c *LevelDBCursor) Seek(key []byte) error {
 		return errors.New("cannot seek a closed cursor")
 	}
 
+	notFoundErr := errors.Wrapf(database.ErrNotFound, "key %s not "+
+		"found", hex.EncodeToString(key))
 	found := c.ldbIterator.Seek(key)
 	if !found {
-		return errors.Wrapf(database.ErrNotFound, "key %s not "+
-			"found", hex.EncodeToString(key))
+		return notFoundErr
 	}
-	currentKey, err := c.Key()
-	if err != nil {
-		return err
+	currentKey := c.ldbIterator.Key()
+	if currentKey == nil {
+		return notFoundErr
 	}
 	if !bytes.Equal(currentKey, key) {
-		return errors.Wrapf(database.ErrNotFound, "key %s not "+
-			"found", hex.EncodeToString(key))
+		return notFoundErr
 	}
 
 	return nil
