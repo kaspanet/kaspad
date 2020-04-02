@@ -2,6 +2,7 @@ package ldb
 
 import (
 	"bytes"
+	"encoding/hex"
 	"github.com/kaspanet/kaspad/database"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
@@ -45,12 +46,28 @@ func (c *LevelDBCursor) First() bool {
 }
 
 // Seek moves the iterator to the first key/value pair whose key is greater
-// than or equal to the given key. It returns whether such pair exist.
-func (c *LevelDBCursor) Seek(key []byte) (bool, error) {
+// than or equal to the given key. It returns ErrNotFound if such pair does not
+// exist.
+func (c *LevelDBCursor) Seek(key []byte) error {
 	if c.isClosed {
-		return false, errors.New("cannot seek a closed cursor")
+		return errors.New("cannot seek a closed cursor")
 	}
-	return c.ldbIterator.Seek(key), nil
+
+	found := c.ldbIterator.Seek(key)
+	if !found {
+		return errors.Wrapf(database.ErrNotFound, "key %s not "+
+			"found", hex.EncodeToString(key))
+	}
+	currentKey, err := c.Key()
+	if err != nil {
+		return err
+	}
+	if !bytes.Equal(currentKey, key) {
+		return errors.Wrapf(database.ErrNotFound, "key %s not "+
+			"found", hex.EncodeToString(key))
+	}
+
+	return nil
 }
 
 // Key returns the key of the current key/value pair, or ErrNotFound if done.

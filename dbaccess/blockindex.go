@@ -43,14 +43,15 @@ func BlockIndexCursorFrom(context Context, blockIndexKey []byte) (database.Curso
 		return nil, err
 	}
 
-	found, err := cursor.Seek(blockIndexKey)
-	if err != nil {
-		return nil, err
-	}
-	if !found {
+	key := blockIndexBucket.Key(blockIndexKey)
+	err = cursor.Seek(key)
+	if IsNotFoundError(err) {
 		cursor.Close()
 		return nil, errors.Wrapf(database.ErrNotFound,
 			"entry not found for %s", hex.EncodeToString(blockIndexKey))
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	return cursor, nil
