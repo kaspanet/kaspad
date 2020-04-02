@@ -119,6 +119,8 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 }
 
 // deleteFile removes the file for the passed flat file number.
+// This function MUST be called with the lruMutex and the openFilesMutex
+// held for writes.
 func (s *flatFileStore) deleteFile(fileNumber uint32) error {
 	// Cleanup the file before deleting it
 	if file, ok := s.openFiles[fileNumber]; ok {
