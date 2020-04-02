@@ -7,6 +7,10 @@ import (
 
 var reachabilityDataBucket = database.MakeBucket([]byte("reachability"))
 
+func reachabilityKey(hash *daghash.Hash) []byte {
+	return reachabilityDataBucket.Key(hash[:])
+}
+
 // ReachabilityDataCursor opens a cursor over all the
 // reachability data entries.
 func ReachabilityDataCursor(context Context) (database.Cursor, error) {
@@ -33,8 +37,4 @@ func StoreReachabilityData(context Context, blockHash *daghash.Hash, reachabilit
 // from database.
 func ClearReachabilityData(dbTx *TxContext) error {
 	return clearBucket(dbTx, reachabilityDataBucket)
-}
-
-func reachabilityKey(hash *daghash.Hash) []byte {
-	return reachabilityDataBucket.Key(hash[:])
 }

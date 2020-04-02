@@ -14,6 +14,10 @@ var (
 	blockLocationsBucket = database.MakeBucket([]byte("block-locations"))
 )
 
+func blockLocationKey(hash *daghash.Hash) []byte {
+	return blockLocationsBucket.Key(hash[:])
+}
+
 // StoreBlock stores the given block in the database.
 func StoreBlock(context *TxContext, hash *daghash.Hash, blockBytes []byte) error {
 	accessor, err := context.accessor()
@@ -83,8 +87,4 @@ func FetchBlock(context Context, hash *daghash.Hash) ([]byte, error) {
 	}
 
 	return bytes, nil
-}
-
-func blockLocationKey(hash *daghash.Hash) []byte {
-	return blockLocationsBucket.Key(hash[:])
 }

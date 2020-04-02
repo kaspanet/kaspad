@@ -8,6 +8,10 @@ import (
 
 var feeBucket = database.MakeBucket([]byte("fees"))
 
+func feeDataKey(hash *daghash.Hash) []byte {
+	return feeBucket.Key(hash[:])
+}
+
 // FetchFeeData returns the fee data of a block by its hash.
 func FetchFeeData(context Context, blockHash *daghash.Hash) ([]byte, error) {
 	accessor, err := context.accessor()
@@ -32,8 +36,4 @@ func StoreFeeData(context Context, blockHash *daghash.Hash, feeData []byte) erro
 
 	key := feeDataKey(blockHash)
 	return accessor.Put(key, feeData)
-}
-
-func feeDataKey(hash *daghash.Hash) []byte {
-	return feeBucket.Key(hash[:])
 }

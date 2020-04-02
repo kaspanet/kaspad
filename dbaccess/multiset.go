@@ -7,6 +7,10 @@ import (
 
 var multisetBucket = database.MakeBucket([]byte("multiset"))
 
+func multisetKey(hash *daghash.Hash) []byte {
+	return multisetBucket.Key(hash[:])
+}
+
 // MultisetCursor opens a cursor over all the
 // multiset entries.
 func MultisetCursor(context Context) (database.Cursor, error) {
@@ -39,8 +43,4 @@ func HasMultiset(context Context, blockHash *daghash.Hash) (bool, error) {
 
 	key := multisetKey(blockHash)
 	return accessor.Has(key)
-}
-
-func multisetKey(hash *daghash.Hash) []byte {
-	return multisetBucket.Key(hash[:])
 }

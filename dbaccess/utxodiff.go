@@ -8,6 +8,10 @@ import (
 
 var utxoDiffsBucket = database.MakeBucket([]byte("utxo-diffs"))
 
+func utxoDiffKey(hash *daghash.Hash) []byte {
+	return utxoDiffsBucket.Key(hash[:])
+}
+
 // StoreUTXODiffData stores the UTXO diff data of a block by its hash.
 func StoreUTXODiffData(context Context, blockHash *daghash.Hash, diffData []byte) error {
 	accessor, err := context.accessor()
@@ -44,8 +48,4 @@ func FetchUTXODiffData(context Context, blockHash *daghash.Hash) ([]byte, error)
 		return nil, errors.Wrapf(err, "couldn't find diff data for block %s", blockHash)
 	}
 	return diffData, err
-}
-
-func utxoDiffKey(hash *daghash.Hash) []byte {
-	return utxoDiffsBucket.Key(hash[:])
 }

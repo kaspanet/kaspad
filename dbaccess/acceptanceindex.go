@@ -10,6 +10,10 @@ var (
 	acceptanceIndexBucket = database.MakeBucket([]byte("acceptance-index"))
 )
 
+func acceptanceIndexKey(hash *daghash.Hash) []byte {
+	return acceptanceIndexBucket.Key(hash[:])
+}
+
 // StoreAcceptanceData stores the given acceptanceData in the database.
 func StoreAcceptanceData(context Context, hash *daghash.Hash, acceptanceData []byte) error {
 	accessor, err := context.accessor()
@@ -52,10 +56,6 @@ func FetchAcceptanceData(context Context, hash *daghash.Hash) ([]byte, error) {
 	}
 
 	return acceptanceData, nil
-}
-
-func acceptanceIndexKey(hash *daghash.Hash) []byte {
-	return acceptanceIndexBucket.Key(hash[:])
 }
 
 // DropAcceptanceIndex completely removes all acceptanceData entries.
