@@ -173,7 +173,7 @@ func saveDAGState(context dbaccess.Context, state *dagState) error {
 }
 
 // createDAGState initializes the DAG state to the
-// genesis block and the node's local subnetwork id.'
+// genesis block and the node's local subnetwork id.
 func (dag *BlockDAG) createDAGState(localSubnetworkID *subnetworkid.SubnetworkID) error {
 	return saveDAGState(dbaccess.NoTx(), &dagState{
 		TipHashes:         []*daghash.Hash{dag.dagParams.GenesisHash},
