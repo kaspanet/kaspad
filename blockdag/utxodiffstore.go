@@ -124,8 +124,7 @@ func (diffStore *utxoDiffStore) diffDataFromDB(hash *daghash.Hash) (*blockUTXODi
 	return diffStore.deserializeBlockUTXODiffData(serializedBlockDiffData)
 }
 
-// flushToDB writes all dirty diff data to the database. If all writes
-// succeed, this clears the dirty set.
+// flushToDB writes all dirty diff data to the database.
 func (diffStore *utxoDiffStore) flushToDB(context dbaccess.Context) error {
 	diffStore.mtx.HighPriorityWriteLock()
 	defer diffStore.mtx.HighPriorityWriteUnlock()
