@@ -74,7 +74,10 @@ func TestUTXODiffStore(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error flushing utxoDiffStore data to DB: %s", err)
 	}
-	dbTx.Commit()
+	err = dbTx.Commit()
+	if err != nil {
+		t.Fatalf("Failed to commit database transaction: %s", err)
+	}
 	delete(dag.utxoDiffStore.loaded, *node.hash)
 
 	if storeDiff, err := dag.utxoDiffStore.diffByNode(node); err != nil {
