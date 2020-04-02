@@ -32,10 +32,10 @@ func (s *flatFileStore) write(data []byte) (*flatFileLocation, error) {
 	// even though it isn't possible currently, numbers/ might change in
 	// the future to make it possible.
 	//
-	// NOTE: The writeCursor.offset field isn't protected by the mutex
-	// since it's only read/changed during this function which can only be
-	// called during a write transaction, of which there can be only one at
-	// a time.
+	// NOTE: The writeCursor.currentOffset field isn't protected by the
+	// mutex since it's only read/changed during this function which can
+	// only be called during a write transaction, of which there can be
+	// only one at a time.
 	cursor := s.writeCursor
 	finalOffset := cursor.currentOffset + fullLength
 	if finalOffset < cursor.currentOffset || finalOffset > maxFileSize {
