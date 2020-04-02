@@ -18,9 +18,10 @@ type Cursor interface {
 	// than or equal to the given key. It returns whether such pair exist.
 	Seek(key []byte) (bool, error)
 
-	// Key returns the key of the current key/value pair, or nil if done. The caller
-	// should not modify the contents of the returned slice, and its contents may
-	// change on the next call to Next.
+	// Key returns the key of the current key/value pair, or nil if done. Not that
+	// the key is trimmed to not include the prefix the cursor was opened with.
+	// The caller should not modify the contents of the returned slice, and its
+	// contents may change on the next call to Next.
 	Key() ([]byte, error)
 
 	// Value returns the value of the current key/value pair, or nil if done. The
