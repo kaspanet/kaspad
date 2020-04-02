@@ -11,15 +11,15 @@ import (
 // multiple concurrent readers.
 type lockableFile struct {
 	sync.RWMutex
-	file filer
+	file
 
 	isClosed bool
 }
 
-// filer is an interface which acts very similar to a *os.File and is typically
+// file is an interface which acts very similar to a *os.File and is typically
 // implemented by it. It exists so the test code can provide mock files for
 // properly testing corruption and file system issues.
-type filer interface {
+type file interface {
 	io.Closer
 	io.WriterAt
 	io.ReaderAt

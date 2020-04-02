@@ -122,7 +122,7 @@ func (s *flatFileStore) write(data []byte) (*flatFileLocation, error) {
 // for the current file that will have all new data appended. Unlike openFile,
 // this function does not keep track of the open file and it is not subject to
 // the maxOpenFiles limit.
-func (s *flatFileStore) openWriteFile(fileNumber uint32) (filer, error) {
+func (s *flatFileStore) openWriteFile(fileNumber uint32) (file, error) {
 	// The current flat file needs to be read-write so it is possible to
 	// append to it. Also, it shouldn't be part of the least recently used
 	// file.
