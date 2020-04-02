@@ -2,6 +2,7 @@ package ldb
 
 import (
 	"bytes"
+	"encoding/hex"
 	"github.com/kaspanet/kaspad/database"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
@@ -54,14 +55,16 @@ func (c *LevelDBCursor) Seek(key []byte) error {
 
 	found := c.ldbIterator.Seek(key)
 	if !found {
-		return database.ErrNotFound
+		return errors.Wrapf(database.ErrNotFound, "key %s not "+
+			"found", hex.EncodeToString(key))
 	}
 	currentKey, err := c.Key()
 	if err != nil {
 		return err
 	}
 	if !bytes.Equal(currentKey, key) {
-		return database.ErrNotFound
+		return errors.Wrapf(database.ErrNotFound, "key %s not "+
+			"found", hex.EncodeToString(key))
 	}
 
 	return nil
