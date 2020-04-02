@@ -1,8 +1,7 @@
 package ffldb
 
-// initialize initializes the database. If this function fails it is
-// irrecoverable, and likely indicates that database corruption had
-// previously occurred.
+// initialize initializes the database. If this function fails then the
+// database is irrecoverably corrupted.
 func (db *ffldb) initialize() error {
 	flatFiles, err := db.flatFiles()
 	if err != nil {
