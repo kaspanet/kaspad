@@ -10,14 +10,14 @@ func handleGetSelectedTip(s *Server, cmd interface{}, closeChan <-chan struct{})
 	getSelectedTipCmd := cmd.(*rpcmodel.GetSelectedTipCmd)
 	selectedTipHash := s.cfg.DAG.SelectedTipHash()
 
-	blk, err := s.cfg.DAG.BlockByHash(selectedTipHash)
+	block, err := s.cfg.DAG.BlockByHash(selectedTipHash)
 	if err != nil {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCBlockNotFound,
 			Message: "Block not found",
 		}
 	}
-	blockBytes, err := blk.Bytes()
+	blockBytes, err := block.Bytes()
 	if err != nil {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCBlockInvalid,
@@ -31,7 +31,7 @@ func handleGetSelectedTip(s *Server, cmd interface{}, closeChan <-chan struct{})
 		return hex.EncodeToString(blockBytes), nil
 	}
 
-	blockVerboseResult, err := buildGetBlockVerboseResult(s, blk, getSelectedTipCmd.VerboseTx == nil || !*getSelectedTipCmd.VerboseTx)
+	blockVerboseResult, err := buildGetBlockVerboseResult(s, block, getSelectedTipCmd.VerboseTx == nil || !*getSelectedTipCmd.VerboseTx)
 	if err != nil {
 		return nil, err
 	}

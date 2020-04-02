@@ -44,7 +44,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 			Message: "Block not found",
 		}
 	}
-	blkBytes, err := block.Bytes()
+	blockBytes, err := block.Bytes()
 	if err != nil {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCBlockInvalid,
@@ -78,7 +78,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 				msgBlock.ConvertToPartial(requestSubnetworkID)
 				var b bytes.Buffer
 				msgBlock.Serialize(bufio.NewWriter(&b))
-				blkBytes = b.Bytes()
+				blockBytes = b.Bytes()
 			}
 		}
 	}
@@ -86,13 +86,13 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	// When the verbose flag is set to false, simply return the serialized block
 	// as a hex-encoded string (verbose flag is on by default).
 	if c.Verbose != nil && !*c.Verbose {
-		return hex.EncodeToString(blkBytes), nil
+		return hex.EncodeToString(blockBytes), nil
 	}
 
 	// The verbose flag is set, so generate the JSON object and return it.
 
 	// Deserialize the block.
-	blk, err := util.NewBlockFromBytes(blkBytes)
+	blk, err := util.NewBlockFromBytes(blockBytes)
 	if err != nil {
 		context := "Failed to deserialize block"
 		return nil, internalRPCError(err.Error(), context)
