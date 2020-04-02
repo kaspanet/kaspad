@@ -63,9 +63,7 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 	log.Warnf("ROLLBACK: Rolling back to file %d, offset %d",
 		targetFileNumber, targetFileOffset)
 
-	// Close the current write file if it needs to be deleted. Then delete
-	// all files that are newer than the provided rollback file while
-	// also moving the write cursor file backwards accordingly.
+	// Close the current write file if it needs to be deleted.
 	if cursor.currentFileNumber > targetFileNumber {
 		cursor.currentFile.Lock()
 		if cursor.currentFile.file != nil {
@@ -74,6 +72,13 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 		}
 		cursor.currentFile.Unlock()
 	}
+
+	// Delete all files that are newer than the provided rollback file
+	// while also moving the write cursor file backwards accordingly.
+	s.lruMutex.Lock()
+	defer s.lruMutex.Unlock()
+	s.openFilesMutex.Lock()
+	defer s.openFilesMutex.Unlock()
 	for cursor.currentFileNumber > targetFileNumber {
 		err := s.deleteFile(cursor.currentFileNumber)
 		if err != nil {
@@ -113,11 +118,31 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 	return nil
 }
 
-// deleteFile removes the file for the passed flat file number. The file must
-// already be closed and it is the responsibility of the caller to do any
-// other state cleanup necessary.
+// deleteFile removes the file for the passed flat file number.
 func (s *flatFileStore) deleteFile(fileNumber uint32) error {
-	filePath := flatFilePath(s.basePath, s.storeName, fileNumber)
+	// Cleanup the file before deleting it
+	if file, ok := s.openFiles[fileNumber]; ok {
+		err := func() error {
+			file.Lock()
+			defer file.Unlock()
+			err := file.Close()
+			if err != nil {
+				return err
+			}
 
+			lruElement := s.fileNumberToLRUElement[fileNumber]
+			s.openFilesLRU.Remove(lruElement)
+			delete(s.openFiles, fileNumber)
+			delete(s.fileNumberToLRUElement, fileNumber)
+
+			return nil
+		}()
+		if err != nil {
+			return err
+		}
+	}
+
+	// Delete the file from disk
+	filePath := flatFilePath(s.basePath, s.storeName, fileNumber)
 	return errors.WithStack(os.Remove(filePath))
 }
