@@ -2,6 +2,7 @@ package ldb
 
 import (
 	"bytes"
+	"github.com/kaspanet/kaspad/database"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
 	"github.com/syndtr/goleveldb/leveldb/util"
@@ -52,27 +53,36 @@ func (c *LevelDBCursor) Seek(key []byte) (bool, error) {
 	return c.ldbIterator.Seek(key), nil
 }
 
-// Key returns the key of the current key/value pair, or nil if done. Not that
-// the key is trimmed to not include the prefix the cursor was opened with.
-// The caller should not modify the contents of the returned slice, and its
-// contents may change on the next call to Next.
+// Key returns the key of the current key/value pair, or ErrNotFound if done.
+// Not that the key is trimmed to not include the prefix the cursor was opened
+// with. The caller should not modify the contents of the returned slice, and
+// its contents may change on the next call to Next.
 func (c *LevelDBCursor) Key() ([]byte, error) {
 	if c.isClosed {
 		return nil, errors.New("cannot get the key of a closed cursor")
 	}
 	fullKeyPath := c.ldbIterator.Key()
+	if fullKeyPath == nil {
+		return nil, errors.Wrapf(database.ErrNotFound, "cannot get the "+
+			"key of a done cursor")
+	}
 	key := bytes.TrimPrefix(fullKeyPath, c.prefix)
 	return key, nil
 }
 
-// Value returns the value of the current key/value pair, or nil if done. The
-// caller should not modify the contents of the returned slice, and its contents
-// may change on the next call to Next.
+// Value returns the value of the current key/value pair, or ErrNotFound if done.
+// The caller should not modify the contents of the returned slice, and its
+// contents may change on the next call to Next.
 func (c *LevelDBCursor) Value() ([]byte, error) {
 	if c.isClosed {
 		return nil, errors.New("cannot get the value of a closed cursor")
 	}
-	return c.ldbIterator.Value(), nil
+	value := c.ldbIterator.Value()
+	if value == nil {
+		return nil, errors.Wrapf(database.ErrNotFound, "cannot get the "+
+			"value of a done cursor")
+	}
+	return value, nil
 }
 
 // Close releases associated resources.
