@@ -17,21 +17,21 @@ var (
 // ffldb is a database utilizing LevelDB for key-value data and
 // flat-files for raw data storage.
 type ffldb struct {
-	ffdb *ff.FlatFileDB
-	ldb  *ldb.LevelDB
+	flatFileDb *ff.FlatFileDB
+	levelDB    *ldb.LevelDB
 }
 
 // Open opens a new ffldb with the given path.
 func Open(path string) (database.Database, error) {
-	ffdb := ff.NewFlatFileDB(path)
-	ldb, err := ldb.NewLevelDB(path)
+	flatFileDB := ff.NewFlatFileDB(path)
+	levelDB, err := ldb.NewLevelDB(path)
 	if err != nil {
 		return nil, err
 	}
 
 	db := &ffldb{
-		ffdb: ffdb,
-		ldb:  ldb,
+		flatFileDb: flatFileDB,
+		levelDB:    levelDB,
 	}
 
 	err = db.initialize()
@@ -45,43 +45,43 @@ func Open(path string) (database.Database, error) {
 // Close closes the database.
 // This method is part of the Database interface.
 func (db *ffldb) Close() error {
-	err := db.ffdb.Close()
+	err := db.flatFileDb.Close()
 	if err != nil {
-		ldbCloseErr := db.ldb.Close()
+		ldbCloseErr := db.levelDB.Close()
 		if ldbCloseErr != nil {
 			return errors.Wrapf(err, "err occurred during leveldb close: %s", ldbCloseErr)
 		}
 		return err
 	}
-	return db.ldb.Close()
+	return db.levelDB.Close()
 }
 
 // Put sets the value for the given key. It overwrites
 // any previous value for that key.
 // This method is part of the DataAccessor interface.
 func (db *ffldb) Put(key []byte, value []byte) error {
-	return db.ldb.Put(key, value)
+	return db.levelDB.Put(key, value)
 }
 
 // Get gets the value for the given key. It returns
 // ErrNotFound if the given key does not exist.
 // This method is part of the DataAccessor interface.
 func (db *ffldb) Get(key []byte) ([]byte, error) {
-	return db.ldb.Get(key)
+	return db.levelDB.Get(key)
 }
 
 // Has returns true if the database does contains the
 // given key.
 // This method is part of the DataAccessor interface.
 func (db *ffldb) Has(key []byte) (bool, error) {
-	return db.ldb.Has(key)
+	return db.levelDB.Has(key)
 }
 
 // Delete deletes the value for the given key. Will not
 // return an error if the key doesn't exist.
 // This method is part of the DataAccessor interface.
 func (db *ffldb) Delete(key []byte) error {
-	return db.ldb.Delete(key)
+	return db.levelDB.Delete(key)
 }
 
 // AppendToStore appends the given data to the flat
@@ -91,7 +91,7 @@ func (db *ffldb) Delete(key []byte) error {
 // that has just now been inserted.
 // This method is part of the DataAccessor interface.
 func (db *ffldb) AppendToStore(storeName string, data []byte) ([]byte, error) {
-	return appendToStore(db, db.ffdb, storeName, data)
+	return appendToStore(db, db.flatFileDb, storeName, data)
 }
 
 func appendToStore(accessor database.DataAccessor, ffdb *ff.FlatFileDB, storeName string, data []byte) ([]byte, error) {
@@ -150,13 +150,13 @@ func setCurrentStoreLocation(accessor database.DataAccessor, storeName string, l
 // AppendToStore for further details.
 // This method is part of the DataAccessor interface.
 func (db *ffldb) RetrieveFromStore(storeName string, location []byte) ([]byte, error) {
-	return db.ffdb.Read(storeName, location)
+	return db.flatFileDb.Read(storeName, location)
 }
 
 // Cursor begins a new cursor over the given bucket.
 // This method is part of the DataAccessor interface.
 func (db *ffldb) Cursor(bucket []byte) (database.Cursor, error) {
-	ldbCursor := db.ldb.Cursor(bucket)
+	ldbCursor := db.levelDB.Cursor(bucket)
 
 	return ldbCursor, nil
 }
@@ -164,14 +164,14 @@ func (db *ffldb) Cursor(bucket []byte) (database.Cursor, error) {
 // Begin begins a new ffldb transaction.
 // This method is part of the Database interface.
 func (db *ffldb) Begin() (database.Transaction, error) {
-	ldbTx, err := db.ldb.Begin()
+	ldbTx, err := db.levelDB.Begin()
 	if err != nil {
 		return nil, err
 	}
 
 	transaction := &transaction{
 		ldbTx: ldbTx,
-		ffdb:  db.ffdb,
+		ffdb:  db.flatFileDb,
 	}
 	return transaction, nil
 }

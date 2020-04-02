@@ -19,7 +19,7 @@ func (db *ffldb) initialize() error {
 
 func (db *ffldb) flatFiles() (map[string][]byte, error) {
 	flatFilesBucketPath := flatFilesBucket.Path()
-	flatFilesCursor := db.ldb.Cursor(flatFilesBucketPath)
+	flatFilesCursor := db.levelDB.Cursor(flatFilesBucketPath)
 	defer func() {
 		err := flatFilesCursor.Close()
 		if err != nil {
@@ -52,5 +52,5 @@ func (db *ffldb) flatFiles() (map[string][]byte, error) {
 // c. currentLocation is greater than the store's location. Rollback returns an
 //    error. This indicates definite database corruption and is irrecoverable.
 func (db *ffldb) tryRepair(storeName string, currentLocation []byte) error {
-	return db.ffdb.Rollback(storeName, currentLocation)
+	return db.flatFileDb.Rollback(storeName, currentLocation)
 }
