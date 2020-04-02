@@ -11,8 +11,9 @@ type Cursor interface {
 	First() bool
 
 	// Seek moves the iterator to the first key/value pair whose key is greater
-	// than or equal to the given key. It returns whether such pair exist.
-	Seek(key []byte) (bool, error)
+	// than or equal to the given key. It returns ErrNotFound if such pair does not
+	// exist.
+	Seek(key []byte) error
 
 	// Key returns the key of the current key/value pair, or ErrNotFound if done.
 	// Note that the key is trimmed to not include the prefix the cursor was opened
