@@ -72,7 +72,7 @@ type flatFileStore struct {
 	// openFilesLRU tracks how the open files are referenced by pushing the
 	// most recently used files to the front of the list thereby trickling
 	// the least recently used files to end of the list. When a file needs
-	// to be closed due to exceeding the the max number of allowed open
+	// to be closed due to exceeding the max number of allowed open
 	// files, the one at the end of the list is closed.
 	//
 	// fileNumberToLRUElement is a mapping between a specific file number and
