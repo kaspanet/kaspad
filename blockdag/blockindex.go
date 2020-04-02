@@ -110,7 +110,7 @@ func (bi *blockIndex) UnsetStatusFlags(node *blockNode, flags blockStatus) {
 }
 
 // flushToDB writes all dirty block nodes to the database.
-func (bi *blockIndex) flushToDB(context *dbaccess.TxContext) error {
+func (bi *blockIndex) flushToDB(dbContext *dbaccess.TxContext) error {
 	bi.Lock()
 	defer bi.Unlock()
 	if len(bi.dirty) == 0 {
@@ -123,7 +123,7 @@ func (bi *blockIndex) flushToDB(context *dbaccess.TxContext) error {
 			return err
 		}
 		key := blockIndexKey(node.hash, node.blueScore)
-		err = dbaccess.StoreIndexBlock(context, key, serializedBlockNode)
+		err = dbaccess.StoreIndexBlock(dbContext, key, serializedBlockNode)
 		if err != nil {
 			return err
 		}

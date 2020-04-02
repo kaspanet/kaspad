@@ -90,7 +90,7 @@ func deserializeOutpoint(r io.Reader) (*wire.Outpoint, error) {
 
 // updateUTXOSet updates the UTXO set in the database based on the provided
 // UTXO diff.
-func updateUTXOSet(context dbaccess.Context, virtualUTXODiff *UTXODiff) error {
+func updateUTXOSet(dbContext dbaccess.Context, virtualUTXODiff *UTXODiff) error {
 	for outpoint := range virtualUTXODiff.toRemove {
 		w := outpointKeyPool.Get().(*bytes.Buffer)
 		w.Reset()
@@ -100,7 +100,7 @@ func updateUTXOSet(context dbaccess.Context, virtualUTXODiff *UTXODiff) error {
 		}
 
 		key := w.Bytes()
-		err = dbaccess.RemoveFromUTXOSet(context, key)
+		err = dbaccess.RemoveFromUTXOSet(dbContext, key)
 		if err != nil {
 			return err
 		}
@@ -127,7 +127,7 @@ func updateUTXOSet(context dbaccess.Context, virtualUTXODiff *UTXODiff) error {
 		}
 
 		key := sBuff.Bytes()
-		err = dbaccess.AddToUTXOSet(context, key, serializedEntry)
+		err = dbaccess.AddToUTXOSet(dbContext, key, serializedEntry)
 		if err != nil {
 			return err
 		}
@@ -163,13 +163,13 @@ func deserializeDAGState(serializedData []byte) (*dagState, error) {
 
 // saveDAGState uses an existing database context to store the latest
 // tip hashes of the DAG.
-func saveDAGState(context dbaccess.Context, state *dagState) error {
+func saveDAGState(dbContext dbaccess.Context, state *dagState) error {
 	serializedDAGState, err := serializeDAGState(state)
 	if err != nil {
 		return err
 	}
 
-	return dbaccess.StoreDAGState(context, serializedDAGState)
+	return dbaccess.StoreDAGState(dbContext, serializedDAGState)
 }
 
 // createDAGState initializes the DAG state to the
@@ -467,20 +467,20 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 
 // fetchBlockByHash retrieves the raw block for the provided hash,
 // deserializes it, and returns a util.Block of it.
-func fetchBlockByHash(context dbaccess.Context, hash *daghash.Hash) (*util.Block, error) {
-	blockBytes, err := dbaccess.FetchBlock(context, hash)
+func fetchBlockByHash(dbContext dbaccess.Context, hash *daghash.Hash) (*util.Block, error) {
+	blockBytes, err := dbaccess.FetchBlock(dbContext, hash)
 	if err != nil {
 		return nil, err
 	}
 	return util.NewBlockFromBytes(blockBytes)
 }
 
-func storeBlock(context *dbaccess.TxContext, block *util.Block) error {
+func storeBlock(dbContext *dbaccess.TxContext, block *util.Block) error {
 	blockBytes, err := block.Bytes()
 	if err != nil {
 		return err
 	}
-	return dbaccess.StoreBlock(context, block.Hash(), blockBytes)
+	return dbaccess.StoreBlock(dbContext, block.Hash(), blockBytes)
 }
 
 func serializeBlockNode(node *blockNode) ([]byte, error) {

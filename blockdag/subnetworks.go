@@ -17,7 +17,7 @@ import (
 // subnetwork registry transactions, validates them, and registers a new
 // subnetwork based on it.
 // This function returns an error if one or more transactions are invalid
-func registerSubnetworks(context dbaccess.Context, txs []*util.Tx) error {
+func registerSubnetworks(dbContext dbaccess.Context, txs []*util.Tx) error {
 	subnetworkRegistryTxs := make([]*wire.MsgTx, 0)
 	for _, tx := range txs {
 		msgTx := tx.MsgTx()
@@ -39,13 +39,13 @@ func registerSubnetworks(context dbaccess.Context, txs []*util.Tx) error {
 		if err != nil {
 			return err
 		}
-		exists, err := dbaccess.HasSubnetwork(context, subnetworkID)
+		exists, err := dbaccess.HasSubnetwork(dbContext, subnetworkID)
 		if err != nil {
 			return err
 		}
 		if !exists {
 			createdSubnetwork := newSubnetwork(registryTx)
-			err := registerSubnetwork(context, subnetworkID, createdSubnetwork)
+			err := registerSubnetwork(dbContext, subnetworkID, createdSubnetwork)
 			if err != nil {
 				return errors.Errorf("failed registering subnetwork"+
 					"for tx '%s': %s", registryTx.TxHash(), err)
@@ -100,13 +100,13 @@ func GasLimit(subnetworkID *subnetworkid.SubnetworkID) (uint64, error) {
 	return sNet.gasLimit, nil
 }
 
-func registerSubnetwork(context dbaccess.Context, subnetworkID *subnetworkid.SubnetworkID, network *subnetwork) error {
+func registerSubnetwork(dbContext dbaccess.Context, subnetworkID *subnetworkid.SubnetworkID, network *subnetwork) error {
 	serializedSubnetwork, err := serializeSubnetwork(network)
 	if err != nil {
 		return errors.Errorf("failed to serialize sub-netowrk '%s': %s", subnetworkID, err)
 	}
 
-	return dbaccess.StoreSubnetwork(context, subnetworkID, serializedSubnetwork)
+	return dbaccess.StoreSubnetwork(dbContext, subnetworkID, serializedSubnetwork)
 }
 
 type subnetwork struct {

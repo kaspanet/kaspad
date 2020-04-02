@@ -90,13 +90,13 @@ func (idx *AcceptanceIndex) recover() error {
 // connected to the DAG.
 //
 // This is part of the Indexer interface.
-func (idx *AcceptanceIndex) ConnectBlock(context *dbaccess.TxContext, blockHash *daghash.Hash,
+func (idx *AcceptanceIndex) ConnectBlock(dbContext *dbaccess.TxContext, blockHash *daghash.Hash,
 	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
 	serializedTxsAcceptanceData, err := serializeMultiBlockTxsAcceptanceData(txsAcceptanceData)
 	if err != nil {
 		return err
 	}
-	return dbaccess.StoreAcceptanceData(context, blockHash, serializedTxsAcceptanceData)
+	return dbaccess.StoreAcceptanceData(dbContext, blockHash, serializedTxsAcceptanceData)
 }
 
 // TxsAcceptanceData returns the acceptance data of all the transactions that

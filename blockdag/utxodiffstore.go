@@ -58,9 +58,9 @@ func (diffStore *utxoDiffStore) setBlockDiffChild(node *blockNode, diffChild *bl
 	return nil
 }
 
-func (diffStore *utxoDiffStore) removeBlocksDiffData(context dbaccess.Context, blockHashes []*daghash.Hash) error {
+func (diffStore *utxoDiffStore) removeBlocksDiffData(dbContext dbaccess.Context, blockHashes []*daghash.Hash) error {
 	for _, hash := range blockHashes {
-		err := diffStore.removeBlockDiffData(context, hash)
+		err := diffStore.removeBlockDiffData(dbContext, hash)
 		if err != nil {
 			return err
 		}
@@ -68,11 +68,11 @@ func (diffStore *utxoDiffStore) removeBlocksDiffData(context dbaccess.Context, b
 	return nil
 }
 
-func (diffStore *utxoDiffStore) removeBlockDiffData(context dbaccess.Context, blockHash *daghash.Hash) error {
+func (diffStore *utxoDiffStore) removeBlockDiffData(dbContext dbaccess.Context, blockHash *daghash.Hash) error {
 	diffStore.mtx.LowPriorityWriteLock()
 	defer diffStore.mtx.LowPriorityWriteUnlock()
 	delete(diffStore.loaded, *blockHash)
-	err := dbaccess.RemoveDiffData(context, blockHash)
+	err := dbaccess.RemoveDiffData(dbContext, blockHash)
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func (diffStore *utxoDiffStore) diffDataFromDB(hash *daghash.Hash) (*blockUTXODi
 }
 
 // flushToDB writes all dirty diff data to the database.
-func (diffStore *utxoDiffStore) flushToDB(context *dbaccess.TxContext) error {
+func (diffStore *utxoDiffStore) flushToDB(dbContext *dbaccess.TxContext) error {
 	diffStore.mtx.HighPriorityWriteLock()
 	defer diffStore.mtx.HighPriorityWriteUnlock()
 	if len(diffStore.dirty) == 0 {
@@ -139,7 +139,7 @@ func (diffStore *utxoDiffStore) flushToDB(context *dbaccess.TxContext) error {
 		hash := hash // Copy hash to a new variable to avoid passing the same pointer
 		buffer.Reset()
 		diffData := diffStore.loaded[hash]
-		err := storeDiffData(context, buffer, &hash, diffData)
+		err := storeDiffData(dbContext, buffer, &hash, diffData)
 		if err != nil {
 			return err
 		}
@@ -153,7 +153,7 @@ func (diffStore *utxoDiffStore) clearDirtyEntries() {
 
 // storeDiffData stores the UTXO diff data to the database.
 // This overwrites the current entry if there exists one.
-func storeDiffData(context dbaccess.Context, w *bytes.Buffer, hash *daghash.Hash, diffData *blockUTXODiffData) error {
+func storeDiffData(dbContext dbaccess.Context, w *bytes.Buffer, hash *daghash.Hash, diffData *blockUTXODiffData) error {
 	// To avoid a ton of allocs, use the io.Writer
 	// instead of allocating one. We expect the buffer to
 	// already be initalized and, in most cases, to already
@@ -164,5 +164,5 @@ func storeDiffData(context dbaccess.Context, w *bytes.Buffer, hash *daghash.Hash
 		return err
 	}
 
-	return dbaccess.StoreUTXODiffData(context, hash, w.Bytes())
+	return dbaccess.StoreUTXODiffData(dbContext, hash, w.Bytes())
 }

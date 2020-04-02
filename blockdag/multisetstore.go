@@ -51,7 +51,7 @@ func (store *multisetStore) multisetByBlockHash(hash *daghash.Hash) (*secp256k1.
 }
 
 // flushToDB writes all new multiset data to the database.
-func (store *multisetStore) flushToDB(context *dbaccess.TxContext) error {
+func (store *multisetStore) flushToDB(dbContext *dbaccess.TxContext) error {
 	if len(store.new) == 0 {
 		return nil
 	}
@@ -71,7 +71,7 @@ func (store *multisetStore) flushToDB(context *dbaccess.TxContext) error {
 			return err
 		}
 
-		err = store.storeMultiset(context, &hash, w.Bytes())
+		err = store.storeMultiset(dbContext, &hash, w.Bytes())
 		if err != nil {
 			return err
 		}
@@ -83,8 +83,8 @@ func (store *multisetStore) clearNewEntries() {
 	store.new = make(map[daghash.Hash]struct{})
 }
 
-func (store *multisetStore) init(context dbaccess.Context) error {
-	cursor, err := dbaccess.MultisetCursor(context)
+func (store *multisetStore) init(dbContext dbaccess.Context) error {
+	cursor, err := dbaccess.MultisetCursor(dbContext)
 	if err != nil {
 		return err
 	}
@@ -117,8 +117,8 @@ func (store *multisetStore) init(context dbaccess.Context) error {
 }
 
 // storeMultiset stores the multiset data to the database.
-func (store *multisetStore) storeMultiset(context dbaccess.Context, blockHash *daghash.Hash, serializedMS []byte) error {
-	exists, err := dbaccess.HasMultiset(context, blockHash)
+func (store *multisetStore) storeMultiset(dbContext dbaccess.Context, blockHash *daghash.Hash, serializedMS []byte) error {
+	exists, err := dbaccess.HasMultiset(dbContext, blockHash)
 	if err != nil {
 		return err
 	}
@@ -127,5 +127,5 @@ func (store *multisetStore) storeMultiset(context dbaccess.Context, blockHash *d
 		return errors.Errorf("Can't override an existing multiset database entry for block %s", blockHash)
 	}
 
-	return dbaccess.StoreMultiset(context, blockHash, serializedMS)
+	return dbaccess.StoreMultiset(dbContext, blockHash, serializedMS)
 }

@@ -37,13 +37,13 @@ func (m *Manager) Init(dag *blockdag.BlockDAG) error {
 // checks, and invokes each indexer.
 //
 // This is part of the blockdag.IndexManager interface.
-func (m *Manager) ConnectBlock(context *dbaccess.TxContext, blockHash *daghash.Hash, txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
+func (m *Manager) ConnectBlock(dbContext *dbaccess.TxContext, blockHash *daghash.Hash, txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
 
 	// Call each of the currently active optional indexes with the block
 	// being connected so they can update accordingly.
 	for _, index := range m.enabledIndexes {
 		// Notify the indexer with the connected block so it can index it.
-		if err := index.ConnectBlock(context, blockHash, txsAcceptanceData); err != nil {
+		if err := index.ConnectBlock(dbContext, blockHash, txsAcceptanceData); err != nil {
 			return err
 		}
 	}
