@@ -17,18 +17,18 @@ func db() (database.Database, error) {
 	return dbSingleton, nil
 }
 
-// Open opens to the database for given path
+// Open opens the database for given path
 func Open(path string) error {
 	if dbSingleton != nil {
 		return errors.New("database is already open")
 	}
 
-	openedDB, err := ffldb.Open(path)
+	openDB, err := ffldb.Open(path)
 	if err != nil {
 		return err
 	}
 
-	dbSingleton = openedDB
+	dbSingleton = openDB
 	return nil
 }
 
