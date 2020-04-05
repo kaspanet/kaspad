@@ -129,6 +129,7 @@ func (tx *LevelDBTransaction) Cursor(bucket []byte) (*LevelDBCursor, error) {
 	return tx.db.Cursor(bucket), nil
 }
 
+// IsClosed returns true if this transaction had been closed.
 func (tx *LevelDBTransaction) IsClosed() bool {
 	return tx.isClosed
 }
