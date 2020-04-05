@@ -59,3 +59,22 @@ func AfterFuncWrapperFunc(log *logs.Logger) func(d time.Duration, f func()) *tim
 		})
 	}
 }
+
+// Exit writes the given exit reason to the given log, waits for
+// it to finish, and exits.
+func Exit(log *logs.Logger, reason string) {
+	exitHandlerDone := make(chan struct{})
+	go func() {
+		log.Criticalf("Exiting: %s", reason)
+		log.Backend().Close()
+		close(exitHandlerDone)
+	}()
+
+	const panicHandlerTimeout = 5 * time.Second
+	select {
+	case <-time.After(panicHandlerTimeout):
+		fmt.Fprintln(os.Stderr, "Couldn't exit gracefully.")
+	case <-exitHandlerDone:
+	}
+	os.Exit(1)
+}

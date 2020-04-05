@@ -1,6 +1,7 @@
 package ff
 
 import (
+	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/pkg/errors"
 	"hash/crc32"
 	"os"
@@ -154,7 +155,7 @@ func (s *flatFileStore) writeData(data []byte, fieldName string) error {
 	if err != nil {
 		var pathErr *os.PathError
 		if ok := errors.As(err, &pathErr); ok && pathErr.Err == syscall.ENOSPC {
-			panic("No space left on the hard disk, exiting...")
+			panics.Exit(log, "No space left on the hard disk.")
 		}
 		return errors.Wrapf(err, "failed to write %s in store %s to file %d "+
 			"at offset %d", fieldName, s.storeName, cursor.currentFileNumber,
