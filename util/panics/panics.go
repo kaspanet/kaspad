@@ -70,9 +70,9 @@ func Exit(log *logs.Logger, reason string) {
 		close(exitHandlerDone)
 	}()
 
-	const panicHandlerTimeout = 5 * time.Second
+	const exitHandlerTimeout = 5 * time.Second
 	select {
-	case <-time.After(panicHandlerTimeout):
+	case <-time.After(exitHandlerTimeout):
 		fmt.Fprintln(os.Stderr, "Couldn't exit gracefully.")
 	case <-exitHandlerDone:
 	}
