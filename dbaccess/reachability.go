@@ -7,7 +7,7 @@ import (
 
 var reachabilityDataBucket = database.MakeBucket([]byte("reachability"))
 
-func reachabilityKey(hash *daghash.Hash) []byte {
+func reachabilityKey(hash *daghash.Hash) *database.Key {
 	return reachabilityDataBucket.Key(hash[:])
 }
 
@@ -19,7 +19,7 @@ func ReachabilityDataCursor(context Context) (database.Cursor, error) {
 		return nil, err
 	}
 
-	return accessor.Cursor(reachabilityDataBucket.Path())
+	return accessor.Cursor(reachabilityDataBucket)
 }
 
 // StoreReachabilityData stores the reachability data of a block by its hash.

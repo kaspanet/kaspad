@@ -1,12 +1,44 @@
 package database
 
-import "bytes"
+import (
+	"bytes"
+)
 
 var separator = []byte("/")
 
-// Bucket is a helper type meant to combine buckets,
-// sub-buckets, and keys into a single full key-value
+// Key is a helper type meant to combine prefix
+// and keys into a single full key-value
 // database key.
+type Key struct {
+	prefix, key []byte
+}
+
+// FullKey returns the prefix concatenated to the key.
+func (k *Key) FullKey() []byte {
+	keyPath := make([]byte, len(k.prefix)+len(k.key))
+	copy(keyPath, k.prefix)
+	copy(keyPath[len(k.prefix):], k.key)
+	return keyPath
+}
+
+func (k *Key) String() string {
+	return string(k.FullKey())
+}
+
+// Key returns the key part of the key.
+func (k *Key) Key() []byte {
+	return k.key
+}
+
+// NewKey returns a new key composed
+// of the given prefix and key
+func NewKey(prefix, key []byte) *Key {
+	return &Key{prefix: prefix, key: key}
+}
+
+// Bucket is a helper type meant to combine buckets
+// and sub-buckets that can be used to create database
+// keys and prefix-based cursors.
 type Bucket struct {
 	path [][]byte
 }
@@ -28,15 +60,8 @@ func (b *Bucket) Bucket(bucketBytes []byte) *Bucket {
 }
 
 // Key returns the key inside of the current bucket.
-func (b *Bucket) Key(key []byte) []byte {
-	bucketPath := b.Path()
-
-	fullKeyLength := len(bucketPath) + len(key)
-	fullKey := make([]byte, fullKeyLength)
-	copy(fullKey, bucketPath)
-	copy(fullKey[len(bucketPath):], key)
-
-	return fullKey
+func (b *Bucket) Key(key []byte) *Key {
+	return NewKey(b.Path(), key)
 }
 
 // Path returns the full path of the current bucket.
