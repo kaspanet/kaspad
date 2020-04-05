@@ -190,95 +190,22 @@ func (dag *BlockDAG) initDAGState() error {
 	if err != nil {
 		return err
 	}
-	if !dagState.LocalSubnetworkID.IsEqual(dag.subnetworkID) {
-		return errors.Errorf("Cannot start kaspad with subnetwork ID %s because"+
-			" its database is already built with subnetwork ID %s. If you"+
-			" want to switch to a new database, please reset the"+
-			" database by starting kaspad with --reset-db flag", dag.subnetworkID, dagState.LocalSubnetworkID)
+
+	err = dag.validateLocalSubnetworkID(dagState)
+	if err != nil {
+		return err
 	}
 
 	log.Debugf("Loading block index...")
-	var unprocessedBlockNodes []*blockNode
-	blockIndexCursor, err := dbaccess.BlockIndexCursor(dbaccess.NoTx())
+	unprocessedBlockNodes, err := dag.initBlockIndex()
 	if err != nil {
 		return err
-	}
-	defer blockIndexCursor.Close()
-	for blockIndexCursor.Next() {
-		serializedDBNode, err := blockIndexCursor.Value()
-		if err != nil {
-			return err
-		}
-		node, err := dag.deserializeBlockNode(serializedDBNode)
-		if err != nil {
-			return err
-		}
-
-		// Check to see if this node had been stored in the the block DB
-		// but not yet accepted. If so, add it to a slice to be processed later.
-		if node.status == statusDataStored {
-			unprocessedBlockNodes = append(unprocessedBlockNodes, node)
-			continue
-		}
-
-		// If the node is known to be invalid add it as-is to the block
-		// index and continue.
-		if node.status.KnownInvalid() {
-			dag.index.addNode(node)
-			continue
-		}
-
-		if dag.blockCount == 0 {
-			if !node.hash.IsEqual(dag.dagParams.GenesisHash) {
-				return AssertError(fmt.Sprintf("initDAGState: Expected "+
-					"first entry in block index to be genesis block, "+
-					"found %s", node.hash))
-			}
-		} else {
-			if len(node.parents) == 0 {
-				return AssertError(fmt.Sprintf("initDAGState: block %s "+
-					"has no parents but it's not the genesis block", node.hash))
-			}
-		}
-
-		// Add the node to its parents children, connect it,
-		// and add it to the block index.
-		node.updateParentsChildren()
-		dag.index.addNode(node)
-
-		dag.blockCount++
 	}
 
 	log.Debugf("Loading UTXO set...")
-	fullUTXOCollection := make(utxoCollection)
-	cursor, err := dbaccess.UTXOSetCursor(dbaccess.NoTx())
+	fullUTXOCollection, err := dag.initUTXOSet()
 	if err != nil {
 		return err
-	}
-	defer cursor.Close()
-
-	for cursor.Next() {
-		// Deserialize the outpoint
-		key, err := cursor.Key()
-		if err != nil {
-			return err
-		}
-		outpoint, err := deserializeOutpoint(bytes.NewReader(key))
-		if err != nil {
-			return err
-		}
-
-		// Deserialize the utxo entry
-		value, err := cursor.Value()
-		if err != nil {
-			return err
-		}
-		entry, err := deserializeUTXOEntry(bytes.NewReader(value))
-		if err != nil {
-			return err
-		}
-
-		fullUTXOCollection[*outpoint] = entry
 	}
 
 	log.Debugf("Loading reachability data...")
@@ -300,32 +227,149 @@ func (dag *BlockDAG) initDAGState() error {
 	}
 
 	log.Debugf("Applying the stored tips to the virtual block...")
-	tips := newBlockSet()
-	for _, tipHash := range dagState.TipHashes {
-		tip := dag.index.LookupNode(tipHash)
-		if tip == nil {
-			return AssertError(fmt.Sprintf("initDAGState: cannot find "+
-				"DAG tip %s in block index", dagState.TipHashes))
-		}
-		tips.add(tip)
+	err = dag.initVirtualBlockTips(dagState)
+	if err != nil {
+		return err
 	}
-	dag.virtual.SetTips(tips)
 
 	log.Debugf("Setting the last finality point...")
 	dag.lastFinalityPoint = dag.index.LookupNode(dagState.LastFinalityPoint)
 	dag.finalizeNodesBelowFinalityPoint(false)
 
 	log.Debugf("Processing unprocessed blockNodes...")
+	err = dag.processUnprocessedBlockNodes(unprocessedBlockNodes)
+	if err != nil {
+		return err
+	}
+
+	log.Infof("DAG state initialized.")
+
+	return nil
+}
+
+func (dag *BlockDAG) validateLocalSubnetworkID(state *dagState) error {
+	if !state.LocalSubnetworkID.IsEqual(dag.subnetworkID) {
+		return errors.Errorf("Cannot start kaspad with subnetwork ID %s because"+
+			" its database is already built with subnetwork ID %s. If you"+
+			" want to switch to a new database, please reset the"+
+			" database by starting kaspad with --reset-db flag", dag.subnetworkID, state.LocalSubnetworkID)
+	}
+	return nil
+}
+
+func (dag *BlockDAG) initBlockIndex() (unprocessedBlockNodes []*blockNode, err error) {
+	blockIndexCursor, err := dbaccess.BlockIndexCursor(dbaccess.NoTx())
+	if err != nil {
+		return nil, err
+	}
+	defer blockIndexCursor.Close()
+	for blockIndexCursor.Next() {
+		serializedDBNode, err := blockIndexCursor.Value()
+		if err != nil {
+			return nil, err
+		}
+		node, err := dag.deserializeBlockNode(serializedDBNode)
+		if err != nil {
+			return nil, err
+		}
+
+		// Check to see if this node had been stored in the the block DB
+		// but not yet accepted. If so, add it to a slice to be processed later.
+		if node.status == statusDataStored {
+			unprocessedBlockNodes = append(unprocessedBlockNodes, node)
+			continue
+		}
+
+		// If the node is known to be invalid add it as-is to the block
+		// index and continue.
+		if node.status.KnownInvalid() {
+			dag.index.addNode(node)
+			continue
+		}
+
+		if dag.blockCount == 0 {
+			if !node.hash.IsEqual(dag.dagParams.GenesisHash) {
+				return nil, AssertError(fmt.Sprintf("Expected "+
+					"first entry in block index to be genesis block, "+
+					"found %s", node.hash))
+			}
+		} else {
+			if len(node.parents) == 0 {
+				return nil, AssertError(fmt.Sprintf("block %s "+
+					"has no parents but it's not the genesis block", node.hash))
+			}
+		}
+
+		// Add the node to its parents children, connect it,
+		// and add it to the block index.
+		node.updateParentsChildren()
+		dag.index.addNode(node)
+
+		dag.blockCount++
+	}
+	return unprocessedBlockNodes, nil
+}
+
+func (dag *BlockDAG) initUTXOSet() (fullUTXOCollection utxoCollection, err error) {
+	fullUTXOCollection = make(utxoCollection)
+	cursor, err := dbaccess.UTXOSetCursor(dbaccess.NoTx())
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close()
+
+	for cursor.Next() {
+		// Deserialize the outpoint
+		key, err := cursor.Key()
+		if err != nil {
+			return nil, err
+		}
+		outpoint, err := deserializeOutpoint(bytes.NewReader(key))
+		if err != nil {
+			return nil, err
+		}
+
+		// Deserialize the utxo entry
+		value, err := cursor.Value()
+		if err != nil {
+			return nil, err
+		}
+		entry, err := deserializeUTXOEntry(bytes.NewReader(value))
+		if err != nil {
+			return nil, err
+		}
+
+		fullUTXOCollection[*outpoint] = entry
+	}
+
+	return fullUTXOCollection, nil
+}
+
+func (dag *BlockDAG) initVirtualBlockTips(state *dagState) error {
+	tips := newBlockSet()
+	for _, tipHash := range state.TipHashes {
+		tip := dag.index.LookupNode(tipHash)
+		if tip == nil {
+			return AssertError(fmt.Sprintf("cannot find "+
+				"DAG tip %s in block index", state.TipHashes))
+		}
+		tips.add(tip)
+	}
+	dag.virtual.SetTips(tips)
+	return nil
+}
+
+func (dag *BlockDAG) processUnprocessedBlockNodes(unprocessedBlockNodes []*blockNode) error {
 	for _, node := range unprocessedBlockNodes {
 		// Check to see if the block exists in the block DB. If it
 		// doesn't, the database has certainly been corrupted.
 		blockExists, err := dbaccess.HasBlock(dbaccess.NoTx(), node.hash)
 		if err != nil {
-			return AssertError(fmt.Sprintf("initDAGState: HasBlock "+
+			return AssertError(fmt.Sprintf("HasBlock "+
 				"for block %s failed: %s", node.hash, err))
 		}
 		if !blockExists {
-			return AssertError(fmt.Sprintf("initDAGState: block %s "+
+			return AssertError(fmt.Sprintf("block %s "+
 				"exists in block index but not in block db", node.hash))
 		}
 
@@ -354,9 +398,6 @@ func (dag *BlockDAG) initDAGState() error {
 				"impossible.", node.hash))
 		}
 	}
-
-	log.Infof("DAG state initialized.")
-
 	return nil
 }
 
