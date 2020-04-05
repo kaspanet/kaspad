@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"sync"
 
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/dbaccess"
@@ -18,7 +17,6 @@ import (
 
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/binaryserializer"
-	"github.com/kaspanet/kaspad/util/buffers"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/wire"
@@ -44,14 +42,6 @@ func (e errNotInDAG) Error() string {
 func isNotInDAGErr(err error) bool {
 	var notInDAGErr errNotInDAG
 	return errors.As(err, &notInDAGErr)
-}
-
-// outpointKeyPool defines a concurrent safe free list of byte buffers used to
-// provide temporary buffers for outpoint database keys.
-var outpointKeyPool = sync.Pool{
-	New: func() interface{} {
-		return &bytes.Buffer{} // Pointer to a buffer to avoid boxing alloc.
-	},
 }
 
 // outpointIndexByteOrder is the byte order for serializing the outpoint index.
@@ -91,42 +81,41 @@ func deserializeOutpoint(r io.Reader) (*wire.Outpoint, error) {
 // updateUTXOSet updates the UTXO set in the database based on the provided
 // UTXO diff.
 func updateUTXOSet(dbContext dbaccess.Context, virtualUTXODiff *UTXODiff) error {
+	outpointBuff := bytes.NewBuffer(make([]byte, outpointSerializeSize))
 	for outpoint := range virtualUTXODiff.toRemove {
-		w := outpointKeyPool.Get().(*bytes.Buffer)
-		w.Reset()
-		err := serializeOutpoint(w, &outpoint)
+		outpointBuff.Reset()
+		err := serializeOutpoint(outpointBuff, &outpoint)
 		if err != nil {
 			return err
 		}
 
-		key := w.Bytes()
+		key := outpointBuff.Bytes()
 		err = dbaccess.RemoveFromUTXOSet(dbContext, key)
 		if err != nil {
 			return err
 		}
-		outpointKeyPool.Put(w)
 	}
 
 	// We are preallocating for P2PKH entries because they are the most common ones.
 	// If we have entries with a compressed script bigger than P2PKH's, the buffer will grow.
-	bytesToPreallocate := (p2pkhUTXOEntrySerializeSize + outpointSerializeSize) * len(virtualUTXODiff.toAdd)
-	buff := bytes.NewBuffer(make([]byte, bytesToPreallocate))
+	utxoEntryBuff := bytes.NewBuffer(make([]byte, p2pkhUTXOEntrySerializeSize))
+
 	for outpoint, entry := range virtualUTXODiff.toAdd {
+		utxoEntryBuff.Reset()
+		outpointBuff.Reset()
 		// Serialize and store the UTXO entry.
-		sBuff := buffers.NewSubBuffer(buff)
-		err := serializeUTXOEntry(sBuff, entry)
+		err := serializeUTXOEntry(utxoEntryBuff, entry)
 		if err != nil {
 			return err
 		}
-		serializedEntry := sBuff.Bytes()
+		serializedEntry := utxoEntryBuff.Bytes()
 
-		sBuff = buffers.NewSubBuffer(buff)
-		err = serializeOutpoint(sBuff, &outpoint)
+		err = serializeOutpoint(outpointBuff, &outpoint)
 		if err != nil {
 			return err
 		}
 
-		key := sBuff.Bytes()
+		key := outpointBuff.Bytes()
 		err = dbaccess.AddToUTXOSet(dbContext, key, serializedEntry)
 		if err != nil {
 			return err
