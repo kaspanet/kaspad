@@ -70,16 +70,6 @@ func (tx *LevelDBTransaction) Rollback() error {
 	return nil
 }
 
-// RollbackUnlessClosed rolls back changes that were made to
-// the database within the transaction, unless the transaction
-// had already been closed using either Rollback or Commit.
-func (tx *LevelDBTransaction) RollbackUnlessClosed() error {
-	if tx.isClosed {
-		return nil
-	}
-	return tx.Rollback()
-}
-
 // Put sets the value for the given key. It overwrites
 // any previous value for that key.
 func (tx *LevelDBTransaction) Put(key []byte, value []byte) error {
@@ -137,4 +127,8 @@ func (tx *LevelDBTransaction) Cursor(bucket []byte) (*LevelDBCursor, error) {
 	}
 
 	return tx.db.Cursor(bucket), nil
+}
+
+func (tx *LevelDBTransaction) IsClosed() bool {
+	return tx.isClosed
 }

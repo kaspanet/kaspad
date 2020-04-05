@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/database/ffldb/ff"
 	"github.com/kaspanet/kaspad/database/ffldb/ldb"
+	"github.com/pkg/errors"
 )
 
 // transaction is an ffldb transaction.
@@ -13,8 +14,9 @@ import (
 // NO guarantee that if one puts data into the transaction then
 // it will be available to get within the same transaction.
 type transaction struct {
-	ldbTx *ldb.LevelDBTransaction
-	ffdb  *ff.FlatFileDB
+	ldbTx             *ldb.LevelDBTransaction
+	ffdb              *ff.FlatFileDB
+	flatFilesSnapshot map[string][]byte
 }
 
 // Put sets the value for the given key. It overwrites
@@ -74,7 +76,7 @@ func (tx *transaction) Cursor(bucket []byte) (database.Cursor, error) {
 // database within this transaction.
 // This method is part of the Transaction interface.
 func (tx *transaction) Rollback() error {
-	return tx.ldbTx.Rollback()
+	return tx.rollback()
 }
 
 // Commit commits whatever changes were made to the database
@@ -88,5 +90,31 @@ func (tx *transaction) Commit() error {
 // the database within the transaction, unless the transaction
 // had already been closed using either Rollback or Commit.
 func (tx *transaction) RollbackUnlessClosed() error {
-	return tx.ldbTx.RollbackUnlessClosed()
+	if tx.ldbTx.IsClosed() {
+		return nil
+	}
+	return tx.rollback()
+}
+
+func (tx *transaction) rollback() error {
+	err := tx.rollbackFlatFiles()
+	if err != nil {
+		levelDBErr := tx.ldbTx.Rollback()
+		if levelDBErr != nil {
+			return errors.Wrapf(err, "failed to rollback leveldb: %s", levelDBErr)
+		}
+		return err
+	}
+
+	return tx.ldbTx.Rollback()
+}
+
+func (tx *transaction) rollbackFlatFiles() error {
+	for storeName, location := range tx.flatFilesSnapshot {
+		err := tx.ffdb.Rollback(storeName, location)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

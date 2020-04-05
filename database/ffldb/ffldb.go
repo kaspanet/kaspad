@@ -168,10 +168,15 @@ func (db *ffldb) Begin() (database.Transaction, error) {
 	if err != nil {
 		return nil, err
 	}
+	flatFilesSnapshot, err := db.flatFiles()
+	if err != nil {
+		return nil, err
+	}
 
 	transaction := &transaction{
-		ldbTx: ldbTx,
-		ffdb:  db.flatFileDB,
+		ldbTx:             ldbTx,
+		ffdb:              db.flatFileDB,
+		flatFilesSnapshot: flatFilesSnapshot,
 	}
 	return transaction, nil
 }
