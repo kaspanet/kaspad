@@ -131,7 +131,7 @@ func TestFlatFileRollbackInTransactions(t *testing.T) {
 	// Cast to ffldb since we're going to be messing with its internals
 	ffldbInstance, ok := db.(*ffldb)
 	if !ok {
-		t.Fatalf("TestRepairFlatFiles: unexpectedly can't cast " +
+		t.Fatalf("TestFlatFileRollbackInTransactions: unexpectedly can't cast " +
 			"db to ffldb")
 	}
 
