@@ -2,6 +2,7 @@ package database
 
 import (
 	"bytes"
+	"encoding/hex"
 )
 
 var separator = []byte("/")
@@ -22,7 +23,7 @@ func (k *Key) FullKeyBytes() []byte {
 }
 
 func (k *Key) String() string {
-	return string(k.FullKeyBytes())
+	return hex.EncodeToString(k.FullKeyBytes())
 }
 
 // KeyBytes returns the key part of the key.
