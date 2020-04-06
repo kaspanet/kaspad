@@ -263,7 +263,7 @@ func (dag *BlockDAG) initDAGState() error {
 		if err != nil {
 			return err
 		}
-		outpoint, err := deserializeOutpoint(bytes.NewReader(key.Key()))
+		outpoint, err := deserializeOutpoint(bytes.NewReader(key.KeyBytes()))
 		if err != nil {
 			return err
 		}
@@ -598,7 +598,7 @@ func (dag *BlockDAG) BlockHashesFrom(lowHash *daghash.Hash, limit int) ([]*dagha
 		if err != nil {
 			return nil, err
 		}
-		blockHash, err := blockHashFromBlockIndexKey(key.Key())
+		blockHash, err := blockHashFromBlockIndexKey(key.KeyBytes())
 		if err != nil {
 			return nil, err
 		}

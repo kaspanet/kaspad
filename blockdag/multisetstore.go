@@ -96,7 +96,7 @@ func (store *multisetStore) init(dbContext dbaccess.Context) error {
 			return err
 		}
 
-		hash, err := daghash.NewHash(key.Key())
+		hash, err := daghash.NewHash(key.KeyBytes())
 		if err != nil {
 			return err
 		}

@@ -46,13 +46,13 @@ func TestBucketKey(t *testing.T) {
 	tests := []struct {
 		bucketByteSlices [][]byte
 		key              []byte
-		expectedFullKey  []byte
+		expectedKeyBytes []byte
 		expectedKey      *Key
 	}{
 		{
 			bucketByteSlices: [][]byte{[]byte("hello")},
 			key:              []byte("test"),
-			expectedFullKey:  []byte("hello/test"),
+			expectedKeyBytes: []byte("hello/test"),
 			expectedKey: &Key{
 				prefix: []byte("hello/"),
 				key:    []byte("test"),
@@ -61,7 +61,7 @@ func TestBucketKey(t *testing.T) {
 		{
 			bucketByteSlices: [][]byte{[]byte("hello"), []byte("world")},
 			key:              []byte("test"),
-			expectedFullKey:  []byte("hello/world/test"),
+			expectedKeyBytes: []byte("hello/world/test"),
 			expectedKey: &Key{
 				prefix: []byte("hello/world/"),
 				key:    []byte("test"),
@@ -73,11 +73,11 @@ func TestBucketKey(t *testing.T) {
 		resultKey := MakeBucket(test.bucketByteSlices...).Key(test.key)
 		if !reflect.DeepEqual(resultKey, test.expectedKey) {
 			t.Errorf("TestBucketKey: got wrong key. Want: %s, got: %s",
-				test.expectedFullKey, resultKey)
+				test.expectedKeyBytes, resultKey)
 		}
-		if !bytes.Equal(resultKey.FullKey(), test.expectedFullKey) {
-			t.Errorf("TestBucketKey: got wrong full key. Want: %s, got: %s",
-				test.expectedFullKey, resultKey.FullKey())
+		if !bytes.Equal(resultKey.FullKeyBytes(), test.expectedKeyBytes) {
+			t.Errorf("TestBucketKey: got wrong key bytes. Want: %s, got: %s",
+				test.expectedKeyBytes, resultKey.FullKeyBytes())
 		}
 	}
 }

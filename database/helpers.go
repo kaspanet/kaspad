@@ -13,8 +13,8 @@ type Key struct {
 	prefix, key []byte
 }
 
-// FullKey returns the prefix concatenated to the key.
-func (k *Key) FullKey() []byte {
+// FullKeyBytes returns the prefix concatenated to the key.
+func (k *Key) FullKeyBytes() []byte {
 	keyPath := make([]byte, len(k.prefix)+len(k.key))
 	copy(keyPath, k.prefix)
 	copy(keyPath[len(k.prefix):], k.key)
@@ -22,11 +22,11 @@ func (k *Key) FullKey() []byte {
 }
 
 func (k *Key) String() string {
-	return string(k.FullKey())
+	return string(k.FullKeyBytes())
 }
 
-// Key returns the key part of the key.
-func (k *Key) Key() []byte {
+// KeyBytes returns the key part of the key.
+func (k *Key) KeyBytes() []byte {
 	return k.key
 }
 

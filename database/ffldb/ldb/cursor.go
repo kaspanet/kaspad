@@ -54,7 +54,7 @@ func (c *LevelDBCursor) Seek(key *database.Key) error {
 
 	notFoundErr := errors.Wrapf(database.ErrNotFound, "key %s not "+
 		"found", key)
-	found := c.ldbIterator.Seek(key.FullKey())
+	found := c.ldbIterator.Seek(key.FullKeyBytes())
 	if !found {
 		return notFoundErr
 	}
@@ -64,7 +64,7 @@ func (c *LevelDBCursor) Seek(key *database.Key) error {
 	if currentKey == nil {
 		return notFoundErr
 	}
-	if !bytes.Equal(currentKey, key.FullKey()) {
+	if !bytes.Equal(currentKey, key.FullKeyBytes()) {
 		return notFoundErr
 	}
 

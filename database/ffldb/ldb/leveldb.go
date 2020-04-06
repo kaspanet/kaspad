@@ -52,14 +52,14 @@ func (db *LevelDB) Close() error {
 // Put sets the value for the given key. It overwrites
 // any previous value for that key.
 func (db *LevelDB) Put(key *database.Key, value []byte) error {
-	err := db.ldb.Put(key.FullKey(), value, nil)
+	err := db.ldb.Put(key.FullKeyBytes(), value, nil)
 	return errors.WithStack(err)
 }
 
 // Get gets the value for the given key. It returns
 // ErrNotFound if the given key does not exist.
 func (db *LevelDB) Get(key *database.Key) ([]byte, error) {
-	data, err := db.ldb.Get(key.FullKey(), nil)
+	data, err := db.ldb.Get(key.FullKeyBytes(), nil)
 	if err != nil {
 		if errors.Is(err, leveldb.ErrNotFound) {
 			return nil, errors.Wrapf(database.ErrNotFound,
@@ -73,7 +73,7 @@ func (db *LevelDB) Get(key *database.Key) ([]byte, error) {
 // Has returns true if the database does contains the
 // given key.
 func (db *LevelDB) Has(key *database.Key) (bool, error) {
-	exists, err := db.ldb.Has(key.FullKey(), nil)
+	exists, err := db.ldb.Has(key.FullKeyBytes(), nil)
 	if err != nil {
 		return false, errors.WithStack(err)
 	}
@@ -83,6 +83,6 @@ func (db *LevelDB) Has(key *database.Key) (bool, error) {
 // Delete deletes the value for the given key. Will not
 // return an error if the key doesn't exist.
 func (db *LevelDB) Delete(key *database.Key) error {
-	err := db.ldb.Delete(key.FullKey(), nil)
+	err := db.ldb.Delete(key.FullKeyBytes(), nil)
 	return errors.WithStack(err)
 }

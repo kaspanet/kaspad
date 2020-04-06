@@ -33,7 +33,7 @@ func (db *ffldb) flatFiles() (map[string][]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		storeName := string(storeNameKey.Key())
+		storeName := string(storeNameKey.KeyBytes())
 
 		currentLocation, err := flatFilesCursor.Value()
 		if err != nil {
