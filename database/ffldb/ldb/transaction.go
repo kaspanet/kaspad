@@ -86,7 +86,7 @@ func (tx *LevelDBTransaction) Put(key *database.Key, value []byte) error {
 		return errors.New("cannot put into a closed transaction")
 	}
 
-	tx.batch.Put(key.FullKeyBytes(), value)
+	tx.batch.Put(key.Bytes(), value)
 	return nil
 }
 
@@ -97,7 +97,7 @@ func (tx *LevelDBTransaction) Get(key *database.Key) ([]byte, error) {
 		return nil, errors.New("cannot get from a closed transaction")
 	}
 
-	data, err := tx.snapshot.Get(key.FullKeyBytes(), nil)
+	data, err := tx.snapshot.Get(key.Bytes(), nil)
 	if err != nil {
 		if errors.Is(err, leveldb.ErrNotFound) {
 			return nil, errors.Wrapf(database.ErrNotFound,
@@ -115,7 +115,7 @@ func (tx *LevelDBTransaction) Has(key *database.Key) (bool, error) {
 		return false, errors.New("cannot has from a closed transaction")
 	}
 
-	return tx.snapshot.Has(key.FullKeyBytes(), nil)
+	return tx.snapshot.Has(key.Bytes(), nil)
 }
 
 // Delete deletes the value for the given key. Will not
@@ -125,7 +125,7 @@ func (tx *LevelDBTransaction) Delete(key *database.Key) error {
 		return errors.New("cannot delete from a closed transaction")
 	}
 
-	tx.batch.Delete(key.FullKeyBytes())
+	tx.batch.Delete(key.Bytes())
 	return nil
 }
 

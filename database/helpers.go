@@ -8,33 +8,38 @@ import (
 var separator = []byte("/")
 
 // Key is a helper type meant to combine prefix
-// and keys into a single full key-value
+// and suffix into a single full key-value
 // database key.
 type Key struct {
-	prefix, key []byte
+	prefix, suffix []byte
 }
 
-// FullKeyBytes returns the prefix concatenated to the key.
-func (k *Key) FullKeyBytes() []byte {
-	keyPath := make([]byte, len(k.prefix)+len(k.key))
-	copy(keyPath, k.prefix)
-	copy(keyPath[len(k.prefix):], k.key)
-	return keyPath
+// Bytes returns the prefix concatenated to the key.
+func (k *Key) Bytes() []byte {
+	keyBytes := make([]byte, len(k.prefix)+len(k.suffix))
+	copy(keyBytes, k.prefix)
+	copy(keyBytes[len(k.prefix):], k.suffix)
+	return keyBytes
 }
 
 func (k *Key) String() string {
-	return hex.EncodeToString(k.FullKeyBytes())
+	return hex.EncodeToString(k.Bytes())
 }
 
-// KeyBytes returns the key part of the key.
-func (k *Key) KeyBytes() []byte {
-	return k.key
+// PrefixBytes returns the prefix part of the key.
+func (k *Key) PrefixBytes() []byte {
+	return k.prefix
+}
+
+// SuffixBytes returns the suffix part of the key.
+func (k *Key) SuffixBytes() []byte {
+	return k.suffix
 }
 
 // NewKey returns a new key composed
-// of the given prefix and key
-func NewKey(prefix, key []byte) *Key {
-	return &Key{prefix: prefix, key: key}
+// of the given prefix and suffix
+func NewKey(prefix, suffix []byte) *Key {
+	return &Key{prefix: prefix, suffix: suffix}
 }
 
 // Bucket is a helper type meant to combine buckets

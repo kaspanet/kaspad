@@ -55,7 +55,7 @@ func TestBucketKey(t *testing.T) {
 			expectedKeyBytes: []byte("hello/test"),
 			expectedKey: &Key{
 				prefix: []byte("hello/"),
-				key:    []byte("test"),
+				suffix: []byte("test"),
 			},
 		},
 		{
@@ -64,7 +64,7 @@ func TestBucketKey(t *testing.T) {
 			expectedKeyBytes: []byte("hello/world/test"),
 			expectedKey: &Key{
 				prefix: []byte("hello/world/"),
-				key:    []byte("test"),
+				suffix: []byte("test"),
 			},
 		},
 	}
@@ -75,9 +75,9 @@ func TestBucketKey(t *testing.T) {
 			t.Errorf("TestBucketKey: got wrong key. Want: %s, got: %s",
 				test.expectedKeyBytes, resultKey)
 		}
-		if !bytes.Equal(resultKey.FullKeyBytes(), test.expectedKeyBytes) {
+		if !bytes.Equal(resultKey.Bytes(), test.expectedKeyBytes) {
 			t.Errorf("TestBucketKey: got wrong key bytes. Want: %s, got: %s",
-				test.expectedKeyBytes, resultKey.FullKeyBytes())
+				test.expectedKeyBytes, resultKey.Bytes())
 		}
 	}
 }
