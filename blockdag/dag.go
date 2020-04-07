@@ -1058,11 +1058,14 @@ func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) error {
 	return newVirtualUTXODiffSet.meldToBase()
 }
 
-func (node *blockNode) diffFromTxs(pastUTXO UTXOSet, transactions []*util.Tx) (*UTXODiff, error) {
+func applyTransactions(pastUTXO UTXOSet, transactions []*util.Tx) (UTXOSet, error) {
 	diff := NewUTXODiff()
 
 	for _, tx := range transactions {
 		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), UnacceptedBlueScore)
+		if errors.Is(err, errUTXOMissingTxOut) {
+			return nil, ruleError(ErrMissingTxOut, err.Error())
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -1072,7 +1075,7 @@ func (node *blockNode) diffFromTxs(pastUTXO UTXOSet, transactions []*util.Tx) (*
 		}
 	}
 
-	return diff, nil
+	return pastUTXO.WithDiff(diff)
 }
 
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
@@ -1096,11 +1099,7 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 		return nil, nil, nil, nil, err
 	}
 
-	diffFromTxs, err := node.diffFromTxs(pastUTXO, transactions)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-	utxo, err := pastUTXO.WithDiff(diffFromTxs)
+	utxo, err := applyTransactions(pastUTXO, transactions)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
