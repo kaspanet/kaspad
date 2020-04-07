@@ -1059,7 +1059,7 @@ func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) error {
 }
 
 // applyAndVerifyBlockTransactionsToPastUTXO applies a block's transactions to its
-// given past UTXO, and verifies that there are not double spends with his past.
+// given past UTXO, and verifies that there are no double spends with its past.
 func applyAndVerifyBlockTransactionsToPastUTXO(pastUTXO UTXOSet, blockTransactions []*util.Tx) (UTXOSet, error) {
 	diff := NewUTXODiff()
 
