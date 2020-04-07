@@ -81,6 +81,17 @@ func TestKeyValueTransactionCommit(t *testing.T) {
 			"unexpectedly failed: %s", err)
 	}
 
+	// Try to get a value that does not exist and make sure it returns ErrNotFound
+	_, err = dbTx.Get([]byte("doesn't exist"))
+	if err == nil {
+		t.Fatalf("TestKeyValueTransactionCommit: Get " +
+			"unexpectedly succeeded")
+	}
+	if !database.IsNotFoundError(err) {
+		t.Fatalf("TestKeyValueTransactionCommit: Get "+
+			"returned unexpected error: %s", err)
+	}
+
 	// Put a new value
 	key2 := []byte("key2")
 	value2 := []byte("value2")
