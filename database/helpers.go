@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 )
 
-var separator = []byte("/")
+var bucketSeparator = []byte("/")
 
 // Key is a helper type meant to combine prefix
 // and suffix into a single full key-value
@@ -72,11 +72,11 @@ func (b *Bucket) Key(key []byte) *Key {
 
 // Path returns the full path of the current bucket.
 func (b *Bucket) Path() []byte {
-	bucketPath := bytes.Join(b.path, separator)
+	bucketPath := bytes.Join(b.path, bucketSeparator)
 
-	bucketPathWithFinalSeparator := make([]byte, len(bucketPath)+len(separator))
+	bucketPathWithFinalSeparator := make([]byte, len(bucketPath)+len(bucketSeparator))
 	copy(bucketPathWithFinalSeparator, bucketPath)
-	copy(bucketPathWithFinalSeparator[len(bucketPath):], separator)
+	copy(bucketPathWithFinalSeparator[len(bucketPath):], bucketSeparator)
 
 	return bucketPathWithFinalSeparator
 }
