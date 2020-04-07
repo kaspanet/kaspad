@@ -26,13 +26,13 @@ func (k *Key) String() string {
 	return hex.EncodeToString(k.Bytes())
 }
 
-// PrefixBytes returns the prefix part of the key.
-func (k *Key) PrefixBytes() []byte {
+// Prefix returns the prefix part of the key.
+func (k *Key) Prefix() []byte {
 	return k.prefix
 }
 
-// SuffixBytes returns the suffix part of the key.
-func (k *Key) SuffixBytes() []byte {
+// Suffix returns the suffix part of the key.
+func (k *Key) Suffix() []byte {
 	return k.suffix
 }
 
