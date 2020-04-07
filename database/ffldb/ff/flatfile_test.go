@@ -1,6 +1,8 @@
 package ff
 
 import (
+	"bytes"
+	"github.com/kaspanet/kaspad/database"
 	"io/ioutil"
 	"reflect"
 	"testing"
@@ -70,5 +72,92 @@ func TestFlatFilePath(t *testing.T) {
 			t.Errorf("TestFlatFilePath: unexpected path. Want: %s, got: %s",
 				test.expectedPath, path)
 		}
+	}
+}
+
+func TestFlatFileMultiFileRollback(t *testing.T) {
+	// Set the maxFileSize to 16 bytes.
+	currentMaxFileSize := maxFileSize
+	maxFileSize = 16
+	defer func() {
+		maxFileSize = currentMaxFileSize
+	}()
+
+	// Open a test store
+	path, err := ioutil.TempDir("", "TestFlatFileMultiFileRollback")
+	if err != nil {
+		t.Fatalf("TestFlatFileMultiFileRollback: TempDir unexpectedly "+
+			"failed: %s", err)
+	}
+	name := "test"
+	store, err := openFlatFileStore(path, name)
+	if err != nil {
+		t.Fatalf("TestFlatFileMultiFileRollback: openFlatFileStore "+
+			"unexpectedly failed: %s", err)
+	}
+	defer func() {
+		err := store.Close()
+		if err != nil {
+			t.Fatalf("TestFlatFileMultiFileRollback: Close "+
+				"unexpectedly failed: %s", err)
+		}
+	}()
+
+	// Write 5 more 8 byte chunks and keep the last location written to
+	var lastWriteLocation1 *flatFileLocation
+	for i := byte(0); i < 5; i++ {
+		writeData := []byte{i, i, i, i, i, i, i, i}
+		var err error
+		lastWriteLocation1, err = store.write(writeData)
+		if err != nil {
+			t.Fatalf("TestFlatFileMultiFileRollback: write returned "+
+				"unexpected error: %s", err)
+		}
+	}
+
+	// Grab the current location
+	currentLocation := store.currentLocation()
+
+	// Write 2 * maxOpenFiles more 8 byte chunks and keep the last location written to
+	var lastWriteLocation2 *flatFileLocation
+	for i := byte(0); i < byte(2*maxFileSize); i++ {
+		writeData := []byte{0, 1, 2, 3, 4, 5, 6, 7}
+		var err error
+		lastWriteLocation2, err = store.write(writeData)
+		if err != nil {
+			t.Fatalf("TestFlatFileMultiFileRollback: write returned "+
+				"unexpected error: %s", err)
+		}
+	}
+
+	// Rollback
+	err = store.rollback(currentLocation)
+	if err != nil {
+		t.Fatalf("TestFlatFileMultiFileRollback: rollback returned "+
+			"unexpected error: %s", err)
+	}
+
+	// Make sure that lastWriteLocation1 still exists
+	expectedData := []byte{4, 4, 4, 4, 4, 4, 4, 4}
+	data, err := store.read(lastWriteLocation1)
+	if err != nil {
+		t.Fatalf("TestFlatFileMultiFileRollback: read returned "+
+			"unexpected error: %s", err)
+	}
+	if !bytes.Equal(data, expectedData) {
+		t.Fatalf("TestFlatFileMultiFileRollback: read returned "+
+			"unexpected data. Want: %s, got: %s", string(expectedData),
+			string(data))
+	}
+
+	// Make sure that lastWriteLocation2 does NOT exist
+	_, err = store.read(lastWriteLocation2)
+	if err == nil {
+		t.Fatalf("TestFlatFileMultiFileRollback: read " +
+			"unexpectedly succeeded")
+	}
+	if !database.IsNotFoundError(err) {
+		t.Fatalf("TestFlatFileMultiFileRollback: read "+
+			"returned unexpected error: %s", err)
 	}
 }
