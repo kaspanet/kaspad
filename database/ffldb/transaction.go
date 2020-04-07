@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/database/ffldb/ff"
 	"github.com/kaspanet/kaspad/database/ffldb/ldb"
+	"github.com/pkg/errors"
 )
 
 // transaction is an ffldb transaction.
@@ -13,14 +14,19 @@ import (
 // NO guarantee that if one puts data into the transaction then
 // it will be available to get within the same transaction.
 type transaction struct {
-	ldbTx *ldb.LevelDBTransaction
-	ffdb  *ff.FlatFileDB
+	ldbTx    *ldb.LevelDBTransaction
+	ffdb     *ff.FlatFileDB
+	isClosed bool
 }
 
 // Put sets the value for the given key. It overwrites
 // any previous value for that key.
 // This method is part of the DataAccessor interface.
 func (tx *transaction) Put(key []byte, value []byte) error {
+	if tx.isClosed {
+		return errors.New("cannot put into a closed transaction")
+	}
+
 	return tx.ldbTx.Put(key, value)
 }
 
@@ -28,6 +34,10 @@ func (tx *transaction) Put(key []byte, value []byte) error {
 // ErrNotFound if the given key does not exist.
 // This method is part of the DataAccessor interface.
 func (tx *transaction) Get(key []byte) ([]byte, error) {
+	if tx.isClosed {
+		return nil, errors.New("cannot get from a closed transaction")
+	}
+
 	return tx.ldbTx.Get(key)
 }
 
@@ -35,6 +45,10 @@ func (tx *transaction) Get(key []byte) ([]byte, error) {
 // given key.
 // This method is part of the DataAccessor interface.
 func (tx *transaction) Has(key []byte) (bool, error) {
+	if tx.isClosed {
+		return false, errors.New("cannot has from a closed transaction")
+	}
+
 	return tx.ldbTx.Has(key)
 }
 
@@ -42,6 +56,10 @@ func (tx *transaction) Has(key []byte) (bool, error) {
 // return an error if the key doesn't exist.
 // This method is part of the DataAccessor interface.
 func (tx *transaction) Delete(key []byte) error {
+	if tx.isClosed {
+		return errors.New("cannot delete from a closed transaction")
+	}
+
 	return tx.ldbTx.Delete(key)
 }
 
@@ -52,6 +70,10 @@ func (tx *transaction) Delete(key []byte) error {
 // that has just now been inserted.
 // This method is part of the DataAccessor interface.
 func (tx *transaction) AppendToStore(storeName string, data []byte) ([]byte, error) {
+	if tx.isClosed {
+		return nil, errors.New("cannot append to store on a closed transaction")
+	}
+
 	return appendToStore(tx, tx.ffdb, storeName, data)
 }
 
@@ -61,12 +83,20 @@ func (tx *transaction) AppendToStore(storeName string, data []byte) ([]byte, err
 // AppendToStore for further details.
 // This method is part of the DataAccessor interface.
 func (tx *transaction) RetrieveFromStore(storeName string, location []byte) ([]byte, error) {
+	if tx.isClosed {
+		return nil, errors.New("cannot retrieve from store on a closed transaction")
+	}
+
 	return tx.ffdb.Read(storeName, location)
 }
 
 // Cursor begins a new cursor over the given bucket.
 // This method is part of the DataAccessor interface.
 func (tx *transaction) Cursor(bucket []byte) (database.Cursor, error) {
+	if tx.isClosed {
+		return nil, errors.New("cannot open a cursor from a closed transaction")
+	}
+
 	return tx.ldbTx.Cursor(bucket)
 }
 
@@ -74,6 +104,11 @@ func (tx *transaction) Cursor(bucket []byte) (database.Cursor, error) {
 // database within this transaction.
 // This method is part of the Transaction interface.
 func (tx *transaction) Rollback() error {
+	if tx.isClosed {
+		return errors.New("cannot rollback a closed transaction")
+	}
+	tx.isClosed = true
+
 	return tx.ldbTx.Rollback()
 }
 
@@ -81,6 +116,11 @@ func (tx *transaction) Rollback() error {
 // within this transaction.
 // This method is part of the Transaction interface.
 func (tx *transaction) Commit() error {
+	if tx.isClosed {
+		return errors.New("cannot commit a closed transaction")
+	}
+	tx.isClosed = true
+
 	return tx.ldbTx.Commit()
 }
 
@@ -88,5 +128,10 @@ func (tx *transaction) Commit() error {
 // the database within the transaction, unless the transaction
 // had already been closed using either Rollback or Commit.
 func (tx *transaction) RollbackUnlessClosed() error {
+	if tx.isClosed {
+		return nil
+	}
+	tx.isClosed = true
+
 	return tx.ldbTx.RollbackUnlessClosed()
 }
