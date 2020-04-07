@@ -293,8 +293,8 @@ func (d *UTXODiff) withDiffInPlace(diff *UTXODiff) error {
 		}
 		if d.toRemove.contains(outpoint) {
 			// If already exists - this is an error
-			return ruleError(ErrWithDiff, fmt.Sprintf(
-				"withDiffInPlace: outpoint %s both in d.toRemove and in diff.toRemove", outpoint))
+			return errors.Errorf(
+				"withDiffInPlace: outpoint %s both in d.toRemove and in diff.toRemove", outpoint)
 		}
 
 		// If not exists neither in toAdd nor in toRemove - add to toRemove
@@ -305,9 +305,9 @@ func (d *UTXODiff) withDiffInPlace(diff *UTXODiff) error {
 		if d.toRemove.containsWithBlueScore(outpoint, entryToAdd.blockBlueScore) {
 			// If already exists in toRemove with the same blueScore - remove from toRemove
 			if d.toAdd.contains(outpoint) && !diff.toRemove.contains(outpoint) {
-				return ruleError(ErrWithDiff, fmt.Sprintf(
+				return errors.Errorf(
 					"withDiffInPlace: outpoint %s both in d.toAdd and in diff.toAdd with no "+
-						"corresponding entry in diff.toRemove", outpoint))
+						"corresponding entry in diff.toRemove", outpoint)
 			}
 			d.toRemove.remove(outpoint)
 			continue
@@ -316,8 +316,8 @@ func (d *UTXODiff) withDiffInPlace(diff *UTXODiff) error {
 			(existingEntry.blockBlueScore == entryToAdd.blockBlueScore ||
 				!diff.toRemove.containsWithBlueScore(outpoint, existingEntry.blockBlueScore)) {
 			// If already exists - this is an error
-			return ruleError(ErrWithDiff, fmt.Sprintf(
-				"withDiffInPlace: outpoint %s both in d.toAdd and in diff.toAdd", outpoint))
+			return errors.Errorf(
+				"withDiffInPlace: outpoint %s both in d.toAdd and in diff.toAdd", outpoint)
 		}
 
 		// If not exists neither in toAdd nor in toRemove, or exists in toRemove with different blueScore - add to toAdd
@@ -406,6 +406,8 @@ type UTXOSet interface {
 	Get(outpoint wire.Outpoint) (*UTXOEntry, bool)
 }
 
+var errUTXOMissingTxOut = errors.New("missing transaction output in the utxo set")
+
 // diffFromTx is a common implementation for diffFromTx, that works
 // for both diff-based and full UTXO sets
 // Returns a diff that is equivalent to provided transaction,
@@ -421,9 +423,8 @@ func diffFromTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff
 					return nil, err
 				}
 			} else {
-				return nil, ruleError(ErrMissingTxOut, fmt.Sprintf(
-					"Transaction %s is invalid because spends outpoint %s that is not in utxo set",
-					tx.TxID(), txIn.PreviousOutpoint))
+				return nil, errors.Wrapf(errUTXOMissingTxOut, "Transaction %s is invalid because it spends "+
+					"outpoint %s that is not in utxo set", tx.TxID(), txIn.PreviousOutpoint)
 			}
 		}
 	}
