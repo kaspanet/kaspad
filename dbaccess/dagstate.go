@@ -3,7 +3,7 @@ package dbaccess
 import "github.com/kaspanet/kaspad/database"
 
 var (
-	dagStateKey = database.NewKey(nil, []byte("dag-state"))
+	dagStateKey = database.MakeBucket().Key([]byte("dag-state"))
 )
 
 // StoreDAGState stores the DAG state in the database.
