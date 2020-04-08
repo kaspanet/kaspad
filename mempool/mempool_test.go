@@ -811,8 +811,24 @@ func TestDoubleSpendsFromDAG(t *testing.T) {
 	dag := harness.txPool.cfg.DAG
 	blockdag.PrepareAndProcessBlockForTest(t, dag, dag.TipHashes(), []*wire.MsgTx{tx.MsgTx()})
 
-	// Check that a transaction that some of its outputs exist in the DAG UTXO
-	// is rejected from the mempool.
+	// Check that a transaction that double spends the DAG UTXO set is orphaned.
+	doubleSpendTx, err := harness.createTx(spendableOuts[0], uint64(txRelayFeeForTest), 2)
+	if err != nil {
+		t.Fatalf("unable to create transaction: %v", err)
+	}
+
+	_, err = harness.txPool.ProcessTransaction(doubleSpendTx, true, 0)
+	if err != nil {
+		t.Fatalf("ProcessTransaction: %s", err)
+	}
+	testPoolMembership(tc, doubleSpendTx, true, false, false)
+
+	// If you send a transaction that some of its outputs exist in the DAG UTXO,
+	// it won't be added to the orphan pool, and will completely get rejected
+	// from the mempool.
+	// This happens because transactions with the same ID as old transactions
+	// are not allowed as long as some of the old transaction outputs exist
+	// in the UTXO.
 	_, err = harness.txPool.ProcessTransaction(tx, true, 0)
 	var ruleErr RuleError
 	if ok := errors.As(err, &ruleErr); ok {
@@ -828,18 +844,6 @@ func TestDoubleSpendsFromDAG(t *testing.T) {
 		t.Errorf("ProcessTransaction expected a RuleError but got %v", err)
 	}
 	testPoolMembership(tc, tx, false, false, false)
-
-	// Check that a transaction that double spends the DAG UTXO set is orphaned.
-	doubleSpendTx, err := harness.createTx(spendableOuts[0], uint64(txRelayFeeForTest), 2)
-	if err != nil {
-		t.Fatalf("unable to create transaction: %v", err)
-	}
-
-	_, err = harness.txPool.ProcessTransaction(doubleSpendTx, true, 0)
-	if err != nil {
-		t.Fatalf("ProcessTransaction: %s", err)
-	}
-	testPoolMembership(tc, doubleSpendTx, true, false, false)
 }
 
 //TestFetchTransaction checks that FetchTransaction
