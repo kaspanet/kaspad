@@ -8,7 +8,7 @@ import (
 
 var feeBucket = database.MakeBucket([]byte("fees"))
 
-func feeDataKey(hash *daghash.Hash) []byte {
+func feeDataKey(hash *daghash.Hash) *database.Key {
 	return feeBucket.Key(hash[:])
 }
 

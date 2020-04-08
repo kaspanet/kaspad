@@ -14,7 +14,7 @@ var (
 	blockLocationsBucket = database.MakeBucket([]byte("block-locations"))
 )
 
-func blockLocationKey(hash *daghash.Hash) []byte {
+func blockLocationKey(hash *daghash.Hash) *database.Key {
 	return blockLocationsBucket.Key(hash[:])
 }
 

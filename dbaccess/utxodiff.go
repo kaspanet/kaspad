@@ -8,7 +8,7 @@ import (
 
 var utxoDiffsBucket = database.MakeBucket([]byte("utxo-diffs"))
 
-func utxoDiffKey(hash *daghash.Hash) []byte {
+func utxoDiffKey(hash *daghash.Hash) *database.Key {
 	return utxoDiffsBucket.Key(hash[:])
 }
 

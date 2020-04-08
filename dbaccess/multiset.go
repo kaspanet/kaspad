@@ -7,7 +7,7 @@ import (
 
 var multisetBucket = database.MakeBucket([]byte("multiset"))
 
-func multisetKey(hash *daghash.Hash) []byte {
+func multisetKey(hash *daghash.Hash) *database.Key {
 	return multisetBucket.Key(hash[:])
 }
 
@@ -19,7 +19,7 @@ func MultisetCursor(context Context) (database.Cursor, error) {
 		return nil, err
 	}
 
-	return accessor.Cursor(multisetBucket.Path())
+	return accessor.Cursor(multisetBucket)
 }
 
 // StoreMultiset stores the multiset of a block by its hash.

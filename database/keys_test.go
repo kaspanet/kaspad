@@ -1,6 +1,7 @@
 package database
 
 import (
+	"bytes"
 	"reflect"
 	"testing"
 )
@@ -45,17 +46,26 @@ func TestBucketKey(t *testing.T) {
 	tests := []struct {
 		bucketByteSlices [][]byte
 		key              []byte
-		expectedKey      []byte
+		expectedKeyBytes []byte
+		expectedKey      *Key
 	}{
 		{
 			bucketByteSlices: [][]byte{[]byte("hello")},
 			key:              []byte("test"),
-			expectedKey:      []byte("hello/test"),
+			expectedKeyBytes: []byte("hello/test"),
+			expectedKey: &Key{
+				bucket: MakeBucket([]byte("hello")),
+				suffix: []byte("test"),
+			},
 		},
 		{
 			bucketByteSlices: [][]byte{[]byte("hello"), []byte("world")},
 			key:              []byte("test"),
-			expectedKey:      []byte("hello/world/test"),
+			expectedKeyBytes: []byte("hello/world/test"),
+			expectedKey: &Key{
+				bucket: MakeBucket([]byte("hello"), []byte("world")),
+				suffix: []byte("test"),
+			},
 		},
 	}
 
@@ -63,7 +73,11 @@ func TestBucketKey(t *testing.T) {
 		resultKey := MakeBucket(test.bucketByteSlices...).Key(test.key)
 		if !reflect.DeepEqual(resultKey, test.expectedKey) {
 			t.Errorf("TestBucketKey: got wrong key. Want: %s, got: %s",
-				string(test.expectedKey), string(resultKey))
+				test.expectedKeyBytes, resultKey)
+		}
+		if !bytes.Equal(resultKey.Bytes(), test.expectedKeyBytes) {
+			t.Errorf("TestBucketKey: got wrong key bytes. Want: %s, got: %s",
+				test.expectedKeyBytes, resultKey.Bytes())
 		}
 	}
 }
