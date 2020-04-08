@@ -1117,3 +1117,161 @@ func TestIsDAGCurrentMaxDiff(t *testing.T) {
 		}
 	}
 }
+
+func TestDoubleSpends(t *testing.T) {
+	params := dagconfig.SimnetParams
+	params.BlockCoinbaseMaturity = 0
+	// Create a new database and dag instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("TestChainedTransactions", true, Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup dag instance: %v", err)
+	}
+	defer teardownFunc()
+
+	block1, err := PrepareBlockForTest(dag, []*daghash.Hash{params.GenesisHash}, nil)
+	if err != nil {
+		t.Fatalf("PrepareBlockForTest: %v", err)
+	}
+	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(block1), BFNoPoWCheck)
+	if err != nil {
+		t.Fatalf("ProcessBlock: %v", err)
+	}
+	if isDelayed {
+		t.Fatalf("ProcessBlock: block1 " +
+			"is too far in the future")
+	}
+	if isOrphan {
+		t.Fatalf("ProcessBlock: block1 got unexpectedly orphaned")
+	}
+	cbTx := block1.Transactions[0]
+
+	signatureScript, err := txscript.PayToScriptHashSignatureScript(OpTrueScript, nil)
+	if err != nil {
+		t.Fatalf("Failed to build signature script: %s", err)
+	}
+	txIn := &wire.TxIn{
+		PreviousOutpoint: wire.Outpoint{TxID: *cbTx.TxID(), Index: 0},
+		SignatureScript:  signatureScript,
+		Sequence:         wire.MaxTxInSequenceNum,
+	}
+	txOut := &wire.TxOut{
+		ScriptPubKey: OpTrueScript,
+		Value:        uint64(1),
+	}
+	tx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
+
+	doubleSpendTxOut := &wire.TxOut{
+		ScriptPubKey: OpTrueScript,
+		Value:        uint64(2),
+	}
+	doubleSpendTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{doubleSpendTxOut})
+
+	block2, err := PrepareBlockForTest(dag, []*daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{tx})
+	if err != nil {
+		t.Fatalf("PrepareBlockForTest: %v", err)
+	}
+
+	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(block2), BFNoPoWCheck)
+	if err != nil {
+		t.Fatalf("ProcessBlock: %v", err)
+	}
+	if isDelayed {
+		t.Fatalf("ProcessBlock: block2 " +
+			"is too far in the future")
+	}
+	if isOrphan {
+		t.Fatalf("ProcessBlock: block2 got unexpectedly orphaned")
+	}
+
+	// Check that a block will be rejected if it has a transaction from its past.
+	block3, err := PrepareBlockForTest(dag, []*daghash.Hash{block2.BlockHash()}, nil)
+	if err != nil {
+		t.Fatalf("PrepareBlockForTest: %v", err)
+	}
+
+	// Manually add a transaction from block 2.
+	block3.Transactions = append(block3.Transactions, tx)
+	block3UtilTxs := make([]*util.Tx, len(block3.Transactions))
+	for i, tx := range block3.Transactions {
+		block3UtilTxs[i] = util.NewTx(tx)
+	}
+	block3.Header.HashMerkleRoot = BuildHashMerkleTreeStore(block3UtilTxs).Root()
+
+	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(block3), BFNoPoWCheck)
+	if err == nil {
+		t.Errorf("ProcessBlock expected an error")
+	} else {
+		var ruleErr RuleError
+		if ok := errors.As(err, &ruleErr); ok {
+			if ruleErr.ErrorCode != ErrOverwriteTx {
+				t.Errorf("ProcessBlock expected an %v error code but got %v", ErrOverwriteTx, ruleErr.ErrorCode)
+			}
+		} else {
+			t.Errorf("ProcessBlock expected a blockdag.RuleError but got %v", err)
+		}
+	}
+	if isDelayed {
+		t.Fatalf("ProcessBlock: block3 " +
+			"is too far in the future")
+	}
+	if isOrphan {
+		t.Fatalf("ProcessBlock: block3 got unexpectedly orphaned")
+	}
+
+	// Check that a block will be rejected if it has a transaction that double spends
+	// a transaction from its past.
+	block3A, err := PrepareBlockForTest(dag, []*daghash.Hash{block2.BlockHash()}, nil)
+	if err != nil {
+		t.Fatalf("PrepareBlockForTest: %v", err)
+	}
+
+	// Manually add a transaction that double spends the block past.
+	block3A.Transactions = append(block3A.Transactions, doubleSpendTx)
+	block3AUtilTxs := make([]*util.Tx, len(block3A.Transactions))
+	for i, tx := range block3A.Transactions {
+		block3AUtilTxs[i] = util.NewTx(tx)
+	}
+	block3A.Header.HashMerkleRoot = BuildHashMerkleTreeStore(block3AUtilTxs).Root()
+
+	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(block3A), BFNoPoWCheck)
+	if err == nil {
+		t.Errorf("ProcessBlock expected an error")
+	} else {
+		var ruleErr RuleError
+		if ok := errors.As(err, &ruleErr); ok {
+			if ruleErr.ErrorCode != ErrMissingTxOut {
+				t.Errorf("ProcessBlock expected an %v error code but got %v", ErrMissingTxOut, ruleErr.ErrorCode)
+			}
+		} else {
+			t.Errorf("ProcessBlock expected a blockdag.RuleError but got %v", err)
+		}
+	}
+	if isDelayed {
+		t.Fatalf("ProcessBlock: block3A " +
+			"is too far in the future")
+	}
+	if isOrphan {
+		t.Fatalf("ProcessBlock: block3A got unexpectedly orphaned")
+	}
+
+	block2A, err := PrepareBlockForTest(dag, []*daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{doubleSpendTx})
+	if err != nil {
+		t.Fatalf("PrepareBlockForTest: %v", err)
+	}
+
+	// Check that a block will not get rejected if it has a transaction that double spends
+	// a transaction from its anticone.
+	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(block2A), BFNoPoWCheck)
+	if err != nil {
+		t.Fatalf("ProcessBlock: %v", err)
+	}
+	if isDelayed {
+		t.Fatalf("ProcessBlock: block2A " +
+			"is too far in the future")
+	}
+	if isOrphan {
+		t.Fatalf("ProcessBlock: block2A got unexpectedly orphaned")
+	}
+}
