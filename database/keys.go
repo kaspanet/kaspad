@@ -75,10 +75,6 @@ func (b *Bucket) Key(suffix []byte) *Key {
 
 // Path returns the full path of the current bucket.
 func (b *Bucket) Path() []byte {
-	if b.path == nil {
-		return bucketSeparator
-	}
-
 	bucketPath := bytes.Join(b.path, bucketSeparator)
 
 	bucketPathWithFinalSeparator := make([]byte, len(bucketPath)+len(bucketSeparator))
