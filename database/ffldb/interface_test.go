@@ -13,7 +13,7 @@ type keyValuePair struct {
 	value []byte
 }
 
-func prepareCursorForTest(t *testing.T, testName string) (cursor database.Cursor, entries []keyValuePair, teardownFunc func()) {
+func prepareCursorForTest(t *testing.T, testName string, entries []keyValuePair) (cursor database.Cursor, teardownFunc func()) {
 	// Create a temp db to run tests against
 	path, err := ioutil.TempDir("", testName)
 	if err != nil {
@@ -33,14 +33,6 @@ func prepareCursorForTest(t *testing.T, testName string) (cursor database.Cursor
 		}
 	}
 
-	// Prepare a list of key/value pairs
-	entries = make([]keyValuePair, 10)
-	for i := 0; i < 10; i++ {
-		key := []byte(fmt.Sprintf("key%d", i))
-		value := []byte("value")
-		entries[i] = keyValuePair{key: key, value: value}
-	}
-
 	// Put them into the database
 	for _, entry := range entries {
 		err := db.Put(entry.key, entry.value)
@@ -56,11 +48,23 @@ func prepareCursorForTest(t *testing.T, testName string) (cursor database.Cursor
 			"failed: %s", testName, err)
 	}
 
-	return cursor, entries, teardownFunc
+	return cursor, teardownFunc
+}
+
+func prepareKeyValuePairsForTest() []keyValuePair {
+	// Prepare a list of key/value pairs
+	entries := make([]keyValuePair, 10)
+	for i := 0; i < 10; i++ {
+		key := []byte(fmt.Sprintf("key%d", i))
+		value := []byte("value")
+		entries[i] = keyValuePair{key: key, value: value}
+	}
+	return entries
 }
 
 func TestCursorNext(t *testing.T) {
-	cursor, entries, teardownFunc := prepareCursorForTest(t, "TestCursorNext")
+	entries := prepareKeyValuePairsForTest()
+	cursor, teardownFunc := prepareCursorForTest(t, "TestCursorNext", entries)
 	defer teardownFunc()
 
 	// Make sure that all the entries exist in the cursor, in their
@@ -111,5 +115,51 @@ func TestCursorNext(t *testing.T) {
 	if hasNext {
 		t.Fatalf("TestCursorNext: cursor unexpectedly " +
 			"returned true after being closed")
+	}
+}
+
+func TestCursorFirst(t *testing.T) {
+	entries := prepareKeyValuePairsForTest()
+	cursor, teardownFunc := prepareCursorForTest(t, "TestCursorFirstWithEntries", entries)
+	defer teardownFunc()
+
+	// Make sure that First returns true when the cursor is not empty
+	exists := cursor.First()
+	if !exists {
+		t.Fatalf("TestCursorFirst: Cursor unexpectedly " +
+			"returned false")
+	}
+
+	// Make sure that the first key and value are as expected
+	firstEntryKey := entries[0].key
+	firstCursorKey, err := cursor.Key()
+	if err != nil {
+		t.Fatalf("TestCursorFirst: Key unexpectedly "+
+			"failed: %s", err)
+	}
+	if !bytes.Equal(firstCursorKey, firstEntryKey) {
+		t.Fatalf("TestCursorFirst: Cursor returned "+
+			"wrong key. Want: %s, got: %s", firstEntryKey, firstCursorKey)
+	}
+	firstEntryValue := entries[0].value
+	firstCursorValue, err := cursor.Value()
+	if err != nil {
+		t.Fatalf("TestCursorFirst: Value unexpectedly "+
+			"failed: %s", err)
+	}
+	if !bytes.Equal(firstCursorValue, firstEntryValue) {
+		t.Fatalf("TestCursorFirst: Cursor returned "+
+			"wrong value. Want: %s, got: %s", firstEntryValue, firstCursorValue)
+	}
+
+	// Create a new cursor over an empty dataset
+	cursor, teardownFunc = prepareCursorForTest(t, "TestCursorFirstWithoutEntries", nil)
+	defer teardownFunc()
+
+	// Make sure that First returns false when the cursor is empty
+	exists = cursor.First()
+	if exists {
+		t.Fatalf("TestCursorFirst: Cursor unexpectedly " +
+			"returned true")
 	}
 }
