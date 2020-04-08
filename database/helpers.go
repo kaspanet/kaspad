@@ -8,13 +8,12 @@ import (
 var bucketSeparator = []byte("/")
 
 // Key is a helper type meant to combine prefix
-// and suffix into a single full key-value
-// database key.
+// and suffix into a single database key.
 type Key struct {
 	prefix, suffix []byte
 }
 
-// Bytes returns the prefix concatenated to the key.
+// Bytes returns the prefix concatenated to the suffix.
 func (k *Key) Bytes() []byte {
 	keyBytes := make([]byte, len(k.prefix)+len(k.suffix))
 	copy(keyBytes, k.prefix)
