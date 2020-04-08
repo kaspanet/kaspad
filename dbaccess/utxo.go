@@ -8,7 +8,7 @@ var (
 	utxoBucket = database.MakeBucket([]byte("utxo"))
 )
 
-func utxoKey(outpointKey []byte) []byte {
+func utxoKey(outpointKey []byte) *database.Key {
 	return utxoBucket.Key(outpointKey)
 }
 
@@ -44,5 +44,5 @@ func UTXOSetCursor(context Context) (database.Cursor, error) {
 		return nil, err
 	}
 
-	return accessor.Cursor(utxoBucket.Path())
+	return accessor.Cursor(utxoBucket)
 }

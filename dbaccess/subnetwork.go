@@ -7,7 +7,7 @@ import (
 
 var subnetworkBucket = database.MakeBucket([]byte("subnetworks"))
 
-func subnetworkKey(subnetworkID *subnetworkid.SubnetworkID) []byte {
+func subnetworkKey(subnetworkID *subnetworkid.SubnetworkID) *database.Key {
 	return subnetworkBucket.Key(subnetworkID[:])
 }
 

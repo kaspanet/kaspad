@@ -30,7 +30,7 @@ func BlockIndexCursor(context Context) (database.Cursor, error) {
 		return nil, err
 	}
 
-	return accessor.Cursor(blockIndexBucket.Path())
+	return accessor.Cursor(blockIndexBucket)
 }
 
 // BlockIndexCursorFrom opens a cursor over blocks-index blocks

@@ -28,7 +28,7 @@ func TestLevelDBSanity(t *testing.T) {
 	}()
 
 	// Put something into the db
-	key := []byte("key")
+	key := database.MakeBucket().Key([]byte("key"))
 	putData := []byte("Hello world!")
 	err = ldb.Put(key, putData)
 	if err != nil {
@@ -80,7 +80,7 @@ func TestLevelDBTransactionSanity(t *testing.T) {
 	}
 
 	// Put something into the transaction
-	key := []byte("key")
+	key := database.MakeBucket().Key([]byte("key"))
 	putData := []byte("Hello world!")
 	err = tx.Put(key, putData)
 	if err != nil {
@@ -124,7 +124,7 @@ func TestLevelDBTransactionSanity(t *testing.T) {
 
 	// Case 2. Write directly to the DB and then read from a tx
 	// Put something into the db
-	key = []byte("key2")
+	key = database.MakeBucket().Key([]byte("key2"))
 	putData = []byte("Goodbye world!")
 	err = ldb.Put(key, putData)
 	if err != nil {

@@ -137,7 +137,7 @@ func (store *reachabilityStore) initReachabilityData(cursor database.Cursor) err
 		return err
 	}
 
-	hash, err := daghash.NewHash(key)
+	hash, err := daghash.NewHash(key.Suffix())
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func (store *reachabilityStore) loadReachabilityDataFromCursor(cursor database.C
 		return err
 	}
 
-	hash, err := daghash.NewHash(key)
+	hash, err := daghash.NewHash(key.Suffix())
 	if err != nil {
 		return err
 	}
