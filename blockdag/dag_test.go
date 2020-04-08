@@ -688,7 +688,7 @@ func TestConfirmations(t *testing.T) {
 	chainBlocks := make([]*wire.MsgBlock, 5)
 	chainBlocks[0] = dag.dagParams.GenesisBlock
 	for i := uint32(1); i < 5; i++ {
-		chainBlocks[i] = prepareAndProcessBlock(t, dag, chainBlocks[i-1])
+		chainBlocks[i] = prepareAndProcessBlockByParentMsgBlocks(t, dag, chainBlocks[i-1])
 	}
 
 	// Make sure that each one of the chain blocks has the expected confirmations number
@@ -707,8 +707,8 @@ func TestConfirmations(t *testing.T) {
 
 	branchingBlocks := make([]*wire.MsgBlock, 2)
 	// Add two branching blocks
-	branchingBlocks[0] = prepareAndProcessBlock(t, dag, chainBlocks[1])
-	branchingBlocks[1] = prepareAndProcessBlock(t, dag, branchingBlocks[0])
+	branchingBlocks[0] = prepareAndProcessBlockByParentMsgBlocks(t, dag, chainBlocks[1])
+	branchingBlocks[1] = prepareAndProcessBlockByParentMsgBlocks(t, dag, branchingBlocks[0])
 
 	// Check that the genesis has a confirmations number == len(chainBlocks)
 	genesisConfirmations, err = dag.blockConfirmations(dag.genesis)
@@ -738,7 +738,7 @@ func TestConfirmations(t *testing.T) {
 	// Generate 100 blocks to force the "main" chain to become red
 	branchingChainTip := branchingBlocks[1]
 	for i := uint32(0); i < 100; i++ {
-		nextBranchingChainTip := prepareAndProcessBlock(t, dag, branchingChainTip)
+		nextBranchingChainTip := prepareAndProcessBlockByParentMsgBlocks(t, dag, branchingChainTip)
 		branchingChainTip = nextBranchingChainTip
 	}
 
@@ -797,7 +797,7 @@ func TestAcceptingBlock(t *testing.T) {
 	chainBlocks := make([]*wire.MsgBlock, numChainBlocks)
 	chainBlocks[0] = dag.dagParams.GenesisBlock
 	for i := uint32(1); i <= numChainBlocks-1; i++ {
-		chainBlocks[i] = prepareAndProcessBlock(t, dag, chainBlocks[i-1])
+		chainBlocks[i] = prepareAndProcessBlockByParentMsgBlocks(t, dag, chainBlocks[i-1])
 	}
 
 	// Make sure that each chain block (including the genesis) is accepted by its child
@@ -825,7 +825,7 @@ func TestAcceptingBlock(t *testing.T) {
 
 	// Generate a chain tip that will be in the anticone of the selected tip and
 	// in dag.virtual.blues.
-	branchingChainTip := prepareAndProcessBlock(t, dag, chainBlocks[len(chainBlocks)-3])
+	branchingChainTip := prepareAndProcessBlockByParentMsgBlocks(t, dag, chainBlocks[len(chainBlocks)-3])
 
 	// Make sure that branchingChainTip is not in the selected parent chain
 	isBranchingChainTipInSelectedParentChain, err := dag.IsInSelectedParentChain(branchingChainTip.BlockHash())
@@ -863,7 +863,7 @@ func TestAcceptingBlock(t *testing.T) {
 	intersectionBlock := chainBlocks[1]
 	sideChainTip := intersectionBlock
 	for i := 0; i < len(chainBlocks)-3; i++ {
-		sideChainTip = prepareAndProcessBlock(t, dag, sideChainTip)
+		sideChainTip = prepareAndProcessBlockByParentMsgBlocks(t, dag, sideChainTip)
 	}
 
 	// Make sure that the accepting block of the parent of the branching block didn't change
@@ -879,7 +879,7 @@ func TestAcceptingBlock(t *testing.T) {
 
 	// Make sure that a block that is found in the red set of the selected tip
 	// doesn't have an accepting block
-	prepareAndProcessBlock(t, dag, sideChainTip, chainBlocks[len(chainBlocks)-1])
+	prepareAndProcessBlockByParentMsgBlocks(t, dag, sideChainTip, chainBlocks[len(chainBlocks)-1])
 
 	sideChainTipAcceptingBlock, err := acceptingBlockByMsgBlock(sideChainTip)
 	if err != nil {
@@ -1122,7 +1122,7 @@ func TestDoubleSpends(t *testing.T) {
 	params := dagconfig.SimnetParams
 	params.BlockCoinbaseMaturity = 0
 	// Create a new database and dag instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestChainedTransactions", true, Config{
+	dag, teardownFunc, err := DAGSetup("TestDoubleSpends", true, Config{
 		DAGParams: &params,
 	})
 	if err != nil {
