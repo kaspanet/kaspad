@@ -38,9 +38,9 @@ func (k *Key) Suffix() []byte {
 	return k.suffix
 }
 
-// NewKey returns a new key composed
+// newKey returns a new key composed
 // of the given bucket and suffix
-func NewKey(bucket *Bucket, suffix []byte) *Key {
+func newKey(bucket *Bucket, suffix []byte) *Key {
 	return &Key{bucket: bucket, suffix: suffix}
 }
 
@@ -70,7 +70,7 @@ func (b *Bucket) Bucket(bucketBytes []byte) *Bucket {
 // Key returns a key in the current bucket with the
 // given suffix.
 func (b *Bucket) Key(suffix []byte) *Key {
-	return NewKey(b, suffix)
+	return newKey(b, suffix)
 }
 
 // Path returns the full path of the current bucket.
