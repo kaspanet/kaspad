@@ -809,21 +809,7 @@ func TestDoubleSpendsFromDAG(t *testing.T) {
 	}
 
 	dag := harness.txPool.cfg.DAG
-	block, err := mining.PrepareBlockForTest(dag, harness.dagParams, dag.TipHashes(), []*wire.MsgTx{tx.MsgTx()}, false)
-	if err != nil {
-		t.Fatalf("PrepareBlockForTest: %v", err)
-	}
-	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(block), blockdag.BFNoPoWCheck)
-	if err != nil {
-		t.Fatalf("ProcessBlock: %v", err)
-	}
-	if isDelayed {
-		t.Fatalf("ProcessBlock: block " +
-			"is too far in the future")
-	}
-	if isOrphan {
-		t.Fatalf("ProcessBlock: block got unexpectedly orphaned")
-	}
+	blockdag.PrepareAndProcessBlockForTest(t, dag, dag.TipHashes(), []*wire.MsgTx{tx.MsgTx()})
 
 	// Check that a transaction that some of its outputs exists in the DAG UTXO
 	// is rejected from the mempool.

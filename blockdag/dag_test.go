@@ -1130,21 +1130,7 @@ func TestDoubleSpends(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	block1, err := PrepareBlockForTest(dag, []*daghash.Hash{params.GenesisHash}, nil)
-	if err != nil {
-		t.Fatalf("PrepareBlockForTest: %v", err)
-	}
-	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(block1), BFNoPoWCheck)
-	if err != nil {
-		t.Fatalf("ProcessBlock: %v", err)
-	}
-	if isDelayed {
-		t.Fatalf("ProcessBlock: block1 " +
-			"is too far in the future")
-	}
-	if isOrphan {
-		t.Fatalf("ProcessBlock: block1 got unexpectedly orphaned")
-	}
+	block1 := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{params.GenesisHash}, nil)
 	cbTx := block1.Transactions[0]
 
 	signatureScript, err := txscript.PayToScriptHashSignatureScript(OpTrueScript, nil)
@@ -1168,22 +1154,7 @@ func TestDoubleSpends(t *testing.T) {
 	}
 	doubleSpendTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{doubleSpendTxOut})
 
-	block2, err := PrepareBlockForTest(dag, []*daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{tx})
-	if err != nil {
-		t.Fatalf("PrepareBlockForTest: %v", err)
-	}
-
-	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(block2), BFNoPoWCheck)
-	if err != nil {
-		t.Fatalf("ProcessBlock: %v", err)
-	}
-	if isDelayed {
-		t.Fatalf("ProcessBlock: block2 " +
-			"is too far in the future")
-	}
-	if isOrphan {
-		t.Fatalf("ProcessBlock: block2 got unexpectedly orphaned")
-	}
+	block2 := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{tx})
 
 	// Check that a block will be rejected if it has a transaction from its past.
 	block3, err := PrepareBlockForTest(dag, []*daghash.Hash{block2.BlockHash()}, nil)
@@ -1199,7 +1170,7 @@ func TestDoubleSpends(t *testing.T) {
 	}
 	block3.Header.HashMerkleRoot = BuildHashMerkleTreeStore(block3UtilTxs).Root()
 
-	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(block3), BFNoPoWCheck)
+	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(block3), BFNoPoWCheck)
 	if err == nil {
 		t.Errorf("ProcessBlock expected an error")
 	} else {
