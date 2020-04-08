@@ -1130,8 +1130,8 @@ func TestDoubleSpends(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	block1 := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{params.GenesisHash}, nil)
-	cbTx := block1.Transactions[0]
+	fundingBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{params.GenesisHash}, nil)
+	cbTx := fundingBlock.Transactions[0]
 
 	signatureScript, err := txscript.PayToScriptHashSignatureScript(OpTrueScript, nil)
 	if err != nil {
@@ -1146,31 +1146,31 @@ func TestDoubleSpends(t *testing.T) {
 		ScriptPubKey: OpTrueScript,
 		Value:        uint64(1),
 	}
-	tx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
+	tx1 := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
 
 	doubleSpendTxOut := &wire.TxOut{
 		ScriptPubKey: OpTrueScript,
 		Value:        uint64(2),
 	}
-	doubleSpendTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{doubleSpendTxOut})
+	doubleSpendTx1 := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{doubleSpendTxOut})
 
-	block2 := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{tx})
+	blockWithTx1 := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{fundingBlock.BlockHash()}, []*wire.MsgTx{tx1})
 
 	// Check that a block will be rejected if it has a transaction from its past.
-	block3, err := PrepareBlockForTest(dag, []*daghash.Hash{block2.BlockHash()}, nil)
+	anotherBlockWithTx1, err := PrepareBlockForTest(dag, []*daghash.Hash{blockWithTx1.BlockHash()}, nil)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
 
-	// Manually add a transaction from block 2.
-	block3.Transactions = append(block3.Transactions, tx)
-	block3UtilTxs := make([]*util.Tx, len(block3.Transactions))
-	for i, tx := range block3.Transactions {
-		block3UtilTxs[i] = util.NewTx(tx)
+	// Manually add tx1.
+	anotherBlockWithTx1.Transactions = append(anotherBlockWithTx1.Transactions, tx1)
+	anotherBlockWithTx1UtilTxs := make([]*util.Tx, len(anotherBlockWithTx1.Transactions))
+	for i, tx := range anotherBlockWithTx1.Transactions {
+		anotherBlockWithTx1UtilTxs[i] = util.NewTx(tx)
 	}
-	block3.Header.HashMerkleRoot = BuildHashMerkleTreeStore(block3UtilTxs).Root()
+	anotherBlockWithTx1.Header.HashMerkleRoot = BuildHashMerkleTreeStore(anotherBlockWithTx1UtilTxs).Root()
 
-	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(block3), BFNoPoWCheck)
+	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(anotherBlockWithTx1), BFNoPoWCheck)
 	if err == nil {
 		t.Errorf("ProcessBlock expected an error")
 	} else {
@@ -1184,29 +1184,29 @@ func TestDoubleSpends(t *testing.T) {
 		}
 	}
 	if isDelayed {
-		t.Fatalf("ProcessBlock: block3 " +
+		t.Fatalf("ProcessBlock: anotherBlockWithTx1 " +
 			"is too far in the future")
 	}
 	if isOrphan {
-		t.Fatalf("ProcessBlock: block3 got unexpectedly orphaned")
+		t.Fatalf("ProcessBlock: anotherBlockWithTx1 got unexpectedly orphaned")
 	}
 
 	// Check that a block will be rejected if it has a transaction that double spends
 	// a transaction from its past.
-	block3A, err := PrepareBlockForTest(dag, []*daghash.Hash{block2.BlockHash()}, nil)
+	blockWithDoubleSpendForTx1, err := PrepareBlockForTest(dag, []*daghash.Hash{blockWithTx1.BlockHash()}, nil)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
 
 	// Manually add a transaction that double spends the block past.
-	block3A.Transactions = append(block3A.Transactions, doubleSpendTx)
-	block3AUtilTxs := make([]*util.Tx, len(block3A.Transactions))
-	for i, tx := range block3A.Transactions {
-		block3AUtilTxs[i] = util.NewTx(tx)
+	blockWithDoubleSpendForTx1.Transactions = append(blockWithDoubleSpendForTx1.Transactions, doubleSpendTx1)
+	blockWithDoubleSpendForTx1UtilTxs := make([]*util.Tx, len(blockWithDoubleSpendForTx1.Transactions))
+	for i, tx := range blockWithDoubleSpendForTx1.Transactions {
+		blockWithDoubleSpendForTx1UtilTxs[i] = util.NewTx(tx)
 	}
-	block3A.Header.HashMerkleRoot = BuildHashMerkleTreeStore(block3AUtilTxs).Root()
+	blockWithDoubleSpendForTx1.Header.HashMerkleRoot = BuildHashMerkleTreeStore(blockWithDoubleSpendForTx1UtilTxs).Root()
 
-	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(block3A), BFNoPoWCheck)
+	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(blockWithDoubleSpendForTx1), BFNoPoWCheck)
 	if err == nil {
 		t.Errorf("ProcessBlock expected an error")
 	} else {
@@ -1220,29 +1220,29 @@ func TestDoubleSpends(t *testing.T) {
 		}
 	}
 	if isDelayed {
-		t.Fatalf("ProcessBlock: block3A " +
+		t.Fatalf("ProcessBlock: blockWithDoubleSpendForTx1 " +
 			"is too far in the future")
 	}
 	if isOrphan {
-		t.Fatalf("ProcessBlock: block3A got unexpectedly orphaned")
+		t.Fatalf("ProcessBlock: blockWithDoubleSpendForTx1 got unexpectedly orphaned")
 	}
 
-	block2A, err := PrepareBlockForTest(dag, []*daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{doubleSpendTx})
+	blockInAnticoneOfBlockWithTx1, err := PrepareBlockForTest(dag, []*daghash.Hash{fundingBlock.BlockHash()}, []*wire.MsgTx{doubleSpendTx1})
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
 
 	// Check that a block will not get rejected if it has a transaction that double spends
 	// a transaction from its anticone.
-	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(block2A), BFNoPoWCheck)
+	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(blockInAnticoneOfBlockWithTx1), BFNoPoWCheck)
 	if err != nil {
 		t.Fatalf("ProcessBlock: %v", err)
 	}
 	if isDelayed {
-		t.Fatalf("ProcessBlock: block2A " +
+		t.Fatalf("ProcessBlock: blockInAnticoneOfBlockWithTx1 " +
 			"is too far in the future")
 	}
 	if isOrphan {
-		t.Fatalf("ProcessBlock: block2A got unexpectedly orphaned")
+		t.Fatalf("ProcessBlock: blockInAnticoneOfBlockWithTx1 got unexpectedly orphaned")
 	}
 }

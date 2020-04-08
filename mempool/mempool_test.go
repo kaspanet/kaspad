@@ -811,7 +811,7 @@ func TestDoubleSpendsFromDAG(t *testing.T) {
 	dag := harness.txPool.cfg.DAG
 	blockdag.PrepareAndProcessBlockForTest(t, dag, dag.TipHashes(), []*wire.MsgTx{tx.MsgTx()})
 
-	// Check that a transaction that some of its outputs exists in the DAG UTXO
+	// Check that a transaction that some of its outputs exist in the DAG UTXO
 	// is rejected from the mempool.
 	_, err = harness.txPool.ProcessTransaction(tx, true, 0)
 	var ruleErr RuleError
