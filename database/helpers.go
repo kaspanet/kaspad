@@ -10,14 +10,17 @@ var bucketSeparator = []byte("/")
 // Key is a helper type meant to combine prefix
 // and suffix into a single database key.
 type Key struct {
-	prefix, suffix []byte
+	bucket *Bucket
+	suffix []byte
 }
 
-// Bytes returns the prefix concatenated to the suffix.
+// Bytes returns the full key bytes that are consisted
+// from the bucket path concatenated to the suffix.
 func (k *Key) Bytes() []byte {
-	keyBytes := make([]byte, len(k.prefix)+len(k.suffix))
-	copy(keyBytes, k.prefix)
-	copy(keyBytes[len(k.prefix):], k.suffix)
+	bucketPath := k.bucket.Path()
+	keyBytes := make([]byte, len(bucketPath)+len(k.suffix))
+	copy(keyBytes, bucketPath)
+	copy(keyBytes[len(bucketPath):], k.suffix)
 	return keyBytes
 }
 
@@ -25,20 +28,20 @@ func (k *Key) String() string {
 	return hex.EncodeToString(k.Bytes())
 }
 
-// Prefix returns the prefix part of the key.
-func (k *Key) Prefix() []byte {
-	return k.prefix
+// Bucket returns the key bucket.
+func (k *Key) Bucket() *Bucket {
+	return k.bucket
 }
 
-// Suffix returns the suffix part of the key.
+// Suffix returns the key suffix.
 func (k *Key) Suffix() []byte {
 	return k.suffix
 }
 
 // NewKey returns a new key composed
-// of the given prefix and suffix
-func NewKey(prefix, suffix []byte) *Key {
-	return &Key{prefix: prefix, suffix: suffix}
+// of the given bucket and suffix
+func NewKey(bucket *Bucket, suffix []byte) *Key {
+	return &Key{bucket: bucket, suffix: suffix}
 }
 
 // Bucket is a helper type meant to combine buckets
@@ -64,9 +67,10 @@ func (b *Bucket) Bucket(bucketBytes []byte) *Bucket {
 	return MakeBucket(newPath...)
 }
 
-// Key returns the key inside of the current bucket.
-func (b *Bucket) Key(key []byte) *Key {
-	return NewKey(b.Path(), key)
+// Key returns a key in the current bucket with the
+// given suffix.
+func (b *Bucket) Key(suffix []byte) *Key {
+	return NewKey(b, suffix)
 }
 
 // Path returns the full path of the current bucket.

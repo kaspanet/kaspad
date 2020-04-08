@@ -84,8 +84,9 @@ func (c *LevelDBCursor) Key() (*database.Key, error) {
 		return nil, errors.Wrapf(database.ErrNotFound, "cannot get the "+
 			"key of a done cursor")
 	}
-	key := bytes.TrimPrefix(fullKeyPath, c.prefix)
-	return database.NewKey(c.prefix, key), nil
+	suffix := bytes.TrimPrefix(fullKeyPath, c.prefix)
+	bucket := database.MakeBucket(c.prefix)
+	return database.NewKey(bucket, suffix), nil
 }
 
 // Value returns the value of the current key/value pair, or ErrNotFound if done.

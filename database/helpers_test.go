@@ -54,7 +54,7 @@ func TestBucketKey(t *testing.T) {
 			key:              []byte("test"),
 			expectedKeyBytes: []byte("hello/test"),
 			expectedKey: &Key{
-				prefix: []byte("hello/"),
+				bucket: MakeBucket([]byte("hello")),
 				suffix: []byte("test"),
 			},
 		},
@@ -63,7 +63,7 @@ func TestBucketKey(t *testing.T) {
 			key:              []byte("test"),
 			expectedKeyBytes: []byte("hello/world/test"),
 			expectedKey: &Key{
-				prefix: []byte("hello/world/"),
+				bucket: MakeBucket([]byte("hello"), []byte("world")),
 				suffix: []byte("test"),
 			},
 		},
