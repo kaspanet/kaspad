@@ -164,3 +164,51 @@ func TestCursorFirst(t *testing.T) {
 			"returned true")
 	}
 }
+
+func TestCursorSeek(t *testing.T) {
+	entries := prepareKeyValuePairsForTest()
+	cursor, teardownFunc := prepareCursorForTest(t, "TestCursorSeek", entries)
+	defer teardownFunc()
+
+	// Seek to the fourth entry and make sure it exists
+	fourthEntry := entries[3]
+	err := cursor.Seek(fourthEntry.key)
+	if err != nil {
+		t.Fatalf("TestCursorSeek: Cursor unexpectedly "+
+			"failed: %s", err)
+	}
+
+	// Make sure that the key and value are as expected
+	fourthEntryKey := entries[3].key
+	fourthCursorKey, err := cursor.Key()
+	if err != nil {
+		t.Fatalf("TestCursorSeek: Key unexpectedly "+
+			"failed: %s", err)
+	}
+	if !reflect.DeepEqual(fourthCursorKey, fourthEntryKey) {
+		t.Fatalf("TestCursorSeek: Cursor returned "+
+			"wrong key. Want: %s, got: %s", fourthEntryKey, fourthCursorKey)
+	}
+	fourthEntryValue := entries[3].value
+	fourthCursorValue, err := cursor.Value()
+	if err != nil {
+		t.Fatalf("TestCursorSeek: Value unexpectedly "+
+			"failed: %s", err)
+	}
+	if !bytes.Equal(fourthCursorValue, fourthEntryValue) {
+		t.Fatalf("TestCursorSeek: Cursor returned "+
+			"wrong value. Want: %s, got: %s", fourthEntryValue, fourthCursorValue)
+	}
+
+	// Seek to a value that doesn't exist and make sure that
+	// the returned error is ErrNotFound
+	err = cursor.Seek(database.MakeBucket().Key([]byte("doesn't exist")))
+	if err == nil {
+		t.Fatalf("TestCursorSeek: Seek unexpectedly " +
+			"succeeded")
+	}
+	if !database.IsNotFoundError(err) {
+		t.Fatalf("TestCursorSeek: Seek returned "+
+			"wrong error: %s", err)
+	}
+}
