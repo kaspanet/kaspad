@@ -106,12 +106,10 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 	}
 
 	// No point in generating templates or processing proposals before
-	// the DAG is synced. Note that we make a special check for when
-	// we have nothing besides the genesis block (blueScore == 0),
-	// because in that state IsCurrent may still return true.
-	currentBlueScore := s.cfg.DAG.SelectedTipBlueScore()
-	if (currentBlueScore != 0 && !s.cfg.DAG.IsCurrent()) ||
-		(currentBlueScore == 0 && !s.cfg.shouldMineOnGenesis()) {
+	// the DAG is synced. Note that if the DAG is not current, but all
+	// of the node peers don't have a better selected tip, we'll return
+	// a block template anyway.
+	if !s.cfg.DAG.IsCurrent() && !s.cfg.allPeersSelectedTipsAreInDAG() {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCClientInInitialDownload,
 			Message: "Kaspa is downloading blocks...",

@@ -775,7 +775,7 @@ type getConnCountMsg struct {
 	reply chan int32
 }
 
-type getShouldMineOnGenesisMsg struct {
+type getAllPeersSelectedTipsAreInDAG struct {
 	reply chan bool
 }
 
@@ -827,16 +827,10 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 		})
 		msg.reply <- nconnected
 
-	case getShouldMineOnGenesisMsg:
-		shouldMineOnGenesis := true
-		if state.Count() != 0 {
-			shouldMineOnGenesis = state.forAllPeers(func(sp *Peer) bool {
-				return sp.SelectedTipHash().IsEqual(s.DAGParams.GenesisHash)
-			})
-		} else {
-			shouldMineOnGenesis = false
-		}
-		msg.reply <- shouldMineOnGenesis
+	case getAllPeersSelectedTipsAreInDAG:
+		msg.reply <- state.forAllPeers(func(sp *Peer) bool {
+			return s.DAG.IsInDAG(sp.SelectedTipHash())
+		})
 
 	case GetPeersMsg:
 		peers := make([]*Peer, 0, state.Count())
@@ -1207,13 +1201,12 @@ func (s *Server) ConnectedCount() int32 {
 	return <-replyChan
 }
 
-// ShouldMineOnGenesis checks if the node is connected to at least one
-// peer, and at least one of its peers knows of any blocks that were mined
-// on top of the genesis block.
-func (s *Server) ShouldMineOnGenesis() bool {
+// AllPeersSelectedTipsAreInDAG checks whether all the peers of
+// the node have a selected tip that exists in the node DAG.
+func (s *Server) AllPeersSelectedTipsAreInDAG() bool {
 	replyChan := make(chan bool)
 
-	s.Query <- getShouldMineOnGenesisMsg{reply: replyChan}
+	s.Query <- getAllPeersSelectedTipsAreInDAG{reply: replyChan}
 
 	return <-replyChan
 }
