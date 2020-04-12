@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/database"
 	"io/ioutil"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -210,5 +211,66 @@ func TestCursorSeek(t *testing.T) {
 	if !database.IsNotFoundError(err) {
 		t.Fatalf("TestCursorSeek: Seek returned "+
 			"wrong error: %s", err)
+	}
+}
+
+func TestCursorCloseErrors(t *testing.T) {
+	entries := prepareKeyValuePairsForTest()
+	cursor, teardownFunc := prepareCursorForTest(t, "TestCursorCloseErrors", entries)
+	defer teardownFunc()
+
+	// Close the cursor
+	err := cursor.Close()
+	if err != nil {
+		t.Fatalf("TestCursorCloseErrors: Close "+
+			"unexpectedly failed: %s", err)
+	}
+
+	tests := []struct {
+		name     string
+		function func() error
+	}{
+		{
+			name: "Seek",
+			function: func() error {
+				return cursor.Seek(database.MakeBucket().Key([]byte{}))
+			},
+		},
+		{
+			name: "Key",
+			function: func() error {
+				_, err := cursor.Key()
+				return err
+			},
+		},
+		{
+			name: "Value",
+			function: func() error {
+				_, err := cursor.Value()
+				return err
+			},
+		},
+		{
+			name: "Close",
+			function: func() error {
+				return cursor.Close()
+			},
+		},
+	}
+
+	for _, test := range tests {
+		expectedErrContainsString := "closed cursor"
+
+		// Make sure that the test function returns a "closed cursor" error
+		err = test.function()
+		if err == nil {
+			t.Fatalf("TestCursorCloseErrors: %s "+
+				"unexpectedly succeeded", test.name)
+		}
+		if !strings.Contains(err.Error(), expectedErrContainsString) {
+			t.Fatalf("TestCursorCloseErrors: %s "+
+				"returned wrong error. Want: %s, got: %s",
+				test.name, expectedErrContainsString, err)
+		}
 	}
 }
