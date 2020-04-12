@@ -485,6 +485,58 @@ func TestDatabaseAppendToStoreAndRetrieveFromStore(t *testing.T) {
 	}
 }
 
+func TestTransactionGet(t *testing.T) {
+	db, teardownFunc := prepareDatabaseForTest(t, "TestTransactionGet")
+	defer teardownFunc()
+
+	// Put a value into the database
+	key := database.MakeBucket().Key([]byte("key"))
+	value := []byte("value")
+	err := db.Put(key, value)
+	if err != nil {
+		t.Fatalf("TestTransactionGet: Put "+
+			"unexpectedly failed: %s", err)
+	}
+
+	// Begin a new transaction
+	dbTx, err := db.Begin()
+	if err != nil {
+		t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: Begin "+
+			"unexpectedly failed: %s", err)
+	}
+	defer func() {
+		err := dbTx.RollbackUnlessClosed()
+		if err != nil {
+			t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: RollbackUnlessClosed "+
+				"unexpectedly failed: %s", err)
+		}
+	}()
+
+	// Get the value back and make sure it's the same one
+	returnedValue, err := dbTx.Get(key)
+	if err != nil {
+		t.Fatalf("TestTransactionGet: Get "+
+			"unexpectedly failed: %s", err)
+	}
+	if !bytes.Equal(returnedValue, value) {
+		t.Fatalf("TestTransactionGet: Get "+
+			"returned wrong value. Want: %s, got: %s",
+			string(value), string(returnedValue))
+	}
+
+	// Try getting a non-existent value and make sure
+	// the returned error is ErrNotFound
+	_, err = dbTx.Get(database.MakeBucket().Key([]byte("doesn't exist")))
+	if err == nil {
+		t.Fatalf("TestTransactionGet: Get " +
+			"unexpectedly succeeded")
+	}
+	if !database.IsNotFoundError(err) {
+		t.Fatalf("TestTransactionGet: Get "+
+			"returned wrong error: %s", err)
+	}
+}
+
 func TestTransactionHas(t *testing.T) {
 	db, teardownFunc := prepareDatabaseForTest(t, "TestTransactionHas")
 	defer teardownFunc()
@@ -524,7 +576,7 @@ func TestTransactionHas(t *testing.T) {
 	}
 
 	// Make sure that Has returns false for a non-existent value
-	exists, err = db.Has(database.MakeBucket().Key([]byte("doesn't exist")))
+	exists, err = dbTx.Has(database.MakeBucket().Key([]byte("doesn't exist")))
 	if err != nil {
 		t.Fatalf("TestTransactionHas: Has "+
 			"unexpectedly failed: %s", err)
