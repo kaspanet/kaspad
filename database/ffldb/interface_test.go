@@ -37,25 +37,6 @@ func prepareDatabaseForTest(t *testing.T, testName string) (db database.Database
 	return db, teardownFunc
 }
 
-func prepareTransactionForTest(t *testing.T, testName string) (db database.Database, dbTx database.Transaction, teardownFunc func()) {
-	db, innerTeardownFunc := prepareDatabaseForTest(t, testName)
-
-	dbTx, err := db.Begin()
-	if err != nil {
-		t.Fatalf("%s: Begin unexpectedly "+
-			"failed: %s", testName, err)
-	}
-	teardownFunc = func() {
-		err := dbTx.RollbackUnlessClosed()
-		if err != nil {
-			t.Fatalf("%s: RollbackUnlessClosed unexpectedly "+
-				"failed: %s", testName, err)
-		}
-		innerTeardownFunc()
-	}
-	return db, dbTx, teardownFunc
-}
-
 func prepareCursorForTest(t *testing.T, testName string, entries []keyValuePair) (cursor database.Cursor, teardownFunc func()) {
 	db, teardownFunc := prepareDatabaseForTest(t, testName)
 
@@ -504,8 +485,58 @@ func TestDatabaseAppendToStoreAndRetrieveFromStore(t *testing.T) {
 	}
 }
 
+func TestTransactionHas(t *testing.T) {
+	db, teardownFunc := prepareDatabaseForTest(t, "TestTransactionHas")
+	defer teardownFunc()
+
+	// Put a value into the database
+	key := database.MakeBucket().Key([]byte("key"))
+	value := []byte("value")
+	err := db.Put(key, value)
+	if err != nil {
+		t.Fatalf("TestTransactionHas: Put "+
+			"unexpectedly failed: %s", err)
+	}
+
+	// Begin a new transaction
+	dbTx, err := db.Begin()
+	if err != nil {
+		t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: Begin "+
+			"unexpectedly failed: %s", err)
+	}
+	defer func() {
+		err := dbTx.RollbackUnlessClosed()
+		if err != nil {
+			t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: RollbackUnlessClosed "+
+				"unexpectedly failed: %s", err)
+		}
+	}()
+
+	// Make sure that Has returns true for the value we just put
+	exists, err := dbTx.Has(key)
+	if err != nil {
+		t.Fatalf("TestTransactionHas: Has "+
+			"unexpectedly failed: %s", err)
+	}
+	if !exists {
+		t.Fatalf("TestTransactionHas: Has " +
+			"unexpectedly returned that the value does not exist")
+	}
+
+	// Make sure that Has returns false for a non-existent value
+	exists, err = db.Has(database.MakeBucket().Key([]byte("doesn't exist")))
+	if err != nil {
+		t.Fatalf("TestTransactionHas: Has "+
+			"unexpectedly failed: %s", err)
+	}
+	if exists {
+		t.Fatalf("TestTransactionHas: Has " +
+			"unexpectedly returned that the value exists")
+	}
+}
+
 func TestTransactionDelete(t *testing.T) {
-	db, dbTx, teardownFunc := prepareTransactionForTest(t, "TestTransactionDelete")
+	db, teardownFunc := prepareDatabaseForTest(t, "TestTransactionDelete")
 	defer teardownFunc()
 
 	// Put a value into the database
@@ -516,6 +547,20 @@ func TestTransactionDelete(t *testing.T) {
 		t.Fatalf("TestTransactionDelete: Put "+
 			"unexpectedly failed: %s", err)
 	}
+
+	// Begin a new transaction
+	dbTx, err := db.Begin()
+	if err != nil {
+		t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: Begin "+
+			"unexpectedly failed: %s", err)
+	}
+	defer func() {
+		err := dbTx.RollbackUnlessClosed()
+		if err != nil {
+			t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: RollbackUnlessClosed "+
+				"unexpectedly failed: %s", err)
+		}
+	}()
 
 	// Delete the value in the transaction
 	err = dbTx.Delete(key)
@@ -544,8 +589,22 @@ func TestTransactionDelete(t *testing.T) {
 }
 
 func TestTransactionAppendToStoreAndRetrieveFromStore(t *testing.T) {
-	_, dbTx, teardownFunc := prepareTransactionForTest(t, "TestTransactionAppendToStoreAndRetrieveFromStore")
+	db, teardownFunc := prepareDatabaseForTest(t, "TestTransactionAppendToStoreAndRetrieveFromStore")
 	defer teardownFunc()
+
+	// Begin a new transaction
+	dbTx, err := db.Begin()
+	if err != nil {
+		t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: Begin "+
+			"unexpectedly failed: %s", err)
+	}
+	defer func() {
+		err := dbTx.RollbackUnlessClosed()
+		if err != nil {
+			t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: RollbackUnlessClosed "+
+				"unexpectedly failed: %s", err)
+		}
+	}()
 
 	// Append some data into the store
 	storeName := "store"
