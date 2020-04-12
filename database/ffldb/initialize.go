@@ -18,8 +18,7 @@ func (db *ffldb) initialize() error {
 }
 
 func (db *ffldb) flatFiles() (map[string][]byte, error) {
-	flatFilesBucketPath := flatFilesBucket.Path()
-	flatFilesCursor := db.levelDB.Cursor(flatFilesBucketPath)
+	flatFilesCursor := db.levelDB.Cursor(flatFilesBucket)
 	defer func() {
 		err := flatFilesCursor.Close()
 		if err != nil {
