@@ -307,8 +307,8 @@ func TestCursorCloseFirstAndNext(t *testing.T) {
 	}
 }
 
-func TestDataAccessorPut(t *testing.T) {
-	db, teardownFunc := prepareDatabaseForTest(t, "TestDataAccessorPut")
+func TestDatabasePut(t *testing.T) {
+	db, teardownFunc := prepareDatabaseForTest(t, "TestDatabasePut")
 	defer teardownFunc()
 
 	// Put value1 into the database
@@ -316,7 +316,7 @@ func TestDataAccessorPut(t *testing.T) {
 	value1 := []byte("value1")
 	err := db.Put(key, value1)
 	if err != nil {
-		t.Fatalf("TestDataAccessorPut: Put "+
+		t.Fatalf("TestDatabasePut: Put "+
 			"unexpectedly failed: %s", err)
 	}
 
@@ -324,25 +324,25 @@ func TestDataAccessorPut(t *testing.T) {
 	value2 := []byte("value2")
 	err = db.Put(key, value2)
 	if err != nil {
-		t.Fatalf("TestDataAccessorPut: Put "+
+		t.Fatalf("TestDatabasePut: Put "+
 			"unexpectedly failed: %s", err)
 	}
 
 	// Make sure that the returned value is value2
 	returnedValue, err := db.Get(key)
 	if err != nil {
-		t.Fatalf("TestDataAccessorPut: Get "+
+		t.Fatalf("TestDatabasePut: Get "+
 			"unexpectedly failed: %s", err)
 	}
 	if !bytes.Equal(returnedValue, value2) {
-		t.Fatalf("TestDataAccessorPut: Get "+
+		t.Fatalf("TestDatabasePut: Get "+
 			"returned wrong value. Want: %s, got: %s",
 			string(value2), string(returnedValue))
 	}
 }
 
-func TestDataAccessorGet(t *testing.T) {
-	db, teardownFunc := prepareDatabaseForTest(t, "TestDataAccessorGet")
+func TestDatabaseGet(t *testing.T) {
+	db, teardownFunc := prepareDatabaseForTest(t, "TestDatabaseGet")
 	defer teardownFunc()
 
 	// Put a value into the database
@@ -350,18 +350,18 @@ func TestDataAccessorGet(t *testing.T) {
 	value := []byte("value")
 	err := db.Put(key, value)
 	if err != nil {
-		t.Fatalf("TestDataAccessorGet: Put "+
+		t.Fatalf("TestDatabaseGet: Put "+
 			"unexpectedly failed: %s", err)
 	}
 
 	// Get the value back and make sure it's the same one
 	returnedValue, err := db.Get(key)
 	if err != nil {
-		t.Fatalf("TestDataAccessorGet: Get "+
+		t.Fatalf("TestDatabaseGet: Get "+
 			"unexpectedly failed: %s", err)
 	}
 	if !bytes.Equal(returnedValue, value) {
-		t.Fatalf("TestDataAccessorGet: Get "+
+		t.Fatalf("TestDatabaseGet: Get "+
 			"returned wrong value. Want: %s, got: %s",
 			string(value), string(returnedValue))
 	}
@@ -370,17 +370,17 @@ func TestDataAccessorGet(t *testing.T) {
 	// the returned error is ErrNotFound
 	_, err = db.Get(database.MakeBucket().Key([]byte("doesn't exist")))
 	if err == nil {
-		t.Fatalf("TestDataAccessorGet: Get " +
+		t.Fatalf("TestDatabaseGet: Get " +
 			"unexpectedly succeeded")
 	}
 	if !database.IsNotFoundError(err) {
-		t.Fatalf("TestDataAccessorPut: Get "+
+		t.Fatalf("TestDatabasePut: Get "+
 			"returned wrong error: %s", err)
 	}
 }
 
-func TestDataAccessorHas(t *testing.T) {
-	db, teardownFunc := prepareDatabaseForTest(t, "TestDataAccessorHas")
+func TestDatabaseHas(t *testing.T) {
+	db, teardownFunc := prepareDatabaseForTest(t, "TestDatabaseHas")
 	defer teardownFunc()
 
 	// Put a value into the database
@@ -388,29 +388,61 @@ func TestDataAccessorHas(t *testing.T) {
 	value := []byte("value")
 	err := db.Put(key, value)
 	if err != nil {
-		t.Fatalf("TestDataAccessorHas: Put "+
+		t.Fatalf("TestDatabaseHas: Put "+
 			"unexpectedly failed: %s", err)
 	}
 
 	// Make sure that Has returns true for the value we just put
 	exists, err := db.Has(key)
 	if err != nil {
-		t.Fatalf("TestDataAccessorGet: Has "+
+		t.Fatalf("TestDatabaseGet: Has "+
 			"unexpectedly failed: %s", err)
 	}
 	if !exists {
-		t.Fatalf("TestDataAccessorGet: Has " +
+		t.Fatalf("TestDatabaseGet: Has " +
 			"unexpectedly returned that the value does not exist")
 	}
 
 	// Make sure that Has returns false for a non-existent value
 	exists, err = db.Has(database.MakeBucket().Key([]byte("doesn't exist")))
 	if err != nil {
-		t.Fatalf("TestDataAccessorGet: Has "+
+		t.Fatalf("TestDatabaseGet: Has "+
 			"unexpectedly failed: %s", err)
 	}
 	if exists {
-		t.Fatalf("TestDataAccessorGet: Has " +
+		t.Fatalf("TestDatabaseGet: Has " +
+			"unexpectedly returned that the value exists")
+	}
+}
+
+func TestDatabaseDelete(t *testing.T) {
+	db, teardownFunc := prepareDatabaseForTest(t, "TestDatabaseDelete")
+	defer teardownFunc()
+
+	// Put a value into the database
+	key := database.MakeBucket().Key([]byte("key"))
+	value := []byte("value")
+	err := db.Put(key, value)
+	if err != nil {
+		t.Fatalf("TestDatabaseDelete: Put "+
+			"unexpectedly failed: %s", err)
+	}
+
+	// Delete the value
+	err = db.Delete(key)
+	if err != nil {
+		t.Fatalf("TestDatabaseDelete: Delete "+
+			"unexpectedly failed: %s", err)
+	}
+
+	// Make sure that Has returns false for the deleted value
+	exists, err := db.Has(key)
+	if err != nil {
+		t.Fatalf("TestDatabaseDelete: Has "+
+			"unexpectedly failed: %s", err)
+	}
+	if exists {
+		t.Fatalf("TestDatabaseDelete: Has " +
 			"unexpectedly returned that the value exists")
 	}
 }
