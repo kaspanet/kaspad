@@ -15,14 +15,14 @@ type keyValuePair struct {
 	value []byte
 }
 
-func prepareCursorForTest(t *testing.T, testName string, entries []keyValuePair) (cursor database.Cursor, teardownFunc func()) {
+func prepareDatabaseForTest(t *testing.T, testName string) (db database.Database, teardownFunc func()) {
 	// Create a temp db to run tests against
 	path, err := ioutil.TempDir("", testName)
 	if err != nil {
 		t.Fatalf("%s: TempDir unexpectedly "+
 			"failed: %s", testName, err)
 	}
-	db, err := Open(path)
+	db, err = Open(path)
 	if err != nil {
 		t.Fatalf("%s: Open unexpectedly "+
 			"failed: %s", testName, err)
@@ -34,8 +34,13 @@ func prepareCursorForTest(t *testing.T, testName string, entries []keyValuePair)
 				"failed: %s", testName, err)
 		}
 	}
+	return db, teardownFunc
+}
 
-	// Put them into the database
+func prepareCursorForTest(t *testing.T, testName string, entries []keyValuePair) (cursor database.Cursor, teardownFunc func()) {
+	db, teardownFunc := prepareDatabaseForTest(t, testName)
+
+	// Put the entries into the database
 	for _, entry := range entries {
 		err := db.Put(entry.key, entry.value)
 		if err != nil {
@@ -44,7 +49,7 @@ func prepareCursorForTest(t *testing.T, testName string, entries []keyValuePair)
 		}
 	}
 
-	cursor, err = db.Cursor(database.MakeBucket())
+	cursor, err := db.Cursor(database.MakeBucket())
 	if err != nil {
 		t.Fatalf("%s: Cursor unexpectedly "+
 			"failed: %s", testName, err)
@@ -299,5 +304,39 @@ func TestCursorCloseFirstAndNext(t *testing.T) {
 	if result {
 		t.Fatalf("TestCursorCloseFirstAndNext: Next " +
 			"unexpectedly returned true")
+	}
+}
+
+func TestDataAccessorPut(t *testing.T) {
+	db, teardownFunc := prepareDatabaseForTest(t, "TestDataAccessorPut")
+	defer teardownFunc()
+
+	// Put value1 into the database
+	key := database.MakeBucket().Key([]byte("key"))
+	value1 := []byte("value1")
+	err := db.Put(key, value1)
+	if err != nil {
+		t.Fatalf("TestDataAccessorPut: Put "+
+			"unexpectedly failed: %s", err)
+	}
+
+	// Put value2 into the database with the same key
+	value2 := []byte("value2")
+	err = db.Put(key, value2)
+	if err != nil {
+		t.Fatalf("TestDataAccessorPut: Put "+
+			"unexpectedly failed: %s", err)
+	}
+
+	// Make sure that the returned value is value2
+	returnedValue, err := db.Get(key)
+	if err != nil {
+		t.Fatalf("TestDataAccessorPut: Get "+
+			"unexpectedly failed: %s", err)
+	}
+	if !bytes.Equal(returnedValue, value2) {
+		t.Fatalf("TestDataAccessorPut: Get "+
+			"returned wrong value. Want: %s, got: %s",
+			string(value2), string(returnedValue))
 	}
 }
