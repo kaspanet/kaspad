@@ -37,6 +37,25 @@ func prepareDatabaseForTest(t *testing.T, testName string) (db database.Database
 	return db, teardownFunc
 }
 
+func prepareTransactionForTest(t *testing.T, testName string) (dbTx database.Transaction, teardownFunc func()) {
+	db, teardownFunc := prepareDatabaseForTest(t, testName)
+
+	dbTx, err := db.Begin()
+	if err != nil {
+		t.Fatalf("%s: Begin unexpectedly "+
+			"failed: %s", testName, err)
+	}
+	outerTeardownFunc := func() {
+		err := dbTx.RollbackUnlessClosed()
+		if err != nil {
+			t.Fatalf("%s: RollbackUnlessClosed unexpectedly "+
+				"failed: %s", testName, err)
+		}
+		teardownFunc()
+	}
+	return dbTx, outerTeardownFunc
+}
+
 func prepareCursorForTest(t *testing.T, testName string, entries []keyValuePair) (cursor database.Cursor, teardownFunc func()) {
 	db, teardownFunc := prepareDatabaseForTest(t, testName)
 
@@ -481,6 +500,44 @@ func TestDatabaseAppendToStoreAndRetrieveFromStore(t *testing.T) {
 	}
 	if !database.IsNotFoundError(err) {
 		t.Fatalf("TestDatabaseAppendToStoreAndRetrieveFromStore: RetrieveFromStore "+
+			"returned wrong error: %s", err)
+	}
+}
+
+func TestTransactionAppendToStoreAndRetrieveFromStore(t *testing.T) {
+	db, teardownFunc := prepareTransactionForTest(t, "TestTransactionAppendToStoreAndRetrieveFromStore")
+	defer teardownFunc()
+
+	// Append some data into the store
+	storeName := "store"
+	data := []byte("data")
+	location, err := db.AppendToStore(storeName, data)
+	if err != nil {
+		t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: AppendToStore "+
+			"unexpectedly failed: %s", err)
+	}
+
+	// Retrieve the data and make sure it's equal to what was appended
+	retrievedData, err := db.RetrieveFromStore(storeName, location)
+	if err != nil {
+		t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: RetrieveFromStore "+
+			"unexpectedly failed: %s", err)
+	}
+	if !bytes.Equal(retrievedData, data) {
+		t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: RetrieveFromStore "+
+			"returned unexpected data. Want: %s, got: %s",
+			string(data), string(retrievedData))
+	}
+
+	// Make sure that an invalid location returns ErrNotFound
+	fakeLocation := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
+	_, err = db.RetrieveFromStore(storeName, fakeLocation)
+	if err == nil {
+		t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: RetrieveFromStore " +
+			"unexpectedly succeeded")
+	}
+	if !database.IsNotFoundError(err) {
+		t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: RetrieveFromStore "+
 			"returned wrong error: %s", err)
 	}
 }
