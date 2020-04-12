@@ -274,3 +274,30 @@ func TestCursorCloseErrors(t *testing.T) {
 		}
 	}
 }
+
+func TestCursorCloseFirstAndNext(t *testing.T) {
+	entries := prepareKeyValuePairsForTest()
+	cursor, teardownFunc := prepareCursorForTest(t, "TestCursorCloseFirstAndNext", entries)
+	defer teardownFunc()
+
+	// Close the cursor
+	err := cursor.Close()
+	if err != nil {
+		t.Fatalf("TestCursorCloseFirstAndNext: Close "+
+			"unexpectedly failed: %s", err)
+	}
+
+	// We expect First to return false
+	result := cursor.First()
+	if result {
+		t.Fatalf("TestCursorCloseFirstAndNext: First " +
+			"unexpectedly returned true")
+	}
+
+	// We expect Next to return false
+	result = cursor.Next()
+	if result {
+		t.Fatalf("TestCursorCloseFirstAndNext: Next " +
+			"unexpectedly returned true")
+	}
+}
