@@ -823,8 +823,8 @@ func TestDoubleSpendsFromDAG(t *testing.T) {
 	}
 	testPoolMembership(tc, doubleSpendTx, true, false, false)
 
-	// If you send a transaction that some of its outputs exist in the DAG UTXO,
-	// it won't be added to the orphan pool, and will completely get rejected
+	// If you send a transaction that some of its outputs exist in the DAG UTXO
+	// set, it won't be added to the orphan pool, and will completely get rejected
 	// from the mempool.
 	// This happens because transactions with the same ID as old transactions
 	// are not allowed as long as some of the old transaction outputs exist
