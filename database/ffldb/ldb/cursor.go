@@ -11,17 +11,17 @@ import (
 // LevelDBCursor is a thin wrapper around native leveldb iterators.
 type LevelDBCursor struct {
 	ldbIterator iterator.Iterator
-	prefix      []byte
+	bucket      *database.Bucket
 
 	isClosed bool
 }
 
 // Cursor begins a new cursor over the given prefix.
-func (db *LevelDB) Cursor(prefix []byte) *LevelDBCursor {
-	ldbIterator := db.ldb.NewIterator(util.BytesPrefix(prefix), nil)
+func (db *LevelDB) Cursor(bucket *database.Bucket) *LevelDBCursor {
+	ldbIterator := db.ldb.NewIterator(util.BytesPrefix(bucket.Path()), nil)
 	return &LevelDBCursor{
 		ldbIterator: ldbIterator,
-		prefix:      prefix,
+		bucket:      bucket,
 		isClosed:    false,
 	}
 }
@@ -84,8 +84,8 @@ func (c *LevelDBCursor) Key() (*database.Key, error) {
 		return nil, errors.Wrapf(database.ErrNotFound, "cannot get the "+
 			"key of a done cursor")
 	}
-	suffix := bytes.TrimPrefix(fullKeyPath, c.prefix)
-	return database.MakeBucket(c.prefix).Key(suffix), nil
+	suffix := bytes.TrimPrefix(fullKeyPath, c.bucket.Path())
+	return c.bucket.Key(suffix), nil
 }
 
 // Value returns the value of the current key/value pair, or ErrNotFound if done.

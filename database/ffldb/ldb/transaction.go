@@ -135,5 +135,5 @@ func (tx *LevelDBTransaction) Cursor(bucket *database.Bucket) (*LevelDBCursor, e
 		return nil, errors.New("cannot open a cursor from a closed transaction")
 	}
 
-	return tx.db.Cursor(bucket.Path()), nil
+	return tx.db.Cursor(bucket), nil
 }
