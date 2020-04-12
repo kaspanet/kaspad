@@ -156,7 +156,7 @@ func (db *ffldb) RetrieveFromStore(storeName string, location []byte) ([]byte, e
 // Cursor begins a new cursor over the given bucket.
 // This method is part of the DataAccessor interface.
 func (db *ffldb) Cursor(bucket *database.Bucket) (database.Cursor, error) {
-	ldbCursor := db.levelDB.Cursor(bucket.Path())
+	ldbCursor := db.levelDB.Cursor(bucket)
 
 	return ldbCursor, nil
 }
