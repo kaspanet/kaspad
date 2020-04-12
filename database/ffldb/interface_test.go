@@ -378,3 +378,39 @@ func TestDataAccessorGet(t *testing.T) {
 			"returned wrong error: %s", err)
 	}
 }
+
+func TestDataAccessorHas(t *testing.T) {
+	db, teardownFunc := prepareDatabaseForTest(t, "TestDataAccessorHas")
+	defer teardownFunc()
+
+	// Put a value into the database
+	key := database.MakeBucket().Key([]byte("key"))
+	value := []byte("value")
+	err := db.Put(key, value)
+	if err != nil {
+		t.Fatalf("TestDataAccessorHas: Put "+
+			"unexpectedly failed: %s", err)
+	}
+
+	// Make sure that Has returns true for the value we just put
+	exists, err := db.Has(key)
+	if err != nil {
+		t.Fatalf("TestDataAccessorGet: Has "+
+			"unexpectedly failed: %s", err)
+	}
+	if !exists {
+		t.Fatalf("TestDataAccessorGet: Has " +
+			"unexpectedly returned that the value does not exist")
+	}
+
+	// Make sure that Has returns false for a non-existent value
+	exists, err = db.Has(database.MakeBucket().Key([]byte("doesn't exist")))
+	if err != nil {
+		t.Fatalf("TestDataAccessorGet: Has "+
+			"unexpectedly failed: %s", err)
+	}
+	if exists {
+		t.Fatalf("TestDataAccessorGet: Has " +
+			"unexpectedly returned that the value exists")
+	}
+}
