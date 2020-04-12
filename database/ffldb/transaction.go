@@ -20,28 +20,28 @@ type transaction struct {
 // Put sets the value for the given key. It overwrites
 // any previous value for that key.
 // This method is part of the DataAccessor interface.
-func (tx *transaction) Put(key []byte, value []byte) error {
+func (tx *transaction) Put(key *database.Key, value []byte) error {
 	return tx.ldbTx.Put(key, value)
 }
 
 // Get gets the value for the given key. It returns
 // ErrNotFound if the given key does not exist.
 // This method is part of the DataAccessor interface.
-func (tx *transaction) Get(key []byte) ([]byte, error) {
+func (tx *transaction) Get(key *database.Key) ([]byte, error) {
 	return tx.ldbTx.Get(key)
 }
 
 // Has returns true if the database does contains the
 // given key.
 // This method is part of the DataAccessor interface.
-func (tx *transaction) Has(key []byte) (bool, error) {
+func (tx *transaction) Has(key *database.Key) (bool, error) {
 	return tx.ldbTx.Has(key)
 }
 
 // Delete deletes the value for the given key. Will not
 // return an error if the key doesn't exist.
 // This method is part of the DataAccessor interface.
-func (tx *transaction) Delete(key []byte) error {
+func (tx *transaction) Delete(key *database.Key) error {
 	return tx.ldbTx.Delete(key)
 }
 
@@ -66,7 +66,7 @@ func (tx *transaction) RetrieveFromStore(storeName string, location []byte) ([]b
 
 // Cursor begins a new cursor over the given bucket.
 // This method is part of the DataAccessor interface.
-func (tx *transaction) Cursor(bucket []byte) (database.Cursor, error) {
+func (tx *transaction) Cursor(bucket *database.Bucket) (database.Cursor, error) {
 	return tx.ldbTx.Cursor(bucket)
 }
 

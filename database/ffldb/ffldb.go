@@ -59,28 +59,28 @@ func (db *ffldb) Close() error {
 // Put sets the value for the given key. It overwrites
 // any previous value for that key.
 // This method is part of the DataAccessor interface.
-func (db *ffldb) Put(key []byte, value []byte) error {
+func (db *ffldb) Put(key *database.Key, value []byte) error {
 	return db.levelDB.Put(key, value)
 }
 
 // Get gets the value for the given key. It returns
 // ErrNotFound if the given key does not exist.
 // This method is part of the DataAccessor interface.
-func (db *ffldb) Get(key []byte) ([]byte, error) {
+func (db *ffldb) Get(key *database.Key) ([]byte, error) {
 	return db.levelDB.Get(key)
 }
 
 // Has returns true if the database does contains the
 // given key.
 // This method is part of the DataAccessor interface.
-func (db *ffldb) Has(key []byte) (bool, error) {
+func (db *ffldb) Has(key *database.Key) (bool, error) {
 	return db.levelDB.Has(key)
 }
 
 // Delete deletes the value for the given key. Will not
 // return an error if the key doesn't exist.
 // This method is part of the DataAccessor interface.
-func (db *ffldb) Delete(key []byte) error {
+func (db *ffldb) Delete(key *database.Key) error {
 	return db.levelDB.Delete(key)
 }
 
@@ -155,7 +155,7 @@ func (db *ffldb) RetrieveFromStore(storeName string, location []byte) ([]byte, e
 
 // Cursor begins a new cursor over the given bucket.
 // This method is part of the DataAccessor interface.
-func (db *ffldb) Cursor(bucket []byte) (database.Cursor, error) {
+func (db *ffldb) Cursor(bucket *database.Bucket) (database.Cursor, error) {
 	ldbCursor := db.levelDB.Cursor(bucket)
 
 	return ldbCursor, nil

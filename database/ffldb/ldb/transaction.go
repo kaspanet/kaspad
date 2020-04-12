@@ -1,7 +1,6 @@
 package ldb
 
 import (
-	"encoding/hex"
 	"github.com/kaspanet/kaspad/database"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -82,27 +81,27 @@ func (tx *LevelDBTransaction) RollbackUnlessClosed() error {
 
 // Put sets the value for the given key. It overwrites
 // any previous value for that key.
-func (tx *LevelDBTransaction) Put(key []byte, value []byte) error {
+func (tx *LevelDBTransaction) Put(key *database.Key, value []byte) error {
 	if tx.isClosed {
 		return errors.New("cannot put into a closed transaction")
 	}
 
-	tx.batch.Put(key, value)
+	tx.batch.Put(key.Bytes(), value)
 	return nil
 }
 
 // Get gets the value for the given key. It returns
 // ErrNotFound if the given key does not exist.
-func (tx *LevelDBTransaction) Get(key []byte) ([]byte, error) {
+func (tx *LevelDBTransaction) Get(key *database.Key) ([]byte, error) {
 	if tx.isClosed {
 		return nil, errors.New("cannot get from a closed transaction")
 	}
 
-	data, err := tx.snapshot.Get(key, nil)
+	data, err := tx.snapshot.Get(key.Bytes(), nil)
 	if err != nil {
 		if errors.Is(err, leveldb.ErrNotFound) {
 			return nil, errors.Wrapf(database.ErrNotFound,
-				"key %s not found", hex.EncodeToString(key))
+				"key %s not found", key)
 		}
 		return nil, errors.WithStack(err)
 	}
@@ -111,27 +110,27 @@ func (tx *LevelDBTransaction) Get(key []byte) ([]byte, error) {
 
 // Has returns true if the database does contains the
 // given key.
-func (tx *LevelDBTransaction) Has(key []byte) (bool, error) {
+func (tx *LevelDBTransaction) Has(key *database.Key) (bool, error) {
 	if tx.isClosed {
 		return false, errors.New("cannot has from a closed transaction")
 	}
 
-	return tx.snapshot.Has(key, nil)
+	return tx.snapshot.Has(key.Bytes(), nil)
 }
 
 // Delete deletes the value for the given key. Will not
 // return an error if the key doesn't exist.
-func (tx *LevelDBTransaction) Delete(key []byte) error {
+func (tx *LevelDBTransaction) Delete(key *database.Key) error {
 	if tx.isClosed {
 		return errors.New("cannot delete from a closed transaction")
 	}
 
-	tx.batch.Delete(key)
+	tx.batch.Delete(key.Bytes())
 	return nil
 }
 
 // Cursor begins a new cursor over the given bucket.
-func (tx *LevelDBTransaction) Cursor(bucket []byte) (*LevelDBCursor, error) {
+func (tx *LevelDBTransaction) Cursor(bucket *database.Bucket) (*LevelDBCursor, error) {
 	if tx.isClosed {
 		return nil, errors.New("cannot open a cursor from a closed transaction")
 	}

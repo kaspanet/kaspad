@@ -1,7 +1,6 @@
 package ldb
 
 import (
-	"encoding/hex"
 	"github.com/kaspanet/kaspad/database"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -52,19 +51,19 @@ func (db *LevelDB) Close() error {
 
 // Put sets the value for the given key. It overwrites
 // any previous value for that key.
-func (db *LevelDB) Put(key []byte, value []byte) error {
-	err := db.ldb.Put(key, value, nil)
+func (db *LevelDB) Put(key *database.Key, value []byte) error {
+	err := db.ldb.Put(key.Bytes(), value, nil)
 	return errors.WithStack(err)
 }
 
 // Get gets the value for the given key. It returns
 // ErrNotFound if the given key does not exist.
-func (db *LevelDB) Get(key []byte) ([]byte, error) {
-	data, err := db.ldb.Get(key, nil)
+func (db *LevelDB) Get(key *database.Key) ([]byte, error) {
+	data, err := db.ldb.Get(key.Bytes(), nil)
 	if err != nil {
 		if errors.Is(err, leveldb.ErrNotFound) {
 			return nil, errors.Wrapf(database.ErrNotFound,
-				"key %s not found", hex.EncodeToString(key))
+				"key %s not found", key)
 		}
 		return nil, errors.WithStack(err)
 	}
@@ -73,8 +72,8 @@ func (db *LevelDB) Get(key []byte) ([]byte, error) {
 
 // Has returns true if the database does contains the
 // given key.
-func (db *LevelDB) Has(key []byte) (bool, error) {
-	exists, err := db.ldb.Has(key, nil)
+func (db *LevelDB) Has(key *database.Key) (bool, error) {
+	exists, err := db.ldb.Has(key.Bytes(), nil)
 	if err != nil {
 		return false, errors.WithStack(err)
 	}
@@ -83,7 +82,7 @@ func (db *LevelDB) Has(key []byte) (bool, error) {
 
 // Delete deletes the value for the given key. Will not
 // return an error if the key doesn't exist.
-func (db *LevelDB) Delete(key []byte) error {
-	err := db.ldb.Delete(key, nil)
+func (db *LevelDB) Delete(key *database.Key) error {
+	err := db.ldb.Delete(key.Bytes(), nil)
 	return errors.WithStack(err)
 }

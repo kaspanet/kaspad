@@ -324,7 +324,7 @@ func (dag *BlockDAG) initUTXOSet() (fullUTXOCollection utxoCollection, err error
 		if err != nil {
 			return nil, err
 		}
-		outpoint, err := deserializeOutpoint(bytes.NewReader(key))
+		outpoint, err := deserializeOutpoint(bytes.NewReader(key.Suffix()))
 		if err != nil {
 			return nil, err
 		}
@@ -639,7 +639,7 @@ func (dag *BlockDAG) BlockHashesFrom(lowHash *daghash.Hash, limit int) ([]*dagha
 		if err != nil {
 			return nil, err
 		}
-		blockHash, err := blockHashFromBlockIndexKey(key)
+		blockHash, err := blockHashFromBlockIndexKey(key.Suffix())
 		if err != nil {
 			return nil, err
 		}
