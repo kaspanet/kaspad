@@ -29,7 +29,7 @@ func TestKeyValueTransactionCommit(t *testing.T) {
 	}()
 
 	// Put a value into the database
-	key1 := []byte("key1")
+	key1 := database.MakeBucket().Key([]byte("key1"))
 	value1 := []byte("value1")
 	err = db.Put(key1, value1)
 	if err != nil {
@@ -82,7 +82,7 @@ func TestKeyValueTransactionCommit(t *testing.T) {
 	}
 
 	// Try to get a value that does not exist and make sure it returns ErrNotFound
-	_, err = dbTx.Get([]byte("doesn't exist"))
+	_, err = dbTx.Get(database.MakeBucket().Key([]byte("doesn't exist")))
 	if err == nil {
 		t.Fatalf("TestKeyValueTransactionCommit: Get " +
 			"unexpectedly succeeded")
@@ -93,7 +93,7 @@ func TestKeyValueTransactionCommit(t *testing.T) {
 	}
 
 	// Put a new value
-	key2 := []byte("key2")
+	key2 := database.MakeBucket().Key([]byte("key2"))
 	value2 := []byte("value2")
 	err = dbTx.Put(key2, value2)
 	if err != nil {
@@ -175,7 +175,7 @@ func TestKeyValueTransactionRollback(t *testing.T) {
 	}()
 
 	// Put a value into the database
-	key1 := []byte("key1")
+	key1 := database.MakeBucket().Key([]byte("key1"))
 	value1 := []byte("value1")
 	err = db.Put(key1, value1)
 	if err != nil {
@@ -228,7 +228,7 @@ func TestKeyValueTransactionRollback(t *testing.T) {
 	}
 
 	// Put a new value
-	key2 := []byte("key2")
+	key2 := database.MakeBucket().Key([]byte("key2"))
 	value2 := []byte("value2")
 	err = dbTx.Put(key2, value2)
 	if err != nil {
@@ -298,14 +298,14 @@ func TestTransactionCloseErrors(t *testing.T) {
 		{
 			name: "Put",
 			function: func(dbTx database.Transaction) error {
-				return dbTx.Put([]byte("key"), []byte("value"))
+				return dbTx.Put(database.MakeBucket().Key([]byte("key")), []byte("value"))
 			},
 			shouldReturnError: true,
 		},
 		{
 			name: "Get",
 			function: func(dbTx database.Transaction) error {
-				_, err := dbTx.Get([]byte("key"))
+				_, err := dbTx.Get(database.MakeBucket().Key([]byte("key")))
 				return err
 			},
 			shouldReturnError: true,
@@ -313,7 +313,7 @@ func TestTransactionCloseErrors(t *testing.T) {
 		{
 			name: "Has",
 			function: func(dbTx database.Transaction) error {
-				_, err := dbTx.Has([]byte("key"))
+				_, err := dbTx.Has(database.MakeBucket().Key([]byte("key")))
 				return err
 			},
 			shouldReturnError: true,
@@ -321,14 +321,14 @@ func TestTransactionCloseErrors(t *testing.T) {
 		{
 			name: "Delete",
 			function: func(dbTx database.Transaction) error {
-				return dbTx.Delete([]byte("key"))
+				return dbTx.Delete(database.MakeBucket().Key([]byte("key")))
 			},
 			shouldReturnError: true,
 		},
 		{
 			name: "Cursor",
 			function: func(dbTx database.Transaction) error {
-				_, err := dbTx.Cursor([]byte("bucket"))
+				_, err := dbTx.Cursor(database.MakeBucket([]byte("bucket")))
 				return err
 			},
 			shouldReturnError: true,

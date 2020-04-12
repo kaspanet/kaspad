@@ -1,6 +1,7 @@
 package ldb
 
 import (
+	"github.com/kaspanet/kaspad/database"
 	"io/ioutil"
 	"strings"
 	"testing"
@@ -15,14 +16,14 @@ func TestTransactionCloseErrors(t *testing.T) {
 		{
 			name: "Put",
 			function: func(dbTx *LevelDBTransaction) error {
-				return dbTx.Put([]byte("key"), []byte("value"))
+				return dbTx.Put(database.MakeBucket().Key([]byte("key")), []byte("value"))
 			},
 			shouldReturnError: true,
 		},
 		{
 			name: "Get",
 			function: func(dbTx *LevelDBTransaction) error {
-				_, err := dbTx.Get([]byte("key"))
+				_, err := dbTx.Get(database.MakeBucket().Key([]byte("key")))
 				return err
 			},
 			shouldReturnError: true,
@@ -30,7 +31,7 @@ func TestTransactionCloseErrors(t *testing.T) {
 		{
 			name: "Has",
 			function: func(dbTx *LevelDBTransaction) error {
-				_, err := dbTx.Has([]byte("key"))
+				_, err := dbTx.Has(database.MakeBucket().Key([]byte("key")))
 				return err
 			},
 			shouldReturnError: true,
@@ -38,14 +39,14 @@ func TestTransactionCloseErrors(t *testing.T) {
 		{
 			name: "Delete",
 			function: func(dbTx *LevelDBTransaction) error {
-				return dbTx.Delete([]byte("key"))
+				return dbTx.Delete(database.MakeBucket().Key([]byte("key")))
 			},
 			shouldReturnError: true,
 		},
 		{
 			name: "Cursor",
 			function: func(dbTx *LevelDBTransaction) error {
-				_, err := dbTx.Cursor([]byte("bucket"))
+				_, err := dbTx.Cursor(database.MakeBucket([]byte("bucket")))
 				return err
 			},
 			shouldReturnError: true,
