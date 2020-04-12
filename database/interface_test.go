@@ -572,9 +572,7 @@ type keyValuePair struct {
 	value []byte
 }
 
-func prepareCursorForTest(t *testing.T, testName string, entries []keyValuePair) (cursor database.Cursor, teardownFunc func()) {
-	db, _, teardownFunc := prepareFFLDBForTest(t, testName)
-
+func prepareCursorForTest(t *testing.T, db database.Database, testName string, entries []keyValuePair) database.Cursor {
 	// Put the entries into the database
 	for _, entry := range entries {
 		err := db.Put(entry.key, entry.value)
@@ -590,7 +588,7 @@ func prepareCursorForTest(t *testing.T, testName string, entries []keyValuePair)
 			"failed: %s", testName, err)
 	}
 
-	return cursor, teardownFunc
+	return cursor
 }
 
 func prepareKeyValuePairsForTest() []keyValuePair {
@@ -605,35 +603,46 @@ func prepareKeyValuePairsForTest() []keyValuePair {
 }
 
 func TestCursorNext(t *testing.T) {
+	for _, prepareDatabase := range databasePrepareFuncs {
+		func() {
+			db, name, teardownFunc := prepareDatabase(t, "TestCursorNext")
+			defer teardownFunc()
+
+			testName := fmt.Sprintf("%s: TestCursorNext", name)
+			testCursorNext(t, db, testName)
+		}()
+	}
+}
+
+func testCursorNext(t *testing.T, db database.Database, testName string) {
 	entries := prepareKeyValuePairsForTest()
-	cursor, teardownFunc := prepareCursorForTest(t, "TestCursorNext", entries)
-	defer teardownFunc()
+	cursor := prepareCursorForTest(t, db, testName, entries)
 
 	// Make sure that all the entries exist in the cursor, in their
 	// correct order
 	for _, entry := range entries {
 		hasNext := cursor.Next()
 		if !hasNext {
-			t.Fatalf("TestCursorNext: cursor unexpectedly " +
-				"done")
+			t.Fatalf("%s: cursor unexpectedly "+
+				"done", testName)
 		}
 		cursorKey, err := cursor.Key()
 		if err != nil {
-			t.Fatalf("TestCursorNext: Key unexpectedly "+
-				"failed: %s", err)
+			t.Fatalf("%s: Key unexpectedly "+
+				"failed: %s", testName, err)
 		}
 		if !reflect.DeepEqual(cursorKey, entry.key) {
-			t.Fatalf("TestCursorNext: Cursor returned "+
-				"wrong key. Want: %s, got: %s", entry.key, cursorKey)
+			t.Fatalf("%s: Cursor returned "+
+				"wrong key. Want: %s, got: %s", testName, entry.key, cursorKey)
 		}
 		cursorValue, err := cursor.Value()
 		if err != nil {
-			t.Fatalf("TestCursorNext: Value unexpectedly "+
-				"failed: %s", err)
+			t.Fatalf("%s: Value unexpectedly "+
+				"failed: %s", testName, err)
 		}
 		if !bytes.Equal(cursorValue, entry.value) {
-			t.Fatalf("TestCursorNext: Cursor returned "+
-				"wrong value. Want: %s, got: %s", entry.value, cursorValue)
+			t.Fatalf("%s: Cursor returned "+
+				"wrong value. Want: %s, got: %s", testName, entry.value, cursorValue)
 		}
 	}
 
@@ -641,8 +650,8 @@ func TestCursorNext(t *testing.T) {
 	// returns false
 	hasNext := cursor.Next()
 	if hasNext {
-		t.Fatalf("TestCursorNext: cursor unexpectedly " +
-			"not done")
+		t.Fatalf("%s: cursor unexpectedly "+
+			"not done", testName)
 	}
 
 	// Rewind the cursor, close it, and call Next on it again.
@@ -650,120 +659,161 @@ func TestCursorNext(t *testing.T) {
 	cursor.First()
 	err := cursor.Close()
 	if err != nil {
-		t.Fatalf("TestCursorNext: Close unexpectedly "+
-			"failed: %s", err)
+		t.Fatalf("%s: Close unexpectedly "+
+			"failed: %s", testName, err)
 	}
 	hasNext = cursor.Next()
 	if hasNext {
-		t.Fatalf("TestCursorNext: cursor unexpectedly " +
-			"returned true after being closed")
+		t.Fatalf("%s: cursor unexpectedly "+
+			"returned true after being closed", testName)
 	}
 }
 
 func TestCursorFirst(t *testing.T) {
+	for _, prepareDatabase := range databasePrepareFuncs {
+		func() {
+			db, name, teardownFunc := prepareDatabase(t, "TestCursorFirst")
+			defer teardownFunc()
+
+			testName := fmt.Sprintf("%s: TestCursorFirst", name)
+			testCursorFirst(t, db, testName)
+		}()
+	}
+}
+
+func testCursorFirst(t *testing.T, db database.Database, testName string) {
 	entries := prepareKeyValuePairsForTest()
-	cursor, teardownFunc := prepareCursorForTest(t, "TestCursorFirstWithEntries", entries)
-	defer teardownFunc()
+	cursor := prepareCursorForTest(t, db, testName, entries)
 
 	// Make sure that First returns true when the cursor is not empty
 	exists := cursor.First()
 	if !exists {
-		t.Fatalf("TestCursorFirst: Cursor unexpectedly " +
-			"returned false")
+		t.Fatalf("%s: Cursor unexpectedly "+
+			"returned false", testName)
 	}
 
 	// Make sure that the first key and value are as expected
 	firstEntryKey := entries[0].key
 	firstCursorKey, err := cursor.Key()
 	if err != nil {
-		t.Fatalf("TestCursorFirst: Key unexpectedly "+
-			"failed: %s", err)
+		t.Fatalf("%s: Key unexpectedly "+
+			"failed: %s", testName, err)
 	}
 	if !reflect.DeepEqual(firstCursorKey, firstEntryKey) {
-		t.Fatalf("TestCursorFirst: Cursor returned "+
-			"wrong key. Want: %s, got: %s", firstEntryKey, firstCursorKey)
+		t.Fatalf("%s: Cursor returned "+
+			"wrong key. Want: %s, got: %s", testName, firstEntryKey, firstCursorKey)
 	}
 	firstEntryValue := entries[0].value
 	firstCursorValue, err := cursor.Value()
 	if err != nil {
-		t.Fatalf("TestCursorFirst: Value unexpectedly "+
-			"failed: %s", err)
+		t.Fatalf("%s: Value unexpectedly "+
+			"failed: %s", testName, err)
 	}
 	if !bytes.Equal(firstCursorValue, firstEntryValue) {
-		t.Fatalf("TestCursorFirst: Cursor returned "+
-			"wrong value. Want: %s, got: %s", firstEntryValue, firstCursorValue)
+		t.Fatalf("%s: Cursor returned "+
+			"wrong value. Want: %s, got: %s", testName, firstEntryValue, firstCursorValue)
+	}
+
+	// Remove all the entries from the database
+	for _, entry := range entries {
+		err := db.Delete(entry.key)
+		if err != nil {
+			t.Fatalf("%s: Delete unexpectedly "+
+				"failed: %s", testName, err)
+		}
 	}
 
 	// Create a new cursor over an empty dataset
-	cursor, teardownFunc = prepareCursorForTest(t, "TestCursorFirstWithoutEntries", nil)
-	defer teardownFunc()
+	cursor = prepareCursorForTest(t, db, testName, nil)
 
 	// Make sure that First returns false when the cursor is empty
 	exists = cursor.First()
 	if exists {
-		t.Fatalf("TestCursorFirst: Cursor unexpectedly " +
-			"returned true")
+		t.Fatalf("%s: Cursor unexpectedly "+
+			"returned true", testName)
 	}
 }
 
 func TestCursorSeek(t *testing.T) {
+	for _, prepareDatabase := range databasePrepareFuncs {
+		func() {
+			db, name, teardownFunc := prepareDatabase(t, "TestCursorSeek")
+			defer teardownFunc()
+
+			testName := fmt.Sprintf("%s: TestCursorSeek", name)
+			testCursorSeek(t, db, testName)
+		}()
+	}
+}
+
+func testCursorSeek(t *testing.T, db database.Database, testName string) {
 	entries := prepareKeyValuePairsForTest()
-	cursor, teardownFunc := prepareCursorForTest(t, "TestCursorSeek", entries)
-	defer teardownFunc()
+	cursor := prepareCursorForTest(t, db, testName, entries)
 
 	// Seek to the fourth entry and make sure it exists
 	fourthEntry := entries[3]
 	err := cursor.Seek(fourthEntry.key)
 	if err != nil {
-		t.Fatalf("TestCursorSeek: Cursor unexpectedly "+
-			"failed: %s", err)
+		t.Fatalf("%s: Cursor unexpectedly "+
+			"failed: %s", testName, err)
 	}
 
 	// Make sure that the key and value are as expected
 	fourthEntryKey := entries[3].key
 	fourthCursorKey, err := cursor.Key()
 	if err != nil {
-		t.Fatalf("TestCursorSeek: Key unexpectedly "+
-			"failed: %s", err)
+		t.Fatalf("%s: Key unexpectedly "+
+			"failed: %s", testName, err)
 	}
 	if !reflect.DeepEqual(fourthCursorKey, fourthEntryKey) {
-		t.Fatalf("TestCursorSeek: Cursor returned "+
-			"wrong key. Want: %s, got: %s", fourthEntryKey, fourthCursorKey)
+		t.Fatalf("%s: Cursor returned "+
+			"wrong key. Want: %s, got: %s", testName, fourthEntryKey, fourthCursorKey)
 	}
 	fourthEntryValue := entries[3].value
 	fourthCursorValue, err := cursor.Value()
 	if err != nil {
-		t.Fatalf("TestCursorSeek: Value unexpectedly "+
-			"failed: %s", err)
+		t.Fatalf("%s: Value unexpectedly "+
+			"failed: %s", testName, err)
 	}
 	if !bytes.Equal(fourthCursorValue, fourthEntryValue) {
-		t.Fatalf("TestCursorSeek: Cursor returned "+
-			"wrong value. Want: %s, got: %s", fourthEntryValue, fourthCursorValue)
+		t.Fatalf("%s: Cursor returned "+
+			"wrong value. Want: %s, got: %s", testName, fourthEntryValue, fourthCursorValue)
 	}
 
 	// Seek to a value that doesn't exist and make sure that
 	// the returned error is ErrNotFound
 	err = cursor.Seek(database.MakeBucket().Key([]byte("doesn't exist")))
 	if err == nil {
-		t.Fatalf("TestCursorSeek: Seek unexpectedly " +
-			"succeeded")
+		t.Fatalf("%s: Seek unexpectedly "+
+			"succeeded", testName)
 	}
 	if !database.IsNotFoundError(err) {
-		t.Fatalf("TestCursorSeek: Seek returned "+
-			"wrong error: %s", err)
+		t.Fatalf("%s: Seek returned "+
+			"wrong error: %s", testName, err)
 	}
 }
 
 func TestCursorCloseErrors(t *testing.T) {
+	for _, prepareDatabase := range databasePrepareFuncs {
+		func() {
+			db, name, teardownFunc := prepareDatabase(t, "TestCursorCloseErrors")
+			defer teardownFunc()
+
+			testName := fmt.Sprintf("%s: TestCursorCloseErrors", name)
+			testCursorCloseErrors(t, db, testName)
+		}()
+	}
+}
+
+func testCursorCloseErrors(t *testing.T, db database.Database, testName string) {
 	entries := prepareKeyValuePairsForTest()
-	cursor, teardownFunc := prepareCursorForTest(t, "TestCursorCloseErrors", entries)
-	defer teardownFunc()
+	cursor := prepareCursorForTest(t, db, testName, entries)
 
 	// Close the cursor
 	err := cursor.Close()
 	if err != nil {
-		t.Fatalf("TestCursorCloseErrors: Close "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Close "+
+			"unexpectedly failed: %s", testName, err)
 	}
 
 	tests := []struct {
@@ -804,40 +854,51 @@ func TestCursorCloseErrors(t *testing.T) {
 		// Make sure that the test function returns a "closed cursor" error
 		err = test.function()
 		if err == nil {
-			t.Fatalf("TestCursorCloseErrors: %s "+
-				"unexpectedly succeeded", test.name)
+			t.Fatalf("%s: %s "+
+				"unexpectedly succeeded", testName, test.name)
 		}
 		if !strings.Contains(err.Error(), expectedErrContainsString) {
-			t.Fatalf("TestCursorCloseErrors: %s "+
+			t.Fatalf("%s: %s "+
 				"returned wrong error. Want: %s, got: %s",
-				test.name, expectedErrContainsString, err)
+				testName, test.name, expectedErrContainsString, err)
 		}
 	}
 }
 
 func TestCursorCloseFirstAndNext(t *testing.T) {
+	for _, prepareDatabase := range databasePrepareFuncs {
+		func() {
+			db, name, teardownFunc := prepareDatabase(t, "TestCursorCloseFirstAndNext")
+			defer teardownFunc()
+
+			testName := fmt.Sprintf("%s: TestCursorCloseFirstAndNext", name)
+			testCursorCloseFirstAndNext(t, db, testName)
+		}()
+	}
+}
+
+func testCursorCloseFirstAndNext(t *testing.T, db database.Database, testName string) {
 	entries := prepareKeyValuePairsForTest()
-	cursor, teardownFunc := prepareCursorForTest(t, "TestCursorCloseFirstAndNext", entries)
-	defer teardownFunc()
+	cursor := prepareCursorForTest(t, db, testName, entries)
 
 	// Close the cursor
 	err := cursor.Close()
 	if err != nil {
-		t.Fatalf("TestCursorCloseFirstAndNext: Close "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Close "+
+			"unexpectedly failed: %s", testName, err)
 	}
 
 	// We expect First to return false
 	result := cursor.First()
 	if result {
-		t.Fatalf("TestCursorCloseFirstAndNext: First " +
-			"unexpectedly returned true")
+		t.Fatalf("%s: First "+
+			"unexpectedly returned true", testName)
 	}
 
 	// We expect Next to return false
 	result = cursor.Next()
 	if result {
-		t.Fatalf("TestCursorCloseFirstAndNext: Next " +
-			"unexpectedly returned true")
+		t.Fatalf("%s: Next "+
+			"unexpectedly returned true", testName)
 	}
 }
