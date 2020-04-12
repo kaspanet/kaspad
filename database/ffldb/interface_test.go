@@ -446,3 +446,41 @@ func TestDatabaseDelete(t *testing.T) {
 			"unexpectedly returned that the value exists")
 	}
 }
+
+func TestDatabaseAppendToStoreAndRetrieveFromStore(t *testing.T) {
+	db, teardownFunc := prepareDatabaseForTest(t, "TestDatabaseAppendToStoreAndRetrieveFromStore")
+	defer teardownFunc()
+
+	// Append some data into the store
+	storeName := "store"
+	data := []byte("data")
+	location, err := db.AppendToStore(storeName, data)
+	if err != nil {
+		t.Fatalf("TestDatabaseAppendToStoreAndRetrieveFromStore: AppendToStore "+
+			"unexpectedly failed: %s", err)
+	}
+
+	// Retrieve the data and make sure it's equal to what was appended
+	retrievedData, err := db.RetrieveFromStore(storeName, location)
+	if err != nil {
+		t.Fatalf("TestDatabaseAppendToStoreAndRetrieveFromStore: RetrieveFromStore "+
+			"unexpectedly failed: %s", err)
+	}
+	if !bytes.Equal(retrievedData, data) {
+		t.Fatalf("TestDatabaseAppendToStoreAndRetrieveFromStore: RetrieveFromStore "+
+			"returned unexpected data. Want: %s, got: %s",
+			string(data), string(retrievedData))
+	}
+
+	// Make sure that an invalid location returns ErrNotFound
+	fakeLocation := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
+	_, err = db.RetrieveFromStore(storeName, fakeLocation)
+	if err == nil {
+		t.Fatalf("TestDatabaseAppendToStoreAndRetrieveFromStore: RetrieveFromStore " +
+			"unexpectedly succeeded")
+	}
+	if !database.IsNotFoundError(err) {
+		t.Fatalf("TestDatabaseAppendToStoreAndRetrieveFromStore: RetrieveFromStore "+
+			"returned wrong error: %s", err)
+	}
+}
