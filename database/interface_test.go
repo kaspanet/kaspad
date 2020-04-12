@@ -11,7 +11,11 @@ import (
 	"testing"
 )
 
-func prepareDatabaseForTest(t *testing.T, testName string) (db database.Database, teardownFunc func()) {
+var databasePrepareFuncs = []func(t *testing.T, testName string) (db database.Database, name string, teardownFunc func()){
+	prepareFFLDBForTest,
+}
+
+func prepareFFLDBForTest(t *testing.T, testName string) (db database.Database, name string, teardownFunc func()) {
 	// Create a temp db to run tests against
 	path, err := ioutil.TempDir("", testName)
 	if err != nil {
@@ -30,202 +34,256 @@ func prepareDatabaseForTest(t *testing.T, testName string) (db database.Database
 				"failed: %s", testName, err)
 		}
 	}
-	return db, teardownFunc
+	return db, "ffldb", teardownFunc
 }
 
 func TestDatabasePut(t *testing.T) {
-	db, teardownFunc := prepareDatabaseForTest(t, "TestDatabasePut")
-	defer teardownFunc()
+	for _, prepareDatabase := range databasePrepareFuncs {
+		func() {
+			db, name, teardownFunc := prepareDatabase(t, "TestDatabasePut")
+			defer teardownFunc()
 
+			testName := fmt.Sprintf("%s: TestDatabasePut", name)
+			testDatabasePut(t, db, testName)
+		}()
+	}
+}
+
+func testDatabasePut(t *testing.T, db database.Database, testName string) {
 	// Put value1 into the database
 	key := database.MakeBucket().Key([]byte("key"))
 	value1 := []byte("value1")
 	err := db.Put(key, value1)
 	if err != nil {
-		t.Fatalf("TestDatabasePut: Put "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Put "+
+			"unexpectedly failed: %s", testName, err)
 	}
 
 	// Put value2 into the database with the same key
 	value2 := []byte("value2")
 	err = db.Put(key, value2)
 	if err != nil {
-		t.Fatalf("TestDatabasePut: Put "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Put "+
+			"unexpectedly failed: %s", testName, err)
 	}
 
 	// Make sure that the returned value is value2
 	returnedValue, err := db.Get(key)
 	if err != nil {
-		t.Fatalf("TestDatabasePut: Get "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Get "+
+			"unexpectedly failed: %s", testName, err)
 	}
 	if !bytes.Equal(returnedValue, value2) {
-		t.Fatalf("TestDatabasePut: Get "+
+		t.Fatalf("%s: Get "+
 			"returned wrong value. Want: %s, got: %s",
-			string(value2), string(returnedValue))
+			testName, string(value2), string(returnedValue))
 	}
 }
 
 func TestDatabaseGet(t *testing.T) {
-	db, teardownFunc := prepareDatabaseForTest(t, "TestDatabaseGet")
-	defer teardownFunc()
+	for _, prepareDatabase := range databasePrepareFuncs {
+		func() {
+			db, name, teardownFunc := prepareDatabase(t, "TestDatabaseGet")
+			defer teardownFunc()
 
+			testName := fmt.Sprintf("%s: TestDatabaseGet", name)
+			testDatabaseGet(t, db, testName)
+		}()
+	}
+}
+
+func testDatabaseGet(t *testing.T, db database.Database, testName string) {
 	// Put a value into the database
 	key := database.MakeBucket().Key([]byte("key"))
 	value := []byte("value")
 	err := db.Put(key, value)
 	if err != nil {
-		t.Fatalf("TestDatabaseGet: Put "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Put "+
+			"unexpectedly failed: %s", testName, err)
 	}
 
 	// Get the value back and make sure it's the same one
 	returnedValue, err := db.Get(key)
 	if err != nil {
-		t.Fatalf("TestDatabaseGet: Get "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Get "+
+			"unexpectedly failed: %s", testName, err)
 	}
 	if !bytes.Equal(returnedValue, value) {
-		t.Fatalf("TestDatabaseGet: Get "+
+		t.Fatalf("%s: Get "+
 			"returned wrong value. Want: %s, got: %s",
-			string(value), string(returnedValue))
+			testName, string(value), string(returnedValue))
 	}
 
 	// Try getting a non-existent value and make sure
 	// the returned error is ErrNotFound
 	_, err = db.Get(database.MakeBucket().Key([]byte("doesn't exist")))
 	if err == nil {
-		t.Fatalf("TestDatabaseGet: Get " +
-			"unexpectedly succeeded")
+		t.Fatalf("%s: Get "+
+			"unexpectedly succeeded", testName)
 	}
 	if !database.IsNotFoundError(err) {
-		t.Fatalf("TestDatabasePut: Get "+
-			"returned wrong error: %s", err)
+		t.Fatalf("%s: Get "+
+			"returned wrong error: %s", testName, err)
 	}
 }
 
 func TestDatabaseHas(t *testing.T) {
-	db, teardownFunc := prepareDatabaseForTest(t, "TestDatabaseHas")
-	defer teardownFunc()
+	for _, prepareDatabase := range databasePrepareFuncs {
+		func() {
+			db, name, teardownFunc := prepareDatabase(t, "TestDatabaseHas")
+			defer teardownFunc()
 
+			testName := fmt.Sprintf("%s: TestDatabaseHas", name)
+			testDatabaseHas(t, db, testName)
+		}()
+	}
+}
+
+func testDatabaseHas(t *testing.T, db database.Database, testName string) {
 	// Put a value into the database
 	key := database.MakeBucket().Key([]byte("key"))
 	value := []byte("value")
 	err := db.Put(key, value)
 	if err != nil {
-		t.Fatalf("TestDatabaseHas: Put "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Put "+
+			"unexpectedly failed: %s", testName, err)
 	}
 
 	// Make sure that Has returns true for the value we just put
 	exists, err := db.Has(key)
 	if err != nil {
-		t.Fatalf("TestDatabaseGet: Has "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Has "+
+			"unexpectedly failed: %s", testName, err)
 	}
 	if !exists {
-		t.Fatalf("TestDatabaseGet: Has " +
-			"unexpectedly returned that the value does not exist")
+		t.Fatalf("%s: Has "+
+			"unexpectedly returned that the value does not exist", testName)
 	}
 
 	// Make sure that Has returns false for a non-existent value
 	exists, err = db.Has(database.MakeBucket().Key([]byte("doesn't exist")))
 	if err != nil {
-		t.Fatalf("TestDatabaseGet: Has "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Has "+
+			"unexpectedly failed: %s", testName, err)
 	}
 	if exists {
-		t.Fatalf("TestDatabaseGet: Has " +
-			"unexpectedly returned that the value exists")
+		t.Fatalf("%s: Has "+
+			"unexpectedly returned that the value exists", testName)
 	}
 }
 
 func TestDatabaseDelete(t *testing.T) {
-	db, teardownFunc := prepareDatabaseForTest(t, "TestDatabaseDelete")
-	defer teardownFunc()
+	for _, prepareDatabase := range databasePrepareFuncs {
+		func() {
+			db, name, teardownFunc := prepareDatabase(t, "TestDatabaseDelete")
+			defer teardownFunc()
 
+			testName := fmt.Sprintf("%s: TestDatabaseDelete", name)
+			testDatabaseDelete(t, db, testName)
+		}()
+	}
+}
+
+func testDatabaseDelete(t *testing.T, db database.Database, testName string) {
 	// Put a value into the database
 	key := database.MakeBucket().Key([]byte("key"))
 	value := []byte("value")
 	err := db.Put(key, value)
 	if err != nil {
-		t.Fatalf("TestDatabaseDelete: Put "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Put "+
+			"unexpectedly failed: %s", testName, err)
 	}
 
 	// Delete the value
 	err = db.Delete(key)
 	if err != nil {
-		t.Fatalf("TestDatabaseDelete: Delete "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Delete "+
+			"unexpectedly failed: %s", testName, err)
 	}
 
 	// Make sure that Has returns false for the deleted value
 	exists, err := db.Has(key)
 	if err != nil {
-		t.Fatalf("TestDatabaseDelete: Has "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Has "+
+			"unexpectedly failed: %s", testName, err)
 	}
 	if exists {
-		t.Fatalf("TestDatabaseDelete: Has " +
-			"unexpectedly returned that the value exists")
+		t.Fatalf("%s: Has "+
+			"unexpectedly returned that the value exists", testName)
 	}
 }
 
 func TestDatabaseAppendToStoreAndRetrieveFromStore(t *testing.T) {
-	db, teardownFunc := prepareDatabaseForTest(t, "TestDatabaseAppendToStoreAndRetrieveFromStore")
-	defer teardownFunc()
+	for _, prepareDatabase := range databasePrepareFuncs {
+		func() {
+			db, name, teardownFunc := prepareDatabase(t, "TestDatabaseAppendToStoreAndRetrieveFromStore")
+			defer teardownFunc()
 
+			testName := fmt.Sprintf("%s: TestDatabaseAppendToStoreAndRetrieveFromStore", name)
+			testDatabaseAppendToStoreAndRetrieveFromStore(t, db, testName)
+		}()
+	}
+}
+
+func testDatabaseAppendToStoreAndRetrieveFromStore(t *testing.T, db database.Database, testName string) {
 	// Append some data into the store
 	storeName := "store"
 	data := []byte("data")
 	location, err := db.AppendToStore(storeName, data)
 	if err != nil {
-		t.Fatalf("TestDatabaseAppendToStoreAndRetrieveFromStore: AppendToStore "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: AppendToStore "+
+			"unexpectedly failed: %s", testName, err)
 	}
 
 	// Retrieve the data and make sure it's equal to what was appended
 	retrievedData, err := db.RetrieveFromStore(storeName, location)
 	if err != nil {
-		t.Fatalf("TestDatabaseAppendToStoreAndRetrieveFromStore: RetrieveFromStore "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: RetrieveFromStore "+
+			"unexpectedly failed: %s", testName, err)
 	}
 	if !bytes.Equal(retrievedData, data) {
-		t.Fatalf("TestDatabaseAppendToStoreAndRetrieveFromStore: RetrieveFromStore "+
+		t.Fatalf("%s: RetrieveFromStore "+
 			"returned unexpected data. Want: %s, got: %s",
-			string(data), string(retrievedData))
+			testName, string(data), string(retrievedData))
 	}
 
 	// Make sure that an invalid location returns ErrNotFound
 	fakeLocation := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
 	_, err = db.RetrieveFromStore(storeName, fakeLocation)
 	if err == nil {
-		t.Fatalf("TestDatabaseAppendToStoreAndRetrieveFromStore: RetrieveFromStore " +
-			"unexpectedly succeeded")
+		t.Fatalf("%s: RetrieveFromStore "+
+			"unexpectedly succeeded", testName)
 	}
 	if !database.IsNotFoundError(err) {
-		t.Fatalf("TestDatabaseAppendToStoreAndRetrieveFromStore: RetrieveFromStore "+
-			"returned wrong error: %s", err)
+		t.Fatalf("%s: RetrieveFromStore "+
+			"returned wrong error: %s", testName, err)
 	}
 }
 
 func TestTransactionPut(t *testing.T) {
-	db, teardownFunc := prepareDatabaseForTest(t, "TestTransactionPut")
-	defer teardownFunc()
+	for _, prepareDatabase := range databasePrepareFuncs {
+		func() {
+			db, name, teardownFunc := prepareDatabase(t, "TestTransactionPut")
+			defer teardownFunc()
 
+			testName := fmt.Sprintf("%s: TestTransactionPut", name)
+			testTransactionPut(t, db, testName)
+		}()
+	}
+}
+
+func testTransactionPut(t *testing.T, db database.Database, testName string) {
 	// Begin a new transaction
 	dbTx, err := db.Begin()
 	if err != nil {
-		t.Fatalf("TestTransactionPut: Begin "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Begin "+
+			"unexpectedly failed: %s", testName, err)
 	}
 	defer func() {
 		err := dbTx.RollbackUnlessClosed()
 		if err != nil {
-			t.Fatalf("TestTransactionPut: RollbackUnlessClosed "+
-				"unexpectedly failed: %s", err)
+			t.Fatalf("%s: RollbackUnlessClosed "+
+				"unexpectedly failed: %s", testName, err)
 		}
 	}()
 
@@ -234,208 +292,244 @@ func TestTransactionPut(t *testing.T) {
 	value1 := []byte("value1")
 	err = dbTx.Put(key, value1)
 	if err != nil {
-		t.Fatalf("TestTransactionPut: Put "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Put "+
+			"unexpectedly failed: %s", testName, err)
 	}
 
 	// Put value2 into the transaction with the same key
 	value2 := []byte("value2")
 	err = dbTx.Put(key, value2)
 	if err != nil {
-		t.Fatalf("TestTransactionPut: Put "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Put "+
+			"unexpectedly failed: %s", testName, err)
 	}
 
 	// Commit the transaction
 	err = dbTx.Commit()
 	if err != nil {
-		t.Fatalf("TestTransactionPut: Commit "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Commit "+
+			"unexpectedly failed: %s", testName, err)
 	}
 
 	// Make sure that the returned value is value2
 	returnedValue, err := db.Get(key)
 	if err != nil {
-		t.Fatalf("TestTransactionPut: Get "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Get "+
+			"unexpectedly failed: %s", testName, err)
 	}
 	if !bytes.Equal(returnedValue, value2) {
-		t.Fatalf("TestTransactionPut: Get "+
+		t.Fatalf("%s: Get "+
 			"returned wrong value. Want: %s, got: %s",
-			string(value2), string(returnedValue))
+			testName, string(value2), string(returnedValue))
 	}
 }
 
 func TestTransactionGet(t *testing.T) {
-	db, teardownFunc := prepareDatabaseForTest(t, "TestTransactionGet")
-	defer teardownFunc()
+	for _, prepareDatabase := range databasePrepareFuncs {
+		func() {
+			db, name, teardownFunc := prepareDatabase(t, "TestTransactionGet")
+			defer teardownFunc()
 
+			testName := fmt.Sprintf("%s: TestTransactionGet", name)
+			testTransactionGet(t, db, testName)
+		}()
+	}
+}
+
+func testTransactionGet(t *testing.T, db database.Database, testName string) {
 	// Put a value into the database
 	key := database.MakeBucket().Key([]byte("key"))
 	value := []byte("value")
 	err := db.Put(key, value)
 	if err != nil {
-		t.Fatalf("TestTransactionGet: Put "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Put "+
+			"unexpectedly failed: %s", testName, err)
 	}
 
 	// Begin a new transaction
 	dbTx, err := db.Begin()
 	if err != nil {
-		t.Fatalf("TestTransactionGet: Begin "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Begin "+
+			"unexpectedly failed: %s", testName, err)
 	}
 	defer func() {
 		err := dbTx.RollbackUnlessClosed()
 		if err != nil {
-			t.Fatalf("TestTransactionGet: RollbackUnlessClosed "+
-				"unexpectedly failed: %s", err)
+			t.Fatalf("%s: RollbackUnlessClosed "+
+				"unexpectedly failed: %s", testName, err)
 		}
 	}()
 
 	// Get the value back and make sure it's the same one
 	returnedValue, err := dbTx.Get(key)
 	if err != nil {
-		t.Fatalf("TestTransactionGet: Get "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Get "+
+			"unexpectedly failed: %s", testName, err)
 	}
 	if !bytes.Equal(returnedValue, value) {
-		t.Fatalf("TestTransactionGet: Get "+
+		t.Fatalf("%s: Get "+
 			"returned wrong value. Want: %s, got: %s",
-			string(value), string(returnedValue))
+			testName, string(value), string(returnedValue))
 	}
 
 	// Try getting a non-existent value and make sure
 	// the returned error is ErrNotFound
 	_, err = dbTx.Get(database.MakeBucket().Key([]byte("doesn't exist")))
 	if err == nil {
-		t.Fatalf("TestTransactionGet: Get " +
-			"unexpectedly succeeded")
+		t.Fatalf("%s: Get "+
+			"unexpectedly succeeded", testName)
 	}
 	if !database.IsNotFoundError(err) {
-		t.Fatalf("TestTransactionGet: Get "+
-			"returned wrong error: %s", err)
+		t.Fatalf("%s: Get "+
+			"returned wrong error: %s", testName, err)
 	}
 }
 
 func TestTransactionHas(t *testing.T) {
-	db, teardownFunc := prepareDatabaseForTest(t, "TestTransactionHas")
-	defer teardownFunc()
+	for _, prepareDatabase := range databasePrepareFuncs {
+		func() {
+			db, name, teardownFunc := prepareDatabase(t, "TestTransactionHas")
+			defer teardownFunc()
 
+			testName := fmt.Sprintf("%s: TestTransactionHas", name)
+			testTransactionHas(t, db, testName)
+		}()
+	}
+}
+
+func testTransactionHas(t *testing.T, db database.Database, testName string) {
 	// Put a value into the database
 	key := database.MakeBucket().Key([]byte("key"))
 	value := []byte("value")
 	err := db.Put(key, value)
 	if err != nil {
-		t.Fatalf("TestTransactionHas: Put "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Put "+
+			"unexpectedly failed: %s", testName, err)
 	}
 
 	// Begin a new transaction
 	dbTx, err := db.Begin()
 	if err != nil {
-		t.Fatalf("TestTransactionHas: Begin "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Begin "+
+			"unexpectedly failed: %s", testName, err)
 	}
 	defer func() {
 		err := dbTx.RollbackUnlessClosed()
 		if err != nil {
-			t.Fatalf("TestTransactionHas: RollbackUnlessClosed "+
-				"unexpectedly failed: %s", err)
+			t.Fatalf("%s: RollbackUnlessClosed "+
+				"unexpectedly failed: %s", testName, err)
 		}
 	}()
 
 	// Make sure that Has returns true for the value we just put
 	exists, err := dbTx.Has(key)
 	if err != nil {
-		t.Fatalf("TestTransactionHas: Has "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Has "+
+			"unexpectedly failed: %s", testName, err)
 	}
 	if !exists {
-		t.Fatalf("TestTransactionHas: Has " +
-			"unexpectedly returned that the value does not exist")
+		t.Fatalf("%s: Has "+
+			"unexpectedly returned that the value does not exist", testName)
 	}
 
 	// Make sure that Has returns false for a non-existent value
 	exists, err = dbTx.Has(database.MakeBucket().Key([]byte("doesn't exist")))
 	if err != nil {
-		t.Fatalf("TestTransactionHas: Has "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Has "+
+			"unexpectedly failed: %s", testName, err)
 	}
 	if exists {
-		t.Fatalf("TestTransactionHas: Has " +
-			"unexpectedly returned that the value exists")
+		t.Fatalf("%s: Has "+
+			"unexpectedly returned that the value exists", testName)
 	}
 }
 
 func TestTransactionDelete(t *testing.T) {
-	db, teardownFunc := prepareDatabaseForTest(t, "TestTransactionDelete")
-	defer teardownFunc()
+	for _, prepareDatabase := range databasePrepareFuncs {
+		func() {
+			db, name, teardownFunc := prepareDatabase(t, "TestTransactionDelete")
+			defer teardownFunc()
 
+			testName := fmt.Sprintf("%s: TestTransactionDelete", name)
+			testTransactionDelete(t, db, testName)
+		}()
+	}
+}
+
+func testTransactionDelete(t *testing.T, db database.Database, testName string) {
 	// Put a value into the database
 	key := database.MakeBucket().Key([]byte("key"))
 	value := []byte("value")
 	err := db.Put(key, value)
 	if err != nil {
-		t.Fatalf("TestTransactionDelete: Put "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Put "+
+			"unexpectedly failed: %s", testName, err)
 	}
 
 	// Begin a new transaction
 	dbTx, err := db.Begin()
 	if err != nil {
-		t.Fatalf("TestTransactionDelete: Begin "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Begin "+
+			"unexpectedly failed: %s", testName, err)
 	}
 	defer func() {
 		err := dbTx.RollbackUnlessClosed()
 		if err != nil {
-			t.Fatalf("TestTransactionDelete: RollbackUnlessClosed "+
-				"unexpectedly failed: %s", err)
+			t.Fatalf("%s: RollbackUnlessClosed "+
+				"unexpectedly failed: %s", testName, err)
 		}
 	}()
 
 	// Delete the value in the transaction
 	err = dbTx.Delete(key)
 	if err != nil {
-		t.Fatalf("TestTransactionDelete: Delete "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Delete "+
+			"unexpectedly failed: %s", testName, err)
 	}
 
 	// Commit the transaction
 	err = dbTx.Commit()
 	if err != nil {
-		t.Fatalf("TestTransactionDelete: Commit "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Commit "+
+			"unexpectedly failed: %s", testName, err)
 	}
 
 	// Make sure that Has returns false for the deleted value
 	exists, err := db.Has(key)
 	if err != nil {
-		t.Fatalf("TestTransactionDelete: Has "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Has "+
+			"unexpectedly failed: %s", testName, err)
 	}
 	if exists {
-		t.Fatalf("TestTransactionDelete: Has " +
-			"unexpectedly returned that the value exists")
+		t.Fatalf("%s: Has "+
+			"unexpectedly returned that the value exists", testName)
 	}
 }
 
 func TestTransactionAppendToStoreAndRetrieveFromStore(t *testing.T) {
-	db, teardownFunc := prepareDatabaseForTest(t, "TestTransactionAppendToStoreAndRetrieveFromStore")
-	defer teardownFunc()
+	for _, prepareDatabase := range databasePrepareFuncs {
+		func() {
+			db, name, teardownFunc := prepareDatabase(t, "TestTransactionAppendToStoreAndRetrieveFromStore")
+			defer teardownFunc()
 
+			testName := fmt.Sprintf("%s: TestTransactionAppendToStoreAndRetrieveFromStore", name)
+			testTransactionAppendToStoreAndRetrieveFromStore(t, db, testName)
+		}()
+	}
+}
+
+func testTransactionAppendToStoreAndRetrieveFromStore(t *testing.T, db database.Database, testName string) {
 	// Begin a new transaction
 	dbTx, err := db.Begin()
 	if err != nil {
-		t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: Begin "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Begin "+
+			"unexpectedly failed: %s", testName, err)
 	}
 	defer func() {
 		err := dbTx.RollbackUnlessClosed()
 		if err != nil {
-			t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: RollbackUnlessClosed "+
-				"unexpectedly failed: %s", err)
+			t.Fatalf("%s: RollbackUnlessClosed "+
+				"unexpectedly failed: %s", testName, err)
 		}
 	}()
 
@@ -444,32 +538,32 @@ func TestTransactionAppendToStoreAndRetrieveFromStore(t *testing.T) {
 	data := []byte("data")
 	location, err := dbTx.AppendToStore(storeName, data)
 	if err != nil {
-		t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: AppendToStore "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: AppendToStore "+
+			"unexpectedly failed: %s", testName, err)
 	}
 
 	// Retrieve the data and make sure it's equal to what was appended
 	retrievedData, err := dbTx.RetrieveFromStore(storeName, location)
 	if err != nil {
-		t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: RetrieveFromStore "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: RetrieveFromStore "+
+			"unexpectedly failed: %s", testName, err)
 	}
 	if !bytes.Equal(retrievedData, data) {
-		t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: RetrieveFromStore "+
+		t.Fatalf("%s: RetrieveFromStore "+
 			"returned unexpected data. Want: %s, got: %s",
-			string(data), string(retrievedData))
+			testName, string(data), string(retrievedData))
 	}
 
 	// Make sure that an invalid location returns ErrNotFound
 	fakeLocation := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
 	_, err = dbTx.RetrieveFromStore(storeName, fakeLocation)
 	if err == nil {
-		t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: RetrieveFromStore " +
-			"unexpectedly succeeded")
+		t.Fatalf("%s: RetrieveFromStore "+
+			"unexpectedly succeeded", testName)
 	}
 	if !database.IsNotFoundError(err) {
-		t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: RetrieveFromStore "+
-			"returned wrong error: %s", err)
+		t.Fatalf("%s: RetrieveFromStore "+
+			"returned wrong error: %s", testName, err)
 	}
 }
 
@@ -479,7 +573,7 @@ type keyValuePair struct {
 }
 
 func prepareCursorForTest(t *testing.T, testName string, entries []keyValuePair) (cursor database.Cursor, teardownFunc func()) {
-	db, teardownFunc := prepareDatabaseForTest(t, testName)
+	db, _, teardownFunc := prepareFFLDBForTest(t, testName)
 
 	// Put the entries into the database
 	for _, entry := range entries {
