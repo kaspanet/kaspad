@@ -1156,7 +1156,7 @@ func TestDoubleSpends(t *testing.T) {
 
 	blockWithTx1 := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{fundingBlock.BlockHash()}, []*wire.MsgTx{tx1})
 
-	// Check that a block will be rejected if it has a transaction from its past.
+	// Check that a block will be rejected if it has a transaction that already exists in its past.
 	anotherBlockWithTx1, err := PrepareBlockForTest(dag, []*daghash.Hash{blockWithTx1.BlockHash()}, nil)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
