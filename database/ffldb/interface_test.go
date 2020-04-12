@@ -485,6 +485,61 @@ func TestDatabaseAppendToStoreAndRetrieveFromStore(t *testing.T) {
 	}
 }
 
+func TestTransactionPut(t *testing.T) {
+	db, teardownFunc := prepareDatabaseForTest(t, "TestTransactionPut")
+	defer teardownFunc()
+
+	// Begin a new transaction
+	dbTx, err := db.Begin()
+	if err != nil {
+		t.Fatalf("TestTransactionPut: Begin "+
+			"unexpectedly failed: %s", err)
+	}
+	defer func() {
+		err := dbTx.RollbackUnlessClosed()
+		if err != nil {
+			t.Fatalf("TestTransactionPut: RollbackUnlessClosed "+
+				"unexpectedly failed: %s", err)
+		}
+	}()
+
+	// Put value1 into the transaction
+	key := database.MakeBucket().Key([]byte("key"))
+	value1 := []byte("value1")
+	err = dbTx.Put(key, value1)
+	if err != nil {
+		t.Fatalf("TestTransactionPut: Put "+
+			"unexpectedly failed: %s", err)
+	}
+
+	// Put value2 into the transaction with the same key
+	value2 := []byte("value2")
+	err = dbTx.Put(key, value2)
+	if err != nil {
+		t.Fatalf("TestTransactionPut: Put "+
+			"unexpectedly failed: %s", err)
+	}
+
+	// Commit the transaction
+	err = dbTx.Commit()
+	if err != nil {
+		t.Fatalf("TestTransactionPut: Commit "+
+			"unexpectedly failed: %s", err)
+	}
+
+	// Make sure that the returned value is value2
+	returnedValue, err := db.Get(key)
+	if err != nil {
+		t.Fatalf("TestTransactionPut: Get "+
+			"unexpectedly failed: %s", err)
+	}
+	if !bytes.Equal(returnedValue, value2) {
+		t.Fatalf("TestTransactionPut: Get "+
+			"returned wrong value. Want: %s, got: %s",
+			string(value2), string(returnedValue))
+	}
+}
+
 func TestTransactionGet(t *testing.T) {
 	db, teardownFunc := prepareDatabaseForTest(t, "TestTransactionGet")
 	defer teardownFunc()
@@ -501,13 +556,13 @@ func TestTransactionGet(t *testing.T) {
 	// Begin a new transaction
 	dbTx, err := db.Begin()
 	if err != nil {
-		t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: Begin "+
+		t.Fatalf("TestTransactionGet: Begin "+
 			"unexpectedly failed: %s", err)
 	}
 	defer func() {
 		err := dbTx.RollbackUnlessClosed()
 		if err != nil {
-			t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: RollbackUnlessClosed "+
+			t.Fatalf("TestTransactionGet: RollbackUnlessClosed "+
 				"unexpectedly failed: %s", err)
 		}
 	}()
@@ -553,13 +608,13 @@ func TestTransactionHas(t *testing.T) {
 	// Begin a new transaction
 	dbTx, err := db.Begin()
 	if err != nil {
-		t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: Begin "+
+		t.Fatalf("TestTransactionHas: Begin "+
 			"unexpectedly failed: %s", err)
 	}
 	defer func() {
 		err := dbTx.RollbackUnlessClosed()
 		if err != nil {
-			t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: RollbackUnlessClosed "+
+			t.Fatalf("TestTransactionHas: RollbackUnlessClosed "+
 				"unexpectedly failed: %s", err)
 		}
 	}()
@@ -603,13 +658,13 @@ func TestTransactionDelete(t *testing.T) {
 	// Begin a new transaction
 	dbTx, err := db.Begin()
 	if err != nil {
-		t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: Begin "+
+		t.Fatalf("TestTransactionDelete: Begin "+
 			"unexpectedly failed: %s", err)
 	}
 	defer func() {
 		err := dbTx.RollbackUnlessClosed()
 		if err != nil {
-			t.Fatalf("TestTransactionAppendToStoreAndRetrieveFromStore: RollbackUnlessClosed "+
+			t.Fatalf("TestTransactionDelete: RollbackUnlessClosed "+
 				"unexpectedly failed: %s", err)
 		}
 	}()
