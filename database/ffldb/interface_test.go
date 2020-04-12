@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/database"
 	"io/ioutil"
+	"reflect"
 	"testing"
 )
 
 type keyValuePair struct {
-	key   []byte
+	key   *database.Key
 	value []byte
 }
 
@@ -42,7 +43,7 @@ func prepareCursorForTest(t *testing.T, testName string, entries []keyValuePair)
 		}
 	}
 
-	cursor, err = db.Cursor([]byte{})
+	cursor, err = db.Cursor(database.MakeBucket())
 	if err != nil {
 		t.Fatalf("%s: Cursor unexpectedly "+
 			"failed: %s", testName, err)
@@ -55,7 +56,7 @@ func prepareKeyValuePairsForTest() []keyValuePair {
 	// Prepare a list of key/value pairs
 	entries := make([]keyValuePair, 10)
 	for i := 0; i < 10; i++ {
-		key := []byte(fmt.Sprintf("key%d", i))
+		key := database.MakeBucket().Key([]byte(fmt.Sprintf("key%d", i)))
 		value := []byte("value")
 		entries[i] = keyValuePair{key: key, value: value}
 	}
@@ -80,7 +81,7 @@ func TestCursorNext(t *testing.T) {
 			t.Fatalf("TestCursorNext: Key unexpectedly "+
 				"failed: %s", err)
 		}
-		if !bytes.Equal(cursorKey, entry.key) {
+		if !reflect.DeepEqual(cursorKey, entry.key) {
 			t.Fatalf("TestCursorNext: Cursor returned "+
 				"wrong key. Want: %s, got: %s", entry.key, cursorKey)
 		}
@@ -137,7 +138,7 @@ func TestCursorFirst(t *testing.T) {
 		t.Fatalf("TestCursorFirst: Key unexpectedly "+
 			"failed: %s", err)
 	}
-	if !bytes.Equal(firstCursorKey, firstEntryKey) {
+	if !reflect.DeepEqual(firstCursorKey, firstEntryKey) {
 		t.Fatalf("TestCursorFirst: Cursor returned "+
 			"wrong key. Want: %s, got: %s", firstEntryKey, firstCursorKey)
 	}
