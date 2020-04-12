@@ -1,9 +1,10 @@
-package ffldb
+package database_test
 
 import (
 	"bytes"
 	"fmt"
 	"github.com/kaspanet/kaspad/database"
+	"github.com/kaspanet/kaspad/database/ffldb"
 	"io/ioutil"
 	"reflect"
 	"strings"
@@ -17,7 +18,7 @@ func prepareDatabaseForTest(t *testing.T, testName string) (db database.Database
 		t.Fatalf("%s: TempDir unexpectedly "+
 			"failed: %s", testName, err)
 	}
-	db, err = Open(path)
+	db, err = ffldb.Open(path)
 	if err != nil {
 		t.Fatalf("%s: Open unexpectedly "+
 			"failed: %s", testName, err)
