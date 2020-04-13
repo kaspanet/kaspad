@@ -27,19 +27,19 @@ func (db *LevelDB) Cursor(bucket *database.Bucket) *LevelDBCursor {
 }
 
 // Next moves the iterator to the next key/value pair. It returns whether the
-// iterator is exhausted. Returns false if the cursor is closed.
+// iterator is exhausted. Panics if the cursor is closed.
 func (c *LevelDBCursor) Next() bool {
 	if c.isClosed {
-		return false
+		panic("cannot go to next on a closed cursor")
 	}
 	return c.ldbIterator.Next()
 }
 
 // First moves the iterator to the first key/value pair. It returns false if
-// such a pair does not exist or if the cursor is closed.
+// such a pair does not exist. Panics if the cursor is closed.
 func (c *LevelDBCursor) First() bool {
 	if c.isClosed {
-		return false
+		panic("cannot go to first on a closed cursor")
 	}
 	return c.ldbIterator.First()
 }

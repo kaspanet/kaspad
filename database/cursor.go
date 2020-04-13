@@ -3,11 +3,11 @@ package database
 // Cursor iterates over database entries given some bucket.
 type Cursor interface {
 	// Next moves the iterator to the next key/value pair. It returns whether the
-	// iterator is exhausted. Returns false if the cursor is closed.
+	// iterator is exhausted. Panics if the cursor is closed.
 	Next() bool
 
 	// First moves the iterator to the first key/value pair. It returns false if
-	// such a pair does not exist or if the cursor is closed.
+	// such a pair does not exist. Panics if the cursor is closed.
 	First() bool
 
 	// Seek moves the iterator to the first key/value pair whose key is greater
