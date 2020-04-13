@@ -14,16 +14,7 @@ type keyValuePair struct {
 	value []byte
 }
 
-func prepareCursorForTest(t *testing.T, db database.Database, testName string, entries []keyValuePair) database.Cursor {
-	// Put the entries into the database
-	for _, entry := range entries {
-		err := db.Put(entry.key, entry.value)
-		if err != nil {
-			t.Fatalf("%s: Put unexpectedly "+
-				"failed: %s", testName, err)
-		}
-	}
-
+func prepareCursorForTest(t *testing.T, db database.Database, testName string) database.Cursor {
 	cursor, err := db.Cursor(database.MakeBucket())
 	if err != nil {
 		t.Fatalf("%s: Cursor unexpectedly "+
@@ -33,7 +24,7 @@ func prepareCursorForTest(t *testing.T, db database.Database, testName string, e
 	return cursor
 }
 
-func prepareKeyValuePairsForTest() []keyValuePair {
+func populateDatabaseForTest(t *testing.T, db database.Database, testName string) []keyValuePair {
 	// Prepare a list of key/value pairs
 	entries := make([]keyValuePair, 10)
 	for i := 0; i < 10; i++ {
@@ -41,6 +32,16 @@ func prepareKeyValuePairsForTest() []keyValuePair {
 		value := []byte("value")
 		entries[i] = keyValuePair{key: key, value: value}
 	}
+
+	// Put the pairs into the database
+	for _, entry := range entries {
+		err := db.Put(entry.key, entry.value)
+		if err != nil {
+			t.Fatalf("%s: Put unexpectedly "+
+				"failed: %s", testName, err)
+		}
+	}
+
 	return entries
 }
 
@@ -49,8 +50,8 @@ func TestCursorNext(t *testing.T) {
 }
 
 func testCursorNext(t *testing.T, db database.Database, testName string) {
-	entries := prepareKeyValuePairsForTest()
-	cursor := prepareCursorForTest(t, db, testName, entries)
+	entries := populateDatabaseForTest(t, db, testName)
+	cursor := prepareCursorForTest(t, db, testName)
 
 	// Make sure that all the entries exist in the cursor, in their
 	// correct order
@@ -108,8 +109,8 @@ func TestCursorFirst(t *testing.T) {
 }
 
 func testCursorFirst(t *testing.T, db database.Database, testName string) {
-	entries := prepareKeyValuePairsForTest()
-	cursor := prepareCursorForTest(t, db, testName, entries)
+	entries := populateDatabaseForTest(t, db, testName)
+	cursor := prepareCursorForTest(t, db, testName)
 
 	// Make sure that First returns true when the cursor is not empty
 	exists := cursor.First()
@@ -150,7 +151,7 @@ func testCursorFirst(t *testing.T, db database.Database, testName string) {
 	}
 
 	// Create a new cursor over an empty dataset
-	cursor = prepareCursorForTest(t, db, testName, nil)
+	cursor = prepareCursorForTest(t, db, testName)
 
 	// Make sure that First returns false when the cursor is empty
 	exists = cursor.First()
@@ -165,8 +166,8 @@ func TestCursorSeek(t *testing.T) {
 }
 
 func testCursorSeek(t *testing.T, db database.Database, testName string) {
-	entries := prepareKeyValuePairsForTest()
-	cursor := prepareCursorForTest(t, db, testName, entries)
+	entries := populateDatabaseForTest(t, db, testName)
+	cursor := prepareCursorForTest(t, db, testName)
 
 	// Seek to the fourth entry and make sure it exists
 	fourthEntry := entries[3]
@@ -216,8 +217,8 @@ func TestCursorCloseErrors(t *testing.T) {
 }
 
 func testCursorCloseErrors(t *testing.T, db database.Database, testName string) {
-	entries := prepareKeyValuePairsForTest()
-	cursor := prepareCursorForTest(t, db, testName, entries)
+	populateDatabaseForTest(t, db, testName)
+	cursor := prepareCursorForTest(t, db, testName)
 
 	// Close the cursor
 	err := cursor.Close()
@@ -280,8 +281,8 @@ func TestCursorCloseFirstAndNext(t *testing.T) {
 }
 
 func testCursorCloseFirstAndNext(t *testing.T, db database.Database, testName string) {
-	entries := prepareKeyValuePairsForTest()
-	cursor := prepareCursorForTest(t, db, testName, entries)
+	populateDatabaseForTest(t, db, testName)
+	cursor := prepareCursorForTest(t, db, testName)
 
 	// Close the cursor
 	err := cursor.Close()
