@@ -1,6 +1,7 @@
 package database_test
 
 import (
+	"fmt"
 	"github.com/kaspanet/kaspad/database"
 	"github.com/kaspanet/kaspad/database/ffldb"
 	"io/ioutil"
@@ -31,4 +32,18 @@ func prepareFFLDBForTest(t *testing.T, testName string) (db database.Database, n
 		}
 	}
 	return db, "ffldb", teardownFunc
+}
+
+func testForAllDatabaseTypes(t *testing.T, testName string,
+	function func(t *testing.T, db database.Database, testName string)) {
+
+	for _, prepareDatabase := range databasePrepareFuncs {
+		func() {
+			db, dbType, teardownFunc := prepareDatabase(t, testName)
+			defer teardownFunc()
+
+			testName := fmt.Sprintf("%s: %s", dbType, testName)
+			function(t, db, testName)
+		}()
+	}
 }

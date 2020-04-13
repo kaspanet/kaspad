@@ -2,21 +2,12 @@ package database_test
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/kaspanet/kaspad/database"
 	"testing"
 )
 
 func TestDatabasePut(t *testing.T) {
-	for _, prepareDatabase := range databasePrepareFuncs {
-		func() {
-			db, name, teardownFunc := prepareDatabase(t, "TestDatabasePut")
-			defer teardownFunc()
-
-			testName := fmt.Sprintf("%s: TestDatabasePut", name)
-			testDatabasePut(t, db, testName)
-		}()
-	}
+	testForAllDatabaseTypes(t, "TestDatabasePut", testDatabasePut)
 }
 
 func testDatabasePut(t *testing.T, db database.Database, testName string) {
@@ -51,15 +42,7 @@ func testDatabasePut(t *testing.T, db database.Database, testName string) {
 }
 
 func TestDatabaseGet(t *testing.T) {
-	for _, prepareDatabase := range databasePrepareFuncs {
-		func() {
-			db, name, teardownFunc := prepareDatabase(t, "TestDatabaseGet")
-			defer teardownFunc()
-
-			testName := fmt.Sprintf("%s: TestDatabaseGet", name)
-			testDatabaseGet(t, db, testName)
-		}()
-	}
+	testForAllDatabaseTypes(t, "TestDatabaseGet", testDatabaseGet)
 }
 
 func testDatabaseGet(t *testing.T, db database.Database, testName string) {
@@ -98,15 +81,7 @@ func testDatabaseGet(t *testing.T, db database.Database, testName string) {
 }
 
 func TestDatabaseHas(t *testing.T) {
-	for _, prepareDatabase := range databasePrepareFuncs {
-		func() {
-			db, name, teardownFunc := prepareDatabase(t, "TestDatabaseHas")
-			defer teardownFunc()
-
-			testName := fmt.Sprintf("%s: TestDatabaseHas", name)
-			testDatabaseHas(t, db, testName)
-		}()
-	}
+	testForAllDatabaseTypes(t, "TestDatabaseHas", testDatabaseHas)
 }
 
 func testDatabaseHas(t *testing.T, db database.Database, testName string) {
@@ -143,15 +118,7 @@ func testDatabaseHas(t *testing.T, db database.Database, testName string) {
 }
 
 func TestDatabaseDelete(t *testing.T) {
-	for _, prepareDatabase := range databasePrepareFuncs {
-		func() {
-			db, name, teardownFunc := prepareDatabase(t, "TestDatabaseDelete")
-			defer teardownFunc()
-
-			testName := fmt.Sprintf("%s: TestDatabaseDelete", name)
-			testDatabaseDelete(t, db, testName)
-		}()
-	}
+	testForAllDatabaseTypes(t, "TestDatabaseDelete", testDatabaseDelete)
 }
 
 func testDatabaseDelete(t *testing.T, db database.Database, testName string) {
@@ -184,15 +151,7 @@ func testDatabaseDelete(t *testing.T, db database.Database, testName string) {
 }
 
 func TestDatabaseAppendToStoreAndRetrieveFromStore(t *testing.T) {
-	for _, prepareDatabase := range databasePrepareFuncs {
-		func() {
-			db, name, teardownFunc := prepareDatabase(t, "TestDatabaseAppendToStoreAndRetrieveFromStore")
-			defer teardownFunc()
-
-			testName := fmt.Sprintf("%s: TestDatabaseAppendToStoreAndRetrieveFromStore", name)
-			testDatabaseAppendToStoreAndRetrieveFromStore(t, db, testName)
-		}()
-	}
+	testForAllDatabaseTypes(t, "TestDatabaseAppendToStoreAndRetrieveFromStore", testDatabaseAppendToStoreAndRetrieveFromStore)
 }
 
 func testDatabaseAppendToStoreAndRetrieveFromStore(t *testing.T, db database.Database, testName string) {

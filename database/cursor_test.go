@@ -45,15 +45,7 @@ func prepareKeyValuePairsForTest() []keyValuePair {
 }
 
 func TestCursorNext(t *testing.T) {
-	for _, prepareDatabase := range databasePrepareFuncs {
-		func() {
-			db, name, teardownFunc := prepareDatabase(t, "TestCursorNext")
-			defer teardownFunc()
-
-			testName := fmt.Sprintf("%s: TestCursorNext", name)
-			testCursorNext(t, db, testName)
-		}()
-	}
+	testForAllDatabaseTypes(t, "TestCursorNext", testCursorNext)
 }
 
 func testCursorNext(t *testing.T, db database.Database, testName string) {
@@ -112,15 +104,7 @@ func testCursorNext(t *testing.T, db database.Database, testName string) {
 }
 
 func TestCursorFirst(t *testing.T) {
-	for _, prepareDatabase := range databasePrepareFuncs {
-		func() {
-			db, name, teardownFunc := prepareDatabase(t, "TestCursorFirst")
-			defer teardownFunc()
-
-			testName := fmt.Sprintf("%s: TestCursorFirst", name)
-			testCursorFirst(t, db, testName)
-		}()
-	}
+	testForAllDatabaseTypes(t, "TestCursorFirst", testCursorFirst)
 }
 
 func testCursorFirst(t *testing.T, db database.Database, testName string) {
@@ -177,15 +161,7 @@ func testCursorFirst(t *testing.T, db database.Database, testName string) {
 }
 
 func TestCursorSeek(t *testing.T) {
-	for _, prepareDatabase := range databasePrepareFuncs {
-		func() {
-			db, name, teardownFunc := prepareDatabase(t, "TestCursorSeek")
-			defer teardownFunc()
-
-			testName := fmt.Sprintf("%s: TestCursorSeek", name)
-			testCursorSeek(t, db, testName)
-		}()
-	}
+	testForAllDatabaseTypes(t, "TestCursorSeek", testCursorSeek)
 }
 
 func testCursorSeek(t *testing.T, db database.Database, testName string) {
@@ -236,15 +212,7 @@ func testCursorSeek(t *testing.T, db database.Database, testName string) {
 }
 
 func TestCursorCloseErrors(t *testing.T) {
-	for _, prepareDatabase := range databasePrepareFuncs {
-		func() {
-			db, name, teardownFunc := prepareDatabase(t, "TestCursorCloseErrors")
-			defer teardownFunc()
-
-			testName := fmt.Sprintf("%s: TestCursorCloseErrors", name)
-			testCursorCloseErrors(t, db, testName)
-		}()
-	}
+	testForAllDatabaseTypes(t, "TestCursorCloseErrors", testCursorCloseErrors)
 }
 
 func testCursorCloseErrors(t *testing.T, db database.Database, testName string) {
@@ -308,15 +276,7 @@ func testCursorCloseErrors(t *testing.T, db database.Database, testName string) 
 }
 
 func TestCursorCloseFirstAndNext(t *testing.T) {
-	for _, prepareDatabase := range databasePrepareFuncs {
-		func() {
-			db, name, teardownFunc := prepareDatabase(t, "TestCursorCloseFirstAndNext")
-			defer teardownFunc()
-
-			testName := fmt.Sprintf("%s: TestCursorCloseFirstAndNext", name)
-			testCursorCloseFirstAndNext(t, db, testName)
-		}()
-	}
+	testForAllDatabaseTypes(t, "TestCursorCloseFirstAndNext", testCursorCloseFirstAndNext)
 }
 
 func testCursorCloseFirstAndNext(t *testing.T, db database.Database, testName string) {

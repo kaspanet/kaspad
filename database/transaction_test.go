@@ -2,21 +2,12 @@ package database_test
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/kaspanet/kaspad/database"
 	"testing"
 )
 
 func TestTransactionPut(t *testing.T) {
-	for _, prepareDatabase := range databasePrepareFuncs {
-		func() {
-			db, name, teardownFunc := prepareDatabase(t, "TestTransactionPut")
-			defer teardownFunc()
-
-			testName := fmt.Sprintf("%s: TestTransactionPut", name)
-			testTransactionPut(t, db, testName)
-		}()
-	}
+	testForAllDatabaseTypes(t, "TestTransactionPut", testTransactionPut)
 }
 
 func testTransactionPut(t *testing.T, db database.Database, testName string) {
@@ -72,15 +63,7 @@ func testTransactionPut(t *testing.T, db database.Database, testName string) {
 }
 
 func TestTransactionGet(t *testing.T) {
-	for _, prepareDatabase := range databasePrepareFuncs {
-		func() {
-			db, name, teardownFunc := prepareDatabase(t, "TestTransactionGet")
-			defer teardownFunc()
-
-			testName := fmt.Sprintf("%s: TestTransactionGet", name)
-			testTransactionGet(t, db, testName)
-		}()
-	}
+	testForAllDatabaseTypes(t, "TestTransactionGet", testTransactionGet)
 }
 
 func testTransactionGet(t *testing.T, db database.Database, testName string) {
@@ -133,15 +116,7 @@ func testTransactionGet(t *testing.T, db database.Database, testName string) {
 }
 
 func TestTransactionHas(t *testing.T) {
-	for _, prepareDatabase := range databasePrepareFuncs {
-		func() {
-			db, name, teardownFunc := prepareDatabase(t, "TestTransactionHas")
-			defer teardownFunc()
-
-			testName := fmt.Sprintf("%s: TestTransactionHas", name)
-			testTransactionHas(t, db, testName)
-		}()
-	}
+	testForAllDatabaseTypes(t, "TestTransactionHas", testTransactionHas)
 }
 
 func testTransactionHas(t *testing.T, db database.Database, testName string) {
@@ -192,15 +167,7 @@ func testTransactionHas(t *testing.T, db database.Database, testName string) {
 }
 
 func TestTransactionDelete(t *testing.T) {
-	for _, prepareDatabase := range databasePrepareFuncs {
-		func() {
-			db, name, teardownFunc := prepareDatabase(t, "TestTransactionDelete")
-			defer teardownFunc()
-
-			testName := fmt.Sprintf("%s: TestTransactionDelete", name)
-			testTransactionDelete(t, db, testName)
-		}()
-	}
+	testForAllDatabaseTypes(t, "TestTransactionDelete", testTransactionDelete)
 }
 
 func testTransactionDelete(t *testing.T, db database.Database, testName string) {
@@ -254,15 +221,7 @@ func testTransactionDelete(t *testing.T, db database.Database, testName string) 
 }
 
 func TestTransactionAppendToStoreAndRetrieveFromStore(t *testing.T) {
-	for _, prepareDatabase := range databasePrepareFuncs {
-		func() {
-			db, name, teardownFunc := prepareDatabase(t, "TestTransactionAppendToStoreAndRetrieveFromStore")
-			defer teardownFunc()
-
-			testName := fmt.Sprintf("%s: TestTransactionAppendToStoreAndRetrieveFromStore", name)
-			testTransactionAppendToStoreAndRetrieveFromStore(t, db, testName)
-		}()
-	}
+	testForAllDatabaseTypes(t, "TestTransactionAppendToStoreAndRetrieveFromStore", testTransactionAppendToStoreAndRetrieveFromStore)
 }
 
 func testTransactionAppendToStoreAndRetrieveFromStore(t *testing.T, db database.Database, testName string) {
