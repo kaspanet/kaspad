@@ -444,6 +444,13 @@ func (p *Peer) ShouldSendBlockLocator() bool {
 	return p.shouldSendBlockLocator
 }
 
+// SetShouldSendBlockLocator sets whether the node
+// is expecting to get a block locator from this
+// peer.
+func (p *Peer) SetShouldSendBlockLocator(shouldSendBlockLocator bool) {
+	p.shouldSendBlockLocator = shouldSendBlockLocator
+}
+
 // String returns the peer's address and directionality as a human-readable
 // string.
 //
@@ -784,7 +791,7 @@ func (p *Peer) PushAddrMsg(addresses []*wire.NetAddress, subnetworkID *subnetwor
 //
 // This function is safe for concurrent access.
 func (p *Peer) PushGetBlockLocatorMsg(highHash, lowHash *daghash.Hash) {
-	p.shouldSendBlockLocator = true
+	p.SetShouldSendBlockLocator(true)
 	msg := wire.NewMsgGetBlockLocator(highHash, lowHash)
 	p.QueueMessage(msg, nil)
 }
