@@ -1,3 +1,7 @@
+// All tests within this file should call testForAllDatabaseTypes
+// over the actual test. This is to make sure that all supported
+// database types adhere to the interfaces defined in this package.
+
 package database_test
 
 import (

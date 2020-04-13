@@ -1,18 +1,16 @@
+// All tests within this file should call testForAllDatabaseTypes
+// over the actual test. This is to make sure that all supported
+// database types adhere to the interfaces defined in this package.
+
 package database_test
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/kaspanet/kaspad/database"
 	"reflect"
 	"strings"
 	"testing"
 )
-
-type keyValuePair struct {
-	key   *database.Key
-	value []byte
-}
 
 func prepareCursorForTest(t *testing.T, db database.Database, testName string) database.Cursor {
 	cursor, err := db.Cursor(database.MakeBucket())
@@ -22,27 +20,6 @@ func prepareCursorForTest(t *testing.T, db database.Database, testName string) d
 	}
 
 	return cursor
-}
-
-func populateDatabaseForTest(t *testing.T, db database.Database, testName string) []keyValuePair {
-	// Prepare a list of key/value pairs
-	entries := make([]keyValuePair, 10)
-	for i := 0; i < 10; i++ {
-		key := database.MakeBucket().Key([]byte(fmt.Sprintf("key%d", i)))
-		value := []byte("value")
-		entries[i] = keyValuePair{key: key, value: value}
-	}
-
-	// Put the pairs into the database
-	for _, entry := range entries {
-		err := db.Put(entry.key, entry.value)
-		if err != nil {
-			t.Fatalf("%s: Put unexpectedly "+
-				"failed: %s", testName, err)
-		}
-	}
-
-	return entries
 }
 
 func TestCursorNext(t *testing.T) {

@@ -8,6 +8,9 @@ import (
 	"testing"
 )
 
+// databasePrepareFuncs is a set of functions, in which each function
+// prepares a separate database type for testing.
+// See testForAllDatabaseTypes for further details.
 var databasePrepareFuncs = []func(t *testing.T, testName string) (db database.Database, name string, teardownFunc func()){
 	prepareFFLDBForTest,
 }
@@ -34,8 +37,12 @@ func prepareFFLDBForTest(t *testing.T, testName string) (db database.Database, n
 	return db, "ffldb", teardownFunc
 }
 
+// testForAllDatabaseTypes runs the given testFunc for every database
+// type defined in databasePrepareFuncs. This is to make sure that
+// all supported database types adhere to the interfaces defined in
+// this package.
 func testForAllDatabaseTypes(t *testing.T, testName string,
-	function func(t *testing.T, db database.Database, testName string)) {
+	testFunc func(t *testing.T, db database.Database, testName string)) {
 
 	for _, prepareDatabase := range databasePrepareFuncs {
 		func() {
@@ -43,7 +50,33 @@ func testForAllDatabaseTypes(t *testing.T, testName string,
 			defer teardownFunc()
 
 			testName := fmt.Sprintf("%s: %s", dbType, testName)
-			function(t, db, testName)
+			testFunc(t, db, testName)
 		}()
 	}
+}
+
+type keyValuePair struct {
+	key   *database.Key
+	value []byte
+}
+
+func populateDatabaseForTest(t *testing.T, db database.Database, testName string) []keyValuePair {
+	// Prepare a list of key/value pairs
+	entries := make([]keyValuePair, 10)
+	for i := 0; i < 10; i++ {
+		key := database.MakeBucket().Key([]byte(fmt.Sprintf("key%d", i)))
+		value := []byte("value")
+		entries[i] = keyValuePair{key: key, value: value}
+	}
+
+	// Put the pairs into the database
+	for _, entry := range entries {
+		err := db.Put(entry.key, entry.value)
+		if err != nil {
+			t.Fatalf("%s: Put unexpectedly "+
+				"failed: %s", testName, err)
+		}
+	}
+
+	return entries
 }
