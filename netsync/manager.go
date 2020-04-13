@@ -460,7 +460,7 @@ func (sm *SyncManager) shouldReplaceSyncPeer() (bool, error) {
 	defer syncPeerState.requestQueueMtx.Unlock()
 	return len(syncPeerState.requestedBlocks) == 0 &&
 		len(syncPeerState.requestQueues[wire.InvTypeSyncBlock].queue) == 0 &&
-		!sm.syncPeer.ShouldSendBlockLocator(), nil
+		!sm.syncPeer.WasBlockLocatorRequested(), nil
 }
 
 // handleBlockMsg handles block messages from all peers.
