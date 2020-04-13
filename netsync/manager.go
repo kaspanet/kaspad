@@ -433,12 +433,8 @@ func (sm *SyncManager) current() bool {
 func (sm *SyncManager) restartSyncIfNeeded() {
 	sm.syncPeerLock.Lock()
 	defer sm.syncPeerLock.Unlock()
-	shouldReplaceSyncPeer, err := sm.shouldReplaceSyncPeer()
-	if err != nil {
-		panic(err)
-	}
 
-	if !shouldReplaceSyncPeer {
+	if !sm.shouldReplaceSyncPeer() {
 		return
 	}
 
@@ -446,21 +442,21 @@ func (sm *SyncManager) restartSyncIfNeeded() {
 	sm.startSync()
 }
 
-func (sm *SyncManager) shouldReplaceSyncPeer() (bool, error) {
+func (sm *SyncManager) shouldReplaceSyncPeer() bool {
 	if sm.syncPeer == nil {
-		return true, nil
+		return true
 	}
 
 	syncPeerState, exists := sm.peerStates[sm.syncPeer]
 	if !exists {
-		return false, errors.Errorf("no peer state for sync peer %s", sm.syncPeer)
+		panic(errors.Errorf("no peer state for sync peer %s", sm.syncPeer))
 	}
 
 	syncPeerState.requestQueueMtx.Lock()
 	defer syncPeerState.requestQueueMtx.Unlock()
 	return len(syncPeerState.requestedBlocks) == 0 &&
 		len(syncPeerState.requestQueues[wire.InvTypeSyncBlock].queue) == 0 &&
-		!sm.syncPeer.WasBlockLocatorRequested(), nil
+		!sm.syncPeer.WasBlockLocatorRequested()
 }
 
 // handleBlockMsg handles block messages from all peers.
