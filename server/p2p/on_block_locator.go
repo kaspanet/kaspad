@@ -8,6 +8,7 @@ import (
 // OnBlockLocator is invoked when a peer receives a locator kaspa
 // message.
 func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgBlockLocator) {
+	sp.SetWasBlockLocatorRequested(false)
 	// Find the highest known shared block between the peers, and asks
 	// the block and its future from the peer. If the block is not
 	// found, create a lower resolution block locator and send it to

@@ -414,6 +414,8 @@ type Peer struct {
 	prevGetBlockInvsLow  *daghash.Hash
 	prevGetBlockInvsHigh *daghash.Hash
 
+	wasBlockLocatorRequested bool
+
 	// These fields keep track of statistics for the peer and are protected
 	// by the statsMtx mutex.
 	statsMtx        sync.RWMutex
@@ -433,6 +435,20 @@ type Peer struct {
 	queueQuit     chan struct{}
 	outQuit       chan struct{}
 	quit          chan struct{}
+}
+
+// WasBlockLocatorRequested returns whether the node
+// is expecting to get a block locator from this
+// peer.
+func (p *Peer) WasBlockLocatorRequested() bool {
+	return p.wasBlockLocatorRequested
+}
+
+// SetWasBlockLocatorRequested sets whether the node
+// is expecting to get a block locator from this
+// peer.
+func (p *Peer) SetWasBlockLocatorRequested(wasBlockLocatorRequested bool) {
+	p.wasBlockLocatorRequested = wasBlockLocatorRequested
 }
 
 // String returns the peer's address and directionality as a human-readable
@@ -775,6 +791,7 @@ func (p *Peer) PushAddrMsg(addresses []*wire.NetAddress, subnetworkID *subnetwor
 //
 // This function is safe for concurrent access.
 func (p *Peer) PushGetBlockLocatorMsg(highHash, lowHash *daghash.Hash) {
+	p.SetWasBlockLocatorRequested(true)
 	msg := wire.NewMsgGetBlockLocator(highHash, lowHash)
 	p.QueueMessage(msg, nil)
 }
