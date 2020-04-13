@@ -570,9 +570,9 @@ func TestValidateParents(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	a := prepareAndProcessBlock(t, dag, dag.dagParams.GenesisBlock)
-	b := prepareAndProcessBlock(t, dag, a)
-	c := prepareAndProcessBlock(t, dag, dag.dagParams.GenesisBlock)
+	a := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.dagParams.GenesisBlock)
+	b := prepareAndProcessBlockByParentMsgBlocks(t, dag, a)
+	c := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.dagParams.GenesisBlock)
 
 	aNode := nodeByMsgBlock(t, dag, a)
 	bNode := nodeByMsgBlock(t, dag, b)

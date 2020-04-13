@@ -795,6 +795,57 @@ func TestDoubleSpends(t *testing.T) {
 	testPoolMembership(tc, tx2, false, true, false)
 }
 
+func TestDoubleSpendsFromDAG(t *testing.T) {
+	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.SimnetParams, 2, "TestDoubleSpendsFromDAG")
+	if err != nil {
+		t.Fatalf("unable to create test pool: %v", err)
+	}
+	defer teardownFunc()
+	harness := tc.harness
+
+	tx, err := harness.createTx(spendableOuts[0], uint64(txRelayFeeForTest), 1)
+	if err != nil {
+		t.Fatalf("unable to create transaction: %v", err)
+	}
+
+	dag := harness.txPool.cfg.DAG
+	blockdag.PrepareAndProcessBlockForTest(t, dag, dag.TipHashes(), []*wire.MsgTx{tx.MsgTx()})
+
+	// Check that a transaction that double spends the DAG UTXO set is orphaned.
+	doubleSpendTx, err := harness.createTx(spendableOuts[0], uint64(txRelayFeeForTest), 2)
+	if err != nil {
+		t.Fatalf("unable to create transaction: %v", err)
+	}
+
+	_, err = harness.txPool.ProcessTransaction(doubleSpendTx, true, 0)
+	if err != nil {
+		t.Fatalf("ProcessTransaction: %s", err)
+	}
+	testPoolMembership(tc, doubleSpendTx, true, false, false)
+
+	// If you send a transaction that some of its outputs exist in the DAG UTXO
+	// set, it won't be added to the orphan pool, and will completely get rejected
+	// from the mempool.
+	// This happens because transactions with the same ID as old transactions
+	// are not allowed as long as some of the old transaction outputs exist
+	// in the UTXO.
+	_, err = harness.txPool.ProcessTransaction(tx, true, 0)
+	var ruleErr RuleError
+	if ok := errors.As(err, &ruleErr); ok {
+		var txRuleErr TxRuleError
+		if ok := errors.As(ruleErr.Err, &txRuleErr); ok {
+			if txRuleErr.RejectCode != wire.RejectDuplicate {
+				t.Errorf("ProcessTransaction expected an %v reject code but got %v", wire.RejectDuplicate, txRuleErr.RejectCode)
+			}
+		} else {
+			t.Errorf("ProcessTransaction expected a ruleErr.Err to be a TxRuleError but got %v", err)
+		}
+	} else {
+		t.Errorf("ProcessTransaction expected a RuleError but got %v", err)
+	}
+	testPoolMembership(tc, tx, false, false, false)
+}
+
 //TestFetchTransaction checks that FetchTransaction
 //returns only transaction from the main pool and not from the orphan pool
 func TestFetchTransaction(t *testing.T) {

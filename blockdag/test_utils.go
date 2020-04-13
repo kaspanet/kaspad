@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"testing"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
@@ -277,6 +278,28 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 	block.Header.Bits = dag.NextRequiredDifficulty(block.Header.Timestamp)
 
 	return block, nil
+}
+
+// PrepareAndProcessBlockForTest prepares a block that points to the given parent
+// hashes and process it.
+func PrepareAndProcessBlockForTest(t *testing.T, dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*wire.MsgTx) *wire.MsgBlock {
+	daghash.Sort(parentHashes)
+	block, err := PrepareBlockForTest(dag, parentHashes, transactions)
+	if err != nil {
+		t.Fatalf("error in PrepareBlockForTest: %s", err)
+	}
+	utilBlock := util.NewBlock(block)
+	isOrphan, isDelayed, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
+	if err != nil {
+		t.Fatalf("unexpected error in ProcessBlock: %s", err)
+	}
+	if isDelayed {
+		t.Fatalf("block is too far in the future")
+	}
+	if isOrphan {
+		t.Fatalf("block was unexpectedly orphan")
+	}
+	return block
 }
 
 // generateDeterministicExtraNonceForTest returns a unique deterministic extra nonce for coinbase data, in order to create unique coinbase transactions.

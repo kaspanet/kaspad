@@ -688,7 +688,7 @@ func TestConfirmations(t *testing.T) {
 	chainBlocks := make([]*wire.MsgBlock, 5)
 	chainBlocks[0] = dag.dagParams.GenesisBlock
 	for i := uint32(1); i < 5; i++ {
-		chainBlocks[i] = prepareAndProcessBlock(t, dag, chainBlocks[i-1])
+		chainBlocks[i] = prepareAndProcessBlockByParentMsgBlocks(t, dag, chainBlocks[i-1])
 	}
 
 	// Make sure that each one of the chain blocks has the expected confirmations number
@@ -707,8 +707,8 @@ func TestConfirmations(t *testing.T) {
 
 	branchingBlocks := make([]*wire.MsgBlock, 2)
 	// Add two branching blocks
-	branchingBlocks[0] = prepareAndProcessBlock(t, dag, chainBlocks[1])
-	branchingBlocks[1] = prepareAndProcessBlock(t, dag, branchingBlocks[0])
+	branchingBlocks[0] = prepareAndProcessBlockByParentMsgBlocks(t, dag, chainBlocks[1])
+	branchingBlocks[1] = prepareAndProcessBlockByParentMsgBlocks(t, dag, branchingBlocks[0])
 
 	// Check that the genesis has a confirmations number == len(chainBlocks)
 	genesisConfirmations, err = dag.blockConfirmations(dag.genesis)
@@ -738,7 +738,7 @@ func TestConfirmations(t *testing.T) {
 	// Generate 100 blocks to force the "main" chain to become red
 	branchingChainTip := branchingBlocks[1]
 	for i := uint32(0); i < 100; i++ {
-		nextBranchingChainTip := prepareAndProcessBlock(t, dag, branchingChainTip)
+		nextBranchingChainTip := prepareAndProcessBlockByParentMsgBlocks(t, dag, branchingChainTip)
 		branchingChainTip = nextBranchingChainTip
 	}
 
@@ -797,7 +797,7 @@ func TestAcceptingBlock(t *testing.T) {
 	chainBlocks := make([]*wire.MsgBlock, numChainBlocks)
 	chainBlocks[0] = dag.dagParams.GenesisBlock
 	for i := uint32(1); i <= numChainBlocks-1; i++ {
-		chainBlocks[i] = prepareAndProcessBlock(t, dag, chainBlocks[i-1])
+		chainBlocks[i] = prepareAndProcessBlockByParentMsgBlocks(t, dag, chainBlocks[i-1])
 	}
 
 	// Make sure that each chain block (including the genesis) is accepted by its child
@@ -825,7 +825,7 @@ func TestAcceptingBlock(t *testing.T) {
 
 	// Generate a chain tip that will be in the anticone of the selected tip and
 	// in dag.virtual.blues.
-	branchingChainTip := prepareAndProcessBlock(t, dag, chainBlocks[len(chainBlocks)-3])
+	branchingChainTip := prepareAndProcessBlockByParentMsgBlocks(t, dag, chainBlocks[len(chainBlocks)-3])
 
 	// Make sure that branchingChainTip is not in the selected parent chain
 	isBranchingChainTipInSelectedParentChain, err := dag.IsInSelectedParentChain(branchingChainTip.BlockHash())
@@ -863,7 +863,7 @@ func TestAcceptingBlock(t *testing.T) {
 	intersectionBlock := chainBlocks[1]
 	sideChainTip := intersectionBlock
 	for i := 0; i < len(chainBlocks)-3; i++ {
-		sideChainTip = prepareAndProcessBlock(t, dag, sideChainTip)
+		sideChainTip = prepareAndProcessBlockByParentMsgBlocks(t, dag, sideChainTip)
 	}
 
 	// Make sure that the accepting block of the parent of the branching block didn't change
@@ -879,7 +879,7 @@ func TestAcceptingBlock(t *testing.T) {
 
 	// Make sure that a block that is found in the red set of the selected tip
 	// doesn't have an accepting block
-	prepareAndProcessBlock(t, dag, sideChainTip, chainBlocks[len(chainBlocks)-1])
+	prepareAndProcessBlockByParentMsgBlocks(t, dag, sideChainTip, chainBlocks[len(chainBlocks)-1])
 
 	sideChainTipAcceptingBlock, err := acceptingBlockByMsgBlock(sideChainTip)
 	if err != nil {
@@ -1115,5 +1115,134 @@ func TestIsDAGCurrentMaxDiff(t *testing.T) {
 		if params.TargetTimePerBlock*time.Duration(params.FinalityInterval) < isDAGCurrentMaxDiff {
 			t.Errorf("in %s, a DAG can be considered current even if it's below the finality point", params.Name)
 		}
+	}
+}
+
+func TestDoubleSpends(t *testing.T) {
+	params := dagconfig.SimnetParams
+	params.BlockCoinbaseMaturity = 0
+	// Create a new database and dag instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("TestDoubleSpends", true, Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup dag instance: %v", err)
+	}
+	defer teardownFunc()
+
+	fundingBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{params.GenesisHash}, nil)
+	cbTx := fundingBlock.Transactions[0]
+
+	signatureScript, err := txscript.PayToScriptHashSignatureScript(OpTrueScript, nil)
+	if err != nil {
+		t.Fatalf("Failed to build signature script: %s", err)
+	}
+	txIn := &wire.TxIn{
+		PreviousOutpoint: wire.Outpoint{TxID: *cbTx.TxID(), Index: 0},
+		SignatureScript:  signatureScript,
+		Sequence:         wire.MaxTxInSequenceNum,
+	}
+	txOut := &wire.TxOut{
+		ScriptPubKey: OpTrueScript,
+		Value:        uint64(1),
+	}
+	tx1 := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
+
+	doubleSpendTxOut := &wire.TxOut{
+		ScriptPubKey: OpTrueScript,
+		Value:        uint64(2),
+	}
+	doubleSpendTx1 := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{doubleSpendTxOut})
+
+	blockWithTx1 := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{fundingBlock.BlockHash()}, []*wire.MsgTx{tx1})
+
+	// Check that a block will be rejected if it has a transaction that already exists in its past.
+	anotherBlockWithTx1, err := PrepareBlockForTest(dag, []*daghash.Hash{blockWithTx1.BlockHash()}, nil)
+	if err != nil {
+		t.Fatalf("PrepareBlockForTest: %v", err)
+	}
+
+	// Manually add tx1.
+	anotherBlockWithTx1.Transactions = append(anotherBlockWithTx1.Transactions, tx1)
+	anotherBlockWithTx1UtilTxs := make([]*util.Tx, len(anotherBlockWithTx1.Transactions))
+	for i, tx := range anotherBlockWithTx1.Transactions {
+		anotherBlockWithTx1UtilTxs[i] = util.NewTx(tx)
+	}
+	anotherBlockWithTx1.Header.HashMerkleRoot = BuildHashMerkleTreeStore(anotherBlockWithTx1UtilTxs).Root()
+
+	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(anotherBlockWithTx1), BFNoPoWCheck)
+	if err == nil {
+		t.Errorf("ProcessBlock expected an error")
+	} else {
+		var ruleErr RuleError
+		if ok := errors.As(err, &ruleErr); ok {
+			if ruleErr.ErrorCode != ErrOverwriteTx {
+				t.Errorf("ProcessBlock expected an %v error code but got %v", ErrOverwriteTx, ruleErr.ErrorCode)
+			}
+		} else {
+			t.Errorf("ProcessBlock expected a blockdag.RuleError but got %v", err)
+		}
+	}
+	if isDelayed {
+		t.Fatalf("ProcessBlock: anotherBlockWithTx1 " +
+			"is too far in the future")
+	}
+	if isOrphan {
+		t.Fatalf("ProcessBlock: anotherBlockWithTx1 got unexpectedly orphaned")
+	}
+
+	// Check that a block will be rejected if it has a transaction that double spends
+	// a transaction from its past.
+	blockWithDoubleSpendForTx1, err := PrepareBlockForTest(dag, []*daghash.Hash{blockWithTx1.BlockHash()}, nil)
+	if err != nil {
+		t.Fatalf("PrepareBlockForTest: %v", err)
+	}
+
+	// Manually add a transaction that double spends the block past.
+	blockWithDoubleSpendForTx1.Transactions = append(blockWithDoubleSpendForTx1.Transactions, doubleSpendTx1)
+	blockWithDoubleSpendForTx1UtilTxs := make([]*util.Tx, len(blockWithDoubleSpendForTx1.Transactions))
+	for i, tx := range blockWithDoubleSpendForTx1.Transactions {
+		blockWithDoubleSpendForTx1UtilTxs[i] = util.NewTx(tx)
+	}
+	blockWithDoubleSpendForTx1.Header.HashMerkleRoot = BuildHashMerkleTreeStore(blockWithDoubleSpendForTx1UtilTxs).Root()
+
+	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(blockWithDoubleSpendForTx1), BFNoPoWCheck)
+	if err == nil {
+		t.Errorf("ProcessBlock expected an error")
+	} else {
+		var ruleErr RuleError
+		if ok := errors.As(err, &ruleErr); ok {
+			if ruleErr.ErrorCode != ErrMissingTxOut {
+				t.Errorf("ProcessBlock expected an %v error code but got %v", ErrMissingTxOut, ruleErr.ErrorCode)
+			}
+		} else {
+			t.Errorf("ProcessBlock expected a blockdag.RuleError but got %v", err)
+		}
+	}
+	if isDelayed {
+		t.Fatalf("ProcessBlock: blockWithDoubleSpendForTx1 " +
+			"is too far in the future")
+	}
+	if isOrphan {
+		t.Fatalf("ProcessBlock: blockWithDoubleSpendForTx1 got unexpectedly orphaned")
+	}
+
+	blockInAnticoneOfBlockWithTx1, err := PrepareBlockForTest(dag, []*daghash.Hash{fundingBlock.BlockHash()}, []*wire.MsgTx{doubleSpendTx1})
+	if err != nil {
+		t.Fatalf("PrepareBlockForTest: %v", err)
+	}
+
+	// Check that a block will not get rejected if it has a transaction that double spends
+	// a transaction from its anticone.
+	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(blockInAnticoneOfBlockWithTx1), BFNoPoWCheck)
+	if err != nil {
+		t.Fatalf("ProcessBlock: %v", err)
+	}
+	if isDelayed {
+		t.Fatalf("ProcessBlock: blockInAnticoneOfBlockWithTx1 " +
+			"is too far in the future")
+	}
+	if isOrphan {
+		t.Fatalf("ProcessBlock: blockInAnticoneOfBlockWithTx1 got unexpectedly orphaned")
 	}
 }
