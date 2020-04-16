@@ -70,5 +70,7 @@ func exit(log *logs.Logger, reason string, currentThreadStackTrace []byte, gorou
 		fmt.Fprintln(os.Stderr, "Couldn't exit gracefully.")
 	case <-exitHandlerDone:
 	}
+	fmt.Print("Exiting...")
 	os.Exit(1)
+	fmt.Print("After os.Exit(1)")
 }
