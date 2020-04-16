@@ -24,6 +24,7 @@ func HandlePanic(log *logs.Logger, goroutineStackTrace []byte) {
 			log.Criticalf("Goroutine stack trace: %s", goroutineStackTrace)
 		}
 		log.Criticalf("Stack trace: %s", debug.Stack())
+
 		log.Backend().Close()
 		close(panicHandlerDone)
 	}()
@@ -34,8 +35,9 @@ func HandlePanic(log *logs.Logger, goroutineStackTrace []byte) {
 		fmt.Fprintln(os.Stderr, "Couldn't handle a fatal error. Exiting...")
 	case <-panicHandlerDone:
 	}
-	log.Criticalf("Exiting")
+	fmt.Print("Exiting...")
 	os.Exit(1)
+	fmt.Print("After os.Exit(1)")
 }
 
 // GoroutineWrapperFunc returns a goroutine wrapper function that handles panics and writes them to the log.
