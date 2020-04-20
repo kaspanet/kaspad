@@ -103,7 +103,7 @@ func TestFlatFileMultiFileRollback(t *testing.T) {
 		}
 	}()
 
-	// Write 5 more 8 byte chunks and keep the last location written to
+	// Write five 8 byte chunks and keep the last location written to
 	var lastWriteLocation1 *flatFileLocation
 	for i := byte(0); i < 5; i++ {
 		writeData := []byte{i, i, i, i, i, i, i, i}
