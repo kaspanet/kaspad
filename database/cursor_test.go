@@ -196,6 +196,33 @@ func testCursorSeek(t *testing.T, db database.Database, testName string) {
 			"wrong value. Want: %s, got: %s", testName, fourthEntryValue, fourthCursorValue)
 	}
 
+	// Call Next and make sure that we are now on the fifth entry
+	exists := cursor.Next()
+	if !exists {
+		t.Fatalf("%s: Next unexpectedly "+
+			"returned false", testName)
+	}
+	fifthEntryKey := entries[4].key
+	fifthCursorKey, err := cursor.Key()
+	if err != nil {
+		t.Fatalf("%s: Key unexpectedly "+
+			"failed: %s", testName, err)
+	}
+	if !reflect.DeepEqual(fifthCursorKey, fifthEntryKey) {
+		t.Fatalf("%s: Cursor returned "+
+			"wrong key. Want: %s, got: %s", testName, fifthEntryKey, fifthCursorKey)
+	}
+	fifthEntryValue := entries[4].value
+	fifthCursorValue, err := cursor.Value()
+	if err != nil {
+		t.Fatalf("%s: Value unexpectedly "+
+			"failed: %s", testName, err)
+	}
+	if !bytes.Equal(fifthCursorValue, fifthEntryValue) {
+		t.Fatalf("%s: Cursor returned "+
+			"wrong value. Want: %s, got: %s", testName, fifthEntryValue, fifthCursorValue)
+	}
+
 	// Seek to a value that doesn't exist and make sure that
 	// the returned error is ErrNotFound
 	err = cursor.Seek(database.MakeBucket().Key([]byte("doesn't exist")))
