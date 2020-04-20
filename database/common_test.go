@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-type databasePrepareFunc = func(t *testing.T, testName string) (db database.Database, name string, teardownFunc func())
+type databasePrepareFunc func(t *testing.T, testName string) (db database.Database, name string, teardownFunc func())
 
 // databasePrepareFuncs is a set of functions, in which each function
 // prepares a separate database type for testing.
