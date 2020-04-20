@@ -119,6 +119,25 @@ func testCursorFirst(t *testing.T, db database.Database, testName string) {
 			"wrong value. Want: %s, got: %s", testName, firstEntryValue, firstCursorValue)
 	}
 
+	// Exhaust the cursor
+	for cursor.Next() {
+		// Do nothing
+	}
+
+	// Call first again and make sure it still returns true
+	exists = cursor.First()
+	if !exists {
+		t.Fatalf("%s: First unexpectedly "+
+			"returned false", testName)
+	}
+
+	// Call next and make sure it returns true as well
+	exists = cursor.Next()
+	if !exists {
+		t.Fatalf("%s: Next unexpectedly "+
+			"returned false", testName)
+	}
+
 	// Remove all the entries from the database
 	for _, entry := range entries {
 		err := db.Delete(entry.key)
