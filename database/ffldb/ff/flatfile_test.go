@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/kaspanet/kaspad/database"
 	"io/ioutil"
+	"os"
 	"reflect"
 	"testing"
 )
@@ -115,8 +116,9 @@ func TestFlatFileMultiFileRollback(t *testing.T) {
 		}
 	}
 
-	// Grab the current location
+	// Grab the current location and the current file number
 	currentLocation := store.currentLocation()
+	fileNumberBeforeWriting := store.writeCursor.currentFileNumber
 
 	// Write (2 * maxOpenFiles) more 8 byte chunks and keep the last location written to
 	var lastWriteLocation2 *flatFileLocation
@@ -129,6 +131,9 @@ func TestFlatFileMultiFileRollback(t *testing.T) {
 				"unexpected error: %s", err)
 		}
 	}
+
+	// Grab the file number again to later make sure its file no longer exists
+	fileNumberAfterWriting := store.writeCursor.currentFileNumber
 
 	// Rollback
 	err = store.rollback(currentLocation)
@@ -159,5 +164,14 @@ func TestFlatFileMultiFileRollback(t *testing.T) {
 	if !database.IsNotFoundError(err) {
 		t.Fatalf("TestFlatFileMultiFileRollback: read "+
 			"returned unexpected error: %s", err)
+	}
+
+	// Make sure that all the appropriate files have been deleted
+	for i := fileNumberAfterWriting; i > fileNumberBeforeWriting; i-- {
+		filePath := flatFilePath(store.basePath, store.storeName, i)
+		if _, err := os.Stat(filePath); err == nil || !os.IsNotExist(err) {
+			t.Fatalf("TestFlatFileMultiFileRollback: file "+
+				"unexpectedly still exists: %s", filePath)
+		}
 	}
 }
