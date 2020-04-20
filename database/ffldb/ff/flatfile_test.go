@@ -118,7 +118,7 @@ func TestFlatFileMultiFileRollback(t *testing.T) {
 	// Grab the current location
 	currentLocation := store.currentLocation()
 
-	// Write 2 * maxOpenFiles more 8 byte chunks and keep the last location written to
+	// Write (2 * maxOpenFiles) more 8 byte chunks and keep the last location written to
 	var lastWriteLocation2 *flatFileLocation
 	for i := byte(0); i < byte(2*maxFileSize); i++ {
 		writeData := []byte{0, 1, 2, 3, 4, 5, 6, 7}
