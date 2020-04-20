@@ -157,6 +157,7 @@ type SyncManager struct {
 	msgChan        chan interface{}
 	wg             sync.WaitGroup
 	quit           chan struct{}
+	syncPeerLock   sync.Mutex
 
 	// These fields should only be accessed from the messageHandler thread
 	rejectedTxns    map[daghash.TxID]struct{}
@@ -170,6 +171,8 @@ type SyncManager struct {
 // download/sync the blockDAG from. When syncing is already running, it
 // simply returns. It also examines the candidates for any which are no longer
 // candidates and removes them as needed.
+//
+// This function MUST be called with the sync peer lock held.
 func (sm *SyncManager) startSync() {
 	// Return now if we're already syncing.
 	if sm.syncPeer != nil {
@@ -189,6 +192,7 @@ func (sm *SyncManager) startSync() {
 		// TODO(davec): Use a better algorithm to choose the sync peer.
 		// For now, just pick the first available candidate.
 		syncPeer = peer
+		break
 	}
 
 	// Start syncing from the sync peer if one was selected.
@@ -294,8 +298,8 @@ func (sm *SyncManager) handleNewPeerMsg(peer *peerpkg.Peer) {
 	}
 
 	// Start syncing by choosing the best candidate if needed.
-	if isSyncCandidate && sm.syncPeer == nil {
-		sm.startSync()
+	if isSyncCandidate {
+		sm.restartSyncIfNeeded()
 	}
 }
 
@@ -337,7 +341,7 @@ func (sm *SyncManager) stopSyncFromPeer(peer *peerpkg.Peer) {
 	// sync peer.
 	if sm.syncPeer == peer {
 		sm.syncPeer = nil
-		sm.startSync()
+		sm.restartSyncIfNeeded()
 	}
 }
 
@@ -427,22 +431,32 @@ func (sm *SyncManager) current() bool {
 // restartSyncIfNeeded finds a new sync candidate if we're not expecting any
 // blocks from the current one.
 func (sm *SyncManager) restartSyncIfNeeded() {
-	if sm.syncPeer != nil {
-		syncPeerState, exists := sm.peerStates[sm.syncPeer]
-		if exists {
-			isWaitingForBlocks := func() bool {
-				syncPeerState.requestQueueMtx.Lock()
-				defer syncPeerState.requestQueueMtx.Unlock()
-				return len(syncPeerState.requestedBlocks) != 0 || len(syncPeerState.requestQueues[wire.InvTypeSyncBlock].queue) != 0
-			}()
-			if isWaitingForBlocks {
-				return
-			}
-		}
+	sm.syncPeerLock.Lock()
+	defer sm.syncPeerLock.Unlock()
+
+	if !sm.shouldReplaceSyncPeer() {
+		return
 	}
 
 	sm.syncPeer = nil
 	sm.startSync()
+}
+
+func (sm *SyncManager) shouldReplaceSyncPeer() bool {
+	if sm.syncPeer == nil {
+		return true
+	}
+
+	syncPeerState, exists := sm.peerStates[sm.syncPeer]
+	if !exists {
+		panic(errors.Errorf("no peer state for sync peer %s", sm.syncPeer))
+	}
+
+	syncPeerState.requestQueueMtx.Lock()
+	defer syncPeerState.requestQueueMtx.Unlock()
+	return len(syncPeerState.requestedBlocks) == 0 &&
+		len(syncPeerState.requestQueues[wire.InvTypeSyncBlock].queue) == 0 &&
+		!sm.syncPeer.WasBlockLocatorRequested()
 }
 
 // handleBlockMsg handles block messages from all peers.
@@ -905,7 +919,7 @@ func (sm *SyncManager) handleSelectedTipMsg(msg *selectedTipMsg) {
 		return
 	}
 	peer.SetSelectedTipHash(selectedTipHash)
-	sm.startSync()
+	sm.restartSyncIfNeeded()
 }
 
 // messageHandler is the main handler for the sync manager. It must be run as a

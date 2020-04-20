@@ -293,14 +293,14 @@ func TestBlueAnticoneSizeErrors(t *testing.T) {
 	// Prepare a block chain with size K beginning with the genesis block
 	currentBlockA := dag.dagParams.GenesisBlock
 	for i := dagconfig.KType(0); i < dag.dagParams.K; i++ {
-		newBlock := prepareAndProcessBlock(t, dag, currentBlockA)
+		newBlock := prepareAndProcessBlockByParentMsgBlocks(t, dag, currentBlockA)
 		currentBlockA = newBlock
 	}
 
 	// Prepare another block chain with size K beginning with the genesis block
 	currentBlockB := dag.dagParams.GenesisBlock
 	for i := dagconfig.KType(0); i < dag.dagParams.K; i++ {
-		newBlock := prepareAndProcessBlock(t, dag, currentBlockB)
+		newBlock := prepareAndProcessBlockByParentMsgBlocks(t, dag, currentBlockB)
 		currentBlockB = newBlock
 	}
 
@@ -332,11 +332,11 @@ func TestGHOSTDAGErrors(t *testing.T) {
 	defer teardownFunc()
 
 	// Add two child blocks to the genesis
-	block1 := prepareAndProcessBlock(t, dag, dag.dagParams.GenesisBlock)
-	block2 := prepareAndProcessBlock(t, dag, dag.dagParams.GenesisBlock)
+	block1 := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.dagParams.GenesisBlock)
+	block2 := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.dagParams.GenesisBlock)
 
 	// Add a child block to the previous two blocks
-	block3 := prepareAndProcessBlock(t, dag, block1, block2)
+	block3 := prepareAndProcessBlockByParentMsgBlocks(t, dag, block1, block2)
 
 	// Clear the reachability store
 	dag.reachabilityStore.loaded = map[daghash.Hash]*reachabilityData{}
