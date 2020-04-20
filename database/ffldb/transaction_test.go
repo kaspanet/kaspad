@@ -464,13 +464,6 @@ func TestTransactionRollbackUnlessClosed(t *testing.T) {
 		t.Fatalf("TestTransactionRollbackUnlessClosed: Begin "+
 			"unexpectedly failed: %s", err)
 	}
-	defer func() {
-		err := dbTx.RollbackUnlessClosed()
-		if err != nil {
-			t.Fatalf("TestTransactionRollbackUnlessClosed: RollbackUnlessClosed "+
-				"unexpectedly failed: %s", err)
-		}
-	}()
 
 	// Roll it back
 	err = dbTx.RollbackUnlessClosed()
