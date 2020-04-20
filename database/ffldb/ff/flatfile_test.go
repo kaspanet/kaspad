@@ -77,7 +77,9 @@ func TestFlatFilePath(t *testing.T) {
 }
 
 func TestFlatFileMultiFileRollback(t *testing.T) {
-	// Set the maxFileSize to 16 bytes.
+	// Set the maxFileSize to 16 bytes so that we don't have to write
+	// an enormous amount of data to disk to get multiple files, all
+	// for the sake of this test.
 	currentMaxFileSize := maxFileSize
 	maxFileSize = 16
 	defer func() {
