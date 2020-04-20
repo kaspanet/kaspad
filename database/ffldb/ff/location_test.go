@@ -36,16 +36,21 @@ func TestFlatFileLocationSerialization(t *testing.T) {
 }
 
 func TestFlatFileLocationDeserializationErrors(t *testing.T) {
-	location := &flatFileLocation{
-		fileNumber: 1,
-		fileOffset: 2,
-		dataLength: 3,
+	expectedError := "unexpected serializedLocation length"
+
+	tooShortSerializedLocation := []byte{0, 1, 2, 3, 4, 5}
+	_, err := deserializeLocation(tooShortSerializedLocation)
+	if err == nil {
+		t.Fatalf("TestFlatFileLocationSerialization: deserializeLocation " +
+			"unexpectedly succeeded")
+	}
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Fatalf("TestFlatFileLocationSerialization: deserializeLocation "+
+			"returned unexpected error. Want: %s, got: %s", expectedError, err)
 	}
 
-	serializedLocation := serializeLocation(location)
-
-	expectedError := "unexpected serializedLocation length"
-	_, err := deserializeLocation(serializedLocation[7:])
+	tooLongSerializedLocation := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14}
+	_, err = deserializeLocation(tooLongSerializedLocation)
 	if err == nil {
 		t.Fatalf("TestFlatFileLocationSerialization: deserializeLocation " +
 			"unexpectedly succeeded")
