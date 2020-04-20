@@ -41,8 +41,8 @@ func prepareFFLDBForTest(t *testing.T, testName string) (db database.Database, n
 
 // testForAllDatabaseTypes runs the given testFunc for every database
 // type defined in databasePrepareFuncs. This is to make sure that
-// all supported database types adhere to the interfaces defined in
-// this package.
+// all supported database types adhere to the assumptions defined in
+// the interfaces in this package.
 func testForAllDatabaseTypes(t *testing.T, testName string,
 	testFunc func(t *testing.T, db database.Database, testName string)) {
 
