@@ -8,6 +8,7 @@ package database_test
 import (
 	"bytes"
 	"github.com/kaspanet/kaspad/database"
+	"strings"
 	"testing"
 )
 
@@ -356,5 +357,66 @@ func testTransactionAppendToStoreAndRetrieveFromStore(t *testing.T, db database.
 	if !database.IsNotFoundError(err) {
 		t.Fatalf("%s: RetrieveFromStore "+
 			"returned wrong error: %s", testName, err)
+	}
+}
+
+func TestTransactionCommit(t *testing.T) {
+	testForAllDatabaseTypes(t, "TestTransactionCommit", testTransactionCommit)
+}
+
+func testTransactionCommit(t *testing.T, db database.Database, testName string) {
+	// Begin a new transaction
+	dbTx, err := db.Begin()
+	if err != nil {
+		t.Fatalf("%s: Begin "+
+			"unexpectedly failed: %s", testName, err)
+	}
+	defer func() {
+		err := dbTx.RollbackUnlessClosed()
+		if err != nil {
+			t.Fatalf("%s: RollbackUnlessClosed "+
+				"unexpectedly failed: %s", testName, err)
+		}
+	}()
+
+	// Put a value into the transaction
+	key := database.MakeBucket().Key([]byte("key"))
+	value := []byte("value")
+	err = dbTx.Put(key, value)
+	if err != nil {
+		t.Fatalf("%s: Put "+
+			"unexpectedly failed: %s", testName, err)
+	}
+
+	// Commit the transaction
+	err = dbTx.Commit()
+	if err != nil {
+		t.Fatalf("%s: Commit "+
+			"unexpectedly failed: %s", testName, err)
+	}
+
+	// Make sure that the returned value exists and is as expected
+	returnedValue, err := db.Get(key)
+	if err != nil {
+		t.Fatalf("%s: Get "+
+			"unexpectedly failed: %s", testName, err)
+	}
+	if !bytes.Equal(returnedValue, value) {
+		t.Fatalf("%s: Get "+
+			"returned wrong value. Want: %s, got: %s",
+			testName, string(value), string(returnedValue))
+	}
+
+	// Make sure that further operations on the transactions return an error
+	_, err = dbTx.Get(key)
+	if err == nil {
+		t.Fatalf("%s: Get "+
+			"unexpectedly succeeded", testName)
+	}
+	expectedError := "closed transaction"
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Fatalf("%s: Get "+
+			"returned wrong error. Want: %s, got: %s",
+			testName, expectedError, err)
 	}
 }
