@@ -407,7 +407,7 @@ func testTransactionCommit(t *testing.T, db database.Database, testName string) 
 			testName, string(value), string(returnedValue))
 	}
 
-	// Make sure that further operations on the transactions return an error
+	// Make sure that further operations on the transaction return an error
 	_, err = dbTx.Get(key)
 	if err == nil {
 		t.Fatalf("%s: Get "+
@@ -467,7 +467,7 @@ func testTransactionRollback(t *testing.T, db database.Database, testName string
 			"returned wrong error", testName)
 	}
 
-	// Make sure that further operations on the transactions return an error
+	// Make sure that further operations on the transaction return an error
 	_, err = dbTx.Get(key)
 	if err == nil {
 		t.Fatalf("%s: Get "+
@@ -478,5 +478,72 @@ func testTransactionRollback(t *testing.T, db database.Database, testName string
 		t.Fatalf("%s: Get "+
 			"returned wrong error. Want: %s, got: %s",
 			testName, expectedError, err)
+	}
+}
+
+func TestTransactionRollbackUnlessClosed(t *testing.T) {
+	testForAllDatabaseTypes(t, "TestTransactionRollbackUnlessClosed", testTransactionRollbackUnlessClosed)
+}
+
+func testTransactionRollbackUnlessClosed(t *testing.T, db database.Database, testName string) {
+	// Begin a new transaction
+	dbTx, err := db.Begin()
+	if err != nil {
+		t.Fatalf("%s: Begin "+
+			"unexpectedly failed: %s", testName, err)
+	}
+	defer func() {
+		err := dbTx.RollbackUnlessClosed()
+		if err != nil {
+			t.Fatalf("%s: RollbackUnlessClosed "+
+				"unexpectedly failed: %s", testName, err)
+		}
+	}()
+
+	// Put a value into the transaction
+	key := database.MakeBucket().Key([]byte("key"))
+	value := []byte("value")
+	err = dbTx.Put(key, value)
+	if err != nil {
+		t.Fatalf("%s: Put "+
+			"unexpectedly failed: %s", testName, err)
+	}
+
+	// RollbackUnlessClosed the transaction
+	err = dbTx.RollbackUnlessClosed()
+	if err != nil {
+		t.Fatalf("%s: RollbackUnlessClosed "+
+			"unexpectedly failed: %s", testName, err)
+	}
+
+	// Make sure that the returned value did not get added to the database
+	_, err = db.Get(key)
+	if err == nil {
+		t.Fatalf("%s: Get "+
+			"unexpectedly succeeded", testName)
+	}
+	if !database.IsNotFoundError(err) {
+		t.Fatalf("%s: Get "+
+			"returned wrong error", testName)
+	}
+
+	// Make sure that further operations on the transaction return an error
+	_, err = dbTx.Get(key)
+	if err == nil {
+		t.Fatalf("%s: Get "+
+			"unexpectedly succeeded", testName)
+	}
+	expectedError := "closed transaction"
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Fatalf("%s: Get "+
+			"returned wrong error. Want: %s, got: %s",
+			testName, expectedError, err)
+	}
+
+	// Make sure that further calls to RollbackUnlessClosed don't return an error
+	err = dbTx.RollbackUnlessClosed()
+	if err != nil {
+		t.Fatalf("%s: RollbackUnlessClosed "+
+			"unexpectedly failed: %s", testName, err)
 	}
 }
