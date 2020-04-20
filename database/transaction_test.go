@@ -138,6 +138,26 @@ func testTransactionGet(t *testing.T, db database.Database, testName string) {
 		t.Fatalf("%s: Get "+
 			"returned wrong error: %s", testName, err)
 	}
+
+	// Put a new value into the transaction
+	key3 := database.MakeBucket().Key([]byte("key3"))
+	value3 := []byte("value3")
+	err = dbTx.Put(key3, value3)
+	if err != nil {
+		t.Fatalf("%s: Put "+
+			"unexpectedly failed: %s", testName, err)
+	}
+
+	// Make sure that the new value doesn't exist outside the transaction
+	_, err = db.Get(key3)
+	if err == nil {
+		t.Fatalf("%s: Get "+
+			"unexpectedly succeeded", testName)
+	}
+	if !database.IsNotFoundError(err) {
+		t.Fatalf("%s: Get "+
+			"returned wrong error: %s", testName, err)
+	}
 }
 
 func TestTransactionHas(t *testing.T) {
