@@ -236,7 +236,7 @@ func TestKeyValueTransactionRollback(t *testing.T) {
 			"unexpectedly failed: %s", err)
 	}
 
-	// Commit the transaction
+	// Rollback the transaction
 	err = dbTx.Rollback()
 	if err != nil {
 		t.Fatalf("TestKeyValueTransactionRollback: Rollback "+
