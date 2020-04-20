@@ -8,10 +8,12 @@ import (
 	"testing"
 )
 
+type databasePrepareFunc = func(t *testing.T, testName string) (db database.Database, name string, teardownFunc func())
+
 // databasePrepareFuncs is a set of functions, in which each function
 // prepares a separate database type for testing.
 // See testForAllDatabaseTypes for further details.
-var databasePrepareFuncs = []func(t *testing.T, testName string) (db database.Database, name string, teardownFunc func()){
+var databasePrepareFuncs = []databasePrepareFunc{
 	prepareFFLDBForTest,
 }
 
