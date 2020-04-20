@@ -25,6 +25,18 @@ func testDatabasePut(t *testing.T, db database.Database, testName string) {
 			"unexpectedly failed: %s", testName, err)
 	}
 
+	// Make sure that the returned value is value1
+	returnedValue, err := db.Get(key)
+	if err != nil {
+		t.Fatalf("%s: Get "+
+			"unexpectedly failed: %s", testName, err)
+	}
+	if !bytes.Equal(returnedValue, value1) {
+		t.Fatalf("%s: Get "+
+			"returned wrong value. Want: %s, got: %s",
+			testName, string(value1), string(returnedValue))
+	}
+
 	// Put value2 into the database with the same key
 	value2 := []byte("value2")
 	err = db.Put(key, value2)
@@ -34,7 +46,7 @@ func testDatabasePut(t *testing.T, db database.Database, testName string) {
 	}
 
 	// Make sure that the returned value is value2
-	returnedValue, err := db.Get(key)
+	returnedValue, err = db.Get(key)
 	if err != nil {
 		t.Fatalf("%s: Get "+
 			"unexpectedly failed: %s", testName, err)
