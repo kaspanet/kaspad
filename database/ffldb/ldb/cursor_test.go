@@ -34,6 +34,10 @@ func validateCurrentCursorKeyAndValue(t *testing.T, testName string, cursor *Lev
 	}
 }
 
+// TestCursorSanity validates typical cursor usage, including
+// opening a cursor over some existing data, seeking back
+// and forth over that data, and getting some keys/values out
+// of the cursor.
 func TestCursorSanity(t *testing.T) {
 	ldb, teardownFunc := prepareDatabaseForTest(t, "TestCursorSanity")
 	defer teardownFunc()
