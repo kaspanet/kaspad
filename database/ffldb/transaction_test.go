@@ -8,22 +8,22 @@ import (
 	"testing"
 )
 
-func TestKeyValueTransactionCommit(t *testing.T) {
+func TestTransactionCommitForLevelDBMethods(t *testing.T) {
 	// Open a test db
-	path, err := ioutil.TempDir("", "TestKeyValueTransactionCommit")
+	path, err := ioutil.TempDir("", "TestTransactionCommitForLevelDBMethods")
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionCommit: TempDir unexpectedly "+
+		t.Fatalf("TestTransactionCommitForLevelDBMethods: TempDir unexpectedly "+
 			"failed: %s", err)
 	}
 	db, err := Open(path)
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionCommit: Open "+
+		t.Fatalf("TestTransactionCommitForLevelDBMethods: Open "+
 			"unexpectedly failed: %s", err)
 	}
 	defer func() {
 		err := db.Close()
 		if err != nil {
-			t.Fatalf("TestKeyValueTransactionCommit: Close "+
+			t.Fatalf("TestTransactionCommitForLevelDBMethods: Close "+
 				"unexpectedly failed: %s", err)
 		}
 	}()
@@ -33,20 +33,20 @@ func TestKeyValueTransactionCommit(t *testing.T) {
 	value1 := []byte("value1")
 	err = db.Put(key1, value1)
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionCommit: Put "+
+		t.Fatalf("TestTransactionCommitForLevelDBMethods: Put "+
 			"unexpectedly failed: %s", err)
 	}
 
 	// Begin a new transaction
 	dbTx, err := db.Begin()
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionCommit: Begin "+
+		t.Fatalf("TestTransactionCommitForLevelDBMethods: Begin "+
 			"unexpectedly failed: %s", err)
 	}
 	defer func() {
 		err := dbTx.RollbackUnlessClosed()
 		if err != nil {
-			t.Fatalf("TestKeyValueTransactionCommit: RollbackUnlessClosed "+
+			t.Fatalf("TestTransactionCommitForLevelDBMethods: RollbackUnlessClosed "+
 				"unexpectedly failed: %s", err)
 		}
 	}()
@@ -54,22 +54,22 @@ func TestKeyValueTransactionCommit(t *testing.T) {
 	// Make sure that Has returns that the original value exists
 	exists, err := dbTx.Has(key1)
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionCommit: Has "+
+		t.Fatalf("TestTransactionCommitForLevelDBMethods: Has "+
 			"unexpectedly failed: %s", err)
 	}
 	if !exists {
-		t.Fatalf("TestKeyValueTransactionCommit: Has " +
+		t.Fatalf("TestTransactionCommitForLevelDBMethods: Has " +
 			"unexpectedly returned that the value does not exist")
 	}
 
 	// Get the existing value and make sure it's equal to the original
 	existingValue, err := dbTx.Get(key1)
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionCommit: Get "+
+		t.Fatalf("TestTransactionCommitForLevelDBMethods: Get "+
 			"unexpectedly failed: %s", err)
 	}
 	if !bytes.Equal(existingValue, value1) {
-		t.Fatalf("TestKeyValueTransactionCommit: Get "+
+		t.Fatalf("TestTransactionCommitForLevelDBMethods: Get "+
 			"returned unexpected value. Want: %s, got: %s",
 			string(value1), string(existingValue))
 	}
@@ -77,18 +77,18 @@ func TestKeyValueTransactionCommit(t *testing.T) {
 	// Delete the existing value
 	err = dbTx.Delete(key1)
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionCommit: Delete "+
+		t.Fatalf("TestTransactionCommitForLevelDBMethods: Delete "+
 			"unexpectedly failed: %s", err)
 	}
 
 	// Try to get a value that does not exist and make sure it returns ErrNotFound
 	_, err = dbTx.Get(database.MakeBucket().Key([]byte("doesn't exist")))
 	if err == nil {
-		t.Fatalf("TestKeyValueTransactionCommit: Get " +
+		t.Fatalf("TestTransactionCommitForLevelDBMethods: Get " +
 			"unexpectedly succeeded")
 	}
 	if !database.IsNotFoundError(err) {
-		t.Fatalf("TestKeyValueTransactionCommit: Get "+
+		t.Fatalf("TestTransactionCommitForLevelDBMethods: Get "+
 			"returned unexpected error: %s", err)
 	}
 
@@ -97,79 +97,79 @@ func TestKeyValueTransactionCommit(t *testing.T) {
 	value2 := []byte("value2")
 	err = dbTx.Put(key2, value2)
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionCommit: Put "+
+		t.Fatalf("TestTransactionCommitForLevelDBMethods: Put "+
 			"unexpectedly failed: %s", err)
 	}
 
 	// Commit the transaction
 	err = dbTx.Commit()
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionCommit: Commit "+
+		t.Fatalf("TestTransactionCommitForLevelDBMethods: Commit "+
 			"unexpectedly failed: %s", err)
 	}
 
 	// Make sure that Has returns that the original value does NOT exist
 	exists, err = db.Has(key1)
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionCommit: Has "+
+		t.Fatalf("TestTransactionCommitForLevelDBMethods: Has "+
 			"unexpectedly failed: %s", err)
 	}
 	if exists {
-		t.Fatalf("TestKeyValueTransactionCommit: Has " +
+		t.Fatalf("TestTransactionCommitForLevelDBMethods: Has " +
 			"unexpectedly returned that the value exists")
 	}
 
 	// Try to Get the existing value and make sure an ErrNotFound is returned
 	_, err = db.Get(key1)
 	if err == nil {
-		t.Fatalf("TestKeyValueTransactionCommit: Get " +
+		t.Fatalf("TestTransactionCommitForLevelDBMethods: Get " +
 			"unexpectedly succeeded")
 	}
 	if !database.IsNotFoundError(err) {
-		t.Fatalf("TestKeyValueTransactionCommit: Get "+
+		t.Fatalf("TestTransactionCommitForLevelDBMethods: Get "+
 			"returned unexpected err: %s", err)
 	}
 
 	// Make sure that Has returns that the new value exists
 	exists, err = db.Has(key2)
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionCommit: Has "+
+		t.Fatalf("TestTransactionCommitForLevelDBMethods: Has "+
 			"unexpectedly failed: %s", err)
 	}
 	if !exists {
-		t.Fatalf("TestKeyValueTransactionCommit: Has " +
+		t.Fatalf("TestTransactionCommitForLevelDBMethods: Has " +
 			"unexpectedly returned that the value does not exist")
 	}
 
 	// Get the new value and make sure it's equal to the original
 	existingValue, err = db.Get(key2)
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionCommit: Get "+
+		t.Fatalf("TestTransactionCommitForLevelDBMethods: Get "+
 			"unexpectedly failed: %s", err)
 	}
 	if !bytes.Equal(existingValue, value2) {
-		t.Fatalf("TestKeyValueTransactionCommit: Get "+
+		t.Fatalf("TestTransactionCommitForLevelDBMethods: Get "+
 			"returned unexpected value. Want: %s, got: %s",
 			string(value2), string(existingValue))
 	}
 }
 
-func TestKeyValueTransactionRollback(t *testing.T) {
+func TestTransactionRollbackForLevelDBMethods(t *testing.T) {
 	// Open a test db
-	path, err := ioutil.TempDir("", "TestKeyValueTransactionRollback")
+	path, err := ioutil.TempDir("", "TestTransactionRollbackForLevelDBMethods")
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionRollback: TempDir unexpectedly "+
+		t.Fatalf("TestTransactionRollbackForLevelDBMethods: TempDir unexpectedly "+
 			"failed: %s", err)
 	}
 	db, err := Open(path)
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionRollback: Open "+
+		t.Fatalf("TestTransactionRollbackForLevelDBMethods: Open "+
 			"unexpectedly failed: %s", err)
 	}
 	defer func() {
 		err := db.Close()
 		if err != nil {
-			t.Fatalf("TestKeyValueTransactionRollback: Close "+
+			t.Fatalf("TestTransactionRollbackForLevelDBMethods: Close "+
 				"unexpectedly failed: %s", err)
 		}
 	}()
@@ -179,20 +179,20 @@ func TestKeyValueTransactionRollback(t *testing.T) {
 	value1 := []byte("value1")
 	err = db.Put(key1, value1)
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionRollback: Put "+
+		t.Fatalf("TestTransactionRollbackForLevelDBMethods: Put "+
 			"unexpectedly failed: %s", err)
 	}
 
 	// Begin a new transaction
 	dbTx, err := db.Begin()
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionRollback: Begin "+
+		t.Fatalf("TestTransactionRollbackForLevelDBMethods: Begin "+
 			"unexpectedly failed: %s", err)
 	}
 	defer func() {
 		err := dbTx.RollbackUnlessClosed()
 		if err != nil {
-			t.Fatalf("TestKeyValueTransactionRollback: RollbackUnlessClosed "+
+			t.Fatalf("TestTransactionRollbackForLevelDBMethods: RollbackUnlessClosed "+
 				"unexpectedly failed: %s", err)
 		}
 	}()
@@ -200,22 +200,22 @@ func TestKeyValueTransactionRollback(t *testing.T) {
 	// Make sure that Has returns that the original value exists
 	exists, err := dbTx.Has(key1)
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionRollback: Has "+
+		t.Fatalf("TestTransactionRollbackForLevelDBMethods: Has "+
 			"unexpectedly failed: %s", err)
 	}
 	if !exists {
-		t.Fatalf("TestKeyValueTransactionRollback: Has " +
+		t.Fatalf("TestTransactionRollbackForLevelDBMethods: Has " +
 			"unexpectedly returned that the value does not exist")
 	}
 
 	// Get the existing value and make sure it's equal to the original
 	existingValue, err := dbTx.Get(key1)
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionRollback: Get "+
+		t.Fatalf("TestTransactionRollbackForLevelDBMethods: Get "+
 			"unexpectedly failed: %s", err)
 	}
 	if !bytes.Equal(existingValue, value1) {
-		t.Fatalf("TestKeyValueTransactionRollback: Get "+
+		t.Fatalf("TestTransactionRollbackForLevelDBMethods: Get "+
 			"returned unexpected value. Want: %s, got: %s",
 			string(value1), string(existingValue))
 	}
@@ -223,7 +223,7 @@ func TestKeyValueTransactionRollback(t *testing.T) {
 	// Delete the existing value
 	err = dbTx.Delete(key1)
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionRollback: Delete "+
+		t.Fatalf("TestTransactionRollbackForLevelDBMethods: Delete "+
 			"unexpectedly failed: %s", err)
 	}
 
@@ -232,36 +232,36 @@ func TestKeyValueTransactionRollback(t *testing.T) {
 	value2 := []byte("value2")
 	err = dbTx.Put(key2, value2)
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionRollback: Put "+
+		t.Fatalf("TestTransactionRollbackForLevelDBMethods: Put "+
 			"unexpectedly failed: %s", err)
 	}
 
 	// Rollback the transaction
 	err = dbTx.Rollback()
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionRollback: Rollback "+
+		t.Fatalf("TestTransactionRollbackForLevelDBMethods: Rollback "+
 			"unexpectedly failed: %s", err)
 	}
 
 	// Make sure that Has returns that the original value still exists
 	exists, err = db.Has(key1)
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionRollback: Has "+
+		t.Fatalf("TestTransactionRollbackForLevelDBMethods: Has "+
 			"unexpectedly failed: %s", err)
 	}
 	if !exists {
-		t.Fatalf("TestKeyValueTransactionRollback: Has " +
+		t.Fatalf("TestTransactionRollbackForLevelDBMethods: Has " +
 			"unexpectedly returned that the value does not exist")
 	}
 
 	// Get the existing value and make sure it is still returned
 	existingValue, err = db.Get(key1)
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionRollback: Get "+
+		t.Fatalf("TestTransactionRollbackForLevelDBMethods: Get "+
 			"unexpectedly failed: %s", err)
 	}
 	if !bytes.Equal(existingValue, value1) {
-		t.Fatalf("TestKeyValueTransactionRollback: Get "+
+		t.Fatalf("TestTransactionRollbackForLevelDBMethods: Get "+
 			"returned unexpected value. Want: %s, got: %s",
 			string(value1), string(existingValue))
 	}
@@ -269,22 +269,22 @@ func TestKeyValueTransactionRollback(t *testing.T) {
 	// Make sure that Has returns that the new value does NOT exist
 	exists, err = db.Has(key2)
 	if err != nil {
-		t.Fatalf("TestKeyValueTransactionRollback: Has "+
+		t.Fatalf("TestTransactionRollbackForLevelDBMethods: Has "+
 			"unexpectedly failed: %s", err)
 	}
 	if exists {
-		t.Fatalf("TestKeyValueTransactionRollback: Has " +
+		t.Fatalf("TestTransactionRollbackForLevelDBMethods: Has " +
 			"unexpectedly returned that the value exists")
 	}
 
 	// Try to Get the new value and make sure it returns an ErrNotFound
 	_, err = db.Get(key2)
 	if err == nil {
-		t.Fatalf("TestKeyValueTransactionRollback: Get " +
+		t.Fatalf("TestTransactionRollbackForLevelDBMethods: Get " +
 			"unexpectedly succeeded")
 	}
 	if !database.IsNotFoundError(err) {
-		t.Fatalf("TestKeyValueTransactionRollback: Get "+
+		t.Fatalf("TestTransactionRollbackForLevelDBMethods: Get "+
 			"returned unexpected error: %s", err)
 	}
 }
@@ -473,22 +473,22 @@ func TestTransactionRollbackUnlessClosed(t *testing.T) {
 	}
 }
 
-func TestStoreTransactionCommit(t *testing.T) {
+func TestTransactionCommitForFlatFileMethods(t *testing.T) {
 	// Open a test db
-	path, err := ioutil.TempDir("", "TestStoreTransactionCommit")
+	path, err := ioutil.TempDir("", "TestTransactionCommitForFlatFileMethods")
 	if err != nil {
-		t.Fatalf("TestStoreTransactionCommit: TempDir unexpectedly "+
+		t.Fatalf("TestTransactionCommitForFlatFileMethods: TempDir unexpectedly "+
 			"failed: %s", err)
 	}
 	db, err := Open(path)
 	if err != nil {
-		t.Fatalf("TestStoreTransactionCommit: Open "+
+		t.Fatalf("TestTransactionCommitForFlatFileMethods: Open "+
 			"unexpectedly failed: %s", err)
 	}
 	defer func() {
 		err := db.Close()
 		if err != nil {
-			t.Fatalf("TestStoreTransactionCommit: Close "+
+			t.Fatalf("TestTransactionCommitForFlatFileMethods: Close "+
 				"unexpectedly failed: %s", err)
 		}
 	}()
@@ -498,20 +498,20 @@ func TestStoreTransactionCommit(t *testing.T) {
 	value1 := []byte("value1")
 	location1, err := db.AppendToStore(store, value1)
 	if err != nil {
-		t.Fatalf("TestStoreTransactionCommit: AppendToStore "+
+		t.Fatalf("TestTransactionCommitForFlatFileMethods: AppendToStore "+
 			"unexpectedly failed: %s", err)
 	}
 
 	// Begin a new transaction
 	dbTx, err := db.Begin()
 	if err != nil {
-		t.Fatalf("TestStoreTransactionCommit: Begin "+
+		t.Fatalf("TestTransactionCommitForFlatFileMethods: Begin "+
 			"unexpectedly failed: %s", err)
 	}
 	defer func() {
 		err := dbTx.RollbackUnlessClosed()
 		if err != nil {
-			t.Fatalf("TestStoreTransactionCommit: RollbackUnlessClosed "+
+			t.Fatalf("TestTransactionCommitForFlatFileMethods: RollbackUnlessClosed "+
 				"unexpectedly failed: %s", err)
 		}
 	}()
@@ -519,11 +519,11 @@ func TestStoreTransactionCommit(t *testing.T) {
 	// Retrieve the existing value and make sure it's equal to the original
 	existingValue, err := dbTx.RetrieveFromStore(store, location1)
 	if err != nil {
-		t.Fatalf("TestStoreTransactionCommit: RetrieveFromStore "+
+		t.Fatalf("TestTransactionCommitForFlatFileMethods: RetrieveFromStore "+
 			"unexpectedly failed: %s", err)
 	}
 	if !bytes.Equal(existingValue, value1) {
-		t.Fatalf("TestStoreTransactionCommit: RetrieveFromStore "+
+		t.Fatalf("TestTransactionCommitForFlatFileMethods: RetrieveFromStore "+
 			"returned unexpected value. Want: %s, got: %s",
 			string(value1), string(existingValue))
 	}
@@ -532,25 +532,25 @@ func TestStoreTransactionCommit(t *testing.T) {
 	value2 := []byte("value2")
 	location2, err := dbTx.AppendToStore(store, value2)
 	if err != nil {
-		t.Fatalf("TestStoreTransactionCommit: AppendToStore "+
+		t.Fatalf("TestTransactionCommitForFlatFileMethods: AppendToStore "+
 			"unexpectedly failed: %s", err)
 	}
 
 	// Commit the transaction
 	err = dbTx.Commit()
 	if err != nil {
-		t.Fatalf("TestStoreTransactionCommit: Commit "+
+		t.Fatalf("TestTransactionCommitForFlatFileMethods: Commit "+
 			"unexpectedly failed: %s", err)
 	}
 
 	// Retrieve the new value and make sure it's equal to the original
 	newValue, err := db.RetrieveFromStore(store, location2)
 	if err != nil {
-		t.Fatalf("TestStoreTransactionCommit: RetrieveFromStore "+
+		t.Fatalf("TestTransactionCommitForFlatFileMethods: RetrieveFromStore "+
 			"unexpectedly failed: %s", err)
 	}
 	if !bytes.Equal(newValue, value2) {
-		t.Fatalf("TestStoreTransactionCommit: RetrieveFromStore "+
+		t.Fatalf("TestTransactionCommitForFlatFileMethods: RetrieveFromStore "+
 			"returned unexpected value. Want: %s, got: %s",
 			string(value2), string(newValue))
 	}
