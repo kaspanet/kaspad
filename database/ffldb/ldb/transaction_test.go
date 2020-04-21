@@ -8,7 +8,11 @@ import (
 
 func TestTransactionCloseErrors(t *testing.T) {
 	tests := []struct {
-		name              string
+		name string
+
+		// function is the LevelDBCursor function that we're
+		// verifying whether it returns an error after the
+		// transaction had been closed.
 		function          func(dbTx *LevelDBTransaction) error
 		shouldReturnError bool
 	}{
