@@ -51,24 +51,18 @@ func TestTransactionCloseErrors(t *testing.T) {
 			shouldReturnError: true,
 		},
 		{
-			name: "Rollback",
-			function: func(dbTx *LevelDBTransaction) error {
-				return dbTx.Rollback()
-			},
+			name:              "Rollback",
+			function:          (*LevelDBTransaction).Rollback,
 			shouldReturnError: true,
 		},
 		{
-			name: "Commit",
-			function: func(dbTx *LevelDBTransaction) error {
-				return dbTx.Commit()
-			},
+			name:              "Commit",
+			function:          (*LevelDBTransaction).Commit,
 			shouldReturnError: true,
 		},
 		{
-			name: "RollbackUnlessClosed",
-			function: func(dbTx *LevelDBTransaction) error {
-				return dbTx.RollbackUnlessClosed()
-			},
+			name:              "RollbackUnlessClosed",
+			function:          (*LevelDBTransaction).RollbackUnlessClosed,
 			shouldReturnError: false,
 		},
 	}
