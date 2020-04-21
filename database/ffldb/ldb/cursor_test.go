@@ -31,10 +31,11 @@ func TestCursorSanity(t *testing.T) {
 	}()
 
 	// Write some data to the database
+	bucket := database.MakeBucket([]byte("bucket"))
 	for i := 0; i < 10; i++ {
 		key := fmt.Sprintf("key%d", i)
 		value := fmt.Sprintf("value%d", i)
-		err := db.Put(database.MakeBucket([]byte("bucket")).Key([]byte(key)), []byte(value))
+		err := db.Put(bucket.Key([]byte(key)), []byte(value))
 		if err != nil {
 			t.Fatalf("TestCursorSanity: Put "+
 				"unexpectedly failed: %s", err)
@@ -42,7 +43,7 @@ func TestCursorSanity(t *testing.T) {
 	}
 
 	// Open a new cursor
-	cursor := db.Cursor(database.MakeBucket([]byte("bucket")))
+	cursor := db.Cursor(bucket)
 	defer func() {
 		err = cursor.Close()
 		if err != nil {
@@ -62,7 +63,7 @@ func TestCursorSanity(t *testing.T) {
 		t.Fatalf("TestCursorSanity: Key "+
 			"unexpectedly failed: %s", err)
 	}
-	expectedKey := database.MakeBucket([]byte("bucket")).Key([]byte("key0"))
+	expectedKey := bucket.Key([]byte("key0"))
 	if !reflect.DeepEqual(firstKey, expectedKey) {
 		t.Fatalf("TestCursorSanity: Key "+
 			"returned wrong key. Want: %s, got: %s",
@@ -92,7 +93,7 @@ func TestCursorSanity(t *testing.T) {
 	}
 
 	// Seek to the last key
-	err = cursor.Seek(database.MakeBucket([]byte("bucket")).Key([]byte("key9")))
+	err = cursor.Seek(bucket.Key([]byte("key9")))
 	if err != nil {
 		t.Fatalf("TestCursorSanity: Seek "+
 			"unexpectedly failed: %s", err)
@@ -102,7 +103,7 @@ func TestCursorSanity(t *testing.T) {
 		t.Fatalf("TestCursorSanity: Key "+
 			"unexpectedly failed: %s", err)
 	}
-	expectedKey = database.MakeBucket([]byte("bucket")).Key([]byte("key9"))
+	expectedKey = bucket.Key([]byte("key9"))
 	if !reflect.DeepEqual(lastKey, expectedKey) {
 		t.Fatalf("TestCursorSanity: Key "+
 			"returned wrong key. Want: %s, got: %s",
