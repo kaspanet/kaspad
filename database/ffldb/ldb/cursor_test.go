@@ -9,6 +9,31 @@ import (
 	"testing"
 )
 
+func validateCurrentCursorKeyAndValue(t *testing.T, testName string, cursor *LevelDBCursor,
+	expectedKey *database.Key, expectedValue []byte) {
+
+	cursorKey, err := cursor.Key()
+	if err != nil {
+		t.Fatalf("%s: Key "+
+			"unexpectedly failed: %s", testName, err)
+	}
+	if !reflect.DeepEqual(cursorKey, expectedKey) {
+		t.Fatalf("%s: Key "+
+			"returned wrong key. Want: %s, got: %s",
+			testName, string(expectedKey.Bytes()), string(cursorKey.Bytes()))
+	}
+	cursorValue, err := cursor.Value()
+	if err != nil {
+		t.Fatalf("%s: Value "+
+			"unexpectedly failed: %s", testName, err)
+	}
+	if !bytes.Equal(cursorValue, expectedValue) {
+		t.Fatalf("%s: Value "+
+			"returned wrong value. Want: %s, got: %s",
+			testName, string(expectedValue), string(cursorValue))
+	}
+}
+
 func TestCursorSanity(t *testing.T) {
 	ldb, teardownFunc := prepareDatabaseForTest(t, "TestCursorSanity")
 	defer teardownFunc()
@@ -41,31 +66,12 @@ func TestCursorSanity(t *testing.T) {
 		t.Fatalf("TestCursorSanity: First " +
 			"unexpectedly returned non-existance")
 	}
-	firstKey, err := cursor.Key()
-	if err != nil {
-		t.Fatalf("TestCursorSanity: Key "+
-			"unexpectedly failed: %s", err)
-	}
 	expectedKey := bucket.Key([]byte("key0"))
-	if !reflect.DeepEqual(firstKey, expectedKey) {
-		t.Fatalf("TestCursorSanity: Key "+
-			"returned wrong key. Want: %s, got: %s",
-			string(expectedKey.Bytes()), string(firstKey.Bytes()))
-	}
-	firstValue, err := cursor.Value()
-	if err != nil {
-		t.Fatalf("TestCursorSanity: Value "+
-			"unexpectedly failed: %s", err)
-	}
 	expectedValue := []byte("value0")
-	if !bytes.Equal(firstValue, expectedValue) {
-		t.Fatalf("TestCursorSanity: Value "+
-			"returned wrong value. Want: %s, got: %s",
-			string(expectedValue), string(firstValue))
-	}
+	validateCurrentCursorKeyAndValue(t, "TestCursorSanity", cursor, expectedKey, expectedValue)
 
 	// Seek to a non-existant key
-	err = cursor.Seek(database.MakeBucket().Key([]byte("doesn't exist")))
+	err := cursor.Seek(database.MakeBucket().Key([]byte("doesn't exist")))
 	if err == nil {
 		t.Fatalf("TestCursorSanity: Seek " +
 			"unexpectedly succeeded")
@@ -81,28 +87,9 @@ func TestCursorSanity(t *testing.T) {
 		t.Fatalf("TestCursorSanity: Seek "+
 			"unexpectedly failed: %s", err)
 	}
-	lastKey, err := cursor.Key()
-	if err != nil {
-		t.Fatalf("TestCursorSanity: Key "+
-			"unexpectedly failed: %s", err)
-	}
 	expectedKey = bucket.Key([]byte("key9"))
-	if !reflect.DeepEqual(lastKey, expectedKey) {
-		t.Fatalf("TestCursorSanity: Key "+
-			"returned wrong key. Want: %s, got: %s",
-			expectedKey, lastKey)
-	}
-	lastValue, err := cursor.Value()
-	if err != nil {
-		t.Fatalf("TestCursorSanity: Value "+
-			"unexpectedly failed: %s", err)
-	}
 	expectedValue = []byte("value9")
-	if !bytes.Equal(lastValue, expectedValue) {
-		t.Fatalf("TestCursorSanity: Value "+
-			"returned wrong value. Want: %s, got: %s",
-			string(expectedValue), string(lastValue))
-	}
+	validateCurrentCursorKeyAndValue(t, "TestCursorSanity", cursor, expectedKey, expectedValue)
 
 	// Call Next to get to the end of the cursor. This should
 	// return false to signify that there are no items after that.
