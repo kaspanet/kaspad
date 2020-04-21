@@ -188,19 +188,19 @@ func TestTransactionRollbackErrors(t *testing.T) {
 
 	for _, test := range tests {
 		func() {
-			ldb, teardownFunc := prepareDatabaseForTest(t, "TestTransactionCommitErrors")
+			ldb, teardownFunc := prepareDatabaseForTest(t, "TestTransactionRollbackErrors")
 			defer teardownFunc()
 
 			// Begin a new transaction
 			dbTx, err := ldb.Begin()
 			if err != nil {
-				t.Fatalf("TestTransactionCommitErrors: Begin "+
+				t.Fatalf("TestTransactionRollbackErrors: Begin "+
 					"unexpectedly failed: %s", err)
 			}
 			defer func() {
 				err := dbTx.RollbackUnlessClosed()
 				if err != nil {
-					t.Fatalf("TestTransactionCommitErrors: RollbackUnlessClosed "+
+					t.Fatalf("TestTransactionRollbackErrors: RollbackUnlessClosed "+
 						"unexpectedly failed: %s", err)
 				}
 			}()
@@ -208,7 +208,7 @@ func TestTransactionRollbackErrors(t *testing.T) {
 			// Rollback the transaction
 			err = dbTx.Rollback()
 			if err != nil {
-				t.Fatalf("TestTransactionCommitErrors: Rollback "+
+				t.Fatalf("TestTransactionRollbackErrors: Rollback "+
 					"unexpectedly failed: %s", err)
 			}
 
@@ -218,17 +218,17 @@ func TestTransactionRollbackErrors(t *testing.T) {
 			err = test.function(dbTx)
 			if test.shouldReturnError {
 				if err == nil {
-					t.Fatalf("TestTransactionCommitErrors: %s "+
+					t.Fatalf("TestTransactionRollbackErrors: %s "+
 						"unexpectedly succeeded", test.name)
 				}
 				if !strings.Contains(err.Error(), expectedErrContainsString) {
-					t.Fatalf("TestTransactionCommitErrors: %s "+
+					t.Fatalf("TestTransactionRollbackErrors: %s "+
 						"returned wrong error. Want: %s, got: %s",
 						test.name, expectedErrContainsString, err)
 				}
 			} else {
 				if err != nil {
-					t.Fatalf("TestTransactionCommitErrors: %s "+
+					t.Fatalf("TestTransactionRollbackErrors: %s "+
 						"unexpectedly failed: %s", test.name, err)
 				}
 			}
