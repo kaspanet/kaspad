@@ -125,7 +125,11 @@ func TestCursorSanity(t *testing.T) {
 
 func TestCursorCloseErrors(t *testing.T) {
 	tests := []struct {
-		name     string
+		name string
+
+		// function is the LevelDBCursor function that we're
+		// verifying returns an error after the cursor had
+		// been closed.
 		function func(dbTx *LevelDBCursor) error
 	}{
 		{
