@@ -9,19 +9,32 @@ import (
 	"testing"
 )
 
-func TestFlatFileStoreSanity(t *testing.T) {
-	// Open a test store
-	path, err := ioutil.TempDir("", "TestFlatFileStoreSanity")
+func prepareStoreForTest(t *testing.T, testName string) (store *flatFileStore, teardownFunc func()) {
+	// Create a temp db to run tests against
+	path, err := ioutil.TempDir("", testName)
 	if err != nil {
-		t.Fatalf("TestFlatFileStoreSanity: TempDir unexpectedly "+
-			"failed: %s", err)
+		t.Fatalf("%s: TempDir unexpectedly "+
+			"failed: %s", testName, err)
 	}
 	name := "test"
-	store, err := openFlatFileStore(path, name)
+	store, err = openFlatFileStore(path, name)
 	if err != nil {
-		t.Fatalf("TestFlatFileStoreSanity: openFlatFileStore "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: openFlatFileStore "+
+			"unexpectedly failed: %s", testName, err)
 	}
+	teardownFunc = func() {
+		err = store.Close()
+		if err != nil {
+			t.Fatalf("%s: Close unexpectedly "+
+				"failed: %s", testName, err)
+		}
+	}
+	return store, teardownFunc
+}
+
+func TestFlatFileStoreSanity(t *testing.T) {
+	store, teardownFunc := prepareStoreForTest(t, "TestFlatFileStoreSanity")
+	defer teardownFunc()
 
 	// Write something to the store
 	writeData := []byte("Hello world!")
@@ -77,6 +90,9 @@ func TestFlatFilePath(t *testing.T) {
 }
 
 func TestFlatFileMultiFileRollback(t *testing.T) {
+	store, teardownFunc := prepareStoreForTest(t, "TestFlatFileMultiFileRollback")
+	defer teardownFunc()
+
 	// Set the maxFileSize to 16 bytes so that we don't have to write
 	// an enormous amount of data to disk to get multiple files, all
 	// for the sake of this test.
@@ -84,26 +100,6 @@ func TestFlatFileMultiFileRollback(t *testing.T) {
 	maxFileSize = 16
 	defer func() {
 		maxFileSize = currentMaxFileSize
-	}()
-
-	// Open a test store
-	path, err := ioutil.TempDir("", "TestFlatFileMultiFileRollback")
-	if err != nil {
-		t.Fatalf("TestFlatFileMultiFileRollback: TempDir unexpectedly "+
-			"failed: %s", err)
-	}
-	name := "test"
-	store, err := openFlatFileStore(path, name)
-	if err != nil {
-		t.Fatalf("TestFlatFileMultiFileRollback: openFlatFileStore "+
-			"unexpectedly failed: %s", err)
-	}
-	defer func() {
-		err := store.Close()
-		if err != nil {
-			t.Fatalf("TestFlatFileMultiFileRollback: Close "+
-				"unexpectedly failed: %s", err)
-		}
 	}()
 
 	// Write five 8 byte chunks and keep the last location written to
@@ -138,7 +134,7 @@ func TestFlatFileMultiFileRollback(t *testing.T) {
 	fileNumberAfterWriting := store.writeCursor.currentFileNumber
 
 	// Rollback
-	err = store.rollback(currentLocation)
+	err := store.rollback(currentLocation)
 	if err != nil {
 		t.Fatalf("TestFlatFileMultiFileRollback: rollback returned "+
 			"unexpected error: %s", err)

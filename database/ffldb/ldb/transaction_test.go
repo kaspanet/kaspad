@@ -2,7 +2,6 @@ package ldb
 
 import (
 	"github.com/kaspanet/kaspad/database"
-	"io/ioutil"
 	"strings"
 	"testing"
 )
@@ -76,27 +75,11 @@ func TestTransactionCloseErrors(t *testing.T) {
 
 	for _, test := range tests {
 		func() {
-			// Open a test db
-			path, err := ioutil.TempDir("", "TestTransactionCloseErrors")
-			if err != nil {
-				t.Fatalf("TestTransactionCloseErrors: TempDir unexpectedly "+
-					"failed: %s", err)
-			}
-			db, err := NewLevelDB(path)
-			if err != nil {
-				t.Fatalf("TestTransactionCloseErrors: Open "+
-					"unexpectedly failed: %s", err)
-			}
-			defer func() {
-				err := db.Close()
-				if err != nil {
-					t.Fatalf("TestTransactionCloseErrors: Close "+
-						"unexpectedly failed: %s", err)
-				}
-			}()
+			ldb, teardownFunc := prepareDatabaseForTest(t, "TestTransactionCloseErrors")
+			defer teardownFunc()
 
 			// Begin a new transaction
-			dbTx, err := db.Begin()
+			dbTx, err := ldb.Begin()
 			if err != nil {
 				t.Fatalf("TestTransactionCloseErrors: Begin "+
 					"unexpectedly failed: %s", err)

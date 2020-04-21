@@ -8,30 +8,36 @@ import (
 	"testing"
 )
 
-func TestTransactionCommitForLevelDBMethods(t *testing.T) {
-	// Open a test db
-	path, err := ioutil.TempDir("", "TestTransactionCommitForLevelDBMethods")
+func prepareDatabaseForTest(t *testing.T, testName string) (db database.Database, teardownFunc func()) {
+	// Create a temp db to run tests against
+	path, err := ioutil.TempDir("", testName)
 	if err != nil {
-		t.Fatalf("TestTransactionCommitForLevelDBMethods: TempDir unexpectedly "+
-			"failed: %s", err)
+		t.Fatalf("%s: TempDir unexpectedly "+
+			"failed: %s", testName, err)
 	}
-	db, err := Open(path)
+	db, err = Open(path)
 	if err != nil {
-		t.Fatalf("TestTransactionCommitForLevelDBMethods: Open "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: Open unexpectedly "+
+			"failed: %s", testName, err)
 	}
-	defer func() {
-		err := db.Close()
+	teardownFunc = func() {
+		err = db.Close()
 		if err != nil {
-			t.Fatalf("TestTransactionCommitForLevelDBMethods: Close "+
-				"unexpectedly failed: %s", err)
+			t.Fatalf("%s: Close unexpectedly "+
+				"failed: %s", testName, err)
 		}
-	}()
+	}
+	return db, teardownFunc
+}
+
+func TestTransactionCommitForLevelDBMethods(t *testing.T) {
+	db, teardownFunc := prepareDatabaseForTest(t, "TestTransactionCommitForLevelDBMethods")
+	defer teardownFunc()
 
 	// Put a value into the database
 	key1 := database.MakeBucket().Key([]byte("key1"))
 	value1 := []byte("value1")
-	err = db.Put(key1, value1)
+	err := db.Put(key1, value1)
 	if err != nil {
 		t.Fatalf("TestTransactionCommitForLevelDBMethods: Put "+
 			"unexpectedly failed: %s", err)
@@ -155,29 +161,13 @@ func TestTransactionCommitForLevelDBMethods(t *testing.T) {
 }
 
 func TestTransactionRollbackForLevelDBMethods(t *testing.T) {
-	// Open a test db
-	path, err := ioutil.TempDir("", "TestTransactionRollbackForLevelDBMethods")
-	if err != nil {
-		t.Fatalf("TestTransactionRollbackForLevelDBMethods: TempDir unexpectedly "+
-			"failed: %s", err)
-	}
-	db, err := Open(path)
-	if err != nil {
-		t.Fatalf("TestTransactionRollbackForLevelDBMethods: Open "+
-			"unexpectedly failed: %s", err)
-	}
-	defer func() {
-		err := db.Close()
-		if err != nil {
-			t.Fatalf("TestTransactionRollbackForLevelDBMethods: Close "+
-				"unexpectedly failed: %s", err)
-		}
-	}()
+	db, teardownFunc := prepareDatabaseForTest(t, "TestTransactionRollbackForLevelDBMethods")
+	defer teardownFunc()
 
 	// Put a value into the database
 	key1 := database.MakeBucket().Key([]byte("key1"))
 	value1 := []byte("value1")
-	err = db.Put(key1, value1)
+	err := db.Put(key1, value1)
 	if err != nil {
 		t.Fatalf("TestTransactionRollbackForLevelDBMethods: Put "+
 			"unexpectedly failed: %s", err)
@@ -374,24 +364,8 @@ func TestTransactionCloseErrors(t *testing.T) {
 
 	for _, test := range tests {
 		func() {
-			// Open a test db
-			path, err := ioutil.TempDir("", "TestTransactionCloseErrors")
-			if err != nil {
-				t.Fatalf("TestTransactionCloseErrors: TempDir unexpectedly "+
-					"failed: %s", err)
-			}
-			db, err := Open(path)
-			if err != nil {
-				t.Fatalf("TestTransactionCloseErrors: Open "+
-					"unexpectedly failed: %s", err)
-			}
-			defer func() {
-				err := db.Close()
-				if err != nil {
-					t.Fatalf("TestTransactionCloseErrors: Close "+
-						"unexpectedly failed: %s", err)
-				}
-			}()
+			db, teardownFunc := prepareDatabaseForTest(t, "TestTransactionCloseErrors")
+			defer teardownFunc()
 
 			// Begin a new transaction
 			dbTx, err := db.Begin()
@@ -439,24 +413,8 @@ func TestTransactionCloseErrors(t *testing.T) {
 }
 
 func TestTransactionRollbackUnlessClosed(t *testing.T) {
-	// Open a test db
-	path, err := ioutil.TempDir("", "TestTransactionRollbackUnlessClosed")
-	if err != nil {
-		t.Fatalf("TestTransactionRollbackUnlessClosed: TempDir unexpectedly "+
-			"failed: %s", err)
-	}
-	db, err := Open(path)
-	if err != nil {
-		t.Fatalf("TestTransactionRollbackUnlessClosed: Open "+
-			"unexpectedly failed: %s", err)
-	}
-	defer func() {
-		err := db.Close()
-		if err != nil {
-			t.Fatalf("TestTransactionRollbackUnlessClosed: Close "+
-				"unexpectedly failed: %s", err)
-		}
-	}()
+	db, teardownFunc := prepareDatabaseForTest(t, "TestTransactionRollbackUnlessClosed")
+	defer teardownFunc()
 
 	// Begin a new transaction
 	dbTx, err := db.Begin()
@@ -474,24 +432,8 @@ func TestTransactionRollbackUnlessClosed(t *testing.T) {
 }
 
 func TestTransactionCommitForFlatFileMethods(t *testing.T) {
-	// Open a test db
-	path, err := ioutil.TempDir("", "TestTransactionCommitForFlatFileMethods")
-	if err != nil {
-		t.Fatalf("TestTransactionCommitForFlatFileMethods: TempDir unexpectedly "+
-			"failed: %s", err)
-	}
-	db, err := Open(path)
-	if err != nil {
-		t.Fatalf("TestTransactionCommitForFlatFileMethods: Open "+
-			"unexpectedly failed: %s", err)
-	}
-	defer func() {
-		err := db.Close()
-		if err != nil {
-			t.Fatalf("TestTransactionCommitForFlatFileMethods: Close "+
-				"unexpectedly failed: %s", err)
-		}
-	}()
+	db, teardownFunc := prepareDatabaseForTest(t, "TestTransactionCommitForFlatFileMethods")
+	defer teardownFunc()
 
 	// Put a value into the database
 	store := "store"

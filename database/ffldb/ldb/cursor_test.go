@@ -4,38 +4,21 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/kaspanet/kaspad/database"
-	"io/ioutil"
 	"reflect"
 	"strings"
 	"testing"
 )
 
 func TestCursorSanity(t *testing.T) {
-	// Open a test db
-	path, err := ioutil.TempDir("", "TestCursorSanity")
-	if err != nil {
-		t.Fatalf("TestCursorSanity: TempDir unexpectedly "+
-			"failed: %s", err)
-	}
-	db, err := NewLevelDB(path)
-	if err != nil {
-		t.Fatalf("TestCursorSanity: Open "+
-			"unexpectedly failed: %s", err)
-	}
-	defer func() {
-		err := db.Close()
-		if err != nil {
-			t.Fatalf("TestCursorSanity: Close "+
-				"unexpectedly failed: %s", err)
-		}
-	}()
+	ldb, teardownFunc := prepareDatabaseForTest(t, "TestCursorSanity")
+	defer teardownFunc()
 
 	// Write some data to the database
 	bucket := database.MakeBucket([]byte("bucket"))
 	for i := 0; i < 10; i++ {
 		key := fmt.Sprintf("key%d", i)
 		value := fmt.Sprintf("value%d", i)
-		err := db.Put(bucket.Key([]byte(key)), []byte(value))
+		err := ldb.Put(bucket.Key([]byte(key)), []byte(value))
 		if err != nil {
 			t.Fatalf("TestCursorSanity: Put "+
 				"unexpectedly failed: %s", err)
@@ -43,9 +26,9 @@ func TestCursorSanity(t *testing.T) {
 	}
 
 	// Open a new cursor
-	cursor := db.Cursor(bucket)
+	cursor := ldb.Cursor(bucket)
 	defer func() {
-		err = cursor.Close()
+		err := cursor.Close()
 		if err != nil {
 			t.Fatalf("TestCursorSanity: Close "+
 				"unexpectedly failed: %s", err)
@@ -184,30 +167,14 @@ func TestCursorCloseErrors(t *testing.T) {
 
 	for _, test := range tests {
 		func() {
-			// Open a test db
-			path, err := ioutil.TempDir("", "TestCursorCloseErrors")
-			if err != nil {
-				t.Fatalf("TestCursorCloseErrors: TempDir unexpectedly "+
-					"failed: %s", err)
-			}
-			db, err := NewLevelDB(path)
-			if err != nil {
-				t.Fatalf("TestCursorCloseErrors: Open "+
-					"unexpectedly failed: %s", err)
-			}
-			defer func() {
-				err := db.Close()
-				if err != nil {
-					t.Fatalf("TestCursorCloseErrors: Close "+
-						"unexpectedly failed: %s", err)
-				}
-			}()
+			ldb, teardownFunc := prepareDatabaseForTest(t, "TestCursorCloseErrors")
+			defer teardownFunc()
 
 			// Open a new cursor
-			cursor := db.Cursor(database.MakeBucket())
+			cursor := ldb.Cursor(database.MakeBucket())
 
 			// Close the cursor
-			err = cursor.Close()
+			err := cursor.Close()
 			if err != nil {
 				t.Fatalf("TestCursorCloseErrors: Close "+
 					"unexpectedly failed: %s", err)
@@ -231,30 +198,14 @@ func TestCursorCloseErrors(t *testing.T) {
 }
 
 func TestCursorCloseFirstAndNext(t *testing.T) {
-	// Open a test db
-	path, err := ioutil.TempDir("", "TestCursorCloseFirstAndNext")
-	if err != nil {
-		t.Fatalf("TestCursorCloseFirstAndNext: TempDir unexpectedly "+
-			"failed: %s", err)
-	}
-	db, err := NewLevelDB(path)
-	if err != nil {
-		t.Fatalf("TestCursorCloseFirstAndNext: Open "+
-			"unexpectedly failed: %s", err)
-	}
-	defer func() {
-		err := db.Close()
-		if err != nil {
-			t.Fatalf("TestCursorCloseFirstAndNext: Close "+
-				"unexpectedly failed: %s", err)
-		}
-	}()
+	ldb, teardownFunc := prepareDatabaseForTest(t, "TestCursorCloseFirstAndNext")
+	defer teardownFunc()
 
 	// Write some data to the database
 	for i := 0; i < 10; i++ {
 		key := fmt.Sprintf("key%d", i)
 		value := fmt.Sprintf("value%d", i)
-		err := db.Put(database.MakeBucket([]byte("bucket")).Key([]byte(key)), []byte(value))
+		err := ldb.Put(database.MakeBucket([]byte("bucket")).Key([]byte(key)), []byte(value))
 		if err != nil {
 			t.Fatalf("TestCursorCloseFirstAndNext: Put "+
 				"unexpectedly failed: %s", err)
@@ -262,10 +213,10 @@ func TestCursorCloseFirstAndNext(t *testing.T) {
 	}
 
 	// Open a new cursor
-	cursor := db.Cursor(database.MakeBucket([]byte("bucket")))
+	cursor := ldb.Cursor(database.MakeBucket([]byte("bucket")))
 
 	// Close the cursor
-	err = cursor.Close()
+	err := cursor.Close()
 	if err != nil {
 		t.Fatalf("TestCursorCloseFirstAndNext: Close "+
 			"unexpectedly failed: %s", err)
