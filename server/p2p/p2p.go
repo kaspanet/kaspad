@@ -1047,25 +1047,21 @@ func (s *Server) outboundPeerConnected(state *peerState, msg *outboundPeerConnec
 // outboundPeerConnected is invoked by the connection manager when a new
 // outbound connection failed to be established.
 func (s *Server) outboundPeerConnectionFailed(msg *outboundPeerConnectionFailedMsg) {
-	netAddressString := msg.connReq.Addr.String()
-	netAddress, err := parseNetAddress(netAddressString)
+	host, portStr, err := net.SplitHostPort(msg.connReq.Addr.String())
+	if err != nil {
+		srvrLog.Debugf("Cannot parse net address %s: %s", msg.connReq.Addr, err)
+	}
+	port, err := strconv.ParseUint(portStr, 10, 16)
 	if err != nil {
 		srvrLog.Debugf("Cannot parse net address %s: %s", msg.connReq.Addr, err)
 	}
 
-	s.addrManager.Attempt(netAddress)
-}
+	// defaultServices is used here because Attempt makes no use
+	// of the services field and NewNetAddressIPPort does not
+	// take nil for it.
+	netAddress := wire.NewNetAddressIPPort(net.ParseIP(host), uint16(port), defaultServices)
 
-func parseNetAddress(str string) (*wire.NetAddress, error) {
-	host, portStr, err := net.SplitHostPort(str)
-	if err != nil {
-		return nil, err
-	}
-	port, err := strconv.ParseUint(portStr, 10, 16)
-	if err != nil {
-		return nil, err
-	}
-	return wire.NewNetAddressIPPort(net.ParseIP(host), uint16(port), defaultServices), nil
+	s.addrManager.Attempt(netAddress)
 }
 
 // peerDoneHandler handles peer disconnects by notifiying the server that it's
