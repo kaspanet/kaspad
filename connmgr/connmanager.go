@@ -151,6 +151,10 @@ type Config struct {
 	// connection is established.
 	OnConnection func(*ConnReq, net.Conn)
 
+	// OnConnectionFailed is a callback that is fired when a new outbound
+	// connection has failed to be established.
+	OnConnectionFailed func(*ConnReq)
+
 	// OnDisconnection is a callback that is fired when an outbound
 	// connection is disconnected.
 	OnDisconnection func(*ConnReq)
@@ -419,6 +423,10 @@ out:
 						connReq, msg.err)
 				}
 				cm.handleFailedConn(connReq, msg.err)
+
+				if cm.cfg.OnConnectionFailed != nil {
+					cm.cfg.OnConnectionFailed(connReq)
+				}
 			}
 
 		case <-cm.quit:
