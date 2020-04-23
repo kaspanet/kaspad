@@ -1049,11 +1049,11 @@ func (s *Server) outboundPeerConnected(state *peerState, msg *outboundPeerConnec
 func (s *Server) outboundPeerConnectionFailed(msg *outboundPeerConnectionFailedMsg) {
 	host, portStr, err := net.SplitHostPort(msg.connReq.Addr.String())
 	if err != nil {
-		srvrLog.Debugf("Cannot parse net address %s: %s", msg.connReq.Addr, err)
+		srvrLog.Debugf("Cannot extract address host and port %s: %s", msg.connReq.Addr, err)
 	}
 	port, err := strconv.ParseUint(portStr, 10, 16)
 	if err != nil {
-		srvrLog.Debugf("Cannot parse net address %s: %s", msg.connReq.Addr, err)
+		srvrLog.Debugf("Cannot parse port %s: %s", msg.connReq.Addr, err)
 	}
 
 	// defaultServices is used here because Attempt makes no use
