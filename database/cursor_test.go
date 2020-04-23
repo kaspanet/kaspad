@@ -337,7 +337,7 @@ func testCursorCloseFirstAndNext(t *testing.T, db database.Database, testName st
 		cursor.First()
 	}()
 
-	// We expect Next to return false
+	// We expect Next to panic
 	func() {
 		defer recoverFromClosedCursorPanic(t, testName)
 		cursor.Next()
