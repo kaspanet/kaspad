@@ -34,6 +34,20 @@ func validateCurrentCursorKeyAndValue(t *testing.T, testName string, cursor *Lev
 	}
 }
 
+func recoverFromClosedCursorPanic(t *testing.T, testName string) {
+	panicErr := recover()
+	if panicErr == nil {
+		t.Fatalf("%s: cursor unexpectedly "+
+			"didn't panic after being closed", testName)
+	}
+	expectedPanicErr := "closed cursor"
+	if !strings.Contains(fmt.Sprintf("%v", panicErr), expectedPanicErr) {
+		t.Fatalf("%s: cursor panicked "+
+			"with wrong message. Want: %v, got: %s",
+			testName, expectedPanicErr, panicErr)
+	}
+}
+
 // TestCursorSanity validates typical cursor usage, including
 // opening a cursor over some existing data, seeking back
 // and forth over that data, and getting some keys/values out
@@ -217,15 +231,15 @@ func TestCursorCloseFirstAndNext(t *testing.T) {
 			"unexpectedly failed: %s", err)
 	}
 
-	result := cursor.First()
-	if result {
-		t.Fatalf("TestCursorCloseFirstAndNext: First " +
-			"unexpectedly returned true")
-	}
+	// We expect First to panic
+	func() {
+		defer recoverFromClosedCursorPanic(t, "TestCursorCloseFirstAndNext")
+		cursor.First()
+	}()
 
-	result = cursor.Next()
-	if result {
-		t.Fatalf("TestCursorCloseFirstAndNext: Next " +
-			"unexpectedly returned true")
-	}
+	// We expect Next to panic
+	func() {
+		defer recoverFromClosedCursorPanic(t, "TestCursorCloseFirstAndNext")
+		cursor.Next()
+	}()
 }
