@@ -7,6 +7,7 @@ package database_test
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/kaspanet/kaspad/database"
 	"reflect"
 	"strings"
@@ -21,6 +22,20 @@ func prepareCursorForTest(t *testing.T, db database.Database, testName string) d
 	}
 
 	return cursor
+}
+
+func recoverFromClosedCursorPanic(t *testing.T, testName string) {
+	panicErr := recover()
+	if panicErr == nil {
+		t.Fatalf("%s: cursor unexpectedly "+
+			"didn't panic after being closed", testName)
+	}
+	expectedPanicErr := "closed cursor"
+	if !strings.Contains(fmt.Sprintf("%v", panicErr), expectedPanicErr) {
+		t.Fatalf("%s: cursor panicked "+
+			"with wrong message. Want: %v, got: %s",
+			testName, expectedPanicErr, panicErr)
+	}
 }
 
 func TestCursorNext(t *testing.T) {
@@ -67,19 +82,20 @@ func testCursorNext(t *testing.T, db database.Database, testName string) {
 			"not done", testName)
 	}
 
-	// Rewind the cursor, close it, and call Next on it again.
-	// This time it should return false because it's closed.
+	// Rewind the cursor and close it
 	cursor.First()
 	err := cursor.Close()
 	if err != nil {
 		t.Fatalf("%s: Close unexpectedly "+
 			"failed: %s", testName, err)
 	}
-	hasNext = cursor.Next()
-	if hasNext {
-		t.Fatalf("%s: cursor unexpectedly "+
-			"returned true after being closed", testName)
-	}
+
+	// Call Next on the cursor. This time it should panic
+	// because it's closed.
+	func() {
+		defer recoverFromClosedCursorPanic(t, testName)
+		cursor.Next()
+	}()
 }
 
 func TestCursorFirst(t *testing.T) {
@@ -315,17 +331,15 @@ func testCursorCloseFirstAndNext(t *testing.T, db database.Database, testName st
 			"unexpectedly failed: %s", testName, err)
 	}
 
-	// We expect First to return false
-	result := cursor.First()
-	if result {
-		t.Fatalf("%s: First "+
-			"unexpectedly returned true", testName)
-	}
+	// We expect First to panic
+	func() {
+		defer recoverFromClosedCursorPanic(t, testName)
+		cursor.First()
+	}()
 
-	// We expect Next to return false
-	result = cursor.Next()
-	if result {
-		t.Fatalf("%s: Next "+
-			"unexpectedly returned true", testName)
-	}
+	// We expect Next to panic
+	func() {
+		defer recoverFromClosedCursorPanic(t, testName)
+		cursor.Next()
+	}()
 }
