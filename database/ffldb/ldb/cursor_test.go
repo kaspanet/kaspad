@@ -25,12 +25,13 @@ func validateCurrentCursorKeyAndValue(t *testing.T, testName string, cursor *Lev
 	cursorValue, err := cursor.Value()
 	if err != nil {
 		t.Fatalf("%s: Value "+
-			"unexpectedly failed: %s", testName, err)
+			"unexpectedly failed for key %s: %s",
+			testName, cursorKey, err)
 	}
 	if !bytes.Equal(cursorValue, expectedValue) {
 		t.Fatalf("%s: Value "+
-			"returned wrong value. Want: %s, got: %s",
-			testName, string(expectedValue), string(cursorValue))
+			"returned wrong value for key %s. Want: %s, got: %s",
+			testName, cursorKey, string(expectedValue), string(cursorValue))
 	}
 }
 
