@@ -3,32 +3,9 @@ package ffldb
 import (
 	"bytes"
 	"github.com/kaspanet/kaspad/database"
-	"io/ioutil"
 	"strings"
 	"testing"
 )
-
-func prepareDatabaseForTest(t *testing.T, testName string) (db database.Database, teardownFunc func()) {
-	// Create a temp db to run tests against
-	path, err := ioutil.TempDir("", testName)
-	if err != nil {
-		t.Fatalf("%s: TempDir unexpectedly "+
-			"failed: %s", testName, err)
-	}
-	db, err = Open(path)
-	if err != nil {
-		t.Fatalf("%s: Open unexpectedly "+
-			"failed: %s", testName, err)
-	}
-	teardownFunc = func() {
-		err = db.Close()
-		if err != nil {
-			t.Fatalf("%s: Close unexpectedly "+
-				"failed: %s", testName, err)
-		}
-	}
-	return db, teardownFunc
-}
 
 func TestTransactionCommitForLevelDBMethods(t *testing.T) {
 	db, teardownFunc := prepareDatabaseForTest(t, "TestTransactionCommitForLevelDBMethods")
