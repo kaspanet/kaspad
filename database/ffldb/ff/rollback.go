@@ -64,12 +64,14 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 
 	// Close the current write file if it needs to be deleted.
 	if s.writeCursor.currentFileNumber > targetFileNumber {
-		s.writeCursor.currentFile.Lock()
-		if s.writeCursor.currentFile.file != nil {
-			s.writeCursor.currentFile.file.Close()
-			s.writeCursor.currentFile.file = nil
-		}
-		s.writeCursor.currentFile.Unlock()
+		func() {
+			s.writeCursor.currentFile.Lock()
+			defer s.writeCursor.currentFile.Unlock()
+			if s.writeCursor.currentFile.file != nil {
+				_ = s.writeCursor.currentFile.file.Close()
+				s.writeCursor.currentFile.file = nil
+			}
+		}()
 	}
 
 	// Delete all files that are newer than the provided rollback file
@@ -90,10 +92,10 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 
 	// Open the file for the current write cursor if needed.
 	s.writeCursor.currentFile.Lock()
+	defer s.writeCursor.currentFile.Unlock()
 	if s.writeCursor.currentFile.file == nil {
 		openFile, err := s.openWriteFile(s.writeCursor.currentFileNumber)
 		if err != nil {
-			s.writeCursor.currentFile.Unlock()
 			return err
 		}
 		s.writeCursor.currentFile.file = openFile
@@ -102,14 +104,12 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 	// Truncate the file to the provided target offset.
 	err := s.writeCursor.currentFile.file.Truncate(int64(targetFileOffset))
 	if err != nil {
-		s.writeCursor.currentFile.Unlock()
 		return errors.Wrapf(err, "ROLLBACK: Failed to truncate file %d "+
 			"in store '%s'", s.writeCursor.currentFileNumber, s.storeName)
 	}
 
 	// Sync the file to disk.
 	err = s.writeCursor.currentFile.file.Sync()
-	s.writeCursor.currentFile.Unlock()
 	if err != nil {
 		return errors.Wrapf(err, "ROLLBACK: Failed to sync file %d in "+
 			"store '%s'", s.writeCursor.currentFileNumber, s.storeName)
