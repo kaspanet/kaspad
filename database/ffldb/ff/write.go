@@ -47,18 +47,24 @@ func (s *flatFileStore) write(data []byte) (*flatFileLocation, error) {
 		// with LRU tracking. The close is done under the write lock
 		// for the file to prevent it from being closed out from under
 		// any readers currently reading from it.
-		cursor.Lock()
-		cursor.currentFile.Lock()
-		if cursor.currentFile.file != nil {
-			_ = cursor.currentFile.file.Close()
-			cursor.currentFile.file = nil
-		}
-		cursor.currentFile.Unlock()
+		func() {
+			cursor.Lock()
+			defer cursor.Unlock()
 
-		// Start writes into next file.
-		cursor.currentFileNumber++
-		cursor.currentOffset = 0
-		cursor.Unlock()
+			func() {
+				cursor.currentFile.Lock()
+				defer cursor.currentFile.Unlock()
+				if cursor.currentFile.file != nil {
+					_ = cursor.currentFile.file.Close()
+					cursor.currentFile.file = nil
+				}
+			}()
+
+			// Start writes into next file.
+			cursor.currentFileNumber++
+			cursor.currentOffset = 0
+
+		}()
 	}
 
 	// All writes are done under the write lock for the file to ensure any
