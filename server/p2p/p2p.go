@@ -1047,6 +1047,12 @@ func (s *Server) outboundPeerConnected(state *peerState, msg *outboundPeerConnec
 // outboundPeerConnected is invoked by the connection manager when a new
 // outbound connection failed to be established.
 func (s *Server) outboundPeerConnectionFailed(msg *outboundPeerConnectionFailedMsg) {
+	// If the connection request has no address
+	// associated to it, do nothing.
+	if msg.connReq.Addr == nil {
+		return
+	}
+
 	host, portStr, err := net.SplitHostPort(msg.connReq.Addr.String())
 	if err != nil {
 		srvrLog.Debugf("Cannot extract address host and port %s: %s", msg.connReq.Addr, err)

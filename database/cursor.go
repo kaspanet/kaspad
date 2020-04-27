@@ -16,8 +16,7 @@ type Cursor interface {
 	Seek(key *Key) error
 
 	// Key returns the key of the current key/value pair, or ErrNotFound if done.
-	// Note that the key is trimmed to not include the prefix the cursor was opened
-	// with. The caller should not modify the contents of the returned slice, and
+	// The caller should not modify the contents of the returned key, and
 	// its contents may change on the next call to Next.
 	Key() (*Key, error)
 
