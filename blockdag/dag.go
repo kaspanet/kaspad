@@ -153,6 +153,9 @@ type BlockDAG struct {
 	utxoDiffStore     *utxoDiffStore
 	reachabilityStore *reachabilityStore
 	multisetStore     *multisetStore
+
+	recentBlockProcessTimes []time.Time
+	startTime               time.Time
 }
 
 // IsKnownBlock returns whether or not the DAG instance has the block represented
@@ -2092,6 +2095,7 @@ func New(config *Config) (*BlockDAG, error) {
 		deploymentCaches:               newThresholdCaches(dagconfig.DefinedDeployments),
 		blockCount:                     0,
 		subnetworkID:                   config.SubnetworkID,
+		startTime:                      time.Now(),
 	}
 
 	dag.virtual = newVirtualBlock(dag, nil)

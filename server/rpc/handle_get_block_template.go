@@ -109,9 +109,7 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 	// the DAG is synced. Note that we make a special check for when
 	// we have nothing besides the genesis block (blueScore == 0),
 	// because in that state IsCurrent may still return true.
-	currentBlueScore := s.cfg.DAG.SelectedTipBlueScore()
-	if (currentBlueScore != 0 && !s.cfg.DAG.IsCurrent()) ||
-		(currentBlueScore == 0 && !s.cfg.shouldMineOnGenesis()) {
+	if !isSyncedForMining(s) {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCClientInInitialDownload,
 			Message: "Kaspa is downloading blocks...",
@@ -129,6 +127,16 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 		Code:    rpcmodel.ErrRPCInvalidParameter,
 		Message: "Invalid mode",
 	}
+}
+
+func isSyncedForMining(s *Server) bool {
+	const maxDiff = 5 * time.Minute
+	isCloseToCurrentTime := s.cfg.DAG.Now().Sub(s.cfg.DAG.SelectedTipHeader().Timestamp) <= maxDiff
+	if isCloseToCurrentTime {
+		return true
+	}
+
+	return s.cfg.DAG.IsSyncRateBelowThreshold()
 }
 
 // handleGetBlockTemplateRequest is a helper for handleGetBlockTemplate which
