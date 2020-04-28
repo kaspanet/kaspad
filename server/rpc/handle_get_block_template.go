@@ -130,8 +130,8 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 }
 
 func isSyncedForMining(s *Server) bool {
-	const maxDiff = 5 * time.Minute
-	isCloseToCurrentTime := s.cfg.DAG.Now().Sub(s.cfg.DAG.SelectedTipHeader().Timestamp) <= maxDiff
+	const maxTipAge = 5 * time.Minute
+	isCloseToCurrentTime := s.cfg.DAG.Now().Sub(s.cfg.DAG.SelectedTipHeader().Timestamp) <= maxTipAge
 	if isCloseToCurrentTime {
 		return true
 	}

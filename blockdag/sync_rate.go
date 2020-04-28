@@ -4,12 +4,10 @@ import "time"
 
 const syncRateWindowDuration = 15 * time.Minute
 
-// addBlockProcessTime adds the last the last
-// block process time in order to measure the
-// recent sync rate.
+// addBlockProcessTimestamp adds the last block process timestamp in order to measure the recent sync rate.
 //
 // This function MUST be called with the DAG state lock held (for writes).
-func (dag *BlockDAG) addBlockProcessTime() {
+func (dag *BlockDAG) addBlockProcessTimestamp() {
 	now := time.Now()
 	dag.recentBlockProcessTimes = append(dag.recentBlockProcessTimes, now)
 	dag.recentBlockProcessTimes = dag.recentBlockProcessTimesRelevantWindow()

@@ -253,7 +253,7 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 		}
 	}
 
-	dag.addBlockProcessTime()
+	dag.addBlockProcessTimestamp()
 
 	log.Debugf("Accepted block %s", blockHash)
 
