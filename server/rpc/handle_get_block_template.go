@@ -136,7 +136,7 @@ func isSyncedForMining(s *Server) bool {
 		return true
 	}
 
-	const maxDeviation = 0.05
+	const maxDeviation = 1.05
 	return s.cfg.DAG.IsSyncRateBelowThreshold(maxDeviation)
 }
 

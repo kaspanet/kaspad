@@ -41,7 +41,7 @@ func (dag *BlockDAG) IsSyncRateBelowThreshold(maxDeviation float64) bool {
 		return false
 	}
 
-	return dag.syncRate() < 1/dag.dagParams.TargetTimePerBlock.Seconds()*(1-maxDeviation)
+	return dag.syncRate() < 1/dag.dagParams.TargetTimePerBlock.Seconds()*maxDeviation
 }
 
 func (dag *BlockDAG) uptime() time.Duration {
