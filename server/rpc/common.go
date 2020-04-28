@@ -245,6 +245,14 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		return nil, internalRPCError(err.Error(), context)
 	}
 
+	acceptedBlockHashes, err := s.cfg.DAG.BluesByBlockHash(hash)
+	if err != nil {
+		context := "Could not get block accepted blocks"
+		return nil, internalRPCError(err.Error(), context)
+	}
+
+	acceptedBlockHashesStrings := daghash.Strings(acceptedBlockHashes)
+
 	result := &rpcmodel.GetBlockVerboseResult{
 		Hash:                 hash.String(),
 		Version:              blockHeader.Version,
@@ -263,6 +271,7 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
 		Difficulty:           getDifficultyRatio(blockHeader.Bits, params),
 		ChildHashes:          childHashStrings,
+		AcceptedBlockHashes:  acceptedBlockHashesStrings,
 	}
 
 	if isVerboseTx {
