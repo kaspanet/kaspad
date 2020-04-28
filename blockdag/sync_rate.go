@@ -36,12 +36,11 @@ func (dag *BlockDAG) syncRate() float64 {
 
 // IsSyncRateBelowThreshold checks whether the sync rate
 // is below an expected threshold.
-func (dag *BlockDAG) IsSyncRateBelowThreshold() bool {
+func (dag *BlockDAG) IsSyncRateBelowThreshold(maxDeviation float64) bool {
 	if dag.uptime() < syncRateWindowDuration {
 		return false
 	}
 
-	const maxDeviation = 0.05
 	return dag.syncRate() < 1/dag.dagParams.TargetTimePerBlock.Seconds()*(1-maxDeviation)
 }
 

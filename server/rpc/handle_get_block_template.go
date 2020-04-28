@@ -136,7 +136,8 @@ func isSyncedForMining(s *Server) bool {
 		return true
 	}
 
-	return s.cfg.DAG.IsSyncRateBelowThreshold()
+	const maxDeviation = 0.05
+	return s.cfg.DAG.IsSyncRateBelowThreshold(maxDeviation)
 }
 
 // handleGetBlockTemplateRequest is a helper for handleGetBlockTemplate which
