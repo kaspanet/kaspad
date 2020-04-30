@@ -9,20 +9,20 @@ const syncRateWindowDuration = 15 * time.Minute
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) addBlockProcessTimestamp() {
 	now := time.Now()
-	dag.recentBlockProcessTimes = append(dag.recentBlockProcessTimes, now)
-	dag.recentBlockProcessTimes = dag.recentBlockProcessTimesRelevantWindow()
+	dag.recentBlockProcessTimestamps = append(dag.recentBlockProcessTimestamps, now)
+	dag.recentBlockProcessTimestamps = dag.recentBlockProcessTimesRelevantWindow()
 }
 
 func (dag *BlockDAG) recentBlockProcessTimesRelevantWindow() []time.Time {
 	minTime := time.Now().Add(-syncRateWindowDuration)
-	windowStartIndex := len(dag.recentBlockProcessTimes)
-	for i, processTime := range dag.recentBlockProcessTimes {
+	windowStartIndex := len(dag.recentBlockProcessTimestamps)
+	for i, processTime := range dag.recentBlockProcessTimestamps {
 		if processTime.After(minTime) {
 			windowStartIndex = i
 			break
 		}
 	}
-	return dag.recentBlockProcessTimes[windowStartIndex:]
+	return dag.recentBlockProcessTimestamps[windowStartIndex:]
 }
 
 // syncRate returns the rate of processed
