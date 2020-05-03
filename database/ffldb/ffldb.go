@@ -170,8 +170,9 @@ func (db *ffldb) Begin() (database.Transaction, error) {
 	}
 
 	transaction := &transaction{
-		ldbTx: ldbTx,
-		ffdb:  db.flatFileDB,
+		ldbTx:    ldbTx,
+		ffdb:     db.flatFileDB,
+		isClosed: false,
 	}
 	return transaction, nil
 }

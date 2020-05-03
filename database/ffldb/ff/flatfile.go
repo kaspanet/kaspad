@@ -16,12 +16,14 @@ const (
 	// cache. Note that this does not include the current/write file, so there
 	// will typically be one more than this value open.
 	maxOpenFiles = 25
+)
 
+var (
 	// maxFileSize is the maximum size for each file used to store data.
 	//
 	// NOTE: The current code uses uint32 for all offsets, so this value
-	// must be less than 2^32 (4 GiB). This is also why it's a typed
-	// constant.
+	// must be less than 2^32 (4 GiB).
+	// NOTE: This is a var rather than a const for testing purposes.
 	maxFileSize uint32 = 512 * 1024 * 1024 // 512 MiB
 )
 
