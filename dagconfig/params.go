@@ -48,7 +48,7 @@ var (
 )
 
 const (
-	ghostdagK                      = 10
+	ghostdagK                      = 15
 	difficultyAdjustmentWindowSize = 2640
 	timestampDeviationTolerance    = 132
 	finalityDuration               = 24 * time.Hour
