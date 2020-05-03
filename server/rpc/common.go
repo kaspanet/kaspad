@@ -221,7 +221,6 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		context := "No next block"
 		return nil, internalRPCError(err.Error(), context)
 	}
-	childHashStrings := daghash.Strings(childHashes)
 
 	blockConfirmations, err := s.cfg.DAG.BlockConfirmationsByHashNoLock(hash)
 	if err != nil {
@@ -251,8 +250,6 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		return nil, internalRPCError(err.Error(), context)
 	}
 
-	acceptedBlockHashesStrings := daghash.Strings(acceptedBlockHashes)
-
 	result := &rpcmodel.GetBlockVerboseResult{
 		Hash:                 hash.String(),
 		Version:              blockHeader.Version,
@@ -270,8 +267,8 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		Size:                 int32(block.MsgBlock().SerializeSize()),
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
 		Difficulty:           getDifficultyRatio(blockHeader.Bits, params),
-		ChildHashes:          childHashStrings,
-		AcceptedBlockHashes:  acceptedBlockHashesStrings,
+		ChildHashes:          daghash.Strings(childHashes),
+		AcceptedBlockHashes:  daghash.Strings(acceptedBlockHashes),
 	}
 
 	if isVerboseTx {
