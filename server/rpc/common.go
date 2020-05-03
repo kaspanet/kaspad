@@ -246,7 +246,7 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 
 	acceptedBlockHashes, err := s.cfg.DAG.BluesByBlockHash(hash)
 	if err != nil {
-		context := "Could not get block accepted blocks"
+		context := fmt.Sprintf("Could not get block accepted blocks for block %s", hash)
 		return nil, internalRPCError(err.Error(), context)
 	}
 
