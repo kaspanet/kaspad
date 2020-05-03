@@ -10,6 +10,14 @@ const syncRateWindowDuration = 15 * time.Minute
 func (dag *BlockDAG) addBlockProcessingTimestamp() {
 	now := time.Now()
 	dag.recentBlockProcessingTimestamps = append(dag.recentBlockProcessingTimestamps, now)
+	dag.removeNonRecentTimestampsFromRecentBlockProcessingTimestamps()
+}
+
+// removeNonRecentTimestampsFromRecentBlockProcessingTimestamps removes timestamps older than syncRateWindowDuration
+// from dag.recentBlockProcessingTimestamps
+//
+// This function MUST be called with the DAG state lock held (for writes).
+func (dag *BlockDAG) removeNonRecentTimestampsFromRecentBlockProcessingTimestamps() {
 	dag.recentBlockProcessingTimestamps = dag.recentBlockProcessingTimestampsRelevantWindow()
 }
 
