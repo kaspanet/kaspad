@@ -129,6 +129,13 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 	}
 }
 
+// isSyncedForMining checks if the node is synced enough for mining blocks
+// on top of its world view.
+// To do that, first it checks if the selected tip timestamp is not older than maxTipAge. If that's the case, it means
+// the node is synced since blocks' timestamps are not allowed to deviate too much into the future.
+// If that's not the case it checks the rate it added new blocks to the DAG recently. If it's faster than
+// blockRate * maxSyncRateDeviation it means the node is not synced, since when the node is synced it shouldn't add
+// blocks to the DAG faster than the block rate.
 func isSyncedForMining(s *Server) bool {
 	const maxTipAge = 5 * time.Minute
 	isCloseToCurrentTime := s.cfg.DAG.Now().Sub(s.cfg.DAG.SelectedTipHeader().Timestamp) <= maxTipAge

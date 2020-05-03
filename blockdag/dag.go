@@ -154,8 +154,8 @@ type BlockDAG struct {
 	reachabilityStore *reachabilityStore
 	multisetStore     *multisetStore
 
-	recentBlockProcessTimestamps []time.Time
-	startTime                    time.Time
+	recentBlockProcessingTimestamps []time.Time
+	startTime                       time.Time
 }
 
 // IsKnownBlock returns whether or not the DAG instance has the block represented
