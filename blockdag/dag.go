@@ -1486,7 +1486,7 @@ func (dag *BlockDAG) BlueScoreByBlockHash(hash *daghash.Hash) (uint64, error) {
 	return node.blueScore, nil
 }
 
-// BluesByBlockHash returns the hashes of its blues.
+// BluesByBlockHash returns the blues of the block for the given hash.
 func (dag *BlockDAG) BluesByBlockHash(hash *daghash.Hash) ([]*daghash.Hash, error) {
 	node := dag.index.LookupNode(hash)
 	if node == nil {
