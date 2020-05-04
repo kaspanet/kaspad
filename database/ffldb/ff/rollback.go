@@ -64,14 +64,7 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 
 	// Close the current write file if it needs to be deleted.
 	if s.writeCursor.currentFileNumber > targetFileNumber {
-		func() {
-			s.writeCursor.currentFile.Lock()
-			defer s.writeCursor.currentFile.Unlock()
-			if s.writeCursor.currentFile.file != nil {
-				_ = s.writeCursor.currentFile.file.Close()
-				s.writeCursor.currentFile.file = nil
-			}
-		}()
+		s.closeCurrentWriteCursorFile()
 	}
 
 	// Delete all files that are newer than the provided rollback file

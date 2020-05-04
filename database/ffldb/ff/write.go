@@ -51,14 +51,7 @@ func (s *flatFileStore) write(data []byte) (*flatFileLocation, error) {
 			cursor.Lock()
 			defer cursor.Unlock()
 
-			func() {
-				cursor.currentFile.Lock()
-				defer cursor.currentFile.Unlock()
-				if cursor.currentFile.file != nil {
-					_ = cursor.currentFile.file.Close()
-					cursor.currentFile.file = nil
-				}
-			}()
+			s.closeCurrentWriteCursorFile()
 
 			// Start writes into next file.
 			cursor.currentFileNumber++
@@ -168,4 +161,16 @@ func (s *flatFileStore) writeData(data []byte, fieldName string) error {
 	}
 
 	return nil
+}
+
+// closeCurrentWriteCursorFile closes the currently open writeCursor file if
+// it's open.
+// This method MUST be called with the writeCursor lock held for writes.
+func (s *flatFileStore) closeCurrentWriteCursorFile() {
+	s.writeCursor.currentFile.Lock()
+	defer s.writeCursor.currentFile.Unlock()
+	if s.writeCursor.currentFile.file != nil {
+		_ = s.writeCursor.currentFile.file.Close()
+		s.writeCursor.currentFile.file = nil
+	}
 }
