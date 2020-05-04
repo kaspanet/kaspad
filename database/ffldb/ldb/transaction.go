@@ -53,7 +53,7 @@ func (tx *LevelDBTransaction) Commit() error {
 
 	tx.isClosed = true
 	tx.snapshot.Release()
-	return tx.db.ldb.Write(tx.batch, nil)
+	return errors.WithStack(tx.db.ldb.Write(tx.batch, nil))
 }
 
 // Rollback rolls back whatever changes were made to the
@@ -115,7 +115,8 @@ func (tx *LevelDBTransaction) Has(key *database.Key) (bool, error) {
 		return false, errors.New("cannot has from a closed transaction")
 	}
 
-	return tx.snapshot.Has(key.Bytes(), nil)
+	res, err := tx.snapshot.Has(key.Bytes(), nil)
+	return res, errors.WithStack(err)
 }
 
 // Delete deletes the value for the given key. Will not
