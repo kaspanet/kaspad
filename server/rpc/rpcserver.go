@@ -783,8 +783,6 @@ type rpcserverConfig struct {
 	// These fields define any optional indexes the RPC server can make use
 	// of to provide additional data when queried.
 	AcceptanceIndex *indexers.AcceptanceIndex
-
-	shouldMineOnGenesis func() bool
 }
 
 // setupRPCListeners returns a slice of listeners that are configured for use
@@ -853,17 +851,16 @@ func NewRPCServer(
 		return nil, errors.New("RPCS: No valid listen address")
 	}
 	cfg := &rpcserverConfig{
-		Listeners:           rpcListeners,
-		StartupTime:         startupTime,
-		ConnMgr:             &rpcConnManager{p2pServer},
-		SyncMgr:             &rpcSyncMgr{p2pServer, p2pServer.SyncManager},
-		TimeSource:          p2pServer.TimeSource,
-		DAGParams:           p2pServer.DAGParams,
-		TxMemPool:           p2pServer.TxMemPool,
-		Generator:           blockTemplateGenerator,
-		AcceptanceIndex:     p2pServer.AcceptanceIndex,
-		DAG:                 p2pServer.DAG,
-		shouldMineOnGenesis: p2pServer.ShouldMineOnGenesis,
+		Listeners:       rpcListeners,
+		StartupTime:     startupTime,
+		ConnMgr:         &rpcConnManager{p2pServer},
+		SyncMgr:         &rpcSyncMgr{p2pServer, p2pServer.SyncManager},
+		TimeSource:      p2pServer.TimeSource,
+		DAGParams:       p2pServer.DAGParams,
+		TxMemPool:       p2pServer.TxMemPool,
+		Generator:       blockTemplateGenerator,
+		AcceptanceIndex: p2pServer.AcceptanceIndex,
+		DAG:             p2pServer.DAG,
 	}
 	rpc := Server{
 		cfg:                    *cfg,

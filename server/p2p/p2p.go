@@ -780,10 +780,6 @@ type getConnCountMsg struct {
 	reply chan int32
 }
 
-type getShouldMineOnGenesisMsg struct {
-	reply chan bool
-}
-
 //GetPeersMsg is the message type which is used by the rpc server to get the peers list from the p2p server
 type GetPeersMsg struct {
 	Reply chan []*Peer
@@ -831,17 +827,6 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 			return true
 		})
 		msg.reply <- nconnected
-
-	case getShouldMineOnGenesisMsg:
-		shouldMineOnGenesis := true
-		if state.Count() != 0 {
-			shouldMineOnGenesis = state.forAllPeers(func(sp *Peer) bool {
-				return sp.SelectedTipHash().IsEqual(s.DAGParams.GenesisHash)
-			})
-		} else {
-			shouldMineOnGenesis = false
-		}
-		msg.reply <- shouldMineOnGenesis
 
 	case GetPeersMsg:
 		peers := make([]*Peer, 0, state.Count())
@@ -1237,17 +1222,6 @@ func (s *Server) ConnectedCount() int32 {
 	replyChan := make(chan int32)
 
 	s.Query <- getConnCountMsg{reply: replyChan}
-
-	return <-replyChan
-}
-
-// ShouldMineOnGenesis checks if the node is connected to at least one
-// peer, and at least one of its peers knows of any blocks that were mined
-// on top of the genesis block.
-func (s *Server) ShouldMineOnGenesis() bool {
-	replyChan := make(chan bool)
-
-	s.Query <- getShouldMineOnGenesisMsg{reply: replyChan}
 
 	return <-replyChan
 }
