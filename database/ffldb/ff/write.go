@@ -63,7 +63,6 @@ func (s *flatFileStore) write(data []byte) (*flatFileLocation, error) {
 			// Start writes into next file.
 			cursor.currentFileNumber++
 			cursor.currentOffset = 0
-
 		}()
 	}
 
