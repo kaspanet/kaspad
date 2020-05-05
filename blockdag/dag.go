@@ -1489,6 +1489,21 @@ func (dag *BlockDAG) BlueScoreByBlockHash(hash *daghash.Hash) (uint64, error) {
 	return node.blueScore, nil
 }
 
+// BluesByBlockHash returns the blues of the block for the given hash.
+func (dag *BlockDAG) BluesByBlockHash(hash *daghash.Hash) ([]*daghash.Hash, error) {
+	node := dag.index.LookupNode(hash)
+	if node == nil {
+		return nil, errors.Errorf("block %s is unknown", hash)
+	}
+
+	hashes := make([]*daghash.Hash, len(node.blues))
+	for i, blue := range node.blues {
+		hashes[i] = blue.hash
+	}
+
+	return hashes, nil
+}
+
 // BlockConfirmationsByHash returns the confirmations number for a block with the
 // given hash. See blockConfirmations for further details.
 //

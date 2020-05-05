@@ -252,6 +252,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockVerboseResult-parentHashes":         "The hashes of the parent blocks",
 	"getBlockVerboseResult-selectedParentHash":   "The selected parent hash",
 	"getBlockVerboseResult-childHashes":          "The hashes of the child blocks (only if there are any)",
+	"getBlockVerboseResult-acceptedBlockHashes":  "The hashes of the blocks accepted by this block",
 
 	// GetBlockCountCmd help.
 	"getBlockCount--synopsis": "Returns the number of blocks in the block DAG.",
