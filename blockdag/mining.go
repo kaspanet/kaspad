@@ -38,7 +38,7 @@ func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, er
 		msgBlock.AddTransaction(tx.MsgTx())
 	}
 
-	multiset, err := dag.NextBlockMultiset()
+	multiset, err := dag.NextBlockMultiset(transactions)
 	if err != nil {
 		return nil, err
 	}
@@ -57,16 +57,16 @@ func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, er
 }
 
 // NextBlockMultiset returns the multiset of an assumed next block
-// built on top of the current tips.
+// built on top of the current tips, with the given transactions.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) NextBlockMultiset() (*secp256k1.MultiSet, error) {
-	_, selectedParentUTXO, txsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
+func (dag *BlockDAG) NextBlockMultiset(transactions []*util.Tx) (*secp256k1.MultiSet, error) {
+	pastUTXO, selectedParentUTXO, txsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
 	if err != nil {
 		return nil, err
 	}
 
-	return dag.virtual.blockNode.calcMultiset(dag, txsAcceptanceData, selectedParentUTXO)
+	return dag.virtual.blockNode.calcMultiset(dag, transactions, txsAcceptanceData, selectedParentUTXO, pastUTXO)
 }
 
 // CoinbasePayloadExtraData returns coinbase payload extra data parameter

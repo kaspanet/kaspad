@@ -605,11 +605,18 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	return chainUpdates, nil
 }
 
-// calcMultiset returns the multiset of the UTXO of the given block.
-func (node *blockNode) calcMultiset(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData, selectedParentUTXO UTXOSet) (*secp256k1.MultiSet, error) {
+// calcMultiset returns the multiset of the UTXO of the given block with the given transactions.
+func (node *blockNode) calcMultiset(dag *BlockDAG, transactions []*util.Tx, acceptanceData MultiBlockTxsAcceptanceData, selectedParentUTXO, pastUTXO UTXOSet) (*secp256k1.MultiSet, error) {
 	ms, err := node.pastUTXOMultiSet(dag, acceptanceData, selectedParentUTXO)
 	if err != nil {
 		return nil, err
+	}
+
+	for _, tx := range transactions {
+		ms, err = addTxToMultiset(ms, tx.MsgTx(), pastUTXO, UnacceptedBlueScore)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return ms, nil
@@ -1102,7 +1109,7 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 		return nil, nil, nil, nil, err
 	}
 
-	multiset, err = node.calcMultiset(dag, txsAcceptanceData, selectedParentUTXO)
+	multiset, err = node.calcMultiset(dag, transactions, txsAcceptanceData, selectedParentUTXO, pastUTXO)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}

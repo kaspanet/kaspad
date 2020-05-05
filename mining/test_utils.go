@@ -104,7 +104,7 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 		}
 		template.Block.Header.HashMerkleRoot = blockdag.BuildHashMerkleTreeStore(utilTxs).Root()
 
-		ms, err := dag.NextBlockMultiset()
+		ms, err := dag.NextBlockMultiset(utilTxs)
 		if err != nil {
 			return nil, err
 		}
