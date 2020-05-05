@@ -8,7 +8,6 @@ package p2p
 import (
 	"crypto/rand"
 	"encoding/binary"
-	"fmt"
 	"math"
 	"net"
 	"runtime"
@@ -150,7 +149,6 @@ type peerState struct {
 	outboundPeers   map[int32]*Peer
 	persistentPeers map[int32]*Peer
 	banned          map[string]time.Time
-	outboundGroups  map[string]int
 }
 
 // Count returns the count of all known peers.
@@ -665,9 +663,6 @@ func (s *Server) handleDonePeerMsg(state *peerState, sp *Peer) {
 		list = state.outboundPeers
 	}
 	if _, ok := list[sp.ID()]; ok {
-		if !sp.Inbound() && sp.VersionKnown() {
-			state.outboundGroups[addrmgr.GroupKey(sp.NA())]--
-		}
 		if !sp.Inbound() && sp.connReq != nil {
 			s.connManager.Disconnect(sp.connReq.ID())
 		}
@@ -785,11 +780,6 @@ type GetPeersMsg struct {
 	Reply chan []*Peer
 }
 
-type getOutboundGroup struct {
-	key   string
-	reply chan int
-}
-
 //GetManualNodesMsg is the message type which is used by the rpc server to get the list of persistent peers from the p2p server
 type GetManualNodesMsg struct {
 	Reply chan []*Peer
@@ -872,23 +862,12 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 		})
 		msg.Reply <- nil
 	case RemoveNodeMsg:
-		found := disconnectPeer(state.persistentPeers, msg.Cmp, func(sp *Peer) {
-			// Keep group counts ok since we remove from
-			// the list now.
-			state.outboundGroups[addrmgr.GroupKey(sp.NA())]--
-		})
+		found := disconnectPeer(state.persistentPeers, msg.Cmp)
 
 		if found {
 			msg.Reply <- nil
 		} else {
 			msg.Reply <- connmgr.ErrPeerNotFound
-		}
-	case getOutboundGroup:
-		count, ok := state.outboundGroups[msg.key]
-		if ok {
-			msg.reply <- count
-		} else {
-			msg.reply <- 0
 		}
 	// Request a list of the persistent (added) peers.
 	case GetManualNodesMsg:
@@ -901,26 +880,20 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 	case DisconnectNodeMsg:
 		// Check inbound peers. We pass a nil callback since we don't
 		// require any additional actions on disconnect for inbound peers.
-		found := disconnectPeer(state.inboundPeers, msg.Cmp, nil)
+		found := disconnectPeer(state.inboundPeers, msg.Cmp)
 		if found {
 			msg.Reply <- nil
 			return
 		}
 
 		// Check outbound peers.
-		found = disconnectPeer(state.outboundPeers, msg.Cmp, func(sp *Peer) {
-			// Keep group counts ok since we remove from
-			// the list now.
-			state.outboundGroups[addrmgr.GroupKey(sp.NA())]--
-		})
+		found = disconnectPeer(state.outboundPeers, msg.Cmp)
 		if found {
 			// If there are multiple outbound connections to the same
 			// ip:port, continue disconnecting them all until no such
 			// peers are found.
 			for found {
-				found = disconnectPeer(state.outboundPeers, msg.Cmp, func(sp *Peer) {
-					state.outboundGroups[addrmgr.GroupKey(sp.NA())]--
-				})
+				found = disconnectPeer(state.outboundPeers, msg.Cmp)
 			}
 			msg.Reply <- nil
 			return
@@ -937,13 +910,9 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 // to be located. If the peer is found, and the passed callback: `whenFound'
 // isn't nil, we call it with the peer as the argument before it is removed
 // from the peerList, and is disconnected from the server.
-func disconnectPeer(peerList map[int32]*Peer, compareFunc func(*Peer) bool, whenFound func(*Peer)) bool {
+func disconnectPeer(peerList map[int32]*Peer, compareFunc func(*Peer) bool) bool {
 	for addr, peer := range peerList {
 		if compareFunc(peer) {
-			if whenFound != nil {
-				whenFound(peer)
-			}
-
 			// This is ok because we are not continuing
 			// to iterate so won't corrupt the loop.
 			delete(peerList, addr)
@@ -1026,7 +995,6 @@ func (s *Server) outboundPeerConnected(state *peerState, msg *outboundPeerConnec
 		s.peerDoneHandler(sp)
 	})
 	s.addrManager.Attempt(sp.NA())
-	state.outboundGroups[addrmgr.GroupKey(sp.NA())]++
 }
 
 // outboundPeerConnected is invoked by the connection manager when a new
@@ -1097,7 +1065,6 @@ func (s *Server) peerHandler() {
 		persistentPeers: make(map[int32]*Peer),
 		outboundPeers:   make(map[int32]*Peer),
 		banned:          make(map[string]time.Time),
-		outboundGroups:  make(map[string]int),
 	}
 
 	if !config.ActiveConfig().DisableDNSSeed {
@@ -1223,14 +1190,6 @@ func (s *Server) ConnectedCount() int32 {
 
 	s.Query <- getConnCountMsg{reply: replyChan}
 
-	return <-replyChan
-}
-
-// OutboundGroupCount returns the number of peers connected to the given
-// outbound group key.
-func (s *Server) OutboundGroupCount(key string) int {
-	replyChan := make(chan int)
-	s.Query <- getOutboundGroup{key: key, reply: replyChan}
 	return <-replyChan
 }
 
@@ -1602,57 +1561,6 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 		return nil, err
 	}
 
-	// Only setup a function to return new addresses to connect to when
-	// not running in connect-only mode. The simulation network is always
-	// in connect-only mode since it is only intended to connect to
-	// specified peers and actively avoid advertising and connecting to
-	// discovered peers in order to prevent it from becoming a public test
-	// network.
-	var newAddressFunc func() (net.Addr, error)
-	if !config.ActiveConfig().Simnet && len(config.ActiveConfig().ConnectPeers) == 0 {
-		newAddressFunc = func() (net.Addr, error) {
-			for tries := 0; tries < 100; tries++ {
-				addr := s.addrManager.GetAddress()
-				if addr == nil {
-					break
-				}
-
-				// Address will not be invalid, local or unroutable
-				// because addrmanager rejects those on addition.
-				// Just check that we don't already have an address
-				// in the same group so that we are not connecting
-				// to the same network segment at the expense of
-				// others.
-				//
-				// Networks that accept unroutable connections are exempt
-				// from this rule, since they're meant to run within a
-				// private subnet, like 10.0.0.0/16.
-				if !config.ActiveConfig().NetParams().AcceptUnroutable {
-					key := addrmgr.GroupKey(addr.NetAddress())
-					if s.OutboundGroupCount(key) != 0 {
-						continue
-					}
-				}
-
-				// only allow recent nodes (10mins) after we failed 30
-				// times
-				if tries < 30 && time.Since(addr.LastAttempt()) < 10*time.Minute {
-					continue
-				}
-
-				// allow nondefault ports after 50 failed tries.
-				if tries < 50 && fmt.Sprintf("%d", addr.NetAddress().Port) !=
-					config.ActiveConfig().NetParams().DefaultPort {
-					continue
-				}
-
-				addrString := addrmgr.NetAddressKey(addr.NetAddress())
-				return addrStringToNetAddr(addrString)
-			}
-			return nil, connmgr.ErrNoAddress
-		}
-	}
-
 	// Create a connection manager.
 	cmgr, err := connmgr.New(&connmgr.Config{
 		Listeners:      listeners,
@@ -1671,7 +1579,7 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 				connReq: c,
 			}
 		},
-		GetNewAddress: newAddressFunc,
+		AddrManager: s.addrManager,
 	})
 	if err != nil {
 		return nil, err
@@ -1782,7 +1690,7 @@ func initListeners(amgr *addrmgr.AddrManager, listenAddrs []string, services wir
 // a net.Addr which maps to the original address with any host names resolved
 // to IP addresses. It also handles tor addresses properly by returning a
 // net.Addr that encapsulates the address.
-func addrStringToNetAddr(addr string) (net.Addr, error) {
+func addrStringToNetAddr(addr string) (*net.TCPAddr, error) {
 	host, strPort, err := net.SplitHostPort(addr)
 	if err != nil {
 		return nil, err

@@ -7,6 +7,9 @@ package connmgr
 import (
 	nativeerrors "errors"
 	"fmt"
+	"github.com/kaspanet/kaspad/addrmgr"
+	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/wire"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -77,7 +80,7 @@ type ConnReq struct {
 	// The following variables must only be used atomically.
 	id uint64
 
-	Addr      net.Addr
+	Addr      *net.TCPAddr
 	Permanent bool
 
 	conn       net.Conn
@@ -159,9 +162,7 @@ type Config struct {
 	// connection is disconnected.
 	OnDisconnection func(*ConnReq)
 
-	// GetNewAddress is a way to get an address to make a network connection
-	// to. If nil, no new connections will be made automatically.
-	GetNewAddress func() (net.Addr, error)
+	AddrManager *addrmgr.AddrManager
 
 	// Dial connects to the address on the named network. It cannot be nil.
 	Dial func(net.Addr) (net.Conn, error)
@@ -201,7 +202,9 @@ type ConnManager struct {
 	start        int32
 	stop         int32
 
-	newConnReqMtx sync.Mutex
+	addressMtx         sync.Mutex
+	usedOutboundGroups map[string]int64
+	usedAddresses      map[string]struct{}
 
 	cfg            Config
 	wg             sync.WaitGroup
@@ -237,9 +240,12 @@ func (cm *ConnManager) handleFailedConn(c *ConnReq, err error) {
 			log.Debugf("Retrying further connections to %s every %s", c, d)
 		}
 		spawnAfter(d, func() {
-			cm.Connect(c)
+			cm.connect(c)
 		})
-	} else if cm.cfg.GetNewAddress != nil {
+	} else {
+		if c.Addr != nil {
+			cm.releaseAddress(c.Addr)
+		}
 		cm.failedAttempts++
 		if cm.failedAttempts >= maxFailedAttempts {
 			if shouldWriteLog {
@@ -252,6 +258,54 @@ func (cm *ConnManager) handleFailedConn(c *ConnReq, err error) {
 			spawn(cm.NewConnReq)
 		}
 	}
+}
+
+func (cm *ConnManager) releaseAddress(addr *net.TCPAddr) {
+	cm.addressMtx.Lock()
+	defer cm.addressMtx.Unlock()
+	groupKey := usedOutboundGroupsKey(addr)
+	cm.usedOutboundGroups[groupKey]--
+	if cm.usedOutboundGroups[groupKey] < 0 {
+		panic(fmt.Errorf("cm.usedOutboundGroups[%s] has a negative value of %d. This should never happen", groupKey, cm.usedOutboundGroups[groupKey]))
+	}
+	delete(cm.usedAddresses, usedAddressesKey(addr))
+}
+
+func (cm *ConnManager) markAddressAsUsed(addr *net.TCPAddr) {
+	cm.addressMtx.Lock()
+	defer cm.addressMtx.Unlock()
+	cm.markAddressAsUsedNoLock(addr)
+}
+
+func (cm *ConnManager) markAddressAsUsedNoLock(addr *net.TCPAddr) {
+	cm.usedOutboundGroups[usedOutboundGroupsKey(addr)]++
+	cm.usedAddresses[usedAddressesKey(addr)] = struct{}{}
+}
+
+func (cm *ConnManager) outboundGroupUsedNoLock(addr *net.TCPAddr) bool {
+	_, ok := cm.usedOutboundGroups[usedOutboundGroupsKey(addr)]
+	return ok
+}
+
+func (cm *ConnManager) addressUsed(addr *net.TCPAddr) bool {
+	cm.addressMtx.Lock()
+	defer cm.addressMtx.Unlock()
+	return cm.addressUsedNoLock(addr)
+}
+
+func (cm *ConnManager) addressUsedNoLock(addr *net.TCPAddr) bool {
+	_, ok := cm.usedAddresses[usedAddressesKey(addr)]
+	return ok
+}
+
+func usedOutboundGroupsKey(addr *net.TCPAddr) string {
+	// A fake service flag is used since it doesn't affect the group key.
+	na := wire.NewNetAddress(addr, wire.SFNodeNetwork)
+	return addrmgr.GroupKey(na)
+}
+
+func usedAddressesKey(addr *net.TCPAddr) string {
+	return addr.String()
 }
 
 // throttledError defines an error type whose logs get throttled. This is to
@@ -448,12 +502,7 @@ func (cm *ConnManager) NotifyConnectionRequestComplete() {
 // NewConnReq creates a new connection request and connects to the
 // corresponding address.
 func (cm *ConnManager) NewConnReq() {
-	cm.newConnReqMtx.Lock()
-	defer cm.newConnReqMtx.Unlock()
 	if atomic.LoadInt32(&cm.stop) != 0 {
-		return
-	}
-	if cm.cfg.GetNewAddress == nil {
 		return
 	}
 
@@ -478,8 +527,7 @@ func (cm *ConnManager) NewConnReq() {
 	case <-cm.quit:
 		return
 	}
-
-	addr, err := cm.cfg.GetNewAddress()
+	err := cm.associateAddressToConnReq(c)
 	if err != nil {
 		select {
 		case cm.requests <- handleFailed{c, err}:
@@ -488,17 +536,39 @@ func (cm *ConnManager) NewConnReq() {
 		return
 	}
 
-	c.Addr = addr
+	cm.connect(c)
+}
 
-	cm.Connect(c)
+func (cm *ConnManager) associateAddressToConnReq(c *ConnReq) error {
+	cm.addressMtx.Lock()
+	defer cm.addressMtx.Unlock()
+
+	addr, err := cm.getNewAddress()
+	if err != nil {
+		return err
+	}
+
+	cm.markAddressAsUsedNoLock(addr)
+	c.Addr = addr
+	return nil
+}
+
+func (cm *ConnManager) Connect(c *ConnReq) error {
+	if cm.addressUsed(c.Addr) {
+		return fmt.Errorf("address %s is already in use", c.Addr)
+	}
+	cm.markAddressAsUsed(c.Addr)
+	cm.connect(c)
+	return nil
 }
 
 // Connect assigns an id and dials a connection to the address of the
 // connection request.
-func (cm *ConnManager) Connect(c *ConnReq) {
+func (cm *ConnManager) connect(c *ConnReq) {
 	if atomic.LoadInt32(&cm.stop) != 0 {
 		return
 	}
+
 	if atomic.LoadUint64(&c.id) == 0 {
 		atomic.StoreUint64(&c.id, atomic.AddUint64(&cm.connReqCount, 1))
 
@@ -645,6 +715,52 @@ func (cm *ConnManager) Stop() {
 	log.Trace("Connection manager stopped")
 }
 
+func (cm *ConnManager) getNewAddress() (*net.TCPAddr, error) {
+	for tries := 0; tries < 100; tries++ {
+		addr := cm.cfg.AddrManager.GetAddress()
+		if addr == nil {
+			break
+		}
+
+		// Check if there's already a connection to the same address.
+		netAddr := addr.NetAddress().TCPAddress()
+		if cm.addressUsedNoLock(netAddr) {
+			continue
+		}
+
+		// Address will not be invalid, local or unroutable
+		// because addrmanager rejects those on addition.
+		// Just check that we don't already have an address
+		// in the same group so that we are not connecting
+		// to the same network segment at the expense of
+		// others.
+		//
+		// Networks that accept unroutable connections are exempt
+		// from this rule, since they're meant to run within a
+		// private subnet, like 10.0.0.0/16.
+		if !config.ActiveConfig().NetParams().AcceptUnroutable {
+			if cm.outboundGroupUsedNoLock(netAddr) {
+				continue
+			}
+		}
+
+		// only allow recent nodes (10mins) after we failed 30
+		// times
+		if tries < 30 && time.Since(addr.LastAttempt()) < 10*time.Minute {
+			continue
+		}
+
+		// allow nondefault ports after 50 failed tries.
+		if tries < 50 && fmt.Sprintf("%d", netAddr.Port) !=
+			config.ActiveConfig().NetParams().DefaultPort {
+			continue
+		}
+
+		return netAddr, nil
+	}
+	return nil, ErrNoAddress
+}
+
 // New returns a new connection manager.
 // Use Start to start connecting to the network.
 func New(cfg *Config) (*ConnManager, error) {
@@ -659,9 +775,11 @@ func New(cfg *Config) (*ConnManager, error) {
 		cfg.TargetOutbound = defaultTargetOutbound
 	}
 	cm := ConnManager{
-		cfg:      *cfg, // Copy so caller can't mutate
-		requests: make(chan interface{}),
-		quit:     make(chan struct{}),
+		cfg:                *cfg, // Copy so caller can't mutate
+		requests:           make(chan interface{}),
+		quit:               make(chan struct{}),
+		usedAddresses:      make(map[string]struct{}),
+		usedOutboundGroups: make(map[string]int64),
 	}
 	return &cm, nil
 }
