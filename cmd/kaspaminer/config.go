@@ -75,7 +75,7 @@ func parseConfig() (*configFlags, error) {
 	}
 
 	if cfg.RPCCert == "" && !cfg.DisableTLS {
-		return nil, errors.New("--notls has to be disabled if --cert is used")
+		return nil, errors.New("either --notls or --rpccert must be specified")
 	}
 	if cfg.RPCCert != "" && cfg.DisableTLS {
 		return nil, errors.New("--rpccert should be omitted if --notls is used")
