@@ -18,6 +18,8 @@ import (
 	"time"
 )
 
+const numAddressesInAddressManager = 10
+
 func init() {
 	// Override the max retry duration when running tests.
 	maxRetryDuration = 2 * time.Millisecond
@@ -165,24 +167,27 @@ func overrideActiveConfig() func() {
 }
 
 func addressManagerForTest(t *testing.T, testName string) *addrmgr.AddrManager {
-	path, err := ioutil.TempDir("", fmt.Sprintf("%s-addressmanager", testName))
-	if err != nil {
-		t.Fatalf("addressManagerForTest: TempDir unexpectedly "+
-			"failed: %s", err)
-	}
+	amgr := emptyAddressManagerForTest(t, testName)
 
-	amgr := addrmgr.New(path, nil, nil)
-
-	const numAddresses = 10
-	for i := 0; i < numAddresses; i++ {
+	for i := 0; i < numAddressesInAddressManager; i++ {
 		ip := fmt.Sprintf("173.19%d.115.66:16511", i)
-		err = amgr.AddAddressByIP(ip, nil)
+		err := amgr.AddAddressByIP(ip, nil)
 		if err != nil {
 			t.Fatalf("AddAddressByIP unexpectedly failed to add IP %s: %s", ip, err)
 		}
 	}
 
 	return amgr
+}
+
+func emptyAddressManagerForTest(t *testing.T, testName string) *addrmgr.AddrManager {
+	path, err := ioutil.TempDir("", fmt.Sprintf("%s-addressmanager", testName))
+	if err != nil {
+		t.Fatalf("emptyAddressManagerForTest: TempDir unexpectedly "+
+			"failed: %s", err)
+	}
+
+	return addrmgr.New(path, nil, nil)
 }
 
 // TestConnectMode tests that the connection manager works in the connect mode.
@@ -243,7 +248,7 @@ func TestTargetOutbound(t *testing.T) {
 	restoreConfig := overrideActiveConfig()
 	defer restoreConfig()
 
-	targetOutbound := uint32(10)
+	targetOutbound := uint32(numAddressesInAddressManager - 2)
 	connected := make(chan *ConnReq)
 	cmgr, err := New(&Config{
 		TargetOutbound: targetOutbound,
@@ -267,6 +272,139 @@ func TestTargetOutbound(t *testing.T) {
 	case <-time.After(time.Millisecond):
 		break
 	}
+	cmgr.Stop()
+	cmgr.Wait()
+}
+
+// TestDuplicateOutboundConnections tests that connection requests cannot use an already used address.
+// It checks it by creating one connection request for each address in the address manager, so that
+// the next connection request will have to fail because no unused adress will be available.
+func TestDuplicateOutboundConnections(t *testing.T) {
+	restoreConfig := overrideActiveConfig()
+	defer restoreConfig()
+
+	targetOutbound := uint32(numAddressesInAddressManager - 1)
+	connected := make(chan struct{})
+	failedConnections := make(chan struct{})
+	cmgr, err := New(&Config{
+		TargetOutbound: targetOutbound,
+		Dial:           mockDialer,
+		AddrManager:    addressManagerForTest(t, "TestTargetOutbound"),
+		OnConnection: func(c *ConnReq, conn net.Conn) {
+			connected <- struct{}{}
+		},
+		OnConnectionFailed: func(_ *ConnReq) {
+			failedConnections <- struct{}{}
+		},
+	})
+	if err != nil {
+		t.Fatalf("New error: %v", err)
+	}
+	cmgr.Start()
+	for i := uint32(0); i < targetOutbound; i++ {
+		<-connected
+	}
+
+	time.Sleep(time.Millisecond)
+
+	// Here we check that making a manual connection request beyond the target outbound connection
+	// doesn't fail, so we can know that the reason such connection request will fail is an address
+	// related issue.
+	cmgr.NewConnReq()
+	select {
+	case <-connected:
+		break
+	case <-time.After(time.Millisecond):
+		t.Fatalf("connection request unexpectedly didn't connect")
+	}
+
+	select {
+	case <-failedConnections:
+		t.Fatalf("a connection request unexpectedly failed")
+	case <-time.After(time.Millisecond):
+		break
+	}
+
+	// After we created numAddressesInAddressManager connection requests, this request should fail
+	// because there aren't any more available addresses.
+	cmgr.NewConnReq()
+	select {
+	case <-connected:
+		t.Fatalf("connection request unexpectedly succeeded")
+	case <-time.After(time.Millisecond):
+		t.Fatalf("connection request didn't fail as expected")
+	case <-failedConnections:
+		break
+	}
+
+	cmgr.Stop()
+	cmgr.Wait()
+}
+
+// TestSameOutboundGroupConnections tests that connection requests cannot use an address with an already used
+// address CIDR group.
+// It checks it by creating an address manager with only two adresses, that both belong to the same CIDR group
+// and checks that the second connection request fails.
+func TestSameOutboundGroupConnections(t *testing.T) {
+	restoreConfig := overrideActiveConfig()
+	defer restoreConfig()
+
+	amgr := emptyAddressManagerForTest(t, "TestSameOutboundGroupConnections")
+
+	err := amgr.AddAddressByIP("173.190.115.66:16511", nil)
+	if err != nil {
+		t.Fatalf("AddAddressByIP unexpectedly failed: %s", err)
+	}
+
+	err = amgr.AddAddressByIP("173.190.115.67:16511", nil)
+	if err != nil {
+		t.Fatalf("AddAddressByIP unexpectedly failed: %s", err)
+	}
+
+	connected := make(chan struct{})
+	failedConnections := make(chan struct{})
+	cmgr, err := New(&Config{
+		TargetOutbound: 0,
+		Dial:           mockDialer,
+		AddrManager:    amgr,
+		OnConnection: func(c *ConnReq, conn net.Conn) {
+			connected <- struct{}{}
+		},
+		OnConnectionFailed: func(_ *ConnReq) {
+			failedConnections <- struct{}{}
+		},
+	})
+	if err != nil {
+		t.Fatalf("New error: %v", err)
+	}
+
+	cmgr.Start()
+
+	cmgr.NewConnReq()
+	select {
+	case <-connected:
+		break
+	case <-time.After(time.Millisecond):
+		t.Fatalf("connection request unexpectedly didn't connect")
+	}
+
+	select {
+	case <-failedConnections:
+		t.Fatalf("a connection request unexpectedly failed")
+	case <-time.After(time.Millisecond):
+		break
+	}
+
+	cmgr.NewConnReq()
+	select {
+	case <-connected:
+		t.Fatalf("connection request unexpectedly succeeded")
+	case <-time.After(time.Millisecond):
+		t.Fatalf("connection request didn't fail as expected")
+	case <-failedConnections:
+		break
+	}
+
 	cmgr.Stop()
 	cmgr.Wait()
 }
