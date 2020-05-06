@@ -33,10 +33,6 @@ var (
 	// defaultRetryDuration is the default duration of time for retrying
 	// persistent connections.
 	defaultRetryDuration = time.Second * 5
-
-	// defaultTargetOutbound is the default number of outbound connections to
-	// maintain.
-	defaultTargetOutbound = uint32(8)
 )
 
 var (
@@ -57,6 +53,9 @@ var (
 
 	// ErrPeerNotFound is an error that is thrown if the peer was not found.
 	ErrPeerNotFound = errors.New("peer not found")
+
+	//ErrAdressManagerNil is used to indicate that Address Manager cannot be nil in the configuration.
+	ErrAdressManagerNil = errors.New("Config: Address manager cannot be nil")
 )
 
 // ConnState represents the state of the requested connection.
@@ -767,12 +766,12 @@ func New(cfg *Config) (*ConnManager, error) {
 	if cfg.Dial == nil {
 		return nil, ErrDialNil
 	}
+	if cfg.AddrManager == nil {
+		return nil, ErrAdressManagerNil
+	}
 	// Default to sane values
 	if cfg.RetryDuration <= 0 {
 		cfg.RetryDuration = defaultRetryDuration
-	}
-	if cfg.TargetOutbound == 0 {
-		cfg.TargetOutbound = defaultTargetOutbound
 	}
 	cm := ConnManager{
 		cfg:                *cfg, // Copy so caller can't mutate
