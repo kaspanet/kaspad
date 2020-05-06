@@ -634,6 +634,9 @@ func (node *blockNode) pastUTXOMultiSet(dag *BlockDAG, acceptanceData MultiBlock
 	return ms, nil
 }
 
+// selectedParentMultiset returns the multiset of the node's selected
+// parent. If the node is the genesis blockNode then it does not have
+// a selected parent, in which case return a new, empty multiset.
 func (node *blockNode) selectedParentMultiset(dag *BlockDAG) (*secp256k1.MultiSet, error) {
 	if node.isGenesis() {
 		return secp256k1.NewMultiset(), nil
