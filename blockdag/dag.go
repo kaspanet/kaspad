@@ -607,12 +607,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 
 // calcMultiset returns the multiset of the UTXO of the given block.
 func (node *blockNode) calcMultiset(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData, selectedParentUTXO UTXOSet) (*secp256k1.MultiSet, error) {
-	ms, err := node.pastUTXOMultiSet(dag, acceptanceData, selectedParentUTXO)
-	if err != nil {
-		return nil, err
-	}
-
-	return ms, nil
+	return node.pastUTXOMultiSet(dag, acceptanceData, selectedParentUTXO)
 }
 
 func (node *blockNode) pastUTXOMultiSet(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData, selectedParentUTXO UTXOSet) (*secp256k1.MultiSet, error) {
