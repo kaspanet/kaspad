@@ -162,6 +162,11 @@ func overrideActiveConfig() func() {
 		},
 	})
 	return func() {
+		// Give some extra time to all open NewConnReq goroutines
+		// to finish before restoring the active config to prevent
+		// potential panics.
+		time.Sleep(10 * time.Millisecond)
+
 		config.SetActiveConfig(originalActiveCfg)
 	}
 }
@@ -487,6 +492,9 @@ func TestRetryPermanent(t *testing.T) {
 
 	cmgr.Remove(cr.ID())
 	gotConnReq = <-disconnected
+
+	// Wait for status to be updated
+	time.Sleep(10 * time.Millisecond)
 	wantID = cr.ID()
 	gotID = gotConnReq.ID()
 	if gotID != wantID {
@@ -581,15 +589,14 @@ func TestNetworkFailure(t *testing.T) {
 		t.Fatalf("New error: %v", err)
 	}
 	cmgr.Start()
-	time.AfterFunc(10*time.Millisecond, cmgr.Stop)
+	time.Sleep(10 * time.Millisecond)
+	cmgr.Stop()
 	cmgr.Wait()
 	wantMaxDials := uint32(75)
 	if atomic.LoadUint32(&dials) > wantMaxDials {
 		t.Fatalf("network failure: unexpected number of dials - got %v, want < %v",
 			atomic.LoadUint32(&dials), wantMaxDials)
 	}
-	cmgr.Stop()
-	cmgr.Wait()
 }
 
 // TestStopFailed tests that failed connections are ignored after connmgr is

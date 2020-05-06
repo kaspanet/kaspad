@@ -552,6 +552,8 @@ func (cm *ConnManager) associateAddressToConnReq(c *ConnReq) error {
 	return nil
 }
 
+// Connect assigns an id and dials a connection to the address of the
+// connection request.
 func (cm *ConnManager) Connect(c *ConnReq) error {
 	if cm.addressUsed(c.Addr) {
 		return fmt.Errorf("address %s is already in use", c.Addr)
@@ -561,8 +563,9 @@ func (cm *ConnManager) Connect(c *ConnReq) error {
 	return nil
 }
 
-// Connect assigns an id and dials a connection to the address of the
-// connection request.
+// connect assigns an id and dials a connection to the address of the
+// connection request. This function assumes that the connection address
+// has checked and already marked as used.
 func (cm *ConnManager) connect(c *ConnReq) {
 	if atomic.LoadInt32(&cm.stop) != 0 {
 		return

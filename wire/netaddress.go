@@ -48,6 +48,7 @@ func (na *NetAddress) AddService(service ServiceFlag) {
 	na.Services |= service
 }
 
+// TCPAddress converts the NetAddress to *net.TCPAddr
 func (na *NetAddress) TCPAddress() *net.TCPAddr {
 	return &net.TCPAddr{
 		IP:   na.IP,
