@@ -605,79 +605,23 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	return chainUpdates, nil
 }
 
-// calcMultiset returns the multiset of the UTXO of the given block with the given transactions.
-func (node *blockNode) calcMultiset(dag *BlockDAG, transactions []*util.Tx, acceptanceData MultiBlockTxsAcceptanceData, selectedParentUTXO, pastUTXO UTXOSet) (*secp256k1.MultiSet, error) {
+// calcMultiset returns the multiset of the UTXO of the given block.
+func (node *blockNode) calcMultiset(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData, selectedParentUTXO UTXOSet) (*secp256k1.MultiSet, error) {
 	ms, err := node.pastUTXOMultiSet(dag, acceptanceData, selectedParentUTXO)
 	if err != nil {
 		return nil, err
-	}
-
-	for _, tx := range transactions {
-		ms, err = addTxToMultiset(ms, tx.MsgTx(), pastUTXO, UnacceptedBlueScore)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return ms, nil
-}
-
-// acceptedSelectedParentMultiset takes the multiset of the selected
-// parent, replaces all the selected parent outputs' blue score with
-// the block blue score and returns the result.
-func (node *blockNode) acceptedSelectedParentMultiset(dag *BlockDAG,
-	acceptanceData MultiBlockTxsAcceptanceData) (*secp256k1.MultiSet, error) {
-
-	if node.isGenesis() {
-		return secp256k1.NewMultiset(), nil
-	}
-
-	ms, err := dag.multisetStore.multisetByBlockNode(node.selectedParent)
-	if err != nil {
-		return nil, err
-	}
-
-	selectedParentAcceptanceData, exists := acceptanceData.FindAcceptanceData(node.selectedParent.hash)
-	if !exists {
-		return nil, errors.Errorf("couldn't find selected parent acceptance data for block %s", node)
-	}
-	for _, txAcceptanceData := range selectedParentAcceptanceData.TxAcceptanceData {
-		tx := txAcceptanceData.Tx
-		msgTx := tx.MsgTx()
-		isCoinbase := tx.IsCoinBase()
-		for i, txOut := range msgTx.TxOut {
-			outpoint := *wire.NewOutpoint(tx.ID(), uint32(i))
-
-			unacceptedEntry := NewUTXOEntry(txOut, isCoinbase, UnacceptedBlueScore)
-			acceptedEntry := NewUTXOEntry(txOut, isCoinbase, node.blueScore)
-
-			var err error
-			ms, err = removeUTXOFromMultiset(ms, unacceptedEntry, &outpoint)
-			if err != nil {
-				return nil, err
-			}
-
-			ms, err = addUTXOToMultiset(ms, acceptedEntry, &outpoint)
-			if err != nil {
-				return nil, err
-			}
-		}
 	}
 
 	return ms, nil
 }
 
 func (node *blockNode) pastUTXOMultiSet(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData, selectedParentUTXO UTXOSet) (*secp256k1.MultiSet, error) {
-	ms, err := node.acceptedSelectedParentMultiset(dag, acceptanceData)
+	ms, err := node.selectedParentMultiset(dag)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, blockAcceptanceData := range acceptanceData {
-		if blockAcceptanceData.BlockHash.IsEqual(node.selectedParent.hash) {
-			continue
-		}
-
 		for _, txAcceptanceData := range blockAcceptanceData.TxAcceptanceData {
 			if !txAcceptanceData.IsAccepted {
 				continue
@@ -692,6 +636,19 @@ func (node *blockNode) pastUTXOMultiSet(dag *BlockDAG, acceptanceData MultiBlock
 			}
 		}
 	}
+	return ms, nil
+}
+
+func (node *blockNode) selectedParentMultiset(dag *BlockDAG) (*secp256k1.MultiSet, error) {
+	if node.isGenesis() {
+		return secp256k1.NewMultiset(), nil
+	}
+
+	ms, err := dag.multisetStore.multisetByBlockNode(node.selectedParent)
+	if err != nil {
+		return nil, err
+	}
+
 	return ms, nil
 }
 
@@ -1109,7 +1066,7 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 		return nil, nil, nil, nil, err
 	}
 
-	multiset, err = node.calcMultiset(dag, transactions, txsAcceptanceData, selectedParentUTXO, pastUTXO)
+	multiset, err = node.calcMultiset(dag, txsAcceptanceData, selectedParentUTXO)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
