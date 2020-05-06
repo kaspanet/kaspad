@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
 	"os"
@@ -1244,5 +1245,67 @@ func TestDoubleSpends(t *testing.T) {
 	}
 	if isOrphan {
 		t.Fatalf("ProcessBlock: blockInAnticoneOfBlockWithTx1 got unexpectedly orphaned")
+	}
+}
+
+func TestUTXOCommitment(t *testing.T) {
+	// Create a new database and dag instance to run tests against.
+	params := dagconfig.SimnetParams
+	dag, teardownFunc, err := DAGSetup("TestUTXOCommitment", true, Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("TestUTXOCommitment: Failed to setup dag instance: %v", err)
+	}
+	defer teardownFunc()
+
+	// Build the following DAG:
+	// G <- A <- B <- D
+	//        <- C <-
+	genesis := params.GenesisBlock
+	blockA := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{genesis.BlockHash()}, nil)
+	blockB := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockA.BlockHash()}, nil)
+	blockC := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockA.BlockHash()}, nil)
+	blockD := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockB.BlockHash(), blockC.BlockHash()}, nil)
+
+	// Get the pastUTXO of blockD
+	blockNodeD := dag.index.LookupNode(blockD.BlockHash())
+	if blockNodeD == nil {
+		t.Fatalf("TestUTXOCommitment: blockNode for block D not found")
+	}
+	blockDPastUTXO, _, _, _ := dag.pastUTXO(blockNodeD)
+	blockDPastDiffUTXOSet := blockDPastUTXO.(*DiffUTXOSet)
+
+	// Build a Multiset for block D
+	multiset := secp256k1.NewMultiset()
+	for outpoint, entry := range blockDPastDiffUTXOSet.base.utxoCollection {
+		var err error
+		multiset, err = addUTXOToMultiset(multiset, entry, &outpoint)
+		if err != nil {
+			t.Fatalf("TestUTXOCommitment: addUTXOToMultiset unexpectedly failed")
+		}
+	}
+	for outpoint, entry := range blockDPastDiffUTXOSet.UTXODiff.toAdd {
+		var err error
+		multiset, err = addUTXOToMultiset(multiset, entry, &outpoint)
+		if err != nil {
+			t.Fatalf("TestUTXOCommitment: addUTXOToMultiset unexpectedly failed")
+		}
+	}
+	for outpoint, entry := range blockDPastDiffUTXOSet.UTXODiff.toRemove {
+		var err error
+		multiset, err = removeUTXOFromMultiset(multiset, entry, &outpoint)
+		if err != nil {
+			t.Fatalf("TestUTXOCommitment: removeUTXOFromMultiset unexpectedly failed")
+		}
+	}
+
+	// Turn the multiset into a UTXO commitment
+	utxoCommitment := daghash.Hash(*multiset.Finalize())
+
+	// Make sure that the two commitments are equal
+	if !utxoCommitment.IsEqual(blockNodeD.utxoCommitment) {
+		t.Fatalf("TestUTXOCommitment: calculated UTXO commitment and " +
+			"actual UTXO commitment don't match")
 	}
 }
