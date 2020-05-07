@@ -281,18 +281,18 @@ func (cm *ConnManager) markAddressAsUsedNoLock(addr *net.TCPAddr) {
 	cm.usedAddresses[usedAddressesKey(addr)] = struct{}{}
 }
 
-func (cm *ConnManager) outboundGroupUsedNoLock(addr *net.TCPAddr) bool {
+func (cm *ConnManager) isOutboundGroupUsedNoLock(addr *net.TCPAddr) bool {
 	_, ok := cm.usedOutboundGroups[usedOutboundGroupsKey(addr)]
 	return ok
 }
 
-func (cm *ConnManager) addressUsed(addr *net.TCPAddr) bool {
+func (cm *ConnManager) isAdressUsed(addr *net.TCPAddr) bool {
 	cm.addressMtx.Lock()
 	defer cm.addressMtx.Unlock()
-	return cm.addressUsedNoLock(addr)
+	return cm.isAddressUsedNoLock(addr)
 }
 
-func (cm *ConnManager) addressUsedNoLock(addr *net.TCPAddr) bool {
+func (cm *ConnManager) isAddressUsedNoLock(addr *net.TCPAddr) bool {
 	_, ok := cm.usedAddresses[usedAddressesKey(addr)]
 	return ok
 }
@@ -555,7 +555,7 @@ func (cm *ConnManager) associateAddressToConnReq(c *ConnReq) error {
 // Connect assigns an id and dials a connection to the address of the
 // connection request.
 func (cm *ConnManager) Connect(c *ConnReq) error {
-	if cm.addressUsed(c.Addr) {
+	if cm.isAdressUsed(c.Addr) {
 		return fmt.Errorf("address %s is already in use", c.Addr)
 	}
 	cm.markAddressAsUsed(c.Addr)
@@ -726,7 +726,7 @@ func (cm *ConnManager) getNewAddress() (*net.TCPAddr, error) {
 
 		// Check if there's already a connection to the same address.
 		netAddr := addr.NetAddress().TCPAddress()
-		if cm.addressUsedNoLock(netAddr) {
+		if cm.isAddressUsedNoLock(netAddr) {
 			continue
 		}
 
@@ -741,7 +741,7 @@ func (cm *ConnManager) getNewAddress() (*net.TCPAddr, error) {
 		// from this rule, since they're meant to run within a
 		// private subnet, like 10.0.0.0/16.
 		if !config.ActiveConfig().NetParams().AcceptUnroutable {
-			if cm.outboundGroupUsedNoLock(netAddr) {
+			if cm.isOutboundGroupUsedNoLock(netAddr) {
 				continue
 			}
 		}
