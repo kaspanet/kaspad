@@ -738,10 +738,8 @@ func (cm *ConnManager) getNewAddress() (*net.TCPAddr, error) {
 		// Networks that accept unroutable connections are exempt
 		// from this rule, since they're meant to run within a
 		// private subnet, like 10.0.0.0/16.
-		if !config.ActiveConfig().NetParams().AcceptUnroutable {
-			if cm.isOutboundGroupUsed(netAddr) {
-				continue
-			}
+		if !config.ActiveConfig().NetParams().AcceptUnroutable && cm.isOutboundGroupUsed(netAddr) {
+			continue
 		}
 
 		// only allow recent nodes (10mins) after we failed 30

@@ -18,8 +18,6 @@ import (
 	"time"
 )
 
-const numAddressesInAddressManager = 10
-
 func init() {
 	// Override the max retry duration when running tests.
 	maxRetryDuration = 2 * time.Millisecond
@@ -94,7 +92,7 @@ func TestNewConfig(t *testing.T) {
 
 	_, err = New(&Config{
 		Dial:        mockDialer,
-		AddrManager: addressManagerForTest(t, "TestNewConfig"),
+		AddrManager: addressManagerForTest(t, "TestNewConfig", 10),
 	})
 	if err != nil {
 		t.Fatalf("New unexpected error: %v", err)
@@ -111,7 +109,7 @@ func TestStartStop(t *testing.T) {
 	disconnected := make(chan *ConnReq)
 	cmgr, err := New(&Config{
 		TargetOutbound: 1,
-		AddrManager:    addressManagerForTest(t, "TestStartStop"),
+		AddrManager:    addressManagerForTest(t, "TestStartStop", 10),
 		Dial:           mockDialer,
 		OnConnection: func(c *ConnReq, conn net.Conn) {
 			connected <- c
@@ -171,11 +169,11 @@ func overrideActiveConfig() func() {
 	}
 }
 
-func addressManagerForTest(t *testing.T, testName string) *addrmgr.AddrManager {
+func addressManagerForTest(t *testing.T, testName string, numAddresses uint8) *addrmgr.AddrManager {
 	amgr := emptyAddressManagerForTest(t, testName)
 
-	for i := 0; i < numAddressesInAddressManager; i++ {
-		ip := fmt.Sprintf("173.19%d.115.66:16511", i)
+	for i := uint8(0); i < numAddresses; i++ {
+		ip := fmt.Sprintf("173.%d.115.66:16511", i)
 		err := amgr.AddAddressByIP(ip, nil)
 		if err != nil {
 			t.Fatalf("AddAddressByIP unexpectedly failed to add IP %s: %s", ip, err)
@@ -210,7 +208,7 @@ func TestConnectMode(t *testing.T) {
 		OnConnection: func(c *ConnReq, conn net.Conn) {
 			connected <- c
 		},
-		AddrManager: addressManagerForTest(t, "TestConnectMode"),
+		AddrManager: addressManagerForTest(t, "TestConnectMode", 10),
 	})
 	if err != nil {
 		t.Fatalf("New error: %v", err)
@@ -253,12 +251,13 @@ func TestTargetOutbound(t *testing.T) {
 	restoreConfig := overrideActiveConfig()
 	defer restoreConfig()
 
+	const numAddressesInAddressManager = 10
 	targetOutbound := uint32(numAddressesInAddressManager - 2)
 	connected := make(chan *ConnReq)
 	cmgr, err := New(&Config{
 		TargetOutbound: targetOutbound,
 		Dial:           mockDialer,
-		AddrManager:    addressManagerForTest(t, "TestTargetOutbound"),
+		AddrManager:    addressManagerForTest(t, "TestTargetOutbound", 10),
 		OnConnection: func(c *ConnReq, conn net.Conn) {
 			connected <- c
 		},
@@ -288,13 +287,14 @@ func TestDuplicateOutboundConnections(t *testing.T) {
 	restoreConfig := overrideActiveConfig()
 	defer restoreConfig()
 
+	const numAddressesInAddressManager = 10
 	targetOutbound := uint32(numAddressesInAddressManager - 1)
 	connected := make(chan struct{})
 	failedConnections := make(chan struct{})
 	cmgr, err := New(&Config{
 		TargetOutbound: targetOutbound,
 		Dial:           mockDialer,
-		AddrManager:    addressManagerForTest(t, "TestTargetOutbound"),
+		AddrManager:    addressManagerForTest(t, "TestTargetOutbound", 10),
 		OnConnection: func(c *ConnReq, conn net.Conn) {
 			connected <- struct{}{}
 		},
@@ -434,7 +434,7 @@ func TestRetryPermanent(t *testing.T) {
 		OnDisconnection: func(c *ConnReq) {
 			disconnected <- c
 		},
-		AddrManager: addressManagerForTest(t, "TestRetryPermanent"),
+		AddrManager: addressManagerForTest(t, "TestRetryPermanent", 10),
 	})
 	if err != nil {
 		t.Fatalf("New error: %v", err)
@@ -538,7 +538,7 @@ func TestMaxRetryDuration(t *testing.T) {
 		OnConnection: func(c *ConnReq, conn net.Conn) {
 			connected <- c
 		},
-		AddrManager: addressManagerForTest(t, "TestMaxRetryDuration"),
+		AddrManager: addressManagerForTest(t, "TestMaxRetryDuration", 10),
 	})
 	if err != nil {
 		t.Fatalf("New error: %v", err)
@@ -580,7 +580,7 @@ func TestNetworkFailure(t *testing.T) {
 		TargetOutbound: 5,
 		RetryDuration:  5 * time.Millisecond,
 		Dial:           errDialer,
-		AddrManager:    addressManagerForTest(t, "TestNetworkFailure"),
+		AddrManager:    addressManagerForTest(t, "TestNetworkFailure", 10),
 		OnConnection: func(c *ConnReq, conn net.Conn) {
 			t.Fatalf("network failure: got unexpected connection - %v", c.Addr)
 		},
@@ -617,7 +617,7 @@ func TestStopFailed(t *testing.T) {
 	}
 	cmgr, err := New(&Config{
 		Dial:        waitDialer,
-		AddrManager: addressManagerForTest(t, "TestStopFailed"),
+		AddrManager: addressManagerForTest(t, "TestStopFailed", 10),
 	})
 	if err != nil {
 		t.Fatalf("New error: %v", err)
@@ -656,7 +656,7 @@ func TestRemovePendingConnection(t *testing.T) {
 	}
 	cmgr, err := New(&Config{
 		Dial:        indefiniteDialer,
-		AddrManager: addressManagerForTest(t, "TestRemovePendingConnection"),
+		AddrManager: addressManagerForTest(t, "TestRemovePendingConnection", 10),
 	})
 	if err != nil {
 		t.Fatalf("New error: %v", err)
@@ -727,7 +727,7 @@ func TestCancelIgnoreDelayedConnection(t *testing.T) {
 		OnConnection: func(c *ConnReq, conn net.Conn) {
 			connected <- c
 		},
-		AddrManager: addressManagerForTest(t, "TestCancelIgnoreDelayedConnection"),
+		AddrManager: addressManagerForTest(t, "TestCancelIgnoreDelayedConnection", 10),
 	})
 	if err != nil {
 		t.Fatalf("New error: %v", err)
@@ -857,7 +857,7 @@ func TestListeners(t *testing.T) {
 			receivedConns <- conn
 		},
 		Dial:        mockDialer,
-		AddrManager: addressManagerForTest(t, "TestListeners"),
+		AddrManager: addressManagerForTest(t, "TestListeners", 10),
 	})
 	if err != nil {
 		t.Fatalf("New error: %v", err)
