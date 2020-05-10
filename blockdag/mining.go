@@ -66,7 +66,7 @@ func (dag *BlockDAG) NextBlockMultiset() (*secp256k1.MultiSet, error) {
 		return nil, err
 	}
 
-	_, _, txsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
+	_, txsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
 	if err != nil {
 		return nil, err
 	}

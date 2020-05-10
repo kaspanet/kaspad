@@ -939,7 +939,7 @@ func (dag *BlockDAG) NextAcceptedIDMerkleRootNoLock() (*daghash.Hash, error) {
 //
 // This function MUST be called with the DAG read-lock held
 func (dag *BlockDAG) TxsAcceptedByVirtual() (MultiBlockTxsAcceptanceData, error) {
-	_, _, txsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
+	_, txsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
 	return txsAcceptanceData, err
 }
 
@@ -951,7 +951,7 @@ func (dag *BlockDAG) TxsAcceptedByBlockHash(blockHash *daghash.Hash) (MultiBlock
 	if node == nil {
 		return nil, errors.Errorf("Couldn't find block %s", blockHash)
 	}
-	_, _, txsAcceptanceData, err := dag.pastUTXO(node)
+	_, txsAcceptanceData, err := dag.pastUTXO(node)
 	return txsAcceptanceData, err
 }
 
@@ -987,7 +987,7 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockUTXO UTXOSet, newB
 	chainUpdates = dag.virtual.AddTip(node)
 
 	// Build a UTXO set for the new virtual block
-	newVirtualUTXO, _, _, err := dag.pastUTXO(&dag.virtual.blockNode)
+	newVirtualUTXO, _, err := dag.pastUTXO(&dag.virtual.blockNode)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "could not restore past UTXO for virtual")
 	}
@@ -1048,7 +1048,7 @@ func applyAndVerifyBlockTransactionsToPastUTXO(pastUTXO UTXOSet, blockTransactio
 func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
 	newBlockUTXO UTXOSet, txsAcceptanceData MultiBlockTxsAcceptanceData, newBlockFeeData compactFeeData, multiset *secp256k1.MultiSet, err error) {
 
-	pastUTXO, _, txsAcceptanceData, err := dag.pastUTXO(node)
+	pastUTXO, txsAcceptanceData, err := dag.pastUTXO(node)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
@@ -1093,7 +1093,7 @@ func (node *blockNode) selectedParentPastUTXO(dag *BlockDAG) (UTXOSet, error) {
 	if node.isGenesis() {
 		return NewFullUTXOSet(), nil
 	}
-	selectedParentPastUTXO, _, _, err := dag.pastUTXO(node.selectedParent)
+	selectedParentPastUTXO, _, err := dag.pastUTXO(node.selectedParent)
 	return selectedParentPastUTXO, err
 }
 
@@ -1255,33 +1255,33 @@ func (node *blockNode) updateParentsDiffs(dag *BlockDAG, newBlockUTXO UTXOSet) e
 // To save traversals over the blue blocks, it also returns the transaction acceptance data for
 // all blue blocks
 func (dag *BlockDAG) pastUTXO(node *blockNode) (
-	pastUTXO, selectedParentUTXO UTXOSet, bluesTxsAcceptanceData MultiBlockTxsAcceptanceData, err error) {
+	pastUTXO UTXOSet, bluesTxsAcceptanceData MultiBlockTxsAcceptanceData, err error) {
 
 	if node.isGenesis() {
-		return genesisPastUTXO(dag.virtual), NewFullUTXOSet(), MultiBlockTxsAcceptanceData{}, nil
+		return genesisPastUTXO(dag.virtual), MultiBlockTxsAcceptanceData{}, nil
 	}
-	selectedParentUTXO, err = dag.restoreUTXO(node.selectedParent)
+	selectedParentUTXO, err := dag.restoreUTXO(node.selectedParent)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	blueBlocks, err := node.fetchBlueBlocks()
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	selectedParent := blueBlocks[0]
 	acceptedSelectedParentUTXO, selectedParentAcceptanceData, err := node.acceptSelectedParentTransactions(selectedParent, selectedParentUTXO)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	pastUTXO, bluesTxsAcceptanceData, err = node.applyBlueBlocks(acceptedSelectedParentUTXO, selectedParentAcceptanceData, blueBlocks)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
-	return pastUTXO, selectedParentUTXO, bluesTxsAcceptanceData, nil
+	return pastUTXO, bluesTxsAcceptanceData, nil
 }
 
 func (node *blockNode) acceptSelectedParentTransactions(selectedParent *util.Block, selectedParentUTXO UTXOSet) (acceptedSelectedParentUTXO UTXOSet, txAcceptanceData []TxAcceptanceData, err error) {

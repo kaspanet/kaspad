@@ -1273,7 +1273,7 @@ func TestUTXOCommitment(t *testing.T) {
 	if blockNodeD == nil {
 		t.Fatalf("TestUTXOCommitment: blockNode for block D not found")
 	}
-	blockDPastUTXO, _, _, _ := dag.pastUTXO(blockNodeD)
+	blockDPastUTXO, _, _ := dag.pastUTXO(blockNodeD)
 	blockDPastDiffUTXOSet := blockDPastUTXO.(*DiffUTXOSet)
 
 	// Build a Multiset for block D
