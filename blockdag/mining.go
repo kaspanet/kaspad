@@ -61,7 +61,11 @@ func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, er
 //
 // This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) NextBlockMultiset() (*secp256k1.MultiSet, error) {
-	selectedParentPastUTXO, _, _, err := dag.pastUTXO(dag.virtual.blockNode.selectedParent)
+	selectedParentPastUTXO, err := dag.virtual.blockNode.selectedParentPastUTXO(dag)
+	if err != nil {
+		return nil, err
+	}
+
 	_, _, txsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
 	if err != nil {
 		return nil, err

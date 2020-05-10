@@ -606,11 +606,15 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 }
 
 // calcMultiset returns the multiset of the UTXO of the given block.
-func (node *blockNode) calcMultiset(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData, pastUTXO UTXOSet) (*secp256k1.MultiSet, error) {
-	return node.pastUTXOMultiSet(dag, acceptanceData, pastUTXO)
+func (node *blockNode) calcMultiset(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData,
+	selectedParentPastUTXO UTXOSet) (*secp256k1.MultiSet, error) {
+
+	return node.pastUTXOMultiSet(dag, acceptanceData, selectedParentPastUTXO)
 }
 
-func (node *blockNode) pastUTXOMultiSet(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData, pastUTXO UTXOSet) (*secp256k1.MultiSet, error) {
+func (node *blockNode) pastUTXOMultiSet(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData,
+	selectedParentPastUTXO UTXOSet) (*secp256k1.MultiSet, error) {
+
 	ms, err := node.selectedParentMultiset(dag)
 	if err != nil {
 		return nil, err
@@ -625,7 +629,7 @@ func (node *blockNode) pastUTXOMultiSet(dag *BlockDAG, acceptanceData MultiBlock
 			tx := txAcceptanceData.Tx.MsgTx()
 
 			var err error
-			ms, err = addTxToMultiset(ms, tx, pastUTXO, node.blueScore)
+			ms, err = addTxToMultiset(ms, tx, selectedParentPastUTXO, node.blueScore)
 			if err != nil {
 				return nil, err
 			}
@@ -1064,9 +1068,9 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 		return nil, nil, nil, nil, err
 	}
 
-	selectedParentPastUTXO := pastUTXO
-	if dag.virtual.blockNode.selectedParent != nil {
-		selectedParentPastUTXO, _, _, _ = dag.pastUTXO(dag.virtual.blockNode.selectedParent)
+	selectedParentPastUTXO, err := node.selectedParentPastUTXO(dag)
+	if err != nil {
+		return nil, nil, nil, nil, err
 	}
 
 	multiset, err = node.calcMultiset(dag, txsAcceptanceData, selectedParentPastUTXO)
@@ -1083,6 +1087,14 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 	}
 
 	return utxo, txsAcceptanceData, feeData, multiset, nil
+}
+
+func (node *blockNode) selectedParentPastUTXO(dag *BlockDAG) (UTXOSet, error) {
+	if node.isGenesis() {
+		return NewFullUTXOSet(), nil
+	}
+	selectedParentPastUTXO, _, _, err := dag.pastUTXO(node.selectedParent)
+	return selectedParentPastUTXO, err
 }
 
 // TxAcceptanceData stores a transaction together with an indication
