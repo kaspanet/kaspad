@@ -1251,6 +1251,7 @@ func TestDoubleSpends(t *testing.T) {
 func TestUTXOCommitment(t *testing.T) {
 	// Create a new database and dag instance to run tests against.
 	params := dagconfig.SimnetParams
+	params.BlockCoinbaseMaturity = 0
 	dag, teardownFunc, err := DAGSetup("TestUTXOCommitment", true, Config{
 		DAGParams: &params,
 	})
@@ -1259,14 +1260,48 @@ func TestUTXOCommitment(t *testing.T) {
 	}
 	defer teardownFunc()
 
+	createTx := func(txToSpend *wire.MsgTx) *wire.MsgTx {
+		scriptPubKey, err := txscript.PayToScriptHashScript(OpTrueScript)
+		if err != nil {
+			t.Fatalf("TestUTXOCommitment: failed to build script pub key: %s", err)
+		}
+		signatureScript, err := txscript.PayToScriptHashSignatureScript(OpTrueScript, nil)
+		if err != nil {
+			t.Fatalf("TestUTXOCommitment: failed to build signature script: %s", err)
+		}
+		txIn := &wire.TxIn{
+			PreviousOutpoint: wire.Outpoint{TxID: *txToSpend.TxID(), Index: 0},
+			SignatureScript:  signatureScript,
+			Sequence:         wire.MaxTxInSequenceNum,
+		}
+		txOut := &wire.TxOut{
+			ScriptPubKey: scriptPubKey,
+			Value:        uint64(1),
+		}
+		return wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
+	}
+
 	// Build the following DAG:
 	// G <- A <- B <- D
 	//        <- C <-
 	genesis := params.GenesisBlock
+
+	// Block A:
 	blockA := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{genesis.BlockHash()}, nil)
+
+	// Block B:
 	blockB := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockA.BlockHash()}, nil)
-	blockC := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockA.BlockHash()}, nil)
-	blockD := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockB.BlockHash(), blockC.BlockHash()}, nil)
+
+	// Block C:
+	txSpendBlockACoinbase := createTx(blockA.Transactions[0])
+	blockCTxs := []*wire.MsgTx{txSpendBlockACoinbase}
+	blockC := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockA.BlockHash()}, blockCTxs)
+
+	// Block D:
+	txSpendBlockCCoinbase := createTx(blockC.Transactions[0])
+	txSpendTxInBlockC := createTx(txSpendBlockACoinbase)
+	blockDTxs := []*wire.MsgTx{txSpendBlockCCoinbase, txSpendTxInBlockC}
+	blockD := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockB.BlockHash(), blockC.BlockHash()}, blockDTxs)
 
 	// Get the pastUTXO of blockD
 	blockNodeD := dag.index.LookupNode(blockD.BlockHash())
