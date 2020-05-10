@@ -1064,7 +1064,12 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 		return nil, nil, nil, nil, err
 	}
 
-	multiset, err = node.calcMultiset(dag, txsAcceptanceData, pastUTXO)
+	selectedParentPastUTXO := pastUTXO
+	if dag.virtual.blockNode.selectedParent != nil {
+		selectedParentPastUTXO, _, _, _ = dag.pastUTXO(dag.virtual.blockNode.selectedParent)
+	}
+
+	multiset, err = node.calcMultiset(dag, txsAcceptanceData, selectedParentPastUTXO)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
@@ -1106,6 +1111,17 @@ func (data MultiBlockTxsAcceptanceData) FindAcceptanceData(blockHash *daghash.Ha
 		}
 	}
 	return nil, false
+}
+
+func (data MultiBlockTxsAcceptanceData) String() string {
+	str := ""
+	for _, kaka := range data {
+		str = kaka.BlockHash.String()
+		for _, baka := range kaka.TxAcceptanceData {
+			str = fmt.Sprintf("%s %v", str, baka.Tx.MsgTx().TxID())
+		}
+	}
+	return str
 }
 
 func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
