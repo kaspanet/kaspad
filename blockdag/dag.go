@@ -606,11 +606,11 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 }
 
 // calcMultiset returns the multiset of the UTXO of the given block.
-func (node *blockNode) calcMultiset(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData, selectedParentUTXO UTXOSet) (*secp256k1.MultiSet, error) {
-	return node.pastUTXOMultiSet(dag, acceptanceData, selectedParentUTXO)
+func (node *blockNode) calcMultiset(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData, pastUTXO UTXOSet) (*secp256k1.MultiSet, error) {
+	return node.pastUTXOMultiSet(dag, acceptanceData, pastUTXO)
 }
 
-func (node *blockNode) pastUTXOMultiSet(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData, selectedParentUTXO UTXOSet) (*secp256k1.MultiSet, error) {
+func (node *blockNode) pastUTXOMultiSet(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData, pastUTXO UTXOSet) (*secp256k1.MultiSet, error) {
 	ms, err := node.selectedParentMultiset(dag)
 	if err != nil {
 		return nil, err
@@ -625,7 +625,7 @@ func (node *blockNode) pastUTXOMultiSet(dag *BlockDAG, acceptanceData MultiBlock
 			tx := txAcceptanceData.Tx.MsgTx()
 
 			var err error
-			ms, err = addTxToMultiset(ms, tx, selectedParentUTXO, node.blueScore)
+			ms, err = addTxToMultiset(ms, tx, pastUTXO, node.blueScore)
 			if err != nil {
 				return nil, err
 			}
@@ -1044,7 +1044,7 @@ func applyAndVerifyBlockTransactionsToPastUTXO(pastUTXO UTXOSet, blockTransactio
 func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
 	newBlockUTXO UTXOSet, txsAcceptanceData MultiBlockTxsAcceptanceData, newBlockFeeData compactFeeData, multiset *secp256k1.MultiSet, err error) {
 
-	pastUTXO, selectedParentUTXO, txsAcceptanceData, err := dag.pastUTXO(node)
+	pastUTXO, _, txsAcceptanceData, err := dag.pastUTXO(node)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
@@ -1064,7 +1064,7 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 		return nil, nil, nil, nil, err
 	}
 
-	multiset, err = node.calcMultiset(dag, txsAcceptanceData, selectedParentUTXO)
+	multiset, err = node.calcMultiset(dag, txsAcceptanceData, pastUTXO)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}

@@ -1305,7 +1305,8 @@ func TestUTXOCommitment(t *testing.T) {
 
 	// Make sure that the two commitments are equal
 	if !utxoCommitment.IsEqual(blockNodeD.utxoCommitment) {
-		t.Fatalf("TestUTXOCommitment: calculated UTXO commitment and " +
-			"actual UTXO commitment don't match")
+		t.Fatalf("TestUTXOCommitment: calculated UTXO commitment and "+
+			"actual UTXO commitment don't match. Want: %s, got: %s",
+			utxoCommitment, blockNodeD.utxoCommitment)
 	}
 }
