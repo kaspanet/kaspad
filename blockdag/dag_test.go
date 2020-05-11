@@ -1250,7 +1250,7 @@ func TestDoubleSpends(t *testing.T) {
 
 func TestUTXOCommitment(t *testing.T) {
 	// Create a new database and dag instance to run tests against.
-	params := dagconfig.SimnetParams
+	params := dagconfig.DevnetParams
 	params.BlockCoinbaseMaturity = 0
 	dag, teardownFunc, err := DAGSetup("TestUTXOCommitment", true, Config{
 		DAGParams: &params,
