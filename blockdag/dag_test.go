@@ -1362,32 +1362,33 @@ func TestPastUTXOMultiSet(t *testing.T) {
 	genesis := params.GenesisBlock
 	blockA := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{genesis.BlockHash()}, nil)
 	blockB := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockA.BlockHash()}, nil)
+	blockC := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockB.BlockHash()}, nil)
 
-	// Take blockB's selectedParentMultiset
-	blockNodeB := dag.index.LookupNode(blockB.BlockHash())
-	if blockNodeB == nil {
-		t.Fatalf("TestPastUTXOMultiSet: blockNode for block B not found")
+	// Take blockC's selectedParentMultiset
+	blockNodeC := dag.index.LookupNode(blockC.BlockHash())
+	if blockNodeC == nil {
+		t.Fatalf("TestPastUTXOMultiSet: blockNode for blockC not found")
 	}
-	blockBSelectedParentMultiset, err := blockNodeB.selectedParentMultiset(dag)
+	blockCSelectedParentMultiset, err := blockNodeC.selectedParentMultiset(dag)
 	if err != nil {
 		t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset unexpectedly failed: %s", err)
 	}
 
-	// Copy the multiHash
-	blockBSelectedParentMultisetCopy := *blockBSelectedParentMultiset
-	blockBSelectedParentMultiset = &blockBSelectedParentMultisetCopy
+	// Copy the multiset
+	blockCSelectedParentMultisetCopy := *blockCSelectedParentMultiset
+	blockCSelectedParentMultiset = &blockCSelectedParentMultisetCopy
 
-	// Add a couple of blocks on top of blockB
-	PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockB.BlockHash()}, nil)
+	// Add a block on top of blockC
+	PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockC.BlockHash()}, nil)
 
-	// Get blockB's selectedParentMultiset again
-	blockBSelectedParentMultiSetAfterAnotherBlock, err := blockNodeB.selectedParentMultiset(dag)
+	// Get blockC's selectedParentMultiset again
+	blockCSelectedParentMultiSetAfterAnotherBlock, err := blockNodeC.selectedParentMultiset(dag)
 	if err != nil {
 		t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset unexpectedly failed: %s", err)
 	}
 
-	// Make sure that blockB's selectedParentMultiset had not changed
-	if !reflect.DeepEqual(blockBSelectedParentMultiset, blockBSelectedParentMultiSetAfterAnotherBlock) {
+	// Make sure that blockC's selectedParentMultiset had not changed
+	if !reflect.DeepEqual(blockCSelectedParentMultiset, blockCSelectedParentMultiSetAfterAnotherBlock) {
 		t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset appears to have changed")
 	}
 }
