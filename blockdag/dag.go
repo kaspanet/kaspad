@@ -620,10 +620,6 @@ func (node *blockNode) pastUTXOMultiSet(dag *BlockDAG, acceptanceData MultiBlock
 		return nil, err
 	}
 
-	// Copy the multiset to avoid modifying the original
-	msCopy := *ms
-	ms = &msCopy
-
 	for _, blockAcceptanceData := range acceptanceData {
 		for _, txAcceptanceData := range blockAcceptanceData.TxAcceptanceData {
 			if !txAcceptanceData.IsAccepted {
