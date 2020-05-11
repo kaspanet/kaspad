@@ -1125,17 +1125,6 @@ func (data MultiBlockTxsAcceptanceData) FindAcceptanceData(blockHash *daghash.Ha
 	return nil, false
 }
 
-func (data MultiBlockTxsAcceptanceData) String() string {
-	str := ""
-	for _, kaka := range data {
-		str = kaka.BlockHash.String()
-		for _, baka := range kaka.TxAcceptanceData {
-			str = fmt.Sprintf("%s %v", str, baka.Tx.MsgTx().TxID())
-		}
-	}
-	return str
-}
-
 func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 	// The genesis has no past UTXO, so we create an empty UTXO
 	// set by creating a diff UTXO set with the virtual UTXO
