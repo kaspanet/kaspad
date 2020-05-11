@@ -6,10 +6,12 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 
@@ -1244,5 +1246,149 @@ func TestDoubleSpends(t *testing.T) {
 	}
 	if isOrphan {
 		t.Fatalf("ProcessBlock: blockInAnticoneOfBlockWithTx1 got unexpectedly orphaned")
+	}
+}
+
+func TestUTXOCommitment(t *testing.T) {
+	// Create a new database and dag instance to run tests against.
+	params := dagconfig.SimnetParams
+	params.BlockCoinbaseMaturity = 0
+	dag, teardownFunc, err := DAGSetup("TestUTXOCommitment", true, Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("TestUTXOCommitment: Failed to setup dag instance: %v", err)
+	}
+	defer teardownFunc()
+
+	createTx := func(txToSpend *wire.MsgTx) *wire.MsgTx {
+		scriptPubKey, err := txscript.PayToScriptHashScript(OpTrueScript)
+		if err != nil {
+			t.Fatalf("TestUTXOCommitment: failed to build script pub key: %s", err)
+		}
+		signatureScript, err := txscript.PayToScriptHashSignatureScript(OpTrueScript, nil)
+		if err != nil {
+			t.Fatalf("TestUTXOCommitment: failed to build signature script: %s", err)
+		}
+		txIn := &wire.TxIn{
+			PreviousOutpoint: wire.Outpoint{TxID: *txToSpend.TxID(), Index: 0},
+			SignatureScript:  signatureScript,
+			Sequence:         wire.MaxTxInSequenceNum,
+		}
+		txOut := &wire.TxOut{
+			ScriptPubKey: scriptPubKey,
+			Value:        uint64(1),
+		}
+		return wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
+	}
+
+	// Build the following DAG:
+	// G <- A <- B <- D
+	//        <- C <-
+	genesis := params.GenesisBlock
+
+	// Block A:
+	blockA := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{genesis.BlockHash()}, nil)
+
+	// Block B:
+	blockB := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockA.BlockHash()}, nil)
+
+	// Block C:
+	txSpendBlockACoinbase := createTx(blockA.Transactions[0])
+	blockCTxs := []*wire.MsgTx{txSpendBlockACoinbase}
+	blockC := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockA.BlockHash()}, blockCTxs)
+
+	// Block D:
+	txSpendBlockCCoinbase := createTx(blockC.Transactions[0])
+	txSpendTxInBlockC := createTx(txSpendBlockACoinbase)
+	blockDTxs := []*wire.MsgTx{txSpendBlockCCoinbase, txSpendTxInBlockC}
+	blockD := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockB.BlockHash(), blockC.BlockHash()}, blockDTxs)
+
+	// Get the pastUTXO of blockD
+	blockNodeD := dag.index.LookupNode(blockD.BlockHash())
+	if blockNodeD == nil {
+		t.Fatalf("TestUTXOCommitment: blockNode for block D not found")
+	}
+	blockDPastUTXO, _, _ := dag.pastUTXO(blockNodeD)
+	blockDPastDiffUTXOSet := blockDPastUTXO.(*DiffUTXOSet)
+
+	// Build a Multiset for block D
+	multiset := secp256k1.NewMultiset()
+	for outpoint, entry := range blockDPastDiffUTXOSet.base.utxoCollection {
+		var err error
+		multiset, err = addUTXOToMultiset(multiset, entry, &outpoint)
+		if err != nil {
+			t.Fatalf("TestUTXOCommitment: addUTXOToMultiset unexpectedly failed")
+		}
+	}
+	for outpoint, entry := range blockDPastDiffUTXOSet.UTXODiff.toAdd {
+		var err error
+		multiset, err = addUTXOToMultiset(multiset, entry, &outpoint)
+		if err != nil {
+			t.Fatalf("TestUTXOCommitment: addUTXOToMultiset unexpectedly failed")
+		}
+	}
+	for outpoint, entry := range blockDPastDiffUTXOSet.UTXODiff.toRemove {
+		var err error
+		multiset, err = removeUTXOFromMultiset(multiset, entry, &outpoint)
+		if err != nil {
+			t.Fatalf("TestUTXOCommitment: removeUTXOFromMultiset unexpectedly failed")
+		}
+	}
+
+	// Turn the multiset into a UTXO commitment
+	utxoCommitment := daghash.Hash(*multiset.Finalize())
+
+	// Make sure that the two commitments are equal
+	if !utxoCommitment.IsEqual(blockNodeD.utxoCommitment) {
+		t.Fatalf("TestUTXOCommitment: calculated UTXO commitment and "+
+			"actual UTXO commitment don't match. Want: %s, got: %s",
+			utxoCommitment, blockNodeD.utxoCommitment)
+	}
+}
+
+func TestPastUTXOMultiSet(t *testing.T) {
+	// Create a new database and dag instance to run tests against.
+	params := dagconfig.SimnetParams
+	dag, teardownFunc, err := DAGSetup("TestPastUTXOMultiSet", true, Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("TestPastUTXOMultiSet: Failed to setup dag instance: %v", err)
+	}
+	defer teardownFunc()
+
+	// Build a short chain
+	genesis := params.GenesisBlock
+	blockA := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{genesis.BlockHash()}, nil)
+	blockB := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockA.BlockHash()}, nil)
+	blockC := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockB.BlockHash()}, nil)
+
+	// Take blockC's selectedParentMultiset
+	blockNodeC := dag.index.LookupNode(blockC.BlockHash())
+	if blockNodeC == nil {
+		t.Fatalf("TestPastUTXOMultiSet: blockNode for blockC not found")
+	}
+	blockCSelectedParentMultiset, err := blockNodeC.selectedParentMultiset(dag)
+	if err != nil {
+		t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset unexpectedly failed: %s", err)
+	}
+
+	// Copy the multiset
+	blockCSelectedParentMultisetCopy := *blockCSelectedParentMultiset
+	blockCSelectedParentMultiset = &blockCSelectedParentMultisetCopy
+
+	// Add a block on top of blockC
+	PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockC.BlockHash()}, nil)
+
+	// Get blockC's selectedParentMultiset again
+	blockCSelectedParentMultiSetAfterAnotherBlock, err := blockNodeC.selectedParentMultiset(dag)
+	if err != nil {
+		t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset unexpectedly failed: %s", err)
+	}
+
+	// Make sure that blockC's selectedParentMultiset had not changed
+	if !reflect.DeepEqual(blockCSelectedParentMultiset, blockCSelectedParentMultiSetAfterAnotherBlock) {
+		t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset appears to have changed")
 	}
 }
