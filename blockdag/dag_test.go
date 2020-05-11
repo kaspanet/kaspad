@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 
@@ -1343,5 +1344,51 @@ func TestUTXOCommitment(t *testing.T) {
 		t.Fatalf("TestUTXOCommitment: calculated UTXO commitment and "+
 			"actual UTXO commitment don't match. Want: %s, got: %s",
 			utxoCommitment, blockNodeD.utxoCommitment)
+	}
+}
+
+func TestPastUTXOMultiSet(t *testing.T) {
+	// Create a new database and dag instance to run tests against.
+	params := dagconfig.SimnetParams
+	dag, teardownFunc, err := DAGSetup("TestPastUTXOMultiSet", true, Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("TestPastUTXOMultiSet: Failed to setup dag instance: %v", err)
+	}
+	defer teardownFunc()
+
+	// Build a short chain
+	genesis := params.GenesisBlock
+	blockA := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{genesis.BlockHash()}, nil)
+	blockB := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockA.BlockHash()}, nil)
+	blockC := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockB.BlockHash()}, nil)
+
+	// Take blockC's selectedParentMultiset
+	blockNodeC := dag.index.LookupNode(blockC.BlockHash())
+	if blockNodeC == nil {
+		t.Fatalf("TestPastUTXOMultiSet: blockNode for blockC not found")
+	}
+	blockCSelectedParentMultiset, err := blockNodeC.selectedParentMultiset(dag)
+	if err != nil {
+		t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset unexpectedly failed: %s", err)
+	}
+
+	// Copy the multiset
+	blockCSelectedParentMultisetCopy := *blockCSelectedParentMultiset
+	blockCSelectedParentMultiset = &blockCSelectedParentMultisetCopy
+
+	// Add a block on top of blockC
+	PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockC.BlockHash()}, nil)
+
+	// Get blockC's selectedParentMultiset again
+	blockCSelectedParentMultiSetAfterAnotherBlock, err := blockNodeC.selectedParentMultiset(dag)
+	if err != nil {
+		t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset unexpectedly failed: %s", err)
+	}
+
+	// Make sure that blockC's selectedParentMultiset had not changed
+	if !reflect.DeepEqual(blockCSelectedParentMultiset, blockCSelectedParentMultiSetAfterAnotherBlock) {
+		t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset appears to have changed")
 	}
 }
