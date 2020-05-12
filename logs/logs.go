@@ -478,7 +478,7 @@ func (l *Logger) Criticalf(format string, args ...interface{}) {
 func (l *Logger) Write(logLevel Level, args ...interface{}) {
 	lvl := l.Level()
 	if lvl <= logLevel {
-		l.b.print(LevelCritical, l.tag, args...)
+		l.b.print(logLevel, l.tag, args...)
 	}
 }
 
@@ -487,7 +487,7 @@ func (l *Logger) Write(logLevel Level, args ...interface{}) {
 func (l *Logger) Writef(logLevel Level, format string, args ...interface{}) {
 	lvl := l.Level()
 	if lvl <= logLevel {
-		l.b.printf(LevelCritical, l.tag, format, args...)
+		l.b.printf(logLevel, l.tag, format, args...)
 	}
 }
 
