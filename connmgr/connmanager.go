@@ -262,6 +262,7 @@ func (cm *ConnManager) handleFailedConn(c *ConnReq, err error) {
 func (cm *ConnManager) releaseAddress(addr *net.TCPAddr) {
 	cm.addressMtx.Lock()
 	defer cm.addressMtx.Unlock()
+
 	groupKey := usedOutboundGroupsKey(addr)
 	cm.usedOutboundGroups[groupKey]--
 	if cm.usedOutboundGroups[groupKey] < 0 {
