@@ -71,6 +71,7 @@ type gbtWorkState struct {
 	template      *mining.BlockTemplate
 	notifyMap     map[string]map[int64]chan struct{}
 	timeSource    blockdag.TimeSource
+	isSynced      bool
 }
 
 // newGbtWorkState returns a new instance of a gbtWorkState with all internal
@@ -103,17 +104,6 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 	mode := "template"
 	if request != nil && request.Mode != "" {
 		mode = request.Mode
-	}
-
-	// No point in generating templates or processing proposals before
-	// the DAG is synced. Note that we make a special check for when
-	// we have nothing besides the genesis block (blueScore == 0),
-	// because in that state IsCurrent may still return true.
-	if !isSyncedForMining(s) {
-		return nil, &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCClientInInitialDownload,
-			Message: "Kaspa is downloading blocks...",
-		}
 	}
 
 	switch mode {
@@ -655,6 +645,15 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		// consensus rules.
 		minTimestamp := s.cfg.DAG.NextBlockMinimumTime()
 
+		// Check whether this node is synced with the rest of of the
+		// network. There's almost never a good reason to mine on top
+		// of an unsynced DAG, and miners are generally expected not to
+		// mine when isSynced is false.
+		// This is not a straight-up error because the choice of whether
+		// to mine or not is the responsibility of the miner rather
+		// than the node's.
+		isSynced := isSyncedForMining(s)
+
 		// Update work state to ensure another block template isn't
 		// generated until needed.
 		state.template = template
@@ -662,6 +661,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		state.lastTxUpdate = lastTxUpdate
 		state.tipHashes = tipHashes
 		state.minTimestamp = minTimestamp
+		state.isSynced = isSynced
 
 		log.Debugf("Generated block template (timestamp %s, "+
 			"target %s, merkle root %s)",
@@ -820,6 +820,7 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 		Mutable:              gbtMutableFields,
 		NonceRange:           gbtNonceRange,
 		Capabilities:         gbtCapabilities,
+		IsSynced:             state.isSynced,
 	}
 
 	if useCoinbaseValue {

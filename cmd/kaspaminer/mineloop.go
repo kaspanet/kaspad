@@ -25,7 +25,7 @@ var hashesTried uint64
 
 const logHashRateInterval = 10 * time.Second
 
-func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64) error {
+func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64, mineWhenNotSynced bool) error {
 	errChan := make(chan error)
 
 	templateStopChan := make(chan struct{})
@@ -35,7 +35,7 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64) err
 		wg := sync.WaitGroup{}
 		for i := uint64(0); numberOfBlocks == 0 || i < numberOfBlocks; i++ {
 			foundBlock := make(chan *util.Block)
-			mineNextBlock(client, foundBlock, templateStopChan, errChan)
+			mineNextBlock(client, foundBlock, mineWhenNotSynced, templateStopChan, errChan)
 			block := <-foundBlock
 			templateStopChan <- struct{}{}
 			wg.Add(1)
@@ -80,13 +80,15 @@ func logHashRate() {
 	})
 }
 
-func mineNextBlock(client *minerClient, foundBlock chan *util.Block, templateStopChan chan struct{}, errChan chan error) {
+func mineNextBlock(client *minerClient, foundBlock chan *util.Block, mineWhenNotSynced bool,
+	templateStopChan chan struct{}, errChan chan error) {
+
 	newTemplateChan := make(chan *rpcmodel.GetBlockTemplateResult)
 	spawn(func() {
 		templatesLoop(client, newTemplateChan, errChan, templateStopChan)
 	})
 	spawn(func() {
-		solveLoop(newTemplateChan, foundBlock, errChan)
+		solveLoop(newTemplateChan, foundBlock, mineWhenNotSynced, errChan)
 	})
 }
 
@@ -207,12 +209,23 @@ func getBlockTemplate(client *minerClient, longPollID string) (*rpcmodel.GetBloc
 	return client.GetBlockTemplate([]string{"coinbasetxn"}, longPollID)
 }
 
-func solveLoop(newTemplateChan chan *rpcmodel.GetBlockTemplateResult, foundBlock chan *util.Block, errChan chan error) {
+func solveLoop(newTemplateChan chan *rpcmodel.GetBlockTemplateResult, foundBlock chan *util.Block,
+	mineWhenNotSynced bool, errChan chan error) {
+
 	var stopOldTemplateSolving chan struct{}
 	for template := range newTemplateChan {
 		if stopOldTemplateSolving != nil {
 			close(stopOldTemplateSolving)
 		}
+
+		if !template.IsSynced {
+			if !mineWhenNotSynced {
+				errChan <- errors.Errorf("got template with isSynced=false")
+				return
+			}
+			log.Warnf("Got template with isSynced=false")
+		}
+
 		stopOldTemplateSolving = make(chan struct{})
 		block, err := parseBlock(template)
 		if err != nil {

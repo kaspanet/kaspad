@@ -151,6 +151,7 @@ type GetBlockTemplateResult struct {
 	CoinbaseTxn          *GetBlockTemplateResultTx  `json:"coinbaseTxn,omitempty"`
 	CoinbaseValue        *uint64                    `json:"coinbaseValue,omitempty"`
 	WorkID               string                     `json:"workId,omitempty"`
+	IsSynced             bool                       `json:"isSynced"`
 
 	// Optional long polling from BIP 0022.
 	LongPollID  string `json:"longPollId,omitempty"`
