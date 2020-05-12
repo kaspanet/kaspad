@@ -315,7 +315,7 @@ func TestDuplicateOutboundConnections(t *testing.T) {
 	connected := make(chan struct{})
 	failedConnections := make(chan struct{})
 
-	amgr, teardown := addressManagerForTest(t, "TestTargetOutbound", 10)
+	amgr, teardown := addressManagerForTest(t, "TestDuplicateOutboundConnections", 10)
 	defer teardown()
 
 	cmgr, err := New(&Config{
