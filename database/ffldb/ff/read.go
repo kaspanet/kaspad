@@ -33,10 +33,11 @@ func (s *flatFileStore) read(location *flatFileLocation) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	flatFile.RLock()
+	defer flatFile.RUnlock()
 
 	data := make([]byte, location.dataLength)
 	n, err := flatFile.file.ReadAt(data, int64(location.fileOffset))
-	flatFile.RUnlock()
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to read data in store '%s' "+
 			"from file %d, offset %d", s.storeName, location.fileNumber,
@@ -62,43 +63,31 @@ func (s *flatFileStore) read(location *flatFileLocation) ([]byte, error) {
 // will also open the file when it's not already open subject to the rules
 // described in openFile. Also handles closing files as needed to avoid going
 // over the max allowed open files.
-//
-// NOTE: The returned flat file will already have the read lock acquired and
-// the caller MUST call .RUnlock() to release it once it has finished all read
-// operations. This is necessary because otherwise it would be possible for a
-// separate goroutine to close the file after it is returned from here, but
-// before the caller has acquired a read lock.
 func (s *flatFileStore) flatFile(fileNumber uint32) (*lockableFile, error) {
 	// When the requested flat file is open for writes, return it.
 	s.writeCursor.RLock()
+	defer s.writeCursor.RUnlock()
 	if fileNumber == s.writeCursor.currentFileNumber && s.writeCursor.currentFile.file != nil {
 		openFile := s.writeCursor.currentFile
-		openFile.RLock()
-		s.writeCursor.RUnlock()
 		return openFile, nil
 	}
-	s.writeCursor.RUnlock()
 
 	// Try to return an open file under the overall files read lock.
 	s.openFilesMutex.RLock()
+	defer s.openFilesMutex.RUnlock()
 	if openFile, ok := s.openFiles[fileNumber]; ok {
 		s.lruMutex.Lock()
-		s.openFilesLRU.MoveToFront(s.fileNumberToLRUElement[fileNumber])
-		s.lruMutex.Unlock()
+		defer s.lruMutex.Unlock()
 
-		openFile.RLock()
-		s.openFilesMutex.RUnlock()
+		s.openFilesLRU.MoveToFront(s.fileNumberToLRUElement[fileNumber])
+
 		return openFile, nil
 	}
-	s.openFilesMutex.RUnlock()
 
 	// Since the file isn't open already, need to check the open files map
 	// again under write lock in case multiple readers got here and a
 	// separate one is already opening the file.
-	s.openFilesMutex.Lock()
 	if openFlatFile, ok := s.openFiles[fileNumber]; ok {
-		openFlatFile.RLock()
-		s.openFilesMutex.Unlock()
 		return openFlatFile, nil
 	}
 
@@ -106,11 +95,8 @@ func (s *flatFileStore) flatFile(fileNumber uint32) (*lockableFile, error) {
 	// recently used one as needed.
 	openFile, err := s.openFile(fileNumber)
 	if err != nil {
-		s.openFilesMutex.Unlock()
 		return nil, err
 	}
-	openFile.RLock()
-	s.openFilesMutex.Unlock()
 	return openFile, nil
 }
 
@@ -142,6 +128,7 @@ func (s *flatFileStore) openFile(fileNumber uint32) (*lockableFile, error) {
 	// recently used list to indicate it is the most recently used file and
 	// therefore should be closed last.
 	s.lruMutex.Lock()
+	defer s.lruMutex.Unlock()
 	lruList := s.openFilesLRU
 	if lruList.Len() >= maxOpenFiles {
 		lruFileNumber := lruList.Remove(lruList.Back()).(uint32)
@@ -151,14 +138,13 @@ func (s *flatFileStore) openFile(fileNumber uint32) (*lockableFile, error) {
 		// any readers are currently reading from it so it's not closed
 		// out from under them.
 		oldFile.Lock()
+		defer oldFile.Unlock()
 		_ = oldFile.file.Close()
-		oldFile.Unlock()
 
 		delete(s.openFiles, lruFileNumber)
 		delete(s.fileNumberToLRUElement, lruFileNumber)
 	}
 	s.fileNumberToLRUElement[fileNumber] = lruList.PushFront(fileNumber)
-	s.lruMutex.Unlock()
 
 	// Store a reference to it in the open files map.
 	s.openFiles[fileNumber] = flatFile

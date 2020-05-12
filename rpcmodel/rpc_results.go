@@ -46,8 +46,9 @@ type GetBlockVerboseResult struct {
 	Bits                 string        `json:"bits"`
 	Difficulty           float64       `json:"difficulty"`
 	ParentHashes         []string      `json:"parentHashes"`
-	SelectedParentHash   string        `json:"selectedParentHash,omitempty"`
-	ChildHashes          []string      `json:"childHashes,omitempty"`
+	SelectedParentHash   string        `json:"selectedParentHash"`
+	ChildHashes          []string      `json:"childHashes"`
+	AcceptedBlockHashes  []string      `json:"acceptedBlockHashes"`
 }
 
 // CreateMultiSigResult models the data returned from the createmultisig
@@ -150,6 +151,7 @@ type GetBlockTemplateResult struct {
 	CoinbaseTxn          *GetBlockTemplateResultTx  `json:"coinbaseTxn,omitempty"`
 	CoinbaseValue        *uint64                    `json:"coinbaseValue,omitempty"`
 	WorkID               string                     `json:"workId,omitempty"`
+	IsSynced             bool                       `json:"isSynced"`
 
 	// Optional long polling from BIP 0022.
 	LongPollID  string `json:"longPollId,omitempty"`

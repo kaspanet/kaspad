@@ -30,16 +30,17 @@ var (
 )
 
 type configFlags struct {
-	ShowVersion    bool   `short:"V" long:"version" description:"Display version information and exit"`
-	RPCUser        string `short:"u" long:"rpcuser" description:"RPC username"`
-	RPCPassword    string `short:"P" long:"rpcpass" default-mask:"-" description:"RPC password"`
-	RPCServer      string `short:"s" long:"rpcserver" description:"RPC server to connect to"`
-	RPCCert        string `short:"c" long:"rpccert" description:"RPC server certificate chain for validation"`
-	DisableTLS     bool   `long:"notls" description:"Disable TLS"`
-	Verbose        bool   `long:"verbose" short:"v" description:"Enable logging of RPC requests"`
-	NumberOfBlocks uint64 `short:"n" long:"numblocks" description:"Number of blocks to mine. If omitted, will mine until the process is interrupted."`
-	BlockDelay     uint64 `long:"block-delay" description:"Delay for block submission (in milliseconds). This is used only for testing purposes."`
-	Profile        string `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
+	ShowVersion       bool   `short:"V" long:"version" description:"Display version information and exit"`
+	RPCUser           string `short:"u" long:"rpcuser" description:"RPC username"`
+	RPCPassword       string `short:"P" long:"rpcpass" default-mask:"-" description:"RPC password"`
+	RPCServer         string `short:"s" long:"rpcserver" description:"RPC server to connect to"`
+	RPCCert           string `short:"c" long:"rpccert" description:"RPC server certificate chain for validation"`
+	DisableTLS        bool   `long:"notls" description:"Disable TLS"`
+	Verbose           bool   `long:"verbose" short:"v" description:"Enable logging of RPC requests"`
+	NumberOfBlocks    uint64 `short:"n" long:"numblocks" description:"Number of blocks to mine. If omitted, will mine until the process is interrupted."`
+	BlockDelay        uint64 `long:"block-delay" description:"Delay for block submission (in milliseconds). This is used only for testing purposes."`
+	MineWhenNotSynced bool   `long:"mine-when-not-synced" description:"Mine even if the node is not synced with the rest of the network."`
+	Profile           string `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
 	config.NetworkFlags
 }
 
@@ -75,7 +76,7 @@ func parseConfig() (*configFlags, error) {
 	}
 
 	if cfg.RPCCert == "" && !cfg.DisableTLS {
-		return nil, errors.New("--notls has to be disabled if --cert is used")
+		return nil, errors.New("either --notls or --rpccert must be specified")
 	}
 	if cfg.RPCCert != "" && cfg.DisableTLS {
 		return nil, errors.New("--rpccert should be omitted if --notls is used")

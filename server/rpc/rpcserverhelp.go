@@ -252,6 +252,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockVerboseResult-parentHashes":         "The hashes of the parent blocks",
 	"getBlockVerboseResult-selectedParentHash":   "The selected parent hash",
 	"getBlockVerboseResult-childHashes":          "The hashes of the child blocks (only if there are any)",
+	"getBlockVerboseResult-acceptedBlockHashes":  "The hashes of the blocks accepted by this block",
 
 	// GetBlockCountCmd help.
 	"getBlockCount--synopsis": "Returns the number of blocks in the block DAG.",
@@ -330,6 +331,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockTemplateResult-nonceRange":           "Two concatenated hex-encoded big-endian 64-bit integers which represent the valid ranges of nonces the miner may scan",
 	"getBlockTemplateResult-capabilities":         "List of server capabilities including 'proposal' to indicate support for block proposals",
 	"getBlockTemplateResult-rejectReason":         "Reason the proposal was invalid as-is (only applies to proposal responses)",
+	"getBlockTemplateResult-isSynced":             "Whether this node is synced with the rest of of the network. Miners are generally expected not to mine when isSynced is false",
 
 	// GetBlockTemplateCmd help.
 	"getBlockTemplate--synopsis": "Returns a JSON object with information necessary to construct a block to mine or accepts a proposal to validate.\n" +

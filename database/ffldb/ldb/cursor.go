@@ -2,6 +2,7 @@ package ldb
 
 import (
 	"bytes"
+
 	"github.com/kaspanet/kaspad/database"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
@@ -52,20 +53,15 @@ func (c *LevelDBCursor) Seek(key *database.Key) error {
 		return errors.New("cannot seek a closed cursor")
 	}
 
-	notFoundErr := errors.Wrapf(database.ErrNotFound, "key %s not "+
-		"found", key)
 	found := c.ldbIterator.Seek(key.Bytes())
 	if !found {
-		return notFoundErr
+		return errors.Wrapf(database.ErrNotFound, "key %s not found", key)
 	}
 
 	// Use c.ldbIterator.Key because c.Key removes the prefix from the key
 	currentKey := c.ldbIterator.Key()
-	if currentKey == nil {
-		return notFoundErr
-	}
-	if !bytes.Equal(currentKey, key.Bytes()) {
-		return notFoundErr
+	if currentKey == nil || !bytes.Equal(currentKey, key.Bytes()) {
+		return errors.Wrapf(database.ErrNotFound, "key %s not found", key)
 	}
 
 	return nil
@@ -82,7 +78,7 @@ func (c *LevelDBCursor) Key() (*database.Key, error) {
 	fullKeyPath := c.ldbIterator.Key()
 	if fullKeyPath == nil {
 		return nil, errors.Wrapf(database.ErrNotFound, "cannot get the "+
-			"key of a done cursor")
+			"key of an exhausted cursor")
 	}
 	suffix := bytes.TrimPrefix(fullKeyPath, c.bucket.Path())
 	return c.bucket.Key(suffix), nil
@@ -98,7 +94,7 @@ func (c *LevelDBCursor) Value() ([]byte, error) {
 	value := c.ldbIterator.Value()
 	if value == nil {
 		return nil, errors.Wrapf(database.ErrNotFound, "cannot get the "+
-			"value of a done cursor")
+			"value of an exhausted cursor")
 	}
 	return value, nil
 }
