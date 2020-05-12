@@ -33,7 +33,7 @@ func TestGHOSTDAG(t *testing.T) {
 	}{
 		{
 			k:            3,
-			expectedReds: []string{"F", "G", "H", "I", "N", "Q"},
+			expectedReds: []string{"F", "G", "H", "I", "O", "Q"},
 			dagData: []*testBlockData{
 				{
 					parents:                []string{"A"},
@@ -166,7 +166,7 @@ func TestGHOSTDAG(t *testing.T) {
 					id:                     "T",
 					expectedScore:          13,
 					expectedSelectedParent: "S",
-					expectedBlues:          []string{"S", "O", "P"},
+					expectedBlues:          []string{"S", "N", "P"},
 				},
 			},
 		},
