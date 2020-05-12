@@ -220,7 +220,7 @@ func solveLoop(newTemplateChan chan *rpcmodel.GetBlockTemplateResult, foundBlock
 
 		if !template.IsSynced {
 			if !mineWhenNotSynced {
-				errChan <- errors.Errorf("Got template with isSynced=false")
+				errChan <- errors.Errorf("got template with isSynced=false")
 				return
 			}
 			log.Warnf("Got template with isSynced=false")
