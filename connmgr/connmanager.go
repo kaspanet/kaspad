@@ -434,21 +434,16 @@ out:
 					continue
 				}
 
-				// Otherwise, we will attempt a reconnection if
-				// we do not have enough peers, or if this is a
-				// persistent peer. The connection request is
-				// re added to the pending map, so that
-				// subsequent processing of connections and
-				// failures do not ignore the request.
-				if uint32(len(conns)) < cm.cfg.TargetOutbound ||
-					connReq.Permanent {
-
-					connReq.updateState(ConnPending)
-					log.Debugf("Reconnecting to %s",
-						connReq)
-					pending[msg.id] = connReq
-					cm.handleFailedConn(connReq, nil)
-				}
+				// Otherwise, we will attempt a reconnection.
+				// The connection request is re added to the
+				// pending map, so that subsequent processing
+				// of connections and failures do not ignore
+				// the request.
+				connReq.updateState(ConnPending)
+				log.Debugf("Reconnecting to %s",
+					connReq)
+				pending[msg.id] = connReq
+				cm.handleFailedConn(connReq, nil)
 
 			case handleFailed:
 				connReq := msg.c
