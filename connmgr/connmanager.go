@@ -54,8 +54,8 @@ var (
 	// ErrPeerNotFound is an error that is thrown if the peer was not found.
 	ErrPeerNotFound = errors.New("peer not found")
 
-	//ErrAdressManagerNil is used to indicate that Address Manager cannot be nil in the configuration.
-	ErrAdressManagerNil = errors.New("Config: Address manager cannot be nil")
+	//ErrAddressManagerNil is used to indicate that Address Manager cannot be nil in the configuration.
+	ErrAddressManagerNil = errors.New("Config: Address manager cannot be nil")
 )
 
 // ConnState represents the state of the requested connection.
@@ -766,7 +766,7 @@ func New(cfg *Config) (*ConnManager, error) {
 		return nil, errors.WithStack(ErrDialNil)
 	}
 	if cfg.AddrManager == nil {
-		return nil, errors.WithStack(ErrAdressManagerNil)
+		return nil, errors.WithStack(ErrAddressManagerNil)
 	}
 	// Default to sane values
 	if cfg.RetryDuration <= 0 {

@@ -87,8 +87,8 @@ func TestNewConfig(t *testing.T) {
 	_, err = New(&Config{
 		Dial: mockDialer,
 	})
-	if !errors.Is(err, ErrAdressManagerNil) {
-		t.Fatalf("New expected error: %s, got %s", ErrAdressManagerNil, err)
+	if !errors.Is(err, ErrAddressManagerNil) {
+		t.Fatalf("New expected error: %s, got %s", ErrAddressManagerNil, err)
 	}
 
 	amgr, teardown := addressManagerForTest(t, "TestNewConfig", 10)
@@ -178,7 +178,7 @@ func overrideActiveConfig() func() {
 }
 
 func addressManagerForTest(t *testing.T, testName string, numAddresses uint8) (*addrmgr.AddrManager, func()) {
-	amgr, teardown := emptyAddressManagerForTest(t, testName)
+	amgr, teardown := createEmptyAddressManagerForTest(t, testName)
 
 	for i := uint8(0); i < numAddresses; i++ {
 		ip := fmt.Sprintf("173.%d.115.66:16511", i)
@@ -191,10 +191,10 @@ func addressManagerForTest(t *testing.T, testName string, numAddresses uint8) (*
 	return amgr, teardown
 }
 
-func emptyAddressManagerForTest(t *testing.T, testName string) (*addrmgr.AddrManager, func()) {
+func createEmptyAddressManagerForTest(t *testing.T, testName string) (*addrmgr.AddrManager, func()) {
 	path, err := ioutil.TempDir("", fmt.Sprintf("%s-addressmanager", testName))
 	if err != nil {
-		t.Fatalf("emptyAddressManagerForTest: TempDir unexpectedly "+
+		t.Fatalf("createEmptyAddressManagerForTest: TempDir unexpectedly "+
 			"failed: %s", err)
 	}
 
@@ -305,7 +305,7 @@ func TestTargetOutbound(t *testing.T) {
 
 // TestDuplicateOutboundConnections tests that connection requests cannot use an already used address.
 // It checks it by creating one connection request for each address in the address manager, so that
-// the next connection request will have to fail because no unused adress will be available.
+// the next connection request will have to fail because no unused address will be available.
 func TestDuplicateOutboundConnections(t *testing.T) {
 	restoreConfig := overrideActiveConfig()
 	defer restoreConfig()
@@ -375,13 +375,13 @@ func TestDuplicateOutboundConnections(t *testing.T) {
 
 // TestSameOutboundGroupConnections tests that connection requests cannot use an address with an already used
 // address CIDR group.
-// It checks it by creating an address manager with only two adresses, that both belong to the same CIDR group
+// It checks it by creating an address manager with only two addresses, that both belong to the same CIDR group
 // and checks that the second connection request fails.
 func TestSameOutboundGroupConnections(t *testing.T) {
 	restoreConfig := overrideActiveConfig()
 	defer restoreConfig()
 
-	amgr, teardown := emptyAddressManagerForTest(t, "TestSameOutboundGroupConnections")
+	amgr, teardown := createEmptyAddressManagerForTest(t, "TestSameOutboundGroupConnections")
 	defer teardown()
 
 	err := amgr.AddAddressByIP("173.190.115.66:16511", nil)
