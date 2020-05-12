@@ -833,15 +833,15 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 		// TODO: duplicate oneshots?
 		// Limit max number of total peers.
 		if state.countOutboundPeers() >= config.ActiveConfig().TargetOutboundPeers {
-			msg.Reply <- connmgr.ErrMaxOutboundPeers
+			msg.Reply <- errors.WithStack(connmgr.ErrMaxOutboundPeers)
 			return
 		}
 		for _, peer := range state.persistentPeers {
 			if peer.Addr() == msg.Addr {
 				if msg.Permanent {
-					msg.Reply <- connmgr.ErrAlreadyConnected
+					msg.Reply <- errors.WithStack(connmgr.ErrAlreadyConnected)
 				} else {
-					msg.Reply <- connmgr.ErrAlreadyPermanent
+					msg.Reply <- errors.WithStack(connmgr.ErrAlreadyPermanent)
 				}
 				return
 			}
@@ -867,7 +867,7 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 		if found {
 			msg.Reply <- nil
 		} else {
-			msg.Reply <- connmgr.ErrPeerNotFound
+			msg.Reply <- errors.WithStack(connmgr.ErrPeerNotFound)
 		}
 	// Request a list of the persistent (added) peers.
 	case GetManualNodesMsg:
@@ -899,7 +899,7 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 			return
 		}
 
-		msg.Reply <- connmgr.ErrPeerNotFound
+		msg.Reply <- errors.WithStack(connmgr.ErrPeerNotFound)
 	}
 }
 

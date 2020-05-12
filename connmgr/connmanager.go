@@ -763,10 +763,10 @@ func (cm *ConnManager) getNewAddress() (*net.TCPAddr, error) {
 // Use Start to start connecting to the network.
 func New(cfg *Config) (*ConnManager, error) {
 	if cfg.Dial == nil {
-		return nil, ErrDialNil
+		return nil, errors.WithStack(ErrDialNil)
 	}
 	if cfg.AddrManager == nil {
-		return nil, ErrAdressManagerNil
+		return nil, errors.WithStack(ErrAdressManagerNil)
 	}
 	// Default to sane values
 	if cfg.RetryDuration <= 0 {
