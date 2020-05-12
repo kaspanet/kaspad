@@ -127,7 +127,7 @@ func TestStartStop(t *testing.T) {
 		},
 	})
 	if err != nil {
-		t.Fatalf("New error: %v", err)
+		t.Fatalf("unexpected error from New: %s", err)
 	}
 	cmgr.Start()
 	gotConnReq := <-connected
@@ -230,7 +230,7 @@ func TestConnectMode(t *testing.T) {
 		AddrManager: amgr,
 	})
 	if err != nil {
-		t.Fatalf("New error: %v", err)
+		t.Fatalf("unexpected error from New: %s", err)
 	}
 	cr := &ConnReq{
 		Addr: &net.TCPAddr{
@@ -286,7 +286,7 @@ func TestTargetOutbound(t *testing.T) {
 		},
 	})
 	if err != nil {
-		t.Fatalf("New error: %v", err)
+		t.Fatalf("unexpected error from New: %s", err)
 	}
 	cmgr.Start()
 	for i := uint32(0); i < targetOutbound; i++ {
@@ -330,7 +330,7 @@ func TestDuplicateOutboundConnections(t *testing.T) {
 		},
 	})
 	if err != nil {
-		t.Fatalf("New error: %v", err)
+		t.Fatalf("unexpected error from New: %s", err)
 	}
 	cmgr.Start()
 	for i := uint32(0); i < targetOutbound; i++ {
@@ -408,7 +408,7 @@ func TestSameOutboundGroupConnections(t *testing.T) {
 		},
 	})
 	if err != nil {
-		t.Fatalf("New error: %v", err)
+		t.Fatalf("unexpected error from New: %s", err)
 	}
 
 	cmgr.Start()
@@ -469,7 +469,7 @@ func TestRetryPermanent(t *testing.T) {
 		AddrManager: amgr,
 	})
 	if err != nil {
-		t.Fatalf("New error: %v", err)
+		t.Fatalf("unexpected error from New: %s", err)
 	}
 
 	cr := &ConnReq{
@@ -576,7 +576,7 @@ func TestMaxRetryDuration(t *testing.T) {
 		AddrManager: amgr,
 	})
 	if err != nil {
-		t.Fatalf("New error: %v", err)
+		t.Fatalf("unexpected error from New: %s", err)
 	}
 
 	cr := &ConnReq{
@@ -625,7 +625,7 @@ func TestNetworkFailure(t *testing.T) {
 		},
 	})
 	if err != nil {
-		t.Fatalf("New error: %v", err)
+		t.Fatalf("unexpected error from New: %s", err)
 	}
 	cmgr.Start()
 	time.Sleep(10 * time.Millisecond)
@@ -663,7 +663,7 @@ func TestStopFailed(t *testing.T) {
 		AddrManager: amgr,
 	})
 	if err != nil {
-		t.Fatalf("New error: %v", err)
+		t.Fatalf("unexpected error from New: %s", err)
 	}
 	cmgr.Start()
 	go func() {
@@ -706,7 +706,7 @@ func TestRemovePendingConnection(t *testing.T) {
 		AddrManager: amgr,
 	})
 	if err != nil {
-		t.Fatalf("New error: %v", err)
+		t.Fatalf("unexpected error from New: %s", err)
 	}
 	cmgr.Start()
 
@@ -781,7 +781,7 @@ func TestCancelIgnoreDelayedConnection(t *testing.T) {
 		AddrManager: amgr,
 	})
 	if err != nil {
-		t.Fatalf("New error: %v", err)
+		t.Fatalf("unexpected error from New: %s", err)
 	}
 	cmgr.Start()
 
@@ -915,7 +915,7 @@ func TestListeners(t *testing.T) {
 		AddrManager: amgr,
 	})
 	if err != nil {
-		t.Fatalf("New error: %v", err)
+		t.Fatalf("unexpected error from New: %s", err)
 	}
 	cmgr.Start()
 
