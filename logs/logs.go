@@ -473,6 +473,24 @@ func (l *Logger) Criticalf(format string, args ...interface{}) {
 	}
 }
 
+// Write formats message using the default formats for its operands, prepends
+// the prefix as necessary, and writes to log with the given logLevel.
+func (l *Logger) Write(logLevel Level, args ...interface{}) {
+	lvl := l.Level()
+	if lvl <= logLevel {
+		l.b.print(LevelCritical, l.tag, args...)
+	}
+}
+
+// Writef formats message according to format specifier, prepends the prefix
+// as necessary, and writes to log with the given logLevel.
+func (l *Logger) Writef(logLevel Level, format string, args ...interface{}) {
+	lvl := l.Level()
+	if lvl <= logLevel {
+		l.b.printf(LevelCritical, l.tag, format, args...)
+	}
+}
+
 // Level returns the current logging level
 func (l *Logger) Level() Level {
 	return Level(atomic.LoadUint32((*uint32)(&l.lvl)))

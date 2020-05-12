@@ -6,6 +6,7 @@ package peer
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/logs"
 	"strings"
 	"time"
 
@@ -170,4 +171,13 @@ func messageSummary(msg wire.Message) string {
 
 	// No summary for other messages.
 	return ""
+}
+
+func messageLogLevel(msg wire.Message) logs.Level {
+	switch msg.(type) {
+	case *wire.MsgReject:
+		return logs.LevelWarn
+	default:
+		return logs.LevelDebug
+	}
 }
