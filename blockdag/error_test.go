@@ -5,7 +5,6 @@
 package blockdag
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -130,15 +129,5 @@ func TestDeploymentError(t *testing.T) {
 				test.want)
 			continue
 		}
-	}
-}
-
-func TestAssertError(t *testing.T) {
-	message := "abc 123"
-	err := AssertError(message)
-	expectedMessage := fmt.Sprintf("assertion failed: %s", message)
-	if expectedMessage != err.Error() {
-		t.Errorf("Unexpected AssertError message. "+
-			"Got: %s, want: %s", err.Error(), expectedMessage)
 	}
 }

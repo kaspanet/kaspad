@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/pkg/errors"
 )
 
 // ThresholdState define the various threshold states used when voting on
@@ -177,9 +178,9 @@ func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdCondit
 		var ok bool
 		state, ok = cache.Lookup(prevNode.hash)
 		if !ok {
-			return ThresholdFailed, AssertError(fmt.Sprintf(
+			return ThresholdFailed, errors.Errorf(
 				"thresholdState: cache lookup failed for %s",
-				prevNode.hash))
+				prevNode.hash)
 		}
 	}
 
