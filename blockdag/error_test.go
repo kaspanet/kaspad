@@ -98,36 +98,3 @@ func TestRuleError(t *testing.T) {
 		}
 	}
 }
-
-// TestDeploymentError tests the stringized output for the DeploymentError type.
-func TestDeploymentError(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		in   DeploymentError
-		want string
-	}{
-		{
-			DeploymentError(0),
-			"deployment ID 0 does not exist",
-		},
-		{
-			DeploymentError(10),
-			"deployment ID 10 does not exist",
-		},
-		{
-			DeploymentError(123),
-			"deployment ID 123 does not exist",
-		},
-	}
-
-	t.Logf("Running %d tests", len(tests))
-	for i, test := range tests {
-		result := test.in.Error()
-		if result != test.want {
-			t.Errorf("Error #%d\n got: %s want: %s", i, result,
-				test.want)
-			continue
-		}
-	}
-}

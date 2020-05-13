@@ -10,16 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// DeploymentError identifies an error that indicates a deployment ID was
-// specified that does not exist.
-type DeploymentError uint32
-
-// Error returns the assertion error as a human-readable string and satisfies
-// the error interface.
-func (e DeploymentError) Error() string {
-	return fmt.Sprintf("deployment ID %d does not exist", uint32(e))
-}
-
 // ErrorCode identifies a kind of error.
 type ErrorCode int
 
