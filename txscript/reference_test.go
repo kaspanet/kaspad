@@ -363,7 +363,9 @@ func TestScripts(t *testing.T) {
 	}
 
 	// Disable non-test logs
+	logLevel := log.Level()
 	log.SetLevel(logs.LevelOff)
+	defer log.SetLevel(logLevel)
 
 	// Run all script tests with and without the signature cache.
 	testScripts(t, tests, true)
