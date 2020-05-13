@@ -986,7 +986,8 @@ func (p *Peer) readMessage() (wire.Message, []byte, error) {
 
 	// Use closures to log expensive operations so they are only run when
 	// the logging level requires it.
-	log.Debugf("%s", logger.NewLogClosure(func() string {
+	logLevel := messageLogLevel(msg)
+	log.Writef(logLevel, "%s", logger.NewLogClosure(func() string {
 		// Debug summary of message.
 		summary := messageSummary(msg)
 		if len(summary) > 0 {
@@ -1014,7 +1015,8 @@ func (p *Peer) writeMessage(msg wire.Message) error {
 
 	// Use closures to log expensive operations so they are only run when
 	// the logging level requires it.
-	log.Debugf("%s", logger.NewLogClosure(func() string {
+	logLevel := messageLogLevel(msg)
+	log.Writef(logLevel, "%s", logger.NewLogClosure(func() string {
 		// Debug summary of message.
 		summary := messageSummary(msg)
 		if len(summary) > 0 {
