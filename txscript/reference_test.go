@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/kaspanet/kaspad/logs"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"strconv"
@@ -360,6 +361,9 @@ func TestScripts(t *testing.T) {
 	if err != nil {
 		t.Fatalf("TestScripts couldn't Unmarshal: %v", err)
 	}
+
+	// Disable non-test logs
+	log.SetLevel(logs.LevelOff)
 
 	// Run all script tests with and without the signature cache.
 	testScripts(t, tests, true)
