@@ -138,7 +138,6 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 	server, err := server.NewServer(cfg.Listeners, config.ActiveConfig().NetParams(),
 		interrupt)
 	if err != nil {
-		// TODO: this logging could do with some beautifying.
 		kasdLog.Errorf("Unable to start server on %s: %+v",
 			strings.Join(cfg.Listeners, ", "), err)
 		return err
