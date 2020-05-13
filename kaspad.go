@@ -6,7 +6,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/dbaccess"
 	_ "net/http/pprof"
 	"os"
 	"path/filepath"
@@ -14,6 +13,8 @@ import (
 	"runtime/debug"
 	"runtime/pprof"
 	"strings"
+
+	"github.com/kaspanet/kaspad/dbaccess"
 
 	"github.com/kaspanet/kaspad/blockdag/indexers"
 	"github.com/kaspanet/kaspad/config"
@@ -138,7 +139,7 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 		interrupt)
 	if err != nil {
 		// TODO: this logging could do with some beautifying.
-		kasdLog.Errorf("Unable to start server on %s: %s",
+		kasdLog.Errorf("Unable to start server on %s: %+v",
 			strings.Join(cfg.Listeners, ", "), err)
 		return err
 	}
