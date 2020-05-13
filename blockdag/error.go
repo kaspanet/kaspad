@@ -6,6 +6,8 @@ package blockdag
 
 import (
 	"fmt"
+
+	"github.com/pkg/errors"
 )
 
 // DeploymentError identifies an error that indicates a deployment ID was
@@ -285,6 +287,6 @@ func (e RuleError) Error() string {
 }
 
 // ruleError creates an RuleError given a set of arguments.
-func ruleError(c ErrorCode, desc string) RuleError {
-	return RuleError{ErrorCode: c, Description: desc}
+func ruleError(c ErrorCode, desc string) error {
+	return errors.WithStack(RuleError{ErrorCode: c, Description: desc})
 }
