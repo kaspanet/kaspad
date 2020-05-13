@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/pkg/errors"
 )
 
 // ThresholdState define the various threshold states used when voting on
@@ -177,9 +178,9 @@ func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdCondit
 		var ok bool
 		state, ok = cache.Lookup(prevNode.hash)
 		if !ok {
-			return ThresholdFailed, AssertError(fmt.Sprintf(
+			return ThresholdFailed, errors.Errorf(
 				"thresholdState: cache lookup failed for %s",
-				prevNode.hash))
+				prevNode.hash)
 		}
 	}
 
@@ -297,7 +298,7 @@ func (dag *BlockDAG) IsDeploymentActive(deploymentID uint32) (bool, error) {
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) deploymentState(prevNode *blockNode, deploymentID uint32) (ThresholdState, error) {
 	if deploymentID > uint32(len(dag.dagParams.Deployments)) {
-		return ThresholdFailed, DeploymentError(deploymentID)
+		return ThresholdFailed, errors.Errorf("deployment ID %d does not exist", deploymentID)
 	}
 
 	deployment := &dag.dagParams.Deployments[deploymentID]
