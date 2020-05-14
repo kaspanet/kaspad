@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"container/list"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"math/rand"
 	"net"
@@ -16,6 +15,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/random"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -1841,6 +1842,7 @@ func (p *Peer) start() error {
 
 	// Send our verack message now that the IO processing machinery has started.
 	p.QueueMessage(wire.NewMsgVerAck(), nil)
+
 	return nil
 }
 
