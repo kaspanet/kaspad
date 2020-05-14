@@ -272,11 +272,14 @@ const (
 )
 
 // AddLogFile adds a file which the log will write into on a certain
-// log level. It'll create the file if it doesn't exist.
+// log level with the default log rotation settings. It'll create the file if it doesn't exist.
 func (b *Backend) AddLogFile(logFile string, logLevel Level) error {
 	return b.AddLogFileWithCustomRotator(logFile, logLevel, defaultThreasholdKB, defaultMaxRolls)
 }
 
+// AddLogFileWithCustomRotator adds a file which the log will write into on a certain
+// log level, with the specified log rotation settings.
+// It'll create the file if it doesn't exist.
 func (b *Backend) AddLogFileWithCustomRotator(logFile string, logLevel Level, thresholdKB int64, maxRolls int) error {
 	logDir, _ := filepath.Split(logFile)
 	err := os.MkdirAll(logDir, 0700)
