@@ -35,7 +35,6 @@ package logs
 import (
 	"bytes"
 	"fmt"
-	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -43,6 +42,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/jrick/logrotate/rotator"
 )
@@ -265,15 +266,24 @@ func callsite(flag uint32) (string, int) {
 	return file, line
 }
 
+const (
+	defaultThreasholdKB = 10 * 1024
+	defaultMaxRolls     = 3
+)
+
 // AddLogFile adds a file which the log will write into on a certain
 // log level. It'll create the file if it doesn't exist.
 func (b *Backend) AddLogFile(logFile string, logLevel Level) error {
+	return b.AddLogFileWithCustomRotator(logFile, logLevel, defaultThreasholdKB, defaultMaxRolls)
+}
+
+func (b *Backend) AddLogFileWithCustomRotator(logFile string, logLevel Level, thresholdKB int64, maxRolls int) error {
 	logDir, _ := filepath.Split(logFile)
 	err := os.MkdirAll(logDir, 0700)
 	if err != nil {
 		return errors.Errorf("failed to create log directory: %s", err)
 	}
-	r, err := rotator.New(logFile, 10*1024, false, 3)
+	r, err := rotator.New(logFile, thresholdKB, false, maxRolls)
 	if err != nil {
 		return errors.Errorf("failed to create file rotator: %s", err)
 	}
