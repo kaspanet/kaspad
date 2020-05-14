@@ -267,14 +267,14 @@ func callsite(flag uint32) (string, int) {
 }
 
 const (
-	defaultThreasholdKB = 10 * 1024
-	defaultMaxRolls     = 3
+	defaultThresholdKB = 10 * 1024
+	defaultMaxRolls    = 3
 )
 
 // AddLogFile adds a file which the log will write into on a certain
 // log level with the default log rotation settings. It'll create the file if it doesn't exist.
 func (b *Backend) AddLogFile(logFile string, logLevel Level) error {
-	return b.AddLogFileWithCustomRotator(logFile, logLevel, defaultThreasholdKB, defaultMaxRolls)
+	return b.AddLogFileWithCustomRotator(logFile, logLevel, defaultThresholdKB, defaultMaxRolls)
 }
 
 // AddLogFileWithCustomRotator adds a file which the log will write into on a certain
