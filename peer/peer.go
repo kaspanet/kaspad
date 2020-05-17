@@ -1777,12 +1777,10 @@ func (p *Peer) AssociateConnection(conn net.Conn) {
 		p.na = na
 	}
 
-	spawn(func() {
-		if err := p.start(); err != nil {
-			log.Debugf("Cannot start peer %s: %s", p, err)
-			p.Disconnect()
-		}
-	})
+	if err := p.start(); err != nil {
+		log.Debugf("Cannot start peer %s: %s", p, err)
+		p.Disconnect()
+	}
 }
 
 // Connected returns whether or not the peer is currently connected.

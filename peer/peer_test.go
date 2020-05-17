@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package peer_test
+package peer
 
 import (
 	"io"
@@ -11,11 +11,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kaspanet/kaspad/util/testtools"
+
 	"github.com/pkg/errors"
 
 	"github.com/btcsuite/go-socks/socks"
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/peer"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -93,7 +94,7 @@ func pipe(c1, c2 *conn) (*conn, *conn) {
 	return c1, c2
 }
 
-// peerStats holds the expected peer stats used for testing peer.
+// peerStats holds the expected peer stats used for testing
 type peerStats struct {
 	wantUserAgent       string
 	wantServices        wire.ServiceFlag
@@ -110,7 +111,7 @@ type peerStats struct {
 }
 
 // testPeer tests the given peer's flags and stats
-func testPeer(t *testing.T, p *peer.Peer, s peerStats) {
+func testPeer(t *testing.T, p *Peer, s peerStats) {
 	if p.UserAgent() != s.wantUserAgent {
 		t.Errorf("testPeer: wrong UserAgent - got %v, want %v", p.UserAgent(), s.wantUserAgent)
 		return
@@ -200,12 +201,12 @@ func testPeer(t *testing.T, p *peer.Peer, s peerStats) {
 // TestPeerConnection tests connection between inbound and outbound peers.
 func TestPeerConnection(t *testing.T) {
 	verack := make(chan struct{})
-	peer1Cfg := &peer.Config{
-		Listeners: peer.MessageListeners{
-			OnVerAck: func(p *peer.Peer, msg *wire.MsgVerAck) {
+	inPeerCfg := &Config{
+		Listeners: MessageListeners{
+			OnVerAck: func(p *Peer, msg *wire.MsgVerAck) {
 				verack <- struct{}{}
 			},
-			OnWrite: func(p *peer.Peer, bytesWritten int, msg wire.Message,
+			OnWrite: func(p *Peer, bytesWritten int, msg wire.Message,
 				err error) {
 				if _, ok := msg.(*wire.MsgVerAck); ok {
 					verack <- struct{}{}
@@ -220,8 +221,8 @@ func TestPeerConnection(t *testing.T) {
 		Services:          0,
 		SelectedTipHash:   fakeSelectedTipFn,
 	}
-	peer2Cfg := &peer.Config{
-		Listeners:         peer1Cfg.Listeners,
+	outPeerCfg := &Config{
+		Listeners:         inPeerCfg.Listeners,
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
@@ -262,56 +263,38 @@ func TestPeerConnection(t *testing.T) {
 
 	tests := []struct {
 		name  string
-		setup func() (*peer.Peer, *peer.Peer, error)
+		setup func() (*Peer, *Peer, error)
 	}{
 		{
 			"basic handshake",
-			func() (*peer.Peer, *peer.Peer, error) {
-				inConn, outConn := pipe(
-					&conn{raddr: "10.0.0.1:16111"},
-					&conn{raddr: "10.0.0.2:16111"},
-				)
-				inPeer := peer.NewInboundPeer(peer1Cfg)
-				inPeer.AssociateConnection(inConn)
-
-				outPeer, err := peer.NewOutboundPeer(peer2Cfg, "10.0.0.2:16111")
+			func() (*Peer, *Peer, error) {
+				inPeer, outPeer, err := setupPeers(inPeerCfg, outPeerCfg)
 				if err != nil {
 					return nil, nil, err
 				}
-				outPeer.AssociateConnection(outConn)
 
-				for i := 0; i < 4; i++ {
-					select {
-					case <-verack:
-					case <-time.After(time.Second):
-						return nil, nil, errors.New("verack timeout")
-					}
+				// wait for 4 veracks
+				if !testtools.WaitTillAllCompleteOrTimeout(time.Second, verack, verack, verack, verack) {
+					return nil, nil, errors.New("handshake timeout")
 				}
 				return inPeer, outPeer, nil
 			},
 		},
 		{
 			"socks proxy",
-			func() (*peer.Peer, *peer.Peer, error) {
+			func() (*Peer, *Peer, error) {
 				inConn, outConn := pipe(
 					&conn{raddr: "10.0.0.1:16111", proxy: true},
 					&conn{raddr: "10.0.0.2:16111"},
 				)
-				inPeer := peer.NewInboundPeer(peer1Cfg)
-				inPeer.AssociateConnection(inConn)
-
-				outPeer, err := peer.NewOutboundPeer(peer2Cfg, "10.0.0.2:16111")
+				inPeer, outPeer, err := setupPeersWithConns(inPeerCfg, outPeerCfg, inConn, outConn)
 				if err != nil {
 					return nil, nil, err
 				}
-				outPeer.AssociateConnection(outConn)
 
-				for i := 0; i < 4; i++ {
-					select {
-					case <-verack:
-					case <-time.After(time.Second):
-						return nil, nil, errors.New("verack timeout")
-					}
+				// wait for 4 veracks
+				if !testtools.WaitTillAllCompleteOrTimeout(time.Second, verack, verack, verack, verack) {
+					return nil, nil, errors.New("handshake timeout")
 				}
 				return inPeer, outPeer, nil
 			},
@@ -338,60 +321,60 @@ func TestPeerConnection(t *testing.T) {
 func TestPeerListeners(t *testing.T) {
 	verack := make(chan struct{}, 1)
 	ok := make(chan wire.Message, 20)
-	peerCfg := &peer.Config{
-		Listeners: peer.MessageListeners{
-			OnGetAddr: func(p *peer.Peer, msg *wire.MsgGetAddr) {
+	peerCfg := &Config{
+		Listeners: MessageListeners{
+			OnGetAddr: func(p *Peer, msg *wire.MsgGetAddr) {
 				ok <- msg
 			},
-			OnAddr: func(p *peer.Peer, msg *wire.MsgAddr) {
+			OnAddr: func(p *Peer, msg *wire.MsgAddr) {
 				ok <- msg
 			},
-			OnPing: func(p *peer.Peer, msg *wire.MsgPing) {
+			OnPing: func(p *Peer, msg *wire.MsgPing) {
 				ok <- msg
 			},
-			OnPong: func(p *peer.Peer, msg *wire.MsgPong) {
+			OnPong: func(p *Peer, msg *wire.MsgPong) {
 				ok <- msg
 			},
-			OnTx: func(p *peer.Peer, msg *wire.MsgTx) {
+			OnTx: func(p *Peer, msg *wire.MsgTx) {
 				ok <- msg
 			},
-			OnBlock: func(p *peer.Peer, msg *wire.MsgBlock, buf []byte) {
+			OnBlock: func(p *Peer, msg *wire.MsgBlock, buf []byte) {
 				ok <- msg
 			},
-			OnInv: func(p *peer.Peer, msg *wire.MsgInv) {
+			OnInv: func(p *Peer, msg *wire.MsgInv) {
 				ok <- msg
 			},
-			OnNotFound: func(p *peer.Peer, msg *wire.MsgNotFound) {
+			OnNotFound: func(p *Peer, msg *wire.MsgNotFound) {
 				ok <- msg
 			},
-			OnGetData: func(p *peer.Peer, msg *wire.MsgGetData) {
+			OnGetData: func(p *Peer, msg *wire.MsgGetData) {
 				ok <- msg
 			},
-			OnGetBlockInvs: func(p *peer.Peer, msg *wire.MsgGetBlockInvs) {
+			OnGetBlockInvs: func(p *Peer, msg *wire.MsgGetBlockInvs) {
 				ok <- msg
 			},
-			OnFeeFilter: func(p *peer.Peer, msg *wire.MsgFeeFilter) {
+			OnFeeFilter: func(p *Peer, msg *wire.MsgFeeFilter) {
 				ok <- msg
 			},
-			OnFilterAdd: func(p *peer.Peer, msg *wire.MsgFilterAdd) {
+			OnFilterAdd: func(p *Peer, msg *wire.MsgFilterAdd) {
 				ok <- msg
 			},
-			OnFilterClear: func(p *peer.Peer, msg *wire.MsgFilterClear) {
+			OnFilterClear: func(p *Peer, msg *wire.MsgFilterClear) {
 				ok <- msg
 			},
-			OnFilterLoad: func(p *peer.Peer, msg *wire.MsgFilterLoad) {
+			OnFilterLoad: func(p *Peer, msg *wire.MsgFilterLoad) {
 				ok <- msg
 			},
-			OnMerkleBlock: func(p *peer.Peer, msg *wire.MsgMerkleBlock) {
+			OnMerkleBlock: func(p *Peer, msg *wire.MsgMerkleBlock) {
 				ok <- msg
 			},
-			OnVersion: func(p *peer.Peer, msg *wire.MsgVersion) {
+			OnVersion: func(p *Peer, msg *wire.MsgVersion) {
 				ok <- msg
 			},
-			OnVerAck: func(p *peer.Peer, msg *wire.MsgVerAck) {
+			OnVerAck: func(p *Peer, msg *wire.MsgVerAck) {
 				verack <- struct{}{}
 			},
-			OnReject: func(p *peer.Peer, msg *wire.MsgReject) {
+			OnReject: func(p *Peer, msg *wire.MsgReject) {
 				ok <- msg
 			},
 		},
@@ -402,32 +385,10 @@ func TestPeerListeners(t *testing.T) {
 		Services:          wire.SFNodeBloom,
 		SelectedTipHash:   fakeSelectedTipFn,
 	}
-	inConn, outConn := pipe(
-		&conn{raddr: "10.0.0.1:16111"},
-		&conn{raddr: "10.0.0.2:16111"},
-	)
-	inPeer := peer.NewInboundPeer(peerCfg)
-	inPeer.AssociateConnection(inConn)
 
-	peerCfg.Listeners = peer.MessageListeners{
-		OnVerAck: func(p *peer.Peer, msg *wire.MsgVerAck) {
-			verack <- struct{}{}
-		},
-	}
-	outPeer, err := peer.NewOutboundPeer(peerCfg, "10.0.0.1:16111")
+	inPeer, outPeer, err := setupPeers(peerCfg, peerCfg)
 	if err != nil {
-		t.Errorf("NewOutboundPeer: unexpected err %v\n", err)
-		return
-	}
-	outPeer.AssociateConnection(outConn)
-
-	for i := 0; i < 2; i++ {
-		select {
-		case <-verack:
-		case <-time.After(time.Second * 1):
-			t.Errorf("TestPeerListeners: verack timeout\n")
-			return
-		}
+		t.Errorf("TestPeerListeners: %v", err)
 	}
 
 	tests := []struct {
@@ -520,7 +481,7 @@ func TestPeerListeners(t *testing.T) {
 
 // TestOutboundPeer tests that the outbound peer works as expected.
 func TestOutboundPeer(t *testing.T) {
-	peerCfg := &peer.Config{
+	peerCfg := &Config{
 		SelectedTipHash: func() *daghash.Hash {
 			return &daghash.ZeroHash
 		},
@@ -531,18 +492,13 @@ func TestOutboundPeer(t *testing.T) {
 		Services:          0,
 	}
 
-	r, w := io.Pipe()
-	c := &conn{raddr: "10.0.0.1:16111", Writer: w, Reader: r}
-
-	p, err := peer.NewOutboundPeer(peerCfg, "10.0.0.1:16111")
+	_, p, err := setupPeers(peerCfg, peerCfg)
 	if err != nil {
-		t.Errorf("NewOutboundPeer: unexpected err - %v\n", err)
-		return
+		t.Fatalf("TestOuboundPeer: unexpected in err setupPeers - %v\n", err)
 	}
 
-	// Test trying to connect twice.
-	p.AssociateConnection(c)
-	p.AssociateConnection(c)
+	// Test trying to connect for a second time and make sure nothing happens.
+	p.AssociateConnection(p.conn)
 	p.Disconnect()
 
 	// Test Queue Inv
@@ -572,14 +528,11 @@ func TestOutboundPeer(t *testing.T) {
 	}
 
 	peerCfg.SelectedTipHash = selectedTipHash
-	r1, w1 := io.Pipe()
-	c1 := &conn{raddr: "10.0.0.1:16111", Writer: w1, Reader: r1}
-	p1, err := peer.NewOutboundPeer(peerCfg, "10.0.0.1:16111")
+
+	_, p1, err := setupPeers(peerCfg, peerCfg)
 	if err != nil {
-		t.Errorf("NewOutboundPeer: unexpected err - %v\n", err)
-		return
+		t.Fatalf("TestOuboundPeer: unexpected in err setupPeers - %v\n", err)
 	}
-	p1.AssociateConnection(c1)
 
 	// Test Queue Inv after connection
 	p1.QueueInventory(fakeInv)
@@ -588,14 +541,10 @@ func TestOutboundPeer(t *testing.T) {
 	// Test regression
 	peerCfg.DAGParams = &dagconfig.RegressionNetParams
 	peerCfg.Services = wire.SFNodeBloom
-	r2, w2 := io.Pipe()
-	c2 := &conn{raddr: "10.0.0.1:16111", Writer: w2, Reader: r2}
-	p2, err := peer.NewOutboundPeer(peerCfg, "10.0.0.1:16111")
+	_, p2, err := setupPeers(peerCfg, peerCfg)
 	if err != nil {
-		t.Errorf("NewOutboundPeer: unexpected err - %v\n", err)
-		return
+		t.Fatalf("NewOutboundPeer: unexpected err - %v\n", err)
 	}
-	p2.AssociateConnection(c2)
 
 	// Test PushXXX
 	var addrs []*wire.NetAddress
@@ -604,12 +553,10 @@ func TestOutboundPeer(t *testing.T) {
 		addrs = append(addrs, &na)
 	}
 	if _, err := p2.PushAddrMsg(addrs, nil); err != nil {
-		t.Errorf("PushAddrMsg: unexpected err %v\n", err)
-		return
+		t.Fatalf("PushAddrMsg: unexpected err %v\n", err)
 	}
 	if err := p2.PushGetBlockInvsMsg(nil, &daghash.Hash{}); err != nil {
-		t.Errorf("PushGetBlockInvsMsg: unexpected err %v\n", err)
-		return
+		t.Fatalf("PushGetBlockInvsMsg: unexpected err %v\n", err)
 	}
 
 	p2.PushRejectMsg("block", wire.RejectMalformed, "malformed", nil, false)
@@ -627,7 +574,7 @@ func TestOutboundPeer(t *testing.T) {
 // Tests that the node disconnects from peers with an unsupported protocol
 // version.
 func TestUnsupportedVersionPeer(t *testing.T) {
-	peerCfg := &peer.Config{
+	peerCfg := &Config{
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
@@ -651,11 +598,12 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 		&conn{laddr: "10.0.0.2:16111", raddr: "10.0.0.1:16111"},
 	)
 
-	p, err := peer.NewOutboundPeer(peerCfg, "10.0.0.1:16111")
+	p, err := NewOutboundPeer(peerCfg, "10.0.0.1:16111")
 	if err != nil {
 		t.Fatalf("NewOutboundPeer: unexpected err - %v\n", err)
 	}
-	p.AssociateConnection(localConn)
+
+	go p.AssociateConnection(localConn)
 
 	// Read outbound messages to peer into a channel
 	outboundMessages := make(chan wire.Message)
@@ -730,9 +678,42 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 
 func init() {
 	// Allow self connection when running the tests.
-	peer.TstAllowSelfConns()
+	TstAllowSelfConns()
 }
 
 func fakeSelectedTipFn() *daghash.Hash {
 	return &daghash.Hash{0x12, 0x34}
+}
+
+func setupPeers(inPeerCfg, outPeerCfg *Config) (inPeer *Peer, outPeer *Peer, err error) {
+	inConn, outConn := pipe(
+		&conn{raddr: "10.0.0.1:16111"},
+		&conn{raddr: "10.0.0.2:16111"},
+	)
+	return setupPeersWithConns(inPeerCfg, outPeerCfg, inConn, outConn)
+}
+
+func setupPeersWithConns(inPeerCfg, outPeerCfg *Config, inConn, outConn *conn) (inPeer *Peer, outPeer *Peer, err error) {
+	inPeer = NewInboundPeer(inPeerCfg)
+	inPeerDone := make(chan struct{})
+	go func() {
+		inPeer.AssociateConnection(inConn)
+		inPeerDone <- struct{}{}
+	}()
+
+	outPeer, err = NewOutboundPeer(outPeerCfg, "10.0.0.2:16111")
+	if err != nil {
+		return nil, nil, err
+	}
+	outPeerDone := make(chan struct{})
+	go func() {
+		outPeer.AssociateConnection(outConn)
+		outPeerDone <- struct{}{}
+	}()
+
+	// wait for AssociateConnection to complete in all instances
+	if !testtools.WaitTillAllCompleteOrTimeout(2*time.Second, inPeerDone, outPeerDone) {
+		return nil, nil, errors.New("handshake timeout")
+	}
+	return inPeer, outPeer, nil
 }

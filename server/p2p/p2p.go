@@ -995,13 +995,13 @@ func (s *Server) outboundPeerConnected(state *peerState, msg *outboundPeerConnec
 func (s *Server) peerConnected(sp *Peer, conn net.Conn) {
 	sp.isWhitelisted = isWhitelisted(conn.RemoteAddr())
 
-	sp.AssociateConnection(conn)
-
-	s.SyncManager.NewPeer(sp.Peer)
-
-	s.AddPeer(sp)
-
 	spawn(func() {
+		sp.AssociateConnection(conn)
+
+		s.SyncManager.NewPeer(sp.Peer)
+
+		s.AddPeer(sp)
+
 		s.peerDoneHandler(sp)
 	})
 }
