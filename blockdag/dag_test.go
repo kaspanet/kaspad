@@ -1296,6 +1296,8 @@ func TestUTXOCommitment(t *testing.T) {
 	}
 	defer teardownFunc()
 
+	resetExtraNonceForTest()
+
 	createTx := func(txToSpend *wire.MsgTx) *wire.MsgTx {
 		scriptPubKey, err := txscript.PayToScriptHashScript(OpTrueScript)
 		if err != nil {
