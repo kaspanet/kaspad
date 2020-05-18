@@ -1268,8 +1268,8 @@ func TestDoubleSpends(t *testing.T) {
 	} else {
 		var ruleErr RuleError
 		if ok := errors.As(err, &ruleErr); ok {
-			if ruleErr.ErrorCode != ErrDoubleSpendsWithBlockTransaction {
-				t.Errorf("ProcessBlock expected an %v error code but got %v", ErrDoubleSpendsWithBlockTransaction, ruleErr.ErrorCode)
+			if ruleErr.ErrorCode != ErrDoubleSpendInSameBlock {
+				t.Errorf("ProcessBlock expected an %v error code but got %v", ErrDoubleSpendInSameBlock, ruleErr.ErrorCode)
 			}
 		} else {
 			t.Errorf("ProcessBlock expected a blockdag.RuleError but got %v", err)

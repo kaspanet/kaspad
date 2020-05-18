@@ -555,7 +555,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 				str := fmt.Sprintf("transaction %s spends "+
 					"outpoint %s that was already spent by another "+
 					"transaction in this block", tx.ID(), txIn.PreviousOutpoint)
-				return 0, ruleError(ErrDoubleSpendsWithBlockTransaction, str)
+				return 0, ruleError(ErrDoubleSpendInSameBlock, str)
 			}
 			usedOutpoints[txIn.PreviousOutpoint] = struct{}{}
 		}
