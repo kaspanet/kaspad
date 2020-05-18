@@ -966,7 +966,6 @@ func newPeerConfig(sp *Peer) *peer.Config {
 // instance, associates it with the connection, and starts a goroutine to wait
 // for disconnection.
 func (s *Server) inboundPeerConnected(conn net.Conn) {
-	peerLog.Infof("~~~~~ %s: inboundPeerConnected", conn.RemoteAddr())
 	sp := newServerPeer(s, false)
 	sp.Peer = peer.NewInboundPeer(newPeerConfig(sp))
 
@@ -979,7 +978,6 @@ func (s *Server) inboundPeerConnected(conn net.Conn) {
 // request instance and the connection itself, and finally notifies the address
 // manager of the attempt.
 func (s *Server) outboundPeerConnected(state *peerState, msg *outboundPeerConnectedMsg) {
-	peerLog.Infof("~~~~~ %s: outboundPeerConnected", msg.conn.RemoteAddr())
 	sp := newServerPeer(s, msg.connReq.Permanent)
 	outboundPeer, err := peer.NewOutboundPeer(newPeerConfig(sp), msg.connReq.Addr.String())
 	if err != nil {
@@ -995,7 +993,6 @@ func (s *Server) outboundPeerConnected(state *peerState, msg *outboundPeerConnec
 }
 
 func (s *Server) peerConnected(sp *Peer, conn net.Conn) {
-	peerLog.Infof("~~~~~~ %s: peerConnected", conn.RemoteAddr())
 	sp.isWhitelisted = isWhitelisted(conn.RemoteAddr())
 
 	spawn(func() {

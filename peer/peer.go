@@ -643,7 +643,6 @@ func (p *Peer) SetSelectedTipHash(selectedTipHash *daghash.Hash) {
 //
 // This function is safe for concurrent access.
 func (p *Peer) IsSelectedTipKnown() bool {
-	log.Infof("~~~~~ %s: IsSelectedTipKnown. SelectedTipHash: %s", p.Addr(), p.selectedTipHash)
 	return !p.cfg.IsInDAG(p.selectedTipHash)
 }
 
@@ -881,7 +880,6 @@ func (p *Peer) PushRejectMsg(command string, code wire.RejectCode, reason string
 // from the remote peer. It will return an error if the remote peer's version
 // is not compatible with ours.
 func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
-	log.Infof("~~~~~ %s: handleRemoteVersionMsg", p.addr)
 	// Detect self connections.
 	if !allowSelfConns && sentNonces.Exists(msg.Nonce) {
 		return errors.New("disconnecting peer connected to self")
@@ -919,7 +917,6 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 // updateStatsFromVersionMsg updates a bunch of stats including block based stats, and the
 // peer's time offset.
 func (p *Peer) updateStatsFromVersionMsg(msg *wire.MsgVersion) {
-	log.Infof("~~~~~ %s: updateStatsFromVersionMsg. selectedTipHash: %s", p.addr, msg.SelectedTipHash)
 	p.statsMtx.Lock()
 	defer p.statsMtx.Unlock()
 	p.selectedTipHash = msg.SelectedTipHash
@@ -1757,7 +1754,6 @@ func (p *Peer) QueueInventory(invVect *wire.InvVect) {
 // AssociateConnection associates the given conn to the peer. Calling this
 // function when the peer is already connected will have no effect.
 func (p *Peer) AssociateConnection(conn net.Conn) error {
-	log.Infof("~~~~~ %s: AssociateConnection", p.addr)
 	// Already connected?
 	if !atomic.CompareAndSwapInt32(&p.connected, 0, 1) {
 		return nil
@@ -1813,7 +1809,6 @@ func (p *Peer) Disconnect() {
 
 // start begins processing input and output messages.
 func (p *Peer) start() error {
-	log.Infof("~~~~~ %s: Peer.start()", p.addr)
 	log.Tracef("Starting peer %s", p)
 
 	negotiateErr := make(chan error, 1)
@@ -1862,7 +1857,6 @@ func (p *Peer) WaitForDisconnect() {
 // peer. If the next message is not a version message or the version is not
 // acceptable then return an error.
 func (p *Peer) readRemoteVersionMsg() error {
-	log.Infof("~~~~~ %s: readRemoteVersionMsg", p.addr)
 	// Read their version message.
 	msg, _, err := p.readMessage()
 	if err != nil {
@@ -1903,7 +1897,6 @@ func (p *Peer) writeLocalVersionMsg() error {
 // then sends our version message. If the events do not occur in that order then
 // it returns an error.
 func (p *Peer) negotiateInboundProtocol() error {
-	log.Infof("~~~~~ %s: negotiateInboundProtocol", p.addr)
 	if err := p.readRemoteVersionMsg(); err != nil {
 		return err
 	}
@@ -1915,7 +1908,6 @@ func (p *Peer) negotiateInboundProtocol() error {
 // version message from the peer. If the events do not occur in that order then
 // it returns an error.
 func (p *Peer) negotiateOutboundProtocol() error {
-	log.Infof("~~~~~ %s: negotiateOutboundProtocol", p.addr)
 	if err := p.writeLocalVersionMsg(); err != nil {
 		return err
 	}
