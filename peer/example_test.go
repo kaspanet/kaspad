@@ -41,7 +41,11 @@ func mockRemotePeer() error {
 
 		// Create and start the inbound
 		p := NewInboundPeer(peerCfg)
-		p.AssociateConnection(conn)
+		err = p.AssociateConnection(conn)
+		if err != nil {
+			fmt.Printf("AssociateConnection: error %+v\n", err)
+			return
+		}
 	}()
 
 	return nil
@@ -92,10 +96,14 @@ func Example_newOutboundPeer() {
 	// Establish the connection to the peer address and mark it connected.
 	conn, err := net.Dial("tcp", p.Addr())
 	if err != nil {
-		fmt.Printf("net.Dial: error %v\n", err)
+		fmt.Printf("net.Dial: error %+v\n", err)
 		return
 	}
-	p.AssociateConnection(conn)
+	err = p.AssociateConnection(conn)
+	if err != nil {
+		fmt.Printf("AssociateConnection: error %+v\n", err)
+		return
+	}
 
 	// Wait for the verack message or timeout in case of failure.
 	select {

@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -502,7 +503,10 @@ func TestOutboundPeer(t *testing.T) {
 	}
 
 	// Test trying to connect for a second time and make sure nothing happens.
-	p.AssociateConnection(p.conn)
+	err = p.AssociateConnection(p.conn)
+	if err != nil {
+		t.Fatalf("AssociateConnection for the second time didn't return nil")
+	}
 	p.Disconnect()
 
 	// Test Queue Inv
@@ -607,7 +611,18 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 		t.Fatalf("NewOutboundPeer: unexpected err - %v\n", err)
 	}
 
-	go p.AssociateConnection(localConn)
+	go func() {
+		err := p.AssociateConnection(localConn)
+		wantErrorMessage := "protocol version must be 1 or greater"
+		if err == nil {
+			t.Fatalf("No error from AssociateConnection to invalid protocol version")
+		}
+		gotErrorMessage := err.Error()
+		if !strings.Contains(gotErrorMessage, wantErrorMessage) {
+			t.Fatalf("Wrong error message from AssociateConnection to invalid protocol version.\nWant: '%s'\nGot: '%s'",
+				wantErrorMessage, gotErrorMessage)
+		}
+	}()
 
 	// Read outbound messages to peer into a channel
 	outboundMessages := make(chan wire.Message)
@@ -700,8 +715,9 @@ func setupPeers(inPeerCfg, outPeerCfg *Config) (inPeer *Peer, outPeer *Peer, err
 func setupPeersWithConns(inPeerCfg, outPeerCfg *Config, inConn, outConn *conn) (inPeer *Peer, outPeer *Peer, err error) {
 	inPeer = NewInboundPeer(inPeerCfg)
 	inPeerDone := make(chan struct{})
+	var inPeerErr error
 	go func() {
-		inPeer.AssociateConnection(inConn)
+		inPeerErr = inPeer.AssociateConnection(inConn)
 		inPeerDone <- struct{}{}
 	}()
 
@@ -710,8 +726,9 @@ func setupPeersWithConns(inPeerCfg, outPeerCfg *Config, inConn, outConn *conn) (
 		return nil, nil, err
 	}
 	outPeerDone := make(chan struct{})
+	var outPeerErr error
 	go func() {
-		outPeer.AssociateConnection(outConn)
+		outPeerErr = outPeer.AssociateConnection(outConn)
 		outPeerDone <- struct{}{}
 	}()
 
@@ -719,5 +736,17 @@ func setupPeersWithConns(inPeerCfg, outPeerCfg *Config, inConn, outConn *conn) (
 	if !testtools.WaitTillAllCompleteOrTimeout(2*time.Second, inPeerDone, outPeerDone) {
 		return nil, nil, errors.New("handshake timeout")
 	}
+
+	if inPeerErr != nil && outPeerErr != nil {
+		return nil, nil, errors.Errorf("Both inPeer and outPeer failed connecting: \nInPeer: %+v\nOutPeer: %+v",
+			inPeerErr, outPeerErr)
+	}
+	if inPeerErr != nil {
+		return nil, nil, inPeerErr
+	}
+	if outPeerErr != nil {
+		return nil, nil, outPeerErr
+	}
+
 	return inPeer, outPeer, nil
 }

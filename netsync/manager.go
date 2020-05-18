@@ -1033,6 +1033,7 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 
 // NewPeer informs the sync manager of a newly active peer.
 func (sm *SyncManager) NewPeer(peer *peerpkg.Peer) {
+	log.Infof("~~~~~ %s: NewPeer,", peer.Addr())
 	// Ignore if we are shutting down.
 	if atomic.LoadInt32(&sm.shutdown) != 0 {
 		return
