@@ -1159,8 +1159,8 @@ func (sm *SyncManager) IsSynced() bool {
 	return <-reply
 }
 
-// isSynced checks if the node is synced enough based upon it's worldview.
-// This is used to determine if the node can support mining and request newly-mined blocks.
+// isSynced checks if the node is synced enough based upon its worldview.
+// This is used to determine if the node can support mining and requesting newly-mined blocks.
 // To do that, first it checks if the selected tip timestamp is not older than maxTipAge. If that's the case, it means
 // the node is synced since blocks' timestamps are not allowed to deviate too much into the future.
 // If that's not the case it checks the rate it added new blocks to the DAG recently. If it's faster than
