@@ -57,7 +57,7 @@ func (window blockWindow) averageTarget() *big.Int {
 	averageTarget := big.NewInt(0)
 	target := big.NewInt(0)
 	for _, node := range window {
-		util.CompactToBig(node.bits, target)
+		util.CompactToBigWithDestination(node.bits, target)
 		averageTarget.Add(averageTarget, target)
 	}
 	return averageTarget.Div(averageTarget, big.NewInt(int64(len(window))))

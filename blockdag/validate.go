@@ -7,7 +7,6 @@ package blockdag
 import (
 	"fmt"
 	"math"
-	"math/big"
 	"sort"
 	"time"
 
@@ -266,8 +265,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 //    difficulty is not performed.
 func (dag *BlockDAG) checkProofOfWork(header *wire.BlockHeader, flags BehaviorFlags) error {
 	// The target difficulty must be larger than zero.
-	target := big.NewInt(0)
-	util.CompactToBig(header.Bits, target)
+	target := util.CompactToBig(header.Bits)
 	if target.Sign() <= 0 {
 		str := fmt.Sprintf("block target difficulty of %064x is too low",
 			target)

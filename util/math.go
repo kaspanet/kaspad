@@ -52,7 +52,17 @@ func FastLog2Floor(n uint64) uint8 {
 //
 // The formula to calculate N is:
 // 	N = (-1^sign) * mantissa * 256^(exponent-3)
-func CompactToBig(compact uint32, out *big.Int) {
+func CompactToBig(compact uint32) *big.Int {
+	destination := big.NewInt(0)
+	CompactToBigWithDestination(compact, destination)
+	return destination
+}
+
+// CompactToBigWithDestination is a version of CompactToBig that
+// takes a destination parameter. This is useful for saving memory,
+// as then the destination big.Int can be reused.
+// See CompactToBig for further details.
+func CompactToBigWithDestination(compact uint32, destination *big.Int) {
 	// Extract the mantissa, sign bit, and exponent.
 	mantissa := compact & 0x007fffff
 	isNegative := compact&0x00800000 != 0
@@ -65,22 +75,22 @@ func CompactToBig(compact uint32, out *big.Int) {
 	// N = mantissa * 256^(exponent-3)
 	if exponent <= 3 {
 		mantissa >>= 8 * (3 - exponent)
-		out = out.SetInt64(int64(mantissa))
+		destination.SetInt64(int64(mantissa))
 	} else {
-		out = out.SetInt64(int64(mantissa))
-		out.Lsh(out, 8*(exponent-3))
+		destination.SetInt64(int64(mantissa))
+		destination.Lsh(destination, 8*(exponent-3))
 	}
 
 	// Make it negative if the sign bit is set.
 	if isNegative {
-		out = out.Neg(out)
+		destination.Neg(destination)
 	}
 }
 
 // BigToCompact converts a whole number N to a compact representation using
 // an unsigned 32-bit number. The compact representation only provides 23 bits
 // of precision, so values larger than (2^23 - 1) only encode the most
-// significant digits of the number. See CompactToBig for details.
+// significant digits of the number. See CompactToBigWithDestination for details.
 func BigToCompact(n *big.Int) uint32 {
 	// No need to do any work if it's zero.
 	if n.Sign() == 0 {
@@ -123,7 +133,7 @@ func BigToCompact(n *big.Int) uint32 {
 // the difficulty for generating a block by decreasing the value which the
 // generated hash must be less than. This difficulty target is stored in each
 // block header using a compact representation as described in the documentation
-// for CompactToBig. Since a lower target difficulty value equates to higher
+// for CompactToBigWithDestination. Since a lower target difficulty value equates to higher
 // actual difficulty, the work value which will be accumulated must be the
 // inverse of the difficulty. Also, in order to avoid potential division by
 // zero and really small floating point numbers, the result adds 1 to the
@@ -132,8 +142,7 @@ func CalcWork(bits uint32) *big.Int {
 	// Return a work value of zero if the passed difficulty bits represent
 	// a negative number. Note this should not happen in practice with valid
 	// blocks, but an invalid block could trigger it.
-	difficultyNum := big.NewInt(0)
-	CompactToBig(bits, difficultyNum)
+	difficultyNum := CompactToBig(bits)
 	if difficultyNum.Sign() <= 0 {
 		return big.NewInt(0)
 	}

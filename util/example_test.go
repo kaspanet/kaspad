@@ -81,8 +81,7 @@ func ExampleAmount_unitConversions() {
 // the typical hex notation.
 func ExampleCompactToBig() {
 	bits := uint32(419465580)
-	targetDifficulty := big.NewInt(0)
-	util.CompactToBig(bits, targetDifficulty)
+	targetDifficulty := util.CompactToBig(bits)
 
 	// Display it in hex.
 	fmt.Printf("%064x\n", targetDifficulty.Bytes())

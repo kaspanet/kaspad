@@ -35,7 +35,7 @@ func TestBigToCompact(t *testing.T) {
 	}
 }
 
-// TestCompactToBig ensures CompactToBig converts numbers using the compact
+// TestCompactToBig ensures CompactToBigWithDestination converts numbers using the compact
 // representation to the expected big intergers.
 func TestCompactToBig(t *testing.T) {
 	tests := []struct {
@@ -46,8 +46,7 @@ func TestCompactToBig(t *testing.T) {
 	}
 
 	for x, test := range tests {
-		n := big.NewInt(0)
-		util.CompactToBig(test.in, n)
+		n := util.CompactToBig(test.in)
 		want := big.NewInt(test.out)
 		if n.Cmp(want) != 0 {
 			t.Errorf("TestCompactToBig test #%d failed: got %d want %d\n",
@@ -210,9 +209,7 @@ func TestDifficulty(t *testing.T) {
 }
 
 func compareBits(a uint32, b uint32) int {
-	aTarget := big.NewInt(0)
-	bTarget := big.NewInt(0)
-	util.CompactToBig(a, aTarget)
-	util.CompactToBig(b, bTarget)
+	aTarget := util.CompactToBig(a)
+	bTarget := util.CompactToBig(b)
 	return aTarget.Cmp(bTarget)
 }
