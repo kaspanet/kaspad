@@ -969,7 +969,7 @@ out:
 				}
 
 			case isSyncedMsg:
-				msg.reply <- sm.IsSynced()
+				msg.reply <- sm.isSynced()
 
 			case pauseMsg:
 				// Wait until the sender unpauses the manager.
