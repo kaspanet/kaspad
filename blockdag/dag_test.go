@@ -1247,6 +1247,41 @@ func TestDoubleSpends(t *testing.T) {
 	if isOrphan {
 		t.Fatalf("ProcessBlock: blockInAnticoneOfBlockWithTx1 got unexpectedly orphaned")
 	}
+
+	// Check that a block will be rejected if it has two transactions that spend the same UTXO.
+	blockWithDoubleSpendWithItself, err := PrepareBlockForTest(dag, []*daghash.Hash{fundingBlock.BlockHash()}, nil)
+	if err != nil {
+		t.Fatalf("PrepareBlockForTest: %v", err)
+	}
+
+	// Manually add tx1.
+	blockWithDoubleSpendWithItself.Transactions = append(blockWithDoubleSpendWithItself.Transactions, tx1, doubleSpendTx1)
+	blockWithDoubleSpendWithItselfUtilTxs := make([]*util.Tx, len(blockWithDoubleSpendWithItself.Transactions))
+	for i, tx := range blockWithDoubleSpendWithItself.Transactions {
+		blockWithDoubleSpendWithItselfUtilTxs[i] = util.NewTx(tx)
+	}
+	blockWithDoubleSpendWithItself.Header.HashMerkleRoot = BuildHashMerkleTreeStore(blockWithDoubleSpendWithItselfUtilTxs).Root()
+
+	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(blockWithDoubleSpendWithItself), BFNoPoWCheck)
+	if err == nil {
+		t.Errorf("ProcessBlock expected an error")
+	} else {
+		var ruleErr RuleError
+		if ok := errors.As(err, &ruleErr); ok {
+			if ruleErr.ErrorCode != ErrDoubleSpendsWithBlockTransaction {
+				t.Errorf("ProcessBlock expected an %v error code but got %v", ErrDoubleSpendsWithBlockTransaction, ruleErr.ErrorCode)
+			}
+		} else {
+			t.Errorf("ProcessBlock expected a blockdag.RuleError but got %v", err)
+		}
+	}
+	if isDelayed {
+		t.Fatalf("ProcessBlock: blockWithDoubleSpendWithItself " +
+			"is too far in the future")
+	}
+	if isOrphan {
+		t.Fatalf("ProcessBlock: blockWithDoubleSpendWithItself got unexpectedly orphaned")
+	}
 }
 
 func TestUTXOCommitment(t *testing.T) {

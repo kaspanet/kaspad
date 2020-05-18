@@ -1020,26 +1020,22 @@ func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) error {
 	return newVirtualUTXODiffSet.meldToBase()
 }
 
-// applyAndVerifyBlockTransactionsToPastUTXO applies a block's transactions to its
-// given past UTXO, and verifies that there are no double spends with its past.
-func applyAndVerifyBlockTransactionsToPastUTXO(pastUTXO UTXOSet, blockTransactions []*util.Tx) (UTXOSet, error) {
-	diff := NewUTXODiff()
-
+// checkDoubleSpendsWithBlockPast checks that each block transaction
+// has a corresponding UTXO in the block pastUTXO.
+func checkDoubleSpendsWithBlockPast(pastUTXO UTXOSet, blockTransactions []*util.Tx) error {
 	for _, tx := range blockTransactions {
-		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), UnacceptedBlueScore)
-		if errors.Is(err, errUTXOMissingTxOut) {
-			return nil, ruleError(ErrMissingTxOut, err.Error())
+		if tx.IsCoinBase() {
+			continue
 		}
-		if err != nil {
-			return nil, err
-		}
-		diff, err = diff.WithDiff(txDiff)
-		if err != nil {
-			return nil, err
+
+		for _, txIn := range tx.MsgTx().TxIn {
+			if _, ok := pastUTXO.Get(txIn.PreviousOutpoint); !ok {
+				return ruleError(ErrMissingTxOut, fmt.Sprintf("missing transaction output %s in the utxo set", txIn.PreviousOutpoint))
+			}
 		}
 	}
 
-	return pastUTXO.WithDiff(diff)
+	return nil
 }
 
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
@@ -1059,11 +1055,6 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 	}
 
 	feeData, err := dag.checkConnectToPastUTXO(node, pastUTXO, transactions, fastAdd)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-
-	_, err = applyAndVerifyBlockTransactionsToPastUTXO(pastUTXO, transactions)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
