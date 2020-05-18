@@ -390,6 +390,10 @@ func TestPeerListeners(t *testing.T) {
 	if err != nil {
 		t.Errorf("TestPeerListeners: %v", err)
 	}
+	// wait for 2 veracks
+	if !testtools.WaitTillAllCompleteOrTimeout(time.Second, verack, verack) {
+		t.Errorf("TestPeerListeners: Timout waiting for veracks")
+	}
 
 	tests := []struct {
 		listener string

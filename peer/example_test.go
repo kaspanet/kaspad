@@ -9,6 +9,8 @@ import (
 	"net"
 	"time"
 
+	"github.com/kaspanet/kaspad/logs"
+
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -50,6 +52,8 @@ func mockRemotePeer() error {
 // For demonstration, a simple handler for version message is attached to the
 //
 func Example_newOutboundPeer() {
+	log.SetLevel(logs.LevelOff) // Disable logs to not interfer with output
+
 	// Ordinarily this will not be needed since the outbound peer will be
 	// connecting to a remote peer, however, since this example is executed
 	// and tested, a mock remote peer is needed to listen for the outbound
