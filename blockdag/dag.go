@@ -1140,7 +1140,7 @@ func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlock
 
 	selectedParentPastDiffUTXOSet, ok := selectedParentPastUTXO.(*DiffUTXOSet)
 	if !ok {
-		panic("selectedParentPastUTXO is not *DiffUTXOSet")
+		panic(errors.New("selectedParentPastUTXO is not *DiffUTXOSet"))
 	}
 	pastUTXO = NewDiffUTXOSet(selectedParentPastDiffUTXOSet.base, selectedParentPastDiffUTXOSet.UTXODiff.clone())
 
