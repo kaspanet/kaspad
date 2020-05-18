@@ -239,8 +239,8 @@ var _ rpcserverSyncManager = (*rpcSyncMgr)(nil)
 //
 // This function is safe for concurrent access and is part of the
 // rpcserverSyncManager interface implementation.
-func (b *rpcSyncMgr) IsCurrent() bool {
-	return b.syncMgr.IsCurrent()
+func (b *rpcSyncMgr) IsSynced() bool {
+	return b.syncMgr.IsSynced()
 }
 
 // SubmitBlock submits the provided block to the network after processing it
