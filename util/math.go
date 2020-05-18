@@ -90,7 +90,7 @@ func CompactToBigWithDestination(compact uint32, destination *big.Int) {
 // BigToCompact converts a whole number N to a compact representation using
 // an unsigned 32-bit number. The compact representation only provides 23 bits
 // of precision, so values larger than (2^23 - 1) only encode the most
-// significant digits of the number. See CompactToBigWithDestination for details.
+// significant digits of the number. See CompactToBig for details.
 func BigToCompact(n *big.Int) uint32 {
 	// No need to do any work if it's zero.
 	if n.Sign() == 0 {
@@ -133,7 +133,7 @@ func BigToCompact(n *big.Int) uint32 {
 // the difficulty for generating a block by decreasing the value which the
 // generated hash must be less than. This difficulty target is stored in each
 // block header using a compact representation as described in the documentation
-// for CompactToBigWithDestination. Since a lower target difficulty value equates to higher
+// for CompactToBig. Since a lower target difficulty value equates to higher
 // actual difficulty, the work value which will be accumulated must be the
 // inverse of the difficulty. Also, in order to avoid potential division by
 // zero and really small floating point numbers, the result adds 1 to the

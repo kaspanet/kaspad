@@ -620,7 +620,8 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		template = blkTemplate
 		msgBlock = template.Block
 
-		targetDifficulty = fmt.Sprintf("%064x", util.CompactToBig(msgBlock.Header.Bits))
+		targetDifficulty = fmt.Sprintf("%064x",
+			util.CompactToBig(msgBlock.Header.Bits))
 
 		// Get the minimum allowed timestamp for the block based on the
 		// median timestamp of the last several blocks per the DAG
@@ -688,7 +689,8 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 
 		// Set locals for convenience.
 		msgBlock = template.Block
-		targetDifficulty = fmt.Sprintf("%064x", util.CompactToBig(msgBlock.Header.Bits))
+		targetDifficulty = fmt.Sprintf("%064x",
+			util.CompactToBig(msgBlock.Header.Bits))
 
 		// Update the time of the block template to the current time
 		// while accounting for the median time of the past several

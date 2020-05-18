@@ -35,7 +35,7 @@ func TestBigToCompact(t *testing.T) {
 	}
 }
 
-// TestCompactToBig ensures CompactToBigWithDestination converts numbers using the compact
+// TestCompactToBig ensures CompactToBig converts numbers using the compact
 // representation to the expected big intergers.
 func TestCompactToBig(t *testing.T) {
 	tests := []struct {
