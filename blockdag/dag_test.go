@@ -1223,7 +1223,7 @@ func TestDoubleSpends(t *testing.T) {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
 
-	// Manually add tx1.
+	// Manually add tx1 and doubleSpendTx1.
 	blockWithDoubleSpendWithItself.Transactions = append(blockWithDoubleSpendWithItself.Transactions, tx1, doubleSpendTx1)
 	blockWithDoubleSpendWithItselfUtilTxs := make([]*util.Tx, len(blockWithDoubleSpendWithItself.Transactions))
 	for i, tx := range blockWithDoubleSpendWithItself.Transactions {
