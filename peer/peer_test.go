@@ -95,7 +95,7 @@ func pipe(c1, c2 *conn) (*conn, *conn) {
 	return c1, c2
 }
 
-// peerStats holds the expected peer stats used for testing
+// peerStats holds the expected peer stats used for testing peer.
 type peerStats struct {
 	wantUserAgent       string
 	wantServices        wire.ServiceFlag
@@ -499,7 +499,7 @@ func TestOutboundPeer(t *testing.T) {
 
 	_, p, err := setupPeers(peerCfg, peerCfg)
 	if err != nil {
-		t.Fatalf("TestOuboundPeer: unexpected in err setupPeers - %v\n", err)
+		t.Fatalf("TestOuboundPeer: unexpected err in setupPeers - %v\n", err)
 	}
 
 	// Test trying to connect for a second time and make sure nothing happens.
@@ -539,7 +539,7 @@ func TestOutboundPeer(t *testing.T) {
 
 	_, p1, err := setupPeers(peerCfg, peerCfg)
 	if err != nil {
-		t.Fatalf("TestOuboundPeer: unexpected in err setupPeers - %v\n", err)
+		t.Fatalf("TestOuboundPeer: unexpected err in setupPeers - %v\n", err)
 	}
 
 	// Test Queue Inv after connection

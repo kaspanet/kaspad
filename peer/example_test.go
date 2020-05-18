@@ -54,13 +54,15 @@ func mockRemotePeer() error {
 // This example demonstrates the basic process for initializing and creating an
 // outbound  Peers negotiate by exchanging version and verack messages.
 // For demonstration, a simple handler for version message is attached to the
+// peer.
 //
 func Example_newOutboundPeer() {
-	log.SetLevel(logs.LevelOff) // Disable logs to not interfer with output
+	log.SetLevel(logs.LevelOff) // Disable logs to not interfere with output
 
 	// Ordinarily this will not be needed since the outbound peer will be
 	// connecting to a remote peer, however, since this example is executed
 	// and tested, a mock remote peer is needed to listen for the outbound
+	// peer.
 	//
 	if err := mockRemotePeer(); err != nil {
 		fmt.Printf("mockRemotePeer: unexpected error %v\n", err)
@@ -112,7 +114,7 @@ func Example_newOutboundPeer() {
 		fmt.Printf("Example_peerConnection: verack timeout")
 	}
 
-	// Disconnect the
+	// Disconnect the peer.
 	p.Disconnect()
 	p.WaitForDisconnect()
 
