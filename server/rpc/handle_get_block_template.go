@@ -14,6 +14,7 @@ import (
 	"github.com/kaspanet/kaspad/util/random"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
+	"math/big"
 	"math/rand"
 	"strconv"
 	"strings"
