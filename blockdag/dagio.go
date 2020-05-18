@@ -223,7 +223,7 @@ func (dag *BlockDAG) initDAGState() error {
 	log.Debugf("Applying the loaded utxoCollection to the virtual block...")
 	dag.virtual.utxoSet, err = newFullUTXOSetFromUTXOCollection(fullUTXOCollection)
 	if err != nil {
-		return AssertError(fmt.Sprintf("Error loading UTXOSet: %s", err))
+		return errors.Wrap(err, "Error loading UTXOSet")
 	}
 
 	log.Debugf("Applying the stored tips to the virtual block...")
@@ -289,14 +289,14 @@ func (dag *BlockDAG) initBlockIndex() (unprocessedBlockNodes []*blockNode, err e
 
 		if dag.blockCount == 0 {
 			if !node.hash.IsEqual(dag.dagParams.GenesisHash) {
-				return nil, AssertError(fmt.Sprintf("Expected "+
+				return nil, errors.Errorf("Expected "+
 					"first entry in block index to be genesis block, "+
-					"found %s", node.hash))
+					"found %s", node.hash)
 			}
 		} else {
 			if len(node.parents) == 0 {
-				return nil, AssertError(fmt.Sprintf("block %s "+
-					"has no parents but it's not the genesis block", node.hash))
+				return nil, errors.Errorf("block %s "+
+					"has no parents but it's not the genesis block", node.hash)
 			}
 		}
 
@@ -350,8 +350,8 @@ func (dag *BlockDAG) initVirtualBlockTips(state *dagState) error {
 	for _, tipHash := range state.TipHashes {
 		tip := dag.index.LookupNode(tipHash)
 		if tip == nil {
-			return AssertError(fmt.Sprintf("cannot find "+
-				"DAG tip %s in block index", state.TipHashes))
+			return errors.Errorf("cannot find "+
+				"DAG tip %s in block index", state.TipHashes)
 		}
 		tips.add(tip)
 	}
@@ -365,12 +365,12 @@ func (dag *BlockDAG) processUnprocessedBlockNodes(unprocessedBlockNodes []*block
 		// doesn't, the database has certainly been corrupted.
 		blockExists, err := dbaccess.HasBlock(dbaccess.NoTx(), node.hash)
 		if err != nil {
-			return AssertError(fmt.Sprintf("HasBlock "+
-				"for block %s failed: %s", node.hash, err))
+			return errors.Wrapf(err, "HasBlock "+
+				"for block %s failed: %s", node.hash, err)
 		}
 		if !blockExists {
-			return AssertError(fmt.Sprintf("block %s "+
-				"exists in block index but not in block db", node.hash))
+			return errors.Errorf("block %s "+
+				"exists in block index but not in block db", node.hash)
 		}
 
 		// Attempt to accept the block.
@@ -388,14 +388,14 @@ func (dag *BlockDAG) processUnprocessedBlockNodes(unprocessedBlockNodes []*block
 		// If the block is an orphan or is delayed then it couldn't have
 		// possibly been written to the block index in the first place.
 		if isOrphan {
-			return AssertError(fmt.Sprintf("Block %s, which was not "+
+			return errors.Errorf("Block %s, which was not "+
 				"previously processed, turned out to be an orphan, which is "+
-				"impossible.", node.hash))
+				"impossible.", node.hash)
 		}
 		if isDelayed {
-			return AssertError(fmt.Sprintf("Block %s, which was not "+
+			return errors.Errorf("Block %s, which was not "+
 				"previously processed, turned out to be delayed, which is "+
-				"impossible.", node.hash))
+				"impossible.", node.hash)
 		}
 	}
 	return nil
@@ -428,8 +428,8 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 	for _, hash := range header.ParentHashes {
 		parent := dag.index.LookupNode(hash)
 		if parent == nil {
-			return nil, AssertError(fmt.Sprintf("deserializeBlockNode: Could "+
-				"not find parent %s for block %s", hash, header.BlockHash()))
+			return nil, errors.Errorf("deserializeBlockNode: Could "+
+				"not find parent %s for block %s", hash, header.BlockHash())
 		}
 		node.parents.add(parent)
 	}

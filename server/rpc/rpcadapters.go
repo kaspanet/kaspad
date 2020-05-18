@@ -234,13 +234,13 @@ type rpcSyncMgr struct {
 // Ensure rpcSyncMgr implements the rpcserverSyncManager interface.
 var _ rpcserverSyncManager = (*rpcSyncMgr)(nil)
 
-// IsCurrent returns whether or not the sync manager believes the DAG is
+// IsSynced returns whether or not the sync manager believes the DAG is
 // current as compared to the rest of the network.
 //
 // This function is safe for concurrent access and is part of the
 // rpcserverSyncManager interface implementation.
-func (b *rpcSyncMgr) IsCurrent() bool {
-	return b.syncMgr.IsCurrent()
+func (b *rpcSyncMgr) IsSynced() bool {
+	return b.syncMgr.IsSynced()
 }
 
 // SubmitBlock submits the provided block to the network after processing it
