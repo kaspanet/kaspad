@@ -4,6 +4,12 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"math/rand"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/mining"
@@ -14,11 +20,6 @@ import (
 	"github.com/kaspanet/kaspad/util/random"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
-	"math/rand"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
 )
 
 const (
@@ -619,7 +620,6 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		}
 		template = blkTemplate
 		msgBlock = template.Block
-
 		targetDifficulty = fmt.Sprintf("%064x",
 			util.CompactToBig(msgBlock.Header.Bits))
 
