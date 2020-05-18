@@ -839,7 +839,7 @@ func (sm *SyncManager) sendInvsFromRequestQueue(peer *peerpkg.Peer, state *peerS
 	if err != nil {
 		return err
 	}
-	if sm.current() {
+	if sm.syncPeer == nil || sm.isSynced() {
 		err := sm.addInvsToGetDataMessageFromQueue(gdmsg, state, wire.InvTypeBlock, wire.MaxInvPerGetDataMsg)
 		if err != nil {
 			return err
