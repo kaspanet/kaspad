@@ -14,6 +14,7 @@ import (
 	"github.com/kaspanet/kaspad/util/random"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
+	"math/big"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -637,8 +638,10 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		}
 		template = blkTemplate
 		msgBlock = template.Block
-		targetDifficulty = fmt.Sprintf("%064x",
-			util.CompactToBig(msgBlock.Header.Bits))
+
+		target := big.NewInt(0)
+		util.CompactToBig(msgBlock.Header.Bits, target)
+		targetDifficulty = fmt.Sprintf("%064x", target)
 
 		// Get the minimum allowed timestamp for the block based on the
 		// median timestamp of the last several blocks per the DAG
@@ -706,8 +709,9 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 
 		// Set locals for convenience.
 		msgBlock = template.Block
-		targetDifficulty = fmt.Sprintf("%064x",
-			util.CompactToBig(msgBlock.Header.Bits))
+		target := big.NewInt(0)
+		util.CompactToBig(msgBlock.Header.Bits, target)
+		targetDifficulty = fmt.Sprintf("%064x", target)
 
 		// Update the time of the block template to the current time
 		// while accounting for the median time of the past several
@@ -801,7 +805,9 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 	// implied by the included or omission of fields:
 	//  Including MinTime -> time/decrement
 	//  Omitting CoinbaseTxn -> coinbase, generation
-	targetDifficulty := fmt.Sprintf("%064x", util.CompactToBig(header.Bits))
+	target := big.NewInt(0)
+	util.CompactToBig(header.Bits, target)
+	targetDifficulty := fmt.Sprintf("%064x", target)
 	longPollID := encodeLongPollID(state.tipHashes, state.lastGenerated)
 	reply := rpcmodel.GetBlockTemplateResult{
 		Bits:                 strconv.FormatInt(int64(header.Bits), 16),

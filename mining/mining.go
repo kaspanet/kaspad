@@ -6,6 +6,7 @@ package mining
 
 import (
 	"github.com/pkg/errors"
+	"math/big"
 	"time"
 
 	"github.com/kaspanet/kaspad/blockdag"
@@ -206,10 +207,12 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address, extraNonc
 		return nil, err
 	}
 
+	targetDifficulty := big.NewInt(0)
+	util.CompactToBig(msgBlock.Header.Bits, targetDifficulty)
 	log.Debugf("Created new block template (%d transactions, %d in fees, "+
 		"%d mass, target difficulty %064x)",
 		len(msgBlock.Transactions), txsForBlockTemplate.totalFees,
-		txsForBlockTemplate.totalMass, util.CompactToBig(msgBlock.Header.Bits))
+		txsForBlockTemplate.totalMass, targetDifficulty)
 
 	return &BlockTemplate{
 		Block:           msgBlock,

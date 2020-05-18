@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/hex"
 	nativeerrors "errors"
+	"math/big"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -150,7 +151,8 @@ func parseBlock(template *rpcmodel.GetBlockTemplateResult) (*util.Block, error) 
 
 func solveBlock(block *util.Block, stopChan chan struct{}, foundBlock chan *util.Block) {
 	msgBlock := block.MsgBlock()
-	targetDifficulty := util.CompactToBig(msgBlock.Header.Bits)
+	targetDifficulty := big.NewInt(0)
+	util.CompactToBig(msgBlock.Header.Bits, targetDifficulty)
 	initialNonce := random.Uint64()
 	for i := random.Uint64(); i != initialNonce-1; i++ {
 		select {

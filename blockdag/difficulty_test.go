@@ -46,7 +46,8 @@ func TestCompactToBig(t *testing.T) {
 	}
 
 	for x, test := range tests {
-		n := util.CompactToBig(test.in)
+		n := big.NewInt(0)
+		util.CompactToBig(test.in, n)
 		want := big.NewInt(test.out)
 		if n.Cmp(want) != 0 {
 			t.Errorf("TestCompactToBig test #%d failed: got %d want %d\n",
@@ -209,7 +210,9 @@ func TestDifficulty(t *testing.T) {
 }
 
 func compareBits(a uint32, b uint32) int {
-	aTarget := util.CompactToBig(a)
-	bTarget := util.CompactToBig(b)
+	aTarget := big.NewInt(0)
+	bTarget := big.NewInt(0)
+	util.CompactToBig(a, aTarget)
+	util.CompactToBig(b, bTarget)
 	return aTarget.Cmp(bTarget)
 }

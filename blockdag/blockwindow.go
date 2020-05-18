@@ -55,8 +55,9 @@ func (window blockWindow) minMaxTimestamps() (min, max int64) {
 
 func (window blockWindow) averageTarget() *big.Int {
 	averageTarget := big.NewInt(0)
+	target := big.NewInt(0)
 	for _, node := range window {
-		target := util.CompactToBig(node.bits)
+		util.CompactToBig(node.bits, target)
 		averageTarget.Add(averageTarget, target)
 	}
 	return averageTarget.Div(averageTarget, big.NewInt(int64(len(window))))
