@@ -573,7 +573,8 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 		return nil, err
 	}
 
-	newBlockPastUTXO, txsAcceptanceData, newBlockFeeData, newBlockMultiSet, err := node.verifyAndBuildUTXO(dag, block.Transactions(), fastAdd)
+	newBlockPastUTXO, txsAcceptanceData, newBlockFeeData, newBlockMultiSet, err := node.verifyAndBuildUTXO(dag,
+		block.Transactions(), fastAdd)
 	if err != nil {
 		var ruleErr RuleError
 		if ok := errors.As(err, &ruleErr); ok {
@@ -588,7 +589,8 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	}
 
 	// Apply all changes to the DAG.
-	virtualUTXODiff, chainUpdates, err := dag.applyDAGChanges(node, newBlockPastUTXO, newBlockMultiSet, selectedParentAnticone)
+	virtualUTXODiff, chainUpdates, err := dag.applyDAGChanges(node,
+		newBlockPastUTXO, newBlockMultiSet, selectedParentAnticone)
 	if err != nil {
 		// Since all validation logic has already ran, if applyDAGChanges errors out,
 		// this means we have a problem in the internal structure of the DAG - a problem which is
@@ -1030,7 +1032,8 @@ func checkDoubleSpendsWithBlockPast(pastUTXO UTXOSet, blockTransactions []*util.
 
 		for _, txIn := range tx.MsgTx().TxIn {
 			if _, ok := pastUTXO.Get(txIn.PreviousOutpoint); !ok {
-				return ruleError(ErrMissingTxOut, fmt.Sprintf("missing transaction output %s in the utxo set", txIn.PreviousOutpoint))
+				return ruleError(ErrMissingTxOut, fmt.Sprintf("missing transaction "+
+					"output %s in the utxo set", txIn.PreviousOutpoint))
 			}
 		}
 	}
