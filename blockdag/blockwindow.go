@@ -6,6 +6,7 @@ import (
 	"math"
 	"math/big"
 	"sort"
+	"sync"
 )
 
 type blockWindow []*blockNode
@@ -53,14 +54,37 @@ func (window blockWindow) minMaxTimestamps() (min, max int64) {
 	return
 }
 
+var blockWindowBigIntPool = sync.Pool{
+	New: func() interface{} {
+		return big.NewInt(0)
+	},
+}
+
+func acquireBigInt() *big.Int {
+	return blockWindowBigIntPool.Get().(*big.Int)
+}
+
+func releaseBigInt(toRelease *big.Int) {
+	toRelease.SetInt64(0)
+	blockWindowBigIntPool.Put(toRelease)
+}
+
 func (window blockWindow) averageTarget() *big.Int {
 	averageTarget := big.NewInt(0)
-	target := big.NewInt(0)
+
+	target := acquireBigInt()
 	for _, node := range window {
 		util.CompactToBigWithDestination(node.bits, target)
 		averageTarget.Add(averageTarget, target)
 	}
-	return averageTarget.Div(averageTarget, big.NewInt(int64(len(window))))
+
+	// Reuse `target` to avoid a big.Int allocation
+	windowLen := target
+	windowLen.SetInt64(int64(len(window)))
+	averageTarget.Div(averageTarget, windowLen)
+
+	releaseBigInt(target)
+	return averageTarget
 }
 
 func (window blockWindow) medianTimestamp() (int64, error) {
