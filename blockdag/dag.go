@@ -1154,7 +1154,7 @@ func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlock
 		}
 		isSelectedParent := i == 0
 
-		for i, tx := range blueBlock.Transactions() {
+		for j, tx := range blueBlock.Transactions() {
 			var isAccepted bool
 
 			// Coinbase transaction outputs are added to the UTXO
@@ -1167,7 +1167,7 @@ func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlock
 					return nil, nil, err
 				}
 			}
-			blockTxsAcceptanceData.TxAcceptanceData[i] = TxAcceptanceData{Tx: tx, IsAccepted: isAccepted}
+			blockTxsAcceptanceData.TxAcceptanceData[j] = TxAcceptanceData{Tx: tx, IsAccepted: isAccepted}
 		}
 		multiBlockTxsAcceptanceData[i] = blockTxsAcceptanceData
 	}
