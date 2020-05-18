@@ -548,16 +548,16 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 	// Check for duplicate transactions. This check will be fairly quick
 	// since the transaction IDs are already cached due to building the
 	// merkle tree above.
-	usedOutpoints := make(map[wire.Outpoint]struct{})
+	usedOutpoints := make(map[wire.Outpoint]*daghash.TxID)
 	for _, tx := range transactions {
 		for _, txIn := range tx.MsgTx().TxIn {
-			if _, exists := usedOutpoints[txIn.PreviousOutpoint]; exists {
+			if spendingTxID, exists := usedOutpoints[txIn.PreviousOutpoint]; exists {
 				str := fmt.Sprintf("transaction %s spends "+
-					"outpoint %s that was already spent by another "+
-					"transaction in this block", tx.ID(), txIn.PreviousOutpoint)
+					"outpoint %s that was already spent by "+
+					"transaction %s in this block", tx.ID(), txIn.PreviousOutpoint, spendingTxID)
 				return 0, ruleError(ErrDoubleSpendInSameBlock, str)
 			}
-			usedOutpoints[txIn.PreviousOutpoint] = struct{}{}
+			usedOutpoints[txIn.PreviousOutpoint] = tx.ID()
 		}
 	}
 
