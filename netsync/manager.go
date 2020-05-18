@@ -103,10 +103,10 @@ type processBlockMsg struct {
 	reply chan processBlockResponse
 }
 
-// isCurrentMsg is a message type to be sent across the message channel for
+// isSyncedMsg is a message type to be sent across the message channel for
 // requesting whether or not the sync manager believes it is synced with the
 // currently connected peers.
-type isCurrentMsg struct {
+type isSyncedMsg struct {
 	reply chan bool
 }
 
@@ -839,7 +839,7 @@ func (sm *SyncManager) sendInvsFromRequestQueue(peer *peerpkg.Peer, state *peerS
 	if err != nil {
 		return err
 	}
-	if sm.current() {
+	if sm.syncPeer == nil || sm.isSynced() {
 		err := sm.addInvsToGetDataMessageFromQueue(gdmsg, state, wire.InvTypeBlock, wire.MaxInvPerGetDataMsg)
 		if err != nil {
 			return err
@@ -968,8 +968,8 @@ out:
 					err:      err,
 				}
 
-			case isCurrentMsg:
-				msg.reply <- sm.current()
+			case isSyncedMsg:
+				msg.reply <- sm.isSynced()
 
 			case pauseMsg:
 				// Wait until the sender unpauses the manager.
@@ -1151,12 +1151,30 @@ func (sm *SyncManager) ProcessBlock(block *util.Block, flags blockdag.BehaviorFl
 	return response.isOrphan, response.err
 }
 
-// IsCurrent returns whether or not the sync manager believes it is synced with
+// IsSynced returns whether or not the sync manager believes it is synced with
 // the connected peers.
-func (sm *SyncManager) IsCurrent() bool {
+func (sm *SyncManager) IsSynced() bool {
 	reply := make(chan bool)
-	sm.msgChan <- isCurrentMsg{reply: reply}
+	sm.msgChan <- isSyncedMsg{reply: reply}
 	return <-reply
+}
+
+// isSynced checks if the node is synced enough based upon its worldview.
+// This is used to determine if the node can support mining and requesting newly-mined blocks.
+// To do that, first it checks if the selected tip timestamp is not older than maxTipAge. If that's the case, it means
+// the node is synced since blocks' timestamps are not allowed to deviate too much into the future.
+// If that's not the case it checks the rate it added new blocks to the DAG recently. If it's faster than
+// blockRate * maxSyncRateDeviation it means the node is not synced, since when the node is synced it shouldn't add
+// blocks to the DAG faster than the block rate.
+func (sm *SyncManager) isSynced() bool {
+	const maxTipAge = 5 * time.Minute
+	isCloseToCurrentTime := sm.dag.Now().Sub(sm.dag.SelectedTipHeader().Timestamp) <= maxTipAge
+	if isCloseToCurrentTime {
+		return true
+	}
+
+	const maxSyncRateDeviation = 1.05
+	return sm.dag.IsSyncRateBelowThreshold(maxSyncRateDeviation)
 }
 
 // Pause pauses the sync manager until the returned channel is closed.

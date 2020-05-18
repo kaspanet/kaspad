@@ -723,9 +723,9 @@ type rpcserverConnManager interface {
 // The interface contract requires that all of these methods are safe for
 // concurrent access.
 type rpcserverSyncManager interface {
-	// IsCurrent returns whether or not the sync manager believes the DAG
+	// IsSynced returns whether or not the sync manager believes the DAG
 	// is current as compared to the rest of the network.
-	IsCurrent() bool
+	IsSynced() bool
 
 	// SubmitBlock submits the provided block to the network after
 	// processing it locally.

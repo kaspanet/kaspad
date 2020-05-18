@@ -5,11 +5,12 @@
 package blockdag
 
 import (
-	"github.com/pkg/errors"
 	"math"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/util"

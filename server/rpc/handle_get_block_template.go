@@ -4,6 +4,12 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"math/rand"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/mining"
@@ -14,11 +20,6 @@ import (
 	"github.com/kaspanet/kaspad/util/random"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
-	"math/rand"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
 )
 
 const (
@@ -117,24 +118,6 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 		Code:    rpcmodel.ErrRPCInvalidParameter,
 		Message: "Invalid mode",
 	}
-}
-
-// isSyncedForMining checks if the node is synced enough for mining blocks
-// on top of its world view.
-// To do that, first it checks if the selected tip timestamp is not older than maxTipAge. If that's the case, it means
-// the node is synced since blocks' timestamps are not allowed to deviate too much into the future.
-// If that's not the case it checks the rate it added new blocks to the DAG recently. If it's faster than
-// blockRate * maxSyncRateDeviation it means the node is not synced, since when the node is synced it shouldn't add
-// blocks to the DAG faster than the block rate.
-func isSyncedForMining(s *Server) bool {
-	const maxTipAge = 5 * time.Minute
-	isCloseToCurrentTime := s.cfg.DAG.Now().Sub(s.cfg.DAG.SelectedTipHeader().Timestamp) <= maxTipAge
-	if isCloseToCurrentTime {
-		return true
-	}
-
-	const maxSyncRateDeviation = 1.05
-	return s.cfg.DAG.IsSyncRateBelowThreshold(maxSyncRateDeviation)
 }
 
 // handleGetBlockTemplateRequest is a helper for handleGetBlockTemplate which
@@ -652,7 +635,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		// This is not a straight-up error because the choice of whether
 		// to mine or not is the responsibility of the miner rather
 		// than the node's.
-		isSynced := isSyncedForMining(s)
+		isSynced := s.cfg.SyncMgr.IsSynced()
 
 		// Update work state to ensure another block template isn't
 		// generated until needed.

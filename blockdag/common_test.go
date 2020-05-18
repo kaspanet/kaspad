@@ -7,14 +7,14 @@ package blockdag
 import (
 	"compress/bzip2"
 	"encoding/binary"
-	"github.com/pkg/errors"
 	"io"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/util"
@@ -144,29 +144,26 @@ func addNodeAsChildToParents(node *blockNode) {
 // same type (either both nil or both of type RuleError) and their error codes
 // match when not nil.
 func checkRuleError(gotErr, wantErr error) error {
-	// Ensure the error code is of the expected type and the error
-	// code matches the value specified in the test instance.
-	if reflect.TypeOf(gotErr) != reflect.TypeOf(wantErr) {
-		return errors.Errorf("wrong error - got %T (%[1]v), want %T",
-			gotErr, wantErr)
-	}
-	if gotErr == nil {
+	if wantErr == nil && gotErr == nil {
 		return nil
 	}
 
-	// Ensure the want error type is a script error.
-	werr, ok := wantErr.(RuleError)
-	if !ok {
-		return errors.Errorf("unexpected test error type %T", wantErr)
+	var gotRuleErr RuleError
+	if ok := errors.As(gotErr, &gotRuleErr); !ok {
+		return errors.Errorf("gotErr expected to be RuleError, but got %+v instead", gotErr)
+	}
+
+	var wantRuleErr RuleError
+	if ok := errors.As(wantErr, &wantRuleErr); !ok {
+		return errors.Errorf("wantErr expected to be RuleError, but got %+v instead", wantErr)
 	}
 
 	// Ensure the error codes match. It's safe to use a raw type assert
 	// here since the code above already proved they are the same type and
 	// the want error is a script error.
-	gotErrorCode := gotErr.(RuleError).ErrorCode
-	if gotErrorCode != werr.ErrorCode {
+	if gotRuleErr.ErrorCode != wantRuleErr.ErrorCode {
 		return errors.Errorf("mismatched error code - got %v (%v), want %v",
-			gotErrorCode, gotErr, werr.ErrorCode)
+			gotRuleErr.ErrorCode, gotErr, wantRuleErr.ErrorCode)
 	}
 
 	return nil

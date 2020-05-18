@@ -6,11 +6,12 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/dbaccess"
 	"math"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/kaspanet/kaspad/dbaccess"
 
 	"github.com/pkg/errors"
 
@@ -2054,10 +2055,10 @@ type Config struct {
 func New(config *Config) (*BlockDAG, error) {
 	// Enforce required config fields.
 	if config.DAGParams == nil {
-		return nil, AssertError("BlockDAG.New DAG parameters nil")
+		return nil, errors.New("BlockDAG.New DAG parameters nil")
 	}
 	if config.TimeSource == nil {
-		return nil, AssertError("BlockDAG.New timesource is nil")
+		return nil, errors.New("BlockDAG.New timesource is nil")
 	}
 
 	params := config.DAGParams
