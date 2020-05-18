@@ -1232,6 +1232,21 @@ func TestDoubleSpends(t *testing.T) {
 	blockWithDoubleSpendWithItself.Header.HashMerkleRoot = BuildHashMerkleTreeStore(blockWithDoubleSpendWithItselfUtilTxs).Root()
 
 	testProcessBlockRuleError(t, dag, blockWithDoubleSpendWithItself, ruleError(ErrDoubleSpendInSameBlock, ""))
+
+	// Check that a block will be rejected if it has the same transaction twice.
+	blockWithDuplicateTransaction, err := PrepareBlockForTest(dag, []*daghash.Hash{fundingBlock.BlockHash()}, nil)
+	if err != nil {
+		t.Fatalf("PrepareBlockForTest: %v", err)
+	}
+
+	// Manually add tx1 twice.
+	blockWithDuplicateTransaction.Transactions = append(blockWithDuplicateTransaction.Transactions, tx1, tx1)
+	blockWithDuplicateTransactionUtilTxs := make([]*util.Tx, len(blockWithDuplicateTransaction.Transactions))
+	for i, tx := range blockWithDuplicateTransaction.Transactions {
+		blockWithDuplicateTransactionUtilTxs[i] = util.NewTx(tx)
+	}
+	blockWithDuplicateTransaction.Header.HashMerkleRoot = BuildHashMerkleTreeStore(blockWithDuplicateTransactionUtilTxs).Root()
+	testProcessBlockRuleError(t, dag, blockWithDuplicateTransaction, ruleError(ErrDuplicateTx, ""))
 }
 
 func TestUTXOCommitment(t *testing.T) {
