@@ -104,15 +104,15 @@ func TestClearOldEntries(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	// Set maxBlueScoreDifferenceToKeepLoaded to 2 to make this test fast to run
+	// Set maxBlueScoreDifferenceToKeepLoaded to 10 to make this test fast to run
 	currentDifference := maxBlueScoreDifferenceToKeepLoaded
-	maxBlueScoreDifferenceToKeepLoaded = 1
+	maxBlueScoreDifferenceToKeepLoaded = 10
 	defer func() { maxBlueScoreDifferenceToKeepLoaded = currentDifference }()
 
-	// Add 1 blocks
+	// Add 10 blocks
 	tipHash := dag.genesis.hash
-	blockNodes := make([]*blockNode, 1)
-	for i := 0; i < 1; i++ {
+	blockNodes := make([]*blockNode, 10)
+	for i := 0; i < 10; i++ {
 		processedBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{tipHash}, nil)
 		tipHash = processedBlock.BlockHash()
 
@@ -131,20 +131,38 @@ func TestClearOldEntries(t *testing.T) {
 		}
 	}
 
-	//// Add 1 more blocks on top of the others
-	//for i := 0; i < 1; i++ {
-	//	processedBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{tipHash}, nil)
-	//	tipHash = processedBlock.BlockHash()
-	//}
-	//
-	//// Make sure that all the old nodes no longer exist in the loaded set
-	//for _, node := range blockNodes {
-	//	_, ok := dag.utxoDiffStore.loaded[node]
-	//	if ok {
-	//		t.Fatalf("TestClearOldEntries: diffData for node %s is in the loaded set", node.hash)
-	//	}
-	//}
+	// Add 10 more blocks on top of the others
+	for i := 0; i < 10; i++ {
+		processedBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{tipHash}, nil)
+		tipHash = processedBlock.BlockHash()
+	}
+
+	// Make sure that all the old nodes no longer exist in the loaded set
+	for _, node := range blockNodes {
+		_, ok := dag.utxoDiffStore.loaded[node]
+		if ok {
+			t.Fatalf("TestClearOldEntries: diffData for node %s is in the loaded set", node.hash)
+		}
+	}
 
 	// Add a block on top of the virtual to force the retrieval of all diffData
-	PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{dag.genesis.hash}, nil)
+	processedBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{dag.genesis.hash}, nil)
+	node := dag.index.LookupNode(processedBlock.BlockHash())
+	if node == nil {
+		t.Fatalf("TestClearOldEntries: missing blockNode for hash %s", processedBlock.BlockHash())
+	}
+
+	// Make sure that the child-of-genesis node isn't in the loaded set
+	_, ok := dag.utxoDiffStore.loaded[node]
+	if ok {
+		t.Fatalf("TestClearOldEntries: diffData for node %s is in the loaded set", node.hash)
+	}
+
+	// Make sure that all the old nodes still do not exist in the loaded set
+	for _, node := range blockNodes {
+		_, ok := dag.utxoDiffStore.loaded[node]
+		if ok {
+			t.Fatalf("TestClearOldEntries: diffData for node %s is in the loaded set", node.hash)
+		}
+	}
 }
