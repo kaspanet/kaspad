@@ -21,6 +21,5 @@ func Acquire(x int64) *big.Int {
 
 // Release returns the given big.Int to the pool.
 func Release(toRelease *big.Int) {
-	toRelease.SetInt64(0)
 	bigIntPool.Put(toRelease)
 }
