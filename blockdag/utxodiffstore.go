@@ -150,6 +150,27 @@ func (diffStore *utxoDiffStore) clearDirtyEntries() {
 	diffStore.dirty = make(map[*blockNode]struct{})
 }
 
+// maxBlueScoreDifferenceToKeepLoaded is the maxiumum difference
+// between the virtual's blueScore and a blockNode's blueScore
+// under which to keep diff data loaded in memory.
+const maxBlueScoreDifferenceToKeepLoaded = 50
+
+// clearOldEntries removes entries whose blue score is lower than
+// virtual.blueScore - maxBlueScoreDifferenceToKeepLoaded.
+func (diffStore *utxoDiffStore) clearOldEntries() {
+	virtualBlueScore := diffStore.dag.VirtualBlueScore()
+	minBlueScore := virtualBlueScore - maxBlueScoreDifferenceToKeepLoaded
+	toRemove := make(map[*blockNode]struct{})
+	for node := range diffStore.loaded {
+		if node.blueScore < minBlueScore {
+			toRemove[node] = struct{}{}
+		}
+	}
+	for node := range toRemove {
+		delete(diffStore.loaded, node)
+	}
+}
+
 // storeDiffData stores the UTXO diff data to the database.
 // This overwrites the current entry if there exists one.
 func storeDiffData(dbContext dbaccess.Context, w *bytes.Buffer, hash *daghash.Hash, diffData *blockUTXODiffData) error {
