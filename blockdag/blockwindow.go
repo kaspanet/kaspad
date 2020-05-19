@@ -2,11 +2,11 @@ package blockdag
 
 import (
 	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/bigintpool"
 	"github.com/pkg/errors"
 	"math"
 	"math/big"
 	"sort"
-	"sync"
 )
 
 type blockWindow []*blockNode
@@ -54,35 +54,18 @@ func (window blockWindow) minMaxTimestamps() (min, max int64) {
 	return
 }
 
-var difficultyBigIntPool = sync.Pool{
-	New: func() interface{} {
-		return big.NewInt(0)
-	},
-}
-
-func acquireBigInt(x int64) *big.Int {
-	bigInt := difficultyBigIntPool.Get().(*big.Int)
-	bigInt.SetInt64(x)
-	return bigInt
-}
-
-func releaseBigInt(toRelease *big.Int) {
-	toRelease.SetInt64(0)
-	difficultyBigIntPool.Put(toRelease)
-}
-
 func (window blockWindow) averageTarget(averageTarget *big.Int) {
 	averageTarget.SetInt64(0)
 
-	target := acquireBigInt(0)
-	defer releaseBigInt(target)
+	target := bigintpool.Acquire(0)
+	defer bigintpool.Release(target)
 	for _, node := range window {
 		util.CompactToBigWithDestination(node.bits, target)
 		averageTarget.Add(averageTarget, target)
 	}
 
-	windowLen := acquireBigInt(int64(len(window)))
-	defer releaseBigInt(windowLen)
+	windowLen := bigintpool.Acquire(int64(len(window)))
+	defer bigintpool.Release(windowLen)
 	averageTarget.Div(averageTarget, windowLen)
 }
 
