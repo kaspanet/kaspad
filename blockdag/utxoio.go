@@ -36,20 +36,6 @@ func serializeBlockUTXODiffData(w io.Writer, diffData *blockUTXODiffData) error 
 	return nil
 }
 
-// utxoEntryHeaderCode returns the calculated header code to be used when
-// serializing the provided utxo entry.
-func utxoEntryHeaderCode(entry *UTXOEntry) uint64 {
-	// As described in the serialization format comments, the header code
-	// encodes the blue score shifted over one bit and the block reward flag
-	// in the lowest bit.
-	headerCode := uint64(entry.BlockBlueScore()) << 1
-	if entry.IsCoinbase() {
-		headerCode |= 0x01
-	}
-
-	return headerCode
-}
-
 func (diffStore *utxoDiffStore) deserializeBlockUTXODiffData(serializedDiffData []byte) (*blockUTXODiffData, error) {
 	diffData := &blockUTXODiffData{}
 	r := bytes.NewBuffer(serializedDiffData)
@@ -177,10 +163,14 @@ var p2pkhUTXOEntrySerializeSize = 8 + 8 + wire.VarIntSerializeSize(25) + 25
 // serializeUTXOEntry encodes the entry to the given io.Writer and use compression if useCompression is true.
 // The compression format is described in detail above.
 func serializeUTXOEntry(w io.Writer, entry *UTXOEntry) error {
-	// Encode the header code.
-	headerCode := utxoEntryHeaderCode(entry)
+	// Encode the blueScore.
+	err := binaryserializer.PutUint64(w, byteOrder, entry.blockBlueScore)
+	if err != nil {
+		return err
+	}
 
-	err := binaryserializer.PutUint64(w, byteOrder, headerCode)
+	// Encode the packedFlags.
+	err = binaryserializer.PutUint8(w, uint8(entry.packedFlags))
 	if err != nil {
 		return err
 	}
@@ -208,26 +198,21 @@ func serializeUTXOEntry(w io.Writer, entry *UTXOEntry) error {
 // the entry according to the format that is described in detail
 // above.
 func deserializeUTXOEntry(r io.Reader) (*UTXOEntry, error) {
-	// Deserialize the header code.
-	headerCode, err := binaryserializer.Uint64(r, byteOrder)
+	// Deserialize the blueScore.
+	blockBlueScore, err := binaryserializer.Uint64(r, byteOrder)
 	if err != nil {
 		return nil, err
 	}
 
-	// Decode the header code.
-	//
-	// Bit 0 indicates whether the containing transaction is a coinbase.
-	// Bits 1-x encode blue score of the containing transaction.
-	isCoinbase := headerCode&0x01 != 0
-	blockBlueScore := headerCode >> 1
+	// Decode the packedFlags.
+	packedFlags, err := binaryserializer.Uint8(r)
+	if err != nil {
+		return nil, err
+	}
 
 	entry := &UTXOEntry{
 		blockBlueScore: blockBlueScore,
-		packedFlags:    0,
-	}
-
-	if isCoinbase {
-		entry.packedFlags |= tfCoinbase
+		packedFlags:    txoFlags(packedFlags),
 	}
 
 	entry.amount, err = binaryserializer.Uint64(r, byteOrder)
