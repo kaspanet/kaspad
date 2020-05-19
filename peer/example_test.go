@@ -2,25 +2,31 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package peer
+package peer_test
 
 import (
 	"fmt"
 	"net"
 	"time"
 
-	"github.com/kaspanet/kaspad/logs"
+	"github.com/kaspanet/kaspad/util/daghash"
+
+	"github.com/kaspanet/kaspad/peer"
 
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/wire"
 )
+
+func fakeSelectedTipFn() *daghash.Hash {
+	return &daghash.Hash{0x12, 0x34}
+}
 
 // mockRemotePeer creates a basic inbound peer listening on the simnet port for
 // use with Example_peerConnection. It does not return until the listner is
 // active.
 func mockRemotePeer() error {
 	// Configure peer to act as a simnet node that offers no services.
-	peerCfg := &Config{
+	peerCfg := &peer.Config{
 		UserAgentName:    "peer",  // User agent name to advertise.
 		UserAgentVersion: "1.0.0", // User agent version to advertise.
 		DAGParams:        &dagconfig.SimnetParams,
@@ -40,7 +46,7 @@ func mockRemotePeer() error {
 		}
 
 		// Create and start the inbound
-		p := NewInboundPeer(peerCfg)
+		p := peer.NewInboundPeer(peerCfg)
 		err = p.AssociateConnection(conn)
 		if err != nil {
 			fmt.Printf("AssociateConnection: error %+v\n", err)
@@ -48,17 +54,16 @@ func mockRemotePeer() error {
 		}
 	}()
 
+	<-time.After(1 * time.Second)
 	return nil
 }
 
 // This example demonstrates the basic process for initializing and creating an
-// outbound  Peers negotiate by exchanging version and verack messages.
+// outbound peer. Peers negotiate by exchanging version and verack messages.
 // For demonstration, a simple handler for version message is attached to the
 // peer.
 //
 func Example_newOutboundPeer() {
-	log.SetLevel(logs.LevelOff) // Disable logs to not interfere with output
-
 	// Ordinarily this will not be needed since the outbound peer will be
 	// connecting to a remote peer, however, since this example is executed
 	// and tested, a mock remote peer is needed to listen for the outbound
@@ -74,22 +79,22 @@ func Example_newOutboundPeer() {
 	// messages. The verack listener is used here to signal the code below
 	// when the handshake has been finished by signalling a channel.
 	verack := make(chan struct{})
-	peerCfg := &Config{
+	peerCfg := &peer.Config{
 		UserAgentName:    "peer",  // User agent name to advertise.
 		UserAgentVersion: "1.0.0", // User agent version to advertise.
 		DAGParams:        &dagconfig.SimnetParams,
 		Services:         0,
-		Listeners: MessageListeners{
-			OnVersion: func(p *Peer, msg *wire.MsgVersion) {
+		Listeners: peer.MessageListeners{
+			OnVersion: func(p *peer.Peer, msg *wire.MsgVersion) {
 				fmt.Println("outbound: received version")
 			},
-			OnVerAck: func(p *Peer, msg *wire.MsgVerAck) {
+			OnVerAck: func(p *peer.Peer, msg *wire.MsgVerAck) {
 				verack <- struct{}{}
 			},
 		},
 		SelectedTipHash: fakeSelectedTipFn,
 	}
-	p, err := NewOutboundPeer(peerCfg, "127.0.0.1:18555")
+	p, err := peer.NewOutboundPeer(peerCfg, "127.0.0.1:18555")
 	if err != nil {
 		fmt.Printf("NewOutboundPeer: error %v\n", err)
 		return

@@ -40,6 +40,11 @@ type conn struct {
 	proxy bool
 }
 
+const (
+	addr1 = "10.0.0.1:16111"
+	addr2 = "10.0.0.2:16111"
+)
+
 // LocalAddr returns the local address for the connection.
 func (c conn) LocalAddr() net.Addr {
 	return &addr{c.lnet, c.laddr}
@@ -285,8 +290,8 @@ func TestPeerConnection(t *testing.T) {
 			"socks proxy",
 			func() (*Peer, *Peer, error) {
 				inConn, outConn := pipe(
-					&conn{raddr: "10.0.0.1:16111", proxy: true},
-					&conn{raddr: "10.0.0.2:16111"},
+					&conn{raddr: addr1, proxy: true},
+					&conn{raddr: addr2},
 				)
 				inPeer, outPeer, err := setupPeersWithConns(inPeerCfg, outPeerCfg, inConn, outConn)
 				if err != nil {
@@ -592,21 +597,21 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 	}
 
 	localNA := wire.NewNetAddressIPPort(
-		net.ParseIP("10.0.0.1"),
+		net.ParseIP(addr1),
 		uint16(16111),
 		wire.SFNodeNetwork,
 	)
 	remoteNA := wire.NewNetAddressIPPort(
-		net.ParseIP("10.0.0.2"),
+		net.ParseIP(addr2),
 		uint16(16111),
 		wire.SFNodeNetwork,
 	)
 	localConn, remoteConn := pipe(
-		&conn{laddr: "10.0.0.1:16111", raddr: "10.0.0.2:16111"},
-		&conn{laddr: "10.0.0.2:16111", raddr: "10.0.0.1:16111"},
+		&conn{laddr: addr1, raddr: addr2},
+		&conn{laddr: addr2, raddr: addr1},
 	)
 
-	p, err := NewOutboundPeer(peerCfg, "10.0.0.1:16111")
+	p, err := NewOutboundPeer(peerCfg, addr1)
 	if err != nil {
 		t.Fatalf("NewOutboundPeer: unexpected err - %v\n", err)
 	}
@@ -706,8 +711,8 @@ func fakeSelectedTipFn() *daghash.Hash {
 
 func setupPeers(inPeerCfg, outPeerCfg *Config) (inPeer *Peer, outPeer *Peer, err error) {
 	inConn, outConn := pipe(
-		&conn{raddr: "10.0.0.1:16111"},
-		&conn{raddr: "10.0.0.2:16111"},
+		&conn{raddr: addr1},
+		&conn{raddr: addr2},
 	)
 	return setupPeersWithConns(inPeerCfg, outPeerCfg, inConn, outConn)
 }
@@ -721,7 +726,7 @@ func setupPeersWithConns(inPeerCfg, outPeerCfg *Config, inConn, outConn *conn) (
 		inPeerDone <- struct{}{}
 	}()
 
-	outPeer, err = NewOutboundPeer(outPeerCfg, "10.0.0.2:16111")
+	outPeer, err = NewOutboundPeer(outPeerCfg, addr2)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -738,7 +743,7 @@ func setupPeersWithConns(inPeerCfg, outPeerCfg *Config, inConn, outConn *conn) (
 	}
 
 	if inPeerErr != nil && outPeerErr != nil {
-		return nil, nil, errors.Errorf("Both inPeer and outPeer failed connecting: \nInPeer: %+v\nOutPeer: %+v",
+		return nil, nil, errors.Errorf("both inPeer and outPeer failed connecting: \nInPeer: %+v\nOutPeer: %+v",
 			inPeerErr, outPeerErr)
 	}
 	if inPeerErr != nil {
