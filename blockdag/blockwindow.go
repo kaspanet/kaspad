@@ -54,37 +54,36 @@ func (window blockWindow) minMaxTimestamps() (min, max int64) {
 	return
 }
 
-var blockWindowBigIntPool = sync.Pool{
+var difficultyBigIntPool = sync.Pool{
 	New: func() interface{} {
 		return big.NewInt(0)
 	},
 }
 
-func acquireBigInt() *big.Int {
-	return blockWindowBigIntPool.Get().(*big.Int)
+func acquireBigInt(x int64) *big.Int {
+	bigInt := difficultyBigIntPool.Get().(*big.Int)
+	bigInt.SetInt64(x)
+	return bigInt
 }
 
 func releaseBigInt(toRelease *big.Int) {
 	toRelease.SetInt64(0)
-	blockWindowBigIntPool.Put(toRelease)
+	difficultyBigIntPool.Put(toRelease)
 }
 
-func (window blockWindow) averageTarget() *big.Int {
-	averageTarget := big.NewInt(0)
+func (window blockWindow) averageTarget(averageTarget *big.Int) {
+	averageTarget.SetInt64(0)
 
-	target := acquireBigInt()
+	target := acquireBigInt(0)
 	defer releaseBigInt(target)
 	for _, node := range window {
 		util.CompactToBigWithDestination(node.bits, target)
 		averageTarget.Add(averageTarget, target)
 	}
 
-	windowLen := acquireBigInt()
+	windowLen := acquireBigInt(int64(len(window)))
 	defer releaseBigInt(windowLen)
-	windowLen.SetInt64(int64(len(window)))
 	averageTarget.Div(averageTarget, windowLen)
-
-	return averageTarget
 }
 
 func (window blockWindow) medianTimestamp() (int64, error) {
