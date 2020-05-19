@@ -62,7 +62,6 @@ func mockRemotePeer() error {
 // outbound peer. Peers negotiate by exchanging version and verack messages.
 // For demonstration, a simple handler for version message is attached to the
 // peer.
-//
 func Example_newOutboundPeer() {
 	// Ordinarily this will not be needed since the outbound peer will be
 	// connecting to a remote peer, however, since this example is executed
