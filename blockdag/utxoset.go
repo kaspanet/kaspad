@@ -622,6 +622,12 @@ func (dus *DiffUTXOSet) clone() UTXOSet {
 	return NewDiffUTXOSet(dus.base.clone().(*FullUTXOSet), dus.UTXODiff.clone())
 }
 
+// cloneWithoutBase returns a *DiffUTXOSet with same
+// base as this *DiffUTXOSet and cloned diff.
+func (dus *DiffUTXOSet) cloneWithoutBase() UTXOSet {
+	return NewDiffUTXOSet(dus.base, dus.UTXODiff.clone())
+}
+
 // Get returns the UTXOEntry associated with provided outpoint in this UTXOSet.
 // Returns false in second output if this UTXOEntry was not found
 func (dus *DiffUTXOSet) Get(outpoint wire.Outpoint) (*UTXOEntry, bool) {

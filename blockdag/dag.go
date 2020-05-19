@@ -1138,12 +1138,7 @@ func (node *blockNode) fetchBlueBlocks() ([]*util.Block, error) {
 func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlocks []*util.Block) (
 	pastUTXO UTXOSet, multiBlockTxsAcceptanceData MultiBlockTxsAcceptanceData, err error) {
 
-	selectedParentPastDiffUTXOSet, ok := selectedParentPastUTXO.(*DiffUTXOSet)
-	if !ok {
-		panic(errors.New("selectedParentPastUTXO is not *DiffUTXOSet"))
-	}
-	pastUTXO = NewDiffUTXOSet(selectedParentPastDiffUTXOSet.base, selectedParentPastDiffUTXOSet.UTXODiff.clone())
-
+	pastUTXO = selectedParentPastUTXO.(*DiffUTXOSet).cloneWithoutBase()
 	multiBlockTxsAcceptanceData = make(MultiBlockTxsAcceptanceData, len(blueBlocks))
 
 	// Add blueBlocks to multiBlockTxsAcceptanceData in topological order. This
