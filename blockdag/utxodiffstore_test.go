@@ -145,7 +145,7 @@ func TestClearOldEntries(t *testing.T) {
 		}
 	}
 
-	// Add a block on top of the virtual to force the retrieval of all diffData
+	// Add a block on top of the genesis to force the retrieval of all diffData
 	processedBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{dag.genesis.hash}, nil)
 	node := dag.index.LookupNode(processedBlock.BlockHash())
 	if node == nil {
