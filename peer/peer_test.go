@@ -201,7 +201,8 @@ func testPeer(t *testing.T, p *Peer, s peerStats) {
 
 // TestPeerConnection tests connection between inbound and outbound peers.
 func TestPeerConnection(t *testing.T) {
-	inPeerVerack, outPeerVerack, inPeerOnWriteVerack, outPeerOnWriteVerack := make(chan struct{}), make(chan struct{}), make(chan struct{}), make(chan struct{})
+	inPeerVerack, outPeerVerack, inPeerOnWriteVerack, outPeerOnWriteVerack :=
+		make(chan struct{}, 1), make(chan struct{}, 1), make(chan struct{}, 1), make(chan struct{}, 1)
 
 	inPeerCfg := &Config{
 		Listeners: MessageListeners{
@@ -231,7 +232,7 @@ func TestPeerConnection(t *testing.T) {
 			OnWrite: func(p *Peer, bytesWritten int, msg wire.Message,
 				err error) {
 				if _, ok := msg.(*wire.MsgVerAck); ok {
-					inPeerOnWriteVerack <- struct{}{}
+					outPeerOnWriteVerack <- struct{}{}
 				}
 			},
 		},
@@ -335,7 +336,7 @@ func TestPeerConnection(t *testing.T) {
 
 // TestPeerListeners tests that the peer listeners are called as expected.
 func TestPeerListeners(t *testing.T) {
-	inPeerVerack, outPeerVerack := make(chan struct{}), make(chan struct{})
+	inPeerVerack, outPeerVerack := make(chan struct{}, 1), make(chan struct{}, 1)
 	ok := make(chan wire.Message, 20)
 	inPeerCfg := &Config{
 		Listeners: MessageListeners{
@@ -402,7 +403,7 @@ func TestPeerListeners(t *testing.T) {
 		SelectedTipHash:   fakeSelectedTipFn,
 	}
 
-	var outPeerCfg *Config
+	outPeerCfg := &Config{}
 	*outPeerCfg = *inPeerCfg // copy inPeerCfg
 	outPeerCfg.Listeners.OnVerAck = func(p *Peer, msg *wire.MsgVerAck) {
 		outPeerVerack <- struct{}{}
