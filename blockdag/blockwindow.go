@@ -73,17 +73,17 @@ func (window blockWindow) averageTarget() *big.Int {
 	averageTarget := big.NewInt(0)
 
 	target := acquireBigInt()
+	defer releaseBigInt(target)
 	for _, node := range window {
 		util.CompactToBigWithDestination(node.bits, target)
 		averageTarget.Add(averageTarget, target)
 	}
 
-	// Reuse `target` to avoid a big.Int allocation
-	windowLen := target
+	windowLen := acquireBigInt()
+	defer releaseBigInt(windowLen)
 	windowLen.SetInt64(int64(len(window)))
 	averageTarget.Div(averageTarget, windowLen)
 
-	releaseBigInt(target)
 	return averageTarget
 }
 
