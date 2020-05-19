@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
+	"math"
 	"os"
 	"path/filepath"
 	"testing"
@@ -952,6 +953,11 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 
 	// Manually set the last finality point
 	dag.lastFinalityPoint = nodes[finalityInterval-1]
+
+	// Don't unload diffData
+	currentDifference := maxBlueScoreDifferenceToKeepLoaded
+	maxBlueScoreDifferenceToKeepLoaded = math.MaxUint64
+	defer func() { maxBlueScoreDifferenceToKeepLoaded = currentDifference }()
 
 	dag.finalizeNodesBelowFinalityPoint(deleteDiffData)
 	flushUTXODiffStore()

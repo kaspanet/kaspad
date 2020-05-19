@@ -804,6 +804,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 
 	dag.index.clearDirtyEntries()
 	dag.utxoDiffStore.clearDirtyEntries()
+	dag.utxoDiffStore.clearOldEntries()
 	dag.reachabilityStore.clearDirtyEntries()
 	dag.multisetStore.clearNewEntries()
 
