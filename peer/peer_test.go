@@ -201,16 +201,17 @@ func testPeer(t *testing.T, p *Peer, s peerStats) {
 
 // TestPeerConnection tests connection between inbound and outbound peers.
 func TestPeerConnection(t *testing.T) {
-	verack := make(chan struct{})
+	inPeerVerack, outPeerVerack, inPeerOnWriteVerack, outPeerOnWriteVerack := make(chan struct{}), make(chan struct{}), make(chan struct{}), make(chan struct{})
+
 	inPeerCfg := &Config{
 		Listeners: MessageListeners{
 			OnVerAck: func(p *Peer, msg *wire.MsgVerAck) {
-				verack <- struct{}{}
+				inPeerVerack <- struct{}{}
 			},
 			OnWrite: func(p *Peer, bytesWritten int, msg wire.Message,
 				err error) {
 				if _, ok := msg.(*wire.MsgVerAck); ok {
-					verack <- struct{}{}
+					inPeerOnWriteVerack <- struct{}{}
 				}
 			},
 		},
@@ -223,7 +224,17 @@ func TestPeerConnection(t *testing.T) {
 		SelectedTipHash:   fakeSelectedTipFn,
 	}
 	outPeerCfg := &Config{
-		Listeners:         inPeerCfg.Listeners,
+		Listeners: MessageListeners{
+			OnVerAck: func(p *Peer, msg *wire.MsgVerAck) {
+				outPeerVerack <- struct{}{}
+			},
+			OnWrite: func(p *Peer, bytesWritten int, msg wire.Message,
+				err error) {
+				if _, ok := msg.(*wire.MsgVerAck); ok {
+					inPeerOnWriteVerack <- struct{}{}
+				}
+			},
+		},
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
@@ -275,7 +286,9 @@ func TestPeerConnection(t *testing.T) {
 				}
 
 				// wait for 4 veracks
-				if !testtools.WaitTillAllCompleteOrTimeout(time.Second, verack, verack, verack, verack) {
+				if !testtools.WaitTillAllCompleteOrTimeout(time.Second,
+					inPeerVerack, inPeerOnWriteVerack, outPeerVerack, outPeerOnWriteVerack) {
+
 					return nil, nil, errors.New("handshake timeout")
 				}
 				return inPeer, outPeer, nil
@@ -294,7 +307,9 @@ func TestPeerConnection(t *testing.T) {
 				}
 
 				// wait for 4 veracks
-				if !testtools.WaitTillAllCompleteOrTimeout(time.Second, verack, verack, verack, verack) {
+				if !testtools.WaitTillAllCompleteOrTimeout(time.Second,
+					inPeerVerack, inPeerOnWriteVerack, outPeerVerack, outPeerOnWriteVerack) {
+
 					return nil, nil, errors.New("handshake timeout")
 				}
 				return inPeer, outPeer, nil
@@ -320,9 +335,9 @@ func TestPeerConnection(t *testing.T) {
 
 // TestPeerListeners tests that the peer listeners are called as expected.
 func TestPeerListeners(t *testing.T) {
-	verack := make(chan struct{}, 1)
+	inPeerVerack, outPeerVerack := make(chan struct{}), make(chan struct{})
 	ok := make(chan wire.Message, 20)
-	peerCfg := &Config{
+	inPeerCfg := &Config{
 		Listeners: MessageListeners{
 			OnGetAddr: func(p *Peer, msg *wire.MsgGetAddr) {
 				ok <- msg
@@ -373,7 +388,7 @@ func TestPeerListeners(t *testing.T) {
 				ok <- msg
 			},
 			OnVerAck: func(p *Peer, msg *wire.MsgVerAck) {
-				verack <- struct{}{}
+				inPeerVerack <- struct{}{}
 			},
 			OnReject: func(p *Peer, msg *wire.MsgReject) {
 				ok <- msg
@@ -387,12 +402,18 @@ func TestPeerListeners(t *testing.T) {
 		SelectedTipHash:   fakeSelectedTipFn,
 	}
 
-	inPeer, outPeer, err := setupPeers(peerCfg, peerCfg)
+	var outPeerCfg *Config
+	*outPeerCfg = *inPeerCfg // copy inPeerCfg
+	outPeerCfg.Listeners.OnVerAck = func(p *Peer, msg *wire.MsgVerAck) {
+		outPeerVerack <- struct{}{}
+	}
+
+	inPeer, outPeer, err := setupPeers(inPeerCfg, outPeerCfg)
 	if err != nil {
 		t.Errorf("TestPeerListeners: %v", err)
 	}
 	// wait for 2 veracks
-	if !testtools.WaitTillAllCompleteOrTimeout(time.Second, verack, verack) {
+	if !testtools.WaitTillAllCompleteOrTimeout(time.Second, inPeerVerack, outPeerVerack) {
 		t.Errorf("TestPeerListeners: Timout waiting for veracks")
 	}
 
