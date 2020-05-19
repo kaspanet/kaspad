@@ -14,16 +14,16 @@ type blockUTXODiffData struct {
 
 type utxoDiffStore struct {
 	dag    *BlockDAG
-	dirty  map[daghash.Hash]struct{}
-	loaded map[daghash.Hash]*blockUTXODiffData
+	dirty  map[*blockNode]struct{}
+	loaded map[*blockNode]*blockUTXODiffData
 	mtx    *locks.PriorityMutex
 }
 
 func newUTXODiffStore(dag *BlockDAG) *utxoDiffStore {
 	return &utxoDiffStore{
 		dag:    dag,
-		dirty:  make(map[daghash.Hash]struct{}),
-		loaded: make(map[daghash.Hash]*blockUTXODiffData),
+		dirty:  make(map[*blockNode]struct{}),
+		loaded: make(map[*blockNode]*blockUTXODiffData),
 		mtx:    locks.NewPriorityMutex(),
 	}
 }
@@ -32,15 +32,15 @@ func (diffStore *utxoDiffStore) setBlockDiff(node *blockNode, diff *UTXODiff) er
 	diffStore.mtx.HighPriorityWriteLock()
 	defer diffStore.mtx.HighPriorityWriteUnlock()
 	// load the diff data from DB to diffStore.loaded
-	_, err := diffStore.diffDataByHash(node.hash)
+	_, err := diffStore.diffDataByHash(node)
 	if dbaccess.IsNotFoundError(err) {
-		diffStore.loaded[*node.hash] = &blockUTXODiffData{}
+		diffStore.loaded[node] = &blockUTXODiffData{}
 	} else if err != nil {
 		return err
 	}
 
-	diffStore.loaded[*node.hash].diff = diff
-	diffStore.setBlockAsDirty(node.hash)
+	diffStore.loaded[node].diff = diff
+	diffStore.setBlockAsDirty(node)
 	return nil
 }
 
@@ -48,19 +48,19 @@ func (diffStore *utxoDiffStore) setBlockDiffChild(node *blockNode, diffChild *bl
 	diffStore.mtx.HighPriorityWriteLock()
 	defer diffStore.mtx.HighPriorityWriteUnlock()
 	// load the diff data from DB to diffStore.loaded
-	_, err := diffStore.diffDataByHash(node.hash)
+	_, err := diffStore.diffDataByHash(node)
 	if err != nil {
 		return err
 	}
 
-	diffStore.loaded[*node.hash].diffChild = diffChild
-	diffStore.setBlockAsDirty(node.hash)
+	diffStore.loaded[node].diffChild = diffChild
+	diffStore.setBlockAsDirty(node)
 	return nil
 }
 
-func (diffStore *utxoDiffStore) removeBlocksDiffData(dbContext dbaccess.Context, blockHashes []*daghash.Hash) error {
-	for _, hash := range blockHashes {
-		err := diffStore.removeBlockDiffData(dbContext, hash)
+func (diffStore *utxoDiffStore) removeBlocksDiffData(dbContext dbaccess.Context, nodes []*blockNode) error {
+	for _, node := range nodes {
+		err := diffStore.removeBlockDiffData(dbContext, node)
 		if err != nil {
 			return err
 		}
@@ -68,37 +68,37 @@ func (diffStore *utxoDiffStore) removeBlocksDiffData(dbContext dbaccess.Context,
 	return nil
 }
 
-func (diffStore *utxoDiffStore) removeBlockDiffData(dbContext dbaccess.Context, blockHash *daghash.Hash) error {
+func (diffStore *utxoDiffStore) removeBlockDiffData(dbContext dbaccess.Context, node *blockNode) error {
 	diffStore.mtx.LowPriorityWriteLock()
 	defer diffStore.mtx.LowPriorityWriteUnlock()
-	delete(diffStore.loaded, *blockHash)
-	err := dbaccess.RemoveDiffData(dbContext, blockHash)
+	delete(diffStore.loaded, node)
+	err := dbaccess.RemoveDiffData(dbContext, node.hash)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (diffStore *utxoDiffStore) setBlockAsDirty(blockHash *daghash.Hash) {
-	diffStore.dirty[*blockHash] = struct{}{}
+func (diffStore *utxoDiffStore) setBlockAsDirty(node *blockNode) {
+	diffStore.dirty[node] = struct{}{}
 }
 
-func (diffStore *utxoDiffStore) diffDataByHash(hash *daghash.Hash) (*blockUTXODiffData, error) {
-	if diffData, ok := diffStore.loaded[*hash]; ok {
+func (diffStore *utxoDiffStore) diffDataByHash(node *blockNode) (*blockUTXODiffData, error) {
+	if diffData, ok := diffStore.loaded[node]; ok {
 		return diffData, nil
 	}
-	diffData, err := diffStore.diffDataFromDB(hash)
+	diffData, err := diffStore.diffDataFromDB(node.hash)
 	if err != nil {
 		return nil, err
 	}
-	diffStore.loaded[*hash] = diffData
+	diffStore.loaded[node] = diffData
 	return diffData, nil
 }
 
 func (diffStore *utxoDiffStore) diffByNode(node *blockNode) (*UTXODiff, error) {
 	diffStore.mtx.HighPriorityReadLock()
 	defer diffStore.mtx.HighPriorityReadUnlock()
-	diffData, err := diffStore.diffDataByHash(node.hash)
+	diffData, err := diffStore.diffDataByHash(node)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func (diffStore *utxoDiffStore) diffByNode(node *blockNode) (*UTXODiff, error) {
 func (diffStore *utxoDiffStore) diffChildByNode(node *blockNode) (*blockNode, error) {
 	diffStore.mtx.HighPriorityReadLock()
 	defer diffStore.mtx.HighPriorityReadUnlock()
-	diffData, err := diffStore.diffDataByHash(node.hash)
+	diffData, err := diffStore.diffDataByHash(node)
 	if err != nil {
 		return nil, err
 	}
@@ -135,11 +135,10 @@ func (diffStore *utxoDiffStore) flushToDB(dbContext *dbaccess.TxContext) error {
 	// Allocate a buffer here to avoid needless allocations/grows
 	// while writing each entry.
 	buffer := &bytes.Buffer{}
-	for hash := range diffStore.dirty {
-		hash := hash // Copy hash to a new variable to avoid passing the same pointer
+	for node := range diffStore.dirty {
 		buffer.Reset()
-		diffData := diffStore.loaded[hash]
-		err := storeDiffData(dbContext, buffer, &hash, diffData)
+		diffData := diffStore.loaded[node]
+		err := storeDiffData(dbContext, buffer, node.hash, diffData)
 		if err != nil {
 			return err
 		}
@@ -148,7 +147,7 @@ func (diffStore *utxoDiffStore) flushToDB(dbContext *dbaccess.TxContext) error {
 }
 
 func (diffStore *utxoDiffStore) clearDirtyEntries() {
-	diffStore.dirty = make(map[daghash.Hash]struct{})
+	diffStore.dirty = make(map[*blockNode]struct{})
 }
 
 // storeDiffData stores the UTXO diff data to the database.

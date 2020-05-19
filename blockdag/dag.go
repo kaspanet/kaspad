@@ -910,9 +910,9 @@ func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
 	for parent := range dag.lastFinalityPoint.parents {
 		queue = append(queue, parent)
 	}
-	var blockHashesToDelete []*daghash.Hash
+	var nodesToDelete []*blockNode
 	if deleteDiffData {
-		blockHashesToDelete = make([]*daghash.Hash, 0, dag.dagParams.FinalityInterval)
+		nodesToDelete = make([]*blockNode, 0, dag.dagParams.FinalityInterval)
 	}
 	for len(queue) > 0 {
 		var current *blockNode
@@ -920,7 +920,7 @@ func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
 		if !current.isFinalized {
 			current.isFinalized = true
 			if deleteDiffData {
-				blockHashesToDelete = append(blockHashesToDelete, current.hash)
+				nodesToDelete = append(nodesToDelete, current)
 			}
 			for parent := range current.parents {
 				queue = append(queue, parent)
@@ -928,7 +928,7 @@ func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
 		}
 	}
 	if deleteDiffData {
-		err := dag.utxoDiffStore.removeBlocksDiffData(dbaccess.NoTx(), blockHashesToDelete)
+		err := dag.utxoDiffStore.removeBlocksDiffData(dbaccess.NoTx(), nodesToDelete)
 		if err != nil {
 			panic(fmt.Sprintf("Error removing diff data from utxoDiffStore: %s", err))
 		}

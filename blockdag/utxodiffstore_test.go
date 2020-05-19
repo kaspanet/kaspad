@@ -78,7 +78,7 @@ func TestUTXODiffStore(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to commit database transaction: %s", err)
 	}
-	delete(dag.utxoDiffStore.loaded, *node.hash)
+	delete(dag.utxoDiffStore.loaded, node)
 
 	if storeDiff, err := dag.utxoDiffStore.diffByNode(node); err != nil {
 		t.Fatalf("diffByNode: unexpected error: %s", err)
@@ -87,7 +87,7 @@ func TestUTXODiffStore(t *testing.T) {
 	}
 
 	// Check if getBlockDiff caches the result in dag.utxoDiffStore.loaded
-	if loadedDiffData, ok := dag.utxoDiffStore.loaded[*node.hash]; !ok {
+	if loadedDiffData, ok := dag.utxoDiffStore.loaded[node]; !ok {
 		t.Errorf("the diff data wasn't added to loaded map after requesting it")
 	} else if !reflect.DeepEqual(loadedDiffData.diff, diff) {
 		t.Errorf("Expected diff and loadedDiff to be equal")
