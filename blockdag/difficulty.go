@@ -5,7 +5,7 @@
 package blockdag
 
 import (
-	"math/big"
+	"github.com/kaspanet/kaspad/util/bigintpool"
 	"time"
 
 	"github.com/kaspanet/kaspad/util"
@@ -30,11 +30,20 @@ func (dag *BlockDAG) requiredDifficulty(bluestParent *blockNode, newBlockTime ti
 	// averageWindowTarget * (windowMinTimestamp / (targetTimePerBlock * windowSize))
 	// The result uses integer division which means it will be slightly
 	// rounded down.
-	newTarget := targetsWindow.averageTarget()
+	newTarget := bigintpool.Acquire(0)
+	defer bigintpool.Release(newTarget)
+	windowTimeStampDifference := bigintpool.Acquire(windowMaxTimeStamp - windowMinTimestamp)
+	defer bigintpool.Release(windowTimeStampDifference)
+	targetTimePerBlock := bigintpool.Acquire(dag.targetTimePerBlock)
+	defer bigintpool.Release(targetTimePerBlock)
+	difficultyAdjustmentWindowSize := bigintpool.Acquire(int64(dag.difficultyAdjustmentWindowSize))
+	defer bigintpool.Release(difficultyAdjustmentWindowSize)
+
+	targetsWindow.averageTarget(newTarget)
 	newTarget.
-		Mul(newTarget, big.NewInt(windowMaxTimeStamp-windowMinTimestamp)).
-		Div(newTarget, big.NewInt(dag.targetTimePerBlock)).
-		Div(newTarget, big.NewInt(int64(dag.difficultyAdjustmentWindowSize)))
+		Mul(newTarget, windowTimeStampDifference).
+		Div(newTarget, targetTimePerBlock).
+		Div(newTarget, difficultyAdjustmentWindowSize)
 	if newTarget.Cmp(dag.dagParams.PowMax) > 0 {
 		return dag.powMaxBits
 	}

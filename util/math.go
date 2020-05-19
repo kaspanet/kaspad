@@ -53,6 +53,16 @@ func FastLog2Floor(n uint64) uint8 {
 // The formula to calculate N is:
 // 	N = (-1^sign) * mantissa * 256^(exponent-3)
 func CompactToBig(compact uint32) *big.Int {
+	destination := big.NewInt(0)
+	CompactToBigWithDestination(compact, destination)
+	return destination
+}
+
+// CompactToBigWithDestination is a version of CompactToBig that
+// takes a destination parameter. This is useful for saving memory,
+// as then the destination big.Int can be reused.
+// See CompactToBig for further details.
+func CompactToBigWithDestination(compact uint32, destination *big.Int) {
 	// Extract the mantissa, sign bit, and exponent.
 	mantissa := compact & 0x007fffff
 	isNegative := compact&0x00800000 != 0
@@ -63,21 +73,18 @@ func CompactToBig(compact uint32) *big.Int {
 	// treat the exponent as the number of bytes and shift the mantissa
 	// right or left accordingly. This is equivalent to:
 	// N = mantissa * 256^(exponent-3)
-	var bn *big.Int
 	if exponent <= 3 {
 		mantissa >>= 8 * (3 - exponent)
-		bn = big.NewInt(int64(mantissa))
+		destination.SetInt64(int64(mantissa))
 	} else {
-		bn = big.NewInt(int64(mantissa))
-		bn.Lsh(bn, 8*(exponent-3))
+		destination.SetInt64(int64(mantissa))
+		destination.Lsh(destination, 8*(exponent-3))
 	}
 
 	// Make it negative if the sign bit is set.
 	if isNegative {
-		bn = bn.Neg(bn)
+		destination.Neg(destination)
 	}
-
-	return bn
 }
 
 // BigToCompact converts a whole number N to a compact representation using
