@@ -180,7 +180,7 @@ func (diffStore *utxoDiffStore) clearOldEntries() {
 func storeDiffData(dbContext dbaccess.Context, w *bytes.Buffer, hash *daghash.Hash, diffData *blockUTXODiffData) error {
 	// To avoid a ton of allocs, use the io.Writer
 	// instead of allocating one. We expect the buffer to
-	// already be initalized and, in most cases, to already
+	// already be initialized and, in most cases, to already
 	// be large enough to accommodate the serialized data
 	// without growing.
 	err := serializeBlockUTXODiffData(w, diffData)

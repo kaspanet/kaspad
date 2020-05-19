@@ -93,3 +93,58 @@ func TestUTXODiffStore(t *testing.T) {
 		t.Errorf("Expected diff and loadedDiff to be equal")
 	}
 }
+
+func TestClearOldEntries(t *testing.T) {
+	// Create a new database and DAG instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("TestClearOldEntries", true, Config{
+		DAGParams: &dagconfig.SimnetParams,
+	})
+	if err != nil {
+		t.Fatalf("TestClearOldEntries: Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
+
+	// Set maxBlueScoreDifferenceToKeepLoaded to 2 to make this test fast to run
+	currentDifference := maxBlueScoreDifferenceToKeepLoaded
+	maxBlueScoreDifferenceToKeepLoaded = 1
+	defer func() { maxBlueScoreDifferenceToKeepLoaded = currentDifference }()
+
+	// Add 1 blocks
+	tipHash := dag.genesis.hash
+	blockNodes := make([]*blockNode, 1)
+	for i := 0; i < 1; i++ {
+		processedBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{tipHash}, nil)
+		tipHash = processedBlock.BlockHash()
+
+		node := dag.index.LookupNode(processedBlock.BlockHash())
+		if node == nil {
+			t.Fatalf("TestClearOldEntries: missing blockNode for hash %s", processedBlock.BlockHash())
+		}
+		blockNodes[i] = node
+	}
+
+	// Make sure that all of them exist in the loaded set
+	for _, node := range blockNodes {
+		_, ok := dag.utxoDiffStore.loaded[node]
+		if !ok {
+			t.Fatalf("TestClearOldEntries: diffData for node %s is not in the loaded set", node.hash)
+		}
+	}
+
+	//// Add 1 more blocks on top of the others
+	//for i := 0; i < 1; i++ {
+	//	processedBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{tipHash}, nil)
+	//	tipHash = processedBlock.BlockHash()
+	//}
+	//
+	//// Make sure that all the old nodes no longer exist in the loaded set
+	//for _, node := range blockNodes {
+	//	_, ok := dag.utxoDiffStore.loaded[node]
+	//	if ok {
+	//		t.Fatalf("TestClearOldEntries: diffData for node %s is in the loaded set", node.hash)
+	//	}
+	//}
+
+	// Add a block on top of the virtual to force the retrieval of all diffData
+	PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{dag.genesis.hash}, nil)
+}
