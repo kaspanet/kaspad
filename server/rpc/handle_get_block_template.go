@@ -72,7 +72,6 @@ type gbtWorkState struct {
 	template      *mining.BlockTemplate
 	notifyMap     map[string]map[int64]chan struct{}
 	timeSource    blockdag.TimeSource
-	isSynced      bool
 }
 
 // newGbtWorkState returns a new instance of a gbtWorkState with all internal
@@ -194,7 +193,7 @@ func handleGetBlockTemplateRequest(s *Server, request *rpcmodel.TemplateRequest,
 	if err := state.updateBlockTemplate(s, useCoinbaseValue); err != nil {
 		return nil, err
 	}
-	return state.blockTemplateResult(s.cfg.DAG, useCoinbaseValue)
+	return state.blockTemplateResult(s, useCoinbaseValue)
 }
 
 // handleGetBlockTemplateLongPoll is a helper for handleGetBlockTemplateRequest
@@ -239,7 +238,7 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 	// Include whether or not it is valid to submit work against the old
 	// block template depending on whether or not a solution has already
 	// been found and added to the block DAG.
-	result, err = state.blockTemplateResult(s.cfg.DAG, useCoinbaseValue)
+	result, err = state.blockTemplateResult(s, useCoinbaseValue)
 	if err != nil {
 		return nil, err
 	}
@@ -268,7 +267,7 @@ func blockTemplateOrLongPollChan(s *Server, longPollID string, useCoinbaseValue 
 	// the caller is invalid.
 	parentHashes, lastGenerated, err := decodeLongPollID(longPollID)
 	if err != nil {
-		result, err := state.blockTemplateResult(s.cfg.DAG, useCoinbaseValue)
+		result, err := state.blockTemplateResult(s, useCoinbaseValue)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -286,7 +285,7 @@ func blockTemplateOrLongPollChan(s *Server, longPollID string, useCoinbaseValue 
 		// Include whether or not it is valid to submit work against the
 		// old block template depending on whether or not a solution has
 		// already been found and added to the block DAG.
-		result, err := state.blockTemplateResult(s.cfg.DAG, useCoinbaseValue)
+		result, err := state.blockTemplateResult(s, useCoinbaseValue)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -628,15 +627,6 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		// consensus rules.
 		minTimestamp := s.cfg.DAG.NextBlockMinimumTime()
 
-		// Check whether this node is synced with the rest of of the
-		// network. There's almost never a good reason to mine on top
-		// of an unsynced DAG, and miners are generally expected not to
-		// mine when isSynced is false.
-		// This is not a straight-up error because the choice of whether
-		// to mine or not is the responsibility of the miner rather
-		// than the node's.
-		isSynced := s.cfg.SyncMgr.IsSynced()
-
 		// Update work state to ensure another block template isn't
 		// generated until needed.
 		state.template = template
@@ -644,7 +634,6 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		state.lastTxUpdate = lastTxUpdate
 		state.tipHashes = tipHashes
 		state.minTimestamp = minTimestamp
-		state.isSynced = isSynced
 
 		log.Debugf("Generated block template (timestamp %s, "+
 			"target %s, merkle root %s)",
@@ -711,7 +700,8 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 // and returned to the caller.
 //
 // This function MUST be called with the state locked.
-func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinbaseValue bool) (*rpcmodel.GetBlockTemplateResult, error) {
+func (state *gbtWorkState) blockTemplateResult(s *Server, useCoinbaseValue bool) (*rpcmodel.GetBlockTemplateResult, error) {
+	dag := s.cfg.DAG
 	// Ensure the timestamps are still in valid range for the template.
 	// This should really only ever happen if the local clock is changed
 	// after the template is generated, but it's important to avoid serving
@@ -786,6 +776,16 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 	//  Omitting CoinbaseTxn -> coinbase, generation
 	targetDifficulty := fmt.Sprintf("%064x", util.CompactToBig(header.Bits))
 	longPollID := encodeLongPollID(state.tipHashes, state.lastGenerated)
+
+	// Check whether this node is synced with the rest of of the
+	// network. There's almost never a good reason to mine on top
+	// of an unsynced DAG, and miners are generally expected not to
+	// mine when isSynced is false.
+	// This is not a straight-up error because the choice of whether
+	// to mine or not is the responsibility of the miner rather
+	// than the node's.
+	isSynced := s.cfg.SyncMgr.IsSynced()
+
 	reply := rpcmodel.GetBlockTemplateResult{
 		Bits:                 strconv.FormatInt(int64(header.Bits), 16),
 		CurTime:              header.Timestamp.Unix(),
@@ -803,7 +803,7 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 		Mutable:              gbtMutableFields,
 		NonceRange:           gbtNonceRange,
 		Capabilities:         gbtCapabilities,
-		IsSynced:             state.isSynced,
+		IsSynced:             isSynced,
 	}
 
 	if useCoinbaseValue {
