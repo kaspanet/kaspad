@@ -934,7 +934,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 
 		// Now that the inexpensive checks are done and have passed, verify the
 		// transactions are actually allowed to spend the coins by running the
-		// expensive ECDSA signature check scripts. Doing this last helps
+		// expensive SCHNORR signature check scripts. Doing this last helps
 		// prevent CPU exhaustion attacks.
 		err := checkBlockScripts(block, pastUTXO, transactions, scriptFlags, dag.sigCache)
 		if err != nil {
