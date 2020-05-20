@@ -545,6 +545,20 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 		existingTxIDs[*id] = struct{}{}
 	}
 
+	// Check for double spends with transactions on the same block.
+	usedOutpoints := make(map[wire.Outpoint]*daghash.TxID)
+	for _, tx := range transactions {
+		for _, txIn := range tx.MsgTx().TxIn {
+			if spendingTxID, exists := usedOutpoints[txIn.PreviousOutpoint]; exists {
+				str := fmt.Sprintf("transaction %s spends "+
+					"outpoint %s that was already spent by "+
+					"transaction %s in this block", tx.ID(), txIn.PreviousOutpoint, spendingTxID)
+				return 0, ruleError(ErrDoubleSpendInSameBlock, str)
+			}
+			usedOutpoints[txIn.PreviousOutpoint] = tx.ID()
+		}
+	}
+
 	return delay, nil
 }
 
@@ -838,6 +852,11 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 			return nil, err
 		}
 
+		err = checkDoubleSpendsWithBlockPast(pastUTXO, transactions)
+		if err != nil {
+			return nil, err
+		}
+
 		if err := validateBlockMass(pastUTXO, transactions); err != nil {
 			return nil, err
 		}
@@ -913,7 +932,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 
 		// Now that the inexpensive checks are done and have passed, verify the
 		// transactions are actually allowed to spend the coins by running the
-		// expensive ECDSA signature check scripts. Doing this last helps
+		// expensive SCHNORR signature check scripts. Doing this last helps
 		// prevent CPU exhaustion attacks.
 		err := checkBlockScripts(block, pastUTXO, transactions, scriptFlags, dag.sigCache)
 		if err != nil {

@@ -6,11 +6,13 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
 	"math"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 
@@ -205,7 +207,7 @@ func TestIsKnownBlock(t *testing.T) {
 		{hash: dagconfig.SimnetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "7f2bea5aa4122aed2a542447133e73da6b6f6190ec34c061be70d4576cdd7498", want: true},
+		{hash: "48a752afbe36ad66357f751f8dee4f75665d24e18f644d83a3409b398405b46b", want: true},
 
 		// Block 100000 should be present (as an orphan).
 		{hash: "65b20b048a074793ebfd1196e49341c8d194dabfc6b44a4fd0c607406e122baf", want: true},
@@ -1124,6 +1126,23 @@ func TestIsDAGCurrentMaxDiff(t *testing.T) {
 	}
 }
 
+func testProcessBlockRuleError(t *testing.T, dag *BlockDAG, block *wire.MsgBlock, expectedRuleErr error) {
+	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(block), BFNoPoWCheck)
+
+	err = checkRuleError(err, expectedRuleErr)
+	if err != nil {
+		t.Errorf("checkRuleError: %s", err)
+	}
+
+	if isDelayed {
+		t.Fatalf("ProcessBlock: block " +
+			"is too far in the future")
+	}
+	if isOrphan {
+		t.Fatalf("ProcessBlock: block got unexpectedly orphaned")
+	}
+}
+
 func TestDoubleSpends(t *testing.T) {
 	params := dagconfig.SimnetParams
 	params.BlockCoinbaseMaturity = 0
@@ -1176,26 +1195,7 @@ func TestDoubleSpends(t *testing.T) {
 	}
 	anotherBlockWithTx1.Header.HashMerkleRoot = BuildHashMerkleTreeStore(anotherBlockWithTx1UtilTxs).Root()
 
-	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(anotherBlockWithTx1), BFNoPoWCheck)
-	if err == nil {
-		t.Errorf("ProcessBlock expected an error")
-	} else {
-		var ruleErr RuleError
-		if ok := errors.As(err, &ruleErr); ok {
-			if ruleErr.ErrorCode != ErrOverwriteTx {
-				t.Errorf("ProcessBlock expected an %v error code but got %v", ErrOverwriteTx, ruleErr.ErrorCode)
-			}
-		} else {
-			t.Errorf("ProcessBlock expected a blockdag.RuleError but got %v", err)
-		}
-	}
-	if isDelayed {
-		t.Fatalf("ProcessBlock: anotherBlockWithTx1 " +
-			"is too far in the future")
-	}
-	if isOrphan {
-		t.Fatalf("ProcessBlock: anotherBlockWithTx1 got unexpectedly orphaned")
-	}
+	testProcessBlockRuleError(t, dag, anotherBlockWithTx1, ruleError(ErrOverwriteTx, ""))
 
 	// Check that a block will be rejected if it has a transaction that double spends
 	// a transaction from its past.
@@ -1212,26 +1212,7 @@ func TestDoubleSpends(t *testing.T) {
 	}
 	blockWithDoubleSpendForTx1.Header.HashMerkleRoot = BuildHashMerkleTreeStore(blockWithDoubleSpendForTx1UtilTxs).Root()
 
-	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(blockWithDoubleSpendForTx1), BFNoPoWCheck)
-	if err == nil {
-		t.Errorf("ProcessBlock expected an error")
-	} else {
-		var ruleErr RuleError
-		if ok := errors.As(err, &ruleErr); ok {
-			if ruleErr.ErrorCode != ErrMissingTxOut {
-				t.Errorf("ProcessBlock expected an %v error code but got %v", ErrMissingTxOut, ruleErr.ErrorCode)
-			}
-		} else {
-			t.Errorf("ProcessBlock expected a blockdag.RuleError but got %v", err)
-		}
-	}
-	if isDelayed {
-		t.Fatalf("ProcessBlock: blockWithDoubleSpendForTx1 " +
-			"is too far in the future")
-	}
-	if isOrphan {
-		t.Fatalf("ProcessBlock: blockWithDoubleSpendForTx1 got unexpectedly orphaned")
-	}
+	testProcessBlockRuleError(t, dag, blockWithDoubleSpendForTx1, ruleError(ErrMissingTxOut, ""))
 
 	blockInAnticoneOfBlockWithTx1, err := PrepareBlockForTest(dag, []*daghash.Hash{fundingBlock.BlockHash()}, []*wire.MsgTx{doubleSpendTx1})
 	if err != nil {
@@ -1240,15 +1221,181 @@ func TestDoubleSpends(t *testing.T) {
 
 	// Check that a block will not get rejected if it has a transaction that double spends
 	// a transaction from its anticone.
-	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(blockInAnticoneOfBlockWithTx1), BFNoPoWCheck)
+	testProcessBlockRuleError(t, dag, blockInAnticoneOfBlockWithTx1, nil)
+
+	// Check that a block will be rejected if it has two transactions that spend the same UTXO.
+	blockWithDoubleSpendWithItself, err := PrepareBlockForTest(dag, []*daghash.Hash{fundingBlock.BlockHash()}, nil)
 	if err != nil {
-		t.Fatalf("ProcessBlock: %v", err)
+		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
-	if isDelayed {
-		t.Fatalf("ProcessBlock: blockInAnticoneOfBlockWithTx1 " +
-			"is too far in the future")
+
+	// Manually add tx1 and doubleSpendTx1.
+	blockWithDoubleSpendWithItself.Transactions = append(blockWithDoubleSpendWithItself.Transactions, tx1, doubleSpendTx1)
+	blockWithDoubleSpendWithItselfUtilTxs := make([]*util.Tx, len(blockWithDoubleSpendWithItself.Transactions))
+	for i, tx := range blockWithDoubleSpendWithItself.Transactions {
+		blockWithDoubleSpendWithItselfUtilTxs[i] = util.NewTx(tx)
 	}
-	if isOrphan {
-		t.Fatalf("ProcessBlock: blockInAnticoneOfBlockWithTx1 got unexpectedly orphaned")
+	blockWithDoubleSpendWithItself.Header.HashMerkleRoot = BuildHashMerkleTreeStore(blockWithDoubleSpendWithItselfUtilTxs).Root()
+
+	testProcessBlockRuleError(t, dag, blockWithDoubleSpendWithItself, ruleError(ErrDoubleSpendInSameBlock, ""))
+
+	// Check that a block will be rejected if it has the same transaction twice.
+	blockWithDuplicateTransaction, err := PrepareBlockForTest(dag, []*daghash.Hash{fundingBlock.BlockHash()}, nil)
+	if err != nil {
+		t.Fatalf("PrepareBlockForTest: %v", err)
+	}
+
+	// Manually add tx1 twice.
+	blockWithDuplicateTransaction.Transactions = append(blockWithDuplicateTransaction.Transactions, tx1, tx1)
+	blockWithDuplicateTransactionUtilTxs := make([]*util.Tx, len(blockWithDuplicateTransaction.Transactions))
+	for i, tx := range blockWithDuplicateTransaction.Transactions {
+		blockWithDuplicateTransactionUtilTxs[i] = util.NewTx(tx)
+	}
+	blockWithDuplicateTransaction.Header.HashMerkleRoot = BuildHashMerkleTreeStore(blockWithDuplicateTransactionUtilTxs).Root()
+	testProcessBlockRuleError(t, dag, blockWithDuplicateTransaction, ruleError(ErrDuplicateTx, ""))
+}
+
+func TestUTXOCommitment(t *testing.T) {
+	// Create a new database and dag instance to run tests against.
+	params := dagconfig.DevnetParams
+	params.BlockCoinbaseMaturity = 0
+	dag, teardownFunc, err := DAGSetup("TestUTXOCommitment", true, Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("TestUTXOCommitment: Failed to setup dag instance: %v", err)
+	}
+	defer teardownFunc()
+
+	resetExtraNonceForTest()
+
+	createTx := func(txToSpend *wire.MsgTx) *wire.MsgTx {
+		scriptPubKey, err := txscript.PayToScriptHashScript(OpTrueScript)
+		if err != nil {
+			t.Fatalf("TestUTXOCommitment: failed to build script pub key: %s", err)
+		}
+		signatureScript, err := txscript.PayToScriptHashSignatureScript(OpTrueScript, nil)
+		if err != nil {
+			t.Fatalf("TestUTXOCommitment: failed to build signature script: %s", err)
+		}
+		txIn := &wire.TxIn{
+			PreviousOutpoint: wire.Outpoint{TxID: *txToSpend.TxID(), Index: 0},
+			SignatureScript:  signatureScript,
+			Sequence:         wire.MaxTxInSequenceNum,
+		}
+		txOut := &wire.TxOut{
+			ScriptPubKey: scriptPubKey,
+			Value:        uint64(1),
+		}
+		return wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
+	}
+
+	// Build the following DAG:
+	// G <- A <- B <- D
+	//        <- C <-
+	genesis := params.GenesisBlock
+
+	// Block A:
+	blockA := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{genesis.BlockHash()}, nil)
+
+	// Block B:
+	blockB := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockA.BlockHash()}, nil)
+
+	// Block C:
+	txSpendBlockACoinbase := createTx(blockA.Transactions[0])
+	blockCTxs := []*wire.MsgTx{txSpendBlockACoinbase}
+	blockC := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockA.BlockHash()}, blockCTxs)
+
+	// Block D:
+	txSpendTxInBlockC := createTx(txSpendBlockACoinbase)
+	blockDTxs := []*wire.MsgTx{txSpendTxInBlockC}
+	blockD := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockB.BlockHash(), blockC.BlockHash()}, blockDTxs)
+
+	// Get the pastUTXO of blockD
+	blockNodeD := dag.index.LookupNode(blockD.BlockHash())
+	if blockNodeD == nil {
+		t.Fatalf("TestUTXOCommitment: blockNode for block D not found")
+	}
+	blockDPastUTXO, _, _, _ := dag.pastUTXO(blockNodeD)
+	blockDPastDiffUTXOSet := blockDPastUTXO.(*DiffUTXOSet)
+
+	// Build a Multiset for block D
+	multiset := secp256k1.NewMultiset()
+	for outpoint, entry := range blockDPastDiffUTXOSet.base.utxoCollection {
+		var err error
+		multiset, err = addUTXOToMultiset(multiset, entry, &outpoint)
+		if err != nil {
+			t.Fatalf("TestUTXOCommitment: addUTXOToMultiset unexpectedly failed")
+		}
+	}
+	for outpoint, entry := range blockDPastDiffUTXOSet.UTXODiff.toAdd {
+		var err error
+		multiset, err = addUTXOToMultiset(multiset, entry, &outpoint)
+		if err != nil {
+			t.Fatalf("TestUTXOCommitment: addUTXOToMultiset unexpectedly failed")
+		}
+	}
+	for outpoint, entry := range blockDPastDiffUTXOSet.UTXODiff.toRemove {
+		var err error
+		multiset, err = removeUTXOFromMultiset(multiset, entry, &outpoint)
+		if err != nil {
+			t.Fatalf("TestUTXOCommitment: removeUTXOFromMultiset unexpectedly failed")
+		}
+	}
+
+	// Turn the multiset into a UTXO commitment
+	utxoCommitment := daghash.Hash(*multiset.Finalize())
+
+	// Make sure that the two commitments are equal
+	if !utxoCommitment.IsEqual(blockNodeD.utxoCommitment) {
+		t.Fatalf("TestUTXOCommitment: calculated UTXO commitment and "+
+			"actual UTXO commitment don't match. Want: %s, got: %s",
+			utxoCommitment, blockNodeD.utxoCommitment)
+	}
+}
+
+func TestPastUTXOMultiSet(t *testing.T) {
+	// Create a new database and dag instance to run tests against.
+	params := dagconfig.SimnetParams
+	dag, teardownFunc, err := DAGSetup("TestPastUTXOMultiSet", true, Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("TestPastUTXOMultiSet: Failed to setup dag instance: %v", err)
+	}
+	defer teardownFunc()
+
+	// Build a short chain
+	genesis := params.GenesisBlock
+	blockA := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{genesis.BlockHash()}, nil)
+	blockB := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockA.BlockHash()}, nil)
+	blockC := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockB.BlockHash()}, nil)
+
+	// Take blockC's selectedParentMultiset
+	blockNodeC := dag.index.LookupNode(blockC.BlockHash())
+	if blockNodeC == nil {
+		t.Fatalf("TestPastUTXOMultiSet: blockNode for blockC not found")
+	}
+	blockCSelectedParentMultiset, err := blockNodeC.selectedParentMultiset(dag)
+	if err != nil {
+		t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset unexpectedly failed: %s", err)
+	}
+
+	// Copy the multiset
+	blockCSelectedParentMultisetCopy := *blockCSelectedParentMultiset
+	blockCSelectedParentMultiset = &blockCSelectedParentMultisetCopy
+
+	// Add a block on top of blockC
+	PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockC.BlockHash()}, nil)
+
+	// Get blockC's selectedParentMultiset again
+	blockCSelectedParentMultiSetAfterAnotherBlock, err := blockNodeC.selectedParentMultiset(dag)
+	if err != nil {
+		t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset unexpectedly failed: %s", err)
+	}
+
+	// Make sure that blockC's selectedParentMultiset had not changed
+	if !reflect.DeepEqual(blockCSelectedParentMultiset, blockCSelectedParentMultiSetAfterAnotherBlock) {
+		t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset appears to have changed")
 	}
 }

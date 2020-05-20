@@ -103,6 +103,11 @@ const (
 	// either does not exist or has already been spent.
 	ErrMissingTxOut
 
+	// ErrDoubleSpendInSameBlock indicates a transaction
+	// that spends an output that was already spent by another
+	// transaction in the same block.
+	ErrDoubleSpendInSameBlock
+
 	// ErrUnfinalizedTx indicates a transaction has not been finalized.
 	// A valid block may only contain finalized transactions.
 	ErrUnfinalizedTx
@@ -227,6 +232,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrDuplicateTxInputs:         "ErrDuplicateTxInputs",
 	ErrBadTxInput:                "ErrBadTxInput",
 	ErrMissingTxOut:              "ErrMissingTxOut",
+	ErrDoubleSpendInSameBlock:    "ErrDoubleSpendInSameBlock",
 	ErrUnfinalizedTx:             "ErrUnfinalizedTx",
 	ErrDuplicateTx:               "ErrDuplicateTx",
 	ErrOverwriteTx:               "ErrOverwriteTx",
