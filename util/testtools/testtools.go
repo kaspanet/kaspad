@@ -1,6 +1,8 @@
 package testtools
 
 import (
+	"time"
+
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/pkg/errors"
 
@@ -93,4 +95,22 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 		return nil, errors.Errorf("could not build subnetwork ID: %s", err)
 	}
 	return subnetworkID, nil
+}
+
+// WaitTillAllCompleteOrTimeout waits until all the provided channels has been written to,
+// or until a timeout period has passed.
+// Returns true iff all channels returned in the allotted time.
+func WaitTillAllCompleteOrTimeout(timeoutDuration time.Duration, chans ...chan struct{}) (ok bool) {
+	timeout := time.After(timeoutDuration)
+
+	for _, c := range chans {
+		select {
+		case <-c:
+			continue
+		case <-timeout:
+			return false
+		}
+	}
+
+	return true
 }
