@@ -1133,7 +1133,7 @@ func (node *blockNode) fetchBlueBlocks() ([]*util.Block, error) {
 	return blueBlocks, nil
 }
 
-// applyBlueBlocks adds all transactions in the blue blocks to the selectedParent's UTXO set
+// applyBlueBlocks adds all transactions in the blue blocks to the selectedParent's past UTXO set
 // Purposefully ignoring failures - these are just unaccepted transactions
 // Writing down which transactions were accepted or not in txsAcceptanceData
 func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlocks []*util.Block) (
@@ -1200,7 +1200,7 @@ func (node *blockNode) updateParentsDiffs(dag *BlockDAG, newBlockUTXO UTXOSet) e
 			return err
 		}
 		if diffChild == nil {
-			parentUTXO, err := dag.restorePastUTXO(parent)
+			parentPastUTXO, err := dag.restorePastUTXO(parent)
 			if err != nil {
 				return err
 			}
@@ -1208,7 +1208,7 @@ func (node *blockNode) updateParentsDiffs(dag *BlockDAG, newBlockUTXO UTXOSet) e
 			if err != nil {
 				return err
 			}
-			diff, err := newBlockUTXO.diffFrom(parentUTXO)
+			diff, err := newBlockUTXO.diffFrom(parentPastUTXO)
 			if err != nil {
 				return err
 			}
@@ -1292,11 +1292,11 @@ func (dag *BlockDAG) restorePastUTXO(node *blockNode) (UTXOSet, error) {
 // updateTipsUTXO builds and applies new diff UTXOs for all the DAG's tips
 func updateTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
 	for tip := range dag.virtual.parents {
-		tipUTXO, err := dag.restorePastUTXO(tip)
+		tipPastUTXO, err := dag.restorePastUTXO(tip)
 		if err != nil {
 			return err
 		}
-		diff, err := virtualUTXO.diffFrom(tipUTXO)
+		diff, err := virtualUTXO.diffFrom(tipPastUTXO)
 		if err != nil {
 			return err
 		}
