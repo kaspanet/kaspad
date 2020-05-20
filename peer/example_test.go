@@ -45,7 +45,7 @@ func mockRemotePeer() error {
 			return
 		}
 
-		// Create and start the inbound
+		// Create and start the inbound peer.
 		p := peer.NewInboundPeer(peerCfg)
 		err = p.AssociateConnection(conn)
 		if err != nil {
@@ -54,7 +54,6 @@ func mockRemotePeer() error {
 		}
 	}()
 
-	<-time.After(1 * time.Second)
 	return nil
 }
 
