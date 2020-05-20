@@ -574,8 +574,8 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 		return nil, err
 	}
 
-	newBlockPastUTXO, txsAcceptanceData, newBlockFeeData, newBlockMultiSet, err := node.verifyAndBuildUTXO(dag,
-		block.Transactions(), fastAdd)
+	newBlockPastUTXO, txsAcceptanceData, newBlockFeeData, newBlockMultiSet, err :=
+		node.verifyAndBuildUTXO(dag, block.Transactions(), fastAdd)
 	if err != nil {
 		var ruleErr RuleError
 		if ok := errors.As(err, &ruleErr); ok {
@@ -590,8 +590,8 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	}
 
 	// Apply all changes to the DAG.
-	virtualUTXODiff, chainUpdates, err := dag.applyDAGChanges(node,
-		newBlockPastUTXO, newBlockMultiSet, selectedParentAnticone)
+	virtualUTXODiff, chainUpdates, err :=
+		dag.applyDAGChanges(node, newBlockPastUTXO, newBlockMultiSet, selectedParentAnticone)
 	if err != nil {
 		// Since all validation logic has already ran, if applyDAGChanges errors out,
 		// this means we have a problem in the internal structure of the DAG - a problem which is
@@ -971,7 +971,8 @@ func (dag *BlockDAG) TxsAcceptedByBlockHash(blockHash *daghash.Hash) (MultiBlock
 // It returns the diff in the virtual block's UTXO set.
 //
 // This function MUST be called with the DAG state lock held (for writes).
-func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockPastUTXO UTXOSet, newBlockMultiset *secp256k1.MultiSet, selectedParentAnticone []*blockNode) (
+func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockPastUTXO UTXOSet,
+	newBlockMultiset *secp256k1.MultiSet, selectedParentAnticone []*blockNode) (
 	virtualUTXODiff *UTXODiff, chainUpdates *chainUpdates, err error) {
 
 	// Add the block to the reachability structures
