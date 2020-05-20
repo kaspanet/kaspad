@@ -133,17 +133,17 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	return nil
 }
 
-func lookupParentNodes(block *util.Block, blockDAG *BlockDAG) (blockSet, error) {
+func lookupParentNodes(block *util.Block, dag *BlockDAG) (blockSet, error) {
 	header := block.MsgBlock().Header
 	parentHashes := header.ParentHashes
 
 	nodes := newBlockSet()
 	for _, parentHash := range parentHashes {
-		node, ok := blockDAG.index.LookupNode(parentHash)
+		node, ok := dag.index.LookupNode(parentHash)
 		if !ok {
 			str := fmt.Sprintf("parent block %s is unknown", parentHash)
 			return nil, ruleError(ErrParentBlockUnknown, str)
-		} else if blockDAG.index.NodeStatus(node).KnownInvalid() {
+		} else if dag.index.NodeStatus(node).KnownInvalid() {
 			str := fmt.Sprintf("parent block %s is known to be invalid", parentHash)
 			return nil, ruleError(ErrInvalidAncestorBlock, str)
 		}
