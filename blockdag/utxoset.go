@@ -623,7 +623,7 @@ func (dus *DiffUTXOSet) clone() UTXOSet {
 }
 
 // cloneWithoutBase returns a *DiffUTXOSet with same
-// base as this *DiffUTXOSet and cloned diff.
+// base as this *DiffUTXOSet and a cloned diff.
 func (dus *DiffUTXOSet) cloneWithoutBase() UTXOSet {
 	return NewDiffUTXOSet(dus.base, dus.UTXODiff.clone())
 }
