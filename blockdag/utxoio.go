@@ -52,7 +52,12 @@ func (diffStore *utxoDiffStore) deserializeBlockUTXODiffData(serializedDiffData 
 		if err != nil {
 			return nil, err
 		}
-		diffData.diffChild = diffStore.dag.index.LookupNode(hash)
+
+		var ok bool
+		diffData.diffChild, ok = diffStore.dag.index.LookupNode(hash)
+		if !ok {
+			return nil, errors.Errorf("block %s does not exist in the DAG", hash)
+		}
 	}
 
 	diffData.diff, err = deserializeUTXODiff(r)

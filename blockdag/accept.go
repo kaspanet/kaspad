@@ -139,8 +139,8 @@ func lookupParentNodes(block *util.Block, blockDAG *BlockDAG) (blockSet, error) 
 
 	nodes := newBlockSet()
 	for _, parentHash := range parentHashes {
-		node := blockDAG.index.LookupNode(parentHash)
-		if node == nil {
+		node, ok := blockDAG.index.LookupNode(parentHash)
+		if !ok {
 			str := fmt.Sprintf("parent block %s is unknown", parentHash)
 			return nil, ruleError(ErrParentBlockUnknown, str)
 		} else if blockDAG.index.NodeStatus(node).KnownInvalid() {
