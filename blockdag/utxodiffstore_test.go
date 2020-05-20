@@ -110,11 +110,9 @@ func TestClearOldEntries(t *testing.T) {
 	defer func() { maxBlueScoreDifferenceToKeepLoaded = currentDifference }()
 
 	// Add 10 blocks
-	tipHash := dag.genesis.hash
 	blockNodes := make([]*blockNode, 10)
 	for i := 0; i < 10; i++ {
-		processedBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{tipHash}, nil)
-		tipHash = processedBlock.BlockHash()
+		processedBlock := PrepareAndProcessBlockForTest(t, dag, dag.TipHashes(), nil)
 
 		node := dag.index.LookupNode(processedBlock.BlockHash())
 		if node == nil {
@@ -133,8 +131,7 @@ func TestClearOldEntries(t *testing.T) {
 
 	// Add 10 more blocks on top of the others
 	for i := 0; i < 10; i++ {
-		processedBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{tipHash}, nil)
-		tipHash = processedBlock.BlockHash()
+		PrepareAndProcessBlockForTest(t, dag, dag.TipHashes(), nil)
 	}
 
 	// Make sure that all the old nodes no longer exist in the loaded set
