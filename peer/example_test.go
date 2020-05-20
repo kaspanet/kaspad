@@ -66,7 +66,6 @@ func Example_newOutboundPeer() {
 	// connecting to a remote peer, however, since this example is executed
 	// and tested, a mock remote peer is needed to listen for the outbound
 	// peer.
-	//
 	if err := mockRemotePeer(); err != nil {
 		fmt.Printf("mockRemotePeer: unexpected error %v\n", err)
 		return
