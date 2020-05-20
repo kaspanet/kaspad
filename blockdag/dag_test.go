@@ -1307,9 +1307,8 @@ func TestUTXOCommitment(t *testing.T) {
 	blockC := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockA.BlockHash()}, blockCTxs)
 
 	// Block D:
-	txSpendBlockCCoinbase := createTx(blockC.Transactions[0])
 	txSpendTxInBlockC := createTx(txSpendBlockACoinbase)
-	blockDTxs := []*wire.MsgTx{txSpendBlockCCoinbase, txSpendTxInBlockC}
+	blockDTxs := []*wire.MsgTx{txSpendTxInBlockC}
 	blockD := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockB.BlockHash(), blockC.BlockHash()}, blockDTxs)
 
 	// Get the pastUTXO of blockD
