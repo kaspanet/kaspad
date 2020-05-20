@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
+	"math"
 	"os"
 	"path/filepath"
 	"testing"
@@ -953,6 +954,11 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 	// Manually set the last finality point
 	dag.lastFinalityPoint = nodes[finalityInterval-1]
 
+	// Don't unload diffData
+	currentDifference := maxBlueScoreDifferenceToKeepLoaded
+	maxBlueScoreDifferenceToKeepLoaded = math.MaxUint64
+	defer func() { maxBlueScoreDifferenceToKeepLoaded = currentDifference }()
+
 	dag.finalizeNodesBelowFinalityPoint(deleteDiffData)
 	flushUTXODiffStore()
 
@@ -960,7 +966,7 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 		if !node.isFinalized {
 			t.Errorf("Node with blue score %d expected to be finalized", node.blueScore)
 		}
-		if _, ok := dag.utxoDiffStore.loaded[*node.hash]; deleteDiffData && ok {
+		if _, ok := dag.utxoDiffStore.loaded[node]; deleteDiffData && ok {
 			t.Errorf("The diff data of node with blue score %d should have been unloaded if deleteDiffData is %T", node.blueScore, deleteDiffData)
 		} else if !deleteDiffData && !ok {
 			t.Errorf("The diff data of node with blue score %d shouldn't have been unloaded if deleteDiffData is %T", node.blueScore, deleteDiffData)
@@ -988,7 +994,7 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 		if node.isFinalized {
 			t.Errorf("Node with blue score %d wasn't expected to be finalized", node.blueScore)
 		}
-		if _, ok := dag.utxoDiffStore.loaded[*node.hash]; !ok {
+		if _, ok := dag.utxoDiffStore.loaded[node]; !ok {
 			t.Errorf("The diff data of node with blue score %d shouldn't have been unloaded", node.blueScore)
 		}
 		if diffData, err := dag.utxoDiffStore.diffDataFromDB(node.hash); err != nil {
