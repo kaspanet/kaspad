@@ -967,12 +967,9 @@ func newPeerConfig(sp *Peer) *peer.Config {
 // for disconnection.
 func (s *Server) inboundPeerConnected(conn net.Conn) {
 	sp := newServerPeer(s, false)
-	sp.isWhitelisted = isWhitelisted(conn.RemoteAddr())
 	sp.Peer = peer.NewInboundPeer(newPeerConfig(sp))
-	sp.AssociateConnection(conn)
-	spawn(func() {
-		s.peerDoneHandler(sp)
-	})
+
+	s.peerConnected(sp, conn)
 }
 
 // outboundPeerConnected is invoked by the connection manager when a new
@@ -989,12 +986,28 @@ func (s *Server) outboundPeerConnected(state *peerState, msg *outboundPeerConnec
 	}
 	sp.Peer = outboundPeer
 	sp.connReq = msg.connReq
-	sp.isWhitelisted = isWhitelisted(msg.conn.RemoteAddr())
-	sp.AssociateConnection(msg.conn)
+
+	s.peerConnected(sp, msg.conn)
+
+	s.addrManager.Attempt(sp.NA())
+}
+
+func (s *Server) peerConnected(sp *Peer, conn net.Conn) {
+	sp.isWhitelisted = isWhitelisted(conn.RemoteAddr())
+
 	spawn(func() {
+		err := sp.AssociateConnection(conn)
+		if err != nil {
+			peerLog.Debugf("Error connecting to peer: %+v", err)
+			return
+		}
+
+		s.SyncManager.NewPeer(sp.Peer)
+
+		s.AddPeer(sp)
+
 		s.peerDoneHandler(sp)
 	})
-	s.addrManager.Attempt(sp.NA())
 }
 
 // outboundPeerConnected is invoked by the connection manager when a new

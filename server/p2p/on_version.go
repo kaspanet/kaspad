@@ -11,9 +11,6 @@ import (
 // and is used to negotiate the protocol version details as well as kick start
 // the communications.
 func (sp *Peer) OnVersion(_ *peer.Peer, msg *wire.MsgVersion) {
-	// Signal the sync manager this peer is a new sync candidate.
-	sp.server.SyncManager.NewPeer(sp.Peer)
-
 	// Choose whether or not to relay transactions before a filter command
 	// is received.
 	sp.setDisableRelayTx(msg.DisableRelayTx)
@@ -54,7 +51,4 @@ func (sp *Peer) OnVersion(_ *peer.Peer, msg *wire.MsgVersion) {
 			addrManager.Good(sp.NA(), msg.SubnetworkID)
 		}
 	}
-
-	// Add valid peer to the server.
-	sp.server.AddPeer(sp)
 }

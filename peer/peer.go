@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"container/list"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"math/rand"
 	"net"
@@ -16,6 +15,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/random"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -1752,10 +1753,10 @@ func (p *Peer) QueueInventory(invVect *wire.InvVect) {
 
 // AssociateConnection associates the given conn to the peer. Calling this
 // function when the peer is already connected will have no effect.
-func (p *Peer) AssociateConnection(conn net.Conn) {
+func (p *Peer) AssociateConnection(conn net.Conn) error {
 	// Already connected?
 	if !atomic.CompareAndSwapInt32(&p.connected, 0, 1) {
-		return
+		return nil
 	}
 
 	p.conn = conn
@@ -1769,19 +1770,18 @@ func (p *Peer) AssociateConnection(conn net.Conn) {
 		// and no point recomputing.
 		na, err := newNetAddress(p.conn.RemoteAddr(), p.services)
 		if err != nil {
-			log.Errorf("Cannot create remote net address: %s", err)
 			p.Disconnect()
-			return
+			return errors.Wrap(err, "Cannot create remote net address")
 		}
 		p.na = na
 	}
 
-	spawn(func() {
-		if err := p.start(); err != nil {
-			log.Debugf("Cannot start peer %s: %s", p, err)
-			p.Disconnect()
-		}
-	})
+	if err := p.start(); err != nil {
+		p.Disconnect()
+		return errors.Wrapf(err, "Cannot start peer %s", p)
+	}
+
+	return nil
 }
 
 // Connected returns whether or not the peer is currently connected.
@@ -1841,6 +1841,7 @@ func (p *Peer) start() error {
 
 	// Send our verack message now that the IO processing machinery has started.
 	p.QueueMessage(wire.NewMsgVerAck(), nil)
+
 	return nil
 }
 

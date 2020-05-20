@@ -9,6 +9,7 @@ import (
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
+	"math"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -206,7 +207,7 @@ func TestIsKnownBlock(t *testing.T) {
 		{hash: dagconfig.SimnetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "56b27f07f7a0ec21e0df165e155ad4600b5f63b9523e201e58c89b53209a27f6", want: true},
+		{hash: "7f2bea5aa4122aed2a542447133e73da6b6f6190ec34c061be70d4576cdd7498", want: true},
 
 		// Block 100000 should be present (as an orphan).
 		{hash: "65b20b048a074793ebfd1196e49341c8d194dabfc6b44a4fd0c607406e122baf", want: true},
@@ -955,6 +956,11 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 	// Manually set the last finality point
 	dag.lastFinalityPoint = nodes[finalityInterval-1]
 
+	// Don't unload diffData
+	currentDifference := maxBlueScoreDifferenceToKeepLoaded
+	maxBlueScoreDifferenceToKeepLoaded = math.MaxUint64
+	defer func() { maxBlueScoreDifferenceToKeepLoaded = currentDifference }()
+
 	dag.finalizeNodesBelowFinalityPoint(deleteDiffData)
 	flushUTXODiffStore()
 
@@ -962,7 +968,7 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 		if !node.isFinalized {
 			t.Errorf("Node with blue score %d expected to be finalized", node.blueScore)
 		}
-		if _, ok := dag.utxoDiffStore.loaded[*node.hash]; deleteDiffData && ok {
+		if _, ok := dag.utxoDiffStore.loaded[node]; deleteDiffData && ok {
 			t.Errorf("The diff data of node with blue score %d should have been unloaded if deleteDiffData is %T", node.blueScore, deleteDiffData)
 		} else if !deleteDiffData && !ok {
 			t.Errorf("The diff data of node with blue score %d shouldn't have been unloaded if deleteDiffData is %T", node.blueScore, deleteDiffData)
@@ -990,7 +996,7 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 		if node.isFinalized {
 			t.Errorf("Node with blue score %d wasn't expected to be finalized", node.blueScore)
 		}
-		if _, ok := dag.utxoDiffStore.loaded[*node.hash]; !ok {
+		if _, ok := dag.utxoDiffStore.loaded[node]; !ok {
 			t.Errorf("The diff data of node with blue score %d shouldn't have been unloaded", node.blueScore)
 		}
 		if diffData, err := dag.utxoDiffStore.diffDataFromDB(node.hash); err != nil {

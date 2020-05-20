@@ -97,7 +97,7 @@ func TestVirtualBlock(t *testing.T) {
 			tipsToSet:              []*blockNode{},
 			tipsToAdd:              []*blockNode{node0, node1, node2, node3, node4, node5, node6},
 			expectedTips:           blockSetFromSlice(node2, node5, node6),
-			expectedSelectedParent: node5,
+			expectedSelectedParent: node6,
 		},
 	}
 
