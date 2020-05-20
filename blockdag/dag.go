@@ -608,7 +608,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	return chainUpdates, nil
 }
 
-// calcMultiset returns the multiset of the UTXO of the given block.
+// calcMultiset returns the multiset of the past UTXO of the given block.
 func (node *blockNode) calcMultiset(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData,
 	selectedParentPastUTXO UTXOSet) (*secp256k1.MultiSet, error) {
 
