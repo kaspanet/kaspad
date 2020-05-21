@@ -53,8 +53,8 @@ func (bi *blockIndex) HaveBlock(hash *daghash.Hash) bool {
 func (bi *blockIndex) LookupNode(hash *daghash.Hash) (*blockNode, bool) {
 	bi.RLock()
 	defer bi.RUnlock()
-	node := bi.index[*hash]
-	return node, node != nil
+	node, ok := bi.index[*hash]
+	return node, ok
 }
 
 // AddNode adds the provided node to the block index and marks it as dirty.
