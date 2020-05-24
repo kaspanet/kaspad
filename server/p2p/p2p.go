@@ -725,7 +725,7 @@ func (s *Server) handleRelayInvMsg(state *peerState, msg relayMsg) {
 			// Don't relay the transaction if the transaction fee-per-kb
 			// is less than the peer's feefilter.
 			feeFilter := uint64(atomic.LoadInt64(&sp.FeeFilterInt))
-			if feeFilter > 0 && txD.FeePerKB < feeFilter {
+			if feeFilter > 0 && txD.FeePerMegaGram < feeFilter {
 				return true
 			}
 

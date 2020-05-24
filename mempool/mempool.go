@@ -668,12 +668,16 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 func (mp *TxPool) addTransaction(tx *util.Tx, fee uint64, parentsInPool []*wire.Outpoint) (*TxDesc, error) {
 	// Add the transaction to the pool and mark the referenced outpoints
 	// as spent by the pool.
+	mass, err := blockdag.CalcTxMassFromUTXOSet(tx, mp.mpUTXOSet)
+	if err != nil {
+		return nil, err
+	}
 	txD := &TxDesc{
 		TxDesc: mining.TxDesc{
-			Tx:       tx,
-			Added:    time.Now(),
-			Fee:      fee,
-			FeePerKB: fee * 1000 / uint64(tx.MsgTx().SerializeSize()),
+			Tx:             tx,
+			Added:          time.Now(),
+			Fee:            fee,
+			FeePerMegaGram: fee * 1e6 / mass,
 		},
 		depCount: len(parentsInPool),
 	}
