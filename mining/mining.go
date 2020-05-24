@@ -35,8 +35,8 @@ type TxDesc struct {
 	// Fee is the total fee the transaction associated with the entry pays.
 	Fee uint64
 
-	// FeePerKB is the fee the transaction pays in sompi per 1000 bytes.
-	FeePerKB uint64
+	// FeePerMegaGram is the fee the transaction pays in sompi per million gram.
+	FeePerMegaGram uint64
 }
 
 // TxSource represents a source of transactions to consider for inclusion in

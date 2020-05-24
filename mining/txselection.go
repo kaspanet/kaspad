@@ -301,8 +301,8 @@ func (g *BlkTmplGenerator) populateTemplateFromCandidates(candidateTxs []*candid
 		txsForBlockTemplate.totalMass += selectedTx.txMass
 		txsForBlockTemplate.totalFees += selectedTx.txDesc.Fee
 
-		log.Tracef("Adding tx %s (feePerKB %d)",
-			tx.ID(), selectedTx.txDesc.FeePerKB)
+		log.Tracef("Adding tx %s (feePerMegaGram %d)",
+			tx.ID(), selectedTx.txDesc.FeePerMegaGram)
 
 		markCandidateTxForDeletion(selectedTx)
 	}
