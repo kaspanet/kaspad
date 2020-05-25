@@ -209,12 +209,6 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 		}
 	}
 
-	// Temporarily do not allow non-native/coinbase transactions
-	if !(msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
-		msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase)) {
-		return ruleError(ErrInvalidSubnetwork, "non-native/coinbase subnetworks are not allowed")
-	}
-
 	// Check payload's hash
 	if !msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
 		payloadHash := daghash.DoubleHashH(msgTx.Payload)
@@ -512,6 +506,16 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 		}
 		if i != 0 && subnetworkid.Less(&tx.MsgTx().SubnetworkID, &transactions[i].MsgTx().SubnetworkID) {
 			return 0, ruleError(ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")
+		}
+	}
+
+	// Disallow non-native/coinbase subnetworks in networks that don't allow them
+	if !dag.dagParams.EnableNonNativeSubnetworks {
+		for _, tx := range transactions {
+			if !(tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
+				tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase)) {
+				return 0, ruleError(ErrInvalidSubnetwork, "non-native/coinbase subnetworks are not allowed")
+			}
 		}
 	}
 

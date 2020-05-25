@@ -812,6 +812,14 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 		return nil, nil, txRuleError(wire.RejectInvalid, str)
 	}
 
+	// Disallow non-native/coinbase subnetworks in networks that don't allow them
+	if !mp.cfg.DAGParams.EnableNonNativeSubnetworks {
+		if !(tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
+			tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase)) {
+			return nil, nil, txRuleError(wire.RejectInvalid, "non-native/coinbase subnetworks are not allowed")
+		}
+	}
+
 	// Perform preliminary sanity checks on the transaction. This makes
 	// use of blockDAG which contains the invariant rules for what
 	// transactions are allowed into blocks.

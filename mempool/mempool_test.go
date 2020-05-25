@@ -1809,8 +1809,6 @@ var dummyBlock = wire.MsgBlock{
 }
 
 func TestTransactionGas(t *testing.T) {
-	t.Skipf("subnetworks are temporarily disabled")
-
 	params := dagconfig.SimnetParams
 	params.BlockCoinbaseMaturity = 0
 	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &params, 6, "TestTransactionGas")
