@@ -13,6 +13,7 @@ import (
 	"runtime/debug"
 	"runtime/pprof"
 	"strings"
+	"time"
 
 	"github.com/kaspanet/kaspad/dbaccess"
 
@@ -145,7 +146,20 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 	defer func() {
 		kasdLog.Infof("Gracefully shutting down the server...")
 		server.Stop()
-		server.WaitForShutdown()
+
+		shutdownDone := make(chan struct{})
+		go func() {
+			server.WaitForShutdown()
+			shutdownDone <- struct{}{}
+		}()
+
+		const shutdownTimeout = 2 * time.Minute
+
+		select {
+		case <-shutdownDone:
+		case <-time.Tick(shutdownTimeout):
+			kasdLog.Criticalf("Graceful shutdown timed out %s. Terminating...", shutdownTimeout)
+		}
 		srvrLog.Infof("Server shutdown complete")
 	}()
 	server.Start()
