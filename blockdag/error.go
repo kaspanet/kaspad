@@ -69,6 +69,9 @@ const (
 	// the expected value.
 	ErrBadUTXOCommitment
 
+	// ErrInvalidSubnetwork indicates the subnetwork is now allowed.
+	ErrInvalidSubnetwork
+
 	// ErrFinalityPointTimeTooOld indicates a block has a timestamp before the
 	// last finality point.
 	ErrFinalityPointTimeTooOld

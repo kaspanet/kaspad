@@ -209,6 +209,12 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 		}
 	}
 
+	// Temporarily do not allow non-native/coinbase transactions
+	if !msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
+		!msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
+		return ruleError(ErrInvalidSubnetwork, "non-native/coinbase subnetworks are not allowed")
+	}
+
 	// Check payload's hash
 	if !msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
 		payloadHash := daghash.DoubleHashH(msgTx.Payload)
