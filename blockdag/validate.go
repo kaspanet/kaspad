@@ -210,8 +210,8 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	}
 
 	// Temporarily do not allow non-native/coinbase transactions
-	if !msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
-		!msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
+	if !(msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
+		msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase)) {
 		return ruleError(ErrInvalidSubnetwork, "non-native/coinbase subnetworks are not allowed")
 	}
 
