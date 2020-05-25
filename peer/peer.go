@@ -897,6 +897,11 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 		return errors.New(reason)
 	}
 
+	// Temporarily do not allow connections to non-native subnetworks
+	if !msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
+		return errors.New("non-native subnetworks are not allowed")
+	}
+
 	// Disconnect if:
 	// - we are a full node and the outbound connection we've initiated is a partial node
 	// - the remote node is partial and our subnetwork doesn't match their subnetwork
