@@ -897,8 +897,9 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 		return errors.New(reason)
 	}
 
-	// Temporarily do not allow connections to non-native subnetworks
-	if !msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
+	// Disconnect from non-native/coinbase subnetworks in networks that don't allow them
+	if !p.cfg.DAGParams.EnableNonNativeSubnetworks &&
+		!msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
 		return errors.New("non-native subnetworks are not allowed")
 	}
 
