@@ -176,7 +176,10 @@ func (store *reachabilityStore) loadReachabilityDataFromCursor(cursor database.C
 	}
 
 	// Connect the treeNode with its blockNode
-	reachabilityData.treeNode.blockNode = store.dag.index.LookupNode(hash)
+	reachabilityData.treeNode.blockNode, ok = store.dag.index.LookupNode(hash)
+	if !ok {
+		return errors.Errorf("block %s does not exist in the DAG", hash)
+	}
 
 	return nil
 }
@@ -392,8 +395,8 @@ func (store *reachabilityStore) deserializeFutureCoveringSet(r io.Reader, destin
 		if err != nil {
 			return err
 		}
-		blockNode := store.dag.index.LookupNode(blockHash)
-		if blockNode == nil {
+		blockNode, ok := store.dag.index.LookupNode(blockHash)
+		if !ok {
 			return errors.Errorf("blockNode not found for hash %s", blockHash)
 		}
 		blockReachabilityData, ok := store.reachabilityDataByHash(blockHash)

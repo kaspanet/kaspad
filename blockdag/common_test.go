@@ -178,8 +178,8 @@ func prepareAndProcessBlockByParentMsgBlocks(t *testing.T, dag *BlockDAG, parent
 }
 
 func nodeByMsgBlock(t *testing.T, dag *BlockDAG, block *wire.MsgBlock) *blockNode {
-	node := dag.index.LookupNode(block.BlockHash())
-	if node == nil {
+	node, ok := dag.index.LookupNode(block.BlockHash())
+	if !ok {
 		t.Fatalf("couldn't find block node with hash %s", block.BlockHash())
 	}
 	return node

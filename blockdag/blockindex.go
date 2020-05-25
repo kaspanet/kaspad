@@ -50,11 +50,11 @@ func (bi *blockIndex) HaveBlock(hash *daghash.Hash) bool {
 // return nil if there is no entry for the hash.
 //
 // This function is safe for concurrent access.
-func (bi *blockIndex) LookupNode(hash *daghash.Hash) *blockNode {
+func (bi *blockIndex) LookupNode(hash *daghash.Hash) (*blockNode, bool) {
 	bi.RLock()
 	defer bi.RUnlock()
-	node := bi.index[*hash]
-	return node
+	node, ok := bi.index[*hash]
+	return node, ok
 }
 
 // AddNode adds the provided node to the block index and marks it as dirty.

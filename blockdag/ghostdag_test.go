@@ -215,7 +215,10 @@ func TestGHOSTDAG(t *testing.T) {
 					t.Fatalf("TestGHOSTDAG: block %v was unexpectedly orphan", blockData.id)
 				}
 
-				node := dag.index.LookupNode(utilBlock.Hash())
+				node, ok := dag.index.LookupNode(utilBlock.Hash())
+				if !ok {
+					t.Fatalf("block %s does not exist in the DAG", utilBlock.Hash())
+				}
 
 				blockByIDMap[blockData.id] = node
 				idByBlockMap[node] = blockData.id
@@ -305,8 +308,15 @@ func TestBlueAnticoneSizeErrors(t *testing.T) {
 	}
 
 	// Get references to the tips of the two chains
-	blockNodeA := dag.index.LookupNode(currentBlockA.BlockHash())
-	blockNodeB := dag.index.LookupNode(currentBlockB.BlockHash())
+	blockNodeA, ok := dag.index.LookupNode(currentBlockA.BlockHash())
+	if !ok {
+		t.Fatalf("block %s does not exist in the DAG", currentBlockA.BlockHash())
+	}
+
+	blockNodeB, ok := dag.index.LookupNode(currentBlockB.BlockHash())
+	if !ok {
+		t.Fatalf("block %s does not exist in the DAG", currentBlockB.BlockHash())
+	}
 
 	// Try getting the blueAnticoneSize between them. Since the two
 	// blocks are not in the anticones of eachother, this should fail.
@@ -359,7 +369,10 @@ func TestGHOSTDAGErrors(t *testing.T) {
 
 	// Try to rerun GHOSTDAG on the last block. GHOSTDAG uses
 	// reachability data, so we expect it to fail.
-	blockNode3 := dag.index.LookupNode(block3.BlockHash())
+	blockNode3, ok := dag.index.LookupNode(block3.BlockHash())
+	if !ok {
+		t.Fatalf("block %s does not exist in the DAG", block3.BlockHash())
+	}
 	_, err = dag.ghostdag(blockNode3)
 	if err == nil {
 		t.Fatalf("TestGHOSTDAGErrors: ghostdag unexpectedly succeeded")

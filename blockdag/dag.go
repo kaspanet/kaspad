@@ -209,8 +209,8 @@ func (dag *BlockDAG) IsKnownOrphan(hash *daghash.Hash) bool {
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) IsKnownInvalid(hash *daghash.Hash) bool {
-	node := dag.index.LookupNode(hash)
-	if node == nil {
+	node, ok := dag.index.LookupNode(hash)
+	if !ok {
 		return false
 	}
 	return dag.index.NodeStatus(node).KnownInvalid()
@@ -902,8 +902,8 @@ func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
 // updated in a separate goroutine. To get a definite answer if a block
 // is finalized or not, use dag.checkFinalityRules.
 func (dag *BlockDAG) IsKnownFinalizedBlock(blockHash *daghash.Hash) bool {
-	node := dag.index.LookupNode(blockHash)
-	return node != nil && node.isFinalized
+	node, ok := dag.index.LookupNode(blockHash)
+	return ok && node.isFinalized
 }
 
 // NextBlockCoinbaseTransaction prepares the coinbase transaction for the next mined block
@@ -951,8 +951,8 @@ func (dag *BlockDAG) TxsAcceptedByVirtual() (MultiBlockTxsAcceptanceData, error)
 //
 // This function MUST be called with the DAG read-lock held
 func (dag *BlockDAG) TxsAcceptedByBlockHash(blockHash *daghash.Hash) (MultiBlockTxsAcceptanceData, error) {
-	node := dag.index.LookupNode(blockHash)
-	if node == nil {
+	node, ok := dag.index.LookupNode(blockHash)
+	if !ok {
 		return nil, errors.Errorf("Couldn't find block %s", blockHash)
 	}
 	_, _, txsAcceptanceData, err := dag.pastUTXO(node)
@@ -1407,8 +1407,8 @@ func (dag *BlockDAG) GetUTXOEntry(outpoint wire.Outpoint) (*UTXOEntry, bool) {
 
 // BlueScoreByBlockHash returns the blue score of a block with the given hash.
 func (dag *BlockDAG) BlueScoreByBlockHash(hash *daghash.Hash) (uint64, error) {
-	node := dag.index.LookupNode(hash)
-	if node == nil {
+	node, ok := dag.index.LookupNode(hash)
+	if !ok {
 		return 0, errors.Errorf("block %s is unknown", hash)
 	}
 
@@ -1417,8 +1417,8 @@ func (dag *BlockDAG) BlueScoreByBlockHash(hash *daghash.Hash) (uint64, error) {
 
 // BluesByBlockHash returns the blues of the block for the given hash.
 func (dag *BlockDAG) BluesByBlockHash(hash *daghash.Hash) ([]*daghash.Hash, error) {
-	node := dag.index.LookupNode(hash)
-	if node == nil {
+	node, ok := dag.index.LookupNode(hash)
+	if !ok {
 		return nil, errors.Errorf("block %s is unknown", hash)
 	}
 
@@ -1449,8 +1449,8 @@ func (dag *BlockDAG) BlockConfirmationsByHashNoLock(hash *daghash.Hash) (uint64,
 		return 0, nil
 	}
 
-	node := dag.index.LookupNode(hash)
-	if node == nil {
+	node, ok := dag.index.LookupNode(hash)
+	if !ok {
 		return 0, errors.Errorf("block %s is unknown", hash)
 	}
 
@@ -1565,8 +1565,8 @@ func (dag *BlockDAG) oldestChainBlockWithBlueScoreGreaterThan(blueScore uint64) 
 //
 // This method MUST be called with the DAG lock held
 func (dag *BlockDAG) IsInSelectedParentChain(blockHash *daghash.Hash) (bool, error) {
-	blockNode := dag.index.LookupNode(blockHash)
-	if blockNode == nil {
+	blockNode, ok := dag.index.LookupNode(blockHash)
+	if !ok {
 		str := fmt.Sprintf("block %s is not in the DAG", blockHash)
 		return false, errNotInDAG(str)
 	}
@@ -1598,7 +1598,10 @@ func (dag *BlockDAG) SelectedParentChain(blockHash *daghash.Hash) ([]*daghash.Ha
 	for !isBlockInSelectedParentChain {
 		removedChainHashes = append(removedChainHashes, blockHash)
 
-		node := dag.index.LookupNode(blockHash)
+		node, ok := dag.index.LookupNode(blockHash)
+		if !ok {
+			return nil, nil, errors.Errorf("block %s does not exist in the DAG", blockHash)
+		}
 		blockHash = node.selectedParent.hash
 
 		isBlockInSelectedParentChain, err = dag.IsInSelectedParentChain(blockHash)
@@ -1661,8 +1664,8 @@ func (dag *BlockDAG) CurrentBits() uint32 {
 // HeaderByHash returns the block header identified by the given hash or an
 // error if it doesn't exist.
 func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*wire.BlockHeader, error) {
-	node := dag.index.LookupNode(hash)
-	if node == nil {
+	node, ok := dag.index.LookupNode(hash)
+	if !ok {
 		err := errors.Errorf("block %s is not known", hash)
 		return &wire.BlockHeader{}, err
 	}
@@ -1675,8 +1678,8 @@ func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*wire.BlockHeader, error)
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) ChildHashesByHash(hash *daghash.Hash) ([]*daghash.Hash, error) {
-	node := dag.index.LookupNode(hash)
-	if node == nil {
+	node, ok := dag.index.LookupNode(hash)
+	if !ok {
 		str := fmt.Sprintf("block %s is not in the DAG", hash)
 		return nil, errNotInDAG(str)
 
@@ -1690,8 +1693,8 @@ func (dag *BlockDAG) ChildHashesByHash(hash *daghash.Hash) ([]*daghash.Hash, err
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) SelectedParentHash(blockHash *daghash.Hash) (*daghash.Hash, error) {
-	node := dag.index.LookupNode(blockHash)
-	if node == nil {
+	node, ok := dag.index.LookupNode(blockHash)
+	if !ok {
 		str := fmt.Sprintf("block %s is not in the DAG", blockHash)
 		return nil, errNotInDAG(str)
 
@@ -1725,12 +1728,12 @@ func (dag *BlockDAG) antiPastHashesBetween(lowHash, highHash *daghash.Hash, maxH
 //
 // This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries uint64) ([]*blockNode, error) {
-	lowNode := dag.index.LookupNode(lowHash)
-	if lowNode == nil {
+	lowNode, ok := dag.index.LookupNode(lowHash)
+	if !ok {
 		return nil, errors.Errorf("Couldn't find low hash %s", lowHash)
 	}
-	highNode := dag.index.LookupNode(highHash)
-	if highNode == nil {
+	highNode, ok := dag.index.LookupNode(highHash)
+	if !ok {
 		return nil, errors.Errorf("Couldn't find high hash %s", highHash)
 	}
 	if lowNode.blueScore >= highNode.blueScore {
@@ -1825,8 +1828,9 @@ func (dag *BlockDAG) antiPastHeadersBetween(lowHash, highHash *daghash.Hash, max
 func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
 	highNode := &dag.virtual.blockNode
 	if highHash != nil {
-		highNode = dag.index.LookupNode(highHash)
-		if highNode == nil {
+		var ok bool
+		highNode, ok = dag.index.LookupNode(highHash)
+		if !ok {
 			return nil, errors.Errorf("Couldn't find the high hash %s in the dag", highHash)
 		}
 	}
@@ -2061,9 +2065,9 @@ func New(config *Config) (*BlockDAG, error) {
 		}
 	}
 
-	genesis := index.LookupNode(params.GenesisHash)
+	genesis, ok := index.LookupNode(params.GenesisHash)
 
-	if genesis == nil {
+	if !ok {
 		genesisBlock := util.NewBlock(dag.dagParams.GenesisBlock)
 		// To prevent the creation of a new err variable unintentionally so the
 		// defered function above could read err - declare isOrphan and isDelayed explicitly.
@@ -2073,12 +2077,15 @@ func New(config *Config) (*BlockDAG, error) {
 			return nil, err
 		}
 		if isDelayed {
-			return nil, errors.New("Genesis block shouldn't be in the future")
+			return nil, errors.New("genesis block shouldn't be in the future")
 		}
 		if isOrphan {
-			return nil, errors.New("Genesis block is unexpectedly orphan")
+			return nil, errors.New("genesis block is unexpectedly orphan")
 		}
-		genesis = index.LookupNode(params.GenesisHash)
+		genesis, ok = index.LookupNode(params.GenesisHash)
+		if !ok {
+			return nil, errors.New("genesis is not found in the DAG after it was proccessed")
+		}
 	}
 
 	// Save a reference to the genesis block.
