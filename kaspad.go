@@ -157,7 +157,7 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 
 		select {
 		case <-shutdownDone:
-		case <-time.Tick(shutdownTimeout):
+		case <-time.After(shutdownTimeout):
 			kasdLog.Criticalf("Graceful shutdown timed out %s. Terminating...", shutdownTimeout)
 		}
 		srvrLog.Infof("Server shutdown complete")
