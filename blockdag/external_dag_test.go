@@ -183,6 +183,8 @@ func TestFinalityInterval(t *testing.T) {
 
 // TestSubnetworkRegistry tests the full subnetwork registry flow
 func TestSubnetworkRegistry(t *testing.T) {
+	t.Skipf("subnetworks are temporarily disabled")
+
 	params := dagconfig.SimnetParams
 	params.K = 1
 	params.BlockCoinbaseMaturity = 0
@@ -407,6 +409,8 @@ func TestOrderInDiffFromAcceptanceData(t *testing.T) {
 
 // TestGasLimit tests the gas limit rules
 func TestGasLimit(t *testing.T) {
+	t.Skipf("subnetworks are temporarily disabled")
+
 	params := dagconfig.SimnetParams
 	params.K = 1
 	params.BlockCoinbaseMaturity = 0
