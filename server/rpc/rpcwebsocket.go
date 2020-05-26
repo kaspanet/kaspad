@@ -1152,15 +1152,10 @@ out:
 
 	// Drain any wait channels before exiting so nothing is left waiting
 	// around to send.
-cleanup:
-	for {
-		select {
-		case <-c.ntfnChan:
-		case <-ntfnSentChan:
-		default:
-			break cleanup
+	spawn(func() {
+		for range c.ntfnChan {
 		}
-	}
+	})
 	c.wg.Done()
 	log.Tracef("Websocket client notification queue handler done "+
 		"for %s", c.addr)
@@ -1193,17 +1188,13 @@ out:
 
 	// Drain any wait channels before exiting so nothing is left waiting
 	// around to send.
-cleanup:
-	for {
-		select {
-		case r := <-c.sendChan:
+	spawn(func() {
+		for r := range c.sendChan {
 			if r.doneChan != nil {
 				r.doneChan <- false
 			}
-		default:
-			break cleanup
 		}
-	}
+	})
 	c.wg.Done()
 	log.Tracef("Websocket client output handler done for %s", c.addr)
 }

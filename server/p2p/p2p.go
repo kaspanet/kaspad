@@ -1156,18 +1156,17 @@ out:
 
 	// Drain channels before exiting so nothing is left waiting around
 	// to send.
-cleanup:
-	for {
-		select {
-		case <-s.newPeers:
-		case <-s.donePeers:
-		case <-s.relayInv:
-		case <-s.broadcast:
-		case <-s.Query:
-		default:
-			break cleanup
+	spawn(func() {
+		for {
+			select {
+			case <-s.newPeers:
+			case <-s.donePeers:
+			case <-s.relayInv:
+			case <-s.broadcast:
+			case <-s.Query:
+			}
 		}
-	}
+	})
 	s.wg.Done()
 	srvrLog.Tracef("Peer handler done")
 }
@@ -1272,14 +1271,10 @@ out:
 
 	// Drain channels before exiting so nothing is left waiting around
 	// to send.
-cleanup:
-	for {
-		select {
-		case <-s.modifyRebroadcastInv:
-		default:
-			break cleanup
+	spawn(func() {
+		for range s.modifyRebroadcastInv {
 		}
-	}
+	})
 	s.quitWaitGroup.Done()
 	s.wg.Done()
 }

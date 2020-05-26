@@ -469,14 +469,10 @@ out:
 
 	// Drain any channels before exiting so nothing is left waiting around
 	// to send.
-cleanup:
-	for {
-		select {
-		case <-c.sendChan:
-		default:
-			break cleanup
+	spawn(func() {
+		for range c.sendChan {
 		}
-	}
+	})
 	c.wg.Done()
 	log.Tracef("RPC client output handler done for %s", c.config.Host)
 }
@@ -745,19 +741,14 @@ out:
 
 	// Drain any wait channels before exiting so nothing is left waiting
 	// around to send.
-cleanup:
-	for {
-		select {
-		case details := <-c.sendPostChan:
+	spawn(func() {
+		for details := range c.sendPostChan {
 			details.jsonRequest.responseChan <- &response{
 				result: nil,
 				err:    ErrClientShutdown,
 			}
-
-		default:
-			break cleanup
 		}
-	}
+	})
 	c.wg.Done()
 	log.Tracef("RPC client send handler done for %s", c.config.Host)
 

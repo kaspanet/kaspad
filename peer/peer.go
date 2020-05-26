@@ -1270,14 +1270,10 @@ out:
 
 	// Drain any wait channels before going away so there is nothing left
 	// waiting on this goroutine.
-cleanup:
-	for {
-		select {
-		case <-p.stallControl:
-		default:
-			break cleanup
+	spawn(func() {
+		for range p.stallControl {
 		}
-	}
+	})
 	log.Tracef("Peer stall handler done for %s", p)
 }
 
@@ -1602,20 +1598,18 @@ out:
 			msg.doneChan <- struct{}{}
 		}
 	}
-cleanup:
-	for {
-		select {
-		case msg := <-p.outputQueue:
-			if msg.doneChan != nil {
-				msg.doneChan <- struct{}{}
+	spawn(func() {
+		for {
+			select {
+			case msg := <-p.outputQueue:
+				if msg.doneChan != nil {
+					msg.doneChan <- struct{}{}
+				}
+			case <-p.outputInvChan:
+			case <-p.sendDoneQueue:
 			}
-		case <-p.outputInvChan:
-			// Just drain channel
-		// sendDoneQueue is buffered so doesn't need draining.
-		default:
-			break cleanup
 		}
-	}
+	})
 	close(p.queueQuit)
 	log.Tracef("Peer queue handler done for %s", p)
 }
@@ -1672,19 +1666,15 @@ out:
 	// Drain any wait channels before we go away so we don't leave something
 	// waiting for us. We have waited on queueQuit and thus we can be sure
 	// that we will not miss anything sent on sendQueue.
-cleanup:
-	for {
-		select {
-		case msg := <-p.sendQueue:
+	spawn(func() {
+		for msg := range p.sendQueue {
 			if msg.doneChan != nil {
 				msg.doneChan <- struct{}{}
 			}
 			// no need to send on sendDoneQueue since queueHandler
 			// has been waited on and already exited.
-		default:
-			break cleanup
 		}
-	}
+	})
 	close(p.outQuit)
 	log.Tracef("Peer output handler done for %s", p)
 }
