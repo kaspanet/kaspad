@@ -106,9 +106,12 @@ func lookupFunc(host string) ([]net.IP, error) {
 }
 
 func TestStartStop(t *testing.T) {
-	n := New("teststartstop", lookupFunc, nil)
-	n.Start()
-	err := n.Stop()
+	n := New(lookupFunc, nil)
+	err := n.Start()
+	if err != nil {
+		t.Fatalf("Address Manager failed to start: %v", err)
+	}
+	err = n.Stop()
 	if err != nil {
 		t.Fatalf("Address Manager failed to stop: %v", err)
 	}

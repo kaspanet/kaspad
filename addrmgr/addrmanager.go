@@ -5,16 +5,16 @@
 package addrmgr
 
 import (
+	"bytes"
 	"container/list"
 	crand "crypto/rand" // for seeding
 	"encoding/binary"
-	"encoding/json"
+	"encoding/gob"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
 	"io"
 	"math/rand"
 	"net"
-	"os"
-	"path/filepath"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -33,7 +33,6 @@ type triedBucket [triedBucketCount]*list.List
 // peers on the Kaspa network.
 type AddrManager struct {
 	mtx                sync.Mutex
-	peersFile          string
 	lookupFunc         func(string) ([]net.IP, error)
 	rand               *rand.Rand
 	key                [32]byte
@@ -69,7 +68,7 @@ type serializedKnownAddress struct {
 type serializedNewBucket [newBucketCount][]string
 type serializedTriedBucket [triedBucketCount][]string
 
-type serializedAddrManager struct {
+type serializedPeersState struct {
 	Version              int
 	Key                  [32]byte
 	Addresses            []*serializedKnownAddress
@@ -423,26 +422,32 @@ out:
 	for {
 		select {
 		case <-dumpAddressTicker.C:
-			a.savePeers()
+			err := a.savePeers()
+			if err != nil {
+				panic(errors.Wrap(err, "error saving peers"))
+			}
 
 		case <-a.quit:
 			break out
 		}
 	}
-	a.savePeers()
+	err := a.savePeers()
+	if err != nil {
+		panic(errors.Wrap(err, "error saving peers"))
+	}
 	a.wg.Done()
 	log.Trace("Address handler done")
 }
 
 // savePeers saves all the known addresses to a file so they can be read back
 // in at next run.
-func (a *AddrManager) savePeers() {
+func (a *AddrManager) savePeers() error {
 	a.mtx.Lock()
 	defer a.mtx.Unlock()
 
 	// First we make a serialisable datastructure so we can encode it to
 	// json.
-	sam := new(serializedAddrManager)
+	sam := new(serializedPeersState)
 	sam.Version = serialisationVersion
 	copy(sam.Key[:], a.key[:])
 
@@ -517,56 +522,44 @@ func (a *AddrManager) savePeers() {
 		}
 	}
 
-	w, err := os.Create(a.peersFile)
+	w := &bytes.Buffer{}
+	encoder := gob.NewEncoder(w)
+	err := encoder.Encode(&sam)
 	if err != nil {
-		log.Errorf("Error opening file %s: %s", a.peersFile, err)
-		return
+		return errors.Wrap(err, "Failed to encode address manager")
 	}
-	enc := json.NewEncoder(w)
-	defer w.Close()
-	if err := enc.Encode(&sam); err != nil {
-		log.Errorf("Failed to encode file %s: %s", a.peersFile, err)
-		return
-	}
+
+	return dbaccess.StorePeersState(dbaccess.NoTx(), w.Bytes())
 }
 
 // loadPeers loads the known address from the saved file. If empty, missing, or
 // malformed file, just don't load anything and start fresh
-func (a *AddrManager) loadPeers() {
+func (a *AddrManager) loadPeers() error {
 	a.mtx.Lock()
 	defer a.mtx.Unlock()
 
-	err := a.deserializePeers(a.peersFile)
-	if err != nil {
-		log.Errorf("Failed to parse file %s: %s", a.peersFile, err)
-		// if it is invalid we nuke the old one unconditionally.
-		err = os.Remove(a.peersFile)
-		if err != nil {
-			log.Warnf("Failed to remove corrupt peers file %s: %s",
-				a.peersFile, err)
-		}
+	err := a.deserializePeers()
+	if dbaccess.IsNotFoundError(err) {
 		a.reset()
-		return
+	} else if err != nil {
+		return err
 	}
-	log.Infof("Loaded %d addresses from file '%s'", a.totalNumAddresses(), a.peersFile)
+	log.Infof("Loaded %d addresses from database", a.totalNumAddresses())
+	return nil
 }
 
-func (a *AddrManager) deserializePeers(filePath string) error {
-	_, err := os.Stat(filePath)
-	if os.IsNotExist(err) {
-		return nil
-	}
-	r, err := os.Open(filePath)
+func (a *AddrManager) deserializePeers() error {
+	addrManagerState, err := dbaccess.FetchPeersState(dbaccess.NoTx())
 	if err != nil {
-		return errors.Errorf("%s error opening file: %s", filePath, err)
+		return errors.Wrap(err, "error fetching peers state state")
 	}
-	defer r.Close()
 
-	var sam serializedAddrManager
-	dec := json.NewDecoder(r)
+	var sam serializedPeersState
+	r := bytes.NewBuffer(addrManagerState)
+	dec := gob.NewDecoder(r)
 	err = dec.Decode(&sam)
 	if err != nil {
-		return errors.Errorf("error reading %s: %s", filePath, err)
+		return errors.Wrap(err, "error deserializing peers state")
 	}
 
 	if sam.Version != serialisationVersion {
@@ -704,20 +697,24 @@ func (a *AddrManager) DeserializeNetAddress(addr string) (*wire.NetAddress, erro
 
 // Start begins the core address handler which manages a pool of known
 // addresses, timeouts, and interval based writes.
-func (a *AddrManager) Start() {
+func (a *AddrManager) Start() error {
 	// Already started?
 	if atomic.AddInt32(&a.started, 1) != 1 {
-		return
+		return nil
 	}
 
 	log.Trace("Starting address manager")
 
 	// Load peers we already know about from file.
-	a.loadPeers()
+	err := a.loadPeers()
+	if err != nil {
+		return err
+	}
 
 	// Start the address ticker to save addresses periodically.
 	a.wg.Add(1)
 	spawn(a.addressHandler)
+	return nil
 }
 
 // Stop gracefully shuts down the address manager by stopping the main handler.
@@ -1333,9 +1330,8 @@ func (a *AddrManager) GetBestLocalAddress(remoteAddr *wire.NetAddress) *wire.Net
 
 // New returns a new Kaspa address manager.
 // Use Start to begin processing asynchronous address updates.
-func New(dataDir string, lookupFunc func(string) ([]net.IP, error), subnetworkID *subnetworkid.SubnetworkID) *AddrManager {
+func New(lookupFunc func(string) ([]net.IP, error), subnetworkID *subnetworkid.SubnetworkID) *AddrManager {
 	am := AddrManager{
-		peersFile:         filepath.Join(dataDir, "peers.json"),
 		lookupFunc:        lookupFunc,
 		rand:              rand.New(rand.NewSource(time.Now().UnixNano())),
 		quit:              make(chan struct{}),

@@ -1066,7 +1066,10 @@ func (s *Server) peerHandler() {
 	// to this handler and rather than adding more channels to sychronize
 	// things, it's easier and slightly faster to simply start and stop them
 	// in this handler.
-	s.addrManager.Start()
+	err := s.addrManager.Start()
+	if err != nil {
+		panic(errors.Wrap(err, "address manager failed to start"))
+	}
 	s.SyncManager.Start()
 
 	s.quitWaitGroup.Add(1)
@@ -1479,7 +1482,7 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 		services &^= wire.SFNodeBloom
 	}
 
-	amgr := addrmgr.New(config.ActiveConfig().DataDir, serverutils.KaspadLookup, config.ActiveConfig().SubnetworkID)
+	amgr := addrmgr.New(serverutils.KaspadLookup, config.ActiveConfig().SubnetworkID)
 
 	var listeners []net.Listener
 	var nat serverutils.NAT
