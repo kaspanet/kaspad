@@ -439,7 +439,7 @@ out:
 	log.Trace("Address handler done")
 }
 
-// savePeers saves all the known addresses to a file so they can be read back
+// savePeers saves all the known addresses to the database so they can be read back
 // in at next run.
 func (a *AddrManager) savePeers() error {
 	a.mtx.Lock()
@@ -447,11 +447,11 @@ func (a *AddrManager) savePeers() error {
 
 	// First we make a serialisable datastructure so we can encode it to
 	// json.
-	sam := new(serializedPeersState)
-	sam.Version = serialisationVersion
-	copy(sam.Key[:], a.key[:])
+	peersState := new(serializedPeersState)
+	peersState.Version = serialisationVersion
+	copy(peersState.Key[:], a.key[:])
 
-	sam.Addresses = make([]*serializedKnownAddress, len(a.addrIndex))
+	peersState.Addresses = make([]*serializedKnownAddress, len(a.addrIndex))
 	i := 0
 	for k, v := range a.addrIndex {
 		ska := new(serializedKnownAddress)
@@ -468,72 +468,72 @@ func (a *AddrManager) savePeers() error {
 		ska.LastSuccess = v.lastsuccess.Unix()
 		// Tried and refs are implicit in the rest of the structure
 		// and will be worked out from context on unserialisation.
-		sam.Addresses[i] = ska
+		peersState.Addresses[i] = ska
 		i++
 	}
 
-	sam.NewBuckets = make(map[string]*serializedNewBucket)
+	peersState.NewBuckets = make(map[string]*serializedNewBucket)
 	for subnetworkID := range a.addrNew {
 		subnetworkIDStr := subnetworkID.String()
-		sam.NewBuckets[subnetworkIDStr] = &serializedNewBucket{}
+		peersState.NewBuckets[subnetworkIDStr] = &serializedNewBucket{}
 
 		for i := range a.addrNew[subnetworkID] {
-			sam.NewBuckets[subnetworkIDStr][i] = make([]string, len(a.addrNew[subnetworkID][i]))
+			peersState.NewBuckets[subnetworkIDStr][i] = make([]string, len(a.addrNew[subnetworkID][i]))
 			j := 0
 			for k := range a.addrNew[subnetworkID][i] {
-				sam.NewBuckets[subnetworkIDStr][i][j] = k
+				peersState.NewBuckets[subnetworkIDStr][i][j] = k
 				j++
 			}
 		}
 	}
 
 	for i := range a.addrNewFullNodes {
-		sam.NewBucketFullNodes[i] = make([]string, len(a.addrNewFullNodes[i]))
+		peersState.NewBucketFullNodes[i] = make([]string, len(a.addrNewFullNodes[i]))
 		j := 0
 		for k := range a.addrNewFullNodes[i] {
-			sam.NewBucketFullNodes[i][j] = k
+			peersState.NewBucketFullNodes[i][j] = k
 			j++
 		}
 	}
 
-	sam.TriedBuckets = make(map[string]*serializedTriedBucket)
+	peersState.TriedBuckets = make(map[string]*serializedTriedBucket)
 	for subnetworkID := range a.addrTried {
 		subnetworkIDStr := subnetworkID.String()
-		sam.TriedBuckets[subnetworkIDStr] = &serializedTriedBucket{}
+		peersState.TriedBuckets[subnetworkIDStr] = &serializedTriedBucket{}
 
 		for i := range a.addrTried[subnetworkID] {
-			sam.TriedBuckets[subnetworkIDStr][i] = make([]string, a.addrTried[subnetworkID][i].Len())
+			peersState.TriedBuckets[subnetworkIDStr][i] = make([]string, a.addrTried[subnetworkID][i].Len())
 			j := 0
 			for e := a.addrTried[subnetworkID][i].Front(); e != nil; e = e.Next() {
 				ka := e.Value.(*KnownAddress)
-				sam.TriedBuckets[subnetworkIDStr][i][j] = NetAddressKey(ka.na)
+				peersState.TriedBuckets[subnetworkIDStr][i][j] = NetAddressKey(ka.na)
 				j++
 			}
 		}
 	}
 
 	for i := range a.addrTriedFullNodes {
-		sam.TriedBucketFullNodes[i] = make([]string, a.addrTriedFullNodes[i].Len())
+		peersState.TriedBucketFullNodes[i] = make([]string, a.addrTriedFullNodes[i].Len())
 		j := 0
 		for e := a.addrTriedFullNodes[i].Front(); e != nil; e = e.Next() {
 			ka := e.Value.(*KnownAddress)
-			sam.TriedBucketFullNodes[i][j] = NetAddressKey(ka.na)
+			peersState.TriedBucketFullNodes[i][j] = NetAddressKey(ka.na)
 			j++
 		}
 	}
 
 	w := &bytes.Buffer{}
 	encoder := gob.NewEncoder(w)
-	err := encoder.Encode(&sam)
+	err := encoder.Encode(&peersState)
 	if err != nil {
-		return errors.Wrap(err, "Failed to encode address manager")
+		return errors.Wrap(err, "failed to encode peers state")
 	}
 
 	return dbaccess.StorePeersState(dbaccess.NoTx(), w.Bytes())
 }
 
-// loadPeers loads the known address from the saved file. If empty, missing, or
-// malformed file, just don't load anything and start fresh
+// loadPeers loads the known address from the database. If missing,
+// just don't load anything and start fresh.
 func (a *AddrManager) loadPeers() error {
 	a.mtx.Lock()
 	defer a.mtx.Unlock()
@@ -705,7 +705,7 @@ func (a *AddrManager) Start() error {
 
 	log.Trace("Starting address manager")
 
-	// Load peers we already know about from file.
+	// Load peers we already know about from the database.
 	err := a.loadPeers()
 	if err != nil {
 		return err
