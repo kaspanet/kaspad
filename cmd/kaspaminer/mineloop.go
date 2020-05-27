@@ -22,6 +22,7 @@ import (
 
 var random = rand.New(rand.NewSource(time.Now().UnixNano()))
 var hashesTried uint64
+var wasPreviouslySynced = false
 
 const logHashRateInterval = 10 * time.Second
 
@@ -218,12 +219,16 @@ func solveLoop(newTemplateChan chan *rpcmodel.GetBlockTemplateResult, foundBlock
 			close(stopOldTemplateSolving)
 		}
 
-		if !template.IsSynced {
-			if !mineWhenNotSynced {
-				errChan <- errors.Errorf("got template with isSynced=false")
-				return
+		if !wasPreviouslySynced {
+			if !template.IsSynced {
+				if !mineWhenNotSynced {
+					errChan <- errors.Errorf("got template with isSynced=false")
+					return
+				}
+				log.Warnf("Got template with isSynced=false")
+			} else {
+				wasPreviouslySynced = true
 			}
-			log.Warnf("Got template with isSynced=false")
 		}
 
 		stopOldTemplateSolving = make(chan struct{})
