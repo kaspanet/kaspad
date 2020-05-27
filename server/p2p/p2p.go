@@ -1069,8 +1069,6 @@ func (s *Server) peerHandler() {
 	s.addrManager.Start()
 	s.SyncManager.Start()
 
-	s.quitWaitGroup.Add(1)
-
 	srvrLog.Tracef("Starting peer handler")
 
 	state := &peerState{
@@ -1135,7 +1133,6 @@ out:
 				sp.Disconnect()
 				return true
 			})
-			s.quitWaitGroup.Done()
 			break out
 
 		case opcMsg := <-s.newOutboundConnection:
@@ -1151,23 +1148,8 @@ out:
 	s.quitWaitGroup.Wait()
 
 	s.connManager.Stop()
-	s.SyncManager.Stop()
 	s.addrManager.Stop()
 
-	// Drain channels before exiting so nothing is left waiting around
-	// to send.
-cleanup:
-	for {
-		select {
-		case <-s.newPeers:
-		case <-s.donePeers:
-		case <-s.relayInv:
-		case <-s.broadcast:
-		case <-s.Query:
-		default:
-			break cleanup
-		}
-	}
 	s.wg.Done()
 	srvrLog.Tracef("Peer handler done")
 }
@@ -1233,9 +1215,6 @@ func (s *Server) rebroadcastHandler() {
 	timer := time.NewTimer(5 * time.Minute)
 	pendingInvs := make(map[wire.InvVect]interface{})
 
-	s.quitWaitGroup.Add(1)
-
-out:
 	for {
 		select {
 		case riv := <-s.modifyRebroadcastInv:
@@ -1262,26 +1241,8 @@ out:
 			// in the future.
 			timer.Reset(time.Second *
 				time.Duration(randomUint16Number(1800)))
-
-		case <-s.quit:
-			break out
 		}
 	}
-
-	timer.Stop()
-
-	// Drain channels before exiting so nothing is left waiting around
-	// to send.
-cleanup:
-	for {
-		select {
-		case <-s.modifyRebroadcastInv:
-		default:
-			break cleanup
-		}
-	}
-	s.quitWaitGroup.Done()
-	s.wg.Done()
 }
 
 // Start begins accepting connections from peers.
@@ -1300,8 +1261,6 @@ func (s *Server) Start() {
 	cfg := config.ActiveConfig()
 
 	if !cfg.DisableRPC {
-		s.wg.Add(1)
-
 		// Start the rebroadcastHandler, which ensures user tx received by
 		// the RPC server are rebroadcast until being included in a block.
 		spawn(s.rebroadcastHandler)

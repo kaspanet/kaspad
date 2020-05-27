@@ -149,14 +149,11 @@ type peerSyncState struct {
 type SyncManager struct {
 	peerNotifier   PeerNotifier
 	started        int32
-	shutdown       int32
 	dag            *blockdag.BlockDAG
 	txMemPool      *mempool.TxPool
 	dagParams      *dagconfig.Params
 	progressLogger *blockProgressLogger
 	msgChan        chan interface{}
-	wg             sync.WaitGroup
-	quit           chan struct{}
 	syncPeerLock   sync.Mutex
 
 	// These fields should only be accessed from the messageHandler thread
@@ -274,11 +271,6 @@ func (sm *SyncManager) isSyncCandidate(peer *peerpkg.Peer) bool {
 // be considered as a sync peer (they have already successfully negotiated). It
 // also starts syncing if needed. It is invoked from the syncHandler goroutine.
 func (sm *SyncManager) handleNewPeerMsg(peer *peerpkg.Peer) {
-	// Ignore if in the process of shutting down.
-	if atomic.LoadInt32(&sm.shutdown) != 0 {
-		return
-	}
-
 	log.Infof("New valid peer %s (%s)", peer, peer.UserAgent())
 
 	// Initialize the peer state
@@ -929,7 +921,6 @@ func (sm *SyncManager) handleSelectedTipMsg(msg *selectedTipMsg) {
 // important because the sync manager controls which blocks are needed and how
 // the fetching should proceed.
 func (sm *SyncManager) messageHandler() {
-out:
 	for {
 		select {
 		case m := <-sm.msgChan:
@@ -983,14 +974,8 @@ out:
 				log.Warnf("Invalid message type in block "+
 					"handler: %T", msg)
 			}
-
-		case <-sm.quit:
-			break out
 		}
 	}
-
-	sm.wg.Done()
-	log.Trace("Block handler done")
 }
 
 // handleBlockDAGNotification handles notifications from blockDAG. It does
@@ -1033,10 +1018,6 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 
 // NewPeer informs the sync manager of a newly active peer.
 func (sm *SyncManager) NewPeer(peer *peerpkg.Peer) {
-	// Ignore if we are shutting down.
-	if atomic.LoadInt32(&sm.shutdown) != 0 {
-		return
-	}
 	sm.msgChan <- &newPeerMsg{peer: peer}
 }
 
@@ -1044,12 +1025,6 @@ func (sm *SyncManager) NewPeer(peer *peerpkg.Peer) {
 // queue. Responds to the done channel argument after the tx message is
 // processed.
 func (sm *SyncManager) QueueTx(tx *util.Tx, peer *peerpkg.Peer, done chan struct{}) {
-	// Don't accept more transactions if we're shutting down.
-	if atomic.LoadInt32(&sm.shutdown) != 0 {
-		done <- struct{}{}
-		return
-	}
-
 	sm.msgChan <- &txMsg{tx: tx, peer: peer, reply: done}
 }
 
@@ -1057,12 +1032,6 @@ func (sm *SyncManager) QueueTx(tx *util.Tx, peer *peerpkg.Peer, done chan struct
 // queue. Responds to the done channel argument after the block message is
 // processed.
 func (sm *SyncManager) QueueBlock(block *util.Block, peer *peerpkg.Peer, isDelayedBlock bool, done chan struct{}) {
-	// Don't accept more blocks if we're shutting down.
-	if atomic.LoadInt32(&sm.shutdown) != 0 {
-		done <- struct{}{}
-		return
-	}
-
 	sm.msgChan <- &blockMsg{block: block, peer: peer, isDelayedBlock: isDelayedBlock, reply: done}
 }
 
@@ -1070,10 +1039,6 @@ func (sm *SyncManager) QueueBlock(block *util.Block, peer *peerpkg.Peer, isDelay
 func (sm *SyncManager) QueueInv(inv *wire.MsgInv, peer *peerpkg.Peer) {
 	// No channel handling here because peers do not need to block on inv
 	// messages.
-	if atomic.LoadInt32(&sm.shutdown) != 0 {
-		return
-	}
-
 	sm.msgChan <- &invMsg{inv: inv, peer: peer}
 }
 
@@ -1090,22 +1055,12 @@ func (sm *SyncManager) QueueSelectedTipMsg(msg *wire.MsgSelectedTip, peer *peerp
 
 // DonePeer informs the blockmanager that a peer has disconnected.
 func (sm *SyncManager) DonePeer(peer *peerpkg.Peer) {
-	// Ignore if we are shutting down.
-	if atomic.LoadInt32(&sm.shutdown) != 0 {
-		return
-	}
-
 	sm.msgChan <- &donePeerMsg{peer: peer}
 }
 
 // RemoveFromSyncCandidates tells the blockmanager to remove a peer as
 // a sync candidate.
 func (sm *SyncManager) RemoveFromSyncCandidates(peer *peerpkg.Peer) {
-	// Ignore if we are shutting down.
-	if atomic.LoadInt32(&sm.shutdown) != 0 {
-		return
-	}
-
 	sm.msgChan <- &removeFromSyncCandidatesMsg{peer: peer}
 }
 
@@ -1117,23 +1072,7 @@ func (sm *SyncManager) Start() {
 	}
 
 	log.Trace("Starting sync manager")
-	sm.wg.Add(1)
 	spawn(sm.messageHandler)
-}
-
-// Stop gracefully shuts down the sync manager by stopping all asynchronous
-// handlers and waiting for them to finish.
-func (sm *SyncManager) Stop() error {
-	if atomic.AddInt32(&sm.shutdown, 1) != 1 {
-		log.Warnf("Sync manager is already in the process of " +
-			"shutting down")
-		return nil
-	}
-
-	log.Infof("Sync manager shutting down")
-	close(sm.quit)
-	sm.wg.Wait()
-	return nil
 }
 
 // SyncPeerID returns the ID of the current sync peer, or 0 if there is none.
@@ -1201,7 +1140,6 @@ func New(config *Config) (*SyncManager, error) {
 		peerStates:      make(map[*peerpkg.Peer]*peerSyncState),
 		progressLogger:  newBlockProgressLogger("Processed", log),
 		msgChan:         make(chan interface{}, config.MaxPeers*3),
-		quit:            make(chan struct{}),
 	}
 
 	sm.dag.Subscribe(sm.handleBlockDAGNotification)
