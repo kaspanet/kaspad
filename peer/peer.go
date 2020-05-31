@@ -897,10 +897,9 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 		return errors.New(reason)
 	}
 
-	// Disconnect from non-native/coinbase subnetworks in networks that don't allow them
-	if !p.cfg.DAGParams.EnableNonNativeSubnetworks &&
-		!msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
-		return errors.New("non-native subnetworks are not allowed")
+	// Disconnect from partial nodes in networks that don't allow them
+	if !p.cfg.DAGParams.EnableNonNativeSubnetworks && msg.SubnetworkID != nil {
+		return errors.New("partial nodes are not allowed")
 	}
 
 	// Disconnect if:
