@@ -170,8 +170,8 @@ const (
 	// will share with a call to AddressCache.
 	getAddrPercent = 23
 
-	// serialisationVersion is the current version of the on-disk format.
-	serialisationVersion = 1
+	// serializationVersion is the current version of the on-disk format.
+	serializationVersion = 1
 )
 
 // updateAddress is a helper function to either update an address already known
@@ -445,10 +445,19 @@ func (a *AddrManager) savePeers() error {
 	a.mtx.Lock()
 	defer a.mtx.Unlock()
 
-	// First we make a serialisable datastructure so we can encode it to
-	// json.
+	serializedPeersState, err := a.serializePeersState()
+	if err != nil {
+		return err
+	}
+
+	return dbaccess.StorePeersState(dbaccess.NoTx(), serializedPeersState)
+}
+
+func (a *AddrManager) serializePeersState() ([]byte, error) {
+	// First we make a serializable data structure so we can encode it to
+	// gob.
 	peersState := new(serializedPeersState)
-	peersState.Version = serialisationVersion
+	peersState.Version = serializationVersion
 	copy(peersState.Key[:], a.key[:])
 
 	peersState.Addresses = make([]*serializedKnownAddress, len(a.addrIndex))
@@ -526,10 +535,10 @@ func (a *AddrManager) savePeers() error {
 	encoder := gob.NewEncoder(w)
 	err := encoder.Encode(&peersState)
 	if err != nil {
-		return errors.Wrap(err, "failed to encode peers state")
+		return nil, errors.Wrap(err, "failed to encode peers state")
 	}
 
-	return dbaccess.StorePeersState(dbaccess.NoTx(), w.Bytes())
+	return w.Bytes(), nil
 }
 
 // loadPeers loads the known address from the database. If missing,
@@ -538,37 +547,38 @@ func (a *AddrManager) loadPeers() error {
 	a.mtx.Lock()
 	defer a.mtx.Unlock()
 
-	err := a.deserializePeers()
+	serializedPeerState, err := dbaccess.FetchPeersState(dbaccess.NoTx())
 	if dbaccess.IsNotFoundError(err) {
 		a.reset()
 	} else if err != nil {
 		return err
 	}
+
+	err = a.deserializePeersState(serializedPeerState)
+	if err != nil {
+		return err
+	}
+
 	log.Infof("Loaded %d addresses from database", a.totalNumAddresses())
 	return nil
 }
 
-func (a *AddrManager) deserializePeers() error {
-	addrManagerState, err := dbaccess.FetchPeersState(dbaccess.NoTx())
-	if err != nil {
-		return errors.Wrap(err, "error fetching peers state state")
-	}
-
-	var sam serializedPeersState
-	r := bytes.NewBuffer(addrManagerState)
+func (a *AddrManager) deserializePeersState(serializedPeerState []byte) error {
+	var peersState serializedPeersState
+	r := bytes.NewBuffer(serializedPeerState)
 	dec := gob.NewDecoder(r)
-	err = dec.Decode(&sam)
+	err := dec.Decode(&peersState)
 	if err != nil {
 		return errors.Wrap(err, "error deserializing peers state")
 	}
 
-	if sam.Version != serialisationVersion {
+	if peersState.Version != serializationVersion {
 		return errors.Errorf("unknown version %d in serialized "+
-			"addrmanager", sam.Version)
+			"peers state", peersState.Version)
 	}
-	copy(a.key[:], sam.Key[:])
+	copy(a.key[:], peersState.Key[:])
 
-	for _, v := range sam.Addresses {
+	for _, v := range peersState.Addresses {
 		ka := new(KnownAddress)
 		ka.na, err = a.DeserializeNetAddress(v.Addr)
 		if err != nil {
@@ -593,12 +603,12 @@ func (a *AddrManager) deserializePeers() error {
 		a.addrIndex[NetAddressKey(ka.na)] = ka
 	}
 
-	for subnetworkIDStr := range sam.NewBuckets {
+	for subnetworkIDStr := range peersState.NewBuckets {
 		subnetworkID, err := subnetworkid.NewFromStr(subnetworkIDStr)
 		if err != nil {
 			return err
 		}
-		for i, subnetworkNewBucket := range sam.NewBuckets[subnetworkIDStr] {
+		for i, subnetworkNewBucket := range peersState.NewBuckets[subnetworkIDStr] {
 			for _, val := range subnetworkNewBucket {
 				ka, ok := a.addrIndex[val]
 				if !ok {
@@ -615,7 +625,7 @@ func (a *AddrManager) deserializePeers() error {
 		}
 	}
 
-	for i, newBucket := range sam.NewBucketFullNodes {
+	for i, newBucket := range peersState.NewBucketFullNodes {
 		for _, val := range newBucket {
 			ka, ok := a.addrIndex[val]
 			if !ok {
@@ -631,12 +641,12 @@ func (a *AddrManager) deserializePeers() error {
 		}
 	}
 
-	for subnetworkIDStr := range sam.TriedBuckets {
+	for subnetworkIDStr := range peersState.TriedBuckets {
 		subnetworkID, err := subnetworkid.NewFromStr(subnetworkIDStr)
 		if err != nil {
 			return err
 		}
-		for i, subnetworkTriedBucket := range sam.TriedBuckets[subnetworkIDStr] {
+		for i, subnetworkTriedBucket := range peersState.TriedBuckets[subnetworkIDStr] {
 			for _, val := range subnetworkTriedBucket {
 				ka, ok := a.addrIndex[val]
 				if !ok {
@@ -651,7 +661,7 @@ func (a *AddrManager) deserializePeers() error {
 		}
 	}
 
-	for i, triedBucket := range sam.TriedBucketFullNodes {
+	for i, triedBucket := range peersState.TriedBucketFullNodes {
 		for _, val := range triedBucket {
 			ka, ok := a.addrIndex[val]
 			if !ok {
