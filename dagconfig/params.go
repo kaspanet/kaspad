@@ -394,7 +394,7 @@ var SimnetParams = Params{
 	Prefix: util.Bech32PrefixKaspaSim,
 
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
-	EnableNonNativeSubnetworks: true,
+	EnableNonNativeSubnetworks: false,
 }
 
 // DevnetParams defines the network parameters for the development Kaspa network.
