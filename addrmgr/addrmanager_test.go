@@ -103,11 +103,11 @@ func addNaTest(ip string, port uint16, want string) {
 	naTests = append(naTests, test)
 }
 
-func lookupFunc(host string) ([]net.IP, error) {
+func lookupFuncForTest(host string) ([]net.IP, error) {
 	return nil, errors.New("not implemented")
 }
 
-func newAddrManager(t *testing.T, testName string, localSubnetworkID *subnetworkid.SubnetworkID) (*AddrManager, func()) {
+func newAddrManagerForTest(t *testing.T, testName string, localSubnetworkID *subnetworkid.SubnetworkID) (*AddrManager, func()) {
 	dbPath, err := ioutil.TempDir("", testName)
 	if err != nil {
 		t.Fatalf("Error creating temporary directory: %s", err)
@@ -118,9 +118,9 @@ func newAddrManager(t *testing.T, testName string, localSubnetworkID *subnetwork
 		t.Fatalf("error creating db: %s", err)
 	}
 
-	amgr := New(lookupFunc, localSubnetworkID)
+	addressManager := New(lookupFuncForTest, localSubnetworkID)
 
-	return amgr, func() {
+	return addressManager, func() {
 		err := dbaccess.Close()
 		if err != nil {
 			t.Fatalf("error closing the database: %s", err)
@@ -129,7 +129,7 @@ func newAddrManager(t *testing.T, testName string, localSubnetworkID *subnetwork
 }
 
 func TestStartStop(t *testing.T) {
-	amgr, teardown := newAddrManager(t, "TestStartStop", nil)
+	amgr, teardown := newAddrManagerForTest(t, "TestStartStop", nil)
 	defer teardown()
 	err := amgr.Start()
 	if err != nil {
@@ -175,7 +175,7 @@ func TestAddAddressByIP(t *testing.T) {
 		},
 	}
 
-	amgr, teardown := newAddrManager(t, "TestAddAddressByIP", nil)
+	amgr, teardown := newAddrManagerForTest(t, "TestAddAddressByIP", nil)
 	defer teardown()
 	for i, test := range tests {
 		err := amgr.AddAddressByIP(test.addrIP, nil)
@@ -241,7 +241,7 @@ func TestAddLocalAddress(t *testing.T) {
 			true,
 		},
 	}
-	amgr, teardown := newAddrManager(t, "TestAddLocalAddress", nil)
+	amgr, teardown := newAddrManagerForTest(t, "TestAddLocalAddress", nil)
 	defer teardown()
 	for x, test := range tests {
 		result := amgr.AddLocalAddress(&test.address, test.priority)
@@ -268,7 +268,7 @@ func TestAttempt(t *testing.T) {
 	})
 	defer config.SetActiveConfig(originalActiveCfg)
 
-	amgr, teardown := newAddrManager(t, "TestAttempt", nil)
+	amgr, teardown := newAddrManagerForTest(t, "TestAttempt", nil)
 	defer teardown()
 
 	// Add a new address and get it
@@ -300,7 +300,7 @@ func TestConnected(t *testing.T) {
 	})
 	defer config.SetActiveConfig(originalActiveCfg)
 
-	amgr, teardown := newAddrManager(t, "TestConnected", nil)
+	amgr, teardown := newAddrManagerForTest(t, "TestConnected", nil)
 	defer teardown()
 
 	// Add a new address and get it
@@ -330,7 +330,7 @@ func TestNeedMoreAddresses(t *testing.T) {
 	})
 	defer config.SetActiveConfig(originalActiveCfg)
 
-	amgr, teardown := newAddrManager(t, "TestNeedMoreAddresses", nil)
+	amgr, teardown := newAddrManagerForTest(t, "TestNeedMoreAddresses", nil)
 	defer teardown()
 	addrsToAdd := 1500
 	b := amgr.NeedMoreAddresses()
@@ -372,7 +372,7 @@ func TestGood(t *testing.T) {
 	})
 	defer config.SetActiveConfig(originalActiveCfg)
 
-	amgr, teardown := newAddrManager(t, "TestGood", nil)
+	amgr, teardown := newAddrManagerForTest(t, "TestGood", nil)
 	defer teardown()
 	addrsToAdd := 64 * 64
 	addrs := make([]*wire.NetAddress, addrsToAdd)
@@ -429,7 +429,7 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	})
 	defer config.SetActiveConfig(originalActiveCfg)
 
-	amgr, teardown := newAddrManager(t, "TestGoodChangeSubnetworkID", nil)
+	amgr, teardown := newAddrManagerForTest(t, "TestGoodChangeSubnetworkID", nil)
 	defer teardown()
 	addr := wire.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
 	addrKey := NetAddressKey(addr)
@@ -509,7 +509,7 @@ func TestGetAddress(t *testing.T) {
 	defer config.SetActiveConfig(originalActiveCfg)
 
 	localSubnetworkID := &subnetworkid.SubnetworkID{0xff}
-	amgr, teardown := newAddrManager(t, "TestGetAddress", localSubnetworkID)
+	amgr, teardown := newAddrManagerForTest(t, "TestGetAddress", localSubnetworkID)
 	defer teardown()
 
 	// Get an address from an empty set (should error)
@@ -639,7 +639,7 @@ func TestGetBestLocalAddress(t *testing.T) {
 		*/
 	}
 
-	amgr, teardown := newAddrManager(t, "TestGetBestLocalAddress", nil)
+	amgr, teardown := newAddrManagerForTest(t, "TestGetBestLocalAddress", nil)
 	defer teardown()
 
 	// Test against default when there's no address

@@ -1482,13 +1482,13 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 		services &^= wire.SFNodeBloom
 	}
 
-	amgr := addrmgr.New(serverutils.KaspadLookup, config.ActiveConfig().SubnetworkID)
+	addressManager := addrmgr.New(serverutils.KaspadLookup, config.ActiveConfig().SubnetworkID)
 
 	var listeners []net.Listener
 	var nat serverutils.NAT
 	if !config.ActiveConfig().DisableListen {
 		var err error
-		listeners, nat, err = initListeners(amgr, listenAddrs, services)
+		listeners, nat, err = initListeners(addressManager, listenAddrs, services)
 		if err != nil {
 			return nil, err
 		}
@@ -1501,7 +1501,7 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 
 	s := Server{
 		DAGParams:                   dagParams,
-		addrManager:                 amgr,
+		addrManager:                 addressManager,
 		newPeers:                    make(chan *Peer, maxPeers),
 		donePeers:                   make(chan *Peer, maxPeers),
 		banPeers:                    make(chan *Peer, maxPeers),
