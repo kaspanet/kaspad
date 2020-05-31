@@ -5,7 +5,6 @@
 package peer
 
 import (
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"io"
 	"net"
 	"strconv"
@@ -224,7 +223,7 @@ func TestPeerConnection(t *testing.T) {
 		ProtocolVersion:   wire.ProtocolVersion, // Configure with older version
 		Services:          0,
 		SelectedTipHash:   fakeSelectedTipFn,
-		SubnetworkID:      subnetworkid.SubnetworkIDNative,
+		SubnetworkID:      nil,
 	}
 	outPeerCfg := &Config{
 		Listeners: MessageListeners{
@@ -245,7 +244,7 @@ func TestPeerConnection(t *testing.T) {
 		ProtocolVersion:   wire.ProtocolVersion + 1,
 		Services:          wire.SFNodeNetwork,
 		SelectedTipHash:   fakeSelectedTipFn,
-		SubnetworkID:      subnetworkid.SubnetworkIDNative,
+		SubnetworkID:      nil,
 	}
 
 	wantStats1 := peerStats{
@@ -259,8 +258,8 @@ func TestPeerConnection(t *testing.T) {
 		wantLastPingNonce:   uint64(0),
 		wantLastPingMicros:  int64(0),
 		wantTimeOffset:      int64(0),
-		wantBytesSent:       215, // 191 version + 24 verack
-		wantBytesReceived:   215,
+		wantBytesSent:       195, // 171 version + 24 verack
+		wantBytesReceived:   195,
 	}
 	wantStats2 := peerStats{
 		wantUserAgent:       wire.DefaultUserAgent + "peer:1.0(comment)/",
@@ -273,8 +272,8 @@ func TestPeerConnection(t *testing.T) {
 		wantLastPingNonce:   uint64(0),
 		wantLastPingMicros:  int64(0),
 		wantTimeOffset:      int64(0),
-		wantBytesSent:       215, // 191 version + 24 verack
-		wantBytesReceived:   215,
+		wantBytesSent:       195, // 171 version + 24 verack
+		wantBytesReceived:   195,
 	}
 
 	tests := []struct {
@@ -404,7 +403,7 @@ func TestPeerListeners(t *testing.T) {
 		DAGParams:         &dagconfig.MainnetParams,
 		Services:          wire.SFNodeBloom,
 		SelectedTipHash:   fakeSelectedTipFn,
-		SubnetworkID:      subnetworkid.SubnetworkIDNative,
+		SubnetworkID:      nil,
 	}
 
 	outPeerCfg := &Config{}
@@ -521,7 +520,7 @@ func TestOutboundPeer(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		DAGParams:         &dagconfig.MainnetParams,
 		Services:          0,
-		SubnetworkID:      subnetworkid.SubnetworkIDNative,
+		SubnetworkID:      nil,
 	}
 
 	_, p, err := setupPeers(peerCfg, peerCfg)
