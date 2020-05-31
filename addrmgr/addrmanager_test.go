@@ -107,7 +107,7 @@ func lookupFuncForTest(host string) ([]net.IP, error) {
 	return nil, errors.New("not implemented")
 }
 
-func newAddrManagerForTest(t *testing.T, testName string, localSubnetworkID *subnetworkid.SubnetworkID) (*AddrManager, func()) {
+func newAddrManagerForTest(t *testing.T, testName string, localSubnetworkID *subnetworkid.SubnetworkID) (addressManager *AddrManager, teardown func()) {
 	dbPath, err := ioutil.TempDir("", testName)
 	if err != nil {
 		t.Fatalf("Error creating temporary directory: %s", err)
@@ -118,7 +118,7 @@ func newAddrManagerForTest(t *testing.T, testName string, localSubnetworkID *sub
 		t.Fatalf("error creating db: %s", err)
 	}
 
-	addressManager := New(lookupFuncForTest, localSubnetworkID)
+	addressManager = New(lookupFuncForTest, localSubnetworkID)
 
 	return addressManager, func() {
 		err := dbaccess.Close()
