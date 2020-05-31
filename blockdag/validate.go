@@ -509,6 +509,16 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 		}
 	}
 
+	// Disallow non-native/coinbase subnetworks in networks that don't allow them
+	if !dag.dagParams.EnableNonNativeSubnetworks {
+		for _, tx := range transactions {
+			if !(tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
+				tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase)) {
+				return 0, ruleError(ErrInvalidSubnetwork, "non-native/coinbase subnetworks are not allowed")
+			}
+		}
+	}
+
 	// Do some preliminary checks on each transaction to ensure they are
 	// sane before continuing.
 	for _, tx := range transactions {

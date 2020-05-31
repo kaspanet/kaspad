@@ -6,6 +6,7 @@ package peer_test
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"net"
 	"time"
 
@@ -31,6 +32,7 @@ func mockRemotePeer() error {
 		UserAgentVersion: "1.0.0", // User agent version to advertise.
 		DAGParams:        &dagconfig.SimnetParams,
 		SelectedTipHash:  fakeSelectedTipFn,
+		SubnetworkID:     subnetworkid.SubnetworkIDNative,
 	}
 
 	// Accept connections on the simnet port.
@@ -90,6 +92,7 @@ func Example_newOutboundPeer() {
 			},
 		},
 		SelectedTipHash: fakeSelectedTipFn,
+		SubnetworkID:    subnetworkid.SubnetworkIDNative,
 	}
 	p, err := peer.NewOutboundPeer(peerCfg, "127.0.0.1:18555")
 	if err != nil {

@@ -127,7 +127,6 @@ type Flags struct {
 	DropAcceptanceIndex  bool          `long:"dropacceptanceindex" description:"Deletes the hash-based acceptance index from the database on start up and then exits."`
 	RelayNonStd          bool          `long:"relaynonstd" description:"Relay non-standard transactions regardless of the default settings for the active network."`
 	RejectNonStd         bool          `long:"rejectnonstd" description:"Reject non-standard transactions regardless of the default settings for the active network."`
-	Subnetwork           string        `long:"subnetwork" description:"If subnetwork ID is specified, than node will request and process only payloads from specified subnetwork. And if subnetwork ID is ommited, than payloads of all subnetworks are processed. Subnetworks with IDs 2 through 255 are reserved for future use and are currently not allowed."`
 	ResetDatabase        bool          `long:"reset-db" description:"Reset database before starting node. It's needed when switching between subnetworks."`
 	NetworkFlags
 }
@@ -627,15 +626,6 @@ func loadConfig() (*Config, []string, error) {
 			return nil, nil, err
 		}
 		activeConfig.MiningAddrs = append(activeConfig.MiningAddrs, addr)
-	}
-
-	if activeConfig.Flags.Subnetwork != "" {
-		activeConfig.SubnetworkID, err = subnetworkid.NewFromStr(activeConfig.Flags.Subnetwork)
-		if err != nil {
-			return nil, nil, err
-		}
-	} else {
-		activeConfig.SubnetworkID = nil
 	}
 
 	// Add default port to all listener addresses if needed and remove

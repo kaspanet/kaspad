@@ -186,6 +186,7 @@ func TestSubnetworkRegistry(t *testing.T) {
 	params := dagconfig.SimnetParams
 	params.K = 1
 	params.BlockCoinbaseMaturity = 0
+	params.EnableNonNativeSubnetworks = true
 	dag, teardownFunc, err := blockdag.DAGSetup("TestSubnetworkRegistry", true, blockdag.Config{
 		DAGParams: &params,
 	})
@@ -410,6 +411,7 @@ func TestGasLimit(t *testing.T) {
 	params := dagconfig.SimnetParams
 	params.K = 1
 	params.BlockCoinbaseMaturity = 0
+	params.EnableNonNativeSubnetworks = true
 	dag, teardownFunc, err := blockdag.DAGSetup("TestSubnetworkRegistry", true, blockdag.Config{
 		DAGParams: &params,
 	})
