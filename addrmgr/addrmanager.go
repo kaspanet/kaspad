@@ -1085,35 +1085,23 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 	// Record one of the buckets in question and call it the `first'
 	oldBucket := -1
 	if !ka.tried {
+		var addrNewBucket *newBucket
 		if oldSubnetworkID == nil {
-			for i := range a.addrNewFullNodes {
-				// we check for existence so we can record the first one
-				if _, ok := a.addrNewFullNodes[i][addrKey]; ok {
-					delete(a.addrNewFullNodes[i], addrKey)
-					ka.refs--
-					if oldBucket == -1 {
-						oldBucket = i
-					}
-				}
-			}
+			addrNewBucket = &a.addrNewFullNodes
 			a.nNewFullNodes--
 		} else {
-			for i := range a.addrNew[*oldSubnetworkID] {
-				// we check for existence so we can record the first one
-				if _, ok := a.addrNew[*oldSubnetworkID][i][addrKey]; ok {
-					delete(a.addrNew[*oldSubnetworkID][i], addrKey)
-					ka.refs--
-					if oldBucket == -1 {
-						oldBucket = i
-					}
-				}
-			}
+			addrNewBucket = a.addrNew[*oldSubnetworkID]
 			a.nNew[*oldSubnetworkID]--
 		}
-
-		if oldBucket == -1 {
-			// What? wasn't in a bucket after all.... Panic?
-			return
+		for i := range addrNewBucket {
+			// we check for existence so we can record the first one
+			if _, ok := addrNewBucket[i][addrKey]; ok {
+				delete(addrNewBucket[i], addrKey)
+				ka.refs--
+				if oldBucket == -1 {
+					oldBucket = i
+				}
+			}
 		}
 	}
 
