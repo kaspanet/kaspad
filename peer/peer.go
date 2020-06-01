@@ -755,17 +755,11 @@ func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
 // addresses. This function is useful over manually sending the message via
 // QueueMessage since it automatically limits the addresses to the maximum
 // number allowed by the message and randomizes the chosen addresses when there
-// are too many. It returns the addresses that were actually sent and no
-// message will be sent if there are no entries in the provided addresses slice.
+// are too many. It returns the addresses that were actually sent.
 //
 // This function is safe for concurrent access.
 func (p *Peer) PushAddrMsg(addresses []*wire.NetAddress, subnetworkID *subnetworkid.SubnetworkID) ([]*wire.NetAddress, error) {
 	addressCount := len(addresses)
-
-	// Nothing to send.
-	if addressCount == 0 {
-		return nil, nil
-	}
 
 	msg := wire.NewMsgAddr(false, subnetworkID)
 	msg.AddrList = make([]*wire.NetAddress, addressCount)
