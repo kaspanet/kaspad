@@ -1119,35 +1119,19 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 
 	// If no room in the original bucket, we put it in a bucket we just
 	// freed up a space in.
-	if ka.subnetworkID == nil {
-		if len(a.addrNewFullNodes[newBucket]) >= newBucketSize {
-			if oldBucket == -1 {
-				// If addr was a tried bucket with updated subnetworkID - oldBucket will be equal to -1.
-				// In that case - find some non-full bucket.
-				// If no such bucket exists - throw rmka away
-				for newBucket := range a.addrNewFullNodes {
-					if len(a.addrNewFullNodes[newBucket]) < newBucketSize {
-						break
-					}
+	addrNewBucket := a.addrNewBucket(ka.subnetworkID)
+	if len(addrNewBucket[newBucket]) >= newBucketSize {
+		if oldBucket == -1 {
+			// If addr was a tried bucket with updated subnetworkID - oldBucket will be equal to -1.
+			// In that case - find some non-full bucket.
+			// If no such bucket exists - throw rmka away
+			for newBucket := range addrNewBucket {
+				if len(addrNewBucket[newBucket]) < newBucketSize {
+					break
 				}
-			} else {
-				newBucket = oldBucket
 			}
-		}
-	} else if len(a.addrNew[*ka.subnetworkID][newBucket]) >= newBucketSize {
-		if len(a.addrNew[*ka.subnetworkID][newBucket]) >= newBucketSize {
-			if oldBucket == -1 {
-				// If addr was a tried bucket with updated subnetworkID - oldBucket will be equal to -1.
-				// In that case - find some non-full bucket.
-				// If no such bucket exists - throw rmka away
-				for newBucket := range a.addrNew[*ka.subnetworkID] {
-					if len(a.addrNew[*ka.subnetworkID][newBucket]) < newBucketSize {
-						break
-					}
-				}
-			} else {
-				newBucket = oldBucket
-			}
+		} else {
+			newBucket = oldBucket
 		}
 	}
 
@@ -1159,23 +1143,15 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 	rmka.refs++
 
 	// We don't touch a.nTried here since the number of tried stays the same
-	// but we decemented new above, raise it again since we're putting
+	// but we decremented new above, raise it again since we're putting
 	// something back.
-	if ka.subnetworkID == nil {
-		a.nNewFullNodes++
-	} else {
-		a.nNew[*ka.subnetworkID]++
-	}
+	a.incrementNNewNodes(ka.subnetworkID)
 
 	rmkey := NetAddressKey(rmka.na)
 	log.Tracef("Replacing %s with %s in tried", rmkey, addrKey)
 
 	// We made sure there is space here just above.
-	if ka.subnetworkID == nil {
-		a.addrNewFullNodes[newBucket][rmkey] = rmka
-	} else {
-		a.addrNew[*ka.subnetworkID][newBucket][rmkey] = rmka
-	}
+	addrNewBucket[newBucket][rmkey] = rmka
 }
 
 func (a *AddrManager) addrNewBucket(subnetworkID *subnetworkid.SubnetworkID) *newBucket {
@@ -1213,6 +1189,14 @@ func (a *AddrManager) incrementNTriedNodes(subnetworkID *subnetworkid.Subnetwork
 		return
 	}
 	a.nTried[*subnetworkID]++
+}
+
+func (a *AddrManager) incrementNNewNodes(subnetworkID *subnetworkid.SubnetworkID) {
+	if subnetworkID == nil {
+		a.nNewFullNodes++
+		return
+	}
+	a.nNew[*subnetworkID]++
 }
 
 // AddLocalAddress adds na to the list of known local addresses to advertise
