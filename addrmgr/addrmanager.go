@@ -294,9 +294,6 @@ func (a *AddrManager) expireNew(subnetworkID *subnetworkid.SubnetworkID, bucketI
 	// information instead.
 	var oldest *KnownAddress
 	addrNewBucket := a.addrNewBucket(subnetworkID)
-	if addrNewBucket == nil {
-		return
-	}
 	for k, v := range addrNewBucket[bucketIndex] {
 		if v.isBad() {
 			log.Tracef("expiring bad address %s", k)
