@@ -226,23 +226,16 @@ func (a *AddrManager) updateAddress(netAddr, srcAddr *wire.NetAddress, subnetwor
 		netAddrCopy := *netAddr
 		ka = &KnownAddress{na: &netAddrCopy, srcAddr: srcAddr, subnetworkID: subnetworkID}
 		a.addrIndex[addr] = ka
-		if subnetworkID == nil {
-			a.nNewFullNodes++
-		} else {
-			a.nNew[*subnetworkID]++
-		}
+		a.incrementNNewNodes(subnetworkID)
 		// XXX time penalty?
 	}
 
 	bucket := a.getNewBucket(netAddr, srcAddr)
 
 	// Already exists?
-	if ka.subnetworkID == nil {
-		if _, ok := a.addrNewFullNodes[bucket][addr]; ok {
-			return
-		}
-	} else if a.addrNew[*ka.subnetworkID] != nil {
-		if _, ok := a.addrNew[*ka.subnetworkID][bucket][addr]; ok {
+	addrNewBucket := a.addrNewBucket(ka.subnetworkID)
+	if addrNewBucket != nil {
+		if _, ok := addrNewBucket[bucket][addr]; ok {
 			return
 		}
 	}
@@ -262,13 +255,9 @@ func (a *AddrManager) updateAddress(netAddr, srcAddr *wire.NetAddress, subnetwor
 	ka.refs++
 	a.updateAddrNew(bucket, addr, ka)
 
-	if ka.subnetworkID == nil {
-		log.Tracef("Added new full node address %s for a total of %d addresses", addr,
-			a.nTriedFullNodes+a.nNewFullNodes)
-	} else {
-		log.Tracef("Added new address %s for a total of %d addresses", addr,
-			a.nTried[*ka.subnetworkID]+a.nNew[*ka.subnetworkID])
-	}
+	nAllNodes := a.nNewNodes(ka.subnetworkID) + a.nTriedNodes(ka.subnetworkID)
+	log.Tracef("Added new address %s for a total of %d addresses", addr, nAllNodes)
+
 }
 
 func (a *AddrManager) updateAddrNew(bucket int, addr string, ka *KnownAddress) {
