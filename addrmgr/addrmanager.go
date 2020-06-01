@@ -1085,14 +1085,7 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 	// Record one of the buckets in question and call it the `first'
 	oldBucket := -1
 	if !ka.tried {
-		var addrNewBucket *newBucket
-		if oldSubnetworkID == nil {
-			addrNewBucket = &a.addrNewFullNodes
-			a.nNewFullNodes--
-		} else {
-			addrNewBucket = a.addrNew[*oldSubnetworkID]
-			a.nNew[*oldSubnetworkID]--
-		}
+		addrNewBucket := a.addrNewBucket(oldSubnetworkID)
 		for i := range addrNewBucket {
 			// we check for existence so we can record the first one
 			if _, ok := addrNewBucket[i][addrKey]; ok {
@@ -1103,20 +1096,17 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 				}
 			}
 		}
+
+		a.decrementNNewNodes(oldSubnetworkID)
 	}
 
 	// Room in this tried bucket?
-	if ka.subnetworkID == nil {
-		if a.nTriedFullNodes == 0 || a.addrTriedFullNodes[triedBucketIndex].Len() < triedBucketSize {
-			ka.tried = true
-			a.updateAddrTried(triedBucketIndex, ka)
-			a.nTriedFullNodes++
-			return
-		}
-	} else if a.nTried[*ka.subnetworkID] == 0 || a.addrTried[*ka.subnetworkID][triedBucketIndex].Len() < triedBucketSize {
+	addrTriedBucket := a.addrTriedBucket(ka.subnetworkID)
+	nTriedNodes := a.nTriedNodes(ka.subnetworkID)
+	if nTriedNodes == 0 || addrTriedBucket[triedBucketIndex].Len() < triedBucketSize {
 		ka.tried = true
 		a.updateAddrTried(triedBucketIndex, ka)
-		a.nTried[*ka.subnetworkID]++
+		a.incrementNTriedNodes(ka.subnetworkID)
 		return
 	}
 
@@ -1186,6 +1176,43 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 	} else {
 		a.addrNew[*ka.subnetworkID][newBucket][rmkey] = rmka
 	}
+}
+
+func (a *AddrManager) addrNewBucket(subnetworkID *subnetworkid.SubnetworkID) *newBucket {
+	if subnetworkID == nil {
+		return &a.addrNewFullNodes
+	}
+	return a.addrNew[*subnetworkID]
+}
+
+func (a *AddrManager) addrTriedBucket(subnetworkID *subnetworkid.SubnetworkID) *triedBucket {
+	if subnetworkID == nil {
+		return &a.addrTriedFullNodes
+	}
+	return a.addrTried[*subnetworkID]
+}
+
+func (a *AddrManager) decrementNNewNodes(subnetworkID *subnetworkid.SubnetworkID) {
+	if subnetworkID == nil {
+		a.nNewFullNodes--
+		return
+	}
+	a.nNew[*subnetworkID]--
+}
+
+func (a *AddrManager) nTriedNodes(subnetworkID *subnetworkid.SubnetworkID) int {
+	if subnetworkID == nil {
+		return a.nTriedFullNodes
+	}
+	return a.nTried[*subnetworkID]
+}
+
+func (a *AddrManager) incrementNTriedNodes(subnetworkID *subnetworkid.SubnetworkID) {
+	if subnetworkID == nil {
+		a.nTriedFullNodes++
+		return
+	}
+	a.nTried[*subnetworkID]++
 }
 
 // AddLocalAddress adds na to the list of known local addresses to advertise
