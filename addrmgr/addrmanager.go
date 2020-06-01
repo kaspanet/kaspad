@@ -919,15 +919,11 @@ func (a *AddrManager) GetAddress() *KnownAddress {
 	a.mtx.Lock()
 	defer a.mtx.Unlock()
 
-	var knownAddress *KnownAddress
-	if a.localSubnetworkID == nil {
-		knownAddress = a.getAddress(&a.addrTriedFullNodes, a.nTriedFullNodes,
-			&a.addrNewFullNodes, a.nNewFullNodes)
-	} else {
-		subnetworkID := *a.localSubnetworkID
-		knownAddress = a.getAddress(a.addrTried[subnetworkID], a.nTried[subnetworkID],
-			a.addrNew[subnetworkID], a.nNew[subnetworkID])
-	}
+	addrTriedBucket := a.addrTriedBucket(a.localSubnetworkID)
+	nTriedNodes := a.nTriedNodes(a.localSubnetworkID)
+	addrNewBucket := a.addrNewBucket(a.localSubnetworkID)
+	nNewNodes := a.nNewNodes(a.localSubnetworkID)
+	knownAddress := a.getAddress(addrTriedBucket, nTriedNodes, addrNewBucket, nNewNodes)
 
 	return knownAddress
 
@@ -1168,6 +1164,14 @@ func (a *AddrManager) addrTriedBucket(subnetworkID *subnetworkid.SubnetworkID) *
 	return a.addrTried[*subnetworkID]
 }
 
+func (a *AddrManager) incrementNNewNodes(subnetworkID *subnetworkid.SubnetworkID) {
+	if subnetworkID == nil {
+		a.nNewFullNodes++
+		return
+	}
+	a.nNew[*subnetworkID]++
+}
+
 func (a *AddrManager) decrementNNewNodes(subnetworkID *subnetworkid.SubnetworkID) {
 	if subnetworkID == nil {
 		a.nNewFullNodes--
@@ -1183,20 +1187,19 @@ func (a *AddrManager) nTriedNodes(subnetworkID *subnetworkid.SubnetworkID) int {
 	return a.nTried[*subnetworkID]
 }
 
+func (a *AddrManager) nNewNodes(subnetworkID *subnetworkid.SubnetworkID) int {
+	if subnetworkID == nil {
+		return a.nNewFullNodes
+	}
+	return a.nNew[*subnetworkID]
+}
+
 func (a *AddrManager) incrementNTriedNodes(subnetworkID *subnetworkid.SubnetworkID) {
 	if subnetworkID == nil {
 		a.nTriedFullNodes++
 		return
 	}
 	a.nTried[*subnetworkID]++
-}
-
-func (a *AddrManager) incrementNNewNodes(subnetworkID *subnetworkid.SubnetworkID) {
-	if subnetworkID == nil {
-		a.nNewFullNodes++
-		return
-	}
-	a.nNew[*subnetworkID]++
 }
 
 // AddLocalAddress adds na to the list of known local addresses to advertise
