@@ -232,15 +232,8 @@ func (a *AddrManager) updateAddress(netAddr, srcAddr *wire.NetAddress, subnetwor
 
 	bucketIndex := a.getNewBucket(netAddr, srcAddr)
 
-	// Already exists?
-	addrNewBucket := a.addrNewBucket(ka.subnetworkID)
-	if addrNewBucket != nil {
-		if _, ok := addrNewBucket[bucketIndex][addr]; ok {
-			return
-		}
-	}
-
 	// Enforce max addresses.
+	addrNewBucket := a.addrNewBucket(ka.subnetworkID)
 	if addrNewBucket != nil && len(addrNewBucket[bucketIndex]) > newBucketSize {
 		log.Tracef("new bucket is full, expiring old")
 		a.expireNew(ka.subnetworkID, bucketIndex)
