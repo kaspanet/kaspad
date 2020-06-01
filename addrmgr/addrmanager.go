@@ -230,30 +230,25 @@ func (a *AddrManager) updateAddress(netAddr, srcAddr *wire.NetAddress, subnetwor
 		// XXX time penalty?
 	}
 
-	bucket := a.getNewBucket(netAddr, srcAddr)
+	bucketIndex := a.getNewBucket(netAddr, srcAddr)
 
 	// Already exists?
 	addrNewBucket := a.addrNewBucket(ka.subnetworkID)
 	if addrNewBucket != nil {
-		if _, ok := addrNewBucket[bucket][addr]; ok {
+		if _, ok := addrNewBucket[bucketIndex][addr]; ok {
 			return
 		}
 	}
 
 	// Enforce max addresses.
-	if ka.subnetworkID == nil {
-		if len(a.addrNewFullNodes[bucket]) > newBucketSize {
-			log.Tracef("new bucket of full nodes is full, expiring old")
-			a.expireNewFullNodes(bucket)
-		}
-	} else if a.addrNew[*ka.subnetworkID] != nil && len(a.addrNew[*ka.subnetworkID][bucket]) > newBucketSize {
+	if addrNewBucket != nil && len(addrNewBucket[bucketIndex]) > newBucketSize {
 		log.Tracef("new bucket is full, expiring old")
-		a.expireNewBySubnetworkID(ka.subnetworkID, bucket)
+		a.expireNew(ka.subnetworkID, bucketIndex)
 	}
 
 	// Add to new bucket.
 	ka.refs++
-	a.updateAddrNew(bucket, addr, ka)
+	a.updateAddrNew(bucketIndex, addr, ka)
 
 	nAllNodes := a.nNewNodes(ka.subnetworkID) + a.nTriedNodes(ka.subnetworkID)
 	log.Tracef("Added new address %s for a total of %d addresses", addr, nAllNodes)
@@ -292,19 +287,23 @@ func (a *AddrManager) updateAddrTried(bucket int, ka *KnownAddress) {
 
 // expireNew makes space in the new buckets by expiring the really bad entries.
 // If no bad entries are available we look at a few and remove the oldest.
-func (a *AddrManager) expireNew(bucket *newBucket, idx int, decrNewCounter func()) {
+func (a *AddrManager) expireNew(subnetworkID *subnetworkid.SubnetworkID, bucketIndex int) {
 	// First see if there are any entries that are so bad we can just throw
 	// them away. otherwise we throw away the oldest entry in the cache.
 	// We keep track of oldest in the initial traversal and use that
 	// information instead.
 	var oldest *KnownAddress
-	for k, v := range bucket[idx] {
+	addrNewBucket := a.addrNewBucket(subnetworkID)
+	if addrNewBucket == nil {
+		return
+	}
+	for k, v := range addrNewBucket[bucketIndex] {
 		if v.isBad() {
 			log.Tracef("expiring bad address %s", k)
-			delete(bucket[idx], k)
+			delete(addrNewBucket[bucketIndex], k)
 			v.refs--
 			if v.refs == 0 {
-				decrNewCounter()
+				a.decrementNNewNodes(subnetworkID)
 				delete(a.addrIndex, k)
 			}
 			continue
@@ -320,25 +319,13 @@ func (a *AddrManager) expireNew(bucket *newBucket, idx int, decrNewCounter func(
 		key := NetAddressKey(oldest.na)
 		log.Tracef("expiring oldest address %s", key)
 
-		delete(bucket[idx], key)
+		delete(addrNewBucket[bucketIndex], key)
 		oldest.refs--
 		if oldest.refs == 0 {
-			decrNewCounter()
+			a.decrementNNewNodes(subnetworkID)
 			delete(a.addrIndex, key)
 		}
 	}
-}
-
-// expireNewBySubnetworkID makes space in the new buckets by expiring the really bad entries.
-// If no bad entries are available we look at a few and remove the oldest.
-func (a *AddrManager) expireNewBySubnetworkID(subnetworkID *subnetworkid.SubnetworkID, bucket int) {
-	a.expireNew(a.addrNew[*subnetworkID], bucket, func() { a.nNew[*subnetworkID]-- })
-}
-
-// expireNewFullNodes makes space in the new buckets by expiring the really bad entries.
-// If no bad entries are available we look at a few and remove the oldest.
-func (a *AddrManager) expireNewFullNodes(bucket int) {
-	a.expireNew(&a.addrNewFullNodes, bucket, func() { a.nNewFullNodes-- })
 }
 
 // pickTried selects an address from the tried bucket to be evicted.
