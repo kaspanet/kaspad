@@ -417,14 +417,14 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 	sm.peerNotifier.AnnounceNewTransactions(acceptedTxs)
 }
 
-// current returns true if we believe we are synced with our peers, false if we
+// synced returns true if we believe we are synced with our peers, false if we
 // still have blocks to check
 //
-// We consider ourselves current iff both of the following are true:
+// We consider ourselves synced iff both of the following are true:
 // 1. there's no syncPeer, a.k.a. all connected peers are at the same tip
-// 2. the DAG considers itself current - to prevent attacks where a peer sends an
+// 2. the DAG considers itself synced - to prevent attacks where a peer sends an
 //    unknown tip but never lets us sync to it.
-func (sm *SyncManager) current() bool {
+func (sm *SyncManager) synced() bool {
 	return sm.syncPeer == nil && sm.dag.IsSynced()
 }
 
@@ -754,7 +754,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		log.Errorf("Failed to send invs from queue: %s", err)
 	}
 
-	if haveUnknownInvBlock && !sm.current() {
+	if haveUnknownInvBlock && !sm.synced() {
 		// If one of the inv messages is an unknown block
 		// it is an indication that one of our peers has more
 		// up-to-date data than us.
@@ -1017,9 +1017,9 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 			}
 		})
 
-		// Relay if we are current and the block was not just now unorphaned.
-		// Otherwise peers that are current should already know about it
-		if sm.current() && !data.WasUnorphaned {
+		// Relay if we are synced and the block was not just now unorphaned.
+		// Otherwise peers that are synced should already know about it
+		if sm.synced() && !data.WasUnorphaned {
 			iv := wire.NewInvVect(wire.InvTypeBlock, block.Hash())
 			sm.peerNotifier.RelayInventory(iv, block.MsgBlock().Header)
 		}
