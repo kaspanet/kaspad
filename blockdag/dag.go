@@ -551,7 +551,7 @@ func (node *blockNode) validateAcceptedIDMerkleRoot(dag *BlockDAG, txsAcceptance
 func (dag *BlockDAG) connectBlock(node *blockNode,
 	block *util.Block, selectedParentAnticone []*blockNode, fastAdd bool) (*chainUpdates, error) {
 	// No warnings about unknown rules or versions until the DAG is
-	// current.
+	// synced.
 	if dag.isSynced() {
 		// Warn if any unknown new rules are either about to activate or
 		// have already been activated.
