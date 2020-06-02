@@ -5,7 +5,6 @@
 package addrmgr
 
 import (
-	"container/list"
 	crand "crypto/rand" // for seeding
 	"encoding/binary"
 	"encoding/json"
@@ -27,7 +26,7 @@ import (
 )
 
 type newBucket [newBucketCount]map[string]*KnownAddress
-type triedBucket [triedBucketCount]*list.List
+type triedBucket [triedBucketCount][]*KnownAddress
 
 // AddrManager provides a concurrency safe address manager for caching potential
 // peers on the Kaspa network.
@@ -265,17 +264,17 @@ func (a *AddrManager) updateAddrNew(bucket int, addr string, ka *KnownAddress) {
 
 func (a *AddrManager) updateAddrTried(bucket int, ka *KnownAddress) {
 	if ka.subnetworkID == nil {
-		a.addrTriedFullNodes[bucket].PushBack(ka)
+		a.addrTriedFullNodes[bucket] = append(a.addrTriedFullNodes[bucket], ka)
 		return
 	}
 
 	if _, ok := a.addrTried[*ka.subnetworkID]; !ok {
 		a.addrTried[*ka.subnetworkID] = &triedBucket{}
 		for i := range a.addrTried[*ka.subnetworkID] {
-			a.addrTried[*ka.subnetworkID][i] = list.New()
+			a.addrTried[*ka.subnetworkID][i] = nil
 		}
 	}
-	a.addrTried[*ka.subnetworkID][bucket].PushBack(ka)
+	a.addrTried[*ka.subnetworkID][bucket] = append(a.addrTried[*ka.subnetworkID][bucket], ka)
 }
 
 // expireNew makes space in the new buckets by expiring the really bad entries.
@@ -320,24 +319,17 @@ func (a *AddrManager) expireNew(subnetworkID *subnetworkid.SubnetworkID, bucketI
 
 // pickTried selects an address from the tried bucket to be evicted.
 // We just choose the eldest.
-func (a *AddrManager) pickTried(subnetworkID *subnetworkid.SubnetworkID, bucket int) *list.Element {
+func (a *AddrManager) pickTried(subnetworkID *subnetworkid.SubnetworkID, bucketIndex int) (ka *KnownAddress, index int) {
 	var oldest *KnownAddress
-	var oldestElem *list.Element
-	var lst *list.List
-	if subnetworkID == nil {
-		lst = a.addrTriedFullNodes[bucket]
-	} else {
-		lst = a.addrTried[*subnetworkID][bucket]
-	}
-	for e := lst.Front(); e != nil; e = e.Next() {
-		ka := e.Value.(*KnownAddress)
+	oldestIndex := -1
+	addrTriedBucket := a.addrTriedBucket(subnetworkID)
+	for i, ka := range addrTriedBucket[bucketIndex] {
 		if oldest == nil || oldest.na.Timestamp.After(ka.na.Timestamp) {
-			oldestElem = e
+			oldestIndex = i
 			oldest = ka
 		}
-
 	}
-	return oldestElem
+	return oldest, oldestIndex
 }
 
 func (a *AddrManager) getNewBucket(netAddr, srcAddr *wire.NetAddress) int {
@@ -463,10 +455,9 @@ func (a *AddrManager) savePeers() {
 		sam.TriedBuckets[subnetworkIDStr] = &serializedTriedBucket{}
 
 		for i := range a.addrTried[subnetworkID] {
-			sam.TriedBuckets[subnetworkIDStr][i] = make([]string, a.addrTried[subnetworkID][i].Len())
+			sam.TriedBuckets[subnetworkIDStr][i] = make([]string, len(a.addrTried[subnetworkID][i]))
 			j := 0
-			for e := a.addrTried[subnetworkID][i].Front(); e != nil; e = e.Next() {
-				ka := e.Value.(*KnownAddress)
+			for _, ka := range a.addrTried[subnetworkID][i] {
 				sam.TriedBuckets[subnetworkIDStr][i][j] = NetAddressKey(ka.na)
 				j++
 			}
@@ -474,10 +465,9 @@ func (a *AddrManager) savePeers() {
 	}
 
 	for i := range a.addrTriedFullNodes {
-		sam.TriedBucketFullNodes[i] = make([]string, a.addrTriedFullNodes[i].Len())
+		sam.TriedBucketFullNodes[i] = make([]string, len(a.addrTriedFullNodes[i]))
 		j := 0
-		for e := a.addrTriedFullNodes[i].Front(); e != nil; e = e.Next() {
-			ka := e.Value.(*KnownAddress)
+		for _, ka := range a.addrTriedFullNodes[i] {
 			sam.TriedBucketFullNodes[i][j] = NetAddressKey(ka.na)
 			j++
 		}
@@ -619,7 +609,7 @@ func (a *AddrManager) deserializePeers(filePath string) error {
 
 				ka.tried = true
 				a.nTried[*subnetworkID]++
-				a.addrTried[*subnetworkID][i].PushBack(ka)
+				a.addrTried[*subnetworkID][i] = append(a.addrTried[*subnetworkID][i], ka)
 			}
 		}
 	}
@@ -634,7 +624,7 @@ func (a *AddrManager) deserializePeers(filePath string) error {
 
 			ka.tried = true
 			a.nTriedFullNodes++
-			a.addrTriedFullNodes[i].PushBack(ka)
+			a.addrTriedFullNodes[i] = append(a.addrTriedFullNodes[i], ka)
 		}
 	}
 
@@ -844,7 +834,7 @@ func (a *AddrManager) reset() {
 		a.addrNewFullNodes[i] = make(map[string]*KnownAddress)
 	}
 	for i := range a.addrTriedFullNodes {
-		a.addrTriedFullNodes[i] = list.New()
+		a.addrTriedFullNodes[i] = nil
 	}
 	a.nNewFullNodes = 0
 	a.nTriedFullNodes = 0
@@ -905,17 +895,13 @@ func (a *AddrManager) getAddress(addrTried *triedBucket, nTried int, addrNew *ne
 		for {
 			// pick a random bucket.
 			bucket := a.rand.Intn(len(addrTried))
-			if addrTried[bucket].Len() == 0 {
+			if len(addrTried[bucket]) == 0 {
 				continue
 			}
 
 			// Pick a random entry in the list
-			e := addrTried[bucket].Front()
-			for i :=
-				a.rand.Int63n(int64(addrTried[bucket].Len())); i > 0; i-- {
-				e = e.Next()
-			}
-			ka := e.Value.(*KnownAddress)
+			i := a.rand.Int63n(int64(len(addrTried[bucket])))
+			ka := addrTried[bucket][i]
 			randval := a.rand.Intn(large)
 			if float64(randval) < (factor * ka.chance() * float64(large)) {
 				log.Tracef("Selected %s from tried bucket",
@@ -1032,12 +1018,16 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 
 		// If this address was already tried, but subnetworkID was changed -
 		// update subnetworkID, than continue as though this is a new address
-		bucketList := a.addrTried[*oldSubnetworkID][triedBucketIndex]
-		for e := bucketList.Front(); e != nil; e = e.Next() {
-			if NetAddressKey(e.Value.(*KnownAddress).NetAddress()) == addrKey {
-				bucketList.Remove(e)
-				break
+		bucket := a.addrTried[*oldSubnetworkID][triedBucketIndex]
+		toRemoveIndex := -1
+		for i, ka := range bucket {
+			if NetAddressKey(ka.NetAddress()) == addrKey {
+				toRemoveIndex = i
 			}
+		}
+		if toRemoveIndex != -1 {
+			a.addrTried[*oldSubnetworkID][triedBucketIndex] =
+				append(bucket[:toRemoveIndex], bucket[toRemoveIndex+1:]...)
 		}
 	}
 
@@ -1065,7 +1055,7 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 	// Room in this tried bucket?
 	addrTriedBucket := a.addrTriedBucket(ka.subnetworkID)
 	nTriedNodes := a.nTriedNodes(ka.subnetworkID)
-	if nTriedNodes == 0 || addrTriedBucket[triedBucketIndex].Len() < triedBucketSize {
+	if nTriedNodes == 0 || len(addrTriedBucket[triedBucketIndex]) < triedBucketSize {
 		ka.tried = true
 		a.updateAddrTried(triedBucketIndex, ka)
 		a.incrementNTriedNodes(ka.subnetworkID)
@@ -1073,11 +1063,10 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 	}
 
 	// No room, we have to evict something else.
-	entry := a.pickTried(ka.subnetworkID, triedBucketIndex)
-	rmka := entry.Value.(*KnownAddress)
+	kaToRemove, kaToRemoveIndex := a.pickTried(ka.subnetworkID, triedBucketIndex)
 
 	// First bucket it would have been put in.
-	newBucket := a.getNewBucket(rmka.na, rmka.srcAddr)
+	newBucket := a.getNewBucket(kaToRemove.na, kaToRemove.srcAddr)
 
 	// If no room in the original bucket, we put it in a bucket we just
 	// freed up a space in.
@@ -1086,7 +1075,7 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 		if oldBucket == -1 {
 			// If addr was a tried bucket with updated subnetworkID - oldBucket will be equal to -1.
 			// In that case - find some non-full bucket.
-			// If no such bucket exists - throw rmka away
+			// If no such bucket exists - throw kaToRemove away
 			for newBucket := range addrNewBucket {
 				if len(addrNewBucket[newBucket]) < newBucketSize {
 					break
@@ -1097,23 +1086,23 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 		}
 	}
 
-	// Replace with ka in list.
+	// Replace with ka in the slice
 	ka.tried = true
-	entry.Value = ka
+	addrTriedBucket[triedBucketIndex][kaToRemoveIndex] = ka
 
-	rmka.tried = false
-	rmka.refs++
+	kaToRemove.tried = false
+	kaToRemove.refs++
 
 	// We don't touch a.nTried here since the number of tried stays the same
 	// but we decremented new above, raise it again since we're putting
 	// something back.
 	a.incrementNNewNodes(ka.subnetworkID)
 
-	rmkey := NetAddressKey(rmka.na)
-	log.Tracef("Replacing %s with %s in tried", rmkey, addrKey)
+	kaToRemoveKey := NetAddressKey(kaToRemove.na)
+	log.Tracef("Replacing %s with %s in tried", kaToRemoveKey, addrKey)
 
 	// We made sure there is space here just above.
-	addrNewBucket[newBucket][rmkey] = rmka
+	addrNewBucket[newBucket][kaToRemoveKey] = kaToRemove
 }
 
 func (a *AddrManager) addrNewBucket(subnetworkID *subnetworkid.SubnetworkID) *newBucket {

@@ -417,8 +417,8 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	// make sure address was added to correct bucket under oldSubnetwork
 	bucket := n.addrTried[*oldSubnetwork][n.getTriedBucket(addr)]
 	wasFound := false
-	for e := bucket.Front(); e != nil; e = e.Next() {
-		if NetAddressKey(e.Value.(*KnownAddress).NetAddress()) == addrKey {
+	for _, ka := range bucket {
+		if NetAddressKey(ka.NetAddress()) == addrKey {
 			wasFound = true
 		}
 	}
@@ -442,8 +442,8 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	// make sure address was removed from bucket under oldSubnetwork
 	bucket = n.addrTried[*oldSubnetwork][n.getTriedBucket(addr)]
 	wasFound = false
-	for e := bucket.Front(); e != nil; e = e.Next() {
-		if NetAddressKey(e.Value.(*KnownAddress).NetAddress()) == addrKey {
+	for _, ka := range bucket {
+		if NetAddressKey(ka.NetAddress()) == addrKey {
 			wasFound = true
 		}
 	}
@@ -454,8 +454,8 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	// make sure address was added to correct bucket under newSubnetwork
 	bucket = n.addrTried[*newSubnetwork][n.getTriedBucket(addr)]
 	wasFound = false
-	for e := bucket.Front(); e != nil; e = e.Next() {
-		if NetAddressKey(e.Value.(*KnownAddress).NetAddress()) == addrKey {
+	for _, ka := range bucket {
+		if NetAddressKey(ka.NetAddress()) == addrKey {
 			wasFound = true
 		}
 	}
