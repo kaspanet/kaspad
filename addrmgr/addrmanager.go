@@ -925,8 +925,7 @@ func (a *AddrManager) getAddress(addrTried *triedBucket, nTried int, addrNew *ne
 		}
 	}
 
-	// This could only happen if randomValue is exactly 1
-	return randomBucket[len(randomBucket)-1]
+	panic("randomValue is exactly 1, which cannot happen")
 }
 
 type bucket interface {
