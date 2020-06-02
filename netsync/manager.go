@@ -425,7 +425,7 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 // 2. the DAG considers itself current - to prevent attacks where a peer sends an
 //    unknown tip but never lets us sync to it.
 func (sm *SyncManager) current() bool {
-	return sm.syncPeer == nil && sm.dag.IsCurrent()
+	return sm.syncPeer == nil && sm.dag.IsSynced()
 }
 
 // restartSyncIfNeeded finds a new sync candidate if we're not expecting any
