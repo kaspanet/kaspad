@@ -885,61 +885,77 @@ func (a *AddrManager) GetAddress() *KnownAddress {
 
 }
 
-// see GetAddress for details
+// getAddress returns a single address that should be routable.
+// See GetAddress for further details.
 func (a *AddrManager) getAddress(addrTried *triedBucket, nTried int, addrNew *newBucket, nNew int) *KnownAddress {
 	// Use a 50% chance for choosing between tried and new table entries.
+	var addrBucket bucket
 	if nTried > 0 && (nNew == 0 || a.rand.Intn(2) == 0) {
-		// Tried entry.
-		large := 1 << 30
-		factor := 1.0
-		for {
-			// pick a random bucket.
-			bucket := a.rand.Intn(len(addrTried))
-			if len(addrTried[bucket]) == 0 {
-				continue
-			}
-
-			// Pick a random entry in the list
-			i := a.rand.Int63n(int64(len(addrTried[bucket])))
-			ka := addrTried[bucket][i]
-			randval := a.rand.Intn(large)
-			if float64(randval) < (factor * ka.chance() * float64(large)) {
-				log.Tracef("Selected %s from tried bucket",
-					NetAddressKey(ka.na))
-				return ka
-			}
-			factor *= 1.2
-		}
+		addrBucket = addrTried
 	} else if nNew > 0 {
-		// new node.
-		// XXX use a closure/function to avoid repeating this.
-		large := 1 << 30
-		factor := 1.0
-		for {
-			// Pick a random bucket.
-			bucket := a.rand.Intn(len(addrNew))
-			if len(addrNew[bucket]) == 0 {
-				continue
-			}
-			// Then, a random entry in it.
-			var ka *KnownAddress
-			nth := a.rand.Intn(len(addrNew[bucket]))
-			for _, value := range addrNew[bucket] {
-				if nth == 0 {
-					ka = value
-				}
-				nth--
-			}
-			randval := a.rand.Intn(large)
-			if float64(randval) < (factor * ka.chance() * float64(large)) {
-				log.Tracef("Selected %s from new bucket",
-					NetAddressKey(ka.na))
-				return ka
-			}
-			factor *= 1.2
+		addrBucket = addrNew
+	} else {
+		// There aren't any addresses in any of the buckets
+		return nil
+	}
+
+	large := 1 << 30
+	factor := 1.0
+	for {
+		// Pick a random entry in the list
+		ka := addrBucket.randomAddress(a.rand)
+		randval := a.rand.Intn(large)
+		if float64(randval) < (factor * ka.chance() * float64(large)) {
+			log.Tracef("Selected %s from the %s bucket",
+				NetAddressKey(ka.na), addrBucket.name())
+			return ka
+		}
+		factor *= 1.2
+	}
+}
+
+type bucket interface {
+	name() string
+	randomAddress(random *rand.Rand) *KnownAddress
+}
+
+func (nb *newBucket) randomAddress(random *rand.Rand) *KnownAddress {
+	nonEmptyBuckets := make([]map[string]*KnownAddress, 0, newBucketCount)
+	for _, bucket := range nb {
+		if len(bucket) > 0 {
+			nonEmptyBuckets = append(nonEmptyBuckets, bucket)
 		}
 	}
-	return nil
+	randomIndex := random.Intn(len(nonEmptyBuckets))
+	randomBucket := nonEmptyBuckets[randomIndex]
+
+	// Use Go's random map sort and just return the iteration's first element
+	for _, ka := range randomBucket {
+		return ka
+	}
+	panic("bucket is both non-empty and empty at the same time")
+}
+
+func (nb *newBucket) name() string {
+	return "new"
+}
+
+func (tb *triedBucket) randomAddress(random *rand.Rand) *KnownAddress {
+	nonEmptyBuckets := make([][]*KnownAddress, 0, triedBucketCount)
+	for _, bucket := range tb {
+		if len(bucket) > 0 {
+			nonEmptyBuckets = append(nonEmptyBuckets, bucket)
+		}
+	}
+	randomIndex := random.Intn(len(nonEmptyBuckets))
+	randomBucket := nonEmptyBuckets[randomIndex]
+
+	i := random.Int63n(int64(len(randomBucket)))
+	return randomBucket[i]
+}
+
+func (tb *triedBucket) name() string {
+	return "tried"
 }
 
 func (a *AddrManager) find(addr *wire.NetAddress) *KnownAddress {
