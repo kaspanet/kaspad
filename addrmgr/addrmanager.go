@@ -14,6 +14,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -899,27 +900,41 @@ func (a *AddrManager) getAddress(addrTried *triedBucket, nTried int, addrNew *ne
 		return nil
 	}
 
-	large := 1 << 30
-	factor := 1.0
-	for {
-		// Pick a random entry in the list
-		ka := addrBucket.randomAddress(a.rand)
-		randval := a.rand.Intn(large)
-		if float64(randval) < (factor * ka.chance() * float64(large)) {
-			log.Tracef("Selected %s from the %s bucket",
-				NetAddressKey(ka.na), addrBucket.name())
+	// Pick a random bucket
+	randomBucket := addrBucket.randomBucket(a.rand)
+
+	// Sort the addresses by chance
+	sort.Slice(randomBucket, func(i, j int) bool {
+		return randomBucket[i].chance() < randomBucket[j].chance()
+	})
+
+	// Get the sum of all chances
+	totalChance := float64(0)
+	for _, ka := range randomBucket {
+		totalChance += ka.chance()
+	}
+
+	// Pick a random address weighted by chance
+	randomValue := a.rand.Float64()
+	accumulatedChance := float64(0)
+	for _, ka := range randomBucket {
+		normalizedChance := ka.chance() / totalChance
+		accumulatedChance += normalizedChance
+		if randomValue < accumulatedChance {
 			return ka
 		}
-		factor *= 1.2
 	}
+
+	// This could only happen if randomValue is exactly 1
+	return randomBucket[len(randomBucket)-1]
 }
 
 type bucket interface {
 	name() string
-	randomAddress(random *rand.Rand) *KnownAddress
+	randomBucket(random *rand.Rand) []*KnownAddress
 }
 
-func (nb *newBucket) randomAddress(random *rand.Rand) *KnownAddress {
+func (nb *newBucket) randomBucket(random *rand.Rand) []*KnownAddress {
 	nonEmptyBuckets := make([]map[string]*KnownAddress, 0, newBucketCount)
 	for _, bucket := range nb {
 		if len(bucket) > 0 {
@@ -929,18 +944,19 @@ func (nb *newBucket) randomAddress(random *rand.Rand) *KnownAddress {
 	randomIndex := random.Intn(len(nonEmptyBuckets))
 	randomBucket := nonEmptyBuckets[randomIndex]
 
-	// Use Go's random map sort and just return the iteration's first element
+	// Collect the known addresses into a slice
+	randomBucketSlice := make([]*KnownAddress, 0, len(randomBucket))
 	for _, ka := range randomBucket {
-		return ka
+		randomBucketSlice = append(randomBucketSlice, ka)
 	}
-	panic("bucket is both non-empty and empty at the same time")
+	return randomBucketSlice
 }
 
 func (nb *newBucket) name() string {
 	return "new"
 }
 
-func (tb *triedBucket) randomAddress(random *rand.Rand) *KnownAddress {
+func (tb *triedBucket) randomBucket(random *rand.Rand) []*KnownAddress {
 	nonEmptyBuckets := make([][]*KnownAddress, 0, triedBucketCount)
 	for _, bucket := range tb {
 		if len(bucket) > 0 {
@@ -948,10 +964,7 @@ func (tb *triedBucket) randomAddress(random *rand.Rand) *KnownAddress {
 		}
 	}
 	randomIndex := random.Intn(len(nonEmptyBuckets))
-	randomBucket := nonEmptyBuckets[randomIndex]
-
-	i := random.Int63n(int64(len(randomBucket)))
-	return randomBucket[i]
+	return nonEmptyBuckets[randomIndex]
 }
 
 func (tb *triedBucket) name() string {
