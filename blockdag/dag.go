@@ -551,8 +551,8 @@ func (node *blockNode) validateAcceptedIDMerkleRoot(dag *BlockDAG, txsAcceptance
 func (dag *BlockDAG) connectBlock(node *blockNode,
 	block *util.Block, selectedParentAnticone []*blockNode, fastAdd bool) (*chainUpdates, error) {
 	// No warnings about unknown rules or versions until the DAG is
-	// current.
-	if dag.isCurrent() {
+	// synced.
+	if dag.isSynced() {
 		// Warn if any unknown new rules are either about to activate or
 		// have already been activated.
 		if err := dag.warnUnknownRuleActivations(node); err != nil {
@@ -1310,18 +1310,18 @@ func updateTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
 	return nil
 }
 
-// isCurrent returns whether or not the DAG believes it is current. Several
+// isSynced returns whether or not the DAG believes it is synced. Several
 // factors are used to guess, but the key factors that allow the DAG to
-// believe it is current are:
+// believe it is synced are:
 //  - Latest block has a timestamp newer than 24 hours ago
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) isCurrent() bool {
-	// Not current if the virtual's selected parent has a timestamp
+func (dag *BlockDAG) isSynced() bool {
+	// Not synced if the virtual's selected parent has a timestamp
 	// before 24 hours ago. If the DAG is empty, we take the genesis
 	// block timestamp.
 	//
-	// The DAG appears to be current if none of the checks reported
+	// The DAG appears to be syncned if none of the checks reported
 	// otherwise.
 	var dagTimestamp int64
 	selectedTip := dag.selectedTip()
@@ -1341,17 +1341,17 @@ func (dag *BlockDAG) Now() time.Time {
 	return dag.timeSource.Now()
 }
 
-// IsCurrent returns whether or not the DAG believes it is current. Several
+// IsSynced returns whether or not the DAG believes it is synced. Several
 // factors are used to guess, but the key factors that allow the DAG to
-// believe it is current are:
+// believe it is synced are:
 //  - Latest block has a timestamp newer than 24 hours ago
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) IsCurrent() bool {
+func (dag *BlockDAG) IsSynced() bool {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 
-	return dag.isCurrent()
+	return dag.isSynced()
 }
 
 // selectedTip returns the current selected tip for the DAG.

@@ -336,8 +336,8 @@ func (dag *BlockDAG) initThresholdCaches() error {
 	}
 
 	// No warnings about unknown rules or versions until the DAG is
-	// current.
-	if dag.isCurrent() {
+	// synced.
+	if dag.isSynced() {
 		// Warn if a high enough percentage of the last blocks have
 		// unexpected versions.
 		bestNode := dag.selectedTip()
