@@ -550,7 +550,10 @@ func (a *AddrManager) loadPeers() error {
 	serializedPeerState, err := dbaccess.FetchPeersState(dbaccess.NoTx())
 	if dbaccess.IsNotFoundError(err) {
 		a.reset()
-	} else if err != nil {
+		log.Info("No peers state was found in the database. Created a new one", a.totalNumAddresses())
+		return nil
+	}
+	if err != nil {
 		return err
 	}
 
