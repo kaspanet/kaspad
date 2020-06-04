@@ -535,7 +535,6 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		if peer == sm.syncPeer {
 			log.Errorf("Received an orphan block %s from sync peer %s. Disconnecting...",
 				blockHash, peer)
-			sm.stopSyncFromPeer(peer)
 			peer.Disconnect()
 			return
 		}
