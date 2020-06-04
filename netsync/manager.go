@@ -530,10 +530,6 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	}
 
 	if isOrphan {
-		log.Criticalf("aaaa %t", peer == sm.syncPeer)
-	}
-
-	if isOrphan {
 		// If we received an orphan block from the sync peer, it is
 		// misbehaving and must be disconnected from.
 		if peer == sm.syncPeer {
