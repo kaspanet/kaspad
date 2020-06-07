@@ -153,7 +153,7 @@ func (diffStore *utxoDiffStore) clearDirtyEntries() {
 // maxBlueScoreDifferenceToKeepLoaded is the maximum difference
 // between the virtual's blueScore and a blockNode's blueScore
 // under which to keep diff data loaded in memory.
-var maxBlueScoreDifferenceToKeepLoaded uint64 = 100
+var maxBlueScoreDifferenceToKeepLoaded uint64 = 1500
 
 // clearOldEntries removes entries whose blue score is lower than
 // virtual.blueScore - maxBlueScoreDifferenceToKeepLoaded.
