@@ -132,13 +132,13 @@ type requestQueueAndSet struct {
 // peerSyncState stores additional information that the SyncManager tracks
 // about a peer.
 type peerSyncState struct {
-	syncCandidate          bool
-	lastSelectedTipRequest time.Time
-	shouldSendSelectedTip  bool
-	requestQueueMtx        sync.Mutex
-	requestQueues          map[wire.InvType]*requestQueueAndSet
-	requestedTxns          map[daghash.TxID]struct{}
-	requestedBlocks        map[daghash.Hash]struct{}
+	syncCandidate             bool
+	lastSelectedTipRequest    time.Time
+	peerShouldSendSelectedTip bool
+	requestQueueMtx           sync.Mutex
+	requestQueues             map[wire.InvType]*requestQueueAndSet
+	requestedTxns             map[daghash.TxID]struct{}
+	requestedBlocks           map[daghash.Hash]struct{}
 }
 
 // SyncManager is used to communicate block related messages with peers. The
@@ -218,7 +218,7 @@ func (sm *SyncManager) startSync() {
 		sm.isSyncing = true
 		hasSyncCandidates := false
 		for peer, state := range sm.peerStates {
-			if state.shouldSendSelectedTip {
+			if state.peerShouldSendSelectedTip {
 				pendingForSelectedTips = true
 				continue
 			}
@@ -250,7 +250,7 @@ func (sm *SyncManager) shouldQueryPeerSelectedTips() bool {
 
 func (sm *SyncManager) queueMsgGetSelectedTip(peer *peerpkg.Peer, state *peerSyncState) {
 	state.lastSelectedTipRequest = time.Now()
-	state.shouldSendSelectedTip = true
+	state.peerShouldSendSelectedTip = true
 	peer.QueueMessage(wire.NewMsgGetSelectedTip(), nil)
 }
 
@@ -852,6 +852,7 @@ func (sm *SyncManager) sendInvsFromRequestQueue(peer *peerpkg.Peer, state *peerS
 		return err
 	}
 	if !sm.isSyncing || sm.isSynced() {
+		log.Criticalf("wtf? sm.isSyncing: %t sm.isSynced: %t", sm.isSyncing, sm.isSynced())
 		err := sm.addInvsToGetDataMessageFromQueue(gdmsg, state, wire.InvTypeBlock, wire.MaxInvPerGetDataMsg)
 		if err != nil {
 			return err
@@ -921,12 +922,12 @@ func (sm *SyncManager) handleSelectedTipMsg(msg *selectedTipMsg) {
 	peer := msg.peer
 	selectedTipHash := msg.selectedTipHash
 	state := sm.peerStates[peer]
-	if !state.shouldSendSelectedTip {
+	if !state.peerShouldSendSelectedTip {
 		log.Warnf("Got unrequested selected tip message from %s -- "+
 			"disconnecting", peer.Addr())
 		peer.Disconnect()
 	}
-	state.shouldSendSelectedTip = false
+	state.peerShouldSendSelectedTip = false
 	if selectedTipHash.IsEqual(peer.SelectedTipHash()) {
 		return
 	}
