@@ -1582,15 +1582,19 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 		TargetOutbound: uint32(config.ActiveConfig().TargetOutboundPeers),
 		Dial:           serverutils.KaspadDial,
 		OnConnection: func(c *connmgr.ConnReq, conn net.Conn) {
-			s.newOutboundConnection <- &outboundPeerConnectedMsg{
-				connReq: c,
-				conn:    conn,
-			}
+			spawn(func() {
+				s.newOutboundConnection <- &outboundPeerConnectedMsg{
+					connReq: c,
+					conn:    conn,
+				}
+			})
 		},
 		OnConnectionFailed: func(c *connmgr.ConnReq) {
-			s.newOutboundConnectionFailed <- &outboundPeerConnectionFailedMsg{
-				connReq: c,
-			}
+			spawn(func() {
+				s.newOutboundConnectionFailed <- &outboundPeerConnectionFailedMsg{
+					connReq: c,
+				}
+			})
 		},
 		AddrManager: s.addrManager,
 	})
