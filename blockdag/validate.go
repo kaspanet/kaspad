@@ -589,7 +589,9 @@ func (dag *BlockDAG) checkBlockTransactionSanity(transactions []*util.Tx) error 
 
 func (dag *BlockDAG) checkBlockHashMerkleRoot(block *util.Block) error {
 	// Build merkle tree and ensure the calculated merkle root matches the
-	// entry in the block header.
+	// entry in the block header. This also has the effect of caching all
+	// of the transaction hashes in the block to speed up future hash
+	// checks.
 	hashMerkleTree := BuildHashMerkleTreeStore(block.Transactions())
 	calculatedHashMerkleRoot := hashMerkleTree.Root()
 	if !block.MsgBlock().Header.HashMerkleRoot.IsEqual(calculatedHashMerkleRoot) {
@@ -602,6 +604,9 @@ func (dag *BlockDAG) checkBlockHashMerkleRoot(block *util.Block) error {
 }
 
 func (dag *BlockDAG) checkBlockDuplicateTransactions(transactions []*util.Tx) error {
+	// Check for duplicate transactions. This check will be fairly quick
+	// since the transaction IDs are already cached due to building the
+	// merkle tree above.
 	existingTxIDs := make(map[daghash.TxID]struct{})
 	for _, tx := range transactions {
 		id := tx.ID()
