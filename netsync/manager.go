@@ -1030,17 +1030,19 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 			}
 		})
 
-		// Relay if we are current and the block was not just now unorphaned.
-		// Otherwise peers that are current should already know about it
-		if sm.isSynced() && !data.WasUnorphaned {
-			iv := wire.NewInvVect(wire.InvTypeBlock, block.Hash())
-			sm.peerNotifier.RelayInventory(iv, block.MsgBlock().Header)
-		}
+		spawn(func() {
+			// Relay if we are current and the block was not just now unorphaned.
+			// Otherwise peers that are current should already know about it
+			if sm.isSynced() && !data.WasUnorphaned {
+				iv := wire.NewInvVect(wire.InvTypeBlock, block.Hash())
+				sm.peerNotifier.RelayInventory(iv, block.MsgBlock().Header)
+			}
 
-		for msg := range ch {
-			sm.peerNotifier.TransactionConfirmed(msg.Tx)
-			sm.peerNotifier.AnnounceNewTransactions(msg.AcceptedTxs)
-		}
+			for msg := range ch {
+				sm.peerNotifier.TransactionConfirmed(msg.Tx)
+				sm.peerNotifier.AnnounceNewTransactions(msg.AcceptedTxs)
+			}
+		})
 	}
 }
 
