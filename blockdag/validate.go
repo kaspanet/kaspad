@@ -486,7 +486,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 	if err != nil {
 		return 0, err
 	}
-	err = dag.checkBlockTransactionsOrderedBySubnetwork(block)
+	err = dag.checkBlockTransactionOrder(block)
 	if err != nil {
 		return 0, err
 	}
@@ -557,7 +557,7 @@ func (dag *BlockDAG) checkBlockContainsOnlyOneCoinbase(block *util.Block) error 
 	return nil
 }
 
-func (dag *BlockDAG) checkBlockTransactionsOrderedBySubnetwork(block *util.Block) error {
+func (dag *BlockDAG) checkBlockTransactionOrder(block *util.Block) error {
 	transactions := block.Transactions()
 	for i, tx := range transactions[util.CoinbaseTransactionIndex+1:] {
 		if i != 0 && subnetworkid.Less(&tx.MsgTx().SubnetworkID, &transactions[i].MsgTx().SubnetworkID) {
