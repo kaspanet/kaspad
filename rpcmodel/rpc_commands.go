@@ -654,6 +654,14 @@ type VersionCmd struct{}
 // version command.
 func NewVersionCmd() *VersionCmd { return new(VersionCmd) }
 
+// GetPeersStateCmd defines the getPeersState JSON-RPC command.
+type GetPeersStateCmd struct {
+}
+
+// NewGetPeersStateCmd returns a new instance which can be used to issue a JSON-RPC
+// getPeersState command.
+func NewGetPeersStateCmd() *GetPeersStateCmd { return new(GetPeersStateCmd) }
+
 func init() {
 	// No special flags for commands in this file.
 	flags := UsageFlag(0)
@@ -681,6 +689,7 @@ func init() {
 	MustRegisterCommand("getNetworkInfo", (*GetNetworkInfoCmd)(nil), flags)
 	MustRegisterCommand("getNetTotals", (*GetNetTotalsCmd)(nil), flags)
 	MustRegisterCommand("getPeerInfo", (*GetPeerInfoCmd)(nil), flags)
+	MustRegisterCommand("getPeersState", (*GetPeersStateCmd)(nil), flags)
 	MustRegisterCommand("getRawMempool", (*GetRawMempoolCmd)(nil), flags)
 	MustRegisterCommand("getSubnetwork", (*GetSubnetworkCmd)(nil), flags)
 	MustRegisterCommand("getTxOut", (*GetTxOutCmd)(nil), flags)

@@ -26,8 +26,8 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-type newBucket [newBucketCount]map[string]*KnownAddress
-type triedBucket [triedBucketCount]*list.List
+type newBucket [NewBucketCount]map[string]*KnownAddress
+type triedBucket [TriedBucketCount]*list.List
 
 // AddrManager provides a concurrency safe address manager for caching potential
 // peers on the Kaspa network.
@@ -65,10 +65,12 @@ type serializedKnownAddress struct {
 	// no refcount or tried, that is available from context.
 }
 
-type serializedNewBucket [newBucketCount][]string
-type serializedTriedBucket [triedBucketCount][]string
+type serializedNewBucket [NewBucketCount][]string
+type serializedTriedBucket [TriedBucketCount][]string
 
-type serializedPeersState struct {
+// PeersStateForSerialization is the data model that is used to
+// serialize the peers state to any encoding.
+type PeersStateForSerialization struct {
 	Version              int
 	Key                  [32]byte
 	Addresses            []*serializedKnownAddress
@@ -117,17 +119,17 @@ const (
 	// tried address bucket.
 	triedBucketSize = 256
 
-	// triedBucketCount is the number of buckets we split tried
+	// TriedBucketCount is the number of buckets we split tried
 	// addresses over.
-	triedBucketCount = 64
+	TriedBucketCount = 64
 
 	// newBucketSize is the maximum number of addresses in each new address
 	// bucket.
 	newBucketSize = 64
 
-	// newBucketCount is the number of buckets that we spread new addresses
+	// NewBucketCount is the number of buckets that we spread new addresses
 	// over.
-	newBucketCount = 1024
+	NewBucketCount = 1024
 
 	// triedBucketsPerGroup is the number of tried buckets over which an
 	// address group will be spread.
@@ -391,7 +393,7 @@ func (a *AddrManager) getNewBucket(netAddr, srcAddr *wire.NetAddress) int {
 	data2 = append(data2, hashbuf[:]...)
 
 	hash2 := daghash.DoubleHashB(data2)
-	return int(binary.LittleEndian.Uint64(hash2) % newBucketCount)
+	return int(binary.LittleEndian.Uint64(hash2) % NewBucketCount)
 }
 
 func (a *AddrManager) getTriedBucket(netAddr *wire.NetAddress) int {
@@ -410,7 +412,7 @@ func (a *AddrManager) getTriedBucket(netAddr *wire.NetAddress) int {
 	data2 = append(data2, hashbuf[:]...)
 
 	hash2 := daghash.DoubleHashB(data2)
-	return int(binary.LittleEndian.Uint64(hash2) % triedBucketCount)
+	return int(binary.LittleEndian.Uint64(hash2) % TriedBucketCount)
 }
 
 // addressHandler is the main handler for the address manager. It must be run
@@ -442,9 +444,6 @@ out:
 // savePeers saves all the known addresses to the database so they can be read back
 // in at next run.
 func (a *AddrManager) savePeers() error {
-	a.mtx.Lock()
-	defer a.mtx.Unlock()
-
 	serializedPeersState, err := a.serializePeersState()
 	if err != nil {
 		return err
@@ -454,9 +453,29 @@ func (a *AddrManager) savePeers() error {
 }
 
 func (a *AddrManager) serializePeersState() ([]byte, error) {
+	peersState, err := a.PeersStateForSerialization()
+	if err != nil {
+		return nil, err
+	}
+
+	w := &bytes.Buffer{}
+	encoder := gob.NewEncoder(w)
+	err = encoder.Encode(&peersState)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to encode peers state")
+	}
+
+	return w.Bytes(), nil
+}
+
+// PeersStateForSerialization returns the data model that is used to serialize the peers state to any encoding.
+func (a *AddrManager) PeersStateForSerialization() (*PeersStateForSerialization, error) {
+	a.mtx.Lock()
+	defer a.mtx.Unlock()
+
 	// First we make a serializable data structure so we can encode it to
 	// gob.
-	peersState := new(serializedPeersState)
+	peersState := new(PeersStateForSerialization)
 	peersState.Version = serializationVersion
 	copy(peersState.Key[:], a.key[:])
 
@@ -531,14 +550,7 @@ func (a *AddrManager) serializePeersState() ([]byte, error) {
 		}
 	}
 
-	w := &bytes.Buffer{}
-	encoder := gob.NewEncoder(w)
-	err := encoder.Encode(&peersState)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to encode peers state")
-	}
-
-	return w.Bytes(), nil
+	return peersState, nil
 }
 
 // loadPeers loads the known address from the database. If missing,
@@ -567,7 +579,7 @@ func (a *AddrManager) loadPeers() error {
 }
 
 func (a *AddrManager) deserializePeersState(serializedPeerState []byte) error {
-	var peersState serializedPeersState
+	var peersState PeersStateForSerialization
 	r := bytes.NewBuffer(serializedPeerState)
 	dec := gob.NewDecoder(r)
 	err := dec.Decode(&peersState)

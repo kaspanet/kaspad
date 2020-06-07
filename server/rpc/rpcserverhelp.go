@@ -440,6 +440,32 @@ var helpDescsEnUS = map[string]string{
 	// GetPeerInfoCmd help.
 	"getPeerInfo--synopsis": "Returns data about each connected network peer as an array of json objects.",
 
+	// GetPeersStateResult help.
+	"getPeersStateResult-version":              "Peers state serialization version",
+	"getPeersStateResult-key":                  "Address manager's key for randomness purposes.",
+	"getPeersStateResult-addresses":            "The node's known addresses",
+	"getPeersStateResult-newBuckets":           "Peers state subnetwork new buckets",
+	"getPeersStateResult-newBuckets--desc":     "New buckets keyed by subnetwork ID",
+	"getPeersStateResult-newBuckets--key":      "subnetworkId",
+	"getPeersStateResult-newBuckets--value":    "New bucket",
+	"getPeersStateResult-newBucketFullNodes":   "Peers state full nodes new bucket",
+	"getPeersStateResult-triedBuckets":         "Peers state subnetwork tried buckets",
+	"getPeersStateResult-triedBuckets--desc":   "Tried buckets keyed by subnetwork ID",
+	"getPeersStateResult-triedBuckets--key":    "subnetworkId",
+	"getPeersStateResult-triedBuckets--value":  "Tried bucket",
+	"getPeersStateResult-triedBucketFullNodes": "Peers state tried full nodes bucket",
+
+	"peersStateKnownAddressResult-addr":         "Address",
+	"peersStateKnownAddressResult-src":          "Address of the peer that handed the address",
+	"peersStateKnownAddressResult-subnetworkId": "Address subnetwork ID",
+	"peersStateKnownAddressResult-attempts":     "Number of attempts to connect to the address",
+	"peersStateKnownAddressResult-timeStamp":    "Time the address was added",
+	"peersStateKnownAddressResult-lastAttempt":  "Last attempt to connect to the address",
+	"peersStateKnownAddressResult-lastSuccess":  "Last successful attempt to connect to the address",
+
+	// GetPeersStateCmd help.
+	"getPeersState--synopsis": "Returns the peers state.",
+
 	// GetRawMempoolVerboseResult help.
 	"getRawMempoolVerboseResult-size":             "Transaction size in bytes",
 	"getRawMempoolVerboseResult-fee":              "Transaction fee in kaspa",
@@ -617,6 +643,7 @@ var rpcResultTypes = map[string][]interface{}{
 	"getMempoolEntry":       {(*rpcmodel.GetMempoolEntryResult)(nil)},
 	"getNetTotals":          {(*rpcmodel.GetNetTotalsResult)(nil)},
 	"getPeerInfo":           {(*[]rpcmodel.GetPeerInfoResult)(nil)},
+	"getPeersState":         {(*[]rpcmodel.GetPeersStateResult)(nil)},
 	"getRawMempool":         {(*[]string)(nil), (*rpcmodel.GetRawMempoolVerboseResult)(nil)},
 	"getSubnetwork":         {(*rpcmodel.GetSubnetworkResult)(nil)},
 	"getTxOut":              {(*rpcmodel.GetTxOutResult)(nil)},
