@@ -156,7 +156,9 @@ func (diffStore *utxoDiffStore) clearDirtyEntries() {
 var maxBlueScoreDifferenceToKeepLoaded uint64 = 100
 
 // clearOldEntries removes entries whose blue score is lower than
-// virtual.blueScore - maxBlueScoreDifferenceToKeepLoaded.
+// virtual.blueScore - maxBlueScoreDifferenceToKeepLoaded. Note
+// that tips are not removed either even if their blue score is
+// lower than the above.
 func (diffStore *utxoDiffStore) clearOldEntries() {
 	virtualBlueScore := diffStore.dag.VirtualBlueScore()
 	minBlueScore := virtualBlueScore - maxBlueScoreDifferenceToKeepLoaded

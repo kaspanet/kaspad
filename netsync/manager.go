@@ -852,7 +852,6 @@ func (sm *SyncManager) sendInvsFromRequestQueue(peer *peerpkg.Peer, state *peerS
 		return err
 	}
 	if !sm.isSyncing || sm.isSynced() {
-		log.Criticalf("wtf? sm.isSyncing: %t sm.isSynced: %t", sm.isSyncing, sm.isSynced())
 		err := sm.addInvsToGetDataMessageFromQueue(gdmsg, state, wire.InvTypeBlock, wire.MaxInvPerGetDataMsg)
 		if err != nil {
 			return err
