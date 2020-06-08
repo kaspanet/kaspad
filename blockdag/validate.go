@@ -478,7 +478,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 			"any transactions")
 	}
 
-	// A block must not bigger in bytes than the max block mass because
+	// A block must not be bigger in bytes than the max block mass because
 	// otherwise it is certainly over the block mass limit.
 	blockSizeInBytes := msgBlock.SerializeSize()
 	if blockSizeInBytes > wire.MaxMassPerBlock {
