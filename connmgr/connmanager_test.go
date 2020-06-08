@@ -204,7 +204,9 @@ func createEmptyAddressManagerForTest(t *testing.T, testName string) (*addrmgr.A
 	}
 
 	return addrmgr.New(nil, nil), func() {
-		// Wait for the connection manager to finish
+		// Wait for the connection manager to finish, so it'll
+		// have access to the address manager as long as it's
+		// alive.
 		time.Sleep(10 * time.Millisecond)
 
 		err := dbaccess.Close()
