@@ -1030,6 +1030,9 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 			}
 		})
 
+		// sm.peerNotifier sends messages to the rebroadcastHandler, so we call
+		// it in its own goroutine so it won't block dag.ProcessBlock in case
+		// rebroadcastHandler channel is full.
 		spawn(func() {
 			// Relay if we are current and the block was not just now unorphaned.
 			// Otherwise peers that are current should already know about it
