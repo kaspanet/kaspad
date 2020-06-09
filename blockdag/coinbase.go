@@ -108,7 +108,7 @@ func (node *blockNode) validateCoinbaseTransaction(dag *BlockDAG, block *util.Bl
 	}
 
 	if !expectedCoinbaseTransaction.Hash().IsEqual(block.CoinbaseTransaction().Hash()) {
-		return ruleError(ErrBadCoinbaseTransaction, "Coinbase transaction is not built as expected")
+		return ruleErrorFromString(ErrBadCoinbaseTransaction, "Coinbase transaction is not built as expected")
 	}
 
 	return nil

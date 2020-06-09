@@ -61,7 +61,7 @@ out:
 					"transaction %s input %d",
 					txIn.PreviousOutpoint, txVI.tx.ID(),
 					txVI.txInIndex)
-				err := ruleError(ErrMissingTxOut, str)
+				err := ruleErrorFromString(ErrMissingTxOut, str)
 				v.sendResult(err)
 				break out
 			}
@@ -78,7 +78,7 @@ out:
 					"output script bytes %x)",
 					txVI.tx.ID(), txVI.txInIndex,
 					txIn.PreviousOutpoint, err, sigScript, scriptPubKey)
-				err := ruleError(ErrScriptMalformed, str)
+				err := ruleErrorFromString(ErrScriptMalformed, str)
 				v.sendResult(err)
 				break out
 			}
@@ -91,7 +91,7 @@ out:
 					"script bytes %x)",
 					txVI.tx.ID(), txVI.txInIndex,
 					txIn.PreviousOutpoint, err, sigScript, scriptPubKey)
-				err := ruleError(ErrScriptValidation, str)
+				err := ruleErrorFromString(ErrScriptValidation, str)
 				v.sendResult(err)
 				break out
 			}

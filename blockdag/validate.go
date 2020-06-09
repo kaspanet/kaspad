@@ -130,7 +130,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	// A transaction must have at least one input.
 	msgTx := tx.MsgTx()
 	if !isCoinbase && len(msgTx.TxIn) == 0 {
-		return ruleError(ErrNoTxInputs, "transaction has no inputs")
+		return ruleErrorFromString(ErrNoTxInputs, "transaction has no inputs")
 	}
 
 	// A transaction must not exceed the maximum allowed block mass when
@@ -139,7 +139,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	if serializedTxSize*MassPerTxByte > wire.MaxMassPerTx {
 		str := fmt.Sprintf("serialized transaction is too big - got "+
 			"%d, max %d", serializedTxSize, wire.MaxMassPerBlock)
-		return ruleError(ErrTxMassTooHigh, str)
+		return ruleErrorFromString(ErrTxMassTooHigh, str)
 	}
 
 	// Ensure the transaction amounts are in range. Each transaction
@@ -155,7 +155,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 			str := fmt.Sprintf("transaction output value of %d is "+
 				"higher than max allowed value of %d", sompi,
 				util.MaxSompi)
-			return ruleError(ErrBadTxOutValue, str)
+			return ruleErrorFromString(ErrBadTxOutValue, str)
 		}
 
 		// Binary arithmetic guarantees that any overflow is detected and reported.
@@ -166,7 +166,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 			str := fmt.Sprintf("total value of all transaction "+
 				"outputs exceeds max allowed value of %d",
 				util.MaxSompi)
-			return ruleError(ErrBadTxOutValue, str)
+			return ruleErrorFromString(ErrBadTxOutValue, str)
 		}
 		totalSompi = newTotalSompi
 		if totalSompi > util.MaxSompi {
@@ -174,7 +174,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 				"outputs is %d which is higher than max "+
 				"allowed value of %d", totalSompi,
 				util.MaxSompi)
-			return ruleError(ErrBadTxOutValue, str)
+			return ruleErrorFromString(ErrBadTxOutValue, str)
 		}
 	}
 
@@ -182,7 +182,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	existingTxOut := make(map[wire.Outpoint]struct{})
 	for _, txIn := range msgTx.TxIn {
 		if _, exists := existingTxOut[txIn.PreviousOutpoint]; exists {
-			return ruleError(ErrDuplicateTxInputs, "transaction "+
+			return ruleErrorFromString(ErrDuplicateTxInputs, "transaction "+
 				"contains duplicate inputs")
 		}
 		existingTxOut[txIn.PreviousOutpoint] = struct{}{}
@@ -195,14 +195,14 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 			str := fmt.Sprintf("coinbase transaction payload length "+
 				"of %d is out of range (max: %d)",
 				payloadLen, MaxCoinbasePayloadLen)
-			return ruleError(ErrBadCoinbasePayloadLen, str)
+			return ruleErrorFromString(ErrBadCoinbasePayloadLen, str)
 		}
 	} else {
 		// Previous transaction outputs referenced by the inputs to this
 		// transaction must not be null.
 		for _, txIn := range msgTx.TxIn {
 			if isNullOutpoint(&txIn.PreviousOutpoint) {
-				return ruleError(ErrBadTxInput, "transaction "+
+				return ruleErrorFromString(ErrBadTxInput, "transaction "+
 					"input refers to previous output that "+
 					"is null")
 			}
@@ -213,10 +213,10 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	if !msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
 		payloadHash := daghash.DoubleHashH(msgTx.Payload)
 		if !msgTx.PayloadHash.IsEqual(&payloadHash) {
-			return ruleError(ErrInvalidPayloadHash, "invalid payload hash")
+			return ruleErrorFromString(ErrInvalidPayloadHash, "invalid payload hash")
 		}
 	} else if msgTx.PayloadHash != nil {
-		return ruleError(ErrInvalidPayloadHash, "unexpected non-empty payload hash in native subnetwork")
+		return ruleErrorFromString(ErrInvalidPayloadHash, "unexpected non-empty payload hash in native subnetwork")
 	}
 
 	// Transactions in native, registry and coinbase subnetworks must have Gas = 0
@@ -224,7 +224,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 		msgTx.SubnetworkID.IsBuiltIn()) &&
 		msgTx.Gas > 0 {
 
-		return ruleError(ErrInvalidGas, "transaction in the native or "+
+		return ruleErrorFromString(ErrInvalidGas, "transaction in the native or "+
 			"registry subnetworks has gas > 0 ")
 	}
 
@@ -238,7 +238,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) &&
 		len(msgTx.Payload) > 0 {
 
-		return ruleError(ErrInvalidPayload,
+		return ruleErrorFromString(ErrInvalidPayload,
 			"transaction in the native subnetwork includes a payload")
 	}
 
@@ -248,7 +248,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	shouldTxBeFull := msgTx.SubnetworkID.IsBuiltIn() ||
 		msgTx.SubnetworkID.IsEqual(subnetworkID)
 	if !isLocalNodeFull && !shouldTxBeFull && len(msgTx.Payload) > 0 {
-		return ruleError(ErrInvalidPayload,
+		return ruleErrorFromString(ErrInvalidPayload,
 			"transaction that was expected to be partial has a payload "+
 				"with length > 0")
 	}
@@ -269,14 +269,14 @@ func (dag *BlockDAG) checkProofOfWork(header *wire.BlockHeader, flags BehaviorFl
 	if target.Sign() <= 0 {
 		str := fmt.Sprintf("block target difficulty of %064x is too low",
 			target)
-		return ruleError(ErrUnexpectedDifficulty, str)
+		return ruleErrorFromString(ErrUnexpectedDifficulty, str)
 	}
 
 	// The target difficulty must be less than the maximum allowed.
 	if target.Cmp(dag.dagParams.PowMax) > 0 {
 		str := fmt.Sprintf("block target difficulty of %064x is "+
 			"higher than max of %064x", target, dag.dagParams.PowMax)
-		return ruleError(ErrUnexpectedDifficulty, str)
+		return ruleErrorFromString(ErrUnexpectedDifficulty, str)
 	}
 
 	// The block hash must be less than the claimed target unless the flag
@@ -288,7 +288,7 @@ func (dag *BlockDAG) checkProofOfWork(header *wire.BlockHeader, flags BehaviorFl
 		if hashNum.Cmp(target) > 0 {
 			str := fmt.Sprintf("block hash of %064x is higher than "+
 				"expected max of %064x", hashNum, target)
-			return ruleError(ErrHighHash, str)
+			return ruleErrorFromString(ErrHighHash, str)
 		}
 	}
 
@@ -306,7 +306,7 @@ func ValidateTxMass(tx *util.Tx, utxoSet UTXOSet) error {
 	if txMass > wire.MaxMassPerBlock {
 		str := fmt.Sprintf("tx %s has mass %d, which is above the "+
 			"allowed limit of %d", tx.ID(), txMass, wire.MaxMassPerBlock)
-		return ruleError(ErrTxMassTooHigh, str)
+		return ruleErrorFromString(ErrTxMassTooHigh, str)
 	}
 	return nil
 }
@@ -332,7 +332,7 @@ func CalcBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) (uint64, error) {
 		if totalMass < txMass || totalMass > wire.MaxMassPerBlock {
 			str := fmt.Sprintf("block has total mass %d, which is "+
 				"above the allowed limit of %d", totalMass, wire.MaxMassPerBlock)
-			return 0, ruleError(ErrBlockMassTooHigh, str)
+			return 0, ruleErrorFromString(ErrBlockMassTooHigh, str)
 		}
 	}
 	return totalMass, nil
@@ -354,7 +354,7 @@ func CalcTxMassFromUTXOSet(tx *util.Tx, utxoSet UTXOSet) (uint64, error) {
 				"transaction %s input %d either does not exist or "+
 				"has already been spent", txIn.PreviousOutpoint,
 				tx.ID(), txInIndex)
-			return 0, ruleError(ErrMissingTxOut, str)
+			return 0, ruleErrorFromString(ErrMissingTxOut, str)
 		}
 		previousScriptPubKeys[txInIndex] = entry.ScriptPubKey()
 	}
@@ -411,7 +411,7 @@ func (dag *BlockDAG) checkBlockHeaderSanity(header *wire.BlockHeader, flags Beha
 
 	if len(header.ParentHashes) == 0 {
 		if !header.BlockHash().IsEqual(dag.dagParams.GenesisHash) {
-			return 0, ruleError(ErrNoParents, "block has no parents")
+			return 0, ruleErrorFromString(ErrNoParents, "block has no parents")
 		}
 	} else {
 		err = checkBlockParentsOrder(header)
@@ -428,7 +428,7 @@ func (dag *BlockDAG) checkBlockHeaderSanity(header *wire.BlockHeader, flags Beha
 	if !header.Timestamp.Equal(time.Unix(header.Timestamp.Unix(), 0)) {
 		str := fmt.Sprintf("block timestamp of %s has a higher "+
 			"precision than one second", header.Timestamp)
-		return 0, ruleError(ErrInvalidTime, str)
+		return 0, ruleErrorFromString(ErrInvalidTime, str)
 	}
 
 	// Ensure the block time is not too far in the future. If it's too far, return
@@ -454,7 +454,7 @@ func checkBlockParentsOrder(header *wire.BlockHeader) error {
 		return daghash.Less(sortedHashes[i], sortedHashes[j])
 	})
 	if !daghash.AreEqual(header.ParentHashes, sortedHashes) {
-		return ruleError(ErrWrongParentsOrder, "block parents are not ordered by hash")
+		return ruleErrorFromString(ErrWrongParentsOrder, "block parents are not ordered by hash")
 	}
 	return nil
 }
@@ -475,7 +475,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 	// A block must have at least one transaction.
 	numTx := len(msgBlock.Transactions)
 	if numTx == 0 {
-		return 0, ruleError(ErrNoTransactions, "block does not contain "+
+		return 0, ruleErrorFromString(ErrNoTransactions, "block does not contain "+
 			"any transactions")
 	}
 
@@ -484,13 +484,13 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 	if numTx > wire.MaxMassPerBlock {
 		str := fmt.Sprintf("block contains too many transactions - "+
 			"got %d, max %d", numTx, wire.MaxMassPerBlock)
-		return 0, ruleError(ErrBlockMassTooHigh, str)
+		return 0, ruleErrorFromString(ErrBlockMassTooHigh, str)
 	}
 
 	// The first transaction in a block must be a coinbase.
 	transactions := block.Transactions()
 	if !transactions[util.CoinbaseTransactionIndex].IsCoinBase() {
-		return 0, ruleError(ErrFirstTxNotCoinbase, "first transaction in "+
+		return 0, ruleErrorFromString(ErrFirstTxNotCoinbase, "first transaction in "+
 			"block is not a coinbase")
 	}
 
@@ -502,10 +502,10 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 		if tx.IsCoinBase() {
 			str := fmt.Sprintf("block contains second coinbase at "+
 				"index %d", i+2)
-			return 0, ruleError(ErrMultipleCoinbases, str)
+			return 0, ruleErrorFromString(ErrMultipleCoinbases, str)
 		}
 		if i != 0 && subnetworkid.Less(&tx.MsgTx().SubnetworkID, &transactions[i].MsgTx().SubnetworkID) {
-			return 0, ruleError(ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")
+			return 0, ruleErrorFromString(ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")
 		}
 	}
 
@@ -514,7 +514,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 		for _, tx := range transactions {
 			if !(tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
 				tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase)) {
-				return 0, ruleError(ErrInvalidSubnetwork, "non-native/coinbase subnetworks are not allowed")
+				return 0, ruleErrorFromString(ErrInvalidSubnetwork, "non-native/coinbase subnetworks are not allowed")
 			}
 		}
 	}
@@ -538,7 +538,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 		str := fmt.Sprintf("block hash merkle root is invalid - block "+
 			"header indicates %s, but calculated value is %s",
 			header.HashMerkleRoot, calculatedHashMerkleRoot)
-		return 0, ruleError(ErrBadMerkleRoot, str)
+		return 0, ruleErrorFromString(ErrBadMerkleRoot, str)
 	}
 
 	// Check for duplicate transactions. This check will be fairly quick
@@ -550,7 +550,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 		if _, exists := existingTxIDs[*id]; exists {
 			str := fmt.Sprintf("block contains duplicate "+
 				"transaction %s", id)
-			return 0, ruleError(ErrDuplicateTx, str)
+			return 0, ruleErrorFromString(ErrDuplicateTx, str)
 		}
 		existingTxIDs[*id] = struct{}{}
 	}
@@ -563,7 +563,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 				str := fmt.Sprintf("transaction %s spends "+
 					"outpoint %s that was already spent by "+
 					"transaction %s in this block", tx.ID(), txIn.PreviousOutpoint, spendingTxID)
-				return 0, ruleError(ErrDoubleSpendInSameBlock, str)
+				return 0, ruleErrorFromString(ErrDoubleSpendInSameBlock, str)
 			}
 			usedOutpoints[txIn.PreviousOutpoint] = tx.ID()
 		}
@@ -599,7 +599,7 @@ func validateMedianTime(dag *BlockDAG, header *wire.BlockHeader, bluestParent *b
 		medianTime := bluestParent.PastMedianTime(dag)
 		if header.Timestamp.Before(medianTime) {
 			str := fmt.Sprintf("block timestamp of %s is not after expected %s", header.Timestamp, medianTime)
-			return ruleError(ErrTimeTooOld, str)
+			return ruleErrorFromString(ErrTimeTooOld, str)
 		}
 	}
 
@@ -615,7 +615,7 @@ func (dag *BlockDAG) validateDifficulty(header *wire.BlockHeader, bluestParent *
 	blockDifficulty := header.Bits
 	if blockDifficulty != expectedDifficulty {
 		str := fmt.Sprintf("block difficulty of %d is not the expected value of %d", blockDifficulty, expectedDifficulty)
-		return ruleError(ErrUnexpectedDifficulty, str)
+		return ruleErrorFromString(ErrUnexpectedDifficulty, str)
 	}
 
 	return nil
@@ -628,7 +628,7 @@ func (dag *BlockDAG) validateParents(blockHeader *wire.BlockHeader, parents bloc
 		// updated in a separate goroutine. This is why later the block is
 		// checked more thoroughly on the finality rules in dag.checkFinalityRules.
 		if parentA.isFinalized {
-			return ruleError(ErrFinality, fmt.Sprintf("block %s is a finalized "+
+			return ruleErrorFromString(ErrFinality, fmt.Sprintf("block %s is a finalized "+
 				"parent of block %s", parentA.hash, blockHeader.BlockHash()))
 		}
 
@@ -642,7 +642,7 @@ func (dag *BlockDAG) validateParents(blockHeader *wire.BlockHeader, parents bloc
 				return err
 			}
 			if isAncestorOf {
-				return ruleError(ErrInvalidParentsRelation, fmt.Sprintf("block %s is both a parent of %s and an"+
+				return ruleErrorFromString(ErrInvalidParentsRelation, fmt.Sprintf("block %s is both a parent of %s and an"+
 					" ancestor of another parent %s",
 					parentA.hash,
 					blockHeader.BlockHash(),
@@ -694,7 +694,7 @@ func (dag *BlockDAG) validateAllTxsFinalized(block *util.Block, node *blockNode,
 		if !IsFinalizedTransaction(tx, node.blueScore, blockTime) {
 			str := fmt.Sprintf("block contains unfinalized "+
 				"transaction %s", tx.ID())
-			return ruleError(ErrUnfinalizedTx, str)
+			return ruleErrorFromString(ErrUnfinalizedTx, str)
 		}
 	}
 
@@ -728,7 +728,7 @@ func ensureNoDuplicateTx(utxoSet UTXOSet, transactions []*util.Tx) error {
 		if _, ok := utxoSet.Get(outpoint); ok {
 			str := fmt.Sprintf("tried to overwrite transaction %s "+
 				"that is not fully spent", outpoint.TxID)
-			return ruleError(ErrOverwriteTx, str)
+			return ruleErrorFromString(ErrOverwriteTx, str)
 		}
 	}
 
@@ -763,7 +763,7 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoS
 				"transaction %s input %d either does not exist or "+
 				"has already been spent", txIn.PreviousOutpoint,
 				tx.ID(), txInIndex)
-			return 0, ruleError(ErrMissingTxOut, str)
+			return 0, ruleErrorFromString(ErrMissingTxOut, str)
 		}
 
 		if !fastAdd {
@@ -784,7 +784,7 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoS
 				"higher than max allowed value of %d",
 				util.Amount(originTxSompi),
 				util.MaxSompi)
-			return 0, ruleError(ErrBadTxOutValue, str)
+			return 0, ruleErrorFromString(ErrBadTxOutValue, str)
 		}
 
 		// The total of all outputs must not be more than the max
@@ -798,7 +798,7 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoS
 				"inputs is %d which is higher than max "+
 				"allowed value of %d", totalSompiIn,
 				util.MaxSompi)
-			return 0, ruleError(ErrBadTxOutValue, str)
+			return 0, ruleErrorFromString(ErrBadTxOutValue, str)
 		}
 	}
 
@@ -815,7 +815,7 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoS
 		str := fmt.Sprintf("total value of all transaction inputs for "+
 			"transaction %s is %d which is less than the amount "+
 			"spent of %d", txID, totalSompiIn, totalSompiOut)
-		return 0, ruleError(ErrSpendTooHigh, str)
+		return 0, ruleErrorFromString(ErrSpendTooHigh, str)
 	}
 
 	txFeeInSompi = totalSompiIn - totalSompiOut
@@ -835,7 +835,7 @@ func validateCoinbaseMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, txB
 				"of %d", txIn.PreviousOutpoint,
 				originBlueScore, txBlueScore,
 				dagParams.BlockCoinbaseMaturity)
-			return ruleError(ErrImmatureSpend, str)
+			return ruleErrorFromString(ErrImmatureSpend, str)
 		}
 	}
 	return nil
@@ -896,7 +896,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 		lastTotalFees := totalFees
 		totalFees += txFee
 		if totalFees < lastTotalFees {
-			return nil, ruleError(ErrBadFees, "total fees for block "+
+			return nil, ruleErrorFromString(ErrBadFees, "total fees for block "+
 				"overflows accumulator")
 		}
 
@@ -936,7 +936,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 				str := fmt.Sprintf("block contains " +
 					"transaction whose input sequence " +
 					"locks are not met")
-				return nil, ruleError(ErrUnfinalizedTx, str)
+				return nil, ruleErrorFromString(ErrUnfinalizedTx, str)
 			}
 		}
 

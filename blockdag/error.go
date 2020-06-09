@@ -276,15 +276,23 @@ func (e ErrorCode) String() string {
 // specifically due to a rule violation and access the ErrorCode field to
 // ascertain the specific reason for the rule violation.
 type RuleError struct {
-	ErrorCode   ErrorCode // Describes the kind of error
-	Description string    // Human readable description of the issue
+	ErrorCode ErrorCode // Describes the kind of error
+	Cause     error     // The underlying error
 }
 
 // Error satisfies the error interface and prints human-readable errors.
 func (e RuleError) Error() string {
-	return e.Description
+	return e.Cause.Error()
 }
 
-func ruleError(c ErrorCode, desc string) error {
-	return errors.WithStack(RuleError{ErrorCode: c, Description: desc})
+func (e RuleError) Unwrap() error {
+	return e.Cause
+}
+
+func ruleError(c ErrorCode, err error) error {
+	return errors.WithStack(RuleError{ErrorCode: c, Cause: err})
+}
+
+func ruleErrorFromString(c ErrorCode, str string) error {
+	return ruleError(c, errors.New(str))
 }

@@ -5,6 +5,7 @@
 package blockdag
 
 import (
+	"github.com/pkg/errors"
 	"testing"
 )
 
@@ -79,11 +80,11 @@ func TestRuleError(t *testing.T) {
 		want string
 	}{
 		{
-			RuleError{Description: "duplicate block"},
+			RuleError{Cause: errors.New("duplicate block")},
 			"duplicate block",
 		},
 		{
-			RuleError{Description: "human-readable error"},
+			RuleError{Cause: errors.New("human-readable error")},
 			"human-readable error",
 		},
 	}

@@ -61,7 +61,7 @@ func registerSubnetworks(dbContext dbaccess.Context, txs []*util.Tx) error {
 // - Its entire payload is a uint64 (8 bytes)
 func validateSubnetworkRegistryTransaction(tx *wire.MsgTx) error {
 	if len(tx.Payload) != 8 {
-		return ruleError(ErrSubnetworkRegistry, fmt.Sprintf("validation failed: subnetwork registry"+
+		return ruleErrorFromString(ErrSubnetworkRegistry, fmt.Sprintf("validation failed: subnetwork registry"+
 			"tx '%s' has an invalid payload", tx.TxHash()))
 	}
 

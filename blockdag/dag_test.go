@@ -1202,7 +1202,7 @@ func TestDoubleSpends(t *testing.T) {
 	}
 	anotherBlockWithTx1.Header.HashMerkleRoot = BuildHashMerkleTreeStore(anotherBlockWithTx1UtilTxs).Root()
 
-	testProcessBlockRuleError(t, dag, anotherBlockWithTx1, ruleError(ErrOverwriteTx, ""))
+	testProcessBlockRuleError(t, dag, anotherBlockWithTx1, ruleErrorFromString(ErrOverwriteTx, ""))
 
 	// Check that a block will be rejected if it has a transaction that double spends
 	// a transaction from its past.
@@ -1219,7 +1219,7 @@ func TestDoubleSpends(t *testing.T) {
 	}
 	blockWithDoubleSpendForTx1.Header.HashMerkleRoot = BuildHashMerkleTreeStore(blockWithDoubleSpendForTx1UtilTxs).Root()
 
-	testProcessBlockRuleError(t, dag, blockWithDoubleSpendForTx1, ruleError(ErrMissingTxOut, ""))
+	testProcessBlockRuleError(t, dag, blockWithDoubleSpendForTx1, ruleErrorFromString(ErrMissingTxOut, ""))
 
 	blockInAnticoneOfBlockWithTx1, err := PrepareBlockForTest(dag, []*daghash.Hash{fundingBlock.BlockHash()}, []*wire.MsgTx{doubleSpendTx1})
 	if err != nil {
@@ -1244,7 +1244,7 @@ func TestDoubleSpends(t *testing.T) {
 	}
 	blockWithDoubleSpendWithItself.Header.HashMerkleRoot = BuildHashMerkleTreeStore(blockWithDoubleSpendWithItselfUtilTxs).Root()
 
-	testProcessBlockRuleError(t, dag, blockWithDoubleSpendWithItself, ruleError(ErrDoubleSpendInSameBlock, ""))
+	testProcessBlockRuleError(t, dag, blockWithDoubleSpendWithItself, ruleErrorFromString(ErrDoubleSpendInSameBlock, ""))
 
 	// Check that a block will be rejected if it has the same transaction twice.
 	blockWithDuplicateTransaction, err := PrepareBlockForTest(dag, []*daghash.Hash{fundingBlock.BlockHash()}, nil)
@@ -1259,7 +1259,7 @@ func TestDoubleSpends(t *testing.T) {
 		blockWithDuplicateTransactionUtilTxs[i] = util.NewTx(tx)
 	}
 	blockWithDuplicateTransaction.Header.HashMerkleRoot = BuildHashMerkleTreeStore(blockWithDuplicateTransactionUtilTxs).Root()
-	testProcessBlockRuleError(t, dag, blockWithDuplicateTransaction, ruleError(ErrDuplicateTx, ""))
+	testProcessBlockRuleError(t, dag, blockWithDuplicateTransaction, ruleErrorFromString(ErrDuplicateTx, ""))
 }
 
 func TestUTXOCommitment(t *testing.T) {

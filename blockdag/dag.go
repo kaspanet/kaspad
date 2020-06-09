@@ -395,7 +395,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 				"transaction %s input %d either does not exist or "+
 				"has already been spent", txIn.PreviousOutpoint,
 				tx.ID(), txInIndex)
-			return sequenceLock, ruleError(ErrMissingTxOut, str)
+			return sequenceLock, ruleErrorFromString(ErrMissingTxOut, str)
 		}
 
 		// If the input blue score is set to the mempool blue score, then we
@@ -540,7 +540,7 @@ func (node *blockNode) validateAcceptedIDMerkleRoot(dag *BlockDAG, txsAcceptance
 		str := fmt.Sprintf("block accepted ID merkle root is invalid - block "+
 			"header indicates %s, but calculated value is %s",
 			header.AcceptedIDMerkleRoot, calculatedAccepetedIDMerkleRoot)
-		return ruleError(ErrBadMerkleRoot, str)
+		return ruleErrorFromString(ErrBadMerkleRoot, str)
 	}
 	return nil
 }
@@ -577,10 +577,6 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	newBlockPastUTXO, txsAcceptanceData, newBlockFeeData, newBlockMultiSet, err :=
 		node.verifyAndBuildUTXO(dag, block.Transactions(), fastAdd)
 	if err != nil {
-		var ruleErr RuleError
-		if ok := errors.As(err, &ruleErr); ok {
-			return nil, ruleError(ruleErr.ErrorCode, fmt.Sprintf("error verifying UTXO for %s: %s", node, err))
-		}
 		return nil, errors.Wrapf(err, "error verifying UTXO for %s", node)
 	}
 
@@ -801,11 +797,11 @@ func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
 		newGasUsage := currentGasUsage + msgTx.Gas
 		if newGasUsage < currentGasUsage { // check for overflow
 			str := fmt.Sprintf("Block gas usage in subnetwork with ID %s has overflown", currentSubnetworkID)
-			return ruleError(ErrInvalidGas, str)
+			return ruleErrorFromString(ErrInvalidGas, str)
 		}
 		if newGasUsage > currentSubnetworkGasLimit {
 			str := fmt.Sprintf("Block wastes too much gas in subnetwork with ID %s", currentSubnetworkID)
-			return ruleError(ErrInvalidGas, str)
+			return ruleErrorFromString(ErrInvalidGas, str)
 		}
 
 		currentGasUsage = newGasUsage
@@ -834,7 +830,7 @@ func (dag *BlockDAG) checkFinalityRules(newNode *blockNode) error {
 		// If we went past dag's last finality point without encountering it -
 		// the new block has violated finality.
 		if currentNode.blueScore <= dag.lastFinalityPoint.blueScore {
-			return ruleError(ErrFinality, "The last finality point is not in the selected chain of this block")
+			return ruleErrorFromString(ErrFinality, "The last finality point is not in the selected chain of this block")
 		}
 	}
 	return nil
@@ -1035,7 +1031,7 @@ func checkDoubleSpendsWithBlockPast(pastUTXO UTXOSet, blockTransactions []*util.
 
 		for _, txIn := range tx.MsgTx().TxIn {
 			if _, ok := pastUTXO.Get(txIn.PreviousOutpoint); !ok {
-				return ruleError(ErrMissingTxOut, fmt.Sprintf("missing transaction "+
+				return ruleErrorFromString(ErrMissingTxOut, fmt.Sprintf("missing transaction "+
 					"output %s in the utxo set", txIn.PreviousOutpoint))
 			}
 		}
@@ -1075,7 +1071,7 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 		str := fmt.Sprintf("block %s UTXO commitment is invalid - block "+
 			"header indicates %s, but calculated value is %s", node.hash,
 			node.utxoCommitment, calculatedMultisetHash)
-		return nil, nil, nil, nil, ruleError(ErrBadUTXOCommitment, str)
+		return nil, nil, nil, nil, ruleErrorFromString(ErrBadUTXOCommitment, str)
 	}
 
 	return pastUTXO, txsAcceptanceData, feeData, multiset, nil

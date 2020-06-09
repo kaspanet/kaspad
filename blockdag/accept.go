@@ -142,10 +142,10 @@ func lookupParentNodes(block *util.Block, dag *BlockDAG) (blockSet, error) {
 		node, ok := dag.index.LookupNode(parentHash)
 		if !ok {
 			str := fmt.Sprintf("parent block %s is unknown", parentHash)
-			return nil, ruleError(ErrParentBlockUnknown, str)
+			return nil, ruleErrorFromString(ErrParentBlockUnknown, str)
 		} else if dag.index.NodeStatus(node).KnownInvalid() {
 			str := fmt.Sprintf("parent block %s is known to be invalid", parentHash)
-			return nil, ruleError(ErrInvalidAncestorBlock, str)
+			return nil, ruleErrorFromString(ErrInvalidAncestorBlock, str)
 		}
 
 		nodes.add(node)

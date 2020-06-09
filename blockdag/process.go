@@ -158,18 +158,18 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 	// The block must not already exist in the DAG.
 	if dag.IsInDAG(blockHash) && !wasBlockStored {
 		str := fmt.Sprintf("already have block %s", blockHash)
-		return false, false, ruleError(ErrDuplicateBlock, str)
+		return false, false, ruleErrorFromString(ErrDuplicateBlock, str)
 	}
 
 	// The block must not already exist as an orphan.
 	if _, exists := dag.orphans[*blockHash]; exists {
 		str := fmt.Sprintf("already have block (orphan) %s", blockHash)
-		return false, false, ruleError(ErrDuplicateBlock, str)
+		return false, false, ruleErrorFromString(ErrDuplicateBlock, str)
 	}
 
 	if dag.isKnownDelayedBlock(blockHash) {
 		str := fmt.Sprintf("already have block (delayed) %s", blockHash)
-		return false, false, ruleError(ErrDuplicateBlock, str)
+		return false, false, ruleErrorFromString(ErrDuplicateBlock, str)
 	}
 
 	if !isAfterDelay {
@@ -181,7 +181,7 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 
 		if delay != 0 && disallowDelay {
 			str := fmt.Sprintf("Cannot process blocks beyond the allowed time offset while the BFDisallowDelay flag is raised %s", blockHash)
-			return false, true, ruleError(ErrDelayedBlockIsNotAllowed, str)
+			return false, true, ruleErrorFromString(ErrDelayedBlockIsNotAllowed, str)
 		}
 
 		if delay != 0 {
