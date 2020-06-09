@@ -530,12 +530,20 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	}
 
 	if isOrphan {
-		// If we received an orphan block from the sync peer, it is
-		// misbehaving and must be disconnected from.
-		if peer == sm.syncPeer {
-			log.Errorf("Received an orphan block %s from sync peer %s. Disconnecting...",
+		blueScore, err := bmsg.block.BlueScore()
+		if err != nil {
+			log.Errorf("Received an orphan block %s with malformed blue score from %s. Disconnecting...",
 				blockHash, peer)
 			peer.Disconnect()
+			return
+		}
+
+		const maxOrphanBlueScoreDiff = 10000
+		selectedTipBlueScore := sm.dag.SelectedTipBlueScore()
+		if blueScore > selectedTipBlueScore+maxOrphanBlueScoreDiff {
+			log.Infof("Orphan block %s has blue score %d and the selected tip blue score is "+
+				"%d. Ignoring orphans with blue score higher more than %d than the selected tip's",
+				blockHash, blueScore, selectedTipBlueScore, maxOrphanBlueScoreDiff)
 			return
 		}
 
