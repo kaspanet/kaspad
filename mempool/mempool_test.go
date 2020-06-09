@@ -849,7 +849,7 @@ func TestDoubleSpendsFromDAG(t *testing.T) {
 //TestFetchTransaction checks that FetchTransaction
 //returns only transaction from the main pool and not from the orphan pool
 func TestFetchTransaction(t *testing.T) {
-	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.MainnetParams, 1, "TestFetchTransaction")
+	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.SimnetParams, 1, "TestFetchTransaction")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -895,7 +895,7 @@ func TestFetchTransaction(t *testing.T) {
 // they are all orphans. Finally, it adds the linking transaction and ensures
 // the entire orphan chain is moved to the transaction pool.
 func TestSimpleOrphanChain(t *testing.T) {
-	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.MainnetParams, 1, "TestSimpleOrphanChain")
+	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.SimnetParams, 1, "TestSimpleOrphanChain")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -955,7 +955,7 @@ func TestSimpleOrphanChain(t *testing.T) {
 // TestOrphanReject ensures that orphans are properly rejected when the allow
 // orphans flag is not set on ProcessTransaction.
 func TestOrphanReject(t *testing.T) {
-	tc, outputs, teardownFunc, err := newPoolHarness(t, &dagconfig.MainnetParams, 1, "TestOrphanReject")
+	tc, outputs, teardownFunc, err := newPoolHarness(t, &dagconfig.SimnetParams, 1, "TestOrphanReject")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -1009,7 +1009,7 @@ func TestOrphanReject(t *testing.T) {
 // it will check if we are beyond nextExpireScan, and if so, it will remove
 // all expired orphan transactions
 func TestOrphanExpiration(t *testing.T) {
-	tc, _, teardownFunc, err := newPoolHarness(t, &dagconfig.MainnetParams, 1, "TestOrphanExpiration")
+	tc, _, teardownFunc, err := newPoolHarness(t, &dagconfig.SimnetParams, 1, "TestOrphanExpiration")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -1071,7 +1071,7 @@ func TestOrphanExpiration(t *testing.T) {
 //TestMaxOrphanTxSize ensures that a transaction that is
 //bigger than MaxOrphanTxSize will get rejected
 func TestMaxOrphanTxSize(t *testing.T) {
-	tc, _, teardownFunc, err := newPoolHarness(t, &dagconfig.MainnetParams, 1, "TestMaxOrphanTxSize")
+	tc, _, teardownFunc, err := newPoolHarness(t, &dagconfig.SimnetParams, 1, "TestMaxOrphanTxSize")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -1098,7 +1098,7 @@ func TestMaxOrphanTxSize(t *testing.T) {
 }
 
 func TestRemoveTransaction(t *testing.T) {
-	tc, outputs, teardownFunc, err := newPoolHarness(t, &dagconfig.MainnetParams, 2, "TestRemoveTransaction")
+	tc, outputs, teardownFunc, err := newPoolHarness(t, &dagconfig.SimnetParams, 2, "TestRemoveTransaction")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -1141,7 +1141,7 @@ func TestRemoveTransaction(t *testing.T) {
 // TestOrphanEviction ensures that exceeding the maximum number of orphans
 // evicts entries to make room for the new ones.
 func TestOrphanEviction(t *testing.T) {
-	tc, outputs, teardownFunc, err := newPoolHarness(t, &dagconfig.MainnetParams, 1, "TestOrphanEviction")
+	tc, outputs, teardownFunc, err := newPoolHarness(t, &dagconfig.SimnetParams, 1, "TestOrphanEviction")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -1202,7 +1202,7 @@ func TestOrphanEviction(t *testing.T) {
 // Attempt to remove orphans by tag,
 // and ensure the state of all other orphans are unaffected.
 func TestRemoveOrphansByTag(t *testing.T) {
-	tc, _, teardownFunc, err := newPoolHarness(t, &dagconfig.MainnetParams, 1, "TestRemoveOrphansByTag")
+	tc, _, teardownFunc, err := newPoolHarness(t, &dagconfig.SimnetParams, 1, "TestRemoveOrphansByTag")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -1255,7 +1255,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 // redeems it and when there is not.
 func TestBasicOrphanRemoval(t *testing.T) {
 	const maxOrphans = 4
-	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.MainnetParams, 1, "TestBasicOrphanRemoval")
+	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.SimnetParams, 1, "TestBasicOrphanRemoval")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -1329,7 +1329,7 @@ func TestBasicOrphanRemoval(t *testing.T) {
 // from other orphans) are removed as expected.
 func TestOrphanChainRemoval(t *testing.T) {
 	const maxOrphans = 10
-	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.MainnetParams, 1, "TestOrphanChainRemoval")
+	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.SimnetParams, 1, "TestOrphanChainRemoval")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -1394,7 +1394,7 @@ func TestOrphanChainRemoval(t *testing.T) {
 // output that is spend by another transaction entering the pool are removed.
 func TestMultiInputOrphanDoubleSpend(t *testing.T) {
 	const maxOrphans = 4
-	tc, outputs, teardownFunc, err := newPoolHarness(t, &dagconfig.MainnetParams, 1, "TestMultiInputOrphanDoubleSpend")
+	tc, outputs, teardownFunc, err := newPoolHarness(t, &dagconfig.SimnetParams, 1, "TestMultiInputOrphanDoubleSpend")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -1478,7 +1478,7 @@ func TestMultiInputOrphanDoubleSpend(t *testing.T) {
 // TestCheckSpend tests that CheckSpend returns the expected spends found in
 // the mempool.
 func TestCheckSpend(t *testing.T) {
-	tc, outputs, teardownFunc, err := newPoolHarness(t, &dagconfig.MainnetParams, 1, "TestCheckSpend")
+	tc, outputs, teardownFunc, err := newPoolHarness(t, &dagconfig.SimnetParams, 1, "TestCheckSpend")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -1544,7 +1544,7 @@ func TestCheckSpend(t *testing.T) {
 }
 
 func TestCount(t *testing.T) {
-	tc, outputs, teardownFunc, err := newPoolHarness(t, &dagconfig.MainnetParams, 1, "TestCount")
+	tc, outputs, teardownFunc, err := newPoolHarness(t, &dagconfig.SimnetParams, 1, "TestCount")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -1647,7 +1647,7 @@ func TestExtractRejectCode(t *testing.T) {
 
 // TestHandleNewBlock
 func TestHandleNewBlock(t *testing.T) {
-	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.MainnetParams, 2, "TestHandleNewBlock")
+	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.SimnetParams, 2, "TestHandleNewBlock")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -1770,21 +1770,7 @@ var dummyBlock = wire.MsgBlock{
 	Transactions: []*wire.MsgTx{
 		{
 			Version: 1,
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutpoint: wire.Outpoint{
-						TxID: daghash.TxID{
-							0x9b, 0x22, 0x59, 0x44, 0x66, 0xf0, 0xbe, 0x50,
-							0x7c, 0x1c, 0x8a, 0xf6, 0x06, 0x27, 0xe6, 0x33,
-							0x38, 0x7e, 0xd1, 0xd5, 0x8c, 0x42, 0x59, 0x1a,
-							0x31, 0xac, 0x9a, 0xa6, 0x2e, 0xd5, 0x2b, 0x0f,
-						},
-						Index: 0xffffffff,
-					},
-					SignatureScript: nil,
-					Sequence:        math.MaxUint64,
-				},
-			},
+			TxIn:    []*wire.TxIn{},
 			TxOut: []*wire.TxOut{
 				{
 					Value: 0x12a05f200, // 5000000000
@@ -1797,7 +1783,10 @@ var dummyBlock = wire.MsgBlock{
 			},
 			LockTime:     0,
 			SubnetworkID: *subnetworkid.SubnetworkIDCoinbase,
-			Payload:      []byte{0x00},
+			Payload: []byte{
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00,
+			},
 			PayloadHash: &daghash.Hash{
 				0x14, 0x06, 0xe0, 0x58, 0x81, 0xe2, 0x99, 0x36,
 				0x77, 0x66, 0xd3, 0x13, 0xe2, 0x6c, 0x05, 0x56,

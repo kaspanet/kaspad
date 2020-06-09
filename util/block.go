@@ -7,6 +7,7 @@ package util
 import (
 	"bytes"
 	"fmt"
+	"github.com/kaspanet/kaspad/util/coinbasepayload"
 	"io"
 	"time"
 
@@ -38,7 +39,7 @@ type Block struct {
 	blockHash       *daghash.Hash  // Cached block hash
 	transactions    []*Tx          // Transactions
 	txnsGenerated   bool           // ALL wrapped transactions generated
-	blueScore       uint64         // Blue score
+	blueScore       *uint64        // Blue score
 }
 
 // MsgBlock returns the underlying wire.MsgBlock for the Block.
@@ -200,13 +201,15 @@ func (b *Block) Timestamp() time.Time {
 }
 
 // BlueScore returns this block's blue score.
-func (b *Block) BlueScore() uint64 {
-	return b.blueScore
-}
-
-// SetBlueScore sets the blue score of the block.
-func (b *Block) SetBlueScore(blueScore uint64) {
-	b.blueScore = blueScore
+func (b *Block) BlueScore() (uint64, error) {
+	if b.blueScore == nil {
+		blueScore, _, _, err := coinbasepayload.DeserializeCoinbasePayload(b.CoinbaseTransaction().MsgTx())
+		if err != nil {
+			return 0, err
+		}
+		b.blueScore = &blueScore
+	}
+	return *b.blueScore, nil
 }
 
 // NewBlock returns a new instance of a kaspa block given an underlying
