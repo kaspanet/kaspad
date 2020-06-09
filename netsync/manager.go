@@ -1029,17 +1029,22 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 			}
 		})
 
-		// Relay if we are current and the block was not just now unorphaned.
-		// Otherwise peers that are current should already know about it
-		if sm.isSynced() && !data.WasUnorphaned {
-			iv := wire.NewInvVect(wire.InvTypeBlock, block.Hash())
-			sm.peerNotifier.RelayInventory(iv, block.MsgBlock().Header)
-		}
+		// sm.peerNotifier sends messages to the rebroadcastHandler, so we call
+		// it in its own goroutine so it won't block dag.ProcessBlock in case
+		// rebroadcastHandler channel is full.
+		spawn(func() {
+			// Relay if we are current and the block was not just now unorphaned.
+			// Otherwise peers that are current should already know about it
+			if sm.isSynced() && !data.WasUnorphaned {
+				iv := wire.NewInvVect(wire.InvTypeBlock, block.Hash())
+				sm.peerNotifier.RelayInventory(iv, block.MsgBlock().Header)
+			}
 
-		for msg := range ch {
-			sm.peerNotifier.TransactionConfirmed(msg.Tx)
-			sm.peerNotifier.AnnounceNewTransactions(msg.AcceptedTxs)
-		}
+			for msg := range ch {
+				sm.peerNotifier.TransactionConfirmed(msg.Tx)
+				sm.peerNotifier.AnnounceNewTransactions(msg.AcceptedTxs)
+			}
+		})
 	}
 }
 
