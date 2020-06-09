@@ -577,10 +577,6 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	newBlockPastUTXO, txsAcceptanceData, newBlockFeeData, newBlockMultiSet, err :=
 		node.verifyAndBuildUTXO(dag, block.Transactions(), fastAdd)
 	if err != nil {
-		var ruleErr RuleError
-		if ok := errors.As(err, &ruleErr); ok {
-			return nil, ruleError(ruleErr.ErrorCode, fmt.Sprintf("error verifying UTXO for %s: %s", node, err))
-		}
 		return nil, errors.Wrapf(err, "error verifying UTXO for %s", node)
 	}
 
