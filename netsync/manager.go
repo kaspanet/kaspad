@@ -412,18 +412,24 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 		// When the error is a rule error, it means the transaction was
 		// simply rejected as opposed to something actually going wrong,
 		// so log it as such. Otherwise, something really did go wrong,
-		// so log it as an actual error.
-		if errors.As(err, &mempool.RuleError{}) {
-			log.Debugf("Rejected transaction %s from %s: %s",
-				txID, peer, err)
-		} else {
-			log.Errorf("Failed to process transaction %s: %s",
-				txID, err)
+		// so panic.
+		ruleErr := &mempool.RuleError{}
+		if !errors.As(err, ruleErr) {
+			panic(errors.Wrapf(err, "failed to process transaction %s", txID))
 		}
+		log.Debugf("Rejected transaction %s from %s: %s",
+			txID, peer, err)
 
-		// Convert the error into an appropriate reject message and
-		// send it.
+		// Extract error code and reason
 		code, reason := mempool.ErrToRejectErr(err)
+
+		if txRuleErr := (&mempool.TxRuleError{}); errors.As(ruleErr.Err, txRuleErr) {
+			if txRuleErr.RejectCode == wire.RejectInvalid {
+				peer.AddBanScore(100, 0, "")
+			}
+		} else if dagRuleErr := (&blockdag.RuleError{}); errors.As(ruleErr.Err, dagRuleErr) {
+			peer.AddBanScore(100, 0, "")
+		}
 		peer.PushRejectMsg(wire.CmdTx, code, reason, (*daghash.Hash)(txID), false)
 		return
 	}
@@ -518,13 +524,12 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		log.Infof("Rejected block %s from %s: %s", blockHash,
 			peer, err)
 
+		peer.AddBanScore(100, 0, fmt.Sprintf("got invalid block: %s", err))
+
 		// Convert the error into an appropriate reject message and
 		// send it.
 		code, reason := mempool.ErrToRejectErr(err)
 		peer.PushRejectMsg(wire.CmdBlock, code, reason, blockHash, false)
-
-		// Disconnect from the misbehaving peer.
-		peer.Disconnect()
 		return
 	}
 
@@ -727,6 +732,10 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		}
 
 		if iv.IsBlockOrSyncBlock() {
+			if !peer.Inbound() && sm.dag.IsKnownInvalid(iv.Hash) {
+				peer.AddBanScore(100, 0, fmt.Sprintf("sent inv of invalid block %s", iv.Hash))
+				continue
+			}
 			// The block is an orphan block that we already have.
 			// When the existing orphan was processed, it requested
 			// the missing parent blocks. When this scenario

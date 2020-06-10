@@ -199,6 +199,13 @@ type Config struct {
 	// the DAG.
 	IsInDAG func(*daghash.Hash) bool
 
+	// AddBanScore increases the persistent and decaying ban score fields by the
+	// values passed as parameters. If the resulting score exceeds half of the ban
+	// threshold, a warning is logged including the reason provided. Further, if
+	// the score is above the ban threshold, the peer will be banned and
+	// disconnected.
+	AddBanScore func(persistent, transient uint32, reason string)
+
 	// HostToNetAddress returns the netaddress for the given host. This can be
 	// nil in  which case the host will be parsed as an IP address.
 	HostToNetAddress HostToNetAddrFunc
@@ -644,6 +651,10 @@ func (p *Peer) SetSelectedTipHash(selectedTipHash *daghash.Hash) {
 // This function is safe for concurrent access.
 func (p *Peer) IsSelectedTipKnown() bool {
 	return !p.cfg.IsInDAG(p.selectedTipHash)
+}
+
+func (p *Peer) AddBanScore(persistent, transient uint32, reason string) {
+	p.cfg.AddBanScore(persistent, transient, reason)
 }
 
 // LastSend returns the last send time of the peer.
@@ -1336,8 +1347,10 @@ out:
 		switch msg := rmsg.(type) {
 		case *wire.MsgVersion:
 
+			reason := "duplicate version message"
+			p.AddBanScore(1, 0, reason)
 			p.PushRejectMsg(msg.Command(), wire.RejectDuplicate,
-				"duplicate version message", nil, true)
+				reason, nil, true)
 			break out
 
 		case *wire.MsgVerAck:
@@ -1345,6 +1358,7 @@ out:
 			// No read lock is necessary because verAckReceived is not written
 			// to in any other goroutine.
 			if p.verAckReceived {
+				p.AddBanScore(1, 0, "verack sent twice")
 				log.Infof("Already received 'verack' from peer %s -- "+
 					"disconnecting", p)
 				break out
@@ -1866,6 +1880,8 @@ func (p *Peer) readRemoteVersionMsg() error {
 	if !ok {
 		errStr := "A version message must precede all others"
 		log.Errorf(errStr)
+
+		p.AddBanScore(1, 0, errStr)
 
 		rejectMsg := wire.NewMsgReject(msg.Command(), wire.RejectMalformed,
 			errStr)

@@ -937,6 +937,7 @@ func newPeerConfig(sp *Peer) *peer.Config {
 		},
 		SelectedTipHash:   sp.selectedTipHash,
 		IsInDAG:           sp.blockExists,
+		AddBanScore:       sp.addBanScore,
 		HostToNetAddress:  sp.server.addrManager.HostToNetAddress,
 		Proxy:             config.ActiveConfig().Proxy,
 		UserAgentName:     userAgentName,
