@@ -200,12 +200,12 @@ func TestCheckBlockSanity(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CheckBlockSanity: Bytes unexpectedly failed: %s", err)
 	}
-	tooBigMassBlock, err := util.NewBlockFromBytes(blockBytes)
+	tooBigBlock, err := util.NewBlockFromBytes(blockBytes)
 	if err != nil {
 		t.Fatalf("CheckBlockSanity: NewBlockFromBytes unexpectedly failed: %s", err)
 	}
-	tooBigMassBlock.MsgBlock().Transactions[0].Payload = bytes.Repeat([]byte{0}, 9998710)
-	delay, err = dag.checkBlockSanity(tooBigMassBlock, BFNone)
+	tooBigBlock.MsgBlock().Transactions[0].Payload = bytes.Repeat([]byte{0}, 9998710)
+	delay, err = dag.checkBlockSanity(tooBigBlock, BFNone)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: excess block mass is not detected")
 	}
