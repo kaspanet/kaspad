@@ -18,14 +18,6 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 		return
 	}
 
-	// A message that has no addresses is invalid.
-	if len(msg.AddrList) == 0 {
-		peerLog.Errorf("Command [%s] from %s does not contain any addresses",
-			msg.Command(), sp.Peer)
-		sp.Disconnect()
-		return
-	}
-
 	if msg.IncludeAllSubnetworks {
 		peerLog.Errorf("Got unexpected IncludeAllSubnetworks=true in [%s] command from %s",
 			msg.Command(), sp.Peer)
