@@ -64,7 +64,7 @@ func DAGSetup(dbName string, openDb bool, config Config) (*BlockDAG, func(), err
 			return nil, nil, errors.Errorf("error creating temp dir: %s", err)
 		}
 
-		originalOptions := ldb.Options
+		originalLDBOptions := ldb.Options
 		ldb.Options = func() *opt.Options {
 			return nil
 		}
@@ -82,7 +82,7 @@ func DAGSetup(dbName string, openDb bool, config Config) (*BlockDAG, func(), err
 			spawnWaitGroup.Wait()
 			spawn = realSpawn
 			dbaccess.Close()
-			ldb.Options = originalOptions
+			ldb.Options = originalLDBOptions
 			os.RemoveAll(dbPath)
 		}
 	} else {
