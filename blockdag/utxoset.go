@@ -457,17 +457,15 @@ func (fus *FullUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 //
 // This function MUST be called with the DAG lock held.
 func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blueScore uint64) (isAccepted bool, err error) {
-	isCoinbase := tx.IsCoinBase()
-	if !isCoinbase {
-		if !fus.containsInputs(tx) {
-			return false, nil
-		}
-
-		for _, txIn := range tx.TxIn {
-			fus.remove(txIn.PreviousOutpoint)
-		}
+	if !fus.containsInputs(tx) {
+		return false, nil
 	}
 
+	for _, txIn := range tx.TxIn {
+		fus.remove(txIn.PreviousOutpoint)
+	}
+
+	isCoinbase := tx.IsCoinBase()
 	for i, txOut := range tx.TxOut {
 		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
 		entry := NewUTXOEntry(txOut, isCoinbase, blueScore)
@@ -543,12 +541,11 @@ func (dus *DiffUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 // If dus.UTXODiff.useMultiset is true, this function MUST be
 // called with the DAG lock held.
 func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockBlueScore uint64) (bool, error) {
-	isCoinbase := tx.IsCoinBase()
-	if !isCoinbase && !dus.containsInputs(tx) {
+	if !dus.containsInputs(tx) {
 		return false, nil
 	}
 
-	err := dus.appendTx(tx, blockBlueScore, isCoinbase)
+	err := dus.appendTx(tx, blockBlueScore)
 	if err != nil {
 		return false, err
 	}
@@ -556,20 +553,19 @@ func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockBlueScore uint64) (bool, erro
 	return true, nil
 }
 
-func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockBlueScore uint64, isCoinbase bool) error {
-	if !isCoinbase {
-		for _, txIn := range tx.TxIn {
-			entry, ok := dus.Get(txIn.PreviousOutpoint)
-			if !ok {
-				return errors.Errorf("Couldn't find entry for outpoint %s", txIn.PreviousOutpoint)
-			}
-			err := dus.UTXODiff.RemoveEntry(txIn.PreviousOutpoint, entry)
-			if err != nil {
-				return err
-			}
+func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockBlueScore uint64) error {
+	for _, txIn := range tx.TxIn {
+		entry, ok := dus.Get(txIn.PreviousOutpoint)
+		if !ok {
+			return errors.Errorf("couldn't find entry for outpoint %s", txIn.PreviousOutpoint)
+		}
+		err := dus.UTXODiff.RemoveEntry(txIn.PreviousOutpoint, entry)
+		if err != nil {
+			return err
 		}
 	}
 
+	isCoinbase := tx.IsCoinBase()
 	for i, txOut := range tx.TxOut {
 		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
 		entry := NewUTXOEntry(txOut, isCoinbase, blockBlueScore)

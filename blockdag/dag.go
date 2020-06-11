@@ -654,22 +654,20 @@ func (node *blockNode) selectedParentMultiset(dag *BlockDAG) (*secp256k1.MultiSe
 }
 
 func addTxToMultiset(ms *secp256k1.MultiSet, tx *wire.MsgTx, pastUTXO UTXOSet, blockBlueScore uint64) (*secp256k1.MultiSet, error) {
-	isCoinbase := tx.IsCoinBase()
-	if !isCoinbase {
-		for _, txIn := range tx.TxIn {
-			entry, ok := pastUTXO.Get(txIn.PreviousOutpoint)
-			if !ok {
-				return nil, errors.Errorf("Couldn't find entry for outpoint %s", txIn.PreviousOutpoint)
-			}
+	for _, txIn := range tx.TxIn {
+		entry, ok := pastUTXO.Get(txIn.PreviousOutpoint)
+		if !ok {
+			return nil, errors.Errorf("Couldn't find entry for outpoint %s", txIn.PreviousOutpoint)
+		}
 
-			var err error
-			ms, err = removeUTXOFromMultiset(ms, entry, &txIn.PreviousOutpoint)
-			if err != nil {
-				return nil, err
-			}
+		var err error
+		ms, err = removeUTXOFromMultiset(ms, entry, &txIn.PreviousOutpoint)
+		if err != nil {
+			return nil, err
 		}
 	}
 
+	isCoinbase := tx.IsCoinBase()
 	for i, txOut := range tx.TxOut {
 		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
 		entry := NewUTXOEntry(txOut, isCoinbase, blockBlueScore)
