@@ -34,12 +34,23 @@ func (e OutOfRangeError) Error() string {
 // transactions on their first access so subsequent accesses don't have to
 // repeat the relatively expensive hashing operations.
 type Block struct {
-	msgBlock        *wire.MsgBlock // Underlying MsgBlock
-	serializedBlock []byte         // Serialized bytes for the block
-	blockHash       *daghash.Hash  // Cached block hash
-	transactions    []*Tx          // Transactions
-	txnsGenerated   bool           // ALL wrapped transactions generated
-	blueScore       *uint64        // Blue score
+	// Underlying MsgBlock
+	msgBlock *wire.MsgBlock
+
+	// Serialized bytes for the block. This is used only internally, and .Hash() should be used anywhere.
+	serializedBlock []byte
+
+	// Cached block hash. This is used only internally, and .Hash() should be used anywhere.
+	blockHash *daghash.Hash
+
+	// Transactions. This is used only internally, and .Transactions() should be used anywhere.
+	transactions []*Tx
+
+	// ALL wrapped transactions generated
+	txnsGenerated bool
+
+	// Blue score. This is used only internally, and .BlueScore() should be used anywhere.
+	blueScore *uint64
 }
 
 // MsgBlock returns the underlying wire.MsgBlock for the Block.
