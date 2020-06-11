@@ -1,6 +1,7 @@
 package p2p
 
 import (
+	"fmt"
 	"github.com/kaspanet/kaspad/peer"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -23,8 +24,8 @@ func (sp *Peer) OnGetBlockInvs(_ *peer.Peer, msg *wire.MsgGetBlockInvs) {
 	hashList, err := dag.AntiPastHashesBetween(msg.LowHash, msg.HighHash,
 		wire.MaxInvPerMsg)
 	if err != nil {
-		peerLog.Warnf("Error getting antiPast hashes between %s and %s: %s", msg.LowHash, msg.HighHash, err)
-		sp.Disconnect()
+		sp.AddBanScoreAndPushRejectMsg(wire.CmdGetBlockInvs, wire.RejectInvalid, nil, 10, 0,
+			fmt.Sprintf("error getting antiPast hashes between %s and %s: %s", msg.LowHash, msg.HighHash, err))
 		return
 	}
 

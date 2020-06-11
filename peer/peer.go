@@ -657,6 +657,11 @@ func (p *Peer) AddBanScore(persistent, transient uint32, reason string) {
 	p.cfg.AddBanScore(persistent, transient, reason)
 }
 
+func (p *Peer) AddBanScoreAndPushRejectMsg(command string, code wire.RejectCode, hash *daghash.Hash, persistent, transient uint32, reason string) {
+	p.PushRejectMsg(command, code, reason, hash, true)
+	p.cfg.AddBanScore(persistent, transient, reason)
+}
+
 // LastSend returns the last send time of the peer.
 //
 // This function is safe for concurrent access.
@@ -1250,9 +1255,7 @@ out:
 					continue
 				}
 
-				log.Debugf("Peer %s appears to be stalled or "+
-					"misbehaving, %s timeout -- "+
-					"disconnecting", p, command)
+				p.AddBanScore(1, 0, fmt.Sprintf("got timeout for command %s", command))
 				p.Disconnect()
 				break
 			}
@@ -1337,6 +1340,7 @@ out:
 				p.PushRejectMsg("malformed", wire.RejectMalformed, errMsg, nil,
 					true)
 			}
+			p.AddBanScore(10, 0, "malformed message")
 			break out
 		}
 		atomic.StoreInt64(&p.lastRecv, time.Now().Unix())
@@ -1348,20 +1352,16 @@ out:
 		case *wire.MsgVersion:
 
 			reason := "duplicate version message"
-			p.AddBanScore(1, 0, reason)
-			p.PushRejectMsg(msg.Command(), wire.RejectDuplicate,
-				reason, nil, true)
-			break out
+			p.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectDuplicate, nil, 1, 0, reason)
 
 		case *wire.MsgVerAck:
 
 			// No read lock is necessary because verAckReceived is not written
 			// to in any other goroutine.
 			if p.verAckReceived {
-				p.AddBanScore(1, 0, "verack sent twice")
+				p.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectDuplicate, nil, 1, 0, "verack sent twice")
 				log.Infof("Already received 'verack' from peer %s -- "+
 					"disconnecting", p)
-				break out
 			}
 			p.markVerAckReceived()
 			if p.cfg.Listeners.OnVerAck != nil {

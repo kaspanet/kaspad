@@ -376,9 +376,7 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 	// If we didn't ask for this transaction then the peer is misbehaving.
 	txID := tmsg.tx.ID()
 	if _, exists = state.requestedTxns[*txID]; !exists {
-		log.Warnf("Got unrequested transaction %s from %s -- "+
-			"disconnecting", txID, peer.Addr())
-		peer.Disconnect()
+		peer.AddBanScoreAndPushRejectMsg(wire.CmdTx, wire.RejectNotRequested, (*daghash.Hash)(txID), 20, 0, fmt.Sprintf("got unrequested transaction %s", txID))
 		return
 	}
 
@@ -417,19 +415,24 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 		if !errors.As(err, ruleErr) {
 			panic(errors.Wrapf(err, "failed to process transaction %s", txID))
 		}
-		log.Debugf("Rejected transaction %s from %s: %s",
-			txID, peer, err)
 
-		// Extract error code and reason
-		code, reason := mempool.ErrToRejectErr(err)
-
+		shouldIncreaseBanScore := false
 		if txRuleErr := (&mempool.TxRuleError{}); errors.As(ruleErr.Err, txRuleErr) {
 			if txRuleErr.RejectCode == wire.RejectInvalid {
-				peer.AddBanScore(100, 0, "")
+				shouldIncreaseBanScore = true
 			}
 		} else if dagRuleErr := (&blockdag.RuleError{}); errors.As(ruleErr.Err, dagRuleErr) {
-			peer.AddBanScore(100, 0, "")
+			shouldIncreaseBanScore = true
 		}
+
+		if shouldIncreaseBanScore {
+			peer.AddBanScoreAndPushRejectMsg(wire.CmdTx, wire.RejectNotRequested, (*daghash.Hash)(txID),
+				100, 0, fmt.Sprintf("rejected transaction %s: %s", txID, err))
+		}
+
+		// Convert the error into an appropriate reject message and
+		// send it.
+		code, reason := mempool.ErrToRejectErr(err)
 		peer.PushRejectMsg(wire.CmdTx, code, reason, (*daghash.Hash)(txID), false)
 		return
 	}
@@ -486,9 +489,8 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		// mode in this case so the DAG code is actually fed the
 		// duplicate blocks.
 		if sm.dagParams != &dagconfig.RegressionNetParams {
-			log.Warnf("Got unrequested block %s from %s -- "+
-				"disconnecting", blockHash, peer.Addr())
-			peer.Disconnect()
+			peer.AddBanScoreAndPushRejectMsg(wire.CmdBlock, wire.RejectNotRequested, blockHash,
+				100, 0, fmt.Sprintf("got unrequested block %s", blockHash))
 			return
 		}
 	}
@@ -524,7 +526,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		log.Infof("Rejected block %s from %s: %s", blockHash,
 			peer, err)
 
-		peer.AddBanScore(100, 0, fmt.Sprintf("got invalid block: %s", err))
+		peer.AddBanScoreAndPushRejectMsg(wire.CmdBlock, wire.RejectInvalid, blockHash, 100, 0, fmt.Sprintf("got invalid block: %s", err))
 
 		// Convert the error into an appropriate reject message and
 		// send it.
@@ -733,8 +735,8 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 
 		if iv.IsBlockOrSyncBlock() {
 			if !peer.Inbound() && sm.dag.IsKnownInvalid(iv.Hash) {
-				peer.AddBanScore(100, 0, fmt.Sprintf("sent inv of invalid block %s", iv.Hash))
-				continue
+				peer.AddBanScoreAndPushRejectMsg(wire.CmdInv, wire.RejectInvalid, iv.Hash, 100, 0, fmt.Sprintf("sent inv of invalid block %s", iv.Hash))
+				return
 			}
 			// The block is an orphan block that we already have.
 			// When the existing orphan was processed, it requested
@@ -931,9 +933,9 @@ func (sm *SyncManager) handleSelectedTipMsg(msg *selectedTipMsg) {
 	selectedTipHash := msg.selectedTipHash
 	state := sm.peerStates[peer]
 	if !state.peerShouldSendSelectedTip {
-		log.Warnf("Got unrequested selected tip message from %s -- "+
-			"disconnecting", peer.Addr())
-		peer.Disconnect()
+		peer.AddBanScoreAndPushRejectMsg(wire.CmdSelectedTip, wire.RejectNotRequested, nil,
+			20, 0, "got unrequested selected tip message")
+		return
 	}
 	state.peerShouldSendSelectedTip = false
 	if selectedTipHash.IsEqual(peer.SelectedTipHash()) {

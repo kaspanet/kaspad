@@ -21,6 +21,7 @@ const (
 	RejectInvalid         RejectCode = 0x10
 	RejectObsolete        RejectCode = 0x11
 	RejectDuplicate       RejectCode = 0x12
+	RejectNotRequested    RejectCode = 0x13
 	RejectNonstandard     RejectCode = 0x40
 	RejectDust            RejectCode = 0x41
 	RejectInsufficientFee RejectCode = 0x42
@@ -39,6 +40,7 @@ var rejectCodeStrings = map[RejectCode]string{
 	RejectInsufficientFee: "REJECT_INSUFFICIENTFEE",
 	RejectFinality:        "REJECT_FINALITY",
 	RejectDifficulty:      "REJECT_DIFFICULTY",
+	RejectNotRequested:    "REJECT_NOTREQUESTED",
 }
 
 // String returns the RejectCode in human-readable form.

@@ -11,13 +11,11 @@ import (
 func (sp *Peer) OnGetBlockLocator(_ *peer.Peer, msg *wire.MsgGetBlockLocator) {
 	locator, err := sp.server.DAG.BlockLocatorFromHashes(msg.HighHash, msg.LowHash)
 	if err != nil || len(locator) == 0 {
-		warning := fmt.Sprintf("Couldn't build a block locator between blocks "+
-			"%s and %s that was requested from peer %s", msg.HighHash, msg.LowHash, sp)
 		if err != nil {
-			warning = fmt.Sprintf("%s: %s", warning, err)
+			peerLog.Warnf("Couldn't build a block locator between blocks "+
+				"%s and %s that was requested from peer %s: %s", msg.HighHash, msg.LowHash, sp, err)
 		}
-		peerLog.Warnf(warning)
-		sp.Disconnect()
+		sp.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectInvalid, nil, 100, 0, fmt.Sprintf("couldn't build a block locator between blocks %s and %s", msg.HighHash, msg.LowHash))
 		return
 	}
 
