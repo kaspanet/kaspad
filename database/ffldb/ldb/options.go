@@ -4,10 +4,10 @@ import "github.com/syndtr/goleveldb/leveldb/opt"
 
 var (
 	defaultOptions = opt.Options{
-		Compression:          opt.NoCompression,
-		BlockCacheCapacity:   512 * opt.MiB,
-		WriteBuffer:          512 * opt.MiB,
-		IteratorSamplingRate: 512 * opt.MiB,
+		Compression:            opt.NoCompression,
+		BlockCacheCapacity:     256 * opt.MiB,
+		WriteBuffer:            128 * opt.MiB,
+		DisableSeeksCompaction: true,
 	}
 
 	// Options is a function that returns a leveldb
