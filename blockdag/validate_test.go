@@ -5,6 +5,7 @@
 package blockdag
 
 import (
+	"bytes"
 	"math"
 	"path/filepath"
 	"testing"
@@ -188,6 +189,30 @@ func TestCheckBlockSanity(t *testing.T) {
 		t.Errorf("CheckBlockSanity: wrong error returned, expect RuleError, got %T", err)
 	} else if ruleErr.ErrorCode != ErrTransactionsNotSorted {
 		t.Errorf("CheckBlockSanity: wrong error returned, expect ErrTransactionsNotSorted, got"+
+			" %v, err %s", ruleErr.ErrorCode, err)
+	}
+	if delay != 0 {
+		t.Errorf("CheckBlockSanity: unexpected return %s delay", delay)
+	}
+
+	// Ensure that a block that's bigger in bytes than MaxMassPerBlock fails
+	blockBytes, err := block.Bytes()
+	if err != nil {
+		t.Fatalf("CheckBlockSanity: Bytes unexpectedly failed: %s", err)
+	}
+	tooBigBlock, err := util.NewBlockFromBytes(blockBytes)
+	if err != nil {
+		t.Fatalf("CheckBlockSanity: NewBlockFromBytes unexpectedly failed: %s", err)
+	}
+	tooBigBlock.MsgBlock().Transactions[0].Payload = bytes.Repeat([]byte{0}, 9998710)
+	delay, err = dag.checkBlockSanity(tooBigBlock, BFNone)
+	if err == nil {
+		t.Errorf("CheckBlockSanity: excess block mass is not detected")
+	}
+	if !errors.As(err, &ruleErr) {
+		t.Errorf("CheckBlockSanity: wrong error returned, expect RuleError, got %T", err)
+	} else if ruleErr.ErrorCode != ErrBlockMassTooHigh {
+		t.Errorf("CheckBlockSanity: wrong error returned, expect ErrBlockMassTooHigh, got"+
 			" %v, err %s", ruleErr.ErrorCode, err)
 	}
 	if delay != 0 {

@@ -473,17 +473,17 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 	}
 
 	// A block must have at least one transaction.
-	numTx := len(msgBlock.Transactions)
-	if numTx == 0 {
+	if len(msgBlock.Transactions) == 0 {
 		return 0, ruleError(ErrNoTransactions, "block does not contain "+
 			"any transactions")
 	}
 
-	// A block must not have more transactions than the max block mass or
-	// else it is certainly over the block mass limit.
-	if numTx > wire.MaxMassPerBlock {
-		str := fmt.Sprintf("block contains too many transactions - "+
-			"got %d, max %d", numTx, wire.MaxMassPerBlock)
+	// A block must not be bigger in bytes than the max block mass because
+	// otherwise it is certainly over the block mass limit.
+	blockSizeInBytes := msgBlock.SerializeSize()
+	if blockSizeInBytes > wire.MaxMassPerBlock {
+		str := fmt.Sprintf("block size in bytes too big - "+
+			"got %d, max %d", blockSizeInBytes, wire.MaxMassPerBlock)
 		return 0, ruleError(ErrBlockMassTooHigh, str)
 	}
 
