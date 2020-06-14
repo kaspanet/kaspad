@@ -629,7 +629,13 @@ func (m *wsNotificationManager) notifyFilteredBlockAdded(clients map[chan struct
 			"added notification: %s", err)
 		return
 	}
-	ntfn := rpcmodel.NewFilteredBlockAddedNtfn(block.BlueScore(), hex.EncodeToString(w.Bytes()), nil)
+	blueScore, err := block.BlueScore()
+	if err != nil {
+		log.Errorf("Failed to deserialize blue score for filtered block "+
+			"added notification: %s", err)
+		return
+	}
+	ntfn := rpcmodel.NewFilteredBlockAddedNtfn(blueScore, hex.EncodeToString(w.Bytes()), nil)
 
 	// Search for relevant transactions for each client and save them
 	// serialized in hex encoding for the notification.

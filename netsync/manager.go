@@ -540,15 +540,6 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	}
 
 	if isOrphan {
-		// If we received an orphan block from the sync peer, it is
-		// misbehaving and must be disconnected from.
-		if peer == sm.syncPeer {
-			log.Errorf("Received an orphan block %s from sync peer %s. Disconnecting...",
-				blockHash, peer)
-			peer.Disconnect()
-			return
-		}
-
 		// Request the parents for the orphan block from the peer that sent it.
 		missingAncestors, err := sm.dag.GetOrphanMissingAncestorHashes(blockHash)
 		if err != nil {
