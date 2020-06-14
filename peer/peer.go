@@ -1365,8 +1365,7 @@ out:
 			// to in any other goroutine.
 			if p.verAckReceived {
 				p.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectDuplicate, nil, 1, 0, "verack sent twice")
-				log.Infof("Already received 'verack' from peer %s -- "+
-					"disconnecting", p)
+				log.Warnf("Already received 'verack' from peer %s", p)
 			}
 			p.markVerAckReceived()
 			if p.cfg.Listeners.OnVerAck != nil {
