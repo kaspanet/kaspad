@@ -35,7 +35,7 @@ func SerializeCoinbasePayload(blueScore uint64, scriptPubKey []byte, extraData [
 // ErrIncorrectScriptPubKeyLen indicates that the script pub key length is not as expected.
 var ErrIncorrectScriptPubKeyLen = errors.New("incorrect script pub key length")
 
-// DeserializeCoinbasePayload deserialize the coinbase payload to its component (scriptPubKey and extra data).
+// DeserializeCoinbasePayload deserializes the coinbase payload to its component (scriptPubKey and extra data).
 func DeserializeCoinbasePayload(tx *wire.MsgTx) (blueScore uint64, scriptPubKey []byte, extraData []byte, err error) {
 	r := bytes.NewReader(tx.Payload)
 	blueScore, err = binaryserializer.Uint64(r, byteOrder)
