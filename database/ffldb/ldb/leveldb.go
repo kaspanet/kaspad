@@ -15,7 +15,7 @@ type LevelDB struct {
 // NewLevelDB opens a leveldb instance defined by the given path.
 func NewLevelDB(path string) (*LevelDB, error) {
 	// Open leveldb. If it doesn't exist, create it.
-	ldb, err := leveldb.OpenFile(path, nil)
+	ldb, err := leveldb.OpenFile(path, Options())
 
 	// If the database is corrupted, attempt to recover.
 	if _, corrupted := err.(*ldbErrors.ErrCorrupted); corrupted {
