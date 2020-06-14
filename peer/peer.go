@@ -653,10 +653,17 @@ func (p *Peer) IsSelectedTipKnown() bool {
 	return !p.cfg.IsInDAG(p.selectedTipHash)
 }
 
+// AddBanScore increases the persistent and decaying ban score fields by the
+// values passed as parameters. If the resulting score exceeds half of the ban
+// threshold, a warning is logged including the reason provided. Further, if
+// the score is above the ban threshold, the peer will be banned and
+// disconnected.
 func (p *Peer) AddBanScore(persistent, transient uint32, reason string) {
 	p.cfg.AddBanScore(persistent, transient, reason)
 }
 
+// AddBanScoreAndPushRejectMsg increases ban score and sends a
+// reject message to the misbehaving peer.
 func (p *Peer) AddBanScoreAndPushRejectMsg(command string, code wire.RejectCode, hash *daghash.Hash, persistent, transient uint32, reason string) {
 	p.PushRejectMsg(command, code, reason, hash, true)
 	p.cfg.AddBanScore(persistent, transient, reason)
