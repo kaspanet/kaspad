@@ -502,10 +502,14 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 	if err != nil {
 		return 0, err
 	}
+
+	// The following check will be fairly quick since the transaction IDs
+	// are already cached due to building the merkle tree above.
 	err = dag.checkBlockDuplicateTransactions(block)
 	if err != nil {
 		return 0, err
 	}
+
 	err = dag.checkBlockDoubleSpends(block)
 	if err != nil {
 		return 0, err
@@ -609,9 +613,6 @@ func (dag *BlockDAG) checkBlockHashMerkleRoot(block *util.Block) error {
 }
 
 func (dag *BlockDAG) checkBlockDuplicateTransactions(block *util.Block) error {
-	// Check for duplicate transactions. This check will be fairly quick
-	// since the transaction IDs are already cached due to building the
-	// merkle tree above.
 	existingTxIDs := make(map[daghash.TxID]struct{})
 	transactions := block.Transactions()
 	for _, tx := range transactions {
