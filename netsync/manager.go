@@ -716,7 +716,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		}
 
 		if iv.IsBlockOrSyncBlock() {
-			if !peer.Inbound() && sm.dag.IsKnownInvalid(iv.Hash) {
+			if sm.dag.IsKnownInvalid(iv.Hash) {
 				peer.AddBanScoreAndPushRejectMsg(wire.CmdInv, wire.RejectInvalid, iv.Hash, 100, 0, fmt.Sprintf("sent inv of invalid block %s", iv.Hash))
 				return
 			}
