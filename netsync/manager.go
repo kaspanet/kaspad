@@ -429,11 +429,6 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 			peer.AddBanScoreAndPushRejectMsg(wire.CmdTx, wire.RejectNotRequested, (*daghash.Hash)(txID),
 				100, 0, fmt.Sprintf("rejected transaction %s: %s", txID, err))
 		}
-
-		// Convert the error into an appropriate reject message and
-		// send it.
-		code, reason := mempool.ErrToRejectErr(err)
-		peer.PushRejectMsg(wire.CmdTx, code, reason, (*daghash.Hash)(txID), false)
 		return
 	}
 
@@ -526,12 +521,8 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		log.Infof("Rejected block %s from %s: %s", blockHash,
 			peer, err)
 
-		peer.AddBanScoreAndPushRejectMsg(wire.CmdBlock, wire.RejectInvalid, blockHash, 100, 0, fmt.Sprintf("got invalid block: %s", err))
-
-		// Convert the error into an appropriate reject message and
-		// send it.
-		code, reason := mempool.ErrToRejectErr(err)
-		peer.PushRejectMsg(wire.CmdBlock, code, reason, blockHash, false)
+		peer.AddBanScoreAndPushRejectMsg(wire.CmdBlock, wire.RejectInvalid, blockHash,
+			100, 0, fmt.Sprintf("got invalid block: %s", err))
 		return
 	}
 
