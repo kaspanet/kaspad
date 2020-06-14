@@ -2,6 +2,7 @@ package p2p
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/peer"
 	"github.com/kaspanet/kaspad/wire"
@@ -24,6 +25,12 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 		peerLog.Errorf("Command [%s] from %s does not contain any addresses",
 			msg.Command(), sp.Peer)
 		sp.Disconnect()
+		return
+	}
+
+	if len(msg.AddrList) > addrmgr.GetAddrMax {
+		sp.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectInvalid, nil,
+			20, 0, fmt.Sprintf("address count excceeded %d", addrmgr.GetAddrMax))
 		return
 	}
 
