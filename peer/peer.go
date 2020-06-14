@@ -1330,17 +1330,15 @@ out:
 					log.Errorf(errMsg)
 				}
 
-				// Push a reject message for the malformed message and wait for
-				// the message to be sent before disconnecting.
+				// Add ban score, push a reject message for the malformed message
+				// and wait for the message to be sent before disconnecting.
 				//
 				// NOTE: Ideally this would include the command in the header if
 				// at least that much of the message was valid, but that is not
 				// currently exposed by wire, so just used malformed for the
 				// command.
-				p.PushRejectMsg("malformed", wire.RejectMalformed, errMsg, nil,
-					true)
+				p.AddBanScoreAndPushRejectMsg("malformed", wire.RejectMalformed, nil, 10, 0, errMsg)
 			}
-			p.AddBanScore(10, 0, "malformed message")
 			break out
 		}
 		atomic.StoreInt64(&p.lastRecv, time.Now().Unix())
