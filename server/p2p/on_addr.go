@@ -22,12 +22,14 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 
 	if len(msg.AddrList) > addrmgr.GetAddrMax {
 		sp.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectInvalid, nil,
-			20, 0, fmt.Sprintf("address count excceeded %d", addrmgr.GetAddrMax))
+			peer.BanScoreSentTooManyAddresses, 0, fmt.Sprintf("address count excceeded %d", addrmgr.GetAddrMax))
 		return
 	}
 
 	if msg.IncludeAllSubnetworks {
-		sp.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectInvalid, nil, 10, 0, fmt.Sprintf("got unexpected IncludeAllSubnetworks=true in [%s] command", msg.Command()))
+		sp.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectInvalid, nil,
+			peer.BanScoreMsgAddrWithInvalidSubnetwork, 0,
+			fmt.Sprintf("got unexpected IncludeAllSubnetworks=true in [%s] command", msg.Command()))
 		return
 	} else if !msg.SubnetworkID.IsEqual(config.ActiveConfig().SubnetworkID) && msg.SubnetworkID != nil {
 		peerLog.Errorf("Only full nodes and %s subnetwork IDs are allowed in [%s] command, but got subnetwork ID %s from %s",

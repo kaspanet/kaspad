@@ -24,7 +24,7 @@ func (sp *Peer) OnInv(_ *peer.Peer, msg *wire.MsgInv) {
 			peerLog.Tracef("Ignoring tx %s in inv from %s -- "+
 				"blocksonly enabled", invVect.Hash, sp)
 			sp.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectNotRequested, invVect.Hash,
-				20, 0, "announced transactions when blocksonly is enabled")
+				peer.BanScoreSentTxToBlocksOnly, 0, "announced transactions when blocksonly is enabled")
 			return
 		}
 		err := newInv.AddInvVect(invVect)

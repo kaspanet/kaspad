@@ -18,7 +18,7 @@ func (sp *Peer) OnFilterClear(_ *peer.Peer, msg *wire.MsgFilterClear) {
 
 	if !sp.filter.IsLoaded() {
 		sp.AddBanScoreAndPushRejectMsg(wire.CmdFilterClear, wire.RejectInvalid, nil,
-			5, 0, "sent a filterclear request with no filter loaded")
+			peer.BanScoreNoFilterLoaded, 0, "sent a filterclear request with no filter loaded")
 		return
 	}
 

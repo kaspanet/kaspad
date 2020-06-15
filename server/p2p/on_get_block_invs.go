@@ -24,7 +24,8 @@ func (sp *Peer) OnGetBlockInvs(_ *peer.Peer, msg *wire.MsgGetBlockInvs) {
 	hashList, err := dag.AntiPastHashesBetween(msg.LowHash, msg.HighHash,
 		wire.MaxInvPerMsg)
 	if err != nil {
-		sp.AddBanScoreAndPushRejectMsg(wire.CmdGetBlockInvs, wire.RejectInvalid, nil, 10, 0,
+		sp.AddBanScoreAndPushRejectMsg(wire.CmdGetBlockInvs, wire.RejectInvalid, nil,
+			peer.BanScoreInvalidMsgGetBlockInvs, 0,
 			fmt.Sprintf("error getting antiPast hashes between %s and %s: %s", msg.LowHash, msg.HighHash, err))
 		return
 	}

@@ -376,7 +376,8 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 	// If we didn't ask for this transaction then the peer is misbehaving.
 	txID := tmsg.tx.ID()
 	if _, exists = state.requestedTxns[*txID]; !exists {
-		peer.AddBanScoreAndPushRejectMsg(wire.CmdTx, wire.RejectNotRequested, (*daghash.Hash)(txID), 20, 0, fmt.Sprintf("got unrequested transaction %s", txID))
+		peer.AddBanScoreAndPushRejectMsg(wire.CmdTx, wire.RejectNotRequested, (*daghash.Hash)(txID),
+			peerpkg.BanScoreUnrequestedTx, 0, fmt.Sprintf("got unrequested transaction %s", txID))
 		return
 	}
 
@@ -426,8 +427,8 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 		}
 
 		if shouldIncreaseBanScore {
-			peer.AddBanScoreAndPushRejectMsg(wire.CmdTx, wire.RejectNotRequested, (*daghash.Hash)(txID),
-				100, 0, fmt.Sprintf("rejected transaction %s: %s", txID, err))
+			peer.AddBanScoreAndPushRejectMsg(wire.CmdTx, wire.RejectInvalid, (*daghash.Hash)(txID),
+				peerpkg.BanScoreInvalidTx, 0, fmt.Sprintf("rejected transaction %s: %s", txID, err))
 		}
 		return
 	}
@@ -485,7 +486,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		// duplicate blocks.
 		if sm.dagParams != &dagconfig.RegressionNetParams {
 			peer.AddBanScoreAndPushRejectMsg(wire.CmdBlock, wire.RejectNotRequested, blockHash,
-				100, 0, fmt.Sprintf("got unrequested block %s", blockHash))
+				peerpkg.BanScoreUnrequestedBlock, 0, fmt.Sprintf("got unrequested block %s", blockHash))
 			return
 		}
 	}
@@ -522,7 +523,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 			peer, err)
 
 		peer.AddBanScoreAndPushRejectMsg(wire.CmdBlock, wire.RejectInvalid, blockHash,
-			100, 0, fmt.Sprintf("got invalid block: %s", err))
+			peerpkg.BanScoreInvalidBlock, 0, fmt.Sprintf("got invalid block: %s", err))
 		return
 	}
 
@@ -717,7 +718,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 
 		if iv.IsBlockOrSyncBlock() {
 			if sm.dag.IsKnownInvalid(iv.Hash) {
-				peer.AddBanScoreAndPushRejectMsg(wire.CmdInv, wire.RejectInvalid, iv.Hash, 100, 0, fmt.Sprintf("sent inv of invalid block %s", iv.Hash))
+				peer.AddBanScoreAndPushRejectMsg(imsg.inv.Command(), wire.RejectInvalid, iv.Hash, peerpkg.BanScoreInvalidInvBlock, 0, fmt.Sprintf("sent inv of invalid block %s", iv.Hash))
 				return
 			}
 			// The block is an orphan block that we already have.
@@ -916,7 +917,7 @@ func (sm *SyncManager) handleSelectedTipMsg(msg *selectedTipMsg) {
 	state := sm.peerStates[peer]
 	if !state.peerShouldSendSelectedTip {
 		peer.AddBanScoreAndPushRejectMsg(wire.CmdSelectedTip, wire.RejectNotRequested, nil,
-			20, 0, "got unrequested selected tip message")
+			peerpkg.BanScoreUnrequestedSelectedTip, 0, "got unrequested selected tip message")
 		return
 	}
 	state.peerShouldSendSelectedTip = false

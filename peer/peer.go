@@ -1262,7 +1262,7 @@ out:
 					continue
 				}
 
-				p.AddBanScore(1, 0, fmt.Sprintf("got timeout for command %s", command))
+				p.AddBanScore(BanScoreStallTimeout, 0, fmt.Sprintf("got timeout for command %s", command))
 				p.Disconnect()
 				break
 			}
@@ -1344,7 +1344,8 @@ out:
 				// at least that much of the message was valid, but that is not
 				// currently exposed by wire, so just used malformed for the
 				// command.
-				p.AddBanScoreAndPushRejectMsg("malformed", wire.RejectMalformed, nil, 10, 0, errMsg)
+				p.AddBanScoreAndPushRejectMsg("malformed", wire.RejectMalformed, nil,
+					BanScoreMalformedMessage, 0, errMsg)
 			}
 			break out
 		}
@@ -1357,14 +1358,16 @@ out:
 		case *wire.MsgVersion:
 
 			reason := "duplicate version message"
-			p.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectDuplicate, nil, 1, 0, reason)
+			p.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectDuplicate, nil,
+				BanScoreDuplicateVersion, 0, reason)
 
 		case *wire.MsgVerAck:
 
 			// No read lock is necessary because verAckReceived is not written
 			// to in any other goroutine.
 			if p.verAckReceived {
-				p.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectDuplicate, nil, 1, 0, "verack sent twice")
+				p.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectDuplicate, nil,
+					BanScoreDuplicateVerack, 0, "verack sent twice")
 				log.Warnf("Already received 'verack' from peer %s", p)
 			}
 			p.markVerAckReceived()
@@ -1885,7 +1888,7 @@ func (p *Peer) readRemoteVersionMsg() error {
 		errStr := "A version message must precede all others"
 		log.Errorf(errStr)
 
-		p.AddBanScore(1, 0, errStr)
+		p.AddBanScore(BanScoreNonVersionFirstMessage, 0, errStr)
 
 		rejectMsg := wire.NewMsgReject(msg.Command(), wire.RejectMalformed,
 			errStr)

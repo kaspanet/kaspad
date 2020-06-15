@@ -377,7 +377,7 @@ func (sp *Peer) enforceNodeBloomFlag(cmd string) bool {
 
 			// Disconnect the peer regardless of whether it was
 			// banned.
-			sp.addBanScore(100, 0, cmd)
+			sp.addBanScore(peer.BanScoreNodeBloomFlagViolation, 0, cmd)
 			sp.Disconnect()
 			return false
 		}

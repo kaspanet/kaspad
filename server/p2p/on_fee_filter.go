@@ -15,8 +15,8 @@ import (
 func (sp *Peer) OnFeeFilter(_ *peer.Peer, msg *wire.MsgFeeFilter) {
 	// Check that the passed minimum fee is a valid amount.
 	if msg.MinFee < 0 || msg.MinFee > util.MaxSompi {
-		sp.AddBanScoreAndPushRejectMsg(wire.CmdFeeFilter, wire.RejectInvalid, nil,
-			100, 0, fmt.Sprintf("sent an invalid feefilter '%s'", util.Amount(msg.MinFee)))
+		sp.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectInvalid, nil,
+			peer.BanScoreInvalidFeeFilter, 0, fmt.Sprintf("sent an invalid feefilter '%s'", util.Amount(msg.MinFee)))
 		return
 	}
 
