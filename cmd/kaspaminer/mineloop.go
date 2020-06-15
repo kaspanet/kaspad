@@ -25,7 +25,9 @@ var hashesTried uint64
 
 const logHashRateInterval = 10 * time.Second
 
-func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64, mineWhenNotSynced bool, miningAddr util.Address) error {
+func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64, mineWhenNotSynced bool,
+	miningAddr util.Address) error {
+
 	errChan := make(chan error)
 
 	templateStopChan := make(chan struct{})
@@ -169,7 +171,9 @@ func solveBlock(block *util.Block, stopChan chan struct{}, foundBlock chan *util
 
 }
 
-func templatesLoop(client *minerClient, miningAddr util.Address, newTemplateChan chan *rpcmodel.GetBlockTemplateResult, errChan chan error, stopChan chan struct{}) {
+func templatesLoop(client *minerClient, miningAddr util.Address,
+	newTemplateChan chan *rpcmodel.GetBlockTemplateResult, errChan chan error, stopChan chan struct{}) {
+
 	longPollID := ""
 	getBlockTemplateLongPoll := func() {
 		if longPollID != "" {
