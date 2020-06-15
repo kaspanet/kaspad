@@ -2,9 +2,10 @@ package peer
 
 // Ban scores for misbehaving nodes
 const (
-	BanScoreUnrequestedBlock = 100
-	BanScoreInvalidBlock     = 100
-	BanScoreInvalidInvBlock  = 100
+	BanScoreUnrequestedBlock           = 100
+	BanScoreInvalidBlock               = 100
+	BanScoreInvalidInvBlock            = 100
+	BanScoreMalformedBlueScoreInOrphan = 100
 
 	BanScoreUnrequestedSelectedTip = 20
 	BanScoreUnrequestedTx          = 20
