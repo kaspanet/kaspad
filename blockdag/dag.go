@@ -165,7 +165,7 @@ type BlockDAG struct {
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) IsKnownBlock(hash *daghash.Hash) bool {
-	return dag.IsInDAG(hash) || dag.IsKnownOrphan(hash) || dag.isKnownDelayedBlock(hash)
+	return dag.IsInDAG(hash) || dag.IsKnownOrphan(hash) || dag.isKnownDelayedBlock(hash) || dag.IsKnownInvalid(hash)
 }
 
 // AreKnownBlocks returns whether or not the DAG instances has all blocks represented
@@ -577,10 +577,6 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	newBlockPastUTXO, txsAcceptanceData, newBlockFeeData, newBlockMultiSet, err :=
 		node.verifyAndBuildUTXO(dag, block.Transactions(), fastAdd)
 	if err != nil {
-		var ruleErr RuleError
-		if ok := errors.As(err, &ruleErr); ok {
-			return nil, ruleError(ruleErr.ErrorCode, fmt.Sprintf("error verifying UTXO for %s: %s", node, err))
-		}
 		return nil, errors.Wrapf(err, "error verifying UTXO for %s", node)
 	}
 
@@ -658,22 +654,20 @@ func (node *blockNode) selectedParentMultiset(dag *BlockDAG) (*secp256k1.MultiSe
 }
 
 func addTxToMultiset(ms *secp256k1.MultiSet, tx *wire.MsgTx, pastUTXO UTXOSet, blockBlueScore uint64) (*secp256k1.MultiSet, error) {
-	isCoinbase := tx.IsCoinBase()
-	if !isCoinbase {
-		for _, txIn := range tx.TxIn {
-			entry, ok := pastUTXO.Get(txIn.PreviousOutpoint)
-			if !ok {
-				return nil, errors.Errorf("Couldn't find entry for outpoint %s", txIn.PreviousOutpoint)
-			}
+	for _, txIn := range tx.TxIn {
+		entry, ok := pastUTXO.Get(txIn.PreviousOutpoint)
+		if !ok {
+			return nil, errors.Errorf("Couldn't find entry for outpoint %s", txIn.PreviousOutpoint)
+		}
 
-			var err error
-			ms, err = removeUTXOFromMultiset(ms, entry, &txIn.PreviousOutpoint)
-			if err != nil {
-				return nil, err
-			}
+		var err error
+		ms, err = removeUTXOFromMultiset(ms, entry, &txIn.PreviousOutpoint)
+		if err != nil {
+			return nil, err
 		}
 	}
 
+	isCoinbase := tx.IsCoinBase()
 	for i, txOut := range tx.TxOut {
 		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
 		entry := NewUTXOEntry(txOut, isCoinbase, blockBlueScore)

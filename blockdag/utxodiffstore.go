@@ -160,6 +160,9 @@ var maxBlueScoreDifferenceToKeepLoaded uint64 = 100
 // that tips are not removed either even if their blue score is
 // lower than the above.
 func (diffStore *utxoDiffStore) clearOldEntries() {
+	diffStore.mtx.HighPriorityWriteLock()
+	defer diffStore.mtx.HighPriorityWriteUnlock()
+
 	virtualBlueScore := diffStore.dag.VirtualBlueScore()
 	minBlueScore := virtualBlueScore - maxBlueScoreDifferenceToKeepLoaded
 	if maxBlueScoreDifferenceToKeepLoaded > virtualBlueScore {
