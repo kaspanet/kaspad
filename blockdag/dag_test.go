@@ -207,7 +207,7 @@ func TestIsKnownBlock(t *testing.T) {
 		{hash: dagconfig.SimnetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "48a752afbe36ad66357f751f8dee4f75665d24e18f644d83a3409b398405b46b", want: true},
+		{hash: "2eb8903d3eb7f977ab329649f56f4125afa532662f7afe5dba0d4a3f1b93746f", want: true},
 
 		// Block 100000 should be present (as an orphan).
 		{hash: "65b20b048a074793ebfd1196e49341c8d194dabfc6b44a4fd0c607406e122baf", want: true},
@@ -621,7 +621,10 @@ func TestAcceptingInInit(t *testing.T) {
 	testBlock := blocks[1]
 
 	// Create a test blockNode with an unvalidated status
-	genesisNode := dag.index.LookupNode(genesisBlock.Hash())
+	genesisNode, ok := dag.index.LookupNode(genesisBlock.Hash())
+	if !ok {
+		t.Fatalf("genesis block does not exist in the DAG")
+	}
 	testNode, _ := dag.newBlockNode(&testBlock.MsgBlock().Header, blockSetFromSlice(genesisNode))
 	testNode.status = statusDataStored
 
@@ -659,7 +662,11 @@ func TestAcceptingInInit(t *testing.T) {
 	}
 
 	// Make sure that the test node's status is valid
-	testNode = dag.index.LookupNode(testBlock.Hash())
+	testNode, ok = dag.index.LookupNode(testBlock.Hash())
+	if !ok {
+		t.Fatalf("block %s does not exist in the DAG", testBlock.Hash())
+	}
+
 	if testNode.status&statusValid == 0 {
 		t.Fatalf("testNode is unexpectedly invalid")
 	}
@@ -1045,8 +1052,8 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 			"is an orphan\n")
 	}
 
-	invalidBlockNode := dag.index.LookupNode(invalidBlock.Hash())
-	if invalidBlockNode == nil {
+	invalidBlockNode, ok := dag.index.LookupNode(invalidBlock.Hash())
+	if !ok {
 		t.Fatalf("invalidBlockNode wasn't added to the block index as expected")
 	}
 	if invalidBlockNode.status&statusValidateFailed != statusValidateFailed {
@@ -1074,8 +1081,8 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 		t.Fatalf("ProcessBlock incorrectly returned invalidBlockChild " +
 			"is an orphan\n")
 	}
-	invalidBlockChildNode := dag.index.LookupNode(invalidBlockChild.Hash())
-	if invalidBlockChildNode == nil {
+	invalidBlockChildNode, ok := dag.index.LookupNode(invalidBlockChild.Hash())
+	if !ok {
 		t.Fatalf("invalidBlockChild wasn't added to the block index as expected")
 	}
 	if invalidBlockChildNode.status&statusInvalidAncestor != statusInvalidAncestor {
@@ -1102,8 +1109,8 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 		t.Fatalf("ProcessBlock incorrectly returned invalidBlockGrandChild " +
 			"is an orphan\n")
 	}
-	invalidBlockGrandChildNode := dag.index.LookupNode(invalidBlockGrandChild.Hash())
-	if invalidBlockGrandChildNode == nil {
+	invalidBlockGrandChildNode, ok := dag.index.LookupNode(invalidBlockGrandChild.Hash())
+	if !ok {
 		t.Fatalf("invalidBlockGrandChild wasn't added to the block index as expected")
 	}
 	if invalidBlockGrandChildNode.status&statusInvalidAncestor != statusInvalidAncestor {
@@ -1257,7 +1264,7 @@ func TestDoubleSpends(t *testing.T) {
 
 func TestUTXOCommitment(t *testing.T) {
 	// Create a new database and dag instance to run tests against.
-	params := dagconfig.DevnetParams
+	params := dagconfig.SimnetParams
 	params.BlockCoinbaseMaturity = 0
 	dag, teardownFunc, err := DAGSetup("TestUTXOCommitment", true, Config{
 		DAGParams: &params,
@@ -1312,8 +1319,8 @@ func TestUTXOCommitment(t *testing.T) {
 	blockD := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockB.BlockHash(), blockC.BlockHash()}, blockDTxs)
 
 	// Get the pastUTXO of blockD
-	blockNodeD := dag.index.LookupNode(blockD.BlockHash())
-	if blockNodeD == nil {
+	blockNodeD, ok := dag.index.LookupNode(blockD.BlockHash())
+	if !ok {
 		t.Fatalf("TestUTXOCommitment: blockNode for block D not found")
 	}
 	blockDPastUTXO, _, _, _ := dag.pastUTXO(blockNodeD)
@@ -1372,8 +1379,8 @@ func TestPastUTXOMultiSet(t *testing.T) {
 	blockC := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockB.BlockHash()}, nil)
 
 	// Take blockC's selectedParentMultiset
-	blockNodeC := dag.index.LookupNode(blockC.BlockHash())
-	if blockNodeC == nil {
+	blockNodeC, ok := dag.index.LookupNode(blockC.BlockHash())
+	if !ok {
 		t.Fatalf("TestPastUTXOMultiSet: blockNode for blockC not found")
 	}
 	blockCSelectedParentMultiset, err := blockNodeC.selectedParentMultiset(dag)

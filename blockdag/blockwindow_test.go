@@ -133,7 +133,10 @@ func TestBlueBlockWindow(t *testing.T) {
 			t.Fatalf("block %v was unexpectedly orphan", blockData.id)
 		}
 
-		node := dag.index.LookupNode(utilBlock.Hash())
+		node, ok := dag.index.LookupNode(utilBlock.Hash())
+		if !ok {
+			t.Fatalf("block %s does not exist in the DAG", utilBlock.Hash())
+		}
 
 		blockByIDMap[blockData.id] = node
 		idByBlockMap[node] = blockData.id

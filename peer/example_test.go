@@ -31,6 +31,7 @@ func mockRemotePeer() error {
 		UserAgentVersion: "1.0.0", // User agent version to advertise.
 		DAGParams:        &dagconfig.SimnetParams,
 		SelectedTipHash:  fakeSelectedTipFn,
+		SubnetworkID:     nil,
 	}
 
 	// Accept connections on the simnet port.
@@ -90,6 +91,7 @@ func Example_newOutboundPeer() {
 			},
 		},
 		SelectedTipHash: fakeSelectedTipFn,
+		SubnetworkID:    nil,
 	}
 	p, err := peer.NewOutboundPeer(peerCfg, "127.0.0.1:18555")
 	if err != nil {

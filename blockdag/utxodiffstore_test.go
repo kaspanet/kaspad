@@ -1,12 +1,13 @@
 package blockdag
 
 import (
+	"reflect"
+	"testing"
+
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
-	"reflect"
-	"testing"
 )
 
 func TestUTXODiffStore(t *testing.T) {
@@ -114,8 +115,8 @@ func TestClearOldEntries(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		processedBlock := PrepareAndProcessBlockForTest(t, dag, dag.TipHashes(), nil)
 
-		node := dag.index.LookupNode(processedBlock.BlockHash())
-		if node == nil {
+		node, ok := dag.index.LookupNode(processedBlock.BlockHash())
+		if !ok {
 			t.Fatalf("TestClearOldEntries: missing blockNode for hash %s", processedBlock.BlockHash())
 		}
 		blockNodes[i] = node
@@ -144,15 +145,16 @@ func TestClearOldEntries(t *testing.T) {
 
 	// Add a block on top of the genesis to force the retrieval of all diffData
 	processedBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{dag.genesis.hash}, nil)
-	node := dag.index.LookupNode(processedBlock.BlockHash())
-	if node == nil {
+	node, ok := dag.index.LookupNode(processedBlock.BlockHash())
+	if !ok {
 		t.Fatalf("TestClearOldEntries: missing blockNode for hash %s", processedBlock.BlockHash())
 	}
 
-	// Make sure that the child-of-genesis node isn't in the loaded set
-	_, ok := dag.utxoDiffStore.loaded[node]
-	if ok {
-		t.Fatalf("TestClearOldEntries: diffData for node %s is in the loaded set", node.hash)
+	// Make sure that the child-of-genesis node is in the loaded set, since it
+	// is a tip.
+	_, ok = dag.utxoDiffStore.loaded[node]
+	if !ok {
+		t.Fatalf("TestClearOldEntries: diffData for node %s is not in the loaded set", node.hash)
 	}
 
 	// Make sure that all the old nodes still do not exist in the loaded set

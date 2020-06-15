@@ -105,8 +105,6 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 		}
 	}
 
-	block.SetBlueScore(newNode.blueScore)
-
 	// Connect the passed block to the DAG. This also handles validation of the
 	// transaction scripts.
 	chainUpdates, err := dag.addBlock(newNode, block, selectedParentAnticone, flags)
@@ -133,17 +131,17 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	return nil
 }
 
-func lookupParentNodes(block *util.Block, blockDAG *BlockDAG) (blockSet, error) {
+func lookupParentNodes(block *util.Block, dag *BlockDAG) (blockSet, error) {
 	header := block.MsgBlock().Header
 	parentHashes := header.ParentHashes
 
 	nodes := newBlockSet()
 	for _, parentHash := range parentHashes {
-		node := blockDAG.index.LookupNode(parentHash)
-		if node == nil {
+		node, ok := dag.index.LookupNode(parentHash)
+		if !ok {
 			str := fmt.Sprintf("parent block %s is unknown", parentHash)
 			return nil, ruleError(ErrParentBlockUnknown, str)
-		} else if blockDAG.index.NodeStatus(node).KnownInvalid() {
+		} else if dag.index.NodeStatus(node).KnownInvalid() {
 			str := fmt.Sprintf("parent block %s is known to be invalid", parentHash)
 			return nil, ruleError(ErrInvalidAncestorBlock, str)
 		}

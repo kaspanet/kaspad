@@ -17,9 +17,8 @@ func (sp *Peer) OnFilterClear(_ *peer.Peer, msg *wire.MsgFilterClear) {
 	}
 
 	if !sp.filter.IsLoaded() {
-		peerLog.Debugf("%s sent a filterclear request with no "+
-			"filter loaded -- disconnecting", sp)
-		sp.Disconnect()
+		sp.AddBanScoreAndPushRejectMsg(wire.CmdFilterClear, wire.RejectInvalid, nil,
+			peer.BanScoreNoFilterLoaded, 0, "sent a filterclear request with no filter loaded")
 		return
 	}
 

@@ -5,9 +5,11 @@ package blockdag
 import (
 	"compress/bzip2"
 	"encoding/binary"
+	"github.com/kaspanet/kaspad/database/ffldb/ldb"
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
+	"github.com/syndtr/goleveldb/leveldb/opt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -62,6 +64,15 @@ func DAGSetup(dbName string, openDb bool, config Config) (*BlockDAG, func(), err
 			return nil, nil, errors.Errorf("error creating temp dir: %s", err)
 		}
 
+		// We set ldb.Options here to return nil because normally
+		// the database is initialized with very large caches that
+		// can make opening/closing the database for every test
+		// quite heavy.
+		originalLDBOptions := ldb.Options
+		ldb.Options = func() *opt.Options {
+			return nil
+		}
+
 		dbPath := filepath.Join(tmpDir, dbName)
 		_ = os.RemoveAll(dbPath)
 		err = dbaccess.Open(dbPath)
@@ -75,6 +86,7 @@ func DAGSetup(dbName string, openDb bool, config Config) (*BlockDAG, func(), err
 			spawnWaitGroup.Wait()
 			spawn = realSpawn
 			dbaccess.Close()
+			ldb.Options = originalLDBOptions
 			os.RemoveAll(dbPath)
 		}
 	} else {
@@ -146,8 +158,8 @@ func SetVirtualForTest(dag *BlockDAG, virtual VirtualForTest) VirtualForTest {
 func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (VirtualForTest, error) {
 	parents := newBlockSet()
 	for _, hash := range parentHashes {
-		parent := dag.index.LookupNode(hash)
-		if parent == nil {
+		parent, ok := dag.index.LookupNode(hash)
+		if !ok {
 			return nil, errors.Errorf("GetVirtualFromParentsForTest: didn't found node for hash %s", hash)
 		}
 		parents.add(parent)

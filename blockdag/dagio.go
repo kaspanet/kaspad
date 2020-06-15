@@ -233,7 +233,11 @@ func (dag *BlockDAG) initDAGState() error {
 	}
 
 	log.Debugf("Setting the last finality point...")
-	dag.lastFinalityPoint = dag.index.LookupNode(dagState.LastFinalityPoint)
+	var ok bool
+	dag.lastFinalityPoint, ok = dag.index.LookupNode(dagState.LastFinalityPoint)
+	if !ok {
+		return errors.Errorf("block %s does not exist in the DAG", dagState.LastFinalityPoint)
+	}
 	dag.finalizeNodesBelowFinalityPoint(false)
 
 	log.Debugf("Processing unprocessed blockNodes...")
@@ -348,8 +352,8 @@ func (dag *BlockDAG) initUTXOSet() (fullUTXOCollection utxoCollection, err error
 func (dag *BlockDAG) initVirtualBlockTips(state *dagState) error {
 	tips := newBlockSet()
 	for _, tipHash := range state.TipHashes {
-		tip := dag.index.LookupNode(tipHash)
-		if tip == nil {
+		tip, ok := dag.index.LookupNode(tipHash)
+		if !ok {
 			return errors.Errorf("cannot find "+
 				"DAG tip %s in block index", state.TipHashes)
 		}
@@ -426,8 +430,8 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 	node.parents = newBlockSet()
 
 	for _, hash := range header.ParentHashes {
-		parent := dag.index.LookupNode(hash)
-		if parent == nil {
+		parent, ok := dag.index.LookupNode(hash)
+		if !ok {
 			return nil, errors.Errorf("deserializeBlockNode: Could "+
 				"not find parent %s for block %s", hash, header.BlockHash())
 		}
@@ -447,7 +451,11 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 
 	// Because genesis doesn't have selected parent, it's serialized as zero hash
 	if !selectedParentHash.IsEqual(&daghash.ZeroHash) {
-		node.selectedParent = dag.index.LookupNode(selectedParentHash)
+		var ok bool
+		node.selectedParent, ok = dag.index.LookupNode(selectedParentHash)
+		if !ok {
+			return nil, errors.Errorf("block %s does not exist in the DAG", selectedParentHash)
+		}
 	}
 
 	node.blueScore, err = binaryserializer.Uint64(buffer, byteOrder)
@@ -466,7 +474,12 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		if _, err := io.ReadFull(buffer, hash[:]); err != nil {
 			return nil, err
 		}
-		node.blues[i] = dag.index.LookupNode(hash)
+
+		var ok bool
+		node.blues[i], ok = dag.index.LookupNode(hash)
+		if !ok {
+			return nil, errors.Errorf("block %s does not exist in the DAG", selectedParentHash)
+		}
 	}
 
 	bluesAnticoneSizesLen, err := wire.ReadVarInt(buffer)
@@ -484,8 +497,8 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		if err != nil {
 			return nil, err
 		}
-		blue := dag.index.LookupNode(hash)
-		if blue == nil {
+		blue, ok := dag.index.LookupNode(hash)
+		if !ok {
 			return nil, errors.Errorf("couldn't find block with hash %s", hash)
 		}
 		node.bluesAnticoneSizes[blue] = dagconfig.KType(bluesAnticoneSize)
@@ -590,8 +603,8 @@ func blockHashFromBlockIndexKey(BlockIndexKey []byte) (*daghash.Hash, error) {
 // This function is safe for concurrent access.
 func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
 	// Lookup the block hash in block index and ensure it is in the DAG
-	node := dag.index.LookupNode(hash)
-	if node == nil {
+	node, ok := dag.index.LookupNode(hash)
+	if !ok {
 		str := fmt.Sprintf("block %s is not in the DAG", hash)
 		return nil, errNotInDAG(str)
 	}

@@ -223,6 +223,7 @@ func TestPeerConnection(t *testing.T) {
 		ProtocolVersion:   wire.ProtocolVersion, // Configure with older version
 		Services:          0,
 		SelectedTipHash:   fakeSelectedTipFn,
+		SubnetworkID:      nil,
 	}
 	outPeerCfg := &Config{
 		Listeners: MessageListeners{
@@ -243,6 +244,7 @@ func TestPeerConnection(t *testing.T) {
 		ProtocolVersion:   wire.ProtocolVersion + 1,
 		Services:          wire.SFNodeNetwork,
 		SelectedTipHash:   fakeSelectedTipFn,
+		SubnetworkID:      nil,
 	}
 
 	wantStats1 := peerStats{
@@ -401,6 +403,7 @@ func TestPeerListeners(t *testing.T) {
 		DAGParams:         &dagconfig.MainnetParams,
 		Services:          wire.SFNodeBloom,
 		SelectedTipHash:   fakeSelectedTipFn,
+		SubnetworkID:      nil,
 	}
 
 	outPeerCfg := &Config{}
@@ -517,6 +520,7 @@ func TestOutboundPeer(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		DAGParams:         &dagconfig.MainnetParams,
 		Services:          0,
+		SubnetworkID:      nil,
 	}
 
 	_, p, err := setupPeers(peerCfg, peerCfg)
