@@ -8,6 +8,7 @@ package p2p
 import (
 	"crypto/rand"
 	"encoding/binary"
+	"fmt"
 	"math"
 	"net"
 	"runtime"
@@ -328,13 +329,8 @@ func (sp *Peer) pushAddrMsg(addresses []*wire.NetAddress, subnetworkID *subnetwo
 // the score is above the ban threshold, the peer will be banned and
 // disconnected.
 func (sp *Peer) addBanScore(persistent, transient uint32, reason string) {
-	// No warning is logged and no score is calculated if banning is disabled.
-	if config.ActiveConfig().DisableBanning {
-		return
-	}
 	if sp.isWhitelisted {
 		peerLog.Debugf("Misbehaving whitelisted peer %s: %s", sp, reason)
-		return
 	}
 
 	warnThreshold := config.ActiveConfig().BanThreshold >> 1
@@ -348,16 +344,22 @@ func (sp *Peer) addBanScore(persistent, transient uint32, reason string) {
 		}
 		return
 	}
+
 	score := sp.DynamicBanScore.Increase(persistent, transient)
+	logMsg := fmt.Sprintf("Misbehaving peer %s: %s -- ban score increased to %d",
+		sp, reason, score)
 	if score > warnThreshold {
-		peerLog.Warnf("Misbehaving peer %s: %s -- ban score increased to %d",
-			sp, reason, score)
-		if score > config.ActiveConfig().BanThreshold {
+		peerLog.Warn(logMsg)
+		if !config.ActiveConfig().DisableBanning && !sp.isWhitelisted && score > config.ActiveConfig().BanThreshold {
 			peerLog.Warnf("Misbehaving peer %s -- banning and disconnecting",
 				sp)
 			sp.server.BanPeer(sp)
 			sp.Disconnect()
 		}
+	} else if persistent != 0 {
+		peerLog.Warn(logMsg)
+	} else {
+		peerLog.Trace(logMsg)
 	}
 }
 
@@ -375,7 +377,7 @@ func (sp *Peer) enforceNodeBloomFlag(cmd string) bool {
 
 			// Disconnect the peer regardless of whether it was
 			// banned.
-			sp.addBanScore(100, 0, cmd)
+			sp.addBanScore(peer.BanScoreNodeBloomFlagViolation, 0, cmd)
 			sp.Disconnect()
 			return false
 		}
@@ -937,6 +939,7 @@ func newPeerConfig(sp *Peer) *peer.Config {
 		},
 		SelectedTipHash:   sp.selectedTipHash,
 		IsInDAG:           sp.blockExists,
+		AddBanScore:       sp.addBanScore,
 		HostToNetAddress:  sp.server.addrManager.HostToNetAddress,
 		Proxy:             config.ActiveConfig().Proxy,
 		UserAgentName:     userAgentName,
