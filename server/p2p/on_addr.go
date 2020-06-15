@@ -1,6 +1,8 @@
 package p2p
 
 import (
+	"fmt"
+	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/peer"
 	"github.com/kaspanet/kaspad/wire"
@@ -18,10 +20,16 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 		return
 	}
 
+	if len(msg.AddrList) > addrmgr.GetAddrMax {
+		sp.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectInvalid, nil,
+			peer.BanScoreSentTooManyAddresses, 0, fmt.Sprintf("address count excceeded %d", addrmgr.GetAddrMax))
+		return
+	}
+
 	if msg.IncludeAllSubnetworks {
-		peerLog.Errorf("Got unexpected IncludeAllSubnetworks=true in [%s] command from %s",
-			msg.Command(), sp.Peer)
-		sp.Disconnect()
+		sp.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectInvalid, nil,
+			peer.BanScoreMsgAddrWithInvalidSubnetwork, 0,
+			fmt.Sprintf("got unexpected IncludeAllSubnetworks=true in [%s] command", msg.Command()))
 		return
 	} else if !msg.SubnetworkID.IsEqual(config.ActiveConfig().SubnetworkID) && msg.SubnetworkID != nil {
 		peerLog.Errorf("Only full nodes and %s subnetwork IDs are allowed in [%s] command, but got subnetwork ID %s from %s",

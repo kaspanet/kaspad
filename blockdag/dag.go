@@ -165,7 +165,7 @@ type BlockDAG struct {
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) IsKnownBlock(hash *daghash.Hash) bool {
-	return dag.IsInDAG(hash) || dag.IsKnownOrphan(hash) || dag.isKnownDelayedBlock(hash)
+	return dag.IsInDAG(hash) || dag.IsKnownOrphan(hash) || dag.isKnownDelayedBlock(hash) || dag.IsKnownInvalid(hash)
 }
 
 // AreKnownBlocks returns whether or not the DAG instances has all blocks represented
