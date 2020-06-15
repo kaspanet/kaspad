@@ -84,7 +84,7 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getMempoolInfo":        handleGetMempoolInfo,
 	"getMempoolEntry":       handleGetMempoolEntry,
 	"getNetTotals":          handleGetNetTotals,
-	"getPeerInfo":           handleGetPeerInfo,
+	"getConnectedPeerInfo":  handleGetConnectedPeerInfo,
 	"getPeerAddresses":      handleGetPeerAddresses,
 	"getRawMempool":         handleGetRawMempool,
 	"getSubnetwork":         handleGetSubnetwork,

@@ -225,8 +225,8 @@ type GetNetworkInfoResult struct {
 	Warnings        string                 `json:"warnings"`
 }
 
-// GetPeerInfoResult models the data returned from the getpeerinfo command.
-type GetPeerInfoResult struct {
+// GetConnectedPeerInfoResult models the data returned from the getConnectedPeerInfo command.
+type GetConnectedPeerInfoResult struct {
 	ID          int32   `json:"id"`
 	Addr        string  `json:"addr"`
 	Services    string  `json:"services"`

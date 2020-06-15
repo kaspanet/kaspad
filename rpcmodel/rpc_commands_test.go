@@ -444,15 +444,15 @@ func TestRPCServerCommands(t *testing.T) {
 			unmarshalled: &rpcmodel.GetNetTotalsCmd{},
 		},
 		{
-			name: "getPeerInfo",
+			name: "getConnectedPeerInfo",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getPeerInfo")
+				return rpcmodel.NewCommand("getConnectedPeerInfo")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetPeerInfoCmd()
+				return rpcmodel.NewGetConnectedPeerInfoCmd()
 			},
-			marshalled:   `{"jsonrpc":"1.0","method":"getPeerInfo","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetPeerInfoCmd{},
+			marshalled:   `{"jsonrpc":"1.0","method":"getConnectedPeerInfo","params":[],"id":1}`,
+			unmarshalled: &rpcmodel.GetConnectedPeerInfoCmd{},
 		},
 		{
 			name: "getRawMempool",
