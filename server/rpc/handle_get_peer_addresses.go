@@ -2,25 +2,25 @@ package rpc
 
 import "github.com/kaspanet/kaspad/rpcmodel"
 
-// handleGetPeersState handles getPeersState commands.
-func handleGetPeersState(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+// handleGetPeerAddresses handles getPeerAddresses commands.
+func handleGetPeerAddresses(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	peersState, err := s.cfg.addressManager.PeersStateForSerialization()
 	if err != nil {
 		return nil, err
 	}
 
-	rpcPeersState := rpcmodel.GetPeersStateResult{
+	rpcPeersState := rpcmodel.GetPeerAddressesResult{
 		Version:              peersState.Version,
 		Key:                  peersState.Key,
-		Addresses:            make([]*rpcmodel.PeersStateKnownAddressResult, len(peersState.Addresses)),
-		NewBuckets:           make(map[string]*rpcmodel.PeersStateNewBucketResult),
-		NewBucketFullNodes:   rpcmodel.PeersStateNewBucketResult{},
-		TriedBuckets:         make(map[string]*rpcmodel.PeersStateTriedBucketResult),
-		TriedBucketFullNodes: rpcmodel.PeersStateTriedBucketResult{},
+		Addresses:            make([]*rpcmodel.GetPeerAddressesKnownAddressResult, len(peersState.Addresses)),
+		NewBuckets:           make(map[string]*rpcmodel.GetPeerAddressesNewBucketResult),
+		NewBucketFullNodes:   rpcmodel.GetPeerAddressesNewBucketResult{},
+		TriedBuckets:         make(map[string]*rpcmodel.GetPeerAddressesTriedBucketResult),
+		TriedBucketFullNodes: rpcmodel.GetPeerAddressesTriedBucketResult{},
 	}
 
 	for i, addr := range peersState.Addresses {
-		rpcPeersState.Addresses[i] = &rpcmodel.PeersStateKnownAddressResult{
+		rpcPeersState.Addresses[i] = &rpcmodel.GetPeerAddressesKnownAddressResult{
 			Addr:         addr.Addr,
 			Src:          addr.Src,
 			SubnetworkID: addr.SubnetworkID,
@@ -32,7 +32,7 @@ func handleGetPeersState(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 	}
 
 	for subnetworkID, bucket := range peersState.NewBuckets {
-		rpcPeersState.NewBuckets[subnetworkID] = &rpcmodel.PeersStateNewBucketResult{}
+		rpcPeersState.NewBuckets[subnetworkID] = &rpcmodel.GetPeerAddressesNewBucketResult{}
 		for i, addr := range bucket {
 			rpcPeersState.NewBuckets[subnetworkID][i] = addr
 		}
@@ -43,7 +43,7 @@ func handleGetPeersState(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 	}
 
 	for subnetworkID, bucket := range peersState.TriedBuckets {
-		rpcPeersState.TriedBuckets[subnetworkID] = &rpcmodel.PeersStateTriedBucketResult{}
+		rpcPeersState.TriedBuckets[subnetworkID] = &rpcmodel.GetPeerAddressesTriedBucketResult{}
 		for i, addr := range bucket {
 			rpcPeersState.TriedBuckets[subnetworkID][i] = addr
 		}

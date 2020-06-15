@@ -248,19 +248,19 @@ type GetPeerInfoResult struct {
 	SyncNode    bool    `json:"syncNode"`
 }
 
-// GetPeersStateResult models the data returned from the getPeersState command.
-type GetPeersStateResult struct {
+// GetPeerAddressesResult models the data returned from the getPeerAddresses command.
+type GetPeerAddressesResult struct {
 	Version              int
 	Key                  [32]byte
-	Addresses            []*PeersStateKnownAddressResult
-	NewBuckets           map[string]*PeersStateNewBucketResult // string is Subnetwork ID
-	NewBucketFullNodes   PeersStateNewBucketResult
-	TriedBuckets         map[string]*PeersStateTriedBucketResult // string is Subnetwork ID
-	TriedBucketFullNodes PeersStateTriedBucketResult
+	Addresses            []*GetPeerAddressesKnownAddressResult
+	NewBuckets           map[string]*GetPeerAddressesNewBucketResult // string is Subnetwork ID
+	NewBucketFullNodes   GetPeerAddressesNewBucketResult
+	TriedBuckets         map[string]*GetPeerAddressesTriedBucketResult // string is Subnetwork ID
+	TriedBucketFullNodes GetPeerAddressesTriedBucketResult
 }
 
-// PeersStateKnownAddressResult models a peers state known address.
-type PeersStateKnownAddressResult struct {
+// GetPeerAddressesKnownAddressResult models a GetPeerAddressesResult known address.
+type GetPeerAddressesKnownAddressResult struct {
 	Addr         string
 	Src          string
 	SubnetworkID string
@@ -270,11 +270,11 @@ type PeersStateKnownAddressResult struct {
 	LastSuccess  int64
 }
 
-// PeersStateNewBucketResult models a peers state new bucket.
-type PeersStateNewBucketResult [addrmgr.NewBucketCount][]string
+// GetPeerAddressesNewBucketResult models a GetPeerAddressesResult new bucket.
+type GetPeerAddressesNewBucketResult [addrmgr.NewBucketCount][]string
 
-// PeersStateTriedBucketResult models a peers state tried bucket.
-type PeersStateTriedBucketResult [addrmgr.TriedBucketCount][]string
+// GetPeerAddressesTriedBucketResult models a GetPeerAddressesResult tried bucket.
+type GetPeerAddressesTriedBucketResult [addrmgr.TriedBucketCount][]string
 
 // GetRawMempoolVerboseResult models the data returned from the getrawmempool
 // command when the verbose flag is set. When the verbose flag is not set,
