@@ -25,7 +25,7 @@ var hashesTried uint64
 
 const logHashRateInterval = 10 * time.Second
 
-func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64, mineWhenNotSynced bool) error {
+func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64, mineWhenNotSynced bool, miningAddr util.Address) error {
 	errChan := make(chan error)
 
 	templateStopChan := make(chan struct{})
@@ -35,7 +35,7 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64, min
 		wg := sync.WaitGroup{}
 		for i := uint64(0); numberOfBlocks == 0 || i < numberOfBlocks; i++ {
 			foundBlock := make(chan *util.Block)
-			mineNextBlock(client, foundBlock, mineWhenNotSynced, templateStopChan, errChan)
+			mineNextBlock(client, miningAddr, foundBlock, mineWhenNotSynced, templateStopChan, errChan)
 			block := <-foundBlock
 			templateStopChan <- struct{}{}
 			wg.Add(1)
@@ -80,12 +80,12 @@ func logHashRate() {
 	})
 }
 
-func mineNextBlock(client *minerClient, foundBlock chan *util.Block, mineWhenNotSynced bool,
+func mineNextBlock(client *minerClient, miningAddr util.Address, foundBlock chan *util.Block, mineWhenNotSynced bool,
 	templateStopChan chan struct{}, errChan chan error) {
 
 	newTemplateChan := make(chan *rpcmodel.GetBlockTemplateResult)
 	spawn(func() {
-		templatesLoop(client, newTemplateChan, errChan, templateStopChan)
+		templatesLoop(client, miningAddr, newTemplateChan, errChan, templateStopChan)
 	})
 	spawn(func() {
 		solveLoop(newTemplateChan, foundBlock, mineWhenNotSynced, errChan)
@@ -134,7 +134,7 @@ func parseBlock(template *rpcmodel.GetBlockTemplateResult) (*util.Block, error) 
 		wire.NewBlockHeader(template.Version, parentHashes, &daghash.Hash{},
 			acceptedIDMerkleRoot, utxoCommitment, bits, 0))
 
-	for i, txResult := range append([]rpcmodel.GetBlockTemplateResultTx{*template.CoinbaseTxn}, template.Transactions...) {
+	for i, txResult := range template.Transactions {
 		reader := hex.NewDecoder(strings.NewReader(txResult.Data))
 		tx := &wire.MsgTx{}
 		if err := tx.KaspaDecode(reader, 0); err != nil {
@@ -169,7 +169,7 @@ func solveBlock(block *util.Block, stopChan chan struct{}, foundBlock chan *util
 
 }
 
-func templatesLoop(client *minerClient, newTemplateChan chan *rpcmodel.GetBlockTemplateResult, errChan chan error, stopChan chan struct{}) {
+func templatesLoop(client *minerClient, miningAddr util.Address, newTemplateChan chan *rpcmodel.GetBlockTemplateResult, errChan chan error, stopChan chan struct{}) {
 	longPollID := ""
 	getBlockTemplateLongPoll := func() {
 		if longPollID != "" {
@@ -177,7 +177,7 @@ func templatesLoop(client *minerClient, newTemplateChan chan *rpcmodel.GetBlockT
 		} else {
 			log.Infof("Requesting template without longPollID from %s", client.Host())
 		}
-		template, err := getBlockTemplate(client, longPollID)
+		template, err := getBlockTemplate(client, miningAddr, longPollID)
 		if nativeerrors.Is(err, rpcclient.ErrResponseTimedOut) {
 			log.Infof("Got timeout while requesting template '%s' from %s", longPollID, client.Host())
 			return
@@ -205,8 +205,8 @@ func templatesLoop(client *minerClient, newTemplateChan chan *rpcmodel.GetBlockT
 	}
 }
 
-func getBlockTemplate(client *minerClient, longPollID string) (*rpcmodel.GetBlockTemplateResult, error) {
-	return client.GetBlockTemplate([]string{"coinbasetxn"}, longPollID)
+func getBlockTemplate(client *minerClient, miningAddr util.Address, longPollID string) (*rpcmodel.GetBlockTemplateResult, error) {
+	return client.GetBlockTemplate(miningAddr.String(), longPollID)
 }
 
 func solveLoop(newTemplateChan chan *rpcmodel.GetBlockTemplateResult, foundBlock chan *util.Block,

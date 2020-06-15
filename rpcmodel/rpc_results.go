@@ -127,12 +127,6 @@ type GetBlockTemplateResultTx struct {
 	Fee     uint64  `json:"fee"`
 }
 
-// GetBlockTemplateResultAux models the coinbaseaux field of the
-// getblocktemplate command.
-type GetBlockTemplateResultAux struct {
-	Flags string `json:"flags"`
-}
-
 // GetBlockTemplateResult models the data returned from the getblocktemplate
 // command.
 type GetBlockTemplateResult struct {
@@ -147,9 +141,6 @@ type GetBlockTemplateResult struct {
 	AcceptedIDMerkleRoot string                     `json:"acceptedIdMerkleRoot"`
 	UTXOCommitment       string                     `json:"utxoCommitment"`
 	Version              int32                      `json:"version"`
-	CoinbaseAux          *GetBlockTemplateResultAux `json:"coinbaseAux,omitempty"`
-	CoinbaseTxn          *GetBlockTemplateResultTx  `json:"coinbaseTxn,omitempty"`
-	CoinbaseValue        *uint64                    `json:"coinbaseValue,omitempty"`
 	WorkID               string                     `json:"workId,omitempty"`
 	IsSynced             bool                       `json:"isSynced"`
 

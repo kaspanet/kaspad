@@ -117,7 +117,6 @@ type Flags struct {
 	Upnp                 bool          `long:"upnp" description:"Use UPnP to map our listening port outside of NAT"`
 	MinRelayTxFee        float64       `long:"minrelaytxfee" description:"The minimum transaction fee in KAS/kB to be considered a non-zero fee."`
 	MaxOrphanTxs         int           `long:"maxorphantx" description:"Max number of orphan transactions to keep in memory"`
-	MiningAddrs          []string      `long:"miningaddr" description:"Add the specified payment address to the list of addresses to use for generated blocks -- At least one address is required if the generate option is set"`
 	BlockMaxMass         uint64        `long:"blockmaxmass" description:"Maximum transaction mass to be used when creating a block"`
 	UserAgentComments    []string      `long:"uacomment" description:"Comment to add to the user agent -- See BIP 14 for more information."`
 	NoPeerBloomFilters   bool          `long:"nopeerbloomfilters" description:"Disable bloom filtering support"`
@@ -605,27 +604,6 @@ func loadConfig() (*Config, []string, error) {
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
 		return nil, nil, err
-	}
-
-	// Check mining addresses are valid and saved parsed versions.
-	activeConfig.MiningAddrs = make([]util.Address, 0, len(activeConfig.Flags.MiningAddrs))
-	for _, strAddr := range activeConfig.Flags.MiningAddrs {
-		addr, err := util.DecodeAddress(strAddr, activeConfig.NetParams().Prefix)
-		if err != nil {
-			str := "%s: mining address '%s' failed to decode: %s"
-			err := errors.Errorf(str, funcName, strAddr, err)
-			fmt.Fprintln(os.Stderr, err)
-			fmt.Fprintln(os.Stderr, usageMessage)
-			return nil, nil, err
-		}
-		if !addr.IsForPrefix(activeConfig.NetParams().Prefix) {
-			str := "%s: mining address '%s' is on the wrong network"
-			err := errors.Errorf(str, funcName, strAddr)
-			fmt.Fprintln(os.Stderr, err)
-			fmt.Fprintln(os.Stderr, usageMessage)
-			return nil, nil, err
-		}
-		activeConfig.MiningAddrs = append(activeConfig.MiningAddrs, addr)
 	}
 
 	// Add default port to all listener addresses if needed and remove
