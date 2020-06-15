@@ -546,7 +546,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		selectedTipBlueScore := sm.dag.SelectedTipBlueScore()
 		if blueScore > selectedTipBlueScore+maxOrphanBlueScoreDiff {
 			log.Infof("Orphan block %s has blue score %d and the selected tip blue score is "+
-				"%d. Ignoring orphans with blue score higher more than %d than the selected tip's",
+				"%d. Ignoring orphans with a blue score difference from the selected tip greater than %d",
 				blockHash, blueScore, selectedTipBlueScore, maxOrphanBlueScoreDiff)
 			return
 		}
