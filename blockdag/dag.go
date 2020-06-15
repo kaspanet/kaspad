@@ -816,17 +816,20 @@ func (dag *BlockDAG) LastFinalityPointHash() *daghash.Hash {
 	return dag.lastFinalityPoint.hash
 }
 
-// isInSelectedParentChain returns whether a is in the selected parent chain of b
-func (dag *BlockDAG) isInSelectedParentChain(a, b *blockNode) (bool, error) {
-	if a == b {
+// isInSelectedParentChain returns whether aNode is in the selected parent chain of bNode.
+func (dag *BlockDAG) isInSelectedParentChain(aNode, bNode *blockNode) (bool, error) {
+	// Because reachabilityInterval.isAncestorOf and isInSelectedParentChain
+	// is exclusive, we need to explicitly check if aNode and bNode
+	// are equal.
+	if aNode == bNode {
 		return false, nil
 	}
-	aTreeNode, err := dag.reachabilityStore.treeNodeByBlockNode(a)
+	aTreeNode, err := dag.reachabilityStore.treeNodeByBlockNode(aNode)
 	if err != nil {
 		return false, err
 	}
 
-	bTreeNode, err := dag.reachabilityStore.treeNodeByBlockNode(b)
+	bTreeNode, err := dag.reachabilityStore.treeNodeByBlockNode(bNode)
 	if err != nil {
 		return false, err
 	}
@@ -835,13 +838,18 @@ func (dag *BlockDAG) isInSelectedParentChain(a, b *blockNode) (bool, error) {
 }
 
 // checkFinalityRules checks the new block does not violate the finality rules
-// specifically - the new block selectedParent chain should contain the old finality point
+// specifically - the new block selectedParent chain should contain the old finality point.
 func (dag *BlockDAG) checkFinalityRules(newNode *blockNode) error {
 	// the genesis block can not violate finality rules
 	if newNode.isGenesis() {
 		return nil
 	}
 
+	// Because newNode doesn't have reachability data we
+	// need to check if the last finality point is in the
+	// selected parent chainof newNode.selectedParent, so
+	// we explicitly check if newNode.selectedParent is
+	// the finality point.
 	if dag.lastFinalityPoint == newNode.selectedParent {
 		return nil
 	}
@@ -852,7 +860,7 @@ func (dag *BlockDAG) checkFinalityRules(newNode *blockNode) error {
 	}
 
 	if !isInSelectedChain {
-		return ruleError(ErrFinality, "the last finality point is not in the selected chain of this block")
+		return ruleError(ErrFinality, "the last finality point is not in the selected parent chain of this block")
 	}
 	return nil
 }
