@@ -536,7 +536,9 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		if err != nil {
 			log.Errorf("Received an orphan block %s with malformed blue score from %s. Disconnecting...",
 				blockHash, peer)
-			peer.Disconnect()
+			peer.AddBanScoreAndPushRejectMsg(wire.CmdBlock, wire.RejectInvalid, blockHash,
+				peerpkg.BanScoreMalformedBlueScoreInOrphan, 0,
+				fmt.Sprintf("Received an orphan block %s with malformed blue score", blockHash))
 			return
 		}
 
