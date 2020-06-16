@@ -918,9 +918,6 @@ func (sm *SyncManager) handleSelectedTipMsg(msg *selectedTipMsg) {
 		peer.Disconnect()
 	}
 	state.peerShouldSendSelectedTip = false
-	if selectedTipHash.IsEqual(peer.SelectedTipHash()) {
-		return
-	}
 	peer.SetSelectedTipHash(selectedTipHash)
 	sm.restartSyncIfNeeded()
 }
