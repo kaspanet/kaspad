@@ -818,9 +818,8 @@ func (dag *BlockDAG) LastFinalityPointHash() *daghash.Hash {
 
 // isInSelectedParentChain returns whether aNode is in the selected parent chain of bNode.
 func (dag *BlockDAG) isInSelectedParentChain(aNode, bNode *blockNode) (bool, error) {
-	// Because reachabilityInterval.isAncestorOf and isInSelectedParentChain
-	// is exclusive, we need to explicitly check if aNode and bNode
-	// are equal.
+	// Because reachabilityInterval.isAncestorOf is inclusive and isInSelectedParentChain
+	// is exclusive, we need to explicitly check if aNode and bNode are equal.
 	if aNode == bNode {
 		return false, nil
 	}
@@ -847,7 +846,7 @@ func (dag *BlockDAG) checkFinalityRules(newNode *blockNode) error {
 
 	// Because newNode doesn't have reachability data we
 	// need to check if the last finality point is in the
-	// selected parent chainof newNode.selectedParent, so
+	// selected parent chain of newNode.selectedParent, so
 	// we explicitly check if newNode.selectedParent is
 	// the finality point.
 	if dag.lastFinalityPoint == newNode.selectedParent {
