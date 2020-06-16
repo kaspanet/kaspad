@@ -283,15 +283,15 @@ var helpDescsEnUS = map[string]string{
 	"getBlockHeaderVerboseResult-childHashes":          "The hashes of the child blocks (only if there are any)",
 
 	// TemplateRequest help.
-	"templateRequest-mode":         "This is 'template', 'proposal', or omitted",
-	"templateRequest-capabilities": "List of capabilities",
-	"templateRequest-longPollId":   "The long poll ID of a job to monitor for expiration; required and valid only for long poll requests ",
-	"templateRequest-sigOpLimit":   "Number of signature operations allowed in blocks (this parameter is ignored)",
-	"templateRequest-massLimit":    "Max transaction mass allowed in blocks (this parameter is ignored)",
-	"templateRequest-maxVersion":   "Highest supported block version number (this parameter is ignored)",
-	"templateRequest-target":       "The desired target for the block template (this parameter is ignored)",
-	"templateRequest-data":         "Hex-encoded block data (only for mode=proposal)",
-	"templateRequest-workId":       "The server provided workid if provided in block template (not applicable)",
+	"templateRequest-mode":       "This is 'template', 'proposal', or omitted",
+	"templateRequest-payAddress": "The address the coinbase pays to",
+	"templateRequest-longPollId": "The long poll ID of a job to monitor for expiration; required and valid only for long poll requests ",
+	"templateRequest-sigOpLimit": "Number of signature operations allowed in blocks (this parameter is ignored)",
+	"templateRequest-massLimit":  "Max transaction mass allowed in blocks (this parameter is ignored)",
+	"templateRequest-maxVersion": "Highest supported block version number (this parameter is ignored)",
+	"templateRequest-target":     "The desired target for the block template (this parameter is ignored)",
+	"templateRequest-data":       "Hex-encoded block data (only for mode=proposal)",
+	"templateRequest-workId":     "The server provided workid if provided in block template (not applicable)",
 
 	// GetBlockTemplateResultTx help.
 	"getBlockTemplateResultTx-data":    "Hex-encoded transaction data (byte-for-byte)",

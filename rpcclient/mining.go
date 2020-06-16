@@ -71,11 +71,11 @@ type FutureGetBlockTemplateResult chan *response
 // the returned instance.
 //
 // See GetBlockTemplate for the blocking version and more details
-func (c *Client) GetBlockTemplateAsync(capabilities []string, longPollID string) FutureGetBlockTemplateResult {
+func (c *Client) GetBlockTemplateAsync(payAddress string, longPollID string) FutureGetBlockTemplateResult {
 	request := &rpcmodel.TemplateRequest{
-		Mode:         "template",
-		Capabilities: capabilities,
-		LongPollID:   longPollID,
+		Mode:       "template",
+		LongPollID: longPollID,
+		PayAddress: payAddress,
 	}
 	cmd := rpcmodel.NewGetBlockTemplateCmd(request)
 	return c.sendCmd(cmd)
@@ -97,6 +97,6 @@ func (r FutureGetBlockTemplateResult) Receive() (*rpcmodel.GetBlockTemplateResul
 }
 
 // GetBlockTemplate request a block template from the server, to mine upon
-func (c *Client) GetBlockTemplate(capabilities []string, longPollID string) (*rpcmodel.GetBlockTemplateResult, error) {
-	return c.GetBlockTemplateAsync(capabilities, longPollID).Receive()
+func (c *Client) GetBlockTemplate(payAddress string, longPollID string) (*rpcmodel.GetBlockTemplateResult, error) {
+	return c.GetBlockTemplateAsync(payAddress, longPollID).Receive()
 }

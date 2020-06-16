@@ -165,7 +165,7 @@ type BlockDAG struct {
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) IsKnownBlock(hash *daghash.Hash) bool {
-	return dag.IsInDAG(hash) || dag.IsKnownOrphan(hash) || dag.isKnownDelayedBlock(hash)
+	return dag.IsInDAG(hash) || dag.IsKnownOrphan(hash) || dag.isKnownDelayedBlock(hash) || dag.IsKnownInvalid(hash)
 }
 
 // AreKnownBlocks returns whether or not the DAG instances has all blocks represented
@@ -551,8 +551,8 @@ func (node *blockNode) validateAcceptedIDMerkleRoot(dag *BlockDAG, txsAcceptance
 func (dag *BlockDAG) connectBlock(node *blockNode,
 	block *util.Block, selectedParentAnticone []*blockNode, fastAdd bool) (*chainUpdates, error) {
 	// No warnings about unknown rules or versions until the DAG is
-	// current.
-	if dag.isCurrent() {
+	// synced.
+	if dag.isSynced() {
 		// Warn if any unknown new rules are either about to activate or
 		// have already been activated.
 		if err := dag.warnUnknownRuleActivations(node); err != nil {
@@ -577,10 +577,6 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	newBlockPastUTXO, txsAcceptanceData, newBlockFeeData, newBlockMultiSet, err :=
 		node.verifyAndBuildUTXO(dag, block.Transactions(), fastAdd)
 	if err != nil {
-		var ruleErr RuleError
-		if ok := errors.As(err, &ruleErr); ok {
-			return nil, ruleError(ruleErr.ErrorCode, fmt.Sprintf("error verifying UTXO for %s: %s", node, err))
-		}
 		return nil, errors.Wrapf(err, "error verifying UTXO for %s", node)
 	}
 
@@ -658,22 +654,20 @@ func (node *blockNode) selectedParentMultiset(dag *BlockDAG) (*secp256k1.MultiSe
 }
 
 func addTxToMultiset(ms *secp256k1.MultiSet, tx *wire.MsgTx, pastUTXO UTXOSet, blockBlueScore uint64) (*secp256k1.MultiSet, error) {
-	isCoinbase := tx.IsCoinBase()
-	if !isCoinbase {
-		for _, txIn := range tx.TxIn {
-			entry, ok := pastUTXO.Get(txIn.PreviousOutpoint)
-			if !ok {
-				return nil, errors.Errorf("Couldn't find entry for outpoint %s", txIn.PreviousOutpoint)
-			}
+	for _, txIn := range tx.TxIn {
+		entry, ok := pastUTXO.Get(txIn.PreviousOutpoint)
+		if !ok {
+			return nil, errors.Errorf("Couldn't find entry for outpoint %s", txIn.PreviousOutpoint)
+		}
 
-			var err error
-			ms, err = removeUTXOFromMultiset(ms, entry, &txIn.PreviousOutpoint)
-			if err != nil {
-				return nil, err
-			}
+		var err error
+		ms, err = removeUTXOFromMultiset(ms, entry, &txIn.PreviousOutpoint)
+		if err != nil {
+			return nil, err
 		}
 	}
 
+	isCoinbase := tx.IsCoinBase()
 	for i, txOut := range tx.TxOut {
 		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
 		entry := NewUTXOEntry(txOut, isCoinbase, blockBlueScore)
@@ -1310,18 +1304,18 @@ func updateTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
 	return nil
 }
 
-// isCurrent returns whether or not the DAG believes it is current. Several
+// isSynced returns whether or not the DAG believes it is synced. Several
 // factors are used to guess, but the key factors that allow the DAG to
-// believe it is current are:
+// believe it is synced are:
 //  - Latest block has a timestamp newer than 24 hours ago
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) isCurrent() bool {
-	// Not current if the virtual's selected parent has a timestamp
+func (dag *BlockDAG) isSynced() bool {
+	// Not synced if the virtual's selected parent has a timestamp
 	// before 24 hours ago. If the DAG is empty, we take the genesis
 	// block timestamp.
 	//
-	// The DAG appears to be current if none of the checks reported
+	// The DAG appears to be syncned if none of the checks reported
 	// otherwise.
 	var dagTimestamp int64
 	selectedTip := dag.selectedTip()
@@ -1341,17 +1335,17 @@ func (dag *BlockDAG) Now() time.Time {
 	return dag.timeSource.Now()
 }
 
-// IsCurrent returns whether or not the DAG believes it is current. Several
+// IsSynced returns whether or not the DAG believes it is synced. Several
 // factors are used to guess, but the key factors that allow the DAG to
-// believe it is current are:
+// believe it is synced are:
 //  - Latest block has a timestamp newer than 24 hours ago
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) IsCurrent() bool {
+func (dag *BlockDAG) IsSynced() bool {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 
-	return dag.isCurrent()
+	return dag.isSynced()
 }
 
 // selectedTip returns the current selected tip for the DAG.

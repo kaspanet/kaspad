@@ -14,7 +14,7 @@ require (
 	github.com/kaspanet/go-secp256k1 v0.0.2
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/syndtr/goleveldb v1.0.0
+	github.com/syndtr/goleveldb v1.0.1-0.20190923125748-758128399b1d
 	golang.org/x/crypto v0.0.0-20200323165209-0ec3e9974c59
 	golang.org/x/sys v0.0.0-20190426135247-a129542de9ae // indirect
 	golang.org/x/text v0.3.2 // indirect
