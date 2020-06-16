@@ -1558,7 +1558,7 @@ out:
 			// No handshake?  They'll find out soon enough.
 			if p.VersionKnown() {
 				// If this is a new block, then we'll blast it
-				// out immediately, sipping the inv trickle
+				// out immediately, skipping the inv trickle
 				// queue.
 				if iv.Type == wire.InvTypeBlock {
 					invMsg := wire.NewMsgInvSizeHint(1)
