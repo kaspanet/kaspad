@@ -14,7 +14,6 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -901,11 +900,6 @@ func (a *AddrManager) getAddress(addrTried *triedBucket, nTried int, addrNew *ne
 
 	// Pick a random bucket
 	randomBucket := addrBucket.randomBucket(a.rand)
-
-	// Sort the addresses by chance
-	sort.Slice(randomBucket, func(i, j int) bool {
-		return randomBucket[i].chance() < randomBucket[j].chance()
-	})
 
 	// Get the sum of all chances
 	totalChance := float64(0)
