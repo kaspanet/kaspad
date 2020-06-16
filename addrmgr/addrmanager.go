@@ -227,7 +227,6 @@ func (a *AddrManager) updateAddress(netAddr, srcAddr *wire.NetAddress, subnetwor
 		ka = &KnownAddress{na: &netAddrCopy, srcAddr: srcAddr, subnetworkID: subnetworkID}
 		a.addrIndex[addr] = ka
 		a.incrementNNewNodes(subnetworkID)
-		// XXX time penalty?
 	}
 
 	bucketIndex := a.getNewBucket(netAddr, srcAddr)
