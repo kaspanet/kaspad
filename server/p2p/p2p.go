@@ -126,7 +126,7 @@ type Peer struct {
 	sentAddrs       bool
 	isWhitelisted   bool
 	filter          *bloom.Filter
-	knownAddresses  map[string]struct{}
+	knownAddresses  map[addrmgr.AddressKey]struct{}
 	DynamicBanScore connmgr.DynamicBanScore
 	quit            chan struct{}
 	// The following chans are used to sync blockmanager and server.
@@ -255,7 +255,7 @@ func newServerPeer(s *Server, isPersistent bool) *Peer {
 		server:         s,
 		persistent:     isPersistent,
 		filter:         bloom.LoadFilter(nil),
-		knownAddresses: make(map[string]struct{}),
+		knownAddresses: make(map[addrmgr.AddressKey]struct{}),
 		quit:           make(chan struct{}),
 		txProcessed:    make(chan struct{}, 1),
 		blockProcessed: make(chan struct{}, 1),

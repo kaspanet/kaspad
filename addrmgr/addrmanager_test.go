@@ -23,7 +23,7 @@ import (
 // method.
 type naTest struct {
 	in   wire.NetAddress
-	want string
+	want AddressKey
 }
 
 // naTests houses all of the tests to be performed against the NetAddressKey
@@ -94,7 +94,7 @@ func addNaTests() {
 	addNaTest("fef3::4:4", 8336, "[fef3::4:4]:8336")
 }
 
-func addNaTest(ip string, port uint16, want string) {
+func addNaTest(ip string, port uint16, want AddressKey) {
 	nip := net.ParseIP(ip)
 	na := *wire.NewNetAddressIPPort(nip, port, wire.SFNodeNetwork)
 	test := naTest{na, want}
@@ -309,7 +309,7 @@ func TestNeedMoreAddresses(t *testing.T) {
 
 	var err error
 	for i := 0; i < addrsToAdd; i++ {
-		s := fmt.Sprintf("%d.%d.173.147:8333", i/128+60, i%128+60)
+		s := AddressKey(fmt.Sprintf("%d.%d.173.147:8333", i/128+60, i%128+60))
 		addrs[i], err = n.DeserializeNetAddress(s)
 		if err != nil {
 			t.Errorf("Failed to turn %s into an address: %v", s, err)
@@ -348,7 +348,7 @@ func TestGood(t *testing.T) {
 
 	var err error
 	for i := 0; i < addrsToAdd; i++ {
-		s := fmt.Sprintf("%d.173.147.%d:8333", i/64+60, i%64+60)
+		s := AddressKey(fmt.Sprintf("%d.173.147.%d:8333", i/64+60, i%64+60))
 		addrs[i], err = n.DeserializeNetAddress(s)
 		if err != nil {
 			t.Errorf("Failed to turn %s into an address: %v", s, err)

@@ -25,7 +25,8 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-type newBucket [newBucketCount]map[string]*KnownAddress
+type AddressKey string
+type newBucket [newBucketCount]map[AddressKey]*KnownAddress
 type triedBucket [triedBucketCount][]*KnownAddress
 
 // AddrManager provides a concurrency safe address manager for caching potential
@@ -36,7 +37,7 @@ type AddrManager struct {
 	lookupFunc         func(string) ([]net.IP, error)
 	rand               *rand.Rand
 	key                [32]byte
-	addrIndex          map[string]*KnownAddress // address key to ka for all addrs.
+	addrIndex          map[AddressKey]*KnownAddress // address key to ka for all addrs.
 	addrNew            map[subnetworkid.SubnetworkID]*newBucket
 	addrNewFullNodes   newBucket
 	addrTried          map[subnetworkid.SubnetworkID]*triedBucket
@@ -50,13 +51,13 @@ type AddrManager struct {
 	nTriedFullNodes    int
 	nNewFullNodes      int
 	lamtx              sync.Mutex
-	localAddresses     map[string]*localAddress
+	localAddresses     map[AddressKey]*localAddress
 	localSubnetworkID  *subnetworkid.SubnetworkID
 }
 
 type serializedKnownAddress struct {
-	Addr         string
-	Src          string
+	Addr         AddressKey
+	Src          AddressKey
 	SubnetworkID string
 	Attempts     int
 	TimeStamp    int64
@@ -65,8 +66,8 @@ type serializedKnownAddress struct {
 	// no refcount or tried, that is available from context.
 }
 
-type serializedNewBucket [newBucketCount][]string
-type serializedTriedBucket [triedBucketCount][]string
+type serializedNewBucket [newBucketCount][]AddressKey
+type serializedTriedBucket [triedBucketCount][]AddressKey
 
 type serializedAddrManager struct {
 	Version              int
@@ -183,7 +184,7 @@ func (a *AddrManager) updateAddress(netAddr, srcAddr *wire.NetAddress, subnetwor
 		return
 	}
 
-	addr := NetAddressKey(netAddr)
+	addressKey := NetAddressKey(netAddr)
 	ka := a.find(netAddr)
 	if ka != nil {
 		// TODO: only update addresses periodically.
@@ -224,7 +225,7 @@ func (a *AddrManager) updateAddress(netAddr, srcAddr *wire.NetAddress, subnetwor
 		// change the actual netaddress on the peer.
 		netAddrCopy := *netAddr
 		ka = &KnownAddress{na: &netAddrCopy, srcAddr: srcAddr, subnetworkID: subnetworkID}
-		a.addrIndex[addr] = ka
+		a.addrIndex[addressKey] = ka
 		a.incrementNNewNodes(subnetworkID)
 	}
 
@@ -239,26 +240,26 @@ func (a *AddrManager) updateAddress(netAddr, srcAddr *wire.NetAddress, subnetwor
 
 	// Add to new bucket.
 	ka.refs++
-	a.updateAddrNew(bucketIndex, addr, ka)
+	a.updateAddrNew(bucketIndex, addressKey, ka)
 
 	nAllNodes := a.nNewNodes(ka.subnetworkID) + a.nTriedNodes(ka.subnetworkID)
-	log.Tracef("Added new address %s for a total of %d addresses", addr, nAllNodes)
+	log.Tracef("Added new address %s for a total of %d addresses", addressKey, nAllNodes)
 
 }
 
-func (a *AddrManager) updateAddrNew(bucket int, addr string, ka *KnownAddress) {
+func (a *AddrManager) updateAddrNew(bucket int, addressKey AddressKey, ka *KnownAddress) {
 	if ka.subnetworkID == nil {
-		a.addrNewFullNodes[bucket][addr] = ka
+		a.addrNewFullNodes[bucket][addressKey] = ka
 		return
 	}
 
 	if _, ok := a.addrNew[*ka.subnetworkID]; !ok {
 		a.addrNew[*ka.subnetworkID] = &newBucket{}
 		for i := range a.addrNew[*ka.subnetworkID] {
-			a.addrNew[*ka.subnetworkID][i] = make(map[string]*KnownAddress)
+			a.addrNew[*ka.subnetworkID][i] = make(map[AddressKey]*KnownAddress)
 		}
 	}
-	a.addrNew[*ka.subnetworkID][bucket][addr] = ka
+	a.addrNew[*ka.subnetworkID][bucket][addressKey] = ka
 }
 
 func (a *AddrManager) updateAddrTried(bucket int, ka *KnownAddress) {
@@ -430,7 +431,7 @@ func (a *AddrManager) savePeers() {
 		sam.NewBuckets[subnetworkIDStr] = &serializedNewBucket{}
 
 		for i := range a.addrNew[subnetworkID] {
-			sam.NewBuckets[subnetworkIDStr][i] = make([]string, len(a.addrNew[subnetworkID][i]))
+			sam.NewBuckets[subnetworkIDStr][i] = make([]AddressKey, len(a.addrNew[subnetworkID][i]))
 			j := 0
 			for k := range a.addrNew[subnetworkID][i] {
 				sam.NewBuckets[subnetworkIDStr][i][j] = k
@@ -440,7 +441,7 @@ func (a *AddrManager) savePeers() {
 	}
 
 	for i := range a.addrNewFullNodes {
-		sam.NewBucketFullNodes[i] = make([]string, len(a.addrNewFullNodes[i]))
+		sam.NewBucketFullNodes[i] = make([]AddressKey, len(a.addrNewFullNodes[i]))
 		j := 0
 		for k := range a.addrNewFullNodes[i] {
 			sam.NewBucketFullNodes[i][j] = k
@@ -454,7 +455,7 @@ func (a *AddrManager) savePeers() {
 		sam.TriedBuckets[subnetworkIDStr] = &serializedTriedBucket{}
 
 		for i := range a.addrTried[subnetworkID] {
-			sam.TriedBuckets[subnetworkIDStr][i] = make([]string, len(a.addrTried[subnetworkID][i]))
+			sam.TriedBuckets[subnetworkIDStr][i] = make([]AddressKey, len(a.addrTried[subnetworkID][i]))
 			j := 0
 			for _, ka := range a.addrTried[subnetworkID][i] {
 				sam.TriedBuckets[subnetworkIDStr][i][j] = NetAddressKey(ka.na)
@@ -464,7 +465,7 @@ func (a *AddrManager) savePeers() {
 	}
 
 	for i := range a.addrTriedFullNodes {
-		sam.TriedBucketFullNodes[i] = make([]string, len(a.addrTriedFullNodes[i]))
+		sam.TriedBucketFullNodes[i] = make([]AddressKey, len(a.addrTriedFullNodes[i]))
 		j := 0
 		for _, ka := range a.addrTriedFullNodes[i] {
 			sam.TriedBucketFullNodes[i][j] = NetAddressKey(ka.na)
@@ -644,8 +645,8 @@ func (a *AddrManager) deserializePeers(filePath string) error {
 }
 
 // DeserializeNetAddress converts a given address string to a *wire.NetAddress
-func (a *AddrManager) DeserializeNetAddress(addr string) (*wire.NetAddress, error) {
-	host, portStr, err := net.SplitHostPort(addr)
+func (a *AddrManager) DeserializeNetAddress(addr AddressKey) (*wire.NetAddress, error) {
+	host, portStr, err := net.SplitHostPort(string(addr))
 	if err != nil {
 		return nil, err
 	}
@@ -819,7 +820,7 @@ func (a *AddrManager) AddressCache(includeAllSubnetworks bool, subnetworkID *sub
 // reset resets the address manager by reinitialising the random source
 // and allocating fresh empty bucket storage.
 func (a *AddrManager) reset() {
-	a.addrIndex = make(map[string]*KnownAddress)
+	a.addrIndex = make(map[AddressKey]*KnownAddress)
 
 	// fill key with bytes from a good random source.
 	io.ReadFull(crand.Reader, a.key[:])
@@ -830,7 +831,7 @@ func (a *AddrManager) reset() {
 	a.nTried = make(map[subnetworkid.SubnetworkID]int)
 
 	for i := range a.addrNewFullNodes {
-		a.addrNewFullNodes[i] = make(map[string]*KnownAddress)
+		a.addrNewFullNodes[i] = make(map[AddressKey]*KnownAddress)
 	}
 	for i := range a.addrTriedFullNodes {
 		a.addrTriedFullNodes[i] = nil
@@ -859,10 +860,10 @@ func (a *AddrManager) HostToNetAddress(host string, port uint16, services wire.S
 
 // NetAddressKey returns a string key in the form of ip:port for IPv4 addresses
 // or [ip]:port for IPv6 addresses.
-func NetAddressKey(na *wire.NetAddress) string {
+func NetAddressKey(na *wire.NetAddress) AddressKey {
 	port := strconv.FormatUint(uint64(na.Port), 10)
 
-	return net.JoinHostPort(na.IP.String(), port)
+	return AddressKey(net.JoinHostPort(na.IP.String(), port))
 }
 
 // GetAddress returns a single address that should be routable. It picks a
@@ -927,7 +928,7 @@ type bucket interface {
 }
 
 func (nb *newBucket) randomBucket(random *rand.Rand) []*KnownAddress {
-	nonEmptyBuckets := make([]map[string]*KnownAddress, 0, newBucketCount)
+	nonEmptyBuckets := make([]map[AddressKey]*KnownAddress, 0, newBucketCount)
 	for _, bucket := range nb {
 		if len(bucket) > 0 {
 			nonEmptyBuckets = append(nonEmptyBuckets, bucket)
@@ -1317,7 +1318,7 @@ func New(dataDir string, lookupFunc func(string) ([]net.IP, error), subnetworkID
 		lookupFunc:        lookupFunc,
 		rand:              rand.New(rand.NewSource(time.Now().UnixNano())),
 		quit:              make(chan struct{}),
-		localAddresses:    make(map[string]*localAddress),
+		localAddresses:    make(map[AddressKey]*localAddress),
 		localSubnetworkID: subnetworkID,
 	}
 	am.reset()
