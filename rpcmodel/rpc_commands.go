@@ -206,8 +206,7 @@ func NewGetBlockHeaderCmd(hash string, verbose *bool) *GetBlockHeaderCmd {
 // TemplateRequest is a request object as defined in BIP22. It is optionally
 // provided as an pointer argument to GetBlockTemplateCmd.
 type TemplateRequest struct {
-	Mode         string   `json:"mode,omitempty"`
-	Capabilities []string `json:"capabilities,omitempty"`
+	Mode string `json:"mode,omitempty"`
 
 	// Optional long polling.
 	LongPollID string `json:"longPollId,omitempty"`
@@ -225,6 +224,8 @@ type TemplateRequest struct {
 	// "proposal".
 	Data   string `json:"data,omitempty"`
 	WorkID string `json:"workId,omitempty"`
+
+	PayAddress string `json:"payAddress"`
 }
 
 // convertTemplateRequestField potentially converts the provided value as

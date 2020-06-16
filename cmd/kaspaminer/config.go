@@ -36,6 +36,7 @@ type configFlags struct {
 	RPCServer         string `short:"s" long:"rpcserver" description:"RPC server to connect to"`
 	RPCCert           string `short:"c" long:"rpccert" description:"RPC server certificate chain for validation"`
 	DisableTLS        bool   `long:"notls" description:"Disable TLS"`
+	MiningAddr        string `long:"miningaddr" description:"Address to mine to"`
 	Verbose           bool   `long:"verbose" short:"v" description:"Enable logging of RPC requests"`
 	NumberOfBlocks    uint64 `short:"n" long:"numblocks" description:"Number of blocks to mine. If omitted, will mine until the process is interrupted."`
 	BlockDelay        uint64 `long:"block-delay" description:"Delay for block submission (in milliseconds). This is used only for testing purposes."`
