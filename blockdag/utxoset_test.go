@@ -1,7 +1,6 @@
 package blockdag
 
 import (
-	"math"
 	"reflect"
 	"testing"
 
@@ -947,12 +946,9 @@ func TestUTXOSetDiffRules(t *testing.T) {
 
 // TestDiffUTXOSet_addTx makes sure that diffUTXOSet addTx works as expected
 func TestDiffUTXOSet_addTx(t *testing.T) {
-	// coinbaseTX is coinbase. As such, it has exactly one input with hash zero and MaxUInt32 index
-	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
-	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutpoint: wire.Outpoint{TxID: *txID0, Index: math.MaxUint32}, Sequence: 0}
 	txOut0 := &wire.TxOut{ScriptPubKey: []byte{0}, Value: 10}
 	utxoEntry0 := NewUTXOEntry(txOut0, true, 0)
-	coinbaseTX := wire.NewSubnetworkMsgTx(1, []*wire.TxIn{txIn0}, []*wire.TxOut{txOut0}, subnetworkid.SubnetworkIDCoinbase, 0, nil)
+	coinbaseTX := wire.NewSubnetworkMsgTx(1, []*wire.TxIn{}, []*wire.TxOut{txOut0}, subnetworkid.SubnetworkIDCoinbase, 0, nil)
 
 	// transaction1 spends coinbaseTX
 	id1 := coinbaseTX.TxID()
