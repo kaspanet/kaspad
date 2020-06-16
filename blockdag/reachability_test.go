@@ -57,7 +57,7 @@ func TestAddChild(t *testing.T) {
 
 	// Expect all nodes to be descendant nodes of root
 	currentNode := currentTip
-	for currentNode != nil {
+	for currentNode != root {
 		if !root.isAncestorOf(currentNode) {
 			t.Fatalf("TestAddChild: currentNode is not a descendant of root")
 		}
@@ -115,6 +115,33 @@ func TestAddChild(t *testing.T) {
 		if !root.isAncestorOf(childNode) {
 			t.Fatalf("TestAddChild: childNode is not a descendant of root")
 		}
+	}
+}
+
+func TestIsAncestorOf(t *testing.T) {
+	root := newReachabilityTreeNode(&blockNode{})
+	currentTip := root
+	const numberOfDescendants = 6
+	descendants := make([]*reachabilityTreeNode, numberOfDescendants)
+	for i := 0; i < numberOfDescendants; i++ {
+		node := newReachabilityTreeNode(&blockNode{})
+		_, err := currentTip.addChild(node)
+		if err != nil {
+			t.Fatalf("TestIsAncestorOf: addChild failed: %s", err)
+		}
+		descendants[i] = node
+		currentTip = node
+	}
+
+	// Expect all descendants to be in the future of root
+	for _, node := range descendants {
+		if !root.isAncestorOf(node) {
+			t.Fatalf("TestIsAncestorOf: node is not a descendant of root")
+		}
+	}
+
+	if root.isAncestorOf(root) {
+		t.Fatalf("TestIsAncestorOf: root is not expected to be a descendant of root")
 	}
 }
 

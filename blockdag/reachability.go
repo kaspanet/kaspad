@@ -155,7 +155,7 @@ func exponentialFractions(sizes []uint64) []float64 {
 // property of reachability intervals that intervals are either completely disjoint,
 // or one strictly contains the other.
 func (ri *reachabilityInterval) isAncestorOf(other *reachabilityInterval) bool {
-	return ri.start <= other.end && other.end <= ri.end
+	return ri.start <= other.end && other.end < ri.end
 }
 
 // String returns a string representation of the interval.
