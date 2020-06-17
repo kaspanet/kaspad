@@ -50,7 +50,7 @@ func TestAddChild(t *testing.T) {
 	if tipInterval != 1 {
 		t.Fatalf("TestAddChild: unexpected tip interval size: want: 1, got: %d", tipInterval)
 	}
-	tipRemainingInterval := lastChild.remainingInterval.size()
+	tipRemainingInterval := lastChild.remainingIntervalAfter().size()
 	if tipRemainingInterval != 0 {
 		t.Fatalf("TestAddChild: unexpected tip interval size: want: 0, got: %d", tipRemainingInterval)
 	}
@@ -105,7 +105,7 @@ func TestAddChild(t *testing.T) {
 	if lastChildInterval != 1 {
 		t.Fatalf("TestAddChild: unexpected lastChild interval size: want: 1, got: %d", lastChildInterval)
 	}
-	lastChildRemainingInterval := lastChild.remainingInterval.size()
+	lastChildRemainingInterval := lastChild.remainingIntervalAfter().size()
 	if lastChildRemainingInterval != 0 {
 		t.Fatalf("TestAddChild: unexpected lastChild interval size: want: 0, got: %d", lastChildRemainingInterval)
 	}
@@ -632,7 +632,7 @@ func BenchmarkReindexInterval(b *testing.B) {
 			currentTreeNode = childTreeNode
 		}
 
-		remainingIntervalBefore := *root.remainingInterval
+		remainingIntervalBefore := *root.remainingIntervalAfter()
 		// After we added subTreeSize nodes, adding the next
 		// node should lead to a reindex from root.
 		fullReindexTriggeringNode := newReachabilityTreeNode(&blockNode{})
@@ -643,7 +643,7 @@ func BenchmarkReindexInterval(b *testing.B) {
 			b.Fatalf("addChild: %s", err)
 		}
 
-		if *root.remainingInterval == remainingIntervalBefore {
+		if *root.remainingIntervalAfter() == remainingIntervalBefore {
 			b.Fatal("Expected a reindex from root, but it didn't happen")
 		}
 	}

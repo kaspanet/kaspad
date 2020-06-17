@@ -215,12 +215,6 @@ func (store *reachabilityStore) serializeTreeNode(w io.Writer, treeNode *reachab
 		return err
 	}
 
-	// Serialize the remaining interval
-	err = store.serializeReachabilityInterval(w, treeNode.remainingInterval)
-	if err != nil {
-		return err
-	}
-
 	// Serialize the parent
 	// If this is the genesis block, write the zero hash instead
 	parentHash := &daghash.ZeroHash
@@ -310,13 +304,6 @@ func (store *reachabilityStore) deserializeTreeNode(r io.Reader, destination *re
 		return err
 	}
 	destination.treeNode.interval = interval
-
-	// Deserialize the remaining interval
-	remainingInterval, err := store.deserializeReachabilityInterval(r)
-	if err != nil {
-		return err
-	}
-	destination.treeNode.remainingInterval = remainingInterval
 
 	// Deserialize the parent
 	// If this is the zero hash, this node is the genesis and as such doesn't have a parent

@@ -187,20 +187,29 @@ type reachabilityTreeNode struct {
 	// interval is the index interval containing all intervals of
 	// blocks in this node's subtree
 	interval *reachabilityInterval
-
-	// remainingInterval is the not-yet allocated interval (within
-	// this node's interval) awaiting new children
-	remainingInterval *reachabilityInterval
 }
 
 func newReachabilityTreeNode(blockNode *blockNode) *reachabilityTreeNode {
 	// Please see the comment above reachabilityTreeNode to understand why
 	// we use these initial values.
 	interval := newReachabilityInterval(1, math.MaxUint64-1)
+	return &reachabilityTreeNode{blockNode: blockNode, interval: interval}
+}
+
+func (rtn *reachabilityTreeNode) remainingIntervalAfter() *reachabilityInterval {
+	if len(rtn.children) == 0 {
+		return rtn.childIntervalAllocationRange()
+	}
+
 	// We subtract 1 from the end of the remaining interval to prevent the node from allocating
 	// the entire interval to its child, so its interval would *strictly* contain the interval of its child.
-	remainingInterval := newReachabilityInterval(interval.start, interval.end-1)
-	return &reachabilityTreeNode{blockNode: blockNode, interval: interval, remainingInterval: remainingInterval}
+	return newReachabilityInterval(rtn.children[len(rtn.children)-1].interval.end+1, rtn.interval.end-1)
+}
+
+func (rtn *reachabilityTreeNode) childIntervalAllocationRange() *reachabilityInterval {
+	// We subtract 1 from the end of the range to prevent the node from allocating
+	// the entire interval to its child, so its interval would *strictly* contain the interval of its child.
+	return newReachabilityInterval(rtn.interval.start, rtn.interval.end-1)
 }
 
 // addChild adds child to this tree node. If this node has no
@@ -208,12 +217,14 @@ func newReachabilityTreeNode(blockNode *blockNode) *reachabilityTreeNode {
 // This method returns a list of reachabilityTreeNodes modified
 // by it.
 func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode) ([]*reachabilityTreeNode, error) {
+	remaining := rtn.remainingIntervalAfter()
+
 	// Set the parent-child relationship
 	rtn.children = append(rtn.children, child)
 	child.parent = rtn
 
 	// No allocation space left -- reindex
-	if rtn.remainingInterval.size() == 0 {
+	if remaining.size() == 0 {
 		reindexStartTime := time.Now()
 		modifiedNodes, err := rtn.reindexIntervals()
 		if err != nil {
@@ -227,23 +238,17 @@ func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode) ([]*reach
 	}
 
 	// Allocate from the remaining space
-	allocated, remaining, err := rtn.remainingInterval.splitInHalf()
+	allocated, _, err := remaining.splitInHalf()
 	if err != nil {
 		return nil, err
 	}
 	child.setInterval(allocated)
-	rtn.remainingInterval = remaining
 	return []*reachabilityTreeNode{rtn, child}, nil
 }
 
 // setInterval sets the reachability interval for this node.
 func (rtn *reachabilityTreeNode) setInterval(interval *reachabilityInterval) {
 	rtn.interval = interval
-
-	// Reserve a single interval index for the current node. This
-	// is necessary to ensure that ancestor intervals are strictly
-	// supersets of any descendant intervals and not equal
-	rtn.remainingInterval = newReachabilityInterval(interval.start, interval.end-1)
 }
 
 // reindexIntervals traverses the reachability subtree that's
@@ -345,8 +350,6 @@ func (rtn *reachabilityTreeNode) countSubtrees(subTreeSizeMap map[*reachabilityT
 // the allocation rule in splitWithExponentialBias. This method returns
 // a list of reachabilityTreeNodes modified by it.
 func (rtn *reachabilityTreeNode) propagateInterval(subTreeSizeMap map[*reachabilityTreeNode]uint64) ([]*reachabilityTreeNode, error) {
-	// We set the interval to reset its remainingInterval, so we could reallocate it while reindexing.
-	rtn.setInterval(rtn.interval)
 	queue := []*reachabilityTreeNode{rtn}
 	var modifiedNodes []*reachabilityTreeNode
 	for len(queue) > 0 {
@@ -357,7 +360,7 @@ func (rtn *reachabilityTreeNode) propagateInterval(subTreeSizeMap map[*reachabil
 			for i, child := range current.children {
 				sizes[i] = subTreeSizeMap[child]
 			}
-			intervals, err := current.remainingInterval.splitWithExponentialBias(sizes)
+			intervals, err := current.childIntervalAllocationRange().splitWithExponentialBias(sizes)
 			if err != nil {
 				return nil, err
 			}
@@ -366,9 +369,6 @@ func (rtn *reachabilityTreeNode) propagateInterval(subTreeSizeMap map[*reachabil
 				child.setInterval(childInterval)
 				queue = append(queue, child)
 			}
-
-			// Empty up remaining interval
-			current.remainingInterval.start = current.remainingInterval.end + 1
 		}
 
 		modifiedNodes = append(modifiedNodes, current)
