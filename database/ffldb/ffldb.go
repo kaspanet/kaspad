@@ -86,11 +86,12 @@ func (db *ffldb) Delete(key *database.Key) error {
 
 // AppendToStore appends the given data to the flat
 // file store defined by storeName. This function
-// returns a serialized location handle that's meant
-// to be stored and later used when querying the data
+// returns a location handle that's meant to be
+// stored and later used when querying the data
 // that has just now been inserted.
+//
 // This method is part of the DataAccessor interface.
-func (db *ffldb) AppendToStore(storeName string, data []byte) ([]byte, error) {
+func (db *ffldb) AppendToStore(storeName string, data []byte) (database.StoreLocation, error) {
 	return appendToStore(db, db.flatFileDB, storeName, data)
 }
 
@@ -145,11 +146,12 @@ func setCurrentStoreLocation(accessor database.DataAccessor, storeName string, l
 }
 
 // RetrieveFromStore retrieves data from the store defined by
-// storeName using the given serialized location handle. It
-// returns ErrNotFound if the location does not exist. See
+// storeName using the given location handle. It returns
+// ErrNotFound if the location does not exist. See
 // AppendToStore for further details.
+//
 // This method is part of the DataAccessor interface.
-func (db *ffldb) RetrieveFromStore(storeName string, location []byte) ([]byte, error) {
+func (db *ffldb) RetrieveFromStore(storeName string, location database.StoreLocation) ([]byte, error) {
 	return db.flatFileDB.Read(storeName, location)
 }
 

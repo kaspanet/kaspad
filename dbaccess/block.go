@@ -42,7 +42,7 @@ func StoreBlock(context *TxContext, hash *daghash.Hash, blockBytes []byte) error
 
 	// Write the block's hash to the blockLocations bucket
 	blockLocationsKey := blockLocationKey(hash)
-	err = accessor.Put(blockLocationsKey, blockLocation)
+	err = accessor.Put(blockLocationsKey, blockLocation.Serialize())
 	if err != nil {
 		return err
 	}
@@ -73,7 +73,7 @@ func FetchBlock(context Context, hash *daghash.Hash) ([]byte, error) {
 	}
 
 	blockLocationsKey := blockLocationKey(hash)
-	blockLocation, err := accessor.Get(blockLocationsKey)
+	serializedBlockLocation, err := accessor.Get(blockLocationsKey)
 	if err != nil {
 		if database.IsNotFoundError(err) {
 			return nil, errors.Wrapf(err,
@@ -81,6 +81,8 @@ func FetchBlock(context Context, hash *daghash.Hash) ([]byte, error) {
 		}
 		return nil, err
 	}
+	var blockLocation database.StoreLocation
+	blockLocation.Deserialize(serializedBlockLocation)
 	bytes, err := accessor.RetrieveFromStore(blockStoreName, blockLocation)
 	if err != nil {
 		return nil, err
