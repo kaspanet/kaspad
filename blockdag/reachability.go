@@ -196,20 +196,34 @@ func newReachabilityTreeNode(blockNode *blockNode) *reachabilityTreeNode {
 	return &reachabilityTreeNode{blockNode: blockNode, interval: interval}
 }
 
-func (rtn *reachabilityTreeNode) remainingIntervalAfter() *reachabilityInterval {
-	if len(rtn.children) == 0 {
-		return rtn.childIntervalAllocationRange()
-	}
-
-	// We subtract 1 from the end of the remaining interval to prevent the node from allocating
-	// the entire interval to its child, so its interval would *strictly* contain the interval of its child.
-	return newReachabilityInterval(rtn.children[len(rtn.children)-1].interval.end+1, rtn.interval.end-1)
-}
-
 func (rtn *reachabilityTreeNode) childIntervalAllocationRange() *reachabilityInterval {
 	// We subtract 1 from the end of the range to prevent the node from allocating
 	// the entire interval to its child, so its interval would *strictly* contain the interval of its child.
 	return newReachabilityInterval(rtn.interval.start, rtn.interval.end-1)
+}
+
+func (rtn *reachabilityTreeNode) remainingIntervalBefore() *reachabilityInterval {
+	childRange := rtn.childIntervalAllocationRange()
+	if len(rtn.children) == 0 {
+		return childRange
+	}
+	return newReachabilityInterval(childRange.start, rtn.children[0].interval.start-1)
+}
+
+func (rtn *reachabilityTreeNode) remainingIntervalAfter() *reachabilityInterval {
+	childRange := rtn.childIntervalAllocationRange()
+	if len(rtn.children) == 0 {
+		return childRange
+	}
+	return newReachabilityInterval(rtn.children[len(rtn.children)-1].interval.end+1, childRange.end)
+}
+
+func (rtn *reachabilityTreeNode) hasSlackIntervalBefore() bool {
+	return rtn.remainingIntervalBefore().size() > 0
+}
+
+func (rtn *reachabilityTreeNode) hasSlackIntervalAfter() bool {
+	return rtn.remainingIntervalAfter().size() > 0
 }
 
 // addChild adds child to this tree node. If this node has no
