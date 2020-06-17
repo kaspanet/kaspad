@@ -95,7 +95,7 @@ func (db *ffldb) AppendToStore(storeName string, data []byte) (database.StoreLoc
 	return appendToStore(db, db.flatFileDB, storeName, data)
 }
 
-func appendToStore(accessor database.DataAccessor, ffdb *ff.FlatFileDB, storeName string, data []byte) ([]byte, error) {
+func appendToStore(accessor database.DataAccessor, ffdb *ff.FlatFileDB, storeName string, data []byte) (database.StoreLocation, error) {
 	// Save a reference to the current location in case
 	// we fail and need to rollback.
 	previousLocation, err := ffdb.CurrentLocation(storeName)
@@ -137,7 +137,9 @@ func appendToStore(accessor database.DataAccessor, ffdb *ff.FlatFileDB, storeNam
 		return nil, err
 	}
 
-	return location, err
+	var dbStoreLocation database.StoreLocation
+	dbStoreLocation.Deserialize(location)
+	return dbStoreLocation, err
 }
 
 func setCurrentStoreLocation(accessor database.DataAccessor, storeName string, location []byte) error {
@@ -152,7 +154,7 @@ func setCurrentStoreLocation(accessor database.DataAccessor, storeName string, l
 //
 // This method is part of the DataAccessor interface.
 func (db *ffldb) RetrieveFromStore(storeName string, location database.StoreLocation) ([]byte, error) {
-	return db.flatFileDB.Read(storeName, location)
+	return db.flatFileDB.Read(storeName, location.Serialize())
 }
 
 // Cursor begins a new cursor over the given bucket.
@@ -161,6 +163,11 @@ func (db *ffldb) Cursor(bucket *database.Bucket) (database.Cursor, error) {
 	ldbCursor := db.levelDB.Cursor(bucket)
 
 	return ldbCursor, nil
+}
+
+func (db *ffldb) DeleteUpToLocation(storeName string, dbLocation database.StoreLocation,
+	dbPreservedLocations []database.StoreLocation) error {
+	return db.flatFileDB.DeleteUpToLocation(storeName, dbLocation, dbPreservedLocations)
 }
 
 // Begin begins a new ffldb transaction.

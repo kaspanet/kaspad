@@ -2,7 +2,6 @@ package ff
 
 import (
 	"github.com/pkg/errors"
-	"os"
 )
 
 // rollback rolls the flat files on disk back to the provided file number
@@ -108,28 +107,4 @@ func (s *flatFileStore) rollback(targetLocation *flatFileLocation) error {
 			"store '%s'", s.writeCursor.currentFileNumber, s.storeName)
 	}
 	return nil
-}
-
-// deleteFile removes the file for the passed flat file number.
-// This function MUST be called with the lruMutex and the openFilesMutex
-// held for writes.
-func (s *flatFileStore) deleteFile(fileNumber uint32) error {
-	// Cleanup the file before deleting it
-	if file, ok := s.openFiles[fileNumber]; ok {
-		file.Lock()
-		defer file.Unlock()
-		err := file.Close()
-		if err != nil {
-			return err
-		}
-
-		lruElement := s.fileNumberToLRUElement[fileNumber]
-		s.openFilesLRU.Remove(lruElement)
-		delete(s.openFiles, fileNumber)
-		delete(s.fileNumberToLRUElement, fileNumber)
-	}
-
-	// Delete the file from disk
-	filePath := flatFilePath(s.basePath, s.storeName, fileNumber)
-	return errors.WithStack(os.Remove(filePath))
 }

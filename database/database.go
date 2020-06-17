@@ -11,6 +11,9 @@ package database
 type Database interface {
 	DataAccessor
 
+	DeleteUpToLocation(storeName string, dbLocation StoreLocation,
+		dbPreservedLocations []StoreLocation) error
+
 	// Begin begins a new database transaction.
 	Begin() (Transaction, error)
 

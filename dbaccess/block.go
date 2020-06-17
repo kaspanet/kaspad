@@ -18,6 +18,28 @@ func blockLocationKey(hash *daghash.Hash) *database.Key {
 	return blockLocationsBucket.Key(hash[:])
 }
 
+func PruneBlocksData(pruningPoint *daghash.Hash, pruningPointAnticone []*daghash.Hash) error {
+	dbInstance, err := db()
+	if err != nil {
+		return err
+	}
+
+	pruningPointLocation, err := blockLocationByHash(dbInstance, pruningPoint)
+	if err != nil {
+		return err
+	}
+
+	pruningPointAnticoneLocations := make([]database.StoreLocation, len(pruningPointAnticone))
+	for i, hash := range pruningPointAnticone {
+		pruningPointAnticoneLocations[i], err = blockLocationByHash(dbInstance, hash)
+		if err != nil {
+			return err
+		}
+	}
+
+	return dbInstance.DeleteUpToLocation(blockStoreName, pruningPointLocation, pruningPointAnticoneLocations)
+}
+
 // StoreBlock stores the given block in the database.
 func StoreBlock(context *TxContext, hash *daghash.Hash, blockBytes []byte) error {
 	accessor, err := context.accessor()
@@ -72,6 +94,20 @@ func FetchBlock(context Context, hash *daghash.Hash) ([]byte, error) {
 		return nil, err
 	}
 
+	blockLocation, err := blockLocationByHash(accessor, hash)
+	if err != nil {
+		return nil, err
+	}
+
+	bytes, err := accessor.RetrieveFromStore(blockStoreName, blockLocation)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes, nil
+}
+
+func blockLocationByHash(accessor database.DataAccessor, hash *daghash.Hash) (database.StoreLocation, error) {
 	blockLocationsKey := blockLocationKey(hash)
 	serializedBlockLocation, err := accessor.Get(blockLocationsKey)
 	if err != nil {
@@ -83,10 +119,5 @@ func FetchBlock(context Context, hash *daghash.Hash) ([]byte, error) {
 	}
 	var blockLocation database.StoreLocation
 	blockLocation.Deserialize(serializedBlockLocation)
-	bytes, err := accessor.RetrieveFromStore(blockStoreName, blockLocation)
-	if err != nil {
-		return nil, err
-	}
-
-	return bytes, nil
+	return blockLocation, nil
 }

@@ -1,5 +1,7 @@
 package ff
 
+import "github.com/kaspanet/kaspad/database"
+
 // FlatFileDB is a flat-file database. It supports opening
 // multiple flat-file stores. See flatFileStore for further
 // details.
@@ -100,4 +102,29 @@ func (ffdb *FlatFileDB) store(storeName string) (*flatFileStore, error) {
 		ffdb.flatFileStores[storeName] = store
 	}
 	return store, nil
+}
+
+func (ffdb *FlatFileDB) DeleteUpToLocation(storeName string, dbLocation database.StoreLocation,
+	dbPreservedLocations []database.StoreLocation) error {
+
+	store, err := ffdb.store(storeName)
+	if err != nil {
+		return err
+	}
+
+	storeLocation, err := deserializeLocation(dbLocation.Serialize())
+	if err != nil {
+		return err
+	}
+
+	preservedFiles := make(map[uint32]struct{})
+	for _, dbLocation := range dbPreservedLocations {
+		location, err := deserializeLocation(dbLocation.Serialize())
+		if err != nil {
+			return err
+		}
+		preservedFiles[location.fileNumber] = struct{}{}
+	}
+
+	return store.deleteUpToFile(storeLocation.fileNumber, preservedFiles)
 }
