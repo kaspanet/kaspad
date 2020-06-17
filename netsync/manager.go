@@ -532,6 +532,25 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	}
 
 	if isOrphan {
+		blueScore, err := bmsg.block.BlueScore()
+		if err != nil {
+			log.Errorf("Received an orphan block %s with malformed blue score from %s. Disconnecting...",
+				blockHash, peer)
+			peer.AddBanScoreAndPushRejectMsg(wire.CmdBlock, wire.RejectInvalid, blockHash,
+				peerpkg.BanScoreMalformedBlueScoreInOrphan, 0,
+				fmt.Sprintf("Received an orphan block %s with malformed blue score", blockHash))
+			return
+		}
+
+		const maxOrphanBlueScoreDiff = 10000
+		selectedTipBlueScore := sm.dag.SelectedTipBlueScore()
+		if blueScore > selectedTipBlueScore+maxOrphanBlueScoreDiff {
+			log.Infof("Orphan block %s has blue score %d and the selected tip blue score is "+
+				"%d. Ignoring orphans with a blue score difference from the selected tip greater than %d",
+				blockHash, blueScore, selectedTipBlueScore, maxOrphanBlueScoreDiff)
+			return
+		}
+
 		// Request the parents for the orphan block from the peer that sent it.
 		missingAncestors, err := sm.dag.GetOrphanMissingAncestorHashes(blockHash)
 		if err != nil {
