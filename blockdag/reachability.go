@@ -230,7 +230,7 @@ func (rtn *reachabilityTreeNode) hasSlackIntervalAfter() bool {
 // remaining interval to allocate, a reindexing is triggered.
 // This method returns a list of reachabilityTreeNodes modified
 // by it.
-func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode) ([]*reachabilityTreeNode, error) {
+func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode, reindexRoot *reachabilityTreeNode) ([]*reachabilityTreeNode, error) {
 	remaining := rtn.remainingIntervalAfter()
 
 	// Set the parent-child relationship
@@ -532,6 +532,7 @@ func (dag *BlockDAG) updateReachability(node *blockNode, selectedParentAnticone 
 	// If this is the genesis node, simply initialize it and return
 	if node.isGenesis() {
 		dag.reachabilityStore.setTreeNode(newTreeNode)
+		dag.reachabilityReindexRoot = newTreeNode
 		return nil
 	}
 
@@ -540,7 +541,7 @@ func (dag *BlockDAG) updateReachability(node *blockNode, selectedParentAnticone 
 	if err != nil {
 		return err
 	}
-	modifiedTreeNodes, err := selectedParentTreeNode.addChild(newTreeNode)
+	modifiedTreeNodes, err := selectedParentTreeNode.addChild(newTreeNode, dag.reachabilityReindexRoot)
 	if err != nil {
 		return err
 	}
@@ -561,6 +562,10 @@ func (dag *BlockDAG) updateReachability(node *blockNode, selectedParentAnticone 
 			return err
 		}
 	}
+
+	// Attempt to move the reindex root
+	// Blah blah blah
+
 	return nil
 }
 

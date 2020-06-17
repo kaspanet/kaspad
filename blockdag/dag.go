@@ -149,7 +149,8 @@ type BlockDAG struct {
 	notificationsLock sync.RWMutex
 	notifications     []NotificationCallback
 
-	lastFinalityPoint *blockNode
+	lastFinalityPoint       *blockNode
+	reachabilityReindexRoot *reachabilityTreeNode
 
 	utxoDiffStore     *utxoDiffStore
 	reachabilityStore *reachabilityStore
@@ -712,9 +713,10 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 
 	// Update DAG state.
 	state := &dagState{
-		TipHashes:         dag.TipHashes(),
-		LastFinalityPoint: dag.lastFinalityPoint.hash,
-		LocalSubnetworkID: dag.subnetworkID,
+		TipHashes:               dag.TipHashes(),
+		LastFinalityPoint:       dag.lastFinalityPoint.hash,
+		ReachabilityReindexRoot: dag.reachabilityReindexRoot.blockNode.hash,
+		LocalSubnetworkID:       dag.subnetworkID,
 	}
 	err = saveDAGState(dbTx, state)
 	if err != nil {

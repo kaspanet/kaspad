@@ -126,9 +126,10 @@ func updateUTXOSet(dbContext dbaccess.Context, virtualUTXODiff *UTXODiff) error 
 }
 
 type dagState struct {
-	TipHashes         []*daghash.Hash
-	LastFinalityPoint *daghash.Hash
-	LocalSubnetworkID *subnetworkid.SubnetworkID
+	TipHashes               []*daghash.Hash
+	LastFinalityPoint       *daghash.Hash
+	ReachabilityReindexRoot *daghash.Hash
+	LocalSubnetworkID       *subnetworkid.SubnetworkID
 }
 
 // serializeDAGState returns the serialization of the DAG state.
@@ -165,9 +166,10 @@ func saveDAGState(dbContext dbaccess.Context, state *dagState) error {
 // genesis block and the node's local subnetwork id.
 func (dag *BlockDAG) createDAGState(localSubnetworkID *subnetworkid.SubnetworkID) error {
 	return saveDAGState(dbaccess.NoTx(), &dagState{
-		TipHashes:         []*daghash.Hash{dag.dagParams.GenesisHash},
-		LastFinalityPoint: dag.dagParams.GenesisHash,
-		LocalSubnetworkID: localSubnetworkID,
+		TipHashes:               []*daghash.Hash{dag.dagParams.GenesisHash},
+		LastFinalityPoint:       dag.dagParams.GenesisHash,
+		ReachabilityReindexRoot: dag.dagParams.GenesisHash,
+		LocalSubnetworkID:       localSubnetworkID,
 	})
 }
 
@@ -239,6 +241,16 @@ func (dag *BlockDAG) initDAGState() error {
 		return errors.Errorf("block %s does not exist in the DAG", dagState.LastFinalityPoint)
 	}
 	dag.finalizeNodesBelowFinalityPoint(false)
+
+	log.Debugf("Setting the reachability reindex root...")
+	reachabilityReindexRootNode, ok := dag.index.LookupNode(dagState.ReachabilityReindexRoot)
+	if !ok {
+		return errors.Errorf("block %s does not exist in the DAG", dagState.LastFinalityPoint)
+	}
+	dag.reachabilityReindexRoot, err = dag.reachabilityStore.treeNodeByBlockNode(reachabilityReindexRootNode)
+	if err != nil {
+		return errors.Errorf("cannot set reachability reindex root: %s", err)
+	}
 
 	log.Debugf("Processing unprocessed blockNodes...")
 	err = dag.processUnprocessedBlockNodes(unprocessedBlockNodes)

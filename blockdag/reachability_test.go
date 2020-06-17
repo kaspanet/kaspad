@@ -17,7 +17,7 @@ func TestAddChild(t *testing.T) {
 	currentTip := root
 	for i := 0; i < 6; i++ {
 		node := newReachabilityTreeNode(&blockNode{})
-		modifiedNodes, err := currentTip.addChild(node)
+		modifiedNodes, err := currentTip.addChild(node, root)
 		if err != nil {
 			t.Fatalf("TestAddChild: addChild failed: %s", err)
 		}
@@ -34,7 +34,7 @@ func TestAddChild(t *testing.T) {
 
 	// Add another node to the tip of the chain to trigger a reindex (100 < 2^7=128)
 	lastChild := newReachabilityTreeNode(&blockNode{})
-	modifiedNodes, err := currentTip.addChild(lastChild)
+	modifiedNodes, err := currentTip.addChild(lastChild, root)
 	if err != nil {
 		t.Fatalf("TestAddChild: addChild failed: %s", err)
 	}
@@ -74,7 +74,7 @@ func TestAddChild(t *testing.T) {
 	childNodes := make([]*reachabilityTreeNode, 6)
 	for i := 0; i < len(childNodes); i++ {
 		childNodes[i] = newReachabilityTreeNode(&blockNode{})
-		modifiedNodes, err := root.addChild(childNodes[i])
+		modifiedNodes, err := root.addChild(childNodes[i], root)
 		if err != nil {
 			t.Fatalf("TestAddChild: addChild failed: %s", err)
 		}
@@ -89,7 +89,7 @@ func TestAddChild(t *testing.T) {
 
 	// Add another node to the root to trigger a reindex (100 < 2^7=128)
 	lastChild = newReachabilityTreeNode(&blockNode{})
-	modifiedNodes, err = root.addChild(lastChild)
+	modifiedNodes, err = root.addChild(lastChild, root)
 	if err != nil {
 		t.Fatalf("TestAddChild: addChild failed: %s", err)
 	}
@@ -587,7 +587,7 @@ func TestReindexIntervalErrors(t *testing.T) {
 	currentTreeNode := treeNode
 	for i := 0; i < 100; i++ {
 		childTreeNode := newReachabilityTreeNode(&blockNode{})
-		_, err = currentTreeNode.addChild(childTreeNode)
+		_, err = currentTreeNode.addChild(childTreeNode, treeNode)
 		if err != nil {
 			break
 		}
@@ -624,7 +624,7 @@ func BenchmarkReindexInterval(b *testing.B) {
 		currentTreeNode := root
 		for i := 0; i < subTreeSize; i++ {
 			childTreeNode := newReachabilityTreeNode(&blockNode{})
-			_, err := currentTreeNode.addChild(childTreeNode)
+			_, err := currentTreeNode.addChild(childTreeNode, root)
 			if err != nil {
 				b.Fatalf("addChild: %s", err)
 			}
@@ -637,7 +637,7 @@ func BenchmarkReindexInterval(b *testing.B) {
 		// node should lead to a reindex from root.
 		fullReindexTriggeringNode := newReachabilityTreeNode(&blockNode{})
 		b.StartTimer()
-		_, err := currentTreeNode.addChild(fullReindexTriggeringNode)
+		_, err := currentTreeNode.addChild(fullReindexTriggeringNode, root)
 		b.StopTimer()
 		if err != nil {
 			b.Fatalf("addChild: %s", err)
