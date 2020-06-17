@@ -44,6 +44,8 @@ func (sp *Peer) OnGetData(_ *peer.Peer, msg *wire.MsgGetData) {
 			err = sp.server.pushTxMsg(sp, (*daghash.TxID)(iv.Hash), c, waitChan)
 		case wire.InvTypeSyncBlock:
 			fallthrough
+		case wire.InvTypeMissingAncestor:
+			fallthrough
 		case wire.InvTypeBlock:
 			err = sp.server.pushBlockMsg(sp, iv.Hash, c, waitChan)
 		case wire.InvTypeFilteredBlock:
