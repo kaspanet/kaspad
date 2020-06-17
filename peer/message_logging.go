@@ -46,6 +46,8 @@ func invSummary(invList []*wire.InvVect) string {
 			return fmt.Sprintf("block %s", iv.Hash)
 		case wire.InvTypeSyncBlock:
 			return fmt.Sprintf("sync block %s", iv.Hash)
+		case wire.InvTypeMissingAncestor:
+			return fmt.Sprintf("missing ancestor %s", iv.Hash)
 		case wire.InvTypeTx:
 			return fmt.Sprintf("tx %s", iv.Hash)
 		}
