@@ -607,7 +607,7 @@ func TestOutboundPeer(t *testing.T) {
 		t.Errorf("PushAddrMsg: unexpected err %v\n", err)
 		return
 	}
-	if err := p2.PushGetBlockInvsMsg(nil, &daghash.Hash{}); err != nil {
+	if err := p2.PushGetBlockInvsMsg(&daghash.Hash{}, &daghash.Hash{}); err != nil {
 		t.Errorf("PushGetBlockInvsMsg: unexpected err %v\n", err)
 		return
 	}
