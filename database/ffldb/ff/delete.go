@@ -35,12 +35,14 @@ func (s *flatFileStore) deleteUpToFile(minFileToKeep uint32, preservedFiles map[
 			s.storeName)
 	}
 
-	s.writeCursor.Lock()
-	defer s.writeCursor.Unlock()
-
 	if minFileToKeep > s.writeCursor.currentFileNumber {
 		return errors.New("cannot delete up to location which is after the write cursor")
 	}
+
+	s.lruMutex.Lock()
+	defer s.lruMutex.Unlock()
+	s.openFilesMutex.Lock()
+	defer s.openFilesMutex.Unlock()
 
 	for fileNumber := uint32(0); fileNumber < minFileToKeep; fileNumber++ {
 		if _, ok := preservedFiles[fileNumber]; ok {
