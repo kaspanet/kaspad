@@ -12,6 +12,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/kaspanet/kaspad/addrmgr"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -83,7 +84,8 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getMempoolInfo":        handleGetMempoolInfo,
 	"getMempoolEntry":       handleGetMempoolEntry,
 	"getNetTotals":          handleGetNetTotals,
-	"getPeerInfo":           handleGetPeerInfo,
+	"getConnectedPeerInfo":  handleGetConnectedPeerInfo,
+	"getPeerAddresses":      handleGetPeerAddresses,
 	"getRawMempool":         handleGetRawMempool,
 	"getSubnetwork":         handleGetSubnetwork,
 	"getTxOut":              handleGetTxOut,
@@ -783,6 +785,9 @@ type rpcserverConfig struct {
 	// These fields define any optional indexes the RPC server can make use
 	// of to provide additional data when queried.
 	AcceptanceIndex *indexers.AcceptanceIndex
+
+	// addressManager defines the address manager for the RPC server to use.
+	addressManager *addrmgr.AddrManager
 }
 
 // setupRPCListeners returns a slice of listeners that are configured for use
@@ -855,6 +860,7 @@ func NewRPCServer(
 		StartupTime:     startupTime,
 		ConnMgr:         &rpcConnManager{p2pServer},
 		SyncMgr:         &rpcSyncMgr{p2pServer, p2pServer.SyncManager},
+		addressManager:  p2pServer.AddrManager,
 		TimeSource:      p2pServer.TimeSource,
 		DAGParams:       p2pServer.DAGParams,
 		TxMemPool:       p2pServer.TxMemPool,

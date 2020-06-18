@@ -6,14 +6,14 @@ import (
 	"time"
 )
 
-// handleGetPeerInfo implements the getPeerInfo command.
-func handleGetPeerInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+// handleGetConnectedPeerInfo implements the getConnectedPeerInfo command.
+func handleGetConnectedPeerInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	peers := s.cfg.ConnMgr.ConnectedPeers()
 	syncPeerID := s.cfg.SyncMgr.SyncPeerID()
-	infos := make([]*rpcmodel.GetPeerInfoResult, 0, len(peers))
+	infos := make([]*rpcmodel.GetConnectedPeerInfoResult, 0, len(peers))
 	for _, p := range peers {
 		statsSnap := p.ToPeer().StatsSnapshot()
-		info := &rpcmodel.GetPeerInfoResult{
+		info := &rpcmodel.GetConnectedPeerInfoResult{
 			ID:          statsSnap.ID,
 			Addr:        statsSnap.Addr,
 			Services:    fmt.Sprintf("%08d", uint64(statsSnap.Services)),

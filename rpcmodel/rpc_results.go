@@ -4,7 +4,10 @@
 
 package rpcmodel
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"github.com/kaspanet/kaspad/addrmgr"
+)
 
 // GetBlockHeaderVerboseResult models the data from the getblockheader command when
 // the verbose flag is set. When the verbose flag is not set, getblockheader
@@ -213,8 +216,8 @@ type GetNetworkInfoResult struct {
 	Warnings        string                 `json:"warnings"`
 }
 
-// GetPeerInfoResult models the data returned from the getpeerinfo command.
-type GetPeerInfoResult struct {
+// GetConnectedPeerInfoResult models the data returned from the getConnectedPeerInfo command.
+type GetConnectedPeerInfoResult struct {
 	ID          int32   `json:"id"`
 	Addr        string  `json:"addr"`
 	Services    string  `json:"services"`
@@ -235,6 +238,34 @@ type GetPeerInfoResult struct {
 	FeeFilter   int64   `json:"feeFilter"`
 	SyncNode    bool    `json:"syncNode"`
 }
+
+// GetPeerAddressesResult models the data returned from the getPeerAddresses command.
+type GetPeerAddressesResult struct {
+	Version              int
+	Key                  [32]byte
+	Addresses            []*GetPeerAddressesKnownAddressResult
+	NewBuckets           map[string]*GetPeerAddressesNewBucketResult // string is Subnetwork ID
+	NewBucketFullNodes   GetPeerAddressesNewBucketResult
+	TriedBuckets         map[string]*GetPeerAddressesTriedBucketResult // string is Subnetwork ID
+	TriedBucketFullNodes GetPeerAddressesTriedBucketResult
+}
+
+// GetPeerAddressesKnownAddressResult models a GetPeerAddressesResult known address.
+type GetPeerAddressesKnownAddressResult struct {
+	Addr         string
+	Src          string
+	SubnetworkID string
+	Attempts     int
+	TimeStamp    int64
+	LastAttempt  int64
+	LastSuccess  int64
+}
+
+// GetPeerAddressesNewBucketResult models a GetPeerAddressesResult new bucket.
+type GetPeerAddressesNewBucketResult [addrmgr.NewBucketCount][]string
+
+// GetPeerAddressesTriedBucketResult models a GetPeerAddressesResult tried bucket.
+type GetPeerAddressesTriedBucketResult [addrmgr.TriedBucketCount][]string
 
 // GetRawMempoolVerboseResult models the data returned from the getrawmempool
 // command when the verbose flag is set. When the verbose flag is not set,
