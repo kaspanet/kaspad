@@ -396,6 +396,26 @@ func (rtn *reachabilityTreeNode) isAncestorOf(other *reachabilityTreeNode) bool 
 	return rtn.interval.isAncestorOf(other.interval)
 }
 
+// findCommonAncestor finds the most recent reachability tree ancestor
+// common to both rtn and other.
+func (rtn *reachabilityTreeNode) findCommonAncestor(other *reachabilityTreeNode) *reachabilityTreeNode {
+	currentThis := rtn
+	currentOther := other
+	for currentThis.parent != nil && currentOther.parent != nil {
+		if currentThis.isAncestorOf(other) {
+			return currentThis
+		}
+		if currentOther.isAncestorOf(rtn) {
+			return currentOther
+		}
+		currentThis = currentThis.parent
+		currentOther = currentOther.parent
+	}
+
+	// If we reached here, the common ancestor is the genesis block
+	return currentThis
+}
+
 // String returns a string representation of a reachability tree node
 // and its children.
 func (rtn *reachabilityTreeNode) String() string {
@@ -586,7 +606,19 @@ func (dag *BlockDAG) updateReachability(node *blockNode, selectedParentAnticone 
 func (dag *BlockDAG) findNextReachabilityReindexRoot(
 	reindexRoot *reachabilityTreeNode, newTreeNode *reachabilityTreeNode) (*reachabilityTreeNode, bool) {
 
-	return nil, false
+	if !reindexRoot.isAncestorOf(newTreeNode) {
+		commonAncestor := reindexRoot.findCommonAncestor(newTreeNode)
+		return commonAncestor, true
+	}
+
+	ancestor := dag.getAncestorBlock(reindexRoot, newTreeNode)
+	if newTreeNode.blockNode.blueScore-ancestor.blockNode.blueScore < reachabilityReindexWindow {
+		return nil, false
+	}
+
+	dag.concentrateInterval(reindexRoot, newTreeNode)
+
+	return ancestor, true
 }
 
 // isAncestorOf returns true if this node is in the past of the other node
