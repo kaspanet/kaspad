@@ -629,7 +629,7 @@ func (dag *BlockDAG) findNextReachabilityReindexRoot(
 		return commonAncestor, true, nil
 	}
 
-	ancestor, err := dag.findReachabilityTreeAncestorInChildren(reindexRoot, newTreeNode)
+	ancestor, err := reindexRoot.findReachabilityTreeAncestorInChildren(newTreeNode)
 	if err != nil {
 		return nil, false, err
 	}
@@ -643,14 +643,13 @@ func (dag *BlockDAG) findNextReachabilityReindexRoot(
 }
 
 // findReachabilityTreeAncestorInChildren finds the reachability tree child
-// of root that is the ancestor of leaf.
-func (dag *BlockDAG) findReachabilityTreeAncestorInChildren(
-	root *reachabilityTreeNode, leaf *reachabilityTreeNode) (*reachabilityTreeNode, error) {
+// of rtn that is the ancestor of node.
+func (rtn *reachabilityTreeNode) findReachabilityTreeAncestorInChildren(node *reachabilityTreeNode) (*reachabilityTreeNode, error) {
 
-	rootChildrenFutureCoveringSet := futureCoveringBlockSetFromReachabilityTreeNodes(root.children)
-	i := rootChildrenFutureCoveringSet.findIndex(&futureCoveringBlock{blockNode: leaf.blockNode, treeNode: leaf})
+	rootChildrenFutureCoveringSet := futureCoveringBlockSetFromReachabilityTreeNodes(rtn.children)
+	i := rootChildrenFutureCoveringSet.findIndex(&futureCoveringBlock{blockNode: node.blockNode, treeNode: node})
 	if i == 0 {
-		return nil, errors.Errorf("root is not an ancestor of leaf")
+		return nil, errors.Errorf("rtn is not an ancestor of node")
 	}
 
 	return rootChildrenFutureCoveringSet[i-1].treeNode, nil
