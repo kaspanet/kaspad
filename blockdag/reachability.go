@@ -591,7 +591,10 @@ func (dag *BlockDAG) updateReachability(node *blockNode, selectedParentAnticone 
 	if node.blueScore > dag.SelectedTipBlueScore() {
 		nextReindexRoot := dag.reachabilityReindexRoot
 		for {
-			candidateReindexRoute, found := dag.findNextReachabilityReindexRoot(nextReindexRoot, newTreeNode)
+			candidateReindexRoute, found, err := dag.findNextReachabilityReindexRoot(nextReindexRoot, newTreeNode)
+			if err != nil {
+				return err
+			}
 			if !found {
 				break
 			}
@@ -604,21 +607,42 @@ func (dag *BlockDAG) updateReachability(node *blockNode, selectedParentAnticone 
 }
 
 func (dag *BlockDAG) findNextReachabilityReindexRoot(
-	reindexRoot *reachabilityTreeNode, newTreeNode *reachabilityTreeNode) (*reachabilityTreeNode, bool) {
+	reindexRoot *reachabilityTreeNode, newTreeNode *reachabilityTreeNode) (*reachabilityTreeNode, bool, error) {
 
 	if !reindexRoot.isAncestorOf(newTreeNode) {
 		commonAncestor := reindexRoot.findCommonAncestor(newTreeNode)
-		return commonAncestor, true
+		return commonAncestor, true, nil
 	}
 
-	ancestor := dag.getAncestorBlock(reindexRoot, newTreeNode)
+	ancestor, err := dag.findReachabilityTreeAncestorInChildren(reindexRoot, newTreeNode)
+	if err != nil {
+		return nil, false, err
+	}
 	if newTreeNode.blockNode.blueScore-ancestor.blockNode.blueScore < reachabilityReindexWindow {
-		return nil, false
+		return nil, false, nil
 	}
 
 	dag.concentrateInterval(reindexRoot, newTreeNode)
 
-	return ancestor, true
+	return ancestor, true, nil
+}
+
+// findReachabilityTreeAncestorInChildren finds the reachability tree child
+// of root that is the ancestor of leaf.
+func (dag *BlockDAG) findReachabilityTreeAncestorInChildren(
+	root *reachabilityTreeNode, leaf *reachabilityTreeNode) (*reachabilityTreeNode, error) {
+
+	rootFutureCoveringSet, err := dag.reachabilityStore.futureCoveringSetByBlockNode(root.blockNode)
+	if err != nil {
+		return nil, err
+	}
+
+	i := rootFutureCoveringSet.findIndex(&futureCoveringBlock{blockNode: leaf.blockNode, treeNode: leaf})
+	if i == 0 {
+		return nil, errors.Errorf("root is not an ancestor of leaf")
+	}
+
+	return rootFutureCoveringSet[i-1].treeNode, nil
 }
 
 // isAncestorOf returns true if this node is in the past of the other node
