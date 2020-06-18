@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+// reachabilityReindexWindow is the target window size for reachability
+// reindexes. Note that this is not a constant for testing purposes.
+var reachabilityReindexWindow uint64 = 200
+
 // reachabilityInterval represents an interval to be used within the
 // tree reachability algorithm. See reachabilityTreeNode for further
 // details.
