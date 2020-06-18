@@ -462,6 +462,17 @@ type futureCoveringBlock struct {
 	treeNode  *reachabilityTreeNode
 }
 
+func futureCoveringBlockSetFromReachabilityTreeNodes(nodes []*reachabilityTreeNode) futureCoveringBlockSet {
+	futureCoveringBlocks := make([]*futureCoveringBlock, len(nodes))
+	for i, node := range nodes {
+		futureCoveringBlocks[i] = &futureCoveringBlock{
+			blockNode: node.blockNode,
+			treeNode:  node,
+		}
+	}
+	return futureCoveringBlocks
+}
+
 // insertBlock inserts the given block into this futureCoveringBlockSet
 // while keeping futureCoveringBlockSet ordered by interval.
 // If a block B ∈ futureCoveringBlockSet exists such that its interval
@@ -587,7 +598,7 @@ func (dag *BlockDAG) updateReachability(node *blockNode, selectedParentAnticone 
 		}
 	}
 
-	// Attempt to move the reindex root
+	// Attempt to move the reindex root.
 	// Note that we check for blue score here in order to find out
 	// whether the new node is going to be the virtual's selected
 	// parent. We don't check node == virtual.selectedParent because
@@ -636,17 +647,13 @@ func (dag *BlockDAG) findNextReachabilityReindexRoot(
 func (dag *BlockDAG) findReachabilityTreeAncestorInChildren(
 	root *reachabilityTreeNode, leaf *reachabilityTreeNode) (*reachabilityTreeNode, error) {
 
-	rootFutureCoveringSet, err := dag.reachabilityStore.futureCoveringSetByBlockNode(root.blockNode)
-	if err != nil {
-		return nil, err
-	}
-
-	i := rootFutureCoveringSet.findIndex(&futureCoveringBlock{blockNode: leaf.blockNode, treeNode: leaf})
+	rootChildrenFutureCoveringSet := futureCoveringBlockSetFromReachabilityTreeNodes(root.children)
+	i := rootChildrenFutureCoveringSet.findIndex(&futureCoveringBlock{blockNode: leaf.blockNode, treeNode: leaf})
 	if i == 0 {
 		return nil, errors.Errorf("root is not an ancestor of leaf")
 	}
 
-	return rootFutureCoveringSet[i-1].treeNode, nil
+	return rootChildrenFutureCoveringSet[i-1].treeNode, nil
 }
 
 // isAncestorOf returns true if this node is in the past of the other node
