@@ -18,6 +18,8 @@ func blockLocationKey(hash *daghash.Hash) *database.Key {
 	return blockLocationsBucket.Key(hash[:])
 }
 
+// PruneBlocksData deletes as much block data as it can from the database, while guaranteeing
+// that pruningPoint, its future and pruningPointAnticone will be kept.
 func PruneBlocksData(pruningPoint *daghash.Hash, pruningPointAnticone []*daghash.Hash) error {
 	dbInstance, err := db()
 	if err != nil {

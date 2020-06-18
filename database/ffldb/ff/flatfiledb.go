@@ -104,6 +104,7 @@ func (ffdb *FlatFileDB) store(storeName string) (*flatFileStore, error) {
 	return store, nil
 }
 
+// DeleteUpToLocation deletes the store data up to the given location file.
 func (ffdb *FlatFileDB) DeleteUpToLocation(storeName string, dbLocation database.StoreLocation,
 	dbPreservedLocations []database.StoreLocation) error {
 

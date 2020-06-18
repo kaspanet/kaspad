@@ -11,6 +11,9 @@ package database
 type Database interface {
 	DataAccessor
 
+	// DeleteUpToLocation deletes as much data as it can from the given store, while guaranteeing
+	// that the data belongs to dbLocation, its following locations and dbPreservedLocations will
+	// be kept.
 	DeleteUpToLocation(storeName string, dbLocation StoreLocation,
 		dbPreservedLocations []StoreLocation) error
 
