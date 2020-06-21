@@ -667,6 +667,16 @@ func (dag *BlockDAG) concentrateInterval(reindexRoot *reachabilityTreeNode, chos
 		return err
 	}
 
+	reindexRootChildNodesBeforeChosenSizes, reindexRootChildNodesBeforeChosenSizesSum :=
+		dag.calcReachabilityTreeNodeSizes(reindexRootChildNodesBeforeChosen)
+	reindexRootChildNodesBeforeAfterSizes, reindexRootChildNodesAfterChosenSizesSum :=
+		dag.calcReachabilityTreeNodeSizes(reindexRootChildNodesAfterChosen)
+
+	reindexRootStart := reindexRoot.interval.start
+	reindexRootEnd := reindexRoot.interval.end
+	chosenChildStart := chosenReindexRootChild.interval.start
+	chodenChildEnd := chosenReindexRootChild.interval.end
+
 	return nil
 }
 
@@ -684,6 +694,19 @@ func (dag *BlockDAG) splitReindexRootChildrenAroundChosen(reindexRoot *reachabil
 		return nil, nil, errors.Errorf("chosenReindexRootChild not a child of reindexRoot")
 	}
 	return reindexRoot.children[:chosenIndex], reindexRoot.children[chosenIndex+1:], nil
+}
+
+func (dag *BlockDAG) calcReachabilityTreeNodeSizes(treeNodes []*reachabilityTreeNode) (sizes []uint64, sum uint64) {
+	sizes = make([]uint64, len(treeNodes))
+	sum = 0
+	for i, node := range treeNodes {
+		subtreeSizeMap := make(map[*reachabilityTreeNode]uint64)
+		node.countSubtrees(subtreeSizeMap)
+		subtreeSize := subtreeSizeMap[node]
+		sizes[i] = subtreeSize
+		sum += subtreeSize
+	}
+	return sizes, sum
 }
 
 // findReachabilityTreeAncestorInChildren finds the reachability tree child
