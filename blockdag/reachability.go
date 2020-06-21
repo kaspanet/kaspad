@@ -645,21 +645,45 @@ func (dag *BlockDAG) tryMovingReachabilityReindexRoot(
 		return commonAncestor, true, nil
 	}
 
-	ancestor, err := reindexRoot.findReachabilityTreeAncestorInChildren(newTreeNode)
+	chosenReindexRootChild, err := reindexRoot.findReachabilityTreeAncestorInChildren(newTreeNode)
 	if err != nil {
 		return nil, false, err
 	}
-	if newTreeNode.blockNode.blueScore-ancestor.blockNode.blueScore < reachabilityReindexWindow {
+	if newTreeNode.blockNode.blueScore-chosenReindexRootChild.blockNode.blueScore < reachabilityReindexWindow {
 		return nil, false, nil
 	}
+	err = dag.concentrateInterval(reindexRoot, chosenReindexRootChild)
+	if err != nil {
+		return nil, false, err
+	}
 
-	dag.concentrateInterval(reindexRoot, newTreeNode)
-
-	return ancestor, true, nil
+	return chosenReindexRootChild, true, nil
 }
 
-func (dag *BlockDAG) concentrateInterval(reindexRoot *reachabilityTreeNode, newTreeNode *reachabilityTreeNode) {
+func (dag *BlockDAG) concentrateInterval(reindexRoot *reachabilityTreeNode, chosenReindexRootChild *reachabilityTreeNode) error {
+	reindexRootChildNodesBeforeChosen, reindexRootChildNodesAfterChosen, err :=
+		dag.splitReindexRootChildrenAroundChosen(reindexRoot, chosenReindexRootChild)
+	if err != nil {
+		return err
+	}
 
+	return nil
+}
+
+func (dag *BlockDAG) splitReindexRootChildrenAroundChosen(reindexRoot *reachabilityTreeNode, chosenReindexRootChild *reachabilityTreeNode) (
+	[]*reachabilityTreeNode, []*reachabilityTreeNode, error) {
+
+	chosenIndex := -1
+	for i, child := range reindexRoot.children {
+		if child == chosenReindexRootChild {
+			chosenIndex = i
+			break
+		}
+	}
+	if chosenIndex == -1 {
+		return nil, nil, errors.Errorf("chosenReindexRootChild not a child of reindexRoot")
+	}
+	return reindexRoot.children[:chosenIndex], reindexRoot.children[chosenIndex+1:], nil
 }
 
 // findReachabilityTreeAncestorInChildren finds the reachability tree child
