@@ -598,30 +598,39 @@ func (dag *BlockDAG) updateReachability(node *blockNode, selectedParentAnticone 
 		}
 	}
 
-	// Attempt to move the reindex root.
+	// Update the reindex root.
 	// Note that we check for blue score here in order to find out
 	// whether the new node is going to be the virtual's selected
 	// parent. We don't check node == virtual.selectedParent because
 	// at this stage the virtual had not yet been updated.
 	if node.blueScore > dag.SelectedTipBlueScore() {
-		nextReindexRoot := dag.reachabilityReindexRoot
-		for {
-			candidateReindexRoute, found, err := dag.findNextReachabilityReindexRoot(nextReindexRoot, newTreeNode)
-			if err != nil {
-				return err
-			}
-			if !found {
-				break
-			}
-			nextReindexRoot = candidateReindexRoute
+		err := dag.updateReachabilityReindexRoot(newTreeNode)
+		if err != nil {
+			return err
 		}
-		dag.reachabilityReindexRoot = nextReindexRoot
 	}
 
 	return nil
 }
 
-func (dag *BlockDAG) findNextReachabilityReindexRoot(
+func (dag *BlockDAG) updateReachabilityReindexRoot(newTreeNode *reachabilityTreeNode) error {
+	nextReindexRoot := dag.reachabilityReindexRoot
+	for {
+		candidateReindexRoute, found, err := dag.tryMovingReachabilityReindexRoot(nextReindexRoot, newTreeNode)
+		if err != nil {
+			return err
+		}
+		if !found {
+			break
+		}
+		nextReindexRoot = candidateReindexRoute
+	}
+
+	dag.reachabilityReindexRoot = nextReindexRoot
+	return nil
+}
+
+func (dag *BlockDAG) tryMovingReachabilityReindexRoot(
 	reindexRoot *reachabilityTreeNode, newTreeNode *reachabilityTreeNode) (*reachabilityTreeNode, bool, error) {
 
 	if !reindexRoot.isAncestorOf(newTreeNode) {
@@ -640,6 +649,10 @@ func (dag *BlockDAG) findNextReachabilityReindexRoot(
 	dag.concentrateInterval(reindexRoot, newTreeNode)
 
 	return ancestor, true, nil
+}
+
+func (dag *BlockDAG) concentrateInterval(reindexRoot *reachabilityTreeNode, newTreeNode *reachabilityTreeNode) {
+
 }
 
 // findReachabilityTreeAncestorInChildren finds the reachability tree child
