@@ -6,17 +6,18 @@ package connmgr
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/addrmgr"
-	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/dbaccess"
-	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"net"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/kaspanet/kaspad/addrmgr"
+	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/pkg/errors"
 )
 
 func init() {
@@ -575,7 +576,7 @@ func TestMaxRetryDuration(t *testing.T) {
 	connected := make(chan *ConnReq)
 	cmgr, err := New(&Config{
 		RetryDuration:  time.Millisecond,
-		TargetOutbound: 1,
+		TargetOutbound: 0,
 		Dial:           timedDialer,
 		OnConnection: func(c *ConnReq, conn net.Conn) {
 			connected <- c
