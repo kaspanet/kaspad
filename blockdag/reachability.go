@@ -248,6 +248,13 @@ func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode, reindexRo
 	rtn.children = append(rtn.children, child)
 	child.parent = rtn
 
+	// Handle rtn not being a descendant of the reindex root.
+	// Note that we check rtn here instead of child because
+	// at this point we don't yet know child's interval.
+	if !reindexRoot.isAncestorOf(rtn) {
+		return rtn.reindexIntervalsBeforeReindexRoot(reindexRoot)
+	}
+
 	// No allocation space left -- reindex
 	if remaining.size() == 0 {
 		reindexStartTime := time.Now()
@@ -399,6 +406,12 @@ func (rtn *reachabilityTreeNode) propagateInterval(subTreeSizeMap map[*reachabil
 		modifiedNodes = append(modifiedNodes, current)
 	}
 	return modifiedNodes, nil
+}
+
+func (rtn *reachabilityTreeNode) reindexIntervalsBeforeReindexRoot(
+	reindexRoot *reachabilityTreeNode) ([]*reachabilityTreeNode, error) {
+
+	return nil, nil
 }
 
 // isAncestorOf checks if this node is a reachability tree ancestor
