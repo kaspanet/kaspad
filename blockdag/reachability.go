@@ -659,7 +659,7 @@ func (dag *BlockDAG) tryMovingReachabilityReindexRoot(
 	if newTreeNode.blockNode.blueScore-chosenReindexRootChild.blockNode.blueScore < reachabilityReindexWindow {
 		return nil, nil, false, nil
 	}
-	modifiedNodes, err = dag.concentrateInterval(reindexRoot, chosenReindexRootChild)
+	modifiedNodes, err = dag.concentrateReachabilityTreeIntervalAroundReindexRootChild(reindexRoot, chosenReindexRootChild)
 	if err != nil {
 		return nil, nil, false, err
 	}
@@ -680,38 +680,25 @@ func (rtn *reachabilityTreeNode) findReachabilityTreeAncestorInChildren(node *re
 	return rootChildrenFutureCoveringSet[i-1].treeNode, nil
 }
 
-func (dag *BlockDAG) concentrateInterval(reindexRoot *reachabilityTreeNode, chosenReindexRootChild *reachabilityTreeNode) (
+func (dag *BlockDAG) concentrateReachabilityTreeIntervalAroundReindexRootChild(
+	reindexRoot *reachabilityTreeNode, chosenReindexRootChild *reachabilityTreeNode) (
 	modifiedTreeNodes []*reachabilityTreeNode, err error) {
 
 	reindexRootChildNodesBeforeChosen, reindexRootChildNodesAfterChosen, err :=
-		dag.splitReindexRootChildrenAroundChosen(reindexRoot, chosenReindexRootChild)
+		dag.splitReindexRootChildrenAroundChosenReindexRootChild(reindexRoot, chosenReindexRootChild)
 	if err != nil {
 		return nil, err
 	}
 
-	// Apply tight intervals to before the chosen child
-	reindexRootChildNodesBeforeChosenSizes, reindexRootChildNodesBeforeChosenSubtreeSizeMaps, reindexRootChildNodesBeforeChosenSizesSum :=
-		dag.calcReachabilityTreeNodeSizes(reindexRootChildNodesBeforeChosen)
-	reindexRootStart := reindexRoot.interval.start
-	targetRangeBeforeReindexRootStart := reindexRootStart + reachabilityReindexSlack
-	targetRangeBeforeReindexRootEnd := targetRangeBeforeReindexRootStart + reindexRootChildNodesBeforeChosenSizesSum - 1
-	intervalBeforeReindexRootStart := newReachabilityInterval(targetRangeBeforeReindexRootStart, targetRangeBeforeReindexRootEnd)
-	modifiedNodes, err := dag.propagateChildIntervals(intervalBeforeReindexRootStart, reindexRootChildNodesBeforeChosen,
-		reindexRootChildNodesBeforeChosenSizes, reindexRootChildNodesBeforeChosenSubtreeSizeMaps)
+	modifiedNodes, err := dag.tightenReachabilityTreeIntervalsBeforeChosenReindexRootChild(
+		reindexRoot, reindexRootChildNodesBeforeChosen)
 	if err != nil {
 		return nil, err
 	}
 	modifiedTreeNodes = append(modifiedTreeNodes, modifiedNodes...)
 
-	// Apply tight intervals to after the chosen child
-	reindexRootChildNodesAfterChosenSizes, reindexRootChildNodesAfterChosenSubtreeSizeMaps, reindexRootChildNodesAfterChosenSizesSum :=
-		dag.calcReachabilityTreeNodeSizes(reindexRootChildNodesAfterChosen)
-	reindexRootEnd := reindexRoot.interval.end
-	targetRangeAfterReindexRootEnd := reindexRootEnd - reachabilityReindexSlack
-	targetRangeAfterReindexRootStart := targetRangeAfterReindexRootEnd - reindexRootChildNodesAfterChosenSizesSum - 1
-	intervalAfterReindexRootStart := newReachabilityInterval(targetRangeAfterReindexRootStart, targetRangeAfterReindexRootEnd)
-	modifiedNodes, err = dag.propagateChildIntervals(intervalAfterReindexRootStart, reindexRootChildNodesAfterChosen,
-		reindexRootChildNodesAfterChosenSizes, reindexRootChildNodesAfterChosenSubtreeSizeMaps)
+	modifiedNodes, err = dag.tightenReachabilityTreeIntervalsAfterChosenReindexRootChild(
+		reindexRoot, reindexRootChildNodesAfterChosen)
 	if err != nil {
 		return nil, err
 	}
@@ -720,8 +707,9 @@ func (dag *BlockDAG) concentrateInterval(reindexRoot *reachabilityTreeNode, chos
 	return modifiedTreeNodes, nil
 }
 
-func (dag *BlockDAG) splitReindexRootChildrenAroundChosen(reindexRoot *reachabilityTreeNode, chosenReindexRootChild *reachabilityTreeNode) (
-	[]*reachabilityTreeNode, []*reachabilityTreeNode, error) {
+func (dag *BlockDAG) splitReindexRootChildrenAroundChosenReindexRootChild(
+	reindexRoot *reachabilityTreeNode, chosenReindexRootChild *reachabilityTreeNode) (
+	nodesBeforeChosen []*reachabilityTreeNode, nodesAfterChosen []*reachabilityTreeNode, err error) {
 
 	chosenIndex := -1
 	for i, child := range reindexRoot.children {
@@ -734,6 +722,38 @@ func (dag *BlockDAG) splitReindexRootChildrenAroundChosen(reindexRoot *reachabil
 		return nil, nil, errors.Errorf("chosenReindexRootChild not a child of reindexRoot")
 	}
 	return reindexRoot.children[:chosenIndex], reindexRoot.children[chosenIndex+1:], nil
+}
+
+func (dag *BlockDAG) tightenReachabilityTreeIntervalsBeforeChosenReindexRootChild(
+	reindexRoot *reachabilityTreeNode, reindexRootChildNodesBeforeChosen []*reachabilityTreeNode) (
+	modifiedTreeNodes []*reachabilityTreeNode, err error) {
+
+	reindexRootChildNodesBeforeChosenSizes, reindexRootChildNodesBeforeChosenSubtreeSizeMaps, reindexRootChildNodesBeforeChosenSizesSum :=
+		dag.calcReachabilityTreeNodeSizes(reindexRootChildNodesBeforeChosen)
+
+	reindexRootStart := reindexRoot.interval.start
+	targetRangeBeforeReindexRootStart := reindexRootStart + reachabilityReindexSlack
+	targetRangeBeforeReindexRootEnd := targetRangeBeforeReindexRootStart + reindexRootChildNodesBeforeChosenSizesSum - 1
+	intervalBeforeReindexRootStart := newReachabilityInterval(targetRangeBeforeReindexRootStart, targetRangeBeforeReindexRootEnd)
+
+	return dag.propagateChildIntervals(intervalBeforeReindexRootStart, reindexRootChildNodesBeforeChosen,
+		reindexRootChildNodesBeforeChosenSizes, reindexRootChildNodesBeforeChosenSubtreeSizeMaps)
+}
+
+func (dag *BlockDAG) tightenReachabilityTreeIntervalsAfterChosenReindexRootChild(
+	reindexRoot *reachabilityTreeNode, reindexRootChildNodesAfterChosen []*reachabilityTreeNode) (
+	modifiedTreeNodes []*reachabilityTreeNode, err error) {
+
+	reindexRootChildNodesAfterChosenSizes, reindexRootChildNodesAfterChosenSubtreeSizeMaps, reindexRootChildNodesAfterChosenSizesSum :=
+		dag.calcReachabilityTreeNodeSizes(reindexRootChildNodesAfterChosen)
+
+	reindexRootEnd := reindexRoot.interval.end
+	targetRangeAfterReindexRootEnd := reindexRootEnd - reachabilityReindexSlack
+	targetRangeAfterReindexRootStart := targetRangeAfterReindexRootEnd - reindexRootChildNodesAfterChosenSizesSum - 1
+	intervalAfterReindexRootEnd := newReachabilityInterval(targetRangeAfterReindexRootStart, targetRangeAfterReindexRootEnd)
+
+	return dag.propagateChildIntervals(intervalAfterReindexRootEnd, reindexRootChildNodesAfterChosen,
+		reindexRootChildNodesAfterChosenSizes, reindexRootChildNodesAfterChosenSubtreeSizeMaps)
 }
 
 func (dag *BlockDAG) calcReachabilityTreeNodeSizes(treeNodes []*reachabilityTreeNode) (
