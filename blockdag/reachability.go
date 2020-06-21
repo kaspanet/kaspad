@@ -411,6 +411,34 @@ func (rtn *reachabilityTreeNode) propagateInterval(subTreeSizeMap map[*reachabil
 func (rtn *reachabilityTreeNode) reindexIntervalsBeforeReindexRoot(
 	reindexRoot *reachabilityTreeNode) ([]*reachabilityTreeNode, error) {
 
+	commonAncestor := rtn.findCommonAncestor(reindexRoot)
+	commonAncestorChosenChild, err := commonAncestor.findReachabilityTreeAncestorInChildren(rtn)
+	if err != nil {
+		return nil, err
+	}
+
+	if rtn.interval.start < commonAncestorChosenChild.interval.start {
+		// rtn is in the subtree before the chosen child
+		return rtn.reclaimIntervalBeforeChosenChild(commonAncestor, commonAncestorChosenChild, reindexRoot)
+	}
+	if commonAncestorChosenChild.interval.end < rtn.interval.end {
+		// rtn is in the subtree after the chosen child
+		return rtn.reclaimIntervalAfterChosenChild(commonAncestor, commonAncestorChosenChild, reindexRoot)
+	}
+	return nil, errors.Errorf("rtn is in the chosen child's subtree")
+}
+
+func (rtn *reachabilityTreeNode) reclaimIntervalBeforeChosenChild(
+	commonAncestor *reachabilityTreeNode, commonAncestorChosenChild *reachabilityTreeNode, reindexRoot *reachabilityTreeNode) (
+	[]*reachabilityTreeNode, error) {
+
+	return nil, nil
+}
+
+func (rtn *reachabilityTreeNode) reclaimIntervalAfterChosenChild(
+	commonAncestor *reachabilityTreeNode, commonAncestorChosenChild *reachabilityTreeNode, reindexRoot *reachabilityTreeNode) (
+	[]*reachabilityTreeNode, error) {
+
 	return nil, nil
 }
 
