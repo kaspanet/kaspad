@@ -9,6 +9,10 @@ import (
 // This function MUST be called with the lruMutex and the openFilesMutex
 // held for writes.
 func (s *flatFileStore) deleteFile(fileNumber uint32) error {
+	if s.isClosed {
+		return errors.Errorf("cannot delete file in a closed store %s", s.storeName)
+	}
+
 	// Cleanup the file before deleting it
 	if file, ok := s.openFiles[fileNumber]; ok {
 		file.Lock()
@@ -68,6 +72,9 @@ func (s *flatFileStore) deleteUpToFile(minFileToKeep uint32, preservedFiles map[
 }
 
 func (s *flatFileStore) fileExists(fileNumber uint32) (bool, error) {
+	if s.isClosed {
+		return false, errors.Errorf("cannot check for existing files in a closed store %s", s.storeName)
+	}
 	filePath := flatFilePath(s.basePath, s.storeName, fileNumber)
 	if _, err := os.Stat(filePath); err != nil {
 		if os.IsNotExist(err) {
