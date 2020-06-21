@@ -779,6 +779,17 @@ func (mp *TxPool) FetchTransaction(txID *daghash.TxID) (*util.Tx, error) {
 	return nil, errors.Errorf("transaction is not in the pool")
 }
 
+// checkTransactionMassSanity checks that a transaction must not exceed the maximum allowed block mass when serialized.
+func checkTransactionMassSanity(tx *util.Tx) error {
+	serializedTxSize := tx.MsgTx().SerializeSize()
+	if serializedTxSize*blockdag.MassPerTxByte > wire.MaxMassPerTx {
+		str := fmt.Sprintf("serialized transaction is too big - got "+
+			"%d, max %d", serializedTxSize, wire.MaxMassPerBlock)
+		return txRuleError(wire.RejectInvalid, str)
+	}
+	return nil
+}
+
 // maybeAcceptTransaction is the main workhorse for handling insertion of new
 // free-standing transactions into a memory pool. It includes functionality
 // such as rejecting duplicate transactions, ensuring transactions follow all
@@ -820,10 +831,15 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 		}
 	}
 
+	err := checkTransactionMassSanity(tx)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	// Perform preliminary sanity checks on the transaction. This makes
 	// use of blockDAG which contains the invariant rules for what
 	// transactions are allowed into blocks.
-	err := blockdag.CheckTransactionSanity(tx, subnetworkID)
+	err = blockdag.CheckTransactionSanity(tx, subnetworkID)
 	if err != nil {
 		var ruleErr blockdag.RuleError
 		if ok := errors.As(err, &ruleErr); ok {
