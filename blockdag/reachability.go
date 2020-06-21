@@ -8,9 +8,16 @@ import (
 	"time"
 )
 
-// reachabilityReindexWindow is the target window size for reachability
-// reindexes. Note that this is not a constant for testing purposes.
-var reachabilityReindexWindow uint64 = 200
+var (
+	// reachabilityReindexWindow is the target window size for reachability
+	// reindexes. Note that this is not a constant for testing purposes.
+	reachabilityReindexWindow uint64 = 200
+
+	// reachabilityReindexSlack is the slack interval given to reachability
+	// tree nodes not in the selected parent chain. Note that this is not
+	// a constant for testing purposes.
+	reachabilityReindexSlack uint64 = 1 << 12
+)
 
 // reachabilityInterval represents an interval to be used within the
 // tree reachability algorithm. See reachabilityTreeNode for further
