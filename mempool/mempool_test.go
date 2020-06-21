@@ -10,6 +10,7 @@ import (
 	"math"
 	"reflect"
 	"runtime"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -552,6 +553,24 @@ func TestProcessTransaction(t *testing.T) {
 		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectInvalid, code)
 	}
 
+	//Checks that a transaction is rejected from the mempool if its
+	//size is above 50KB, and its fee is below the minimum relay fee
+	tooBigTx, err := harness.createTx(spendableOuts[1], 0, 1000000) //A transaction with 2000 outputs, in order to make it bigger than 50kb
+	if err != nil {
+		t.Fatalf("unable to create transaction: %v", err)
+	}
+	_, err = harness.txPool.ProcessTransaction(tooBigTx, true, 0)
+	if err == nil {
+		t.Errorf("ProcessTransaction: expected an error, not nil")
+	}
+	if code, _ := extractRejectCode(err); code != wire.RejectInvalid {
+		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectInsufficientFee, code)
+	}
+	expectedErrStr := "serialized transaction is too big"
+	if !strings.Contains(err.Error(), expectedErrStr) {
+		t.Fatalf("ProcessBlock expected error \"%v\" but got \"%v\"", expectedErrStr, err)
+	}
+
 	//Checks that non standard transactions are rejected from the mempool
 	nonStdTx, err := harness.createTx(spendableOuts[0], 0, 1)
 	if err != nil {
@@ -661,7 +680,7 @@ func TestProcessTransaction(t *testing.T) {
 	if code, _ := extractRejectCode(err); code != wire.RejectNonstandard {
 		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectNonstandard, code)
 	}
-	expectedErrStr := fmt.Sprintf("transaction %v has a non-standard input: "+
+	expectedErrStr = fmt.Sprintf("transaction %v has a non-standard input: "+
 		"transaction input #%d has "+
 		"%d signature operations which is more "+
 		"than the allowed max amount of %d",
