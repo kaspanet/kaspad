@@ -15,8 +15,12 @@ func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgBlockLocator) {
 	// the peer in order to find it in the next iteration.
 	dag := sp.server.DAG
 	if len(msg.BlockLocatorHashes) == 0 {
-		peerLog.Warnf("Got empty block locator from peer %s",
-			sp)
+		sp.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectInvalid, nil,
+			peer.BanScoreEmptyBlockLocator, 0,
+			"got empty block locator")
+		// Whether the peer will be banned or not, syncing from a node that doesn't follow
+		// the netsync protocol is undesired.
+		sp.server.SyncManager.RemoveFromSyncCandidates(sp.Peer)
 		return
 	}
 	// If the first hash of the block locator is known, it means we found

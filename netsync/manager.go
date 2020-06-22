@@ -65,12 +65,6 @@ type donePeerMsg struct {
 	peer *peerpkg.Peer
 }
 
-// removeFromSyncCandidatesMsg signifies to remove the given peer
-// from the sync candidates.
-type removeFromSyncCandidatesMsg struct {
-	peer *peerpkg.Peer
-}
-
 // txMsg packages a kaspa tx message and the peer it came from together
 // so the block handler has access to that information.
 type txMsg struct {
@@ -350,6 +344,8 @@ func (sm *SyncManager) handleDonePeerMsg(peer *peerpkg.Peer) {
 	sm.stopSyncFromPeer(peer)
 }
 
+// stopSyncFromPeer replaces a sync peer if the given peer
+// is the sync peer.
 func (sm *SyncManager) stopSyncFromPeer(peer *peerpkg.Peer) {
 	if sm.syncPeer == peer {
 		sm.syncPeer = nil
@@ -357,7 +353,10 @@ func (sm *SyncManager) stopSyncFromPeer(peer *peerpkg.Peer) {
 	}
 }
 
-func (sm *SyncManager) handleRemoveFromSyncCandidatesMsg(peer *peerpkg.Peer) {
+// RemoveFromSyncCandidates removes the given peer from being
+// a sync candidate and stop syncing from it if it's the current
+// sync peer.
+func (sm *SyncManager) RemoveFromSyncCandidates(peer *peerpkg.Peer) {
 	sm.peerStates[peer].syncCandidate = false
 	sm.stopSyncFromPeer(peer)
 }
@@ -522,6 +521,9 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 
 		peer.AddBanScoreAndPushRejectMsg(wire.CmdBlock, wire.RejectInvalid, blockHash,
 			peerpkg.BanScoreInvalidBlock, 0, fmt.Sprintf("got invalid block: %s", err))
+		// Whether the peer will be banned or not, syncing from a node that doesn't follow
+		// the netsync protocol is undesired.
+		sm.RemoveFromSyncCandidates(peer)
 		return
 	}
 
@@ -739,6 +741,9 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 			if sm.dag.IsKnownInvalid(iv.Hash) {
 				peer.AddBanScoreAndPushRejectMsg(imsg.inv.Command(), wire.RejectInvalid, iv.Hash,
 					peerpkg.BanScoreInvalidInvBlock, 0, fmt.Sprintf("sent inv of invalid block %s", iv.Hash))
+				// Whether the peer will be banned or not, syncing from a node that doesn't follow
+				// the netsync protocol is undesired.
+				sm.RemoveFromSyncCandidates(peer)
 				return
 			}
 			// The block is an orphan block that we already have.
@@ -758,7 +763,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 						fmt.Sprintf("sent inv of orphan block %s as part of netsync", iv.Hash))
 					// Whether the peer will be banned or not, syncing from a node that doesn't follow
 					// the netsync protocol is undesired.
-					sm.stopSyncFromPeer(peer)
+					sm.RemoveFromSyncCandidates(peer)
 					return
 				}
 				missingAncestors, err := sm.dag.GetOrphanMissingAncestorHashes(iv.Hash)
@@ -993,9 +998,6 @@ out:
 			case *donePeerMsg:
 				sm.handleDonePeerMsg(msg.peer)
 
-			case *removeFromSyncCandidatesMsg:
-				sm.handleRemoveFromSyncCandidatesMsg(msg.peer)
-
 			case getSyncPeerMsg:
 				var peerID int32
 				if sm.syncPeer != nil {
@@ -1143,17 +1145,6 @@ func (sm *SyncManager) DonePeer(peer *peerpkg.Peer) {
 	}
 
 	sm.msgChan <- &donePeerMsg{peer: peer}
-}
-
-// RemoveFromSyncCandidates tells the blockmanager to remove a peer as
-// a sync candidate.
-func (sm *SyncManager) RemoveFromSyncCandidates(peer *peerpkg.Peer) {
-	// Ignore if we are shutting down.
-	if atomic.LoadInt32(&sm.shutdown) != 0 {
-		return
-	}
-
-	sm.msgChan <- &removeFromSyncCandidatesMsg{peer: peer}
 }
 
 // Start begins the core block handler which processes block and inv messages.
