@@ -21,7 +21,7 @@ func (sp *Peer) OnVersion(_ *peer.Peer, msg *wire.MsgVersion) {
 	// to specified peers and actively avoids advertising and connecting to
 	// discovered peers.
 	if !config.ActiveConfig().Simnet {
-		addrManager := sp.server.addrManager
+		addrManager := sp.server.AddrManager
 
 		// Outbound connections.
 		if !sp.Inbound() {

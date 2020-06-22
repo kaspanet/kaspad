@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"io/ioutil"
 	"net"
 	"reflect"
 	"testing"
@@ -101,14 +103,41 @@ func addNaTest(ip string, port uint16, want string) {
 	naTests = append(naTests, test)
 }
 
-func lookupFunc(host string) ([]net.IP, error) {
+func lookupFuncForTest(host string) ([]net.IP, error) {
 	return nil, errors.New("not implemented")
 }
 
+func newAddrManagerForTest(t *testing.T, testName string,
+	localSubnetworkID *subnetworkid.SubnetworkID) (addressManager *AddrManager, teardown func()) {
+
+	dbPath, err := ioutil.TempDir("", testName)
+	if err != nil {
+		t.Fatalf("Error creating temporary directory: %s", err)
+	}
+
+	err = dbaccess.Open(dbPath)
+	if err != nil {
+		t.Fatalf("error creating db: %s", err)
+	}
+
+	addressManager = New(lookupFuncForTest, localSubnetworkID)
+
+	return addressManager, func() {
+		err := dbaccess.Close()
+		if err != nil {
+			t.Fatalf("error closing the database: %s", err)
+		}
+	}
+}
+
 func TestStartStop(t *testing.T) {
-	n := New("teststartstop", lookupFunc, nil)
-	n.Start()
-	err := n.Stop()
+	amgr, teardown := newAddrManagerForTest(t, "TestStartStop", nil)
+	defer teardown()
+	err := amgr.Start()
+	if err != nil {
+		t.Fatalf("Address Manager failed to start: %v", err)
+	}
+	err = amgr.Stop()
 	if err != nil {
 		t.Fatalf("Address Manager failed to stop: %v", err)
 	}
@@ -148,7 +177,8 @@ func TestAddAddressByIP(t *testing.T) {
 		},
 	}
 
-	amgr := New("testaddressbyip", nil, nil)
+	amgr, teardown := newAddrManagerForTest(t, "TestAddAddressByIP", nil)
+	defer teardown()
 	for i, test := range tests {
 		err := amgr.AddAddressByIP(test.addrIP, nil)
 		if test.err != nil && err == nil {
@@ -213,7 +243,8 @@ func TestAddLocalAddress(t *testing.T) {
 			true,
 		},
 	}
-	amgr := New("testaddlocaladdress", nil, nil)
+	amgr, teardown := newAddrManagerForTest(t, "TestAddLocalAddress", nil)
+	defer teardown()
 	for x, test := range tests {
 		result := amgr.AddLocalAddress(&test.address, test.priority)
 		if result == nil && !test.valid {
@@ -239,21 +270,22 @@ func TestAttempt(t *testing.T) {
 	})
 	defer config.SetActiveConfig(originalActiveCfg)
 
-	n := New("testattempt", lookupFunc, nil)
+	amgr, teardown := newAddrManagerForTest(t, "TestAttempt", nil)
+	defer teardown()
 
 	// Add a new address and get it
-	err := n.AddAddressByIP(someIP+":8333", nil)
+	err := amgr.AddAddressByIP(someIP+":8333", nil)
 	if err != nil {
 		t.Fatalf("Adding address failed: %v", err)
 	}
-	ka := n.GetAddress()
+	ka := amgr.GetAddress()
 
 	if !ka.LastAttempt().IsZero() {
 		t.Errorf("Address should not have attempts, but does")
 	}
 
 	na := ka.NetAddress()
-	n.Attempt(na)
+	amgr.Attempt(na)
 
 	if ka.LastAttempt().IsZero() {
 		t.Errorf("Address should have an attempt, but does not")
@@ -270,19 +302,20 @@ func TestConnected(t *testing.T) {
 	})
 	defer config.SetActiveConfig(originalActiveCfg)
 
-	n := New("testconnected", lookupFunc, nil)
+	amgr, teardown := newAddrManagerForTest(t, "TestConnected", nil)
+	defer teardown()
 
 	// Add a new address and get it
-	err := n.AddAddressByIP(someIP+":8333", nil)
+	err := amgr.AddAddressByIP(someIP+":8333", nil)
 	if err != nil {
 		t.Fatalf("Adding address failed: %v", err)
 	}
-	ka := n.GetAddress()
+	ka := amgr.GetAddress()
 	na := ka.NetAddress()
 	// make it an hour ago
 	na.Timestamp = time.Unix(time.Now().Add(time.Hour*-1).Unix(), 0)
 
-	n.Connected(na)
+	amgr.Connected(na)
 
 	if !ka.NetAddress().Timestamp.After(na.Timestamp) {
 		t.Errorf("Address should have a new timestamp, but does not")
@@ -299,9 +332,10 @@ func TestNeedMoreAddresses(t *testing.T) {
 	})
 	defer config.SetActiveConfig(originalActiveCfg)
 
-	n := New("testneedmoreaddresses", lookupFunc, nil)
+	amgr, teardown := newAddrManagerForTest(t, "TestNeedMoreAddresses", nil)
+	defer teardown()
 	addrsToAdd := 1500
-	b := n.NeedMoreAddresses()
+	b := amgr.NeedMoreAddresses()
 	if !b {
 		t.Errorf("Expected that we need more addresses")
 	}
@@ -310,7 +344,7 @@ func TestNeedMoreAddresses(t *testing.T) {
 	var err error
 	for i := 0; i < addrsToAdd; i++ {
 		s := fmt.Sprintf("%d.%d.173.147:8333", i/128+60, i%128+60)
-		addrs[i], err = n.DeserializeNetAddress(s)
+		addrs[i], err = amgr.DeserializeNetAddress(s)
 		if err != nil {
 			t.Errorf("Failed to turn %s into an address: %v", s, err)
 		}
@@ -318,13 +352,13 @@ func TestNeedMoreAddresses(t *testing.T) {
 
 	srcAddr := wire.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
 
-	n.AddAddresses(addrs, srcAddr, nil)
-	numAddrs := n.TotalNumAddresses()
+	amgr.AddAddresses(addrs, srcAddr, nil)
+	numAddrs := amgr.TotalNumAddresses()
 	if numAddrs > addrsToAdd {
 		t.Errorf("Number of addresses is too many %d vs %d", numAddrs, addrsToAdd)
 	}
 
-	b = n.NeedMoreAddresses()
+	b = amgr.NeedMoreAddresses()
 	if b {
 		t.Errorf("Expected that we don't need more addresses")
 	}
@@ -340,7 +374,8 @@ func TestGood(t *testing.T) {
 	})
 	defer config.SetActiveConfig(originalActiveCfg)
 
-	n := New("testgood", lookupFunc, nil)
+	amgr, teardown := newAddrManagerForTest(t, "TestGood", nil)
+	defer teardown()
 	addrsToAdd := 64 * 64
 	addrs := make([]*wire.NetAddress, addrsToAdd)
 	subnetworkCount := 32
@@ -349,7 +384,7 @@ func TestGood(t *testing.T) {
 	var err error
 	for i := 0; i < addrsToAdd; i++ {
 		s := fmt.Sprintf("%d.173.147.%d:8333", i/64+60, i%64+60)
-		addrs[i], err = n.DeserializeNetAddress(s)
+		addrs[i], err = amgr.DeserializeNetAddress(s)
 		if err != nil {
 			t.Errorf("Failed to turn %s into an address: %v", s, err)
 		}
@@ -361,24 +396,24 @@ func TestGood(t *testing.T) {
 
 	srcAddr := wire.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
 
-	n.AddAddresses(addrs, srcAddr, nil)
+	amgr.AddAddresses(addrs, srcAddr, nil)
 	for i, addr := range addrs {
-		n.Good(addr, subnetworkIDs[i%subnetworkCount])
+		amgr.Good(addr, subnetworkIDs[i%subnetworkCount])
 	}
 
-	numAddrs := n.TotalNumAddresses()
+	numAddrs := amgr.TotalNumAddresses()
 	if numAddrs >= addrsToAdd {
 		t.Errorf("Number of addresses is too many: %d vs %d", numAddrs, addrsToAdd)
 	}
 
-	numCache := len(n.AddressCache(true, nil))
+	numCache := len(amgr.AddressCache(true, nil))
 	if numCache == 0 || numCache >= numAddrs/4 {
 		t.Errorf("Number of addresses in cache: got %d, want positive and less than %d",
 			numCache, numAddrs/4)
 	}
 
 	for i := 0; i < subnetworkCount; i++ {
-		numCache = len(n.AddressCache(false, subnetworkIDs[i]))
+		numCache = len(amgr.AddressCache(false, subnetworkIDs[i]))
 		if numCache == 0 || numCache >= numAddrs/subnetworkCount {
 			t.Errorf("Number of addresses in subnetwork cache: got %d, want positive and less than %d",
 				numCache, numAddrs/4/subnetworkCount)
@@ -396,17 +431,18 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	})
 	defer config.SetActiveConfig(originalActiveCfg)
 
-	n := New("test_good_change_subnetwork_id", lookupFunc, nil)
+	amgr, teardown := newAddrManagerForTest(t, "TestGoodChangeSubnetworkID", nil)
+	defer teardown()
 	addr := wire.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
 	addrKey := NetAddressKey(addr)
 	srcAddr := wire.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
 
 	oldSubnetwork := subnetworkid.SubnetworkIDNative
-	n.AddAddress(addr, srcAddr, oldSubnetwork)
-	n.Good(addr, oldSubnetwork)
+	amgr.AddAddress(addr, srcAddr, oldSubnetwork)
+	amgr.Good(addr, oldSubnetwork)
 
 	// make sure address was saved to addrIndex under oldSubnetwork
-	ka := n.find(addr)
+	ka := amgr.find(addr)
 	if ka == nil {
 		t.Fatalf("Address was not found after first time .Good called")
 	}
@@ -415,7 +451,7 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	}
 
 	// make sure address was added to correct bucket under oldSubnetwork
-	bucket := n.addrTried[*oldSubnetwork][n.getTriedBucket(addr)]
+	bucket := amgr.addrTried[*oldSubnetwork][amgr.getTriedBucket(addr)]
 	wasFound := false
 	for e := bucket.Front(); e != nil; e = e.Next() {
 		if NetAddressKey(e.Value.(*KnownAddress).NetAddress()) == addrKey {
@@ -428,10 +464,10 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 
 	// now call .Good again with a different subnetwork
 	newSubnetwork := subnetworkid.SubnetworkIDRegistry
-	n.Good(addr, newSubnetwork)
+	amgr.Good(addr, newSubnetwork)
 
 	// make sure address was updated in addrIndex under newSubnetwork
-	ka = n.find(addr)
+	ka = amgr.find(addr)
 	if ka == nil {
 		t.Fatalf("Address was not found after second time .Good called")
 	}
@@ -440,7 +476,7 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	}
 
 	// make sure address was removed from bucket under oldSubnetwork
-	bucket = n.addrTried[*oldSubnetwork][n.getTriedBucket(addr)]
+	bucket = amgr.addrTried[*oldSubnetwork][amgr.getTriedBucket(addr)]
 	wasFound = false
 	for e := bucket.Front(); e != nil; e = e.Next() {
 		if NetAddressKey(e.Value.(*KnownAddress).NetAddress()) == addrKey {
@@ -452,7 +488,7 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	}
 
 	// make sure address was added to correct bucket under newSubnetwork
-	bucket = n.addrTried[*newSubnetwork][n.getTriedBucket(addr)]
+	bucket = amgr.addrTried[*newSubnetwork][amgr.getTriedBucket(addr)]
 	wasFound = false
 	for e := bucket.Front(); e != nil; e = e.Next() {
 		if NetAddressKey(e.Value.(*KnownAddress).NetAddress()) == addrKey {
@@ -475,34 +511,35 @@ func TestGetAddress(t *testing.T) {
 	defer config.SetActiveConfig(originalActiveCfg)
 
 	localSubnetworkID := &subnetworkid.SubnetworkID{0xff}
-	n := New("testgetaddress", lookupFunc, localSubnetworkID)
+	amgr, teardown := newAddrManagerForTest(t, "TestGetAddress", localSubnetworkID)
+	defer teardown()
 
 	// Get an address from an empty set (should error)
-	if rv := n.GetAddress(); rv != nil {
+	if rv := amgr.GetAddress(); rv != nil {
 		t.Errorf("GetAddress failed: got: %v want: %v\n", rv, nil)
 	}
 
 	// Add a new address and get it
-	err := n.AddAddressByIP(someIP+":8332", localSubnetworkID)
+	err := amgr.AddAddressByIP(someIP+":8332", localSubnetworkID)
 	if err != nil {
 		t.Fatalf("Adding address failed: %v", err)
 	}
-	ka := n.GetAddress()
+	ka := amgr.GetAddress()
 	if ka == nil {
 		t.Fatalf("Did not get an address where there is one in the pool")
 	}
-	n.Attempt(ka.NetAddress())
+	amgr.Attempt(ka.NetAddress())
 
 	// Checks that we don't get it if we find that it has other subnetwork ID than expected.
 	actualSubnetworkID := &subnetworkid.SubnetworkID{0xfe}
-	n.Good(ka.NetAddress(), actualSubnetworkID)
-	ka = n.GetAddress()
+	amgr.Good(ka.NetAddress(), actualSubnetworkID)
+	ka = amgr.GetAddress()
 	if ka != nil {
 		t.Errorf("Didn't expect to get an address because there shouldn't be any address from subnetwork ID %s or nil", localSubnetworkID)
 	}
 
 	// Checks that the total number of addresses incremented although the new address is not full node or a partial node of the same subnetwork as the local node.
-	numAddrs := n.TotalNumAddresses()
+	numAddrs := amgr.TotalNumAddresses()
 	if numAddrs != 1 {
 		t.Errorf("Wrong number of addresses: got %d, want %d", numAddrs, 1)
 	}
@@ -510,11 +547,11 @@ func TestGetAddress(t *testing.T) {
 	// Now we repeat the same process, but now the address has the expected subnetwork ID.
 
 	// Add a new address and get it
-	err = n.AddAddressByIP(someIP+":8333", localSubnetworkID)
+	err = amgr.AddAddressByIP(someIP+":8333", localSubnetworkID)
 	if err != nil {
 		t.Fatalf("Adding address failed: %v", err)
 	}
-	ka = n.GetAddress()
+	ka = amgr.GetAddress()
 	if ka == nil {
 		t.Fatalf("Did not get an address where there is one in the pool")
 	}
@@ -524,11 +561,11 @@ func TestGetAddress(t *testing.T) {
 	if !ka.SubnetworkID().IsEqual(localSubnetworkID) {
 		t.Errorf("Wrong Subnetwork ID: got %v, want %v", *ka.SubnetworkID(), localSubnetworkID)
 	}
-	n.Attempt(ka.NetAddress())
+	amgr.Attempt(ka.NetAddress())
 
 	// Mark this as a good address and get it
-	n.Good(ka.NetAddress(), localSubnetworkID)
-	ka = n.GetAddress()
+	amgr.Good(ka.NetAddress(), localSubnetworkID)
+	ka = amgr.GetAddress()
 	if ka == nil {
 		t.Fatalf("Did not get an address where there is one in the pool")
 	}
@@ -539,7 +576,7 @@ func TestGetAddress(t *testing.T) {
 		t.Errorf("Wrong Subnetwork ID: got %v, want %v", ka.SubnetworkID(), localSubnetworkID)
 	}
 
-	numAddrs = n.TotalNumAddresses()
+	numAddrs = amgr.TotalNumAddresses()
 	if numAddrs != 2 {
 		t.Errorf("Wrong number of addresses: got %d, want %d", numAddrs, 1)
 	}
@@ -604,7 +641,8 @@ func TestGetBestLocalAddress(t *testing.T) {
 		*/
 	}
 
-	amgr := New("testgetbestlocaladdress", nil, nil)
+	amgr, teardown := newAddrManagerForTest(t, "TestGetBestLocalAddress", nil)
+	defer teardown()
 
 	// Test against default when there's no address
 	for x, test := range tests {

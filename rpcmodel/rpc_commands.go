@@ -382,13 +382,13 @@ func NewGetNetTotalsCmd() *GetNetTotalsCmd {
 	return &GetNetTotalsCmd{}
 }
 
-// GetPeerInfoCmd defines the getPeerInfo JSON-RPC command.
-type GetPeerInfoCmd struct{}
+// GetConnectedPeerInfoCmd defines the getConnectedPeerInfo JSON-RPC command.
+type GetConnectedPeerInfoCmd struct{}
 
-// NewGetPeerInfoCmd returns a new instance which can be used to issue a getpeer
+// NewGetConnectedPeerInfoCmd returns a new instance which can be used to issue a getpeer
 // JSON-RPC command.
-func NewGetPeerInfoCmd() *GetPeerInfoCmd {
-	return &GetPeerInfoCmd{}
+func NewGetConnectedPeerInfoCmd() *GetConnectedPeerInfoCmd {
+	return &GetConnectedPeerInfoCmd{}
 }
 
 // GetRawMempoolCmd defines the getmempool JSON-RPC command.
@@ -655,6 +655,14 @@ type VersionCmd struct{}
 // version command.
 func NewVersionCmd() *VersionCmd { return new(VersionCmd) }
 
+// GetPeerAddressesCmd defines the getPeerAddresses JSON-RPC command.
+type GetPeerAddressesCmd struct {
+}
+
+// NewGetPeerAddressesCmd returns a new instance which can be used to issue a JSON-RPC
+// getPeerAddresses command.
+func NewGetPeerAddressesCmd() *GetPeerAddressesCmd { return new(GetPeerAddressesCmd) }
+
 func init() {
 	// No special flags for commands in this file.
 	flags := UsageFlag(0)
@@ -681,7 +689,8 @@ func init() {
 	MustRegisterCommand("getMempoolInfo", (*GetMempoolInfoCmd)(nil), flags)
 	MustRegisterCommand("getNetworkInfo", (*GetNetworkInfoCmd)(nil), flags)
 	MustRegisterCommand("getNetTotals", (*GetNetTotalsCmd)(nil), flags)
-	MustRegisterCommand("getPeerInfo", (*GetPeerInfoCmd)(nil), flags)
+	MustRegisterCommand("getConnectedPeerInfo", (*GetConnectedPeerInfoCmd)(nil), flags)
+	MustRegisterCommand("getPeerAddresses", (*GetPeerAddressesCmd)(nil), flags)
 	MustRegisterCommand("getRawMempool", (*GetRawMempoolCmd)(nil), flags)
 	MustRegisterCommand("getSubnetwork", (*GetSubnetworkCmd)(nil), flags)
 	MustRegisterCommand("getTxOut", (*GetTxOutCmd)(nil), flags)

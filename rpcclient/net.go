@@ -186,26 +186,26 @@ func (c *Client) PingAsync() FuturePingResult {
 
 // Ping queues a ping to be sent to each connected peer.
 //
-// Use the GetPeerInfo function and examine the PingTime and PingWait fields to
+// Use the GetConnectedPeerInfo function and examine the PingTime and PingWait fields to
 // access the ping times.
 func (c *Client) Ping() error {
 	return c.PingAsync().Receive()
 }
 
-// FutureGetPeerInfoResult is a future promise to deliver the result of a
-// GetPeerInfoAsync RPC invocation (or an applicable error).
-type FutureGetPeerInfoResult chan *response
+// FutureGetConnectedPeerInfo is a future promise to deliver the result of a
+// GetConnectedPeerInfoAsync RPC invocation (or an applicable error).
+type FutureGetConnectedPeerInfo chan *response
 
 // Receive waits for the response promised by the future and returns  data about
 // each connected network peer.
-func (r FutureGetPeerInfoResult) Receive() ([]rpcmodel.GetPeerInfoResult, error) {
+func (r FutureGetConnectedPeerInfo) Receive() ([]rpcmodel.GetConnectedPeerInfoResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
-	// Unmarshal result as an array of getpeerinfo result objects.
-	var peerInfo []rpcmodel.GetPeerInfoResult
+	// Unmarshal result as an array of getConnectedPeerInfo result objects.
+	var peerInfo []rpcmodel.GetConnectedPeerInfoResult
 	err = json.Unmarshal(res, &peerInfo)
 	if err != nil {
 		return nil, err
@@ -214,19 +214,19 @@ func (r FutureGetPeerInfoResult) Receive() ([]rpcmodel.GetPeerInfoResult, error)
 	return peerInfo, nil
 }
 
-// GetPeerInfoAsync returns an instance of a type that can be used to get the
+// GetConnectedPeerInfoAsync returns an instance of a type that can be used to get the
 // result of the RPC at some future time by invoking the Receive function on the
 // returned instance.
 //
-// See GetPeerInfo for the blocking version and more details.
-func (c *Client) GetPeerInfoAsync() FutureGetPeerInfoResult {
-	cmd := rpcmodel.NewGetPeerInfoCmd()
+// See GetConnectedPeerInfo for the blocking version and more details.
+func (c *Client) GetConnectedPeerInfoAsync() FutureGetConnectedPeerInfo {
+	cmd := rpcmodel.NewGetConnectedPeerInfoCmd()
 	return c.sendCmd(cmd)
 }
 
-// GetPeerInfo returns data about each connected network peer.
-func (c *Client) GetPeerInfo() ([]rpcmodel.GetPeerInfoResult, error) {
-	return c.GetPeerInfoAsync().Receive()
+// GetConnectedPeerInfo returns data about each connected network peer.
+func (c *Client) GetConnectedPeerInfo() ([]rpcmodel.GetConnectedPeerInfoResult, error) {
+	return c.GetConnectedPeerInfoAsync().Receive()
 }
 
 // FutureGetNetTotalsResult is a future promise to deliver the result of a
