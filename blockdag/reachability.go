@@ -432,11 +432,11 @@ func (rtn *reachabilityTreeNode) reindexIntervalsEarlierThanReindexRoot(
 		return nil, err
 	}
 
-	if rtn.interval.start < commonAncestorChosenChild.interval.start {
+	if rtn.interval.end < commonAncestorChosenChild.interval.start {
 		// rtn is in the subtree before the chosen child
 		return rtn.reclaimIntervalBeforeChosenChild(commonAncestor, commonAncestorChosenChild, reindexRoot)
 	}
-	if commonAncestorChosenChild.interval.end < rtn.interval.end {
+	if commonAncestorChosenChild.interval.end < rtn.interval.start {
 		// rtn is in the subtree after the chosen child
 		return rtn.reclaimIntervalAfterChosenChild(commonAncestor, commonAncestorChosenChild, reindexRoot)
 	}
@@ -622,19 +622,16 @@ func (rtn *reachabilityTreeNode) isAncestorOf(other *reachabilityTreeNode) bool 
 func (rtn *reachabilityTreeNode) findCommonAncestor(other *reachabilityTreeNode) *reachabilityTreeNode {
 	currentThis := rtn
 	currentOther := other
-	for currentThis.parent != nil && currentOther.parent != nil {
-		if currentThis.isAncestorOf(other) {
+	for {
+		if currentThis.parent == nil || currentThis.isAncestorOf(other) {
 			return currentThis
 		}
-		if currentOther.isAncestorOf(rtn) {
+		if currentOther.parent == nil || currentOther.isAncestorOf(rtn) {
 			return currentOther
 		}
 		currentThis = currentThis.parent
 		currentOther = currentOther.parent
 	}
-
-	// If we reached here, the common ancestor is the genesis block
-	return currentThis
 }
 
 // String returns a string representation of a reachability tree node
