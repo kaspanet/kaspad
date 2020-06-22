@@ -515,6 +515,71 @@ func (rtn *reachabilityTreeNode) reclaimIntervalAfterChosenChild(
 	commonAncestor *reachabilityTreeNode, commonAncestorChosenChild *reachabilityTreeNode, reindexRoot *reachabilityTreeNode) (
 	modifiedTreeNodes []*reachabilityTreeNode, err error) {
 
+	current := commonAncestorChosenChild
+	for !current.hasSlackIntervalAfter() {
+		if current == reindexRoot {
+			originalInterval := current.interval
+			current.interval = newReachabilityInterval(current.interval.start, current.interval.end-1)
+
+			modifiedNodes, err := current.countSubtreesAndPropagateInterval()
+			if err != nil {
+				return nil, err
+			}
+			modifiedTreeNodes = append(modifiedTreeNodes, modifiedNodes...)
+
+			current.interval = originalInterval
+			break
+		}
+		current, err = current.findReachabilityTreeAncestorInChildren(reindexRoot)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	for current != commonAncestor {
+		current.interval = newReachabilityInterval(current.interval.start, current.interval.end-1)
+
+		modifiedNodes, err := current.parent.reindexIntervalsAfterChosenChild(current)
+		if err != nil {
+			return nil, err
+		}
+		modifiedTreeNodes = append(modifiedTreeNodes, modifiedNodes...)
+
+		current = current.parent
+	}
+
+	return modifiedTreeNodes, nil
+}
+
+func (rtn *reachabilityTreeNode) reindexIntervalsAfterChosenChild(chosenChild *reachabilityTreeNode) (
+	modifiedTreeNodes []*reachabilityTreeNode, err error) {
+
+	_, childrenAfterChosen, err := rtn.splitChildrenAroundChosenChild(chosenChild)
+	if err != nil {
+		return nil, err
+	}
+
+	childrenAfterChosenSizes, childrenAfterChosenSubtreeSizeMaps, childrenAfterChosenSizesSum :=
+		calcReachabilityTreeNodeSizes(childrenAfterChosen)
+
+	// Apply a tight interval
+	newIntervalStart := childrenAfterChosen[0].interval.start - 1
+	newInterval := newReachabilityInterval(newIntervalStart, newIntervalStart+childrenAfterChosenSizesSum-1)
+	intervals, err := newInterval.splitExact(childrenAfterChosenSizes)
+	if err != nil {
+		return nil, err
+	}
+	for i, child := range childrenAfterChosen {
+		interval := intervals[i]
+		subtreeSizeMap := childrenAfterChosenSubtreeSizeMaps[i]
+		child.interval = interval
+		modifiedNodes, err := child.propagateInterval(subtreeSizeMap)
+		if err != nil {
+			return nil, err
+		}
+		modifiedTreeNodes = append(modifiedTreeNodes, modifiedNodes...)
+	}
+
 	return modifiedTreeNodes, nil
 }
 
