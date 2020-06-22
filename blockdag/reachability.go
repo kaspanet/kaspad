@@ -793,12 +793,20 @@ func (dag *BlockDAG) updateReachability(node *blockNode, selectedParentAnticone 
 	// parent. We don't check node == virtual.selectedParent because
 	// at this stage the virtual had not yet been updated.
 	if node.blueScore > dag.SelectedTipBlueScore() {
+		updateStartTime := time.Now()
 		modifiedTreeNodes, err := dag.updateReachabilityReindexRoot(newTreeNode)
 		if err != nil {
 			return err
 		}
-		for _, modifiedTreeNode := range modifiedTreeNodes {
-			dag.reachabilityStore.setTreeNode(modifiedTreeNode)
+		if len(modifiedTreeNodes) > 0 {
+			updateTimeElapsed := time.Since(updateStartTime)
+			log.Debugf("Reachability reindex root updated to %s. "+
+				"Modified %d tree nodes and took %dms.",
+				dag.reachabilityReindexRoot, len(modifiedTreeNodes),
+				updateTimeElapsed.Milliseconds())
+			for _, modifiedTreeNode := range modifiedTreeNodes {
+				dag.reachabilityStore.setTreeNode(modifiedTreeNode)
+			}
 		}
 	}
 
