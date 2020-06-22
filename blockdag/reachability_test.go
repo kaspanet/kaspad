@@ -23,7 +23,7 @@ func TestAddChild(t *testing.T) {
 		}
 
 		// Expect only the node and its parent to be affected
-		expectedModifiedNodes := []*reachabilityTreeNode{currentTip, node}
+		expectedModifiedNodes := map[*reachabilityTreeNode]struct{}{currentTip: {}, node: {}}
 		if !reflect.DeepEqual(modifiedNodes, expectedModifiedNodes) {
 			t.Fatalf("TestAddChild: unexpected modifiedNodes. "+
 				"want: %s, got: %s", expectedModifiedNodes, modifiedNodes)
@@ -80,7 +80,7 @@ func TestAddChild(t *testing.T) {
 		}
 
 		// Expect only the node and the root to be affected
-		expectedModifiedNodes := []*reachabilityTreeNode{root, childNodes[i]}
+		expectedModifiedNodes := map[*reachabilityTreeNode]struct{}{root: {}, childNodes[i]: {}}
 		if !reflect.DeepEqual(modifiedNodes, expectedModifiedNodes) {
 			t.Fatalf("TestAddChild: unexpected modifiedNodes. "+
 				"want: %s, got: %s", expectedModifiedNodes, modifiedNodes)
