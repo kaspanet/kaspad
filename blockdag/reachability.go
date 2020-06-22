@@ -252,7 +252,18 @@ func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode, reindexRo
 	// Note that we check rtn here instead of child because
 	// at this point we don't yet know child's interval.
 	if !reindexRoot.isAncestorOf(rtn) {
-		return rtn.reindexIntervalsBeforeReindexRoot(reindexRoot)
+		reindexStartTime := time.Now()
+		modifiedNodes, err := rtn.reindexIntervalsBeforeReindexRoot(reindexRoot)
+		if err != nil {
+			return nil, err
+		}
+		reindexTimeElapsed := time.Since(reindexStartTime)
+		log.Debugf("Reachability reindex triggered for "+
+			"block %s. This block is not a child of the current "+
+			"reindex root %s. Modified %d tree nodes and took %dms.",
+			rtn.blockNode.hash, reindexRoot.blockNode.hash,
+			len(modifiedNodes), reindexTimeElapsed.Milliseconds())
+		return modifiedNodes, nil
 	}
 
 	// No allocation space left -- reindex
