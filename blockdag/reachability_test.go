@@ -57,7 +57,7 @@ func TestAddChild(t *testing.T) {
 
 	// Expect all nodes to be descendant nodes of root
 	currentNode := currentTip
-	for currentNode != nil {
+	for currentNode != root {
 		if !root.isAncestorOf(currentNode) {
 			t.Fatalf("TestAddChild: currentNode is not a descendant of root")
 		}
@@ -114,6 +114,91 @@ func TestAddChild(t *testing.T) {
 	for _, childNode := range childNodes {
 		if !root.isAncestorOf(childNode) {
 			t.Fatalf("TestAddChild: childNode is not a descendant of root")
+		}
+	}
+}
+
+func TestReachabilityTreeNodeIsAncestorOf(t *testing.T) {
+	root := newReachabilityTreeNode(&blockNode{})
+	currentTip := root
+	const numberOfDescendants = 6
+	descendants := make([]*reachabilityTreeNode, numberOfDescendants)
+	for i := 0; i < numberOfDescendants; i++ {
+		node := newReachabilityTreeNode(&blockNode{})
+		_, err := currentTip.addChild(node)
+		if err != nil {
+			t.Fatalf("TestReachabilityTreeNodeIsAncestorOf: addChild failed: %s", err)
+		}
+		descendants[i] = node
+		currentTip = node
+	}
+
+	// Expect all descendants to be in the future of root
+	for _, node := range descendants {
+		if !root.isAncestorOf(node) {
+			t.Fatalf("TestReachabilityTreeNodeIsAncestorOf: node is not a descendant of root")
+		}
+	}
+
+	if root.isAncestorOf(root) {
+		t.Fatalf("TestReachabilityTreeNodeIsAncestorOf: root is not expected to be a descendant of root")
+	}
+}
+
+func TestIntervalIsAncestorOf(t *testing.T) {
+	tests := []struct {
+		name                  string
+		this, other           *reachabilityInterval
+		isThisAncestorOfOther bool
+	}{
+		{
+			name:                  "this == other",
+			this:                  newReachabilityInterval(10, 100),
+			other:                 newReachabilityInterval(10, 100),
+			isThisAncestorOfOther: false,
+		},
+		{
+			name:                  "this.start == other.start && this.end < other.end",
+			this:                  newReachabilityInterval(10, 90),
+			other:                 newReachabilityInterval(10, 100),
+			isThisAncestorOfOther: false,
+		},
+		{
+			name:                  "this.start == other.start && this.end > other.end",
+			this:                  newReachabilityInterval(10, 100),
+			other:                 newReachabilityInterval(10, 90),
+			isThisAncestorOfOther: true,
+		},
+		{
+			name:                  "this.start > other.start && this.end == other.end",
+			this:                  newReachabilityInterval(20, 100),
+			other:                 newReachabilityInterval(10, 100),
+			isThisAncestorOfOther: false,
+		},
+		{
+			name:                  "this.start < other.start && this.end == other.end",
+			this:                  newReachabilityInterval(10, 100),
+			other:                 newReachabilityInterval(20, 100),
+			isThisAncestorOfOther: true,
+		},
+		{
+			name:                  "this.start > other.start && this.end < other.end",
+			this:                  newReachabilityInterval(20, 90),
+			other:                 newReachabilityInterval(10, 100),
+			isThisAncestorOfOther: false,
+		},
+		{
+			name:                  "this.start < other.start && this.end > other.end",
+			this:                  newReachabilityInterval(10, 100),
+			other:                 newReachabilityInterval(20, 90),
+			isThisAncestorOfOther: true,
+		},
+	}
+
+	for _, test := range tests {
+		if isAncestorOf := test.this.isAncestorOf(test.other); isAncestorOf != test.isThisAncestorOfOther {
+			t.Errorf("test.this.isAncestorOf(test.other) is expected to be %t but got %t",
+				test.isThisAncestorOfOther, isAncestorOf)
 		}
 	}
 }

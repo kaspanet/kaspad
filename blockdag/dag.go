@@ -566,7 +566,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 		}
 	}
 
-	if err := dag.checkFinalityRules(node); err != nil {
+	if err := dag.checkFinalityViolation(node); err != nil {
 		return nil, err
 	}
 
@@ -816,20 +816,45 @@ func (dag *BlockDAG) LastFinalityPointHash() *daghash.Hash {
 	return dag.lastFinalityPoint.hash
 }
 
-// checkFinalityRules checks the new block does not violate the finality rules
-// specifically - the new block selectedParent chain should contain the old finality point
-func (dag *BlockDAG) checkFinalityRules(newNode *blockNode) error {
+// isInSelectedParentChain returns whether aNode is in the selected parent chain of bNode.
+func (dag *BlockDAG) isInSelectedParentChain(aNode, bNode *blockNode) (bool, error) {
+	aTreeNode, err := dag.reachabilityStore.treeNodeByBlockNode(aNode)
+	if err != nil {
+		return false, err
+	}
+
+	bTreeNode, err := dag.reachabilityStore.treeNodeByBlockNode(bNode)
+	if err != nil {
+		return false, err
+	}
+
+	return aTreeNode.interval.isAncestorOf(bTreeNode.interval), nil
+}
+
+// checkFinalityViolation checks the new block does not violate the finality rules
+// specifically - the new block selectedParent chain should contain the old finality point.
+func (dag *BlockDAG) checkFinalityViolation(newNode *blockNode) error {
 	// the genesis block can not violate finality rules
 	if newNode.isGenesis() {
 		return nil
 	}
 
-	for currentNode := newNode; currentNode != dag.lastFinalityPoint; currentNode = currentNode.selectedParent {
-		// If we went past dag's last finality point without encountering it -
-		// the new block has violated finality.
-		if currentNode.blueScore <= dag.lastFinalityPoint.blueScore {
-			return ruleError(ErrFinality, "The last finality point is not in the selected chain of this block")
-		}
+	// Because newNode doesn't have reachability data we
+	// need to check if the last finality point is in the
+	// selected parent chain of newNode.selectedParent, so
+	// we explicitly check if newNode.selectedParent is
+	// the finality point.
+	if dag.lastFinalityPoint == newNode.selectedParent {
+		return nil
+	}
+
+	isInSelectedChain, err := dag.isInSelectedParentChain(dag.lastFinalityPoint, newNode.selectedParent)
+	if err != nil {
+		return err
+	}
+
+	if !isInSelectedChain {
+		return ruleError(ErrFinality, "the last finality point is not in the selected parent chain of this block")
 	}
 	return nil
 }
@@ -894,7 +919,7 @@ func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
 // IsKnownFinalizedBlock returns whether the block is below the finality point.
 // IsKnownFinalizedBlock might be false-negative because node finality status is
 // updated in a separate goroutine. To get a definite answer if a block
-// is finalized or not, use dag.checkFinalityRules.
+// is finalized or not, use dag.checkFinalityViolation.
 func (dag *BlockDAG) IsKnownFinalizedBlock(blockHash *daghash.Hash) bool {
 	node, ok := dag.index.LookupNode(blockHash)
 	return ok && node.isFinalized
