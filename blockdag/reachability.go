@@ -427,7 +427,7 @@ func (rtn *reachabilityTreeNode) reindexIntervalsEarlierThanReindexRoot(
 	reindexRoot *reachabilityTreeNode) (map[*reachabilityTreeNode]struct{}, error) {
 
 	commonAncestor := rtn.findCommonAncestor(reindexRoot)
-	commonAncestorChosenChild, err := commonAncestor.findReachabilityTreeAncestorInChildren(rtn)
+	commonAncestorChosenChild, err := commonAncestor.findReachabilityTreeAncestorInChildren(reindexRoot)
 	if err != nil {
 		return nil, err
 	}
