@@ -125,7 +125,7 @@ func TestReachabilityTreeNodeIsAncestorOf(t *testing.T) {
 	descendants := make([]*reachabilityTreeNode, numberOfDescendants)
 	for i := 0; i < numberOfDescendants; i++ {
 		node := newReachabilityTreeNode(&blockNode{})
-		_, err := currentTip.addChild(node)
+		_, err := currentTip.addChild(node, root)
 		if err != nil {
 			t.Fatalf("TestReachabilityTreeNodeIsAncestorOf: addChild failed: %s", err)
 		}

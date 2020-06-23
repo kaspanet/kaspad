@@ -1093,15 +1093,11 @@ func (rt *reachabilityTree) propagateChildIntervals(interval *reachabilityInterv
 func (rt *reachabilityTree) isAncestorOf(this *blockNode, other *blockNode) (bool, error) {
 	// First, check if this node is a reachability tree ancestor of the
 	// other node
-	thisTreeNode, err := rt.reachabilityStore.treeNodeByBlockNode(this)
+	isReachabilityTreeAncestor, err := rt.isReachabilityTreeAncestorOf(this, other)
 	if err != nil {
 		return false, err
 	}
-	otherTreeNode, err := rt.reachabilityStore.treeNodeByBlockNode(other)
-	if err != nil {
-		return false, err
-	}
-	if thisTreeNode.isAncestorOf(otherTreeNode) {
+	if isReachabilityTreeAncestor {
 		return true, nil
 	}
 
@@ -1111,5 +1107,22 @@ func (rt *reachabilityTree) isAncestorOf(this *blockNode, other *blockNode) (boo
 	if err != nil {
 		return false, err
 	}
+	otherTreeNode, err := rt.reachabilityStore.treeNodeByBlockNode(other)
+	if err != nil {
+		return false, err
+	}
 	return thisFutureCoveringSet.isInFuture(&futureCoveringBlock{blockNode: other, treeNode: otherTreeNode}), nil
+}
+
+// isReachabilityTreeAncestorOf returns whether `this` is in the selected parent chain of `other`.
+func (rt *reachabilityTree) isReachabilityTreeAncestorOf(this *blockNode, other *blockNode) (bool, error) {
+	thisTreeNode, err := rt.reachabilityStore.treeNodeByBlockNode(this)
+	if err != nil {
+		return false, err
+	}
+	otherTreeNode, err := rt.reachabilityStore.treeNodeByBlockNode(other)
+	if err != nil {
+		return false, err
+	}
+	return thisTreeNode.isAncestorOf(otherTreeNode), nil
 }

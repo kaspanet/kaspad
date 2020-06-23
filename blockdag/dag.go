@@ -820,17 +820,7 @@ func (dag *BlockDAG) LastFinalityPointHash() *daghash.Hash {
 
 // isInSelectedParentChain returns whether aNode is in the selected parent chain of bNode.
 func (dag *BlockDAG) isInSelectedParentChain(aNode, bNode *blockNode) (bool, error) {
-	aTreeNode, err := dag.reachabilityStore.treeNodeByBlockNode(aNode)
-	if err != nil {
-		return false, err
-	}
-
-	bTreeNode, err := dag.reachabilityStore.treeNodeByBlockNode(bNode)
-	if err != nil {
-		return false, err
-	}
-
-	return aTreeNode.interval.isAncestorOf(bTreeNode.interval), nil
+	return dag.reachabilityTree.isReachabilityTreeAncestorOf(aNode, bNode)
 }
 
 // checkFinalityViolation checks the new block does not violate the finality rules
