@@ -529,9 +529,8 @@ func (rtn *reachabilityTreeNode) reindexIntervalsBeforeChosenChild(chosenChild *
 		return nil, err
 	}
 	for i, child := range childrenBeforeChosen {
-		interval := intervals[i]
+		child.interval = intervals[i]
 		subtreeSizeMap := childrenBeforeChosenSubtreeSizeMaps[i]
-		child.interval = interval
 		modifiedNodes, err := child.propagateInterval(subtreeSizeMap)
 		if err != nil {
 			return nil, err
@@ -607,9 +606,8 @@ func (rtn *reachabilityTreeNode) reindexIntervalsAfterChosenChild(chosenChild *r
 		return nil, err
 	}
 	for i, child := range childrenAfterChosen {
-		interval := intervals[i]
+		child.interval = intervals[i]
 		subtreeSizeMap := childrenAfterChosenSubtreeSizeMaps[i]
-		child.interval = interval
 		modifiedNodes, err := child.propagateInterval(subtreeSizeMap)
 		if err != nil {
 			return nil, err
