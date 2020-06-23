@@ -45,14 +45,18 @@ func TestAddChild(t *testing.T) {
 		t.Fatalf("TestAddChild: unexpected amount of modifiedNodes.")
 	}
 
-	// Expect the tip to have an interval of 1 and remaining interval of 0
+	// Expect the tip to have an interval of 1 and remaining interval of 0 both before and after
 	tipInterval := lastChild.interval.size()
 	if tipInterval != 1 {
 		t.Fatalf("TestAddChild: unexpected tip interval size: want: 1, got: %d", tipInterval)
 	}
-	tipRemainingInterval := lastChild.remainingIntervalAfter().size()
-	if tipRemainingInterval != 0 {
-		t.Fatalf("TestAddChild: unexpected tip interval size: want: 0, got: %d", tipRemainingInterval)
+	tipRemainingIntervalBefore := lastChild.remainingIntervalBefore().size()
+	if tipRemainingIntervalBefore != 0 {
+		t.Fatalf("TestAddChild: unexpected tip interval before size: want: 0, got: %d", tipRemainingIntervalBefore)
+	}
+	tipRemainingIntervalAfter := lastChild.remainingIntervalAfter().size()
+	if tipRemainingIntervalAfter != 0 {
+		t.Fatalf("TestAddChild: unexpected tip interval after size: want: 0, got: %d", tipRemainingIntervalAfter)
 	}
 
 	// Expect all nodes to be descendant nodes of root
@@ -100,14 +104,18 @@ func TestAddChild(t *testing.T) {
 		t.Fatalf("TestAddChild: unexpected amount of modifiedNodes.")
 	}
 
-	// Expect the last-added child to have an interval of 1 and remaining interval of 0
+	// Expect the last-added child to have an interval of 1 and remaining interval of 0 both before and after
 	lastChildInterval := lastChild.interval.size()
 	if lastChildInterval != 1 {
 		t.Fatalf("TestAddChild: unexpected lastChild interval size: want: 1, got: %d", lastChildInterval)
 	}
-	lastChildRemainingInterval := lastChild.remainingIntervalAfter().size()
-	if lastChildRemainingInterval != 0 {
-		t.Fatalf("TestAddChild: unexpected lastChild interval size: want: 0, got: %d", lastChildRemainingInterval)
+	lastChildRemainingIntervalBefore := lastChild.remainingIntervalBefore().size()
+	if lastChildRemainingIntervalBefore != 0 {
+		t.Fatalf("TestAddChild: unexpected lastChild interval before size: want: 0, got: %d", lastChildRemainingIntervalBefore)
+	}
+	lastChildRemainingIntervalAfter := lastChild.remainingIntervalAfter().size()
+	if lastChildRemainingIntervalAfter != 0 {
+		t.Fatalf("TestAddChild: unexpected lastChild interval after size: want: 0, got: %d", lastChildRemainingIntervalAfter)
 	}
 
 	// Expect all nodes to be descendant nodes of root
