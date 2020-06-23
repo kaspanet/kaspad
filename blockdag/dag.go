@@ -149,12 +149,13 @@ type BlockDAG struct {
 	notificationsLock sync.RWMutex
 	notifications     []NotificationCallback
 
-	lastFinalityPoint       *blockNode
-	reachabilityReindexRoot *reachabilityTreeNode
+	lastFinalityPoint *blockNode
 
 	utxoDiffStore     *utxoDiffStore
 	reachabilityStore *reachabilityStore
 	multisetStore     *multisetStore
+
+	reachabilityTree *reachabilityTree
 
 	recentBlockProcessingTimestamps []time.Time
 	startTime                       time.Time
@@ -715,7 +716,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 	state := &dagState{
 		TipHashes:               dag.TipHashes(),
 		LastFinalityPoint:       dag.lastFinalityPoint.hash,
-		ReachabilityReindexRoot: dag.reachabilityReindexRoot.blockNode.hash,
+		ReachabilityReindexRoot: dag.reachabilityTree.reindexRoot.blockNode.hash,
 		LocalSubnetworkID:       dag.subnetworkID,
 	}
 	err = saveDAGState(dbTx, state)
@@ -2043,6 +2044,7 @@ func New(config *Config) (*BlockDAG, error) {
 	dag.utxoDiffStore = newUTXODiffStore(dag)
 	dag.reachabilityStore = newReachabilityStore(dag)
 	dag.multisetStore = newMultisetStore(dag)
+	dag.reachabilityTree = newReachabilityTree(nil)
 
 	// Initialize the DAG state from the passed database. When the db
 	// does not yet contain any DAG state, both it and the DAG state

@@ -247,7 +247,7 @@ func (dag *BlockDAG) initDAGState() error {
 	if !ok {
 		return errors.Errorf("block %s does not exist in the DAG", dagState.LastFinalityPoint)
 	}
-	dag.reachabilityReindexRoot, err = dag.reachabilityStore.treeNodeByBlockNode(reachabilityReindexRootNode)
+	dag.reachabilityTree.reindexRoot, err = dag.reachabilityStore.treeNodeByBlockNode(reachabilityReindexRootNode)
 	if err != nil {
 		return errors.Errorf("cannot set reachability reindex root: %s", err)
 	}
