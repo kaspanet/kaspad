@@ -972,10 +972,14 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockPastUTXO UTXOSet,
 	newBlockMultiset *secp256k1.MultiSet, selectedParentAnticone []*blockNode) (
 	virtualUTXODiff *UTXODiff, chainUpdates *chainUpdates, err error) {
 
-	// Add the block to the reachability structures
-	err = dag.updateReachability(node, selectedParentAnticone)
+	// Add the block to the reachability tree
+	selectedTipBlueScore := uint64(0)
+	if !node.isGenesis() {
+		selectedTipBlueScore = dag.SelectedTipBlueScore()
+	}
+	err = dag.reachabilityTree.addBlock(node, selectedParentAnticone, selectedTipBlueScore)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed updating reachability")
+		return nil, nil, errors.Wrap(err, "failed adding block to the reachability tree")
 	}
 
 	dag.multisetStore.setMultiset(node, newBlockMultiset)
@@ -1786,6 +1790,10 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 		nodes[i] = candidateNodes.pop()
 	}
 	return nodes, nil
+}
+
+func (dag *BlockDAG) isAncestorOf(this *blockNode, other *blockNode) (bool, error) {
+	return dag.reachabilityTree.isAncestorOf(this, other)
 }
 
 // AntiPastHashesBetween returns the hashes of the blocks between the
