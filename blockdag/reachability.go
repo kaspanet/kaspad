@@ -1014,7 +1014,8 @@ func (rt *reachabilityTree) expandIntervalInReindexRootChosenChild(reindexRoot *
 		reindexRoot.interval.end-reindexRootChildNodesAfterChosenSizesSum-reachabilityReindexSlack-1,
 	)
 
-	if newReindexRootChildInterval.start > reindexRoot.interval.start || newReindexRootChildInterval.end < reindexRoot.interval.end {
+	if newReindexRootChildInterval.start > chosenReindexRootChild.interval.start ||
+		newReindexRootChildInterval.end < chosenReindexRootChild.interval.end {
 		// New interval doesn't contain the previous one, propagation is required
 		chosenReindexRootChild.interval = newReachabilityInterval(
 			newReindexRootChildInterval.start+reachabilityReindexSlack,
