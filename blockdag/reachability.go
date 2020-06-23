@@ -309,13 +309,8 @@ func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode, reindexRo
 	if err != nil {
 		return nil, err
 	}
-	child.setInterval(allocated)
+	child.interval = allocated
 	return newModifiedTreeNodes(rtn, child), nil
-}
-
-// setInterval sets the reachability interval for this node.
-func (rtn *reachabilityTreeNode) setInterval(interval *reachabilityInterval) {
-	rtn.interval = interval
 }
 
 // reindexIntervals traverses the reachability subtree that's
@@ -435,7 +430,7 @@ func (rtn *reachabilityTreeNode) propagateInterval(subTreeSizeMap map[*reachabil
 			}
 			for i, child := range current.children {
 				childInterval := intervals[i]
-				child.setInterval(childInterval)
+				child.interval = childInterval
 				queue = append(queue, child)
 			}
 		}

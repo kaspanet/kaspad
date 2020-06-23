@@ -11,7 +11,7 @@ func TestAddChild(t *testing.T) {
 	//             root -> a -> b -> c...
 	// Create the root node of a new reachability tree
 	root := newReachabilityTreeNode(&blockNode{})
-	root.setInterval(newReachabilityInterval(1, 100))
+	root.interval = newReachabilityInterval(1, 100)
 
 	// Add a chain of child nodes just before a reindex occurs (2^6=64 < 100)
 	currentTip := root
@@ -23,7 +23,7 @@ func TestAddChild(t *testing.T) {
 		}
 
 		// Expect only the node and its parent to be affected
-		expectedModifiedNodes := map[*reachabilityTreeNode]struct{}{currentTip: {}, node: {}}
+		expectedModifiedNodes := newModifiedTreeNodes(currentTip, node)
 		if !reflect.DeepEqual(modifiedNodes, expectedModifiedNodes) {
 			t.Fatalf("TestAddChild: unexpected modifiedNodes. "+
 				"want: %s, got: %s", expectedModifiedNodes, modifiedNodes)
@@ -68,7 +68,7 @@ func TestAddChild(t *testing.T) {
 	//             root -> a, b, c...
 	// Create the root node of a new reachability tree
 	root = newReachabilityTreeNode(&blockNode{})
-	root.setInterval(newReachabilityInterval(1, 100))
+	root.interval = newReachabilityInterval(1, 100)
 
 	// Add child nodes to root just before a reindex occurs (2^6=64 < 100)
 	childNodes := make([]*reachabilityTreeNode, 6)
@@ -80,7 +80,7 @@ func TestAddChild(t *testing.T) {
 		}
 
 		// Expect only the node and the root to be affected
-		expectedModifiedNodes := map[*reachabilityTreeNode]struct{}{root: {}, childNodes[i]: {}}
+		expectedModifiedNodes := newModifiedTreeNodes(root, childNodes[i])
 		if !reflect.DeepEqual(modifiedNodes, expectedModifiedNodes) {
 			t.Fatalf("TestAddChild: unexpected modifiedNodes. "+
 				"want: %s, got: %s", expectedModifiedNodes, modifiedNodes)
@@ -580,7 +580,7 @@ func TestSplitWithExponentialBiasErrors(t *testing.T) {
 func TestReindexIntervalErrors(t *testing.T) {
 	// Create a treeNode and give it size = 100
 	treeNode := newReachabilityTreeNode(&blockNode{})
-	treeNode.setInterval(newReachabilityInterval(0, 99))
+	treeNode.interval = newReachabilityInterval(0, 99)
 
 	// Add a chain of 100 child treeNodes to treeNode
 	var err error
@@ -619,7 +619,7 @@ func BenchmarkReindexInterval(b *testing.B) {
 		// its first child gets half of the interval, so a reindex
 		// from the root should happen after adding subTreeSize
 		// nodes.
-		root.setInterval(newReachabilityInterval(0, subTreeSize*2))
+		root.interval = newReachabilityInterval(0, subTreeSize*2)
 
 		currentTreeNode := root
 		for i := 0; i < subTreeSize; i++ {
@@ -651,9 +651,9 @@ func BenchmarkReindexInterval(b *testing.B) {
 
 func TestFutureCoveringBlockSetString(t *testing.T) {
 	treeNodeA := newReachabilityTreeNode(&blockNode{})
-	treeNodeA.setInterval(newReachabilityInterval(123, 456))
+	treeNodeA.interval = newReachabilityInterval(123, 456)
 	treeNodeB := newReachabilityTreeNode(&blockNode{})
-	treeNodeB.setInterval(newReachabilityInterval(457, 789))
+	treeNodeB.interval = newReachabilityInterval(457, 789)
 	futureCoveringSet := futureCoveringBlockSet{
 		&futureCoveringBlock{treeNode: treeNodeA},
 		&futureCoveringBlock{treeNode: treeNodeB},
@@ -669,13 +669,13 @@ func TestFutureCoveringBlockSetString(t *testing.T) {
 
 func TestReachabilityTreeNodeString(t *testing.T) {
 	treeNodeA := newReachabilityTreeNode(&blockNode{})
-	treeNodeA.setInterval(newReachabilityInterval(100, 199))
+	treeNodeA.interval = newReachabilityInterval(100, 199)
 	treeNodeB1 := newReachabilityTreeNode(&blockNode{})
-	treeNodeB1.setInterval(newReachabilityInterval(100, 150))
+	treeNodeB1.interval = newReachabilityInterval(100, 150)
 	treeNodeB2 := newReachabilityTreeNode(&blockNode{})
-	treeNodeB2.setInterval(newReachabilityInterval(150, 199))
+	treeNodeB2.interval = newReachabilityInterval(150, 199)
 	treeNodeC := newReachabilityTreeNode(&blockNode{})
-	treeNodeC.setInterval(newReachabilityInterval(100, 149))
+	treeNodeC.interval = newReachabilityInterval(100, 149)
 	treeNodeA.children = []*reachabilityTreeNode{treeNodeB1, treeNodeB2}
 	treeNodeB2.children = []*reachabilityTreeNode{treeNodeC}
 
