@@ -970,10 +970,9 @@ func (rt *reachabilityTree) tightenIntervalsBeforeReindexRootChosenChild(
 	reindexRootChildNodesBeforeChosenSizes, reindexRootChildNodesBeforeChosenSubtreeSizeMaps, reindexRootChildNodesBeforeChosenSizesSum :=
 		calcReachabilityTreeNodeSizes(reindexRootChildNodesBeforeChosen)
 
-	reindexRootStart := reindexRoot.interval.start
 	intervalBeforeReindexRootStart := newReachabilityInterval(
-		reindexRootStart+reachabilityReindexSlack,
-		reindexRootStart+reachabilityReindexSlack+reindexRootChildNodesBeforeChosenSizesSum-1,
+		reindexRoot.interval.start+reachabilityReindexSlack,
+		reindexRoot.interval.start+reachabilityReindexSlack+reindexRootChildNodesBeforeChosenSizesSum-1,
 	)
 
 	modifiedTreeNodes, err = rt.propagateChildIntervals(intervalBeforeReindexRootStart, reindexRootChildNodesBeforeChosen,
@@ -991,10 +990,9 @@ func (rt *reachabilityTree) tightenIntervalsAfterReindexRootChosenChild(
 	reindexRootChildNodesAfterChosenSizes, reindexRootChildNodesAfterChosenSubtreeSizeMaps, reindexRootChildNodesAfterChosenSizesSum :=
 		calcReachabilityTreeNodeSizes(reindexRootChildNodesAfterChosen)
 
-	reindexRootEnd := reindexRoot.interval.end
 	intervalAfterReindexRootEnd := newReachabilityInterval(
-		reindexRootEnd-reachabilityReindexSlack-reindexRootChildNodesAfterChosenSizesSum,
-		reindexRootEnd-reachabilityReindexSlack-1,
+		reindexRoot.interval.end-reachabilityReindexSlack-reindexRootChildNodesAfterChosenSizesSum,
+		reindexRoot.interval.end-reachabilityReindexSlack-1,
 	)
 
 	modifiedTreeNodes, err = rt.propagateChildIntervals(intervalAfterReindexRootEnd, reindexRootChildNodesAfterChosen,
@@ -1011,14 +1009,12 @@ func (rt *reachabilityTree) expandIntervalInReindexRootChosenChild(reindexRoot *
 
 	modifiedTreeNodes := newModifiedTreeNodes()
 
-	reindexRootStart := reindexRoot.interval.start
-	reindexRootEnd := reindexRoot.interval.end
 	newReindexRootChildInterval := newReachabilityInterval(
-		reindexRootStart+reindexRootChildNodesBeforeChosenSizesSum+reachabilityReindexSlack,
-		reindexRootEnd-reindexRootChildNodesAfterChosenSizesSum-reachabilityReindexSlack-1,
+		reindexRoot.interval.start+reindexRootChildNodesBeforeChosenSizesSum+reachabilityReindexSlack,
+		reindexRoot.interval.end-reindexRootChildNodesAfterChosenSizesSum-reachabilityReindexSlack-1,
 	)
 
-	if newReindexRootChildInterval.start > reindexRootStart || newReindexRootChildInterval.end < reindexRootEnd {
+	if newReindexRootChildInterval.start > reindexRoot.interval.start || newReindexRootChildInterval.end < reindexRoot.interval.end {
 		// New interval doesn't contain the previous one, propagation is required
 		chosenReindexRootChild.interval = newReachabilityInterval(
 			newReindexRootChildInterval.start+reachabilityReindexSlack,
