@@ -268,7 +268,7 @@ func (store *reachabilityStore) serializeFutureCoveringSet(w io.Writer, futureCo
 
 	// Serialize each block in the set
 	for _, block := range futureCoveringSet {
-		err = wire.WriteElement(w, block.blockNode.hash)
+		err = wire.WriteElement(w, block.treeNode.blockNode.hash)
 		if err != nil {
 			return err
 		}
@@ -382,17 +382,12 @@ func (store *reachabilityStore) deserializeFutureCoveringSet(r io.Reader, destin
 		if err != nil {
 			return err
 		}
-		blockNode, ok := store.dag.index.LookupNode(blockHash)
-		if !ok {
-			return errors.Errorf("blockNode not found for hash %s", blockHash)
-		}
 		blockReachabilityData, ok := store.reachabilityDataByHash(blockHash)
 		if !ok {
 			return errors.Errorf("block reachability data not found for hash: %s", blockHash)
 		}
 		futureCoveringSet[i] = &futureCoveringBlock{
-			blockNode: blockNode,
-			treeNode:  blockReachabilityData.treeNode,
+			treeNode: blockReachabilityData.treeNode,
 		}
 	}
 	destination.futureCoveringSet = futureCoveringSet

@@ -679,16 +679,14 @@ type futureCoveringBlockSet []*futureCoveringBlock
 
 // futureCoveringBlock represents a block in the future of some other block.
 type futureCoveringBlock struct {
-	blockNode *blockNode
-	treeNode  *reachabilityTreeNode
+	treeNode *reachabilityTreeNode
 }
 
 func futureCoveringBlockSetFromReachabilityTreeNodes(nodes []*reachabilityTreeNode) futureCoveringBlockSet {
 	futureCoveringBlocks := make([]*futureCoveringBlock, len(nodes))
 	for i, node := range nodes {
 		futureCoveringBlocks[i] = &futureCoveringBlock{
-			blockNode: node.blockNode,
-			treeNode:  node,
+			treeNode: node,
 		}
 	}
 	return futureCoveringBlocks
@@ -812,7 +810,7 @@ func (rt *reachabilityTree) addBlock(node *blockNode, selectedParentAnticone []*
 		if err != nil {
 			return err
 		}
-		currentFutureCoveringSet.insertBlock(&futureCoveringBlock{blockNode: node, treeNode: newTreeNode})
+		currentFutureCoveringSet.insertBlock(&futureCoveringBlock{treeNode: newTreeNode})
 		err = rt.reachabilityStore.setFutureCoveringSet(current, currentFutureCoveringSet)
 		if err != nil {
 			return err
@@ -908,7 +906,7 @@ func (rt *reachabilityTree) maybeMoveReindexRoot(
 // of rtn that is the ancestor of node.
 func (rtn *reachabilityTreeNode) findAncestorAmongChildren(node *reachabilityTreeNode) (*reachabilityTreeNode, error) {
 	rootChildrenFutureCoveringSet := futureCoveringBlockSetFromReachabilityTreeNodes(rtn.children)
-	i := rootChildrenFutureCoveringSet.findIndex(&futureCoveringBlock{blockNode: node.blockNode, treeNode: node})
+	i := rootChildrenFutureCoveringSet.findIndex(&futureCoveringBlock{treeNode: node})
 	if i == 0 {
 		return nil, errors.Errorf("rtn is not an ancestor of node")
 	}
@@ -1105,7 +1103,7 @@ func (rt *reachabilityTree) isAncestorOf(this *blockNode, other *blockNode) (boo
 	if err != nil {
 		return false, err
 	}
-	return thisFutureCoveringSet.isInFuture(&futureCoveringBlock{blockNode: other, treeNode: otherTreeNode}), nil
+	return thisFutureCoveringSet.isInFuture(&futureCoveringBlock{treeNode: otherTreeNode}), nil
 }
 
 // isReachabilityTreeAncestorOf returns whether `this` is in the selected parent chain of `other`.
