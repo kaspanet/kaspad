@@ -955,17 +955,12 @@ func (rt *reachabilityTree) concentrateIntervalAroundReindexRootChosenChild(
 func (rtn *reachabilityTreeNode) splitChildrenAroundChosenChild(chosenChild *reachabilityTreeNode) (
 	nodesBeforeChosen []*reachabilityTreeNode, nodesAfterChosen []*reachabilityTreeNode, err error) {
 
-	chosenIndex := -1
 	for i, child := range rtn.children {
 		if child == chosenChild {
-			chosenIndex = i
-			break
+			return rtn.children[:i], rtn.children[i+1:], nil
 		}
 	}
-	if chosenIndex == -1 {
-		return nil, nil, errors.Errorf("chosenChild not a child of rtn")
-	}
-	return rtn.children[:chosenIndex], rtn.children[chosenIndex+1:], nil
+	return nil, nil, errors.Errorf("chosenChild not a child of rtn")
 }
 
 func (rt *reachabilityTree) tightenIntervalsBeforeReindexRootChosenChild(
