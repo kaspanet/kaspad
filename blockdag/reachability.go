@@ -783,7 +783,7 @@ func (fb futureCoveringBlockSet) String() string {
 	return intervalsString
 }
 
-func (rt *reachabilityTree) addBlock(node *blockNode, selectedParentAnticone []*blockNode, selectedTipBlueScore uint64) error {
+func (rt *reachabilityTree) addBlock(node *blockNode, selectedParentAnticone []*blockNode) error {
 	// Allocate a new reachability tree node
 	newTreeNode := newReachabilityTreeNode(node)
 
@@ -826,7 +826,7 @@ func (rt *reachabilityTree) addBlock(node *blockNode, selectedParentAnticone []*
 	// whether the new node is going to be the virtual's selected
 	// parent. We don't check node == virtual.selectedParent because
 	// at this stage the virtual had not yet been updated.
-	if node.blueScore > selectedTipBlueScore {
+	if node.blueScore > rt.dag.SelectedTipBlueScore() {
 		updateStartTime := time.Now()
 		modifiedTreeNodes, err := rt.updateReindexRoot(newTreeNode)
 		if err != nil {
@@ -848,12 +848,15 @@ func (rt *reachabilityTree) addBlock(node *blockNode, selectedParentAnticone []*
 }
 
 type reachabilityTree struct {
+	dag               *BlockDAG
 	reachabilityStore *reachabilityStore
 	reindexRoot       *reachabilityTreeNode
 }
 
-func newReachabilityTree(reachabilityStore *reachabilityStore) *reachabilityTree {
+func newReachabilityTree(dag *BlockDAG) *reachabilityTree {
+	reachabilityStore := newReachabilityStore(dag)
 	return &reachabilityTree{
+		dag:               dag,
 		reindexRoot:       nil,
 		reachabilityStore: reachabilityStore,
 	}

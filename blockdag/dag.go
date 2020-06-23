@@ -988,11 +988,7 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockPastUTXO UTXOSet,
 	virtualUTXODiff *UTXODiff, chainUpdates *chainUpdates, err error) {
 
 	// Add the block to the reachability tree
-	selectedTipBlueScore := uint64(0)
-	if !node.isGenesis() {
-		selectedTipBlueScore = dag.SelectedTipBlueScore()
-	}
-	err = dag.reachabilityTree.addBlock(node, selectedParentAnticone, selectedTipBlueScore)
+	err = dag.reachabilityTree.addBlock(node, selectedParentAnticone)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed adding block to the reachability tree")
 	}
@@ -2065,9 +2061,7 @@ func New(config *Config) (*BlockDAG, error) {
 	dag.virtual = newVirtualBlock(dag, nil)
 	dag.utxoDiffStore = newUTXODiffStore(dag)
 	dag.multisetStore = newMultisetStore(dag)
-
-	reachabilityStore := newReachabilityStore(dag)
-	dag.reachabilityTree = newReachabilityTree(reachabilityStore)
+	dag.reachabilityTree = newReachabilityTree(dag)
 
 	// Initialize the DAG state from the passed database. When the db
 	// does not yet contain any DAG state, both it and the DAG state
