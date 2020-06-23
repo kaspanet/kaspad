@@ -151,9 +151,8 @@ type BlockDAG struct {
 
 	lastFinalityPoint *blockNode
 
-	utxoDiffStore     *utxoDiffStore
-	reachabilityStore *reachabilityStore
-	multisetStore     *multisetStore
+	utxoDiffStore *utxoDiffStore
+	multisetStore *multisetStore
 
 	reachabilityTree *reachabilityTree
 
@@ -702,7 +701,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 		return err
 	}
 
-	err = dag.reachabilityStore.flushToDB(dbTx)
+	err = dag.reachabilityTree.reachabilityStore.flushToDB(dbTx)
 	if err != nil {
 		return err
 	}
@@ -763,7 +762,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 	dag.index.clearDirtyEntries()
 	dag.utxoDiffStore.clearDirtyEntries()
 	dag.utxoDiffStore.clearOldEntries()
-	dag.reachabilityStore.clearDirtyEntries()
+	dag.reachabilityTree.reachabilityStore.clearDirtyEntries()
 	dag.multisetStore.clearNewEntries()
 
 	return nil
@@ -2042,9 +2041,9 @@ func New(config *Config) (*BlockDAG, error) {
 
 	dag.virtual = newVirtualBlock(dag, nil)
 	dag.utxoDiffStore = newUTXODiffStore(dag)
-	dag.reachabilityStore = newReachabilityStore(dag)
 	dag.multisetStore = newMultisetStore(dag)
 	dag.reachabilityTree = newReachabilityTree(nil)
+	dag.reachabilityTree.reachabilityStore = newReachabilityStore(dag)
 
 	// Initialize the DAG state from the passed database. When the db
 	// does not yet contain any DAG state, both it and the DAG state

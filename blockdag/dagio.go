@@ -211,7 +211,7 @@ func (dag *BlockDAG) initDAGState() error {
 	}
 
 	log.Debugf("Loading reachability data...")
-	err = dag.reachabilityStore.init(dbaccess.NoTx())
+	err = dag.reachabilityTree.reachabilityStore.init(dbaccess.NoTx())
 	if err != nil {
 		return err
 	}
@@ -247,7 +247,7 @@ func (dag *BlockDAG) initDAGState() error {
 	if !ok {
 		return errors.Errorf("block %s does not exist in the DAG", dagState.LastFinalityPoint)
 	}
-	dag.reachabilityTree.reindexRoot, err = dag.reachabilityStore.treeNodeByBlockNode(reachabilityReindexRootNode)
+	dag.reachabilityTree.reindexRoot, err = dag.reachabilityTree.reachabilityStore.treeNodeByBlockNode(reachabilityReindexRootNode)
 	if err != nil {
 		return errors.Errorf("cannot set reachability reindex root: %s", err)
 	}
