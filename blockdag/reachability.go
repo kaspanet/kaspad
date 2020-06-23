@@ -623,10 +623,10 @@ func (rtn *reachabilityTreeNode) findCommonAncestor(other *reachabilityTreeNode)
 	currentThis := rtn
 	currentOther := other
 	for {
-		if currentThis.parent == nil || currentThis.isAncestorOf(other) {
+		if currentThis.isAncestorOf(other) {
 			return currentThis
 		}
-		if currentOther.parent == nil || currentOther.isAncestorOf(rtn) {
+		if currentOther.isAncestorOf(rtn) {
 			return currentOther
 		}
 		currentThis = currentThis.parent
