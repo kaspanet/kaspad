@@ -279,7 +279,7 @@ func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode, reindexRo
 	// Handle rtn not being a descendant of the reindex root.
 	// Note that we check rtn here instead of child because
 	// at this point we don't yet know child's interval.
-	if !reindexRoot.isAncestorOf(rtn) {
+	if !reindexRoot.isAncestorOf(rtn) && reindexRoot != rtn {
 		reindexStartTime := time.Now()
 		modifiedNodes, err := rtn.reindexIntervalsEarlierThanReindexRoot(reindexRoot)
 		if err != nil {
