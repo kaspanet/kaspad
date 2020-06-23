@@ -249,7 +249,7 @@ func (dag *BlockDAG) initDAGState() error {
 	}
 	dag.reachabilityTree.reindexRoot, err = dag.reachabilityTree.reachabilityStore.treeNodeByBlockNode(reachabilityReindexRootNode)
 	if err != nil {
-		return errors.Errorf("cannot set reachability reindex root: %s", err)
+		return errors.Wrapf(err, "cannot set reachability reindex root")
 	}
 
 	log.Debugf("Processing unprocessed blockNodes...")
