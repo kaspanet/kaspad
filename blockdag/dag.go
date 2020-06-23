@@ -2050,8 +2050,9 @@ func New(config *Config) (*BlockDAG, error) {
 	dag.virtual = newVirtualBlock(dag, nil)
 	dag.utxoDiffStore = newUTXODiffStore(dag)
 	dag.multisetStore = newMultisetStore(dag)
-	dag.reachabilityTree = newReachabilityTree(nil)
-	dag.reachabilityTree.reachabilityStore = newReachabilityStore(dag)
+
+	reachabilityStore := newReachabilityStore(dag)
+	dag.reachabilityTree = newReachabilityTree(reachabilityStore)
 
 	// Initialize the DAG state from the passed database. When the db
 	// does not yet contain any DAG state, both it and the DAG state

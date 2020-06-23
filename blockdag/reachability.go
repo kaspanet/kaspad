@@ -848,8 +848,11 @@ type reachabilityTree struct {
 	reindexRoot       *reachabilityTreeNode
 }
 
-func newReachabilityTree(reindexRoot *reachabilityTreeNode) *reachabilityTree {
-	return &reachabilityTree{reindexRoot: reindexRoot}
+func newReachabilityTree(reachabilityStore *reachabilityStore) *reachabilityTree {
+	return &reachabilityTree{
+		reindexRoot:       nil,
+		reachabilityStore: reachabilityStore,
+	}
 }
 
 func (rt *reachabilityTree) updateReindexRoot(newTreeNode *reachabilityTreeNode) (modifiedTreeNodes, error) {
