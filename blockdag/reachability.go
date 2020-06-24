@@ -927,7 +927,7 @@ func (rt *reachabilityTree) concentrateIntervalAroundReindexRootChosenChild(
 	reindexRoot *reachabilityTreeNode, reindexRootChosenChild *reachabilityTreeNode) (
 	modifiedTreeNodes, error) {
 
-	modifiedTreeNodes := newModifiedTreeNodes()
+	allModifiedTreeNodes := newModifiedTreeNodes()
 
 	reindexRootChildNodesBeforeChosen, reindexRootChildNodesAfterChosen, err :=
 		reindexRoot.splitChildrenAroundChild(reindexRootChosenChild)
@@ -935,28 +935,28 @@ func (rt *reachabilityTree) concentrateIntervalAroundReindexRootChosenChild(
 		return nil, err
 	}
 
-	reindexRootChildNodesBeforeChosenSizesSum, modifiedNodes, err :=
+	reindexRootChildNodesBeforeChosenSizesSum, modifiedNodesBeforeChosen, err :=
 		rt.tightenIntervalsBeforeReindexRootChosenChild(reindexRoot, reindexRootChildNodesBeforeChosen)
 	if err != nil {
 		return nil, err
 	}
-	modifiedTreeNodes.copyAllFrom(modifiedNodes)
+	allModifiedTreeNodes.copyAllFrom(modifiedNodesBeforeChosen)
 
-	reindexRootChildNodesAfterChosenSizesSum, modifiedNodes, err :=
+	reindexRootChildNodesAfterChosenSizesSum, modifiedNodesAfterChosen, err :=
 		rt.tightenIntervalsAfterReindexRootChosenChild(reindexRoot, reindexRootChildNodesAfterChosen)
 	if err != nil {
 		return nil, err
 	}
-	modifiedTreeNodes.copyAllFrom(modifiedNodes)
+	allModifiedTreeNodes.copyAllFrom(modifiedNodesAfterChosen)
 
-	modifiedNodes, err = rt.expandIntervalInReindexRootChosenChild(
+	modifiedNodesForReindexRootExpansion, err := rt.expandIntervalInReindexRootChosenChild(
 		reindexRoot, reindexRootChosenChild, reindexRootChildNodesBeforeChosenSizesSum, reindexRootChildNodesAfterChosenSizesSum)
 	if err != nil {
 		return nil, err
 	}
-	modifiedTreeNodes.copyAllFrom(modifiedNodes)
+	allModifiedTreeNodes.copyAllFrom(modifiedNodesForReindexRootExpansion)
 
-	return modifiedTreeNodes, nil
+	return allModifiedTreeNodes, nil
 }
 
 // splitChildrenAroundChild splits `rtn` into two slices: the nodes that are before
