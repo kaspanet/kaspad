@@ -477,26 +477,23 @@ func (rtn *reachabilityTreeNode) reclaimIntervalBeforeChosenChild(
 	modifiedTreeNodes := newModifiedTreeNodes()
 
 	current := commonAncestorChosenChild
-	for !current.hasSlackIntervalBefore() {
-		if current == reindexRoot {
-			originalInterval := current.interval
-			current.interval = newReachabilityInterval(current.interval.start+1, current.interval.end)
-
-			modifiedNodes, err := current.countSubtreesAndPropagateInterval()
+	if !commonAncestorChosenChild.hasSlackIntervalBefore() {
+		for !current.hasSlackIntervalBefore() && current != reindexRoot {
+			var err error
+			current, err = current.findAncestorAmongChildren(reindexRoot)
 			if err != nil {
 				return nil, err
 			}
-			modifiedTreeNodes.copyAllFrom(modifiedNodes)
-
-			current.interval = originalInterval
-			break
 		}
 
-		var err error
-		current, err = current.findAncestorAmongChildren(reindexRoot)
+		originalInterval := current.interval
+		current.interval = newReachabilityInterval(current.interval.start+1, current.interval.end)
+		modifiedNodes, err := current.countSubtreesAndPropagateInterval()
 		if err != nil {
 			return nil, err
 		}
+		modifiedTreeNodes.copyAllFrom(modifiedNodes)
+		current.interval = originalInterval
 	}
 
 	for current != commonAncestor {
@@ -544,26 +541,23 @@ func (rtn *reachabilityTreeNode) reclaimIntervalAfterChosenChild(
 	modifiedTreeNodes := newModifiedTreeNodes()
 
 	current := commonAncestorChosenChild
-	for !current.hasSlackIntervalAfter() {
-		if current == reindexRoot {
-			originalInterval := current.interval
-			current.interval = newReachabilityInterval(current.interval.start, current.interval.end-1)
-
-			modifiedNodes, err := current.countSubtreesAndPropagateInterval()
+	if !commonAncestorChosenChild.hasSlackIntervalAfter() {
+		for !current.hasSlackIntervalAfter() && current != reindexRoot {
+			var err error
+			current, err = current.findAncestorAmongChildren(reindexRoot)
 			if err != nil {
 				return nil, err
 			}
-			modifiedTreeNodes.copyAllFrom(modifiedNodes)
-
-			current.interval = originalInterval
-			break
 		}
 
-		var err error
-		current, err = current.findAncestorAmongChildren(reindexRoot)
+		originalInterval := current.interval
+		current.interval = newReachabilityInterval(current.interval.start, current.interval.end-1)
+		modifiedNodes, err := current.countSubtreesAndPropagateInterval()
 		if err != nil {
 			return nil, err
 		}
+		modifiedTreeNodes.copyAllFrom(modifiedNodes)
+		current.interval = originalInterval
 	}
 
 	for current != commonAncestor {
