@@ -238,14 +238,16 @@ func (dag *BlockDAG) initDAGState() error {
 	var ok bool
 	dag.lastFinalityPoint, ok = dag.index.LookupNode(dagState.LastFinalityPoint)
 	if !ok {
-		return errors.Errorf("block %s does not exist in the DAG", dagState.LastFinalityPoint)
+		return errors.Errorf("finality point block %s "+
+			"does not exist in the DAG", dagState.LastFinalityPoint)
 	}
 	dag.finalizeNodesBelowFinalityPoint(false)
 
 	log.Debugf("Setting the reachability reindex root...")
 	reachabilityReindexRootNode, ok := dag.index.LookupNode(dagState.ReachabilityReindexRoot)
 	if !ok {
-		return errors.Errorf("block %s does not exist in the DAG", dagState.LastFinalityPoint)
+		return errors.Errorf("reachability reindex root block %s "+
+			"does not exist in the DAG", dagState.ReachabilityReindexRoot)
 	}
 	dag.reachabilityTree.reindexRoot, err = dag.reachabilityTree.store.treeNodeByBlockNode(reachabilityReindexRootNode)
 	if err != nil {
