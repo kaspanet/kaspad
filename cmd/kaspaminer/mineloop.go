@@ -154,7 +154,7 @@ func solveBlock(block *util.Block, stopChan chan struct{}, foundBlock chan *util
 	msgBlock := block.MsgBlock()
 	targetDifficulty := util.CompactToBig(msgBlock.Header.Bits)
 	initialNonce := random.Uint64()
-	for i := random.Uint64(); i != initialNonce-1; i++ {
+	for i := initialNonce; i != initialNonce-1; i++ {
 		select {
 		case <-stopChan:
 			return
