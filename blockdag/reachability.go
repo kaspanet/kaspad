@@ -452,8 +452,9 @@ func (rtn *reachabilityTreeNode) reindexIntervalsEarlierThanReindexRoot(
 	// Find the common ancestor for both rtn and the reindex root
 	commonAncestor := rtn.findCommonAncestorWithReindexRoot(reindexRoot)
 
-	// The reachability tree child of the common ancestor that is
-	// the ancestor of the reindex root is called "the chosen child".
+	// The chosen child is:
+	// a. A reachability tree child of `commonAncestor`
+	// b. A reachability tree ancestor of `reindexRoot`
 	commonAncestorChosenChild, err := commonAncestor.findAncestorAmongChildren(reindexRoot)
 	if err != nil {
 		return nil, err
