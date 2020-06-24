@@ -663,6 +663,9 @@ func (rtn *reachabilityTreeNode) String() string {
 	return strings.Join(lines, "\n")
 }
 
+// treeNodeSet is an ordered set of reachabilityTreeNodes
+type treeNodeSet []*reachabilityTreeNode
+
 // futureCoveringTreeNodeSet represents a collection of blocks in the future of
 // a certain block. Once a block B is added to the DAG, every block A_i in
 // B's selected parent anticone must register B in its futureCoveringTreeNodeSet. This allows
@@ -675,15 +678,7 @@ func (rtn *reachabilityTreeNode) String() string {
 // tree queries are always O(1).
 //
 // See insertNode, isInFuture, and dag.isAncestorOf for further details.
-type futureCoveringTreeNodeSet []*reachabilityTreeNode
-
-func futureCoveringTreeNodeSetFromReachabilityTreeNodes(nodes []*reachabilityTreeNode) futureCoveringTreeNodeSet {
-	futureCoveringTreeNodes := make(futureCoveringTreeNodeSet, len(nodes))
-	for i, node := range nodes {
-		futureCoveringTreeNodes[i] = node
-	}
-	return futureCoveringTreeNodes
-}
+type futureCoveringTreeNodeSet treeNodeSet
 
 // insertNode inserts the given block into this futureCoveringTreeNodeSet
 // while keeping futureCoveringTreeNodeSet ordered by interval.
@@ -701,7 +696,7 @@ func futureCoveringTreeNodeSetFromReachabilityTreeNodes(nodes []*reachabilityTre
 //   be always preserved.
 func (fb *futureCoveringTreeNodeSet) insertNode(node *reachabilityTreeNode) {
 	blockInterval := node.interval
-	i := fb.findIndex(node)
+	i := treeNodeSet(*fb).findIndex(node)
 	if i > 0 {
 		candidate := (*fb)[i-1]
 		candidateInterval := candidate.interval
@@ -733,7 +728,7 @@ func (fb *futureCoveringTreeNodeSet) insertNode(node *reachabilityTreeNode) {
 // binary search over futureCoveringTreeNodeSet and answer the query in
 // O(log(|futureCoveringTreeNodeSet|)).
 func (fb futureCoveringTreeNodeSet) isInFuture(node *reachabilityTreeNode) bool {
-	i := fb.findIndex(node)
+	i := treeNodeSet(fb).findIndex(node)
 	if i == 0 {
 		// No candidate to contain node
 		return false
@@ -745,15 +740,15 @@ func (fb futureCoveringTreeNodeSet) isInFuture(node *reachabilityTreeNode) bool 
 
 // findIndex finds the index of the block with the maximum start that is below
 // the given block.
-func (fb futureCoveringTreeNodeSet) findIndex(node *reachabilityTreeNode) int {
+func (tns treeNodeSet) findIndex(node *reachabilityTreeNode) int {
 	blockInterval := node.interval
 	end := blockInterval.end
 
 	low := 0
-	high := len(fb)
+	high := len(tns)
 	for low < high {
 		middle := (low + high) / 2
-		middleInterval := fb[middle].interval
+		middleInterval := tns[middle].interval
 		if end < middleInterval.start {
 			high = middle
 		} else {
@@ -898,13 +893,12 @@ func (rt *reachabilityTree) maybeMoveReindexRoot(
 // findAncestorAmongChildren finds the reachability tree child
 // of rtn that is the ancestor of node.
 func (rtn *reachabilityTreeNode) findAncestorAmongChildren(node *reachabilityTreeNode) (*reachabilityTreeNode, error) {
-	rootChildrenFutureCoveringSet := futureCoveringTreeNodeSetFromReachabilityTreeNodes(rtn.children)
-	i := rootChildrenFutureCoveringSet.findIndex(node)
+	i := treeNodeSet(rtn.children).findIndex(node)
 	if i == 0 {
 		return nil, errors.Errorf("rtn is not an ancestor of node")
 	}
 
-	return rootChildrenFutureCoveringSet[i-1], nil
+	return rtn.children[i-1], nil
 }
 
 func (rt *reachabilityTree) concentrateIntervalAroundReindexRootChosenChild(
