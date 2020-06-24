@@ -704,20 +704,23 @@ type futureCoveringTreeNodeSet treeNodeSet
 //   is-superset relation will by definition
 //   be always preserved.
 func (fb *futureCoveringTreeNodeSet) insertNode(node *reachabilityTreeNode) {
-	blockInterval := node.interval
+	nodeInterval := node.interval
 	ancestorIndex, ok := treeNodeSet(*fb).findAncestorIndexOfNode(node)
-	if ok {
-		candidate := (*fb)[ancestorIndex]
-		candidateInterval := candidate.interval
-		if candidateInterval.isAncestorOf(blockInterval) {
-			// candidate is an ancestor of node, no need to insert
-			return
-		}
-		if blockInterval.isAncestorOf(candidateInterval) {
-			// node is an ancestor of candidate, and can thus replace it
-			(*fb)[ancestorIndex] = node
-			return
-		}
+	if !ok {
+		*fb = append([]*reachabilityTreeNode{node}, *fb...)
+		return
+	}
+
+	candidate := (*fb)[ancestorIndex]
+	candidateInterval := candidate.interval
+	if candidateInterval.isAncestorOf(nodeInterval) {
+		// candidate is an ancestor of node, no need to insert
+		return
+	}
+	if nodeInterval.isAncestorOf(candidateInterval) {
+		// node is an ancestor of candidate, and can thus replace it
+		(*fb)[ancestorIndex] = node
+		return
 	}
 
 	// Insert node in the correct index to maintain futureCoveringTreeNodeSet as
@@ -778,7 +781,7 @@ func (tns treeNodeSet) findAncestorIndexOfNode(node *reachabilityTreeNode) (int,
 	}
 
 	if low == 0 {
-		return -1, false
+		return 0, false
 	}
 	return low - 1, true
 }
