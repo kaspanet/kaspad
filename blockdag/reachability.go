@@ -17,6 +17,12 @@ var (
 	// tree nodes not in the selected parent chain. Note that this is not
 	// a constant for testing purposes.
 	reachabilityReindexSlack uint64 = 1 << 12
+
+	// slackReachabilityIntervalForReclaiming is the slack interval to
+	// reclaim during reachability reindexes earlier than the reindex root.
+	// See reclaimIntervalBeforeChosenChild for further details. Note that
+	// this is not a constant for testing purposes.
+	slackReachabilityIntervalForReclaiming uint64 = 1
 )
 
 // modifiedTreeNodes are a set of reachabilityTreeNodes that's bubbled up
@@ -490,10 +496,14 @@ func (rtn *reachabilityTreeNode) reclaimIntervalBeforeChosenChild(
 			}
 		}
 
-		// "Deallocate" an interval of 1 from this node. This is the
-		// interval that we'll use for the new node.
+		// "Deallocate" an interval of slackReachabilityIntervalForReclaiming
+		// from this node. This is the interval that we'll use for the new
+		// node.
 		originalInterval := current.interval
-		current.interval = newReachabilityInterval(current.interval.start+1, current.interval.end)
+		current.interval = newReachabilityInterval(
+			current.interval.start+slackReachabilityIntervalForReclaiming,
+			current.interval.end,
+		)
 		modifiedNodes, err := current.countSubtreesAndPropagateInterval()
 		if err != nil {
 			return nil, err
@@ -504,10 +514,14 @@ func (rtn *reachabilityTreeNode) reclaimIntervalBeforeChosenChild(
 
 	// Go down the reachability tree towards the common ancestor.
 	// On every hop we reindex the reachability subtree before the
-	// current node with an interval that is smaller by 1. This
-	// is to make room for the new node.
+	// current node with an interval that is smaller by
+	// slackReachabilityIntervalForReclaiming. This is to make room
+	// for the new node.
 	for current != commonAncestor {
-		current.interval = newReachabilityInterval(current.interval.start+1, current.interval.end)
+		current.interval = newReachabilityInterval(
+			current.interval.start+slackReachabilityIntervalForReclaiming,
+			current.interval.end,
+		)
 		modifiedNodes, err := current.parent.reindexIntervalsBeforeNode(current)
 		if err != nil {
 			return nil, err
@@ -561,10 +575,14 @@ func (rtn *reachabilityTreeNode) reclaimIntervalAfterChosenChild(
 			}
 		}
 
-		// "Deallocate" an interval of 1 from this node. This is the
-		// interval that we'll use for the new node.
+		// "Deallocate" an interval of slackReachabilityIntervalForReclaiming
+		// from this node. This is the interval that we'll use for the new
+		// node.
 		originalInterval := current.interval
-		current.interval = newReachabilityInterval(current.interval.start, current.interval.end-1)
+		current.interval = newReachabilityInterval(
+			current.interval.start,
+			current.interval.end-slackReachabilityIntervalForReclaiming,
+		)
 		modifiedNodes, err := current.countSubtreesAndPropagateInterval()
 		if err != nil {
 			return nil, err
@@ -575,10 +593,14 @@ func (rtn *reachabilityTreeNode) reclaimIntervalAfterChosenChild(
 
 	// Go down the reachability tree towards the common ancestor.
 	// On every hop we reindex the reachability subtree after the
-	// current node with an interval that is smaller by 1. This
-	// is to make room for the new node.
+	// current node with an interval that is smaller by
+	// slackReachabilityIntervalForReclaiming. This is to make room
+	// for the new node.
 	for current != commonAncestor {
-		current.interval = newReachabilityInterval(current.interval.start, current.interval.end-1)
+		current.interval = newReachabilityInterval(
+			current.interval.start,
+			current.interval.end-slackReachabilityIntervalForReclaiming,
+		)
 		modifiedNodes, err := current.parent.reindexIntervalsAfterNode(current)
 		if err != nil {
 			return nil, err
