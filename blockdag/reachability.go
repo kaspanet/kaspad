@@ -478,6 +478,9 @@ func (rtn *reachabilityTreeNode) reclaimIntervalBeforeChosenChild(
 
 	current := commonAncestorChosenChild
 	if !commonAncestorChosenChild.hasSlackIntervalBefore() {
+		// The common ancestor ran out of slack before its chosen child.
+		// Climb up the reachability tree toward the reindex root until
+		// we find a node that has enough slack.
 		for !current.hasSlackIntervalBefore() && current != reindexRoot {
 			var err error
 			current, err = current.findAncestorAmongChildren(reindexRoot)
@@ -486,6 +489,8 @@ func (rtn *reachabilityTreeNode) reclaimIntervalBeforeChosenChild(
 			}
 		}
 
+		// "Deallocate" an interval of 1 from this node. This is the
+		// interval that we'll use for the new node.
 		originalInterval := current.interval
 		current.interval = newReachabilityInterval(current.interval.start+1, current.interval.end)
 		modifiedNodes, err := current.countSubtreesAndPropagateInterval()
@@ -496,15 +501,17 @@ func (rtn *reachabilityTreeNode) reclaimIntervalBeforeChosenChild(
 		current.interval = originalInterval
 	}
 
+	// Go down the reachability tree towards the common ancestor.
+	// On every hop we reindex the reachability subtree before the
+	// current node with an interval that is smaller by 1. This
+	// is to make room for the new node.
 	for current != commonAncestor {
 		current.interval = newReachabilityInterval(current.interval.start+1, current.interval.end)
-
 		modifiedNodes, err := current.parent.reindexIntervalsBeforeNode(current)
 		if err != nil {
 			return nil, err
 		}
 		modifiedTreeNodes.copyAllFrom(modifiedNodes)
-
 		current = current.parent
 	}
 
@@ -542,6 +549,9 @@ func (rtn *reachabilityTreeNode) reclaimIntervalAfterChosenChild(
 
 	current := commonAncestorChosenChild
 	if !commonAncestorChosenChild.hasSlackIntervalAfter() {
+		// The common ancestor ran out of slack after its chosen child.
+		// Climb up the reachability tree toward the reindex root until
+		// we find a node that has enough slack.
 		for !current.hasSlackIntervalAfter() && current != reindexRoot {
 			var err error
 			current, err = current.findAncestorAmongChildren(reindexRoot)
@@ -550,6 +560,8 @@ func (rtn *reachabilityTreeNode) reclaimIntervalAfterChosenChild(
 			}
 		}
 
+		// "Deallocate" an interval of 1 from this node. This is the
+		// interval that we'll use for the new node.
 		originalInterval := current.interval
 		current.interval = newReachabilityInterval(current.interval.start, current.interval.end-1)
 		modifiedNodes, err := current.countSubtreesAndPropagateInterval()
@@ -560,15 +572,17 @@ func (rtn *reachabilityTreeNode) reclaimIntervalAfterChosenChild(
 		current.interval = originalInterval
 	}
 
+	// Go down the reachability tree towards the common ancestor.
+	// On every hop we reindex the reachability subtree after the
+	// current node with an interval that is smaller by 1. This
+	// is to make room for the new node.
 	for current != commonAncestor {
 		current.interval = newReachabilityInterval(current.interval.start, current.interval.end-1)
-
 		modifiedNodes, err := current.parent.reindexIntervalsAfterNode(current)
 		if err != nil {
 			return nil, err
 		}
 		modifiedTreeNodes.copyAllFrom(modifiedNodes)
-
 		current = current.parent
 	}
 
