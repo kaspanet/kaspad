@@ -440,47 +440,47 @@ func TestSplitWithExponentialBias(t *testing.T) {
 }
 
 func TestIsInFuture(t *testing.T) {
-	blocks := futureCoveringBlockSet{
-		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(2, 3)}},
-		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(4, 67)}},
-		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(67, 77)}},
-		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(657, 789)}},
-		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1000, 1000)}},
-		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1920, 1921)}},
+	treeNodes := futureCoveringTreeNodeSet{
+		&reachabilityTreeNode{interval: newReachabilityInterval(2, 3)},
+		&reachabilityTreeNode{interval: newReachabilityInterval(4, 67)},
+		&reachabilityTreeNode{interval: newReachabilityInterval(67, 77)},
+		&reachabilityTreeNode{interval: newReachabilityInterval(657, 789)},
+		&reachabilityTreeNode{interval: newReachabilityInterval(1000, 1000)},
+		&reachabilityTreeNode{interval: newReachabilityInterval(1920, 1921)},
 	}
 
 	tests := []struct {
-		block          *futureCoveringBlock
+		treeNode       *reachabilityTreeNode
 		expectedResult bool
 	}{
 		{
-			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1, 1)}},
+			treeNode:       &reachabilityTreeNode{interval: newReachabilityInterval(1, 1)},
 			expectedResult: false,
 		},
 		{
-			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(5, 7)}},
+			treeNode:       &reachabilityTreeNode{interval: newReachabilityInterval(5, 7)},
 			expectedResult: true,
 		},
 		{
-			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(67, 76)}},
+			treeNode:       &reachabilityTreeNode{interval: newReachabilityInterval(67, 76)},
 			expectedResult: true,
 		},
 		{
-			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(78, 100)}},
+			treeNode:       &reachabilityTreeNode{interval: newReachabilityInterval(78, 100)},
 			expectedResult: false,
 		},
 		{
-			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1980, 2000)}},
+			treeNode:       &reachabilityTreeNode{interval: newReachabilityInterval(1980, 2000)},
 			expectedResult: false,
 		},
 		{
-			block:          &futureCoveringBlock{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1920, 1920)}},
+			treeNode:       &reachabilityTreeNode{interval: newReachabilityInterval(1920, 1920)},
 			expectedResult: true,
 		},
 	}
 
 	for i, test := range tests {
-		result := blocks.isInFuture(test.block)
+		result := treeNodes.isInFuture(test.treeNode)
 		if result != test.expectedResult {
 			t.Errorf("TestIsInFuture: unexpected result in test #%d. Want: %t, got: %t",
 				i, test.expectedResult, result)
@@ -488,91 +488,91 @@ func TestIsInFuture(t *testing.T) {
 	}
 }
 
-func TestInsertBlock(t *testing.T) {
-	blocks := futureCoveringBlockSet{
-		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1, 3)}},
-		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(4, 67)}},
-		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(67, 77)}},
-		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(657, 789)}},
-		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1000, 1000)}},
-		{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1920, 1921)}},
+func TestInsertNode(t *testing.T) {
+	treeNodes := futureCoveringTreeNodeSet{
+		&reachabilityTreeNode{interval: newReachabilityInterval(1, 3)},
+		&reachabilityTreeNode{interval: newReachabilityInterval(4, 67)},
+		&reachabilityTreeNode{interval: newReachabilityInterval(67, 77)},
+		&reachabilityTreeNode{interval: newReachabilityInterval(657, 789)},
+		&reachabilityTreeNode{interval: newReachabilityInterval(1000, 1000)},
+		&reachabilityTreeNode{interval: newReachabilityInterval(1920, 1921)},
 	}
 
 	tests := []struct {
-		toInsert       []*futureCoveringBlock
-		expectedResult futureCoveringBlockSet
+		toInsert       []*reachabilityTreeNode
+		expectedResult futureCoveringTreeNodeSet
 	}{
 		{
-			toInsert: []*futureCoveringBlock{
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(5, 7)}},
+			toInsert: []*reachabilityTreeNode{
+				{interval: newReachabilityInterval(5, 7)},
 			},
-			expectedResult: futureCoveringBlockSet{
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1, 3)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(4, 67)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(67, 77)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(657, 789)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1000, 1000)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1920, 1921)}},
-			},
-		},
-		{
-			toInsert: []*futureCoveringBlock{
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(65, 78)}},
-			},
-			expectedResult: futureCoveringBlockSet{
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1, 3)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(4, 67)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(65, 78)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(657, 789)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1000, 1000)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1920, 1921)}},
+			expectedResult: futureCoveringTreeNodeSet{
+				&reachabilityTreeNode{interval: newReachabilityInterval(1, 3)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(4, 67)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(67, 77)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(657, 789)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(1000, 1000)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(1920, 1921)},
 			},
 		},
 		{
-			toInsert: []*futureCoveringBlock{
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(88, 97)}},
+			toInsert: []*reachabilityTreeNode{
+				{interval: newReachabilityInterval(65, 78)},
 			},
-			expectedResult: futureCoveringBlockSet{
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1, 3)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(4, 67)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(67, 77)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(88, 97)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(657, 789)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1000, 1000)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1920, 1921)}},
+			expectedResult: futureCoveringTreeNodeSet{
+				&reachabilityTreeNode{interval: newReachabilityInterval(1, 3)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(4, 67)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(65, 78)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(657, 789)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(1000, 1000)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(1920, 1921)},
 			},
 		},
 		{
-			toInsert: []*futureCoveringBlock{
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(88, 97)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(3000, 3010)}},
+			toInsert: []*reachabilityTreeNode{
+				{interval: newReachabilityInterval(88, 97)},
 			},
-			expectedResult: futureCoveringBlockSet{
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1, 3)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(4, 67)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(67, 77)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(88, 97)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(657, 789)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1000, 1000)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(1920, 1921)}},
-				{treeNode: &reachabilityTreeNode{interval: newReachabilityInterval(3000, 3010)}},
+			expectedResult: futureCoveringTreeNodeSet{
+				&reachabilityTreeNode{interval: newReachabilityInterval(1, 3)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(4, 67)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(67, 77)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(88, 97)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(657, 789)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(1000, 1000)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(1920, 1921)},
+			},
+		},
+		{
+			toInsert: []*reachabilityTreeNode{
+				{interval: newReachabilityInterval(88, 97)},
+				{interval: newReachabilityInterval(3000, 3010)},
+			},
+			expectedResult: futureCoveringTreeNodeSet{
+				&reachabilityTreeNode{interval: newReachabilityInterval(1, 3)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(4, 67)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(67, 77)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(88, 97)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(657, 789)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(1000, 1000)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(1920, 1921)},
+				&reachabilityTreeNode{interval: newReachabilityInterval(3000, 3010)},
 			},
 		},
 	}
 
 	for i, test := range tests {
-		// Create a clone of blocks so that we have a clean start for every test
-		blocksClone := make(futureCoveringBlockSet, len(blocks))
-		for i, block := range blocks {
-			blocksClone[i] = block
+		// Create a clone of treeNodes so that we have a clean start for every test
+		treeNodesClone := make(futureCoveringTreeNodeSet, len(treeNodes))
+		for i, treeNode := range treeNodes {
+			treeNodesClone[i] = treeNode
 		}
 
-		for _, block := range test.toInsert {
-			blocksClone.insertBlock(block)
+		for _, treeNode := range test.toInsert {
+			treeNodesClone.insertNode(treeNode)
 		}
-		if !reflect.DeepEqual(blocksClone, test.expectedResult) {
-			t.Errorf("TestInsertBlock: unexpected result in test #%d. Want: %s, got: %s",
-				i, test.expectedResult, blocksClone)
+		if !reflect.DeepEqual(treeNodesClone, test.expectedResult) {
+			t.Errorf("TestInsertNode: unexpected result in test #%d. Want: %s, got: %s",
+				i, test.expectedResult, treeNodesClone)
 		}
 	}
 }
@@ -742,20 +742,17 @@ func BenchmarkReindexInterval(b *testing.B) {
 	}
 }
 
-func TestFutureCoveringBlockSetString(t *testing.T) {
+func TestFutureCoveringTreeNodeSetString(t *testing.T) {
 	treeNodeA := newReachabilityTreeNode(&blockNode{})
 	treeNodeA.interval = newReachabilityInterval(123, 456)
 	treeNodeB := newReachabilityTreeNode(&blockNode{})
 	treeNodeB.interval = newReachabilityInterval(457, 789)
-	futureCoveringSet := futureCoveringBlockSet{
-		&futureCoveringBlock{treeNode: treeNodeA},
-		&futureCoveringBlock{treeNode: treeNodeB},
-	}
+	futureCoveringSet := futureCoveringTreeNodeSet{treeNodeA, treeNodeB}
 
 	str := futureCoveringSet.String()
 	expectedStr := "[123,456][457,789]"
 	if str != expectedStr {
-		t.Fatalf("TestFutureCoveringBlockSetString: unexpected "+
+		t.Fatalf("TestFutureCoveringTreeNodeSetString: unexpected "+
 			"string. Want: %s, got: %s", expectedStr, str)
 	}
 }
