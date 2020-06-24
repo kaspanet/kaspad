@@ -496,20 +496,22 @@ func (rtn *reachabilityTreeNode) reclaimIntervalBeforeChosenChild(
 			}
 		}
 
-		// "Deallocate" an interval of slackReachabilityIntervalForReclaiming
-		// from this node. This is the interval that we'll use for the new
-		// node.
-		originalInterval := current.interval
-		current.interval = newReachabilityInterval(
-			current.interval.start+slackReachabilityIntervalForReclaiming,
-			current.interval.end,
-		)
-		modifiedNodes, err := current.countSubtreesAndPropagateInterval()
-		if err != nil {
-			return nil, err
+		if current == reindexRoot {
+			// "Deallocate" an interval of slackReachabilityIntervalForReclaiming
+			// from this node. This is the interval that we'll use for the new
+			// node.
+			originalInterval := current.interval
+			current.interval = newReachabilityInterval(
+				current.interval.start+slackReachabilityIntervalForReclaiming,
+				current.interval.end,
+			)
+			modifiedNodes, err := current.countSubtreesAndPropagateInterval()
+			if err != nil {
+				return nil, err
+			}
+			modifiedTreeNodes.addAll(modifiedNodes)
+			current.interval = originalInterval
 		}
-		modifiedTreeNodes.addAll(modifiedNodes)
-		current.interval = originalInterval
 	}
 
 	// Go down the reachability tree towards the common ancestor.
@@ -575,20 +577,22 @@ func (rtn *reachabilityTreeNode) reclaimIntervalAfterChosenChild(
 			}
 		}
 
-		// "Deallocate" an interval of slackReachabilityIntervalForReclaiming
-		// from this node. This is the interval that we'll use for the new
-		// node.
-		originalInterval := current.interval
-		current.interval = newReachabilityInterval(
-			current.interval.start,
-			current.interval.end-slackReachabilityIntervalForReclaiming,
-		)
-		modifiedNodes, err := current.countSubtreesAndPropagateInterval()
-		if err != nil {
-			return nil, err
+		if current == reindexRoot {
+			// "Deallocate" an interval of slackReachabilityIntervalForReclaiming
+			// from this node. This is the interval that we'll use for the new
+			// node.
+			originalInterval := current.interval
+			current.interval = newReachabilityInterval(
+				current.interval.start,
+				current.interval.end-slackReachabilityIntervalForReclaiming,
+			)
+			modifiedNodes, err := current.countSubtreesAndPropagateInterval()
+			if err != nil {
+				return nil, err
+			}
+			modifiedTreeNodes.addAll(modifiedNodes)
+			current.interval = originalInterval
 		}
-		modifiedTreeNodes.addAll(modifiedNodes)
-		current.interval = originalInterval
 	}
 
 	// Go down the reachability tree towards the common ancestor.
