@@ -184,11 +184,13 @@ func exponentialFractions(sizes []uint64) []float64 {
 }
 
 // isAncestorOf checks if this interval's node is a reachability tree
-// ancestor of the other interval's node. The condition below is relying on the
-// property of reachability intervals that intervals are either completely disjoint,
-// or one strictly contains the other.
+// ancestor of the other interval's node.
 func (ri *reachabilityInterval) isAncestorOf(other *reachabilityInterval) bool {
-	// An interval is not an ancestor of itself.
+	return ri.contains(other)
+}
+
+// contains returns true if ri strictly contains other.
+func (ri *reachabilityInterval) contains(other *reachabilityInterval) bool {
 	if ri.start == other.start && ri.end == other.end {
 		return false
 	}
@@ -1015,8 +1017,7 @@ func (rt *reachabilityTree) expandIntervalInReindexRootChosenChild(reindexRoot *
 		reindexRoot.interval.end-reindexRootChildNodesAfterChosenSizesSum-reachabilityReindexSlack-1,
 	)
 
-	if newReindexRootChildInterval.start > chosenReindexRootChild.interval.start ||
-		newReindexRootChildInterval.end < chosenReindexRootChild.interval.end {
+	if !newReindexRootChildInterval.contains(chosenReindexRootChild.interval) {
 		// New interval doesn't contain the previous one, propagation is required
 		chosenReindexRootChild.interval = newReachabilityInterval(
 			newReindexRootChildInterval.start+reachabilityReindexSlack,
