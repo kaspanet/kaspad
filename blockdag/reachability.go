@@ -447,7 +447,7 @@ func (rtn *reachabilityTreeNode) propagateInterval(subTreeSizeMap map[*reachabil
 func (rtn *reachabilityTreeNode) reindexIntervalsEarlierThanReindexRoot(
 	reindexRoot *reachabilityTreeNode) (modifiedTreeNodes, error) {
 
-	commonAncestor := rtn.findCommonAncestor(reindexRoot)
+	commonAncestor := rtn.findCommonAncestorWithReindexRoot(reindexRoot)
 	commonAncestorChosenChild, err := commonAncestor.findAncestorAmongChildren(reindexRoot)
 	if err != nil {
 		return nil, err
@@ -624,20 +624,18 @@ func (rtn *reachabilityTreeNode) isAncestorOf(other *reachabilityTreeNode) bool 
 	return rtn.interval.isAncestorOf(other.interval)
 }
 
-// findCommonAncestor finds the most recent reachability tree ancestor
-// common to both rtn and other.
-func (rtn *reachabilityTreeNode) findCommonAncestor(other *reachabilityTreeNode) *reachabilityTreeNode {
+// findCommonAncestorWithReindexRoot finds the most recent reachability
+// tree ancestor common to both rtn and the given reindex root. Note
+// that we assume that almost always the chain between the reindex root
+// and the common ancestor is longer than the chain between rtn and the
+// common ancestor.
+func (rtn *reachabilityTreeNode) findCommonAncestorWithReindexRoot(reindexRoot *reachabilityTreeNode) *reachabilityTreeNode {
 	currentThis := rtn
-	currentOther := other
 	for {
-		if currentThis.isAncestorOf(other) {
+		if currentThis.isAncestorOf(reindexRoot) {
 			return currentThis
 		}
-		if currentOther.isAncestorOf(rtn) {
-			return currentOther
-		}
 		currentThis = currentThis.parent
-		currentOther = currentOther.parent
 	}
 }
 
@@ -887,7 +885,7 @@ func (rt *reachabilityTree) maybeMoveReindexRoot(
 	newReindexRoot *reachabilityTreeNode, modifiedTreeNodes modifiedTreeNodes, found bool, err error) {
 
 	if !reindexRoot.isAncestorOf(newTreeNode) {
-		commonAncestor := reindexRoot.findCommonAncestor(newTreeNode)
+		commonAncestor := newTreeNode.findCommonAncestorWithReindexRoot(reindexRoot)
 		return commonAncestor, nil, true, nil
 	}
 
