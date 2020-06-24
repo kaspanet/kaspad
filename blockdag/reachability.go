@@ -233,14 +233,14 @@ func newReachabilityTreeNode(blockNode *blockNode) *reachabilityTreeNode {
 	return &reachabilityTreeNode{blockNode: blockNode, interval: interval}
 }
 
-func (rtn *reachabilityTreeNode) childIntervalAllocationRange() *reachabilityInterval {
+func (rtn *reachabilityTreeNode) intervalRangeForChildAllocation() *reachabilityInterval {
 	// We subtract 1 from the end of the range to prevent the node from allocating
 	// the entire interval to its child, so its interval would *strictly* contain the interval of its child.
 	return newReachabilityInterval(rtn.interval.start, rtn.interval.end-1)
 }
 
 func (rtn *reachabilityTreeNode) remainingIntervalBefore() *reachabilityInterval {
-	childRange := rtn.childIntervalAllocationRange()
+	childRange := rtn.intervalRangeForChildAllocation()
 	if len(rtn.children) == 0 {
 		return childRange
 	}
@@ -248,7 +248,7 @@ func (rtn *reachabilityTreeNode) remainingIntervalBefore() *reachabilityInterval
 }
 
 func (rtn *reachabilityTreeNode) remainingIntervalAfter() *reachabilityInterval {
-	childRange := rtn.childIntervalAllocationRange()
+	childRange := rtn.intervalRangeForChildAllocation()
 	if len(rtn.children) == 0 {
 		return childRange
 	}
@@ -428,7 +428,7 @@ func (rtn *reachabilityTreeNode) propagateInterval(subTreeSizeMap map[*reachabil
 			for i, child := range current.children {
 				sizes[i] = subTreeSizeMap[child]
 			}
-			intervals, err := current.childIntervalAllocationRange().splitWithExponentialBias(sizes)
+			intervals, err := current.intervalRangeForChildAllocation().splitWithExponentialBias(sizes)
 			if err != nil {
 				return nil, err
 			}
