@@ -447,7 +447,11 @@ func (rtn *reachabilityTreeNode) propagateInterval(subTreeSizeMap map[*reachabil
 func (rtn *reachabilityTreeNode) reindexIntervalsEarlierThanReindexRoot(
 	reindexRoot *reachabilityTreeNode) (modifiedTreeNodes, error) {
 
+	// Find the common ancestor for both rtn and the reindex root
 	commonAncestor := rtn.findCommonAncestorWithReindexRoot(reindexRoot)
+
+	// The reachability tree child of the common ancestor that is
+	// the ancestor of the reindex root is called "the chosen child".
 	commonAncestorChosenChild, err := commonAncestor.findAncestorAmongChildren(reindexRoot)
 	if err != nil {
 		return nil, err
