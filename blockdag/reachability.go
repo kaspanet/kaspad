@@ -517,8 +517,6 @@ func (rtn *reachabilityTreeNode) reclaimIntervalBeforeChosenChild(
 func (rtn *reachabilityTreeNode) reindexIntervalsBeforeNode(node *reachabilityTreeNode) (
 	modifiedTreeNodes, error) {
 
-	modifiedTreeNodes := newModifiedTreeNodes()
-
 	childrenBeforeNode, _, err := rtn.splitChildrenAroundChild(node)
 	if err != nil {
 		return nil, err
@@ -534,17 +532,7 @@ func (rtn *reachabilityTreeNode) reindexIntervalsBeforeNode(node *reachabilityTr
 	if err != nil {
 		return nil, err
 	}
-	for i, child := range childrenBeforeNode {
-		child.interval = intervals[i]
-		subtreeSizeMap := childrenBeforeNodeSubtreeSizeMaps[i]
-		modifiedNodes, err := child.propagateInterval(subtreeSizeMap)
-		if err != nil {
-			return nil, err
-		}
-		modifiedTreeNodes.copyAllFrom(modifiedNodes)
-	}
-
-	return modifiedTreeNodes, nil
+	return treeNodeSet(childrenBeforeNode).propagateIntervals(intervals, childrenBeforeNodeSubtreeSizeMaps)
 }
 
 func (rtn *reachabilityTreeNode) reclaimIntervalAfterChosenChild(
@@ -596,8 +584,6 @@ func (rtn *reachabilityTreeNode) reclaimIntervalAfterChosenChild(
 func (rtn *reachabilityTreeNode) reindexIntervalsAfterNode(node *reachabilityTreeNode) (
 	modifiedTreeNodes, error) {
 
-	modifiedTreeNodes := newModifiedTreeNodes()
-
 	_, childrenAfterNode, err := rtn.splitChildrenAroundChild(node)
 	if err != nil {
 		return nil, err
@@ -613,16 +599,22 @@ func (rtn *reachabilityTreeNode) reindexIntervalsAfterNode(node *reachabilityTre
 	if err != nil {
 		return nil, err
 	}
-	for i, child := range childrenAfterNode {
-		child.interval = intervals[i]
-		subtreeSizeMap := childrenAfterNodeSubtreeSizeMaps[i]
-		modifiedNodes, err := child.propagateInterval(subtreeSizeMap)
+	return treeNodeSet(childrenAfterNode).propagateIntervals(intervals, childrenAfterNodeSubtreeSizeMaps)
+}
+
+func (tns treeNodeSet) propagateIntervals(intervals []*reachabilityInterval,
+	subtreeSizeMaps []map[*reachabilityTreeNode]uint64) (modifiedTreeNodes, error) {
+
+	modifiedTreeNodes := newModifiedTreeNodes()
+	for i, node := range tns {
+		node.interval = intervals[i]
+		subtreeSizeMap := subtreeSizeMaps[i]
+		modifiedNodes, err := node.propagateInterval(subtreeSizeMap)
 		if err != nil {
 			return nil, err
 		}
 		modifiedTreeNodes.copyAllFrom(modifiedNodes)
 	}
-
 	return modifiedTreeNodes, nil
 }
 
