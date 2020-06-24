@@ -522,7 +522,7 @@ func (rtn *reachabilityTreeNode) reindexIntervalsBeforeChosenChild(chosenChild *
 		calcReachabilityTreeNodeSizes(childrenBeforeChosen)
 
 	// Apply a tight interval
-	newIntervalEnd := childrenBeforeChosen[len(childrenBeforeChosen)-1].interval.end + 1
+	newIntervalEnd := chosenChild.interval.start - 1
 	newInterval := newReachabilityInterval(newIntervalEnd-childrenBeforeChosenSizesSum+1, newIntervalEnd)
 	intervals, err := newInterval.splitExact(childrenBeforeChosenSizes)
 	if err != nil {
@@ -599,7 +599,7 @@ func (rtn *reachabilityTreeNode) reindexIntervalsAfterChosenChild(chosenChild *r
 		calcReachabilityTreeNodeSizes(childrenAfterChosen)
 
 	// Apply a tight interval
-	newIntervalStart := childrenAfterChosen[0].interval.start - 1
+	newIntervalStart := chosenChild.interval.end + 1
 	newInterval := newReachabilityInterval(newIntervalStart, newIntervalStart+childrenAfterChosenSizesSum-1)
 	intervals, err := newInterval.splitExact(childrenAfterChosenSizes)
 	if err != nil {
