@@ -33,9 +33,9 @@ func newModifiedTreeNodes(nodes ...*reachabilityTreeNode) modifiedTreeNodes {
 	return modifiedNodes
 }
 
-// copyAllFrom copies all the reachabilityTreeNodes from `other`
+// addAll adds all the reachabilityTreeNodes in `other`
 // into `mtn`. Note that `other` is not affected.
-func (mtn modifiedTreeNodes) copyAllFrom(other modifiedTreeNodes) {
+func (mtn modifiedTreeNodes) addAll(other modifiedTreeNodes) {
 	for node := range other {
 		mtn[node] = struct{}{}
 	}
@@ -497,7 +497,7 @@ func (rtn *reachabilityTreeNode) reclaimIntervalBeforeChosenChild(
 		if err != nil {
 			return nil, err
 		}
-		modifiedTreeNodes.copyAllFrom(modifiedNodes)
+		modifiedTreeNodes.addAll(modifiedNodes)
 		current.interval = originalInterval
 	}
 
@@ -511,7 +511,7 @@ func (rtn *reachabilityTreeNode) reclaimIntervalBeforeChosenChild(
 		if err != nil {
 			return nil, err
 		}
-		modifiedTreeNodes.copyAllFrom(modifiedNodes)
+		modifiedTreeNodes.addAll(modifiedNodes)
 		current = current.parent
 	}
 
@@ -568,7 +568,7 @@ func (rtn *reachabilityTreeNode) reclaimIntervalAfterChosenChild(
 		if err != nil {
 			return nil, err
 		}
-		modifiedTreeNodes.copyAllFrom(modifiedNodes)
+		modifiedTreeNodes.addAll(modifiedNodes)
 		current.interval = originalInterval
 	}
 
@@ -582,7 +582,7 @@ func (rtn *reachabilityTreeNode) reclaimIntervalAfterChosenChild(
 		if err != nil {
 			return nil, err
 		}
-		modifiedTreeNodes.copyAllFrom(modifiedNodes)
+		modifiedTreeNodes.addAll(modifiedNodes)
 		current = current.parent
 	}
 
@@ -623,7 +623,7 @@ func (tns treeNodeSet) propagateIntervals(intervals []*reachabilityInterval,
 		if err != nil {
 			return nil, err
 		}
-		modifiedTreeNodes.copyAllFrom(modifiedNodes)
+		modifiedTreeNodes.addAll(modifiedNodes)
 	}
 	return modifiedTreeNodes, nil
 }
@@ -882,7 +882,7 @@ func (rt *reachabilityTree) updateReindexRoot(newTreeNode *reachabilityTreeNode)
 		if !found {
 			break
 		}
-		modifiedTreeNodes.copyAllFrom(modifiedNodes)
+		modifiedTreeNodes.addAll(modifiedNodes)
 		nextReindexRoot = candidateReindexRoot
 	}
 
@@ -942,21 +942,21 @@ func (rt *reachabilityTree) concentrateIntervalAroundReindexRootChosenChild(
 	if err != nil {
 		return nil, err
 	}
-	allModifiedTreeNodes.copyAllFrom(modifiedNodesBeforeChosen)
+	allModifiedTreeNodes.addAll(modifiedNodesBeforeChosen)
 
 	reindexRootChildNodesAfterChosenSizesSum, modifiedNodesAfterChosen, err :=
 		rt.tightenIntervalsAfterReindexRootChosenChild(reindexRoot, reindexRootChildNodesAfterChosen)
 	if err != nil {
 		return nil, err
 	}
-	allModifiedTreeNodes.copyAllFrom(modifiedNodesAfterChosen)
+	allModifiedTreeNodes.addAll(modifiedNodesAfterChosen)
 
 	modifiedNodesForReindexRootExpansion, err := rt.expandIntervalInReindexRootChosenChild(
 		reindexRoot, reindexRootChosenChild, reindexRootChildNodesBeforeChosenSizesSum, reindexRootChildNodesAfterChosenSizesSum)
 	if err != nil {
 		return nil, err
 	}
-	allModifiedTreeNodes.copyAllFrom(modifiedNodesForReindexRootExpansion)
+	allModifiedTreeNodes.addAll(modifiedNodesForReindexRootExpansion)
 
 	return allModifiedTreeNodes, nil
 }
@@ -1035,7 +1035,7 @@ func (rt *reachabilityTree) expandIntervalInReindexRootChosenChild(reindexRoot *
 		if err != nil {
 			return nil, err
 		}
-		modifiedTreeNodes.copyAllFrom(modifiedNodes)
+		modifiedTreeNodes.addAll(modifiedNodes)
 	}
 
 	chosenReindexRootChild.interval = newReindexRootChildInterval
@@ -1086,7 +1086,7 @@ func (rt *reachabilityTree) propagateChildIntervals(interval *reachabilityInterv
 		if err != nil {
 			return nil, err
 		}
-		modifiedTreeNodes.copyAllFrom(modifiedNodes)
+		modifiedTreeNodes.addAll(modifiedNodes)
 	}
 
 	return modifiedTreeNodes, nil
