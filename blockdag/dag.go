@@ -701,7 +701,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 		return err
 	}
 
-	err = dag.reachabilityTree.reachabilityStore.flushToDB(dbTx)
+	err = dag.reachabilityTree.store.flushToDB(dbTx)
 	if err != nil {
 		return err
 	}
@@ -762,7 +762,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 	dag.index.clearDirtyEntries()
 	dag.utxoDiffStore.clearDirtyEntries()
 	dag.utxoDiffStore.clearOldEntries()
-	dag.reachabilityTree.reachabilityStore.clearDirtyEntries()
+	dag.reachabilityTree.store.clearDirtyEntries()
 	dag.multisetStore.clearNewEntries()
 
 	return nil

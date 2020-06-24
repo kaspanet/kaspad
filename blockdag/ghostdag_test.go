@@ -349,7 +349,7 @@ func TestGHOSTDAGErrors(t *testing.T) {
 	block3 := prepareAndProcessBlockByParentMsgBlocks(t, dag, block1, block2)
 
 	// Clear the reachability store
-	dag.reachabilityTree.reachabilityStore.loaded = map[daghash.Hash]*reachabilityData{}
+	dag.reachabilityTree.store.loaded = map[daghash.Hash]*reachabilityData{}
 
 	dbTx, err := dbaccess.NewTx()
 	if err != nil {

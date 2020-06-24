@@ -797,13 +797,13 @@ func (rt *reachabilityTree) addBlock(node *blockNode, selectedParentAnticone []*
 
 	// If this is the genesis node, simply initialize it and return
 	if node.isGenesis() {
-		rt.reachabilityStore.setTreeNode(newTreeNode)
+		rt.store.setTreeNode(newTreeNode)
 		rt.reindexRoot = newTreeNode
 		return nil
 	}
 
 	// Insert the node into the selected parent's reachability tree
-	selectedParentTreeNode, err := rt.reachabilityStore.treeNodeByBlockNode(node.selectedParent)
+	selectedParentTreeNode, err := rt.store.treeNodeByBlockNode(node.selectedParent)
 	if err != nil {
 		return err
 	}
@@ -812,18 +812,18 @@ func (rt *reachabilityTree) addBlock(node *blockNode, selectedParentAnticone []*
 		return err
 	}
 	for modifiedTreeNode := range modifiedTreeNodes {
-		rt.reachabilityStore.setTreeNode(modifiedTreeNode)
+		rt.store.setTreeNode(modifiedTreeNode)
 	}
 
 	// Add the block to the futureCoveringSets of all the blocks
 	// in the selected parent's anticone
 	for _, current := range selectedParentAnticone {
-		currentFutureCoveringSet, err := rt.reachabilityStore.futureCoveringSetByBlockNode(current)
+		currentFutureCoveringSet, err := rt.store.futureCoveringSetByBlockNode(current)
 		if err != nil {
 			return err
 		}
 		currentFutureCoveringSet.insertNode(newTreeNode)
-		err = rt.reachabilityStore.setFutureCoveringSet(current, currentFutureCoveringSet)
+		err = rt.store.setFutureCoveringSet(current, currentFutureCoveringSet)
 		if err != nil {
 			return err
 		}
@@ -847,7 +847,7 @@ func (rt *reachabilityTree) addBlock(node *blockNode, selectedParentAnticone []*
 				rt.reindexRoot.blockNode.hash,
 				len(modifiedTreeNodes), updateTimeElapsed.Milliseconds())
 			for modifiedTreeNode := range modifiedTreeNodes {
-				rt.reachabilityStore.setTreeNode(modifiedTreeNode)
+				rt.store.setTreeNode(modifiedTreeNode)
 			}
 		}
 	}
@@ -856,17 +856,17 @@ func (rt *reachabilityTree) addBlock(node *blockNode, selectedParentAnticone []*
 }
 
 type reachabilityTree struct {
-	dag               *BlockDAG
-	reachabilityStore *reachabilityStore
-	reindexRoot       *reachabilityTreeNode
+	dag         *BlockDAG
+	store       *reachabilityStore
+	reindexRoot *reachabilityTreeNode
 }
 
 func newReachabilityTree(dag *BlockDAG) *reachabilityTree {
 	reachabilityStore := newReachabilityStore(dag)
 	return &reachabilityTree{
-		dag:               dag,
-		reindexRoot:       nil,
-		reachabilityStore: reachabilityStore,
+		dag:         dag,
+		store:       reachabilityStore,
+		reindexRoot: nil,
 	}
 }
 
@@ -1107,11 +1107,11 @@ func (rt *reachabilityTree) isAncestorOf(this *blockNode, other *blockNode) (boo
 
 	// Otherwise, use previously registered future blocks to complete the
 	// reachability test
-	thisFutureCoveringSet, err := rt.reachabilityStore.futureCoveringSetByBlockNode(this)
+	thisFutureCoveringSet, err := rt.store.futureCoveringSetByBlockNode(this)
 	if err != nil {
 		return false, err
 	}
-	otherTreeNode, err := rt.reachabilityStore.treeNodeByBlockNode(other)
+	otherTreeNode, err := rt.store.treeNodeByBlockNode(other)
 	if err != nil {
 		return false, err
 	}
@@ -1120,11 +1120,11 @@ func (rt *reachabilityTree) isAncestorOf(this *blockNode, other *blockNode) (boo
 
 // isReachabilityTreeAncestorOf returns whether `this` is in the selected parent chain of `other`.
 func (rt *reachabilityTree) isReachabilityTreeAncestorOf(this *blockNode, other *blockNode) (bool, error) {
-	thisTreeNode, err := rt.reachabilityStore.treeNodeByBlockNode(this)
+	thisTreeNode, err := rt.store.treeNodeByBlockNode(this)
 	if err != nil {
 		return false, err
 	}
-	otherTreeNode, err := rt.reachabilityStore.treeNodeByBlockNode(other)
+	otherTreeNode, err := rt.store.treeNodeByBlockNode(other)
 	if err != nil {
 		return false, err
 	}
