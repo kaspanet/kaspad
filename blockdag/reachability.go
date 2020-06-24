@@ -496,7 +496,7 @@ func (rtn *reachabilityTreeNode) reclaimIntervalBeforeChosenChild(
 	for current != commonAncestor {
 		current.interval = newReachabilityInterval(current.interval.start+1, current.interval.end)
 
-		modifiedNodes, err := current.parent.reindexIntervalsBeforeChosenChild(current)
+		modifiedNodes, err := current.parent.reindexIntervalsBeforeNode(current)
 		if err != nil {
 			return nil, err
 		}
@@ -508,29 +508,31 @@ func (rtn *reachabilityTreeNode) reclaimIntervalBeforeChosenChild(
 	return modifiedTreeNodes, nil
 }
 
-func (rtn *reachabilityTreeNode) reindexIntervalsBeforeChosenChild(chosenChild *reachabilityTreeNode) (
+// reindexIntervalsBeforeNode applies a tight interval to the reachability
+// subtree before `node`. Note that `node` itself is unaffected.
+func (rtn *reachabilityTreeNode) reindexIntervalsBeforeNode(node *reachabilityTreeNode) (
 	modifiedTreeNodes, error) {
 
 	modifiedTreeNodes := newModifiedTreeNodes()
 
-	childrenBeforeChosen, _, err := rtn.splitChildrenAroundChosenChild(chosenChild)
+	childrenBeforeNode, _, err := rtn.splitChildrenAroundChild(node)
 	if err != nil {
 		return nil, err
 	}
 
-	childrenBeforeChosenSizes, childrenBeforeChosenSubtreeSizeMaps, childrenBeforeChosenSizesSum :=
-		calcReachabilityTreeNodeSizes(childrenBeforeChosen)
+	childrenBeforeNodeSizes, childrenBeforeNodeSubtreeSizeMaps, childrenBeforeNodeSizesSum :=
+		calcReachabilityTreeNodeSizes(childrenBeforeNode)
 
 	// Apply a tight interval
-	newIntervalEnd := chosenChild.interval.start - 1
-	newInterval := newReachabilityInterval(newIntervalEnd-childrenBeforeChosenSizesSum+1, newIntervalEnd)
-	intervals, err := newInterval.splitExact(childrenBeforeChosenSizes)
+	newIntervalEnd := node.interval.start - 1
+	newInterval := newReachabilityInterval(newIntervalEnd-childrenBeforeNodeSizesSum+1, newIntervalEnd)
+	intervals, err := newInterval.splitExact(childrenBeforeNodeSizes)
 	if err != nil {
 		return nil, err
 	}
-	for i, child := range childrenBeforeChosen {
+	for i, child := range childrenBeforeNode {
 		child.interval = intervals[i]
-		subtreeSizeMap := childrenBeforeChosenSubtreeSizeMaps[i]
+		subtreeSizeMap := childrenBeforeNodeSubtreeSizeMaps[i]
 		modifiedNodes, err := child.propagateInterval(subtreeSizeMap)
 		if err != nil {
 			return nil, err
@@ -573,7 +575,7 @@ func (rtn *reachabilityTreeNode) reclaimIntervalAfterChosenChild(
 	for current != commonAncestor {
 		current.interval = newReachabilityInterval(current.interval.start, current.interval.end-1)
 
-		modifiedNodes, err := current.parent.reindexIntervalsAfterChosenChild(current)
+		modifiedNodes, err := current.parent.reindexIntervalsAfterNode(current)
 		if err != nil {
 			return nil, err
 		}
@@ -585,29 +587,31 @@ func (rtn *reachabilityTreeNode) reclaimIntervalAfterChosenChild(
 	return modifiedTreeNodes, nil
 }
 
-func (rtn *reachabilityTreeNode) reindexIntervalsAfterChosenChild(chosenChild *reachabilityTreeNode) (
+// reindexIntervalsAfterNode applies a tight interval to the reachability
+// subtree after `node`. Note that `node` itself is unaffected.
+func (rtn *reachabilityTreeNode) reindexIntervalsAfterNode(node *reachabilityTreeNode) (
 	modifiedTreeNodes, error) {
 
 	modifiedTreeNodes := newModifiedTreeNodes()
 
-	_, childrenAfterChosen, err := rtn.splitChildrenAroundChosenChild(chosenChild)
+	_, childrenAfterNode, err := rtn.splitChildrenAroundChild(node)
 	if err != nil {
 		return nil, err
 	}
 
-	childrenAfterChosenSizes, childrenAfterChosenSubtreeSizeMaps, childrenAfterChosenSizesSum :=
-		calcReachabilityTreeNodeSizes(childrenAfterChosen)
+	childrenAfterNodeSizes, childrenAfterNodeSubtreeSizeMaps, childrenAfterNodeSizesSum :=
+		calcReachabilityTreeNodeSizes(childrenAfterNode)
 
 	// Apply a tight interval
-	newIntervalStart := chosenChild.interval.end + 1
-	newInterval := newReachabilityInterval(newIntervalStart, newIntervalStart+childrenAfterChosenSizesSum-1)
-	intervals, err := newInterval.splitExact(childrenAfterChosenSizes)
+	newIntervalStart := node.interval.end + 1
+	newInterval := newReachabilityInterval(newIntervalStart, newIntervalStart+childrenAfterNodeSizesSum-1)
+	intervals, err := newInterval.splitExact(childrenAfterNodeSizes)
 	if err != nil {
 		return nil, err
 	}
-	for i, child := range childrenAfterChosen {
+	for i, child := range childrenAfterNode {
 		child.interval = intervals[i]
-		subtreeSizeMap := childrenAfterChosenSubtreeSizeMaps[i]
+		subtreeSizeMap := childrenAfterNodeSubtreeSizeMaps[i]
 		modifiedNodes, err := child.propagateInterval(subtreeSizeMap)
 		if err != nil {
 			return nil, err
@@ -916,13 +920,13 @@ func (rtn *reachabilityTreeNode) findAncestorAmongChildren(node *reachabilityTre
 }
 
 func (rt *reachabilityTree) concentrateIntervalAroundReindexRootChosenChild(
-	reindexRoot *reachabilityTreeNode, chosenReindexRootChild *reachabilityTreeNode) (
+	reindexRoot *reachabilityTreeNode, reindexRootChosenChild *reachabilityTreeNode) (
 	modifiedTreeNodes, error) {
 
 	modifiedTreeNodes := newModifiedTreeNodes()
 
 	reindexRootChildNodesBeforeChosen, reindexRootChildNodesAfterChosen, err :=
-		reindexRoot.splitChildrenAroundChosenChild(chosenReindexRootChild)
+		reindexRoot.splitChildrenAroundChild(reindexRootChosenChild)
 	if err != nil {
 		return nil, err
 	}
@@ -942,7 +946,7 @@ func (rt *reachabilityTree) concentrateIntervalAroundReindexRootChosenChild(
 	modifiedTreeNodes.copyAllFrom(modifiedNodes)
 
 	modifiedNodes, err = rt.expandIntervalInReindexRootChosenChild(
-		reindexRoot, chosenReindexRootChild, reindexRootChildNodesBeforeChosenSizesSum, reindexRootChildNodesAfterChosenSizesSum)
+		reindexRoot, reindexRootChosenChild, reindexRootChildNodesBeforeChosenSizesSum, reindexRootChildNodesAfterChosenSizesSum)
 	if err != nil {
 		return nil, err
 	}
@@ -951,15 +955,17 @@ func (rt *reachabilityTree) concentrateIntervalAroundReindexRootChosenChild(
 	return modifiedTreeNodes, nil
 }
 
-func (rtn *reachabilityTreeNode) splitChildrenAroundChosenChild(chosenChild *reachabilityTreeNode) (
-	nodesBeforeChosen []*reachabilityTreeNode, nodesAfterChosen []*reachabilityTreeNode, err error) {
+// splitChildrenAroundChild splits `rtn` into two slices: the nodes that are before
+// `child` and the nodes that are after.
+func (rtn *reachabilityTreeNode) splitChildrenAroundChild(child *reachabilityTreeNode) (
+	nodesBeforeChild []*reachabilityTreeNode, nodesAfterChild []*reachabilityTreeNode, err error) {
 
-	for i, child := range rtn.children {
-		if child == chosenChild {
+	for i, candidateChild := range rtn.children {
+		if candidateChild == child {
 			return rtn.children[:i], rtn.children[i+1:], nil
 		}
 	}
-	return nil, nil, errors.Errorf("chosenChild not a child of rtn")
+	return nil, nil, errors.Errorf("child not a child of rtn")
 }
 
 func (rt *reachabilityTree) tightenIntervalsBeforeReindexRootChosenChild(
