@@ -648,7 +648,8 @@ func (tns orderedTreeNodeSet) propagateIntervals(intervals []*reachabilityInterv
 }
 
 // isAncestorOf checks if this node is a reachability tree ancestor
-// of the other node.
+// of the other node. Note that we use the graph theory convention
+// here which defines that rtn is also an ancestor of itself.
 func (rtn *reachabilityTreeNode) isAncestorOf(other *reachabilityTreeNode) bool {
 	return rtn.interval.contains(other.interval)
 }
