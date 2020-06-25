@@ -190,17 +190,8 @@ func exponentialFractions(sizes []uint64) []float64 {
 	return fractions
 }
 
-// isAncestorOf checks if this interval's node is a reachability tree
-// ancestor of the other interval's node.
-func (ri *reachabilityInterval) isAncestorOf(other *reachabilityInterval) bool {
-	return ri.contains(other)
-}
-
-// contains returns true if ri strictly contains other.
+// contains returns true if ri contains other.
 func (ri *reachabilityInterval) contains(other *reachabilityInterval) bool {
-	if ri.start == other.start && ri.end == other.end {
-		return false
-	}
 	return ri.start <= other.start && other.end <= ri.end
 }
 
@@ -659,7 +650,7 @@ func (tns orderedTreeNodeSet) propagateIntervals(intervals []*reachabilityInterv
 // isAncestorOf checks if this node is a reachability tree ancestor
 // of the other node.
 func (rtn *reachabilityTreeNode) isAncestorOf(other *reachabilityTreeNode) bool {
-	return rtn.interval.isAncestorOf(other.interval)
+	return rtn.interval.contains(other.interval)
 }
 
 // findCommonAncestorWithReindexRoot finds the most recent reachability
