@@ -779,13 +779,13 @@ func TestReachabilityTreeNodeString(t *testing.T) {
 	}
 }
 
-func TestIsInFuture(t *testing.T) {
+func TestIsInPast(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestIsInFuture", true, Config{
+	dag, teardownFunc, err := DAGSetup("TestIsInPast", true, Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
-		t.Fatalf("TestIsInFuture: Failed to setup DAG instance: %v", err)
+		t.Fatalf("TestIsInPast: Failed to setup DAG instance: %v", err)
 	}
 	defer teardownFunc()
 
@@ -798,22 +798,22 @@ func TestIsInFuture(t *testing.T) {
 	blockC := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{dag.genesis.hash}, nil)
 	nodeC, ok := dag.index.LookupNode(blockC.BlockHash())
 	if !ok {
-		t.Fatalf("TestIsInFuture: block C is not in the block index")
+		t.Fatalf("TestIsInPast: block C is not in the block index")
 	}
 
 	// Add a block whose parents are the two tips
 	blockD := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockB.BlockHash(), blockC.BlockHash()}, nil)
 	nodeD, ok := dag.index.LookupNode(blockD.BlockHash())
 	if !ok {
-		t.Fatalf("TestIsInFuture: block C is not in the block index")
+		t.Fatalf("TestIsInPast: block C is not in the block index")
 	}
 
-	// Make sure that node D is in the future of node C
-	isInFuture, err := dag.reachabilityTree.isInFuture(nodeC, nodeD)
+	// Make sure that node C is in the past of node D
+	isInFuture, err := dag.reachabilityTree.isInPast(nodeC, nodeD)
 	if err != nil {
-		t.Fatalf("TestIsInFuture: isInFuture unexpectedly failed: %s", err)
+		t.Fatalf("TestIsInPast: isInPast unexpectedly failed: %s", err)
 	}
 	if !isInFuture {
-		t.Fatalf("TestIsInFuture: node D is unexpectedly not the future of node C")
+		t.Fatalf("TestIsInPast: node C is unexpectedly not the past of node D")
 	}
 }

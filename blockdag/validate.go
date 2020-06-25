@@ -709,7 +709,7 @@ func (dag *BlockDAG) validateParents(blockHeader *wire.BlockHeader, parents bloc
 				continue
 			}
 
-			isAncestorOf, err := dag.isInFuture(parentA, parentB)
+			isAncestorOf, err := dag.isInPast(parentA, parentB)
 			if err != nil {
 				return err
 			}

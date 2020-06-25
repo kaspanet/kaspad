@@ -708,7 +708,7 @@ type orderedTreeNodeSet []*reachabilityTreeNode
 // a reachability tree descendant of the block in question, as reachability
 // tree queries are always O(1).
 //
-// See insertNode, hasAncestorOf, and reachabilityTree.isInFuture for further
+// See insertNode, hasAncestorOf, and reachabilityTree.isInPast for further
 // details.
 type futureCoveringTreeNodeSet orderedTreeNodeSet
 
@@ -1165,11 +1165,11 @@ func (rt *reachabilityTree) propagateChildIntervals(interval *reachabilityInterv
 	return modifiedTreeNodes, nil
 }
 
-// isInFuture returns true if `other` is in the future (exclusive) of `this`
+// isInPast returns true if `this` is in the past (exclusive) of `other`
 // in the DAG.
 // The complexity of this method is O(log(|this.futureCoveringTreeNodeSet|))
-func (rt *reachabilityTree) isInFuture(this *blockNode, other *blockNode) (bool, error) {
-	// By definition, a node is not in the future of itself.
+func (rt *reachabilityTree) isInPast(this *blockNode, other *blockNode) (bool, error) {
+	// By definition, a node is not in the past of itself.
 	if this == other {
 		return false, nil
 	}

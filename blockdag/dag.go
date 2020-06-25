@@ -1781,7 +1781,7 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 			continue
 		}
 		visited.add(current)
-		isCurrentAncestorOfLowNode, err := dag.isInFuture(current, lowNode)
+		isCurrentAncestorOfLowNode, err := dag.isInPast(current, lowNode)
 		if err != nil {
 			return nil, err
 		}
@@ -1807,8 +1807,8 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 	return nodes, nil
 }
 
-func (dag *BlockDAG) isInFuture(this *blockNode, other *blockNode) (bool, error) {
-	return dag.reachabilityTree.isInFuture(this, other)
+func (dag *BlockDAG) isInPast(this *blockNode, other *blockNode) (bool, error) {
+	return dag.reachabilityTree.isInPast(this, other)
 }
 
 // AntiPastHashesBetween returns the hashes of the blocks between the
