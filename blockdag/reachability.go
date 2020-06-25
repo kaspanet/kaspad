@@ -699,6 +699,9 @@ func (rtn *reachabilityTreeNode) String() string {
 }
 
 // orderedTreeNodeSet is an ordered set of reachabilityTreeNodes
+// Note that this type does not validate order validity. It's the
+// responsibility of the caller to construct instances of this
+// type properly.
 type orderedTreeNodeSet []*reachabilityTreeNode
 
 // futureCoveringTreeNodeSet represents a collection of blocks in the future of
