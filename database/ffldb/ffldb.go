@@ -165,9 +165,8 @@ func (db *ffldb) Cursor(bucket *database.Bucket) (database.Cursor, error) {
 	return ldbCursor, nil
 }
 
-// DeleteUpToLocation deletes as much data as it can from the given store, while guaranteeing
-// that the data belongs to dbLocation, its following locations and dbPreservedLocations will
-// be kept.
+// DeleteUpToLocation deletes as much data as it can from the given store, while keeping the data that
+// dbLocation, its following locations, and dbPreservedLocations point to.
 //
 // This method is part of the Database interface.
 func (db *ffldb) DeleteUpToLocation(storeName string, dbLocation database.StoreLocation,

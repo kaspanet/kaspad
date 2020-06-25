@@ -43,7 +43,7 @@ func TestDeleteUpToFile(t *testing.T) {
 			t.Fatalf("store.fileExists(): %s", err)
 		}
 		if !exists {
-			t.Errorf("file %d is inpreservedFiles  was expected to be preserved", fileNumber)
+			t.Errorf("file %d in preservedFiles was expected to be preserved", fileNumber)
 		}
 	}
 
