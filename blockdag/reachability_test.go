@@ -1,6 +1,8 @@
 package blockdag
 
 import (
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util/daghash"
 	"reflect"
 	"strings"
 	"testing"
@@ -774,5 +776,43 @@ func TestReachabilityTreeNodeString(t *testing.T) {
 	if str != expectedStr {
 		t.Fatalf("TestReachabilityTreeNodeString: unexpected "+
 			"string. Want: %s, got: %s", expectedStr, str)
+	}
+}
+
+func TestIsInFuture(t *testing.T) {
+	// Create a new database and DAG instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("TestIsInFuture", true, Config{
+		DAGParams: &dagconfig.SimnetParams,
+	})
+	if err != nil {
+		t.Fatalf("TestIsInFuture: Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
+
+	// Add a chain of two blocks above the genesis. This will be the
+	// selected parent chain.
+	blockA := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{dag.genesis.hash}, nil)
+	blockB := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockA.BlockHash()}, nil)
+
+	// Add another block above the genesis
+	blockC := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{dag.genesis.hash}, nil)
+	nodeC, ok := dag.index.LookupNode(blockC.BlockHash())
+	if !ok {
+		t.Fatalf("AAAA")
+	}
+
+	// Add a block whose parents are the two tips
+	blockD := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockB.BlockHash(), blockC.BlockHash()}, nil)
+	nodeD, ok := dag.index.LookupNode(blockD.BlockHash())
+	if !ok {
+		t.Fatalf("AAAA")
+	}
+
+	isInFuture, err := dag.reachabilityTree.isInFuture(nodeC, nodeD)
+	if err != nil {
+		t.Fatalf("AAAA")
+	}
+	if !isInFuture {
+		t.Fatalf("AAAA")
 	}
 }
