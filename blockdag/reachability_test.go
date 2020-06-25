@@ -798,21 +798,22 @@ func TestIsInFuture(t *testing.T) {
 	blockC := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{dag.genesis.hash}, nil)
 	nodeC, ok := dag.index.LookupNode(blockC.BlockHash())
 	if !ok {
-		t.Fatalf("AAAA")
+		t.Fatalf("TestIsInFuture: block C is not in the block index")
 	}
 
 	// Add a block whose parents are the two tips
 	blockD := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockB.BlockHash(), blockC.BlockHash()}, nil)
 	nodeD, ok := dag.index.LookupNode(blockD.BlockHash())
 	if !ok {
-		t.Fatalf("AAAA")
+		t.Fatalf("TestIsInFuture: block C is not in the block index")
 	}
 
+	// Make sure that node D is in the future of node C
 	isInFuture, err := dag.reachabilityTree.isInFuture(nodeC, nodeD)
 	if err != nil {
-		t.Fatalf("AAAA")
+		t.Fatalf("TestIsInFuture: isInFuture unexpectedly failed: %s", err)
 	}
 	if !isInFuture {
-		t.Fatalf("AAAA")
+		t.Fatalf("TestIsInFuture: node D is unexpectedly not the future of node C")
 	}
 }
