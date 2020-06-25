@@ -1098,8 +1098,14 @@ func (rt *reachabilityTree) expandIntervalInReindexRootChosenChild(reindexRoot *
 
 	if !newReindexRootChildInterval.contains(reindexRootChosenChild.interval) {
 		// New interval doesn't contain the previous one, propagation is required
-		// Note that we reindex with an allocation of slack on both sides as an
-		// optimization for future calls to this method.
+
+		// We assign slack on both sides as an optimization. Were we to
+		// assign a tight interval, the next time the reindex root moves we
+		// would need to propagate intervals again. That is to say, When we
+		// DO allocate slack, next time
+		// expandIntervalInReindexRootChosenChild is called (next time the
+		// reindex root moves), newReindexRootChildInterval is likely to
+		// contain reindexRootChosenChild.interval.
 		reindexRootChosenChild.interval = newReachabilityInterval(
 			newReindexRootChildInterval.start+reachabilityReindexSlack,
 			newReindexRootChildInterval.end-reachabilityReindexSlack,
