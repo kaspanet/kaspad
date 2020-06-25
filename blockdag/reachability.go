@@ -708,7 +708,8 @@ type orderedTreeNodeSet []*reachabilityTreeNode
 // a reachability tree descendant of the block in question, as reachability
 // tree queries are always O(1).
 //
-// See insertNode, isInFuture, and dag.isAncestorOf for further details.
+// See insertNode, hasAncestorOf, and reachabilityTree.isInFuture for further
+// details.
 type futureCoveringTreeNodeSet orderedTreeNodeSet
 
 // insertNode inserts the given block into this futureCoveringTreeNodeSet
@@ -751,7 +752,7 @@ func (fb *futureCoveringTreeNodeSet) insertNode(node *reachabilityTreeNode) {
 	*fb = append(left, right...)
 }
 
-// isInFuture resolves whether the given node is in the subtree of
+// hasAncestorOf resolves whether the given node is in the subtree of
 // any node in this futureCoveringTreeNodeSet.
 // See insertNode method for the complementary insertion behavior.
 //
@@ -759,7 +760,7 @@ func (fb *futureCoveringTreeNodeSet) insertNode(node *reachabilityTreeNode) {
 // futureCoveringTreeNodeSet is kept ordered by interval to efficiently perform a
 // binary search over futureCoveringTreeNodeSet and answer the query in
 // O(log(|futureCoveringTreeNodeSet|)).
-func (fb futureCoveringTreeNodeSet) isInFuture(node *reachabilityTreeNode) bool {
+func (fb futureCoveringTreeNodeSet) hasAncestorOf(node *reachabilityTreeNode) bool {
 	ancestorIndex, ok := orderedTreeNodeSet(fb).findAncestorIndexOfNode(node)
 	if !ok {
 		// No candidate to contain node
@@ -1162,10 +1163,16 @@ func (rt *reachabilityTree) propagateChildIntervals(interval *reachabilityInterv
 	return modifiedTreeNodes, nil
 }
 
-// isAncestorOf returns true if this node is in the past of the other node
-// in the DAG. The complexity of this method is O(log(|this.futureCoveringTreeNodeSet|))
-func (rt *reachabilityTree) isAncestorOf(this *blockNode, other *blockNode) (bool, error) {
-	// First, check if this node is a reachability tree ancestor of the
+// isInFuture returns true if `other` is in the future (exclusive) of `this`
+// in the DAG.
+// The complexity of this method is O(log(|this.futureCoveringTreeNodeSet|))
+func (rt *reachabilityTree) isInFuture(this *blockNode, other *blockNode) (bool, error) {
+	// By definition, a node is not in the future of itself.
+	if this == other {
+		return false, nil
+	}
+
+	// Check if this node is a reachability tree ancestor of the
 	// other node
 	isReachabilityTreeAncestor, err := rt.isReachabilityTreeAncestorOf(this, other)
 	if err != nil {
@@ -1185,7 +1192,7 @@ func (rt *reachabilityTree) isAncestorOf(this *blockNode, other *blockNode) (boo
 	if err != nil {
 		return false, err
 	}
-	return thisFutureCoveringSet.isInFuture(otherTreeNode), nil
+	return thisFutureCoveringSet.hasAncestorOf(otherTreeNode), nil
 }
 
 // isReachabilityTreeAncestorOf returns whether `this` is in the selected parent chain of `other`.

@@ -819,6 +819,11 @@ func (dag *BlockDAG) LastFinalityPointHash() *daghash.Hash {
 
 // isInSelectedParentChain returns whether aNode is in the selected parent chain of bNode.
 func (dag *BlockDAG) isInSelectedParentChain(aNode, bNode *blockNode) (bool, error) {
+	// By definition, a node is not in the selected parent chain of itself.
+	if aNode == bNode {
+		return false, nil
+	}
+
 	return dag.reachabilityTree.isReachabilityTreeAncestorOf(aNode, bNode)
 }
 
@@ -1803,7 +1808,7 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 }
 
 func (dag *BlockDAG) isAncestorOf(this *blockNode, other *blockNode) (bool, error) {
-	return dag.reachabilityTree.isAncestorOf(this, other)
+	return dag.reachabilityTree.isInFuture(this, other)
 }
 
 // AntiPastHashesBetween returns the hashes of the blocks between the

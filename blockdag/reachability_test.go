@@ -480,7 +480,7 @@ func TestIsInFuture(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		result := treeNodes.isInFuture(test.treeNode)
+		result := treeNodes.hasAncestorOf(test.treeNode)
 		if result != test.expectedResult {
 			t.Errorf("TestIsInFuture: unexpected result in test #%d. Want: %t, got: %t",
 				i, test.expectedResult, result)
