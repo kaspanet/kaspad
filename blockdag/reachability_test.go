@@ -439,7 +439,7 @@ func TestSplitWithExponentialBias(t *testing.T) {
 	}
 }
 
-func TestIsInFuture(t *testing.T) {
+func TestHasAncestorOf(t *testing.T) {
 	treeNodes := futureCoveringTreeNodeSet{
 		&reachabilityTreeNode{interval: newReachabilityInterval(2, 3)},
 		&reachabilityTreeNode{interval: newReachabilityInterval(4, 67)},
@@ -482,7 +482,7 @@ func TestIsInFuture(t *testing.T) {
 	for i, test := range tests {
 		result := treeNodes.hasAncestorOf(test.treeNode)
 		if result != test.expectedResult {
-			t.Errorf("TestIsInFuture: unexpected result in test #%d. Want: %t, got: %t",
+			t.Errorf("TestHasAncestorOf: unexpected result in test #%d. Want: %t, got: %t",
 				i, test.expectedResult, result)
 		}
 	}
