@@ -701,7 +701,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 		return err
 	}
 
-	err = dag.reachabilityTree.store.flushToDB(dbTx)
+	err = dag.reachabilityTree.storeState(dbTx)
 	if err != nil {
 		return err
 	}
@@ -713,10 +713,9 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 
 	// Update DAG state.
 	state := &dagState{
-		TipHashes:               dag.TipHashes(),
-		LastFinalityPoint:       dag.lastFinalityPoint.hash,
-		ReachabilityReindexRoot: dag.reachabilityTree.reindexRoot.blockNode.hash,
-		LocalSubnetworkID:       dag.subnetworkID,
+		TipHashes:         dag.TipHashes(),
+		LastFinalityPoint: dag.lastFinalityPoint.hash,
+		LocalSubnetworkID: dag.subnetworkID,
 	}
 	err = saveDAGState(dbTx, state)
 	if err != nil {

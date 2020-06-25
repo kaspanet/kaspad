@@ -2,6 +2,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
 	"math"
 	"strings"
@@ -893,12 +894,58 @@ type reachabilityTree struct {
 }
 
 func newReachabilityTree(dag *BlockDAG) *reachabilityTree {
-	reachabilityStore := newReachabilityStore(dag)
+	store := newReachabilityStore(dag)
 	return &reachabilityTree{
 		dag:         dag,
-		store:       reachabilityStore,
+		store:       store,
 		reindexRoot: nil,
 	}
+}
+
+func (rt *reachabilityTree) init(dbContext dbaccess.Context) error {
+	// Init the store
+	err := rt.store.init(dbContext)
+	if err != nil {
+		return err
+	}
+
+	// Fetch the reindex root hash. If missing, use the genesis hash
+	reindexRootHash, err := dbaccess.FetchReachabilityReindexRoot(dbContext)
+	if err != nil {
+		if !dbaccess.IsNotFoundError(err) {
+			return err
+		}
+		reindexRootHash = rt.dag.dagParams.GenesisHash
+	}
+
+	// Init the reindex root
+	reachabilityReindexRootNode, ok := rt.dag.index.LookupNode(reindexRootHash)
+	if !ok {
+		return errors.Errorf("reachability reindex root block %s "+
+			"does not exist in the DAG", reindexRootHash)
+	}
+	rt.reindexRoot, err = rt.store.treeNodeByBlockNode(reachabilityReindexRootNode)
+	if err != nil {
+		return errors.Wrapf(err, "cannot set reachability reindex root")
+	}
+
+	return nil
+}
+
+func (rt *reachabilityTree) storeState(dbTx *dbaccess.TxContext) error {
+	// Flush the store
+	err := rt.dag.reachabilityTree.store.flushToDB(dbTx)
+	if err != nil {
+		return err
+	}
+
+	// Store the reindex root
+	err = dbaccess.StoreReachabilityReindexRoot(dbTx, rt.reindexRoot.blockNode.hash)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (rt *reachabilityTree) updateReindexRoot(newTreeNode *reachabilityTreeNode) (modifiedTreeNodes, error) {
