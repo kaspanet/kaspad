@@ -148,65 +148,65 @@ func TestReachabilityTreeNodeIsAncestorOf(t *testing.T) {
 		}
 	}
 
-	if root.isAncestorOf(root) {
-		t.Fatalf("TestReachabilityTreeNodeIsAncestorOf: root is not expected to be a descendant of root")
+	if !root.isAncestorOf(root) {
+		t.Fatalf("TestReachabilityTreeNodeIsAncestorOf: root is expected to be an ancestor of root")
 	}
 }
 
-func TestIntervalIsAncestorOf(t *testing.T) {
+func TestIntervalContains(t *testing.T) {
 	tests := []struct {
-		name                  string
-		this, other           *reachabilityInterval
-		isThisAncestorOfOther bool
+		name              string
+		this, other       *reachabilityInterval
+		thisContainsOther bool
 	}{
 		{
-			name:                  "this == other",
-			this:                  newReachabilityInterval(10, 100),
-			other:                 newReachabilityInterval(10, 100),
-			isThisAncestorOfOther: false,
+			name:              "this == other",
+			this:              newReachabilityInterval(10, 100),
+			other:             newReachabilityInterval(10, 100),
+			thisContainsOther: true,
 		},
 		{
-			name:                  "this.start == other.start && this.end < other.end",
-			this:                  newReachabilityInterval(10, 90),
-			other:                 newReachabilityInterval(10, 100),
-			isThisAncestorOfOther: false,
+			name:              "this.start == other.start && this.end < other.end",
+			this:              newReachabilityInterval(10, 90),
+			other:             newReachabilityInterval(10, 100),
+			thisContainsOther: false,
 		},
 		{
-			name:                  "this.start == other.start && this.end > other.end",
-			this:                  newReachabilityInterval(10, 100),
-			other:                 newReachabilityInterval(10, 90),
-			isThisAncestorOfOther: true,
+			name:              "this.start == other.start && this.end > other.end",
+			this:              newReachabilityInterval(10, 100),
+			other:             newReachabilityInterval(10, 90),
+			thisContainsOther: true,
 		},
 		{
-			name:                  "this.start > other.start && this.end == other.end",
-			this:                  newReachabilityInterval(20, 100),
-			other:                 newReachabilityInterval(10, 100),
-			isThisAncestorOfOther: false,
+			name:              "this.start > other.start && this.end == other.end",
+			this:              newReachabilityInterval(20, 100),
+			other:             newReachabilityInterval(10, 100),
+			thisContainsOther: false,
 		},
 		{
-			name:                  "this.start < other.start && this.end == other.end",
-			this:                  newReachabilityInterval(10, 100),
-			other:                 newReachabilityInterval(20, 100),
-			isThisAncestorOfOther: true,
+			name:              "this.start < other.start && this.end == other.end",
+			this:              newReachabilityInterval(10, 100),
+			other:             newReachabilityInterval(20, 100),
+			thisContainsOther: true,
 		},
 		{
-			name:                  "this.start > other.start && this.end < other.end",
-			this:                  newReachabilityInterval(20, 90),
-			other:                 newReachabilityInterval(10, 100),
-			isThisAncestorOfOther: false,
+			name:              "this.start > other.start && this.end < other.end",
+			this:              newReachabilityInterval(20, 90),
+			other:             newReachabilityInterval(10, 100),
+			thisContainsOther: false,
 		},
 		{
-			name:                  "this.start < other.start && this.end > other.end",
-			this:                  newReachabilityInterval(10, 100),
-			other:                 newReachabilityInterval(20, 90),
-			isThisAncestorOfOther: true,
+			name:              "this.start < other.start && this.end > other.end",
+			this:              newReachabilityInterval(10, 100),
+			other:             newReachabilityInterval(20, 90),
+			thisContainsOther: true,
 		},
 	}
 
 	for _, test := range tests {
-		if isAncestorOf := test.this.isAncestorOf(test.other); isAncestorOf != test.isThisAncestorOfOther {
-			t.Errorf("test.this.isAncestorOf(test.other) is expected to be %t but got %t",
-				test.isThisAncestorOfOther, isAncestorOf)
+		if thisContainsOther := test.this.contains(test.other); thisContainsOther != test.thisContainsOther {
+			t.Errorf("test.this.contains(test.other) is expected to be %t but got %t",
+				test.thisContainsOther, thisContainsOther)
 		}
 	}
 }
