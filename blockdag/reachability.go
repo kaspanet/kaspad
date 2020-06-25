@@ -555,7 +555,7 @@ func (rtn *reachabilityTreeNode) reindexIntervalsBeforeNode(node *reachabilityTr
 	if err != nil {
 		return nil, err
 	}
-	return treeNodeSet(childrenBeforeNode).propagateIntervals(intervals, childrenBeforeNodeSubtreeSizeMaps)
+	return orderedTreeNodeSet(childrenBeforeNode).propagateIntervals(intervals, childrenBeforeNodeSubtreeSizeMaps)
 }
 
 func (rtn *reachabilityTreeNode) reclaimIntervalAfterChosenChild(
@@ -636,10 +636,10 @@ func (rtn *reachabilityTreeNode) reindexIntervalsAfterNode(node *reachabilityTre
 	if err != nil {
 		return nil, err
 	}
-	return treeNodeSet(childrenAfterNode).propagateIntervals(intervals, childrenAfterNodeSubtreeSizeMaps)
+	return orderedTreeNodeSet(childrenAfterNode).propagateIntervals(intervals, childrenAfterNodeSubtreeSizeMaps)
 }
 
-func (tns treeNodeSet) propagateIntervals(intervals []*reachabilityInterval,
+func (tns orderedTreeNodeSet) propagateIntervals(intervals []*reachabilityInterval,
 	subtreeSizeMaps []map[*reachabilityTreeNode]uint64) (modifiedTreeNodes, error) {
 
 	modifiedTreeNodes := newModifiedTreeNodes()
@@ -698,8 +698,8 @@ func (rtn *reachabilityTreeNode) String() string {
 	return strings.Join(lines, "\n")
 }
 
-// treeNodeSet is an ordered set of reachabilityTreeNodes
-type treeNodeSet []*reachabilityTreeNode
+// orderedTreeNodeSet is an ordered set of reachabilityTreeNodes
+type orderedTreeNodeSet []*reachabilityTreeNode
 
 // futureCoveringTreeNodeSet represents a collection of blocks in the future of
 // a certain block. Once a block B is added to the DAG, every block A_i in
@@ -713,7 +713,7 @@ type treeNodeSet []*reachabilityTreeNode
 // tree queries are always O(1).
 //
 // See insertNode, isInFuture, and dag.isAncestorOf for further details.
-type futureCoveringTreeNodeSet treeNodeSet
+type futureCoveringTreeNodeSet orderedTreeNodeSet
 
 // insertNode inserts the given block into this futureCoveringTreeNodeSet
 // while keeping futureCoveringTreeNodeSet ordered by interval.
@@ -730,7 +730,7 @@ type futureCoveringTreeNodeSet treeNodeSet
 //   is-superset relation will by definition
 //   be always preserved.
 func (fb *futureCoveringTreeNodeSet) insertNode(node *reachabilityTreeNode) {
-	ancestorIndex, ok := treeNodeSet(*fb).findAncestorIndexOfNode(node)
+	ancestorIndex, ok := orderedTreeNodeSet(*fb).findAncestorIndexOfNode(node)
 	if !ok {
 		*fb = append([]*reachabilityTreeNode{node}, *fb...)
 		return
@@ -764,7 +764,7 @@ func (fb *futureCoveringTreeNodeSet) insertNode(node *reachabilityTreeNode) {
 // binary search over futureCoveringTreeNodeSet and answer the query in
 // O(log(|futureCoveringTreeNodeSet|)).
 func (fb futureCoveringTreeNodeSet) isInFuture(node *reachabilityTreeNode) bool {
-	ancestorIndex, ok := treeNodeSet(fb).findAncestorIndexOfNode(node)
+	ancestorIndex, ok := orderedTreeNodeSet(fb).findAncestorIndexOfNode(node)
 	if !ok {
 		// No candidate to contain node
 		return false
@@ -776,7 +776,7 @@ func (fb futureCoveringTreeNodeSet) isInFuture(node *reachabilityTreeNode) bool 
 
 // findAncestorOfNode finds the reachability tree ancestor of `node`
 // among the nodes in `tns`.
-func (tns treeNodeSet) findAncestorOfNode(node *reachabilityTreeNode) (*reachabilityTreeNode, bool) {
+func (tns orderedTreeNodeSet) findAncestorOfNode(node *reachabilityTreeNode) (*reachabilityTreeNode, bool) {
 	ancestorIndex, ok := tns.findAncestorIndexOfNode(node)
 	if !ok {
 		return nil, false
@@ -788,7 +788,7 @@ func (tns treeNodeSet) findAncestorOfNode(node *reachabilityTreeNode) (*reachabi
 // ancestor of `node` among the nodes in `tns`. It does so by finding
 // the index of the block with the maximum start that is below the
 // given block.
-func (tns treeNodeSet) findAncestorIndexOfNode(node *reachabilityTreeNode) (int, bool) {
+func (tns orderedTreeNodeSet) findAncestorIndexOfNode(node *reachabilityTreeNode) (int, bool) {
 	blockInterval := node.interval
 	end := blockInterval.end
 
@@ -945,7 +945,7 @@ func (rt *reachabilityTree) maybeMoveReindexRoot(
 // findAncestorAmongChildren finds the reachability tree child
 // of rtn that is the ancestor of node.
 func (rtn *reachabilityTreeNode) findAncestorAmongChildren(node *reachabilityTreeNode) (*reachabilityTreeNode, error) {
-	ancestor, ok := treeNodeSet(rtn.children).findAncestorOfNode(node)
+	ancestor, ok := orderedTreeNodeSet(rtn.children).findAncestorOfNode(node)
 	if !ok {
 		return nil, errors.Errorf("rtn is not an ancestor of node")
 	}
