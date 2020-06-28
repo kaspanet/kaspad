@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/hex"
 	nativeerrors "errors"
+	"github.com/kaspanet/kaspad/blockdag"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -13,7 +14,6 @@ import (
 	"github.com/kaspanet/kaspad/rpcclient"
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -122,6 +122,12 @@ func parseBlock(template *rpcmodel.GetBlockTemplateResult) (*util.Block, error) 
 	}
 	bits := uint32(bitsUint64)
 
+	// parse hashMerkleRoot
+	hashMerkleRoot, err := daghash.NewHashFromStr(template.HashMerkleRoot)
+	if err != nil {
+		return nil, errors.Errorf("Error parsing HashMerkleRoot: %s", err)
+	}
+
 	// parseAcceptedIDMerkleRoot
 	acceptedIDMerkleRoot, err := daghash.NewHashFromStr(template.AcceptedIDMerkleRoot)
 	if err != nil {
@@ -133,7 +139,7 @@ func parseBlock(template *rpcmodel.GetBlockTemplateResult) (*util.Block, error) 
 	}
 	// parse rest of block
 	msgBlock := wire.NewMsgBlock(
-		wire.NewBlockHeader(template.Version, parentHashes, &daghash.Hash{},
+		wire.NewBlockHeader(template.Version, parentHashes, hashMerkleRoot,
 			acceptedIDMerkleRoot, utxoCommitment, bits, 0))
 
 	for i, txResult := range template.Transactions {
@@ -146,7 +152,6 @@ func parseBlock(template *rpcmodel.GetBlockTemplateResult) (*util.Block, error) 
 	}
 
 	block := util.NewBlock(msgBlock)
-	msgBlock.Header.HashMerkleRoot = blockdag.BuildHashMerkleTreeStore(block.Transactions()).Root()
 	return block, nil
 }
 
