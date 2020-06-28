@@ -819,7 +819,67 @@ func TestIsInPast(t *testing.T) {
 }
 
 func TestUpdateReindexRoot(t *testing.T) {
+	// Create a new database and DAG instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("TestUpdateReindexRoot", true, Config{
+		DAGParams: &dagconfig.SimnetParams,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
 
+	// Set the reindex window to a low number to make this test run fast
+	originalReachabilityReindexWindow := reachabilityReindexWindow
+	reachabilityReindexWindow = 10
+	defer func() {
+		reachabilityReindexWindow = originalReachabilityReindexWindow
+	}()
+
+	// Add two blocks on top of the genesis block
+	chain1RootBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{dag.genesis.hash}, nil)
+	chain2RootBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{dag.genesis.hash}, nil)
+
+	// Add chain of reachabilityReindexWindow - 1 blocks above chain1RootBlock and
+	// chain2RootBlock, respectively. This should not move the reindex root
+	chain1RootBlockTipHash := chain1RootBlock.BlockHash()
+	chain2RootBlockTipHash := chain2RootBlock.BlockHash()
+	genesisTreeNode := dag.reachabilityTree.store.loaded[*dag.genesis.hash].treeNode
+	for i := uint64(0); i < reachabilityReindexWindow-1; i++ {
+		chain1Block := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{chain1RootBlockTipHash}, nil)
+		chain1RootBlockTipHash = chain1Block.BlockHash()
+
+		chain2Block := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{chain2RootBlockTipHash}, nil)
+		chain2RootBlockTipHash = chain2Block.BlockHash()
+
+		if dag.reachabilityTree.reindexRoot != genesisTreeNode {
+			t.Fatalf("reindex root unexpectedly moved")
+		}
+	}
+
+	// Add another block over chain1. This will move the reindex root to chain1RootBlock
+	PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{chain1RootBlockTipHash}, nil)
+
+	// Make sure that chain1RootBlock is now the reindex root
+	chain1RootTreeNode := dag.reachabilityTree.store.loaded[*chain1RootBlock.BlockHash()].treeNode
+	if dag.reachabilityTree.reindexRoot != chain1RootTreeNode {
+		t.Fatalf("chain1RootBlock is not the reindex root after reindex")
+	}
+
+	// Make sure that tight intervals have been applied to chain2
+	chain2RootTreeNode := dag.reachabilityTree.store.loaded[*chain2RootBlock.BlockHash()].treeNode
+	if chain2RootTreeNode.interval.size() != reachabilityReindexWindow {
+		t.Fatalf("got unexpected chain2RootNode interval. Want: %d, got: %d",
+			chain2RootTreeNode.interval.size(), reachabilityReindexWindow)
+	}
+
+	// Make sure that the rest of the interval has been allocated to
+	// chain1RootNode, minus slack from both sides
+	expectedChain1RootIntervalSize := genesisTreeNode.interval.size() - 1 -
+		chain2RootTreeNode.interval.size() - 2*reachabilityReindexSlack
+	if chain1RootTreeNode.interval.size() != expectedChain1RootIntervalSize {
+		t.Fatalf("got unexpected chain1RootNode interval. Want: %d, got: %d",
+			chain1RootTreeNode.interval.size(), expectedChain1RootIntervalSize)
+	}
 }
 
 func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
