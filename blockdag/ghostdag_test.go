@@ -377,7 +377,7 @@ func TestGHOSTDAGErrors(t *testing.T) {
 	if err == nil {
 		t.Fatalf("TestGHOSTDAGErrors: ghostdag unexpectedly succeeded")
 	}
-	expectedErrSubstring := "Couldn't find reachability data"
+	expectedErrSubstring := "couldn't find reachability data"
 	if !strings.Contains(err.Error(), expectedErrSubstring) {
 		t.Fatalf("TestGHOSTDAGErrors: ghostdag returned wrong error. "+
 			"Want: %s, got: %s", expectedErrSubstring, err)
