@@ -865,7 +865,9 @@ func TestUpdateReindexRoot(t *testing.T) {
 		t.Fatalf("chain1RootBlock is not the reindex root after reindex")
 	}
 
-	// Make sure that tight intervals have been applied to chain2
+	// Make sure that tight intervals have been applied to chain2. Since
+	// we added reachabilityReindexWindow-1 blocks to chain2, the size
+	// of the interval at its root should be equal to reachabilityReindexWindow
 	chain2RootTreeNode := dag.reachabilityTree.store.loaded[*chain2RootBlock.BlockHash()].treeNode
 	if chain2RootTreeNode.interval.size() != reachabilityReindexWindow {
 		t.Fatalf("got unexpected chain2RootNode interval. Want: %d, got: %d",
