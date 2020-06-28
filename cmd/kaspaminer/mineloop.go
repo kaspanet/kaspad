@@ -1,23 +1,17 @@
 package main
 
 import (
-	"encoding/hex"
 	nativeerrors "errors"
-	"github.com/kaspanet/kaspad/blockdag"
 	"math/rand"
-	"strconv"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/kaspanet/kaspad/rpcclient"
-	"github.com/pkg/errors"
-
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
 )
 
 var random = rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -104,57 +98,6 @@ func handleFoundBlock(client *minerClient, block *util.Block) error {
 	return nil
 }
 
-func parseBlock(template *rpcmodel.GetBlockTemplateResult) (*util.Block, error) {
-	// parse parent hashes
-	parentHashes := make([]*daghash.Hash, len(template.ParentHashes))
-	for i, parentHash := range template.ParentHashes {
-		hash, err := daghash.NewHashFromStr(parentHash)
-		if err != nil {
-			return nil, errors.Errorf("Error decoding hash %s: %s", parentHash, err)
-		}
-		parentHashes[i] = hash
-	}
-
-	// parse Bits
-	bitsUint64, err := strconv.ParseUint(template.Bits, 16, 32)
-	if err != nil {
-		return nil, errors.Errorf("Error decoding bits %s: %s", template.Bits, err)
-	}
-	bits := uint32(bitsUint64)
-
-	// parse hashMerkleRoot
-	hashMerkleRoot, err := daghash.NewHashFromStr(template.HashMerkleRoot)
-	if err != nil {
-		return nil, errors.Errorf("Error parsing HashMerkleRoot: %s", err)
-	}
-
-	// parseAcceptedIDMerkleRoot
-	acceptedIDMerkleRoot, err := daghash.NewHashFromStr(template.AcceptedIDMerkleRoot)
-	if err != nil {
-		return nil, errors.Errorf("Error parsing acceptedIDMerkleRoot: %s", err)
-	}
-	utxoCommitment, err := daghash.NewHashFromStr(template.UTXOCommitment)
-	if err != nil {
-		return nil, errors.Errorf("Error parsing utxoCommitment: %s", err)
-	}
-	// parse rest of block
-	msgBlock := wire.NewMsgBlock(
-		wire.NewBlockHeader(template.Version, parentHashes, hashMerkleRoot,
-			acceptedIDMerkleRoot, utxoCommitment, bits, 0))
-
-	for i, txResult := range template.Transactions {
-		reader := hex.NewDecoder(strings.NewReader(txResult.Data))
-		tx := &wire.MsgTx{}
-		if err := tx.KaspaDecode(reader, 0); err != nil {
-			return nil, errors.Errorf("Error decoding tx #%d: %s", i, err)
-		}
-		msgBlock.AddTransaction(tx)
-	}
-
-	block := util.NewBlock(msgBlock)
-	return block, nil
-}
-
 func solveBlock(block *util.Block, stopChan chan struct{}, foundBlock chan *util.Block) {
 	msgBlock := block.MsgBlock()
 	targetDifficulty := util.CompactToBig(msgBlock.Header.Bits)
@@ -236,7 +179,7 @@ func solveLoop(newTemplateChan chan *rpcmodel.GetBlockTemplateResult, foundBlock
 		}
 
 		stopOldTemplateSolving = make(chan struct{})
-		block, err := parseBlock(template)
+		block, err := rpcclient.ParseBlock(template)
 		if err != nil {
 			errChan <- errors.Errorf("Error parsing block: %s", err)
 			return

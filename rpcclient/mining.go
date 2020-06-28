@@ -7,8 +7,13 @@ package rpcclient
 import (
 	"encoding/hex"
 	"encoding/json"
+	"strconv"
+	"strings"
+
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
 
@@ -99,4 +104,56 @@ func (r FutureGetBlockTemplateResult) Receive() (*rpcmodel.GetBlockTemplateResul
 // GetBlockTemplate request a block template from the server, to mine upon
 func (c *Client) GetBlockTemplate(payAddress string, longPollID string) (*rpcmodel.GetBlockTemplateResult, error) {
 	return c.GetBlockTemplateAsync(payAddress, longPollID).Receive()
+}
+
+// ParseBlock Accepts a GetBlockTemplateResult and parse it into a Block
+func ParseBlock(template *rpcmodel.GetBlockTemplateResult) (*util.Block, error) {
+	// parse parent hashes
+	parentHashes := make([]*daghash.Hash, len(template.ParentHashes))
+	for i, parentHash := range template.ParentHashes {
+		hash, err := daghash.NewHashFromStr(parentHash)
+		if err != nil {
+			return nil, errors.Errorf("Error decoding hash %s: %s", parentHash, err)
+		}
+		parentHashes[i] = hash
+	}
+
+	// parse Bits
+	bitsUint64, err := strconv.ParseUint(template.Bits, 16, 32)
+	if err != nil {
+		return nil, errors.Errorf("Error decoding bits %s: %s", template.Bits, err)
+	}
+	bits := uint32(bitsUint64)
+
+	// parse hashMerkleRoot
+	hashMerkleRoot, err := daghash.NewHashFromStr(template.HashMerkleRoot)
+	if err != nil {
+		return nil, errors.Errorf("Error parsing HashMerkleRoot: %s", err)
+	}
+
+	// parseAcceptedIDMerkleRoot
+	acceptedIDMerkleRoot, err := daghash.NewHashFromStr(template.AcceptedIDMerkleRoot)
+	if err != nil {
+		return nil, errors.Errorf("Error parsing acceptedIDMerkleRoot: %s", err)
+	}
+	utxoCommitment, err := daghash.NewHashFromStr(template.UTXOCommitment)
+	if err != nil {
+		return nil, errors.Errorf("Error parsing utxoCommitment: %s", err)
+	}
+	// parse rest of block
+	msgBlock := wire.NewMsgBlock(
+		wire.NewBlockHeader(template.Version, parentHashes, hashMerkleRoot,
+			acceptedIDMerkleRoot, utxoCommitment, bits, 0))
+
+	for i, txResult := range template.Transactions {
+		reader := hex.NewDecoder(strings.NewReader(txResult.Data))
+		tx := &wire.MsgTx{}
+		if err := tx.KaspaDecode(reader, 0); err != nil {
+			return nil, errors.Errorf("Error decoding tx #%d: %s", i, err)
+		}
+		msgBlock.AddTransaction(tx)
+	}
+
+	block := util.NewBlock(msgBlock)
+	return block, nil
 }
