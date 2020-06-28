@@ -817,3 +817,115 @@ func TestIsInPast(t *testing.T) {
 		t.Fatalf("TestIsInPast: node C is unexpectedly not the past of node D")
 	}
 }
+
+func TestUpdateReindexRoot(t *testing.T) {
+
+}
+
+func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
+	// Create a new database and DAG instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("TestReindexIntervalsEarlierThanReindexRoot", true, Config{
+		DAGParams: &dagconfig.SimnetParams,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
+
+	// Set the reindex window and slack to low numbers to make this test
+	// run fast
+	originalReachabilityReindexWindow := reachabilityReindexWindow
+	originalReachabilityReindexSlack := reachabilityReindexSlack
+	reachabilityReindexWindow = 10
+	reachabilityReindexSlack = 5
+	defer func() {
+		reachabilityReindexWindow = originalReachabilityReindexWindow
+		reachabilityReindexSlack = originalReachabilityReindexSlack
+	}()
+
+	// Add three children to the genesis: leftBlock, centerBlock, rightBlock
+	leftBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{dag.genesis.hash}, nil)
+	centerBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{dag.genesis.hash}, nil)
+	rightBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{dag.genesis.hash}, nil)
+
+	// Add a chain of reachabilityReindexWindow blocks above centerBlock.
+	// This will move the reindex root to centerBlock
+	centerTipHash := centerBlock.BlockHash()
+	for i := uint64(0); i < reachabilityReindexWindow; i++ {
+		block := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{centerTipHash}, nil)
+		centerTipHash = block.BlockHash()
+	}
+
+	// Make sure that centerBlock is now the reindex root
+	centerTreeNode := dag.reachabilityTree.store.loaded[*centerBlock.BlockHash()].treeNode
+	if dag.reachabilityTree.reindexRoot != centerTreeNode {
+		t.Fatalf("centerBlock is not the reindex root after reindex")
+	}
+
+	// Get the current interval for leftBlock. The reindex should have
+	// resulted in a tight interval there
+	leftTreeNode := dag.reachabilityTree.store.loaded[*leftBlock.BlockHash()].treeNode
+	if leftTreeNode.interval.size() != 1 {
+		t.Fatalf("leftBlock interval not tight after reindex")
+	}
+
+	// Get the current interval for rightBlock. The reindex should have
+	// resulted in a tight interval there
+	rightTreeNode := dag.reachabilityTree.store.loaded[*rightBlock.BlockHash()].treeNode
+	if rightTreeNode.interval.size() != 1 {
+		t.Fatalf("rightBlock interval not tight after reindex")
+	}
+
+	// Get the current interval for centerBlock. Its interval should be:
+	// genesisInterval - 1 - leftInterval - leftSlack - rightInterval - rightSlack
+	genesisTreeNode := dag.reachabilityTree.store.loaded[*dag.genesis.hash].treeNode
+	expectedCenterInterval := genesisTreeNode.interval.size() - 1 -
+		leftTreeNode.interval.size() - reachabilityReindexSlack -
+		rightTreeNode.interval.size() - reachabilityReindexSlack
+	if centerTreeNode.interval.size() != expectedCenterInterval {
+		t.Fatalf("unexpected centerBlock interval. Want: %d, got: %d",
+			expectedCenterInterval, centerTreeNode.interval.size())
+	}
+
+	// Add a chain of reachabilityReindexWindow - 1 blocks above leftBlock.
+	// Each addition will trigger a low-than-reindex-root reindex. We
+	// expect the centerInterval to shrink by 1 each time, but its child
+	// to remain unaffected
+	treeChildOfCenterBlock := centerTreeNode.children[0]
+	treeChildOfCenterBlockOriginalIntervalSize := treeChildOfCenterBlock.interval.size()
+	leftTipHash := leftBlock.BlockHash()
+	for i := uint64(0); i < reachabilityReindexWindow-1; i++ {
+		block := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{leftTipHash}, nil)
+		leftTipHash = block.BlockHash()
+
+		expectedCenterInterval--
+		if centerTreeNode.interval.size() != expectedCenterInterval {
+			t.Fatalf("unexpected centerBlock interval. Want: %d, got: %d",
+				expectedCenterInterval, centerTreeNode.interval.size())
+		}
+
+		if treeChildOfCenterBlock.interval.size() != treeChildOfCenterBlockOriginalIntervalSize {
+			t.Fatalf("the interval of centerBlock's child unexpectedly changed")
+		}
+	}
+
+	// Add a chain of reachabilityReindexWindow - 1 blocks above rightBlock.
+	// Each addition will trigger a low-than-reindex-root reindex. We
+	// expect the centerInterval to shrink by 1 each time, but its child
+	// to remain unaffected
+	rightTipHash := rightBlock.BlockHash()
+	for i := uint64(0); i < reachabilityReindexWindow-1; i++ {
+		block := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{rightTipHash}, nil)
+		rightTipHash = block.BlockHash()
+
+		expectedCenterInterval--
+		if centerTreeNode.interval.size() != expectedCenterInterval {
+			t.Fatalf("unexpected centerBlock interval. Want: %d, got: %d",
+				expectedCenterInterval, centerTreeNode.interval.size())
+		}
+
+		if treeChildOfCenterBlock.interval.size() != treeChildOfCenterBlockOriginalIntervalSize {
+			t.Fatalf("the interval of centerBlock's child unexpectedly changed")
+		}
+	}
+}
