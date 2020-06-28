@@ -179,7 +179,7 @@ func solveLoop(newTemplateChan chan *rpcmodel.GetBlockTemplateResult, foundBlock
 		}
 
 		stopOldTemplateSolving = make(chan struct{})
-		block, err := rpcclient.ParseBlock(template)
+		block, err := rpcclient.ConvertGetBlockTemplateResultToBlock(template)
 		if err != nil {
 			errChan <- errors.Errorf("Error parsing block: %s", err)
 			return

@@ -106,14 +106,14 @@ func (c *Client) GetBlockTemplate(payAddress string, longPollID string) (*rpcmod
 	return c.GetBlockTemplateAsync(payAddress, longPollID).Receive()
 }
 
-// ParseBlock Accepts a GetBlockTemplateResult and parse it into a Block
-func ParseBlock(template *rpcmodel.GetBlockTemplateResult) (*util.Block, error) {
+// ConvertGetBlockTemplateResultToBlock Accepts a GetBlockTemplateResult and parses it into a Block
+func ConvertGetBlockTemplateResultToBlock(template *rpcmodel.GetBlockTemplateResult) (*util.Block, error) {
 	// parse parent hashes
 	parentHashes := make([]*daghash.Hash, len(template.ParentHashes))
 	for i, parentHash := range template.ParentHashes {
 		hash, err := daghash.NewHashFromStr(parentHash)
 		if err != nil {
-			return nil, errors.Errorf("Error decoding hash %s: %s", parentHash, err)
+			return nil, errors.Wrapf(err, "error decoding hash: '%s'", parentHash)
 		}
 		parentHashes[i] = hash
 	}
@@ -121,24 +121,24 @@ func ParseBlock(template *rpcmodel.GetBlockTemplateResult) (*util.Block, error) 
 	// parse Bits
 	bitsUint64, err := strconv.ParseUint(template.Bits, 16, 32)
 	if err != nil {
-		return nil, errors.Errorf("Error decoding bits %s: %s", template.Bits, err)
+		return nil, errors.Wrapf(err, "error decoding bits: '%s'", template.Bits)
 	}
 	bits := uint32(bitsUint64)
 
 	// parse hashMerkleRoot
 	hashMerkleRoot, err := daghash.NewHashFromStr(template.HashMerkleRoot)
 	if err != nil {
-		return nil, errors.Errorf("Error parsing HashMerkleRoot: %s", err)
+		return nil, errors.Wrapf(err, "error parsing HashMerkleRoot: '%s'", template.HashMerkleRoot)
 	}
 
-	// parseAcceptedIDMerkleRoot
+	// parse AcceptedIDMerkleRoot
 	acceptedIDMerkleRoot, err := daghash.NewHashFromStr(template.AcceptedIDMerkleRoot)
 	if err != nil {
-		return nil, errors.Errorf("Error parsing acceptedIDMerkleRoot: %s", err)
+		return nil, errors.Wrapf(err, "error parsing acceptedIDMerkleRoot: '%s'", template.AcceptedIDMerkleRoot)
 	}
 	utxoCommitment, err := daghash.NewHashFromStr(template.UTXOCommitment)
 	if err != nil {
-		return nil, errors.Errorf("Error parsing utxoCommitment: %s", err)
+		return nil, errors.Wrapf(err, "error parsing utxoCommitment '%s'", template.UTXOCommitment)
 	}
 	// parse rest of block
 	msgBlock := wire.NewMsgBlock(
@@ -149,7 +149,7 @@ func ParseBlock(template *rpcmodel.GetBlockTemplateResult) (*util.Block, error) 
 		reader := hex.NewDecoder(strings.NewReader(txResult.Data))
 		tx := &wire.MsgTx{}
 		if err := tx.KaspaDecode(reader, 0); err != nil {
-			return nil, errors.Errorf("Error decoding tx #%d: %s", i, err)
+			return nil, errors.Wrapf(err, "error decoding tx #%d", i)
 		}
 		msgBlock.AddTransaction(tx)
 	}
