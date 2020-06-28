@@ -818,6 +818,37 @@ func TestIsInPast(t *testing.T) {
 	}
 }
 
+func TestAddChildToSelectedParentChainBelowReindexRoot(t *testing.T) {
+	// Create a new database and DAG instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("TestAddChildToSelectedParentChainBelowReindexRoot",
+		true, Config{DAGParams: &dagconfig.SimnetParams})
+	if err != nil {
+		t.Fatalf("Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
+
+	// Set the reindex window to a low number to make this test run fast
+	originalReachabilityReindexWindow := reachabilityReindexWindow
+	reachabilityReindexWindow = 10
+	defer func() {
+		reachabilityReindexWindow = originalReachabilityReindexWindow
+	}()
+
+	// Add a block on top of the genesis block
+	chainRootBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{dag.genesis.hash}, nil)
+
+	// Add chain of reachabilityReindexWindow blocks above chainRootBlock.
+	// This should move the reindex root
+	chainRootBlockTipHash := chainRootBlock.BlockHash()
+	for i := uint64(0); i < reachabilityReindexWindow; i++ {
+		chainBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{chainRootBlockTipHash}, nil)
+		chainRootBlockTipHash = chainBlock.BlockHash()
+	}
+
+	// Add another block over genesis
+	PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{dag.genesis.hash}, nil)
+}
+
 func TestUpdateReindexRoot(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("TestUpdateReindexRoot", true, Config{

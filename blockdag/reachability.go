@@ -462,11 +462,16 @@ func (rtn *reachabilityTreeNode) reindexIntervalsEarlierThanReindexRoot(
 		// rtn is in the subtree before the chosen child
 		return rtn.reclaimIntervalBeforeChosenChild(commonAncestor, commonAncestorChosenChild, reindexRoot)
 	}
-	if commonAncestorChosenChild.interval.end < rtn.interval.start {
-		// rtn is in the subtree after the chosen child
-		return rtn.reclaimIntervalAfterChosenChild(commonAncestor, commonAncestorChosenChild, reindexRoot)
-	}
-	return nil, errors.Errorf("rtn is in the chosen child's subtree")
+
+	// rtn is either:
+	// * in the subtree after the chosen child
+	// * in the chosen child's subtree. This most commonly happens when
+	//   a block is added to the selected parent chain below the reindex
+	//   root
+	// In both cases we reclaim from the "after" subtree. In the latter
+	// case this is simply because we allocate from the "after" part of
+	// the remaining interval.
+	return rtn.reclaimIntervalAfterChosenChild(commonAncestor, commonAncestorChosenChild, reindexRoot)
 }
 
 func (rtn *reachabilityTreeNode) reclaimIntervalBeforeChosenChild(
@@ -578,6 +583,8 @@ func (rtn *reachabilityTreeNode) reclaimIntervalAfterChosenChild(
 				current.interval.start,
 				current.interval.end-slackReachabilityIntervalForReclaiming,
 			)
+			allModifiedTreeNodes[current] = struct{}{}
+
 			modifiedNodes, err := current.countSubtreesAndPropagateInterval()
 			if err != nil {
 				return nil, err
@@ -597,6 +604,8 @@ func (rtn *reachabilityTreeNode) reclaimIntervalAfterChosenChild(
 			current.interval.start,
 			current.interval.end-slackReachabilityIntervalForReclaiming,
 		)
+		allModifiedTreeNodes[current] = struct{}{}
+
 		modifiedNodes, err := current.parent.reindexIntervalsAfterNode(current)
 		if err != nil {
 			return nil, err
