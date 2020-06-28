@@ -313,6 +313,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockTemplateResult-sigOpLimit":           "Number of sigops allowed in blocks",
 	"getBlockTemplateResult-massLimit":            "Max transaction mass allowed in blocks",
 	"getBlockTemplateResult-transactions":         "Array of transactions as JSON objects",
+	"getBlockTemplateResult-hashMerkleRoot":       "The root of the merkle tree of all transaction IDs in this block",
 	"getBlockTemplateResult-acceptedIdMerkleRoot": "The root of the merkle tree of transaction IDs accepted by this block",
 	"getBlockTemplateResult-utxoCommitment":       "An ECMH UTXO commitment of this block",
 	"getBlockTemplateResult-version":              "The block version",
