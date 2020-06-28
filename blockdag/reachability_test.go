@@ -843,7 +843,10 @@ func TestUpdateReindexRoot(t *testing.T) {
 	// chain2RootBlock, respectively. This should not move the reindex root
 	chain1RootBlockTipHash := chain1RootBlock.BlockHash()
 	chain2RootBlockTipHash := chain2RootBlock.BlockHash()
-	genesisTreeNode := dag.reachabilityTree.store.loaded[*dag.genesis.hash].treeNode
+	genesisTreeNode, err := dag.reachabilityTree.store.treeNodeByBlockHash(dag.genesis.hash)
+	if err != nil {
+		t.Fatalf("failed to get tree node: %s", err)
+	}
 	for i := uint64(0); i < reachabilityReindexWindow-1; i++ {
 		chain1Block := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{chain1RootBlockTipHash}, nil)
 		chain1RootBlockTipHash = chain1Block.BlockHash()
@@ -860,7 +863,10 @@ func TestUpdateReindexRoot(t *testing.T) {
 	PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{chain1RootBlockTipHash}, nil)
 
 	// Make sure that chain1RootBlock is now the reindex root
-	chain1RootTreeNode := dag.reachabilityTree.store.loaded[*chain1RootBlock.BlockHash()].treeNode
+	chain1RootTreeNode, err := dag.reachabilityTree.store.treeNodeByBlockHash(chain1RootBlock.BlockHash())
+	if err != nil {
+		t.Fatalf("failed to get tree node: %s", err)
+	}
 	if dag.reachabilityTree.reindexRoot != chain1RootTreeNode {
 		t.Fatalf("chain1RootBlock is not the reindex root after reindex")
 	}
@@ -868,7 +874,10 @@ func TestUpdateReindexRoot(t *testing.T) {
 	// Make sure that tight intervals have been applied to chain2. Since
 	// we added reachabilityReindexWindow-1 blocks to chain2, the size
 	// of the interval at its root should be equal to reachabilityReindexWindow
-	chain2RootTreeNode := dag.reachabilityTree.store.loaded[*chain2RootBlock.BlockHash()].treeNode
+	chain2RootTreeNode, err := dag.reachabilityTree.store.treeNodeByBlockHash(chain2RootBlock.BlockHash())
+	if err != nil {
+		t.Fatalf("failed to get tree node: %s", err)
+	}
 	if chain2RootTreeNode.interval.size() != reachabilityReindexWindow {
 		t.Fatalf("got unexpected chain2RootNode interval. Want: %d, got: %d",
 			chain2RootTreeNode.interval.size(), reachabilityReindexWindow)
@@ -919,28 +928,40 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 	}
 
 	// Make sure that centerBlock is now the reindex root
-	centerTreeNode := dag.reachabilityTree.store.loaded[*centerBlock.BlockHash()].treeNode
+	centerTreeNode, err := dag.reachabilityTree.store.treeNodeByBlockHash(centerBlock.BlockHash())
+	if err != nil {
+		t.Fatalf("failed to get tree node: %s", err)
+	}
 	if dag.reachabilityTree.reindexRoot != centerTreeNode {
 		t.Fatalf("centerBlock is not the reindex root after reindex")
 	}
 
 	// Get the current interval for leftBlock. The reindex should have
 	// resulted in a tight interval there
-	leftTreeNode := dag.reachabilityTree.store.loaded[*leftBlock.BlockHash()].treeNode
+	leftTreeNode, err := dag.reachabilityTree.store.treeNodeByBlockHash(leftBlock.BlockHash())
+	if err != nil {
+		t.Fatalf("failed to get tree node: %s", err)
+	}
 	if leftTreeNode.interval.size() != 1 {
 		t.Fatalf("leftBlock interval not tight after reindex")
 	}
 
 	// Get the current interval for rightBlock. The reindex should have
 	// resulted in a tight interval there
-	rightTreeNode := dag.reachabilityTree.store.loaded[*rightBlock.BlockHash()].treeNode
+	rightTreeNode, err := dag.reachabilityTree.store.treeNodeByBlockHash(rightBlock.BlockHash())
+	if err != nil {
+		t.Fatalf("failed to get tree node: %s", err)
+	}
 	if rightTreeNode.interval.size() != 1 {
 		t.Fatalf("rightBlock interval not tight after reindex")
 	}
 
 	// Get the current interval for centerBlock. Its interval should be:
 	// genesisInterval - 1 - leftInterval - leftSlack - rightInterval - rightSlack
-	genesisTreeNode := dag.reachabilityTree.store.loaded[*dag.genesis.hash].treeNode
+	genesisTreeNode, err := dag.reachabilityTree.store.treeNodeByBlockHash(dag.genesis.hash)
+	if err != nil {
+		t.Fatalf("failed to get tree node: %s", err)
+	}
 	expectedCenterInterval := genesisTreeNode.interval.size() - 1 -
 		leftTreeNode.interval.size() - reachabilityReindexSlack -
 		rightTreeNode.interval.size() - reachabilityReindexSlack

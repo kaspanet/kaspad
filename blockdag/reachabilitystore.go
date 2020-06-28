@@ -45,7 +45,7 @@ func (store *reachabilityStore) setFutureCoveringSet(node *blockNode, futureCove
 	// load the reachability data from DB to store.loaded
 	_, exists := store.reachabilityDataByHash(node.hash)
 	if !exists {
-		return reachabilityNotFoundError(node)
+		return reachabilityNotFoundError(node.hash)
 	}
 
 	store.loaded[*node.hash].futureCoveringSet = futureCoveringSet
@@ -57,22 +57,26 @@ func (store *reachabilityStore) setBlockAsDirty(blockHash *daghash.Hash) {
 	store.dirty[*blockHash] = struct{}{}
 }
 
-func reachabilityNotFoundError(node *blockNode) error {
-	return errors.Errorf("Couldn't find reachability data for block %s", node.hash)
+func reachabilityNotFoundError(hash *daghash.Hash) error {
+	return errors.Errorf("Couldn't find reachability data for block %s", hash)
+}
+
+func (store *reachabilityStore) treeNodeByBlockHash(hash *daghash.Hash) (*reachabilityTreeNode, error) {
+	reachabilityData, exists := store.reachabilityDataByHash(hash)
+	if !exists {
+		return nil, reachabilityNotFoundError(hash)
+	}
+	return reachabilityData.treeNode, nil
 }
 
 func (store *reachabilityStore) treeNodeByBlockNode(node *blockNode) (*reachabilityTreeNode, error) {
-	reachabilityData, exists := store.reachabilityDataByHash(node.hash)
-	if !exists {
-		return nil, reachabilityNotFoundError(node)
-	}
-	return reachabilityData.treeNode, nil
+	return store.treeNodeByBlockHash(node.hash)
 }
 
 func (store *reachabilityStore) futureCoveringSetByBlockNode(node *blockNode) (futureCoveringTreeNodeSet, error) {
 	reachabilityData, exists := store.reachabilityDataByHash(node.hash)
 	if !exists {
-		return nil, reachabilityNotFoundError(node)
+		return nil, reachabilityNotFoundError(node.hash)
 	}
 	return reachabilityData.futureCoveringSet, nil
 }
