@@ -209,7 +209,7 @@ func (dag *BlockDAG) initDAGState() error {
 	}
 
 	log.Debugf("Loading reachability data...")
-	err = dag.reachabilityStore.init(dbaccess.NoTx())
+	err = dag.reachabilityTree.init(dbaccess.NoTx())
 	if err != nil {
 		return err
 	}
@@ -236,7 +236,8 @@ func (dag *BlockDAG) initDAGState() error {
 	var ok bool
 	dag.lastFinalityPoint, ok = dag.index.LookupNode(dagState.LastFinalityPoint)
 	if !ok {
-		return errors.Errorf("block %s does not exist in the DAG", dagState.LastFinalityPoint)
+		return errors.Errorf("finality point block %s "+
+			"does not exist in the DAG", dagState.LastFinalityPoint)
 	}
 	dag.finalizeNodesBelowFinalityPoint(false)
 
