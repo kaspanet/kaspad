@@ -58,7 +58,7 @@ func (store *reachabilityStore) setBlockAsDirty(blockHash *daghash.Hash) {
 }
 
 func reachabilityNotFoundError(hash *daghash.Hash) error {
-	return errors.Errorf("Couldn't find reachability data for block %s", hash)
+	return errors.Errorf("couldn't find reachability data for block %s", hash)
 }
 
 func (store *reachabilityStore) treeNodeByBlockHash(hash *daghash.Hash) (*reachabilityTreeNode, error) {
