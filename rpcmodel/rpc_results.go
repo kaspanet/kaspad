@@ -141,6 +141,7 @@ type GetBlockTemplateResult struct {
 	ParentHashes         []string                   `json:"parentHashes"`
 	MassLimit            int64                      `json:"massLimit,omitempty"`
 	Transactions         []GetBlockTemplateResultTx `json:"transactions"`
+	HashMerkleRoot       string                     `json:"hashMerkleRoot"`
 	AcceptedIDMerkleRoot string                     `json:"acceptedIdMerkleRoot"`
 	UTXOCommitment       string                     `json:"utxoCommitment"`
 	Version              int32                      `json:"version"`
