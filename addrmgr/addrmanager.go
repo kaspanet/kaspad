@@ -488,7 +488,7 @@ func (a *AddrManager) PeersStateForSerialization() (*PeersStateForSerialization,
 		peersState.TriedBuckets[subnetworkIDStr] = &serializedTriedBucket{}
 
 		for i := range a.addrTried[subnetworkID] {
-			peersState.TriedBuckets[subnetworkIDStr][i] = make([]AddressKey, a.addrTried[subnetworkID][i].Len())
+			peersState.TriedBuckets[subnetworkIDStr][i] = make([]AddressKey, len(a.addrTried[subnetworkID][i]))
 			j := 0
 			for _, ka := range a.addrTried[subnetworkID][i] {
 				peersState.TriedBuckets[subnetworkIDStr][i][j] = NetAddressKey(ka.na)
@@ -498,7 +498,7 @@ func (a *AddrManager) PeersStateForSerialization() (*PeersStateForSerialization,
 	}
 
 	for i := range a.addrTriedFullNodes {
-		peersState.TriedBucketFullNodes[i] = make([]AddressKey, a.addrTriedFullNodes[i].Len())
+		peersState.TriedBucketFullNodes[i] = make([]AddressKey, len(a.addrTriedFullNodes[i]))
 		j := 0
 		for _, ka := range a.addrTriedFullNodes[i] {
 			peersState.TriedBucketFullNodes[i][j] = NetAddressKey(ka.na)
