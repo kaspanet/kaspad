@@ -40,14 +40,6 @@ func newModifiedTreeNodes(nodes ...*reachabilityTreeNode) modifiedTreeNodes {
 	return modifiedNodes
 }
 
-// addAll adds all the reachabilityTreeNodes in `other`
-// into `mtn`. Note that `other` is not affected.
-func (mtn modifiedTreeNodes) addAll(other modifiedTreeNodes) {
-	for node := range other {
-		mtn[node] = struct{}{}
-	}
-}
-
 // reachabilityInterval represents an interval to be used within the
 // tree reachability algorithm. See reachabilityTreeNode for further
 // details.
@@ -267,8 +259,8 @@ func (rtn *reachabilityTreeNode) hasSlackIntervalAfter() bool {
 // remaining interval to allocate, a reindexing is triggered.
 // This method returns a list of reachabilityTreeNodes modified
 // by it.
-func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode, reindexRoot *reachabilityTreeNode) (
-	modifiedTreeNodes, error) {
+func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode, reindexRoot *reachabilityTreeNode,
+	modifiedNodes modifiedTreeNodes) error {
 
 	remaining := rtn.remainingIntervalAfter()
 
@@ -281,9 +273,9 @@ func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode, reindexRo
 	// at this point we don't yet know child's interval.
 	if !reindexRoot.isAncestorOf(rtn) {
 		reindexStartTime := time.Now()
-		modifiedNodes, err := rtn.reindexIntervalsEarlierThanReindexRoot(reindexRoot)
+		err := rtn.reindexIntervalsEarlierThanReindexRoot(reindexRoot, modifiedNodes)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		reindexTimeElapsed := time.Since(reindexStartTime)
 		log.Debugf("Reachability reindex triggered for "+
@@ -291,30 +283,32 @@ func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode, reindexRo
 			"reindex root %s. Modified %d tree nodes and took %dms.",
 			rtn.blockNode.hash, reindexRoot.blockNode.hash,
 			len(modifiedNodes), reindexTimeElapsed.Milliseconds())
-		return modifiedNodes, nil
+		return nil
 	}
 
 	// No allocation space left -- reindex
 	if remaining.size() == 0 {
 		reindexStartTime := time.Now()
-		modifiedNodes, err := rtn.reindexIntervals()
+		err := rtn.reindexIntervals(modifiedNodes)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		reindexTimeElapsed := time.Since(reindexStartTime)
 		log.Debugf("Reachability reindex triggered for "+
 			"block %s. Modified %d tree nodes and took %dms.",
 			rtn.blockNode.hash, len(modifiedNodes), reindexTimeElapsed.Milliseconds())
-		return modifiedNodes, nil
+		return nil
 	}
 
 	// Allocate from the remaining space
 	allocated, _, err := remaining.splitInHalf()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	child.interval = allocated
-	return newModifiedTreeNodes(rtn, child), nil
+	modifiedNodes[rtn] = struct{}{}
+	modifiedNodes[child] = struct{}{}
+	return nil
 }
 
 // reindexIntervals traverses the reachability subtree that's
@@ -324,7 +318,7 @@ func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode, reindexRo
 // tree until it finds a node with a subreeSize that's greater than
 // its interval size. See propagateInterval for further details.
 // This method returns a list of reachabilityTreeNodes modified by it.
-func (rtn *reachabilityTreeNode) reindexIntervals() (modifiedTreeNodes, error) {
+func (rtn *reachabilityTreeNode) reindexIntervals(modifiedNodes modifiedTreeNodes) error {
 	current := rtn
 
 	// Initial interval and subtree sizes
@@ -338,7 +332,7 @@ func (rtn *reachabilityTreeNode) reindexIntervals() (modifiedTreeNodes, error) {
 		if current.parent == nil {
 			// If we ended up here it means that there are more
 			// than 2^64 blocks, which shouldn't ever happen.
-			return nil, errors.Errorf("missing tree " +
+			return errors.Errorf("missing tree " +
 				"parent during reindexing. Theoretically, this " +
 				"should only ever happen if there are more " +
 				"than 2^64 blocks in the DAG.")
@@ -350,7 +344,7 @@ func (rtn *reachabilityTreeNode) reindexIntervals() (modifiedTreeNodes, error) {
 	}
 
 	// Propagate the interval to the subtree
-	return current.propagateInterval(subTreeSizeMap)
+	return current.propagateInterval(subTreeSizeMap, modifiedNodes)
 }
 
 // countSubtrees counts the size of each subtree under this node,
@@ -415,10 +409,9 @@ func (rtn *reachabilityTreeNode) countSubtrees(subTreeSizeMap map[*reachabilityT
 // Subtree intervals are recursively allocated according to subtree sizes and
 // the allocation rule in splitWithExponentialBias. This method returns
 // a list of reachabilityTreeNodes modified by it.
-func (rtn *reachabilityTreeNode) propagateInterval(subTreeSizeMap map[*reachabilityTreeNode]uint64) (
-	modifiedTreeNodes, error) {
+func (rtn *reachabilityTreeNode) propagateInterval(subTreeSizeMap map[*reachabilityTreeNode]uint64,
+	modifiedNodes modifiedTreeNodes) error {
 
-	allModifiedTreeNodes := newModifiedTreeNodes()
 	queue := []*reachabilityTreeNode{rtn}
 	for len(queue) > 0 {
 		var current *reachabilityTreeNode
@@ -430,7 +423,7 @@ func (rtn *reachabilityTreeNode) propagateInterval(subTreeSizeMap map[*reachabil
 			}
 			intervals, err := current.intervalRangeForChildAllocation().splitWithExponentialBias(sizes)
 			if err != nil {
-				return nil, err
+				return err
 			}
 			for i, child := range current.children {
 				childInterval := intervals[i]
@@ -439,13 +432,13 @@ func (rtn *reachabilityTreeNode) propagateInterval(subTreeSizeMap map[*reachabil
 			}
 		}
 
-		allModifiedTreeNodes[current] = struct{}{}
+		modifiedNodes[current] = struct{}{}
 	}
-	return allModifiedTreeNodes, nil
+	return nil
 }
 
 func (rtn *reachabilityTreeNode) reindexIntervalsEarlierThanReindexRoot(
-	reindexRoot *reachabilityTreeNode) (modifiedTreeNodes, error) {
+	reindexRoot *reachabilityTreeNode, modifiedNodes modifiedTreeNodes) error {
 
 	// Find the common ancestor for both rtn and the reindex root
 	commonAncestor := rtn.findCommonAncestorWithReindexRoot(reindexRoot)
@@ -455,25 +448,27 @@ func (rtn *reachabilityTreeNode) reindexIntervalsEarlierThanReindexRoot(
 	// b. A reachability tree ancestor of `reindexRoot`
 	commonAncestorChosenChild, err := commonAncestor.findAncestorAmongChildren(reindexRoot)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if rtn.interval.end < commonAncestorChosenChild.interval.start {
 		// rtn is in the subtree before the chosen child
-		return rtn.reclaimIntervalBeforeChosenChild(commonAncestor, commonAncestorChosenChild, reindexRoot)
+		return rtn.reclaimIntervalBeforeChosenChild(commonAncestor,
+			commonAncestorChosenChild, reindexRoot, modifiedNodes)
 	}
-	if commonAncestorChosenChild.interval.end < rtn.interval.start {
-		// rtn is in the subtree after the chosen child
-		return rtn.reclaimIntervalAfterChosenChild(commonAncestor, commonAncestorChosenChild, reindexRoot)
-	}
-	return nil, errors.Errorf("rtn is in the chosen child's subtree")
+
+	// rtn is either:
+	// * in the subtree after the chosen child
+	// * the common ancestor
+	// In both cases we reclaim from the "after" subtree. In the
+	// latter case this is arbitrary
+	return rtn.reclaimIntervalAfterChosenChild(commonAncestor,
+		commonAncestorChosenChild, reindexRoot, modifiedNodes)
 }
 
 func (rtn *reachabilityTreeNode) reclaimIntervalBeforeChosenChild(
-	commonAncestor *reachabilityTreeNode, commonAncestorChosenChild *reachabilityTreeNode, reindexRoot *reachabilityTreeNode) (
-	modifiedTreeNodes, error) {
-
-	allModifiedTreeNodes := newModifiedTreeNodes()
+	commonAncestor *reachabilityTreeNode, commonAncestorChosenChild *reachabilityTreeNode,
+	reindexRoot *reachabilityTreeNode, modifiedNodes modifiedTreeNodes) error {
 
 	current := commonAncestorChosenChild
 	if !commonAncestorChosenChild.hasSlackIntervalBefore() {
@@ -484,7 +479,7 @@ func (rtn *reachabilityTreeNode) reclaimIntervalBeforeChosenChild(
 			var err error
 			current, err = current.findAncestorAmongChildren(reindexRoot)
 			if err != nil {
-				return nil, err
+				return err
 			}
 		}
 
@@ -497,11 +492,10 @@ func (rtn *reachabilityTreeNode) reclaimIntervalBeforeChosenChild(
 				current.interval.start+slackReachabilityIntervalForReclaiming,
 				current.interval.end,
 			)
-			modifiedNodes, err := current.countSubtreesAndPropagateInterval()
+			err := current.countSubtreesAndPropagateInterval(modifiedNodes)
 			if err != nil {
-				return nil, err
+				return err
 			}
-			allModifiedTreeNodes.addAll(modifiedNodes)
 			current.interval = originalInterval
 		}
 	}
@@ -516,25 +510,24 @@ func (rtn *reachabilityTreeNode) reclaimIntervalBeforeChosenChild(
 			current.interval.start+slackReachabilityIntervalForReclaiming,
 			current.interval.end,
 		)
-		modifiedNodes, err := current.parent.reindexIntervalsBeforeNode(current)
+		err := current.parent.reindexIntervalsBeforeNode(current, modifiedNodes)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		allModifiedTreeNodes.addAll(modifiedNodes)
 		current = current.parent
 	}
 
-	return allModifiedTreeNodes, nil
+	return nil
 }
 
 // reindexIntervalsBeforeNode applies a tight interval to the reachability
 // subtree before `node`. Note that `node` itself is unaffected.
-func (rtn *reachabilityTreeNode) reindexIntervalsBeforeNode(node *reachabilityTreeNode) (
-	modifiedTreeNodes, error) {
+func (rtn *reachabilityTreeNode) reindexIntervalsBeforeNode(node *reachabilityTreeNode,
+	modifiedNodes modifiedTreeNodes) error {
 
 	childrenBeforeNode, _, err := rtn.splitChildrenAroundChild(node)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	childrenBeforeNodeSizes, childrenBeforeNodeSubtreeSizeMaps, childrenBeforeNodeSizesSum :=
@@ -545,16 +538,15 @@ func (rtn *reachabilityTreeNode) reindexIntervalsBeforeNode(node *reachabilityTr
 	newInterval := newReachabilityInterval(newIntervalEnd-childrenBeforeNodeSizesSum+1, newIntervalEnd)
 	intervals, err := newInterval.splitExact(childrenBeforeNodeSizes)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return orderedTreeNodeSet(childrenBeforeNode).propagateIntervals(intervals, childrenBeforeNodeSubtreeSizeMaps)
+	return orderedTreeNodeSet(childrenBeforeNode).
+		propagateIntervals(intervals, childrenBeforeNodeSubtreeSizeMaps, modifiedNodes)
 }
 
 func (rtn *reachabilityTreeNode) reclaimIntervalAfterChosenChild(
-	commonAncestor *reachabilityTreeNode, commonAncestorChosenChild *reachabilityTreeNode, reindexRoot *reachabilityTreeNode) (
-	modifiedTreeNodes, error) {
-
-	allModifiedTreeNodes := newModifiedTreeNodes()
+	commonAncestor *reachabilityTreeNode, commonAncestorChosenChild *reachabilityTreeNode,
+	reindexRoot *reachabilityTreeNode, modifiedNodes modifiedTreeNodes) error {
 
 	current := commonAncestorChosenChild
 	if !commonAncestorChosenChild.hasSlackIntervalAfter() {
@@ -565,7 +557,7 @@ func (rtn *reachabilityTreeNode) reclaimIntervalAfterChosenChild(
 			var err error
 			current, err = current.findAncestorAmongChildren(reindexRoot)
 			if err != nil {
-				return nil, err
+				return err
 			}
 		}
 
@@ -578,11 +570,12 @@ func (rtn *reachabilityTreeNode) reclaimIntervalAfterChosenChild(
 				current.interval.start,
 				current.interval.end-slackReachabilityIntervalForReclaiming,
 			)
-			modifiedNodes, err := current.countSubtreesAndPropagateInterval()
+			modifiedNodes[current] = struct{}{}
+
+			err := current.countSubtreesAndPropagateInterval(modifiedNodes)
 			if err != nil {
-				return nil, err
+				return err
 			}
-			allModifiedTreeNodes.addAll(modifiedNodes)
 			current.interval = originalInterval
 		}
 	}
@@ -597,25 +590,26 @@ func (rtn *reachabilityTreeNode) reclaimIntervalAfterChosenChild(
 			current.interval.start,
 			current.interval.end-slackReachabilityIntervalForReclaiming,
 		)
-		modifiedNodes, err := current.parent.reindexIntervalsAfterNode(current)
+		modifiedNodes[current] = struct{}{}
+
+		err := current.parent.reindexIntervalsAfterNode(current, modifiedNodes)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		allModifiedTreeNodes.addAll(modifiedNodes)
 		current = current.parent
 	}
 
-	return allModifiedTreeNodes, nil
+	return nil
 }
 
 // reindexIntervalsAfterNode applies a tight interval to the reachability
 // subtree after `node`. Note that `node` itself is unaffected.
-func (rtn *reachabilityTreeNode) reindexIntervalsAfterNode(node *reachabilityTreeNode) (
-	modifiedTreeNodes, error) {
+func (rtn *reachabilityTreeNode) reindexIntervalsAfterNode(node *reachabilityTreeNode,
+	modifiedNodes modifiedTreeNodes) error {
 
 	_, childrenAfterNode, err := rtn.splitChildrenAroundChild(node)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	childrenAfterNodeSizes, childrenAfterNodeSubtreeSizeMaps, childrenAfterNodeSizesSum :=
@@ -626,25 +620,24 @@ func (rtn *reachabilityTreeNode) reindexIntervalsAfterNode(node *reachabilityTre
 	newInterval := newReachabilityInterval(newIntervalStart, newIntervalStart+childrenAfterNodeSizesSum-1)
 	intervals, err := newInterval.splitExact(childrenAfterNodeSizes)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return orderedTreeNodeSet(childrenAfterNode).propagateIntervals(intervals, childrenAfterNodeSubtreeSizeMaps)
+	return orderedTreeNodeSet(childrenAfterNode).
+		propagateIntervals(intervals, childrenAfterNodeSubtreeSizeMaps, modifiedNodes)
 }
 
 func (tns orderedTreeNodeSet) propagateIntervals(intervals []*reachabilityInterval,
-	subtreeSizeMaps []map[*reachabilityTreeNode]uint64) (modifiedTreeNodes, error) {
+	subtreeSizeMaps []map[*reachabilityTreeNode]uint64, modifiedNodes modifiedTreeNodes) error {
 
-	allModifiedTreeNodes := newModifiedTreeNodes()
 	for i, node := range tns {
 		node.interval = intervals[i]
 		subtreeSizeMap := subtreeSizeMaps[i]
-		modifiedNodes, err := node.propagateInterval(subtreeSizeMap)
+		err := node.propagateInterval(subtreeSizeMap, modifiedNodes)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		allModifiedTreeNodes.addAll(modifiedNodes)
 	}
-	return allModifiedTreeNodes, nil
+	return nil
 }
 
 // isAncestorOf checks if this node is a reachability tree ancestor
@@ -832,7 +825,8 @@ func (rt *reachabilityTree) addBlock(node *blockNode, selectedParentAnticone []*
 	if err != nil {
 		return err
 	}
-	modifiedNodes, err := selectedParentTreeNode.addChild(newTreeNode, rt.reindexRoot)
+	modifiedNodes := newModifiedTreeNodes()
+	err = selectedParentTreeNode.addChild(newTreeNode, rt.reindexRoot, modifiedNodes)
 	if err != nil {
 		return err
 	}
@@ -861,7 +855,8 @@ func (rt *reachabilityTree) addBlock(node *blockNode, selectedParentAnticone []*
 	// at this stage the virtual had not yet been updated.
 	if node.blueScore > rt.dag.SelectedTipBlueScore() {
 		updateStartTime := time.Now()
-		modifiedNodes, err := rt.updateReindexRoot(newTreeNode)
+		modifiedNodes := newModifiedTreeNodes()
+		err := rt.updateReindexRoot(newTreeNode, modifiedNodes)
 		if err != nil {
 			return err
 		}
@@ -941,48 +936,47 @@ func (rt *reachabilityTree) storeState(dbTx *dbaccess.TxContext) error {
 	return nil
 }
 
-func (rt *reachabilityTree) updateReindexRoot(newTreeNode *reachabilityTreeNode) (modifiedTreeNodes, error) {
-	allModifiedTreeNodes := newModifiedTreeNodes()
+func (rt *reachabilityTree) updateReindexRoot(newTreeNode *reachabilityTreeNode,
+	modifiedNodes modifiedTreeNodes) error {
 
 	nextReindexRoot := rt.reindexRoot
 	for {
-		candidateReindexRoot, modifiedNodes, found, err := rt.maybeMoveReindexRoot(nextReindexRoot, newTreeNode)
+		candidateReindexRoot, found, err := rt.maybeMoveReindexRoot(nextReindexRoot, newTreeNode, modifiedNodes)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		if !found {
 			break
 		}
-		allModifiedTreeNodes.addAll(modifiedNodes)
 		nextReindexRoot = candidateReindexRoot
 	}
 
 	rt.reindexRoot = nextReindexRoot
-	return allModifiedTreeNodes, nil
+	return nil
 }
 
 func (rt *reachabilityTree) maybeMoveReindexRoot(
-	reindexRoot *reachabilityTreeNode, newTreeNode *reachabilityTreeNode) (
-	newReindexRoot *reachabilityTreeNode, modifiedNodes modifiedTreeNodes, found bool, err error) {
+	reindexRoot *reachabilityTreeNode, newTreeNode *reachabilityTreeNode, modifiedNodes modifiedTreeNodes) (
+	newReindexRoot *reachabilityTreeNode, found bool, err error) {
 
 	if !reindexRoot.isAncestorOf(newTreeNode) {
 		commonAncestor := newTreeNode.findCommonAncestorWithReindexRoot(reindexRoot)
-		return commonAncestor, nil, true, nil
+		return commonAncestor, true, nil
 	}
 
 	reindexRootChosenChild, err := reindexRoot.findAncestorAmongChildren(newTreeNode)
 	if err != nil {
-		return nil, nil, false, err
+		return nil, false, err
 	}
 	if newTreeNode.blockNode.blueScore-reindexRootChosenChild.blockNode.blueScore < reachabilityReindexWindow {
-		return nil, nil, false, nil
+		return nil, false, nil
 	}
-	modifiedNodes, err = rt.concentrateIntervalAroundReindexRootChosenChild(reindexRoot, reindexRootChosenChild)
+	err = rt.concentrateIntervalAroundReindexRootChosenChild(reindexRoot, reindexRootChosenChild, modifiedNodes)
 	if err != nil {
-		return nil, nil, false, err
+		return nil, false, err
 	}
 
-	return reindexRootChosenChild, modifiedNodes, true, nil
+	return reindexRootChosenChild, true, nil
 }
 
 // findAncestorAmongChildren finds the reachability tree child
@@ -997,39 +991,34 @@ func (rtn *reachabilityTreeNode) findAncestorAmongChildren(node *reachabilityTre
 }
 
 func (rt *reachabilityTree) concentrateIntervalAroundReindexRootChosenChild(
-	reindexRoot *reachabilityTreeNode, reindexRootChosenChild *reachabilityTreeNode) (
-	modifiedTreeNodes, error) {
-
-	allModifiedTreeNodes := newModifiedTreeNodes()
+	reindexRoot *reachabilityTreeNode, reindexRootChosenChild *reachabilityTreeNode,
+	modifiedNodes modifiedTreeNodes) error {
 
 	reindexRootChildNodesBeforeChosen, reindexRootChildNodesAfterChosen, err :=
 		reindexRoot.splitChildrenAroundChild(reindexRootChosenChild)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	reindexRootChildNodesBeforeChosenSizesSum, modifiedNodesBeforeChosen, err :=
-		rt.tightenIntervalsBeforeReindexRootChosenChild(reindexRoot, reindexRootChildNodesBeforeChosen)
+	reindexRootChildNodesBeforeChosenSizesSum, err :=
+		rt.tightenIntervalsBeforeReindexRootChosenChild(reindexRoot, reindexRootChildNodesBeforeChosen, modifiedNodes)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	allModifiedTreeNodes.addAll(modifiedNodesBeforeChosen)
 
-	reindexRootChildNodesAfterChosenSizesSum, modifiedNodesAfterChosen, err :=
-		rt.tightenIntervalsAfterReindexRootChosenChild(reindexRoot, reindexRootChildNodesAfterChosen)
+	reindexRootChildNodesAfterChosenSizesSum, err :=
+		rt.tightenIntervalsAfterReindexRootChosenChild(reindexRoot, reindexRootChildNodesAfterChosen, modifiedNodes)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	allModifiedTreeNodes.addAll(modifiedNodesAfterChosen)
 
-	modifiedNodesForReindexRootExpansion, err := rt.expandIntervalInReindexRootChosenChild(
-		reindexRoot, reindexRootChosenChild, reindexRootChildNodesBeforeChosenSizesSum, reindexRootChildNodesAfterChosenSizesSum)
+	err = rt.expandIntervalInReindexRootChosenChild(reindexRoot, reindexRootChosenChild,
+		reindexRootChildNodesBeforeChosenSizesSum, reindexRootChildNodesAfterChosenSizesSum, modifiedNodes)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	allModifiedTreeNodes.addAll(modifiedNodesForReindexRootExpansion)
 
-	return allModifiedTreeNodes, nil
+	return nil
 }
 
 // splitChildrenAroundChild splits `rtn` into two slices: the nodes that are before
@@ -1046,8 +1035,8 @@ func (rtn *reachabilityTreeNode) splitChildrenAroundChild(child *reachabilityTre
 }
 
 func (rt *reachabilityTree) tightenIntervalsBeforeReindexRootChosenChild(
-	reindexRoot *reachabilityTreeNode, reindexRootChildNodesBeforeChosen []*reachabilityTreeNode) (
-	reindexRootChildNodesBeforeChosenSizesSum uint64, modifiedNodes modifiedTreeNodes, err error) {
+	reindexRoot *reachabilityTreeNode, reindexRootChildNodesBeforeChosen []*reachabilityTreeNode,
+	modifiedNodes modifiedTreeNodes) (reindexRootChildNodesBeforeChosenSizesSum uint64, err error) {
 
 	reindexRootChildNodesBeforeChosenSizes, reindexRootChildNodesBeforeChosenSubtreeSizeMaps, reindexRootChildNodesBeforeChosenSizesSum :=
 		calcReachabilityTreeNodeSizes(reindexRootChildNodesBeforeChosen)
@@ -1057,17 +1046,17 @@ func (rt *reachabilityTree) tightenIntervalsBeforeReindexRootChosenChild(
 		reindexRoot.interval.start+reachabilityReindexSlack+reindexRootChildNodesBeforeChosenSizesSum-1,
 	)
 
-	modifiedNodes, err = rt.propagateChildIntervals(intervalBeforeReindexRootStart, reindexRootChildNodesBeforeChosen,
-		reindexRootChildNodesBeforeChosenSizes, reindexRootChildNodesBeforeChosenSubtreeSizeMaps)
+	err = rt.propagateChildIntervals(intervalBeforeReindexRootStart, reindexRootChildNodesBeforeChosen,
+		reindexRootChildNodesBeforeChosenSizes, reindexRootChildNodesBeforeChosenSubtreeSizeMaps, modifiedNodes)
 	if err != nil {
-		return 0, nil, err
+		return 0, err
 	}
-	return reindexRootChildNodesBeforeChosenSizesSum, modifiedNodes, nil
+	return reindexRootChildNodesBeforeChosenSizesSum, nil
 }
 
 func (rt *reachabilityTree) tightenIntervalsAfterReindexRootChosenChild(
-	reindexRoot *reachabilityTreeNode, reindexRootChildNodesAfterChosen []*reachabilityTreeNode) (
-	reindexRootChildNodesAfterChosenSizesSum uint64, modifiedNodes modifiedTreeNodes, err error) {
+	reindexRoot *reachabilityTreeNode, reindexRootChildNodesAfterChosen []*reachabilityTreeNode,
+	modifiedNodes modifiedTreeNodes) (reindexRootChildNodesAfterChosenSizesSum uint64, err error) {
 
 	reindexRootChildNodesAfterChosenSizes, reindexRootChildNodesAfterChosenSubtreeSizeMaps, reindexRootChildNodesAfterChosenSizesSum :=
 		calcReachabilityTreeNodeSizes(reindexRootChildNodesAfterChosen)
@@ -1077,19 +1066,17 @@ func (rt *reachabilityTree) tightenIntervalsAfterReindexRootChosenChild(
 		reindexRoot.interval.end-reachabilityReindexSlack-1,
 	)
 
-	modifiedNodes, err = rt.propagateChildIntervals(intervalAfterReindexRootEnd, reindexRootChildNodesAfterChosen,
-		reindexRootChildNodesAfterChosenSizes, reindexRootChildNodesAfterChosenSubtreeSizeMaps)
+	err = rt.propagateChildIntervals(intervalAfterReindexRootEnd, reindexRootChildNodesAfterChosen,
+		reindexRootChildNodesAfterChosenSizes, reindexRootChildNodesAfterChosenSubtreeSizeMaps, modifiedNodes)
 	if err != nil {
-		return 0, nil, err
+		return 0, err
 	}
-	return reindexRootChildNodesAfterChosenSizesSum, modifiedNodes, nil
+	return reindexRootChildNodesAfterChosenSizesSum, nil
 }
 
 func (rt *reachabilityTree) expandIntervalInReindexRootChosenChild(reindexRoot *reachabilityTreeNode,
 	reindexRootChosenChild *reachabilityTreeNode, reindexRootChildNodesBeforeChosenSizesSum uint64,
-	reindexRootChildNodesAfterChosenSizesSum uint64) (modifiedTreeNodes, error) {
-
-	allModifiedTreeNodes := newModifiedTreeNodes()
+	reindexRootChildNodesAfterChosenSizesSum uint64, modifiedNodes modifiedTreeNodes) error {
 
 	newReindexRootChildInterval := newReachabilityInterval(
 		reindexRoot.interval.start+reindexRootChildNodesBeforeChosenSizesSum+reachabilityReindexSlack,
@@ -1110,22 +1097,21 @@ func (rt *reachabilityTree) expandIntervalInReindexRootChosenChild(reindexRoot *
 			newReindexRootChildInterval.start+reachabilityReindexSlack,
 			newReindexRootChildInterval.end-reachabilityReindexSlack,
 		)
-		modifiedNodes, err := reindexRootChosenChild.countSubtreesAndPropagateInterval()
+		err := reindexRootChosenChild.countSubtreesAndPropagateInterval(modifiedNodes)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		allModifiedTreeNodes.addAll(modifiedNodes)
 	}
 
 	reindexRootChosenChild.interval = newReindexRootChildInterval
-	allModifiedTreeNodes[reindexRootChosenChild] = struct{}{}
-	return allModifiedTreeNodes, nil
+	modifiedNodes[reindexRootChosenChild] = struct{}{}
+	return nil
 }
 
-func (rtn *reachabilityTreeNode) countSubtreesAndPropagateInterval() (modifiedTreeNodes, error) {
+func (rtn *reachabilityTreeNode) countSubtreesAndPropagateInterval(modifiedNodes modifiedTreeNodes) error {
 	subtreeSizeMap := make(map[*reachabilityTreeNode]uint64)
 	rtn.countSubtrees(subtreeSizeMap)
-	return rtn.propagateInterval(subtreeSizeMap)
+	return rtn.propagateInterval(subtreeSizeMap, modifiedNodes)
 }
 
 func calcReachabilityTreeNodeSizes(treeNodes []*reachabilityTreeNode) (
@@ -1146,14 +1132,12 @@ func calcReachabilityTreeNodeSizes(treeNodes []*reachabilityTreeNode) (
 }
 
 func (rt *reachabilityTree) propagateChildIntervals(interval *reachabilityInterval,
-	childNodes []*reachabilityTreeNode, sizes []uint64, subtreeSizeMaps []map[*reachabilityTreeNode]uint64) (
-	modifiedTreeNodes, error) {
-
-	allModifiedTreeNodes := newModifiedTreeNodes()
+	childNodes []*reachabilityTreeNode, sizes []uint64, subtreeSizeMaps []map[*reachabilityTreeNode]uint64,
+	modifiedNodes modifiedTreeNodes) error {
 
 	childIntervalSizes, err := interval.splitExact(sizes)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	for i, child := range childNodes {
@@ -1161,14 +1145,13 @@ func (rt *reachabilityTree) propagateChildIntervals(interval *reachabilityInterv
 		child.interval = childInterval
 
 		childSubtreeSizeMap := subtreeSizeMaps[i]
-		modifiedNodes, err := child.propagateInterval(childSubtreeSizeMap)
+		err := child.propagateInterval(childSubtreeSizeMap, modifiedNodes)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		allModifiedTreeNodes.addAll(modifiedNodes)
 	}
 
-	return allModifiedTreeNodes, nil
+	return nil
 }
 
 // isInPast returns true if `this` is in the past (exclusive) of `other`
