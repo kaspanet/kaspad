@@ -11,7 +11,6 @@ import (
 	"encoding/gob"
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
-	"encoding/json"
 	"io"
 	"math/rand"
 	"net"
@@ -19,8 +18,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
