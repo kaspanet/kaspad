@@ -19,7 +19,8 @@ func TestAddChild(t *testing.T) {
 	currentTip := root
 	for i := 0; i < 6; i++ {
 		node := newReachabilityTreeNode(&blockNode{})
-		modifiedNodes, err := currentTip.addChild(node, root)
+		modifiedNodes := newModifiedTreeNodes()
+		err := currentTip.addChild(node, root, modifiedNodes)
 		if err != nil {
 			t.Fatalf("TestAddChild: addChild failed: %s", err)
 		}
@@ -36,7 +37,8 @@ func TestAddChild(t *testing.T) {
 
 	// Add another node to the tip of the chain to trigger a reindex (100 < 2^7=128)
 	lastChild := newReachabilityTreeNode(&blockNode{})
-	modifiedNodes, err := currentTip.addChild(lastChild, root)
+	modifiedNodes := newModifiedTreeNodes()
+	err := currentTip.addChild(lastChild, root, modifiedNodes)
 	if err != nil {
 		t.Fatalf("TestAddChild: addChild failed: %s", err)
 	}
@@ -80,7 +82,8 @@ func TestAddChild(t *testing.T) {
 	childNodes := make([]*reachabilityTreeNode, 6)
 	for i := 0; i < len(childNodes); i++ {
 		childNodes[i] = newReachabilityTreeNode(&blockNode{})
-		modifiedNodes, err := root.addChild(childNodes[i], root)
+		modifiedNodes := newModifiedTreeNodes()
+		err := root.addChild(childNodes[i], root, modifiedNodes)
 		if err != nil {
 			t.Fatalf("TestAddChild: addChild failed: %s", err)
 		}
@@ -95,7 +98,8 @@ func TestAddChild(t *testing.T) {
 
 	// Add another node to the root to trigger a reindex (100 < 2^7=128)
 	lastChild = newReachabilityTreeNode(&blockNode{})
-	modifiedNodes, err = root.addChild(lastChild, root)
+	modifiedNodes = newModifiedTreeNodes()
+	err = root.addChild(lastChild, root, modifiedNodes)
 	if err != nil {
 		t.Fatalf("TestAddChild: addChild failed: %s", err)
 	}
@@ -135,7 +139,7 @@ func TestReachabilityTreeNodeIsAncestorOf(t *testing.T) {
 	descendants := make([]*reachabilityTreeNode, numberOfDescendants)
 	for i := 0; i < numberOfDescendants; i++ {
 		node := newReachabilityTreeNode(&blockNode{})
-		_, err := currentTip.addChild(node, root)
+		err := currentTip.addChild(node, root, newModifiedTreeNodes())
 		if err != nil {
 			t.Fatalf("TestReachabilityTreeNodeIsAncestorOf: addChild failed: %s", err)
 		}
@@ -682,7 +686,7 @@ func TestReindexIntervalErrors(t *testing.T) {
 	currentTreeNode := treeNode
 	for i := 0; i < 100; i++ {
 		childTreeNode := newReachabilityTreeNode(&blockNode{})
-		_, err = currentTreeNode.addChild(childTreeNode, treeNode)
+		err = currentTreeNode.addChild(childTreeNode, treeNode, newModifiedTreeNodes())
 		if err != nil {
 			break
 		}
@@ -719,7 +723,7 @@ func BenchmarkReindexInterval(b *testing.B) {
 		currentTreeNode := root
 		for i := 0; i < subTreeSize; i++ {
 			childTreeNode := newReachabilityTreeNode(&blockNode{})
-			_, err := currentTreeNode.addChild(childTreeNode, root)
+			err := currentTreeNode.addChild(childTreeNode, root, newModifiedTreeNodes())
 			if err != nil {
 				b.Fatalf("addChild: %s", err)
 			}
@@ -732,7 +736,7 @@ func BenchmarkReindexInterval(b *testing.B) {
 		// node should lead to a reindex from root.
 		fullReindexTriggeringNode := newReachabilityTreeNode(&blockNode{})
 		b.StartTimer()
-		_, err := currentTreeNode.addChild(fullReindexTriggeringNode, root)
+		err := currentTreeNode.addChild(fullReindexTriggeringNode, root, newModifiedTreeNodes())
 		b.StopTimer()
 		if err != nil {
 			b.Fatalf("addChild: %s", err)
@@ -816,6 +820,37 @@ func TestIsInPast(t *testing.T) {
 	if !isInFuture {
 		t.Fatalf("TestIsInPast: node C is unexpectedly not the past of node D")
 	}
+}
+
+func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *testing.T) {
+	// Create a new database and DAG instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot",
+		true, Config{DAGParams: &dagconfig.SimnetParams})
+	if err != nil {
+		t.Fatalf("Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
+
+	// Set the reindex window to a low number to make this test run fast
+	originalReachabilityReindexWindow := reachabilityReindexWindow
+	reachabilityReindexWindow = 10
+	defer func() {
+		reachabilityReindexWindow = originalReachabilityReindexWindow
+	}()
+
+	// Add a block on top of the genesis block
+	chainRootBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{dag.genesis.hash}, nil)
+
+	// Add chain of reachabilityReindexWindow blocks above chainRootBlock.
+	// This should move the reindex root
+	chainRootBlockTipHash := chainRootBlock.BlockHash()
+	for i := uint64(0); i < reachabilityReindexWindow; i++ {
+		chainBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{chainRootBlockTipHash}, nil)
+		chainRootBlockTipHash = chainBlock.BlockHash()
+	}
+
+	// Add another block over genesis
+	PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{dag.genesis.hash}, nil)
 }
 
 func TestUpdateReindexRoot(t *testing.T) {
