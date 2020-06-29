@@ -214,7 +214,7 @@ type Server struct {
 	shutdownSched int32
 
 	DAGParams   *dagconfig.Params
-	addrManager *addrmgr.AddrManager
+	AddrManager *addrmgr.AddrManager
 	connManager *connmgr.ConnManager
 	SigCache    *txscript.SigCache
 	SyncManager *netsync.SyncManager
@@ -669,7 +669,7 @@ func (s *Server) handleDonePeerMsg(state *peerState, sp *Peer) {
 	// Update the address' last seen time if the peer has acknowledged
 	// our version and has sent us its version as well.
 	if sp.VerAckReceived() && sp.VersionKnown() && sp.NA() != nil {
-		s.addrManager.Connected(sp.NA())
+		s.AddrManager.Connected(sp.NA())
 	}
 
 	// If we get here it means that either we didn't know about the peer
@@ -940,7 +940,7 @@ func newPeerConfig(sp *Peer) *peer.Config {
 		SelectedTipHash:   sp.selectedTipHash,
 		IsInDAG:           sp.blockExists,
 		AddBanScore:       sp.addBanScore,
-		HostToNetAddress:  sp.server.addrManager.HostToNetAddress,
+		HostToNetAddress:  sp.server.AddrManager.HostToNetAddress,
 		Proxy:             config.ActiveConfig().Proxy,
 		UserAgentName:     userAgentName,
 		UserAgentVersion:  userAgentVersion,
@@ -981,7 +981,7 @@ func (s *Server) outboundPeerConnected(connReq *connmgr.ConnReq, conn net.Conn) 
 
 	s.peerConnected(sp, conn)
 
-	s.addrManager.Attempt(sp.NA())
+	s.AddrManager.Attempt(sp.NA())
 }
 
 func (s *Server) peerConnected(sp *Peer, conn net.Conn) {
@@ -1025,7 +1025,7 @@ func (s *Server) outboundPeerConnectionFailed(connReq *connmgr.ConnReq) {
 	// take nil for it.
 	netAddress := wire.NewNetAddressIPPort(net.ParseIP(host), uint16(port), defaultServices)
 
-	s.addrManager.Attempt(netAddress)
+	s.AddrManager.Attempt(netAddress)
 }
 
 // peerDoneHandler handles peer disconnects by notifiying the server that it's
@@ -1058,7 +1058,10 @@ func (s *Server) peerHandler() {
 	// to this handler and rather than adding more channels to sychronize
 	// things, it's easier and slightly faster to simply start and stop them
 	// in this handler.
-	s.addrManager.Start()
+	err := s.AddrManager.Start()
+	if err != nil {
+		panic(errors.Wrap(err, "address manager failed to start"))
+	}
 	s.SyncManager.Start()
 
 	s.quitWaitGroup.Add(1)
@@ -1079,7 +1082,7 @@ func (s *Server) peerHandler() {
 					// Kaspad uses a lookup of the dns seeder here. Since seeder returns
 					// IPs of nodes and not its own IP, we can not know real IP of
 					// source. So we'll take first returned address as source.
-					s.addrManager.AddAddresses(addrs, addrs[0], subnetworkID)
+					s.AddrManager.AddAddresses(addrs, addrs[0], subnetworkID)
 				})
 		}
 
@@ -1138,7 +1141,7 @@ out:
 
 	s.connManager.Stop()
 	s.SyncManager.Stop()
-	s.addrManager.Stop()
+	s.AddrManager.Stop()
 
 	// Drain channels before exiting so nothing is left waiting around
 	// to send.
@@ -1431,7 +1434,7 @@ out:
 				}
 				na := wire.NewNetAddressIPPort(externalip, uint16(listenPort),
 					s.services)
-				err = s.addrManager.AddLocalAddress(na, addrmgr.UpnpPrio)
+				err = s.AddrManager.AddLocalAddress(na, addrmgr.UpnpPrio)
 				if err != nil {
 					// XXX DeletePortMapping?
 				}
@@ -1465,13 +1468,13 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 		services &^= wire.SFNodeBloom
 	}
 
-	amgr := addrmgr.New(config.ActiveConfig().DataDir, serverutils.KaspadLookup, config.ActiveConfig().SubnetworkID)
+	addressManager := addrmgr.New(serverutils.KaspadLookup, config.ActiveConfig().SubnetworkID)
 
 	var listeners []net.Listener
 	var nat serverutils.NAT
 	if !config.ActiveConfig().DisableListen {
 		var err error
-		listeners, nat, err = initListeners(amgr, listenAddrs, services)
+		listeners, nat, err = initListeners(addressManager, listenAddrs, services)
 		if err != nil {
 			return nil, err
 		}
@@ -1484,7 +1487,7 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 
 	s := Server{
 		DAGParams:             dagParams,
-		addrManager:           amgr,
+		AddrManager:           addressManager,
 		newPeers:              make(chan *Peer, maxPeers),
 		donePeers:             make(chan *Peer, maxPeers),
 		banPeers:              make(chan *Peer, maxPeers),
@@ -1567,7 +1570,7 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 		Dial:               serverutils.KaspadDial,
 		OnConnection:       s.outboundPeerConnected,
 		OnConnectionFailed: s.outboundPeerConnectionFailed,
-		AddrManager:        s.addrManager,
+		AddrManager:        s.AddrManager,
 	})
 	if err != nil {
 		return nil, err

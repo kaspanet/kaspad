@@ -151,9 +151,10 @@ type BlockDAG struct {
 
 	lastFinalityPoint *blockNode
 
-	utxoDiffStore     *utxoDiffStore
-	reachabilityStore *reachabilityStore
-	multisetStore     *multisetStore
+	utxoDiffStore *utxoDiffStore
+	multisetStore *multisetStore
+
+	reachabilityTree *reachabilityTree
 
 	recentBlockProcessingTimestamps []time.Time
 	startTime                       time.Time
@@ -566,7 +567,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 		}
 	}
 
-	if err := dag.checkFinalityRules(node); err != nil {
+	if err := dag.checkFinalityViolation(node); err != nil {
 		return nil, err
 	}
 
@@ -700,7 +701,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 		return err
 	}
 
-	err = dag.reachabilityStore.flushToDB(dbTx)
+	err = dag.reachabilityTree.storeState(dbTx)
 	if err != nil {
 		return err
 	}
@@ -760,7 +761,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 	dag.index.clearDirtyEntries()
 	dag.utxoDiffStore.clearDirtyEntries()
 	dag.utxoDiffStore.clearOldEntries()
-	dag.reachabilityStore.clearDirtyEntries()
+	dag.reachabilityTree.store.clearDirtyEntries()
 	dag.multisetStore.clearNewEntries()
 
 	return nil
@@ -816,20 +817,40 @@ func (dag *BlockDAG) LastFinalityPointHash() *daghash.Hash {
 	return dag.lastFinalityPoint.hash
 }
 
-// checkFinalityRules checks the new block does not violate the finality rules
-// specifically - the new block selectedParent chain should contain the old finality point
-func (dag *BlockDAG) checkFinalityRules(newNode *blockNode) error {
+// isInSelectedParentChainOf returns whether `node` is in the selected parent chain of `other`.
+func (dag *BlockDAG) isInSelectedParentChainOf(node *blockNode, other *blockNode) (bool, error) {
+	// By definition, a node is not in the selected parent chain of itself.
+	if node == other {
+		return false, nil
+	}
+
+	return dag.reachabilityTree.isReachabilityTreeAncestorOf(node, other)
+}
+
+// checkFinalityViolation checks the new block does not violate the finality rules
+// specifically - the new block selectedParent chain should contain the old finality point.
+func (dag *BlockDAG) checkFinalityViolation(newNode *blockNode) error {
 	// the genesis block can not violate finality rules
 	if newNode.isGenesis() {
 		return nil
 	}
 
-	for currentNode := newNode; currentNode != dag.lastFinalityPoint; currentNode = currentNode.selectedParent {
-		// If we went past dag's last finality point without encountering it -
-		// the new block has violated finality.
-		if currentNode.blueScore <= dag.lastFinalityPoint.blueScore {
-			return ruleError(ErrFinality, "The last finality point is not in the selected chain of this block")
-		}
+	// Because newNode doesn't have reachability data we
+	// need to check if the last finality point is in the
+	// selected parent chain of newNode.selectedParent, so
+	// we explicitly check if newNode.selectedParent is
+	// the finality point.
+	if dag.lastFinalityPoint == newNode.selectedParent {
+		return nil
+	}
+
+	isInSelectedChain, err := dag.isInSelectedParentChainOf(dag.lastFinalityPoint, newNode.selectedParent)
+	if err != nil {
+		return err
+	}
+
+	if !isInSelectedChain {
+		return ruleError(ErrFinality, "the last finality point is not in the selected parent chain of this block")
 	}
 	return nil
 }
@@ -894,7 +915,7 @@ func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
 // IsKnownFinalizedBlock returns whether the block is below the finality point.
 // IsKnownFinalizedBlock might be false-negative because node finality status is
 // updated in a separate goroutine. To get a definite answer if a block
-// is finalized or not, use dag.checkFinalityRules.
+// is finalized or not, use dag.checkFinalityViolation.
 func (dag *BlockDAG) IsKnownFinalizedBlock(blockHash *daghash.Hash) bool {
 	node, ok := dag.index.LookupNode(blockHash)
 	return ok && node.isFinalized
@@ -970,10 +991,10 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockPastUTXO UTXOSet,
 	newBlockMultiset *secp256k1.MultiSet, selectedParentAnticone []*blockNode) (
 	virtualUTXODiff *UTXODiff, chainUpdates *chainUpdates, err error) {
 
-	// Add the block to the reachability structures
-	err = dag.updateReachability(node, selectedParentAnticone)
+	// Add the block to the reachability tree
+	err = dag.reachabilityTree.addBlock(node, selectedParentAnticone)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed updating reachability")
+		return nil, nil, errors.Wrap(err, "failed adding block to the reachability tree")
 	}
 
 	dag.multisetStore.setMultiset(node, newBlockMultiset)
@@ -1760,7 +1781,7 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 			continue
 		}
 		visited.add(current)
-		isCurrentAncestorOfLowNode, err := dag.isAncestorOf(current, lowNode)
+		isCurrentAncestorOfLowNode, err := dag.isInPast(current, lowNode)
 		if err != nil {
 			return nil, err
 		}
@@ -1784,6 +1805,10 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 		nodes[i] = candidateNodes.pop()
 	}
 	return nodes, nil
+}
+
+func (dag *BlockDAG) isInPast(this *blockNode, other *blockNode) (bool, error) {
+	return dag.reachabilityTree.isInPast(this, other)
 }
 
 // AntiPastHashesBetween returns the hashes of the blocks between the
@@ -2039,8 +2064,8 @@ func New(config *Config) (*BlockDAG, error) {
 
 	dag.virtual = newVirtualBlock(dag, nil)
 	dag.utxoDiffStore = newUTXODiffStore(dag)
-	dag.reachabilityStore = newReachabilityStore(dag)
 	dag.multisetStore = newMultisetStore(dag)
+	dag.reachabilityTree = newReachabilityTree(dag)
 
 	// Initialize the DAG state from the passed database. When the db
 	// does not yet contain any DAG state, both it and the DAG state

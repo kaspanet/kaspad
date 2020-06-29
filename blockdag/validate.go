@@ -698,7 +698,7 @@ func (dag *BlockDAG) validateParents(blockHeader *wire.BlockHeader, parents bloc
 	for parentA := range parents {
 		// isFinalized might be false-negative because node finality status is
 		// updated in a separate goroutine. This is why later the block is
-		// checked more thoroughly on the finality rules in dag.checkFinalityRules.
+		// checked more thoroughly on the finality rules in dag.checkFinalityViolation.
 		if parentA.isFinalized {
 			return ruleError(ErrFinality, fmt.Sprintf("block %s is a finalized "+
 				"parent of block %s", parentA.hash, blockHeader.BlockHash()))
@@ -709,7 +709,7 @@ func (dag *BlockDAG) validateParents(blockHeader *wire.BlockHeader, parents bloc
 				continue
 			}
 
-			isAncestorOf, err := dag.isAncestorOf(parentA, parentB)
+			isAncestorOf, err := dag.isInPast(parentA, parentB)
 			if err != nil {
 				return err
 			}

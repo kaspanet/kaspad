@@ -34,7 +34,7 @@ func (sp *Peer) OnGetAddr(_ *peer.Peer, msg *wire.MsgGetAddr) {
 	sp.sentAddrs = true
 
 	// Get the current known addresses from the address manager.
-	addrCache := sp.server.addrManager.AddressCache(msg.IncludeAllSubnetworks, msg.SubnetworkID)
+	addrCache := sp.server.AddrManager.AddressCache(msg.IncludeAllSubnetworks, msg.SubnetworkID)
 
 	// Push the addresses.
 	sp.pushAddrMsg(addrCache, sp.SubnetworkID())

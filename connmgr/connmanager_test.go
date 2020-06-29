@@ -6,17 +6,18 @@ package connmgr
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/addrmgr"
-	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"net"
-	"os"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/kaspanet/kaspad/addrmgr"
+	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/pkg/errors"
 )
 
 func init() {
@@ -192,19 +193,26 @@ func addressManagerForTest(t *testing.T, testName string, numAddresses uint8) (*
 }
 
 func createEmptyAddressManagerForTest(t *testing.T, testName string) (*addrmgr.AddrManager, func()) {
-	path, err := ioutil.TempDir("", fmt.Sprintf("%s-addressmanager", testName))
+	path, err := ioutil.TempDir("", fmt.Sprintf("%s-database", testName))
 	if err != nil {
 		t.Fatalf("createEmptyAddressManagerForTest: TempDir unexpectedly "+
 			"failed: %s", err)
 	}
 
-	return addrmgr.New(path, nil, nil), func() {
-		// Wait for the connection manager to finish
+	err = dbaccess.Open(path)
+	if err != nil {
+		t.Fatalf("error creating db: %s", err)
+	}
+
+	return addrmgr.New(nil, nil), func() {
+		// Wait for the connection manager to finish, so it'll
+		// have access to the address manager as long as it's
+		// alive.
 		time.Sleep(10 * time.Millisecond)
 
-		err := os.RemoveAll(path)
+		err := dbaccess.Close()
 		if err != nil {
-			t.Fatalf("couldn't remove path %s", path)
+			t.Fatalf("error closing the database: %s", err)
 		}
 	}
 }
@@ -568,7 +576,7 @@ func TestMaxRetryDuration(t *testing.T) {
 	connected := make(chan *ConnReq)
 	cmgr, err := New(&Config{
 		RetryDuration:  time.Millisecond,
-		TargetOutbound: 1,
+		TargetOutbound: 0,
 		Dial:           timedDialer,
 		OnConnection: func(c *ConnReq, conn net.Conn) {
 			connected <- c

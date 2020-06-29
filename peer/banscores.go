@@ -5,6 +5,7 @@ const (
 	BanScoreUnrequestedBlock           = 100
 	BanScoreInvalidBlock               = 100
 	BanScoreInvalidInvBlock            = 100
+	BanScoreOrphanInvAsPartOfNetsync   = 100
 	BanScoreMalformedBlueScoreInOrphan = 100
 
 	BanScoreUnrequestedSelectedTip = 20
