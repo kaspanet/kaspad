@@ -822,9 +822,9 @@ func TestIsInPast(t *testing.T) {
 	}
 }
 
-func TestAddChildToSelectedParentChainBelowReindexRoot(t *testing.T) {
+func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestAddChildToSelectedParentChainBelowReindexRoot",
+	dag, teardownFunc, err := DAGSetup("TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot",
 		true, Config{DAGParams: &dagconfig.SimnetParams})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
