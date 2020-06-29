@@ -11,6 +11,7 @@ import (
 	"encoding/gob"
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
+	"encoding/json"
 	"io"
 	"math/rand"
 	"net"
@@ -19,12 +20,16 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
 
+// AddressKey represents a "string" key in the form of ip:port for IPv4 addresses
+// or [ip]:port for IPv6 addresses for use as keys in maps.
 type AddressKey string
 type newBucket [NewBucketCount]map[AddressKey]*KnownAddress
 type triedBucket [TriedBucketCount][]*KnownAddress
@@ -880,8 +885,8 @@ func (a *AddrManager) HostToNetAddress(host string, port uint16, services wire.S
 	return wire.NewNetAddressIPPort(ip, port, services), nil
 }
 
-// NetAddressKey returns a string key in the form of ip:port for IPv4 addresses
-// or [ip]:port for IPv6 addresses.
+// NetAddressKey returns a "string" key in the form of ip:port for IPv4 addresses
+// or [ip]:port for IPv6 addresses for use as keys in maps.
 func NetAddressKey(na *wire.NetAddress) AddressKey {
 	port := strconv.FormatUint(uint64(na.Port), 10)
 
