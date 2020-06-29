@@ -34,7 +34,7 @@ func (dag *BlockDAG) requiredDifficulty(bluestParent *blockNode, newBlockTime ti
 	defer bigintpool.Release(newTarget)
 	windowTimeStampDifference := bigintpool.Acquire(windowMaxTimeStamp - windowMinTimestamp)
 	defer bigintpool.Release(windowTimeStampDifference)
-	targetTimePerBlock := bigintpool.Acquire(dag.targetTimePerBlock)
+	targetTimePerBlock := bigintpool.Acquire(dag.dagParams.TargetTimePerBlock.Milliseconds())
 	defer bigintpool.Release(targetTimePerBlock)
 	difficultyAdjustmentWindowSize := bigintpool.Acquire(int64(dag.difficultyAdjustmentWindowSize))
 	defer bigintpool.Release(difficultyAdjustmentWindowSize)

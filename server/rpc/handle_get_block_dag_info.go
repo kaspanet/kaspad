@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 	"strings"
 )
@@ -23,7 +24,7 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 		Headers:       dag.BlockCount(),
 		TipHashes:     daghash.Strings(dag.TipHashes()),
 		Difficulty:    getDifficultyRatio(dag.CurrentBits(), params),
-		MedianTime:    dag.CalcPastMedianTime().Unix(),
+		MedianTime:    mstime.TimeToUnixMilli(dag.CalcPastMedianTime()),
 		Pruned:        false,
 		Bip9SoftForks: make(map[string]*rpcmodel.Bip9SoftForkDescription),
 	}

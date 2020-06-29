@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"container/list"
 	"fmt"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"io"
 	"math/rand"
 	"net"
@@ -942,7 +943,7 @@ func (p *Peer) updateStatsFromVersionMsg(msg *wire.MsgVersion) {
 	p.statsMtx.Lock()
 	defer p.statsMtx.Unlock()
 	p.selectedTipHash = msg.SelectedTipHash
-	p.timeOffset = msg.Timestamp.Unix() - time.Now().Unix()
+	p.timeOffset = mstime.TimeToUnixMilli(msg.Timestamp) - mstime.TimeToUnixMilli(time.Now())
 }
 
 func (p *Peer) updateFlagsFromVersionMsg(msg *wire.MsgVersion) {

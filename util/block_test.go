@@ -31,7 +31,7 @@ func TestBlock(t *testing.T) {
 	}
 
 	// Hash for block 100,000.
-	wantHashStr := "839a8e072e6d402128f6f9a32ffc012e471e071e8ef8405552b1e58ef7b681f0"
+	wantHashStr := "239edd8f4b5904d7973e7e7105f1aa48412cd82bab87aefd7aae809d01bd8d21"
 	wantHash, err := daghash.NewHashFromStr(wantHashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)

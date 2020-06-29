@@ -94,7 +94,7 @@ func TestDifficulty(t *testing.T) {
 	addNode := func(parents blockSet, blockTime time.Time) *blockNode {
 		bluestParent := parents.bluest()
 		if blockTime == zeroTime {
-			blockTime = time.Unix(bluestParent.timestamp, 0)
+			blockTime = bluestParent.time()
 			blockTime = blockTime.Add(params.TargetTimePerBlock)
 		}
 		block, err := PrepareBlockForTest(dag, parents.hashes(), nil)
@@ -174,7 +174,7 @@ func TestDifficulty(t *testing.T) {
 			sameBitsCount = 0
 		}
 	}
-	slowBlockTime := time.Unix(tip.timestamp, 0)
+	slowBlockTime := tip.time()
 	slowBlockTime = slowBlockTime.Add(params.TargetTimePerBlock + time.Second)
 	slowNode := addNode(blockSetFromSlice(tip), slowBlockTime)
 	if slowNode.bits != tip.bits {

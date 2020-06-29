@@ -6,6 +6,7 @@ package wire
 
 import (
 	"bytes"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 	"io"
 	"net"
@@ -66,7 +67,7 @@ func TestNetAddress(t *testing.T) {
 func TestNetAddressWire(t *testing.T) {
 	// baseNetAddr is used in the various tests as a baseline NetAddress.
 	baseNetAddr := NetAddress{
-		Timestamp: time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
+		Timestamp: mstime.UnixMilliToTime(0x17315ed0f99),
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("127.0.0.1"),
 		Port:      16111,
@@ -78,7 +79,7 @@ func TestNetAddressWire(t *testing.T) {
 
 	// baseNetAddrEncoded is the wire encoded bytes of baseNetAddr.
 	baseNetAddrEncoded := []byte{
-		0x29, 0xab, 0x5f, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
+		0x99, 0x0f, 0xed, 0x15, 0x73, 0x01, 0x00, 0x00, // Timestamp
 		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x01, // IP 127.0.0.1

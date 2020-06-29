@@ -6,6 +6,7 @@ package wire
 
 import (
 	"encoding/binary"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"io"
 	"net"
 	"time"
@@ -64,13 +65,13 @@ func NewNetAddressIPPort(ip net.IP, port uint16, services ServiceFlag) *NetAddre
 
 // NewNetAddressTimestamp returns a new NetAddress using the provided
 // timestamp, IP, port, and supported services. The timestamp is rounded to
-// single second precision.
+// single millisecond precision.
 func NewNetAddressTimestamp(
 	timestamp time.Time, services ServiceFlag, ip net.IP, port uint16) *NetAddress {
-	// Limit the timestamp to one second precision since the protocol
+	// Limit the timestamp to one millisecond precision since the protocol
 	// doesn't support better.
 	na := NetAddress{
-		Timestamp: time.Unix(timestamp.Unix(), 0),
+		Timestamp: mstime.ReduceToMillisecondPrecision(timestamp),
 		Services:  services,
 		IP:        ip,
 		Port:      port,
@@ -120,7 +121,7 @@ func readNetAddress(r io.Reader, pver uint32, na *NetAddress, ts bool) error {
 // like version do not include the timestamp.
 func writeNetAddress(w io.Writer, pver uint32, na *NetAddress, ts bool) error {
 	if ts {
-		err := WriteElement(w, int64(na.Timestamp.Unix()))
+		err := WriteElement(w, mstime.TimeToUnixMilli(na.Timestamp))
 		if err != nil {
 			return err
 		}

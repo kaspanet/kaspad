@@ -6,6 +6,7 @@ package wire
 
 import (
 	"bytes"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 	"io"
 	"net"
@@ -359,7 +360,7 @@ var baseVersionEncoded = []byte{
 var baseVersionWithRelayTx = &MsgVersion{
 	ProtocolVersion: 70001,
 	Services:        SFNodeNetwork,
-	Timestamp:       time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST)
+	Timestamp:       mstime.UnixMilliToTime(0x17315ed0f99),
 	AddrYou: NetAddress{
 		Timestamp: time.Time{}, // Zero value -- no timestamp in version
 		Services:  SFNodeNetwork,
@@ -382,7 +383,7 @@ var baseVersionWithRelayTx = &MsgVersion{
 var baseVersionWithRelayTxEncoded = []byte{
 	0x71, 0x11, 0x01, 0x00, // Protocol version 70001
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
-	0x29, 0xab, 0x5f, 0x49, 0x00, 0x00, 0x00, 0x00, // 64-bit Timestamp
+	0x99, 0x0f, 0xed, 0x15, 0x73, 0x01, 0x00, 0x00, // Timestamp
 	0x01, // is full node
 	// AddrYou -- No timestamp for NetAddress in version message
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork

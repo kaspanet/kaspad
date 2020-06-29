@@ -1,6 +1,7 @@
 package blockdag
 
 import (
+	"github.com/kaspanet/kaspad/util/mstime"
 	"time"
 )
 
@@ -14,9 +15,9 @@ type TimeSource interface {
 // that simply returns the current local time.
 type timeSource struct{}
 
-// Now returns the current local time, with one second precision.
+// Now returns the current local time, with one millisecond precision.
 func (m *timeSource) Now() time.Time {
-	return time.Unix(time.Now().Unix(), 0)
+	return mstime.Now()
 }
 
 // NewTimeSource returns a new instance of a TimeSource

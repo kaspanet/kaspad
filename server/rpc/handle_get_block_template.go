@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"strconv"
 	"strings"
 	"sync"
@@ -638,7 +639,7 @@ func (state *gbtWorkState) blockTemplateResult(s *Server) (*rpcmodel.GetBlockTem
 	msgBlock := template.Block
 	header := &msgBlock.Header
 	adjustedTime := state.timeSource.Now()
-	maxTime := adjustedTime.Add(time.Second * time.Duration(dag.TimestampDeviationTolerance))
+	maxTime := adjustedTime.Add(time.Millisecond * time.Duration(dag.TimestampDeviationTolerance))
 	if header.Timestamp.After(maxTime) {
 		return nil, &rpcmodel.RPCError{
 			Code: rpcmodel.ErrRPCOutOfRange,
@@ -711,7 +712,7 @@ func (state *gbtWorkState) blockTemplateResult(s *Server) (*rpcmodel.GetBlockTem
 
 	reply := rpcmodel.GetBlockTemplateResult{
 		Bits:                 strconv.FormatInt(int64(header.Bits), 16),
-		CurTime:              header.Timestamp.Unix(),
+		CurTime:              mstime.TimeToUnixMilli(header.Timestamp),
 		Height:               template.Height,
 		ParentHashes:         daghash.Strings(header.ParentHashes),
 		MassLimit:            wire.MaxMassPerBlock,
@@ -721,8 +722,8 @@ func (state *gbtWorkState) blockTemplateResult(s *Server) (*rpcmodel.GetBlockTem
 		Version:              header.Version,
 		LongPollID:           longPollID,
 		Target:               targetDifficulty,
-		MinTime:              state.minTimestamp.Unix(),
-		MaxTime:              maxTime.Unix(),
+		MinTime:              mstime.TimeToUnixMilli(state.minTimestamp),
+		MaxTime:              mstime.TimeToUnixMilli(maxTime),
 		Mutable:              gbtMutableFields,
 		NonceRange:           gbtNonceRange,
 		Capabilities:         gbtCapabilities,

@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"math"
 	"sort"
 	"sync"
@@ -1345,11 +1346,11 @@ func (dag *BlockDAG) isSynced() bool {
 	var dagTimestamp int64
 	selectedTip := dag.selectedTip()
 	if selectedTip == nil {
-		dagTimestamp = dag.dagParams.GenesisBlock.Header.Timestamp.Unix()
+		dagTimestamp = mstime.TimeToUnixMilli(dag.dagParams.GenesisBlock.Header.Timestamp)
 	} else {
 		dagTimestamp = selectedTip.timestamp
 	}
-	dagTime := time.Unix(dagTimestamp, 0)
+	dagTime := mstime.UnixMilliToTime(dagTimestamp)
 	return dag.Now().Sub(dagTime) <= isDAGCurrentMaxDiff
 }
 

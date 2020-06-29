@@ -7,6 +7,7 @@ package blockdag
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 	"math"
 	"time"
@@ -110,7 +111,7 @@ func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSe
 		parents:            parents,
 		children:           make(blockSet),
 		blueScore:          math.MaxUint64, // Initialized to the max value to avoid collisions with the genesis block
-		timestamp:          dag.Now().Unix(),
+		timestamp:          mstime.TimeToUnixMilli(dag.Now()),
 		bluesAnticoneSizes: make(map[*blockNode]dagconfig.KType),
 	}
 
@@ -120,7 +121,7 @@ func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSe
 		node.version = blockHeader.Version
 		node.bits = blockHeader.Bits
 		node.nonce = blockHeader.Nonce
-		node.timestamp = blockHeader.Timestamp.Unix()
+		node.timestamp = mstime.TimeToUnixMilli(blockHeader.Timestamp)
 		node.hashMerkleRoot = blockHeader.HashMerkleRoot
 		node.acceptedIDMerkleRoot = blockHeader.AcceptedIDMerkleRoot
 		node.utxoCommitment = blockHeader.UTXOCommitment
@@ -167,7 +168,7 @@ func (node *blockNode) Header() *wire.BlockHeader {
 		HashMerkleRoot:       node.hashMerkleRoot,
 		AcceptedIDMerkleRoot: node.acceptedIDMerkleRoot,
 		UTXOCommitment:       node.utxoCommitment,
-		Timestamp:            time.Unix(node.timestamp, 0),
+		Timestamp:            node.time(),
 		Bits:                 node.bits,
 		Nonce:                node.nonce,
 	}
@@ -210,7 +211,7 @@ func (node *blockNode) PastMedianTime(dag *BlockDAG) time.Time {
 	if err != nil {
 		panic(fmt.Sprintf("blueBlockWindow: %s", err))
 	}
-	return time.Unix(medianTimestamp, 0)
+	return mstime.UnixMilliToTime(medianTimestamp)
 }
 
 func (node *blockNode) ParentHashes() []*daghash.Hash {
@@ -229,4 +230,8 @@ func (node *blockNode) finalityScore(dag *BlockDAG) uint64 {
 // String returns a string that contains the block hash.
 func (node blockNode) String() string {
 	return node.hash.String()
+}
+
+func (node *blockNode) time() time.Time {
+	return mstime.UnixMilliToTime(node.timestamp)
 }

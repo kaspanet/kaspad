@@ -7,6 +7,7 @@ package wire
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"io"
 	"math"
 	"time"
@@ -34,9 +35,9 @@ var (
 var errNonCanonicalVarInt = "non-canonical varint %x - discriminant %x must " +
 	"encode a value greater than %x"
 
-// int64Time represents a unix timestamp encoded with an int64. It is used as
-// a way to signal the readElement function how to decode a timestamp into a Go
-// time.Time since it is otherwise ambiguous.
+// int64Time represents a unix timestamp with milliseconds precision encoded with
+// an int64. It is used as a way to signal the readElement function how to decode
+// a timestamp into a Go time.Time since it is otherwise ambiguous.
 type int64Time time.Time
 
 // ReadElement reads the next sequence of bytes from r using little endian
@@ -95,7 +96,7 @@ func ReadElement(r io.Reader, element interface{}) error {
 		if err != nil {
 			return err
 		}
-		*e = int64Time(time.Unix(int64(rv), 0))
+		*e = int64Time(mstime.UnixMilliToTime(int64(rv)))
 		return nil
 
 	// Message header checksum.

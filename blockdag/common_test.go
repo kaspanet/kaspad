@@ -7,6 +7,7 @@ package blockdag
 import (
 	"compress/bzip2"
 	"encoding/binary"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"io"
 	"os"
 	"path/filepath"
@@ -190,7 +191,7 @@ type fakeTimeSource struct {
 }
 
 func (fts *fakeTimeSource) Now() time.Time {
-	return time.Unix(fts.time.Unix(), 0)
+	return mstime.ReduceToMillisecondPrecision(fts.time)
 }
 
 func newFakeTimeSource(fakeTime time.Time) TimeSource {

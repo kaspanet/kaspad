@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"math"
 	"sort"
 	"time"
@@ -421,14 +422,14 @@ func (dag *BlockDAG) checkBlockHeaderSanity(block *util.Block, flags BehaviorFla
 		}
 	}
 
-	// A block timestamp must not have a greater precision than one second.
+	// A block timestamp must not have a greater precision than one millisecond.
 	// This check is necessary because Go time.Time values support
 	// nanosecond precision whereas the consensus rules only apply to
-	// seconds and it's much nicer to deal with standard Go time values
-	// instead of converting to seconds everywhere.
-	if !header.Timestamp.Equal(time.Unix(header.Timestamp.Unix(), 0)) {
+	// milliseconds and it's much nicer to deal with standard Go time values
+	// instead of converting to milliseconds everywhere.
+	if !header.Timestamp.Equal(mstime.ReduceToMillisecondPrecision(header.Timestamp)) {
 		str := fmt.Sprintf("block timestamp of %s has a higher "+
-			"precision than one second", header.Timestamp)
+			"precision than one millisecond", header.Timestamp)
 		return 0, ruleError(ErrInvalidTime, str)
 	}
 

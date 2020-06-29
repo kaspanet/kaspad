@@ -114,9 +114,9 @@ func (dag *BlockDAG) NextBlockTime() time.Time {
 	// The timestamp for the block must not be before the median timestamp
 	// of the last several blocks. Thus, choose the maximum between the
 	// current time and one second after the past median time. The current
-	// timestamp is truncated to a second boundary before comparison since a
+	// timestamp is truncated to a millisecond boundary before comparison since a
 	// block timestamp does not supported a precision greater than one
-	// second.
+	// millisecond.
 	newTimestamp := dag.Now()
 	minTimestamp := dag.NextBlockMinimumTime()
 	if newTimestamp.Before(minTimestamp) {

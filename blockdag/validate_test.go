@@ -195,7 +195,7 @@ func TestCheckBlockSanity(t *testing.T) {
 	}
 
 	// Ensure a block that has a timestamp with a precision higher than one
-	// second fails.
+	// millisecond fails.
 	timestamp := block.MsgBlock().Header.Timestamp
 	block.MsgBlock().Header.Timestamp = timestamp.Add(time.Nanosecond)
 	delay, err = dag.checkBlockSanity(block, BFNone)
@@ -742,7 +742,7 @@ var Block100000 = wire.MsgBlock{
 		UTXOCommitment: &daghash.ZeroHash,
 		Timestamp:      time.Unix(0x5cdac4b1, 0),
 		Bits:           0x207fffff,
-		Nonce:          0x00000001,
+		Nonce:          1,
 	},
 	Transactions: []*wire.MsgTx{
 		{
@@ -1049,7 +1049,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 		},
 		Timestamp: time.Unix(0x5cd16eaa, 0),
 		Bits:      0x207fffff,
-		Nonce:     0x0,
+		Nonce:     1,
 	},
 	Transactions: []*wire.MsgTx{
 		{
