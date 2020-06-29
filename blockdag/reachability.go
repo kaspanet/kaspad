@@ -459,12 +459,9 @@ func (rtn *reachabilityTreeNode) reindexIntervalsEarlierThanReindexRoot(
 
 	// rtn is either:
 	// * in the subtree after the chosen child
-	// * in the chosen child's subtree. This most commonly happens when
-	//   a block is added to the selected parent chain below the reindex
-	//   root
-	// In both cases we reclaim from the "after" subtree. In the latter
-	// case this is simply because we allocate from the "after" part of
-	// the remaining interval.
+	// * the common ancestor
+	// In both cases we reclaim from the "after" subtree. In the
+	// latter case this is arbitrary
 	return rtn.reclaimIntervalAfterChosenChild(commonAncestor,
 		commonAncestorChosenChild, reindexRoot, modifiedNodes)
 }
