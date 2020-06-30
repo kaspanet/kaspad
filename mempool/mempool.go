@@ -7,6 +7,7 @@ package mempool
 import (
 	"container/list"
 	"fmt"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 	"sync"
 	"sync/atomic"
@@ -1305,7 +1306,7 @@ func (mp *TxPool) RawMempoolVerbose() map[string]*rpcmodel.GetRawMempoolVerboseR
 		mpd := &rpcmodel.GetRawMempoolVerboseResult{
 			Size:    int32(tx.MsgTx().SerializeSize()),
 			Fee:     util.Amount(desc.Fee).ToKAS(),
-			Time:    desc.Added.Unix(),
+			Time:    mstime.TimeToUnixMilli(desc.Added),
 			Depends: make([]string, 0),
 		}
 		for _, txIn := range tx.MsgTx().TxIn {

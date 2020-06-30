@@ -674,14 +674,14 @@ func (p *Peer) AddBanScoreAndPushRejectMsg(command string, code wire.RejectCode,
 //
 // This function is safe for concurrent access.
 func (p *Peer) LastSend() time.Time {
-	return time.Unix(atomic.LoadInt64(&p.lastSend), 0)
+	return mstime.UnixMilliToTime(atomic.LoadInt64(&p.lastSend))
 }
 
 // LastRecv returns the last recv time of the peer.
 //
 // This function is safe for concurrent access.
 func (p *Peer) LastRecv() time.Time {
-	return time.Unix(atomic.LoadInt64(&p.lastRecv), 0)
+	return mstime.UnixMilliToTime(atomic.LoadInt64(&p.lastRecv))
 }
 
 // BytesSent returns the total number of bytes sent by the peer.
@@ -1350,7 +1350,7 @@ out:
 			}
 			break out
 		}
-		atomic.StoreInt64(&p.lastRecv, time.Now().Unix())
+		atomic.StoreInt64(&p.lastRecv, mstime.TimeToUnixMilli(time.Now()))
 		p.stallControl <- stallControlMsg{sccReceiveMessage, rmsg}
 
 		// Handle each supported message type.
@@ -1677,7 +1677,7 @@ out:
 			// message that it has been sent (if requested), and
 			// signal the send queue to the deliver the next queued
 			// message.
-			atomic.StoreInt64(&p.lastSend, time.Now().Unix())
+			atomic.StoreInt64(&p.lastSend, mstime.TimeToUnixMilli(time.Now()))
 			if msg.doneChan != nil {
 				msg.doneChan <- struct{}{}
 			}

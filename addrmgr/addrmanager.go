@@ -11,6 +11,7 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 	"io"
 	"math/rand"
@@ -489,11 +490,11 @@ func (a *AddrManager) PeersStateForSerialization() (*PeersStateForSerialization,
 		} else {
 			ska.SubnetworkID = v.subnetworkID.String()
 		}
-		ska.TimeStamp = v.na.Timestamp.Unix()
+		ska.TimeStamp = mstime.TimeToUnixMilli(v.na.Timestamp)
 		ska.Src = NetAddressKey(v.srcAddr)
 		ska.Attempts = v.attempts
-		ska.LastAttempt = v.lastattempt.Unix()
-		ska.LastSuccess = v.lastsuccess.Unix()
+		ska.LastAttempt = mstime.TimeToUnixMilli(v.lastattempt)
+		ska.LastSuccess = mstime.TimeToUnixMilli(v.lastsuccess)
 		// Tried and refs are implicit in the rest of the structure
 		// and will be worked out from context on unserialisation.
 		peersState.Addresses[i] = ska
@@ -613,8 +614,8 @@ func (a *AddrManager) deserializePeersState(serializedPeerState []byte) error {
 			}
 		}
 		ka.attempts = v.Attempts
-		ka.lastattempt = time.Unix(v.LastAttempt, 0)
-		ka.lastsuccess = time.Unix(v.LastSuccess, 0)
+		ka.lastattempt = mstime.UnixMilliToTime(v.LastAttempt)
+		ka.lastsuccess = mstime.UnixMilliToTime(v.LastSuccess)
 		a.addrIndex[NetAddressKey(ka.na)] = ka
 	}
 

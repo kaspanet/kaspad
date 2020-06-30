@@ -519,31 +519,35 @@ func TestCalcPastMedianTime(t *testing.T) {
 	}
 
 	tests := []struct {
-		blockNumber                 uint32
-		expectedSecondsSinceGenesis int64
+		blockNumber                      uint32
+		expectedMillisecondsSinceGenesis int64
 	}{
 		{
-			blockNumber:                 262,
-			expectedSecondsSinceGenesis: 130,
+			blockNumber:                      262,
+			expectedMillisecondsSinceGenesis: 130000,
 		},
 		{
-			blockNumber:                 270,
-			expectedSecondsSinceGenesis: 138,
+			blockNumber:                      270,
+			expectedMillisecondsSinceGenesis: 138000,
 		},
 		{
-			blockNumber:                 240,
-			expectedSecondsSinceGenesis: 108,
+			blockNumber:                      240,
+			expectedMillisecondsSinceGenesis: 108000,
 		},
 		{
-			blockNumber:                 5,
-			expectedSecondsSinceGenesis: 0,
+			blockNumber:                      5,
+			expectedMillisecondsSinceGenesis: 0,
 		},
 	}
 
 	for _, test := range tests {
-		secondsSinceGenesis := nodes[test.blockNumber].PastMedianTime(dag).Unix() - dag.genesis.Header().Timestamp.Unix()
-		if secondsSinceGenesis != test.expectedSecondsSinceGenesis {
-			t.Errorf("TestCalcPastMedianTime: expected past median time of block %v to be %v seconds from genesis but got %v", test.blockNumber, test.expectedSecondsSinceGenesis, secondsSinceGenesis)
+		millisecondsSinceGenesis := mstime.TimeToUnixMilli(nodes[test.blockNumber].PastMedianTime(dag)) -
+			mstime.TimeToUnixMilli(dag.genesis.Header().Timestamp)
+
+		if millisecondsSinceGenesis != test.expectedMillisecondsSinceGenesis {
+			t.Errorf("TestCalcPastMedianTime: expected past median time of block %v to be %v milliseconds "+
+				"from genesis but got %v",
+				test.blockNumber, test.expectedMillisecondsSinceGenesis, millisecondsSinceGenesis)
 		}
 	}
 }

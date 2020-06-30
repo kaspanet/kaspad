@@ -3,6 +3,7 @@ package rpc
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"time"
 )
 
@@ -18,11 +19,11 @@ func handleGetConnectedPeerInfo(s *Server, cmd interface{}, closeChan <-chan str
 			Addr:        statsSnap.Addr,
 			Services:    fmt.Sprintf("%08d", uint64(statsSnap.Services)),
 			RelayTxes:   !p.IsTxRelayDisabled(),
-			LastSend:    statsSnap.LastSend.Unix(),
-			LastRecv:    statsSnap.LastRecv.Unix(),
+			LastSend:    mstime.TimeToUnixMilli(statsSnap.LastSend),
+			LastRecv:    mstime.TimeToUnixMilli(statsSnap.LastRecv),
 			BytesSent:   statsSnap.BytesSent,
 			BytesRecv:   statsSnap.BytesRecv,
-			ConnTime:    statsSnap.ConnTime.Unix(),
+			ConnTime:    mstime.TimeToUnixMilli(statsSnap.ConnTime),
 			PingTime:    float64(statsSnap.LastPingMicros),
 			TimeOffset:  statsSnap.TimeOffset,
 			Version:     statsSnap.Version,

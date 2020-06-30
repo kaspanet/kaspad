@@ -5,6 +5,7 @@
 package addrmgr_test
 
 import (
+	"github.com/kaspanet/kaspad/util/mstime"
 	"math"
 	"testing"
 	"time"
@@ -14,7 +15,7 @@ import (
 )
 
 func TestChance(t *testing.T) {
-	now := time.Unix(time.Now().Unix(), 0)
+	now := mstime.Now()
 	var tests = []struct {
 		addr     *addrmgr.KnownAddress
 		expected float64
@@ -57,7 +58,7 @@ func TestChance(t *testing.T) {
 }
 
 func TestIsBad(t *testing.T) {
-	now := time.Unix(time.Now().Unix(), 0)
+	now := mstime.Now()
 	future := now.Add(35 * time.Minute)
 	monthOld := now.Add(-43 * time.Hour * 24)
 	secondsOld := now.Add(-2 * time.Second)
