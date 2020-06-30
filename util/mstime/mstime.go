@@ -90,7 +90,7 @@ func Now() Time {
 	return ToMSTime(time.Now())
 }
 
-// Unix returns the local Time corresponding to the given Unix time,
+// UnixMilli returns the local Time corresponding to the given Unix time,
 // ms milliseconds since January 1, 1970 UTC.
 func UnixMilli(ms int64) Time {
 	seconds := ms / millisecondsInSecond
