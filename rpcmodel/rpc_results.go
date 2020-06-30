@@ -163,8 +163,8 @@ type GetBlockTemplateResult struct {
 	NonceRange string   `json:"nonceRange,omitempty"`
 
 	// Block proposal from BIP 0023.
-	Capabilities  []string `json:"capabilities,omitempty"`
-	RejectReasion string   `json:"rejectReason,omitempty"`
+	Capabilities []string `json:"capabilities,omitempty"`
+	RejectReason string   `json:"rejectReason,omitempty"`
 }
 
 // GetMempoolEntryResult models the data returned from the getMempoolEntry
