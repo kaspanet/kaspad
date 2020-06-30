@@ -5,7 +5,6 @@
 package domainmessage
 
 import (
-	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -302,29 +301,34 @@ func (msg *MsgTx) IsCoinBase() bool {
 // TxHash generates the Hash for the transaction.
 func (msg *MsgTx) TxHash() *daghash.Hash {
 	// Encode the transaction and calculate double sha256 on the result.
-	// Ignore the error returns since the only way the encode could fail
-	// is being out of memory or due to nil pointers, both of which would
-	// cause a run-time panic.
-	buf := bytes.NewBuffer(make([]byte, 0, msg.serializeSize(txEncodingExcludePayload)))
-	_ = msg.serialize(buf, txEncodingExcludePayload)
+	writer := daghash.NewDoubleHashWriter()
+	err := msg.serialize(writer, txEncodingExcludePayload)
+	if err != nil {
+		// this writer never return errors (no allocations or possible failures) so errors can only come from validity checks,
+		// and we assume we never construct malformed transactions.
+		panic(fmt.Sprintf("TxHash() failed. this should never fail for structurally-valid transactions. err: %+v", err))
+	}
 
-	hash := daghash.Hash(daghash.DoubleHashH(buf.Bytes()))
+	hash := writer.Finalize()
 	return &hash
 }
 
 // TxID generates the Hash for the transaction without the signature script, gas and payload fields.
 func (msg *MsgTx) TxID() *daghash.TxID {
 	// Encode the transaction, replace signature script with zeroes, cut off
-	// payload and calculate double sha256 on the result. Ignore the error
-	// returns since the only way the encode could fail is being out of memory or
-	// due to nil pointers, both of which would cause a run-time panic.
+	// payload and calculate double sha256 on the result.
 	var encodingFlags txEncoding
 	if !msg.IsCoinBase() {
 		encodingFlags = txEncodingExcludeSignatureScript | txEncodingExcludePayload
 	}
-	buf := bytes.NewBuffer(make([]byte, 0, msg.serializeSize(encodingFlags)))
-	_ = msg.serialize(buf, encodingFlags)
-	txID := daghash.TxID(daghash.DoubleHashH(buf.Bytes()))
+	writer := daghash.NewDoubleHashWriter()
+	err := msg.serialize(writer, encodingFlags)
+	if err != nil {
+		// this writer never return errors (no allocations or possible failures) so errors can only come from validity checks,
+		// and we assume we never construct malformed transactions.
+		panic(fmt.Sprintf("TxID() failed. this should never fail for structurally-valid transactions. err: %+v", err))
+	}
+	txID := daghash.TxID(writer.Finalize())
 	return &txID
 }
 

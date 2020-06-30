@@ -364,10 +364,10 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *domainme
 	// The final hash is the double sha256 of both the serialized modified
 	// transaction and the hash type (encoded as a 4-byte little-endian
 	// value) appended.
-	wbuf := bytes.NewBuffer(make([]byte, 0, txCopy.SerializeSize()+4))
-	txCopy.Serialize(wbuf)
-	binary.Write(wbuf, binary.LittleEndian, hashType)
-	hash := daghash.DoubleHashH(wbuf.Bytes())
+	writer := daghash.NewDoubleHashWriter()
+	txCopy.Serialize(writer)
+	binary.Write(writer, binary.LittleEndian, hashType)
+	hash := writer.Finalize()
 	return &hash, nil
 }
 
