@@ -195,18 +195,6 @@ func TestCheckBlockSanity(t *testing.T) {
 		t.Errorf("CheckBlockSanity: unexpected return %s delay", delay)
 	}
 
-	// Ensure a block that has a timestamp with a precision higher than one
-	// millisecond fails.
-	timestamp := block.MsgBlock().Header.Timestamp
-	block.MsgBlock().Header.Timestamp = timestamp.Add(time.Nanosecond)
-	delay, err = dag.checkBlockSanity(block, BFNone)
-	if err == nil {
-		t.Errorf("CheckBlockSanity: error is nil when it shouldn't be")
-	}
-	if delay != 0 {
-		t.Errorf("CheckBlockSanity: unexpected return %s delay", delay)
-	}
-
 	var invalidParentsOrderBlock = wire.MsgBlock{
 		Header: wire.BlockHeader{
 			Version: 0x10000000,
