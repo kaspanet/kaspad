@@ -210,7 +210,7 @@ func TestIsKnownBlock(t *testing.T) {
 		{hash: "46314ca17e117b31b467fe1b26fd36c98ee83e750aa5e3b3c1c32870afbe5984", want: true},
 
 		// Block 100000 should be present (as an orphan).
-		{hash: "7847f926d934a47d82fc1fc851e31e056b6a92ba19b0e83e436d3dd4b4a57883", want: true},
+		{hash: "732c891529619d43b5aeb3df42ba25dea483a8c0aded1cf585751ebabea28f29", want: true},
 
 		// Random hashes should not be available.
 		{hash: "123", want: false},

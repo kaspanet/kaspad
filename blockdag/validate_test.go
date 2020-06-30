@@ -741,7 +741,7 @@ var Block100000 = wire.MsgBlock{
 			0x3c, 0xb1, 0x16, 0x8f, 0x5f, 0x6b, 0x45, 0x87,
 		},
 		UTXOCommitment: &daghash.ZeroHash,
-		Timestamp:      mstime.UnixMilli(0x5cdac4b1000),
+		Timestamp:      mstime.UnixMilli(0x17305aa654a),
 		Bits:           0x207fffff,
 		Nonce:          1,
 	},
