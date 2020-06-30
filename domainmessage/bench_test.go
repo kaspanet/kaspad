@@ -411,3 +411,21 @@ func BenchmarkDoubleHashH(b *testing.B) {
 		_ = daghash.DoubleHashH(txBytes)
 	}
 }
+
+// BenchmarkDoubleHashWriter performs a benchmark on how long it takes to perform
+// a double hash via the writer returning a daghash.Hash.
+func BenchmarkDoubleHashWriter(b *testing.B) {
+	var buf bytes.Buffer
+	err := genesisCoinbaseTx.Serialize(&buf)
+	if err != nil {
+		b.Fatalf("Serialize: unexpected error: %+v", err)
+	}
+	txBytes := buf.Bytes()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		writer := daghash.NewDoubleHashWriter()
+		_, _ = writer.Write(txBytes)
+		writer.Finalize()
+	}
+}
