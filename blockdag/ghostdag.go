@@ -57,7 +57,7 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 			// newNode is always in the future of blueCandidate, so there's
 			// no point in checking it.
 			if chainBlock != newNode {
-				if isAncestorOfBlueCandidate, err := dag.isAncestorOf(chainBlock, blueCandidate); err != nil {
+				if isAncestorOfBlueCandidate, err := dag.isInPast(chainBlock, blueCandidate); err != nil {
 					return nil, err
 				} else if isAncestorOfBlueCandidate {
 					break
@@ -66,7 +66,7 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 
 			for _, block := range chainBlock.blues {
 				// Skip blocks that exist in the past of blueCandidate.
-				if isAncestorOfBlueCandidate, err := dag.isAncestorOf(block, blueCandidate); err != nil {
+				if isAncestorOfBlueCandidate, err := dag.isInPast(block, blueCandidate); err != nil {
 					return nil, err
 				} else if isAncestorOfBlueCandidate {
 					continue
@@ -148,7 +148,7 @@ func (dag *BlockDAG) selectedParentAnticone(node *blockNode) ([]*blockNode, erro
 			if anticoneSet.contains(parent) || selectedParentPast.contains(parent) {
 				continue
 			}
-			isAncestorOfSelectedParent, err := dag.isAncestorOf(parent, node.selectedParent)
+			isAncestorOfSelectedParent, err := dag.isInPast(parent, node.selectedParent)
 			if err != nil {
 				return nil, err
 			}

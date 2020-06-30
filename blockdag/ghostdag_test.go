@@ -349,7 +349,7 @@ func TestGHOSTDAGErrors(t *testing.T) {
 	block3 := prepareAndProcessBlockByParentMsgBlocks(t, dag, block1, block2)
 
 	// Clear the reachability store
-	dag.reachabilityStore.loaded = map[daghash.Hash]*reachabilityData{}
+	dag.reachabilityTree.store.loaded = map[daghash.Hash]*reachabilityData{}
 
 	dbTx, err := dbaccess.NewTx()
 	if err != nil {
@@ -377,7 +377,7 @@ func TestGHOSTDAGErrors(t *testing.T) {
 	if err == nil {
 		t.Fatalf("TestGHOSTDAGErrors: ghostdag unexpectedly succeeded")
 	}
-	expectedErrSubstring := "Couldn't find reachability data"
+	expectedErrSubstring := "couldn't find reachability data"
 	if !strings.Contains(err.Error(), expectedErrSubstring) {
 		t.Fatalf("TestGHOSTDAGErrors: ghostdag returned wrong error. "+
 			"Want: %s, got: %s", expectedErrSubstring, err)

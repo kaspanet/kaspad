@@ -601,7 +601,6 @@ func TestCheckTransactionSanity(t *testing.T) {
 		{"good one", 1, 1, 1, *subnetworkid.SubnetworkIDNative, nil, nil, nil},
 		{"no inputs", 0, 1, 1, *subnetworkid.SubnetworkIDNative, nil, nil, ruleError(ErrNoTxInputs, "")},
 		{"no outputs", 1, 0, 1, *subnetworkid.SubnetworkIDNative, nil, nil, nil},
-		{"too massive", 1, 1000000, 1, *subnetworkid.SubnetworkIDNative, nil, nil, ruleError(ErrTxMassTooHigh, "")},
 		{"too much sompi in one output", 1, 1, util.MaxSompi + 1,
 			*subnetworkid.SubnetworkIDNative,
 			nil,

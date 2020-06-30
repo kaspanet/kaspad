@@ -715,6 +715,7 @@ func (state *gbtWorkState) blockTemplateResult(s *Server) (*rpcmodel.GetBlockTem
 		ParentHashes:         daghash.Strings(header.ParentHashes),
 		MassLimit:            wire.MaxMassPerBlock,
 		Transactions:         transactions,
+		HashMerkleRoot:       header.HashMerkleRoot.String(),
 		AcceptedIDMerkleRoot: header.AcceptedIDMerkleRoot.String(),
 		UTXOCommitment:       header.UTXOCommitment.String(),
 		Version:              header.Version,

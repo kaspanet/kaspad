@@ -152,9 +152,10 @@ type BlockDAG struct {
 
 	lastFinalityPoint *blockNode
 
-	utxoDiffStore     *utxoDiffStore
-	reachabilityStore *reachabilityStore
-	multisetStore     *multisetStore
+	utxoDiffStore *utxoDiffStore
+	multisetStore *multisetStore
+
+	reachabilityTree *reachabilityTree
 
 	recentBlockProcessingTimestamps []mstime.Time
 	startTime                       mstime.Time
@@ -700,7 +701,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 		return err
 	}
 
-	err = dag.reachabilityStore.flushToDB(dbTx)
+	err = dag.reachabilityTree.storeState(dbTx)
 	if err != nil {
 		return err
 	}
@@ -760,7 +761,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 	dag.index.clearDirtyEntries()
 	dag.utxoDiffStore.clearDirtyEntries()
 	dag.utxoDiffStore.clearOldEntries()
-	dag.reachabilityStore.clearDirtyEntries()
+	dag.reachabilityTree.store.clearDirtyEntries()
 	dag.multisetStore.clearNewEntries()
 
 	return nil
@@ -816,19 +817,14 @@ func (dag *BlockDAG) LastFinalityPointHash() *daghash.Hash {
 	return dag.lastFinalityPoint.hash
 }
 
-// isInSelectedParentChain returns whether aNode is in the selected parent chain of bNode.
-func (dag *BlockDAG) isInSelectedParentChain(aNode, bNode *blockNode) (bool, error) {
-	aTreeNode, err := dag.reachabilityStore.treeNodeByBlockNode(aNode)
-	if err != nil {
-		return false, err
+// isInSelectedParentChainOf returns whether `node` is in the selected parent chain of `other`.
+func (dag *BlockDAG) isInSelectedParentChainOf(node *blockNode, other *blockNode) (bool, error) {
+	// By definition, a node is not in the selected parent chain of itself.
+	if node == other {
+		return false, nil
 	}
 
-	bTreeNode, err := dag.reachabilityStore.treeNodeByBlockNode(bNode)
-	if err != nil {
-		return false, err
-	}
-
-	return aTreeNode.interval.isAncestorOf(bTreeNode.interval), nil
+	return dag.reachabilityTree.isReachabilityTreeAncestorOf(node, other)
 }
 
 // checkFinalityViolation checks the new block does not violate the finality rules
@@ -848,7 +844,7 @@ func (dag *BlockDAG) checkFinalityViolation(newNode *blockNode) error {
 		return nil
 	}
 
-	isInSelectedChain, err := dag.isInSelectedParentChain(dag.lastFinalityPoint, newNode.selectedParent)
+	isInSelectedChain, err := dag.isInSelectedParentChainOf(dag.lastFinalityPoint, newNode.selectedParent)
 	if err != nil {
 		return err
 	}
@@ -995,10 +991,10 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockPastUTXO UTXOSet,
 	newBlockMultiset *secp256k1.MultiSet, selectedParentAnticone []*blockNode) (
 	virtualUTXODiff *UTXODiff, chainUpdates *chainUpdates, err error) {
 
-	// Add the block to the reachability structures
-	err = dag.updateReachability(node, selectedParentAnticone)
+	// Add the block to the reachability tree
+	err = dag.reachabilityTree.addBlock(node, selectedParentAnticone)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed updating reachability")
+		return nil, nil, errors.Wrap(err, "failed adding block to the reachability tree")
 	}
 
 	dag.multisetStore.setMultiset(node, newBlockMultiset)
@@ -1785,7 +1781,7 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 			continue
 		}
 		visited.add(current)
-		isCurrentAncestorOfLowNode, err := dag.isAncestorOf(current, lowNode)
+		isCurrentAncestorOfLowNode, err := dag.isInPast(current, lowNode)
 		if err != nil {
 			return nil, err
 		}
@@ -1809,6 +1805,10 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 		nodes[i] = candidateNodes.pop()
 	}
 	return nodes, nil
+}
+
+func (dag *BlockDAG) isInPast(this *blockNode, other *blockNode) (bool, error) {
+	return dag.reachabilityTree.isInPast(this, other)
 }
 
 // AntiPastHashesBetween returns the hashes of the blocks between the
@@ -2064,8 +2064,8 @@ func New(config *Config) (*BlockDAG, error) {
 
 	dag.virtual = newVirtualBlock(dag, nil)
 	dag.utxoDiffStore = newUTXODiffStore(dag)
-	dag.reachabilityStore = newReachabilityStore(dag)
 	dag.multisetStore = newMultisetStore(dag)
+	dag.reachabilityTree = newReachabilityTree(dag)
 
 	// Initialize the DAG state from the passed database. When the db
 	// does not yet contain any DAG state, both it and the DAG state

@@ -134,15 +134,6 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 		return ruleError(ErrNoTxInputs, "transaction has no inputs")
 	}
 
-	// A transaction must not exceed the maximum allowed block mass when
-	// serialized.
-	serializedTxSize := msgTx.SerializeSize()
-	if serializedTxSize*MassPerTxByte > wire.MaxMassPerTx {
-		str := fmt.Sprintf("serialized transaction is too big - got "+
-			"%d, max %d", serializedTxSize, wire.MaxMassPerBlock)
-		return ruleError(ErrTxMassTooHigh, str)
-	}
-
 	// Ensure the transaction amounts are in range. Each transaction
 	// output must not be negative or more than the max allowed per
 	// transaction. Also, the total of all outputs must abide by the same
@@ -699,7 +690,7 @@ func (dag *BlockDAG) validateParents(blockHeader *wire.BlockHeader, parents bloc
 				continue
 			}
 
-			isAncestorOf, err := dag.isAncestorOf(parentA, parentB)
+			isAncestorOf, err := dag.isInPast(parentA, parentB)
 			if err != nil {
 				return err
 			}
