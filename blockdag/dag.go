@@ -39,13 +39,13 @@ const (
 // forever.
 type orphanBlock struct {
 	block      *util.Block
-	expiration time.Time
+	expiration mstime.Time
 }
 
 // delayedBlock represents a block which has a delayed timestamp and will be processed at processTime
 type delayedBlock struct {
 	block       *util.Block
-	processTime time.Time
+	processTime mstime.Time
 }
 
 // chainUpdates represents the updates made to the selected parent chain after
@@ -156,8 +156,8 @@ type BlockDAG struct {
 	reachabilityStore *reachabilityStore
 	multisetStore     *multisetStore
 
-	recentBlockProcessingTimestamps []time.Time
-	startTime                       time.Time
+	recentBlockProcessingTimestamps []mstime.Time
+	startTime                       mstime.Time
 }
 
 // IsKnownBlock returns whether or not the DAG instance has the block represented
@@ -293,7 +293,7 @@ func (dag *BlockDAG) removeOrphanBlock(orphan *orphanBlock) {
 func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 	// Remove expired orphan blocks.
 	for _, oBlock := range dag.orphans {
-		if time.Now().After(oBlock.expiration) {
+		if mstime.Now().After(oBlock.expiration) {
 			dag.removeOrphanBlock(oBlock)
 			continue
 		}
@@ -325,7 +325,7 @@ func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 
 	// Insert the block into the orphan map with an expiration time
 	// 1 hour from now.
-	expiration := time.Now().Add(time.Hour)
+	expiration := mstime.Now().Add(time.Hour)
 	oBlock := &orphanBlock{
 		block:      block,
 		expiration: expiration,
@@ -437,7 +437,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			// subtract one from the relative lock to maintain the original
 			// lockTime semantics.
 			timeLockMilliseconds := (relativeLock << wire.SequenceLockTimeGranularity) - 1
-			timeLock := mstime.TimeToUnixMilli(medianTime) + timeLockMilliseconds
+			timeLock := medianTime.UnixMilli() + timeLockMilliseconds
 			if timeLock > sequenceLock.Milliseconds {
 				sequenceLock.Milliseconds = timeLock
 			}
@@ -1345,18 +1345,18 @@ func (dag *BlockDAG) isSynced() bool {
 	var dagTimestamp int64
 	selectedTip := dag.selectedTip()
 	if selectedTip == nil {
-		dagTimestamp = mstime.TimeToUnixMilli(dag.dagParams.GenesisBlock.Header.Timestamp)
+		dagTimestamp = dag.dagParams.GenesisBlock.Header.Timestamp.UnixMilli()
 	} else {
 		dagTimestamp = selectedTip.timestamp
 	}
-	dagTime := mstime.UnixMilliToTime(dagTimestamp)
+	dagTime := mstime.UnixMilli(dagTimestamp)
 	return dag.Now().Sub(dagTime) <= isDAGCurrentMaxDiff
 }
 
 // Now returns the adjusted time according to
 // dag.timeSource. See TimeSource.Now for
 // more details.
-func (dag *BlockDAG) Now() time.Time {
+func (dag *BlockDAG) Now() mstime.Time {
 	return dag.timeSource.Now()
 }
 
@@ -1411,7 +1411,7 @@ func (dag *BlockDAG) UTXOSet() *FullUTXOSet {
 }
 
 // CalcPastMedianTime returns the past median time of the DAG.
-func (dag *BlockDAG) CalcPastMedianTime() time.Time {
+func (dag *BlockDAG) CalcPastMedianTime() mstime.Time {
 	return dag.virtual.tips().bluest().PastMedianTime(dag)
 }
 
@@ -2059,7 +2059,7 @@ func New(config *Config) (*BlockDAG, error) {
 		deploymentCaches:               newThresholdCaches(dagconfig.DefinedDeployments),
 		blockCount:                     0,
 		subnetworkID:                   config.SubnetworkID,
-		startTime:                      time.Now(),
+		startTime:                      mstime.Now(),
 	}
 
 	dag.virtual = newVirtualBlock(dag, nil)

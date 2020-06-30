@@ -12,7 +12,6 @@ import (
 	"net"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -81,13 +80,13 @@ func TestAddr(t *testing.T) {
 func TestAddrWire(t *testing.T) {
 	// A couple of NetAddresses to use for testing.
 	na := &NetAddress{
-		Timestamp: mstime.UnixMilliToTime(0x17315ed0f99),
+		Timestamp: mstime.UnixMilli(0x17315ed0f99),
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("127.0.0.1"),
 		Port:      16111,
 	}
 	na2 := &NetAddress{
-		Timestamp: mstime.UnixMilliToTime(0x17315ed0f99),
+		Timestamp: mstime.UnixMilli(0x17315ed0f99),
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("192.168.0.1"),
 		Port:      16110,
@@ -211,13 +210,13 @@ func TestAddrWireErrors(t *testing.T) {
 
 	// A couple of NetAddresses to use for testing.
 	na := &NetAddress{
-		Timestamp: time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
+		Timestamp: mstime.UnixMilli(0x495fab29000),
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("127.0.0.1"),
 		Port:      16111,
 	}
 	na2 := &NetAddress{
-		Timestamp: time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
+		Timestamp: mstime.UnixMilli(0x495fab29000),
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("192.168.0.1"),
 		Port:      16110,

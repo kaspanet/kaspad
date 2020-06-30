@@ -490,11 +490,11 @@ func (a *AddrManager) PeersStateForSerialization() (*PeersStateForSerialization,
 		} else {
 			ska.SubnetworkID = v.subnetworkID.String()
 		}
-		ska.TimeStamp = mstime.TimeToUnixMilli(v.na.Timestamp)
+		ska.TimeStamp = v.na.Timestamp.UnixMilli()
 		ska.Src = NetAddressKey(v.srcAddr)
 		ska.Attempts = v.attempts
-		ska.LastAttempt = mstime.TimeToUnixMilli(v.lastattempt)
-		ska.LastSuccess = mstime.TimeToUnixMilli(v.lastsuccess)
+		ska.LastAttempt = v.lastattempt.UnixMilli()
+		ska.LastSuccess = v.lastsuccess.UnixMilli()
 		// Tried and refs are implicit in the rest of the structure
 		// and will be worked out from context on unserialisation.
 		peersState.Addresses[i] = ska
@@ -614,8 +614,8 @@ func (a *AddrManager) deserializePeersState(serializedPeerState []byte) error {
 			}
 		}
 		ka.attempts = v.Attempts
-		ka.lastattempt = mstime.UnixMilliToTime(v.LastAttempt)
-		ka.lastsuccess = mstime.UnixMilliToTime(v.LastSuccess)
+		ka.lastattempt = mstime.UnixMilli(v.LastAttempt)
+		ka.lastsuccess = mstime.UnixMilli(v.LastSuccess)
 		a.addrIndex[NetAddressKey(ka.na)] = ka
 	}
 
@@ -1035,7 +1035,7 @@ func (a *AddrManager) Attempt(addr *wire.NetAddress) {
 	}
 	// set last tried time to now
 	ka.attempts++
-	ka.lastattempt = time.Now()
+	ka.lastattempt = mstime.Now()
 }
 
 // Connected Marks the given address as currently connected and working at the
@@ -1052,11 +1052,11 @@ func (a *AddrManager) Connected(addr *wire.NetAddress) {
 
 	// Update the time as long as it has been 20 minutes since last we did
 	// so.
-	now := time.Now()
+	now := mstime.Now()
 	if now.After(ka.na.Timestamp.Add(time.Minute * 20)) {
 		// ka.na is immutable, so replace it.
 		naCopy := *ka.na
-		naCopy.Timestamp = time.Now()
+		naCopy.Timestamp = mstime.Now()
 		ka.na = &naCopy
 	}
 }
@@ -1076,7 +1076,7 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 
 	// ka.Timestamp is not updated here to avoid leaking information
 	// about currently connected peers.
-	now := time.Now()
+	now := mstime.Now()
 	ka.lastsuccess = now
 	ka.lastattempt = now
 	ka.attempts = 0

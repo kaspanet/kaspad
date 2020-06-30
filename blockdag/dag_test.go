@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/dbaccess"
-	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 	"math"
 	"os"
@@ -279,13 +278,13 @@ func TestCalcSequenceLock(t *testing.T) {
 	// Obtain the past median time from the PoV of the input created above.
 	// The past median time for the input is the past median time from the PoV
 	// of the block *prior* to the one that included it.
-	medianTime := mstime.TimeToUnixMilli(node.RelativeAncestor(5).PastMedianTime(dag))
+	medianTime := node.RelativeAncestor(5).PastMedianTime(dag).UnixMilli()
 
 	// The median time calculated from the PoV of the best block in the
 	// test DAG. For unconfirmed inputs, this value will be used since
 	// the MTP will be calculated from the PoV of the yet-to-be-mined
 	// block.
-	nextMedianTime := mstime.TimeToUnixMilli(node.PastMedianTime(dag))
+	nextMedianTime := node.PastMedianTime(dag).UnixMilli()
 	nextBlockBlueScore := int32(numBlocksToGenerate) + 1
 
 	// Add an additional transaction which will serve as our unconfirmed
@@ -541,8 +540,8 @@ func TestCalcPastMedianTime(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		millisecondsSinceGenesis := mstime.TimeToUnixMilli(nodes[test.blockNumber].PastMedianTime(dag)) -
-			mstime.TimeToUnixMilli(dag.genesis.Header().Timestamp)
+		millisecondsSinceGenesis := nodes[test.blockNumber].PastMedianTime(dag).UnixMilli() -
+			dag.genesis.Header().Timestamp.UnixMilli()
 
 		if millisecondsSinceGenesis != test.expectedMillisecondsSinceGenesis {
 			t.Errorf("TestCalcPastMedianTime: expected past median time of block %v to be %v milliseconds "+

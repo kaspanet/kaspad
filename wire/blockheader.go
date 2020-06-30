@@ -6,11 +6,9 @@ package wire
 
 import (
 	"bytes"
+	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"io"
-	"time"
-
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // BaseBlockHeaderPayload is the base number of bytes a block header can be,
@@ -50,7 +48,7 @@ type BlockHeader struct {
 	UTXOCommitment *daghash.Hash
 
 	// Time the block was created.
-	Timestamp time.Time
+	Timestamp mstime.Time
 
 	// Difficulty target for the block.
 	Bits uint32
@@ -173,7 +171,7 @@ func readBlockHeader(r io.Reader, pver uint32, bh *BlockHeader) error {
 // encoding block headers to be stored to disk, such as in a database, as
 // opposed to encoding for the wire.
 func writeBlockHeader(w io.Writer, pver uint32, bh *BlockHeader) error {
-	timestamp := mstime.TimeToUnixMilli(bh.Timestamp)
+	timestamp := bh.Timestamp.UnixMilli()
 	if err := writeElements(w, bh.Version, bh.NumParentBlocks()); err != nil {
 		return err
 	}

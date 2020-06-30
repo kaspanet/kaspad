@@ -6,14 +6,13 @@ package mempool
 
 import (
 	"bytes"
-	"github.com/pkg/errors"
-	"testing"
-	"time"
-
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
+	"testing"
 )
 
 // TestCalcMinRequiredTxRelayFee tests the calcMinRequiredTxRelayFee API.
@@ -292,7 +291,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 		},
 	}
 
-	pastMedianTime := time.Now()
+	pastMedianTime := mstime.Now()
 	for _, test := range tests {
 		// Ensure standardness is as expected.
 		err := checkTransactionStandard(util.NewTx(test.tx),

@@ -5,6 +5,7 @@
 package addrmgr
 
 import (
+	"github.com/kaspanet/kaspad/util/mstime"
 	"time"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -18,8 +19,8 @@ type KnownAddress struct {
 	na           *wire.NetAddress
 	srcAddr      *wire.NetAddress
 	attempts     int
-	lastattempt  time.Time
-	lastsuccess  time.Time
+	lastattempt  mstime.Time
+	lastsuccess  mstime.Time
 	tried        bool
 	refs         int // reference count of new buckets
 	subnetworkID *subnetworkid.SubnetworkID
@@ -37,7 +38,7 @@ func (ka *KnownAddress) SubnetworkID() *subnetworkid.SubnetworkID {
 }
 
 // LastAttempt returns the last time the known address was attempted.
-func (ka *KnownAddress) LastAttempt() time.Time {
+func (ka *KnownAddress) LastAttempt() mstime.Time {
 	return ka.lastattempt
 }
 
@@ -45,7 +46,7 @@ func (ka *KnownAddress) LastAttempt() time.Time {
 // depends upon how recently the address has been seen, how recently it was last
 // attempted and how often attempts to connect to it have failed.
 func (ka *KnownAddress) chance() float64 {
-	now := time.Now()
+	now := mstime.Now()
 	lastAttempt := now.Sub(ka.lastattempt)
 
 	if lastAttempt < 0 {
@@ -76,17 +77,17 @@ func (ka *KnownAddress) chance() float64 {
 // All addresses that meet these criteria are assumed to be worthless and not
 // worth keeping hold of.
 func (ka *KnownAddress) isBad() bool {
-	if ka.lastattempt.After(time.Now().Add(-1 * time.Minute)) {
+	if ka.lastattempt.After(mstime.Now().Add(-1 * time.Minute)) {
 		return false
 	}
 
 	// From the future?
-	if ka.na.Timestamp.After(time.Now().Add(10 * time.Minute)) {
+	if ka.na.Timestamp.After(mstime.Now().Add(10 * time.Minute)) {
 		return true
 	}
 
 	// Over a month old?
-	if ka.na.Timestamp.Before(time.Now().Add(-1 * numMissingDays * time.Hour * 24)) {
+	if ka.na.Timestamp.Before(mstime.Now().Add(-1 * numMissingDays * time.Hour * 24)) {
 		return true
 	}
 
@@ -96,7 +97,7 @@ func (ka *KnownAddress) isBad() bool {
 	}
 
 	// Hasn't succeeded in too long?
-	if !ka.lastsuccess.After(time.Now().Add(-1*minBadDays*time.Hour*24)) &&
+	if !ka.lastsuccess.After(mstime.Now().Add(-1*minBadDays*time.Hour*24)) &&
 		ka.attempts >= maxFailures {
 		return true
 	}

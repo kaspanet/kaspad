@@ -3,7 +3,6 @@ package rpc
 import (
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/util/mstime"
 )
 
 func handleGetMempoolEntry(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
@@ -27,7 +26,7 @@ func handleGetMempoolEntry(s *Server, cmd interface{}, closeChan <-chan struct{}
 
 	return &rpcmodel.GetMempoolEntryResult{
 		Fee:   txDesc.Fee,
-		Time:  mstime.TimeToUnixMilli(txDesc.Added),
+		Time:  txDesc.Added.UnixMilli(),
 		RawTx: *rawTx,
 	}, nil
 }

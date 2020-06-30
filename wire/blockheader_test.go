@@ -6,14 +6,12 @@ package wire
 
 import (
 	"bytes"
-	"github.com/kaspanet/kaspad/util/mstime"
-	"reflect"
-	"testing"
-	"time"
-
 	"github.com/davecgh/go-spew/spew"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/util/random"
+	"reflect"
+	"testing"
 )
 
 // TestBlockHeader tests the BlockHeader API.
@@ -63,7 +61,7 @@ func TestBlockHeaderWire(t *testing.T) {
 		HashMerkleRoot:       mainnetGenesisMerkleRoot,
 		AcceptedIDMerkleRoot: exampleAcceptedIDMerkleRoot,
 		UTXOCommitment:       exampleUTXOCommitment,
-		Timestamp:            mstime.UnixMilliToTime(0x17315ed0f99),
+		Timestamp:            mstime.UnixMilli(0x17315ed0f99),
 		Bits:                 bits,
 		Nonce:                nonce,
 	}
@@ -179,7 +177,7 @@ func TestBlockHeaderSerialize(t *testing.T) {
 		HashMerkleRoot:       mainnetGenesisMerkleRoot,
 		AcceptedIDMerkleRoot: exampleAcceptedIDMerkleRoot,
 		UTXOCommitment:       exampleUTXOCommitment,
-		Timestamp:            mstime.UnixMilliToTime(0x17315ed0f99),
+		Timestamp:            mstime.UnixMilli(0x17315ed0f99),
 		Bits:                 bits,
 		Nonce:                nonce,
 	}
@@ -261,7 +259,7 @@ func TestBlockHeaderSerialize(t *testing.T) {
 func TestBlockHeaderSerializeSize(t *testing.T) {
 	nonce := uint64(123123) // 0x1e0f3
 	bits := uint32(0x1d00ffff)
-	timestamp := time.Unix(0x495fab29, 0) // 2009-01-03 12:15:05 -0600 CST
+	timestamp := mstime.UnixMilli(0x495fab29000)
 	baseBlockHdr := &BlockHeader{
 		Version:              1,
 		ParentHashes:         []*daghash.Hash{mainnetGenesisHash, simnetGenesisHash},
@@ -309,7 +307,7 @@ func TestBlockHeaderSerializeSize(t *testing.T) {
 func TestIsGenesis(t *testing.T) {
 	nonce := uint64(123123) // 0x1e0f3
 	bits := uint32(0x1d00ffff)
-	timestamp := time.Unix(0x495fab29, 0) // 2009-01-03 12:15:05 -0600 CST
+	timestamp := mstime.UnixMilli(0x495fab29000)
 
 	baseBlockHdr := &BlockHeader{
 		Version:        1,

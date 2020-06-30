@@ -6,12 +6,10 @@ package wire
 
 import (
 	"encoding/binary"
+	"github.com/kaspanet/kaspad/util/binaryserializer"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"io"
 	"net"
-	"time"
-
-	"github.com/kaspanet/kaspad/util/binaryserializer"
 )
 
 // maxNetAddressPayload returns the max payload size for a kaspa NetAddress
@@ -25,7 +23,7 @@ func maxNetAddressPayload(pver uint32) uint32 {
 // it was last seen, the services it supports, its IP address, and port.
 type NetAddress struct {
 	// Last time the address was seen.
-	Timestamp time.Time
+	Timestamp mstime.Time
 
 	// Bitfield which identifies the services supported by the address.
 	Services ServiceFlag
@@ -60,18 +58,18 @@ func (na *NetAddress) TCPAddress() *net.TCPAddr {
 // NewNetAddressIPPort returns a new NetAddress using the provided IP, port, and
 // supported services with defaults for the remaining fields.
 func NewNetAddressIPPort(ip net.IP, port uint16, services ServiceFlag) *NetAddress {
-	return NewNetAddressTimestamp(time.Now(), services, ip, port)
+	return NewNetAddressTimestamp(mstime.Now(), services, ip, port)
 }
 
 // NewNetAddressTimestamp returns a new NetAddress using the provided
 // timestamp, IP, port, and supported services. The timestamp is rounded to
 // single millisecond precision.
 func NewNetAddressTimestamp(
-	timestamp time.Time, services ServiceFlag, ip net.IP, port uint16) *NetAddress {
+	timestamp mstime.Time, services ServiceFlag, ip net.IP, port uint16) *NetAddress {
 	// Limit the timestamp to one millisecond precision since the protocol
 	// doesn't support better.
 	na := NetAddress{
-		Timestamp: mstime.ReduceToMillisecondPrecision(timestamp),
+		Timestamp: timestamp,
 		Services:  services,
 		IP:        ip,
 		Port:      port,
@@ -121,7 +119,7 @@ func readNetAddress(r io.Reader, pver uint32, na *NetAddress, ts bool) error {
 // like version do not include the timestamp.
 func writeNetAddress(w io.Writer, pver uint32, na *NetAddress, ts bool) error {
 	if ts {
-		err := WriteElement(w, mstime.TimeToUnixMilli(na.Timestamp))
+		err := WriteElement(w, na.Timestamp.UnixMilli())
 		if err != nil {
 			return err
 		}

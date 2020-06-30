@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/wire"
 	"time"
 )
@@ -104,13 +105,13 @@ func (dag *BlockDAG) NextCoinbaseFromAddress(payToAddress util.Address, extraDat
 // on the end of the DAG. In particular, it is one second after
 // the median timestamp of the last several blocks per the DAG consensus
 // rules.
-func (dag *BlockDAG) NextBlockMinimumTime() time.Time {
+func (dag *BlockDAG) NextBlockMinimumTime() mstime.Time {
 	return dag.CalcPastMedianTime().Add(time.Second)
 }
 
 // NextBlockTime returns a valid block time for the
 // next block that will point to the existing DAG tips.
-func (dag *BlockDAG) NextBlockTime() time.Time {
+func (dag *BlockDAG) NextBlockTime() mstime.Time {
 	// The timestamp for the block must not be before the median timestamp
 	// of the last several blocks. Thus, choose the maximum between the
 	// current time and one second after the past median time. The current

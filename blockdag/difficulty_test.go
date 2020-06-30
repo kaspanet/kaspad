@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"math/big"
 	"testing"
 	"time"
@@ -90,10 +91,10 @@ func TestDifficulty(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	zeroTime := time.Unix(0, 0)
-	addNode := func(parents blockSet, blockTime time.Time) *blockNode {
+	zeroTime := mstime.Time{}
+	addNode := func(parents blockSet, blockTime mstime.Time) *blockNode {
 		bluestParent := parents.bluest()
-		if blockTime == zeroTime {
+		if blockTime.IsZero() {
 			blockTime = bluestParent.time()
 			blockTime = blockTime.Add(params.TargetTimePerBlock)
 		}

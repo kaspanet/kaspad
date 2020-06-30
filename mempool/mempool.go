@@ -61,7 +61,7 @@ type Config struct {
 	// MedianTimePast defines the function to use in order to access the
 	// median time past calculated from the point-of-view of the current
 	// selected tip.
-	MedianTimePast func() time.Time
+	MedianTimePast func() mstime.Time
 
 	// CalcSequenceLockNoLock defines the function to use in order to generate
 	// the current sequence lock for the given transaction using the passed
@@ -125,7 +125,7 @@ type TxDesc struct {
 type orphanTx struct {
 	tx         *util.Tx
 	tag        Tag
-	expiration time.Time
+	expiration mstime.Time
 }
 
 // TxPool is used as a source of transactions that need to be mined into blocks
@@ -148,7 +148,7 @@ type TxPool struct {
 	// scanned in order to evict orphans. This is NOT a hard deadline as
 	// the scan will only run when an orphan is added to the pool as opposed
 	// to on an unconditional timer.
-	nextExpireScan time.Time
+	nextExpireScan mstime.Time
 
 	mpUTXOSet blockdag.UTXOSet
 }
@@ -232,7 +232,7 @@ func (mp *TxPool) limitNumOrphans() error {
 	// Scan through the orphan pool and remove any expired orphans when it's
 	// time. This is done for efficiency so the scan only happens
 	// periodically instead of on every orphan added to the pool.
-	if now := time.Now(); now.After(mp.nextExpireScan) {
+	if now := mstime.Now(); now.After(mp.nextExpireScan) {
 		origNumOrphans := len(mp.orphans)
 		for _, otx := range mp.orphans {
 			if now.After(otx.expiration) {
@@ -294,7 +294,7 @@ func (mp *TxPool) addOrphan(tx *util.Tx, tag Tag) {
 	mp.orphans[*tx.ID()] = &orphanTx{
 		tx:         tx,
 		tag:        tag,
-		expiration: time.Now().Add(orphanTTL),
+		expiration: mstime.Now().Add(orphanTTL),
 	}
 	for _, txIn := range tx.MsgTx().TxIn {
 		if _, exists := mp.orphansByPrev[txIn.PreviousOutpoint]; !exists {
@@ -475,7 +475,7 @@ func (mp *TxPool) removeTransactions(txs []*util.Tx) error {
 	if err != nil {
 		return err
 	}
-	atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
+	atomic.StoreInt64(&mp.lastUpdated, mstime.Now().UnixMilli())
 
 	return nil
 }
@@ -513,7 +513,7 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeDependants bool, restoreI
 	if err != nil {
 		return err
 	}
-	atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
+	atomic.StoreInt64(&mp.lastUpdated, mstime.Now().UnixMilli())
 
 	return nil
 }
@@ -676,7 +676,7 @@ func (mp *TxPool) addTransaction(tx *util.Tx, fee uint64, parentsInPool []*wire.
 	txD := &TxDesc{
 		TxDesc: mining.TxDesc{
 			Tx:             tx,
-			Added:          time.Now(),
+			Added:          mstime.Now(),
 			Fee:            fee,
 			FeePerMegaGram: fee * 1e6 / mass,
 		},
@@ -703,7 +703,7 @@ func (mp *TxPool) addTransaction(tx *util.Tx, fee uint64, parentsInPool []*wire.
 	} else if !isAccepted {
 		return nil, errors.Errorf("unexpectedly failed to add tx %s to the mempool utxo set", tx.ID())
 	}
-	atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
+	atomic.StoreInt64(&mp.lastUpdated, mstime.Now().UnixMilli())
 
 	return txD, nil
 }
@@ -1306,7 +1306,7 @@ func (mp *TxPool) RawMempoolVerbose() map[string]*rpcmodel.GetRawMempoolVerboseR
 		mpd := &rpcmodel.GetRawMempoolVerboseResult{
 			Size:    int32(tx.MsgTx().SerializeSize()),
 			Fee:     util.Amount(desc.Fee).ToKAS(),
-			Time:    mstime.TimeToUnixMilli(desc.Added),
+			Time:    desc.Added.UnixMilli(),
 			Depends: make([]string, 0),
 		}
 		for _, txIn := range tx.MsgTx().TxIn {
@@ -1327,8 +1327,8 @@ func (mp *TxPool) RawMempoolVerbose() map[string]*rpcmodel.GetRawMempoolVerboseR
 // the main pool. It does not include the orphan pool.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) LastUpdated() time.Time {
-	return time.Unix(atomic.LoadInt64(&mp.lastUpdated), 0)
+func (mp *TxPool) LastUpdated() mstime.Time {
+	return mstime.UnixMilli(atomic.LoadInt64(&mp.lastUpdated))
 }
 
 // HandleNewBlock removes all the transactions in the new block
@@ -1374,7 +1374,7 @@ func New(cfg *Config) *TxPool {
 		dependsByPrev:  make(map[wire.Outpoint]map[daghash.TxID]*TxDesc),
 		orphans:        make(map[daghash.TxID]*orphanTx),
 		orphansByPrev:  make(map[wire.Outpoint]map[daghash.TxID]*util.Tx),
-		nextExpireScan: time.Now().Add(orphanExpireScanInterval),
+		nextExpireScan: mstime.Now().Add(orphanExpireScanInterval),
 		outpoints:      make(map[wire.Outpoint]*util.Tx),
 		mpUTXOSet:      mpUTXO,
 	}

@@ -2,13 +2,12 @@ package blockdag
 
 import (
 	"github.com/kaspanet/kaspad/util/mstime"
-	"time"
 )
 
 // TimeSource is the interface to access time.
 type TimeSource interface {
 	// Now returns the current time.
-	Now() time.Time
+	Now() mstime.Time
 }
 
 // timeSource provides an implementation of the TimeSource interface
@@ -16,7 +15,7 @@ type TimeSource interface {
 type timeSource struct{}
 
 // Now returns the current local time, with one millisecond precision.
-func (m *timeSource) Now() time.Time {
+func (m *timeSource) Now() mstime.Time {
 	return mstime.Now()
 }
 

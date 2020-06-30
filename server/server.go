@@ -3,7 +3,6 @@ package server
 import (
 	"github.com/kaspanet/kaspad/util/mstime"
 	"sync/atomic"
-	"time"
 
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/dagconfig"
@@ -33,7 +32,7 @@ func (s *Server) Start() {
 	log.Trace("Starting server")
 
 	// Server startup time. Used for the uptime command for uptime calculation.
-	s.startupTime = mstime.TimeToUnixMilli(time.Now())
+	s.startupTime = mstime.Now().UnixMilli()
 
 	s.p2pServer.Start()
 

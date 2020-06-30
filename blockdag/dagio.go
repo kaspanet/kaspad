@@ -9,7 +9,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"github.com/kaspanet/kaspad/util/mstime"
 	"io"
 
 	"github.com/kaspanet/kaspad/dagconfig"
@@ -421,7 +420,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		version:              header.Version,
 		bits:                 header.Bits,
 		nonce:                header.Nonce,
-		timestamp:            mstime.TimeToUnixMilli(header.Timestamp),
+		timestamp:            header.Timestamp.UnixMilli(),
 		hashMerkleRoot:       header.HashMerkleRoot,
 		acceptedIDMerkleRoot: header.AcceptedIDMerkleRoot,
 		utxoCommitment:       header.UTXOCommitment,

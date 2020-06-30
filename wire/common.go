@@ -7,14 +7,12 @@ package wire
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/kaspanet/kaspad/util/mstime"
-	"io"
-	"math"
-	"time"
-
 	"github.com/kaspanet/kaspad/util/binaryserializer"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"io"
+	"math"
 )
 
 // MaxVarIntPayload is the maximum payload size for a variable length integer.
@@ -37,8 +35,8 @@ var errNonCanonicalVarInt = "non-canonical varint %x - discriminant %x must " +
 
 // int64Time represents a unix timestamp with milliseconds precision encoded with
 // an int64. It is used as a way to signal the readElement function how to decode
-// a timestamp into a Go time.Time since it is otherwise ambiguous.
-type int64Time time.Time
+// a timestamp into a Go mstime.Time since it is otherwise ambiguous.
+type int64Time mstime.Time
 
 // ReadElement reads the next sequence of bytes from r using little endian
 // depending on the concrete type of element pointed to.
@@ -96,7 +94,7 @@ func ReadElement(r io.Reader, element interface{}) error {
 		if err != nil {
 			return err
 		}
-		*e = int64Time(mstime.UnixMilliToTime(int64(rv)))
+		*e = int64Time(mstime.UnixMilli(int64(rv)))
 		return nil
 
 	// Message header checksum.

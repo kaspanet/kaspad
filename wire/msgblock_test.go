@@ -507,7 +507,7 @@ var blockOne = MsgBlock{
 		HashMerkleRoot:       mainnetGenesisMerkleRoot,
 		AcceptedIDMerkleRoot: exampleAcceptedIDMerkleRoot,
 		UTXOCommitment:       exampleUTXOCommitment,
-		Timestamp:            mstime.UnixMilliToTime(0x17315ed0f99),
+		Timestamp:            mstime.UnixMilli(0x17315ed0f99),
 		Bits:                 0x1d00ffff, // 486604799
 		Nonce:                0x9962e301, // 2573394689
 	},

@@ -9,7 +9,6 @@ import (
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/util/pointers"
 	"github.com/kaspanet/kaspad/wire"
 	"math/big"
@@ -170,8 +169,8 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 	}
 
 	if blkHeader != nil {
-		txReply.Time = uint64(mstime.TimeToUnixMilli(blkHeader.Timestamp))
-		txReply.BlockTime = uint64(mstime.TimeToUnixMilli(blkHeader.Timestamp))
+		txReply.Time = uint64(blkHeader.Timestamp.UnixMilli())
+		txReply.BlockTime = uint64(blkHeader.Timestamp.UnixMilli())
 		txReply.BlockHash = blkHash
 	}
 
@@ -261,7 +260,7 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		ParentHashes:         daghash.Strings(blockHeader.ParentHashes),
 		SelectedParentHash:   selectedParentHashStr,
 		Nonce:                blockHeader.Nonce,
-		Time:                 mstime.TimeToUnixMilli(blockHeader.Timestamp),
+		Time:                 blockHeader.Timestamp.UnixMilli(),
 		Confirmations:        blockConfirmations,
 		BlueScore:            blockBlueScore,
 		IsChainBlock:         isChainBlock,

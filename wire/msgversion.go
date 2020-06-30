@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"io"
 	"strings"
-	"time"
 
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -40,7 +39,7 @@ type MsgVersion struct {
 	Services ServiceFlag
 
 	// Time the message was generated. This is encoded as an int64 on the wire.
-	Timestamp time.Time
+	Timestamp mstime.Time
 
 	// Address of the remote peer.
 	AddrYou NetAddress
@@ -163,7 +162,7 @@ func (msg *MsgVersion) KaspaEncode(w io.Writer, pver uint32) error {
 	}
 
 	err = writeElements(w, msg.ProtocolVersion, msg.Services,
-		mstime.TimeToUnixMilli(msg.Timestamp))
+		msg.Timestamp.UnixMilli())
 	if err != nil {
 		return err
 	}

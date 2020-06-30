@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/util/mstime"
 	"strconv"
 )
 
@@ -73,7 +72,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 		ParentHashes:         daghash.Strings(blockHeader.ParentHashes),
 		SelectedParentHash:   selectedParentHash.String(),
 		Nonce:                blockHeader.Nonce,
-		Time:                 mstime.TimeToUnixMilli(blockHeader.Timestamp),
+		Time:                 blockHeader.Timestamp.UnixMilli(),
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
 		Difficulty:           getDifficultyRatio(blockHeader.Bits, params),
 	}

@@ -6,18 +6,16 @@ package wire
 
 import (
 	"bytes"
+	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/kaspanet/kaspad/util/random"
 	"github.com/pkg/errors"
 	"io"
 	"net"
 	"reflect"
 	"strings"
 	"testing"
-	"time"
-
-	"github.com/davecgh/go-spew/spew"
-	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/util/random"
 )
 
 // TestVersion tests the MsgVersion API.
@@ -310,15 +308,15 @@ func TestVersionWireErrors(t *testing.T) {
 var baseVersion = &MsgVersion{
 	ProtocolVersion: 60002,
 	Services:        SFNodeNetwork,
-	Timestamp:       time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST)
+	Timestamp:       mstime.UnixMilli(0x495fab29000),
 	AddrYou: NetAddress{
-		Timestamp: time.Time{}, // Zero value -- no timestamp in version
+		Timestamp: mstime.Time{}, // Zero value -- no timestamp in version
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("192.168.0.1"),
 		Port:      16111,
 	},
 	AddrMe: NetAddress{
-		Timestamp: time.Time{}, // Zero value -- no timestamp in version
+		Timestamp: mstime.Time{}, // Zero value -- no timestamp in version
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("127.0.0.1"),
 		Port:      16111,
@@ -360,15 +358,15 @@ var baseVersionEncoded = []byte{
 var baseVersionWithRelayTx = &MsgVersion{
 	ProtocolVersion: 70001,
 	Services:        SFNodeNetwork,
-	Timestamp:       mstime.UnixMilliToTime(0x17315ed0f99),
+	Timestamp:       mstime.UnixMilli(0x17315ed0f99),
 	AddrYou: NetAddress{
-		Timestamp: time.Time{}, // Zero value -- no timestamp in version
+		Timestamp: mstime.Time{}, // Zero value -- no timestamp in version
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("192.168.0.1"),
 		Port:      16111,
 	},
 	AddrMe: NetAddress{
-		Timestamp: time.Time{}, // Zero value -- no timestamp in version
+		Timestamp: mstime.Time{}, // Zero value -- no timestamp in version
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("127.0.0.1"),
 		Port:      16111,
