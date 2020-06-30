@@ -73,7 +73,7 @@ func calcSequenceLock(tx *util.Tx,
 	utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 
 	return &blockdag.SequenceLock{
-		Seconds:        -1,
+		Milliseconds:   -1,
 		BlockBlueScore: -1,
 	}, nil
 }
@@ -687,7 +687,7 @@ func TestProcessTransaction(t *testing.T) {
 		view blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 
 		return &blockdag.SequenceLock{
-			Seconds:        math.MaxInt64,
+			Milliseconds:   math.MaxInt64,
 			BlockBlueScore: math.MaxInt64,
 		}, nil
 	}

@@ -5,6 +5,7 @@
 package blockdag
 
 import (
+	"github.com/kaspanet/kaspad/util/mstime"
 	"math"
 	"path/filepath"
 	"testing"
@@ -22,10 +23,10 @@ import (
 // TestSequenceLocksActive tests the SequenceLockActive function to ensure it
 // works as expected in all possible combinations/scenarios.
 func TestSequenceLocksActive(t *testing.T) {
-	seqLock := func(h int64, s int64) *SequenceLock {
+	seqLock := func(blueScore int64, milliseconds int64) *SequenceLock {
 		return &SequenceLock{
-			Seconds:        s,
-			BlockBlueScore: h,
+			Milliseconds:   milliseconds,
+			BlockBlueScore: blueScore,
 		}
 	}
 
@@ -37,22 +38,22 @@ func TestSequenceLocksActive(t *testing.T) {
 		want bool
 	}{
 		// Block based sequence lock with equal block blue score.
-		{seqLock: seqLock(1000, -1), blockBlueScore: 1001, mtp: time.Unix(9, 0), want: true},
+		{seqLock: seqLock(1000, -1), blockBlueScore: 1001, mtp: mstime.UnixMilliToTime(9), want: true},
 
 		// Time based sequence lock with mtp past the absolute time.
-		{seqLock: seqLock(-1, 30), blockBlueScore: 2, mtp: time.Unix(31, 0), want: true},
+		{seqLock: seqLock(-1, 30), blockBlueScore: 2, mtp: mstime.UnixMilliToTime(31), want: true},
 
 		// Block based sequence lock with current blue score below seq lock block blue score.
-		{seqLock: seqLock(1000, -1), blockBlueScore: 90, mtp: time.Unix(9, 0), want: false},
+		{seqLock: seqLock(1000, -1), blockBlueScore: 90, mtp: mstime.UnixMilliToTime(9), want: false},
 
 		// Time based sequence lock with current time before lock time.
-		{seqLock: seqLock(-1, 30), blockBlueScore: 2, mtp: time.Unix(29, 0), want: false},
+		{seqLock: seqLock(-1, 30), blockBlueScore: 2, mtp: mstime.UnixMilliToTime(29), want: false},
 
 		// Block based sequence lock at the same blue score, so shouldn't yet be active.
-		{seqLock: seqLock(1000, -1), blockBlueScore: 1000, mtp: time.Unix(9, 0), want: false},
+		{seqLock: seqLock(1000, -1), blockBlueScore: 1000, mtp: mstime.UnixMilliToTime(9), want: false},
 
 		// Time based sequence lock with current time equal to lock time, so shouldn't yet be active.
-		{seqLock: seqLock(-1, 30), blockBlueScore: 2, mtp: time.Unix(30, 0), want: false},
+		{seqLock: seqLock(-1, 30), blockBlueScore: 2, mtp: mstime.UnixMilliToTime(30), want: false},
 	}
 
 	t.Logf("Running %d sequence locks tests", len(tests))

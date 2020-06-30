@@ -59,10 +59,10 @@ func isNullOutpoint(outpoint *wire.Outpoint) bool {
 func SequenceLockActive(sequenceLock *SequenceLock, blockBlueScore uint64,
 	medianTimePast time.Time) bool {
 
-	// If either the seconds, or blue score relative-lock time has not yet
+	// If either the milliseconds, or blue score relative-lock time has not yet
 	// reached, then the transaction is not yet mature according to its
 	// sequence locks.
-	if sequenceLock.Seconds >= medianTimePast.Unix() ||
+	if sequenceLock.Milliseconds >= mstime.TimeToUnixMilli(medianTimePast) ||
 		sequenceLock.BlockBlueScore >= int64(blockBlueScore) {
 		return false
 	}
@@ -88,7 +88,7 @@ func IsFinalizedTransaction(tx *util.Tx, blockBlueScore uint64, blockTime time.T
 	if lockTime < txscript.LockTimeThreshold {
 		blockTimeOrBlueScore = int64(blockBlueScore)
 	} else {
-		blockTimeOrBlueScore = blockTime.Unix()
+		blockTimeOrBlueScore = mstime.TimeToUnixMilli(blockTime)
 	}
 	if int64(lockTime) < blockTimeOrBlueScore {
 		return true

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 	"math"
 	"os"
@@ -278,13 +279,13 @@ func TestCalcSequenceLock(t *testing.T) {
 	// Obtain the past median time from the PoV of the input created above.
 	// The past median time for the input is the past median time from the PoV
 	// of the block *prior* to the one that included it.
-	medianTime := node.RelativeAncestor(5).PastMedianTime(dag).Unix()
+	medianTime := mstime.TimeToUnixMilli(node.RelativeAncestor(5).PastMedianTime(dag))
 
 	// The median time calculated from the PoV of the best block in the
 	// test DAG. For unconfirmed inputs, this value will be used since
 	// the MTP will be calculated from the PoV of the yet-to-be-mined
 	// block.
-	nextMedianTime := node.PastMedianTime(dag).Unix()
+	nextMedianTime := mstime.TimeToUnixMilli(node.PastMedianTime(dag))
 	nextBlockBlueScore := int32(numBlocksToGenerate) + 1
 
 	// Add an additional transaction which will serve as our unconfirmed
@@ -315,35 +316,34 @@ func TestCalcSequenceLock(t *testing.T) {
 			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutpoint: utxo, Sequence: wire.MaxTxInSequenceNum}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:        -1,
+				Milliseconds:   -1,
 				BlockBlueScore: -1,
 			},
 		},
 		// A transaction with a single input whose lock time is
 		// expressed in seconds. However, the specified lock time is
 		// below the required floor for time based lock times since
-		// they have time granularity of 512 seconds. As a result, the
-		// seconds lock-time should be just before the median time of
+		// they have time granularity of 524288 milliseconds. As a result, the
+		// milliseconds lock-time should be just before the median time of
 		// the targeted block.
 		{
-			name:    "single input, seconds lock time below time granularity",
+			name:    "single input, milliseconds lock time below time granularity",
 			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutpoint: utxo, Sequence: LockTimeToSequence(true, 2)}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:        medianTime - 1,
+				Milliseconds:   medianTime - 1,
 				BlockBlueScore: -1,
 			},
 		},
 		// A transaction with a single input whose lock time is
-		// expressed in seconds. The number of seconds should be 1023
-		// seconds after the median past time of the last block in the
-		// chain.
+		// expressed in seconds. The number of seconds should be 1048575
+		// milliseconds after the median past time of the DAG.
 		{
-			name:    "single input, 1023 seconds after median time",
-			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutpoint: utxo, Sequence: LockTimeToSequence(true, 1024)}}, nil),
+			name:    "single input, 1048575 milliseconds after median time",
+			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutpoint: utxo, Sequence: LockTimeToSequence(true, 1048576)}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:        medianTime + 1023,
+				Milliseconds:   medianTime + 1048575,
 				BlockBlueScore: -1,
 			},
 		},
@@ -358,7 +358,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			tx: wire.NewNativeMsgTx(1,
 				[]*wire.TxIn{{
 					PreviousOutpoint: utxo,
-					Sequence:         LockTimeToSequence(true, 2560),
+					Sequence:         LockTimeToSequence(true, 2621440),
 				}, {
 					PreviousOutpoint: utxo,
 					Sequence:         LockTimeToSequence(false, 4),
@@ -370,7 +370,7 @@ func TestCalcSequenceLock(t *testing.T) {
 				nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:        medianTime + (5 << wire.SequenceLockTimeGranularity) - 1,
+				Milliseconds:   medianTime + (5 << wire.SequenceLockTimeGranularity) - 1,
 				BlockBlueScore: int64(prevUtxoBlueScore) + 3,
 			},
 		},
@@ -383,7 +383,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutpoint: utxo, Sequence: LockTimeToSequence(false, 3)}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:        -1,
+				Milliseconds:   -1,
 				BlockBlueScore: int64(prevUtxoBlueScore) + 2,
 			},
 		},
@@ -394,14 +394,14 @@ func TestCalcSequenceLock(t *testing.T) {
 			name: "two inputs, lock-times in seconds",
 			tx: wire.NewNativeMsgTx(1, []*wire.TxIn{{
 				PreviousOutpoint: utxo,
-				Sequence:         LockTimeToSequence(true, 5120),
+				Sequence:         LockTimeToSequence(true, 5242880),
 			}, {
 				PreviousOutpoint: utxo,
-				Sequence:         LockTimeToSequence(true, 2560),
+				Sequence:         LockTimeToSequence(true, 2621440),
 			}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:        medianTime + (10 << wire.SequenceLockTimeGranularity) - 1,
+				Milliseconds:   medianTime + (10 << wire.SequenceLockTimeGranularity) - 1,
 				BlockBlueScore: -1,
 			},
 		},
@@ -422,7 +422,7 @@ func TestCalcSequenceLock(t *testing.T) {
 				nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:        -1,
+				Milliseconds:   -1,
 				BlockBlueScore: int64(prevUtxoBlueScore) + 10,
 			},
 		},
@@ -434,10 +434,10 @@ func TestCalcSequenceLock(t *testing.T) {
 			tx: wire.NewNativeMsgTx(1,
 				[]*wire.TxIn{{
 					PreviousOutpoint: utxo,
-					Sequence:         LockTimeToSequence(true, 2560),
+					Sequence:         LockTimeToSequence(true, 2621440),
 				}, {
 					PreviousOutpoint: utxo,
-					Sequence:         LockTimeToSequence(true, 6656),
+					Sequence:         LockTimeToSequence(true, 6815744),
 				}, {
 					PreviousOutpoint: utxo,
 					Sequence:         LockTimeToSequence(false, 3),
@@ -448,7 +448,7 @@ func TestCalcSequenceLock(t *testing.T) {
 				nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:        medianTime + (13 << wire.SequenceLockTimeGranularity) - 1,
+				Milliseconds:   medianTime + (13 << wire.SequenceLockTimeGranularity) - 1,
 				BlockBlueScore: int64(prevUtxoBlueScore) + 8,
 			},
 		},
@@ -464,7 +464,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			utxoSet: utxoSet,
 			mempool: true,
 			want: &SequenceLock{
-				Seconds:        -1,
+				Milliseconds:   -1,
 				BlockBlueScore: int64(nextBlockBlueScore) + 1,
 			},
 		},
@@ -472,12 +472,12 @@ func TestCalcSequenceLock(t *testing.T) {
 		// a time based lock, so the lock time should be based off the
 		// MTP of the *next* block.
 		{
-			name:    "single input, unconfirmed, lock-time in seoncds",
-			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutpoint: unConfUtxo, Sequence: LockTimeToSequence(true, 1024)}}, nil),
+			name:    "single input, unconfirmed, lock-time in milliseoncds",
+			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutpoint: unConfUtxo, Sequence: LockTimeToSequence(true, 1048576)}}, nil),
 			utxoSet: utxoSet,
 			mempool: true,
 			want: &SequenceLock{
-				Seconds:        nextMedianTime + 1023,
+				Milliseconds:   nextMedianTime + 1048575,
 				BlockBlueScore: -1,
 			},
 		},
@@ -491,9 +491,9 @@ func TestCalcSequenceLock(t *testing.T) {
 			t.Fatalf("test '%s', unable to calc sequence lock: %v", test.name, err)
 		}
 
-		if seqLock.Seconds != test.want.Seconds {
-			t.Fatalf("test '%s' got %v seconds want %v seconds",
-				test.name, seqLock.Seconds, test.want.Seconds)
+		if seqLock.Milliseconds != test.want.Milliseconds {
+			t.Fatalf("test '%s' got %v milliseconds want %v milliseconds",
+				test.name, seqLock.Milliseconds, test.want.Milliseconds)
 		}
 		if seqLock.BlockBlueScore != test.want.BlockBlueScore {
 			t.Fatalf("test '%s' got blue score of %v want blue score of %v ",
