@@ -59,14 +59,8 @@ func (idx *AcceptanceIndex) Init(dag *blockdag.BlockDAG) error {
 //
 // This is part of the Indexer interface.
 func (idx *AcceptanceIndex) recover() error {
-	dbTx, err := dbaccess.NewTx()
-	if err != nil {
-		return err
-	}
-	defer dbTx.RollbackUnlessClosed()
-
-	err = idx.dag.ForEachHash(func(hash daghash.Hash) error {
-		exists, err := dbaccess.HasAcceptanceData(dbTx, &hash)
+	return idx.dag.ForEachHash(func(hash daghash.Hash) error {
+		exists, err := dbaccess.HasAcceptanceData(dbaccess.NoTx(), &hash)
 		if err != nil {
 			return err
 		}
@@ -77,20 +71,15 @@ func (idx *AcceptanceIndex) recover() error {
 		if err != nil {
 			return err
 		}
-		return idx.ConnectBlock(dbTx, &hash, txAcceptanceData)
+		return idx.ConnectBlock(dbaccess.NoTx(), &hash, txAcceptanceData)
 	})
-	if err != nil {
-		return err
-	}
-
-	return dbTx.Commit()
 }
 
 // ConnectBlock is invoked by the index manager when a new block has been
 // connected to the DAG.
 //
 // This is part of the Indexer interface.
-func (idx *AcceptanceIndex) ConnectBlock(dbContext *dbaccess.TxContext, blockHash *daghash.Hash,
+func (idx *AcceptanceIndex) ConnectBlock(dbContext dbaccess.Context, blockHash *daghash.Hash,
 	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
 	serializedTxsAcceptanceData, err := serializeMultiBlockTxsAcceptanceData(txsAcceptanceData)
 	if err != nil {

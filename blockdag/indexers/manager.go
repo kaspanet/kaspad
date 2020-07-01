@@ -37,7 +37,7 @@ func (m *Manager) Init(dag *blockdag.BlockDAG) error {
 // checks, and invokes each indexer.
 //
 // This is part of the blockdag.IndexManager interface.
-func (m *Manager) ConnectBlock(dbContext *dbaccess.TxContext, blockHash *daghash.Hash, txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
+func (m *Manager) ConnectBlock(dbContext dbaccess.Context, blockHash *daghash.Hash, txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
 
 	// Call each of the currently active optional indexes with the block
 	// being connected so they can update accordingly.

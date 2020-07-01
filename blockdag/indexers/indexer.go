@@ -22,7 +22,7 @@ type Indexer interface {
 
 	// ConnectBlock is invoked when the index manager is notified that a new
 	// block has been connected to the DAG.
-	ConnectBlock(dbContext *dbaccess.TxContext,
+	ConnectBlock(dbContext dbaccess.Context,
 		blockHash *daghash.Hash,
 		acceptedTxsData blockdag.MultiBlockTxsAcceptanceData) error
 }
