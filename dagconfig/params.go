@@ -53,7 +53,6 @@ const (
 	timestampDeviationTolerance    = 132
 	finalityDuration               = 24 * time.Hour
 	targetTimePerBlock             = 1 * time.Second
-	finalityInterval               = uint64(finalityDuration / targetTimePerBlock)
 )
 
 // ConsensusDeployment defines details related to a specific consensus rule
@@ -136,8 +135,8 @@ type Params struct {
 	// block.
 	TargetTimePerBlock time.Duration
 
-	// FinalityInterval is the interval that determines the finality window of the DAG.
-	FinalityInterval uint64
+	// FinalityDuration is the duration of the finality window.
+	FinalityDuration time.Duration
 
 	// TimestampDeviationTolerance is the maximum offset a block timestamp
 	// is allowed to be in the future before it gets delayed
@@ -203,7 +202,7 @@ var MainnetParams = Params{
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             targetTimePerBlock,
-	FinalityInterval:               finalityInterval,
+	FinalityDuration:               finalityDuration,
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 
@@ -256,7 +255,7 @@ var RegressionNetParams = Params{
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       150,
 	TargetTimePerBlock:             targetTimePerBlock,
-	FinalityInterval:               finalityInterval,
+	FinalityDuration:               finalityDuration,
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 
@@ -307,7 +306,7 @@ var TestnetParams = Params{
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             targetTimePerBlock,
-	FinalityInterval:               finalityInterval,
+	FinalityDuration:               finalityDuration,
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 
@@ -364,7 +363,7 @@ var SimnetParams = Params{
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             targetTimePerBlock,
-	FinalityInterval:               finalityInterval,
+	FinalityDuration:               finalityDuration,
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 
@@ -413,7 +412,7 @@ var DevnetParams = Params{
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             targetTimePerBlock,
-	FinalityInterval:               finalityInterval,
+	FinalityDuration:               finalityDuration,
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 
