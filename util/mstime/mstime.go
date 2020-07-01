@@ -60,7 +60,7 @@ func (t Time) Before(u Time) bool {
 }
 
 // Add returns the time t+d.
-// It panics if d has a precision lesser than one millisecond.
+// It panics if d has a precision greater than one millisecond (the duration has a non zero microseconds part).
 func (t Time) Add(d time.Duration) Time {
 	validateDurationPrecision(d)
 	return newMSTime(t.time.Add(d))
