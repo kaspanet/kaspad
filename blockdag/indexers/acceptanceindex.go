@@ -59,13 +59,13 @@ func (idx *AcceptanceIndex) Init(dag *blockdag.BlockDAG) error {
 //
 // This is part of the Indexer interface.
 func (idx *AcceptanceIndex) recover() error {
-	dbTx, err := dbaccess.NewTx()
-	if err != nil {
-		return err
-	}
-	defer dbTx.RollbackUnlessClosed()
+	return idx.dag.ForEachHash(func(hash daghash.Hash) error {
+		dbTx, err := dbaccess.NewTx()
+		if err != nil {
+			return err
+		}
+		defer dbTx.RollbackUnlessClosed()
 
-	err = idx.dag.ForEachHash(func(hash daghash.Hash) error {
 		exists, err := dbaccess.HasAcceptanceData(dbTx, &hash)
 		if err != nil {
 			return err
@@ -77,13 +77,13 @@ func (idx *AcceptanceIndex) recover() error {
 		if err != nil {
 			return err
 		}
-		return idx.ConnectBlock(dbTx, &hash, txAcceptanceData)
-	})
-	if err != nil {
-		return err
-	}
+		err = idx.ConnectBlock(dbTx, &hash, txAcceptanceData)
+		if err != nil {
+			return err
+		}
 
-	return dbTx.Commit()
+		return dbTx.Commit()
+	})
 }
 
 // ConnectBlock is invoked by the index manager when a new block has been
