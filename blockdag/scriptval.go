@@ -179,11 +179,6 @@ func newTxValidator(utxoSet UTXOSet, flags txscript.ScriptFlags, sigCache *txscr
 // ValidateTransactionScripts validates the scripts for the passed transaction
 // using multiple goroutines.
 func ValidateTransactionScripts(tx *util.Tx, utxoSet UTXOSet, flags txscript.ScriptFlags, sigCache *txscript.SigCache) error {
-	// Don't validate coinbase transaction scripts.
-	if tx.IsCoinBase() {
-		return nil
-	}
-
 	// Collect all of the transaction inputs and required information for
 	// validation.
 	txIns := tx.MsgTx().TxIn
@@ -213,10 +208,6 @@ func checkBlockScripts(block *blockNode, utxoSet UTXOSet, transactions []*util.T
 	}
 	txValItems := make([]*txValidateItem, 0, numInputs)
 	for _, tx := range transactions {
-		// Skip coinbase transactions.
-		if tx.IsCoinBase() {
-			continue
-		}
 		for txInIdx, txIn := range tx.MsgTx().TxIn {
 			txVI := &txValidateItem{
 				txInIndex: txInIdx,

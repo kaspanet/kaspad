@@ -36,5 +36,9 @@ func (lf *lockableFile) Close() error {
 	lf.Lock()
 	defer lf.Unlock()
 
+	if lf.file == nil {
+		return nil
+	}
+
 	return errors.WithStack(lf.file.Close())
 }

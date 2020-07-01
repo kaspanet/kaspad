@@ -9,10 +9,17 @@ import (
 	"net"
 	"time"
 
-	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util/daghash"
+
 	"github.com/kaspanet/kaspad/peer"
+
+	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/wire"
 )
+
+func fakeSelectedTipFn() *daghash.Hash {
+	return &daghash.Hash{0x12, 0x34}
+}
 
 // mockRemotePeer creates a basic inbound peer listening on the simnet port for
 // use with Example_peerConnection. It does not return until the listner is
@@ -24,6 +31,7 @@ func mockRemotePeer() error {
 		UserAgentVersion: "1.0.0", // User agent version to advertise.
 		DAGParams:        &dagconfig.SimnetParams,
 		SelectedTipHash:  fakeSelectedTipFn,
+		SubnetworkID:     nil,
 	}
 
 	// Accept connections on the simnet port.
@@ -40,7 +48,11 @@ func mockRemotePeer() error {
 
 		// Create and start the inbound peer.
 		p := peer.NewInboundPeer(peerCfg)
-		p.AssociateConnection(conn)
+		err = p.AssociateConnection(conn)
+		if err != nil {
+			fmt.Printf("AssociateConnection: error %+v\n", err)
+			return
+		}
 	}()
 
 	return nil
@@ -79,6 +91,7 @@ func Example_newOutboundPeer() {
 			},
 		},
 		SelectedTipHash: fakeSelectedTipFn,
+		SubnetworkID:    nil,
 	}
 	p, err := peer.NewOutboundPeer(peerCfg, "127.0.0.1:18555")
 	if err != nil {
@@ -89,10 +102,14 @@ func Example_newOutboundPeer() {
 	// Establish the connection to the peer address and mark it connected.
 	conn, err := net.Dial("tcp", p.Addr())
 	if err != nil {
-		fmt.Printf("net.Dial: error %v\n", err)
+		fmt.Printf("net.Dial: error %+v\n", err)
 		return
 	}
-	p.AssociateConnection(conn)
+	err = p.AssociateConnection(conn)
+	if err != nil {
+		fmt.Printf("AssociateConnection: error %+v\n", err)
+		return
+	}
 
 	// Wait for the verack message or timeout in case of failure.
 	select {

@@ -103,10 +103,10 @@ type processBlockMsg struct {
 	reply chan processBlockResponse
 }
 
-// isCurrentMsg is a message type to be sent across the message channel for
+// isSyncedMsg is a message type to be sent across the message channel for
 // requesting whether or not the sync manager believes it is synced with the
 // currently connected peers.
-type isCurrentMsg struct {
+type isSyncedMsg struct {
 	reply chan bool
 }
 
@@ -132,13 +132,13 @@ type requestQueueAndSet struct {
 // peerSyncState stores additional information that the SyncManager tracks
 // about a peer.
 type peerSyncState struct {
-	syncCandidate           bool
-	lastSelectedTipRequest  time.Time
-	isPendingForSelectedTip bool
-	requestQueueMtx         sync.Mutex
-	requestQueues           map[wire.InvType]*requestQueueAndSet
-	requestedTxns           map[daghash.TxID]struct{}
-	requestedBlocks         map[daghash.Hash]struct{}
+	syncCandidate             bool
+	lastSelectedTipRequest    time.Time
+	peerShouldSendSelectedTip bool
+	requestQueueMtx           sync.Mutex
+	requestQueues             map[wire.InvType]*requestQueueAndSet
+	requestedTxns             map[daghash.TxID]struct{}
+	requestedBlocks           map[daghash.Hash]struct{}
 }
 
 // SyncManager is used to communicate block related messages with peers. The
@@ -158,6 +158,7 @@ type SyncManager struct {
 	wg             sync.WaitGroup
 	quit           chan struct{}
 	syncPeerLock   sync.Mutex
+	isSyncing      bool
 
 	// These fields should only be accessed from the messageHandler thread
 	rejectedTxns    map[daghash.TxID]struct{}
@@ -206,13 +207,21 @@ func (sm *SyncManager) startSync() {
 			syncPeer.SelectedTipHash(), syncPeer.Addr())
 
 		syncPeer.PushGetBlockLocatorMsg(syncPeer.SelectedTipHash(), sm.dagParams.GenesisHash)
+		sm.isSyncing = true
 		sm.syncPeer = syncPeer
 		return
 	}
 
+	pendingForSelectedTips := false
+
 	if sm.shouldQueryPeerSelectedTips() {
+		sm.isSyncing = true
 		hasSyncCandidates := false
 		for peer, state := range sm.peerStates {
+			if state.peerShouldSendSelectedTip {
+				pendingForSelectedTips = true
+				continue
+			}
 			if !state.syncCandidate {
 				continue
 			}
@@ -222,11 +231,16 @@ func (sm *SyncManager) startSync() {
 				continue
 			}
 
-			queueMsgGetSelectedTip(peer, state)
+			sm.queueMsgGetSelectedTip(peer, state)
+			pendingForSelectedTips = true
 		}
 		if !hasSyncCandidates {
 			log.Warnf("No sync peer candidates available")
 		}
+	}
+
+	if !pendingForSelectedTips {
+		sm.isSyncing = false
 	}
 }
 
@@ -234,9 +248,9 @@ func (sm *SyncManager) shouldQueryPeerSelectedTips() bool {
 	return sm.dag.Now().Sub(sm.dag.CalcPastMedianTime()) > minDAGTimeDelay
 }
 
-func queueMsgGetSelectedTip(peer *peerpkg.Peer, state *peerSyncState) {
+func (sm *SyncManager) queueMsgGetSelectedTip(peer *peerpkg.Peer, state *peerSyncState) {
 	state.lastSelectedTipRequest = time.Now()
-	state.isPendingForSelectedTip = true
+	state.peerShouldSendSelectedTip = true
 	peer.QueueMessage(wire.NewMsgGetSelectedTip(), nil)
 }
 
@@ -284,7 +298,7 @@ func (sm *SyncManager) handleNewPeerMsg(peer *peerpkg.Peer) {
 	// Initialize the peer state
 	isSyncCandidate := sm.isSyncCandidate(peer)
 	requestQueues := make(map[wire.InvType]*requestQueueAndSet)
-	requestQueueInvTypes := []wire.InvType{wire.InvTypeTx, wire.InvTypeBlock, wire.InvTypeSyncBlock}
+	requestQueueInvTypes := []wire.InvType{wire.InvTypeTx, wire.InvTypeBlock, wire.InvTypeSyncBlock, wire.InvTypeMissingAncestor}
 	for _, invType := range requestQueueInvTypes {
 		requestQueues[invType] = &requestQueueAndSet{
 			set: make(map[daghash.Hash]struct{}),
@@ -337,8 +351,6 @@ func (sm *SyncManager) handleDonePeerMsg(peer *peerpkg.Peer) {
 }
 
 func (sm *SyncManager) stopSyncFromPeer(peer *peerpkg.Peer) {
-	// Attempt to find a new peer to sync from if the quitting peer is the
-	// sync peer.
 	if sm.syncPeer == peer {
 		sm.syncPeer = nil
 		sm.restartSyncIfNeeded()
@@ -362,9 +374,8 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 	// If we didn't ask for this transaction then the peer is misbehaving.
 	txID := tmsg.tx.ID()
 	if _, exists = state.requestedTxns[*txID]; !exists {
-		log.Warnf("Got unrequested transaction %s from %s -- "+
-			"disconnecting", txID, peer.Addr())
-		peer.Disconnect()
+		peer.AddBanScoreAndPushRejectMsg(wire.CmdTx, wire.RejectNotRequested, (*daghash.Hash)(txID),
+			peerpkg.BanScoreUnrequestedTx, 0, fmt.Sprintf("got unrequested transaction %s", txID))
 		return
 	}
 
@@ -398,34 +409,29 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 		// When the error is a rule error, it means the transaction was
 		// simply rejected as opposed to something actually going wrong,
 		// so log it as such. Otherwise, something really did go wrong,
-		// so log it as an actual error.
-		if errors.As(err, &mempool.RuleError{}) {
-			log.Debugf("Rejected transaction %s from %s: %s",
-				txID, peer, err)
-		} else {
-			log.Errorf("Failed to process transaction %s: %s",
-				txID, err)
+		// so panic.
+		ruleErr := &mempool.RuleError{}
+		if !errors.As(err, ruleErr) {
+			panic(errors.Wrapf(err, "failed to process transaction %s", txID))
 		}
 
-		// Convert the error into an appropriate reject message and
-		// send it.
-		code, reason := mempool.ErrToRejectErr(err)
-		peer.PushRejectMsg(wire.CmdTx, code, reason, (*daghash.Hash)(txID), false)
+		shouldIncreaseBanScore := false
+		if txRuleErr := (&mempool.TxRuleError{}); errors.As(ruleErr.Err, txRuleErr) {
+			if txRuleErr.RejectCode == wire.RejectInvalid {
+				shouldIncreaseBanScore = true
+			}
+		} else if dagRuleErr := (&blockdag.RuleError{}); errors.As(ruleErr.Err, dagRuleErr) {
+			shouldIncreaseBanScore = true
+		}
+
+		if shouldIncreaseBanScore {
+			peer.AddBanScoreAndPushRejectMsg(wire.CmdTx, wire.RejectInvalid, (*daghash.Hash)(txID),
+				peerpkg.BanScoreInvalidTx, 0, fmt.Sprintf("rejected transaction %s: %s", txID, err))
+		}
 		return
 	}
 
 	sm.peerNotifier.AnnounceNewTransactions(acceptedTxs)
-}
-
-// current returns true if we believe we are synced with our peers, false if we
-// still have blocks to check
-//
-// We consider ourselves current iff both of the following are true:
-// 1. there's no syncPeer, a.k.a. all connected peers are at the same tip
-// 2. the DAG considers itself current - to prevent attacks where a peer sends an
-//    unknown tip but never lets us sync to it.
-func (sm *SyncManager) current() bool {
-	return sm.syncPeer == nil && sm.dag.IsCurrent()
 }
 
 // restartSyncIfNeeded finds a new sync candidate if we're not expecting any
@@ -477,9 +483,8 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		// mode in this case so the DAG code is actually fed the
 		// duplicate blocks.
 		if sm.dagParams != &dagconfig.RegressionNetParams {
-			log.Warnf("Got unrequested block %s from %s -- "+
-				"disconnecting", blockHash, peer.Addr())
-			peer.Disconnect()
+			peer.AddBanScoreAndPushRejectMsg(wire.CmdBlock, wire.RejectNotRequested, blockHash,
+				peerpkg.BanScoreUnrequestedBlock, 0, fmt.Sprintf("got unrequested block %s", blockHash))
 			return
 		}
 	}
@@ -515,13 +520,8 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		log.Infof("Rejected block %s from %s: %s", blockHash,
 			peer, err)
 
-		// Convert the error into an appropriate reject message and
-		// send it.
-		code, reason := mempool.ErrToRejectErr(err)
-		peer.PushRejectMsg(wire.CmdBlock, code, reason, blockHash, false)
-
-		// Disconnect from the misbehaving peer.
-		peer.Disconnect()
+		peer.AddBanScoreAndPushRejectMsg(wire.CmdBlock, wire.RejectInvalid, blockHash,
+			peerpkg.BanScoreInvalidBlock, 0, fmt.Sprintf("got invalid block: %s", err))
 		return
 	}
 
@@ -529,15 +529,34 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		return
 	}
 
-	// Request the parents for the orphan block from the peer that sent it.
 	if isOrphan {
+		blueScore, err := bmsg.block.BlueScore()
+		if err != nil {
+			log.Errorf("Received an orphan block %s with malformed blue score from %s. Disconnecting...",
+				blockHash, peer)
+			peer.AddBanScoreAndPushRejectMsg(wire.CmdBlock, wire.RejectInvalid, blockHash,
+				peerpkg.BanScoreMalformedBlueScoreInOrphan, 0,
+				fmt.Sprintf("Received an orphan block %s with malformed blue score", blockHash))
+			return
+		}
+
+		const maxOrphanBlueScoreDiff = 10000
+		selectedTipBlueScore := sm.dag.SelectedTipBlueScore()
+		if blueScore > selectedTipBlueScore+maxOrphanBlueScoreDiff {
+			log.Infof("Orphan block %s has blue score %d and the selected tip blue score is "+
+				"%d. Ignoring orphans with a blue score difference from the selected tip greater than %d",
+				blockHash, blueScore, selectedTipBlueScore, maxOrphanBlueScoreDiff)
+			return
+		}
+
+		// Request the parents for the orphan block from the peer that sent it.
 		missingAncestors, err := sm.dag.GetOrphanMissingAncestorHashes(blockHash)
 		if err != nil {
 			log.Errorf("Failed to find missing ancestors for block %s: %s",
 				blockHash, err)
 			return
 		}
-		sm.addBlocksToRequestQueue(state, missingAncestors, false)
+		sm.addBlocksToRequestQueue(state, missingAncestors, wire.InvTypeMissingAncestor)
 	} else {
 		// When the block is not an orphan, log information about it and
 		// update the DAG state.
@@ -563,15 +582,11 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	}
 }
 
-func (sm *SyncManager) addBlocksToRequestQueue(state *peerSyncState, hashes []*daghash.Hash, isRelayedInv bool) {
+func (sm *SyncManager) addBlocksToRequestQueue(state *peerSyncState, hashes []*daghash.Hash, invType wire.InvType) {
 	state.requestQueueMtx.Lock()
 	defer state.requestQueueMtx.Unlock()
 	for _, hash := range hashes {
 		if _, exists := sm.requestedBlocks[*hash]; !exists {
-			invType := wire.InvTypeSyncBlock
-			if isRelayedInv {
-				invType = wire.InvTypeBlock
-			}
 			iv := wire.NewInvVect(invType, hash)
 			state.addInvToRequestQueueNoLock(iv)
 		}
@@ -583,10 +598,13 @@ func (state *peerSyncState) addInvToRequestQueueNoLock(iv *wire.InvVect) {
 	if !ok {
 		panic(errors.Errorf("got unsupported inventory type %s", iv.Type))
 	}
-	if _, exists := requestQueue.set[*iv.Hash]; !exists {
-		requestQueue.set[*iv.Hash] = struct{}{}
-		requestQueue.queue = append(requestQueue.queue, iv)
+
+	if _, exists := requestQueue.set[*iv.Hash]; exists {
+		return
 	}
+
+	requestQueue.set[*iv.Hash] = struct{}{}
+	requestQueue.queue = append(requestQueue.queue, iv)
 }
 
 func (state *peerSyncState) addInvToRequestQueue(iv *wire.InvVect) {
@@ -602,6 +620,8 @@ func (state *peerSyncState) addInvToRequestQueue(iv *wire.InvVect) {
 // (either the main pool or orphan pool).
 func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 	switch invVect.Type {
+	case wire.InvTypeMissingAncestor:
+		fallthrough
 	case wire.InvTypeSyncBlock:
 		fallthrough
 	case wire.InvTypeBlock:
@@ -677,6 +697,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		case wire.InvTypeSyncBlock:
 		case wire.InvTypeTx:
 		default:
+			log.Warnf("got unsupported inv type %s from %s", iv.Type, peer)
 			continue
 		}
 
@@ -715,6 +736,11 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		}
 
 		if iv.IsBlockOrSyncBlock() {
+			if sm.dag.IsKnownInvalid(iv.Hash) {
+				peer.AddBanScoreAndPushRejectMsg(imsg.inv.Command(), wire.RejectInvalid, iv.Hash,
+					peerpkg.BanScoreInvalidInvBlock, 0, fmt.Sprintf("sent inv of invalid block %s", iv.Hash))
+				return
+			}
 			// The block is an orphan block that we already have.
 			// When the existing orphan was processed, it requested
 			// the missing parent blocks. When this scenario
@@ -726,13 +752,22 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 			// to signal there are more missing blocks that need to
 			// be requested.
 			if sm.dag.IsKnownOrphan(iv.Hash) {
+				if iv.Type == wire.InvTypeSyncBlock {
+					peer.AddBanScoreAndPushRejectMsg(imsg.inv.Command(), wire.RejectInvalid, iv.Hash,
+						peerpkg.BanScoreOrphanInvAsPartOfNetsync, 0,
+						fmt.Sprintf("sent inv of orphan block %s as part of netsync", iv.Hash))
+					// Whether the peer will be banned or not, syncing from a node that doesn't follow
+					// the netsync protocol is undesired.
+					sm.stopSyncFromPeer(peer)
+					return
+				}
 				missingAncestors, err := sm.dag.GetOrphanMissingAncestorHashes(iv.Hash)
 				if err != nil {
 					log.Errorf("Failed to find missing ancestors for block %s: %s",
 						iv.Hash, err)
 					return
 				}
-				sm.addBlocksToRequestQueue(state, missingAncestors, iv.Type != wire.InvTypeSyncBlock)
+				sm.addBlocksToRequestQueue(state, missingAncestors, wire.InvTypeMissingAncestor)
 				continue
 			}
 
@@ -754,7 +789,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		log.Errorf("Failed to send invs from queue: %s", err)
 	}
 
-	if haveUnknownInvBlock && !sm.current() {
+	if haveUnknownInvBlock && !sm.isSyncing {
 		// If one of the inv messages is an unknown block
 		// it is an indication that one of our peers has more
 		// up-to-date data than us.
@@ -806,6 +841,8 @@ func (sm *SyncManager) addInvsToGetDataMessageFromQueue(gdmsg *wire.MsgGetData, 
 	for _, iv := range invsToAdd {
 		delete(requestQueue.set, *iv.Hash)
 		switch invType {
+		case wire.InvTypeMissingAncestor:
+			addBlockInv(iv)
 		case wire.InvTypeSyncBlock:
 			addBlockInv(iv)
 		case wire.InvTypeBlock:
@@ -834,13 +871,21 @@ func (sm *SyncManager) addInvsToGetDataMessageFromQueue(gdmsg *wire.MsgGetData, 
 func (sm *SyncManager) sendInvsFromRequestQueue(peer *peerpkg.Peer, state *peerSyncState) error {
 	state.requestQueueMtx.Lock()
 	defer state.requestQueueMtx.Unlock()
+	if len(sm.requestedBlocks) != 0 {
+		return nil
+	}
 	gdmsg := wire.NewMsgGetData()
 	err := sm.addInvsToGetDataMessageFromQueue(gdmsg, state, wire.InvTypeSyncBlock, wire.MaxSyncBlockInvPerGetDataMsg)
 	if err != nil {
 		return err
 	}
-	if sm.current() {
-		err := sm.addInvsToGetDataMessageFromQueue(gdmsg, state, wire.InvTypeBlock, wire.MaxInvPerGetDataMsg)
+	if !sm.isSyncing || sm.isSynced() {
+		err := sm.addInvsToGetDataMessageFromQueue(gdmsg, state, wire.InvTypeMissingAncestor, wire.MaxInvPerGetDataMsg)
+		if err != nil {
+			return err
+		}
+
+		err = sm.addInvsToGetDataMessageFromQueue(gdmsg, state, wire.InvTypeBlock, wire.MaxInvPerGetDataMsg)
 		if err != nil {
 			return err
 		}
@@ -909,15 +954,12 @@ func (sm *SyncManager) handleSelectedTipMsg(msg *selectedTipMsg) {
 	peer := msg.peer
 	selectedTipHash := msg.selectedTipHash
 	state := sm.peerStates[peer]
-	if !state.isPendingForSelectedTip {
-		log.Warnf("Got unrequested selected tip message from %s -- "+
-			"disconnecting", peer.Addr())
-		peer.Disconnect()
-	}
-	state.isPendingForSelectedTip = false
-	if selectedTipHash.IsEqual(peer.SelectedTipHash()) {
+	if !state.peerShouldSendSelectedTip {
+		peer.AddBanScoreAndPushRejectMsg(wire.CmdSelectedTip, wire.RejectNotRequested, nil,
+			peerpkg.BanScoreUnrequestedSelectedTip, 0, "got unrequested selected tip message")
 		return
 	}
+	state.peerShouldSendSelectedTip = false
 	peer.SetSelectedTipHash(selectedTipHash)
 	sm.restartSyncIfNeeded()
 }
@@ -968,8 +1010,8 @@ out:
 					err:      err,
 				}
 
-			case isCurrentMsg:
-				msg.reply <- sm.current()
+			case isSyncedMsg:
+				msg.reply <- sm.isSynced()
 
 			case pauseMsg:
 				// Wait until the sender unpauses the manager.
@@ -1017,17 +1059,22 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 			}
 		})
 
-		// Relay if we are current and the block was not just now unorphaned.
-		// Otherwise peers that are current should already know about it
-		if sm.current() && !data.WasUnorphaned {
-			iv := wire.NewInvVect(wire.InvTypeBlock, block.Hash())
-			sm.peerNotifier.RelayInventory(iv, block.MsgBlock().Header)
-		}
+		// sm.peerNotifier sends messages to the rebroadcastHandler, so we call
+		// it in its own goroutine so it won't block dag.ProcessBlock in case
+		// rebroadcastHandler channel is full.
+		spawn(func() {
+			// Relay if we are current and the block was not just now unorphaned.
+			// Otherwise peers that are current should already know about it
+			if sm.isSynced() && !data.WasUnorphaned {
+				iv := wire.NewInvVect(wire.InvTypeBlock, block.Hash())
+				sm.peerNotifier.RelayInventory(iv, block.MsgBlock().Header)
+			}
 
-		for msg := range ch {
-			sm.peerNotifier.TransactionConfirmed(msg.Tx)
-			sm.peerNotifier.AnnounceNewTransactions(msg.AcceptedTxs)
-		}
+			for msg := range ch {
+				sm.peerNotifier.TransactionConfirmed(msg.Tx)
+				sm.peerNotifier.AnnounceNewTransactions(msg.AcceptedTxs)
+			}
+		})
 	}
 }
 
@@ -1151,12 +1198,30 @@ func (sm *SyncManager) ProcessBlock(block *util.Block, flags blockdag.BehaviorFl
 	return response.isOrphan, response.err
 }
 
-// IsCurrent returns whether or not the sync manager believes it is synced with
+// IsSynced returns whether or not the sync manager believes it is synced with
 // the connected peers.
-func (sm *SyncManager) IsCurrent() bool {
+func (sm *SyncManager) IsSynced() bool {
 	reply := make(chan bool)
-	sm.msgChan <- isCurrentMsg{reply: reply}
+	sm.msgChan <- isSyncedMsg{reply: reply}
 	return <-reply
+}
+
+// isSynced checks if the node is synced enough based upon its worldview.
+// This is used to determine if the node can support mining and requesting newly-mined blocks.
+// To do that, first it checks if the selected tip timestamp is not older than maxTipAge. If that's the case, it means
+// the node is synced since blocks' timestamps are not allowed to deviate too much into the future.
+// If that's not the case it checks the rate it added new blocks to the DAG recently. If it's faster than
+// blockRate * maxSyncRateDeviation it means the node is not synced, since when the node is synced it shouldn't add
+// blocks to the DAG faster than the block rate.
+func (sm *SyncManager) isSynced() bool {
+	const maxTipAge = 5 * time.Minute
+	isCloseToCurrentTime := sm.dag.Now().Sub(sm.dag.SelectedTipHeader().Timestamp) <= maxTipAge
+	if isCloseToCurrentTime {
+		return true
+	}
+
+	const maxSyncRateDeviation = 1.05
+	return sm.dag.IsSyncRateBelowThreshold(maxSyncRateDeviation)
 }
 
 // Pause pauses the sync manager until the returned channel is closed.

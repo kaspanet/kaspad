@@ -1,6 +1,7 @@
 package ff
 
 import (
+	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/pkg/errors"
 	"hash/crc32"
 	"os"
@@ -46,18 +47,16 @@ func (s *flatFileStore) write(data []byte) (*flatFileLocation, error) {
 		// with LRU tracking. The close is done under the write lock
 		// for the file to prevent it from being closed out from under
 		// any readers currently reading from it.
-		cursor.Lock()
-		cursor.currentFile.Lock()
-		if cursor.currentFile.file != nil {
-			_ = cursor.currentFile.file.Close()
-			cursor.currentFile.file = nil
-		}
-		cursor.currentFile.Unlock()
+		func() {
+			cursor.Lock()
+			defer cursor.Unlock()
 
-		// Start writes into next file.
-		cursor.currentFileNumber++
-		cursor.currentOffset = 0
-		cursor.Unlock()
+			s.closeCurrentWriteCursorFile()
+
+			// Start writes into next file.
+			cursor.currentFileNumber++
+			cursor.currentOffset = 0
+		}()
 	}
 
 	// All writes are done under the write lock for the file to ensure any
@@ -154,7 +153,7 @@ func (s *flatFileStore) writeData(data []byte, fieldName string) error {
 	if err != nil {
 		var pathErr *os.PathError
 		if ok := errors.As(err, &pathErr); ok && pathErr.Err == syscall.ENOSPC {
-			panic("No space left on the hard disk, exiting...")
+			panics.Exit(log, "No space left on the hard disk.")
 		}
 		return errors.Wrapf(err, "failed to write %s in store %s to file %d "+
 			"at offset %d", fieldName, s.storeName, cursor.currentFileNumber,
@@ -162,4 +161,16 @@ func (s *flatFileStore) writeData(data []byte, fieldName string) error {
 	}
 
 	return nil
+}
+
+// closeCurrentWriteCursorFile closes the currently open writeCursor file if
+// it's open.
+// This method MUST be called with the writeCursor lock held for writes.
+func (s *flatFileStore) closeCurrentWriteCursorFile() {
+	s.writeCursor.currentFile.Lock()
+	defer s.writeCursor.currentFile.Unlock()
+	if s.writeCursor.currentFile.file != nil {
+		_ = s.writeCursor.currentFile.file.Close()
+		s.writeCursor.currentFile.file = nil
+	}
 }

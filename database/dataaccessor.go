@@ -5,19 +5,19 @@ package database
 type DataAccessor interface {
 	// Put sets the value for the given key. It overwrites
 	// any previous value for that key.
-	Put(key []byte, value []byte) error
+	Put(key *Key, value []byte) error
 
 	// Get gets the value for the given key. It returns
 	// ErrNotFound if the given key does not exist.
-	Get(key []byte) ([]byte, error)
+	Get(key *Key) ([]byte, error)
 
 	// Has returns true if the database does contains the
 	// given key.
-	Has(key []byte) (bool, error)
+	Has(key *Key) (bool, error)
 
 	// Delete deletes the value for the given key. Will not
 	// return an error if the key doesn't exist.
-	Delete(key []byte) error
+	Delete(key *Key) error
 
 	// AppendToStore appends the given data to the store
 	// defined by storeName. This function returns a serialized
@@ -32,5 +32,5 @@ type DataAccessor interface {
 	RetrieveFromStore(storeName string, location []byte) ([]byte, error)
 
 	// Cursor begins a new cursor over the given bucket.
-	Cursor(bucket []byte) (Cursor, error)
+	Cursor(bucket *Bucket) (Cursor, error)
 }

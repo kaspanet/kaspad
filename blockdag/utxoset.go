@@ -293,8 +293,8 @@ func (d *UTXODiff) withDiffInPlace(diff *UTXODiff) error {
 		}
 		if d.toRemove.contains(outpoint) {
 			// If already exists - this is an error
-			return ruleError(ErrWithDiff, fmt.Sprintf(
-				"withDiffInPlace: outpoint %s both in d.toRemove and in diff.toRemove", outpoint))
+			return errors.Errorf(
+				"withDiffInPlace: outpoint %s both in d.toRemove and in diff.toRemove", outpoint)
 		}
 
 		// If not exists neither in toAdd nor in toRemove - add to toRemove
@@ -305,9 +305,9 @@ func (d *UTXODiff) withDiffInPlace(diff *UTXODiff) error {
 		if d.toRemove.containsWithBlueScore(outpoint, entryToAdd.blockBlueScore) {
 			// If already exists in toRemove with the same blueScore - remove from toRemove
 			if d.toAdd.contains(outpoint) && !diff.toRemove.contains(outpoint) {
-				return ruleError(ErrWithDiff, fmt.Sprintf(
+				return errors.Errorf(
 					"withDiffInPlace: outpoint %s both in d.toAdd and in diff.toAdd with no "+
-						"corresponding entry in diff.toRemove", outpoint))
+						"corresponding entry in diff.toRemove", outpoint)
 			}
 			d.toRemove.remove(outpoint)
 			continue
@@ -316,8 +316,8 @@ func (d *UTXODiff) withDiffInPlace(diff *UTXODiff) error {
 			(existingEntry.blockBlueScore == entryToAdd.blockBlueScore ||
 				!diff.toRemove.containsWithBlueScore(outpoint, existingEntry.blockBlueScore)) {
 			// If already exists - this is an error
-			return ruleError(ErrWithDiff, fmt.Sprintf(
-				"withDiffInPlace: outpoint %s both in d.toAdd and in diff.toAdd", outpoint))
+			return errors.Errorf(
+				"withDiffInPlace: outpoint %s both in d.toAdd and in diff.toAdd", outpoint)
 		}
 
 		// If not exists neither in toAdd nor in toRemove, or exists in toRemove with different blueScore - add to toAdd
@@ -399,75 +399,9 @@ type UTXOSet interface {
 	fmt.Stringer
 	diffFrom(other UTXOSet) (*UTXODiff, error)
 	WithDiff(utxoDiff *UTXODiff) (UTXOSet, error)
-	diffFromTx(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error)
-	diffFromAcceptedTx(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error)
 	AddTx(tx *wire.MsgTx, blockBlueScore uint64) (ok bool, err error)
 	clone() UTXOSet
 	Get(outpoint wire.Outpoint) (*UTXOEntry, bool)
-}
-
-// diffFromTx is a common implementation for diffFromTx, that works
-// for both diff-based and full UTXO sets
-// Returns a diff that is equivalent to provided transaction,
-// or an error if provided transaction is not valid in the context of this UTXOSet
-func diffFromTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
-	diff := NewUTXODiff()
-	isCoinbase := tx.IsCoinBase()
-	if !isCoinbase {
-		for _, txIn := range tx.TxIn {
-			if entry, ok := u.Get(txIn.PreviousOutpoint); ok {
-				err := diff.RemoveEntry(txIn.PreviousOutpoint, entry)
-				if err != nil {
-					return nil, err
-				}
-			} else {
-				return nil, ruleError(ErrMissingTxOut, fmt.Sprintf(
-					"Transaction %s is invalid because spends outpoint %s that is not in utxo set",
-					tx.TxID(), txIn.PreviousOutpoint))
-			}
-		}
-	}
-	for i, txOut := range tx.TxOut {
-		entry := NewUTXOEntry(txOut, isCoinbase, acceptingBlueScore)
-		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
-		err := diff.AddEntry(outpoint, entry)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return diff, nil
-}
-
-// diffFromAcceptedTx is a common implementation for diffFromAcceptedTx, that works
-// for both diff-based and full UTXO sets.
-// Returns a diff that replaces an entry's blockBlueScore with the given acceptingBlueScore.
-// Returns an error if the provided transaction's entry is not valid in the context
-// of this UTXOSet.
-func diffFromAcceptedTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
-	diff := NewUTXODiff()
-	isCoinbase := tx.IsCoinBase()
-	for i, txOut := range tx.TxOut {
-		// Fetch any unaccepted transaction
-		existingOutpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
-		existingEntry, ok := u.Get(existingOutpoint)
-		if !ok {
-			return nil, errors.Errorf("cannot accept outpoint %s because it doesn't exist in the given UTXO", existingOutpoint)
-		}
-
-		// Remove unaccepted entries
-		err := diff.RemoveEntry(existingOutpoint, existingEntry)
-		if err != nil {
-			return nil, err
-		}
-
-		// Add new entries with their accepting blue score
-		newEntry := NewUTXOEntry(txOut, isCoinbase, acceptingBlueScore)
-		err = diff.AddEntry(existingOutpoint, newEntry)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return diff, nil
 }
 
 // FullUTXOSet represents a full list of transaction outputs and their values
@@ -523,17 +457,15 @@ func (fus *FullUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 //
 // This function MUST be called with the DAG lock held.
 func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blueScore uint64) (isAccepted bool, err error) {
-	isCoinbase := tx.IsCoinBase()
-	if !isCoinbase {
-		if !fus.containsInputs(tx) {
-			return false, nil
-		}
-
-		for _, txIn := range tx.TxIn {
-			fus.remove(txIn.PreviousOutpoint)
-		}
+	if !fus.containsInputs(tx) {
+		return false, nil
 	}
 
+	for _, txIn := range tx.TxIn {
+		fus.remove(txIn.PreviousOutpoint)
+	}
+
+	isCoinbase := tx.IsCoinBase()
 	for i, txOut := range tx.TxOut {
 		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
 		entry := NewUTXOEntry(txOut, isCoinbase, blueScore)
@@ -541,12 +473,6 @@ func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blueScore uint64) (isAccepted bool
 	}
 
 	return true, nil
-}
-
-// diffFromTx returns a diff that is equivalent to provided transaction,
-// or an error if provided transaction is not valid in the context of this UTXOSet
-func (fus *FullUTXOSet) diffFromTx(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
-	return diffFromTx(fus, tx, acceptingBlueScore)
 }
 
 func (fus *FullUTXOSet) containsInputs(tx *wire.MsgTx) bool {
@@ -558,10 +484,6 @@ func (fus *FullUTXOSet) containsInputs(tx *wire.MsgTx) bool {
 	}
 
 	return true
-}
-
-func (fus *FullUTXOSet) diffFromAcceptedTx(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
-	return diffFromAcceptedTx(fus, tx, acceptingBlueScore)
 }
 
 // clone returns a clone of this utxoSet
@@ -619,12 +541,11 @@ func (dus *DiffUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 // If dus.UTXODiff.useMultiset is true, this function MUST be
 // called with the DAG lock held.
 func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockBlueScore uint64) (bool, error) {
-	isCoinbase := tx.IsCoinBase()
-	if !isCoinbase && !dus.containsInputs(tx) {
+	if !dus.containsInputs(tx) {
 		return false, nil
 	}
 
-	err := dus.appendTx(tx, blockBlueScore, isCoinbase)
+	err := dus.appendTx(tx, blockBlueScore)
 	if err != nil {
 		return false, err
 	}
@@ -632,20 +553,19 @@ func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockBlueScore uint64) (bool, erro
 	return true, nil
 }
 
-func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockBlueScore uint64, isCoinbase bool) error {
-	if !isCoinbase {
-		for _, txIn := range tx.TxIn {
-			entry, ok := dus.Get(txIn.PreviousOutpoint)
-			if !ok {
-				return errors.Errorf("Couldn't find entry for outpoint %s", txIn.PreviousOutpoint)
-			}
-			err := dus.UTXODiff.RemoveEntry(txIn.PreviousOutpoint, entry)
-			if err != nil {
-				return err
-			}
+func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockBlueScore uint64) error {
+	for _, txIn := range tx.TxIn {
+		entry, ok := dus.Get(txIn.PreviousOutpoint)
+		if !ok {
+			return errors.Errorf("couldn't find entry for outpoint %s", txIn.PreviousOutpoint)
+		}
+		err := dus.UTXODiff.RemoveEntry(txIn.PreviousOutpoint, entry)
+		if err != nil {
+			return err
 		}
 	}
 
+	isCoinbase := tx.IsCoinBase()
 	for i, txOut := range tx.TxOut {
 		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
 		entry := NewUTXOEntry(txOut, isCoinbase, blockBlueScore)
@@ -689,16 +609,6 @@ func (dus *DiffUTXOSet) meldToBase() error {
 	return nil
 }
 
-// diffFromTx returns a diff that is equivalent to provided transaction,
-// or an error if provided transaction is not valid in the context of this UTXOSet
-func (dus *DiffUTXOSet) diffFromTx(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
-	return diffFromTx(dus, tx, acceptingBlueScore)
-}
-
-func (dus *DiffUTXOSet) diffFromAcceptedTx(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
-	return diffFromAcceptedTx(dus, tx, acceptingBlueScore)
-}
-
 func (dus *DiffUTXOSet) String() string {
 	return fmt.Sprintf("{Base: %s, To Add: %s, To Remove: %s}", dus.base, dus.UTXODiff.toAdd, dus.UTXODiff.toRemove)
 }
@@ -706,6 +616,12 @@ func (dus *DiffUTXOSet) String() string {
 // clone returns a clone of this UTXO Set
 func (dus *DiffUTXOSet) clone() UTXOSet {
 	return NewDiffUTXOSet(dus.base.clone().(*FullUTXOSet), dus.UTXODiff.clone())
+}
+
+// cloneWithoutBase returns a *DiffUTXOSet with same
+// base as this *DiffUTXOSet and a cloned diff.
+func (dus *DiffUTXOSet) cloneWithoutBase() UTXOSet {
+	return NewDiffUTXOSet(dus.base, dus.UTXODiff.clone())
 }
 
 // Get returns the UTXOEntry associated with provided outpoint in this UTXOSet.

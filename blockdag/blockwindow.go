@@ -2,6 +2,7 @@ package blockdag
 
 import (
 	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/bigintpool"
 	"github.com/pkg/errors"
 	"math"
 	"math/big"
@@ -53,13 +54,19 @@ func (window blockWindow) minMaxTimestamps() (min, max int64) {
 	return
 }
 
-func (window blockWindow) averageTarget() *big.Int {
-	averageTarget := big.NewInt(0)
+func (window blockWindow) averageTarget(averageTarget *big.Int) {
+	averageTarget.SetInt64(0)
+
+	target := bigintpool.Acquire(0)
+	defer bigintpool.Release(target)
 	for _, node := range window {
-		target := util.CompactToBig(node.bits)
+		util.CompactToBigWithDestination(node.bits, target)
 		averageTarget.Add(averageTarget, target)
 	}
-	return averageTarget.Div(averageTarget, big.NewInt(int64(len(window))))
+
+	windowLen := bigintpool.Acquire(int64(len(window)))
+	defer bigintpool.Release(windowLen)
+	averageTarget.Div(averageTarget, windowLen)
 }
 
 func (window blockWindow) medianTimestamp() (int64, error) {

@@ -5,9 +5,11 @@ package blockdag
 import (
 	"compress/bzip2"
 	"encoding/binary"
+	"github.com/kaspanet/kaspad/database/ffldb/ldb"
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
+	"github.com/syndtr/goleveldb/leveldb/opt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -15,6 +17,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"testing"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
@@ -61,6 +64,15 @@ func DAGSetup(dbName string, openDb bool, config Config) (*BlockDAG, func(), err
 			return nil, nil, errors.Errorf("error creating temp dir: %s", err)
 		}
 
+		// We set ldb.Options here to return nil because normally
+		// the database is initialized with very large caches that
+		// can make opening/closing the database for every test
+		// quite heavy.
+		originalLDBOptions := ldb.Options
+		ldb.Options = func() *opt.Options {
+			return nil
+		}
+
 		dbPath := filepath.Join(tmpDir, dbName)
 		_ = os.RemoveAll(dbPath)
 		err = dbaccess.Open(dbPath)
@@ -74,6 +86,7 @@ func DAGSetup(dbName string, openDb bool, config Config) (*BlockDAG, func(), err
 			spawnWaitGroup.Wait()
 			spawn = realSpawn
 			dbaccess.Close()
+			ldb.Options = originalLDBOptions
 			os.RemoveAll(dbPath)
 		}
 	} else {
@@ -145,8 +158,8 @@ func SetVirtualForTest(dag *BlockDAG, virtual VirtualForTest) VirtualForTest {
 func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (VirtualForTest, error) {
 	parents := newBlockSet()
 	for _, hash := range parentHashes {
-		parent := dag.index.LookupNode(hash)
-		if parent == nil {
+		parent, ok := dag.index.LookupNode(hash)
+		if !ok {
 			return nil, errors.Errorf("GetVirtualFromParentsForTest: didn't found node for hash %s", hash)
 		}
 		parents.add(parent)
@@ -277,6 +290,28 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 	block.Header.Bits = dag.NextRequiredDifficulty(block.Header.Timestamp)
 
 	return block, nil
+}
+
+// PrepareAndProcessBlockForTest prepares a block that points to the given parent
+// hashes and process it.
+func PrepareAndProcessBlockForTest(t *testing.T, dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*wire.MsgTx) *wire.MsgBlock {
+	daghash.Sort(parentHashes)
+	block, err := PrepareBlockForTest(dag, parentHashes, transactions)
+	if err != nil {
+		t.Fatalf("error in PrepareBlockForTest: %s", err)
+	}
+	utilBlock := util.NewBlock(block)
+	isOrphan, isDelayed, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
+	if err != nil {
+		t.Fatalf("unexpected error in ProcessBlock: %s", err)
+	}
+	if isDelayed {
+		t.Fatalf("block is too far in the future")
+	}
+	if isOrphan {
+		t.Fatalf("block was unexpectedly orphan")
+	}
+	return block
 }
 
 // generateDeterministicExtraNonceForTest returns a unique deterministic extra nonce for coinbase data, in order to create unique coinbase transactions.

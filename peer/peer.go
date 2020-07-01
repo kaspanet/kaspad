@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"container/list"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"math/rand"
 	"net"
@@ -16,6 +15,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/random"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -197,6 +198,13 @@ type Config struct {
 	// IsInDAG determines whether a block with the given hash exists in
 	// the DAG.
 	IsInDAG func(*daghash.Hash) bool
+
+	// AddBanScore increases the persistent and decaying ban score fields by the
+	// values passed as parameters. If the resulting score exceeds half of the ban
+	// threshold, a warning is logged including the reason provided. Further, if
+	// the score is above the ban threshold, the peer will be banned and
+	// disconnected.
+	AddBanScore func(persistent, transient uint32, reason string)
 
 	// HostToNetAddress returns the netaddress for the given host. This can be
 	// nil in  which case the host will be parsed as an IP address.
@@ -645,6 +653,22 @@ func (p *Peer) IsSelectedTipKnown() bool {
 	return !p.cfg.IsInDAG(p.selectedTipHash)
 }
 
+// AddBanScore increases the persistent and decaying ban score fields by the
+// values passed as parameters. If the resulting score exceeds half of the ban
+// threshold, a warning is logged including the reason provided. Further, if
+// the score is above the ban threshold, the peer will be banned and
+// disconnected.
+func (p *Peer) AddBanScore(persistent, transient uint32, reason string) {
+	p.cfg.AddBanScore(persistent, transient, reason)
+}
+
+// AddBanScoreAndPushRejectMsg increases ban score and sends a
+// reject message to the misbehaving peer.
+func (p *Peer) AddBanScoreAndPushRejectMsg(command string, code wire.RejectCode, hash *daghash.Hash, persistent, transient uint32, reason string) {
+	p.PushRejectMsg(command, code, reason, hash, true)
+	p.cfg.AddBanScore(persistent, transient, reason)
+}
+
 // LastSend returns the last send time of the peer.
 //
 // This function is safe for concurrent access.
@@ -754,17 +778,11 @@ func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
 // addresses. This function is useful over manually sending the message via
 // QueueMessage since it automatically limits the addresses to the maximum
 // number allowed by the message and randomizes the chosen addresses when there
-// are too many. It returns the addresses that were actually sent and no
-// message will be sent if there are no entries in the provided addresses slice.
+// are too many. It returns the addresses that were actually sent.
 //
 // This function is safe for concurrent access.
 func (p *Peer) PushAddrMsg(addresses []*wire.NetAddress, subnetworkID *subnetworkid.SubnetworkID) ([]*wire.NetAddress, error) {
 	addressCount := len(addresses)
-
-	// Nothing to send.
-	if addressCount == 0 {
-		return nil, nil
-	}
 
 	msg := wire.NewMsgAddr(false, subnetworkID)
 	msg.AddrList = make([]*wire.NetAddress, addressCount)
@@ -896,6 +914,11 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 		return errors.New(reason)
 	}
 
+	// Disconnect from partial nodes in networks that don't allow them
+	if !p.cfg.DAGParams.EnableNonNativeSubnetworks && msg.SubnetworkID != nil {
+		return errors.New("partial nodes are not allowed")
+	}
+
 	// Disconnect if:
 	// - we are a full node and the outbound connection we've initiated is a partial node
 	// - the remote node is partial and our subnetwork doesn't match their subnetwork
@@ -986,7 +1009,8 @@ func (p *Peer) readMessage() (wire.Message, []byte, error) {
 
 	// Use closures to log expensive operations so they are only run when
 	// the logging level requires it.
-	log.Debugf("%s", logger.NewLogClosure(func() string {
+	logLevel := messageLogLevel(msg)
+	log.Writef(logLevel, "%s", logger.NewLogClosure(func() string {
 		// Debug summary of message.
 		summary := messageSummary(msg)
 		if len(summary) > 0 {
@@ -1014,7 +1038,8 @@ func (p *Peer) writeMessage(msg wire.Message) error {
 
 	// Use closures to log expensive operations so they are only run when
 	// the logging level requires it.
-	log.Debugf("%s", logger.NewLogClosure(func() string {
+	logLevel := messageLogLevel(msg)
+	log.Writef(logLevel, "%s", logger.NewLogClosure(func() string {
 		// Debug summary of message.
 		summary := messageSummary(msg)
 		if len(summary) > 0 {
@@ -1237,9 +1262,7 @@ out:
 					continue
 				}
 
-				log.Debugf("Peer %s appears to be stalled or "+
-					"misbehaving, %s timeout -- "+
-					"disconnecting", p, command)
+				p.AddBanScore(BanScoreStallTimeout, 0, fmt.Sprintf("got timeout for command %s", command))
 				p.Disconnect()
 				break
 			}
@@ -1314,15 +1337,15 @@ out:
 					log.Errorf(errMsg)
 				}
 
-				// Push a reject message for the malformed message and wait for
-				// the message to be sent before disconnecting.
+				// Add ban score, push a reject message for the malformed message
+				// and wait for the message to be sent before disconnecting.
 				//
 				// NOTE: Ideally this would include the command in the header if
 				// at least that much of the message was valid, but that is not
 				// currently exposed by wire, so just used malformed for the
 				// command.
-				p.PushRejectMsg("malformed", wire.RejectMalformed, errMsg, nil,
-					true)
+				p.AddBanScoreAndPushRejectMsg("malformed", wire.RejectMalformed, nil,
+					BanScoreMalformedMessage, 0, errMsg)
 			}
 			break out
 		}
@@ -1334,18 +1357,18 @@ out:
 		switch msg := rmsg.(type) {
 		case *wire.MsgVersion:
 
-			p.PushRejectMsg(msg.Command(), wire.RejectDuplicate,
-				"duplicate version message", nil, true)
-			break out
+			reason := "duplicate version message"
+			p.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectDuplicate, nil,
+				BanScoreDuplicateVersion, 0, reason)
 
 		case *wire.MsgVerAck:
 
 			// No read lock is necessary because verAckReceived is not written
 			// to in any other goroutine.
 			if p.verAckReceived {
-				log.Infof("Already received 'verack' from peer %s -- "+
-					"disconnecting", p)
-				break out
+				p.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectDuplicate, nil,
+					BanScoreDuplicateVerack, 0, "verack sent twice")
+				log.Warnf("Already received 'verack' from peer %s", p)
 			}
 			p.markVerAckReceived()
 			if p.cfg.Listeners.OnVerAck != nil {
@@ -1535,7 +1558,7 @@ out:
 			// No handshake?  They'll find out soon enough.
 			if p.VersionKnown() {
 				// If this is a new block, then we'll blast it
-				// out immediately, sipping the inv trickle
+				// out immediately, skipping the inv trickle
 				// queue.
 				if iv.Type == wire.InvTypeBlock {
 					invMsg := wire.NewMsgInvSizeHint(1)
@@ -1750,10 +1773,10 @@ func (p *Peer) QueueInventory(invVect *wire.InvVect) {
 
 // AssociateConnection associates the given conn to the peer. Calling this
 // function when the peer is already connected will have no effect.
-func (p *Peer) AssociateConnection(conn net.Conn) {
+func (p *Peer) AssociateConnection(conn net.Conn) error {
 	// Already connected?
 	if !atomic.CompareAndSwapInt32(&p.connected, 0, 1) {
-		return
+		return nil
 	}
 
 	p.conn = conn
@@ -1767,19 +1790,18 @@ func (p *Peer) AssociateConnection(conn net.Conn) {
 		// and no point recomputing.
 		na, err := newNetAddress(p.conn.RemoteAddr(), p.services)
 		if err != nil {
-			log.Errorf("Cannot create remote net address: %s", err)
 			p.Disconnect()
-			return
+			return errors.Wrap(err, "Cannot create remote net address")
 		}
 		p.na = na
 	}
 
-	spawn(func() {
-		if err := p.start(); err != nil {
-			log.Debugf("Cannot start peer %s: %s", p, err)
-			p.Disconnect()
-		}
-	})
+	if err := p.start(); err != nil {
+		p.Disconnect()
+		return errors.Wrapf(err, "Cannot start peer %s", p)
+	}
+
+	return nil
 }
 
 // Connected returns whether or not the peer is currently connected.
@@ -1839,6 +1861,7 @@ func (p *Peer) start() error {
 
 	// Send our verack message now that the IO processing machinery has started.
 	p.QueueMessage(wire.NewMsgVerAck(), nil)
+
 	return nil
 }
 
@@ -1864,6 +1887,8 @@ func (p *Peer) readRemoteVersionMsg() error {
 	if !ok {
 		errStr := "A version message must precede all others"
 		log.Errorf(errStr)
+
+		p.AddBanScore(BanScoreNonVersionFirstMessage, 0, errStr)
 
 		rejectMsg := wire.NewMsgReject(msg.Command(), wire.RejectMalformed,
 			errStr)

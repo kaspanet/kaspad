@@ -6,14 +6,15 @@ package main
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/dbaccess"
 	_ "net/http/pprof"
 	"os"
 	"path/filepath"
 	"runtime"
-	"runtime/debug"
 	"runtime/pprof"
 	"strings"
+	"time"
+
+	"github.com/kaspanet/kaspad/dbaccess"
 
 	"github.com/kaspanet/kaspad/blockdag/indexers"
 	"github.com/kaspanet/kaspad/config"
@@ -137,15 +138,27 @@ func kaspadMain(serverChan chan<- *server.Server) error {
 	server, err := server.NewServer(cfg.Listeners, config.ActiveConfig().NetParams(),
 		interrupt)
 	if err != nil {
-		// TODO: this logging could do with some beautifying.
-		kasdLog.Errorf("Unable to start server on %s: %s",
+		kasdLog.Errorf("Unable to start server on %s: %+v",
 			strings.Join(cfg.Listeners, ", "), err)
 		return err
 	}
 	defer func() {
 		kasdLog.Infof("Gracefully shutting down the server...")
 		server.Stop()
-		server.WaitForShutdown()
+
+		shutdownDone := make(chan struct{})
+		go func() {
+			server.WaitForShutdown()
+			shutdownDone <- struct{}{}
+		}()
+
+		const shutdownTimeout = 2 * time.Minute
+
+		select {
+		case <-shutdownDone:
+		case <-time.After(shutdownTimeout):
+			kasdLog.Criticalf("Graceful shutdown timed out %s. Terminating...", shutdownTimeout)
+		}
 		srvrLog.Infof("Server shutdown complete")
 	}()
 	server.Start()
@@ -250,12 +263,6 @@ func openDB() error {
 func main() {
 	// Use all processor cores.
 	runtime.GOMAXPROCS(runtime.NumCPU())
-
-	// Block and transaction processing can cause bursty allocations. This
-	// limits the garbage collector from excessively overallocating during
-	// bursts. This value was arrived at with the help of profiling live
-	// usage.
-	debug.SetGCPercent(10)
 
 	// Up some limits.
 	if err := limits.SetLimits(); err != nil {

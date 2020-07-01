@@ -10,7 +10,7 @@ var (
 	acceptanceIndexBucket = database.MakeBucket([]byte("acceptance-index"))
 )
 
-func acceptanceIndexKey(hash *daghash.Hash) []byte {
+func acceptanceIndexKey(hash *daghash.Hash) *database.Key {
 	return acceptanceIndexBucket.Key(hash[:])
 }
 

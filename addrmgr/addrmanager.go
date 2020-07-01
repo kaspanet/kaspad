@@ -5,16 +5,16 @@
 package addrmgr
 
 import (
+	"bytes"
 	"container/list"
 	crand "crypto/rand" // for seeding
 	"encoding/binary"
-	"encoding/json"
+	"encoding/gob"
+	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
 	"io"
 	"math/rand"
 	"net"
-	"os"
-	"path/filepath"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -26,14 +26,13 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-type newBucket [newBucketCount]map[string]*KnownAddress
-type triedBucket [triedBucketCount]*list.List
+type newBucket [NewBucketCount]map[string]*KnownAddress
+type triedBucket [TriedBucketCount]*list.List
 
 // AddrManager provides a concurrency safe address manager for caching potential
 // peers on the Kaspa network.
 type AddrManager struct {
 	mtx                sync.Mutex
-	peersFile          string
 	lookupFunc         func(string) ([]net.IP, error)
 	rand               *rand.Rand
 	key                [32]byte
@@ -66,10 +65,12 @@ type serializedKnownAddress struct {
 	// no refcount or tried, that is available from context.
 }
 
-type serializedNewBucket [newBucketCount][]string
-type serializedTriedBucket [triedBucketCount][]string
+type serializedNewBucket [NewBucketCount][]string
+type serializedTriedBucket [TriedBucketCount][]string
 
-type serializedAddrManager struct {
+// PeersStateForSerialization is the data model that is used to
+// serialize the peers state to any encoding.
+type PeersStateForSerialization struct {
 	Version              int
 	Key                  [32]byte
 	Addresses            []*serializedKnownAddress
@@ -118,17 +119,17 @@ const (
 	// tried address bucket.
 	triedBucketSize = 256
 
-	// triedBucketCount is the number of buckets we split tried
+	// TriedBucketCount is the number of buckets we split tried
 	// addresses over.
-	triedBucketCount = 64
+	TriedBucketCount = 64
 
 	// newBucketSize is the maximum number of addresses in each new address
 	// bucket.
 	newBucketSize = 64
 
-	// newBucketCount is the number of buckets that we spread new addresses
+	// NewBucketCount is the number of buckets that we spread new addresses
 	// over.
-	newBucketCount = 1024
+	NewBucketCount = 1024
 
 	// triedBucketsPerGroup is the number of tried buckets over which an
 	// address group will be spread.
@@ -162,17 +163,17 @@ const (
 	// to a getAddr. If we have less than this amount, we send everything.
 	getAddrMin = 50
 
-	// getAddrMax is the most addresses that we will send in response
+	// GetAddrMax is the most addresses that we will send in response
 	// to a getAddr (in practise the most addresses we will return from a
 	// call to AddressCache()).
-	getAddrMax = 2500
+	GetAddrMax = 2500
 
 	// getAddrPercent is the percentage of total addresses known that we
 	// will share with a call to AddressCache.
 	getAddrPercent = 23
 
-	// serialisationVersion is the current version of the on-disk format.
-	serialisationVersion = 1
+	// serializationVersion is the current version of the on-disk format.
+	serializationVersion = 1
 )
 
 // updateAddress is a helper function to either update an address already known
@@ -392,7 +393,7 @@ func (a *AddrManager) getNewBucket(netAddr, srcAddr *wire.NetAddress) int {
 	data2 = append(data2, hashbuf[:]...)
 
 	hash2 := daghash.DoubleHashB(data2)
-	return int(binary.LittleEndian.Uint64(hash2) % newBucketCount)
+	return int(binary.LittleEndian.Uint64(hash2) % NewBucketCount)
 }
 
 func (a *AddrManager) getTriedBucket(netAddr *wire.NetAddress) int {
@@ -411,7 +412,7 @@ func (a *AddrManager) getTriedBucket(netAddr *wire.NetAddress) int {
 	data2 = append(data2, hashbuf[:]...)
 
 	hash2 := daghash.DoubleHashB(data2)
-	return int(binary.LittleEndian.Uint64(hash2) % triedBucketCount)
+	return int(binary.LittleEndian.Uint64(hash2) % TriedBucketCount)
 }
 
 // addressHandler is the main handler for the address manager. It must be run
@@ -423,30 +424,62 @@ out:
 	for {
 		select {
 		case <-dumpAddressTicker.C:
-			a.savePeers()
+			err := a.savePeers()
+			if err != nil {
+				panic(errors.Wrap(err, "error saving peers"))
+			}
 
 		case <-a.quit:
 			break out
 		}
 	}
-	a.savePeers()
+	err := a.savePeers()
+	if err != nil {
+		panic(errors.Wrap(err, "error saving peers"))
+	}
 	a.wg.Done()
 	log.Trace("Address handler done")
 }
 
-// savePeers saves all the known addresses to a file so they can be read back
+// savePeers saves all the known addresses to the database so they can be read back
 // in at next run.
-func (a *AddrManager) savePeers() {
+func (a *AddrManager) savePeers() error {
+	serializedPeersState, err := a.serializePeersState()
+	if err != nil {
+		return err
+	}
+
+	return dbaccess.StorePeersState(dbaccess.NoTx(), serializedPeersState)
+}
+
+func (a *AddrManager) serializePeersState() ([]byte, error) {
+	peersState, err := a.PeersStateForSerialization()
+	if err != nil {
+		return nil, err
+	}
+
+	w := &bytes.Buffer{}
+	encoder := gob.NewEncoder(w)
+	err = encoder.Encode(&peersState)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to encode peers state")
+	}
+
+	return w.Bytes(), nil
+}
+
+// PeersStateForSerialization returns the data model that is used to serialize the peers state to any encoding.
+func (a *AddrManager) PeersStateForSerialization() (*PeersStateForSerialization, error) {
 	a.mtx.Lock()
 	defer a.mtx.Unlock()
 
-	// First we make a serialisable datastructure so we can encode it to
-	// json.
-	sam := new(serializedAddrManager)
-	sam.Version = serialisationVersion
-	copy(sam.Key[:], a.key[:])
+	// First we make a serializable data structure so we can encode it to
+	// gob.
+	peersState := new(PeersStateForSerialization)
+	peersState.Version = serializationVersion
+	copy(peersState.Key[:], a.key[:])
 
-	sam.Addresses = make([]*serializedKnownAddress, len(a.addrIndex))
+	peersState.Addresses = make([]*serializedKnownAddress, len(a.addrIndex))
 	i := 0
 	for k, v := range a.addrIndex {
 		ska := new(serializedKnownAddress)
@@ -463,119 +496,104 @@ func (a *AddrManager) savePeers() {
 		ska.LastSuccess = v.lastsuccess.Unix()
 		// Tried and refs are implicit in the rest of the structure
 		// and will be worked out from context on unserialisation.
-		sam.Addresses[i] = ska
+		peersState.Addresses[i] = ska
 		i++
 	}
 
-	sam.NewBuckets = make(map[string]*serializedNewBucket)
+	peersState.NewBuckets = make(map[string]*serializedNewBucket)
 	for subnetworkID := range a.addrNew {
 		subnetworkIDStr := subnetworkID.String()
-		sam.NewBuckets[subnetworkIDStr] = &serializedNewBucket{}
+		peersState.NewBuckets[subnetworkIDStr] = &serializedNewBucket{}
 
 		for i := range a.addrNew[subnetworkID] {
-			sam.NewBuckets[subnetworkIDStr][i] = make([]string, len(a.addrNew[subnetworkID][i]))
+			peersState.NewBuckets[subnetworkIDStr][i] = make([]string, len(a.addrNew[subnetworkID][i]))
 			j := 0
 			for k := range a.addrNew[subnetworkID][i] {
-				sam.NewBuckets[subnetworkIDStr][i][j] = k
+				peersState.NewBuckets[subnetworkIDStr][i][j] = k
 				j++
 			}
 		}
 	}
 
 	for i := range a.addrNewFullNodes {
-		sam.NewBucketFullNodes[i] = make([]string, len(a.addrNewFullNodes[i]))
+		peersState.NewBucketFullNodes[i] = make([]string, len(a.addrNewFullNodes[i]))
 		j := 0
 		for k := range a.addrNewFullNodes[i] {
-			sam.NewBucketFullNodes[i][j] = k
+			peersState.NewBucketFullNodes[i][j] = k
 			j++
 		}
 	}
 
-	sam.TriedBuckets = make(map[string]*serializedTriedBucket)
+	peersState.TriedBuckets = make(map[string]*serializedTriedBucket)
 	for subnetworkID := range a.addrTried {
 		subnetworkIDStr := subnetworkID.String()
-		sam.TriedBuckets[subnetworkIDStr] = &serializedTriedBucket{}
+		peersState.TriedBuckets[subnetworkIDStr] = &serializedTriedBucket{}
 
 		for i := range a.addrTried[subnetworkID] {
-			sam.TriedBuckets[subnetworkIDStr][i] = make([]string, a.addrTried[subnetworkID][i].Len())
+			peersState.TriedBuckets[subnetworkIDStr][i] = make([]string, a.addrTried[subnetworkID][i].Len())
 			j := 0
 			for e := a.addrTried[subnetworkID][i].Front(); e != nil; e = e.Next() {
 				ka := e.Value.(*KnownAddress)
-				sam.TriedBuckets[subnetworkIDStr][i][j] = NetAddressKey(ka.na)
+				peersState.TriedBuckets[subnetworkIDStr][i][j] = NetAddressKey(ka.na)
 				j++
 			}
 		}
 	}
 
 	for i := range a.addrTriedFullNodes {
-		sam.TriedBucketFullNodes[i] = make([]string, a.addrTriedFullNodes[i].Len())
+		peersState.TriedBucketFullNodes[i] = make([]string, a.addrTriedFullNodes[i].Len())
 		j := 0
 		for e := a.addrTriedFullNodes[i].Front(); e != nil; e = e.Next() {
 			ka := e.Value.(*KnownAddress)
-			sam.TriedBucketFullNodes[i][j] = NetAddressKey(ka.na)
+			peersState.TriedBucketFullNodes[i][j] = NetAddressKey(ka.na)
 			j++
 		}
 	}
 
-	w, err := os.Create(a.peersFile)
-	if err != nil {
-		log.Errorf("Error opening file %s: %s", a.peersFile, err)
-		return
-	}
-	enc := json.NewEncoder(w)
-	defer w.Close()
-	if err := enc.Encode(&sam); err != nil {
-		log.Errorf("Failed to encode file %s: %s", a.peersFile, err)
-		return
-	}
+	return peersState, nil
 }
 
-// loadPeers loads the known address from the saved file. If empty, missing, or
-// malformed file, just don't load anything and start fresh
-func (a *AddrManager) loadPeers() {
+// loadPeers loads the known address from the database. If missing,
+// just don't load anything and start fresh.
+func (a *AddrManager) loadPeers() error {
 	a.mtx.Lock()
 	defer a.mtx.Unlock()
 
-	err := a.deserializePeers(a.peersFile)
-	if err != nil {
-		log.Errorf("Failed to parse file %s: %s", a.peersFile, err)
-		// if it is invalid we nuke the old one unconditionally.
-		err = os.Remove(a.peersFile)
-		if err != nil {
-			log.Warnf("Failed to remove corrupt peers file %s: %s",
-				a.peersFile, err)
-		}
+	serializedPeerState, err := dbaccess.FetchPeersState(dbaccess.NoTx())
+	if dbaccess.IsNotFoundError(err) {
 		a.reset()
-		return
-	}
-	log.Infof("Loaded %d addresses from file '%s'", a.totalNumAddresses(), a.peersFile)
-}
-
-func (a *AddrManager) deserializePeers(filePath string) error {
-	_, err := os.Stat(filePath)
-	if os.IsNotExist(err) {
+		log.Info("No peers state was found in the database. Created a new one", a.totalNumAddresses())
 		return nil
 	}
-	r, err := os.Open(filePath)
 	if err != nil {
-		return errors.Errorf("%s error opening file: %s", filePath, err)
-	}
-	defer r.Close()
-
-	var sam serializedAddrManager
-	dec := json.NewDecoder(r)
-	err = dec.Decode(&sam)
-	if err != nil {
-		return errors.Errorf("error reading %s: %s", filePath, err)
+		return err
 	}
 
-	if sam.Version != serialisationVersion {
+	err = a.deserializePeersState(serializedPeerState)
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Loaded %d addresses from database", a.totalNumAddresses())
+	return nil
+}
+
+func (a *AddrManager) deserializePeersState(serializedPeerState []byte) error {
+	var peersState PeersStateForSerialization
+	r := bytes.NewBuffer(serializedPeerState)
+	dec := gob.NewDecoder(r)
+	err := dec.Decode(&peersState)
+	if err != nil {
+		return errors.Wrap(err, "error deserializing peers state")
+	}
+
+	if peersState.Version != serializationVersion {
 		return errors.Errorf("unknown version %d in serialized "+
-			"addrmanager", sam.Version)
+			"peers state", peersState.Version)
 	}
-	copy(a.key[:], sam.Key[:])
+	copy(a.key[:], peersState.Key[:])
 
-	for _, v := range sam.Addresses {
+	for _, v := range peersState.Addresses {
 		ka := new(KnownAddress)
 		ka.na, err = a.DeserializeNetAddress(v.Addr)
 		if err != nil {
@@ -600,12 +618,12 @@ func (a *AddrManager) deserializePeers(filePath string) error {
 		a.addrIndex[NetAddressKey(ka.na)] = ka
 	}
 
-	for subnetworkIDStr := range sam.NewBuckets {
+	for subnetworkIDStr := range peersState.NewBuckets {
 		subnetworkID, err := subnetworkid.NewFromStr(subnetworkIDStr)
 		if err != nil {
 			return err
 		}
-		for i, subnetworkNewBucket := range sam.NewBuckets[subnetworkIDStr] {
+		for i, subnetworkNewBucket := range peersState.NewBuckets[subnetworkIDStr] {
 			for _, val := range subnetworkNewBucket {
 				ka, ok := a.addrIndex[val]
 				if !ok {
@@ -622,7 +640,7 @@ func (a *AddrManager) deserializePeers(filePath string) error {
 		}
 	}
 
-	for i, newBucket := range sam.NewBucketFullNodes {
+	for i, newBucket := range peersState.NewBucketFullNodes {
 		for _, val := range newBucket {
 			ka, ok := a.addrIndex[val]
 			if !ok {
@@ -638,12 +656,12 @@ func (a *AddrManager) deserializePeers(filePath string) error {
 		}
 	}
 
-	for subnetworkIDStr := range sam.TriedBuckets {
+	for subnetworkIDStr := range peersState.TriedBuckets {
 		subnetworkID, err := subnetworkid.NewFromStr(subnetworkIDStr)
 		if err != nil {
 			return err
 		}
-		for i, subnetworkTriedBucket := range sam.TriedBuckets[subnetworkIDStr] {
+		for i, subnetworkTriedBucket := range peersState.TriedBuckets[subnetworkIDStr] {
 			for _, val := range subnetworkTriedBucket {
 				ka, ok := a.addrIndex[val]
 				if !ok {
@@ -658,7 +676,7 @@ func (a *AddrManager) deserializePeers(filePath string) error {
 		}
 	}
 
-	for i, triedBucket := range sam.TriedBucketFullNodes {
+	for i, triedBucket := range peersState.TriedBucketFullNodes {
 		for _, val := range triedBucket {
 			ka, ok := a.addrIndex[val]
 			if !ok {
@@ -704,20 +722,24 @@ func (a *AddrManager) DeserializeNetAddress(addr string) (*wire.NetAddress, erro
 
 // Start begins the core address handler which manages a pool of known
 // addresses, timeouts, and interval based writes.
-func (a *AddrManager) Start() {
+func (a *AddrManager) Start() error {
 	// Already started?
 	if atomic.AddInt32(&a.started, 1) != 1 {
-		return
+		return nil
 	}
 
 	log.Trace("Starting address manager")
 
-	// Load peers we already know about from file.
-	a.loadPeers()
+	// Load peers we already know about from the database.
+	err := a.loadPeers()
+	if err != nil {
+		return err
+	}
 
 	// Start the address ticker to save addresses periodically.
 	a.wg.Add(1)
 	spawn(a.addressHandler)
+	return nil
 }
 
 // Stop gracefully shuts down the address manager by stopping the main handler.
@@ -839,8 +861,8 @@ func (a *AddrManager) AddressCache(includeAllSubnetworks bool, subnetworkID *sub
 	}
 
 	numAddresses := len(allAddr) * getAddrPercent / 100
-	if numAddresses > getAddrMax {
-		numAddresses = getAddrMax
+	if numAddresses > GetAddrMax {
+		numAddresses = GetAddrMax
 	}
 	if len(allAddr) < getAddrMin {
 		numAddresses = len(allAddr)
@@ -1333,9 +1355,8 @@ func (a *AddrManager) GetBestLocalAddress(remoteAddr *wire.NetAddress) *wire.Net
 
 // New returns a new Kaspa address manager.
 // Use Start to begin processing asynchronous address updates.
-func New(dataDir string, lookupFunc func(string) ([]net.IP, error), subnetworkID *subnetworkid.SubnetworkID) *AddrManager {
+func New(lookupFunc func(string) ([]net.IP, error), subnetworkID *subnetworkid.SubnetworkID) *AddrManager {
 	am := AddrManager{
-		peersFile:         filepath.Join(dataDir, "peers.json"),
 		lookupFunc:        lookupFunc,
 		rand:              rand.New(rand.NewSource(time.Now().UnixNano())),
 		quit:              make(chan struct{}),

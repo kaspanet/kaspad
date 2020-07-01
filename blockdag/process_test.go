@@ -63,8 +63,8 @@ func TestProcessOrphans(t *testing.T) {
 	}
 
 	// Make sure that the child block had been rejected
-	node := dag.index.LookupNode(childBlock.Hash())
-	if node == nil {
+	node, ok := dag.index.LookupNode(childBlock.Hash())
+	if !ok {
 		t.Fatalf("TestProcessOrphans: child block missing from block index")
 	}
 	if !dag.index.NodeStatus(node).KnownInvalid() {

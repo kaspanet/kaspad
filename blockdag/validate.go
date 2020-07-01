@@ -400,10 +400,11 @@ func CalcTxMass(tx *util.Tx, previousScriptPubKeys [][]byte) uint64 {
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkProofOfWork.
-func (dag *BlockDAG) checkBlockHeaderSanity(header *wire.BlockHeader, flags BehaviorFlags) (delay time.Duration, err error) {
+func (dag *BlockDAG) checkBlockHeaderSanity(block *util.Block, flags BehaviorFlags) (delay time.Duration, err error) {
 	// Ensure the proof of work bits in the block header is in min/max range
 	// and the block hash is less than the target value described by the
 	// bits.
+	header := &block.MsgBlock().Header
 	err = dag.checkProofOfWork(header, flags)
 	if err != nil {
 		return 0, err
@@ -465,87 +466,182 @@ func checkBlockParentsOrder(header *wire.BlockHeader) error {
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkBlockHeaderSanity.
 func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (time.Duration, error) {
-	msgBlock := block.MsgBlock()
-	header := &msgBlock.Header
-	delay, err := dag.checkBlockHeaderSanity(header, flags)
+	delay, err := dag.checkBlockHeaderSanity(block, flags)
+	if err != nil {
+		return 0, err
+	}
+	err = dag.checkBlockContainsAtLeastOneTransaction(block)
+	if err != nil {
+		return 0, err
+	}
+	err = dag.checkBlockContainsLessThanMaxBlockMassTransactions(block)
+	if err != nil {
+		return 0, err
+	}
+	err = dag.checkFirstBlockTransactionIsCoinbase(block)
+	if err != nil {
+		return 0, err
+	}
+	err = dag.checkBlockContainsOnlyOneCoinbase(block)
+	if err != nil {
+		return 0, err
+	}
+	err = dag.checkBlockTransactionOrder(block)
+	if err != nil {
+		return 0, err
+	}
+	err = dag.checkNoNonNativeTransactions(block)
+	if err != nil {
+		return 0, err
+	}
+	err = dag.checkBlockTransactionSanity(block)
+	if err != nil {
+		return 0, err
+	}
+	err = dag.checkBlockHashMerkleRoot(block)
 	if err != nil {
 		return 0, err
 	}
 
-	// A block must have at least one transaction.
-	numTx := len(msgBlock.Transactions)
-	if numTx == 0 {
-		return 0, ruleError(ErrNoTransactions, "block does not contain "+
-			"any transactions")
+	// The following check will be fairly quick since the transaction IDs
+	// are already cached due to building the merkle tree above.
+	err = dag.checkBlockDuplicateTransactions(block)
+	if err != nil {
+		return 0, err
 	}
 
+	err = dag.checkBlockDoubleSpends(block)
+	if err != nil {
+		return 0, err
+	}
+	return delay, nil
+}
+
+func (dag *BlockDAG) checkBlockContainsAtLeastOneTransaction(block *util.Block) error {
+	transactions := block.Transactions()
+	numTx := len(transactions)
+	if numTx == 0 {
+		return ruleError(ErrNoTransactions, "block does not contain "+
+			"any transactions")
+	}
+	return nil
+}
+
+func (dag *BlockDAG) checkBlockContainsLessThanMaxBlockMassTransactions(block *util.Block) error {
 	// A block must not have more transactions than the max block mass or
 	// else it is certainly over the block mass limit.
+	transactions := block.Transactions()
+	numTx := len(transactions)
 	if numTx > wire.MaxMassPerBlock {
 		str := fmt.Sprintf("block contains too many transactions - "+
 			"got %d, max %d", numTx, wire.MaxMassPerBlock)
-		return 0, ruleError(ErrBlockMassTooHigh, str)
+		return ruleError(ErrBlockMassTooHigh, str)
 	}
+	return nil
+}
 
-	// The first transaction in a block must be a coinbase.
+func (dag *BlockDAG) checkFirstBlockTransactionIsCoinbase(block *util.Block) error {
 	transactions := block.Transactions()
 	if !transactions[util.CoinbaseTransactionIndex].IsCoinBase() {
-		return 0, ruleError(ErrFirstTxNotCoinbase, "first transaction in "+
+		return ruleError(ErrFirstTxNotCoinbase, "first transaction in "+
 			"block is not a coinbase")
 	}
+	return nil
+}
 
-	txOffset := util.CoinbaseTransactionIndex + 1
-
-	// A block must not have more than one coinbase. And transactions must be
-	// ordered by subnetwork
-	for i, tx := range transactions[txOffset:] {
+func (dag *BlockDAG) checkBlockContainsOnlyOneCoinbase(block *util.Block) error {
+	transactions := block.Transactions()
+	for i, tx := range transactions[util.CoinbaseTransactionIndex+1:] {
 		if tx.IsCoinBase() {
 			str := fmt.Sprintf("block contains second coinbase at "+
 				"index %d", i+2)
-			return 0, ruleError(ErrMultipleCoinbases, str)
-		}
-		if i != 0 && subnetworkid.Less(&tx.MsgTx().SubnetworkID, &transactions[i].MsgTx().SubnetworkID) {
-			return 0, ruleError(ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")
+			return ruleError(ErrMultipleCoinbases, str)
 		}
 	}
+	return nil
+}
 
-	// Do some preliminary checks on each transaction to ensure they are
-	// sane before continuing.
+func (dag *BlockDAG) checkBlockTransactionOrder(block *util.Block) error {
+	transactions := block.Transactions()
+	for i, tx := range transactions[util.CoinbaseTransactionIndex+1:] {
+		if i != 0 && subnetworkid.Less(&tx.MsgTx().SubnetworkID, &transactions[i].MsgTx().SubnetworkID) {
+			return ruleError(ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")
+		}
+	}
+	return nil
+}
+
+func (dag *BlockDAG) checkNoNonNativeTransactions(block *util.Block) error {
+	// Disallow non-native/coinbase subnetworks in networks that don't allow them
+	if !dag.dagParams.EnableNonNativeSubnetworks {
+		transactions := block.Transactions()
+		for _, tx := range transactions {
+			if !(tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
+				tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase)) {
+				return ruleError(ErrInvalidSubnetwork, "non-native/coinbase subnetworks are not allowed")
+			}
+		}
+	}
+	return nil
+}
+
+func (dag *BlockDAG) checkBlockTransactionSanity(block *util.Block) error {
+	transactions := block.Transactions()
 	for _, tx := range transactions {
 		err := CheckTransactionSanity(tx, dag.subnetworkID)
 		if err != nil {
-			return 0, err
+			return err
 		}
 	}
+	return nil
+}
 
+func (dag *BlockDAG) checkBlockHashMerkleRoot(block *util.Block) error {
 	// Build merkle tree and ensure the calculated merkle root matches the
 	// entry in the block header. This also has the effect of caching all
 	// of the transaction hashes in the block to speed up future hash
 	// checks.
 	hashMerkleTree := BuildHashMerkleTreeStore(block.Transactions())
 	calculatedHashMerkleRoot := hashMerkleTree.Root()
-	if !header.HashMerkleRoot.IsEqual(calculatedHashMerkleRoot) {
+	if !block.MsgBlock().Header.HashMerkleRoot.IsEqual(calculatedHashMerkleRoot) {
 		str := fmt.Sprintf("block hash merkle root is invalid - block "+
 			"header indicates %s, but calculated value is %s",
-			header.HashMerkleRoot, calculatedHashMerkleRoot)
-		return 0, ruleError(ErrBadMerkleRoot, str)
+			block.MsgBlock().Header.HashMerkleRoot, calculatedHashMerkleRoot)
+		return ruleError(ErrBadMerkleRoot, str)
 	}
+	return nil
+}
 
-	// Check for duplicate transactions. This check will be fairly quick
-	// since the transaction IDs are already cached due to building the
-	// merkle tree above.
+func (dag *BlockDAG) checkBlockDuplicateTransactions(block *util.Block) error {
 	existingTxIDs := make(map[daghash.TxID]struct{})
+	transactions := block.Transactions()
 	for _, tx := range transactions {
 		id := tx.ID()
 		if _, exists := existingTxIDs[*id]; exists {
 			str := fmt.Sprintf("block contains duplicate "+
 				"transaction %s", id)
-			return 0, ruleError(ErrDuplicateTx, str)
+			return ruleError(ErrDuplicateTx, str)
 		}
 		existingTxIDs[*id] = struct{}{}
 	}
+	return nil
+}
 
-	return delay, nil
+func (dag *BlockDAG) checkBlockDoubleSpends(block *util.Block) error {
+	usedOutpoints := make(map[wire.Outpoint]*daghash.TxID)
+	transactions := block.Transactions()
+	for _, tx := range transactions {
+		for _, txIn := range tx.MsgTx().TxIn {
+			if spendingTxID, exists := usedOutpoints[txIn.PreviousOutpoint]; exists {
+				str := fmt.Sprintf("transaction %s spends "+
+					"outpoint %s that was already spent by "+
+					"transaction %s in this block", tx.ID(), txIn.PreviousOutpoint, spendingTxID)
+				return ruleError(ErrDoubleSpendInSameBlock, str)
+			}
+			usedOutpoints[txIn.PreviousOutpoint] = tx.ID()
+		}
+	}
+	return nil
 }
 
 // checkBlockHeaderContext performs several validation checks on the block header
@@ -602,7 +698,7 @@ func (dag *BlockDAG) validateParents(blockHeader *wire.BlockHeader, parents bloc
 	for parentA := range parents {
 		// isFinalized might be false-negative because node finality status is
 		// updated in a separate goroutine. This is why later the block is
-		// checked more thoroughly on the finality rules in dag.checkFinalityRules.
+		// checked more thoroughly on the finality rules in dag.checkFinalityViolation.
 		if parentA.isFinalized {
 			return ruleError(ErrFinality, fmt.Sprintf("block %s is a finalized "+
 				"parent of block %s", parentA.hash, blockHeader.BlockHash()))
@@ -613,7 +709,7 @@ func (dag *BlockDAG) validateParents(blockHeader *wire.BlockHeader, parents bloc
 				continue
 			}
 
-			isAncestorOf, err := dag.isAncestorOf(parentA, parentB)
+			isAncestorOf, err := dag.isInPast(parentA, parentB)
 			if err != nil {
 				return err
 			}
@@ -838,6 +934,11 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 			return nil, err
 		}
 
+		err = checkDoubleSpendsWithBlockPast(pastUTXO, transactions)
+		if err != nil {
+			return nil, err
+		}
+
 		if err := validateBlockMass(pastUTXO, transactions); err != nil {
 			return nil, err
 		}
@@ -913,7 +1014,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 
 		// Now that the inexpensive checks are done and have passed, verify the
 		// transactions are actually allowed to spend the coins by running the
-		// expensive ECDSA signature check scripts. Doing this last helps
+		// expensive SCHNORR signature check scripts. Doing this last helps
 		// prevent CPU exhaustion attacks.
 		err := checkBlockScripts(block, pastUTXO, transactions, scriptFlags, dag.sigCache)
 		if err != nil {

@@ -256,72 +256,72 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "getBlockTemplate optional - template request",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getBlockTemplate", `{"mode":"template","capabilities":["longpoll","coinbasetxn"]}`)
+				return rpcmodel.NewCommand("getBlockTemplate", `{"mode":"template","payAddress":"kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3"}`)
 			},
 			staticCmd: func() interface{} {
 				template := rpcmodel.TemplateRequest{
-					Mode:         "template",
-					Capabilities: []string{"longpoll", "coinbasetxn"},
+					Mode:       "template",
+					PayAddress: "kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3",
 				}
 				return rpcmodel.NewGetBlockTemplateCmd(&template)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"getBlockTemplate","params":[{"mode":"template","capabilities":["longpoll","coinbasetxn"]}],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"getBlockTemplate","params":[{"mode":"template","payAddress":"kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3"}],"id":1}`,
 			unmarshalled: &rpcmodel.GetBlockTemplateCmd{
 				Request: &rpcmodel.TemplateRequest{
-					Mode:         "template",
-					Capabilities: []string{"longpoll", "coinbasetxn"},
+					Mode:       "template",
+					PayAddress: "kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3",
 				},
 			},
 		},
 		{
 			name: "getBlockTemplate optional - template request with tweaks",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getBlockTemplate", `{"mode":"template","capabilities":["longPoll","coinbaseTxn"],"sigOpLimit":500,"massLimit":100000000,"maxVersion":1}`)
+				return rpcmodel.NewCommand("getBlockTemplate", `{"mode":"template","sigOpLimit":500,"massLimit":100000000,"maxVersion":1,"payAddress":"kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3"}`)
 			},
 			staticCmd: func() interface{} {
 				template := rpcmodel.TemplateRequest{
-					Mode:         "template",
-					Capabilities: []string{"longPoll", "coinbaseTxn"},
-					SigOpLimit:   500,
-					MassLimit:    100000000,
-					MaxVersion:   1,
+					Mode:       "template",
+					PayAddress: "kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3",
+					SigOpLimit: 500,
+					MassLimit:  100000000,
+					MaxVersion: 1,
 				}
 				return rpcmodel.NewGetBlockTemplateCmd(&template)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"getBlockTemplate","params":[{"mode":"template","capabilities":["longPoll","coinbaseTxn"],"sigOpLimit":500,"massLimit":100000000,"maxVersion":1}],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"getBlockTemplate","params":[{"mode":"template","sigOpLimit":500,"massLimit":100000000,"maxVersion":1,"payAddress":"kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3"}],"id":1}`,
 			unmarshalled: &rpcmodel.GetBlockTemplateCmd{
 				Request: &rpcmodel.TemplateRequest{
-					Mode:         "template",
-					Capabilities: []string{"longPoll", "coinbaseTxn"},
-					SigOpLimit:   int64(500),
-					MassLimit:    int64(100000000),
-					MaxVersion:   1,
+					Mode:       "template",
+					PayAddress: "kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3",
+					SigOpLimit: int64(500),
+					MassLimit:  int64(100000000),
+					MaxVersion: 1,
 				},
 			},
 		},
 		{
 			name: "getBlockTemplate optional - template request with tweaks 2",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getBlockTemplate", `{"mode":"template","capabilities":["longPoll","coinbaseTxn"],"sigOpLimit":true,"massLimit":100000000,"maxVersion":1}`)
+				return rpcmodel.NewCommand("getBlockTemplate", `{"mode":"template","payAddress":"kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3","sigOpLimit":true,"massLimit":100000000,"maxVersion":1}`)
 			},
 			staticCmd: func() interface{} {
 				template := rpcmodel.TemplateRequest{
-					Mode:         "template",
-					Capabilities: []string{"longPoll", "coinbaseTxn"},
-					SigOpLimit:   true,
-					MassLimit:    100000000,
-					MaxVersion:   1,
+					Mode:       "template",
+					PayAddress: "kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3",
+					SigOpLimit: true,
+					MassLimit:  100000000,
+					MaxVersion: 1,
 				}
 				return rpcmodel.NewGetBlockTemplateCmd(&template)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"getBlockTemplate","params":[{"mode":"template","capabilities":["longPoll","coinbaseTxn"],"sigOpLimit":true,"massLimit":100000000,"maxVersion":1}],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"getBlockTemplate","params":[{"mode":"template","sigOpLimit":true,"massLimit":100000000,"maxVersion":1,"payAddress":"kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3"}],"id":1}`,
 			unmarshalled: &rpcmodel.GetBlockTemplateCmd{
 				Request: &rpcmodel.TemplateRequest{
-					Mode:         "template",
-					Capabilities: []string{"longPoll", "coinbaseTxn"},
-					SigOpLimit:   true,
-					MassLimit:    int64(100000000),
-					MaxVersion:   1,
+					Mode:       "template",
+					PayAddress: "kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3",
+					SigOpLimit: true,
+					MassLimit:  int64(100000000),
+					MaxVersion: 1,
 				},
 			},
 		},
@@ -444,15 +444,15 @@ func TestRPCServerCommands(t *testing.T) {
 			unmarshalled: &rpcmodel.GetNetTotalsCmd{},
 		},
 		{
-			name: "getPeerInfo",
+			name: "getConnectedPeerInfo",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getPeerInfo")
+				return rpcmodel.NewCommand("getConnectedPeerInfo")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetPeerInfoCmd()
+				return rpcmodel.NewGetConnectedPeerInfoCmd()
 			},
-			marshalled:   `{"jsonrpc":"1.0","method":"getPeerInfo","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetPeerInfoCmd{},
+			marshalled:   `{"jsonrpc":"1.0","method":"getConnectedPeerInfo","params":[],"id":1}`,
+			unmarshalled: &rpcmodel.GetConnectedPeerInfoCmd{},
 		},
 		{
 			name: "getRawMempool",

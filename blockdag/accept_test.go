@@ -63,7 +63,10 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	if isOrphan {
 		t.Fatalf("TestMaybeAcceptBlockErrors: incorrectly returned block 1 is an orphan")
 	}
-	blockNode1 := dag.index.LookupNode(block1.Hash())
+	blockNode1, ok := dag.index.LookupNode(block1.Hash())
+	if !ok {
+		t.Fatalf("block %s does not exist in the DAG", block1.Hash())
+	}
 	dag.index.SetStatusFlags(blockNode1, statusValidateFailed)
 
 	block2 := blocks[2]

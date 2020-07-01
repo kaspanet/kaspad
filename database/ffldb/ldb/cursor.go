@@ -2,7 +2,7 @@ package ldb
 
 import (
 	"bytes"
-	"encoding/hex"
+
 	"github.com/kaspanet/kaspad/database"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
@@ -12,35 +12,35 @@ import (
 // LevelDBCursor is a thin wrapper around native leveldb iterators.
 type LevelDBCursor struct {
 	ldbIterator iterator.Iterator
-	prefix      []byte
+	bucket      *database.Bucket
 
 	isClosed bool
 }
 
 // Cursor begins a new cursor over the given prefix.
-func (db *LevelDB) Cursor(prefix []byte) *LevelDBCursor {
-	ldbIterator := db.ldb.NewIterator(util.BytesPrefix(prefix), nil)
+func (db *LevelDB) Cursor(bucket *database.Bucket) *LevelDBCursor {
+	ldbIterator := db.ldb.NewIterator(util.BytesPrefix(bucket.Path()), nil)
 	return &LevelDBCursor{
 		ldbIterator: ldbIterator,
-		prefix:      prefix,
+		bucket:      bucket,
 		isClosed:    false,
 	}
 }
 
 // Next moves the iterator to the next key/value pair. It returns whether the
-// iterator is exhausted. Returns false if the cursor is closed.
+// iterator is exhausted. Panics if the cursor is closed.
 func (c *LevelDBCursor) Next() bool {
 	if c.isClosed {
-		return false
+		panic("cannot call next on a closed cursor")
 	}
 	return c.ldbIterator.Next()
 }
 
 // First moves the iterator to the first key/value pair. It returns false if
-// such a pair does not exist or if the cursor is closed.
+// such a pair does not exist. Panics if the cursor is closed.
 func (c *LevelDBCursor) First() bool {
 	if c.isClosed {
-		return false
+		panic("cannot call first on a closed cursor")
 	}
 	return c.ldbIterator.First()
 }
@@ -48,25 +48,20 @@ func (c *LevelDBCursor) First() bool {
 // Seek moves the iterator to the first key/value pair whose key is greater
 // than or equal to the given key. It returns ErrNotFound if such pair does not
 // exist.
-func (c *LevelDBCursor) Seek(key []byte) error {
+func (c *LevelDBCursor) Seek(key *database.Key) error {
 	if c.isClosed {
 		return errors.New("cannot seek a closed cursor")
 	}
 
-	notFoundErr := errors.Wrapf(database.ErrNotFound, "key %s not "+
-		"found", hex.EncodeToString(key))
-	found := c.ldbIterator.Seek(key)
+	found := c.ldbIterator.Seek(key.Bytes())
 	if !found {
-		return notFoundErr
+		return errors.Wrapf(database.ErrNotFound, "key %s not found", key)
 	}
 
 	// Use c.ldbIterator.Key because c.Key removes the prefix from the key
 	currentKey := c.ldbIterator.Key()
-	if currentKey == nil {
-		return notFoundErr
-	}
-	if !bytes.Equal(currentKey, key) {
-		return notFoundErr
+	if currentKey == nil || !bytes.Equal(currentKey, key.Bytes()) {
+		return errors.Wrapf(database.ErrNotFound, "key %s not found", key)
 	}
 
 	return nil
@@ -76,17 +71,17 @@ func (c *LevelDBCursor) Seek(key []byte) error {
 // Note that the key is trimmed to not include the prefix the cursor was opened
 // with. The caller should not modify the contents of the returned slice, and
 // its contents may change on the next call to Next.
-func (c *LevelDBCursor) Key() ([]byte, error) {
+func (c *LevelDBCursor) Key() (*database.Key, error) {
 	if c.isClosed {
 		return nil, errors.New("cannot get the key of a closed cursor")
 	}
 	fullKeyPath := c.ldbIterator.Key()
 	if fullKeyPath == nil {
 		return nil, errors.Wrapf(database.ErrNotFound, "cannot get the "+
-			"key of a done cursor")
+			"key of an exhausted cursor")
 	}
-	key := bytes.TrimPrefix(fullKeyPath, c.prefix)
-	return key, nil
+	suffix := bytes.TrimPrefix(fullKeyPath, c.bucket.Path())
+	return c.bucket.Key(suffix), nil
 }
 
 // Value returns the value of the current key/value pair, or ErrNotFound if done.
@@ -99,7 +94,7 @@ func (c *LevelDBCursor) Value() ([]byte, error) {
 	value := c.ldbIterator.Value()
 	if value == nil {
 		return nil, errors.Wrapf(database.ErrNotFound, "cannot get the "+
-			"value of a done cursor")
+			"value of an exhausted cursor")
 	}
 	return value, nil
 }

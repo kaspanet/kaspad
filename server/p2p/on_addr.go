@@ -1,6 +1,8 @@
 package p2p
 
 import (
+	"fmt"
+	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/peer"
 	"github.com/kaspanet/kaspad/wire"
@@ -18,18 +20,16 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 		return
 	}
 
-	// A message that has no addresses is invalid.
-	if len(msg.AddrList) == 0 {
-		peerLog.Errorf("Command [%s] from %s does not contain any addresses",
-			msg.Command(), sp.Peer)
-		sp.Disconnect()
+	if len(msg.AddrList) > addrmgr.GetAddrMax {
+		sp.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectInvalid, nil,
+			peer.BanScoreSentTooManyAddresses, 0, fmt.Sprintf("address count excceeded %d", addrmgr.GetAddrMax))
 		return
 	}
 
 	if msg.IncludeAllSubnetworks {
-		peerLog.Errorf("Got unexpected IncludeAllSubnetworks=true in [%s] command from %s",
-			msg.Command(), sp.Peer)
-		sp.Disconnect()
+		sp.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectInvalid, nil,
+			peer.BanScoreMsgAddrWithInvalidSubnetwork, 0,
+			fmt.Sprintf("got unexpected IncludeAllSubnetworks=true in [%s] command", msg.Command()))
 		return
 	} else if !msg.SubnetworkID.IsEqual(config.ActiveConfig().SubnetworkID) && msg.SubnetworkID != nil {
 		peerLog.Errorf("Only full nodes and %s subnetwork IDs are allowed in [%s] command, but got subnetwork ID %s from %s",
@@ -59,5 +59,5 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 	// Add addresses to server address manager. The address manager handles
 	// the details of things such as preventing duplicate addresses, max
 	// addresses, and last seen updates.
-	sp.server.addrManager.AddAddresses(msg.AddrList, sp.NA(), msg.SubnetworkID)
+	sp.server.AddrManager.AddAddresses(msg.AddrList, sp.NA(), msg.SubnetworkID)
 }

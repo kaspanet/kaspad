@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/util"
 	"os"
 
 	"github.com/kaspanet/kaspad/version"
@@ -39,15 +40,20 @@ func main() {
 
 	client, err := connectToServer(cfg)
 	if err != nil {
-		panic(errors.Wrap(err, "Error connecting to the RPC server"))
+		panic(errors.Wrap(err, "error connecting to the RPC server"))
 	}
 	defer client.Disconnect()
 
+	miningAddr, err := util.DecodeAddress(cfg.MiningAddr, cfg.ActiveNetParams.Prefix)
+	if err != nil {
+		panic(errors.Wrap(err, "error decoding mining address"))
+	}
+
 	doneChan := make(chan struct{})
 	spawn(func() {
-		err = mineLoop(client, cfg.NumberOfBlocks, cfg.BlockDelay)
+		err = mineLoop(client, cfg.NumberOfBlocks, cfg.BlockDelay, cfg.MineWhenNotSynced, miningAddr)
 		if err != nil {
-			panic(errors.Errorf("Error in mine loop: %s", err))
+			panic(errors.Wrap(err, "error in mine loop"))
 		}
 		doneChan <- struct{}{}
 	})

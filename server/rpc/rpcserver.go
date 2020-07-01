@@ -12,6 +12,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/kaspanet/kaspad/addrmgr"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -83,7 +84,8 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getMempoolInfo":        handleGetMempoolInfo,
 	"getMempoolEntry":       handleGetMempoolEntry,
 	"getNetTotals":          handleGetNetTotals,
-	"getPeerInfo":           handleGetPeerInfo,
+	"getConnectedPeerInfo":  handleGetConnectedPeerInfo,
+	"getPeerAddresses":      handleGetPeerAddresses,
 	"getRawMempool":         handleGetRawMempool,
 	"getSubnetwork":         handleGetSubnetwork,
 	"getTxOut":              handleGetTxOut,
@@ -723,9 +725,9 @@ type rpcserverConnManager interface {
 // The interface contract requires that all of these methods are safe for
 // concurrent access.
 type rpcserverSyncManager interface {
-	// IsCurrent returns whether or not the sync manager believes the DAG
+	// IsSynced returns whether or not the sync manager believes the DAG
 	// is current as compared to the rest of the network.
-	IsCurrent() bool
+	IsSynced() bool
 
 	// SubmitBlock submits the provided block to the network after
 	// processing it locally.
@@ -784,7 +786,8 @@ type rpcserverConfig struct {
 	// of to provide additional data when queried.
 	AcceptanceIndex *indexers.AcceptanceIndex
 
-	shouldMineOnGenesis func() bool
+	// addressManager defines the address manager for the RPC server to use.
+	addressManager *addrmgr.AddrManager
 }
 
 // setupRPCListeners returns a slice of listeners that are configured for use
@@ -853,17 +856,17 @@ func NewRPCServer(
 		return nil, errors.New("RPCS: No valid listen address")
 	}
 	cfg := &rpcserverConfig{
-		Listeners:           rpcListeners,
-		StartupTime:         startupTime,
-		ConnMgr:             &rpcConnManager{p2pServer},
-		SyncMgr:             &rpcSyncMgr{p2pServer, p2pServer.SyncManager},
-		TimeSource:          p2pServer.TimeSource,
-		DAGParams:           p2pServer.DAGParams,
-		TxMemPool:           p2pServer.TxMemPool,
-		Generator:           blockTemplateGenerator,
-		AcceptanceIndex:     p2pServer.AcceptanceIndex,
-		DAG:                 p2pServer.DAG,
-		shouldMineOnGenesis: p2pServer.ShouldMineOnGenesis,
+		Listeners:       rpcListeners,
+		StartupTime:     startupTime,
+		ConnMgr:         &rpcConnManager{p2pServer},
+		SyncMgr:         &rpcSyncMgr{p2pServer, p2pServer.SyncManager},
+		addressManager:  p2pServer.AddrManager,
+		TimeSource:      p2pServer.TimeSource,
+		DAGParams:       p2pServer.DAGParams,
+		TxMemPool:       p2pServer.TxMemPool,
+		Generator:       blockTemplateGenerator,
+		AcceptanceIndex: p2pServer.AcceptanceIndex,
+		DAG:             p2pServer.DAG,
 	}
 	rpc := Server{
 		cfg:                    *cfg,

@@ -252,6 +252,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockVerboseResult-parentHashes":         "The hashes of the parent blocks",
 	"getBlockVerboseResult-selectedParentHash":   "The selected parent hash",
 	"getBlockVerboseResult-childHashes":          "The hashes of the child blocks (only if there are any)",
+	"getBlockVerboseResult-acceptedBlockHashes":  "The hashes of the blocks accepted by this block",
 
 	// GetBlockCountCmd help.
 	"getBlockCount--synopsis": "Returns the number of blocks in the block DAG.",
@@ -282,15 +283,15 @@ var helpDescsEnUS = map[string]string{
 	"getBlockHeaderVerboseResult-childHashes":          "The hashes of the child blocks (only if there are any)",
 
 	// TemplateRequest help.
-	"templateRequest-mode":         "This is 'template', 'proposal', or omitted",
-	"templateRequest-capabilities": "List of capabilities",
-	"templateRequest-longPollId":   "The long poll ID of a job to monitor for expiration; required and valid only for long poll requests ",
-	"templateRequest-sigOpLimit":   "Number of signature operations allowed in blocks (this parameter is ignored)",
-	"templateRequest-massLimit":    "Max transaction mass allowed in blocks (this parameter is ignored)",
-	"templateRequest-maxVersion":   "Highest supported block version number (this parameter is ignored)",
-	"templateRequest-target":       "The desired target for the block template (this parameter is ignored)",
-	"templateRequest-data":         "Hex-encoded block data (only for mode=proposal)",
-	"templateRequest-workId":       "The server provided workid if provided in block template (not applicable)",
+	"templateRequest-mode":       "This is 'template', 'proposal', or omitted",
+	"templateRequest-payAddress": "The address the coinbase pays to",
+	"templateRequest-longPollId": "The long poll ID of a job to monitor for expiration; required and valid only for long poll requests ",
+	"templateRequest-sigOpLimit": "Number of signature operations allowed in blocks (this parameter is ignored)",
+	"templateRequest-massLimit":  "Max transaction mass allowed in blocks (this parameter is ignored)",
+	"templateRequest-maxVersion": "Highest supported block version number (this parameter is ignored)",
+	"templateRequest-target":     "The desired target for the block template (this parameter is ignored)",
+	"templateRequest-data":       "Hex-encoded block data (only for mode=proposal)",
+	"templateRequest-workId":     "The server provided workid if provided in block template (not applicable)",
 
 	// GetBlockTemplateResultTx help.
 	"getBlockTemplateResultTx-data":    "Hex-encoded transaction data (byte-for-byte)",
@@ -330,6 +331,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockTemplateResult-nonceRange":           "Two concatenated hex-encoded big-endian 64-bit integers which represent the valid ranges of nonces the miner may scan",
 	"getBlockTemplateResult-capabilities":         "List of server capabilities including 'proposal' to indicate support for block proposals",
 	"getBlockTemplateResult-rejectReason":         "Reason the proposal was invalid as-is (only applies to proposal responses)",
+	"getBlockTemplateResult-isSynced":             "Whether this node is synced with the rest of of the network. Miners are generally expected not to mine when isSynced is false",
 
 	// GetBlockTemplateCmd help.
 	"getBlockTemplate--synopsis": "Returns a JSON object with information necessary to construct a block to mine or accepts a proposal to validate.\n" +
@@ -414,29 +416,55 @@ var helpDescsEnUS = map[string]string{
 	"getNetTotalsResult-totalBytesSent": "Total bytes sent",
 	"getNetTotalsResult-timeMillis":     "Number of milliseconds since 1 Jan 1970 GMT",
 
-	// GetPeerInfoResult help.
-	"getPeerInfoResult-id":          "A unique node ID",
-	"getPeerInfoResult-addr":        "The ip address and port of the peer",
-	"getPeerInfoResult-services":    "Services bitmask which represents the services supported by the peer",
-	"getPeerInfoResult-relayTxes":   "Peer has requested transactions be relayed to it",
-	"getPeerInfoResult-lastSend":    "Time the last message was received in seconds since 1 Jan 1970 GMT",
-	"getPeerInfoResult-lastRecv":    "Time the last message was sent in seconds since 1 Jan 1970 GMT",
-	"getPeerInfoResult-bytesSent":   "Total bytes sent",
-	"getPeerInfoResult-bytesRecv":   "Total bytes received",
-	"getPeerInfoResult-connTime":    "Time the connection was made in seconds since 1 Jan 1970 GMT",
-	"getPeerInfoResult-timeOffset":  "The time offset of the peer",
-	"getPeerInfoResult-pingTime":    "Number of microseconds the last ping took",
-	"getPeerInfoResult-pingWait":    "Number of microseconds a queued ping has been waiting for a response",
-	"getPeerInfoResult-version":     "The protocol version of the peer",
-	"getPeerInfoResult-subVer":      "The user agent of the peer",
-	"getPeerInfoResult-inbound":     "Whether or not the peer is an inbound connection",
-	"getPeerInfoResult-selectedTip": "The selected tip of the peer",
-	"getPeerInfoResult-banScore":    "The ban score",
-	"getPeerInfoResult-feeFilter":   "The requested minimum fee a transaction must have to be announced to the peer",
-	"getPeerInfoResult-syncNode":    "Whether or not the peer is the sync peer",
+	// GetConnectedPeerInfoResult help.
+	"getConnectedPeerInfoResult-id":          "A unique node ID",
+	"getConnectedPeerInfoResult-addr":        "The ip address and port of the peer",
+	"getConnectedPeerInfoResult-services":    "Services bitmask which represents the services supported by the peer",
+	"getConnectedPeerInfoResult-relayTxes":   "Peer has requested transactions be relayed to it",
+	"getConnectedPeerInfoResult-lastSend":    "Time the last message was received in seconds since 1 Jan 1970 GMT",
+	"getConnectedPeerInfoResult-lastRecv":    "Time the last message was sent in seconds since 1 Jan 1970 GMT",
+	"getConnectedPeerInfoResult-bytesSent":   "Total bytes sent",
+	"getConnectedPeerInfoResult-bytesRecv":   "Total bytes received",
+	"getConnectedPeerInfoResult-connTime":    "Time the connection was made in seconds since 1 Jan 1970 GMT",
+	"getConnectedPeerInfoResult-timeOffset":  "The time offset of the peer",
+	"getConnectedPeerInfoResult-pingTime":    "Number of microseconds the last ping took",
+	"getConnectedPeerInfoResult-pingWait":    "Number of microseconds a queued ping has been waiting for a response",
+	"getConnectedPeerInfoResult-version":     "The protocol version of the peer",
+	"getConnectedPeerInfoResult-subVer":      "The user agent of the peer",
+	"getConnectedPeerInfoResult-inbound":     "Whether or not the peer is an inbound connection",
+	"getConnectedPeerInfoResult-selectedTip": "The selected tip of the peer",
+	"getConnectedPeerInfoResult-banScore":    "The ban score",
+	"getConnectedPeerInfoResult-feeFilter":   "The requested minimum fee a transaction must have to be announced to the peer",
+	"getConnectedPeerInfoResult-syncNode":    "Whether or not the peer is the sync peer",
 
-	// GetPeerInfoCmd help.
-	"getPeerInfo--synopsis": "Returns data about each connected network peer as an array of json objects.",
+	// GetConnectedPeerInfoCmd help.
+	"getConnectedPeerInfo--synopsis": "Returns data about each connected network peer as an array of json objects.",
+
+	// GetPeerAddressesResult help.
+	"getPeerAddressesResult-version":              "Peers state serialization version",
+	"getPeerAddressesResult-key":                  "Address manager's key for randomness purposes.",
+	"getPeerAddressesResult-addresses":            "The node's known addresses",
+	"getPeerAddressesResult-newBuckets":           "Peers state subnetwork new buckets",
+	"getPeerAddressesResult-newBuckets--desc":     "New buckets keyed by subnetwork ID",
+	"getPeerAddressesResult-newBuckets--key":      "subnetworkId",
+	"getPeerAddressesResult-newBuckets--value":    "New bucket",
+	"getPeerAddressesResult-newBucketFullNodes":   "Peers state full nodes new bucket",
+	"getPeerAddressesResult-triedBuckets":         "Peers state subnetwork tried buckets",
+	"getPeerAddressesResult-triedBuckets--desc":   "Tried buckets keyed by subnetwork ID",
+	"getPeerAddressesResult-triedBuckets--key":    "subnetworkId",
+	"getPeerAddressesResult-triedBuckets--value":  "Tried bucket",
+	"getPeerAddressesResult-triedBucketFullNodes": "Peers state tried full nodes bucket",
+
+	"getPeerAddressesKnownAddressResult-addr":         "Address",
+	"getPeerAddressesKnownAddressResult-src":          "Address of the peer that handed the address",
+	"getPeerAddressesKnownAddressResult-subnetworkId": "Address subnetwork ID",
+	"getPeerAddressesKnownAddressResult-attempts":     "Number of attempts to connect to the address",
+	"getPeerAddressesKnownAddressResult-timeStamp":    "Time the address was added",
+	"getPeerAddressesKnownAddressResult-lastAttempt":  "Last attempt to connect to the address",
+	"getPeerAddressesKnownAddressResult-lastSuccess":  "Last successful attempt to connect to the address",
+
+	// GetPeerAddressesCmd help.
+	"getPeerAddresses--synopsis": "Returns the peers state.",
 
 	// GetRawMempoolVerboseResult help.
 	"getRawMempoolVerboseResult-size":             "Transaction size in bytes",
@@ -486,7 +514,7 @@ var helpDescsEnUS = map[string]string{
 
 	// PingCmd help.
 	"ping--synopsis": "Queues a ping to be sent to each connected peer.\n" +
-		"Ping times are provided by getPeerInfo via the pingtime and pingwait fields.",
+		"Ping times are provided by getConnectedPeerInfo via the pingtime and pingwait fields.",
 
 	// RemoveManualNodeCmd help.
 	"removeManualNode--synopsis": "Removes a peer from the manual nodes list",
@@ -614,7 +642,8 @@ var rpcResultTypes = map[string][]interface{}{
 	"getMempoolInfo":        {(*rpcmodel.GetMempoolInfoResult)(nil)},
 	"getMempoolEntry":       {(*rpcmodel.GetMempoolEntryResult)(nil)},
 	"getNetTotals":          {(*rpcmodel.GetNetTotalsResult)(nil)},
-	"getPeerInfo":           {(*[]rpcmodel.GetPeerInfoResult)(nil)},
+	"getConnectedPeerInfo":  {(*[]rpcmodel.GetConnectedPeerInfoResult)(nil)},
+	"getPeerAddresses":      {(*[]rpcmodel.GetPeerAddressesResult)(nil)},
 	"getRawMempool":         {(*[]string)(nil), (*rpcmodel.GetRawMempoolVerboseResult)(nil)},
 	"getSubnetwork":         {(*rpcmodel.GetSubnetworkResult)(nil)},
 	"getTxOut":              {(*rpcmodel.GetTxOutResult)(nil)},

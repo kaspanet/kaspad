@@ -11,9 +11,6 @@ import (
 // and is used to negotiate the protocol version details as well as kick start
 // the communications.
 func (sp *Peer) OnVersion(_ *peer.Peer, msg *wire.MsgVersion) {
-	// Signal the sync manager this peer is a new sync candidate.
-	sp.server.SyncManager.NewPeer(sp.Peer)
-
 	// Choose whether or not to relay transactions before a filter command
 	// is received.
 	sp.setDisableRelayTx(msg.DisableRelayTx)
@@ -24,13 +21,13 @@ func (sp *Peer) OnVersion(_ *peer.Peer, msg *wire.MsgVersion) {
 	// to specified peers and actively avoids advertising and connecting to
 	// discovered peers.
 	if !config.ActiveConfig().Simnet {
-		addrManager := sp.server.addrManager
+		addrManager := sp.server.AddrManager
 
 		// Outbound connections.
 		if !sp.Inbound() {
 			// TODO(davec): Only do this if not doing the initial block
 			// download and the local address is routable.
-			if !config.ActiveConfig().DisableListen /* && isCurrent? */ {
+			if !config.ActiveConfig().DisableListen {
 				// Get address that best matches.
 				lna := addrManager.GetBestLocalAddress(sp.NA())
 				if addrmgr.IsRoutable(lna) {
@@ -54,7 +51,4 @@ func (sp *Peer) OnVersion(_ *peer.Peer, msg *wire.MsgVersion) {
 			addrManager.Good(sp.NA(), msg.SubnetworkID)
 		}
 	}
-
-	// Add valid peer to the server.
-	sp.server.AddPeer(sp)
 }

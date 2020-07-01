@@ -5,11 +5,12 @@
 package blockdag
 
 import (
-	"github.com/pkg/errors"
 	"math"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/util"
@@ -122,12 +123,6 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CheckConnectBlockTemplate: Received unexpected error on "+
 			"block 4: %v", err)
-	}
-
-	blockNode3 := dag.index.LookupNode(blocks[3].Hash())
-	blockNode4 := dag.index.LookupNode(blocks[4].Hash())
-	if blockNode3.children.contains(blockNode4) {
-		t.Errorf("Block 4 wasn't successfully detached as a child from block3")
 	}
 
 	// Block 3a should connect even though it does not build on dag tips.
@@ -570,9 +565,9 @@ func TestValidateParents(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	a := prepareAndProcessBlock(t, dag, dag.dagParams.GenesisBlock)
-	b := prepareAndProcessBlock(t, dag, a)
-	c := prepareAndProcessBlock(t, dag, dag.dagParams.GenesisBlock)
+	a := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.dagParams.GenesisBlock)
+	b := prepareAndProcessBlockByParentMsgBlocks(t, dag, a)
+	c := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.dagParams.GenesisBlock)
 
 	aNode := nodeByMsgBlock(t, dag, a)
 	bNode := nodeByMsgBlock(t, dag, b)

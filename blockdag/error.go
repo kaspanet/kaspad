@@ -6,27 +6,9 @@ package blockdag
 
 import (
 	"fmt"
+
+	"github.com/pkg/errors"
 )
-
-// DeploymentError identifies an error that indicates a deployment ID was
-// specified that does not exist.
-type DeploymentError uint32
-
-// Error returns the assertion error as a human-readable string and satisfies
-// the error interface.
-func (e DeploymentError) Error() string {
-	return fmt.Sprintf("deployment ID %d does not exist", uint32(e))
-}
-
-// AssertError identifies an error that indicates an internal code consistency
-// issue and should be treated as a critical and unrecoverable error.
-type AssertError string
-
-// Error returns the assertion error as a human-readable string and satisfies
-// the error interface.
-func (e AssertError) Error() string {
-	return "assertion failed: " + string(e)
-}
 
 // ErrorCode identifies a kind of error.
 type ErrorCode int
@@ -87,6 +69,9 @@ const (
 	// the expected value.
 	ErrBadUTXOCommitment
 
+	// ErrInvalidSubnetwork indicates the subnetwork is now allowed.
+	ErrInvalidSubnetwork
+
 	// ErrFinalityPointTimeTooOld indicates a block has a timestamp before the
 	// last finality point.
 	ErrFinalityPointTimeTooOld
@@ -120,6 +105,11 @@ const (
 	// ErrMissingTxOut indicates a transaction output referenced by an input
 	// either does not exist or has already been spent.
 	ErrMissingTxOut
+
+	// ErrDoubleSpendInSameBlock indicates a transaction
+	// that spends an output that was already spent by another
+	// transaction in the same block.
+	ErrDoubleSpendInSameBlock
 
 	// ErrUnfinalizedTx indicates a transaction has not been finalized.
 	// A valid block may only contain finalized transactions.
@@ -245,6 +235,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrDuplicateTxInputs:         "ErrDuplicateTxInputs",
 	ErrBadTxInput:                "ErrBadTxInput",
 	ErrMissingTxOut:              "ErrMissingTxOut",
+	ErrDoubleSpendInSameBlock:    "ErrDoubleSpendInSameBlock",
 	ErrUnfinalizedTx:             "ErrUnfinalizedTx",
 	ErrDuplicateTx:               "ErrDuplicateTx",
 	ErrOverwriteTx:               "ErrOverwriteTx",
@@ -294,7 +285,6 @@ func (e RuleError) Error() string {
 	return e.Description
 }
 
-// ruleError creates an RuleError given a set of arguments.
-func ruleError(c ErrorCode, desc string) RuleError {
-	return RuleError{ErrorCode: c, Description: desc}
+func ruleError(c ErrorCode, desc string) error {
+	return errors.WithStack(RuleError{ErrorCode: c, Description: desc})
 }

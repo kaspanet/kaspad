@@ -35,8 +35,8 @@ type TxDesc struct {
 	// Fee is the total fee the transaction associated with the entry pays.
 	Fee uint64
 
-	// FeePerKB is the fee the transaction pays in sompi per 1000 bytes.
-	FeePerKB uint64
+	// FeePerMegaGram is the fee the transaction pays in sompi per million gram.
+	FeePerMegaGram uint64
 }
 
 // TxSource represents a source of transactions to consider for inclusion in
@@ -79,12 +79,6 @@ type BlockTemplate struct {
 
 	// Height is the height at which the block template connects to the DAG
 	Height uint64
-
-	// ValidPayAddress indicates whether or not the template coinbase pays
-	// to an address or is redeemable by anyone. See the documentation on
-	// NewBlockTemplate for details on which this can be useful to generate
-	// templates without a coinbase payment address.
-	ValidPayAddress bool
 }
 
 // BlkTmplGenerator provides a type that can be used to generate block templates
@@ -212,10 +206,9 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address, extraNonc
 		txsForBlockTemplate.totalMass, util.CompactToBig(msgBlock.Header.Bits))
 
 	return &BlockTemplate{
-		Block:           msgBlock,
-		TxMasses:        txsForBlockTemplate.txMasses,
-		Fees:            txsForBlockTemplate.txFees,
-		ValidPayAddress: payToAddress != nil,
+		Block:    msgBlock,
+		TxMasses: txsForBlockTemplate.txMasses,
+		Fees:     txsForBlockTemplate.txFees,
 	}, nil
 }
 

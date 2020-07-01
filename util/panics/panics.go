@@ -9,35 +9,17 @@ import (
 	"github.com/kaspanet/kaspad/logs"
 )
 
-// HandlePanic recovers panics, log them, runs an optional panicHandler,
-// and then initiates a clean shutdown.
+const exitHandlerTimeout = 5 * time.Second
+
+// HandlePanic recovers panics and then initiates a clean shutdown.
 func HandlePanic(log *logs.Logger, goroutineStackTrace []byte) {
 	err := recover()
 	if err == nil {
 		return
 	}
 
-	panicHandlerDone := make(chan struct{})
-	go func() {
-		log.Criticalf("Fatal error: %+v", err)
-		if goroutineStackTrace != nil {
-			log.Criticalf("Goroutine stack trace: %s", goroutineStackTrace)
-		}
-		log.Criticalf("Stack trace: %s", debug.Stack())
-
-		log.Backend().Close()
-		close(panicHandlerDone)
-	}()
-
-	const panicHandlerTimeout = 5 * time.Second
-	select {
-	case <-time.After(panicHandlerTimeout):
-		fmt.Fprintln(os.Stderr, "Couldn't handle a fatal error. Exiting...")
-	case <-panicHandlerDone:
-	}
-	fmt.Print("Exiting...")
-	os.Exit(1)
-	fmt.Print("After os.Exit(1)")
+	reason := fmt.Sprintf("Fatal error: %+v", err)
+	exit(log, reason, debug.Stack(), goroutineStackTrace)
 }
 
 // GoroutineWrapperFunc returns a goroutine wrapper function that handles panics and writes them to the log.
@@ -60,4 +42,35 @@ func AfterFuncWrapperFunc(log *logs.Logger) func(d time.Duration, f func()) *tim
 			f()
 		})
 	}
+}
+
+// Exit prints the given reason to log and initiates a clean shutdown.
+func Exit(log *logs.Logger, reason string) {
+	exit(log, reason, nil, nil)
+}
+
+// Exit prints the given reason, prints either of the given stack traces (if not nil),
+// waits for them to finish writing, and exits.
+func exit(log *logs.Logger, reason string, currentThreadStackTrace []byte, goroutineStackTrace []byte) {
+	exitHandlerDone := make(chan struct{})
+	go func() {
+		log.Criticalf("Exiting: %s", reason)
+		if goroutineStackTrace != nil {
+			log.Criticalf("Goroutine stack trace: %s", goroutineStackTrace)
+		}
+		if currentThreadStackTrace != nil {
+			log.Criticalf("Stack trace: %s", currentThreadStackTrace)
+		}
+		log.Backend().Close()
+		close(exitHandlerDone)
+	}()
+
+	select {
+	case <-time.After(exitHandlerTimeout):
+		fmt.Fprintln(os.Stderr, "Couldn't exit gracefully.")
+	case <-exitHandlerDone:
+	}
+	fmt.Print("Exiting...")
+	os.Exit(1)
+	fmt.Print("After os.Exit(1)")
 }

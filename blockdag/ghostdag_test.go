@@ -215,7 +215,10 @@ func TestGHOSTDAG(t *testing.T) {
 					t.Fatalf("TestGHOSTDAG: block %v was unexpectedly orphan", blockData.id)
 				}
 
-				node := dag.index.LookupNode(utilBlock.Hash())
+				node, ok := dag.index.LookupNode(utilBlock.Hash())
+				if !ok {
+					t.Fatalf("block %s does not exist in the DAG", utilBlock.Hash())
+				}
 
 				blockByIDMap[blockData.id] = node
 				idByBlockMap[node] = blockData.id
@@ -293,20 +296,27 @@ func TestBlueAnticoneSizeErrors(t *testing.T) {
 	// Prepare a block chain with size K beginning with the genesis block
 	currentBlockA := dag.dagParams.GenesisBlock
 	for i := dagconfig.KType(0); i < dag.dagParams.K; i++ {
-		newBlock := prepareAndProcessBlock(t, dag, currentBlockA)
+		newBlock := prepareAndProcessBlockByParentMsgBlocks(t, dag, currentBlockA)
 		currentBlockA = newBlock
 	}
 
 	// Prepare another block chain with size K beginning with the genesis block
 	currentBlockB := dag.dagParams.GenesisBlock
 	for i := dagconfig.KType(0); i < dag.dagParams.K; i++ {
-		newBlock := prepareAndProcessBlock(t, dag, currentBlockB)
+		newBlock := prepareAndProcessBlockByParentMsgBlocks(t, dag, currentBlockB)
 		currentBlockB = newBlock
 	}
 
 	// Get references to the tips of the two chains
-	blockNodeA := dag.index.LookupNode(currentBlockA.BlockHash())
-	blockNodeB := dag.index.LookupNode(currentBlockB.BlockHash())
+	blockNodeA, ok := dag.index.LookupNode(currentBlockA.BlockHash())
+	if !ok {
+		t.Fatalf("block %s does not exist in the DAG", currentBlockA.BlockHash())
+	}
+
+	blockNodeB, ok := dag.index.LookupNode(currentBlockB.BlockHash())
+	if !ok {
+		t.Fatalf("block %s does not exist in the DAG", currentBlockB.BlockHash())
+	}
 
 	// Try getting the blueAnticoneSize between them. Since the two
 	// blocks are not in the anticones of eachother, this should fail.
@@ -332,14 +342,14 @@ func TestGHOSTDAGErrors(t *testing.T) {
 	defer teardownFunc()
 
 	// Add two child blocks to the genesis
-	block1 := prepareAndProcessBlock(t, dag, dag.dagParams.GenesisBlock)
-	block2 := prepareAndProcessBlock(t, dag, dag.dagParams.GenesisBlock)
+	block1 := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.dagParams.GenesisBlock)
+	block2 := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.dagParams.GenesisBlock)
 
 	// Add a child block to the previous two blocks
-	block3 := prepareAndProcessBlock(t, dag, block1, block2)
+	block3 := prepareAndProcessBlockByParentMsgBlocks(t, dag, block1, block2)
 
 	// Clear the reachability store
-	dag.reachabilityStore.loaded = map[daghash.Hash]*reachabilityData{}
+	dag.reachabilityTree.store.loaded = map[daghash.Hash]*reachabilityData{}
 
 	dbTx, err := dbaccess.NewTx()
 	if err != nil {
@@ -359,12 +369,15 @@ func TestGHOSTDAGErrors(t *testing.T) {
 
 	// Try to rerun GHOSTDAG on the last block. GHOSTDAG uses
 	// reachability data, so we expect it to fail.
-	blockNode3 := dag.index.LookupNode(block3.BlockHash())
+	blockNode3, ok := dag.index.LookupNode(block3.BlockHash())
+	if !ok {
+		t.Fatalf("block %s does not exist in the DAG", block3.BlockHash())
+	}
 	_, err = dag.ghostdag(blockNode3)
 	if err == nil {
 		t.Fatalf("TestGHOSTDAGErrors: ghostdag unexpectedly succeeded")
 	}
-	expectedErrSubstring := "Couldn't find reachability data"
+	expectedErrSubstring := "couldn't find reachability data"
 	if !strings.Contains(err.Error(), expectedErrSubstring) {
 		t.Fatalf("TestGHOSTDAGErrors: ghostdag returned wrong error. "+
 			"Want: %s, got: %s", expectedErrSubstring, err)

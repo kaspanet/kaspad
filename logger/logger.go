@@ -113,7 +113,7 @@ var subsystemLoggers = map[string]*logs.Logger{
 
 // InitLog attaches log file and error log file to the backend log.
 func InitLog(logFile, errLogFile string) {
-	err := BackendLog.AddLogFile(logFile, logs.LevelTrace)
+	err := BackendLog.AddLogFileWithCustomRotator(logFile, logs.LevelTrace, 100*1024, 4)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error adding log file %s as log rotator for level %s: %s", logFile, logs.LevelTrace, err)
 		os.Exit(1)

@@ -212,18 +212,10 @@ func TestFilterInsertWithTweak(t *testing.T) {
 // TestFilterInsertKey ensures inserting public keys and addresses works as
 // expected.
 func TestFilterInsertKey(t *testing.T) {
-	secret := "5Kg1gnAjaLfKiwhhPpGS3QfRg2m6awQvaj98JCZBZQ5SuS2F15C"
-
-	wif, err := util.DecodeWIF(secret)
-	if err != nil {
-		t.Errorf("TestFilterInsertKey DecodeWIF failed: %v", err)
-		return
-	}
-
 	f := bloom.NewFilter(2, 0, 0.001, wire.BloomUpdateAll)
-	serializedPubKey, err := wif.SerializePubKey()
+	serializedPubKey, err := hex.DecodeString("045b81f0017e2091e2edcd5eecf10d5bdd120a5514cb3ee65b8447ec18bfc4575c6d5bf415e54e03b1067934a0f0ba76b01c6b9ab227142ee1d543764b69d901e0")
 	if err != nil {
-		t.Errorf("TestFilterInsertKey SerializePubKey failed: %v", err)
+		t.Errorf("TestFilterInsertKey DecodeString failed: %v", err)
 		return
 	}
 	f.Add(serializedPubKey)

@@ -1,7 +1,6 @@
 package blockdag
 
 import (
-	"math"
 	"reflect"
 	"testing"
 
@@ -947,12 +946,9 @@ func TestUTXOSetDiffRules(t *testing.T) {
 
 // TestDiffUTXOSet_addTx makes sure that diffUTXOSet addTx works as expected
 func TestDiffUTXOSet_addTx(t *testing.T) {
-	// coinbaseTX is coinbase. As such, it has exactly one input with hash zero and MaxUInt32 index
-	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
-	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutpoint: wire.Outpoint{TxID: *txID0, Index: math.MaxUint32}, Sequence: 0}
 	txOut0 := &wire.TxOut{ScriptPubKey: []byte{0}, Value: 10}
 	utxoEntry0 := NewUTXOEntry(txOut0, true, 0)
-	coinbaseTX := wire.NewSubnetworkMsgTx(1, []*wire.TxIn{txIn0}, []*wire.TxOut{txOut0}, subnetworkid.SubnetworkIDCoinbase, 0, nil)
+	coinbaseTX := wire.NewSubnetworkMsgTx(1, []*wire.TxIn{}, []*wire.TxOut{txOut0}, subnetworkid.SubnetworkIDCoinbase, 0, nil)
 
 	// transaction1 spends coinbaseTX
 	id1 := coinbaseTX.TxID()
@@ -1107,81 +1103,6 @@ testLoop:
 			t.Errorf("unexpected diffSet in test \"%s\". "+
 				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedSet, diffSet)
 		}
-	}
-}
-
-func TestDiffFromTx(t *testing.T) {
-	fus := &FullUTXOSet{
-		utxoCollection: utxoCollection{},
-	}
-
-	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
-	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutpoint: wire.Outpoint{TxID: *txID0, Index: math.MaxUint32}, Sequence: 0}
-	txOut0 := &wire.TxOut{ScriptPubKey: []byte{0}, Value: 10}
-	cbTx := wire.NewSubnetworkMsgTx(1, []*wire.TxIn{txIn0}, []*wire.TxOut{txOut0}, subnetworkid.SubnetworkIDCoinbase, 0, nil)
-	if isAccepted, err := fus.AddTx(cbTx, 1); err != nil {
-		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
-	} else if !isAccepted {
-		t.Fatalf("AddTx unexpectedly didn't add tx %s", cbTx.TxID())
-	}
-	acceptingBlueScore := uint64(2)
-	cbOutpoint := wire.Outpoint{TxID: *cbTx.TxID(), Index: 0}
-	txIns := []*wire.TxIn{{
-		PreviousOutpoint: cbOutpoint,
-		SignatureScript:  nil,
-		Sequence:         wire.MaxTxInSequenceNum,
-	}}
-	txOuts := []*wire.TxOut{{
-		ScriptPubKey: OpTrueScript,
-		Value:        uint64(1),
-	}}
-	tx := wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)
-	diff, err := fus.diffFromTx(tx, acceptingBlueScore)
-	if err != nil {
-		t.Errorf("diffFromTx: %v", err)
-	}
-	if !reflect.DeepEqual(diff.toAdd, utxoCollection{
-		wire.Outpoint{TxID: *tx.TxID(), Index: 0}: NewUTXOEntry(tx.TxOut[0], false, 2),
-	}) {
-		t.Errorf("diff.toAdd doesn't have the expected values")
-	}
-
-	if !reflect.DeepEqual(diff.toRemove, utxoCollection{
-		wire.Outpoint{TxID: *cbTx.TxID(), Index: 0}: NewUTXOEntry(cbTx.TxOut[0], true, 1),
-	}) {
-		t.Errorf("diff.toRemove doesn't have the expected values")
-	}
-
-	//Test that we get an error if we don't have the outpoint inside the utxo set
-	invalidTxIns := []*wire.TxIn{{
-		PreviousOutpoint: wire.Outpoint{TxID: daghash.TxID{}, Index: 0},
-		SignatureScript:  nil,
-		Sequence:         wire.MaxTxInSequenceNum,
-	}}
-	invalidTxOuts := []*wire.TxOut{{
-		ScriptPubKey: OpTrueScript,
-		Value:        uint64(1),
-	}}
-	invalidTx := wire.NewNativeMsgTx(wire.TxVersion, invalidTxIns, invalidTxOuts)
-	_, err = fus.diffFromTx(invalidTx, acceptingBlueScore)
-	if err == nil {
-		t.Errorf("diffFromTx: expected an error but got <nil>")
-	}
-
-	//Test that we get an error if the outpoint is inside diffUTXOSet's toRemove
-	diff2 := &UTXODiff{
-		toAdd:    utxoCollection{},
-		toRemove: utxoCollection{},
-	}
-	dus := NewDiffUTXOSet(fus, diff2)
-	if isAccepted, err := dus.AddTx(tx, 2); err != nil {
-		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
-	} else if !isAccepted {
-		t.Fatalf("AddTx unexpectedly didn't add tx %s", tx.TxID())
-	}
-	_, err = dus.diffFromTx(tx, acceptingBlueScore)
-	if err == nil {
-		t.Errorf("diffFromTx: expected an error but got <nil>")
 	}
 }
 

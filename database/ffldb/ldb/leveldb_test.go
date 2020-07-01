@@ -7,30 +7,36 @@ import (
 	"testing"
 )
 
-func TestLevelDBSanity(t *testing.T) {
-	// Open a test db
-	path, err := ioutil.TempDir("", "TestLevelDBSanity")
+func prepareDatabaseForTest(t *testing.T, testName string) (ldb *LevelDB, teardownFunc func()) {
+	// Create a temp db to run tests against
+	path, err := ioutil.TempDir("", testName)
 	if err != nil {
-		t.Fatalf("TestLevelDBSanity: TempDir unexpectedly "+
-			"failed: %s", err)
+		t.Fatalf("%s: TempDir unexpectedly "+
+			"failed: %s", testName, err)
 	}
-	ldb, err := NewLevelDB(path)
+	ldb, err = NewLevelDB(path)
 	if err != nil {
-		t.Fatalf("TestLevelDBSanity: NewLevelDB "+
-			"unexpectedly failed: %s", err)
+		t.Fatalf("%s: NewLevelDB unexpectedly "+
+			"failed: %s", testName, err)
 	}
-	defer func() {
-		err := ldb.Close()
+	teardownFunc = func() {
+		err = ldb.Close()
 		if err != nil {
-			t.Fatalf("TestLevelDBSanity: Close "+
-				"unexpectedly failed: %s", err)
+			t.Fatalf("%s: Close unexpectedly "+
+				"failed: %s", testName, err)
 		}
-	}()
+	}
+	return ldb, teardownFunc
+}
+
+func TestLevelDBSanity(t *testing.T) {
+	ldb, teardownFunc := prepareDatabaseForTest(t, "TestLevelDBSanity")
+	defer teardownFunc()
 
 	// Put something into the db
-	key := []byte("key")
+	key := database.MakeBucket().Key([]byte("key"))
 	putData := []byte("Hello world!")
-	err = ldb.Put(key, putData)
+	err := ldb.Put(key, putData)
 	if err != nil {
 		t.Fatalf("TestLevelDBSanity: Put returned "+
 			"unexpected error: %s", err)
@@ -52,24 +58,8 @@ func TestLevelDBSanity(t *testing.T) {
 }
 
 func TestLevelDBTransactionSanity(t *testing.T) {
-	// Open a test db
-	path, err := ioutil.TempDir("", "TestLevelDBTransactionSanity")
-	if err != nil {
-		t.Fatalf("TestLevelDBTransactionSanity: TempDir unexpectedly "+
-			"failed: %s", err)
-	}
-	ldb, err := NewLevelDB(path)
-	if err != nil {
-		t.Fatalf("TestLevelDBTransactionSanity: NewLevelDB "+
-			"unexpectedly failed: %s", err)
-	}
-	defer func() {
-		err := ldb.Close()
-		if err != nil {
-			t.Fatalf("TestLevelDBTransactionSanity: Close "+
-				"unexpectedly failed: %s", err)
-		}
-	}()
+	ldb, teardownFunc := prepareDatabaseForTest(t, "TestLevelDBTransactionSanity")
+	defer teardownFunc()
 
 	// Case 1. Write in tx and then read directly from the DB
 	// Begin a new transaction
@@ -80,7 +70,7 @@ func TestLevelDBTransactionSanity(t *testing.T) {
 	}
 
 	// Put something into the transaction
-	key := []byte("key")
+	key := database.MakeBucket().Key([]byte("key"))
 	putData := []byte("Hello world!")
 	err = tx.Put(key, putData)
 	if err != nil {
@@ -124,7 +114,7 @@ func TestLevelDBTransactionSanity(t *testing.T) {
 
 	// Case 2. Write directly to the DB and then read from a tx
 	// Put something into the db
-	key = []byte("key2")
+	key = database.MakeBucket().Key([]byte("key2"))
 	putData = []byte("Goodbye world!")
 	err = ldb.Put(key, putData)
 	if err != nil {

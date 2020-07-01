@@ -668,12 +668,16 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 func (mp *TxPool) addTransaction(tx *util.Tx, fee uint64, parentsInPool []*wire.Outpoint) (*TxDesc, error) {
 	// Add the transaction to the pool and mark the referenced outpoints
 	// as spent by the pool.
+	mass, err := blockdag.CalcTxMassFromUTXOSet(tx, mp.mpUTXOSet)
+	if err != nil {
+		return nil, err
+	}
 	txD := &TxDesc{
 		TxDesc: mining.TxDesc{
-			Tx:       tx,
-			Added:    time.Now(),
-			Fee:      fee,
-			FeePerKB: fee * 1000 / uint64(tx.MsgTx().SerializeSize()),
+			Tx:             tx,
+			Added:          time.Now(),
+			Fee:            fee,
+			FeePerMegaGram: fee * 1e6 / mass,
 		},
 		depCount: len(parentsInPool),
 	}
@@ -806,6 +810,14 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 		str := fmt.Sprintf("tx %s belongs to an invalid subnetwork %s, DAG subnetwork %s", tx.ID(),
 			tx.MsgTx().SubnetworkID, subnetworkID)
 		return nil, nil, txRuleError(wire.RejectInvalid, str)
+	}
+
+	// Disallow non-native/coinbase subnetworks in networks that don't allow them
+	if !mp.cfg.DAGParams.EnableNonNativeSubnetworks {
+		if !(tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
+			tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase)) {
+			return nil, nil, txRuleError(wire.RejectInvalid, "non-native/coinbase subnetworks are not allowed")
+		}
 	}
 
 	// Perform preliminary sanity checks on the transaction. This makes
