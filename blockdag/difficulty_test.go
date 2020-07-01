@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"math/big"
 	"testing"
 	"time"
@@ -90,11 +91,11 @@ func TestDifficulty(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	zeroTime := time.Unix(0, 0)
-	addNode := func(parents blockSet, blockTime time.Time) *blockNode {
+	zeroTime := mstime.Time{}
+	addNode := func(parents blockSet, blockTime mstime.Time) *blockNode {
 		bluestParent := parents.bluest()
-		if blockTime == zeroTime {
-			blockTime = time.Unix(bluestParent.timestamp, 0)
+		if blockTime.IsZero() {
+			blockTime = bluestParent.time()
 			blockTime = blockTime.Add(params.TargetTimePerBlock)
 		}
 		block, err := PrepareBlockForTest(dag, parents.hashes(), nil)
@@ -174,7 +175,7 @@ func TestDifficulty(t *testing.T) {
 			sameBitsCount = 0
 		}
 	}
-	slowBlockTime := time.Unix(tip.timestamp, 0)
+	slowBlockTime := tip.time()
 	slowBlockTime = slowBlockTime.Add(params.TargetTimePerBlock + time.Second)
 	slowNode := addNode(blockSetFromSlice(tip), slowBlockTime)
 	if slowNode.bits != tip.bits {

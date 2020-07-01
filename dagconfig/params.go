@@ -216,8 +216,8 @@ var MainnetParams = Params{
 	Deployments: [DefinedDeployments]ConsensusDeployment{
 		DeploymentTestDummy: {
 			BitNumber:  28,
-			StartTime:  1199145601, // January 1, 2008 UTC
-			ExpireTime: 1230767999, // December 31, 2008 UTC
+			StartTime:  1199145601000, // January 1, 2008 UTC
+			ExpireTime: 1230767999000, // December 31, 2008 UTC
 		},
 	},
 
@@ -320,8 +320,8 @@ var TestnetParams = Params{
 	Deployments: [DefinedDeployments]ConsensusDeployment{
 		DeploymentTestDummy: {
 			BitNumber:  28,
-			StartTime:  1199145601, // January 1, 2008 UTC
-			ExpireTime: 1230767999, // December 31, 2008 UTC
+			StartTime:  1199145601000, // January 1, 2008 UTC
+			ExpireTime: 1230767999000, // December 31, 2008 UTC
 		},
 	},
 
@@ -426,8 +426,8 @@ var DevnetParams = Params{
 	Deployments: [DefinedDeployments]ConsensusDeployment{
 		DeploymentTestDummy: {
 			BitNumber:  28,
-			StartTime:  1199145601, // January 1, 2008 UTC
-			ExpireTime: 1230767999, // December 31, 2008 UTC
+			StartTime:  1199145601000, // January 1, 2008 UTC
+			ExpireTime: 1230767999000, // December 31, 2008 UTC
 		},
 	},
 

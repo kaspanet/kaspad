@@ -35,15 +35,14 @@ package logs
 import (
 	"bytes"
 	"fmt"
+	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
-	"time"
-
-	"github.com/pkg/errors"
 
 	"github.com/jrick/logrotate/rotator"
 )
@@ -209,10 +208,10 @@ func itoa(buf *[]byte, i int, wid int) {
 // Appends a header in the default format 'YYYY-MM-DD hh:mm:ss.sss [LVL] TAG: '.
 // If either of the Lshortfile or Llongfile flags are specified, the file named
 // and line number are included after the tag and before the final colon.
-func formatHeader(buf *[]byte, t time.Time, lvl, tag string, file string, line int) {
+func formatHeader(buf *[]byte, t mstime.Time, lvl, tag string, file string, line int) {
 	year, month, day := t.Date()
 	hour, min, sec := t.Clock()
-	ms := t.Nanosecond() / 1e6
+	ms := t.Millisecond()
 
 	itoa(buf, year, 4)
 	*buf = append(*buf, '-')
@@ -302,7 +301,7 @@ func (b *Backend) AddLogFileWithCustomRotator(logFile string, logLevel Level, th
 // function and formatting the provided arguments using the default formatting
 // rules.
 func (b *Backend) print(lvl Level, tag string, args ...interface{}) {
-	t := time.Now() // get as early as possible
+	t := mstime.Now() // get as early as possible
 
 	bytebuf := buffer()
 
@@ -327,7 +326,7 @@ func (b *Backend) print(lvl Level, tag string, args ...interface{}) {
 // function and formatting the provided arguments according to the given format
 // specifier.
 func (b *Backend) printf(lvl Level, tag string, format string, args ...interface{}) {
-	t := time.Now() // get as early as possible
+	t := mstime.Now() // get as early as possible
 
 	bytebuf := buffer()
 

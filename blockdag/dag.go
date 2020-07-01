@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"math"
 	"sort"
 	"sync"
@@ -38,13 +39,13 @@ const (
 // forever.
 type orphanBlock struct {
 	block      *util.Block
-	expiration time.Time
+	expiration mstime.Time
 }
 
 // delayedBlock represents a block which has a delayed timestamp and will be processed at processTime
 type delayedBlock struct {
 	block       *util.Block
-	processTime time.Time
+	processTime mstime.Time
 }
 
 // chainUpdates represents the updates made to the selected parent chain after
@@ -156,8 +157,8 @@ type BlockDAG struct {
 
 	reachabilityTree *reachabilityTree
 
-	recentBlockProcessingTimestamps []time.Time
-	startTime                       time.Time
+	recentBlockProcessingTimestamps []mstime.Time
+	startTime                       mstime.Time
 }
 
 // IsKnownBlock returns whether or not the DAG instance has the block represented
@@ -293,7 +294,7 @@ func (dag *BlockDAG) removeOrphanBlock(orphan *orphanBlock) {
 func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 	// Remove expired orphan blocks.
 	for _, oBlock := range dag.orphans {
-		if time.Now().After(oBlock.expiration) {
+		if mstime.Now().After(oBlock.expiration) {
 			dag.removeOrphanBlock(oBlock)
 			continue
 		}
@@ -325,7 +326,7 @@ func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 
 	// Insert the block into the orphan map with an expiration time
 	// 1 hour from now.
-	expiration := time.Now().Add(time.Hour)
+	expiration := mstime.Now().Add(time.Hour)
 	oBlock := &orphanBlock{
 		block:      block,
 		expiration: expiration,
@@ -345,7 +346,7 @@ func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 // block either after 'seconds' (according to past median time), or once the
 // 'BlockBlueScore' has been reached.
 type SequenceLock struct {
-	Seconds        int64
+	Milliseconds   int64
 	BlockBlueScore int64
 }
 
@@ -379,7 +380,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 	// A value of -1 for each relative lock type represents a relative time
 	// lock value that will allow a transaction to be included in a block
 	// at any given height or time.
-	sequenceLock := &SequenceLock{Seconds: -1, BlockBlueScore: -1}
+	sequenceLock := &SequenceLock{Milliseconds: -1, BlockBlueScore: -1}
 
 	// Sequence locks don't apply to coinbase transactions Therefore, we
 	// return sequence lock values of -1 indicating that this transaction
@@ -431,16 +432,15 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			}
 			medianTime := blockNode.PastMedianTime(dag)
 
-			// Time based relative time-locks as defined by BIP 68
-			// have a time granularity of RelativeLockSeconds, so
-			// we shift left by this amount to convert to the
-			// proper relative time-lock. We also subtract one from
-			// the relative lock to maintain the original lockTime
-			// semantics.
-			timeLockSeconds := (relativeLock << wire.SequenceLockTimeGranularity) - 1
-			timeLock := medianTime.Unix() + timeLockSeconds
-			if timeLock > sequenceLock.Seconds {
-				sequenceLock.Seconds = timeLock
+			// Time based relative time-locks have a time granularity of
+			// wire.SequenceLockTimeGranularity, so we shift left by this
+			// amount to convert to the proper relative time-lock. We also
+			// subtract one from the relative lock to maintain the original
+			// lockTime semantics.
+			timeLockMilliseconds := (relativeLock << wire.SequenceLockTimeGranularity) - 1
+			timeLock := medianTime.UnixMilliseconds() + timeLockMilliseconds
+			if timeLock > sequenceLock.Milliseconds {
+				sequenceLock.Milliseconds = timeLock
 			}
 		default:
 			// The relative lock-time for this input is expressed
@@ -459,18 +459,18 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 }
 
 // LockTimeToSequence converts the passed relative locktime to a sequence
-// number in accordance to BIP-68.
-func LockTimeToSequence(isSeconds bool, locktime uint64) uint64 {
+// number.
+func LockTimeToSequence(isMilliseconds bool, locktime uint64) uint64 {
 	// If we're expressing the relative lock time in blocks, then the
 	// corresponding sequence number is simply the desired input age.
-	if !isSeconds {
+	if !isMilliseconds {
 		return locktime
 	}
 
-	// Set the 22nd bit which indicates the lock time is in seconds, then
-	// shift the locktime over by 9 since the time granularity is in
-	// 512-second intervals (2^9). This results in a max lock-time of
-	// 33,553,920 seconds, or 1.1 years.
+	// Set the 22nd bit which indicates the lock time is in milliseconds, then
+	// shift the locktime over by 19 since the time granularity is in
+	// 524288-millisecond intervals (2^19). This results in a max lock-time of
+	// 34,359,214,080 seconds, or 1.1 years.
 	return wire.SequenceLockTimeIsSeconds |
 		locktime>>wire.SequenceLockTimeGranularity
 }
@@ -1341,18 +1341,18 @@ func (dag *BlockDAG) isSynced() bool {
 	var dagTimestamp int64
 	selectedTip := dag.selectedTip()
 	if selectedTip == nil {
-		dagTimestamp = dag.dagParams.GenesisBlock.Header.Timestamp.Unix()
+		dagTimestamp = dag.dagParams.GenesisBlock.Header.Timestamp.UnixMilliseconds()
 	} else {
 		dagTimestamp = selectedTip.timestamp
 	}
-	dagTime := time.Unix(dagTimestamp, 0)
+	dagTime := mstime.UnixMilliseconds(dagTimestamp)
 	return dag.Now().Sub(dagTime) <= isDAGCurrentMaxDiff
 }
 
 // Now returns the adjusted time according to
 // dag.timeSource. See TimeSource.Now for
 // more details.
-func (dag *BlockDAG) Now() time.Time {
+func (dag *BlockDAG) Now() mstime.Time {
 	return dag.timeSource.Now()
 }
 
@@ -1407,7 +1407,7 @@ func (dag *BlockDAG) UTXOSet() *FullUTXOSet {
 }
 
 // CalcPastMedianTime returns the past median time of the DAG.
-func (dag *BlockDAG) CalcPastMedianTime() time.Time {
+func (dag *BlockDAG) CalcPastMedianTime() mstime.Time {
 	return dag.virtual.tips().bluest().PastMedianTime(dag)
 }
 
@@ -2059,7 +2059,7 @@ func New(config *Config) (*BlockDAG, error) {
 		deploymentCaches:               newThresholdCaches(dagconfig.DefinedDeployments),
 		blockCount:                     0,
 		subnetworkID:                   config.SubnetworkID,
-		startTime:                      time.Now(),
+		startTime:                      mstime.Now(),
 	}
 
 	dag.virtual = newVirtualBlock(dag, nil)

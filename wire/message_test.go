@@ -7,12 +7,12 @@ package wire
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 	"io"
 	"net"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -43,10 +43,10 @@ func TestMessage(t *testing.T) {
 	// MsgVersion.
 	addrYou := &net.TCPAddr{IP: net.ParseIP("192.168.0.1"), Port: 16111}
 	you := NewNetAddress(addrYou, SFNodeNetwork)
-	you.Timestamp = time.Time{} // Version message has zero value timestamp.
+	you.Timestamp = mstime.Time{} // Version message has zero value timestamp.
 	addrMe := &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 16111}
 	me := NewNetAddress(addrMe, SFNodeNetwork)
-	me.Timestamp = time.Time{} // Version message has zero value timestamp.
+	me.Timestamp = mstime.Time{} // Version message has zero value timestamp.
 	msgVersion := NewMsgVersion(me, you, 123123, &daghash.ZeroHash, nil)
 
 	msgVerack := NewMsgVerAck()

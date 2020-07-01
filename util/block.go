@@ -8,8 +8,8 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/kaspanet/kaspad/util/coinbasepayload"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"io"
-	"time"
 
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
@@ -207,7 +207,7 @@ func (b *Block) CoinbaseTransaction() *Tx {
 }
 
 // Timestamp returns this block's timestamp
-func (b *Block) Timestamp() time.Time {
+func (b *Block) Timestamp() mstime.Time {
 	return b.msgBlock.Header.Timestamp
 }
 

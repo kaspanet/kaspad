@@ -26,7 +26,7 @@ func handleGetMempoolEntry(s *Server, cmd interface{}, closeChan <-chan struct{}
 
 	return &rpcmodel.GetMempoolEntryResult{
 		Fee:   txDesc.Fee,
-		Time:  txDesc.Added.Unix(),
+		Time:  txDesc.Added.UnixMilliseconds(),
 		RawTx: *rawTx,
 	}, nil
 }

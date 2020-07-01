@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"strconv"
 	"strings"
 	"sync"
@@ -54,10 +55,10 @@ var (
 // getBlockTemplate.
 type gbtWorkState struct {
 	sync.Mutex
-	lastTxUpdate  time.Time
-	lastGenerated time.Time
+	lastTxUpdate  mstime.Time
+	lastGenerated mstime.Time
 	tipHashes     []*daghash.Hash
-	minTimestamp  time.Time
+	minTimestamp  mstime.Time
 	template      *mining.BlockTemplate
 	notifyMap     map[string]map[int64]chan struct{}
 	timeSource    blockdag.TimeSource
@@ -240,7 +241,7 @@ func blockTemplateOrLongPollChan(s *Server, longPollID string, payAddr util.Addr
 	// template as this means the provided template is stale.
 	areHashesEqual := daghash.AreEqual(state.template.Block.Header.ParentHashes, parentHashes)
 	if !areHashesEqual ||
-		lastGenerated != state.lastGenerated.Unix() {
+		lastGenerated != state.lastGenerated.UnixSeconds() {
 
 		// Include whether or not it is valid to submit work against the
 		// old block template depending on whether or not a solution has
@@ -337,8 +338,6 @@ func dagErrToGBTErrString(err error) string {
 		return "bad-blk-mass"
 	case blockdag.ErrBlockVersionTooOld:
 		return "bad-version"
-	case blockdag.ErrInvalidTime:
-		return "bad-time"
 	case blockdag.ErrTimeTooOld:
 		return "time-too-old"
 	case blockdag.ErrTimeTooNew:
@@ -406,7 +405,7 @@ func dagErrToGBTErrString(err error) string {
 // notified when block templates are stale.
 //
 // This function MUST be called with the state locked.
-func (state *gbtWorkState) notifyLongPollers(tipHashes []*daghash.Hash, lastGenerated time.Time) {
+func (state *gbtWorkState) notifyLongPollers(tipHashes []*daghash.Hash, lastGenerated mstime.Time) {
 	// Notify anything that is waiting for a block template update from
 	// hashes which are not the current tip hashes.
 	tipHashesStr := daghash.JoinHashesStrings(tipHashes, "")
@@ -435,7 +434,7 @@ func (state *gbtWorkState) notifyLongPollers(tipHashes []*daghash.Hash, lastGene
 	// Notify anything that is waiting for a block template update from a
 	// block template generated before the most recently generated block
 	// template.
-	lastGeneratedUnix := lastGenerated.Unix()
+	lastGeneratedUnix := lastGenerated.UnixSeconds()
 	for lastGen, c := range channels {
 		if lastGen < lastGeneratedUnix {
 			close(c)
@@ -466,7 +465,7 @@ func (state *gbtWorkState) NotifyBlockAdded(tipHashes []*daghash.Hash) {
 // pool to notify any long poll clients with a new block template when their
 // existing block template is stale due to enough time passing and the contents
 // of the memory pool changing.
-func (state *gbtWorkState) NotifyMempoolTx(lastUpdated time.Time) {
+func (state *gbtWorkState) NotifyMempoolTx(lastUpdated mstime.Time) {
 	spawn(func() {
 		state.Lock()
 		defer state.Unlock()
@@ -477,7 +476,7 @@ func (state *gbtWorkState) NotifyMempoolTx(lastUpdated time.Time) {
 			return
 		}
 
-		if time.Now().After(state.lastGenerated.Add(time.Second *
+		if mstime.Now().After(state.lastGenerated.Add(time.Second *
 			gbtRegenerateSeconds)) {
 
 			state.notifyLongPollers(state.tipHashes, lastUpdated)
@@ -530,7 +529,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, payAddr util.Address) 
 	generator := s.cfg.Generator
 	lastTxUpdate := generator.TxSource().LastUpdated()
 	if lastTxUpdate.IsZero() {
-		lastTxUpdate = time.Now()
+		lastTxUpdate = mstime.Now()
 	}
 
 	// Generate a new block template when the current best block has
@@ -545,7 +544,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, payAddr util.Address) 
 		!daghash.AreEqual(state.tipHashes, tipHashes) ||
 		state.payAddress.String() != payAddr.String() ||
 		(state.lastTxUpdate != lastTxUpdate &&
-			time.Now().After(state.lastGenerated.Add(time.Second*
+			mstime.Now().After(state.lastGenerated.Add(time.Second*
 				gbtRegenerateSeconds))) {
 
 		// Reset the previous best hash the block template was generated
@@ -583,7 +582,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, payAddr util.Address) 
 		// Update work state to ensure another block template isn't
 		// generated until needed.
 		state.template = template
-		state.lastGenerated = time.Now()
+		state.lastGenerated = mstime.Now()
 		state.lastTxUpdate = lastTxUpdate
 		state.tipHashes = tipHashes
 		state.minTimestamp = minTimestamp
@@ -638,7 +637,7 @@ func (state *gbtWorkState) blockTemplateResult(s *Server) (*rpcmodel.GetBlockTem
 	msgBlock := template.Block
 	header := &msgBlock.Header
 	adjustedTime := state.timeSource.Now()
-	maxTime := adjustedTime.Add(time.Second * time.Duration(dag.TimestampDeviationTolerance))
+	maxTime := adjustedTime.Add(time.Millisecond * time.Duration(dag.TimestampDeviationTolerance))
 	if header.Timestamp.After(maxTime) {
 		return nil, &rpcmodel.RPCError{
 			Code: rpcmodel.ErrRPCOutOfRange,
@@ -711,7 +710,7 @@ func (state *gbtWorkState) blockTemplateResult(s *Server) (*rpcmodel.GetBlockTem
 
 	reply := rpcmodel.GetBlockTemplateResult{
 		Bits:                 strconv.FormatInt(int64(header.Bits), 16),
-		CurTime:              header.Timestamp.Unix(),
+		CurTime:              header.Timestamp.UnixMilliseconds(),
 		Height:               template.Height,
 		ParentHashes:         daghash.Strings(header.ParentHashes),
 		MassLimit:            wire.MaxMassPerBlock,
@@ -722,8 +721,8 @@ func (state *gbtWorkState) blockTemplateResult(s *Server) (*rpcmodel.GetBlockTem
 		Version:              header.Version,
 		LongPollID:           longPollID,
 		Target:               targetDifficulty,
-		MinTime:              state.minTimestamp.Unix(),
-		MaxTime:              maxTime.Unix(),
+		MinTime:              state.minTimestamp.UnixMilliseconds(),
+		MaxTime:              maxTime.UnixMilliseconds(),
 		Mutable:              gbtMutableFields,
 		NonceRange:           gbtNonceRange,
 		Capabilities:         gbtCapabilities,
@@ -735,8 +734,8 @@ func (state *gbtWorkState) blockTemplateResult(s *Server) (*rpcmodel.GetBlockTem
 
 // encodeLongPollID encodes the passed details into an ID that can be used to
 // uniquely identify a block template.
-func encodeLongPollID(parentHashes []*daghash.Hash, miningAddress util.Address, lastGenerated time.Time) string {
-	return fmt.Sprintf("%s-%s-%d", daghash.JoinHashesStrings(parentHashes, ""), miningAddress, lastGenerated.Unix())
+func encodeLongPollID(parentHashes []*daghash.Hash, miningAddress util.Address, lastGenerated mstime.Time) string {
+	return fmt.Sprintf("%s-%s-%d", daghash.JoinHashesStrings(parentHashes, ""), miningAddress, lastGenerated.UnixSeconds())
 }
 
 // decodeLongPollID decodes an ID that is used to uniquely identify a block

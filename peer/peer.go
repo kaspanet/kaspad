@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"container/list"
 	"fmt"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"io"
 	"math/rand"
 	"net"
@@ -344,11 +345,11 @@ type StatsSnap struct {
 	ID              int32
 	Addr            string
 	Services        wire.ServiceFlag
-	LastSend        time.Time
-	LastRecv        time.Time
+	LastSend        mstime.Time
+	LastRecv        mstime.Time
 	BytesSent       uint64
 	BytesRecv       uint64
-	ConnTime        time.Time
+	ConnTime        mstime.Time
 	TimeOffset      int64
 	Version         uint32
 	UserAgent       string
@@ -501,7 +502,7 @@ func (p *Peer) StatsSnapshot() *StatsSnap {
 		LastRecv:        p.LastRecv(),
 		BytesSent:       p.BytesSent(),
 		BytesRecv:       p.BytesReceived(),
-		ConnTime:        p.timeConnected,
+		ConnTime:        mstime.ToMSTime(p.timeConnected),
 		TimeOffset:      p.timeOffset,
 		Version:         protocolVersion,
 		Inbound:         p.inbound,
@@ -672,15 +673,15 @@ func (p *Peer) AddBanScoreAndPushRejectMsg(command string, code wire.RejectCode,
 // LastSend returns the last send time of the peer.
 //
 // This function is safe for concurrent access.
-func (p *Peer) LastSend() time.Time {
-	return time.Unix(atomic.LoadInt64(&p.lastSend), 0)
+func (p *Peer) LastSend() mstime.Time {
+	return mstime.UnixMilliseconds(atomic.LoadInt64(&p.lastSend))
 }
 
 // LastRecv returns the last recv time of the peer.
 //
 // This function is safe for concurrent access.
-func (p *Peer) LastRecv() time.Time {
-	return time.Unix(atomic.LoadInt64(&p.lastRecv), 0)
+func (p *Peer) LastRecv() mstime.Time {
+	return mstime.UnixMilliseconds(atomic.LoadInt64(&p.lastRecv))
 }
 
 // BytesSent returns the total number of bytes sent by the peer.
@@ -942,7 +943,7 @@ func (p *Peer) updateStatsFromVersionMsg(msg *wire.MsgVersion) {
 	p.statsMtx.Lock()
 	defer p.statsMtx.Unlock()
 	p.selectedTipHash = msg.SelectedTipHash
-	p.timeOffset = msg.Timestamp.Unix() - time.Now().Unix()
+	p.timeOffset = msg.Timestamp.UnixMilliseconds() - mstime.Now().UnixMilliseconds()
 }
 
 func (p *Peer) updateFlagsFromVersionMsg(msg *wire.MsgVersion) {
@@ -1349,7 +1350,7 @@ out:
 			}
 			break out
 		}
-		atomic.StoreInt64(&p.lastRecv, time.Now().Unix())
+		atomic.StoreInt64(&p.lastRecv, mstime.Now().UnixMilliseconds())
 		p.stallControl <- stallControlMsg{sccReceiveMessage, rmsg}
 
 		// Handle each supported message type.
@@ -1676,7 +1677,7 @@ out:
 			// message that it has been sent (if requested), and
 			// signal the send queue to the deliver the next queued
 			// message.
-			atomic.StoreInt64(&p.lastSend, time.Now().Unix())
+			atomic.StoreInt64(&p.lastSend, mstime.Now().UnixMilliseconds())
 			if msg.doneChan != nil {
 				msg.doneChan <- struct{}{}
 			}

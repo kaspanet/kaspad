@@ -6,6 +6,7 @@ package netsync
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -127,7 +128,7 @@ type requestQueueAndSet struct {
 // about a peer.
 type peerSyncState struct {
 	syncCandidate             bool
-	lastSelectedTipRequest    time.Time
+	lastSelectedTipRequest    mstime.Time
 	peerShouldSendSelectedTip bool
 	requestQueueMtx           sync.Mutex
 	requestQueues             map[wire.InvType]*requestQueueAndSet
@@ -221,7 +222,7 @@ func (sm *SyncManager) startSync() {
 			}
 			hasSyncCandidates = true
 
-			if time.Since(state.lastSelectedTipRequest) < minGetSelectedTipInterval {
+			if mstime.Since(state.lastSelectedTipRequest) < minGetSelectedTipInterval {
 				continue
 			}
 
@@ -243,7 +244,7 @@ func (sm *SyncManager) shouldQueryPeerSelectedTips() bool {
 }
 
 func (sm *SyncManager) queueMsgGetSelectedTip(peer *peerpkg.Peer, state *peerSyncState) {
-	state.lastSelectedTipRequest = time.Now()
+	state.lastSelectedTipRequest = mstime.Now()
 	state.peerShouldSendSelectedTip = true
 	peer.QueueMessage(wire.NewMsgGetSelectedTip(), nil)
 }

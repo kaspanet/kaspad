@@ -10,8 +10,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
-	"time"
 
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util"
@@ -81,7 +81,7 @@ type NotificationHandlers struct {
 	// to register for the notification and the function is non-nil.
 	//
 	// NOTE: Deprecated. Use OnFilteredBlockAdded instead.
-	OnBlockAdded func(hash *daghash.Hash, height int32, t time.Time)
+	OnBlockAdded func(hash *daghash.Hash, height int32, t mstime.Time)
 
 	// OnFilteredBlockAdded is invoked when a block is connected to the
 	// bloackDAG. It will only be invoked if a preceding call to

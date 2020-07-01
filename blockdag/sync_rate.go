@@ -1,6 +1,9 @@
 package blockdag
 
-import "time"
+import (
+	"github.com/kaspanet/kaspad/util/mstime"
+	"time"
+)
 
 const syncRateWindowDuration = 15 * time.Minute
 
@@ -8,7 +11,7 @@ const syncRateWindowDuration = 15 * time.Minute
 //
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) addBlockProcessingTimestamp() {
-	now := time.Now()
+	now := mstime.Now()
 	dag.recentBlockProcessingTimestamps = append(dag.recentBlockProcessingTimestamps, now)
 	dag.removeNonRecentTimestampsFromRecentBlockProcessingTimestamps()
 }
@@ -21,8 +24,8 @@ func (dag *BlockDAG) removeNonRecentTimestampsFromRecentBlockProcessingTimestamp
 	dag.recentBlockProcessingTimestamps = dag.recentBlockProcessingTimestampsRelevantWindow()
 }
 
-func (dag *BlockDAG) recentBlockProcessingTimestampsRelevantWindow() []time.Time {
-	minTime := time.Now().Add(-syncRateWindowDuration)
+func (dag *BlockDAG) recentBlockProcessingTimestampsRelevantWindow() []mstime.Time {
+	minTime := mstime.Now().Add(-syncRateWindowDuration)
 	windowStartIndex := len(dag.recentBlockProcessingTimestamps)
 	for i, processTime := range dag.recentBlockProcessingTimestamps {
 		if processTime.After(minTime) {
@@ -53,5 +56,5 @@ func (dag *BlockDAG) IsSyncRateBelowThreshold(maxDeviation float64) bool {
 }
 
 func (dag *BlockDAG) uptime() time.Duration {
-	return time.Now().Sub(dag.startTime)
+	return mstime.Now().Sub(dag.startTime)
 }

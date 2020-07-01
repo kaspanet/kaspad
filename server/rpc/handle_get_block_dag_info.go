@@ -23,7 +23,7 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 		Headers:       dag.BlockCount(),
 		TipHashes:     daghash.Strings(dag.TipHashes()),
 		Difficulty:    getDifficultyRatio(dag.CurrentBits(), params),
-		MedianTime:    dag.CalcPastMedianTime().Unix(),
+		MedianTime:    dag.CalcPastMedianTime().UnixMilliseconds(),
 		Pruned:        false,
 		Bip9SoftForks: make(map[string]*rpcmodel.Bip9SoftForkDescription),
 	}

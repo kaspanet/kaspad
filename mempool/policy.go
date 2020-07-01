@@ -6,7 +6,7 @@ package mempool
 
 import (
 	"fmt"
-	"time"
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/txscript"
@@ -191,7 +191,7 @@ func isDust(txOut *wire.TxOut, minRelayTxFee util.Amount) bool {
 // of recognized forms, and not containing "dust" outputs (those that are
 // so small it costs more to process them than they are worth).
 func checkTransactionStandard(tx *util.Tx, blueScore uint64,
-	medianTimePast time.Time, policy *Policy) error {
+	medianTimePast mstime.Time, policy *Policy) error {
 
 	// The transaction must be a currently supported version.
 	msgTx := tx.MsgTx()

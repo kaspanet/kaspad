@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"math"
 	"sort"
 	"time"
@@ -56,12 +57,12 @@ func isNullOutpoint(outpoint *wire.Outpoint) bool {
 // met, meaning that all the inputs of a given transaction have reached a
 // blue score or time sufficient for their relative lock-time maturity.
 func SequenceLockActive(sequenceLock *SequenceLock, blockBlueScore uint64,
-	medianTimePast time.Time) bool {
+	medianTimePast mstime.Time) bool {
 
-	// If either the seconds, or blue score relative-lock time has not yet
+	// If either the milliseconds, or blue score relative-lock time has not yet
 	// reached, then the transaction is not yet mature according to its
 	// sequence locks.
-	if sequenceLock.Seconds >= medianTimePast.Unix() ||
+	if sequenceLock.Milliseconds >= medianTimePast.UnixMilliseconds() ||
 		sequenceLock.BlockBlueScore >= int64(blockBlueScore) {
 		return false
 	}
@@ -70,7 +71,7 @@ func SequenceLockActive(sequenceLock *SequenceLock, blockBlueScore uint64,
 }
 
 // IsFinalizedTransaction determines whether or not a transaction is finalized.
-func IsFinalizedTransaction(tx *util.Tx, blockBlueScore uint64, blockTime time.Time) bool {
+func IsFinalizedTransaction(tx *util.Tx, blockBlueScore uint64, blockTime mstime.Time) bool {
 	msgTx := tx.MsgTx()
 
 	// Lock time of zero means the transaction is finalized.
@@ -87,7 +88,7 @@ func IsFinalizedTransaction(tx *util.Tx, blockBlueScore uint64, blockTime time.T
 	if lockTime < txscript.LockTimeThreshold {
 		blockTimeOrBlueScore = int64(blockBlueScore)
 	} else {
-		blockTimeOrBlueScore = blockTime.Unix()
+		blockTimeOrBlueScore = blockTime.UnixMilliseconds()
 	}
 	if int64(lockTime) < blockTimeOrBlueScore {
 		return true
@@ -410,17 +411,6 @@ func (dag *BlockDAG) checkBlockHeaderSanity(block *util.Block, flags BehaviorFla
 		if err != nil {
 			return 0, err
 		}
-	}
-
-	// A block timestamp must not have a greater precision than one second.
-	// This check is necessary because Go time.Time values support
-	// nanosecond precision whereas the consensus rules only apply to
-	// seconds and it's much nicer to deal with standard Go time values
-	// instead of converting to seconds everywhere.
-	if !header.Timestamp.Equal(time.Unix(header.Timestamp.Unix(), 0)) {
-		str := fmt.Sprintf("block timestamp of %s has a higher "+
-			"precision than one second", header.Timestamp)
-		return 0, ruleError(ErrInvalidTime, str)
 	}
 
 	// Ensure the block time is not too far in the future. If it's too far, return

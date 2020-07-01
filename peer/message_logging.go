@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/logs"
 	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/wire"
 	"strings"
-	"time"
 )
 
 const (
@@ -17,15 +17,15 @@ const (
 
 // formatLockTime returns a transaction lock time as a human-readable string.
 func formatLockTime(lockTime uint64) string {
-	// The lock time field of a transaction is either a block height at
+	// The lock time field of a transaction is either a block blue score at
 	// which the transaction is finalized or a timestamp depending on if the
 	// value is before the lockTimeThreshold. When it is under the
-	// threshold it is a block height.
+	// threshold it is a block blue score.
 	if lockTime < txscript.LockTimeThreshold {
-		return fmt.Sprintf("height %d", lockTime)
+		return fmt.Sprintf("blue score %d", lockTime)
 	}
 
-	return time.Unix(int64(lockTime), 0).String()
+	return mstime.UnixMilliseconds(int64(lockTime)).String()
 }
 
 // invSummary returns an inventory message as a human-readable string.

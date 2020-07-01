@@ -7,9 +7,9 @@ package blockdag
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 	"math"
-	"time"
 
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
@@ -110,7 +110,7 @@ func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSe
 		parents:            parents,
 		children:           make(blockSet),
 		blueScore:          math.MaxUint64, // Initialized to the max value to avoid collisions with the genesis block
-		timestamp:          dag.Now().Unix(),
+		timestamp:          dag.Now().UnixMilliseconds(),
 		bluesAnticoneSizes: make(map[*blockNode]dagconfig.KType),
 	}
 
@@ -120,7 +120,7 @@ func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSe
 		node.version = blockHeader.Version
 		node.bits = blockHeader.Bits
 		node.nonce = blockHeader.Nonce
-		node.timestamp = blockHeader.Timestamp.Unix()
+		node.timestamp = blockHeader.Timestamp.UnixMilliseconds()
 		node.hashMerkleRoot = blockHeader.HashMerkleRoot
 		node.acceptedIDMerkleRoot = blockHeader.AcceptedIDMerkleRoot
 		node.utxoCommitment = blockHeader.UTXOCommitment
@@ -167,7 +167,7 @@ func (node *blockNode) Header() *wire.BlockHeader {
 		HashMerkleRoot:       node.hashMerkleRoot,
 		AcceptedIDMerkleRoot: node.acceptedIDMerkleRoot,
 		UTXOCommitment:       node.utxoCommitment,
-		Timestamp:            time.Unix(node.timestamp, 0),
+		Timestamp:            node.time(),
 		Bits:                 node.bits,
 		Nonce:                node.nonce,
 	}
@@ -204,13 +204,13 @@ func (node *blockNode) RelativeAncestor(distance uint64) *blockNode {
 // prior to, and including, the block node.
 //
 // This function is safe for concurrent access.
-func (node *blockNode) PastMedianTime(dag *BlockDAG) time.Time {
+func (node *blockNode) PastMedianTime(dag *BlockDAG) mstime.Time {
 	window := blueBlockWindow(node, 2*dag.TimestampDeviationTolerance-1)
 	medianTimestamp, err := window.medianTimestamp()
 	if err != nil {
 		panic(fmt.Sprintf("blueBlockWindow: %s", err))
 	}
-	return time.Unix(medianTimestamp, 0)
+	return mstime.UnixMilliseconds(medianTimestamp)
 }
 
 func (node *blockNode) ParentHashes() []*daghash.Hash {
@@ -229,4 +229,8 @@ func (node *blockNode) finalityScore(dag *BlockDAG) uint64 {
 // String returns a string that contains the block hash.
 func (node blockNode) String() string {
 	return node.hash.String()
+}
+
+func (node *blockNode) time() mstime.Time {
+	return mstime.UnixMilliseconds(node.timestamp)
 }

@@ -72,7 +72,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 		ParentHashes:         daghash.Strings(blockHeader.ParentHashes),
 		SelectedParentHash:   selectedParentHash.String(),
 		Nonce:                blockHeader.Nonce,
-		Time:                 blockHeader.Timestamp.Unix(),
+		Time:                 blockHeader.Timestamp.UnixMilliseconds(),
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
 		Difficulty:           getDifficultyRatio(blockHeader.Bits, params),
 	}

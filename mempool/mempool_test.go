@@ -7,15 +7,14 @@ package mempool
 import (
 	"bytes"
 	"fmt"
+	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/pkg/errors"
 	"math"
 	"reflect"
 	"runtime"
 	"strings"
 	"sync"
 	"testing"
-	"time"
-
-	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/util/testtools"
@@ -35,7 +34,7 @@ import (
 type fakeDAG struct {
 	sync.RWMutex
 	currentBlueScore uint64
-	medianTimePast   time.Time
+	medianTimePast   mstime.Time
 }
 
 // BlueScore returns the current blue score associated with the fake DAG
@@ -55,7 +54,7 @@ func (s *fakeDAG) SetBlueScore(blueScore uint64) {
 
 // MedianTimePast returns the current median time past associated with the fake
 // DAG instance.
-func (s *fakeDAG) MedianTimePast() time.Time {
+func (s *fakeDAG) MedianTimePast() mstime.Time {
 	s.RLock()
 	defer s.RUnlock()
 	mtp := s.medianTimePast
@@ -64,7 +63,7 @@ func (s *fakeDAG) MedianTimePast() time.Time {
 
 // SetMedianTimePast sets the current median time past associated with the fake
 // DAG instance.
-func (s *fakeDAG) SetMedianTimePast(mtp time.Time) {
+func (s *fakeDAG) SetMedianTimePast(mtp mstime.Time) {
 	s.Lock()
 	defer s.Unlock()
 	s.medianTimePast = mtp
@@ -74,7 +73,7 @@ func calcSequenceLock(tx *util.Tx,
 	utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 
 	return &blockdag.SequenceLock{
-		Seconds:        -1,
+		Milliseconds:   -1,
 		BlockBlueScore: -1,
 	}, nil
 }
@@ -365,7 +364,7 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 	} else {
 		harness.dag.SetBlueScore(curHeight + 1)
 	}
-	harness.dag.SetMedianTimePast(time.Now())
+	harness.dag.SetMedianTimePast(mstime.Now())
 
 	return tc, outpoints, teardownFunc, nil
 }
@@ -706,7 +705,7 @@ func TestProcessTransaction(t *testing.T) {
 		view blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 
 		return &blockdag.SequenceLock{
-			Seconds:        math.MaxInt64,
+			Milliseconds:   math.MaxInt64,
 			BlockBlueScore: math.MaxInt64,
 		}, nil
 	}
@@ -1047,7 +1046,7 @@ func TestOrphanExpiration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unexpected error on harness.ProcessTransaction: %s", err)
 	}
-	harness.txPool.orphans[*expiredTx.ID()].expiration = time.Unix(0, 0)
+	harness.txPool.orphans[*expiredTx.ID()].expiration = mstime.UnixMilliseconds(0)
 
 	tx1, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
@@ -1067,8 +1066,7 @@ func TestOrphanExpiration(t *testing.T) {
 	testPoolMembership(tc, expiredTx, true, false, false)
 
 	// Force nextExpireScan to be in the past
-	harness.txPool.nextExpireScan = time.Unix(0, 0)
-	fmt.Println(harness.txPool.nextExpireScan.Unix())
+	harness.txPool.nextExpireScan = mstime.UnixMilliseconds(0)
 
 	tx2, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
@@ -1782,9 +1780,9 @@ var dummyBlock = wire.MsgBlock{
 			0x28, 0xc3, 0x06, 0x7c, 0xc3, 0x8d, 0x48, 0x85,
 			0xef, 0xb5, 0xa4, 0xac, 0x42, 0x47, 0xe9, 0xf3,
 		}, // f3e94742aca4b5ef85488dc37c06c3282295ffec960994b2c0d5ac2a25a95766
-		Timestamp: time.Unix(1529483563, 0), // 2018-06-20 08:32:43 +0000 UTC
-		Bits:      0x1e00ffff,               // 503382015
-		Nonce:     0x000ae53f,               // 714047
+		Timestamp: mstime.UnixMilliseconds(1529483563000), // 2018-06-20 08:32:43 +0000 UTC
+		Bits:      0x1e00ffff,                             // 503382015
+		Nonce:     0x000ae53f,                             // 714047
 	},
 	Transactions: []*wire.MsgTx{
 		{

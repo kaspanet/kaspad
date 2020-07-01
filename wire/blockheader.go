@@ -6,10 +6,9 @@ package wire
 
 import (
 	"bytes"
-	"io"
-	"time"
-
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/mstime"
+	"io"
 )
 
 // BaseBlockHeaderPayload is the base number of bytes a block header can be,
@@ -49,7 +48,7 @@ type BlockHeader struct {
 	UTXOCommitment *daghash.Hash
 
 	// Time the block was created.
-	Timestamp time.Time
+	Timestamp mstime.Time
 
 	// Difficulty target for the block.
 	Bits uint32
@@ -128,7 +127,7 @@ func (h *BlockHeader) SerializeSize() int {
 func NewBlockHeader(version int32, parentHashes []*daghash.Hash, hashMerkleRoot *daghash.Hash,
 	acceptedIDMerkleRoot *daghash.Hash, utxoCommitment *daghash.Hash, bits uint32, nonce uint64) *BlockHeader {
 
-	// Limit the timestamp to one second precision since the protocol
+	// Limit the timestamp to one millisecond precision since the protocol
 	// doesn't support better.
 	return &BlockHeader{
 		Version:              version,
@@ -136,7 +135,7 @@ func NewBlockHeader(version int32, parentHashes []*daghash.Hash, hashMerkleRoot 
 		HashMerkleRoot:       hashMerkleRoot,
 		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
 		UTXOCommitment:       utxoCommitment,
-		Timestamp:            time.Unix(time.Now().Unix(), 0),
+		Timestamp:            mstime.Now(),
 		Bits:                 bits,
 		Nonce:                nonce,
 	}
@@ -172,7 +171,7 @@ func readBlockHeader(r io.Reader, pver uint32, bh *BlockHeader) error {
 // encoding block headers to be stored to disk, such as in a database, as
 // opposed to encoding for the wire.
 func writeBlockHeader(w io.Writer, pver uint32, bh *BlockHeader) error {
-	sec := int64(bh.Timestamp.Unix())
+	timestamp := bh.Timestamp.UnixMilliseconds()
 	if err := writeElements(w, bh.Version, bh.NumParentBlocks()); err != nil {
 		return err
 	}
@@ -181,5 +180,5 @@ func writeBlockHeader(w io.Writer, pver uint32, bh *BlockHeader) error {
 			return err
 		}
 	}
-	return writeElements(w, bh.HashMerkleRoot, bh.AcceptedIDMerkleRoot, bh.UTXOCommitment, sec, bh.Bits, bh.Nonce)
+	return writeElements(w, bh.HashMerkleRoot, bh.AcceptedIDMerkleRoot, bh.UTXOCommitment, timestamp, bh.Bits, bh.Nonce)
 }

@@ -7,11 +7,11 @@ package wire
 import (
 	"bytes"
 	"fmt"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/version"
 	"github.com/pkg/errors"
 	"io"
 	"strings"
-	"time"
 
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -39,7 +39,7 @@ type MsgVersion struct {
 	Services ServiceFlag
 
 	// Time the message was generated. This is encoded as an int64 on the wire.
-	Timestamp time.Time
+	Timestamp mstime.Time
 
 	// Address of the remote peer.
 	AddrYou NetAddress
@@ -162,7 +162,7 @@ func (msg *MsgVersion) KaspaEncode(w io.Writer, pver uint32) error {
 	}
 
 	err = writeElements(w, msg.ProtocolVersion, msg.Services,
-		msg.Timestamp.Unix())
+		msg.Timestamp.UnixMilliseconds())
 	if err != nil {
 		return err
 	}
@@ -237,12 +237,12 @@ func (msg *MsgVersion) MaxPayloadLength(pver uint32) uint32 {
 func NewMsgVersion(me *NetAddress, you *NetAddress, nonce uint64,
 	selectedTipHash *daghash.Hash, subnetworkID *subnetworkid.SubnetworkID) *MsgVersion {
 
-	// Limit the timestamp to one second precision since the protocol
+	// Limit the timestamp to one millisecond precision since the protocol
 	// doesn't support better.
 	return &MsgVersion{
 		ProtocolVersion: int32(ProtocolVersion),
 		Services:        0,
-		Timestamp:       time.Unix(time.Now().Unix(), 0),
+		Timestamp:       mstime.Now(),
 		AddrYou:         *you,
 		AddrMe:          *me,
 		Nonce:           nonce,

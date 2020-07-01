@@ -28,11 +28,6 @@ const (
 	// to a newer version.
 	ErrBlockVersionTooOld
 
-	// ErrInvalidTime indicates the time in the passed block has a precision
-	// that is more than one second. The DAG consensus rules require
-	// timestamps to have a maximum precision of one second.
-	ErrInvalidTime
-
 	// ErrTimeTooOld indicates the time is either before the median time of
 	// the last several blocks per the DAG consensus rules.
 	ErrTimeTooOld
@@ -218,7 +213,6 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrDuplicateBlock:            "ErrDuplicateBlock",
 	ErrBlockMassTooHigh:          "ErrBlockMassTooHigh",
 	ErrBlockVersionTooOld:        "ErrBlockVersionTooOld",
-	ErrInvalidTime:               "ErrInvalidTime",
 	ErrTimeTooOld:                "ErrTimeTooOld",
 	ErrTimeTooNew:                "ErrTimeTooNew",
 	ErrNoParents:                 "ErrNoParents",
