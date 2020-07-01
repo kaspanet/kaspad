@@ -61,7 +61,7 @@ func TestBlockHeaderWire(t *testing.T) {
 		HashMerkleRoot:       mainnetGenesisMerkleRoot,
 		AcceptedIDMerkleRoot: exampleAcceptedIDMerkleRoot,
 		UTXOCommitment:       exampleUTXOCommitment,
-		Timestamp:            mstime.UnixMilli(0x17315ed0f99),
+		Timestamp:            mstime.UnixMilliseconds(0x17315ed0f99),
 		Bits:                 bits,
 		Nonce:                nonce,
 	}
@@ -177,7 +177,7 @@ func TestBlockHeaderSerialize(t *testing.T) {
 		HashMerkleRoot:       mainnetGenesisMerkleRoot,
 		AcceptedIDMerkleRoot: exampleAcceptedIDMerkleRoot,
 		UTXOCommitment:       exampleUTXOCommitment,
-		Timestamp:            mstime.UnixMilli(0x17315ed0f99),
+		Timestamp:            mstime.UnixMilliseconds(0x17315ed0f99),
 		Bits:                 bits,
 		Nonce:                nonce,
 	}
@@ -259,7 +259,7 @@ func TestBlockHeaderSerialize(t *testing.T) {
 func TestBlockHeaderSerializeSize(t *testing.T) {
 	nonce := uint64(123123) // 0x1e0f3
 	bits := uint32(0x1d00ffff)
-	timestamp := mstime.UnixMilli(0x495fab29000)
+	timestamp := mstime.UnixMilliseconds(0x495fab29000)
 	baseBlockHdr := &BlockHeader{
 		Version:              1,
 		ParentHashes:         []*daghash.Hash{mainnetGenesisHash, simnetGenesisHash},
@@ -307,7 +307,7 @@ func TestBlockHeaderSerializeSize(t *testing.T) {
 func TestIsGenesis(t *testing.T) {
 	nonce := uint64(123123) // 0x1e0f3
 	bits := uint32(0x1d00ffff)
-	timestamp := mstime.UnixMilli(0x495fab29000)
+	timestamp := mstime.UnixMilliseconds(0x495fab29000)
 
 	baseBlockHdr := &BlockHeader{
 		Version:        1,

@@ -710,7 +710,7 @@ func (state *gbtWorkState) blockTemplateResult(s *Server) (*rpcmodel.GetBlockTem
 
 	reply := rpcmodel.GetBlockTemplateResult{
 		Bits:                 strconv.FormatInt(int64(header.Bits), 16),
-		CurTime:              header.Timestamp.UnixMilli(),
+		CurTime:              header.Timestamp.UnixMilliseconds(),
 		Height:               template.Height,
 		ParentHashes:         daghash.Strings(header.ParentHashes),
 		MassLimit:            wire.MaxMassPerBlock,
@@ -721,8 +721,8 @@ func (state *gbtWorkState) blockTemplateResult(s *Server) (*rpcmodel.GetBlockTem
 		Version:              header.Version,
 		LongPollID:           longPollID,
 		Target:               targetDifficulty,
-		MinTime:              state.minTimestamp.UnixMilli(),
-		MaxTime:              maxTime.UnixMilli(),
+		MinTime:              state.minTimestamp.UnixMilliseconds(),
+		MaxTime:              maxTime.UnixMilliseconds(),
 		Mutable:              gbtMutableFields,
 		NonceRange:           gbtNonceRange,
 		Capabilities:         gbtCapabilities,

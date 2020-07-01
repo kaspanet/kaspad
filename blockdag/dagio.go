@@ -421,7 +421,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		version:              header.Version,
 		bits:                 header.Bits,
 		nonce:                header.Nonce,
-		timestamp:            header.Timestamp.UnixMilli(),
+		timestamp:            header.Timestamp.UnixMilliseconds(),
 		hashMerkleRoot:       header.HashMerkleRoot,
 		acceptedIDMerkleRoot: header.AcceptedIDMerkleRoot,
 		utxoCommitment:       header.UTXOCommitment,

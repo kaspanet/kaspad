@@ -674,14 +674,14 @@ func (p *Peer) AddBanScoreAndPushRejectMsg(command string, code wire.RejectCode,
 //
 // This function is safe for concurrent access.
 func (p *Peer) LastSend() mstime.Time {
-	return mstime.UnixMilli(atomic.LoadInt64(&p.lastSend))
+	return mstime.UnixMilliseconds(atomic.LoadInt64(&p.lastSend))
 }
 
 // LastRecv returns the last recv time of the peer.
 //
 // This function is safe for concurrent access.
 func (p *Peer) LastRecv() mstime.Time {
-	return mstime.UnixMilli(atomic.LoadInt64(&p.lastRecv))
+	return mstime.UnixMilliseconds(atomic.LoadInt64(&p.lastRecv))
 }
 
 // BytesSent returns the total number of bytes sent by the peer.
@@ -943,7 +943,7 @@ func (p *Peer) updateStatsFromVersionMsg(msg *wire.MsgVersion) {
 	p.statsMtx.Lock()
 	defer p.statsMtx.Unlock()
 	p.selectedTipHash = msg.SelectedTipHash
-	p.timeOffset = msg.Timestamp.UnixMilli() - mstime.Now().UnixMilli()
+	p.timeOffset = msg.Timestamp.UnixMilliseconds() - mstime.Now().UnixMilliseconds()
 }
 
 func (p *Peer) updateFlagsFromVersionMsg(msg *wire.MsgVersion) {
@@ -1350,7 +1350,7 @@ out:
 			}
 			break out
 		}
-		atomic.StoreInt64(&p.lastRecv, mstime.Now().UnixMilli())
+		atomic.StoreInt64(&p.lastRecv, mstime.Now().UnixMilliseconds())
 		p.stallControl <- stallControlMsg{sccReceiveMessage, rmsg}
 
 		// Handle each supported message type.
@@ -1677,7 +1677,7 @@ out:
 			// message that it has been sent (if requested), and
 			// signal the send queue to the deliver the next queued
 			// message.
-			atomic.StoreInt64(&p.lastSend, mstime.Now().UnixMilli())
+			atomic.StoreInt64(&p.lastSend, mstime.Now().UnixMilliseconds())
 			if msg.doneChan != nil {
 				msg.doneChan <- struct{}{}
 			}

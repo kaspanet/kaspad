@@ -1046,7 +1046,7 @@ func TestOrphanExpiration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unexpected error on harness.ProcessTransaction: %s", err)
 	}
-	harness.txPool.orphans[*expiredTx.ID()].expiration = mstime.UnixMilli(0)
+	harness.txPool.orphans[*expiredTx.ID()].expiration = mstime.UnixMilliseconds(0)
 
 	tx1, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
@@ -1066,7 +1066,7 @@ func TestOrphanExpiration(t *testing.T) {
 	testPoolMembership(tc, expiredTx, true, false, false)
 
 	// Force nextExpireScan to be in the past
-	harness.txPool.nextExpireScan = mstime.UnixMilli(0)
+	harness.txPool.nextExpireScan = mstime.UnixMilliseconds(0)
 
 	tx2, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
@@ -1780,9 +1780,9 @@ var dummyBlock = wire.MsgBlock{
 			0x28, 0xc3, 0x06, 0x7c, 0xc3, 0x8d, 0x48, 0x85,
 			0xef, 0xb5, 0xa4, 0xac, 0x42, 0x47, 0xe9, 0xf3,
 		}, // f3e94742aca4b5ef85488dc37c06c3282295ffec960994b2c0d5ac2a25a95766
-		Timestamp: mstime.UnixMilli(1529483563000), // 2018-06-20 08:32:43 +0000 UTC
-		Bits:      0x1e00ffff,                      // 503382015
-		Nonce:     0x000ae53f,                      // 714047
+		Timestamp: mstime.UnixMilliseconds(1529483563000), // 2018-06-20 08:32:43 +0000 UTC
+		Bits:      0x1e00ffff,                             // 503382015
+		Nonce:     0x000ae53f,                             // 714047
 	},
 	Transactions: []*wire.MsgTx{
 		{

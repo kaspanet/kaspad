@@ -94,7 +94,7 @@ func ReadElement(r io.Reader, element interface{}) error {
 		if err != nil {
 			return err
 		}
-		*e = int64Time(mstime.UnixMilli(int64(rv)))
+		*e = int64Time(mstime.UnixMilliseconds(int64(rv)))
 		return nil
 
 	// Message header checksum.

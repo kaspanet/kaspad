@@ -62,7 +62,7 @@ func SequenceLockActive(sequenceLock *SequenceLock, blockBlueScore uint64,
 	// If either the milliseconds, or blue score relative-lock time has not yet
 	// reached, then the transaction is not yet mature according to its
 	// sequence locks.
-	if sequenceLock.Milliseconds >= medianTimePast.UnixMilli() ||
+	if sequenceLock.Milliseconds >= medianTimePast.UnixMilliseconds() ||
 		sequenceLock.BlockBlueScore >= int64(blockBlueScore) {
 		return false
 	}
@@ -88,7 +88,7 @@ func IsFinalizedTransaction(tx *util.Tx, blockBlueScore uint64, blockTime mstime
 	if lockTime < txscript.LockTimeThreshold {
 		blockTimeOrBlueScore = int64(blockBlueScore)
 	} else {
-		blockTimeOrBlueScore = blockTime.UnixMilli()
+		blockTimeOrBlueScore = blockTime.UnixMilliseconds()
 	}
 	if int64(lockTime) < blockTimeOrBlueScore {
 		return true

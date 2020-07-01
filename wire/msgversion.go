@@ -162,7 +162,7 @@ func (msg *MsgVersion) KaspaEncode(w io.Writer, pver uint32) error {
 	}
 
 	err = writeElements(w, msg.ProtocolVersion, msg.Services,
-		msg.Timestamp.UnixMilli())
+		msg.Timestamp.UnixMilliseconds())
 	if err != nil {
 		return err
 	}

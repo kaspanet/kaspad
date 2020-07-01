@@ -59,9 +59,9 @@ func TestAdd(t *testing.T) {
 					t.Fatalf("test #%d panicked when it was not expected to", i)
 				}
 			}()
-			mtime := UnixMilli(100).Add(test.duration)
-			if mtime.UnixMilli() != test.expectedUnixMilli {
-				t.Fatalf("test #%d expected UnixMilli to be %d but got %d", i, test.expectedUnixMilli, mtime.UnixMilli())
+			mtime := UnixMilliseconds(100).Add(test.duration)
+			if mtime.UnixMilliseconds() != test.expectedUnixMilli {
+				t.Fatalf("test #%d expected UnixMilliseconds to be %d but got %d", i, test.expectedUnixMilli, mtime.UnixMilliseconds())
 			}
 		}()
 	}
@@ -70,5 +70,5 @@ func TestAdd(t *testing.T) {
 			t.Fatalf("Add didn't panic when ")
 		}
 	}()
-	UnixMilli(100).Add(time.Nanosecond)
+	UnixMilliseconds(100).Add(time.Nanosecond)
 }

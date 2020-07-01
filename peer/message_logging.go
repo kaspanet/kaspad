@@ -25,7 +25,7 @@ func formatLockTime(lockTime uint64) string {
 		return fmt.Sprintf("blue score %d", lockTime)
 	}
 
-	return mstime.UnixMilli(int64(lockTime)).String()
+	return mstime.UnixMilliseconds(int64(lockTime)).String()
 }
 
 // invSummary returns an inventory message as a human-readable string.

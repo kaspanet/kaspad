@@ -475,7 +475,7 @@ func (mp *TxPool) removeTransactions(txs []*util.Tx) error {
 	if err != nil {
 		return err
 	}
-	atomic.StoreInt64(&mp.lastUpdated, mstime.Now().UnixMilli())
+	atomic.StoreInt64(&mp.lastUpdated, mstime.Now().UnixMilliseconds())
 
 	return nil
 }
@@ -513,7 +513,7 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeDependants bool, restoreI
 	if err != nil {
 		return err
 	}
-	atomic.StoreInt64(&mp.lastUpdated, mstime.Now().UnixMilli())
+	atomic.StoreInt64(&mp.lastUpdated, mstime.Now().UnixMilliseconds())
 
 	return nil
 }
@@ -703,7 +703,7 @@ func (mp *TxPool) addTransaction(tx *util.Tx, fee uint64, parentsInPool []*wire.
 	} else if !isAccepted {
 		return nil, errors.Errorf("unexpectedly failed to add tx %s to the mempool utxo set", tx.ID())
 	}
-	atomic.StoreInt64(&mp.lastUpdated, mstime.Now().UnixMilli())
+	atomic.StoreInt64(&mp.lastUpdated, mstime.Now().UnixMilliseconds())
 
 	return txD, nil
 }
@@ -1322,7 +1322,7 @@ func (mp *TxPool) RawMempoolVerbose() map[string]*rpcmodel.GetRawMempoolVerboseR
 		mpd := &rpcmodel.GetRawMempoolVerboseResult{
 			Size:    int32(tx.MsgTx().SerializeSize()),
 			Fee:     util.Amount(desc.Fee).ToKAS(),
-			Time:    desc.Added.UnixMilli(),
+			Time:    desc.Added.UnixMilliseconds(),
 			Depends: make([]string, 0),
 		}
 		for _, txIn := range tx.MsgTx().TxIn {
@@ -1344,7 +1344,7 @@ func (mp *TxPool) RawMempoolVerbose() map[string]*rpcmodel.GetRawMempoolVerboseR
 //
 // This function is safe for concurrent access.
 func (mp *TxPool) LastUpdated() mstime.Time {
-	return mstime.UnixMilli(atomic.LoadInt64(&mp.lastUpdated))
+	return mstime.UnixMilliseconds(atomic.LoadInt64(&mp.lastUpdated))
 }
 
 // HandleNewBlock removes all the transactions in the new block

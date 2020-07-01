@@ -278,13 +278,13 @@ func TestCalcSequenceLock(t *testing.T) {
 	// Obtain the past median time from the PoV of the input created above.
 	// The past median time for the input is the past median time from the PoV
 	// of the block *prior* to the one that included it.
-	medianTime := node.RelativeAncestor(5).PastMedianTime(dag).UnixMilli()
+	medianTime := node.RelativeAncestor(5).PastMedianTime(dag).UnixMilliseconds()
 
 	// The median time calculated from the PoV of the best block in the
 	// test DAG. For unconfirmed inputs, this value will be used since
 	// the MTP will be calculated from the PoV of the yet-to-be-mined
 	// block.
-	nextMedianTime := node.PastMedianTime(dag).UnixMilli()
+	nextMedianTime := node.PastMedianTime(dag).UnixMilliseconds()
 	nextBlockBlueScore := int32(numBlocksToGenerate) + 1
 
 	// Add an additional transaction which will serve as our unconfirmed
@@ -540,8 +540,8 @@ func TestCalcPastMedianTime(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		millisecondsSinceGenesis := nodes[test.blockNumber].PastMedianTime(dag).UnixMilli() -
-			dag.genesis.Header().Timestamp.UnixMilli()
+		millisecondsSinceGenesis := nodes[test.blockNumber].PastMedianTime(dag).UnixMilliseconds() -
+			dag.genesis.Header().Timestamp.UnixMilliseconds()
 
 		if millisecondsSinceGenesis != test.expectedMillisecondsSinceGenesis {
 			t.Errorf("TestCalcPastMedianTime: expected past median time of block %v to be %v milliseconds "+

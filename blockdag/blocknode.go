@@ -110,7 +110,7 @@ func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSe
 		parents:            parents,
 		children:           make(blockSet),
 		blueScore:          math.MaxUint64, // Initialized to the max value to avoid collisions with the genesis block
-		timestamp:          dag.Now().UnixMilli(),
+		timestamp:          dag.Now().UnixMilliseconds(),
 		bluesAnticoneSizes: make(map[*blockNode]dagconfig.KType),
 	}
 
@@ -120,7 +120,7 @@ func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSe
 		node.version = blockHeader.Version
 		node.bits = blockHeader.Bits
 		node.nonce = blockHeader.Nonce
-		node.timestamp = blockHeader.Timestamp.UnixMilli()
+		node.timestamp = blockHeader.Timestamp.UnixMilliseconds()
 		node.hashMerkleRoot = blockHeader.HashMerkleRoot
 		node.acceptedIDMerkleRoot = blockHeader.AcceptedIDMerkleRoot
 		node.utxoCommitment = blockHeader.UTXOCommitment
@@ -210,7 +210,7 @@ func (node *blockNode) PastMedianTime(dag *BlockDAG) mstime.Time {
 	if err != nil {
 		panic(fmt.Sprintf("blueBlockWindow: %s", err))
 	}
-	return mstime.UnixMilli(medianTimestamp)
+	return mstime.UnixMilliseconds(medianTimestamp)
 }
 
 func (node *blockNode) ParentHashes() []*daghash.Hash {
@@ -232,5 +232,5 @@ func (node blockNode) String() string {
 }
 
 func (node *blockNode) time() mstime.Time {
-	return mstime.UnixMilli(node.timestamp)
+	return mstime.UnixMilliseconds(node.timestamp)
 }

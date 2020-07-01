@@ -38,22 +38,22 @@ func TestSequenceLocksActive(t *testing.T) {
 		want bool
 	}{
 		// Block based sequence lock with equal block blue score.
-		{seqLock: seqLock(1000, -1), blockBlueScore: 1001, mtp: mstime.UnixMilli(9), want: true},
+		{seqLock: seqLock(1000, -1), blockBlueScore: 1001, mtp: mstime.UnixMilliseconds(9), want: true},
 
 		// Time based sequence lock with mtp past the absolute time.
-		{seqLock: seqLock(-1, 30), blockBlueScore: 2, mtp: mstime.UnixMilli(31), want: true},
+		{seqLock: seqLock(-1, 30), blockBlueScore: 2, mtp: mstime.UnixMilliseconds(31), want: true},
 
 		// Block based sequence lock with current blue score below seq lock block blue score.
-		{seqLock: seqLock(1000, -1), blockBlueScore: 90, mtp: mstime.UnixMilli(9), want: false},
+		{seqLock: seqLock(1000, -1), blockBlueScore: 90, mtp: mstime.UnixMilliseconds(9), want: false},
 
 		// Time based sequence lock with current time before lock time.
-		{seqLock: seqLock(-1, 30), blockBlueScore: 2, mtp: mstime.UnixMilli(29), want: false},
+		{seqLock: seqLock(-1, 30), blockBlueScore: 2, mtp: mstime.UnixMilliseconds(29), want: false},
 
 		// Block based sequence lock at the same blue score, so shouldn't yet be active.
-		{seqLock: seqLock(1000, -1), blockBlueScore: 1000, mtp: mstime.UnixMilli(9), want: false},
+		{seqLock: seqLock(1000, -1), blockBlueScore: 1000, mtp: mstime.UnixMilliseconds(9), want: false},
 
 		// Time based sequence lock with current time equal to lock time, so shouldn't yet be active.
-		{seqLock: seqLock(-1, 30), blockBlueScore: 2, mtp: mstime.UnixMilli(30), want: false},
+		{seqLock: seqLock(-1, 30), blockBlueScore: 2, mtp: mstime.UnixMilliseconds(30), want: false},
 	}
 
 	t.Logf("Running %d sequence locks tests", len(tests))
@@ -230,7 +230,7 @@ func TestCheckBlockSanity(t *testing.T) {
 				0x4e, 0x06, 0xba, 0x64, 0xd7, 0x61, 0xda, 0x25,
 				0x1a, 0x0e, 0x21, 0xd4, 0x64, 0x49, 0x02, 0xa2,
 			},
-			Timestamp: mstime.UnixMilli(0x5cd18053000),
+			Timestamp: mstime.UnixMilliseconds(0x5cd18053000),
 			Bits:      0x207fffff,
 			Nonce:     0x1,
 		},
@@ -728,7 +728,7 @@ var Block100000 = wire.MsgBlock{
 			0x3c, 0xb1, 0x16, 0x8f, 0x5f, 0x6b, 0x45, 0x87,
 		},
 		UTXOCommitment: &daghash.ZeroHash,
-		Timestamp:      mstime.UnixMilli(0x17305aa654a),
+		Timestamp:      mstime.UnixMilliseconds(0x17305aa654a),
 		Bits:           0x207fffff,
 		Nonce:          1,
 	},
@@ -1035,7 +1035,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 			0x0b, 0x79, 0xf5, 0x29, 0x6d, 0x1c, 0xaa, 0x90,
 			0x2f, 0x01, 0xd4, 0x83, 0x9b, 0x2a, 0x04, 0x5e,
 		},
-		Timestamp: mstime.UnixMilli(0x5cd16eaa000),
+		Timestamp: mstime.UnixMilliseconds(0x5cd16eaa000),
 		Bits:      0x207fffff,
 		Nonce:     1,
 	},

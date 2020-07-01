@@ -32,7 +32,7 @@ func (s *Server) Start() {
 	log.Trace("Starting server")
 
 	// Server startup time. Used for the uptime command for uptime calculation.
-	s.startupTime = mstime.Now().UnixMilli()
+	s.startupTime = mstime.Now().UnixMilliseconds()
 
 	s.p2pServer.Start()
 

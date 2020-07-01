@@ -15,9 +15,9 @@ type Time struct {
 	time time.Time
 }
 
-// UnixMilli returns t as a Unix time, the number of milliseconds elapsed
+// UnixMilliseconds returns t as a Unix time, the number of milliseconds elapsed
 // since January 1, 1970 UTC.
-func (t Time) UnixMilli() int64 {
+func (t Time) UnixMilliseconds() int64 {
 	return t.time.UnixNano() / nanosecondsInMillisecond
 }
 
@@ -90,9 +90,9 @@ func Now() Time {
 	return ToMSTime(time.Now())
 }
 
-// UnixMilli returns the local Time corresponding to the given Unix time,
+// UnixMilliseconds returns the local Time corresponding to the given Unix time,
 // ms milliseconds since January 1, 1970 UTC.
-func UnixMilli(ms int64) Time {
+func UnixMilliseconds(ms int64) Time {
 	seconds := ms / millisecondsInSecond
 	nanoseconds := (ms - seconds*millisecondsInSecond) * nanosecondsInMillisecond
 	return newMSTime(time.Unix(ms/millisecondsInSecond, nanoseconds))

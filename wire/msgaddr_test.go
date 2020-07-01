@@ -80,13 +80,13 @@ func TestAddr(t *testing.T) {
 func TestAddrWire(t *testing.T) {
 	// A couple of NetAddresses to use for testing.
 	na := &NetAddress{
-		Timestamp: mstime.UnixMilli(0x17315ed0f99),
+		Timestamp: mstime.UnixMilliseconds(0x17315ed0f99),
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("127.0.0.1"),
 		Port:      16111,
 	}
 	na2 := &NetAddress{
-		Timestamp: mstime.UnixMilli(0x17315ed0f99),
+		Timestamp: mstime.UnixMilliseconds(0x17315ed0f99),
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("192.168.0.1"),
 		Port:      16110,
@@ -210,13 +210,13 @@ func TestAddrWireErrors(t *testing.T) {
 
 	// A couple of NetAddresses to use for testing.
 	na := &NetAddress{
-		Timestamp: mstime.UnixMilli(0x495fab29000),
+		Timestamp: mstime.UnixMilliseconds(0x495fab29000),
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("127.0.0.1"),
 		Port:      16111,
 	}
 	na2 := &NetAddress{
-		Timestamp: mstime.UnixMilli(0x495fab29000),
+		Timestamp: mstime.UnixMilliseconds(0x495fab29000),
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("192.168.0.1"),
 		Port:      16110,

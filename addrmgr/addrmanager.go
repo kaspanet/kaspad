@@ -490,11 +490,11 @@ func (a *AddrManager) PeersStateForSerialization() (*PeersStateForSerialization,
 		} else {
 			ska.SubnetworkID = v.subnetworkID.String()
 		}
-		ska.TimeStamp = v.na.Timestamp.UnixMilli()
+		ska.TimeStamp = v.na.Timestamp.UnixMilliseconds()
 		ska.Src = NetAddressKey(v.srcAddr)
 		ska.Attempts = v.attempts
-		ska.LastAttempt = v.lastattempt.UnixMilli()
-		ska.LastSuccess = v.lastsuccess.UnixMilli()
+		ska.LastAttempt = v.lastattempt.UnixMilliseconds()
+		ska.LastSuccess = v.lastsuccess.UnixMilliseconds()
 		// Tried and refs are implicit in the rest of the structure
 		// and will be worked out from context on unserialisation.
 		peersState.Addresses[i] = ska
@@ -614,8 +614,8 @@ func (a *AddrManager) deserializePeersState(serializedPeerState []byte) error {
 			}
 		}
 		ka.attempts = v.Attempts
-		ka.lastattempt = mstime.UnixMilli(v.LastAttempt)
-		ka.lastsuccess = mstime.UnixMilli(v.LastSuccess)
+		ka.lastattempt = mstime.UnixMilliseconds(v.LastAttempt)
+		ka.lastsuccess = mstime.UnixMilliseconds(v.LastSuccess)
 		a.addrIndex[NetAddressKey(ka.na)] = ka
 	}
 

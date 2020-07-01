@@ -438,7 +438,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			// subtract one from the relative lock to maintain the original
 			// lockTime semantics.
 			timeLockMilliseconds := (relativeLock << wire.SequenceLockTimeGranularity) - 1
-			timeLock := medianTime.UnixMilli() + timeLockMilliseconds
+			timeLock := medianTime.UnixMilliseconds() + timeLockMilliseconds
 			if timeLock > sequenceLock.Milliseconds {
 				sequenceLock.Milliseconds = timeLock
 			}
@@ -1341,11 +1341,11 @@ func (dag *BlockDAG) isSynced() bool {
 	var dagTimestamp int64
 	selectedTip := dag.selectedTip()
 	if selectedTip == nil {
-		dagTimestamp = dag.dagParams.GenesisBlock.Header.Timestamp.UnixMilli()
+		dagTimestamp = dag.dagParams.GenesisBlock.Header.Timestamp.UnixMilliseconds()
 	} else {
 		dagTimestamp = selectedTip.timestamp
 	}
-	dagTime := mstime.UnixMilli(dagTimestamp)
+	dagTime := mstime.UnixMilliseconds(dagTimestamp)
 	return dag.Now().Sub(dagTime) <= isDAGCurrentMaxDiff
 }
 

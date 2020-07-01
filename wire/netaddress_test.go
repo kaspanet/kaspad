@@ -66,7 +66,7 @@ func TestNetAddress(t *testing.T) {
 func TestNetAddressWire(t *testing.T) {
 	// baseNetAddr is used in the various tests as a baseline NetAddress.
 	baseNetAddr := NetAddress{
-		Timestamp: mstime.UnixMilli(0x17315ed0f99),
+		Timestamp: mstime.UnixMilliseconds(0x17315ed0f99),
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("127.0.0.1"),
 		Port:      16111,
@@ -158,7 +158,7 @@ func TestNetAddressWireErrors(t *testing.T) {
 
 	// baseNetAddr is used in the various tests as a baseline NetAddress.
 	baseNetAddr := NetAddress{
-		Timestamp: mstime.UnixMilli(0x495fab29000),
+		Timestamp: mstime.UnixMilliseconds(0x495fab29000),
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("127.0.0.1"),
 		Port:      16111,

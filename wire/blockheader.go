@@ -171,7 +171,7 @@ func readBlockHeader(r io.Reader, pver uint32, bh *BlockHeader) error {
 // encoding block headers to be stored to disk, such as in a database, as
 // opposed to encoding for the wire.
 func writeBlockHeader(w io.Writer, pver uint32, bh *BlockHeader) error {
-	timestamp := bh.Timestamp.UnixMilli()
+	timestamp := bh.Timestamp.UnixMilliseconds()
 	if err := writeElements(w, bh.Version, bh.NumParentBlocks()); err != nil {
 		return err
 	}

@@ -308,7 +308,7 @@ func TestVersionWireErrors(t *testing.T) {
 var baseVersion = &MsgVersion{
 	ProtocolVersion: 60002,
 	Services:        SFNodeNetwork,
-	Timestamp:       mstime.UnixMilli(0x495fab29000),
+	Timestamp:       mstime.UnixMilliseconds(0x495fab29000),
 	AddrYou: NetAddress{
 		Timestamp: mstime.Time{}, // Zero value -- no timestamp in version
 		Services:  SFNodeNetwork,
@@ -358,7 +358,7 @@ var baseVersionEncoded = []byte{
 var baseVersionWithRelayTx = &MsgVersion{
 	ProtocolVersion: 70001,
 	Services:        SFNodeNetwork,
-	Timestamp:       mstime.UnixMilli(0x17315ed0f99),
+	Timestamp:       mstime.UnixMilliseconds(0x17315ed0f99),
 	AddrYou: NetAddress{
 		Timestamp: mstime.Time{}, // Zero value -- no timestamp in version
 		Services:  SFNodeNetwork,

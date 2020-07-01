@@ -20,7 +20,7 @@ type fakeTxSource struct {
 }
 
 func (txs *fakeTxSource) LastUpdated() mstime.Time {
-	return mstime.UnixMilli(0)
+	return mstime.UnixMilliseconds(0)
 }
 
 func (txs *fakeTxSource) MiningDescs() []*TxDesc {
