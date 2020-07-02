@@ -650,7 +650,7 @@ func (p *Peer) SetSelectedTipHash(selectedTipHash *daghash.Hash) {
 //
 // This function is safe for concurrent access.
 func (p *Peer) IsSelectedTipKnown() bool {
-	return !p.cfg.IsInDAG(p.selectedTipHash)
+	return p.cfg.IsInDAG(p.selectedTipHash)
 }
 
 // AddBanScore increases the persistent and decaying ban score fields by the
