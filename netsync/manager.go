@@ -198,11 +198,6 @@ func (sm *SyncManager) startSync() {
 
 	// Start syncing from the sync peer if one was selected.
 	if syncPeer != nil {
-		// Clear the requestedBlocks if the sync peer changes, otherwise
-		// we may ignore blocks we need that the last sync peer failed
-		// to send.
-		sm.requestedBlocks = make(map[daghash.Hash]struct{})
-
 		log.Infof("Syncing to block %s from peer %s",
 			syncPeer.SelectedTipHash(), syncPeer.Addr())
 
