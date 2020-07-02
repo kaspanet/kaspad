@@ -363,7 +363,7 @@ var SimnetParams = Params{
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Millisecond,
-	FinalityDuration:               finalityDuration,
+	FinalityDuration:               time.Minute,
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 
