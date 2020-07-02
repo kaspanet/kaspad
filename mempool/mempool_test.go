@@ -192,7 +192,8 @@ func (p *poolHarness) CreateSignedTxForSubnetwork(inputs []spendableOutpoint, nu
 		})
 	}
 
-	tx := domainmessage.NewSubnetworkMsgTx(domainmessage.TxVersion, txIns, txOuts, subnetworkID, gas, []byte{})
+	// Payload must be nil because it might be the native subnetwork
+	tx := domainmessage.NewSubnetworkMsgTx(domainmessage.TxVersion, txIns, txOuts, subnetworkID, gas, nil)
 
 	// Sign the new transaction.
 	for i := range tx.TxIn {
