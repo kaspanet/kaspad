@@ -31,7 +31,9 @@ const (
 	// queued.
 	maxOrphanBlocks = 100
 
-	isDAGCurrentMaxDiff = 12 * time.Hour
+	// isDAGCurrentMaxDiff is the number of blocks from the network tips (estimated by timestamps) for the current
+	// to be considered not synced
+	isDAGCurrentMaxDiff = 40_000
 )
 
 // orphanBlock represents a block that we don't yet have the parent for. It
@@ -1350,7 +1352,7 @@ func (dag *BlockDAG) isSynced() bool {
 		dagTimestamp = selectedTip.timestamp
 	}
 	dagTime := mstime.UnixMilliseconds(dagTimestamp)
-	return dag.Now().Sub(dagTime) <= isDAGCurrentMaxDiff
+	return dag.Now().Sub(dagTime) <= isDAGCurrentMaxDiff*dag.dagParams.TargetTimePerBlock
 }
 
 // Now returns the adjusted time according to

@@ -1130,7 +1130,7 @@ func TestIsDAGCurrentMaxDiff(t *testing.T) {
 		&dagconfig.SimnetParams,
 	}
 	for _, params := range netParams {
-		if params.FinalityDuration < isDAGCurrentMaxDiff {
+		if params.FinalityDuration < isDAGCurrentMaxDiff*params.TargetTimePerBlock {
 			t.Errorf("in %s, a DAG can be considered current even if it's below the finality point", params.Name)
 		}
 	}
