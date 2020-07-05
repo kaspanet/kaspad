@@ -8,15 +8,17 @@ import (
 )
 
 // StartProtocol starts the p2p protocol for a given connection
-func StartProtocol(server p2pserver.Server, mux messagemux.Mux, connection p2pserver.Connection, dag *blockdag.BlockDAG) {
+func StartProtocol(server p2pserver.Server, mux messagemux.Mux, connection p2pserver.Connection,
+	dag *blockdag.BlockDAG) {
+
 	mux.AddFlow([]string{wire.CmdTx}, startDummy(server, connection, dag))
 }
 
 func startDummy(server p2pserver.Server, connection p2pserver.Connection, dag *blockdag.BlockDAG) chan<- wire.Message {
 	ch := make(chan wire.Message)
-	go func() {
+	spawn(func() {
 		for range ch {
 		}
-	}()
+	})
 	return ch
 }
