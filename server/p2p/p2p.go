@@ -9,7 +9,6 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
-	"github.com/kaspanet/kaspad/util/mstime"
 	"math"
 	"net"
 	"runtime"
@@ -18,6 +17,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/pkg/errors"
 
@@ -217,8 +218,8 @@ type Server struct {
 	DAGParams   *dagconfig.Params
 	AddrManager *addrmgr.AddrManager
 	connManager *connmgr.ConnManager
-	SigCache    *txscript.SigCache
 	SyncManager *netsync.SyncManager
+	SigCache    *txscript.SigCache
 	DAG         *blockdag.BlockDAG
 	TxMemPool   *mempool.TxPool
 
