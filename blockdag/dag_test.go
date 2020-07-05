@@ -954,7 +954,7 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 		flushUTXODiffStore()
 		return node
 	}
-	finalityInterval := dag.dagParams.FinalityInterval
+	finalityInterval := dag.FinalityInterval()
 	nodes := make([]*blockNode, 0, finalityInterval)
 	currentNode := dag.genesis
 	nodes = append(nodes, currentNode)
@@ -1130,7 +1130,7 @@ func TestIsDAGCurrentMaxDiff(t *testing.T) {
 		&dagconfig.SimnetParams,
 	}
 	for _, params := range netParams {
-		if params.TargetTimePerBlock*time.Duration(params.FinalityInterval) < isDAGCurrentMaxDiff {
+		if params.FinalityDuration < isDAGCurrentMaxDiff*params.TargetTimePerBlock {
 			t.Errorf("in %s, a DAG can be considered current even if it's below the finality point", params.Name)
 		}
 	}

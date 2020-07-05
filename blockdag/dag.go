@@ -31,7 +31,9 @@ const (
 	// queued.
 	maxOrphanBlocks = 100
 
-	isDAGCurrentMaxDiff = 12 * time.Hour
+	// isDAGCurrentMaxDiff is the number of blocks from the network tips (estimated by timestamps) for the current
+	// to be considered not synced
+	isDAGCurrentMaxDiff = 40_000
 )
 
 // orphanBlock represents a block that we don't yet have the parent for. It
@@ -72,7 +74,6 @@ type BlockDAG struct {
 	// parameters. They are also set when the instance is created and
 	// can't be changed afterwards, so there is no need to protect them with
 	// a separate mutex.
-	targetTimePerBlock             int64 // The target delay between blocks (in seconds)
 	difficultyAdjustmentWindowSize uint64
 	TimestampDeviationTolerance    uint64
 
@@ -827,6 +828,11 @@ func (dag *BlockDAG) isInSelectedParentChainOf(node *blockNode, other *blockNode
 	return dag.reachabilityTree.isReachabilityTreeAncestorOf(node, other)
 }
 
+// FinalityInterval is the interval that determines the finality window of the DAG.
+func (dag *BlockDAG) FinalityInterval() uint64 {
+	return uint64(dag.dagParams.FinalityDuration / dag.dagParams.TargetTimePerBlock)
+}
+
 // checkFinalityViolation checks the new block does not violate the finality rules
 // specifically - the new block selectedParent chain should contain the old finality point.
 func (dag *BlockDAG) checkFinalityViolation(newNode *blockNode) error {
@@ -889,7 +895,7 @@ func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
 	}
 	var nodesToDelete []*blockNode
 	if deleteDiffData {
-		nodesToDelete = make([]*blockNode, 0, dag.dagParams.FinalityInterval)
+		nodesToDelete = make([]*blockNode, 0, dag.FinalityInterval())
 	}
 	for len(queue) > 0 {
 		var current *blockNode
@@ -1346,7 +1352,7 @@ func (dag *BlockDAG) isSynced() bool {
 		dagTimestamp = selectedTip.timestamp
 	}
 	dagTime := mstime.UnixMilliseconds(dagTimestamp)
-	return dag.Now().Sub(dagTime) <= isDAGCurrentMaxDiff
+	return dag.Now().Sub(dagTime) <= isDAGCurrentMaxDiff*dag.dagParams.TargetTimePerBlock
 }
 
 // Now returns the adjusted time according to
@@ -2038,7 +2044,6 @@ func New(config *Config) (*BlockDAG, error) {
 	}
 
 	params := config.DAGParams
-	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
 
 	index := newBlockIndex(params)
 	dag := &BlockDAG{
@@ -2046,7 +2051,6 @@ func New(config *Config) (*BlockDAG, error) {
 		timeSource:                     config.TimeSource,
 		sigCache:                       config.SigCache,
 		indexManager:                   config.IndexManager,
-		targetTimePerBlock:             targetTimePerBlock,
 		difficultyAdjustmentWindowSize: params.DifficultyAdjustmentWindowSize,
 		TimestampDeviationTolerance:    params.TimestampDeviationTolerance,
 		powMaxBits:                     util.BigToCompact(params.PowMax),
