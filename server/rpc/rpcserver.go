@@ -12,7 +12,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/kaspanet/kaspad/addrmgr"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -22,6 +21,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/kaspanet/kaspad/addrmgr"
 
 	"github.com/pkg/errors"
 
@@ -34,11 +35,11 @@ import (
 	"github.com/kaspanet/kaspad/mining"
 	"github.com/kaspanet/kaspad/peer"
 	"github.com/kaspanet/kaspad/rpcmodel"
-	"github.com/kaspanet/kaspad/server/p2p"
 	"github.com/kaspanet/kaspad/server/serverutils"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/fs"
+	"github.com/kaspanet/kaspad/util/network"
 	"github.com/kaspanet/kaspad/wire"
 )
 
@@ -821,7 +822,7 @@ func setupRPCListeners() ([]net.Listener, error) {
 		}
 	}
 
-	netAddrs, err := p2p.ParseListeners(config.ActiveConfig().RPCListeners)
+	netAddrs, err := network.ParseListeners(config.ActiveConfig().RPCListeners)
 	if err != nil {
 		return nil, err
 	}
@@ -842,9 +843,10 @@ func setupRPCListeners() ([]net.Listener, error) {
 // NewRPCServer returns a new instance of the rpcServer struct.
 func NewRPCServer(
 	startupTime int64,
-	p2pServer *p2p.Server,
+	dag *blockdag.BlockDAG,
+	txMempool *mempool.TxPool,
+	acceptanceIndex *indexers.AcceptanceIndex,
 	blockTemplateGenerator *mining.BlkTmplGenerator,
-
 ) (*Server, error) {
 	// Setup listeners for the configured RPC listen addresses and
 	// TLS settings.
@@ -858,15 +860,12 @@ func NewRPCServer(
 	cfg := &rpcserverConfig{
 		Listeners:       rpcListeners,
 		StartupTime:     startupTime,
-		ConnMgr:         &rpcConnManager{p2pServer},
-		SyncMgr:         &rpcSyncMgr{p2pServer, p2pServer.SyncManager},
-		addressManager:  p2pServer.AddrManager,
-		TimeSource:      p2pServer.TimeSource,
-		DAGParams:       p2pServer.DAGParams,
-		TxMemPool:       p2pServer.TxMemPool,
+		TimeSource:      dag.TimeSource,
+		DAGParams:       dag.Params,
+		TxMemPool:       txMempool,
 		Generator:       blockTemplateGenerator,
-		AcceptanceIndex: p2pServer.AcceptanceIndex,
-		DAG:             p2pServer.DAG,
+		AcceptanceIndex: acceptanceIndex,
+		DAG:             dag,
 	}
 	rpc := Server{
 		cfg:                    *cfg,

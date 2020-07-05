@@ -903,7 +903,7 @@ func (rt *reachabilityTree) init(dbContext dbaccess.Context) error {
 		if !dbaccess.IsNotFoundError(err) {
 			return err
 		}
-		reindexRootHash = rt.dag.dagParams.GenesisHash
+		reindexRootHash = rt.dag.Params.GenesisHash
 	}
 
 	// Init the reindex root

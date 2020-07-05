@@ -699,7 +699,7 @@ func TestConfirmations(t *testing.T) {
 
 	// Add a chain of blocks
 	chainBlocks := make([]*wire.MsgBlock, 5)
-	chainBlocks[0] = dag.dagParams.GenesisBlock
+	chainBlocks[0] = dag.Params.GenesisBlock
 	for i := uint32(1); i < 5; i++ {
 		chainBlocks[i] = prepareAndProcessBlockByParentMsgBlocks(t, dag, chainBlocks[i-1])
 	}
@@ -808,7 +808,7 @@ func TestAcceptingBlock(t *testing.T) {
 
 	numChainBlocks := uint32(10)
 	chainBlocks := make([]*wire.MsgBlock, numChainBlocks)
-	chainBlocks[0] = dag.dagParams.GenesisBlock
+	chainBlocks[0] = dag.Params.GenesisBlock
 	for i := uint32(1); i <= numChainBlocks-1; i++ {
 		chainBlocks[i] = prepareAndProcessBlockByParentMsgBlocks(t, dag, chainBlocks[i-1])
 	}
@@ -954,7 +954,7 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 		flushUTXODiffStore()
 		return node
 	}
-	finalityInterval := dag.dagParams.FinalityInterval
+	finalityInterval := dag.Params.FinalityInterval
 	nodes := make([]*blockNode, 0, finalityInterval)
 	currentNode := dag.genesis
 	nodes = append(nodes, currentNode)

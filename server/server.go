@@ -13,7 +13,6 @@ import (
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/mining"
-	"github.com/kaspanet/kaspad/server/p2p"
 	"github.com/kaspanet/kaspad/server/rpc"
 	"github.com/kaspanet/kaspad/signal"
 )
@@ -21,7 +20,6 @@ import (
 // Server is a wrapper for p2p server and rpc server
 type Server struct {
 	rpcServer   *rpc.Server
-	p2pServer   *p2p.Server
 	SigCache    *txscript.SigCache
 	DAG         *blockdag.BlockDAG
 	Mempool     *mempool.TxPool
@@ -42,8 +40,6 @@ func (s *Server) Start() {
 	// Server startup time. Used for the uptime command for uptime calculation.
 	s.startupTime = mstime.Now().UnixMilliseconds()
 
-	s.p2pServer.Start()
-
 	cfg := config.ActiveConfig()
 
 	if !cfg.DisableRPC {
@@ -62,8 +58,6 @@ func (s *Server) Stop() error {
 
 	log.Warnf("Server shutting down")
 
-	s.p2pServer.Stop()
-
 	// Shutdown the RPC server if it's not disabled.
 	if !config.ActiveConfig().DisableRPC {
 		s.rpcServer.Stop()
@@ -78,9 +72,10 @@ func (s *Server) Stop() error {
 func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-chan struct{}) (*Server, error) {
 	// Create indexes if needed.
 	var indexes []indexers.Indexer
+	var acceptanceIndex *indexers.AcceptanceIndex
 	if config.ActiveConfig().AcceptanceIndex {
 		log.Info("acceptance index is enabled")
-		indexes = append(indexes, indexers.NewAcceptanceIndex())
+		indexes = append(indexes, acceptanceIndex)
 	}
 	sigCache := txscript.NewSigCache(config.ActiveConfig().SigCacheMaxSize)
 	// Create an index manager if any of the optional indexes are enabled.
@@ -132,11 +127,13 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 	}
 	if !cfg.DisableRPC {
 		blockTemplateGenerator := mining.NewBlkTmplGenerator(&policy,
-			dagParams, s.p2pServer.TxMemPool, s.p2pServer.DAG, s.p2pServer.TimeSource, s.p2pServer.SigCache)
+			dagParams, s.Mempool, dag, dag.TimeSource, sigCache)
 
 		s.rpcServer, err = rpc.NewRPCServer(
 			s.startupTime,
-			s.p2pServer,
+			dag,
+			s.Mempool,
+			acceptanceIndex,
 			blockTemplateGenerator,
 		)
 		if err != nil {
@@ -155,5 +152,6 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 
 // WaitForShutdown blocks until the main listener and peer handlers are stopped.
 func (s *Server) WaitForShutdown() {
-	s.p2pServer.WaitForShutdown()
+	// TODO(libp2p)
+	//	s.p2pServer.WaitForShutdown()
 }

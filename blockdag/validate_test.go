@@ -165,7 +165,7 @@ func TestCheckBlockSanity(t *testing.T) {
 		return
 	}
 	defer teardownFunc()
-	dag.timeSource = newFakeTimeSource(mstime.Now())
+	dag.TimeSource = newFakeTimeSource(mstime.Now())
 
 	block := util.NewBlock(&Block100000)
 	if len(block.Transactions()) < 3 {
@@ -554,9 +554,9 @@ func TestValidateParents(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	a := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.dagParams.GenesisBlock)
+	a := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.Params.GenesisBlock)
 	b := prepareAndProcessBlockByParentMsgBlocks(t, dag, a)
-	c := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.dagParams.GenesisBlock)
+	c := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.Params.GenesisBlock)
 
 	aNode := nodeByMsgBlock(t, dag, a)
 	bNode := nodeByMsgBlock(t, dag, b)

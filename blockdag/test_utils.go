@@ -249,7 +249,7 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 	oldVirtual := SetVirtualForTest(dag, newVirtual)
 	defer SetVirtualForTest(dag, oldVirtual)
 
-	OpTrueAddr, err := opTrueAddress(dag.dagParams.Prefix)
+	OpTrueAddr, err := opTrueAddress(dag.Params.Prefix)
 	if err != nil {
 		return nil, err
 	}

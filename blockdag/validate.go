@@ -265,9 +265,9 @@ func (dag *BlockDAG) checkProofOfWork(header *wire.BlockHeader, flags BehaviorFl
 	}
 
 	// The target difficulty must be less than the maximum allowed.
-	if target.Cmp(dag.dagParams.PowMax) > 0 {
+	if target.Cmp(dag.Params.PowMax) > 0 {
 		str := fmt.Sprintf("block target difficulty of %064x is "+
-			"higher than max of %064x", target, dag.dagParams.PowMax)
+			"higher than max of %064x", target, dag.Params.PowMax)
 		return ruleError(ErrUnexpectedDifficulty, str)
 	}
 
@@ -403,7 +403,7 @@ func (dag *BlockDAG) checkBlockHeaderSanity(block *util.Block, flags BehaviorFla
 	}
 
 	if len(header.ParentHashes) == 0 {
-		if !header.BlockHash().IsEqual(dag.dagParams.GenesisHash) {
+		if !header.BlockHash().IsEqual(dag.Params.GenesisHash) {
 			return 0, ruleError(ErrNoParents, "block has no parents")
 		}
 	} else {
@@ -554,7 +554,7 @@ func (dag *BlockDAG) checkBlockTransactionOrder(block *util.Block) error {
 
 func (dag *BlockDAG) checkNoNonNativeTransactions(block *util.Block) error {
 	// Disallow non-native/coinbase subnetworks in networks that don't allow them
-	if !dag.dagParams.EnableNonNativeSubnetworks {
+	if !dag.Params.EnableNonNativeSubnetworks {
 		transactions := block.Transactions()
 		for _, tx := range transactions {
 			if !(tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
@@ -939,7 +939,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 
 	for _, tx := range transactions {
 		txFee, err := CheckTransactionInputsAndCalulateFee(tx, block.blueScore, pastUTXO,
-			dag.dagParams, fastAdd)
+			dag.Params, fastAdd)
 		if err != nil {
 			return nil, err
 		}

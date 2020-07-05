@@ -294,15 +294,15 @@ func TestBlueAnticoneSizeErrors(t *testing.T) {
 	defer teardownFunc()
 
 	// Prepare a block chain with size K beginning with the genesis block
-	currentBlockA := dag.dagParams.GenesisBlock
-	for i := dagconfig.KType(0); i < dag.dagParams.K; i++ {
+	currentBlockA := dag.Params.GenesisBlock
+	for i := dagconfig.KType(0); i < dag.Params.K; i++ {
 		newBlock := prepareAndProcessBlockByParentMsgBlocks(t, dag, currentBlockA)
 		currentBlockA = newBlock
 	}
 
 	// Prepare another block chain with size K beginning with the genesis block
-	currentBlockB := dag.dagParams.GenesisBlock
-	for i := dagconfig.KType(0); i < dag.dagParams.K; i++ {
+	currentBlockB := dag.Params.GenesisBlock
+	for i := dagconfig.KType(0); i < dag.Params.K; i++ {
 		newBlock := prepareAndProcessBlockByParentMsgBlocks(t, dag, currentBlockB)
 		currentBlockB = newBlock
 	}
@@ -342,8 +342,8 @@ func TestGHOSTDAGErrors(t *testing.T) {
 	defer teardownFunc()
 
 	// Add two child blocks to the genesis
-	block1 := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.dagParams.GenesisBlock)
-	block2 := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.dagParams.GenesisBlock)
+	block1 := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.Params.GenesisBlock)
+	block2 := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.Params.GenesisBlock)
 
 	// Add a child block to the previous two blocks
 	block3 := prepareAndProcessBlockByParentMsgBlocks(t, dag, block1, block2)
