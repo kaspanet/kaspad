@@ -18,8 +18,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/kaspanet/kaspad/util/mstime"
-
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -1541,8 +1539,6 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 			MinRelayTxFee:   config.ActiveConfig().MinRelayTxFee,
 			MaxTxVersion:    1,
 		},
-		DAGParams:      dagParams,
-		MedianTimePast: func() mstime.Time { return s.DAG.CalcPastMedianTime() },
 		CalcSequenceLockNoLock: func(tx *util.Tx, utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 			return s.DAG.CalcSequenceLockNoLock(tx, utxoSet, true)
 		},

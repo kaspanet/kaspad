@@ -96,6 +96,22 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 		return nil, err
 	}
 
+	mempoolConfig := setupMempool(dag, sigCache)
+	s := &Server{
+		SigCache: sigCache,
+		DAG:      dag,
+		Mempool:  mempool.New(&mempoolConfig),
+	}
+
+	server, err := setupRPC(s, dag, sigCache, acceptanceIndex)
+	if err != nil {
+		return server, err
+	}
+
+	return s, nil
+}
+
+func setupMempool(dag *blockdag.BlockDAG, sigCache *txscript.SigCache) mempool.Config {
 	mempoolConfig := mempool.Config{
 		Policy: mempool.Policy{
 			AcceptNonStd:    config.ActiveConfig().RelayNonStd,
@@ -104,8 +120,6 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 			MinRelayTxFee:   config.ActiveConfig().MinRelayTxFee,
 			MaxTxVersion:    1,
 		},
-		DAGParams:      dagParams,
-		MedianTimePast: func() mstime.Time { return dag.CalcPastMedianTime() },
 		CalcSequenceLockNoLock: func(tx *util.Tx, utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 			return dag.CalcSequenceLockNoLock(tx, utxoSet, true)
 		},
@@ -113,12 +127,10 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 		SigCache:           sigCache,
 		DAG:                dag,
 	}
-	s := &Server{
-		SigCache: sigCache,
-		DAG:      dag,
-		Mempool:  mempool.New(&mempoolConfig),
-	}
+	return mempoolConfig
+}
 
+func setupRPC(s *Server, dag *blockdag.BlockDAG, sigCache *txscript.SigCache, acceptanceIndex *indexers.AcceptanceIndex) (*Server, error) {
 	cfg := config.ActiveConfig()
 	if !cfg.DisableRPC {
 		policy := mining.Policy{
@@ -127,6 +139,7 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 		blockTemplateGenerator := mining.NewBlkTmplGenerator(&policy,
 			s.Mempool, dag, sigCache)
 
+		var err error
 		s.rpcServer, err = rpc.NewRPCServer(
 			s.startupTime,
 			dag,
@@ -144,8 +157,7 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 			signal.ShutdownRequestChannel <- struct{}{}
 		})
 	}
-
-	return s, nil
+	return nil, nil
 }
 
 // WaitForShutdown blocks until the main listener and peer handlers are stopped.
