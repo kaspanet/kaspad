@@ -35,4 +35,6 @@ const (
 	BanScoreNodeBloomFlagViolation = 100
 
 	BanScoreStallTimeout = 1
+
+	BanScoreUnrequestedMessage = 100
 )

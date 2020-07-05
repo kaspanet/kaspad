@@ -13,4 +13,6 @@ type Connection interface {
 	Send(message wire.Message) error
 	Receive() (wire.Message, error)
 	Disconnect() error
+	AddBanScore(persistent, transient uint32, reason string) (banned bool)
+	String() string
 }

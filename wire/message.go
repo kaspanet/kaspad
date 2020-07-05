@@ -51,6 +51,8 @@ const (
 	CmdBlockLocator    = "locator"
 	CmdSelectedTip     = "selectedtip"
 	CmdGetSelectedTip  = "getseltip"
+	CmdInvRelayBlock   = "invrelblk"
+	CmdGetRelayBlock   = "getrelblk"
 )
 
 // Message is an interface that describes a kaspa message. A type that
