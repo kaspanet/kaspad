@@ -46,6 +46,9 @@ var (
 	txmpLog = BackendLog.Logger("TXMP")
 	utilLog = BackendLog.Logger("UTIL")
 	profLog = BackendLog.Logger("PROF")
+	protLog = BackendLog.Logger("PROT")
+	muxxLog = BackendLog.Logger("MUXX")
+	p2psLog = BackendLog.Logger("P2PS")
 )
 
 // SubsystemTags is an enum of all sub system tags
@@ -67,7 +70,10 @@ var SubsystemTags = struct {
 	SYNC,
 	TXMP,
 	UTIL,
-	PROF string
+	PROF,
+	PROT,
+	MUXX,
+	P2PS string
 }{
 	ADXR: "ADXR",
 	AMGR: "AMGR",
@@ -87,6 +93,9 @@ var SubsystemTags = struct {
 	TXMP: "TXMP",
 	UTIL: "UTIL",
 	PROF: "PROF",
+	PROT: "PROT",
+	MUXX: "MUXX",
+	P2PS: "P2PS",
 }
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
@@ -109,6 +118,9 @@ var subsystemLoggers = map[string]*logs.Logger{
 	SubsystemTags.TXMP: txmpLog,
 	SubsystemTags.UTIL: utilLog,
 	SubsystemTags.PROF: profLog,
+	SubsystemTags.PROT: protLog,
+	SubsystemTags.MUXX: muxxLog,
+	SubsystemTags.P2PS: p2psLog,
 }
 
 // InitLog attaches log file and error log file to the backend log.
