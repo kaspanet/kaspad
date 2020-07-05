@@ -96,7 +96,7 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 		return nil, err
 	}
 
-	txC := mempool.Config{
+	mempoolConfig := mempool.Config{
 		Policy: mempool.Policy{
 			AcceptNonStd:    config.ActiveConfig().RelayNonStd,
 			MaxOrphanTxs:    config.ActiveConfig().MaxOrphanTxs,
@@ -116,18 +116,16 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 	s := &Server{
 		SigCache: sigCache,
 		DAG:      dag,
-		Mempool:  mempool.New(&txC),
+		Mempool:  mempool.New(&mempoolConfig),
 	}
-	cfg := config.ActiveConfig()
 
-	// Create the mining policy and block template generator based on the
-	// configuration options.
-	policy := mining.Policy{
-		BlockMaxMass: cfg.BlockMaxMass,
-	}
+	cfg := config.ActiveConfig()
 	if !cfg.DisableRPC {
+		policy := mining.Policy{
+			BlockMaxMass: cfg.BlockMaxMass,
+		}
 		blockTemplateGenerator := mining.NewBlkTmplGenerator(&policy,
-			dagParams, s.Mempool, dag, dag.TimeSource, sigCache)
+			s.Mempool, dag, sigCache)
 
 		s.rpcServer, err = rpc.NewRPCServer(
 			s.startupTime,

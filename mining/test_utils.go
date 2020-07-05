@@ -3,7 +3,6 @@ package mining
 // This file functions are not considered safe for regular use, and should be used for test purposes only.
 
 import (
-	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 
@@ -37,7 +36,9 @@ func (txs *fakeTxSource) HaveTransaction(txID *daghash.TxID) bool {
 }
 
 // PrepareBlockForTest generates a block with the proper merkle roots, coinbase transaction etc. This function is used for test purposes only
-func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, parentHashes []*daghash.Hash, transactions []*wire.MsgTx, forceTransactions bool) (*wire.MsgBlock, error) {
+func PrepareBlockForTest(dag *blockdag.BlockDAG, parentHashes []*daghash.Hash, transactions []*wire.MsgTx, forceTransactions bool,
+) (*wire.MsgBlock, error) {
+
 	newVirtual, err := blockdag.GetVirtualFromParentsForTest(dag, parentHashes)
 	if err != nil {
 		return nil, err
@@ -59,10 +60,9 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 		}
 	}
 
-	blockTemplateGenerator := NewBlkTmplGenerator(&policy,
-		params, txSource, dag, blockdag.NewTimeSource(), txscript.NewSigCache(100000))
+	blockTemplateGenerator := NewBlkTmplGenerator(&policy, txSource, dag, txscript.NewSigCache(100000))
 
-	OpTrueAddr, err := OpTrueAddress(params.Prefix)
+	OpTrueAddr, err := OpTrueAddress(dag.Params.Prefix)
 	if err != nil {
 		return nil, err
 	}
