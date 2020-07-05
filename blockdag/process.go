@@ -157,8 +157,7 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 
 	// The block must not already exist in the DAG.
 	if dag.IsInDAG(blockHash) && !wasBlockStored {
-		str := fmt.Sprintf("already have block %s", blockHash)
-		return false, false, ruleError(ErrDuplicateBlock, str)
+		return false, false, errors.Errorf("already have block %s", blockHash)
 	}
 
 	// The block must not already exist as an orphan.

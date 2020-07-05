@@ -35,9 +35,9 @@ const (
 	// hashes to store in memory.
 	maxRequestedTxns = wire.MaxInvPerMsg
 
-	minGetSelectedTipInterval = time.Minute
+	minGetSelectedTipInterval = time.Minute * 5
 
-	minDAGTimeDelay = time.Minute
+	minDAGTimeDelay = time.Minute * 5
 )
 
 // newPeerMsg signifies a newly connected peer to the block handler.
@@ -181,7 +181,7 @@ func (sm *SyncManager) startSync() {
 			continue
 		}
 
-		if !peer.IsSelectedTipKnown() {
+		if peer.IsSelectedTipKnown() {
 			continue
 		}
 
@@ -193,11 +193,6 @@ func (sm *SyncManager) startSync() {
 
 	// Start syncing from the sync peer if one was selected.
 	if syncPeer != nil {
-		// Clear the requestedBlocks if the sync peer changes, otherwise
-		// we may ignore blocks we need that the last sync peer failed
-		// to send.
-		sm.requestedBlocks = make(map[daghash.Hash]struct{})
-
 		log.Infof("Syncing to block %s from peer %s",
 			syncPeer.SelectedTipHash(), syncPeer.Addr())
 
@@ -240,7 +235,7 @@ func (sm *SyncManager) startSync() {
 }
 
 func (sm *SyncManager) shouldQueryPeerSelectedTips() bool {
-	return sm.dag.Now().Sub(sm.dag.CalcPastMedianTime()) > minDAGTimeDelay
+	return sm.dag.Now().Sub(sm.dag.SelectedTipHeader().Timestamp) > minDAGTimeDelay
 }
 
 func (sm *SyncManager) queueMsgGetSelectedTip(peer *peerpkg.Peer, state *peerSyncState) {
