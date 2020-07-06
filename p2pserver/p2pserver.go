@@ -4,6 +4,8 @@ import "github.com/kaspanet/kaspad/wire"
 
 // Server represents a p2p server.
 type Server interface {
+	Broadcast(msg wire.Message)
+	BroadcastExceptConnection(msg wire.Message, exceptConnection Connection)
 	Connect(address string) (Connection, error)
 	Connections() []Connection
 }

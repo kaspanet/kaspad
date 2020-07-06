@@ -12,7 +12,7 @@ import (
 
 // StartProtocol starts the p2p protocol for a given connection
 func StartProtocol(server p2pserver.Server, mux messagemux.Mux, connection p2pserver.Connection,
-	dag *blockdag.BlockDAG, requestedBlocks *blockrelay.SharedRequestedBlocks) {
+	dag *blockdag.BlockDAG) {
 
 	stop := make(chan struct{})
 	shutdown := uint32(0)
@@ -20,7 +20,7 @@ func StartProtocol(server p2pserver.Server, mux messagemux.Mux, connection p2pse
 	blockRelayCh := make(chan wire.Message)
 	mux.AddFlow([]string{wire.CmdTx}, blockRelayCh)
 	spawn(func() {
-		err := blockrelay.StartBlockRelay(blockRelayCh, server, connection, dag, requestedBlocks)
+		err := blockrelay.StartBlockRelay(blockRelayCh, server, connection, dag)
 		if err == nil {
 			return
 		}

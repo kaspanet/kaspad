@@ -221,7 +221,7 @@ func (dag *BlockDAG) IsKnownInvalid(hash *daghash.Hash) bool {
 // GetOrphanMissingAncestorHashes returns all of the missing parents in the orphan's sub-DAG
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) GetOrphanMissingAncestorHashes(orphanHash *daghash.Hash) ([]*daghash.Hash, error) {
+func (dag *BlockDAG) GetOrphanMissingAncestorHashes(orphanHash *daghash.Hash) []*daghash.Hash {
 	// Protect concurrent access. Using a read lock only so multiple
 	// readers can query without blocking each other.
 	dag.orphanLock.RLock()
@@ -246,7 +246,7 @@ func (dag *BlockDAG) GetOrphanMissingAncestorHashes(orphanHash *daghash.Hash) ([
 			}
 		}
 	}
-	return missingAncestorsHashes, nil
+	return missingAncestorsHashes
 }
 
 // removeOrphanBlock removes the passed orphan block from the orphan pool and
