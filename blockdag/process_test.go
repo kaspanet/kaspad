@@ -1,10 +1,11 @@
 package blockdag
 
 import (
-	"github.com/kaspanet/kaspad/util"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/kaspanet/kaspad/util"
 
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -93,7 +94,7 @@ func TestProcessDelayedBlocks(t *testing.T) {
 	// Here we use a fake time source that returns a timestamp
 	// one hour into the future to make delayedBlock artificially
 	// valid.
-	dag1.TimeSource = newFakeTimeSource(initialTime.Add(time.Hour))
+	dag1.timeSource = newFakeTimeSource(initialTime.Add(time.Hour))
 
 	delayedBlock, err := PrepareBlockForTest(dag1, []*daghash.Hash{dag1.Params.GenesisBlock.BlockHash()}, nil)
 	if err != nil {
@@ -135,7 +136,7 @@ func TestProcessDelayedBlocks(t *testing.T) {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
 	}
 	defer teardownFunc2()
-	dag2.TimeSource = newFakeTimeSource(initialTime)
+	dag2.timeSource = newFakeTimeSource(initialTime)
 
 	isOrphan, isDelayed, err = dag2.ProcessBlock(util.NewBlock(delayedBlock), BFNoPoWCheck)
 	if err != nil {
@@ -207,7 +208,7 @@ func TestProcessDelayedBlocks(t *testing.T) {
 		Add(-time.Duration(deviationTolerance)*time.Second).
 		Sub(dag2.Now()) +
 		time.Second
-	dag2.TimeSource = newFakeTimeSource(initialTime.Add(timeUntilDelayedBlockIsValid))
+	dag2.timeSource = newFakeTimeSource(initialTime.Add(timeUntilDelayedBlockIsValid))
 
 	blockAfterDelay, err := PrepareBlockForTest(dag2,
 		[]*daghash.Hash{dag2.Params.GenesisBlock.BlockHash()},

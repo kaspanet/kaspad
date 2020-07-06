@@ -770,9 +770,8 @@ type rpcserverConfig struct {
 
 	// These fields allow the RPC server to interface with the local block
 	// DAG data and state.
-	TimeSource blockdag.TimeSource
-	DAG        *blockdag.BlockDAG
-	DAGParams  *dagconfig.Params
+	DAG       *blockdag.BlockDAG
+	DAGParams *dagconfig.Params
 
 	// TxMemPool defines the transaction memory pool to interact with.
 	TxMemPool *mempool.TxPool
@@ -860,7 +859,6 @@ func NewRPCServer(
 	cfg := &rpcserverConfig{
 		Listeners:       rpcListeners,
 		StartupTime:     startupTime,
-		TimeSource:      dag.TimeSource,
 		DAGParams:       dag.Params,
 		TxMemPool:       txMempool,
 		Generator:       blockTemplateGenerator,
@@ -870,7 +868,7 @@ func NewRPCServer(
 	rpc := Server{
 		cfg:                    *cfg,
 		statusLines:            make(map[int]string),
-		gbtWorkState:           newGbtWorkState(cfg.TimeSource),
+		gbtWorkState:           newGbtWorkState(),
 		helpCacher:             newHelpCacher(),
 		requestProcessShutdown: make(chan struct{}),
 		quit:                   make(chan int),

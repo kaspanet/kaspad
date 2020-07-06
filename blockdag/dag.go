@@ -6,11 +6,12 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/util/mstime"
 	"math"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/kaspanet/kaspad/dbaccess"
 
@@ -63,7 +64,7 @@ type BlockDAG struct {
 	// be changed afterwards, so there is no need to protect them with a
 	// separate mutex.
 	Params       *dagconfig.Params
-	TimeSource   TimeSource
+	timeSource   TimeSource
 	sigCache     *txscript.SigCache
 	indexManager IndexManager
 	genesis      *blockNode
@@ -1353,7 +1354,7 @@ func (dag *BlockDAG) isSynced() bool {
 // dag.timeSource. See TimeSource.Now for
 // more details.
 func (dag *BlockDAG) Now() mstime.Time {
-	return dag.TimeSource.Now()
+	return dag.timeSource.Now()
 }
 
 // IsSynced returns whether or not the DAG believes it is synced. Several
@@ -2043,7 +2044,7 @@ func New(config *Config) (*BlockDAG, error) {
 	index := newBlockIndex(params)
 	dag := &BlockDAG{
 		Params:                         params,
-		TimeSource:                     config.TimeSource,
+		timeSource:                     config.TimeSource,
 		sigCache:                       config.SigCache,
 		indexManager:                   config.IndexManager,
 		targetTimePerBlock:             targetTimePerBlock,

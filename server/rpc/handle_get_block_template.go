@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/kaspanet/kaspad/util/mstime"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/config"
@@ -61,16 +62,14 @@ type gbtWorkState struct {
 	minTimestamp  mstime.Time
 	template      *mining.BlockTemplate
 	notifyMap     map[string]map[int64]chan struct{}
-	timeSource    blockdag.TimeSource
 	payAddress    util.Address
 }
 
 // newGbtWorkState returns a new instance of a gbtWorkState with all internal
 // fields initialized and ready to use.
-func newGbtWorkState(timeSource blockdag.TimeSource) *gbtWorkState {
+func newGbtWorkState() *gbtWorkState {
 	return &gbtWorkState{
-		notifyMap:  make(map[string]map[int64]chan struct{}),
-		timeSource: timeSource,
+		notifyMap: make(map[string]map[int64]chan struct{}),
 	}
 }
 
@@ -636,7 +635,7 @@ func (state *gbtWorkState) blockTemplateResult(s *Server) (*rpcmodel.GetBlockTem
 	template := state.template
 	msgBlock := template.Block
 	header := &msgBlock.Header
-	adjustedTime := state.timeSource.Now()
+	adjustedTime := dag.Now()
 	maxTime := adjustedTime.Add(time.Millisecond * time.Duration(dag.TimestampDeviationTolerance))
 	if header.Timestamp.After(maxTime) {
 		return nil, &rpcmodel.RPCError{

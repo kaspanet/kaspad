@@ -5,11 +5,12 @@
 package blockdag
 
 import (
-	"github.com/kaspanet/kaspad/util/mstime"
 	"math"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/pkg/errors"
 
@@ -165,7 +166,7 @@ func TestCheckBlockSanity(t *testing.T) {
 		return
 	}
 	defer teardownFunc()
-	dag.TimeSource = newFakeTimeSource(mstime.Now())
+	dag.timeSource = newFakeTimeSource(mstime.Now())
 
 	block := util.NewBlock(&Block100000)
 	if len(block.Transactions()) < 3 {

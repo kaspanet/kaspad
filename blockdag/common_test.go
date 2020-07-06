@@ -7,13 +7,14 @@ package blockdag
 import (
 	"compress/bzip2"
 	"encoding/binary"
-	"github.com/kaspanet/kaspad/util/mstime"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/pkg/errors"
 
@@ -99,7 +100,7 @@ func newTestDAG(params *dagconfig.Params) *BlockDAG {
 	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
 	dag := &BlockDAG{
 		Params:                         params,
-		TimeSource:                     NewTimeSource(),
+		timeSource:                     NewTimeSource(),
 		targetTimePerBlock:             targetTimePerBlock,
 		difficultyAdjustmentWindowSize: params.DifficultyAdjustmentWindowSize,
 		TimestampDeviationTolerance:    params.TimestampDeviationTolerance,
