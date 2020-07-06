@@ -157,10 +157,3 @@ func (s *Kaspad) WaitForShutdown() {
 	// TODO(libp2p)
 	//	s.p2pServer.WaitForShutdown()
 }
-func Start() {
-
-}
-
-func Stop() {
-
-}
