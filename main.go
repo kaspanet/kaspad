@@ -20,7 +20,6 @@ import (
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/limits"
 	"github.com/kaspanet/kaspad/signal"
-	"github.com/kaspanet/kaspad/util/fs"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/kaspanet/kaspad/util/profiling"
 	"github.com/kaspanet/kaspad/version"
@@ -212,39 +211,6 @@ func blockDbPath(dbType string) string {
 	}
 	dbPath := filepath.Join(cfg.DataDir, dbName)
 	return dbPath
-}
-
-// warnMultipleDBs shows a warning if multiple block database types are detected.
-// This is not a situation most users want. It is handy for development however
-// to support multiple side-by-side databases.
-func warnMultipleDBs() {
-	// This is intentionally not using the known db types which depend
-	// on the database types compiled into the binary since we want to
-	// detect legacy db types as well.
-	dbTypes := []string{"ffldb", "leveldb", "sqlite"}
-	duplicateDbPaths := make([]string, 0, len(dbTypes)-1)
-	for _, dbType := range dbTypes {
-		if dbType == cfg.DbType {
-			continue
-		}
-
-		// Store db path as a duplicate db if it exists.
-		dbPath := blockDbPath(dbType)
-		if fs.FileExists(dbPath) {
-			duplicateDbPaths = append(duplicateDbPaths, dbPath)
-		}
-	}
-
-	// Warn if there are extra databases.
-	if len(duplicateDbPaths) > 0 {
-		selectedDbPath := blockDbPath(cfg.DbType)
-		log.Warnf("WARNING: There are multiple block DAG databases "+
-			"using different database types.\nYou probably don't "+
-			"want to waste disk space by having more than one.\n"+
-			"Your current database is located at [%s].\nThe "+
-			"additional database is located at %s", selectedDbPath,
-			strings.Join(duplicateDbPaths, ", "))
-	}
 }
 
 func openDB() error {

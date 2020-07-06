@@ -22,7 +22,7 @@ type kaspad struct {
 	started, shutdown int32
 }
 
-// Start begins accepting connections from peers.
+// Start launches all the kaspad services.
 func (s *kaspad) start() {
 	// Already started?
 	if atomic.AddInt32(&s.started, 1) != 1 {
@@ -38,8 +38,7 @@ func (s *kaspad) start() {
 	}
 }
 
-// Stop gracefully shuts down the server by stopping and disconnecting all
-// peers and the main listener.
+// Stop gracefully shuts down all the kaspad services.
 func (s *kaspad) stop() error {
 	// Make sure this only happens once.
 	if atomic.AddInt32(&s.shutdown, 1) != 1 {
