@@ -57,10 +57,10 @@ func (s *kaspad) stop() error {
 	return nil
 }
 
-// NewKaspad returns a new kaspad instance configured to listen on addr for the
+// newKaspad returns a new kaspad instance configured to listen on addr for the
 // kaspa network type specified by dagParams. Use start to begin accepting
 // connections from peers.
-func NewKaspad(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-chan struct{}) (*kaspad, error) {
+func newKaspad(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-chan struct{}) (*kaspad, error) {
 	indexManager, acceptanceIndex := setupIndexes()
 
 	sigCache := txscript.NewSigCache(config.ActiveConfig().SigCacheMaxSize)
