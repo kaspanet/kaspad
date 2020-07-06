@@ -131,8 +131,7 @@ func kaspadMain(startedChan chan<- struct{}) error {
 	}
 
 	// Create kaspad and start it.
-	kaspad, err := newKaspad(cfg.Listeners, config.ActiveConfig().NetParams(),
-		interrupt)
+	kaspad, err := newKaspad(cfg.Listeners, interrupt)
 	if err != nil {
 		log.Errorf("Unable to start kaspad on %s: %+v",
 			strings.Join(cfg.Listeners, ", "), err)

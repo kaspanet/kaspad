@@ -6,7 +6,6 @@ import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/blockdag/indexers"
 	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/mining"
 	"github.com/kaspanet/kaspad/server/rpc"
@@ -59,20 +58,13 @@ func (s *kaspad) stop() error {
 // newKaspad returns a new kaspad instance configured to listen on addr for the
 // kaspa network type specified by dagParams. Use start to begin accepting
 // connections from peers.
-func newKaspad(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-chan struct{}) (*kaspad, error) {
+func newKaspad(listenAddrs []string, interrupt <-chan struct{}) (*kaspad, error) {
 	indexManager, acceptanceIndex := setupIndexes()
 
 	sigCache := txscript.NewSigCache(config.ActiveConfig().SigCacheMaxSize)
 
 	// Create a new block DAG instance with the appropriate configuration.
-	dag, err := blockdag.New(&blockdag.Config{
-		Interrupt:    interrupt,
-		DAGParams:    dagParams,
-		TimeSource:   blockdag.NewTimeSource(),
-		SigCache:     sigCache,
-		IndexManager: indexManager,
-		SubnetworkID: config.ActiveConfig().SubnetworkID,
-	})
+	dag, err := setupDAG(interrupt, sigCache, indexManager)
 	if err != nil {
 		return nil, err
 	}
@@ -87,6 +79,18 @@ func newKaspad(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 	return &kaspad{
 		rpcServer: rpcServer,
 	}, nil
+}
+
+func setupDAG(interrupt <-chan struct{}, sigCache *txscript.SigCache, indexManager blockdag.IndexManager) (*blockdag.BlockDAG, error) {
+	dag, err := blockdag.New(&blockdag.Config{
+		Interrupt:    interrupt,
+		DAGParams:    config.ActiveConfig().NetParams(),
+		TimeSource:   blockdag.NewTimeSource(),
+		SigCache:     sigCache,
+		IndexManager: indexManager,
+		SubnetworkID: config.ActiveConfig().SubnetworkID,
+	})
+	return dag, err
 }
 
 func setupIndexes() (blockdag.IndexManager, *indexers.AcceptanceIndex) {
