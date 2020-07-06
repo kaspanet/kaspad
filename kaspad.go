@@ -15,14 +15,14 @@ import (
 	"github.com/kaspanet/kaspad/util"
 )
 
-// Kaspad is a wrapper for all the kaspad services
+// kaspad is a wrapper for all the kaspad services
 type kaspad struct {
 	rpcServer *rpc.Server
 
 	started, shutdown int32
 }
 
-// Start launches all the kaspad services.
+// start launches all the kaspad services.
 func (s *kaspad) start() {
 	// Already started?
 	if atomic.AddInt32(&s.started, 1) != 1 {
@@ -38,7 +38,7 @@ func (s *kaspad) start() {
 	}
 }
 
-// Stop gracefully shuts down all the kaspad services.
+// stop gracefully shuts down all the kaspad services.
 func (s *kaspad) stop() error {
 	// Make sure this only happens once.
 	if atomic.AddInt32(&s.shutdown, 1) != 1 {
