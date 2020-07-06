@@ -192,7 +192,7 @@ func TestTxHashAndID(t *testing.T) {
 		return
 	}
 	payload := []byte{1, 2, 3}
-	txIns := []*TxIn{&TxIn{
+	txIns := []*TxIn{{
 		PreviousOutpoint: Outpoint{
 			Index: 0,
 			TxID:  daghash.TxID{1, 2, 3},

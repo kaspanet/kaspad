@@ -62,7 +62,7 @@ type BlockDAG struct {
 	// The following fields are set when the instance is created and can't
 	// be changed afterwards, so there is no need to protect them with a
 	// separate mutex.
-	Params    *dagconfig.Params
+	Params       *dagconfig.Params
 	TimeSource   TimeSource
 	sigCache     *txscript.SigCache
 	indexManager IndexManager
@@ -2042,7 +2042,7 @@ func New(config *Config) (*BlockDAG, error) {
 
 	index := newBlockIndex(params)
 	dag := &BlockDAG{
-		Params:                      params,
+		Params:                         params,
 		TimeSource:                     config.TimeSource,
 		sigCache:                       config.SigCache,
 		indexManager:                   config.IndexManager,

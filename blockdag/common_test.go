@@ -98,7 +98,7 @@ func newTestDAG(params *dagconfig.Params) *BlockDAG {
 	index := newBlockIndex(params)
 	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
 	dag := &BlockDAG{
-		Params:                      params,
+		Params:                         params,
 		TimeSource:                     NewTimeSource(),
 		targetTimePerBlock:             targetTimePerBlock,
 		difficultyAdjustmentWindowSize: params.DifficultyAdjustmentWindowSize,
