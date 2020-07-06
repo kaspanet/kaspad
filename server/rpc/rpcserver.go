@@ -22,6 +22,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/kaspanet/kaspad/util/mstime"
+
 	"github.com/kaspanet/kaspad/addrmgr"
 
 	"github.com/pkg/errors"
@@ -841,7 +843,6 @@ func setupRPCListeners() ([]net.Listener, error) {
 
 // NewRPCServer returns a new instance of the rpcServer struct.
 func NewRPCServer(
-	startupTime int64,
 	dag *blockdag.BlockDAG,
 	txMempool *mempool.TxPool,
 	acceptanceIndex *indexers.AcceptanceIndex,
@@ -858,7 +859,7 @@ func NewRPCServer(
 	}
 	cfg := &rpcserverConfig{
 		Listeners:       rpcListeners,
-		StartupTime:     startupTime,
+		StartupTime:     mstime.Now().UnixMilliseconds(),
 		DAGParams:       dag.Params,
 		TxMemPool:       txMempool,
 		Generator:       blockTemplateGenerator,

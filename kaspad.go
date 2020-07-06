@@ -1,291 +1,166 @@
-// Copyright (c) 2013-2016 The btcsuite developers
-// Use of this source code is governed by an ISC
-// license that can be found in the LICENSE file.
-
 package main
 
 import (
-	"fmt"
-	_ "net/http/pprof"
-	"os"
-	"path/filepath"
-	"runtime"
-	"runtime/pprof"
-	"strings"
-	"time"
+	"sync/atomic"
 
-	"github.com/kaspanet/kaspad/dbaccess"
-
+	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/blockdag/indexers"
 	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/limits"
-	"github.com/kaspanet/kaspad/server"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/mempool"
+	"github.com/kaspanet/kaspad/mining"
+	"github.com/kaspanet/kaspad/server/rpc"
 	"github.com/kaspanet/kaspad/signal"
-	"github.com/kaspanet/kaspad/util/fs"
-	"github.com/kaspanet/kaspad/util/panics"
-	"github.com/kaspanet/kaspad/util/profiling"
-	"github.com/kaspanet/kaspad/version"
+	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/util"
 )
 
-const (
-	// blockDbNamePrefix is the prefix for the block database name. The
-	// database type is appended to this value to form the full block
-	// database name.
-	blockDbNamePrefix = "blocks"
-)
+// Kaspad is a wrapper for all the kaspad services
+type Kaspad struct {
+	rpcServer *rpc.Server
 
-var (
-	cfg *config.Config
-)
+	started, shutdown int32
+}
 
-// winServiceMain is only invoked on Windows. It detects when kaspad is running
-// as a service and reacts accordingly.
-var winServiceMain func() (bool, error)
-
-// kaspadMain is the real main function for kaspad. It is necessary to work
-// around the fact that deferred functions do not run when os.Exit() is called.
-// The optional serverChan parameter is mainly used by the service code to be
-// notified with the server once it is setup so it can gracefully stop it when
-// requested from the service control manager.
-func kaspadMain(serverChan chan<- *server.Server) error {
-	interrupt := signal.InterruptListener()
-
-	// Load configuration and parse command line. This function also
-	// initializes logging and configures it accordingly.
-	err := config.LoadAndSetActiveConfig()
-	if err != nil {
-		return err
+// Start begins accepting connections from peers.
+func (s *Kaspad) Start() {
+	// Already started?
+	if atomic.AddInt32(&s.started, 1) != 1 {
+		return
 	}
-	cfg = config.ActiveConfig()
-	defer panics.HandlePanic(kasdLog, nil)
 
-	// Get a channel that will be closed when a shutdown signal has been
-	// triggered either from an OS signal such as SIGINT (Ctrl+C) or from
-	// another subsystem such as the RPC server.
-	defer kasdLog.Info("Shutdown complete")
+	log.Trace("Starting kaspad")
 
-	// Show version at startup.
-	kasdLog.Infof("Version %s", version.Version())
+	cfg := config.ActiveConfig()
 
-	// Enable http profiling server if requested.
-	if cfg.Profile != "" {
+	if !cfg.DisableRPC {
+		s.rpcServer.Start()
+	}
+}
+
+// Stop gracefully shuts down the server by stopping and disconnecting all
+// peers and the main listener.
+func (s *Kaspad) Stop() error {
+	// Make sure this only happens once.
+	if atomic.AddInt32(&s.shutdown, 1) != 1 {
+		log.Infof("Kaspad is already in the process of shutting down")
+		return nil
+	}
+
+	log.Warnf("Kaspad shutting down")
+
+	// Shutdown the RPC server if it's not disabled.
+	if !config.ActiveConfig().DisableRPC {
+		s.rpcServer.Stop()
+	}
+
+	return nil
+}
+
+// NewKaspad returns a new kaspad instance configured to listen on addr for the
+// kaspa network type specified by dagParams. Use start to begin accepting
+// connections from peers.
+func NewKaspad(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-chan struct{}) (*Kaspad, error) {
+	indexManager, acceptanceIndex := setupIndexes()
+
+	sigCache := txscript.NewSigCache(config.ActiveConfig().SigCacheMaxSize)
+
+	// Create a new block DAG instance with the appropriate configuration.
+	dag, err := blockdag.New(&blockdag.Config{
+		Interrupt:    interrupt,
+		DAGParams:    dagParams,
+		TimeSource:   blockdag.NewTimeSource(),
+		SigCache:     sigCache,
+		IndexManager: indexManager,
+		SubnetworkID: config.ActiveConfig().SubnetworkID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	txMempool := setupMempool(dag, sigCache)
+
+	rpcServer, err := setupRPC(dag, txMempool, sigCache, acceptanceIndex)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Kaspad{
+		rpcServer: rpcServer,
+	}, nil
+}
+
+func setupIndexes() (blockdag.IndexManager, *indexers.AcceptanceIndex) {
+	// Create indexes if needed.
+	var indexes []indexers.Indexer
+	var acceptanceIndex *indexers.AcceptanceIndex
+	if config.ActiveConfig().AcceptanceIndex {
+		log.Info("acceptance index is enabled")
+		indexes = append(indexes, acceptanceIndex)
+	}
+
+	// Create an index manager if any of the optional indexes are enabled.
+	if len(indexes) < 0 {
+		return nil, nil
+	}
+	indexManager := indexers.NewManager(indexes)
+	return indexManager, acceptanceIndex
+}
+
+func setupMempool(dag *blockdag.BlockDAG, sigCache *txscript.SigCache) *mempool.TxPool {
+	mempoolConfig := mempool.Config{
+		Policy: mempool.Policy{
+			AcceptNonStd:    config.ActiveConfig().RelayNonStd,
+			MaxOrphanTxs:    config.ActiveConfig().MaxOrphanTxs,
+			MaxOrphanTxSize: config.DefaultMaxOrphanTxSize,
+			MinRelayTxFee:   config.ActiveConfig().MinRelayTxFee,
+			MaxTxVersion:    1,
+		},
+		CalcSequenceLockNoLock: func(tx *util.Tx, utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
+			return dag.CalcSequenceLockNoLock(tx, utxoSet, true)
+		},
+		IsDeploymentActive: dag.IsDeploymentActive,
+		SigCache:           sigCache,
+		DAG:                dag,
+	}
+
+	return mempool.New(&mempoolConfig)
+}
+
+func setupRPC(dag *blockdag.BlockDAG, txMempool *mempool.TxPool, sigCache *txscript.SigCache,
+	acceptanceIndex *indexers.AcceptanceIndex) (*rpc.Server, error) {
+	cfg := config.ActiveConfig()
+	if !cfg.DisableRPC {
+		policy := mining.Policy{
+			BlockMaxMass: cfg.BlockMaxMass,
+		}
+		blockTemplateGenerator := mining.NewBlkTmplGenerator(&policy, txMempool, dag, sigCache)
+
+		rpcServer, err := rpc.NewRPCServer(dag, txMempool, acceptanceIndex, blockTemplateGenerator)
+		if err != nil {
+			return nil, err
+		}
+
+		// Signal process shutdown when the RPC server requests it.
 		spawn(func() {
-			profiling.Start(cfg.Profile, kasdLog)
+			<-rpcServer.RequestedProcessShutdown()
+			signal.ShutdownRequestChannel <- struct{}{}
 		})
+
+		return rpcServer, nil
 	}
-
-	// Write cpu profile if requested.
-	if cfg.CPUProfile != "" {
-		f, err := os.Create(cfg.CPUProfile)
-		if err != nil {
-			kasdLog.Errorf("Unable to create cpu profile: %s", err)
-			return err
-		}
-		pprof.StartCPUProfile(f)
-		defer f.Close()
-		defer pprof.StopCPUProfile()
-	}
-
-	// Perform upgrades to kaspad as new versions require it.
-	if err := doUpgrades(); err != nil {
-		kasdLog.Errorf("%s", err)
-		return err
-	}
-
-	// Return now if an interrupt signal was triggered.
-	if signal.InterruptRequested(interrupt) {
-		return nil
-	}
-
-	if cfg.ResetDatabase {
-		err := removeDatabase()
-		if err != nil {
-			kasdLog.Errorf("%s", err)
-			return err
-		}
-	}
-
-	// Open the database
-	err = openDB()
-	if err != nil {
-		kasdLog.Errorf("%s", err)
-		return err
-	}
-	defer func() {
-		kasdLog.Infof("Gracefully shutting down the database...")
-		err := dbaccess.Close()
-		if err != nil {
-			kasdLog.Errorf("Failed to close the database: %s", err)
-		}
-	}()
-
-	// Return now if an interrupt signal was triggered.
-	if signal.InterruptRequested(interrupt) {
-		return nil
-	}
-
-	// Drop indexes and exit if requested.
-	if cfg.DropAcceptanceIndex {
-		if err := indexers.DropAcceptanceIndex(); err != nil {
-			kasdLog.Errorf("%s", err)
-			return err
-		}
-
-		return nil
-	}
-
-	// Create server and start it.
-	server, err := server.NewServer(cfg.Listeners, config.ActiveConfig().NetParams(),
-		interrupt)
-	if err != nil {
-		kasdLog.Errorf("Unable to start server on %s: %+v",
-			strings.Join(cfg.Listeners, ", "), err)
-		return err
-	}
-	defer func() {
-		kasdLog.Infof("Gracefully shutting down the server...")
-		server.Stop()
-
-		shutdownDone := make(chan struct{})
-		go func() {
-			server.WaitForShutdown()
-			shutdownDone <- struct{}{}
-		}()
-
-		const shutdownTimeout = 2 * time.Minute
-
-		select {
-		case <-shutdownDone:
-		case <-time.After(shutdownTimeout):
-			kasdLog.Criticalf("Graceful shutdown timed out %s. Terminating...", shutdownTimeout)
-		}
-		srvrLog.Infof("Server shutdown complete")
-	}()
-	server.Start()
-	if serverChan != nil {
-		serverChan <- server
-	}
-
-	// Wait until the interrupt signal is received from an OS signal or
-	// shutdown is requested through one of the subsystems such as the RPC
-	// server.
-	<-interrupt
-	return nil
+	return nil, nil
 }
 
-func removeDatabase() error {
-	dbPath := blockDbPath(cfg.DbType)
-	return os.RemoveAll(dbPath)
+// WaitForShutdown blocks until the main listener and peer handlers are stopped.
+func (s *Kaspad) WaitForShutdown() {
+	// TODO(libp2p)
+	//	s.p2pServer.WaitForShutdown()
+}
+func Start() {
+
 }
 
-// removeRegressionDB removes the existing regression test database if running
-// in regression test mode and it already exists.
-func removeRegressionDB(dbPath string) error {
-	// Don't do anything if not in regression test mode.
-	if !cfg.RegressionTest {
-		return nil
-	}
+func Stop() {
 
-	// Remove the old regression test database if it already exists.
-	fi, err := os.Stat(dbPath)
-	if err == nil {
-		kasdLog.Infof("Removing regression test database from '%s'", dbPath)
-		if fi.IsDir() {
-			err := os.RemoveAll(dbPath)
-			if err != nil {
-				return err
-			}
-		} else {
-			err := os.Remove(dbPath)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-// dbPath returns the path to the block database given a database type.
-func blockDbPath(dbType string) string {
-	// The database name is based on the database type.
-	dbName := blockDbNamePrefix + "_" + dbType
-	if dbType == "sqlite" {
-		dbName = dbName + ".db"
-	}
-	dbPath := filepath.Join(cfg.DataDir, dbName)
-	return dbPath
-}
-
-// warnMultipleDBs shows a warning if multiple block database types are detected.
-// This is not a situation most users want. It is handy for development however
-// to support multiple side-by-side databases.
-func warnMultipleDBs() {
-	// This is intentionally not using the known db types which depend
-	// on the database types compiled into the binary since we want to
-	// detect legacy db types as well.
-	dbTypes := []string{"ffldb", "leveldb", "sqlite"}
-	duplicateDbPaths := make([]string, 0, len(dbTypes)-1)
-	for _, dbType := range dbTypes {
-		if dbType == cfg.DbType {
-			continue
-		}
-
-		// Store db path as a duplicate db if it exists.
-		dbPath := blockDbPath(dbType)
-		if fs.FileExists(dbPath) {
-			duplicateDbPaths = append(duplicateDbPaths, dbPath)
-		}
-	}
-
-	// Warn if there are extra databases.
-	if len(duplicateDbPaths) > 0 {
-		selectedDbPath := blockDbPath(cfg.DbType)
-		kasdLog.Warnf("WARNING: There are multiple block DAG databases "+
-			"using different database types.\nYou probably don't "+
-			"want to waste disk space by having more than one.\n"+
-			"Your current database is located at [%s].\nThe "+
-			"additional database is located at %s", selectedDbPath,
-			strings.Join(duplicateDbPaths, ", "))
-	}
-}
-
-func openDB() error {
-	dbPath := filepath.Join(cfg.DataDir, "db")
-	kasdLog.Infof("Loading database from '%s'", dbPath)
-	err := dbaccess.Open(dbPath)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func main() {
-	// Use all processor cores.
-	runtime.GOMAXPROCS(runtime.NumCPU())
-
-	// Up some limits.
-	if err := limits.SetLimits(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to set limits: %s\n", err)
-		os.Exit(1)
-	}
-
-	// Call serviceMain on Windows to handle running as a service. When
-	// the return isService flag is true, exit now since we ran as a
-	// service. Otherwise, just fall through to normal operation.
-	if runtime.GOOS == "windows" {
-		isService, err := winServiceMain()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		if isService {
-			os.Exit(0)
-		}
-	}
-
-	// Work around defer not working after os.Exit()
-	if err := kaspadMain(nil); err != nil {
-		os.Exit(1)
-	}
 }

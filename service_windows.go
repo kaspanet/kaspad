@@ -6,16 +6,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/btcsuite/winsvc/eventlog"
 	"github.com/btcsuite/winsvc/mgr"
 	"github.com/btcsuite/winsvc/svc"
 	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/server"
 	"github.com/kaspanet/kaspad/signal"
 	"github.com/kaspanet/kaspad/version"
 )
@@ -37,9 +37,9 @@ const (
 // elog is used to send messages to the Windows event log.
 var elog *eventlog.Log
 
-// logServiceStartOfDay logs information about kaspad when the main server has
+// logServiceStart logs information about kaspad when the main server has
 // been started to the Windows event log.
-func logServiceStartOfDay() {
+func logServiceStart() {
 	var message string
 	message += fmt.Sprintf("Version %s\n", version.Version())
 	message += fmt.Sprintf("Configuration directory: %s\n", config.DefaultHomeDir)
@@ -64,12 +64,12 @@ func (s *kaspadService) Execute(args []string, r <-chan svc.ChangeRequest, chang
 
 	// Start kaspadMain in a separate goroutine so the service can start
 	// quickly. Shutdown (along with a potential error) is reported via
-	// doneChan. serverChan is notified with the main server instance once
-	// it is started so it can be gracefully stopped.
+	// doneChan. startedChan is notified once Kaspad is started so this can
+	// be properly logged
 	doneChan := make(chan error)
-	serverChan := make(chan *server.Server)
+	startedChan := make(chan struct{})
 	spawn(func() {
-		err := kaspadMain(serverChan)
+		err := kaspadMain(startedChan)
 		doneChan <- err
 	})
 
@@ -96,8 +96,8 @@ loop:
 					"request #%d.", c))
 			}
 
-		case <-serverChan:
-			logServiceStartOfDay()
+		case <-startedChan:
+			logServiceStart()
 
 		case err := <-doneChan:
 			if err != nil {
