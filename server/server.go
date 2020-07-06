@@ -87,11 +87,11 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 		return nil, err
 	}
 
-	mempoolConfig := setupMempool(dag, sigCache)
+	txMempool := setupMempool(dag, sigCache)
 	s := &Server{
 		SigCache: sigCache,
 		DAG:      dag,
-		Mempool:  mempool.New(&mempoolConfig),
+		Mempool:  txMempool,
 	}
 
 	server, err := setupRPC(s, dag, sigCache, acceptanceIndex)
@@ -118,7 +118,7 @@ func setupIndexes() (blockdag.IndexManager, *indexers.AcceptanceIndex) {
 	return indexManager, acceptanceIndex
 }
 
-func setupMempool(dag *blockdag.BlockDAG, sigCache *txscript.SigCache) mempool.Config {
+func setupMempool(dag *blockdag.BlockDAG, sigCache *txscript.SigCache) *mempool.TxPool {
 	mempoolConfig := mempool.Config{
 		Policy: mempool.Policy{
 			AcceptNonStd:    config.ActiveConfig().RelayNonStd,
@@ -134,7 +134,8 @@ func setupMempool(dag *blockdag.BlockDAG, sigCache *txscript.SigCache) mempool.C
 		SigCache:           sigCache,
 		DAG:                dag,
 	}
-	return mempoolConfig
+
+	return mempool.New(&mempoolConfig)
 }
 
 func setupRPC(s *Server, dag *blockdag.BlockDAG, sigCache *txscript.SigCache, acceptanceIndex *indexers.AcceptanceIndex) (*Server, error) {
@@ -147,13 +148,7 @@ func setupRPC(s *Server, dag *blockdag.BlockDAG, sigCache *txscript.SigCache, ac
 			s.Mempool, dag, sigCache)
 
 		var err error
-		s.rpcServer, err = rpc.NewRPCServer(
-			s.startupTime,
-			dag,
-			s.Mempool,
-			acceptanceIndex,
-			blockTemplateGenerator,
-		)
+		s.rpcServer, err = rpc.NewRPCServer(s.startupTime, dag, s.Mempool, acceptanceIndex, blockTemplateGenerator)
 		if err != nil {
 			return nil, err
 		}
