@@ -348,8 +348,6 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 				MinRelayTxFee:   1000, // 1 sompi per byte
 				MaxTxVersion:    1,
 			},
-			DAGParams:              &params,
-			MedianTimePast:         fDAG.MedianTimePast,
 			CalcSequenceLockNoLock: calcSequenceLock,
 			SigCache:               nil,
 		}),
