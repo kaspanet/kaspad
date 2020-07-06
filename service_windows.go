@@ -64,7 +64,7 @@ func (s *kaspadService) Execute(args []string, r <-chan svc.ChangeRequest, chang
 
 	// Start kaspadMain in a separate goroutine so the service can start
 	// quickly. Shutdown (along with a potential error) is reported via
-	// doneChan. startedChan is notified once Kaspad is started so this can
+	// doneChan. startedChan is notified once kaspad is started so this can
 	// be properly logged
 	doneChan := make(chan error)
 	startedChan := make(chan struct{})

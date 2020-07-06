@@ -141,7 +141,7 @@ func kaspadMain(startedChan chan<- struct{}) error {
 	}
 	defer func() {
 		log.Infof("Gracefully shutting down kaspad...")
-		kaspad.Stop()
+		kaspad.stop()
 
 		shutdownDone := make(chan struct{})
 		go func() {
@@ -158,7 +158,7 @@ func kaspadMain(startedChan chan<- struct{}) error {
 		}
 		log.Infof("Kaspad shutdown complete")
 	}()
-	kaspad.Start()
+	kaspad.start()
 	if startedChan != nil {
 		startedChan <- struct{}{}
 	}

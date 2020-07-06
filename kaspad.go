@@ -16,14 +16,14 @@ import (
 )
 
 // Kaspad is a wrapper for all the kaspad services
-type Kaspad struct {
+type kaspad struct {
 	rpcServer *rpc.Server
 
 	started, shutdown int32
 }
 
 // Start begins accepting connections from peers.
-func (s *Kaspad) Start() {
+func (s *kaspad) start() {
 	// Already started?
 	if atomic.AddInt32(&s.started, 1) != 1 {
 		return
@@ -40,7 +40,7 @@ func (s *Kaspad) Start() {
 
 // Stop gracefully shuts down the server by stopping and disconnecting all
 // peers and the main listener.
-func (s *Kaspad) Stop() error {
+func (s *kaspad) stop() error {
 	// Make sure this only happens once.
 	if atomic.AddInt32(&s.shutdown, 1) != 1 {
 		log.Infof("Kaspad is already in the process of shutting down")
@@ -60,7 +60,7 @@ func (s *Kaspad) Stop() error {
 // NewKaspad returns a new kaspad instance configured to listen on addr for the
 // kaspa network type specified by dagParams. Use start to begin accepting
 // connections from peers.
-func NewKaspad(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-chan struct{}) (*Kaspad, error) {
+func NewKaspad(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-chan struct{}) (*kaspad, error) {
 	indexManager, acceptanceIndex := setupIndexes()
 
 	sigCache := txscript.NewSigCache(config.ActiveConfig().SigCacheMaxSize)
@@ -85,7 +85,7 @@ func NewKaspad(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 		return nil, err
 	}
 
-	return &Kaspad{
+	return &kaspad{
 		rpcServer: rpcServer,
 	}, nil
 }
@@ -153,7 +153,7 @@ func setupRPC(dag *blockdag.BlockDAG, txMempool *mempool.TxPool, sigCache *txscr
 }
 
 // WaitForShutdown blocks until the main listener and peer handlers are stopped.
-func (s *Kaspad) WaitForShutdown() {
+func (s *kaspad) WaitForShutdown() {
 	// TODO(libp2p)
 	//	s.p2pServer.WaitForShutdown()
 }
