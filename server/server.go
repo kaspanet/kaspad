@@ -70,19 +70,10 @@ func (s *Server) Stop() error {
 // kaspa network type specified by dagParams. Use start to begin accepting
 // connections from peers.
 func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-chan struct{}) (*Server, error) {
-	// Create indexes if needed.
-	var indexes []indexers.Indexer
-	var acceptanceIndex *indexers.AcceptanceIndex
-	if config.ActiveConfig().AcceptanceIndex {
-		log.Info("acceptance index is enabled")
-		indexes = append(indexes, acceptanceIndex)
-	}
+	indexManager, acceptanceIndex := setupIndexes()
+
 	sigCache := txscript.NewSigCache(config.ActiveConfig().SigCacheMaxSize)
-	// Create an index manager if any of the optional indexes are enabled.
-	var indexManager blockdag.IndexManager
-	if len(indexes) > 0 {
-		indexManager = indexers.NewManager(indexes)
-	}
+
 	// Create a new block DAG instance with the appropriate configuration.
 	dag, err := blockdag.New(&blockdag.Config{
 		Interrupt:    interrupt,
@@ -109,6 +100,22 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 	}
 
 	return s, nil
+}
+
+func setupIndexes() (blockdag.IndexManager, *indexers.AcceptanceIndex) {
+	// Create indexes if needed.
+	var indexes []indexers.Indexer
+	var acceptanceIndex *indexers.AcceptanceIndex
+	if config.ActiveConfig().AcceptanceIndex {
+		log.Info("acceptance index is enabled")
+		indexes = append(indexes, acceptanceIndex)
+	}
+	// Create an index manager if any of the optional indexes are enabled.
+	var indexManager blockdag.IndexManager
+	if len(indexes) > 0 {
+		indexManager = indexers.NewManager(indexes)
+	}
+	return indexManager, acceptanceIndex
 }
 
 func setupMempool(dag *blockdag.BlockDAG, sigCache *txscript.SigCache) mempool.Config {
