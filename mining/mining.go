@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -86,12 +85,10 @@ type BlockTemplate struct {
 // It also houses additional state required in order to ensure the templates
 // are built on top of the current DAG and adhere to the consensus rules.
 type BlkTmplGenerator struct {
-	policy     *Policy
-	dagParams  *dagconfig.Params
-	txSource   TxSource
-	dag        *blockdag.BlockDAG
-	timeSource blockdag.TimeSource
-	sigCache   *txscript.SigCache
+	policy   *Policy
+	txSource TxSource
+	dag      *blockdag.BlockDAG
+	sigCache *txscript.SigCache
 }
 
 // NewBlkTmplGenerator returns a new block template generator for the given
@@ -100,18 +97,15 @@ type BlkTmplGenerator struct {
 // The additional state-related fields are required in order to ensure the
 // templates are built on top of the current DAG and adhere to the
 // consensus rules.
-func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
+func NewBlkTmplGenerator(policy *Policy,
 	txSource TxSource, dag *blockdag.BlockDAG,
-	timeSource blockdag.TimeSource,
 	sigCache *txscript.SigCache) *BlkTmplGenerator {
 
 	return &BlkTmplGenerator{
-		policy:     policy,
-		dagParams:  params,
-		txSource:   txSource,
-		dag:        dag,
-		timeSource: timeSource,
-		sigCache:   sigCache,
+		policy:   policy,
+		txSource: txSource,
+		dag:      dag,
+		sigCache: sigCache,
 	}
 }
 

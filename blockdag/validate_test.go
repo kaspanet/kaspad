@@ -5,11 +5,12 @@
 package blockdag
 
 import (
-	"github.com/kaspanet/kaspad/util/mstime"
 	"math"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/pkg/errors"
 
@@ -554,9 +555,9 @@ func TestValidateParents(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	a := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.dagParams.GenesisBlock)
+	a := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.Params.GenesisBlock)
 	b := prepareAndProcessBlockByParentMsgBlocks(t, dag, a)
-	c := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.dagParams.GenesisBlock)
+	c := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.Params.GenesisBlock)
 
 	aNode := nodeByMsgBlock(t, dag, a)
 	bNode := nodeByMsgBlock(t, dag, b)

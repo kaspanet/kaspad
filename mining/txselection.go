@@ -1,12 +1,13 @@
 package mining
 
 import (
-	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"math"
 	"math/rand"
 	"sort"
+
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
 const (
@@ -136,7 +137,7 @@ func (g *BlkTmplGenerator) collectCandidatesTxs(sourceTxs []*TxDesc) []*candidat
 
 		// A block can't contain non-finalized transactions.
 		if !blockdag.IsFinalizedTransaction(tx, nextBlockBlueScore,
-			g.timeSource.Now()) {
+			g.dag.Now()) {
 			log.Debugf("Skipping non-finalized tx %s", tx.ID())
 			continue
 		}

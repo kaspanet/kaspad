@@ -7,14 +7,14 @@ package mempool
 import (
 	"container/list"
 	"fmt"
-	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/pkg/errors"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/pkg/errors"
+
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/logger"
 	"github.com/kaspanet/kaspad/mining"
 	"github.com/kaspanet/kaspad/rpcmodel"
@@ -53,15 +53,6 @@ type Config struct {
 	// Policy defines the various mempool configuration options related
 	// to policy.
 	Policy Policy
-
-	// DAGParams identifies which DAG parameters the txpool is
-	// associated with.
-	DAGParams *dagconfig.Params
-
-	// MedianTimePast defines the function to use in order to access the
-	// median time past calculated from the point-of-view of the current
-	// selected tip.
-	MedianTimePast func() mstime.Time
 
 	// CalcSequenceLockNoLock defines the function to use in order to generate
 	// the current sequence lock for the given transaction using the passed
@@ -825,7 +816,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 	}
 
 	// Disallow non-native/coinbase subnetworks in networks that don't allow them
-	if !mp.cfg.DAGParams.EnableNonNativeSubnetworks {
+	if !mp.cfg.DAG.Params.EnableNonNativeSubnetworks {
 		if !(tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
 			tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase)) {
 			return nil, nil, txRuleError(wire.RejectInvalid, "non-native/coinbase subnetworks are not allowed")
@@ -876,7 +867,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 	// the transaction as though it was mined on top of the current tips
 	nextBlockBlueScore := mp.cfg.DAG.VirtualBlueScore()
 
-	medianTimePast := mp.cfg.MedianTimePast()
+	medianTimePast := mp.cfg.DAG.CalcPastMedianTime()
 
 	// Don't allow non-standard transactions if the network parameters
 	// forbid their acceptance.
@@ -978,7 +969,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 	// Also returns the fees associated with the transaction which will be
 	// used later.
 	txFee, err := blockdag.CheckTransactionInputsAndCalulateFee(tx, nextBlockBlueScore,
-		mp.mpUTXOSet, mp.cfg.DAGParams, false)
+		mp.mpUTXOSet, mp.cfg.DAG.Params, false)
 	if err != nil {
 		var dagRuleErr blockdag.RuleError
 		if ok := errors.As(err, &dagRuleErr); ok {

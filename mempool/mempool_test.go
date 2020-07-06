@@ -7,14 +7,15 @@ package mempool
 import (
 	"bytes"
 	"fmt"
-	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/pkg/errors"
 	"math"
 	"reflect"
 	"runtime"
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/util/testtools"
@@ -254,7 +255,7 @@ func (tc *testContext) mineTransactions(transactions []*util.Tx, numberOfBlocks 
 		if i == 0 {
 			blockTxs = msgTxs
 		}
-		block, err := mining.PrepareBlockForTest(tc.harness.txPool.cfg.DAG, tc.harness.txPool.cfg.DAGParams, tc.harness.txPool.cfg.DAG.TipHashes(), blockTxs, false)
+		block, err := mining.PrepareBlockForTest(tc.harness.txPool.cfg.DAG, tc.harness.txPool.cfg.DAG.TipHashes(), blockTxs, false)
 		if err != nil {
 			tc.t.Fatalf("PrepareBlockForTest: %s", err)
 		}
@@ -347,8 +348,6 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 				MinRelayTxFee:   1000, // 1 sompi per byte
 				MaxTxVersion:    1,
 			},
-			DAGParams:              &params,
-			MedianTimePast:         fDAG.MedianTimePast,
 			CalcSequenceLockNoLock: calcSequenceLock,
 			SigCache:               nil,
 		}),
