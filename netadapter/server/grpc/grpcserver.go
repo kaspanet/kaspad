@@ -31,6 +31,16 @@ func (s *gRPCServer) Connections() []server.Connection {
 	return s.connections
 }
 
+func (s *gRPCServer) Close() error {
+	for _, connection := range s.connections {
+		err := connection.Disconnect()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 type gRPCConnection struct{}
 
 // Send sends the given message through the connection

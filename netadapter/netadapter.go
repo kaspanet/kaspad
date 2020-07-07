@@ -5,20 +5,31 @@ import (
 	"github.com/kaspanet/kaspad/netadapter/server/grpc"
 )
 
-type netAdapter struct {
-	routerInitializer func() router
+// NetAdapter is an adapter to the net
+type NetAdapter struct {
 	server            server.Server
+	routerInitializer func() *Router
 }
 
-func newNetAdapter(listeningPort string, routerInitializer func() router) (*netAdapter, error) {
+// NewNetAdapter creates and starts a new NetAdapter on the
+// given listeningPort
+func NewNetAdapter(listeningPort string) (*NetAdapter, error) {
 	server, err := grpc.NewGRPCServer(listeningPort)
 	if err != nil {
 		return nil, err
 	}
-
-	adapter := netAdapter{
-		routerInitializer: routerInitializer,
-		server:            server,
+	adapter := NetAdapter{
+		server: server,
 	}
 	return &adapter, nil
+}
+
+// SetRouterInitializer sets the routerInitializer function
+// for the net adapter
+func (na *NetAdapter) SetRouterInitializer(routerInitializer func() *Router) {
+	na.routerInitializer = routerInitializer
+}
+
+func (na *NetAdapter) Close() error {
+	return na.server.Close()
 }

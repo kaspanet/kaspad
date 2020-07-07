@@ -6,6 +6,7 @@ import "github.com/kaspanet/kaspad/wire"
 type Server interface {
 	Connect(address string) (Connection, error)
 	Connections() []Connection
+	Close() error
 }
 
 // Connection represents a p2p server connection.
