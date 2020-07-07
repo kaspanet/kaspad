@@ -9,7 +9,11 @@ import (
 // router to be used with a newly connected peer
 type RouterInitializer func(peer *Peer) (*Router, error)
 
-// NetAdapter is an adapter to the net
+// NetAdapter is an abstraction layer over networking.
+// This type expects a RouteInitializer function. This
+// function weaves together the various "routes" (messages
+// and message handlers) without exposing anything related
+// to networking internals.
 type NetAdapter struct {
 	server            server.Server
 	routerInitializer RouterInitializer
