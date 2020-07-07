@@ -1,9 +1,12 @@
 package server
 
-import "github.com/kaspanet/kaspad/wire"
+import (
+	"github.com/kaspanet/kaspad/wire"
+)
 
 // Server represents a p2p server.
 type Server interface {
+	SetNewConnectionHandler(handleNewConnection func(connection Connection))
 	Connect(address string) (Connection, error)
 	Connections() []Connection
 	Close() error

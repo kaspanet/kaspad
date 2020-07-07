@@ -7,7 +7,8 @@ import (
 )
 
 type gRPCServer struct {
-	connections []server.Connection
+	newConnectionHandler func(connection server.Connection)
+	connections          []server.Connection
 }
 
 // NewGRPCServer creates and starts a gRPC server with the given
@@ -18,10 +19,18 @@ func NewGRPCServer(listeningPort string) (server.Server, error) {
 	return &gRPCServer{}, nil
 }
 
+// SetNewConnectionHandler sets the new connection handler
+// function for the server
+func (s *gRPCServer) SetNewConnectionHandler(handleNewConnection func(connection server.Connection)) {
+	s.newConnectionHandler = handleNewConnection
+}
+
 // Connect connects to the given address
 // This is part of the Server interface
 func (s *gRPCServer) Connect(address string) (server.Connection, error) {
-	return &gRPCConnection{}, nil
+	connection := gRPCConnection{}
+	s.newConnectionHandler(&connection)
+	return &connection, nil
 }
 
 // Connections returns a slice of connections the server

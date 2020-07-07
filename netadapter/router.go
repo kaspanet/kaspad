@@ -13,3 +13,8 @@ func (r *Router) AddRoute(messageTypes []string, inChannel chan<- wire.Message) 
 		r.routes[messageType] = inChannel
 	}
 }
+
+func (r *Router) RouteMessage(message wire.Message) {
+	routeInChannel := r.routes[message.Command()]
+	routeInChannel <- message
+}

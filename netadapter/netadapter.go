@@ -8,7 +8,7 @@ import (
 // NetAdapter is an adapter to the net
 type NetAdapter struct {
 	server            server.Server
-	routerInitializer func() *Router
+	routerInitializer func(peer *Peer) *Router
 }
 
 // NewNetAdapter creates and starts a new NetAdapter on the
@@ -21,12 +21,33 @@ func NewNetAdapter(listeningPort string) (*NetAdapter, error) {
 	adapter := NetAdapter{
 		server: server,
 	}
+
+	newConnectionHandler := adapter.buildNewConnectionHandler()
+	server.SetNewConnectionHandler(newConnectionHandler)
+
 	return &adapter, nil
+}
+
+func (na *NetAdapter) buildNewConnectionHandler() func(connection server.Connection) {
+	return func(connection server.Connection) {
+		peer := Peer{}
+		peer.connection = connection
+		peer.router = na.routerInitializer(&peer)
+
+		for {
+			message, err := peer.connection.Receive()
+			if err != nil {
+				// TODO: properly handle error
+				panic(err)
+			}
+			peer.router.RouteMessage(message)
+		}
+	}
 }
 
 // SetRouterInitializer sets the routerInitializer function
 // for the net adapter
-func (na *NetAdapter) SetRouterInitializer(routerInitializer func() *Router) {
+func (na *NetAdapter) SetRouterInitializer(routerInitializer func(peer *Peer) *Router) {
 	na.routerInitializer = routerInitializer
 }
 
