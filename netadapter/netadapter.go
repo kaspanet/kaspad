@@ -28,7 +28,7 @@ func NewNetAdapter(listeningPort string) (*NetAdapter, error) {
 	return &adapter, nil
 }
 
-func (na *NetAdapter) buildNewConnectionHandler() func(connection server.Connection) {
+func (na *NetAdapter) buildNewConnectionHandler() server.NewConnectionHandler {
 	return func(connection server.Connection) {
 		peer := NewPeer(connection)
 		router, err := na.routerInitializer(peer)
