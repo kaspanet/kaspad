@@ -10,9 +10,9 @@ type gRPCServer struct {
 	connections []server.Connection
 }
 
-// newGRPCServer creates and starts a gRPC server with the given
+// NewGRPCServer creates and starts a gRPC server with the given
 // listening port
-func newGRPCServer(listeningPort string) (server.Server, error) {
+func NewGRPCServer(listeningPort string) (server.Server, error) {
 	fmt.Printf("Listening on 127.0.0.1:%s\n", listeningPort)
 
 	return &gRPCServer{}, nil
