@@ -36,7 +36,7 @@ func (na *NetAdapter) buildNewConnectionHandler() func(connection server.Connect
 		for {
 			message, err := peer.connection.Receive()
 			if err != nil {
-				// TODO: properly handle error
+				// TODO(libp2p): properly handle error
 				panic(err)
 			}
 			router.RouteMessage(message)
