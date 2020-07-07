@@ -2,7 +2,7 @@ package netadapter
 
 import (
 	"github.com/kaspanet/kaspad/netadapter/server"
-	"github.com/kaspanet/kaspad/netadapter/server/grpc"
+	"github.com/kaspanet/kaspad/netadapter/server/grpcserver"
 )
 
 // NetAdapter is an adapter to the net
@@ -14,7 +14,7 @@ type NetAdapter struct {
 // NewNetAdapter creates and starts a new NetAdapter on the
 // given listeningPort
 func NewNetAdapter(listeningPort string) (*NetAdapter, error) {
-	server, err := grpc.NewGRPCServer(listeningPort)
+	server, err := grpcserver.NewGRPCServer(listeningPort)
 	if err != nil {
 		return nil, err
 	}
