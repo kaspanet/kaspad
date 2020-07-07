@@ -31,13 +31,16 @@ func buildRouterInitializer(netAdapter *netadapter.NetAdapter,
 	dag *blockdag.BlockDAG) func(peer *netadapter.Peer) *netadapter.Router {
 
 	return func(peer *netadapter.Peer) *netadapter.Router {
+		peerState := PeerState{}
 		router := netadapter.Router{}
-		router.AddRoute([]string{wire.CmdTx}, startDummy(netAdapter, peer, dag))
+		router.AddRoute([]string{wire.CmdTx}, startDummy(netAdapter, peer, &peerState, dag))
 		return &router
 	}
 }
 
-func startDummy(netAdapter *netadapter.NetAdapter, peer *netadapter.Peer, dag *blockdag.BlockDAG) chan<- wire.Message {
+func startDummy(netAdapter *netadapter.NetAdapter, peer *netadapter.Peer,
+	peerState *PeerState, dag *blockdag.BlockDAG) chan<- wire.Message {
+
 	ch := make(chan wire.Message)
 	spawn(func() {
 		for range ch {
