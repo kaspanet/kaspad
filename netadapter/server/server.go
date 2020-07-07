@@ -4,13 +4,13 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// NewConnectionHandler is a function that is to be called
+// PeerConnectedHandler is a function that is to be called
 // once a new Connection is successfully established.
-type NewConnectionHandler func(connection Connection)
+type PeerConnectedHandler func(connection Connection)
 
 // Server represents a p2p server.
 type Server interface {
-	SetNewConnectionHandler(newConnectedHandler NewConnectionHandler)
+	SetPeerConnectedHandler(peerConnectedHandler PeerConnectedHandler)
 	Connect(address string) (Connection, error)
 	Connections() []Connection
 	Close() error

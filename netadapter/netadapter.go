@@ -30,13 +30,13 @@ func NewNetAdapter(listeningPort string) (*NetAdapter, error) {
 		server: server,
 	}
 
-	newConnectionHandler := adapter.buildNewConnectionHandler()
-	server.SetNewConnectionHandler(newConnectionHandler)
+	peerConnectedHandler := adapter.newPeerConnectedHandler()
+	server.SetPeerConnectedHandler(peerConnectedHandler)
 
 	return &adapter, nil
 }
 
-func (na *NetAdapter) buildNewConnectionHandler() server.NewConnectionHandler {
+func (na *NetAdapter) newPeerConnectedHandler() server.PeerConnectedHandler {
 	return func(connection server.Connection) {
 		peer := NewPeer(connection)
 		router, err := na.routerInitializer(peer)

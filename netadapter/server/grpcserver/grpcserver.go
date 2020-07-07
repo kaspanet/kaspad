@@ -7,7 +7,7 @@ import (
 )
 
 type gRPCServer struct {
-	newConnectionHandler server.NewConnectionHandler
+	peerConnectedHandler server.PeerConnectedHandler
 	connections          []server.Connection
 }
 
@@ -22,10 +22,10 @@ func NewGRPCServer(listeningPort string) (server.Server, error) {
 	return &gRPCServer{}, nil
 }
 
-// SetNewConnectionHandler sets the new connection handler
+// SetPeerConnectedHandler sets the peer connected handler
 // function for the server
-func (s *gRPCServer) SetNewConnectionHandler(newConnectionHandler server.NewConnectionHandler) {
-	s.newConnectionHandler = newConnectionHandler
+func (s *gRPCServer) SetPeerConnectedHandler(peerConnectedHandler server.PeerConnectedHandler) {
+	s.peerConnectedHandler = peerConnectedHandler
 }
 
 // Connect connects to the given address
@@ -35,7 +35,7 @@ func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 	panic("unimplemented")
 
 	connection := gRPCConnection{}
-	s.newConnectionHandler(&connection)
+	s.peerConnectedHandler(&connection)
 	return &connection, nil
 }
 
