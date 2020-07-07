@@ -78,7 +78,7 @@ func (c bitConditionChecker) EndTime() uint64 {
 //
 // This is part of the thresholdConditionChecker interface implementation.
 func (c bitConditionChecker) RuleChangeActivationThreshold() uint64 {
-	return c.dag.dagParams.RuleChangeActivationThreshold
+	return c.dag.Params.RuleChangeActivationThreshold
 }
 
 // MinerConfirmationWindow is the number of blocks in each threshold state
@@ -89,7 +89,7 @@ func (c bitConditionChecker) RuleChangeActivationThreshold() uint64 {
 //
 // This is part of the thresholdConditionChecker interface implementation.
 func (c bitConditionChecker) MinerConfirmationWindow() uint64 {
-	return c.dag.dagParams.MinerConfirmationWindow
+	return c.dag.Params.MinerConfirmationWindow
 }
 
 // Condition returns true when the specific bit associated with the checker is
@@ -159,7 +159,7 @@ func (c deploymentChecker) EndTime() uint64 {
 //
 // This is part of the thresholdConditionChecker interface implementation.
 func (c deploymentChecker) RuleChangeActivationThreshold() uint64 {
-	return c.dag.dagParams.RuleChangeActivationThreshold
+	return c.dag.Params.RuleChangeActivationThreshold
 }
 
 // MinerConfirmationWindow is the number of blocks in each threshold state
@@ -170,7 +170,7 @@ func (c deploymentChecker) RuleChangeActivationThreshold() uint64 {
 //
 // This is part of the thresholdConditionChecker interface implementation.
 func (c deploymentChecker) MinerConfirmationWindow() uint64 {
-	return c.dag.dagParams.MinerConfirmationWindow
+	return c.dag.Params.MinerConfirmationWindow
 }
 
 // Condition returns true when the specific bit defined by the deployment
@@ -198,8 +198,8 @@ func (dag *BlockDAG) calcNextBlockVersion(prevNode *blockNode) (int32, error) {
 	// that is either in the process of being voted on, or locked in for the
 	// activation at the next threshold window change.
 	expectedVersion := uint32(vbTopBits)
-	for id := 0; id < len(dag.dagParams.Deployments); id++ {
-		deployment := &dag.dagParams.Deployments[id]
+	for id := 0; id < len(dag.Params.Deployments); id++ {
+		deployment := &dag.Params.Deployments[id]
 		cache := &dag.deploymentCaches[id]
 		checker := deploymentChecker{deployment: deployment, dag: dag}
 		state, err := dag.thresholdState(prevNode, checker, cache)

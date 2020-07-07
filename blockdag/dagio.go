@@ -165,8 +165,8 @@ func saveDAGState(dbContext dbaccess.Context, state *dagState) error {
 // genesis block and the node's local subnetwork id.
 func (dag *BlockDAG) createDAGState(localSubnetworkID *subnetworkid.SubnetworkID) error {
 	return saveDAGState(dbaccess.NoTx(), &dagState{
-		TipHashes:         []*daghash.Hash{dag.dagParams.GenesisHash},
-		LastFinalityPoint: dag.dagParams.GenesisHash,
+		TipHashes:         []*daghash.Hash{dag.Params.GenesisHash},
+		LastFinalityPoint: dag.Params.GenesisHash,
 		LocalSubnetworkID: localSubnetworkID,
 	})
 }
@@ -293,7 +293,7 @@ func (dag *BlockDAG) initBlockIndex() (unprocessedBlockNodes []*blockNode, err e
 		}
 
 		if dag.blockCount == 0 {
-			if !node.hash.IsEqual(dag.dagParams.GenesisHash) {
+			if !node.hash.IsEqual(dag.Params.GenesisHash) {
 				return nil, errors.Errorf("Expected "+
 					"first entry in block index to be genesis block, "+
 					"found %s", node.hash)

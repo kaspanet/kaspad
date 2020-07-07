@@ -297,11 +297,11 @@ func (dag *BlockDAG) IsDeploymentActive(deploymentID uint32) (bool, error) {
 //
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) deploymentState(prevNode *blockNode, deploymentID uint32) (ThresholdState, error) {
-	if deploymentID > uint32(len(dag.dagParams.Deployments)) {
+	if deploymentID > uint32(len(dag.Params.Deployments)) {
 		return ThresholdFailed, errors.Errorf("deployment ID %d does not exist", deploymentID)
 	}
 
-	deployment := &dag.dagParams.Deployments[deploymentID]
+	deployment := &dag.Params.Deployments[deploymentID]
 	checker := deploymentChecker{deployment: deployment, dag: dag}
 	cache := &dag.deploymentCaches[deploymentID]
 
@@ -325,8 +325,8 @@ func (dag *BlockDAG) initThresholdCaches() error {
 			return err
 		}
 	}
-	for id := 0; id < len(dag.dagParams.Deployments); id++ {
-		deployment := &dag.dagParams.Deployments[id]
+	for id := 0; id < len(dag.Params.Deployments); id++ {
+		deployment := &dag.Params.Deployments[id]
 		cache := &dag.deploymentCaches[id]
 		checker := deploymentChecker{deployment: deployment, dag: dag}
 		_, err := dag.thresholdState(prevNode, checker, cache)

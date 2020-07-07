@@ -7,13 +7,14 @@ package blockdag
 import (
 	"compress/bzip2"
 	"encoding/binary"
-	"github.com/kaspanet/kaspad/util/mstime"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/pkg/errors"
 
@@ -87,7 +88,7 @@ func loadUTXOSet(filename string) (UTXOSet, error) {
 // TestSetCoinbaseMaturity makes the ability to set the coinbase maturity
 // available when running tests.
 func (dag *BlockDAG) TestSetCoinbaseMaturity(maturity uint64) {
-	dag.dagParams.BlockCoinbaseMaturity = maturity
+	dag.Params.BlockCoinbaseMaturity = maturity
 }
 
 // newTestDAG returns a DAG that is usable for syntetic tests. It is
@@ -98,7 +99,7 @@ func newTestDAG(params *dagconfig.Params) *BlockDAG {
 	index := newBlockIndex(params)
 	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
 	dag := &BlockDAG{
-		dagParams:                      params,
+		Params:                         params,
 		timeSource:                     NewTimeSource(),
 		targetTimePerBlock:             targetTimePerBlock,
 		difficultyAdjustmentWindowSize: params.DifficultyAdjustmentWindowSize,

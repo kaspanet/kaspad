@@ -6,11 +6,12 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/util/mstime"
 	"math"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/kaspanet/kaspad/dbaccess"
 
@@ -62,7 +63,7 @@ type BlockDAG struct {
 	// The following fields are set when the instance is created and can't
 	// be changed afterwards, so there is no need to protect them with a
 	// separate mutex.
-	dagParams    *dagconfig.Params
+	Params       *dagconfig.Params
 	timeSource   TimeSource
 	sigCache     *txscript.SigCache
 	indexManager IndexManager
@@ -889,7 +890,7 @@ func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
 	}
 	var nodesToDelete []*blockNode
 	if deleteDiffData {
-		nodesToDelete = make([]*blockNode, 0, dag.dagParams.FinalityInterval)
+		nodesToDelete = make([]*blockNode, 0, dag.Params.FinalityInterval)
 	}
 	for len(queue) > 0 {
 		var current *blockNode
@@ -1341,7 +1342,7 @@ func (dag *BlockDAG) isSynced() bool {
 	var dagTimestamp int64
 	selectedTip := dag.selectedTip()
 	if selectedTip == nil {
-		dagTimestamp = dag.dagParams.GenesisBlock.Header.Timestamp.UnixMilliseconds()
+		dagTimestamp = dag.Params.GenesisBlock.Header.Timestamp.UnixMilliseconds()
 	} else {
 		dagTimestamp = selectedTip.timestamp
 	}
@@ -2042,7 +2043,7 @@ func New(config *Config) (*BlockDAG, error) {
 
 	index := newBlockIndex(params)
 	dag := &BlockDAG{
-		dagParams:                      params,
+		Params:                         params,
 		timeSource:                     config.TimeSource,
 		sigCache:                       config.SigCache,
 		indexManager:                   config.IndexManager,
@@ -2087,7 +2088,7 @@ func New(config *Config) (*BlockDAG, error) {
 	genesis, ok := index.LookupNode(params.GenesisHash)
 
 	if !ok {
-		genesisBlock := util.NewBlock(dag.dagParams.GenesisBlock)
+		genesisBlock := util.NewBlock(dag.Params.GenesisBlock)
 		// To prevent the creation of a new err variable unintentionally so the
 		// defered function above could read err - declare isOrphan and isDelayed explicitly.
 		var isOrphan, isDelayed bool
