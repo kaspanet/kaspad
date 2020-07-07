@@ -18,7 +18,7 @@ func Start(listeningPort string, dag *blockdag.BlockDAG) (*ProtocolManager, erro
 		return nil, err
 	}
 
-	routerInitializer := buildRouterInitializer(netAdapter, dag)
+	routerInitializer := newRouterInitializer(netAdapter, dag)
 	netAdapter.SetRouterInitializer(routerInitializer)
 
 	protocolManager := ProtocolManager{
@@ -27,7 +27,7 @@ func Start(listeningPort string, dag *blockdag.BlockDAG) (*ProtocolManager, erro
 	return &protocolManager, nil
 }
 
-func buildRouterInitializer(netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG) netadapter.RouterInitializer {
+func newRouterInitializer(netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG) netadapter.RouterInitializer {
 	return func(peer *netadapter.Peer) (*netadapter.Router, error) {
 		router := netadapter.Router{}
 		err := router.AddRoute([]string{wire.CmdTx}, startDummy(netAdapter, peer, dag))
