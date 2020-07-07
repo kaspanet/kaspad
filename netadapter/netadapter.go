@@ -30,9 +30,8 @@ func NewNetAdapter(listeningPort string) (*NetAdapter, error) {
 
 func (na *NetAdapter) buildNewConnectionHandler() func(connection server.Connection) {
 	return func(connection server.Connection) {
-		peer := Peer{}
-		peer.connection = connection
-		peer.router = na.routerInitializer(&peer)
+		peer := NewPeer(connection)
+		router := na.routerInitializer(peer)
 
 		for {
 			message, err := peer.connection.Receive()
@@ -40,7 +39,7 @@ func (na *NetAdapter) buildNewConnectionHandler() func(connection server.Connect
 				// TODO: properly handle error
 				panic(err)
 			}
-			peer.router.RouteMessage(message)
+			router.RouteMessage(message)
 		}
 	}
 }
