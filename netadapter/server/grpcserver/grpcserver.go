@@ -1,7 +1,6 @@
 package grpcserver
 
 import (
-	"fmt"
 	"github.com/kaspanet/kaspad/netadapter/server"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -16,10 +15,7 @@ type gRPCServer struct {
 func NewGRPCServer(listeningPort string) (server.Server, error) {
 	// TODO(libp2p): unimplemented
 	panic("unimplemented")
-
-	fmt.Printf("Listening on 127.0.0.1:%s\n", listeningPort)
-
-	return &gRPCServer{}, nil
+	return nil, nil
 }
 
 // SetPeerConnectedHandler sets the peer connected handler
@@ -33,10 +29,7 @@ func (s *gRPCServer) SetPeerConnectedHandler(peerConnectedHandler server.PeerCon
 func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 	// TODO(libp2p): unimplemented
 	panic("unimplemented")
-
-	connection := gRPCConnection{}
-	s.peerConnectedHandler(&connection)
-	return &connection, nil
+	return nil, nil
 }
 
 // Connections returns a slice of connections the server
@@ -45,20 +38,12 @@ func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 func (s *gRPCServer) Connections() []server.Connection {
 	// TODO(libp2p): unimplemented
 	panic("unimplemented")
-
-	return s.connections
+	return nil
 }
 
 func (s *gRPCServer) Close() error {
 	// TODO(libp2p): unimplemented
 	panic("unimplemented")
-
-	for _, connection := range s.connections {
-		err := connection.Disconnect()
-		if err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
@@ -69,7 +54,6 @@ type gRPCConnection struct{}
 func (c *gRPCConnection) Send(message wire.Message) error {
 	// TODO(libp2p): unimplemented
 	panic("unimplemented")
-
 	return nil
 }
 
@@ -78,7 +62,6 @@ func (c *gRPCConnection) Send(message wire.Message) error {
 func (c *gRPCConnection) Receive() (wire.Message, error) {
 	// TODO(libp2p): unimplemented
 	panic("unimplemented")
-
 	return nil, nil
 }
 
@@ -87,6 +70,5 @@ func (c *gRPCConnection) Receive() (wire.Message, error) {
 func (c *gRPCConnection) Disconnect() error {
 	// TODO(libp2p): unimplemented
 	panic("unimplemented")
-
 	return nil
 }
