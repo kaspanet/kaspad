@@ -5,10 +5,14 @@ import (
 	"github.com/kaspanet/kaspad/netadapter/server/grpcserver"
 )
 
+// RouterInitializer is a function that initializes a new
+// router to be used with a newly connected peer
+type RouterInitializer func(peer *Peer) (*Router, error)
+
 // NetAdapter is an adapter to the net
 type NetAdapter struct {
 	server            server.Server
-	routerInitializer func(peer *Peer) (*Router, error)
+	routerInitializer RouterInitializer
 }
 
 // NewNetAdapter creates and starts a new NetAdapter on the
@@ -50,7 +54,7 @@ func (na *NetAdapter) buildNewConnectionHandler() server.NewConnectionHandler {
 
 // SetRouterInitializer sets the routerInitializer function
 // for the net adapter
-func (na *NetAdapter) SetRouterInitializer(routerInitializer func(peer *Peer) (*Router, error)) {
+func (na *NetAdapter) SetRouterInitializer(routerInitializer RouterInitializer) {
 	na.routerInitializer = routerInitializer
 }
 
