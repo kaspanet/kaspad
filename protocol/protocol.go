@@ -5,7 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/messagemux"
 	"github.com/kaspanet/kaspad/p2pserver"
 	"github.com/kaspanet/kaspad/protocol/blockrelay"
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/protocol/getrelayblockslistener"
 	"github.com/kaspanet/kaspad/wire"
 	"sync/atomic"
 )
@@ -18,7 +18,7 @@ func StartProtocol(server p2pserver.Server, mux messagemux.Mux, connection p2pse
 	shutdown := uint32(0)
 
 	blockRelayCh := make(chan wire.Message)
-	mux.AddFlow([]string{wire.CmdTx}, blockRelayCh)
+	mux.AddFlow([]string{wire.CmdInvRelayBlock, wire.CmdBlock}, blockRelayCh)
 	spawn(func() {
 		err := blockrelay.StartBlockRelay(blockRelayCh, server, connection, dag)
 		if err == nil {
@@ -31,19 +31,20 @@ func StartProtocol(server p2pserver.Server, mux messagemux.Mux, connection p2pse
 		}
 	})
 
+	getRelayBlocksListenerCh := make(chan wire.Message)
+	mux.AddFlow([]string{wire.CmdGetRelayBlocks}, getRelayBlocksListenerCh)
+	spawn(func() {
+		err := getrelayblockslistener.StartGetRelayBlocksListener(getRelayBlocksListenerCh, connection, dag)
+		if err == nil {
+			return
+		}
+
+		log.Errorf("error from StartGetRelayBlocksListener: %s", err)
+		if atomic.LoadUint32(&shutdown) == 0 {
+			stop <- struct{}{}
+		}
+	})
+
 	<-stop
 	atomic.StoreUint32(&shutdown, 1)
-}
-
-func AddBanScoreAndPushRejectMsg(connection p2pserver.Connection, command string, code wire.RejectCode, hash *daghash.Hash, persistent, transient uint32, reason string) (isBanned bool) {
-	PushRejectMsg(connection, command, code, reason, hash)
-	return connection.AddBanScore(persistent, transient, reason)
-}
-
-func PushRejectMsg(connection p2pserver.Connection, command string, code wire.RejectCode, reason string, hash *daghash.Hash) {
-	msg := wire.NewMsgReject(command, code, reason)
-	err := connection.Send(msg)
-	if err != nil {
-		log.Errorf("couldn't send reject message to %s", connection)
-	}
 }

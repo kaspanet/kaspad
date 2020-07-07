@@ -5,6 +5,8 @@ import (
 	"io"
 )
 
+// MsgGetRelayBlocksHashes is the maximum number of hashes that can
+// be in a single getrelblks message.
 const MsgGetRelayBlocksHashes = MaxInvPerMsg
 
 // MsgGetRelayBlocks implements the Message interface and represents a kaspa

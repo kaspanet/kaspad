@@ -8,6 +8,8 @@ const (
 	BanScoreOrphanInvAsPartOfNetsync   = 100
 	BanScoreMalformedBlueScoreInOrphan = 100
 
+	BanScoreRequestNonExistingBlock = 10
+
 	BanScoreUnrequestedSelectedTip = 20
 	BanScoreUnrequestedTx          = 20
 	BanScoreInvalidTx              = 100

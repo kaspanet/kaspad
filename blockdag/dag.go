@@ -1583,7 +1583,7 @@ func (dag *BlockDAG) IsInSelectedParentChain(blockHash *daghash.Hash) (bool, err
 	blockNode, ok := dag.index.LookupNode(blockHash)
 	if !ok {
 		str := fmt.Sprintf("block %s is not in the DAG", blockHash)
-		return false, errNotInDAG(str)
+		return false, ErrNotInDAG(str)
 	}
 	return dag.virtual.selectedParentChainSet.contains(blockNode), nil
 }
@@ -1696,7 +1696,7 @@ func (dag *BlockDAG) ChildHashesByHash(hash *daghash.Hash) ([]*daghash.Hash, err
 	node, ok := dag.index.LookupNode(hash)
 	if !ok {
 		str := fmt.Sprintf("block %s is not in the DAG", hash)
-		return nil, errNotInDAG(str)
+		return nil, ErrNotInDAG(str)
 
 	}
 
@@ -1711,7 +1711,7 @@ func (dag *BlockDAG) SelectedParentHash(blockHash *daghash.Hash) (*daghash.Hash,
 	node, ok := dag.index.LookupNode(blockHash)
 	if !ok {
 		str := fmt.Sprintf("block %s is not in the DAG", blockHash)
-		return nil, errNotInDAG(str)
+		return nil, ErrNotInDAG(str)
 
 	}
 

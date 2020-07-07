@@ -5,7 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/p2pserver"
 	"github.com/kaspanet/kaspad/peer"
-	"github.com/kaspanet/kaspad/protocol"
+	protocolcommon "github.com/kaspanet/kaspad/protocol/common"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
@@ -40,6 +40,8 @@ func (s *sharedRequestedBlocks) addIfExists(hash *daghash.Hash) (exists bool) {
 	return false
 }
 
+// StartBlockRelay listens to wire.MsgInvRelayBlock messages, requests their corresponding blocks if they
+// are missing, adds them to the DAG and propagates them to the rest of the network.
 func StartBlockRelay(msgChan <-chan wire.Message, server p2pserver.Server, connection p2pserver.Connection,
 	dag *blockdag.BlockDAG) error {
 
@@ -65,7 +67,7 @@ func handleInv(msgChan <-chan wire.Message, server p2pserver.Server, connection 
 
 	if dag.IsKnownBlock(inv.Hash) {
 		if dag.IsKnownInvalid(inv.Hash) {
-			protocol.AddBanScoreAndPushRejectMsg(connection, inv.Command(), wire.RejectInvalid, inv.Hash,
+			protocolcommon.AddBanScoreAndPushRejectMsg(connection, inv.Command(), wire.RejectInvalid, inv.Hash,
 				peer.BanScoreInvalidInvBlock, 0, fmt.Sprintf("sent inv of invalid block %s",
 					inv.Hash))
 		}
@@ -112,7 +114,7 @@ func readInv(connection p2pserver.Connection, msgChan <-chan wire.Message,
 			return inv, false
 		}
 
-		isBanned := protocol.AddBanScoreAndPushRejectMsg(connection,
+		isBanned := protocolcommon.AddBanScoreAndPushRejectMsg(connection,
 			msg.Command(),
 			wire.RejectNotRequested,
 			nil,
@@ -126,8 +128,11 @@ func readInv(connection p2pserver.Connection, msgChan <-chan wire.Message,
 	}
 }
 
-func readNonInvMsg(connection p2pserver.Connection, msgChan <-chan wire.Message,
-	invsQueue *[]*wire.MsgInvRelayBlock) (msg wire.Message, shouldStop bool, err error) {
+// readMsgBlock returns the next msgBlock in msgChan, and populates invsQueue in any inv messages that arrives between.
+//
+// Note: this function assumes msgChan can contain only wire.MsgInvRelayBlock and wire.MsgBlock messages.
+func readMsgBlock(connection p2pserver.Connection, msgChan <-chan wire.Message,
+	invsQueue *[]*wire.MsgInvRelayBlock) (msgBlock *wire.MsgBlock, shouldStop bool, err error) {
 
 	for {
 		const stallResponseTimeout = 30 * time.Second
@@ -143,7 +148,7 @@ func readNonInvMsg(connection p2pserver.Connection, msgChan <-chan wire.Message,
 
 			inv, ok := msg.(*wire.MsgInvRelayBlock)
 			if !ok {
-				return msg, false, nil
+				return msg.(*wire.MsgBlock), false, nil
 			}
 
 			*invsQueue = append(*invsQueue, inv)
@@ -180,14 +185,14 @@ func requestBlocks(connection p2pserver.Connection, server p2pserver.Server, msg
 		}
 	}
 
-	getRelayBlockMsg := wire.NewMsgGetRelayBlocks(hashesToRequest)
-	err = connection.Send(getRelayBlockMsg)
+	getRelayBlocksMsg := wire.NewMsgGetRelayBlocks(hashesToRequest)
+	err = connection.Send(getRelayBlocksMsg)
 	if err != nil {
 		return false, err
 	}
 
 	for len(pendingBlocks) > 0 {
-		msg, shouldStop, err := readNonInvMsg(connection, msgChan, invsQueue)
+		msgBlock, shouldStop, err := readMsgBlock(connection, msgChan, invsQueue)
 		if err != nil {
 			return false, err
 		}
@@ -195,26 +200,11 @@ func requestBlocks(connection p2pserver.Connection, server p2pserver.Server, msg
 			return true, nil
 		}
 
-		msgBlock, ok := msg.(*wire.MsgBlock)
-		if !ok {
-			isBanned := protocol.AddBanScoreAndPushRejectMsg(connection,
-				msg.Command(),
-				wire.RejectNotRequested,
-				nil,
-				peer.BanScoreUnrequestedMessage,
-				0,
-				fmt.Sprintf("unrequested %s message in the block relay flow", msg.Command()))
-			if isBanned {
-				return true, nil
-			}
-			continue
-		}
-
 		block := util.NewBlock(msgBlock)
 		blockHash := block.Hash()
 		if _, ok := pendingBlocks[*blockHash]; !ok {
-			isBanned := protocol.AddBanScoreAndPushRejectMsg(connection,
-				msg.Command(),
+			isBanned := protocolcommon.AddBanScoreAndPushRejectMsg(connection,
+				msgBlock.Command(),
 				wire.RejectNotRequested,
 				nil,
 				peer.BanScoreUnrequestedBlock,
@@ -227,23 +217,20 @@ func requestBlocks(connection p2pserver.Connection, server p2pserver.Server, msg
 		delete(pendingBlocks, *blockHash)
 		requestedBlocks.delete(blockHash)
 
-		shouldStop, processedBlockHashes, err := processBlock(connection, dag, requestQueue, requestQueueSet, block)
+		shouldStop, err = processAndRelayBlock(connection, server, dag, requestQueue, requestQueueSet, block)
 		if err != nil {
 			return false, err
 		}
 		if shouldStop {
 			return true, nil
 		}
-		if len(processedBlockHashes) > 0 {
-			// TODO(libp2p) need to implement relay inv with multiple hashes so we can broadcast everything together.
-		}
 	}
 	return false, nil
 }
 
-func processBlock(connection p2pserver.Connection, dag *blockdag.BlockDAG, requestQueue *[]*daghash.Hash,
+func processAndRelayBlock(connection p2pserver.Connection, server p2pserver.Server, dag *blockdag.BlockDAG, requestQueue *[]*daghash.Hash,
 	requestQueueSet map[daghash.Hash]struct{},
-	block *util.Block) (shouldStop bool, processedBlocks []*daghash.Hash, err error) {
+	block *util.Block) (shouldStop bool, err error) {
 
 	blockHash := block.Hash()
 	isOrphan, isDelayed, err := dag.ProcessBlock(block, blockdag.BFNone)
@@ -259,15 +246,19 @@ func processBlock(connection p2pserver.Connection, dag *blockdag.BlockDAG, reque
 		log.Infof("Rejected block %s from %s: %s", blockHash,
 			connection, err)
 
-		isBanned := protocol.AddBanScoreAndPushRejectMsg(connection, wire.CmdBlock, wire.RejectInvalid, blockHash,
+		isBanned := protocolcommon.AddBanScoreAndPushRejectMsg(connection, block.MsgBlock().Command(), wire.RejectInvalid, blockHash,
 			peer.BanScoreInvalidBlock, 0, fmt.Sprintf("got invalid block: %s", err))
 		// Whether the peer will be banned or not, syncing from a node that doesn't follow
 		// the netsync protocol is undesired.
 		// TODO(libp2p): sm.RemoveFromSyncCandidates(peer)
 		if isBanned {
-			return true, nil, nil
+			return true, nil
 		}
-		return false, nil, nil
+		return false, nil
+	}
+
+	if isDelayed {
+		return false, nil
 	}
 
 	if isOrphan {
@@ -275,13 +266,13 @@ func processBlock(connection p2pserver.Connection, dag *blockdag.BlockDAG, reque
 		if err != nil {
 			log.Errorf("Received an orphan block %s with malformed blue score from %s. Disconnecting...",
 				blockHash, connection)
-			isBanned := protocol.AddBanScoreAndPushRejectMsg(connection, wire.CmdBlock,
+			isBanned := protocolcommon.AddBanScoreAndPushRejectMsg(connection, block.MsgBlock().Command(),
 				wire.RejectInvalid, blockHash, peer.BanScoreMalformedBlueScoreInOrphan, 0,
 				fmt.Sprintf("Received an orphan block %s with malformed blue score", blockHash))
 			if isBanned {
-				return true, nil, nil
+				return true, nil
 			}
-			return false, nil, nil
+			return false, nil
 		}
 
 		const maxOrphanBlueScoreDiff = 10000
@@ -290,7 +281,7 @@ func processBlock(connection p2pserver.Connection, dag *blockdag.BlockDAG, reque
 			log.Infof("Orphan block %s has blue score %d and the selected tip blue score is "+
 				"%d. Ignoring orphans with a blue score difference from the selected tip greater than %d",
 				blockHash, blueScore, selectedTipBlueScore, maxOrphanBlueScoreDiff)
-			return false, nil, nil
+			return false, nil
 		}
 
 		// Request the parents for the orphan block from the peer that sent it.
@@ -301,7 +292,7 @@ func processBlock(connection p2pserver.Connection, dag *blockdag.BlockDAG, reque
 				requestQueueSet[*missingAncestor] = struct{}{}
 			}
 		}
-		return false, []*daghash.Hash{blockHash}, nil
+		return false, nil
 	}
 	//TODO(libp2p)
 	//// When the block is not an orphan, log information about it and
@@ -315,5 +306,6 @@ func processBlock(connection p2pserver.Connection, dag *blockdag.BlockDAG, reque
 	//
 	//// Clear the rejected transactions.
 	//sm.rejectedTxns = make(map[daghash.TxID]struct{})
-	return false, nil, nil
+	server.BroadcastExceptConnection(block.MsgBlock(), connection)
+	return false, nil
 }
