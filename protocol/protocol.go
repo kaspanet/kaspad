@@ -28,12 +28,15 @@ func Start(listeningPort string, dag *blockdag.BlockDAG) (*ProtocolManager, erro
 }
 
 func buildRouterInitializer(netAdapter *netadapter.NetAdapter,
-	dag *blockdag.BlockDAG) func(peer *netadapter.Peer) *netadapter.Router {
+	dag *blockdag.BlockDAG) func(peer *netadapter.Peer) (*netadapter.Router, error) {
 
-	return func(peer *netadapter.Peer) *netadapter.Router {
+	return func(peer *netadapter.Peer) (*netadapter.Router, error) {
 		router := netadapter.Router{}
-		router.AddRoute([]string{wire.CmdTx}, startDummy(netAdapter, peer, dag))
-		return &router
+		err := router.AddRoute([]string{wire.CmdTx}, startDummy(netAdapter, peer, dag))
+		if err != nil {
+			return nil, err
+		}
+		return &router, nil
 	}
 }
 

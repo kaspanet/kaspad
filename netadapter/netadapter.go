@@ -8,7 +8,7 @@ import (
 // NetAdapter is an adapter to the net
 type NetAdapter struct {
 	server            server.Server
-	routerInitializer func(peer *Peer) *Router
+	routerInitializer func(peer *Peer) (*Router, error)
 }
 
 // NewNetAdapter creates and starts a new NetAdapter on the
@@ -31,7 +31,11 @@ func NewNetAdapter(listeningPort string) (*NetAdapter, error) {
 func (na *NetAdapter) buildNewConnectionHandler() func(connection server.Connection) {
 	return func(connection server.Connection) {
 		peer := NewPeer(connection)
-		router := na.routerInitializer(peer)
+		router, err := na.routerInitializer(peer)
+		if err != nil {
+			// TODO(libp2p): properly handle error
+			panic(err)
+		}
 
 		for {
 			message, err := peer.connection.Receive()
@@ -46,7 +50,7 @@ func (na *NetAdapter) buildNewConnectionHandler() func(connection server.Connect
 
 // SetRouterInitializer sets the routerInitializer function
 // for the net adapter
-func (na *NetAdapter) SetRouterInitializer(routerInitializer func(peer *Peer) *Router) {
+func (na *NetAdapter) SetRouterInitializer(routerInitializer func(peer *Peer) (*Router, error)) {
 	na.routerInitializer = routerInitializer
 }
 
