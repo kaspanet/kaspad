@@ -6,7 +6,7 @@ import (
 )
 
 // OnIDReceivedHandler is a function that is to be called
-// once a new Connection is sends us its ID.
+// once a new Connection sends us its ID.
 type OnIDReceivedHandler func(id *ID)
 
 // Router routes messages by type to their respective
