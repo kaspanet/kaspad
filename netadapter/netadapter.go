@@ -81,8 +81,8 @@ func (na *NetAdapter) newOnConnectedHandler() server.OnConnectedHandler {
 			na.registerConnection(connection, router, id)
 		})
 
-		na.startReceiveLoop(connection, router)
-		na.startSendLoop(connection, router)
+		spawn(func() { na.startReceiveLoop(connection, router) })
+		spawn(func() { na.startSendLoop(connection, router) })
 		return nil
 	}
 }
@@ -105,51 +105,47 @@ func (na *NetAdapter) unregisterConnection(connection server.Connection) {
 }
 
 func (na *NetAdapter) startReceiveLoop(connection server.Connection, router *Router) {
-	spawn(func() {
-		for {
-			if atomic.LoadUint32(&na.stop) != 0 {
-				break
-			}
-
-			message, err := connection.Receive()
-			if err != nil {
-				log.Warnf("Failed to receive from %s: %s", connection, err)
-				break
-			}
-			err = router.RouteInputMessage(message)
-			if err != nil {
-				log.Warnf("Failed to receive from %s: %s", connection, err)
-				break
-			}
+	for {
+		if atomic.LoadUint32(&na.stop) != 0 {
+			break
 		}
 
-		err := connection.Disconnect()
+		message, err := connection.Receive()
 		if err != nil {
-			log.Warnf("Failed to disconnect from %s: %s", connection, err)
+			log.Warnf("Failed to receive from %s: %s", connection, err)
+			break
 		}
-	})
+		err = router.RouteInputMessage(message)
+		if err != nil {
+			log.Warnf("Failed to receive from %s: %s", connection, err)
+			break
+		}
+	}
+
+	err := connection.Disconnect()
+	if err != nil {
+		log.Warnf("Failed to disconnect from %s: %s", connection, err)
+	}
 }
 
 func (na *NetAdapter) startSendLoop(connection server.Connection, router *Router) {
-	spawn(func() {
-		for {
-			if atomic.LoadUint32(&na.stop) != 0 {
-				break
-			}
-
-			message := router.TakeOutputMessage()
-			err := connection.Send(message)
-			if err != nil {
-				log.Warnf("Failed to send to %s: %s", connection, err)
-				break
-			}
+	for {
+		if atomic.LoadUint32(&na.stop) != 0 {
+			break
 		}
 
-		err := connection.Disconnect()
+		message := router.TakeOutputMessage()
+		err := connection.Send(message)
 		if err != nil {
-			log.Warnf("Failed to disconnect from %s: %s", connection, err)
+			log.Warnf("Failed to send to %s: %s", connection, err)
+			break
 		}
-	})
+	}
+
+	err := connection.Disconnect()
+	if err != nil {
+		log.Warnf("Failed to disconnect from %s: %s", connection, err)
+	}
 }
 
 // SetRouterInitializer sets the routerInitializer function
