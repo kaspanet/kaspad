@@ -20,6 +20,10 @@ type NetAdapter struct {
 	server            server.Server
 	routerInitializer RouterInitializer
 	stop              int32
+
+	connectionIDs    map[server.Connection]*ID
+	idsToConnections map[*ID]server.Connection
+	idsToRouters     map[*ID]*Router
 }
 
 // NewNetAdapter creates and starts a new NetAdapter on the
@@ -36,6 +40,10 @@ func NewNetAdapter(listeningAddrs []string) (*NetAdapter, error) {
 	adapter := NetAdapter{
 		id:     id,
 		server: s,
+
+		connectionIDs:    make(map[server.Connection]*ID),
+		idsToConnections: make(map[*ID]server.Connection),
+		idsToRouters:     make(map[*ID]*Router),
 	}
 
 	onConnectedHandler := adapter.newOnConnectedHandler()
@@ -65,13 +73,34 @@ func (na *NetAdapter) newOnConnectedHandler() server.OnConnectedHandler {
 			return err
 		}
 		connection.SetOnDisconnectedHandler(func() error {
+			na.unregisterConnection(connection)
 			return router.Close()
+		})
+		router.SetOnIDReceivedHandler(func(id *ID) {
+			na.registerConnection(connection, router, id)
 		})
 
 		na.startReceiveLoop(connection, router)
 		na.startSendLoop(connection, router)
 		return nil
 	}
+}
+
+func (na *NetAdapter) registerConnection(connection server.Connection, router *Router, id *ID) {
+	na.connectionIDs[connection] = id
+	na.idsToConnections[id] = connection
+	na.idsToRouters[id] = router
+}
+
+func (na *NetAdapter) unregisterConnection(connection server.Connection) {
+	id, ok := na.connectionIDs[connection]
+	if !ok {
+		return
+	}
+
+	delete(na.connectionIDs, connection)
+	delete(na.idsToConnections, id)
+	delete(na.idsToRouters, id)
 }
 
 func (na *NetAdapter) startReceiveLoop(connection server.Connection, router *Router) {

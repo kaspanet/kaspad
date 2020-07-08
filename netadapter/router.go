@@ -5,11 +5,30 @@ import (
 	"github.com/pkg/errors"
 )
 
+// OnConnectedHandler is a function that is to be called
+// once a new Connection is sends us its ID.
+type OnIDReceivedHandler func(id *ID)
+
 // Router routes messages by type to their respective
 // input channels
 type Router struct {
-	inputRoutes map[string]chan wire.Message
-	outputRoute chan wire.Message
+	inputRoutes         map[string]chan wire.Message
+	outputRoute         chan wire.Message
+	onIDReceivedHandler OnIDReceivedHandler
+}
+
+// NewRouter creates a new empty router
+func NewRouter() *Router {
+	return &Router{
+		inputRoutes: make(map[string]chan wire.Message),
+		outputRoute: make(chan wire.Message),
+	}
+}
+
+// SetOnIDReceivedHandler sets the onIDReceivedHandler function for
+// this router
+func (r *Router) SetOnIDReceivedHandler(onIDReceivedHandler OnIDReceivedHandler) {
+	r.onIDReceivedHandler = onIDReceivedHandler
 }
 
 // AddRoute registers the messages of types `messageTypes` to
@@ -47,6 +66,11 @@ func (r *Router) RouteInputMessage(message wire.Message) {
 // the output channel
 func (r *Router) TakeOutputMessage() wire.Message {
 	return <-r.outputRoute
+}
+
+// RegisterID registers the remote connection's ID
+func (r *Router) RegisterID(id *ID) {
+	r.onIDReceivedHandler(id)
 }
 
 // Close shuts down the router by closing all registered

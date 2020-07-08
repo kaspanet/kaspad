@@ -39,12 +39,12 @@ func (p *Manager) Stop() error {
 
 func newRouterInitializer(netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG) netadapter.RouterInitializer {
 	return func() (*netadapter.Router, error) {
-		router := netadapter.Router{}
-		err := router.AddRoute([]string{wire.CmdTx}, startDummy(netAdapter, &router, dag))
+		router := netadapter.NewRouter()
+		err := router.AddRoute([]string{wire.CmdTx}, startDummy(netAdapter, router, dag))
 		if err != nil {
 			return nil, err
 		}
-		return &router, nil
+		return router, nil
 	}
 }
 
