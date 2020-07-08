@@ -14,7 +14,7 @@ type RouterInitializer func() (*Router, error)
 
 // NetAdapter is an abstraction layer over networking.
 // This type expects a RouteInitializer function. This
-// function weaves together the various "inputRoutes" (messages
+// function weaves together the various "routes" (messages
 // and message handlers) without exposing anything related
 // to networking internals.
 type NetAdapter struct {
