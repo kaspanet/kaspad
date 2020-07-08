@@ -21,7 +21,7 @@ type NetAdapter struct {
 	id                *ID
 	server            server.Server
 	routerInitializer RouterInitializer
-	stop              int32
+	stop              uint32
 
 	connectionIDs    map[server.Connection]*ID
 	idsToConnections map[*ID]server.Connection
@@ -61,7 +61,7 @@ func (na *NetAdapter) Start() error {
 
 // Stop safely closes the NetAdapter
 func (na *NetAdapter) Stop() error {
-	if atomic.AddInt32(&na.stop, 1) != 1 {
+	if atomic.AddUint32(&na.stop, 1) != 1 {
 		log.Warnf("Net adapter stopped more than once")
 		return nil
 	}
@@ -108,7 +108,7 @@ func (na *NetAdapter) unregisterConnection(connection server.Connection) {
 func (na *NetAdapter) startReceiveLoop(connection server.Connection, router *Router) {
 	spawn(func() {
 		for {
-			if atomic.LoadInt32(&na.stop) != 0 {
+			if atomic.LoadUint32(&na.stop) != 0 {
 				err := connection.Disconnect()
 				if err != nil {
 					log.Warnf("Failed to disconnect from %s: %s", connection, err)
@@ -132,7 +132,7 @@ func (na *NetAdapter) startReceiveLoop(connection server.Connection, router *Rou
 func (na *NetAdapter) startSendLoop(connection server.Connection, router *Router) {
 	spawn(func() {
 		for {
-			if atomic.LoadInt32(&na.stop) != 0 {
+			if atomic.LoadUint32(&na.stop) != 0 {
 				err := connection.Disconnect()
 				if err != nil {
 					log.Warnf("Failed to disconnect from %s: %s", connection, err)
