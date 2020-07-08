@@ -118,9 +118,11 @@ func (na *NetAdapter) startReceiveLoop(connection server.Connection, router *Rou
 		}
 	}
 
-	err := connection.Disconnect()
-	if err != nil {
-		log.Warnf("Failed to disconnect from %s: %s", connection, err)
+	if connection.IsConnected() {
+		err := connection.Disconnect()
+		if err != nil {
+			log.Warnf("Failed to disconnect from %s: %s", connection, err)
+		}
 	}
 }
 
@@ -134,9 +136,11 @@ func (na *NetAdapter) startSendLoop(connection server.Connection, router *Router
 		}
 	}
 
-	err := connection.Disconnect()
-	if err != nil {
-		log.Warnf("Failed to disconnect from %s: %s", connection, err)
+	if connection.IsConnected() {
+		err := connection.Disconnect()
+		if err != nil {
+			log.Warnf("Failed to disconnect from %s: %s", connection, err)
+		}
 	}
 }
 

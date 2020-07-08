@@ -26,5 +26,6 @@ type Connection interface {
 	Send(message wire.Message) error
 	Receive() (wire.Message, error)
 	Disconnect() error
+	IsConnected() bool
 	SetOnDisconnectedHandler(onDisconnectedHandler OnDisconnectedHandler)
 }

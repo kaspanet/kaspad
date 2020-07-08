@@ -73,6 +73,11 @@ func (c *gRPCConnection) Disconnect() error {
 	panic("unimplemented")
 }
 
+func (c *gRPCConnection) IsConnected() bool {
+	// TODO(libp2p): unimplemented
+	panic("unimplemented")
+}
+
 // SetOnDisconnectedHandler sets the on-disconnected handler
 // function for this connection
 func (c *gRPCConnection) SetOnDisconnectedHandler(onDisconnectedHandler server.OnDisconnectedHandler) {
