@@ -11,6 +11,7 @@ type Protocol struct {
 	netAdapter *netadapter.NetAdapter
 }
 
+// NewProtocol creates a new instance of the p2p protocol
 func NewProtocol(listeningAddrs []string, dag *blockdag.BlockDAG) (*Protocol, error) {
 	netAdapter, err := netadapter.NewNetAdapter(listeningAddrs)
 	if err != nil {
@@ -31,6 +32,7 @@ func (p *Protocol) Start() error {
 	return p.netAdapter.Start()
 }
 
+// Stop stops the p2p protocol
 func (p *Protocol) Stop() error {
 	return p.netAdapter.Stop()
 }
