@@ -105,7 +105,7 @@ func (na *NetAdapter) unregisterConnection(connection server.Connection) {
 }
 
 func (na *NetAdapter) startReceiveLoop(connection server.Connection, router *Router) {
-	for atomic.LoadUint32(&na.stop) != 0 {
+	for atomic.LoadUint32(&na.stop) == 0 {
 		message, err := connection.Receive()
 		if err != nil {
 			log.Warnf("Failed to receive from %s: %s", connection, err)
@@ -127,7 +127,7 @@ func (na *NetAdapter) startReceiveLoop(connection server.Connection, router *Rou
 }
 
 func (na *NetAdapter) startSendLoop(connection server.Connection, router *Router) {
-	for atomic.LoadUint32(&na.stop) != 0 {
+	for atomic.LoadUint32(&na.stop) == 0 {
 		message := router.TakeOutputMessage()
 		err := connection.Send(message)
 		if err != nil {
