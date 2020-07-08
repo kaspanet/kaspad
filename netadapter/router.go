@@ -5,7 +5,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// OnConnectedHandler is a function that is to be called
+// OnIDReceivedHandler is a function that is to be called
 // once a new Connection is sends us its ID.
 type OnIDReceivedHandler func(id *ID)
 
