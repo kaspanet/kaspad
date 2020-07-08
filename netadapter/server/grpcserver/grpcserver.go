@@ -12,7 +12,17 @@ type gRPCServer struct {
 
 // NewGRPCServer creates and starts a gRPC server with the given
 // listening port
-func NewGRPCServer(listeningPort string) (server.Server, error) {
+func NewGRPCServer(listeningAddrs []string) (server.Server, error) {
+	// TODO(libp2p): unimplemented
+	panic("unimplemented")
+}
+
+func (s *gRPCServer) Start() error {
+	// TODO(libp2p): unimplemented
+	panic("unimplemented")
+}
+
+func (s *gRPCServer) Stop() error {
 	// TODO(libp2p): unimplemented
 	panic("unimplemented")
 }
@@ -34,11 +44,6 @@ func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 // is currently connected to.
 // This is part of the Server interface
 func (s *gRPCServer) Connections() []server.Connection {
-	// TODO(libp2p): unimplemented
-	panic("unimplemented")
-}
-
-func (s *gRPCServer) Close() error {
 	// TODO(libp2p): unimplemented
 	panic("unimplemented")
 }
