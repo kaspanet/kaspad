@@ -81,7 +81,7 @@ func newKaspad(listenAddrs []string, interrupt <-chan struct{}) (*kaspad, error)
 
 	txMempool := setupMempool(dag, sigCache)
 
-	protocolManager, err := protocol.New(listenAddrs, dag)
+	protocolManager, err := protocol.NewManager(listenAddrs, dag)
 	if err != nil {
 		return nil, err
 	}
