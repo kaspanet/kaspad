@@ -20,11 +20,11 @@ func GenerateID() (*ID, error) {
 	if err != nil {
 		return nil, err
 	}
-	return CreateID(bytes)
+	return NewID(bytes)
 }
 
-// CreateID creates an ID from the given bytes
-func CreateID(bytes []byte) (*ID, error) {
+// NewID creates an ID from the given bytes
+func NewID(bytes []byte) (*ID, error) {
 	if len(bytes) != idLength {
 		return nil, errors.New("invalid bytes length")
 	}
