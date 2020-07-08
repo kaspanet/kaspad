@@ -11,7 +11,7 @@ type Manager struct {
 	netAdapter *netadapter.NetAdapter
 }
 
-// New creates a new instance of the p2p protocol
+// New creates a new instance of the p2p protocol manager
 func New(listeningAddrs []string, dag *blockdag.BlockDAG) (*Manager, error) {
 	netAdapter, err := netadapter.NewNetAdapter(listeningAddrs)
 	if err != nil {
