@@ -163,7 +163,10 @@ func (na *NetAdapter) Broadcast(ids []*ID, message wire.Message) error {
 		if !ok {
 			return errors.Errorf("id %s is not registered", id)
 		}
-		router.RouteInputMessage(message)
+		err := router.RouteInputMessage(message)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
