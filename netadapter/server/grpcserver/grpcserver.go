@@ -48,7 +48,9 @@ func (s *gRPCServer) Connections() []server.Connection {
 	panic("unimplemented")
 }
 
-type gRPCConnection struct{}
+type gRPCConnection struct {
+	peerDisconnectedHandler server.PeerDisconnectedHandler
+}
 
 // Send sends the given message through the connection
 // This is part of the Connection interface
@@ -69,4 +71,10 @@ func (c *gRPCConnection) Receive() (wire.Message, error) {
 func (c *gRPCConnection) Disconnect() error {
 	// TODO(libp2p): unimplemented
 	panic("unimplemented")
+}
+
+// SetPeerDisconnectedHandler sets the peer disconnected handler
+// function for this connection
+func (c *gRPCConnection) SetPeerDisconnectedHandler(peerDisconnectedHandler server.PeerDisconnectedHandler) {
+	c.peerDisconnectedHandler = peerDisconnectedHandler
 }

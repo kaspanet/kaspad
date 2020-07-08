@@ -47,16 +47,23 @@ func (na *NetAdapter) Stop() error {
 }
 
 func (na *NetAdapter) newPeerConnectedHandler() server.PeerConnectedHandler {
-	return func(connection server.Connection) {
-		peer := NewConnection(connection)
-		router, err := na.routerInitializer(peer)
+	return func(serverConnection server.Connection) {
+		connection := NewConnection(serverConnection)
+		router, err := na.routerInitializer(connection)
 		if err != nil {
 			// TODO(libp2p): properly handle error
 			panic(err)
 		}
+		serverConnection.SetPeerDisconnectedHandler(func() {
+			err := router.Close()
+			if err != nil {
+				// TODO(libp2p): properly handle error
+				panic(err)
+			}
+		})
 
 		for {
-			message, err := peer.connection.Receive()
+			message, err := connection.connection.Receive()
 			if err != nil {
 				// TODO(libp2p): properly handle error
 				panic(err)
