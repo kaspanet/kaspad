@@ -8,6 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/mining"
+	"github.com/kaspanet/kaspad/protocol"
 	"github.com/kaspanet/kaspad/server/rpc"
 	"github.com/kaspanet/kaspad/signal"
 	"github.com/kaspanet/kaspad/txscript"
@@ -17,6 +18,7 @@ import (
 // kaspad is a wrapper for all the kaspad services
 type kaspad struct {
 	rpcServer *rpc.Server
+	protocol  *protocol.Protocol
 
 	started, shutdown int32
 }
@@ -47,9 +49,17 @@ func (s *kaspad) stop() error {
 
 	log.Warnf("Kaspad shutting down")
 
+	err := s.protocol.Stop()
+	if err != nil {
+		log.Errorf("Error closing netAdapter: %+v", err)
+	}
+
 	// Shutdown the RPC server if it's not disabled.
 	if !config.ActiveConfig().DisableRPC {
-		s.rpcServer.Stop()
+		err := s.rpcServer.Stop()
+		if err != nil {
+			log.Errorf("Error stopping rpcServer: %+v", err)
+		}
 	}
 
 	return nil
@@ -71,6 +81,11 @@ func newKaspad(listenAddrs []string, interrupt <-chan struct{}) (*kaspad, error)
 
 	txMempool := setupMempool(dag, sigCache)
 
+	protocolManager, err := protocol.NewProtocol(listenAddrs, dag)
+	if err != nil {
+		return nil, err
+	}
+
 	rpcServer, err := setupRPC(dag, txMempool, sigCache, acceptanceIndex)
 	if err != nil {
 		return nil, err
@@ -78,6 +93,7 @@ func newKaspad(listenAddrs []string, interrupt <-chan struct{}) (*kaspad, error)
 
 	return &kaspad{
 		rpcServer: rpcServer,
+		protocol:  protocolManager,
 	}, nil
 }
 

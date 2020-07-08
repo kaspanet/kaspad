@@ -11,9 +11,8 @@ type Protocol struct {
 	netAdapter *netadapter.NetAdapter
 }
 
-// Start starts the p2p protocol
-func Start(listeningPort string, dag *blockdag.BlockDAG) (*Protocol, error) {
-	netAdapter, err := netadapter.NewNetAdapter(listeningPort)
+func NewProtocol(listeningAddrs []string, dag *blockdag.BlockDAG) (*Protocol, error) {
+	netAdapter, err := netadapter.NewNetAdapter(listeningAddrs)
 	if err != nil {
 		return nil, err
 	}
@@ -25,6 +24,15 @@ func Start(listeningPort string, dag *blockdag.BlockDAG) (*Protocol, error) {
 		netAdapter: netAdapter,
 	}
 	return &protocol, nil
+}
+
+// Start starts the p2p protocol
+func (p *Protocol) Start() error {
+	return p.netAdapter.Start()
+}
+
+func (p *Protocol) Stop() error {
+	return p.netAdapter.Stop()
 }
 
 func newRouterInitializer(netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG) netadapter.RouterInitializer {

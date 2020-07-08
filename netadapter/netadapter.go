@@ -21,19 +21,29 @@ type NetAdapter struct {
 
 // NewNetAdapter creates and starts a new NetAdapter on the
 // given listeningPort
-func NewNetAdapter(listeningPort string) (*NetAdapter, error) {
-	server, err := grpcserver.NewGRPCServer(listeningPort)
+func NewNetAdapter(listeningAddrs []string) (*NetAdapter, error) {
+	s, err := grpcserver.NewGRPCServer(listeningAddrs)
 	if err != nil {
 		return nil, err
 	}
 	adapter := NetAdapter{
-		server: server,
+		server: s,
 	}
 
 	peerConnectedHandler := adapter.newPeerConnectedHandler()
-	server.SetPeerConnectedHandler(peerConnectedHandler)
+	adapter.server.SetPeerConnectedHandler(peerConnectedHandler)
 
 	return &adapter, nil
+}
+
+// Start begins the operation of the NetAdapter
+func (na *NetAdapter) Start() error {
+	return na.server.Start()
+}
+
+// Stop safely closes the netAdapter
+func (na *NetAdapter) Stop() error {
+	return na.server.Stop()
 }
 
 func (na *NetAdapter) newPeerConnectedHandler() server.PeerConnectedHandler {
@@ -60,9 +70,4 @@ func (na *NetAdapter) newPeerConnectedHandler() server.PeerConnectedHandler {
 // for the net adapter
 func (na *NetAdapter) SetRouterInitializer(routerInitializer RouterInitializer) {
 	na.routerInitializer = routerInitializer
-}
-
-// Close safely closes the netAdapter
-func (na *NetAdapter) Close() error {
-	return na.server.Close()
 }
