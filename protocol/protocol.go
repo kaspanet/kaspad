@@ -38,7 +38,7 @@ func (p *Manager) Stop() error {
 }
 
 func newRouterInitializer(netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG) netadapter.RouterInitializer {
-	return func(peer *netadapter.Peer) (*netadapter.Router, error) {
+	return func(peer *netadapter.Connection) (*netadapter.Router, error) {
 		router := netadapter.Router{}
 		err := router.AddRoute([]string{wire.CmdTx}, startDummy(netAdapter, peer, dag))
 		if err != nil {
@@ -48,7 +48,7 @@ func newRouterInitializer(netAdapter *netadapter.NetAdapter, dag *blockdag.Block
 	}
 }
 
-func startDummy(netAdapter *netadapter.NetAdapter, peer *netadapter.Peer, dag *blockdag.BlockDAG) chan<- wire.Message {
+func startDummy(netAdapter *netadapter.NetAdapter, peer *netadapter.Connection, dag *blockdag.BlockDAG) chan<- wire.Message {
 	ch := make(chan wire.Message)
 	spawn(func() {
 		for range ch {

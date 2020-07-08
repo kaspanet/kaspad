@@ -7,7 +7,7 @@ import (
 
 // RouterInitializer is a function that initializes a new
 // router to be used with a newly connected peer
-type RouterInitializer func(peer *Peer) (*Router, error)
+type RouterInitializer func(peer *Connection) (*Router, error)
 
 // NetAdapter is an abstraction layer over networking.
 // This type expects a RouteInitializer function. This
@@ -48,7 +48,7 @@ func (na *NetAdapter) Stop() error {
 
 func (na *NetAdapter) newPeerConnectedHandler() server.PeerConnectedHandler {
 	return func(connection server.Connection) {
-		peer := NewPeer(connection)
+		peer := NewConnection(connection)
 		router, err := na.routerInitializer(peer)
 		if err != nil {
 			// TODO(libp2p): properly handle error
