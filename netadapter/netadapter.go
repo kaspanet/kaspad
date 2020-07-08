@@ -3,6 +3,8 @@ package netadapter
 import (
 	"github.com/kaspanet/kaspad/netadapter/server"
 	"github.com/kaspanet/kaspad/netadapter/server/grpcserver"
+	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
 	"sync/atomic"
 )
 
@@ -160,4 +162,17 @@ func (na *NetAdapter) SetRouterInitializer(routerInitializer RouterInitializer) 
 // ID returns this netAdapter's ID in the network
 func (na *NetAdapter) ID() *ID {
 	return na.id
+}
+
+// Broadcast sends the given `message` to every peer corresponding
+// to each ID in `ids`
+func (na *NetAdapter) Broadcast(ids []*ID, message wire.Message) error {
+	for _, id := range ids {
+		router, ok := na.idsToRouters[id]
+		if !ok {
+			return errors.Errorf("id %s is not registered", id)
+		}
+		router.RouteInputMessage(message)
+	}
+	return nil
 }
