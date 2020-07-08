@@ -7,30 +7,30 @@ import (
 )
 
 func (x *KaspadMessage) ToWireMessage() (wire.Message, error) {
-	msg, err := wire.MakeEmptyMessage(x.Command)
+	message, err := wire.MakeEmptyMessage(x.Command)
 	if err != nil {
 		return nil, err
 	}
 
 	payloadReader := bytes.NewReader(x.Payload)
-	err = msg.KaspaDecode(payloadReader, wire.ProtocolVersion)
+	err = message.KaspaDecode(payloadReader, wire.ProtocolVersion)
 	if err != nil {
 		return nil, err
 	}
 
-	return msg, nil
+	return message, nil
 }
 
-func FromWireMessage(msg wire.Message) (*KaspadMessage, error) {
+func FromWireMessage(message wire.Message) (*KaspadMessage, error) {
 	payloadWriter := &bytes.Buffer{}
 
-	err := msg.KaspaEncode(payloadWriter, wire.ProtocolVersion)
+	err := message.KaspaEncode(payloadWriter, wire.ProtocolVersion)
 	if err != nil {
 		return nil, err
 	}
 
 	return &KaspadMessage{
-		Command: msg.Command(),
+		Command: message.Command(),
 		Payload: payloadWriter.Bytes(),
 	}, nil
 }
