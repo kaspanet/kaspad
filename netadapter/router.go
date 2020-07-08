@@ -8,13 +8,13 @@ import (
 // Router routes messages by type to their respective
 // input channels
 type Router struct {
-	inputRoutes map[string]chan<- wire.Message
-	outputRoute chan<- wire.Message
+	inputRoutes map[string]chan wire.Message
+	outputRoute chan wire.Message
 }
 
 // AddRoute registers the messages of types `messageTypes` to
 // be routed to the given `inputChannel`
-func (r *Router) AddRoute(messageTypes []string, inputChannel chan<- wire.Message) error {
+func (r *Router) AddRoute(messageTypes []string, inputChannel chan wire.Message) error {
 	for _, messageType := range messageTypes {
 		if _, ok := r.inputRoutes[messageType]; ok {
 			return errors.Errorf("a route for '%s' already exists", messageType)
@@ -36,11 +36,17 @@ func (r *Router) RemoveRoute(messageTypes []string) error {
 	return nil
 }
 
-// RouteMessage sends the given message to the correct input
+// RouteInputMessage sends the given message to the correct input
 // channel as registered with AddRoute
-func (r *Router) RouteMessage(message wire.Message) {
+func (r *Router) RouteInputMessage(message wire.Message) {
 	routeInChannel := r.inputRoutes[message.Command()]
 	routeInChannel <- message
+}
+
+// TakeOutputMessage takes the next output message from
+// the output channel
+func (r *Router) TakeOutputMessage() wire.Message {
+	return <-r.outputRoute
 }
 
 // Close shuts down the router by closing all registered
