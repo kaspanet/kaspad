@@ -62,8 +62,7 @@ func (na *NetAdapter) Start() error {
 // Stop safely closes the NetAdapter
 func (na *NetAdapter) Stop() error {
 	if atomic.AddUint32(&na.stop, 1) != 1 {
-		log.Warnf("Net adapter stopped more than once")
-		return nil
+		return errors.New("net adapter stopped more than once")
 	}
 	return na.server.Stop()
 }
