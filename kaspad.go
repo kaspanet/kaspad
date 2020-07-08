@@ -34,6 +34,11 @@ func (s *kaspad) start() {
 
 	cfg := config.ActiveConfig()
 
+	err := s.protocolManager.Start()
+	if err != nil {
+		log.Errorf("Error stopping the p2p protocol: %+v", err)
+	}
+
 	if !cfg.DisableRPC {
 		s.rpcServer.Start()
 	}

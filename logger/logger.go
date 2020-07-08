@@ -48,6 +48,7 @@ var (
 	profLog = BackendLog.Logger("PROF")
 	protLog = BackendLog.Logger("PROT")
 	muxxLog = BackendLog.Logger("MUXX")
+	grpcLog = BackendLog.Logger("GRPC")
 	p2psLog = BackendLog.Logger("P2PS")
 )
 
@@ -73,6 +74,7 @@ var SubsystemTags = struct {
 	PROF,
 	PROT,
 	MUXX,
+	GRPC,
 	P2PS string
 }{
 	ADXR: "ADXR",
@@ -95,6 +97,7 @@ var SubsystemTags = struct {
 	PROF: "PROF",
 	PROT: "PROT",
 	MUXX: "MUXX",
+	GRPC: "GRPC",
 	P2PS: "P2PS",
 }
 
@@ -120,6 +123,7 @@ var subsystemLoggers = map[string]*logs.Logger{
 	SubsystemTags.PROF: profLog,
 	SubsystemTags.PROT: protLog,
 	SubsystemTags.MUXX: muxxLog,
+	SubsystemTags.GRPC: grpcLog,
 	SubsystemTags.P2PS: p2psLog,
 }
 

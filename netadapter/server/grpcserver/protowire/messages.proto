@@ -4,8 +4,8 @@ package protowire;
 option go_package = "github.com/kaspanet/kaspad/protowire";
 
 message KaspadMessage{
-    string messageType = 1;
-    bytes messagePayload = 2;
+    string command = 1;
+    bytes payload = 2;
 }
 
 service P2P {
