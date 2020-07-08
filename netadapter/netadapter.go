@@ -108,22 +108,24 @@ func (na *NetAdapter) startReceiveLoop(connection server.Connection, router *Rou
 	spawn(func() {
 		for {
 			if atomic.LoadUint32(&na.stop) != 0 {
-				err := connection.Disconnect()
-				if err != nil {
-					log.Warnf("Failed to disconnect from %s: %s", connection, err)
-				}
-				return
+				break
 			}
 
 			message, err := connection.Receive()
 			if err != nil {
 				log.Warnf("Failed to receive from %s: %s", connection, err)
-				err := connection.Disconnect()
-				if err != nil {
-					log.Warnf("Failed to disconnect from %s: %s", connection, err)
-				}
+				break
 			}
-			router.RouteInputMessage(message)
+			err = router.RouteInputMessage(message)
+			if err != nil {
+				log.Warnf("Failed to receive from %s: %s", connection, err)
+				break
+			}
+		}
+
+		err := connection.Disconnect()
+		if err != nil {
+			log.Warnf("Failed to disconnect from %s: %s", connection, err)
 		}
 	})
 }
@@ -132,22 +134,20 @@ func (na *NetAdapter) startSendLoop(connection server.Connection, router *Router
 	spawn(func() {
 		for {
 			if atomic.LoadUint32(&na.stop) != 0 {
-				err := connection.Disconnect()
-				if err != nil {
-					log.Warnf("Failed to disconnect from %s: %s", connection, err)
-				}
-				return
+				break
 			}
 
 			message := router.TakeOutputMessage()
 			err := connection.Send(message)
 			if err != nil {
 				log.Warnf("Failed to send to %s: %s", connection, err)
-				err := connection.Disconnect()
-				if err != nil {
-					log.Warnf("Failed to disconnect from %s: %s", connection, err)
-				}
+				break
 			}
+		}
+
+		err := connection.Disconnect()
+		if err != nil {
+			log.Warnf("Failed to disconnect from %s: %s", connection, err)
 		}
 	})
 }

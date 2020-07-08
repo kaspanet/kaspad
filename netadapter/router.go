@@ -57,9 +57,13 @@ func (r *Router) RemoveRoute(messageTypes []string) error {
 
 // RouteInputMessage sends the given message to the correct input
 // channel as registered with AddRoute
-func (r *Router) RouteInputMessage(message wire.Message) {
-	routeInChannel := r.inputRoutes[message.Command()]
+func (r *Router) RouteInputMessage(message wire.Message) error {
+	routeInChannel, ok := r.inputRoutes[message.Command()]
+	if !ok {
+		return errors.Errorf("a route for '%s' does not exist", message.Command())
+	}
 	routeInChannel <- message
+	return nil
 }
 
 // TakeOutputMessage takes the next output message from
