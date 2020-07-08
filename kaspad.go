@@ -51,7 +51,7 @@ func (s *kaspad) stop() error {
 
 	err := s.protocolManager.Stop()
 	if err != nil {
-		log.Errorf("Error stopping netAdapter: %+v", err)
+		log.Errorf("Error stopping the p2p protocol: %+v", err)
 	}
 
 	// Shutdown the RPC server if it's not disabled.
