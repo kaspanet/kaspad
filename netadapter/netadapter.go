@@ -3,6 +3,7 @@ package netadapter
 import (
 	"github.com/kaspanet/kaspad/netadapter/server"
 	"github.com/kaspanet/kaspad/netadapter/server/grpcserver"
+	"sync/atomic"
 )
 
 // RouterInitializer is a function that initializes a new
@@ -17,6 +18,7 @@ type RouterInitializer func(connection *Connection) (*Router, error)
 type NetAdapter struct {
 	server            server.Server
 	routerInitializer RouterInitializer
+	stop              int32
 }
 
 // NewNetAdapter creates and starts a new NetAdapter on the
@@ -43,34 +45,51 @@ func (na *NetAdapter) Start() error {
 
 // Stop safely closes the NetAdapter
 func (na *NetAdapter) Stop() error {
+	if atomic.AddInt32(&na.stop, 1) != 1 {
+		log.Warnf("Net adapter stopped more than once")
+		return nil
+	}
 	return na.server.Stop()
 }
 
 func (na *NetAdapter) newOnConnectedHandler() server.OnConnectedHandler {
-	return func(serverConnection server.Connection) {
+	return func(serverConnection server.Connection) error {
 		connection := NewConnection(serverConnection)
 		router, err := na.routerInitializer(connection)
 		if err != nil {
-			// TODO(libp2p): properly handle error
-			panic(err)
+			return err
 		}
-		serverConnection.SetOnDisconnectedHandler(func() {
-			err := router.Close()
-			if err != nil {
-				// TODO(libp2p): properly handle error
-				panic(err)
-			}
+		serverConnection.SetOnDisconnectedHandler(func() error {
+			return router.Close()
 		})
 
+		na.startReceiveLoop(serverConnection, router)
+		return nil
+	}
+}
+
+func (na *NetAdapter) startReceiveLoop(serverConnection server.Connection, router *Router) {
+	spawn(func() {
 		for {
-			message, err := connection.connection.Receive()
+			if atomic.LoadInt32(&na.stop) != 0 {
+				err := serverConnection.Disconnect()
+				if err != nil {
+					log.Warnf("Failed to disconnect from %s: %s", serverConnection, err)
+				}
+				return
+			}
+
+			message, err := serverConnection.Receive()
 			if err != nil {
-				// TODO(libp2p): properly handle error
-				panic(err)
+				log.Warnf("Received error from %s: %s", serverConnection, err)
+				err := serverConnection.Disconnect()
+				if err != nil {
+					log.Warnf("Failed to disconnect from %s: %s", serverConnection, err)
+				}
 			}
 			router.RouteMessage(message)
 		}
-	}
+	})
 }
 
 // SetRouterInitializer sets the routerInitializer function

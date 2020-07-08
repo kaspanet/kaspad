@@ -6,11 +6,11 @@ import (
 
 // OnConnectedHandler is a function that is to be called
 // once a new Connection is successfully established.
-type OnConnectedHandler func(connection Connection)
+type OnConnectedHandler func(connection Connection) error
 
 // OnDisconnectedHandler is a function that is to be
 // called once a Connection has been disconnected.
-type OnDisconnectedHandler func()
+type OnDisconnectedHandler func() error
 
 // Server represents a p2p server.
 type Server interface {
