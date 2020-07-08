@@ -29,3 +29,16 @@ func (r *Router) RouteMessage(message wire.Message) {
 	routeInChannel := r.routes[message.Command()]
 	routeInChannel <- message
 }
+
+// Close shuts down the router by closing all registered
+// input channels
+func (r *Router) Close() error {
+	inChannels := make(map[chan<- wire.Message]struct{})
+	for _, inChannel := range r.routes {
+		inChannels[inChannel] = struct{}{}
+	}
+	for inChannel := range inChannels {
+		close(inChannel)
+	}
+	return nil
+}
