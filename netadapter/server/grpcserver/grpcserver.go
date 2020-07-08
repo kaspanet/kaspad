@@ -15,7 +15,6 @@ type gRPCServer struct {
 func NewGRPCServer(listeningPort string) (server.Server, error) {
 	// TODO(libp2p): unimplemented
 	panic("unimplemented")
-	return nil, nil
 }
 
 // SetPeerConnectedHandler sets the peer connected handler
@@ -29,7 +28,6 @@ func (s *gRPCServer) SetPeerConnectedHandler(peerConnectedHandler server.PeerCon
 func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 	// TODO(libp2p): unimplemented
 	panic("unimplemented")
-	return nil, nil
 }
 
 // Connections returns a slice of connections the server
@@ -38,13 +36,11 @@ func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 func (s *gRPCServer) Connections() []server.Connection {
 	// TODO(libp2p): unimplemented
 	panic("unimplemented")
-	return nil
 }
 
 func (s *gRPCServer) Close() error {
 	// TODO(libp2p): unimplemented
 	panic("unimplemented")
-	return nil
 }
 
 type gRPCConnection struct{}
@@ -54,7 +50,6 @@ type gRPCConnection struct{}
 func (c *gRPCConnection) Send(message wire.Message) error {
 	// TODO(libp2p): unimplemented
 	panic("unimplemented")
-	return nil
 }
 
 // Receive receives the next message from the connection
@@ -62,7 +57,6 @@ func (c *gRPCConnection) Send(message wire.Message) error {
 func (c *gRPCConnection) Receive() (wire.Message, error) {
 	// TODO(libp2p): unimplemented
 	panic("unimplemented")
-	return nil, nil
 }
 
 // Disconnect disconnects the connection
@@ -70,5 +64,4 @@ func (c *gRPCConnection) Receive() (wire.Message, error) {
 func (c *gRPCConnection) Disconnect() error {
 	// TODO(libp2p): unimplemented
 	panic("unimplemented")
-	return nil
 }

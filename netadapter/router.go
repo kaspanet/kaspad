@@ -5,6 +5,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Router routes messages by type to their respective
+// input channels
 type Router struct {
 	routes map[string]chan<- wire.Message
 }
@@ -21,6 +23,8 @@ func (r *Router) AddRoute(messageTypes []string, inChannel chan<- wire.Message) 
 	return nil
 }
 
+// RouteMessage sends the given message to the correct input
+// channel as registered with AddRoute
 func (r *Router) RouteMessage(message wire.Message) {
 	routeInChannel := r.routes[message.Command()]
 	routeInChannel <- message

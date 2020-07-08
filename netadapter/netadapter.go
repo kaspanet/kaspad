@@ -62,6 +62,7 @@ func (na *NetAdapter) SetRouterInitializer(routerInitializer RouterInitializer) 
 	na.routerInitializer = routerInitializer
 }
 
+// Close safely closes the netAdapter
 func (na *NetAdapter) Close() error {
 	return na.server.Close()
 }
