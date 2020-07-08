@@ -15,5 +15,6 @@ type Connection interface {
 	Receive() (wire.Message, error)
 	Disconnect() error
 	AddBanScore(persistent, transient uint32, reason string) (banned bool)
+	IsInbound() bool
 	String() string
 }

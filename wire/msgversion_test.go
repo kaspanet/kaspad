@@ -39,9 +39,9 @@ func TestVersion(t *testing.T) {
 		t.Errorf("NewMsgVersion: wrong protocol version - got %v, want %v",
 			msg.ProtocolVersion, pver)
 	}
-	if !reflect.DeepEqual(&msg.AddrMe, me) {
+	if !reflect.DeepEqual(&msg.Address, me) {
 		t.Errorf("NewMsgVersion: wrong me address - got %v, want %v",
-			spew.Sdump(&msg.AddrMe), spew.Sdump(me))
+			spew.Sdump(&msg.Address), spew.Sdump(me))
 	}
 	if !reflect.DeepEqual(&msg.AddrYou, you) {
 		t.Errorf("NewMsgVersion: wrong you address - got %v, want %v",
@@ -315,7 +315,7 @@ var baseVersion = &MsgVersion{
 		IP:        net.ParseIP("192.168.0.1"),
 		Port:      16111,
 	},
-	AddrMe: NetAddress{
+	Address: NetAddress{
 		Timestamp: mstime.Time{}, // Zero value -- no timestamp in version
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("127.0.0.1"),
@@ -338,7 +338,7 @@ var baseVersionEncoded = []byte{
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0xff, 0xff, 0xc0, 0xa8, 0x00, 0x01, // IP 192.168.0.1
 	0x3e, 0xef, // Port 16111 in big-endian
-	// AddrMe -- No timestamp for NetAddress in version message
+	// Address -- No timestamp for NetAddress in version message
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x01, // IP 127.0.0.1
@@ -365,7 +365,7 @@ var baseVersionWithRelayTx = &MsgVersion{
 		IP:        net.ParseIP("192.168.0.1"),
 		Port:      16111,
 	},
-	AddrMe: NetAddress{
+	Address: NetAddress{
 		Timestamp: mstime.Time{}, // Zero value -- no timestamp in version
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("127.0.0.1"),
@@ -388,7 +388,7 @@ var baseVersionWithRelayTxEncoded = []byte{
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0xff, 0xff, 0xc0, 0xa8, 0x00, 0x01, // IP 192.168.0.1
 	0x3e, 0xef, // Port 16111 in big-endian
-	// AddrMe -- No timestamp for NetAddress in version message
+	// Address -- No timestamp for NetAddress in version message
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x01, // IP 127.0.0.1

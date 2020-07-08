@@ -33,7 +33,7 @@ var DefaultUserAgent = fmt.Sprintf("/kaspad:%s/", version.Version())
 // communication is allowed to proceed.
 type MsgVersion struct {
 	// Version of the protocol the node is using.
-	ProtocolVersion int32
+	ProtocolVersion uint32
 
 	// Bitfield which identifies the enabled services.
 	Services ServiceFlag
@@ -41,11 +41,8 @@ type MsgVersion struct {
 	// Time the message was generated. This is encoded as an int64 on the wire.
 	Timestamp mstime.Time
 
-	// Address of the remote peer.
-	AddrYou NetAddress
-
 	// Address of the local peer.
-	AddrMe NetAddress
+	Address *NetAddress
 
 	// Unique value associated with message that is used to detect self
 	// connections.
@@ -114,15 +111,19 @@ func (msg *MsgVersion) KaspaDecode(r io.Reader, pver uint32) error {
 		msg.SubnetworkID = &subnetworkID
 	}
 
-	err = readNetAddress(buf, pver, &msg.AddrYou, false)
+	var hasAddress bool
+	err = ReadElement(r, &hasAddress)
 	if err != nil {
 		return err
 	}
 
-	err = readNetAddress(buf, pver, &msg.AddrMe, false)
-	if err != nil {
-		return err
+	if hasAddress {
+		err = readNetAddress(buf, pver, msg.Address, false)
+		if err != nil {
+			return err
+		}
 	}
+
 	err = ReadElement(buf, &msg.Nonce)
 	if err != nil {
 		return err
@@ -180,14 +181,16 @@ func (msg *MsgVersion) KaspaEncode(w io.Writer, pver uint32) error {
 		}
 	}
 
-	err = writeNetAddress(w, pver, &msg.AddrYou, false)
-	if err != nil {
-		return err
-	}
+	if msg.Address != nil {
+		err = WriteElement(w, true)
+		if err != nil {
+			return err
+		}
 
-	err = writeNetAddress(w, pver, &msg.AddrMe, false)
-	if err != nil {
-		return err
+		err = writeNetAddress(w, pver, msg.Address, false)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = WriteElement(w, msg.Nonce)
@@ -234,17 +237,16 @@ func (msg *MsgVersion) MaxPayloadLength(pver uint32) uint32 {
 // NewMsgVersion returns a new kaspa version message that conforms to the
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
-func NewMsgVersion(me *NetAddress, you *NetAddress, nonce uint64,
+func NewMsgVersion(addr *NetAddress, nonce uint64,
 	selectedTipHash *daghash.Hash, subnetworkID *subnetworkid.SubnetworkID) *MsgVersion {
 
 	// Limit the timestamp to one millisecond precision since the protocol
 	// doesn't support better.
 	return &MsgVersion{
-		ProtocolVersion: int32(ProtocolVersion),
+		ProtocolVersion: ProtocolVersion,
 		Services:        0,
 		Timestamp:       mstime.Now(),
-		AddrYou:         *you,
-		AddrMe:          *me,
+		Address:         addr,
 		Nonce:           nonce,
 		UserAgent:       DefaultUserAgent,
 		SelectedTipHash: selectedTipHash,

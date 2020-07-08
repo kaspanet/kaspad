@@ -722,31 +722,6 @@ func (p *Peer) TimeOffset() int64 {
 // remote peer.
 func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
 	selectedTipHash := p.cfg.SelectedTipHash()
-	theirNA := p.na
-
-	// If we are behind a proxy and the connection comes from the proxy then
-	// we return an unroutable address as their address. This is to prevent
-	// leaking the tor proxy address.
-	if p.cfg.Proxy != "" {
-		proxyaddress, _, err := net.SplitHostPort(p.cfg.Proxy)
-		// invalid proxy means poorly configured, be on the safe side.
-		if err != nil || p.na.IP.String() == proxyaddress {
-			theirNA = wire.NewNetAddressIPPort(net.IP([]byte{0, 0, 0, 0}), 0, 0)
-		}
-	}
-
-	// Create a wire.NetAddress with only the services set to use as the
-	// "addrme" in the version message.
-	//
-	// Older nodes previously added the IP and port information to the
-	// address manager which proved to be unreliable as an inbound
-	// connection from a peer didn't necessarily mean the peer itself
-	// accepted inbound connections.
-	//
-	// Also, the timestamp is unused in the version message.
-	ourNA := &wire.NetAddress{
-		Services: p.cfg.Services,
-	}
 
 	// Generate a unique nonce for this peer so self connections can be
 	// detected. This is accomplished by adding it to a size-limited map of
@@ -757,17 +732,15 @@ func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
 	subnetworkID := p.cfg.SubnetworkID
 
 	// Version message.
-	msg := wire.NewMsgVersion(ourNA, theirNA, nonce, selectedTipHash, subnetworkID)
+	msg := wire.NewMsgVersion(nonce, selectedTipHash, subnetworkID)
 	msg.AddUserAgent(p.cfg.UserAgentName, p.cfg.UserAgentVersion,
 		p.cfg.UserAgentComments...)
-
-	msg.AddrYou.Services = wire.SFNodeNetwork
 
 	// Advertise the services flag
 	msg.Services = p.cfg.Services
 
 	// Advertise our max supported protocol version.
-	msg.ProtocolVersion = int32(p.cfg.ProtocolVersion)
+	msg.ProtocolVersion = p.cfg.ProtocolVersion
 
 	// Advertise if inv messages for transactions are desired.
 	msg.DisableRelayTx = p.cfg.DisableRelayTx
@@ -909,7 +882,7 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 	// NOTE: If minAcceptableProtocolVersion is raised to be higher than
 	// wire.RejectVersion, this should send a reject packet before
 	// disconnecting.
-	if uint32(msg.ProtocolVersion) < minAcceptableProtocolVersion {
+	if msg.ProtocolVersion < minAcceptableProtocolVersion {
 		reason := fmt.Sprintf("protocol version must be %d or greater",
 			minAcceptableProtocolVersion)
 		return errors.New(reason)
@@ -951,7 +924,7 @@ func (p *Peer) updateFlagsFromVersionMsg(msg *wire.MsgVersion) {
 	p.flagsMtx.Lock()
 	defer p.flagsMtx.Unlock()
 
-	p.advertisedProtoVer = uint32(msg.ProtocolVersion)
+	p.advertisedProtoVer = msg.ProtocolVersion
 	p.protocolVersion = minUint32(p.protocolVersion, p.advertisedProtoVer)
 	p.versionKnown = true
 	log.Debugf("Negotiated protocol version %d for peer %s",
