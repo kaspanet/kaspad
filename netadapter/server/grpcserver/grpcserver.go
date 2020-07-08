@@ -6,8 +6,8 @@ import (
 )
 
 type gRPCServer struct {
-	peerConnectedHandler server.PeerConnectedHandler
-	connections          []server.Connection
+	onConnectedHandler server.OnConnectedHandler
+	connections        []server.Connection
 }
 
 // NewGRPCServer creates and starts a gRPC server with the given
@@ -27,10 +27,10 @@ func (s *gRPCServer) Stop() error {
 	panic("unimplemented")
 }
 
-// SetPeerConnectedHandler sets the peer connected handler
+// SetOnConnectedHandler sets the on-connected handler
 // function for the server
-func (s *gRPCServer) SetPeerConnectedHandler(peerConnectedHandler server.PeerConnectedHandler) {
-	s.peerConnectedHandler = peerConnectedHandler
+func (s *gRPCServer) SetOnConnectedHandler(onConnectedHandler server.OnConnectedHandler) {
+	s.onConnectedHandler = onConnectedHandler
 }
 
 // Connect connects to the given address
@@ -49,7 +49,7 @@ func (s *gRPCServer) Connections() []server.Connection {
 }
 
 type gRPCConnection struct {
-	peerDisconnectedHandler server.PeerDisconnectedHandler
+	onDisconnectedHandler server.OnDisconnectedHandler
 }
 
 // Send sends the given message through the connection
@@ -73,8 +73,8 @@ func (c *gRPCConnection) Disconnect() error {
 	panic("unimplemented")
 }
 
-// SetPeerDisconnectedHandler sets the peer disconnected handler
+// SetOnDisconnectedHandler sets the on-disconnected handler
 // function for this connection
-func (c *gRPCConnection) SetPeerDisconnectedHandler(peerDisconnectedHandler server.PeerDisconnectedHandler) {
-	c.peerDisconnectedHandler = peerDisconnectedHandler
+func (c *gRPCConnection) SetOnDisconnectedHandler(onDisconnectedHandler server.OnDisconnectedHandler) {
+	c.onDisconnectedHandler = onDisconnectedHandler
 }

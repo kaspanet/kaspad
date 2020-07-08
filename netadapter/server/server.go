@@ -4,13 +4,13 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// PeerConnectedHandler is a function that is to be called
+// OnConnectedHandler is a function that is to be called
 // once a new Connection is successfully established.
-type PeerConnectedHandler func(connection Connection)
+type OnConnectedHandler func(connection Connection)
 
-// PeerDisconnectedHandler is a function that is to be
+// OnDisconnectedHandler is a function that is to be
 // called once a Connection has been disconnected.
-type PeerDisconnectedHandler func()
+type OnDisconnectedHandler func()
 
 // Server represents a p2p server.
 type Server interface {
@@ -18,7 +18,7 @@ type Server interface {
 	Connections() []Connection
 	Start() error
 	Stop() error
-	SetPeerConnectedHandler(peerConnectedHandler PeerConnectedHandler)
+	SetOnConnectedHandler(onConnectedHandler OnConnectedHandler)
 }
 
 // Connection represents a p2p server connection.
@@ -26,5 +26,5 @@ type Connection interface {
 	Send(message wire.Message) error
 	Receive() (wire.Message, error)
 	Disconnect() error
-	SetPeerDisconnectedHandler(peerDisconnectedHandler PeerDisconnectedHandler)
+	SetOnDisconnectedHandler(onDisconnectedHandler OnDisconnectedHandler)
 }
