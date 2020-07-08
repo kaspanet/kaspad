@@ -18,7 +18,7 @@ import (
 // kaspad is a wrapper for all the kaspad services
 type kaspad struct {
 	rpcServer       *rpc.Server
-	protocolManager *protocol.ProtocolManager
+	protocolManager *protocol.Manager
 
 	started, shutdown int32
 }
