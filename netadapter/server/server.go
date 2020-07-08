@@ -13,7 +13,8 @@ type Server interface {
 	SetPeerConnectedHandler(peerConnectedHandler PeerConnectedHandler)
 	Connect(address string) (Connection, error)
 	Connections() []Connection
-	Close() error
+	Start() error
+	Stop() error
 }
 
 // Connection represents a p2p server connection.

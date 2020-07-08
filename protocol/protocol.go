@@ -6,14 +6,14 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// Protocol manages the p2p protocol
-type Protocol struct {
+// Manager manages the p2p protocol
+type Manager struct {
 	netAdapter *netadapter.NetAdapter
 }
 
-// Start starts the p2p protocol
-func Start(listeningPort string, dag *blockdag.BlockDAG) (*Protocol, error) {
-	netAdapter, err := netadapter.NewNetAdapter(listeningPort)
+// NewManager creates a new instance of the p2p protocol manager
+func NewManager(listeningAddrs []string, dag *blockdag.BlockDAG) (*Manager, error) {
+	netAdapter, err := netadapter.NewNetAdapter(listeningAddrs)
 	if err != nil {
 		return nil, err
 	}
@@ -21,10 +21,20 @@ func Start(listeningPort string, dag *blockdag.BlockDAG) (*Protocol, error) {
 	routerInitializer := newRouterInitializer(netAdapter, dag)
 	netAdapter.SetRouterInitializer(routerInitializer)
 
-	protocol := Protocol{
+	manager := Manager{
 		netAdapter: netAdapter,
 	}
-	return &protocol, nil
+	return &manager, nil
+}
+
+// Start starts the p2p protocol
+func (p *Manager) Start() error {
+	return p.netAdapter.Start()
+}
+
+// Stop stops the p2p protocol
+func (p *Manager) Stop() error {
+	return p.netAdapter.Stop()
 }
 
 func newRouterInitializer(netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG) netadapter.RouterInitializer {
