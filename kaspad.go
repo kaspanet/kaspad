@@ -17,8 +17,8 @@ import (
 
 // kaspad is a wrapper for all the kaspad services
 type kaspad struct {
-	rpcServer *rpc.Server
-	protocol  *protocol.Protocol
+	rpcServer       *rpc.Server
+	protocolManager *protocol.ProtocolManager
 
 	started, shutdown int32
 }
@@ -49,7 +49,7 @@ func (s *kaspad) stop() error {
 
 	log.Warnf("Kaspad shutting down")
 
-	err := s.protocol.Stop()
+	err := s.protocolManager.Stop()
 	if err != nil {
 		log.Errorf("Error stopping netAdapter: %+v", err)
 	}
@@ -81,7 +81,7 @@ func newKaspad(listenAddrs []string, interrupt <-chan struct{}) (*kaspad, error)
 
 	txMempool := setupMempool(dag, sigCache)
 
-	protocolManager, err := protocol.NewProtocol(listenAddrs, dag)
+	protocolManager, err := protocol.New(listenAddrs, dag)
 	if err != nil {
 		return nil, err
 	}
@@ -92,8 +92,8 @@ func newKaspad(listenAddrs []string, interrupt <-chan struct{}) (*kaspad, error)
 	}
 
 	return &kaspad{
-		rpcServer: rpcServer,
-		protocol:  protocolManager,
+		rpcServer:       rpcServer,
+		protocolManager: protocolManager,
 	}, nil
 }
 

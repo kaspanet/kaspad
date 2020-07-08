@@ -41,7 +41,7 @@ func (na *NetAdapter) Start() error {
 	return na.server.Start()
 }
 
-// Stop safely closes the netAdapter
+// Stop safely closes the NetAdapter
 func (na *NetAdapter) Stop() error {
 	return na.server.Stop()
 }
