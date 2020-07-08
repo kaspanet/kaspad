@@ -16,6 +16,7 @@ type RouterInitializer func() (*Router, error)
 // and message handlers) without exposing anything related
 // to networking internals.
 type NetAdapter struct {
+	id                *ID
 	server            server.Server
 	routerInitializer RouterInitializer
 	stop              int32
@@ -24,11 +25,16 @@ type NetAdapter struct {
 // NewNetAdapter creates and starts a new NetAdapter on the
 // given listeningPort
 func NewNetAdapter(listeningAddrs []string) (*NetAdapter, error) {
+	id, err := GenerateID()
+	if err != nil {
+		return nil, err
+	}
 	s, err := grpcserver.NewGRPCServer(listeningAddrs)
 	if err != nil {
 		return nil, err
 	}
 	adapter := NetAdapter{
+		id:     id,
 		server: s,
 	}
 
@@ -120,4 +126,9 @@ func (na *NetAdapter) startSendLoop(connection server.Connection, router *Router
 // for the net adapter
 func (na *NetAdapter) SetRouterInitializer(routerInitializer RouterInitializer) {
 	na.routerInitializer = routerInitializer
+}
+
+// ID returns this netAdapter's ID in the network
+func (na *NetAdapter) ID() *ID {
+	return na.id
 }
