@@ -8,11 +8,11 @@ import (
 
 // RouterInitializer is a function that initializes a new
 // router to be used with a new connection
-type RouterInitializer func(connection *Connection) (*Router, error)
+type RouterInitializer func() (*Router, error)
 
 // NetAdapter is an abstraction layer over networking.
 // This type expects a RouteInitializer function. This
-// function weaves together the various "routes" (messages
+// function weaves together the various "inputRoutes" (messages
 // and message handlers) without exposing anything related
 // to networking internals.
 type NetAdapter struct {
@@ -54,8 +54,7 @@ func (na *NetAdapter) Stop() error {
 
 func (na *NetAdapter) newOnConnectedHandler() server.OnConnectedHandler {
 	return func(serverConnection server.Connection) error {
-		connection := NewConnection(serverConnection)
-		router, err := na.routerInitializer(connection)
+		router, err := na.routerInitializer()
 		if err != nil {
 			return err
 		}
