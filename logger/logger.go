@@ -49,6 +49,7 @@ var (
 	protLog = BackendLog.Logger("PROT")
 	muxxLog = BackendLog.Logger("MUXX")
 	p2psLog = BackendLog.Logger("P2PS")
+	ntarLog = BackendLog.Logger("NTAR")
 	blkrLog = BackendLog.Logger("BLKR")
 	gbrlLog = BackendLog.Logger("GBRL")
 )
@@ -77,6 +78,7 @@ var SubsystemTags = struct {
 	MUXX,
 	P2PS,
 	BLKR,
+	NTAR,
 	GBRL string
 }{
 	ADXR: "ADXR",
@@ -102,6 +104,7 @@ var SubsystemTags = struct {
 	P2PS: "P2PS",
 	BLKR: "BLKR",
 	GBRL: "GBRL",
+	NTAR: "NTAR",
 }
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
@@ -129,6 +132,7 @@ var subsystemLoggers = map[string]*logs.Logger{
 	SubsystemTags.P2PS: p2psLog,
 	SubsystemTags.BLKR: blkrLog,
 	SubsystemTags.GBRL: gbrlLog,
+	SubsystemTags.NTAR: ntarLog,
 }
 
 // InitLog attaches log file and error log file to the backend log.
