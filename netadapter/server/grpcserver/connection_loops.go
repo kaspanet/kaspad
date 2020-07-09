@@ -34,8 +34,8 @@ func (c *gRPCConnection) sendLoop(stream grpcStream, errChan chan error) {
 			return
 		}
 		err := stream.Send(message)
+		c.errChan <- err
 		if err != nil {
-			c.errChan <- err
 			errChan <- err
 			return
 		}
