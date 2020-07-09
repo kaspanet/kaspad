@@ -55,6 +55,12 @@ func (s *gRPCServer) Start() error {
 }
 
 func (s *gRPCServer) Stop() error {
+	for _, connection := range s.connections {
+		err := connection.Disconnect()
+		if err != nil {
+			log.Errorf("Error closing connection to %s: %+v", connection.Address(), err)
+		}
+	}
 	s.server.GracefulStop()
 	return nil
 }

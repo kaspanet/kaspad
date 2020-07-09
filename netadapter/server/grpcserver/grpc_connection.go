@@ -68,6 +68,9 @@ func (c *gRPCConnection) Receive() (wire.Message, error) {
 // Disconnect disconnects the connection
 // This is part of the Connection interface
 func (c *gRPCConnection) Disconnect() error {
+	if !c.IsConnected() {
+		return nil
+	}
 	atomic.StoreInt32(&c.isConnected, 0)
 
 	close(c.receiveChan)
@@ -75,4 +78,8 @@ func (c *gRPCConnection) Disconnect() error {
 	close(c.errChan)
 
 	return c.onDisconnectedHandler()
+}
+
+func (c *gRPCConnection) Address() net.Addr {
+	return c.address
 }

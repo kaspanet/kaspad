@@ -1,6 +1,8 @@
 package server
 
 import (
+	"net"
+
 	"github.com/kaspanet/kaspad/wire"
 )
 
@@ -28,4 +30,5 @@ type Connection interface {
 	Disconnect() error
 	IsConnected() bool
 	SetOnDisconnectedHandler(onDisconnectedHandler OnDisconnectedHandler)
+	Address() net.Addr
 }
