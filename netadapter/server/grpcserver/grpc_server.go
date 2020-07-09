@@ -27,6 +27,7 @@ func NewGRPCServer(listeningAddrs []string) (server.Server, error) {
 	s := &gRPCServer{
 		server:         grpc.NewServer(),
 		listeningAddrs: listeningAddrs,
+		connections:    map[string]*gRPCConnection{},
 	}
 	protowire.RegisterP2PServer(s.server, newP2PServer(s))
 
@@ -92,6 +93,8 @@ func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 	})
 
 	s.addConnection(connection)
+
+	log.Infof("Connected to %s", address)
 
 	return connection, nil
 }

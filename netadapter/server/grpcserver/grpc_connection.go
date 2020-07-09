@@ -36,6 +36,7 @@ func newConnection(address net.Addr) *gRPCConnection {
 		address:     address,
 		sendChan:    make(chan *protowire.KaspadMessage),
 		receiveChan: make(chan *protowire.KaspadMessage),
+		errChan:     make(chan error),
 		isConnected: 1,
 	}
 }
