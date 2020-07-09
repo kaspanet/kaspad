@@ -48,6 +48,7 @@ func newRouterInitializer(netAdapter *netadapter.NetAdapter, dag *blockdag.Block
 	}
 }
 
+// TODO(libp2p): Remove this and change it with a real Ping-Pong flow.
 func startPing(netAdapter *netadapter.NetAdapter, router *netadapter.Router,
 	dag *blockdag.BlockDAG) chan wire.Message {
 
