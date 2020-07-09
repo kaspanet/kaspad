@@ -25,7 +25,7 @@ func (p *p2pServer) MessageStream(stream protowire.P2P_MessageStreamServer) erro
 	if !ok {
 		return errors.Errorf("Error getting stream peer info from context")
 	}
-	connection := newConnection(peerInfo.Addr)
+	connection := newConnection(p.server, peerInfo.Addr)
 
 	err := p.server.onConnectedHandler(connection)
 	if err != nil {
@@ -33,8 +33,6 @@ func (p *p2pServer) MessageStream(stream protowire.P2P_MessageStreamServer) erro
 	}
 
 	log.Infof("Incoming connection from %s", peerInfo.Addr)
-
-	p.server.addConnection(connection)
 
 	err = connection.serverConnectionLoop(stream)
 	if err != nil {

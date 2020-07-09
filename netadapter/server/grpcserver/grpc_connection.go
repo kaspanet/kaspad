@@ -13,6 +13,7 @@ import (
 )
 
 type gRPCConnection struct {
+	server                *gRPCServer
 	address               net.Addr
 	sendChan              chan *protowire.KaspadMessage
 	receiveChan           chan *protowire.KaspadMessage
@@ -23,22 +24,27 @@ type gRPCConnection struct {
 	isConnected int32
 }
 
-func (c *gRPCConnection) IsConnected() bool {
-	return atomic.LoadInt32(&c.isConnected) == 1
-}
-
-func (c *gRPCConnection) SetOnDisconnectedHandler(onDisconnectedHandler server.OnDisconnectedHandler) {
-	c.onDisconnectedHandler = onDisconnectedHandler
-}
-
-func newConnection(address net.Addr) *gRPCConnection {
-	return &gRPCConnection{
+func newConnection(server *gRPCServer, address net.Addr) *gRPCConnection {
+	connection := &gRPCConnection{
+		server:      server,
 		address:     address,
 		sendChan:    make(chan *protowire.KaspadMessage),
 		receiveChan: make(chan *protowire.KaspadMessage),
 		errChan:     make(chan error),
 		isConnected: 1,
 	}
+
+	server.addConnection(connection)
+
+	return connection
+}
+
+func (c *gRPCConnection) IsConnected() bool {
+	return atomic.LoadInt32(&c.isConnected) == 1
+}
+
+func (c *gRPCConnection) SetOnDisconnectedHandler(onDisconnectedHandler server.OnDisconnectedHandler) {
+	c.onDisconnectedHandler = onDisconnectedHandler
 }
 
 // Send sends the given message through the connection
@@ -76,6 +82,8 @@ func (c *gRPCConnection) Disconnect() error {
 	close(c.receiveChan)
 	close(c.sendChan)
 	close(c.errChan)
+
+	c.server.removeConnection(c)
 
 	return c.onDisconnectedHandler()
 }
