@@ -3,6 +3,9 @@ package protocol
 import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter"
+	"github.com/kaspanet/kaspad/protocol/blockrelay"
+	"github.com/kaspanet/kaspad/protocol/getrelayblockslistener"
+	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/wire"
 	"sync/atomic"
 )
@@ -41,39 +44,56 @@ func (p *Manager) Stop() error {
 func newRouterInitializer(netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG) netadapter.RouterInitializer {
 	return func() (*netadapter.Router, error) {
 		router := netadapter.NewRouter()
-		stop := make(chan struct{})
-		shutdown := uint32(0)
-
-		blockRelayCh := make(chan wire.Message)
-		mux.AddFlow([]string{wire.CmdInvRelayBlock, wire.CmdBlock}, blockRelayCh)
 		spawn(func() {
-			err := blockrelay.StartBlockRelay(blockRelayCh, server, connection, dag)
-			if err == nil {
-				return
-			}
-
-			log.Errorf("error from StartBlockRelay: %s", err)
-			if atomic.LoadUint32(&shutdown) == 0 {
-				stop <- struct{}{}
+			err := startFlow(netAdapter, router, dag)
+			if err != nil {
+				// TODO(libp2p) Ban peer
 			}
 		})
-
-		getRelayBlocksListenerCh := make(chan wire.Message)
-		mux.AddFlow([]string{wire.CmdGetRelayBlocks}, getRelayBlocksListenerCh)
-		spawn(func() {
-			err := getrelayblockslistener.StartGetRelayBlocksListener(getRelayBlocksListenerCh, connection, dag)
-			if err == nil {
-				return
-			}
-
-			log.Errorf("error from StartGetRelayBlocksListener: %s", err)
-			if atomic.LoadUint32(&shutdown) == 0 {
-				stop <- struct{}{}
-			}
-		})
-
-		<-stop
-		atomic.StoreUint32(&shutdown, 1)
 		return router, nil
 	}
+}
+
+func startFlow(netAdapter *netadapter.NetAdapter, router *netadapter.Router, dag *blockdag.BlockDAG) error {
+	stop := make(chan error)
+	shutdown := uint32(0)
+
+	peer := new(peerpkg.Peer)
+
+	blockRelayCh := make(chan wire.Message)
+	err := router.AddRoute([]string{wire.CmdInvRelayBlock, wire.CmdBlock}, blockRelayCh)
+	if err != nil {
+		panic(err)
+	}
+
+	spawn(func() {
+		err := blockrelay.StartBlockRelay(blockRelayCh, peer, netAdapter, router, dag)
+		if err != nil {
+			log.Errorf("error from StartBlockRelay: %s", err)
+		}
+
+		if atomic.AddUint32(&shutdown, 1) == 1 {
+			stop <- err
+		}
+	})
+
+	getRelayBlocksListenerCh := make(chan wire.Message)
+	err = router.AddRoute([]string{wire.CmdGetRelayBlocks}, getRelayBlocksListenerCh)
+	if err != nil {
+		panic(err)
+	}
+
+	spawn(func() {
+		err := getrelayblockslistener.StartGetRelayBlocksListener(getRelayBlocksListenerCh, router, dag)
+		if err != nil {
+			log.Errorf("error from StartGetRelayBlocksListener: %s", err)
+		}
+
+		if atomic.AddUint32(&shutdown, 1) == 1 {
+			stop <- err
+		}
+	})
+
+	err = <-stop
+	return err
 }

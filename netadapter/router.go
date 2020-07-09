@@ -12,16 +12,16 @@ type OnIDReceivedHandler func(id *ID)
 // Router routes messages by type to their respective
 // input channels
 type Router struct {
-	inputRoutes         map[string]chan wire.Message
-	outputRoute         chan wire.Message
+	incomingRoutes      map[string]chan<- wire.Message
+	outgoingRoute       chan wire.Message
 	onIDReceivedHandler OnIDReceivedHandler
 }
 
 // NewRouter creates a new empty router
 func NewRouter() *Router {
 	return &Router{
-		inputRoutes: make(map[string]chan wire.Message),
-		outputRoute: make(chan wire.Message),
+		incomingRoutes: make(map[string]chan<- wire.Message),
+		outgoingRoute:  make(chan wire.Message),
 	}
 }
 
@@ -33,12 +33,12 @@ func (r *Router) SetOnIDReceivedHandler(onIDReceivedHandler OnIDReceivedHandler)
 
 // AddRoute registers the messages of types `messageTypes` to
 // be routed to the given `inputChannel`
-func (r *Router) AddRoute(messageTypes []string, inputChannel chan wire.Message) error {
+func (r *Router) AddRoute(messageTypes []string, inputChannel chan<- wire.Message) error {
 	for _, messageType := range messageTypes {
-		if _, ok := r.inputRoutes[messageType]; ok {
+		if _, ok := r.incomingRoutes[messageType]; ok {
 			return errors.Errorf("a route for '%s' already exists", messageType)
 		}
-		r.inputRoutes[messageType] = inputChannel
+		r.incomingRoutes[messageType] = inputChannel
 	}
 	return nil
 }
@@ -47,18 +47,18 @@ func (r *Router) AddRoute(messageTypes []string, inputChannel chan wire.Message)
 // the router
 func (r *Router) RemoveRoute(messageTypes []string) error {
 	for _, messageType := range messageTypes {
-		if _, ok := r.inputRoutes[messageType]; !ok {
+		if _, ok := r.incomingRoutes[messageType]; !ok {
 			return errors.Errorf("a route for '%s' does not exist", messageType)
 		}
-		delete(r.inputRoutes, messageType)
+		delete(r.incomingRoutes, messageType)
 	}
 	return nil
 }
 
-// RouteInputMessage sends the given message to the correct input
+// RouteIncomingMessage sends the given message to the correct input
 // channel as registered with AddRoute
-func (r *Router) RouteInputMessage(message wire.Message) error {
-	routeInChannel, ok := r.inputRoutes[message.Command()]
+func (r *Router) RouteIncomingMessage(message wire.Message) error {
+	routeInChannel, ok := r.incomingRoutes[message.Command()]
 	if !ok {
 		return errors.Errorf("a route for '%s' does not exist", message.Command())
 	}
@@ -66,10 +66,14 @@ func (r *Router) RouteInputMessage(message wire.Message) error {
 	return nil
 }
 
-// TakeOutputMessage takes the next output message from
+// ReadOutgoingMessage takes the next output message from
 // the output channel
-func (r *Router) TakeOutputMessage() wire.Message {
-	return <-r.outputRoute
+func (r *Router) ReadOutgoingMessage() wire.Message {
+	return <-r.outgoingRoute
+}
+
+func (r *Router) WriteOutgoingMessage(message wire.Message) {
+	r.outgoingRoute <- message
 }
 
 // RegisterID registers the remote connection's ID
@@ -81,7 +85,7 @@ func (r *Router) RegisterID(id *ID) {
 // input channels
 func (r *Router) Close() error {
 	inChannels := make(map[chan<- wire.Message]struct{})
-	for _, inChannel := range r.inputRoutes {
+	for _, inChannel := range r.incomingRoutes {
 		inChannels[inChannel] = struct{}{}
 	}
 	for inChannel := range inChannels {

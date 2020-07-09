@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/netadapter/server/grpcserver"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
+	"sync"
 	"sync/atomic"
 )
 
@@ -26,6 +27,7 @@ type NetAdapter struct {
 	connectionIDs    map[server.Connection]*ID
 	idsToConnections map[*ID]server.Connection
 	idsToRouters     map[*ID]*Router
+	sync.RWMutex
 }
 
 // NewNetAdapter creates and starts a new NetAdapter on the
@@ -88,12 +90,16 @@ func (na *NetAdapter) newOnConnectedHandler() server.OnConnectedHandler {
 }
 
 func (na *NetAdapter) registerConnection(connection server.Connection, router *Router, id *ID) {
+	na.Lock()
+	defer na.Unlock()
 	na.connectionIDs[connection] = id
 	na.idsToConnections[id] = connection
 	na.idsToRouters[id] = router
 }
 
 func (na *NetAdapter) unregisterConnection(connection server.Connection) {
+	na.Lock()
+	defer na.Unlock()
 	id, ok := na.connectionIDs[connection]
 	if !ok {
 		return
@@ -111,7 +117,7 @@ func (na *NetAdapter) startReceiveLoop(connection server.Connection, router *Rou
 			log.Warnf("Failed to receive from %s: %s", connection, err)
 			break
 		}
-		err = router.RouteInputMessage(message)
+		err = router.RouteIncomingMessage(message)
 		if err != nil {
 			log.Warnf("Failed to receive from %s: %s", connection, err)
 			break
@@ -128,7 +134,7 @@ func (na *NetAdapter) startReceiveLoop(connection server.Connection, router *Rou
 
 func (na *NetAdapter) startSendLoop(connection server.Connection, router *Router) {
 	for atomic.LoadUint32(&na.stop) == 0 {
-		message := router.TakeOutputMessage()
+		message := router.ReadOutgoingMessage()
 		err := connection.Send(message)
 		if err != nil {
 			log.Warnf("Failed to send to %s: %s", connection, err)
@@ -157,16 +163,15 @@ func (na *NetAdapter) ID() *ID {
 
 // Broadcast sends the given `message` to every peer corresponding
 // to each ID in `ids`
-func (na *NetAdapter) Broadcast(ids []*ID, message wire.Message) error {
+func (na *NetAdapter) Broadcast(ids []*ID, message wire.Message) {
+	na.RLock()
+	defer na.RUnlock()
 	for _, id := range ids {
 		router, ok := na.idsToRouters[id]
 		if !ok {
-			return errors.Errorf("id %s is not registered", id)
+			log.Warnf("id %s is not registered", id)
+			continue
 		}
-		err := router.RouteInputMessage(message)
-		if err != nil {
-			return err
-		}
+		router.WriteOutgoingMessage(message)
 	}
-	return nil
 }
