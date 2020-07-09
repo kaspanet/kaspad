@@ -11,19 +11,27 @@ import (
 
 type p2pServer struct {
 	protowire.UnimplementedP2PServer
+	server *gRPCServer
+}
+
+func newP2PServer(s *gRPCServer) *p2pServer {
+	return &p2pServer{server: s}
 }
 
 func (p *p2pServer) MessageStream(stream protowire.P2P_MessageStreamServer) error {
 	defer panics.HandlePanic(log, nil)
+
 	peerInfo, ok := peer.FromContext(stream.Context())
 	if !ok {
 		return errors.Errorf("Error getting stream peer info from context")
 	}
 	connection := newConnection(peerInfo.Addr)
+	p.server.addConnection(connection)
 	err := connection.serverConnectionLoop(stream)
 	if err != nil {
 		log.Errorf("Error in serverConnectionLoop: %+v", err)
 		return status.Error(codes.Internal, err.Error())
 	}
+
 	return nil
 }

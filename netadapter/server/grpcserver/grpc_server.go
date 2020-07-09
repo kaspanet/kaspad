@@ -16,7 +16,7 @@ import (
 
 type gRPCServer struct {
 	onConnectedHandler server.OnConnectedHandler
-	connections        []*gRPCConnection
+	connections        map[string]*gRPCConnection
 	listeningAddrs     []string
 	server             *grpc.Server
 }
@@ -28,7 +28,7 @@ func NewGRPCServer(listeningAddrs []string) (server.Server, error) {
 		server:         grpc.NewServer(),
 		listeningAddrs: listeningAddrs,
 	}
-	protowire.RegisterP2PServer(s.server, &p2pServer{})
+	protowire.RegisterP2PServer(s.server, newP2PServer(s))
 
 	return s, nil
 }
@@ -68,20 +68,31 @@ func (s *gRPCServer) SetOnConnectedHandler(onConnectedHandler server.OnConnected
 // This is part of the Server interface
 func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 	log.Infof("Dialing to %s", address)
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	gRPCConnection, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error connecting to %s", address)
 	}
-	client := protowire.NewP2PClient(conn)
+	client := protowire.NewP2PClient(gRPCConnection)
 	stream, err := client.MessageStream(context.Background())
+	if err != nil {
+		return nil, errors.Wrapf(err, "Error getting client stream for %s", address)
+	}
 
 	peerInfo, ok := peer.FromContext(stream.Context())
 	if !ok {
-		return nil, errors.Errorf("Error getting stream peer info from context")
+		return nil, errors.Errorf("Error getting stream peer info from context for %s", address)
 	}
 
 	connection := newConnection(peerInfo.Addr)
-	spawn(func() { connection.clientConnectionLoop(stream) })
+	spawn(func() {
+		err := connection.clientConnectionLoop(stream)
+		if err != nil {
+			log.Errorf("Error from clientConnectionLoop for %s: %+v", address, err)
+		}
+	})
+
+	s.addConnection(connection)
+
 	return connection, nil
 }
 
@@ -96,4 +107,12 @@ func (s *gRPCServer) Connections() []server.Connection {
 	}
 
 	return result
+}
+
+func (s *gRPCServer) addConnection(connection *gRPCConnection) {
+	s.connections[connection.address.String()] = connection
+}
+
+func (s *gRPCServer) removeConnection(connection *gRPCConnection) {
+	delete(s.connections, connection.address.String())
 }

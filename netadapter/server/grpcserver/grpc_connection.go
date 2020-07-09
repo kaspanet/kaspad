@@ -47,6 +47,7 @@ func (c *gRPCConnection) Send(message wire.Message) error {
 	}
 
 	c.sendChan <- messageProto
+
 	return <-c.errChan
 }
 
