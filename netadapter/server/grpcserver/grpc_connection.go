@@ -4,6 +4,8 @@ import (
 	"net"
 	"sync/atomic"
 
+	"github.com/pkg/errors"
+
 	"github.com/kaspanet/kaspad/netadapter/server"
 	"github.com/kaspanet/kaspad/netadapter/server/grpcserver/protowire"
 	"github.com/kaspanet/kaspad/wire"
@@ -55,6 +57,9 @@ func (c *gRPCConnection) Send(message wire.Message) error {
 // This is part of the Connection interface
 func (c *gRPCConnection) Receive() (wire.Message, error) {
 	protoMessage := <-c.receiveChan
+	if protoMessage == nil {
+		return nil, errors.New("Connection closed during receive")
+	}
 
 	return protoMessage.ToWireMessage()
 }
@@ -63,6 +68,10 @@ func (c *gRPCConnection) Receive() (wire.Message, error) {
 // This is part of the Connection interface
 func (c *gRPCConnection) Disconnect() error {
 	atomic.StoreInt32(&c.isConnected, 0)
+
+	close(c.receiveChan)
+	close(c.sendChan)
+	close(c.errChan)
 
 	return c.onDisconnectedHandler()
 }
