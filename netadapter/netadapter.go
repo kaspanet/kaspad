@@ -63,6 +63,7 @@ func (na *NetAdapter) Start() error {
 		return err
 	}
 
+	// TODO(libp2p): Replace with real connection manager
 	cfg := config.ActiveConfig()
 	for _, connectPeer := range cfg.ConnectPeers {
 		_, err := na.server.Connect(connectPeer)
