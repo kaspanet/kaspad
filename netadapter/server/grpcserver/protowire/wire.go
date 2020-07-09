@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
+// ToWireMessage converts a KaspadMessage to it's wire.Message representation
 func (x *KaspadMessage) ToWireMessage() (wire.Message, error) {
 	message, err := wire.MakeEmptyMessage(x.Command)
 	if err != nil {
@@ -21,6 +22,7 @@ func (x *KaspadMessage) ToWireMessage() (wire.Message, error) {
 	return message, nil
 }
 
+// FromWireMessage creates a KaspadMessage from a wire.Message
 func FromWireMessage(message wire.Message) (*KaspadMessage, error) {
 	payloadWriter := &bytes.Buffer{}
 

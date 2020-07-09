@@ -72,7 +72,8 @@ func (r *Router) TakeOutputMessage() wire.Message {
 	return <-r.outputRoute
 }
 
-func (r *Router) SendMessage(message wire.Message) {
+// WriteOutgoingMessage pushes the given message to the output route
+func (r *Router) WriteOutgoingMessage(message wire.Message) {
 	r.outputRoute <- message
 }
 

@@ -53,11 +53,11 @@ func startPing(netAdapter *netadapter.NetAdapter, router *netadapter.Router,
 
 	ch := make(chan wire.Message)
 	spawn(func() {
-		router.SendMessage(wire.NewMsgPing(666))
+		router.WriteOutgoingMessage(wire.NewMsgPing(666))
 		for message := range ch {
 			log.Infof("Got message: %+v", message.Command())
 			if message.Command() == "ping" {
-				router.SendMessage(wire.NewMsgPong(666))
+				router.WriteOutgoingMessage(wire.NewMsgPong(666))
 			}
 		}
 	})
