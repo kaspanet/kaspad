@@ -72,6 +72,7 @@ func (r *Router) ReadOutgoingMessage() wire.Message {
 	return <-r.outgoingRoute
 }
 
+// WriteOutgoingMessage pushes the given message to the output route
 func (r *Router) WriteOutgoingMessage(message wire.Message) {
 	r.outgoingRoute <- message
 }

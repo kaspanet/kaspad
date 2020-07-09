@@ -767,7 +767,7 @@ func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
 	msg.Services = p.cfg.Services
 
 	// Advertise our max supported protocol version.
-	msg.ProtocolVersion = int32(p.cfg.ProtocolVersion)
+	msg.ProtocolVersion = p.cfg.ProtocolVersion
 
 	// Advertise if inv messages for transactions are desired.
 	msg.DisableRelayTx = p.cfg.DisableRelayTx

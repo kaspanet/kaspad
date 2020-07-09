@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 )
 
+// Peer holds data about a peer.
 type Peer struct {
 	ready uint32
 
@@ -25,6 +26,7 @@ type Peer struct {
 	subnetworkID       *subnetworkid.SubnetworkID
 }
 
+// SelectedTipHash returns the selected tip of the peer.
 func (p *Peer) SelectedTipHash() (*daghash.Hash, error) {
 	if atomic.LoadUint32(&p.ready) == 0 {
 		return nil, errors.New("peer is not ready yet")
@@ -34,6 +36,8 @@ func (p *Peer) SelectedTipHash() (*daghash.Hash, error) {
 	return p.selectedTipHash, nil
 }
 
+// SubnetworkID returns the subnetwork the peer is associated with.
+// It is nil in full nodes.
 func (p *Peer) SubnetworkID() (*subnetworkid.SubnetworkID, error) {
 	if atomic.LoadUint32(&p.ready) == 0 {
 		return nil, errors.New("peer is not ready yet")
@@ -41,6 +45,7 @@ func (p *Peer) SubnetworkID() (*subnetworkid.SubnetworkID, error) {
 	return p.subnetworkID, nil
 }
 
+// SetSelectedTipHash sets the selected tip of the peer.
 func (p *Peer) SetSelectedTipHash(hash *daghash.Hash) error {
 	if atomic.LoadUint32(&p.ready) == 0 {
 		return errors.New("peer is not ready yet")
@@ -51,6 +56,7 @@ func (p *Peer) SetSelectedTipHash(hash *daghash.Hash) error {
 	return nil
 }
 
+// MarkAsReady marks the peer as ready.
 func (p *Peer) MarkAsReady() error {
 	if atomic.AddUint32(&p.ready, 1) != 1 {
 		return errors.New("peer is already ready")
@@ -58,7 +64,8 @@ func (p *Peer) MarkAsReady() error {
 	return nil
 }
 
-func (p *Peer) UpdateFlagsFromVersionMsg(msg *wire.MsgVersion, peerID uint32) {
+// UpdateFieldsFromMsgVersion updates the peer with the data from the version message.
+func (p *Peer) UpdateFieldsFromMsgVersion(msg *wire.MsgVersion, peerID uint32) {
 	// Negotiate the protocol version.
 	p.advertisedProtoVer = msg.ProtocolVersion
 	p.protocolVersion = minUint32(p.protocolVersion, p.advertisedProtoVer)
@@ -85,12 +92,6 @@ func (p *Peer) String() string {
 	panic("unimplemented")
 }
 
-func PushRejectMsg(router *netadapter.Router, command string, code wire.RejectCode, reason string, hash *daghash.Hash) {
-	msg := wire.NewMsgReject(command, code, reason)
-	msg.Hash = hash
-	router.WriteOutgoingMessage(msg)
-}
-
 // minUint32 is a helper function to return the minimum of two uint32s.
 // This avoids a math import and the need to cast to floats.
 func minUint32(a, b uint32) uint32 {
@@ -100,6 +101,7 @@ func minUint32(a, b uint32) uint32 {
 	return b
 }
 
+// GetReadyPeerIDs returns the peer IDs of all the ready peers.
 func GetReadyPeerIDs() []*netadapter.ID {
 	// TODO(libp2p)
 	panic("unimplemented")

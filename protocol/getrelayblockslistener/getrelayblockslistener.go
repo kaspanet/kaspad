@@ -21,7 +21,6 @@ func StartGetRelayBlocksListener(msgChan <-chan wire.Message, router *netadapter
 				return errors.Errorf("block %s not found", hash)
 			} else if err != nil {
 				panic(errors.Wrapf(err, "Unable to fetch requested block hash %s", hash))
-				return err
 			}
 			msgBlock := block.MsgBlock()
 
