@@ -1,6 +1,7 @@
 package grpcserver
 
 import (
+	"context"
 	"fmt"
 	"net"
 
@@ -64,8 +65,18 @@ func (s *gRPCServer) SetPeerConnectedHandler(peerConnectedHandler server.PeerCon
 // Connect connects to the given address
 // This is part of the Server interface
 func (s *gRPCServer) Connect(address string) (server.Connection, error) {
-	// TODO(libp2p): unimplemented
-	panic("unimplemented")
+	log.Infof("Dialing to %s", address)
+	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		return nil, errors.Wrapf(err, "Error connecting to %s", address)
+	}
+	client := protowire.NewP2PClient(conn)
+	stream, err := client.MessageStream(context.Background())
+	if err != nil {
+		return nil, errors.Wrapf(err, "Error getting message stream for %s", address)
+	}
+
+	return &gRPCConnection{conn: conn}, nil
 }
 
 // Connections returns a slice of connections the server

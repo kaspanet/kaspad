@@ -3,25 +3,25 @@ package grpcserver
 import (
 	"github.com/kaspanet/kaspad/netadapter/server/grpcserver/protowire"
 	"github.com/kaspanet/kaspad/wire"
+	"google.golang.org/grpc"
 )
 
 type gRPCConnection struct {
-	isClient     bool
-	clientStream protowire.P2P_MessageStreamClient
-	serverStream protowire.P2P_MessageStreamServer
+	address        string
+	sendChan       chan *protowire.KaspadMessage
+	receiveChan    chan *protowire.KaspadMessage
+	disconnectChan chan struct{}
+	errChan        chan error
+	clientConn     grpc.ClientConn
 }
 
-func newClientConnection(stream protowire.P2P_MessageStreamClient) *gRPCConnection {
+func newConnection(address string) *gRPCConnection {
 	return &gRPCConnection{
-		isClient:     true,
-		clientStream: stream,
-	}
-}
-
-func newServerConnection(stream protowire.P2P_MessageStreamServer) *gRPCConnection {
-	return &gRPCConnection{
-		isClient:     false,
-		serverStream: stream,
+		address:        address,
+		sendChan:       make(chan *protowire.KaspadMessage),
+		receiveChan:    make(chan *protowire.KaspadMessage),
+		disconnectChan: make(chan struct{}),
+		errChan:        make(chan error),
 	}
 }
 
@@ -33,26 +33,14 @@ func (c *gRPCConnection) Send(message wire.Message) error {
 		return err
 	}
 
-	if c.isClient {
-		return c.clientStream.Send(messageProto)
-	}
-	return c.serverStream.Send(messageProto)
+	c.sendChan <- messageProto
+	return <-c.errChan
 }
 
 // Receive receives the next message from the connection
 // This is part of the Connection interface
 func (c *gRPCConnection) Receive() (wire.Message, error) {
-	var protoMessage *protowire.KaspadMessage
-	var err error
-
-	if c.isClient {
-		protoMessage, err = c.clientStream.Recv()
-	} else {
-		protoMessage, err = c.clientStream.Recv()
-	}
-	if err != nil {
-		return nil, err
-	}
+	protoMessage := <-c.receiveChan
 
 	return protoMessage.ToWireMessage()
 }
@@ -60,6 +48,7 @@ func (c *gRPCConnection) Receive() (wire.Message, error) {
 // Disconnect disconnects the connection
 // This is part of the Connection interface
 func (c *gRPCConnection) Disconnect() error {
-	// TODO(libp2p): unimplemented
-	panic("unimplemented")
+	c.disconnectChan <- struct{}{}
+
+	return <-c.errChan
 }

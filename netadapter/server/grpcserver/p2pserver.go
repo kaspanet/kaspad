@@ -2,6 +2,7 @@ package grpcserver
 
 import (
 	"github.com/kaspanet/kaspad/netadapter/server/grpcserver/protowire"
+	"github.com/kaspanet/kaspad/util/panics"
 )
 
 type p2pServer struct {
@@ -9,6 +10,6 @@ type p2pServer struct {
 }
 
 func (*p2pServer) MessageStream(stream protowire.P2P_MessageStreamServer) error {
-	// TODO(libp2p)
-	panic("unimplemented!")
+	defer panics.HandlePanic(log, nil)
+	return serverConnectionLoop(stream)
 }
