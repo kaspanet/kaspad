@@ -3,7 +3,6 @@ package grpcserver
 import (
 	"github.com/kaspanet/kaspad/netadapter/server/grpcserver/protowire"
 	"github.com/kaspanet/kaspad/util/panics"
-	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
@@ -28,28 +27,20 @@ func (p *p2pServer) MessageStream(stream protowire.P2P_MessageStreamServer) erro
 	}
 	connection := newConnection(peerInfo.Addr)
 
-	spawn(func() { testConnection(connection, peerInfo) })
+	err := p.server.onConnectedHandler(connection)
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Incoming connection from %s", peerInfo.Addr)
 
 	p.server.addConnection(connection)
-	log.Infof("Incoming connection from %s", peerInfo.Addr)
-	err := connection.serverConnectionLoop(stream)
+
+	err = connection.serverConnectionLoop(stream)
 	if err != nil {
 		log.Errorf("Error in serverConnectionLoop: %+v", err)
 		return status.Error(codes.Internal, err.Error())
 	}
 
 	return nil
-}
-
-func testConnection(connection *gRPCConnection, peerInfo *peer.Peer) {
-	msg, err := connection.Receive()
-	if err != nil {
-		log.Errorf("Error receiving from %s: %+v", peerInfo.Addr, err)
-	}
-	log.Infof("Got message from %s: %s", peerInfo.Addr, msg.Command())
-
-	err = connection.Send(wire.NewMsgPong(667))
-	if err != nil {
-		log.Errorf("Error sending to %s: %+v", peerInfo.Addr, err)
-	}
 }

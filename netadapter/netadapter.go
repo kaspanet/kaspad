@@ -65,29 +65,13 @@ func (na *NetAdapter) Start() error {
 
 	cfg := config.ActiveConfig()
 	for _, connectPeer := range cfg.ConnectPeers {
-		connection, err := na.server.Connect(connectPeer)
+		_, err := na.server.Connect(connectPeer)
 		if err != nil {
 			log.Errorf("Error connecting to %s: %+v", connectPeer, err)
-			continue
 		}
-
-		spawn(func() { testConnection(connection, connectPeer) })
 	}
 
 	return nil
-}
-
-func testConnection(connection server.Connection, connectPeer string) {
-	err := connection.Send(wire.NewMsgPing(666))
-	if err != nil {
-		log.Errorf("Error sending to %s: %+v", connectPeer, err)
-	}
-
-	msg, err := connection.Receive()
-	if err != nil {
-		log.Errorf("Error receiving from %s: %+v", connectPeer, err)
-	}
-	log.Infof("Got message from %s: %s", connectPeer, msg.Command())
 }
 
 // Stop safely closes the NetAdapter

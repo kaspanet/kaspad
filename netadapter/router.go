@@ -72,6 +72,10 @@ func (r *Router) TakeOutputMessage() wire.Message {
 	return <-r.outputRoute
 }
 
+func (r *Router) SendMessage(message wire.Message) {
+	r.outputRoute <- message
+}
+
 // RegisterID registers the remote connection's ID
 func (r *Router) RegisterID(id *ID) {
 	r.onIDReceivedHandler(id)

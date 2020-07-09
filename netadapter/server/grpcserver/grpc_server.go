@@ -85,16 +85,20 @@ func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 	}
 
 	connection := newConnection(peerInfo.Addr)
+
+	err = s.onConnectedHandler(connection)
+	if err != nil {
+		return nil, err
+	}
+	s.addConnection(connection)
+
+	log.Infof("Connected to %s", address)
 	spawn(func() {
 		err := connection.clientConnectionLoop(stream)
 		if err != nil {
 			log.Errorf("Error from clientConnectionLoop for %s: %+v", address, err)
 		}
 	})
-
-	s.addConnection(connection)
-
-	log.Infof("Connected to %s", address)
 
 	return connection, nil
 }
