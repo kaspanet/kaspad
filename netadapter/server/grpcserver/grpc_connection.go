@@ -1,27 +1,40 @@
 package grpcserver
 
 import (
+	"net"
+	"sync/atomic"
+
+	"github.com/kaspanet/kaspad/netadapter/server"
 	"github.com/kaspanet/kaspad/netadapter/server/grpcserver/protowire"
 	"github.com/kaspanet/kaspad/wire"
 	"google.golang.org/grpc"
 )
 
 type gRPCConnection struct {
-	address        string
-	sendChan       chan *protowire.KaspadMessage
-	receiveChan    chan *protowire.KaspadMessage
-	disconnectChan chan struct{}
-	errChan        chan error
-	clientConn     grpc.ClientConn
+	address               net.Addr
+	sendChan              chan *protowire.KaspadMessage
+	receiveChan           chan *protowire.KaspadMessage
+	errChan               chan error
+	clientConn            grpc.ClientConn
+	onDisconnectedHandler server.OnDisconnectedHandler
+
+	isConnected int32
 }
 
-func newConnection(address string) *gRPCConnection {
+func (c *gRPCConnection) IsConnected() bool {
+	return atomic.LoadInt32(&c.isConnected) == 1
+}
+
+func (c *gRPCConnection) SetOnDisconnectedHandler(onDisconnectedHandler server.OnDisconnectedHandler) {
+	c.onDisconnectedHandler = onDisconnectedHandler
+}
+
+func newConnection(address net.Addr) *gRPCConnection {
 	return &gRPCConnection{
-		address:        address,
-		sendChan:       make(chan *protowire.KaspadMessage),
-		receiveChan:    make(chan *protowire.KaspadMessage),
-		disconnectChan: make(chan struct{}),
-		errChan:        make(chan error),
+		address:     address,
+		sendChan:    make(chan *protowire.KaspadMessage),
+		receiveChan: make(chan *protowire.KaspadMessage),
+		isConnected: 1,
 	}
 }
 
@@ -48,7 +61,7 @@ func (c *gRPCConnection) Receive() (wire.Message, error) {
 // Disconnect disconnects the connection
 // This is part of the Connection interface
 func (c *gRPCConnection) Disconnect() error {
-	c.disconnectChan <- struct{}{}
+	atomic.StoreInt32(&c.isConnected, 0)
 
-	return <-c.errChan
+	return c.onDisconnectedHandler()
 }

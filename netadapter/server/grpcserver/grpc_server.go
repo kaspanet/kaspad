@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net"
 
+	"google.golang.org/grpc/peer"
+
 	"github.com/kaspanet/kaspad/netadapter/server"
 	"github.com/kaspanet/kaspad/netadapter/server/grpcserver/protowire"
 	"github.com/kaspanet/kaspad/util/panics"
@@ -13,10 +15,10 @@ import (
 )
 
 type gRPCServer struct {
-	peerConnectedHandler server.PeerConnectedHandler
-	connections          []*gRPCConnection
-	listeningAddrs       []string
-	server               *grpc.Server
+	onConnectedHandler server.OnConnectedHandler
+	connections        []*gRPCConnection
+	listeningAddrs     []string
+	server             *grpc.Server
 }
 
 // NewGRPCServer creates and starts a gRPC server with the given
@@ -56,10 +58,10 @@ func (s *gRPCServer) Stop() error {
 	return nil
 }
 
-// SetPeerConnectedHandler sets the peer connected handler
+// SetOnConnectedHandler sets the peer connected handler
 // function for the server
-func (s *gRPCServer) SetPeerConnectedHandler(peerConnectedHandler server.PeerConnectedHandler) {
-	s.peerConnectedHandler = peerConnectedHandler
+func (s *gRPCServer) SetOnConnectedHandler(onConnectedHandler server.OnConnectedHandler) {
+	s.onConnectedHandler = onConnectedHandler
 }
 
 // Connect connects to the given address
@@ -72,11 +74,15 @@ func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 	}
 	client := protowire.NewP2PClient(conn)
 	stream, err := client.MessageStream(context.Background())
-	if err != nil {
-		return nil, errors.Wrapf(err, "Error getting message stream for %s", address)
+
+	peerInfo, ok := peer.FromContext(stream.Context())
+	if !ok {
+		return nil, errors.Errorf("Error getting stream peer info from context")
 	}
 
-	return &gRPCConnection{conn: conn}, nil
+	connection := newConnection(peerInfo.Addr)
+	spawn(func() { connection.clientConnectionLoop(stream) })
+	return connection, nil
 }
 
 // Connections returns a slice of connections the server
