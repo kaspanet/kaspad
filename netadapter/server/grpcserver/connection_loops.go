@@ -54,8 +54,8 @@ func (c *gRPCConnection) receiveLoop(stream grpcStream) error {
 		}
 
 		func() {
-			c.channelWriteLock.Lock()
-			defer c.channelWriteLock.Unlock()
+			c.writeDuringDisconnectLock.Lock()
+			defer c.writeDuringDisconnectLock.Unlock()
 			if c.IsConnected() {
 				c.receiveChan <- message
 			}

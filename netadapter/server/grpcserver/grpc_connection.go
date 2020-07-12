@@ -14,14 +14,14 @@ import (
 )
 
 type gRPCConnection struct {
-	server                *gRPCServer
-	address               net.Addr
-	channelWriteLock      sync.Mutex // channelWriteLock makes sure the channels aren't written to after close
-	sendChan              chan *protowire.KaspadMessage
-	receiveChan           chan *protowire.KaspadMessage
-	errChan               chan error
-	clientConn            grpc.ClientConn
-	onDisconnectedHandler server.OnDisconnectedHandler
+	server                    *gRPCServer
+	address                   net.Addr
+	writeDuringDisconnectLock sync.Mutex // writeDuringDisconnectLock makes sure channels aren't written to after close
+	sendChan                  chan *protowire.KaspadMessage
+	receiveChan               chan *protowire.KaspadMessage
+	errChan                   chan error
+	clientConn                grpc.ClientConn
+	onDisconnectedHandler     server.OnDisconnectedHandler
 
 	isConnected uint32
 }
@@ -59,8 +59,8 @@ func (c *gRPCConnection) Send(message wire.Message) error {
 		return err
 	}
 
-	c.channelWriteLock.Lock()
-	defer c.channelWriteLock.Unlock()
+	c.writeDuringDisconnectLock.Lock()
+	defer c.writeDuringDisconnectLock.Unlock()
 	if c.IsConnected() {
 		c.sendChan <- messageProto
 
@@ -91,8 +91,8 @@ func (c *gRPCConnection) Disconnect() error {
 	}
 	atomic.StoreUint32(&c.isConnected, 0)
 
-	c.channelWriteLock.Lock()
-	defer c.channelWriteLock.Unlock()
+	c.writeDuringDisconnectLock.Lock()
+	defer c.writeDuringDisconnectLock.Unlock()
 	close(c.receiveChan)
 	close(c.sendChan)
 	close(c.errChan)
