@@ -1,6 +1,8 @@
 package netadapter
 
 import (
+	id2 "github.com/kaspanet/kaspad/netadapter/id"
+	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/netadapter/server"
 	"github.com/kaspanet/kaspad/netadapter/server/grpcserver"
 	"github.com/kaspanet/kaspad/wire"
@@ -10,7 +12,7 @@ import (
 
 // RouterInitializer is a function that initializes a new
 // router to be used with a new connection
-type RouterInitializer func() (*Router, error)
+type RouterInitializer func() (*router.Router, error)
 
 // NetAdapter is an abstraction layer over networking.
 // This type expects a RouteInitializer function. This
@@ -18,20 +20,20 @@ type RouterInitializer func() (*Router, error)
 // and message handlers) without exposing anything related
 // to networking internals.
 type NetAdapter struct {
-	id                *ID
+	id                *id2.ID
 	server            server.Server
 	routerInitializer RouterInitializer
 	stop              uint32
 
-	connectionIDs    map[server.Connection]*ID
-	idsToConnections map[*ID]server.Connection
-	idsToRouters     map[*ID]*Router
+	connectionIDs    map[server.Connection]*id2.ID
+	idsToConnections map[*id2.ID]server.Connection
+	idsToRouters     map[*id2.ID]*router.Router
 }
 
 // NewNetAdapter creates and starts a new NetAdapter on the
 // given listeningPort
 func NewNetAdapter(listeningAddrs []string) (*NetAdapter, error) {
-	id, err := GenerateID()
+	id, err := id2.GenerateID()
 	if err != nil {
 		return nil, err
 	}
@@ -43,9 +45,9 @@ func NewNetAdapter(listeningAddrs []string) (*NetAdapter, error) {
 		id:     id,
 		server: s,
 
-		connectionIDs:    make(map[server.Connection]*ID),
-		idsToConnections: make(map[*ID]server.Connection),
-		idsToRouters:     make(map[*ID]*Router),
+		connectionIDs:    make(map[server.Connection]*id2.ID),
+		idsToConnections: make(map[*id2.ID]server.Connection),
+		idsToRouters:     make(map[*id2.ID]*router.Router),
 	}
 
 	onConnectedHandler := adapter.newOnConnectedHandler()
@@ -77,7 +79,7 @@ func (na *NetAdapter) newOnConnectedHandler() server.OnConnectedHandler {
 			na.unregisterConnection(connection)
 			return router.Close()
 		})
-		router.SetOnIDReceivedHandler(func(id *ID) {
+		router.SetOnIDReceivedHandler(func(id *id2.ID) {
 			na.registerConnection(connection, router, id)
 		})
 
@@ -87,7 +89,7 @@ func (na *NetAdapter) newOnConnectedHandler() server.OnConnectedHandler {
 	}
 }
 
-func (na *NetAdapter) registerConnection(connection server.Connection, router *Router, id *ID) {
+func (na *NetAdapter) registerConnection(connection server.Connection, router *router.Router, id *id2.ID) {
 	na.connectionIDs[connection] = id
 	na.idsToConnections[id] = connection
 	na.idsToRouters[id] = router
@@ -104,7 +106,7 @@ func (na *NetAdapter) unregisterConnection(connection server.Connection) {
 	delete(na.idsToRouters, id)
 }
 
-func (na *NetAdapter) startReceiveLoop(connection server.Connection, router *Router) {
+func (na *NetAdapter) startReceiveLoop(connection server.Connection, router *router.Router) {
 	for atomic.LoadUint32(&na.stop) == 0 {
 		message, err := connection.Receive()
 		if err != nil {
@@ -126,7 +128,7 @@ func (na *NetAdapter) startReceiveLoop(connection server.Connection, router *Rou
 	}
 }
 
-func (na *NetAdapter) startSendLoop(connection server.Connection, router *Router) {
+func (na *NetAdapter) startSendLoop(connection server.Connection, router *router.Router) {
 	for atomic.LoadUint32(&na.stop) == 0 {
 		message := router.TakeOutputMessage()
 		err := connection.Send(message)
@@ -151,13 +153,13 @@ func (na *NetAdapter) SetRouterInitializer(routerInitializer RouterInitializer) 
 }
 
 // ID returns this netAdapter's ID in the network
-func (na *NetAdapter) ID() *ID {
+func (na *NetAdapter) ID() *id2.ID {
 	return na.id
 }
 
 // Broadcast sends the given `message` to every peer corresponding
 // to each ID in `ids`
-func (na *NetAdapter) Broadcast(ids []*ID, message wire.Message) error {
+func (na *NetAdapter) Broadcast(ids []*id2.ID, message wire.Message) error {
 	for _, id := range ids {
 		router, ok := na.idsToRouters[id]
 		if !ok {

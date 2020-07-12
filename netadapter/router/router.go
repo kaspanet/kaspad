@@ -1,13 +1,14 @@
-package netadapter
+package router
 
 import (
+	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
 
 // OnIDReceivedHandler is a function that is to be called
 // once a new Connection sends us its ID.
-type OnIDReceivedHandler func(id *ID)
+type OnIDReceivedHandler func(id *id.ID)
 
 // Router routes messages by type to their respective
 // input channels
@@ -73,7 +74,7 @@ func (r *Router) TakeOutputMessage() wire.Message {
 }
 
 // RegisterID registers the remote connection's ID
-func (r *Router) RegisterID(id *ID) {
+func (r *Router) RegisterID(id *id.ID) {
 	r.onIDReceivedHandler(id)
 }
 

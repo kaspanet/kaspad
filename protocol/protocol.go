@@ -3,6 +3,7 @@ package protocol
 import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter"
+	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/wire"
 )
 
@@ -38,8 +39,8 @@ func (p *Manager) Stop() error {
 }
 
 func newRouterInitializer(netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG) netadapter.RouterInitializer {
-	return func() (*netadapter.Router, error) {
-		router := netadapter.NewRouter()
+	return func() (*router.Router, error) {
+		router := router.NewRouter()
 		err := router.AddRoute([]string{wire.CmdTx}, startDummy(netAdapter, router, dag))
 		if err != nil {
 			return nil, err
@@ -48,7 +49,7 @@ func newRouterInitializer(netAdapter *netadapter.NetAdapter, dag *blockdag.Block
 	}
 }
 
-func startDummy(netAdapter *netadapter.NetAdapter, router *netadapter.Router,
+func startDummy(netAdapter *netadapter.NetAdapter, router *router.Router,
 	dag *blockdag.BlockDAG) chan wire.Message {
 
 	ch := make(chan wire.Message)
