@@ -1,11 +1,13 @@
 package netadapter
 
 import (
+	"sync/atomic"
+
+	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/netadapter/server"
 	"github.com/kaspanet/kaspad/netadapter/server/grpcserver"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
-	"sync/atomic"
 )
 
 // RouterInitializer is a function that initializes a new
@@ -56,7 +58,21 @@ func NewNetAdapter(listeningAddrs []string) (*NetAdapter, error) {
 
 // Start begins the operation of the NetAdapter
 func (na *NetAdapter) Start() error {
-	return na.server.Start()
+	err := na.server.Start()
+	if err != nil {
+		return err
+	}
+
+	// TODO(libp2p): Replace with real connection manager
+	cfg := config.ActiveConfig()
+	for _, connectPeer := range cfg.ConnectPeers {
+		_, err := na.server.Connect(connectPeer)
+		if err != nil {
+			log.Errorf("Error connecting to %s: %+v", connectPeer, err)
+		}
+	}
+
+	return nil
 }
 
 // Stop safely closes the NetAdapter
@@ -88,12 +104,16 @@ func (na *NetAdapter) newOnConnectedHandler() server.OnConnectedHandler {
 }
 
 func (na *NetAdapter) registerConnection(connection server.Connection, router *Router, id *ID) {
+	na.server.AddConnection(connection)
+
 	na.connectionIDs[connection] = id
 	na.idsToConnections[id] = connection
 	na.idsToRouters[id] = router
 }
 
 func (na *NetAdapter) unregisterConnection(connection server.Connection) {
+	na.server.RemoveConnection(connection)
+
 	id, ok := na.connectionIDs[connection]
 	if !ok {
 		return
@@ -113,7 +133,8 @@ func (na *NetAdapter) startReceiveLoop(connection server.Connection, router *Rou
 		}
 		err = router.RouteInputMessage(message)
 		if err != nil {
-			log.Warnf("Failed to receive from %s: %s", connection, err)
+			// TODO(libp2p): This should never happen, do something more severe
+			log.Warnf("Failed to route input message from %s: %s", connection, err)
 			break
 		}
 	}
