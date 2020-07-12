@@ -59,20 +59,18 @@ func readInv(msgChan <-chan wire.Message,
 		return inv, false, nil
 	}
 
-	for {
-		msg, isOpen := <-msgChan
-		if !isOpen {
-			return nil, true, nil
-		}
-
-		inv, ok := msg.(*wire.MsgInvRelayBlock)
-		if ok {
-			return inv, false, nil
-		}
-
-		return nil, false, errors.Errorf("unexpected %s message in the block relay flow while "+
-			"expecting an inv message", msg.Command())
+	msg, isOpen := <-msgChan
+	if !isOpen {
+		return nil, true, nil
 	}
+
+	inv, ok := msg.(*wire.MsgInvRelayBlock)
+	if ok {
+		return inv, false, nil
+	}
+
+	return nil, false, errors.Errorf("unexpected %s message in the block relay flow while "+
+		"expecting an inv message", msg.Command())
 }
 
 // readMsgBlock returns the next msgBlock in msgChan, and populates invsQueue in any inv messages that arrives between.
