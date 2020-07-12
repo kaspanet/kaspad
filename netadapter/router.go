@@ -77,11 +77,6 @@ func (r *Router) WriteOutgoingMessage(message wire.Message) {
 	r.outgoingRoute <- message
 }
 
-// WriteOutgoingMessage pushes the given message to the output route
-func (r *Router) WriteOutgoingMessage(message wire.Message) {
-	r.outputRoute <- message
-}
-
 // RegisterID registers the remote connection's ID
 func (r *Router) RegisterID(id *ID) {
 	r.onIDReceivedHandler(id)

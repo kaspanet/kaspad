@@ -1,6 +1,7 @@
 package netadapter
 
 import (
+	"sync"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/config"
