@@ -7,7 +7,7 @@ import (
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
-	utilMath "github.com/kaspanet/kaspad/util/math"
+	mathUtil "github.com/kaspanet/kaspad/util/math"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 	"time"
@@ -76,7 +76,7 @@ func readInv(msgChan <-chan wire.Message,
 func requestBlocks(netAdapater *netadapter.NetAdapter, router *netadapter.Router, peer *peerpkg.Peer, msgChan <-chan wire.Message,
 	dag *blockdag.BlockDAG, invsQueue *[]*wire.MsgInvRelayBlock, requestQueue *hashesQueueSet) (shouldStop bool, err error) {
 
-	numHashesToRequest := utilMath.MinInt(wire.MsgGetRelayBlocksHashes, requestQueue.len())
+	numHashesToRequest := mathUtil.MinInt(wire.MsgGetRelayBlocksHashes, requestQueue.len())
 	hashesToRequest := requestQueue.dequeue(numHashesToRequest)
 
 	pendingBlocks := map[daghash.Hash]struct{}{}

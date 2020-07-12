@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"container/list"
 	"fmt"
-	utilMath "github.com/kaspanet/kaspad/util/math"
+	mathUtil "github.com/kaspanet/kaspad/util/math"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"io"
 	"math/rand"
@@ -944,7 +944,7 @@ func (p *Peer) updateFlagsFromVersionMsg(msg *wire.MsgVersion) {
 	defer p.flagsMtx.Unlock()
 
 	p.advertisedProtoVer = msg.ProtocolVersion
-	p.protocolVersion = utilMath.MinUint32(p.protocolVersion, p.advertisedProtoVer)
+	p.protocolVersion = mathUtil.MinUint32(p.protocolVersion, p.advertisedProtoVer)
 	p.versionKnown = true
 	log.Debugf("Negotiated protocol version %d for peer %s",
 		p.protocolVersion, p)
