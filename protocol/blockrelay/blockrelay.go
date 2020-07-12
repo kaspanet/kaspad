@@ -137,10 +137,10 @@ func readMsgBlock(msgChan <-chan wire.Message,
 	invsQueue *[]*wire.MsgInvRelayBlock) (msgBlock *wire.MsgBlock, shouldStop bool, err error) {
 
 	for {
-		const stallResponseTimeout = 30 * time.Second
+		const timeout = 30 * time.Second
 		select {
-		case <-time.After(stallResponseTimeout):
-			return nil, false, errors.Errorf("stalled for %s", stallResponseTimeout)
+		case <-time.After(timeout):
+			return nil, false, errors.Errorf("stalled for %s", timeout)
 		case msg, isOpen := <-msgChan:
 			if !isOpen {
 				return nil, true, nil
