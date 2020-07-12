@@ -60,13 +60,17 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *netadapter.Router, da
 
 	peer := new(peerpkg.Peer)
 
-	addFlow("blockrelay", router, []string{wire.CmdInvRelayBlock, wire.CmdBlock}, &stopped, stop, func(ch chan wire.Message) error {
-		return blockrelay.StartBlockRelay(ch, peer, netAdapter, router, dag)
-	})
+	addFlow("blockrelay", router, []string{wire.CmdInvRelayBlock, wire.CmdBlock}, &stopped, stop,
+		func(ch chan wire.Message) error {
+			return blockrelay.StartBlockRelay(ch, peer, netAdapter, router, dag)
+		},
+	)
 
-	addFlow("getrelayblocks", router, []string{wire.CmdGetRelayBlocks}, &stopped, stop, func(ch chan wire.Message) error {
-		return getrelayblockslistener.StartGetRelayBlocksListener(ch, router, dag)
-	})
+	addFlow("getrelayblocks", router, []string{wire.CmdGetRelayBlocks}, &stopped, stop,
+		func(ch chan wire.Message) error {
+			return getrelayblockslistener.StartGetRelayBlocksListener(ch, router, dag)
+		},
+	)
 
 	err := <-stop
 	return err
