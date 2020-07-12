@@ -104,12 +104,16 @@ func (na *NetAdapter) newOnConnectedHandler() server.OnConnectedHandler {
 }
 
 func (na *NetAdapter) registerConnection(connection server.Connection, router *Router, id *ID) {
+	na.server.AddConnection(connection)
+
 	na.connectionIDs[connection] = id
 	na.idsToConnections[id] = connection
 	na.idsToRouters[id] = router
 }
 
 func (na *NetAdapter) unregisterConnection(connection server.Connection) {
+	na.server.RemoveConnection(connection)
+
 	id, ok := na.connectionIDs[connection]
 	if !ok {
 		return

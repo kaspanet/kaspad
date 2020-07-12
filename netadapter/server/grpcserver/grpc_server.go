@@ -121,10 +121,17 @@ func (s *gRPCServer) Connections() []server.Connection {
 	return result
 }
 
-func (s *gRPCServer) addConnection(connection *gRPCConnection) {
-	s.connections[connection.address.String()] = connection
+// AddConnection adds the provided connection to the connection list
+func (s *gRPCServer) AddConnection(connection server.Connection) error {
+	conn := connection.(*gRPCConnection)
+	s.connections[conn.String()] = conn
+
+	return nil
 }
 
-func (s *gRPCServer) removeConnection(connection *gRPCConnection) {
-	delete(s.connections, connection.address.String())
+// RemoveConnection removes the provided connection from the connection list
+func (s *gRPCServer) RemoveConnection(connection server.Connection) error {
+	delete(s.connections, connection.String())
+
+	return nil
 }

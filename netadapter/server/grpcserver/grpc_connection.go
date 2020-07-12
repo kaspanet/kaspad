@@ -34,8 +34,6 @@ func newConnection(server *gRPCServer, address net.Addr) *gRPCConnection {
 		isConnected: 1,
 	}
 
-	server.addConnection(connection)
-
 	return connection
 }
 
@@ -86,8 +84,6 @@ func (c *gRPCConnection) Disconnect() error {
 	close(c.receiveChan)
 	close(c.sendChan)
 	close(c.errChan)
-
-	c.server.removeConnection(c)
 
 	return c.onDisconnectedHandler()
 }
