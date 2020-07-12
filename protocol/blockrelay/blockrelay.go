@@ -184,9 +184,7 @@ func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 	if isOrphan {
 		blueScore, err := block.BlueScore()
 		if err != nil {
-			log.Errorf("Received an orphan block %s with malformed blue score from %s. Disconnecting...",
-				blockHash, peer)
-			return false, errors.Errorf("Received an orphan block %s with malformed blue score", blockHash)
+			return false, errors.Errorf("received an orphan block %s with malformed blue score", blockHash)
 		}
 
 		const maxOrphanBlueScoreDiff = 10000
