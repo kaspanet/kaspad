@@ -72,6 +72,20 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *netadapter.Router, da
 		},
 	)
 
+	// TODO(libp2p): Remove this and change it with a real Ping-Pong flow.
+	addFlow("PingPong", router, []string{wire.CmdPing, wire.CmdPong}, &stopped, stop,
+		func(ch chan wire.Message) error {
+			router.WriteOutgoingMessage(wire.NewMsgPing(666))
+			for message := range ch {
+				log.Infof("Got message: %+v", message.Command())
+				if message.Command() == "ping" {
+					router.WriteOutgoingMessage(wire.NewMsgPong(666))
+				}
+			}
+			return nil
+		},
+	)
+
 	err := <-stop
 	return err
 }

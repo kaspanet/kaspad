@@ -1,6 +1,9 @@
 package server
 
 import (
+	"fmt"
+	"net"
+
 	"github.com/kaspanet/kaspad/wire"
 )
 
@@ -19,13 +22,18 @@ type Server interface {
 	Start() error
 	Stop() error
 	SetOnConnectedHandler(onConnectedHandler OnConnectedHandler)
+	// TODO(libp2p): Move AddConnection and RemoveConnection to connection manager
+	AddConnection(connection Connection) error
+	RemoveConnection(connection Connection) error
 }
 
 // Connection represents a p2p server connection.
 type Connection interface {
+	fmt.Stringer
 	Send(message wire.Message) error
 	Receive() (wire.Message, error)
 	Disconnect() error
 	IsConnected() bool
 	SetOnDisconnectedHandler(onDisconnectedHandler OnDisconnectedHandler)
+	Address() net.Addr
 }

@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"sync/atomic"
+
+	"github.com/kaspanet/kaspad/util/panics"
 
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/blockdag/indexers"
@@ -33,6 +36,11 @@ func (s *kaspad) start() {
 	log.Trace("Starting kaspad")
 
 	cfg := config.ActiveConfig()
+
+	err := s.protocolManager.Start()
+	if err != nil {
+		panics.Exit(log, fmt.Sprintf("Error starting the p2p protocol: %+v", err))
+	}
 
 	if !cfg.DisableRPC {
 		s.rpcServer.Start()
