@@ -1,24 +1,21 @@
 package grpcserver
 
 import (
+	"github.com/kaspanet/kaspad/netadapter/router"
 	"net"
 	"sync"
 	"sync/atomic"
 
-	"github.com/pkg/errors"
-
 	"github.com/kaspanet/kaspad/netadapter/server"
-	"github.com/kaspanet/kaspad/netadapter/server/grpcserver/protowire"
-	"github.com/kaspanet/kaspad/wire"
 	"google.golang.org/grpc"
 )
 
 type gRPCConnection struct {
-	server                    *gRPCServer
-	address                   net.Addr
+	server  *gRPCServer
+	address net.Addr
+	router  *router.Router
+
 	writeDuringDisconnectLock sync.Mutex // writeDuringDisconnectLock makes sure channels aren't written to after close
-	sendChan                  chan *protowire.KaspadMessage
-	receiveChan               chan *protowire.KaspadMessage
 	errChan                   chan error
 	clientConn                grpc.ClientConn
 	onDisconnectedHandler     server.OnDisconnectedHandler
@@ -30,13 +27,15 @@ func newConnection(server *gRPCServer, address net.Addr) *gRPCConnection {
 	connection := &gRPCConnection{
 		server:      server,
 		address:     address,
-		sendChan:    make(chan *protowire.KaspadMessage),
-		receiveChan: make(chan *protowire.KaspadMessage),
 		errChan:     make(chan error),
 		isConnected: 1,
 	}
 
 	return connection
+}
+
+func (c *gRPCConnection) SetRouter(router *router.Router) {
+	c.router = router
 }
 
 func (c *gRPCConnection) String() string {
@@ -51,36 +50,6 @@ func (c *gRPCConnection) SetOnDisconnectedHandler(onDisconnectedHandler server.O
 	c.onDisconnectedHandler = onDisconnectedHandler
 }
 
-// Send sends the given message through the connection
-// This is part of the Connection interface
-func (c *gRPCConnection) Send(message wire.Message) error {
-	messageProto, err := protowire.FromWireMessage(message)
-	if err != nil {
-		return err
-	}
-
-	c.writeDuringDisconnectLock.Lock()
-	defer c.writeDuringDisconnectLock.Unlock()
-	if c.IsConnected() {
-		c.sendChan <- messageProto
-
-		return <-c.errChan
-	}
-
-	return nil
-}
-
-// Receive receives the next message from the connection
-// This is part of the Connection interface
-func (c *gRPCConnection) Receive() (wire.Message, error) {
-	protoMessage := <-c.receiveChan
-	if protoMessage == nil {
-		return nil, errors.New("connection closed during receive")
-	}
-
-	return protoMessage.ToWireMessage()
-}
-
 // Disconnect disconnects the connection
 // Calling this function a second time doesn't do anything
 //
@@ -93,8 +62,6 @@ func (c *gRPCConnection) Disconnect() error {
 
 	c.writeDuringDisconnectLock.Lock()
 	defer c.writeDuringDisconnectLock.Unlock()
-	close(c.receiveChan)
-	close(c.sendChan)
 	close(c.errChan)
 
 	return c.onDisconnectedHandler()

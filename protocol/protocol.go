@@ -54,12 +54,21 @@ func newRouterInitializer(netAdapter *netadapter.NetAdapter, dag *blockdag.Block
 func startPing(outgoingRoute *router.Route) *router.Route {
 	incomingRoute := router.NewRoute()
 	spawn(func() {
-		outgoingRoute.Enqueue(wire.NewMsgPing(666))
+		err := outgoingRoute.Enqueue(wire.NewMsgPing(666))
+		if err != nil {
+			// TODO(libp2p): handle this error
+		}
 		for {
-			message := incomingRoute.Dequeue()
+			message, err := incomingRoute.Dequeue()
+			if err != nil {
+				// TODO(libp2p): handle this error
+			}
 			log.Infof("Got message: %+v", message.Command())
 			if message.Command() == "ping" {
-				outgoingRoute.Enqueue(wire.NewMsgPong(666))
+				err := outgoingRoute.Enqueue(wire.NewMsgPong(666))
+				if err != nil {
+					// TODO(libp2p): handle this error
+				}
 			}
 		}
 	})

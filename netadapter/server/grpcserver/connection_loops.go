@@ -15,7 +15,6 @@ func (c *gRPCConnection) connectionLoops(stream grpcStream) error {
 	errChan := make(chan error, 1) // buffered channel because one of the loops might try write after disconnect
 
 	spawn(func() { errChan <- c.receiveLoop(stream) })
-
 	spawn(func() { errChan <- c.sendLoop(stream) })
 
 	err := <-errChan
@@ -29,39 +28,45 @@ func (c *gRPCConnection) connectionLoops(stream grpcStream) error {
 
 func (c *gRPCConnection) sendLoop(stream grpcStream) error {
 	for c.IsConnected() {
-		message, ok := <-c.sendChan
-		if !ok {
-			return nil // this means the sendChan is closed, a.k.a. connection is disconnecting
+		message, err := c.router.OutgoingRoute().Dequeue()
+		if err != nil {
+			return err
 		}
-		err := stream.Send(message)
+		messageProto, err := protowire.FromWireMessage(message)
+		if err != nil {
+			return err
+		}
+		err = stream.Send(messageProto)
 		c.errChan <- err
 		if err != nil {
 			return err
 		}
 	}
-
 	return nil
 }
 
 func (c *gRPCConnection) receiveLoop(stream grpcStream) error {
 	for c.IsConnected() {
-		message, err := stream.Recv()
+		protoMessage, err := stream.Recv()
 		if err != nil {
 			if err == io.EOF {
 				err = nil
 			}
 			return err
 		}
-
-		func() {
-			c.writeDuringDisconnectLock.Lock()
-			defer c.writeDuringDisconnectLock.Unlock()
-			if c.IsConnected() {
-				c.receiveChan <- message
-			}
-		}()
+		message, err := protoMessage.ToWireMessage()
+		if err != nil {
+			return err
+		}
+		route, err := c.router.IncomingRoute(message)
+		if err != nil {
+			return err
+		}
+		err = route.Enqueue(message)
+		if err != nil {
+			return err
+		}
 	}
-
 	return nil
 }
 

@@ -90,6 +90,8 @@ func (na *NetAdapter) newOnConnectedHandler() server.OnConnectedHandler {
 		if err != nil {
 			return err
 		}
+		connection.SetRouter(router)
+
 		router.SetOnRouteCapacityReachedHandler(func() {
 			err := connection.Disconnect()
 			if err != nil {
@@ -151,7 +153,10 @@ func (na *NetAdapter) Broadcast(connectionIDs []*id.ID, message wire.Message) er
 		if err != nil {
 			return err
 		}
-		route.Enqueue(message)
+		err = route.Enqueue(message)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
