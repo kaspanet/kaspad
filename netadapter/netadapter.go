@@ -37,7 +37,7 @@ type NetAdapter struct {
 // NewNetAdapter creates and starts a new NetAdapter on the
 // given listeningPort
 func NewNetAdapter(listeningAddrs []string) (*NetAdapter, error) {
-	netAdapterId, err := id.GenerateID()
+	netAdapterID, err := id.GenerateID()
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func NewNetAdapter(listeningAddrs []string) (*NetAdapter, error) {
 		return nil, err
 	}
 	adapter := NetAdapter{
-		id:     netAdapterId,
+		id:     netAdapterID,
 		server: s,
 
 		connectionIDs:    make(map[server.Connection]*id.ID),
