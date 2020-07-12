@@ -14,25 +14,25 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// TestErrNotInDAG ensures the functions related to errNotInDAG work
+// TestErrNotInDAG ensures the functions related to ErrNotInDAG work
 // as expected.
 func TestErrNotInDAG(t *testing.T) {
 	errStr := "no block at height 1 exists"
-	err := error(errNotInDAG(errStr))
+	err := error(ErrNotInDAG(errStr))
 
 	// Ensure the stringized output for the error is as expected.
 	if err.Error() != errStr {
-		t.Fatalf("errNotInDAG retuned unexpected error string - "+
+		t.Fatalf("ErrNotInDAG retuned unexpected error string - "+
 			"got %q, want %q", err.Error(), errStr)
 	}
 
 	// Ensure error is detected as the correct type.
-	if !isNotInDAGErr(err) {
-		t.Fatalf("isNotInDAGErr did not detect as expected type")
+	if !IsNotInDAGErr(err) {
+		t.Fatalf("IsNotInDAGErr did not detect as expected type")
 	}
 	err = errors.New("something else")
-	if isNotInDAGErr(err) {
-		t.Fatalf("isNotInDAGErr detected incorrect type")
+	if IsNotInDAGErr(err) {
+		t.Fatalf("IsNotInDAGErr detected incorrect type")
 	}
 }
 

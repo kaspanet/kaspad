@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"container/list"
 	"fmt"
+	mathUtil "github.com/kaspanet/kaspad/util/math"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"io"
 	"math/rand"
@@ -256,15 +257,6 @@ type Config struct {
 	// SubnetworkID specifies which subnetwork the peer is associated with.
 	// It is nil in full nodes.
 	SubnetworkID *subnetworkid.SubnetworkID
-}
-
-// minUint32 is a helper function to return the minimum of two uint32s.
-// This avoids a math import and the need to cast to floats.
-func minUint32(a, b uint32) uint32 {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 // newNetAddress attempts to extract the IP address and port from the passed
@@ -767,7 +759,7 @@ func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
 	msg.Services = p.cfg.Services
 
 	// Advertise our max supported protocol version.
-	msg.ProtocolVersion = int32(p.cfg.ProtocolVersion)
+	msg.ProtocolVersion = p.cfg.ProtocolVersion
 
 	// Advertise if inv messages for transactions are desired.
 	msg.DisableRelayTx = p.cfg.DisableRelayTx
@@ -951,8 +943,8 @@ func (p *Peer) updateFlagsFromVersionMsg(msg *wire.MsgVersion) {
 	p.flagsMtx.Lock()
 	defer p.flagsMtx.Unlock()
 
-	p.advertisedProtoVer = uint32(msg.ProtocolVersion)
-	p.protocolVersion = minUint32(p.protocolVersion, p.advertisedProtoVer)
+	p.advertisedProtoVer = msg.ProtocolVersion
+	p.protocolVersion = mathUtil.MinUint32(p.protocolVersion, p.advertisedProtoVer)
 	p.versionKnown = true
 	log.Debugf("Negotiated protocol version %d for peer %s",
 		p.protocolVersion, p)

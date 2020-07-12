@@ -28,19 +28,19 @@ var (
 	byteOrder = binary.LittleEndian
 )
 
-// errNotInDAG signifies that a block hash or height that is not in the
+// ErrNotInDAG signifies that a block hash that is not in the
 // DAG was requested.
-type errNotInDAG string
+type ErrNotInDAG string
 
 // Error implements the error interface.
-func (e errNotInDAG) Error() string {
+func (e ErrNotInDAG) Error() string {
 	return string(e)
 }
 
-// isNotInDAGErr returns whether or not the passed error is an
-// errNotInDAG error.
-func isNotInDAGErr(err error) bool {
-	var notInDAGErr errNotInDAG
+// IsNotInDAGErr returns whether or not the passed error is an
+// ErrNotInDAG error.
+func IsNotInDAGErr(err error) bool {
+	var notInDAGErr ErrNotInDAG
 	return errors.As(err, &notInDAGErr)
 }
 
@@ -607,7 +607,7 @@ func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
 	node, ok := dag.index.LookupNode(hash)
 	if !ok {
 		str := fmt.Sprintf("block %s is not in the DAG", hash)
-		return nil, errNotInDAG(str)
+		return nil, ErrNotInDAG(str)
 	}
 
 	block, err := fetchBlockByHash(dbaccess.NoTx(), node.hash)

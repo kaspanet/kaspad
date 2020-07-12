@@ -33,7 +33,7 @@ var DefaultUserAgent = fmt.Sprintf("/kaspad:%s/", version.Version())
 // communication is allowed to proceed.
 type MsgVersion struct {
 	// Version of the protocol the node is using.
-	ProtocolVersion int32
+	ProtocolVersion uint32
 
 	// Bitfield which identifies the enabled services.
 	Services ServiceFlag
@@ -240,7 +240,7 @@ func NewMsgVersion(me *NetAddress, you *NetAddress, nonce uint64,
 	// Limit the timestamp to one millisecond precision since the protocol
 	// doesn't support better.
 	return &MsgVersion{
-		ProtocolVersion: int32(ProtocolVersion),
+		ProtocolVersion: ProtocolVersion,
 		Services:        0,
 		Timestamp:       mstime.Now(),
 		AddrYou:         *you,

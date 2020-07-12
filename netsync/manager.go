@@ -553,12 +553,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		}
 
 		// Request the parents for the orphan block from the peer that sent it.
-		missingAncestors, err := sm.dag.GetOrphanMissingAncestorHashes(blockHash)
-		if err != nil {
-			log.Errorf("Failed to find missing ancestors for block %s: %s",
-				blockHash, err)
-			return
-		}
+		missingAncestors := sm.dag.GetOrphanMissingAncestorHashes(blockHash)
 		sm.addBlocksToRequestQueue(state, missingAncestors, wire.InvTypeMissingAncestor)
 	} else {
 		// When the block is not an orphan, log information about it and
@@ -767,12 +762,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 					sm.RemoveFromSyncCandidates(peer)
 					return
 				}
-				missingAncestors, err := sm.dag.GetOrphanMissingAncestorHashes(iv.Hash)
-				if err != nil {
-					log.Errorf("Failed to find missing ancestors for block %s: %s",
-						iv.Hash, err)
-					return
-				}
+				missingAncestors := sm.dag.GetOrphanMissingAncestorHashes(iv.Hash)
 				sm.addBlocksToRequestQueue(state, missingAncestors, wire.InvTypeMissingAncestor)
 				continue
 			}
