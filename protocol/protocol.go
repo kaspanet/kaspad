@@ -41,7 +41,8 @@ func (p *Manager) Stop() error {
 func newRouterInitializer(netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG) netadapter.RouterInitializer {
 	return func() (*router.Router, error) {
 		router := router.NewRouter()
-		err := router.AddRoute([]string{wire.CmdPing, wire.CmdPong}, startPing(netAdapter, dag))
+		outgoingRoute := router.OutgoingRoute()
+		err := router.AddRoute([]string{wire.CmdPing, wire.CmdPong}, startPing(outgoingRoute))
 		if err != nil {
 			return nil, err
 		}
@@ -50,18 +51,17 @@ func newRouterInitializer(netAdapter *netadapter.NetAdapter, dag *blockdag.Block
 }
 
 // TODO(libp2p): Remove this and change it with a real Ping-Pong flow.
-func startPing(netAdapter *netadapter.NetAdapter, router *netadapter.Router,
-	dag *blockdag.BlockDAG) chan wire.Message {
-
-	ch := make(chan wire.Message)
+func startPing(outgoingRoute *router.Route) *router.Route {
+	incomingRoute := router.NewRoute()
 	spawn(func() {
-		router.WriteOutgoingMessage(wire.NewMsgPing(666))
-		for message := range ch {
+		outgoingRoute.Enqueue(wire.NewMsgPing(666))
+		for {
+			message := incomingRoute.Dequeue()
 			log.Infof("Got message: %+v", message.Command())
 			if message.Command() == "ping" {
-				router.WriteOutgoingMessage(wire.NewMsgPong(666))
+				outgoingRoute.Enqueue(wire.NewMsgPong(666))
 			}
 		}
 	})
-	return route
+	return incomingRoute
 }
