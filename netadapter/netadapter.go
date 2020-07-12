@@ -58,7 +58,21 @@ func NewNetAdapter(listeningAddrs []string) (*NetAdapter, error) {
 
 // Start begins the operation of the NetAdapter
 func (na *NetAdapter) Start() error {
-	return na.server.Start()
+	err := na.server.Start()
+	if err != nil {
+		return err
+	}
+
+	// TODO(libp2p): Replace with real connection manager
+	cfg := config.ActiveConfig()
+	for _, connectPeer := range cfg.ConnectPeers {
+		_, err := na.server.Connect(connectPeer)
+		if err != nil {
+			log.Errorf("Error connecting to %s: %+v", connectPeer, err)
+		}
+	}
+
+	return nil
 }
 
 // Stop safely closes the NetAdapter
@@ -93,12 +107,16 @@ func (na *NetAdapter) newOnConnectedHandler() server.OnConnectedHandler {
 }
 
 func (na *NetAdapter) registerConnection(connection server.Connection, router *router.Router, id *id.ID) {
+	na.server.AddConnection(connection)
+
 	na.connectionIDs[connection] = id
 	na.idsToConnections[id] = connection
 	na.idsToRouters[id] = router
 }
 
 func (na *NetAdapter) unregisterConnection(connection server.Connection) {
+	na.server.RemoveConnection(connection)
+
 	connectionID, ok := na.connectionIDs[connection]
 	if !ok {
 		return

@@ -41,7 +41,7 @@ func (p *Manager) Stop() error {
 func newRouterInitializer(netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG) netadapter.RouterInitializer {
 	return func() (*router.Router, error) {
 		router := router.NewRouter()
-		err := router.AddRoute([]string{wire.CmdTx}, startDummy(netAdapter, dag))
+		err := router.AddRoute([]string{wire.CmdPing, wire.CmdPong}, startPing(netAdapter, dag))
 		if err != nil {
 			return nil, err
 		}
@@ -49,12 +49,18 @@ func newRouterInitializer(netAdapter *netadapter.NetAdapter, dag *blockdag.Block
 	}
 }
 
-func startDummy(netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG) *router.Route {
-	route := router.NewRoute()
+// TODO(libp2p): Remove this and change it with a real Ping-Pong flow.
+func startPing(netAdapter *netadapter.NetAdapter, router *netadapter.Router,
+	dag *blockdag.BlockDAG) chan wire.Message {
+
+	ch := make(chan wire.Message)
 	spawn(func() {
-		for {
-			message := route.Dequeue()
-			log.Infof("handling message %s", message.Command())
+		router.WriteOutgoingMessage(wire.NewMsgPing(666))
+		for message := range ch {
+			log.Infof("Got message: %+v", message.Command())
+			if message.Command() == "ping" {
+				router.WriteOutgoingMessage(wire.NewMsgPong(666))
+			}
 		}
 	})
 	return route

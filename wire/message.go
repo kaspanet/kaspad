@@ -7,9 +7,10 @@ package wire
 import (
 	"bytes"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"unicode/utf8"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/daghash"
 )
@@ -64,9 +65,9 @@ type Message interface {
 	MaxPayloadLength(uint32) uint32
 }
 
-// makeEmptyMessage creates a message of the appropriate concrete type based
+// MakeEmptyMessage creates a message of the appropriate concrete type based
 // on the command.
-func makeEmptyMessage(command string) (Message, error) {
+func MakeEmptyMessage(command string) (Message, error) {
 	var msg Message
 	switch command {
 	case CmdVersion:
@@ -309,7 +310,7 @@ func ReadMessageN(r io.Reader, pver uint32, kaspaNet KaspaNet) (int, Message, []
 	}
 
 	// Create struct of appropriate message type based on the command.
-	msg, err := makeEmptyMessage(command)
+	msg, err := MakeEmptyMessage(command)
 	if err != nil {
 		discardInput(r, hdr.length)
 		return totalBytes, nil, nil, messageError("ReadMessage",
