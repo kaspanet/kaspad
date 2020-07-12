@@ -49,5 +49,4 @@ func HandleRelayBlockRequests(incomingRoute *router.Route, outgoingRoute *router
 			}
 		}
 	}
-	return nil
 }
