@@ -124,12 +124,12 @@ func (na *NetAdapter) startReceiveLoop(connection server.Connection, router *Rou
 	for atomic.LoadUint32(&na.stop) == 0 {
 		message, err := connection.Receive()
 		if err != nil {
-			log.Warnf("Failed to receive from %s: %s", connection.Address(), err)
+			log.Warnf("Failed to receive from %s: %s", connection, err)
 			break
 		}
 		err = router.RouteInputMessage(message)
 		if err != nil {
-			log.Warnf("Failed to receive from %s: %s", connection.Address(), err)
+			log.Warnf("Failed to receive from %s: %s", connection, err)
 			break
 		}
 	}

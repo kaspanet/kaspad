@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net"
 
 	"github.com/kaspanet/kaspad/wire"
@@ -25,6 +26,7 @@ type Server interface {
 
 // Connection represents a p2p server connection.
 type Connection interface {
+	fmt.Stringer
 	Send(message wire.Message) error
 	Receive() (wire.Message, error)
 	Disconnect() error

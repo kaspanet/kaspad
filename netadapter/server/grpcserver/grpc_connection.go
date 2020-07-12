@@ -39,6 +39,10 @@ func newConnection(server *gRPCServer, address net.Addr) *gRPCConnection {
 	return connection
 }
 
+func (c *gRPCConnection) String() string {
+	return c.Address().String()
+}
+
 func (c *gRPCConnection) IsConnected() bool {
 	return atomic.LoadInt32(&c.isConnected) == 1
 }
