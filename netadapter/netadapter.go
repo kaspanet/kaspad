@@ -1,14 +1,13 @@
 package netadapter
 
 import (
+	"sync/atomic"
+
 	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/netadapter/id"
-	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/netadapter/server"
 	"github.com/kaspanet/kaspad/netadapter/server/grpcserver"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
-	"sync/atomic"
 )
 
 // RouterInitializer is a function that initializes a new
@@ -29,6 +28,7 @@ type NetAdapter struct {
 	connectionIDs    map[server.Connection]*id.ID
 	idsToConnections map[*id.ID]server.Connection
 	idsToRouters     map[*id.ID]*router.Router
+	sync.RWMutex
 }
 
 // NewNetAdapter creates and starts a new NetAdapter on the
@@ -144,6 +144,8 @@ func (na *NetAdapter) ID() *id.ID {
 // Broadcast sends the given `message` to every peer corresponding
 // to each ID in `ids`
 func (na *NetAdapter) Broadcast(connectionIDs []*id.ID, message wire.Message) error {
+	na.RLock()
+	defer na.RUnlock()
 	for _, connectionID := range connectionIDs {
 		router, ok := na.idsToRouters[connectionID]
 		if !ok {

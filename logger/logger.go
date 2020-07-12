@@ -51,6 +51,9 @@ var (
 	grpcLog = BackendLog.Logger("GRPC")
 	p2psLog = BackendLog.Logger("P2PS")
 	ntarLog = BackendLog.Logger("NTAR")
+	blkrLog = BackendLog.Logger("BLKR")
+	gbrlLog = BackendLog.Logger("GBRL")
+	blprLog = BackendLog.Logger("BLPR")
 )
 
 // SubsystemTags is an enum of all sub system tags
@@ -77,7 +80,10 @@ var SubsystemTags = struct {
 	MUXX,
 	GRPC,
 	P2PS,
-	NTAR string
+	BLKR,
+	NTAR,
+	GBRL,
+	BLPR string
 }{
 	ADXR: "ADXR",
 	AMGR: "AMGR",
@@ -101,7 +107,10 @@ var SubsystemTags = struct {
 	MUXX: "MUXX",
 	GRPC: "GRPC",
 	P2PS: "P2PS",
+	BLKR: "BLKR",
+	GBRL: "GBRL",
 	NTAR: "NTAR",
+	BLPR: "BLPR",
 }
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
@@ -128,7 +137,10 @@ var subsystemLoggers = map[string]*logs.Logger{
 	SubsystemTags.MUXX: muxxLog,
 	SubsystemTags.GRPC: grpcLog,
 	SubsystemTags.P2PS: p2psLog,
+	SubsystemTags.BLKR: blkrLog,
+	SubsystemTags.GBRL: gbrlLog,
 	SubsystemTags.NTAR: ntarLog,
+	SubsystemTags.BLPR: blprLog,
 }
 
 // InitLog attaches log file and error log file to the backend log.
