@@ -130,7 +130,7 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, router *netadapter.Router
 	return false, nil
 }
 
-// readMsgBlock returns the next msgBlock in msgChan, and populates invsQueue in any inv messages that arrives between.
+// readMsgBlock returns the next msgBlock in msgChan, and populates invsQueue with any inv messages that meanwhile arrive.
 //
 // Note: this function assumes msgChan can contain only wire.MsgInvRelayBlock and wire.MsgBlock messages.
 func readMsgBlock(msgChan <-chan wire.Message,
