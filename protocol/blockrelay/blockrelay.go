@@ -18,55 +18,38 @@ func StartBlockRelay(msgChan <-chan wire.Message, peer *peerpkg.Peer, netAdapter
 
 	invsQueue := make([]*wire.MsgInvRelayBlock, 0)
 	for {
-		shouldStop, err := handleInv(msgChan, netAdapter, router, peer, dag, invsQueue)
+		inv, shouldStop, err := readInv(msgChan, &invsQueue)
 		if err != nil {
 			return err
 		}
 		if shouldStop {
 			return nil
 		}
-	}
-}
 
-func handleInv(msgChan <-chan wire.Message, netAdapter *netadapter.NetAdapter, router *netadapter.Router,
-	peer *peerpkg.Peer, dag *blockdag.BlockDAG, invsQueue []*wire.MsgInvRelayBlock) (shouldStop bool, err error) {
-
-	inv, shouldStop, err := readInv(msgChan, &invsQueue)
-	if err != nil {
-		return false, err
-	}
-	if shouldStop {
-		return true, nil
-	}
-
-	if dag.IsKnownBlock(inv.Hash) {
-		if dag.IsKnownInvalid(inv.Hash) {
-			return false, errors.Errorf("sent inv of invalid block %s",
-				inv.Hash)
+		if dag.IsKnownBlock(inv.Hash) {
+			if dag.IsKnownInvalid(inv.Hash) {
+				return errors.Errorf("sent inv of an invalid block %s",
+					inv.Hash)
+			}
+			return nil
 		}
-		return false, nil
-	}
 
-	requestQueue := []*daghash.Hash{inv.Hash}
-	requestQueueSet := map[daghash.Hash]struct{}{
-		*inv.Hash: {},
-	}
-	pendingBlocks := map[daghash.Hash]struct{}{}
-
-	// In case the function closes earlier than expected, we wanna make sure requestedBlocks is
-	// clean from any pending blocks.
-	defer deleteFromRequestedBlocks(pendingBlocks)
-	for len(requestQueue) > 0 {
-		shouldStop, err := requestBlocks(netAdapter, router, peer, msgChan, dag, &invsQueue,
-			&requestQueue, requestQueueSet)
-		if err != nil {
-			return false, err
+		requestQueue := []*daghash.Hash{inv.Hash}
+		requestQueueSet := map[daghash.Hash]struct{}{
+			*inv.Hash: {},
 		}
-		if shouldStop {
-			return true, nil
+
+		for len(requestQueue) > 0 {
+			shouldStop, err := requestBlocks(netAdapter, router, peer, msgChan, dag, &invsQueue,
+				&requestQueue, requestQueueSet)
+			if err != nil {
+				return err
+			}
+			if shouldStop {
+				return nil
+			}
 		}
 	}
-	return false, nil
 }
 
 func readInv(msgChan <-chan wire.Message,
@@ -147,6 +130,9 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, router *netadapter.Router
 			return false, nil
 		}
 	}
+	// In case the function returns earlier than expected, we wanna make sure requestedBlocks is
+	// clean from any pending blocks.
+	defer deleteFromRequestedBlocks(pendingBlocks)
 
 	getRelayBlocksMsg := wire.NewMsgGetRelayBlocks(hashesToRequest)
 	router.WriteOutgoingMessage(getRelayBlocksMsg)
