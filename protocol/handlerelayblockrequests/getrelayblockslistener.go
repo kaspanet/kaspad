@@ -1,4 +1,4 @@
-package getrelayblockslistener
+package handlerelayblockrequests
 
 import (
 	"github.com/kaspanet/kaspad/blockdag"
@@ -7,9 +7,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-// StartGetRelayBlocksListener listens to wire.MsgGetRelayBlocks messages and sends
+// HandleRelayBlockRequests listens to wire.MsgGetRelayBlocks messages and sends
 // their corresponding blocks to the requesting peer.
-func StartGetRelayBlocksListener(msgChan <-chan wire.Message, router *netadapter.Router,
+func HandleRelayBlockRequests(msgChan <-chan wire.Message, router *netadapter.Router,
 	dag *blockdag.BlockDAG) error {
 
 	for msg := range msgChan {

@@ -1,4 +1,4 @@
-package blockrelay
+package handlerelayinvs
 
 import (
 	"github.com/kaspanet/kaspad/util/daghash"

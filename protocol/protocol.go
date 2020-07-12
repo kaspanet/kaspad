@@ -3,8 +3,8 @@ package protocol
 import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter"
-	"github.com/kaspanet/kaspad/protocol/blockrelay"
-	"github.com/kaspanet/kaspad/protocol/getrelayblockslistener"
+	"github.com/kaspanet/kaspad/protocol/handlerelayblockrequests"
+	"github.com/kaspanet/kaspad/protocol/handlerelayinvs"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/wire"
 	"sync/atomic"
@@ -60,15 +60,15 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *netadapter.Router, da
 
 	peer := new(peerpkg.Peer)
 
-	addFlow("blockrelay", router, []string{wire.CmdInvRelayBlock, wire.CmdBlock}, &stopped, stop,
+	addFlow("HandleRelayInvs", router, []string{wire.CmdInvRelayBlock, wire.CmdBlock}, &stopped, stop,
 		func(ch chan wire.Message) error {
-			return blockrelay.StartBlockRelay(ch, peer, netAdapter, router, dag)
+			return handlerelayinvs.HandleRelayInvs(ch, peer, netAdapter, router, dag)
 		},
 	)
 
-	addFlow("getrelayblocks", router, []string{wire.CmdGetRelayBlocks}, &stopped, stop,
+	addFlow("HandleRelayBlockRequests", router, []string{wire.CmdGetRelayBlocks}, &stopped, stop,
 		func(ch chan wire.Message) error {
-			return getrelayblockslistener.StartGetRelayBlocksListener(ch, router, dag)
+			return handlerelayblockrequests.HandleRelayBlockRequests(ch, router, dag)
 		},
 	)
 

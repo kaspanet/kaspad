@@ -1,4 +1,4 @@
-package blockrelay
+package handlerelayinvs
 
 import (
 	"github.com/kaspanet/kaspad/blockdag"
@@ -12,9 +12,9 @@ import (
 	"time"
 )
 
-// StartBlockRelay listens to wire.MsgInvRelayBlock messages, requests their corresponding blocks if they
+// HandleRelayInvs listens to wire.MsgInvRelayBlock messages, requests their corresponding blocks if they
 // are missing, adds them to the DAG and propagates them to the rest of the network.
-func StartBlockRelay(msgChan <-chan wire.Message, peer *peerpkg.Peer, netAdapter *netadapter.NetAdapter, router *netadapter.Router,
+func HandleRelayInvs(msgChan <-chan wire.Message, peer *peerpkg.Peer, netAdapter *netadapter.NetAdapter, router *netadapter.Router,
 	dag *blockdag.BlockDAG) error {
 
 	invsQueue := make([]*wire.MsgInvRelayBlock, 0)
