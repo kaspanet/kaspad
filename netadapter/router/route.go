@@ -40,3 +40,9 @@ func (r *Route) Dequeue() wire.Message {
 func (r *Route) setOnCapacityReachedHandler(onCapacityReachedHandler onCapacityReachedHandler) {
 	r.onCapacityReachedHandler = onCapacityReachedHandler
 }
+
+// Close closes this route
+func (r *Route) Close() error {
+	close(r.channel)
+	return nil
+}
