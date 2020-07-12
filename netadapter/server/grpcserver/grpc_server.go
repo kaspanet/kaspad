@@ -21,8 +21,8 @@ type gRPCServer struct {
 	server             *grpc.Server
 }
 
-// NewGRPCServer creates and starts a gRPC server with the given
-// listening port
+// NewGRPCServer creates and starts a gRPC server, listening on the
+// provided addresses/ports
 func NewGRPCServer(listeningAddrs []string) (server.Server, error) {
 	s := &gRPCServer{
 		server:         grpc.NewServer(),
