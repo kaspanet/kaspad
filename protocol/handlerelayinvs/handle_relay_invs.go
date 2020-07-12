@@ -32,7 +32,7 @@ func HandleRelayInvs(msgChan <-chan wire.Message, peer *peerpkg.Peer, netAdapter
 				return errors.Errorf("sent inv of an invalid block %s",
 					inv.Hash)
 			}
-			return nil
+			continue
 		}
 
 		requestQueue := newHashesQueueSet()
