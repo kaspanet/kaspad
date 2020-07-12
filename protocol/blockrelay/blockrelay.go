@@ -84,18 +84,22 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, router *netadapter.Router
 	}
 
 	pendingBlocks := map[daghash.Hash]struct{}{}
+	var filteredHashesToRequest []*daghash.Hash
 	for _, hash := range hashesToRequest {
-		pendingBlocks[*hash] = struct{}{}
 		exists := requestedBlocks.addIfNotExists(hash)
-		if exists {
-			return false, nil
+		if !exists {
+			continue
 		}
+
+		pendingBlocks[*hash] = struct{}{}
+		filteredHashesToRequest = append(filteredHashesToRequest, hash)
 	}
+
 	// In case the function returns earlier than expected, we wanna make sure requestedBlocks is
 	// clean from any pending blocks.
 	defer requestedBlocks.removeSet(pendingBlocks)
 
-	getRelayBlocksMsg := wire.NewMsgGetRelayBlocks(hashesToRequest)
+	getRelayBlocksMsg := wire.NewMsgGetRelayBlocks(filteredHashesToRequest)
 	router.WriteOutgoingMessage(getRelayBlocksMsg)
 
 	for len(pendingBlocks) > 0 {
