@@ -38,13 +38,13 @@ func (s *gRPCServer) Start() error {
 	for _, listenAddr := range s.listeningAddrs {
 		listener, err := net.Listen("tcp", listenAddr)
 		if err != nil {
-			return errors.Wrapf(err, "Error listening on %s", listenAddr)
+			return errors.Wrapf(err, "error listening on %s", listenAddr)
 		}
 
 		spawn(func() {
 			err := s.server.Serve(listener)
 			if err != nil {
-				panics.Exit(log, fmt.Sprintf("Error serving on %s: %+v", listenAddr, err))
+				panics.Exit(log, fmt.Sprintf("error serving on %s: %+v", listenAddr, err))
 			}
 		})
 
@@ -58,7 +58,7 @@ func (s *gRPCServer) Stop() error {
 	for _, connection := range s.connections {
 		err := connection.Disconnect()
 		if err != nil {
-			log.Errorf("Error closing connection to %s: %+v", connection, err)
+			log.Errorf("error closing connection to %s: %+v", connection, err)
 		}
 	}
 	s.server.GracefulStop()
@@ -77,17 +77,17 @@ func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 	log.Infof("Dialing to %s", address)
 	gRPCConnection, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		return nil, errors.Wrapf(err, "Error connecting to %s", address)
+		return nil, errors.Wrapf(err, "error connecting to %s", address)
 	}
 	client := protowire.NewP2PClient(gRPCConnection)
 	stream, err := client.MessageStream(context.Background())
 	if err != nil {
-		return nil, errors.Wrapf(err, "Error getting client stream for %s", address)
+		return nil, errors.Wrapf(err, "error getting client stream for %s", address)
 	}
 
 	peerInfo, ok := peer.FromContext(stream.Context())
 	if !ok {
-		return nil, errors.Errorf("Error getting stream peer info from context for %s", address)
+		return nil, errors.Errorf("error getting stream peer info from context for %s", address)
 	}
 
 	connection := newConnection(s, peerInfo.Addr)
@@ -101,7 +101,7 @@ func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 	spawn(func() {
 		err := connection.clientConnectionLoop(stream)
 		if err != nil {
-			log.Errorf("Error from clientConnectionLoop for %s: %+v", address, err)
+			log.Errorf("error from clientConnectionLoop for %s: %+v", address, err)
 		}
 	})
 
