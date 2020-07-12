@@ -34,14 +34,12 @@ func StartBlockRelay(msgChan <-chan wire.Message, peer *peerpkg.Peer, netAdapter
 			return nil
 		}
 
-		requestQueue := []*daghash.Hash{inv.Hash}
-		requestQueueSet := map[daghash.Hash]struct{}{
-			*inv.Hash: {},
-		}
+		requestQueue := newHashesQueueSet()
+		requestQueue.enqueueIfNotExists(inv.Hash)
 
-		for len(requestQueue) > 0 {
+		for requestQueue.len() > 0 {
 			shouldStop, err := requestBlocks(netAdapter, router, peer, msgChan, dag, &invsQueue,
-				&requestQueue, requestQueueSet)
+				requestQueue)
 			if err != nil {
 				return err
 			}
@@ -110,20 +108,17 @@ func deleteFromRequestedBlocks(blockHashes map[daghash.Hash]struct{}) {
 }
 
 func requestBlocks(netAdapater *netadapter.NetAdapter, router *netadapter.Router, peer *peerpkg.Peer, msgChan <-chan wire.Message,
-	dag *blockdag.BlockDAG, invsQueue *[]*wire.MsgInvRelayBlock, requestQueue *[]*daghash.Hash,
-	requestQueueSet map[daghash.Hash]struct{}) (shouldStop bool, err error) {
+	dag *blockdag.BlockDAG, invsQueue *[]*wire.MsgInvRelayBlock, requestQueue *hashesQueueSet) (shouldStop bool, err error) {
 
 	var hashesToRequest []*daghash.Hash
-	if len(*requestQueue) > wire.MsgGetRelayBlocksHashes {
-		hashesToRequest, *requestQueue = (*requestQueue)[:wire.MsgGetRelayBlocksHashes],
-			(*requestQueue)[wire.MsgGetRelayBlocksHashes:]
+	if requestQueue.len() > wire.MsgGetRelayBlocksHashes {
+		hashesToRequest = requestQueue.dequeue(wire.MsgGetRelayBlocksHashes)
 	} else {
-		hashesToRequest, *requestQueue = *requestQueue, nil
+		hashesToRequest = requestQueue.dequeue(requestQueue.len())
 	}
 
 	pendingBlocks := map[daghash.Hash]struct{}{}
 	for _, hash := range hashesToRequest {
-		delete(requestQueueSet, *hash)
 		pendingBlocks[*hash] = struct{}{}
 		exists := requestedBlocks.addIfNotExists(hash)
 		if exists {
@@ -154,7 +149,7 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, router *netadapter.Router
 		delete(pendingBlocks, *blockHash)
 		requestedBlocks.remove(blockHash)
 
-		shouldStop, err = processAndRelayBlock(netAdapater, router, peer, dag, requestQueue, requestQueueSet, block)
+		shouldStop, err = processAndRelayBlock(netAdapater, peer, dag, requestQueue, block)
 		if err != nil {
 			return false, err
 		}
@@ -165,9 +160,8 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, router *netadapter.Router
 	return false, nil
 }
 
-func processAndRelayBlock(netAdapter *netadapter.NetAdapter, router *netadapter.Router, peer *peerpkg.Peer,
-	dag *blockdag.BlockDAG, requestQueue *[]*daghash.Hash, requestQueueSet map[daghash.Hash]struct{},
-	block *util.Block) (shouldStop bool, err error) {
+func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
+	dag *blockdag.BlockDAG, requestQueue *hashesQueueSet, block *util.Block) (shouldStop bool, err error) {
 
 	blockHash := block.Hash()
 	isOrphan, isDelayed, err := dag.ProcessBlock(block, blockdag.BFNone)
@@ -210,10 +204,7 @@ func processAndRelayBlock(netAdapter *netadapter.NetAdapter, router *netadapter.
 		// Request the parents for the orphan block from the peer that sent it.
 		missingAncestors := dag.GetOrphanMissingAncestorHashes(blockHash)
 		for _, missingAncestor := range missingAncestors {
-			if _, ok := requestQueueSet[*missingAncestor]; !ok {
-				*requestQueue = append(*requestQueue, missingAncestor)
-				requestQueueSet[*missingAncestor] = struct{}{}
-			}
+			requestQueue.enqueueIfNotExists(missingAncestor)
 		}
 		return false, nil
 	}
