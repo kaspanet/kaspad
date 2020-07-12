@@ -161,8 +161,7 @@ func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 	if err != nil {
 		// When the error is a rule error, it means the block was simply
 		// rejected as opposed to something actually going wrong, so log
-		// it as such. Otherwise, something really did go wrong, so log
-		// it as an actual error.
+		// it as such. Otherwise, something really did go wrong, so panic.
 		if !errors.As(err, &blockdag.RuleError{}) {
 			panic(errors.Wrapf(err, "failed to process block %s",
 				blockHash))
