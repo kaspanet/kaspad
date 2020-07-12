@@ -17,13 +17,13 @@ type Peer struct {
 	selectedTipHashMtx sync.RWMutex
 	selectedTipHash    *daghash.Hash
 
-	id                 uint32
-	userAgent          string
-	services           wire.ServiceFlag
-	advertisedProtoVer uint32 // protocol version advertised by remote
-	protocolVersion    uint32 // negotiated protocol version
-	disableRelayTx     bool
-	subnetworkID       *subnetworkid.SubnetworkID
+	id                    uint32
+	userAgent             string
+	services              wire.ServiceFlag
+	advertisedProtocolVer uint32 // protocol version advertised by remote
+	protocolVersion       uint32 // negotiated protocol version
+	disableRelayTx        bool
+	subnetworkID          *subnetworkid.SubnetworkID
 }
 
 // SelectedTipHash returns the selected tip of the peer.
@@ -34,15 +34,6 @@ func (p *Peer) SelectedTipHash() (*daghash.Hash, error) {
 	p.selectedTipHashMtx.RLock()
 	defer p.selectedTipHashMtx.RUnlock()
 	return p.selectedTipHash, nil
-}
-
-// SubnetworkID returns the subnetwork the peer is associated with.
-// It is nil in full nodes.
-func (p *Peer) SubnetworkID() (*subnetworkid.SubnetworkID, error) {
-	if atomic.LoadUint32(&p.ready) == 0 {
-		return nil, errors.New("peer is not ready yet")
-	}
-	return p.subnetworkID, nil
 }
 
 // SetSelectedTipHash sets the selected tip of the peer.
@@ -56,6 +47,15 @@ func (p *Peer) SetSelectedTipHash(hash *daghash.Hash) error {
 	return nil
 }
 
+// SubnetworkID returns the subnetwork the peer is associated with.
+// It is nil in full nodes.
+func (p *Peer) SubnetworkID() (*subnetworkid.SubnetworkID, error) {
+	if atomic.LoadUint32(&p.ready) == 0 {
+		return nil, errors.New("peer is not ready yet")
+	}
+	return p.subnetworkID, nil
+}
+
 // MarkAsReady marks the peer as ready.
 func (p *Peer) MarkAsReady() error {
 	if atomic.AddUint32(&p.ready, 1) != 1 {
@@ -67,8 +67,8 @@ func (p *Peer) MarkAsReady() error {
 // UpdateFieldsFromMsgVersion updates the peer with the data from the version message.
 func (p *Peer) UpdateFieldsFromMsgVersion(msg *wire.MsgVersion, peerID uint32) {
 	// Negotiate the protocol version.
-	p.advertisedProtoVer = msg.ProtocolVersion
-	p.protocolVersion = minUint32(p.protocolVersion, p.advertisedProtoVer)
+	p.advertisedProtocolVer = msg.ProtocolVersion
+	p.protocolVersion = minUint32(p.protocolVersion, p.advertisedProtocolVer)
 	log.Debugf("Negotiated protocol version %d for peer %s",
 		p.protocolVersion, p)
 
