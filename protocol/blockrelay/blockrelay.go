@@ -146,12 +146,14 @@ func readMsgBlock(msgChan <-chan wire.Message,
 				return nil, true, nil
 			}
 
-			inv, ok := msg.(*wire.MsgInvRelayBlock)
-			if !ok {
-				return msg.(*wire.MsgBlock), false, nil
+			switch msg := msg.(type) {
+			case *wire.MsgInvRelayBlock:
+				*invsQueue = append(*invsQueue, msg)
+			case *wire.MsgBlock:
+				return msg, false, nil
+			default:
+				panic(errors.Errorf("unexpected message %s", msg.Command()))
 			}
-
-			*invsQueue = append(*invsQueue, inv)
 		}
 	}
 }
