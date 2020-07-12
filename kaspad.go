@@ -1,13 +1,17 @@
 package main
 
 import (
+	"fmt"
 	"sync/atomic"
+
+	"github.com/kaspanet/kaspad/util/panics"
 
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/blockdag/indexers"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/mining"
+	"github.com/kaspanet/kaspad/protocol"
 	"github.com/kaspanet/kaspad/server/rpc"
 	"github.com/kaspanet/kaspad/signal"
 	"github.com/kaspanet/kaspad/txscript"
@@ -16,7 +20,8 @@ import (
 
 // kaspad is a wrapper for all the kaspad services
 type kaspad struct {
-	rpcServer *rpc.Server
+	rpcServer       *rpc.Server
+	protocolManager *protocol.Manager
 
 	started, shutdown int32
 }
@@ -31,6 +36,11 @@ func (s *kaspad) start() {
 	log.Trace("Starting kaspad")
 
 	cfg := config.ActiveConfig()
+
+	err := s.protocolManager.Start()
+	if err != nil {
+		panics.Exit(log, fmt.Sprintf("Error starting the p2p protocol: %+v", err))
+	}
 
 	if !cfg.DisableRPC {
 		s.rpcServer.Start()
@@ -47,9 +57,17 @@ func (s *kaspad) stop() error {
 
 	log.Warnf("Kaspad shutting down")
 
+	err := s.protocolManager.Stop()
+	if err != nil {
+		log.Errorf("Error stopping the p2p protocol: %+v", err)
+	}
+
 	// Shutdown the RPC server if it's not disabled.
 	if !config.ActiveConfig().DisableRPC {
-		s.rpcServer.Stop()
+		err := s.rpcServer.Stop()
+		if err != nil {
+			log.Errorf("Error stopping rpcServer: %+v", err)
+		}
 	}
 
 	return nil
@@ -71,13 +89,19 @@ func newKaspad(listenAddrs []string, interrupt <-chan struct{}) (*kaspad, error)
 
 	txMempool := setupMempool(dag, sigCache)
 
+	protocolManager, err := protocol.NewManager(listenAddrs, dag)
+	if err != nil {
+		return nil, err
+	}
+
 	rpcServer, err := setupRPC(dag, txMempool, sigCache, acceptanceIndex)
 	if err != nil {
 		return nil, err
 	}
 
 	return &kaspad{
-		rpcServer: rpcServer,
+		rpcServer:       rpcServer,
+		protocolManager: protocolManager,
 	}, nil
 }
 

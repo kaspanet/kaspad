@@ -10,7 +10,8 @@ import (
 const MsgGetRelayBlocksHashes = MaxInvPerMsg
 
 // MsgGetRelayBlocks implements the Message interface and represents a kaspa
-// block inventory message. It is used to request a block with a given hash.
+// getrelblks message. It is used to request blocks as part of the block
+// relay protocol.
 type MsgGetRelayBlocks struct {
 	Hashes []*daghash.Hash
 }

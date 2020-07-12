@@ -1,9 +1,9 @@
-package getrelayblockslistener
+package netadapter
 
 import (
 	"github.com/kaspanet/kaspad/logger"
 	"github.com/kaspanet/kaspad/util/panics"
 )
 
-var log, _ = logger.Get(logger.SubsystemTags.GBRL)
+var log, _ = logger.Get(logger.SubsystemTags.NTAR)
 var spawn = panics.GoroutineWrapperFunc(log)

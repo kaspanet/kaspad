@@ -3,22 +3,64 @@ package protocol
 import (
 	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/messagemux"
-	"github.com/kaspanet/kaspad/p2pserver"
-	"github.com/kaspanet/kaspad/protocol/blockrelay"
-	"github.com/kaspanet/kaspad/protocol/getrelayblockslistener"
+	"github.com/kaspanet/kaspad/netadapter"
+	"github.com/kaspanet/kaspad/protocol/handlerelayblockrequests"
+	"github.com/kaspanet/kaspad/protocol/handlerelayinvs"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
-	"github.com/kaspanet/kaspad/protocol/receiveversion"
-	"github.com/kaspanet/kaspad/protocol/sendversion"
-	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/kaspanet/kaspad/wire"
 	"sync"
 	"sync/atomic"
 )
 
-// StartProtocol starts the p2p protocol for a given connection
-func StartProtocol(server p2pserver.Server, mux messagemux.Mux, connection p2pserver.Connection,
-	dag *blockdag.BlockDAG) error {
+// Manager manages the p2p protocol
+type Manager struct {
+	netAdapter *netadapter.NetAdapter
+}
+
+// NewManager creates a new instance of the p2p protocol manager
+func NewManager(listeningAddrs []string, dag *blockdag.BlockDAG) (*Manager, error) {
+	netAdapter, err := netadapter.NewNetAdapter(listeningAddrs)
+	if err != nil {
+		return nil, err
+	}
+
+	routerInitializer := newRouterInitializer(netAdapter, dag)
+	netAdapter.SetRouterInitializer(routerInitializer)
+
+	manager := Manager{
+		netAdapter: netAdapter,
+	}
+	return &manager, nil
+}
+
+// Start starts the p2p protocol
+func (p *Manager) Start() error {
+	return p.netAdapter.Start()
+}
+
+// Stop stops the p2p protocol
+func (p *Manager) Stop() error {
+	return p.netAdapter.Stop()
+}
+
+func newRouterInitializer(netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG) netadapter.RouterInitializer {
+	return func() (*netadapter.Router, error) {
+		router := netadapter.NewRouter()
+		spawn(func() {
+			err := startFlows(netAdapter, router, dag)
+			if err != nil {
+				// TODO(libp2p) Ban peer
+			}
+		})
+		return router, nil
+	}
+}
+
+func startFlows(netAdapter *netadapter.NetAdapter, router *netadapter.Router, dag *blockdag.BlockDAG) error {
+	stop := make(chan error)
+	stopped := uint32(0)
+
+	peer := new(peerpkg.Peer)
 
 	closed, err := handshake()
 	if err != nil {
@@ -28,37 +70,54 @@ func StartProtocol(server p2pserver.Server, mux messagemux.Mux, connection p2pse
 		return nil
 	}
 
-	errChan := make(chan error)
-	stopped := uint32(0)
+	addFlow("HandleRelayInvs", router, []string{wire.CmdInvRelayBlock, wire.CmdBlock}, &stopped, stop,
+		func(ch chan wire.Message) error {
+			return handlerelayinvs.HandleRelayInvs(ch, peer, netAdapter, router, dag)
+		},
+	)
 
-	blockRelayCh := make(chan wire.Message)
-	mux.AddFlow([]string{wire.CmdInvRelayBlock, wire.CmdBlock}, blockRelayCh)
-	spawn(func() {
-		err := blockrelay.StartBlockRelay(blockRelayCh, server, connection, dag)
-		if err != nil {
-			log.Errorf("error from StartBlockRelay: %s", err)
-		}
+	addFlow("HandleRelayBlockRequests", router, []string{wire.CmdGetRelayBlocks}, &stopped, stop,
+		func(ch chan wire.Message) error {
+			return handlerelayblockrequests.HandleRelayBlockRequests(ch, peer, router, dag)
+		},
+	)
 
-		if atomic.AddUint32(&stopped, 1) != 1 {
-			errChan <- err
-		}
-	})
+	// TODO(libp2p): Remove this and change it with a real Ping-Pong flow.
+	addFlow("PingPong", router, []string{wire.CmdPing, wire.CmdPong}, &stopped, stop,
+		func(ch chan wire.Message) error {
+			router.WriteOutgoingMessage(wire.NewMsgPing(666))
+			for message := range ch {
+				log.Infof("Got message: %+v", message.Command())
+				if message.Command() == "ping" {
+					router.WriteOutgoingMessage(wire.NewMsgPong(666))
+				}
+			}
+			return nil
+		},
+	)
 
-	getRelayBlocksListenerCh := make(chan wire.Message)
-	mux.AddFlow([]string{wire.CmdGetRelayBlocks}, getRelayBlocksListenerCh)
-	spawn(func() {
-		err := getrelayblockslistener.StartGetRelayBlocksListener(getRelayBlocksListenerCh, connection, dag)
-		if err != nil {
-			log.Errorf("error from StartGetRelayBlocksListener: %s", err)
-		}
-
-		if atomic.AddUint32(&stopped, 1) != 1 {
-			errChan <- err
-		}
-	})
-
-	err = <-errChan
+	err := <-stop
 	return err
+}
+
+func addFlow(name string, router *netadapter.Router, messageTypes []string, stopped *uint32,
+	stopChan chan error, flow func(ch chan wire.Message) error) {
+
+	ch := make(chan wire.Message)
+	err := router.AddRoute(messageTypes, ch)
+	if err != nil {
+		panic(err)
+	}
+
+	spawn(func() {
+		err := flow(ch)
+		if err != nil {
+			log.Errorf("error from %s flow: %s", name, err)
+		}
+		if atomic.AddUint32(stopped, 1) == 1 {
+			stopChan <- err
+		}
+	})
 }
 
 func handshake(server p2pserver.Server, mux messagemux.Mux, connection p2pserver.Connection, peer *peerpkg.Peer,
@@ -128,3 +187,4 @@ func handshake(server p2pserver.Server, mux messagemux.Mux, connection p2pserver
 	}
 	return false, nil
 }
+

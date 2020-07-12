@@ -13,10 +13,11 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/pkg/errors"
 	"io"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/random"
 	"github.com/kaspanet/kaspad/util/subnetworkid"

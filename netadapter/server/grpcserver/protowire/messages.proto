@@ -1,0 +1,13 @@
+syntax = "proto3";
+package protowire;
+
+option go_package = "github.com/kaspanet/kaspad/protowire";
+
+message KaspadMessage{
+    string command = 1;
+    bytes payload = 2;
+}
+
+service P2P {
+    rpc MessageStream (stream KaspadMessage) returns (stream KaspadMessage) {}
+}

@@ -28,7 +28,7 @@ var (
 	byteOrder = binary.LittleEndian
 )
 
-// ErrNotInDAG signifies that a block hash or height that is not in the
+// ErrNotInDAG signifies that a block hash that is not in the
 // DAG was requested.
 type ErrNotInDAG string
 

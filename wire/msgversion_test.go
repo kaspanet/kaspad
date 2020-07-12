@@ -35,7 +35,7 @@ func TestVersion(t *testing.T) {
 
 	// Ensure we get the correct data back out.
 	msg := NewMsgVersion(me, you, nonce, selectedTipHash, nil)
-	if msg.ProtocolVersion != int32(pver) {
+	if msg.ProtocolVersion != pver {
 		t.Errorf("NewMsgVersion: wrong protocol version - got %v, want %v",
 			msg.ProtocolVersion, pver)
 	}
