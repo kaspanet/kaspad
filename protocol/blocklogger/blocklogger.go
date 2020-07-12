@@ -19,10 +19,10 @@ var (
 	mtx               sync.Mutex
 )
 
-// LogBlockBlueScore logs a new block blue score as an information message
+// LogBlock logs a new block blue score as an information message
 // to show progress to the user. In order to prevent spam, it limits logging to
 // one message every 10 seconds with duration and totals included.
-func LogBlockBlueScore(block *util.Block) error {
+func LogBlock(block *util.Block) error {
 	mtx.Lock()
 	defer mtx.Unlock()
 
@@ -36,8 +36,7 @@ func LogBlockBlueScore(block *util.Block) error {
 	}
 
 	// Truncate the duration to 10s of milliseconds.
-	durationMillis := int64(duration / time.Millisecond)
-	tDuration := 10 * time.Millisecond * time.Duration(durationMillis/10)
+	tDuration := duration.Round(10 * time.Millisecond)
 
 	// Log information about new block blue score.
 	blockStr := "blocks"

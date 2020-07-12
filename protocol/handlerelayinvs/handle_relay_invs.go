@@ -203,7 +203,7 @@ func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 		}
 		return false, nil
 	}
-	err = blocklogger.LogBlockBlueScore(block)
+	err = blocklogger.LogBlock(block)
 	if err != nil {
 		panic(err)
 	}
