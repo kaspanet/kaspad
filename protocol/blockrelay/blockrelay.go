@@ -73,32 +73,6 @@ func readInv(msgChan <-chan wire.Message,
 		"expecting an inv message", msg.Command())
 }
 
-// readMsgBlock returns the next msgBlock in msgChan, and populates invsQueue in any inv messages that arrives between.
-//
-// Note: this function assumes msgChan can contain only wire.MsgInvRelayBlock and wire.MsgBlock messages.
-func readMsgBlock(msgChan <-chan wire.Message,
-	invsQueue *[]*wire.MsgInvRelayBlock) (msgBlock *wire.MsgBlock, shouldStop bool, err error) {
-
-	for {
-		const stallResponseTimeout = 30 * time.Second
-		select {
-		case <-time.After(stallResponseTimeout):
-			return nil, false, errors.Errorf("stalled for %s", stallResponseTimeout)
-		case msg, isOpen := <-msgChan:
-			if !isOpen {
-				return nil, true, nil
-			}
-
-			inv, ok := msg.(*wire.MsgInvRelayBlock)
-			if !ok {
-				return msg.(*wire.MsgBlock), false, nil
-			}
-
-			*invsQueue = append(*invsQueue, inv)
-		}
-	}
-}
-
 func requestBlocks(netAdapater *netadapter.NetAdapter, router *netadapter.Router, peer *peerpkg.Peer, msgChan <-chan wire.Message,
 	dag *blockdag.BlockDAG, invsQueue *[]*wire.MsgInvRelayBlock, requestQueue *hashesQueueSet) (shouldStop bool, err error) {
 
@@ -150,6 +124,32 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, router *netadapter.Router
 		}
 	}
 	return false, nil
+}
+
+// readMsgBlock returns the next msgBlock in msgChan, and populates invsQueue in any inv messages that arrives between.
+//
+// Note: this function assumes msgChan can contain only wire.MsgInvRelayBlock and wire.MsgBlock messages.
+func readMsgBlock(msgChan <-chan wire.Message,
+	invsQueue *[]*wire.MsgInvRelayBlock) (msgBlock *wire.MsgBlock, shouldStop bool, err error) {
+
+	for {
+		const stallResponseTimeout = 30 * time.Second
+		select {
+		case <-time.After(stallResponseTimeout):
+			return nil, false, errors.Errorf("stalled for %s", stallResponseTimeout)
+		case msg, isOpen := <-msgChan:
+			if !isOpen {
+				return nil, true, nil
+			}
+
+			inv, ok := msg.(*wire.MsgInvRelayBlock)
+			if !ok {
+				return msg.(*wire.MsgBlock), false, nil
+			}
+
+			*invsQueue = append(*invsQueue, inv)
+		}
+	}
 }
 
 func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
