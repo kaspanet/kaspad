@@ -53,7 +53,13 @@ func (c *gRPCConnection) receiveLoop(stream grpcStream) error {
 			return err
 		}
 
-		c.receiveChan <- message
+		func() {
+			c.channelWriteLock.Lock()
+			defer c.channelWriteLock.Unlock()
+			if c.IsConnected() {
+				c.receiveChan <- message
+			}
+		}()
 	}
 
 	return nil

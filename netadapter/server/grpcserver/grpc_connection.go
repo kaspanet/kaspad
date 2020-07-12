@@ -2,6 +2,7 @@ package grpcserver
 
 import (
 	"net"
+	"sync"
 	"sync/atomic"
 
 	"github.com/pkg/errors"
@@ -15,6 +16,7 @@ import (
 type gRPCConnection struct {
 	server                *gRPCServer
 	address               net.Addr
+	channelWriteLock      sync.Mutex // channelWriteLock makes sure the channels aren't written to after close
 	sendChan              chan *protowire.KaspadMessage
 	receiveChan           chan *protowire.KaspadMessage
 	errChan               chan error
@@ -57,9 +59,15 @@ func (c *gRPCConnection) Send(message wire.Message) error {
 		return err
 	}
 
-	c.sendChan <- messageProto
+	c.channelWriteLock.Lock()
+	defer c.channelWriteLock.Unlock()
+	if c.IsConnected() {
+		c.sendChan <- messageProto
 
-	return <-c.errChan
+		return <-c.errChan
+	}
+
+	return nil
 }
 
 // Receive receives the next message from the connection
@@ -83,6 +91,8 @@ func (c *gRPCConnection) Disconnect() error {
 	}
 	atomic.StoreUint32(&c.isConnected, 0)
 
+	c.channelWriteLock.Lock()
+	defer c.channelWriteLock.Unlock()
 	close(c.receiveChan)
 	close(c.sendChan)
 	close(c.errChan)
