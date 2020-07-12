@@ -3,6 +3,7 @@ package blockrelay
 import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter"
+	"github.com/kaspanet/kaspad/protocol/blocklogger"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -200,16 +201,14 @@ func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 		}
 		return false, nil
 	}
+	err = blocklogger.LogBlockBlueScore(block)
+	if err != nil {
+		panic(err)
+	}
 	//TODO(libp2p)
 	//// When the block is not an orphan, log information about it and
 	//// update the DAG state.
 	// sm.restartSyncIfNeeded()
-	//blockBlueScore, err := dag.BlueScoreByBlockHash(blockHash)
-	//if err != nil {
-	//	log.Errorf("Failed to get blue score for block %s: %s", blockHash, err)
-	//}
-	//sm.progressLogger.LogBlockBlueScore(bmsg.block, blockBlueScore)
-	//
 	//// Clear the rejected transactions.
 	//sm.rejectedTxns = make(map[daghash.TxID]struct{})
 	netAdapter.Broadcast(peerpkg.GetReadyPeerIDs(), block.MsgBlock())
