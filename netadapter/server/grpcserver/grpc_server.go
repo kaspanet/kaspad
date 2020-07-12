@@ -36,22 +36,30 @@ func NewGRPCServer(listeningAddrs []string) (server.Server, error) {
 
 func (s *gRPCServer) Start() error {
 	for _, listenAddr := range s.listeningAddrs {
-		listener, err := net.Listen("tcp", listenAddr)
-		if err != nil {
-			return errors.Wrapf(err, "error listening on %s", listenAddr)
+		err2, done := s.listenOn(listenAddr)
+		if done {
+			return err2
 		}
-
-		spawn(func() {
-			err := s.server.Serve(listener)
-			if err != nil {
-				panics.Exit(log, fmt.Sprintf("error serving on %s: %+v", listenAddr, err))
-			}
-		})
-
-		log.Infof("P2P server listening on %s", listenAddr)
 	}
 
 	return nil
+}
+
+func (s *gRPCServer) listenOn(listenAddr string) (error, bool) {
+	listener, err := net.Listen("tcp", listenAddr)
+	if err != nil {
+		return errors.Wrapf(err, "error listening on %s", listenAddr), true
+	}
+
+	spawn(func() {
+		err := s.server.Serve(listener)
+		if err != nil {
+			panics.Exit(log, fmt.Sprintf("error serving on %s: %+v", listenAddr, err))
+		}
+	})
+
+	log.Infof("P2P server listening on %s", listenAddr)
+	return nil, false
 }
 
 func (s *gRPCServer) Stop() error {
