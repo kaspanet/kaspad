@@ -10,12 +10,17 @@ import (
 // once a new Connection sends us its ID.
 type OnIDReceivedHandler func(id *id.ID)
 
+// OnRouteCapacityReachedHandler is a function that is to
+// be called when one of the routes reaches capacity.
+type OnRouteCapacityReachedHandler func()
+
 // Router routes messages by type to their respective
 // input channels
 type Router struct {
-	inputRoutes         map[string]chan wire.Message
-	outputRoute         chan wire.Message
-	onIDReceivedHandler OnIDReceivedHandler
+	inputRoutes                   map[string]chan wire.Message
+	outputRoute                   chan wire.Message
+	onIDReceivedHandler           OnIDReceivedHandler
+	onRouteCapacityReachedHandler OnRouteCapacityReachedHandler
 }
 
 // NewRouter creates a new empty router
@@ -30,6 +35,12 @@ func NewRouter() *Router {
 // this router
 func (r *Router) SetOnIDReceivedHandler(onIDReceivedHandler OnIDReceivedHandler) {
 	r.onIDReceivedHandler = onIDReceivedHandler
+}
+
+// SetOnRouteCapacityReachedHandler sets the onRouteCapacityReachedHandler
+// function for this router
+func (r *Router) SetOnRouteCapacityReachedHandler(onRouteCapacityReachedHandler OnRouteCapacityReachedHandler) {
+	r.onRouteCapacityReachedHandler = onRouteCapacityReachedHandler
 }
 
 // AddRoute registers the messages of types `messageTypes` to

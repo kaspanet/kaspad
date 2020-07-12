@@ -75,6 +75,12 @@ func (na *NetAdapter) newOnConnectedHandler() server.OnConnectedHandler {
 		if err != nil {
 			return err
 		}
+		router.SetOnRouteCapacityReachedHandler(func() {
+			err := connection.Disconnect()
+			if err != nil {
+				log.Warnf("Failed to disconnect from %s", connection)
+			}
+		})
 		connection.SetOnDisconnectedHandler(func() error {
 			na.unregisterConnection(connection)
 			return router.Close()
