@@ -88,7 +88,8 @@ func readInv(msgChan <-chan wire.Message,
 			return inv, false, nil
 		}
 
-		return nil, false, errors.Errorf("unrequested %s message in the block relay flow", msg.Command())
+		return nil, false, errors.Errorf("unexpected %s message in the block relay flow while "+
+			"expecting an inv message", msg.Command())
 	}
 }
 
