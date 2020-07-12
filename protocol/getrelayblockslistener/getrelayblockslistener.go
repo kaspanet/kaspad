@@ -20,7 +20,7 @@ func StartGetRelayBlocksListener(msgChan <-chan wire.Message, router *netadapter
 			if blockdag.IsNotInDAGErr(err) {
 				return errors.Errorf("block %s not found", hash)
 			} else if err != nil {
-				panic(errors.Wrapf(err, "Unable to fetch requested block hash %s", hash))
+				panic(errors.Wrapf(err, "unable to fetch requested block hash %s", hash))
 			}
 			msgBlock := block.MsgBlock()
 
