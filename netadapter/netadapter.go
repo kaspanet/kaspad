@@ -133,6 +133,7 @@ func (na *NetAdapter) startReceiveLoop(connection server.Connection, router *Rou
 		}
 		err = router.RouteInputMessage(message)
 		if err != nil {
+			// TODO(libp2p): This should never happen, do something more severe
 			log.Warnf("Failed to route input message from %s: %s", connection, err)
 			break
 		}
