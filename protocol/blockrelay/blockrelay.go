@@ -8,35 +8,8 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
-	"sync"
 	"time"
 )
-
-var requestedBlocks = &sharedRequestedBlocks{
-	blocks: make(map[daghash.Hash]struct{}),
-}
-
-type sharedRequestedBlocks struct {
-	blocks map[daghash.Hash]struct{}
-	sync.Mutex
-}
-
-func (s *sharedRequestedBlocks) delete(hash *daghash.Hash) {
-	s.Lock()
-	defer s.Unlock()
-	delete(s.blocks, *hash)
-}
-
-func (s *sharedRequestedBlocks) addIfExists(hash *daghash.Hash) (exists bool) {
-	s.Lock()
-	defer s.Unlock()
-	_, ok := s.blocks[*hash]
-	if ok {
-		return true
-	}
-	s.blocks[*hash] = struct{}{}
-	return false
-}
 
 // StartBlockRelay listens to wire.MsgInvRelayBlock messages, requests their corresponding blocks if they
 // are missing, adds them to the DAG and propagates them to the rest of the network.
@@ -148,7 +121,7 @@ func readMsgBlock(msgChan <-chan wire.Message,
 func deleteFromRequestedBlocks(blockHashes map[daghash.Hash]struct{}) {
 	for hash := range blockHashes {
 		hash := hash
-		requestedBlocks.delete(&hash)
+		requestedBlocks.remove(&hash)
 	}
 }
 
@@ -168,7 +141,7 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, router *netadapter.Router
 	for _, hash := range hashesToRequest {
 		delete(requestQueueSet, *hash)
 		pendingBlocks[*hash] = struct{}{}
-		exists := requestedBlocks.addIfExists(hash)
+		exists := requestedBlocks.addIfNotExists(hash)
 		if exists {
 			return false, nil
 		}
@@ -192,7 +165,7 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, router *netadapter.Router
 			return false, errors.Errorf("got unrequested block %s", block.Hash())
 		}
 		delete(pendingBlocks, *blockHash)
-		requestedBlocks.delete(blockHash)
+		requestedBlocks.remove(blockHash)
 
 		shouldStop, err = processAndRelayBlock(netAdapater, router, peer, dag, requestQueue, requestQueueSet, block)
 		if err != nil {
