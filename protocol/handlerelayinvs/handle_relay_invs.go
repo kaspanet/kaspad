@@ -66,12 +66,11 @@ func readInv(msgChan <-chan wire.Message,
 	}
 
 	inv, ok := msg.(*wire.MsgInvRelayBlock)
-	if ok {
-		return inv, false, nil
+	if !ok {
+		return nil, false, errors.Errorf("unexpected %s message in the block relay flow while "+
+			"expecting an inv message", msg.Command())
 	}
-
-	return nil, false, errors.Errorf("unexpected %s message in the block relay flow while "+
-		"expecting an inv message", msg.Command())
+	return inv, false, nil
 }
 
 func requestBlocks(netAdapater *netadapter.NetAdapter, router *netadapter.Router, peer *peerpkg.Peer, msgChan <-chan wire.Message,
