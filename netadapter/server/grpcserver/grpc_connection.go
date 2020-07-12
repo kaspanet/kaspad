@@ -42,7 +42,7 @@ func (c *gRPCConnection) String() string {
 }
 
 func (c *gRPCConnection) IsConnected() bool {
-	return atomic.LoadUint32(&c.isConnected) == 1
+	return atomic.LoadUint32(&c.isConnected) != 0
 }
 
 func (c *gRPCConnection) SetOnDisconnectedHandler(onDisconnectedHandler server.OnDisconnectedHandler) {
