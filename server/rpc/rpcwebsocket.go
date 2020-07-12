@@ -849,7 +849,7 @@ type wsResponse struct {
 // as rescans, are sent to the asyncHander goroutine and are limited to one at a
 // time. There are two outbound message types - one for responding to client
 // requests and another for async notifications. Responses to client requests
-// use WriteOutgoingMessage which employs a buffered channel thereby limiting the number
+// use SendMessage which employs a buffered channel thereby limiting the number
 // of outstanding requests that can be made. Notifications are sent via
 // QueueNotification which implements a queue via notificationQueueHandler to
 // ensure sending notifications from other subsystems can't block. Ultimately,
@@ -1215,7 +1215,7 @@ cleanup:
 	log.Tracef("Websocket client output handler done for %s", c.addr)
 }
 
-// WriteOutgoingMessage sends the passed json to the websocket client. It is backed
+// SendMessage sends the passed json to the websocket client. It is backed
 // by a buffered channel, so it will not block until the send channel is full.
 // Note however that QueueNotification must be used for sending async
 // notifications instead of the this function. This approach allows a limit to
