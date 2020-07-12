@@ -75,6 +75,8 @@ func (c *gRPCConnection) Receive() (wire.Message, error) {
 
 // Disconnect disconnects the connection
 // This is part of the Connection interface
+//
+// Calling this function a second time doesn't do anything
 func (c *gRPCConnection) Disconnect() error {
 	if !c.IsConnected() {
 		return nil
