@@ -3,6 +3,7 @@ package handlerelayinvs
 import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter"
+	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/blocklogger"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/util"
@@ -15,12 +16,12 @@ import (
 
 // HandleRelayInvs listens to wire.MsgInvRelayBlock messages, requests their corresponding blocks if they
 // are missing, adds them to the DAG and propagates them to the rest of the network.
-func HandleRelayInvs(msgChan <-chan wire.Message, peer *peerpkg.Peer, netAdapter *netadapter.NetAdapter, router *netadapter.Router,
+func HandleRelayInvs(incomingRoute *router.Route, peer *peerpkg.Peer, netAdapter *netadapter.NetAdapter, outgoingRoute *router.Route,
 	dag *blockdag.BlockDAG) error {
 
 	invsQueue := make([]*wire.MsgInvRelayBlock, 0)
 	for {
-		inv, shouldStop, err := readInv(msgChan, &invsQueue)
+		inv, shouldStop, err := readInv(incomingRoute, &invsQueue)
 		if err != nil {
 			return err
 		}
@@ -40,7 +41,7 @@ func HandleRelayInvs(msgChan <-chan wire.Message, peer *peerpkg.Peer, netAdapter
 		requestQueue.enqueueIfNotExists(inv.Hash)
 
 		for requestQueue.len() > 0 {
-			shouldStop, err := requestBlocks(netAdapter, router, peer, msgChan, dag, &invsQueue,
+			shouldStop, err := requestBlocks(netAdapter, outgoingRoute, peer, incomingRoute, dag, &invsQueue,
 				requestQueue)
 			if err != nil {
 				return err
@@ -52,17 +53,17 @@ func HandleRelayInvs(msgChan <-chan wire.Message, peer *peerpkg.Peer, netAdapter
 	}
 }
 
-func readInv(msgChan <-chan wire.Message,
-	invsQueue *[]*wire.MsgInvRelayBlock) (inv *wire.MsgInvRelayBlock, shouldStop bool, err error) {
+func readInv(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlock) (
+	inv *wire.MsgInvRelayBlock, shouldStop bool, err error) {
 
 	if len(*invsQueue) > 0 {
 		inv, *invsQueue = (*invsQueue)[0], (*invsQueue)[1:]
 		return inv, false, nil
 	}
 
-	msg, isOpen := <-msgChan
-	if !isOpen {
-		return nil, true, nil
+	msg, err := incomingRoute.Dequeue()
+	if err != nil {
+		return nil, false, err
 	}
 
 	inv, ok := msg.(*wire.MsgInvRelayBlock)
@@ -73,7 +74,7 @@ func readInv(msgChan <-chan wire.Message,
 	return inv, false, nil
 }
 
-func requestBlocks(netAdapater *netadapter.NetAdapter, router *netadapter.Router, peer *peerpkg.Peer, msgChan <-chan wire.Message,
+func requestBlocks(netAdapater *netadapter.NetAdapter, outgoingRoute *router.Route, peer *peerpkg.Peer, incomingRoute *router.Route,
 	dag *blockdag.BlockDAG, invsQueue *[]*wire.MsgInvRelayBlock, requestQueue *hashesQueueSet) (shouldStop bool, err error) {
 
 	numHashesToRequest := mathUtil.MinInt(wire.MsgGetRelayBlocksHashes, requestQueue.len())
@@ -96,10 +97,13 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, router *netadapter.Router
 	defer requestedBlocks.removeSet(pendingBlocks)
 
 	getRelayBlocksMsg := wire.NewMsgGetRelayBlocks(filteredHashesToRequest)
-	router.WriteOutgoingMessage(getRelayBlocksMsg)
+	err = outgoingRoute.Enqueue(getRelayBlocksMsg)
+	if err != nil {
+		return false, err
+	}
 
 	for len(pendingBlocks) > 0 {
-		msgBlock, shouldStop, err := readMsgBlock(msgChan, invsQueue)
+		msgBlock, shouldStop, err := readMsgBlock(incomingRoute, invsQueue)
 		if err != nil {
 			return false, err
 		}
@@ -129,19 +133,28 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, router *netadapter.Router
 // readMsgBlock returns the next msgBlock in msgChan, and populates invsQueue with any inv messages that meanwhile arrive.
 //
 // Note: this function assumes msgChan can contain only wire.MsgInvRelayBlock and wire.MsgBlock messages.
-func readMsgBlock(msgChan <-chan wire.Message,
-	invsQueue *[]*wire.MsgInvRelayBlock) (msgBlock *wire.MsgBlock, shouldStop bool, err error) {
+func readMsgBlock(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlock) (
+	msgBlock *wire.MsgBlock, shouldStop bool, err error) {
 
 	for {
+		errChan := make(chan error)
+		msgChan := make(chan wire.Message)
+		spawn(func() {
+			message, err := incomingRoute.Dequeue()
+			if err != nil {
+				errChan <- err
+				return
+			}
+			msgChan <- message
+		})
+
 		const timeout = 30 * time.Second
 		select {
 		case <-time.After(timeout):
 			return nil, false, errors.Errorf("stalled for %s", timeout)
-		case msg, isOpen := <-msgChan:
-			if !isOpen {
-				return nil, true, nil
-			}
-
+		case <-errChan:
+			return nil, false, err
+		case msg := <-msgChan:
 			switch msg := msg.(type) {
 			case *wire.MsgInvRelayBlock:
 				*invsQueue = append(*invsQueue, msg)

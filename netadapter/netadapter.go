@@ -1,6 +1,9 @@
 package netadapter
 
 import (
+	"github.com/kaspanet/kaspad/netadapter/id"
+	"github.com/kaspanet/kaspad/netadapter/router"
+	"sync"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/config"
