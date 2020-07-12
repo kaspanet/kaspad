@@ -10,8 +10,8 @@ import (
 
 // HandleRelayBlockRequests listens to wire.MsgGetRelayBlocks messages and sends
 // their corresponding blocks to the requesting peer.
-func HandleRelayBlockRequests(incomingRoute *router.Route, peer *peerpkg.Peer, outgoingRoute *router.Route,
-	dag *blockdag.BlockDAG) error {
+func HandleRelayBlockRequests(incomingRoute *router.Route, outgoingRoute *router.Route,
+	peer *peerpkg.Peer, dag *blockdag.BlockDAG) error {
 
 	for {
 		message, err := incomingRoute.Dequeue()

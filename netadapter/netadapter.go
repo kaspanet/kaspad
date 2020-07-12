@@ -2,7 +2,7 @@ package netadapter
 
 import (
 	"github.com/kaspanet/kaspad/netadapter/id"
-	"github.com/kaspanet/kaspad/netadapter/router"
+	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 	"sync"
 	"sync/atomic"
 
@@ -15,7 +15,7 @@ import (
 
 // RouterInitializer is a function that initializes a new
 // router to be used with a new connection
-type RouterInitializer func() (*router.Router, error)
+type RouterInitializer func() (*routerpkg.Router, error)
 
 // NetAdapter is an abstraction layer over networking.
 // This type expects a RouteInitializer function. This
@@ -30,7 +30,7 @@ type NetAdapter struct {
 
 	connectionIDs    map[server.Connection]*id.ID
 	idsToConnections map[*id.ID]server.Connection
-	idsToRouters     map[*id.ID]*router.Router
+	idsToRouters     map[*id.ID]*routerpkg.Router
 	sync.RWMutex
 }
 
@@ -51,7 +51,7 @@ func NewNetAdapter(listeningAddrs []string) (*NetAdapter, error) {
 
 		connectionIDs:    make(map[server.Connection]*id.ID),
 		idsToConnections: make(map[*id.ID]server.Connection),
-		idsToRouters:     make(map[*id.ID]*router.Router),
+		idsToRouters:     make(map[*id.ID]*routerpkg.Router),
 	}
 
 	onConnectedHandler := adapter.newOnConnectedHandler()
@@ -112,7 +112,7 @@ func (na *NetAdapter) newOnConnectedHandler() server.OnConnectedHandler {
 	}
 }
 
-func (na *NetAdapter) registerConnection(connection server.Connection, router *router.Router, id *id.ID) {
+func (na *NetAdapter) registerConnection(connection server.Connection, router *routerpkg.Router, id *id.ID) {
 	na.server.AddConnection(connection)
 
 	na.connectionIDs[connection] = id
@@ -152,7 +152,8 @@ func (na *NetAdapter) Broadcast(connectionIDs []*id.ID, message wire.Message) er
 	for _, connectionID := range connectionIDs {
 		router, ok := na.idsToRouters[connectionID]
 		if !ok {
-			return errors.Errorf("connectionID %s is not registered", connectionID)
+			log.Warnf("connectionID %s is not registered", connectionID)
+			continue
 		}
 		route, err := router.IncomingRoute(message)
 		if err != nil {

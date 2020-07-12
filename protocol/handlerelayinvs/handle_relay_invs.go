@@ -16,8 +16,8 @@ import (
 
 // HandleRelayInvs listens to wire.MsgInvRelayBlock messages, requests their corresponding blocks if they
 // are missing, adds them to the DAG and propagates them to the rest of the network.
-func HandleRelayInvs(incomingRoute *router.Route, peer *peerpkg.Peer, netAdapter *netadapter.NetAdapter, outgoingRoute *router.Route,
-	dag *blockdag.BlockDAG) error {
+func HandleRelayInvs(incomingRoute *router.Route, outgoingRoute *router.Route,
+	peer *peerpkg.Peer, netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG) error {
 
 	invsQueue := make([]*wire.MsgInvRelayBlock, 0)
 	for {
@@ -74,8 +74,9 @@ func readInv(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlock) (
 	return inv, false, nil
 }
 
-func requestBlocks(netAdapater *netadapter.NetAdapter, outgoingRoute *router.Route, peer *peerpkg.Peer, incomingRoute *router.Route,
-	dag *blockdag.BlockDAG, invsQueue *[]*wire.MsgInvRelayBlock, requestQueue *hashesQueueSet) (shouldStop bool, err error) {
+func requestBlocks(netAdapater *netadapter.NetAdapter, outgoingRoute *router.Route,
+	peer *peerpkg.Peer, incomingRoute *router.Route, dag *blockdag.BlockDAG,
+	invsQueue *[]*wire.MsgInvRelayBlock, requestQueue *hashesQueueSet) (shouldStop bool, err error) {
 
 	numHashesToRequest := mathUtil.MinInt(wire.MsgGetRelayBlocksHashes, requestQueue.len())
 	hashesToRequest := requestQueue.dequeue(numHashesToRequest)
@@ -222,6 +223,9 @@ func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 	// sm.restartSyncIfNeeded()
 	//// Clear the rejected transactions.
 	//sm.rejectedTxns = make(map[daghash.TxID]struct{})
-	netAdapter.Broadcast(peerpkg.GetReadyPeerIDs(), block.MsgBlock())
+	err = netAdapter.Broadcast(peerpkg.GetReadyPeerIDs(), block.MsgBlock())
+	if err != nil {
+		return false, err
+	}
 	return false, nil
 }

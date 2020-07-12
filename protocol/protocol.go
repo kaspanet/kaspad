@@ -64,36 +64,38 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag
 
 	addFlow("HandleRelayInvs", router, []string{wire.CmdInvRelayBlock, wire.CmdBlock}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return handlerelayinvs.HandleRelayInvs(incomingRoute, peer, netAdapter, outgoingRoute, dag)
+			return handlerelayinvs.HandleRelayInvs(incomingRoute, outgoingRoute, peer, netAdapter, dag)
 		},
 	)
 
 	addFlow("HandleRelayBlockRequests", router, []string{wire.CmdGetRelayBlocks}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return handlerelayblockrequests.HandleRelayBlockRequests(incomingRoute, peer, outgoingRoute, dag)
+			return handlerelayblockrequests.HandleRelayBlockRequests(incomingRoute, outgoingRoute, peer, dag)
 		},
 	)
 
 	// TODO(libp2p): Remove this and change it with a real Ping-Pong flow.
-	addFlow("PingPong", router, []string{wire.CmdPing, wire.CmdPong}, &stopped, stop, func(incomingRoute *routerpkg.Route) error {
-		err := outgoingRoute.Enqueue(wire.NewMsgPing(666))
-		if err != nil {
-			return err
-		}
-		message, err := incomingRoute.Dequeue()
-		if err != nil {
-			return err
-		}
-		for {
-			log.Infof("Got message: %+v", message.Command())
-			if message.Command() == "ping" {
-				err := outgoingRoute.Enqueue(wire.NewMsgPong(666))
-				if err != nil {
-					return err
+	addFlow("PingPong", router, []string{wire.CmdPing, wire.CmdPong},
+		&stopped, stop, func(incomingRoute *routerpkg.Route) error {
+
+			err := outgoingRoute.Enqueue(wire.NewMsgPing(666))
+			if err != nil {
+				return err
+			}
+			message, err := incomingRoute.Dequeue()
+			if err != nil {
+				return err
+			}
+			for {
+				log.Infof("Got message: %+v", message.Command())
+				if message.Command() == "ping" {
+					err := outgoingRoute.Enqueue(wire.NewMsgPong(666))
+					if err != nil {
+						return err
+					}
 				}
 			}
-		}
-	})
+		})
 
 	err := <-stop
 	return err
