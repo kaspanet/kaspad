@@ -91,7 +91,7 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, router *netadapter.Router
 		filteredHashesToRequest = append(filteredHashesToRequest, hash)
 	}
 
-	// In case the function returns earlier than expected, we wanna make sure requestedBlocks is
+	// In case the function returns earlier than expected, we want to make sure requestedBlocks is
 	// clean from any pending blocks.
 	defer requestedBlocks.removeSet(pendingBlocks)
 
