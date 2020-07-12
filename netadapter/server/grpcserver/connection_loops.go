@@ -14,9 +14,9 @@ type grpcStream interface {
 func (c *gRPCConnection) connectionLoops(stream grpcStream) error {
 	errChan := make(chan error, 1) // buffered channel because one of the loops might try write after disconnect
 
-	spawn(func() { c.receiveLoop(stream, errChan) })
+	spawn(func() { errChan <- c.receiveLoop(stream) })
 
-	spawn(func() { c.sendLoop(stream, errChan) })
+	spawn(func() { errChan <- c.sendLoop(stream) })
 
 	err := <-errChan
 
@@ -27,35 +27,36 @@ func (c *gRPCConnection) connectionLoops(stream grpcStream) error {
 	return err
 }
 
-func (c *gRPCConnection) sendLoop(stream grpcStream, errChan chan error) {
+func (c *gRPCConnection) sendLoop(stream grpcStream) error {
 	for c.IsConnected() {
 		message, ok := <-c.sendChan
 		if !ok {
-			errChan <- nil
-			return
+			return nil // this means the sendChan is closed, a.k.a. connection is disconnecting
 		}
 		err := stream.Send(message)
 		c.errChan <- err
 		if err != nil {
-			errChan <- err
-			return
+			return err
 		}
 	}
+
+	return nil
 }
 
-func (c *gRPCConnection) receiveLoop(stream grpcStream, errChan chan error) {
+func (c *gRPCConnection) receiveLoop(stream grpcStream) error {
 	for c.IsConnected() {
 		message, err := stream.Recv()
 		if err != nil {
 			if err == io.EOF {
 				err = nil
 			}
-			errChan <- err
-			return
+			return err
 		}
 
 		c.receiveChan <- message
 	}
+
+	return nil
 }
 
 func (c *gRPCConnection) serverConnectionLoop(stream protowire.P2P_MessageStreamServer) error {
