@@ -21,7 +21,7 @@ type gRPCConnection struct {
 	clientConn            grpc.ClientConn
 	onDisconnectedHandler server.OnDisconnectedHandler
 
-	isConnected int32
+	isConnected uint32
 }
 
 func newConnection(server *gRPCServer, address net.Addr) *gRPCConnection {
@@ -44,7 +44,7 @@ func (c *gRPCConnection) String() string {
 }
 
 func (c *gRPCConnection) IsConnected() bool {
-	return atomic.LoadInt32(&c.isConnected) == 1
+	return atomic.LoadUint32(&c.isConnected) == 1
 }
 
 func (c *gRPCConnection) SetOnDisconnectedHandler(onDisconnectedHandler server.OnDisconnectedHandler) {
@@ -69,7 +69,7 @@ func (c *gRPCConnection) Send(message wire.Message) error {
 func (c *gRPCConnection) Receive() (wire.Message, error) {
 	protoMessage := <-c.receiveChan
 	if protoMessage == nil {
-		return nil, errors.New("Connection closed during receive")
+		return nil, errors.New("connection closed during receive")
 	}
 
 	return protoMessage.ToWireMessage()
@@ -81,7 +81,7 @@ func (c *gRPCConnection) Disconnect() error {
 	if !c.IsConnected() {
 		return nil
 	}
-	atomic.StoreInt32(&c.isConnected, 0)
+	atomic.StoreUint32(&c.isConnected, 0)
 
 	close(c.receiveChan)
 	close(c.sendChan)
