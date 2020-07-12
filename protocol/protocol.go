@@ -68,7 +68,7 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *netadapter.Router, da
 
 	addFlow("HandleRelayBlockRequests", router, []string{wire.CmdGetRelayBlocks}, &stopped, stop,
 		func(ch chan wire.Message) error {
-			return handlerelayblockrequests.HandleRelayBlockRequests(ch, router, dag)
+			return handlerelayblockrequests.HandleRelayBlockRequests(ch, peer, router, dag)
 		},
 	)
 
