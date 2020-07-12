@@ -16,6 +16,12 @@ func (s *sharedRequestedBlocks) remove(hash *daghash.Hash) {
 	delete(s.blocks, *hash)
 }
 
+func (s *sharedRequestedBlocks) removeSet(blockHashes map[daghash.Hash]struct{}) {
+	for hash := range blockHashes {
+		delete(s.blocks, hash)
+	}
+}
+
 func (s *sharedRequestedBlocks) addIfNotExists(hash *daghash.Hash) (exists bool) {
 	s.Lock()
 	defer s.Unlock()

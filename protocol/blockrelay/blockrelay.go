@@ -100,13 +100,6 @@ func readMsgBlock(msgChan <-chan wire.Message,
 	}
 }
 
-func deleteFromRequestedBlocks(blockHashes map[daghash.Hash]struct{}) {
-	for hash := range blockHashes {
-		hash := hash
-		requestedBlocks.remove(&hash)
-	}
-}
-
 func requestBlocks(netAdapater *netadapter.NetAdapter, router *netadapter.Router, peer *peerpkg.Peer, msgChan <-chan wire.Message,
 	dag *blockdag.BlockDAG, invsQueue *[]*wire.MsgInvRelayBlock, requestQueue *hashesQueueSet) (shouldStop bool, err error) {
 
@@ -127,7 +120,7 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, router *netadapter.Router
 	}
 	// In case the function returns earlier than expected, we wanna make sure requestedBlocks is
 	// clean from any pending blocks.
-	defer deleteFromRequestedBlocks(pendingBlocks)
+	defer requestedBlocks.removeSet(pendingBlocks)
 
 	getRelayBlocksMsg := wire.NewMsgGetRelayBlocks(hashesToRequest)
 	router.WriteOutgoingMessage(getRelayBlocksMsg)
