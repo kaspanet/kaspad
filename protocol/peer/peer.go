@@ -3,6 +3,7 @@ package peer
 import (
 	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/util/daghash"
+	mathUtil "github.com/kaspanet/kaspad/util/math"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
@@ -68,7 +69,7 @@ func (p *Peer) MarkAsReady() error {
 func (p *Peer) UpdateFieldsFromMsgVersion(msg *wire.MsgVersion, peerID uint32) {
 	// Negotiate the protocol version.
 	p.advertisedProtocolVer = msg.ProtocolVersion
-	p.protocolVersion = minUint32(p.protocolVersion, p.advertisedProtocolVer)
+	p.protocolVersion = mathUtil.MinUint32(p.protocolVersion, p.advertisedProtocolVer)
 	log.Debugf("Negotiated protocol version %d for peer %s",
 		p.protocolVersion, p)
 
@@ -90,15 +91,6 @@ func (p *Peer) UpdateFieldsFromMsgVersion(msg *wire.MsgVersion, peerID uint32) {
 func (p *Peer) String() string {
 	//TODO(libp2p)
 	panic("unimplemented")
-}
-
-// minUint32 is a helper function to return the minimum of two uint32s.
-// This avoids a math import and the need to cast to floats.
-func minUint32(a, b uint32) uint32 {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 // GetReadyPeerIDs returns the peer IDs of all the ready peers.
