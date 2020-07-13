@@ -7,6 +7,7 @@ package wire
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 	"io"
@@ -47,7 +48,13 @@ func TestMessage(t *testing.T) {
 	addrMe := &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 16111}
 	me := NewNetAddress(addrMe, SFNodeNetwork)
 	me.Timestamp = mstime.Time{} // Version message has zero value timestamp.
-	msgVersion := NewMsgVersion(me, you, 123123, &daghash.ZeroHash, nil)
+	idMeBytes := make([]byte, id.IDLength)
+	idMeBytes[0] = 0xff
+	idMe, err := id.NewID(idMeBytes)
+	if err != nil {
+		t.Fatalf("id.NewID: %s", err)
+	}
+	msgVersion := NewMsgVersion(me, idMe, &daghash.ZeroHash, nil)
 
 	msgVerack := NewMsgVerAck()
 	msgGetAddr := NewMsgGetAddr(false, nil)
@@ -77,7 +84,7 @@ func TestMessage(t *testing.T) {
 		kaspaNet KaspaNet // Network to use for wire encoding
 		bytes    int      // Expected num bytes read/written
 	}{
-		{msgVersion, msgVersion, pver, Mainnet, 153},
+		{msgVersion, msgVersion, pver, Mainnet, 136},
 		{msgVerack, msgVerack, pver, Mainnet, 24},
 		{msgGetAddr, msgGetAddr, pver, Mainnet, 26},
 		{msgAddr, msgAddr, pver, Mainnet, 27},

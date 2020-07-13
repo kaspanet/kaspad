@@ -1,7 +1,7 @@
 package peer
 
 import (
-	"github.com/kaspanet/kaspad/netadapter"
+	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/wire"
@@ -102,7 +102,13 @@ func minUint32(a, b uint32) uint32 {
 }
 
 // GetReadyPeerIDs returns the peer IDs of all the ready peers.
-func GetReadyPeerIDs() []*netadapter.ID {
+func GetReadyPeerIDs() []*id.ID {
+	// TODO(libp2p)
+	panic("unimplemented")
+}
+
+// IDExists returns whether there's a peer with the given ID.
+func IDExists(id *id.ID) bool {
 	// TODO(libp2p)
 	panic("unimplemented")
 }

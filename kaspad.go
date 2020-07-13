@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/addrmgr"
+	"github.com/kaspanet/kaspad/server/serverutils"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/util/panics"
@@ -89,7 +91,8 @@ func newKaspad(listenAddrs []string, interrupt <-chan struct{}) (*kaspad, error)
 
 	txMempool := setupMempool(dag, sigCache)
 
-	protocolManager, err := protocol.NewManager(listenAddrs, dag)
+	addressManager := addrmgr.New(serverutils.KaspadLookup, config.ActiveConfig().SubnetworkID)
+	protocolManager, err := protocol.NewManager(listenAddrs, dag, addressManager)
 	if err != nil {
 		return nil, err
 	}

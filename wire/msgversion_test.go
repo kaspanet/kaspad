@@ -7,9 +7,9 @@ package wire
 import (
 	"bytes"
 	"github.com/davecgh/go-spew/spew"
+	id "github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/kaspanet/kaspad/util/random"
 	"github.com/pkg/errors"
 	"io"
 	"net"
@@ -26,30 +26,24 @@ func TestVersion(t *testing.T) {
 	selectedTipHash := &daghash.Hash{12, 34}
 	tcpAddrMe := &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 16111}
 	me := NewNetAddress(tcpAddrMe, SFNodeNetwork)
-	tcpAddrYou := &net.TCPAddr{IP: net.ParseIP("192.168.0.1"), Port: 16111}
-	you := NewNetAddress(tcpAddrYou, SFNodeNetwork)
-	nonce, err := random.Uint64()
+	generatedID, err := id.GenerateID()
 	if err != nil {
-		t.Errorf("random.Uint64: error generating nonce: %v", err)
+		t.Fatalf("id.GenerateID: %s", err)
 	}
 
 	// Ensure we get the correct data back out.
-	msg := NewMsgVersion(me, you, nonce, selectedTipHash, nil)
+	msg := NewMsgVersion(me, generatedID, selectedTipHash, nil)
 	if msg.ProtocolVersion != pver {
 		t.Errorf("NewMsgVersion: wrong protocol version - got %v, want %v",
 			msg.ProtocolVersion, pver)
 	}
-	if !reflect.DeepEqual(&msg.Address, me) {
+	if !reflect.DeepEqual(msg.Address, me) {
 		t.Errorf("NewMsgVersion: wrong me address - got %v, want %v",
 			spew.Sdump(&msg.Address), spew.Sdump(me))
 	}
-	if !reflect.DeepEqual(&msg.AddrYou, you) {
-		t.Errorf("NewMsgVersion: wrong you address - got %v, want %v",
-			spew.Sdump(&msg.AddrYou), spew.Sdump(you))
-	}
-	if msg.Nonce != nonce {
-		t.Errorf("NewMsgVersion: wrong nonce - got %v, want %v",
-			msg.Nonce, nonce)
+	if msg.ID.String() != generatedID.String() {
+		t.Errorf("NewMsgVersion: wrong nonce - got %s, want %s",
+			msg.ID, generatedID)
 	}
 	if msg.UserAgent != DefaultUserAgent {
 		t.Errorf("NewMsgVersion: wrong user agent - got %v, want %v",
@@ -224,10 +218,10 @@ func TestVersionWireErrors(t *testing.T) {
 	newLen := len(baseVersionEncoded) - len(baseVersion.UserAgent)
 	newLen = newLen + len(newUAVarIntBuf.Bytes()) - 1 + len(newUA)
 	exceedUAVerEncoded := make([]byte, newLen)
-	copy(exceedUAVerEncoded, baseVersionEncoded[0:81])
-	copy(exceedUAVerEncoded[81:], newUAVarIntBuf.Bytes())
-	copy(exceedUAVerEncoded[84:], []byte(newUA))
-	copy(exceedUAVerEncoded[84+len(newUA):], baseVersionEncoded[98:101])
+	copy(exceedUAVerEncoded, baseVersionEncoded[0:64])
+	copy(exceedUAVerEncoded[64:], newUAVarIntBuf.Bytes())
+	copy(exceedUAVerEncoded[67:], []byte(newUA))
+	copy(exceedUAVerEncoded[64+len(newUA):], baseVersionEncoded[78:81])
 
 	tests := []struct {
 		in       *MsgVersion // Value to encode
@@ -245,18 +239,16 @@ func TestVersionWireErrors(t *testing.T) {
 		{baseVersion, baseVersionEncoded, pver, 12, io.ErrShortWrite, io.EOF},
 		// Force error in subnetworkID.
 		{baseVersion, baseVersionEncoded, pver, 20, io.ErrShortWrite, io.EOF},
-		// Force error in remote address.
-		{baseVersion, baseVersionEncoded, pver, 21, io.ErrShortWrite, io.EOF},
 		// Force error in local address.
-		{baseVersion, baseVersionEncoded, pver, 48, io.ErrShortWrite, io.ErrUnexpectedEOF},
-		// Force error in nonce.
-		{baseVersion, baseVersionEncoded, pver, 74, io.ErrShortWrite, io.ErrUnexpectedEOF},
+		{baseVersion, baseVersionEncoded, pver, 21, io.ErrShortWrite, io.EOF},
+		// Force error in ID.
+		{baseVersion, baseVersionEncoded, pver, 49, io.ErrShortWrite, io.ErrUnexpectedEOF},
 		// Force error in user agent length.
-		{baseVersion, baseVersionEncoded, pver, 82, io.ErrShortWrite, io.EOF},
+		{baseVersion, baseVersionEncoded, pver, 65, io.ErrShortWrite, io.EOF},
 		// Force error in user agent.
-		{baseVersion, baseVersionEncoded, pver, 83, io.ErrShortWrite, io.ErrUnexpectedEOF},
+		{baseVersion, baseVersionEncoded, pver, 66, io.ErrShortWrite, io.ErrUnexpectedEOF},
 		// Force error in last block.
-		{baseVersion, baseVersionEncoded, pver, 99, io.ErrShortWrite, io.ErrUnexpectedEOF},
+		{baseVersion, baseVersionEncoded, pver, 82, io.ErrShortWrite, io.ErrUnexpectedEOF},
 		// Force error due to user agent too big
 		{exceedUAVer, exceedUAVerEncoded, pver, newLen, wireErr, wireErr},
 	}
@@ -304,24 +296,23 @@ func TestVersionWireErrors(t *testing.T) {
 	}
 }
 
+var baseVersionID, _ = id.NewID([]byte{
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+})
+
 // baseVersion is used in the various tests as a baseline MsgVersion.
 var baseVersion = &MsgVersion{
 	ProtocolVersion: 60002,
 	Services:        SFNodeNetwork,
 	Timestamp:       mstime.UnixMilliseconds(0x495fab29000),
-	AddrYou: NetAddress{
-		Timestamp: mstime.Time{}, // Zero value -- no timestamp in version
-		Services:  SFNodeNetwork,
-		IP:        net.ParseIP("192.168.0.1"),
-		Port:      16111,
-	},
-	Address: NetAddress{
+	Address: &NetAddress{
 		Timestamp: mstime.Time{}, // Zero value -- no timestamp in version
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("127.0.0.1"),
 		Port:      16111,
 	},
-	Nonce:           123123, // 0x1e0f3
+	ID:              baseVersionID,
 	UserAgent:       "/kaspadtest:0.0.1/",
 	SelectedTipHash: &daghash.Hash{0x12, 0x34},
 }
@@ -333,17 +324,14 @@ var baseVersionEncoded = []byte{
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 	0x29, 0xab, 0x5f, 0x49, 0x00, 0x00, 0x00, 0x00, // 64-bit Timestamp
 	0x01, // is full node
-	// AddrYou -- No timestamp for NetAddress in version message
-	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0xff, 0xff, 0xc0, 0xa8, 0x00, 0x01, // IP 192.168.0.1
-	0x3e, 0xef, // Port 16111 in big-endian
 	// Address -- No timestamp for NetAddress in version message
+	0x01,                                           // Has address
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x01, // IP 127.0.0.1
 	0x3e, 0xef, // Port 16111 in big-endian
-	0xf3, 0xe0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // ID
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	0x12, // Varint for user agent length
 	0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x74,
 	0x65, 0x73, 0x74, 0x3a, 0x30, 0x2e, 0x30, 0x2e, // User agent
@@ -354,24 +342,23 @@ var baseVersionEncoded = []byte{
 	0x00, 0x00,
 }
 
+var baseVersionWithRelayTxID, _ = id.NewID([]byte{
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe,
+})
+
 // baseVersionWithRelayTx is used in the various tests as a baseline MsgVersion
 var baseVersionWithRelayTx = &MsgVersion{
 	ProtocolVersion: 70001,
 	Services:        SFNodeNetwork,
 	Timestamp:       mstime.UnixMilliseconds(0x17315ed0f99),
-	AddrYou: NetAddress{
-		Timestamp: mstime.Time{}, // Zero value -- no timestamp in version
-		Services:  SFNodeNetwork,
-		IP:        net.ParseIP("192.168.0.1"),
-		Port:      16111,
-	},
-	Address: NetAddress{
+	Address: &NetAddress{
 		Timestamp: mstime.Time{}, // Zero value -- no timestamp in version
 		Services:  SFNodeNetwork,
 		IP:        net.ParseIP("127.0.0.1"),
 		Port:      16111,
 	},
-	Nonce:           123123, // 0x1e0f3
+	ID:              baseVersionWithRelayTxID,
 	UserAgent:       "/kaspadtest:0.0.1/",
 	SelectedTipHash: &daghash.Hash{0x12, 0x34},
 }
@@ -383,17 +370,14 @@ var baseVersionWithRelayTxEncoded = []byte{
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 	0x99, 0x0f, 0xed, 0x15, 0x73, 0x01, 0x00, 0x00, // Timestamp
 	0x01, // is full node
-	// AddrYou -- No timestamp for NetAddress in version message
-	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0xff, 0xff, 0xc0, 0xa8, 0x00, 0x01, // IP 192.168.0.1
-	0x3e, 0xef, // Port 16111 in big-endian
 	// Address -- No timestamp for NetAddress in version message
+	0x01,                                           // Has address
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x01, // IP 127.0.0.1
 	0x3e, 0xef, // Port 16111 in big-endian
-	0xf3, 0xe0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, // Nonce
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // ID
+	0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe,
 	0x12, // Varint for user agent length
 	0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x74,
 	0x65, 0x73, 0x74, 0x3a, 0x30, 0x2e, 0x30, 0x2e, // User agent

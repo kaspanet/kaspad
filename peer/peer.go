@@ -713,31 +713,33 @@ func (p *Peer) TimeOffset() int64 {
 // localVersionMsg creates a version message that can be used to send to the
 // remote peer.
 func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
-	selectedTipHash := p.cfg.SelectedTipHash()
-
-	// Generate a unique nonce for this peer so self connections can be
-	// detected. This is accomplished by adding it to a size-limited map of
-	// recently seen nonces.
-	nonce := uint64(rand.Int63())
-	sentNonces.Add(nonce)
-
-	subnetworkID := p.cfg.SubnetworkID
-
-	// Version message.
-	msg := wire.NewMsgVersion(nonce, selectedTipHash, subnetworkID)
-	msg.AddUserAgent(p.cfg.UserAgentName, p.cfg.UserAgentVersion,
-		p.cfg.UserAgentComments...)
-
-	// Advertise the services flag
-	msg.Services = p.cfg.Services
-
-	// Advertise our max supported protocol version.
-	msg.ProtocolVersion = p.cfg.ProtocolVersion
-
-	// Advertise if inv messages for transactions are desired.
-	msg.DisableRelayTx = p.cfg.DisableRelayTx
-
-	return msg, nil
+	//TODO(libp2p) Remove this function
+	panic("not supported anymore")
+	//selectedTipHash := p.cfg.SelectedTipHash()
+	//
+	//// Generate a unique nonce for this peer so self connections can be
+	//// detected. This is accomplished by adding it to a size-limited map of
+	//// recently seen nonces.
+	//nonce := uint64(rand.Int63())
+	//sentNonces.Add(nonce)
+	//
+	//subnetworkID := p.cfg.SubnetworkID
+	//
+	//// Version message.
+	//msg := wire.NewMsgVersion(nonce, selectedTipHash, subnetworkID)
+	//msg.AddUserAgent(p.cfg.UserAgentName, p.cfg.UserAgentVersion,
+	//	p.cfg.UserAgentComments...)
+	//
+	//// Advertise the services flag
+	//msg.Services = p.cfg.Services
+	//
+	//// Advertise our max supported protocol version.
+	//msg.ProtocolVersion = p.cfg.ProtocolVersion
+	//
+	//// Advertise if inv messages for transactions are desired.
+	//msg.DisableRelayTx = p.cfg.DisableRelayTx
+	//
+	//return msg, nil
 }
 
 // PushAddrMsg sends an addr message to the connected peer using the provided
@@ -863,10 +865,11 @@ func (p *Peer) PushRejectMsg(command string, code wire.RejectCode, reason string
 // from the remote peer. It will return an error if the remote peer's version
 // is not compatible with ours.
 func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
-	// Detect self connections.
-	if !allowSelfConns && sentNonces.Exists(msg.Nonce) {
-		return errors.New("disconnecting peer connected to self")
-	}
+	//TODO(libp2p) Remove this function
+	//// Detect self connections.
+	//if !allowSelfConns && sentNonces.Exists(msg.Nonce) {
+	//	return errors.New("disconnecting peer connected to self")
+	//}
 
 	// Notify and disconnect clients that have a protocol version that is
 	// too old.

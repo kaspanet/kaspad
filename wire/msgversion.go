@@ -7,6 +7,7 @@ package wire
 import (
 	"bytes"
 	"fmt"
+	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/version"
 	"github.com/pkg/errors"
@@ -44,9 +45,8 @@ type MsgVersion struct {
 	// Address of the local peer.
 	Address *NetAddress
 
-	// Unique value associated with message that is used to detect self
-	// connections.
-	Nonce uint64
+	// The peer unique ID
+	ID *id.ID
 
 	// The user agent that generated messsage. This is a encoded as a varString
 	// on the wire. This has a max length of MaxUserAgentLen.
@@ -118,13 +118,14 @@ func (msg *MsgVersion) KaspaDecode(r io.Reader, pver uint32) error {
 	}
 
 	if hasAddress {
+		msg.Address = new(NetAddress)
 		err = readNetAddress(buf, pver, msg.Address, false)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = ReadElement(buf, &msg.Nonce)
+	err = ReadElement(buf, &msg.ID)
 	if err != nil {
 		return err
 	}
@@ -193,7 +194,7 @@ func (msg *MsgVersion) KaspaEncode(w io.Writer, pver uint32) error {
 		}
 	}
 
-	err = WriteElement(w, msg.Nonce)
+	err = WriteElement(w, msg.ID)
 	if err != nil {
 		return err
 	}
@@ -237,7 +238,7 @@ func (msg *MsgVersion) MaxPayloadLength(pver uint32) uint32 {
 // NewMsgVersion returns a new kaspa version message that conforms to the
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
-func NewMsgVersion(addr *NetAddress, nonce uint64,
+func NewMsgVersion(addr *NetAddress, id *id.ID,
 	selectedTipHash *daghash.Hash, subnetworkID *subnetworkid.SubnetworkID) *MsgVersion {
 
 	// Limit the timestamp to one millisecond precision since the protocol
@@ -247,7 +248,7 @@ func NewMsgVersion(addr *NetAddress, nonce uint64,
 		Services:        0,
 		Timestamp:       mstime.Now(),
 		Address:         addr,
-		Nonce:           nonce,
+		ID:              id,
 		UserAgent:       DefaultUserAgent,
 		SelectedTipHash: selectedTipHash,
 		DisableRelayTx:  false,

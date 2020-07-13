@@ -1,21 +1,15 @@
 package receiveversion
 
 import (
-	"fmt"
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/p2pserver"
-	protocolcommon "github.com/kaspanet/kaspad/protocol/common"
+	"github.com/kaspanet/kaspad/netadapter"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
-	"github.com/kaspanet/kaspad/util/random"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 	"sync/atomic"
 )
 
 var (
-	versionNonce uint64
-
 	// allowSelfConns is only used to allow the tests to bypass the self
 	// connection detecting and disconnect logic since they intentionally
 	// do so for testing purposes.
@@ -28,8 +22,11 @@ var (
 	nodeCount uint32
 )
 
-func ReceiveVersion(msgChan <-chan wire.Message, connection p2pserver.Connection, peer *peerpkg.Peer,
+// ReceiveVersion waits for the peer to send a version message, sends a
+// verack in response, and updates its info accordingly.
+func ReceiveVersion(msgChan <-chan wire.Message, router *netadapter.Router, peer *peerpkg.Peer,
 	dag *blockdag.BlockDAG) (addr *wire.NetAddress, channelClosed bool, err error) {
+
 	msg, isClosed := <-msgChan
 	if isClosed {
 		return nil, true, nil
@@ -37,19 +34,12 @@ func ReceiveVersion(msgChan <-chan wire.Message, connection p2pserver.Connection
 
 	msgVersion, ok := msg.(*wire.MsgVersion)
 	if !ok {
-		errStr := "a version message must precede all others"
-		protocolcommon.AddBanScoreAndPushRejectMsg(connection,
-			msg.Command(),
-			wire.RejectNotRequested,
-			nil,
-			peerpkg.BanScoreNonVersionFirstMessage,
-			0,
-			errStr)
-		return nil, false, errors.New(errStr)
+		return nil, false, errors.New("a version message must precede all others")
 	}
 
-	if !allowSelfConns && msgVersion.Nonce == versionNonce {
-		return nil, false, errors.New("disconnecting peer connected to self")
+	if !allowSelfConns && peerpkg.IDExists(msgVersion.ID) {
+		//TODO(libp2p) create error type for disconnect but don't ban
+		return nil, false, errors.Errorf("already connected to peer with ID %s", msgVersion.ID)
 	}
 
 	// Notify and disconnect clients that have a protocol version that is
@@ -59,10 +49,9 @@ func ReceiveVersion(msgChan <-chan wire.Message, connection p2pserver.Connection
 	// wire.RejectVersion, this should send a reject packet before
 	// disconnecting.
 	if msgVersion.ProtocolVersion < minAcceptableProtocolVersion {
-		reason := fmt.Sprintf("protocol version must be %d or greater",
+		//TODO(libp2p) create error type for disconnect but don't ban
+		return nil, false, errors.Errorf("protocol version must be %d or greater",
 			minAcceptableProtocolVersion)
-		protocolcommon.PushRejectMsg(connection, msgVersion.Command(), wire.RejectObsolete, reason, nil)
-		return nil, false, errors.New(reason)
 	}
 
 	// Disconnect from partial nodes in networks that don't allow them
@@ -70,27 +59,20 @@ func ReceiveVersion(msgChan <-chan wire.Message, connection p2pserver.Connection
 		return nil, false, errors.New("partial nodes are not allowed")
 	}
 
-	// Disconnect if:
-	// - we are a full node and the outbound connection we've initiated is a partial node
-	// - the remote node is partial and our subnetwork doesn't match their subnetwork
-	localSubnetworkID := config.ActiveConfig().SubnetworkID
-	isLocalNodeFull := localSubnetworkID == nil
-	isRemoteNodeFull := msgVersion.SubnetworkID == nil
-	if (isLocalNodeFull && !isRemoteNodeFull && !connection.IsInbound()) ||
-		(!isLocalNodeFull && !isRemoteNodeFull && !msgVersion.SubnetworkID.IsEqual(localSubnetworkID)) {
+	// TODO(libp2p)
+	//// Disconnect if:
+	//// - we are a full node and the outbound connection we've initiated is a partial node
+	//// - the remote node is partial and our subnetwork doesn't match their subnetwork
+	//localSubnetworkID := config.ActiveConfig().SubnetworkID
+	//isLocalNodeFull := localSubnetworkID == nil
+	//isRemoteNodeFull := msgVersion.SubnetworkID == nil
+	//if (isLocalNodeFull && !isRemoteNodeFull && !connection.IsInbound()) ||
+	//	(!isLocalNodeFull && !isRemoteNodeFull && !msgVersion.SubnetworkID.IsEqual(localSubnetworkID)) {
+	//
+	//	return nil, false, errors.New("incompatible subnetworks")
+	//}
 
-		return nil, false, errors.New("incompatible subnetworks")
-	}
-
-	peer.UpdateFlagsFromVersionMsg(msgVersion, atomic.AddUint32(&nodeCount, 1))
-	connection.Send(wire.NewMsgVerAck())
+	peer.UpdateFieldsFromMsgVersion(msgVersion, atomic.AddUint32(&nodeCount, 1))
+	router.WriteOutgoingMessage(wire.NewMsgVerAck())
 	return msgVersion.Address, false, nil
-}
-
-func init() {
-	var err error
-	versionNonce, err = random.Uint64()
-	if err != nil {
-		panic(errors.Wrap(err, "error initializing version nonce"))
-	}
 }

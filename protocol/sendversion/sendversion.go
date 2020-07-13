@@ -3,8 +3,7 @@ package sendversion
 import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/p2pserver"
-	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
+	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/version"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
@@ -29,16 +28,16 @@ var (
 	defaultRequiredServices = wire.SFNodeNetwork
 )
 
-func SendVersion(msgChan <-chan wire.Message, connection p2pserver.Connection, peer *peerpkg.Peer,
+// SendVersion sends a version to a peer and waits for verack.
+func SendVersion(msgChan <-chan wire.Message, router *netadapter.Router, netAdapter *netadapter.NetAdapter,
 	dag *blockdag.BlockDAG) error {
 
 	selectedTipHash := dag.SelectedTipHash()
 	subnetworkID := config.ActiveConfig().SubnetworkID
 
 	// Version message.
-	msg := wire.NewMsgVersion(versionNonce, selectedTipHash, subnetworkID)
-	err := msg.AddUserAgent(userAgentName, userAgentVersion,
-		config.ActiveConfig().UserAgentComments...)
+	msg := wire.NewMsgVersion(netAdapter.GetBestLocalAddress(), netAdapter.ID(), selectedTipHash, subnetworkID)
+	err := msg.AddUserAgent(userAgentName, userAgentVersion, config.ActiveConfig().UserAgentComments...)
 	if err != nil {
 		panic(errors.Wrapf(err, "error with our own user agent"))
 	}
@@ -52,10 +51,11 @@ func SendVersion(msgChan <-chan wire.Message, connection p2pserver.Connection, p
 	// Advertise if inv messages for transactions are desired.
 	msg.DisableRelayTx = config.ActiveConfig().BlocksOnly
 
-	const stallResponseTimeout = 30 * time.Second
+	router.WriteOutgoingMessage(msg)
+	const timeout = 30 * time.Second
 	select {
 	case <-msgChan:
-	case <-time.After(stallResponseTimeout):
+	case <-time.After(timeout):
 		return errors.New("didn't receive a verack message")
 	}
 	return nil

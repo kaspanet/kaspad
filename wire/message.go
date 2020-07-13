@@ -168,7 +168,10 @@ func readMessageHeader(r io.Reader) (int, *messageHeader, error) {
 	// Create and populate a messageHeader struct from the raw header bytes.
 	hdr := messageHeader{}
 	var command [CommandSize]byte
-	readElements(hr, &hdr.magic, &command, &hdr.length, &hdr.checksum)
+	err = readElements(hr, &hdr.magic, &command, &hdr.length, &hdr.checksum)
+	if err != nil {
+		return 0, nil, err
+	}
 
 	// Strip trailing zeros from command string.
 	hdr.command = string(bytes.TrimRight(command[:], string(0)))
@@ -249,7 +252,10 @@ func WriteMessageN(w io.Writer, msg Message, pver uint32, kaspaNet KaspaNet) (in
 	// rather than directly to the writer since writeElements doesn't
 	// return the number of bytes written.
 	hw := bytes.NewBuffer(make([]byte, 0, MessageHeaderSize))
-	writeElements(hw, hdr.magic, command, hdr.length, hdr.checksum)
+	err = writeElements(hw, hdr.magic, command, hdr.length, hdr.checksum)
+	if err != nil {
+		return 0, err
+	}
 
 	// Write header.
 	n, err := w.Write(hw.Bytes())

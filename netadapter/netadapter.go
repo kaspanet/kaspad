@@ -1,6 +1,7 @@
 package netadapter
 
 import (
+	"github.com/kaspanet/kaspad/netadapter/id"
 	"sync"
 	"sync/atomic"
 
@@ -21,21 +22,21 @@ type RouterInitializer func() (*Router, error)
 // and message handlers) without exposing anything related
 // to networking internals.
 type NetAdapter struct {
-	id                *ID
+	id                *id.ID
 	server            server.Server
 	routerInitializer RouterInitializer
 	stop              uint32
 
-	connectionIDs    map[server.Connection]*ID
-	idsToConnections map[*ID]server.Connection
-	idsToRouters     map[*ID]*Router
+	connectionIDs    map[server.Connection]*id.ID
+	idsToConnections map[*id.ID]server.Connection
+	idsToRouters     map[*id.ID]*Router
 	sync.RWMutex
 }
 
 // NewNetAdapter creates and starts a new NetAdapter on the
 // given listeningPort
 func NewNetAdapter(listeningAddrs []string) (*NetAdapter, error) {
-	id, err := GenerateID()
+	netAdapterID, err := id.GenerateID()
 	if err != nil {
 		return nil, err
 	}
@@ -44,12 +45,12 @@ func NewNetAdapter(listeningAddrs []string) (*NetAdapter, error) {
 		return nil, err
 	}
 	adapter := NetAdapter{
-		id:     id,
+		id:     netAdapterID,
 		server: s,
 
-		connectionIDs:    make(map[server.Connection]*ID),
-		idsToConnections: make(map[*ID]server.Connection),
-		idsToRouters:     make(map[*ID]*Router),
+		connectionIDs:    make(map[server.Connection]*id.ID),
+		idsToConnections: make(map[*id.ID]server.Connection),
+		idsToRouters:     make(map[*id.ID]*Router),
 	}
 
 	onConnectedHandler := adapter.newOnConnectedHandler()
@@ -95,7 +96,7 @@ func (na *NetAdapter) newOnConnectedHandler() server.OnConnectedHandler {
 			na.unregisterConnection(connection)
 			return router.Close()
 		})
-		router.SetOnIDReceivedHandler(func(id *ID) {
+		router.SetOnIDReceivedHandler(func(id *id.ID) {
 			na.registerConnection(connection, router, id)
 		})
 
@@ -105,7 +106,7 @@ func (na *NetAdapter) newOnConnectedHandler() server.OnConnectedHandler {
 	}
 }
 
-func (na *NetAdapter) registerConnection(connection server.Connection, router *Router, id *ID) {
+func (na *NetAdapter) registerConnection(connection server.Connection, router *Router, id *id.ID) {
 	na.server.AddConnection(connection)
 
 	na.connectionIDs[connection] = id
@@ -174,13 +175,13 @@ func (na *NetAdapter) SetRouterInitializer(routerInitializer RouterInitializer) 
 }
 
 // ID returns this netAdapter's ID in the network
-func (na *NetAdapter) ID() *ID {
+func (na *NetAdapter) ID() *id.ID {
 	return na.id
 }
 
 // Broadcast sends the given `message` to every peer corresponding
 // to each ID in `ids`
-func (na *NetAdapter) Broadcast(ids []*ID, message wire.Message) {
+func (na *NetAdapter) Broadcast(ids []*id.ID, message wire.Message) {
 	na.RLock()
 	defer na.RUnlock()
 	for _, id := range ids {
@@ -191,4 +192,11 @@ func (na *NetAdapter) Broadcast(ids []*ID, message wire.Message) {
 		}
 		router.WriteOutgoingMessage(message)
 	}
+}
+
+// GetBestLocalAddress returns the most appropriate local address to use
+// for the given remote address.
+func (na *NetAdapter) GetBestLocalAddress() *wire.NetAddress {
+	//TODO(libp2p) Implement this, and check reachability to the other node
+	panic("unimplemented")
 }
