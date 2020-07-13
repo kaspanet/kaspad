@@ -29,7 +29,7 @@ func NewRoute() *Route {
 }
 
 // Enqueue enqueues a message to the Route
-func (r *Route) Enqueue(message wire.Message) bool {
+func (r *Route) Enqueue(message wire.Message) (isOpen bool) {
 	if r.closed {
 		return false
 	}
@@ -41,7 +41,7 @@ func (r *Route) Enqueue(message wire.Message) bool {
 }
 
 // Dequeue dequeues a message from the Route
-func (r *Route) Dequeue() (wire.Message, bool) {
+func (r *Route) Dequeue() (message wire.Message, isOpen bool) {
 	if r.closed {
 		return nil, false
 	}

@@ -66,7 +66,7 @@ func (r *Router) RemoveRoute(messageTypes []string) error {
 
 // EnqueueIncomingMessage enqueues the given message to the
 // appropriate route
-func (r *Router) EnqueueIncomingMessage(message wire.Message) (bool, error) {
+func (r *Router) EnqueueIncomingMessage(message wire.Message) (isOpen bool, err error) {
 	route, ok := r.incomingRoutes[message.Command()]
 	if !ok {
 		return false, errors.Errorf("a route for '%s' does not exist", message.Command())
