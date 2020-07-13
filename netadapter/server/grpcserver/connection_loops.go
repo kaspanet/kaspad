@@ -11,11 +11,11 @@ type grpcStream interface {
 	Recv() (*protowire.KaspadMessage, error)
 }
 
-func (c *gRPCConnection) connectionLoops(stream grpcStream) error {
+func (c *gRPCConnection) connectionLoops() error {
 	errChan := make(chan error, 1) // buffered channel because one of the loops might try write after disconnect
 
-	spawn(func() { errChan <- c.receiveLoop(stream) })
-	spawn(func() { errChan <- c.sendLoop(stream) })
+	spawn(func() { errChan <- c.receiveLoop() })
+	spawn(func() { errChan <- c.sendLoop() })
 
 	err := <-errChan
 
@@ -26,7 +26,7 @@ func (c *gRPCConnection) connectionLoops(stream grpcStream) error {
 	return err
 }
 
-func (c *gRPCConnection) sendLoop(stream grpcStream) error {
+func (c *gRPCConnection) sendLoop() error {
 	outgoingRoute := c.router.OutgoingRoute()
 	for c.IsConnected() {
 		message, isOpen := outgoingRoute.Dequeue()
@@ -37,7 +37,7 @@ func (c *gRPCConnection) sendLoop(stream grpcStream) error {
 		if err != nil {
 			return err
 		}
-		err = stream.Send(messageProto)
+		err = c.stream.Send(messageProto)
 		c.errChan <- err
 		if err != nil {
 			return err
@@ -46,9 +46,9 @@ func (c *gRPCConnection) sendLoop(stream grpcStream) error {
 	return nil
 }
 
-func (c *gRPCConnection) receiveLoop(stream grpcStream) error {
+func (c *gRPCConnection) receiveLoop() error {
 	for c.IsConnected() {
-		protoMessage, err := stream.Recv()
+		protoMessage, err := c.stream.Recv()
 		if err != nil {
 			if err == io.EOF {
 				err = nil
@@ -68,16 +68,4 @@ func (c *gRPCConnection) receiveLoop(stream grpcStream) error {
 		}
 	}
 	return nil
-}
-
-func (c *gRPCConnection) serverConnectionLoop(stream protowire.P2P_MessageStreamServer) error {
-	return c.connectionLoops(stream)
-}
-
-func (c *gRPCConnection) clientConnectionLoop(stream protowire.P2P_MessageStreamClient) error {
-	err := c.connectionLoops(stream)
-
-	_ = stream.CloseSend() // ignore error because we don't really know what's the status of the connection
-
-	return err
 }
