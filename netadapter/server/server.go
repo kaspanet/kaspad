@@ -29,7 +29,7 @@ type Server interface {
 // Connection represents a p2p server connection.
 type Connection interface {
 	fmt.Stringer
-	SetRouter(router *router.Router)
+	Start(router *router.Router)
 	Disconnect() error
 	IsConnected() bool
 	SetOnDisconnectedHandler(onDisconnectedHandler OnDisconnectedHandler)

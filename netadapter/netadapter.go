@@ -93,7 +93,7 @@ func (na *NetAdapter) newOnConnectedHandler() server.OnConnectedHandler {
 		if err != nil {
 			return err
 		}
-		connection.SetRouter(router)
+		connection.Start(router)
 
 		router.SetOnRouteCapacityReachedHandler(func() {
 			err := connection.Disconnect()

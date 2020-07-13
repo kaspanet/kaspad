@@ -34,7 +34,7 @@ func newConnection(server *gRPCServer, address net.Addr) *gRPCConnection {
 	return connection
 }
 
-func (c *gRPCConnection) SetRouter(router *router.Router) {
+func (c *gRPCConnection) Start(router *router.Router) {
 	c.router = router
 }
 
