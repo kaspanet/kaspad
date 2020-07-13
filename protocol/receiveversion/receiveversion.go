@@ -74,5 +74,6 @@ func ReceiveVersion(msgChan <-chan wire.Message, router *netadapter.Router, peer
 
 	peer.UpdateFieldsFromMsgVersion(msgVersion, atomic.AddUint32(&nodeCount, 1))
 	router.WriteOutgoingMessage(wire.NewMsgVerAck())
+	// TODO(libp2p) Register peer ID
 	return msgVersion.Address, false, nil
 }
