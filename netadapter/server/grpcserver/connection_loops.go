@@ -27,8 +27,9 @@ func (c *gRPCConnection) connectionLoops(stream grpcStream) error {
 }
 
 func (c *gRPCConnection) sendLoop(stream grpcStream) error {
+	outgoingRoute := c.router.OutgoingRoute()
 	for c.IsConnected() {
-		message, isOpen := c.router.OutgoingRoute().Dequeue()
+		message, isOpen := outgoingRoute.Dequeue()
 		if !isOpen {
 			return nil
 		}
