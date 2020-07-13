@@ -2,7 +2,7 @@ package handlerelayblockrequests
 
 import (
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/netadapter"
+	"github.com/kaspanet/kaspad/netadapter/router"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
@@ -10,12 +10,16 @@ import (
 
 // HandleRelayBlockRequests listens to wire.MsgGetRelayBlocks messages and sends
 // their corresponding blocks to the requesting peer.
-func HandleRelayBlockRequests(msgChan <-chan wire.Message, peer *peerpkg.Peer, router *netadapter.Router,
-	dag *blockdag.BlockDAG) error {
+func HandleRelayBlockRequests(incomingRoute *router.Route, outgoingRoute *router.Route,
+	peer *peerpkg.Peer, dag *blockdag.BlockDAG) error {
 
-	for msg := range msgChan {
-		getRelayBlocksMsg := msg.(*wire.MsgGetRelayBlocks)
-		for _, hash := range getRelayBlocksMsg.Hashes {
+	for {
+		message, isOpen := incomingRoute.Dequeue()
+		if !isOpen {
+			return nil
+		}
+		getRelayBlocksMessage := message.(*wire.MsgGetRelayBlocks)
+		for _, hash := range getRelayBlocksMessage.Hashes {
 			// Fetch the block from the database.
 			block, err := dag.BlockByHash(hash)
 			if blockdag.IsNotInDAGErr(err) {
@@ -39,8 +43,10 @@ func HandleRelayBlockRequests(msgChan <-chan wire.Message, peer *peerpkg.Peer, r
 				msgBlock.ConvertToPartial(peerSubnetworkID)
 			}
 
-			router.WriteOutgoingMessage(msgBlock)
+			isOpen = outgoingRoute.Enqueue(msgBlock)
+			if !isOpen {
+				return nil
+			}
 		}
 	}
-	return nil
 }

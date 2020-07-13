@@ -1,4 +1,4 @@
-package netadapter
+package id
 
 import (
 	"crypto/rand"

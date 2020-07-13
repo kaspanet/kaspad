@@ -1,42 +1,55 @@
 package grpcserver
 
 import (
+	"github.com/kaspanet/kaspad/netadapter/router"
+	"github.com/kaspanet/kaspad/netadapter/server/grpcserver/protowire"
 	"net"
 	"sync"
 	"sync/atomic"
 
-	"github.com/pkg/errors"
-
 	"github.com/kaspanet/kaspad/netadapter/server"
-	"github.com/kaspanet/kaspad/netadapter/server/grpcserver/protowire"
-	"github.com/kaspanet/kaspad/wire"
 	"google.golang.org/grpc"
 )
 
 type gRPCConnection struct {
-	server                    *gRPCServer
-	address                   net.Addr
-	writeDuringDisconnectLock sync.Mutex // writeDuringDisconnectLock makes sure channels aren't written to after close
-	sendChan                  chan *protowire.KaspadMessage
-	receiveChan               chan *protowire.KaspadMessage
-	errChan                   chan error
-	clientConn                grpc.ClientConn
-	onDisconnectedHandler     server.OnDisconnectedHandler
+	server     *gRPCServer
+	address    net.Addr
+	isOutbound bool
+	stream     grpcStream
+	router     *router.Router
+
+	writeToErrChanDuringDisconnectLock sync.Mutex
+	errChan                            chan error
+	stopChan                           chan struct{}
+	clientConn                         grpc.ClientConn
+	onDisconnectedHandler              server.OnDisconnectedHandler
 
 	isConnected uint32
 }
 
-func newConnection(server *gRPCServer, address net.Addr) *gRPCConnection {
+func newConnection(server *gRPCServer, address net.Addr, isOutbound bool, stream grpcStream) *gRPCConnection {
 	connection := &gRPCConnection{
 		server:      server,
 		address:     address,
-		sendChan:    make(chan *protowire.KaspadMessage),
-		receiveChan: make(chan *protowire.KaspadMessage),
+		isOutbound:  isOutbound,
+		stream:      stream,
 		errChan:     make(chan error),
+		stopChan:    make(chan struct{}),
 		isConnected: 1,
 	}
 
 	return connection
+}
+
+func (c *gRPCConnection) Start(router *router.Router) {
+	c.router = router
+
+	spawn(func() {
+		err := c.connectionLoops()
+		if err != nil {
+			log.Errorf("error from connectionLoops for %s: %+v", c.address, err)
+		}
+	})
 }
 
 func (c *gRPCConnection) String() string {
@@ -51,36 +64,6 @@ func (c *gRPCConnection) SetOnDisconnectedHandler(onDisconnectedHandler server.O
 	c.onDisconnectedHandler = onDisconnectedHandler
 }
 
-// Send sends the given message through the connection
-// This is part of the Connection interface
-func (c *gRPCConnection) Send(message wire.Message) error {
-	messageProto, err := protowire.FromWireMessage(message)
-	if err != nil {
-		return err
-	}
-
-	c.writeDuringDisconnectLock.Lock()
-	defer c.writeDuringDisconnectLock.Unlock()
-	if c.IsConnected() {
-		c.sendChan <- messageProto
-
-		return <-c.errChan
-	}
-
-	return nil
-}
-
-// Receive receives the next message from the connection
-// This is part of the Connection interface
-func (c *gRPCConnection) Receive() (wire.Message, error) {
-	protoMessage := <-c.receiveChan
-	if protoMessage == nil {
-		return nil, errors.New("connection closed during receive")
-	}
-
-	return protoMessage.ToWireMessage()
-}
-
 // Disconnect disconnects the connection
 // Calling this function a second time doesn't do anything
 //
@@ -91,11 +74,15 @@ func (c *gRPCConnection) Disconnect() error {
 	}
 	atomic.StoreUint32(&c.isConnected, 0)
 
-	c.writeDuringDisconnectLock.Lock()
-	defer c.writeDuringDisconnectLock.Unlock()
-	close(c.receiveChan)
-	close(c.sendChan)
+	c.writeToErrChanDuringDisconnectLock.Lock()
+	defer c.writeToErrChanDuringDisconnectLock.Unlock()
 	close(c.errChan)
+	close(c.stopChan)
+
+	if c.isOutbound {
+		clientStream := c.stream.(protowire.P2P_MessageStreamClient)
+		_ = clientStream.CloseSend() // ignore error because we don't really know what's the status of the connection
+	}
 
 	return c.onDisconnectedHandler()
 }

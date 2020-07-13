@@ -11,12 +11,11 @@ type grpcStream interface {
 	Recv() (*protowire.KaspadMessage, error)
 }
 
-func (c *gRPCConnection) connectionLoops(stream grpcStream) error {
+func (c *gRPCConnection) connectionLoops() error {
 	errChan := make(chan error, 1) // buffered channel because one of the loops might try write after disconnect
 
-	spawn(func() { errChan <- c.receiveLoop(stream) })
-
-	spawn(func() { errChan <- c.sendLoop(stream) })
+	spawn(func() { errChan <- c.receiveLoop() })
+	spawn(func() { errChan <- c.sendLoop() })
 
 	err := <-errChan
 
@@ -27,52 +26,57 @@ func (c *gRPCConnection) connectionLoops(stream grpcStream) error {
 	return err
 }
 
-func (c *gRPCConnection) sendLoop(stream grpcStream) error {
+func (c *gRPCConnection) sendLoop() error {
+	outgoingRoute := c.router.OutgoingRoute()
 	for c.IsConnected() {
-		message, ok := <-c.sendChan
-		if !ok {
-			return nil // this means the sendChan is closed, a.k.a. connection is disconnecting
+		message, isOpen := outgoingRoute.Dequeue()
+		if !isOpen {
+			return nil
 		}
-		err := stream.Send(message)
-		c.errChan <- err
+		messageProto, err := protowire.FromWireMessage(message)
 		if err != nil {
 			return err
 		}
-	}
+		err = func() error {
+			c.writeToErrChanDuringDisconnectLock.Lock()
+			defer c.writeToErrChanDuringDisconnectLock.Unlock()
+			err := c.stream.Send(messageProto)
+			if c.IsConnected() {
+				c.errChan <- err
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}()
+		if err != nil {
+			return err
+		}
 
+	}
 	return nil
 }
 
-func (c *gRPCConnection) receiveLoop(stream grpcStream) error {
+func (c *gRPCConnection) receiveLoop() error {
 	for c.IsConnected() {
-		message, err := stream.Recv()
+		protoMessage, err := c.stream.Recv()
 		if err != nil {
 			if err == io.EOF {
 				err = nil
 			}
 			return err
 		}
-
-		func() {
-			c.writeDuringDisconnectLock.Lock()
-			defer c.writeDuringDisconnectLock.Unlock()
-			if c.IsConnected() {
-				c.receiveChan <- message
-			}
-		}()
+		message, err := protoMessage.ToWireMessage()
+		if err != nil {
+			return err
+		}
+		isOpen, err := c.router.EnqueueIncomingMessage(message)
+		if err != nil {
+			return err
+		}
+		if !isOpen {
+			return nil
+		}
 	}
-
 	return nil
-}
-
-func (c *gRPCConnection) serverConnectionLoop(stream protowire.P2P_MessageStreamServer) error {
-	return c.connectionLoops(stream)
-}
-
-func (c *gRPCConnection) clientConnectionLoop(stream protowire.P2P_MessageStreamClient) error {
-	err := c.connectionLoops(stream)
-
-	_ = stream.CloseSend() // ignore error because we don't really know what's the status of the connection
-
-	return err
 }

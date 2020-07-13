@@ -4,9 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/netadapter/server/grpcserver/protowire"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/pkg/errors"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
-	"google.golang.org/grpc/status"
 )
 
 type p2pServer struct {
@@ -25,7 +23,7 @@ func (p *p2pServer) MessageStream(stream protowire.P2P_MessageStreamServer) erro
 	if !ok {
 		return errors.Errorf("Error getting stream peer info from context")
 	}
-	connection := newConnection(p.server, peerInfo.Addr)
+	connection := newConnection(p.server, peerInfo.Addr, false, stream)
 
 	err := p.server.onConnectedHandler(connection)
 	if err != nil {
@@ -34,11 +32,7 @@ func (p *p2pServer) MessageStream(stream protowire.P2P_MessageStreamServer) erro
 
 	log.Infof("Incoming connection from %s", peerInfo.Addr)
 
-	err = connection.serverConnectionLoop(stream)
-	if err != nil {
-		log.Errorf("Error in serverConnectionLoop: %+v", err)
-		return status.Error(codes.Internal, err.Error())
-	}
+	<-connection.stopChan
 
 	return nil
 }
