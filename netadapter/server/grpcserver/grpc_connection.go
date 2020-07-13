@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/netadapter/server/grpcserver/protowire"
 	"net"
+	"sync"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/netadapter/server"
@@ -17,10 +18,11 @@ type gRPCConnection struct {
 	stream     grpcStream
 	router     *router.Router
 
-	errChan               chan error
-	stopChan              chan struct{}
-	clientConn            grpc.ClientConn
-	onDisconnectedHandler server.OnDisconnectedHandler
+	writeToErrChanDuringDisconnectLock sync.Mutex
+	errChan                            chan error
+	stopChan                           chan struct{}
+	clientConn                         grpc.ClientConn
+	onDisconnectedHandler              server.OnDisconnectedHandler
 
 	isConnected uint32
 }
@@ -72,6 +74,8 @@ func (c *gRPCConnection) Disconnect() error {
 	}
 	atomic.StoreUint32(&c.isConnected, 0)
 
+	c.writeToErrChanDuringDisconnectLock.Lock()
+	defer c.writeToErrChanDuringDisconnectLock.Unlock()
 	close(c.errChan)
 	close(c.stopChan)
 
