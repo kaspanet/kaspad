@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter"
+	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/handlerelayblockrequests"
 	"github.com/kaspanet/kaspad/protocol/handlerelayinvs"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
@@ -25,7 +26,7 @@ func NewManager(listeningAddrs []string, dag *blockdag.BlockDAG,
 		return nil, err
 	}
 
-	routerInitializer := newRouterInitializer(netAdapter, dag, addressManager)
+	routerInitializer := newRouterInitializer(netAdapter, addressManager, dag)
 	netAdapter.SetRouterInitializer(routerInitializer)
 
 	manager := Manager{
@@ -44,10 +45,10 @@ func (p *Manager) Stop() error {
 	return p.netAdapter.Stop()
 }
 
-func newRouterInitializer(netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG,
-	addressManager *addrmgr.AddrManager) netadapter.RouterInitializer {
-	return func() (*netadapter.Router, error) {
-		router := netadapter.NewRouter()
+func newRouterInitializer(netAdapter *netadapter.NetAdapter,
+	addressManager *addrmgr.AddrManager, dag *blockdag.BlockDAG) netadapter.RouterInitializer {
+	return func() (*routerpkg.Router, error) {
+		router := routerpkg.NewRouter()
 		spawn(func() {
 			err := startFlows(netAdapter, router, dag, addressManager)
 			if err != nil {
@@ -58,11 +59,12 @@ func newRouterInitializer(netAdapter *netadapter.NetAdapter, dag *blockdag.Block
 	}
 }
 
-func startFlows(netAdapter *netadapter.NetAdapter, router *netadapter.Router, dag *blockdag.BlockDAG,
+func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag *blockdag.BlockDAG,
 	addressManager *addrmgr.AddrManager) error {
 	stop := make(chan error)
 	stopped := uint32(0)
 
+	outgoingRoute := router.OutgoingRoute()
 	peer := new(peerpkg.Peer)
 
 	closed, err := handshake(router, netAdapter, peer, dag, addressManager)
@@ -74,46 +76,54 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *netadapter.Router, da
 	}
 
 	addFlow("HandleRelayInvs", router, []string{wire.CmdInvRelayBlock, wire.CmdBlock}, &stopped, stop,
-		func(ch chan wire.Message) error {
-			return handlerelayinvs.HandleRelayInvs(ch, peer, netAdapter, router, dag)
+		func(incomingRoute *routerpkg.Route) error {
+			return handlerelayinvs.HandleRelayInvs(incomingRoute, outgoingRoute, peer, netAdapter, dag)
 		},
 	)
 
 	addFlow("HandleRelayBlockRequests", router, []string{wire.CmdGetRelayBlocks}, &stopped, stop,
-		func(ch chan wire.Message) error {
-			return handlerelayblockrequests.HandleRelayBlockRequests(ch, peer, router, dag)
+		func(incomingRoute *routerpkg.Route) error {
+			return handlerelayblockrequests.HandleRelayBlockRequests(incomingRoute, outgoingRoute, peer, dag)
 		},
 	)
 
 	// TODO(libp2p): Remove this and change it with a real Ping-Pong flow.
-	addFlow("PingPong", router, []string{wire.CmdPing, wire.CmdPong}, &stopped, stop,
-		func(ch chan wire.Message) error {
-			router.WriteOutgoingMessage(wire.NewMsgPing(666))
-			for message := range ch {
+	addFlow("PingPong", router, []string{wire.CmdPing, wire.CmdPong},
+		&stopped, stop, func(incomingRoute *routerpkg.Route) error {
+
+			isOpen := outgoingRoute.Enqueue(wire.NewMsgPing(666))
+			if !isOpen {
+				return nil
+			}
+			message, isOpen := incomingRoute.Dequeue()
+			if !isOpen {
+				return nil
+			}
+			for {
 				log.Infof("Got message: %+v", message.Command())
 				if message.Command() == "ping" {
-					router.WriteOutgoingMessage(wire.NewMsgPong(666))
+					isOpen := outgoingRoute.Enqueue(wire.NewMsgPong(666))
+					if !isOpen {
+						return nil
+					}
 				}
 			}
-			return nil
-		},
-	)
+		})
 
 	err = <-stop
 	return err
 }
 
-func addFlow(name string, router *netadapter.Router, messageTypes []string, stopped *uint32,
-	stopChan chan error, flow func(ch chan wire.Message) error) {
+func addFlow(name string, router *routerpkg.Router, messageTypes []string, stopped *uint32,
+	stopChan chan error, flow func(route *routerpkg.Route) error) {
 
-	ch := make(chan wire.Message)
-	err := router.AddRoute(messageTypes, ch)
+	route, err := router.AddIncomingRoute(messageTypes)
 	if err != nil {
 		panic(err)
 	}
 
 	spawn(func() {
-		err := flow(ch)
+		err := flow(route)
 		if err != nil {
 			log.Errorf("error from %s flow: %s", name, err)
 		}

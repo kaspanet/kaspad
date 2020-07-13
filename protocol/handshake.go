@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter"
+	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/receiveversion"
 	"github.com/kaspanet/kaspad/protocol/sendversion"
@@ -13,17 +14,15 @@ import (
 	"sync/atomic"
 )
 
-func handshake(router *netadapter.Router, netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
+func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 	dag *blockdag.BlockDAG, addressManager *addrmgr.AddrManager) (closed bool, err error) {
 
-	receiveVersionCh := make(chan wire.Message)
-	err = router.AddRoute([]string{wire.CmdVersion}, receiveVersionCh)
+	receiveVersionRoute, err := router.AddIncomingRoute([]string{wire.CmdVersion})
 	if err != nil {
 		panic(err)
 	}
-	sendVersionCh := make(chan wire.Message)
 
-	err = router.AddRoute([]string{wire.CmdVerAck}, sendVersionCh)
+	sendVersionRoute, err := router.AddIncomingRoute([]string{wire.CmdVerAck})
 	if err != nil {
 		panic(err)
 	}
@@ -39,7 +38,7 @@ func handshake(router *netadapter.Router, netAdapter *netadapter.NetAdapter, pee
 	var peerAddr *wire.NetAddress
 	spawn(func() {
 		defer wg.Done()
-		addr, closed, err := receiveversion.ReceiveVersion(receiveVersionCh, router, peer, dag)
+		addr, closed, err := receiveversion.ReceiveVersion(receiveVersionRoute, router.OutgoingRoute(), peer, dag)
 		if err != nil || closed {
 			if err != nil {
 				log.Errorf("error from ReceiveVersion: %s", err)
@@ -54,9 +53,9 @@ func handshake(router *netadapter.Router, netAdapter *netadapter.NetAdapter, pee
 
 	spawn(func() {
 		defer wg.Done()
-		err := sendversion.SendVersion(sendVersionCh, router, netAdapter, dag)
-		if err != nil {
-			log.Errorf("error from ReceiveVersion: %s", err)
+		closed, err := sendversion.SendVersion(sendVersionRoute, router.OutgoingRoute(), netAdapter, dag)
+		if err != nil || closed {
+			log.Errorf("error from SendVersion: %s", err)
 			if atomic.AddUint32(&errChanUsed, 1) != 1 {
 				errChan <- err
 			}

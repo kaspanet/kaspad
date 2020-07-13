@@ -2,7 +2,7 @@ package receiveversion
 
 import (
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/netadapter"
+	"github.com/kaspanet/kaspad/netadapter/router"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
@@ -21,10 +21,10 @@ var (
 
 // ReceiveVersion waits for the peer to send a version message, sends a
 // verack in response, and updates its info accordingly.
-func ReceiveVersion(msgChan <-chan wire.Message, router *netadapter.Router, peer *peerpkg.Peer,
-	dag *blockdag.BlockDAG) (addr *wire.NetAddress, channelClosed bool, err error) {
+func ReceiveVersion(incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer,
+	dag *blockdag.BlockDAG) (addr *wire.NetAddress, routeClosed bool, err error) {
 
-	msg, isClosed := <-msgChan
+	msg, isClosed := incomingRoute.Dequeue()
 	if isClosed {
 		return nil, true, nil
 	}
@@ -70,7 +70,10 @@ func ReceiveVersion(msgChan <-chan wire.Message, router *netadapter.Router, peer
 	//}
 
 	peer.UpdateFieldsFromMsgVersion(msgVersion)
-	router.WriteOutgoingMessage(wire.NewMsgVerAck())
+	isOpen := outgoingRoute.Enqueue(wire.NewMsgVerAck())
+	if !isOpen {
+		return nil, true, nil
+	}
 	// TODO(libp2p) Register peer ID
 	return msgVersion.Address, false, nil
 }

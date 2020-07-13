@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/netadapter"
+	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/version"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
@@ -29,8 +30,8 @@ var (
 )
 
 // SendVersion sends a version to a peer and waits for verack.
-func SendVersion(msgChan <-chan wire.Message, router *netadapter.Router, netAdapter *netadapter.NetAdapter,
-	dag *blockdag.BlockDAG) error {
+func SendVersion(incomingRoute *router.Route, outgoingRoute *router.Route, netAdapter *netadapter.NetAdapter,
+	dag *blockdag.BlockDAG) (routeClosed bool, err error) {
 
 	selectedTipHash := dag.SelectedTipHash()
 	subnetworkID := config.ActiveConfig().SubnetworkID
@@ -48,12 +49,29 @@ func SendVersion(msgChan <-chan wire.Message, router *netadapter.Router, netAdap
 	// Advertise if inv messages for transactions are desired.
 	msg.DisableRelayTx = config.ActiveConfig().BlocksOnly
 
-	router.WriteOutgoingMessage(msg)
+	isOpen := outgoingRoute.Enqueue(msg)
+	if !isOpen {
+		return true, nil
+	}
+
+	closeChan := make(chan struct{})
+	gotVerack := make(chan struct{})
+	spawn(func() {
+		_, isOpen := incomingRoute.Dequeue()
+		if !isOpen {
+			closeChan <- struct{}{}
+			return
+		}
+		close(gotVerack)
+	})
+
 	const timeout = 30 * time.Second
 	select {
-	case <-msgChan:
+	case <-gotVerack:
+	case <-closeChan:
+		return true, nil
 	case <-time.After(timeout):
-		return errors.New("didn't receive a verack message")
+		return false, errors.New("didn't receive a verack message")
 	}
-	return nil
+	return false, nil
 }

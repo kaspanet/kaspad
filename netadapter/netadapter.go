@@ -2,6 +2,7 @@ package netadapter
 
 import (
 	"github.com/kaspanet/kaspad/netadapter/id"
+	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 	"sync"
 	"sync/atomic"
 
@@ -14,7 +15,7 @@ import (
 
 // RouterInitializer is a function that initializes a new
 // router to be used with a new connection
-type RouterInitializer func() (*Router, error)
+type RouterInitializer func() (*routerpkg.Router, error)
 
 // NetAdapter is an abstraction layer over networking.
 // This type expects a RouteInitializer function. This
@@ -27,9 +28,9 @@ type NetAdapter struct {
 	routerInitializer RouterInitializer
 	stop              uint32
 
-	connectionIDs    map[server.Connection]*id.ID
-	idsToConnections map[*id.ID]server.Connection
-	idsToRouters     map[*id.ID]*Router
+	routersToConnections map[*routerpkg.Router]server.Connection
+	connectionsToIDs     map[server.Connection]*id.ID
+	idsToRouters         map[*id.ID]*routerpkg.Router
 	sync.RWMutex
 }
 
@@ -48,9 +49,9 @@ func NewNetAdapter(listeningAddrs []string) (*NetAdapter, error) {
 		id:     netAdapterID,
 		server: s,
 
-		connectionIDs:    make(map[server.Connection]*id.ID),
-		idsToConnections: make(map[*id.ID]server.Connection),
-		idsToRouters:     make(map[*id.ID]*Router),
+		routersToConnections: make(map[*routerpkg.Router]server.Connection),
+		connectionsToIDs:     make(map[server.Connection]*id.ID),
+		idsToRouters:         make(map[*id.ID]*routerpkg.Router),
 	}
 
 	onConnectedHandler := adapter.newOnConnectedHandler()
@@ -92,80 +93,47 @@ func (na *NetAdapter) newOnConnectedHandler() server.OnConnectedHandler {
 		if err != nil {
 			return err
 		}
+		connection.Start(router)
+		na.routersToConnections[router] = connection
+
+		router.SetOnRouteCapacityReachedHandler(func() {
+			err := connection.Disconnect()
+			if err != nil {
+				log.Warnf("Failed to disconnect from %s", connection)
+			}
+		})
 		connection.SetOnDisconnectedHandler(func() error {
-			na.unregisterConnection(connection)
+			na.cleanupConnection(connection, router)
+			na.server.RemoveConnection(connection)
 			return router.Close()
 		})
-		router.SetOnIDReceivedHandler(func(id *id.ID) {
-			na.registerConnection(connection, router, id)
-		})
-
-		spawn(func() { na.startReceiveLoop(connection, router) })
-		spawn(func() { na.startSendLoop(connection, router) })
+		na.server.AddConnection(connection)
 		return nil
 	}
 }
 
-func (na *NetAdapter) registerConnection(connection server.Connection, router *Router, id *id.ID) {
-	na.server.AddConnection(connection)
+// AssociateRouterID associates the connection for the given router
+// with the given ID
+func (na *NetAdapter) AssociateRouterID(router *routerpkg.Router, id *id.ID) error {
+	connection, ok := na.routersToConnections[router]
+	if !ok {
+		return errors.Errorf("router not registered for id %s", id)
+	}
 
-	na.connectionIDs[connection] = id
-	na.idsToConnections[id] = connection
+	na.connectionsToIDs[connection] = id
 	na.idsToRouters[id] = router
+	return nil
 }
 
-func (na *NetAdapter) unregisterConnection(connection server.Connection) {
-	na.server.RemoveConnection(connection)
-
-	id, ok := na.connectionIDs[connection]
+func (na *NetAdapter) cleanupConnection(connection server.Connection, router *routerpkg.Router) {
+	connectionID, ok := na.connectionsToIDs[connection]
 	if !ok {
 		return
 	}
 
-	delete(na.connectionIDs, connection)
-	delete(na.idsToConnections, id)
-	delete(na.idsToRouters, id)
-}
-
-func (na *NetAdapter) startReceiveLoop(connection server.Connection, router *Router) {
-	for atomic.LoadUint32(&na.stop) == 0 {
-		message, err := connection.Receive()
-		if err != nil {
-			log.Warnf("Failed to receive from %s: %s", connection, err)
-			break
-		}
-		err = router.RouteIncomingMessage(message)
-		if err != nil {
-			// TODO(libp2p): This should never happen, do something more severe
-			log.Warnf("Failed to route input message from %s: %s", connection, err)
-			break
-		}
-	}
-
-	if connection.IsConnected() {
-		err := connection.Disconnect()
-		if err != nil {
-			log.Warnf("Failed to disconnect from %s: %s", connection, err)
-		}
-	}
-}
-
-func (na *NetAdapter) startSendLoop(connection server.Connection, router *Router) {
-	for atomic.LoadUint32(&na.stop) == 0 {
-		message := router.ReadOutgoingMessage()
-		err := connection.Send(message)
-		if err != nil {
-			log.Warnf("Failed to send to %s: %s", connection, err)
-			break
-		}
-	}
-
-	if connection.IsConnected() {
-		err := connection.Disconnect()
-		if err != nil {
-			log.Warnf("Failed to disconnect from %s: %s", connection, err)
-		}
-	}
+	delete(na.routersToConnections, router)
+	delete(na.connectionsToIDs, connection)
+	delete(na.idsToRouters, connectionID)
 }
 
 // SetRouterInitializer sets the routerInitializer function
@@ -181,17 +149,21 @@ func (na *NetAdapter) ID() *id.ID {
 
 // Broadcast sends the given `message` to every peer corresponding
 // to each ID in `ids`
-func (na *NetAdapter) Broadcast(ids []*id.ID, message wire.Message) {
+func (na *NetAdapter) Broadcast(connectionIDs []*id.ID, message wire.Message) error {
 	na.RLock()
 	defer na.RUnlock()
-	for _, id := range ids {
-		router, ok := na.idsToRouters[id]
+	for _, connectionID := range connectionIDs {
+		router, ok := na.idsToRouters[connectionID]
 		if !ok {
-			log.Warnf("id %s is not registered", id)
+			log.Warnf("connectionID %s is not registered", connectionID)
 			continue
 		}
-		router.WriteOutgoingMessage(message)
+		_, err := router.EnqueueIncomingMessage(message)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // GetBestLocalAddress returns the most appropriate local address to use

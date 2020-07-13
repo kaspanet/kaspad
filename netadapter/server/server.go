@@ -2,9 +2,8 @@ package server
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/netadapter/router"
 	"net"
-
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // OnConnectedHandler is a function that is to be called
@@ -30,8 +29,7 @@ type Server interface {
 // Connection represents a p2p server connection.
 type Connection interface {
 	fmt.Stringer
-	Send(message wire.Message) error
-	Receive() (wire.Message, error)
+	Start(router *router.Router)
 	Disconnect() error
 	IsConnected() bool
 	SetOnDisconnectedHandler(onDisconnectedHandler OnDisconnectedHandler)
