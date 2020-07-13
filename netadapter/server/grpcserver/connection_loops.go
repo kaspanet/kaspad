@@ -28,9 +28,9 @@ func (c *gRPCConnection) connectionLoops(stream grpcStream) error {
 
 func (c *gRPCConnection) sendLoop(stream grpcStream) error {
 	for c.IsConnected() {
-		message, err := c.router.OutgoingRoute().Dequeue()
-		if err != nil {
-			return err
+		message, isOpen := c.router.OutgoingRoute().Dequeue()
+		if !isOpen {
+			return nil
 		}
 		messageProto, err := protowire.FromWireMessage(message)
 		if err != nil {
@@ -58,13 +58,12 @@ func (c *gRPCConnection) receiveLoop(stream grpcStream) error {
 		if err != nil {
 			return err
 		}
-		route, err := c.router.EnqueueIncomingMessage(message)
+		isOpen, err := c.router.EnqueueIncomingMessage(message)
 		if err != nil {
 			return err
 		}
-		err = route.Enqueue(message)
-		if err != nil {
-			return err
+		if !isOpen {
+			return nil
 		}
 	}
 	return nil

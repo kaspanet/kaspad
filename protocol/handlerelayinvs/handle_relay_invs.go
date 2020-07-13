@@ -61,9 +61,9 @@ func readInv(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlock) (
 		return inv, false, nil
 	}
 
-	msg, err := incomingRoute.Dequeue()
-	if err != nil {
-		return nil, false, err
+	msg, isOpen := incomingRoute.Dequeue()
+	if !isOpen {
+		return nil, true, nil
 	}
 
 	inv, ok := msg.(*wire.MsgInvRelayBlock)
@@ -98,9 +98,9 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, outgoingRoute *router.Rou
 	defer requestedBlocks.removeSet(pendingBlocks)
 
 	getRelayBlocksMsg := wire.NewMsgGetRelayBlocks(filteredHashesToRequest)
-	err = outgoingRoute.Enqueue(getRelayBlocksMsg)
-	if err != nil {
-		return false, err
+	isOpen := outgoingRoute.Enqueue(getRelayBlocksMsg)
+	if !isOpen {
+		return true, nil
 	}
 
 	for len(pendingBlocks) > 0 {
@@ -138,12 +138,12 @@ func readMsgBlock(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlo
 	msgBlock *wire.MsgBlock, shouldStop bool, err error) {
 
 	for {
-		errChan := make(chan error)
+		closeChan := make(chan struct{})
 		msgChan := make(chan wire.Message)
 		spawn(func() {
-			message, err := incomingRoute.Dequeue()
-			if err != nil {
-				errChan <- err
+			message, isOpen := incomingRoute.Dequeue()
+			if !isOpen {
+				closeChan <- struct{}{}
 				return
 			}
 			msgChan <- message
@@ -153,8 +153,8 @@ func readMsgBlock(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlo
 		select {
 		case <-time.After(timeout):
 			return nil, false, errors.Errorf("stalled for %s", timeout)
-		case <-errChan:
-			return nil, false, err
+		case <-closeChan:
+			return nil, true, nil
 		case msg := <-msgChan:
 			switch msg := msg.(type) {
 			case *wire.MsgInvRelayBlock:

@@ -1,7 +1,6 @@
 package router
 
 import (
-	"errors"
 	"github.com/kaspanet/kaspad/wire"
 )
 
@@ -30,23 +29,23 @@ func NewRoute() *Route {
 }
 
 // Enqueue enqueues a message to the Route
-func (r *Route) Enqueue(message wire.Message) error {
+func (r *Route) Enqueue(message wire.Message) bool {
 	if r.closed {
-		return errors.New("route is closed")
+		return false
 	}
 	if len(r.channel) == maxMessages {
 		r.onCapacityReachedHandler()
 	}
 	r.channel <- message
-	return nil
+	return true
 }
 
 // Dequeue dequeues a message from the Route
-func (r *Route) Dequeue() (wire.Message, error) {
+func (r *Route) Dequeue() (wire.Message, bool) {
 	if r.closed {
-		return nil, errors.New("route is closed")
+		return nil, false
 	}
-	return <-r.channel, nil
+	return <-r.channel, true
 }
 
 func (r *Route) setOnCapacityReachedHandler(onCapacityReachedHandler onCapacityReachedHandler) {

@@ -78,20 +78,20 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag
 	addFlow("PingPong", router, []string{wire.CmdPing, wire.CmdPong},
 		&stopped, stop, func(incomingRoute *routerpkg.Route) error {
 
-			err := outgoingRoute.Enqueue(wire.NewMsgPing(666))
-			if err != nil {
-				return err
+			isOpen := outgoingRoute.Enqueue(wire.NewMsgPing(666))
+			if !isOpen {
+				return nil
 			}
-			message, err := incomingRoute.Dequeue()
-			if err != nil {
-				return err
+			message, isOpen := incomingRoute.Dequeue()
+			if !isOpen {
+				return nil
 			}
 			for {
 				log.Infof("Got message: %+v", message.Command())
 				if message.Command() == "ping" {
-					err := outgoingRoute.Enqueue(wire.NewMsgPong(666))
-					if err != nil {
-						return err
+					isOpen := outgoingRoute.Enqueue(wire.NewMsgPong(666))
+					if !isOpen {
+						return nil
 					}
 				}
 			}
