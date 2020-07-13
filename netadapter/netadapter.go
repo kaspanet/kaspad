@@ -3,6 +3,8 @@ package netadapter
 import (
 	"github.com/kaspanet/kaspad/netadapter/id"
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
+	"net"
+	"strconv"
 	"sync"
 	"sync/atomic"
 
@@ -168,7 +170,31 @@ func (na *NetAdapter) Broadcast(connectionIDs []*id.ID, message wire.Message) er
 
 // GetBestLocalAddress returns the most appropriate local address to use
 // for the given remote address.
-func (na *NetAdapter) GetBestLocalAddress() *wire.NetAddress {
-	//TODO(libp2p) Implement this, and check reachability to the other node
-	panic("unimplemented")
+func (na *NetAdapter) GetBestLocalAddress() (*wire.NetAddress, error) {
+	//TODO(libp2p) Reimplement this, and check reachability to the other node
+	listenAddr := config.ActiveConfig().Listeners[0]
+	_, portStr, err := net.SplitHostPort(listenAddr)
+	if err != nil {
+		portStr = config.ActiveConfig().NetParams().DefaultPort
+	}
+
+	portInt, err := strconv.Atoi(portStr)
+	if err != nil {
+		return nil, err
+	}
+
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, addr := range addrs {
+		ifaceIP, _, err := net.ParseCIDR(addr.String())
+		if err != nil {
+			continue
+		}
+
+		return wire.NewNetAddressIPPort(ifaceIP, uint16(portInt), wire.SFNodeNetwork), nil
+	}
+	return nil, errors.New("no address was found")
 }

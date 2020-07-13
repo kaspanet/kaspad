@@ -37,7 +37,11 @@ func SendVersion(incomingRoute *router.Route, outgoingRoute *router.Route, netAd
 	subnetworkID := config.ActiveConfig().SubnetworkID
 
 	// Version message.
-	msg := wire.NewMsgVersion(netAdapter.GetBestLocalAddress(), netAdapter.ID(), selectedTipHash, subnetworkID)
+	localAddr, err := netAdapter.GetBestLocalAddress()
+	if err != nil {
+		panic(err)
+	}
+	msg := wire.NewMsgVersion(localAddr, netAdapter.ID(), selectedTipHash, subnetworkID)
 	msg.AddUserAgent(userAgentName, userAgentVersion, config.ActiveConfig().UserAgentComments...)
 
 	// Advertise the services flag
