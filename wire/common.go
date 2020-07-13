@@ -129,18 +129,8 @@ func ReadElement(r io.Reader, element interface{}) error {
 		}
 		return nil
 
-	case **id.ID:
-		idBytes := make([]byte, id.IDLength)
-		_, err := io.ReadFull(r, idBytes)
-		if err != nil {
-			return err
-		}
-		deserializedID, err := id.NewID(idBytes)
-		if err != nil {
-			return err
-		}
-		*e = deserializedID
-		return nil
+	case *id.ID:
+		return e.Deserialize(r)
 
 	case *subnetworkid.SubnetworkID:
 		_, err := io.ReadFull(r, e[:])
@@ -284,11 +274,7 @@ func WriteElement(w io.Writer, element interface{}) error {
 		return nil
 
 	case *id.ID:
-		_, err := w.Write(e.Bytes())
-		if err != nil {
-			return err
-		}
-		return nil
+		return e.Serialize(w)
 
 	case *subnetworkid.SubnetworkID:
 		_, err := w.Write(e[:])

@@ -125,7 +125,8 @@ func (msg *MsgVersion) KaspaDecode(r io.Reader, pver uint32) error {
 		}
 	}
 
-	err = ReadElement(buf, &msg.ID)
+	msg.ID = new(id.ID)
+	err = ReadElement(buf, msg.ID)
 	if err != nil {
 		return err
 	}

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/hex"
-	"errors"
+	"io"
 )
 
 // IDLength of array used to store the ID.
@@ -17,27 +17,12 @@ type ID struct {
 
 // GenerateID generates a new ID
 func GenerateID() (*ID, error) {
-	idBytes := make([]byte, IDLength)
-	_, err := rand.Read(idBytes)
+	id := new(ID)
+	err := id.Deserialize(rand.Reader)
 	if err != nil {
 		return nil, err
 	}
-	return NewID(idBytes)
-}
-
-// NewID creates an ID from the given bytes
-func NewID(bytes []byte) (*ID, error) {
-	if len(bytes) != IDLength {
-		return nil, errors.New("invalid bytes length")
-	}
-	return &ID{bytes: bytes}, nil
-}
-
-// Bytes returns the serialized bytes for the ID.
-func (id *ID) Bytes() []byte {
-	bytesCopy := make([]byte, IDLength)
-	copy(bytesCopy, id.bytes)
-	return bytesCopy
+	return id, nil
 }
 
 // IsEqual returns whether id equals to other.
@@ -47,4 +32,17 @@ func (id *ID) IsEqual(other *ID) bool {
 
 func (id *ID) String() string {
 	return hex.EncodeToString(id.bytes)
+}
+
+// Deserialize decodes a block from r into the receiver.
+func (id *ID) Deserialize(r io.Reader) error {
+	id.bytes = make([]byte, IDLength)
+	_, err := io.ReadFull(r, id.bytes)
+	return err
+}
+
+// Serialize serializes the receiver into the given writer.
+func (id *ID) Serialize(w io.Writer) error {
+	_, err := w.Write(id.bytes)
+	return err
 }
