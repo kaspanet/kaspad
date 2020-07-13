@@ -6,7 +6,6 @@ import (
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
-	"sync/atomic"
 )
 
 var (
@@ -18,8 +17,6 @@ var (
 	// minAcceptableProtocolVersion is the lowest protocol version that a
 	// connected peer may support.
 	minAcceptableProtocolVersion = wire.ProtocolVersion
-
-	nodeCount uint32
 )
 
 // ReceiveVersion waits for the peer to send a version message, sends a
@@ -72,7 +69,7 @@ func ReceiveVersion(msgChan <-chan wire.Message, router *netadapter.Router, peer
 	//	return nil, false, errors.New("incompatible subnetworks")
 	//}
 
-	peer.UpdateFieldsFromMsgVersion(msgVersion, atomic.AddUint32(&nodeCount, 1))
+	peer.UpdateFieldsFromMsgVersion(msgVersion)
 	router.WriteOutgoingMessage(wire.NewMsgVerAck())
 	// TODO(libp2p) Register peer ID
 	return msgVersion.Address, false, nil

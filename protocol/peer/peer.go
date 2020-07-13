@@ -18,7 +18,7 @@ type Peer struct {
 	selectedTipHashMtx sync.RWMutex
 	selectedTipHash    *daghash.Hash
 
-	id                    uint32
+	id                    *id.ID
 	userAgent             string
 	services              wire.ServiceFlag
 	advertisedProtocolVer uint32 // protocol version advertised by remote
@@ -66,7 +66,7 @@ func (p *Peer) MarkAsReady() error {
 }
 
 // UpdateFieldsFromMsgVersion updates the peer with the data from the version message.
-func (p *Peer) UpdateFieldsFromMsgVersion(msg *wire.MsgVersion, peerID uint32) {
+func (p *Peer) UpdateFieldsFromMsgVersion(msg *wire.MsgVersion) {
 	// Negotiate the protocol version.
 	p.advertisedProtocolVer = msg.ProtocolVersion
 	p.protocolVersion = mathUtil.MinUint32(p.protocolVersion, p.advertisedProtocolVer)
@@ -74,7 +74,7 @@ func (p *Peer) UpdateFieldsFromMsgVersion(msg *wire.MsgVersion, peerID uint32) {
 		p.protocolVersion, p)
 
 	// Set the peer's ID.
-	p.id = peerID
+	p.id = msg.ID
 
 	// Set the supported services for the peer to what the remote peer
 	// advertised.
