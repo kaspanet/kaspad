@@ -26,7 +26,7 @@ type Peer struct {
 	disableRelayTx        bool
 	subnetworkID          *subnetworkid.SubnetworkID
 
-	peerLock       sync.RWMutex
+	pingLock       sync.RWMutex
 	lastPingNonce  uint64    // Set to nonce if we have a pending ping.
 	lastPingTime   time.Time // Time we sent last ping.
 	lastPingMicros int64     // Time for last ping to return.
@@ -94,16 +94,16 @@ func (p *Peer) UpdateFieldsFromMsgVersion(msg *wire.MsgVersion, peerID uint32) {
 }
 
 func (p *Peer) SetPingPending(nonce uint64) {
-	p.peerLock.Lock()
-	defer p.peerLock.Unlock()
+	p.pingLock.Lock()
+	defer p.pingLock.Unlock()
 
 	p.lastPingNonce = nonce
 	p.lastPingTime = time.Now()
 }
 
 func (p *Peer) SetPingIdle() {
-	p.peerLock.Lock()
-	defer p.peerLock.Unlock()
+	p.pingLock.Lock()
+	defer p.pingLock.Unlock()
 
 	p.lastPingNonce = 0
 	p.lastPingMicros = time.Since(p.lastPingTime).Nanoseconds() / 1000
