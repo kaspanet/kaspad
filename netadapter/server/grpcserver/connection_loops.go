@@ -58,7 +58,7 @@ func (c *gRPCConnection) receiveLoop(stream grpcStream) error {
 		if err != nil {
 			return err
 		}
-		route, err := c.router.IncomingRoute(message)
+		route, err := c.router.EnqueueIncomingMessage(message)
 		if err != nil {
 			return err
 		}

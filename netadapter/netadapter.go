@@ -155,7 +155,7 @@ func (na *NetAdapter) Broadcast(connectionIDs []*id.ID, message wire.Message) er
 			log.Warnf("connectionID %s is not registered", connectionID)
 			continue
 		}
-		route, err := router.IncomingRoute(message)
+		route, err := router.EnqueueIncomingMessage(message)
 		if err != nil {
 			return err
 		}
