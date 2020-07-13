@@ -13,16 +13,16 @@ const pingInterval = 2 * time.Minute
 
 func HandlePing(incomingRoute *router.Route, outgoingRoute *router.Route) error {
 	for {
-		message, err := incomingRoute.Dequeue()
-		if err != nil {
-			return err
+		message, isOpen := incomingRoute.Dequeue()
+		if !isOpen {
+			return nil
 		}
 		pingMessage := message.(*wire.MsgPing)
 
 		pongMessage := wire.NewMsgPong(pingMessage.Nonce)
-		err = outgoingRoute.Enqueue(pongMessage)
-		if err != nil {
-			return err
+		isOpen = outgoingRoute.Enqueue(pongMessage)
+		if !isOpen {
+			return nil
 		}
 	}
 }
@@ -41,14 +41,14 @@ func StartPingLoop(incomingRoute *router.Route, outgoingRoute *router.Route, pee
 		peer.SetPingPending(nonce)
 
 		pingMessage := wire.NewMsgPing(nonce)
-		err = outgoingRoute.Enqueue(pingMessage)
-		if err != nil {
-			return err
+		isOpen := outgoingRoute.Enqueue(pingMessage)
+		if !isOpen {
+			return nil
 		}
 
-		message, err := incomingRoute.Dequeue()
-		if err != nil {
-			return err
+		message, isOpen := incomingRoute.Dequeue()
+		if !isOpen {
+			return nil
 		}
 		pongMessage := message.(*wire.MsgPing)
 		if pongMessage.Nonce != pingMessage.Nonce {
