@@ -104,8 +104,7 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag
 func addFlow(name string, router *routerpkg.Router, messageTypes []string, stopped *uint32,
 	stopChan chan error, flow func(route *routerpkg.Route) error) {
 
-	route := routerpkg.NewRoute()
-	err := router.AddIncomingRoute(messageTypes, route)
+	route, err := router.AddIncomingRoute(messageTypes)
 	if err != nil {
 		panic(err)
 	}

@@ -50,17 +50,18 @@ func (r *Router) SetOnRouteCapacityReachedHandler(onRouteCapacityReachedHandler 
 
 // AddIncomingRoute registers the messages of types `messageTypes` to
 // be routed to the given `route`
-func (r *Router) AddIncomingRoute(messageTypes []string, route *Route) error {
+func (r *Router) AddIncomingRoute(messageTypes []string) (*Route, error) {
+	route := NewRoute()
 	for _, messageType := range messageTypes {
 		if _, ok := r.incomingRoutes[messageType]; ok {
-			return errors.Errorf("a route for '%s' already exists", messageType)
+			return nil, errors.Errorf("a route for '%s' already exists", messageType)
 		}
 		r.incomingRoutes[messageType] = route
 	}
 	route.setOnCapacityReachedHandler(func() {
 		r.onRouteCapacityReachedHandler()
 	})
-	return nil
+	return route, nil
 }
 
 // RemoveRoute unregisters the messages of types `messageTypes` from
