@@ -9,10 +9,10 @@ import (
 )
 
 var (
-	// allowSelfConns is only used to allow the tests to bypass the self
+	// allowSelfConnections is only used to allow the tests to bypass the self
 	// connection detecting and disconnect logic since they intentionally
 	// do so for testing purposes.
-	allowSelfConns bool
+	allowSelfConnections bool
 
 	// minAcceptableProtocolVersion is the lowest protocol version that a
 	// connected peer may support.
@@ -34,7 +34,7 @@ func ReceiveVersion(incomingRoute *router.Route, outgoingRoute *router.Route, pe
 		return nil, false, errors.New("a version message must precede all others")
 	}
 
-	if !allowSelfConns && peerpkg.IDExists(msgVersion.ID) {
+	if !allowSelfConnections && peerpkg.IDExists(msgVersion.ID) {
 		//TODO(libp2p) create error type for disconnect but don't ban
 		return nil, false, errors.Errorf("already connected to peer with ID %s", msgVersion.ID)
 	}

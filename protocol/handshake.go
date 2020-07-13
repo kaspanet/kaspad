@@ -30,15 +30,13 @@ func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
-	var (
-		errChanUsed uint32
-		errChan     = make(chan error)
-	)
+	errChanUsed := uint32(0)
+	errChan := make(chan error)
 
-	var peerAddr *wire.NetAddress
+	var peerAddress *wire.NetAddress
 	spawn(func() {
 		defer wg.Done()
-		addr, closed, err := receiveversion.ReceiveVersion(receiveVersionRoute, router.OutgoingRoute(), peer, dag)
+		address, closed, err := receiveversion.ReceiveVersion(receiveVersionRoute, router.OutgoingRoute(), peer, dag)
 		if err != nil || closed {
 			if err != nil {
 				log.Errorf("error from ReceiveVersion: %s", err)
@@ -48,7 +46,7 @@ func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer
 			}
 			return
 		}
-		peerAddr = addr
+		peerAddress = address
 	})
 
 	spawn(func() {
@@ -77,12 +75,12 @@ func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer
 		panic(err)
 	}
 
-	if peerAddr != nil {
+	if peerAddress != nil {
 		subnetworkID, err := peer.SubnetworkID()
 		if err != nil {
 			panic(err)
 		}
-		addressManager.AddAddress(peerAddr, peerAddr, subnetworkID)
+		addressManager.AddAddress(peerAddress, peerAddress, subnetworkID)
 	}
 	return false, nil
 }
