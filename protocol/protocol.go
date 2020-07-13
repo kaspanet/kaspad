@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/protocol/handlerelayblockrequests"
 	"github.com/kaspanet/kaspad/protocol/handlerelayinvs"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
+	"github.com/kaspanet/kaspad/protocol/ping"
 	"github.com/kaspanet/kaspad/wire"
 	"sync/atomic"
 )
@@ -74,27 +75,14 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag
 		},
 	)
 
-	// TODO(libp2p): Remove this and change it with a real Ping-Pong flow.
-	addFlow("PingPong", router, []string{wire.CmdPing, wire.CmdPong},
+	addFlow("HandlePing", router, []string{wire.CmdPing},
 		&stopped, stop, func(incomingRoute *routerpkg.Route) error {
+			return ping.HandlePing(incomingRoute, outgoingRoute)
+		})
 
-			err := outgoingRoute.Enqueue(wire.NewMsgPing(666))
-			if err != nil {
-				return err
-			}
-			message, err := incomingRoute.Dequeue()
-			if err != nil {
-				return err
-			}
-			for {
-				log.Infof("Got message: %+v", message.Command())
-				if message.Command() == "ping" {
-					err := outgoingRoute.Enqueue(wire.NewMsgPong(666))
-					if err != nil {
-						return err
-					}
-				}
-			}
+	addFlow("StartPingLoop", router, []string{wire.CmdPong},
+		&stopped, stop, func(incomingRoute *routerpkg.Route) error {
+			return ping.StartPingLoop(incomingRoute, outgoingRoute, peer)
 		})
 
 	err := <-stop
