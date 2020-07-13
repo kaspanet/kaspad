@@ -27,6 +27,9 @@ func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer
 		panic(err)
 	}
 
+	// For the handshake to finish, we need to get from the other node
+	// a version and verack messages, so we increase the wait group by 2
+	// and block the handshake with wg.Wait().
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
