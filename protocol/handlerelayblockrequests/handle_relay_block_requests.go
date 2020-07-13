@@ -14,9 +14,9 @@ func HandleRelayBlockRequests(incomingRoute *router.Route, outgoingRoute *router
 	peer *peerpkg.Peer, dag *blockdag.BlockDAG) error {
 
 	for {
-		message, err := incomingRoute.Dequeue()
-		if err != nil {
-			return err
+		message, isOpen := incomingRoute.Dequeue()
+		if !isOpen {
+			return nil
 		}
 		getRelayBlocksMessage := message.(*wire.MsgGetRelayBlocks)
 		for _, hash := range getRelayBlocksMessage.Hashes {
@@ -43,9 +43,9 @@ func HandleRelayBlockRequests(incomingRoute *router.Route, outgoingRoute *router
 				msgBlock.ConvertToPartial(peerSubnetworkID)
 			}
 
-			err = outgoingRoute.Enqueue(msgBlock)
-			if err != nil {
-				return err
+			isOpen = outgoingRoute.Enqueue(msgBlock)
+			if !isOpen {
+				return nil
 			}
 		}
 	}

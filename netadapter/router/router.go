@@ -1,14 +1,9 @@
 package router
 
 import (
-	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
-
-// OnIDReceivedHandler is a function that is to be called
-// once a new Connection sends us its ID.
-type OnIDReceivedHandler func(id *id.ID)
 
 // OnRouteCapacityReachedHandler is a function that is to
 // be called when one of the routes reaches capacity.
@@ -20,7 +15,6 @@ type Router struct {
 	incomingRoutes map[string]*Route
 	outgoingRoute  *Route
 
-	onIDReceivedHandler           OnIDReceivedHandler
 	onRouteCapacityReachedHandler OnRouteCapacityReachedHandler
 }
 
@@ -36,31 +30,26 @@ func NewRouter() *Router {
 	return &router
 }
 
-// SetOnIDReceivedHandler sets the onIDReceivedHandler function for
-// this router
-func (r *Router) SetOnIDReceivedHandler(onIDReceivedHandler OnIDReceivedHandler) {
-	r.onIDReceivedHandler = onIDReceivedHandler
-}
-
 // SetOnRouteCapacityReachedHandler sets the onRouteCapacityReachedHandler
 // function for this router
 func (r *Router) SetOnRouteCapacityReachedHandler(onRouteCapacityReachedHandler OnRouteCapacityReachedHandler) {
 	r.onRouteCapacityReachedHandler = onRouteCapacityReachedHandler
 }
 
-// AddRoute registers the messages of types `messageTypes` to
-// be routed to the given `inputChannel`
-func (r *Router) AddRoute(messageTypes []string, route *Route) error {
+// AddIncomingRoute registers the messages of types `messageTypes` to
+// be routed to the given `route`
+func (r *Router) AddIncomingRoute(messageTypes []string) (*Route, error) {
+	route := NewRoute()
 	for _, messageType := range messageTypes {
 		if _, ok := r.incomingRoutes[messageType]; ok {
-			return errors.Errorf("a route for '%s' already exists", messageType)
+			return nil, errors.Errorf("a route for '%s' already exists", messageType)
 		}
 		r.incomingRoutes[messageType] = route
 	}
 	route.setOnCapacityReachedHandler(func() {
 		r.onRouteCapacityReachedHandler()
 	})
-	return nil
+	return route, nil
 }
 
 // RemoveRoute unregisters the messages of types `messageTypes` from
@@ -75,24 +64,19 @@ func (r *Router) RemoveRoute(messageTypes []string) error {
 	return nil
 }
 
-// IncomingRoute returns the appropriate route for a given
-// message
-func (r *Router) IncomingRoute(message wire.Message) (*Route, error) {
+// EnqueueIncomingMessage enqueues the given message to the
+// appropriate route
+func (r *Router) EnqueueIncomingMessage(message wire.Message) (isOpen bool, err error) {
 	route, ok := r.incomingRoutes[message.Command()]
 	if !ok {
-		return nil, errors.Errorf("a route for '%s' does not exist", message.Command())
+		return false, errors.Errorf("a route for '%s' does not exist", message.Command())
 	}
-	return route, nil
+	return route.Enqueue(message), nil
 }
 
 // OutgoingRoute returns the outgoing route
 func (r *Router) OutgoingRoute() *Route {
 	return r.outgoingRoute
-}
-
-// RegisterID registers the remote connection's ID
-func (r *Router) RegisterID(id *id.ID) {
-	r.onIDReceivedHandler(id)
 }
 
 // Close shuts down the router by closing all registered
