@@ -48,9 +48,9 @@ func (r *Router) SetOnRouteCapacityReachedHandler(onRouteCapacityReachedHandler 
 	r.onRouteCapacityReachedHandler = onRouteCapacityReachedHandler
 }
 
-// AddRoute registers the messages of types `messageTypes` to
-// be routed to the given `inputChannel`
-func (r *Router) AddRoute(messageTypes []string, route *Route) error {
+// AddIncomingRoute registers the messages of types `messageTypes` to
+// be routed to the given `route`
+func (r *Router) AddIncomingRoute(messageTypes []string, route *Route) error {
 	for _, messageType := range messageTypes {
 		if _, ok := r.incomingRoutes[messageType]; ok {
 			return errors.Errorf("a route for '%s' already exists", messageType)

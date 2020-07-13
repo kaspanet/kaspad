@@ -105,7 +105,7 @@ func addFlow(name string, router *routerpkg.Router, messageTypes []string, stopp
 	stopChan chan error, flow func(route *routerpkg.Route) error) {
 
 	route := routerpkg.NewRoute()
-	err := router.AddRoute(messageTypes, route)
+	err := router.AddIncomingRoute(messageTypes, route)
 	if err != nil {
 		panic(err)
 	}
