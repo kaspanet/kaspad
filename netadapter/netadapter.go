@@ -1,10 +1,11 @@
 package netadapter
 
 import (
-	"github.com/kaspanet/kaspad/netadapter/id"
-	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 	"sync"
 	"sync/atomic"
+
+	"github.com/kaspanet/kaspad/netadapter/id"
+	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/netadapter/server"
@@ -54,8 +55,7 @@ func NewNetAdapter(listeningAddrs []string) (*NetAdapter, error) {
 		idsToRouters:         make(map[*id.ID]*routerpkg.Router),
 	}
 
-	onConnectedHandler := adapter.newOnConnectedHandler()
-	adapter.server.SetOnConnectedHandler(onConnectedHandler)
+	adapter.server.SetOnConnectedHandler(adapter.onConnectedHandler)
 
 	return &adapter, nil
 }
@@ -87,29 +87,27 @@ func (na *NetAdapter) Stop() error {
 	return na.server.Stop()
 }
 
-func (na *NetAdapter) newOnConnectedHandler() server.OnConnectedHandler {
-	return func(connection server.Connection) error {
-		router, err := na.routerInitializer()
-		if err != nil {
-			return err
-		}
-		connection.Start(router)
-		na.routersToConnections[router] = connection
-
-		router.SetOnRouteCapacityReachedHandler(func() {
-			err := connection.Disconnect()
-			if err != nil {
-				log.Warnf("Failed to disconnect from %s", connection)
-			}
-		})
-		connection.SetOnDisconnectedHandler(func() error {
-			na.cleanupConnection(connection, router)
-			na.server.RemoveConnection(connection)
-			return router.Close()
-		})
-		na.server.AddConnection(connection)
-		return nil
+func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
+	router, err := na.routerInitializer()
+	if err != nil {
+		return err
 	}
+	connection.Start(router)
+	na.routersToConnections[router] = connection
+
+	router.SetOnRouteCapacityReachedHandler(func() {
+		err := connection.Disconnect()
+		if err != nil {
+			log.Warnf("Failed to disconnect from %s", connection)
+		}
+	})
+	connection.SetOnDisconnectedHandler(func() error {
+		na.cleanupConnection(connection, router)
+		na.server.RemoveConnection(connection)
+		return router.Close()
+	})
+	na.server.AddConnection(connection)
+	return nil
 }
 
 // AssociateRouterID associates the connection for the given router
