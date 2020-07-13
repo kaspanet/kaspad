@@ -37,10 +37,7 @@ func SendVersion(msgChan <-chan wire.Message, router *netadapter.Router, netAdap
 
 	// Version message.
 	msg := wire.NewMsgVersion(netAdapter.GetBestLocalAddress(), netAdapter.ID(), selectedTipHash, subnetworkID)
-	err := msg.AddUserAgent(userAgentName, userAgentVersion, config.ActiveConfig().UserAgentComments...)
-	if err != nil {
-		panic(errors.Wrapf(err, "error with our own user agent"))
-	}
+	msg.AddUserAgent(userAgentName, userAgentVersion, config.ActiveConfig().UserAgentComments...)
 
 	// Advertise the services flag
 	msg.Services = defaultServices

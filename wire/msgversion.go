@@ -271,7 +271,7 @@ func validateUserAgent(userAgent string) error {
 // message. The version string is not defined to any strict format, although
 // it is recommended to use the form "major.minor.revision" e.g. "2.6.41".
 func (msg *MsgVersion) AddUserAgent(name string, version string,
-	comments ...string) error {
+	comments ...string) {
 
 	newUserAgent := fmt.Sprintf("%s:%s", name, version)
 	if len(comments) != 0 {
@@ -279,10 +279,5 @@ func (msg *MsgVersion) AddUserAgent(name string, version string,
 			strings.Join(comments, "; "))
 	}
 	newUserAgent = fmt.Sprintf("%s%s/", msg.UserAgent, newUserAgent)
-	err := validateUserAgent(newUserAgent)
-	if err != nil {
-		return err
-	}
 	msg.UserAgent = newUserAgent
-	return nil
 }

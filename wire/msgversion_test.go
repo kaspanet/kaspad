@@ -72,15 +72,6 @@ func TestVersion(t *testing.T) {
 			msg.UserAgent, customUserAgent)
 	}
 
-	// accounting for ":", "/"
-	err = msg.AddUserAgent(strings.Repeat("t",
-		MaxUserAgentLen-len(customUserAgent)-2+1), "")
-	if msgErr := &(MessageError{}); !errors.As(err, &msgErr) {
-		t.Errorf("AddUserAgent: expected error not received "+
-			"- got %v, want %T", err, MessageError{})
-
-	}
-
 	// Version message should not have any services set by default.
 	if msg.Services != 0 {
 		t.Errorf("NewMsgVersion: wrong default services - got %v, want %v",
