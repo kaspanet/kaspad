@@ -3,7 +3,6 @@ package grpcserver
 import (
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"net"
-	"sync"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/netadapter/server"
@@ -15,10 +14,9 @@ type gRPCConnection struct {
 	address net.Addr
 	router  *router.Router
 
-	writeDuringDisconnectLock sync.Mutex // writeDuringDisconnectLock makes sure channels aren't written to after close
-	errChan                   chan error
-	clientConn                grpc.ClientConn
-	onDisconnectedHandler     server.OnDisconnectedHandler
+	errChan               chan error
+	clientConn            grpc.ClientConn
+	onDisconnectedHandler server.OnDisconnectedHandler
 
 	isConnected uint32
 }
@@ -60,8 +58,6 @@ func (c *gRPCConnection) Disconnect() error {
 	}
 	atomic.StoreUint32(&c.isConnected, 0)
 
-	c.writeDuringDisconnectLock.Lock()
-	defer c.writeDuringDisconnectLock.Unlock()
 	close(c.errChan)
 
 	return c.onDisconnectedHandler()
