@@ -1,14 +1,9 @@
 package router
 
 import (
-	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
-
-// OnIDReceivedHandler is a function that is to be called
-// once a new Connection sends us its ID.
-type OnIDReceivedHandler func(id *id.ID)
 
 // OnRouteCapacityReachedHandler is a function that is to
 // be called when one of the routes reaches capacity.
@@ -20,7 +15,6 @@ type Router struct {
 	incomingRoutes map[string]*Route
 	outgoingRoute  *Route
 
-	onIDReceivedHandler           OnIDReceivedHandler
 	onRouteCapacityReachedHandler OnRouteCapacityReachedHandler
 }
 
@@ -34,12 +28,6 @@ func NewRouter() *Router {
 		router.onRouteCapacityReachedHandler()
 	})
 	return &router
-}
-
-// SetOnIDReceivedHandler sets the onIDReceivedHandler function for
-// this router
-func (r *Router) SetOnIDReceivedHandler(onIDReceivedHandler OnIDReceivedHandler) {
-	r.onIDReceivedHandler = onIDReceivedHandler
 }
 
 // SetOnRouteCapacityReachedHandler sets the onRouteCapacityReachedHandler
@@ -89,11 +77,6 @@ func (r *Router) EnqueueIncomingMessage(message wire.Message) (bool, error) {
 // OutgoingRoute returns the outgoing route
 func (r *Router) OutgoingRoute() *Route {
 	return r.outgoingRoute
-}
-
-// RegisterID registers the remote connection's ID
-func (r *Router) RegisterID(id *id.ID) {
-	r.onIDReceivedHandler(id)
 }
 
 // Close shuts down the router by closing all registered

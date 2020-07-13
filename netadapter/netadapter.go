@@ -28,9 +28,9 @@ type NetAdapter struct {
 	routerInitializer RouterInitializer
 	stop              uint32
 
-	connectionIDs    map[server.Connection]*id.ID
-	idsToConnections map[*id.ID]server.Connection
-	idsToRouters     map[*id.ID]*routerpkg.Router
+	routersToConnections map[*routerpkg.Router]server.Connection
+	connectionsToIDs     map[server.Connection]*id.ID
+	idsToRouters         map[*id.ID]*routerpkg.Router
 	sync.RWMutex
 }
 
@@ -49,9 +49,9 @@ func NewNetAdapter(listeningAddrs []string) (*NetAdapter, error) {
 		id:     netAdapterID,
 		server: s,
 
-		connectionIDs:    make(map[server.Connection]*id.ID),
-		idsToConnections: make(map[*id.ID]server.Connection),
-		idsToRouters:     make(map[*id.ID]*routerpkg.Router),
+		routersToConnections: make(map[*routerpkg.Router]server.Connection),
+		connectionsToIDs:     make(map[server.Connection]*id.ID),
+		idsToRouters:         make(map[*id.ID]*routerpkg.Router),
 	}
 
 	onConnectedHandler := adapter.newOnConnectedHandler()
@@ -94,6 +94,7 @@ func (na *NetAdapter) newOnConnectedHandler() server.OnConnectedHandler {
 			return err
 		}
 		connection.Start(router)
+		na.routersToConnections[router] = connection
 
 		router.SetOnRouteCapacityReachedHandler(func() {
 			err := connection.Disconnect()
@@ -102,34 +103,36 @@ func (na *NetAdapter) newOnConnectedHandler() server.OnConnectedHandler {
 			}
 		})
 		connection.SetOnDisconnectedHandler(func() error {
-			na.unregisterConnection(connection)
+			na.cleanupConnection(connection, router)
+			na.server.RemoveConnection(connection)
 			return router.Close()
 		})
-		router.SetOnIDReceivedHandler(func(id *id.ID) {
-			na.registerConnection(connection, router, id)
-		})
+		na.server.AddConnection(connection)
 		return nil
 	}
 }
 
-func (na *NetAdapter) registerConnection(connection server.Connection, router *routerpkg.Router, id *id.ID) {
-	na.server.AddConnection(connection)
+// AssociateRouterID associates the connection for the given router
+// with the given ID
+func (na *NetAdapter) AssociateRouterID(router *routerpkg.Router, id *id.ID) error {
+	connection, ok := na.routersToConnections[router]
+	if !ok {
+		return errors.Errorf("router not registered for id %s", id)
+	}
 
-	na.connectionIDs[connection] = id
-	na.idsToConnections[id] = connection
+	na.connectionsToIDs[connection] = id
 	na.idsToRouters[id] = router
+	return nil
 }
 
-func (na *NetAdapter) unregisterConnection(connection server.Connection) {
-	na.server.RemoveConnection(connection)
-
-	connectionID, ok := na.connectionIDs[connection]
+func (na *NetAdapter) cleanupConnection(connection server.Connection, router *routerpkg.Router) {
+	connectionID, ok := na.connectionsToIDs[connection]
 	if !ok {
 		return
 	}
 
-	delete(na.connectionIDs, connection)
-	delete(na.idsToConnections, connectionID)
+	delete(na.routersToConnections, router)
+	delete(na.connectionsToIDs, connection)
 	delete(na.idsToRouters, connectionID)
 }
 
