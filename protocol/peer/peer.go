@@ -93,6 +93,7 @@ func (p *Peer) UpdateFieldsFromMsgVersion(msg *wire.MsgVersion, peerID uint32) {
 	p.subnetworkID = msg.SubnetworkID
 }
 
+// SetPingPending sets the ping state of the peer to 'pending'
 func (p *Peer) SetPingPending(nonce uint64) {
 	p.pingLock.Lock()
 	defer p.pingLock.Unlock()
@@ -101,6 +102,7 @@ func (p *Peer) SetPingPending(nonce uint64) {
 	p.lastPingTime = time.Now()
 }
 
+// SetPingIdle sets the ping state of the peer to 'idle'
 func (p *Peer) SetPingIdle() {
 	p.pingLock.Lock()
 	defer p.pingLock.Unlock()
