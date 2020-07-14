@@ -75,10 +75,10 @@ func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer
 	}
 
 	err = peerpkg.AddToReadyPeers(peer)
-	if errors.Is(err, peerpkg.ErrPeerWithSameIDExists) {
-		return false, err
-	}
 	if err != nil {
+		if errors.Is(err, peerpkg.ErrPeerWithSameIDExists) {
+			return false, err
+		}
 		panic(err)
 	}
 
