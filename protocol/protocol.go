@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter"
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
@@ -9,7 +10,9 @@ import (
 	"github.com/kaspanet/kaspad/protocol/ibd"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/ping"
+	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
 	"sync/atomic"
 )
 
@@ -19,13 +22,15 @@ type Manager struct {
 }
 
 // NewManager creates a new instance of the p2p protocol manager
-func NewManager(listeningAddrs []string, dag *blockdag.BlockDAG) (*Manager, error) {
+func NewManager(listeningAddrs []string, dag *blockdag.BlockDAG,
+	addressManager *addrmgr.AddrManager) (*Manager, error) {
+
 	netAdapter, err := netadapter.NewNetAdapter(listeningAddrs)
 	if err != nil {
 		return nil, err
 	}
 
-	routerInitializer := newRouterInitializer(netAdapter, dag)
+	routerInitializer := newRouterInitializer(netAdapter, addressManager, dag)
 	netAdapter.SetRouterInitializer(routerInitializer)
 
 	manager := Manager{
@@ -44,25 +49,47 @@ func (p *Manager) Stop() error {
 	return p.netAdapter.Stop()
 }
 
-func newRouterInitializer(netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG) netadapter.RouterInitializer {
+func newRouterInitializer(netAdapter *netadapter.NetAdapter,
+	addressManager *addrmgr.AddrManager, dag *blockdag.BlockDAG) netadapter.RouterInitializer {
 	return func() (*routerpkg.Router, error) {
 		router := routerpkg.NewRouter()
 		spawn(func() {
-			err := startFlows(netAdapter, router, dag)
+			err := startFlows(netAdapter, router, dag, addressManager)
 			if err != nil {
-				// TODO(libp2p) Ban peer
+				if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
+					if protocolErr.ShouldBan {
+						// TODO(libp2p) Ban peer
+						panic("unimplemented")
+					}
+					// TODO(libp2p) Disconnect from peer
+					panic("unimplemented")
+				}
+				if errors.Is(err, routerpkg.ErrTimeout) {
+					// TODO(libp2p) Disconnect peer
+					panic("unimplemented")
+				}
+				panic(err)
 			}
 		})
 		return router, nil
 	}
 }
 
-func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag *blockdag.BlockDAG) error {
+func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag *blockdag.BlockDAG,
+	addressManager *addrmgr.AddrManager) error {
 	stop := make(chan error)
 	stopped := uint32(0)
 
 	outgoingRoute := router.OutgoingRoute()
 	peer := new(peerpkg.Peer)
+
+	closed, err := handshake(router, netAdapter, peer, dag, addressManager)
+	if err != nil {
+		return err
+	}
+	if closed {
+		return nil
+	}
 
 	addFlow("HandleRelayInvs", router, []string{wire.CmdInvRelayBlock, wire.CmdBlock}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
@@ -94,7 +121,7 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag
 		},
 	)
 
-	err := <-stop
+	err = <-stop
 	return err
 }
 

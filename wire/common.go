@@ -7,6 +7,7 @@ package wire
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/util/binaryserializer"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
@@ -127,6 +128,9 @@ func ReadElement(r io.Reader, element interface{}) error {
 			return err
 		}
 		return nil
+
+	case *id.ID:
+		return e.Deserialize(r)
 
 	case *subnetworkid.SubnetworkID:
 		_, err := io.ReadFull(r, e[:])
@@ -268,6 +272,9 @@ func WriteElement(w io.Writer, element interface{}) error {
 			return err
 		}
 		return nil
+
+	case *id.ID:
+		return e.Serialize(w)
 
 	case *subnetworkid.SubnetworkID:
 		_, err := w.Write(e[:])
