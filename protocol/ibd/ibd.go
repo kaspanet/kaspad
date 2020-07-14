@@ -23,14 +23,30 @@ func StartIBDIfRequired(dag *blockdag.BlockDAG) error {
 
 	peer := selectPeerForIBD()
 	if peer == nil {
-		if recentlyReceivedBlock(dag) {
-			return nil
-		}
-		return requestSelectedTips(dag)
+		return requestSelectedTipsIfRequired(dag)
 	}
 
 	atomic.StoreUint32(&isIBDRunning, 1)
 	peer.StartIBD()
+	return nil
+}
+
+func selectPeerForIBD() *peerpkg.Peer {
+	return nil
+}
+
+func requestSelectedTipsIfRequired(dag *blockdag.BlockDAG) error {
+	if recentlyReceivedBlock(dag) {
+		return nil
+	}
+	return requestSelectedTips(dag)
+}
+
+func recentlyReceivedBlock(dag *blockdag.BlockDAG) bool {
+	return false
+}
+
+func requestSelectedTips(dag *blockdag.BlockDAG) error {
 	return nil
 }
 
@@ -54,16 +70,4 @@ func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 
 func finishIBD() {
 	atomic.StoreUint32(&isIBDRunning, 0)
-}
-
-func selectPeerForIBD() *peerpkg.Peer {
-	return nil
-}
-
-func recentlyReceivedBlock(dag *blockdag.BlockDAG) bool {
-	return false
-}
-
-func requestSelectedTips(dag *blockdag.BlockDAG) error {
-	return nil
 }
