@@ -17,6 +17,7 @@ import (
 //
 // This message has no payload.
 type MsgGetAddr struct {
+	NeedAddresses         bool
 	IncludeAllSubnetworks bool
 	SubnetworkID          *subnetworkid.SubnetworkID
 }
@@ -24,9 +25,14 @@ type MsgGetAddr struct {
 // KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgGetAddr) KaspaDecode(r io.Reader, pver uint32) error {
+	err := ReadElement(r, &msg.NeedAddresses)
+	if err != nil {
+		return err
+	}
+
 	msg.SubnetworkID = nil
 
-	err := ReadElement(r, &msg.IncludeAllSubnetworks)
+	err = ReadElement(r, &msg.IncludeAllSubnetworks)
 	if err != nil {
 		return err
 	}
@@ -56,7 +62,12 @@ func (msg *MsgGetAddr) KaspaDecode(r io.Reader, pver uint32) error {
 // KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgGetAddr) KaspaEncode(w io.Writer, pver uint32) error {
-	err := WriteElement(w, msg.IncludeAllSubnetworks)
+	err := WriteElement(w, msg.NeedAddresses)
+	if err != nil {
+		return err
+	}
+
+	err = WriteElement(w, msg.IncludeAllSubnetworks)
 	if err != nil {
 		return err
 	}
@@ -90,14 +101,15 @@ func (msg *MsgGetAddr) Command() string {
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver. This is part of the Message interface implementation.
 func (msg *MsgGetAddr) MaxPayloadLength(pver uint32) uint32 {
-	// SubnetworkID length + IncludeAllSubnetworks (1) + isFullNode (1)
-	return subnetworkid.IDLength + 2
+	// NeedAddresses (1) + SubnetworkID length + IncludeAllSubnetworks (1) + isFullNode (1)
+	return subnetworkid.IDLength + 3
 }
 
 // NewMsgGetAddr returns a new kaspa getaddr message that conforms to the
 // Message interface. See MsgGetAddr for details.
-func NewMsgGetAddr(includeAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID) *MsgGetAddr {
+func NewMsgGetAddr(needAddresses, includeAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID) *MsgGetAddr {
 	return &MsgGetAddr{
+		NeedAddresses:         needAddresses,
 		IncludeAllSubnetworks: includeAllSubnetworks,
 		SubnetworkID:          subnetworkID,
 	}

@@ -40,10 +40,10 @@ func (sp *Peer) OnVersion(_ *peer.Peer, msg *wire.MsgVersion) {
 			// Request known addresses if the server address manager needs
 			// more.
 			if addrManager.NeedMoreAddresses() {
-				sp.QueueMessage(wire.NewMsgGetAddr(false, sp.SubnetworkID()), nil)
+				sp.QueueMessage(wire.NewMsgGetAddr(true, false, sp.SubnetworkID()), nil)
 
 				if sp.SubnetworkID() != nil {
-					sp.QueueMessage(wire.NewMsgGetAddr(false, nil), nil)
+					sp.QueueMessage(wire.NewMsgGetAddr(true, false, nil), nil)
 				}
 			}
 
