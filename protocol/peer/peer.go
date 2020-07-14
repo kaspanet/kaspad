@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 // Peer holds data about a peer.
@@ -25,6 +26,11 @@ type Peer struct {
 	protocolVersion       uint32 // negotiated protocol version
 	disableRelayTx        bool
 	subnetworkID          *subnetworkid.SubnetworkID
+
+	pingLock         sync.RWMutex
+	lastPingNonce    uint64        // The nonce of the last ping we sent
+	lastPingTime     time.Time     // Time we sent last ping
+	lastPingDuration time.Duration // Time for last ping to return
 }
 
 // SelectedTipHash returns the selected tip of the peer.
@@ -94,6 +100,24 @@ func (p *Peer) UpdateFieldsFromMsgVersion(msg *wire.MsgVersion) {
 	p.disableRelayTx = msg.DisableRelayTx
 	p.selectedTipHash = msg.SelectedTipHash
 	p.subnetworkID = msg.SubnetworkID
+}
+
+// SetPingPending sets the ping state of the peer to 'pending'
+func (p *Peer) SetPingPending(nonce uint64) {
+	p.pingLock.Lock()
+	defer p.pingLock.Unlock()
+
+	p.lastPingNonce = nonce
+	p.lastPingTime = time.Now()
+}
+
+// SetPingIdle sets the ping state of the peer to 'idle'
+func (p *Peer) SetPingIdle() {
+	p.pingLock.Lock()
+	defer p.pingLock.Unlock()
+
+	p.lastPingNonce = 0
+	p.lastPingDuration = time.Since(p.lastPingTime)
 }
 
 func (p *Peer) String() string {
