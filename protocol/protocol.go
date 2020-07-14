@@ -62,7 +62,6 @@ func newRouterInitializer(netAdapter *netadapter.NetAdapter,
 					}
 					// TODO(libp2p)
 					panic("unimplemented")
-					return
 				}
 				panic(err)
 			}
