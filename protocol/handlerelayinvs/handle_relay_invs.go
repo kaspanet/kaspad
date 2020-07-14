@@ -138,32 +138,22 @@ func readMsgBlock(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlo
 	msgBlock *wire.MsgBlock, shouldStop bool, err error) {
 
 	for {
-		closeChan := make(chan struct{})
-		msgChan := make(chan wire.Message)
-		spawn(func() {
-			message, isOpen := incomingRoute.Dequeue()
-			if !isOpen {
-				closeChan <- struct{}{}
-				return
-			}
-			msgChan <- message
-		})
-
 		const timeout = 30 * time.Second
-		select {
-		case <-time.After(timeout):
-			return nil, false, errors.Errorf("stalled for %s", timeout)
-		case <-closeChan:
+		message, isOpen, err := incomingRoute.DequeueWithTimeout(timeout)
+		if err != nil {
+			return nil, false, err
+		}
+		if !isOpen {
 			return nil, true, nil
-		case msg := <-msgChan:
-			switch msg := msg.(type) {
-			case *wire.MsgInvRelayBlock:
-				*invsQueue = append(*invsQueue, msg)
-			case *wire.MsgBlock:
-				return msg, false, nil
-			default:
-				panic(errors.Errorf("unexpected message %s", msg.Command()))
-			}
+		}
+
+		switch message := message.(type) {
+		case *wire.MsgInvRelayBlock:
+			*invsQueue = append(*invsQueue, message)
+		case *wire.MsgBlock:
+			return message, false, nil
+		default:
+			panic(errors.Errorf("unexpected message %s", message.Command()))
 		}
 	}
 }
