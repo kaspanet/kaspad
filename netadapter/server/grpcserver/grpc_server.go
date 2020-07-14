@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"time"
 
 	"google.golang.org/grpc/peer"
 
@@ -83,7 +84,8 @@ func (s *gRPCServer) SetOnConnectedHandler(onConnectedHandler server.OnConnected
 // This is part of the Server interface
 func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 	log.Infof("Dialing to %s", address)
-	gRPCConnection, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	gRPCConnection, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return nil, errors.Wrapf(err, "error connecting to %s", address)
 	}
