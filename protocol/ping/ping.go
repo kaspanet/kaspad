@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+const pingTimeout = 30 * time.Second
+
 // ReceivePings handles all ping messages coming through incomingRoute.
 // This function assumes that incomingRoute will only return MsgPing.
 func ReceivePings(incomingRoute *router.Route, outgoingRoute *router.Route) error {
@@ -20,7 +22,10 @@ func ReceivePings(incomingRoute *router.Route, outgoingRoute *router.Route) erro
 		pingMessage := message.(*wire.MsgPing)
 
 		pongMessage := wire.NewMsgPong(pingMessage.Nonce)
-		isOpen = outgoingRoute.Enqueue(pongMessage)
+		isOpen, err := outgoingRoute.EnqueueWithTimeout(pongMessage, pingTimeout)
+		if err != nil {
+			return err
+		}
 		if !isOpen {
 			return nil
 		}
@@ -43,12 +48,18 @@ func SendPings(incomingRoute *router.Route, outgoingRoute *router.Route, peer *p
 		peer.SetPingPending(nonce)
 
 		pingMessage := wire.NewMsgPing(nonce)
-		isOpen := outgoingRoute.Enqueue(pingMessage)
+		isOpen, err := outgoingRoute.EnqueueWithTimeout(pingMessage, pingTimeout)
+		if err != nil {
+			return err
+		}
 		if !isOpen {
 			return nil
 		}
 
-		message, isOpen := incomingRoute.Dequeue()
+		message, isOpen, err := incomingRoute.DequeueWithTimeout(pingTimeout)
+		if err != nil {
+			return err
+		}
 		if !isOpen {
 			return nil
 		}
