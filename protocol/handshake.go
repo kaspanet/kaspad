@@ -41,10 +41,10 @@ func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer
 	spawn(func() {
 		defer wg.Done()
 		address, closed, err := receiveversion.ReceiveVersion(receiveVersionRoute, router.OutgoingRoute(), netAdapter, peer, dag)
+		if err != nil {
+			log.Errorf("error from ReceiveVersion: %s", err)
+		}
 		if err != nil || closed {
-			if err != nil {
-				log.Errorf("error from ReceiveVersion: %s", err)
-			}
 			if atomic.AddUint32(&errChanUsed, 1) != 1 {
 				errChan <- err
 			}
@@ -56,8 +56,10 @@ func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer
 	spawn(func() {
 		defer wg.Done()
 		closed, err := sendversion.SendVersion(sendVersionRoute, router.OutgoingRoute(), netAdapter, dag)
-		if err != nil || closed {
+		if err != nil {
 			log.Errorf("error from SendVersion: %s", err)
+		}
+		if err != nil || closed {
 			if atomic.AddUint32(&errChanUsed, 1) != 1 {
 				errChan <- err
 			}
