@@ -6,6 +6,7 @@ import (
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/handlerelayblockrequests"
 	"github.com/kaspanet/kaspad/protocol/handlerelayinvs"
+	"github.com/kaspanet/kaspad/protocol/ibd"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/ping"
 	"github.com/kaspanet/kaspad/wire"
@@ -84,6 +85,12 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag
 	addFlow("SendPings", router, []string{wire.CmdPong}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return ping.SendPings(incomingRoute, outgoingRoute, peer)
+		},
+	)
+
+	addFlow("HandleIBD", router, []string{wire.CmdSelectedTip}, &stopped, stop,
+		func(incomingRoute *routerpkg.Route) error {
+			return ibd.HandleIBD(incomingRoute, outgoingRoute)
 		},
 	)
 
