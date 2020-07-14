@@ -50,6 +50,8 @@ func (r *Route) Dequeue() (message wire.Message, isOpen bool) {
 	return <-r.channel, true
 }
 
+// EnqueueWithTimeout attempts to enqueue a message to the Route
+// and returns an error if the given timeout expires first.
 func (r *Route) EnqueueWithTimeout(message wire.Message, timeout time.Duration) (isOpen bool, err error) {
 	if r.closed {
 		return false, nil
@@ -65,6 +67,8 @@ func (r *Route) EnqueueWithTimeout(message wire.Message, timeout time.Duration) 
 	}
 }
 
+// DequeueWithTimeout attempts to dequeue a message from the Route
+// and returns an error if the given timeout expires first.
 func (r *Route) DequeueWithTimeout(timeout time.Duration) (message wire.Message, isOpen bool, err error) {
 	if r.closed {
 		return nil, false, nil
