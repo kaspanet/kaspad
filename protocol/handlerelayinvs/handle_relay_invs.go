@@ -142,9 +142,6 @@ func readMsgBlock(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlo
 		const timeout = 30 * time.Second
 		message, isOpen, err := incomingRoute.DequeueWithTimeout(timeout)
 		if err != nil {
-			if !errors.Is(err, router.ErrTimeout) {
-				panic(err)
-			}
 			return nil, false, err
 		}
 		if !isOpen {
