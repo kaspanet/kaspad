@@ -30,6 +30,8 @@ type Peer struct {
 	lastPingNonce    uint64        // The nonce of the last ping we sent
 	lastPingTime     time.Time     // Time we sent last ping
 	lastPingDuration time.Duration // Time for last ping to return
+
+	ibdStartChan chan struct{}
 }
 
 // SelectedTipHash returns the selected tip of the peer.
@@ -129,4 +131,12 @@ func minUint32(a, b uint32) uint32 {
 func GetReadyPeerIDs() []*id.ID {
 	// TODO(libp2p)
 	panic("unimplemented")
+}
+
+func (p *Peer) StartIBD() {
+	p.ibdStartChan <- struct{}{}
+}
+
+func (p *Peer) WaitForIBDStart() {
+	<-p.ibdStartChan
 }

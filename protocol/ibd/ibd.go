@@ -1,40 +1,69 @@
 package ibd
 
 import (
+	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter/router"
+	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"sync"
+	"sync/atomic"
 )
 
 var (
-	isIBDRunning      bool
-	isIBDRunningMutex sync.Mutex
-	ibdStartChan      chan struct{}
+	isIBDRunning  uint32
+	startIBDMutex sync.Mutex
 )
 
-func StartIBDIfRequired() {
-	isIBDRunningMutex.Lock()
-	defer isIBDRunningMutex.Unlock()
+func StartIBDIfRequired(dag *blockdag.BlockDAG) error {
+	startIBDMutex.Lock()
+	defer startIBDMutex.Unlock()
 
-	if isIBDRunning {
-		return
+	if atomic.LoadUint32(&isIBDRunning) != 0 {
+		return nil
 	}
-	isIBDRunning = true
-	ibdStartChan <- struct{}{}
-}
 
-func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route) error {
-	for range ibdStartChan {
-		// We the flow inside a func so that the defer is called at its end
-		func() {
-			defer finishIBD()
-		}()
+	peer := selectPeerForIBD()
+	if peer == nil {
+		if recentlyReceivedBlock(dag) {
+			return nil
+		}
+		return requestSelectedTips(dag)
 	}
+
+	atomic.StoreUint32(&isIBDRunning, 1)
+	peer.StartIBD()
 	return nil
 }
 
-func finishIBD() {
-	isIBDRunningMutex.Lock()
-	defer isIBDRunningMutex.Unlock()
+func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
+	peer *peerpkg.Peer, dag *blockdag.BlockDAG) error {
 
-	isIBDRunning = false
+	for {
+		peer.WaitForIBDStart()
+
+		// We the flow inside a func so that the defer is called at its end
+		err := func() error {
+			defer finishIBD()
+
+			return nil
+		}()
+		if err != nil {
+			return err
+		}
+	}
+}
+
+func finishIBD() {
+	atomic.StoreUint32(&isIBDRunning, 0)
+}
+
+func selectPeerForIBD() *peerpkg.Peer {
+	return nil
+}
+
+func recentlyReceivedBlock(dag *blockdag.BlockDAG) bool {
+	return false
+}
+
+func requestSelectedTips(dag *blockdag.BlockDAG) error {
+	return nil
 }
