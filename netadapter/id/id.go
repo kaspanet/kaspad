@@ -46,3 +46,14 @@ func (id *ID) Serialize(w io.Writer) error {
 	_, err := w.Write(id.bytes)
 	return err
 }
+
+// FromBytes returns an ID deserialized from the given byte slice.
+func FromBytes(serializedID []byte) *ID {
+	r := bytes.NewReader(serializedID)
+	newID := new(ID)
+	err := newID.Deserialize(r)
+	if err != nil {
+		panic(err)
+	}
+	return newID
+}

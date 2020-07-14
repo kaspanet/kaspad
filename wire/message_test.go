@@ -35,16 +35,6 @@ func makeHeader(kaspaNet KaspaNet, command string,
 	return buf
 }
 
-func idFromBytes(idBytes []byte) *id.ID {
-	r := bytes.NewReader(idBytes)
-	newID := new(id.ID)
-	err := newID.Deserialize(r)
-	if err != nil {
-		panic(err)
-	}
-	return newID
-}
-
 // TestMessage tests the Read/WriteMessage and Read/WriteMessageN API.
 func TestMessage(t *testing.T) {
 	pver := ProtocolVersion
@@ -60,7 +50,7 @@ func TestMessage(t *testing.T) {
 	me.Timestamp = mstime.Time{} // Version message has zero value timestamp.
 	idMeBytes := make([]byte, id.IDLength)
 	idMeBytes[0] = 0xff
-	idMe := idFromBytes(idMeBytes)
+	idMe := id.FromBytes(idMeBytes)
 	msgVersion := NewMsgVersion(me, idMe, &daghash.ZeroHash, nil)
 
 	msgVerack := NewMsgVerAck()
