@@ -5,7 +5,6 @@ import (
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/netadapter/router"
-	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/version"
 	"github.com/kaspanet/kaspad/wire"
 	"time"
@@ -58,24 +57,13 @@ func SendVersion(incomingRoute *router.Route, outgoingRoute *router.Route, netAd
 		return true, nil
 	}
 
-	closeChan := make(chan struct{})
-	gotVerack := make(chan struct{})
-	spawn(func() {
-		_, isOpen := incomingRoute.Dequeue()
-		if !isOpen {
-			closeChan <- struct{}{}
-			return
-		}
-		close(gotVerack)
-	})
-
 	const timeout = 30 * time.Second
-	select {
-	case <-gotVerack:
-	case <-closeChan:
+	_, isOpen, err = incomingRoute.DequeueWithTimeout(timeout)
+	if err != nil {
+		return false, err
+	}
+	if !isOpen {
 		return true, nil
-	case <-time.After(timeout):
-		return false, protocolerrors.New(false, "didn't receive a verack message")
 	}
 	return false, nil
 }
