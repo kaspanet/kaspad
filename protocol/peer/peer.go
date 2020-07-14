@@ -109,7 +109,6 @@ func (p *Peer) SetPingIdle() {
 
 	p.lastPingNonce = 0
 	p.lastPingMicros = time.Since(p.lastPingTime).Nanoseconds() / 1000
-
 }
 
 func (p *Peer) String() string {
