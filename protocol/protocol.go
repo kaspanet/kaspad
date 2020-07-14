@@ -1,6 +1,8 @@
 package protocol
 
 import (
+	"sync/atomic"
+
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter"
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
@@ -9,7 +11,6 @@ import (
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/ping"
 	"github.com/kaspanet/kaspad/wire"
-	"sync/atomic"
 )
 
 // Manager manages the p2p protocol
@@ -18,12 +19,7 @@ type Manager struct {
 }
 
 // NewManager creates a new instance of the p2p protocol manager
-func NewManager(listeningAddrs []string, dag *blockdag.BlockDAG) (*Manager, error) {
-	netAdapter, err := netadapter.NewNetAdapter(listeningAddrs)
-	if err != nil {
-		return nil, err
-	}
-
+func NewManager(netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG) (*Manager, error) {
 	routerInitializer := newRouterInitializer(netAdapter, dag)
 	netAdapter.SetRouterInitializer(routerInitializer)
 

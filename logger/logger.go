@@ -54,6 +54,7 @@ var (
 	blkrLog = BackendLog.Logger("BLKR")
 	gbrlLog = BackendLog.Logger("GBRL")
 	blprLog = BackendLog.Logger("BLPR")
+	dnssLog = BackendLog.Logger("DNSS")
 )
 
 // SubsystemTags is an enum of all sub system tags
@@ -83,7 +84,8 @@ var SubsystemTags = struct {
 	BLKR,
 	NTAR,
 	GBRL,
-	BLPR string
+	BLPR,
+	DNSS string
 }{
 	ADXR: "ADXR",
 	AMGR: "AMGR",
@@ -111,6 +113,7 @@ var SubsystemTags = struct {
 	GBRL: "GBRL",
 	NTAR: "NTAR",
 	BLPR: "BLPR",
+	DNSS: "DNSS",
 }
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
@@ -141,6 +144,7 @@ var subsystemLoggers = map[string]*logs.Logger{
 	SubsystemTags.GBRL: gbrlLog,
 	SubsystemTags.NTAR: ntarLog,
 	SubsystemTags.BLPR: blprLog,
+	SubsystemTags.DNSS: dnssLog,
 }
 
 // InitLog attaches log file and error log file to the backend log.
