@@ -9,7 +9,9 @@ import (
 	"github.com/kaspanet/kaspad/protocol/handlerelayinvs"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/ping"
+	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
 	"sync/atomic"
 )
 
@@ -53,7 +55,16 @@ func newRouterInitializer(netAdapter *netadapter.NetAdapter,
 		spawn(func() {
 			err := startFlows(netAdapter, router, dag, addressManager)
 			if err != nil {
-				// TODO(libp2p) Ban peer
+				if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
+					if protocolErr.ShouldBan {
+						// TODO(libp2p)
+						panic("unimplemented")
+					}
+					// TODO(libp2p)
+					panic("unimplemented")
+					return
+				}
+				panic(err)
 			}
 		})
 		return router, nil

@@ -2,10 +2,11 @@ package receiveversion
 
 import (
 	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
+	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/wire"
-	"github.com/pkg/errors"
 )
 
 var (
@@ -21,8 +22,8 @@ var (
 
 // ReceiveVersion waits for the peer to send a version message, sends a
 // verack in response, and updates its info accordingly.
-func ReceiveVersion(incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer,
-	dag *blockdag.BlockDAG) (addr *wire.NetAddress, routeClosed bool, err error) {
+func ReceiveVersion(incomingRoute *router.Route, outgoingRoute *router.Route, netAdapter *netadapter.NetAdapter,
+	peer *peerpkg.Peer, dag *blockdag.BlockDAG) (addr *wire.NetAddress, routeClosed bool, err error) {
 
 	message, isOpen := incomingRoute.Dequeue()
 	if !isOpen {
@@ -31,12 +32,11 @@ func ReceiveVersion(incomingRoute *router.Route, outgoingRoute *router.Route, pe
 
 	msgVersion, ok := message.(*wire.MsgVersion)
 	if !ok {
-		return nil, false, errors.New("a version message must precede all others")
+		return nil, false, protocolerrors.New(true, "a version message must precede all others")
 	}
 
-	if !allowSelfConnections && peerpkg.IDExists(msgVersion.ID) {
-		//TODO(libp2p) create error type for disconnect but don't ban
-		return nil, false, errors.Errorf("already connected to peer with ID %s", msgVersion.ID)
+	if !allowSelfConnections && netAdapter.ID().IsEqual(msgVersion.ID) {
+		return nil, false, protocolerrors.New(true, "connected to self")
 	}
 
 	// Notify and disconnect clients that have a protocol version that is
@@ -47,13 +47,13 @@ func ReceiveVersion(incomingRoute *router.Route, outgoingRoute *router.Route, pe
 	// disconnecting.
 	if msgVersion.ProtocolVersion < minAcceptableProtocolVersion {
 		//TODO(libp2p) create error type for disconnect but don't ban
-		return nil, false, errors.Errorf("protocol version must be %d or greater",
+		return nil, false, protocolerrors.Errorf(false, "protocol version must be %d or greater",
 			minAcceptableProtocolVersion)
 	}
 
 	// Disconnect from partial nodes in networks that don't allow them
 	if !dag.Params.EnableNonNativeSubnetworks && msgVersion.SubnetworkID != nil {
-		return nil, false, errors.New("partial nodes are not allowed")
+		return nil, false, protocolerrors.New(true, "partial nodes are not allowed")
 	}
 
 	// TODO(libp2p)

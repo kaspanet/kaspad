@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/blocklogger"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
+	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	mathUtil "github.com/kaspanet/kaspad/util/math"
@@ -31,7 +32,7 @@ func HandleRelayInvs(incomingRoute *router.Route, outgoingRoute *router.Route,
 
 		if dag.IsKnownBlock(inv.Hash) {
 			if dag.IsKnownInvalid(inv.Hash) {
-				return errors.Errorf("sent inv of an invalid block %s",
+				return protocolerrors.Errorf(true, "sent inv of an invalid block %s",
 					inv.Hash)
 			}
 			continue
@@ -68,7 +69,7 @@ func readInv(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlock) (
 
 	inv, ok := msg.(*wire.MsgInvRelayBlock)
 	if !ok {
-		return nil, false, errors.Errorf("unexpected %s message in the block relay flow while "+
+		return nil, false, protocolerrors.Errorf(true, "unexpected %s message in the block relay flow while "+
 			"expecting an inv message", msg.Command())
 	}
 	return inv, false, nil
@@ -115,7 +116,7 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, outgoingRoute *router.Rou
 		block := util.NewBlock(msgBlock)
 		blockHash := block.Hash()
 		if _, ok := pendingBlocks[*blockHash]; !ok {
-			return false, errors.Errorf("got unrequested block %s", block.Hash())
+			return false, protocolerrors.Errorf(true, "got unrequested block %s", block.Hash())
 		}
 		delete(pendingBlocks, *blockHash)
 		requestedBlocks.remove(blockHash)
@@ -152,7 +153,7 @@ func readMsgBlock(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlo
 		const timeout = 30 * time.Second
 		select {
 		case <-time.After(timeout):
-			return nil, false, errors.Errorf("stalled for %s", timeout)
+			return nil, false, protocolerrors.Errorf(true, "stalled for %s", timeout)
 		case <-closeChan:
 			return nil, true, nil
 		case msg := <-msgChan:
@@ -184,7 +185,7 @@ func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 		log.Infof("Rejected block %s from %s: %s", blockHash,
 			peer, err)
 
-		return false, errors.Wrap(err, "got invalid block: %s")
+		return false, protocolerrors.Wrap(true, err, "got invalid block")
 	}
 
 	if isDelayed {
@@ -194,7 +195,8 @@ func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 	if isOrphan {
 		blueScore, err := block.BlueScore()
 		if err != nil {
-			return false, errors.Errorf("received an orphan block %s with malformed blue score", blockHash)
+			return false, protocolerrors.Errorf(true, "received an orphan "+
+				"block %s with malformed blue score", blockHash)
 		}
 
 		const maxOrphanBlueScoreDiff = 10000
@@ -215,7 +217,7 @@ func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 	}
 	err = blocklogger.LogBlock(block)
 	if err != nil {
-		panic(err)
+		return false, err
 	}
 	//TODO(libp2p)
 	//// When the block is not an orphan, log information about it and

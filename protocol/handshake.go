@@ -40,7 +40,7 @@ func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer
 	var peerAddress *wire.NetAddress
 	spawn(func() {
 		defer wg.Done()
-		address, closed, err := receiveversion.ReceiveVersion(receiveVersionRoute, router.OutgoingRoute(), peer, dag)
+		address, closed, err := receiveversion.ReceiveVersion(receiveVersionRoute, router.OutgoingRoute(), netAdapter, peer, dag)
 		if err != nil || closed {
 			if err != nil {
 				log.Errorf("error from ReceiveVersion: %s", err)
