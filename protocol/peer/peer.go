@@ -135,6 +135,7 @@ func GetReadyPeerIDs() []*id.ID {
 	i := 0
 	for peerID := range readyPeers {
 		peerIDs[i] = peerID
+		i++
 	}
 	return peerIDs
 }
