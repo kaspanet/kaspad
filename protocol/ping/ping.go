@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-const pingInterval = 2 * time.Minute
-
 // ReceivePings handles all ping messages coming through incomingRoute.
 // This function assumes that incomingRoute will only return MsgPing.
 func ReceivePings(incomingRoute *router.Route, outgoingRoute *router.Route) error {
@@ -33,6 +31,7 @@ func ReceivePings(incomingRoute *router.Route, outgoingRoute *router.Route) erro
 // given peer.
 // This function assumes that incomingRoute will only return MsgPong.
 func SendPings(incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer) error {
+	const pingInterval = 2 * time.Minute
 	ticker := time.NewTicker(pingInterval)
 	defer ticker.Stop()
 
