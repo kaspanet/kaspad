@@ -1,6 +1,9 @@
 package protocol
 
 import (
+	"sync"
+	"sync/atomic"
+
 	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter"
@@ -11,8 +14,6 @@ import (
 	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
-	"sync"
-	"sync/atomic"
 )
 
 func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
@@ -100,6 +101,7 @@ func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer
 			panic(err)
 		}
 		addressManager.AddAddress(peerAddress, peerAddress, subnetworkID)
+		addressManager.Good(peerAddress, subnetworkID)
 	}
 
 	err = router.RemoveRoute([]string{wire.CmdVersion, wire.CmdVerAck})
