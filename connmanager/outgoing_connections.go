@@ -17,8 +17,11 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 	}
 
 	connectionsToAdd := c.targetOutgoing - liveConnections
+	if connectionsToAdd == 0 {
+		return
+	}
 
-	log.Debug("Have got %d outgoing connections out of target %d, adding %d more",
+	log.Debugf("Have got %d outgoing connections out of target %d, adding %d more",
 		liveConnections, c.targetOutgoing, connectionsToAdd)
 
 	for i := 0; i < connectionsToAdd; i++ {

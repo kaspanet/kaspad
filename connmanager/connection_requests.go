@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	minRetryDuration = time.Second
+	minRetryDuration = 30 * time.Second
 	maxRetryDuration = 10 * time.Minute
 )
 
@@ -70,7 +70,7 @@ func (c *ConnectionManager) checkConnectionRequests(connSet connectionSet) {
 		} else { // if connection request is permanent - keep in pending, and increase retry time
 			connReq.retryDuration = nextRetryDuration(connReq.retryDuration)
 			connReq.nextAttempt = now.Add(connReq.retryDuration)
-			log.Debugf("Retrying connection to %s in %s", connReq.retryDuration)
+			log.Debugf("Retrying connection to %s in %s", address, connReq.retryDuration)
 		}
 	}
 }
