@@ -99,5 +99,10 @@ func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer
 		}
 		addressManager.AddAddress(peerAddress, peerAddress, subnetworkID)
 	}
+
+	err = router.RemoveRoute([]string{wire.CmdVersion, wire.CmdVerAck})
+	if err != nil {
+		panic(err)
+	}
 	return false, nil
 }
