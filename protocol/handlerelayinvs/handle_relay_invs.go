@@ -15,6 +15,8 @@ import (
 	"time"
 )
 
+const timeout = 30 * time.Second
+
 // HandleRelayInvs listens to wire.MsgInvRelayBlock messages, requests their corresponding blocks if they
 // are missing, adds them to the DAG and propagates them to the rest of the network.
 func HandleRelayInvs(incomingRoute *router.Route, outgoingRoute *router.Route,
@@ -99,7 +101,10 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, outgoingRoute *router.Rou
 	defer requestedBlocks.removeSet(pendingBlocks)
 
 	getRelayBlocksMsg := wire.NewMsgGetRelayBlocks(filteredHashesToRequest)
-	isOpen := outgoingRoute.Enqueue(getRelayBlocksMsg)
+	isOpen, err := outgoingRoute.EnqueueWithTimeout(getRelayBlocksMsg, timeout)
+	if err != nil {
+		return false, err
+	}
 	if !isOpen {
 		return true, nil
 	}
@@ -139,7 +144,6 @@ func readMsgBlock(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlo
 	msgBlock *wire.MsgBlock, shouldStop bool, err error) {
 
 	for {
-		const timeout = 30 * time.Second
 		message, isOpen, err := incomingRoute.DequeueWithTimeout(timeout)
 		if err != nil {
 			return nil, false, err

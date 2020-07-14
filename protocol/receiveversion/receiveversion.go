@@ -7,6 +7,7 @@ import (
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/wire"
+	"time"
 )
 
 var (
@@ -19,6 +20,8 @@ var (
 	// connected peer may support.
 	minAcceptableProtocolVersion = wire.ProtocolVersion
 )
+
+const timeout = 30 * time.Second
 
 // ReceiveVersion waits for the peer to send a version message, sends a
 // verack in response, and updates its info accordingly.
@@ -70,7 +73,10 @@ func ReceiveVersion(incomingRoute *router.Route, outgoingRoute *router.Route, ne
 	//}
 
 	peer.UpdateFieldsFromMsgVersion(msgVersion)
-	isOpen = outgoingRoute.Enqueue(wire.NewMsgVerAck())
+	isOpen, err = outgoingRoute.EnqueueWithTimeout(wire.NewMsgVerAck(), timeout)
+	if err != nil {
+		return nil, false, err
+	}
 	if !isOpen {
 		return nil, true, nil
 	}

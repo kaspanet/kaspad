@@ -28,6 +28,8 @@ var (
 	defaultRequiredServices = wire.SFNodeNetwork
 )
 
+const timeout = 30 * time.Second
+
 // SendVersion sends a version to a peer and waits for verack.
 func SendVersion(incomingRoute *router.Route, outgoingRoute *router.Route, netAdapter *netadapter.NetAdapter,
 	dag *blockdag.BlockDAG) (routeClosed bool, err error) {
@@ -52,12 +54,14 @@ func SendVersion(incomingRoute *router.Route, outgoingRoute *router.Route, netAd
 	// Advertise if inv messages for transactions are desired.
 	msg.DisableRelayTx = config.ActiveConfig().BlocksOnly
 
-	isOpen := outgoingRoute.Enqueue(msg)
+	isOpen, err := outgoingRoute.EnqueueWithTimeout(msg, timeout)
+	if err != nil {
+		return false, err
+	}
 	if !isOpen {
 		return true, nil
 	}
 
-	const timeout = 30 * time.Second
 	_, isOpen, err = incomingRoute.DequeueWithTimeout(timeout)
 	if err != nil {
 		return false, err
