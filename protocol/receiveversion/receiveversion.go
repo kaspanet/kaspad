@@ -24,12 +24,12 @@ var (
 func ReceiveVersion(incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer,
 	dag *blockdag.BlockDAG) (addr *wire.NetAddress, routeClosed bool, err error) {
 
-	msg, isClosed := incomingRoute.Dequeue()
-	if isClosed {
+	message, isOpen := incomingRoute.Dequeue()
+	if !isOpen {
 		return nil, true, nil
 	}
 
-	msgVersion, ok := msg.(*wire.MsgVersion)
+	msgVersion, ok := message.(*wire.MsgVersion)
 	if !ok {
 		return nil, false, errors.New("a version message must precede all others")
 	}
@@ -70,7 +70,7 @@ func ReceiveVersion(incomingRoute *router.Route, outgoingRoute *router.Route, pe
 	//}
 
 	peer.UpdateFieldsFromMsgVersion(msgVersion)
-	isOpen := outgoingRoute.Enqueue(wire.NewMsgVerAck())
+	isOpen = outgoingRoute.Enqueue(wire.NewMsgVerAck())
 	if !isOpen {
 		return nil, true, nil
 	}
