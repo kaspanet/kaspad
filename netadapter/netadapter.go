@@ -3,6 +3,8 @@ package netadapter
 import (
 	"github.com/kaspanet/kaspad/netadapter/id"
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
+	"net"
+	"strconv"
 	"sync"
 	"sync/atomic"
 
@@ -164,4 +166,59 @@ func (na *NetAdapter) Broadcast(connectionIDs []*id.ID, message wire.Message) er
 		}
 	}
 	return nil
+}
+
+// GetBestLocalAddress returns the most appropriate local address to use
+// for the given remote address.
+func (na *NetAdapter) GetBestLocalAddress() (*wire.NetAddress, error) {
+	//TODO(libp2p) Reimplement this, and check reachability to the other node
+	if len(config.ActiveConfig().ExternalIPs) > 0 {
+		host, portString, err := net.SplitHostPort(config.ActiveConfig().ExternalIPs[0])
+		if err != nil {
+			portString = config.ActiveConfig().NetParams().DefaultPort
+		}
+		portInt, err := strconv.Atoi(portString)
+		if err != nil {
+			return nil, err
+		}
+
+		ip := net.ParseIP(host)
+		if ip == nil {
+			hostAddrs, err := net.LookupHost(host)
+			if err != nil {
+				return nil, err
+			}
+			ip = net.ParseIP(hostAddrs[0])
+			if ip == nil {
+				return nil, errors.Errorf("Cannot resolve IP address for host '%s'", host)
+			}
+		}
+		return wire.NewNetAddressIPPort(ip, uint16(portInt), wire.SFNodeNetwork), nil
+
+	}
+	listenAddress := config.ActiveConfig().Listeners[0]
+	_, portString, err := net.SplitHostPort(listenAddress)
+	if err != nil {
+		portString = config.ActiveConfig().NetParams().DefaultPort
+	}
+
+	portInt, err := strconv.Atoi(portString)
+	if err != nil {
+		return nil, err
+	}
+
+	addresses, err := net.InterfaceAddrs()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, address := range addresses {
+		ip, _, err := net.ParseCIDR(address.String())
+		if err != nil {
+			continue
+		}
+
+		return wire.NewNetAddressIPPort(ip, uint16(portInt), wire.SFNodeNetwork), nil
+	}
+	return nil, errors.New("no address was found")
 }

@@ -1,14 +1,17 @@
 package router
 
 import (
-	"errors"
 	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
 	"time"
 )
 
 const (
 	maxMessages = 100
 )
+
+// ErrTimeout signifies that one of the router functions had a timeout.
+var ErrTimeout = errors.New("timeout expired")
 
 // onCapacityReachedHandler is a function that is to be
 // called when a route reaches capacity.
@@ -61,7 +64,7 @@ func (r *Route) EnqueueWithTimeout(message wire.Message, timeout time.Duration) 
 	}
 	select {
 	case <-time.After(timeout):
-		return false, errors.New("timeout expired")
+		return false, errors.Wrapf(ErrTimeout, "got timeout after %s", timeout)
 	case r.channel <- message:
 		return true, nil
 	}
@@ -75,7 +78,7 @@ func (r *Route) DequeueWithTimeout(timeout time.Duration) (message wire.Message,
 	}
 	select {
 	case <-time.After(timeout):
-		return nil, false, errors.New("timeout expired")
+		return nil, false, errors.Wrapf(ErrTimeout, "got timeout after %s", timeout)
 	case message := <-r.channel:
 		return message, true, nil
 	}

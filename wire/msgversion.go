@@ -7,6 +7,7 @@ package wire
 import (
 	"bytes"
 	"fmt"
+	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/version"
 	"github.com/pkg/errors"
@@ -41,15 +42,11 @@ type MsgVersion struct {
 	// Time the message was generated. This is encoded as an int64 on the wire.
 	Timestamp mstime.Time
 
-	// Address of the remote peer.
-	AddrYou NetAddress
-
 	// Address of the local peer.
-	AddrMe NetAddress
+	Address *NetAddress
 
-	// Unique value associated with message that is used to detect self
-	// connections.
-	Nonce uint64
+	// The peer unique ID
+	ID *id.ID
 
 	// The user agent that generated messsage. This is a encoded as a varString
 	// on the wire. This has a max length of MaxUserAgentLen.
@@ -114,16 +111,22 @@ func (msg *MsgVersion) KaspaDecode(r io.Reader, pver uint32) error {
 		msg.SubnetworkID = &subnetworkID
 	}
 
-	err = readNetAddress(buf, pver, &msg.AddrYou, false)
+	var hasAddress bool
+	err = ReadElement(r, &hasAddress)
 	if err != nil {
 		return err
 	}
 
-	err = readNetAddress(buf, pver, &msg.AddrMe, false)
-	if err != nil {
-		return err
+	if hasAddress {
+		msg.Address = new(NetAddress)
+		err = readNetAddress(buf, pver, msg.Address, false)
+		if err != nil {
+			return err
+		}
 	}
-	err = ReadElement(buf, &msg.Nonce)
+
+	msg.ID = new(id.ID)
+	err = ReadElement(buf, msg.ID)
 	if err != nil {
 		return err
 	}
@@ -180,17 +183,19 @@ func (msg *MsgVersion) KaspaEncode(w io.Writer, pver uint32) error {
 		}
 	}
 
-	err = writeNetAddress(w, pver, &msg.AddrYou, false)
-	if err != nil {
-		return err
+	if msg.Address != nil {
+		err = WriteElement(w, true)
+		if err != nil {
+			return err
+		}
+
+		err = writeNetAddress(w, pver, msg.Address, false)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = writeNetAddress(w, pver, &msg.AddrMe, false)
-	if err != nil {
-		return err
-	}
-
-	err = WriteElement(w, msg.Nonce)
+	err = WriteElement(w, msg.ID)
 	if err != nil {
 		return err
 	}
@@ -234,7 +239,7 @@ func (msg *MsgVersion) MaxPayloadLength(pver uint32) uint32 {
 // NewMsgVersion returns a new kaspa version message that conforms to the
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
-func NewMsgVersion(me *NetAddress, you *NetAddress, nonce uint64,
+func NewMsgVersion(addr *NetAddress, id *id.ID,
 	selectedTipHash *daghash.Hash, subnetworkID *subnetworkid.SubnetworkID) *MsgVersion {
 
 	// Limit the timestamp to one millisecond precision since the protocol
@@ -243,9 +248,8 @@ func NewMsgVersion(me *NetAddress, you *NetAddress, nonce uint64,
 		ProtocolVersion: ProtocolVersion,
 		Services:        0,
 		Timestamp:       mstime.Now(),
-		AddrYou:         *you,
-		AddrMe:          *me,
-		Nonce:           nonce,
+		Address:         addr,
+		ID:              id,
 		UserAgent:       DefaultUserAgent,
 		SelectedTipHash: selectedTipHash,
 		DisableRelayTx:  false,
@@ -267,7 +271,7 @@ func validateUserAgent(userAgent string) error {
 // message. The version string is not defined to any strict format, although
 // it is recommended to use the form "major.minor.revision" e.g. "2.6.41".
 func (msg *MsgVersion) AddUserAgent(name string, version string,
-	comments ...string) error {
+	comments ...string) {
 
 	newUserAgent := fmt.Sprintf("%s:%s", name, version)
 	if len(comments) != 0 {
@@ -275,10 +279,5 @@ func (msg *MsgVersion) AddUserAgent(name string, version string,
 			strings.Join(comments, "; "))
 	}
 	newUserAgent = fmt.Sprintf("%s%s/", msg.UserAgent, newUserAgent)
-	err := validateUserAgent(newUserAgent)
-	if err != nil {
-		return err
-	}
 	msg.UserAgent = newUserAgent
-	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
+	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
@@ -23,7 +24,7 @@ func HandleRelayBlockRequests(incomingRoute *router.Route, outgoingRoute *router
 			// Fetch the block from the database.
 			block, err := dag.BlockByHash(hash)
 			if blockdag.IsNotInDAGErr(err) {
-				return errors.Errorf("block %s not found", hash)
+				return protocolerrors.Errorf(true, "block %s not found", hash)
 			} else if err != nil {
 				panic(errors.Wrapf(err, "unable to fetch requested block hash %s", hash))
 			}
@@ -34,7 +35,7 @@ func HandleRelayBlockRequests(incomingRoute *router.Route, outgoingRoute *router
 			nodeSubnetworkID := dag.SubnetworkID()
 			peerSubnetworkID, err := peer.SubnetworkID()
 			if err != nil {
-				panic(err)
+				return err
 			}
 
 			isNodeFull := nodeSubnetworkID == nil

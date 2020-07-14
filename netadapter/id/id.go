@@ -1,12 +1,14 @@
 package id
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/hex"
-	"errors"
+	"io"
 )
 
-const idLength = 16
+// IDLength of array used to store the ID.
+const IDLength = 16
 
 // ID identifies a network connection
 type ID struct {
@@ -15,22 +17,43 @@ type ID struct {
 
 // GenerateID generates a new ID
 func GenerateID() (*ID, error) {
-	bytes := make([]byte, idLength)
-	_, err := rand.Read(bytes)
+	id := new(ID)
+	err := id.Deserialize(rand.Reader)
 	if err != nil {
 		return nil, err
 	}
-	return NewID(bytes)
+	return id, nil
 }
 
-// NewID creates an ID from the given bytes
-func NewID(bytes []byte) (*ID, error) {
-	if len(bytes) != idLength {
-		return nil, errors.New("invalid bytes length")
-	}
-	return &ID{bytes: bytes}, nil
+// IsEqual returns whether id equals to other.
+func (id *ID) IsEqual(other *ID) bool {
+	return bytes.Equal(id.bytes, other.bytes)
 }
 
 func (id *ID) String() string {
 	return hex.EncodeToString(id.bytes)
+}
+
+// Deserialize decodes a block from r into the receiver.
+func (id *ID) Deserialize(r io.Reader) error {
+	id.bytes = make([]byte, IDLength)
+	_, err := io.ReadFull(r, id.bytes)
+	return err
+}
+
+// Serialize serializes the receiver into the given writer.
+func (id *ID) Serialize(w io.Writer) error {
+	_, err := w.Write(id.bytes)
+	return err
+}
+
+// FromBytes returns an ID deserialized from the given byte slice.
+func FromBytes(serializedID []byte) *ID {
+	r := bytes.NewReader(serializedID)
+	newID := new(ID)
+	err := newID.Deserialize(r)
+	if err != nil {
+		panic(err)
+	}
+	return newID
 }
