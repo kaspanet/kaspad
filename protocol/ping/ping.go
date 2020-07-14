@@ -59,4 +59,5 @@ func StartSendingPings(incomingRoute *router.Route, outgoingRoute *router.Route,
 		}
 		peer.SetPingIdle()
 	}
+	return nil
 }
