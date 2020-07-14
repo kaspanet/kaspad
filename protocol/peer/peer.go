@@ -26,10 +26,10 @@ type Peer struct {
 	disableRelayTx        bool
 	subnetworkID          *subnetworkid.SubnetworkID
 
-	pingLock       sync.RWMutex
-	lastPingNonce  uint64    // Set to nonce if we have a pending ping.
-	lastPingTime   time.Time // Time we sent last ping.
-	lastPingMicros int64     // Time for last ping to return.
+	pingLock         sync.RWMutex
+	lastPingNonce    uint64        // Set to nonce if we have a pending ping.
+	lastPingTime     time.Time     // Time we sent last ping.
+	lastPingDuration time.Duration // Time for last ping to return.
 }
 
 // SelectedTipHash returns the selected tip of the peer.
@@ -108,7 +108,7 @@ func (p *Peer) SetPingIdle() {
 	defer p.pingLock.Unlock()
 
 	p.lastPingNonce = 0
-	p.lastPingMicros = time.Since(p.lastPingTime).Nanoseconds() / 1000
+	p.lastPingDuration = time.Since(p.lastPingTime)
 }
 
 func (p *Peer) String() string {
