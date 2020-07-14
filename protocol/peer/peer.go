@@ -3,6 +3,7 @@ package peer
 import (
 	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/util/daghash"
+	mathUtil "github.com/kaspanet/kaspad/util/math"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
@@ -18,7 +19,7 @@ type Peer struct {
 	selectedTipHashMtx sync.RWMutex
 	selectedTipHash    *daghash.Hash
 
-	id                    uint32
+	id                    *id.ID
 	userAgent             string
 	services              wire.ServiceFlag
 	advertisedProtocolVer uint32 // protocol version advertised by remote
@@ -62,6 +63,14 @@ func (p *Peer) SubnetworkID() (*subnetworkid.SubnetworkID, error) {
 	return p.subnetworkID, nil
 }
 
+// ID returns the peer ID.
+func (p *Peer) ID() (*id.ID, error) {
+	if atomic.LoadUint32(&p.ready) == 0 {
+		return nil, errors.New("peer is not ready yet")
+	}
+	return p.id, nil
+}
+
 // MarkAsReady marks the peer as ready.
 func (p *Peer) MarkAsReady() error {
 	if atomic.AddUint32(&p.ready, 1) != 1 {
@@ -71,15 +80,15 @@ func (p *Peer) MarkAsReady() error {
 }
 
 // UpdateFieldsFromMsgVersion updates the peer with the data from the version message.
-func (p *Peer) UpdateFieldsFromMsgVersion(msg *wire.MsgVersion, peerID uint32) {
+func (p *Peer) UpdateFieldsFromMsgVersion(msg *wire.MsgVersion) {
 	// Negotiate the protocol version.
 	p.advertisedProtocolVer = msg.ProtocolVersion
-	p.protocolVersion = minUint32(p.protocolVersion, p.advertisedProtocolVer)
+	p.protocolVersion = mathUtil.MinUint32(p.protocolVersion, p.advertisedProtocolVer)
 	log.Debugf("Negotiated protocol version %d for peer %s",
 		p.protocolVersion, p)
 
 	// Set the peer's ID.
-	p.id = peerID
+	p.id = msg.ID
 
 	// Set the supported services for the peer to what the remote peer
 	// advertised.
@@ -116,17 +125,47 @@ func (p *Peer) String() string {
 	panic("unimplemented")
 }
 
-// minUint32 is a helper function to return the minimum of two uint32s.
-// This avoids a math import and the need to cast to floats.
-func minUint32(a, b uint32) uint32 {
-	if a < b {
-		return a
+var (
+	readyPeers      = make(map[*id.ID]*Peer, 0)
+	readyPeersMutex sync.RWMutex
+)
+
+// ErrPeerWithSameIDExists signifies that a peer with the same ID already exist.
+var ErrPeerWithSameIDExists = errors.New("ready with the same ID already exists")
+
+// AddToReadyPeers marks this peer as ready and adds it to the ready peers list.
+func AddToReadyPeers(peer *Peer) error {
+	readyPeersMutex.RLock()
+	defer readyPeersMutex.RUnlock()
+
+	if _, ok := readyPeers[peer.id]; ok {
+		return errors.Wrapf(ErrPeerWithSameIDExists, "peer with ID %s already exists", peer.id)
 	}
-	return b
+
+	err := peer.MarkAsReady()
+	if err != nil {
+		return err
+	}
+
+	readyPeers[peer.id] = peer
+	return nil
 }
 
 // GetReadyPeerIDs returns the peer IDs of all the ready peers.
 func GetReadyPeerIDs() []*id.ID {
-	// TODO(libp2p)
-	panic("unimplemented")
+	readyPeersMutex.RLock()
+	defer readyPeersMutex.RUnlock()
+	peerIDs := make([]*id.ID, len(readyPeers))
+	i := 0
+	for peerID := range readyPeers {
+		peerIDs[i] = peerID
+		i++
+	}
+	return peerIDs
+}
+
+// IDExists returns whether there's a peer with the given ID.
+func IDExists(peerID *id.ID) bool {
+	_, ok := readyPeers[peerID]
+	return ok
 }

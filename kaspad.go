@@ -109,7 +109,7 @@ func newKaspad(interrupt <-chan struct{}) (*kaspad, error) {
 	}
 	addressManager := addrmgr.New(serverutils.KaspadLookup, config.ActiveConfig().SubnetworkID)
 
-	protocolManager, err := protocol.NewManager(netAdapter, dag)
+	protocolManager, err := protocol.NewManager(netAdapter, addressManager, dag)
 	if err != nil {
 		return nil, err
 	}
