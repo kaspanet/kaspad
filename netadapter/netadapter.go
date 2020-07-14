@@ -172,29 +172,29 @@ func (na *NetAdapter) Broadcast(connectionIDs []*id.ID, message wire.Message) er
 // for the given remote address.
 func (na *NetAdapter) GetBestLocalAddress() (*wire.NetAddress, error) {
 	//TODO(libp2p) Reimplement this, and check reachability to the other node
-	listenAddr := config.ActiveConfig().Listeners[0]
-	_, portStr, err := net.SplitHostPort(listenAddr)
+	listenAddress := config.ActiveConfig().Listeners[0]
+	_, portString, err := net.SplitHostPort(listenAddress)
 	if err != nil {
-		portStr = config.ActiveConfig().NetParams().DefaultPort
+		portString = config.ActiveConfig().NetParams().DefaultPort
 	}
 
-	portInt, err := strconv.Atoi(portStr)
-	if err != nil {
-		return nil, err
-	}
-
-	addrs, err := net.InterfaceAddrs()
+	portInt, err := strconv.Atoi(portString)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, addr := range addrs {
-		ifaceIP, _, err := net.ParseCIDR(addr.String())
+	addresses, err := net.InterfaceAddrs()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, address := range addresses {
+		ip, _, err := net.ParseCIDR(address.String())
 		if err != nil {
 			continue
 		}
 
-		return wire.NewNetAddressIPPort(ifaceIP, uint16(portInt), wire.SFNodeNetwork), nil
+		return wire.NewNetAddressIPPort(ip, uint16(portInt), wire.SFNodeNetwork), nil
 	}
 	return nil, errors.New("no address was found")
 }
