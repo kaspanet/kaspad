@@ -3,7 +3,9 @@ package ibd
 import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter/router"
+	"github.com/kaspanet/kaspad/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
+	"github.com/kaspanet/kaspad/wire"
 	"sync"
 	"sync/atomic"
 )
@@ -60,12 +62,35 @@ func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 		err := func() error {
 			defer finishIBD()
 
+			shouldContinue, err := sendGetBlockLocator(outgoingRoute, peer, dag)
+			if err != nil {
+				return err
+			}
+			if !shouldContinue {
+				return nil
+			}
+
 			return nil
 		}()
 		if err != nil {
 			return err
 		}
 	}
+}
+
+func sendGetBlockLocator(outgoingRoute *router.Route, peer *peerpkg.Peer,
+	dag *blockdag.BlockDAG) (shouldContinue bool, err error) {
+
+	selectedTipHash, err := peer.SelectedTipHash()
+	if err != nil {
+		return false, err
+	}
+	msgGetBlockLocator := wire.NewMsgGetBlockLocator(selectedTipHash, dag.Params.GenesisHash)
+	isOpen, err := outgoingRoute.EnqueueWithTimeout(msgGetBlockLocator, common.DefaultTimeout)
+	if err != nil {
+		return false, err
+	}
+	return isOpen, nil
 }
 
 func finishIBD() {
