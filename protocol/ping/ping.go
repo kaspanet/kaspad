@@ -30,7 +30,7 @@ func HandlePing(incomingRoute *router.Route, outgoingRoute *router.Route) error 
 }
 
 // StartPingLoop starts the ping-sending loop, which sends MsgPing to
-// the given peer ever pingInterval.
+// the given peer every pingInterval.
 // This function assumes that incomingRoute will only return MsgPong.
 func StartPingLoop(incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer) error {
 	ticker := time.NewTicker(pingInterval)
