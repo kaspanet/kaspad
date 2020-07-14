@@ -10,6 +10,9 @@ const (
 	maxMessages = 100
 )
 
+// ErrTimeout signifies that one of the router functions had a timeout.
+var ErrTimeout = errors.New("timeout expired")
+
 // onCapacityReachedHandler is a function that is to be
 // called when a route reaches capacity.
 type onCapacityReachedHandler func()
@@ -61,7 +64,7 @@ func (r *Route) EnqueueWithTimeout(message wire.Message, timeout time.Duration) 
 	}
 	select {
 	case <-time.After(timeout):
-		return false, errors.New("timeout expired")
+		return false, ErrTimeout
 	case r.channel <- message:
 		return true, nil
 	}
