@@ -36,9 +36,7 @@ func StartPingLoop(incomingRoute *router.Route, outgoingRoute *router.Route, pee
 	ticker := time.NewTicker(pingInterval)
 	defer ticker.Stop()
 
-	for {
-		<-ticker.C
-
+	for range ticker.C {
 		nonce, err := random.Uint64()
 		if err != nil {
 			return err
