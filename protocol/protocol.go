@@ -75,15 +75,15 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag
 		},
 	)
 
-	addFlow("HandlePing", router, []string{wire.CmdPing}, &stopped, stop,
+	addFlow("HandleIncomingPings", router, []string{wire.CmdPing}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ping.HandlePing(incomingRoute, outgoingRoute)
+			return ping.HandleIncomingPings(incomingRoute, outgoingRoute)
 		},
 	)
 
-	addFlow("StartPingLoop", router, []string{wire.CmdPong}, &stopped, stop,
+	addFlow("StartSendingPings", router, []string{wire.CmdPong}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ping.StartPingLoop(incomingRoute, outgoingRoute, peer)
+			return ping.StartSendingPings(incomingRoute, outgoingRoute, peer)
 		},
 	)
 

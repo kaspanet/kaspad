@@ -11,9 +11,9 @@ import (
 
 const pingInterval = 2 * time.Minute
 
-// HandlePing handles all ping messages coming through incomingRoute.
+// HandleIncomingPings handles all ping messages coming through incomingRoute.
 // This function assumes that incomingRoute will only return MsgPing.
-func HandlePing(incomingRoute *router.Route, outgoingRoute *router.Route) error {
+func HandleIncomingPings(incomingRoute *router.Route, outgoingRoute *router.Route) error {
 	for {
 		message, isOpen := incomingRoute.Dequeue()
 		if !isOpen {
@@ -29,10 +29,10 @@ func HandlePing(incomingRoute *router.Route, outgoingRoute *router.Route) error 
 	}
 }
 
-// StartPingLoop starts the ping-sending loop, which sends MsgPing to
-// the given peer every pingInterval.
+// StartSendingPings starts sending MsgPings every pingInterval seconds to the
+// given peer.
 // This function assumes that incomingRoute will only return MsgPong.
-func StartPingLoop(incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer) error {
+func StartSendingPings(incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer) error {
 	ticker := time.NewTicker(pingInterval)
 	defer ticker.Stop()
 
