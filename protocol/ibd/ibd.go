@@ -5,6 +5,8 @@ import (
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
+	"github.com/kaspanet/kaspad/protocol/protocolerrors"
+	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 	"sync"
 	"sync/atomic"
@@ -62,7 +64,7 @@ func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 		err := func() error {
 			defer finishIBD()
 
-			shouldContinue, err := sendGetBlockLocator(outgoingRoute, peer, dag)
+			lowHash, shouldContinue, err := findIBDLowHash(incomingRoute, outgoingRoute, peer, dag)
 			if err != nil {
 				return err
 			}
@@ -78,19 +80,61 @@ func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 	}
 }
 
-func sendGetBlockLocator(outgoingRoute *router.Route, peer *peerpkg.Peer,
-	dag *blockdag.BlockDAG) (shouldContinue bool, err error) {
+func findIBDLowHash(incomingRoute *router.Route, outgoingRoute *router.Route,
+	peer *peerpkg.Peer, dag *blockdag.BlockDAG) (lowHash *daghash.Hash, shouldContinue bool, err error) {
 
-	selectedTipHash, err := peer.SelectedTipHash()
+	lowHash = dag.Params.GenesisHash
+	highHash, err := peer.SelectedTipHash()
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
-	msgGetBlockLocator := wire.NewMsgGetBlockLocator(selectedTipHash, dag.Params.GenesisHash)
+
+	for !dag.IsInDAG(highHash) {
+		shouldContinue, err = sendGetBlockLocator(outgoingRoute, lowHash, highHash)
+		if err != nil {
+			return nil, false, err
+		}
+		if !shouldContinue {
+			return nil, false, nil
+		}
+
+		shouldContinue, err = receiveBlockLocator(incomingRoute)
+		if err != nil {
+			return nil, false, err
+		}
+		if !shouldContinue {
+			return nil, false, nil
+		}
+	}
+
+	return lowHash, true, nil
+}
+
+func sendGetBlockLocator(outgoingRoute *router.Route, lowHash *daghash.Hash,
+	highHash *daghash.Hash) (shouldContinue bool, err error) {
+
+	msgGetBlockLocator := wire.NewMsgGetBlockLocator(highHash, lowHash)
 	isOpen, err := outgoingRoute.EnqueueWithTimeout(msgGetBlockLocator, common.DefaultTimeout)
 	if err != nil {
 		return false, err
 	}
 	return isOpen, nil
+}
+
+func receiveBlockLocator(incomingRoute *router.Route) (shouldContinue bool, err error) {
+	message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	if err != nil {
+		return false, err
+	}
+	if !isOpen {
+		return false, nil
+	}
+	msgBlockLocator, ok := message.(*wire.MsgBlockLocator)
+	if !ok {
+		return false, protocolerrors.Errorf(true, "unexpected message")
+	}
+
+	return true, nil
 }
 
 func finishIBD() {
