@@ -64,7 +64,7 @@ func newRouterInitializer(netAdapter *netadapter.NetAdapter,
 					panic("unimplemented")
 				}
 				if errors.Is(err, routerpkg.ErrTimeout) {
-					// TODO(libp2p) Ban peer
+					// TODO(libp2p) Disconnect peer
 					panic("unimplemented")
 				}
 				panic(err)
