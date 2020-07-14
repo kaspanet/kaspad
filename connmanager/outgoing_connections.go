@@ -28,6 +28,7 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 		address := c.addressManager.GetAddress()
 		if address == nil {
 			log.Debugf("No more addresses available")
+			return
 		}
 
 		c.addressManager.Attempt(address.NetAddress())

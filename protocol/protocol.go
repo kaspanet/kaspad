@@ -16,30 +16,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Manager manages the p2p protocol
-type Manager struct {
-	netAdapter *netadapter.NetAdapter
-}
-
-// NewManager creates a new instance of the p2p protocol manager
-func NewManager(netAdapter *netadapter.NetAdapter, addressManager *addrmgr.AddrManager, dag *blockdag.BlockDAG) (*Manager, error) {
+// Init initializes the p2p protocol
+func Init(netAdapter *netadapter.NetAdapter, addressManager *addrmgr.AddrManager, dag *blockdag.BlockDAG) {
 	routerInitializer := newRouterInitializer(netAdapter, addressManager, dag)
 	netAdapter.SetRouterInitializer(routerInitializer)
-
-	manager := Manager{
-		netAdapter: netAdapter,
-	}
-	return &manager, nil
-}
-
-// Start starts the p2p protocol
-func (p *Manager) Start() error {
-	return p.netAdapter.Start()
-}
-
-// Stop stops the p2p protocol
-func (p *Manager) Stop() error {
-	return p.netAdapter.Stop()
 }
 
 func newRouterInitializer(netAdapter *netadapter.NetAdapter,

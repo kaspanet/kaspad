@@ -28,7 +28,7 @@ import (
 // kaspad is a wrapper for all the kaspad services
 type kaspad struct {
 	rpcServer         *rpc.Server
-	protocolManager   *protocol.Manager
+	networkAdapter    *netadapter.NetAdapter
 	connectionManager *connmanager.ConnectionManager
 
 	started, shutdown int32
@@ -45,7 +45,7 @@ func (s *kaspad) start() {
 
 	cfg := config.ActiveConfig()
 
-	err := s.protocolManager.Start()
+	err := s.networkAdapter.Start()
 	if err != nil {
 		panics.Exit(log, fmt.Sprintf("Error starting the p2p protocol: %+v", err))
 	}
@@ -67,12 +67,12 @@ func (s *kaspad) stop() error {
 
 	log.Warnf("Kaspad shutting down")
 
-	err := s.protocolManager.Stop()
+	s.connectionManager.Stop()
+
+	err := s.networkAdapter.Stop()
 	if err != nil {
 		log.Errorf("Error stopping the p2p protocol: %+v", err)
 	}
-
-	s.connectionManager.Stop()
 
 	// Shutdown the RPC server if it's not disabled.
 	if !config.ActiveConfig().DisableRPC {
@@ -109,10 +109,7 @@ func newKaspad(interrupt <-chan struct{}) (*kaspad, error) {
 	}
 	addressManager := addrmgr.New(serverutils.KaspadLookup, config.ActiveConfig().SubnetworkID)
 
-	protocolManager, err := protocol.NewManager(netAdapter, addressManager, dag)
-	if err != nil {
-		return nil, err
-	}
+	protocol.Init(netAdapter, addressManager, dag)
 
 	connectionManager, err := connmanager.New(netAdapter, addressManager)
 	if err != nil {
@@ -126,7 +123,7 @@ func newKaspad(interrupt <-chan struct{}) (*kaspad, error) {
 
 	return &kaspad{
 		rpcServer:         rpcServer,
-		protocolManager:   protocolManager,
+		networkAdapter:    netAdapter,
 		connectionManager: connectionManager,
 	}, nil
 }

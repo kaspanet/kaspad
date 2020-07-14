@@ -68,19 +68,13 @@ func New(netAdapter *netadapter.NetAdapter, addressManager *addrmgr.AddrManager)
 func (c *ConnectionManager) Start() {
 	cfg := config.ActiveConfig()
 	if !cfg.DisableDNSSeed {
-		seedDoneCh := make(chan struct{})
-
 		dnsseed.SeedFromDNS(cfg.NetParams(), wire.SFNodeNetwork, false, nil,
 			config.ActiveConfig().Lookup, func(addrs []*wire.NetAddress) {
 				// Kaspad uses a lookup of the dns seeder here. Since seeder returns
 				// IPs of nodes and not its own IP, we can not know real IP of
 				// source. So we'll take first returned address as source.
 				c.addressManager.AddAddresses(addrs, addrs[0], nil)
-
-				close(seedDoneCh)
 			})
-
-		<-seedDoneCh
 	}
 
 	spawn(c.connectionsLoop)
@@ -88,6 +82,10 @@ func (c *ConnectionManager) Start() {
 
 func (c *ConnectionManager) Stop() {
 	atomic.StoreUint32(&c.stop, 1)
+
+	for _, connection := range c.netAdapter.Connections() {
+		_ = connection.Disconnect() // Ignore errors since connection might be in the midst of disconnecting
+	}
 }
 
 const connectionsLoopInterval = 30 * time.Second

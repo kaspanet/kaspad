@@ -111,10 +111,8 @@ func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
 	})
 	connection.SetOnDisconnectedHandler(func() error {
 		na.cleanupConnection(connection, router)
-		na.server.RemoveConnection(connection)
 		return router.Close()
 	})
-	na.server.AddConnection(connection)
 	return nil
 }
 
