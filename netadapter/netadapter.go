@@ -7,7 +7,6 @@ import (
 	"github.com/kaspanet/kaspad/netadapter/id"
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 
-	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/netadapter/server"
 	"github.com/kaspanet/kaspad/netadapter/server/grpcserver"
 	"github.com/kaspanet/kaspad/wire"
@@ -67,15 +66,6 @@ func (na *NetAdapter) Start() error {
 		return err
 	}
 
-	// TODO(libp2p): Replace with real connection manager
-	cfg := config.ActiveConfig()
-	for _, connectPeer := range cfg.ConnectPeers {
-		_, err := na.server.Connect(connectPeer)
-		if err != nil {
-			log.Errorf("Error connecting to %s: %+v", connectPeer, err)
-		}
-	}
-
 	return nil
 }
 
@@ -87,6 +77,20 @@ func (na *NetAdapter) Stop() error {
 	return na.server.Stop()
 }
 
+func (na *NetAdapter) Connect(address string) (server.Connection, error) {
+	return na.server.Connect(address)
+}
+
+func (na *NetAdapter) Connections() []server.Connection {
+	connections := make([]server.Connection, 0, len(na.connectionsToIDs))
+
+	for connection := range na.connectionsToIDs {
+		connections = append(connections, connection)
+	}
+
+	return connections
+}
+
 func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
 	router, err := na.routerInitializer()
 	if err != nil {
@@ -94,6 +98,8 @@ func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
 	}
 	connection.Start(router)
 	na.routersToConnections[router] = connection
+
+	na.connectionsToIDs[connection] = nil
 
 	router.SetOnRouteCapacityReachedHandler(func() {
 		err := connection.Disconnect()

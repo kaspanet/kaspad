@@ -2,8 +2,9 @@ package server
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/netadapter/router"
 	"net"
+
+	"github.com/kaspanet/kaspad/netadapter/router"
 )
 
 // OnConnectedHandler is a function that is to be called
