@@ -27,9 +27,9 @@ type Peer struct {
 	subnetworkID          *subnetworkid.SubnetworkID
 
 	pingLock         sync.RWMutex
-	lastPingNonce    uint64        // Set to nonce if we have a pending ping.
-	lastPingTime     time.Time     // Time we sent last ping.
-	lastPingDuration time.Duration // Time for last ping to return.
+	lastPingNonce    uint64        // The nonce of the last ping we sent
+	lastPingTime     time.Time     // Time we sent last ping
+	lastPingDuration time.Duration // Time for last ping to return
 }
 
 // SelectedTipHash returns the selected tip of the peer.
