@@ -10,6 +10,7 @@ import (
 	"github.com/kaspanet/kaspad/protocol/sendversion"
 	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
 	"sync"
 	"sync/atomic"
 )
@@ -70,10 +71,23 @@ func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer
 			return false, err
 		}
 		return true, nil
-	case <-locks.TickWhenDone(func() { wg.Wait() }):
+	case <-locks.ReceiveFromChanWhenDone(func() { wg.Wait() }):
 	}
 
-	err = peer.MarkAsReady()
+	err = peerpkg.AddToReadyPeers(peer)
+	if errors.Is(err, peerpkg.ErrPeerWithSameIDExists) {
+		return false, err
+	}
+	if err != nil {
+		panic(err)
+	}
+
+	peerID, err := peer.ID()
+	if err != nil {
+		panic(err)
+	}
+
+	err = netAdapter.AssociateRouterID(router, peerID)
 	if err != nil {
 		panic(err)
 	}
