@@ -56,7 +56,7 @@ func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 	for {
 		peer.WaitForIBDStart()
 
-		// We the flow inside a func so that the defer is called at its end
+		// We run the flow inside a func so that the defer is called at its end
 		err := func() error {
 			defer finishIBD()
 
