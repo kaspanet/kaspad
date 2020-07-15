@@ -22,6 +22,8 @@ type connectionRequest struct {
 	retryDuration time.Duration
 }
 
+// ConnectionManager monitors that the current active connections satisfy the requirements of
+// outgoing, requested and incoming connections
 type ConnectionManager struct {
 	netAdapter                *netadapter.NetAdapter
 	activeConnectionRequests  map[string]*connectionRequest
@@ -36,6 +38,7 @@ type ConnectionManager struct {
 	connectionRequestsLock sync.Mutex
 }
 
+// New instantiates a new instance of a ConnectionManager
 func New(netAdapter *netadapter.NetAdapter, addressManager *addrmgr.AddrManager) (*ConnectionManager, error) {
 	c := &ConnectionManager{
 		netAdapter:                netAdapter,
@@ -65,6 +68,7 @@ func New(netAdapter *netadapter.NetAdapter, addressManager *addrmgr.AddrManager)
 	return c, nil
 }
 
+// Start begins the operation of the ConnectionManager
 func (c *ConnectionManager) Start() {
 	cfg := config.ActiveConfig()
 	if !cfg.DisableDNSSeed {
@@ -80,6 +84,7 @@ func (c *ConnectionManager) Start() {
 	spawn(c.connectionsLoop)
 }
 
+// Stop halts the operation of the ConnectionManager
 func (c *ConnectionManager) Stop() {
 	atomic.StoreUint32(&c.stop, 1)
 

@@ -75,6 +75,7 @@ func (c *ConnectionManager) checkConnectionRequests(connSet connectionSet) {
 	}
 }
 
+// AddConnectionRequest adds the given address to list of pending connection requests
 func (c *ConnectionManager) AddConnectionRequest(address string, isPermanent bool) {
 	// spawn goroutine so that caller doesn't wait in case connectionManager is in the midst of handling
 	// connection requests
