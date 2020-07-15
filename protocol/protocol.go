@@ -80,7 +80,6 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag
 	stop := make(chan error)
 	stopped := uint32(0)
 
-	outgoingRoute := router.OutgoingRoute()
 	peer := new(peerpkg.Peer)
 
 	closed, err := handshake(router, netAdapter, peer, dag, addressManager)
@@ -91,50 +90,82 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag
 		return nil
 	}
 
-	addFlow("HandleRelayInvs", router, []string{wire.CmdInvRelayBlock, wire.CmdBlock}, &stopped, stop,
+	addBlockRelayFlows(netAdapter, router, &stopped, stop, peer, dag)
+	addPingFlows(router, &stopped, stop, peer)
+	addIBDFlows(router, &stopped, stop, peer, dag)
+
+	err = <-stop
+	return err
+}
+
+func addBlockRelayFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router,
+	stopped *uint32, stop chan error, peer *peerpkg.Peer, dag *blockdag.BlockDAG) {
+
+	outgoingRoute := router.OutgoingRoute()
+
+	addFlow("HandleRelayInvs", router, []string{wire.CmdInvRelayBlock, wire.CmdBlock}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return handlerelayinvs.HandleRelayInvs(incomingRoute, outgoingRoute, peer, netAdapter, dag)
 		},
 	)
 
-	addFlow("HandleRelayBlockRequests", router, []string{wire.CmdGetRelayBlocks}, &stopped, stop,
+	addFlow("HandleRelayBlockRequests", router, []string{wire.CmdGetRelayBlocks}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return handlerelayblockrequests.HandleRelayBlockRequests(incomingRoute, outgoingRoute, peer, dag)
 		},
 	)
+}
 
-	addFlow("ReceivePings", router, []string{wire.CmdPing}, &stopped, stop,
+func addPingFlows(router *routerpkg.Router, stopped *uint32, stop chan error, peer *peerpkg.Peer) {
+	outgoingRoute := router.OutgoingRoute()
+
+	addFlow("ReceivePings", router, []string{wire.CmdPing}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return ping.ReceivePings(incomingRoute, outgoingRoute)
 		},
 	)
 
-	addFlow("SendPings", router, []string{wire.CmdPong}, &stopped, stop,
+	addFlow("SendPings", router, []string{wire.CmdPong}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return ping.SendPings(incomingRoute, outgoingRoute, peer)
 		},
 	)
+}
 
-	addFlow("HandleIBD", router, []string{wire.CmdBlockLocator, wire.CmdIBDBlock}, &stopped, stop,
+func addIBDFlows(router *routerpkg.Router, stopped *uint32, stop chan error,
+	peer *peerpkg.Peer, dag *blockdag.BlockDAG) {
+
+	outgoingRoute := router.OutgoingRoute()
+
+	addFlow("HandleIBD", router, []string{wire.CmdBlockLocator, wire.CmdIBDBlock}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return ibd.HandleIBD(incomingRoute, outgoingRoute, peer, dag)
 		},
 	)
 
-	addFlow("RequestSelectedTip", router, []string{wire.CmdSelectedTip}, &stopped, stop,
+	addFlow("RequestSelectedTip", router, []string{wire.CmdSelectedTip}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return ibd.RequestSelectedTip(incomingRoute, outgoingRoute, peer)
 		},
 	)
 
-	addFlow("HandleGetSelectedTip", router, []string{wire.CmdGetSelectedTip}, &stopped, stop,
+	addFlow("HandleGetSelectedTip", router, []string{wire.CmdGetSelectedTip}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return ibd.HandleGetSelectedTip(incomingRoute, outgoingRoute, peer)
 		},
 	)
 
-	err = <-stop
-	return err
+	addFlow("HandleGetBlockLocator", router, []string{wire.CmdGetBlockLocator}, stopped, stop,
+		func(incomingRoute *routerpkg.Route) error {
+			return ibd.HandleGetBlockLocator(incomingRoute, outgoingRoute)
+		},
+	)
+
+	addFlow("HandleGetBlocks", router, []string{wire.CmdGetBlocks}, stopped, stop,
+		func(incomingRoute *routerpkg.Route) error {
+			return ibd.HandleGetBlocks(incomingRoute, outgoingRoute)
+		},
+	)
 }
 
 func addFlow(name string, router *routerpkg.Router, messageTypes []string, stopped *uint32,
