@@ -45,11 +45,9 @@ func shuffleAddresses(addresses []*wire.NetAddress) []*wire.NetAddress {
 	shuffleAddresses := make([]*wire.NetAddress, addressCount)
 	copy(shuffleAddresses, addresses)
 
-	// Shuffle the address list.
-	for i := 0; i < wire.MaxAddrPerMsg; i++ {
-		j := i + rand.Intn(addressCount-i)
+	rand.Shuffle(addressCount, func(i, j int) {
 		shuffleAddresses[i], shuffleAddresses[j] = shuffleAddresses[j], shuffleAddresses[i]
-	}
+	})
 
 	// Truncate it to the maximum size.
 	shuffleAddresses = shuffleAddresses[:wire.MaxAddrPerMsg]
