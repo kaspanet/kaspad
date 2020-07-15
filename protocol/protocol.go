@@ -163,7 +163,7 @@ func addIBDFlows(router *routerpkg.Router, stopped *uint32, stop chan error,
 
 	addFlow("HandleGetBlocks", router, []string{wire.CmdGetBlocks}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ibd.HandleGetBlocks(incomingRoute, outgoingRoute)
+			return ibd.HandleGetBlocks(incomingRoute, outgoingRoute, dag)
 		},
 	)
 }
