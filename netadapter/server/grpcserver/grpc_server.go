@@ -76,11 +76,14 @@ func (s *gRPCServer) SetOnConnectedHandler(onConnectedHandler server.OnConnected
 // This is part of the Server interface
 func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 	log.Infof("Dialing to %s", address)
-	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	gRPCConnection, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return nil, errors.Wrapf(err, "error connecting to %s", address)
 	}
+
 	client := protowire.NewP2PClient(gRPCConnection)
 	stream, err := client.MessageStream(context.Background())
 	if err != nil {
