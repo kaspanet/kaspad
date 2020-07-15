@@ -38,5 +38,5 @@ type Connection interface {
 }
 
 // ErrNetwork is an error related to the internals of the connection, and not an error that
-// came from outside (e.g from OnDisconnectedHandler).
+// came from outside (e.g. from OnDisconnectedHandler).
 var ErrNetwork = errors.New("network error")
