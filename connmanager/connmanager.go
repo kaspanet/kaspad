@@ -5,9 +5,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/kaspanet/kaspad/dnsseed"
-	"github.com/kaspanet/kaspad/wire"
-
 	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/netadapter"
 
@@ -71,17 +68,6 @@ func New(netAdapter *netadapter.NetAdapter, addressManager *addrmgr.AddrManager)
 
 // Start begins the operation of the ConnectionManager
 func (c *ConnectionManager) Start() {
-	cfg := config.ActiveConfig()
-	if !cfg.DisableDNSSeed {
-		dnsseed.SeedFromDNS(cfg.NetParams(), wire.SFNodeNetwork, false, nil,
-			config.ActiveConfig().Lookup, func(addrs []*wire.NetAddress) {
-				// Kaspad uses a lookup of the dns seeder here. Since seeder returns
-				// IPs of nodes and not its own IP, we can not know real IP of
-				// source. So we'll take first returned address as source.
-				c.addressManager.AddAddresses(addrs, addrs[0], nil)
-			})
-	}
-
 	spawn(c.connectionsLoop)
 }
 

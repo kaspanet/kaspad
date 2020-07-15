@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	"github.com/kaspanet/kaspad/dnsseed"
+	"github.com/kaspanet/kaspad/wire"
+
 	"github.com/kaspanet/kaspad/connmanager"
 
 	"github.com/kaspanet/kaspad/addrmgr"
@@ -28,6 +31,7 @@ import (
 // kaspad is a wrapper for all the kaspad services
 type kaspad struct {
 	rpcServer         *rpc.Server
+	addressManager    *addrmgr.AddrManager
 	networkAdapter    *netadapter.NetAdapter
 	connectionManager *connmanager.ConnectionManager
 
@@ -50,10 +54,24 @@ func (s *kaspad) start() {
 		panics.Exit(log, fmt.Sprintf("Error starting the p2p protocol: %+v", err))
 	}
 
+	maybeSeedFromDNS(cfg, s.addressManager)
+
 	s.connectionManager.Start()
 
 	if !cfg.DisableRPC {
 		s.rpcServer.Start()
+	}
+}
+
+func maybeSeedFromDNS(cfg *config.Config, addressManager *addrmgr.AddrManager) {
+	if !cfg.DisableDNSSeed {
+		dnsseed.SeedFromDNS(cfg.NetParams(), wire.SFNodeNetwork, false, nil,
+			config.ActiveConfig().Lookup, func(addrs []*wire.NetAddress) {
+				// Kaspad uses a lookup of the dns seeder here. Since seeder returns
+				// IPs of nodes and not its own IP, we can not know real IP of
+				// source. So we'll take first returned address as source.
+				addressManager.AddAddresses(addrs, addrs[0], nil)
+			})
 	}
 }
 

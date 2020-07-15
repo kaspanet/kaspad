@@ -6,7 +6,7 @@ package dnsseed
 
 import (
 	"fmt"
-	mrand "math/rand"
+	"math/rand"
 	"net"
 	"strconv"
 	"time"
@@ -45,9 +45,9 @@ func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag, incl
 	subnetworkID *subnetworkid.SubnetworkID, lookupFn LookupFunc, seedFn OnSeed) {
 
 	var dnsSeeds []string
-	mainConfig := config.ActiveConfig()
-	if mainConfig != nil && mainConfig.DNSSeed != "" {
-		dnsSeeds = []string{mainConfig.DNSSeed}
+	cfg := config.ActiveConfig()
+	if cfg != nil && cfg.DNSSeed != "" {
+		dnsSeeds = []string{cfg.DNSSeed}
 	} else {
 		dnsSeeds = dagParams.DNSSeeds
 	}
@@ -69,7 +69,7 @@ func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag, incl
 		}
 
 		spawn(func() {
-			randSource := mrand.New(mrand.NewSource(time.Now().UnixNano()))
+			randSource := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 			seedpeers, err := lookupFn(host)
 			if err != nil {
