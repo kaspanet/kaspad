@@ -9,7 +9,7 @@ import (
 // OnGetAddr is invoked when a peer receives a getaddr kaspa message
 // and is used to provide the peer with known addresses from the address
 // manager.
-func (sp *Peer) OnGetAddr(_ *peer.Peer, msg *wire.MsgGetAddr) {
+func (sp *Peer) OnGetAddr(_ *peer.Peer, msg *wire.MsgGetAddresses) {
 	// Don't return any addresses when running on the simulation test
 	// network. This helps prevent the network from becoming another
 	// public test network since it will not be able to learn about other

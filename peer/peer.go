@@ -103,10 +103,10 @@ var (
 // result in a deadlock.
 type MessageListeners struct {
 	// OnGetAddr is invoked when a peer receives a getaddr kaspa message.
-	OnGetAddr func(p *Peer, msg *wire.MsgGetAddr)
+	OnGetAddr func(p *Peer, msg *wire.MsgGetAddresses)
 
 	// OnAddr is invoked when a peer receives an addr kaspa message.
-	OnAddr func(p *Peer, msg *wire.MsgAddr)
+	OnAddr func(p *Peer, msg *wire.MsgAddresses)
 
 	// OnPing is invoked when a peer receives a ping kaspa message.
 	OnPing func(p *Peer, msg *wire.MsgPing)
@@ -752,20 +752,20 @@ func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
 func (p *Peer) PushAddrMsg(addresses []*wire.NetAddress, subnetworkID *subnetworkid.SubnetworkID) ([]*wire.NetAddress, error) {
 	addressCount := len(addresses)
 
-	msg := wire.NewMsgAddr(false, subnetworkID)
+	msg := wire.NewMsgAddresses(false, subnetworkID)
 	msg.AddrList = make([]*wire.NetAddress, addressCount)
 	copy(msg.AddrList, addresses)
 
 	// Randomize the addresses sent if there are more than the maximum allowed.
-	if addressCount > wire.MaxAddrPerMsg {
+	if addressCount > wire.MaxAddressesPerMsg {
 		// Shuffle the address list.
-		for i := 0; i < wire.MaxAddrPerMsg; i++ {
+		for i := 0; i < wire.MaxAddressesPerMsg; i++ {
 			j := i + rand.Intn(addressCount-i)
 			msg.AddrList[i], msg.AddrList[j] = msg.AddrList[j], msg.AddrList[i]
 		}
 
 		// Truncate it to the maximum size.
-		msg.AddrList = msg.AddrList[:wire.MaxAddrPerMsg]
+		msg.AddrList = msg.AddrList[:wire.MaxAddressesPerMsg]
 	}
 
 	p.QueueMessage(msg, nil)
@@ -1344,12 +1344,12 @@ out:
 				p.cfg.Listeners.OnVerAck(p, msg)
 			}
 
-		case *wire.MsgGetAddr:
+		case *wire.MsgGetAddresses:
 			if p.cfg.Listeners.OnGetAddr != nil {
 				p.cfg.Listeners.OnGetAddr(p, msg)
 			}
 
-		case *wire.MsgAddr:
+		case *wire.MsgAddresses:
 			if p.cfg.Listeners.OnAddr != nil {
 				p.cfg.Listeners.OnAddr(p, msg)
 			}
