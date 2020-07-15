@@ -54,7 +54,7 @@ func TestMessage(t *testing.T) {
 	msgVersion := NewMsgVersion(me, idMe, &daghash.ZeroHash, nil)
 
 	msgVerack := NewMsgVerAck()
-	msgGetAddr := NewMsgGetAddr(true, false, nil)
+	msgGetAddr := NewMsgGetAddr(false, nil)
 	msgAddr := NewMsgAddr(false, nil)
 	msgGetBlockInvs := NewMsgGetBlockInvs(&daghash.Hash{}, &daghash.Hash{})
 	msgBlock := &blockOne
@@ -83,7 +83,7 @@ func TestMessage(t *testing.T) {
 	}{
 		{msgVersion, msgVersion, pver, Mainnet, 136},
 		{msgVerack, msgVerack, pver, Mainnet, 24},
-		{msgGetAddr, msgGetAddr, pver, Mainnet, 27},
+		{msgGetAddr, msgGetAddr, pver, Mainnet, 26},
 		{msgAddr, msgAddr, pver, Mainnet, 27},
 		{msgGetBlockInvs, msgGetBlockInvs, pver, Mainnet, 88},
 		{msgBlock, msgBlock, pver, Mainnet, 372},
@@ -207,7 +207,7 @@ func TestReadMessageWireErrors(t *testing.T) {
 
 	// Wire encoded bytes for a message which exceeds the max payload for
 	// a specific message type.
-	exceedTypePayloadBytes := makeHeader(kaspaNet, "getaddr", 24, 0)
+	exceedTypePayloadBytes := makeHeader(kaspaNet, "getaddr", 23, 0)
 
 	// Wire encoded bytes for a message which does not deliver the full
 	// payload according to the header length.
