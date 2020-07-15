@@ -3,12 +3,10 @@ package connmanager
 // checkOutgoingConnections goes over all activeOutgoing and makes sure they are still active.
 // Then it opens connections so that we have targetOutgoing active connections
 func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
-	liveConnections := 0
 	for address := range c.activeOutgoing {
 		connection, ok := connSet.get(address)
 		if ok { // connections still connected
 			connSet.remove(connection)
-			liveConnections++
 			continue
 		}
 
@@ -16,27 +14,28 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 		delete(c.activeOutgoing, address)
 	}
 
-	connectionsToAdd := c.targetOutgoing - liveConnections
-	if connectionsToAdd == 0 {
+	liveConnections := len(c.activeOutgoing)
+	if c.targetOutgoing == liveConnections {
 		return
 	}
 
 	log.Debugf("Have got %d outgoing connections out of target %d, adding %d more",
-		liveConnections, c.targetOutgoing, connectionsToAdd)
+		liveConnections, c.targetOutgoing, c.targetOutgoing-liveConnections)
 
-	for i := 0; i < connectionsToAdd; i++ {
+	for len(c.activeOutgoing) < c.targetOutgoing {
 		address := c.addressManager.GetAddress()
 		if address == nil {
-			log.Debugf("No more addresses available")
+			log.Warnf("No more addresses available")
 			return
 		}
 
 		c.addressManager.Attempt(address.NetAddress())
 		err := c.initiateConnection(address.NetAddress().TCPAddress().String())
 		if err != nil {
-			i--
-		} else {
-			c.addressManager.Connected(address.NetAddress())
+			continue
 		}
+
+		c.addressManager.Connected(address.NetAddress())
+		c.activeOutgoing[address.NetAddress().TCPAddress().String()] = struct{}{}
 	}
 }
