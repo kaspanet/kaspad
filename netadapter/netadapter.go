@@ -109,6 +109,9 @@ func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
 	router.SetOnRouteCapacityReachedHandler(func() {
 		err := connection.Disconnect()
 		if err != nil {
+			if !errors.Is(err, server.ErrNetwork) {
+				panic(err)
+			}
 			log.Warnf("Failed to disconnect from %s", connection)
 		}
 	})
@@ -226,4 +229,17 @@ func (na *NetAdapter) GetBestLocalAddress() (*wire.NetAddress, error) {
 		return wire.NewNetAddressIPPort(ip, uint16(portInt), wire.SFNodeNetwork), nil
 	}
 	return nil, errors.New("no address was found")
+}
+
+// DisconnectAssociatedConnection disconnects from the connection associated with the given router.
+func (na *NetAdapter) DisconnectAssociatedConnection(router *routerpkg.Router) error {
+	connection := na.routersToConnections[router]
+	err := connection.Disconnect()
+	if err != nil {
+		if !errors.Is(err, server.ErrNetwork) {
+			return err
+		}
+		log.Warnf("Error disconnecting from %s: %s", connection, err)
+	}
+	return nil
 }
