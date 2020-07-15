@@ -75,12 +75,12 @@ func (c *ConnectionManager) checkRequestedConnections(connSet connectionSet) {
 			connReq.retryDuration = nextRetryDuration(connReq.retryDuration)
 			connReq.nextAttempt = now.Add(connReq.retryDuration)
 			log.Debugf("Retrying permanent connection to %s in %s", address, connReq.retryDuration)
+			continue
 		}
 
 		// if connected successfully - move from pending to active
 		delete(c.pendingRequested, address)
 		c.activeRequested[address] = connReq
-		continue
 	}
 }
 
