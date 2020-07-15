@@ -50,7 +50,10 @@ func (c *ConnectionManager) checkRequestedConnections(connSet connectionSet) {
 		}
 
 		connection, ok := connSet.get(address)
-		if ok { // somehow the pendingConnectionRequest has already connected - move it to active
+		// The pendingConnectionRequest has already connected - move it to active
+		// This can happen in rare cases such as when the other side has connected to our node
+		// while it has been pending on our side.
+		if ok {
 			delete(c.pendingRequested, address)
 			c.pendingRequested[address] = connReq
 
