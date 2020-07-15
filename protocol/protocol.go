@@ -53,6 +53,7 @@ func (p *Manager) Stop() error {
 func newRouterInitializer(netAdapter *netadapter.NetAdapter,
 	addressManager *addrmgr.AddrManager, dag *blockdag.BlockDAG) netadapter.RouterInitializer {
 	return func() (*routerpkg.Router, error) {
+
 		router := routerpkg.NewRouter()
 		spawn(func() {
 			err := startFlows(netAdapter, router, dag, addressManager)

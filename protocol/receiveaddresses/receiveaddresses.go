@@ -60,6 +60,8 @@ func ReceiveAddresses(incomingRoute *router.Route, outgoingRoute *router.Route,
 	}
 
 	// TODO(libp2p) Consider adding to peer known addresses set
-	addressManager.AddAddresses(msgAddr.AddrList, sp.NA(), msgAddr.SubnetworkID)
+	// TODO(libp2p) Replace with real peer IP
+	fakeSrcAddr := new(wire.NetAddress)
+	addressManager.AddAddresses(msgAddr.AddrList, fakeSrcAddr, msgAddr.SubnetworkID)
 	return false, nil
 }
