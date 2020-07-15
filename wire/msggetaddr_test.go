@@ -13,15 +13,15 @@ import (
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
-// TestGetAddr tests the MsgGetAddr API.
+// TestGetAddr tests the MsgGetAddresses API.
 func TestGetAddr(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Ensure the command is expected value.
 	wantCmd := "getaddr"
-	msg := NewMsgGetAddr(false, nil)
+	msg := NewMsgGetAddresses(false, nil)
 	if cmd := msg.Command(); cmd != wantCmd {
-		t.Errorf("NewMsgGetAddr: wrong command - got %v want %v",
+		t.Errorf("NewMsgGetAddresses: wrong command - got %v want %v",
 			cmd, wantCmd)
 	}
 
@@ -36,18 +36,18 @@ func TestGetAddr(t *testing.T) {
 	}
 }
 
-// TestGetAddrWire tests the MsgGetAddr wire encode and decode for various
+// TestGetAddrWire tests the MsgGetAddresses wire encode and decode for various
 // protocol versions.
 func TestGetAddrWire(t *testing.T) {
 	// With all subnetworks
-	msgGetAddr := NewMsgGetAddr(false, nil)
+	msgGetAddr := NewMsgGetAddresses(false, nil)
 	msgGetAddrEncoded := []byte{
 		0x00, // All subnetworks
 		0x01, // Get full nodes
 	}
 
 	// With specific subnetwork
-	msgGetAddrSubnet := NewMsgGetAddr(false, subnetworkid.SubnetworkIDNative)
+	msgGetAddrSubnet := NewMsgGetAddresses(false, subnetworkid.SubnetworkIDNative)
 	msgGetAddrSubnetEncoded := []byte{
 		0x00,                                           // Is all subnetworks
 		0x00,                                           // Is full node
@@ -57,10 +57,10 @@ func TestGetAddrWire(t *testing.T) {
 	}
 
 	tests := []struct {
-		in   *MsgGetAddr // Message to encode
-		out  *MsgGetAddr // Expected decoded message
-		buf  []byte      // Wire encoding
-		pver uint32      // Protocol version for wire encoding
+		in   *MsgGetAddresses // Message to encode
+		out  *MsgGetAddresses // Expected decoded message
+		buf  []byte           // Wire encoding
+		pver uint32           // Protocol version for wire encoding
 	}{
 		// Latest protocol version. All subnetworks
 		{
@@ -94,7 +94,7 @@ func TestGetAddrWire(t *testing.T) {
 		}
 
 		// Decode the message from wire format.
-		var msg MsgGetAddr
+		var msg MsgGetAddresses
 		rbuf := bytes.NewReader(test.buf)
 		err = msg.KaspaDecode(rbuf, test.pver)
 		if err != nil {

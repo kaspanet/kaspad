@@ -93,7 +93,7 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag
 		return nil
 	}
 
-	addOneTimeFlow("SendAddresses", router, []string{wire.CmdGetAddr}, &stopped, stop,
+	addOneTimeFlow("SendAddresses", router, []string{wire.CmdGetAddresses}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) (routeClosed bool, err error) {
 			return sendaddresses.SendAddresses(incomingRoute, outgoingRoute, addressManager)
 		},

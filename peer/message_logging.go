@@ -94,7 +94,7 @@ func messageSummary(msg wire.Message) string {
 	case *wire.MsgVerAck:
 		// No summary.
 
-	case *wire.MsgGetAddr:
+	case *wire.MsgGetAddresses:
 		if msg.IncludeAllSubnetworks {
 			return "all subnetworks and full nodes"
 		}

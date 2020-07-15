@@ -103,7 +103,7 @@ var (
 // result in a deadlock.
 type MessageListeners struct {
 	// OnGetAddr is invoked when a peer receives a getaddr kaspa message.
-	OnGetAddr func(p *Peer, msg *wire.MsgGetAddr)
+	OnGetAddr func(p *Peer, msg *wire.MsgGetAddresses)
 
 	// OnAddr is invoked when a peer receives an addr kaspa message.
 	OnAddr func(p *Peer, msg *wire.MsgAddr)
@@ -1344,7 +1344,7 @@ out:
 				p.cfg.Listeners.OnVerAck(p, msg)
 			}
 
-		case *wire.MsgGetAddr:
+		case *wire.MsgGetAddresses:
 			if p.cfg.Listeners.OnGetAddr != nil {
 				p.cfg.Listeners.OnGetAddr(p, msg)
 			}
