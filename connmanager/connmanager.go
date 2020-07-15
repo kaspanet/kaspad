@@ -25,14 +25,15 @@ type connectionRequest struct {
 // ConnectionManager monitors that the current active connections satisfy the requirements of
 // outgoing, requested and incoming connections
 type ConnectionManager struct {
-	netAdapter                *netadapter.NetAdapter
-	activeConnectionRequests  map[string]*connectionRequest
-	pendingConnectionRequests map[string]*connectionRequest
-	activeOutgoing            map[string]struct{}
-	targetOutgoing            int
-	activeIncoming            map[string]struct{}
-	maxIncoming               int
-	addressManager            *addrmgr.AddrManager
+	netAdapter     *netadapter.NetAdapter
+	addressManager *addrmgr.AddrManager
+
+	activeRequested  map[string]*connectionRequest
+	pendingRequested map[string]*connectionRequest
+	activeOutgoing   map[string]struct{}
+	targetOutgoing   int
+	activeIncoming   map[string]struct{}
+	maxIncoming      int
 
 	stop                   uint32
 	connectionRequestsLock sync.Mutex
@@ -41,12 +42,12 @@ type ConnectionManager struct {
 // New instantiates a new instance of a ConnectionManager
 func New(netAdapter *netadapter.NetAdapter, addressManager *addrmgr.AddrManager) (*ConnectionManager, error) {
 	c := &ConnectionManager{
-		netAdapter:                netAdapter,
-		addressManager:            addressManager,
-		activeConnectionRequests:  map[string]*connectionRequest{},
-		pendingConnectionRequests: map[string]*connectionRequest{},
-		activeOutgoing:            map[string]struct{}{},
-		activeIncoming:            map[string]struct{}{},
+		netAdapter:       netAdapter,
+		addressManager:   addressManager,
+		activeRequested:  map[string]*connectionRequest{},
+		pendingRequested: map[string]*connectionRequest{},
+		activeOutgoing:   map[string]struct{}{},
+		activeIncoming:   map[string]struct{}{},
 	}
 
 	cfg := config.ActiveConfig()
@@ -59,7 +60,7 @@ func New(netAdapter *netadapter.NetAdapter, addressManager *addrmgr.AddrManager)
 	c.targetOutgoing = cfg.TargetOutboundPeers
 
 	for _, connectPeer := range connectPeers {
-		c.pendingConnectionRequests[connectPeer] = &connectionRequest{
+		c.pendingRequested[connectPeer] = &connectionRequest{
 			address:     connectPeer,
 			isPermanent: true,
 		}
@@ -108,9 +109,13 @@ func (c *ConnectionManager) connectionsLoop() {
 	for atomic.LoadUint32(&c.stop) == 0 {
 		connections := c.netAdapter.Connections()
 
+		// We convert the connections list to a set, so that connections can be found quickly
+		// Then we go over the set, classifying connection by category: requested, outgoing or incoming
+		// Every step removes all matching connections so that once we get to checkIncomingConnections -
+		// the only connections left are the incoming ones
 		connSet := convertToSet(connections)
 
-		c.checkConnectionRequests(connSet)
+		c.checkRequestedConnections(connSet)
 
 		c.checkOutgoingConnections(connSet)
 
