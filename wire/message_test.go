@@ -55,7 +55,7 @@ func TestMessage(t *testing.T) {
 
 	msgVerack := NewMsgVerAck()
 	msgGetAddresses := NewMsgGetAddresses(false, nil)
-	msgAddr := NewMsgAddr(false, nil)
+	msgAddresses := NewMsgAddresses(false, nil)
 	msgGetBlockInvs := NewMsgGetBlockInvs(&daghash.Hash{}, &daghash.Hash{})
 	msgBlock := &blockOne
 	msgInv := NewMsgInv()
@@ -84,7 +84,7 @@ func TestMessage(t *testing.T) {
 		{msgVersion, msgVersion, pver, Mainnet, 136},
 		{msgVerack, msgVerack, pver, Mainnet, 24},
 		{msgGetAddresses, msgGetAddresses, pver, Mainnet, 26},
-		{msgAddr, msgAddr, pver, Mainnet, 27},
+		{msgAddresses, msgAddresses, pver, Mainnet, 27},
 		{msgGetBlockInvs, msgGetBlockInvs, pver, Mainnet, 88},
 		{msgBlock, msgBlock, pver, Mainnet, 372},
 		{msgInv, msgInv, pver, Mainnet, 25},

@@ -20,8 +20,8 @@ const (
 	BanScoreDuplicateVersion       = 1
 	BanScoreDuplicateVerack        = 1
 
-	BanScoreSentTooManyAddresses         = 20
-	BanScoreMsgAddrWithInvalidSubnetwork = 10
+	BanScoreSentTooManyAddresses              = 20
+	BanScoreMsgAddressesWithInvalidSubnetwork = 10
 
 	BanScoreInvalidFeeFilter = 100
 	BanScoreNoFilterLoaded   = 5

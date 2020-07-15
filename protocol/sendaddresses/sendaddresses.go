@@ -19,14 +19,14 @@ func SendAddresses(incomingRoute *router.Route, outgoingRoute *router.Route,
 
 	msgGetAddresses := message.(*wire.MsgGetAddresses)
 	addresses := addressManager.AddressCache(msgGetAddresses.IncludeAllSubnetworks, msgGetAddresses.SubnetworkID)
-	msgAddr := wire.NewMsgAddr(msgGetAddresses.IncludeAllSubnetworks, msgGetAddresses.SubnetworkID)
-	err = msgAddr.AddAddresses(shuffleAddresses(addresses)...)
+	msgAddresses := wire.NewMsgAddresses(msgGetAddresses.IncludeAllSubnetworks, msgGetAddresses.SubnetworkID)
+	err = msgAddresses.AddAddresses(shuffleAddresses(addresses)...)
 	if err != nil {
 		panic(err)
 	}
 
 	const timeout = 30 * time.Second
-	isOpen, err = outgoingRoute.EnqueueWithTimeout(msgAddr, timeout)
+	isOpen, err = outgoingRoute.EnqueueWithTimeout(msgAddresses, timeout)
 	if err != nil {
 		return false, err
 	}

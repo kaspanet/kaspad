@@ -106,7 +106,7 @@ type MessageListeners struct {
 	OnGetAddr func(p *Peer, msg *wire.MsgGetAddresses)
 
 	// OnAddr is invoked when a peer receives an addr kaspa message.
-	OnAddr func(p *Peer, msg *wire.MsgAddr)
+	OnAddr func(p *Peer, msg *wire.MsgAddresses)
 
 	// OnPing is invoked when a peer receives a ping kaspa message.
 	OnPing func(p *Peer, msg *wire.MsgPing)
@@ -752,7 +752,7 @@ func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
 func (p *Peer) PushAddrMsg(addresses []*wire.NetAddress, subnetworkID *subnetworkid.SubnetworkID) ([]*wire.NetAddress, error) {
 	addressCount := len(addresses)
 
-	msg := wire.NewMsgAddr(false, subnetworkID)
+	msg := wire.NewMsgAddresses(false, subnetworkID)
 	msg.AddrList = make([]*wire.NetAddress, addressCount)
 	copy(msg.AddrList, addresses)
 
@@ -1349,7 +1349,7 @@ out:
 				p.cfg.Listeners.OnGetAddr(p, msg)
 			}
 
-		case *wire.MsgAddr:
+		case *wire.MsgAddresses:
 			if p.cfg.Listeners.OnAddr != nil {
 				p.cfg.Listeners.OnAddr(p, msg)
 			}

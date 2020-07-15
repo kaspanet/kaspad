@@ -37,7 +37,7 @@ interactions in no particular order.
 
 	Peer A Sends                            Peer B Responds
 	----------------------------------------------------------------------------
-	getaddr message (MsgGetAddresses)       addr message (MsgAddr)
+	getaddr message (MsgGetAddresses)       addr message (MsgAddresses)
 	getblockinvs message (MsgGetBlockInvs)  inv message (MsgInv)
 	inv message (MsgInv)                    getdata message (MsgGetData)
 	getdata message (MsgGetData)            block message (MsgBlock) -or-

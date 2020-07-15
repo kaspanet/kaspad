@@ -13,7 +13,7 @@ import (
 // MsgGetAddresses implements the Message interface and represents a kaspa
 // getaddr message. It is used to request a list of known active peers on the
 // network from a peer to help identify potential nodes. The list is returned
-// via one or more addr messages (MsgAddr).
+// via one or more addr messages (MsgAddresses).
 //
 // This message has no payload.
 type MsgGetAddresses struct {

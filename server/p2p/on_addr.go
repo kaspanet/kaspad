@@ -12,7 +12,7 @@ import (
 
 // OnAddr is invoked when a peer receives an addr kaspa message and is
 // used to notify the server about advertised addresses.
-func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
+func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddresses) {
 	// Ignore addresses when running on the simulation test network. This
 	// helps prevent the network from becoming another public test network
 	// since it will not be able to learn about other peers that have not
@@ -29,7 +29,7 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 
 	if msg.IncludeAllSubnetworks {
 		sp.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectInvalid, nil,
-			peer.BanScoreMsgAddrWithInvalidSubnetwork, 0,
+			peer.BanScoreMsgAddressesWithInvalidSubnetwork, 0,
 			fmt.Sprintf("got unexpected IncludeAllSubnetworks=true in [%s] command", msg.Command()))
 		return
 	} else if !msg.SubnetworkID.IsEqual(config.ActiveConfig().SubnetworkID) && msg.SubnetworkID != nil {

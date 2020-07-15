@@ -103,7 +103,7 @@ func messageSummary(msg wire.Message) string {
 		}
 		return fmt.Sprintf("subnetwork ID %v", msg.SubnetworkID)
 
-	case *wire.MsgAddr:
+	case *wire.MsgAddresses:
 		return fmt.Sprintf("%d addr", len(msg.AddrList))
 
 	case *wire.MsgPing:

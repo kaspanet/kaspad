@@ -82,7 +82,7 @@ func MakeEmptyMessage(command string) (Message, error) {
 		msg = &MsgGetAddresses{}
 
 	case CmdAddr:
-		msg = &MsgAddr{}
+		msg = &MsgAddresses{}
 
 	case CmdGetBlockInvs:
 		msg = &MsgGetBlockInvs{}

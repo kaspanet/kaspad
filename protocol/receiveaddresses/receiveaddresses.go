@@ -42,24 +42,24 @@ func ReceiveAddresses(incomingRoute *router.Route, outgoingRoute *router.Route,
 		return true, nil
 	}
 
-	msgAddr := message.(*wire.MsgAddr)
-	if len(msgAddr.AddrList) > addrmgr.GetAddrMax {
+	msgAddresses := message.(*wire.MsgAddresses)
+	if len(msgAddresses.AddrList) > addrmgr.GetAddrMax {
 		return false, protocolerrors.Errorf(true, "address count excceeded %d", addrmgr.GetAddrMax)
 	}
 
-	if msgAddr.IncludeAllSubnetworks {
+	if msgAddresses.IncludeAllSubnetworks {
 		return false, protocolerrors.Errorf(true, "got unexpected "+
-			"IncludeAllSubnetworks=true in [%s] command", msgAddr.Command())
+			"IncludeAllSubnetworks=true in [%s] command", msgAddresses.Command())
 	}
-	if !msgAddr.SubnetworkID.IsEqual(config.ActiveConfig().SubnetworkID) && msgAddr.SubnetworkID != nil {
+	if !msgAddresses.SubnetworkID.IsEqual(config.ActiveConfig().SubnetworkID) && msgAddresses.SubnetworkID != nil {
 		return false, protocolerrors.Errorf(false, "only full nodes and %s subnetwork IDs "+
 			"are allowed in [%s] command, but got subnetwork ID %s",
-			config.ActiveConfig().SubnetworkID, msgAddr.Command(), msgAddr.SubnetworkID)
+			config.ActiveConfig().SubnetworkID, msgAddresses.Command(), msgAddresses.SubnetworkID)
 	}
 
 	// TODO(libp2p) Consider adding to peer known addresses set
 	// TODO(libp2p) Replace with real peer IP
 	fakeSrcAddr := new(wire.NetAddress)
-	addressManager.AddAddresses(msgAddr.AddrList, fakeSrcAddr, msgAddr.SubnetworkID)
+	addressManager.AddAddresses(msgAddresses.AddrList, fakeSrcAddr, msgAddresses.SubnetworkID)
 	return false, nil
 }

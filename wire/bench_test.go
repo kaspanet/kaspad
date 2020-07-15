@@ -404,7 +404,7 @@ func BenchmarkDecodeAddr(b *testing.B) {
 	// Create a message with the maximum number of addresses.
 	pver := ProtocolVersion
 	ip := net.ParseIP("127.0.0.1")
-	ma := NewMsgAddr(false, nil)
+	ma := NewMsgAddresses(false, nil)
 	for port := uint16(0); port < MaxAddrPerMsg; port++ {
 		ma.AddAddress(NewNetAddressIPPort(ip, port, SFNodeNetwork))
 	}
@@ -412,12 +412,12 @@ func BenchmarkDecodeAddr(b *testing.B) {
 	// Serialize it so the bytes are available to test the decode below.
 	var bb bytes.Buffer
 	if err := ma.KaspaEncode(&bb, pver); err != nil {
-		b.Fatalf("MsgAddr.KaspaEncode: unexpected error: %v", err)
+		b.Fatalf("MsgAddresses.KaspaEncode: unexpected error: %v", err)
 	}
 	buf := bb.Bytes()
 
 	r := bytes.NewReader(buf)
-	var msg MsgAddr
+	var msg MsgAddresses
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		r.Seek(0, 0)
