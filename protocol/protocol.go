@@ -84,11 +84,11 @@ func newRouterInitializer(netAdapter *netadapter.NetAdapter,
 	}
 }
 
-func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag *blockdag.BlockDAG,
-	addressManager *addrmgr.AddrManager) error {
+func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router,
+	dag *blockdag.BlockDAG, addressManager *addrmgr.AddrManager) error {
+
 	stop := make(chan error)
 	stopped := uint32(0)
-
 	peer := new(peerpkg.Peer)
 
 	closed, err := handshake(router, netAdapter, peer, dag, addressManager)
@@ -99,24 +99,31 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag
 		return nil
 	}
 
+	addAddressFlows(router, &stopped, stop, peer, addressManager)
 	addBlockRelayFlows(netAdapter, router, &stopped, stop, peer, dag)
 	addPingFlows(router, &stopped, stop, peer)
 	addIBDFlows(router, &stopped, stop, peer, dag)
 
-	addOneTimeFlow("SendAddresses", router, []string{wire.CmdGetAddresses}, &stopped, stop,
+	err = <-stop
+	return err
+}
+
+func addAddressFlows(router *routerpkg.Router, stopped *uint32, stop chan error,
+	peer *peerpkg.Peer, addressManager *addrmgr.AddrManager) {
+
+	outgoingRoute := router.OutgoingRoute()
+
+	addOneTimeFlow("SendAddresses", router, []string{wire.CmdGetAddresses}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) (routeClosed bool, err error) {
 			return sendaddresses.SendAddresses(incomingRoute, outgoingRoute, addressManager)
 		},
 	)
 
-	addOneTimeFlow("ReceiveAddresses", router, []string{wire.CmdAddress}, &stopped, stop,
+	addOneTimeFlow("ReceiveAddresses", router, []string{wire.CmdAddress}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) (routeClosed bool, err error) {
 			return receiveaddresses.ReceiveAddresses(incomingRoute, outgoingRoute, peer, addressManager)
 		},
 	)
-
-	err = <-stop
-	return err
 }
 
 func addBlockRelayFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router,
