@@ -653,6 +653,15 @@ func loadConfig() (*Config, []string, error) {
 		}
 	}
 
+	// Disallow --addpeer and --connect used together
+	if len(activeConfig.AddPeers) > 0 && len(activeConfig.ConnectPeers) > 0 {
+		str := "%s: --addpeer and --connect can not be used together"
+		err := errors.Errorf(str, funcName)
+		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(os.Stderr, usageMessage)
+		return nil, nil, err
+	}
+
 	// Add default port to all added peer addresses if needed and remove
 	// duplicate addresses.
 	activeConfig.AddPeers, err = network.NormalizeAddresses(activeConfig.AddPeers,
