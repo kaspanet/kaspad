@@ -121,6 +121,18 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag
 		},
 	)
 
+	addFlow("RequestSelectedTip", router, []string{wire.CmdSelectedTip}, &stopped, stop,
+		func(incomingRoute *routerpkg.Route) error {
+			return ibd.RequestSelectedTip(incomingRoute, outgoingRoute, peer)
+		},
+	)
+
+	addFlow("HandleGetSelectedTip", router, []string{wire.CmdGetSelectedTip}, &stopped, stop,
+		func(incomingRoute *routerpkg.Route) error {
+			return ibd.HandleGetSelectedTip(incomingRoute, outgoingRoute, peer)
+		},
+	)
+
 	err = <-stop
 	return err
 }

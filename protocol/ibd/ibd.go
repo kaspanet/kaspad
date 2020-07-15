@@ -40,21 +40,6 @@ func selectPeerForIBD() *peerpkg.Peer {
 	return nil
 }
 
-func requestSelectedTipsIfRequired(dag *blockdag.BlockDAG) error {
-	if recentlyReceivedBlock(dag) {
-		return nil
-	}
-	return requestSelectedTips(dag)
-}
-
-func recentlyReceivedBlock(dag *blockdag.BlockDAG) bool {
-	return false
-}
-
-func requestSelectedTips(dag *blockdag.BlockDAG) error {
-	return nil
-}
-
 func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 	peer *peerpkg.Peer, dag *blockdag.BlockDAG) error {
 
