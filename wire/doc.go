@@ -37,7 +37,7 @@ interactions in no particular order.
 
 	Peer A Sends                            Peer B Responds
 	----------------------------------------------------------------------------
-	getaddr message (MsgGetAddr)            addr message (MsgAddr)
+	getaddr message (MsgGetAddresses)       addr message (MsgAddresses)
 	getblockinvs message (MsgGetBlockInvs)  inv message (MsgInv)
 	inv message (MsgInv)                    getdata message (MsgGetData)
 	getdata message (MsgGetData)            block message (MsgBlock) -or-
@@ -113,7 +113,7 @@ a remote node running a kaspa peer. Example syntax to request addresses
 from a remote peer is:
 
 	// Create a new getaddr kaspa message.
-	msg := wire.NewMsgGetAddr()
+	msg := wire.NewMsgGetAddresses()
 
 	// Writes a kaspa message msg to conn using the protocol version
 	// pver, and the kaspa network kaspaNet. The return is a possible

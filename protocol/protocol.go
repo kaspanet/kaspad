@@ -11,6 +11,8 @@ import (
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/ping"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
+	"github.com/kaspanet/kaspad/protocol/receiveaddresses"
+	"github.com/kaspanet/kaspad/protocol/sendaddresses"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 	"sync/atomic"
@@ -22,10 +24,10 @@ type Manager struct {
 }
 
 // NewManager creates a new instance of the p2p protocol manager
-func NewManager(listeningAddrs []string, dag *blockdag.BlockDAG,
+func NewManager(listeningAddresses []string, dag *blockdag.BlockDAG,
 	addressManager *addrmgr.AddrManager) (*Manager, error) {
 
-	netAdapter, err := netadapter.NewNetAdapter(listeningAddrs)
+	netAdapter, err := netadapter.NewNetAdapter(listeningAddresses)
 	if err != nil {
 		return nil, err
 	}
@@ -52,6 +54,7 @@ func (p *Manager) Stop() error {
 func newRouterInitializer(netAdapter *netadapter.NetAdapter,
 	addressManager *addrmgr.AddrManager, dag *blockdag.BlockDAG) netadapter.RouterInitializer {
 	return func() (*routerpkg.Router, error) {
+
 		router := routerpkg.NewRouter()
 		spawn(func() {
 			err := startFlows(netAdapter, router, dag, addressManager)
@@ -61,12 +64,18 @@ func newRouterInitializer(netAdapter *netadapter.NetAdapter,
 						// TODO(libp2p) Ban peer
 						panic("unimplemented")
 					}
-					// TODO(libp2p) Disconnect from peer
-					panic("unimplemented")
+					err = netAdapter.DisconnectAssociatedConnection(router)
+					if err != nil {
+						panic(err)
+					}
+					return
 				}
 				if errors.Is(err, routerpkg.ErrTimeout) {
-					// TODO(libp2p) Disconnect peer
-					panic("unimplemented")
+					err = netAdapter.DisconnectAssociatedConnection(router)
+					if err != nil {
+						panic(err)
+					}
+					return
 				}
 				panic(err)
 			}
@@ -93,6 +102,18 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag
 	addBlockRelayFlows(netAdapter, router, &stopped, stop, peer, dag)
 	addPingFlows(router, &stopped, stop, peer)
 	addIBDFlows(router, &stopped, stop, peer, dag)
+
+	addOneTimeFlow("SendAddresses", router, []string{wire.CmdGetAddresses}, &stopped, stop,
+		func(incomingRoute *routerpkg.Route) (routeClosed bool, err error) {
+			return sendaddresses.SendAddresses(incomingRoute, outgoingRoute, addressManager)
+		},
+	)
+
+	addOneTimeFlow("ReceiveAddresses", router, []string{wire.CmdAddress}, &stopped, stop,
+		func(incomingRoute *routerpkg.Route) (routeClosed bool, err error) {
+			return receiveaddresses.ReceiveAddresses(incomingRoute, outgoingRoute, peer, addressManager)
+		},
+	)
 
 	err = <-stop
 	return err
@@ -182,6 +203,32 @@ func addFlow(name string, router *routerpkg.Router, messageTypes []string, stopp
 			log.Errorf("error from %s flow: %s", name, err)
 		}
 		if atomic.AddUint32(stopped, 1) == 1 {
+			stopChan <- err
+		}
+	})
+}
+
+func addOneTimeFlow(name string, router *routerpkg.Router, messageTypes []string, stopped *uint32,
+	stopChan chan error, flow func(route *routerpkg.Route) (routeClosed bool, err error)) {
+
+	route, err := router.AddIncomingRoute(messageTypes)
+	if err != nil {
+		panic(err)
+	}
+
+	spawn(func() {
+		defer func() {
+			err := router.RemoveRoute(messageTypes)
+			if err != nil {
+				panic(err)
+			}
+		}()
+
+		closed, err := flow(route)
+		if err != nil {
+			log.Errorf("error from %s flow: %s", name, err)
+		}
+		if (err != nil || closed) && atomic.AddUint32(stopped, 1) == 1 {
 			stopChan <- err
 		}
 	})
