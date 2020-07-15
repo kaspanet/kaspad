@@ -66,13 +66,16 @@ func (c *ConnectionManager) checkConnectionRequests(connSet connectionSet) {
 			delete(c.pendingConnectionRequests, address)
 			c.activeConnectionRequests[address] = connReq
 			continue
-		} else if !connReq.isPermanent { // if connection request is one try - remove from pending and ignore failure
-			delete(c.pendingConnectionRequests, address)
-		} else { // if connection request is permanent - keep in pending, and increase retry time
-			connReq.retryDuration = nextRetryDuration(connReq.retryDuration)
-			connReq.nextAttempt = now.Add(connReq.retryDuration)
-			log.Debugf("Retrying connection to %s in %s", address, connReq.retryDuration)
 		}
+		if !connReq.isPermanent { // if connection request is one try - remove from pending and ignore failure
+			delete(c.pendingConnectionRequests, address)
+			continue
+		}
+		// if connection request is permanent - keep in pending, and increase retry time
+		connReq.retryDuration = nextRetryDuration(connReq.retryDuration)
+		connReq.nextAttempt = now.Add(connReq.retryDuration)
+		log.Debugf("Retrying connection to %s in %s", address, connReq.retryDuration)
+
 	}
 }
 
