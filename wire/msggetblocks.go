@@ -10,17 +10,17 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// MsgGetBlockInvs implements the Message interface and represents a kaspa
-// getblockinvs message. It is used to request a list of blocks starting after the
+// MsgGetBlocks implements the Message interface and represents a kaspa
+// getblocks message. It is used to request a list of blocks starting after the
 // low hash and until the high hash.
-type MsgGetBlockInvs struct {
+type MsgGetBlocks struct {
 	LowHash  *daghash.Hash
 	HighHash *daghash.Hash
 }
 
 // KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
-func (msg *MsgGetBlockInvs) KaspaDecode(r io.Reader, pver uint32) error {
+func (msg *MsgGetBlocks) KaspaDecode(r io.Reader, pver uint32) error {
 	msg.LowHash = &daghash.Hash{}
 	err := ReadElement(r, msg.LowHash)
 	if err != nil {
@@ -33,7 +33,7 @@ func (msg *MsgGetBlockInvs) KaspaDecode(r io.Reader, pver uint32) error {
 
 // KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
-func (msg *MsgGetBlockInvs) KaspaEncode(w io.Writer, pver uint32) error {
+func (msg *MsgGetBlocks) KaspaEncode(w io.Writer, pver uint32) error {
 	err := WriteElement(w, msg.LowHash)
 	if err != nil {
 		return err
@@ -44,22 +44,22 @@ func (msg *MsgGetBlockInvs) KaspaEncode(w io.Writer, pver uint32) error {
 
 // Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
-func (msg *MsgGetBlockInvs) Command() string {
-	return CmdGetBlockInvs
+func (msg *MsgGetBlocks) Command() string {
+	return CmdGetBlocks
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver. This is part of the Message interface implementation.
-func (msg *MsgGetBlockInvs) MaxPayloadLength(pver uint32) uint32 {
+func (msg *MsgGetBlocks) MaxPayloadLength(pver uint32) uint32 {
 	// low hash + high hash.
 	return 2 * daghash.HashSize
 }
 
-// NewMsgGetBlockInvs returns a new kaspa getblockinvs message that conforms to the
+// NewMsgGetBlocks returns a new kaspa getblocks message that conforms to the
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
-func NewMsgGetBlockInvs(lowHash, highHash *daghash.Hash) *MsgGetBlockInvs {
-	return &MsgGetBlockInvs{
+func NewMsgGetBlocks(lowHash, highHash *daghash.Hash) *MsgGetBlocks {
+	return &MsgGetBlocks{
 		LowHash:  lowHash,
 		HighHash: highHash,
 	}

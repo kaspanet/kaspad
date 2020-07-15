@@ -138,7 +138,7 @@ type MessageListeners struct {
 
 	// OnGetBlockInvs is invoked when a peer receives a getblockinvs kaspa
 	// message.
-	OnGetBlockInvs func(p *Peer, msg *wire.MsgGetBlockInvs)
+	OnGetBlockInvs func(p *Peer, msg *wire.MsgGetBlocks)
 
 	// OnFeeFilter is invoked when a peer receives a feefilter kaspa message.
 	OnFeeFilter func(p *Peer, msg *wire.MsgFeeFilter)
@@ -803,7 +803,7 @@ func (p *Peer) PushGetBlockInvsMsg(lowHash, highHash *daghash.Hash) error {
 	}
 
 	// Construct the getblockinvs request and queue it to be sent.
-	msg := wire.NewMsgGetBlockInvs(lowHash, highHash)
+	msg := wire.NewMsgGetBlocks(lowHash, highHash)
 	p.QueueMessage(msg, nil)
 
 	// Update the previous getblockinvs request information for filtering
@@ -1107,7 +1107,7 @@ func (p *Peer) maybeAddDeadline(pendingResponses map[string]time.Time, msgCmd st
 		// Expects a verack message.
 		pendingResponses[wire.CmdVerAck] = deadline
 
-	case wire.CmdGetBlockInvs:
+	case wire.CmdGetBlocks:
 		// Expects an inv message.
 		pendingResponses[wire.CmdInv] = deadline
 
@@ -1401,7 +1401,7 @@ out:
 				p.cfg.Listeners.OnBlockLocator(p, msg)
 			}
 
-		case *wire.MsgGetBlockInvs:
+		case *wire.MsgGetBlocks:
 			if p.cfg.Listeners.OnGetBlockInvs != nil {
 				p.cfg.Listeners.OnGetBlockInvs(p, msg)
 			}

@@ -131,7 +131,7 @@ func messageSummary(msg wire.Message) string {
 	case *wire.MsgGetData:
 		return invSummary(msg.InvList)
 
-	case *wire.MsgGetBlockInvs:
+	case *wire.MsgGetBlocks:
 		return fmt.Sprintf("low hash %s, high hash %s", msg.LowHash,
 			msg.HighHash)
 

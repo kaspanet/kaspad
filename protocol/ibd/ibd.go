@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
+	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 	"sync"
@@ -64,7 +65,12 @@ func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 		err := func() error {
 			defer finishIBD()
 
-			highestSharedBlockHash, shouldContinue, err := findHighestSharedBlockHash(incomingRoute, outgoingRoute, peer, dag)
+			peerSelectedTipHash, err := peer.SelectedTipHash()
+			if err != nil {
+				return err
+			}
+
+			highestSharedBlockHash, shouldContinue, err := findHighestSharedBlockHash(incomingRoute, outgoingRoute, dag, peerSelectedTipHash)
 			if err != nil {
 				return err
 			}
@@ -77,7 +83,7 @@ func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 					"below the finality point", peer, highestSharedBlockHash)
 			}
 
-			return nil
+			return downloadBlocks(incomingRoute, outgoingRoute, dag, highestSharedBlockHash, peerSelectedTipHash)
 		}()
 		if err != nil {
 			return err
@@ -85,14 +91,11 @@ func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 	}
 }
 
-func findHighestSharedBlockHash(incomingRoute *router.Route, outgoingRoute *router.Route,
-	peer *peerpkg.Peer, dag *blockdag.BlockDAG) (lowHash *daghash.Hash, shouldContinue bool, err error) {
+func findHighestSharedBlockHash(incomingRoute *router.Route, outgoingRoute *router.Route, dag *blockdag.BlockDAG,
+	peerSelectedTipHash *daghash.Hash) (lowHash *daghash.Hash, shouldContinue bool, err error) {
 
 	lowHash = dag.Params.GenesisHash
-	highHash, err := peer.SelectedTipHash()
-	if err != nil {
-		return nil, false, err
-	}
+	highHash := peerSelectedTipHash
 
 	for {
 		shouldContinue, err = sendGetBlockLocator(outgoingRoute, lowHash, highHash)
@@ -150,6 +153,81 @@ func receiveBlockLocator(incomingRoute *router.Route) (blockLocatorHashes []*dag
 		return nil, false, protocolerrors.Errorf(true, "unexpected message")
 	}
 	return msgBlockLocator.BlockLocatorHashes, true, nil
+}
+
+func downloadBlocks(incomingRoute *router.Route, outgoingRoute *router.Route,
+	dag *blockdag.BlockDAG, highestSharedBlockHash *daghash.Hash, peerSelectedTipHash *daghash.Hash) error {
+
+	shouldContinue, err := sendGetBlocks(outgoingRoute, highestSharedBlockHash, peerSelectedTipHash)
+	if err != nil {
+		return err
+	}
+	if !shouldContinue {
+		return nil
+	}
+
+	for {
+		msgBlock, shouldContinue, err := receiveIBDBlock(incomingRoute)
+		if err != nil {
+			return err
+		}
+		if !shouldContinue {
+			return nil
+		}
+		err = processIBDBlock(dag, msgBlock)
+		if err != nil {
+			return err
+		}
+		if msgBlock.BlockHash().IsEqual(peerSelectedTipHash) {
+			return nil
+		}
+	}
+}
+
+func sendGetBlocks(outgoingRoute *router.Route, highestSharedBlockHash *daghash.Hash,
+	peerSelectedTipHash *daghash.Hash) (shouldContinue bool, err error) {
+
+	msgGetBlockInvs := wire.NewMsgGetBlocks(highestSharedBlockHash, peerSelectedTipHash)
+	isOpen, err := outgoingRoute.EnqueueWithTimeout(msgGetBlockInvs, common.DefaultTimeout)
+	if err != nil {
+		return false, err
+	}
+	return isOpen, nil
+}
+
+func receiveIBDBlock(incomingRoute *router.Route) (msgBlock *wire.MsgBlock, shouldContinue bool, err error) {
+	message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	if err != nil {
+		return nil, false, err
+	}
+	if !isOpen {
+		return nil, false, nil
+	}
+	msgBlock, ok := message.(*wire.MsgBlock)
+	if !ok {
+		return nil, false, protocolerrors.Errorf(true, "unexpected message")
+	}
+	return msgBlock, true, nil
+}
+
+func processIBDBlock(dag *blockdag.BlockDAG, msgBlock *wire.MsgBlock) error {
+	block := util.NewBlock(msgBlock)
+	if dag.IsInDAG(block.Hash()) {
+		return nil
+	}
+	isOrphan, isDelayed, err := dag.ProcessBlock(block, blockdag.BFNone)
+	if err != nil {
+		return err
+	}
+	if isOrphan {
+		return protocolerrors.Errorf(true, "received orphan block %s "+
+			"during IBD", block.Hash())
+	}
+	if isDelayed {
+		return protocolerrors.Errorf(true, "received delayed block %s "+
+			"during IBD", block.Hash())
+	}
+	return nil
 }
 
 func finishIBD() {

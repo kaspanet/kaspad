@@ -10,7 +10,7 @@ import (
 // message.
 // It finds the blue future between msg.LowHash and msg.HighHash
 // and send the invs to the requesting peer.
-func (sp *Peer) OnGetBlockInvs(_ *peer.Peer, msg *wire.MsgGetBlockInvs) {
+func (sp *Peer) OnGetBlockInvs(_ *peer.Peer, msg *wire.MsgGetBlocks) {
 	dag := sp.server.DAG
 	// We want to prevent a situation where the syncing peer needs
 	// to call getblocks once again, but the block we sent it
@@ -24,7 +24,7 @@ func (sp *Peer) OnGetBlockInvs(_ *peer.Peer, msg *wire.MsgGetBlockInvs) {
 	hashList, err := dag.AntiPastHashesBetween(msg.LowHash, msg.HighHash,
 		wire.MaxInvPerMsg)
 	if err != nil {
-		sp.AddBanScoreAndPushRejectMsg(wire.CmdGetBlockInvs, wire.RejectInvalid, nil,
+		sp.AddBanScoreAndPushRejectMsg(wire.CmdGetBlocks, wire.RejectInvalid, nil,
 			peer.BanScoreInvalidMsgGetBlockInvs, 0,
 			fmt.Sprintf("error getting antiPast hashes between %s and %s: %s", msg.LowHash, msg.HighHash, err))
 		return
