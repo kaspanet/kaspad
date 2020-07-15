@@ -167,18 +167,18 @@ func downloadBlocks(incomingRoute *router.Route, outgoingRoute *router.Route,
 	}
 
 	for {
-		msgBlock, shouldContinue, err := receiveIBDBlock(incomingRoute)
+		msgIBDBlock, shouldContinue, err := receiveIBDBlock(incomingRoute)
 		if err != nil {
 			return err
 		}
 		if !shouldContinue {
 			return nil
 		}
-		err = processIBDBlock(dag, msgBlock)
+		err = processIBDBlock(dag, msgIBDBlock)
 		if err != nil {
 			return err
 		}
-		if msgBlock.BlockHash().IsEqual(peerSelectedTipHash) {
+		if msgIBDBlock.BlockHash().IsEqual(peerSelectedTipHash) {
 			return nil
 		}
 	}
@@ -195,7 +195,7 @@ func sendGetBlocks(outgoingRoute *router.Route, highestSharedBlockHash *daghash.
 	return isOpen, nil
 }
 
-func receiveIBDBlock(incomingRoute *router.Route) (msgBlock *wire.MsgBlock, shouldContinue bool, err error) {
+func receiveIBDBlock(incomingRoute *router.Route) (msgIBDBlock *wire.MsgIBDBlock, shouldContinue bool, err error) {
 	message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, false, err
@@ -203,15 +203,15 @@ func receiveIBDBlock(incomingRoute *router.Route) (msgBlock *wire.MsgBlock, shou
 	if !isOpen {
 		return nil, false, nil
 	}
-	msgBlock, ok := message.(*wire.MsgBlock)
+	msgIBDBlock, ok := message.(*wire.MsgIBDBlock)
 	if !ok {
 		return nil, false, protocolerrors.Errorf(true, "unexpected message")
 	}
-	return msgBlock, true, nil
+	return msgIBDBlock, true, nil
 }
 
-func processIBDBlock(dag *blockdag.BlockDAG, msgBlock *wire.MsgBlock) error {
-	block := util.NewBlock(msgBlock)
+func processIBDBlock(dag *blockdag.BlockDAG, msgIBDBlock *wire.MsgIBDBlock) error {
+	block := util.NewBlock(&msgIBDBlock.MsgBlock)
 	if dag.IsInDAG(block.Hash()) {
 		return nil
 	}

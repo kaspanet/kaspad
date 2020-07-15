@@ -39,6 +39,7 @@ const (
 	CmdGetData         = "getdata"
 	CmdNotFound        = "notfound"
 	CmdBlock           = "block"
+	CmdIBDBlock        = "ibdblock"
 	CmdTx              = "tx"
 	CmdPing            = "ping"
 	CmdPong            = "pong"
