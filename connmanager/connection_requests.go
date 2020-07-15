@@ -38,6 +38,7 @@ func (c *ConnectionManager) checkConnectionRequests(connSet connectionSet) {
 				connReq.retryDuration = time.Second
 				c.pendingConnectionRequests[address] = connReq
 			}
+			continue
 		}
 
 		connSet.remove(connection)

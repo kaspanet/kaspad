@@ -78,6 +78,8 @@ func (c *gRPCConnection) Disconnect() error {
 		_ = clientStream.CloseSend() // ignore error because we don't really know what's the status of the connection
 	}
 
+	log.Debugf("Disconnected from %s", c)
+
 	return c.onDisconnectedHandler()
 }
 
