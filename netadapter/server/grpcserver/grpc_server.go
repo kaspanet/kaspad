@@ -77,8 +77,10 @@ func (s *gRPCServer) SetOnConnectedHandler(onConnectedHandler server.OnConnected
 func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 	log.Infof("Dialing to %s", address)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	const dialTimeout = 30 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), dialTimeout)
 	defer cancel()
+
 	gRPCConnection, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return nil, errors.Wrapf(err, "error connecting to %s", address)
