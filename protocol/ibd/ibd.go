@@ -64,17 +64,17 @@ func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 		err := func() error {
 			defer finishIBD()
 
-			lowHash, shouldContinue, err := findIBDLowHash(incomingRoute, outgoingRoute, peer, dag)
+			highestSharedBlockHash, shouldContinue, err := findHighestSharedBlockHash(incomingRoute, outgoingRoute, peer, dag)
 			if err != nil {
 				return err
 			}
 			if !shouldContinue {
 				return nil
 			}
-			if dag.IsKnownFinalizedBlock(lowHash) {
+			if dag.IsKnownFinalizedBlock(highestSharedBlockHash) {
 				return protocolerrors.Errorf(false, "Cannot initiate "+
 					"IBD with peer %s because the highest shared chain block (%s) is "+
-					"below the finality point", peer, lowHash)
+					"below the finality point", peer, highestSharedBlockHash)
 			}
 
 			return nil
@@ -85,7 +85,7 @@ func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 	}
 }
 
-func findIBDLowHash(incomingRoute *router.Route, outgoingRoute *router.Route,
+func findHighestSharedBlockHash(incomingRoute *router.Route, outgoingRoute *router.Route,
 	peer *peerpkg.Peer, dag *blockdag.BlockDAG) (lowHash *daghash.Hash, shouldContinue bool, err error) {
 
 	lowHash = dag.Params.GenesisHash
@@ -120,10 +120,6 @@ func findIBDLowHash(incomingRoute *router.Route, outgoingRoute *router.Route,
 			continue
 		}
 
-		// We return the locator's highest hash as the lowHash here.
-		// This is not a mistake. The blocks we desire start from the highest
-		// hash that we know of and end at the highest hash that the peer
-		// knows of (i.e. its selected tip).
 		return locatorHighHash, true, nil
 	}
 }
