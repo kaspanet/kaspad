@@ -115,7 +115,7 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag
 		},
 	)
 
-	addFlow("HandleIBD", router, []string{wire.CmdSelectedTip}, &stopped, stop,
+	addFlow("HandleIBD", router, []string{wire.CmdBlockLocator, wire.CmdIBDBlock}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return ibd.HandleIBD(incomingRoute, outgoingRoute, peer, dag)
 		},
