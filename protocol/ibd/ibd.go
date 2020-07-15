@@ -71,6 +71,11 @@ func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 			if !shouldContinue {
 				return nil
 			}
+			if dag.IsKnownFinalizedBlock(lowHash) {
+				return protocolerrors.Errorf(false, "Cannot initiate "+
+					"IBD with peer %s because the highest shared chain block (%s) is "+
+					"below the finality point", peer, lowHash)
+			}
 
 			return nil
 		}()
@@ -89,7 +94,7 @@ func findIBDLowHash(incomingRoute *router.Route, outgoingRoute *router.Route,
 		return nil, false, err
 	}
 
-	for !dag.IsInDAG(highHash) {
+	for {
 		shouldContinue, err = sendGetBlockLocator(outgoingRoute, lowHash, highHash)
 		if err != nil {
 			return nil, false, err
@@ -98,16 +103,29 @@ func findIBDLowHash(incomingRoute *router.Route, outgoingRoute *router.Route,
 			return nil, false, nil
 		}
 
-		shouldContinue, err = receiveBlockLocator(incomingRoute)
+		blockLocatorHashes, shouldContinue, err := receiveBlockLocator(incomingRoute)
 		if err != nil {
 			return nil, false, err
 		}
 		if !shouldContinue {
 			return nil, false, nil
 		}
-	}
 
-	return lowHash, true, nil
+		// We check whether the locator's highest hash is in the local DAG.
+		// If it isn't, we need to narrow our getBlockLocator request and
+		// try again.
+		locatorHighHash := blockLocatorHashes[0]
+		if !dag.IsInDAG(locatorHighHash) {
+			highHash, lowHash = dag.FindNextLocatorBoundaries(blockLocatorHashes)
+			continue
+		}
+
+		// We return the locator's highest hash as the lowHash here.
+		// This is not a mistake. The blocks we desire start from the highest
+		// hash that we know of and end at the highest hash that the peer
+		// knows of (i.e. its selected tip).
+		return locatorHighHash, true, nil
+	}
 }
 
 func sendGetBlockLocator(outgoingRoute *router.Route, lowHash *daghash.Hash,
@@ -121,20 +139,21 @@ func sendGetBlockLocator(outgoingRoute *router.Route, lowHash *daghash.Hash,
 	return isOpen, nil
 }
 
-func receiveBlockLocator(incomingRoute *router.Route) (shouldContinue bool, err error) {
+func receiveBlockLocator(incomingRoute *router.Route) (blockLocatorHashes []*daghash.Hash,
+	shouldContinue bool, err error) {
+
 	message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
 	if !isOpen {
-		return false, nil
+		return nil, false, nil
 	}
 	msgBlockLocator, ok := message.(*wire.MsgBlockLocator)
 	if !ok {
-		return false, protocolerrors.Errorf(true, "unexpected message")
+		return nil, false, protocolerrors.Errorf(true, "unexpected message")
 	}
-
-	return true, nil
+	return msgBlockLocator.BlockLocatorHashes, true, nil
 }
 
 func finishIBD() {
