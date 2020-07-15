@@ -5,10 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/wire"
 	"math/rand"
-	"time"
 )
-
-const timeout = 30 * time.Second
 
 // SendAddresses sends address to a peer that requests it.
 func SendAddresses(incomingRoute *router.Route, outgoingRoute *router.Route,
