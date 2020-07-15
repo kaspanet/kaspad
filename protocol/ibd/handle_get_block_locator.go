@@ -38,10 +38,7 @@ func HandleGetBlockLocator(incomingRoute *router.Route, outgoingRoute *router.Ro
 func receiveGetBlockLocator(incomingRoute *router.Route) (lowHash *daghash.Hash,
 	highHash *daghash.Hash, shouldContinue bool, err error) {
 
-	message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
-	if err != nil {
-		return nil, nil, false, err
-	}
+	message, isOpen := incomingRoute.Dequeue()
 	if !isOpen {
 		return nil, nil, false, nil
 	}
