@@ -7,54 +7,89 @@ package wire
 import (
 	"bytes"
 	"fmt"
-	"io"
-	"unicode/utf8"
-
 	"github.com/pkg/errors"
+	"io"
 
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // MessageHeaderSize is the number of bytes in a kaspa message header.
-// Kaspa network (magic) 4 bytes + command 12 bytes + payload length 4 bytes +
+// Kaspa network (magic) 4 bytes + command 4 byte + payload length 4 bytes +
 // checksum 4 bytes.
-const MessageHeaderSize = 24
-
-// CommandSize is the fixed size of all commands in the common kaspa message
-// header. Shorter commands must be zero padded.
-const CommandSize = 12
+const MessageHeaderSize = 16
 
 // MaxMessagePayload is the maximum bytes a message can be regardless of other
 // individual limits imposed by messages themselves.
 const MaxMessagePayload = (1024 * 1024 * 32) // 32MB
 
+// MessageCommand is a number in the header of a message that represents its type.
+type MessageCommand uint32
+
+func (cmd MessageCommand) String() string {
+	cmdString, ok := messageCommandToString[cmd]
+	if !ok {
+		cmdString = "unknown command"
+	}
+	return fmt.Sprintf("%s [code %d]", cmdString, uint8(cmd))
+}
+
 // Commands used in kaspa message headers which describe the type of message.
 const (
-	CmdVersion         = "version"
-	CmdVerAck          = "verack"
-	CmdGetAddr         = "getaddr"
-	CmdAddr            = "addr"
-	CmdGetBlockInvs    = "getblockinvs"
-	CmdInv             = "inv"
-	CmdGetData         = "getdata"
-	CmdNotFound        = "notfound"
-	CmdBlock           = "block"
-	CmdTx              = "tx"
-	CmdPing            = "ping"
-	CmdPong            = "pong"
-	CmdFilterAdd       = "filteradd"
-	CmdFilterClear     = "filterclear"
-	CmdFilterLoad      = "filterload"
-	CmdMerkleBlock     = "merkleblock"
-	CmdReject          = "reject"
-	CmdFeeFilter       = "feefilter"
-	CmdGetBlockLocator = "getlocator"
-	CmdBlockLocator    = "locator"
-	CmdSelectedTip     = "selectedtip"
-	CmdGetSelectedTip  = "getseltip"
-	CmdInvRelayBlock   = "invrelblk"
-	CmdGetRelayBlocks  = "getrelblks"
+	CmdVersion MessageCommand = iota
+	CmdVerAck
+	CmdGetAddr
+	CmdAddr
+	CmdGetBlockInvs
+	CmdInv
+	CmdGetData
+	CmdNotFound
+	CmdBlock
+	CmdTx
+	CmdPing
+	CmdPong
+	CmdFilterAdd
+	CmdFilterClear
+	CmdFilterLoad
+	CmdMerkleBlock
+	CmdReject
+	CmdFeeFilter
+	CmdGetBlockLocator
+	CmdBlockLocator
+	CmdSelectedTip
+	CmdGetSelectedTip
+	CmdInvRelayBlock
+	CmdGetRelayBlocks
+
+	CmdRejectMalformed // Used only for reject message
 )
+
+var messageCommandToString = map[MessageCommand]string{
+	CmdVersion:         "Version",
+	CmdVerAck:          "VerAck",
+	CmdGetAddr:         "GetAddr",
+	CmdAddr:            "Addr",
+	CmdGetBlockInvs:    "GetBlockInvs",
+	CmdInv:             "Inv",
+	CmdGetData:         "GetData",
+	CmdNotFound:        "NotFound",
+	CmdBlock:           "Block",
+	CmdTx:              "Tx",
+	CmdPing:            "Ping",
+	CmdPong:            "Pong",
+	CmdFilterAdd:       "FilterAdd",
+	CmdFilterClear:     "FilterClear",
+	CmdFilterLoad:      "FilterLoad",
+	CmdMerkleBlock:     "MerkleBlock",
+	CmdReject:          "Reject",
+	CmdFeeFilter:       "FeeFilter",
+	CmdGetBlockLocator: "GetBlockLocator",
+	CmdBlockLocator:    "BlockLocator",
+	CmdSelectedTip:     "SelectedTip",
+	CmdGetSelectedTip:  "GetSelectedTip",
+	CmdInvRelayBlock:   "InvRelayBlock",
+	CmdGetRelayBlocks:  "GetRelayBlocks",
+	CmdRejectMalformed: "RejectMalformed",
+}
 
 // Message is an interface that describes a kaspa message. A type that
 // implements Message has complete control over the representation of its data
@@ -63,13 +98,13 @@ const (
 type Message interface {
 	KaspaDecode(io.Reader, uint32) error
 	KaspaEncode(io.Writer, uint32) error
-	Command() string
+	Command() MessageCommand
 	MaxPayloadLength(uint32) uint32
 }
 
 // MakeEmptyMessage creates a message of the appropriate concrete type based
 // on the command.
-func MakeEmptyMessage(command string) (Message, error) {
+func MakeEmptyMessage(command MessageCommand) (Message, error) {
 	var msg Message
 	switch command {
 	case CmdVersion:
@@ -146,10 +181,10 @@ func MakeEmptyMessage(command string) (Message, error) {
 
 // messageHeader defines the header structure for all kaspa protocol messages.
 type messageHeader struct {
-	magic    KaspaNet // 4 bytes
-	command  string   // 12 bytes
-	length   uint32   // 4 bytes
-	checksum [4]byte  // 4 bytes
+	magic    KaspaNet       // 4 bytes
+	command  MessageCommand // 4 bytes
+	length   uint32         // 4 bytes
+	checksum [4]byte        // 4 bytes
 }
 
 // readMessageHeader reads a kaspa message header from r.
@@ -167,14 +202,10 @@ func readMessageHeader(r io.Reader) (int, *messageHeader, error) {
 
 	// Create and populate a messageHeader struct from the raw header bytes.
 	hdr := messageHeader{}
-	var command [CommandSize]byte
-	err = readElements(hr, &hdr.magic, &command, &hdr.length, &hdr.checksum)
+	err = readElements(hr, &hdr.magic, &hdr.command, &hdr.length, &hdr.checksum)
 	if err != nil {
 		return 0, nil, err
 	}
-
-	// Strip trailing zeros from command string.
-	hdr.command = string(bytes.TrimRight(command[:], string(0)))
 
 	return n, &hdr, nil
 }
@@ -205,16 +236,6 @@ func discardInput(r io.Reader, n uint32) {
 func WriteMessageN(w io.Writer, msg Message, pver uint32, kaspaNet KaspaNet) (int, error) {
 	totalBytes := 0
 
-	// Enforce max command size.
-	var command [CommandSize]byte
-	cmd := msg.Command()
-	if len(cmd) > CommandSize {
-		str := fmt.Sprintf("command [%s] is too long [max %d]",
-			cmd, CommandSize)
-		return totalBytes, messageError("WriteMessage", str)
-	}
-	copy(command[:], []byte(cmd))
-
 	// Encode the message payload.
 	var bw bytes.Buffer
 	err := msg.KaspaEncode(&bw, pver)
@@ -237,14 +258,14 @@ func WriteMessageN(w io.Writer, msg Message, pver uint32, kaspaNet KaspaNet) (in
 	if uint32(lenp) > mpl {
 		str := fmt.Sprintf("message payload is too large - encoded "+
 			"%d bytes, but maximum message payload size for "+
-			"messages of type [%s] is %d.", lenp, cmd, mpl)
+			"messages of type [%s] is %d.", lenp, msg.Command(), mpl)
 		return totalBytes, messageError("WriteMessage", str)
 	}
 
 	// Create header for the message.
 	hdr := messageHeader{}
 	hdr.magic = kaspaNet
-	hdr.command = cmd
+	hdr.command = msg.Command()
 	hdr.length = uint32(lenp)
 	copy(hdr.checksum[:], daghash.DoubleHashB(payload)[0:4])
 
@@ -252,7 +273,7 @@ func WriteMessageN(w io.Writer, msg Message, pver uint32, kaspaNet KaspaNet) (in
 	// rather than directly to the writer since writeElements doesn't
 	// return the number of bytes written.
 	hw := bytes.NewBuffer(make([]byte, 0, MessageHeaderSize))
-	err = writeElements(hw, hdr.magic, command, hdr.length, hdr.checksum)
+	err = writeElements(hw, hdr.magic, hdr.command, hdr.length, hdr.checksum)
 	if err != nil {
 		return 0, err
 	}
@@ -309,14 +330,7 @@ func ReadMessageN(r io.Reader, pver uint32, kaspaNet KaspaNet) (int, Message, []
 		return totalBytes, nil, nil, messageError("ReadMessage", str)
 	}
 
-	// Check for malformed commands.
 	command := hdr.command
-	if !utf8.ValidString(command) {
-		discardInput(r, hdr.length)
-		str := fmt.Sprintf("invalid command %d", []byte(command))
-		return totalBytes, nil, nil, messageError("ReadMessage", str)
-	}
-
 	// Create struct of appropriate message type based on the command.
 	msg, err := MakeEmptyMessage(command)
 	if err != nil {

@@ -48,7 +48,7 @@ func (msg *MsgGetBlockLocator) KaspaEncode(w io.Writer, pver uint32) error {
 
 // Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
-func (msg *MsgGetBlockLocator) Command() string {
+func (msg *MsgGetBlockLocator) Command() MessageCommand {
 	return CmdGetBlockLocator
 }
 

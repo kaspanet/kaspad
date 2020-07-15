@@ -12,7 +12,7 @@ type OnRouteCapacityReachedHandler func()
 // Router routes messages by type to their respective
 // input channels
 type Router struct {
-	incomingRoutes map[string]*Route
+	incomingRoutes map[wire.MessageCommand]*Route
 	outgoingRoute  *Route
 
 	onRouteCapacityReachedHandler OnRouteCapacityReachedHandler
@@ -21,7 +21,7 @@ type Router struct {
 // NewRouter creates a new empty router
 func NewRouter() *Router {
 	router := Router{
-		incomingRoutes: make(map[string]*Route),
+		incomingRoutes: make(map[wire.MessageCommand]*Route),
 		outgoingRoute:  NewRoute(),
 	}
 	router.outgoingRoute.setOnCapacityReachedHandler(func() {
@@ -38,7 +38,7 @@ func (r *Router) SetOnRouteCapacityReachedHandler(onRouteCapacityReachedHandler 
 
 // AddIncomingRoute registers the messages of types `messageTypes` to
 // be routed to the given `route`
-func (r *Router) AddIncomingRoute(messageTypes []string) (*Route, error) {
+func (r *Router) AddIncomingRoute(messageTypes []wire.MessageCommand) (*Route, error) {
 	route := NewRoute()
 	for _, messageType := range messageTypes {
 		if _, ok := r.incomingRoutes[messageType]; ok {
@@ -54,7 +54,7 @@ func (r *Router) AddIncomingRoute(messageTypes []string) (*Route, error) {
 
 // RemoveRoute unregisters the messages of types `messageTypes` from
 // the router
-func (r *Router) RemoveRoute(messageTypes []string) error {
+func (r *Router) RemoveRoute(messageTypes []wire.MessageCommand) error {
 	for _, messageType := range messageTypes {
 		if _, ok := r.incomingRoutes[messageType]; !ok {
 			return errors.Errorf("a route for '%s' does not exist", messageType)

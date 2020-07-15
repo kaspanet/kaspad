@@ -33,7 +33,7 @@ func (msg *MsgSelectedTip) KaspaEncode(w io.Writer, pver uint32) error {
 
 // Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
-func (msg *MsgSelectedTip) Command() string {
+func (msg *MsgSelectedTip) Command() MessageCommand {
 	return CmdSelectedTip
 }
 

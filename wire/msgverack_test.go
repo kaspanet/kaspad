@@ -17,7 +17,7 @@ func TestVerAck(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Ensure the command is expected value.
-	wantCmd := "verack"
+	wantCmd := MessageCommand(1)
 	msg := NewMsgVerAck()
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgVerAck: wrong command - got %v want %v",

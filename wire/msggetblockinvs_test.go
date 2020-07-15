@@ -39,7 +39,7 @@ func TestGetBlockInvs(t *testing.T) {
 	}
 
 	// Ensure the command is expected value.
-	wantCmd := "getblockinvs"
+	wantCmd := MessageCommand(4)
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgGetBlockInvs: wrong command - got %v want %v",
 			cmd, wantCmd)

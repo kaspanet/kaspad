@@ -4,10 +4,10 @@ package protowire;
 option go_package = "github.com/kaspanet/kaspad/protowire";
 
 message KaspadMessage{
-    string command = 1;
-    bytes payload = 2;
+  uint32 command = 1;
+  bytes payload = 2;
 }
 
 service P2P {
-    rpc MessageStream (stream KaspadMessage) returns (stream KaspadMessage) {}
+  rpc MessageStream (stream KaspadMessage) returns (stream KaspadMessage) {}
 }

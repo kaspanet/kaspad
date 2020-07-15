@@ -30,7 +30,7 @@ func TestTx(t *testing.T) {
 	}
 
 	// Ensure the command is expected value.
-	wantCmd := "tx"
+	wantCmd := MessageCommand(9)
 	msg := NewNativeMsgTx(1, nil, nil)
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgAddr: wrong command - got %v want %v",

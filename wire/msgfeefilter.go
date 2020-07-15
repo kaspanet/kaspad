@@ -32,7 +32,7 @@ func (msg *MsgFeeFilter) KaspaEncode(w io.Writer, pver uint32) error {
 
 // Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
-func (msg *MsgFeeFilter) Command() string {
+func (msg *MsgFeeFilter) Command() MessageCommand {
 	return CmdFeeFilter
 }
 

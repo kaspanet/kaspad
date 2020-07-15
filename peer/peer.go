@@ -657,7 +657,7 @@ func (p *Peer) AddBanScore(persistent, transient uint32, reason string) {
 
 // AddBanScoreAndPushRejectMsg increases ban score and sends a
 // reject message to the misbehaving peer.
-func (p *Peer) AddBanScoreAndPushRejectMsg(command string, code wire.RejectCode, hash *daghash.Hash, persistent, transient uint32, reason string) {
+func (p *Peer) AddBanScoreAndPushRejectMsg(command wire.MessageCommand, code wire.RejectCode, hash *daghash.Hash, persistent, transient uint32, reason string) {
 	p.PushRejectMsg(command, code, reason, hash, true)
 	p.cfg.AddBanScore(persistent, transient, reason)
 }
@@ -837,7 +837,7 @@ func (p *Peer) PushBlockLocatorMsg(locator blockdag.BlockLocator) error {
 // function to block until the reject message has actually been sent.
 //
 // This function is safe for concurrent access.
-func (p *Peer) PushRejectMsg(command string, code wire.RejectCode, reason string, hash *daghash.Hash, wait bool) {
+func (p *Peer) PushRejectMsg(command wire.MessageCommand, code wire.RejectCode, reason string, hash *daghash.Hash, wait bool) {
 	msg := wire.NewMsgReject(command, code, reason)
 	if command == wire.CmdTx || command == wire.CmdBlock {
 		if hash == nil {
@@ -1094,7 +1094,7 @@ func (p *Peer) shouldHandleReadError(err error) bool {
 
 // maybeAddDeadline potentially adds a deadline for the appropriate expected
 // response for the passed wire protocol command to the pending responses map.
-func (p *Peer) maybeAddDeadline(pendingResponses map[string]time.Time, msgCmd string) {
+func (p *Peer) maybeAddDeadline(pendingResponses map[wire.MessageCommand]time.Time, msgCmd wire.MessageCommand) {
 	// Setup a deadline for each message being sent that expects a response.
 	//
 	// NOTE: Pings are intentionally ignored here since they are typically
@@ -1138,7 +1138,7 @@ func (p *Peer) stallHandler() {
 	var deadlineOffset time.Duration
 
 	// pendingResponses tracks the expected response deadline times.
-	pendingResponses := make(map[string]time.Time)
+	pendingResponses := make(map[wire.MessageCommand]time.Time)
 
 	// stallTicker is used to periodically check pending responses that have
 	// exceeded the expected deadline and disconnect the peer due to
@@ -1313,7 +1313,7 @@ out:
 				// at least that much of the message was valid, but that is not
 				// currently exposed by wire, so just used malformed for the
 				// command.
-				p.AddBanScoreAndPushRejectMsg("malformed", wire.RejectMalformed, nil,
+				p.AddBanScoreAndPushRejectMsg(wire.CmdRejectMalformed, wire.RejectMalformed, nil,
 					BanScoreMalformedMessage, 0, errMsg)
 			}
 			break out

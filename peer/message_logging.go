@@ -150,11 +150,10 @@ func messageSummary(msg wire.Message) string {
 		// characters which are even remotely dangerous such as HTML
 		// control characters, etc. Also limit them to sane length for
 		// logging.
-		rejCommand := sanitizeString(msg.Cmd, wire.CommandSize)
 		rejReason := sanitizeString(msg.Reason, maxRejectReasonLen)
-		summary := fmt.Sprintf("cmd %s, code %s, reason %s", rejCommand,
+		summary := fmt.Sprintf("cmd %s, code %s, reason %s", msg.Cmd,
 			msg.Code, rejReason)
-		if rejCommand == wire.CmdBlock || rejCommand == wire.CmdTx {
+		if msg.Cmd == wire.CmdBlock || msg.Cmd == wire.CmdTx {
 			summary += fmt.Sprintf(", hash %s", msg.Hash)
 		}
 		return summary

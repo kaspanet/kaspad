@@ -32,7 +32,7 @@ func TestBlock(t *testing.T) {
 	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, acceptedIDMerkleRoot, utxoCommitment, bits, nonce)
 
 	// Ensure the command is expected value.
-	wantCmd := "block"
+	wantCmd := MessageCommand(8)
 	msg := NewMsgBlock(bh)
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgBlock: wrong command - got %v want %v",
