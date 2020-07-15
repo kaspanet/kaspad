@@ -5,8 +5,8 @@ package connmanager
 func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 	liveConnections := 0
 	for address := range c.activeOutgoing {
-		connection := connSet.get(address)
-		if connection != nil { // connections still connected
+		connection, ok := connSet.get(address)
+		if ok { // connections still connected
 			connSet.remove(connection)
 			liveConnections++
 			continue

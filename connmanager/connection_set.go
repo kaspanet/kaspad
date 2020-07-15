@@ -12,8 +12,9 @@ func (cs connectionSet) remove(connection server.Connection) {
 	delete(cs, connection.Address().String())
 }
 
-func (cs connectionSet) get(address string) server.Connection {
-	return cs[address]
+func (cs connectionSet) get(address string) (server.Connection, bool) {
+	connection, ok := cs[address]
+	return connection, ok
 }
 
 func convertToSet(connections []server.Connection) connectionSet {

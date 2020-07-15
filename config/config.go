@@ -476,7 +476,7 @@ func loadConfig() (*Config, []string, error) {
 		activeConfig.DisableListen = true
 	}
 
-	// Connect means no DNS seeding and no outbound peers
+	// ConnectPeers means no DNS seeding and no outbound peers
 	if len(activeConfig.ConnectPeers) > 0 {
 		activeConfig.DisableDNSSeed = true
 		activeConfig.TargetOutboundPeers = 0

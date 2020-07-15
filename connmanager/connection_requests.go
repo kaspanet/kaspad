@@ -29,8 +29,8 @@ func (c *ConnectionManager) checkConnectionRequests(connSet connectionSet) {
 	now := time.Now()
 
 	for address, connReq := range c.activeConnectionRequests {
-		connection := connSet.get(address)
-		if connection == nil { // a requested connection was disconnected
+		connection, ok := connSet.get(address)
+		if !ok { // a requested connection was disconnected
 			delete(c.activeConnectionRequests, address)
 
 			if connReq.isPermanent { // if is one-try - ignore. If permanent - add to pending list to retry
@@ -49,8 +49,8 @@ func (c *ConnectionManager) checkConnectionRequests(connSet connectionSet) {
 			continue
 		}
 
-		connection := connSet.get(address)
-		if connection != nil { // somehow the pendingConnectionRequest has already connected - move it to active
+		connection, ok := connSet.get(address)
+		if ok { // somehow the pendingConnectionRequest has already connected - move it to active
 			delete(c.pendingConnectionRequests, address)
 			c.pendingConnectionRequests[address] = connReq
 
