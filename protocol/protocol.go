@@ -23,10 +23,10 @@ type Manager struct {
 }
 
 // NewManager creates a new instance of the p2p protocol manager
-func NewManager(listeningAddrs []string, dag *blockdag.BlockDAG,
+func NewManager(listeningAddresses []string, dag *blockdag.BlockDAG,
 	addressManager *addrmgr.AddrManager) (*Manager, error) {
 
-	netAdapter, err := netadapter.NewNetAdapter(listeningAddrs)
+	netAdapter, err := netadapter.NewNetAdapter(listeningAddresses)
 	if err != nil {
 		return nil, err
 	}

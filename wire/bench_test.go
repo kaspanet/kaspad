@@ -405,7 +405,7 @@ func BenchmarkDecodeAddr(b *testing.B) {
 	pver := ProtocolVersion
 	ip := net.ParseIP("127.0.0.1")
 	ma := NewMsgAddresses(false, nil)
-	for port := uint16(0); port < MaxAddrPerMsg; port++ {
+	for port := uint16(0); port < MaxAddressesPerMsg; port++ {
 		ma.AddAddress(NewNetAddressIPPort(ip, port, SFNodeNetwork))
 	}
 

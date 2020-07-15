@@ -13,8 +13,8 @@ import (
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
-// TestGetAddr tests the MsgGetAddresses API.
-func TestGetAddr(t *testing.T) {
+// TestGetAddresses tests the MsgGetAddresses API.
+func TestGetAddresses(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Ensure the command is expected value.
@@ -36,9 +36,9 @@ func TestGetAddr(t *testing.T) {
 	}
 }
 
-// TestGetAddrWire tests the MsgGetAddresses wire encode and decode for various
+// TestGetAddressesWire tests the MsgGetAddresses wire encode and decode for various
 // protocol versions.
-func TestGetAddrWire(t *testing.T) {
+func TestGetAddressesWire(t *testing.T) {
 	// With all subnetworks
 	msgGetAddresses := NewMsgGetAddresses(false, nil)
 	msgGetAddrEncoded := []byte{

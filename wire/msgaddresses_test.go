@@ -17,8 +17,8 @@ import (
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
-// TestAddr tests the MsgAddresses API.
-func TestAddr(t *testing.T) {
+// TestAddresses tests the MsgAddresses API.
+func TestAddresses(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Ensure the command is expected value.
@@ -61,7 +61,7 @@ func TestAddr(t *testing.T) {
 
 	// Ensure adding more than the max allowed addresses per message returns
 	// error.
-	for i := 0; i < MaxAddrPerMsg+1; i++ {
+	for i := 0; i < MaxAddressesPerMsg+1; i++ {
 		err = msg.AddAddress(na)
 	}
 	if err == nil {
@@ -75,9 +75,9 @@ func TestAddr(t *testing.T) {
 	}
 }
 
-// TestAddrWire tests the MsgAddresses wire encode and decode for various numbers
+// TestAddressesWire tests the MsgAddresses wire encode and decode for various numbers
 // of addresses and protocol versions.
-func TestAddrWire(t *testing.T) {
+func TestAddressesWire(t *testing.T) {
 	// A couple of NetAddresses to use for testing.
 	na := &NetAddress{
 		Timestamp: mstime.UnixMilliseconds(0x17315ed0f99),
@@ -202,9 +202,9 @@ func TestAddrWire(t *testing.T) {
 	}
 }
 
-// TestAddrWireErrors performs negative tests against wire encode and decode
+// TestAddressesWireErrors performs negative tests against wire encode and decode
 // of MsgAddresses to confirm error paths work correctly.
-func TestAddrWireErrors(t *testing.T) {
+func TestAddressesWireErrors(t *testing.T) {
 	pver := ProtocolVersion
 	wireErr := &MessageError{}
 
@@ -243,7 +243,7 @@ func TestAddrWireErrors(t *testing.T) {
 	// Message that forces an error by having more than the max allowed
 	// addresses.
 	maxAddr := NewMsgAddresses(false, nil)
-	for i := 0; i < MaxAddrPerMsg; i++ {
+	for i := 0; i < MaxAddressesPerMsg; i++ {
 		maxAddr.AddAddress(na)
 	}
 	maxAddr.AddrList = append(maxAddr.AddrList, na)

@@ -26,7 +26,7 @@ const timeout = 30 * time.Second
 // ReceiveVersion waits for the peer to send a version message, sends a
 // verack in response, and updates its info accordingly.
 func ReceiveVersion(incomingRoute *router.Route, outgoingRoute *router.Route, netAdapter *netadapter.NetAdapter,
-	peer *peerpkg.Peer, dag *blockdag.BlockDAG) (addr *wire.NetAddress, routeClosed bool, err error) {
+	peer *peerpkg.Peer, dag *blockdag.BlockDAG) (address *wire.NetAddress, routeClosed bool, err error) {
 
 	message, isOpen, err := incomingRoute.DequeueWithTimeout(timeout)
 	if err != nil {

@@ -757,15 +757,15 @@ func (p *Peer) PushAddrMsg(addresses []*wire.NetAddress, subnetworkID *subnetwor
 	copy(msg.AddrList, addresses)
 
 	// Randomize the addresses sent if there are more than the maximum allowed.
-	if addressCount > wire.MaxAddrPerMsg {
+	if addressCount > wire.MaxAddressesPerMsg {
 		// Shuffle the address list.
-		for i := 0; i < wire.MaxAddrPerMsg; i++ {
+		for i := 0; i < wire.MaxAddressesPerMsg; i++ {
 			j := i + rand.Intn(addressCount-i)
 			msg.AddrList[i], msg.AddrList[j] = msg.AddrList[j], msg.AddrList[i]
 		}
 
 		// Truncate it to the maximum size.
-		msg.AddrList = msg.AddrList[:wire.MaxAddrPerMsg]
+		msg.AddrList = msg.AddrList[:wire.MaxAddressesPerMsg]
 	}
 
 	p.QueueMessage(msg, nil)

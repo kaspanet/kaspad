@@ -21,9 +21,9 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddresses) {
 		return
 	}
 
-	if len(msg.AddrList) > addrmgr.GetAddrMax {
+	if len(msg.AddrList) > addrmgr.GetAddressesMax {
 		sp.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectInvalid, nil,
-			peer.BanScoreSentTooManyAddresses, 0, fmt.Sprintf("address count excceeded %d", addrmgr.GetAddrMax))
+			peer.BanScoreSentTooManyAddresses, 0, fmt.Sprintf("address count excceeded %d", addrmgr.GetAddressesMax))
 		return
 	}
 

@@ -11,9 +11,9 @@ import (
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
-// MaxAddrPerMsg is the maximum number of addresses that can be in a single
+// MaxAddressesPerMsg is the maximum number of addresses that can be in a single
 // kaspa addr message (MsgAddresses).
-const MaxAddrPerMsg = 1000
+const MaxAddressesPerMsg = 1000
 
 // MsgAddresses implements the Message interface and represents a kaspa
 // addr message. It is used to provide a list of known active peers on the
@@ -33,9 +33,9 @@ type MsgAddresses struct {
 
 // AddAddress adds a known active peer to the message.
 func (msg *MsgAddresses) AddAddress(na *NetAddress) error {
-	if len(msg.AddrList)+1 > MaxAddrPerMsg {
+	if len(msg.AddrList)+1 > MaxAddressesPerMsg {
 		str := fmt.Sprintf("too many addresses in message [max %d]",
-			MaxAddrPerMsg)
+			MaxAddressesPerMsg)
 		return messageError("MsgAddresses.AddAddress", str)
 	}
 
@@ -92,9 +92,9 @@ func (msg *MsgAddresses) KaspaDecode(r io.Reader, pver uint32) error {
 	}
 
 	// Limit to max addresses per message.
-	if count > MaxAddrPerMsg {
+	if count > MaxAddressesPerMsg {
 		str := fmt.Sprintf("too many addresses for message "+
-			"[count %d, max %d]", count, MaxAddrPerMsg)
+			"[count %d, max %d]", count, MaxAddressesPerMsg)
 		return messageError("MsgAddresses.KaspaDecode", str)
 	}
 
@@ -115,9 +115,9 @@ func (msg *MsgAddresses) KaspaDecode(r io.Reader, pver uint32) error {
 // This is part of the Message interface implementation.
 func (msg *MsgAddresses) KaspaEncode(w io.Writer, pver uint32) error {
 	count := len(msg.AddrList)
-	if count > MaxAddrPerMsg {
+	if count > MaxAddressesPerMsg {
 		str := fmt.Sprintf("too many addresses for message "+
-			"[count %d, max %d]", count, MaxAddrPerMsg)
+			"[count %d, max %d]", count, MaxAddressesPerMsg)
 		return messageError("MsgAddresses.KaspaEncode", str)
 	}
 
@@ -166,7 +166,7 @@ func (msg *MsgAddresses) Command() string {
 // receiver. This is part of the Message interface implementation.
 func (msg *MsgAddresses) MaxPayloadLength(pver uint32) uint32 {
 	// IncludeAllSubnetworks flag 1 byte + isFullNode 1 byte + SubnetworkID length + Num addresses (varInt) + max allowed addresses.
-	return 1 + 1 + subnetworkid.IDLength + MaxVarIntPayload + (MaxAddrPerMsg * maxNetAddressPayload(pver))
+	return 1 + 1 + subnetworkid.IDLength + MaxVarIntPayload + (MaxAddressesPerMsg * maxNetAddressPayload(pver))
 }
 
 // NewMsgAddresses returns a new kaspa addr message that conforms to the
@@ -175,6 +175,6 @@ func NewMsgAddresses(includeAllSubnetworks bool, subnetworkID *subnetworkid.Subn
 	return &MsgAddresses{
 		IncludeAllSubnetworks: includeAllSubnetworks,
 		SubnetworkID:          subnetworkID,
-		AddrList:              make([]*NetAddress, 0, MaxAddrPerMsg),
+		AddrList:              make([]*NetAddress, 0, MaxAddressesPerMsg),
 	}
 }

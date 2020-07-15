@@ -40,7 +40,7 @@ func SendAddresses(incomingRoute *router.Route, outgoingRoute *router.Route,
 func shuffleAddresses(addresses []*wire.NetAddress) []*wire.NetAddress {
 	addressCount := len(addresses)
 
-	if addressCount < wire.MaxAddrPerMsg {
+	if addressCount < wire.MaxAddressesPerMsg {
 		return addresses
 	}
 
@@ -52,6 +52,6 @@ func shuffleAddresses(addresses []*wire.NetAddress) []*wire.NetAddress {
 	})
 
 	// Truncate it to the maximum size.
-	shuffleAddresses = shuffleAddresses[:wire.MaxAddrPerMsg]
+	shuffleAddresses = shuffleAddresses[:wire.MaxAddressesPerMsg]
 	return shuffleAddresses
 }
