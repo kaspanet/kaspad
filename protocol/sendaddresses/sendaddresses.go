@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/wire"
 	"math/rand"
+	"time"
 )
 
 // SendAddresses sends addresses to a peer that requests it.
@@ -24,7 +25,11 @@ func SendAddresses(incomingRoute *router.Route, outgoingRoute *router.Route,
 		panic(err)
 	}
 
-	isOpen = outgoingRoute.Enqueue(msgAddr)
+	const timeout = 30 * time.Second
+	isOpen, err = outgoingRoute.EnqueueWithTimeout(msgAddr, timeout)
+	if err != nil {
+		return false, err
+	}
 	if !isOpen {
 		return true, nil
 	}
