@@ -99,7 +99,7 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag
 		},
 	)
 
-	addOneTimeFlow("ReceiveAddresses", router, []string{wire.CmdAddr}, &stopped, stop,
+	addOneTimeFlow("ReceiveAddresses", router, []string{wire.CmdAddress}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) (routeClosed bool, err error) {
 			return receiveaddresses.ReceiveAddresses(incomingRoute, outgoingRoute, peer, addressManager)
 		},
