@@ -39,11 +39,6 @@ func (msg *MsgIBDBlock) MaxPayloadLength(pver uint32) uint32 {
 
 // NewMsgIBDBlock returns a new kaspa ibdblock message that conforms to the
 // Message interface. See MsgIBDBlock for details.
-func NewMsgIBDBlock(blockHeader *BlockHeader) *MsgIBDBlock {
-	return &MsgIBDBlock{
-		MsgBlock: MsgBlock{
-			Header:       *blockHeader,
-			Transactions: make([]*MsgTx, 0, defaultTransactionAlloc),
-		},
-	}
+func NewMsgIBDBlock(msgBlock *MsgBlock) *MsgIBDBlock {
+	return &MsgIBDBlock{*msgBlock}
 }

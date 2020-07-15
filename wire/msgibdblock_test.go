@@ -27,7 +27,7 @@ func TestIBDBlock(t *testing.T) {
 
 	// Ensure the command is expected value.
 	wantCmd := "ibdblock"
-	msg := NewMsgIBDBlock(bh)
+	msg := NewMsgIBDBlock(NewMsgBlock(bh))
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgIBDBlock: wrong command - got %v want %v",
 			cmd, wantCmd)
