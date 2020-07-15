@@ -50,7 +50,7 @@ func (c *ConnectionManager) checkRequestedConnections(connSet connectionSet) {
 		}
 
 		connection, ok := connSet.get(address)
-		// The pendingConnectionRequest has already connected - move it to active
+		// The pending connection request has already connected - move it to active
 		// This can happen in rare cases such as when the other side has connected to our node
 		// while it has been pending on our side.
 		if ok {
@@ -64,20 +64,23 @@ func (c *ConnectionManager) checkRequestedConnections(connSet connectionSet) {
 
 		// try to initiate connection
 		err := c.initiateConnection(connReq.address)
-		if err == nil { // if connected successfully - move from pending to active
+		if err != nil {
 			log.Infof("Couldn't connect to %s: %s", address, err)
-			delete(c.pendingRequested, address)
-			c.activeRequested[address] = connReq
-			continue
+			// if connection request is one try - remove from pending and ignore failure
+			if !connReq.isPermanent {
+				delete(c.pendingRequested, address)
+				continue
+			}
+			// if connection request is permanent - keep in pending, and increase retry time
+			connReq.retryDuration = nextRetryDuration(connReq.retryDuration)
+			connReq.nextAttempt = now.Add(connReq.retryDuration)
+			log.Debugf("Retrying permanent connection to %s in %s", address, connReq.retryDuration)
 		}
-		if !connReq.isPermanent { // if connection request is one try - remove from pending and ignore failure
-			delete(c.pendingRequested, address)
-			continue
-		}
-		// if connection request is permanent - keep in pending, and increase retry time
-		connReq.retryDuration = nextRetryDuration(connReq.retryDuration)
-		connReq.nextAttempt = now.Add(connReq.retryDuration)
-		log.Debugf("Retrying permanent connection to %s in %s", address, connReq.retryDuration)
+
+		// if connected successfully - move from pending to active
+		delete(c.pendingRequested, address)
+		c.activeRequested[address] = connReq
+		continue
 	}
 }
 

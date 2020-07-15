@@ -29,10 +29,11 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 			return
 		}
 
-		c.addressManager.Attempt(address.NetAddress())
-		err := c.initiateConnection(address.NetAddress().TCPAddress().String())
+		netAddress := address.NetAddress()
+		c.addressManager.Attempt(netAddress)
+		err := c.initiateConnection(netAddress.TCPAddress().String())
 		if err != nil {
-			log.Infof("Couldn't connect to %s: %s", address, err)
+			log.Infof("Couldn't connect to %s: %s", netAddress.TCPAddress(), err)
 			continue
 		}
 
