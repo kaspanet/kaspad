@@ -7,7 +7,7 @@ import (
 	"math/rand"
 )
 
-// SendAddresses sends address to a peer that requests it.
+// SendAddresses sends addresses to a peer that requests it.
 func SendAddresses(incomingRoute *router.Route, outgoingRoute *router.Route,
 	addressManager *addrmgr.AddrManager) (routeClosed bool, err error) {
 
