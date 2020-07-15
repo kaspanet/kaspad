@@ -159,14 +159,15 @@ func addOneTimeFlow(name string, router *routerpkg.Router, messageTypes []string
 	if err != nil {
 		panic(err)
 	}
-	defer func() {
-		err := router.RemoveRoute(messageTypes)
-		if err != nil {
-			panic(err)
-		}
-	}()
 
 	spawn(func() {
+		defer func() {
+			err := router.RemoveRoute(messageTypes)
+			if err != nil {
+				panic(err)
+			}
+		}()
+
 		closed, err := flow(route)
 		if err != nil {
 			log.Errorf("error from %s flow: %s", name, err)
