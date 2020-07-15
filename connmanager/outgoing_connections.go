@@ -32,6 +32,7 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 		c.addressManager.Attempt(address.NetAddress())
 		err := c.initiateConnection(address.NetAddress().TCPAddress().String())
 		if err != nil {
+			log.Infof("Couldn't connect to %s: %s", address, err)
 			continue
 		}
 

@@ -64,8 +64,8 @@ func (c *ConnectionManager) checkRequestedConnections(connSet connectionSet) {
 
 		// try to initiate connection
 		err := c.initiateConnection(connReq.address)
-
 		if err == nil { // if connected successfully - move from pending to active
+			log.Infof("Couldn't connect to %s: %s", address, err)
 			delete(c.pendingRequested, address)
 			c.activeRequested[address] = connReq
 			continue
