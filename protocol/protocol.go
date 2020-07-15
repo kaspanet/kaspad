@@ -157,7 +157,7 @@ func addIBDFlows(router *routerpkg.Router, stopped *uint32, stop chan error,
 
 	addFlow("HandleGetBlockLocator", router, []string{wire.CmdGetBlockLocator}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ibd.HandleGetBlockLocator(incomingRoute, outgoingRoute)
+			return ibd.HandleGetBlockLocator(incomingRoute, outgoingRoute, dag)
 		},
 	)
 
