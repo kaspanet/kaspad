@@ -17,9 +17,9 @@ func SendAddresses(incomingRoute *router.Route, outgoingRoute *router.Route,
 		return true, nil
 	}
 
-	msgGetAddr := message.(*wire.MsgGetAddresses)
-	addresses := addressManager.AddressCache(msgGetAddr.IncludeAllSubnetworks, msgGetAddr.SubnetworkID)
-	msgAddr := wire.NewMsgAddr(msgGetAddr.IncludeAllSubnetworks, msgGetAddr.SubnetworkID)
+	msgGetAddresses := message.(*wire.MsgGetAddresses)
+	addresses := addressManager.AddressCache(msgGetAddresses.IncludeAllSubnetworks, msgGetAddresses.SubnetworkID)
+	msgAddr := wire.NewMsgAddr(msgGetAddresses.IncludeAllSubnetworks, msgGetAddresses.SubnetworkID)
 	err = msgAddr.AddAddresses(shuffleAddresses(addresses)...)
 	if err != nil {
 		panic(err)

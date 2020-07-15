@@ -40,15 +40,15 @@ func TestGetAddr(t *testing.T) {
 // protocol versions.
 func TestGetAddrWire(t *testing.T) {
 	// With all subnetworks
-	msgGetAddr := NewMsgGetAddresses(false, nil)
+	msgGetAddresses := NewMsgGetAddresses(false, nil)
 	msgGetAddrEncoded := []byte{
 		0x00, // All subnetworks
 		0x01, // Get full nodes
 	}
 
 	// With specific subnetwork
-	msgGetAddrSubnet := NewMsgGetAddresses(false, subnetworkid.SubnetworkIDNative)
-	msgGetAddrSubnetEncoded := []byte{
+	msgGetAddressesSubnetwork := NewMsgGetAddresses(false, subnetworkid.SubnetworkIDNative)
+	msgGetAddressesSubnetworkEncoded := []byte{
 		0x00,                                           // Is all subnetworks
 		0x00,                                           // Is full node
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Subnetwork ID
@@ -64,16 +64,16 @@ func TestGetAddrWire(t *testing.T) {
 	}{
 		// Latest protocol version. All subnetworks
 		{
-			msgGetAddr,
-			msgGetAddr,
+			msgGetAddresses,
+			msgGetAddresses,
 			msgGetAddrEncoded,
 			ProtocolVersion,
 		},
 		// Latest protocol version. Specific subnetwork
 		{
-			msgGetAddrSubnet,
-			msgGetAddrSubnet,
-			msgGetAddrSubnetEncoded,
+			msgGetAddressesSubnetwork,
+			msgGetAddressesSubnetwork,
+			msgGetAddressesSubnetworkEncoded,
 			ProtocolVersion,
 		},
 	}

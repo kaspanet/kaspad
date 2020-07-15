@@ -21,8 +21,8 @@ func ReceiveAddresses(incomingRoute *router.Route, outgoingRoute *router.Route,
 		panic(err)
 	}
 
-	msgGetAddr := wire.NewMsgGetAddresses(false, subnetworkID)
-	isOpen, err := outgoingRoute.EnqueueWithTimeout(msgGetAddr, timeout)
+	msgGetAddresses := wire.NewMsgGetAddresses(false, subnetworkID)
+	isOpen, err := outgoingRoute.EnqueueWithTimeout(msgGetAddresses, timeout)
 	if err != nil {
 		return false, err
 	}
