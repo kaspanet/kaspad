@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/netadapter/router"
+	"github.com/pkg/errors"
 	"net"
 )
 
@@ -35,3 +36,7 @@ type Connection interface {
 	SetOnDisconnectedHandler(onDisconnectedHandler OnDisconnectedHandler)
 	Address() net.Addr
 }
+
+// ErrNetwork is an error related to the internals of the connection, and not an error that
+// came from outside (e.g. from OnDisconnectedHandler).
+var ErrNetwork = errors.New("network error")

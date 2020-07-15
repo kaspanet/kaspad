@@ -55,8 +55,8 @@ func TestMessage(t *testing.T) {
 	msgVersion := NewMsgVersion(me, idMe, &daghash.ZeroHash, nil)
 
 	msgVerack := NewMsgVerAck()
-	msgGetAddr := NewMsgGetAddr(false, nil)
-	msgAddr := NewMsgAddr(false, nil)
+	msgGetAddresses := NewMsgGetAddresses(false, nil)
+	msgAddresses := NewMsgAddresses(false, nil)
 	msgGetBlockInvs := NewMsgGetBlockInvs(&daghash.Hash{}, &daghash.Hash{})
 	msgBlock := &blockOne
 	msgInv := NewMsgInv()
@@ -84,8 +84,8 @@ func TestMessage(t *testing.T) {
 	}{
 		{msgVersion, msgVersion, pver, Mainnet, 128},
 		{msgVerack, msgVerack, pver, Mainnet, 16},
-		{msgGetAddr, msgGetAddr, pver, Mainnet, 18},
-		{msgAddr, msgAddr, pver, Mainnet, 19},
+		{msgGetAddresses, msgGetAddresses, pver, Mainnet, 18},
+		{msgAddresses, msgAddresses, pver, Mainnet, 19},
 		{msgGetBlockInvs, msgGetBlockInvs, pver, Mainnet, 80},
 		{msgBlock, msgBlock, pver, Mainnet, 364},
 		{msgInv, msgInv, pver, Mainnet, 17},
@@ -199,7 +199,7 @@ func TestReadMessageWireErrors(t *testing.T) {
 	// Wire encoded bytes for a message that exceeds max overall message
 	// length.
 	mpl := uint32(MaxMessagePayload)
-	exceedMaxPayloadBytes := makeHeader(kaspaNet, CmdAddr, mpl+1, 0)
+	exceedMaxPayloadBytes := makeHeader(kaspaNet, CmdAddress, mpl+1, 0)
 
 	// Wire encoded bytes for a command which is invalid utf-8.
 	badCommandBytes := makeHeader(kaspaNet, bogusCommand, 0, 0)
@@ -210,7 +210,7 @@ func TestReadMessageWireErrors(t *testing.T) {
 
 	// Wire encoded bytes for a message which exceeds the max payload for
 	// a specific message type.
-	exceedTypePayloadBytes := makeHeader(kaspaNet, CmdGetAddr, 23, 0)
+	exceedTypePayloadBytes := makeHeader(kaspaNet, CmdGetAddresses, 23, 0)
 
 	// Wire encoded bytes for a message which does not deliver the full
 	// payload according to the header length.
@@ -225,7 +225,7 @@ func TestReadMessageWireErrors(t *testing.T) {
 	// contained in the message. Claim there is two, but don't provide
 	// them. At the same time, forge the header fields so the message is
 	// otherwise accurate.
-	badMessageBytes := makeHeader(kaspaNet, CmdAddr, 1, 0xeaadc31c)
+	badMessageBytes := makeHeader(kaspaNet, CmdAddress, 1, 0xeaadc31c)
 	badMessageBytes = append(badMessageBytes, 0x2)
 
 	// Wire encoded bytes for a message which the header claims has 15k

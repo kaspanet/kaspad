@@ -13,15 +13,15 @@ import (
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
-// TestGetAddr tests the MsgGetAddr API.
-func TestGetAddr(t *testing.T) {
+// TestGetAddresses tests the MsgGetAddresses API.
+func TestGetAddresses(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Ensure the command is expected value.
 	wantCmd := MessageCommand(2)
-	msg := NewMsgGetAddr(false, nil)
+	msg := NewMsgGetAddresses(false, nil)
 	if cmd := msg.Command(); cmd != wantCmd {
-		t.Errorf("NewMsgGetAddr: wrong command - got %v want %v",
+		t.Errorf("NewMsgGetAddresses: wrong command - got %v want %v",
 			cmd, wantCmd)
 	}
 
@@ -36,19 +36,19 @@ func TestGetAddr(t *testing.T) {
 	}
 }
 
-// TestGetAddrWire tests the MsgGetAddr wire encode and decode for various
+// TestGetAddressesWire tests the MsgGetAddresses wire encode and decode for various
 // protocol versions.
-func TestGetAddrWire(t *testing.T) {
+func TestGetAddressesWire(t *testing.T) {
 	// With all subnetworks
-	msgGetAddr := NewMsgGetAddr(false, nil)
+	msgGetAddresses := NewMsgGetAddresses(false, nil)
 	msgGetAddrEncoded := []byte{
 		0x00, // All subnetworks
 		0x01, // Get full nodes
 	}
 
 	// With specific subnetwork
-	msgGetAddrSubnet := NewMsgGetAddr(false, subnetworkid.SubnetworkIDNative)
-	msgGetAddrSubnetEncoded := []byte{
+	msgGetAddressesSubnetwork := NewMsgGetAddresses(false, subnetworkid.SubnetworkIDNative)
+	msgGetAddressesSubnetworkEncoded := []byte{
 		0x00,                                           // Is all subnetworks
 		0x00,                                           // Is full node
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Subnetwork ID
@@ -57,23 +57,23 @@ func TestGetAddrWire(t *testing.T) {
 	}
 
 	tests := []struct {
-		in   *MsgGetAddr // Message to encode
-		out  *MsgGetAddr // Expected decoded message
-		buf  []byte      // Wire encoding
-		pver uint32      // Protocol version for wire encoding
+		in   *MsgGetAddresses // Message to encode
+		out  *MsgGetAddresses // Expected decoded message
+		buf  []byte           // Wire encoding
+		pver uint32           // Protocol version for wire encoding
 	}{
 		// Latest protocol version. All subnetworks
 		{
-			msgGetAddr,
-			msgGetAddr,
+			msgGetAddresses,
+			msgGetAddresses,
 			msgGetAddrEncoded,
 			ProtocolVersion,
 		},
 		// Latest protocol version. Specific subnetwork
 		{
-			msgGetAddrSubnet,
-			msgGetAddrSubnet,
-			msgGetAddrSubnetEncoded,
+			msgGetAddressesSubnetwork,
+			msgGetAddressesSubnetwork,
+			msgGetAddressesSubnetworkEncoded,
 			ProtocolVersion,
 		},
 	}
@@ -94,7 +94,7 @@ func TestGetAddrWire(t *testing.T) {
 		}
 
 		// Decode the message from wire format.
-		var msg MsgGetAddr
+		var msg MsgGetAddresses
 		rbuf := bytes.NewReader(test.buf)
 		err = msg.KaspaDecode(rbuf, test.pver)
 		if err != nil {

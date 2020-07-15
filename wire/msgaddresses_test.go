@@ -17,15 +17,15 @@ import (
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
-// TestAddr tests the MsgAddr API.
-func TestAddr(t *testing.T) {
+// TestAddresses tests the MsgAddresses API.
+func TestAddresses(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Ensure the command is expected value.
 	wantCmd := MessageCommand(3)
-	msg := NewMsgAddr(false, nil)
+	msg := NewMsgAddresses(false, nil)
 	if cmd := msg.Command(); cmd != wantCmd {
-		t.Errorf("NewMsgAddr: wrong command - got %v want %v",
+		t.Errorf("NewMsgAddresses: wrong command - got %v want %v",
 			cmd, wantCmd)
 	}
 
@@ -61,7 +61,7 @@ func TestAddr(t *testing.T) {
 
 	// Ensure adding more than the max allowed addresses per message returns
 	// error.
-	for i := 0; i < MaxAddrPerMsg+1; i++ {
+	for i := 0; i < MaxAddressesPerMsg+1; i++ {
 		err = msg.AddAddress(na)
 	}
 	if err == nil {
@@ -75,9 +75,9 @@ func TestAddr(t *testing.T) {
 	}
 }
 
-// TestAddrWire tests the MsgAddr wire encode and decode for various numbers
+// TestAddressesWire tests the MsgAddresses wire encode and decode for various numbers
 // of addresses and protocol versions.
-func TestAddrWire(t *testing.T) {
+func TestAddressesWire(t *testing.T) {
 	// A couple of NetAddresses to use for testing.
 	na := &NetAddress{
 		Timestamp: mstime.UnixMilliseconds(0x17315ed0f99),
@@ -93,7 +93,7 @@ func TestAddrWire(t *testing.T) {
 	}
 
 	// Empty address message.
-	noAddr := NewMsgAddr(false, nil)
+	noAddr := NewMsgAddresses(false, nil)
 	noAddrEncoded := []byte{
 		0x00, // All subnetworks
 		0x01, // Is full node
@@ -101,7 +101,7 @@ func TestAddrWire(t *testing.T) {
 	}
 
 	// Address message with multiple addresses.
-	multiAddr := NewMsgAddr(true, nil)
+	multiAddr := NewMsgAddresses(true, nil)
 	multiAddr.AddAddresses(na, na2)
 	multiAddrEncoded := []byte{
 		0x01,                                           // All subnetworks
@@ -119,7 +119,7 @@ func TestAddrWire(t *testing.T) {
 	}
 
 	// Address message with multiple addresses and subnetworkID.
-	multiAddrSubnet := NewMsgAddr(false, subnetworkid.SubnetworkIDNative)
+	multiAddrSubnet := NewMsgAddresses(false, subnetworkid.SubnetworkIDNative)
 	multiAddrSubnet.AddAddresses(na, na2)
 	multiAddrSubnetEncoded := []byte{
 		0x00,                                           // All subnetworks
@@ -141,10 +141,10 @@ func TestAddrWire(t *testing.T) {
 	}
 
 	tests := []struct {
-		in   *MsgAddr // Message to encode
-		out  *MsgAddr // Expected decoded message
-		buf  []byte   // Wire encoding
-		pver uint32   // Protocol version for wire encoding
+		in   *MsgAddresses // Message to encode
+		out  *MsgAddresses // Expected decoded message
+		buf  []byte        // Wire encoding
+		pver uint32        // Protocol version for wire encoding
 	}{
 		// Latest protocol version with no addresses.
 		{
@@ -187,7 +187,7 @@ func TestAddrWire(t *testing.T) {
 		}
 
 		// Decode the message from wire format.
-		var msg MsgAddr
+		var msg MsgAddresses
 		rbuf := bytes.NewReader(test.buf)
 		err = msg.KaspaDecode(rbuf, test.pver)
 		if err != nil {
@@ -202,9 +202,9 @@ func TestAddrWire(t *testing.T) {
 	}
 }
 
-// TestAddrWireErrors performs negative tests against wire encode and decode
-// of MsgAddr to confirm error paths work correctly.
-func TestAddrWireErrors(t *testing.T) {
+// TestAddressesWireErrors performs negative tests against wire encode and decode
+// of MsgAddresses to confirm error paths work correctly.
+func TestAddressesWireErrors(t *testing.T) {
 	pver := ProtocolVersion
 	wireErr := &MessageError{}
 
@@ -223,7 +223,7 @@ func TestAddrWireErrors(t *testing.T) {
 	}
 
 	// Address message with multiple addresses.
-	baseAddr := NewMsgAddr(false, nil)
+	baseAddr := NewMsgAddresses(false, nil)
 	baseAddr.AddAddresses(na, na2)
 	baseAddrEncoded := []byte{
 		0x01,                                           // All subnetworks
@@ -242,8 +242,8 @@ func TestAddrWireErrors(t *testing.T) {
 
 	// Message that forces an error by having more than the max allowed
 	// addresses.
-	maxAddr := NewMsgAddr(false, nil)
-	for i := 0; i < MaxAddrPerMsg; i++ {
+	maxAddr := NewMsgAddresses(false, nil)
+	for i := 0; i < MaxAddressesPerMsg; i++ {
 		maxAddr.AddAddress(na)
 	}
 	maxAddr.AddrList = append(maxAddr.AddrList, na)
@@ -253,12 +253,12 @@ func TestAddrWireErrors(t *testing.T) {
 	}
 
 	tests := []struct {
-		in       *MsgAddr // Value to encode
-		buf      []byte   // Wire encoding
-		pver     uint32   // Protocol version for wire encoding
-		max      int      // Max size of fixed buffer to induce errors
-		writeErr error    // Expected write error
-		readErr  error    // Expected read error
+		in       *MsgAddresses // Value to encode
+		buf      []byte        // Wire encoding
+		pver     uint32        // Protocol version for wire encoding
+		max      int           // Max size of fixed buffer to induce errors
+		writeErr error         // Expected write error
+		readErr  error         // Expected read error
 	}{
 		// Latest protocol version with intentional read/write errors.
 		// Force error in addresses count
@@ -291,7 +291,7 @@ func TestAddrWireErrors(t *testing.T) {
 		}
 
 		// Decode from wire format.
-		var msg MsgAddr
+		var msg MsgAddresses
 		r := newFixedReader(test.max, test.buf)
 		err = msg.KaspaDecode(r, test.pver)
 

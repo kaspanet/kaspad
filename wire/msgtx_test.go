@@ -33,7 +33,7 @@ func TestTx(t *testing.T) {
 	wantCmd := MessageCommand(9)
 	msg := NewNativeMsgTx(1, nil, nil)
 	if cmd := msg.Command(); cmd != wantCmd {
-		t.Errorf("NewMsgAddr: wrong command - got %v want %v",
+		t.Errorf("NewMsgAddresses: wrong command - got %v want %v",
 			cmd, wantCmd)
 	}
 

@@ -37,8 +37,8 @@ func (cmd MessageCommand) String() string {
 const (
 	CmdVersion MessageCommand = iota
 	CmdVerAck
-	CmdGetAddr
-	CmdAddr
+	CmdGetAddresses
+	CmdAddress
 	CmdGetBlockInvs
 	CmdInv
 	CmdGetData
@@ -66,8 +66,8 @@ const (
 var messageCommandToString = map[MessageCommand]string{
 	CmdVersion:         "Version",
 	CmdVerAck:          "VerAck",
-	CmdGetAddr:         "GetAddr",
-	CmdAddr:            "Addr",
+	CmdGetAddresses:    "GetAddr",
+	CmdAddress:         "Addr",
 	CmdGetBlockInvs:    "GetBlockInvs",
 	CmdInv:             "Inv",
 	CmdGetData:         "GetData",
@@ -113,11 +113,11 @@ func MakeEmptyMessage(command MessageCommand) (Message, error) {
 	case CmdVerAck:
 		msg = &MsgVerAck{}
 
-	case CmdGetAddr:
-		msg = &MsgGetAddr{}
+	case CmdGetAddresses:
+		msg = &MsgGetAddresses{}
 
-	case CmdAddr:
-		msg = &MsgAddr{}
+	case CmdAddress:
+		msg = &MsgAddresses{}
 
 	case CmdGetBlockInvs:
 		msg = &MsgGetBlockInvs{}
