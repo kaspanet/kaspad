@@ -89,7 +89,7 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router,
 
 	stop := make(chan error)
 	stopped := uint32(0)
-	peer := new(peerpkg.Peer)
+	peer := peerpkg.New()
 
 	closed, err := handshake(router, netAdapter, peer, dag, addressManager)
 	if err != nil {

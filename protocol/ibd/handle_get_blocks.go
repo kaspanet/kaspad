@@ -76,5 +76,4 @@ func sendMsgIBDBlocks(outgoingRoute *router.Route, msgIBDBlocks []*wire.MsgIBDBl
 		}
 	}
 	return true, nil
-
 }

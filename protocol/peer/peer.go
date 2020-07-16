@@ -32,7 +32,17 @@ type Peer struct {
 	lastPingTime     time.Time     // Time we sent last ping
 	lastPingDuration time.Duration // Time for last ping to return
 
+	isSelectedPeerRequested uint32
+	selectedPeerRequestChan chan struct{}
+
 	ibdStartChan chan struct{}
+}
+
+func New() *Peer {
+	return &Peer{
+		selectedPeerRequestChan: make(chan struct{}),
+		ibdStartChan:            make(chan struct{}),
+	}
 }
 
 // SelectedTipHash returns the selected tip of the peer.
@@ -179,6 +189,22 @@ func ReadyPeers() []*Peer {
 		peers = append(peers, readyPeer)
 	}
 	return peers
+}
+
+func (p *Peer) RequestSelectedTipIfRequired() {
+	if atomic.LoadUint32(&p.isSelectedPeerRequested) != 0 {
+		return
+	}
+	atomic.StoreUint32(&p.isSelectedPeerRequested, 1)
+	p.selectedPeerRequestChan <- struct{}{}
+}
+
+func (p *Peer) WaitForSelectedTipRequests() {
+	<-p.selectedPeerRequestChan
+}
+
+func (p *Peer) FinishRequestingSelectedTip() {
+	atomic.StoreUint32(&p.isSelectedPeerRequested, 0)
 }
 
 func (p *Peer) StartIBD() {
