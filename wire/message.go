@@ -59,7 +59,6 @@ const (
 	CmdGetSelectedTip  MessageCommand = 21
 	CmdInvRelayBlock   MessageCommand = 22
 	CmdGetRelayBlocks  MessageCommand = 23
-
 	CmdRejectMalformed MessageCommand = 24 // Used only for reject message
 )
 
