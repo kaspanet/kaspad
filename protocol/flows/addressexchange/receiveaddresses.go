@@ -22,6 +22,10 @@ func ReceiveAddresses(incomingRoute *router.Route, outgoingRoute *router.Route,
 		panic(err)
 	}
 
+	if !addressManager.NeedMoreAddresses() {
+		return false, nil
+	}
+
 	msgGetAddresses := wire.NewMsgGetAddresses(false, subnetworkID)
 	isOpen, err := outgoingRoute.EnqueueWithTimeout(msgGetAddresses, timeout)
 	if err != nil {
@@ -29,10 +33,6 @@ func ReceiveAddresses(incomingRoute *router.Route, outgoingRoute *router.Route,
 	}
 	if !isOpen {
 		return true, nil
-	}
-
-	if addressManager.NeedMoreAddresses() {
-		return false, nil
 	}
 
 	message, isOpen, err := incomingRoute.DequeueWithTimeout(timeout)
