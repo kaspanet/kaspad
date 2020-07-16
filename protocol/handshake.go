@@ -1,9 +1,6 @@
 package protocol
 
 import (
-	"github.com/kaspanet/kaspad/addrmgr"
-	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/netadapter"
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/flows/receiveversion"
 	"github.com/kaspanet/kaspad/protocol/flows/sendversion"
@@ -15,8 +12,7 @@ import (
 	"sync/atomic"
 )
 
-func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
-	dag *blockdag.BlockDAG, addressManager *addrmgr.AddrManager) (closed bool, err error) {
+func (m *Manager) handshake(router *routerpkg.Router, peer *peerpkg.Peer) (closed bool, err error) {
 
 	receiveVersionRoute, err := router.AddIncomingRoute([]string{wire.CmdVersion})
 	if err != nil {
@@ -40,7 +36,8 @@ func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer
 	var peerAddress *wire.NetAddress
 	spawn(func() {
 		defer wg.Done()
-		address, closed, err := receiveversion.ReceiveVersion(receiveVersionRoute, router.OutgoingRoute(), netAdapter, peer, dag)
+		address, closed, err := receiveversion.ReceiveVersion(receiveVersionRoute, router.OutgoingRoute(),
+			m.netAdapter, peer, m.dag)
 		if err != nil {
 			log.Errorf("error from ReceiveVersion: %s", err)
 		}
@@ -55,7 +52,7 @@ func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer
 
 	spawn(func() {
 		defer wg.Done()
-		closed, err := sendversion.SendVersion(sendVersionRoute, router.OutgoingRoute(), netAdapter, dag)
+		closed, err := sendversion.SendVersion(sendVersionRoute, router.OutgoingRoute(), m.netAdapter, m.dag)
 		if err != nil {
 			log.Errorf("error from SendVersion: %s", err)
 		}
@@ -89,7 +86,7 @@ func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer
 		panic(err)
 	}
 
-	err = netAdapter.AssociateRouterID(router, peerID)
+	err = m.netAdapter.AssociateRouterID(router, peerID)
 	if err != nil {
 		panic(err)
 	}
@@ -99,7 +96,7 @@ func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer
 		if err != nil {
 			panic(err)
 		}
-		addressManager.AddAddress(peerAddress, peerAddress, subnetworkID)
+		m.addressManager.AddAddress(peerAddress, peerAddress, subnetworkID)
 	}
 
 	err = router.RemoveRoute([]string{wire.CmdVersion, wire.CmdVerAck})
