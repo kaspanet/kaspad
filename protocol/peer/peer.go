@@ -172,6 +172,15 @@ func IDExists(peerID *id.ID) bool {
 	return ok
 }
 
+// ReadyPeers returns a copy of the currently ready peers
+func ReadyPeers() []*Peer {
+	peers := make([]*Peer, 0, len(readyPeers))
+	for _, readyPeer := range readyPeers {
+		peers = append(peers, readyPeer)
+	}
+	return peers
+}
+
 func (p *Peer) StartIBD() {
 	p.ibdStartChan <- struct{}{}
 }

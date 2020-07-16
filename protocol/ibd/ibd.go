@@ -26,7 +26,10 @@ func StartIBDIfRequired(dag *blockdag.BlockDAG) error {
 		return nil
 	}
 
-	peer := selectPeerForIBD()
+	peer, err := selectPeerForIBD(dag)
+	if err != nil {
+		return err
+	}
 	if peer == nil {
 		return requestSelectedTipsIfRequired(dag)
 	}
@@ -36,8 +39,19 @@ func StartIBDIfRequired(dag *blockdag.BlockDAG) error {
 	return nil
 }
 
-func selectPeerForIBD() *peerpkg.Peer {
-	return nil
+// selectPeerForIBD returns the first peer whose selected tip
+// hash is not in our DAG
+func selectPeerForIBD(dag *blockdag.BlockDAG) (*peerpkg.Peer, error) {
+	for _, peer := range peerpkg.ReadyPeers() {
+		peerSelectedTipHash, err := peer.SelectedTipHash()
+		if err != nil {
+			return nil, err
+		}
+		if !dag.IsInDAG(peerSelectedTipHash) {
+			return peer, nil
+		}
+	}
+	return nil, nil
 }
 
 func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
