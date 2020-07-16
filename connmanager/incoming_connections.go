@@ -7,6 +7,7 @@ func (c *ConnectionManager) checkIncomingConnections(connSet connectionSet) {
 		return
 	}
 
+	numConnectionsOverMax := len(connSet) - c.maxIncoming
 	// randomly disconnect nodes until the number of incoming connections is smaller the maxIncoming
 	for address, connection := range connSet {
 		err := c.netAdapter.Disconnect(connection)
@@ -14,6 +15,9 @@ func (c *ConnectionManager) checkIncomingConnections(connSet connectionSet) {
 			log.Errorf("Error disconnecting from %s: %+v", address, err)
 		}
 
-		connSet.remove(connection)
+		numConnectionsOverMax--
+		if numConnectionsOverMax == 0 {
+			break
+		}
 	}
 }
