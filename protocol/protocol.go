@@ -173,7 +173,7 @@ func addIBDFlows(router *routerpkg.Router, stopped *uint32, stop chan error,
 
 	addFlow("RequestSelectedTip", router, []string{wire.CmdSelectedTip}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ibd.RequestSelectedTip(incomingRoute, outgoingRoute, peer)
+			return ibd.RequestSelectedTip(incomingRoute, outgoingRoute, peer, dag)
 		},
 	)
 

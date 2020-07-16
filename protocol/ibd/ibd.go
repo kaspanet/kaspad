@@ -65,7 +65,12 @@ func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 
 		// We run the flow inside a func so that the defer is called at its end
 		err := func() error {
-			defer finishIBD()
+			defer func() {
+				err := finishIBD(dag)
+				if err != nil {
+					log.Warnf("failed to finish IBD: %s", err)
+				}
+			}()
 
 			peerSelectedTipHash, err := peer.SelectedTipHash()
 			if err != nil {
@@ -232,6 +237,8 @@ func processIBDBlock(dag *blockdag.BlockDAG, msgIBDBlock *wire.MsgIBDBlock) erro
 	return nil
 }
 
-func finishIBD() {
+func finishIBD(dag *blockdag.BlockDAG) error {
 	atomic.StoreUint32(&isIBDRunning, 0)
+
+	return StartIBDIfRequired(dag)
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/blocklogger"
+	"github.com/kaspanet/kaspad/protocol/ibd"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/util"
@@ -223,5 +224,10 @@ func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 	if err != nil {
 		return false, err
 	}
+	err = ibd.StartIBDIfRequired(dag)
+	if err != nil {
+		return false, err
+	}
+
 	return false, nil
 }

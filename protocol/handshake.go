@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter"
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
+	"github.com/kaspanet/kaspad/protocol/ibd"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/receiveversion"
 	"github.com/kaspanet/kaspad/protocol/sendversion"
@@ -102,9 +103,15 @@ func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer
 		addressManager.AddAddress(peerAddress, peerAddress, subnetworkID)
 	}
 
+	err = ibd.StartIBDIfRequired(dag)
+	if err != nil {
+		return false, err
+	}
+
 	err = router.RemoveRoute([]string{wire.CmdVersion, wire.CmdVerAck})
 	if err != nil {
 		panic(err)
 	}
+
 	return false, nil
 }
