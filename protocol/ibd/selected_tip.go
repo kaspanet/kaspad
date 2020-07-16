@@ -1,6 +1,7 @@
 package ibd
 
 import (
+	"errors"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/common"
@@ -73,7 +74,10 @@ func requestSelectedTip(outgoingRoute *router.Route) (shouldContinue bool, err e
 }
 
 func receiveSelectedTip(incomingRoute *router.Route) (selectedTipHash *daghash.Hash, shouldContinue bool, err error) {
-	message, isOpen := incomingRoute.Dequeue()
+	message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	if err != nil {
+		return nil, false, err
+	}
 	if !isOpen {
 		return nil, false, nil
 	}
@@ -82,7 +86,45 @@ func receiveSelectedTip(incomingRoute *router.Route) (selectedTipHash *daghash.H
 	return msgSelectedTip.SelectedTipHash, true, nil
 }
 
-func HandleGetSelectedTip(incomingRoute *router.Route, outgoingRoute *router.Route,
-	peer *peerpkg.Peer) error {
-	return nil
+func HandleGetSelectedTip(incomingRoute *router.Route, outgoingRoute *router.Route, dag *blockdag.BlockDAG) error {
+	for {
+		shouldContinue, err := receiveGetSelectedTip(incomingRoute)
+		if err != nil {
+			return err
+		}
+		if !shouldContinue {
+			return nil
+		}
+
+		selectedTipHash := dag.SelectedTipHash()
+		shouldContinue, err = sendSelectedTipHash(outgoingRoute, selectedTipHash)
+		if err != nil {
+			return err
+		}
+		if !shouldContinue {
+			return nil
+		}
+	}
+}
+
+func receiveGetSelectedTip(incomingRoute *router.Route) (shouldContinue bool, err error) {
+	message, isOpen := incomingRoute.Dequeue()
+	if !isOpen {
+		return false, nil
+	}
+	_, ok := message.(*wire.MsgGetSelectedTip)
+	if !ok {
+		panic(errors.New("received unexpected message type"))
+	}
+
+	return true, nil
+}
+
+func sendSelectedTipHash(outgoingRoute *router.Route, selectedTipHash *daghash.Hash) (shouldContinue bool, err error) {
+	msgSelectedTip := wire.NewMsgSelectedTip(selectedTipHash)
+	isOpen, err := outgoingRoute.EnqueueWithTimeout(msgSelectedTip, common.DefaultTimeout)
+	if err != nil {
+		return false, err
+	}
+	return isOpen, nil
 }
