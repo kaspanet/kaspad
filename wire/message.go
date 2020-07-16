@@ -35,32 +35,32 @@ func (cmd MessageCommand) String() string {
 
 // Commands used in kaspa message headers which describe the type of message.
 const (
-	CmdVersion MessageCommand = iota
-	CmdVerAck
-	CmdGetAddresses
-	CmdAddress
-	CmdGetBlockInvs
-	CmdInv
-	CmdGetData
-	CmdNotFound
-	CmdBlock
-	CmdTx
-	CmdPing
-	CmdPong
-	CmdFilterAdd
-	CmdFilterClear
-	CmdFilterLoad
-	CmdMerkleBlock
-	CmdReject
-	CmdFeeFilter
-	CmdGetBlockLocator
-	CmdBlockLocator
-	CmdSelectedTip
-	CmdGetSelectedTip
-	CmdInvRelayBlock
-	CmdGetRelayBlocks
+	CmdVersion         MessageCommand = 0
+	CmdVerAck          MessageCommand = 1
+	CmdGetAddresses    MessageCommand = 2
+	CmdAddress         MessageCommand = 3
+	CmdGetBlockInvs    MessageCommand = 4
+	CmdInv             MessageCommand = 5
+	CmdGetData         MessageCommand = 6
+	CmdNotFound        MessageCommand = 7
+	CmdBlock           MessageCommand = 8
+	CmdTx              MessageCommand = 9
+	CmdPing            MessageCommand = 10
+	CmdPong            MessageCommand = 11
+	CmdFilterAdd       MessageCommand = 12
+	CmdFilterClear     MessageCommand = 13
+	CmdFilterLoad      MessageCommand = 14
+	CmdMerkleBlock     MessageCommand = 15
+	CmdReject          MessageCommand = 16
+	CmdFeeFilter       MessageCommand = 17
+	CmdGetBlockLocator MessageCommand = 18
+	CmdBlockLocator    MessageCommand = 19
+	CmdSelectedTip     MessageCommand = 20
+	CmdGetSelectedTip  MessageCommand = 21
+	CmdInvRelayBlock   MessageCommand = 22
+	CmdGetRelayBlocks  MessageCommand = 23
 
-	CmdRejectMalformed // Used only for reject message
+	CmdRejectMalformed MessageCommand = 24 // Used only for reject message
 )
 
 var messageCommandToString = map[MessageCommand]string{
