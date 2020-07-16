@@ -34,7 +34,7 @@ const (
 )
 
 // OnSeed is the signature of the callback function which is invoked when DNS
-// seeding is succesfull.
+// seeding is successful.
 type OnSeed func(addrs []*wire.NetAddress)
 
 // LookupFunc is the signature of the DNS lookup function.
@@ -71,22 +71,22 @@ func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag, incl
 		spawn(func() {
 			randSource := rand.New(rand.NewSource(time.Now().UnixNano()))
 
-			seedpeers, err := lookupFn(host)
+			seedPeers, err := lookupFn(host)
 			if err != nil {
 				log.Infof("DNS discovery failed on seed %s: %s", host, err)
 				return
 			}
-			numPeers := len(seedpeers)
+			numPeers := len(seedPeers)
 
 			log.Infof("%d addresses found from DNS seed %s", numPeers, host)
 
 			if numPeers == 0 {
 				return
 			}
-			addresses := make([]*wire.NetAddress, len(seedpeers))
+			addresses := make([]*wire.NetAddress, len(seedPeers))
 			// if this errors then we have *real* problems
 			intPort, _ := strconv.Atoi(dagParams.DefaultPort)
-			for i, peer := range seedpeers {
+			for i, peer := range seedPeers {
 				addresses[i] = wire.NewNetAddressTimestamp(
 					// seed with addresses from a time randomly selected
 					// between 3 and 7 days ago.

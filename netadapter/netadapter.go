@@ -79,10 +79,11 @@ func (na *NetAdapter) Stop() error {
 	return na.server.Stop()
 }
 
-// Connect tells the NetAdapters underlying server to initiate a connection
+// Connect tells the NetAdapter's underlying server to initiate a connection
 // to the given address
-func (na *NetAdapter) Connect(address string) (server.Connection, error) {
-	return na.server.Connect(address)
+func (na *NetAdapter) Connect(address string) error {
+	_, err := na.server.Connect(address)
+	return err
 }
 
 // Connections returns a list of connections currently connected and active

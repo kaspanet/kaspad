@@ -84,8 +84,7 @@ const connectionsLoopInterval = 30 * time.Second
 
 func (c *ConnectionManager) initiateConnection(address string) error {
 	log.Infof("Connecting to %s", address)
-	_, err := c.netAdapter.Connect(address)
-	return err
+	return c.netAdapter.Connect(address)
 }
 
 func (c *ConnectionManager) connectionsLoop() {

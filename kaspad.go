@@ -66,11 +66,11 @@ func (s *kaspad) start() {
 func maybeSeedFromDNS(cfg *config.Config, addressManager *addrmgr.AddrManager) {
 	if !cfg.DisableDNSSeed {
 		dnsseed.SeedFromDNS(cfg.NetParams(), wire.SFNodeNetwork, false, nil,
-			config.ActiveConfig().Lookup, func(addrs []*wire.NetAddress) {
+			config.ActiveConfig().Lookup, func(addresses []*wire.NetAddress) {
 				// Kaspad uses a lookup of the dns seeder here. Since seeder returns
 				// IPs of nodes and not its own IP, we can not know real IP of
 				// source. So we'll take first returned address as source.
-				addressManager.AddAddresses(addrs, addrs[0], nil)
+				addressManager.AddAddresses(addresses, addresses[0], nil)
 			})
 	}
 }
