@@ -28,3 +28,7 @@ func (c *NetConnection) String() string {
 func (c *NetConnection) ID() *id.ID {
 	return c.id
 }
+
+func (c *NetConnection) Address() string {
+	return c.connection.Address().String()
+}

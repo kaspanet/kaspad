@@ -80,19 +80,19 @@ func (c *ConnectionManager) Stop() {
 	}
 }
 
-const connectionsLoopInterval = 30 * time.Second
-
 func (c *ConnectionManager) initiateConnection(address string) error {
 	log.Infof("Connecting to %s", address)
 	return c.netAdapter.Connect(address)
 }
+
+const connectionsLoopInterval = 30 * time.Second
 
 func (c *ConnectionManager) connectionsLoop() {
 	for atomic.LoadUint32(&c.stop) == 0 {
 		connections := c.netAdapter.Connections()
 
 		// We convert the connections list to a set, so that connections can be found quickly
-		// Then we go over the set, classifying connection by category: requested, outgoing or incoming
+		// Then we go over the set, classifying connection by category: requested, outgoing or incoming.
 		// Every step removes all matching connections so that once we get to checkIncomingConnections -
 		// the only connections left are the incoming ones
 		connSet := convertToSet(connections)
