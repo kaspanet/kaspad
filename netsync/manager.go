@@ -1045,10 +1045,10 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 		// Update mempool
 		ch := make(chan mempool.NewBlockMsg)
 		spawn(func() {
-			err := sm.txMemPool.HandleNewBlock(block, ch)
+			err := sm.txMemPool.HandleNewBlockOld(block, ch)
 			close(ch)
 			if err != nil {
-				panic(fmt.Sprintf("HandleNewBlock failed to handle block %s", block.Hash()))
+				panic(fmt.Sprintf("HandleNewBlockOld failed to handle block %s", block.Hash()))
 			}
 		})
 

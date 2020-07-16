@@ -1338,11 +1338,12 @@ func (mp *TxPool) LastUpdated() mstime.Time {
 	return mstime.UnixMilliseconds(atomic.LoadInt64(&mp.lastUpdated))
 }
 
-// HandleNewBlock removes all the transactions in the new block
+// HandleNewBlockOld removes all the transactions in the new block
 // from the mempool and the orphan pool, and it also removes
 // from the mempool transactions that double spend a
 // transaction that is already in the DAG
-func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan NewBlockMsg) error {
+func (mp *TxPool) HandleNewBlockOld(block *util.Block, txChan chan NewBlockMsg) error {
+	// TODO(libp2p) Remove this function
 	oldUTXOSet := mp.mpUTXOSet
 
 	// Remove all of the transactions (except the coinbase) in the
@@ -1367,6 +1368,39 @@ func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan NewBlockMsg) err
 		}
 	}
 	return nil
+}
+
+func (mp *TxPool) HandleNewBlock(block *util.Block) ([]*util.Tx, error) {
+	// Protect concurrent access.
+	mp.cfg.DAG.RLock()
+	defer mp.cfg.DAG.RUnlock()
+	mp.mtx.Lock()
+	defer mp.mtx.Unlock()
+
+	oldUTXOSet := mp.mpUTXOSet
+
+	// Remove all of the transactions (except the coinbase) in the
+	// connected block from the transaction pool. Secondly, remove any
+	// transactions which are now double spends as a result of these
+	// new transactions. Finally, remove any transaction that is
+	// no longer an orphan. Transactions which depend on a confirmed
+	// transaction are NOT removed recursively because they are still
+	// valid.
+	err := mp.RemoveTransactions(block.Transactions()[util.CoinbaseTransactionIndex+1:])
+	if err != nil {
+		mp.mpUTXOSet = oldUTXOSet
+		return nil, err
+	}
+	acceptedTxs := make([]*util.Tx, 0)
+	for _, tx := range block.Transactions()[util.CoinbaseTransactionIndex+1:] {
+		mp.RemoveDoubleSpends(tx)
+		mp.RemoveOrphan(tx)
+		acceptedOrphans := mp.ProcessOrphans(tx)
+		for _, acceptedOrphan := range acceptedOrphans {
+			acceptedTxs = append(acceptedTxs, acceptedOrphan.Tx)
+		}
+	}
+	return acceptedTxs, nil
 }
 
 // New returns a new memory pool for validating and storing standalone

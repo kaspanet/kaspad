@@ -219,7 +219,7 @@ func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 	// sm.restartSyncIfNeeded()
 	//// Clear the rejected transactions.
 	//sm.rejectedTxns = make(map[daghash.TxID]struct{})
-	err = netAdapter.Broadcast(peerpkg.GetReadyPeerIDs(), block.MsgBlock())
+	err = netAdapter.Broadcast(peerpkg.ReadyPeerIDs(), block.MsgBlock())
 	if err != nil {
 		return false, err
 	}

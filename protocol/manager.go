@@ -6,6 +6,8 @@ import (
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"time"
 )
 
 // Manager manages the p2p protocol
@@ -15,6 +17,9 @@ type Manager struct {
 	addedTransaction []*util.Tx
 	dag              *blockdag.BlockDAG
 	addressManager   *addrmgr.AddrManager
+
+	transactionsToRebroadcast map[daghash.TxID]*util.Tx
+	lastRebroadcastTime       time.Time
 }
 
 // NewManager creates a new instance of the p2p protocol manager
@@ -37,11 +42,11 @@ func NewManager(listeningAddresses []string, dag *blockdag.BlockDAG,
 }
 
 // Start starts the p2p protocol
-func (p *Manager) Start() error {
-	return p.netAdapter.Start()
+func (m *Manager) Start() error {
+	return m.netAdapter.Start()
 }
 
 // Stop stops the p2p protocol
-func (p *Manager) Stop() error {
-	return p.netAdapter.Stop()
+func (m *Manager) Stop() error {
+	return m.netAdapter.Stop()
 }
