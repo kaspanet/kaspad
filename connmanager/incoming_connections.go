@@ -1,6 +1,6 @@
 package connmanager
 
-// checkIncomingConnections makes sure there's no more then maxIncoming incoming connections
+// checkIncomingConnections makes sure there's no more than maxIncoming incoming connections
 // if there are - it randomly disconnects enough to go below that number
 func (c *ConnectionManager) checkIncomingConnections(incomingConnectionSet connectionSet) {
 	if len(incomingConnectionSet) <= c.maxIncoming {
