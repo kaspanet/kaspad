@@ -5,14 +5,13 @@
 package wire
 
 import (
-	"bytes"
 	"fmt"
+	"io"
+	"strings"
+
 	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/version"
-	"github.com/pkg/errors"
-	"io"
-	"strings"
 
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -82,13 +81,7 @@ func (msg *MsgVersion) AddService(service ServiceFlag) {
 //
 // This is part of the Message interface implementation.
 func (msg *MsgVersion) KaspaDecode(r io.Reader, pver uint32) error {
-	buf, ok := r.(*bytes.Buffer)
-	if !ok {
-		return errors.Errorf("MsgVersion.KaspaDecode reader is not a " +
-			"*bytes.Buffer")
-	}
-
-	err := readElements(buf, &msg.ProtocolVersion, &msg.Services,
+	err := readElements(r, &msg.ProtocolVersion, &msg.Services,
 		(*int64Time)(&msg.Timestamp))
 	if err != nil {
 		return err
@@ -119,18 +112,18 @@ func (msg *MsgVersion) KaspaDecode(r io.Reader, pver uint32) error {
 
 	if hasAddress {
 		msg.Address = new(NetAddress)
-		err = readNetAddress(buf, pver, msg.Address, false)
+		err = readNetAddress(r, pver, msg.Address, false)
 		if err != nil {
 			return err
 		}
 	}
 
 	msg.ID = new(id.ID)
-	err = ReadElement(buf, msg.ID)
+	err = ReadElement(r, msg.ID)
 	if err != nil {
 		return err
 	}
-	userAgent, err := ReadVarString(buf, pver)
+	userAgent, err := ReadVarString(r, pver)
 	if err != nil {
 		return err
 	}
@@ -141,7 +134,7 @@ func (msg *MsgVersion) KaspaDecode(r io.Reader, pver uint32) error {
 	msg.UserAgent = userAgent
 
 	msg.SelectedTipHash = &daghash.Hash{}
-	err = ReadElement(buf, msg.SelectedTipHash)
+	err = ReadElement(r, msg.SelectedTipHash)
 	if err != nil {
 		return err
 	}

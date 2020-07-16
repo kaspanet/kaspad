@@ -1,6 +1,9 @@
 package protocol
 
 import (
+	"errors"
+	"sync/atomic"
+
 	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter"
@@ -13,41 +16,12 @@ import (
 	"github.com/kaspanet/kaspad/protocol/receiveaddresses"
 	"github.com/kaspanet/kaspad/protocol/sendaddresses"
 	"github.com/kaspanet/kaspad/wire"
-	"github.com/pkg/errors"
-	"sync/atomic"
 )
 
-// Manager manages the p2p protocol
-type Manager struct {
-	netAdapter *netadapter.NetAdapter
-}
-
-// NewManager creates a new instance of the p2p protocol manager
-func NewManager(listeningAddresses []string, dag *blockdag.BlockDAG,
-	addressManager *addrmgr.AddrManager) (*Manager, error) {
-
-	netAdapter, err := netadapter.NewNetAdapter(listeningAddresses)
-	if err != nil {
-		return nil, err
-	}
-
+// Init initializes the p2p protocol
+func Init(netAdapter *netadapter.NetAdapter, addressManager *addrmgr.AddrManager, dag *blockdag.BlockDAG) {
 	routerInitializer := newRouterInitializer(netAdapter, addressManager, dag)
 	netAdapter.SetRouterInitializer(routerInitializer)
-
-	manager := Manager{
-		netAdapter: netAdapter,
-	}
-	return &manager, nil
-}
-
-// Start starts the p2p protocol
-func (p *Manager) Start() error {
-	return p.netAdapter.Start()
-}
-
-// Stop stops the p2p protocol
-func (p *Manager) Stop() error {
-	return p.netAdapter.Stop()
 }
 
 func newRouterInitializer(netAdapter *netadapter.NetAdapter,

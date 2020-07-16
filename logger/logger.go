@@ -54,6 +54,7 @@ var (
 	blkrLog = BackendLog.Logger("BLKR")
 	gbrlLog = BackendLog.Logger("GBRL")
 	blprLog = BackendLog.Logger("BLPR")
+	dnssLog = BackendLog.Logger("DNSS")
 	snvrLog = BackendLog.Logger("SNVR")
 )
 
@@ -85,6 +86,7 @@ var SubsystemTags = struct {
 	NTAR,
 	GBRL,
 	BLPR,
+	DNSS,
 	SNVR string
 }{
 	ADXR: "ADXR",
@@ -113,6 +115,7 @@ var SubsystemTags = struct {
 	GBRL: "GBRL",
 	NTAR: "NTAR",
 	BLPR: "BLPR",
+	DNSS: "DNSS",
 	SNVR: "SNVR",
 }
 
@@ -144,6 +147,7 @@ var subsystemLoggers = map[string]*logs.Logger{
 	SubsystemTags.GBRL: gbrlLog,
 	SubsystemTags.NTAR: ntarLog,
 	SubsystemTags.BLPR: blprLog,
+	SubsystemTags.DNSS: dnssLog,
 	SubsystemTags.SNVR: snvrLog,
 }
 

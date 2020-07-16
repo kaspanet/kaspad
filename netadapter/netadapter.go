@@ -1,14 +1,14 @@
 package netadapter
 
 import (
-	"github.com/kaspanet/kaspad/netadapter/id"
-	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 	"net"
 	"strconv"
 	"sync"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/netadapter/id"
+	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/netadapter/server"
 	"github.com/kaspanet/kaspad/netadapter/server/grpcserver"
 	"github.com/kaspanet/kaspad/wire"
@@ -30,8 +30,8 @@ type NetAdapter struct {
 	routerInitializer RouterInitializer
 	stop              uint32
 
-	routersToConnections map[*routerpkg.Router]server.Connection
-	connectionsToIDs     map[server.Connection]*id.ID
+	routersToConnections map[*routerpkg.Router]*NetConnection
+	connectionsToIDs     map[*NetConnection]*id.ID
 	idsToRouters         map[*id.ID]*routerpkg.Router
 	sync.RWMutex
 }
@@ -51,13 +51,12 @@ func NewNetAdapter(listeningAddrs []string) (*NetAdapter, error) {
 		id:     netAdapterID,
 		server: s,
 
-		routersToConnections: make(map[*routerpkg.Router]server.Connection),
-		connectionsToIDs:     make(map[server.Connection]*id.ID),
+		routersToConnections: make(map[*routerpkg.Router]*NetConnection),
+		connectionsToIDs:     make(map[*NetConnection]*id.ID),
 		idsToRouters:         make(map[*id.ID]*routerpkg.Router),
 	}
 
-	onConnectedHandler := adapter.newOnConnectedHandler()
-	adapter.server.SetOnConnectedHandler(onConnectedHandler)
+	adapter.server.SetOnConnectedHandler(adapter.onConnectedHandler)
 
 	return &adapter, nil
 }
@@ -67,15 +66,6 @@ func (na *NetAdapter) Start() error {
 	err := na.server.Start()
 	if err != nil {
 		return err
-	}
-
-	// TODO(libp2p): Replace with real connection manager
-	cfg := config.ActiveConfig()
-	for _, connectPeer := range cfg.ConnectPeers {
-		_, err := na.server.Connect(connectPeer)
-		if err != nil {
-			log.Errorf("Error connecting to %s: %+v", connectPeer, err)
-		}
 	}
 
 	return nil
@@ -89,55 +79,76 @@ func (na *NetAdapter) Stop() error {
 	return na.server.Stop()
 }
 
-func (na *NetAdapter) newOnConnectedHandler() server.OnConnectedHandler {
-	return func(connection server.Connection) error {
-		router, err := na.routerInitializer()
-		if err != nil {
-			return err
-		}
-		connection.Start(router)
-		na.routersToConnections[router] = connection
+// Connect tells the NetAdapter's underlying server to initiate a connection
+// to the given address
+func (na *NetAdapter) Connect(address string) error {
+	_, err := na.server.Connect(address)
+	return err
+}
 
-		router.SetOnRouteCapacityReachedHandler(func() {
-			err := connection.Disconnect()
-			if err != nil {
-				if !errors.Is(err, server.ErrNetwork) {
-					panic(err)
-				}
-				log.Warnf("Failed to disconnect from %s", connection)
-			}
-		})
-		connection.SetOnDisconnectedHandler(func() error {
-			na.cleanupConnection(connection, router)
-			na.server.RemoveConnection(connection)
-			return router.Close()
-		})
-		na.server.AddConnection(connection)
-		return nil
+// Connections returns a list of connections currently connected and active
+func (na *NetAdapter) Connections() []*NetConnection {
+	netConnections := make([]*NetConnection, 0, len(na.connectionsToIDs))
+
+	for netConnection := range na.connectionsToIDs {
+		netConnections = append(netConnections, netConnection)
 	}
+
+	return netConnections
+}
+
+func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
+	router, err := na.routerInitializer()
+	if err != nil {
+		return err
+	}
+	connection.Start(router)
+
+	netConnection := newNetConnection(connection, nil)
+
+	na.routersToConnections[router] = netConnection
+
+	na.connectionsToIDs[netConnection] = nil
+
+	router.SetOnRouteCapacityReachedHandler(func() {
+		err := connection.Disconnect()
+		if err != nil {
+			if !errors.Is(err, server.ErrNetwork) {
+				panic(err)
+			}
+			log.Warnf("Failed to disconnect from %s", connection)
+		}
+	})
+	connection.SetOnDisconnectedHandler(func() error {
+		na.cleanupConnection(netConnection, router)
+		return router.Close()
+	})
+	return nil
 }
 
 // AssociateRouterID associates the connection for the given router
 // with the given ID
 func (na *NetAdapter) AssociateRouterID(router *routerpkg.Router, id *id.ID) error {
-	connection, ok := na.routersToConnections[router]
+	netConnection, ok := na.routersToConnections[router]
 	if !ok {
 		return errors.Errorf("router not registered for id %s", id)
 	}
 
-	na.connectionsToIDs[connection] = id
+	netConnection.id = id
+
+	na.connectionsToIDs[netConnection] = id
 	na.idsToRouters[id] = router
 	return nil
 }
 
-func (na *NetAdapter) cleanupConnection(connection server.Connection, router *routerpkg.Router) {
-	connectionID, ok := na.connectionsToIDs[connection]
+func (na *NetAdapter) cleanupConnection(netConnection *NetConnection, router *routerpkg.Router) {
+	connectionID, ok := na.connectionsToIDs[netConnection]
 	if !ok {
 		return
 	}
 
 	delete(na.routersToConnections, router)
-	delete(na.connectionsToIDs, connection)
+	delete(na.connectionsToIDs, netConnection)
 	delete(na.idsToRouters, connectionID)
 }
 
@@ -228,13 +239,18 @@ func (na *NetAdapter) GetBestLocalAddress() (*wire.NetAddress, error) {
 
 // DisconnectAssociatedConnection disconnects from the connection associated with the given router.
 func (na *NetAdapter) DisconnectAssociatedConnection(router *routerpkg.Router) error {
-	connection := na.routersToConnections[router]
-	err := connection.Disconnect()
+	netConnection := na.routersToConnections[router]
+	return na.Disconnect(netConnection)
+}
+
+// Disconnect disconnects the given connection
+func (na *NetAdapter) Disconnect(netConnection *NetConnection) error {
+	err := netConnection.connection.Disconnect()
 	if err != nil {
 		if !errors.Is(err, server.ErrNetwork) {
 			return err
 		}
-		log.Warnf("Error disconnecting from %s: %s", connection, err)
+		log.Warnf("Error disconnecting from %s: %s", netConnection, err)
 	}
 	return nil
 }
