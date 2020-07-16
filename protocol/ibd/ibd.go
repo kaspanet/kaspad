@@ -18,6 +18,8 @@ var (
 	startIBDMutex sync.Mutex
 )
 
+// StartIBDIfRequired selects a peer and starts IBD against it
+// if required
 func StartIBDIfRequired(dag *blockdag.BlockDAG) error {
 	startIBDMutex.Lock()
 	defer startIBDMutex.Unlock()
@@ -54,6 +56,7 @@ func selectPeerForIBD(dag *blockdag.BlockDAG) (*peerpkg.Peer, error) {
 	return nil, nil
 }
 
+// HandleIBD waits for IBD start and handles it when IBD is triggered for this peer
 func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 	peer *peerpkg.Peer, dag *blockdag.BlockDAG) error {
 

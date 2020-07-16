@@ -33,6 +33,7 @@ func requestSelectedTips(dag *blockdag.BlockDAG) error {
 	return nil
 }
 
+// RequestSelectedTip waits for selected tip requests and handles them
 func RequestSelectedTip(incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer) error {
 	for {
 		peer.WaitForSelectedTipRequests()
@@ -86,6 +87,7 @@ func receiveSelectedTip(incomingRoute *router.Route) (selectedTipHash *daghash.H
 	return msgSelectedTip.SelectedTipHash, true, nil
 }
 
+// HandleGetSelectedTip handles getSelectedTip messages
 func HandleGetSelectedTip(incomingRoute *router.Route, outgoingRoute *router.Route, dag *blockdag.BlockDAG) error {
 	for {
 		shouldContinue, err := receiveGetSelectedTip(incomingRoute)

@@ -9,6 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
+// HandleGetBlockLocator handles getBlockLocator messages
 func HandleGetBlockLocator(incomingRoute *router.Route, outgoingRoute *router.Route, dag *blockdag.BlockDAG) error {
 	for {
 		lowHash, highHash, shouldContinue, err := receiveGetBlockLocator(incomingRoute)

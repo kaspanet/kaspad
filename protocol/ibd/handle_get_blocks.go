@@ -8,6 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
+// HandleGetBlocks handles getBlocks messages
 func HandleGetBlocks(incomingRoute *router.Route, outgoingRoute *router.Route, dag *blockdag.BlockDAG) error {
 	for {
 		lowHash, highHash, shouldContinue, err := receiveGetBlocks(incomingRoute)

@@ -38,6 +38,7 @@ type Peer struct {
 	ibdStartChan chan struct{}
 }
 
+// New returns a new Peer
 func New() *Peer {
 	return &Peer{
 		selectedPeerRequestChan: make(chan struct{}),
@@ -191,6 +192,9 @@ func ReadyPeers() []*Peer {
 	return peers
 }
 
+// RequestSelectedTipIfRequired notifies the peer that requesting
+// a selected tip is required. This triggers the selected tip
+// request flow.
 func (p *Peer) RequestSelectedTipIfRequired() {
 	if atomic.LoadUint32(&p.isSelectedPeerRequested) != 0 {
 		return
@@ -199,18 +203,26 @@ func (p *Peer) RequestSelectedTipIfRequired() {
 	p.selectedPeerRequestChan <- struct{}{}
 }
 
+// WaitForSelectedTipRequests blocks the current thread until
+// a selected tip is requested from this peer
 func (p *Peer) WaitForSelectedTipRequests() {
 	<-p.selectedPeerRequestChan
 }
 
+// FinishRequestingSelectedTip finishes requesting the selected
+// tip from this peer
 func (p *Peer) FinishRequestingSelectedTip() {
 	atomic.StoreUint32(&p.isSelectedPeerRequested, 0)
 }
 
+// StartIBD notifies the peer that starting IBD is required.
+// This triggers the IBD flow
 func (p *Peer) StartIBD() {
 	p.ibdStartChan <- struct{}{}
 }
 
+// WaitForIBDStart blocks the current thread until
+// IBD start is requested from this peer
 func (p *Peer) WaitForIBDStart() {
 	<-p.ibdStartChan
 }
