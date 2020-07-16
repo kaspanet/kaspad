@@ -11,9 +11,7 @@ import (
 	"time"
 )
 
-const (
-	minDurationToRequestSelectedTips = time.Minute
-)
+const minDurationToRequestSelectedTips = time.Minute
 
 func requestSelectedTipsIfRequired(dag *blockdag.BlockDAG) error {
 	if hasRecentlyReceivedBlock(dag) {

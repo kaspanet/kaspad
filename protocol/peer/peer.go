@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/util/daghash"
 	mathUtil "github.com/kaspanet/kaspad/util/math"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
@@ -11,6 +12,8 @@ import (
 	"sync/atomic"
 	"time"
 )
+
+const minGetSelectedTipInterval = time.Minute
 
 // Peer holds data about a peer.
 type Peer struct {
@@ -34,6 +37,7 @@ type Peer struct {
 
 	isSelectedPeerRequested uint32
 	selectedPeerRequestChan chan struct{}
+	lastSelectedTipRequest  mstime.Time
 
 	ibdStartChan chan struct{}
 }
@@ -199,7 +203,12 @@ func (p *Peer) RequestSelectedTipIfRequired() {
 	if atomic.LoadUint32(&p.isSelectedPeerRequested) != 0 {
 		return
 	}
+	if mstime.Since(p.lastSelectedTipRequest) < minGetSelectedTipInterval {
+		return
+	}
+
 	atomic.StoreUint32(&p.isSelectedPeerRequested, 1)
+	p.lastSelectedTipRequest = mstime.Now()
 	p.selectedPeerRequestChan <- struct{}{}
 }
 
