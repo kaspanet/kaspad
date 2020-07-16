@@ -9,7 +9,7 @@ func (c *ConnectionManager) checkIncomingConnections(connSet connectionSet) {
 
 	// randomly disconnect nodes until the number of incoming connections is smaller the maxIncoming
 	for address, connection := range connSet {
-		err := connection.Disconnect()
+		err := c.netAdapter.Disconnect(connection)
 		if err != nil {
 			log.Errorf("Error disconnecting from %s: %+v", address, err)
 		}

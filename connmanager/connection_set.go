@@ -1,27 +1,29 @@
 package connmanager
 
-import "github.com/kaspanet/kaspad/netadapter/server"
+import (
+	"github.com/kaspanet/kaspad/netadapter"
+)
 
-type connectionSet map[string]server.Connection
+type connectionSet map[string]*netadapter.NetConnection
 
-func (cs connectionSet) add(connection server.Connection) {
-	cs[connection.Address().String()] = connection
+func (cs connectionSet) add(connection *netadapter.NetConnection) {
+	cs[connection.String()] = connection
 }
 
-func (cs connectionSet) remove(connection server.Connection) {
-	delete(cs, connection.Address().String())
+func (cs connectionSet) remove(connection *netadapter.NetConnection) {
+	delete(cs, connection.String())
 }
 
-func (cs connectionSet) get(address string) (server.Connection, bool) {
+func (cs connectionSet) get(address string) (*netadapter.NetConnection, bool) {
 	connection, ok := cs[address]
 	return connection, ok
 }
 
-func convertToSet(connections []server.Connection) connectionSet {
-	connSet := make(map[string]server.Connection, len(connections))
+func convertToSet(connections []*netadapter.NetConnection) connectionSet {
+	connSet := make(connectionSet, len(connections))
 
 	for _, connection := range connections {
-		connSet[connection.Address().String()] = connection
+		connSet[connection.String()] = connection
 	}
 
 	return connSet

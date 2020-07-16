@@ -30,8 +30,8 @@ type NetAdapter struct {
 	routerInitializer RouterInitializer
 	stop              uint32
 
-	routersToConnections map[*routerpkg.Router]server.Connection
-	connectionsToIDs     map[server.Connection]*id.ID
+	routersToConnections map[*routerpkg.Router]*NetConnection
+	connectionsToIDs     map[*NetConnection]*id.ID
 	idsToRouters         map[*id.ID]*routerpkg.Router
 	sync.RWMutex
 }
@@ -51,8 +51,8 @@ func NewNetAdapter(listeningAddrs []string) (*NetAdapter, error) {
 		id:     netAdapterID,
 		server: s,
 
-		routersToConnections: make(map[*routerpkg.Router]server.Connection),
-		connectionsToIDs:     make(map[server.Connection]*id.ID),
+		routersToConnections: make(map[*routerpkg.Router]*NetConnection),
+		connectionsToIDs:     make(map[*NetConnection]*id.ID),
 		idsToRouters:         make(map[*id.ID]*routerpkg.Router),
 	}
 
@@ -86,14 +86,14 @@ func (na *NetAdapter) Connect(address string) (server.Connection, error) {
 }
 
 // Connections returns a list of connections currently connected and active
-func (na *NetAdapter) Connections() []server.Connection {
-	connections := make([]server.Connection, 0, len(na.connectionsToIDs))
+func (na *NetAdapter) Connections() []*NetConnection {
+	netConnections := make([]*NetConnection, 0, len(na.connectionsToIDs))
 
-	for connection := range na.connectionsToIDs {
-		connections = append(connections, connection)
+	for netConnection := range na.connectionsToIDs {
+		netConnections = append(netConnections, netConnection)
 	}
 
-	return connections
+	return netConnections
 }
 
 func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
@@ -102,9 +102,12 @@ func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
 		return err
 	}
 	connection.Start(router)
-	na.routersToConnections[router] = connection
 
-	na.connectionsToIDs[connection] = nil
+	netConnection := newNetConnection(connection, nil)
+
+	na.routersToConnections[router] = netConnection
+
+	na.connectionsToIDs[netConnection] = nil
 
 	router.SetOnRouteCapacityReachedHandler(func() {
 		err := connection.Disconnect()
@@ -116,7 +119,7 @@ func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
 		}
 	})
 	connection.SetOnDisconnectedHandler(func() error {
-		na.cleanupConnection(connection, router)
+		na.cleanupConnection(netConnection, router)
 		return router.Close()
 	})
 	return nil
@@ -125,24 +128,26 @@ func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
 // AssociateRouterID associates the connection for the given router
 // with the given ID
 func (na *NetAdapter) AssociateRouterID(router *routerpkg.Router, id *id.ID) error {
-	connection, ok := na.routersToConnections[router]
+	netConnection, ok := na.routersToConnections[router]
 	if !ok {
 		return errors.Errorf("router not registered for id %s", id)
 	}
 
-	na.connectionsToIDs[connection] = id
+	netConnection.id = id
+
+	na.connectionsToIDs[netConnection] = id
 	na.idsToRouters[id] = router
 	return nil
 }
 
-func (na *NetAdapter) cleanupConnection(connection server.Connection, router *routerpkg.Router) {
-	connectionID, ok := na.connectionsToIDs[connection]
+func (na *NetAdapter) cleanupConnection(netConnection *NetConnection, router *routerpkg.Router) {
+	connectionID, ok := na.connectionsToIDs[netConnection]
 	if !ok {
 		return
 	}
 
 	delete(na.routersToConnections, router)
-	delete(na.connectionsToIDs, connection)
+	delete(na.connectionsToIDs, netConnection)
 	delete(na.idsToRouters, connectionID)
 }
 
@@ -233,13 +238,17 @@ func (na *NetAdapter) GetBestLocalAddress() (*wire.NetAddress, error) {
 
 // DisconnectAssociatedConnection disconnects from the connection associated with the given router.
 func (na *NetAdapter) DisconnectAssociatedConnection(router *routerpkg.Router) error {
-	connection := na.routersToConnections[router]
-	err := connection.Disconnect()
+	netConnection := na.routersToConnections[router]
+	return na.Disconnect(netConnection)
+}
+
+func (na *NetAdapter) Disconnect(netConnection *NetConnection) error {
+	err := netConnection.connection.Disconnect()
 	if err != nil {
 		if !errors.Is(err, server.ErrNetwork) {
 			return err
 		}
-		log.Warnf("Error disconnecting from %s: %s", connection, err)
+		log.Warnf("Error disconnecting from %s: %s", netConnection, err)
 	}
 	return nil
 }
