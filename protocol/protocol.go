@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"errors"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/addrmgr"
@@ -12,8 +13,9 @@ import (
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/ping"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
+	"github.com/kaspanet/kaspad/protocol/receiveaddresses"
+	"github.com/kaspanet/kaspad/protocol/sendaddresses"
 	"github.com/kaspanet/kaspad/wire"
-	"github.com/pkg/errors"
 )
 
 // Init initializes the p2p protocol
@@ -25,6 +27,7 @@ func Init(netAdapter *netadapter.NetAdapter, addressManager *addrmgr.AddrManager
 func newRouterInitializer(netAdapter *netadapter.NetAdapter,
 	addressManager *addrmgr.AddrManager, dag *blockdag.BlockDAG) netadapter.RouterInitializer {
 	return func() (*routerpkg.Router, error) {
+
 		router := routerpkg.NewRouter()
 		spawn(func() {
 			err := startFlows(netAdapter, router, dag, addressManager)
@@ -70,6 +73,18 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag
 		return nil
 	}
 
+	addOneTimeFlow("SendAddresses", router, []string{wire.CmdGetAddresses}, &stopped, stop,
+		func(incomingRoute *routerpkg.Route) (routeClosed bool, err error) {
+			return sendaddresses.SendAddresses(incomingRoute, outgoingRoute, addressManager)
+		},
+	)
+
+	addOneTimeFlow("ReceiveAddresses", router, []string{wire.CmdAddress}, &stopped, stop,
+		func(incomingRoute *routerpkg.Route) (routeClosed bool, err error) {
+			return receiveaddresses.ReceiveAddresses(incomingRoute, outgoingRoute, peer, addressManager)
+		},
+	)
+
 	addFlow("HandleRelayInvs", router, []string{wire.CmdInvRelayBlock, wire.CmdBlock}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return handlerelayinvs.HandleRelayInvs(incomingRoute, outgoingRoute, peer, netAdapter, dag)
@@ -112,6 +127,32 @@ func addFlow(name string, router *routerpkg.Router, messageTypes []string, stopp
 			log.Errorf("error from %s flow: %s", name, err)
 		}
 		if atomic.AddUint32(stopped, 1) == 1 {
+			stopChan <- err
+		}
+	})
+}
+
+func addOneTimeFlow(name string, router *routerpkg.Router, messageTypes []string, stopped *uint32,
+	stopChan chan error, flow func(route *routerpkg.Route) (routeClosed bool, err error)) {
+
+	route, err := router.AddIncomingRoute(messageTypes)
+	if err != nil {
+		panic(err)
+	}
+
+	spawn(func() {
+		defer func() {
+			err := router.RemoveRoute(messageTypes)
+			if err != nil {
+				panic(err)
+			}
+		}()
+
+		closed, err := flow(route)
+		if err != nil {
+			log.Errorf("error from %s flow: %s", name, err)
+		}
+		if (err != nil || closed) && atomic.AddUint32(stopped, 1) == 1 {
 			stopChan <- err
 		}
 	})

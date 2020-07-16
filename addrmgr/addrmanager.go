@@ -164,10 +164,10 @@ const (
 	// to a getAddr. If we have less than this amount, we send everything.
 	getAddrMin = 50
 
-	// GetAddrMax is the most addresses that we will send in response
+	// GetAddressesMax is the most addresses that we will send in response
 	// to a getAddr (in practise the most addresses we will return from a
 	// call to AddressCache()).
-	GetAddrMax = 2500
+	GetAddressesMax = 2500
 
 	// getAddrPercent is the percentage of total addresses known that we
 	// will share with a call to AddressCache.
@@ -862,8 +862,8 @@ func (a *AddrManager) AddressCache(includeAllSubnetworks bool, subnetworkID *sub
 	}
 
 	numAddresses := len(allAddr) * getAddrPercent / 100
-	if numAddresses > GetAddrMax {
-		numAddresses = GetAddrMax
+	if numAddresses > GetAddressesMax {
+		numAddresses = GetAddressesMax
 	}
 	if len(allAddr) < getAddrMin {
 		numAddresses = len(allAddr)
