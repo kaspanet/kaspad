@@ -60,7 +60,7 @@ type MsgReject struct {
 	// Cmd is the command for the message which was rejected such as
 	// as CmdBlock or CmdTx. This can be obtained from the Command function
 	// of a Message.
-	Cmd string
+	Cmd MessageCommand
 
 	// RejectCode is a code indicating why the command was rejected. It
 	// is encoded as a uint8 on the wire.
@@ -79,11 +79,10 @@ type MsgReject struct {
 // This is part of the Message interface implementation.
 func (msg *MsgReject) KaspaDecode(r io.Reader, pver uint32) error {
 	// Command that was rejected.
-	cmd, err := ReadVarString(r, pver)
+	err := ReadElement(r, &msg.Cmd)
 	if err != nil {
 		return err
 	}
-	msg.Cmd = cmd
 
 	// Code indicating why the command was rejected.
 	err = ReadElement(r, &msg.Code)
@@ -116,7 +115,7 @@ func (msg *MsgReject) KaspaDecode(r io.Reader, pver uint32) error {
 // This is part of the Message interface implementation.
 func (msg *MsgReject) KaspaEncode(w io.Writer, pver uint32) error {
 	// Command that was rejected.
-	err := WriteVarString(w, msg.Cmd)
+	err := WriteElement(w, msg.Cmd)
 	if err != nil {
 		return err
 	}
@@ -148,7 +147,7 @@ func (msg *MsgReject) KaspaEncode(w io.Writer, pver uint32) error {
 
 // Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
-func (msg *MsgReject) Command() string {
+func (msg *MsgReject) Command() MessageCommand {
 	return CmdReject
 }
 
@@ -163,7 +162,7 @@ func (msg *MsgReject) MaxPayloadLength(pver uint32) uint32 {
 
 // NewMsgReject returns a new kaspa reject message that conforms to the
 // Message interface. See MsgReject for details.
-func NewMsgReject(command string, code RejectCode, reason string) *MsgReject {
+func NewMsgReject(command MessageCommand, code RejectCode, reason string) *MsgReject {
 	return &MsgReject{
 		Cmd:    command,
 		Code:   code,

@@ -8,7 +8,7 @@ import (
 
 // ToWireMessage converts a KaspadMessage to its wire.Message representation
 func (x *KaspadMessage) ToWireMessage() (wire.Message, error) {
-	message, err := wire.MakeEmptyMessage(x.Command)
+	message, err := wire.MakeEmptyMessage(wire.MessageCommand(x.Command))
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func FromWireMessage(message wire.Message) (*KaspadMessage, error) {
 	}
 
 	return &KaspadMessage{
-		Command: message.Command(),
+		Command: uint32(message.Command()),
 		Payload: payloadWriter.Bytes(),
 	}, nil
 }

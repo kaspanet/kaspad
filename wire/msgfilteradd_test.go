@@ -21,7 +21,7 @@ func TestFilterAddLatest(t *testing.T) {
 	msg := NewMsgFilterAdd(data)
 
 	// Ensure the command is expected value.
-	wantCmd := "filteradd"
+	wantCmd := MessageCommand(12)
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgFilterAdd: wrong command - got %v want %v",
 			cmd, wantCmd)

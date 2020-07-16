@@ -20,7 +20,7 @@ func TestGetData(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Ensure the command is expected value.
-	wantCmd := "getdata"
+	wantCmd := MessageCommand(6)
 	msg := NewMsgGetData()
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgGetData: wrong command - got %v want %v",

@@ -18,7 +18,7 @@ func TestGetAddresses(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Ensure the command is expected value.
-	wantCmd := "getaddr"
+	wantCmd := MessageCommand(2)
 	msg := NewMsgGetAddresses(false, nil)
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgGetAddresses: wrong command - got %v want %v",

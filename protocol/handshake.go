@@ -18,12 +18,12 @@ import (
 func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 	dag *blockdag.BlockDAG, addressManager *addrmgr.AddrManager) (closed bool, err error) {
 
-	receiveVersionRoute, err := router.AddIncomingRoute([]string{wire.CmdVersion})
+	receiveVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVersion})
 	if err != nil {
 		panic(err)
 	}
 
-	sendVersionRoute, err := router.AddIncomingRoute([]string{wire.CmdVerAck})
+	sendVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVerAck})
 	if err != nil {
 		panic(err)
 	}
@@ -102,7 +102,7 @@ func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer
 		addressManager.AddAddress(peerAddress, peerAddress, subnetworkID)
 	}
 
-	err = router.RemoveRoute([]string{wire.CmdVersion, wire.CmdVerAck})
+	err = router.RemoveRoute([]wire.MessageCommand{wire.CmdVersion, wire.CmdVerAck})
 	if err != nil {
 		panic(err)
 	}
