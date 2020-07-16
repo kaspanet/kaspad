@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/netadapter/server"
 )
 
+// NetConnection is a wrapper to a server connection for use by services external to NetAdapter
 type NetConnection struct {
 	connection server.Connection
 	id         *id.ID
@@ -23,6 +24,7 @@ func (c *NetConnection) String() string {
 	return fmt.Sprintf("<%s: %s>", c.id, c.connection)
 }
 
+// ID returns the ID associated with this connection
 func (c *NetConnection) ID() *id.ID {
 	return c.id
 }

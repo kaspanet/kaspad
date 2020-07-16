@@ -242,6 +242,7 @@ func (na *NetAdapter) DisconnectAssociatedConnection(router *routerpkg.Router) e
 	return na.Disconnect(netConnection)
 }
 
+// Disconnect disconnects the given connection
 func (na *NetAdapter) Disconnect(netConnection *NetConnection) error {
 	err := netConnection.connection.Disconnect()
 	if err != nil {
