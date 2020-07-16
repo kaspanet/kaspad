@@ -10,7 +10,7 @@ const (
 )
 
 func nextRetryDuration(previousDuration time.Duration) time.Duration {
-	if previousDuration == 0 {
+	if previousDuration < minRetryDuration {
 		return minRetryDuration
 	}
 	if previousDuration*2 > maxRetryDuration {
@@ -35,7 +35,7 @@ func (c *ConnectionManager) checkRequestedConnections(connSet connectionSet) {
 
 			if connReq.isPermanent { // if is one-try - ignore. If permanent - add to pending list to retry
 				connReq.nextAttempt = now
-				connReq.retryDuration = time.Second
+				connReq.retryDuration = 0
 				c.pendingRequested[address] = connReq
 			}
 			continue
