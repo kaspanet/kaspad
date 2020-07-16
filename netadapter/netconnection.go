@@ -29,6 +29,7 @@ func (c *NetConnection) ID() *id.ID {
 	return c.id
 }
 
+// Address returns the address associated with this connection
 func (c *NetConnection) Address() string {
 	return c.connection.Address().String()
 }
