@@ -14,6 +14,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+// HandleHandshake sets up the handshake protocol - It sends a version message and waits for an incoming
+// version message, as well as a verack for the sent version
 func HandleHandshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 	dag *blockdag.BlockDAG, addressManager *addrmgr.AddrManager) (closed bool, err error) {
 
