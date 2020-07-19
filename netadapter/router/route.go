@@ -53,26 +53,6 @@ func (r *Route) Enqueue(message wire.Message) (isOpen bool) {
 	return true
 }
 
-// EnqueueWithTimeout attempts to enqueue a message to the Route
-// and returns an error if the given timeout expires first.
-func (r *Route) EnqueueWithTimeout(message wire.Message, timeout time.Duration) (isOpen bool, err error) {
-	r.closeLock.Lock()
-	defer r.closeLock.Unlock()
-
-	if r.closed {
-		return false, nil
-	}
-	if len(r.channel) == maxMessages {
-		r.onCapacityReachedHandler()
-	}
-	select {
-	case <-time.After(timeout):
-		return false, errors.Wrapf(ErrTimeout, "got timeout after %s", timeout)
-	case r.channel <- message:
-		return true, nil
-	}
-}
-
 // Dequeue dequeues a message from the Route
 func (r *Route) Dequeue() (message wire.Message, isOpen bool) {
 	message, isOpen = <-r.channel

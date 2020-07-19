@@ -1,12 +1,10 @@
 package addressexchange
 
 import (
-	"math/rand"
-	"time"
-
 	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/wire"
+	"math/rand"
 )
 
 // SendAddresses sends addresses to a peer that requests it.
@@ -26,11 +24,7 @@ func SendAddresses(incomingRoute *router.Route, outgoingRoute *router.Route,
 		panic(err)
 	}
 
-	const timeout = 30 * time.Second
-	isOpen, err = outgoingRoute.EnqueueWithTimeout(msgAddresses, timeout)
-	if err != nil {
-		return false, err
-	}
+	isOpen = outgoingRoute.Enqueue(msgAddresses)
 	if !isOpen {
 		return true, nil
 	}

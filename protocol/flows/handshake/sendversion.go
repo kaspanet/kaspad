@@ -51,10 +51,7 @@ func SendVersion(incomingRoute *router.Route, outgoingRoute *router.Route, netAd
 	// Advertise if inv messages for transactions are desired.
 	msg.DisableRelayTx = config.ActiveConfig().BlocksOnly
 
-	isOpen, err := outgoingRoute.EnqueueWithTimeout(msg, timeout)
-	if err != nil {
-		return false, err
-	}
+	isOpen := outgoingRoute.Enqueue(msg)
 	if !isOpen {
 		return true, nil
 	}

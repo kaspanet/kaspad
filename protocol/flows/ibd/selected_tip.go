@@ -51,10 +51,7 @@ func runSelectedTipRequest(incomingRoute *router.Route, outgoingRoute *router.Ro
 
 	defer peer.FinishRequestingSelectedTip()
 
-	shouldStop, err = requestSelectedTip(outgoingRoute)
-	if err != nil {
-		return true, err
-	}
+	shouldStop = requestSelectedTip(outgoingRoute)
 	if shouldStop {
 		return true, nil
 	}
@@ -72,13 +69,10 @@ func runSelectedTipRequest(incomingRoute *router.Route, outgoingRoute *router.Ro
 	return false, nil
 }
 
-func requestSelectedTip(outgoingRoute *router.Route) (shouldStop bool, err error) {
+func requestSelectedTip(outgoingRoute *router.Route) (shouldStop bool) {
 	msgGetSelectedTip := wire.NewMsgGetSelectedTip()
-	isOpen, err := outgoingRoute.EnqueueWithTimeout(msgGetSelectedTip, common.DefaultTimeout)
-	if err != nil {
-		return true, err
-	}
-	return !isOpen, nil
+	isOpen := outgoingRoute.Enqueue(msgGetSelectedTip)
+	return !isOpen
 }
 
 func receiveSelectedTip(incomingRoute *router.Route) (selectedTipHash *daghash.Hash, shouldStop bool, err error) {
@@ -106,10 +100,7 @@ func HandleGetSelectedTip(incomingRoute *router.Route, outgoingRoute *router.Rou
 		}
 
 		selectedTipHash := dag.SelectedTipHash()
-		shouldStop, err = sendSelectedTipHash(outgoingRoute, selectedTipHash)
-		if err != nil {
-			return err
-		}
+		shouldStop = sendSelectedTipHash(outgoingRoute, selectedTipHash)
 		if shouldStop {
 			return nil
 		}
@@ -130,11 +121,8 @@ func receiveGetSelectedTip(incomingRoute *router.Route) (shouldStop bool, err er
 	return false, nil
 }
 
-func sendSelectedTipHash(outgoingRoute *router.Route, selectedTipHash *daghash.Hash) (shouldStop bool, err error) {
+func sendSelectedTipHash(outgoingRoute *router.Route, selectedTipHash *daghash.Hash) (shouldStop bool) {
 	msgSelectedTip := wire.NewMsgSelectedTip(selectedTipHash)
-	isOpen, err := outgoingRoute.EnqueueWithTimeout(msgSelectedTip, common.DefaultTimeout)
-	if err != nil {
-		return true, err
-	}
-	return !isOpen, nil
+	isOpen := outgoingRoute.Enqueue(msgSelectedTip)
+	return !isOpen
 }

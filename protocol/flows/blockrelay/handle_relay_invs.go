@@ -108,10 +108,7 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, outgoingRoute *router.Rou
 	defer requestedBlocks.removeSet(pendingBlocks)
 
 	getRelayBlocksMsg := wire.NewMsgGetRelayBlocks(filteredHashesToRequest)
-	isOpen, err := outgoingRoute.EnqueueWithTimeout(getRelayBlocksMsg, timeout)
-	if err != nil {
-		return false, err
-	}
+	isOpen := outgoingRoute.Enqueue(getRelayBlocksMsg)
 	if !isOpen {
 		return true, nil
 	}

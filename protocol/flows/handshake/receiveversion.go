@@ -77,10 +77,7 @@ func ReceiveVersion(incomingRoute *router.Route, outgoingRoute *router.Route, ne
 	//}
 
 	peer.UpdateFieldsFromMsgVersion(msgVersion)
-	isOpen, err = outgoingRoute.EnqueueWithTimeout(wire.NewMsgVerAck(), timeout)
-	if err != nil {
-		return nil, false, err
-	}
+	isOpen = outgoingRoute.Enqueue(wire.NewMsgVerAck())
 	if !isOpen {
 		return nil, true, nil
 	}

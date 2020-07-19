@@ -23,10 +23,7 @@ func ReceiveAddresses(incomingRoute *router.Route, outgoingRoute *router.Route,
 
 	subnetworkID := peer.SubnetworkID()
 	msgGetAddresses := wire.NewMsgGetAddresses(false, subnetworkID)
-	isOpen, err := outgoingRoute.EnqueueWithTimeout(msgGetAddresses, timeout)
-	if err != nil {
-		return false, err
-	}
+	isOpen := outgoingRoute.Enqueue(msgGetAddresses)
 	if !isOpen {
 		return true, nil
 	}

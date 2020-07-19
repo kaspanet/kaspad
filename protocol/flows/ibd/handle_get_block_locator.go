@@ -3,7 +3,6 @@ package ibd
 import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter/router"
-	"github.com/kaspanet/kaspad/protocol/common"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
@@ -26,10 +25,7 @@ func HandleGetBlockLocator(incomingRoute *router.Route, outgoingRoute *router.Ro
 				"locator between blocks %s and %s", lowHash, highHash)
 		}
 
-		shouldStop, err = sendBlockLocator(outgoingRoute, locator)
-		if err != nil {
-			return err
-		}
+		shouldStop = sendBlockLocator(outgoingRoute, locator)
 		if shouldStop {
 			return nil
 		}
@@ -48,11 +44,8 @@ func receiveGetBlockLocator(incomingRoute *router.Route) (lowHash *daghash.Hash,
 	return msgGetBlockLocator.LowHash, msgGetBlockLocator.HighHash, false, nil
 }
 
-func sendBlockLocator(outgoingRoute *router.Route, locator blockdag.BlockLocator) (shouldStop bool, err error) {
+func sendBlockLocator(outgoingRoute *router.Route, locator blockdag.BlockLocator) (shouldStop bool) {
 	msgBlockLocator := wire.NewMsgBlockLocator(locator)
-	isOpen, err := outgoingRoute.EnqueueWithTimeout(msgBlockLocator, common.DefaultTimeout)
-	if err != nil {
-		return true, err
-	}
-	return !isOpen, nil
+	isOpen := outgoingRoute.Enqueue(msgBlockLocator)
+	return !isOpen
 }

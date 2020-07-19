@@ -105,10 +105,7 @@ func findHighestSharedBlockHash(incomingRoute *router.Route, outgoingRoute *rout
 	highHash := peerSelectedTipHash
 
 	for {
-		shouldStop, err = sendGetBlockLocator(outgoingRoute, lowHash, highHash)
-		if err != nil {
-			return nil, true, err
-		}
+		shouldStop = sendGetBlockLocator(outgoingRoute, lowHash, highHash)
 		if shouldStop {
 			return nil, true, nil
 		}
@@ -134,14 +131,11 @@ func findHighestSharedBlockHash(incomingRoute *router.Route, outgoingRoute *rout
 }
 
 func sendGetBlockLocator(outgoingRoute *router.Route, lowHash *daghash.Hash,
-	highHash *daghash.Hash) (shouldStop bool, err error) {
+	highHash *daghash.Hash) (shouldStop bool) {
 
 	msgGetBlockLocator := wire.NewMsgGetBlockLocator(highHash, lowHash)
-	isOpen, err := outgoingRoute.EnqueueWithTimeout(msgGetBlockLocator, common.DefaultTimeout)
-	if err != nil {
-		return true, err
-	}
-	return !isOpen, nil
+	isOpen := outgoingRoute.Enqueue(msgGetBlockLocator)
+	return !isOpen
 }
 
 func receiveBlockLocator(incomingRoute *router.Route) (blockLocatorHashes []*daghash.Hash,
@@ -166,10 +160,7 @@ func receiveBlockLocator(incomingRoute *router.Route) (blockLocatorHashes []*dag
 func downloadBlocks(incomingRoute *router.Route, outgoingRoute *router.Route,
 	dag *blockdag.BlockDAG, highestSharedBlockHash *daghash.Hash, peerSelectedTipHash *daghash.Hash) (shouldStop bool, err error) {
 
-	shouldStop, err = sendGetBlocks(outgoingRoute, highestSharedBlockHash, peerSelectedTipHash)
-	if err != nil {
-		return true, err
-	}
+	shouldStop = sendGetBlocks(outgoingRoute, highestSharedBlockHash, peerSelectedTipHash)
 	if shouldStop {
 		return true, nil
 	}
@@ -196,14 +187,11 @@ func downloadBlocks(incomingRoute *router.Route, outgoingRoute *router.Route,
 }
 
 func sendGetBlocks(outgoingRoute *router.Route, highestSharedBlockHash *daghash.Hash,
-	peerSelectedTipHash *daghash.Hash) (shouldStop bool, err error) {
+	peerSelectedTipHash *daghash.Hash) (shouldStop bool) {
 
 	msgGetBlockInvs := wire.NewMsgGetBlocks(highestSharedBlockHash, peerSelectedTipHash)
-	isOpen, err := outgoingRoute.EnqueueWithTimeout(msgGetBlockInvs, common.DefaultTimeout)
-	if err != nil {
-		return true, err
-	}
-	return !isOpen, nil
+	isOpen := outgoingRoute.Enqueue(msgGetBlockInvs)
+	return !isOpen
 }
 
 func receiveIBDBlock(incomingRoute *router.Route) (msgIBDBlock *wire.MsgIBDBlock, shouldStop bool, err error) {
