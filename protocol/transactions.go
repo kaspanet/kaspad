@@ -17,8 +17,8 @@ func (m *Manager) AddTransaction(tx *util.Tx) error {
 		return err
 	}
 
-	if len(acceptedTxs) > 0 {
-		panic(errors.New("got accepted transaction when no orphans were allowed"))
+	if len(acceptedTxs) > 1 {
+		panic(errors.New("got more than one accepted transactions when no orphans were allowed"))
 	}
 
 	m.transactionsToRebroadcast[*tx.ID()] = tx

@@ -13,15 +13,17 @@ import (
 
 // Manager manages the p2p protocol
 type Manager struct {
-	netAdapter       *netadapter.NetAdapter
-	txPool           *mempool.TxPool
-	addedTransaction []*util.Tx
-	dag              *blockdag.BlockDAG
-	addressManager   *addrmgr.AddrManager
+	netAdapter        *netadapter.NetAdapter
+	txPool            *mempool.TxPool
+	addedTransactions []*util.Tx
+	dag               *blockdag.BlockDAG
+	addressManager    *addrmgr.AddrManager
 
 	transactionsToRebroadcastLock sync.Mutex
 	transactionsToRebroadcast     map[daghash.TxID]*util.Tx
 	lastRebroadcastTime           time.Time
+
+	isInIBD uint32 // TODO(libp2p) populate this var
 }
 
 // NewManager creates a new instance of the p2p protocol manager

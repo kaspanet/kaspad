@@ -17,6 +17,8 @@ func (s *sharedRequestedBlocks) remove(hash *daghash.Hash) {
 }
 
 func (s *sharedRequestedBlocks) removeSet(blockHashes map[daghash.Hash]struct{}) {
+	s.Lock()
+	defer s.Unlock()
 	for hash := range blockHashes {
 		delete(s.blocks, hash)
 	}

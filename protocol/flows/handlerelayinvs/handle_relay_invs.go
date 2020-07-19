@@ -17,6 +17,8 @@ import (
 
 const timeout = 30 * time.Second
 
+// NewBlockHandler is a function that is to be
+// called when a new block is successfully processed.
 type NewBlockHandler func(block *util.Block) error
 
 // HandleRelayInvs listens to wire.MsgInvRelayBlock messages, requests their corresponding blocks if they
