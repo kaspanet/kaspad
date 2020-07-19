@@ -42,6 +42,8 @@ func HandleRelayInvs(incomingRoute *router.Route, outgoingRoute *router.Route,
 			continue
 		}
 
+		ibd.StartIBDIfRequired(dag)
+
 		requestQueue := newHashesQueueSet()
 		requestQueue.enqueueIfNotExists(inv.Hash)
 
