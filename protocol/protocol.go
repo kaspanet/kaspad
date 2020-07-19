@@ -21,13 +21,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Manager struct {
-	cfg            *config.Config
-	netAdapter     *netadapter.NetAdapter
-	addressManager *addrmgr.AddrManager
-	dag            *blockdag.BlockDAG
-}
-
 // Init initializes the p2p protocol
 func Init(cfg *config.Config, netAdapter *netadapter.NetAdapter,
 	addressManager *addrmgr.AddrManager, dag *blockdag.BlockDAG) {

@@ -195,15 +195,14 @@ func defaultFlags() *Flags {
 	}
 }
 
+// DefaultConfig returns the default kaspad configuration
 func DefaultConfig() *Config {
 	config := &Config{Flags: defaultFlags()}
 	config.NetworkFlags.ActiveNetParams = &dagconfig.MainnetParams
 	return config
 }
 
-//LoadConfig loads th
-
-// loadConfig initializes and parses the config using a config file and command
+// LoadConfig initializes and parses the config using a config file and command
 // line options.
 //
 // The configuration proceeds as follows:
