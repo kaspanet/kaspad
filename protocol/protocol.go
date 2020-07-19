@@ -4,6 +4,8 @@ import (
 	"errors"
 	"sync/atomic"
 
+	"github.com/kaspanet/kaspad/protocol/flows/handshake"
+
 	"github.com/kaspanet/kaspad/protocol/flows/addressexchange"
 	"github.com/kaspanet/kaspad/protocol/flows/blockrelay"
 
@@ -64,7 +66,7 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag
 	outgoingRoute := router.OutgoingRoute()
 	peer := new(peerpkg.Peer)
 
-	closed, err := handshake(router, netAdapter, peer, dag, addressManager)
+	closed, err := handshake.HandleHandshake(router, netAdapter, peer, dag, addressManager)
 	if err != nil {
 		return err
 	}

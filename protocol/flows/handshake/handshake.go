@@ -1,10 +1,8 @@
-package protocol
+package handshake
 
 import (
 	"sync"
 	"sync/atomic"
-
-	handshake2 "github.com/kaspanet/kaspad/protocol/flows/handshake"
 
 	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/blockdag"
@@ -16,7 +14,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
+func HandleHandshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 	dag *blockdag.BlockDAG, addressManager *addrmgr.AddrManager) (closed bool, err error) {
 
 	receiveVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVersion})
@@ -29,9 +27,9 @@ func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer
 		panic(err)
 	}
 
-	// For the handshake to finish, we need to get from the other node
+	// For the addHandshakeFlow to finish, we need to get from the other node
 	// a version and verack messages, so we increase the wait group by 2
-	// and block the handshake with wg.Wait().
+	// and block the addHandshakeFlow with wg.Wait().
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
@@ -41,7 +39,7 @@ func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer
 	var peerAddress *wire.NetAddress
 	spawn(func() {
 		defer wg.Done()
-		address, closed, err := handshake2.ReceiveVersion(receiveVersionRoute, router.OutgoingRoute(), netAdapter, peer, dag)
+		address, closed, err := ReceiveVersion(receiveVersionRoute, router.OutgoingRoute(), netAdapter, peer, dag)
 		if err != nil {
 			log.Errorf("error from ReceiveVersion: %s", err)
 		}
@@ -56,7 +54,7 @@ func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer
 
 	spawn(func() {
 		defer wg.Done()
-		closed, err := handshake2.SendVersion(sendVersionRoute, router.OutgoingRoute(), netAdapter, dag)
+		closed, err := SendVersion(sendVersionRoute, router.OutgoingRoute(), netAdapter, dag)
 		if err != nil {
 			log.Errorf("error from SendVersion: %s", err)
 		}
