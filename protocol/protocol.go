@@ -1,18 +1,20 @@
 package protocol
 
 import (
+	"sync/atomic"
+
+	"github.com/kaspanet/kaspad/protocol/flows/handshake"
+
+	"github.com/kaspanet/kaspad/protocol/flows/addressexchange"
+	"github.com/kaspanet/kaspad/protocol/flows/blockrelay"
+
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
-	"github.com/kaspanet/kaspad/protocol/flows/handlerelayblockrequests"
-	"github.com/kaspanet/kaspad/protocol/flows/handlerelayinvs"
 	"github.com/kaspanet/kaspad/protocol/flows/ping"
-	"github.com/kaspanet/kaspad/protocol/flows/receiveaddresses"
 	"github.com/kaspanet/kaspad/protocol/flows/relaytransactions"
-	"github.com/kaspanet/kaspad/protocol/flows/sendaddresses"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
-	"sync/atomic"
 )
 
 func (m *Manager) routerInitializer() (*routerpkg.Router, error) {
@@ -53,7 +55,7 @@ func (m *Manager) startFlows(router *routerpkg.Router) error {
 	outgoingRoute := router.OutgoingRoute()
 	peer := new(peerpkg.Peer)
 
-	closed, err := m.handshake(router, peer)
+	closed, err := handshake.HandleHandshake(router, m.netAdapter, peer, m.dag, m.addressManager)
 	if err != nil {
 		return err
 	}
@@ -63,26 +65,26 @@ func (m *Manager) startFlows(router *routerpkg.Router) error {
 
 	addOneTimeFlow("SendAddresses", router, []wire.MessageCommand{wire.CmdGetAddresses}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) (routeClosed bool, err error) {
-			return sendaddresses.SendAddresses(incomingRoute, outgoingRoute, m.addressManager)
+			return addressexchange.SendAddresses(incomingRoute, outgoingRoute, m.addressManager)
 		},
 	)
 
 	addOneTimeFlow("ReceiveAddresses", router, []wire.MessageCommand{wire.CmdAddress}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) (routeClosed bool, err error) {
-			return receiveaddresses.ReceiveAddresses(incomingRoute, outgoingRoute, peer, m.addressManager)
+			return addressexchange.ReceiveAddresses(incomingRoute, outgoingRoute, peer, m.addressManager)
 		},
 	)
 
 	addFlow("HandleRelayInvs", router, []wire.MessageCommand{wire.CmdInvRelayBlock, wire.CmdBlock}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return handlerelayinvs.HandleRelayInvs(incomingRoute,
+			return blockrelay.HandleRelayInvs(incomingRoute,
 				outgoingRoute, peer, m.netAdapter, m.dag, m.OnNewBlock)
 		},
 	)
 
 	addFlow("HandleRelayBlockRequests", router, []wire.MessageCommand{wire.CmdGetRelayBlocks}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return handlerelayblockrequests.HandleRelayBlockRequests(incomingRoute, outgoingRoute, peer, m.dag)
+			return blockrelay.HandleRelayBlockRequests(incomingRoute, outgoingRoute, peer, m.dag)
 		},
 	)
 

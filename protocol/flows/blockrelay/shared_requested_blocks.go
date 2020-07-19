@@ -1,8 +1,9 @@
-package handlerelayinvs
+package blockrelay
 
 import (
-	"github.com/kaspanet/kaspad/util/daghash"
 	"sync"
+
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 type sharedRequestedBlocks struct {

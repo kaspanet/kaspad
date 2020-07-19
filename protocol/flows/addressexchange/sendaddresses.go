@@ -1,11 +1,12 @@
-package sendaddresses
+package addressexchange
 
 import (
+	"math/rand"
+	"time"
+
 	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/wire"
-	"math/rand"
-	"time"
 )
 
 // SendAddresses sends addresses to a peer that requests it.

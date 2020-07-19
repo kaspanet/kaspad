@@ -51,9 +51,6 @@ var (
 	grpcLog = BackendLog.Logger("GRPC")
 	p2psLog = BackendLog.Logger("P2PS")
 	ntarLog = BackendLog.Logger("NTAR")
-	blkrLog = BackendLog.Logger("BLKR")
-	gbrlLog = BackendLog.Logger("GBRL")
-	blprLog = BackendLog.Logger("BLPR")
 	dnssLog = BackendLog.Logger("DNSS")
 	snvrLog = BackendLog.Logger("SNVR")
 )
@@ -82,10 +79,7 @@ var SubsystemTags = struct {
 	MUXX,
 	GRPC,
 	P2PS,
-	BLKR,
 	NTAR,
-	GBRL,
-	BLPR,
 	DNSS,
 	SNVR string
 }{
@@ -111,10 +105,7 @@ var SubsystemTags = struct {
 	MUXX: "MUXX",
 	GRPC: "GRPC",
 	P2PS: "P2PS",
-	BLKR: "BLKR",
-	GBRL: "GBRL",
 	NTAR: "NTAR",
-	BLPR: "BLPR",
 	DNSS: "DNSS",
 	SNVR: "SNVR",
 }
@@ -143,10 +134,7 @@ var subsystemLoggers = map[string]*logs.Logger{
 	SubsystemTags.MUXX: muxxLog,
 	SubsystemTags.GRPC: grpcLog,
 	SubsystemTags.P2PS: p2psLog,
-	SubsystemTags.BLKR: blkrLog,
-	SubsystemTags.GBRL: gbrlLog,
 	SubsystemTags.NTAR: ntarLog,
-	SubsystemTags.BLPR: blprLog,
 	SubsystemTags.DNSS: dnssLog,
 	SubsystemTags.SNVR: snvrLog,
 }
