@@ -207,7 +207,7 @@ type ConnManager struct {
 	usedAddresses      map[string]struct{}
 
 	cfg            Config
-	appCfg         config.Config
+	appCfg         *config.Config
 	wg             sync.WaitGroup
 	failedAttempts uint64
 	requests       chan interface{}
@@ -759,7 +759,7 @@ func (cm *ConnManager) getNewAddress() (*net.TCPAddr, error) {
 
 // New returns a new connection manager.
 // Use Start to start connecting to the network.
-func New(cfg *Config, appCfg config.Config) (*ConnManager, error) {
+func New(cfg *Config, appCfg *config.Config) (*ConnManager, error) {
 	if cfg.Dial == nil {
 		return nil, errors.WithStack(ErrDialNil)
 	}

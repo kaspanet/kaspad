@@ -1359,10 +1359,10 @@ func (a *AddrManager) GetBestLocalAddress(remoteAddr *wire.NetAddress) *wire.Net
 
 // New returns a new Kaspa address manager.
 // Use Start to begin processing asynchronous address updates.
-func New(cfg *config.Config, lookupFunc func(string) ([]net.IP, error)) *AddrManager {
+func New(cfg *config.Config) *AddrManager {
 	am := AddrManager{
 		cfg:               cfg,
-		lookupFunc:        lookupFunc,
+		lookupFunc:        cfg.Lookup,
 		rand:              rand.New(rand.NewSource(time.Now().UnixNano())),
 		quit:              make(chan struct{}),
 		localAddresses:    make(map[string]*localAddress),

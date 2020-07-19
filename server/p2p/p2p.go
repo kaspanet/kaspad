@@ -206,6 +206,7 @@ func (ps *peerState) forAllPeers(callback func(sp *Peer) bool) bool {
 // Server provides a kaspa server for handling communications to and from
 // kaspa peers.
 type Server struct {
+	cfg *config.Config
 	// The following variables must only be used atomically.
 	// Putting the uint64s first makes them 64-bit aligned for 32-bit systems.
 	bytesReceived uint64 // Total bytes received from all peers since start.
@@ -333,7 +334,7 @@ func (sp *Peer) addBanScore(persistent, transient uint32, reason string) {
 		peerLog.Debugf("Misbehaving whitelisted peer %s: %s", sp, reason)
 	}
 
-	warnThreshold := config.ActiveConfig().BanThreshold >> 1
+	warnThreshold := sp.AppCfg.BanThreshold >> 1
 	if transient == 0 && persistent == 0 {
 		// The score is not being increased, but a warning message is still
 		// logged if the score is above the warn threshold.
@@ -350,7 +351,7 @@ func (sp *Peer) addBanScore(persistent, transient uint32, reason string) {
 		sp, reason, score)
 	if score > warnThreshold {
 		peerLog.Warn(logMsg)
-		if !config.ActiveConfig().DisableBanning && !sp.isWhitelisted && score > config.ActiveConfig().BanThreshold {
+		if !sp.AppCfg.DisableBanning && !sp.isWhitelisted && score > sp.AppCfg.BanThreshold {
 			peerLog.Warnf("Misbehaving peer %s -- banning and disconnecting",
 				sp)
 			sp.server.BanPeer(sp)
@@ -373,7 +374,7 @@ func (sp *Peer) enforceNodeBloomFlag(cmd wire.MessageCommand) bool {
 		// whether or not banning is enabled, it is checked here as well
 		// to ensure the violation is logged and the peer is
 		// disconnected regardless.
-		if !config.ActiveConfig().DisableBanning {
+		if !sp.AppCfg.DisableBanning {
 
 			// Disconnect the peer regardless of whether it was
 			// banned.
@@ -617,9 +618,9 @@ func (s *Server) handleAddPeerMsg(state *peerState, sp *Peer) bool {
 	// TODO: Check for max peers from a single IP.
 
 	// Limit max number of total peers.
-	if sp.Inbound() && len(state.inboundPeers) >= config.ActiveConfig().MaxInboundPeers {
+	if sp.Inbound() && len(state.inboundPeers) >= sp.AppCfg.MaxInboundPeers {
 		srvrLog.Infof("Max inbound peers reached [%d] - disconnecting peer %s",
-			config.ActiveConfig().MaxInboundPeers, sp)
+			sp.AppCfg.MaxInboundPeers, sp)
 		sp.Disconnect()
 		return false
 	}
@@ -686,8 +687,8 @@ func (s *Server) handleBanPeerMsg(state *peerState, sp *Peer) {
 	}
 	direction := logger.DirectionString(sp.Inbound())
 	srvrLog.Infof("Banned peer %s (%s) for %s", host, direction,
-		config.ActiveConfig().BanDuration)
-	state.banned[host] = time.Now().Add(config.ActiveConfig().BanDuration)
+		sp.AppCfg.BanDuration)
+	state.banned[host] = time.Now().Add(sp.AppCfg.BanDuration)
 }
 
 // handleRelayInvMsg deals with relaying inventory to peers that are not already
@@ -823,7 +824,7 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 	case ConnectNodeMsg:
 		// TODO: duplicate oneshots?
 		// Limit max number of total peers.
-		if state.countOutboundPeers() >= config.ActiveConfig().TargetOutboundPeers {
+		if state.countOutboundPeers() >= s.cfg.TargetOutboundPeers {
 			msg.Reply <- errors.WithStack(connmgr.ErrMaxOutboundPeers)
 			return
 		}
@@ -838,7 +839,7 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 			}
 		}
 
-		netAddr, err := addrStringToNetAddr(msg.Addr)
+		netAddr, err := s.addrStringToNetAddr(msg.Addr)
 		if err != nil {
 			msg.Reply <- err
 			return
@@ -941,15 +942,15 @@ func newPeerConfig(sp *Peer) *peer.Config {
 		IsInDAG:           sp.blockExists,
 		AddBanScore:       sp.addBanScore,
 		HostToNetAddress:  sp.server.AddrManager.HostToNetAddress,
-		Proxy:             config.ActiveConfig().Proxy,
+		Proxy:             sp.AppCfg.Proxy,
 		UserAgentName:     userAgentName,
 		UserAgentVersion:  userAgentVersion,
-		UserAgentComments: config.ActiveConfig().UserAgentComments,
+		UserAgentComments: sp.AppCfg.UserAgentComments,
 		DAGParams:         sp.server.DAGParams,
 		Services:          sp.server.services,
-		DisableRelayTx:    config.ActiveConfig().BlocksOnly,
+		DisableRelayTx:    sp.AppCfg.BlocksOnly,
 		ProtocolVersion:   peer.MaxProtocolVersion,
-		SubnetworkID:      config.ActiveConfig().SubnetworkID,
+		SubnetworkID:      sp.AppCfg.SubnetworkID,
 	}
 }
 
@@ -959,7 +960,7 @@ func newPeerConfig(sp *Peer) *peer.Config {
 // for disconnection.
 func (s *Server) inboundPeerConnected(conn net.Conn) {
 	sp := newServerPeer(s, false)
-	sp.Peer = peer.NewInboundPeer(newPeerConfig(sp))
+	sp.Peer = peer.NewInboundPeer(newPeerConfig(sp), s.cfg)
 
 	s.peerConnected(sp, conn)
 }
@@ -971,7 +972,7 @@ func (s *Server) inboundPeerConnected(conn net.Conn) {
 // manager of the attempt.
 func (s *Server) outboundPeerConnected(connReq *connmgr.ConnReq, conn net.Conn) {
 	sp := newServerPeer(s, connReq.Permanent)
-	outboundPeer, err := peer.NewOutboundPeer(newPeerConfig(sp), connReq.Addr.String())
+	outboundPeer, err := peer.NewOutboundPeer(newPeerConfig(sp), s.cfg, connReq.Addr.String())
 	if err != nil {
 		srvrLog.Debugf("Cannot create outbound peer %s: %s", connReq.Addr, err)
 		s.connManager.Disconnect(connReq.ID())
@@ -985,7 +986,7 @@ func (s *Server) outboundPeerConnected(connReq *connmgr.ConnReq, conn net.Conn) 
 }
 
 func (s *Server) peerConnected(sp *Peer, conn net.Conn) {
-	sp.isWhitelisted = isWhitelisted(conn.RemoteAddr())
+	sp.isWhitelisted = s.isWhitelisted(conn.RemoteAddr())
 
 	spawn(func() {
 		err := sp.AssociateConnection(conn)
@@ -1075,10 +1076,10 @@ func (s *Server) peerHandler() {
 		banned:          make(map[string]time.Time),
 	}
 
-	if !config.ActiveConfig().DisableDNSSeed {
+	if !s.cfg.DisableDNSSeed {
 		seedFromSubNetwork := func(subnetworkID *subnetworkid.SubnetworkID) {
-			connmgr.SeedFromDNS(config.ActiveConfig().NetParams(), defaultRequiredServices,
-				false, subnetworkID, serverutils.KaspadLookup, func(addrs []*wire.NetAddress) {
+			connmgr.SeedFromDNS(s.cfg, s.DAGParams, defaultRequiredServices,
+				false, subnetworkID, s.cfg.Lookup, func(addrs []*wire.NetAddress) {
 					// Kaspad uses a lookup of the dns seeder here. Since seeder returns
 					// IPs of nodes and not its own IP, we can not know real IP of
 					// source. So we'll take first returned address as source.
@@ -1089,9 +1090,9 @@ func (s *Server) peerHandler() {
 		// Add full nodes discovered through DNS to the address manager.
 		seedFromSubNetwork(nil)
 
-		if config.ActiveConfig().SubnetworkID != nil {
+		if s.cfg.SubnetworkID != nil {
 			// Node is partial - fetch nodes with same subnetwork
-			seedFromSubNetwork(config.ActiveConfig().SubnetworkID)
+			seedFromSubNetwork(s.cfg.SubnetworkID)
 		}
 	}
 	spawn(s.connManager.Start)
@@ -1286,9 +1287,7 @@ func (s *Server) Start() {
 		spawn(s.upnpUpdateThread)
 	}
 
-	cfg := config.ActiveConfig()
-
-	if !cfg.DisableRPC {
+	if !s.cfg.DisableRPC {
 		s.wg.Add(1)
 
 		// Start the rebroadcastHandler, which ensures user tx received by
@@ -1405,7 +1404,7 @@ func (s *Server) upnpUpdateThread() {
 	// Go off immediately to prevent code duplication, thereafter we renew
 	// lease every 15 minutes.
 	timer := time.NewTimer(0 * time.Second)
-	lport, _ := strconv.ParseInt(config.ActiveConfig().NetParams().DefaultPort, 10, 16)
+	lport, _ := strconv.ParseInt(s.cfg.NetParams().DefaultPort, 10, 16)
 	first := true
 
 	s.quitWaitGroup.Add(1)
@@ -1462,19 +1461,21 @@ out:
 // NewServer returns a new kaspad server configured to listen on addr for the
 // kaspa network type specified by dagParams. Use start to begin accepting
 // connections from peers.
-func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-chan struct{}, notifyNewTransactions func(txns []*mempool.TxDesc)) (*Server, error) {
+func NewServer(cfg *config.Config, listenAddrs []string, dagParams *dagconfig.Params, interrupt <-chan struct{},
+	notifyNewTransactions func(txns []*mempool.TxDesc)) (*Server, error) {
+
 	services := defaultServices
-	if config.ActiveConfig().NoPeerBloomFilters {
+	if cfg.NoPeerBloomFilters {
 		services &^= wire.SFNodeBloom
 	}
 
-	addressManager := addrmgr.New(serverutils.KaspadLookup, config.ActiveConfig().SubnetworkID)
+	addressManager := addrmgr.New(cfg)
 
 	var listeners []net.Listener
 	var nat serverutils.NAT
-	if !config.ActiveConfig().DisableListen {
+	if !cfg.DisableListen {
 		var err error
-		listeners, nat, err = initListeners(addressManager, listenAddrs, services)
+		listeners, nat, err = initListeners(cfg, addressManager, listenAddrs, services)
 		if err != nil {
 			return nil, err
 		}
@@ -1483,9 +1484,10 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 		}
 	}
 
-	maxPeers := config.ActiveConfig().TargetOutboundPeers + config.ActiveConfig().MaxInboundPeers
+	maxPeers := cfg.TargetOutboundPeers + cfg.MaxInboundPeers
 
 	s := Server{
+		cfg:                   cfg,
 		DAGParams:             dagParams,
 		AddrManager:           addressManager,
 		newPeers:              make(chan *Peer, maxPeers),
@@ -1499,13 +1501,13 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 		nat:                   nat,
 		TimeSource:            blockdag.NewTimeSource(),
 		services:              services,
-		SigCache:              txscript.NewSigCache(config.ActiveConfig().SigCacheMaxSize),
+		SigCache:              txscript.NewSigCache(cfg.SigCacheMaxSize),
 		notifyNewTransactions: notifyNewTransactions,
 	}
 
 	// Create indexes if needed.
 	var indexes []indexers.Indexer
-	if config.ActiveConfig().AcceptanceIndex {
+	if cfg.AcceptanceIndex {
 		indxLog.Info("acceptance index is enabled")
 		s.AcceptanceIndex = indexers.NewAcceptanceIndex()
 		indexes = append(indexes, s.AcceptanceIndex)
@@ -1525,7 +1527,7 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 		TimeSource:   s.TimeSource,
 		SigCache:     s.SigCache,
 		IndexManager: indexManager,
-		SubnetworkID: config.ActiveConfig().SubnetworkID,
+		SubnetworkID: cfg.SubnetworkID,
 	})
 	if err != nil {
 		return nil, err
@@ -1533,10 +1535,10 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 
 	txC := mempool.Config{
 		Policy: mempool.Policy{
-			AcceptNonStd:    config.ActiveConfig().RelayNonStd,
-			MaxOrphanTxs:    config.ActiveConfig().MaxOrphanTxs,
+			AcceptNonStd:    cfg.RelayNonStd,
+			MaxOrphanTxs:    cfg.MaxOrphanTxs,
 			MaxOrphanTxSize: config.DefaultMaxOrphanTxSize,
-			MinRelayTxFee:   config.ActiveConfig().MinRelayTxFee,
+			MinRelayTxFee:   cfg.MinRelayTxFee,
 			MaxTxVersion:    1,
 		},
 		CalcSequenceLockNoLock: func(tx *util.Tx, utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
@@ -1559,29 +1561,30 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 		return nil, err
 	}
 
-	// Create a connection manager.
-	cmgr, err := connmgr.New(&connmgr.Config{
+	connManagerCfg := &connmgr.Config{
 		Listeners:          listeners,
 		OnAccept:           s.inboundPeerConnected,
 		RetryDuration:      connectionRetryInterval,
-		TargetOutbound:     uint32(config.ActiveConfig().TargetOutboundPeers),
-		Dial:               serverutils.KaspadDial,
+		TargetOutbound:     uint32(cfg.TargetOutboundPeers),
+		Dial:               func(addr net.Addr) (net.Conn, error) { return serverutils.KaspadDial(cfg, addr) },
 		OnConnection:       s.outboundPeerConnected,
 		OnConnectionFailed: s.outboundPeerConnectionFailed,
 		AddrManager:        s.AddrManager,
-	})
+	}
+	// Create a connection manager.
+	cmgr, err := connmgr.New(connManagerCfg, cfg)
 	if err != nil {
 		return nil, err
 	}
 	s.connManager = cmgr
 
 	// Start up persistent peers.
-	permanentPeers := config.ActiveConfig().ConnectPeers
+	permanentPeers := cfg.ConnectPeers
 	if len(permanentPeers) == 0 {
-		permanentPeers = config.ActiveConfig().AddPeers
+		permanentPeers = cfg.AddPeers
 	}
 	for _, addr := range permanentPeers {
-		netAddr, err := addrStringToNetAddr(addr)
+		netAddr, err := s.addrStringToNetAddr(addr)
 		if err != nil {
 			return nil, err
 		}
@@ -1600,7 +1603,7 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 // initListeners initializes the configured net listeners and adds any bound
 // addresses to the address manager. Returns the listeners and a NAT interface,
 // which is non-nil if UPnP is in use.
-func initListeners(amgr *addrmgr.AddrManager, listenAddrs []string, services wire.ServiceFlag) ([]net.Listener, serverutils.NAT, error) {
+func initListeners(cfg *config.Config, amgr *addrmgr.AddrManager, listenAddrs []string, services wire.ServiceFlag) ([]net.Listener, serverutils.NAT, error) {
 	// Listen for TCP connections at the configured addresses
 	netAddrs, err := ParseListeners(listenAddrs)
 	if err != nil {
@@ -1618,15 +1621,15 @@ func initListeners(amgr *addrmgr.AddrManager, listenAddrs []string, services wir
 	}
 
 	var nat serverutils.NAT
-	if len(config.ActiveConfig().ExternalIPs) != 0 {
-		defaultPort, err := strconv.ParseUint(config.ActiveConfig().NetParams().DefaultPort, 10, 16)
+	if len(cfg.ExternalIPs) != 0 {
+		defaultPort, err := strconv.ParseUint(cfg.NetParams().DefaultPort, 10, 16)
 		if err != nil {
 			srvrLog.Errorf("Can not parse default port %s for active DAG: %s",
-				config.ActiveConfig().NetParams().DefaultPort, err)
+				cfg.NetParams().DefaultPort, err)
 			return nil, nil, err
 		}
 
-		for _, sip := range config.ActiveConfig().ExternalIPs {
+		for _, sip := range cfg.ExternalIPs {
 			eport := uint16(defaultPort)
 			host, portstr, err := net.SplitHostPort(sip)
 			if err != nil {
@@ -1653,7 +1656,7 @@ func initListeners(amgr *addrmgr.AddrManager, listenAddrs []string, services wir
 			}
 		}
 	} else {
-		if config.ActiveConfig().Upnp {
+		if cfg.Upnp {
 			var err error
 			nat, err = serverutils.Discover()
 			if err != nil {
@@ -1679,7 +1682,7 @@ func initListeners(amgr *addrmgr.AddrManager, listenAddrs []string, services wir
 // a net.Addr which maps to the original address with any host names resolved
 // to IP addresses. It also handles tor addresses properly by returning a
 // net.Addr that encapsulates the address.
-func addrStringToNetAddr(addr string) (*net.TCPAddr, error) {
+func (s *Server) addrStringToNetAddr(addr string) (*net.TCPAddr, error) {
 	host, strPort, err := net.SplitHostPort(addr)
 	if err != nil {
 		return nil, err
@@ -1699,7 +1702,7 @@ func addrStringToNetAddr(addr string) (*net.TCPAddr, error) {
 	}
 
 	// Attempt to look up an IP address associated with the parsed host.
-	ips, err := serverutils.KaspadLookup(host)
+	ips, err := s.cfg.Lookup(host)
 	if err != nil {
 		return nil, err
 	}
@@ -1783,8 +1786,8 @@ func dynamicTickDuration(remaining time.Duration) time.Duration {
 
 // isWhitelisted returns whether the IP address is included in the whitelisted
 // networks and IPs.
-func isWhitelisted(addr net.Addr) bool {
-	if len(config.ActiveConfig().Whitelists) == 0 {
+func (s *Server) isWhitelisted(addr net.Addr) bool {
+	if len(s.cfg.Whitelists) == 0 {
 		return false
 	}
 
@@ -1799,7 +1802,7 @@ func isWhitelisted(addr net.Addr) bool {
 		return false
 	}
 
-	for _, ipnet := range config.ActiveConfig().Whitelists {
+	for _, ipnet := range s.cfg.Whitelists {
 		if ipnet.Contains(ip) {
 			return true
 		}
@@ -1826,7 +1829,7 @@ func (s *Server) AnnounceNewTransactions(txns []*mempool.TxDesc) {
 // longer needing rebroadcasting.
 func (s *Server) TransactionConfirmed(tx *util.Tx) {
 	// Rebroadcasting is only necessary when the RPC server is active.
-	if config.ActiveConfig().DisableRPC {
+	if s.cfg.DisableRPC {
 		return
 	}
 
