@@ -125,7 +125,7 @@ func kaspadMain(startedChan chan<- struct{}) error {
 	}
 
 	// Create kaspad and start it.
-	kaspad, err := newKaspad(interrupt)
+	kaspad, err := newKaspad(cfg, interrupt)
 	if err != nil {
 		log.Errorf("Unable to start kaspad: %+v", err)
 		return err
