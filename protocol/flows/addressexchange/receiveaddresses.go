@@ -1,13 +1,14 @@
-package receiveaddresses
+package addressexchange
 
 import (
+	"time"
+
 	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/wire"
-	"time"
 )
 
 const timeout = 30 * time.Second

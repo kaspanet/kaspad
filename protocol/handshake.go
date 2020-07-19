@@ -4,13 +4,13 @@ import (
 	"sync"
 	"sync/atomic"
 
+	handshake2 "github.com/kaspanet/kaspad/protocol/flows/handshake"
+
 	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter"
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
-	"github.com/kaspanet/kaspad/protocol/receiveversion"
-	"github.com/kaspanet/kaspad/protocol/sendversion"
 	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
@@ -41,7 +41,7 @@ func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer
 	var peerAddress *wire.NetAddress
 	spawn(func() {
 		defer wg.Done()
-		address, closed, err := receiveversion.ReceiveVersion(receiveVersionRoute, router.OutgoingRoute(), netAdapter, peer, dag)
+		address, closed, err := handshake2.ReceiveVersion(receiveVersionRoute, router.OutgoingRoute(), netAdapter, peer, dag)
 		if err != nil {
 			log.Errorf("error from ReceiveVersion: %s", err)
 		}
@@ -56,7 +56,7 @@ func handshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer
 
 	spawn(func() {
 		defer wg.Done()
-		closed, err := sendversion.SendVersion(sendVersionRoute, router.OutgoingRoute(), netAdapter, dag)
+		closed, err := handshake2.SendVersion(sendVersionRoute, router.OutgoingRoute(), netAdapter, dag)
 		if err != nil {
 			log.Errorf("error from SendVersion: %s", err)
 		}
