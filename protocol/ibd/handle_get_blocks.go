@@ -49,7 +49,8 @@ func receiveGetBlocks(incomingRoute *router.Route) (lowHash *daghash.Hash,
 func buildMsgIBDBlocks(lowHash *daghash.Hash, highHash *daghash.Hash,
 	dag *blockdag.BlockDAG) ([]*wire.MsgIBDBlock, error) {
 
-	blockHashes, err := dag.AntiPastHashesBetween(lowHash, highHash, wire.MaxInvPerMsg)
+	const maxHashesInMsgIBDBlocks = wire.MaxInvPerMsg
+	blockHashes, err := dag.AntiPastHashesBetween(lowHash, highHash, maxHashesInMsgIBDBlocks)
 	if err != nil {
 		return nil, err
 	}
