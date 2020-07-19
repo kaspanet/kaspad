@@ -1,13 +1,13 @@
 package ibd
 
 import (
-	"errors"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
 	"time"
 )
 
@@ -126,7 +126,8 @@ func receiveGetSelectedTip(incomingRoute *router.Route) (shouldStop bool, err er
 	}
 	_, ok := message.(*wire.MsgGetSelectedTip)
 	if !ok {
-		panic(errors.New("received unexpected message type"))
+		panic(errors.Errorf("received unexpected message type. "+
+			"expected: MsgGetSelectedTip, got: %s", message.Command()))
 	}
 
 	return false, nil

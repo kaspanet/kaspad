@@ -164,7 +164,9 @@ func receiveBlockLocator(incomingRoute *router.Route) (blockLocatorHashes []*dag
 	}
 	msgBlockLocator, ok := message.(*wire.MsgBlockLocator)
 	if !ok {
-		return nil, true, protocolerrors.Errorf(true, "unexpected message")
+		return nil, true,
+			protocolerrors.Errorf(true, "received unexpected message type. "+
+				"expected: MsgBlockLocator, got: %s", message.Command())
 	}
 	return msgBlockLocator.BlockLocatorHashes, false, nil
 }
@@ -222,7 +224,9 @@ func receiveIBDBlock(incomingRoute *router.Route) (msgIBDBlock *wire.MsgIBDBlock
 	}
 	msgIBDBlock, ok := message.(*wire.MsgIBDBlock)
 	if !ok {
-		return nil, true, protocolerrors.Errorf(true, "unexpected message")
+		return nil, true,
+			protocolerrors.Errorf(true, "received unexpected message type. "+
+				"expected: MsgIBDBlock, got: %s", message.Command())
 	}
 	return msgIBDBlock, false, nil
 }
