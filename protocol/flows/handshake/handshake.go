@@ -17,8 +17,8 @@ import (
 
 // HandleHandshake sets up the handshake protocol - It sends a version message and waits for an incoming
 // version message, as well as a verack for the sent version
-func HandleHandshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
-	dag *blockdag.BlockDAG, addressManager *addrmgr.AddrManager) (closed bool, err error) {
+func HandleHandshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter,
+	dag *blockdag.BlockDAG, addressManager *addrmgr.AddrManager) (peer *peerpkg.Peer, closed bool, err error) {
 
 	receiveVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVersion})
 	if err != nil {
@@ -72,16 +72,17 @@ func HandleHandshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter
 	select {
 	case err := <-errChan:
 		if err != nil {
-			return false, err
+			return nil, false, err
 		}
-		return true, nil
+		return nil, true, nil
 	case <-locks.ReceiveFromChanWhenDone(func() { wg.Wait() }):
 	}
 
+	peer = peerpkg.New()
 	err = peerpkg.AddToReadyPeers(peer)
 	if err != nil {
 		if errors.Is(err, peerpkg.ErrPeerWithSameIDExists) {
-			return false, err
+			return nil, false, err
 		}
 		panic(err)
 	}
@@ -107,7 +108,7 @@ func HandleHandshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter
 
 	err = ibd.StartIBDIfRequired(dag)
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
 
 	err = router.RemoveRoute([]wire.MessageCommand{wire.CmdVersion, wire.CmdVerAck})
@@ -115,5 +116,5 @@ func HandleHandshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter
 		panic(err)
 	}
 
-	return false, nil
+	return peer, false, nil
 }

@@ -16,8 +16,6 @@ import (
 
 // Peer holds data about a peer.
 type Peer struct {
-	ready uint32
-
 	selectedTipHashMtx sync.RWMutex
 	selectedTipHash    *daghash.Hash
 
@@ -51,9 +49,6 @@ func New() *Peer {
 
 // SelectedTipHash returns the selected tip of the peer.
 func (p *Peer) SelectedTipHash() (*daghash.Hash, error) {
-	if atomic.LoadUint32(&p.ready) == 0 {
-		return nil, errors.New("peer is not ready yet")
-	}
 	p.selectedTipHashMtx.RLock()
 	defer p.selectedTipHashMtx.RUnlock()
 	return p.selectedTipHash, nil
@@ -61,9 +56,6 @@ func (p *Peer) SelectedTipHash() (*daghash.Hash, error) {
 
 // SetSelectedTipHash sets the selected tip of the peer.
 func (p *Peer) SetSelectedTipHash(hash *daghash.Hash) error {
-	if atomic.LoadUint32(&p.ready) == 0 {
-		return errors.New("peer is not ready yet")
-	}
 	p.selectedTipHashMtx.Lock()
 	defer p.selectedTipHashMtx.Unlock()
 	p.selectedTipHash = hash
@@ -73,25 +65,16 @@ func (p *Peer) SetSelectedTipHash(hash *daghash.Hash) error {
 // SubnetworkID returns the subnetwork the peer is associated with.
 // It is nil in full nodes.
 func (p *Peer) SubnetworkID() (*subnetworkid.SubnetworkID, error) {
-	if atomic.LoadUint32(&p.ready) == 0 {
-		return nil, errors.New("peer is not ready yet")
-	}
 	return p.subnetworkID, nil
 }
 
 // ID returns the peer ID.
 func (p *Peer) ID() (*id.ID, error) {
-	if atomic.LoadUint32(&p.ready) == 0 {
-		return nil, errors.New("peer is not ready yet")
-	}
 	return p.id, nil
 }
 
 // MarkAsReady marks the peer as ready.
 func (p *Peer) MarkAsReady() error {
-	if atomic.AddUint32(&p.ready, 1) != 1 {
-		return errors.New("peer is already ready")
-	}
 	return nil
 }
 

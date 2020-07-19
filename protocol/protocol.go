@@ -64,9 +64,8 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router,
 
 	stop := make(chan error)
 	stopped := uint32(0)
-	peer := peerpkg.New()
 
-	closed, err := handshake.HandleHandshake(router, netAdapter, peer, dag, addressManager)
+	peer, closed, err := handshake.HandleHandshake(router, netAdapter, dag, addressManager)
 	if err != nil {
 		return err
 	}
