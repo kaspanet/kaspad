@@ -18,6 +18,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kaspanet/kaspad/dagconfig"
+
 	"github.com/pkg/errors"
 
 	"github.com/btcsuite/go-socks/socks"
@@ -170,23 +172,8 @@ func newConfigParser(cfgFlags *Flags, so *serviceOptions, options flags.Options)
 	return parser
 }
 
-//LoadConfig loads th
-
-// loadConfig initializes and parses the config using a config file and command
-// line options.
-//
-// The configuration proceeds as follows:
-// 	1) Start with a default config with sane settings
-// 	2) Pre-parse the command line to check for an alternative config file
-// 	3) Load configuration file overwriting defaults with any specified options
-// 	4) Parse CLI options and overwrite/add any specified options
-//
-// The above results in kaspad functioning properly without any config settings
-// while still allowing the user to override settings with config files and
-// command line options. Command line options always take precedence.
-func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
-	// Default config.
-	cfgFlags := Flags{
+func defaultFlags() *Flags {
+	return &Flags{
 		ConfigFile:           defaultConfigFile,
 		DebugLevel:           defaultLogLevel,
 		TargetOutboundPeers:  defaultTargetOutboundPeers,
@@ -206,6 +193,30 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 		MinRelayTxFee:        defaultMinRelayTxFee,
 		AcceptanceIndex:      defaultAcceptanceIndex,
 	}
+}
+
+func DefaultConfig() *Config {
+	config := &Config{Flags: defaultFlags()}
+	config.NetworkFlags.ActiveNetParams = &dagconfig.MainnetParams
+	return config
+}
+
+//LoadConfig loads th
+
+// loadConfig initializes and parses the config using a config file and command
+// line options.
+//
+// The configuration proceeds as follows:
+// 	1) Start with a default config with sane settings
+// 	2) Pre-parse the command line to check for an alternative config file
+// 	3) Load configuration file overwriting defaults with any specified options
+// 	4) Parse CLI options and overwrite/add any specified options
+//
+// The above results in kaspad functioning properly without any config settings
+// while still allowing the user to override settings with config files and
+// command line options. Command line options always take precedence.
+func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
+	cfgFlags := defaultFlags()
 
 	// Service options which are only added on Windows.
 	serviceOpts := serviceOptions{}
@@ -215,7 +226,7 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 	// help message error can be ignored here since they will be caught by
 	// the final parse below.
 	preCfg := cfgFlags
-	preParser := newConfigParser(&preCfg, &serviceOpts, flags.HelpFlag)
+	preParser := newConfigParser(preCfg, &serviceOpts, flags.HelpFlag)
 	_, err = preParser.Parse()
 	if err != nil {
 		var flagsErr *flags.Error
@@ -248,9 +259,9 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 
 	// Load additional config from file.
 	var configFileError error
-	parser := newConfigParser(&cfgFlags, &serviceOpts, flags.Default)
+	parser := newConfigParser(cfgFlags, &serviceOpts, flags.Default)
 	cfg = &Config{
-		Flags: &cfgFlags,
+		Flags: cfgFlags,
 	}
 	if !(preCfg.RegressionTest || preCfg.Simnet) || preCfg.ConfigFile !=
 		defaultConfigFile {

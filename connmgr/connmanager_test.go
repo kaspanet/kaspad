@@ -25,6 +25,15 @@ func init() {
 	maxRetryDuration = 2 * time.Millisecond
 }
 
+func defaultAppConfig() *config.Config {
+	return &config.Config{
+		Flags: &config.Flags{
+			NetworkFlags: config.NetworkFlags{
+				ActiveNetParams: &dagconfig.SimnetParams},
+		},
+	}
+}
+
 // mockAddr mocks a network address
 type mockAddr struct {
 	net, address string
@@ -77,28 +86,26 @@ func mockDialer(addr net.Addr) (net.Conn, error) {
 
 // TestNewConfig tests that new ConnManager config is validated as expected.
 func TestNewConfig(t *testing.T) {
-	restoreConfig := overrideActiveConfig()
-	defer restoreConfig()
-
-	_, err := New(&Config{})
+	appCfg := defaultAppConfig()
+	_, err := New(&Config{}, appCfg)
 	if !errors.Is(err, ErrDialNil) {
 		t.Fatalf("New expected error: %s, got %s", ErrDialNil, err)
 	}
 
 	_, err = New(&Config{
 		Dial: mockDialer,
-	})
+	}, appCfg)
 	if !errors.Is(err, ErrAddressManagerNil) {
 		t.Fatalf("New expected error: %s, got %s", ErrAddressManagerNil, err)
 	}
 
-	amgr, teardown := addressManagerForTest(t, "TestNewConfig", 10)
+	amgr, teardown := addressManagerForTest(t, "TestNewConfig", defaultAppConfig(), 10)
 	defer teardown()
 
 	_, err = New(&Config{
 		Dial:        mockDialer,
 		AddrManager: amgr,
-	})
+	}, appCfg)
 	if err != nil {
 		t.Fatalf("New unexpected error: %v", err)
 	}
@@ -107,13 +114,10 @@ func TestNewConfig(t *testing.T) {
 // TestStartStop tests that the connection manager starts and stops as
 // expected.
 func TestStartStop(t *testing.T) {
-	restoreConfig := overrideActiveConfig()
-	defer restoreConfig()
-
 	connected := make(chan *ConnReq)
 	disconnected := make(chan *ConnReq)
 
-	amgr, teardown := addressManagerForTest(t, "TestStartStop", 10)
+	amgr, teardown := addressManagerForTest(t, "TestStartStop", defaultAppConfig(), 10)
 	defer teardown()
 
 	cmgr, err := New(&Config{
@@ -126,7 +130,7 @@ func TestStartStop(t *testing.T) {
 		OnDisconnection: func(c *ConnReq) {
 			disconnected <- c
 		},
-	})
+	}, defaultAppConfig())
 	if err != nil {
 		t.Fatalf("unexpected error from New: %s", err)
 	}
@@ -160,26 +164,8 @@ func TestStartStop(t *testing.T) {
 	}
 }
 
-func overrideActiveConfig() func() {
-	originalActiveCfg := config.ActiveConfig()
-	config.SetActiveConfig(&config.Config{
-		Flags: &config.Flags{
-			NetworkFlags: config.NetworkFlags{
-				ActiveNetParams: &dagconfig.SimnetParams},
-		},
-	})
-	return func() {
-		// Give some extra time to all open NewConnReq goroutines
-		// to finish before restoring the active config to prevent
-		// potential panics.
-		time.Sleep(10 * time.Millisecond)
-
-		config.SetActiveConfig(originalActiveCfg)
-	}
-}
-
-func addressManagerForTest(t *testing.T, testName string, numAddresses uint8) (*addrmgr.AddrManager, func()) {
-	amgr, teardown := createEmptyAddressManagerForTest(t, testName)
+func addressManagerForTest(t *testing.T, testName string, appConfig *config.Config, numAddresses uint8) (*addrmgr.AddrManager, func()) {
+	amgr, teardown := createEmptyAddressManagerForTest(t, testName, appConfig)
 
 	for i := uint8(0); i < numAddresses; i++ {
 		ip := fmt.Sprintf("173.%d.115.66:16511", i)
@@ -192,7 +178,7 @@ func addressManagerForTest(t *testing.T, testName string, numAddresses uint8) (*
 	return amgr, teardown
 }
 
-func createEmptyAddressManagerForTest(t *testing.T, testName string) (*addrmgr.AddrManager, func()) {
+func createEmptyAddressManagerForTest(t *testing.T, testName string, appConfig *config.Config) (*addrmgr.AddrManager, func()) {
 	path, err := ioutil.TempDir("", fmt.Sprintf("%s-database", testName))
 	if err != nil {
 		t.Fatalf("createEmptyAddressManagerForTest: TempDir unexpectedly "+
@@ -204,7 +190,7 @@ func createEmptyAddressManagerForTest(t *testing.T, testName string) (*addrmgr.A
 		t.Fatalf("error creating db: %s", err)
 	}
 
-	return addrmgr.New(nil, nil), func() {
+	return addrmgr.New(appConfig), func() {
 		// Wait for the connection manager to finish, so it'll
 		// have access to the address manager as long as it's
 		// alive.
@@ -222,11 +208,10 @@ func createEmptyAddressManagerForTest(t *testing.T, testName string) (*addrmgr.A
 // In connect mode, automatic connections are disabled, so we test that
 // requests using Connect are handled and that no other connections are made.
 func TestConnectMode(t *testing.T) {
-	restoreConfig := overrideActiveConfig()
-	defer restoreConfig()
+	appConfig := defaultAppConfig()
 
 	connected := make(chan *ConnReq)
-	amgr, teardown := addressManagerForTest(t, "TestConnectMode", 10)
+	amgr, teardown := addressManagerForTest(t, "TestConnectMode", appConfig, 10)
 	defer teardown()
 
 	cmgr, err := New(&Config{
@@ -236,7 +221,7 @@ func TestConnectMode(t *testing.T) {
 			connected <- c
 		},
 		AddrManager: amgr,
-	})
+	}, appConfig)
 	if err != nil {
 		t.Fatalf("unexpected error from New: %s", err)
 	}
@@ -275,14 +260,13 @@ func TestConnectMode(t *testing.T) {
 // We wait until all connections are established, then test they there are the
 // only connections made.
 func TestTargetOutbound(t *testing.T) {
-	restoreConfig := overrideActiveConfig()
-	defer restoreConfig()
+	appConfig := defaultAppConfig()
 
 	const numAddressesInAddressManager = 10
 	targetOutbound := uint32(numAddressesInAddressManager - 2)
 	connected := make(chan *ConnReq)
 
-	amgr, teardown := addressManagerForTest(t, "TestTargetOutbound", 10)
+	amgr, teardown := addressManagerForTest(t, "TestTargetOutbound", appConfig, 10)
 	defer teardown()
 
 	cmgr, err := New(&Config{
@@ -292,7 +276,7 @@ func TestTargetOutbound(t *testing.T) {
 		OnConnection: func(c *ConnReq, conn net.Conn) {
 			connected <- c
 		},
-	})
+	}, defaultAppConfig())
 	if err != nil {
 		t.Fatalf("unexpected error from New: %s", err)
 	}
@@ -315,15 +299,14 @@ func TestTargetOutbound(t *testing.T) {
 // It checks it by creating one connection request for each address in the address manager, so that
 // the next connection request will have to fail because no unused address will be available.
 func TestDuplicateOutboundConnections(t *testing.T) {
-	restoreConfig := overrideActiveConfig()
-	defer restoreConfig()
+	appConfig := defaultAppConfig()
 
 	const numAddressesInAddressManager = 10
 	targetOutbound := uint32(numAddressesInAddressManager - 1)
 	connected := make(chan struct{})
 	failedConnections := make(chan struct{})
 
-	amgr, teardown := addressManagerForTest(t, "TestDuplicateOutboundConnections", 10)
+	amgr, teardown := addressManagerForTest(t, "TestDuplicateOutboundConnections", appConfig, 10)
 	defer teardown()
 
 	cmgr, err := New(&Config{
@@ -336,7 +319,7 @@ func TestDuplicateOutboundConnections(t *testing.T) {
 		OnConnectionFailed: func(_ *ConnReq) {
 			failedConnections <- struct{}{}
 		},
-	})
+	}, defaultAppConfig())
 	if err != nil {
 		t.Fatalf("unexpected error from New: %s", err)
 	}
@@ -386,10 +369,9 @@ func TestDuplicateOutboundConnections(t *testing.T) {
 // It checks it by creating an address manager with only two addresses, that both belong to the same CIDR group
 // and checks that the second connection request fails.
 func TestSameOutboundGroupConnections(t *testing.T) {
-	restoreConfig := overrideActiveConfig()
-	defer restoreConfig()
+	appConfig := defaultAppConfig()
 
-	amgr, teardown := createEmptyAddressManagerForTest(t, "TestSameOutboundGroupConnections")
+	amgr, teardown := createEmptyAddressManagerForTest(t, "TestSameOutboundGroupConnections", appConfig)
 	defer teardown()
 
 	err := amgr.AddAddressByIP("173.190.115.66:16511", nil)
@@ -414,7 +396,7 @@ func TestSameOutboundGroupConnections(t *testing.T) {
 		OnConnectionFailed: func(_ *ConnReq) {
 			failedConnections <- struct{}{}
 		},
-	})
+	}, appConfig)
 	if err != nil {
 		t.Fatalf("unexpected error from New: %s", err)
 	}
@@ -455,13 +437,12 @@ func TestSameOutboundGroupConnections(t *testing.T) {
 // We make a permanent connection request using Connect, disconnect it using
 // Disconnect and we wait for it to be connected back.
 func TestRetryPermanent(t *testing.T) {
-	restoreConfig := overrideActiveConfig()
-	defer restoreConfig()
+	appConfig := defaultAppConfig()
 
 	connected := make(chan *ConnReq)
 	disconnected := make(chan *ConnReq)
 
-	amgr, teardown := addressManagerForTest(t, "TestRetryPermanent", 10)
+	amgr, teardown := addressManagerForTest(t, "TestRetryPermanent", appConfig, 10)
 	defer teardown()
 
 	cmgr, err := New(&Config{
@@ -475,7 +456,7 @@ func TestRetryPermanent(t *testing.T) {
 			disconnected <- c
 		},
 		AddrManager: amgr,
-	})
+	}, appConfig)
 	if err != nil {
 		t.Fatalf("unexpected error from New: %s", err)
 	}
@@ -554,8 +535,7 @@ func TestRetryPermanent(t *testing.T) {
 // We have a timed dialer which initially returns err but after RetryDuration
 // hits maxRetryDuration returns a mock conn.
 func TestMaxRetryDuration(t *testing.T) {
-	restoreConfig := overrideActiveConfig()
-	defer restoreConfig()
+	appConfig := defaultAppConfig()
 
 	networkUp := make(chan struct{})
 	time.AfterFunc(5*time.Millisecond, func() {
@@ -570,7 +550,7 @@ func TestMaxRetryDuration(t *testing.T) {
 		}
 	}
 
-	amgr, teardown := addressManagerForTest(t, "TestMaxRetryDuration", 10)
+	amgr, teardown := addressManagerForTest(t, "TestMaxRetryDuration", appConfig, 10)
 	defer teardown()
 
 	connected := make(chan *ConnReq)
@@ -582,7 +562,7 @@ func TestMaxRetryDuration(t *testing.T) {
 			connected <- c
 		},
 		AddrManager: amgr,
-	})
+	}, appConfig)
 	if err != nil {
 		t.Fatalf("unexpected error from New: %s", err)
 	}
@@ -611,8 +591,7 @@ func TestMaxRetryDuration(t *testing.T) {
 // TestNetworkFailure tests that the connection manager handles a network
 // failure gracefully.
 func TestNetworkFailure(t *testing.T) {
-	restoreConfig := overrideActiveConfig()
-	defer restoreConfig()
+	appConfig := defaultAppConfig()
 
 	var dials uint32
 	errDialer := func(net net.Addr) (net.Conn, error) {
@@ -620,7 +599,7 @@ func TestNetworkFailure(t *testing.T) {
 		return nil, errors.New("network down")
 	}
 
-	amgr, teardown := addressManagerForTest(t, "TestNetworkFailure", 10)
+	amgr, teardown := addressManagerForTest(t, "TestNetworkFailure", appConfig, 10)
 	defer teardown()
 
 	cmgr, err := New(&Config{
@@ -631,7 +610,7 @@ func TestNetworkFailure(t *testing.T) {
 		OnConnection: func(c *ConnReq, conn net.Conn) {
 			t.Fatalf("network failure: got unexpected connection - %v", c.Addr)
 		},
-	})
+	}, appConfig)
 	if err != nil {
 		t.Fatalf("unexpected error from New: %s", err)
 	}
@@ -653,8 +632,7 @@ func TestNetworkFailure(t *testing.T) {
 // err so that the handler assumes that the conn manager is stopped and ignores
 // the failure.
 func TestStopFailed(t *testing.T) {
-	restoreConfig := overrideActiveConfig()
-	defer restoreConfig()
+	appConfig := defaultAppConfig()
 
 	done := make(chan struct{}, 1)
 	waitDialer := func(addr net.Addr) (net.Conn, error) {
@@ -663,13 +641,13 @@ func TestStopFailed(t *testing.T) {
 		return nil, errors.New("network down")
 	}
 
-	amgr, teardown := addressManagerForTest(t, "TestStopFailed", 10)
+	amgr, teardown := addressManagerForTest(t, "TestStopFailed", appConfig, 10)
 	defer teardown()
 
 	cmgr, err := New(&Config{
 		Dial:        waitDialer,
 		AddrManager: amgr,
-	})
+	}, appConfig)
 	if err != nil {
 		t.Fatalf("unexpected error from New: %s", err)
 	}
@@ -695,8 +673,7 @@ func TestStopFailed(t *testing.T) {
 // TestRemovePendingConnection tests that it's possible to cancel a pending
 // connection, removing its internal state from the ConnMgr.
 func TestRemovePendingConnection(t *testing.T) {
-	restoreConfig := overrideActiveConfig()
-	defer restoreConfig()
+	appConfig := defaultAppConfig()
 
 	// Create a ConnMgr instance with an instance of a dialer that'll never
 	// succeed.
@@ -706,13 +683,13 @@ func TestRemovePendingConnection(t *testing.T) {
 		return nil, errors.Errorf("error")
 	}
 
-	amgr, teardown := addressManagerForTest(t, "TestRemovePendingConnection", 10)
+	amgr, teardown := addressManagerForTest(t, "TestRemovePendingConnection", appConfig, 10)
 	defer teardown()
 
 	cmgr, err := New(&Config{
 		Dial:        indefiniteDialer,
 		AddrManager: amgr,
-	})
+	}, appConfig)
 	if err != nil {
 		t.Fatalf("unexpected error from New: %s", err)
 	}
@@ -756,8 +733,7 @@ func TestRemovePendingConnection(t *testing.T) {
 // not execute the on connection callback, even if an outstanding retry
 // succeeds.
 func TestCancelIgnoreDelayedConnection(t *testing.T) {
-	restoreConfig := overrideActiveConfig()
-	defer restoreConfig()
+	appConfig := defaultAppConfig()
 
 	retryTimeout := 10 * time.Millisecond
 
@@ -777,7 +753,7 @@ func TestCancelIgnoreDelayedConnection(t *testing.T) {
 
 	connected := make(chan *ConnReq)
 
-	amgr, teardown := addressManagerForTest(t, "TestCancelIgnoreDelayedConnection", 10)
+	amgr, teardown := addressManagerForTest(t, "TestCancelIgnoreDelayedConnection", appConfig, 10)
 	defer teardown()
 
 	cmgr, err := New(&Config{
@@ -787,7 +763,7 @@ func TestCancelIgnoreDelayedConnection(t *testing.T) {
 			connected <- c
 		},
 		AddrManager: amgr,
-	})
+	}, appConfig)
 	if err != nil {
 		t.Fatalf("unexpected error from New: %s", err)
 	}
@@ -901,8 +877,7 @@ func newMockListener(localAddr string) *mockListener {
 // TestListeners ensures providing listeners to the connection manager along
 // with an accept callback works properly.
 func TestListeners(t *testing.T) {
-	restoreConfig := overrideActiveConfig()
-	defer restoreConfig()
+	appConfig := defaultAppConfig()
 
 	// Setup a connection manager with a couple of mock listeners that
 	// notify a channel when they receive mock connections.
@@ -911,7 +886,7 @@ func TestListeners(t *testing.T) {
 	listener2 := newMockListener("127.0.0.1:9333")
 	listeners := []net.Listener{listener1, listener2}
 
-	amgr, teardown := addressManagerForTest(t, "TestListeners", 10)
+	amgr, teardown := addressManagerForTest(t, "TestListeners", appConfig, 10)
 	defer teardown()
 
 	cmgr, err := New(&Config{
@@ -921,7 +896,7 @@ func TestListeners(t *testing.T) {
 		},
 		Dial:        mockDialer,
 		AddrManager: amgr,
-	})
+	}, appConfig)
 	if err != nil {
 		t.Fatalf("unexpected error from New: %s", err)
 	}
