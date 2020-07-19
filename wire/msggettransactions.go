@@ -9,7 +9,7 @@ import (
 // be in a single CmdTxInv message.
 const MaxInvPerGetTransactionsMsg = MaxInvPerMsg
 
-// MsgGetRelayBlocks implements the Message interface and represents a kaspa
+// MsgGetTransactions implements the Message interface and represents a kaspa
 // GetTransactions message. It is used to request transactions as part of the
 // transactions relay protocol.
 type MsgGetTransactions struct {

@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/protocol/flows/handlerelayinvs"
 	"github.com/kaspanet/kaspad/protocol/flows/ping"
 	"github.com/kaspanet/kaspad/protocol/flows/receiveaddresses"
+	"github.com/kaspanet/kaspad/protocol/flows/relaytransactions"
 	"github.com/kaspanet/kaspad/protocol/flows/sendaddresses"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
@@ -94,6 +95,13 @@ func (m *Manager) startFlows(router *routerpkg.Router) error {
 	addFlow("SendPings", router, []wire.MessageCommand{wire.CmdPong}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return ping.SendPings(incomingRoute, outgoingRoute, peer)
+		},
+	)
+
+	addFlow("RelayedTransactions", router, []wire.MessageCommand{wire.CmdPong}, &stopped, stop,
+		func(incomingRoute *routerpkg.Route) error {
+			return relaytransactions.HandleRelayedTransactions(incomingRoute, outgoingRoute, m.netAdapter, m.dag,
+				m.txPool, m.sharedRequestedTransactions)
 		},
 	)
 

@@ -5,6 +5,8 @@ import (
 	"sync"
 )
 
+// SharedRequestedTransactions is a data structure that is shared between peers that
+// holds the IDs of all the requested transactions to prevent redundant requests.
 type SharedRequestedTransactions struct {
 	transactions map[daghash.TxID]struct{}
 	sync.Mutex
@@ -16,11 +18,11 @@ func (s *SharedRequestedTransactions) remove(txID *daghash.TxID) {
 	delete(s.transactions, *txID)
 }
 
-func (s *SharedRequestedTransactions) removeSet(txIDs map[daghash.TxID]struct{}) {
+func (s *SharedRequestedTransactions) removeMany(txIDs []*daghash.TxID) {
 	s.Lock()
 	defer s.Unlock()
-	for txID := range txIDs {
-		delete(s.transactions, txID)
+	for _, txID := range txIDs {
+		delete(s.transactions, *txID)
 	}
 }
 
@@ -35,7 +37,10 @@ func (s *SharedRequestedTransactions) addIfNotExists(txID *daghash.TxID) (exists
 	return false
 }
 
-// TODO(libp2p) move to manager scope
-var requestedTransactions = &SharedRequestedTransactions{
-	transactions: make(map[daghash.TxID]struct{}),
+// NewSharedRequestedTransactions returns a new instance of SharedRequestedTransactions.
+func NewSharedRequestedTransactions() *SharedRequestedTransactions {
+	return &SharedRequestedTransactions{
+		transactions: make(map[daghash.TxID]struct{}),
+		Mutex:        sync.Mutex{},
+	}
 }

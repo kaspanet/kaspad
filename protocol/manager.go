@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/netadapter"
+	"github.com/kaspanet/kaspad/protocol/flows/relaytransactions"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"sync"
@@ -22,6 +23,7 @@ type Manager struct {
 	transactionsToRebroadcastLock sync.Mutex
 	transactionsToRebroadcast     map[daghash.TxID]*util.Tx
 	lastRebroadcastTime           time.Time
+	sharedRequestedTransactions   *relaytransactions.SharedRequestedTransactions
 
 	isInIBD uint32 // TODO(libp2p) populate this var
 }
@@ -36,10 +38,11 @@ func NewManager(listeningAddresses []string, dag *blockdag.BlockDAG,
 	}
 
 	manager := Manager{
-		netAdapter:     netAdapter,
-		dag:            dag,
-		addressManager: addressManager,
-		txPool:         txPool,
+		netAdapter:                  netAdapter,
+		dag:                         dag,
+		addressManager:              addressManager,
+		txPool:                      txPool,
+		sharedRequestedTransactions: relaytransactions.NewSharedRequestedTransactions(),
 	}
 	netAdapter.SetRouterInitializer(manager.routerInitializer)
 	return &manager, nil

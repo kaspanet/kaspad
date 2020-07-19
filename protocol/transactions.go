@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// AddTransaction adds transaction to the mempool and propagates it.
 func (m *Manager) AddTransaction(tx *util.Tx) error {
 	m.transactionsToRebroadcastLock.Lock()
 	defer m.transactionsToRebroadcastLock.Unlock()

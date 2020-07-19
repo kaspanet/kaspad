@@ -23,7 +23,8 @@ type NewBlockHandler func(block *util.Block) error
 // HandleRelayedTransactions listens to wire.MsgTxInv messages, requests their corresponding transactions if they
 // are missing, adds them to the mempool and propagates them to the rest of the network.
 func HandleRelayedTransactions(incomingRoute *router.Route, outgoingRoute *router.Route,
-	netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG, txPool *mempool.TxPool) error {
+	netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG, txPool *mempool.TxPool,
+	sharedRequestedTransactions *SharedRequestedTransactions) error {
 
 	invsQueue := make([]*wire.MsgTxInv, 0)
 	for {
@@ -35,71 +36,51 @@ func HandleRelayedTransactions(incomingRoute *router.Route, outgoingRoute *route
 			return nil
 		}
 
-		idsToRequest := make([]*daghash.TxID, 0, len(inv.TXIDs))
-		updateQueues(txPool, dag, inv, &idsToRequest)
-		msgGetTransactions := wire.NewMsgGetTransactions(idsToRequest)
-		isOpen, err := outgoingRoute.EnqueueWithTimeout(msgGetTransactions, 30*time.Second) // TODO(libp2p) Use common.DefaultTimeout
+		requestedIDs, shouldStop, err := requestInvTransactions(outgoingRoute, txPool, dag, sharedRequestedTransactions, inv)
 		if err != nil {
 			return err
 		}
-		if !isOpen {
+		if shouldStop {
 			return nil
 		}
 
-		for _, expectedID := range idsToRequest {
-			msgTx, shouldStop, err := readMsgTx(incomingRoute, &invsQueue)
-			if err != nil {
-				return err
-			}
-			if shouldStop {
-				return nil
-			}
-			tx := util.NewTx(msgTx)
-			if !tx.ID().IsEqual(expectedID) {
-				return protocolerrors.Errorf(true, "expected transaction %s", expectedID)
-			}
-
-			acceptedTxs, err := txPool.ProcessTransaction(tx, true, 0) // TODO(libp2p) Use the peer ID for the mempool tag
-			if err != nil {
-				// When the error is a rule error, it means the transaction was
-				// simply rejected as opposed to something actually going wrong,
-				// so log it as such. Otherwise, something really did go wrong,
-				// so panic.
-				ruleErr := &mempool.RuleError{}
-				if !errors.As(err, ruleErr) {
-					panic(errors.Wrapf(err, "failed to process transaction %s", tx.ID()))
-				}
-
-				shouldBan := false
-				if txRuleErr := (&mempool.TxRuleError{}); errors.As(ruleErr.Err, txRuleErr) {
-					if txRuleErr.RejectCode == wire.RejectInvalid {
-						shouldBan = true
-					}
-				} else if dagRuleErr := (&blockdag.RuleError{}); errors.As(ruleErr.Err, dagRuleErr) {
-					shouldBan = true
-				}
-
-				if !shouldBan {
-					continue
-				}
-
-				return protocolerrors.Errorf(true, "rejected transaction %s", tx.ID())
-			}
-			err = broadcastAcceptedTransactions(netAdapter, acceptedTxs)
-			if err != nil {
-				panic(err)
-			}
+		shouldStop, err = receiveTransactions(requestedIDs, incomingRoute, &invsQueue, txPool, netAdapter,
+			sharedRequestedTransactions)
+		if err != nil {
+			return err
 		}
-
+		if shouldStop {
+			return nil
+		}
 	}
 }
 
-func updateQueues(txPool *mempool.TxPool, dag *blockdag.BlockDAG, inv *wire.MsgTxInv, idsToRequest *[]*daghash.TxID) {
+func requestInvTransactions(outgoingRoute *router.Route, txPool *mempool.TxPool, dag *blockdag.BlockDAG,
+	sharedRequestedTransactions *SharedRequestedTransactions, inv *wire.MsgTxInv) (requestedIDs []*daghash.TxID,
+	shouldStop bool, err error) {
+
+	idsToRequest := make([]*daghash.TxID, 0, len(inv.TXIDs))
+	updateQueues(txPool, dag, inv, &idsToRequest, sharedRequestedTransactions)
+	msgGetTransactions := wire.NewMsgGetTransactions(idsToRequest)
+	isOpen, err := outgoingRoute.EnqueueWithTimeout(msgGetTransactions, 30*time.Second) // TODO(libp2p) Use common.DefaultTimeout
+	if err != nil {
+		sharedRequestedTransactions.removeMany(idsToRequest)
+		return nil, false, err
+	}
+	if !isOpen {
+		sharedRequestedTransactions.removeMany(idsToRequest)
+		return nil, true, nil
+	}
+	return idsToRequest, false, nil
+}
+
+func updateQueues(txPool *mempool.TxPool, dag *blockdag.BlockDAG, inv *wire.MsgTxInv, idsToRequest *[]*daghash.TxID,
+	sharedRequestedTransactions *SharedRequestedTransactions) {
 	for _, txID := range inv.TXIDs {
 		if isKnownTransaction(txPool, dag, txID) {
 			continue
 		}
-		exists := requestedTransactions.addIfNotExists(txID)
+		exists := sharedRequestedTransactions.addIfNotExists(txID)
 		if exists {
 			continue
 		}
@@ -156,6 +137,7 @@ func readInv(incomingRoute *router.Route, invsQueue *[]*wire.MsgTxInv) (
 
 func broadcastAcceptedTransactions(netAdapter *netadapter.NetAdapter, acceptedTxs []*mempool.TxDesc) error {
 	// TODO(libp2p) Add mechanism to avoid sending to other peers invs that are known to them (e.g. mruinvmap)
+	// TODO(libp2p) Consider broadcasting in bulks
 	idsToBroadcast := make([]*daghash.TxID, len(acceptedTxs))
 	for i, tx := range acceptedTxs {
 		idsToBroadcast[i] = tx.Tx.ID()
@@ -188,4 +170,58 @@ func readMsgTx(incomingRoute *router.Route, invsQueue *[]*wire.MsgTxInv) (
 			panic(errors.Errorf("unexpected message %s", message.Command()))
 		}
 	}
+}
+
+func receiveTransactions(requestedTransactions []*daghash.TxID, incomingRoute *router.Route,
+	invsQueue *[]*wire.MsgTxInv, txPool *mempool.TxPool, netAdapter *netadapter.NetAdapter,
+	sharedRequestedTransactions *SharedRequestedTransactions) (shouldStop bool, err error) {
+
+	// In case the function returns earlier than expected, we want to make sure sharedRequestedTransactions is
+	// clean from any pending transactions.
+	defer sharedRequestedTransactions.removeMany(requestedTransactions)
+	for _, expectedID := range requestedTransactions {
+		msgTx, shouldStop, err := readMsgTx(incomingRoute, invsQueue)
+		if err != nil {
+			return false, err
+		}
+		if shouldStop {
+			return true, nil
+		}
+		tx := util.NewTx(msgTx)
+		if !tx.ID().IsEqual(expectedID) {
+			return false, protocolerrors.Errorf(true, "expected transaction %s", expectedID)
+		}
+
+		acceptedTxs, err := txPool.ProcessTransaction(tx, true, 0) // TODO(libp2p) Use the peer ID for the mempool tag
+		if err != nil {
+			// When the error is a rule error, it means the transaction was
+			// simply rejected as opposed to something actually going wrong,
+			// so log it as such. Otherwise, something really did go wrong,
+			// so panic.
+			ruleErr := &mempool.RuleError{}
+			if !errors.As(err, ruleErr) {
+				panic(errors.Wrapf(err, "failed to process transaction %s", tx.ID()))
+			}
+
+			shouldBan := false
+			if txRuleErr := (&mempool.TxRuleError{}); errors.As(ruleErr.Err, txRuleErr) {
+				if txRuleErr.RejectCode == wire.RejectInvalid {
+					shouldBan = true
+				}
+			} else if dagRuleErr := (&blockdag.RuleError{}); errors.As(ruleErr.Err, dagRuleErr) {
+				shouldBan = true
+			}
+
+			if !shouldBan {
+				continue
+			}
+
+			return false, protocolerrors.Errorf(true, "rejected transaction %s", tx.ID())
+		}
+		err = broadcastAcceptedTransactions(netAdapter, acceptedTxs)
+		if err != nil {
+			panic(err)
+		}
+	}
+	return false, nil
 }

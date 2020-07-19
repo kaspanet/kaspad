@@ -1370,7 +1370,7 @@ func (mp *TxPool) HandleNewBlockOld(block *util.Block, txChan chan NewBlockMsg) 
 	return nil
 }
 
-// HandleNewBlockOld removes all the transactions in the new block
+// HandleNewBlock removes all the transactions in the new block
 // from the mempool and the orphan pool, and it also removes
 // from the mempool transactions that double spend a
 // transaction that is already in the DAG
