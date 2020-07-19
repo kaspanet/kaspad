@@ -140,31 +140,31 @@ func addIBDFlows(router *routerpkg.Router, stopped *uint32, stop chan error,
 
 	outgoingRoute := router.OutgoingRoute()
 
-	addFlow("HandleIBD", router, []string{wire.CmdBlockLocator, wire.CmdIBDBlock}, stopped, stop,
+	addFlow("HandleIBD", router, []wire.MessageCommand{wire.CmdBlockLocator, wire.CmdIBDBlock}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return ibd.HandleIBD(incomingRoute, outgoingRoute, peer, dag)
 		},
 	)
 
-	addFlow("RequestSelectedTip", router, []string{wire.CmdSelectedTip}, stopped, stop,
+	addFlow("RequestSelectedTip", router, []wire.MessageCommand{wire.CmdSelectedTip}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return ibd.RequestSelectedTip(incomingRoute, outgoingRoute, peer, dag)
 		},
 	)
 
-	addFlow("HandleGetSelectedTip", router, []string{wire.CmdGetSelectedTip}, stopped, stop,
+	addFlow("HandleGetSelectedTip", router, []wire.MessageCommand{wire.CmdGetSelectedTip}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return ibd.HandleGetSelectedTip(incomingRoute, outgoingRoute, dag)
 		},
 	)
 
-	addFlow("HandleGetBlockLocator", router, []string{wire.CmdGetBlockLocator}, stopped, stop,
+	addFlow("HandleGetBlockLocator", router, []wire.MessageCommand{wire.CmdGetBlockLocator}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return ibd.HandleGetBlockLocator(incomingRoute, outgoingRoute, dag)
 		},
 	)
 
-	addFlow("HandleGetBlocks", router, []string{wire.CmdGetBlocks}, stopped, stop,
+	addFlow("HandleGetBlocks", router, []wire.MessageCommand{wire.CmdGetBlocks}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return ibd.HandleGetBlocks(incomingRoute, outgoingRoute, dag)
 		},

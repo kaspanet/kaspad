@@ -68,7 +68,7 @@ var messageCommandToString = map[MessageCommand]string{
 	CmdVerAck:          "VerAck",
 	CmdGetAddresses:    "GetAddr",
 	CmdAddress:         "Addr",
-	CmdGetBlockInvs:    "GetBlockInvs",
+	CmdGetBlocks:       "GetBlocks",
 	CmdInv:             "Inv",
 	CmdGetData:         "GetData",
 	CmdNotFound:        "NotFound",
