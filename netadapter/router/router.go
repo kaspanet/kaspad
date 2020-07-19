@@ -5,6 +5,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const outgoingRouteMaxMessages = wire.MaxBlockLocatorsPerMsg + defaultMaxMessages
+
 // OnRouteCapacityReachedHandler is a function that is to
 // be called when one of the routes reaches capacity.
 type OnRouteCapacityReachedHandler func()
@@ -22,7 +24,7 @@ type Router struct {
 func NewRouter() *Router {
 	router := Router{
 		incomingRoutes: make(map[wire.MessageCommand]*Route),
-		outgoingRoute:  NewRoute(),
+		outgoingRoute:  newRouteWithCapacity(outgoingRouteMaxMessages),
 	}
 	router.outgoingRoute.setOnCapacityReachedHandler(func() {
 		router.onRouteCapacityReachedHandler()
