@@ -14,8 +14,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const minGetSelectedTipInterval = time.Minute
-
 // Peer holds data about a peer.
 type Peer struct {
 	ready uint32
@@ -204,6 +202,8 @@ func (p *Peer) RequestSelectedTipIfRequired() {
 	if atomic.LoadUint32(&p.isSelectedPeerRequested) != 0 {
 		return
 	}
+
+	const minGetSelectedTipInterval = time.Minute
 	if mstime.Since(p.lastSelectedTipRequest) < minGetSelectedTipInterval {
 		return
 	}
