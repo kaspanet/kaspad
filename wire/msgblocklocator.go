@@ -18,18 +18,6 @@ type MsgBlockLocator struct {
 	BlockLocatorHashes []*daghash.Hash
 }
 
-// AddBlockLocatorHash adds a new block locator hash to the message.
-func (msg *MsgBlockLocator) AddBlockLocatorHash(hash *daghash.Hash) error {
-	if len(msg.BlockLocatorHashes) >= MaxBlockLocatorsPerMsg {
-		str := fmt.Sprintf("too many block locator hashes for message [max %d]",
-			MaxBlockLocatorsPerMsg)
-		return messageError("MsgBlockLocator.AddBlockLocatorHash", str)
-	}
-
-	msg.BlockLocatorHashes = append(msg.BlockLocatorHashes, hash)
-	return nil
-}
-
 // KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgBlockLocator) KaspaDecode(r io.Reader, pver uint32) error {
@@ -54,7 +42,8 @@ func (msg *MsgBlockLocator) KaspaDecode(r io.Reader, pver uint32) error {
 		if err != nil {
 			return err
 		}
-		err = msg.AddBlockLocatorHash(hash)
+		msg.BlockLocatorHashes = append(msg.BlockLocatorHashes, hash)
+
 		if err != nil {
 			return err
 		}
@@ -104,9 +93,8 @@ func (msg *MsgBlockLocator) MaxPayloadLength(pver uint32) uint32 {
 
 // NewMsgBlockLocator returns a new kaspa locator message that conforms to
 // the Message interface. See MsgBlockLocator for details.
-func NewMsgBlockLocator() *MsgBlockLocator {
+func NewMsgBlockLocator(locatorHashes []*daghash.Hash) *MsgBlockLocator {
 	return &MsgBlockLocator{
-		BlockLocatorHashes: make([]*daghash.Hash, 0,
-			MaxBlockLocatorsPerMsg),
+		BlockLocatorHashes: locatorHashes,
 	}
 }

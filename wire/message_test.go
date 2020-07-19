@@ -66,7 +66,7 @@ func TestMessage(t *testing.T) {
 	msgPing := NewMsgPing(123123)
 	msgPong := NewMsgPong(123123)
 	msgGetBlockLocator := NewMsgGetBlockLocator(&daghash.ZeroHash, &daghash.ZeroHash)
-	msgBlockLocator := NewMsgBlockLocator()
+	msgBlockLocator := NewMsgBlockLocator([]*daghash.Hash{})
 	msgFeeFilter := NewMsgFeeFilter(123456)
 	msgFilterAdd := NewMsgFilterAdd([]byte{0x01})
 	msgFilterClear := NewMsgFilterClear()

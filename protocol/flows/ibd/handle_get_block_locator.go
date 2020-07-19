@@ -49,14 +49,7 @@ func receiveGetBlockLocator(incomingRoute *router.Route) (lowHash *daghash.Hash,
 }
 
 func sendBlockLocator(outgoingRoute *router.Route, locator blockdag.BlockLocator) (shouldStop bool, err error) {
-	msgBlockLocator := wire.NewMsgBlockLocator()
-	for _, hash := range locator {
-		err := msgBlockLocator.AddBlockLocatorHash(hash)
-		if err != nil {
-			return true, err
-		}
-	}
-
+	msgBlockLocator := wire.NewMsgBlockLocator(locator)
 	isOpen, err := outgoingRoute.EnqueueWithTimeout(msgBlockLocator, common.DefaultTimeout)
 	if err != nil {
 		return true, err

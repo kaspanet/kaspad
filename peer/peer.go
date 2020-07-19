@@ -820,13 +820,7 @@ func (p *Peer) PushGetBlockInvsMsg(lowHash, highHash *daghash.Hash) error {
 // This function is safe for concurrent access.
 func (p *Peer) PushBlockLocatorMsg(locator blockdag.BlockLocator) error {
 	// Construct the locator request and queue it to be sent.
-	msg := wire.NewMsgBlockLocator()
-	for _, hash := range locator {
-		err := msg.AddBlockLocatorHash(hash)
-		if err != nil {
-			return err
-		}
-	}
+	msg := wire.NewMsgBlockLocator(locator)
 	p.QueueMessage(msg, nil)
 	return nil
 }
