@@ -33,7 +33,8 @@ func StartIBDIfRequired(dag *blockdag.BlockDAG) error {
 		return err
 	}
 	if peer == nil {
-		return requestSelectedTipsIfRequired(dag)
+		requestSelectedTipsIfRequired(dag)
+		return nil
 	}
 
 	atomic.StoreUint32(&isIBDRunning, 1)

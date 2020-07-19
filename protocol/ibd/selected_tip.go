@@ -13,22 +13,21 @@ import (
 
 const minDurationToRequestSelectedTips = time.Minute
 
-func requestSelectedTipsIfRequired(dag *blockdag.BlockDAG) error {
+func requestSelectedTipsIfRequired(dag *blockdag.BlockDAG) {
 	if isDAGTimeCurrent(dag) {
-		return nil
+		return
 	}
-	return requestSelectedTips(dag)
+	requestSelectedTips()
 }
 
 func isDAGTimeCurrent(dag *blockdag.BlockDAG) bool {
 	return dag.Now().Sub(dag.SelectedTipHeader().Timestamp) > minDurationToRequestSelectedTips
 }
 
-func requestSelectedTips(dag *blockdag.BlockDAG) error {
+func requestSelectedTips() {
 	for _, peer := range peerpkg.ReadyPeers() {
 		peer.RequestSelectedTipIfRequired()
 	}
-	return nil
 }
 
 // RequestSelectedTip waits for selected tip requests and handles them
