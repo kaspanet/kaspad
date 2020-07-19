@@ -20,7 +20,7 @@ func TestNotFound(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Ensure the command is expected value.
-	wantCmd := "notfound"
+	wantCmd := MessageCommand(7)
 	msg := NewMsgNotFound()
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgNotFound: wrong command - got %v want %v",

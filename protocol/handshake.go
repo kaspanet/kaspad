@@ -1,6 +1,9 @@
 package protocol
 
 import (
+	"sync"
+	"sync/atomic"
+
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/flows/receiveversion"
 	"github.com/kaspanet/kaspad/protocol/flows/sendversion"
@@ -8,18 +11,16 @@ import (
 	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
-	"sync"
-	"sync/atomic"
 )
 
 func (m *Manager) handshake(router *routerpkg.Router, peer *peerpkg.Peer) (closed bool, err error) {
 
-	receiveVersionRoute, err := router.AddIncomingRoute([]string{wire.CmdVersion})
+	receiveVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVersion})
 	if err != nil {
 		panic(err)
 	}
 
-	sendVersionRoute, err := router.AddIncomingRoute([]string{wire.CmdVerAck})
+	sendVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVerAck})
 	if err != nil {
 		panic(err)
 	}
@@ -97,9 +98,10 @@ func (m *Manager) handshake(router *routerpkg.Router, peer *peerpkg.Peer) (close
 			panic(err)
 		}
 		m.addressManager.AddAddress(peerAddress, peerAddress, subnetworkID)
+		m.addressManager.Good(peerAddress, subnetworkID)
 	}
 
-	err = router.RemoveRoute([]string{wire.CmdVersion, wire.CmdVerAck})
+	err = router.RemoveRoute([]wire.MessageCommand{wire.CmdVersion, wire.CmdVerAck})
 	if err != nil {
 		panic(err)
 	}

@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/pprof"
-	"strings"
 	"time"
 
 	"github.com/kaspanet/kaspad/dbaccess"
@@ -32,10 +31,6 @@ const (
 	blockDbNamePrefix = "blocks"
 )
 
-var (
-	cfg *config.Config
-)
-
 // winServiceMain is only invoked on Windows. It detects when kaspad is running
 // as a service and reacts accordingly.
 var winServiceMain func() (bool, error)
@@ -52,7 +47,7 @@ func kaspadMain(startedChan chan<- struct{}) error {
 	if err != nil {
 		return err
 	}
-	cfg = config.ActiveConfig()
+	cfg := config.ActiveConfig()
 	defer panics.HandlePanic(log, nil)
 
 	// Get a channel that will be closed when a shutdown signal has been
@@ -131,10 +126,9 @@ func kaspadMain(startedChan chan<- struct{}) error {
 	}
 
 	// Create kaspad and start it.
-	kaspad, err := newKaspad(cfg.Listeners, interrupt)
+	kaspad, err := newKaspad(interrupt)
 	if err != nil {
-		log.Errorf("Unable to start kaspad on %s: %+v",
-			strings.Join(cfg.Listeners, ", "), err)
+		log.Errorf("Unable to start kaspad: %+v", err)
 		return err
 	}
 	defer func() {
@@ -169,37 +163,12 @@ func kaspadMain(startedChan chan<- struct{}) error {
 }
 
 func removeDatabase() error {
-	dbPath := blockDbPath(cfg.DbType)
+	dbPath := blockDbPath(config.ActiveConfig().DbType)
 	return os.RemoveAll(dbPath)
 }
 
 // removeRegressionDB removes the existing regression test database if running
 // in regression test mode and it already exists.
-func removeRegressionDB(dbPath string) error {
-	// Don't do anything if not in regression test mode.
-	if !cfg.RegressionTest {
-		return nil
-	}
-
-	// Remove the old regression test database if it already exists.
-	fi, err := os.Stat(dbPath)
-	if err == nil {
-		log.Infof("Removing regression test database from '%s'", dbPath)
-		if fi.IsDir() {
-			err := os.RemoveAll(dbPath)
-			if err != nil {
-				return err
-			}
-		} else {
-			err := os.Remove(dbPath)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
 
 // dbPath returns the path to the block database given a database type.
 func blockDbPath(dbType string) string {
@@ -208,12 +177,12 @@ func blockDbPath(dbType string) string {
 	if dbType == "sqlite" {
 		dbName = dbName + ".db"
 	}
-	dbPath := filepath.Join(cfg.DataDir, dbName)
+	dbPath := filepath.Join(config.ActiveConfig().DataDir, dbName)
 	return dbPath
 }
 
 func openDB() error {
-	dbPath := filepath.Join(cfg.DataDir, "db")
+	dbPath := filepath.Join(config.ActiveConfig().DataDir, "db")
 	log.Infof("Loading database from '%s'", dbPath)
 	err := dbaccess.Open(dbPath)
 	if err != nil {

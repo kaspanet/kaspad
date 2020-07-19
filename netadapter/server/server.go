@@ -2,9 +2,11 @@ package server
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/netadapter/router"
-	"github.com/pkg/errors"
 	"net"
+
+	"github.com/pkg/errors"
+
+	"github.com/kaspanet/kaspad/netadapter/router"
 )
 
 // OnConnectedHandler is a function that is to be called
@@ -18,13 +20,9 @@ type OnDisconnectedHandler func() error
 // Server represents a p2p server.
 type Server interface {
 	Connect(address string) (Connection, error)
-	Connections() []Connection
 	Start() error
 	Stop() error
 	SetOnConnectedHandler(onConnectedHandler OnConnectedHandler)
-	// TODO(libp2p): Move AddConnection and RemoveConnection to connection manager
-	AddConnection(connection Connection) error
-	RemoveConnection(connection Connection) error
 }
 
 // Connection represents a p2p server connection.

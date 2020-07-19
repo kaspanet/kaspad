@@ -24,7 +24,7 @@ func TestBlockLocator(t *testing.T) {
 	msg := NewMsgBlockLocator()
 
 	// Ensure the command is expected value.
-	wantCmd := "locator"
+	wantCmd := MessageCommand(19)
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgBlockLocator: wrong command - got %v want %v",
 			cmd, wantCmd)
