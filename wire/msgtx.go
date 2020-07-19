@@ -762,7 +762,7 @@ func (msg *MsgTx) serializeSize(encodingFlags txEncoding) int {
 
 // Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
-func (msg *MsgTx) Command() string {
+func (msg *MsgTx) Command() MessageCommand {
 	return CmdTx
 }
 

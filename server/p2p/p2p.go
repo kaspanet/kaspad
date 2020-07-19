@@ -367,7 +367,7 @@ func (sp *Peer) addBanScore(persistent, transient uint32, reason string) {
 // allow bloom filters. Additionally, if the peer has negotiated to a protocol
 // version  that is high enough to observe the bloom filter service support bit,
 // it will be banned since it is intentionally violating the protocol.
-func (sp *Peer) enforceNodeBloomFlag(cmd string) bool {
+func (sp *Peer) enforceNodeBloomFlag(cmd wire.MessageCommand) bool {
 	if sp.server.services&wire.SFNodeBloom != wire.SFNodeBloom {
 		// NOTE: Even though the addBanScore function already examines
 		// whether or not banning is enabled, it is checked here as well
@@ -377,7 +377,7 @@ func (sp *Peer) enforceNodeBloomFlag(cmd string) bool {
 
 			// Disconnect the peer regardless of whether it was
 			// banned.
-			sp.addBanScore(peer.BanScoreNodeBloomFlagViolation, 0, cmd)
+			sp.addBanScore(peer.BanScoreNodeBloomFlagViolation, 0, cmd.String())
 			sp.Disconnect()
 			return false
 		}

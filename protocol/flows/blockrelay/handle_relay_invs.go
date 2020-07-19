@@ -1,6 +1,8 @@
-package handlerelayinvs
+package blockrelay
 
 import (
+	"time"
+
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/netadapter/router"
@@ -13,7 +15,6 @@ import (
 	mathUtil "github.com/kaspanet/kaspad/util/math"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
-	"time"
 )
 
 const timeout = 30 * time.Second

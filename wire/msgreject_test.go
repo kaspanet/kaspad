@@ -71,7 +71,7 @@ func TestRejectLatest(t *testing.T) {
 	}
 
 	// Ensure the command is expected value.
-	wantCmd := "reject"
+	wantCmd := MessageCommand(16)
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgReject: wrong command - got %v want %v",
 			cmd, wantCmd)
@@ -150,12 +150,12 @@ func TestRejectWire(t *testing.T) {
 		// Latest protocol version rejected command version (no hash).
 		{
 			MsgReject{
-				Cmd:    "version",
+				Cmd:    CmdVersion,
 				Code:   RejectDuplicate,
 				Reason: "duplicate version",
 			},
 			[]byte{
-				0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, // "version"
+				0x00, 0x00, 0x00, 0x00, // CmdVersion
 				0x12, // RejectDuplicate
 				0x11, 0x64, 0x75, 0x70, 0x6c, 0x69, 0x63, 0x61,
 				0x74, 0x65, 0x20, 0x76, 0x65, 0x72, 0x73, 0x69,
@@ -166,13 +166,13 @@ func TestRejectWire(t *testing.T) {
 		// Latest protocol version rejected command block (has hash).
 		{
 			MsgReject{
-				Cmd:    "block",
+				Cmd:    CmdBlock,
 				Code:   RejectDuplicate,
 				Reason: "duplicate block",
 				Hash:   mainnetGenesisHash,
 			},
 			[]byte{
-				0x05, 0x62, 0x6c, 0x6f, 0x63, 0x6b, // "block"
+				0x08, 0x00, 0x00, 0x00, // CmdBlock
 				0x12, // RejectDuplicate
 				0x0f, 0x64, 0x75, 0x70, 0x6c, 0x69, 0x63, 0x61,
 				0x74, 0x65, 0x20, 0x62, 0x6c, 0x6f, 0x63, 0x6b, // "duplicate block"
@@ -221,10 +221,10 @@ func TestRejectWire(t *testing.T) {
 func TestRejectWireErrors(t *testing.T) {
 	pver := ProtocolVersion
 
-	baseReject := NewMsgReject("block", RejectDuplicate, "duplicate block")
+	baseReject := NewMsgReject(CmdBlock, RejectDuplicate, "duplicate block")
 	baseReject.Hash = mainnetGenesisHash
 	baseRejectEncoded := []byte{
-		0x05, 0x62, 0x6c, 0x6f, 0x63, 0x6b, // "block"
+		0x08, 0x00, 0x00, 0x00, // CmdBlock
 		0x12, // RejectDuplicate
 		0x0f, 0x64, 0x75, 0x70, 0x6c, 0x69, 0x63, 0x61,
 		0x74, 0x65, 0x20, 0x62, 0x6c, 0x6f, 0x63, 0x6b, // "duplicate block"
@@ -246,11 +246,11 @@ func TestRejectWireErrors(t *testing.T) {
 		// Force error in reject command.
 		{baseReject, baseRejectEncoded, pver, 0, io.ErrShortWrite, io.EOF},
 		// Force error in reject code.
-		{baseReject, baseRejectEncoded, pver, 6, io.ErrShortWrite, io.EOF},
+		{baseReject, baseRejectEncoded, pver, 4, io.ErrShortWrite, io.EOF},
 		// Force error in reject reason.
-		{baseReject, baseRejectEncoded, pver, 7, io.ErrShortWrite, io.EOF},
+		{baseReject, baseRejectEncoded, pver, 5, io.ErrShortWrite, io.EOF},
 		// Force error in reject hash.
-		{baseReject, baseRejectEncoded, pver, 23, io.ErrShortWrite, io.EOF},
+		{baseReject, baseRejectEncoded, pver, 21, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))

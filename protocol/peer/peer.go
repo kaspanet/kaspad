@@ -1,6 +1,10 @@
 package peer
 
 import (
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/util/daghash"
 	mathUtil "github.com/kaspanet/kaspad/util/math"
@@ -8,9 +12,6 @@ import (
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 const minGetSelectedTipInterval = time.Minute
@@ -102,7 +103,7 @@ func (p *Peer) UpdateFieldsFromMsgVersion(msg *wire.MsgVersion) {
 	p.advertisedProtocolVer = msg.ProtocolVersion
 	p.protocolVersion = mathUtil.MinUint32(p.protocolVersion, p.advertisedProtocolVer)
 	log.Debugf("Negotiated protocol version %d for peer %s",
-		p.protocolVersion, p)
+		p.protocolVersion, p.id)
 
 	// Set the peer's ID.
 	p.id = msg.ID

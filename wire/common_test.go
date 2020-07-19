@@ -61,8 +61,6 @@ var exampleUTXOCommitment = &daghash.Hash{
 // is mainly to test the "fast" paths in readElement and writeElement which use
 // type assertions to avoid reflection when possible.
 func TestElementWire(t *testing.T) {
-	type writeElementReflect int32
-
 	tests := []struct {
 		in  interface{} // Value to encode
 		buf []byte      // Wire encoding
@@ -90,13 +88,9 @@ func TestElementWire(t *testing.T) {
 			[]byte{0x01, 0x02, 0x03, 0x04},
 		},
 		{
-			[CommandSize]byte{
-				0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-				0x09, 0x0a, 0x0b, 0x0c,
-			},
+			MessageCommand(0x10),
 			[]byte{
-				0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-				0x09, 0x0a, 0x0b, 0x0c,
+				0x10, 0x00, 0x00, 0x00,
 			},
 		},
 		{
@@ -134,11 +128,6 @@ func TestElementWire(t *testing.T) {
 		{
 			KaspaNet(Mainnet),
 			[]byte{0x1d, 0xf7, 0xdc, 0x3d},
-		},
-		// Type not supported by the "fast" path and requires reflection.
-		{
-			writeElementReflect(1),
-			[]byte{0x01, 0x00, 0x00, 0x00},
 		},
 	}
 
@@ -183,6 +172,8 @@ func TestElementWire(t *testing.T) {
 // TestElementWireErrors performs negative tests against wire encode and decode
 // of various element types to confirm error paths work correctly.
 func TestElementWireErrors(t *testing.T) {
+	type writeElementReflect int32
+
 	tests := []struct {
 		in       interface{} // Value to encode
 		max      int         // Max size of fixed buffer to induce errors
@@ -195,10 +186,7 @@ func TestElementWireErrors(t *testing.T) {
 		{true, 0, io.ErrShortWrite, io.EOF},
 		{[4]byte{0x01, 0x02, 0x03, 0x04}, 0, io.ErrShortWrite, io.EOF},
 		{
-			[CommandSize]byte{
-				0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-				0x09, 0x0a, 0x0b, 0x0c,
-			},
+			MessageCommand(10),
 			0, io.ErrShortWrite, io.EOF,
 		},
 		{
@@ -220,6 +208,8 @@ func TestElementWireErrors(t *testing.T) {
 		{ServiceFlag(SFNodeNetwork), 0, io.ErrShortWrite, io.EOF},
 		{InvType(InvTypeTx), 0, io.ErrShortWrite, io.EOF},
 		{KaspaNet(Mainnet), 0, io.ErrShortWrite, io.EOF},
+		// Type with no supported encoding.
+		{writeElementReflect(0), 0, errNoEncodingForType, errNoEncodingForType},
 	}
 
 	t.Logf("Running %d tests", len(tests))

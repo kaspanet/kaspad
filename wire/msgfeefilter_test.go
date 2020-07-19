@@ -27,7 +27,7 @@ func TestFeeFilterLatest(t *testing.T) {
 	}
 
 	// Ensure the command is expected value.
-	wantCmd := "feefilter"
+	wantCmd := MessageCommand(17)
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgFeeFilter: wrong command - got %v want %v",
 			cmd, wantCmd)

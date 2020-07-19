@@ -37,18 +37,8 @@ func (c *gRPCConnection) sendLoop() error {
 		if err != nil {
 			return err
 		}
-		err = func() error {
-			c.writeToErrChanDuringDisconnectLock.Lock()
-			defer c.writeToErrChanDuringDisconnectLock.Unlock()
-			err := c.stream.Send(messageProto)
-			if c.IsConnected() {
-				c.errChan <- err
-				if err != nil {
-					return err
-				}
-			}
-			return nil
-		}()
+
+		err = c.stream.Send(messageProto)
 		if err != nil {
 			return err
 		}

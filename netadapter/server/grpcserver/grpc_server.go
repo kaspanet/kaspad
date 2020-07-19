@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"time"
 
 	"google.golang.org/grpc/peer"
 
@@ -16,7 +17,6 @@ import (
 
 type gRPCServer struct {
 	onConnectedHandler server.OnConnectedHandler
-	connections        map[string]*gRPCConnection
 	listeningAddrs     []string
 	server             *grpc.Server
 }
@@ -27,7 +27,6 @@ func NewGRPCServer(listeningAddrs []string) (server.Server, error) {
 	s := &gRPCServer{
 		server:         grpc.NewServer(),
 		listeningAddrs: listeningAddrs,
-		connections:    map[string]*gRPCConnection{},
 	}
 	protowire.RegisterP2PServer(s.server, newP2PServer(s))
 
@@ -63,12 +62,6 @@ func (s *gRPCServer) listenOn(listenAddr string) error {
 }
 
 func (s *gRPCServer) Stop() error {
-	for _, connection := range s.connections {
-		err := connection.Disconnect()
-		if err != nil {
-			log.Errorf("error closing connection to %s: %+v", connection, err)
-		}
-	}
 	s.server.GracefulStop()
 	return nil
 }
@@ -83,10 +76,16 @@ func (s *gRPCServer) SetOnConnectedHandler(onConnectedHandler server.OnConnected
 // This is part of the Server interface
 func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 	log.Infof("Dialing to %s", address)
-	gRPCConnection, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+
+	const dialTimeout = 30 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), dialTimeout)
+	defer cancel()
+
+	gRPCConnection, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return nil, errors.Wrapf(err, "error connecting to %s", address)
 	}
+
 	client := protowire.NewP2PClient(gRPCConnection)
 	stream, err := client.MessageStream(context.Background())
 	if err != nil {
@@ -108,32 +107,4 @@ func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 	log.Infof("Connected to %s", address)
 
 	return connection, nil
-}
-
-// Connections returns a slice of connections the server
-// is currently connected to.
-// This is part of the Server interface
-func (s *gRPCServer) Connections() []server.Connection {
-	result := make([]server.Connection, 0, len(s.connections))
-
-	for _, conn := range s.connections {
-		result = append(result, conn)
-	}
-
-	return result
-}
-
-// AddConnection adds the provided connection to the connection list
-func (s *gRPCServer) AddConnection(connection server.Connection) error {
-	conn := connection.(*gRPCConnection)
-	s.connections[conn.String()] = conn
-
-	return nil
-}
-
-// RemoveConnection removes the provided connection from the connection list
-func (s *gRPCServer) RemoveConnection(connection server.Connection) error {
-	delete(s.connections, connection.String())
-
-	return nil
 }

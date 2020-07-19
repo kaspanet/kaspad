@@ -1,4 +1,4 @@
-package sendversion
+package handshake
 
 import (
 	"github.com/kaspanet/kaspad/blockdag"
@@ -7,7 +7,6 @@ import (
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/version"
 	"github.com/kaspanet/kaspad/wire"
-	"time"
 )
 
 var (
@@ -27,8 +26,6 @@ var (
 	// required to be supported by outbound peers.
 	defaultRequiredServices = wire.SFNodeNetwork
 )
-
-const timeout = 30 * time.Second
 
 // SendVersion sends a version to a peer and waits for verack.
 func SendVersion(incomingRoute *router.Route, outgoingRoute *router.Route, netAdapter *netadapter.NetAdapter,

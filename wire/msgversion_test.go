@@ -83,7 +83,7 @@ func TestVersion(t *testing.T) {
 	}
 
 	// Ensure the command is expected value.
-	wantCmd := "version"
+	wantCmd := MessageCommand(0)
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgVersion: wrong command - got %v want %v",
 			cmd, wantCmd)

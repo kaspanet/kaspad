@@ -476,9 +476,10 @@ func loadConfig() (*Config, []string, error) {
 		activeConfig.DisableListen = true
 	}
 
-	// Connect means no DNS seeding.
+	// ConnectPeers means no DNS seeding and no outbound peers
 	if len(activeConfig.ConnectPeers) > 0 {
 		activeConfig.DisableDNSSeed = true
+		activeConfig.TargetOutboundPeers = 0
 	}
 
 	// Add the default listener if none were specified. The default
@@ -650,6 +651,15 @@ func loadConfig() (*Config, []string, error) {
 				return nil, nil, err
 			}
 		}
+	}
+
+	// Disallow --addpeer and --connect used together
+	if len(activeConfig.AddPeers) > 0 && len(activeConfig.ConnectPeers) > 0 {
+		str := "%s: --addpeer and --connect can not be used together"
+		err := errors.Errorf(str, funcName)
+		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(os.Stderr, usageMessage)
+		return nil, nil, err
 	}
 
 	// Add default port to all added peer addresses if needed and remove

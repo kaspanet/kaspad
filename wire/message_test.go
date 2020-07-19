@@ -11,6 +11,7 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 	"io"
+	"math"
 	"net"
 	"reflect"
 	"testing"
@@ -21,17 +22,17 @@ import (
 
 // makeHeader is a convenience function to make a message header in the form of
 // a byte slice. It is used to force errors when reading messages.
-func makeHeader(kaspaNet KaspaNet, command string,
+func makeHeader(kaspaNet KaspaNet, command MessageCommand,
 	payloadLen uint32, checksum uint32) []byte {
 
-	// The length of a kaspa message header is 24 bytes.
-	// 4 byte magic number of the kaspa network + 12 byte command + 4 byte
+	// The length of a kaspa message header is 13 bytes.
+	// 4 byte magic number of the kaspa network + 4 bytes command + 4 byte
 	// payload length + 4 byte checksum.
-	buf := make([]byte, 24)
+	buf := make([]byte, 16)
 	binary.LittleEndian.PutUint32(buf, uint32(kaspaNet))
-	copy(buf[4:], []byte(command))
-	binary.LittleEndian.PutUint32(buf[16:], payloadLen)
-	binary.LittleEndian.PutUint32(buf[20:], checksum)
+	binary.LittleEndian.PutUint32(buf[4:], uint32(command))
+	binary.LittleEndian.PutUint32(buf[8:], payloadLen)
+	binary.LittleEndian.PutUint32(buf[12:], checksum)
 	return buf
 }
 
@@ -72,7 +73,7 @@ func TestMessage(t *testing.T) {
 	msgFilterLoad := NewMsgFilterLoad([]byte{0x01}, 10, 0, BloomUpdateNone)
 	bh := NewBlockHeader(1, []*daghash.Hash{mainnetGenesisHash, simnetGenesisHash}, &daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, 0, 0)
 	msgMerkleBlock := NewMsgMerkleBlock(bh)
-	msgReject := NewMsgReject("block", RejectDuplicate, "duplicate block")
+	msgReject := NewMsgReject(CmdBlock, RejectDuplicate, "duplicate block")
 
 	tests := []struct {
 		in       Message  // Value to encode
@@ -81,26 +82,26 @@ func TestMessage(t *testing.T) {
 		kaspaNet KaspaNet // Network to use for wire encoding
 		bytes    int      // Expected num bytes read/written
 	}{
-		{msgVersion, msgVersion, pver, Mainnet, 136},
-		{msgVerack, msgVerack, pver, Mainnet, 24},
-		{msgGetAddresses, msgGetAddresses, pver, Mainnet, 26},
-		{msgAddresses, msgAddresses, pver, Mainnet, 27},
-		{msgGetBlockInvs, msgGetBlockInvs, pver, Mainnet, 88},
-		{msgBlock, msgBlock, pver, Mainnet, 372},
-		{msgInv, msgInv, pver, Mainnet, 25},
-		{msgGetData, msgGetData, pver, Mainnet, 25},
-		{msgNotFound, msgNotFound, pver, Mainnet, 25},
-		{msgTx, msgTx, pver, Mainnet, 58},
-		{msgPing, msgPing, pver, Mainnet, 32},
-		{msgPong, msgPong, pver, Mainnet, 32},
-		{msgGetBlockLocator, msgGetBlockLocator, pver, Mainnet, 88},
-		{msgBlockLocator, msgBlockLocator, pver, Mainnet, 25},
-		{msgFeeFilter, msgFeeFilter, pver, Mainnet, 32},
-		{msgFilterAdd, msgFilterAdd, pver, Mainnet, 26},
-		{msgFilterClear, msgFilterClear, pver, Mainnet, 24},
-		{msgFilterLoad, msgFilterLoad, pver, Mainnet, 35},
-		{msgMerkleBlock, msgMerkleBlock, pver, Mainnet, 215},
-		{msgReject, msgReject, pver, Mainnet, 79},
+		{msgVersion, msgVersion, pver, Mainnet, 128},
+		{msgVerack, msgVerack, pver, Mainnet, 16},
+		{msgGetAddresses, msgGetAddresses, pver, Mainnet, 18},
+		{msgAddresses, msgAddresses, pver, Mainnet, 19},
+		{msgGetBlockInvs, msgGetBlockInvs, pver, Mainnet, 80},
+		{msgBlock, msgBlock, pver, Mainnet, 364},
+		{msgInv, msgInv, pver, Mainnet, 17},
+		{msgGetData, msgGetData, pver, Mainnet, 17},
+		{msgNotFound, msgNotFound, pver, Mainnet, 17},
+		{msgTx, msgTx, pver, Mainnet, 50},
+		{msgPing, msgPing, pver, Mainnet, 24},
+		{msgPong, msgPong, pver, Mainnet, 24},
+		{msgGetBlockLocator, msgGetBlockLocator, pver, Mainnet, 80},
+		{msgBlockLocator, msgBlockLocator, pver, Mainnet, 17},
+		{msgFeeFilter, msgFeeFilter, pver, Mainnet, 24},
+		{msgFilterAdd, msgFilterAdd, pver, Mainnet, 18},
+		{msgFilterClear, msgFilterClear, pver, Mainnet, 16},
+		{msgFilterLoad, msgFilterLoad, pver, Mainnet, 27},
+		{msgMerkleBlock, msgMerkleBlock, pver, Mainnet, 207},
+		{msgReject, msgReject, pver, Mainnet, 69},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -190,31 +191,33 @@ func TestReadMessageWireErrors(t *testing.T) {
 			testErr.Error(), wantErr)
 	}
 
+	bogusCommand := MessageCommand(math.MaxUint8)
+
 	// Wire encoded bytes for main and testnet networks magic identifiers.
-	testnetBytes := makeHeader(Testnet, "", 0, 0)
+	testnetBytes := makeHeader(Testnet, bogusCommand, 0, 0)
 
 	// Wire encoded bytes for a message that exceeds max overall message
 	// length.
 	mpl := uint32(MaxMessagePayload)
-	exceedMaxPayloadBytes := makeHeader(kaspaNet, "getaddr", mpl+1, 0)
+	exceedMaxPayloadBytes := makeHeader(kaspaNet, CmdAddress, mpl+1, 0)
 
 	// Wire encoded bytes for a command which is invalid utf-8.
-	badCommandBytes := makeHeader(kaspaNet, "bogus", 0, 0)
+	badCommandBytes := makeHeader(kaspaNet, bogusCommand, 0, 0)
 	badCommandBytes[4] = 0x81
 
 	// Wire encoded bytes for a command which is valid, but not supported.
-	unsupportedCommandBytes := makeHeader(kaspaNet, "bogus", 0, 0)
+	unsupportedCommandBytes := makeHeader(kaspaNet, bogusCommand, 0, 0)
 
 	// Wire encoded bytes for a message which exceeds the max payload for
 	// a specific message type.
-	exceedTypePayloadBytes := makeHeader(kaspaNet, "getaddr", 23, 0)
+	exceedTypePayloadBytes := makeHeader(kaspaNet, CmdGetAddresses, 23, 0)
 
 	// Wire encoded bytes for a message which does not deliver the full
 	// payload according to the header length.
-	shortPayloadBytes := makeHeader(kaspaNet, "version", 115, 0)
+	shortPayloadBytes := makeHeader(kaspaNet, CmdVersion, 115, 0)
 
 	// Wire encoded bytes for a message with a bad checksum.
-	badChecksumBytes := makeHeader(kaspaNet, "version", 2, 0xbeef)
+	badChecksumBytes := makeHeader(kaspaNet, CmdVersion, 2, 0xbeef)
 	badChecksumBytes = append(badChecksumBytes, []byte{0x0, 0x0}...)
 
 	// Wire encoded bytes for a message which has a valid header, but is
@@ -222,12 +225,12 @@ func TestReadMessageWireErrors(t *testing.T) {
 	// contained in the message. Claim there is two, but don't provide
 	// them. At the same time, forge the header fields so the message is
 	// otherwise accurate.
-	badMessageBytes := makeHeader(kaspaNet, "addr", 1, 0xeaadc31c)
+	badMessageBytes := makeHeader(kaspaNet, CmdAddress, 1, 0xeaadc31c)
 	badMessageBytes = append(badMessageBytes, 0x2)
 
 	// Wire encoded bytes for a message which the header claims has 15k
 	// bytes of data to discard.
-	discardBytes := makeHeader(kaspaNet, "bogus", 15*1024, 0)
+	discardBytes := makeHeader(kaspaNet, bogusCommand, 15*1024, 0)
 
 	tests := []struct {
 		buf      []byte   // Wire encoding
@@ -256,7 +259,7 @@ func TestReadMessageWireErrors(t *testing.T) {
 			kaspaNet,
 			len(testnetBytes),
 			&MessageError{},
-			24,
+			16,
 		},
 
 		// Exceed max overall message payload length.
@@ -266,7 +269,7 @@ func TestReadMessageWireErrors(t *testing.T) {
 			kaspaNet,
 			len(exceedMaxPayloadBytes),
 			&MessageError{},
-			24,
+			16,
 		},
 
 		// Invalid UTF-8 command.
@@ -276,7 +279,7 @@ func TestReadMessageWireErrors(t *testing.T) {
 			kaspaNet,
 			len(badCommandBytes),
 			&MessageError{},
-			24,
+			16,
 		},
 
 		// Valid, but unsupported command.
@@ -286,7 +289,7 @@ func TestReadMessageWireErrors(t *testing.T) {
 			kaspaNet,
 			len(unsupportedCommandBytes),
 			&MessageError{},
-			24,
+			16,
 		},
 
 		// Exceed max allowed payload for a message of a specific type.
@@ -296,7 +299,7 @@ func TestReadMessageWireErrors(t *testing.T) {
 			kaspaNet,
 			len(exceedTypePayloadBytes),
 			&MessageError{},
-			24,
+			16,
 		},
 
 		// Message with a payload shorter than the header indicates.
@@ -306,7 +309,7 @@ func TestReadMessageWireErrors(t *testing.T) {
 			kaspaNet,
 			len(shortPayloadBytes),
 			io.EOF,
-			24,
+			16,
 		},
 
 		// Message with a bad checksum.
@@ -316,7 +319,7 @@ func TestReadMessageWireErrors(t *testing.T) {
 			kaspaNet,
 			len(badChecksumBytes),
 			&MessageError{},
-			26,
+			18,
 		},
 
 		// Message with a valid header, but wrong format.
@@ -326,7 +329,7 @@ func TestReadMessageWireErrors(t *testing.T) {
 			kaspaNet,
 			len(badMessageBytes),
 			io.EOF,
-			25,
+			17,
 		},
 
 		// 15k bytes of data to discard.
@@ -336,7 +339,7 @@ func TestReadMessageWireErrors(t *testing.T) {
 			kaspaNet,
 			len(discardBytes),
 			&MessageError{},
-			24,
+			16,
 		},
 	}
 
@@ -377,9 +380,6 @@ func TestWriteMessageWireErrors(t *testing.T) {
 	kaspaNet := Mainnet
 	wireErr := &MessageError{}
 
-	// Fake message with a command that is too long.
-	badCommandMsg := &fakeMessage{command: "somethingtoolong"}
-
 	// Fake message with a problem during encoding
 	encodeErrMsg := &fakeMessage{forceEncodeErr: true}
 
@@ -394,7 +394,7 @@ func TestWriteMessageWireErrors(t *testing.T) {
 	// Fake message that is used to force errors in the header and payload
 	// writes.
 	bogusPayload := []byte{0x01, 0x02, 0x03, 0x04}
-	bogusMsg := &fakeMessage{command: "bogus", payload: bogusPayload}
+	bogusMsg := &fakeMessage{command: MessageCommand(math.MaxUint8), payload: bogusPayload}
 
 	tests := []struct {
 		msg      Message  // Message to encode
@@ -404,8 +404,6 @@ func TestWriteMessageWireErrors(t *testing.T) {
 		err      error    // Expected error
 		bytes    int      // Expected num bytes written
 	}{
-		// Command too long.
-		{badCommandMsg, pver, kaspaNet, 0, wireErr, 0},
 		// Force error in payload encode.
 		{encodeErrMsg, pver, kaspaNet, 0, wireErr, 0},
 		// Force error due to exceeding max overall message payload size.
@@ -415,7 +413,7 @@ func TestWriteMessageWireErrors(t *testing.T) {
 		// Force error in header write.
 		{bogusMsg, pver, kaspaNet, 0, io.ErrShortWrite, 0},
 		// Force error in payload write.
-		{bogusMsg, pver, kaspaNet, 24, io.ErrShortWrite, 24},
+		{bogusMsg, pver, kaspaNet, 16, io.ErrShortWrite, 16},
 	}
 
 	t.Logf("Running %d tests", len(tests))

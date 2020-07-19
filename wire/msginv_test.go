@@ -20,7 +20,7 @@ func TestInv(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Ensure the command is expected value.
-	wantCmd := "inv"
+	wantCmd := MessageCommand(5)
 	msg := NewMsgInv()
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgInv: wrong command - got %v want %v",
