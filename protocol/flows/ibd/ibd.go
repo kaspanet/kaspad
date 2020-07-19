@@ -24,7 +24,7 @@ func StartIBDIfRequired(dag *blockdag.BlockDAG) {
 	startIBDMutex.Lock()
 	defer startIBDMutex.Unlock()
 
-	if atomic.LoadUint32(&isIBDRunning) != 0 {
+	if IsInIBD() {
 		return
 	}
 
@@ -36,6 +36,11 @@ func StartIBDIfRequired(dag *blockdag.BlockDAG) {
 
 	atomic.StoreUint32(&isIBDRunning, 1)
 	peer.StartIBD()
+}
+
+// IsInIBD is true if IBD is currently running
+func IsInIBD() bool {
+	return atomic.LoadUint32(&isIBDRunning) != 0
 }
 
 // selectPeerForIBD returns the first peer whose selected tip
