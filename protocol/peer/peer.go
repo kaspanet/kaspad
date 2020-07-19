@@ -200,6 +200,7 @@ func ReadyPeers() []*Peer {
 // request flow.
 func (p *Peer) RequestSelectedTipIfRequired() {
 	if atomic.AddUint32(&p.isSelectedPeerRequested, 1) != 1 {
+		atomic.AddUint32(&p.isSelectedPeerRequested, -1)
 		return
 	}
 
