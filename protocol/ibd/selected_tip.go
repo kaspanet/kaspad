@@ -14,13 +14,13 @@ import (
 const minDurationToRequestSelectedTips = time.Minute
 
 func requestSelectedTipsIfRequired(dag *blockdag.BlockDAG) error {
-	if hasRecentlyReceivedBlock(dag) {
+	if isDAGTimeCurrent(dag) {
 		return nil
 	}
 	return requestSelectedTips(dag)
 }
 
-func hasRecentlyReceivedBlock(dag *blockdag.BlockDAG) bool {
+func isDAGTimeCurrent(dag *blockdag.BlockDAG) bool {
 	return dag.Now().Sub(dag.SelectedTipHeader().Timestamp) > minDurationToRequestSelectedTips
 }
 
