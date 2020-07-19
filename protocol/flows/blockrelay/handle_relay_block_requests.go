@@ -1,4 +1,4 @@
-package handlerelayblockrequests
+package blockrelay
 
 import (
 	"github.com/kaspanet/kaspad/blockdag"
