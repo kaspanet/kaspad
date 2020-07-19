@@ -37,33 +37,40 @@ func RequestSelectedTip(incomingRoute *router.Route,
 		peer.WaitForSelectedTipRequests()
 
 		// We run the flow inside a func so that the defer is called at its end
-		err := func() error {
+		shouldStop, err := func() (bool, error) {
 			defer peer.FinishRequestingSelectedTip()
 
 			shouldStop, err := requestSelectedTip(outgoingRoute)
 			if err != nil {
-				return err
+				return true, err
 			}
 			if shouldStop {
-				return nil
+				return true, nil
 			}
 
 			peerSelectedTipHash, shouldStop, err := receiveSelectedTip(incomingRoute)
 			if err != nil {
-				return err
+				return true, err
 			}
 			if shouldStop {
-				return nil
+				return true, nil
 			}
 			err = peer.SetSelectedTipHash(peerSelectedTipHash)
 			if err != nil {
-				return err
+				return true, err
 			}
 
-			return StartIBDIfRequired(dag)
+			err = StartIBDIfRequired(dag)
+			if err != nil {
+				return true, err
+			}
+			return false, nil
 		}()
 		if err != nil {
 			return err
+		}
+		if shouldStop {
+			return nil
 		}
 	}
 }
