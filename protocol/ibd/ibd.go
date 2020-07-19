@@ -122,15 +122,14 @@ func findHighestSharedBlockHash(incomingRoute *router.Route, outgoingRoute *rout
 		}
 
 		// We check whether the locator's highest hash is in the local DAG.
-		// If it isn't, we need to narrow our getBlockLocator request and
-		// try again.
+		// If it is, return it. If it isn't, we need to narrow our
+		// getBlockLocator request and try again.
 		locatorHighHash := blockLocatorHashes[0]
-		if !dag.IsInDAG(locatorHighHash) {
-			highHash, lowHash = dag.FindNextLocatorBoundaries(blockLocatorHashes)
-			continue
+		if dag.IsInDAG(locatorHighHash) {
+			return locatorHighHash, false, nil
 		}
 
-		return locatorHighHash, false, nil
+		highHash, lowHash = dag.FindNextLocatorBoundaries(blockLocatorHashes)
 	}
 }
 
