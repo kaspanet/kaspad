@@ -1,11 +1,11 @@
 package rpc
 
 import (
+	"net"
+
 	"github.com/kaspanet/kaspad/logger"
 	"github.com/kaspanet/kaspad/rpcmodel"
-	"github.com/kaspanet/kaspad/server/serverutils"
 	"github.com/kaspanet/kaspad/util/pointers"
-	"net"
 )
 
 // handleGetManualNodeInfo handles getManualNodeInfo commands.
@@ -83,7 +83,7 @@ func getManualNodesInfo(s *Server, detailsArg *bool, node string) (interface{}, 
 		default:
 			// Do a DNS lookup for the address. If the lookup fails, just
 			// use the host.
-			ips, err := serverutils.KaspadLookup(host)
+			ips, err := s.appCfg.Lookup(host)
 			if err != nil {
 				ipList = make([]string, 1)
 				ipList[0] = host

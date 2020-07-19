@@ -163,6 +163,7 @@ type Server struct {
 	started                int32
 	shutdown               int32
 	cfg                    rpcserverConfig
+	appCfg                 *config.Config
 	authsha                [sha256.Size]byte
 	limitauthsha           [sha256.Size]byte
 	ntfnMgr                *wsNotificationManager
@@ -282,9 +283,9 @@ func (s *Server) NotifyNewTransactions(txns []*mempool.TxDesc) {
 //
 // This function is safe for concurrent access.
 func (s *Server) limitConnections(w http.ResponseWriter, remoteAddr string) bool {
-	if int(atomic.LoadInt32(&s.numClients)+1) > config.ActiveConfig().RPCMaxClients {
+	if int(atomic.LoadInt32(&s.numClients)+1) > s.appCfg.RPCMaxClients {
 		log.Infof("Max RPC clients exceeded [%d] - "+
-			"disconnecting client %s", config.ActiveConfig().RPCMaxClients,
+			"disconnecting client %s", s.appCfg.RPCMaxClients,
 			remoteAddr)
 		http.Error(w, "503 Too busy. Try again later.",
 			http.StatusServiceUnavailable)
@@ -795,19 +796,19 @@ type rpcserverConfig struct {
 // setupRPCListeners returns a slice of listeners that are configured for use
 // with the RPC server depending on the configuration settings for listen
 // addresses and TLS.
-func setupRPCListeners() ([]net.Listener, error) {
+func setupRPCListeners(appCfg *config.Config) ([]net.Listener, error) {
 	// Setup TLS if not disabled.
 	listenFunc := net.Listen
-	if !config.ActiveConfig().DisableTLS {
+	if !appCfg.DisableTLS {
 		// Generate the TLS cert and key file if both don't already
 		// exist.
-		if !fs.FileExists(config.ActiveConfig().RPCKey) && !fs.FileExists(config.ActiveConfig().RPCCert) {
-			err := serverutils.GenCertPair(config.ActiveConfig().RPCCert, config.ActiveConfig().RPCKey)
+		if !fs.FileExists(appCfg.RPCKey) && !fs.FileExists(appCfg.RPCCert) {
+			err := serverutils.GenCertPair(appCfg.RPCCert, appCfg.RPCKey)
 			if err != nil {
 				return nil, err
 			}
 		}
-		keypair, err := tls.LoadX509KeyPair(config.ActiveConfig().RPCCert, config.ActiveConfig().RPCKey)
+		keypair, err := tls.LoadX509KeyPair(appCfg.RPCCert, appCfg.RPCKey)
 		if err != nil {
 			return nil, err
 		}
@@ -823,7 +824,7 @@ func setupRPCListeners() ([]net.Listener, error) {
 		}
 	}
 
-	netAddrs, err := network.ParseListeners(config.ActiveConfig().RPCListeners)
+	netAddrs, err := network.ParseListeners(appCfg.RPCListeners)
 	if err != nil {
 		return nil, err
 	}
@@ -843,6 +844,7 @@ func setupRPCListeners() ([]net.Listener, error) {
 
 // NewRPCServer returns a new instance of the rpcServer struct.
 func NewRPCServer(
+	appCfg *config.Config,
 	dag *blockdag.BlockDAG,
 	txMempool *mempool.TxPool,
 	acceptanceIndex *indexers.AcceptanceIndex,
@@ -850,7 +852,7 @@ func NewRPCServer(
 ) (*Server, error) {
 	// Setup listeners for the configured RPC listen addresses and
 	// TLS settings.
-	rpcListeners, err := setupRPCListeners()
+	rpcListeners, err := setupRPCListeners(appCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -874,13 +876,13 @@ func NewRPCServer(
 		requestProcessShutdown: make(chan struct{}),
 		quit:                   make(chan int),
 	}
-	if config.ActiveConfig().RPCUser != "" && config.ActiveConfig().RPCPass != "" {
-		login := config.ActiveConfig().RPCUser + ":" + config.ActiveConfig().RPCPass
+	if appCfg.RPCUser != "" && appCfg.RPCPass != "" {
+		login := appCfg.RPCUser + ":" + appCfg.RPCPass
 		auth := "Basic " + base64.StdEncoding.EncodeToString([]byte(login))
 		rpc.authsha = sha256.Sum256([]byte(auth))
 	}
-	if config.ActiveConfig().RPCLimitUser != "" && config.ActiveConfig().RPCLimitPass != "" {
-		login := config.ActiveConfig().RPCLimitUser + ":" + config.ActiveConfig().RPCLimitPass
+	if appCfg.RPCLimitUser != "" && appCfg.RPCLimitPass != "" {
+		login := appCfg.RPCLimitUser + ":" + appCfg.RPCLimitPass
 		auth := "Basic " + base64.StdEncoding.EncodeToString([]byte(login))
 		rpc.limitauthsha = sha256.Sum256([]byte(auth))
 	}
