@@ -32,9 +32,9 @@ type Peer struct {
 	lastPingTime     time.Time     // Time we sent last ping
 	lastPingDuration time.Duration // Time for last ping to return
 
-	isSelectedPeerRequested uint32
-	selectedPeerRequestChan chan struct{}
-	lastSelectedTipRequest  mstime.Time
+	isSelectedTipRequested uint32
+	selectedTipRequestChan chan struct{}
+	lastSelectedTipRequest mstime.Time
 
 	ibdStartChan chan struct{}
 }
@@ -42,8 +42,8 @@ type Peer struct {
 // New returns a new Peer
 func New() *Peer {
 	return &Peer{
-		selectedPeerRequestChan: make(chan struct{}),
-		ibdStartChan:            make(chan struct{}),
+		selectedTipRequestChan: make(chan struct{}),
+		ibdStartChan:           make(chan struct{}),
 	}
 }
 
@@ -165,7 +165,7 @@ func ReadyPeers() []*Peer {
 // a selected tip is required. This triggers the selected tip
 // request flow.
 func (p *Peer) RequestSelectedTipIfRequired() {
-	if atomic.SwapUint32(&p.isSelectedPeerRequested, 1) != 0 {
+	if atomic.SwapUint32(&p.isSelectedTipRequested, 1) != 0 {
 		return
 	}
 
@@ -175,19 +175,19 @@ func (p *Peer) RequestSelectedTipIfRequired() {
 	}
 
 	p.lastSelectedTipRequest = mstime.Now()
-	p.selectedPeerRequestChan <- struct{}{}
+	p.selectedTipRequestChan <- struct{}{}
 }
 
 // WaitForSelectedTipRequests blocks the current thread until
 // a selected tip is requested from this peer
 func (p *Peer) WaitForSelectedTipRequests() {
-	<-p.selectedPeerRequestChan
+	<-p.selectedTipRequestChan
 }
 
 // FinishRequestingSelectedTip finishes requesting the selected
 // tip from this peer
 func (p *Peer) FinishRequestingSelectedTip() {
-	atomic.SwapUint32(&p.isSelectedPeerRequested, 0)
+	atomic.SwapUint32(&p.isSelectedTipRequested, 0)
 }
 
 // StartIBD notifies the peer that starting IBD is required.
