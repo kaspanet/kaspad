@@ -65,7 +65,7 @@ func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 		peer.WaitForIBDStart()
 
 		// We run the flow inside a func so that the defer is called at its end
-		err := func() error {
+		shouldStop, err := func() (bool, error) {
 			defer func() {
 				err := finishIBD(dag)
 				if err != nil {
@@ -75,26 +75,33 @@ func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 
 			peerSelectedTipHash, err := peer.SelectedTipHash()
 			if err != nil {
-				return err
+				return true, err
 			}
 
 			highestSharedBlockHash, shouldStop, err := findHighestSharedBlockHash(incomingRoute, outgoingRoute, dag, peerSelectedTipHash)
 			if err != nil {
-				return err
+				return true, err
 			}
 			if shouldStop {
-				return nil
+				return true, nil
 			}
 			if dag.IsKnownFinalizedBlock(highestSharedBlockHash) {
-				return protocolerrors.Errorf(false, "cannot initiate "+
+				return true, protocolerrors.Errorf(false, "cannot initiate "+
 					"IBD with peer %s because the highest shared chain block (%s) is "+
 					"below the finality point", peer, highestSharedBlockHash)
 			}
 
-			return downloadBlocks(incomingRoute, outgoingRoute, dag, highestSharedBlockHash, peerSelectedTipHash)
+			shouldStop, err = downloadBlocks(incomingRoute, outgoingRoute, dag, highestSharedBlockHash, peerSelectedTipHash)
+			if err != nil {
+				return true, err
+			}
+			return shouldStop, nil
 		}()
 		if err != nil {
 			return err
+		}
+		if shouldStop {
+			return nil
 		}
 	}
 }
@@ -163,30 +170,30 @@ func receiveBlockLocator(incomingRoute *router.Route) (blockLocatorHashes []*dag
 }
 
 func downloadBlocks(incomingRoute *router.Route, outgoingRoute *router.Route,
-	dag *blockdag.BlockDAG, highestSharedBlockHash *daghash.Hash, peerSelectedTipHash *daghash.Hash) error {
+	dag *blockdag.BlockDAG, highestSharedBlockHash *daghash.Hash, peerSelectedTipHash *daghash.Hash) (shouldStop bool, err error) {
 
-	shouldStop, err := sendGetBlocks(outgoingRoute, highestSharedBlockHash, peerSelectedTipHash)
+	shouldStop, err = sendGetBlocks(outgoingRoute, highestSharedBlockHash, peerSelectedTipHash)
 	if err != nil {
-		return err
+		return true, err
 	}
 	if shouldStop {
-		return nil
+		return true, nil
 	}
 
 	for {
 		msgIBDBlock, shouldStop, err := receiveIBDBlock(incomingRoute)
 		if err != nil {
-			return err
+			return true, err
 		}
 		if shouldStop {
-			return nil
+			return true, nil
 		}
 		err = processIBDBlock(dag, msgIBDBlock)
 		if err != nil {
-			return err
+			return true, err
 		}
 		if msgIBDBlock.BlockHash().IsEqual(peerSelectedTipHash) {
-			return nil
+			return true, nil
 		}
 	}
 }
