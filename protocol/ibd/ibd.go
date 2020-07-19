@@ -85,7 +85,7 @@ func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 				return nil
 			}
 			if dag.IsKnownFinalizedBlock(highestSharedBlockHash) {
-				return protocolerrors.Errorf(false, "Cannot initiate "+
+				return protocolerrors.Errorf(false, "cannot initiate "+
 					"IBD with peer %s because the highest shared chain block (%s) is "+
 					"below the finality point", peer, highestSharedBlockHash)
 			}
