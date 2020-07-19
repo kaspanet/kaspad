@@ -4,6 +4,8 @@ import (
 	"errors"
 	"sync/atomic"
 
+	"github.com/kaspanet/kaspad/config"
+
 	"github.com/kaspanet/kaspad/protocol/flows/handshake"
 
 	"github.com/kaspanet/kaspad/protocol/flows/addressexchange"
@@ -19,19 +21,28 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
+type Manager struct {
+	cfg            *config.Config
+	netAdapter     *netadapter.NetAdapter
+	addressManager *addrmgr.AddrManager
+	dag            *blockdag.BlockDAG
+}
+
 // Init initializes the p2p protocol
-func Init(netAdapter *netadapter.NetAdapter, addressManager *addrmgr.AddrManager, dag *blockdag.BlockDAG) {
-	routerInitializer := newRouterInitializer(netAdapter, addressManager, dag)
+func Init(cfg *config.Config, netAdapter *netadapter.NetAdapter,
+	addressManager *addrmgr.AddrManager, dag *blockdag.BlockDAG) {
+
+	routerInitializer := newRouterInitializer(cfg, netAdapter, addressManager, dag)
 	netAdapter.SetRouterInitializer(routerInitializer)
 }
 
-func newRouterInitializer(netAdapter *netadapter.NetAdapter,
-	addressManager *addrmgr.AddrManager, dag *blockdag.BlockDAG) netadapter.RouterInitializer {
-	return func() (*routerpkg.Router, error) {
+func newRouterInitializer(cfg *config.Config, netAdapter *netadapter.NetAdapter, addressManager *addrmgr.AddrManager,
+	dag *blockdag.BlockDAG) netadapter.RouterInitializer {
 
+	return func() (*routerpkg.Router, error) {
 		router := routerpkg.NewRouter()
 		spawn(func() {
-			err := startFlows(netAdapter, router, dag, addressManager)
+			err := startFlows(cfg, netAdapter, router, dag, addressManager)
 			if err != nil {
 				if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
 					if protocolErr.ShouldBan {
@@ -58,15 +69,16 @@ func newRouterInitializer(netAdapter *netadapter.NetAdapter,
 	}
 }
 
-func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag *blockdag.BlockDAG,
+func startFlows(cfg *config.Config, netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag *blockdag.BlockDAG,
 	addressManager *addrmgr.AddrManager) error {
+
 	stop := make(chan error)
 	stopped := uint32(0)
 
 	outgoingRoute := router.OutgoingRoute()
 	peer := new(peerpkg.Peer)
 
-	closed, err := handshake.HandleHandshake(router, netAdapter, peer, dag, addressManager)
+	closed, err := handshake.HandleHandshake(cfg, router, netAdapter, peer, dag, addressManager)
 	if err != nil {
 		return err
 	}
@@ -82,7 +94,7 @@ func startFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag
 
 	addOneTimeFlow("ReceiveAddresses", router, []wire.MessageCommand{wire.CmdAddress}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) (routeClosed bool, err error) {
-			return addressexchange.ReceiveAddresses(incomingRoute, outgoingRoute, peer, addressManager)
+			return addressexchange.ReceiveAddresses(incomingRoute, outgoingRoute, cfg, peer, addressManager)
 		},
 	)
 
