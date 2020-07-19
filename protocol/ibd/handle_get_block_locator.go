@@ -62,5 +62,4 @@ func sendBlockLocator(outgoingRoute *router.Route, locator blockdag.BlockLocator
 		return false, err
 	}
 	return isOpen, nil
-
 }
