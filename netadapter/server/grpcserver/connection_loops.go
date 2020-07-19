@@ -3,6 +3,9 @@ package grpcserver
 import (
 	"io"
 
+	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/logger"
+
 	"github.com/kaspanet/kaspad/netadapter/server/grpcserver/protowire"
 )
 
@@ -33,6 +36,11 @@ func (c *gRPCConnection) sendLoop() error {
 		if !isOpen {
 			return nil
 		}
+
+		log.Tracef("outgoing '%s' message to %s: %s", message.Command(), c, logger.NewLogClosure(func() string {
+			return spew.Sdump(message)
+		}))
+
 		messageProto, err := protowire.FromWireMessage(message)
 		if err != nil {
 			return err
@@ -60,6 +68,11 @@ func (c *gRPCConnection) receiveLoop() error {
 		if err != nil {
 			return err
 		}
+
+		log.Tracef("incoming '%s' message from %s: %s", message.Command(), c, logger.NewLogClosure(func() string {
+			return spew.Sdump(message)
+		}))
+
 		isOpen, err := c.router.EnqueueIncomingMessage(message)
 		if err != nil {
 			return err

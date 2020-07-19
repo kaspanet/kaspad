@@ -1,12 +1,13 @@
 package ping
 
 import (
+	"time"
+
 	"github.com/kaspanet/kaspad/netadapter/router"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/util/random"
 	"github.com/kaspanet/kaspad/wire"
-	"time"
 )
 
 const pingTimeout = 30 * time.Second
@@ -63,7 +64,7 @@ func SendPings(incomingRoute *router.Route, outgoingRoute *router.Route, peer *p
 		if !isOpen {
 			return nil
 		}
-		pongMessage := message.(*wire.MsgPing)
+		pongMessage := message.(*wire.MsgPong)
 		if pongMessage.Nonce != pingMessage.Nonce {
 			return protocolerrors.New(true, "nonce mismatch between ping and pong")
 		}
