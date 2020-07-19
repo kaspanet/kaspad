@@ -29,9 +29,9 @@ func HandleHandshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter
 		panic(err)
 	}
 
-	// For the addHandshakeFlow to finish, we need to get from the other node
+	// For HandleHandshake to finish, we need to get from the other node
 	// a version and verack messages, so we increase the wait group by 2
-	// and block the addHandshakeFlow with wg.Wait().
+	// and block HandleHandshake with wg.Wait().
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
