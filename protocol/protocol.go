@@ -100,7 +100,7 @@ func (m *Manager) startFlows(router *routerpkg.Router) error {
 		},
 	)
 
-	addFlow("RelayedTransactions", router, []wire.MessageCommand{wire.CmdPong}, &stopped, stop,
+	addFlow("RelayedTransactions", router, []wire.MessageCommand{wire.CmdInv, wire.CmdTx}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return relaytransactions.HandleRelayedTransactions(incomingRoute, outgoingRoute, m.netAdapter, m.dag,
 				m.txPool, m.sharedRequestedTransactions)
