@@ -1,7 +1,10 @@
 package protocol
 
 import (
+	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 )
 
 func (m *Manager) OnNewBlock(block *util.Block) error {
@@ -10,8 +13,20 @@ func (m *Manager) OnNewBlock(block *util.Block) error {
 		return err
 	}
 
-	// TODO(libp2p) broadcast all acceptedTxs
 	m.updateTransactionsToRebroadcast(block)
-	m.maybeRebroadcastTransactions()
-	return nil
+
+	var txIDsToRebroadcast []*daghash.TxID
+	if m.shouldRebroadcastTransactions() {
+		txIDsToRebroadcast = m.txIDsToRebroadcast()
+	}
+
+	txIDsToBroadcast := make([]*daghash.TxID, len(acceptedTxs)+len(txIDsToRebroadcast))
+	for i, tx := range acceptedTxs {
+		txIDsToBroadcast[i] = tx.ID()
+	}
+
+	copy(txIDsToBroadcast[len(acceptedTxs):], txIDsToBroadcast)
+	txIDsToBroadcast = txIDsToBroadcast[:wire.MaxInvPerTxInvMsg]
+	inv := wire.NewMsgTxInv(txIDsToBroadcast)
+	return m.netAdapter.Broadcast(peerpkg.ReadyPeerIDs(), inv)
 }

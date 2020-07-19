@@ -60,6 +60,7 @@ const (
 	CmdInvRelayBlock   MessageCommand = 22
 	CmdGetRelayBlocks  MessageCommand = 23
 	CmdRejectMalformed MessageCommand = 24 // Used only for reject message
+	CmdTxInv           MessageCommand = 25
 )
 
 var messageCommandToString = map[MessageCommand]string{
@@ -88,6 +89,7 @@ var messageCommandToString = map[MessageCommand]string{
 	CmdInvRelayBlock:   "InvRelayBlock",
 	CmdGetRelayBlocks:  "GetRelayBlocks",
 	CmdRejectMalformed: "RejectMalformed",
+	CmdTxInv:           "TxInv",
 }
 
 // Message is an interface that describes a kaspa message. A type that

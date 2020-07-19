@@ -3,11 +3,15 @@ package protocol
 import (
 	"github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 	"time"
 )
 
 func (m *Manager) AddTransaction(tx *util.Tx) error {
+	m.transactionsToRebroadcastLock.Lock()
+	defer m.transactionsToRebroadcastLock.Unlock()
 	acceptedTxs, err := m.txPool.ProcessTransaction(tx, false, 0)
 	if err != nil {
 		return err
@@ -18,11 +22,13 @@ func (m *Manager) AddTransaction(tx *util.Tx) error {
 	}
 
 	m.transactionsToRebroadcast[*tx.ID()] = tx
-	// TODO(libp2p) Implement inv type to relay txs and broadcast.
-	return m.netAdapter.Broadcast(peer.ReadyPeerIDs(), tx.MsgTx())
+	inv := wire.NewMsgTxInv([]*daghash.TxID{tx.ID()})
+	return m.netAdapter.Broadcast(peer.ReadyPeerIDs(), inv)
 }
 
 func (m *Manager) updateTransactionsToRebroadcast(block *util.Block) {
+	m.transactionsToRebroadcastLock.Lock()
+	defer m.transactionsToRebroadcastLock.Unlock()
 	// Note: if the block is red, its transactions won't be rebroadcasted
 	// anymore, although they are not included in the UTXO set.
 	// This is probably ok, since red blocks are quite rare.
@@ -31,15 +37,20 @@ func (m *Manager) updateTransactionsToRebroadcast(block *util.Block) {
 	}
 }
 
-func (m *Manager) maybeRebroadcastTransactions() {
-	if len(m.transactionsToRebroadcast) == 0 {
-		return
-	}
-
+func (m *Manager) shouldRebroadcastTransactions() bool {
 	const rebroadcastInterval = 30 * time.Second
-	if time.Since(m.lastRebroadcastTime) > rebroadcastInterval {
-		return
-	}
+	return time.Since(m.lastRebroadcastTime) > rebroadcastInterval
+}
 
-	// TODO(libp2p) Implement inv type to relay txs and broadcast.
+func (m *Manager) txIDsToRebroadcast() []*daghash.TxID {
+	m.transactionsToRebroadcastLock.Lock()
+	defer m.transactionsToRebroadcastLock.Unlock()
+
+	txIDs := make([]*daghash.TxID, len(m.transactionsToRebroadcast))
+	i := 0
+	for _, tx := range m.transactionsToRebroadcast {
+		txIDs[i] = tx.ID()
+		i++
+	}
+	return txIDs
 }

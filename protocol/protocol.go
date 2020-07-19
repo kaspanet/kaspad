@@ -60,37 +60,38 @@ func (m *Manager) startFlows(router *routerpkg.Router) error {
 		return nil
 	}
 
-	addOneTimeFlow("SendAddresses", router, []string{wire.CmdGetAddresses}, &stopped, stop,
+	addOneTimeFlow("SendAddresses", router, []wire.MessageCommand{wire.CmdGetAddresses}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) (routeClosed bool, err error) {
 			return sendaddresses.SendAddresses(incomingRoute, outgoingRoute, m.addressManager)
 		},
 	)
 
-	addOneTimeFlow("ReceiveAddresses", router, []string{wire.CmdAddress}, &stopped, stop,
+	addOneTimeFlow("ReceiveAddresses", router, []wire.MessageCommand{wire.CmdAddress}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) (routeClosed bool, err error) {
 			return receiveaddresses.ReceiveAddresses(incomingRoute, outgoingRoute, peer, m.addressManager)
 		},
 	)
 
-	addFlow("HandleRelayInvs", router, []string{wire.CmdInvRelayBlock, wire.CmdBlock}, &stopped, stop,
+	addFlow("HandleRelayInvs", router, []wire.MessageCommand{wire.CmdInvRelayBlock, wire.CmdBlock}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return handlerelayinvs.HandleRelayInvs(incomingRoute, outgoingRoute, peer, m.netAdapter, m.dag)
+			return handlerelayinvs.HandleRelayInvs(incomingRoute,
+				outgoingRoute, peer, m.netAdapter, m.dag, m.OnNewBlock)
 		},
 	)
 
-	addFlow("HandleRelayBlockRequests", router, []string{wire.CmdGetRelayBlocks}, &stopped, stop,
+	addFlow("HandleRelayBlockRequests", router, []wire.MessageCommand{wire.CmdGetRelayBlocks}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return handlerelayblockrequests.HandleRelayBlockRequests(incomingRoute, outgoingRoute, peer, m.dag)
 		},
 	)
 
-	addFlow("ReceivePings", router, []string{wire.CmdPing}, &stopped, stop,
+	addFlow("ReceivePings", router, []wire.MessageCommand{wire.CmdPing}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return ping.ReceivePings(incomingRoute, outgoingRoute)
 		},
 	)
 
-	addFlow("SendPings", router, []string{wire.CmdPong}, &stopped, stop,
+	addFlow("SendPings", router, []wire.MessageCommand{wire.CmdPong}, &stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return ping.SendPings(incomingRoute, outgoingRoute, peer)
 		},
@@ -100,7 +101,7 @@ func (m *Manager) startFlows(router *routerpkg.Router) error {
 	return err
 }
 
-func addFlow(name string, router *routerpkg.Router, messageTypes []string, stopped *uint32,
+func addFlow(name string, router *routerpkg.Router, messageTypes []wire.MessageCommand, stopped *uint32,
 	stopChan chan error, flow func(route *routerpkg.Route) error) {
 
 	route, err := router.AddIncomingRoute(messageTypes)
@@ -119,7 +120,7 @@ func addFlow(name string, router *routerpkg.Router, messageTypes []string, stopp
 	})
 }
 
-func addOneTimeFlow(name string, router *routerpkg.Router, messageTypes []string, stopped *uint32,
+func addOneTimeFlow(name string, router *routerpkg.Router, messageTypes []wire.MessageCommand, stopped *uint32,
 	stopChan chan error, flow func(route *routerpkg.Route) (routeClosed bool, err error)) {
 
 	route, err := router.AddIncomingRoute(messageTypes)

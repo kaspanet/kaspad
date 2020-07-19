@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"sync"
 	"time"
 )
 
@@ -18,8 +19,9 @@ type Manager struct {
 	dag              *blockdag.BlockDAG
 	addressManager   *addrmgr.AddrManager
 
-	transactionsToRebroadcast map[daghash.TxID]*util.Tx
-	lastRebroadcastTime       time.Time
+	transactionsToRebroadcastLock sync.Mutex
+	transactionsToRebroadcast     map[daghash.TxID]*util.Tx
+	lastRebroadcastTime           time.Time
 }
 
 // NewManager creates a new instance of the p2p protocol manager
