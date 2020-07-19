@@ -48,34 +48,28 @@ func New() *Peer {
 }
 
 // SelectedTipHash returns the selected tip of the peer.
-func (p *Peer) SelectedTipHash() (*daghash.Hash, error) {
+func (p *Peer) SelectedTipHash() *daghash.Hash {
 	p.selectedTipHashMtx.RLock()
 	defer p.selectedTipHashMtx.RUnlock()
-	return p.selectedTipHash, nil
+	return p.selectedTipHash
 }
 
 // SetSelectedTipHash sets the selected tip of the peer.
-func (p *Peer) SetSelectedTipHash(hash *daghash.Hash) error {
+func (p *Peer) SetSelectedTipHash(hash *daghash.Hash) {
 	p.selectedTipHashMtx.Lock()
 	defer p.selectedTipHashMtx.Unlock()
 	p.selectedTipHash = hash
-	return nil
 }
 
 // SubnetworkID returns the subnetwork the peer is associated with.
 // It is nil in full nodes.
-func (p *Peer) SubnetworkID() (*subnetworkid.SubnetworkID, error) {
-	return p.subnetworkID, nil
+func (p *Peer) SubnetworkID() *subnetworkid.SubnetworkID {
+	return p.subnetworkID
 }
 
 // ID returns the peer ID.
-func (p *Peer) ID() (*id.ID, error) {
-	return p.id, nil
-}
-
-// MarkAsReady marks the peer as ready.
-func (p *Peer) MarkAsReady() error {
-	return nil
+func (p *Peer) ID() *id.ID {
+	return p.id
 }
 
 // UpdateFieldsFromMsgVersion updates the peer with the data from the version message.
@@ -141,11 +135,6 @@ func AddToReadyPeers(peer *Peer) error {
 		return errors.Wrapf(ErrPeerWithSameIDExists, "peer with ID %s already exists", peer.id)
 	}
 
-	err := peer.MarkAsReady()
-	if err != nil {
-		return err
-	}
-
 	readyPeers[peer.id] = peer
 	return nil
 }
@@ -161,12 +150,6 @@ func GetReadyPeerIDs() []*id.ID {
 		i++
 	}
 	return peerIDs
-}
-
-// IDExists returns whether there's a peer with the given ID.
-func IDExists(peerID *id.ID) bool {
-	_, ok := readyPeers[peerID]
-	return ok
 }
 
 // ReadyPeers returns a copy of the currently ready peers

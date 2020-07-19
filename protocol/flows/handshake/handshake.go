@@ -87,29 +87,19 @@ func HandleHandshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter
 		panic(err)
 	}
 
-	peerID, err := peer.ID()
-	if err != nil {
-		panic(err)
-	}
-
+	peerID := peer.ID()
 	err = netAdapter.AssociateRouterID(router, peerID)
 	if err != nil {
 		panic(err)
 	}
 
 	if peerAddress != nil {
-		subnetworkID, err := peer.SubnetworkID()
-		if err != nil {
-			panic(err)
-		}
+		subnetworkID := peer.SubnetworkID()
 		addressManager.AddAddress(peerAddress, peerAddress, subnetworkID)
 		addressManager.Good(peerAddress, subnetworkID)
 	}
 
-	err = ibd.StartIBDIfRequired(dag)
-	if err != nil {
-		return nil, false, err
-	}
+	ibd.StartIBDIfRequired(dag)
 
 	err = router.RemoveRoute([]wire.MessageCommand{wire.CmdVersion, wire.CmdVerAck})
 	if err != nil {

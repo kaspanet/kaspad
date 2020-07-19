@@ -225,10 +225,8 @@ func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 	if err != nil {
 		return false, err
 	}
-	err = ibd.StartIBDIfRequired(dag)
-	if err != nil {
-		return false, err
-	}
+
+	ibd.StartIBDIfRequired(dag)
 
 	return false, nil
 }

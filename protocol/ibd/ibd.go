@@ -20,41 +20,34 @@ var (
 
 // StartIBDIfRequired selects a peer and starts IBD against it
 // if required
-func StartIBDIfRequired(dag *blockdag.BlockDAG) error {
+func StartIBDIfRequired(dag *blockdag.BlockDAG) {
 	startIBDMutex.Lock()
 	defer startIBDMutex.Unlock()
 
 	if atomic.LoadUint32(&isIBDRunning) != 0 {
-		return nil
+		return
 	}
 
-	peer, err := selectPeerForIBD(dag)
-	if err != nil {
-		return err
-	}
+	peer := selectPeerForIBD(dag)
 	if peer == nil {
 		requestSelectedTipsIfRequired(dag)
-		return nil
+		return
 	}
 
 	atomic.StoreUint32(&isIBDRunning, 1)
 	peer.StartIBD()
-	return nil
 }
 
 // selectPeerForIBD returns the first peer whose selected tip
 // hash is not in our DAG
-func selectPeerForIBD(dag *blockdag.BlockDAG) (*peerpkg.Peer, error) {
+func selectPeerForIBD(dag *blockdag.BlockDAG) *peerpkg.Peer {
 	for _, peer := range peerpkg.ReadyPeers() {
-		peerSelectedTipHash, err := peer.SelectedTipHash()
-		if err != nil {
-			return nil, err
-		}
+		peerSelectedTipHash := peer.SelectedTipHash()
 		if !dag.IsInDAG(peerSelectedTipHash) {
-			return peer, nil
+			return peer
 		}
 	}
-	return nil, nil
+	return nil
 }
 
 // HandleIBD waits for IBD start and handles it when IBD is triggered for this peer
@@ -66,18 +59,9 @@ func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 
 		// We run the flow inside a func so that the defer is called at its end
 		shouldStop, err := func() (bool, error) {
-			defer func() {
-				err := finishIBD(dag)
-				if err != nil {
-					log.Warnf("failed to finish IBD: %s", err)
-				}
-			}()
+			defer finishIBD(dag)
 
-			peerSelectedTipHash, err := peer.SelectedTipHash()
-			if err != nil {
-				return true, err
-			}
-
+			peerSelectedTipHash := peer.SelectedTipHash()
 			highestSharedBlockHash, shouldStop, err := findHighestSharedBlockHash(incomingRoute, outgoingRoute, dag, peerSelectedTipHash)
 			if err != nil {
 				return true, err
@@ -252,8 +236,8 @@ func processIBDBlock(dag *blockdag.BlockDAG, msgIBDBlock *wire.MsgIBDBlock) (sho
 	return false, nil
 }
 
-func finishIBD(dag *blockdag.BlockDAG) error {
+func finishIBD(dag *blockdag.BlockDAG) {
 	atomic.StoreUint32(&isIBDRunning, 0)
 
-	return StartIBDIfRequired(dag)
+	StartIBDIfRequired(dag)
 }

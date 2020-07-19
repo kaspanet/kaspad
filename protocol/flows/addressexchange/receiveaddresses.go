@@ -17,11 +17,7 @@ const timeout = 30 * time.Second
 func ReceiveAddresses(incomingRoute *router.Route, outgoingRoute *router.Route,
 	peer *peerpkg.Peer, addressManager *addrmgr.AddrManager) (routeClosed bool, err error) {
 
-	subnetworkID, err := peer.SubnetworkID()
-	if err != nil {
-		panic(err)
-	}
-
+	subnetworkID := peer.SubnetworkID()
 	msgGetAddresses := wire.NewMsgGetAddresses(false, subnetworkID)
 	isOpen, err := outgoingRoute.EnqueueWithTimeout(msgGetAddresses, timeout)
 	if err != nil {

@@ -55,15 +55,9 @@ func RequestSelectedTip(incomingRoute *router.Route,
 			if shouldStop {
 				return true, nil
 			}
-			err = peer.SetSelectedTipHash(peerSelectedTipHash)
-			if err != nil {
-				return true, err
-			}
 
-			err = StartIBDIfRequired(dag)
-			if err != nil {
-				return true, err
-			}
+			peer.SetSelectedTipHash(peerSelectedTipHash)
+			StartIBDIfRequired(dag)
 			return false, nil
 		}()
 		if err != nil {
