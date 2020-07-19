@@ -36,30 +36,7 @@ func RequestSelectedTip(incomingRoute *router.Route,
 	for {
 		peer.WaitForSelectedTipRequests()
 
-		// We run the flow inside a func so that the defer is called at its end
-		shouldStop, err := func() (bool, error) {
-			defer peer.FinishRequestingSelectedTip()
-
-			shouldStop, err := requestSelectedTip(outgoingRoute)
-			if err != nil {
-				return true, err
-			}
-			if shouldStop {
-				return true, nil
-			}
-
-			peerSelectedTipHash, shouldStop, err := receiveSelectedTip(incomingRoute)
-			if err != nil {
-				return true, err
-			}
-			if shouldStop {
-				return true, nil
-			}
-
-			peer.SetSelectedTipHash(peerSelectedTipHash)
-			StartIBDIfRequired(dag)
-			return false, nil
-		}()
+		shouldStop, err := runSelectedTipRequest(incomingRoute, outgoingRoute, peer, dag)
 		if err != nil {
 			return err
 		}
@@ -67,6 +44,32 @@ func RequestSelectedTip(incomingRoute *router.Route,
 			return nil
 		}
 	}
+}
+
+func runSelectedTipRequest(incomingRoute *router.Route, outgoingRoute *router.Route,
+	peer *peerpkg.Peer, dag *blockdag.BlockDAG) (shouldStop bool, err error) {
+
+	defer peer.FinishRequestingSelectedTip()
+
+	shouldStop, err = requestSelectedTip(outgoingRoute)
+	if err != nil {
+		return true, err
+	}
+	if shouldStop {
+		return true, nil
+	}
+
+	peerSelectedTipHash, shouldStop, err := receiveSelectedTip(incomingRoute)
+	if err != nil {
+		return true, err
+	}
+	if shouldStop {
+		return true, nil
+	}
+
+	peer.SetSelectedTipHash(peerSelectedTipHash)
+	StartIBDIfRequired(dag)
+	return false, nil
 }
 
 func requestSelectedTip(outgoingRoute *router.Route) (shouldStop bool, err error) {

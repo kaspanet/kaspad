@@ -74,6 +74,7 @@ func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 
 func runIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 	peer *peerpkg.Peer, dag *blockdag.BlockDAG) (shouldStop bool, err error) {
+
 	defer finishIBD(dag)
 
 	peerSelectedTipHash := peer.SelectedTipHash()
