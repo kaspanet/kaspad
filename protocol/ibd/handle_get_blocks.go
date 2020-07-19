@@ -11,11 +11,11 @@ import (
 // HandleGetBlocks handles getBlocks messages
 func HandleGetBlocks(incomingRoute *router.Route, outgoingRoute *router.Route, dag *blockdag.BlockDAG) error {
 	for {
-		lowHash, highHash, shouldContinue, err := receiveGetBlocks(incomingRoute)
+		lowHash, highHash, shouldStop, err := receiveGetBlocks(incomingRoute)
 		if err != nil {
 			return err
 		}
-		if !shouldContinue {
+		if shouldStop {
 			return nil
 		}
 
@@ -24,26 +24,26 @@ func HandleGetBlocks(incomingRoute *router.Route, outgoingRoute *router.Route, d
 			return err
 		}
 
-		shouldContinue, err = sendMsgIBDBlocks(outgoingRoute, msgIBDBlocks)
+		shouldStop, err = sendMsgIBDBlocks(outgoingRoute, msgIBDBlocks)
 		if err != nil {
 			return err
 		}
-		if !shouldContinue {
+		if shouldStop {
 			return nil
 		}
 	}
 }
 
 func receiveGetBlocks(incomingRoute *router.Route) (lowHash *daghash.Hash,
-	highHash *daghash.Hash, shouldContinue bool, err error) {
+	highHash *daghash.Hash, shouldStop bool, err error) {
 
 	message, isOpen := incomingRoute.Dequeue()
 	if !isOpen {
-		return nil, nil, false, nil
+		return nil, nil, true, nil
 	}
 	msgGetBlocks := message.(*wire.MsgGetBlocks)
 
-	return msgGetBlocks.LowHash, msgGetBlocks.HighHash, true, nil
+	return msgGetBlocks.LowHash, msgGetBlocks.HighHash, false, nil
 }
 
 func buildMsgIBDBlocks(lowHash *daghash.Hash, highHash *daghash.Hash,
@@ -66,15 +66,15 @@ func buildMsgIBDBlocks(lowHash *daghash.Hash, highHash *daghash.Hash,
 	return msgIBDBlocks, nil
 }
 
-func sendMsgIBDBlocks(outgoingRoute *router.Route, msgIBDBlocks []*wire.MsgIBDBlock) (shouldContinue bool, err error) {
+func sendMsgIBDBlocks(outgoingRoute *router.Route, msgIBDBlocks []*wire.MsgIBDBlock) (shouldStop bool, err error) {
 	for _, msgIBDBlock := range msgIBDBlocks {
 		isOpen, err := outgoingRoute.EnqueueWithTimeout(msgIBDBlock, common.DefaultTimeout)
 		if err != nil {
-			return false, err
+			return true, err
 		}
 		if !isOpen {
-			return false, nil
+			return true, nil
 		}
 	}
-	return true, nil
+	return false, nil
 }

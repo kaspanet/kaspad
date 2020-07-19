@@ -12,11 +12,11 @@ import (
 // HandleGetBlockLocator handles getBlockLocator messages
 func HandleGetBlockLocator(incomingRoute *router.Route, outgoingRoute *router.Route, dag *blockdag.BlockDAG) error {
 	for {
-		lowHash, highHash, shouldContinue, err := receiveGetBlockLocator(incomingRoute)
+		lowHash, highHash, shouldStop, err := receiveGetBlockLocator(incomingRoute)
 		if err != nil {
 			return err
 		}
-		if !shouldContinue {
+		if shouldStop {
 			return nil
 		}
 
@@ -26,40 +26,40 @@ func HandleGetBlockLocator(incomingRoute *router.Route, outgoingRoute *router.Ro
 				"locator between blocks %s and %s", lowHash, highHash)
 		}
 
-		shouldContinue, err = sendBlockLocator(outgoingRoute, locator)
+		shouldStop, err = sendBlockLocator(outgoingRoute, locator)
 		if err != nil {
 			return err
 		}
-		if !shouldContinue {
+		if shouldStop {
 			return nil
 		}
 	}
 }
 
 func receiveGetBlockLocator(incomingRoute *router.Route) (lowHash *daghash.Hash,
-	highHash *daghash.Hash, shouldContinue bool, err error) {
+	highHash *daghash.Hash, shouldStop bool, err error) {
 
 	message, isOpen := incomingRoute.Dequeue()
 	if !isOpen {
-		return nil, nil, false, nil
+		return nil, nil, true, nil
 	}
 	msgGetBlockLocator := message.(*wire.MsgGetBlockLocator)
 
-	return msgGetBlockLocator.LowHash, msgGetBlockLocator.HighHash, true, nil
+	return msgGetBlockLocator.LowHash, msgGetBlockLocator.HighHash, false, nil
 }
 
-func sendBlockLocator(outgoingRoute *router.Route, locator blockdag.BlockLocator) (shouldContinue bool, err error) {
+func sendBlockLocator(outgoingRoute *router.Route, locator blockdag.BlockLocator) (shouldStop bool, err error) {
 	msgBlockLocator := wire.NewMsgBlockLocator()
 	for _, hash := range locator {
 		err := msgBlockLocator.AddBlockLocatorHash(hash)
 		if err != nil {
-			return false, err
+			return true, err
 		}
 	}
 
 	isOpen, err := outgoingRoute.EnqueueWithTimeout(msgBlockLocator, common.DefaultTimeout)
 	if err != nil {
-		return false, err
+		return true, err
 	}
-	return isOpen, nil
+	return !isOpen, nil
 }
