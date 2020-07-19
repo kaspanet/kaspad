@@ -1,7 +1,6 @@
 package protocol
 
 import (
-	"errors"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/config"
@@ -19,6 +18,7 @@ import (
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
 )
 
 type Manager struct {
