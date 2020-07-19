@@ -6,11 +6,12 @@ package connmgr
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/util/mstime"
 	mrand "math/rand"
 	"net"
 	"strconv"
 	"time"
+
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -40,11 +41,10 @@ type OnSeed func(addrs []*wire.NetAddress)
 type LookupFunc func(string) ([]net.IP, error)
 
 // SeedFromDNS uses DNS seeding to populate the address manager with peers.
-func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag, includeAllSubnetworks bool,
+func SeedFromDNS(mainConfig *config.Config, dagParams *dagconfig.Params, reqServices wire.ServiceFlag, includeAllSubnetworks bool,
 	subnetworkID *subnetworkid.SubnetworkID, lookupFn LookupFunc, seedFn OnSeed) {
 
 	var dnsSeeds []string
-	mainConfig := config.ActiveConfig()
 	if mainConfig != nil && mainConfig.DNSSeed != "" {
 		dnsSeeds = []string{mainConfig.DNSSeed}
 	} else {

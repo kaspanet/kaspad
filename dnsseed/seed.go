@@ -41,11 +41,10 @@ type OnSeed func(addrs []*wire.NetAddress)
 type LookupFunc func(string) ([]net.IP, error)
 
 // SeedFromDNS uses DNS seeding to populate the address manager with peers.
-func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag, includeAllSubnetworks bool,
+func SeedFromDNS(cfg *config.Config, dagParams *dagconfig.Params, reqServices wire.ServiceFlag, includeAllSubnetworks bool,
 	subnetworkID *subnetworkid.SubnetworkID, lookupFn LookupFunc, seedFn OnSeed) {
 
 	var dnsSeeds []string
-	cfg := config.ActiveConfig()
 	if cfg != nil && cfg.DNSSeed != "" {
 		dnsSeeds = []string{cfg.DNSSeed}
 	} else {
