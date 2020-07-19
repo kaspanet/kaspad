@@ -1,9 +1,11 @@
 package router
 
 import (
+	"sync"
+	"time"
+
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
-	"time"
 )
 
 const (
@@ -20,7 +22,10 @@ type onCapacityReachedHandler func()
 // Route represents an incoming or outgoing Router route
 type Route struct {
 	channel chan wire.Message
-	closed  bool
+	// closed and closeLock are used to protect us from writing to a closed channel
+	// reads use the channel's built-in mechanism to check if the channel is closed
+	closed    bool
+	closeLock sync.Mutex
 
 	onCapacityReachedHandler onCapacityReachedHandler
 }
@@ -35,6 +40,9 @@ func NewRoute() *Route {
 
 // Enqueue enqueues a message to the Route
 func (r *Route) Enqueue(message wire.Message) (isOpen bool) {
+	r.closeLock.Lock()
+	defer r.closeLock.Unlock()
+
 	if r.closed {
 		return false
 	}
@@ -45,17 +53,12 @@ func (r *Route) Enqueue(message wire.Message) (isOpen bool) {
 	return true
 }
 
-// Dequeue dequeues a message from the Route
-func (r *Route) Dequeue() (message wire.Message, isOpen bool) {
-	if r.closed {
-		return nil, false
-	}
-	return <-r.channel, true
-}
-
 // EnqueueWithTimeout attempts to enqueue a message to the Route
 // and returns an error if the given timeout expires first.
 func (r *Route) EnqueueWithTimeout(message wire.Message, timeout time.Duration) (isOpen bool, err error) {
+	r.closeLock.Lock()
+	defer r.closeLock.Unlock()
+
 	if r.closed {
 		return false, nil
 	}
@@ -70,17 +73,20 @@ func (r *Route) EnqueueWithTimeout(message wire.Message, timeout time.Duration) 
 	}
 }
 
+// Dequeue dequeues a message from the Route
+func (r *Route) Dequeue() (message wire.Message, isOpen bool) {
+	message, isOpen = <-r.channel
+	return message, isOpen
+}
+
 // DequeueWithTimeout attempts to dequeue a message from the Route
 // and returns an error if the given timeout expires first.
 func (r *Route) DequeueWithTimeout(timeout time.Duration) (message wire.Message, isOpen bool, err error) {
-	if r.closed {
-		return nil, false, nil
-	}
 	select {
 	case <-time.After(timeout):
 		return nil, false, errors.Wrapf(ErrTimeout, "got timeout after %s", timeout)
-	case message := <-r.channel:
-		return message, true, nil
+	case message, isOpen = <-r.channel:
+		return message, isOpen, nil
 	}
 }
 
@@ -90,6 +96,9 @@ func (r *Route) setOnCapacityReachedHandler(onCapacityReachedHandler onCapacityR
 
 // Close closes this route
 func (r *Route) Close() error {
+	r.closeLock.Lock()
+	defer r.closeLock.Unlock()
+
 	r.closed = true
 	close(r.channel)
 	return nil

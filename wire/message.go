@@ -7,8 +7,9 @@ package wire
 import (
 	"bytes"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/daghash"
 )
@@ -66,8 +67,8 @@ const (
 var messageCommandToString = map[MessageCommand]string{
 	CmdVersion:         "Version",
 	CmdVerAck:          "VerAck",
-	CmdGetAddresses:    "GetAddr",
-	CmdAddress:         "Addr",
+	CmdGetAddresses:    "GetAddress",
+	CmdAddress:         "Address",
 	CmdGetBlocks:       "GetBlocks",
 	CmdInv:             "Inv",
 	CmdGetData:         "GetData",
