@@ -878,7 +878,7 @@ func (dag *BlockDAG) updateFinalityPoint() {
 		}
 	}
 	dag.lastFinalityPoint = currentNode
-	spawn(func() {
+	spawn("dag.finalizeNodesBelowFinalityPoint", func() {
 		dag.finalizeNodesBelowFinalityPoint(true)
 	})
 }

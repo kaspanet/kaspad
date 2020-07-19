@@ -27,7 +27,7 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64, min
 	templateStopChan := make(chan struct{})
 
 	doneChan := make(chan struct{})
-	spawn(func() {
+	spawn("mineLoop-internalLoop", func() {
 		wg := sync.WaitGroup{}
 		for i := uint64(0); numberOfBlocks == 0 || i < numberOfBlocks; i++ {
 			foundBlock := make(chan *util.Block)
@@ -35,7 +35,7 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64, min
 			block := <-foundBlock
 			templateStopChan <- struct{}{}
 			wg.Add(1)
-			spawn(func() {
+			spawn("mineLoop-handleFoundBlock", func() {
 				if blockDelay != 0 {
 					time.Sleep(time.Duration(blockDelay) * time.Millisecond)
 				}
@@ -61,7 +61,7 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64, min
 }
 
 func logHashRate() {
-	spawn(func() {
+	spawn("logHashRate", func() {
 		lastCheck := time.Now()
 		for range time.Tick(logHashRateInterval) {
 			currentHashesTried := hashesTried
@@ -80,10 +80,10 @@ func mineNextBlock(client *minerClient, miningAddr util.Address, foundBlock chan
 	templateStopChan chan struct{}, errChan chan error) {
 
 	newTemplateChan := make(chan *rpcmodel.GetBlockTemplateResult)
-	spawn(func() {
+	spawn("templatesLoop", func() {
 		templatesLoop(client, miningAddr, newTemplateChan, errChan, templateStopChan)
 	})
-	spawn(func() {
+	spawn("solveLoop", func() {
 		solveLoop(newTemplateChan, foundBlock, mineWhenNotSynced, errChan)
 	})
 }
@@ -185,7 +185,7 @@ func solveLoop(newTemplateChan chan *rpcmodel.GetBlockTemplateResult, foundBlock
 			return
 		}
 
-		spawn(func() {
+		spawn("solveBlock", func() {
 			solveBlock(block, stopOldTemplateSolving, foundBlock)
 		})
 	}

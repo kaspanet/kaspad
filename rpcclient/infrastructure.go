@@ -426,7 +426,7 @@ out:
 			}
 			break out
 		}
-		spawn(func() {
+		spawn("Client.handleMessage", func() {
 			c.handleMessage(msg)
 		})
 	}
@@ -673,7 +673,7 @@ out:
 
 			// Reissue pending requests in another goroutine since
 			// the send can block.
-			spawn(c.resendRequests)
+			spawn("Client.resendRequests", c.resendRequests)
 
 			// Break out of the reconnect loop back to wait for
 			// disconnect again.
@@ -845,7 +845,7 @@ func (c *Client) sendRequest(data *jsonRequestData) chan *response {
 	} else {
 		jReq.responseChan = responseChan
 	}
-	spawn(func() {
+	spawn("Client.sendRequest-sendMessage", func() {
 		// Choose which marshal and send function to use depending on whether
 		// the client running in HTTP POST mode or not. When running in HTTP
 		// POST mode, the command is issued via an HTTP client. Otherwise,
@@ -876,7 +876,7 @@ func (c *Client) sendRequest(data *jsonRequestData) chan *response {
 		c.sendMessage(jReq.marshalledJSON)
 	})
 	if cancelOnTimeout {
-		spawn(func() {
+		spawn("Client.sendRequest-cancelOnTimeout", func() {
 			ticker := time.NewTicker(c.config.RequestTimeout)
 			defer ticker.Stop()
 			select {
@@ -1044,10 +1044,10 @@ func (c *Client) start() {
 	// in HTTP POST mode or the default websocket mode.
 	if c.config.HTTPPostMode {
 		c.wg.Add(1)
-		spawn(c.sendPostHandler)
+		spawn("Client.sendPostHandler", c.sendPostHandler)
 	} else {
 		c.wg.Add(3)
-		spawn(func() {
+		spawn("Client.OnClientConnected", func() {
 			if c.ntfnHandlers != nil {
 				if c.ntfnHandlers.OnClientConnected != nil {
 					c.ntfnHandlers.OnClientConnected()
@@ -1055,8 +1055,8 @@ func (c *Client) start() {
 			}
 			c.wg.Done()
 		})
-		spawn(c.wsInHandler)
-		spawn(c.wsOutHandler)
+		spawn("Client.wsInHandler", c.wsInHandler)
+		spawn("Client.wsOutHandler", c.wsOutHandler)
 	}
 }
 
@@ -1295,7 +1295,7 @@ func New(config *ConnConfig, ntfnHandlers *NotificationHandlers) (*Client, error
 		client.start()
 		if !client.config.HTTPPostMode && !client.config.DisableAutoReconnect {
 			client.wg.Add(1)
-			spawn(client.wsReconnectHandler)
+			spawn("Client.wsReconnectHandler", client.wsReconnectHandler)
 		}
 	}
 
@@ -1350,7 +1350,7 @@ func (c *Client) Connect(tries int) error {
 		c.start()
 		if !c.config.DisableAutoReconnect {
 			c.wg.Add(1)
-			spawn(c.wsReconnectHandler)
+			spawn("Client.wsReconnectHandler", c.wsReconnectHandler)
 		}
 		return nil
 	}

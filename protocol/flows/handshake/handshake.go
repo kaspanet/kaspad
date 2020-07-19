@@ -39,7 +39,7 @@ func HandleHandshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter
 	errChan := make(chan error)
 
 	var peerAddress *wire.NetAddress
-	spawn(func() {
+	spawn("HandleHandshake-ReceiveVersion", func() {
 		defer wg.Done()
 		address, closed, err := ReceiveVersion(receiveVersionRoute, router.OutgoingRoute(), netAdapter, peer, dag)
 		if err != nil {
@@ -54,7 +54,7 @@ func HandleHandshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter
 		peerAddress = address
 	})
 
-	spawn(func() {
+	spawn("HandleHandshake-SendVersion", func() {
 		defer wg.Done()
 		closed, err := SendVersion(sendVersionRoute, router.OutgoingRoute(), netAdapter, dag)
 		if err != nil {

@@ -88,7 +88,7 @@ func (c *ConnectionManager) checkRequestedConnections(connSet connectionSet) {
 func (c *ConnectionManager) AddConnectionRequest(address string, isPermanent bool) {
 	// spawn goroutine so that caller doesn't wait in case connectionManager is in the midst of handling
 	// connection requests
-	spawn(func() {
+	spawn("ConnectionManager-AddConnectionRequest", func() {
 		c.connectionRequestsLock.Lock()
 		defer c.connectionRequestsLock.Unlock()
 

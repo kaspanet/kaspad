@@ -68,7 +68,7 @@ func New(netAdapter *netadapter.NetAdapter, addressManager *addrmgr.AddrManager)
 
 // Start begins the operation of the ConnectionManager
 func (c *ConnectionManager) Start() {
-	spawn(c.connectionsLoop)
+	spawn("ConnectionManager.connectionsLoop", c.connectionsLoop)
 }
 
 // Stop halts the operation of the ConnectionManager

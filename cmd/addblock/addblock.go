@@ -21,7 +21,7 @@ const (
 var (
 	cfg   *ConfigFlags
 	log   *logs.Logger
-	spawn func(func())
+	spawn func(string, func())
 )
 
 // realMain is the real main function for the utility. It is necessary to work
