@@ -39,12 +39,12 @@ type NetAdapter struct {
 
 // NewNetAdapter creates and starts a new NetAdapter on the
 // given listeningPort
-func NewNetAdapter(cfg *config.Config, listeningAddrs []string) (*NetAdapter, error) {
+func NewNetAdapter(cfg *config.Config) (*NetAdapter, error) {
 	netAdapterID, err := id.GenerateID()
 	if err != nil {
 		return nil, err
 	}
-	s, err := grpcserver.NewGRPCServer(listeningAddrs)
+	s, err := grpcserver.NewGRPCServer(cfg.Listeners)
 	if err != nil {
 		return nil, err
 	}

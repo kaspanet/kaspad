@@ -10,7 +10,6 @@ import (
 	"github.com/kaspanet/kaspad/connmanager"
 
 	"github.com/kaspanet/kaspad/addrmgr"
-	"github.com/kaspanet/kaspad/server/serverutils"
 
 	"github.com/kaspanet/kaspad/netadapter"
 
@@ -64,7 +63,7 @@ func (k *kaspad) start() {
 
 func (k *kaspad) maybeSeedFromDNS() {
 	if !k.cfg.DisableDNSSeed {
-		dnsseed.SeedFromDNS(k.cfg.NetParams(), wire.SFNodeNetwork, false, nil,
+		dnsseed.SeedFromDNS(k.cfg, k.cfg.NetParams(), wire.SFNodeNetwork, false, nil,
 			k.cfg.Lookup, func(addresses []*wire.NetAddress) {
 				// Kaspad uses a lookup of the dns seeder here. Since seeder returns
 				// IPs of nodes and not its own IP, we can not know real IP of
@@ -106,32 +105,32 @@ func (k *kaspad) stop() error {
 // kaspa network type specified by dagParams. Use start to begin accepting
 // connections from peers.
 func newKaspad(cfg *config.Config, interrupt <-chan struct{}) (*kaspad, error) {
-	indexManager, acceptanceIndex := setupIndexes()
+	indexManager, acceptanceIndex := setupIndexes(cfg)
 
 	sigCache := txscript.NewSigCache(cfg.SigCacheMaxSize)
 
 	// Create a new block DAG instance with the appropriate configuration.
-	dag, err := setupDAG(interrupt, sigCache, indexManager)
+	dag, err := setupDAG(cfg, interrupt, sigCache, indexManager)
 	if err != nil {
 		return nil, err
 	}
 
-	txMempool := setupMempool(dag, sigCache)
+	txMempool := setupMempool(cfg, dag, sigCache)
 
-	netAdapter, err := netadapter.NewNetAdapter(cfg.Listeners)
+	netAdapter, err := netadapter.NewNetAdapter(cfg)
 	if err != nil {
 		return nil, err
 	}
-	addressManager := addrmgr.New(cfg, serverutils.KaspadLookup)
+	addressManager := addrmgr.New(cfg)
 
-	protocol.Init(netAdapter, addressManager, dag)
+	protocol.Init(cfg, netAdapter, addressManager, dag)
 
-	connectionManager, err := connmanager.New(netAdapter, addressManager)
+	connectionManager, err := connmanager.New(cfg, netAdapter, addressManager)
 	if err != nil {
 		return nil, err
 	}
 
-	rpcServer, err := setupRPC(dag, txMempool, sigCache, acceptanceIndex)
+	rpcServer, err := setupRPC(cfg, dag, txMempool, sigCache, acceptanceIndex)
 	if err != nil {
 		return nil, err
 	}
@@ -143,23 +142,23 @@ func newKaspad(cfg *config.Config, interrupt <-chan struct{}) (*kaspad, error) {
 	}, nil
 }
 
-func setupDAG(interrupt <-chan struct{}, sigCache *txscript.SigCache, indexManager blockdag.IndexManager) (*blockdag.BlockDAG, error) {
+func setupDAG(cfg *config.Config, interrupt <-chan struct{}, sigCache *txscript.SigCache, indexManager blockdag.IndexManager) (*blockdag.BlockDAG, error) {
 	dag, err := blockdag.New(&blockdag.Config{
 		Interrupt:    interrupt,
-		DAGParams:    config.ActiveConfig().NetParams(),
+		DAGParams:    cfg.NetParams(),
 		TimeSource:   blockdag.NewTimeSource(),
 		SigCache:     sigCache,
 		IndexManager: indexManager,
-		SubnetworkID: config.ActiveConfig().SubnetworkID,
+		SubnetworkID: cfg.SubnetworkID,
 	})
 	return dag, err
 }
 
-func setupIndexes() (blockdag.IndexManager, *indexers.AcceptanceIndex) {
+func setupIndexes(cfg *config.Config) (blockdag.IndexManager, *indexers.AcceptanceIndex) {
 	// Create indexes if needed.
 	var indexes []indexers.Indexer
 	var acceptanceIndex *indexers.AcceptanceIndex
-	if config.ActiveConfig().AcceptanceIndex {
+	if cfg.AcceptanceIndex {
 		log.Info("acceptance index is enabled")
 		indexes = append(indexes, acceptanceIndex)
 	}
@@ -172,13 +171,13 @@ func setupIndexes() (blockdag.IndexManager, *indexers.AcceptanceIndex) {
 	return indexManager, acceptanceIndex
 }
 
-func setupMempool(dag *blockdag.BlockDAG, sigCache *txscript.SigCache) *mempool.TxPool {
+func setupMempool(cfg *config.Config, dag *blockdag.BlockDAG, sigCache *txscript.SigCache) *mempool.TxPool {
 	mempoolConfig := mempool.Config{
 		Policy: mempool.Policy{
-			AcceptNonStd:    config.ActiveConfig().RelayNonStd,
-			MaxOrphanTxs:    config.ActiveConfig().MaxOrphanTxs,
+			AcceptNonStd:    cfg.RelayNonStd,
+			MaxOrphanTxs:    cfg.MaxOrphanTxs,
 			MaxOrphanTxSize: config.DefaultMaxOrphanTxSize,
-			MinRelayTxFee:   config.ActiveConfig().MinRelayTxFee,
+			MinRelayTxFee:   cfg.MinRelayTxFee,
 			MaxTxVersion:    1,
 		},
 		CalcSequenceLockNoLock: func(tx *util.Tx, utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
@@ -192,16 +191,16 @@ func setupMempool(dag *blockdag.BlockDAG, sigCache *txscript.SigCache) *mempool.
 	return mempool.New(&mempoolConfig)
 }
 
-func setupRPC(dag *blockdag.BlockDAG, txMempool *mempool.TxPool, sigCache *txscript.SigCache,
+func setupRPC(cfg *config.Config, dag *blockdag.BlockDAG, txMempool *mempool.TxPool, sigCache *txscript.SigCache,
 	acceptanceIndex *indexers.AcceptanceIndex) (*rpc.Server, error) {
-	cfg := config.ActiveConfig()
+
 	if !cfg.DisableRPC {
 		policy := mining.Policy{
 			BlockMaxMass: cfg.BlockMaxMass,
 		}
 		blockTemplateGenerator := mining.NewBlkTmplGenerator(&policy, txMempool, dag, sigCache)
 
-		rpcServer, err := rpc.NewRPCServer(dag, txMempool, acceptanceIndex, blockTemplateGenerator)
+		rpcServer, err := rpc.NewRPCServer(cfg, dag, txMempool, acceptanceIndex, blockTemplateGenerator)
 		if err != nil {
 			return nil, err
 		}
