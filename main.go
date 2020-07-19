@@ -43,11 +43,10 @@ func kaspadMain(startedChan chan<- struct{}) error {
 
 	// Load configuration and parse command line. This function also
 	// initializes logging and configures it accordingly.
-	err := config.LoadAndSetActiveConfig()
+	cfg, _, err := config.LoadConfig()
 	if err != nil {
 		return err
 	}
-	cfg := config.ActiveConfig()
 	defer panics.HandlePanic(log, nil)
 
 	// Get a channel that will be closed when a shutdown signal has been
@@ -89,7 +88,7 @@ func kaspadMain(startedChan chan<- struct{}) error {
 	}
 
 	if cfg.ResetDatabase {
-		err := removeDatabase()
+		err := removeDatabase(cfg)
 		if err != nil {
 			log.Errorf("%s", err)
 			return err
@@ -97,7 +96,7 @@ func kaspadMain(startedChan chan<- struct{}) error {
 	}
 
 	// Open the database
-	err = openDB()
+	err = openDB(cfg)
 	if err != nil {
 		log.Errorf("%s", err)
 		return err
@@ -162,8 +161,8 @@ func kaspadMain(startedChan chan<- struct{}) error {
 	return nil
 }
 
-func removeDatabase() error {
-	dbPath := blockDbPath(config.ActiveConfig().DbType)
+func removeDatabase(cfg *config.Config) error {
+	dbPath := blockDbPath(cfg)
 	return os.RemoveAll(dbPath)
 }
 
@@ -171,18 +170,15 @@ func removeDatabase() error {
 // in regression test mode and it already exists.
 
 // dbPath returns the path to the block database given a database type.
-func blockDbPath(dbType string) string {
+func blockDbPath(cfg *config.Config) string {
 	// The database name is based on the database type.
-	dbName := blockDbNamePrefix + "_" + dbType
-	if dbType == "sqlite" {
-		dbName = dbName + ".db"
-	}
-	dbPath := filepath.Join(config.ActiveConfig().DataDir, dbName)
+	dbName := blockDbNamePrefix + "_" + cfg.DbType
+	dbPath := filepath.Join(cfg.DataDir, dbName)
 	return dbPath
 }
 
-func openDB() error {
-	dbPath := filepath.Join(config.ActiveConfig().DataDir, "db")
+func openDB(cfg *config.Config) error {
+	dbPath := filepath.Join(cfg.DataDir, "db")
 	log.Infof("Loading database from '%s'", dbPath)
 	err := dbaccess.Open(dbPath)
 	if err != nil {
