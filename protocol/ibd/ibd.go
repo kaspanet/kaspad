@@ -188,9 +188,12 @@ func downloadBlocks(incomingRoute *router.Route, outgoingRoute *router.Route,
 		if shouldStop {
 			return true, nil
 		}
-		err = processIBDBlock(dag, msgIBDBlock)
+		shouldStop, err = processIBDBlock(dag, msgIBDBlock)
 		if err != nil {
 			return true, err
+		}
+		if shouldStop {
+			return true, nil
 		}
 		if msgIBDBlock.BlockHash().IsEqual(peerSelectedTipHash) {
 			return true, nil
@@ -224,24 +227,25 @@ func receiveIBDBlock(incomingRoute *router.Route) (msgIBDBlock *wire.MsgIBDBlock
 	return msgIBDBlock, false, nil
 }
 
-func processIBDBlock(dag *blockdag.BlockDAG, msgIBDBlock *wire.MsgIBDBlock) error {
+func processIBDBlock(dag *blockdag.BlockDAG, msgIBDBlock *wire.MsgIBDBlock) (shouldStop bool, err error) {
 	block := util.NewBlock(&msgIBDBlock.MsgBlock)
 	if dag.IsInDAG(block.Hash()) {
-		return nil
+		return false, nil
 	}
 	isOrphan, isDelayed, err := dag.ProcessBlock(block, blockdag.BFNone)
 	if err != nil {
-		return err
+		return true, err
 	}
 	if isOrphan {
-		return protocolerrors.Errorf(true, "received orphan block %s "+
+		return true, protocolerrors.Errorf(true, "received orphan block %s "+
 			"during IBD", block.Hash())
 	}
 	if isDelayed {
-		return protocolerrors.Errorf(true, "received delayed block %s "+
-			"during IBD", block.Hash())
+		// Theoretically we may receive delayed blocks during IBD from
+		// an honest peer, so we don't bad/disconnect them
+		return true, nil
 	}
-	return nil
+	return false, nil
 }
 
 func finishIBD(dag *blockdag.BlockDAG) error {
