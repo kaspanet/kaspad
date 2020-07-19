@@ -199,7 +199,7 @@ func ReadyPeers() []*Peer {
 // a selected tip is required. This triggers the selected tip
 // request flow.
 func (p *Peer) RequestSelectedTipIfRequired() {
-	if atomic.LoadUint32(&p.isSelectedPeerRequested) != 0 {
+	if atomic.AddUint32(&p.isSelectedPeerRequested, 1) != 1 {
 		return
 	}
 
@@ -208,7 +208,6 @@ func (p *Peer) RequestSelectedTipIfRequired() {
 		return
 	}
 
-	atomic.StoreUint32(&p.isSelectedPeerRequested, 1)
 	p.lastSelectedTipRequest = mstime.Now()
 	p.selectedPeerRequestChan <- struct{}{}
 }
@@ -222,7 +221,7 @@ func (p *Peer) WaitForSelectedTipRequests() {
 // FinishRequestingSelectedTip finishes requesting the selected
 // tip from this peer
 func (p *Peer) FinishRequestingSelectedTip() {
-	atomic.StoreUint32(&p.isSelectedPeerRequested, 0)
+	atomic.AddUint32(&p.isSelectedPeerRequested, -1)
 }
 
 // StartIBD notifies the peer that starting IBD is required.
