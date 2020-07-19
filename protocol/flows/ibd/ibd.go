@@ -62,30 +62,7 @@ func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 	for {
 		peer.WaitForIBDStart()
 
-		// We run the flow inside a func so that the defer is called at its end
-		shouldStop, err := func() (bool, error) {
-			defer finishIBD(dag)
-
-			peerSelectedTipHash := peer.SelectedTipHash()
-			highestSharedBlockHash, shouldStop, err := findHighestSharedBlockHash(incomingRoute, outgoingRoute, dag, peerSelectedTipHash)
-			if err != nil {
-				return true, err
-			}
-			if shouldStop {
-				return true, nil
-			}
-			if dag.IsKnownFinalizedBlock(highestSharedBlockHash) {
-				return true, protocolerrors.Errorf(false, "cannot initiate "+
-					"IBD with peer %s because the highest shared chain block (%s) is "+
-					"below the finality point", peer, highestSharedBlockHash)
-			}
-
-			shouldStop, err = downloadBlocks(incomingRoute, outgoingRoute, dag, highestSharedBlockHash, peerSelectedTipHash)
-			if err != nil {
-				return true, err
-			}
-			return shouldStop, nil
-		}()
+		shouldStop, err := runIBD(incomingRoute, outgoingRoute, peer, dag)
 		if err != nil {
 			return err
 		}
@@ -93,6 +70,31 @@ func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 			return nil
 		}
 	}
+}
+
+func runIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
+	peer *peerpkg.Peer, dag *blockdag.BlockDAG) (shouldStop bool, err error) {
+	defer finishIBD(dag)
+
+	peerSelectedTipHash := peer.SelectedTipHash()
+	highestSharedBlockHash, shouldStop, err := findHighestSharedBlockHash(incomingRoute, outgoingRoute, dag, peerSelectedTipHash)
+	if err != nil {
+		return true, err
+	}
+	if shouldStop {
+		return true, nil
+	}
+	if dag.IsKnownFinalizedBlock(highestSharedBlockHash) {
+		return true, protocolerrors.Errorf(false, "cannot initiate "+
+			"IBD with peer %s because the highest shared chain block (%s) is "+
+			"below the finality point", peer, highestSharedBlockHash)
+	}
+
+	shouldStop, err = downloadBlocks(incomingRoute, outgoingRoute, dag, highestSharedBlockHash, peerSelectedTipHash)
+	if err != nil {
+		return true, err
+	}
+	return shouldStop, nil
 }
 
 func findHighestSharedBlockHash(incomingRoute *router.Route, outgoingRoute *router.Route, dag *blockdag.BlockDAG,
