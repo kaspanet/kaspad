@@ -136,6 +136,7 @@ func newKaspad(cfg *config.Config, interrupt <-chan struct{}) (*kaspad, error) {
 	}
 
 	return &kaspad{
+		cfg:               cfg,
 		rpcServer:         rpcServer,
 		networkAdapter:    netAdapter,
 		connectionManager: connectionManager,
