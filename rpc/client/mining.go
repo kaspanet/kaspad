@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
@@ -47,7 +47,7 @@ func (r FutureSubmitBlockResult) Receive() error {
 // returned instance.
 //
 // See SubmitBlock for the blocking version and more details.
-func (c *Client) SubmitBlockAsync(block *util.Block, options *rpcmodel.SubmitBlockOptions) FutureSubmitBlockResult {
+func (c *Client) SubmitBlockAsync(block *util.Block, options *model.SubmitBlockOptions) FutureSubmitBlockResult {
 	blockHex := ""
 	if block != nil {
 		blockBytes, err := block.Bytes()
@@ -58,12 +58,12 @@ func (c *Client) SubmitBlockAsync(block *util.Block, options *rpcmodel.SubmitBlo
 		blockHex = hex.EncodeToString(blockBytes)
 	}
 
-	cmd := rpcmodel.NewSubmitBlockCmd(blockHex, options)
+	cmd := model.NewSubmitBlockCmd(blockHex, options)
 	return c.sendCmd(cmd)
 }
 
 // SubmitBlock attempts to submit a new block into the kaspa network.
-func (c *Client) SubmitBlock(block *util.Block, options *rpcmodel.SubmitBlockOptions) error {
+func (c *Client) SubmitBlock(block *util.Block, options *model.SubmitBlockOptions) error {
 	return c.SubmitBlockAsync(block, options).Receive()
 }
 
@@ -77,24 +77,24 @@ type FutureGetBlockTemplateResult chan *response
 //
 // See GetBlockTemplate for the blocking version and more details
 func (c *Client) GetBlockTemplateAsync(payAddress string, longPollID string) FutureGetBlockTemplateResult {
-	request := &rpcmodel.TemplateRequest{
+	request := &model.TemplateRequest{
 		Mode:       "template",
 		LongPollID: longPollID,
 		PayAddress: payAddress,
 	}
-	cmd := rpcmodel.NewGetBlockTemplateCmd(request)
+	cmd := model.NewGetBlockTemplateCmd(request)
 	return c.sendCmd(cmd)
 }
 
 // Receive waits for the response promised by the future and returns an error if
 // any occurred when submitting the block.
-func (r FutureGetBlockTemplateResult) Receive() (*rpcmodel.GetBlockTemplateResult, error) {
+func (r FutureGetBlockTemplateResult) Receive() (*model.GetBlockTemplateResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
-	var result rpcmodel.GetBlockTemplateResult
+	var result model.GetBlockTemplateResult
 	if err := json.Unmarshal(res, &result); err != nil {
 		return nil, err
 	}
@@ -102,12 +102,12 @@ func (r FutureGetBlockTemplateResult) Receive() (*rpcmodel.GetBlockTemplateResul
 }
 
 // GetBlockTemplate request a block template from the server, to mine upon
-func (c *Client) GetBlockTemplate(payAddress string, longPollID string) (*rpcmodel.GetBlockTemplateResult, error) {
+func (c *Client) GetBlockTemplate(payAddress string, longPollID string) (*model.GetBlockTemplateResult, error) {
 	return c.GetBlockTemplateAsync(payAddress, longPollID).Receive()
 }
 
 // ConvertGetBlockTemplateResultToBlock Accepts a GetBlockTemplateResult and parses it into a Block
-func ConvertGetBlockTemplateResultToBlock(template *rpcmodel.GetBlockTemplateResult) (*util.Block, error) {
+func ConvertGetBlockTemplateResultToBlock(template *model.GetBlockTemplateResult) (*util.Block, error) {
 	// parse parent hashes
 	parentHashes := make([]*daghash.Hash, len(template.ParentHashes))
 	for i, parentHash := range template.ParentHashes {

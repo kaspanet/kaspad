@@ -2,7 +2,7 @@ package rpc
 
 import (
 	"github.com/kaspanet/kaspad/connmanager"
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util/network"
 	"net"
 	"strconv"
@@ -10,7 +10,7 @@ import (
 
 // handleNode handles node commands.
 func handleNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*rpcmodel.NodeCmd)
+	c := cmd.(*model.NodeCmd)
 
 	var addr string
 	var nodeID uint64
@@ -32,16 +32,16 @@ func handleNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 
 				err = s.connectionManager.DisconnectByAddr(addr)
 			} else {
-				return nil, &rpcmodel.RPCError{
-					Code:    rpcmodel.ErrRPCInvalidParameter,
+				return nil, &model.RPCError{
+					Code:    model.ErrRPCInvalidParameter,
 					Message: "invalid address or node ID",
 				}
 			}
 		}
 		if err != nil && peerExists(s.connectionManager, addr, int32(nodeID)) {
 
-			return nil, &rpcmodel.RPCError{
-				Code:    rpcmodel.ErrRPCMisc,
+			return nil, &model.RPCError{
+				Code:    model.ErrRPCMisc,
 				Message: "can't disconnect a permanent peer, use remove",
 			}
 		}
@@ -61,15 +61,15 @@ func handleNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 
 				err = s.connectionManager.RemoveByAddr(addr)
 			} else {
-				return nil, &rpcmodel.RPCError{
-					Code:    rpcmodel.ErrRPCInvalidParameter,
+				return nil, &model.RPCError{
+					Code:    model.ErrRPCInvalidParameter,
 					Message: "invalid address or node ID",
 				}
 			}
 		}
 		if err != nil && peerExists(s.connectionManager, addr, int32(nodeID)) {
-			return nil, &rpcmodel.RPCError{
-				Code:    rpcmodel.ErrRPCMisc,
+			return nil, &model.RPCError{
+				Code:    model.ErrRPCMisc,
 				Message: "can't remove a temporary peer, use disconnect",
 			}
 		}
@@ -90,21 +90,21 @@ func handleNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 		case "perm", "temp":
 			s.connectionManager.AddConnectionRequest(addr, subCmd == "perm")
 		default:
-			return nil, &rpcmodel.RPCError{
-				Code:    rpcmodel.ErrRPCInvalidParameter,
+			return nil, &model.RPCError{
+				Code:    model.ErrRPCInvalidParameter,
 				Message: "invalid subcommand for node connect",
 			}
 		}
 	default:
-		return nil, &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCInvalidParameter,
+		return nil, &model.RPCError{
+			Code:    model.ErrRPCInvalidParameter,
 			Message: "invalid subcommand for node",
 		}
 	}
 
 	if err != nil {
-		return nil, &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCInvalidParameter,
+		return nil, &model.RPCError{
+			Code:    model.ErrRPCInvalidParameter,
 			Message: err.Error(),
 		}
 	}

@@ -13,7 +13,7 @@ import (
 
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/mining"
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -86,7 +86,7 @@ func builderScript(builder *txscript.ScriptBuilder) []byte {
 
 // handleGetBlockTemplate implements the getBlockTemplate command.
 func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*rpcmodel.GetBlockTemplateCmd)
+	c := cmd.(*model.GetBlockTemplateCmd)
 	request := c.Request
 
 	// Set the default mode and override it if supplied.
@@ -102,8 +102,8 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 		return handleGetBlockTemplateProposal(s, request)
 	}
 
-	return nil, &rpcmodel.RPCError{
-		Code:    rpcmodel.ErrRPCInvalidParameter,
+	return nil, &model.RPCError{
+		Code:    model.ErrRPCInvalidParameter,
 		Message: "Invalid mode",
 	}
 }
@@ -112,7 +112,7 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 // deals with generating and returning block templates to the caller. It
 // handles both long poll requests as specified by BIP 0022 as well as regular
 // requests.
-func handleGetBlockTemplateRequest(s *Server, request *rpcmodel.TemplateRequest, closeChan <-chan struct{}) (interface{}, error) {
+func handleGetBlockTemplateRequest(s *Server, request *model.TemplateRequest, closeChan <-chan struct{}) (interface{}, error) {
 	// Return an error if there are no peers connected since there is no
 	// way to relay a found block or receive transactions to work on.
 	// However, allow this state when running in the regression test or
@@ -120,8 +120,8 @@ func handleGetBlockTemplateRequest(s *Server, request *rpcmodel.TemplateRequest,
 	if !(s.cfg.RegressionTest || s.cfg.Simnet) &&
 		s.connectionManager.ConnectedCount() == 0 {
 
-		return nil, &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCClientNotConnected,
+		return nil, &model.RPCError{
+			Code:    model.ErrRPCClientNotConnected,
 			Message: "Kaspa is not connected",
 		}
 	}
@@ -209,7 +209,7 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, payAddr util.A
 // template identified by the provided long poll ID is stale or
 // invalid. Otherwise, it returns a channel that will notify
 // when there's a more current template.
-func blockTemplateOrLongPollChan(s *Server, longPollID string, payAddr util.Address) (*rpcmodel.GetBlockTemplateResult, chan struct{}, error) {
+func blockTemplateOrLongPollChan(s *Server, longPollID string, payAddr util.Address) (*model.GetBlockTemplateResult, chan struct{}, error) {
 	state := s.gbtWorkState
 
 	state.Lock()
@@ -262,11 +262,11 @@ func blockTemplateOrLongPollChan(s *Server, longPollID string, payAddr util.Addr
 
 // handleGetBlockTemplateProposal is a helper for handleGetBlockTemplate which
 // deals with block proposals.
-func handleGetBlockTemplateProposal(s *Server, request *rpcmodel.TemplateRequest) (interface{}, error) {
+func handleGetBlockTemplateProposal(s *Server, request *model.TemplateRequest) (interface{}, error) {
 	hexData := request.Data
 	if hexData == "" {
-		return false, &rpcmodel.RPCError{
-			Code: rpcmodel.ErrRPCType,
+		return false, &model.RPCError{
+			Code: model.ErrRPCType,
 			Message: fmt.Sprintf("Data must contain the " +
 				"hex-encoded serialized block that is being " +
 				"proposed"),
@@ -279,16 +279,16 @@ func handleGetBlockTemplateProposal(s *Server, request *rpcmodel.TemplateRequest
 	}
 	dataBytes, err := hex.DecodeString(hexData)
 	if err != nil {
-		return false, &rpcmodel.RPCError{
-			Code: rpcmodel.ErrRPCDeserialization,
+		return false, &model.RPCError{
+			Code: model.ErrRPCDeserialization,
 			Message: fmt.Sprintf("Data must be "+
 				"hexadecimal string (not %q)", hexData),
 		}
 	}
 	var msgBlock wire.MsgBlock
 	if err := msgBlock.Deserialize(bytes.NewReader(dataBytes)); err != nil {
-		return nil, &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCDeserialization,
+		return nil, &model.RPCError{
+			Code:    model.ErrRPCDeserialization,
 			Message: "Block decode failed: " + err.Error(),
 		}
 	}
@@ -305,8 +305,8 @@ func handleGetBlockTemplateProposal(s *Server, request *rpcmodel.TemplateRequest
 		if !errors.As(err, &blockdag.RuleError{}) {
 			errStr := fmt.Sprintf("Failed to process block proposal: %s", err)
 			log.Error(errStr)
-			return nil, &rpcmodel.RPCError{
-				Code:    rpcmodel.ErrRPCVerify,
+			return nil, &model.RPCError{
+				Code:    model.ErrRPCVerify,
 				Message: errStr,
 			}
 		}
@@ -621,11 +621,11 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, payAddr util.Address) 
 }
 
 // blockTemplateResult returns the current block template associated with the
-// state as a rpcmodel.GetBlockTemplateResult that is ready to be encoded to JSON
+// state as a model.GetBlockTemplateResult that is ready to be encoded to JSON
 // and returned to the caller.
 //
 // This function MUST be called with the state locked.
-func (state *gbtWorkState) blockTemplateResult(s *Server) (*rpcmodel.GetBlockTemplateResult, error) {
+func (state *gbtWorkState) blockTemplateResult(s *Server) (*model.GetBlockTemplateResult, error) {
 	dag := s.dag
 	// Ensure the timestamps are still in valid range for the template.
 	// This should really only ever happen if the local clock is changed
@@ -637,8 +637,8 @@ func (state *gbtWorkState) blockTemplateResult(s *Server) (*rpcmodel.GetBlockTem
 	adjustedTime := dag.Now()
 	maxTime := adjustedTime.Add(time.Millisecond * time.Duration(dag.TimestampDeviationTolerance))
 	if header.Timestamp.After(maxTime) {
-		return nil, &rpcmodel.RPCError{
-			Code: rpcmodel.ErrRPCOutOfRange,
+		return nil, &model.RPCError{
+			Code: model.ErrRPCOutOfRange,
 			Message: fmt.Sprintf("The template time is after the "+
 				"maximum allowed time for a block - template "+
 				"time %s, maximum time %s", adjustedTime,
@@ -650,7 +650,7 @@ func (state *gbtWorkState) blockTemplateResult(s *Server) (*rpcmodel.GetBlockTem
 	// transaction. The result does not include the coinbase, so notice
 	// the adjustments to the various lengths and indices.
 	numTx := len(msgBlock.Transactions)
-	transactions := make([]rpcmodel.GetBlockTemplateResultTx, 0, numTx-1)
+	transactions := make([]model.GetBlockTemplateResultTx, 0, numTx-1)
 	txIndex := make(map[daghash.TxID]int64, numTx)
 	for i, tx := range msgBlock.Transactions {
 		txID := tx.TxID()
@@ -680,7 +680,7 @@ func (state *gbtWorkState) blockTemplateResult(s *Server) (*rpcmodel.GetBlockTem
 			return nil, internalRPCError(err.Error(), context)
 		}
 
-		resultTx := rpcmodel.GetBlockTemplateResultTx{
+		resultTx := model.GetBlockTemplateResultTx{
 			Data:    hex.EncodeToString(txBuf.Bytes()),
 			ID:      txID.String(),
 			Depends: depends,
@@ -706,7 +706,7 @@ func (state *gbtWorkState) blockTemplateResult(s *Server) (*rpcmodel.GetBlockTem
 	// than the node's.
 	isSynced := isSynced(s)
 
-	reply := rpcmodel.GetBlockTemplateResult{
+	reply := model.GetBlockTemplateResult{
 		Bits:                 strconv.FormatInt(int64(header.Bits), 16),
 		CurTime:              header.Timestamp.UnixMilliseconds(),
 		Height:               template.Height,

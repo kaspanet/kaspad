@@ -2,14 +2,14 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package rpcmodel_test
+package model_test
 
 import (
 	"encoding/json"
 	"github.com/kaspanet/kaspad/util/pointers"
 	"testing"
 
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 )
 
 // TestRPCServerCustomResults ensures any results that have custom marshalling
@@ -25,10 +25,10 @@ func TestRPCServerCustomResults(t *testing.T) {
 	}{
 		{
 			name: "custom vin marshal without coinbase",
-			result: &rpcmodel.Vin{
+			result: &model.Vin{
 				TxID: "123",
 				Vout: 1,
-				ScriptSig: &rpcmodel.ScriptSig{
+				ScriptSig: &model.ScriptSig{
 					Asm: "0",
 					Hex: "00",
 				},
@@ -38,7 +38,7 @@ func TestRPCServerCustomResults(t *testing.T) {
 		},
 		{
 			name: "custom vinprevout marshal with coinbase",
-			result: &rpcmodel.VinPrevOut{
+			result: &model.VinPrevOut{
 				Coinbase: "021234",
 				Sequence: 4294967295,
 			},
@@ -46,14 +46,14 @@ func TestRPCServerCustomResults(t *testing.T) {
 		},
 		{
 			name: "custom vinprevout marshal without coinbase",
-			result: &rpcmodel.VinPrevOut{
+			result: &model.VinPrevOut{
 				TxID: "123",
 				Vout: 1,
-				ScriptSig: &rpcmodel.ScriptSig{
+				ScriptSig: &model.ScriptSig{
 					Asm: "0",
 					Hex: "00",
 				},
-				PrevOut: &rpcmodel.PrevOut{
+				PrevOut: &model.PrevOut{
 					Address: pointers.String("addr1"),
 					Value:   0,
 				},
@@ -63,7 +63,7 @@ func TestRPCServerCustomResults(t *testing.T) {
 		},
 		{
 			name: "versionresult",
-			result: &rpcmodel.VersionResult{
+			result: &model.VersionResult{
 				VersionString: "1.0.0",
 				Major:         1,
 				Minor:         0,

@@ -1,5 +1,5 @@
 /*
-Package rpcmodel provides primitives for working with the kaspa JSON-RPC API.
+Package model provides primitives for working with the kaspa JSON-RPC API.
 
 Overview
 
@@ -128,10 +128,10 @@ returned from the various functions available in this package. They identify
 issues such as unsupported field types, attempts to register malformed commands,
 and attempting to create a new command with an improper number of parameters.
 The specific reason for the error can be detected by type asserting it to a
-*rpcmodel.Error and accessing the ErrorCode field.
+*model.Error and accessing the ErrorCode field.
 
 The second category of errors (type RPCError), on the other hand, are useful for
 returning errors to RPC clients. Consequently, they are used in the previously
 described Response type.
 */
-package rpcmodel
+package model

@@ -116,15 +116,15 @@ the type can vary, but usually will be best handled by simply showing/logging
 it.
 
 The third category of errors, that is errors returned by the server, can be
-detected by type asserting the error in a *rpcmodel.RPCError. For example, to
+detected by type asserting the error in a *model.RPCError. For example, to
 detect if a command is unimplemented by the remote RPC server:
 
   netTotals, err := client.GetNetTotals()
   if err != nil {
-	var jErr *rpcmodel.RPCError
+	var jErr *model.RPCError
   	if errors.As(err, jErr) {
   		switch jErr.Code {
-  		case rpcmodel.ErrRPCUnimplemented:
+  		case model.ErrRPCUnimplemented:
   			// Handle not implemented error
 
   		// Handle other specific errors you care about

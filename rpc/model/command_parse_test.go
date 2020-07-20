@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package rpcmodel_test
+package model_test
 
 import (
 	"encoding/json"
@@ -11,7 +11,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 )
 
 // TestAssignField tests the assignField function handles supported combinations
@@ -169,7 +169,7 @@ func TestAssignField(t *testing.T) {
 	for i, test := range tests {
 		dst := reflect.New(reflect.TypeOf(test.dest)).Elem()
 		src := reflect.ValueOf(test.src)
-		err := rpcmodel.TstAssignField(1, "testField", dst, src)
+		err := model.TstAssignField(1, "testField", dst, src)
 		if err != nil {
 			t.Errorf("Test #%d (%s) unexpected error: %v", i,
 				test.name, err)
@@ -198,133 +198,133 @@ func TestAssignFieldErrors(t *testing.T) {
 		name string
 		dest interface{}
 		src  interface{}
-		err  rpcmodel.Error
+		err  model.Error
 	}{
 		{
 			name: "general incompatible int -> string",
 			dest: string(0),
 			src:  int(0),
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name: "overflow source int -> dest int",
 			dest: int8(0),
 			src:  int(128),
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name: "overflow source int -> dest uint",
 			dest: uint8(0),
 			src:  int(256),
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name: "int -> float",
 			dest: float32(0),
 			src:  int(256),
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name: "overflow source uint64 -> dest int64",
 			dest: int64(0),
 			src:  uint64(1 << 63),
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name: "overflow source uint -> dest int",
 			dest: int8(0),
 			src:  uint(128),
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name: "overflow source uint -> dest uint",
 			dest: uint8(0),
 			src:  uint(256),
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name: "uint -> float",
 			dest: float32(0),
 			src:  uint(256),
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name: "float -> int",
 			dest: int(0),
 			src:  float32(1.0),
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name: "overflow float64 -> float32",
 			dest: float32(0),
 			src:  float64(math.MaxFloat64),
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name: "invalid string -> bool",
 			dest: true,
 			src:  "foo",
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name: "invalid string -> int",
 			dest: int8(0),
 			src:  "foo",
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name: "overflow string -> int",
 			dest: int8(0),
 			src:  "128",
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name: "invalid string -> uint",
 			dest: uint8(0),
 			src:  "foo",
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name: "overflow string -> uint",
 			dest: uint8(0),
 			src:  "256",
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name: "invalid string -> float",
 			dest: float32(0),
 			src:  "foo",
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name: "overflow string -> float",
 			dest: float32(0),
 			src:  "1.7976931348623157e+308",
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name: "invalid string -> array",
 			dest: [3]int{},
 			src:  "foo",
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name: "invalid string -> slice",
 			dest: []int{},
 			src:  "foo",
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name: "invalid string -> struct",
 			dest: struct{ A int }{},
 			src:  "foo",
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name: "invalid string -> map",
 			dest: map[string]int{},
 			src:  "foo",
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 	}
 
@@ -332,13 +332,13 @@ func TestAssignFieldErrors(t *testing.T) {
 	for i, test := range tests {
 		dst := reflect.New(reflect.TypeOf(test.dest)).Elem()
 		src := reflect.ValueOf(test.src)
-		err := rpcmodel.TstAssignField(1, "testField", dst, src)
+		err := model.TstAssignField(1, "testField", dst, src)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
 			t.Errorf("Test #%d (%s) wrong error - got %T (%[3]v), "+
 				"want %T", i, test.name, err, test.err)
 			continue
 		}
-		var gotRPCModelErr rpcmodel.Error
+		var gotRPCModelErr model.Error
 		errors.As(err, &gotRPCModelErr)
 		gotErrorCode := gotRPCModelErr.ErrorCode
 		if gotErrorCode != test.err.ErrorCode {
@@ -358,43 +358,43 @@ func TestNewCommandErrors(t *testing.T) {
 		name   string
 		method string
 		args   []interface{}
-		err    rpcmodel.Error
+		err    model.Error
 	}{
 		{
 			name:   "unregistered command",
 			method: "bogusCommand",
 			args:   []interface{}{},
-			err:    rpcmodel.Error{ErrorCode: rpcmodel.ErrUnregisteredMethod},
+			err:    model.Error{ErrorCode: model.ErrUnregisteredMethod},
 		},
 		{
 			name:   "too few parameters to command with required + optional",
 			method: "getBlock",
 			args:   []interface{}{},
-			err:    rpcmodel.Error{ErrorCode: rpcmodel.ErrNumParams},
+			err:    model.Error{ErrorCode: model.ErrNumParams},
 		},
 		{
 			name:   "too many parameters to command with no optional",
 			method: "getBlockCount",
 			args:   []interface{}{"123"},
-			err:    rpcmodel.Error{ErrorCode: rpcmodel.ErrNumParams},
+			err:    model.Error{ErrorCode: model.ErrNumParams},
 		},
 		{
 			name:   "incorrect parameter type",
 			method: "getBlock",
 			args:   []interface{}{1},
-			err:    rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:    model.Error{ErrorCode: model.ErrInvalidType},
 		},
 	}
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		_, err := rpcmodel.NewCommand(test.method, test.args...)
+		_, err := model.NewCommand(test.method, test.args...)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
 			t.Errorf("Test #%d (%s) wrong error - got %T (%[2]v), "+
 				"want %T", i, test.name, err, test.err)
 			continue
 		}
-		var gotRPCModelErr rpcmodel.Error
+		var gotRPCModelErr model.Error
 		errors.As(err, &gotRPCModelErr)
 		gotErrorCode := gotRPCModelErr.ErrorCode
 		if gotErrorCode != test.err.ErrorCode {
@@ -414,37 +414,37 @@ func TestMarshalCommandErrors(t *testing.T) {
 		name string
 		id   interface{}
 		cmd  interface{}
-		err  rpcmodel.Error
+		err  model.Error
 	}{
 		{
 			name: "unregistered type",
 			id:   1,
 			cmd:  (*int)(nil),
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrUnregisteredMethod},
+			err:  model.Error{ErrorCode: model.ErrUnregisteredMethod},
 		},
 		{
 			name: "nil instance of registered type",
 			id:   1,
-			cmd:  (*rpcmodel.GetBlockCmd)(nil),
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			cmd:  (*model.GetBlockCmd)(nil),
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name: "nil instance of registered type",
 			id:   []int{0, 1},
-			cmd:  &rpcmodel.GetBlockCountCmd{},
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			cmd:  &model.GetBlockCountCmd{},
+			err:  model.Error{ErrorCode: model.ErrInvalidType},
 		},
 	}
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		_, err := rpcmodel.MarshalCommand(test.id, test.cmd)
+		_, err := model.MarshalCommand(test.id, test.cmd)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
 			t.Errorf("Test #%d (%s) wrong error - got %T (%[2]v), "+
 				"want %T", i, test.name, err, test.err)
 			continue
 		}
-		var gotRPCModelErr rpcmodel.Error
+		var gotRPCModelErr model.Error
 		errors.As(err, &gotRPCModelErr)
 		gotErrorCode := gotRPCModelErr.ErrorCode
 		if gotErrorCode != test.err.ErrorCode {
@@ -462,60 +462,60 @@ func TestUnmarshalCommandErrors(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		request rpcmodel.Request
-		err     rpcmodel.Error
+		request model.Request
+		err     model.Error
 	}{
 		{
 			name: "unregistered type",
-			request: rpcmodel.Request{
+			request: model.Request{
 				JSONRPC: "1.0",
 				Method:  "bogusMethod",
 				Params:  nil,
 				ID:      nil,
 			},
-			err: rpcmodel.Error{ErrorCode: rpcmodel.ErrUnregisteredMethod},
+			err: model.Error{ErrorCode: model.ErrUnregisteredMethod},
 		},
 		{
 			name: "incorrect number of params",
-			request: rpcmodel.Request{
+			request: model.Request{
 				JSONRPC: "1.0",
 				Method:  "getBlockCount",
 				Params:  []json.RawMessage{[]byte(`"bogusparam"`)},
 				ID:      nil,
 			},
-			err: rpcmodel.Error{ErrorCode: rpcmodel.ErrNumParams},
+			err: model.Error{ErrorCode: model.ErrNumParams},
 		},
 		{
 			name: "invalid type for a parameter",
-			request: rpcmodel.Request{
+			request: model.Request{
 				JSONRPC: "1.0",
 				Method:  "getBlock",
 				Params:  []json.RawMessage{[]byte("1")},
 				ID:      nil,
 			},
-			err: rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err: model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name: "invalid JSON for a parameter",
-			request: rpcmodel.Request{
+			request: model.Request{
 				JSONRPC: "1.0",
 				Method:  "getBlock",
 				Params:  []json.RawMessage{[]byte(`"1`)},
 				ID:      nil,
 			},
-			err: rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err: model.Error{ErrorCode: model.ErrInvalidType},
 		},
 	}
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		_, err := rpcmodel.UnmarshalCommand(&test.request)
+		_, err := model.UnmarshalCommand(&test.request)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
 			t.Errorf("Test #%d (%s) wrong error - got %T (%[2]v), "+
 				"want %T", i, test.name, err, test.err)
 			continue
 		}
-		var gotRPCModelErr rpcmodel.Error
+		var gotRPCModelErr model.Error
 		errors.As(err, &gotRPCModelErr)
 		gotErrorCode := gotRPCModelErr.ErrorCode
 		if gotErrorCode != test.err.ErrorCode {

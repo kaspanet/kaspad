@@ -3,7 +3,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package rpcmodel_test
+package model_test
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 )
 
 // TestRPCServerWebsocketCommands tests all of the kaspa rpc server websocket-specific commands
@@ -34,94 +34,94 @@ func TestRPCServerWebsocketCommands(t *testing.T) {
 		{
 			name: "authenticate",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("authenticate", "user", "pass")
+				return model.NewCommand("authenticate", "user", "pass")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewAuthenticateCmd("user", "pass")
+				return model.NewAuthenticateCmd("user", "pass")
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"authenticate","params":["user","pass"],"id":1}`,
-			unmarshalled: &rpcmodel.AuthenticateCmd{Username: "user", Passphrase: "pass"},
+			unmarshalled: &model.AuthenticateCmd{Username: "user", Passphrase: "pass"},
 		},
 		{
 			name: "notifyBlocks",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("notifyBlocks")
+				return model.NewCommand("notifyBlocks")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewNotifyBlocksCmd()
+				return model.NewNotifyBlocksCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"notifyBlocks","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.NotifyBlocksCmd{},
+			unmarshalled: &model.NotifyBlocksCmd{},
 		},
 		{
 			name: "stopNotifyBlocks",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("stopNotifyBlocks")
+				return model.NewCommand("stopNotifyBlocks")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewStopNotifyBlocksCmd()
+				return model.NewStopNotifyBlocksCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"stopNotifyBlocks","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.StopNotifyBlocksCmd{},
+			unmarshalled: &model.StopNotifyBlocksCmd{},
 		},
 		{
 			name: "notifyChainChanges",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("notifyChainChanges")
+				return model.NewCommand("notifyChainChanges")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewNotifyChainChangesCmd()
+				return model.NewNotifyChainChangesCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"notifyChainChanges","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.NotifyChainChangesCmd{},
+			unmarshalled: &model.NotifyChainChangesCmd{},
 		},
 		{
 			name: "stopNotifyChainChanges",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("stopNotifyChainChanges")
+				return model.NewCommand("stopNotifyChainChanges")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewStopNotifyChainChangesCmd()
+				return model.NewStopNotifyChainChangesCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"stopNotifyChainChanges","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.StopNotifyChainChangesCmd{},
+			unmarshalled: &model.StopNotifyChainChangesCmd{},
 		},
 		{
 			name: "notifyNewTransactions",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("notifyNewTransactions")
+				return model.NewCommand("notifyNewTransactions")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewNotifyNewTransactionsCmd(nil, nil)
+				return model.NewNotifyNewTransactionsCmd(nil, nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"notifyNewTransactions","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.NotifyNewTransactionsCmd{
+			unmarshalled: &model.NotifyNewTransactionsCmd{
 				Verbose: pointers.Bool(false),
 			},
 		},
 		{
 			name: "notifyNewTransactions optional",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("notifyNewTransactions", true)
+				return model.NewCommand("notifyNewTransactions", true)
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewNotifyNewTransactionsCmd(pointers.Bool(true), nil)
+				return model.NewNotifyNewTransactionsCmd(pointers.Bool(true), nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"notifyNewTransactions","params":[true],"id":1}`,
-			unmarshalled: &rpcmodel.NotifyNewTransactionsCmd{
+			unmarshalled: &model.NotifyNewTransactionsCmd{
 				Verbose: pointers.Bool(true),
 			},
 		},
 		{
 			name: "notifyNewTransactions optional 2",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("notifyNewTransactions", true, "0000000000000000000000000000000000000123")
+				return model.NewCommand("notifyNewTransactions", true, "0000000000000000000000000000000000000123")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewNotifyNewTransactionsCmd(pointers.Bool(true), pointers.String("0000000000000000000000000000000000000123"))
+				return model.NewNotifyNewTransactionsCmd(pointers.Bool(true), pointers.String("0000000000000000000000000000000000000123"))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"notifyNewTransactions","params":[true,"0000000000000000000000000000000000000123"],"id":1}`,
-			unmarshalled: &rpcmodel.NotifyNewTransactionsCmd{
+			unmarshalled: &model.NotifyNewTransactionsCmd{
 				Verbose:    pointers.Bool(true),
 				Subnetwork: pointers.String("0000000000000000000000000000000000000123"),
 			},
@@ -129,45 +129,45 @@ func TestRPCServerWebsocketCommands(t *testing.T) {
 		{
 			name: "stopNotifyNewTransactions",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("stopNotifyNewTransactions")
+				return model.NewCommand("stopNotifyNewTransactions")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewStopNotifyNewTransactionsCmd()
+				return model.NewStopNotifyNewTransactionsCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"stopNotifyNewTransactions","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.StopNotifyNewTransactionsCmd{},
+			unmarshalled: &model.StopNotifyNewTransactionsCmd{},
 		},
 		{
 			name: "loadTxFilter",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("loadTxFilter", false, `["1Address"]`, `[{"txid":"0000000000000000000000000000000000000000000000000000000000000123","index":0}]`)
+				return model.NewCommand("loadTxFilter", false, `["1Address"]`, `[{"txid":"0000000000000000000000000000000000000000000000000000000000000123","index":0}]`)
 			},
 			staticCmd: func() interface{} {
 				addrs := []string{"1Address"}
-				ops := []rpcmodel.Outpoint{{
+				ops := []model.Outpoint{{
 					TxID:  "0000000000000000000000000000000000000000000000000000000000000123",
 					Index: 0,
 				}}
-				return rpcmodel.NewLoadTxFilterCmd(false, addrs, ops)
+				return model.NewLoadTxFilterCmd(false, addrs, ops)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"loadTxFilter","params":[false,["1Address"],[{"txid":"0000000000000000000000000000000000000000000000000000000000000123","index":0}]],"id":1}`,
-			unmarshalled: &rpcmodel.LoadTxFilterCmd{
+			unmarshalled: &model.LoadTxFilterCmd{
 				Reload:    false,
 				Addresses: []string{"1Address"},
-				Outpoints: []rpcmodel.Outpoint{{TxID: "0000000000000000000000000000000000000000000000000000000000000123", Index: 0}},
+				Outpoints: []model.Outpoint{{TxID: "0000000000000000000000000000000000000000000000000000000000000123", Index: 0}},
 			},
 		},
 		{
 			name: "rescanBlocks",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("rescanBlocks", `["0000000000000000000000000000000000000000000000000000000000000123"]`)
+				return model.NewCommand("rescanBlocks", `["0000000000000000000000000000000000000000000000000000000000000123"]`)
 			},
 			staticCmd: func() interface{} {
 				blockhashes := []string{"0000000000000000000000000000000000000000000000000000000000000123"}
-				return rpcmodel.NewRescanBlocksCmd(blockhashes)
+				return model.NewRescanBlocksCmd(blockhashes)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"rescanBlocks","params":[["0000000000000000000000000000000000000000000000000000000000000123"]],"id":1}`,
-			unmarshalled: &rpcmodel.RescanBlocksCmd{
+			unmarshalled: &model.RescanBlocksCmd{
 				BlockHashes: []string{"0000000000000000000000000000000000000000000000000000000000000123"},
 			},
 		},
@@ -177,7 +177,7 @@ func TestRPCServerWebsocketCommands(t *testing.T) {
 	for i, test := range tests {
 		// Marshal the command as created by the new static command
 		// creation function.
-		marshalled, err := rpcmodel.MarshalCommand(testID, test.staticCmd())
+		marshalled, err := model.MarshalCommand(testID, test.staticCmd())
 		if err != nil {
 			t.Errorf("MarshalCommand #%d (%s) unexpected error: %v", i,
 				test.name, err)
@@ -201,7 +201,7 @@ func TestRPCServerWebsocketCommands(t *testing.T) {
 
 		// Marshal the command as created by the generic new command
 		// creation function.
-		marshalled, err = rpcmodel.MarshalCommand(testID, cmd)
+		marshalled, err = model.MarshalCommand(testID, cmd)
 		if err != nil {
 			t.Errorf("MarshalCommand #%d (%s) unexpected error: %v", i,
 				test.name, err)
@@ -215,7 +215,7 @@ func TestRPCServerWebsocketCommands(t *testing.T) {
 			continue
 		}
 
-		var request rpcmodel.Request
+		var request model.Request
 		if err := json.Unmarshal(marshalled, &request); err != nil {
 			t.Errorf("Test #%d (%s) unexpected error while "+
 				"unmarshalling JSON-RPC request: %v", i,
@@ -223,7 +223,7 @@ func TestRPCServerWebsocketCommands(t *testing.T) {
 			continue
 		}
 
-		cmd, err = rpcmodel.UnmarshalCommand(&request)
+		cmd, err = model.UnmarshalCommand(&request)
 		if err != nil {
 			t.Errorf("UnmarshalCommand #%d (%s) unexpected error: %v", i,
 				test.name, err)

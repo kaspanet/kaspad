@@ -13,7 +13,7 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
@@ -112,7 +112,7 @@ type NotificationHandlers struct {
 	// memory pool. It will only be invoked if a preceding call to
 	// NotifyNewTransactions with the verbose flag set to true has been
 	// made to register for the notification and the function is non-nil.
-	OnTxAcceptedVerbose func(txDetails *rpcmodel.TxRawResult)
+	OnTxAcceptedVerbose func(txDetails *model.TxRawResult)
 
 	// OnUnknownNotification is invoked when an unrecognized notification
 	// is received. This typically means the notification handling code
@@ -136,7 +136,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 	switch ntfn.Method {
 
 	// ChainChangedNtfnMethod
-	case rpcmodel.ChainChangedNtfnMethod:
+	case model.ChainChangedNtfnMethod:
 		// Ignore the notification if the client is not interested in
 		// it.
 		if c.ntfnHandlers.OnChainChanged == nil {
@@ -153,7 +153,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		c.ntfnHandlers.OnChainChanged(removedChainBlockHashes, addedChainBlocks)
 
 	// OnFilteredBlockAdded
-	case rpcmodel.FilteredBlockAddedNtfnMethod:
+	case model.FilteredBlockAddedNtfnMethod:
 		// Ignore the notification if the client is not interested in
 		// it.
 		if c.ntfnHandlers.OnFilteredBlockAdded == nil {
@@ -172,7 +172,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 			blockHeader, transactions)
 
 	// OnRelevantTxAccepted
-	case rpcmodel.RelevantTxAcceptedNtfnMethod:
+	case model.RelevantTxAcceptedNtfnMethod:
 		// Ignore the notification if the client is not interested in
 		// it.
 		if c.ntfnHandlers.OnRelevantTxAccepted == nil {
@@ -189,7 +189,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		c.ntfnHandlers.OnRelevantTxAccepted(transaction)
 
 	// OnTxAccepted
-	case rpcmodel.TxAcceptedNtfnMethod:
+	case model.TxAcceptedNtfnMethod:
 		// Ignore the notification if the client is not interested in
 		// it.
 		if c.ntfnHandlers.OnTxAccepted == nil {
@@ -206,7 +206,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		c.ntfnHandlers.OnTxAccepted(hash, amt)
 
 	// OnTxAcceptedVerbose
-	case rpcmodel.TxAcceptedVerboseNtfnMethod:
+	case model.TxAcceptedVerboseNtfnMethod:
 		// Ignore the notification if the client is not interested in
 		// it.
 		if c.ntfnHandlers.OnTxAcceptedVerbose == nil {
@@ -264,7 +264,7 @@ func parseChainChangedParams(params []json.RawMessage) (removedChainBlockHashes 
 	}
 
 	// Unmarshal first parameter as a raw transaction result object.
-	var rawParam rpcmodel.ChainChangedRawParam
+	var rawParam model.ChainChangedRawParam
 	err = json.Unmarshal(params[0], &rawParam)
 	if err != nil {
 		return nil, nil, err
@@ -425,7 +425,7 @@ func parseTxAcceptedNtfnParams(params []json.RawMessage) (*daghash.Hash,
 
 // parseTxAcceptedVerboseNtfnParams parses out details about a raw transaction
 // from the parameters of a txacceptedverbose notification.
-func parseTxAcceptedVerboseNtfnParams(params []json.RawMessage) (*rpcmodel.TxRawResult,
+func parseTxAcceptedVerboseNtfnParams(params []json.RawMessage) (*model.TxRawResult,
 	error) {
 
 	if len(params) != 1 {
@@ -433,7 +433,7 @@ func parseTxAcceptedVerboseNtfnParams(params []json.RawMessage) (*rpcmodel.TxRaw
 	}
 
 	// Unmarshal first parameter as a raw transaction result object.
-	var rawTx rpcmodel.TxRawResult
+	var rawTx model.TxRawResult
 	err := json.Unmarshal(params[0], &rawTx)
 	if err != nil {
 		return nil, err
@@ -473,7 +473,7 @@ func (c *Client) NotifyBlocksAsync() FutureNotifyBlocksResult {
 		return newNilFutureResult()
 	}
 
-	cmd := rpcmodel.NewNotifyBlocksCmd()
+	cmd := model.NewNotifyBlocksCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -516,7 +516,7 @@ func (c *Client) NotifyChainChangesAsync() FutureNotifyBlocksResult {
 		return newNilFutureResult()
 	}
 
-	cmd := rpcmodel.NewNotifyChainChangesCmd()
+	cmd := model.NewNotifyChainChangesCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -559,7 +559,7 @@ func (c *Client) NotifyNewTransactionsAsync(verbose bool, subnetworkID *string) 
 		return newNilFutureResult()
 	}
 
-	cmd := rpcmodel.NewNotifyNewTransactionsCmd(&verbose, subnetworkID)
+	cmd := model.NewNotifyNewTransactionsCmd(&verbose, subnetworkID)
 	return c.sendCmd(cmd)
 }
 
@@ -599,15 +599,15 @@ func (c *Client) LoadTxFilterAsync(reload bool, addresses []util.Address,
 	for i, a := range addresses {
 		addrStrs[i] = a.EncodeAddress()
 	}
-	outpointObjects := make([]rpcmodel.Outpoint, len(outpoints))
+	outpointObjects := make([]model.Outpoint, len(outpoints))
 	for i := range outpoints {
-		outpointObjects[i] = rpcmodel.Outpoint{
+		outpointObjects[i] = model.Outpoint{
 			TxID:  outpoints[i].TxID.String(),
 			Index: outpoints[i].Index,
 		}
 	}
 
-	cmd := rpcmodel.NewLoadTxFilterCmd(reload, addrStrs, outpointObjects)
+	cmd := model.NewLoadTxFilterCmd(reload, addrStrs, outpointObjects)
 	return c.sendCmd(cmd)
 }
 

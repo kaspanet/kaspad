@@ -26,7 +26,7 @@ import (
 
 	"github.com/btcsuite/websocket"
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -539,13 +539,13 @@ func (m *wsNotificationManager) notifyChainChanged(clients map[chan struct{}]*ws
 	}
 
 	// Create the notification.
-	ntfn := rpcmodel.NewChainChangedNtfn(removedChainHashesStrs, addedChainBlocks)
+	ntfn := model.NewChainChangedNtfn(removedChainHashesStrs, addedChainBlocks)
 
 	var marshalledJSON []byte
 	if len(clients) != 0 {
 		// Marshal notification
 		var err error
-		marshalledJSON, err = rpcmodel.MarshalCommand(nil, ntfn)
+		marshalledJSON, err = model.MarshalCommand(nil, ntfn)
 		if err != nil {
 			log.Errorf("Failed to marshal chain changed "+
 				"notification: %s", err)
@@ -635,7 +635,7 @@ func (m *wsNotificationManager) notifyFilteredBlockAdded(clients map[chan struct
 			"added notification: %s", err)
 		return
 	}
-	ntfn := rpcmodel.NewFilteredBlockAddedNtfn(blueScore, hex.EncodeToString(w.Bytes()), nil)
+	ntfn := model.NewFilteredBlockAddedNtfn(blueScore, hex.EncodeToString(w.Bytes()), nil)
 
 	// Search for relevant transactions for each client and save them
 	// serialized in hex encoding for the notification.
@@ -655,7 +655,7 @@ func (m *wsNotificationManager) notifyFilteredBlockAdded(clients map[chan struct
 		ntfn.SubscribedTxs = subscribedTxs[quitChan]
 
 		// Marshal and queue notification.
-		marshalledJSON, err := rpcmodel.MarshalCommand(nil, ntfn)
+		marshalledJSON, err := model.MarshalCommand(nil, ntfn)
 		if err != nil {
 			log.Errorf("Failed to marshal filtered block "+
 				"connected notification: %s", err)
@@ -688,8 +688,8 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 		amount += txOut.Value
 	}
 
-	ntfn := rpcmodel.NewTxAcceptedNtfn(txIDStr, util.Amount(amount).ToKAS())
-	marshalledJSON, err := rpcmodel.MarshalCommand(nil, ntfn)
+	ntfn := model.NewTxAcceptedNtfn(txIDStr, util.Amount(amount).ToKAS())
+	marshalledJSON, err := model.MarshalCommand(nil, ntfn)
 	if err != nil {
 		log.Errorf("Failed to marshal tx notification: %s", err.Error())
 		return
@@ -708,8 +708,8 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 			if err != nil {
 				return nil, false
 			}
-			verboseNtfn := rpcmodel.NewTxAcceptedVerboseNtfn(*rawTx)
-			marshalledJSONVerbose, err := rpcmodel.MarshalCommand(nil, verboseNtfn)
+			verboseNtfn := model.NewTxAcceptedVerboseNtfn(*rawTx)
+			marshalledJSONVerbose, err := model.MarshalCommand(nil, verboseNtfn)
 			if err != nil {
 				log.Errorf("Failed to marshal verbose tx notification: %s", err.Error())
 				return nil, false
@@ -773,8 +773,8 @@ func (m *wsNotificationManager) notifyRelevantTxAccepted(tx *util.Tx,
 	clientsToNotify := m.subscribedClients(tx, clients)
 
 	if len(clientsToNotify) != 0 {
-		n := rpcmodel.NewRelevantTxAcceptedNtfn(txHexString(tx.MsgTx()))
-		marshalled, err := rpcmodel.MarshalCommand(nil, n)
+		n := model.NewRelevantTxAcceptedNtfn(txHexString(tx.MsgTx()))
+		marshalled, err := model.MarshalCommand(nil, n)
 		if err != nil {
 			log.Errorf("Failed to marshal notification: %s", err)
 			return
@@ -926,15 +926,15 @@ out:
 			break out
 		}
 
-		var request rpcmodel.Request
+		var request model.Request
 		err = json.Unmarshal(msg, &request)
 		if err != nil {
 			if !c.authenticated {
 				break out
 			}
 
-			jsonErr := &rpcmodel.RPCError{
-				Code:    rpcmodel.ErrRPCParse.Code,
+			jsonErr := &model.RPCError{
+				Code:    model.ErrRPCParse.Code,
 				Message: "Failed to parse request: " + err.Error(),
 			}
 			reply, err := createMarshalledReply(nil, nil, jsonErr)
@@ -986,7 +986,7 @@ out:
 		// the authenticate request, an authenticate request is received
 		// when the client is already authenticated, or incorrect
 		// authentication credentials are provided in the request.
-		switch authCmd, ok := cmd.cmd.(*rpcmodel.AuthenticateCmd); {
+		switch authCmd, ok := cmd.cmd.(*model.AuthenticateCmd); {
 		case c.authenticated && ok:
 			log.Warnf("Websocket client %s is already authenticated",
 				c.addr)
@@ -1024,8 +1024,8 @@ out:
 		// error when not authorized to call this RPC.
 		if !c.isAdmin {
 			if _, ok := rpcLimited[request.Method]; !ok {
-				jsonErr := &rpcmodel.RPCError{
-					Code:    rpcmodel.ErrRPCInvalidParams.Code,
+				jsonErr := &model.RPCError{
+					Code:    model.ErrRPCInvalidParams.Code,
 					Message: "limited user not authorized for this method",
 				}
 				// Marshal and send response.

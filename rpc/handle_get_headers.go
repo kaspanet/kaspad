@@ -3,7 +3,7 @@ package rpc
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -11,7 +11,7 @@ const getHeadersMaxHeaders = 2000
 
 // handleGetHeaders implements the getHeaders command.
 func handleGetHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*rpcmodel.GetHeadersCmd)
+	c := cmd.(*model.GetHeadersCmd)
 
 	lowHash := &daghash.ZeroHash
 	if c.LowHash != "" {
@@ -29,8 +29,8 @@ func handleGetHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (in
 	}
 	headers, err := s.dag.AntiPastHeadersBetween(lowHash, highHash, getHeadersMaxHeaders)
 	if err != nil {
-		return nil, &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCMisc,
+		return nil, &model.RPCError{
+			Code:    model.ErrRPCMisc,
 			Message: err.Error(),
 		}
 	}

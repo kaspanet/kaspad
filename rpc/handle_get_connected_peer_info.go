@@ -2,7 +2,7 @@ package rpc
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"time"
 )
 
@@ -10,10 +10,10 @@ import (
 func handleGetConnectedPeerInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	peers := s.connectionManager.ConnectedPeers()
 	syncPeerID := s.SyncMgr.SyncPeerID()
-	infos := make([]*rpcmodel.GetConnectedPeerInfoResult, 0, len(peers))
+	infos := make([]*model.GetConnectedPeerInfoResult, 0, len(peers))
 	for _, p := range peers {
 		statsSnap := p.ToPeer().StatsSnapshot()
-		info := &rpcmodel.GetConnectedPeerInfoResult{
+		info := &model.GetConnectedPeerInfoResult{
 			ID:          statsSnap.ID,
 			Addr:        statsSnap.Addr,
 			Services:    fmt.Sprintf("%08d", uint64(statsSnap.Services)),

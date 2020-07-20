@@ -2,7 +2,7 @@ package rpc
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -15,15 +15,15 @@ const (
 // handleGetChainFromBlock implements the getChainFromBlock command.
 func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	if s.acceptanceIndex == nil {
-		return nil, &rpcmodel.RPCError{
-			Code: rpcmodel.ErrRPCNoAcceptanceIndex,
+		return nil, &model.RPCError{
+			Code: model.ErrRPCNoAcceptanceIndex,
 			Message: "The acceptance index must be " +
 				"enabled to get the selected parent chain " +
 				"(specify --acceptanceindex)",
 		}
 	}
 
-	c := cmd.(*rpcmodel.GetChainFromBlockCmd)
+	c := cmd.(*model.GetChainFromBlockCmd)
 	var startHash *daghash.Hash
 	if c.StartHash != nil {
 		startHash = &daghash.Hash{}
@@ -39,8 +39,8 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 	// If startHash is not in the selected parent chain, there's nothing
 	// to do; return an error.
 	if startHash != nil && !s.dag.IsInDAG(startHash) {
-		return nil, &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCBlockNotFound,
+		return nil, &model.RPCError{
+			Code:    model.ErrRPCBlockNotFound,
 			Message: "Block not found in the DAG",
 		}
 	}
@@ -59,8 +59,8 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 	// Collect addedChainBlocks.
 	addedChainBlocks, err := collectChainBlocks(s, addedChainHashes)
 	if err != nil {
-		return nil, &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCInternal.Code,
+		return nil, &model.RPCError{
+			Code:    model.ErrRPCInternal.Code,
 			Message: fmt.Sprintf("could not collect chain blocks: %s", err),
 		}
 	}
@@ -71,7 +71,7 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 		removedHashes[i] = hash.String()
 	}
 
-	result := &rpcmodel.GetChainFromBlockResult{
+	result := &model.GetChainFromBlockResult{
 		RemovedChainBlockHashes: removedHashes,
 		AddedChainBlocks:        addedChainBlocks,
 		Blocks:                  nil,

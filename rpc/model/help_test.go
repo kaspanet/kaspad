@@ -2,14 +2,14 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package rpcmodel_test
+package model_test
 
 import (
 	"github.com/pkg/errors"
 	"reflect"
 	"testing"
 
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 )
 
 // TestHelpReflectInternals ensures the various help functions which deal with
@@ -238,7 +238,7 @@ func TestHelpReflectInternals(t *testing.T) {
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
 		// Ensure the description key is the expected value.
-		key := rpcmodel.TstReflectTypeToJSONType(xT, test.reflectType)
+		key := model.TstReflectTypeToJSONType(xT, test.reflectType)
 		if key != test.key {
 			t.Errorf("Test #%d (%s) unexpected key - got: %v, "+
 				"want: %v", i, test.name, key, test.key)
@@ -246,7 +246,7 @@ func TestHelpReflectInternals(t *testing.T) {
 		}
 
 		// Ensure the generated example is as expected.
-		examples, isComplex := rpcmodel.TstReflectTypeToJSONExample(xT,
+		examples, isComplex := model.TstReflectTypeToJSONExample(xT,
 			test.reflectType, test.indentLevel, "fdk")
 		if isComplex != test.isComplex {
 			t.Errorf("Test #%d (%s) unexpected isComplex - got: %v, "+
@@ -270,7 +270,7 @@ func TestHelpReflectInternals(t *testing.T) {
 		}
 
 		// Ensure the generated result type help is as expected.
-		helpText := rpcmodel.TstResultTypeHelp(xT, test.reflectType, "fdk")
+		helpText := model.TstResultTypeHelp(xT, test.reflectType, "fdk")
 		if helpText != test.help {
 			t.Errorf("Test #%d (%s) unexpected result help - "+
 				"got: %v, want: %v", i, test.name, helpText,
@@ -278,7 +278,7 @@ func TestHelpReflectInternals(t *testing.T) {
 			continue
 		}
 
-		isValid := rpcmodel.TstIsValidResultType(test.reflectType.Kind())
+		isValid := model.TstIsValidResultType(test.reflectType.Kind())
 		if isValid != !test.isInvalid {
 			t.Errorf("Test #%d (%s) unexpected result type validity "+
 				"- got: %v", i, test.name, isValid)
@@ -403,7 +403,7 @@ func TestResultStructHelp(t *testing.T) {
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		results := rpcmodel.TstResultStructHelp(xT, test.reflectType, 0)
+		results := model.TstResultStructHelp(xT, test.reflectType, 0)
 		if len(results) != len(test.expected) {
 			t.Errorf("Test #%d (%s) unexpected result length - "+
 				"got: %v, want: %v", i, test.name, len(results),
@@ -556,7 +556,7 @@ func TestHelpArgInternals(t *testing.T) {
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		help := rpcmodel.TstArgHelp(xT, test.reflectType, test.defaults,
+		help := model.TstArgHelp(xT, test.reflectType, test.defaults,
 			test.method)
 		if help != test.help {
 			t.Errorf("Test #%d (%s) unexpected help - got:\n%v\n"+
@@ -649,7 +649,7 @@ func TestMethodHelp(t *testing.T) {
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		help := rpcmodel.TestMethodHelp(xT, test.reflectType,
+		help := model.TestMethodHelp(xT, test.reflectType,
 			test.defaults, test.method, test.resultTypes)
 		if help != test.help {
 			t.Errorf("Test #%d (%s) unexpected help - got:\n%v\n"+
@@ -668,43 +668,43 @@ func TestGenerateHelpErrors(t *testing.T) {
 		name        string
 		method      string
 		resultTypes []interface{}
-		err         rpcmodel.Error
+		err         model.Error
 	}{
 		{
 			name:   "unregistered command",
 			method: "boguscommand",
-			err:    rpcmodel.Error{ErrorCode: rpcmodel.ErrUnregisteredMethod},
+			err:    model.Error{ErrorCode: model.ErrUnregisteredMethod},
 		},
 		{
 			name:        "non-pointer result type",
 			method:      "help",
 			resultTypes: []interface{}{0},
-			err:         rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:         model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name:        "invalid result type",
 			method:      "help",
 			resultTypes: []interface{}{(*complex64)(nil)},
-			err:         rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:         model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name:        "missing description",
 			method:      "help",
 			resultTypes: []interface{}{(*string)(nil), nil},
-			err:         rpcmodel.Error{ErrorCode: rpcmodel.ErrMissingDescription},
+			err:         model.Error{ErrorCode: model.ErrMissingDescription},
 		},
 	}
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		_, err := rpcmodel.GenerateHelp(test.method, nil,
+		_, err := model.GenerateHelp(test.method, nil,
 			test.resultTypes...)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
 			t.Errorf("Test #%d (%s) wrong error - got %T (%[2]v), "+
 				"want %T", i, test.name, err, test.err)
 			continue
 		}
-		var gotRPCModelErr rpcmodel.Error
+		var gotRPCModelErr model.Error
 		errors.As(err, &gotRPCModelErr)
 		gotErrorCode := gotRPCModelErr.ErrorCode
 		if gotErrorCode != test.err.ErrorCode {
@@ -726,7 +726,7 @@ func TestGenerateHelp(t *testing.T) {
 		"help--synopsis": "test",
 		"help-command":   "test",
 	}
-	help, err := rpcmodel.GenerateHelp("help", descs)
+	help, err := model.GenerateHelp("help", descs)
 	if err != nil {
 		t.Fatalf("GenerateHelp: unexpected error: %v", err)
 	}

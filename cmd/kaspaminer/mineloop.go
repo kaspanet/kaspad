@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/rpc/client"
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
@@ -79,7 +79,7 @@ func logHashRate() {
 func mineNextBlock(client *minerClient, miningAddr util.Address, foundBlock chan *util.Block, mineWhenNotSynced bool,
 	templateStopChan chan struct{}, errChan chan error) {
 
-	newTemplateChan := make(chan *rpcmodel.GetBlockTemplateResult)
+	newTemplateChan := make(chan *model.GetBlockTemplateResult)
 	spawn("templatesLoop", func() {
 		templatesLoop(client, miningAddr, newTemplateChan, errChan, templateStopChan)
 	})
@@ -91,7 +91,7 @@ func mineNextBlock(client *minerClient, miningAddr util.Address, foundBlock chan
 func handleFoundBlock(client *minerClient, block *util.Block) error {
 	log.Infof("Found block %s with parents %s. Submitting to %s", block.Hash(), block.MsgBlock().Header.ParentHashes, client.Host())
 
-	err := client.SubmitBlock(block, &rpcmodel.SubmitBlockOptions{})
+	err := client.SubmitBlock(block, &model.SubmitBlockOptions{})
 	if err != nil {
 		return errors.Errorf("Error submitting block %s to %s: %s", block.Hash(), client.Host(), err)
 	}
@@ -120,7 +120,7 @@ func solveBlock(block *util.Block, stopChan chan struct{}, foundBlock chan *util
 }
 
 func templatesLoop(minerClient *minerClient, miningAddr util.Address,
-	newTemplateChan chan *rpcmodel.GetBlockTemplateResult, errChan chan error, stopChan chan struct{}) {
+	newTemplateChan chan *model.GetBlockTemplateResult, errChan chan error, stopChan chan struct{}) {
 
 	longPollID := ""
 	getBlockTemplateLongPoll := func() {
@@ -157,11 +157,11 @@ func templatesLoop(minerClient *minerClient, miningAddr util.Address,
 	}
 }
 
-func getBlockTemplate(client *minerClient, miningAddr util.Address, longPollID string) (*rpcmodel.GetBlockTemplateResult, error) {
+func getBlockTemplate(client *minerClient, miningAddr util.Address, longPollID string) (*model.GetBlockTemplateResult, error) {
 	return client.GetBlockTemplate(miningAddr.String(), longPollID)
 }
 
-func solveLoop(newTemplateChan chan *rpcmodel.GetBlockTemplateResult, foundBlock chan *util.Block,
+func solveLoop(newTemplateChan chan *model.GetBlockTemplateResult, foundBlock chan *util.Block,
 	mineWhenNotSynced bool, errChan chan error) {
 
 	var stopOldTemplateSolving chan struct{}

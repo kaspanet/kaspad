@@ -2,7 +2,7 @@ package rpc
 
 import (
 	"encoding/hex"
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
@@ -14,7 +14,7 @@ const (
 )
 
 func handleGetBlocks(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*rpcmodel.GetBlocksCmd)
+	c := cmd.(*model.GetBlocksCmd)
 	var lowHash *daghash.Hash
 	if c.LowHash != nil {
 		lowHash = &daghash.Hash{}
@@ -29,8 +29,8 @@ func handleGetBlocks(s *Server, cmd interface{}, closeChan <-chan struct{}) (int
 
 	// If lowHash is not in the DAG, there's nothing to do; return an error.
 	if lowHash != nil && !s.dag.IsKnownBlock(lowHash) {
-		return nil, &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCBlockNotFound,
+		return nil, &model.RPCError{
+			Code:    model.ErrRPCBlockNotFound,
 			Message: "Block not found",
 		}
 	}
@@ -47,7 +47,7 @@ func handleGetBlocks(s *Server, cmd interface{}, closeChan <-chan struct{}) (int
 		hashes[i] = blockHash.String()
 	}
 
-	result := &rpcmodel.GetBlocksResult{
+	result := &model.GetBlocksResult{
 		Hashes:        hashes,
 		RawBlocks:     nil,
 		VerboseBlocks: nil,
@@ -98,8 +98,8 @@ func blockBytesToStrings(blockBytesSlice [][]byte) []string {
 	return rawBlocks
 }
 
-func blockBytesToBlockVerboseResults(s *Server, blockBytesSlice [][]byte) ([]rpcmodel.GetBlockVerboseResult, error) {
-	verboseBlocks := make([]rpcmodel.GetBlockVerboseResult, len(blockBytesSlice))
+func blockBytesToBlockVerboseResults(s *Server, blockBytesSlice [][]byte) ([]model.GetBlockVerboseResult, error) {
+	verboseBlocks := make([]model.GetBlockVerboseResult, len(blockBytesSlice))
 	for i, blockBytes := range blockBytesSlice {
 		block, err := util.NewBlockFromBytes(blockBytes)
 		if err != nil {

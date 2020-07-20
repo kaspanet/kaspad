@@ -33,7 +33,7 @@ import (
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/mining"
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util/fs"
 	"github.com/kaspanet/kaspad/util/network"
 )
@@ -359,7 +359,7 @@ type parsedRPCCmd struct {
 	id     interface{}
 	method string
 	cmd    interface{}
-	err    *rpcmodel.RPCError
+	err    *model.RPCError
 }
 
 // standardCmdResult checks that a parsed command is a standard kaspa JSON-RPC
@@ -376,7 +376,7 @@ func (s *Server) standardCmdResult(cmd *parsedRPCCmd, closeChan <-chan struct{})
 		handler = handleUnimplemented
 		goto handled
 	}
-	return nil, rpcmodel.ErrRPCMethodNotFound
+	return nil, model.ErrRPCMethodNotFound
 handled:
 
 	return handler(s, cmd.cmd, closeChan)
@@ -386,27 +386,27 @@ handled:
 // err field of the returned parsedRPCCmd struct will contain an RPC error that
 // is suitable for use in replies if the command is invalid in some way such as
 // an unregistered command or invalid parameters.
-func parseCmd(request *rpcmodel.Request) *parsedRPCCmd {
+func parseCmd(request *model.Request) *parsedRPCCmd {
 	var parsedCmd parsedRPCCmd
 	parsedCmd.id = request.ID
 	parsedCmd.method = request.Method
 
-	cmd, err := rpcmodel.UnmarshalCommand(request)
+	cmd, err := model.UnmarshalCommand(request)
 	if err != nil {
 		// When the error is because the method is not registered,
 		// produce a method not found RPC error.
-		var rpcModelErr rpcmodel.Error
+		var rpcModelErr model.Error
 		if ok := errors.As(err, &rpcModelErr); ok &&
-			rpcModelErr.ErrorCode == rpcmodel.ErrUnregisteredMethod {
+			rpcModelErr.ErrorCode == model.ErrUnregisteredMethod {
 
-			parsedCmd.err = rpcmodel.ErrRPCMethodNotFound
+			parsedCmd.err = model.ErrRPCMethodNotFound
 			return &parsedCmd
 		}
 
 		// Otherwise, some type of invalid parameters is the
 		// cause, so produce the equivalent RPC error.
-		parsedCmd.err = rpcmodel.NewRPCError(
-			rpcmodel.ErrRPCInvalidParams.Code, err.Error())
+		parsedCmd.err = model.NewRPCError(
+			model.ErrRPCInvalidParams.Code, err.Error())
 		return &parsedCmd
 	}
 
@@ -416,18 +416,18 @@ func parseCmd(request *rpcmodel.Request) *parsedRPCCmd {
 
 // createMarshalledReply returns a new marshalled JSON-RPC response given the
 // passed parameters. It will automatically convert errors that are not of
-// the type *rpcmodel.RPCError to the appropriate type as needed.
+// the type *model.RPCError to the appropriate type as needed.
 func createMarshalledReply(id, result interface{}, replyErr error) ([]byte, error) {
-	var jsonErr *rpcmodel.RPCError
+	var jsonErr *model.RPCError
 	if replyErr != nil {
-		if jErr, ok := replyErr.(*rpcmodel.RPCError); ok {
+		if jErr, ok := replyErr.(*model.RPCError); ok {
 			jsonErr = jErr
 		} else {
 			jsonErr = internalRPCError(replyErr.Error(), "")
 		}
 	}
 
-	return rpcmodel.MarshalResponse(id, result, jsonErr)
+	return model.MarshalResponse(id, result, jsonErr)
 }
 
 // jsonRPCRead handles reading and responding to RPC messages.
@@ -475,10 +475,10 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 	var responseID interface{}
 	var jsonErr error
 	var result interface{}
-	var request rpcmodel.Request
+	var request model.Request
 	if err := json.Unmarshal(body, &request); err != nil {
-		jsonErr = &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCParse.Code,
+		jsonErr = &model.RPCError{
+			Code:    model.ErrRPCParse.Code,
 			Message: "Failed to parse request: " + err.Error(),
 		}
 	}
@@ -514,8 +514,8 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 		// Check if the user is limited and set error if method unauthorized
 		if !isAdmin {
 			if _, ok := rpcLimited[request.Method]; !ok {
-				jsonErr = &rpcmodel.RPCError{
-					Code:    rpcmodel.ErrRPCInvalidParams.Code,
+				jsonErr = &model.RPCError{
+					Code:    model.ErrRPCInvalidParams.Code,
 					Message: "limited user not authorized for this method",
 				}
 			}

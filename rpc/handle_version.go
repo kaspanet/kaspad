@@ -1,6 +1,6 @@
 package rpc
 
-import "github.com/kaspanet/kaspad/rpcmodel"
+import "github.com/kaspanet/kaspad/rpc/model"
 
 // API version constants
 const (
@@ -12,7 +12,7 @@ const (
 
 // handleVersion implements the version command.
 func handleVersion(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	result := map[string]rpcmodel.VersionResult{
+	result := map[string]model.VersionResult{
 		"kaspadjsonrpcapi": {
 			VersionString: jsonrpcSemverString,
 			Major:         jsonrpcSemverMajor,

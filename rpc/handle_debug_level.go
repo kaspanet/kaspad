@@ -3,12 +3,12 @@ package rpc
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/logger"
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 )
 
 // handleDebugLevel handles debugLevel commands.
 func handleDebugLevel(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*rpcmodel.DebugLevelCmd)
+	c := cmd.(*model.DebugLevelCmd)
 
 	// Special show command to list supported subsystems.
 	if c.LevelSpec == "show" {
@@ -18,8 +18,8 @@ func handleDebugLevel(s *Server, cmd interface{}, closeChan <-chan struct{}) (in
 
 	err := logger.ParseAndSetDebugLevels(c.LevelSpec)
 	if err != nil {
-		return nil, &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCInvalidParams.Code,
+		return nil, &model.RPCError{
+			Code:    model.ErrRPCInvalidParams.Code,
 			Message: err.Error(),
 		}
 	}

@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package rpcmodel
+package model
 
 // Standard JSON-RPC 2.0 errors.
 var (

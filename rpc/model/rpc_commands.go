@@ -5,7 +5,7 @@
 // NOTE: This file is intended to house the RPC commands that are supported by
 // a kaspa rpc server.
 
-package rpcmodel
+package model
 
 import (
 	"encoding/json"

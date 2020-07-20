@@ -16,7 +16,7 @@ import (
 	"strings"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util"
 )
 
@@ -24,7 +24,7 @@ const (
 	// unusableFlags are the command usage flags which this utility are not
 	// able to use. In particular it doesn't support websockets and
 	// consequently notifications.
-	unusableFlags = rpcmodel.UFWebsocketOnly | rpcmodel.UFNotification
+	unusableFlags = model.UFWebsocketOnly | model.UFNotification
 )
 
 var (
@@ -45,10 +45,10 @@ func listCommands() {
 	)
 
 	// Get a list of registered commands and categorize and filter them.
-	cmdMethods := rpcmodel.RegisteredCmdMethods()
+	cmdMethods := model.RegisteredCmdMethods()
 	categorized := make([][]string, numCategories)
 	for _, method := range cmdMethods {
-		flags, err := rpcmodel.MethodUsageFlags(method)
+		flags, err := model.MethodUsageFlags(method)
 		if err != nil {
 			// This should never happen since the method was just
 			// returned from the package, but be safe.
@@ -60,7 +60,7 @@ func listCommands() {
 			continue
 		}
 
-		usage, err := rpcmodel.MethodUsageText(method)
+		usage, err := model.MethodUsageText(method)
 		if err != nil {
 			// This should never happen since the method was just
 			// returned from the package, but be safe.

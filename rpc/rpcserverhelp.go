@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/pkg/errors"
 )
 
@@ -621,33 +621,33 @@ var rpcResultTypes = map[string][]interface{}{
 	"addManualNode":         nil,
 	"createRawTransaction":  {(*string)(nil)},
 	"debugLevel":            {(*string)(nil), (*string)(nil)},
-	"decodeRawTransaction":  {(*rpcmodel.TxRawDecodeResult)(nil)},
-	"decodeScript":          {(*rpcmodel.DecodeScriptResult)(nil)},
-	"getAllManualNodesInfo": {(*[]string)(nil), (*[]rpcmodel.GetManualNodeInfoResult)(nil)},
-	"getSelectedTip":        {(*rpcmodel.GetBlockVerboseResult)(nil)},
+	"decodeRawTransaction":  {(*model.TxRawDecodeResult)(nil)},
+	"decodeScript":          {(*model.DecodeScriptResult)(nil)},
+	"getAllManualNodesInfo": {(*[]string)(nil), (*[]model.GetManualNodeInfoResult)(nil)},
+	"getSelectedTip":        {(*model.GetBlockVerboseResult)(nil)},
 	"getSelectedTipHash":    {(*string)(nil)},
-	"getBlock":              {(*string)(nil), (*rpcmodel.GetBlockVerboseResult)(nil)},
-	"getBlocks":             {(*rpcmodel.GetBlocksResult)(nil)},
+	"getBlock":              {(*string)(nil), (*model.GetBlockVerboseResult)(nil)},
+	"getBlocks":             {(*model.GetBlocksResult)(nil)},
 	"getBlockCount":         {(*int64)(nil)},
-	"getBlockHeader":        {(*string)(nil), (*rpcmodel.GetBlockHeaderVerboseResult)(nil)},
-	"getBlockTemplate":      {(*rpcmodel.GetBlockTemplateResult)(nil), (*string)(nil), nil},
-	"getBlockDagInfo":       {(*rpcmodel.GetBlockDAGInfoResult)(nil)},
-	"getChainFromBlock":     {(*rpcmodel.GetChainFromBlockResult)(nil)},
+	"getBlockHeader":        {(*string)(nil), (*model.GetBlockHeaderVerboseResult)(nil)},
+	"getBlockTemplate":      {(*model.GetBlockTemplateResult)(nil), (*string)(nil), nil},
+	"getBlockDagInfo":       {(*model.GetBlockDAGInfoResult)(nil)},
+	"getChainFromBlock":     {(*model.GetChainFromBlockResult)(nil)},
 	"getConnectionCount":    {(*int32)(nil)},
 	"getCurrentNet":         {(*uint32)(nil)},
 	"getDifficulty":         {(*float64)(nil)},
 	"getTopHeaders":         {(*[]string)(nil)},
 	"getHeaders":            {(*[]string)(nil)},
-	"getInfo":               {(*rpcmodel.InfoDAGResult)(nil)},
-	"getManualNodeInfo":     {(*string)(nil), (*rpcmodel.GetManualNodeInfoResult)(nil)},
-	"getMempoolInfo":        {(*rpcmodel.GetMempoolInfoResult)(nil)},
-	"getMempoolEntry":       {(*rpcmodel.GetMempoolEntryResult)(nil)},
-	"getNetTotals":          {(*rpcmodel.GetNetTotalsResult)(nil)},
-	"getConnectedPeerInfo":  {(*[]rpcmodel.GetConnectedPeerInfoResult)(nil)},
-	"getPeerAddresses":      {(*[]rpcmodel.GetPeerAddressesResult)(nil)},
-	"getRawMempool":         {(*[]string)(nil), (*rpcmodel.GetRawMempoolVerboseResult)(nil)},
-	"getSubnetwork":         {(*rpcmodel.GetSubnetworkResult)(nil)},
-	"getTxOut":              {(*rpcmodel.GetTxOutResult)(nil)},
+	"getInfo":               {(*model.InfoDAGResult)(nil)},
+	"getManualNodeInfo":     {(*string)(nil), (*model.GetManualNodeInfoResult)(nil)},
+	"getMempoolInfo":        {(*model.GetMempoolInfoResult)(nil)},
+	"getMempoolEntry":       {(*model.GetMempoolEntryResult)(nil)},
+	"getNetTotals":          {(*model.GetNetTotalsResult)(nil)},
+	"getConnectedPeerInfo":  {(*[]model.GetConnectedPeerInfoResult)(nil)},
+	"getPeerAddresses":      {(*[]model.GetPeerAddressesResult)(nil)},
+	"getRawMempool":         {(*[]string)(nil), (*model.GetRawMempoolVerboseResult)(nil)},
+	"getSubnetwork":         {(*model.GetSubnetworkResult)(nil)},
+	"getTxOut":              {(*model.GetTxOutResult)(nil)},
 	"node":                  nil,
 	"help":                  {(*string)(nil), (*string)(nil)},
 	"ping":                  nil,
@@ -656,19 +656,19 @@ var rpcResultTypes = map[string][]interface{}{
 	"stop":                  {(*string)(nil)},
 	"submitBlock":           {nil, (*string)(nil)},
 	"uptime":                {(*int64)(nil)},
-	"validateAddress":       {(*rpcmodel.ValidateAddressResult)(nil)},
-	"version":               {(*map[string]rpcmodel.VersionResult)(nil)},
+	"validateAddress":       {(*model.ValidateAddressResult)(nil)},
+	"version":               {(*map[string]model.VersionResult)(nil)},
 
 	// Websocket commands.
 	"loadTxFilter":              nil,
-	"session":                   {(*rpcmodel.SessionResult)(nil)},
+	"session":                   {(*model.SessionResult)(nil)},
 	"notifyBlocks":              nil,
 	"stopNotifyBlocks":          nil,
 	"notifyChainChanges":        nil,
 	"stopNotifyChainChanges":    nil,
 	"notifyNewTransactions":     nil,
 	"stopNotifyNewTransactions": nil,
-	"rescanBlocks":              {(*[]rpcmodel.RescannedBlock)(nil)},
+	"rescanBlocks":              {(*[]model.RescannedBlock)(nil)},
 }
 
 // helpCacher provides a concurrent safe type that provides help and usage for
@@ -699,7 +699,7 @@ func (c *helpCacher) rpcMethodHelp(method string) (string, error) {
 	}
 
 	// Generate, cache, and return the help.
-	help, err := rpcmodel.GenerateHelp(method, helpDescsEnUS, resultTypes...)
+	help, err := model.GenerateHelp(method, helpDescsEnUS, resultTypes...)
 	if err != nil {
 		return "", err
 	}
@@ -722,7 +722,7 @@ func (c *helpCacher) rpcUsage(includeWebsockets bool) (string, error) {
 	// Generate a list of one-line usage for every command.
 	usageTexts := make([]string, 0, len(rpcHandlers))
 	for k := range rpcHandlers {
-		usage, err := rpcmodel.MethodUsageText(k)
+		usage, err := model.MethodUsageText(k)
 		if err != nil {
 			return "", err
 		}
@@ -732,7 +732,7 @@ func (c *helpCacher) rpcUsage(includeWebsockets bool) (string, error) {
 	// Include websockets commands if requested.
 	if includeWebsockets {
 		for k := range wsHandlers {
-			usage, err := rpcmodel.MethodUsageText(k)
+			usage, err := model.MethodUsageText(k)
 			if err != nil {
 				return "", err
 			}

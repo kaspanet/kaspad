@@ -1,7 +1,7 @@
 package rpc
 
 import (
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -11,14 +11,14 @@ import (
 //
 // NOTE: This extension is ported from github.com/decred/dcrd
 func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
-	cmd := icmd.(*rpcmodel.LoadTxFilterCmd)
+	cmd := icmd.(*model.LoadTxFilterCmd)
 
 	outpoints := make([]wire.Outpoint, len(cmd.Outpoints))
 	for i := range cmd.Outpoints {
 		txID, err := daghash.NewTxIDFromStr(cmd.Outpoints[i].TxID)
 		if err != nil {
-			return nil, &rpcmodel.RPCError{
-				Code:    rpcmodel.ErrRPCInvalidParameter,
+			return nil, &model.RPCError{
+				Code:    model.ErrRPCInvalidParameter,
 				Message: err.Error(),
 			}
 		}

@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
@@ -20,14 +20,14 @@ type FutureDecodeRawTransactionResult chan *response
 
 // Receive waits for the response promised by the future and returns information
 // about a transaction given its serialized bytes.
-func (r FutureDecodeRawTransactionResult) Receive() (*rpcmodel.TxRawResult, error) {
+func (r FutureDecodeRawTransactionResult) Receive() (*model.TxRawResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a decoderawtransaction result object.
-	var rawTxResult rpcmodel.TxRawResult
+	var rawTxResult model.TxRawResult
 	err = json.Unmarshal(res, &rawTxResult)
 	if err != nil {
 		return nil, err
@@ -43,13 +43,13 @@ func (r FutureDecodeRawTransactionResult) Receive() (*rpcmodel.TxRawResult, erro
 // See DecodeRawTransaction for the blocking version and more details.
 func (c *Client) DecodeRawTransactionAsync(serializedTx []byte) FutureDecodeRawTransactionResult {
 	txHex := hex.EncodeToString(serializedTx)
-	cmd := rpcmodel.NewDecodeRawTransactionCmd(txHex)
+	cmd := model.NewDecodeRawTransactionCmd(txHex)
 	return c.sendCmd(cmd)
 }
 
 // DecodeRawTransaction returns information about a transaction given its
 // serialized bytes.
-func (c *Client) DecodeRawTransaction(serializedTx []byte) (*rpcmodel.TxRawResult, error) {
+func (c *Client) DecodeRawTransaction(serializedTx []byte) (*model.TxRawResult, error) {
 	return c.DecodeRawTransactionAsync(serializedTx).Receive()
 }
 
@@ -92,20 +92,20 @@ func (r FutureCreateRawTransactionResult) Receive() (*wire.MsgTx, error) {
 // function on the returned instance.
 //
 // See CreateRawTransaction for the blocking version and more details.
-func (c *Client) CreateRawTransactionAsync(inputs []rpcmodel.TransactionInput,
+func (c *Client) CreateRawTransactionAsync(inputs []model.TransactionInput,
 	amounts map[util.Address]util.Amount, lockTime *uint64) FutureCreateRawTransactionResult {
 
 	convertedAmts := make(map[string]float64, len(amounts))
 	for addr, amount := range amounts {
 		convertedAmts[addr.String()] = amount.ToKAS()
 	}
-	cmd := rpcmodel.NewCreateRawTransactionCmd(inputs, convertedAmts, lockTime)
+	cmd := model.NewCreateRawTransactionCmd(inputs, convertedAmts, lockTime)
 	return c.sendCmd(cmd)
 }
 
 // CreateRawTransaction returns a new transaction spending the provided inputs
 // and sending to the provided addresses.
-func (c *Client) CreateRawTransaction(inputs []rpcmodel.TransactionInput,
+func (c *Client) CreateRawTransaction(inputs []model.TransactionInput,
 	amounts map[util.Address]util.Amount, lockTime *uint64) (*wire.MsgTx, error) {
 
 	return c.CreateRawTransactionAsync(inputs, amounts, lockTime).Receive()
@@ -150,7 +150,7 @@ func (c *Client) SendRawTransactionAsync(tx *wire.MsgTx, allowHighFees bool) Fut
 		txHex = hex.EncodeToString(buf.Bytes())
 	}
 
-	cmd := rpcmodel.NewSendRawTransactionCmd(txHex, &allowHighFees)
+	cmd := model.NewSendRawTransactionCmd(txHex, &allowHighFees)
 	return c.sendCmd(cmd)
 }
 
@@ -166,14 +166,14 @@ type FutureDecodeScriptResult chan *response
 
 // Receive waits for the response promised by the future and returns information
 // about a script given its serialized bytes.
-func (r FutureDecodeScriptResult) Receive() (*rpcmodel.DecodeScriptResult, error) {
+func (r FutureDecodeScriptResult) Receive() (*model.DecodeScriptResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a decodescript result object.
-	var decodeScriptResult rpcmodel.DecodeScriptResult
+	var decodeScriptResult model.DecodeScriptResult
 	err = json.Unmarshal(res, &decodeScriptResult)
 	if err != nil {
 		return nil, err
@@ -189,11 +189,11 @@ func (r FutureDecodeScriptResult) Receive() (*rpcmodel.DecodeScriptResult, error
 // See DecodeScript for the blocking version and more details.
 func (c *Client) DecodeScriptAsync(serializedScript []byte) FutureDecodeScriptResult {
 	scriptHex := hex.EncodeToString(serializedScript)
-	cmd := rpcmodel.NewDecodeScriptCmd(scriptHex)
+	cmd := model.NewDecodeScriptCmd(scriptHex)
 	return c.sendCmd(cmd)
 }
 
 // DecodeScript returns information about a script given its serialized bytes.
-func (c *Client) DecodeScript(serializedScript []byte) (*rpcmodel.DecodeScriptResult, error) {
+func (c *Client) DecodeScript(serializedScript []byte) (*model.DecodeScriptResult, error) {
 	return c.DecodeScriptAsync(serializedScript).Receive()
 }

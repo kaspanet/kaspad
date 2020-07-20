@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 	"strings"
@@ -17,7 +17,7 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 	params := s.dag.Params
 	dag := s.dag
 
-	dagInfo := &rpcmodel.GetBlockDAGInfoResult{
+	dagInfo := &model.GetBlockDAGInfoResult{
 		DAG:           params.Name,
 		Blocks:        dag.BlockCount(),
 		Headers:       dag.BlockCount(),
@@ -25,7 +25,7 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 		Difficulty:    getDifficultyRatio(dag.CurrentBits(), params),
 		MedianTime:    dag.CalcPastMedianTime().UnixMilliseconds(),
 		Pruned:        false,
-		Bip9SoftForks: make(map[string]*rpcmodel.Bip9SoftForkDescription),
+		Bip9SoftForks: make(map[string]*model.Bip9SoftForkDescription),
 	}
 
 	// Finally, query the BIP0009 version bits state for all currently
@@ -39,8 +39,8 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 			forkName = "dummy"
 
 		default:
-			return nil, &rpcmodel.RPCError{
-				Code: rpcmodel.ErrRPCInternal.Code,
+			return nil, &model.RPCError{
+				Code: model.ErrRPCInternal.Code,
 				Message: fmt.Sprintf("Unknown deployment %d "+
 					"detected", deployment),
 			}
@@ -59,8 +59,8 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 		// non-nil error is returned.
 		statusString, err := softForkStatus(deploymentStatus)
 		if err != nil {
-			return nil, &rpcmodel.RPCError{
-				Code: rpcmodel.ErrRPCInternal.Code,
+			return nil, &model.RPCError{
+				Code: model.ErrRPCInternal.Code,
 				Message: fmt.Sprintf("unknown deployment status: %d",
 					deploymentStatus),
 			}
@@ -68,7 +68,7 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 
 		// Finally, populate the soft-fork description with all the
 		// information gathered above.
-		dagInfo.Bip9SoftForks[forkName] = &rpcmodel.Bip9SoftForkDescription{
+		dagInfo.Bip9SoftForks[forkName] = &model.Bip9SoftForkDescription{
 			Status:    strings.ToLower(statusString),
 			Bit:       deploymentDetails.BitNumber,
 			StartTime: int64(deploymentDetails.StartTime),

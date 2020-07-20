@@ -4,13 +4,13 @@ import (
 	"net"
 
 	"github.com/kaspanet/kaspad/logger"
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util/pointers"
 )
 
 // handleGetManualNodeInfo handles getManualNodeInfo commands.
 func handleGetManualNodeInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*rpcmodel.GetManualNodeInfoCmd)
+	c := cmd.(*model.GetManualNodeInfoCmd)
 	results, err := getManualNodesInfo(s, c.Details, c.Node)
 	if err != nil {
 		return nil, err
@@ -18,7 +18,7 @@ func handleGetManualNodeInfo(s *Server, cmd interface{}, closeChan <-chan struct
 	if resultsNonDetailed, ok := results.([]string); ok {
 		return resultsNonDetailed[0], nil
 	}
-	resultsDetailed := results.([]*rpcmodel.GetManualNodeInfoResult)
+	resultsDetailed := results.([]*model.GetManualNodeInfoResult)
 	return resultsDetailed[0], nil
 }
 
@@ -39,8 +39,8 @@ func getManualNodesInfo(s *Server, detailsArg *bool, node string) (interface{}, 
 			}
 		}
 		if !found {
-			return nil, &rpcmodel.RPCError{
-				Code:    rpcmodel.ErrRPCClientNodeNotAdded,
+			return nil, &model.RPCError{
+				Code:    model.ErrRPCClientNodeNotAdded,
 				Message: "Node has not been added",
 			}
 		}
@@ -58,12 +58,12 @@ func getManualNodesInfo(s *Server, detailsArg *bool, node string) (interface{}, 
 
 	// With the details flag, the result is an array of JSON objects which
 	// include the result of DNS lookups for each peer.
-	results := make([]*rpcmodel.GetManualNodeInfoResult, 0, len(peers))
+	results := make([]*model.GetManualNodeInfoResult, 0, len(peers))
 	for _, rpcPeer := range peers {
 		// Set the "address" of the peer which could be an ip address
 		// or a domain name.
 		peer := rpcPeer.ToPeer()
-		var result rpcmodel.GetManualNodeInfoResult
+		var result model.GetManualNodeInfoResult
 		result.ManualNode = peer.Addr()
 		result.Connected = pointers.Bool(peer.Connected())
 
@@ -96,9 +96,9 @@ func getManualNodesInfo(s *Server, detailsArg *bool, node string) (interface{}, 
 		}
 
 		// Add the addresses and connection info to the result.
-		addrs := make([]rpcmodel.GetManualNodeInfoResultAddr, 0, len(ipList))
+		addrs := make([]model.GetManualNodeInfoResultAddr, 0, len(ipList))
 		for _, ip := range ipList {
-			var addr rpcmodel.GetManualNodeInfoResultAddr
+			var addr model.GetManualNodeInfoResultAddr
 			addr.Address = ip
 			addr.Connected = "false"
 			if ip == host && peer.Connected() {

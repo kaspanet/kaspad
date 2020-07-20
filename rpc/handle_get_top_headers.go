@@ -3,7 +3,7 @@ package rpc
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -11,7 +11,7 @@ const getTopHeadersMaxHeaders = getHeadersMaxHeaders
 
 // handleGetTopHeaders implements the getTopHeaders command.
 func handleGetTopHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*rpcmodel.GetTopHeadersCmd)
+	c := cmd.(*model.GetTopHeadersCmd)
 
 	var highHash *daghash.Hash
 	if c.HighHash != nil {

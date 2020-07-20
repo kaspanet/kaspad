@@ -1,10 +1,10 @@
 package rpc
 
-import "github.com/kaspanet/kaspad/rpcmodel"
+import "github.com/kaspanet/kaspad/rpc/model"
 
 // handleHelp implements the help command.
 func handleHelp(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*rpcmodel.HelpCmd)
+	c := cmd.(*model.HelpCmd)
 
 	// Provide a usage overview of all commands when no specific command
 	// was specified.
@@ -26,8 +26,8 @@ func handleHelp(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 	// for commands that are unimplemented or related to wallet
 	// functionality.
 	if _, ok := rpcHandlers[command]; !ok {
-		return nil, &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCInvalidParameter,
+		return nil, &model.RPCError{
+			Code:    model.ErrRPCInvalidParameter,
 			Message: "Unknown command: " + command,
 		}
 	}

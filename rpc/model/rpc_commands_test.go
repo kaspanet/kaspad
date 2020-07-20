@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package rpcmodel_test
+package model_test
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 )
 
 // TestRPCServerCommands tests all of the kaspa rpc server commands marshal and unmarshal
@@ -34,49 +34,49 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "addManualNode",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("addManualNode", "127.0.0.1")
+				return model.NewCommand("addManualNode", "127.0.0.1")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewAddManualNodeCmd("127.0.0.1", nil)
+				return model.NewAddManualNodeCmd("127.0.0.1", nil)
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"addManualNode","params":["127.0.0.1"],"id":1}`,
-			unmarshalled: &rpcmodel.AddManualNodeCmd{Addr: "127.0.0.1", OneTry: pointers.Bool(false)},
+			unmarshalled: &model.AddManualNodeCmd{Addr: "127.0.0.1", OneTry: pointers.Bool(false)},
 		},
 		{
 			name: "createRawTransaction",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("createRawTransaction", `[{"txId":"123","vout":1}]`,
+				return model.NewCommand("createRawTransaction", `[{"txId":"123","vout":1}]`,
 					`{"456":0.0123}`)
 			},
 			staticCmd: func() interface{} {
-				txInputs := []rpcmodel.TransactionInput{
+				txInputs := []model.TransactionInput{
 					{TxID: "123", Vout: 1},
 				}
 				amounts := map[string]float64{"456": .0123}
-				return rpcmodel.NewCreateRawTransactionCmd(txInputs, amounts, nil)
+				return model.NewCreateRawTransactionCmd(txInputs, amounts, nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"createRawTransaction","params":[[{"txId":"123","vout":1}],{"456":0.0123}],"id":1}`,
-			unmarshalled: &rpcmodel.CreateRawTransactionCmd{
-				Inputs:  []rpcmodel.TransactionInput{{TxID: "123", Vout: 1}},
+			unmarshalled: &model.CreateRawTransactionCmd{
+				Inputs:  []model.TransactionInput{{TxID: "123", Vout: 1}},
 				Amounts: map[string]float64{"456": .0123},
 			},
 		},
 		{
 			name: "createRawTransaction optional",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("createRawTransaction", `[{"txId":"123","vout":1}]`,
+				return model.NewCommand("createRawTransaction", `[{"txId":"123","vout":1}]`,
 					`{"456":0.0123}`, int64(12312333333))
 			},
 			staticCmd: func() interface{} {
-				txInputs := []rpcmodel.TransactionInput{
+				txInputs := []model.TransactionInput{
 					{TxID: "123", Vout: 1},
 				}
 				amounts := map[string]float64{"456": .0123}
-				return rpcmodel.NewCreateRawTransactionCmd(txInputs, amounts, pointers.Uint64(12312333333))
+				return model.NewCreateRawTransactionCmd(txInputs, amounts, pointers.Uint64(12312333333))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"createRawTransaction","params":[[{"txId":"123","vout":1}],{"456":0.0123},12312333333],"id":1}`,
-			unmarshalled: &rpcmodel.CreateRawTransactionCmd{
-				Inputs:   []rpcmodel.TransactionInput{{TxID: "123", Vout: 1}},
+			unmarshalled: &model.CreateRawTransactionCmd{
+				Inputs:   []model.TransactionInput{{TxID: "123", Vout: 1}},
 				Amounts:  map[string]float64{"456": .0123},
 				LockTime: pointers.Uint64(12312333333),
 			},
@@ -85,57 +85,57 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "decodeRawTransaction",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("decodeRawTransaction", "123")
+				return model.NewCommand("decodeRawTransaction", "123")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewDecodeRawTransactionCmd("123")
+				return model.NewDecodeRawTransactionCmd("123")
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"decodeRawTransaction","params":["123"],"id":1}`,
-			unmarshalled: &rpcmodel.DecodeRawTransactionCmd{HexTx: "123"},
+			unmarshalled: &model.DecodeRawTransactionCmd{HexTx: "123"},
 		},
 		{
 			name: "decodeScript",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("decodeScript", "00")
+				return model.NewCommand("decodeScript", "00")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewDecodeScriptCmd("00")
+				return model.NewDecodeScriptCmd("00")
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"decodeScript","params":["00"],"id":1}`,
-			unmarshalled: &rpcmodel.DecodeScriptCmd{HexScript: "00"},
+			unmarshalled: &model.DecodeScriptCmd{HexScript: "00"},
 		},
 		{
 			name: "getAllManualNodesInfo",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getAllManualNodesInfo")
+				return model.NewCommand("getAllManualNodesInfo")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetAllManualNodesInfoCmd(nil)
+				return model.NewGetAllManualNodesInfoCmd(nil)
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"getAllManualNodesInfo","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetAllManualNodesInfoCmd{Details: pointers.Bool(true)},
+			unmarshalled: &model.GetAllManualNodesInfoCmd{Details: pointers.Bool(true)},
 		},
 		{
 			name: "getSelectedTipHash",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getSelectedTipHash")
+				return model.NewCommand("getSelectedTipHash")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetSelectedTipHashCmd()
+				return model.NewGetSelectedTipHashCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"getSelectedTipHash","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetSelectedTipHashCmd{},
+			unmarshalled: &model.GetSelectedTipHashCmd{},
 		},
 		{
 			name: "getBlock",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getBlock", "123")
+				return model.NewCommand("getBlock", "123")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetBlockCmd("123", nil, nil, nil)
+				return model.NewGetBlockCmd("123", nil, nil, nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getBlock","params":["123"],"id":1}`,
-			unmarshalled: &rpcmodel.GetBlockCmd{
+			unmarshalled: &model.GetBlockCmd{
 				Hash:      "123",
 				Verbose:   pointers.Bool(true),
 				VerboseTx: pointers.Bool(false),
@@ -148,13 +148,13 @@ func TestRPCServerCommands(t *testing.T) {
 				// more pointers than the destination to
 				// exercise that path.
 				verbosePtr := pointers.Bool(true)
-				return rpcmodel.NewCommand("getBlock", "123", &verbosePtr)
+				return model.NewCommand("getBlock", "123", &verbosePtr)
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetBlockCmd("123", pointers.Bool(true), nil, nil)
+				return model.NewGetBlockCmd("123", pointers.Bool(true), nil, nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getBlock","params":["123",true],"id":1}`,
-			unmarshalled: &rpcmodel.GetBlockCmd{
+			unmarshalled: &model.GetBlockCmd{
 				Hash:      "123",
 				Verbose:   pointers.Bool(true),
 				VerboseTx: pointers.Bool(false),
@@ -163,13 +163,13 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "getBlock required optional2",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getBlock", "123", true, true)
+				return model.NewCommand("getBlock", "123", true, true)
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetBlockCmd("123", pointers.Bool(true), pointers.Bool(true), nil)
+				return model.NewGetBlockCmd("123", pointers.Bool(true), pointers.Bool(true), nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getBlock","params":["123",true,true],"id":1}`,
-			unmarshalled: &rpcmodel.GetBlockCmd{
+			unmarshalled: &model.GetBlockCmd{
 				Hash:      "123",
 				Verbose:   pointers.Bool(true),
 				VerboseTx: pointers.Bool(true),
@@ -178,13 +178,13 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "getBlock required optional3",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getBlock", "123", true, true, "456")
+				return model.NewCommand("getBlock", "123", true, true, "456")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetBlockCmd("123", pointers.Bool(true), pointers.Bool(true), pointers.String("456"))
+				return model.NewGetBlockCmd("123", pointers.Bool(true), pointers.Bool(true), pointers.String("456"))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getBlock","params":["123",true,true,"456"],"id":1}`,
-			unmarshalled: &rpcmodel.GetBlockCmd{
+			unmarshalled: &model.GetBlockCmd{
 				Hash:       "123",
 				Verbose:    pointers.Bool(true),
 				VerboseTx:  pointers.Bool(true),
@@ -194,13 +194,13 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "getBlocks",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getBlocks", true, true, "123")
+				return model.NewCommand("getBlocks", true, true, "123")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetBlocksCmd(true, true, pointers.String("123"))
+				return model.NewGetBlocksCmd(true, true, pointers.String("123"))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getBlocks","params":[true,true,"123"],"id":1}`,
-			unmarshalled: &rpcmodel.GetBlocksCmd{
+			unmarshalled: &model.GetBlocksCmd{
 				IncludeRawBlockData:     true,
 				IncludeVerboseBlockData: true,
 				LowHash:                 pointers.String("123"),
@@ -209,35 +209,35 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "getBlockDagInfo",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getBlockDagInfo")
+				return model.NewCommand("getBlockDagInfo")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetBlockDAGInfoCmd()
+				return model.NewGetBlockDAGInfoCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"getBlockDagInfo","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetBlockDAGInfoCmd{},
+			unmarshalled: &model.GetBlockDAGInfoCmd{},
 		},
 		{
 			name: "getBlockCount",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getBlockCount")
+				return model.NewCommand("getBlockCount")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetBlockCountCmd()
+				return model.NewGetBlockCountCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"getBlockCount","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetBlockCountCmd{},
+			unmarshalled: &model.GetBlockCountCmd{},
 		},
 		{
 			name: "getBlockHeader",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getBlockHeader", "123")
+				return model.NewCommand("getBlockHeader", "123")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetBlockHeaderCmd("123", nil)
+				return model.NewGetBlockHeaderCmd("123", nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getBlockHeader","params":["123"],"id":1}`,
-			unmarshalled: &rpcmodel.GetBlockHeaderCmd{
+			unmarshalled: &model.GetBlockHeaderCmd{
 				Hash:    "123",
 				Verbose: pointers.Bool(true),
 			},
@@ -245,29 +245,29 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "getBlockTemplate",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getBlockTemplate")
+				return model.NewCommand("getBlockTemplate")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetBlockTemplateCmd(nil)
+				return model.NewGetBlockTemplateCmd(nil)
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"getBlockTemplate","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetBlockTemplateCmd{Request: nil},
+			unmarshalled: &model.GetBlockTemplateCmd{Request: nil},
 		},
 		{
 			name: "getBlockTemplate optional - template request",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getBlockTemplate", `{"mode":"template","payAddress":"kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3"}`)
+				return model.NewCommand("getBlockTemplate", `{"mode":"template","payAddress":"kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3"}`)
 			},
 			staticCmd: func() interface{} {
-				template := rpcmodel.TemplateRequest{
+				template := model.TemplateRequest{
 					Mode:       "template",
 					PayAddress: "kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3",
 				}
-				return rpcmodel.NewGetBlockTemplateCmd(&template)
+				return model.NewGetBlockTemplateCmd(&template)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getBlockTemplate","params":[{"mode":"template","payAddress":"kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3"}],"id":1}`,
-			unmarshalled: &rpcmodel.GetBlockTemplateCmd{
-				Request: &rpcmodel.TemplateRequest{
+			unmarshalled: &model.GetBlockTemplateCmd{
+				Request: &model.TemplateRequest{
 					Mode:       "template",
 					PayAddress: "kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3",
 				},
@@ -276,21 +276,21 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "getBlockTemplate optional - template request with tweaks",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getBlockTemplate", `{"mode":"template","sigOpLimit":500,"massLimit":100000000,"maxVersion":1,"payAddress":"kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3"}`)
+				return model.NewCommand("getBlockTemplate", `{"mode":"template","sigOpLimit":500,"massLimit":100000000,"maxVersion":1,"payAddress":"kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3"}`)
 			},
 			staticCmd: func() interface{} {
-				template := rpcmodel.TemplateRequest{
+				template := model.TemplateRequest{
 					Mode:       "template",
 					PayAddress: "kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3",
 					SigOpLimit: 500,
 					MassLimit:  100000000,
 					MaxVersion: 1,
 				}
-				return rpcmodel.NewGetBlockTemplateCmd(&template)
+				return model.NewGetBlockTemplateCmd(&template)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getBlockTemplate","params":[{"mode":"template","sigOpLimit":500,"massLimit":100000000,"maxVersion":1,"payAddress":"kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3"}],"id":1}`,
-			unmarshalled: &rpcmodel.GetBlockTemplateCmd{
-				Request: &rpcmodel.TemplateRequest{
+			unmarshalled: &model.GetBlockTemplateCmd{
+				Request: &model.TemplateRequest{
 					Mode:       "template",
 					PayAddress: "kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3",
 					SigOpLimit: int64(500),
@@ -302,21 +302,21 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "getBlockTemplate optional - template request with tweaks 2",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getBlockTemplate", `{"mode":"template","payAddress":"kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3","sigOpLimit":true,"massLimit":100000000,"maxVersion":1}`)
+				return model.NewCommand("getBlockTemplate", `{"mode":"template","payAddress":"kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3","sigOpLimit":true,"massLimit":100000000,"maxVersion":1}`)
 			},
 			staticCmd: func() interface{} {
-				template := rpcmodel.TemplateRequest{
+				template := model.TemplateRequest{
 					Mode:       "template",
 					PayAddress: "kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3",
 					SigOpLimit: true,
 					MassLimit:  100000000,
 					MaxVersion: 1,
 				}
-				return rpcmodel.NewGetBlockTemplateCmd(&template)
+				return model.NewGetBlockTemplateCmd(&template)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getBlockTemplate","params":[{"mode":"template","sigOpLimit":true,"massLimit":100000000,"maxVersion":1,"payAddress":"kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3"}],"id":1}`,
-			unmarshalled: &rpcmodel.GetBlockTemplateCmd{
-				Request: &rpcmodel.TemplateRequest{
+			unmarshalled: &model.GetBlockTemplateCmd{
+				Request: &model.TemplateRequest{
 					Mode:       "template",
 					PayAddress: "kaspa:qph364lxa0ul5h0jrvl3u7xu8erc7mu3dv7prcn7x3",
 					SigOpLimit: true,
@@ -328,13 +328,13 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "getChainFromBlock",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getChainFromBlock", true, "123")
+				return model.NewCommand("getChainFromBlock", true, "123")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetChainFromBlockCmd(true, pointers.String("123"))
+				return model.NewGetChainFromBlockCmd(true, pointers.String("123"))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getChainFromBlock","params":[true,"123"],"id":1}`,
-			unmarshalled: &rpcmodel.GetChainFromBlockCmd{
+			unmarshalled: &model.GetChainFromBlockCmd{
 				IncludeBlocks: true,
 				StartHash:     pointers.String("123"),
 			},
@@ -342,57 +342,57 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "getDagTips",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getDagTips")
+				return model.NewCommand("getDagTips")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetDAGTipsCmd()
+				return model.NewGetDAGTipsCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"getDagTips","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetDAGTipsCmd{},
+			unmarshalled: &model.GetDAGTipsCmd{},
 		},
 		{
 			name: "getConnectionCount",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getConnectionCount")
+				return model.NewCommand("getConnectionCount")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetConnectionCountCmd()
+				return model.NewGetConnectionCountCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"getConnectionCount","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetConnectionCountCmd{},
+			unmarshalled: &model.GetConnectionCountCmd{},
 		},
 		{
 			name: "getDifficulty",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getDifficulty")
+				return model.NewCommand("getDifficulty")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetDifficultyCmd()
+				return model.NewGetDifficultyCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"getDifficulty","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetDifficultyCmd{},
+			unmarshalled: &model.GetDifficultyCmd{},
 		},
 		{
 			name: "getInfo",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getInfo")
+				return model.NewCommand("getInfo")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetInfoCmd()
+				return model.NewGetInfoCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"getInfo","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetInfoCmd{},
+			unmarshalled: &model.GetInfoCmd{},
 		},
 		{
 			name: "getManualNodeInfo",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getManualNodeInfo", "127.0.0.1")
+				return model.NewCommand("getManualNodeInfo", "127.0.0.1")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetManualNodeInfoCmd("127.0.0.1", nil)
+				return model.NewGetManualNodeInfoCmd("127.0.0.1", nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getManualNodeInfo","params":["127.0.0.1"],"id":1}`,
-			unmarshalled: &rpcmodel.GetManualNodeInfoCmd{
+			unmarshalled: &model.GetManualNodeInfoCmd{
 				Node:    "127.0.0.1",
 				Details: pointers.Bool(true),
 			},
@@ -400,109 +400,109 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "getMempoolEntry",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getMempoolEntry", "txhash")
+				return model.NewCommand("getMempoolEntry", "txhash")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetMempoolEntryCmd("txhash")
+				return model.NewGetMempoolEntryCmd("txhash")
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getMempoolEntry","params":["txhash"],"id":1}`,
-			unmarshalled: &rpcmodel.GetMempoolEntryCmd{
+			unmarshalled: &model.GetMempoolEntryCmd{
 				TxID: "txhash",
 			},
 		},
 		{
 			name: "getMempoolInfo",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getMempoolInfo")
+				return model.NewCommand("getMempoolInfo")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetMempoolInfoCmd()
+				return model.NewGetMempoolInfoCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"getMempoolInfo","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetMempoolInfoCmd{},
+			unmarshalled: &model.GetMempoolInfoCmd{},
 		},
 		{
 			name: "getNetworkInfo",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getNetworkInfo")
+				return model.NewCommand("getNetworkInfo")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetNetworkInfoCmd()
+				return model.NewGetNetworkInfoCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"getNetworkInfo","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetNetworkInfoCmd{},
+			unmarshalled: &model.GetNetworkInfoCmd{},
 		},
 		{
 			name: "getNetTotals",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getNetTotals")
+				return model.NewCommand("getNetTotals")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetNetTotalsCmd()
+				return model.NewGetNetTotalsCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"getNetTotals","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetNetTotalsCmd{},
+			unmarshalled: &model.GetNetTotalsCmd{},
 		},
 		{
 			name: "getConnectedPeerInfo",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getConnectedPeerInfo")
+				return model.NewCommand("getConnectedPeerInfo")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetConnectedPeerInfoCmd()
+				return model.NewGetConnectedPeerInfoCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"getConnectedPeerInfo","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetConnectedPeerInfoCmd{},
+			unmarshalled: &model.GetConnectedPeerInfoCmd{},
 		},
 		{
 			name: "getRawMempool",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getRawMempool")
+				return model.NewCommand("getRawMempool")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetRawMempoolCmd(nil)
+				return model.NewGetRawMempoolCmd(nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getRawMempool","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetRawMempoolCmd{
+			unmarshalled: &model.GetRawMempoolCmd{
 				Verbose: pointers.Bool(false),
 			},
 		},
 		{
 			name: "getRawMempool optional",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getRawMempool", false)
+				return model.NewCommand("getRawMempool", false)
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetRawMempoolCmd(pointers.Bool(false))
+				return model.NewGetRawMempoolCmd(pointers.Bool(false))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getRawMempool","params":[false],"id":1}`,
-			unmarshalled: &rpcmodel.GetRawMempoolCmd{
+			unmarshalled: &model.GetRawMempoolCmd{
 				Verbose: pointers.Bool(false),
 			},
 		},
 		{
 			name: "getSubnetwork",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getSubnetwork", "123")
+				return model.NewCommand("getSubnetwork", "123")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetSubnetworkCmd("123")
+				return model.NewGetSubnetworkCmd("123")
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getSubnetwork","params":["123"],"id":1}`,
-			unmarshalled: &rpcmodel.GetSubnetworkCmd{
+			unmarshalled: &model.GetSubnetworkCmd{
 				SubnetworkID: "123",
 			},
 		},
 		{
 			name: "getTxOut",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getTxOut", "123", 1)
+				return model.NewCommand("getTxOut", "123", 1)
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetTxOutCmd("123", 1, nil)
+				return model.NewGetTxOutCmd("123", 1, nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getTxOut","params":["123",1],"id":1}`,
-			unmarshalled: &rpcmodel.GetTxOutCmd{
+			unmarshalled: &model.GetTxOutCmd{
 				TxID:           "123",
 				Vout:           1,
 				IncludeMempool: pointers.Bool(true),
@@ -511,13 +511,13 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "getTxOut optional",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getTxOut", "123", 1, true)
+				return model.NewCommand("getTxOut", "123", 1, true)
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetTxOutCmd("123", 1, pointers.Bool(true))
+				return model.NewGetTxOutCmd("123", 1, pointers.Bool(true))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getTxOut","params":["123",1,true],"id":1}`,
-			unmarshalled: &rpcmodel.GetTxOutCmd{
+			unmarshalled: &model.GetTxOutCmd{
 				TxID:           "123",
 				Vout:           1,
 				IncludeMempool: pointers.Bool(true),
@@ -526,72 +526,72 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "getTxOutSetInfo",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getTxOutSetInfo")
+				return model.NewCommand("getTxOutSetInfo")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetTxOutSetInfoCmd()
+				return model.NewGetTxOutSetInfoCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"getTxOutSetInfo","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetTxOutSetInfoCmd{},
+			unmarshalled: &model.GetTxOutSetInfoCmd{},
 		},
 		{
 			name: "help",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("help")
+				return model.NewCommand("help")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewHelpCmd(nil)
+				return model.NewHelpCmd(nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"help","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.HelpCmd{
+			unmarshalled: &model.HelpCmd{
 				Command: nil,
 			},
 		},
 		{
 			name: "help optional",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("help", "getBlock")
+				return model.NewCommand("help", "getBlock")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewHelpCmd(pointers.String("getBlock"))
+				return model.NewHelpCmd(pointers.String("getBlock"))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"help","params":["getBlock"],"id":1}`,
-			unmarshalled: &rpcmodel.HelpCmd{
+			unmarshalled: &model.HelpCmd{
 				Command: pointers.String("getBlock"),
 			},
 		},
 		{
 			name: "ping",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("ping")
+				return model.NewCommand("ping")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewPingCmd()
+				return model.NewPingCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"ping","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.PingCmd{},
+			unmarshalled: &model.PingCmd{},
 		},
 		{
 			name: "removeManualNode",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("removeManualNode", "127.0.0.1")
+				return model.NewCommand("removeManualNode", "127.0.0.1")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewRemoveManualNodeCmd("127.0.0.1")
+				return model.NewRemoveManualNodeCmd("127.0.0.1")
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"removeManualNode","params":["127.0.0.1"],"id":1}`,
-			unmarshalled: &rpcmodel.RemoveManualNodeCmd{Addr: "127.0.0.1"},
+			unmarshalled: &model.RemoveManualNodeCmd{Addr: "127.0.0.1"},
 		},
 		{
 			name: "sendRawTransaction",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("sendRawTransaction", "1122")
+				return model.NewCommand("sendRawTransaction", "1122")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewSendRawTransactionCmd("1122", nil)
+				return model.NewSendRawTransactionCmd("1122", nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"sendRawTransaction","params":["1122"],"id":1}`,
-			unmarshalled: &rpcmodel.SendRawTransactionCmd{
+			unmarshalled: &model.SendRawTransactionCmd{
 				HexTx:         "1122",
 				AllowHighFees: pointers.Bool(false),
 			},
@@ -599,13 +599,13 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "sendRawTransaction optional",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("sendRawTransaction", "1122", false)
+				return model.NewCommand("sendRawTransaction", "1122", false)
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewSendRawTransactionCmd("1122", pointers.Bool(false))
+				return model.NewSendRawTransactionCmd("1122", pointers.Bool(false))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"sendRawTransaction","params":["1122",false],"id":1}`,
-			unmarshalled: &rpcmodel.SendRawTransactionCmd{
+			unmarshalled: &model.SendRawTransactionCmd{
 				HexTx:         "1122",
 				AllowHighFees: pointers.Bool(false),
 			},
@@ -613,24 +613,24 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "stop",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("stop")
+				return model.NewCommand("stop")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewStopCmd()
+				return model.NewStopCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"stop","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.StopCmd{},
+			unmarshalled: &model.StopCmd{},
 		},
 		{
 			name: "submitBlock",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("submitBlock", "112233")
+				return model.NewCommand("submitBlock", "112233")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewSubmitBlockCmd("112233", nil)
+				return model.NewSubmitBlockCmd("112233", nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"submitBlock","params":["112233"],"id":1}`,
-			unmarshalled: &rpcmodel.SubmitBlockCmd{
+			unmarshalled: &model.SubmitBlockCmd{
 				HexBlock: "112233",
 				Options:  nil,
 			},
@@ -638,18 +638,18 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "submitBlock optional",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("submitBlock", "112233", `{"workId":"12345"}`)
+				return model.NewCommand("submitBlock", "112233", `{"workId":"12345"}`)
 			},
 			staticCmd: func() interface{} {
-				options := rpcmodel.SubmitBlockOptions{
+				options := model.SubmitBlockOptions{
 					WorkID: "12345",
 				}
-				return rpcmodel.NewSubmitBlockCmd("112233", &options)
+				return model.NewSubmitBlockCmd("112233", &options)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"submitBlock","params":["112233",{"workId":"12345"}],"id":1}`,
-			unmarshalled: &rpcmodel.SubmitBlockCmd{
+			unmarshalled: &model.SubmitBlockCmd{
 				HexBlock: "112233",
-				Options: &rpcmodel.SubmitBlockOptions{
+				Options: &model.SubmitBlockOptions{
 					WorkID: "12345",
 				},
 			},
@@ -657,79 +657,79 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "uptime",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("uptime")
+				return model.NewCommand("uptime")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewUptimeCmd()
+				return model.NewUptimeCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"uptime","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.UptimeCmd{},
+			unmarshalled: &model.UptimeCmd{},
 		},
 		{
 			name: "validateAddress",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("validateAddress", "1Address")
+				return model.NewCommand("validateAddress", "1Address")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewValidateAddressCmd("1Address")
+				return model.NewValidateAddressCmd("1Address")
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"validateAddress","params":["1Address"],"id":1}`,
-			unmarshalled: &rpcmodel.ValidateAddressCmd{
+			unmarshalled: &model.ValidateAddressCmd{
 				Address: "1Address",
 			},
 		},
 		{
 			name: "debugLevel",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("debugLevel", "trace")
+				return model.NewCommand("debugLevel", "trace")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewDebugLevelCmd("trace")
+				return model.NewDebugLevelCmd("trace")
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"debugLevel","params":["trace"],"id":1}`,
-			unmarshalled: &rpcmodel.DebugLevelCmd{
+			unmarshalled: &model.DebugLevelCmd{
 				LevelSpec: "trace",
 			},
 		},
 		{
 			name: "node",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("node", rpcmodel.NRemove, "1.1.1.1")
+				return model.NewCommand("node", model.NRemove, "1.1.1.1")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewNodeCmd("remove", "1.1.1.1", nil)
+				return model.NewNodeCmd("remove", "1.1.1.1", nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"node","params":["remove","1.1.1.1"],"id":1}`,
-			unmarshalled: &rpcmodel.NodeCmd{
-				SubCmd: rpcmodel.NRemove,
+			unmarshalled: &model.NodeCmd{
+				SubCmd: model.NRemove,
 				Target: "1.1.1.1",
 			},
 		},
 		{
 			name: "node",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("node", rpcmodel.NDisconnect, "1.1.1.1")
+				return model.NewCommand("node", model.NDisconnect, "1.1.1.1")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewNodeCmd("disconnect", "1.1.1.1", nil)
+				return model.NewNodeCmd("disconnect", "1.1.1.1", nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"node","params":["disconnect","1.1.1.1"],"id":1}`,
-			unmarshalled: &rpcmodel.NodeCmd{
-				SubCmd: rpcmodel.NDisconnect,
+			unmarshalled: &model.NodeCmd{
+				SubCmd: model.NDisconnect,
 				Target: "1.1.1.1",
 			},
 		},
 		{
 			name: "node",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("node", rpcmodel.NConnect, "1.1.1.1", "perm")
+				return model.NewCommand("node", model.NConnect, "1.1.1.1", "perm")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewNodeCmd("connect", "1.1.1.1", pointers.String("perm"))
+				return model.NewNodeCmd("connect", "1.1.1.1", pointers.String("perm"))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"node","params":["connect","1.1.1.1","perm"],"id":1}`,
-			unmarshalled: &rpcmodel.NodeCmd{
-				SubCmd:        rpcmodel.NConnect,
+			unmarshalled: &model.NodeCmd{
+				SubCmd:        model.NConnect,
 				Target:        "1.1.1.1",
 				ConnectSubCmd: pointers.String("perm"),
 			},
@@ -737,14 +737,14 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "node",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("node", rpcmodel.NConnect, "1.1.1.1", "temp")
+				return model.NewCommand("node", model.NConnect, "1.1.1.1", "temp")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewNodeCmd("connect", "1.1.1.1", pointers.String("temp"))
+				return model.NewNodeCmd("connect", "1.1.1.1", pointers.String("temp"))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"node","params":["connect","1.1.1.1","temp"],"id":1}`,
-			unmarshalled: &rpcmodel.NodeCmd{
-				SubCmd:        rpcmodel.NConnect,
+			unmarshalled: &model.NodeCmd{
+				SubCmd:        model.NConnect,
 				Target:        "1.1.1.1",
 				ConnectSubCmd: pointers.String("temp"),
 			},
@@ -752,13 +752,13 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "getSelectedTip",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getSelectedTip")
+				return model.NewCommand("getSelectedTip")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetSelectedTipCmd(nil, nil)
+				return model.NewGetSelectedTipCmd(nil, nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getSelectedTip","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetSelectedTipCmd{
+			unmarshalled: &model.GetSelectedTipCmd{
 				Verbose:   pointers.Bool(true),
 				VerboseTx: pointers.Bool(false),
 			},
@@ -766,27 +766,27 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "getCurrentNet",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getCurrentNet")
+				return model.NewCommand("getCurrentNet")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetCurrentNetCmd()
+				return model.NewGetCurrentNetCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"getCurrentNet","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetCurrentNetCmd{},
+			unmarshalled: &model.GetCurrentNetCmd{},
 		},
 		{
 			name: "getHeaders",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getHeaders", "", "")
+				return model.NewCommand("getHeaders", "", "")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetHeadersCmd(
+				return model.NewGetHeadersCmd(
 					"",
 					"",
 				)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getHeaders","params":["",""],"id":1}`,
-			unmarshalled: &rpcmodel.GetHeadersCmd{
+			unmarshalled: &model.GetHeadersCmd{
 				LowHash:  "",
 				HighHash: "",
 			},
@@ -794,16 +794,16 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "getHeaders - with arguments",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getHeaders", "000000000000000001f1739002418e2f9a84c47a4fd2a0eb7a787a6b7dc12f16", "000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7")
+				return model.NewCommand("getHeaders", "000000000000000001f1739002418e2f9a84c47a4fd2a0eb7a787a6b7dc12f16", "000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetHeadersCmd(
+				return model.NewGetHeadersCmd(
 					"000000000000000001f1739002418e2f9a84c47a4fd2a0eb7a787a6b7dc12f16",
 					"000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7",
 				)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getHeaders","params":["000000000000000001f1739002418e2f9a84c47a4fd2a0eb7a787a6b7dc12f16","000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"],"id":1}`,
-			unmarshalled: &rpcmodel.GetHeadersCmd{
+			unmarshalled: &model.GetHeadersCmd{
 				LowHash:  "000000000000000001f1739002418e2f9a84c47a4fd2a0eb7a787a6b7dc12f16",
 				HighHash: "000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7",
 			},
@@ -811,41 +811,41 @@ func TestRPCServerCommands(t *testing.T) {
 		{
 			name: "getTopHeaders",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getTopHeaders")
+				return model.NewCommand("getTopHeaders")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetTopHeadersCmd(
+				return model.NewGetTopHeadersCmd(
 					nil,
 				)
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"getTopHeaders","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.GetTopHeadersCmd{},
+			unmarshalled: &model.GetTopHeadersCmd{},
 		},
 		{
 			name: "getTopHeaders - with high hash",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("getTopHeaders", "000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7")
+				return model.NewCommand("getTopHeaders", "000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewGetTopHeadersCmd(
+				return model.NewGetTopHeadersCmd(
 					pointers.String("000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"),
 				)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getTopHeaders","params":["000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"],"id":1}`,
-			unmarshalled: &rpcmodel.GetTopHeadersCmd{
+			unmarshalled: &model.GetTopHeadersCmd{
 				HighHash: pointers.String("000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"),
 			},
 		},
 		{
 			name: "version",
 			newCmd: func() (interface{}, error) {
-				return rpcmodel.NewCommand("version")
+				return model.NewCommand("version")
 			},
 			staticCmd: func() interface{} {
-				return rpcmodel.NewVersionCmd()
+				return model.NewVersionCmd()
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"version","params":[],"id":1}`,
-			unmarshalled: &rpcmodel.VersionCmd{},
+			unmarshalled: &model.VersionCmd{},
 		},
 	}
 
@@ -853,7 +853,7 @@ func TestRPCServerCommands(t *testing.T) {
 	for i, test := range tests {
 		// Marshal the command as created by the new static command
 		// creation function.
-		marshalled, err := rpcmodel.MarshalCommand(testID, test.staticCmd())
+		marshalled, err := model.MarshalCommand(testID, test.staticCmd())
 		if err != nil {
 			t.Errorf("MarshalCommand #%d (%s) unexpected error: %v", i,
 				test.name, err)
@@ -878,7 +878,7 @@ func TestRPCServerCommands(t *testing.T) {
 
 		// Marshal the command as created by the generic new command
 		// creation function.
-		marshalled, err = rpcmodel.MarshalCommand(testID, cmd)
+		marshalled, err = model.MarshalCommand(testID, cmd)
 		if err != nil {
 			t.Errorf("MarshalCommand #%d (%s) unexpected error: %v", i,
 				test.name, err)
@@ -892,7 +892,7 @@ func TestRPCServerCommands(t *testing.T) {
 			continue
 		}
 
-		var request rpcmodel.Request
+		var request model.Request
 		if err := json.Unmarshal(marshalled, &request); err != nil {
 			t.Errorf("Test #%d (%s) unexpected error while "+
 				"unmarshalling JSON-RPC request: %v", i,
@@ -900,7 +900,7 @@ func TestRPCServerCommands(t *testing.T) {
 			continue
 		}
 
-		cmd, err = rpcmodel.UnmarshalCommand(&request)
+		cmd, err = model.UnmarshalCommand(&request)
 		if err != nil {
 			t.Errorf("UnmarshalCommand #%d (%s) unexpected error: %v", i,
 				test.name, err)
@@ -930,21 +930,21 @@ func TestRPCServerCommandErrors(t *testing.T) {
 	}{
 		{
 			name:       "template request with invalid type",
-			result:     &rpcmodel.TemplateRequest{},
+			result:     &model.TemplateRequest{},
 			marshalled: `{"mode":1}`,
 			err:        &json.UnmarshalTypeError{},
 		},
 		{
 			name:       "invalid template request sigoplimit field",
-			result:     &rpcmodel.TemplateRequest{},
+			result:     &model.TemplateRequest{},
 			marshalled: `{"sigoplimit":"invalid"}`,
-			err:        rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:        model.Error{ErrorCode: model.ErrInvalidType},
 		},
 		{
 			name:       "invalid template request masslimit field",
-			result:     &rpcmodel.TemplateRequest{},
+			result:     &model.TemplateRequest{},
 			marshalled: `{"masslimit":"invalid"}`,
-			err:        rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType},
+			err:        model.Error{ErrorCode: model.ErrInvalidType},
 		},
 	}
 
@@ -957,9 +957,9 @@ func TestRPCServerCommandErrors(t *testing.T) {
 			continue
 		}
 
-		var testErr rpcmodel.Error
+		var testErr model.Error
 		if errors.As(err, &testErr) {
-			var gotRPCModelErr rpcmodel.Error
+			var gotRPCModelErr model.Error
 			errors.As(err, &gotRPCModelErr)
 			gotErrorCode := gotRPCModelErr.ErrorCode
 			if gotErrorCode != testErr.ErrorCode {

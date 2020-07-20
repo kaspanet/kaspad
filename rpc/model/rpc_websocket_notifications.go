@@ -6,7 +6,7 @@
 // NOTE: This file is intended to house the RPC websocket notifications that are
 // supported by a kaspa rpc server.
 
-package rpcmodel
+package model
 
 const (
 	// FilteredBlockAddedNtfnMethod is the new method used for

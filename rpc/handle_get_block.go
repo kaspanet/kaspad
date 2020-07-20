@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"encoding/hex"
 
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -13,7 +13,7 @@ import (
 
 // handleGetBlock implements the getBlock command.
 func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*rpcmodel.GetBlockCmd)
+	c := cmd.(*model.GetBlockCmd)
 
 	// Load the raw block bytes from the database.
 	hash, err := daghash.NewHashFromStr(c.Hash)
@@ -23,31 +23,31 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 
 	// Return an appropriate error if the block is known to be invalid
 	if s.dag.IsKnownInvalid(hash) {
-		return nil, &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCBlockInvalid,
+		return nil, &model.RPCError{
+			Code:    model.ErrRPCBlockInvalid,
 			Message: "Block is known to be invalid",
 		}
 	}
 
 	// Return an appropriate error if the block is an orphan
 	if s.dag.IsKnownOrphan(hash) {
-		return nil, &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCOrphanBlock,
+		return nil, &model.RPCError{
+			Code:    model.ErrRPCOrphanBlock,
 			Message: "Block is an orphan",
 		}
 	}
 
 	block, err := s.dag.BlockByHash(hash)
 	if err != nil {
-		return nil, &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCBlockNotFound,
+		return nil, &model.RPCError{
+			Code:    model.ErrRPCBlockNotFound,
 			Message: "Block not found",
 		}
 	}
 	blockBytes, err := block.Bytes()
 	if err != nil {
-		return nil, &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCBlockInvalid,
+		return nil, &model.RPCError{
+			Code:    model.ErrRPCBlockInvalid,
 			Message: "Cannot serialize block",
 		}
 	}
@@ -56,8 +56,8 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	if c.Subnetwork != nil {
 		requestSubnetworkID, err := subnetworkid.NewFromStr(*c.Subnetwork)
 		if err != nil {
-			return nil, &rpcmodel.RPCError{
-				Code:    rpcmodel.ErrRPCInvalidRequest.Code,
+			return nil, &model.RPCError{
+				Code:    model.ErrRPCInvalidRequest.Code,
 				Message: "invalid subnetwork string",
 			}
 		}
@@ -66,8 +66,8 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		if requestSubnetworkID != nil {
 			if nodeSubnetworkID != nil {
 				if !nodeSubnetworkID.IsEqual(requestSubnetworkID) {
-					return nil, &rpcmodel.RPCError{
-						Code:    rpcmodel.ErrRPCInvalidRequest.Code,
+					return nil, &model.RPCError{
+						Code:    model.ErrRPCInvalidRequest.Code,
 						Message: "subnetwork does not match this partial node",
 					}
 				}

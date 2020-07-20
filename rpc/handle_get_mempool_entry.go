@@ -1,12 +1,12 @@
 package rpc
 
 import (
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 func handleGetMempoolEntry(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*rpcmodel.GetMempoolEntryCmd)
+	c := cmd.(*model.GetMempoolEntryCmd)
 	txID, err := daghash.NewTxIDFromStr(c.TxID)
 	if err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func handleGetMempoolEntry(s *Server, cmd interface{}, closeChan <-chan struct{}
 		return nil, err
 	}
 
-	return &rpcmodel.GetMempoolEntryResult{
+	return &model.GetMempoolEntryResult{
 		Fee:   txDesc.Fee,
 		Time:  txDesc.Added.UnixMilliseconds(),
 		RawTx: *rawTx,

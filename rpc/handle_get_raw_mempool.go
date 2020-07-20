@@ -1,10 +1,10 @@
 package rpc
 
-import "github.com/kaspanet/kaspad/rpcmodel"
+import "github.com/kaspanet/kaspad/rpc/model"
 
 // handleGetRawMempool implements the getRawMempool command.
 func handleGetRawMempool(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*rpcmodel.GetRawMempoolCmd)
+	c := cmd.(*model.GetRawMempoolCmd)
 	mp := s.txMempool
 
 	if c.Verbose != nil && *c.Verbose {

@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -18,8 +18,8 @@ import (
 var (
 	// ErrRPCUnimplemented is an error returned to RPC clients when the
 	// provided command is recognized, but not implemented.
-	ErrRPCUnimplemented = &rpcmodel.RPCError{
-		Code:    rpcmodel.ErrRPCUnimplemented,
+	ErrRPCUnimplemented = &model.RPCError{
+		Code:    model.ErrRPCUnimplemented,
 		Message: "Command unimplemented",
 	}
 )
@@ -29,19 +29,19 @@ var (
 // RPC server subsystem since internal errors really should not occur. The
 // context parameter is only used in the log message and may be empty if it's
 // not needed.
-func internalRPCError(errStr, context string) *rpcmodel.RPCError {
+func internalRPCError(errStr, context string) *model.RPCError {
 	logStr := errStr
 	if context != "" {
 		logStr = context + ": " + errStr
 	}
 	log.Error(logStr)
-	return rpcmodel.NewRPCError(rpcmodel.ErrRPCInternal.Code, errStr)
+	return model.NewRPCError(model.ErrRPCInternal.Code, errStr)
 }
 
 // rpcDecodeHexError is a convenience function for returning a nicely formatted
 // RPC error which indicates the provided hex string failed to decode.
-func rpcDecodeHexError(gotHex string) *rpcmodel.RPCError {
-	return rpcmodel.NewRPCError(rpcmodel.ErrRPCDecodeHexString,
+func rpcDecodeHexError(gotHex string) *model.RPCError {
+	return model.NewRPCError(model.ErrRPCDecodeHexString,
 		fmt.Sprintf("Argument must be hexadecimal string (not %q)",
 			gotHex))
 }
@@ -49,8 +49,8 @@ func rpcDecodeHexError(gotHex string) *rpcmodel.RPCError {
 // rpcNoTxInfoError is a convenience function for returning a nicely formatted
 // RPC error which indicates there is no information available for the provided
 // transaction hash.
-func rpcNoTxInfoError(txID *daghash.TxID) *rpcmodel.RPCError {
-	return rpcmodel.NewRPCError(rpcmodel.ErrRPCNoTxInfo,
+func rpcNoTxInfoError(txID *daghash.TxID) *model.RPCError {
+	return model.NewRPCError(model.ErrRPCNoTxInfo,
 		fmt.Sprintf("No information available about transaction %s",
 			txID))
 }
@@ -69,8 +69,8 @@ func messageToHex(msg wire.Message) (string, error) {
 
 // createVinList returns a slice of JSON objects for the inputs of the passed
 // transaction.
-func createVinList(mtx *wire.MsgTx) []rpcmodel.Vin {
-	vinList := make([]rpcmodel.Vin, len(mtx.TxIn))
+func createVinList(mtx *wire.MsgTx) []model.Vin {
+	vinList := make([]model.Vin, len(mtx.TxIn))
 	for i, txIn := range mtx.TxIn {
 		// The disassembled string will contain [error] inline
 		// if the script doesn't fully parse, so ignore the
@@ -81,7 +81,7 @@ func createVinList(mtx *wire.MsgTx) []rpcmodel.Vin {
 		vinEntry.TxID = txIn.PreviousOutpoint.TxID.String()
 		vinEntry.Vout = txIn.PreviousOutpoint.Index
 		vinEntry.Sequence = txIn.Sequence
-		vinEntry.ScriptSig = &rpcmodel.ScriptSig{
+		vinEntry.ScriptSig = &model.ScriptSig{
 			Asm: disbuf,
 			Hex: hex.EncodeToString(txIn.SignatureScript),
 		}
@@ -92,8 +92,8 @@ func createVinList(mtx *wire.MsgTx) []rpcmodel.Vin {
 
 // createVoutList returns a slice of JSON objects for the outputs of the passed
 // transaction.
-func createVoutList(mtx *wire.MsgTx, dagParams *dagconfig.Params, filterAddrMap map[string]struct{}) []rpcmodel.Vout {
-	voutList := make([]rpcmodel.Vout, 0, len(mtx.TxOut))
+func createVoutList(mtx *wire.MsgTx, dagParams *dagconfig.Params, filterAddrMap map[string]struct{}) []model.Vout {
+	voutList := make([]model.Vout, 0, len(mtx.TxOut))
 	for i, v := range mtx.TxOut {
 		// The disassembled string will contain [error] inline if the
 		// script doesn't fully parse, so ignore the error here.
@@ -123,7 +123,7 @@ func createVoutList(mtx *wire.MsgTx, dagParams *dagconfig.Params, filterAddrMap 
 			continue
 		}
 
-		var vout rpcmodel.Vout
+		var vout model.Vout
 		vout.N = uint32(i)
 		vout.Value = v.Value
 		vout.ScriptPubKey.Address = encodedAddr
@@ -141,7 +141,7 @@ func createVoutList(mtx *wire.MsgTx, dagParams *dagconfig.Params, filterAddrMap 
 // to a raw transaction JSON object.
 func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 	txID string, blkHeader *wire.BlockHeader, blkHash string,
-	acceptingBlock *daghash.Hash, isInMempool bool) (*rpcmodel.TxRawResult, error) {
+	acceptingBlock *daghash.Hash, isInMempool bool) (*model.TxRawResult, error) {
 
 	mtxHex, err := messageToHex(mtx)
 	if err != nil {
@@ -153,7 +153,7 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 		payloadHash = mtx.PayloadHash.String()
 	}
 
-	txReply := &rpcmodel.TxRawResult{
+	txReply := &model.TxRawResult{
 		Hex:         mtxHex,
 		TxID:        txID,
 		Hash:        mtx.TxHash().String(),
@@ -201,10 +201,10 @@ func getDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
 	return diff
 }
 
-// buildGetBlockVerboseResult takes a block and convert it to rpcmodel.GetBlockVerboseResult
+// buildGetBlockVerboseResult takes a block and convert it to model.GetBlockVerboseResult
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) (*rpcmodel.GetBlockVerboseResult, error) {
+func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) (*model.GetBlockVerboseResult, error) {
 	hash := block.Hash()
 	params := s.dag.Params
 	blockHeader := block.MsgBlock().Header
@@ -250,7 +250,7 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		return nil, internalRPCError(err.Error(), context)
 	}
 
-	result := &rpcmodel.GetBlockVerboseResult{
+	result := &model.GetBlockVerboseResult{
 		Hash:                 hash.String(),
 		Version:              blockHeader.Version,
 		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version),
@@ -281,7 +281,7 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		result.Tx = txNames
 	} else {
 		txns := block.Transactions()
-		rawTxns := make([]rpcmodel.TxRawResult, len(txns))
+		rawTxns := make([]model.TxRawResult, len(txns))
 		for i, tx := range txns {
 			rawTxn, err := createTxRawResult(params, tx.MsgTx(), tx.ID().String(),
 				&blockHeader, hash.String(), nil, false)
@@ -296,18 +296,18 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 	return result, nil
 }
 
-func collectChainBlocks(s *Server, hashes []*daghash.Hash) ([]rpcmodel.ChainBlock, error) {
-	chainBlocks := make([]rpcmodel.ChainBlock, 0, len(hashes))
+func collectChainBlocks(s *Server, hashes []*daghash.Hash) ([]model.ChainBlock, error) {
+	chainBlocks := make([]model.ChainBlock, 0, len(hashes))
 	for _, hash := range hashes {
 		acceptanceData, err := s.acceptanceIndex.TxsAcceptanceData(hash)
 		if err != nil {
-			return nil, &rpcmodel.RPCError{
-				Code:    rpcmodel.ErrRPCInternal.Code,
+			return nil, &model.RPCError{
+				Code:    model.ErrRPCInternal.Code,
 				Message: fmt.Sprintf("could not retrieve acceptance data for block %s", hash),
 			}
 		}
 
-		acceptedBlocks := make([]rpcmodel.AcceptedBlock, 0, len(acceptanceData))
+		acceptedBlocks := make([]model.AcceptedBlock, 0, len(acceptanceData))
 		for _, blockAcceptanceData := range acceptanceData {
 			acceptedTxIds := make([]string, 0, len(blockAcceptanceData.TxAcceptanceData))
 			for _, txAcceptanceData := range blockAcceptanceData.TxAcceptanceData {
@@ -315,14 +315,14 @@ func collectChainBlocks(s *Server, hashes []*daghash.Hash) ([]rpcmodel.ChainBloc
 					acceptedTxIds = append(acceptedTxIds, txAcceptanceData.Tx.ID().String())
 				}
 			}
-			acceptedBlock := rpcmodel.AcceptedBlock{
+			acceptedBlock := model.AcceptedBlock{
 				Hash:          blockAcceptanceData.BlockHash.String(),
 				AcceptedTxIDs: acceptedTxIds,
 			}
 			acceptedBlocks = append(acceptedBlocks, acceptedBlock)
 		}
 
-		chainBlock := rpcmodel.ChainBlock{
+		chainBlock := model.ChainBlock{
 			Hash:           hash.String(),
 			AcceptedBlocks: acceptedBlocks,
 		}
@@ -335,20 +335,20 @@ func collectChainBlocks(s *Server, hashes []*daghash.Hash) ([]rpcmodel.ChainBloc
 // correspondent block verbose.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func hashesToGetBlockVerboseResults(s *Server, hashes []*daghash.Hash) ([]rpcmodel.GetBlockVerboseResult, error) {
-	getBlockVerboseResults := make([]rpcmodel.GetBlockVerboseResult, 0, len(hashes))
+func hashesToGetBlockVerboseResults(s *Server, hashes []*daghash.Hash) ([]model.GetBlockVerboseResult, error) {
+	getBlockVerboseResults := make([]model.GetBlockVerboseResult, 0, len(hashes))
 	for _, blockHash := range hashes {
 		block, err := s.dag.BlockByHash(blockHash)
 		if err != nil {
-			return nil, &rpcmodel.RPCError{
-				Code:    rpcmodel.ErrRPCInternal.Code,
+			return nil, &model.RPCError{
+				Code:    model.ErrRPCInternal.Code,
 				Message: fmt.Sprintf("could not retrieve block %s.", blockHash),
 			}
 		}
 		getBlockVerboseResult, err := buildGetBlockVerboseResult(s, block, false)
 		if err != nil {
-			return nil, &rpcmodel.RPCError{
-				Code:    rpcmodel.ErrRPCInternal.Code,
+			return nil, &model.RPCError{
+				Code:    model.ErrRPCInternal.Code,
 				Message: fmt.Sprintf("could not build getBlockVerboseResult for block %s: %s", blockHash, err),
 			}
 		}

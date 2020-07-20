@@ -2,14 +2,14 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package rpcmodel_test
+package model_test
 
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/kaspanet/kaspad/util/pointers"
 
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 )
 
 // This example demonstrates how to create and marshal a command into a JSON-RPC
@@ -22,13 +22,13 @@ func ExampleMarshalCommand() {
 	// convenience function for creating a pointer out of a primitive for
 	// optional parameters.
 	blockHash := "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"
-	gbCmd := rpcmodel.NewGetBlockCmd(blockHash, pointers.Bool(false), nil, nil)
+	gbCmd := model.NewGetBlockCmd(blockHash, pointers.Bool(false), nil, nil)
 
 	// Marshal the command to the format suitable for sending to the RPC
 	// server. Typically the client would increment the id here which is
 	// request so the response can be identified.
 	id := 1
-	marshalledBytes, err := rpcmodel.MarshalCommand(id, gbCmd)
+	marshalledBytes, err := model.MarshalCommand(id, gbCmd)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -50,7 +50,7 @@ func ExampleUnmarshalCommand() {
 	data := []byte(`{"jsonrpc":"1.0","method":"getBlock","params":["000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",false],"id":1}`)
 
 	// Unmarshal the raw bytes from the wire into a JSON-RPC request.
-	var request rpcmodel.Request
+	var request model.Request
 	if err := json.Unmarshal(data, &request); err != nil {
 		fmt.Println(err)
 		return
@@ -70,14 +70,14 @@ func ExampleUnmarshalCommand() {
 	}
 
 	// Unmarshal the request into a concrete command.
-	cmd, err := rpcmodel.UnmarshalCommand(&request)
+	cmd, err := model.UnmarshalCommand(&request)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
 	// Type assert the command to the appropriate type.
-	gbCmd, ok := cmd.(*rpcmodel.GetBlockCmd)
+	gbCmd, ok := cmd.(*model.GetBlockCmd)
 	if !ok {
 		fmt.Printf("Incorrect command type: %T\n", cmd)
 		return
@@ -101,7 +101,7 @@ func ExampleUnmarshalCommand() {
 func ExampleMarshalResponse() {
 	// Marshal a new JSON-RPC response. For example, this is a response
 	// to a getblockheight request.
-	marshalledBytes, err := rpcmodel.MarshalResponse(1, 350001, nil)
+	marshalledBytes, err := model.MarshalResponse(1, 350001, nil)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -125,7 +125,7 @@ func Example_unmarshalResponse() {
 	data := []byte(`{"result":350001,"error":null,"id":1}`)
 
 	// Unmarshal the raw bytes from the wire into a JSON-RPC response.
-	var response rpcmodel.Response
+	var response model.Response
 	if err := json.Unmarshal(data, &response); err != nil {
 		fmt.Println("Malformed JSON-RPC response:", err)
 		return

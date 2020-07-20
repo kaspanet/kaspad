@@ -12,7 +12,7 @@ import (
 	"github.com/kaspanet/kaspad/util/pointers"
 	"github.com/kaspanet/kaspad/wire"
 
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 )
 
 // FutureAddNodeResult is a future promise to deliver the result of an
@@ -32,7 +32,7 @@ func (r FutureAddNodeResult) Receive() error {
 //
 // See AddNode for the blocking version and more details.
 func (c *Client) AddManualNodeAsync(host string) FutureAddNodeResult {
-	cmd := rpcmodel.NewAddManualNodeCmd(host, pointers.Bool(false))
+	cmd := model.NewAddManualNodeCmd(host, pointers.Bool(false))
 	return c.sendCmd(cmd)
 }
 
@@ -51,14 +51,14 @@ type FutureGetManualNodeInfoResult chan *response
 
 // Receive waits for the response promised by the future and returns information
 // about manually added (persistent) peers.
-func (r FutureGetManualNodeInfoResult) Receive() ([]rpcmodel.GetManualNodeInfoResult, error) {
+func (r FutureGetManualNodeInfoResult) Receive() ([]model.GetManualNodeInfoResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal as an array of getmanualnodeinfo result objects.
-	var nodeInfo []rpcmodel.GetManualNodeInfoResult
+	var nodeInfo []model.GetManualNodeInfoResult
 	err = json.Unmarshal(res, &nodeInfo)
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func (r FutureGetManualNodeInfoResult) Receive() ([]rpcmodel.GetManualNodeInfoRe
 //
 // See GetManualNodeInfo for the blocking version and more details.
 func (c *Client) GetManualNodeInfoAsync(peer string) FutureGetManualNodeInfoResult {
-	cmd := rpcmodel.NewGetManualNodeInfoCmd(peer, nil)
+	cmd := model.NewGetManualNodeInfoCmd(peer, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -81,7 +81,7 @@ func (c *Client) GetManualNodeInfoAsync(peer string) FutureGetManualNodeInfoResu
 //
 // See GetManualNodeInfoNoDNS to retrieve only a list of the added (persistent)
 // peers.
-func (c *Client) GetManualNodeInfo(peer string) ([]rpcmodel.GetManualNodeInfoResult, error) {
+func (c *Client) GetManualNodeInfo(peer string) ([]model.GetManualNodeInfoResult, error) {
 	return c.GetManualNodeInfoAsync(peer).Receive()
 }
 
@@ -113,7 +113,7 @@ func (r FutureGetManualNodeInfoNoDNSResult) Receive() ([]string, error) {
 //
 // See GetManualNodeInfoNoDNS for the blocking version and more details.
 func (c *Client) GetManualNodeInfoNoDNSAsync(peer string) FutureGetManualNodeInfoNoDNSResult {
-	cmd := rpcmodel.NewGetManualNodeInfoCmd(peer, pointers.Bool(false))
+	cmd := model.NewGetManualNodeInfoCmd(peer, pointers.Bool(false))
 	return c.sendCmd(cmd)
 }
 
@@ -154,7 +154,7 @@ func (r FutureGetConnectionCountResult) Receive() (int64, error) {
 //
 // See GetConnectionCount for the blocking version and more details.
 func (c *Client) GetConnectionCountAsync() FutureGetConnectionCountResult {
-	cmd := rpcmodel.NewGetConnectionCountCmd()
+	cmd := model.NewGetConnectionCountCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -180,7 +180,7 @@ func (r FuturePingResult) Receive() error {
 //
 // See Ping for the blocking version and more details.
 func (c *Client) PingAsync() FuturePingResult {
-	cmd := rpcmodel.NewPingCmd()
+	cmd := model.NewPingCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -198,14 +198,14 @@ type FutureGetConnectedPeerInfo chan *response
 
 // Receive waits for the response promised by the future and returns  data about
 // each connected network peer.
-func (r FutureGetConnectedPeerInfo) Receive() ([]rpcmodel.GetConnectedPeerInfoResult, error) {
+func (r FutureGetConnectedPeerInfo) Receive() ([]model.GetConnectedPeerInfoResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as an array of getConnectedPeerInfo result objects.
-	var peerInfo []rpcmodel.GetConnectedPeerInfoResult
+	var peerInfo []model.GetConnectedPeerInfoResult
 	err = json.Unmarshal(res, &peerInfo)
 	if err != nil {
 		return nil, err
@@ -220,12 +220,12 @@ func (r FutureGetConnectedPeerInfo) Receive() ([]rpcmodel.GetConnectedPeerInfoRe
 //
 // See GetConnectedPeerInfo for the blocking version and more details.
 func (c *Client) GetConnectedPeerInfoAsync() FutureGetConnectedPeerInfo {
-	cmd := rpcmodel.NewGetConnectedPeerInfoCmd()
+	cmd := model.NewGetConnectedPeerInfoCmd()
 	return c.sendCmd(cmd)
 }
 
 // GetConnectedPeerInfo returns data about each connected network peer.
-func (c *Client) GetConnectedPeerInfo() ([]rpcmodel.GetConnectedPeerInfoResult, error) {
+func (c *Client) GetConnectedPeerInfo() ([]model.GetConnectedPeerInfoResult, error) {
 	return c.GetConnectedPeerInfoAsync().Receive()
 }
 
@@ -235,14 +235,14 @@ type FutureGetNetTotalsResult chan *response
 
 // Receive waits for the response promised by the future and returns network
 // traffic statistics.
-func (r FutureGetNetTotalsResult) Receive() (*rpcmodel.GetNetTotalsResult, error) {
+func (r FutureGetNetTotalsResult) Receive() (*model.GetNetTotalsResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a getnettotals result object.
-	var totals rpcmodel.GetNetTotalsResult
+	var totals model.GetNetTotalsResult
 	err = json.Unmarshal(res, &totals)
 	if err != nil {
 		return nil, err
@@ -257,12 +257,12 @@ func (r FutureGetNetTotalsResult) Receive() (*rpcmodel.GetNetTotalsResult, error
 //
 // See GetNetTotals for the blocking version and more details.
 func (c *Client) GetNetTotalsAsync() FutureGetNetTotalsResult {
-	cmd := rpcmodel.NewGetNetTotalsCmd()
+	cmd := model.NewGetNetTotalsCmd()
 	return c.sendCmd(cmd)
 }
 
 // GetNetTotals returns network traffic statistics.
-func (c *Client) GetNetTotals() (*rpcmodel.GetNetTotalsResult, error) {
+func (c *Client) GetNetTotals() (*model.GetNetTotalsResult, error) {
 	return c.GetNetTotalsAsync().Receive()
 }
 
@@ -294,7 +294,7 @@ func (r FutureDebugLevelResult) Receive() (string, error) {
 //
 // See DebugLevel for the blocking version and more details.
 func (c *Client) DebugLevelAsync(levelSpec string) FutureDebugLevelResult {
-	cmd := rpcmodel.NewDebugLevelCmd(levelSpec)
+	cmd := model.NewDebugLevelCmd(levelSpec)
 	return c.sendCmd(cmd)
 }
 
@@ -350,12 +350,12 @@ func (r FutureGetSelectedTipResult) Receive() (*wire.MsgBlock, error) {
 //
 // See GetSelectedTip for the blocking version and more details.
 func (c *Client) GetSelectedTipAsync() FutureGetSelectedTipResult {
-	cmd := rpcmodel.NewGetSelectedTipCmd(pointers.Bool(false), pointers.Bool(false))
+	cmd := model.NewGetSelectedTipCmd(pointers.Bool(false), pointers.Bool(false))
 	return c.sendCmd(cmd)
 }
 
 // GetSelectedTip returns the block of the selected DAG tip
-func (c *Client) GetSelectedTip() (*rpcmodel.GetBlockVerboseResult, error) {
+func (c *Client) GetSelectedTip() (*model.GetBlockVerboseResult, error) {
 	return c.GetSelectedTipVerboseAsync().Receive()
 }
 
@@ -365,14 +365,14 @@ type FutureGetSelectedTipVerboseResult chan *response
 
 // Receive waits for the response promised by the future and returns the data
 // structure from the server with information about the requested block.
-func (r FutureGetSelectedTipVerboseResult) Receive() (*rpcmodel.GetBlockVerboseResult, error) {
+func (r FutureGetSelectedTipVerboseResult) Receive() (*model.GetBlockVerboseResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal the raw result into a BlockResult.
-	var blockResult rpcmodel.GetBlockVerboseResult
+	var blockResult model.GetBlockVerboseResult
 	err = json.Unmarshal(res, &blockResult)
 	if err != nil {
 		return nil, err
@@ -386,7 +386,7 @@ func (r FutureGetSelectedTipVerboseResult) Receive() (*rpcmodel.GetBlockVerboseR
 //
 // See GeSelectedTipBlockVerbose for the blocking version and more details.
 func (c *Client) GetSelectedTipVerboseAsync() FutureGetSelectedTipVerboseResult {
-	cmd := rpcmodel.NewGetSelectedTipCmd(pointers.Bool(true), pointers.Bool(false))
+	cmd := model.NewGetSelectedTipCmd(pointers.Bool(true), pointers.Bool(false))
 	return c.sendCmd(cmd)
 }
 
@@ -418,7 +418,7 @@ func (r FutureGetCurrentNetResult) Receive() (wire.KaspaNet, error) {
 //
 // See GetCurrentNet for the blocking version and more details.
 func (c *Client) GetCurrentNetAsync() FutureGetCurrentNetResult {
-	cmd := rpcmodel.NewGetCurrentNetCmd()
+	cmd := model.NewGetCurrentNetCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -470,7 +470,7 @@ func (c *Client) GetTopHeadersAsync(highHash *daghash.Hash) FutureGetHeadersResu
 	if highHash != nil {
 		hash = pointers.String(highHash.String())
 	}
-	cmd := rpcmodel.NewGetTopHeadersCmd(hash)
+	cmd := model.NewGetTopHeadersCmd(hash)
 	return c.sendCmd(cmd)
 }
 
@@ -492,7 +492,7 @@ func (c *Client) GetHeadersAsync(lowHash, highHash *daghash.Hash) FutureGetHeade
 	if highHash != nil {
 		highHashStr = highHash.String()
 	}
-	cmd := rpcmodel.NewGetHeadersCmd(lowHashStr, highHashStr)
+	cmd := model.NewGetHeadersCmd(lowHashStr, highHashStr)
 	return c.sendCmd(cmd)
 }
 
@@ -509,14 +509,14 @@ type FutureSessionResult chan *response
 
 // Receive waits for the response promised by the future and returns the
 // session result.
-func (r FutureSessionResult) Receive() (*rpcmodel.SessionResult, error) {
+func (r FutureSessionResult) Receive() (*model.SessionResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a session result object.
-	var session rpcmodel.SessionResult
+	var session model.SessionResult
 	err = json.Unmarshal(res, &session)
 	if err != nil {
 		return nil, err
@@ -536,14 +536,14 @@ func (c *Client) SessionAsync() FutureSessionResult {
 		return newFutureError(ErrWebsocketsRequired)
 	}
 
-	cmd := rpcmodel.NewSessionCmd()
+	cmd := model.NewSessionCmd()
 	return c.sendCmd(cmd)
 }
 
 // Session returns details regarding a websocket client's current connection.
 //
 // This RPC requires the client to be running in websocket mode.
-func (c *Client) Session() (*rpcmodel.SessionResult, error) {
+func (c *Client) Session() (*model.SessionResult, error) {
 	return c.SessionAsync().Receive()
 }
 
@@ -553,7 +553,7 @@ type FutureVersionResult chan *response
 
 // Receive waits for the response promised by the future and returns the version
 // result.
-func (r FutureVersionResult) Receive() (map[string]rpcmodel.VersionResult,
+func (r FutureVersionResult) Receive() (map[string]model.VersionResult,
 	error) {
 	res, err := receiveFuture(r)
 	if err != nil {
@@ -561,7 +561,7 @@ func (r FutureVersionResult) Receive() (map[string]rpcmodel.VersionResult,
 	}
 
 	// Unmarshal result as a version result object.
-	var vr map[string]rpcmodel.VersionResult
+	var vr map[string]model.VersionResult
 	err = json.Unmarshal(res, &vr)
 	if err != nil {
 		return nil, err
@@ -576,11 +576,11 @@ func (r FutureVersionResult) Receive() (map[string]rpcmodel.VersionResult,
 //
 // See Version for the blocking version and more details.
 func (c *Client) VersionAsync() FutureVersionResult {
-	cmd := rpcmodel.NewVersionCmd()
+	cmd := model.NewVersionCmd()
 	return c.sendCmd(cmd)
 }
 
 // Version returns information about the server's JSON-RPC API versions.
-func (c *Client) Version() (map[string]rpcmodel.VersionResult, error) {
+func (c *Client) Version() (map[string]model.VersionResult, error) {
 	return c.VersionAsync().Receive()
 }

@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/kaspanet/kaspad/mempool"
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
@@ -14,7 +14,7 @@ import (
 
 // handleSendRawTransaction implements the sendRawTransaction command.
 func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*rpcmodel.SendRawTransactionCmd)
+	c := cmd.(*model.SendRawTransactionCmd)
 	// Deserialize and send off to tx relay
 	hexStr := c.HexTx
 	if len(hexStr)%2 != 0 {
@@ -27,8 +27,8 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 	var msgTx wire.MsgTx
 	err = msgTx.Deserialize(bytes.NewReader(serializedTx))
 	if err != nil {
-		return nil, &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCDeserialization,
+		return nil, &model.RPCError{
+			Code:    model.ErrRPCDeserialization,
 			Message: "TX decode failed: " + err.Error(),
 		}
 	}
@@ -50,8 +50,8 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 			log.Errorf("Failed to process transaction %s: %s",
 				tx.ID(), err)
 		}
-		return nil, &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCVerify,
+		return nil, &model.RPCError{
+			Code:    model.ErrRPCVerify,
 			Message: "TX rejected: " + err.Error(),
 		}
 	}

@@ -2,14 +2,14 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package rpcmodel_test
+package model_test
 
 import (
 	"github.com/pkg/errors"
 	"reflect"
 	"testing"
 
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 )
 
 // TestCommandMethod tests the CommandMethod function to ensure it retunrs the expected
@@ -26,33 +26,33 @@ func TestCommandMethod(t *testing.T) {
 		{
 			name: "unregistered type",
 			cmd:  (*int)(nil),
-			err:  rpcmodel.Error{ErrorCode: rpcmodel.ErrUnregisteredMethod},
+			err:  model.Error{ErrorCode: model.ErrUnregisteredMethod},
 		},
 		{
 			name:   "nil pointer of registered type",
-			cmd:    (*rpcmodel.GetBlockCmd)(nil),
+			cmd:    (*model.GetBlockCmd)(nil),
 			method: "getBlock",
 		},
 		{
 			name:   "nil instance of registered type",
-			cmd:    &rpcmodel.GetBlockCountCmd{},
+			cmd:    &model.GetBlockCountCmd{},
 			method: "getBlockCount",
 		},
 	}
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		method, err := rpcmodel.CommandMethod(test.cmd)
+		method, err := model.CommandMethod(test.cmd)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
 			t.Errorf("Test #%d (%s) wrong error - got %T (%[3]v), "+
 				"want %T", i, test.name, err, test.err)
 			continue
 		}
 		if err != nil {
-			var gotRPCModelErr rpcmodel.Error
+			var gotRPCModelErr model.Error
 			errors.As(err, &gotRPCModelErr)
 			gotErrorCode := gotRPCModelErr.ErrorCode
-			var testRPCModelErr rpcmodel.Error
+			var testRPCModelErr model.Error
 			errors.As(err, &testRPCModelErr)
 			testErrorCode := testRPCModelErr.ErrorCode
 			if gotErrorCode != testErrorCode {
@@ -84,12 +84,12 @@ func TestMethodUsageFlags(t *testing.T) {
 		name   string
 		method string
 		err    error
-		flags  rpcmodel.UsageFlag
+		flags  model.UsageFlag
 	}{
 		{
 			name:   "unregistered type",
 			method: "bogusMethod",
-			err:    rpcmodel.Error{ErrorCode: rpcmodel.ErrUnregisteredMethod},
+			err:    model.Error{ErrorCode: model.ErrUnregisteredMethod},
 		},
 		{
 			name:   "getBlock",
@@ -100,17 +100,17 @@ func TestMethodUsageFlags(t *testing.T) {
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		flags, err := rpcmodel.MethodUsageFlags(test.method)
+		flags, err := model.MethodUsageFlags(test.method)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
 			t.Errorf("Test #%d (%s) wrong error - got %T (%[3]v), "+
 				"want %T", i, test.name, err, test.err)
 			continue
 		}
 		if err != nil {
-			var gotRPCModelErr rpcmodel.Error
+			var gotRPCModelErr model.Error
 			errors.As(err, &gotRPCModelErr)
 			gotErrorCode := gotRPCModelErr.ErrorCode
-			var testRPCModelErr rpcmodel.Error
+			var testRPCModelErr model.Error
 			errors.As(err, &testRPCModelErr)
 			testErrorCode := testRPCModelErr.ErrorCode
 			if gotErrorCode != testErrorCode {
@@ -147,7 +147,7 @@ func TestMethodUsageText(t *testing.T) {
 		{
 			name:   "unregistered type",
 			method: "bogusMethod",
-			err:    rpcmodel.Error{ErrorCode: rpcmodel.ErrUnregisteredMethod},
+			err:    model.Error{ErrorCode: model.ErrUnregisteredMethod},
 		},
 		{
 			name:     "getBlockCount",
@@ -163,17 +163,17 @@ func TestMethodUsageText(t *testing.T) {
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		usage, err := rpcmodel.MethodUsageText(test.method)
+		usage, err := model.MethodUsageText(test.method)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
 			t.Errorf("Test #%d (%s) wrong error - got %T (%[3]v), "+
 				"want %T", i, test.name, err, test.err)
 			continue
 		}
 		if err != nil {
-			var gotRPCModelErr rpcmodel.Error
+			var gotRPCModelErr model.Error
 			errors.As(err, &gotRPCModelErr)
 			gotErrorCode := gotRPCModelErr.ErrorCode
-			var testRPCModelErr rpcmodel.Error
+			var testRPCModelErr model.Error
 			errors.As(err, &testRPCModelErr)
 			testErrorCode := testRPCModelErr.ErrorCode
 			if gotErrorCode != testErrorCode {
@@ -195,7 +195,7 @@ func TestMethodUsageText(t *testing.T) {
 		}
 
 		// Get the usage again to exercise caching.
-		usage, err = rpcmodel.MethodUsageText(test.method)
+		usage, err = model.MethodUsageText(test.method)
 		if err != nil {
 			t.Errorf("Test #%d (%s) unexpected error: %v", i,
 				test.name, err)
@@ -431,7 +431,7 @@ func TestFieldUsage(t *testing.T) {
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
 		// Ensure usage matches the expected value.
-		usage := rpcmodel.TstFieldUsage(test.field, test.defValue)
+		usage := model.TstFieldUsage(test.field, test.defValue)
 		if usage != test.expected {
 			t.Errorf("Test #%d (%s) mismatched usage - got %v, "+
 				"want %v", i, test.name, usage, test.expected)

@@ -3,7 +3,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package rpcmodel_test
+package model_test
 
 import (
 	"bytes"
@@ -14,7 +14,7 @@ import (
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -35,13 +35,13 @@ func TestRPCServerWebsocketNotifications(t *testing.T) {
 		{
 			name: "filteredBlockAdded",
 			newNtfn: func() (interface{}, error) {
-				return rpcmodel.NewCommand("filteredBlockAdded", 100, "header", []string{"tx0", "tx1"})
+				return model.NewCommand("filteredBlockAdded", 100, "header", []string{"tx0", "tx1"})
 			},
 			staticNtfn: func() interface{} {
-				return rpcmodel.NewFilteredBlockAddedNtfn(100, "header", []string{"tx0", "tx1"})
+				return model.NewFilteredBlockAddedNtfn(100, "header", []string{"tx0", "tx1"})
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"filteredBlockAdded","params":[100,"header",["tx0","tx1"]],"id":null}`,
-			unmarshalled: &rpcmodel.FilteredBlockAddedNtfn{
+			unmarshalled: &model.FilteredBlockAddedNtfn{
 				BlueScore:     100,
 				Header:        "header",
 				SubscribedTxs: []string{"tx0", "tx1"},
@@ -50,13 +50,13 @@ func TestRPCServerWebsocketNotifications(t *testing.T) {
 		{
 			name: "txAccepted",
 			newNtfn: func() (interface{}, error) {
-				return rpcmodel.NewCommand("txAccepted", "123", 1.5)
+				return model.NewCommand("txAccepted", "123", 1.5)
 			},
 			staticNtfn: func() interface{} {
-				return rpcmodel.NewTxAcceptedNtfn("123", 1.5)
+				return model.NewTxAcceptedNtfn("123", 1.5)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"txAccepted","params":["123",1.5],"id":null}`,
-			unmarshalled: &rpcmodel.TxAcceptedNtfn{
+			unmarshalled: &model.TxAcceptedNtfn{
 				TxID:   "123",
 				Amount: 1.5,
 			},
@@ -64,10 +64,10 @@ func TestRPCServerWebsocketNotifications(t *testing.T) {
 		{
 			name: "txAcceptedVerbose",
 			newNtfn: func() (interface{}, error) {
-				return rpcmodel.NewCommand("txAcceptedVerbose", `{"hex":"001122","txid":"123","version":1,"locktime":4294967295,"subnetwork":"0000000000000000000000000000000000000000","gas":0,"payloadHash":"","payload":"","vin":null,"vout":null,"isInMempool":false}`)
+				return model.NewCommand("txAcceptedVerbose", `{"hex":"001122","txid":"123","version":1,"locktime":4294967295,"subnetwork":"0000000000000000000000000000000000000000","gas":0,"payloadHash":"","payload":"","vin":null,"vout":null,"isInMempool":false}`)
 			},
 			staticNtfn: func() interface{} {
-				txResult := rpcmodel.TxRawResult{
+				txResult := model.TxRawResult{
 					Hex:        "001122",
 					TxID:       "123",
 					Version:    1,
@@ -76,11 +76,11 @@ func TestRPCServerWebsocketNotifications(t *testing.T) {
 					Vin:        nil,
 					Vout:       nil,
 				}
-				return rpcmodel.NewTxAcceptedVerboseNtfn(txResult)
+				return model.NewTxAcceptedVerboseNtfn(txResult)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"txAcceptedVerbose","params":[{"hex":"001122","txId":"123","version":1,"lockTime":4294967295,"subnetwork":"0000000000000000000000000000000000000000","gas":0,"payloadHash":"","payload":"","vin":null,"vout":null,"isInMempool":false}],"id":null}`,
-			unmarshalled: &rpcmodel.TxAcceptedVerboseNtfn{
-				RawTx: rpcmodel.TxRawResult{
+			unmarshalled: &model.TxAcceptedVerboseNtfn{
+				RawTx: model.TxRawResult{
 					Hex:        "001122",
 					TxID:       "123",
 					Version:    1,
@@ -94,10 +94,10 @@ func TestRPCServerWebsocketNotifications(t *testing.T) {
 		{
 			name: "txAcceptedVerbose with subnetwork, gas and paylaod",
 			newNtfn: func() (interface{}, error) {
-				return rpcmodel.NewCommand("txAcceptedVerbose", `{"hex":"001122","txId":"123","version":1,"lockTime":4294967295,"subnetwork":"000000000000000000000000000000000000432d","gas":10,"payloadHash":"bf8ccdb364499a3e628200c3d3512c2c2a43b7a7d4f1a40d7f716715e449f442","payload":"102030","vin":null,"vout":null,"isInMempool":false}`)
+				return model.NewCommand("txAcceptedVerbose", `{"hex":"001122","txId":"123","version":1,"lockTime":4294967295,"subnetwork":"000000000000000000000000000000000000432d","gas":10,"payloadHash":"bf8ccdb364499a3e628200c3d3512c2c2a43b7a7d4f1a40d7f716715e449f442","payload":"102030","vin":null,"vout":null,"isInMempool":false}`)
 			},
 			staticNtfn: func() interface{} {
-				txResult := rpcmodel.TxRawResult{
+				txResult := model.TxRawResult{
 					Hex:         "001122",
 					TxID:        "123",
 					Version:     1,
@@ -109,11 +109,11 @@ func TestRPCServerWebsocketNotifications(t *testing.T) {
 					Vin:         nil,
 					Vout:        nil,
 				}
-				return rpcmodel.NewTxAcceptedVerboseNtfn(txResult)
+				return model.NewTxAcceptedVerboseNtfn(txResult)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"txAcceptedVerbose","params":[{"hex":"001122","txId":"123","version":1,"lockTime":4294967295,"subnetwork":"000000000000000000000000000000000000432d","gas":10,"payloadHash":"bf8ccdb364499a3e628200c3d3512c2c2a43b7a7d4f1a40d7f716715e449f442","payload":"102030","vin":null,"vout":null,"isInMempool":false}],"id":null}`,
-			unmarshalled: &rpcmodel.TxAcceptedVerboseNtfn{
-				RawTx: rpcmodel.TxRawResult{
+			unmarshalled: &model.TxAcceptedVerboseNtfn{
+				RawTx: model.TxRawResult{
 					Hex:         "001122",
 					TxID:        "123",
 					Version:     1,
@@ -130,13 +130,13 @@ func TestRPCServerWebsocketNotifications(t *testing.T) {
 		{
 			name: "relevantTxAccepted",
 			newNtfn: func() (interface{}, error) {
-				return rpcmodel.NewCommand("relevantTxAccepted", "001122")
+				return model.NewCommand("relevantTxAccepted", "001122")
 			},
 			staticNtfn: func() interface{} {
-				return rpcmodel.NewRelevantTxAcceptedNtfn("001122")
+				return model.NewRelevantTxAcceptedNtfn("001122")
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"relevantTxAccepted","params":["001122"],"id":null}`,
-			unmarshalled: &rpcmodel.RelevantTxAcceptedNtfn{
+			unmarshalled: &model.RelevantTxAcceptedNtfn{
 				Transaction: "001122",
 			},
 		},
@@ -146,7 +146,7 @@ func TestRPCServerWebsocketNotifications(t *testing.T) {
 	for i, test := range tests {
 		// Marshal the notification as created by the new static
 		// creation function. The ID is nil for notifications.
-		marshalled, err := rpcmodel.MarshalCommand(nil, test.staticNtfn())
+		marshalled, err := model.MarshalCommand(nil, test.staticNtfn())
 		if err != nil {
 			t.Errorf("MarshalCommand #%d (%s) unexpected error: %v", i,
 				test.name, err)
@@ -171,7 +171,7 @@ func TestRPCServerWebsocketNotifications(t *testing.T) {
 		// Marshal the notification as created by the generic new
 		// notification creation function. The ID is nil for
 		// notifications.
-		marshalled, err = rpcmodel.MarshalCommand(nil, cmd)
+		marshalled, err = model.MarshalCommand(nil, cmd)
 		if err != nil {
 			t.Errorf("MarshalCommand #%d (%s) unexpected error: %v", i,
 				test.name, err)
@@ -185,7 +185,7 @@ func TestRPCServerWebsocketNotifications(t *testing.T) {
 			continue
 		}
 
-		var request rpcmodel.Request
+		var request model.Request
 		if err := json.Unmarshal(marshalled, &request); err != nil {
 			t.Errorf("Test #%d (%s) unexpected error while "+
 				"unmarshalling JSON-RPC request: %v", i,
@@ -193,7 +193,7 @@ func TestRPCServerWebsocketNotifications(t *testing.T) {
 			continue
 		}
 
-		cmd, err = rpcmodel.UnmarshalCommand(&request)
+		cmd, err = model.UnmarshalCommand(&request)
 		if err != nil {
 			t.Errorf("UnmarshalCommand #%d (%s) unexpected error: %v", i,
 				test.name, err)

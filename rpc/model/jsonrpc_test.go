@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package rpcmodel_test
+package model_test
 
 import (
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 )
 
 // TestIsValidIDType ensures the IsValidIDType function behaves as expected.
@@ -45,7 +45,7 @@ func TestIsValidIDType(t *testing.T) {
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		if rpcmodel.IsValidIDType(test.id) != test.isValid {
+		if model.IsValidIDType(test.id) != test.isValid {
 			t.Errorf("Test #%d (%s) valid mismatch - got %v, "+
 				"want %v", i, test.name, !test.isValid,
 				test.isValid)
@@ -62,7 +62,7 @@ func TestMarshalResponse(t *testing.T) {
 	tests := []struct {
 		name     string
 		result   interface{}
-		jsonErr  *rpcmodel.RPCError
+		jsonErr  *model.RPCError
 		expected []byte
 	}{
 		{
@@ -74,8 +74,8 @@ func TestMarshalResponse(t *testing.T) {
 		{
 			name:   "result with error",
 			result: nil,
-			jsonErr: func() *rpcmodel.RPCError {
-				return rpcmodel.NewRPCError(rpcmodel.ErrRPCBlockNotFound, "123 not found")
+			jsonErr: func() *model.RPCError {
+				return model.NewRPCError(model.ErrRPCBlockNotFound, "123 not found")
 			}(),
 			expected: []byte(`{"result":null,"error":{"code":-5,"message":"123 not found"},"id":1}`),
 		},
@@ -84,7 +84,7 @@ func TestMarshalResponse(t *testing.T) {
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
 		_, _ = i, test
-		marshalled, err := rpcmodel.MarshalResponse(testID, test.result, test.jsonErr)
+		marshalled, err := model.MarshalResponse(testID, test.result, test.jsonErr)
 		if err != nil {
 			t.Errorf("Test #%d (%s) unexpected error: %v", i,
 				test.name, err)
@@ -105,7 +105,7 @@ func TestMiscErrors(t *testing.T) {
 
 	// Force an error in NewRequest by giving it a parameter type that is
 	// not supported.
-	_, err := rpcmodel.NewRequest(nil, "test", []interface{}{make(chan int)})
+	_, err := model.NewRequest(nil, "test", []interface{}{make(chan int)})
 	if err == nil {
 		t.Error("NewRequest: did not receive error")
 		return
@@ -113,9 +113,9 @@ func TestMiscErrors(t *testing.T) {
 
 	// Force an error in MarshalResponse by giving it an id type that is not
 	// supported.
-	wantErr := rpcmodel.Error{ErrorCode: rpcmodel.ErrInvalidType}
-	_, err = rpcmodel.MarshalResponse(make(chan int), nil, nil)
-	var rpcModelErr rpcmodel.Error
+	wantErr := model.Error{ErrorCode: model.ErrInvalidType}
+	_, err = model.MarshalResponse(make(chan int), nil, nil)
+	var rpcModelErr model.Error
 	if ok := errors.As(err, &rpcModelErr); !ok || rpcModelErr.ErrorCode != wantErr.ErrorCode {
 		t.Errorf("MarshalResult: did not receive expected error - got "+
 			"%v (%[1]T), want %v (%[2]T)", err, wantErr)
@@ -124,7 +124,7 @@ func TestMiscErrors(t *testing.T) {
 
 	// Force an error in MarshalResponse by giving it a result type that
 	// can't be marshalled.
-	_, err = rpcmodel.MarshalResponse(1, make(chan int), nil)
+	_, err = model.MarshalResponse(1, make(chan int), nil)
 	if jErr := &(json.UnsupportedTypeError{}); !errors.As(err, &jErr) {
 		wantErr := &json.UnsupportedTypeError{}
 		t.Errorf("MarshalResult: did not receive expected error - got "+
@@ -138,15 +138,15 @@ func TestRPCError(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		in   *rpcmodel.RPCError
+		in   *model.RPCError
 		want string
 	}{
 		{
-			rpcmodel.ErrRPCInvalidRequest,
+			model.ErrRPCInvalidRequest,
 			"-32600: Invalid request",
 		},
 		{
-			rpcmodel.ErrRPCMethodNotFound,
+			model.ErrRPCMethodNotFound,
 			"-32601: Method not found",
 		},
 	}

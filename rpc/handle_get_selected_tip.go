@@ -2,25 +2,25 @@ package rpc
 
 import (
 	"encoding/hex"
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 )
 
 // handleGetSelectedTip implements the getSelectedTip command.
 func handleGetSelectedTip(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	getSelectedTipCmd := cmd.(*rpcmodel.GetSelectedTipCmd)
+	getSelectedTipCmd := cmd.(*model.GetSelectedTipCmd)
 	selectedTipHash := s.dag.SelectedTipHash()
 
 	block, err := s.dag.BlockByHash(selectedTipHash)
 	if err != nil {
-		return nil, &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCBlockNotFound,
+		return nil, &model.RPCError{
+			Code:    model.ErrRPCBlockNotFound,
 			Message: "Block not found",
 		}
 	}
 	blockBytes, err := block.Bytes()
 	if err != nil {
-		return nil, &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCBlockInvalid,
+		return nil, &model.RPCError{
+			Code:    model.ErrRPCBlockInvalid,
 			Message: "Cannot serialize block",
 		}
 	}

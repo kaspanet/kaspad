@@ -26,7 +26,7 @@ import (
 
 	"github.com/btcsuite/go-socks/socks"
 	"github.com/btcsuite/websocket"
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 )
 
 var (
@@ -252,13 +252,13 @@ func (c *Client) trackRegisteredNtfns(cmd interface{}) {
 	defer c.ntfnStateLock.Unlock()
 
 	switch bcmd := cmd.(type) {
-	case *rpcmodel.NotifyBlocksCmd:
+	case *model.NotifyBlocksCmd:
 		c.ntfnState.notifyBlocks = true
 
-	case *rpcmodel.NotifyChainChangesCmd:
+	case *model.NotifyChainChangesCmd:
 		c.ntfnState.notifyChainChanges = true
 
-	case *rpcmodel.NotifyNewTransactionsCmd:
+	case *model.NotifyNewTransactionsCmd:
 		if bcmd.Verbose != nil && *bcmd.Verbose {
 			c.ntfnState.notifyNewTxVerbose = true
 		} else {
@@ -289,8 +289,8 @@ type (
 	// rawResponse is a partially-unmarshaled JSON-RPC response. For this
 	// to be valid (according to JSON-RPC 1.0 spec), ID may not be nil.
 	rawResponse struct {
-		Result json.RawMessage    `json:"result"`
-		Error  *rpcmodel.RPCError `json:"error"`
+		Result json.RawMessage `json:"result"`
+		Error  *model.RPCError `json:"error"`
 	}
 )
 
@@ -302,7 +302,7 @@ type response struct {
 }
 
 // result checks whether the unmarshaled response contains a non-nil error,
-// returning an unmarshaled rpcmodel.RPCError (or an unmarshaling error) if so.
+// returning an unmarshaled model.RPCError (or an unmarshaling error) if so.
 // If the response is not an error, the raw bytes of the request are
 // returned for further unmashaling into specific result types.
 func (r rawResponse) result() (result []byte, err error) {
@@ -896,14 +896,14 @@ func (c *Client) sendRequest(data *jsonRequestData) chan *response {
 // configuration of the client.
 func (c *Client) sendCmd(cmd interface{}) chan *response {
 	// Get the method associated with the command.
-	method, err := rpcmodel.CommandMethod(cmd)
+	method, err := model.CommandMethod(cmd)
 	if err != nil {
 		return newFutureError(err)
 	}
 
 	// Marshal the command.
 	id := c.NextID()
-	marshalledJSON, err := rpcmodel.MarshalCommand(id, cmd)
+	marshalledJSON, err := model.MarshalCommand(id, cmd)
 	if err != nil {
 		return newFutureError(err)
 	}

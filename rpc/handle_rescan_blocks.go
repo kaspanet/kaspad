@@ -2,7 +2,7 @@ package rpc
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -11,16 +11,16 @@ import (
 //
 // NOTE: This extension is ported from github.com/decred/dcrd
 func handleRescanBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
-	cmd, ok := icmd.(*rpcmodel.RescanBlocksCmd)
+	cmd, ok := icmd.(*model.RescanBlocksCmd)
 	if !ok {
-		return nil, rpcmodel.ErrRPCInternal
+		return nil, model.ErrRPCInternal
 	}
 
 	// Load client's transaction filter. Must exist in order to continue.
 	filter := wsc.FilterData()
 	if filter == nil {
-		return nil, &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCMisc,
+		return nil, &model.RPCError{
+			Code:    model.ErrRPCMisc,
 			Message: "Transaction filter must be loaded before rescanning",
 		}
 	}
@@ -35,7 +35,7 @@ func handleRescanBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 		blockHashes[i] = hash
 	}
 
-	discoveredData := make([]rpcmodel.RescannedBlock, 0, len(blockHashes))
+	discoveredData := make([]model.RescannedBlock, 0, len(blockHashes))
 
 	// Iterate over each block in the request and rescan. When a block
 	// contains relevant transactions, add it to the response.
@@ -45,14 +45,14 @@ func handleRescanBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	for i := range blockHashes {
 		block, err := bc.BlockByHash(blockHashes[i])
 		if err != nil {
-			return nil, &rpcmodel.RPCError{
-				Code:    rpcmodel.ErrRPCBlockNotFound,
+			return nil, &model.RPCError{
+				Code:    model.ErrRPCBlockNotFound,
 				Message: "Failed to fetch block: " + err.Error(),
 			}
 		}
 		if lastBlockHash != nil && !block.MsgBlock().Header.ParentHashes[0].IsEqual(lastBlockHash) { // TODO: (Stas) This is likely wrong. Modified to satisfy compilation.
-			return nil, &rpcmodel.RPCError{
-				Code: rpcmodel.ErrRPCInvalidParameter,
+			return nil, &model.RPCError{
+				Code: model.ErrRPCInvalidParameter,
 				Message: fmt.Sprintf("Block %s is not a child of %s",
 					blockHashes[i], lastBlockHash),
 			}
@@ -61,7 +61,7 @@ func handleRescanBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 
 		transactions := rescanBlockFilter(filter, block, params)
 		if len(transactions) != 0 {
-			discoveredData = append(discoveredData, rpcmodel.RescannedBlock{
+			discoveredData = append(discoveredData, model.RescannedBlock{
 				Hash:         cmd.BlockHashes[i],
 				Transactions: transactions,
 			})

@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/kaspanet/kaspad/rpcmodel"
+	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"strconv"
 )
 
 // handleGetBlockHeader implements the getBlockHeader command.
 func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*rpcmodel.GetBlockHeaderCmd)
+	c := cmd.(*model.GetBlockHeaderCmd)
 
 	// Fetch the header from DAG.
 	hash, err := daghash.NewHashFromStr(c.Hash)
@@ -20,8 +20,8 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 	}
 	blockHeader, err := s.dag.HeaderByHash(hash)
 	if err != nil {
-		return nil, &rpcmodel.RPCError{
-			Code:    rpcmodel.ErrRPCBlockNotFound,
+		return nil, &model.RPCError{
+			Code:    model.ErrRPCBlockNotFound,
 			Message: "Block not found",
 		}
 	}
@@ -61,7 +61,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 	}
 
 	params := s.dag.Params
-	blockHeaderReply := rpcmodel.GetBlockHeaderVerboseResult{
+	blockHeaderReply := model.GetBlockHeaderVerboseResult{
 		Hash:                 c.Hash,
 		Confirmations:        blockConfirmations,
 		Version:              blockHeader.Version,
