@@ -187,7 +187,7 @@ func (p *Peer) WaitForSelectedTipRequests() {
 // FinishRequestingSelectedTip finishes requesting the selected
 // tip from this peer
 func (p *Peer) FinishRequestingSelectedTip() {
-	atomic.SwapUint32(&p.isSelectedTipRequested, 0)
+	atomic.StoreUint32(&p.isSelectedTipRequested, 0)
 }
 
 // StartIBD starts the IBD process for this peer
