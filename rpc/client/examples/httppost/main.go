@@ -7,12 +7,12 @@ package main
 import (
 	"log"
 
-	"github.com/kaspanet/kaspad/rpcclient"
+	"github.com/kaspanet/kaspad/rpc/client"
 )
 
 func main() {
 	// Connect to a local kaspa RPC server using HTTP POST mode.
-	connCfg := &rpcclient.ConnConfig{
+	connCfg := &client.ConnConfig{
 		Host:         "localhost:8332",
 		User:         "yourrpcuser",
 		Pass:         "yourrpcpass",
@@ -21,7 +21,7 @@ func main() {
 	}
 	// Notice the notification parameter is nil since notifications are
 	// not supported in HTTP POST mode.
-	client, err := rpcclient.New(connCfg, nil)
+	client, err := client.New(connCfg, nil)
 	if err != nil {
 		log.Fatal(err)
 	}

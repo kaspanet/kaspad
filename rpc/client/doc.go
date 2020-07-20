@@ -1,5 +1,5 @@
 /*
-Package rpcclient implements a websocket-enabled kaspa JSON-RPC client.
+Package client implements a websocket-enabled kaspa JSON-RPC client.
 
 Overview
 
@@ -146,4 +146,4 @@ The following full-blown client examples are in the examples directory:
    Connects to a kaspad RPC server using TLS-secured websockets, registers for
    block added notifications, and gets the current block count
 */
-package rpcclient
+package client

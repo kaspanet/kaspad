@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/kaspanet/kaspad/rpcclient"
+	"github.com/kaspanet/kaspad/rpc/client"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -20,7 +20,7 @@ func main() {
 	// Also note most of these handlers will only be called if you register
 	// for notifications. See the documentation of the rpcclient
 	// NotificationHandlers type for more details about each handler.
-	ntfnHandlers := rpcclient.NotificationHandlers{
+	ntfnHandlers := client.NotificationHandlers{
 		OnFilteredBlockAdded: func(blueScore uint64, header *wire.BlockHeader, txns []*util.Tx) {
 			log.Printf("Block added: %s (%d) %s",
 				header.BlockHash(), blueScore, header.Timestamp)
@@ -33,14 +33,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	connCfg := &rpcclient.ConnConfig{
+	connCfg := &client.ConnConfig{
 		Host:         "localhost:16110",
 		Endpoint:     "ws",
 		User:         "yourrpcuser",
 		Pass:         "yourrpcpass",
 		Certificates: certs,
 	}
-	client, err := rpcclient.New(connCfg, &ntfnHandlers)
+	client, err := client.New(connCfg, &ntfnHandlers)
 	if err != nil {
 		log.Fatal(err)
 	}
