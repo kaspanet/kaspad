@@ -276,16 +276,16 @@ func (tc *testContext) mineTransactions(transactions []*util.Tx, numberOfBlocks 
 		// Handle new block by pool
 		ch := make(chan NewBlockMsg)
 		go func() {
-			err = tc.harness.txPool.HandleNewBlock(utilBlock, ch)
+			err = tc.harness.txPool.HandleNewBlockOld(utilBlock, ch)
 			close(ch)
 		}()
 
-		// process messages pushed by HandleNewBlock
+		// process messages pushed by HandleNewBlockOld
 		for range ch {
 		}
-		// ensure that HandleNewBlock has not failed
+		// ensure that HandleNewBlockOld has not failed
 		if err != nil {
-			tc.t.Fatalf("HandleNewBlock failed to handle block %s", err)
+			tc.t.Fatalf("HandleNewBlockOld failed to handle block %s", err)
 		}
 
 		coinbaseTx := block.Transactions[util.CoinbaseTransactionIndex]
@@ -1713,11 +1713,11 @@ func TestHandleNewBlock(t *testing.T) {
 	// Handle new block by pool
 	ch := make(chan NewBlockMsg)
 	go func() {
-		err = harness.txPool.HandleNewBlock(block, ch)
+		err = harness.txPool.HandleNewBlockOld(block, ch)
 		close(ch)
 	}()
 
-	// process messages pushed by HandleNewBlock
+	// process messages pushed by HandleNewBlockOld
 	blockTransactions := make(map[daghash.TxID]int)
 	for msg := range ch {
 		blockTransactions[*msg.Tx.ID()] = 1
@@ -1734,12 +1734,12 @@ func TestHandleNewBlock(t *testing.T) {
 			}
 		}
 	}
-	// ensure that HandleNewBlock has not failed
+	// ensure that HandleNewBlockOld has not failed
 	if err != nil {
-		t.Fatalf("HandleNewBlock failed to handle block %v", err)
+		t.Fatalf("HandleNewBlockOld failed to handle block %v", err)
 	}
 
-	// Validate messages pushed by HandleNewBlock into the channel
+	// Validate messages pushed by HandleNewBlockOld into the channel
 	if len(blockTransactions) != 2 {
 		t.Fatalf("Wrong size of blockTransactions after new block handling")
 	}

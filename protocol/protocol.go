@@ -4,73 +4,57 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/kaspanet/kaspad/config"
-
 	"github.com/kaspanet/kaspad/protocol/flows/handshake"
 
 	"github.com/kaspanet/kaspad/protocol/flows/addressexchange"
 	"github.com/kaspanet/kaspad/protocol/flows/blockrelay"
 
-	"github.com/kaspanet/kaspad/addrmgr"
-	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/netadapter"
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/flows/ibd"
 	"github.com/kaspanet/kaspad/protocol/flows/ping"
+	"github.com/kaspanet/kaspad/protocol/flows/relaytransactions"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
 
-// Init initializes the p2p protocol
-func Init(cfg *config.Config, netAdapter *netadapter.NetAdapter,
-	addressManager *addrmgr.AddrManager, dag *blockdag.BlockDAG) {
+func (m *Manager) routerInitializer() (*routerpkg.Router, error) {
 
-	routerInitializer := newRouterInitializer(cfg, netAdapter, addressManager, dag)
-	netAdapter.SetRouterInitializer(routerInitializer)
-}
-
-func newRouterInitializer(cfg *config.Config, netAdapter *netadapter.NetAdapter, addressManager *addrmgr.AddrManager,
-	dag *blockdag.BlockDAG) netadapter.RouterInitializer {
-
-	return func() (*routerpkg.Router, error) {
-		router := routerpkg.NewRouter()
-		spawn("newRouterInitializer-startFlows", func() {
-			err := startFlows(cfg, netAdapter, router, dag, addressManager)
-			if err != nil {
-				if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
-					if protocolErr.ShouldBan {
-						// TODO(libp2p) Ban peer
-						panic("unimplemented")
-					}
-					err = netAdapter.DisconnectAssociatedConnection(router)
-					if err != nil {
-						panic(err)
-					}
-					return
+	router := routerpkg.NewRouter()
+	spawn("newRouterInitializer-startFlows", func() {
+		err := m.startFlows(router)
+		if err != nil {
+			if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
+				if protocolErr.ShouldBan {
+					// TODO(libp2p) Ban peer
+					panic("unimplemented")
 				}
-				if errors.Is(err, routerpkg.ErrTimeout) {
-					err = netAdapter.DisconnectAssociatedConnection(router)
-					if err != nil {
-						panic(err)
-					}
-					return
+				err = m.netAdapter.DisconnectAssociatedConnection(router)
+				if err != nil {
+					panic(err)
 				}
-				panic(err)
+				return
 			}
-		})
-		return router, nil
-	}
+			if errors.Is(err, routerpkg.ErrTimeout) {
+				err = m.netAdapter.DisconnectAssociatedConnection(router)
+				if err != nil {
+					panic(err)
+				}
+				return
+			}
+			panic(err)
+		}
+	})
+	return router, nil
+
 }
 
-func startFlows(cfg *config.Config, netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag *blockdag.BlockDAG,
-	addressManager *addrmgr.AddrManager) error {
-
+func (m *Manager) startFlows(router *routerpkg.Router) error {
 	stop := make(chan error)
 	stopped := uint32(0)
 
-	peer, closed, err := handshake.HandleHandshake(cfg, router, netAdapter, dag, addressManager)
+	peer, closed, err := handshake.HandleHandshake(m.cfg, router, m.netAdapter, m.dag, m.addressManager)
 	if err != nil {
 		return err
 	}
@@ -78,52 +62,53 @@ func startFlows(cfg *config.Config, netAdapter *netadapter.NetAdapter, router *r
 		return nil
 	}
 
-	addAddressFlows(cfg, router, &stopped, stop, peer, addressManager)
-	addBlockRelayFlows(netAdapter, router, &stopped, stop, peer, dag)
-	addPingFlows(router, &stopped, stop, peer)
-	addIBDFlows(router, &stopped, stop, peer, dag)
+	m.addAddressFlows(router, &stopped, stop, peer)
+	m.addBlockRelayFlows(router, &stopped, stop, peer)
+	m.addPingFlows(router, &stopped, stop, peer)
+	m.addIBDFlows(router, &stopped, stop, peer)
+	m.addTransactionRelayFlow(router, &stopped, stop)
 
 	err = <-stop
 	return err
 }
 
-func addAddressFlows(cfg *config.Config, router *routerpkg.Router, stopped *uint32, stop chan error,
-	peer *peerpkg.Peer, addressManager *addrmgr.AddrManager) {
+func (m *Manager) addAddressFlows(router *routerpkg.Router, stopped *uint32, stop chan error,
+	peer *peerpkg.Peer) {
 
 	outgoingRoute := router.OutgoingRoute()
 
 	addOneTimeFlow("SendAddresses", router, []wire.MessageCommand{wire.CmdGetAddresses}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) (routeClosed bool, err error) {
-			return addressexchange.SendAddresses(incomingRoute, outgoingRoute, addressManager)
+			return addressexchange.SendAddresses(incomingRoute, outgoingRoute, m.addressManager)
 		},
 	)
 
 	addOneTimeFlow("ReceiveAddresses", router, []wire.MessageCommand{wire.CmdAddress}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) (routeClosed bool, err error) {
-			return addressexchange.ReceiveAddresses(incomingRoute, outgoingRoute, cfg, peer, addressManager)
+			return addressexchange.ReceiveAddresses(incomingRoute, outgoingRoute, m.cfg, peer, m.addressManager)
 		},
 	)
 }
 
-func addBlockRelayFlows(netAdapter *netadapter.NetAdapter, router *routerpkg.Router,
-	stopped *uint32, stop chan error, peer *peerpkg.Peer, dag *blockdag.BlockDAG) {
+func (m *Manager) addBlockRelayFlows(router *routerpkg.Router, stopped *uint32, stop chan error, peer *peerpkg.Peer) {
 
 	outgoingRoute := router.OutgoingRoute()
 
 	addFlow("HandleRelayInvs", router, []wire.MessageCommand{wire.CmdInvRelayBlock, wire.CmdBlock}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return blockrelay.HandleRelayInvs(incomingRoute, outgoingRoute, peer, netAdapter, dag)
+			return blockrelay.HandleRelayInvs(incomingRoute,
+				outgoingRoute, peer, m.netAdapter, m.dag, m.OnNewBlock)
 		},
 	)
 
 	addFlow("HandleRelayBlockRequests", router, []wire.MessageCommand{wire.CmdGetRelayBlocks}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return blockrelay.HandleRelayBlockRequests(incomingRoute, outgoingRoute, peer, dag)
+			return blockrelay.HandleRelayBlockRequests(incomingRoute, outgoingRoute, peer, m.dag)
 		},
 	)
 }
 
-func addPingFlows(router *routerpkg.Router, stopped *uint32, stop chan error, peer *peerpkg.Peer) {
+func (m *Manager) addPingFlows(router *routerpkg.Router, stopped *uint32, stop chan error, peer *peerpkg.Peer) {
 	outgoingRoute := router.OutgoingRoute()
 
 	addFlow("ReceivePings", router, []wire.MessageCommand{wire.CmdPing}, stopped, stop,
@@ -139,38 +124,50 @@ func addPingFlows(router *routerpkg.Router, stopped *uint32, stop chan error, pe
 	)
 }
 
-func addIBDFlows(router *routerpkg.Router, stopped *uint32, stop chan error,
-	peer *peerpkg.Peer, dag *blockdag.BlockDAG) {
+func (m *Manager) addIBDFlows(router *routerpkg.Router, stopped *uint32, stop chan error,
+	peer *peerpkg.Peer) {
 
 	outgoingRoute := router.OutgoingRoute()
 
 	addFlow("HandleIBD", router, []wire.MessageCommand{wire.CmdBlockLocator, wire.CmdIBDBlock}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ibd.HandleIBD(incomingRoute, outgoingRoute, peer, dag)
+			return ibd.HandleIBD(incomingRoute, outgoingRoute, peer, m.dag, m.OnNewBlock)
 		},
 	)
 
 	addFlow("RequestSelectedTip", router, []wire.MessageCommand{wire.CmdSelectedTip}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ibd.RequestSelectedTip(incomingRoute, outgoingRoute, peer, dag)
+			return ibd.RequestSelectedTip(incomingRoute, outgoingRoute, peer, m.dag)
 		},
 	)
 
 	addFlow("HandleGetSelectedTip", router, []wire.MessageCommand{wire.CmdGetSelectedTip}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ibd.HandleGetSelectedTip(incomingRoute, outgoingRoute, dag)
+			return ibd.HandleGetSelectedTip(incomingRoute, outgoingRoute, m.dag)
 		},
 	)
 
 	addFlow("HandleGetBlockLocator", router, []wire.MessageCommand{wire.CmdGetBlockLocator}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ibd.HandleGetBlockLocator(incomingRoute, outgoingRoute, dag)
+			return ibd.HandleGetBlockLocator(incomingRoute, outgoingRoute, m.dag)
 		},
 	)
 
 	addFlow("HandleGetBlocks", router, []wire.MessageCommand{wire.CmdGetBlocks}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ibd.HandleGetBlocks(incomingRoute, outgoingRoute, dag)
+			return ibd.HandleGetBlocks(incomingRoute, outgoingRoute, m.dag)
+		},
+	)
+}
+
+func (m *Manager) addTransactionRelayFlow(router *routerpkg.Router, stopped *uint32, stop chan error) {
+
+	outgoingRoute := router.OutgoingRoute()
+
+	addFlow("HandleRelayedTransactions", router, []wire.MessageCommand{wire.CmdInv, wire.CmdTx}, stopped, stop,
+		func(incomingRoute *routerpkg.Route) error {
+			return relaytransactions.HandleRelayedTransactions(incomingRoute, outgoingRoute, m.netAdapter, m.dag,
+				m.txPool, m.sharedRequestedTransactions)
 		},
 	)
 }

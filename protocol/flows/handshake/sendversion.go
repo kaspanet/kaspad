@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/netadapter/router"
+	"github.com/kaspanet/kaspad/protocol/common"
 	"github.com/kaspanet/kaspad/version"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -56,7 +57,7 @@ func SendVersion(cfg *config.Config, incomingRoute *router.Route, outgoingRoute 
 		return true, nil
 	}
 
-	_, isOpen, err = incomingRoute.DequeueWithTimeout(timeout)
+	_, isOpen, err = incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return false, err
 	}
