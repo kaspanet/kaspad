@@ -131,7 +131,7 @@ func (m *Manager) addIBDFlows(router *routerpkg.Router, stopped *uint32, stop ch
 
 	addFlow("HandleIBD", router, []wire.MessageCommand{wire.CmdBlockLocator, wire.CmdIBDBlock}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ibd.HandleIBD(incomingRoute, outgoingRoute, peer, m.dag)
+			return ibd.HandleIBD(incomingRoute, outgoingRoute, peer, m.dag, m.OnNewBlock)
 		},
 	)
 
