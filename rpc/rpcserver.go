@@ -56,10 +56,7 @@ type commandHandler func(*Server, interface{}, <-chan struct{}) (interface{}, er
 var rpcHandlers map[string]commandHandler
 var rpcHandlersBeforeInit = map[string]commandHandler{
 	"addManualNode":         handleAddManualNode,
-	"createRawTransaction":  handleCreateRawTransaction,
 	"debugLevel":            handleDebugLevel,
-	"decodeRawTransaction":  handleDecodeRawTransaction,
-	"decodeScript":          handleDecodeScript,
 	"getAllManualNodesInfo": handleGetAllManualNodesInfo,
 	"getSelectedTip":        handleGetSelectedTip,
 	"getSelectedTipHash":    handleGetSelectedTipHash,
@@ -93,7 +90,6 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"stop":                  handleStop,
 	"submitBlock":           handleSubmitBlock,
 	"uptime":                handleUptime,
-	"validateAddress":       handleValidateAddress,
 	"version":               handleVersion,
 }
 
