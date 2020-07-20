@@ -224,9 +224,8 @@ func processIBDBlock(dag *blockdag.BlockDAG, msgIBDBlock *wire.MsgIBDBlock) (sho
 			"during IBD", block.Hash())
 	}
 	if isDelayed {
-		// Theoretically we may receive delayed blocks during IBD from
-		// an honest peer, so we don't ban/disconnect them
-		return true, nil
+		return false, protocolerrors.Errorf(true, "received delayed block %s "+
+			"during IBD", block.Hash())
 	}
 	return false, nil
 }
