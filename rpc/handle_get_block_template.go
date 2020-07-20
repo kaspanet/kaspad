@@ -118,7 +118,7 @@ func handleGetBlockTemplateRequest(s *Server, request *model.TemplateRequest, cl
 	// However, allow this state when running in the regression test or
 	// simulation test mode.
 	if !(s.cfg.RegressionTest || s.cfg.Simnet) &&
-		s.connectionManager.ConnectedCount() == 0 {
+		s.connectionManager.ConnectionCount() == 0 {
 
 		return nil, &model.RPCError{
 			Code:    model.ErrRPCClientNotConnected,

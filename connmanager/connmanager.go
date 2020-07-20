@@ -107,3 +107,7 @@ func (c *ConnectionManager) connectionsLoop() {
 		<-time.Tick(connectionsLoopInterval)
 	}
 }
+
+func (c *ConnectionManager) ConnectionCount() int {
+	return len(c.netAdapter.Connections())
+}

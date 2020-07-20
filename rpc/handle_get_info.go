@@ -12,7 +12,7 @@ func handleGetInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (inter
 		Version:         version.Version(),
 		ProtocolVersion: int32(maxProtocolVersion),
 		Blocks:          s.dag.BlockCount(),
-		Connections:     s.connectionManager.ConnectedCount(),
+		Connections:     int32(s.connectionManager.ConnectionCount()),
 		Proxy:           s.cfg.Proxy,
 		Difficulty:      getDifficultyRatio(s.dag.CurrentBits(), s.dag.Params),
 		Testnet:         s.cfg.Testnet,
