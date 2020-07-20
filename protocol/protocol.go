@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"fmt"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/protocol/flows/handshake"
@@ -31,7 +32,7 @@ func newRouterInitializer(netAdapter *netadapter.NetAdapter,
 	return func() (*routerpkg.Router, error) {
 
 		router := routerpkg.NewRouter()
-		spawn(func() {
+		spawn("newRouterInitializer-startFlows", func() {
 			err := startFlows(netAdapter, router, dag, addressManager)
 			if err != nil {
 				if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
@@ -178,7 +179,7 @@ func addFlow(name string, router *routerpkg.Router, messageTypes []wire.MessageC
 		panic(err)
 	}
 
-	spawn(func() {
+	spawn(fmt.Sprintf("addFlow-startFlow-%s", name), func() {
 		err := flow(route)
 		if err != nil {
 			log.Errorf("error from %s flow: %s", name, err)
@@ -197,7 +198,7 @@ func addOneTimeFlow(name string, router *routerpkg.Router, messageTypes []wire.M
 		panic(err)
 	}
 
-	spawn(func() {
+	spawn(fmt.Sprintf("addOneTimeFlow-startFlow-%s", name), func() {
 		defer func() {
 			err := router.RemoveRoute(messageTypes)
 			if err != nil {

@@ -452,7 +452,7 @@ func (state *gbtWorkState) notifyLongPollers(tipHashes []*daghash.Hash, lastGene
 // clients with a new block template when their existing block template is
 // stale due to the newly added block.
 func (state *gbtWorkState) NotifyBlockAdded(tipHashes []*daghash.Hash) {
-	spawn(func() {
+	spawn("gbtWorkState.NotifyBlockAdded", func() {
 		state.Lock()
 		defer state.Unlock()
 
@@ -465,7 +465,7 @@ func (state *gbtWorkState) NotifyBlockAdded(tipHashes []*daghash.Hash) {
 // existing block template is stale due to enough time passing and the contents
 // of the memory pool changing.
 func (state *gbtWorkState) NotifyMempoolTx(lastUpdated mstime.Time) {
-	spawn(func() {
+	spawn("NotifyMempoolTx", func() {
 		state.Lock()
 		defer state.Unlock()
 

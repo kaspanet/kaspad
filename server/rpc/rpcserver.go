@@ -506,7 +506,7 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 		// Setup a close notifier. Since the connection is hijacked,
 		// the CloseNotifer on the ResponseWriter is not available.
 		closeChan := make(chan struct{}, 1)
-		spawn(func() {
+		spawn("Server.jsonRPCRead-conn.Read", func() {
 			_, err := conn.Read(make([]byte, 1))
 			if err != nil {
 				close(closeChan)
@@ -630,7 +630,7 @@ func (s *Server) Start() {
 		// Declaring this variable is necessary as it needs be declared in the same
 		// scope of the anonymous function below it.
 		listenerCopy := listener
-		spawn(func() {
+		spawn("Server.Start-httpServer.Serve", func() {
 			log.Infof("RPC server listening on %s", listenerCopy.Addr())
 			httpServer.Serve(listenerCopy)
 			log.Tracef("RPC listener done for %s", listenerCopy.Addr())

@@ -1044,7 +1044,7 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 
 		// Update mempool
 		ch := make(chan mempool.NewBlockMsg)
-		spawn(func() {
+		spawn("SPAWN_PLACEHOLDER_NAME", func() {
 			err := sm.txMemPool.HandleNewBlock(block, ch)
 			close(ch)
 			if err != nil {
@@ -1055,7 +1055,7 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 		// sm.peerNotifier sends messages to the rebroadcastHandler, so we call
 		// it in its own goroutine so it won't block dag.ProcessBlock in case
 		// rebroadcastHandler channel is full.
-		spawn(func() {
+		spawn("SPAWN_PLACEHOLDER_NAME", func() {
 			// Relay if we are current and the block was not just now unorphaned.
 			// Otherwise peers that are current should already know about it
 			if sm.isSynced() && !data.WasUnorphaned {
@@ -1147,7 +1147,7 @@ func (sm *SyncManager) Start() {
 
 	log.Trace("Starting sync manager")
 	sm.wg.Add(1)
-	spawn(sm.messageHandler)
+	spawn("SPAWN_PLACEHOLDER_NAME", sm.messageHandler)
 }
 
 // Stop gracefully shuts down the sync manager by stopping all asynchronous

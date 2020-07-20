@@ -48,7 +48,7 @@ func kaspadMain(startedChan chan<- struct{}) error {
 		return err
 	}
 	cfg := config.ActiveConfig()
-	defer panics.HandlePanic(log, nil)
+	defer panics.HandlePanic(log, "MAIN", nil)
 
 	// Get a channel that will be closed when a shutdown signal has been
 	// triggered either from an OS signal such as SIGINT (Ctrl+C) or from
@@ -60,9 +60,7 @@ func kaspadMain(startedChan chan<- struct{}) error {
 
 	// Enable http profiling server if requested.
 	if cfg.Profile != "" {
-		spawn(func() {
-			profiling.Start(cfg.Profile, log)
-		})
+		profiling.Start(cfg.Profile, log)
 	}
 
 	// Write cpu profile if requested.
