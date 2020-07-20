@@ -126,7 +126,7 @@ func handleGetBlockTemplateRequest(s *Server, request *rpcmodel.TemplateRequest,
 		}
 	}
 
-	payAddr, err := util.DecodeAddress(request.PayAddress, s.cfg.DAGParams.Prefix)
+	payAddr, err := util.DecodeAddress(request.PayAddress, s.cfg.DAG.Params.Prefix)
 	if err != nil {
 		return nil, err
 	}

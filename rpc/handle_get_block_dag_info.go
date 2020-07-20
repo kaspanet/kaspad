@@ -14,7 +14,7 @@ import (
 func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	// Obtain a snapshot of the current best known DAG state. We'll
 	// populate the response to this call primarily from this snapshot.
-	params := s.cfg.DAGParams
+	params := s.cfg.DAG.Params
 	dag := s.cfg.DAG
 
 	dagInfo := &rpcmodel.GetBlockDAGInfoResult{

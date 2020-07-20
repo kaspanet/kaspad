@@ -14,7 +14,7 @@ func handleNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 	var addr string
 	var nodeID uint64
 	var errN, err error
-	params := s.cfg.DAGParams
+	params := s.cfg.DAG.Params
 	switch c.SubCmd {
 	case "disconnect":
 		// If we have a valid uint disconnect by node id. Otherwise,

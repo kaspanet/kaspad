@@ -40,7 +40,7 @@ func handleRescanBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	// Iterate over each block in the request and rescan. When a block
 	// contains relevant transactions, add it to the response.
 	bc := wsc.server.cfg.DAG
-	params := wsc.server.cfg.DAGParams
+	params := wsc.server.cfg.DAG.Params
 	var lastBlockHash *daghash.Hash
 	for i := range blockHashes {
 		block, err := bc.BlockByHash(blockHashes[i])

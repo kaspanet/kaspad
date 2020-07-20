@@ -32,7 +32,6 @@ import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/blockdag/indexers"
 	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/mining"
 	"github.com/kaspanet/kaspad/peer"
@@ -772,8 +771,7 @@ type rpcserverConfig struct {
 
 	// These fields allow the RPC server to interface with the local block
 	// DAG data and state.
-	DAG       *blockdag.BlockDAG
-	DAGParams *dagconfig.Params
+	DAG *blockdag.BlockDAG
 
 	// TxMemPool defines the transaction memory pool to interact with.
 	TxMemPool *mempool.TxPool
@@ -861,7 +859,6 @@ func NewRPCServer(
 	cfg := &rpcserverConfig{
 		Listeners:       rpcListeners,
 		StartupTime:     mstime.Now().UnixMilliseconds(),
-		DAGParams:       dag.Params,
 		TxMemPool:       txMempool,
 		Generator:       blockTemplateGenerator,
 		AcceptanceIndex: acceptanceIndex,

@@ -60,7 +60,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 		return nil, internalRPCError(err.Error(), context)
 	}
 
-	params := s.cfg.DAGParams
+	params := s.cfg.DAG.Params
 	blockHeaderReply := rpcmodel.GetBlockHeaderVerboseResult{
 		Hash:                 c.Hash,
 		Confirmations:        blockConfirmations,

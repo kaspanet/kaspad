@@ -586,7 +586,7 @@ func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
 
 	for i, output := range msgTx.TxOut {
 		_, addr, err := txscript.ExtractScriptPubKeyAddress(
-			output.ScriptPubKey, m.server.cfg.DAGParams)
+			output.ScriptPubKey, m.server.cfg.DAG.Params)
 		if err != nil || addr == nil {
 			// Clients are not able to subscribe to
 			// nonstandard or non-address outputs.
@@ -702,7 +702,7 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 	var marshalledJSONVerboseFull []byte
 	var marshalledJSONVerbosePartial []byte
 	initializeMarshalledJSONVerbose := func() bool {
-		net := m.server.cfg.DAGParams
+		net := m.server.cfg.DAG.Params
 		build := func() ([]byte, bool) {
 			rawTx, err := createTxRawResult(net, mtx, txIDStr, nil, "", nil, true)
 			if err != nil {

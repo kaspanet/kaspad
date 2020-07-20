@@ -101,7 +101,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	// Ignore the error here since an error means the script couldn't parse
 	// and there is no additional information about it anyways.
 	scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddress(scriptPubKey,
-		s.cfg.DAGParams)
+		s.cfg.DAG.Params)
 	var address *string
 	if addr != nil {
 		address = pointers.String(addr.EncodeAddress())

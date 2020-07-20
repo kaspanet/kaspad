@@ -35,7 +35,7 @@ func handleDecodeRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 		Version:  mtx.Version,
 		Locktime: mtx.LockTime,
 		Vin:      createVinList(&mtx),
-		Vout:     createVoutList(&mtx, s.cfg.DAGParams, nil),
+		Vout:     createVoutList(&mtx, s.cfg.DAG.Params, nil),
 	}
 	return txReply, nil
 }

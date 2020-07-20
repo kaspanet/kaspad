@@ -206,7 +206,7 @@ func getDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
 // This function MUST be called with the DAG state lock held (for reads).
 func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) (*rpcmodel.GetBlockVerboseResult, error) {
 	hash := block.Hash()
-	params := s.cfg.DAGParams
+	params := s.cfg.DAG.Params
 	blockHeader := block.MsgBlock().Header
 
 	blockBlueScore, err := s.cfg.DAG.BlueScoreByBlockHash(hash)

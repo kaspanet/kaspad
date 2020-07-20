@@ -10,7 +10,7 @@ func handleValidateAddress(s *Server, cmd interface{}, closeChan <-chan struct{}
 	c := cmd.(*rpcmodel.ValidateAddressCmd)
 
 	result := rpcmodel.ValidateAddressResult{}
-	addr, err := util.DecodeAddress(c.Address, s.cfg.DAGParams.Prefix)
+	addr, err := util.DecodeAddress(c.Address, s.cfg.DAG.Params.Prefix)
 	if err != nil {
 		// Return the default value (false) for IsValid.
 		return result, nil
