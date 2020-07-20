@@ -114,7 +114,7 @@ func receiveGetSelectedTip(incomingRoute *router.Route) (shouldStop bool, err er
 	_, ok := message.(*wire.MsgGetSelectedTip)
 	if !ok {
 		panic(errors.Errorf("received unexpected message type. "+
-			"expected: MsgGetSelectedTip, got: %s", message.Command()))
+			"expected: %s, got: %s", wire.CmdGetSelectedTip, message.Command()))
 	}
 
 	return false, nil
