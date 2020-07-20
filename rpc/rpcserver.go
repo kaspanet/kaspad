@@ -83,8 +83,6 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getSubnetwork":         handleGetSubnetwork,
 	"getTxOut":              handleGetTxOut,
 	"help":                  handleHelp,
-	"node":                  handleNode,
-	"ping":                  handlePing,
 	"removeManualNode":      handleRemoveManualNode,
 	"sendRawTransaction":    handleSendRawTransaction,
 	"stop":                  handleStop,

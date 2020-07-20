@@ -586,7 +586,7 @@ func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
 
 	for i, output := range msgTx.TxOut {
 		_, addr, err := txscript.ExtractScriptPubKeyAddress(
-			output.ScriptPubKey, m.server.cfg.DAG.Params)
+			output.ScriptPubKey, m.server.dag.Params)
 		if err != nil || addr == nil {
 			// Clients are not able to subscribe to
 			// nonstandard or non-address outputs.
@@ -702,7 +702,7 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 	var marshalledJSONVerboseFull []byte
 	var marshalledJSONVerbosePartial []byte
 	initializeMarshalledJSONVerbose := func() bool {
-		net := m.server.cfg.DAG.Params
+		net := m.server.dag.Params
 		build := func() ([]byte, bool) {
 			rawTx, err := createTxRawResult(net, mtx, txIDStr, nil, "", nil, true)
 			if err != nil {
@@ -742,7 +742,7 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 				}
 			}
 
-			nodeSubnetworkID := m.server.cfg.DAG.SubnetworkID()
+			nodeSubnetworkID := m.server.dag.SubnetworkID()
 			if wsc.subnetworkIDForTxUpdates == nil || wsc.subnetworkIDForTxUpdates.IsEqual(nodeSubnetworkID) {
 				wsc.QueueNotification(marshalledJSONVerboseFull)
 			} else {
