@@ -90,7 +90,7 @@ func (k *kaspad) stop() error {
 		log.Errorf("Error stopping the p2p protocol: %+v", err)
 	}
 
-	// Shutdown the RPC server if it'k not disabled.
+	// Shutdown the RPC server if it's not disabled.
 	if !k.cfg.DisableRPC {
 		err := k.rpcServer.Stop()
 		if err != nil {
