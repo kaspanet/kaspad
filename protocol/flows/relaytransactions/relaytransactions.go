@@ -142,7 +142,7 @@ func broadcastAcceptedTransactions(netAdapter *netadapter.NetAdapter, acceptedTx
 	return netAdapter.Broadcast(peerpkg.ReadyPeerIDs(), inv)
 }
 
-// readMsgTx returns the next msgBlock in incomingRoute, and populates invsQueue with any inv messages that meanwhile arrive.
+// readMsgTx returns the next msgTx in incomingRoute, and populates invsQueue with any inv messages that meanwhile arrive.
 //
 // Note: this function assumes msgChan can contain only wire.MsgTxInv and wire.MsgBlock messages.
 func readMsgTx(incomingRoute *router.Route, invsQueue *[]*wire.MsgTxInv) (
