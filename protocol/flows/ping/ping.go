@@ -1,6 +1,7 @@
 package ping
 
 import (
+	"github.com/kaspanet/kaspad/protocol/common"
 	"time"
 
 	"github.com/kaspanet/kaspad/netadapter/router"
@@ -9,8 +10,6 @@ import (
 	"github.com/kaspanet/kaspad/util/random"
 	"github.com/kaspanet/kaspad/wire"
 )
-
-const pingTimeout = 30 * time.Second
 
 // ReceivePings handles all ping messages coming through incomingRoute.
 // This function assumes that incomingRoute will only return MsgPing.
@@ -51,7 +50,7 @@ func SendPings(incomingRoute *router.Route, outgoingRoute *router.Route, peer *p
 			return nil
 		}
 
-		message, isOpen, err := incomingRoute.DequeueWithTimeout(pingTimeout)
+		message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 		if err != nil {
 			return err
 		}

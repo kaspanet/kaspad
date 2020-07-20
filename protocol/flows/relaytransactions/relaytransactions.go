@@ -5,16 +5,14 @@ import (
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/netadapter/router"
+	"github.com/kaspanet/kaspad/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
-	"time"
 )
-
-const timeout = 30 * time.Second
 
 // NewBlockHandler is a function that is to be
 // called when a new block is successfully processed.
@@ -145,7 +143,7 @@ func readMsgTx(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvTransaction
 	msgTx *wire.MsgTx, shouldStop bool, err error) {
 
 	for {
-		message, isOpen, err := incomingRoute.DequeueWithTimeout(timeout)
+		message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 		if err != nil {
 			return nil, false, err
 		}
