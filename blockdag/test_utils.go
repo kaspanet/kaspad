@@ -49,9 +49,9 @@ func DAGSetup(dbName string, openDb bool, config Config) (*BlockDAG, func(), err
 	// overwrite `spawn` to count the number of running goroutines
 	spawnWaitGroup := sync.WaitGroup{}
 	realSpawn := spawn
-	spawn = func(f func()) {
+	spawn = func(name string, f func()) {
 		spawnWaitGroup.Add(1)
-		realSpawn(func() {
+		realSpawn(name, func() {
 			f()
 			spawnWaitGroup.Done()
 		})

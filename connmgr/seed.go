@@ -67,7 +67,7 @@ func SeedFromDNS(mainConfig *config.Config, dagParams *dagconfig.Params, reqServ
 			}
 		}
 
-		spawn(func() {
+		spawn("SPAWN_PLACEHOLDER_NAME", func() {
 			randSource := mrand.New(mrand.NewSource(time.Now().UnixNano()))
 
 			seedpeers, err := lookupFn(host)

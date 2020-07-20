@@ -846,7 +846,7 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 		}
 
 		// TODO: if too many, nuke a non-perm peer.
-		spawn(func() {
+		spawn("SPAWN_PLACEHOLDER_NAME", func() {
 			s.connManager.Connect(&connmgr.ConnReq{
 				Addr:      netAddr,
 				Permanent: msg.Permanent,
@@ -988,7 +988,7 @@ func (s *Server) outboundPeerConnected(connReq *connmgr.ConnReq, conn net.Conn) 
 func (s *Server) peerConnected(sp *Peer, conn net.Conn) {
 	sp.isWhitelisted = s.isWhitelisted(conn.RemoteAddr())
 
-	spawn(func() {
+	spawn("SPAWN_PLACEHOLDER_NAME", func() {
 		err := sp.AssociateConnection(conn)
 		if err != nil {
 			peerLog.Debugf("Error connecting to peer: %+v", err)
@@ -1095,7 +1095,7 @@ func (s *Server) peerHandler() {
 			seedFromSubNetwork(s.cfg.SubnetworkID)
 		}
 	}
-	spawn(s.connManager.Start)
+	spawn("SPAWN_PLACEHOLDER_NAME", s.connManager.Start)
 
 out:
 	for {
@@ -1280,11 +1280,11 @@ func (s *Server) Start() {
 	// Start the peer handler which in turn starts the address and block
 	// managers.
 	s.wg.Add(1)
-	spawn(s.peerHandler)
+	spawn("SPAWN_PLACEHOLDER_NAME", s.peerHandler)
 
 	if s.nat != nil {
 		s.wg.Add(1)
-		spawn(s.upnpUpdateThread)
+		spawn("SPAWN_PLACEHOLDER_NAME", s.upnpUpdateThread)
 	}
 
 	if !s.cfg.DisableRPC {
@@ -1292,7 +1292,7 @@ func (s *Server) Start() {
 
 		// Start the rebroadcastHandler, which ensures user tx received by
 		// the RPC server are rebroadcast until being included in a block.
-		spawn(s.rebroadcastHandler)
+		spawn("SPAWN_PLACEHOLDER_NAME", s.rebroadcastHandler)
 	}
 }
 
@@ -1318,7 +1318,7 @@ func (s *Server) ScheduleShutdown(duration time.Duration) {
 		return
 	}
 	srvrLog.Warnf("Server shutdown in %s", duration)
-	spawn(func() {
+	spawn("SPAWN_PLACEHOLDER_NAME", func() {
 		remaining := duration
 		tickDuration := dynamicTickDuration(remaining)
 		done := time.After(remaining)
@@ -1589,7 +1589,7 @@ func NewServer(cfg *config.Config, listenAddrs []string, dagParams *dagconfig.Pa
 			return nil, err
 		}
 
-		spawn(func() {
+		spawn("SPAWN_PLACEHOLDER_NAME", func() {
 			s.connManager.Connect(&connmgr.ConnReq{
 				Addr:      netAddr,
 				Permanent: true,

@@ -17,7 +17,7 @@ func newP2PServer(s *gRPCServer) *p2pServer {
 }
 
 func (p *p2pServer) MessageStream(stream protowire.P2P_MessageStreamServer) error {
-	defer panics.HandlePanic(log, nil)
+	defer panics.HandlePanic(log, "p2pServer.MessageStream", nil)
 
 	peerInfo, ok := peer.FromContext(stream.Context())
 	if !ok {

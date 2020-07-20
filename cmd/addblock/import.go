@@ -265,12 +265,12 @@ func (bi *blockImporter) Import() chan *importResults {
 	// Start up the read and process handling goroutines. This setup allows
 	// blocks to be read from disk in parallel while being processed.
 	bi.wg.Add(2)
-	spawn(bi.readHandler)
-	spawn(bi.processHandler)
+	spawn("blockImporter.readHandler", bi.readHandler)
+	spawn("blockImporter.processHandler", bi.processHandler)
 
 	// Wait for the import to finish in a separate goroutine and signal
 	// the status handler when done.
-	spawn(func() {
+	spawn("blockImporter.sendToDoneChan", func() {
 		bi.wg.Wait()
 		bi.doneChan <- true
 	})
@@ -278,7 +278,7 @@ func (bi *blockImporter) Import() chan *importResults {
 	// Start the status handler and return the result channel that it will
 	// send the results on when the import is done.
 	resultChan := make(chan *importResults)
-	spawn(func() {
+	spawn("blockImporter.statusHandler", func() {
 		bi.statusHandler(resultChan)
 	})
 	return resultChan

@@ -742,7 +742,7 @@ func (a *AddrManager) Start() error {
 
 	// Start the address ticker to save addresses periodically.
 	a.wg.Add(1)
-	spawn(a.addressHandler)
+	spawn("AddrManager.addressHandler", a.addressHandler)
 	return nil
 }
 

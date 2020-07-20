@@ -140,7 +140,7 @@ type MessageListeners struct {
 
 	// OnGetBlockInvs is invoked when a peer receives a getblockinvs kaspa
 	// message.
-	OnGetBlockInvs func(p *Peer, msg *wire.MsgGetBlockInvs)
+	OnGetBlockInvs func(p *Peer, msg *wire.MsgGetBlocks)
 
 	// OnFeeFilter is invoked when a peer receives a feefilter kaspa message.
 	OnFeeFilter func(p *Peer, msg *wire.MsgFeeFilter)
@@ -806,7 +806,7 @@ func (p *Peer) PushGetBlockInvsMsg(lowHash, highHash *daghash.Hash) error {
 	}
 
 	// Construct the getblockinvs request and queue it to be sent.
-	msg := wire.NewMsgGetBlockInvs(lowHash, highHash)
+	msg := wire.NewMsgGetBlocks(lowHash, highHash)
 	p.QueueMessage(msg, nil)
 
 	// Update the previous getblockinvs request information for filtering
@@ -823,13 +823,7 @@ func (p *Peer) PushGetBlockInvsMsg(lowHash, highHash *daghash.Hash) error {
 // This function is safe for concurrent access.
 func (p *Peer) PushBlockLocatorMsg(locator blockdag.BlockLocator) error {
 	// Construct the locator request and queue it to be sent.
-	msg := wire.NewMsgBlockLocator()
-	for _, hash := range locator {
-		err := msg.AddBlockLocatorHash(hash)
-		if err != nil {
-			return err
-		}
-	}
+	msg := wire.NewMsgBlockLocator(locator)
 	p.QueueMessage(msg, nil)
 	return nil
 }
@@ -1110,7 +1104,7 @@ func (p *Peer) maybeAddDeadline(pendingResponses map[wire.MessageCommand]time.Ti
 		// Expects a verack message.
 		pendingResponses[wire.CmdVerAck] = deadline
 
-	case wire.CmdGetBlockInvs:
+	case wire.CmdGetBlocks:
 		// Expects an inv message.
 		pendingResponses[wire.CmdInv] = deadline
 
@@ -1278,7 +1272,7 @@ cleanup:
 func (p *Peer) inHandler() {
 	// The timer is stopped when a new message is received and reset after it
 	// is processed.
-	idleTimer := spawnAfter(idleTimeout, func() {
+	idleTimer := spawnAfter("Peer.inHandler-disconnectOnIdle", idleTimeout, func() {
 		log.Warnf("Peer %s no answer for %s -- disconnecting", p, idleTimeout)
 		p.Disconnect()
 	})
@@ -1404,7 +1398,7 @@ out:
 				p.cfg.Listeners.OnBlockLocator(p, msg)
 			}
 
-		case *wire.MsgGetBlockInvs:
+		case *wire.MsgGetBlocks:
 			if p.cfg.Listeners.OnGetBlockInvs != nil {
 				p.cfg.Listeners.OnGetBlockInvs(p, msg)
 			}
@@ -1712,7 +1706,7 @@ func (p *Peer) QueueMessage(msg wire.Message, doneChan chan<- struct{}) {
 	// it is marked as disconnected and *then* it drains the channels.
 	if !p.Connected() {
 		if doneChan != nil {
-			spawn(func() {
+			spawn("Peer.QueueMessage-sendToDoneChan", func() {
 				doneChan <- struct{}{}
 			})
 		}
@@ -1804,7 +1798,7 @@ func (p *Peer) start() error {
 	log.Tracef("Starting peer %s", p)
 
 	negotiateErr := make(chan error, 1)
-	spawn(func() {
+	spawn("Peer.start-negotiateProtocol", func() {
 		if p.inbound {
 			negotiateErr <- p.negotiateInboundProtocol()
 		} else {
@@ -1825,11 +1819,11 @@ func (p *Peer) start() error {
 
 	// The protocol has been negotiated successfully so start processing input
 	// and output messages.
-	spawn(p.stallHandler)
-	spawn(p.inHandler)
-	spawn(p.queueHandler)
-	spawn(p.outHandler)
-	spawn(p.pingHandler)
+	spawn("Peer.stallHandler", p.stallHandler)
+	spawn("Peer.inHandler", p.inHandler)
+	spawn("Peer.queueHandler", p.queueHandler)
+	spawn("Peer.outHandler", p.outHandler)
+	spawn("Peer.pingHandler", p.pingHandler)
 
 	// Send our verack message now that the IO processing machinery has started.
 	p.QueueMessage(wire.NewMsgVerAck(), nil)

@@ -13,7 +13,7 @@ import (
 // means the package will not perform any logging by default until the caller
 // requests it.
 var log *logs.Logger
-var spawn func(func())
+var spawn func(name string, f func())
 
 const logSubsytem = "RPCC"
 

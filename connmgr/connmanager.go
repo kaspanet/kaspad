@@ -240,7 +240,7 @@ func (cm *ConnManager) handleFailedConn(c *ConnReq, err error) {
 		if shouldWriteLog {
 			log.Debugf("Retrying further connections to %s every %s", c, d)
 		}
-		spawnAfter(d, func() {
+		spawnAfter("ConnManager.connect-withDelay", d, func() {
 			cm.connect(c)
 		})
 	} else {
@@ -254,9 +254,9 @@ func (cm *ConnManager) handleFailedConn(c *ConnReq, err error) {
 					"-- retrying further connections every %s", maxFailedAttempts,
 					cm.cfg.RetryDuration)
 			}
-			spawnAfter(cm.cfg.RetryDuration, cm.NewConnReq)
+			spawnAfter("ConnManager.NewConnReq-withDelay", cm.cfg.RetryDuration, cm.NewConnReq)
 		} else {
-			spawn(cm.NewConnReq)
+			spawn("ConnManager.NewConnReq", cm.NewConnReq)
 		}
 	}
 }
@@ -423,7 +423,7 @@ out:
 				}
 
 				if cm.cfg.OnDisconnection != nil {
-					spawn(func() {
+					spawn("cm.cfg.OnDisconnection", func() {
 						cm.cfg.OnDisconnection(connReq)
 					})
 				}
@@ -650,7 +650,7 @@ func (cm *ConnManager) listenHandler(listener net.Listener) {
 			}
 			continue
 		}
-		spawn(func() {
+		spawn("SPAWN_PLACEHOLDER_NAME", func() {
 			cm.cfg.OnAccept(conn)
 		})
 	}
@@ -668,7 +668,7 @@ func (cm *ConnManager) Start() {
 
 	log.Trace("Connection manager started")
 	cm.wg.Add(1)
-	spawn(cm.connHandler)
+	spawn("SPAWN_PLACEHOLDER_NAME", cm.connHandler)
 
 	// Start all the listeners so long as the caller requested them and
 	// provided a callback to be invoked when connections are accepted.
@@ -678,14 +678,14 @@ func (cm *ConnManager) Start() {
 			// scope of the anonymous function below it.
 			listenerCopy := listener
 			cm.wg.Add(1)
-			spawn(func() {
+			spawn("SPAWN_PLACEHOLDER_NAME", func() {
 				cm.listenHandler(listenerCopy)
 			})
 		}
 	}
 
 	for i := atomic.LoadUint64(&cm.connReqCount); i < uint64(cm.cfg.TargetOutbound); i++ {
-		spawn(cm.NewConnReq)
+		spawn("SPAWN_PLACEHOLDER_NAME", cm.NewConnReq)
 	}
 }
 

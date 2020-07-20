@@ -17,7 +17,7 @@ import (
 )
 
 func main() {
-	defer panics.HandlePanic(log, nil)
+	defer panics.HandlePanic(log, "MAIN", nil)
 	interrupt := signal.InterruptListener()
 
 	cfg, err := parseConfig()
@@ -50,7 +50,7 @@ func main() {
 	}
 
 	doneChan := make(chan struct{})
-	spawn(func() {
+	spawn("mineLoop", func() {
 		err = mineLoop(client, cfg.NumberOfBlocks, cfg.BlockDelay, cfg.MineWhenNotSynced, miningAddr)
 		if err != nil {
 			panic(errors.Wrap(err, "error in mine loop"))

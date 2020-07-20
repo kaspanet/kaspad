@@ -207,7 +207,7 @@ func setupRPC(cfg *config.Config, dag *blockdag.BlockDAG, txMempool *mempool.TxP
 		}
 
 		// Signal process shutdown when the RPC server requests it.
-		spawn(func() {
+		spawn("setupRPC-handleShutdownRequest", func() {
 			<-rpcServer.RequestedProcessShutdown()
 			signal.ShutdownRequestChannel <- struct{}{}
 		})
