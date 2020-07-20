@@ -3,19 +3,18 @@ package ibd
 import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter/router"
+	"github.com/kaspanet/kaspad/protocol/common"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
 )
 
 // HandleGetBlocks handles getBlocks messages
 func HandleGetBlocks(incomingRoute *router.Route, outgoingRoute *router.Route, dag *blockdag.BlockDAG) error {
 	for {
-		lowHash, highHash, shouldStop, err := receiveGetBlocks(incomingRoute)
+		lowHash, highHash, err := receiveGetBlocks(incomingRoute)
 		if err != nil {
 			return err
-		}
-		if shouldStop {
-			return nil
 		}
 
 		msgIBDBlocks, err := buildMsgIBDBlocks(lowHash, highHash, dag)
@@ -23,23 +22,23 @@ func HandleGetBlocks(incomingRoute *router.Route, outgoingRoute *router.Route, d
 			return err
 		}
 
-		shouldStop = sendMsgIBDBlocks(outgoingRoute, msgIBDBlocks)
-		if shouldStop {
+		err = sendMsgIBDBlocks(outgoingRoute, msgIBDBlocks)
+		if err != nil {
 			return nil
 		}
 	}
 }
 
 func receiveGetBlocks(incomingRoute *router.Route) (lowHash *daghash.Hash,
-	highHash *daghash.Hash, shouldStop bool, err error) {
+	highHash *daghash.Hash, err error) {
 
 	message, isOpen := incomingRoute.Dequeue()
 	if !isOpen {
-		return nil, nil, true, nil
+		return nil, nil, errors.WithStack(common.ErrRouteClosed)
 	}
 	msgGetBlocks := message.(*wire.MsgGetBlocks)
 
-	return msgGetBlocks.LowHash, msgGetBlocks.HighHash, false, nil
+	return msgGetBlocks.LowHash, msgGetBlocks.HighHash, nil
 }
 
 func buildMsgIBDBlocks(lowHash *daghash.Hash, highHash *daghash.Hash,
@@ -63,12 +62,12 @@ func buildMsgIBDBlocks(lowHash *daghash.Hash, highHash *daghash.Hash,
 	return msgIBDBlocks, nil
 }
 
-func sendMsgIBDBlocks(outgoingRoute *router.Route, msgIBDBlocks []*wire.MsgIBDBlock) (shouldStop bool) {
+func sendMsgIBDBlocks(outgoingRoute *router.Route, msgIBDBlocks []*wire.MsgIBDBlock) error {
 	for _, msgIBDBlock := range msgIBDBlocks {
 		isOpen := outgoingRoute.Enqueue(msgIBDBlock)
 		if !isOpen {
-			return true
+			return errors.WithStack(common.ErrRouteClosed)
 		}
 	}
-	return false
+	return nil
 }

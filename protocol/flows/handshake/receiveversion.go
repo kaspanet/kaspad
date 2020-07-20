@@ -8,6 +8,7 @@ import (
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -24,23 +25,23 @@ var (
 // ReceiveVersion waits for the peer to send a version message, sends a
 // verack in response, and updates its info accordingly.
 func ReceiveVersion(incomingRoute *router.Route, outgoingRoute *router.Route, netAdapter *netadapter.NetAdapter,
-	peer *peerpkg.Peer, dag *blockdag.BlockDAG) (address *wire.NetAddress, routeClosed bool, err error) {
+	peer *peerpkg.Peer, dag *blockdag.BlockDAG) (address *wire.NetAddress, err error) {
 
 	message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	if !isOpen {
-		return nil, true, nil
+		return nil, errors.WithStack(common.ErrRouteClosed)
 	}
 
 	msgVersion, ok := message.(*wire.MsgVersion)
 	if !ok {
-		return nil, false, protocolerrors.New(true, "a version message must precede all others")
+		return nil, protocolerrors.New(true, "a version message must precede all others")
 	}
 
 	if !allowSelfConnections && netAdapter.ID().IsEqual(msgVersion.ID) {
-		return nil, false, protocolerrors.New(true, "connected to self")
+		return nil, protocolerrors.New(true, "connected to self")
 	}
 
 	// Notify and disconnect clients that have a protocol version that is
@@ -51,13 +52,13 @@ func ReceiveVersion(incomingRoute *router.Route, outgoingRoute *router.Route, ne
 	// disconnecting.
 	if msgVersion.ProtocolVersion < minAcceptableProtocolVersion {
 		//TODO(libp2p) create error type for disconnect but don't ban
-		return nil, false, protocolerrors.Errorf(false, "protocol version must be %d or greater",
+		return nil, protocolerrors.Errorf(false, "protocol version must be %d or greater",
 			minAcceptableProtocolVersion)
 	}
 
 	// Disconnect from partial nodes in networks that don't allow them
 	if !dag.Params.EnableNonNativeSubnetworks && msgVersion.SubnetworkID != nil {
-		return nil, false, protocolerrors.New(true, "partial nodes are not allowed")
+		return nil, protocolerrors.New(true, "partial nodes are not allowed")
 	}
 
 	// TODO(libp2p)
@@ -76,8 +77,8 @@ func ReceiveVersion(incomingRoute *router.Route, outgoingRoute *router.Route, ne
 	peer.UpdateFieldsFromMsgVersion(msgVersion)
 	isOpen = outgoingRoute.Enqueue(wire.NewMsgVerAck())
 	if !isOpen {
-		return nil, true, nil
+		return nil, errors.WithStack(common.ErrRouteClosed)
 	}
 	// TODO(libp2p) Register peer ID
-	return msgVersion.Address, false, nil
+	return msgVersion.Address, nil
 }

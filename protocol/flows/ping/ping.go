@@ -2,6 +2,7 @@ package ping
 
 import (
 	"github.com/kaspanet/kaspad/protocol/common"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/kaspanet/kaspad/netadapter/router"
@@ -17,14 +18,14 @@ func ReceivePings(incomingRoute *router.Route, outgoingRoute *router.Route) erro
 	for {
 		message, isOpen := incomingRoute.Dequeue()
 		if !isOpen {
-			return nil
+			return errors.WithStack(common.ErrRouteClosed)
 		}
 		pingMessage := message.(*wire.MsgPing)
 
 		pongMessage := wire.NewMsgPong(pingMessage.Nonce)
 		isOpen = outgoingRoute.Enqueue(pongMessage)
 		if !isOpen {
-			return nil
+			return errors.WithStack(common.ErrRouteClosed)
 		}
 	}
 }
@@ -47,7 +48,7 @@ func SendPings(incomingRoute *router.Route, outgoingRoute *router.Route, peer *p
 		pingMessage := wire.NewMsgPing(nonce)
 		isOpen := outgoingRoute.Enqueue(pingMessage)
 		if !isOpen {
-			return nil
+			return errors.WithStack(common.ErrRouteClosed)
 		}
 
 		message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
@@ -55,7 +56,7 @@ func SendPings(incomingRoute *router.Route, outgoingRoute *router.Route, peer *p
 			return err
 		}
 		if !isOpen {
-			return nil
+			return errors.WithStack(common.ErrRouteClosed)
 		}
 		pongMessage := message.(*wire.MsgPong)
 		if pongMessage.Nonce != pingMessage.Nonce {

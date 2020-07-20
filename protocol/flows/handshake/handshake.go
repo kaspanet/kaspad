@@ -45,11 +45,11 @@ func HandleHandshake(cfg *config.Config, router *routerpkg.Router, netAdapter *n
 	var peerAddress *wire.NetAddress
 	spawn("HandleHandshake-ReceiveVersion", func() {
 		defer wg.Done()
-		address, closed, err := ReceiveVersion(receiveVersionRoute, router.OutgoingRoute(), netAdapter, peer, dag)
+		address, err := ReceiveVersion(receiveVersionRoute, router.OutgoingRoute(), netAdapter, peer, dag)
 		if err != nil {
 			log.Errorf("error from ReceiveVersion: %s", err)
 		}
-		if err != nil || closed {
+		if err != nil {
 			if atomic.AddUint32(&errChanUsed, 1) != 1 {
 				errChan <- err
 			}
@@ -60,11 +60,11 @@ func HandleHandshake(cfg *config.Config, router *routerpkg.Router, netAdapter *n
 
 	spawn("HandleHandshake-SendVersion", func() {
 		defer wg.Done()
-		closed, err := SendVersion(cfg, sendVersionRoute, router.OutgoingRoute(), netAdapter, dag)
+		err := SendVersion(cfg, sendVersionRoute, router.OutgoingRoute(), netAdapter, dag)
 		if err != nil {
 			log.Errorf("error from SendVersion: %s", err)
 		}
-		if err != nil || closed {
+		if err != nil {
 			if atomic.AddUint32(&errChanUsed, 1) != 1 {
 				errChan <- err
 			}

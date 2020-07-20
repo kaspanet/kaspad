@@ -8,6 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/protocol/common"
 	"github.com/kaspanet/kaspad/version"
 	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -30,7 +31,7 @@ var (
 
 // SendVersion sends a version to a peer and waits for verack.
 func SendVersion(cfg *config.Config, incomingRoute *router.Route, outgoingRoute *router.Route,
-	netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG) (routeClosed bool, err error) {
+	netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG) error {
 
 	selectedTipHash := dag.SelectedTipHash()
 	subnetworkID := cfg.SubnetworkID
@@ -54,15 +55,15 @@ func SendVersion(cfg *config.Config, incomingRoute *router.Route, outgoingRoute 
 
 	isOpen := outgoingRoute.Enqueue(msg)
 	if !isOpen {
-		return true, nil
+		return errors.WithStack(common.ErrRouteClosed)
 	}
 
 	_, isOpen, err = incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
-		return false, err
+		return err
 	}
 	if !isOpen {
-		return true, nil
+		return errors.WithStack(common.ErrRouteClosed)
 	}
-	return false, nil
+	return nil
 }

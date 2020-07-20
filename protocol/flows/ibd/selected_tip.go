@@ -34,57 +34,54 @@ func requestSelectedTips() {
 func RequestSelectedTip(incomingRoute *router.Route,
 	outgoingRoute *router.Route, peer *peerpkg.Peer, dag *blockdag.BlockDAG) error {
 	for {
-		shouldStop, err := runSelectedTipRequest(incomingRoute, outgoingRoute, peer, dag)
+		err := runSelectedTipRequest(incomingRoute, outgoingRoute, peer, dag)
 		if err != nil {
 			return err
-		}
-		if shouldStop {
-			return nil
 		}
 	}
 }
 
 func runSelectedTipRequest(incomingRoute *router.Route, outgoingRoute *router.Route,
-	peer *peerpkg.Peer, dag *blockdag.BlockDAG) (shouldStop bool, err error) {
+	peer *peerpkg.Peer, dag *blockdag.BlockDAG) error {
 
 	peer.WaitForSelectedTipRequests()
 	defer peer.FinishRequestingSelectedTip()
 
-	shouldStop = requestSelectedTip(outgoingRoute)
-	if shouldStop {
-		return true, nil
+	err := requestSelectedTip(outgoingRoute)
+	if err != nil {
+		return err
 	}
 
-	peerSelectedTipHash, shouldStop, err := receiveSelectedTip(incomingRoute)
+	peerSelectedTipHash, err := receiveSelectedTip(incomingRoute)
 	if err != nil {
-		return false, err
-	}
-	if shouldStop {
-		return true, nil
+		return err
 	}
 
 	peer.SetSelectedTipHash(peerSelectedTipHash)
 	StartIBDIfRequired(dag)
-	return false, nil
+	return nil
 }
 
-func requestSelectedTip(outgoingRoute *router.Route) (shouldStop bool) {
+func requestSelectedTip(outgoingRoute *router.Route) error {
 	msgGetSelectedTip := wire.NewMsgGetSelectedTip()
 	isOpen := outgoingRoute.Enqueue(msgGetSelectedTip)
-	return !isOpen
+	if !isOpen {
+		return errors.WithStack(common.ErrRouteClosed)
+	}
+	return nil
 }
 
-func receiveSelectedTip(incomingRoute *router.Route) (selectedTipHash *daghash.Hash, shouldStop bool, err error) {
+func receiveSelectedTip(incomingRoute *router.Route) (selectedTipHash *daghash.Hash, err error) {
 	message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	if !isOpen {
-		return nil, true, nil
+		return nil, errors.WithStack(common.ErrRouteClosed)
 	}
 	msgSelectedTip := message.(*wire.MsgSelectedTip)
 
-	return msgSelectedTip.SelectedTipHash, false, nil
+	return msgSelectedTip.SelectedTipHash, nil
 }
 
 // HandleGetSelectedTip handles getSelectedTip messages

@@ -8,42 +8,43 @@ import (
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
 )
 
 // ReceiveAddresses asks a peer for more addresses if needed.
 func ReceiveAddresses(incomingRoute *router.Route, outgoingRoute *router.Route, cfg *config.Config, peer *peerpkg.Peer,
-	addressManager *addrmgr.AddrManager) (routeClosed bool, err error) {
+	addressManager *addrmgr.AddrManager) (err error) {
 
 	if !addressManager.NeedMoreAddresses() {
-		return false, nil
+		return nil
 	}
 
 	subnetworkID := peer.SubnetworkID()
 	msgGetAddresses := wire.NewMsgGetAddresses(false, subnetworkID)
 	isOpen := outgoingRoute.Enqueue(msgGetAddresses)
 	if !isOpen {
-		return true, nil
+		return errors.WithStack(common.ErrRouteClosed)
 	}
 
 	message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
-		return false, err
+		return err
 	}
 	if !isOpen {
-		return true, nil
+		return errors.WithStack(common.ErrRouteClosed)
 	}
 
 	msgAddresses := message.(*wire.MsgAddresses)
 	if len(msgAddresses.AddrList) > addrmgr.GetAddressesMax {
-		return false, protocolerrors.Errorf(true, "address count excceeded %d", addrmgr.GetAddressesMax)
+		return protocolerrors.Errorf(true, "address count excceeded %d", addrmgr.GetAddressesMax)
 	}
 
 	if msgAddresses.IncludeAllSubnetworks {
-		return false, protocolerrors.Errorf(true, "got unexpected "+
+		return protocolerrors.Errorf(true, "got unexpected "+
 			"IncludeAllSubnetworks=true in [%s] command", msgAddresses.Command())
 	}
 	if !msgAddresses.SubnetworkID.IsEqual(cfg.SubnetworkID) && msgAddresses.SubnetworkID != nil {
-		return false, protocolerrors.Errorf(false, "only full nodes and %s subnetwork IDs "+
+		return protocolerrors.Errorf(false, "only full nodes and %s subnetwork IDs "+
 			"are allowed in [%s] command, but got subnetwork ID %s",
 			cfg.SubnetworkID, msgAddresses.Command(), msgAddresses.SubnetworkID)
 	}
@@ -52,5 +53,5 @@ func ReceiveAddresses(incomingRoute *router.Route, outgoingRoute *router.Route, 
 	// TODO(libp2p) Replace with real peer IP
 	fakeSourceAddress := new(wire.NetAddress)
 	addressManager.AddAddresses(msgAddresses.AddrList, fakeSourceAddress, msgAddresses.SubnetworkID)
-	return false, nil
+	return nil
 }

@@ -3,32 +3,34 @@ package addressexchange
 import (
 	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/netadapter/router"
+	"github.com/kaspanet/kaspad/protocol/common"
 	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
 	"math/rand"
 )
 
 // SendAddresses sends addresses to a peer that requests it.
 func SendAddresses(incomingRoute *router.Route, outgoingRoute *router.Route,
-	addressManager *addrmgr.AddrManager) (routeClosed bool, err error) {
+	addressManager *addrmgr.AddrManager) error {
 
 	message, isOpen := incomingRoute.Dequeue()
 	if !isOpen {
-		return true, nil
+		return errors.WithStack(common.ErrRouteClosed)
 	}
 
 	msgGetAddresses := message.(*wire.MsgGetAddresses)
 	addresses := addressManager.AddressCache(msgGetAddresses.IncludeAllSubnetworks, msgGetAddresses.SubnetworkID)
 	msgAddresses := wire.NewMsgAddresses(msgGetAddresses.IncludeAllSubnetworks, msgGetAddresses.SubnetworkID)
-	err = msgAddresses.AddAddresses(shuffleAddresses(addresses)...)
+	err := msgAddresses.AddAddresses(shuffleAddresses(addresses)...)
 	if err != nil {
 		panic(err)
 	}
 
 	isOpen = outgoingRoute.Enqueue(msgAddresses)
 	if !isOpen {
-		return true, nil
+		return errors.WithStack(common.ErrRouteClosed)
 	}
-	return false, nil
+	return nil
 }
 
 // shuffleAddresses randomizes the given addresses sent if there are more than the maximum allowed in one message.
