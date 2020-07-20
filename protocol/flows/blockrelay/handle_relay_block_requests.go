@@ -33,10 +33,7 @@ func HandleRelayBlockRequests(incomingRoute *router.Route, outgoingRoute *router
 			// If we are a full node and the peer is a partial node, we must convert
 			// the block to a partial block.
 			nodeSubnetworkID := dag.SubnetworkID()
-			peerSubnetworkID, err := peer.SubnetworkID()
-			if err != nil {
-				return err
-			}
+			peerSubnetworkID := peer.SubnetworkID()
 
 			isNodeFull := nodeSubnetworkID == nil
 			isPeerFull := peerSubnetworkID == nil

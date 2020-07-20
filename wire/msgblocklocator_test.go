@@ -21,7 +21,7 @@ func TestBlockLocator(t *testing.T) {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
-	msg := NewMsgBlockLocator()
+	msg := NewMsgBlockLocator([]*daghash.Hash{locatorHash})
 
 	// Ensure the command is expected value.
 	wantCmd := MessageCommand(19)
@@ -42,25 +42,11 @@ func TestBlockLocator(t *testing.T) {
 	}
 
 	// Ensure block locator hashes are added properly.
-	err = msg.AddBlockLocatorHash(locatorHash)
-	if err != nil {
-		t.Errorf("AddBlockLocatorHash: %v", err)
-	}
 	if msg.BlockLocatorHashes[0] != locatorHash {
 		t.Errorf("AddBlockLocatorHash: wrong block locator added - "+
 			"got %v, want %v",
 			spew.Sprint(msg.BlockLocatorHashes[0]),
 			spew.Sprint(locatorHash))
-	}
-
-	// Ensure adding more than the max allowed block locator hashes per
-	// message returns an error.
-	for i := 0; i < MaxBlockLocatorsPerMsg; i++ {
-		err = msg.AddBlockLocatorHash(locatorHash)
-	}
-	if err == nil {
-		t.Errorf("AddBlockLocatorHash: expected error on too many " +
-			"block locator hashes not received")
 	}
 }
 
@@ -80,15 +66,13 @@ func TestBlockLocatorWire(t *testing.T) {
 	}
 
 	// MsgBlockLocator message with no block locators.
-	noLocators := NewMsgBlockLocator()
+	noLocators := NewMsgBlockLocator([]*daghash.Hash{})
 	noLocatorsEncoded := []byte{
 		0x00, // Varint for number of block locator hashes
 	}
 
 	// MsgBlockLocator message with multiple block locators.
-	multiLocators := NewMsgBlockLocator()
-	multiLocators.AddBlockLocatorHash(hashLocator2)
-	multiLocators.AddBlockLocatorHash(hashLocator)
+	multiLocators := NewMsgBlockLocator([]*daghash.Hash{hashLocator2, hashLocator})
 	multiLocatorsEncoded := []byte{
 		0x02, // Varint for number of block locator hashes
 		0xe0, 0xde, 0x06, 0x44, 0x68, 0x13, 0x2c, 0x63,
@@ -177,9 +161,7 @@ func TestBlockLocatorWireErrors(t *testing.T) {
 	}
 
 	// MsgBlockLocator message with multiple block locators and a low hash.
-	baseGetBlocks := NewMsgBlockLocator()
-	baseGetBlocks.AddBlockLocatorHash(hashLocator2)
-	baseGetBlocks.AddBlockLocatorHash(hashLocator)
+	baseGetBlocks := NewMsgBlockLocator([]*daghash.Hash{hashLocator2, hashLocator})
 	baseGetBlocksEncoded := []byte{
 		0x02, // Varint for number of block locator hashes
 		0xe0, 0xde, 0x06, 0x44, 0x68, 0x13, 0x2c, 0x63,
@@ -194,10 +176,11 @@ func TestBlockLocatorWireErrors(t *testing.T) {
 
 	// Message that forces an error by having more than the max allowed
 	// block locator hashes.
-	maxGetBlocks := NewMsgBlockLocator()
+	maxLocaterHashesSlice := make([]*daghash.Hash, MaxBlockLocatorsPerMsg)
 	for i := 0; i < MaxBlockLocatorsPerMsg; i++ {
-		maxGetBlocks.AddBlockLocatorHash(mainnetGenesisHash)
+		maxLocaterHashesSlice[i] = mainnetGenesisHash
 	}
+	maxGetBlocks := NewMsgBlockLocator(maxLocaterHashesSlice)
 	maxGetBlocks.BlockLocatorHashes = append(maxGetBlocks.BlockLocatorHashes,
 		mainnetGenesisHash)
 	maxGetBlocksEncoded := []byte{

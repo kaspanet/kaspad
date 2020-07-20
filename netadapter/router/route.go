@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	maxMessages = 100
+	defaultMaxMessages = 100
 )
 
 // ErrTimeout signifies that one of the router functions had a timeout.
@@ -32,8 +32,12 @@ type Route struct {
 
 // NewRoute create a new Route
 func NewRoute() *Route {
+	return newRouteWithCapacity(defaultMaxMessages)
+}
+
+func newRouteWithCapacity(capacity int) *Route {
 	return &Route{
-		channel: make(chan wire.Message, maxMessages),
+		channel: make(chan wire.Message, capacity),
 		closed:  false,
 	}
 }
@@ -46,31 +50,11 @@ func (r *Route) Enqueue(message wire.Message) (isOpen bool) {
 	if r.closed {
 		return false
 	}
-	if len(r.channel) == maxMessages {
+	if len(r.channel) == defaultMaxMessages {
 		r.onCapacityReachedHandler()
 	}
 	r.channel <- message
 	return true
-}
-
-// EnqueueWithTimeout attempts to enqueue a message to the Route
-// and returns an error if the given timeout expires first.
-func (r *Route) EnqueueWithTimeout(message wire.Message, timeout time.Duration) (isOpen bool, err error) {
-	r.closeLock.Lock()
-	defer r.closeLock.Unlock()
-
-	if r.closed {
-		return false, nil
-	}
-	if len(r.channel) == maxMessages {
-		r.onCapacityReachedHandler()
-	}
-	select {
-	case <-time.After(timeout):
-		return false, errors.Wrapf(ErrTimeout, "got timeout after %s", timeout)
-	case r.channel <- message:
-		return true, nil
-	}
 }
 
 // Dequeue dequeues a message from the Route
