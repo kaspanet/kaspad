@@ -41,6 +41,5 @@ func (s *SharedRequestedTransactions) addIfNotExists(txID *daghash.TxID) (exists
 func NewSharedRequestedTransactions() *SharedRequestedTransactions {
 	return &SharedRequestedTransactions{
 		transactions: make(map[daghash.TxID]struct{}),
-		Mutex:        sync.Mutex{},
 	}
 }
