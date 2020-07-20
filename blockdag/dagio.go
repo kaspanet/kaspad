@@ -164,7 +164,7 @@ func saveDAGState(dbContext dbaccess.Context, state *dagState) error {
 // createDAGState initializes the DAG state to the
 // genesis block and the node's local subnetwork id.
 func (dag *BlockDAG) createDAGState(localSubnetworkID *subnetworkid.SubnetworkID) error {
-	return saveDAGState(dbaccess.NoTx(), &dagState{
+	return saveDAGState(dag.databaseContext, &dagState{
 		TipHashes:         []*daghash.Hash{dag.Params.GenesisHash},
 		LastFinalityPoint: dag.Params.GenesisHash,
 		LocalSubnetworkID: localSubnetworkID,
@@ -177,7 +177,7 @@ func (dag *BlockDAG) createDAGState(localSubnetworkID *subnetworkid.SubnetworkID
 func (dag *BlockDAG) initDAGState() error {
 	// Fetch the stored DAG state from the database. If it doesn't exist,
 	// it means that kaspad is running for the first time.
-	serializedDAGState, err := dbaccess.FetchDAGState(dbaccess.NoTx())
+	serializedDAGState, err := dbaccess.FetchDAGState(dag.databaseContext)
 	if dbaccess.IsNotFoundError(err) {
 		// Initialize the database and the DAG state to the genesis block.
 		return dag.createDAGState(dag.subnetworkID)
@@ -209,13 +209,13 @@ func (dag *BlockDAG) initDAGState() error {
 	}
 
 	log.Debugf("Loading reachability data...")
-	err = dag.reachabilityTree.init(dbaccess.NoTx())
+	err = dag.reachabilityTree.init(dag.databaseContext)
 	if err != nil {
 		return err
 	}
 
 	log.Debugf("Loading multiset data...")
-	err = dag.multisetStore.init(dbaccess.NoTx())
+	err = dag.multisetStore.init(dag.databaseContext)
 	if err != nil {
 		return err
 	}
@@ -263,7 +263,7 @@ func (dag *BlockDAG) validateLocalSubnetworkID(state *dagState) error {
 }
 
 func (dag *BlockDAG) initBlockIndex() (unprocessedBlockNodes []*blockNode, err error) {
-	blockIndexCursor, err := dbaccess.BlockIndexCursor(dbaccess.NoTx())
+	blockIndexCursor, err := dbaccess.BlockIndexCursor(dag.databaseContext)
 	if err != nil {
 		return nil, err
 	}
@@ -317,7 +317,7 @@ func (dag *BlockDAG) initBlockIndex() (unprocessedBlockNodes []*blockNode, err e
 
 func (dag *BlockDAG) initUTXOSet() (fullUTXOCollection utxoCollection, err error) {
 	fullUTXOCollection = make(utxoCollection)
-	cursor, err := dbaccess.UTXOSetCursor(dbaccess.NoTx())
+	cursor, err := dbaccess.UTXOSetCursor(dag.databaseContext)
 	if err != nil {
 		return nil, err
 	}
@@ -368,7 +368,7 @@ func (dag *BlockDAG) processUnprocessedBlockNodes(unprocessedBlockNodes []*block
 	for _, node := range unprocessedBlockNodes {
 		// Check to see if the block exists in the block DB. If it
 		// doesn't, the database has certainly been corrupted.
-		blockExists, err := dbaccess.HasBlock(dbaccess.NoTx(), node.hash)
+		blockExists, err := dbaccess.HasBlock(dag.databaseContext, node.hash)
 		if err != nil {
 			return errors.Wrapf(err, "HasBlock "+
 				"for block %s failed: %s", node.hash, err)
@@ -379,7 +379,7 @@ func (dag *BlockDAG) processUnprocessedBlockNodes(unprocessedBlockNodes []*block
 		}
 
 		// Attempt to accept the block.
-		block, err := fetchBlockByHash(dbaccess.NoTx(), node.hash)
+		block, err := fetchBlockByHash(dag.databaseContext, node.hash)
 		if err != nil {
 			return err
 		}
@@ -610,7 +610,7 @@ func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
 		return nil, ErrNotInDAG(str)
 	}
 
-	block, err := fetchBlockByHash(dbaccess.NoTx(), node.hash)
+	block, err := fetchBlockByHash(dag.databaseContext, node.hash)
 	if err != nil {
 		return nil, err
 	}
@@ -639,7 +639,7 @@ func (dag *BlockDAG) BlockHashesFrom(lowHash *daghash.Hash, limit int) ([]*dagha
 	}
 
 	key := blockIndexKey(lowHash, blueScore)
-	cursor, err := dbaccess.BlockIndexCursorFrom(dbaccess.NoTx(), key)
+	cursor, err := dbaccess.BlockIndexCursorFrom(dag.databaseContext, key)
 	if dbaccess.IsNotFoundError(err) {
 		return nil, errors.Wrapf(err, "block %s not in block index", lowHash)
 	}

@@ -5,11 +5,6 @@ package blockdag
 import (
 	"compress/bzip2"
 	"encoding/binary"
-	"github.com/kaspanet/kaspad/database/ffldb/ldb"
-	"github.com/kaspanet/kaspad/dbaccess"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/pkg/errors"
-	"github.com/syndtr/goleveldb/leveldb/opt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -18,6 +13,12 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/kaspanet/kaspad/database/ffldb/ldb"
+	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/pkg/errors"
+	"github.com/syndtr/goleveldb/leveldb/opt"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
@@ -75,7 +76,7 @@ func DAGSetup(dbName string, openDb bool, config Config) (*BlockDAG, func(), err
 
 		dbPath := filepath.Join(tmpDir, dbName)
 		_ = os.RemoveAll(dbPath)
-		err = dbaccess.Open(dbPath)
+		databaseContext, err := dbaccess.New(dbPath)
 		if err != nil {
 			return nil, nil, errors.Errorf("error creating db: %s", err)
 		}
@@ -85,7 +86,7 @@ func DAGSetup(dbName string, openDb bool, config Config) (*BlockDAG, func(), err
 		teardown = func() {
 			spawnWaitGroup.Wait()
 			spawn = realSpawn
-			dbaccess.Close()
+			databaseContext.Close()
 			ldb.Options = originalLDBOptions
 			os.RemoveAll(dbPath)
 		}

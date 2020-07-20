@@ -3,6 +3,7 @@ package indexers
 import (
 	"bytes"
 	"encoding/gob"
+
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util"
@@ -14,7 +15,8 @@ import (
 // it stores a mapping between a block's hash and the set of transactions that the
 // block accepts among its blue blocks.
 type AcceptanceIndex struct {
-	dag *blockdag.BlockDAG
+	dag             *blockdag.BlockDAG
+	databaseContext *dbaccess.DatabaseContext
 }
 
 // Ensure the AcceptanceIndex type implements the Indexer interface.
@@ -31,8 +33,8 @@ func NewAcceptanceIndex() *AcceptanceIndex {
 }
 
 // DropAcceptanceIndex drops the acceptance index.
-func DropAcceptanceIndex() error {
-	dbTx, err := dbaccess.NewTx()
+func DropAcceptanceIndex(databaseContext *dbaccess.DatabaseContext) error {
+	dbTx, err := databaseContext.NewTx()
 	if err != nil {
 		return err
 	}
@@ -49,8 +51,9 @@ func DropAcceptanceIndex() error {
 // Init initializes the hash-based acceptance index.
 //
 // This is part of the Indexer interface.
-func (idx *AcceptanceIndex) Init(dag *blockdag.BlockDAG) error {
+func (idx *AcceptanceIndex) Init(dag *blockdag.BlockDAG, databaseContext *dbaccess.DatabaseContext) error {
 	idx.dag = dag
+	idx.databaseContext = databaseContext
 	return idx.recover()
 }
 
@@ -60,7 +63,7 @@ func (idx *AcceptanceIndex) Init(dag *blockdag.BlockDAG) error {
 // This is part of the Indexer interface.
 func (idx *AcceptanceIndex) recover() error {
 	return idx.dag.ForEachHash(func(hash daghash.Hash) error {
-		dbTx, err := dbaccess.NewTx()
+		dbTx, err := idx.databaseContext.NewTx()
 		if err != nil {
 			return err
 		}
@@ -102,7 +105,7 @@ func (idx *AcceptanceIndex) ConnectBlock(dbContext *dbaccess.TxContext, blockHas
 // TxsAcceptanceData returns the acceptance data of all the transactions that
 // were accepted by the block with hash blockHash.
 func (idx *AcceptanceIndex) TxsAcceptanceData(blockHash *daghash.Hash) (blockdag.MultiBlockTxsAcceptanceData, error) {
-	serializedTxsAcceptanceData, err := dbaccess.FetchAcceptanceData(dbaccess.NoTx(), blockHash)
+	serializedTxsAcceptanceData, err := dbaccess.FetchAcceptanceData(idx.databaseContext, blockHash)
 	if err != nil {
 		return nil, err
 	}

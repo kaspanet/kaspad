@@ -18,6 +18,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/kaspanet/kaspad/dbaccess"
+
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -1462,14 +1464,14 @@ out:
 // kaspa network type specified by dagParams. Use start to begin accepting
 // connections from peers.
 func NewServer(cfg *config.Config, listenAddrs []string, dagParams *dagconfig.Params, interrupt <-chan struct{},
-	notifyNewTransactions func(txns []*mempool.TxDesc)) (*Server, error) {
+	notifyNewTransactions func(txns []*mempool.TxDesc), databaseContext *dbaccess.DatabaseContext) (*Server, error) {
 
 	services := defaultServices
 	if cfg.NoPeerBloomFilters {
 		services &^= wire.SFNodeBloom
 	}
 
-	addressManager := addrmgr.New(cfg)
+	addressManager := addrmgr.New(cfg, databaseContext)
 
 	var listeners []net.Listener
 	var nat serverutils.NAT

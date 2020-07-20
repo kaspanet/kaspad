@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
+	"io"
+
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/coinbasepayload"
@@ -12,7 +14,6 @@ import (
 	"github.com/kaspanet/kaspad/util/txsort"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
-	"io"
 )
 
 // compactFeeData is a specialized data type to store a compact list of fees
@@ -79,7 +80,7 @@ func (node *blockNode) getBluesFeeData(dag *BlockDAG) (map[daghash.Hash]compactF
 	bluesFeeData := make(map[daghash.Hash]compactFeeData)
 
 	for _, blueBlock := range node.blues {
-		feeData, err := dbaccess.FetchFeeData(dbaccess.NoTx(), blueBlock.hash)
+		feeData, err := dbaccess.FetchFeeData(node.databaseContext, blueBlock.hash)
 		if err != nil {
 			return nil, err
 		}

@@ -22,9 +22,9 @@ var _ blockdag.IndexManager = (*Manager)(nil)
 
 // Init initializes the enabled indexes.
 // This is part of the blockdag.IndexManager interface.
-func (m *Manager) Init(dag *blockdag.BlockDAG) error {
+func (m *Manager) Init(dag *blockdag.BlockDAG, databaseContext *dbaccess.DatabaseContext) error {
 	for _, indexer := range m.enabledIndexes {
-		if err := indexer.Init(dag); err != nil {
+		if err := indexer.Init(dag, databaseContext); err != nil {
 			return err
 		}
 	}
