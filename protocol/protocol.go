@@ -66,6 +66,7 @@ func (m *Manager) startFlows(router *routerpkg.Router) error {
 	m.addBlockRelayFlows(router, &stopped, stop, peer)
 	m.addPingFlows(router, &stopped, stop, peer)
 	m.addIBDFlows(router, &stopped, stop, peer)
+	m.addTransactionRelayFlow(router, &stopped, stop)
 
 	err = <-stop
 	return err
