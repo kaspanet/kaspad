@@ -37,7 +37,6 @@ import (
 	"github.com/kaspanet/kaspad/mining"
 	"github.com/kaspanet/kaspad/peer"
 	"github.com/kaspanet/kaspad/rpcmodel"
-	"github.com/kaspanet/kaspad/server/serverutils"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/fs"
@@ -803,7 +802,7 @@ func setupRPCListeners(appCfg *config.Config) ([]net.Listener, error) {
 		// Generate the TLS cert and key file if both don't already
 		// exist.
 		if !fs.FileExists(appCfg.RPCKey) && !fs.FileExists(appCfg.RPCCert) {
-			err := serverutils.GenCertPair(appCfg.RPCCert, appCfg.RPCKey)
+			err := GenCertPair(appCfg.RPCCert, appCfg.RPCKey)
 			if err != nil {
 				return nil, err
 			}

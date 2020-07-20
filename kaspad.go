@@ -21,7 +21,7 @@ import (
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/mining"
 	"github.com/kaspanet/kaspad/protocol"
-	"github.com/kaspanet/kaspad/server/rpc"
+	"github.com/kaspanet/kaspad/rpc"
 	"github.com/kaspanet/kaspad/signal"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"

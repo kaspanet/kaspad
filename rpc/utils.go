@@ -1,4 +1,4 @@
-package serverutils
+package rpc
 
 import (
 	"io/ioutil"
