@@ -59,8 +59,8 @@ func requestInvTransactions(outgoingRoute *router.Route, txPool *mempool.TxPool,
 	sharedRequestedTransactions *SharedRequestedTransactions, inv *wire.MsgInvTransaction) (requestedIDs []*daghash.TxID,
 	shouldStop bool, err error) {
 
-	idsToRequest := make([]*daghash.TxID, 0, len(inv.TXIDs))
-	for _, txID := range inv.TXIDs {
+	idsToRequest := make([]*daghash.TxID, 0, len(inv.TxIDS))
+	for _, txID := range inv.TxIDS {
 		if isKnownTransaction(txPool, dag, txID) {
 			continue
 		}
