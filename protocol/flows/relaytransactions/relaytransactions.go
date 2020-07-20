@@ -218,6 +218,7 @@ func receiveTransactions(requestedTransactions []*daghash.TxID, incomingRoute *r
 		if err != nil {
 			panic(err)
 		}
+		// TODO(libp2p) Notify transactionsAcceptedToMempool to RPC
 	}
 	return false, nil
 }

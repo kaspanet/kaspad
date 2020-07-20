@@ -17,6 +17,7 @@ func (m *Manager) OnNewBlock(block *util.Block) error {
 	if err != nil {
 		return err
 	}
+	// TODO(libp2p) Notify transactionsAcceptedToMempool to RPC
 
 	m.updateTransactionsToRebroadcast(block)
 
