@@ -34,8 +34,6 @@ func requestSelectedTips() {
 func RequestSelectedTip(incomingRoute *router.Route,
 	outgoingRoute *router.Route, peer *peerpkg.Peer, dag *blockdag.BlockDAG) error {
 	for {
-		peer.WaitForSelectedTipRequests()
-
 		shouldStop, err := runSelectedTipRequest(incomingRoute, outgoingRoute, peer, dag)
 		if err != nil {
 			return err
@@ -49,6 +47,7 @@ func RequestSelectedTip(incomingRoute *router.Route,
 func runSelectedTipRequest(incomingRoute *router.Route, outgoingRoute *router.Route,
 	peer *peerpkg.Peer, dag *blockdag.BlockDAG) (shouldStop bool, err error) {
 
+	peer.WaitForSelectedTipRequests()
 	defer peer.FinishRequestingSelectedTip()
 
 	shouldStop = requestSelectedTip(outgoingRoute)
