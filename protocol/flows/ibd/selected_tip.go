@@ -57,7 +57,7 @@ func runSelectedTipRequest(incomingRoute *router.Route, outgoingRoute *router.Ro
 
 	peerSelectedTipHash, shouldStop, err := receiveSelectedTip(incomingRoute)
 	if err != nil {
-		return true, err
+		return false, err
 	}
 	if shouldStop {
 		return true, nil
@@ -77,7 +77,7 @@ func requestSelectedTip(outgoingRoute *router.Route) (shouldStop bool) {
 func receiveSelectedTip(incomingRoute *router.Route) (selectedTipHash *daghash.Hash, shouldStop bool, err error) {
 	message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
-		return nil, true, err
+		return nil, false, err
 	}
 	if !isOpen {
 		return nil, true, nil

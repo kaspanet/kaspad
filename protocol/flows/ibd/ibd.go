@@ -79,20 +79,20 @@ func runIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 	peerSelectedTipHash := peer.SelectedTipHash()
 	highestSharedBlockHash, shouldStop, err := findHighestSharedBlockHash(incomingRoute, outgoingRoute, dag, peerSelectedTipHash)
 	if err != nil {
-		return true, err
+		return false, err
 	}
 	if shouldStop {
 		return true, nil
 	}
 	if dag.IsKnownFinalizedBlock(highestSharedBlockHash) {
-		return true, protocolerrors.Errorf(false, "cannot initiate "+
+		return false, protocolerrors.Errorf(false, "cannot initiate "+
 			"IBD with peer %s because the highest shared chain block (%s) is "+
 			"below the finality point", peer, highestSharedBlockHash)
 	}
 
 	shouldStop, err = downloadBlocks(incomingRoute, outgoingRoute, dag, highestSharedBlockHash, peerSelectedTipHash)
 	if err != nil {
-		return true, err
+		return false, err
 	}
 	return shouldStop, nil
 }
@@ -111,7 +111,7 @@ func findHighestSharedBlockHash(incomingRoute *router.Route, outgoingRoute *rout
 
 		blockLocatorHashes, shouldStop, err := receiveBlockLocator(incomingRoute)
 		if err != nil {
-			return nil, true, err
+			return nil, false, err
 		}
 		if shouldStop {
 			return nil, true, nil
@@ -142,14 +142,14 @@ func receiveBlockLocator(incomingRoute *router.Route) (blockLocatorHashes []*dag
 
 	message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
-		return nil, true, err
+		return nil, false, err
 	}
 	if !isOpen {
 		return nil, true, nil
 	}
 	msgBlockLocator, ok := message.(*wire.MsgBlockLocator)
 	if !ok {
-		return nil, true,
+		return nil, false,
 			protocolerrors.Errorf(true, "received unexpected message type. "+
 				"expected: MsgBlockLocator, got: %s", message.Command())
 	}
@@ -167,14 +167,14 @@ func downloadBlocks(incomingRoute *router.Route, outgoingRoute *router.Route,
 	for {
 		msgIBDBlock, shouldStop, err := receiveIBDBlock(incomingRoute)
 		if err != nil {
-			return true, err
+			return false, err
 		}
 		if shouldStop {
 			return true, nil
 		}
 		shouldStop, err = processIBDBlock(dag, msgIBDBlock)
 		if err != nil {
-			return true, err
+			return false, err
 		}
 		if shouldStop {
 			return true, nil
@@ -196,14 +196,14 @@ func sendGetBlocks(outgoingRoute *router.Route, highestSharedBlockHash *daghash.
 func receiveIBDBlock(incomingRoute *router.Route) (msgIBDBlock *wire.MsgIBDBlock, shouldStop bool, err error) {
 	message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
-		return nil, true, err
+		return nil, false, err
 	}
 	if !isOpen {
 		return nil, true, nil
 	}
 	msgIBDBlock, ok := message.(*wire.MsgIBDBlock)
 	if !ok {
-		return nil, true,
+		return nil, false,
 			protocolerrors.Errorf(true, "received unexpected message type. "+
 				"expected: MsgIBDBlock, got: %s", message.Command())
 	}
@@ -217,10 +217,10 @@ func processIBDBlock(dag *blockdag.BlockDAG, msgIBDBlock *wire.MsgIBDBlock) (sho
 	}
 	isOrphan, isDelayed, err := dag.ProcessBlock(block, blockdag.BFNone)
 	if err != nil {
-		return true, err
+		return false, err
 	}
 	if isOrphan {
-		return true, protocolerrors.Errorf(true, "received orphan block %s "+
+		return false, protocolerrors.Errorf(true, "received orphan block %s "+
 			"during IBD", block.Hash())
 	}
 	if isDelayed {
