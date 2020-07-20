@@ -6,6 +6,7 @@ import (
 
 	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/netadapter"
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/flows/ibd"
@@ -17,7 +18,7 @@ import (
 
 // HandleHandshake sets up the handshake protocol - It sends a version message and waits for an incoming
 // version message, as well as a verack for the sent version
-func HandleHandshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter,
+func HandleHandshake(cfg *config.Config, router *routerpkg.Router, netAdapter *netadapter.NetAdapter,
 	dag *blockdag.BlockDAG, addressManager *addrmgr.AddrManager) (peer *peerpkg.Peer, closed bool, err error) {
 
 	receiveVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVersion})
@@ -39,6 +40,8 @@ func HandleHandshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter
 	errChanUsed := uint32(0)
 	errChan := make(chan error)
 
+	peer = peerpkg.New()
+
 	var peerAddress *wire.NetAddress
 	spawn("HandleHandshake-ReceiveVersion", func() {
 		defer wg.Done()
@@ -57,7 +60,7 @@ func HandleHandshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter
 
 	spawn("HandleHandshake-SendVersion", func() {
 		defer wg.Done()
-		closed, err := SendVersion(sendVersionRoute, router.OutgoingRoute(), netAdapter, dag)
+		closed, err := SendVersion(cfg, sendVersionRoute, router.OutgoingRoute(), netAdapter, dag)
 		if err != nil {
 			log.Errorf("error from SendVersion: %s", err)
 		}
@@ -78,7 +81,6 @@ func HandleHandshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter
 	case <-locks.ReceiveFromChanWhenDone(func() { wg.Wait() }):
 	}
 
-	peer = peerpkg.New()
 	err = peerpkg.AddToReadyPeers(peer)
 	if err != nil {
 		if errors.Is(err, peerpkg.ErrPeerWithSameIDExists) {

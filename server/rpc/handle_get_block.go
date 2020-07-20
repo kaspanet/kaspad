@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/hex"
-	"github.com/kaspanet/kaspad/config"
+
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -61,7 +61,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 				Message: "invalid subnetwork string",
 			}
 		}
-		nodeSubnetworkID := config.ActiveConfig().SubnetworkID
+		nodeSubnetworkID := s.appCfg.SubnetworkID
 
 		if requestSubnetworkID != nil {
 			if nodeSubnetworkID != nil {

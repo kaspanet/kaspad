@@ -1,7 +1,6 @@
 package rpc
 
 import (
-	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/version"
 )
@@ -14,11 +13,11 @@ func handleGetInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (inter
 		ProtocolVersion: int32(maxProtocolVersion),
 		Blocks:          s.cfg.DAG.BlockCount(),
 		Connections:     s.cfg.ConnMgr.ConnectedCount(),
-		Proxy:           config.ActiveConfig().Proxy,
+		Proxy:           s.appCfg.Proxy,
 		Difficulty:      getDifficultyRatio(s.cfg.DAG.CurrentBits(), s.cfg.DAGParams),
-		Testnet:         config.ActiveConfig().Testnet,
-		Devnet:          config.ActiveConfig().Devnet,
-		RelayFee:        config.ActiveConfig().MinRelayTxFee.ToKAS(),
+		Testnet:         s.appCfg.Testnet,
+		Devnet:          s.appCfg.Devnet,
+		RelayFee:        s.appCfg.MinRelayTxFee.ToKAS(),
 	}
 
 	return ret, nil

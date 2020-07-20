@@ -6,16 +6,16 @@ package addrmgr
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/dbaccess"
-	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"io/ioutil"
 	"net"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 
 	"github.com/pkg/errors"
 
@@ -111,6 +111,9 @@ func lookupFuncForTest(host string) ([]net.IP, error) {
 func newAddrManagerForTest(t *testing.T, testName string,
 	localSubnetworkID *subnetworkid.SubnetworkID) (addressManager *AddrManager, teardown func()) {
 
+	cfg := config.DefaultConfig()
+	cfg.SubnetworkID = localSubnetworkID
+
 	dbPath, err := ioutil.TempDir("", testName)
 	if err != nil {
 		t.Fatalf("Error creating temporary directory: %s", err)
@@ -121,7 +124,7 @@ func newAddrManagerForTest(t *testing.T, testName string,
 		t.Fatalf("error creating db: %s", err)
 	}
 
-	addressManager = New(lookupFuncForTest, localSubnetworkID)
+	addressManager = New(cfg)
 
 	return addressManager, func() {
 		err := dbaccess.Close()
@@ -145,15 +148,6 @@ func TestStartStop(t *testing.T) {
 }
 
 func TestAddAddressByIP(t *testing.T) {
-	originalActiveCfg := config.ActiveConfig()
-	config.SetActiveConfig(&config.Config{
-		Flags: &config.Flags{
-			NetworkFlags: config.NetworkFlags{
-				ActiveNetParams: &dagconfig.SimnetParams},
-		},
-	})
-	defer config.SetActiveConfig(originalActiveCfg)
-
 	fmtErr := errors.Errorf("")
 	addrErr := &net.AddrError{}
 	var tests = []struct {
@@ -199,15 +193,6 @@ func TestAddAddressByIP(t *testing.T) {
 }
 
 func TestAddLocalAddress(t *testing.T) {
-	originalActiveCfg := config.ActiveConfig()
-	config.SetActiveConfig(&config.Config{
-		Flags: &config.Flags{
-			NetworkFlags: config.NetworkFlags{
-				ActiveNetParams: &dagconfig.SimnetParams},
-		},
-	})
-	defer config.SetActiveConfig(originalActiveCfg)
-
 	var tests = []struct {
 		address  wire.NetAddress
 		priority AddressPriority
@@ -262,15 +247,6 @@ func TestAddLocalAddress(t *testing.T) {
 }
 
 func TestAttempt(t *testing.T) {
-	originalActiveCfg := config.ActiveConfig()
-	config.SetActiveConfig(&config.Config{
-		Flags: &config.Flags{
-			NetworkFlags: config.NetworkFlags{
-				ActiveNetParams: &dagconfig.SimnetParams},
-		},
-	})
-	defer config.SetActiveConfig(originalActiveCfg)
-
 	amgr, teardown := newAddrManagerForTest(t, "TestAttempt", nil)
 	defer teardown()
 
@@ -294,15 +270,6 @@ func TestAttempt(t *testing.T) {
 }
 
 func TestConnected(t *testing.T) {
-	originalActiveCfg := config.ActiveConfig()
-	config.SetActiveConfig(&config.Config{
-		Flags: &config.Flags{
-			NetworkFlags: config.NetworkFlags{
-				ActiveNetParams: &dagconfig.SimnetParams},
-		},
-	})
-	defer config.SetActiveConfig(originalActiveCfg)
-
 	amgr, teardown := newAddrManagerForTest(t, "TestConnected", nil)
 	defer teardown()
 
@@ -324,15 +291,6 @@ func TestConnected(t *testing.T) {
 }
 
 func TestNeedMoreAddresses(t *testing.T) {
-	originalActiveCfg := config.ActiveConfig()
-	config.SetActiveConfig(&config.Config{
-		Flags: &config.Flags{
-			NetworkFlags: config.NetworkFlags{
-				ActiveNetParams: &dagconfig.SimnetParams},
-		},
-	})
-	defer config.SetActiveConfig(originalActiveCfg)
-
 	amgr, teardown := newAddrManagerForTest(t, "TestNeedMoreAddresses", nil)
 	defer teardown()
 	addrsToAdd := 1500
@@ -366,15 +324,6 @@ func TestNeedMoreAddresses(t *testing.T) {
 }
 
 func TestGood(t *testing.T) {
-	originalActiveCfg := config.ActiveConfig()
-	config.SetActiveConfig(&config.Config{
-		Flags: &config.Flags{
-			NetworkFlags: config.NetworkFlags{
-				ActiveNetParams: &dagconfig.SimnetParams},
-		},
-	})
-	defer config.SetActiveConfig(originalActiveCfg)
-
 	amgr, teardown := newAddrManagerForTest(t, "TestGood", nil)
 	defer teardown()
 	addrsToAdd := 64 * 64
@@ -423,15 +372,6 @@ func TestGood(t *testing.T) {
 }
 
 func TestGoodChangeSubnetworkID(t *testing.T) {
-	originalActiveCfg := config.ActiveConfig()
-	config.SetActiveConfig(&config.Config{
-		Flags: &config.Flags{
-			NetworkFlags: config.NetworkFlags{
-				ActiveNetParams: &dagconfig.SimnetParams},
-		},
-	})
-	defer config.SetActiveConfig(originalActiveCfg)
-
 	amgr, teardown := newAddrManagerForTest(t, "TestGoodChangeSubnetworkID", nil)
 	defer teardown()
 	addr := wire.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
@@ -502,15 +442,6 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 }
 
 func TestGetAddress(t *testing.T) {
-	originalActiveCfg := config.ActiveConfig()
-	config.SetActiveConfig(&config.Config{
-		Flags: &config.Flags{
-			NetworkFlags: config.NetworkFlags{
-				ActiveNetParams: &dagconfig.SimnetParams},
-		},
-	})
-	defer config.SetActiveConfig(originalActiveCfg)
-
 	localSubnetworkID := &subnetworkid.SubnetworkID{0xff}
 	amgr, teardown := newAddrManagerForTest(t, "TestGetAddress", localSubnetworkID)
 	defer teardown()
@@ -584,15 +515,6 @@ func TestGetAddress(t *testing.T) {
 }
 
 func TestGetBestLocalAddress(t *testing.T) {
-	originalActiveCfg := config.ActiveConfig()
-	config.SetActiveConfig(&config.Config{
-		Flags: &config.Flags{
-			NetworkFlags: config.NetworkFlags{
-				ActiveNetParams: &dagconfig.SimnetParams},
-		},
-	})
-	defer config.SetActiveConfig(originalActiveCfg)
-
 	localAddrs := []wire.NetAddress{
 		{IP: net.ParseIP("192.168.0.100")},
 		{IP: net.ParseIP("::1")},

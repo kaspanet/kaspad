@@ -2,12 +2,12 @@ package p2p
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/kaspanet/kaspad/addrmgr"
-	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/peer"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/wire"
-	"time"
 )
 
 // OnAddr is invoked when a peer receives an addr kaspa message and is
@@ -17,7 +17,7 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddresses) {
 	// helps prevent the network from becoming another public test network
 	// since it will not be able to learn about other peers that have not
 	// specifically been provided.
-	if config.ActiveConfig().Simnet {
+	if sp.AppCfg.Simnet {
 		return
 	}
 
@@ -32,9 +32,9 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddresses) {
 			peer.BanScoreMsgAddressesWithInvalidSubnetwork, 0,
 			fmt.Sprintf("got unexpected IncludeAllSubnetworks=true in [%s] command", msg.Command()))
 		return
-	} else if !msg.SubnetworkID.IsEqual(config.ActiveConfig().SubnetworkID) && msg.SubnetworkID != nil {
+	} else if !msg.SubnetworkID.IsEqual(sp.AppCfg.SubnetworkID) && msg.SubnetworkID != nil {
 		peerLog.Errorf("Only full nodes and %s subnetwork IDs are allowed in [%s] command, but got subnetwork ID %s from %s",
-			config.ActiveConfig().SubnetworkID, msg.Command(), msg.SubnetworkID, sp.Peer)
+			sp.AppCfg.SubnetworkID, msg.Command(), msg.SubnetworkID, sp.Peer)
 		sp.Disconnect()
 		return
 	}
