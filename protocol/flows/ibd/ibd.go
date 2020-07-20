@@ -224,7 +224,7 @@ func processIBDBlock(dag *blockdag.BlockDAG, msgIBDBlock *wire.MsgIBDBlock) (sho
 			"during IBD", block.Hash())
 	}
 	if isDelayed {
-		return false, protocolerrors.Errorf(true, "received delayed block %s "+
+		return false, protocolerrors.Errorf(false, "received delayed block %s "+
 			"during IBD", block.Hash())
 	}
 	return false, nil
