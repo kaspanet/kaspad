@@ -13,7 +13,7 @@ func handlePing(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 		return nil, internalRPCError("Not sending ping - failed to "+
 			"generate nonce: "+err.Error(), "")
 	}
-	s.cfg.ConnMgr.BroadcastMessage(wire.NewMsgPing(nonce))
+	s.protocol.BroadcastMessage(wire.NewMsgPing(nonce))
 
 	return nil, nil
 }

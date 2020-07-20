@@ -35,7 +35,7 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 
 	// Use 0 for the tag to represent local node.
 	tx := util.NewTx(&msgTx)
-	acceptedTxs, err := s.cfg.TxMemPool.ProcessTransaction(tx, false, 0)
+	acceptedTxs, err := s.txMempool.ProcessTransaction(tx, false, 0)
 	if err != nil {
 		// When the error is a rule error, it means the transaction was
 		// simply rejected as opposed to something actually going wrong,
@@ -64,7 +64,7 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 	// Also, since an error is being returned to the caller, ensure the
 	// transaction is removed from the memory pool.
 	if len(acceptedTxs) == 0 || !acceptedTxs[0].Tx.ID().IsEqual(tx.ID()) {
-		err := s.cfg.TxMemPool.RemoveTransaction(tx, true, true)
+		err := s.txMempool.RemoveTransaction(tx, true, true)
 		if err != nil {
 			return nil, err
 		}
@@ -77,7 +77,7 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 	// Generate and relay inventory vectors for all newly accepted
 	// transactions into the memory pool due to the original being
 	// accepted.
-	s.cfg.ConnMgr.RelayTransactions(acceptedTxs)
+	s.connectionManager.RelayTransactions(acceptedTxs)
 
 	// Notify both websocket and getBlockTemplate long poll clients of all
 	// newly accepted transactions.
@@ -87,7 +87,7 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 	// can be rebroadcast if they don't make their way into a block.
 	txD := acceptedTxs[0]
 	iv := wire.NewInvVect(wire.InvTypeTx, (*daghash.Hash)(txD.Tx.ID()))
-	s.cfg.ConnMgr.AddRebroadcastInventory(iv, txD)
+	s.connectionManager.AddRebroadcastInventory(iv, txD)
 
 	return tx.ID().String(), nil
 }

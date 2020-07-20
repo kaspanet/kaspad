@@ -35,8 +35,8 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	}
 	// TODO: This is racy. It should attempt to fetch it directly and check
 	// the error.
-	if includeMempool && s.cfg.TxMemPool.HaveTransaction(txID) {
-		tx, err := s.cfg.TxMemPool.FetchTransaction(txID)
+	if includeMempool && s.txMempool.HaveTransaction(txID) {
+		tx, err := s.txMempool.FetchTransaction(txID)
 		if err != nil {
 			return nil, rpcNoTxInfoError(txID)
 		}
@@ -57,14 +57,14 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 			return nil, internalRPCError(errStr, "")
 		}
 
-		selectedTipHash = s.cfg.DAG.SelectedTipHash().String()
+		selectedTipHash = s.dag.SelectedTipHash().String()
 		value = txOut.Value
 		scriptPubKey = txOut.ScriptPubKey
 		isCoinbase = mtx.IsCoinBase()
 		isInMempool = true
 	} else {
 		out := wire.Outpoint{TxID: *txID, Index: c.Vout}
-		entry, ok := s.cfg.DAG.GetUTXOEntry(out)
+		entry, ok := s.dag.GetUTXOEntry(out)
 		if !ok {
 			return nil, rpcNoTxInfoError(txID)
 		}
@@ -78,7 +78,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 			return nil, nil
 		}
 
-		utxoConfirmations, ok := s.cfg.DAG.UTXOConfirmations(&out)
+		utxoConfirmations, ok := s.dag.UTXOConfirmations(&out)
 		if !ok {
 			errStr := fmt.Sprintf("Cannot get confirmations for tx id %s, index %d",
 				out.TxID, out.Index)
@@ -86,7 +86,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		}
 		confirmations = &utxoConfirmations
 
-		selectedTipHash = s.cfg.DAG.SelectedTipHash().String()
+		selectedTipHash = s.dag.SelectedTipHash().String()
 		value = entry.Amount()
 		scriptPubKey = entry.ScriptPubKey()
 		isCoinbase = entry.IsCoinbase()
@@ -101,7 +101,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	// Ignore the error here since an error means the script couldn't parse
 	// and there is no additional information about it anyways.
 	scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddress(scriptPubKey,
-		s.cfg.DAG.Params)
+		s.dag.Params)
 	var address *string
 	if addr != nil {
 		address = pointers.String(addr.EncodeAddress())

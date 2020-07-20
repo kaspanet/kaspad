@@ -9,7 +9,7 @@ import (
 func handleRemoveManualNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*rpcmodel.RemoveManualNodeCmd)
 
-	addr, err := network.NormalizeAddress(c.Addr, s.cfg.DAG.Params.DefaultPort)
+	addr, err := network.NormalizeAddress(c.Addr, s.dag.Params.DefaultPort)
 	if err != nil {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCInvalidParameter,
@@ -17,7 +17,7 @@ func handleRemoveManualNode(s *Server, cmd interface{}, closeChan <-chan struct{
 		}
 	}
 
-	err = s.cfg.ConnMgr.RemoveByAddr(addr)
+	err = s.connectionManager.RemoveByAddr(addr)
 	if err != nil {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCInvalidParameter,

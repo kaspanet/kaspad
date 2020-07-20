@@ -7,7 +7,7 @@ import (
 
 // handleGetNetTotals implements the getNetTotals command.
 func handleGetNetTotals(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	totalBytesRecv, totalBytesSent := s.cfg.ConnMgr.NetTotals()
+	totalBytesRecv, totalBytesSent := s.connectionManager.NetTotals()
 	reply := &rpcmodel.GetNetTotalsResult{
 		TotalBytesRecv: totalBytesRecv,
 		TotalBytesSent: totalBytesSent,

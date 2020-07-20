@@ -21,7 +21,7 @@ func handleGetTopHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 			return nil, rpcDecodeHexError(*c.HighHash)
 		}
 	}
-	headers, err := s.cfg.DAG.GetTopHeaders(highHash, getTopHeadersMaxHeaders)
+	headers, err := s.dag.GetTopHeaders(highHash, getTopHeadersMaxHeaders)
 	if err != nil {
 		return nil, internalRPCError(err.Error(),
 			"Failed to get top headers")

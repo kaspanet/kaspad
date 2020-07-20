@@ -14,7 +14,7 @@ const (
 
 // handleGetChainFromBlock implements the getChainFromBlock command.
 func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	if s.cfg.AcceptanceIndex == nil {
+	if s.acceptanceIndex == nil {
 		return nil, &rpcmodel.RPCError{
 			Code: rpcmodel.ErrRPCNoAcceptanceIndex,
 			Message: "The acceptance index must be " +
@@ -33,12 +33,12 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 		}
 	}
 
-	s.cfg.DAG.RLock()
-	defer s.cfg.DAG.RUnlock()
+	s.dag.RLock()
+	defer s.dag.RUnlock()
 
 	// If startHash is not in the selected parent chain, there's nothing
 	// to do; return an error.
-	if startHash != nil && !s.cfg.DAG.IsInDAG(startHash) {
+	if startHash != nil && !s.dag.IsInDAG(startHash) {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCBlockNotFound,
 			Message: "Block not found in the DAG",
@@ -46,7 +46,7 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 	}
 
 	// Retrieve the selected parent chain.
-	removedChainHashes, addedChainHashes, err := s.cfg.DAG.SelectedParentChain(startHash)
+	removedChainHashes, addedChainHashes, err := s.dag.SelectedParentChain(startHash)
 	if err != nil {
 		return nil, err
 	}

@@ -32,7 +32,7 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 
 	// Add all transaction outputs to the transaction after performing
 	// some validity checks.
-	params := s.cfg.DAG.Params
+	params := s.dag.Params
 	for encodedAddr, amount := range c.Amounts {
 		// Ensure amount is in the valid range for monetary amounts.
 		if amount <= 0 || amount > util.MaxSompi {

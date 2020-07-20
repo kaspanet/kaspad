@@ -30,14 +30,14 @@ func handleDecodeScript(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 	// Ignore the error here since an error means the script couldn't parse
 	// and there is no additinal information about it anyways.
 	scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddress(script,
-		s.cfg.DAG.Params)
+		s.dag.Params)
 	var address *string
 	if addr != nil {
 		address = pointers.String(addr.EncodeAddress())
 	}
 
 	// Convert the script itself to a pay-to-script-hash address.
-	p2sh, err := util.NewAddressScriptHash(script, s.cfg.DAG.Params.Prefix)
+	p2sh, err := util.NewAddressScriptHash(script, s.dag.Params.Prefix)
 	if err != nil {
 		context := "Failed to convert script to pay-to-script-hash"
 		return nil, internalRPCError(err.Error(), context)

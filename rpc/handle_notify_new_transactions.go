@@ -34,7 +34,7 @@ func handleNotifyNewTransactions(wsc *wsClient, icmd interface{}) (interface{}, 
 	}
 
 	if isVerbose {
-		nodeSubnetworkID := wsc.server.cfg.DAG.SubnetworkID()
+		nodeSubnetworkID := wsc.server.dag.SubnetworkID()
 		if nodeSubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) && subnetworkID != nil {
 			return nil, &rpcmodel.RPCError{
 				Code:    rpcmodel.ErrRPCInvalidParameter,

@@ -22,7 +22,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	}
 
 	// Return an appropriate error if the block is known to be invalid
-	if s.cfg.DAG.IsKnownInvalid(hash) {
+	if s.dag.IsKnownInvalid(hash) {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCBlockInvalid,
 			Message: "Block is known to be invalid",
@@ -30,14 +30,14 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	}
 
 	// Return an appropriate error if the block is an orphan
-	if s.cfg.DAG.IsKnownOrphan(hash) {
+	if s.dag.IsKnownOrphan(hash) {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCOrphanBlock,
 			Message: "Block is an orphan",
 		}
 	}
 
-	block, err := s.cfg.DAG.BlockByHash(hash)
+	block, err := s.dag.BlockByHash(hash)
 	if err != nil {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCBlockNotFound,
@@ -61,7 +61,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 				Message: "invalid subnetwork string",
 			}
 		}
-		nodeSubnetworkID := s.appCfg.SubnetworkID
+		nodeSubnetworkID := s.cfg.SubnetworkID
 
 		if requestSubnetworkID != nil {
 			if nodeSubnetworkID != nil {
@@ -98,8 +98,8 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		return nil, internalRPCError(err.Error(), context)
 	}
 
-	s.cfg.DAG.RLock()
-	defer s.cfg.DAG.RUnlock()
+	s.dag.RLock()
+	defer s.dag.RUnlock()
 	blockReply, err := buildGetBlockVerboseResult(s, block, c.VerboseTx == nil || !*c.VerboseTx)
 	if err != nil {
 		return nil, err

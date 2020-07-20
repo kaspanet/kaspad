@@ -27,7 +27,7 @@ func handleGetHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (in
 			return nil, rpcDecodeHexError(c.HighHash)
 		}
 	}
-	headers, err := s.cfg.SyncMgr.AntiPastHeadersBetween(lowHash, highHash, getHeadersMaxHeaders)
+	headers, err := s.dag.AntiPastHeadersBetween(lowHash, highHash, getHeadersMaxHeaders)
 	if err != nil {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCMisc,

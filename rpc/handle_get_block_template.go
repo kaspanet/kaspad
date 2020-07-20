@@ -117,8 +117,8 @@ func handleGetBlockTemplateRequest(s *Server, request *rpcmodel.TemplateRequest,
 	// way to relay a found block or receive transactions to work on.
 	// However, allow this state when running in the regression test or
 	// simulation test mode.
-	if !(s.appCfg.RegressionTest || s.appCfg.Simnet) &&
-		s.cfg.ConnMgr.ConnectedCount() == 0 {
+	if !(s.cfg.RegressionTest || s.cfg.Simnet) &&
+		s.connectionManager.ConnectedCount() == 0 {
 
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCClientNotConnected,
@@ -126,7 +126,7 @@ func handleGetBlockTemplateRequest(s *Server, request *rpcmodel.TemplateRequest,
 		}
 	}
 
-	payAddr, err := util.DecodeAddress(request.PayAddress, s.cfg.DAG.Params.Prefix)
+	payAddr, err := util.DecodeAddress(request.PayAddress, s.dag.Params.Prefix)
 	if err != nil {
 		return nil, err
 	}
@@ -295,13 +295,13 @@ func handleGetBlockTemplateProposal(s *Server, request *rpcmodel.TemplateRequest
 	block := util.NewBlock(&msgBlock)
 
 	// Ensure the block is building from the expected parent blocks.
-	expectedParentHashes := s.cfg.DAG.TipHashes()
+	expectedParentHashes := s.dag.TipHashes()
 	parentHashes := block.MsgBlock().Header.ParentHashes
 	if !daghash.AreEqual(expectedParentHashes, parentHashes) {
 		return "bad-parentblk", nil
 	}
 
-	if err := s.cfg.DAG.CheckConnectBlockTemplate(block); err != nil {
+	if err := s.dag.CheckConnectBlockTemplate(block); err != nil {
 		if !errors.As(err, &blockdag.RuleError{}) {
 			errStr := fmt.Sprintf("Failed to process block proposal: %s", err)
 			log.Error(errStr)
@@ -524,7 +524,7 @@ func (state *gbtWorkState) templateUpdateChan(tipHashes []*daghash.Hash, lastGen
 //
 // This function MUST be called with the state locked.
 func (state *gbtWorkState) updateBlockTemplate(s *Server, payAddr util.Address) error {
-	generator := s.cfg.Generator
+	generator := s.blockTemplateGenerator
 	lastTxUpdate := generator.TxSource().LastUpdated()
 	if lastTxUpdate.IsZero() {
 		lastTxUpdate = mstime.Now()
@@ -536,7 +536,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, payAddr util.Address) 
 	// generated.
 	var msgBlock *wire.MsgBlock
 	var targetDifficulty string
-	tipHashes := s.cfg.DAG.TipHashes()
+	tipHashes := s.dag.TipHashes()
 	template := state.template
 	if template == nil || state.tipHashes == nil ||
 		!daghash.AreEqual(state.tipHashes, tipHashes) ||
@@ -575,7 +575,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, payAddr util.Address) 
 		// Get the minimum allowed timestamp for the block based on the
 		// median timestamp of the last several blocks per the DAG
 		// consensus rules.
-		minTimestamp := s.cfg.DAG.NextBlockMinimumTime()
+		minTimestamp := s.dag.NextBlockMinimumTime()
 
 		// Update work state to ensure another block template isn't
 		// generated until needed.
@@ -626,7 +626,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, payAddr util.Address) 
 //
 // This function MUST be called with the state locked.
 func (state *gbtWorkState) blockTemplateResult(s *Server) (*rpcmodel.GetBlockTemplateResult, error) {
-	dag := s.cfg.DAG
+	dag := s.dag
 	// Ensure the timestamps are still in valid range for the template.
 	// This should really only ever happen if the local clock is changed
 	// after the template is generated, but it's important to avoid serving
@@ -704,7 +704,7 @@ func (state *gbtWorkState) blockTemplateResult(s *Server) (*rpcmodel.GetBlockTem
 	// This is not a straight-up error because the choice of whether
 	// to mine or not is the responsibility of the miner rather
 	// than the node's.
-	isSynced := s.cfg.SyncMgr.IsSynced()
+	isSynced := isSynced(s)
 
 	reply := rpcmodel.GetBlockTemplateResult{
 		Bits:                 strconv.FormatInt(int64(header.Bits), 16),
@@ -769,4 +769,22 @@ func decodeLongPollID(longPollID string) ([]*daghash.Hash, int64, error) {
 	}
 
 	return parentHashes, lastGenerated, nil
+}
+
+// isSynced checks if the node is synced enough based upon its worldview.
+// This is used to determine if the node can support mining and requesting newly-mined blocks.
+// To do that, first it checks if the selected tip timestamp is not older than maxTipAge. If that's the case, it means
+// the node is synced since blocks' timestamps are not allowed to deviate too much into the future.
+// If that's not the case it checks the rate it added new blocks to the DAG recently. If it's faster than
+// blockRate * maxSyncRateDeviation it means the node is not synced, since when the node is synced it shouldn't add
+// blocks to the DAG faster than the block rate.
+func isSynced(s *Server) bool {
+	const maxTipAge = 5 * time.Minute
+	isCloseToCurrentTime := s.dag.Now().Sub(s.dag.SelectedTipHeader().Timestamp) <= maxTipAge
+	if isCloseToCurrentTime {
+		return true
+	}
+
+	const maxSyncRateDeviation = 1.05
+	return s.dag.IsSyncRateBelowThreshold(maxSyncRateDeviation)
 }

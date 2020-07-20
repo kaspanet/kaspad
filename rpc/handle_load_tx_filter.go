@@ -28,7 +28,7 @@ func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
 		}
 	}
 
-	params := wsc.server.cfg.DAG.Params
+	params := wsc.server.dag.Params
 
 	reloadedFilterData := func() bool {
 		wsc.Lock()

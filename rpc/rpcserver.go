@@ -12,6 +12,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/kaspanet/kaspad/addrmgr"
+	"github.com/kaspanet/kaspad/connmanager"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -22,10 +25,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/kaspanet/kaspad/util/mstime"
-
-	"github.com/kaspanet/kaspad/addrmgr"
-
 	"github.com/pkg/errors"
 
 	"github.com/btcsuite/websocket"
@@ -34,13 +33,9 @@ import (
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/mining"
-	"github.com/kaspanet/kaspad/peer"
 	"github.com/kaspanet/kaspad/rpcmodel"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/fs"
 	"github.com/kaspanet/kaspad/util/network"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 const (
@@ -158,10 +153,11 @@ func handleUnimplemented(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 
 // Server provides a concurrent safe RPC server to a kaspa node.
 type Server struct {
+	listeners              []net.Listener
 	started                int32
 	shutdown               int32
-	cfg                    rpcserverConfig
-	appCfg                 *config.Config
+	cfg                    *config.Config
+	startedTime            mstime.Time
 	authsha                [sha256.Size]byte
 	limitauthsha           [sha256.Size]byte
 	ntfnMgr                *wsNotificationManager
@@ -173,6 +169,13 @@ type Server struct {
 	helpCacher             *helpCacher
 	requestProcessShutdown chan struct{}
 	quit                   chan int
+
+	dag                    *blockdag.BlockDAG
+	txMempool              *mempool.TxPool
+	acceptanceIndex        *indexers.AcceptanceIndex
+	blockTemplateGenerator *mining.BlkTmplGenerator
+	connectionManager      *connmanager.ConnectionManager
+	addressManager         *addrmgr.AddrManager
 }
 
 // httpStatusLine returns a response Status-Line (RFC 2616 Section 6.1)
@@ -240,7 +243,7 @@ func (s *Server) Stop() error {
 		return nil
 	}
 	log.Warnf("RPC server shutting down")
-	for _, listener := range s.cfg.Listeners {
+	for _, listener := range s.listeners {
 		err := listener.Close()
 		if err != nil {
 			log.Errorf("Problem shutting down rpc: %s", err)
@@ -272,7 +275,7 @@ func (s *Server) NotifyNewTransactions(txns []*mempool.TxDesc) {
 
 		// Potentially notify any getBlockTemplate long poll clients
 		// about stale block templates due to the new transaction.
-		s.gbtWorkState.NotifyMempoolTx(s.cfg.TxMemPool.LastUpdated())
+		s.gbtWorkState.NotifyMempoolTx(s.txMempool.LastUpdated())
 	}
 }
 
@@ -281,9 +284,9 @@ func (s *Server) NotifyNewTransactions(txns []*mempool.TxDesc) {
 //
 // This function is safe for concurrent access.
 func (s *Server) limitConnections(w http.ResponseWriter, remoteAddr string) bool {
-	if int(atomic.LoadInt32(&s.numClients)+1) > s.appCfg.RPCMaxClients {
+	if int(atomic.LoadInt32(&s.numClients)+1) > s.cfg.RPCMaxClients {
 		log.Infof("Max RPC clients exceeded [%d] - "+
-			"disconnecting client %s", s.appCfg.RPCMaxClients,
+			"disconnecting client %s", s.cfg.RPCMaxClients,
 			remoteAddr)
 		http.Error(w, "503 Too busy. Try again later.",
 			http.StatusServiceUnavailable)
@@ -624,7 +627,7 @@ func (s *Server) Start() {
 		s.WebsocketHandler(ws, r.RemoteAddr, authenticated, isAdmin)
 	})
 
-	for _, listener := range s.cfg.Listeners {
+	for _, listener := range s.listeners {
 		s.wg.Add(1)
 		// Declaring this variable is necessary as it needs be declared in the same
 		// scope of the anonymous function below it.
@@ -638,156 +641,6 @@ func (s *Server) Start() {
 	}
 
 	s.ntfnMgr.Start()
-}
-
-// rpcserverPeer represents a peer for use with the RPC server.
-//
-// The interface contract requires that all of these methods are safe for
-// concurrent access.
-type rpcserverPeer interface {
-	// ToPeer returns the underlying peer instance.
-	ToPeer() *peer.Peer
-
-	// IsTxRelayDisabled returns whether or not the peer has disabled
-	// transaction relay.
-	IsTxRelayDisabled() bool
-
-	// BanScore returns the current integer value that represents how close
-	// the peer is to being banned.
-	BanScore() uint32
-
-	// FeeFilter returns the requested current minimum fee rate for which
-	// transactions should be announced.
-	FeeFilter() int64
-}
-
-// rpcserverConnManager represents a connection manager for use with the RPC
-// server.
-//
-// The interface contract requires that all of these methods are safe for
-// concurrent access.
-type rpcserverConnManager interface {
-	// Connect adds the provided address as a new outbound peer. The
-	// permanent flag indicates whether or not to make the peer persistent
-	// and reconnect if the connection is lost. Attempting to connect to an
-	// already existing peer will return an error.
-	Connect(addr string, permanent bool) error
-
-	// RemoveByID removes the peer associated with the provided id from the
-	// list of persistent peers. Attempting to remove an id that does not
-	// exist will return an error.
-	RemoveByID(id int32) error
-
-	// RemoveByAddr removes the peer associated with the provided address
-	// from the list of persistent peers. Attempting to remove an address
-	// that does not exist will return an error.
-	RemoveByAddr(addr string) error
-
-	// DisconnectByID disconnects the peer associated with the provided id.
-	// This applies to both inbound and outbound peers. Attempting to
-	// remove an id that does not exist will return an error.
-	DisconnectByID(id int32) error
-
-	// DisconnectByAddr disconnects the peer associated with the provided
-	// address. This applies to both inbound and outbound peers.
-	// Attempting to remove an address that does not exist will return an
-	// error.
-	DisconnectByAddr(addr string) error
-
-	// ConnectedCount returns the number of currently connected peers.
-	ConnectedCount() int32
-
-	// NetTotals returns the sum of all bytes received and sent across the
-	// network for all peers.
-	NetTotals() (uint64, uint64)
-
-	// ConnectedPeers returns an array consisting of all connected peers.
-	ConnectedPeers() []rpcserverPeer
-
-	// PersistentPeers returns an array consisting of all the persistent
-	// peers.
-	PersistentPeers() []rpcserverPeer
-
-	// BroadcastMessage sends the provided message to all currently
-	// connected peers.
-	BroadcastMessage(msg wire.Message)
-
-	// AddRebroadcastInventory adds the provided inventory to the list of
-	// inventories to be rebroadcast at random intervals until they show up
-	// in a block.
-	AddRebroadcastInventory(iv *wire.InvVect, data interface{})
-
-	// RelayTransactions generates and relays inventory vectors for all of
-	// the passed transactions to all connected peers.
-	RelayTransactions(txns []*mempool.TxDesc)
-}
-
-// rpcserverSyncManager represents a sync manager for use with the RPC server.
-//
-// The interface contract requires that all of these methods are safe for
-// concurrent access.
-type rpcserverSyncManager interface {
-	// IsSynced returns whether or not the sync manager believes the DAG
-	// is current as compared to the rest of the network.
-	IsSynced() bool
-
-	// SubmitBlock submits the provided block to the network after
-	// processing it locally.
-	SubmitBlock(block *util.Block, flags blockdag.BehaviorFlags) (bool, error)
-
-	// Pause pauses the sync manager until the returned channel is closed.
-	Pause() chan<- struct{}
-
-	// SyncPeerID returns the ID of the peer that is currently the peer being
-	// used to sync from or 0 if there is none.
-	SyncPeerID() int32
-
-	// AntiPastHeadersBetween returns the headers of the blocks between the
-	// lowHash's antiPast and highHash's antiPast, or up to
-	// wire.MaxBlockHeadersPerMsg block headers.
-	AntiPastHeadersBetween(lowHash, highHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error)
-}
-
-// rpcserverConfig is a descriptor containing the RPC server configuration.
-type rpcserverConfig struct {
-	// Listeners defines a slice of listeners for which the RPC server will
-	// take ownership of and accept connections. Since the RPC server takes
-	// ownership of these listeners, they will be closed when the RPC server
-	// is stopped.
-	Listeners []net.Listener
-
-	// StartupTime is the unix timestamp for when the server that is hosting
-	// the RPC server started.
-	StartupTime int64
-
-	// ConnMgr defines the connection manager for the RPC server to use. It
-	// provides the RPC server with a means to do things such as add,
-	// remove, connect, disconnect, and query peers as well as other
-	// connection-related data and tasks.
-	ConnMgr rpcserverConnManager
-
-	// SyncMgr defines the sync manager for the RPC server to use.
-	SyncMgr rpcserverSyncManager
-
-	// These fields allow the RPC server to interface with the local block
-	// DAG data and state.
-	DAG *blockdag.BlockDAG
-
-	// TxMemPool defines the transaction memory pool to interact with.
-	TxMemPool *mempool.TxPool
-
-	// These fields allow the RPC server to interface with mining.
-	//
-	// Generator produces block templates that can be retrieved
-	// by the getBlockTemplate command.
-	Generator *mining.BlkTmplGenerator
-
-	// These fields define any optional indexes the RPC server can make use
-	// of to provide additional data when queried.
-	AcceptanceIndex *indexers.AcceptanceIndex
-
-	// addressManager defines the address manager for the RPC server to use.
-	addressManager *addrmgr.AddrManager
 }
 
 // setupRPCListeners returns a slice of listeners that are configured for use
@@ -841,49 +694,51 @@ func setupRPCListeners(appCfg *config.Config) ([]net.Listener, error) {
 
 // NewRPCServer returns a new instance of the rpcServer struct.
 func NewRPCServer(
-	appCfg *config.Config,
+	cfg *config.Config,
 	dag *blockdag.BlockDAG,
 	txMempool *mempool.TxPool,
 	acceptanceIndex *indexers.AcceptanceIndex,
 	blockTemplateGenerator *mining.BlkTmplGenerator,
+	connectionManager *connmanager.ConnectionManager,
+	addressManager *addrmgr.AddrManager,
 ) (*Server, error) {
 	// Setup listeners for the configured RPC listen addresses and
 	// TLS settings.
-	rpcListeners, err := setupRPCListeners(appCfg)
+	rpcListeners, err := setupRPCListeners(cfg)
 	if err != nil {
 		return nil, err
 	}
 	if len(rpcListeners) == 0 {
 		return nil, errors.New("RPCS: No valid listen address")
 	}
-	cfg := &rpcserverConfig{
-		Listeners:       rpcListeners,
-		StartupTime:     mstime.Now().UnixMilliseconds(),
-		TxMemPool:       txMempool,
-		Generator:       blockTemplateGenerator,
-		AcceptanceIndex: acceptanceIndex,
-		DAG:             dag,
-	}
 	rpc := Server{
-		cfg:                    *cfg,
+		listeners:              rpcListeners,
+		startedTime:            mstime.Now(),
 		statusLines:            make(map[int]string),
 		gbtWorkState:           newGbtWorkState(),
 		helpCacher:             newHelpCacher(),
 		requestProcessShutdown: make(chan struct{}),
 		quit:                   make(chan int),
+
+		dag:                    dag,
+		txMempool:              txMempool,
+		acceptanceIndex:        acceptanceIndex,
+		blockTemplateGenerator: blockTemplateGenerator,
+		connectionManager:      connectionManager,
+		addressManager:         addressManager,
 	}
-	if appCfg.RPCUser != "" && appCfg.RPCPass != "" {
-		login := appCfg.RPCUser + ":" + appCfg.RPCPass
+	if cfg.RPCUser != "" && cfg.RPCPass != "" {
+		login := cfg.RPCUser + ":" + cfg.RPCPass
 		auth := "Basic " + base64.StdEncoding.EncodeToString([]byte(login))
 		rpc.authsha = sha256.Sum256([]byte(auth))
 	}
-	if appCfg.RPCLimitUser != "" && appCfg.RPCLimitPass != "" {
-		login := appCfg.RPCLimitUser + ":" + appCfg.RPCLimitPass
+	if cfg.RPCLimitUser != "" && cfg.RPCLimitPass != "" {
+		login := cfg.RPCLimitUser + ":" + cfg.RPCLimitPass
 		auth := "Basic " + base64.StdEncoding.EncodeToString([]byte(login))
 		rpc.limitauthsha = sha256.Sum256([]byte(auth))
 	}
 	rpc.ntfnMgr = newWsNotificationManager(&rpc)
-	rpc.cfg.DAG.Subscribe(rpc.handleBlockDAGNotification)
+	rpc.dag.Subscribe(rpc.handleBlockDAGNotification)
 
 	return &rpc, nil
 }
@@ -900,7 +755,7 @@ func (s *Server) handleBlockDAGNotification(notification *blockdag.Notification)
 		}
 		block := data.Block
 
-		tipHashes := s.cfg.DAG.TipHashes()
+		tipHashes := s.dag.TipHashes()
 
 		// Allow any clients performing long polling via the
 		// getBlockTemplate RPC to be notified when the new block causes
@@ -918,7 +773,7 @@ func (s *Server) handleBlockDAGNotification(notification *blockdag.Notification)
 
 		// If the acceptance index is off we aren't capable of serving
 		// ChainChanged notifications.
-		if s.cfg.AcceptanceIndex == nil {
+		if s.acceptanceIndex == nil {
 			break
 		}
 

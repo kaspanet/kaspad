@@ -12,13 +12,13 @@ func handleGetMempoolEntry(s *Server, cmd interface{}, closeChan <-chan struct{}
 		return nil, err
 	}
 
-	txDesc, err := s.cfg.TxMemPool.FetchTxDesc(txID)
+	txDesc, err := s.txMempool.FetchTxDesc(txID)
 	if err != nil {
 		return nil, err
 	}
 
 	tx := txDesc.Tx
-	rawTx, err := createTxRawResult(s.cfg.DAG.Params, tx.MsgTx(), tx.ID().String(),
+	rawTx, err := createTxRawResult(s.dag.Params, tx.MsgTx(), tx.ID().String(),
 		nil, "", nil, true)
 	if err != nil {
 		return nil, err

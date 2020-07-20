@@ -29,7 +29,7 @@ func getManualNodesInfo(s *Server, detailsArg *bool, node string) (interface{}, 
 
 	// Retrieve a list of persistent (manual) peers from the server and
 	// filter the list of peers per the specified address (if any).
-	peers := s.cfg.ConnMgr.PersistentPeers()
+	peers := s.connectionManager.PersistentPeers()
 	if node != "" {
 		found := false
 		for i, peer := range peers {
@@ -83,7 +83,7 @@ func getManualNodesInfo(s *Server, detailsArg *bool, node string) (interface{}, 
 		default:
 			// Do a DNS lookup for the address. If the lookup fails, just
 			// use the host.
-			ips, err := s.appCfg.Lookup(host)
+			ips, err := s.cfg.Lookup(host)
 			if err != nil {
 				ipList = make([]string, 1)
 				ipList[0] = host

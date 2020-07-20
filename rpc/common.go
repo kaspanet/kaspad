@@ -206,29 +206,29 @@ func getDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
 // This function MUST be called with the DAG state lock held (for reads).
 func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) (*rpcmodel.GetBlockVerboseResult, error) {
 	hash := block.Hash()
-	params := s.cfg.DAG.Params
+	params := s.dag.Params
 	blockHeader := block.MsgBlock().Header
 
-	blockBlueScore, err := s.cfg.DAG.BlueScoreByBlockHash(hash)
+	blockBlueScore, err := s.dag.BlueScoreByBlockHash(hash)
 	if err != nil {
 		context := "Could not get block blue score"
 		return nil, internalRPCError(err.Error(), context)
 	}
 
 	// Get the hashes for the next blocks unless there are none.
-	childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
+	childHashes, err := s.dag.ChildHashesByHash(hash)
 	if err != nil {
 		context := "No next block"
 		return nil, internalRPCError(err.Error(), context)
 	}
 
-	blockConfirmations, err := s.cfg.DAG.BlockConfirmationsByHashNoLock(hash)
+	blockConfirmations, err := s.dag.BlockConfirmationsByHashNoLock(hash)
 	if err != nil {
 		context := "Could not get block confirmations"
 		return nil, internalRPCError(err.Error(), context)
 	}
 
-	selectedParentHash, err := s.cfg.DAG.SelectedParentHash(hash)
+	selectedParentHash, err := s.dag.SelectedParentHash(hash)
 	if err != nil {
 		context := "Could not get block selected parent"
 		return nil, internalRPCError(err.Error(), context)
@@ -238,13 +238,13 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		selectedParentHashStr = selectedParentHash.String()
 	}
 
-	isChainBlock, err := s.cfg.DAG.IsInSelectedParentChain(hash)
+	isChainBlock, err := s.dag.IsInSelectedParentChain(hash)
 	if err != nil {
 		context := "Could not get whether block is in the selected parent chain"
 		return nil, internalRPCError(err.Error(), context)
 	}
 
-	acceptedBlockHashes, err := s.cfg.DAG.BluesByBlockHash(hash)
+	acceptedBlockHashes, err := s.dag.BluesByBlockHash(hash)
 	if err != nil {
 		context := fmt.Sprintf("Could not get block accepted blocks for block %s", hash)
 		return nil, internalRPCError(err.Error(), context)
@@ -299,7 +299,7 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 func collectChainBlocks(s *Server, hashes []*daghash.Hash) ([]rpcmodel.ChainBlock, error) {
 	chainBlocks := make([]rpcmodel.ChainBlock, 0, len(hashes))
 	for _, hash := range hashes {
-		acceptanceData, err := s.cfg.AcceptanceIndex.TxsAcceptanceData(hash)
+		acceptanceData, err := s.acceptanceIndex.TxsAcceptanceData(hash)
 		if err != nil {
 			return nil, &rpcmodel.RPCError{
 				Code:    rpcmodel.ErrRPCInternal.Code,
@@ -338,7 +338,7 @@ func collectChainBlocks(s *Server, hashes []*daghash.Hash) ([]rpcmodel.ChainBloc
 func hashesToGetBlockVerboseResults(s *Server, hashes []*daghash.Hash) ([]rpcmodel.GetBlockVerboseResult, error) {
 	getBlockVerboseResults := make([]rpcmodel.GetBlockVerboseResult, 0, len(hashes))
 	for _, blockHash := range hashes {
-		block, err := s.cfg.DAG.BlockByHash(blockHash)
+		block, err := s.dag.BlockByHash(blockHash)
 		if err != nil {
 			return nil, &rpcmodel.RPCError{
 				Code:    rpcmodel.ErrRPCInternal.Code,

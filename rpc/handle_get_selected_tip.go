@@ -8,9 +8,9 @@ import (
 // handleGetSelectedTip implements the getSelectedTip command.
 func handleGetSelectedTip(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	getSelectedTipCmd := cmd.(*rpcmodel.GetSelectedTipCmd)
-	selectedTipHash := s.cfg.DAG.SelectedTipHash()
+	selectedTipHash := s.dag.SelectedTipHash()
 
-	block, err := s.cfg.DAG.BlockByHash(selectedTipHash)
+	block, err := s.dag.BlockByHash(selectedTipHash)
 	if err != nil {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCBlockNotFound,

@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"github.com/kaspanet/kaspad/connmanager"
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/util/network"
 	"net"
@@ -14,14 +15,14 @@ func handleNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 	var addr string
 	var nodeID uint64
 	var errN, err error
-	params := s.cfg.DAG.Params
+	params := s.dag.Params
 	switch c.SubCmd {
 	case "disconnect":
 		// If we have a valid uint disconnect by node id. Otherwise,
 		// attempt to disconnect by address, returning an error if a
 		// valid IP address is not supplied.
 		if nodeID, errN = strconv.ParseUint(c.Target, 10, 32); errN == nil {
-			err = s.cfg.ConnMgr.DisconnectByID(int32(nodeID))
+			err = s.connectionManager.DisconnectByID(int32(nodeID))
 		} else {
 			if _, _, errP := net.SplitHostPort(c.Target); errP == nil || net.ParseIP(c.Target) != nil {
 				addr, err = network.NormalizeAddress(c.Target, params.DefaultPort)
@@ -29,7 +30,7 @@ func handleNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 					break
 				}
 
-				err = s.cfg.ConnMgr.DisconnectByAddr(addr)
+				err = s.connectionManager.DisconnectByAddr(addr)
 			} else {
 				return nil, &rpcmodel.RPCError{
 					Code:    rpcmodel.ErrRPCInvalidParameter,
@@ -37,7 +38,7 @@ func handleNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 				}
 			}
 		}
-		if err != nil && peerExists(s.cfg.ConnMgr, addr, int32(nodeID)) {
+		if err != nil && peerExists(s.connectionManager, addr, int32(nodeID)) {
 
 			return nil, &rpcmodel.RPCError{
 				Code:    rpcmodel.ErrRPCMisc,
@@ -50,7 +51,7 @@ func handleNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 		// attempt to disconnect by address, returning an error if a
 		// valid IP address is not supplied.
 		if nodeID, errN = strconv.ParseUint(c.Target, 10, 32); errN == nil {
-			err = s.cfg.ConnMgr.RemoveByID(int32(nodeID))
+			err = s.connectionManager.RemoveByID(int32(nodeID))
 		} else {
 			if _, _, errP := net.SplitHostPort(c.Target); errP == nil || net.ParseIP(c.Target) != nil {
 				addr, err = network.NormalizeAddress(c.Target, params.DefaultPort)
@@ -58,7 +59,7 @@ func handleNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 					break
 				}
 
-				err = s.cfg.ConnMgr.RemoveByAddr(addr)
+				err = s.connectionManager.RemoveByAddr(addr)
 			} else {
 				return nil, &rpcmodel.RPCError{
 					Code:    rpcmodel.ErrRPCInvalidParameter,
@@ -66,7 +67,7 @@ func handleNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 				}
 			}
 		}
-		if err != nil && peerExists(s.cfg.ConnMgr, addr, int32(nodeID)) {
+		if err != nil && peerExists(s.connectionManager, addr, int32(nodeID)) {
 			return nil, &rpcmodel.RPCError{
 				Code:    rpcmodel.ErrRPCMisc,
 				Message: "can't remove a temporary peer, use disconnect",
@@ -87,7 +88,7 @@ func handleNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 
 		switch subCmd {
 		case "perm", "temp":
-			err = s.cfg.ConnMgr.Connect(addr, subCmd == "perm")
+			s.connectionManager.AddConnectionRequest(addr, subCmd == "perm")
 		default:
 			return nil, &rpcmodel.RPCError{
 				Code:    rpcmodel.ErrRPCInvalidParameter,
@@ -115,8 +116,8 @@ func handleNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 // peerExists determines if a certain peer is currently connected given
 // information about all currently connected peers. Peer existence is
 // determined using either a target address or node id.
-func peerExists(connMgr rpcserverConnManager, addr string, nodeID int32) bool {
-	for _, p := range connMgr.ConnectedPeers() {
+func peerExists(connectionManager *connmanager.ConnectionManager, addr string, nodeID int32) bool {
+	for _, p := range connectionManager.ConnectedPeers() {
 		if p.ToPeer().ID() == nodeID || p.ToPeer().Addr() == addr {
 			return true
 		}

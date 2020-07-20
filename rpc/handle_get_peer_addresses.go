@@ -4,7 +4,7 @@ import "github.com/kaspanet/kaspad/rpcmodel"
 
 // handleGetPeerAddresses handles getPeerAddresses commands.
 func handleGetPeerAddresses(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	peersState, err := s.cfg.addressManager.PeersStateForSerialization()
+	peersState, err := s.addressManager.PeersStateForSerialization()
 	if err != nil {
 		return nil, err
 	}

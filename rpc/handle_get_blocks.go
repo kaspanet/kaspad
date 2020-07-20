@@ -24,11 +24,11 @@ func handleGetBlocks(s *Server, cmd interface{}, closeChan <-chan struct{}) (int
 		}
 	}
 
-	s.cfg.DAG.RLock()
-	defer s.cfg.DAG.RUnlock()
+	s.dag.RLock()
+	defer s.dag.RUnlock()
 
 	// If lowHash is not in the DAG, there's nothing to do; return an error.
-	if lowHash != nil && !s.cfg.DAG.IsKnownBlock(lowHash) {
+	if lowHash != nil && !s.dag.IsKnownBlock(lowHash) {
 		return nil, &rpcmodel.RPCError{
 			Code:    rpcmodel.ErrRPCBlockNotFound,
 			Message: "Block not found",
@@ -36,7 +36,7 @@ func handleGetBlocks(s *Server, cmd interface{}, closeChan <-chan struct{}) (int
 	}
 
 	// Retrieve the block hashes.
-	blockHashes, err := s.cfg.DAG.BlockHashesFrom(lowHash, maxBlocksInGetBlocksResult)
+	blockHashes, err := s.dag.BlockHashesFrom(lowHash, maxBlocksInGetBlocksResult)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func handleGetBlocks(s *Server, cmd interface{}, closeChan <-chan struct{}) (int
 func hashesToBlockBytes(s *Server, hashes []*daghash.Hash) ([][]byte, error) {
 	blocks := make([][]byte, len(hashes))
 	for i, hash := range hashes {
-		block, err := s.cfg.DAG.BlockByHash(hash)
+		block, err := s.dag.BlockByHash(hash)
 		if err != nil {
 			return nil, err
 		}
