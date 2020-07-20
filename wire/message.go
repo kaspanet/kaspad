@@ -61,7 +61,7 @@ const (
 	CmdInvRelayBlock   MessageCommand = 22
 	CmdGetRelayBlocks  MessageCommand = 23
 	CmdRejectMalformed MessageCommand = 24 // Used only for reject message
-	CmdTxInv           MessageCommand = 25
+	CmdInvTransaction  MessageCommand = 25
 	CmdGetTransactions MessageCommand = 26
 	CmdIBDBlock        MessageCommand = 27
 )
@@ -92,7 +92,7 @@ var messageCommandToString = map[MessageCommand]string{
 	CmdInvRelayBlock:   "InvRelayBlock",
 	CmdGetRelayBlocks:  "GetRelayBlocks",
 	CmdRejectMalformed: "RejectMalformed",
-	CmdTxInv:           "TxInv",
+	CmdInvTransaction:  "InvTransaction",
 	CmdGetTransactions: "GetTransactions",
 	CmdIBDBlock:        "IBDBlock",
 }

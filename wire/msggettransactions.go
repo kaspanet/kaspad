@@ -6,7 +6,7 @@ import (
 )
 
 // MaxInvPerGetTransactionsMsg is the maximum number of hashes that can
-// be in a single CmdTxInv message.
+// be in a single CmdInvTransaction message.
 const MaxInvPerGetTransactionsMsg = MaxInvPerMsg
 
 // MsgGetTransactions implements the Message interface and represents a kaspa

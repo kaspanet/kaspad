@@ -20,13 +20,13 @@ const timeout = 30 * time.Second
 // called when a new block is successfully processed.
 type NewBlockHandler func(block *util.Block) error
 
-// HandleRelayedTransactions listens to wire.MsgTxInv messages, requests their corresponding transactions if they
+// HandleRelayedTransactions listens to wire.MsgInvTransaction messages, requests their corresponding transactions if they
 // are missing, adds them to the mempool and propagates them to the rest of the network.
 func HandleRelayedTransactions(incomingRoute *router.Route, outgoingRoute *router.Route,
 	netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG, txPool *mempool.TxPool,
 	sharedRequestedTransactions *SharedRequestedTransactions) error {
 
-	invsQueue := make([]*wire.MsgTxInv, 0)
+	invsQueue := make([]*wire.MsgInvTransaction, 0)
 	for {
 		inv, shouldStop, err := readInv(incomingRoute, &invsQueue)
 		if err != nil {
@@ -56,7 +56,7 @@ func HandleRelayedTransactions(incomingRoute *router.Route, outgoingRoute *route
 }
 
 func requestInvTransactions(outgoingRoute *router.Route, txPool *mempool.TxPool, dag *blockdag.BlockDAG,
-	sharedRequestedTransactions *SharedRequestedTransactions, inv *wire.MsgTxInv) (requestedIDs []*daghash.TxID,
+	sharedRequestedTransactions *SharedRequestedTransactions, inv *wire.MsgInvTransaction) (requestedIDs []*daghash.TxID,
 	shouldStop bool, err error) {
 
 	idsToRequest := make([]*daghash.TxID, 0, len(inv.TXIDs))
@@ -106,8 +106,8 @@ func isKnownTransaction(txPool *mempool.TxPool, dag *blockdag.BlockDAG, txID *da
 	return false
 }
 
-func readInv(incomingRoute *router.Route, invsQueue *[]*wire.MsgTxInv) (
-	inv *wire.MsgTxInv, shouldStop bool, err error) {
+func readInv(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvTransaction) (
+	inv *wire.MsgInvTransaction, shouldStop bool, err error) {
 
 	if len(*invsQueue) > 0 {
 		inv, *invsQueue = (*invsQueue)[0], (*invsQueue)[1:]
@@ -119,7 +119,7 @@ func readInv(incomingRoute *router.Route, invsQueue *[]*wire.MsgTxInv) (
 		return nil, true, nil
 	}
 
-	inv, ok := msg.(*wire.MsgTxInv)
+	inv, ok := msg.(*wire.MsgInvTransaction)
 	if !ok {
 		return nil, false, protocolerrors.Errorf(true, "unexpected %s message in the block relay flow while "+
 			"expecting an inv message", msg.Command())
@@ -140,8 +140,8 @@ func broadcastAcceptedTransactions(netAdapter *netadapter.NetAdapter, acceptedTx
 
 // readMsgTx returns the next msgTx in incomingRoute, and populates invsQueue with any inv messages that meanwhile arrive.
 //
-// Note: this function assumes msgChan can contain only wire.MsgTxInv and wire.MsgBlock messages.
-func readMsgTx(incomingRoute *router.Route, invsQueue *[]*wire.MsgTxInv) (
+// Note: this function assumes msgChan can contain only wire.MsgInvTransaction and wire.MsgBlock messages.
+func readMsgTx(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvTransaction) (
 	msgTx *wire.MsgTx, shouldStop bool, err error) {
 
 	for {
@@ -154,7 +154,7 @@ func readMsgTx(incomingRoute *router.Route, invsQueue *[]*wire.MsgTxInv) (
 		}
 
 		switch message := message.(type) {
-		case *wire.MsgTxInv:
+		case *wire.MsgInvTransaction:
 			*invsQueue = append(*invsQueue, message)
 		case *wire.MsgTx:
 			return message, false, nil
@@ -165,7 +165,7 @@ func readMsgTx(incomingRoute *router.Route, invsQueue *[]*wire.MsgTxInv) (
 }
 
 func receiveTransactions(requestedTransactions []*daghash.TxID, incomingRoute *router.Route,
-	invsQueue *[]*wire.MsgTxInv, txPool *mempool.TxPool, netAdapter *netadapter.NetAdapter,
+	invsQueue *[]*wire.MsgInvTransaction, txPool *mempool.TxPool, netAdapter *netadapter.NetAdapter,
 	sharedRequestedTransactions *SharedRequestedTransactions) (shouldStop bool, err error) {
 
 	// In case the function returns earlier than expected, we want to make sure sharedRequestedTransactions is
