@@ -6,5 +6,5 @@ import (
 
 // handleUptime implements the uptime command.
 func handleUptime(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	return mstime.Now().UnixMilliseconds() - s.startupTime, nil
+	return mstime.Now().UnixMilliseconds() - s.startupTime.UnixMilliseconds(), nil
 }

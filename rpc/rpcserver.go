@@ -157,7 +157,7 @@ type Server struct {
 	started                int32
 	shutdown               int32
 	cfg                    *config.Config
-	startedTime            mstime.Time
+	startupTime            mstime.Time
 	authsha                [sha256.Size]byte
 	limitauthsha           [sha256.Size]byte
 	ntfnMgr                *wsNotificationManager
@@ -713,7 +713,7 @@ func NewRPCServer(
 	}
 	rpc := Server{
 		listeners:              rpcListeners,
-		startedTime:            mstime.Now(),
+		startupTime:            mstime.Now(),
 		statusLines:            make(map[int]string),
 		gbtWorkState:           newGbtWorkState(),
 		helpCacher:             newHelpCacher(),
