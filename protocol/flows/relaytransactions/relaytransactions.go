@@ -60,7 +60,17 @@ func requestInvTransactions(outgoingRoute *router.Route, txPool *mempool.TxPool,
 	shouldStop bool, err error) {
 
 	idsToRequest := make([]*daghash.TxID, 0, len(inv.TXIDs))
-	updateQueues(txPool, dag, inv, &idsToRequest, sharedRequestedTransactions)
+	for _, txID := range inv.TXIDs {
+		if isKnownTransaction(txPool, dag, txID) {
+			continue
+		}
+		exists := sharedRequestedTransactions.addIfNotExists(txID)
+		if exists {
+			continue
+		}
+		idsToRequest = append(idsToRequest, txID)
+	}
+
 	msgGetTransactions := wire.NewMsgGetTransactions(idsToRequest)
 	isOpen, err := outgoingRoute.EnqueueWithTimeout(msgGetTransactions, 30*time.Second) // TODO(libp2p) Use common.DefaultTimeout
 	if err != nil {
@@ -72,20 +82,6 @@ func requestInvTransactions(outgoingRoute *router.Route, txPool *mempool.TxPool,
 		return nil, true, nil
 	}
 	return idsToRequest, false, nil
-}
-
-func updateQueues(txPool *mempool.TxPool, dag *blockdag.BlockDAG, inv *wire.MsgTxInv, idsToRequest *[]*daghash.TxID,
-	sharedRequestedTransactions *SharedRequestedTransactions) {
-	for _, txID := range inv.TXIDs {
-		if isKnownTransaction(txPool, dag, txID) {
-			continue
-		}
-		exists := sharedRequestedTransactions.addIfNotExists(txID)
-		if exists {
-			continue
-		}
-		*idsToRequest = append(*idsToRequest, txID)
-	}
 }
 
 func isKnownTransaction(txPool *mempool.TxPool, dag *blockdag.BlockDAG, txID *daghash.TxID) bool {
