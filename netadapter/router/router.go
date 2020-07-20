@@ -5,7 +5,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const outgoingRouteMaxMessages = wire.MaxBlockLocatorsPerMsg + defaultMaxMessages
+const outgoingRouteMaxMessages = wire.MaxInvPerMsg + defaultMaxMessages
 
 // OnRouteCapacityReachedHandler is a function that is to
 // be called when one of the routes reaches capacity.
