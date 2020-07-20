@@ -163,7 +163,7 @@ func (m *Manager) addTransactionRelayFlow(router *routerpkg.Router, stopped *uin
 
 	outgoingRoute := router.OutgoingRoute()
 
-	addFlow("RelayedTransactions", router, []wire.MessageCommand{wire.CmdInv, wire.CmdTx}, stopped, stop,
+	addFlow("HandleRelayedTransactions", router, []wire.MessageCommand{wire.CmdInv, wire.CmdTx}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return relaytransactions.HandleRelayedTransactions(incomingRoute, outgoingRoute, m.netAdapter, m.dag,
 				m.txPool, m.sharedRequestedTransactions)
