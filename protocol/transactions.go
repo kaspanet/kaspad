@@ -13,12 +13,13 @@ import (
 func (m *Manager) AddTransaction(tx *util.Tx) error {
 	m.transactionsToRebroadcastLock.Lock()
 	defer m.transactionsToRebroadcastLock.Unlock()
-	acceptedTxs, err := m.txPool.ProcessTransaction(tx, false, 0)
+
+	transactionsAcceptedToMempool, err := m.txPool.ProcessTransaction(tx, false, 0)
 	if err != nil {
 		return err
 	}
 
-	if len(acceptedTxs) > 1 {
+	if len(transactionsAcceptedToMempool) > 1 {
 		panic(errors.New("got more than one accepted transactions when no orphans were allowed"))
 	}
 
