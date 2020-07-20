@@ -13,7 +13,7 @@ import (
 // manually added transactions when not in IBD.
 // TODO(libp2p) Call this function from IBD as well.
 func (m *Manager) OnNewBlock(block *util.Block) error {
-	acceptedTxs, err := m.txPool.HandleNewBlock(block)
+	transactionsAcceptedToMempool, err := m.txPool.HandleNewBlock(block)
 	if err != nil {
 		return err
 	}
@@ -30,12 +30,12 @@ func (m *Manager) OnNewBlock(block *util.Block) error {
 		txIDsToRebroadcast = m.txIDsToRebroadcast()
 	}
 
-	txIDsToBroadcast := make([]*daghash.TxID, len(acceptedTxs)+len(txIDsToRebroadcast))
-	for i, tx := range acceptedTxs {
+	txIDsToBroadcast := make([]*daghash.TxID, len(transactionsAcceptedToMempool)+len(txIDsToRebroadcast))
+	for i, tx := range transactionsAcceptedToMempool {
 		txIDsToBroadcast[i] = tx.ID()
 	}
 
-	copy(txIDsToBroadcast[len(acceptedTxs):], txIDsToBroadcast)
+	copy(txIDsToBroadcast[len(transactionsAcceptedToMempool):], txIDsToBroadcast)
 	txIDsToBroadcast = txIDsToBroadcast[:wire.MaxInvPerTxInvMsg]
 	inv := wire.NewMsgTxInv(txIDsToBroadcast)
 	return m.netAdapter.Broadcast(peerpkg.ReadyPeerIDs(), inv)
