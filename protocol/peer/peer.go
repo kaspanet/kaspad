@@ -190,8 +190,7 @@ func (p *Peer) FinishRequestingSelectedTip() {
 	atomic.SwapUint32(&p.isSelectedTipRequested, 0)
 }
 
-// StartIBD notifies the peer that starting its IBD flow is required.
-// Note that the IBD flow is expected to wait using WaitForIBDStart.
+// StartIBD starts the IBD process for this peer
 func (p *Peer) StartIBD() {
 	p.ibdStartChan <- struct{}{}
 }
