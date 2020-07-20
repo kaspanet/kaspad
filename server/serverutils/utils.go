@@ -7,14 +7,9 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/config"
+
 	"github.com/kaspanet/kaspad/util"
 )
-
-// KaspadLookup resolves the IP of the given host using the correct DNS lookup
-// function depending on the configuration options.
-func KaspadLookup(host string) ([]net.IP, error) {
-	return config.ActiveConfig().Lookup(host)
-}
 
 // GenCertPair generates a key/cert pair to the paths provided.
 func GenCertPair(certFile, keyFile string) error {
@@ -42,6 +37,6 @@ func GenCertPair(certFile, keyFile string) error {
 
 // KaspadDial connects to the address on the named network using the appropriate
 // dial function depending on the address and configuration options.
-func KaspadDial(addr net.Addr) (net.Conn, error) {
-	return config.ActiveConfig().Dial(addr.Network(), addr.String(), config.DefaultConnectTimeout)
+func KaspadDial(cfg *config.Config, addr net.Addr) (net.Conn, error) {
+	return cfg.Dial(addr.Network(), addr.String(), config.DefaultConnectTimeout)
 }

@@ -1,8 +1,6 @@
 package p2p
 
 import (
-	"github.com/kaspanet/kaspad/addrmgr"
-	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/peer"
 	"github.com/kaspanet/kaspad/wire"
 )
@@ -20,17 +18,17 @@ func (sp *Peer) OnVersion(_ *peer.Peer, msg *wire.MsgVersion) {
 	// on the simulation test network since it is only intended to connect
 	// to specified peers and actively avoids advertising and connecting to
 	// discovered peers.
-	if !config.ActiveConfig().Simnet {
+	if !sp.AppCfg.Simnet {
 		addrManager := sp.server.AddrManager
 
 		// Outbound connections.
 		if !sp.Inbound() {
 			// TODO(davec): Only do this if not doing the initial block
 			// download and the local address is routable.
-			if !config.ActiveConfig().DisableListen {
+			if !sp.AppCfg.DisableListen {
 				// Get address that best matches.
 				lna := addrManager.GetBestLocalAddress(sp.NA())
-				if addrmgr.IsRoutable(lna) {
+				if sp.server.AddrManager.IsRoutable(lna) {
 					// Filter addresses the peer already knows about.
 					addresses := []*wire.NetAddress{lna}
 					sp.pushAddrMsg(addresses, sp.SubnetworkID())

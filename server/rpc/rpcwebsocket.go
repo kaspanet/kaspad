@@ -25,7 +25,6 @@ import (
 	"golang.org/x/crypto/ripemd160"
 
 	"github.com/btcsuite/websocket"
-	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/txscript"
@@ -91,9 +90,9 @@ func (s *Server) WebsocketHandler(conn *websocket.Conn, remoteAddr string,
 
 	// Limit max number of websocket clients.
 	log.Infof("New websocket client %s", remoteAddr)
-	if s.ntfnMgr.NumClients()+1 > config.ActiveConfig().RPCMaxWebsockets {
+	if s.ntfnMgr.NumClients()+1 > s.appCfg.RPCMaxWebsockets {
 		log.Infof("Max websocket clients exceeded [%d] - "+
-			"disconnecting client %s", config.ActiveConfig().RPCMaxWebsockets,
+			"disconnecting client %s", s.appCfg.RPCMaxWebsockets,
 			remoteAddr)
 		conn.Close()
 		return
@@ -1324,7 +1323,7 @@ func newWebsocketClient(server *Server, conn *websocket.Conn,
 		isAdmin:           isAdmin,
 		sessionID:         sessionID,
 		server:            server,
-		serviceRequestSem: makeSemaphore(config.ActiveConfig().RPCMaxConcurrentReqs),
+		serviceRequestSem: makeSemaphore(server.appCfg.RPCMaxConcurrentReqs),
 		ntfnChan:          make(chan []byte, 1), // nonblocking sync
 		sendChan:          make(chan wsResponse, websocketSendBufferSize),
 		quit:              make(chan struct{}),

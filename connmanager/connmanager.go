@@ -22,6 +22,7 @@ type connectionRequest struct {
 // ConnectionManager monitors that the current active connections satisfy the requirements of
 // outgoing, requested and incoming connections
 type ConnectionManager struct {
+	cfg            *config.Config
 	netAdapter     *netadapter.NetAdapter
 	addressManager *addrmgr.AddrManager
 
@@ -37,8 +38,9 @@ type ConnectionManager struct {
 }
 
 // New instantiates a new instance of a ConnectionManager
-func New(netAdapter *netadapter.NetAdapter, addressManager *addrmgr.AddrManager) (*ConnectionManager, error) {
+func New(cfg *config.Config, netAdapter *netadapter.NetAdapter, addressManager *addrmgr.AddrManager) (*ConnectionManager, error) {
 	c := &ConnectionManager{
+		cfg:              cfg,
 		netAdapter:       netAdapter,
 		addressManager:   addressManager,
 		activeRequested:  map[string]*connectionRequest{},
@@ -47,7 +49,6 @@ func New(netAdapter *netadapter.NetAdapter, addressManager *addrmgr.AddrManager)
 		activeIncoming:   map[string]struct{}{},
 	}
 
-	cfg := config.ActiveConfig()
 	connectPeers := cfg.AddPeers
 	if len(cfg.ConnectPeers) > 0 {
 		connectPeers = cfg.ConnectPeers

@@ -25,6 +25,7 @@ type RouterInitializer func() (*routerpkg.Router, error)
 // and message handlers) without exposing anything related
 // to networking internals.
 type NetAdapter struct {
+	cfg               *config.Config
 	id                *id.ID
 	server            server.Server
 	routerInitializer RouterInitializer
@@ -38,16 +39,17 @@ type NetAdapter struct {
 
 // NewNetAdapter creates and starts a new NetAdapter on the
 // given listeningPort
-func NewNetAdapter(listeningAddrs []string) (*NetAdapter, error) {
+func NewNetAdapter(cfg *config.Config) (*NetAdapter, error) {
 	netAdapterID, err := id.GenerateID()
 	if err != nil {
 		return nil, err
 	}
-	s, err := grpcserver.NewGRPCServer(listeningAddrs)
+	s, err := grpcserver.NewGRPCServer(cfg.Listeners)
 	if err != nil {
 		return nil, err
 	}
 	adapter := NetAdapter{
+		cfg:    cfg,
 		id:     netAdapterID,
 		server: s,
 
@@ -186,10 +188,10 @@ func (na *NetAdapter) Broadcast(connectionIDs []*id.ID, message wire.Message) er
 // for the given remote address.
 func (na *NetAdapter) GetBestLocalAddress() (*wire.NetAddress, error) {
 	//TODO(libp2p) Reimplement this, and check reachability to the other node
-	if len(config.ActiveConfig().ExternalIPs) > 0 {
-		host, portString, err := net.SplitHostPort(config.ActiveConfig().ExternalIPs[0])
+	if len(na.cfg.ExternalIPs) > 0 {
+		host, portString, err := net.SplitHostPort(na.cfg.ExternalIPs[0])
 		if err != nil {
-			portString = config.ActiveConfig().NetParams().DefaultPort
+			portString = na.cfg.NetParams().DefaultPort
 		}
 		portInt, err := strconv.Atoi(portString)
 		if err != nil {
@@ -210,10 +212,10 @@ func (na *NetAdapter) GetBestLocalAddress() (*wire.NetAddress, error) {
 		return wire.NewNetAddressIPPort(ip, uint16(portInt), wire.SFNodeNetwork), nil
 
 	}
-	listenAddress := config.ActiveConfig().Listeners[0]
+	listenAddress := na.cfg.Listeners[0]
 	_, portString, err := net.SplitHostPort(listenAddress)
 	if err != nil {
-		portString = config.ActiveConfig().NetParams().DefaultPort
+		portString = na.cfg.NetParams().DefaultPort
 	}
 
 	portInt, err := strconv.Atoi(portString)

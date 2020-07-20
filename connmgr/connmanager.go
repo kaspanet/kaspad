@@ -7,13 +7,14 @@ package connmgr
 import (
 	nativeerrors "errors"
 	"fmt"
-	"github.com/kaspanet/kaspad/addrmgr"
-	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/wire"
 	"net"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/kaspanet/kaspad/addrmgr"
+	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/wire"
 
 	"github.com/pkg/errors"
 )
@@ -206,6 +207,7 @@ type ConnManager struct {
 	usedAddresses      map[string]struct{}
 
 	cfg            Config
+	appCfg         *config.Config
 	wg             sync.WaitGroup
 	failedAttempts uint64
 	requests       chan interface{}
@@ -263,7 +265,7 @@ func (cm *ConnManager) releaseAddress(addr *net.TCPAddr) {
 	cm.addressMtx.Lock()
 	defer cm.addressMtx.Unlock()
 
-	groupKey := usedOutboundGroupsKey(addr)
+	groupKey := cm.usedOutboundGroupsKey(addr)
 	cm.usedOutboundGroups[groupKey]--
 	if cm.usedOutboundGroups[groupKey] < 0 {
 		panic(fmt.Errorf("cm.usedOutboundGroups[%s] has a negative value of %d. This should never happen", groupKey, cm.usedOutboundGroups[groupKey]))
@@ -272,12 +274,12 @@ func (cm *ConnManager) releaseAddress(addr *net.TCPAddr) {
 }
 
 func (cm *ConnManager) markAddressAsUsed(addr *net.TCPAddr) {
-	cm.usedOutboundGroups[usedOutboundGroupsKey(addr)]++
+	cm.usedOutboundGroups[cm.usedOutboundGroupsKey(addr)]++
 	cm.usedAddresses[usedAddressesKey(addr)] = struct{}{}
 }
 
 func (cm *ConnManager) isOutboundGroupUsed(addr *net.TCPAddr) bool {
-	_, ok := cm.usedOutboundGroups[usedOutboundGroupsKey(addr)]
+	_, ok := cm.usedOutboundGroups[cm.usedOutboundGroupsKey(addr)]
 	return ok
 }
 
@@ -286,10 +288,10 @@ func (cm *ConnManager) isAddressUsed(addr *net.TCPAddr) bool {
 	return ok
 }
 
-func usedOutboundGroupsKey(addr *net.TCPAddr) string {
+func (cm *ConnManager) usedOutboundGroupsKey(addr *net.TCPAddr) string {
 	// A fake service flag is used since it doesn't affect the group key.
 	na := wire.NewNetAddress(addr, wire.SFNodeNetwork)
-	return addrmgr.GroupKey(na)
+	return cm.cfg.AddrManager.GroupKey(na)
 }
 
 func usedAddressesKey(addr *net.TCPAddr) string {
@@ -734,7 +736,7 @@ func (cm *ConnManager) getNewAddress() (*net.TCPAddr, error) {
 		// Networks that accept unroutable connections are exempt
 		// from this rule, since they're meant to run within a
 		// private subnet, like 10.0.0.0/16.
-		if !config.ActiveConfig().NetParams().AcceptUnroutable && cm.isOutboundGroupUsed(netAddr) {
+		if !cm.appCfg.NetParams().AcceptUnroutable && cm.isOutboundGroupUsed(netAddr) {
 			continue
 		}
 
@@ -746,7 +748,7 @@ func (cm *ConnManager) getNewAddress() (*net.TCPAddr, error) {
 
 		// allow nondefault ports after 50 failed tries.
 		if tries < 50 && fmt.Sprintf("%d", netAddr.Port) !=
-			config.ActiveConfig().NetParams().DefaultPort {
+			cm.appCfg.NetParams().DefaultPort {
 			continue
 		}
 
@@ -757,7 +759,7 @@ func (cm *ConnManager) getNewAddress() (*net.TCPAddr, error) {
 
 // New returns a new connection manager.
 // Use Start to start connecting to the network.
-func New(cfg *Config) (*ConnManager, error) {
+func New(cfg *Config, appCfg *config.Config) (*ConnManager, error) {
 	if cfg.Dial == nil {
 		return nil, errors.WithStack(ErrDialNil)
 	}
@@ -770,6 +772,7 @@ func New(cfg *Config) (*ConnManager, error) {
 	}
 	cm := ConnManager{
 		cfg:                *cfg, // Copy so caller can't mutate
+		appCfg:             appCfg,
 		requests:           make(chan interface{}),
 		quit:               make(chan struct{}),
 		usedAddresses:      make(map[string]struct{}),
