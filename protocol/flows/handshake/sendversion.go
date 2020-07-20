@@ -28,11 +28,11 @@ var (
 )
 
 // SendVersion sends a version to a peer and waits for verack.
-func SendVersion(incomingRoute *router.Route, outgoingRoute *router.Route, netAdapter *netadapter.NetAdapter,
-	dag *blockdag.BlockDAG) (routeClosed bool, err error) {
+func SendVersion(cfg *config.Config, incomingRoute *router.Route, outgoingRoute *router.Route,
+	netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG) (routeClosed bool, err error) {
 
 	selectedTipHash := dag.SelectedTipHash()
-	subnetworkID := config.ActiveConfig().SubnetworkID
+	subnetworkID := cfg.SubnetworkID
 
 	// Version message.
 	localAddress, err := netAdapter.GetBestLocalAddress()
@@ -40,7 +40,7 @@ func SendVersion(incomingRoute *router.Route, outgoingRoute *router.Route, netAd
 		panic(err)
 	}
 	msg := wire.NewMsgVersion(localAddress, netAdapter.ID(), selectedTipHash, subnetworkID)
-	msg.AddUserAgent(userAgentName, userAgentVersion, config.ActiveConfig().UserAgentComments...)
+	msg.AddUserAgent(userAgentName, userAgentVersion, cfg.UserAgentComments...)
 
 	// Advertise the services flag
 	msg.Services = defaultServices
@@ -49,12 +49,9 @@ func SendVersion(incomingRoute *router.Route, outgoingRoute *router.Route, netAd
 	msg.ProtocolVersion = wire.ProtocolVersion
 
 	// Advertise if inv messages for transactions are desired.
-	msg.DisableRelayTx = config.ActiveConfig().BlocksOnly
+	msg.DisableRelayTx = cfg.BlocksOnly
 
-	isOpen, err := outgoingRoute.EnqueueWithTimeout(msg, timeout)
-	if err != nil {
-		return false, err
-	}
+	isOpen := outgoingRoute.Enqueue(msg)
 	if !isOpen {
 		return true, nil
 	}

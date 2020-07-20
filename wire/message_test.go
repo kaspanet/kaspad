@@ -57,7 +57,7 @@ func TestMessage(t *testing.T) {
 	msgVerack := NewMsgVerAck()
 	msgGetAddresses := NewMsgGetAddresses(false, nil)
 	msgAddresses := NewMsgAddresses(false, nil)
-	msgGetBlockInvs := NewMsgGetBlockInvs(&daghash.Hash{}, &daghash.Hash{})
+	msgGetBlockInvs := NewMsgGetBlocks(&daghash.Hash{}, &daghash.Hash{})
 	msgBlock := &blockOne
 	msgInv := NewMsgInv()
 	msgGetData := NewMsgGetData()
@@ -66,7 +66,7 @@ func TestMessage(t *testing.T) {
 	msgPing := NewMsgPing(123123)
 	msgPong := NewMsgPong(123123)
 	msgGetBlockLocator := NewMsgGetBlockLocator(&daghash.ZeroHash, &daghash.ZeroHash)
-	msgBlockLocator := NewMsgBlockLocator()
+	msgBlockLocator := NewMsgBlockLocator([]*daghash.Hash{})
 	msgFeeFilter := NewMsgFeeFilter(123456)
 	msgFilterAdd := NewMsgFilterAdd([]byte{0x01})
 	msgFilterClear := NewMsgFilterClear()

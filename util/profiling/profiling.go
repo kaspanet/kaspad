@@ -14,7 +14,7 @@ import (
 // Start starts the profiling server
 func Start(port string, log *logs.Logger) {
 	spawn := panics.GoroutineWrapperFunc(log)
-	spawn(func() {
+	spawn("profiling.Start", func() {
 		listenAddr := net.JoinHostPort("", port)
 		log.Infof("Profile server listening on %s", listenAddr)
 		profileRedirect := http.RedirectHandler("/debug/pprof", http.StatusSeeOther)

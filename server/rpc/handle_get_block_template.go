@@ -12,7 +12,6 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/mining"
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/txscript"
@@ -118,7 +117,7 @@ func handleGetBlockTemplateRequest(s *Server, request *rpcmodel.TemplateRequest,
 	// way to relay a found block or receive transactions to work on.
 	// However, allow this state when running in the regression test or
 	// simulation test mode.
-	if !(config.ActiveConfig().RegressionTest || config.ActiveConfig().Simnet) &&
+	if !(s.appCfg.RegressionTest || s.appCfg.Simnet) &&
 		s.cfg.ConnMgr.ConnectedCount() == 0 {
 
 		return nil, &rpcmodel.RPCError{
@@ -452,7 +451,7 @@ func (state *gbtWorkState) notifyLongPollers(tipHashes []*daghash.Hash, lastGene
 // clients with a new block template when their existing block template is
 // stale due to the newly added block.
 func (state *gbtWorkState) NotifyBlockAdded(tipHashes []*daghash.Hash) {
-	spawn(func() {
+	spawn("gbtWorkState.NotifyBlockAdded", func() {
 		state.Lock()
 		defer state.Unlock()
 
@@ -465,7 +464,7 @@ func (state *gbtWorkState) NotifyBlockAdded(tipHashes []*daghash.Hash) {
 // existing block template is stale due to enough time passing and the contents
 // of the memory pool changing.
 func (state *gbtWorkState) NotifyMempoolTx(lastUpdated mstime.Time) {
-	spawn(func() {
+	spawn("NotifyMempoolTx", func() {
 		state.Lock()
 		defer state.Unlock()
 

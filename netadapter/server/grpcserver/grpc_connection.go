@@ -41,7 +41,7 @@ func newConnection(server *gRPCServer, address net.Addr, isOutbound bool, stream
 func (c *gRPCConnection) Start(router *router.Router) {
 	c.router = router
 
-	spawn(func() {
+	spawn("gRPCConnection.Start-connectionLoops", func() {
 		err := c.connectionLoops()
 		if err != nil {
 			log.Errorf("error from connectionLoops for %s: %+v", c.address, err)

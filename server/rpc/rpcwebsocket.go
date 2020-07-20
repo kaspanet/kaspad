@@ -25,7 +25,6 @@ import (
 	"golang.org/x/crypto/ripemd160"
 
 	"github.com/btcsuite/websocket"
-	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/txscript"
@@ -91,9 +90,9 @@ func (s *Server) WebsocketHandler(conn *websocket.Conn, remoteAddr string,
 
 	// Limit max number of websocket clients.
 	log.Infof("New websocket client %s", remoteAddr)
-	if s.ntfnMgr.NumClients()+1 > config.ActiveConfig().RPCMaxWebsockets {
+	if s.ntfnMgr.NumClients()+1 > s.appCfg.RPCMaxWebsockets {
 		log.Infof("Max websocket clients exceeded [%d] - "+
-			"disconnecting client %s", config.ActiveConfig().RPCMaxWebsockets,
+			"disconnecting client %s", s.appCfg.RPCMaxWebsockets,
 			remoteAddr)
 		conn.Close()
 		return
@@ -804,8 +803,8 @@ func (m *wsNotificationManager) RemoveClient(wsc *wsClient) {
 // websocket client notifications.
 func (m *wsNotificationManager) Start() {
 	m.wg.Add(2)
-	spawn(m.queueHandler)
-	spawn(m.notificationHandler)
+	spawn("wsNotificationManager.queueHandler", m.queueHandler)
+	spawn("wsNotificationManager.notificationHandler", m.notificationHandler)
 }
 
 // WaitForShutdown blocks until all notification manager goroutines have
@@ -1062,7 +1061,7 @@ out:
 		// read of the next request from the websocket client and allow
 		// many requests to be waited on concurrently.
 		c.serviceRequestSem.acquire()
-		spawn(func() {
+		spawn("wsClient.inHandler-serviceRequest", func() {
 			c.serviceRequest(cmd)
 			c.serviceRequestSem.release()
 		})
@@ -1285,9 +1284,9 @@ func (c *wsClient) Start() {
 
 	// Start processing input and output.
 	c.wg.Add(3)
-	spawn(c.inHandler)
-	spawn(c.notificationQueueHandler)
-	spawn(c.outHandler)
+	spawn("wsClient.inHandler", c.inHandler)
+	spawn("wsClient.notificationQueueHandler", c.notificationQueueHandler)
+	spawn("wsClient.outHandler", c.outHandler)
 }
 
 // WaitForShutdown blocks until the websocket client goroutines are stopped
@@ -1324,7 +1323,7 @@ func newWebsocketClient(server *Server, conn *websocket.Conn,
 		isAdmin:           isAdmin,
 		sessionID:         sessionID,
 		server:            server,
-		serviceRequestSem: makeSemaphore(config.ActiveConfig().RPCMaxConcurrentReqs),
+		serviceRequestSem: makeSemaphore(server.appCfg.RPCMaxConcurrentReqs),
 		ntfnChan:          make(chan []byte, 1), // nonblocking sync
 		sendChan:          make(chan wsResponse, websocketSendBufferSize),
 		quit:              make(chan struct{}),

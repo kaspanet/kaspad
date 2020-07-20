@@ -14,23 +14,16 @@ import (
 const timeout = 30 * time.Second
 
 // ReceiveAddresses asks a peer for more addresses if needed.
-func ReceiveAddresses(incomingRoute *router.Route, outgoingRoute *router.Route,
-	peer *peerpkg.Peer, addressManager *addrmgr.AddrManager) (routeClosed bool, err error) {
-
-	subnetworkID, err := peer.SubnetworkID()
-	if err != nil {
-		panic(err)
-	}
+func ReceiveAddresses(incomingRoute *router.Route, outgoingRoute *router.Route, cfg *config.Config, peer *peerpkg.Peer,
+	addressManager *addrmgr.AddrManager) (routeClosed bool, err error) {
 
 	if !addressManager.NeedMoreAddresses() {
 		return false, nil
 	}
 
+	subnetworkID := peer.SubnetworkID()
 	msgGetAddresses := wire.NewMsgGetAddresses(false, subnetworkID)
-	isOpen, err := outgoingRoute.EnqueueWithTimeout(msgGetAddresses, timeout)
-	if err != nil {
-		return false, err
-	}
+	isOpen := outgoingRoute.Enqueue(msgGetAddresses)
 	if !isOpen {
 		return true, nil
 	}
@@ -52,10 +45,10 @@ func ReceiveAddresses(incomingRoute *router.Route, outgoingRoute *router.Route,
 		return false, protocolerrors.Errorf(true, "got unexpected "+
 			"IncludeAllSubnetworks=true in [%s] command", msgAddresses.Command())
 	}
-	if !msgAddresses.SubnetworkID.IsEqual(config.ActiveConfig().SubnetworkID) && msgAddresses.SubnetworkID != nil {
+	if !msgAddresses.SubnetworkID.IsEqual(cfg.SubnetworkID) && msgAddresses.SubnetworkID != nil {
 		return false, protocolerrors.Errorf(false, "only full nodes and %s subnetwork IDs "+
 			"are allowed in [%s] command, but got subnetwork ID %s",
-			config.ActiveConfig().SubnetworkID, msgAddresses.Command(), msgAddresses.SubnetworkID)
+			cfg.SubnetworkID, msgAddresses.Command(), msgAddresses.SubnetworkID)
 	}
 
 	// TODO(libp2p) Consider adding to peer known addresses set

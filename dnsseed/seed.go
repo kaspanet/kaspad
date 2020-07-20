@@ -13,7 +13,6 @@ import (
 
 	"github.com/kaspanet/kaspad/util/mstime"
 
-	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
 	"github.com/kaspanet/kaspad/dagconfig"
@@ -41,13 +40,12 @@ type OnSeed func(addrs []*wire.NetAddress)
 type LookupFunc func(string) ([]net.IP, error)
 
 // SeedFromDNS uses DNS seeding to populate the address manager with peers.
-func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag, includeAllSubnetworks bool,
+func SeedFromDNS(dagParams *dagconfig.Params, customSeed string, reqServices wire.ServiceFlag, includeAllSubnetworks bool,
 	subnetworkID *subnetworkid.SubnetworkID, lookupFn LookupFunc, seedFn OnSeed) {
 
 	var dnsSeeds []string
-	cfg := config.ActiveConfig()
-	if cfg != nil && cfg.DNSSeed != "" {
-		dnsSeeds = []string{cfg.DNSSeed}
+	if customSeed != "" {
+		dnsSeeds = []string{customSeed}
 	} else {
 		dnsSeeds = dagParams.DNSSeeds
 	}
@@ -68,7 +66,7 @@ func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag, incl
 			}
 		}
 
-		spawn(func() {
+		spawn("SeedFromDNS", func() {
 			randSource := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 			seedPeers, err := lookupFn(host)

@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/blocklogger"
+	"github.com/kaspanet/kaspad/protocol/flows/ibd"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/util"
@@ -41,6 +42,12 @@ func HandleRelayInvs(incomingRoute *router.Route, outgoingRoute *router.Route,
 				return protocolerrors.Errorf(true, "sent inv of an invalid block %s",
 					inv.Hash)
 			}
+			continue
+		}
+
+		ibd.StartIBDIfRequired(dag)
+		if ibd.IsInIBD() {
+			// Block relay is disabled during IBD
 			continue
 		}
 
@@ -106,10 +113,7 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, outgoingRoute *router.Rou
 	defer requestedBlocks.removeSet(pendingBlocks)
 
 	getRelayBlocksMsg := wire.NewMsgGetRelayBlocks(filteredHashesToRequest)
-	isOpen, err := outgoingRoute.EnqueueWithTimeout(getRelayBlocksMsg, timeout)
-	if err != nil {
-		return false, err
-	}
+	isOpen := outgoingRoute.Enqueue(getRelayBlocksMsg)
 	if !isOpen {
 		return true, nil
 	}
@@ -229,9 +233,12 @@ func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 	if err != nil {
 		return false, err
 	}
+
+	ibd.StartIBDIfRequired(dag)
 	err = newBlockHandler(block)
 	if err != nil {
 		panic(err)
 	}
+
 	return false, nil
 }

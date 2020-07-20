@@ -72,11 +72,7 @@ func requestInvTransactions(outgoingRoute *router.Route, txPool *mempool.TxPool,
 	}
 
 	msgGetTransactions := wire.NewMsgGetTransactions(idsToRequest)
-	isOpen, err := outgoingRoute.EnqueueWithTimeout(msgGetTransactions, 30*time.Second) // TODO(libp2p) Use common.DefaultTimeout
-	if err != nil {
-		sharedRequestedTransactions.removeMany(idsToRequest)
-		return nil, false, err
-	}
+	isOpen := outgoingRoute.Enqueue(msgGetTransactions)
 	if !isOpen {
 		sharedRequestedTransactions.removeMany(idsToRequest)
 		return nil, true, nil

@@ -378,19 +378,19 @@ func BenchmarkWriteBlockHeader(b *testing.B) {
 // decode a getblockinvs message.
 func BenchmarkDecodeGetBlockInvs(b *testing.B) {
 	pver := ProtocolVersion
-	var m MsgGetBlockInvs
+	var m MsgGetBlocks
 	m.LowHash = &daghash.Hash{1}
 	m.HighHash = &daghash.Hash{1}
 
 	// Serialize it so the bytes are available to test the decode below.
 	var bb bytes.Buffer
 	if err := m.KaspaEncode(&bb, pver); err != nil {
-		b.Fatalf("MsgGetBlockInvs.KaspaEncode: unexpected error: %v", err)
+		b.Fatalf("MsgGetBlocks.KaspaEncode: unexpected error: %v", err)
 	}
 	buf := bb.Bytes()
 
 	r := bytes.NewReader(buf)
-	var msg MsgGetBlockInvs
+	var msg MsgGetBlocks
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		r.Seek(0, 0)

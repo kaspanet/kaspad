@@ -50,7 +50,7 @@ func (s *gRPCServer) listenOn(listenAddr string) error {
 		return errors.Wrapf(err, "error listening on %s", listenAddr)
 	}
 
-	spawn(func() {
+	spawn("gRPCServer.listenOn-Serve", func() {
 		err := s.server.Serve(listener)
 		if err != nil {
 			panics.Exit(log, fmt.Sprintf("error serving on %s: %+v", listenAddr, err))

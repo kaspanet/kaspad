@@ -3,11 +3,13 @@ package handshake
 import (
 	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/netadapter"
 	"sync"
 	"sync/atomic"
 
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
+	"github.com/kaspanet/kaspad/protocol/flows/ibd"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/kaspanet/kaspad/wire"
@@ -16,8 +18,8 @@ import (
 
 // HandleHandshake sets up the handshake protocol - It sends a version message and waits for an incoming
 // version message, as well as a verack for the sent version
-func HandleHandshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
-	dag *blockdag.BlockDAG, addressManager *addrmgr.AddrManager) (closed bool, err error) {
+func HandleHandshake(cfg *config.Config, router *routerpkg.Router, netAdapter *netadapter.NetAdapter,
+	dag *blockdag.BlockDAG, addressManager *addrmgr.AddrManager) (peer *peerpkg.Peer, closed bool, err error) {
 
 	receiveVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVersion})
 	if err != nil {
@@ -38,8 +40,10 @@ func HandleHandshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter
 	errChanUsed := uint32(0)
 	errChan := make(chan error)
 
+	peer = peerpkg.New()
+
 	var peerAddress *wire.NetAddress
-	spawn(func() {
+	spawn("HandleHandshake-ReceiveVersion", func() {
 		defer wg.Done()
 		address, closed, err := ReceiveVersion(receiveVersionRoute, router.OutgoingRoute(), netAdapter, peer, dag)
 		if err != nil {
@@ -54,9 +58,9 @@ func HandleHandshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter
 		peerAddress = address
 	})
 
-	spawn(func() {
+	spawn("HandleHandshake-SendVersion", func() {
 		defer wg.Done()
-		closed, err := SendVersion(sendVersionRoute, router.OutgoingRoute(), netAdapter, dag)
+		closed, err := SendVersion(cfg, sendVersionRoute, router.OutgoingRoute(), netAdapter, dag)
 		if err != nil {
 			log.Errorf("error from SendVersion: %s", err)
 		}
@@ -71,42 +75,38 @@ func HandleHandshake(router *routerpkg.Router, netAdapter *netadapter.NetAdapter
 	select {
 	case err := <-errChan:
 		if err != nil {
-			return false, err
+			return nil, false, err
 		}
-		return true, nil
+		return nil, true, nil
 	case <-locks.ReceiveFromChanWhenDone(func() { wg.Wait() }):
 	}
 
 	err = peerpkg.AddToReadyPeers(peer)
 	if err != nil {
 		if errors.Is(err, peerpkg.ErrPeerWithSameIDExists) {
-			return false, err
+			return nil, false, err
 		}
 		panic(err)
 	}
 
-	peerID, err := peer.ID()
-	if err != nil {
-		panic(err)
-	}
-
+	peerID := peer.ID()
 	err = netAdapter.AssociateRouterID(router, peerID)
 	if err != nil {
 		panic(err)
 	}
 
 	if peerAddress != nil {
-		subnetworkID, err := peer.SubnetworkID()
-		if err != nil {
-			panic(err)
-		}
+		subnetworkID := peer.SubnetworkID()
 		addressManager.AddAddress(peerAddress, peerAddress, subnetworkID)
 		addressManager.Good(peerAddress, subnetworkID)
 	}
+
+	ibd.StartIBDIfRequired(dag)
 
 	err = router.RemoveRoute([]wire.MessageCommand{wire.CmdVersion, wire.CmdVerAck})
 	if err != nil {
 		panic(err)
 	}
-	return false, nil
+
+	return peer, false, nil
 }

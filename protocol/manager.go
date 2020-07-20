@@ -3,6 +3,7 @@ package protocol
 import (
 	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/protocol/flows/relaytransactions"
@@ -14,6 +15,7 @@ import (
 
 // Manager manages the p2p protocol
 type Manager struct {
+	cfg               *config.Config
 	netAdapter        *netadapter.NetAdapter
 	txPool            *mempool.TxPool
 	addedTransactions []*util.Tx
@@ -29,10 +31,10 @@ type Manager struct {
 }
 
 // NewManager creates a new instance of the p2p protocol manager
-func NewManager(listeningAddresses []string, dag *blockdag.BlockDAG,
+func NewManager(cfg *config.Config, dag *blockdag.BlockDAG,
 	addressManager *addrmgr.AddrManager, txPool *mempool.TxPool) (*Manager, error) {
 
-	netAdapter, err := netadapter.NewNetAdapter(listeningAddresses)
+	netAdapter, err := netadapter.NewNetAdapter(cfg)
 	if err != nil {
 		return nil, err
 	}

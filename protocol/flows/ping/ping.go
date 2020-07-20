@@ -23,10 +23,7 @@ func ReceivePings(incomingRoute *router.Route, outgoingRoute *router.Route) erro
 		pingMessage := message.(*wire.MsgPing)
 
 		pongMessage := wire.NewMsgPong(pingMessage.Nonce)
-		isOpen, err := outgoingRoute.EnqueueWithTimeout(pongMessage, pingTimeout)
-		if err != nil {
-			return err
-		}
+		isOpen = outgoingRoute.Enqueue(pongMessage)
 		if !isOpen {
 			return nil
 		}
@@ -49,10 +46,7 @@ func SendPings(incomingRoute *router.Route, outgoingRoute *router.Route, peer *p
 		peer.SetPingPending(nonce)
 
 		pingMessage := wire.NewMsgPing(nonce)
-		isOpen, err := outgoingRoute.EnqueueWithTimeout(pingMessage, pingTimeout)
-		if err != nil {
-			return err
-		}
+		isOpen := outgoingRoute.Enqueue(pingMessage)
 		if !isOpen {
 			return nil
 		}

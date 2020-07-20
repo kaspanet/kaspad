@@ -7,8 +7,6 @@ package addrmgr
 import (
 	"net"
 
-	"github.com/kaspanet/kaspad/config"
-
 	"github.com/kaspanet/kaspad/wire"
 )
 
@@ -202,8 +200,8 @@ func IsValid(na *wire.NetAddress) bool {
 // IsRoutable returns whether or not the passed address is routable over
 // the public internet. This is true as long as the address is valid and is not
 // in any reserved ranges.
-func IsRoutable(na *wire.NetAddress) bool {
-	if config.ActiveConfig().NetParams().AcceptUnroutable {
+func (a *AddrManager) IsRoutable(na *wire.NetAddress) bool {
+	if a.cfg.NetParams().AcceptUnroutable {
 		return !IsLocal(na)
 	}
 
@@ -217,11 +215,11 @@ func IsRoutable(na *wire.NetAddress) bool {
 // of. This is the /16 for IPv4, the /32 (/36 for he.net) for IPv6, the string
 // "local" for a local address, and the string "unroutable" for an unroutable
 // address.
-func GroupKey(na *wire.NetAddress) string {
+func (a *AddrManager) GroupKey(na *wire.NetAddress) string {
 	if IsLocal(na) {
 		return "local"
 	}
-	if !IsRoutable(na) {
+	if !a.IsRoutable(na) {
 		return "unroutable"
 	}
 	if IsIPv4(na) {

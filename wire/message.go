@@ -40,7 +40,7 @@ const (
 	CmdVerAck          MessageCommand = 1
 	CmdGetAddresses    MessageCommand = 2
 	CmdAddress         MessageCommand = 3
-	CmdGetBlockInvs    MessageCommand = 4
+	CmdGetBlocks       MessageCommand = 4
 	CmdInv             MessageCommand = 5
 	CmdGetData         MessageCommand = 6
 	CmdNotFound        MessageCommand = 7
@@ -63,6 +63,7 @@ const (
 	CmdRejectMalformed MessageCommand = 24 // Used only for reject message
 	CmdTxInv           MessageCommand = 25
 	CmdGetTransactions MessageCommand = 26
+	CmdIBDBlock        MessageCommand = 27
 )
 
 var messageCommandToString = map[MessageCommand]string{
@@ -70,7 +71,7 @@ var messageCommandToString = map[MessageCommand]string{
 	CmdVerAck:          "VerAck",
 	CmdGetAddresses:    "GetAddress",
 	CmdAddress:         "Address",
-	CmdGetBlockInvs:    "GetBlockInvs",
+	CmdGetBlocks:       "GetBlocks",
 	CmdInv:             "Inv",
 	CmdGetData:         "GetData",
 	CmdNotFound:        "NotFound",
@@ -93,6 +94,7 @@ var messageCommandToString = map[MessageCommand]string{
 	CmdRejectMalformed: "RejectMalformed",
 	CmdTxInv:           "TxInv",
 	CmdGetTransactions: "GetTransactions",
+	CmdIBDBlock:        "IBDBlock",
 }
 
 // Message is an interface that describes a kaspa message. A type that
@@ -123,8 +125,8 @@ func MakeEmptyMessage(command MessageCommand) (Message, error) {
 	case CmdAddress:
 		msg = &MsgAddresses{}
 
-	case CmdGetBlockInvs:
-		msg = &MsgGetBlockInvs{}
+	case CmdGetBlocks:
+		msg = &MsgGetBlocks{}
 
 	case CmdBlock:
 		msg = &MsgBlock{}
@@ -176,6 +178,9 @@ func MakeEmptyMessage(command MessageCommand) (Message, error) {
 
 	case CmdSelectedTip:
 		msg = &MsgSelectedTip{}
+
+	case CmdIBDBlock:
+		msg = &MsgIBDBlock{}
 
 	default:
 		return nil, errors.Errorf("unhandled command [%s]", command)
