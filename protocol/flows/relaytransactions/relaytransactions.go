@@ -69,6 +69,10 @@ func requestInvTransactions(outgoingRoute *router.Route, txPool *mempool.TxPool,
 		idsToRequest = append(idsToRequest, txID)
 	}
 
+	if len(idsToRequest) == 0 {
+		return idsToRequest, false, nil
+	}
+
 	msgGetTransactions := wire.NewMsgGetTransactions(idsToRequest)
 	isOpen := outgoingRoute.Enqueue(msgGetTransactions)
 	if !isOpen {
