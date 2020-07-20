@@ -44,6 +44,7 @@ func HandleRelayInvs(incomingRoute *router.Route, outgoingRoute *router.Route,
 
 		ibd.StartIBDIfRequired(dag)
 		if ibd.IsInIBD() {
+			// Block relay is disabled during IBD
 			continue
 		}
 
