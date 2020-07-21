@@ -245,5 +245,5 @@ func (g *BlkTmplGenerator) IsSynced() bool {
 	}
 
 	const maxSyncRateDeviation = 1.05
-	return s.dag.IsSyncRateBelowThreshold(maxSyncRateDeviation)
+	return g.dag.IsSyncRateBelowThreshold(maxSyncRateDeviation)
 }
