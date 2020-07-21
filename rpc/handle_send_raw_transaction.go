@@ -15,9 +15,6 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 	c := cmd.(*model.SendRawTransactionCmd)
 	// Deserialize and send off to tx relay
 	hexStr := c.HexTx
-	if len(hexStr)%2 != 0 {
-		hexStr = "0" + hexStr
-	}
 	serializedTx, err := hex.DecodeString(hexStr)
 	if err != nil {
 		return nil, rpcDecodeHexError(hexStr)
