@@ -40,7 +40,7 @@ type FlowContext struct {
 	readyPeersMutex sync.RWMutex
 }
 
-// New returns a new instance of *FlowContext.
+// New returns a new instance of FlowContext.
 func New(cfg *config.Config, dag *blockdag.BlockDAG,
 	addressManager *addrmgr.AddrManager, txPool *mempool.TxPool, netAdapter *netadapter.NetAdapter) *FlowContext {
 	return &FlowContext{

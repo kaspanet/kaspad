@@ -38,7 +38,7 @@ func (s *SharedRequestedBlocks) addIfNotExists(hash *daghash.Hash) (exists bool)
 	return false
 }
 
-// NewSharedRequestedBlocks returns a new instance of *SharedRequestedBlocks.
+// NewSharedRequestedBlocks returns a new instance of SharedRequestedBlocks.
 func NewSharedRequestedBlocks() *SharedRequestedBlocks {
 	return &SharedRequestedBlocks{
 		blocks: make(map[daghash.Hash]struct{}),
