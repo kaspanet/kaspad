@@ -1,11 +1,12 @@
 package dbaccess
 
 import (
-	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/util"
 	"io/ioutil"
 	"reflect"
 	"testing"
+
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util"
 )
 
 func TestBlockStoreSanity(t *testing.T) {
@@ -15,13 +16,13 @@ func TestBlockStoreSanity(t *testing.T) {
 		t.Fatalf("TestBlockStoreSanity: TempDir unexpectedly "+
 			"failed: %s", err)
 	}
-	err = Open(path)
+	databaseContext, err := New(path)
 	if err != nil {
 		t.Fatalf("TestBlockStoreSanity: Open unexpectedly "+
 			"failed: %s", err)
 	}
 	defer func() {
-		err := Close()
+		err := databaseContext.Close()
 		if err != nil {
 			t.Fatalf("TestBlockStoreSanity: Close unexpectedly "+
 				"failed: %s", err)
@@ -36,7 +37,7 @@ func TestBlockStoreSanity(t *testing.T) {
 		t.Fatalf("TestBlockStoreSanity: util.Block.Bytes unexpectedly "+
 			"failed: %s", err)
 	}
-	dbTx, err := NewTx()
+	dbTx, err := databaseContext.NewTx()
 	if err != nil {
 		t.Fatalf("Failed to open database "+
 			"transaction: %s", err)
@@ -54,7 +55,7 @@ func TestBlockStoreSanity(t *testing.T) {
 	}
 
 	// Make sure the genesis block now exists in the db
-	exists, err := HasBlock(NoTx(), genesisHash)
+	exists, err := HasBlock(databaseContext, genesisHash)
 	if err != nil {
 		t.Fatalf("TestBlockStoreSanity: HasBlock unexpectedly "+
 			"failed: %s", err)
@@ -66,7 +67,7 @@ func TestBlockStoreSanity(t *testing.T) {
 
 	// Fetch the genesis block back from the db and make sure
 	// that it's equal to the original
-	fetchedGenesisBytes, err := FetchBlock(NoTx(), genesisHash)
+	fetchedGenesisBytes, err := FetchBlock(databaseContext, genesisHash)
 	if err != nil {
 		t.Fatalf("TestBlockStoreSanity: FetchBlock unexpectedly "+
 			"failed: %s", err)

@@ -185,18 +185,18 @@ func createEmptyAddressManagerForTest(t *testing.T, testName string, appConfig *
 			"failed: %s", err)
 	}
 
-	err = dbaccess.Open(path)
+	databaseContext, err := dbaccess.New(path)
 	if err != nil {
 		t.Fatalf("error creating db: %s", err)
 	}
 
-	return addrmgr.New(appConfig), func() {
+	return addrmgr.New(appConfig, databaseContext), func() {
 		// Wait for the connection manager to finish, so it'll
 		// have access to the address manager as long as it's
 		// alive.
 		time.Sleep(10 * time.Millisecond)
 
-		err := dbaccess.Close()
+		err := databaseContext.Close()
 		if err != nil {
 			t.Fatalf("error closing the database: %s", err)
 		}

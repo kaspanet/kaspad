@@ -81,6 +81,8 @@ func DAGSetup(dbName string, openDb bool, config Config) (*BlockDAG, func(), err
 			return nil, nil, errors.Errorf("error creating db: %s", err)
 		}
 
+		config.DatabaseContext = databaseContext
+
 		// Setup a teardown function for cleaning up. This function is
 		// returned to the caller to be invoked when it is done testing.
 		teardown = func() {
