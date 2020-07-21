@@ -1,13 +1,6 @@
 package indexers
 
 import (
-	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/dbaccess"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
-	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"os"
@@ -15,6 +8,14 @@ import (
 	"reflect"
 	"syscall"
 	"testing"
+
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
 )
 
 func TestAcceptanceIndexSerializationAndDeserialization(t *testing.T) {
@@ -96,14 +97,15 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 	}
 	defer os.RemoveAll(db1Path)
 
-	err = dbaccess.Open(db1Path)
+	databaseContext1, err := dbaccess.New(db1Path)
 	if err != nil {
 		t.Fatalf("error creating db: %s", err)
 	}
 
 	db1Config := blockdag.Config{
-		IndexManager: db1IndexManager,
-		DAGParams:    params,
+		IndexManager:    db1IndexManager,
+		DAGParams:       params,
+		DatabaseContext: databaseContext1,
 	}
 
 	db1DAG, teardown, err := blockdag.DAGSetup("", false, db1Config)
@@ -160,17 +162,18 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 		t.Fatalf("Error fetching acceptance data: %s", err)
 	}
 
-	err = dbaccess.Close()
+	err = databaseContext1.Close()
 	if err != nil {
 		t.Fatalf("Error closing the database: %s", err)
 	}
-	err = dbaccess.Open(db2Path)
+	databaseContext2, err := dbaccess.New(db2Path)
 	if err != nil {
 		t.Fatalf("error creating db: %s", err)
 	}
 
 	db2Config := blockdag.Config{
-		DAGParams: params,
+		DAGParams:       params,
+		DatabaseContext: databaseContext2,
 	}
 
 	db2DAG, teardown, err := blockdag.DAGSetup("", false, db2Config)
@@ -206,11 +209,11 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 		t.Fatalf("copyDirectory: %s", err)
 	}
 
-	err = dbaccess.Close()
+	err = databaseContext2.Close()
 	if err != nil {
 		t.Fatalf("Error closing the database: %s", err)
 	}
-	err = dbaccess.Open(db3Path)
+	databaseContext3, err := dbaccess.New(db3Path)
 	if err != nil {
 		t.Fatalf("error creating db: %s", err)
 	}
@@ -218,8 +221,9 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 	db3AcceptanceIndex := NewAcceptanceIndex()
 	db3IndexManager := NewManager([]Indexer{db3AcceptanceIndex})
 	db3Config := blockdag.Config{
-		IndexManager: db3IndexManager,
-		DAGParams:    params,
+		IndexManager:    db3IndexManager,
+		DAGParams:       params,
+		DatabaseContext: databaseContext3,
 	}
 
 	_, teardown, err = blockdag.DAGSetup("", false, db3Config)

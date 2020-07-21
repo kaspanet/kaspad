@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
@@ -17,7 +18,7 @@ func (dag *BlockDAG) addNodeToIndexWithInvalidAncestor(block *util.Block) error 
 	newNode.status = statusInvalidAncestor
 	dag.index.AddNode(newNode)
 
-	dbTx, err := dbaccess.NewTx()
+	dbTx, err := dag.databaseContext.NewTx()
 	if err != nil {
 		return err
 	}
@@ -72,7 +73,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	// expensive connection logic. It also has some other nice properties
 	// such as making blocks that never become part of the DAG or
 	// blocks that fail to connect available for further analysis.
-	dbTx, err := dbaccess.NewTx()
+	dbTx, err := dag.databaseContext.NewTx()
 	if err != nil {
 		return err
 	}

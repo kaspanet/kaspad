@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
 
@@ -75,8 +76,8 @@ func TxToSubnetworkID(tx *wire.MsgTx) (*subnetworkid.SubnetworkID, error) {
 }
 
 // fetchSubnetwork returns a registered subnetwork.
-func fetchSubnetwork(subnetworkID *subnetworkid.SubnetworkID) (*subnetwork, error) {
-	serializedSubnetwork, err := dbaccess.FetchSubnetworkData(dbaccess.NoTx(), subnetworkID)
+func (dag *BlockDAG) fetchSubnetwork(subnetworkID *subnetworkid.SubnetworkID) (*subnetwork, error) {
+	serializedSubnetwork, err := dbaccess.FetchSubnetworkData(dag.databaseContext, subnetworkID)
 	if err != nil {
 		return nil, err
 	}
@@ -91,8 +92,8 @@ func fetchSubnetwork(subnetworkID *subnetworkid.SubnetworkID) (*subnetwork, erro
 
 // GasLimit returns the gas limit of a registered subnetwork. If the subnetwork does not
 // exist this method returns an error.
-func GasLimit(subnetworkID *subnetworkid.SubnetworkID) (uint64, error) {
-	sNet, err := fetchSubnetwork(subnetworkID)
+func (dag *BlockDAG) GasLimit(subnetworkID *subnetworkid.SubnetworkID) (uint64, error) {
+	sNet, err := dag.fetchSubnetwork(subnetworkID)
 	if err != nil {
 		return 0, err
 	}

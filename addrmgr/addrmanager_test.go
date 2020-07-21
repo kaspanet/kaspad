@@ -119,15 +119,15 @@ func newAddrManagerForTest(t *testing.T, testName string,
 		t.Fatalf("Error creating temporary directory: %s", err)
 	}
 
-	err = dbaccess.Open(dbPath)
+	databaseContext, err := dbaccess.New(dbPath)
 	if err != nil {
 		t.Fatalf("error creating db: %s", err)
 	}
 
-	addressManager = New(cfg)
+	addressManager = New(cfg, databaseContext)
 
 	return addressManager, func() {
-		err := dbaccess.Close()
+		err := databaseContext.Close()
 		if err != nil {
 			t.Fatalf("error closing the database: %s", err)
 		}

@@ -9,11 +9,11 @@ import (
 
 // SendAddresses sends addresses to a peer that requests it.
 func SendAddresses(incomingRoute *router.Route, outgoingRoute *router.Route,
-	addressManager *addrmgr.AddrManager) (routeClosed bool, err error) {
+	addressManager *addrmgr.AddrManager) error {
 
-	message, isOpen := incomingRoute.Dequeue()
-	if !isOpen {
-		return true, nil
+	message, err := incomingRoute.Dequeue()
+	if err != nil {
+		return err
 	}
 
 	msgGetAddresses := message.(*wire.MsgGetAddresses)
@@ -24,11 +24,7 @@ func SendAddresses(incomingRoute *router.Route, outgoingRoute *router.Route,
 		panic(err)
 	}
 
-	isOpen = outgoingRoute.Enqueue(msgAddresses)
-	if !isOpen {
-		return true, nil
-	}
-	return false, nil
+	return outgoingRoute.Enqueue(msgAddresses)
 }
 
 // shuffleAddresses randomizes the given addresses sent if there are more than the maximum allowed in one message.

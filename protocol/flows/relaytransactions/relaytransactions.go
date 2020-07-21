@@ -26,36 +26,27 @@ func HandleRelayedTransactions(incomingRoute *router.Route, outgoingRoute *route
 
 	invsQueue := make([]*wire.MsgInvTransaction, 0)
 	for {
-		inv, shouldStop, err := readInv(incomingRoute, &invsQueue)
+		inv, err := readInv(incomingRoute, &invsQueue)
 		if err != nil {
 			return err
 		}
-		if shouldStop {
-			return nil
-		}
 
-		requestedIDs, shouldStop, err := requestInvTransactions(outgoingRoute, txPool, dag, sharedRequestedTransactions, inv)
+		requestedIDs, err := requestInvTransactions(outgoingRoute, txPool, dag, sharedRequestedTransactions, inv)
 		if err != nil {
 			return err
 		}
-		if shouldStop {
-			return nil
-		}
 
-		shouldStop, err = receiveTransactions(requestedIDs, incomingRoute, &invsQueue, txPool, netAdapter,
+		err = receiveTransactions(requestedIDs, incomingRoute, &invsQueue, txPool, netAdapter,
 			sharedRequestedTransactions, peers)
 		if err != nil {
 			return err
-		}
-		if shouldStop {
-			return nil
 		}
 	}
 }
 
 func requestInvTransactions(outgoingRoute *router.Route, txPool *mempool.TxPool, dag *blockdag.BlockDAG,
 	sharedRequestedTransactions *SharedRequestedTransactions, inv *wire.MsgInvTransaction) (requestedIDs []*daghash.TxID,
-	shouldStop bool, err error) {
+	err error) {
 
 	idsToRequest := make([]*daghash.TxID, 0, len(inv.TxIDS))
 	for _, txID := range inv.TxIDS {
@@ -70,16 +61,16 @@ func requestInvTransactions(outgoingRoute *router.Route, txPool *mempool.TxPool,
 	}
 
 	if len(idsToRequest) == 0 {
-		return idsToRequest, false, nil
+		return idsToRequest, nil
 	}
 
 	msgGetTransactions := wire.NewMsgGetTransactions(idsToRequest)
-	isOpen := outgoingRoute.Enqueue(msgGetTransactions)
-	if !isOpen {
+	err = outgoingRoute.Enqueue(msgGetTransactions)
+	if err != nil {
 		sharedRequestedTransactions.removeMany(idsToRequest)
-		return nil, true, nil
+		return nil, err
 	}
-	return idsToRequest, false, nil
+	return idsToRequest, nil
 }
 
 func isKnownTransaction(txPool *mempool.TxPool, dag *blockdag.BlockDAG, txID *daghash.TxID) bool {
@@ -108,25 +99,25 @@ func isKnownTransaction(txPool *mempool.TxPool, dag *blockdag.BlockDAG, txID *da
 	return false
 }
 
-func readInv(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvTransaction) (
-	inv *wire.MsgInvTransaction, shouldStop bool, err error) {
+func readInv(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvTransaction) (*wire.MsgInvTransaction, error) {
 
 	if len(*invsQueue) > 0 {
+		var inv *wire.MsgInvTransaction
 		inv, *invsQueue = (*invsQueue)[0], (*invsQueue)[1:]
-		return inv, false, nil
+		return inv, nil
 	}
 
-	msg, isOpen := incomingRoute.Dequeue()
-	if !isOpen {
-		return nil, true, nil
+	msg, err := incomingRoute.Dequeue()
+	if err != nil {
+		return nil, err
 	}
 
 	inv, ok := msg.(*wire.MsgInvTransaction)
 	if !ok {
-		return nil, false, protocolerrors.Errorf(true, "unexpected %s message in the block relay flow while "+
+		return nil, protocolerrors.Errorf(true, "unexpected %s message in the block relay flow while "+
 			"expecting an inv message", msg.Command())
 	}
-	return inv, false, nil
+	return inv, nil
 }
 
 func broadcastAcceptedTransactions(netAdapter *netadapter.NetAdapter, acceptedTxs []*mempool.TxDesc, peers *peerpkg.Peers) error {
@@ -144,22 +135,19 @@ func broadcastAcceptedTransactions(netAdapter *netadapter.NetAdapter, acceptedTx
 //
 // Note: this function assumes msgChan can contain only wire.MsgInvTransaction and wire.MsgBlock messages.
 func readMsgTx(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvTransaction) (
-	msgTx *wire.MsgTx, shouldStop bool, err error) {
+	msgTx *wire.MsgTx, err error) {
 
 	for {
-		message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+		message, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 		if err != nil {
-			return nil, false, err
-		}
-		if !isOpen {
-			return nil, true, nil
+			return nil, err
 		}
 
 		switch message := message.(type) {
 		case *wire.MsgInvTransaction:
 			*invsQueue = append(*invsQueue, message)
 		case *wire.MsgTx:
-			return message, false, nil
+			return message, nil
 		default:
 			panic(errors.Errorf("unexpected message %s", message.Command()))
 		}
@@ -168,22 +156,19 @@ func readMsgTx(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvTransaction
 
 func receiveTransactions(requestedTransactions []*daghash.TxID, incomingRoute *router.Route,
 	invsQueue *[]*wire.MsgInvTransaction, txPool *mempool.TxPool, netAdapter *netadapter.NetAdapter,
-	sharedRequestedTransactions *SharedRequestedTransactions, peers *peerpkg.Peers) (shouldStop bool, err error) {
+	sharedRequestedTransactions *SharedRequestedTransactions, peers *peerpkg.Peers) error {
 
 	// In case the function returns earlier than expected, we want to make sure sharedRequestedTransactions is
 	// clean from any pending transactions.
 	defer sharedRequestedTransactions.removeMany(requestedTransactions)
 	for _, expectedID := range requestedTransactions {
-		msgTx, shouldStop, err := readMsgTx(incomingRoute, invsQueue)
+		msgTx, err := readMsgTx(incomingRoute, invsQueue)
 		if err != nil {
-			return false, err
-		}
-		if shouldStop {
-			return true, nil
+			return err
 		}
 		tx := util.NewTx(msgTx)
 		if !tx.ID().IsEqual(expectedID) {
-			return false, protocolerrors.Errorf(true, "expected transaction %s", expectedID)
+			return protocolerrors.Errorf(true, "expected transaction %s", expectedID)
 		}
 
 		acceptedTxs, err := txPool.ProcessTransaction(tx, true, 0) // TODO(libp2p) Use the peer ID for the mempool tag
@@ -210,7 +195,7 @@ func receiveTransactions(requestedTransactions []*daghash.TxID, incomingRoute *r
 				continue
 			}
 
-			return false, protocolerrors.Errorf(true, "rejected transaction %s", tx.ID())
+			return protocolerrors.Errorf(true, "rejected transaction %s", tx.ID())
 		}
 		err = broadcastAcceptedTransactions(netAdapter, acceptedTxs, peers)
 		if err != nil {
@@ -218,5 +203,5 @@ func receiveTransactions(requestedTransactions []*daghash.TxID, incomingRoute *r
 		}
 		// TODO(libp2p) Notify transactionsAcceptedToMempool to RPC
 	}
-	return false, nil
+	return nil
 }

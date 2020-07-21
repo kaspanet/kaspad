@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	"github.com/kaspanet/kaspad/dbaccess"
+
 	"github.com/kaspanet/kaspad/dnsseed"
 	"github.com/kaspanet/kaspad/wire"
 
@@ -104,13 +106,13 @@ func (k *kaspad) stop() error {
 // newKaspad returns a new kaspad instance configured to listen on addr for the
 // kaspa network type specified by dagParams. Use start to begin accepting
 // connections from peers.
-func newKaspad(cfg *config.Config, interrupt <-chan struct{}) (*kaspad, error) {
+func newKaspad(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrupt <-chan struct{}) (*kaspad, error) {
 	indexManager, acceptanceIndex := setupIndexes(cfg)
 
 	sigCache := txscript.NewSigCache(cfg.SigCacheMaxSize)
 
 	// Create a new block DAG instance with the appropriate configuration.
-	dag, err := setupDAG(cfg, interrupt, sigCache, indexManager)
+	dag, err := setupDAG(cfg, databaseContext, interrupt, sigCache, indexManager)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +123,7 @@ func newKaspad(cfg *config.Config, interrupt <-chan struct{}) (*kaspad, error) {
 	if err != nil {
 		return nil, err
 	}
-	addressManager := addrmgr.New(cfg)
+	addressManager := addrmgr.New(cfg, databaseContext)
 
 	protocolManager, err := protocol.NewManager(cfg, dag, addressManager, txMempool)
 	if err != nil {
@@ -147,14 +149,17 @@ func newKaspad(cfg *config.Config, interrupt <-chan struct{}) (*kaspad, error) {
 	}, nil
 }
 
-func setupDAG(cfg *config.Config, interrupt <-chan struct{}, sigCache *txscript.SigCache, indexManager blockdag.IndexManager) (*blockdag.BlockDAG, error) {
+func setupDAG(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrupt <-chan struct{},
+	sigCache *txscript.SigCache, indexManager blockdag.IndexManager) (*blockdag.BlockDAG, error) {
+
 	dag, err := blockdag.New(&blockdag.Config{
-		Interrupt:    interrupt,
-		DAGParams:    cfg.NetParams(),
-		TimeSource:   blockdag.NewTimeSource(),
-		SigCache:     sigCache,
-		IndexManager: indexManager,
-		SubnetworkID: cfg.SubnetworkID,
+		Interrupt:       interrupt,
+		DatabaseContext: databaseContext,
+		DAGParams:       cfg.NetParams(),
+		TimeSource:      blockdag.NewTimeSource(),
+		SigCache:        sigCache,
+		IndexManager:    indexManager,
+		SubnetworkID:    cfg.SubnetworkID,
 	})
 	return dag, err
 }

@@ -175,8 +175,13 @@ func (na *NetAdapter) Broadcast(connectionIDs []*id.ID, message wire.Message) er
 			log.Warnf("connectionID %s is not registered", connectionID)
 			continue
 		}
-		_, err := router.EnqueueIncomingMessage(message)
+		err := router.EnqueueIncomingMessage(message)
 		if err != nil {
+			if errors.Is(err, routerpkg.ErrRouteClosed) {
+				connection := na.routersToConnections[router]
+				log.Debugf("Cannot enqueue message to %s: router is closed", connection)
+				continue
+			}
 			return err
 		}
 	}

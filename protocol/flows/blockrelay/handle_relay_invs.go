@@ -28,12 +28,9 @@ func HandleRelayInvs(incomingRoute *router.Route, outgoingRoute *router.Route,
 
 	invsQueue := make([]*wire.MsgInvRelayBlock, 0)
 	for {
-		inv, shouldStop, err := readInv(incomingRoute, &invsQueue)
+		inv, err := readInv(incomingRoute, &invsQueue)
 		if err != nil {
 			return err
-		}
-		if shouldStop {
-			return nil
 		}
 
 		if dag.IsKnownBlock(inv.Hash) {
@@ -54,43 +51,40 @@ func HandleRelayInvs(incomingRoute *router.Route, outgoingRoute *router.Route,
 		requestQueue.enqueueIfNotExists(inv.Hash)
 
 		for requestQueue.len() > 0 {
-			shouldStop, err := requestBlocks(netAdapter, outgoingRoute, peer, incomingRoute, dag, &invsQueue,
+			err := requestBlocks(netAdapter, outgoingRoute, peer, incomingRoute, dag, &invsQueue,
 				requestQueue, newBlockHandler, peers)
 			if err != nil {
 				return err
-			}
-			if shouldStop {
-				return nil
 			}
 		}
 	}
 }
 
-func readInv(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlock) (
-	inv *wire.MsgInvRelayBlock, shouldStop bool, err error) {
+func readInv(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlock) (*wire.MsgInvRelayBlock, error) {
 
 	if len(*invsQueue) > 0 {
+		var inv *wire.MsgInvRelayBlock
 		inv, *invsQueue = (*invsQueue)[0], (*invsQueue)[1:]
-		return inv, false, nil
+		return inv, nil
 	}
 
-	msg, isOpen := incomingRoute.Dequeue()
-	if !isOpen {
-		return nil, true, nil
+	msg, err := incomingRoute.Dequeue()
+	if err != nil {
+		return nil, err
 	}
 
 	inv, ok := msg.(*wire.MsgInvRelayBlock)
 	if !ok {
-		return nil, false, protocolerrors.Errorf(true, "unexpected %s message in the block relay flow while "+
+		return nil, protocolerrors.Errorf(true, "unexpected %s message in the block relay flow while "+
 			"expecting an inv message", msg.Command())
 	}
-	return inv, false, nil
+	return inv, nil
 }
 
 func requestBlocks(netAdapater *netadapter.NetAdapter, outgoingRoute *router.Route,
 	peer *peerpkg.Peer, incomingRoute *router.Route, dag *blockdag.BlockDAG,
 	invsQueue *[]*wire.MsgInvRelayBlock, requestQueue *hashesQueueSet,
-	newBlockHandler NewBlockHandler, peers *peerpkg.Peers) (shouldStop bool, err error) {
+	newBlockHandler NewBlockHandler, peers *peerpkg.Peers) error {
 
 	numHashesToRequest := mathUtil.MinInt(wire.MsgGetRelayBlocksHashes, requestQueue.len())
 	hashesToRequest := requestQueue.dequeue(numHashesToRequest)
@@ -112,59 +106,50 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, outgoingRoute *router.Rou
 	defer requestedBlocks.removeSet(pendingBlocks)
 
 	getRelayBlocksMsg := wire.NewMsgGetRelayBlocks(filteredHashesToRequest)
-	isOpen := outgoingRoute.Enqueue(getRelayBlocksMsg)
-	if !isOpen {
-		return true, nil
+	err := outgoingRoute.Enqueue(getRelayBlocksMsg)
+	if err != nil {
+		return err
 	}
 
 	for len(pendingBlocks) > 0 {
-		msgBlock, shouldStop, err := readMsgBlock(incomingRoute, invsQueue)
+		msgBlock, err := readMsgBlock(incomingRoute, invsQueue)
 		if err != nil {
-			return false, err
-		}
-		if shouldStop {
-			return true, nil
+			return err
 		}
 
 		block := util.NewBlock(msgBlock)
 		blockHash := block.Hash()
 		if _, ok := pendingBlocks[*blockHash]; !ok {
-			return false, protocolerrors.Errorf(true, "got unrequested block %s", block.Hash())
+			return protocolerrors.Errorf(true, "got unrequested block %s", block.Hash())
 		}
 		delete(pendingBlocks, *blockHash)
 		requestedBlocks.remove(blockHash)
 
-		shouldStop, err = processAndRelayBlock(netAdapater, peer, dag, requestQueue, block, newBlockHandler, peers)
+		err = processAndRelayBlock(netAdapater, peer, dag, requestQueue, block, newBlockHandler, peers)
 		if err != nil {
-			return false, err
-		}
-		if shouldStop {
-			return true, nil
+			return err
 		}
 	}
-	return false, nil
+	return nil
 }
 
 // readMsgBlock returns the next msgBlock in msgChan, and populates invsQueue with any inv messages that meanwhile arrive.
 //
 // Note: this function assumes msgChan can contain only wire.MsgInvRelayBlock and wire.MsgBlock messages.
 func readMsgBlock(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlock) (
-	msgBlock *wire.MsgBlock, shouldStop bool, err error) {
+	msgBlock *wire.MsgBlock, err error) {
 
 	for {
-		message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+		message, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 		if err != nil {
-			return nil, false, err
-		}
-		if !isOpen {
-			return nil, true, nil
+			return nil, err
 		}
 
 		switch message := message.(type) {
 		case *wire.MsgInvRelayBlock:
 			*invsQueue = append(*invsQueue, message)
 		case *wire.MsgBlock:
-			return message, false, nil
+			return message, nil
 		default:
 			panic(errors.Errorf("unexpected message %s", message.Command()))
 		}
@@ -173,7 +158,7 @@ func readMsgBlock(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlo
 
 func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 	dag *blockdag.BlockDAG, requestQueue *hashesQueueSet, block *util.Block,
-	newBlockHandler NewBlockHandler, peers *peerpkg.Peers) (shouldStop bool, err error) {
+	newBlockHandler NewBlockHandler, peers *peerpkg.Peers) error {
 
 	blockHash := block.Hash()
 	isOrphan, isDelayed, err := dag.ProcessBlock(block, blockdag.BFNone)
@@ -188,17 +173,17 @@ func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 		log.Infof("Rejected block %s from %s: %s", blockHash,
 			peer, err)
 
-		return false, protocolerrors.Wrap(true, err, "got invalid block")
+		return protocolerrors.Wrap(true, err, "got invalid block")
 	}
 
 	if isDelayed {
-		return false, nil
+		return nil
 	}
 
 	if isOrphan {
 		blueScore, err := block.BlueScore()
 		if err != nil {
-			return false, protocolerrors.Errorf(true, "received an orphan "+
+			return protocolerrors.Errorf(true, "received an orphan "+
 				"block %s with malformed blue score", blockHash)
 		}
 
@@ -208,7 +193,7 @@ func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 			log.Infof("Orphan block %s has blue score %d and the selected tip blue score is "+
 				"%d. Ignoring orphans with a blue score difference from the selected tip greater than %d",
 				blockHash, blueScore, selectedTipBlueScore, maxOrphanBlueScoreDiff)
-			return false, nil
+			return nil
 		}
 
 		// Request the parents for the orphan block from the peer that sent it.
@@ -216,11 +201,11 @@ func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 		for _, missingAncestor := range missingAncestors {
 			requestQueue.enqueueIfNotExists(missingAncestor)
 		}
-		return false, nil
+		return nil
 	}
 	err = blocklogger.LogBlock(block)
 	if err != nil {
-		return false, err
+		return err
 	}
 	//TODO(libp2p)
 	//// When the block is not an orphan, log information about it and
@@ -230,7 +215,7 @@ func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 	//sm.rejectedTxns = make(map[daghash.TxID]struct{})
 	err = netAdapter.Broadcast(peers.ReadyPeerIDs(), wire.NewMsgInvBlock(blockHash))
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	ibd.StartIBDIfRequired(dag, peers)
@@ -239,5 +224,5 @@ func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 		panic(err)
 	}
 
-	return false, nil
+	return nil
 }

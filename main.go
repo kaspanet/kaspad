@@ -94,14 +94,14 @@ func kaspadMain(startedChan chan<- struct{}) error {
 	}
 
 	// Open the database
-	err = openDB(cfg)
+	databaseContext, err := openDB(cfg)
 	if err != nil {
 		log.Errorf("%s", err)
 		return err
 	}
 	defer func() {
 		log.Infof("Gracefully shutting down the database...")
-		err := dbaccess.Close()
+		err := databaseContext.Close()
 		if err != nil {
 			log.Errorf("Failed to close the database: %s", err)
 		}
@@ -114,7 +114,7 @@ func kaspadMain(startedChan chan<- struct{}) error {
 
 	// Drop indexes and exit if requested.
 	if cfg.DropAcceptanceIndex {
-		if err := indexers.DropAcceptanceIndex(); err != nil {
+		if err := indexers.DropAcceptanceIndex(databaseContext); err != nil {
 			log.Errorf("%s", err)
 			return err
 		}
@@ -123,7 +123,7 @@ func kaspadMain(startedChan chan<- struct{}) error {
 	}
 
 	// Create kaspad and start it.
-	kaspad, err := newKaspad(cfg, interrupt)
+	kaspad, err := newKaspad(cfg, databaseContext, interrupt)
 	if err != nil {
 		log.Errorf("Unable to start kaspad: %+v", err)
 		return err
@@ -175,14 +175,10 @@ func blockDbPath(cfg *config.Config) string {
 	return dbPath
 }
 
-func openDB(cfg *config.Config) error {
+func openDB(cfg *config.Config) (*dbaccess.DatabaseContext, error) {
 	dbPath := filepath.Join(cfg.DataDir, "db")
 	log.Infof("Loading database from '%s'", dbPath)
-	err := dbaccess.Open(dbPath)
-	if err != nil {
-		return err
-	}
-	return nil
+	return dbaccess.New(dbPath)
 }
 
 func main() {

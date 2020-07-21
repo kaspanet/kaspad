@@ -18,7 +18,7 @@ import (
 type Indexer interface {
 	// Init is invoked when the index manager is first initializing the
 	// index.
-	Init(dag *blockdag.BlockDAG) error
+	Init(dag *blockdag.BlockDAG, databaseContext *dbaccess.DatabaseContext) error
 
 	// ConnectBlock is invoked when the index manager is notified that a new
 	// block has been connected to the DAG.

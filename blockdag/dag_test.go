@@ -6,15 +6,16 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/dbaccess"
-	"github.com/pkg/errors"
 	"math"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/kaspanet/go-secp256k1"
+	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/txscript"
@@ -556,18 +557,19 @@ func TestNew(t *testing.T) {
 
 	dbPath := filepath.Join(tempDir, "TestNew")
 	_ = os.RemoveAll(dbPath)
-	err := dbaccess.Open(dbPath)
+	databaseContext, err := dbaccess.New(dbPath)
 	if err != nil {
 		t.Fatalf("error creating db: %s", err)
 	}
 	defer func() {
-		dbaccess.Close()
+		databaseContext.Close()
 		os.RemoveAll(dbPath)
 	}()
 	config := &Config{
-		DAGParams:  &dagconfig.SimnetParams,
-		TimeSource: NewTimeSource(),
-		SigCache:   txscript.NewSigCache(1000),
+		DatabaseContext: databaseContext,
+		DAGParams:       &dagconfig.SimnetParams,
+		TimeSource:      NewTimeSource(),
+		SigCache:        txscript.NewSigCache(1000),
 	}
 	_, err = New(config)
 	if err != nil {
@@ -595,20 +597,21 @@ func TestAcceptingInInit(t *testing.T) {
 	// Create a test database
 	dbPath := filepath.Join(tempDir, "TestAcceptingInInit")
 	_ = os.RemoveAll(dbPath)
-	err := dbaccess.Open(dbPath)
+	databaseContext, err := dbaccess.New(dbPath)
 	if err != nil {
 		t.Fatalf("error creating db: %s", err)
 	}
 	defer func() {
-		dbaccess.Close()
+		databaseContext.Close()
 		os.RemoveAll(dbPath)
 	}()
 
 	// Create a DAG to add the test block into
 	config := &Config{
-		DAGParams:  &dagconfig.SimnetParams,
-		TimeSource: NewTimeSource(),
-		SigCache:   txscript.NewSigCache(1000),
+		DatabaseContext: databaseContext,
+		DAGParams:       &dagconfig.SimnetParams,
+		TimeSource:      NewTimeSource(),
+		SigCache:        txscript.NewSigCache(1000),
 	}
 	dag, err := New(config)
 	if err != nil {
@@ -632,7 +635,7 @@ func TestAcceptingInInit(t *testing.T) {
 	testNode.status = statusDataStored
 
 	// Manually add the test block to the database
-	dbTx, err := dbaccess.NewTx()
+	dbTx, err := databaseContext.NewTx()
 	if err != nil {
 		t.Fatalf("Failed to open database "+
 			"transaction: %s", err)
@@ -924,7 +927,7 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 	blockTime := dag.genesis.Header().Timestamp
 
 	flushUTXODiffStore := func() {
-		dbTx, err := dbaccess.NewTx()
+		dbTx, err := dag.databaseContext.NewTx()
 		if err != nil {
 			t.Fatalf("Failed to open database transaction: %s", err)
 		}

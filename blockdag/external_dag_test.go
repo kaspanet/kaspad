@@ -201,7 +201,7 @@ func TestSubnetworkRegistry(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not register network: %s", err)
 	}
-	limit, err := blockdag.GasLimit(subnetworkID)
+	limit, err := dag.GasLimit(subnetworkID)
 	if err != nil {
 		t.Fatalf("could not retrieve gas limit: %s", err)
 	}

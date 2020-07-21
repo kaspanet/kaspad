@@ -11,12 +11,9 @@ import (
 // HandleGetBlockLocator handles getBlockLocator messages
 func HandleGetBlockLocator(incomingRoute *router.Route, outgoingRoute *router.Route, dag *blockdag.BlockDAG) error {
 	for {
-		lowHash, highHash, shouldStop, err := receiveGetBlockLocator(incomingRoute)
+		lowHash, highHash, err := receiveGetBlockLocator(incomingRoute)
 		if err != nil {
 			return err
-		}
-		if shouldStop {
-			return nil
 		}
 
 		locator, err := dag.BlockLocatorFromHashes(highHash, lowHash)
@@ -25,27 +22,30 @@ func HandleGetBlockLocator(incomingRoute *router.Route, outgoingRoute *router.Ro
 				"locator between blocks %s and %s", lowHash, highHash)
 		}
 
-		shouldStop = sendBlockLocator(outgoingRoute, locator)
-		if shouldStop {
-			return nil
+		err = sendBlockLocator(outgoingRoute, locator)
+		if err != nil {
+			return err
 		}
 	}
 }
 
 func receiveGetBlockLocator(incomingRoute *router.Route) (lowHash *daghash.Hash,
-	highHash *daghash.Hash, shouldStop bool, err error) {
+	highHash *daghash.Hash, err error) {
 
-	message, isOpen := incomingRoute.Dequeue()
-	if !isOpen {
-		return nil, nil, true, nil
+	message, err := incomingRoute.Dequeue()
+	if err != nil {
+		return nil, nil, err
 	}
 	msgGetBlockLocator := message.(*wire.MsgGetBlockLocator)
 
-	return msgGetBlockLocator.LowHash, msgGetBlockLocator.HighHash, false, nil
+	return msgGetBlockLocator.LowHash, msgGetBlockLocator.HighHash, nil
 }
 
-func sendBlockLocator(outgoingRoute *router.Route, locator blockdag.BlockLocator) (shouldStop bool) {
+func sendBlockLocator(outgoingRoute *router.Route, locator blockdag.BlockLocator) error {
 	msgBlockLocator := wire.NewMsgBlockLocator(locator)
-	isOpen := outgoingRoute.Enqueue(msgBlockLocator)
-	return !isOpen
+	err := outgoingRoute.Enqueue(msgBlockLocator)
+	if err != nil {
+		return err
+	}
+	return nil
 }
