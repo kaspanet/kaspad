@@ -210,6 +210,12 @@ type GetConnectedPeerInfoResult struct {
 	LastPingDuration int64  `json:"lastPingDuration"`
 	SelectedTipHash  string `json:"selectedTipHash"`
 	IsSyncNode       bool   `json:"isSyncNode"`
+	IsInbound        bool   `json:"isInbound"`
+	BanScore         uint32 `json:"banScore"`
+	TimeOffset       int64  `json:"timeOffset"`
+	UserAgent        string `json:"userAgent"`
+	ProtocolVersion  uint32 `json:"protocolVersion"`
+	TimeConnected    int64  `json:"timeConnected"`
 }
 
 // GetPeerAddressesResult models the data returned from the getPeerAddresses command.
