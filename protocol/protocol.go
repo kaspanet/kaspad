@@ -34,10 +34,10 @@ func Init(cfg *config.Config, netAdapter *netadapter.NetAdapter,
 func newRouterInitializer(cfg *config.Config, netAdapter *netadapter.NetAdapter, addressManager *addrmgr.AddrManager,
 	dag *blockdag.BlockDAG) netadapter.RouterInitializer {
 
-	return func() (*routerpkg.Router, error) {
+	return func(netConnection *netadapter.NetConnection) (*routerpkg.Router, error) {
 		router := routerpkg.NewRouter()
 		spawn("newRouterInitializer-startFlows", func() {
-			err := startFlows(cfg, netAdapter, router, dag, addressManager)
+			err := startFlows(cfg, netAdapter, netConnection, router, dag, addressManager)
 			if err != nil {
 				if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
 					if protocolErr.ShouldBan {
@@ -64,13 +64,13 @@ func newRouterInitializer(cfg *config.Config, netAdapter *netadapter.NetAdapter,
 	}
 }
 
-func startFlows(cfg *config.Config, netAdapter *netadapter.NetAdapter, router *routerpkg.Router, dag *blockdag.BlockDAG,
-	addressManager *addrmgr.AddrManager) error {
+func startFlows(cfg *config.Config, netAdapter *netadapter.NetAdapter, netConnection *netadapter.NetConnection,
+	router *routerpkg.Router, dag *blockdag.BlockDAG, addressManager *addrmgr.AddrManager) error {
 
 	stop := make(chan error)
 	stopped := uint32(0)
 
-	peer, closed, err := handshake.HandleHandshake(cfg, router, netAdapter, dag, addressManager)
+	peer, closed, err := handshake.HandleHandshake(cfg, router, netAdapter, netConnection, dag, addressManager)
 	if err != nil {
 		return err
 	}

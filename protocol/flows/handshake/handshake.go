@@ -19,7 +19,8 @@ import (
 // HandleHandshake sets up the handshake protocol - It sends a version message and waits for an incoming
 // version message, as well as a verack for the sent version
 func HandleHandshake(cfg *config.Config, router *routerpkg.Router, netAdapter *netadapter.NetAdapter,
-	dag *blockdag.BlockDAG, addressManager *addrmgr.AddrManager) (peer *peerpkg.Peer, closed bool, err error) {
+	netConnection *netadapter.NetConnection, dag *blockdag.BlockDAG, addressManager *addrmgr.AddrManager) (
+	peer *peerpkg.Peer, closed bool, err error) {
 
 	receiveVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVersion})
 	if err != nil {
@@ -40,7 +41,7 @@ func HandleHandshake(cfg *config.Config, router *routerpkg.Router, netAdapter *n
 	errChanUsed := uint32(0)
 	errChan := make(chan error)
 
-	peer = peerpkg.New()
+	peer = peerpkg.New(netConnection)
 
 	var peerAddress *wire.NetAddress
 	spawn("HandleHandshake-ReceiveVersion", func() {

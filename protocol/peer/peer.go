@@ -1,6 +1,7 @@
 package peer
 
 import (
+	"github.com/kaspanet/kaspad/netadapter"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -16,6 +17,8 @@ import (
 
 // Peer holds data about a peer.
 type Peer struct {
+	connection *netadapter.NetConnection
+
 	selectedTipHashMtx sync.RWMutex
 	selectedTipHash    *daghash.Hash
 
@@ -40,8 +43,9 @@ type Peer struct {
 }
 
 // New returns a new Peer
-func New() *Peer {
+func New(connection *netadapter.NetConnection) *Peer {
 	return &Peer{
+		connection:             connection,
 		selectedTipRequestChan: make(chan struct{}),
 		ibdStartChan:           make(chan struct{}),
 	}
@@ -114,8 +118,7 @@ func (p *Peer) SetPingIdle() {
 }
 
 func (p *Peer) String() string {
-	//TODO(libp2p)
-	panic("unimplemented")
+	return p.connection.String()
 }
 
 var (
