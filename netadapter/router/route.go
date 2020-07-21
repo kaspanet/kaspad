@@ -12,8 +12,8 @@ const (
 	defaultMaxMessages = 100
 )
 
-// ErrTimeout signifies that one of the router functions had a timeout.
 var (
+	// ErrTimeout signifies that one of the router functions had a timeout.
 	ErrTimeout = errors.New("timeout expired")
 
 	// ErrRouteClosed indicates that a route was closed while reading/writing.
