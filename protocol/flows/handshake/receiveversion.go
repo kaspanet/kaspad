@@ -21,7 +21,7 @@ var (
 
 // ReceiveVersion waits for the peer to send a version message, sends a
 // verack in response, and updates its info accordingly.
-func ReceiveVersion(context Context, incomingRoute *router.Route, outgoingRoute *router.Route,
+func ReceiveVersion(context HandleHandshakeContext, incomingRoute *router.Route, outgoingRoute *router.Route,
 	peer *peerpkg.Peer) (*wire.NetAddress, error) {
 
 	message, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)

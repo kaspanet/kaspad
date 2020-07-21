@@ -16,8 +16,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Context is the interface for the context needed for the HandleHandshake flow.
-type Context interface {
+// HandleHandshakeContext is the interface for the context needed for the HandleHandshake flow.
+type HandleHandshakeContext interface {
 	Config() *config.Config
 	NetAdapter() *netadapter.NetAdapter
 	DAG() *blockdag.BlockDAG
@@ -28,7 +28,7 @@ type Context interface {
 
 // HandleHandshake sets up the handshake protocol - It sends a version message and waits for an incoming
 // version message, as well as a verack for the sent version
-func HandleHandshake(context Context, router *routerpkg.Router) (peer *peerpkg.Peer, closed bool, err error) {
+func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router) (peer *peerpkg.Peer, closed bool, err error) {
 
 	receiveVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVersion})
 	if err != nil {

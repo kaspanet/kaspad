@@ -26,7 +26,7 @@ var (
 )
 
 // SendVersion sends a version to a peer and waits for verack.
-func SendVersion(context Context, incomingRoute *router.Route, outgoingRoute *router.Route) error {
+func SendVersion(context HandleHandshakeContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
 
 	selectedTipHash := context.DAG().SelectedTipHash()
 	subnetworkID := context.Config().SubnetworkID
