@@ -142,8 +142,8 @@ func AddToReadyPeers(peer *Peer) error {
 	return nil
 }
 
-// GetReadyPeerIDs returns the peer IDs of all the ready peers.
-func GetReadyPeerIDs() []*id.ID {
+// ReadyPeerIDs returns the peer IDs of all the ready peers.
+func ReadyPeerIDs() []*id.ID {
 	readyPeersMutex.RLock()
 	defer readyPeersMutex.RUnlock()
 	peerIDs := make([]*id.ID, len(readyPeers))

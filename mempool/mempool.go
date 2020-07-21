@@ -347,11 +347,11 @@ func (mp *TxPool) removeOrphanDoubleSpends(tx *util.Tx) {
 // exists in the main pool.
 //
 // This function MUST be called with the mempool lock held (for reads).
-func (mp *TxPool) isTransactionInPool(hash *daghash.TxID) bool {
-	if _, exists := mp.pool[*hash]; exists {
+func (mp *TxPool) isTransactionInPool(txID *daghash.TxID) bool {
+	if _, exists := mp.pool[*txID]; exists {
 		return true
 	}
-	return mp.isInDependPool(hash)
+	return mp.isInDependPool(txID)
 }
 
 // IsTransactionInPool returns whether or not the passed transaction already
@@ -394,8 +394,8 @@ func (mp *TxPool) IsInDependPool(hash *daghash.TxID) bool {
 // in the orphan pool.
 //
 // This function MUST be called with the mempool lock held (for reads).
-func (mp *TxPool) isOrphanInPool(hash *daghash.TxID) bool {
-	if _, exists := mp.orphans[*hash]; exists {
+func (mp *TxPool) isOrphanInPool(txID *daghash.TxID) bool {
+	if _, exists := mp.orphans[*txID]; exists {
 		return true
 	}
 
@@ -419,19 +419,19 @@ func (mp *TxPool) IsOrphanInPool(hash *daghash.TxID) bool {
 // in the main pool or in the orphan pool.
 //
 // This function MUST be called with the mempool lock held (for reads).
-func (mp *TxPool) haveTransaction(hash *daghash.TxID) bool {
-	return mp.isTransactionInPool(hash) || mp.isOrphanInPool(hash)
+func (mp *TxPool) haveTransaction(txID *daghash.TxID) bool {
+	return mp.isTransactionInPool(txID) || mp.isOrphanInPool(txID)
 }
 
 // HaveTransaction returns whether or not the passed transaction already exists
 // in the main pool or in the orphan pool.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) HaveTransaction(hash *daghash.TxID) bool {
+func (mp *TxPool) HaveTransaction(txID *daghash.TxID) bool {
 	// Protect concurrent access.
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
-	haveTx := mp.haveTransaction(hash)
+	haveTx := mp.haveTransaction(txID)
 
 	return haveTx
 }
@@ -1338,11 +1338,12 @@ func (mp *TxPool) LastUpdated() mstime.Time {
 	return mstime.UnixMilliseconds(atomic.LoadInt64(&mp.lastUpdated))
 }
 
-// HandleNewBlock removes all the transactions in the new block
+// HandleNewBlockOld removes all the transactions in the new block
 // from the mempool and the orphan pool, and it also removes
 // from the mempool transactions that double spend a
 // transaction that is already in the DAG
-func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan NewBlockMsg) error {
+func (mp *TxPool) HandleNewBlockOld(block *util.Block, txChan chan NewBlockMsg) error {
+	// TODO(libp2p) Remove this function
 	oldUTXOSet := mp.mpUTXOSet
 
 	// Remove all of the transactions (except the coinbase) in the
@@ -1367,6 +1368,43 @@ func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan NewBlockMsg) err
 		}
 	}
 	return nil
+}
+
+// HandleNewBlock removes all the transactions in the new block
+// from the mempool and the orphan pool, and it also removes
+// from the mempool transactions that double spend a
+// transaction that is already in the DAG
+func (mp *TxPool) HandleNewBlock(block *util.Block) ([]*util.Tx, error) {
+	// Protect concurrent access.
+	mp.cfg.DAG.RLock()
+	defer mp.cfg.DAG.RUnlock()
+	mp.mtx.Lock()
+	defer mp.mtx.Unlock()
+
+	oldUTXOSet := mp.mpUTXOSet
+
+	// Remove all of the transactions (except the coinbase) in the
+	// connected block from the transaction pool. Secondly, remove any
+	// transactions which are now double spends as a result of these
+	// new transactions. Finally, remove any transaction that is
+	// no longer an orphan. Transactions which depend on a confirmed
+	// transaction are NOT removed recursively because they are still
+	// valid.
+	err := mp.RemoveTransactions(block.Transactions()[util.CoinbaseTransactionIndex+1:])
+	if err != nil {
+		mp.mpUTXOSet = oldUTXOSet
+		return nil, err
+	}
+	acceptedTxs := make([]*util.Tx, 0)
+	for _, tx := range block.Transactions()[util.CoinbaseTransactionIndex+1:] {
+		mp.RemoveDoubleSpends(tx)
+		mp.RemoveOrphan(tx)
+		acceptedOrphans := mp.ProcessOrphans(tx)
+		for _, acceptedOrphan := range acceptedOrphans {
+			acceptedTxs = append(acceptedTxs, acceptedOrphan.Tx)
+		}
+	}
+	return acceptedTxs, nil
 }
 
 // New returns a new memory pool for validating and storing standalone

@@ -1,13 +1,13 @@
 package handshake
 
 import (
-	"sync"
-	"sync/atomic"
-
 	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/netadapter"
+	"sync"
+	"sync/atomic"
+
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/flows/ibd"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"

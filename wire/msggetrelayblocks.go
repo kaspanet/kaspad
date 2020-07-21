@@ -37,7 +37,7 @@ func (msg *MsgGetRelayBlocks) Command() MessageCommand {
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver. This is part of the Message interface implementation.
 func (msg *MsgGetRelayBlocks) MaxPayloadLength(pver uint32) uint32 {
-	return daghash.HashSize
+	return daghash.HashSize*MsgGetRelayBlocksHashes + uint32(VarIntSerializeSize(MsgGetRelayBlocksHashes))
 }
 
 // NewMsgGetRelayBlocks returns a new kaspa getrelblks message that conforms to

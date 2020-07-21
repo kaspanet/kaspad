@@ -1,17 +1,14 @@
 package addressexchange
 
 import (
-	"time"
-
 	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/netadapter/router"
+	"github.com/kaspanet/kaspad/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/wire"
 )
-
-const timeout = 30 * time.Second
 
 // ReceiveAddresses asks a peer for more addresses if needed.
 func ReceiveAddresses(incomingRoute *router.Route, outgoingRoute *router.Route, cfg *config.Config, peer *peerpkg.Peer,
@@ -28,7 +25,7 @@ func ReceiveAddresses(incomingRoute *router.Route, outgoingRoute *router.Route, 
 		return true, nil
 	}
 
-	message, isOpen, err := incomingRoute.DequeueWithTimeout(timeout)
+	message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return false, err
 	}

@@ -18,6 +18,10 @@ var (
 	startIBDMutex sync.Mutex
 )
 
+// NewBlockHandler is a function that is to be
+// called when a new block is successfully processed.
+type NewBlockHandler func(block *util.Block) error
+
 // StartIBDIfRequired selects a peer and starts IBD against it
 // if required
 func StartIBDIfRequired(dag *blockdag.BlockDAG) {
@@ -57,10 +61,10 @@ func selectPeerForIBD(dag *blockdag.BlockDAG) *peerpkg.Peer {
 
 // HandleIBD waits for IBD start and handles it when IBD is triggered for this peer
 func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
-	peer *peerpkg.Peer, dag *blockdag.BlockDAG) error {
+	peer *peerpkg.Peer, dag *blockdag.BlockDAG, newBlockHandler NewBlockHandler) error {
 
 	for {
-		shouldStop, err := runIBD(incomingRoute, outgoingRoute, peer, dag)
+		shouldStop, err := runIBD(incomingRoute, outgoingRoute, peer, dag, newBlockHandler)
 		if err != nil {
 			return err
 		}
@@ -71,7 +75,7 @@ func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 }
 
 func runIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
-	peer *peerpkg.Peer, dag *blockdag.BlockDAG) (shouldStop bool, err error) {
+	peer *peerpkg.Peer, dag *blockdag.BlockDAG, newBlockHandler NewBlockHandler) (shouldStop bool, err error) {
 
 	peer.WaitForIBDStart()
 	defer finishIBD(dag)
@@ -90,7 +94,8 @@ func runIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 			"below the finality point", peer, highestSharedBlockHash)
 	}
 
-	shouldStop, err = downloadBlocks(incomingRoute, outgoingRoute, dag, highestSharedBlockHash, peerSelectedTipHash)
+	shouldStop, err = downloadBlocks(incomingRoute, outgoingRoute, dag, highestSharedBlockHash, peerSelectedTipHash,
+		newBlockHandler)
 	if err != nil {
 		return false, err
 	}
@@ -157,7 +162,8 @@ func receiveBlockLocator(incomingRoute *router.Route) (blockLocatorHashes []*dag
 }
 
 func downloadBlocks(incomingRoute *router.Route, outgoingRoute *router.Route,
-	dag *blockdag.BlockDAG, highestSharedBlockHash *daghash.Hash, peerSelectedTipHash *daghash.Hash) (shouldStop bool, err error) {
+	dag *blockdag.BlockDAG, highestSharedBlockHash *daghash.Hash,
+	peerSelectedTipHash *daghash.Hash, newBlockHandler NewBlockHandler) (shouldStop bool, err error) {
 
 	shouldStop = sendGetBlocks(outgoingRoute, highestSharedBlockHash, peerSelectedTipHash)
 	if shouldStop {
@@ -172,7 +178,7 @@ func downloadBlocks(incomingRoute *router.Route, outgoingRoute *router.Route,
 		if shouldStop {
 			return true, nil
 		}
-		shouldStop, err = processIBDBlock(dag, msgIBDBlock)
+		shouldStop, err = processIBDBlock(dag, msgIBDBlock, newBlockHandler)
 		if err != nil {
 			return false, err
 		}
@@ -210,7 +216,9 @@ func receiveIBDBlock(incomingRoute *router.Route) (msgIBDBlock *wire.MsgIBDBlock
 	return msgIBDBlock, false, nil
 }
 
-func processIBDBlock(dag *blockdag.BlockDAG, msgIBDBlock *wire.MsgIBDBlock) (shouldStop bool, err error) {
+func processIBDBlock(dag *blockdag.BlockDAG, msgIBDBlock *wire.MsgIBDBlock,
+	newBlockHandler NewBlockHandler) (shouldStop bool, err error) {
+
 	block := util.NewBlock(&msgIBDBlock.MsgBlock)
 	if dag.IsInDAG(block.Hash()) {
 		return false, nil
@@ -226,6 +234,10 @@ func processIBDBlock(dag *blockdag.BlockDAG, msgIBDBlock *wire.MsgIBDBlock) (sho
 	if isDelayed {
 		return false, protocolerrors.Errorf(false, "received delayed block %s "+
 			"during IBD", block.Hash())
+	}
+	err = newBlockHandler(block)
+	if err != nil {
+		panic(err)
 	}
 	return false, nil
 }
