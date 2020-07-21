@@ -32,7 +32,7 @@ func (r FutureAddNodeResult) Receive() error {
 //
 // See AddNode for the blocking version and more details.
 func (c *Client) AddManualNodeAsync(host string) FutureAddNodeResult {
-	cmd := model.NewAddManualNodeCmd(host, pointers.Bool(false))
+	cmd := model.NewConnectCmd(host, pointers.Bool(false))
 	return c.sendCmd(cmd)
 }
 
@@ -43,87 +43,6 @@ func (c *Client) AddManualNodeAsync(host string) FutureAddNodeResult {
 // It may not be used to remove non-persistent peers.
 func (c *Client) AddManualNode(host string) error {
 	return c.AddManualNodeAsync(host).Receive()
-}
-
-// FutureGetManualNodeInfoResult is a future promise to deliver the result of a
-// GetManualNodeInfoAsync RPC invocation (or an applicable error).
-type FutureGetManualNodeInfoResult chan *response
-
-// Receive waits for the response promised by the future and returns information
-// about manually added (persistent) peers.
-func (r FutureGetManualNodeInfoResult) Receive() ([]model.GetManualNodeInfoResult, error) {
-	res, err := receiveFuture(r)
-	if err != nil {
-		return nil, err
-	}
-
-	// Unmarshal as an array of getmanualnodeinfo result objects.
-	var nodeInfo []model.GetManualNodeInfoResult
-	err = json.Unmarshal(res, &nodeInfo)
-	if err != nil {
-		return nil, err
-	}
-
-	return nodeInfo, nil
-}
-
-// GetManualNodeInfoAsync returns an instance of a type that can be used to get
-// the result of the RPC at some future time by invoking the Receive function on
-// the returned instance.
-//
-// See GetManualNodeInfo for the blocking version and more details.
-func (c *Client) GetManualNodeInfoAsync(peer string) FutureGetManualNodeInfoResult {
-	cmd := model.NewGetManualNodeInfoCmd(peer, nil)
-	return c.sendCmd(cmd)
-}
-
-// GetManualNodeInfo returns information about manually added (persistent) peers.
-//
-// See GetManualNodeInfoNoDNS to retrieve only a list of the added (persistent)
-// peers.
-func (c *Client) GetManualNodeInfo(peer string) ([]model.GetManualNodeInfoResult, error) {
-	return c.GetManualNodeInfoAsync(peer).Receive()
-}
-
-// FutureGetManualNodeInfoNoDNSResult is a future promise to deliver the result
-// of a GetManualNodeInfoNoDNSAsync RPC invocation (or an applicable error).
-type FutureGetManualNodeInfoNoDNSResult chan *response
-
-// Receive waits for the response promised by the future and returns a list of
-// manually added (persistent) peers.
-func (r FutureGetManualNodeInfoNoDNSResult) Receive() ([]string, error) {
-	res, err := receiveFuture(r)
-	if err != nil {
-		return nil, err
-	}
-
-	// Unmarshal result as an array of strings.
-	var nodes []string
-	err = json.Unmarshal(res, &nodes)
-	if err != nil {
-		return nil, err
-	}
-
-	return nodes, nil
-}
-
-// GetManualNodeInfoNoDNSAsync returns an instance of a type that can be used to
-// get the result of the RPC at some future time by invoking the Receive
-// function on the returned instance.
-//
-// See GetManualNodeInfoNoDNS for the blocking version and more details.
-func (c *Client) GetManualNodeInfoNoDNSAsync(peer string) FutureGetManualNodeInfoNoDNSResult {
-	cmd := model.NewGetManualNodeInfoCmd(peer, pointers.Bool(false))
-	return c.sendCmd(cmd)
-}
-
-// GetManualNodeInfoNoDNS returns a list of manually added (persistent) peers.
-// This works by setting the dns flag to false in the underlying RPC.
-//
-// See GetManualNodeInfo to obtain more information about each added (persistent)
-// peer.
-func (c *Client) GetManualNodeInfoNoDNS(peer string) ([]string, error) {
-	return c.GetManualNodeInfoNoDNSAsync(peer).Receive()
 }
 
 // FutureGetConnectionCountResult is a future promise to deliver the result

@@ -102,3 +102,17 @@ func (c *ConnectionManager) AddConnectionRequest(address string, isPermanent boo
 		}
 	})
 }
+
+func (c *ConnectionManager) RemoveConnection(address string) {
+	// spawn goroutine so that caller doesn't wait in case connectionManager is in the midst of handling
+	// connection requests
+	spawn("ConnectionManager.RemoveConnection", func() {
+		c.connectionRequestsLock.Lock()
+		defer c.connectionRequestsLock.Unlock()
+
+		delete(c.activeRequested, address)
+		delete(c.pendingRequested, address)
+		delete(c.activeOutgoing, address)
+		delete(c.activeIncoming, address)
+	})
+}

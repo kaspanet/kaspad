@@ -12,31 +12,31 @@ import (
 	"fmt"
 )
 
-// AddManualNodeCmd defines the addManualNode JSON-RPC command.
-type AddManualNodeCmd struct {
-	Addr   string
-	OneTry *bool `jsonrpcdefault:"false"`
+// ConnectCmd defines the connect JSON-RPC command.
+type ConnectCmd struct {
+	Address string
+	OneTry  *bool `jsonrpcdefault:"false"`
 }
 
-// NewAddManualNodeCmd returns a new instance which can be used to issue an addManualNode
+// NewConnectCmd returns a new instance which can be used to issue a connection
 // JSON-RPC command.
-func NewAddManualNodeCmd(addr string, oneTry *bool) *AddManualNodeCmd {
-	return &AddManualNodeCmd{
-		Addr:   addr,
-		OneTry: oneTry,
+func NewConnectCmd(address string, oneTry *bool) *ConnectCmd {
+	return &ConnectCmd{
+		Address: address,
+		OneTry:  oneTry,
 	}
 }
 
-// RemoveManualNodeCmd defines the removeManualNode JSON-RPC command.
-type RemoveManualNodeCmd struct {
-	Addr string
+// DisconnectCmd defines the disconnect JSON-RPC command.
+type DisconnectCmd struct {
+	Address string
 }
 
-// NewRemoveManualNodeCmd returns a new instance which can be used to issue an removeManualNode
+// NewDisconnectCmd returns a new instance which can be used to issue an disconnect
 // JSON-RPC command.
-func NewRemoveManualNodeCmd(addr string) *RemoveManualNodeCmd {
-	return &RemoveManualNodeCmd{
-		Addr: addr,
+func NewDisconnectCmd(address string) *DisconnectCmd {
+	return &DisconnectCmd{
+		Address: address,
 	}
 }
 
@@ -45,81 +45,6 @@ func NewRemoveManualNodeCmd(addr string) *RemoveManualNodeCmd {
 type TransactionInput struct {
 	TxID string `json:"txId"`
 	Vout uint32 `json:"vout"`
-}
-
-// CreateRawTransactionCmd defines the createRawTransaction JSON-RPC command.
-type CreateRawTransactionCmd struct {
-	Inputs   []TransactionInput
-	Amounts  map[string]float64 `jsonrpcusage:"{\"address\":amount,...}"` // In KAS
-	LockTime *uint64
-}
-
-// NewCreateRawTransactionCmd returns a new instance which can be used to issue
-// a createRawTransaction JSON-RPC command.
-//
-// Amounts are in KAS.
-func NewCreateRawTransactionCmd(inputs []TransactionInput, amounts map[string]float64,
-	lockTime *uint64) *CreateRawTransactionCmd {
-
-	return &CreateRawTransactionCmd{
-		Inputs:   inputs,
-		Amounts:  amounts,
-		LockTime: lockTime,
-	}
-}
-
-// DecodeRawTransactionCmd defines the decodeRawTransaction JSON-RPC command.
-type DecodeRawTransactionCmd struct {
-	HexTx string
-}
-
-// NewDecodeRawTransactionCmd returns a new instance which can be used to issue
-// a decodeRawTransaction JSON-RPC command.
-func NewDecodeRawTransactionCmd(hexTx string) *DecodeRawTransactionCmd {
-	return &DecodeRawTransactionCmd{
-		HexTx: hexTx,
-	}
-}
-
-// DecodeScriptCmd defines the decodeScript JSON-RPC command.
-type DecodeScriptCmd struct {
-	HexScript string
-}
-
-// NewDecodeScriptCmd returns a new instance which can be used to issue a
-// decodeScript JSON-RPC command.
-func NewDecodeScriptCmd(hexScript string) *DecodeScriptCmd {
-	return &DecodeScriptCmd{
-		HexScript: hexScript,
-	}
-}
-
-// GetManualNodeInfoCmd defines the getManualNodeInfo JSON-RPC command.
-type GetManualNodeInfoCmd struct {
-	Node    string
-	Details *bool `jsonrpcdefault:"true"`
-}
-
-// NewGetManualNodeInfoCmd returns a new instance which can be used to issue a
-// getManualNodeInfo JSON-RPC command.
-func NewGetManualNodeInfoCmd(node string, details *bool) *GetManualNodeInfoCmd {
-	return &GetManualNodeInfoCmd{
-		Details: details,
-		Node:    node,
-	}
-}
-
-// GetAllManualNodesInfoCmd defines the getAllManualNodesInfo JSON-RPC command.
-type GetAllManualNodesInfoCmd struct {
-	Details *bool `jsonrpcdefault:"true"`
-}
-
-// NewGetAllManualNodesInfoCmd returns a new instance which can be used to issue a
-// getAllManualNodesInfo JSON-RPC command.
-func NewGetAllManualNodesInfoCmd(details *bool) *GetAllManualNodesInfoCmd {
-	return &GetAllManualNodesInfoCmd{
-		Details: details,
-	}
 }
 
 // GetSelectedTipHashCmd defines the getSelectedTipHash JSON-RPC command.
@@ -667,11 +592,7 @@ func init() {
 	// No special flags for commands in this file.
 	flags := UsageFlag(0)
 
-	MustRegisterCommand("addManualNode", (*AddManualNodeCmd)(nil), flags)
-	MustRegisterCommand("createRawTransaction", (*CreateRawTransactionCmd)(nil), flags)
-	MustRegisterCommand("decodeRawTransaction", (*DecodeRawTransactionCmd)(nil), flags)
-	MustRegisterCommand("decodeScript", (*DecodeScriptCmd)(nil), flags)
-	MustRegisterCommand("getAllManualNodesInfo", (*GetAllManualNodesInfoCmd)(nil), flags)
+	MustRegisterCommand("connect", (*ConnectCmd)(nil), flags)
 	MustRegisterCommand("getSelectedTipHash", (*GetSelectedTipHashCmd)(nil), flags)
 	MustRegisterCommand("getBlock", (*GetBlockCmd)(nil), flags)
 	MustRegisterCommand("getBlocks", (*GetBlocksCmd)(nil), flags)
@@ -684,7 +605,6 @@ func init() {
 	MustRegisterCommand("getConnectionCount", (*GetConnectionCountCmd)(nil), flags)
 	MustRegisterCommand("getDifficulty", (*GetDifficultyCmd)(nil), flags)
 	MustRegisterCommand("getInfo", (*GetInfoCmd)(nil), flags)
-	MustRegisterCommand("getManualNodeInfo", (*GetManualNodeInfoCmd)(nil), flags)
 	MustRegisterCommand("getMempoolEntry", (*GetMempoolEntryCmd)(nil), flags)
 	MustRegisterCommand("getMempoolInfo", (*GetMempoolInfoCmd)(nil), flags)
 	MustRegisterCommand("getNetworkInfo", (*GetNetworkInfoCmd)(nil), flags)
@@ -697,7 +617,7 @@ func init() {
 	MustRegisterCommand("getTxOutSetInfo", (*GetTxOutSetInfoCmd)(nil), flags)
 	MustRegisterCommand("help", (*HelpCmd)(nil), flags)
 	MustRegisterCommand("ping", (*PingCmd)(nil), flags)
-	MustRegisterCommand("removeManualNode", (*RemoveManualNodeCmd)(nil), flags)
+	MustRegisterCommand("disconnect", (*DisconnectCmd)(nil), flags)
 	MustRegisterCommand("sendRawTransaction", (*SendRawTransactionCmd)(nil), flags)
 	MustRegisterCommand("stop", (*StopCmd)(nil), flags)
 	MustRegisterCommand("submitBlock", (*SubmitBlockCmd)(nil), flags)

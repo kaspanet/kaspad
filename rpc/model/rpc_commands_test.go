@@ -32,88 +32,15 @@ func TestRPCServerCommands(t *testing.T) {
 		unmarshalled interface{}
 	}{
 		{
-			name: "addManualNode",
+			name: "connect",
 			newCmd: func() (interface{}, error) {
-				return model.NewCommand("addManualNode", "127.0.0.1")
+				return model.NewCommand("connect", "127.0.0.1")
 			},
 			staticCmd: func() interface{} {
-				return model.NewAddManualNodeCmd("127.0.0.1", nil)
+				return model.NewConnectCmd("127.0.0.1", nil)
 			},
-			marshalled:   `{"jsonrpc":"1.0","method":"addManualNode","params":["127.0.0.1"],"id":1}`,
-			unmarshalled: &model.AddManualNodeCmd{Addr: "127.0.0.1", OneTry: pointers.Bool(false)},
-		},
-		{
-			name: "createRawTransaction",
-			newCmd: func() (interface{}, error) {
-				return model.NewCommand("createRawTransaction", `[{"txId":"123","vout":1}]`,
-					`{"456":0.0123}`)
-			},
-			staticCmd: func() interface{} {
-				txInputs := []model.TransactionInput{
-					{TxID: "123", Vout: 1},
-				}
-				amounts := map[string]float64{"456": .0123}
-				return model.NewCreateRawTransactionCmd(txInputs, amounts, nil)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"createRawTransaction","params":[[{"txId":"123","vout":1}],{"456":0.0123}],"id":1}`,
-			unmarshalled: &model.CreateRawTransactionCmd{
-				Inputs:  []model.TransactionInput{{TxID: "123", Vout: 1}},
-				Amounts: map[string]float64{"456": .0123},
-			},
-		},
-		{
-			name: "createRawTransaction optional",
-			newCmd: func() (interface{}, error) {
-				return model.NewCommand("createRawTransaction", `[{"txId":"123","vout":1}]`,
-					`{"456":0.0123}`, int64(12312333333))
-			},
-			staticCmd: func() interface{} {
-				txInputs := []model.TransactionInput{
-					{TxID: "123", Vout: 1},
-				}
-				amounts := map[string]float64{"456": .0123}
-				return model.NewCreateRawTransactionCmd(txInputs, amounts, pointers.Uint64(12312333333))
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"createRawTransaction","params":[[{"txId":"123","vout":1}],{"456":0.0123},12312333333],"id":1}`,
-			unmarshalled: &model.CreateRawTransactionCmd{
-				Inputs:   []model.TransactionInput{{TxID: "123", Vout: 1}},
-				Amounts:  map[string]float64{"456": .0123},
-				LockTime: pointers.Uint64(12312333333),
-			},
-		},
-
-		{
-			name: "decodeRawTransaction",
-			newCmd: func() (interface{}, error) {
-				return model.NewCommand("decodeRawTransaction", "123")
-			},
-			staticCmd: func() interface{} {
-				return model.NewDecodeRawTransactionCmd("123")
-			},
-			marshalled:   `{"jsonrpc":"1.0","method":"decodeRawTransaction","params":["123"],"id":1}`,
-			unmarshalled: &model.DecodeRawTransactionCmd{HexTx: "123"},
-		},
-		{
-			name: "decodeScript",
-			newCmd: func() (interface{}, error) {
-				return model.NewCommand("decodeScript", "00")
-			},
-			staticCmd: func() interface{} {
-				return model.NewDecodeScriptCmd("00")
-			},
-			marshalled:   `{"jsonrpc":"1.0","method":"decodeScript","params":["00"],"id":1}`,
-			unmarshalled: &model.DecodeScriptCmd{HexScript: "00"},
-		},
-		{
-			name: "getAllManualNodesInfo",
-			newCmd: func() (interface{}, error) {
-				return model.NewCommand("getAllManualNodesInfo")
-			},
-			staticCmd: func() interface{} {
-				return model.NewGetAllManualNodesInfoCmd(nil)
-			},
-			marshalled:   `{"jsonrpc":"1.0","method":"getAllManualNodesInfo","params":[],"id":1}`,
-			unmarshalled: &model.GetAllManualNodesInfoCmd{Details: pointers.Bool(true)},
+			marshalled:   `{"jsonrpc":"1.0","method":"connect","params":["127.0.0.1"],"id":1}`,
+			unmarshalled: &model.ConnectCmd{Address: "127.0.0.1", OneTry: pointers.Bool(false)},
 		},
 		{
 			name: "getSelectedTipHash",
@@ -384,20 +311,6 @@ func TestRPCServerCommands(t *testing.T) {
 			unmarshalled: &model.GetInfoCmd{},
 		},
 		{
-			name: "getManualNodeInfo",
-			newCmd: func() (interface{}, error) {
-				return model.NewCommand("getManualNodeInfo", "127.0.0.1")
-			},
-			staticCmd: func() interface{} {
-				return model.NewGetManualNodeInfoCmd("127.0.0.1", nil)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getManualNodeInfo","params":["127.0.0.1"],"id":1}`,
-			unmarshalled: &model.GetManualNodeInfoCmd{
-				Node:    "127.0.0.1",
-				Details: pointers.Bool(true),
-			},
-		},
-		{
 			name: "getMempoolEntry",
 			newCmd: func() (interface{}, error) {
 				return model.NewCommand("getMempoolEntry", "txhash")
@@ -572,15 +485,15 @@ func TestRPCServerCommands(t *testing.T) {
 			unmarshalled: &model.PingCmd{},
 		},
 		{
-			name: "removeManualNode",
+			name: "disconnect",
 			newCmd: func() (interface{}, error) {
-				return model.NewCommand("removeManualNode", "127.0.0.1")
+				return model.NewCommand("disconnect", "127.0.0.1")
 			},
 			staticCmd: func() interface{} {
-				return model.NewRemoveManualNodeCmd("127.0.0.1")
+				return model.NewDisconnectCmd("127.0.0.1")
 			},
-			marshalled:   `{"jsonrpc":"1.0","method":"removeManualNode","params":["127.0.0.1"],"id":1}`,
-			unmarshalled: &model.RemoveManualNodeCmd{Addr: "127.0.0.1"},
+			marshalled:   `{"jsonrpc":"1.0","method":"disconnect","params":["127.0.0.1"],"id":1}`,
+			unmarshalled: &model.DisconnectCmd{Address: "127.0.0.1"},
 		},
 		{
 			name: "sendRawTransaction",

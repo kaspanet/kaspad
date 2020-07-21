@@ -29,16 +29,10 @@ var helpDescsEnUS = map[string]string{
 	"debugLevel--result0":    "The string 'Done.'",
 	"debugLevel--result1":    "The list of subsystems",
 
-	// AddManualNodeCmd help.
-	"addManualNode--synopsis": "Attempts to add or remove a persistent peer.",
-	"addManualNode-addr":      "IP address and port of the peer to operate on",
-	"addManualNode-oneTry":    "When enabled, will try a single connection to a peer",
-
-	// NodeCmd help.
-	"node--synopsis":     "Attempts to add or remove a peer.",
-	"node-subCmd":        "'disconnect' to remove all matching non-persistent peers, 'remove' to remove a persistent peer, or 'connect' to connect to a peer",
-	"node-target":        "Either the IP address and port of the peer to operate on, or a valid peer ID.",
-	"node-connectSubCmd": "'perm' to make the connected peer a permanent one, 'temp' to try a single connect to a peer",
+	// ConnectCmd help.
+	"connect--synopsis": "Attempts to add or remove a persistent peer.",
+	"connect-addr":      "IP address and port of the peer to operate on",
+	"connect-oneTry":    "When enabled, will try a single connection to a peer",
 
 	// TransactionInput help.
 	"transactionInput-txId": "The hash of the input transaction",
@@ -96,52 +90,6 @@ var helpDescsEnUS = map[string]string{
 	// AcceptedBlock help.
 	"acceptedBlock-hash":          "The hash of the accepted block",
 	"acceptedBlock-acceptedTxIds": "The transactions in this block accepted by the chain block",
-
-	// TxRawDecodeResult help.
-	"txRawDecodeResult-txId":     "The hash of the transaction",
-	"txRawDecodeResult-version":  "The transaction version",
-	"txRawDecodeResult-lockTime": "The transaction lock time",
-	"txRawDecodeResult-vin":      "The transaction inputs as JSON objects",
-	"txRawDecodeResult-vout":     "The transaction outputs as JSON objects",
-
-	// DecodeRawTransactionCmd help.
-	"decodeRawTransaction--synopsis": "Returns a JSON object representing the provided serialized, hex-encoded transaction.",
-	"decodeRawTransaction-hexTx":     "Serialized, hex-encoded transaction",
-
-	// DecodeScriptResult help.
-	"decodeScriptResult-asm":     "Disassembly of the script",
-	"decodeScriptResult-type":    "The type of the script (e.g. 'pubkeyhash')",
-	"decodeScriptResult-reqSigs": "The number of required signatures",
-	"decodeScriptResult-address": "The kaspa address (if any) associated with this script",
-	"decodeScriptResult-p2sh":    "The script hash for use in pay-to-script-hash transactions (only present if the provided redeem script is not already a pay-to-script-hash script)",
-
-	// DecodeScriptCmd help.
-	"decodeScript--synopsis": "Returns a JSON object with information about the provided hex-encoded script.",
-	"decodeScript-hexScript": "Hex-encoded script",
-
-	// GetAllManualNodesInfoCmd help.
-	"getAllManualNodesInfo--synopsis":   "Returns information about manually added (persistent) peers.",
-	"getAllManualNodesInfo-details":     "Specifies whether the returned data is a JSON object including DNS and connection information, or just a list of added peers",
-	"getAllManualNodesInfo--condition0": "details=false",
-	"getAllManualNodesInfo--condition1": "details=true",
-	"getAllManualNodesInfo--result0":    "List of added peers",
-
-	// GetManualNodeInfoResultAddr help.
-	"getManualNodeInfoResultAddr-address":   "The ip address for this DNS entry",
-	"getManualNodeInfoResultAddr-connected": "The connection 'direction' (inbound/outbound/false)",
-
-	// GetManualNodeInfoResult help.
-	"getManualNodeInfoResult-manualNode": "The ip address or domain of the manually added peer",
-	"getManualNodeInfoResult-connected":  "Whether or not the peer is currently connected",
-	"getManualNodeInfoResult-addresses":  "DNS lookup and connection information about the peer",
-
-	// GetManualNodeInfoCmd help.
-	"getManualNodeInfo--synopsis":   "Returns information about manually added (persistent) peers.",
-	"getManualNodeInfo-details":     "Specifies whether the returned data is a JSON object including DNS and connection information, or just a list of added peers",
-	"getManualNodeInfo-node":        "Only return information about this specific peer instead of all added peers",
-	"getManualNodeInfo--condition0": "details=false",
-	"getManualNodeInfo--condition1": "details=true",
-	"getManualNodeInfo--result0":    "List of added peers",
 
 	// GetSelectedTipResult help.
 	"getSelectedTipResult-hash":   "Hex-encoded bytes of the best block hash",
@@ -517,7 +465,7 @@ var helpDescsEnUS = map[string]string{
 	"ping--synopsis": "Queues a ping to be sent to each connected peer.\n" +
 		"Ping times are provided by getConnectedPeerInfo via the pingtime and pingwait fields.",
 
-	// RemoveManualNodeCmd help.
+	// DisconnectCmd help.
 	"removeManualNode--synopsis": "Removes a peer from the manual nodes list",
 	"removeManualNode-addr":      "IP address and port of the peer to remove",
 
@@ -618,46 +566,44 @@ var helpDescsEnUS = map[string]string{
 // This information is used to generate the help. Each result type must be a
 // pointer to the type (or nil to indicate no return value).
 var rpcResultTypes = map[string][]interface{}{
-	"addManualNode":         nil,
-	"createRawTransaction":  {(*string)(nil)},
-	"debugLevel":            {(*string)(nil), (*string)(nil)},
-	"decodeRawTransaction":  {(*model.TxRawDecodeResult)(nil)},
-	"decodeScript":          {(*model.DecodeScriptResult)(nil)},
-	"getAllManualNodesInfo": {(*[]string)(nil), (*[]model.GetManualNodeInfoResult)(nil)},
-	"getSelectedTip":        {(*model.GetBlockVerboseResult)(nil)},
-	"getSelectedTipHash":    {(*string)(nil)},
-	"getBlock":              {(*string)(nil), (*model.GetBlockVerboseResult)(nil)},
-	"getBlocks":             {(*model.GetBlocksResult)(nil)},
-	"getBlockCount":         {(*int64)(nil)},
-	"getBlockHeader":        {(*string)(nil), (*model.GetBlockHeaderVerboseResult)(nil)},
-	"getBlockTemplate":      {(*model.GetBlockTemplateResult)(nil), (*string)(nil), nil},
-	"getBlockDagInfo":       {(*model.GetBlockDAGInfoResult)(nil)},
-	"getChainFromBlock":     {(*model.GetChainFromBlockResult)(nil)},
-	"getConnectionCount":    {(*int32)(nil)},
-	"getCurrentNet":         {(*uint32)(nil)},
-	"getDifficulty":         {(*float64)(nil)},
-	"getTopHeaders":         {(*[]string)(nil)},
-	"getHeaders":            {(*[]string)(nil)},
-	"getInfo":               {(*model.InfoDAGResult)(nil)},
-	"getManualNodeInfo":     {(*string)(nil), (*model.GetManualNodeInfoResult)(nil)},
-	"getMempoolInfo":        {(*model.GetMempoolInfoResult)(nil)},
-	"getMempoolEntry":       {(*model.GetMempoolEntryResult)(nil)},
-	"getNetTotals":          {(*model.GetNetTotalsResult)(nil)},
-	"getConnectedPeerInfo":  {(*[]model.GetConnectedPeerInfoResult)(nil)},
-	"getPeerAddresses":      {(*[]model.GetPeerAddressesResult)(nil)},
-	"getRawMempool":         {(*[]string)(nil), (*model.GetRawMempoolVerboseResult)(nil)},
-	"getSubnetwork":         {(*model.GetSubnetworkResult)(nil)},
-	"getTxOut":              {(*model.GetTxOutResult)(nil)},
-	"node":                  nil,
-	"help":                  {(*string)(nil), (*string)(nil)},
-	"ping":                  nil,
-	"removeManualNode":      nil,
-	"sendRawTransaction":    {(*string)(nil)},
-	"stop":                  {(*string)(nil)},
-	"submitBlock":           {nil, (*string)(nil)},
-	"uptime":                {(*int64)(nil)},
-	"validateAddress":       {(*model.ValidateAddressResult)(nil)},
-	"version":               {(*map[string]model.VersionResult)(nil)},
+	"addManualNode":        nil,
+	"createRawTransaction": {(*string)(nil)},
+	"debugLevel":           {(*string)(nil), (*string)(nil)},
+	"decodeRawTransaction": {(*model.TxRawDecodeResult)(nil)},
+	"decodeScript":         {(*model.DecodeScriptResult)(nil)},
+	"getSelectedTip":       {(*model.GetBlockVerboseResult)(nil)},
+	"getSelectedTipHash":   {(*string)(nil)},
+	"getBlock":             {(*string)(nil), (*model.GetBlockVerboseResult)(nil)},
+	"getBlocks":            {(*model.GetBlocksResult)(nil)},
+	"getBlockCount":        {(*int64)(nil)},
+	"getBlockHeader":       {(*string)(nil), (*model.GetBlockHeaderVerboseResult)(nil)},
+	"getBlockTemplate":     {(*model.GetBlockTemplateResult)(nil), (*string)(nil), nil},
+	"getBlockDagInfo":      {(*model.GetBlockDAGInfoResult)(nil)},
+	"getChainFromBlock":    {(*model.GetChainFromBlockResult)(nil)},
+	"getConnectionCount":   {(*int32)(nil)},
+	"getCurrentNet":        {(*uint32)(nil)},
+	"getDifficulty":        {(*float64)(nil)},
+	"getTopHeaders":        {(*[]string)(nil)},
+	"getHeaders":           {(*[]string)(nil)},
+	"getInfo":              {(*model.InfoDAGResult)(nil)},
+	"getMempoolInfo":       {(*model.GetMempoolInfoResult)(nil)},
+	"getMempoolEntry":      {(*model.GetMempoolEntryResult)(nil)},
+	"getNetTotals":         {(*model.GetNetTotalsResult)(nil)},
+	"getConnectedPeerInfo": {(*[]model.GetConnectedPeerInfoResult)(nil)},
+	"getPeerAddresses":     {(*[]model.GetPeerAddressesResult)(nil)},
+	"getRawMempool":        {(*[]string)(nil), (*model.GetRawMempoolVerboseResult)(nil)},
+	"getSubnetwork":        {(*model.GetSubnetworkResult)(nil)},
+	"getTxOut":             {(*model.GetTxOutResult)(nil)},
+	"node":                 nil,
+	"help":                 {(*string)(nil), (*string)(nil)},
+	"ping":                 nil,
+	"removeManualNode":     nil,
+	"sendRawTransaction":   {(*string)(nil)},
+	"stop":                 {(*string)(nil)},
+	"submitBlock":          {nil, (*string)(nil)},
+	"uptime":               {(*int64)(nil)},
+	"validateAddress":      {(*model.ValidateAddressResult)(nil)},
+	"version":              {(*map[string]model.VersionResult)(nil)},
 
 	// Websocket commands.
 	"loadTxFilter":              nil,

@@ -32,7 +32,7 @@ func handleSubmitBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (i
 
 	// Process this block using the same rules as blocks coming from other
 	// nodes. This will in turn relay it to the network like normal.
-	_, err = s.SyncMgr.SubmitBlock(block, blockdag.BFNone)
+	_, err = s.protocolManager.SubmitBlock(block, blockdag.BFNone)
 	if err != nil {
 		return nil, &model.RPCError{
 			Code:    model.ErrRPCVerify,
