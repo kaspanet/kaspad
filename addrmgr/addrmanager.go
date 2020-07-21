@@ -60,7 +60,6 @@ type AddrManager struct {
 }
 
 // New returns a new Kaspa address manager.
-// Use Start to begin processing asynchronous address updates.
 func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext) *AddrManager {
 	addressManager := AddrManager{
 		cfg:               cfg,
