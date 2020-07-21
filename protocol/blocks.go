@@ -41,6 +41,7 @@ func (m *Manager) OnNewBlock(block *util.Block) error {
 	return m.netAdapter.Broadcast(m.peers.ReadyPeerIDs(), inv)
 }
 
+// AddBlock adds the given block to the DAG and propagates it.
 func (m *Manager) AddBlock(block *util.Block) error {
 	// TODO(libp2p): unimplemented
 	panic("unimplemented")

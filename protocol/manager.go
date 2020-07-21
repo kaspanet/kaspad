@@ -66,10 +66,13 @@ func (m *Manager) Stop() error {
 	return m.netAdapter.Stop()
 }
 
+// Peers returns the currently active peers
 func (m *Manager) Peers() []*peerpkg.Peer {
 	return m.peers.ReadyPeers()
 }
 
+// IBDPeer returns the currently active IBD peer.
+// Returns nil if we aren't currently in IBD
 func (m *Manager) IBDPeer() *peerpkg.Peer {
 	return m.ibdPeer
 }

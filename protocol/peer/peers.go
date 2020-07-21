@@ -6,11 +6,13 @@ import (
 	"sync"
 )
 
+// Peers holds a list of active peers
 type Peers struct {
 	readyPeers      map[*id.ID]*Peer
 	readyPeersMutex sync.RWMutex
 }
 
+// NewPeers returns a new Peers
 func NewPeers() *Peers {
 	return &Peers{
 		readyPeers: make(map[*id.ID]*Peer, 0),

@@ -160,10 +160,13 @@ func (p *Peer) WaitForIBDStart() {
 	<-p.ibdStartChan
 }
 
+// Address returns the address associated with this connection
 func (p *Peer) Address() string {
 	return p.connection.Address()
 }
 
+// LastPingDuration returns the duration of the last ping to
+// this peer
 func (p *Peer) LastPingDuration() time.Duration {
 	p.pingLock.Lock()
 	defer p.pingLock.Unlock()
