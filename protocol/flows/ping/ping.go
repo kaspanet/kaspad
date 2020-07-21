@@ -11,13 +11,13 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// Context is the interface for the context needed for the Ping and Pong flows.
-type Context interface {
+// ReceivePingsContext is the interface for the context needed for the ReceivePings flow.
+type ReceivePingsContext interface {
 }
 
 // ReceivePings handles all ping messages coming through incomingRoute.
 // This function assumes that incomingRoute will only return MsgPing.
-func ReceivePings(_ Context, incomingRoute *router.Route, outgoingRoute *router.Route) error {
+func ReceivePings(_ ReceivePingsContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
 	for {
 		message, err := incomingRoute.Dequeue()
 		if err != nil {
@@ -33,10 +33,14 @@ func ReceivePings(_ Context, incomingRoute *router.Route, outgoingRoute *router.
 	}
 }
 
+// SendPingsContext is the interface for the context needed for the SendPings flow.
+type SendPingsContext interface {
+}
+
 // SendPings starts sending MsgPings every pingInterval seconds to the
 // given peer.
 // This function assumes that incomingRoute will only return MsgPong.
-func SendPings(_ Context, incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer) error {
+func SendPings(_ SendPingsContext, incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer) error {
 	const pingInterval = 2 * time.Minute
 	ticker := time.NewTicker(pingInterval)
 	defer ticker.Stop()
