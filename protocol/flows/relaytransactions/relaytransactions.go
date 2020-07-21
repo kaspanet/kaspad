@@ -6,7 +6,6 @@ import (
 	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/common"
-	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -19,6 +18,7 @@ type RelayedTransactionsContext interface {
 	DAG() *blockdag.BlockDAG
 	SharedRequestedTransactions() *SharedRequestedTransactions
 	TxPool() *mempool.TxPool
+	Broadcast(message wire.Message) error
 }
 
 // HandleRelayedTransactions listens to wire.MsgInvTransaction messages, requests their corresponding transactions if they
@@ -127,7 +127,7 @@ func broadcastAcceptedTransactions(context RelayedTransactionsContext, acceptedT
 		idsToBroadcast[i] = tx.Tx.ID()
 	}
 	inv := wire.NewMsgTxInv(idsToBroadcast)
-	return context.NetAdapter().Broadcast(peerpkg.ReadyPeerIDs(), inv)
+	return context.Broadcast(inv)
 }
 
 // readMsgTx returns the next msgTx in incomingRoute, and populates invsQueue with any inv messages that meanwhile arrive.

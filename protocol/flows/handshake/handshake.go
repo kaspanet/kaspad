@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/netadapter"
+	"github.com/kaspanet/kaspad/protocol/common"
 	"sync"
 	"sync/atomic"
 
@@ -21,6 +22,7 @@ type Context interface {
 	DAG() *blockdag.BlockDAG
 	AddressManager() *addrmgr.AddrManager
 	StartIBDIfRequired()
+	AddToReadyPeers(peer *peerpkg.Peer) error
 }
 
 // HandleHandshake sets up the handshake protocol - It sends a version message and waits for an incoming
@@ -87,9 +89,9 @@ func HandleHandshake(context Context, router *routerpkg.Router) (peer *peerpkg.P
 	case <-locks.ReceiveFromChanWhenDone(func() { wg.Wait() }):
 	}
 
-	err = peerpkg.AddToReadyPeers(peer)
+	err = context.AddToReadyPeers(peer)
 	if err != nil {
-		if errors.Is(err, peerpkg.ErrPeerWithSameIDExists) {
+		if errors.Is(err, common.ErrPeerWithSameIDExists) {
 			return nil, false, err
 		}
 		panic(err)

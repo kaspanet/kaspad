@@ -22,6 +22,7 @@ type RelayInvsContext interface {
 	SharedRequestedBlocks() *SharedRequestedBlocks
 	StartIBDIfRequired()
 	IsInIBD() bool
+	Broadcast(message wire.Message) error
 }
 
 // HandleRelayInvs listens to wire.MsgInvRelayBlock messages, requests their corresponding blocks if they
@@ -213,7 +214,7 @@ func processAndRelayBlock(context RelayInvsContext, peer *peerpkg.Peer,
 	// sm.restartSyncIfNeeded()
 	//// Clear the rejected transactions.
 	//sm.rejectedTxns = make(map[daghash.TxID]struct{})
-	err = context.NetAdapter().Broadcast(peerpkg.ReadyPeerIDs(), wire.NewMsgInvBlock(blockHash))
+	err = context.Broadcast(wire.NewMsgInvBlock(blockHash))
 	if err != nil {
 		return err
 	}

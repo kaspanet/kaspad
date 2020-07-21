@@ -17,9 +17,9 @@ func (m *Manager) StartIBDIfRequired() {
 		return
 	}
 
-	peer := selectPeerForIBD(m.dag)
+	peer := m.selectPeerForIBD(m.dag)
 	if peer == nil {
-		requestSelectedTipsIfRequired(m.dag)
+		m.requestSelectedTipsIfRequired()
 		return
 	}
 
@@ -34,8 +34,8 @@ func (m *Manager) IsInIBD() bool {
 
 // selectPeerForIBD returns the first peer whose selected tip
 // hash is not in our DAG
-func selectPeerForIBD(dag *blockdag.BlockDAG) *peerpkg.Peer {
-	for _, peer := range peerpkg.ReadyPeers() {
+func (m *Manager) selectPeerForIBD(dag *blockdag.BlockDAG) *peerpkg.Peer {
+	for _, peer := range m.readyPeers {
 		peerSelectedTipHash := peer.SelectedTipHash()
 		if !dag.IsInDAG(peerSelectedTipHash) {
 			return peer
@@ -44,20 +44,20 @@ func selectPeerForIBD(dag *blockdag.BlockDAG) *peerpkg.Peer {
 	return nil
 }
 
-func requestSelectedTipsIfRequired(dag *blockdag.BlockDAG) {
-	if isDAGTimeCurrent(dag) {
+func (m *Manager) requestSelectedTipsIfRequired() {
+	if m.isDAGTimeCurrent() {
 		return
 	}
-	requestSelectedTips()
+	m.requestSelectedTips()
 }
 
-func isDAGTimeCurrent(dag *blockdag.BlockDAG) bool {
+func (m *Manager) isDAGTimeCurrent() bool {
 	const minDurationToRequestSelectedTips = time.Minute
-	return dag.Now().Sub(dag.SelectedTipHeader().Timestamp) > minDurationToRequestSelectedTips
+	return m.dag.Now().Sub(m.dag.SelectedTipHeader().Timestamp) > minDurationToRequestSelectedTips
 }
 
-func requestSelectedTips() {
-	for _, peer := range peerpkg.ReadyPeers() {
+func (m *Manager) requestSelectedTips() {
+	for _, peer := range m.readyPeers {
 		peer.RequestSelectedTipIfRequired()
 	}
 }

@@ -3,7 +3,6 @@ package protocol
 import (
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/protocol/flows/relaytransactions"
-	"github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
@@ -27,7 +26,7 @@ func (m *Manager) AddTransaction(tx *util.Tx) error {
 
 	m.transactionsToRebroadcast[*tx.ID()] = tx
 	inv := wire.NewMsgTxInv([]*daghash.TxID{tx.ID()})
-	return m.netAdapter.Broadcast(peer.ReadyPeerIDs(), inv)
+	return m.Broadcast(inv)
 }
 
 func (m *Manager) updateTransactionsToRebroadcast(block *util.Block) {

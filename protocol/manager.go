@@ -6,8 +6,10 @@ import (
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/netadapter"
+	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/protocol/flows/blockrelay"
 	"github.com/kaspanet/kaspad/protocol/flows/relaytransactions"
+	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"sync"
@@ -32,6 +34,9 @@ type Manager struct {
 
 	isInIBD       uint32 // TODO(libp2p) populate this var
 	startIBDMutex sync.Mutex
+
+	readyPeers      map[*id.ID]*peerpkg.Peer
+	readyPeersMutex sync.RWMutex
 }
 
 // NewManager creates a new instance of the p2p protocol manager

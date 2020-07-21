@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"github.com/kaspanet/kaspad/protocol/flows/blockrelay"
-	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
@@ -40,7 +39,7 @@ func (m *Manager) OnNewBlock(block *util.Block) error {
 	copy(txIDsToBroadcast[len(transactionsAcceptedToMempool):], txIDsToBroadcast)
 	txIDsToBroadcast = txIDsToBroadcast[:wire.MaxInvPerTxInvMsg]
 	inv := wire.NewMsgTxInv(txIDsToBroadcast)
-	return m.netAdapter.Broadcast(peerpkg.ReadyPeerIDs(), inv)
+	return m.Broadcast(inv)
 }
 
 func (m *Manager) SharedRequestedBlocks() *blockrelay.SharedRequestedBlocks {
