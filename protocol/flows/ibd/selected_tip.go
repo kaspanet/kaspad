@@ -34,82 +34,69 @@ func requestSelectedTips() {
 func RequestSelectedTip(incomingRoute *router.Route,
 	outgoingRoute *router.Route, peer *peerpkg.Peer, dag *blockdag.BlockDAG) error {
 	for {
-		shouldStop, err := runSelectedTipRequest(incomingRoute, outgoingRoute, peer, dag)
+		err := runSelectedTipRequest(incomingRoute, outgoingRoute, peer, dag)
 		if err != nil {
 			return err
-		}
-		if shouldStop {
-			return nil
 		}
 	}
 }
 
 func runSelectedTipRequest(incomingRoute *router.Route, outgoingRoute *router.Route,
-	peer *peerpkg.Peer, dag *blockdag.BlockDAG) (shouldStop bool, err error) {
+	peer *peerpkg.Peer, dag *blockdag.BlockDAG) error {
 
 	peer.WaitForSelectedTipRequests()
 	defer peer.FinishRequestingSelectedTip()
 
-	shouldStop = requestSelectedTip(outgoingRoute)
-	if shouldStop {
-		return true, nil
+	err := requestSelectedTip(outgoingRoute)
+	if err != nil {
+		return err
 	}
 
-	peerSelectedTipHash, shouldStop, err := receiveSelectedTip(incomingRoute)
+	peerSelectedTipHash, err := receiveSelectedTip(incomingRoute)
 	if err != nil {
-		return false, err
-	}
-	if shouldStop {
-		return true, nil
+		return err
 	}
 
 	peer.SetSelectedTipHash(peerSelectedTipHash)
 	StartIBDIfRequired(dag)
-	return false, nil
+	return nil
 }
 
-func requestSelectedTip(outgoingRoute *router.Route) (shouldStop bool) {
+func requestSelectedTip(outgoingRoute *router.Route) error {
 	msgGetSelectedTip := wire.NewMsgGetSelectedTip()
-	isOpen := outgoingRoute.Enqueue(msgGetSelectedTip)
-	return !isOpen
+	return outgoingRoute.Enqueue(msgGetSelectedTip)
 }
 
-func receiveSelectedTip(incomingRoute *router.Route) (selectedTipHash *daghash.Hash, shouldStop bool, err error) {
-	message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+func receiveSelectedTip(incomingRoute *router.Route) (selectedTipHash *daghash.Hash, err error) {
+	message, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
-		return nil, false, err
-	}
-	if !isOpen {
-		return nil, true, nil
+		return nil, err
 	}
 	msgSelectedTip := message.(*wire.MsgSelectedTip)
 
-	return msgSelectedTip.SelectedTipHash, false, nil
+	return msgSelectedTip.SelectedTipHash, nil
 }
 
 // HandleGetSelectedTip handles getSelectedTip messages
 func HandleGetSelectedTip(incomingRoute *router.Route, outgoingRoute *router.Route, dag *blockdag.BlockDAG) error {
 	for {
-		shouldStop, err := receiveGetSelectedTip(incomingRoute)
+		err := receiveGetSelectedTip(incomingRoute)
 		if err != nil {
 			return err
 		}
-		if shouldStop {
-			return nil
-		}
 
 		selectedTipHash := dag.SelectedTipHash()
-		shouldStop = sendSelectedTipHash(outgoingRoute, selectedTipHash)
-		if shouldStop {
-			return nil
+		err = sendSelectedTipHash(outgoingRoute, selectedTipHash)
+		if err != nil {
+			return err
 		}
 	}
 }
 
-func receiveGetSelectedTip(incomingRoute *router.Route) (shouldStop bool, err error) {
-	message, isOpen := incomingRoute.Dequeue()
-	if !isOpen {
-		return true, nil
+func receiveGetSelectedTip(incomingRoute *router.Route) error {
+	message, err := incomingRoute.Dequeue()
+	if err != nil {
+		return err
 	}
 	_, ok := message.(*wire.MsgGetSelectedTip)
 	if !ok {
@@ -117,11 +104,10 @@ func receiveGetSelectedTip(incomingRoute *router.Route) (shouldStop bool, err er
 			"expected: %s, got: %s", wire.CmdGetSelectedTip, message.Command()))
 	}
 
-	return false, nil
+	return nil
 }
 
-func sendSelectedTipHash(outgoingRoute *router.Route, selectedTipHash *daghash.Hash) (shouldStop bool) {
+func sendSelectedTipHash(outgoingRoute *router.Route, selectedTipHash *daghash.Hash) error {
 	msgSelectedTip := wire.NewMsgSelectedTip(selectedTipHash)
-	isOpen := outgoingRoute.Enqueue(msgSelectedTip)
-	return !isOpen
+	return outgoingRoute.Enqueue(msgSelectedTip)
 }

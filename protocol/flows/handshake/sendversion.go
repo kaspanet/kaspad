@@ -30,7 +30,7 @@ var (
 
 // SendVersion sends a version to a peer and waits for verack.
 func SendVersion(cfg *config.Config, incomingRoute *router.Route, outgoingRoute *router.Route,
-	netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG) (routeClosed bool, err error) {
+	netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG) error {
 
 	selectedTipHash := dag.SelectedTipHash()
 	subnetworkID := cfg.SubnetworkID
@@ -52,17 +52,15 @@ func SendVersion(cfg *config.Config, incomingRoute *router.Route, outgoingRoute 
 	// Advertise if inv messages for transactions are desired.
 	msg.DisableRelayTx = cfg.BlocksOnly
 
-	isOpen := outgoingRoute.Enqueue(msg)
-	if !isOpen {
-		return true, nil
+	err = outgoingRoute.Enqueue(msg)
+	if err != nil {
+		return err
 	}
 
-	_, isOpen, err = incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	// Wait for verack
+	_, err = incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
-		return false, err
+		return err
 	}
-	if !isOpen {
-		return true, nil
-	}
-	return false, nil
+	return nil
 }

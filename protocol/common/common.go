@@ -1,6 +1,8 @@
 package common
 
-import "time"
+import (
+	"time"
+)
 
 // DefaultTimeout is the default duration to wait for enqueuing/dequeuing
 // to/from routes.

@@ -1,6 +1,8 @@
 package grpcserver
 
 import (
+	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
+	"github.com/pkg/errors"
 	"io"
 
 	"github.com/davecgh/go-spew/spew"
@@ -32,9 +34,9 @@ func (c *gRPCConnection) connectionLoops() error {
 func (c *gRPCConnection) sendLoop() error {
 	outgoingRoute := c.router.OutgoingRoute()
 	for c.IsConnected() {
-		message, isOpen := outgoingRoute.Dequeue()
-		if !isOpen {
-			return nil
+		message, err := outgoingRoute.Dequeue()
+		if err != nil {
+			return err
 		}
 
 		log.Tracef("outgoing '%s' message to %s: %s", message.Command(), c, logger.NewLogClosure(func() string {
@@ -73,12 +75,13 @@ func (c *gRPCConnection) receiveLoop() error {
 			return spew.Sdump(message)
 		}))
 
-		isOpen, err := c.router.EnqueueIncomingMessage(message)
+		err = c.router.EnqueueIncomingMessage(message)
 		if err != nil {
+			if errors.Is(err, routerpkg.ErrRouteClosed) {
+				log.Debugf("Router for %s is closed. Exiting the receive loop", c)
+				return nil
+			}
 			return err
-		}
-		if !isOpen {
-			return nil
 		}
 	}
 	return nil

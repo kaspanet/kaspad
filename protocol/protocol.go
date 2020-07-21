@@ -43,6 +43,9 @@ func (m *Manager) routerInitializer() (*routerpkg.Router, error) {
 				}
 				return
 			}
+			if errors.Is(err, routerpkg.ErrRouteClosed) {
+				return
+			}
 			panic(err)
 		}
 	})
@@ -78,13 +81,13 @@ func (m *Manager) addAddressFlows(router *routerpkg.Router, stopped *uint32, sto
 	outgoingRoute := router.OutgoingRoute()
 
 	addOneTimeFlow("SendAddresses", router, []wire.MessageCommand{wire.CmdGetAddresses}, stopped, stop,
-		func(incomingRoute *routerpkg.Route) (routeClosed bool, err error) {
+		func(incomingRoute *routerpkg.Route) error {
 			return addressexchange.SendAddresses(incomingRoute, outgoingRoute, m.addressManager)
 		},
 	)
 
 	addOneTimeFlow("ReceiveAddresses", router, []wire.MessageCommand{wire.CmdAddress}, stopped, stop,
-		func(incomingRoute *routerpkg.Route) (routeClosed bool, err error) {
+		func(incomingRoute *routerpkg.Route) error {
 			return addressexchange.ReceiveAddresses(incomingRoute, outgoingRoute, m.cfg, peer, m.addressManager)
 		},
 	)
@@ -192,7 +195,7 @@ func addFlow(name string, router *routerpkg.Router, messageTypes []wire.MessageC
 }
 
 func addOneTimeFlow(name string, router *routerpkg.Router, messageTypes []wire.MessageCommand, stopped *uint32,
-	stopChan chan error, flow func(route *routerpkg.Route) (routeClosed bool, err error)) {
+	stopChan chan error, flow func(route *routerpkg.Route) error) {
 
 	route, err := router.AddIncomingRoute(messageTypes)
 	if err != nil {
@@ -207,11 +210,11 @@ func addOneTimeFlow(name string, router *routerpkg.Router, messageTypes []wire.M
 			}
 		}()
 
-		closed, err := flow(route)
+		err := flow(route)
 		if err != nil {
 			log.Errorf("error from %s flow: %s", name, err)
 		}
-		if (err != nil || closed) && atomic.AddUint32(stopped, 1) == 1 {
+		if err != nil && atomic.AddUint32(stopped, 1) == 1 {
 			stopChan <- err
 		}
 	})
