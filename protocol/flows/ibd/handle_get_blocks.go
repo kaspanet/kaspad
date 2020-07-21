@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
+// GetBlocksContext is the interface for the context needed for the HandleGetBlocks flow.
 type GetBlocksContext interface {
 	DAG() *blockdag.BlockDAG
 }

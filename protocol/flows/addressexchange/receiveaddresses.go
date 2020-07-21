@@ -10,6 +10,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
+// ReceiveAddressesContext is the interface for the context needed for the ReceiveAddresses flow.
 type ReceiveAddressesContext interface {
 	Config() *config.Config
 	AddressManager() *addrmgr.AddrManager

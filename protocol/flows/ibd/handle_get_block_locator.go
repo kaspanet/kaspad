@@ -8,6 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
+// GetBlockLocatorContext is the interface for the context needed for the HandleGetBlockLocator flow.
 type GetBlockLocatorContext interface {
 	DAG() *blockdag.BlockDAG
 }

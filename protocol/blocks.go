@@ -11,7 +11,6 @@ import (
 // OnNewBlock updates the mempool after a new block arrival, and
 // relays newly unorphaned transactions and possibly rebroadcast
 // manually added transactions when not in IBD.
-// TODO(libp2p) Call this function from IBD as well.
 func (m *Manager) OnNewBlock(block *util.Block) error {
 	transactionsAcceptedToMempool, err := m.txPool.HandleNewBlock(block)
 	if err != nil {
@@ -42,6 +41,8 @@ func (m *Manager) OnNewBlock(block *util.Block) error {
 	return m.Broadcast(inv)
 }
 
+// SharedRequestedBlocks returns a *blockrelay.SharedRequestedBlocks for sharing
+// data about requested blocks between different peers.
 func (m *Manager) SharedRequestedBlocks() *blockrelay.SharedRequestedBlocks {
 	return m.sharedRequestedBlocks
 }

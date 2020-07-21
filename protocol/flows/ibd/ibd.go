@@ -11,7 +11,8 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-type IBDContext interface {
+// HandleIBDContext is the interface for the context needed for the HandleIBD flow.
+type HandleIBDContext interface {
 	DAG() *blockdag.BlockDAG
 	OnNewBlock(block *util.Block) error
 	StartIBDIfRequired()
@@ -19,7 +20,7 @@ type IBDContext interface {
 }
 
 // HandleIBD waits for IBD start and handles it when IBD is triggered for this peer
-func HandleIBD(context IBDContext, incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer) error {
+func HandleIBD(context HandleIBDContext, incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer) error {
 
 	for {
 		err := runIBD(context, incomingRoute, outgoingRoute, peer)
@@ -29,7 +30,7 @@ func HandleIBD(context IBDContext, incomingRoute *router.Route, outgoingRoute *r
 	}
 }
 
-func runIBD(context IBDContext, incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer) error {
+func runIBD(context HandleIBDContext, incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer) error {
 
 	peer.WaitForIBDStart()
 	defer context.FinishIBD()
@@ -48,7 +49,7 @@ func runIBD(context IBDContext, incomingRoute *router.Route, outgoingRoute *rout
 	return downloadBlocks(context, incomingRoute, outgoingRoute, highestSharedBlockHash, peerSelectedTipHash)
 }
 
-func findHighestSharedBlockHash(context IBDContext, incomingRoute *router.Route, outgoingRoute *router.Route,
+func findHighestSharedBlockHash(context HandleIBDContext, incomingRoute *router.Route, outgoingRoute *router.Route,
 	peerSelectedTipHash *daghash.Hash) (lowHash *daghash.Hash, err error) {
 
 	lowHash = context.DAG().Params.GenesisHash
@@ -98,7 +99,7 @@ func receiveBlockLocator(incomingRoute *router.Route) (blockLocatorHashes []*dag
 	return msgBlockLocator.BlockLocatorHashes, nil
 }
 
-func downloadBlocks(context IBDContext, incomingRoute *router.Route, outgoingRoute *router.Route,
+func downloadBlocks(context HandleIBDContext, incomingRoute *router.Route, outgoingRoute *router.Route,
 	highestSharedBlockHash *daghash.Hash,
 	peerSelectedTipHash *daghash.Hash) error {
 
@@ -143,7 +144,7 @@ func receiveIBDBlock(incomingRoute *router.Route) (msgIBDBlock *wire.MsgIBDBlock
 	return msgIBDBlock, nil
 }
 
-func processIBDBlock(context IBDContext, msgIBDBlock *wire.MsgIBDBlock) error {
+func processIBDBlock(context HandleIBDContext, msgIBDBlock *wire.MsgIBDBlock) error {
 
 	block := util.NewBlock(&msgIBDBlock.MsgBlock)
 	if context.DAG().IsInDAG(block.Hash()) {

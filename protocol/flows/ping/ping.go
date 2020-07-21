@@ -11,6 +11,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
+// Context is the interface for the context needed for the Ping and Pong flows.
 type Context interface {
 }
 

@@ -62,6 +62,7 @@ func (m *Manager) requestSelectedTips() {
 	}
 }
 
+// FinishIBD finishes the current IBD flow and starts a new one if required.
 func (m *Manager) FinishIBD() {
 	atomic.StoreUint32(&m.isInIBD, 0)
 

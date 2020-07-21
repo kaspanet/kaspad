@@ -34,6 +34,7 @@ func (m *Manager) readyPeerIDs() []*id.ID {
 	return peerIDs
 }
 
+// Broadcast broadcast the given message to all the ready peers.
 func (m *Manager) Broadcast(message wire.Message) error {
 	return m.netAdapter.Broadcast(m.readyPeerIDs(), message)
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// RelayInvsContext is the interface for the context needed for the HandleRelayInvs flow.
 type RelayInvsContext interface {
 	NetAdapter() *netadapter.NetAdapter
 	DAG() *blockdag.BlockDAG

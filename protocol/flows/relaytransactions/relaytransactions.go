@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// RelayedTransactionsContext is the interface for the context needed for the HandleRelayedTransactions flow.
 type RelayedTransactionsContext interface {
 	NetAdapter() *netadapter.NetAdapter
 	DAG() *blockdag.BlockDAG

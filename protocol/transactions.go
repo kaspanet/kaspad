@@ -58,10 +58,13 @@ func (m *Manager) txIDsToRebroadcast() []*daghash.TxID {
 	return txIDs
 }
 
+// SharedRequestedTransactions returns a *relaytransactions.SharedRequestedTransactions for sharing
+// data about requested transactions between different peers.
 func (m *Manager) SharedRequestedTransactions() *relaytransactions.SharedRequestedTransactions {
 	return m.sharedRequestedTransactions
 }
 
+// TxPool returns the transaction pool associated to the manager.
 func (m *Manager) TxPool() *mempool.TxPool {
 	return m.txPool
 }

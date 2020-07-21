@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// RequestSelectedTipContext is the interface for the context needed for the RequestSelectedTip flow.
 type RequestSelectedTipContext interface {
 	DAG() *blockdag.BlockDAG
 	StartIBDIfRequired()

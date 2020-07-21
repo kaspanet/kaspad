@@ -32,7 +32,7 @@ type Manager struct {
 
 	sharedRequestedBlocks *blockrelay.SharedRequestedBlocks
 
-	isInIBD       uint32 // TODO(libp2p) populate this var
+	isInIBD       uint32
 	startIBDMutex sync.Mutex
 
 	readyPeers      map[*id.ID]*peerpkg.Peer
@@ -70,10 +70,12 @@ func (m *Manager) Stop() error {
 	return m.netAdapter.Stop()
 }
 
+// Config returns an instance of *config.Config associated to the manager.
 func (m *Manager) Config() *config.Config {
 	return m.cfg
 }
 
+// NetAdapter returns the net adapter that is associated to the manager.
 func (m *Manager) NetAdapter() *netadapter.NetAdapter {
 	return m.netAdapter
 }

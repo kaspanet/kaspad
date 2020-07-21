@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Context is the interface for the context needed for the HandleHandshake flow.
 type Context interface {
 	Config() *config.Config
 	NetAdapter() *netadapter.NetAdapter

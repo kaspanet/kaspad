@@ -7,6 +7,7 @@ import (
 	"math/rand"
 )
 
+// SendAddressesContext is the interface for the context needed for the SendAddresses flow.
 type SendAddressesContext interface {
 	AddressManager() *addrmgr.AddrManager
 }

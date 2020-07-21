@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// RelayBlockRequestsContext is the interface for the context needed for the HandleRelayBlockRequests flow.
 type RelayBlockRequestsContext interface {
 	DAG() *blockdag.BlockDAG
 }
