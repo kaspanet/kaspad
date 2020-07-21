@@ -1,8 +1,6 @@
 package handshake
 
 import (
-	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
@@ -23,8 +21,8 @@ var (
 
 // ReceiveVersion waits for the peer to send a version message, sends a
 // verack in response, and updates its info accordingly.
-func ReceiveVersion(incomingRoute *router.Route, outgoingRoute *router.Route, netAdapter *netadapter.NetAdapter,
-	peer *peerpkg.Peer, dag *blockdag.BlockDAG) (*wire.NetAddress, error) {
+func ReceiveVersion(context HandleHandshakeContext, incomingRoute *router.Route, outgoingRoute *router.Route,
+	peer *peerpkg.Peer) (*wire.NetAddress, error) {
 
 	message, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
@@ -36,7 +34,7 @@ func ReceiveVersion(incomingRoute *router.Route, outgoingRoute *router.Route, ne
 		return nil, protocolerrors.New(true, "a version message must precede all others")
 	}
 
-	if !allowSelfConnections && netAdapter.ID().IsEqual(msgVersion.ID) {
+	if !allowSelfConnections && context.NetAdapter().ID().IsEqual(msgVersion.ID) {
 		return nil, protocolerrors.New(true, "connected to self")
 	}
 
@@ -53,7 +51,7 @@ func ReceiveVersion(incomingRoute *router.Route, outgoingRoute *router.Route, ne
 	}
 
 	// Disconnect from partial nodes in networks that don't allow them
-	if !dag.Params.EnableNonNativeSubnetworks && msgVersion.SubnetworkID != nil {
+	if !context.DAG().Params.EnableNonNativeSubnetworks && msgVersion.SubnetworkID != nil {
 		return nil, protocolerrors.New(true, "partial nodes are not allowed")
 	}
 

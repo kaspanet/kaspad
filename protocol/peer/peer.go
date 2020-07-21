@@ -11,7 +11,6 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/wire"
-	"github.com/pkg/errors"
 )
 
 // Peer holds data about a peer.
@@ -116,49 +115,6 @@ func (p *Peer) SetPingIdle() {
 func (p *Peer) String() string {
 	//TODO(libp2p)
 	panic("unimplemented")
-}
-
-var (
-	readyPeers      = make(map[*id.ID]*Peer, 0)
-	readyPeersMutex sync.RWMutex
-)
-
-// ErrPeerWithSameIDExists signifies that a peer with the same ID already exist.
-var ErrPeerWithSameIDExists = errors.New("ready with the same ID already exists")
-
-// AddToReadyPeers marks this peer as ready and adds it to the ready peers list.
-func AddToReadyPeers(peer *Peer) error {
-	readyPeersMutex.RLock()
-	defer readyPeersMutex.RUnlock()
-
-	if _, ok := readyPeers[peer.id]; ok {
-		return errors.Wrapf(ErrPeerWithSameIDExists, "peer with ID %s already exists", peer.id)
-	}
-
-	readyPeers[peer.id] = peer
-	return nil
-}
-
-// ReadyPeerIDs returns the peer IDs of all the ready peers.
-func ReadyPeerIDs() []*id.ID {
-	readyPeersMutex.RLock()
-	defer readyPeersMutex.RUnlock()
-	peerIDs := make([]*id.ID, len(readyPeers))
-	i := 0
-	for peerID := range readyPeers {
-		peerIDs[i] = peerID
-		i++
-	}
-	return peerIDs
-}
-
-// ReadyPeers returns a copy of the currently ready peers
-func ReadyPeers() []*Peer {
-	peers := make([]*Peer, 0, len(readyPeers))
-	for _, readyPeer := range readyPeers {
-		peers = append(peers, readyPeer)
-	}
-	return peers
 }
 
 // RequestSelectedTipIfRequired notifies the peer that requesting

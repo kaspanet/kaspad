@@ -1,9 +1,6 @@
 package handshake
 
 import (
-	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/common"
 	"github.com/kaspanet/kaspad/version"
@@ -29,19 +26,18 @@ var (
 )
 
 // SendVersion sends a version to a peer and waits for verack.
-func SendVersion(cfg *config.Config, incomingRoute *router.Route, outgoingRoute *router.Route,
-	netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG) error {
+func SendVersion(context HandleHandshakeContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
 
-	selectedTipHash := dag.SelectedTipHash()
-	subnetworkID := cfg.SubnetworkID
+	selectedTipHash := context.DAG().SelectedTipHash()
+	subnetworkID := context.Config().SubnetworkID
 
 	// Version message.
-	localAddress, err := netAdapter.GetBestLocalAddress()
+	localAddress, err := context.NetAdapter().GetBestLocalAddress()
 	if err != nil {
 		panic(err)
 	}
-	msg := wire.NewMsgVersion(localAddress, netAdapter.ID(), selectedTipHash, subnetworkID)
-	msg.AddUserAgent(userAgentName, userAgentVersion, cfg.UserAgentComments...)
+	msg := wire.NewMsgVersion(localAddress, context.NetAdapter().ID(), selectedTipHash, subnetworkID)
+	msg.AddUserAgent(userAgentName, userAgentVersion, context.Config().UserAgentComments...)
 
 	// Advertise the services flag
 	msg.Services = defaultServices
@@ -50,7 +46,7 @@ func SendVersion(cfg *config.Config, incomingRoute *router.Route, outgoingRoute 
 	msg.ProtocolVersion = wire.ProtocolVersion
 
 	// Advertise if inv messages for transactions are desired.
-	msg.DisableRelayTx = cfg.BlocksOnly
+	msg.DisableRelayTx = context.Config().BlocksOnly
 
 	err = outgoingRoute.Enqueue(msg)
 	if err != nil {

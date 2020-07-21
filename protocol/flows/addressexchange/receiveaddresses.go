@@ -10,11 +10,17 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// ReceiveAddresses asks a peer for more addresses if needed.
-func ReceiveAddresses(incomingRoute *router.Route, outgoingRoute *router.Route, cfg *config.Config, peer *peerpkg.Peer,
-	addressManager *addrmgr.AddrManager) error {
+// ReceiveAddressesContext is the interface for the context needed for the ReceiveAddresses flow.
+type ReceiveAddressesContext interface {
+	Config() *config.Config
+	AddressManager() *addrmgr.AddrManager
+}
 
-	if !addressManager.NeedMoreAddresses() {
+// ReceiveAddresses asks a peer for more addresses if needed.
+func ReceiveAddresses(context ReceiveAddressesContext, incomingRoute *router.Route, outgoingRoute *router.Route,
+	peer *peerpkg.Peer) error {
+
+	if !context.AddressManager().NeedMoreAddresses() {
 		return nil
 	}
 
@@ -39,15 +45,15 @@ func ReceiveAddresses(incomingRoute *router.Route, outgoingRoute *router.Route, 
 		return protocolerrors.Errorf(true, "got unexpected "+
 			"IncludeAllSubnetworks=true in [%s] command", msgAddresses.Command())
 	}
-	if !msgAddresses.SubnetworkID.IsEqual(cfg.SubnetworkID) && msgAddresses.SubnetworkID != nil {
+	if !msgAddresses.SubnetworkID.IsEqual(context.Config().SubnetworkID) && msgAddresses.SubnetworkID != nil {
 		return protocolerrors.Errorf(false, "only full nodes and %s subnetwork IDs "+
 			"are allowed in [%s] command, but got subnetwork ID %s",
-			cfg.SubnetworkID, msgAddresses.Command(), msgAddresses.SubnetworkID)
+			context.Config().SubnetworkID, msgAddresses.Command(), msgAddresses.SubnetworkID)
 	}
 
 	// TODO(libp2p) Consider adding to peer known addresses set
 	// TODO(libp2p) Replace with real peer IP
 	fakeSourceAddress := new(wire.NetAddress)
-	addressManager.AddAddresses(msgAddresses.AddrList, fakeSourceAddress, msgAddresses.SubnetworkID)
+	context.AddressManager().AddAddresses(msgAddresses.AddrList, fakeSourceAddress, msgAddresses.SubnetworkID)
 	return nil
 }

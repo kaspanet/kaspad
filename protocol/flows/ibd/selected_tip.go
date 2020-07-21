@@ -8,41 +8,27 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
-	"time"
 )
 
-const minDurationToRequestSelectedTips = time.Minute
-
-func requestSelectedTipsIfRequired(dag *blockdag.BlockDAG) {
-	if isDAGTimeCurrent(dag) {
-		return
-	}
-	requestSelectedTips()
-}
-
-func isDAGTimeCurrent(dag *blockdag.BlockDAG) bool {
-	return dag.Now().Sub(dag.SelectedTipHeader().Timestamp) > minDurationToRequestSelectedTips
-}
-
-func requestSelectedTips() {
-	for _, peer := range peerpkg.ReadyPeers() {
-		peer.RequestSelectedTipIfRequired()
-	}
+// RequestSelectedTipContext is the interface for the context needed for the RequestSelectedTip flow.
+type RequestSelectedTipContext interface {
+	DAG() *blockdag.BlockDAG
+	StartIBDIfRequired()
 }
 
 // RequestSelectedTip waits for selected tip requests and handles them
-func RequestSelectedTip(incomingRoute *router.Route,
-	outgoingRoute *router.Route, peer *peerpkg.Peer, dag *blockdag.BlockDAG) error {
+func RequestSelectedTip(context RequestSelectedTipContext, incomingRoute *router.Route,
+	outgoingRoute *router.Route, peer *peerpkg.Peer) error {
 	for {
-		err := runSelectedTipRequest(incomingRoute, outgoingRoute, peer, dag)
+		err := runSelectedTipRequest(context, incomingRoute, outgoingRoute, peer)
 		if err != nil {
 			return err
 		}
 	}
 }
 
-func runSelectedTipRequest(incomingRoute *router.Route, outgoingRoute *router.Route,
-	peer *peerpkg.Peer, dag *blockdag.BlockDAG) error {
+func runSelectedTipRequest(context RequestSelectedTipContext, incomingRoute *router.Route, outgoingRoute *router.Route,
+	peer *peerpkg.Peer) error {
 
 	peer.WaitForSelectedTipRequests()
 	defer peer.FinishRequestingSelectedTip()
@@ -58,7 +44,7 @@ func runSelectedTipRequest(incomingRoute *router.Route, outgoingRoute *router.Ro
 	}
 
 	peer.SetSelectedTipHash(peerSelectedTipHash)
-	StartIBDIfRequired(dag)
+	context.StartIBDIfRequired()
 	return nil
 }
 
@@ -77,15 +63,20 @@ func receiveSelectedTip(incomingRoute *router.Route) (selectedTipHash *daghash.H
 	return msgSelectedTip.SelectedTipHash, nil
 }
 
+// GetSelectedTipContext is the interface for the context needed for the HandleGetSelectedTip flow.
+type GetSelectedTipContext interface {
+	DAG() *blockdag.BlockDAG
+}
+
 // HandleGetSelectedTip handles getSelectedTip messages
-func HandleGetSelectedTip(incomingRoute *router.Route, outgoingRoute *router.Route, dag *blockdag.BlockDAG) error {
+func HandleGetSelectedTip(context GetSelectedTipContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
 	for {
 		err := receiveGetSelectedTip(incomingRoute)
 		if err != nil {
 			return err
 		}
 
-		selectedTipHash := dag.SelectedTipHash()
+		selectedTipHash := context.DAG().SelectedTipHash()
 		err = sendSelectedTipHash(outgoingRoute, selectedTipHash)
 		if err != nil {
 			return err
