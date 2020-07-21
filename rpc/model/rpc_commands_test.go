@@ -40,7 +40,7 @@ func TestRPCServerCommands(t *testing.T) {
 				return model.NewConnectCmd("127.0.0.1", nil)
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"connect","params":["127.0.0.1"],"id":1}`,
-			unmarshalled: &model.ConnectCmd{Address: "127.0.0.1", OneTry: pointers.Bool(false)},
+			unmarshalled: &model.ConnectCmd{Address: "127.0.0.1", IsPermanent: pointers.Bool(false)},
 		},
 		{
 			name: "getSelectedTipHash",

@@ -14,16 +14,16 @@ import (
 
 // ConnectCmd defines the connect JSON-RPC command.
 type ConnectCmd struct {
-	Address string
-	OneTry  *bool `jsonrpcdefault:"false"`
+	Address     string
+	IsPermanent *bool `jsonrpcdefault:"false"`
 }
 
 // NewConnectCmd returns a new instance which can be used to issue a connection
 // JSON-RPC command.
-func NewConnectCmd(address string, oneTry *bool) *ConnectCmd {
+func NewConnectCmd(address string, isPermanent *bool) *ConnectCmd {
 	return &ConnectCmd{
-		Address: address,
-		OneTry:  oneTry,
+		Address:     address,
+		IsPermanent: isPermanent,
 	}
 }
 

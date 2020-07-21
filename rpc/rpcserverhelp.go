@@ -30,9 +30,9 @@ var helpDescsEnUS = map[string]string{
 	"debugLevel--result1":    "The list of subsystems",
 
 	// ConnectCmd help.
-	"connect--synopsis": "Attempts to connect a peer.",
-	"connect-address":   "IP address and port of the peer to connect",
-	"connect-oneTry":    "When enabled, will try to connect only once",
+	"connect--synopsis":   "Attempts to connect a peer.",
+	"connect-address":     "IP address and port of the peer to connect",
+	"connect-isPermanent": "Whether the connection for this address should be permanent",
 
 	// TransactionInput help.
 	"transactionInput-txId": "The hash of the input transaction",

@@ -9,7 +9,7 @@ import (
 func handleConnect(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*model.ConnectCmd)
 
-	oneTry := c.OneTry != nil && *c.OneTry
+	isPermanent := c.IsPermanent != nil && *c.IsPermanent
 
 	address, err := network.NormalizeAddress(c.Address, s.dag.Params.DefaultPort)
 	if err != nil {
@@ -19,6 +19,6 @@ func handleConnect(s *Server, cmd interface{}, closeChan <-chan struct{}) (inter
 		}
 	}
 
-	s.connectionManager.AddConnectionRequest(address, !oneTry)
+	s.connectionManager.AddConnectionRequest(address, isPermanent)
 	return nil, nil
 }
