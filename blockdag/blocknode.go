@@ -9,7 +9,6 @@ import (
 	"math"
 
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 
@@ -101,10 +100,6 @@ type blockNode struct {
 
 	// isFinalized determines whether the node is below the finality point.
 	isFinalized bool
-
-	// DatabaseContext is the context in which all database queries related to
-	// this blockNode are going to run.
-	databaseContext *dbaccess.DatabaseContext
 }
 
 // newBlockNode returns a new block node for the given block header and parents, and the
@@ -118,7 +113,6 @@ func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSe
 		blueScore:          math.MaxUint64, // Initialized to the max value to avoid collisions with the genesis block
 		timestamp:          dag.Now().UnixMilliseconds(),
 		bluesAnticoneSizes: make(map[*blockNode]dagconfig.KType),
-		databaseContext:    dag.databaseContext,
 	}
 
 	// blockHeader is nil only for the virtual block

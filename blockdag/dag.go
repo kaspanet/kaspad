@@ -1235,10 +1235,10 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 	return genesisPastUTXO
 }
 
-func (node *blockNode) fetchBlueBlocks() ([]*util.Block, error) {
+func (dag *BlockDAG) fetchBlueBlocks(node *blockNode) ([]*util.Block, error) {
 	blueBlocks := make([]*util.Block, len(node.blues))
 	for i, blueBlockNode := range node.blues {
-		blueBlock, err := fetchBlockByHash(node.databaseContext, blueBlockNode.hash)
+		blueBlock, err := dag.fetchBlockByHash(blueBlockNode.hash)
 		if err != nil {
 			return nil, err
 		}
@@ -1352,7 +1352,7 @@ func (dag *BlockDAG) pastUTXO(node *blockNode) (
 		return nil, nil, nil, err
 	}
 
-	blueBlocks, err := node.fetchBlueBlocks()
+	blueBlocks, err := dag.fetchBlueBlocks(node)
 	if err != nil {
 		return nil, nil, nil, err
 	}

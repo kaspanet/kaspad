@@ -379,7 +379,7 @@ func (dag *BlockDAG) processUnprocessedBlockNodes(unprocessedBlockNodes []*block
 		}
 
 		// Attempt to accept the block.
-		block, err := fetchBlockByHash(dag.databaseContext, node.hash)
+		block, err := dag.fetchBlockByHash(node.hash)
 		if err != nil {
 			return err
 		}
@@ -425,7 +425,6 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		hashMerkleRoot:       header.HashMerkleRoot,
 		acceptedIDMerkleRoot: header.AcceptedIDMerkleRoot,
 		utxoCommitment:       header.UTXOCommitment,
-		databaseContext:      dag.databaseContext,
 	}
 
 	node.children = newBlockSet()
@@ -511,8 +510,8 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 
 // fetchBlockByHash retrieves the raw block for the provided hash,
 // deserializes it, and returns a util.Block of it.
-func fetchBlockByHash(dbContext dbaccess.Context, hash *daghash.Hash) (*util.Block, error) {
-	blockBytes, err := dbaccess.FetchBlock(dbContext, hash)
+func (dag *BlockDAG) fetchBlockByHash(hash *daghash.Hash) (*util.Block, error) {
+	blockBytes, err := dbaccess.FetchBlock(dag.databaseContext, hash)
 	if err != nil {
 		return nil, err
 	}
@@ -611,7 +610,7 @@ func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
 		return nil, ErrNotInDAG(str)
 	}
 
-	block, err := fetchBlockByHash(dag.databaseContext, node.hash)
+	block, err := dag.fetchBlockByHash(node.hash)
 	if err != nil {
 		return nil, err
 	}
