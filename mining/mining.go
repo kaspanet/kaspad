@@ -7,6 +7,7 @@ package mining
 import (
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
+	"time"
 
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/txscript"
@@ -227,4 +228,22 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 // This function is safe for concurrent access.
 func (g *BlkTmplGenerator) TxSource() TxSource {
 	return g.txSource
+}
+
+// isSynced checks if the node is synced enough based upon its worldview.
+// This is used to determine if the node can support mining and requesting newly-mined blocks.
+// To do that, first it checks if the selected tip timestamp is not older than maxTipAge. If that's the case, it means
+// the node is synced since blocks' timestamps are not allowed to deviate too much into the future.
+// If that's not the case it checks the rate it added new blocks to the DAG recently. If it's faster than
+// blockRate * maxSyncRateDeviation it means the node is not synced, since when the node is synced it shouldn't add
+// blocks to the DAG faster than the block rate.
+func (g *BlkTmplGenerator) IsSynced() bool {
+	const maxTipAge = 5 * time.Minute
+	isCloseToCurrentTime := g.dag.Now().Sub(g.dag.SelectedTipHeader().Timestamp) <= maxTipAge
+	if isCloseToCurrentTime {
+		return true
+	}
+
+	const maxSyncRateDeviation = 1.05
+	return s.dag.IsSyncRateBelowThreshold(maxSyncRateDeviation)
 }
