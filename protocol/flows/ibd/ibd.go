@@ -9,55 +9,13 @@ import (
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
-	"sync"
-	"sync/atomic"
 )
-
-var (
-	isIBDRunning  uint32
-	startIBDMutex sync.Mutex
-)
-
-// StartIBDIfRequired selects a peer and starts IBD against it
-// if required
-func StartIBDIfRequired(dag *blockdag.BlockDAG) {
-	startIBDMutex.Lock()
-	defer startIBDMutex.Unlock()
-
-	if IsInIBD() {
-		return
-	}
-
-	peer := selectPeerForIBD(dag)
-	if peer == nil {
-		requestSelectedTipsIfRequired(dag)
-		return
-	}
-
-	atomic.StoreUint32(&isIBDRunning, 1)
-	peer.StartIBD()
-}
-
-// IsInIBD is true if IBD is currently running
-func IsInIBD() bool {
-	return atomic.LoadUint32(&isIBDRunning) != 0
-}
-
-// selectPeerForIBD returns the first peer whose selected tip
-// hash is not in our DAG
-func selectPeerForIBD(dag *blockdag.BlockDAG) *peerpkg.Peer {
-	for _, peer := range peerpkg.ReadyPeers() {
-		peerSelectedTipHash := peer.SelectedTipHash()
-		if !dag.IsInDAG(peerSelectedTipHash) {
-			return peer
-		}
-	}
-	return nil
-}
 
 type IBDContext interface {
 	DAG() *blockdag.BlockDAG
 	OnNewBlock(block *util.Block) error
+	StartIBDIfRequired()
+	FinishIBD()
 }
 
 // HandleIBD waits for IBD start and handles it when IBD is triggered for this peer
@@ -74,7 +32,7 @@ func HandleIBD(context IBDContext, incomingRoute *router.Route, outgoingRoute *r
 func runIBD(context IBDContext, incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer) error {
 
 	peer.WaitForIBDStart()
-	defer finishIBD(context)
+	defer context.FinishIBD()
 
 	peerSelectedTipHash := peer.SelectedTipHash()
 	highestSharedBlockHash, err := findHighestSharedBlockHash(context, incomingRoute, outgoingRoute, peerSelectedTipHash)
@@ -208,10 +166,4 @@ func processIBDBlock(context IBDContext, msgIBDBlock *wire.MsgIBDBlock) error {
 		panic(err)
 	}
 	return nil
-}
-
-func finishIBD(context IBDContext) {
-	atomic.StoreUint32(&isIBDRunning, 0)
-
-	StartIBDIfRequired(context.DAG())
 }

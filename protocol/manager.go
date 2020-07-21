@@ -30,7 +30,8 @@ type Manager struct {
 
 	sharedRequestedBlocks *blockrelay.SharedRequestedBlocks
 
-	isInIBD uint32 // TODO(libp2p) populate this var
+	isInIBD       uint32 // TODO(libp2p) populate this var
+	startIBDMutex sync.Mutex
 }
 
 // NewManager creates a new instance of the p2p protocol manager

@@ -6,7 +6,6 @@ import (
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/blocklogger"
 	"github.com/kaspanet/kaspad/protocol/common"
-	"github.com/kaspanet/kaspad/protocol/flows/ibd"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/util"
@@ -21,6 +20,8 @@ type RelayInvsContext interface {
 	DAG() *blockdag.BlockDAG
 	OnNewBlock(block *util.Block) error
 	SharedRequestedBlocks() *SharedRequestedBlocks
+	StartIBDIfRequired()
+	IsInIBD() bool
 }
 
 // HandleRelayInvs listens to wire.MsgInvRelayBlock messages, requests their corresponding blocks if they
@@ -43,8 +44,8 @@ func HandleRelayInvs(context RelayInvsContext, incomingRoute *router.Route, outg
 			continue
 		}
 
-		ibd.StartIBDIfRequired(context.DAG())
-		if ibd.IsInIBD() {
+		context.StartIBDIfRequired()
+		if context.IsInIBD() {
 			// Block relay is disabled during IBD
 			continue
 		}
@@ -217,7 +218,7 @@ func processAndRelayBlock(context RelayInvsContext, peer *peerpkg.Peer,
 		return err
 	}
 
-	ibd.StartIBDIfRequired(context.DAG())
+	context.StartIBDIfRequired()
 	err = context.OnNewBlock(block)
 	if err != nil {
 		panic(err)

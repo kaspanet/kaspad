@@ -9,7 +9,6 @@ import (
 	"sync/atomic"
 
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
-	"github.com/kaspanet/kaspad/protocol/flows/ibd"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/kaspanet/kaspad/wire"
@@ -21,6 +20,7 @@ type Context interface {
 	NetAdapter() *netadapter.NetAdapter
 	DAG() *blockdag.BlockDAG
 	AddressManager() *addrmgr.AddrManager
+	StartIBDIfRequired()
 }
 
 // HandleHandshake sets up the handshake protocol - It sends a version message and waits for an incoming
@@ -107,7 +107,7 @@ func HandleHandshake(context Context, router *routerpkg.Router) (peer *peerpkg.P
 		context.AddressManager().Good(peerAddress, subnetworkID)
 	}
 
-	ibd.StartIBDIfRequired(context.DAG())
+	context.StartIBDIfRequired()
 
 	err = router.RemoveRoute([]wire.MessageCommand{wire.CmdVersion, wire.CmdVerAck})
 	if err != nil {

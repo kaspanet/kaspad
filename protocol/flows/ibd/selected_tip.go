@@ -8,30 +8,11 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
-	"time"
 )
-
-const minDurationToRequestSelectedTips = time.Minute
-
-func requestSelectedTipsIfRequired(dag *blockdag.BlockDAG) {
-	if isDAGTimeCurrent(dag) {
-		return
-	}
-	requestSelectedTips()
-}
-
-func isDAGTimeCurrent(dag *blockdag.BlockDAG) bool {
-	return dag.Now().Sub(dag.SelectedTipHeader().Timestamp) > minDurationToRequestSelectedTips
-}
-
-func requestSelectedTips() {
-	for _, peer := range peerpkg.ReadyPeers() {
-		peer.RequestSelectedTipIfRequired()
-	}
-}
 
 type RequestSelectedTipContext interface {
 	DAG() *blockdag.BlockDAG
+	StartIBDIfRequired()
 }
 
 // RequestSelectedTip waits for selected tip requests and handles them
@@ -62,7 +43,7 @@ func runSelectedTipRequest(context RequestSelectedTipContext, incomingRoute *rou
 	}
 
 	peer.SetSelectedTipHash(peerSelectedTipHash)
-	StartIBDIfRequired(context.DAG())
+	context.StartIBDIfRequired()
 	return nil
 }
 
