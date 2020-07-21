@@ -1,8 +1,10 @@
-package main
+package kaspad
 
 import (
 	"fmt"
 	"sync/atomic"
+
+	"github.com/kaspanet/kaspad/netadapter"
 
 	"github.com/kaspanet/kaspad/dbaccess"
 
@@ -12,8 +14,6 @@ import (
 	"github.com/kaspanet/kaspad/connmanager"
 
 	"github.com/kaspanet/kaspad/addrmgr"
-
-	"github.com/kaspanet/kaspad/netadapter"
 
 	"github.com/kaspanet/kaspad/util/panics"
 
@@ -29,8 +29,8 @@ import (
 	"github.com/kaspanet/kaspad/util"
 )
 
-// kaspad is a wrapper for all the kaspad services
-type kaspad struct {
+// Kaspad is a wrapper for all the Kaspad services
+type Kaspad struct {
 	cfg               *config.Config
 	rpcServer         *rpc.Server
 	addressManager    *addrmgr.AddrManager
@@ -40,73 +40,9 @@ type kaspad struct {
 	started, shutdown int32
 }
 
-// start launches all the kaspad services.
-func (k *kaspad) start() {
-	// Already started?
-	if atomic.AddInt32(&k.started, 1) != 1 {
-		return
-	}
-
-	log.Trace("Starting kaspad")
-
-	err := k.protocolManager.Start()
-	if err != nil {
-		panics.Exit(log, fmt.Sprintf("Error starting the p2p protocol: %+v", err))
-	}
-
-	k.maybeSeedFromDNS()
-
-	k.connectionManager.Start()
-
-	if !k.cfg.DisableRPC {
-		k.rpcServer.Start()
-	}
-}
-
-func (k *kaspad) maybeSeedFromDNS() {
-	if !k.cfg.DisableDNSSeed {
-		dnsseed.SeedFromDNS(k.cfg.NetParams(), k.cfg.DNSSeed, wire.SFNodeNetwork, false, nil,
-			k.cfg.Lookup, func(addresses []*wire.NetAddress) {
-				// Kaspad uses a lookup of the dns seeder here. Since seeder returns
-				// IPs of nodes and not its own IP, we can not know real IP of
-				// source. So we'll take first returned address as source.
-				k.addressManager.AddAddresses(addresses, addresses[0], nil)
-			})
-	}
-}
-
-// stop gracefully shuts down all the kaspad services.
-func (k *kaspad) stop() error {
-	// Make sure this only happens once.
-	if atomic.AddInt32(&k.shutdown, 1) != 1 {
-		log.Infof("Kaspad is already in the process of shutting down")
-		return nil
-	}
-
-	log.Warnf("Kaspad shutting down")
-
-	k.connectionManager.Stop()
-
-	err := k.protocolManager.Stop()
-	if err != nil {
-		log.Errorf("Error stopping the p2p protocol: %+v", err)
-	}
-
-	// Shutdown the RPC server if it's not disabled.
-	if !k.cfg.DisableRPC {
-		err := k.rpcServer.Stop()
-		if err != nil {
-			log.Errorf("Error stopping rpcServer: %+v", err)
-		}
-	}
-
-	return nil
-}
-
-// newKaspad returns a new kaspad instance configured to listen on addr for the
-// kaspa network type specified by dagParams. Use start to begin accepting
-// connections from peers.
-func newKaspad(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrupt <-chan struct{}) (*kaspad, error) {
+// New returns a new Kaspad instance configured to listen on address for the
+// kaspa network type specified by dagParams.
+func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrupt <-chan struct{}) (*Kaspad, error) {
 	indexManager, acceptanceIndex := setupIndexes(cfg)
 
 	sigCache := txscript.NewSigCache(cfg.SigCacheMaxSize)
@@ -140,12 +76,75 @@ func newKaspad(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, in
 		return nil, err
 	}
 
-	return &kaspad{
+	return &Kaspad{
 		cfg:               cfg,
 		rpcServer:         rpcServer,
 		protocolManager:   protocolManager,
 		connectionManager: connectionManager,
 	}, nil
+}
+
+// Start launches all the Kaspad services.
+func (k *Kaspad) Start() {
+	// Already started?
+	if atomic.AddInt32(&k.started, 1) != 1 {
+		return
+	}
+
+	log.Trace("Starting Kaspad")
+
+	err := k.protocolManager.Start()
+	if err != nil {
+		panics.Exit(log, fmt.Sprintf("Error starting the p2p protocol: %+v", err))
+	}
+
+	k.maybeSeedFromDNS()
+
+	k.connectionManager.Start()
+
+	if !k.cfg.DisableRPC {
+		k.rpcServer.Start()
+	}
+}
+
+// Stop gracefully shuts down all the Kaspad services.
+func (k *Kaspad) Stop() error {
+	// Make sure this only happens once.
+	if atomic.AddInt32(&k.shutdown, 1) != 1 {
+		log.Infof("Kaspad is already in the process of shutting down")
+		return nil
+	}
+
+	log.Warnf("Kaspad shutting down")
+
+	k.connectionManager.Stop()
+
+	err := k.protocolManager.Stop()
+	if err != nil {
+		log.Errorf("Error stopping the p2p protocol: %+v", err)
+	}
+
+	// Shutdown the RPC server if it's not disabled.
+	if !k.cfg.DisableRPC {
+		err := k.rpcServer.Stop()
+		if err != nil {
+			log.Errorf("Error stopping rpcServer: %+v", err)
+		}
+	}
+
+	return nil
+}
+
+func (k *Kaspad) maybeSeedFromDNS() {
+	if !k.cfg.DisableDNSSeed {
+		dnsseed.SeedFromDNS(k.cfg.NetParams(), k.cfg.DNSSeed, wire.SFNodeNetwork, false, nil,
+			k.cfg.Lookup, func(addresses []*wire.NetAddress) {
+				// Kaspad uses a lookup of the dns seeder here. Since seeder returns
+				// IPs of nodes and not its own IP, we can not know real IP of
+				// source. So we'll take first returned address as source.
+				k.addressManager.AddAddresses(addresses, addresses[0], nil)
+			})
+	}
 }
 
 func setupDAG(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrupt <-chan struct{},
@@ -226,7 +225,7 @@ func setupRPC(cfg *config.Config, dag *blockdag.BlockDAG, txMempool *mempool.TxP
 }
 
 // WaitForShutdown blocks until the main listener and peer handlers are stopped.
-func (k *kaspad) WaitForShutdown() {
+func (k *Kaspad) WaitForShutdown() {
 	// TODO(libp2p)
 	//	k.p2pServer.WaitForShutdown()
 }
