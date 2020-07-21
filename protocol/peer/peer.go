@@ -159,3 +159,14 @@ func (p *Peer) StartIBD() {
 func (p *Peer) WaitForIBDStart() {
 	<-p.ibdStartChan
 }
+
+func (p *Peer) Address() string {
+	return p.connection.Address()
+}
+
+func (p *Peer) LastPingDuration() time.Duration {
+	p.pingLock.Lock()
+	defer p.pingLock.Unlock()
+
+	return p.lastPingDuration
+}

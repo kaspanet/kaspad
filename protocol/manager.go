@@ -28,7 +28,9 @@ type Manager struct {
 	lastRebroadcastTime           time.Time
 	sharedRequestedTransactions   *relaytransactions.SharedRequestedTransactions
 
-	isInIBD uint32 // TODO(libp2p) populate this var
+	// TODO(libp2p) populate these vars
+	isInIBD uint32
+	ibdPeer *peerpkg.Peer
 
 	peers *peerpkg.Peers
 }
@@ -66,4 +68,8 @@ func (m *Manager) Stop() error {
 
 func (m *Manager) Peers() []*peerpkg.Peer {
 	return m.peers.ReadyPeers()
+}
+
+func (m *Manager) IBDPeer() *peerpkg.Peer {
+	return m.ibdPeer
 }

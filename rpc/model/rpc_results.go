@@ -219,25 +219,11 @@ type GetNetworkInfoResult struct {
 
 // GetConnectedPeerInfoResult models the data returned from the getConnectedPeerInfo command.
 type GetConnectedPeerInfoResult struct {
-	ID          int32   `json:"id"`
-	Addr        string  `json:"addr"`
-	Services    string  `json:"services"`
-	RelayTxes   bool    `json:"relayTxes"`
-	LastSend    int64   `json:"lastSend"`
-	LastRecv    int64   `json:"lastRecv"`
-	BytesSent   uint64  `json:"bytesSent"`
-	BytesRecv   uint64  `json:"bytesRecv"`
-	ConnTime    int64   `json:"connTime"`
-	TimeOffset  int64   `json:"timeOffset"`
-	PingTime    float64 `json:"pingTime"`
-	PingWait    float64 `json:"pingWait,omitempty"`
-	Version     uint32  `json:"version"`
-	SubVer      string  `json:"subVer"`
-	Inbound     bool    `json:"inbound"`
-	SelectedTip string  `json:"selectedTip,omitempty"`
-	BanScore    int32   `json:"banScore"`
-	FeeFilter   int64   `json:"feeFilter"`
-	SyncNode    bool    `json:"syncNode"`
+	ID               string `json:"id"`
+	Address          string `json:"address"`
+	LastPingDuration int64  `json:"lastPingDuration"`
+	SelectedTipHash  string `json:"selectedTipHash"`
+	IsSyncNode       bool   `json:"isSyncNode"`
 }
 
 // GetPeerAddressesResult models the data returned from the getPeerAddresses command.
