@@ -23,7 +23,7 @@ type HandleHandshakeContext interface {
 	DAG() *blockdag.BlockDAG
 	AddressManager() *addrmgr.AddrManager
 	StartIBDIfRequired()
-	AddToReadyPeers(peer *peerpkg.Peer) error
+	AddToPeers(peer *peerpkg.Peer) error
 }
 
 // HandleHandshake sets up the handshake protocol - It sends a version message and waits for an incoming
@@ -90,7 +90,7 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router) (
 	case <-locks.ReceiveFromChanWhenDone(func() { wg.Wait() }):
 	}
 
-	err = context.AddToReadyPeers(peer)
+	err = context.AddToPeers(peer)
 	if err != nil {
 		if errors.Is(err, common.ErrPeerWithSameIDExists) {
 			return nil, false, err

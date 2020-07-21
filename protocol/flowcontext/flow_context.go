@@ -36,8 +36,8 @@ type FlowContext struct {
 	isInIBD       uint32
 	startIBDMutex sync.Mutex
 
-	readyPeers      map[*id.ID]*peerpkg.Peer
-	readyPeersMutex sync.RWMutex
+	peers      map[*id.ID]*peerpkg.Peer
+	peersMutex sync.RWMutex
 }
 
 // New returns a new instance of FlowContext.
@@ -51,7 +51,7 @@ func New(cfg *config.Config, dag *blockdag.BlockDAG,
 		txPool:                      txPool,
 		sharedRequestedTransactions: relaytransactions.NewSharedRequestedTransactions(),
 		sharedRequestedBlocks:       blockrelay.NewSharedRequestedBlocks(),
-		readyPeers:                  make(map[*id.ID]*peerpkg.Peer),
+		peers:                       make(map[*id.ID]*peerpkg.Peer),
 		transactionsToRebroadcast:   make(map[daghash.TxID]*util.Tx),
 	}
 }

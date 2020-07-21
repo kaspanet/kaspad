@@ -35,7 +35,7 @@ func (f *FlowContext) IsInIBD() bool {
 // selectPeerForIBD returns the first peer whose selected tip
 // hash is not in our DAG
 func (f *FlowContext) selectPeerForIBD(dag *blockdag.BlockDAG) *peerpkg.Peer {
-	for _, peer := range f.readyPeers {
+	for _, peer := range f.peers {
 		peerSelectedTipHash := peer.SelectedTipHash()
 		if !dag.IsInDAG(peerSelectedTipHash) {
 			return peer
@@ -57,7 +57,7 @@ func (f *FlowContext) isDAGTimeCurrent() bool {
 }
 
 func (f *FlowContext) requestSelectedTips() {
-	for _, peer := range f.readyPeers {
+	for _, peer := range f.peers {
 		peer.RequestSelectedTipIfRequired()
 	}
 }
