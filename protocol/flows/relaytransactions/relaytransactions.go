@@ -22,7 +22,7 @@ type NewBlockHandler func(block *util.Block) error
 // are missing, adds them to the mempool and propagates them to the rest of the network.
 func HandleRelayedTransactions(incomingRoute *router.Route, outgoingRoute *router.Route,
 	netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG, txPool *mempool.TxPool,
-	sharedRequestedTransactions *SharedRequestedTransactions) error {
+	sharedRequestedTransactions *SharedRequestedTransactions, peers *peerpkg.Peers) error {
 
 	invsQueue := make([]*wire.MsgInvTransaction, 0)
 	for {
@@ -43,7 +43,7 @@ func HandleRelayedTransactions(incomingRoute *router.Route, outgoingRoute *route
 		}
 
 		shouldStop, err = receiveTransactions(requestedIDs, incomingRoute, &invsQueue, txPool, netAdapter,
-			sharedRequestedTransactions)
+			sharedRequestedTransactions, peers)
 		if err != nil {
 			return err
 		}
@@ -129,7 +129,7 @@ func readInv(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvTransaction) 
 	return inv, false, nil
 }
 
-func broadcastAcceptedTransactions(netAdapter *netadapter.NetAdapter, acceptedTxs []*mempool.TxDesc) error {
+func broadcastAcceptedTransactions(netAdapter *netadapter.NetAdapter, acceptedTxs []*mempool.TxDesc, peers *peerpkg.Peers) error {
 	// TODO(libp2p) Add mechanism to avoid sending to other peers invs that are known to them (e.g. mruinvmap)
 	// TODO(libp2p) Consider broadcasting in bulks
 	idsToBroadcast := make([]*daghash.TxID, len(acceptedTxs))
@@ -137,7 +137,7 @@ func broadcastAcceptedTransactions(netAdapter *netadapter.NetAdapter, acceptedTx
 		idsToBroadcast[i] = tx.Tx.ID()
 	}
 	inv := wire.NewMsgTxInv(idsToBroadcast)
-	return netAdapter.Broadcast(peerpkg.ReadyPeerIDs(), inv)
+	return netAdapter.Broadcast(peers.ReadyPeerIDs(), inv)
 }
 
 // readMsgTx returns the next msgTx in incomingRoute, and populates invsQueue with any inv messages that meanwhile arrive.
@@ -168,7 +168,7 @@ func readMsgTx(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvTransaction
 
 func receiveTransactions(requestedTransactions []*daghash.TxID, incomingRoute *router.Route,
 	invsQueue *[]*wire.MsgInvTransaction, txPool *mempool.TxPool, netAdapter *netadapter.NetAdapter,
-	sharedRequestedTransactions *SharedRequestedTransactions) (shouldStop bool, err error) {
+	sharedRequestedTransactions *SharedRequestedTransactions, peers *peerpkg.Peers) (shouldStop bool, err error) {
 
 	// In case the function returns earlier than expected, we want to make sure sharedRequestedTransactions is
 	// clean from any pending transactions.
@@ -212,7 +212,7 @@ func receiveTransactions(requestedTransactions []*daghash.TxID, incomingRoute *r
 
 			return false, protocolerrors.Errorf(true, "rejected transaction %s", tx.ID())
 		}
-		err = broadcastAcceptedTransactions(netAdapter, acceptedTxs)
+		err = broadcastAcceptedTransactions(netAdapter, acceptedTxs, peers)
 		if err != nil {
 			panic(err)
 		}

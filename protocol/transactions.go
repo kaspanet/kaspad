@@ -1,7 +1,7 @@
 package protocol
 
 import (
-	"github.com/kaspanet/kaspad/protocol/peer"
+	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
@@ -10,7 +10,7 @@ import (
 )
 
 // AddTransaction adds transaction to the mempool and propagates it.
-func (m *Manager) AddTransaction(tx *util.Tx) error {
+func (m *Manager) AddTransaction(tx *util.Tx, peers *peerpkg.Peers) error {
 	m.transactionsToRebroadcastLock.Lock()
 	defer m.transactionsToRebroadcastLock.Unlock()
 
@@ -25,7 +25,7 @@ func (m *Manager) AddTransaction(tx *util.Tx) error {
 
 	m.transactionsToRebroadcast[*tx.ID()] = tx
 	inv := wire.NewMsgTxInv([]*daghash.TxID{tx.ID()})
-	return m.netAdapter.Broadcast(peer.ReadyPeerIDs(), inv)
+	return m.netAdapter.Broadcast(peers.ReadyPeerIDs(), inv)
 }
 
 func (m *Manager) updateTransactionsToRebroadcast(block *util.Block) {

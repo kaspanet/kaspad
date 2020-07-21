@@ -23,7 +23,8 @@ type NewBlockHandler func(block *util.Block) error
 // HandleRelayInvs listens to wire.MsgInvRelayBlock messages, requests their corresponding blocks if they
 // are missing, adds them to the DAG and propagates them to the rest of the network.
 func HandleRelayInvs(incomingRoute *router.Route, outgoingRoute *router.Route,
-	peer *peerpkg.Peer, netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG, newBlockHandler NewBlockHandler) error {
+	peer *peerpkg.Peer, netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG,
+	newBlockHandler NewBlockHandler, peers *peerpkg.Peers) error {
 
 	invsQueue := make([]*wire.MsgInvRelayBlock, 0)
 	for {
@@ -43,7 +44,7 @@ func HandleRelayInvs(incomingRoute *router.Route, outgoingRoute *router.Route,
 			continue
 		}
 
-		ibd.StartIBDIfRequired(dag)
+		ibd.StartIBDIfRequired(dag, peers)
 		if ibd.IsInIBD() {
 			// Block relay is disabled during IBD
 			continue
@@ -54,7 +55,7 @@ func HandleRelayInvs(incomingRoute *router.Route, outgoingRoute *router.Route,
 
 		for requestQueue.len() > 0 {
 			shouldStop, err := requestBlocks(netAdapter, outgoingRoute, peer, incomingRoute, dag, &invsQueue,
-				requestQueue, newBlockHandler)
+				requestQueue, newBlockHandler, peers)
 			if err != nil {
 				return err
 			}
@@ -89,7 +90,7 @@ func readInv(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlock) (
 func requestBlocks(netAdapater *netadapter.NetAdapter, outgoingRoute *router.Route,
 	peer *peerpkg.Peer, incomingRoute *router.Route, dag *blockdag.BlockDAG,
 	invsQueue *[]*wire.MsgInvRelayBlock, requestQueue *hashesQueueSet,
-	newBlockHandler NewBlockHandler) (shouldStop bool, err error) {
+	newBlockHandler NewBlockHandler, peers *peerpkg.Peers) (shouldStop bool, err error) {
 
 	numHashesToRequest := mathUtil.MinInt(wire.MsgGetRelayBlocksHashes, requestQueue.len())
 	hashesToRequest := requestQueue.dequeue(numHashesToRequest)
@@ -133,7 +134,7 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, outgoingRoute *router.Rou
 		delete(pendingBlocks, *blockHash)
 		requestedBlocks.remove(blockHash)
 
-		shouldStop, err = processAndRelayBlock(netAdapater, peer, dag, requestQueue, block, newBlockHandler)
+		shouldStop, err = processAndRelayBlock(netAdapater, peer, dag, requestQueue, block, newBlockHandler, peers)
 		if err != nil {
 			return false, err
 		}
@@ -172,7 +173,7 @@ func readMsgBlock(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlo
 
 func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 	dag *blockdag.BlockDAG, requestQueue *hashesQueueSet, block *util.Block,
-	newBlockHandler NewBlockHandler) (shouldStop bool, err error) {
+	newBlockHandler NewBlockHandler, peers *peerpkg.Peers) (shouldStop bool, err error) {
 
 	blockHash := block.Hash()
 	isOrphan, isDelayed, err := dag.ProcessBlock(block, blockdag.BFNone)
@@ -227,12 +228,12 @@ func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 	// sm.restartSyncIfNeeded()
 	//// Clear the rejected transactions.
 	//sm.rejectedTxns = make(map[daghash.TxID]struct{})
-	err = netAdapter.Broadcast(peerpkg.ReadyPeerIDs(), wire.NewMsgInvBlock(blockHash))
+	err = netAdapter.Broadcast(peers.ReadyPeerIDs(), wire.NewMsgInvBlock(blockHash))
 	if err != nil {
 		return false, err
 	}
 
-	ibd.StartIBDIfRequired(dag)
+	ibd.StartIBDIfRequired(dag, peers)
 	err = newBlockHandler(block)
 	if err != nil {
 		panic(err)

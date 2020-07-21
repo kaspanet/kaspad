@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/connmanager"
+	"github.com/kaspanet/kaspad/protocol"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"io"
 	"io/ioutil"
@@ -170,6 +171,7 @@ type Server struct {
 	blockTemplateGenerator *mining.BlkTmplGenerator
 	connectionManager      *connmanager.ConnectionManager
 	addressManager         *addrmgr.AddrManager
+	protocolManager        *protocol.Manager
 }
 
 // httpStatusLine returns a response Status-Line (RFC 2616 Section 6.1)
@@ -695,6 +697,7 @@ func NewRPCServer(
 	blockTemplateGenerator *mining.BlkTmplGenerator,
 	connectionManager *connmanager.ConnectionManager,
 	addressManager *addrmgr.AddrManager,
+	protocolManager *protocol.Manager,
 ) (*Server, error) {
 	// Setup listeners for the configured RPC listen addresses and
 	// TLS settings.
@@ -720,6 +723,7 @@ func NewRPCServer(
 		blockTemplateGenerator: blockTemplateGenerator,
 		connectionManager:      connectionManager,
 		addressManager:         addressManager,
+		protocolManager:        protocolManager,
 	}
 	if cfg.RPCUser != "" && cfg.RPCPass != "" {
 		login := cfg.RPCUser + ":" + cfg.RPCPass

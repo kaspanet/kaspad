@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/protocol/flows/relaytransactions"
+	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"sync"
@@ -28,6 +29,8 @@ type Manager struct {
 	sharedRequestedTransactions   *relaytransactions.SharedRequestedTransactions
 
 	isInIBD uint32 // TODO(libp2p) populate this var
+
+	peers *peerpkg.Peers
 }
 
 // NewManager creates a new instance of the p2p protocol manager
@@ -45,6 +48,7 @@ func NewManager(cfg *config.Config, dag *blockdag.BlockDAG,
 		addressManager:              addressManager,
 		txPool:                      txPool,
 		sharedRequestedTransactions: relaytransactions.NewSharedRequestedTransactions(),
+		peers:                       peerpkg.NewPeers(),
 	}
 	netAdapter.SetRouterInitializer(manager.routerInitializer)
 	return &manager, nil
@@ -58,4 +62,8 @@ func (m *Manager) Start() error {
 // Stop stops the p2p protocol
 func (m *Manager) Stop() error {
 	return m.netAdapter.Stop()
+}
+
+func (m *Manager) Peers() []*peerpkg.Peer {
+	return m.peers.ReadyPeers()
 }

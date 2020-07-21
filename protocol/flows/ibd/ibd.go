@@ -24,7 +24,7 @@ type NewBlockHandler func(block *util.Block) error
 
 // StartIBDIfRequired selects a peer and starts IBD against it
 // if required
-func StartIBDIfRequired(dag *blockdag.BlockDAG) {
+func StartIBDIfRequired(dag *blockdag.BlockDAG, peers *peerpkg.Peers) {
 	startIBDMutex.Lock()
 	defer startIBDMutex.Unlock()
 
@@ -32,9 +32,9 @@ func StartIBDIfRequired(dag *blockdag.BlockDAG) {
 		return
 	}
 
-	peer := selectPeerForIBD(dag)
+	peer := selectPeerForIBD(dag, peers)
 	if peer == nil {
-		requestSelectedTipsIfRequired(dag)
+		requestSelectedTipsIfRequired(dag, peers)
 		return
 	}
 
@@ -49,8 +49,8 @@ func IsInIBD() bool {
 
 // selectPeerForIBD returns the first peer whose selected tip
 // hash is not in our DAG
-func selectPeerForIBD(dag *blockdag.BlockDAG) *peerpkg.Peer {
-	for _, peer := range peerpkg.ReadyPeers() {
+func selectPeerForIBD(dag *blockdag.BlockDAG, peers *peerpkg.Peers) *peerpkg.Peer {
+	for _, peer := range peers.ReadyPeers() {
 		peerSelectedTipHash := peer.SelectedTipHash()
 		if !dag.IsInDAG(peerSelectedTipHash) {
 			return peer
@@ -61,10 +61,10 @@ func selectPeerForIBD(dag *blockdag.BlockDAG) *peerpkg.Peer {
 
 // HandleIBD waits for IBD start and handles it when IBD is triggered for this peer
 func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
-	peer *peerpkg.Peer, dag *blockdag.BlockDAG, newBlockHandler NewBlockHandler) error {
+	peer *peerpkg.Peer, dag *blockdag.BlockDAG, newBlockHandler NewBlockHandler, peers *peerpkg.Peers) error {
 
 	for {
-		shouldStop, err := runIBD(incomingRoute, outgoingRoute, peer, dag, newBlockHandler)
+		shouldStop, err := runIBD(incomingRoute, outgoingRoute, peer, dag, newBlockHandler, peers)
 		if err != nil {
 			return err
 		}
@@ -74,11 +74,11 @@ func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
 	}
 }
 
-func runIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
-	peer *peerpkg.Peer, dag *blockdag.BlockDAG, newBlockHandler NewBlockHandler) (shouldStop bool, err error) {
+func runIBD(incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer,
+	dag *blockdag.BlockDAG, newBlockHandler NewBlockHandler, peers *peerpkg.Peers) (shouldStop bool, err error) {
 
 	peer.WaitForIBDStart()
-	defer finishIBD(dag)
+	defer finishIBD(dag, peers)
 
 	peerSelectedTipHash := peer.SelectedTipHash()
 	highestSharedBlockHash, shouldStop, err := findHighestSharedBlockHash(incomingRoute, outgoingRoute, dag, peerSelectedTipHash)
@@ -242,8 +242,8 @@ func processIBDBlock(dag *blockdag.BlockDAG, msgIBDBlock *wire.MsgIBDBlock,
 	return false, nil
 }
 
-func finishIBD(dag *blockdag.BlockDAG) {
+func finishIBD(dag *blockdag.BlockDAG, peers *peerpkg.Peers) {
 	atomic.StoreUint32(&isIBDRunning, 0)
 
-	StartIBDIfRequired(dag)
+	StartIBDIfRequired(dag, peers)
 }

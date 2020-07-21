@@ -13,28 +13,28 @@ import (
 
 const minDurationToRequestSelectedTips = time.Minute
 
-func requestSelectedTipsIfRequired(dag *blockdag.BlockDAG) {
+func requestSelectedTipsIfRequired(dag *blockdag.BlockDAG, peers *peerpkg.Peers) {
 	if isDAGTimeCurrent(dag) {
 		return
 	}
-	requestSelectedTips()
+	requestSelectedTips(peers)
 }
 
 func isDAGTimeCurrent(dag *blockdag.BlockDAG) bool {
 	return dag.Now().Sub(dag.SelectedTipHeader().Timestamp) > minDurationToRequestSelectedTips
 }
 
-func requestSelectedTips() {
-	for _, peer := range peerpkg.ReadyPeers() {
+func requestSelectedTips(peers *peerpkg.Peers) {
+	for _, peer := range peers.ReadyPeers() {
 		peer.RequestSelectedTipIfRequired()
 	}
 }
 
 // RequestSelectedTip waits for selected tip requests and handles them
 func RequestSelectedTip(incomingRoute *router.Route,
-	outgoingRoute *router.Route, peer *peerpkg.Peer, dag *blockdag.BlockDAG) error {
+	outgoingRoute *router.Route, peer *peerpkg.Peer, dag *blockdag.BlockDAG, peers *peerpkg.Peers) error {
 	for {
-		shouldStop, err := runSelectedTipRequest(incomingRoute, outgoingRoute, peer, dag)
+		shouldStop, err := runSelectedTipRequest(incomingRoute, outgoingRoute, peer, dag, peers)
 		if err != nil {
 			return err
 		}
@@ -45,7 +45,7 @@ func RequestSelectedTip(incomingRoute *router.Route,
 }
 
 func runSelectedTipRequest(incomingRoute *router.Route, outgoingRoute *router.Route,
-	peer *peerpkg.Peer, dag *blockdag.BlockDAG) (shouldStop bool, err error) {
+	peer *peerpkg.Peer, dag *blockdag.BlockDAG, peers *peerpkg.Peers) (shouldStop bool, err error) {
 
 	peer.WaitForSelectedTipRequests()
 	defer peer.FinishRequestingSelectedTip()
@@ -64,7 +64,7 @@ func runSelectedTipRequest(incomingRoute *router.Route, outgoingRoute *router.Ro
 	}
 
 	peer.SetSelectedTipHash(peerSelectedTipHash)
-	StartIBDIfRequired(dag)
+	StartIBDIfRequired(dag, peers)
 	return false, nil
 }
 

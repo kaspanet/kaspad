@@ -8,8 +8,7 @@ import (
 
 // handleGetConnectedPeerInfo implements the getConnectedPeerInfo command.
 func handleGetConnectedPeerInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	peers := s.connectionManager.ConnectedPeers()
-	syncPeerID := s.SyncMgr.SyncPeerID()
+	peers := s.protocolManager.Peers()
 	infos := make([]*model.GetConnectedPeerInfoResult, 0, len(peers))
 	for _, p := range peers {
 		statsSnap := p.ToPeer().StatsSnapshot()

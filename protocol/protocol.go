@@ -53,7 +53,8 @@ func (m *Manager) startFlows(netConnection *netadapter.NetConnection, router *ro
 	stop := make(chan error)
 	stopped := uint32(0)
 
-	peer, closed, err := handshake.HandleHandshake(m.cfg, router, m.netAdapter, netConnection, m.dag, m.addressManager)
+	peer, closed, err := handshake.HandleHandshake(m.cfg, router, m.netAdapter, netConnection,
+		m.dag, m.addressManager, m.peers)
 	if err != nil {
 		return err
 	}
@@ -96,7 +97,7 @@ func (m *Manager) addBlockRelayFlows(router *routerpkg.Router, stopped *uint32, 
 	addFlow("HandleRelayInvs", router, []wire.MessageCommand{wire.CmdInvRelayBlock, wire.CmdBlock}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return blockrelay.HandleRelayInvs(incomingRoute,
-				outgoingRoute, peer, m.netAdapter, m.dag, m.OnNewBlock)
+				outgoingRoute, peer, m.netAdapter, m.dag, m.OnNewBlock, m.peers)
 		},
 	)
 
@@ -130,13 +131,13 @@ func (m *Manager) addIBDFlows(router *routerpkg.Router, stopped *uint32, stop ch
 
 	addFlow("HandleIBD", router, []wire.MessageCommand{wire.CmdBlockLocator, wire.CmdIBDBlock}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ibd.HandleIBD(incomingRoute, outgoingRoute, peer, m.dag, m.OnNewBlock)
+			return ibd.HandleIBD(incomingRoute, outgoingRoute, peer, m.dag, m.OnNewBlock, m.peers)
 		},
 	)
 
 	addFlow("RequestSelectedTip", router, []wire.MessageCommand{wire.CmdSelectedTip}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ibd.RequestSelectedTip(incomingRoute, outgoingRoute, peer, m.dag)
+			return ibd.RequestSelectedTip(incomingRoute, outgoingRoute, peer, m.dag, m.peers)
 		},
 	)
 
@@ -166,7 +167,7 @@ func (m *Manager) addTransactionRelayFlow(router *routerpkg.Router, stopped *uin
 	addFlow("HandleRelayedTransactions", router, []wire.MessageCommand{wire.CmdInv, wire.CmdTx}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return relaytransactions.HandleRelayedTransactions(incomingRoute, outgoingRoute, m.netAdapter, m.dag,
-				m.txPool, m.sharedRequestedTransactions)
+				m.txPool, m.sharedRequestedTransactions, m.peers)
 		},
 	)
 }
