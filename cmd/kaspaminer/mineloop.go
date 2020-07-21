@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/kaspanet/kaspad/rpc/client"
+	clientpkg "github.com/kaspanet/kaspad/rpc/client"
 	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -119,22 +119,22 @@ func solveBlock(block *util.Block, stopChan chan struct{}, foundBlock chan *util
 
 }
 
-func templatesLoop(minerClient *minerClient, miningAddr util.Address,
+func templatesLoop(client *minerClient, miningAddr util.Address,
 	newTemplateChan chan *model.GetBlockTemplateResult, errChan chan error, stopChan chan struct{}) {
 
 	longPollID := ""
 	getBlockTemplateLongPoll := func() {
 		if longPollID != "" {
-			log.Infof("Requesting template with longPollID '%s' from %s", longPollID, minerClient.Host())
+			log.Infof("Requesting template with longPollID '%s' from %s", longPollID, client.Host())
 		} else {
-			log.Infof("Requesting template without longPollID from %s", minerClient.Host())
+			log.Infof("Requesting template without longPollID from %s", client.Host())
 		}
-		template, err := getBlockTemplate(minerClient, miningAddr, longPollID)
-		if nativeerrors.Is(err, client.ErrResponseTimedOut) {
-			log.Infof("Got timeout while requesting template '%s' from %s", longPollID, minerClient.Host())
+		template, err := getBlockTemplate(client, miningAddr, longPollID)
+		if nativeerrors.Is(err, clientpkg.ErrResponseTimedOut) {
+			log.Infof("Got timeout while requesting template '%s' from %s", longPollID, client.Host())
 			return
 		} else if err != nil {
-			errChan <- errors.Errorf("Error getting block template from %s: %s", minerClient.Host(), err)
+			errChan <- errors.Errorf("Error getting block template from %s: %s", client.Host(), err)
 			return
 		}
 		if template.LongPollID != longPollID {
@@ -149,7 +149,7 @@ func templatesLoop(minerClient *minerClient, miningAddr util.Address,
 		case <-stopChan:
 			close(newTemplateChan)
 			return
-		case <-minerClient.onBlockAdded:
+		case <-client.onBlockAdded:
 			getBlockTemplateLongPoll()
 		case <-time.Tick(500 * time.Millisecond):
 			getBlockTemplateLongPoll()
@@ -179,7 +179,7 @@ func solveLoop(newTemplateChan chan *model.GetBlockTemplateResult, foundBlock ch
 		}
 
 		stopOldTemplateSolving = make(chan struct{})
-		block, err := client.ConvertGetBlockTemplateResultToBlock(template)
+		block, err := clientpkg.ConvertGetBlockTemplateResultToBlock(template)
 		if err != nil {
 			errChan <- errors.Errorf("Error parsing block: %s", err)
 			return
