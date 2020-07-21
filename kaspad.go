@@ -133,7 +133,8 @@ func newKaspad(cfg *config.Config, interrupt <-chan struct{}) (*kaspad, error) {
 		return nil, err
 	}
 
-	rpcServer, err := setupRPC(cfg, dag, txMempool, sigCache, acceptanceIndex, connectionManager, addressManager)
+	rpcServer, err := setupRPC(cfg, dag, txMempool, sigCache, acceptanceIndex,
+		connectionManager, addressManager, protocolManager)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +198,7 @@ func setupMempool(cfg *config.Config, dag *blockdag.BlockDAG, sigCache *txscript
 
 func setupRPC(cfg *config.Config, dag *blockdag.BlockDAG, txMempool *mempool.TxPool, sigCache *txscript.SigCache,
 	acceptanceIndex *indexers.AcceptanceIndex, connectionManager *connmanager.ConnectionManager,
-	addressManager *addrmgr.AddrManager) (*rpc.Server, error) {
+	addressManager *addrmgr.AddrManager, protocolManager *protocol.Manager) (*rpc.Server, error) {
 
 	if !cfg.DisableRPC {
 		policy := mining.Policy{
@@ -205,7 +206,8 @@ func setupRPC(cfg *config.Config, dag *blockdag.BlockDAG, txMempool *mempool.TxP
 		}
 		blockTemplateGenerator := mining.NewBlkTmplGenerator(&policy, txMempool, dag, sigCache)
 
-		rpcServer, err := rpc.NewRPCServer(cfg, dag, txMempool, acceptanceIndex, blockTemplateGenerator, connectionManager, addressManager)
+		rpcServer, err := rpc.NewRPCServer(cfg, dag, txMempool, acceptanceIndex, blockTemplateGenerator,
+			connectionManager, addressManager, protocolManager)
 		if err != nil {
 			return nil, err
 		}

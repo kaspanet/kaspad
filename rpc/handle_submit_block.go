@@ -3,7 +3,6 @@ package rpc
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util"
 )
@@ -32,7 +31,7 @@ func handleSubmitBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (i
 
 	// Process this block using the same rules as blocks coming from other
 	// nodes. This will in turn relay it to the network like normal.
-	_, err = s.protocolManager.SubmitBlock(block, blockdag.BFNone)
+	err = s.protocolManager.AddBlock(block)
 	if err != nil {
 		return nil, &model.RPCError{
 			Code:    model.ErrRPCVerify,

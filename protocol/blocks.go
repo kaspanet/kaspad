@@ -40,3 +40,8 @@ func (m *Manager) OnNewBlock(block *util.Block) error {
 	inv := wire.NewMsgTxInv(txIDsToBroadcast)
 	return m.netAdapter.Broadcast(m.peers.ReadyPeerIDs(), inv)
 }
+
+func (m *Manager) AddBlock(block *util.Block) error {
+	// TODO(libp2p): unimplemented
+	panic("unimplemented")
+}
