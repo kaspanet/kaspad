@@ -3,7 +3,6 @@ package blockrelay
 import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter/router"
-	"github.com/kaspanet/kaspad/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/wire"
@@ -16,9 +15,9 @@ func HandleRelayBlockRequests(incomingRoute *router.Route, outgoingRoute *router
 	peer *peerpkg.Peer, dag *blockdag.BlockDAG) error {
 
 	for {
-		message, isOpen := incomingRoute.Dequeue()
-		if !isOpen {
-			return errors.WithStack(common.ErrRouteClosed)
+		message, err := incomingRoute.Dequeue()
+		if err != nil {
+			return err
 		}
 		getRelayBlocksMessage := message.(*wire.MsgGetRelayBlocks)
 		for _, hash := range getRelayBlocksMessage.Hashes {
@@ -42,9 +41,9 @@ func HandleRelayBlockRequests(incomingRoute *router.Route, outgoingRoute *router
 				msgBlock.ConvertToPartial(peerSubnetworkID)
 			}
 
-			isOpen = outgoingRoute.Enqueue(msgBlock)
-			if !isOpen {
-				return errors.WithStack(common.ErrRouteClosed)
+			err = outgoingRoute.Enqueue(msgBlock)
+			if err != nil {
+				return err
 			}
 		}
 	}

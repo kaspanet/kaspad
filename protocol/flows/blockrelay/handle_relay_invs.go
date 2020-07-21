@@ -27,12 +27,9 @@ func HandleRelayInvs(incomingRoute *router.Route, outgoingRoute *router.Route,
 
 	invsQueue := make([]*wire.MsgInvRelayBlock, 0)
 	for {
-		inv, shouldStop, err := readInv(incomingRoute, &invsQueue)
+		inv, err := readInv(incomingRoute, &invsQueue)
 		if err != nil {
 			return err
-		}
-		if shouldStop {
-			return nil
 		}
 
 		if dag.IsKnownBlock(inv.Hash) {
@@ -62,25 +59,25 @@ func HandleRelayInvs(incomingRoute *router.Route, outgoingRoute *router.Route,
 	}
 }
 
-func readInv(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlock) (
-	inv *wire.MsgInvRelayBlock, shouldStop bool, err error) {
+func readInv(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlock) (*wire.MsgInvRelayBlock, error) {
 
 	if len(*invsQueue) > 0 {
+		var inv *wire.MsgInvRelayBlock
 		inv, *invsQueue = (*invsQueue)[0], (*invsQueue)[1:]
-		return inv, false, nil
+		return inv, nil
 	}
 
-	msg, isOpen := incomingRoute.Dequeue()
-	if !isOpen {
-		return nil, true, nil
+	msg, err := incomingRoute.Dequeue()
+	if err != nil {
+		return nil, err
 	}
 
 	inv, ok := msg.(*wire.MsgInvRelayBlock)
 	if !ok {
-		return nil, false, protocolerrors.Errorf(true, "unexpected %s message in the block relay flow while "+
+		return nil, protocolerrors.Errorf(true, "unexpected %s message in the block relay flow while "+
 			"expecting an inv message", msg.Command())
 	}
-	return inv, false, nil
+	return inv, nil
 }
 
 func requestBlocks(netAdapater *netadapter.NetAdapter, outgoingRoute *router.Route,
@@ -108,9 +105,9 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, outgoingRoute *router.Rou
 	defer requestedBlocks.removeSet(pendingBlocks)
 
 	getRelayBlocksMsg := wire.NewMsgGetRelayBlocks(filteredHashesToRequest)
-	isOpen := outgoingRoute.Enqueue(getRelayBlocksMsg)
-	if !isOpen {
-		return errors.WithStack(common.ErrRouteClosed)
+	err := outgoingRoute.Enqueue(getRelayBlocksMsg)
+	if err != nil {
+		return err
 	}
 
 	for len(pendingBlocks) > 0 {
@@ -142,12 +139,9 @@ func readMsgBlock(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlo
 	msgBlock *wire.MsgBlock, err error) {
 
 	for {
-		message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+		message, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 		if err != nil {
 			return nil, err
-		}
-		if !isOpen {
-			return nil, errors.WithStack(common.ErrRouteClosed)
 		}
 
 		switch message := message.(type) {

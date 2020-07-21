@@ -8,7 +8,6 @@ import (
 	"github.com/kaspanet/kaspad/protocol/common"
 	"github.com/kaspanet/kaspad/version"
 	"github.com/kaspanet/kaspad/wire"
-	"github.com/pkg/errors"
 )
 
 var (
@@ -53,17 +52,15 @@ func SendVersion(cfg *config.Config, incomingRoute *router.Route, outgoingRoute 
 	// Advertise if inv messages for transactions are desired.
 	msg.DisableRelayTx = cfg.BlocksOnly
 
-	isOpen := outgoingRoute.Enqueue(msg)
-	if !isOpen {
-		return errors.WithStack(common.ErrRouteClosed)
-	}
-
-	_, isOpen, err = incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	err = outgoingRoute.Enqueue(msg)
 	if err != nil {
 		return err
 	}
-	if !isOpen {
-		return errors.WithStack(common.ErrRouteClosed)
+
+	// Wait for verack
+	_, err = incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	if err != nil {
+		return err
 	}
 	return nil
 }

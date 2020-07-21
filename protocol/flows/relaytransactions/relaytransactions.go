@@ -65,10 +65,10 @@ func requestInvTransactions(outgoingRoute *router.Route, txPool *mempool.TxPool,
 	}
 
 	msgGetTransactions := wire.NewMsgGetTransactions(idsToRequest)
-	isOpen := outgoingRoute.Enqueue(msgGetTransactions)
-	if !isOpen {
+	err = outgoingRoute.Enqueue(msgGetTransactions)
+	if err != nil {
 		sharedRequestedTransactions.removeMany(idsToRequest)
-		return nil, errors.WithStack(common.ErrRouteClosed)
+		return nil, err
 	}
 	return idsToRequest, nil
 }
@@ -99,17 +99,17 @@ func isKnownTransaction(txPool *mempool.TxPool, dag *blockdag.BlockDAG, txID *da
 	return false
 }
 
-func readInv(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvTransaction) (
-	inv *wire.MsgInvTransaction, err error) {
+func readInv(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvTransaction) (*wire.MsgInvTransaction, error) {
 
 	if len(*invsQueue) > 0 {
+		var inv *wire.MsgInvTransaction
 		inv, *invsQueue = (*invsQueue)[0], (*invsQueue)[1:]
 		return inv, nil
 	}
 
-	msg, isOpen := incomingRoute.Dequeue()
-	if !isOpen {
-		return nil, errors.WithStack(common.ErrRouteClosed)
+	msg, err := incomingRoute.Dequeue()
+	if err != nil {
+		return nil, err
 	}
 
 	inv, ok := msg.(*wire.MsgInvTransaction)
@@ -138,12 +138,9 @@ func readMsgTx(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvTransaction
 	msgTx *wire.MsgTx, err error) {
 
 	for {
-		message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+		message, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 		if err != nil {
 			return nil, err
-		}
-		if !isOpen {
-			return nil, errors.WithStack(common.ErrRouteClosed)
 		}
 
 		switch message := message.(type) {

@@ -3,10 +3,8 @@ package ibd
 import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter/router"
-	"github.com/kaspanet/kaspad/protocol/common"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
-	"github.com/pkg/errors"
 )
 
 // HandleGetBlocks handles getBlocks messages
@@ -32,9 +30,9 @@ func HandleGetBlocks(incomingRoute *router.Route, outgoingRoute *router.Route, d
 func receiveGetBlocks(incomingRoute *router.Route) (lowHash *daghash.Hash,
 	highHash *daghash.Hash, err error) {
 
-	message, isOpen := incomingRoute.Dequeue()
-	if !isOpen {
-		return nil, nil, errors.WithStack(common.ErrRouteClosed)
+	message, err := incomingRoute.Dequeue()
+	if err != nil {
+		return nil, nil, err
 	}
 	msgGetBlocks := message.(*wire.MsgGetBlocks)
 
@@ -64,9 +62,9 @@ func buildMsgIBDBlocks(lowHash *daghash.Hash, highHash *daghash.Hash,
 
 func sendMsgIBDBlocks(outgoingRoute *router.Route, msgIBDBlocks []*wire.MsgIBDBlock) error {
 	for _, msgIBDBlock := range msgIBDBlocks {
-		isOpen := outgoingRoute.Enqueue(msgIBDBlock)
-		if !isOpen {
-			return errors.WithStack(common.ErrRouteClosed)
+		err := outgoingRoute.Enqueue(msgIBDBlock)
+		if err != nil {
+			return err
 		}
 	}
 	return nil

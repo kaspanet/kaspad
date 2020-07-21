@@ -9,7 +9,6 @@ import (
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
-	"github.com/pkg/errors"
 	"sync"
 	"sync/atomic"
 )
@@ -126,20 +125,13 @@ func sendGetBlockLocator(outgoingRoute *router.Route, lowHash *daghash.Hash,
 	highHash *daghash.Hash) error {
 
 	msgGetBlockLocator := wire.NewMsgGetBlockLocator(highHash, lowHash)
-	isOpen := outgoingRoute.Enqueue(msgGetBlockLocator)
-	if !isOpen {
-		return errors.WithStack(common.ErrRouteClosed)
-	}
-	return nil
+	return outgoingRoute.Enqueue(msgGetBlockLocator)
 }
 
 func receiveBlockLocator(incomingRoute *router.Route) (blockLocatorHashes []*daghash.Hash, err error) {
-	message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	message, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, err
-	}
-	if !isOpen {
-		return nil, errors.WithStack(common.ErrRouteClosed)
 	}
 	msgBlockLocator, ok := message.(*wire.MsgBlockLocator)
 	if !ok {
@@ -178,20 +170,13 @@ func sendGetBlocks(outgoingRoute *router.Route, highestSharedBlockHash *daghash.
 	peerSelectedTipHash *daghash.Hash) error {
 
 	msgGetBlockInvs := wire.NewMsgGetBlocks(highestSharedBlockHash, peerSelectedTipHash)
-	isOpen := outgoingRoute.Enqueue(msgGetBlockInvs)
-	if !isOpen {
-		return errors.WithStack(common.ErrRouteClosed)
-	}
-	return nil
+	return outgoingRoute.Enqueue(msgGetBlockInvs)
 }
 
 func receiveIBDBlock(incomingRoute *router.Route) (msgIBDBlock *wire.MsgIBDBlock, err error) {
-	message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	message, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, err
-	}
-	if !isOpen {
-		return nil, errors.WithStack(common.ErrRouteClosed)
 	}
 	msgIBDBlock, ok := message.(*wire.MsgIBDBlock)
 	if !ok {

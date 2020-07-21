@@ -8,7 +8,6 @@ import (
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/wire"
-	"github.com/pkg/errors"
 )
 
 var (
@@ -25,14 +24,11 @@ var (
 // ReceiveVersion waits for the peer to send a version message, sends a
 // verack in response, and updates its info accordingly.
 func ReceiveVersion(incomingRoute *router.Route, outgoingRoute *router.Route, netAdapter *netadapter.NetAdapter,
-	peer *peerpkg.Peer, dag *blockdag.BlockDAG) (address *wire.NetAddress, err error) {
+	peer *peerpkg.Peer, dag *blockdag.BlockDAG) (*wire.NetAddress, error) {
 
-	message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	message, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, err
-	}
-	if !isOpen {
-		return nil, errors.WithStack(common.ErrRouteClosed)
 	}
 
 	msgVersion, ok := message.(*wire.MsgVersion)
@@ -75,9 +71,9 @@ func ReceiveVersion(incomingRoute *router.Route, outgoingRoute *router.Route, ne
 	//}
 
 	peer.UpdateFieldsFromMsgVersion(msgVersion)
-	isOpen = outgoingRoute.Enqueue(wire.NewMsgVerAck())
-	if !isOpen {
-		return nil, errors.WithStack(common.ErrRouteClosed)
+	err = outgoingRoute.Enqueue(wire.NewMsgVerAck())
+	if err != nil {
+		return nil, err
 	}
 	// TODO(libp2p) Register peer ID
 	return msgVersion.Address, nil

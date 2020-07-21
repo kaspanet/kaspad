@@ -13,7 +13,12 @@ const (
 )
 
 // ErrTimeout signifies that one of the router functions had a timeout.
-var ErrTimeout = errors.New("timeout expired")
+var (
+	ErrTimeout = errors.New("timeout expired")
+
+	// ErrRouteClosed indicates that a route was closed while reading/writing.
+	ErrRouteClosed = errors.New("route is closed")
+)
 
 // onCapacityReachedHandler is a function that is to be
 // called when a route reaches capacity.
@@ -43,34 +48,40 @@ func newRouteWithCapacity(capacity int) *Route {
 }
 
 // Enqueue enqueues a message to the Route
-func (r *Route) Enqueue(message wire.Message) (isOpen bool) {
+func (r *Route) Enqueue(message wire.Message) error {
 	r.closeLock.Lock()
 	defer r.closeLock.Unlock()
 
 	if r.closed {
-		return false
+		return errors.WithStack(ErrRouteClosed)
 	}
 	if len(r.channel) == defaultMaxMessages {
 		r.onCapacityReachedHandler()
 	}
 	r.channel <- message
-	return true
+	return nil
 }
 
 // Dequeue dequeues a message from the Route
-func (r *Route) Dequeue() (message wire.Message, isOpen bool) {
-	message, isOpen = <-r.channel
-	return message, isOpen
+func (r *Route) Dequeue() (wire.Message, error) {
+	message, isOpen := <-r.channel
+	if !isOpen {
+		return nil, errors.WithStack(ErrRouteClosed)
+	}
+	return message, nil
 }
 
 // DequeueWithTimeout attempts to dequeue a message from the Route
 // and returns an error if the given timeout expires first.
-func (r *Route) DequeueWithTimeout(timeout time.Duration) (message wire.Message, isOpen bool, err error) {
+func (r *Route) DequeueWithTimeout(timeout time.Duration) (wire.Message, error) {
 	select {
 	case <-time.After(timeout):
-		return nil, false, errors.Wrapf(ErrTimeout, "got timeout after %s", timeout)
-	case message, isOpen = <-r.channel:
-		return message, isOpen, nil
+		return nil, errors.Wrapf(ErrTimeout, "got timeout after %s", timeout)
+	case message, isOpen := <-r.channel:
+		if !isOpen {
+			return nil, errors.WithStack(ErrRouteClosed)
+		}
+		return message, nil
 	}
 }
 

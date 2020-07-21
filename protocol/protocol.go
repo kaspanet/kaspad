@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/protocol/common"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/protocol/flows/handshake"
@@ -44,7 +43,7 @@ func (m *Manager) routerInitializer() (*routerpkg.Router, error) {
 				}
 				return
 			}
-			if errors.Is(err, common.ErrRouteClosed) {
+			if errors.Is(err, routerpkg.ErrRouteClosed) {
 				return
 			}
 			panic(err)

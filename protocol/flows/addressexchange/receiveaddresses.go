@@ -8,12 +8,11 @@ import (
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/wire"
-	"github.com/pkg/errors"
 )
 
 // ReceiveAddresses asks a peer for more addresses if needed.
 func ReceiveAddresses(incomingRoute *router.Route, outgoingRoute *router.Route, cfg *config.Config, peer *peerpkg.Peer,
-	addressManager *addrmgr.AddrManager) (err error) {
+	addressManager *addrmgr.AddrManager) error {
 
 	if !addressManager.NeedMoreAddresses() {
 		return nil
@@ -21,17 +20,14 @@ func ReceiveAddresses(incomingRoute *router.Route, outgoingRoute *router.Route, 
 
 	subnetworkID := peer.SubnetworkID()
 	msgGetAddresses := wire.NewMsgGetAddresses(false, subnetworkID)
-	isOpen := outgoingRoute.Enqueue(msgGetAddresses)
-	if !isOpen {
-		return errors.WithStack(common.ErrRouteClosed)
-	}
-
-	message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	err := outgoingRoute.Enqueue(msgGetAddresses)
 	if err != nil {
 		return err
 	}
-	if !isOpen {
-		return errors.WithStack(common.ErrRouteClosed)
+
+	message, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	if err != nil {
+		return err
 	}
 
 	msgAddresses := message.(*wire.MsgAddresses)

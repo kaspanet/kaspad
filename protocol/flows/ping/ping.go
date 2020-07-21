@@ -2,7 +2,6 @@ package ping
 
 import (
 	"github.com/kaspanet/kaspad/protocol/common"
-	"github.com/pkg/errors"
 	"time"
 
 	"github.com/kaspanet/kaspad/netadapter/router"
@@ -16,16 +15,16 @@ import (
 // This function assumes that incomingRoute will only return MsgPing.
 func ReceivePings(incomingRoute *router.Route, outgoingRoute *router.Route) error {
 	for {
-		message, isOpen := incomingRoute.Dequeue()
-		if !isOpen {
-			return errors.WithStack(common.ErrRouteClosed)
+		message, err := incomingRoute.Dequeue()
+		if err != nil {
+			return err
 		}
 		pingMessage := message.(*wire.MsgPing)
 
 		pongMessage := wire.NewMsgPong(pingMessage.Nonce)
-		isOpen = outgoingRoute.Enqueue(pongMessage)
-		if !isOpen {
-			return errors.WithStack(common.ErrRouteClosed)
+		err = outgoingRoute.Enqueue(pongMessage)
+		if err != nil {
+			return err
 		}
 	}
 }
@@ -46,17 +45,14 @@ func SendPings(incomingRoute *router.Route, outgoingRoute *router.Route, peer *p
 		peer.SetPingPending(nonce)
 
 		pingMessage := wire.NewMsgPing(nonce)
-		isOpen := outgoingRoute.Enqueue(pingMessage)
-		if !isOpen {
-			return errors.WithStack(common.ErrRouteClosed)
-		}
-
-		message, isOpen, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+		err = outgoingRoute.Enqueue(pingMessage)
 		if err != nil {
 			return err
 		}
-		if !isOpen {
-			return errors.WithStack(common.ErrRouteClosed)
+
+		message, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+		if err != nil {
+			return err
 		}
 		pongMessage := message.(*wire.MsgPong)
 		if pongMessage.Nonce != pingMessage.Nonce {
