@@ -172,6 +172,9 @@ func New(config *Config) (*BlockDAG, error) {
 	if config.TimeSource == nil {
 		return nil, errors.New("BlockDAG.New timesource is nil")
 	}
+	if config.DatabaseContext == nil {
+		return nil, errors.New("BlockDAG.DatabaseContext timesource is nil")
+	}
 
 	params := config.DAGParams
 	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)

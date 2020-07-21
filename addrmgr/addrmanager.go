@@ -62,7 +62,7 @@ type AddrManager struct {
 // New returns a new Kaspa address manager.
 // Use Start to begin processing asynchronous address updates.
 func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext) *AddrManager {
-	am := AddrManager{
+	addressManager := AddrManager{
 		cfg:               cfg,
 		databaseContext:   databaseContext,
 		lookupFunc:        cfg.Lookup,
@@ -71,8 +71,8 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext) *AddrMan
 		localAddresses:    make(map[string]*localAddress),
 		localSubnetworkID: cfg.SubnetworkID,
 	}
-	am.reset()
-	return &am
+	addressManager.reset()
+	return &addressManager
 }
 
 type serializedKnownAddress struct {
