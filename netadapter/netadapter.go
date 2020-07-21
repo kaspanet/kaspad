@@ -99,6 +99,11 @@ func (na *NetAdapter) Connections() []*NetConnection {
 	return netConnections
 }
 
+// ConnectionCount returns the count of the connected connections
+func (na *NetAdapter) ConnectionCount() int {
+	return len(na.connectionsToIDs)
+}
+
 func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
 	netConnection := newNetConnection(connection, nil)
 	router, err := na.routerInitializer(netConnection)

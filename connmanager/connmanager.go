@@ -110,5 +110,5 @@ func (c *ConnectionManager) connectionsLoop() {
 
 // ConnectionCount returns the count of the connected connections
 func (c *ConnectionManager) ConnectionCount() int {
-	return len(c.netAdapter.Connections())
+	return c.netAdapter.ConnectionCount()
 }
