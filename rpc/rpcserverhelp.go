@@ -30,9 +30,9 @@ var helpDescsEnUS = map[string]string{
 	"debugLevel--result1":    "The list of subsystems",
 
 	// ConnectCmd help.
-	"connect--synopsis": "Attempts to add or remove a persistent peer.",
-	"connect-addr":      "IP address and port of the peer to operate on",
-	"connect-oneTry":    "When enabled, will try a single connection to a peer",
+	"connect--synopsis": "Attempts to connect a peer.",
+	"connect-address":   "IP address and port of the peer to connect",
+	"connect-oneTry":    "When enabled, will try to connect only once",
 
 	// TransactionInput help.
 	"transactionInput-txId": "The hash of the input transaction",
@@ -366,25 +366,11 @@ var helpDescsEnUS = map[string]string{
 	"getNetTotalsResult-timeMillis":     "Number of milliseconds since 1 Jan 1970 GMT",
 
 	// GetConnectedPeerInfoResult help.
-	"getConnectedPeerInfoResult-id":          "A unique node ID",
-	"getConnectedPeerInfoResult-addr":        "The ip address and port of the peer",
-	"getConnectedPeerInfoResult-services":    "Services bitmask which represents the services supported by the peer",
-	"getConnectedPeerInfoResult-relayTxes":   "Peer has requested transactions be relayed to it",
-	"getConnectedPeerInfoResult-lastSend":    "Time the last message was received in seconds since 1 Jan 1970 GMT",
-	"getConnectedPeerInfoResult-lastRecv":    "Time the last message was sent in seconds since 1 Jan 1970 GMT",
-	"getConnectedPeerInfoResult-bytesSent":   "Total bytes sent",
-	"getConnectedPeerInfoResult-bytesRecv":   "Total bytes received",
-	"getConnectedPeerInfoResult-connTime":    "Time the connection was made in seconds since 1 Jan 1970 GMT",
-	"getConnectedPeerInfoResult-timeOffset":  "The time offset of the peer",
-	"getConnectedPeerInfoResult-pingTime":    "Number of microseconds the last ping took",
-	"getConnectedPeerInfoResult-pingWait":    "Number of microseconds a queued ping has been waiting for a response",
-	"getConnectedPeerInfoResult-version":     "The protocol version of the peer",
-	"getConnectedPeerInfoResult-subVer":      "The user agent of the peer",
-	"getConnectedPeerInfoResult-inbound":     "Whether or not the peer is an inbound connection",
-	"getConnectedPeerInfoResult-selectedTip": "The selected tip of the peer",
-	"getConnectedPeerInfoResult-banScore":    "The ban score",
-	"getConnectedPeerInfoResult-feeFilter":   "The requested minimum fee a transaction must have to be announced to the peer",
-	"getConnectedPeerInfoResult-syncNode":    "Whether or not the peer is the sync peer",
+	"getConnectedPeerInfoResult-id":               "A unique node ID",
+	"getConnectedPeerInfoResult-address":          "The ip address and port of the peer",
+	"getConnectedPeerInfoResult-selectedTipHash":  "The hash of the selected tip of the peer",
+	"getConnectedPeerInfoResult-lastPingDuration": "The duration of the last ping to the peer in milliseconds",
+	"getConnectedPeerInfoResult-isSyncNode":       "Whether or not the peer is the sync peer",
 
 	// GetConnectedPeerInfoCmd help.
 	"getConnectedPeerInfo--synopsis": "Returns data about each connected network peer as an array of json objects.",
@@ -466,8 +452,8 @@ var helpDescsEnUS = map[string]string{
 		"Ping times are provided by getConnectedPeerInfo via the pingtime and pingwait fields.",
 
 	// DisconnectCmd help.
-	"removeManualNode--synopsis": "Removes a peer from the manual nodes list",
-	"removeManualNode-addr":      "IP address and port of the peer to remove",
+	"disconnect--synopsis": "Disconnects a peer",
+	"disconnect-address":   "IP address and port of the peer to disconnect",
 
 	// SendRawTransactionCmd help.
 	"sendRawTransaction--synopsis":     "Submits the serialized, hex-encoded transaction to the local peer and relays it to the network.",
@@ -566,11 +552,8 @@ var helpDescsEnUS = map[string]string{
 // This information is used to generate the help. Each result type must be a
 // pointer to the type (or nil to indicate no return value).
 var rpcResultTypes = map[string][]interface{}{
-	"addManualNode":        nil,
-	"createRawTransaction": {(*string)(nil)},
+	"connect":              nil,
 	"debugLevel":           {(*string)(nil), (*string)(nil)},
-	"decodeRawTransaction": {(*model.TxRawDecodeResult)(nil)},
-	"decodeScript":         {(*model.DecodeScriptResult)(nil)},
 	"getSelectedTip":       {(*model.GetBlockVerboseResult)(nil)},
 	"getSelectedTipHash":   {(*string)(nil)},
 	"getBlock":             {(*string)(nil), (*model.GetBlockVerboseResult)(nil)},
@@ -597,7 +580,7 @@ var rpcResultTypes = map[string][]interface{}{
 	"node":                 nil,
 	"help":                 {(*string)(nil), (*string)(nil)},
 	"ping":                 nil,
-	"removeManualNode":     nil,
+	"disconnect":           nil,
 	"sendRawTransaction":   {(*string)(nil)},
 	"stop":                 {(*string)(nil)},
 	"submitBlock":          {nil, (*string)(nil)},
