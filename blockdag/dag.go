@@ -63,11 +63,12 @@ type BlockDAG struct {
 	// The following fields are set when the instance is created and can't
 	// be changed afterwards, so there is no need to protect them with a
 	// separate mutex.
-	Params       *dagconfig.Params
-	timeSource   TimeSource
-	sigCache     *txscript.SigCache
-	indexManager IndexManager
-	genesis      *blockNode
+	Params          *dagconfig.Params
+	databaseContext *dbaccess.DatabaseContext
+	timeSource      TimeSource
+	sigCache        *txscript.SigCache
+	indexManager    IndexManager
+	genesis         *blockNode
 
 	// The following fields are calculated based upon the provided DAG
 	// parameters. They are also set when the instance is created and
@@ -160,6 +161,106 @@ type BlockDAG struct {
 
 	recentBlockProcessingTimestamps []mstime.Time
 	startTime                       mstime.Time
+}
+
+// New returns a BlockDAG instance using the provided configuration details.
+func New(config *Config) (*BlockDAG, error) {
+	// Enforce required config fields.
+	if config.DAGParams == nil {
+		return nil, errors.New("BlockDAG.New DAG parameters nil")
+	}
+	if config.TimeSource == nil {
+		return nil, errors.New("BlockDAG.New timesource is nil")
+	}
+	if config.DatabaseContext == nil {
+		return nil, errors.New("BlockDAG.DatabaseContext timesource is nil")
+	}
+
+	params := config.DAGParams
+	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
+
+	index := newBlockIndex(params)
+	dag := &BlockDAG{
+		Params:                         params,
+		databaseContext:                config.DatabaseContext,
+		timeSource:                     config.TimeSource,
+		sigCache:                       config.SigCache,
+		indexManager:                   config.IndexManager,
+		targetTimePerBlock:             targetTimePerBlock,
+		difficultyAdjustmentWindowSize: params.DifficultyAdjustmentWindowSize,
+		TimestampDeviationTolerance:    params.TimestampDeviationTolerance,
+		powMaxBits:                     util.BigToCompact(params.PowMax),
+		index:                          index,
+		orphans:                        make(map[daghash.Hash]*orphanBlock),
+		prevOrphans:                    make(map[daghash.Hash][]*orphanBlock),
+		delayedBlocks:                  make(map[daghash.Hash]*delayedBlock),
+		delayedBlocksQueue:             newDelayedBlocksHeap(),
+		warningCaches:                  newThresholdCaches(vbNumBits),
+		deploymentCaches:               newThresholdCaches(dagconfig.DefinedDeployments),
+		blockCount:                     0,
+		subnetworkID:                   config.SubnetworkID,
+		startTime:                      mstime.Now(),
+	}
+
+	dag.virtual = newVirtualBlock(dag, nil)
+	dag.utxoDiffStore = newUTXODiffStore(dag)
+	dag.multisetStore = newMultisetStore(dag)
+	dag.reachabilityTree = newReachabilityTree(dag)
+
+	// Initialize the DAG state from the passed database. When the db
+	// does not yet contain any DAG state, both it and the DAG state
+	// will be initialized to contain only the genesis block.
+	err := dag.initDAGState()
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialize and catch up all of the currently active optional indexes
+	// as needed.
+	if config.IndexManager != nil {
+		err = config.IndexManager.Init(dag, dag.databaseContext)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	genesis, ok := index.LookupNode(params.GenesisHash)
+
+	if !ok {
+		genesisBlock := util.NewBlock(dag.Params.GenesisBlock)
+		// To prevent the creation of a new err variable unintentionally so the
+		// defered function above could read err - declare isOrphan and isDelayed explicitly.
+		var isOrphan, isDelayed bool
+		isOrphan, isDelayed, err = dag.ProcessBlock(genesisBlock, BFNone)
+		if err != nil {
+			return nil, err
+		}
+		if isDelayed {
+			return nil, errors.New("genesis block shouldn't be in the future")
+		}
+		if isOrphan {
+			return nil, errors.New("genesis block is unexpectedly orphan")
+		}
+		genesis, ok = index.LookupNode(params.GenesisHash)
+		if !ok {
+			return nil, errors.New("genesis is not found in the DAG after it was proccessed")
+		}
+	}
+
+	// Save a reference to the genesis block.
+	dag.genesis = genesis
+
+	// Initialize rule change threshold state caches.
+	err = dag.initThresholdCaches()
+	if err != nil {
+		return nil, err
+	}
+
+	selectedTip := dag.selectedTip()
+	log.Infof("DAG state (blue score %d, hash %s)",
+		selectedTip.blueScore, selectedTip.hash)
+
+	return dag, nil
 }
 
 // IsKnownBlock returns whether or not the DAG instance has the block represented
@@ -493,7 +594,7 @@ func (dag *BlockDAG) addBlock(node *blockNode,
 		if errors.As(err, &RuleError{}) {
 			dag.index.SetStatusFlags(node, statusValidateFailed)
 
-			dbTx, err := dbaccess.NewTx()
+			dbTx, err := dag.databaseContext.NewTx()
 			if err != nil {
 				return nil, err
 			}
@@ -686,7 +787,7 @@ func addTxToMultiset(ms *secp256k1.MultiSet, tx *wire.MsgTx, pastUTXO UTXOSet, b
 func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UTXODiff,
 	txsAcceptanceData MultiBlockTxsAcceptanceData, feeData compactFeeData) error {
 
-	dbTx, err := dbaccess.NewTx()
+	dbTx, err := dag.databaseContext.NewTx()
 	if err != nil {
 		return err
 	}
@@ -788,7 +889,7 @@ func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
 		if !msgTx.SubnetworkID.IsEqual(currentSubnetworkID) {
 			currentSubnetworkID = &msgTx.SubnetworkID
 			currentGasUsage = 0
-			currentSubnetworkGasLimit, err = GasLimit(currentSubnetworkID)
+			currentSubnetworkGasLimit, err = dag.GasLimit(currentSubnetworkID)
 			if err != nil {
 				return errors.Errorf("Error getting gas limit for subnetworkID '%s': %s", currentSubnetworkID, err)
 			}
@@ -906,7 +1007,7 @@ func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
 		}
 	}
 	if deleteDiffData {
-		err := dag.utxoDiffStore.removeBlocksDiffData(dbaccess.NoTx(), nodesToDelete)
+		err := dag.utxoDiffStore.removeBlocksDiffData(dag.databaseContext, nodesToDelete)
 		if err != nil {
 			panic(fmt.Sprintf("Error removing diff data from utxoDiffStore: %s", err))
 		}
@@ -1137,10 +1238,10 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 	return genesisPastUTXO
 }
 
-func (node *blockNode) fetchBlueBlocks() ([]*util.Block, error) {
+func (dag *BlockDAG) fetchBlueBlocks(node *blockNode) ([]*util.Block, error) {
 	blueBlocks := make([]*util.Block, len(node.blues))
 	for i, blueBlockNode := range node.blues {
-		blueBlock, err := fetchBlockByHash(dbaccess.NoTx(), blueBlockNode.hash)
+		blueBlock, err := dag.fetchBlockByHash(blueBlockNode.hash)
 		if err != nil {
 			return nil, err
 		}
@@ -1254,7 +1355,7 @@ func (dag *BlockDAG) pastUTXO(node *blockNode) (
 		return nil, nil, nil, err
 	}
 
-	blueBlocks, err := node.fetchBlueBlocks()
+	blueBlocks, err := dag.fetchBlueBlocks(node)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -1979,7 +2080,7 @@ func (dag *BlockDAG) peekDelayedBlock() *delayedBlock {
 type IndexManager interface {
 	// Init is invoked during DAG initialize in order to allow the index
 	// manager to initialize itself and any indexes it is managing.
-	Init(*BlockDAG) error
+	Init(*BlockDAG, *dbaccess.DatabaseContext) error
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
@@ -2026,102 +2127,10 @@ type Config struct {
 	//
 	// This field is required.
 	SubnetworkID *subnetworkid.SubnetworkID
-}
 
-// New returns a BlockDAG instance using the provided configuration details.
-func New(config *Config) (*BlockDAG, error) {
-	// Enforce required config fields.
-	if config.DAGParams == nil {
-		return nil, errors.New("BlockDAG.New DAG parameters nil")
-	}
-	if config.TimeSource == nil {
-		return nil, errors.New("BlockDAG.New timesource is nil")
-	}
-
-	params := config.DAGParams
-	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
-
-	index := newBlockIndex(params)
-	dag := &BlockDAG{
-		Params:                         params,
-		timeSource:                     config.TimeSource,
-		sigCache:                       config.SigCache,
-		indexManager:                   config.IndexManager,
-		targetTimePerBlock:             targetTimePerBlock,
-		difficultyAdjustmentWindowSize: params.DifficultyAdjustmentWindowSize,
-		TimestampDeviationTolerance:    params.TimestampDeviationTolerance,
-		powMaxBits:                     util.BigToCompact(params.PowMax),
-		index:                          index,
-		orphans:                        make(map[daghash.Hash]*orphanBlock),
-		prevOrphans:                    make(map[daghash.Hash][]*orphanBlock),
-		delayedBlocks:                  make(map[daghash.Hash]*delayedBlock),
-		delayedBlocksQueue:             newDelayedBlocksHeap(),
-		warningCaches:                  newThresholdCaches(vbNumBits),
-		deploymentCaches:               newThresholdCaches(dagconfig.DefinedDeployments),
-		blockCount:                     0,
-		subnetworkID:                   config.SubnetworkID,
-		startTime:                      mstime.Now(),
-	}
-
-	dag.virtual = newVirtualBlock(dag, nil)
-	dag.utxoDiffStore = newUTXODiffStore(dag)
-	dag.multisetStore = newMultisetStore(dag)
-	dag.reachabilityTree = newReachabilityTree(dag)
-
-	// Initialize the DAG state from the passed database. When the db
-	// does not yet contain any DAG state, both it and the DAG state
-	// will be initialized to contain only the genesis block.
-	err := dag.initDAGState()
-	if err != nil {
-		return nil, err
-	}
-
-	// Initialize and catch up all of the currently active optional indexes
-	// as needed.
-	if config.IndexManager != nil {
-		err = config.IndexManager.Init(dag)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	genesis, ok := index.LookupNode(params.GenesisHash)
-
-	if !ok {
-		genesisBlock := util.NewBlock(dag.Params.GenesisBlock)
-		// To prevent the creation of a new err variable unintentionally so the
-		// defered function above could read err - declare isOrphan and isDelayed explicitly.
-		var isOrphan, isDelayed bool
-		isOrphan, isDelayed, err = dag.ProcessBlock(genesisBlock, BFNone)
-		if err != nil {
-			return nil, err
-		}
-		if isDelayed {
-			return nil, errors.New("genesis block shouldn't be in the future")
-		}
-		if isOrphan {
-			return nil, errors.New("genesis block is unexpectedly orphan")
-		}
-		genesis, ok = index.LookupNode(params.GenesisHash)
-		if !ok {
-			return nil, errors.New("genesis is not found in the DAG after it was proccessed")
-		}
-	}
-
-	// Save a reference to the genesis block.
-	dag.genesis = genesis
-
-	// Initialize rule change threshold state caches.
-	err = dag.initThresholdCaches()
-	if err != nil {
-		return nil, err
-	}
-
-	selectedTip := dag.selectedTip()
-	log.Infof("DAG state (blue score %d, hash %s)",
-		selectedTip.blueScore, selectedTip.hash)
-
-	return dag, nil
+	// DatabaseContext is the context in which all database queries related to
+	// this DAG are going to run.
+	DatabaseContext *dbaccess.DatabaseContext
 }
 
 func (dag *BlockDAG) isKnownDelayedBlock(hash *daghash.Hash) bool {

@@ -6,10 +6,11 @@ package blockdag
 
 import (
 	"fmt"
+	"math"
+
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
-	"math"
 
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"

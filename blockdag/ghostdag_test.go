@@ -2,14 +2,15 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/dbaccess"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 type testBlockData struct {
@@ -351,7 +352,7 @@ func TestGHOSTDAGErrors(t *testing.T) {
 	// Clear the reachability store
 	dag.reachabilityTree.store.loaded = map[daghash.Hash]*reachabilityData{}
 
-	dbTx, err := dbaccess.NewTx()
+	dbTx, err := dag.databaseContext.NewTx()
 	if err != nil {
 		t.Fatalf("NewTx: %s", err)
 	}

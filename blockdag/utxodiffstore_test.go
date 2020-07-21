@@ -66,7 +66,7 @@ func TestUTXODiffStore(t *testing.T) {
 
 	// Flush changes to db, delete them from the dag.utxoDiffStore.loaded
 	// map, and check if the diff data is re-fetched from the database.
-	dbTx, err := dbaccess.NewTx()
+	dbTx, err := dag.databaseContext.NewTx()
 	if err != nil {
 		t.Fatalf("Failed to open database transaction: %s", err)
 	}

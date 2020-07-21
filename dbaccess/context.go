@@ -11,22 +11,26 @@ type Context interface {
 	accessor() (database.DataAccessor, error)
 }
 
-type noTxContext struct{}
-
-var noTxContextSingleton = &noTxContext{}
-
-func (*noTxContext) accessor() (database.DataAccessor, error) {
-	return db()
+type noTxContext struct {
+	backend *DatabaseContext
 }
 
-// NoTx creates and returns an instance of dbaccess.Context without an attached database transaction
-func NoTx() Context {
-	return noTxContextSingleton
+func (ctx *noTxContext) accessor() (database.DataAccessor, error) {
+	return ctx.backend.db, nil
 }
 
 // TxContext represents a database context with an attached database transaction
 type TxContext struct {
 	dbTransaction database.Transaction
+}
+
+// NewTx returns an instance of TxContext with a new database transaction
+func (ctx *DatabaseContext) NewTx() (*TxContext, error) {
+	dbTransaction, err := ctx.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	return &TxContext{dbTransaction: dbTransaction}, nil
 }
 
 func (ctx *TxContext) accessor() (database.DataAccessor, error) {
@@ -47,17 +51,4 @@ func (ctx *TxContext) Rollback() error {
 // unless the transaction had already been closed using either Rollback or Commit.
 func (ctx *TxContext) RollbackUnlessClosed() error {
 	return ctx.dbTransaction.RollbackUnlessClosed()
-}
-
-// NewTx returns an instance of TxContext with a new database transaction
-func NewTx() (*TxContext, error) {
-	db, err := db()
-	if err != nil {
-		return nil, err
-	}
-	dbTransaction, err := db.Begin()
-	if err != nil {
-		return nil, err
-	}
-	return &TxContext{dbTransaction: dbTransaction}, nil
 }

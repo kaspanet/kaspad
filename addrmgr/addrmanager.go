@@ -36,6 +36,7 @@ type triedBucket [TriedBucketCount]*list.List
 // peers on the Kaspa network.
 type AddrManager struct {
 	cfg                *config.Config
+	databaseContext    *dbaccess.DatabaseContext
 	mtx                sync.Mutex
 	lookupFunc         func(string) ([]net.IP, error)
 	rand               *rand.Rand
@@ -56,6 +57,21 @@ type AddrManager struct {
 	lamtx              sync.Mutex
 	localAddresses     map[string]*localAddress
 	localSubnetworkID  *subnetworkid.SubnetworkID
+}
+
+// New returns a new Kaspa address manager.
+func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext) *AddrManager {
+	addressManager := AddrManager{
+		cfg:               cfg,
+		databaseContext:   databaseContext,
+		lookupFunc:        cfg.Lookup,
+		rand:              rand.New(rand.NewSource(time.Now().UnixNano())),
+		quit:              make(chan struct{}),
+		localAddresses:    make(map[string]*localAddress),
+		localSubnetworkID: cfg.SubnetworkID,
+	}
+	addressManager.reset()
+	return &addressManager
 }
 
 type serializedKnownAddress struct {
@@ -453,7 +469,7 @@ func (a *AddrManager) savePeers() error {
 		return err
 	}
 
-	return dbaccess.StorePeersState(dbaccess.NoTx(), serializedPeersState)
+	return dbaccess.StorePeersState(a.databaseContext, serializedPeersState)
 }
 
 func (a *AddrManager) serializePeersState() ([]byte, error) {
@@ -563,7 +579,7 @@ func (a *AddrManager) loadPeers() error {
 	a.mtx.Lock()
 	defer a.mtx.Unlock()
 
-	serializedPeerState, err := dbaccess.FetchPeersState(dbaccess.NoTx())
+	serializedPeerState, err := dbaccess.FetchPeersState(a.databaseContext)
 	if dbaccess.IsNotFoundError(err) {
 		a.reset()
 		log.Info("No peers state was found in the database. Created a new one", a.totalNumAddresses())
@@ -1355,19 +1371,4 @@ func (a *AddrManager) GetBestLocalAddress(remoteAddr *wire.NetAddress) *wire.Net
 	}
 
 	return bestAddress
-}
-
-// New returns a new Kaspa address manager.
-// Use Start to begin processing asynchronous address updates.
-func New(cfg *config.Config) *AddrManager {
-	am := AddrManager{
-		cfg:               cfg,
-		lookupFunc:        cfg.Lookup,
-		rand:              rand.New(rand.NewSource(time.Now().UnixNano())),
-		quit:              make(chan struct{}),
-		localAddresses:    make(map[string]*localAddress),
-		localSubnetworkID: cfg.SubnetworkID,
-	}
-	am.reset()
-	return &am
 }

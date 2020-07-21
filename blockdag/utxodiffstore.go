@@ -2,6 +2,7 @@ package blockdag
 
 import (
 	"bytes"
+
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/locks"
@@ -116,7 +117,7 @@ func (diffStore *utxoDiffStore) diffChildByNode(node *blockNode) (*blockNode, er
 }
 
 func (diffStore *utxoDiffStore) diffDataFromDB(hash *daghash.Hash) (*blockUTXODiffData, error) {
-	serializedBlockDiffData, err := dbaccess.FetchUTXODiffData(dbaccess.NoTx(), hash)
+	serializedBlockDiffData, err := dbaccess.FetchUTXODiffData(diffStore.dag.databaseContext, hash)
 	if err != nil {
 		return nil, err
 	}
