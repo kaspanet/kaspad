@@ -16,10 +16,16 @@ import (
 	"github.com/pkg/errors"
 )
 
+type Context interface {
+	Config() *config.Config
+	NetAdapter() *netadapter.NetAdapter
+	DAG() *blockdag.BlockDAG
+	AddressManager() *addrmgr.AddrManager
+}
+
 // HandleHandshake sets up the handshake protocol - It sends a version message and waits for an incoming
 // version message, as well as a verack for the sent version
-func HandleHandshake(cfg *config.Config, router *routerpkg.Router, netAdapter *netadapter.NetAdapter,
-	dag *blockdag.BlockDAG, addressManager *addrmgr.AddrManager) (peer *peerpkg.Peer, closed bool, err error) {
+func HandleHandshake(context Context, router *routerpkg.Router) (peer *peerpkg.Peer, closed bool, err error) {
 
 	receiveVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVersion})
 	if err != nil {
@@ -45,7 +51,7 @@ func HandleHandshake(cfg *config.Config, router *routerpkg.Router, netAdapter *n
 	var peerAddress *wire.NetAddress
 	spawn("HandleHandshake-ReceiveVersion", func() {
 		defer wg.Done()
-		address, err := ReceiveVersion(receiveVersionRoute, router.OutgoingRoute(), netAdapter, peer, dag)
+		address, err := ReceiveVersion(context, receiveVersionRoute, router.OutgoingRoute(), peer)
 		if err != nil {
 			log.Errorf("error from ReceiveVersion: %s", err)
 		}
@@ -60,7 +66,7 @@ func HandleHandshake(cfg *config.Config, router *routerpkg.Router, netAdapter *n
 
 	spawn("HandleHandshake-SendVersion", func() {
 		defer wg.Done()
-		err := SendVersion(cfg, sendVersionRoute, router.OutgoingRoute(), netAdapter, dag)
+		err := SendVersion(context, sendVersionRoute, router.OutgoingRoute())
 		if err != nil {
 			log.Errorf("error from SendVersion: %s", err)
 		}
@@ -90,18 +96,18 @@ func HandleHandshake(cfg *config.Config, router *routerpkg.Router, netAdapter *n
 	}
 
 	peerID := peer.ID()
-	err = netAdapter.AssociateRouterID(router, peerID)
+	err = context.NetAdapter().AssociateRouterID(router, peerID)
 	if err != nil {
 		panic(err)
 	}
 
 	if peerAddress != nil {
 		subnetworkID := peer.SubnetworkID()
-		addressManager.AddAddress(peerAddress, peerAddress, subnetworkID)
-		addressManager.Good(peerAddress, subnetworkID)
+		context.AddressManager().AddAddress(peerAddress, peerAddress, subnetworkID)
+		context.AddressManager().Good(peerAddress, subnetworkID)
 	}
 
-	ibd.StartIBDIfRequired(dag)
+	ibd.StartIBDIfRequired(context.DAG())
 
 	err = router.RemoveRoute([]wire.MessageCommand{wire.CmdVersion, wire.CmdVerAck})
 	if err != nil {

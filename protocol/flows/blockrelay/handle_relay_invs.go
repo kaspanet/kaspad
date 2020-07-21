@@ -16,14 +16,17 @@ import (
 	"github.com/pkg/errors"
 )
 
-// NewBlockHandler is a function that is to be
-// called when a new block is successfully processed.
-type NewBlockHandler func(block *util.Block) error
+type RelayInvsContext interface {
+	NetAdapter() *netadapter.NetAdapter
+	DAG() *blockdag.BlockDAG
+	OnNewBlock(block *util.Block) error
+	SharedRequestedBlocks() *SharedRequestedBlocks
+}
 
 // HandleRelayInvs listens to wire.MsgInvRelayBlock messages, requests their corresponding blocks if they
 // are missing, adds them to the DAG and propagates them to the rest of the network.
-func HandleRelayInvs(incomingRoute *router.Route, outgoingRoute *router.Route,
-	peer *peerpkg.Peer, netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG, newBlockHandler NewBlockHandler) error {
+func HandleRelayInvs(context RelayInvsContext, incomingRoute *router.Route, outgoingRoute *router.Route,
+	peer *peerpkg.Peer) error {
 
 	invsQueue := make([]*wire.MsgInvRelayBlock, 0)
 	for {
@@ -32,15 +35,15 @@ func HandleRelayInvs(incomingRoute *router.Route, outgoingRoute *router.Route,
 			return err
 		}
 
-		if dag.IsKnownBlock(inv.Hash) {
-			if dag.IsKnownInvalid(inv.Hash) {
+		if context.DAG().IsKnownBlock(inv.Hash) {
+			if context.DAG().IsKnownInvalid(inv.Hash) {
 				return protocolerrors.Errorf(true, "sent inv of an invalid block %s",
 					inv.Hash)
 			}
 			continue
 		}
 
-		ibd.StartIBDIfRequired(dag)
+		ibd.StartIBDIfRequired(context.DAG())
 		if ibd.IsInIBD() {
 			// Block relay is disabled during IBD
 			continue
@@ -50,8 +53,7 @@ func HandleRelayInvs(incomingRoute *router.Route, outgoingRoute *router.Route,
 		requestQueue.enqueueIfNotExists(inv.Hash)
 
 		for requestQueue.len() > 0 {
-			err := requestBlocks(netAdapter, outgoingRoute, peer, incomingRoute, dag, &invsQueue,
-				requestQueue, newBlockHandler)
+			err := requestBlocks(context, outgoingRoute, peer, incomingRoute, &invsQueue, requestQueue)
 			if err != nil {
 				return err
 			}
@@ -80,10 +82,9 @@ func readInv(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlock) (
 	return inv, nil
 }
 
-func requestBlocks(netAdapater *netadapter.NetAdapter, outgoingRoute *router.Route,
-	peer *peerpkg.Peer, incomingRoute *router.Route, dag *blockdag.BlockDAG,
-	invsQueue *[]*wire.MsgInvRelayBlock, requestQueue *hashesQueueSet,
-	newBlockHandler NewBlockHandler) error {
+func requestBlocks(context RelayInvsContext, outgoingRoute *router.Route,
+	peer *peerpkg.Peer, incomingRoute *router.Route,
+	invsQueue *[]*wire.MsgInvRelayBlock, requestQueue *hashesQueueSet) error {
 
 	numHashesToRequest := mathUtil.MinInt(wire.MsgGetRelayBlocksHashes, requestQueue.len())
 	hashesToRequest := requestQueue.dequeue(numHashesToRequest)
@@ -91,7 +92,7 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, outgoingRoute *router.Rou
 	pendingBlocks := map[daghash.Hash]struct{}{}
 	var filteredHashesToRequest []*daghash.Hash
 	for _, hash := range hashesToRequest {
-		exists := requestedBlocks.addIfNotExists(hash)
+		exists := context.SharedRequestedBlocks().addIfNotExists(hash)
 		if !exists {
 			continue
 		}
@@ -102,7 +103,7 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, outgoingRoute *router.Rou
 
 	// In case the function returns earlier than expected, we want to make sure requestedBlocks is
 	// clean from any pending blocks.
-	defer requestedBlocks.removeSet(pendingBlocks)
+	defer context.SharedRequestedBlocks().removeSet(pendingBlocks)
 
 	getRelayBlocksMsg := wire.NewMsgGetRelayBlocks(filteredHashesToRequest)
 	err := outgoingRoute.Enqueue(getRelayBlocksMsg)
@@ -122,9 +123,9 @@ func requestBlocks(netAdapater *netadapter.NetAdapter, outgoingRoute *router.Rou
 			return protocolerrors.Errorf(true, "got unrequested block %s", block.Hash())
 		}
 		delete(pendingBlocks, *blockHash)
-		requestedBlocks.remove(blockHash)
+		context.SharedRequestedBlocks().remove(blockHash)
 
-		err = processAndRelayBlock(netAdapater, peer, dag, requestQueue, block, newBlockHandler)
+		err = processAndRelayBlock(context, peer, requestQueue, block)
 		if err != nil {
 			return err
 		}
@@ -155,12 +156,11 @@ func readMsgBlock(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlo
 	}
 }
 
-func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
-	dag *blockdag.BlockDAG, requestQueue *hashesQueueSet, block *util.Block,
-	newBlockHandler NewBlockHandler) error {
+func processAndRelayBlock(context RelayInvsContext, peer *peerpkg.Peer,
+	requestQueue *hashesQueueSet, block *util.Block) error {
 
 	blockHash := block.Hash()
-	isOrphan, isDelayed, err := dag.ProcessBlock(block, blockdag.BFNone)
+	isOrphan, isDelayed, err := context.DAG().ProcessBlock(block, blockdag.BFNone)
 	if err != nil {
 		// When the error is a rule error, it means the block was simply
 		// rejected as opposed to something actually going wrong, so log
@@ -187,7 +187,7 @@ func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 		}
 
 		const maxOrphanBlueScoreDiff = 10000
-		selectedTipBlueScore := dag.SelectedTipBlueScore()
+		selectedTipBlueScore := context.DAG().SelectedTipBlueScore()
 		if blueScore > selectedTipBlueScore+maxOrphanBlueScoreDiff {
 			log.Infof("Orphan block %s has blue score %d and the selected tip blue score is "+
 				"%d. Ignoring orphans with a blue score difference from the selected tip greater than %d",
@@ -196,7 +196,7 @@ func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 		}
 
 		// Request the parents for the orphan block from the peer that sent it.
-		missingAncestors := dag.GetOrphanMissingAncestorHashes(blockHash)
+		missingAncestors := context.DAG().GetOrphanMissingAncestorHashes(blockHash)
 		for _, missingAncestor := range missingAncestors {
 			requestQueue.enqueueIfNotExists(missingAncestor)
 		}
@@ -212,13 +212,13 @@ func processAndRelayBlock(netAdapter *netadapter.NetAdapter, peer *peerpkg.Peer,
 	// sm.restartSyncIfNeeded()
 	//// Clear the rejected transactions.
 	//sm.rejectedTxns = make(map[daghash.TxID]struct{})
-	err = netAdapter.Broadcast(peerpkg.ReadyPeerIDs(), wire.NewMsgInvBlock(blockHash))
+	err = context.NetAdapter().Broadcast(peerpkg.ReadyPeerIDs(), wire.NewMsgInvBlock(blockHash))
 	if err != nil {
 		return err
 	}
 
-	ibd.StartIBDIfRequired(dag)
-	err = newBlockHandler(block)
+	ibd.StartIBDIfRequired(context.DAG())
+	err = context.OnNewBlock(block)
 	if err != nil {
 		panic(err)
 	}

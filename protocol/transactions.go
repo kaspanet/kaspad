@@ -1,6 +1,8 @@
 package protocol
 
 import (
+	"github.com/kaspanet/kaspad/mempool"
+	"github.com/kaspanet/kaspad/protocol/flows/relaytransactions"
 	"github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -55,4 +57,12 @@ func (m *Manager) txIDsToRebroadcast() []*daghash.TxID {
 		i++
 	}
 	return txIDs
+}
+
+func (m *Manager) SharedRequestedTransactions() *relaytransactions.SharedRequestedTransactions {
+	return m.sharedRequestedTransactions
+}
+
+func (m *Manager) TxPool() *mempool.TxPool {
+	return m.txPool
 }

@@ -30,19 +30,23 @@ func requestSelectedTips() {
 	}
 }
 
+type RequestSelectedTipContext interface {
+	DAG() *blockdag.BlockDAG
+}
+
 // RequestSelectedTip waits for selected tip requests and handles them
-func RequestSelectedTip(incomingRoute *router.Route,
-	outgoingRoute *router.Route, peer *peerpkg.Peer, dag *blockdag.BlockDAG) error {
+func RequestSelectedTip(context RequestSelectedTipContext, incomingRoute *router.Route,
+	outgoingRoute *router.Route, peer *peerpkg.Peer) error {
 	for {
-		err := runSelectedTipRequest(incomingRoute, outgoingRoute, peer, dag)
+		err := runSelectedTipRequest(context, incomingRoute, outgoingRoute, peer)
 		if err != nil {
 			return err
 		}
 	}
 }
 
-func runSelectedTipRequest(incomingRoute *router.Route, outgoingRoute *router.Route,
-	peer *peerpkg.Peer, dag *blockdag.BlockDAG) error {
+func runSelectedTipRequest(context RequestSelectedTipContext, incomingRoute *router.Route, outgoingRoute *router.Route,
+	peer *peerpkg.Peer) error {
 
 	peer.WaitForSelectedTipRequests()
 	defer peer.FinishRequestingSelectedTip()
@@ -58,7 +62,7 @@ func runSelectedTipRequest(incomingRoute *router.Route, outgoingRoute *router.Ro
 	}
 
 	peer.SetSelectedTipHash(peerSelectedTipHash)
-	StartIBDIfRequired(dag)
+	StartIBDIfRequired(context.DAG())
 	return nil
 }
 

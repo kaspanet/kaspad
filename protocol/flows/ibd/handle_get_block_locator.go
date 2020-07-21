@@ -8,15 +8,21 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
+type GetBlockLocatorContext interface {
+	DAG() *blockdag.BlockDAG
+}
+
 // HandleGetBlockLocator handles getBlockLocator messages
-func HandleGetBlockLocator(incomingRoute *router.Route, outgoingRoute *router.Route, dag *blockdag.BlockDAG) error {
+func HandleGetBlockLocator(context GetBlockLocatorContext, incomingRoute *router.Route,
+	outgoingRoute *router.Route) error {
+
 	for {
 		lowHash, highHash, err := receiveGetBlockLocator(incomingRoute)
 		if err != nil {
 			return err
 		}
 
-		locator, err := dag.BlockLocatorFromHashes(highHash, lowHash)
+		locator, err := context.DAG().BlockLocatorFromHashes(highHash, lowHash)
 		if err != nil || len(locator) == 0 {
 			return protocolerrors.Errorf(true, "couldn't build a block "+
 				"locator between blocks %s and %s", lowHash, highHash)

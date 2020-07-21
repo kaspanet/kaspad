@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/netadapter"
+	"github.com/kaspanet/kaspad/protocol/flows/blockrelay"
 	"github.com/kaspanet/kaspad/protocol/flows/relaytransactions"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -27,6 +28,8 @@ type Manager struct {
 	lastRebroadcastTime           time.Time
 	sharedRequestedTransactions   *relaytransactions.SharedRequestedTransactions
 
+	sharedRequestedBlocks *blockrelay.SharedRequestedBlocks
+
 	isInIBD uint32 // TODO(libp2p) populate this var
 }
 
@@ -45,6 +48,7 @@ func NewManager(cfg *config.Config, dag *blockdag.BlockDAG,
 		addressManager:              addressManager,
 		txPool:                      txPool,
 		sharedRequestedTransactions: relaytransactions.NewSharedRequestedTransactions(),
+		sharedRequestedBlocks:       blockrelay.NewSharedRequestedBlocks(),
 	}
 	netAdapter.SetRouterInitializer(manager.routerInitializer)
 	return &manager, nil
@@ -58,4 +62,12 @@ func (m *Manager) Start() error {
 // Stop stops the p2p protocol
 func (m *Manager) Stop() error {
 	return m.netAdapter.Stop()
+}
+
+func (m *Manager) Config() *config.Config {
+	return m.cfg
+}
+
+func (m *Manager) NetAdapter() *netadapter.NetAdapter {
+	return m.netAdapter
 }
