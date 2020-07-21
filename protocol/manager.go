@@ -6,37 +6,12 @@ import (
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/netadapter"
-	"github.com/kaspanet/kaspad/netadapter/id"
-	"github.com/kaspanet/kaspad/protocol/flows/blockrelay"
-	"github.com/kaspanet/kaspad/protocol/flows/relaytransactions"
-	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
-	"sync"
-	"time"
+	"github.com/kaspanet/kaspad/protocol/flowcontext"
 )
 
 // Manager manages the p2p protocol
 type Manager struct {
-	cfg               *config.Config
-	netAdapter        *netadapter.NetAdapter
-	txPool            *mempool.TxPool
-	addedTransactions []*util.Tx
-	dag               *blockdag.BlockDAG
-	addressManager    *addrmgr.AddrManager
-
-	transactionsToRebroadcastLock sync.Mutex
-	transactionsToRebroadcast     map[daghash.TxID]*util.Tx
-	lastRebroadcastTime           time.Time
-	sharedRequestedTransactions   *relaytransactions.SharedRequestedTransactions
-
-	sharedRequestedBlocks *blockrelay.SharedRequestedBlocks
-
-	isInIBD       uint32
-	startIBDMutex sync.Mutex
-
-	readyPeers      map[*id.ID]*peerpkg.Peer
-	readyPeersMutex sync.RWMutex
+	context *flowcontext.FlowContext
 }
 
 // NewManager creates a new instance of the p2p protocol manager
@@ -49,12 +24,7 @@ func NewManager(cfg *config.Config, dag *blockdag.BlockDAG,
 	}
 
 	manager := Manager{
-		netAdapter:                  netAdapter,
-		dag:                         dag,
-		addressManager:              addressManager,
-		txPool:                      txPool,
-		sharedRequestedTransactions: relaytransactions.NewSharedRequestedTransactions(),
-		sharedRequestedBlocks:       blockrelay.NewSharedRequestedBlocks(),
+		context: flowcontext.New(cfg, dag, addressManager, txPool, netAdapter),
 	}
 	netAdapter.SetRouterInitializer(manager.routerInitializer)
 	return &manager, nil
@@ -62,20 +32,10 @@ func NewManager(cfg *config.Config, dag *blockdag.BlockDAG,
 
 // Start starts the p2p protocol
 func (m *Manager) Start() error {
-	return m.netAdapter.Start()
+	return m.context.NetAdapter().Start()
 }
 
 // Stop stops the p2p protocol
 func (m *Manager) Stop() error {
-	return m.netAdapter.Stop()
-}
-
-// Config returns an instance of *config.Config associated to the manager.
-func (m *Manager) Config() *config.Config {
-	return m.cfg
-}
-
-// NetAdapter returns the net adapter that is associated to the manager.
-func (m *Manager) NetAdapter() *netadapter.NetAdapter {
-	return m.netAdapter
+	return m.context.NetAdapter().Stop()
 }

@@ -63,15 +63,20 @@ func receiveSelectedTip(incomingRoute *router.Route) (selectedTipHash *daghash.H
 	return msgSelectedTip.SelectedTipHash, nil
 }
 
+// GetSelectedTipContext is the interface for the context needed for the HandleGetSelectedTip flow.
+type GetSelectedTipContext interface {
+	DAG() *blockdag.BlockDAG
+}
+
 // HandleGetSelectedTip handles getSelectedTip messages
-func HandleGetSelectedTip(incomingRoute *router.Route, outgoingRoute *router.Route, dag *blockdag.BlockDAG) error {
+func HandleGetSelectedTip(context GetSelectedTipContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
 	for {
 		err := receiveGetSelectedTip(incomingRoute)
 		if err != nil {
 			return err
 		}
 
-		selectedTipHash := dag.SelectedTipHash()
+		selectedTipHash := context.DAG().SelectedTipHash()
 		err = sendSelectedTipHash(outgoingRoute, selectedTipHash)
 		if err != nil {
 			return err

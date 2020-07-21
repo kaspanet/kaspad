@@ -1,4 +1,4 @@
-package protocol
+package flowcontext
 
 import (
 	"github.com/kaspanet/kaspad/mempool"
@@ -11,11 +11,11 @@ import (
 )
 
 // AddTransaction adds transaction to the mempool and propagates it.
-func (m *Manager) AddTransaction(tx *util.Tx) error {
-	m.transactionsToRebroadcastLock.Lock()
-	defer m.transactionsToRebroadcastLock.Unlock()
+func (f *FlowContext) AddTransaction(tx *util.Tx) error {
+	f.transactionsToRebroadcastLock.Lock()
+	defer f.transactionsToRebroadcastLock.Unlock()
 
-	transactionsAcceptedToMempool, err := m.txPool.ProcessTransaction(tx, false, 0)
+	transactionsAcceptedToMempool, err := f.txPool.ProcessTransaction(tx, false, 0)
 	if err != nil {
 		return err
 	}
@@ -24,34 +24,34 @@ func (m *Manager) AddTransaction(tx *util.Tx) error {
 		panic(errors.New("got more than one accepted transactions when no orphans were allowed"))
 	}
 
-	m.transactionsToRebroadcast[*tx.ID()] = tx
+	f.transactionsToRebroadcast[*tx.ID()] = tx
 	inv := wire.NewMsgTxInv([]*daghash.TxID{tx.ID()})
-	return m.Broadcast(inv)
+	return f.Broadcast(inv)
 }
 
-func (m *Manager) updateTransactionsToRebroadcast(block *util.Block) {
-	m.transactionsToRebroadcastLock.Lock()
-	defer m.transactionsToRebroadcastLock.Unlock()
+func (f *FlowContext) updateTransactionsToRebroadcast(block *util.Block) {
+	f.transactionsToRebroadcastLock.Lock()
+	defer f.transactionsToRebroadcastLock.Unlock()
 	// Note: if the block is red, its transactions won't be rebroadcasted
 	// anymore, although they are not included in the UTXO set.
 	// This is probably ok, since red blocks are quite rare.
 	for _, tx := range block.Transactions() {
-		delete(m.transactionsToRebroadcast, *tx.ID())
+		delete(f.transactionsToRebroadcast, *tx.ID())
 	}
 }
 
-func (m *Manager) shouldRebroadcastTransactions() bool {
+func (f *FlowContext) shouldRebroadcastTransactions() bool {
 	const rebroadcastInterval = 30 * time.Second
-	return time.Since(m.lastRebroadcastTime) > rebroadcastInterval
+	return time.Since(f.lastRebroadcastTime) > rebroadcastInterval
 }
 
-func (m *Manager) txIDsToRebroadcast() []*daghash.TxID {
-	m.transactionsToRebroadcastLock.Lock()
-	defer m.transactionsToRebroadcastLock.Unlock()
+func (f *FlowContext) txIDsToRebroadcast() []*daghash.TxID {
+	f.transactionsToRebroadcastLock.Lock()
+	defer f.transactionsToRebroadcastLock.Unlock()
 
-	txIDs := make([]*daghash.TxID, len(m.transactionsToRebroadcast))
+	txIDs := make([]*daghash.TxID, len(f.transactionsToRebroadcast))
 	i := 0
-	for _, tx := range m.transactionsToRebroadcast {
+	for _, tx := range f.transactionsToRebroadcast {
 		txIDs[i] = tx.ID()
 		i++
 	}
@@ -60,11 +60,11 @@ func (m *Manager) txIDsToRebroadcast() []*daghash.TxID {
 
 // SharedRequestedTransactions returns a *relaytransactions.SharedRequestedTransactions for sharing
 // data about requested transactions between different peers.
-func (m *Manager) SharedRequestedTransactions() *relaytransactions.SharedRequestedTransactions {
-	return m.sharedRequestedTransactions
+func (f *FlowContext) SharedRequestedTransactions() *relaytransactions.SharedRequestedTransactions {
+	return f.sharedRequestedTransactions
 }
 
 // TxPool returns the transaction pool associated to the manager.
-func (m *Manager) TxPool() *mempool.TxPool {
-	return m.txPool
+func (f *FlowContext) TxPool() *mempool.TxPool {
+	return f.txPool
 }
