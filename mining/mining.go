@@ -230,7 +230,7 @@ func (g *BlkTmplGenerator) TxSource() TxSource {
 	return g.txSource
 }
 
-// isSynced checks if the node is synced enough based upon its worldview.
+// IsSynced checks if the node is synced enough based upon its worldview.
 // This is used to determine if the node can support mining and requesting newly-mined blocks.
 // To do that, first it checks if the selected tip timestamp is not older than maxTipAge. If that's the case, it means
 // the node is synced since blocks' timestamps are not allowed to deviate too much into the future.
