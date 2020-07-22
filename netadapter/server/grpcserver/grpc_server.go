@@ -19,7 +19,7 @@ type gRPCServer struct {
 	onConnectedHandler server.OnConnectedHandler
 	listeningAddrs     []string
 	server             *grpc.Server
-	bannedAddresses    map[*net.IP]struct{}
+	bannedAddresses    map[string]struct{}
 }
 
 // NewGRPCServer creates and starts a gRPC server, listening on the
@@ -28,7 +28,7 @@ func NewGRPCServer(listeningAddrs []string) (server.Server, error) {
 	s := &gRPCServer{
 		server:          grpc.NewServer(),
 		listeningAddrs:  listeningAddrs,
-		bannedAddresses: make(map[*net.IP]struct{}),
+		bannedAddresses: make(map[string]struct{}),
 	}
 	protowire.RegisterP2PServer(s.server, newP2PServer(s))
 
@@ -118,11 +118,11 @@ func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 // IsBanned checks whether the given address had previously
 // been banned
 func (s *gRPCServer) IsBanned(address *net.TCPAddr) bool {
-	_, ok := s.bannedAddresses[&address.IP]
+	_, ok := s.bannedAddresses[address.IP.String()]
 	return ok
 }
 
 // Ban prevents the given address from connecting
 func (s *gRPCServer) Ban(address *net.TCPAddr) {
-	s.bannedAddresses[&address.IP] = struct{}{}
+	s.bannedAddresses[address.IP.String()] = struct{}{}
 }
