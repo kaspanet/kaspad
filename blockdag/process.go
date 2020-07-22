@@ -206,7 +206,7 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 	}
 	if len(missingParents) > 0 && disallowOrphans {
 		str := fmt.Sprintf("Cannot process orphan blocks while the BFDisallowOrphans flag is raised %s", blockHash)
-		return false, true, ruleError(ErrOrphanBlockIsNotAllowed, str)
+		return false, false, ruleError(ErrOrphanBlockIsNotAllowed, str)
 	}
 
 	// Handle the case of a block with a valid timestamp(non-delayed) which points to a delayed block.
