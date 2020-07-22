@@ -125,12 +125,12 @@ func newKaspad(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, in
 	}
 	addressManager := addrmgr.New(cfg, databaseContext)
 
-	protocolManager, err := protocol.NewManager(cfg, dag, addressManager, txMempool)
+	connectionManager, err := connmanager.New(cfg, netAdapter, addressManager)
 	if err != nil {
 		return nil, err
 	}
 
-	connectionManager, err := connmanager.New(cfg, netAdapter, addressManager)
+	protocolManager, err := protocol.NewManager(cfg, dag, addressManager, txMempool, connectionManager)
 	if err != nil {
 		return nil, err
 	}

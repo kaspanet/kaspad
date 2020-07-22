@@ -27,8 +27,7 @@ func (m *Manager) routerInitializer(netConnection *netadapter.NetConnection) (*r
 		if err != nil {
 			if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
 				if protocolErr.ShouldBan {
-					// TODO(libp2p) Ban peer
-					panic("unimplemented")
+					m.context.ConnectionManager().Ban(netConnection)
 				}
 				err = m.context.NetAdapter().Disconnect(netConnection)
 				if err != nil {

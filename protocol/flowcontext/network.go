@@ -1,6 +1,7 @@
 package flowcontext
 
 import (
+	"github.com/kaspanet/kaspad/connmanager"
 	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/protocol/common"
@@ -12,6 +13,11 @@ import (
 // NetAdapter returns the net adapter that is associated to the flow context.
 func (f *FlowContext) NetAdapter() *netadapter.NetAdapter {
 	return f.netAdapter
+}
+
+// ConnectionManager returns the connection manager that is associated to the flow context.
+func (f *FlowContext) ConnectionManager() *connmanager.ConnectionManager {
+	return f.connectionManager
 }
 
 // AddToPeers marks this peer as ready and adds it to the ready peers list.

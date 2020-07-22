@@ -23,6 +23,12 @@ func (p *p2pServer) MessageStream(stream protowire.P2P_MessageStreamServer) erro
 	if !ok {
 		return errors.Errorf("Error getting stream peer info from context")
 	}
+
+	if p.server.IsBanned(peerInfo.Addr) {
+		log.Debugf("received connection attempt from banned peer %s", peerInfo.Addr)
+		return nil
+	}
+
 	connection := newConnection(p.server, peerInfo.Addr, false, stream)
 
 	err := p.server.onConnectedHandler(connection)

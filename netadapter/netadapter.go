@@ -259,3 +259,14 @@ func (na *NetAdapter) Disconnect(netConnection *NetConnection) error {
 	}
 	return nil
 }
+
+// IsBanned checks whether the given netConnection had previously
+// been banned
+func (na *NetAdapter) IsBanned(netConnection NetConnection) bool {
+	return na.server.IsBanned(netConnection.connection.Address())
+}
+
+// Ban prevents the given netConnection from connecting again
+func (na *NetAdapter) Ban(netConnection *NetConnection) {
+	na.server.Ban(netConnection.connection.Address())
+}

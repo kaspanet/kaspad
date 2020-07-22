@@ -28,6 +28,8 @@ type Server interface {
 	Start() error
 	Stop() error
 	SetOnConnectedHandler(onConnectedHandler OnConnectedHandler)
+	IsBanned(address net.Addr) bool
+	Ban(address net.Addr)
 }
 
 // Connection represents a p2p server connection.
