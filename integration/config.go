@@ -14,6 +14,9 @@ const (
 
 	kaspad1RPCAddress = "127.0.0.1:12345"
 	kaspad2RPCAddress = "127.0.0.1:12346"
+
+	rpcUser = "user"
+	rpcPass = "pass"
 )
 
 func configs(t *testing.T) (kaspad1Config, kaspad2Config *config.Config) {
@@ -38,6 +41,8 @@ func commonConfig() *config.Config {
 
 	commonConfig.TargetOutboundPeers = 0
 	commonConfig.DisableDNSSeed = true
+	commonConfig.RPCUser = rpcUser
+	commonConfig.RPCPass = rpcPass
 
 	return commonConfig
 }

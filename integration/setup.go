@@ -3,13 +3,16 @@ package integration
 import (
 	"path/filepath"
 	"testing"
+	"time"
+
+	"github.com/kaspanet/kaspad/rpc/client"
 
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/dbaccess"
 	kaspadpkg "github.com/kaspanet/kaspad/kaspad"
 )
 
-func setup(t *testing.T) (kaspad1, kaspad2 *kaspadpkg.Kaspad, teardown func()) {
+func setup(t *testing.T) (kaspad1, kaspad2 *kaspadpkg.Kaspad, client1, client2 *client.Client, teardown func()) {
 	kaspad1Config, kaspad2Config := configs(t)
 
 	kaspad1DatabaseContext, err := openDB(kaspad1Config)
@@ -37,7 +40,16 @@ func setup(t *testing.T) (kaspad1, kaspad2 *kaspadpkg.Kaspad, teardown func()) {
 	kaspad1.Start()
 	kaspad2.Start()
 
-	return kaspad1, kaspad2, func() {
+	client1, err = rpcClient(kaspad1RPCAddress)
+	if err != nil {
+		t.Fatalf("Error getting RPC client for kaspad1 %+v", err)
+	}
+	client2, err = rpcClient(kaspad2RPCAddress)
+	if err != nil {
+		t.Fatalf("Error getting RPC client for kaspad2: %+v", err)
+	}
+
+	return kaspad1, kaspad2, client1, client2, func() {
 		err := kaspad1DatabaseContext.Close()
 		if err != nil {
 			t.Errorf("Error closing kaspad1DatabaseContext: %+v", err)
@@ -46,9 +58,29 @@ func setup(t *testing.T) (kaspad1, kaspad2 *kaspadpkg.Kaspad, teardown func()) {
 		if err != nil {
 			t.Errorf("Error closing kaspad2DatabaseContext: %+v", err)
 		}
-		close(kaspad1Interrupt)
-		close(kaspad2Interrupt)
+
+		err = kaspad1.Stop()
+		if err != nil {
+			t.Errorf("Error stopping kaspad1 %+v", err)
+		}
+		err = kaspad2.Stop()
+		if err != nil {
+			t.Errorf("Error stopping kaspad2: %+v", err)
+		}
 	}
+}
+
+func rpcClient(rpcAddress string) (*client.Client, error) {
+	connConfig := &client.ConnConfig{
+		Host:           rpcAddress,
+		Endpoint:       "ws",
+		User:           rpcUser,
+		Pass:           rpcPass,
+		DisableTLS:     true,
+		RequestTimeout: time.Second * 10,
+	}
+
+	return client.New(connConfig, nil)
 }
 
 func openDB(cfg *config.Config) (*dbaccess.DatabaseContext, error) {
