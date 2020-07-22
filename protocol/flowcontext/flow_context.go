@@ -35,6 +35,7 @@ type FlowContext struct {
 
 	isInIBD       uint32
 	startIBDMutex sync.Mutex
+	ibdPeer       *peerpkg.Peer
 
 	peers      map[*id.ID]*peerpkg.Peer
 	peersMutex sync.RWMutex

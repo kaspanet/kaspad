@@ -44,3 +44,17 @@ func (f *FlowContext) readyPeerIDs() []*id.ID {
 func (f *FlowContext) Broadcast(message wire.Message) error {
 	return f.netAdapter.Broadcast(f.readyPeerIDs(), message)
 }
+
+// Peers returns the currently active peers
+func (f *FlowContext) Peers() []*peerpkg.Peer {
+	f.peersMutex.RLock()
+	defer f.peersMutex.RUnlock()
+
+	peers := make([]*peerpkg.Peer, len(f.peers))
+	i := 0
+	for _, peer := range f.peers {
+		peers[i] = peer
+		i++
+	}
+	return peers
+}

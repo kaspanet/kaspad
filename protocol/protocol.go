@@ -56,7 +56,7 @@ func (m *Manager) startFlows(netConnection *netadapter.NetConnection, router *ro
 	stop := make(chan error)
 	stopped := uint32(0)
 
-	peer, closed, err := handshake.HandleHandshake(m.context, router)
+	peer, closed, err := handshake.HandleHandshake(m.context, router, netConnection)
 	if err != nil {
 		return err
 	}

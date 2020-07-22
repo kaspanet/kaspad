@@ -28,7 +28,8 @@ type HandleHandshakeContext interface {
 
 // HandleHandshake sets up the handshake protocol - It sends a version message and waits for an incoming
 // version message, as well as a verack for the sent version
-func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router) (peer *peerpkg.Peer, closed bool, err error) {
+func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
+	netConnection *netadapter.NetConnection) (peer *peerpkg.Peer, closed bool, err error) {
 
 	receiveVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVersion})
 	if err != nil {
