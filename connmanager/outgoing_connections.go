@@ -30,15 +30,20 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 		}
 
 		netAddress := address.NetAddress()
+		tcpAddress := netAddress.TCPAddress()
+		if c.netAdapter.IsBanned(tcpAddress) {
+			continue
+		}
+
 		c.addressManager.Attempt(netAddress)
-		addressString := netAddress.TCPAddress().String()
+		addressString := tcpAddress.String()
 		err := c.initiateConnection(addressString)
 		if err != nil {
 			log.Infof("Couldn't connect to %s: %s", addressString, err)
 			continue
 		}
 
-		c.addressManager.Connected(address.NetAddress())
-		c.activeOutgoing[address.NetAddress().TCPAddress().String()] = struct{}{}
+		c.addressManager.Connected(netAddress)
+		c.activeOutgoing[addressString] = struct{}{}
 	}
 }

@@ -260,10 +260,10 @@ func (na *NetAdapter) Disconnect(netConnection *NetConnection) error {
 	return nil
 }
 
-// IsBanned checks whether the given netConnection had previously
+// IsBanned checks whether the given address had previously
 // been banned
-func (na *NetAdapter) IsBanned(netConnection NetConnection) bool {
-	return na.server.IsBanned(netConnection.connection.Address())
+func (na *NetAdapter) IsBanned(address *net.TCPAddr) bool {
+	return na.server.IsBanned(address)
 }
 
 // Ban prevents the given netConnection from connecting again
