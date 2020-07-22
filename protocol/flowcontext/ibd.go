@@ -24,6 +24,7 @@ func (f *FlowContext) StartIBDIfRequired() {
 	}
 
 	atomic.StoreUint32(&f.isInIBD, 1)
+	f.ibdPeer = peer
 	peer.StartIBD()
 }
 
@@ -64,7 +65,18 @@ func (f *FlowContext) requestSelectedTips() {
 
 // FinishIBD finishes the current IBD flow and starts a new one if required.
 func (f *FlowContext) FinishIBD() {
+	f.ibdPeer = nil
+
 	atomic.StoreUint32(&f.isInIBD, 0)
 
 	f.StartIBDIfRequired()
+}
+
+// IBDPeer returns the currently active IBD peer.
+// Returns nil if we aren't currently in IBD
+func (f *FlowContext) IBDPeer() *peerpkg.Peer {
+	if !f.IsInIBD() {
+		return nil
+	}
+	return f.ibdPeer
 }

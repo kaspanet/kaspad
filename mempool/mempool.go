@@ -17,7 +17,6 @@ import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/logger"
 	"github.com/kaspanet/kaspad/mining"
-	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -1292,42 +1291,6 @@ func (mp *TxPool) MiningDescs() []*mining.TxDesc {
 	}
 
 	return descs
-}
-
-// RawMempoolVerbose returns all of the entries in the mempool as a fully
-// populated jsonrpc result.
-//
-// This function is safe for concurrent access.
-func (mp *TxPool) RawMempoolVerbose() map[string]*rpcmodel.GetRawMempoolVerboseResult {
-	mp.mtx.RLock()
-	defer mp.mtx.RUnlock()
-
-	result := make(map[string]*rpcmodel.GetRawMempoolVerboseResult, len(mp.pool))
-
-	for _, desc := range mp.pool {
-		// Calculate the current priority based on the inputs to
-		// the transaction. Use zero if one or more of the
-		// input transactions can't be found for some reason.
-		tx := desc.Tx
-
-		mpd := &rpcmodel.GetRawMempoolVerboseResult{
-			Size:    int32(tx.MsgTx().SerializeSize()),
-			Fee:     util.Amount(desc.Fee).ToKAS(),
-			Time:    desc.Added.UnixMilliseconds(),
-			Depends: make([]string, 0),
-		}
-		for _, txIn := range tx.MsgTx().TxIn {
-			txID := &txIn.PreviousOutpoint.TxID
-			if mp.haveTransaction(txID) {
-				mpd.Depends = append(mpd.Depends,
-					txID.String())
-			}
-		}
-
-		result[tx.ID().String()] = mpd
-	}
-
-	return result
 }
 
 // LastUpdated returns the last time a transaction was added to or removed from

@@ -46,3 +46,9 @@ func (f *FlowContext) OnNewBlock(block *util.Block) error {
 func (f *FlowContext) SharedRequestedBlocks() *blockrelay.SharedRequestedBlocks {
 	return f.sharedRequestedBlocks
 }
+
+// AddBlock adds the given block to the DAG and propagates it.
+func (f *FlowContext) AddBlock(block *util.Block) error {
+	// TODO(libp2p): unimplemented
+	panic("unimplemented")
+}

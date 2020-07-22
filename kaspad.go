@@ -23,7 +23,7 @@ import (
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/mining"
 	"github.com/kaspanet/kaspad/protocol"
-	"github.com/kaspanet/kaspad/server/rpc"
+	"github.com/kaspanet/kaspad/rpc"
 	"github.com/kaspanet/kaspad/signal"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
@@ -135,7 +135,8 @@ func newKaspad(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, in
 		return nil, err
 	}
 
-	rpcServer, err := setupRPC(cfg, dag, txMempool, sigCache, acceptanceIndex)
+	rpcServer, err := setupRPC(cfg, dag, txMempool, sigCache, acceptanceIndex,
+		connectionManager, addressManager, protocolManager)
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +202,8 @@ func setupMempool(cfg *config.Config, dag *blockdag.BlockDAG, sigCache *txscript
 }
 
 func setupRPC(cfg *config.Config, dag *blockdag.BlockDAG, txMempool *mempool.TxPool, sigCache *txscript.SigCache,
-	acceptanceIndex *indexers.AcceptanceIndex) (*rpc.Server, error) {
+	acceptanceIndex *indexers.AcceptanceIndex, connectionManager *connmanager.ConnectionManager,
+	addressManager *addrmgr.AddrManager, protocolManager *protocol.Manager) (*rpc.Server, error) {
 
 	if !cfg.DisableRPC {
 		policy := mining.Policy{
@@ -209,7 +211,8 @@ func setupRPC(cfg *config.Config, dag *blockdag.BlockDAG, txMempool *mempool.TxP
 		}
 		blockTemplateGenerator := mining.NewBlkTmplGenerator(&policy, txMempool, dag, sigCache)
 
-		rpcServer, err := rpc.NewRPCServer(cfg, dag, txMempool, acceptanceIndex, blockTemplateGenerator)
+		rpcServer, err := rpc.NewRPCServer(cfg, dag, txMempool, acceptanceIndex, blockTemplateGenerator,
+			connectionManager, addressManager, protocolManager)
 		if err != nil {
 			return nil, err
 		}

@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/netadapter"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/protocol/flows/handshake"
@@ -19,11 +20,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (m *Manager) routerInitializer() (*routerpkg.Router, error) {
-
+func (m *Manager) routerInitializer(netConnection *netadapter.NetConnection) (*routerpkg.Router, error) {
 	router := routerpkg.NewRouter()
 	spawn("newRouterInitializer-startFlows", func() {
-		err := m.startFlows(router)
+		err := m.startFlows(netConnection, router)
 		if err != nil {
 			if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
 				if protocolErr.ShouldBan {
@@ -50,14 +50,13 @@ func (m *Manager) routerInitializer() (*routerpkg.Router, error) {
 		}
 	})
 	return router, nil
-
 }
 
-func (m *Manager) startFlows(router *routerpkg.Router) error {
+func (m *Manager) startFlows(netConnection *netadapter.NetConnection, router *routerpkg.Router) error {
 	stop := make(chan error)
 	stopped := uint32(0)
 
-	peer, closed, err := handshake.HandleHandshake(m.context, router)
+	peer, closed, err := handshake.HandleHandshake(m.context, router, netConnection)
 	if err != nil {
 		return err
 	}

@@ -17,7 +17,7 @@ import (
 
 // RouterInitializer is a function that initializes a new
 // router to be used with a new connection
-type RouterInitializer func() (*routerpkg.Router, error)
+type RouterInitializer func(netConnection *NetConnection) (*routerpkg.Router, error)
 
 // NetAdapter is an abstraction layer over networking.
 // This type expects a RouteInitializer function. This
@@ -99,14 +99,18 @@ func (na *NetAdapter) Connections() []*NetConnection {
 	return netConnections
 }
 
+// ConnectionCount returns the count of the connected connections
+func (na *NetAdapter) ConnectionCount() int {
+	return len(na.connectionsToIDs)
+}
+
 func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
-	router, err := na.routerInitializer()
+	netConnection := newNetConnection(connection, nil)
+	router, err := na.routerInitializer(netConnection)
 	if err != nil {
 		return err
 	}
 	connection.Start(router)
-
-	netConnection := newNetConnection(connection, nil)
 
 	na.routersToConnections[router] = netConnection
 

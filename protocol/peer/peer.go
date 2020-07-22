@@ -1,6 +1,7 @@
 package peer
 
 import (
+	"github.com/kaspanet/kaspad/netadapter"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -15,6 +16,8 @@ import (
 
 // Peer holds data about a peer.
 type Peer struct {
+	connection *netadapter.NetConnection
+
 	selectedTipHashMtx sync.RWMutex
 	selectedTipHash    *daghash.Hash
 
@@ -39,8 +42,9 @@ type Peer struct {
 }
 
 // New returns a new Peer
-func New() *Peer {
+func New(connection *netadapter.NetConnection) *Peer {
 	return &Peer{
+		connection:             connection,
 		selectedTipRequestChan: make(chan struct{}),
 		ibdStartChan:           make(chan struct{}),
 	}
@@ -113,8 +117,7 @@ func (p *Peer) SetPingIdle() {
 }
 
 func (p *Peer) String() string {
-	//TODO(libp2p)
-	panic("unimplemented")
+	return p.connection.String()
 }
 
 // RequestSelectedTipIfRequired notifies the peer that requesting
@@ -155,4 +158,18 @@ func (p *Peer) StartIBD() {
 // IBD start is requested from this peer
 func (p *Peer) WaitForIBDStart() {
 	<-p.ibdStartChan
+}
+
+// Address returns the address associated with this connection
+func (p *Peer) Address() string {
+	return p.connection.Address()
+}
+
+// LastPingDuration returns the duration of the last ping to
+// this peer
+func (p *Peer) LastPingDuration() time.Duration {
+	p.pingLock.Lock()
+	defer p.pingLock.Unlock()
+
+	return p.lastPingDuration
 }
