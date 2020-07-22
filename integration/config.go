@@ -29,7 +29,6 @@ func configs(t *testing.T) (kaspad1Config, kaspad2Config *config.Config) {
 	kaspad2Config = commonConfig()
 	kaspad2Config.DataDir = randomDirectory(t)
 	kaspad2Config.Listeners = []string{kaspad2P2PAddress}
-	kaspad2Config.ConnectPeers = []string{kaspad1P2PAddress}
 	kaspad2Config.RPCListeners = []string{kaspad2RPCAddress}
 	kaspad2Config.DisableTLS = true
 

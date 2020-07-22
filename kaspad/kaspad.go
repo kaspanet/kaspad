@@ -28,9 +28,9 @@ type Kaspad struct {
 	cfg               *config.Config
 	rpcServer         *rpc.Server
 	addressManager    *addrmgr.AddrManager
-	protocolManager   *protocol.Manager
+	ProtocolManager   *protocol.Manager
 	connectionManager *connmanager.ConnectionManager
-	NetAdapter        *netadapter.NetAdapter
+	netAdapter        *netadapter.NetAdapter
 
 	started, shutdown int32
 }
@@ -44,7 +44,7 @@ func (k *Kaspad) Start() {
 
 	log.Trace("Starting kaspad")
 
-	err := k.protocolManager.Start()
+	err := k.ProtocolManager.Start()
 	if err != nil {
 		panics.Exit(log, fmt.Sprintf("Error starting the p2p protocol: %+v", err))
 	}
@@ -70,7 +70,7 @@ func (k *Kaspad) Stop() error {
 
 	k.connectionManager.Stop()
 
-	err := k.protocolManager.Stop()
+	err := k.ProtocolManager.Stop()
 	if err != nil {
 		log.Errorf("Error stopping the p2p protocol: %+v", err)
 	}
@@ -126,9 +126,9 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 	return &Kaspad{
 		cfg:               cfg,
 		rpcServer:         rpcServer,
-		protocolManager:   protocolManager,
+		ProtocolManager:   protocolManager,
 		connectionManager: connectionManager,
-		NetAdapter:        netAdapter,
+		netAdapter:        netAdapter,
 	}, nil
 }
 

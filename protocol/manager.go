@@ -48,6 +48,10 @@ func (m *Manager) IBDPeer() *peerpkg.Peer {
 	return m.context.IBDPeer()
 }
 
+func (m *Manager) SetPeerAddedCallback(callback flowcontext.PeerAddedCallback) {
+	m.context.SetPeerAddedCallback(callback)
+}
+
 // AddTransaction adds transaction to the mempool and propagates it.
 func (m *Manager) AddTransaction(tx *util.Tx) error {
 	return m.context.AddTransaction(tx)

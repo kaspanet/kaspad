@@ -72,10 +72,6 @@ func (s *gRPCServer) SetOnConnectedHandler(onConnectedHandler server.OnConnected
 	s.onConnectedHandler = onConnectedHandler
 }
 
-func (s *gRPCServer) OnConnectedHandler() server.OnConnectedHandler {
-	return s.onConnectedHandler
-}
-
 // Connect connects to the given address
 // This is part of the Server interface
 func (s *gRPCServer) Connect(address string) (server.Connection, error) {

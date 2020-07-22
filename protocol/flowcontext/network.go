@@ -24,6 +24,11 @@ func (f *FlowContext) AddToPeers(peer *peerpkg.Peer) error {
 	}
 
 	f.peers[peer.ID()] = peer
+
+	if f.peerAddedCallback != nil {
+		f.peerAddedCallback(peer)
+	}
+
 	return nil
 }
 
@@ -57,4 +62,10 @@ func (f *FlowContext) Peers() []*peerpkg.Peer {
 		i++
 	}
 	return peers
+}
+
+type PeerAddedCallback func(*peerpkg.Peer)
+
+func (f *FlowContext) SetPeerAddedCallback(callback PeerAddedCallback) {
+	f.peerAddedCallback = callback
 }

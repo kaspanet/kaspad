@@ -1,14 +1,15 @@
 package integration
 
 import (
-	"fmt"
 	"testing"
+	"time"
 )
 
 func TestIntegrationBasicSync(t *testing.T) {
 	kaspad1, kaspad2, client1, client2, teardown := setup(t)
 	defer teardown()
+	<-time.After(1 * time.Second)
 
-	// TODO: DELETE THIS BEFORE MERGE
-	fmt.Print(kaspad1, kaspad2, client1, client2)
+	connect(t, kaspad1, kaspad2, client1, client2)
+
 }

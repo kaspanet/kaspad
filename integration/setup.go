@@ -2,11 +2,8 @@ package integration
 
 import (
 	"path/filepath"
-	"sync"
 	"testing"
 	"time"
-
-	"github.com/kaspanet/kaspad/netadapter/server"
 
 	"github.com/kaspanet/kaspad/rpc/client"
 	rpcclient "github.com/kaspanet/kaspad/rpc/client"
@@ -25,12 +22,10 @@ func setup(t *testing.T) (kaspad1, kaspad2 *kaspadpkg.Kaspad, client1, client2 *
 		kaspad1Config, kaspad2Config,
 		kaspad1DatabaseContext, kaspad2DatabaseContext)
 
-	StartAndWaitForConnection(t, kaspad1, kaspad2)
+	kaspad1.Start()
+	kaspad2.Start()
 
 	client1, client2 = rpcClients(t)
-
-	verifyConnected(t, client1)
-	verifyConnected(t, client2)
 
 	return kaspad1, kaspad2, client1, client2,
 		func() { teardown(t, kaspad1DatabaseContext, kaspad2DatabaseContext, kaspad1, kaspad2) }
@@ -46,29 +41,6 @@ func rpcClients(t *testing.T) (client1, client2 *rpcclient.Client) {
 		t.Fatalf("Error getting RPC client for kaspad2: %+v", err)
 	}
 	return client1, client2
-}
-
-func StartAndWaitForConnection(t *testing.T, kaspad1, kaspad2 *kaspadpkg.Kaspad) {
-	kaspad1OnConnectedChan := make(chan struct{})
-	kaspad1OldOnConnectedHandler := kaspad1.NetAdapter.Server.OnConnectedHandler()
-	kaspad1.NetAdapter.Server.SetOnConnectedHandler(func(connection server.Connection) error {
-		err := kaspad1OldOnConnectedHandler(connection)
-		close(kaspad1OnConnectedChan)
-		return err
-	})
-
-	kaspad1.Start()
-	kaspad2.Start()
-
-	onConnectedWG := sync.WaitGroup{}
-	onConnectedWG.Add(2)
-
-	select {
-	case <-kaspad1OnConnectedChan:
-		kaspad1.NetAdapter.Server.SetOnConnectedHandler(kaspad1OldOnConnectedHandler)
-	case <-time.After(10 * time.Second):
-		t.Fatalf("Timed out waiting for the kaspads to connect")
-	}
 }
 
 func teardown(t *testing.T,
@@ -146,14 +118,4 @@ func rpcClient(rpcAddress string) (*client.Client, error) {
 func openDB(cfg *config.Config) (*dbaccess.DatabaseContext, error) {
 	dbPath := filepath.Join(cfg.DataDir, "db")
 	return dbaccess.New(dbPath)
-}
-
-func verifyConnected(t *testing.T, client *rpcclient.Client) {
-	connectedPeerInfo, err := client.GetConnectedPeerInfo()
-	if err != nil {
-		t.Fatalf("Error getting connected peer info from kaspad1")
-	}
-	if len(connectedPeerInfo) != 1 {
-		t.Errorf("Expected 1 connected peer, but got %d", len(connectedPeerInfo))
-	}
 }
