@@ -30,14 +30,14 @@ func (m *Manager) routerInitializer(netConnection *netadapter.NetConnection) (*r
 					// TODO(libp2p) Ban peer
 					panic("unimplemented")
 				}
-				err = m.context.NetAdapter().DisconnectAssociatedConnection(router)
+				err = m.context.NetAdapter().Disconnect(netConnection)
 				if err != nil {
 					panic(err)
 				}
 				return
 			}
 			if errors.Is(err, routerpkg.ErrTimeout) {
-				err = m.context.NetAdapter().DisconnectAssociatedConnection(router)
+				err = m.context.NetAdapter().Disconnect(netConnection)
 				if err != nil {
 					panic(err)
 				}
