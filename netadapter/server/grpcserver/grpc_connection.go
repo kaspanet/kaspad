@@ -21,6 +21,7 @@ type gRPCConnection struct {
 	stopChan              chan struct{}
 	clientConn            grpc.ClientConn
 	onDisconnectedHandler server.OnDisconnectedHandler
+	onBadMessageHandler   server.OnBadMessageHandler
 
 	isConnected uint32
 }
@@ -59,6 +60,10 @@ func (c *gRPCConnection) IsConnected() bool {
 
 func (c *gRPCConnection) SetOnDisconnectedHandler(onDisconnectedHandler server.OnDisconnectedHandler) {
 	c.onDisconnectedHandler = onDisconnectedHandler
+}
+
+func (c *gRPCConnection) SetOnBadMessageHandler(onBadMessageHandler server.OnBadMessageHandler) {
+	c.onBadMessageHandler = onBadMessageHandler
 }
 
 // Disconnect disconnects the connection

@@ -33,3 +33,9 @@ func (c *NetConnection) ID() *id.ID {
 func (c *NetConnection) Address() string {
 	return c.connection.Address().String()
 }
+
+// SetOnBadMessageHandler sets a handler function
+// for bad messages
+func (c *NetConnection) SetOnBadMessageHandler(onBadMessageHandler server.OnBadMessageHandler) {
+	c.connection.SetOnBadMessageHandler(onBadMessageHandler)
+}
