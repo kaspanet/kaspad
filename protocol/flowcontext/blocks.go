@@ -6,7 +6,6 @@ import (
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
-	"github.com/pkg/errors"
 	"sync/atomic"
 )
 
@@ -49,17 +48,8 @@ func (f *FlowContext) SharedRequestedBlocks() *blockrelay.SharedRequestedBlocks 
 	return f.sharedRequestedBlocks
 }
 
-// AddBlock adds the given block to the DAG and propagates it.
+// AddBlock adds the given block to the DAG.
 func (f *FlowContext) AddBlock(block *util.Block, flags blockdag.BehaviorFlags) error {
-	isOrphan, isDelayed, err := f.DAG().ProcessBlock(block, flags)
-	if err != nil {
-		return err
-	}
-	if isOrphan {
-		return errors.Errorf("cannot add orphan block %s", block.Hash())
-	}
-	if isDelayed {
-		return errors.Errorf("cannot add delayed block %s", block.Hash())
-	}
-	return nil
+	_, _, err := f.DAG().ProcessBlock(block, flags)
+	return err
 }

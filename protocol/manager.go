@@ -58,7 +58,7 @@ func (m *Manager) AddTransaction(tx *util.Tx) error {
 	return m.context.AddTransaction(tx)
 }
 
-// AddBlock adds the given block to the DAG and propagates it.
+// AddBlock adds the given block to the DAG.
 func (m *Manager) AddBlock(block *util.Block, flags blockdag.BehaviorFlags) error {
 	return m.context.AddBlock(block, flags)
 }
