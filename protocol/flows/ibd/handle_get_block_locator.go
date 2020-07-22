@@ -13,33 +13,47 @@ type GetBlockLocatorContext interface {
 	DAG() *blockdag.BlockDAG
 }
 
+type handleGetBlockLocatorFlow struct {
+	GetBlockLocatorContext
+	incomingRoute, outgoingRoute *router.Route
+}
+
 // HandleGetBlockLocator handles getBlockLocator messages
 func HandleGetBlockLocator(context GetBlockLocatorContext, incomingRoute *router.Route,
 	outgoingRoute *router.Route) error {
 
+	flow := &handleGetBlockLocatorFlow{
+		GetBlockLocatorContext: context,
+		incomingRoute:          incomingRoute,
+		outgoingRoute:          outgoingRoute,
+	}
+	return flow.start()
+}
+
+func (flow *handleGetBlockLocatorFlow) start() error {
 	for {
-		lowHash, highHash, err := receiveGetBlockLocator(incomingRoute)
+		lowHash, highHash, err := flow.receiveGetBlockLocator()
 		if err != nil {
 			return err
 		}
 
-		locator, err := context.DAG().BlockLocatorFromHashes(highHash, lowHash)
+		locator, err := flow.DAG().BlockLocatorFromHashes(highHash, lowHash)
 		if err != nil || len(locator) == 0 {
 			return protocolerrors.Errorf(true, "couldn't build a block "+
 				"locator between blocks %s and %s", lowHash, highHash)
 		}
 
-		err = sendBlockLocator(outgoingRoute, locator)
+		err = flow.sendBlockLocator(locator)
 		if err != nil {
 			return err
 		}
 	}
 }
 
-func receiveGetBlockLocator(incomingRoute *router.Route) (lowHash *daghash.Hash,
+func (flow *handleGetBlockLocatorFlow) receiveGetBlockLocator() (lowHash *daghash.Hash,
 	highHash *daghash.Hash, err error) {
 
-	message, err := incomingRoute.Dequeue()
+	message, err := flow.incomingRoute.Dequeue()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -48,9 +62,9 @@ func receiveGetBlockLocator(incomingRoute *router.Route) (lowHash *daghash.Hash,
 	return msgGetBlockLocator.LowHash, msgGetBlockLocator.HighHash, nil
 }
 
-func sendBlockLocator(outgoingRoute *router.Route, locator blockdag.BlockLocator) error {
+func (flow *handleGetBlockLocatorFlow) sendBlockLocator(locator blockdag.BlockLocator) error {
 	msgBlockLocator := wire.NewMsgBlockLocator(locator)
-	err := outgoingRoute.Enqueue(msgBlockLocator)
+	err := flow.outgoingRoute.Enqueue(msgBlockLocator)
 	if err != nil {
 		return err
 	}

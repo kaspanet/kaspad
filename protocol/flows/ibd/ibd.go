@@ -19,49 +19,65 @@ type HandleIBDContext interface {
 	FinishIBD()
 }
 
-// HandleIBD waits for IBD start and handles it when IBD is triggered for this peer
-func HandleIBD(context HandleIBDContext, incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer) error {
+type handleIBDFlow struct {
+	HandleIBDContext
+	incomingRoute, outgoingRoute *router.Route
+	peer                         *peerpkg.Peer
+}
 
+// HandleIBD waits for IBD start and handles it when IBD is triggered for this peer
+func HandleIBD(context HandleIBDContext, incomingRoute *router.Route, outgoingRoute *router.Route,
+	peer *peerpkg.Peer) error {
+
+	flow := &handleIBDFlow{
+		HandleIBDContext: context,
+		incomingRoute:    incomingRoute,
+		outgoingRoute:    outgoingRoute,
+		peer:             peer,
+	}
+	return flow.start()
+}
+
+func (flow *handleIBDFlow) start() error {
 	for {
-		err := runIBD(context, incomingRoute, outgoingRoute, peer)
+		err := flow.runIBD()
 		if err != nil {
 			return err
 		}
 	}
 }
 
-func runIBD(context HandleIBDContext, incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer) error {
+func (flow *handleIBDFlow) runIBD() error {
+	flow.peer.WaitForIBDStart()
+	defer flow.FinishIBD()
 
-	peer.WaitForIBDStart()
-	defer context.FinishIBD()
-
-	peerSelectedTipHash := peer.SelectedTipHash()
-	highestSharedBlockHash, err := findHighestSharedBlockHash(context, incomingRoute, outgoingRoute, peerSelectedTipHash)
+	peerSelectedTipHash := flow.peer.SelectedTipHash()
+	highestSharedBlockHash, err := flow.findHighestSharedBlockHash(peerSelectedTipHash)
 	if err != nil {
 		return err
 	}
-	if context.DAG().IsKnownFinalizedBlock(highestSharedBlockHash) {
+	if flow.DAG().IsKnownFinalizedBlock(highestSharedBlockHash) {
 		return protocolerrors.Errorf(false, "cannot initiate "+
 			"IBD with peer %s because the highest shared chain block (%s) is "+
-			"below the finality point", peer, highestSharedBlockHash)
+			"below the finality point", flow.peer, highestSharedBlockHash)
 	}
 
-	return downloadBlocks(context, incomingRoute, outgoingRoute, highestSharedBlockHash, peerSelectedTipHash)
+	return flow.downloadBlocks(highestSharedBlockHash, peerSelectedTipHash)
 }
 
-func findHighestSharedBlockHash(context HandleIBDContext, incomingRoute *router.Route, outgoingRoute *router.Route,
-	peerSelectedTipHash *daghash.Hash) (lowHash *daghash.Hash, err error) {
+func (flow *handleIBDFlow) findHighestSharedBlockHash(peerSelectedTipHash *daghash.Hash) (lowHash *daghash.Hash,
+	err error) {
 
-	lowHash = context.DAG().Params.GenesisHash
+	lowHash = flow.DAG().Params.GenesisHash
 	highHash := peerSelectedTipHash
 
 	for {
-		err := sendGetBlockLocator(outgoingRoute, lowHash, highHash)
+		err := flow.sendGetBlockLocator(lowHash, highHash)
 		if err != nil {
 			return nil, err
 		}
 
-		blockLocatorHashes, err := receiveBlockLocator(incomingRoute)
+		blockLocatorHashes, err := flow.receiveBlockLocator()
 		if err != nil {
 			return nil, err
 		}
@@ -70,23 +86,22 @@ func findHighestSharedBlockHash(context HandleIBDContext, incomingRoute *router.
 		// If it is, return it. If it isn't, we need to narrow our
 		// getBlockLocator request and try again.
 		locatorHighHash := blockLocatorHashes[0]
-		if context.DAG().IsInDAG(locatorHighHash) {
+		if flow.DAG().IsInDAG(locatorHighHash) {
 			return locatorHighHash, nil
 		}
 
-		highHash, lowHash = context.DAG().FindNextLocatorBoundaries(blockLocatorHashes)
+		highHash, lowHash = flow.DAG().FindNextLocatorBoundaries(blockLocatorHashes)
 	}
 }
 
-func sendGetBlockLocator(outgoingRoute *router.Route, lowHash *daghash.Hash,
-	highHash *daghash.Hash) error {
+func (flow *handleIBDFlow) sendGetBlockLocator(lowHash *daghash.Hash, highHash *daghash.Hash) error {
 
 	msgGetBlockLocator := wire.NewMsgGetBlockLocator(highHash, lowHash)
-	return outgoingRoute.Enqueue(msgGetBlockLocator)
+	return flow.outgoingRoute.Enqueue(msgGetBlockLocator)
 }
 
-func receiveBlockLocator(incomingRoute *router.Route) (blockLocatorHashes []*daghash.Hash, err error) {
-	message, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+func (flow *handleIBDFlow) receiveBlockLocator() (blockLocatorHashes []*daghash.Hash, err error) {
+	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -99,21 +114,20 @@ func receiveBlockLocator(incomingRoute *router.Route) (blockLocatorHashes []*dag
 	return msgBlockLocator.BlockLocatorHashes, nil
 }
 
-func downloadBlocks(context HandleIBDContext, incomingRoute *router.Route, outgoingRoute *router.Route,
-	highestSharedBlockHash *daghash.Hash,
+func (flow *handleIBDFlow) downloadBlocks(highestSharedBlockHash *daghash.Hash,
 	peerSelectedTipHash *daghash.Hash) error {
 
-	err := sendGetBlocks(outgoingRoute, highestSharedBlockHash, peerSelectedTipHash)
+	err := flow.sendGetBlocks(highestSharedBlockHash, peerSelectedTipHash)
 	if err != nil {
 		return err
 	}
 
 	for {
-		msgIBDBlock, err := receiveIBDBlock(incomingRoute)
+		msgIBDBlock, err := flow.receiveIBDBlock()
 		if err != nil {
 			return err
 		}
-		err = processIBDBlock(context, msgIBDBlock)
+		err = flow.processIBDBlock(msgIBDBlock)
 		if err != nil {
 			return err
 		}
@@ -123,15 +137,15 @@ func downloadBlocks(context HandleIBDContext, incomingRoute *router.Route, outgo
 	}
 }
 
-func sendGetBlocks(outgoingRoute *router.Route, highestSharedBlockHash *daghash.Hash,
+func (flow *handleIBDFlow) sendGetBlocks(highestSharedBlockHash *daghash.Hash,
 	peerSelectedTipHash *daghash.Hash) error {
 
 	msgGetBlockInvs := wire.NewMsgGetBlocks(highestSharedBlockHash, peerSelectedTipHash)
-	return outgoingRoute.Enqueue(msgGetBlockInvs)
+	return flow.outgoingRoute.Enqueue(msgGetBlockInvs)
 }
 
-func receiveIBDBlock(incomingRoute *router.Route) (msgIBDBlock *wire.MsgIBDBlock, err error) {
-	message, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+func (flow *handleIBDFlow) receiveIBDBlock() (msgIBDBlock *wire.MsgIBDBlock, err error) {
+	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -144,13 +158,13 @@ func receiveIBDBlock(incomingRoute *router.Route) (msgIBDBlock *wire.MsgIBDBlock
 	return msgIBDBlock, nil
 }
 
-func processIBDBlock(context HandleIBDContext, msgIBDBlock *wire.MsgIBDBlock) error {
+func (flow *handleIBDFlow) processIBDBlock(msgIBDBlock *wire.MsgIBDBlock) error {
 
 	block := util.NewBlock(&msgIBDBlock.MsgBlock)
-	if context.DAG().IsInDAG(block.Hash()) {
+	if flow.DAG().IsInDAG(block.Hash()) {
 		return nil
 	}
-	isOrphan, isDelayed, err := context.DAG().ProcessBlock(block, blockdag.BFNone)
+	isOrphan, isDelayed, err := flow.DAG().ProcessBlock(block, blockdag.BFNone)
 	if err != nil {
 		return err
 	}
@@ -162,7 +176,7 @@ func processIBDBlock(context HandleIBDContext, msgIBDBlock *wire.MsgIBDBlock) er
 		return protocolerrors.Errorf(false, "received delayed block %s "+
 			"during IBD", block.Hash())
 	}
-	err = context.OnNewBlock(block)
+	err = flow.OnNewBlock(block)
 	if err != nil {
 		panic(err)
 	}

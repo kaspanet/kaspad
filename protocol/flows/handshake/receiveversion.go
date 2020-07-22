@@ -19,12 +19,29 @@ var (
 	minAcceptableProtocolVersion = wire.ProtocolVersion
 )
 
+type receiveVersionFlow struct {
+	HandleHandshakeContext
+	incomingRoute, outgoingRoute *router.Route
+	peer                         *peerpkg.Peer
+}
+
 // ReceiveVersion waits for the peer to send a version message, sends a
 // verack in response, and updates its info accordingly.
 func ReceiveVersion(context HandleHandshakeContext, incomingRoute *router.Route, outgoingRoute *router.Route,
 	peer *peerpkg.Peer) (*wire.NetAddress, error) {
 
-	message, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	flow := &receiveVersionFlow{
+		HandleHandshakeContext: context,
+		incomingRoute:          incomingRoute,
+		outgoingRoute:          outgoingRoute,
+		peer:                   peer,
+	}
+
+	return flow.start()
+}
+
+func (flow *receiveVersionFlow) start() (*wire.NetAddress, error) {
+	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +51,7 @@ func ReceiveVersion(context HandleHandshakeContext, incomingRoute *router.Route,
 		return nil, protocolerrors.New(true, "a version message must precede all others")
 	}
 
-	if !allowSelfConnections && context.NetAdapter().ID().IsEqual(msgVersion.ID) {
+	if !allowSelfConnections && flow.NetAdapter().ID().IsEqual(msgVersion.ID) {
 		return nil, protocolerrors.New(true, "connected to self")
 	}
 
@@ -51,7 +68,7 @@ func ReceiveVersion(context HandleHandshakeContext, incomingRoute *router.Route,
 	}
 
 	// Disconnect from partial nodes in networks that don't allow them
-	if !context.DAG().Params.EnableNonNativeSubnetworks && msgVersion.SubnetworkID != nil {
+	if !flow.DAG().Params.EnableNonNativeSubnetworks && msgVersion.SubnetworkID != nil {
 		return nil, protocolerrors.New(true, "partial nodes are not allowed")
 	}
 
@@ -68,11 +85,10 @@ func ReceiveVersion(context HandleHandshakeContext, incomingRoute *router.Route,
 	//	return nil, false, errors.New("incompatible subnetworks")
 	//}
 
-	peer.UpdateFieldsFromMsgVersion(msgVersion)
-	err = outgoingRoute.Enqueue(wire.NewMsgVerAck())
+	flow.peer.UpdateFieldsFromMsgVersion(msgVersion)
+	err = flow.outgoingRoute.Enqueue(wire.NewMsgVerAck())
 	if err != nil {
 		return nil, err
 	}
-	// TODO(libp2p) Register peer ID
 	return msgVersion.Address, nil
 }
