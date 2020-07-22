@@ -12,20 +12,34 @@ type GetBlocksContext interface {
 	DAG() *blockdag.BlockDAG
 }
 
+type handleGetBlocksFlow struct {
+	GetBlocksContext
+	incomingRoute, outgoingRoute *router.Route
+}
+
 // HandleGetBlocks handles getBlocks messages
 func HandleGetBlocks(context GetBlocksContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
+	flow := &handleGetBlocksFlow{
+		GetBlocksContext: context,
+		incomingRoute:    incomingRoute,
+		outgoingRoute:    outgoingRoute,
+	}
+	return flow.start()
+}
+
+func (flow *handleGetBlocksFlow) start() error {
 	for {
-		lowHash, highHash, err := receiveGetBlocks(incomingRoute)
+		lowHash, highHash, err := receiveGetBlocks(flow.incomingRoute)
 		if err != nil {
 			return err
 		}
 
-		msgIBDBlocks, err := buildMsgIBDBlocks(context, lowHash, highHash)
+		msgIBDBlocks, err := flow.buildMsgIBDBlocks(lowHash, highHash)
 		if err != nil {
 			return err
 		}
 
-		err = sendMsgIBDBlocks(outgoingRoute, msgIBDBlocks)
+		err = flow.sendMsgIBDBlocks(msgIBDBlocks)
 		if err != nil {
 			return nil
 		}
@@ -44,18 +58,18 @@ func receiveGetBlocks(incomingRoute *router.Route) (lowHash *daghash.Hash,
 	return msgGetBlocks.LowHash, msgGetBlocks.HighHash, nil
 }
 
-func buildMsgIBDBlocks(context GetBlocksContext, lowHash *daghash.Hash,
+func (flow *handleGetBlocksFlow) buildMsgIBDBlocks(lowHash *daghash.Hash,
 	highHash *daghash.Hash) ([]*wire.MsgIBDBlock, error) {
 
 	const maxHashesInMsgIBDBlocks = wire.MaxInvPerMsg
-	blockHashes, err := context.DAG().AntiPastHashesBetween(lowHash, highHash, maxHashesInMsgIBDBlocks)
+	blockHashes, err := flow.DAG().AntiPastHashesBetween(lowHash, highHash, maxHashesInMsgIBDBlocks)
 	if err != nil {
 		return nil, err
 	}
 
 	msgIBDBlocks := make([]*wire.MsgIBDBlock, len(blockHashes))
 	for i, blockHash := range blockHashes {
-		block, err := context.DAG().BlockByHash(blockHash)
+		block, err := flow.DAG().BlockByHash(blockHash)
 		if err != nil {
 			return nil, err
 		}
@@ -65,9 +79,9 @@ func buildMsgIBDBlocks(context GetBlocksContext, lowHash *daghash.Hash,
 	return msgIBDBlocks, nil
 }
 
-func sendMsgIBDBlocks(outgoingRoute *router.Route, msgIBDBlocks []*wire.MsgIBDBlock) error {
+func (flow *handleGetBlocksFlow) sendMsgIBDBlocks(msgIBDBlocks []*wire.MsgIBDBlock) error {
 	for _, msgIBDBlock := range msgIBDBlocks {
-		err := outgoingRoute.Enqueue(msgIBDBlock)
+		err := flow.outgoingRoute.Enqueue(msgIBDBlock)
 		if err != nil {
 			return err
 		}

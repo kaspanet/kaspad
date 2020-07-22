@@ -22,38 +22,52 @@ type RelayedTransactionsContext interface {
 	Broadcast(message wire.Message) error
 }
 
+type handleRelayedTransactionsFlow struct {
+	RelayedTransactionsContext
+	incomingRoute, outgoingRoute *router.Route
+	invsQueue                    []*wire.MsgInvTransaction
+}
+
 // HandleRelayedTransactions listens to wire.MsgInvTransaction messages, requests their corresponding transactions if they
 // are missing, adds them to the mempool and propagates them to the rest of the network.
 func HandleRelayedTransactions(context RelayedTransactionsContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
+	flow := &handleRelayedTransactionsFlow{
+		RelayedTransactionsContext: context,
+		incomingRoute:              incomingRoute,
+		outgoingRoute:              outgoingRoute,
+		invsQueue:                  make([]*wire.MsgInvTransaction, 0),
+	}
+	return flow.start()
+}
 
-	invsQueue := make([]*wire.MsgInvTransaction, 0)
+func (flow *handleRelayedTransactionsFlow) start() error {
 	for {
-		inv, err := readInv(incomingRoute, &invsQueue)
+		inv, err := flow.readInv()
 		if err != nil {
 			return err
 		}
 
-		requestedIDs, err := requestInvTransactions(context, outgoingRoute, inv)
+		requestedIDs, err := flow.requestInvTransactions(inv)
 		if err != nil {
 			return err
 		}
 
-		err = receiveTransactions(context, requestedIDs, incomingRoute, &invsQueue)
+		err = flow.receiveTransactions(requestedIDs)
 		if err != nil {
 			return err
 		}
 	}
 }
 
-func requestInvTransactions(context RelayedTransactionsContext, outgoingRoute *router.Route,
+func (flow *handleRelayedTransactionsFlow) requestInvTransactions(
 	inv *wire.MsgInvTransaction) (requestedIDs []*daghash.TxID, err error) {
 
 	idsToRequest := make([]*daghash.TxID, 0, len(inv.TxIDS))
 	for _, txID := range inv.TxIDS {
-		if isKnownTransaction(context, txID) {
+		if flow.isKnownTransaction(txID) {
 			continue
 		}
-		exists := context.SharedRequestedTransactions().addIfNotExists(txID)
+		exists := flow.SharedRequestedTransactions().addIfNotExists(txID)
 		if exists {
 			continue
 		}
@@ -65,18 +79,18 @@ func requestInvTransactions(context RelayedTransactionsContext, outgoingRoute *r
 	}
 
 	msgGetTransactions := wire.NewMsgGetTransactions(idsToRequest)
-	err = outgoingRoute.Enqueue(msgGetTransactions)
+	err = flow.outgoingRoute.Enqueue(msgGetTransactions)
 	if err != nil {
-		context.SharedRequestedTransactions().removeMany(idsToRequest)
+		flow.SharedRequestedTransactions().removeMany(idsToRequest)
 		return nil, err
 	}
 	return idsToRequest, nil
 }
 
-func isKnownTransaction(context RelayedTransactionsContext, txID *daghash.TxID) bool {
+func (flow *handleRelayedTransactionsFlow) isKnownTransaction(txID *daghash.TxID) bool {
 	// Ask the transaction memory pool if the transaction is known
 	// to it in any form (main pool or orphan).
-	if context.TxPool().HaveTransaction(txID) {
+	if flow.TxPool().HaveTransaction(txID) {
 		return true
 	}
 
@@ -91,7 +105,7 @@ func isKnownTransaction(context RelayedTransactionsContext, txID *daghash.TxID) 
 	prevOut := wire.Outpoint{TxID: *txID}
 	for i := uint32(0); i < 2; i++ {
 		prevOut.Index = i
-		_, ok := context.DAG().GetUTXOEntry(prevOut)
+		_, ok := flow.DAG().GetUTXOEntry(prevOut)
 		if ok {
 			return true
 		}
@@ -99,15 +113,15 @@ func isKnownTransaction(context RelayedTransactionsContext, txID *daghash.TxID) 
 	return false
 }
 
-func readInv(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvTransaction) (*wire.MsgInvTransaction, error) {
+func (flow *handleRelayedTransactionsFlow) readInv() (*wire.MsgInvTransaction, error) {
 
-	if len(*invsQueue) > 0 {
+	if len(flow.invsQueue) > 0 {
 		var inv *wire.MsgInvTransaction
-		inv, *invsQueue = (*invsQueue)[0], (*invsQueue)[1:]
+		inv, flow.invsQueue = flow.invsQueue[0], flow.invsQueue[1:]
 		return inv, nil
 	}
 
-	msg, err := incomingRoute.Dequeue()
+	msg, err := flow.incomingRoute.Dequeue()
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +134,7 @@ func readInv(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvTransaction) 
 	return inv, nil
 }
 
-func broadcastAcceptedTransactions(context RelayedTransactionsContext, acceptedTxs []*mempool.TxDesc) error {
+func (flow *handleRelayedTransactionsFlow) broadcastAcceptedTransactions(acceptedTxs []*mempool.TxDesc) error {
 	// TODO(libp2p) Add mechanism to avoid sending to other peers invs that are known to them (e.g. mruinvmap)
 	// TODO(libp2p) Consider broadcasting in bulks
 	idsToBroadcast := make([]*daghash.TxID, len(acceptedTxs))
@@ -128,24 +142,24 @@ func broadcastAcceptedTransactions(context RelayedTransactionsContext, acceptedT
 		idsToBroadcast[i] = tx.Tx.ID()
 	}
 	inv := wire.NewMsgTxInv(idsToBroadcast)
-	return context.Broadcast(inv)
+	return flow.Broadcast(inv)
 }
 
 // readMsgTx returns the next msgTx in incomingRoute, and populates invsQueue with any inv messages that meanwhile arrive.
 //
 // Note: this function assumes msgChan can contain only wire.MsgInvTransaction and wire.MsgBlock messages.
-func readMsgTx(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvTransaction) (
+func (flow *handleRelayedTransactionsFlow) readMsgTx() (
 	msgTx *wire.MsgTx, err error) {
 
 	for {
-		message, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+		message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 		if err != nil {
 			return nil, err
 		}
 
 		switch message := message.(type) {
 		case *wire.MsgInvTransaction:
-			*invsQueue = append(*invsQueue, message)
+			flow.invsQueue = append(flow.invsQueue, message)
 		case *wire.MsgTx:
 			return message, nil
 		default:
@@ -154,14 +168,13 @@ func readMsgTx(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvTransaction
 	}
 }
 
-func receiveTransactions(context RelayedTransactionsContext, requestedTransactions []*daghash.TxID, incomingRoute *router.Route,
-	invsQueue *[]*wire.MsgInvTransaction) error {
+func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransactions []*daghash.TxID) error {
 
 	// In case the function returns earlier than expected, we want to make sure sharedRequestedTransactions is
 	// clean from any pending transactions.
-	defer context.SharedRequestedTransactions().removeMany(requestedTransactions)
+	defer flow.SharedRequestedTransactions().removeMany(requestedTransactions)
 	for _, expectedID := range requestedTransactions {
-		msgTx, err := readMsgTx(incomingRoute, invsQueue)
+		msgTx, err := flow.readMsgTx()
 		if err != nil {
 			return err
 		}
@@ -170,7 +183,7 @@ func receiveTransactions(context RelayedTransactionsContext, requestedTransactio
 			return protocolerrors.Errorf(true, "expected transaction %s", expectedID)
 		}
 
-		acceptedTxs, err := context.TxPool().ProcessTransaction(tx, true, 0) // TODO(libp2p) Use the peer ID for the mempool tag
+		acceptedTxs, err := flow.TxPool().ProcessTransaction(tx, true, 0) // TODO(libp2p) Use the peer ID for the mempool tag
 		if err != nil {
 			// When the error is a rule error, it means the transaction was
 			// simply rejected as opposed to something actually going wrong,
@@ -196,7 +209,7 @@ func receiveTransactions(context RelayedTransactionsContext, requestedTransactio
 
 			return protocolerrors.Errorf(true, "rejected transaction %s", tx.ID())
 		}
-		err = broadcastAcceptedTransactions(context, acceptedTxs)
+		err = flow.broadcastAcceptedTransactions(acceptedTxs)
 		if err != nil {
 			panic(err)
 		}

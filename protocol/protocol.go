@@ -3,6 +3,7 @@ package protocol
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/netadapter"
+	"github.com/kaspanet/kaspad/protocol/flows/ibd/selectedtip"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/protocol/flows/handshake"
@@ -139,13 +140,13 @@ func (m *Manager) addIBDFlows(router *routerpkg.Router, stopped *uint32, stop ch
 
 	addFlow("RequestSelectedTip", router, []wire.MessageCommand{wire.CmdSelectedTip}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ibd.RequestSelectedTip(m.context, incomingRoute, outgoingRoute, peer)
+			return selectedtip.RequestSelectedTip(m.context, incomingRoute, outgoingRoute, peer)
 		},
 	)
 
 	addFlow("HandleGetSelectedTip", router, []wire.MessageCommand{wire.CmdGetSelectedTip}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ibd.HandleGetSelectedTip(m.context, incomingRoute, outgoingRoute)
+			return selectedtip.HandleGetSelectedTip(m.context, incomingRoute, outgoingRoute)
 		},
 	)
 
