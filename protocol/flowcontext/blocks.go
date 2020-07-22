@@ -51,7 +51,7 @@ func (f *FlowContext) SharedRequestedBlocks() *blockrelay.SharedRequestedBlocks 
 
 // AddBlock adds the given block to the DAG and propagates it.
 func (f *FlowContext) AddBlock(block *util.Block) error {
-	isOrphan, isDelayed, err := f.DAG().ProcessBlock(block, blockdag.BFDisallowDelay)
+	isOrphan, isDelayed, err := f.DAG().ProcessBlock(block, blockdag.BFDisallowDelay|blockdag.BFDisallowOrphans)
 	if err != nil {
 		return err
 	}

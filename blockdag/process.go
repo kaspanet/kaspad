@@ -49,6 +49,10 @@ const (
 	// This is used for the case where a block is submitted through RPC.
 	BFDisallowDelay
 
+	// BFDisallowOrphans is set to indicate that an orphan block should be rejected.
+	// This is used for the case where a block is submitted through RPC.
+	BFDisallowOrphans
+
 	// BFNone is a convenience value to specifically indicate no flags.
 	BFNone BehaviorFlags = 0
 )
@@ -151,6 +155,7 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 	isAfterDelay := flags&BFAfterDelay == BFAfterDelay
 	wasBlockStored := flags&BFWasStored == BFWasStored
 	disallowDelay := flags&BFDisallowDelay == BFDisallowDelay
+	disallowOrphans := flags&BFDisallowOrphans == BFDisallowOrphans
 
 	blockHash := block.Hash()
 	log.Tracef("Processing block %s", blockHash)
@@ -198,6 +203,10 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 		if !dag.IsInDAG(parentHash) {
 			missingParents = append(missingParents, parentHash)
 		}
+	}
+	if len(missingParents) > 0 && disallowOrphans {
+		str := fmt.Sprintf("Cannot process orphan blocks while the BFDisallowOrphans flag is raised %s", blockHash)
+		return false, true, ruleError(ErrOrphanBlockIsNotAllowed, str)
 	}
 
 	// Handle the case of a block with a valid timestamp(non-delayed) which points to a delayed block.
