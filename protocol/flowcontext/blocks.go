@@ -48,7 +48,7 @@ func (f *FlowContext) SharedRequestedBlocks() *blockrelay.SharedRequestedBlocks 
 	return f.sharedRequestedBlocks
 }
 
-// AddBlock adds the given block to the DAG.
+// AddBlock adds the given block to the DAG and propagates it.
 func (f *FlowContext) AddBlock(block *util.Block, flags blockdag.BehaviorFlags) error {
 	_, _, err := f.DAG().ProcessBlock(block, flags)
 	return err
