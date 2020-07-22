@@ -7,11 +7,9 @@ import (
 	"github.com/kaspanet/kaspad/protocol/peer"
 
 	kaspadpkg "github.com/kaspanet/kaspad/kaspad"
-
-	rpcclient "github.com/kaspanet/kaspad/rpc/client"
 )
 
-func connect(t *testing.T, kaspad1, kaspad2 *kaspadpkg.Kaspad, client1, client2 *rpcclient.Client) {
+func connect(t *testing.T, kaspad1, kaspad2 *kaspadpkg.Kaspad, client1, client2 *rpcClient) {
 	kaspad1OnConnectedChan := make(chan struct{})
 	kaspad1.ProtocolManager.SetPeerAddedCallback(func(peer *peer.Peer) {
 		close(kaspad1OnConnectedChan)
@@ -24,14 +22,14 @@ func connect(t *testing.T, kaspad1, kaspad2 *kaspadpkg.Kaspad, client1, client2 
 
 	select {
 	case <-kaspad1OnConnectedChan:
-	case <-time.After(10 * time.Second):
+	case <-time.After(defaultTimeout):
 		t.Fatalf("Timed out waiting for the kaspads to connect")
 	}
 
 	verifyConnected(t, client1)
 	verifyConnected(t, client2)
 }
-func verifyConnected(t *testing.T, client *rpcclient.Client) {
+func verifyConnected(t *testing.T, client *rpcClient) {
 	connectedPeerInfo, err := client.GetConnectedPeerInfo()
 	if err != nil {
 		t.Fatalf("Error getting connected peer info from kaspad1")
