@@ -57,6 +57,7 @@ func TestErrorCodeStringer(t *testing.T) {
 		{ErrInvalidPayloadHash, "ErrInvalidPayloadHash"},
 		{ErrInvalidParentsRelation, "ErrInvalidParentsRelation"},
 		{ErrDelayedBlockIsNotAllowed, "ErrDelayedBlockIsNotAllowed"},
+		{ErrOrphanBlockIsNotAllowed, "ErrOrphanBlockIsNotAllowed"},
 		{0xffff, "Unknown ErrorCode (65535)"},
 	}
 
