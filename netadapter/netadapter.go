@@ -248,12 +248,6 @@ func (na *NetAdapter) GetBestLocalAddress() (*wire.NetAddress, error) {
 	return nil, errors.New("no address was found")
 }
 
-// DisconnectAssociatedConnection disconnects from the connection associated with the given router.
-func (na *NetAdapter) DisconnectAssociatedConnection(router *routerpkg.Router) error {
-	netConnection := na.routersToConnections[router]
-	return na.Disconnect(netConnection)
-}
-
 // Disconnect disconnects the given connection
 func (na *NetAdapter) Disconnect(netConnection *NetConnection) error {
 	err := netConnection.connection.Disconnect()
