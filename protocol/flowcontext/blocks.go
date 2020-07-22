@@ -1,10 +1,12 @@
 package flowcontext
 
 import (
+	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/protocol/flows/blockrelay"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
 	"sync/atomic"
 )
 
@@ -49,6 +51,15 @@ func (f *FlowContext) SharedRequestedBlocks() *blockrelay.SharedRequestedBlocks 
 
 // AddBlock adds the given block to the DAG and propagates it.
 func (f *FlowContext) AddBlock(block *util.Block) error {
-	// TODO(libp2p): unimplemented
-	panic("unimplemented")
+	isOrphan, isDelayed, err := f.DAG().ProcessBlock(block, blockdag.BFDisallowDelay)
+	if err != nil {
+		return err
+	}
+	if isOrphan {
+		return errors.Errorf("cannot add orphan block %s", block.Hash())
+	}
+	if isDelayed {
+		return errors.Errorf("cannot add delayed block %s", block.Hash())
+	}
+	return nil
 }
