@@ -258,6 +258,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrInvalidPayloadHash:        "ErrInvalidPayloadHash",
 	ErrInvalidParentsRelation:    "ErrInvalidParentsRelation",
 	ErrDelayedBlockIsNotAllowed:  "ErrDelayedBlockIsNotAllowed",
+	ErrOrphanBlockIsNotAllowed:   "ErrOrphanBlockIsNotAllowed",
 }
 
 // String returns the ErrorCode as a human-readable name.
