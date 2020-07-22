@@ -15,6 +15,7 @@ type SendPingsContext interface {
 }
 
 type sendPingsFlow struct {
+	SendPingsContext
 	incomingRoute, outgoingRoute *router.Route
 	peer                         *peerpkg.Peer
 }
@@ -22,11 +23,12 @@ type sendPingsFlow struct {
 // SendPings starts sending MsgPings every pingInterval seconds to the
 // given peer.
 // This function assumes that incomingRoute will only return MsgPong.
-func SendPings(_ SendPingsContext, incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer) error {
+func SendPings(context SendPingsContext, incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer) error {
 	flow := &sendPingsFlow{
-		incomingRoute: incomingRoute,
-		outgoingRoute: outgoingRoute,
-		peer:          peer,
+		SendPingsContext: context,
+		incomingRoute:    incomingRoute,
+		outgoingRoute:    outgoingRoute,
+		peer:             peer,
 	}
 	return flow.start()
 }

@@ -10,15 +10,17 @@ type ReceivePingsContext interface {
 }
 
 type receivePingsFlow struct {
+	ReceivePingsContext
 	incomingRoute, outgoingRoute *router.Route
 }
 
 // ReceivePings handles all ping messages coming through incomingRoute.
 // This function assumes that incomingRoute will only return MsgPing.
-func ReceivePings(_ ReceivePingsContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
+func ReceivePings(context ReceivePingsContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
 	flow := &receivePingsFlow{
-		incomingRoute: incomingRoute,
-		outgoingRoute: outgoingRoute,
+		ReceivePingsContext: context,
+		incomingRoute:       incomingRoute,
+		outgoingRoute:       outgoingRoute,
 	}
 	return flow.start()
 }
