@@ -28,8 +28,8 @@ type Server interface {
 	Start() error
 	Stop() error
 	SetOnConnectedHandler(onConnectedHandler OnConnectedHandler)
-	IsBanned(address net.Addr) bool
-	Ban(address net.Addr)
+	IsBanned(address *net.TCPAddr) bool
+	Ban(address *net.TCPAddr)
 }
 
 // Connection represents a p2p server connection.
@@ -40,7 +40,7 @@ type Connection interface {
 	IsConnected() bool
 	SetOnDisconnectedHandler(onDisconnectedHandler OnDisconnectedHandler)
 	SetOnBadMessageHandler(onBadMessageHandler OnBadMessageHandler)
-	Address() net.Addr
+	Address() *net.TCPAddr
 }
 
 // ErrNetwork is an error related to the internals of the connection, and not an error that

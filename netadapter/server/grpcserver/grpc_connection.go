@@ -13,7 +13,7 @@ import (
 
 type gRPCConnection struct {
 	server     *gRPCServer
-	address    net.Addr
+	address    *net.TCPAddr
 	isOutbound bool
 	stream     grpcStream
 	router     *router.Router
@@ -26,7 +26,7 @@ type gRPCConnection struct {
 	isConnected uint32
 }
 
-func newConnection(server *gRPCServer, address net.Addr, isOutbound bool, stream grpcStream) *gRPCConnection {
+func newConnection(server *gRPCServer, address *net.TCPAddr, isOutbound bool, stream grpcStream) *gRPCConnection {
 	connection := &gRPCConnection{
 		server:      server,
 		address:     address,
@@ -88,6 +88,6 @@ func (c *gRPCConnection) Disconnect() error {
 	return c.onDisconnectedHandler()
 }
 
-func (c *gRPCConnection) Address() net.Addr {
+func (c *gRPCConnection) Address() *net.TCPAddr {
 	return c.address
 }

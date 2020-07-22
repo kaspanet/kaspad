@@ -19,7 +19,7 @@ type gRPCServer struct {
 	onConnectedHandler server.OnConnectedHandler
 	listeningAddrs     []string
 	server             *grpc.Server
-	bannedAddresses    map[net.Addr]struct{}
+	bannedAddresses    map[*net.IP]struct{}
 }
 
 // NewGRPCServer creates and starts a gRPC server, listening on the
@@ -28,7 +28,7 @@ func NewGRPCServer(listeningAddrs []string) (server.Server, error) {
 	s := &gRPCServer{
 		server:          grpc.NewServer(),
 		listeningAddrs:  listeningAddrs,
-		bannedAddresses: make(map[net.Addr]struct{}),
+		bannedAddresses: make(map[*net.IP]struct{}),
 	}
 	protowire.RegisterP2PServer(s.server, newP2PServer(s))
 
@@ -98,8 +98,12 @@ func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 	if !ok {
 		return nil, errors.Errorf("error getting stream peer info from context for %s", address)
 	}
+	tcpAddress, ok := peerInfo.Addr.(*net.TCPAddr)
+	if !ok {
+		return nil, errors.Errorf("non-tcp addresses are not supported")
+	}
 
-	connection := newConnection(s, peerInfo.Addr, true, stream)
+	connection := newConnection(s, tcpAddress, true, stream)
 
 	err = s.onConnectedHandler(connection)
 	if err != nil {
@@ -113,12 +117,12 @@ func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 
 // IsBanned checks whether the given address had previously
 // been banned
-func (s *gRPCServer) IsBanned(address net.Addr) bool {
-	_, ok := s.bannedAddresses[address]
+func (s *gRPCServer) IsBanned(address *net.TCPAddr) bool {
+	_, ok := s.bannedAddresses[&address.IP]
 	return ok
 }
 
 // Ban prevents the given address from connecting
-func (s *gRPCServer) Ban(address net.Addr) {
-	s.bannedAddresses[address] = struct{}{}
+func (s *gRPCServer) Ban(address *net.TCPAddr) {
+	s.bannedAddresses[&address.IP] = struct{}{}
 }
