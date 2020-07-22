@@ -35,6 +35,9 @@ type ConnectionManager struct {
 
 	stop                   uint32
 	connectionRequestsLock sync.Mutex
+
+	resetLoopChan chan struct{}
+	loopTicker    *time.Ticker
 }
 
 // New instantiates a new instance of a ConnectionManager
@@ -47,6 +50,8 @@ func New(cfg *config.Config, netAdapter *netadapter.NetAdapter, addressManager *
 		pendingRequested: map[string]*connectionRequest{},
 		activeOutgoing:   map[string]struct{}{},
 		activeIncoming:   map[string]struct{}{},
+		resetLoopChan:    make(chan struct{}),
+		loopTicker:       time.NewTicker(connectionsLoopInterval),
 	}
 
 	connectPeers := cfg.AddPeers
@@ -79,6 +84,12 @@ func (c *ConnectionManager) Stop() {
 	for _, connection := range c.netAdapter.Connections() {
 		_ = c.netAdapter.Disconnect(connection) // Ignore errors since connection might be in the midst of disconnecting
 	}
+
+	c.loopTicker.Stop()
+}
+
+func (c *ConnectionManager) run() {
+	c.resetLoopChan <- struct{}{}
 }
 
 func (c *ConnectionManager) initiateConnection(address string) error {
@@ -104,11 +115,20 @@ func (c *ConnectionManager) connectionsLoop() {
 
 		c.checkIncomingConnections(connSet)
 
-		<-time.Tick(connectionsLoopInterval)
+		c.waitTillNextIteration()
 	}
 }
 
 // ConnectionCount returns the count of the connected connections
 func (c *ConnectionManager) ConnectionCount() int {
 	return c.netAdapter.ConnectionCount()
+}
+
+func (c *ConnectionManager) waitTillNextIteration() {
+	select {
+	case <-c.resetLoopChan:
+		c.loopTicker.Stop()
+		c.loopTicker = time.NewTicker(connectionsLoopInterval)
+	case <-c.loopTicker.C:
+	}
 }
