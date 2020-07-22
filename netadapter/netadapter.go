@@ -27,7 +27,7 @@ type RouterInitializer func(netConnection *NetConnection) (*routerpkg.Router, er
 type NetAdapter struct {
 	cfg               *config.Config
 	id                *id.ID
-	server            server.Server
+	Server            server.Server
 	routerInitializer RouterInitializer
 	stop              uint32
 
@@ -51,21 +51,21 @@ func NewNetAdapter(cfg *config.Config) (*NetAdapter, error) {
 	adapter := NetAdapter{
 		cfg:    cfg,
 		id:     netAdapterID,
-		server: s,
+		Server: s,
 
 		routersToConnections: make(map[*routerpkg.Router]*NetConnection),
 		connectionsToIDs:     make(map[*NetConnection]*id.ID),
 		idsToRouters:         make(map[*id.ID]*routerpkg.Router),
 	}
 
-	adapter.server.SetOnConnectedHandler(adapter.onConnectedHandler)
+	adapter.Server.SetOnConnectedHandler(adapter.onConnectedHandler)
 
 	return &adapter, nil
 }
 
 // Start begins the operation of the NetAdapter
 func (na *NetAdapter) Start() error {
-	err := na.server.Start()
+	err := na.Server.Start()
 	if err != nil {
 		return err
 	}
@@ -78,13 +78,13 @@ func (na *NetAdapter) Stop() error {
 	if atomic.AddUint32(&na.stop, 1) != 1 {
 		return errors.New("net adapter stopped more than once")
 	}
-	return na.server.Stop()
+	return na.Server.Stop()
 }
 
 // Connect tells the NetAdapter's underlying server to initiate a connection
 // to the given address
 func (na *NetAdapter) Connect(address string) error {
-	_, err := na.server.Connect(address)
+	_, err := na.Server.Connect(address)
 	return err
 }
 

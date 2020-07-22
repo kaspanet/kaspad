@@ -30,6 +30,7 @@ type Kaspad struct {
 	addressManager    *addrmgr.AddrManager
 	protocolManager   *protocol.Manager
 	connectionManager *connmanager.ConnectionManager
+	NetAdapter        *netadapter.NetAdapter
 
 	started, shutdown int32
 }
@@ -127,6 +128,7 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 		rpcServer:         rpcServer,
 		protocolManager:   protocolManager,
 		connectionManager: connectionManager,
+		NetAdapter:        netAdapter,
 	}, nil
 }
 

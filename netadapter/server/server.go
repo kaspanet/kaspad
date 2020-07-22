@@ -23,6 +23,7 @@ type Server interface {
 	Start() error
 	Stop() error
 	SetOnConnectedHandler(onConnectedHandler OnConnectedHandler)
+	OnConnectedHandler() OnConnectedHandler
 }
 
 // Connection represents a p2p server connection.
