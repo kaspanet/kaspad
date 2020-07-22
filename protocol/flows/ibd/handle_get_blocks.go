@@ -7,15 +7,20 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
+// GetBlocksContext is the interface for the context needed for the HandleGetBlocks flow.
+type GetBlocksContext interface {
+	DAG() *blockdag.BlockDAG
+}
+
 // HandleGetBlocks handles getBlocks messages
-func HandleGetBlocks(incomingRoute *router.Route, outgoingRoute *router.Route, dag *blockdag.BlockDAG) error {
+func HandleGetBlocks(context GetBlocksContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
 	for {
 		lowHash, highHash, err := receiveGetBlocks(incomingRoute)
 		if err != nil {
 			return err
 		}
 
-		msgIBDBlocks, err := buildMsgIBDBlocks(lowHash, highHash, dag)
+		msgIBDBlocks, err := buildMsgIBDBlocks(context, lowHash, highHash)
 		if err != nil {
 			return err
 		}
@@ -39,18 +44,18 @@ func receiveGetBlocks(incomingRoute *router.Route) (lowHash *daghash.Hash,
 	return msgGetBlocks.LowHash, msgGetBlocks.HighHash, nil
 }
 
-func buildMsgIBDBlocks(lowHash *daghash.Hash, highHash *daghash.Hash,
-	dag *blockdag.BlockDAG) ([]*wire.MsgIBDBlock, error) {
+func buildMsgIBDBlocks(context GetBlocksContext, lowHash *daghash.Hash,
+	highHash *daghash.Hash) ([]*wire.MsgIBDBlock, error) {
 
 	const maxHashesInMsgIBDBlocks = wire.MaxInvPerMsg
-	blockHashes, err := dag.AntiPastHashesBetween(lowHash, highHash, maxHashesInMsgIBDBlocks)
+	blockHashes, err := context.DAG().AntiPastHashesBetween(lowHash, highHash, maxHashesInMsgIBDBlocks)
 	if err != nil {
 		return nil, err
 	}
 
 	msgIBDBlocks := make([]*wire.MsgIBDBlock, len(blockHashes))
 	for i, blockHash := range blockHashes {
-		block, err := dag.BlockByHash(blockHash)
+		block, err := context.DAG().BlockByHash(blockHash)
 		if err != nil {
 			return nil, err
 		}

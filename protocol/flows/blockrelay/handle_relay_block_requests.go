@@ -9,10 +9,15 @@ import (
 	"github.com/pkg/errors"
 )
 
+// RelayBlockRequestsContext is the interface for the context needed for the HandleRelayBlockRequests flow.
+type RelayBlockRequestsContext interface {
+	DAG() *blockdag.BlockDAG
+}
+
 // HandleRelayBlockRequests listens to wire.MsgGetRelayBlocks messages and sends
 // their corresponding blocks to the requesting peer.
-func HandleRelayBlockRequests(incomingRoute *router.Route, outgoingRoute *router.Route,
-	peer *peerpkg.Peer, dag *blockdag.BlockDAG) error {
+func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *router.Route,
+	outgoingRoute *router.Route, peer *peerpkg.Peer) error {
 
 	for {
 		message, err := incomingRoute.Dequeue()
@@ -22,7 +27,7 @@ func HandleRelayBlockRequests(incomingRoute *router.Route, outgoingRoute *router
 		getRelayBlocksMessage := message.(*wire.MsgGetRelayBlocks)
 		for _, hash := range getRelayBlocksMessage.Hashes {
 			// Fetch the block from the database.
-			block, err := dag.BlockByHash(hash)
+			block, err := context.DAG().BlockByHash(hash)
 			if blockdag.IsNotInDAGErr(err) {
 				return protocolerrors.Errorf(true, "block %s not found", hash)
 			} else if err != nil {
@@ -32,7 +37,7 @@ func HandleRelayBlockRequests(incomingRoute *router.Route, outgoingRoute *router
 
 			// If we are a full node and the peer is a partial node, we must convert
 			// the block to a partial block.
-			nodeSubnetworkID := dag.SubnetworkID()
+			nodeSubnetworkID := context.DAG().SubnetworkID()
 			peerSubnetworkID := peer.SubnetworkID()
 
 			isNodeFull := nodeSubnetworkID == nil

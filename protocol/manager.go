@@ -6,33 +6,12 @@ import (
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/netadapter"
-	"github.com/kaspanet/kaspad/protocol/flows/relaytransactions"
-	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
-	"sync"
-	"time"
+	"github.com/kaspanet/kaspad/protocol/flowcontext"
 )
 
 // Manager manages the p2p protocol
 type Manager struct {
-	cfg               *config.Config
-	netAdapter        *netadapter.NetAdapter
-	txPool            *mempool.TxPool
-	addedTransactions []*util.Tx
-	dag               *blockdag.BlockDAG
-	addressManager    *addrmgr.AddrManager
-
-	transactionsToRebroadcastLock sync.Mutex
-	transactionsToRebroadcast     map[daghash.TxID]*util.Tx
-	lastRebroadcastTime           time.Time
-	sharedRequestedTransactions   *relaytransactions.SharedRequestedTransactions
-
-	// TODO(libp2p) populate these vars
-	isInIBD uint32
-	ibdPeer *peerpkg.Peer
-
-	peers *peerpkg.Peers
+	context *flowcontext.FlowContext
 }
 
 // NewManager creates a new instance of the p2p protocol manager
@@ -45,12 +24,7 @@ func NewManager(cfg *config.Config, dag *blockdag.BlockDAG,
 	}
 
 	manager := Manager{
-		netAdapter:                  netAdapter,
-		dag:                         dag,
-		addressManager:              addressManager,
-		txPool:                      txPool,
-		sharedRequestedTransactions: relaytransactions.NewSharedRequestedTransactions(),
-		peers:                       peerpkg.NewPeers(),
+		context: flowcontext.New(cfg, dag, addressManager, txPool, netAdapter),
 	}
 	netAdapter.SetRouterInitializer(manager.routerInitializer)
 	return &manager, nil
@@ -58,12 +32,12 @@ func NewManager(cfg *config.Config, dag *blockdag.BlockDAG,
 
 // Start starts the p2p protocol
 func (m *Manager) Start() error {
-	return m.netAdapter.Start()
+	return m.context.NetAdapter().Start()
 }
 
 // Stop stops the p2p protocol
 func (m *Manager) Stop() error {
-	return m.netAdapter.Stop()
+	return m.context.NetAdapter().Stop()
 }
 
 // Peers returns the currently active peers

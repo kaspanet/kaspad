@@ -9,93 +9,50 @@ import (
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
-	"sync"
-	"sync/atomic"
 )
 
-var (
-	isIBDRunning  uint32
-	startIBDMutex sync.Mutex
-)
-
-// NewBlockHandler is a function that is to be
-// called when a new block is successfully processed.
-type NewBlockHandler func(block *util.Block) error
-
-// StartIBDIfRequired selects a peer and starts IBD against it
-// if required
-func StartIBDIfRequired(dag *blockdag.BlockDAG, peers *peerpkg.Peers) {
-	startIBDMutex.Lock()
-	defer startIBDMutex.Unlock()
-
-	if IsInIBD() {
-		return
-	}
-
-	peer := selectPeerForIBD(dag, peers)
-	if peer == nil {
-		requestSelectedTipsIfRequired(dag, peers)
-		return
-	}
-
-	atomic.StoreUint32(&isIBDRunning, 1)
-	peer.StartIBD()
-}
-
-// IsInIBD is true if IBD is currently running
-func IsInIBD() bool {
-	return atomic.LoadUint32(&isIBDRunning) != 0
-}
-
-// selectPeerForIBD returns the first peer whose selected tip
-// hash is not in our DAG
-func selectPeerForIBD(dag *blockdag.BlockDAG, peers *peerpkg.Peers) *peerpkg.Peer {
-	for _, peer := range peers.ReadyPeers() {
-		peerSelectedTipHash := peer.SelectedTipHash()
-		if !dag.IsInDAG(peerSelectedTipHash) {
-			return peer
-		}
-	}
-	return nil
+// HandleIBDContext is the interface for the context needed for the HandleIBD flow.
+type HandleIBDContext interface {
+	DAG() *blockdag.BlockDAG
+	OnNewBlock(block *util.Block) error
+	StartIBDIfRequired()
+	FinishIBD()
 }
 
 // HandleIBD waits for IBD start and handles it when IBD is triggered for this peer
-func HandleIBD(incomingRoute *router.Route, outgoingRoute *router.Route,
-	peer *peerpkg.Peer, dag *blockdag.BlockDAG, newBlockHandler NewBlockHandler, peers *peerpkg.Peers) error {
+func HandleIBD(context HandleIBDContext, incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer) error {
 
 	for {
-		err := runIBD(incomingRoute, outgoingRoute, peer, dag, newBlockHandler, peers)
+		err := runIBD(context, incomingRoute, outgoingRoute, peer)
 		if err != nil {
 			return err
 		}
 	}
 }
 
-func runIBD(incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer,
-	dag *blockdag.BlockDAG, newBlockHandler NewBlockHandler, peers *peerpkg.Peers) error {
+func runIBD(context HandleIBDContext, incomingRoute *router.Route, outgoingRoute *router.Route, peer *peerpkg.Peer) error {
 
 	peer.WaitForIBDStart()
-	defer finishIBD(dag, peers)
+	defer context.FinishIBD()
 
 	peerSelectedTipHash := peer.SelectedTipHash()
-	highestSharedBlockHash, err := findHighestSharedBlockHash(incomingRoute, outgoingRoute, dag, peerSelectedTipHash)
+	highestSharedBlockHash, err := findHighestSharedBlockHash(context, incomingRoute, outgoingRoute, peerSelectedTipHash)
 	if err != nil {
 		return err
 	}
-	if dag.IsKnownFinalizedBlock(highestSharedBlockHash) {
+	if context.DAG().IsKnownFinalizedBlock(highestSharedBlockHash) {
 		return protocolerrors.Errorf(false, "cannot initiate "+
 			"IBD with peer %s because the highest shared chain block (%s) is "+
 			"below the finality point", peer, highestSharedBlockHash)
 	}
 
-	return downloadBlocks(incomingRoute, outgoingRoute, dag, highestSharedBlockHash, peerSelectedTipHash,
-		newBlockHandler)
+	return downloadBlocks(context, incomingRoute, outgoingRoute, highestSharedBlockHash, peerSelectedTipHash)
 }
 
-func findHighestSharedBlockHash(incomingRoute *router.Route, outgoingRoute *router.Route, dag *blockdag.BlockDAG,
+func findHighestSharedBlockHash(context HandleIBDContext, incomingRoute *router.Route, outgoingRoute *router.Route,
 	peerSelectedTipHash *daghash.Hash) (lowHash *daghash.Hash, err error) {
 
-	lowHash = dag.Params.GenesisHash
+	lowHash = context.DAG().Params.GenesisHash
 	highHash := peerSelectedTipHash
 
 	for {
@@ -113,11 +70,11 @@ func findHighestSharedBlockHash(incomingRoute *router.Route, outgoingRoute *rout
 		// If it is, return it. If it isn't, we need to narrow our
 		// getBlockLocator request and try again.
 		locatorHighHash := blockLocatorHashes[0]
-		if dag.IsInDAG(locatorHighHash) {
+		if context.DAG().IsInDAG(locatorHighHash) {
 			return locatorHighHash, nil
 		}
 
-		highHash, lowHash = dag.FindNextLocatorBoundaries(blockLocatorHashes)
+		highHash, lowHash = context.DAG().FindNextLocatorBoundaries(blockLocatorHashes)
 	}
 }
 
@@ -142,9 +99,9 @@ func receiveBlockLocator(incomingRoute *router.Route) (blockLocatorHashes []*dag
 	return msgBlockLocator.BlockLocatorHashes, nil
 }
 
-func downloadBlocks(incomingRoute *router.Route, outgoingRoute *router.Route,
-	dag *blockdag.BlockDAG, highestSharedBlockHash *daghash.Hash,
-	peerSelectedTipHash *daghash.Hash, newBlockHandler NewBlockHandler) error {
+func downloadBlocks(context HandleIBDContext, incomingRoute *router.Route, outgoingRoute *router.Route,
+	highestSharedBlockHash *daghash.Hash,
+	peerSelectedTipHash *daghash.Hash) error {
 
 	err := sendGetBlocks(outgoingRoute, highestSharedBlockHash, peerSelectedTipHash)
 	if err != nil {
@@ -156,7 +113,7 @@ func downloadBlocks(incomingRoute *router.Route, outgoingRoute *router.Route,
 		if err != nil {
 			return err
 		}
-		err = processIBDBlock(dag, msgIBDBlock, newBlockHandler)
+		err = processIBDBlock(context, msgIBDBlock)
 		if err != nil {
 			return err
 		}
@@ -187,14 +144,13 @@ func receiveIBDBlock(incomingRoute *router.Route) (msgIBDBlock *wire.MsgIBDBlock
 	return msgIBDBlock, nil
 }
 
-func processIBDBlock(dag *blockdag.BlockDAG, msgIBDBlock *wire.MsgIBDBlock,
-	newBlockHandler NewBlockHandler) error {
+func processIBDBlock(context HandleIBDContext, msgIBDBlock *wire.MsgIBDBlock) error {
 
 	block := util.NewBlock(&msgIBDBlock.MsgBlock)
-	if dag.IsInDAG(block.Hash()) {
+	if context.DAG().IsInDAG(block.Hash()) {
 		return nil
 	}
-	isOrphan, isDelayed, err := dag.ProcessBlock(block, blockdag.BFNone)
+	isOrphan, isDelayed, err := context.DAG().ProcessBlock(block, blockdag.BFNone)
 	if err != nil {
 		return err
 	}
@@ -206,15 +162,9 @@ func processIBDBlock(dag *blockdag.BlockDAG, msgIBDBlock *wire.MsgIBDBlock,
 		return protocolerrors.Errorf(false, "received delayed block %s "+
 			"during IBD", block.Hash())
 	}
-	err = newBlockHandler(block)
+	err = context.OnNewBlock(block)
 	if err != nil {
 		panic(err)
 	}
 	return nil
-}
-
-func finishIBD(dag *blockdag.BlockDAG, peers *peerpkg.Peers) {
-	atomic.StoreUint32(&isIBDRunning, 0)
-
-	StartIBDIfRequired(dag, peers)
 }
