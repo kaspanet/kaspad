@@ -102,3 +102,10 @@ func (c *ConnectionManager) AddConnectionRequest(address string, isPermanent boo
 		}
 	})
 }
+
+// RemoveConnection disconnects the connection for the given address
+// and removes it entirely from the connection manager.
+func (c *ConnectionManager) RemoveConnection(address string) {
+	// TODO(libp2p): unimplemented
+	panic("unimplemented")
+}

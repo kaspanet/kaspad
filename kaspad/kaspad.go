@@ -4,32 +4,26 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/kaspanet/kaspad/netadapter"
-
-	"github.com/kaspanet/kaspad/dbaccess"
-
-	"github.com/kaspanet/kaspad/dnsseed"
-	"github.com/kaspanet/kaspad/wire"
-
-	"github.com/kaspanet/kaspad/connmanager"
-
 	"github.com/kaspanet/kaspad/addrmgr"
-
-	"github.com/kaspanet/kaspad/util/panics"
-
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/blockdag/indexers"
 	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/connmanager"
+	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/kaspanet/kaspad/dnsseed"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/mining"
+	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/protocol"
-	"github.com/kaspanet/kaspad/server/rpc"
+	"github.com/kaspanet/kaspad/rpc"
 	"github.com/kaspanet/kaspad/signal"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/panics"
+	"github.com/kaspanet/kaspad/wire"
 )
 
-// Kaspad is a wrapper for all the Kaspad services
+// Kaspad is a wrapper for all the kaspad services
 type Kaspad struct {
 	cfg               *config.Config
 	rpcServer         *rpc.Server
@@ -40,58 +34,14 @@ type Kaspad struct {
 	started, shutdown int32
 }
 
-// New returns a new Kaspad instance configured to listen on address for the
-// kaspa network type specified by dagParams.
-func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrupt <-chan struct{}) (*Kaspad, error) {
-	indexManager, acceptanceIndex := setupIndexes(cfg)
-
-	sigCache := txscript.NewSigCache(cfg.SigCacheMaxSize)
-
-	// Create a new block DAG instance with the appropriate configuration.
-	dag, err := setupDAG(cfg, databaseContext, interrupt, sigCache, indexManager)
-	if err != nil {
-		return nil, err
-	}
-
-	txMempool := setupMempool(cfg, dag, sigCache)
-
-	netAdapter, err := netadapter.NewNetAdapter(cfg)
-	if err != nil {
-		return nil, err
-	}
-	addressManager := addrmgr.New(cfg, databaseContext)
-
-	protocolManager, err := protocol.NewManager(cfg, dag, addressManager, txMempool)
-	if err != nil {
-		return nil, err
-	}
-
-	connectionManager, err := connmanager.New(cfg, netAdapter, addressManager)
-	if err != nil {
-		return nil, err
-	}
-
-	rpcServer, err := setupRPC(cfg, dag, txMempool, sigCache, acceptanceIndex)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Kaspad{
-		cfg:               cfg,
-		rpcServer:         rpcServer,
-		protocolManager:   protocolManager,
-		connectionManager: connectionManager,
-	}, nil
-}
-
-// Start launches all the Kaspad services.
+// Kaspad start launches all the kaspad services.
 func (k *Kaspad) Start() {
 	// Already started?
 	if atomic.AddInt32(&k.started, 1) != 1 {
 		return
 	}
 
-	log.Trace("Starting Kaspad")
+	log.Trace("Starting kaspad")
 
 	err := k.protocolManager.Start()
 	if err != nil {
@@ -107,7 +57,7 @@ func (k *Kaspad) Start() {
 	}
 }
 
-// Stop gracefully shuts down all the Kaspad services.
+// stop gracefully shuts down all the kaspad services.
 func (k *Kaspad) Stop() error {
 	// Make sure this only happens once.
 	if atomic.AddInt32(&k.shutdown, 1) != 1 {
@@ -135,6 +85,51 @@ func (k *Kaspad) Stop() error {
 	return nil
 }
 
+// newKaspad returns a new kaspad instance configured to listen on addr for the
+// kaspa network type specified by dagParams. Use start to begin accepting
+// connections from peers.
+func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrupt <-chan struct{}) (*Kaspad, error) {
+	indexManager, acceptanceIndex := setupIndexes(cfg)
+
+	sigCache := txscript.NewSigCache(cfg.SigCacheMaxSize)
+
+	// Create a new block DAG instance with the appropriate configuration.
+	dag, err := setupDAG(cfg, databaseContext, interrupt, sigCache, indexManager)
+	if err != nil {
+		return nil, err
+	}
+
+	txMempool := setupMempool(cfg, dag, sigCache)
+
+	netAdapter, err := netadapter.NewNetAdapter(cfg)
+	if err != nil {
+		return nil, err
+	}
+	addressManager := addrmgr.New(cfg, databaseContext)
+
+	protocolManager, err := protocol.NewManager(cfg, dag, netAdapter, addressManager, txMempool)
+	if err != nil {
+		return nil, err
+	}
+
+	connectionManager, err := connmanager.New(cfg, netAdapter, addressManager)
+	if err != nil {
+		return nil, err
+	}
+	rpcServer, err := setupRPC(
+		cfg, dag, txMempool, sigCache, acceptanceIndex, connectionManager, addressManager, protocolManager)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Kaspad{
+		cfg:               cfg,
+		rpcServer:         rpcServer,
+		protocolManager:   protocolManager,
+		connectionManager: connectionManager,
+	}, nil
+}
+
 func (k *Kaspad) maybeSeedFromDNS() {
 	if !k.cfg.DisableDNSSeed {
 		dnsseed.SeedFromDNS(k.cfg.NetParams(), k.cfg.DNSSeed, wire.SFNodeNetwork, false, nil,
@@ -146,7 +141,6 @@ func (k *Kaspad) maybeSeedFromDNS() {
 			})
 	}
 }
-
 func setupDAG(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrupt <-chan struct{},
 	sigCache *txscript.SigCache, indexManager blockdag.IndexManager) (*blockdag.BlockDAG, error) {
 
@@ -199,8 +193,14 @@ func setupMempool(cfg *config.Config, dag *blockdag.BlockDAG, sigCache *txscript
 	return mempool.New(&mempoolConfig)
 }
 
-func setupRPC(cfg *config.Config, dag *blockdag.BlockDAG, txMempool *mempool.TxPool, sigCache *txscript.SigCache,
-	acceptanceIndex *indexers.AcceptanceIndex) (*rpc.Server, error) {
+func setupRPC(cfg *config.Config,
+	dag *blockdag.BlockDAG,
+	txMempool *mempool.TxPool,
+	sigCache *txscript.SigCache,
+	acceptanceIndex *indexers.AcceptanceIndex,
+	connectionManager *connmanager.ConnectionManager,
+	addressManager *addrmgr.AddrManager,
+	protocolManager *protocol.Manager) (*rpc.Server, error) {
 
 	if !cfg.DisableRPC {
 		policy := mining.Policy{
@@ -208,7 +208,8 @@ func setupRPC(cfg *config.Config, dag *blockdag.BlockDAG, txMempool *mempool.TxP
 		}
 		blockTemplateGenerator := mining.NewBlkTmplGenerator(&policy, txMempool, dag, sigCache)
 
-		rpcServer, err := rpc.NewRPCServer(cfg, dag, txMempool, acceptanceIndex, blockTemplateGenerator)
+		rpcServer, err := rpc.NewRPCServer(cfg, dag, txMempool, acceptanceIndex, blockTemplateGenerator,
+			connectionManager, addressManager, protocolManager)
 		if err != nil {
 			return nil, err
 		}

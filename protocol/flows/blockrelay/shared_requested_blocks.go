@@ -6,18 +6,20 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-type sharedRequestedBlocks struct {
+// SharedRequestedBlocks is a data structure that is shared between peers that
+// holds the hashes of all the requested blocks to prevent redundant requests.
+type SharedRequestedBlocks struct {
 	blocks map[daghash.Hash]struct{}
 	sync.Mutex
 }
 
-func (s *sharedRequestedBlocks) remove(hash *daghash.Hash) {
+func (s *SharedRequestedBlocks) remove(hash *daghash.Hash) {
 	s.Lock()
 	defer s.Unlock()
 	delete(s.blocks, *hash)
 }
 
-func (s *sharedRequestedBlocks) removeSet(blockHashes map[daghash.Hash]struct{}) {
+func (s *SharedRequestedBlocks) removeSet(blockHashes map[daghash.Hash]struct{}) {
 	s.Lock()
 	defer s.Unlock()
 	for hash := range blockHashes {
@@ -25,7 +27,7 @@ func (s *sharedRequestedBlocks) removeSet(blockHashes map[daghash.Hash]struct{})
 	}
 }
 
-func (s *sharedRequestedBlocks) addIfNotExists(hash *daghash.Hash) (exists bool) {
+func (s *SharedRequestedBlocks) addIfNotExists(hash *daghash.Hash) (exists bool) {
 	s.Lock()
 	defer s.Unlock()
 	_, ok := s.blocks[*hash]
@@ -36,6 +38,9 @@ func (s *sharedRequestedBlocks) addIfNotExists(hash *daghash.Hash) (exists bool)
 	return false
 }
 
-var requestedBlocks = &sharedRequestedBlocks{
-	blocks: make(map[daghash.Hash]struct{}),
+// NewSharedRequestedBlocks returns a new instance of SharedRequestedBlocks.
+func NewSharedRequestedBlocks() *SharedRequestedBlocks {
+	return &SharedRequestedBlocks{
+		blocks: make(map[daghash.Hash]struct{}),
+	}
 }

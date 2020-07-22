@@ -1,6 +1,7 @@
 package peer
 
 import (
+	"github.com/kaspanet/kaspad/netadapter"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -11,11 +12,12 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/wire"
-	"github.com/pkg/errors"
 )
 
 // Peer holds data about a peer.
 type Peer struct {
+	connection *netadapter.NetConnection
+
 	selectedTipHashMtx sync.RWMutex
 	selectedTipHash    *daghash.Hash
 
@@ -40,8 +42,9 @@ type Peer struct {
 }
 
 // New returns a new Peer
-func New() *Peer {
+func New(connection *netadapter.NetConnection) *Peer {
 	return &Peer{
+		connection:             connection,
 		selectedTipRequestChan: make(chan struct{}),
 		ibdStartChan:           make(chan struct{}),
 	}
@@ -114,51 +117,7 @@ func (p *Peer) SetPingIdle() {
 }
 
 func (p *Peer) String() string {
-	//TODO(libp2p)
-	panic("unimplemented")
-}
-
-var (
-	readyPeers      = make(map[*id.ID]*Peer, 0)
-	readyPeersMutex sync.RWMutex
-)
-
-// ErrPeerWithSameIDExists signifies that a peer with the same ID already exist.
-var ErrPeerWithSameIDExists = errors.New("ready with the same ID already exists")
-
-// AddToReadyPeers marks this peer as ready and adds it to the ready peers list.
-func AddToReadyPeers(peer *Peer) error {
-	readyPeersMutex.RLock()
-	defer readyPeersMutex.RUnlock()
-
-	if _, ok := readyPeers[peer.id]; ok {
-		return errors.Wrapf(ErrPeerWithSameIDExists, "peer with ID %s already exists", peer.id)
-	}
-
-	readyPeers[peer.id] = peer
-	return nil
-}
-
-// ReadyPeerIDs returns the peer IDs of all the ready peers.
-func ReadyPeerIDs() []*id.ID {
-	readyPeersMutex.RLock()
-	defer readyPeersMutex.RUnlock()
-	peerIDs := make([]*id.ID, len(readyPeers))
-	i := 0
-	for peerID := range readyPeers {
-		peerIDs[i] = peerID
-		i++
-	}
-	return peerIDs
-}
-
-// ReadyPeers returns a copy of the currently ready peers
-func ReadyPeers() []*Peer {
-	peers := make([]*Peer, 0, len(readyPeers))
-	for _, readyPeer := range readyPeers {
-		peers = append(peers, readyPeer)
-	}
-	return peers
+	return p.connection.String()
 }
 
 // RequestSelectedTipIfRequired notifies the peer that requesting
@@ -199,4 +158,18 @@ func (p *Peer) StartIBD() {
 // IBD start is requested from this peer
 func (p *Peer) WaitForIBDStart() {
 	<-p.ibdStartChan
+}
+
+// Address returns the address associated with this connection
+func (p *Peer) Address() string {
+	return p.connection.Address()
+}
+
+// LastPingDuration returns the duration of the last ping to
+// this peer
+func (p *Peer) LastPingDuration() time.Duration {
+	p.pingLock.Lock()
+	defer p.pingLock.Unlock()
+
+	return p.lastPingDuration
 }

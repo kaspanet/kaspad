@@ -107,3 +107,8 @@ func (c *ConnectionManager) connectionsLoop() {
 		<-time.Tick(connectionsLoopInterval)
 	}
 }
+
+// ConnectionCount returns the count of the connected connections
+func (c *ConnectionManager) ConnectionCount() int {
+	return c.netAdapter.ConnectionCount()
+}

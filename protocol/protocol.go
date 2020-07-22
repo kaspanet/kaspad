@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/netadapter"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/protocol/flows/handshake"
@@ -19,25 +20,24 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (m *Manager) routerInitializer() (*routerpkg.Router, error) {
-
+func (m *Manager) routerInitializer(netConnection *netadapter.NetConnection) (*routerpkg.Router, error) {
 	router := routerpkg.NewRouter()
 	spawn("newRouterInitializer-startFlows", func() {
-		err := m.startFlows(router)
+		err := m.startFlows(netConnection, router)
 		if err != nil {
 			if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
 				if protocolErr.ShouldBan {
 					// TODO(libp2p) Ban peer
 					panic("unimplemented")
 				}
-				err = m.netAdapter.DisconnectAssociatedConnection(router)
+				err = m.context.NetAdapter().DisconnectAssociatedConnection(router)
 				if err != nil {
 					panic(err)
 				}
 				return
 			}
 			if errors.Is(err, routerpkg.ErrTimeout) {
-				err = m.netAdapter.DisconnectAssociatedConnection(router)
+				err = m.context.NetAdapter().DisconnectAssociatedConnection(router)
 				if err != nil {
 					panic(err)
 				}
@@ -50,14 +50,13 @@ func (m *Manager) routerInitializer() (*routerpkg.Router, error) {
 		}
 	})
 	return router, nil
-
 }
 
-func (m *Manager) startFlows(router *routerpkg.Router) error {
+func (m *Manager) startFlows(netConnection *netadapter.NetConnection, router *routerpkg.Router) error {
 	stop := make(chan error)
 	stopped := uint32(0)
 
-	peer, closed, err := handshake.HandleHandshake(m.cfg, router, m.netAdapter, m.dag, m.addressManager)
+	peer, closed, err := handshake.HandleHandshake(m.context, router, netConnection)
 	if err != nil {
 		return err
 	}
@@ -82,13 +81,13 @@ func (m *Manager) addAddressFlows(router *routerpkg.Router, stopped *uint32, sto
 
 	addOneTimeFlow("SendAddresses", router, []wire.MessageCommand{wire.CmdGetAddresses}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return addressexchange.SendAddresses(incomingRoute, outgoingRoute, m.addressManager)
+			return addressexchange.SendAddresses(m.context, incomingRoute, outgoingRoute)
 		},
 	)
 
 	addOneTimeFlow("ReceiveAddresses", router, []wire.MessageCommand{wire.CmdAddress}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return addressexchange.ReceiveAddresses(incomingRoute, outgoingRoute, m.cfg, peer, m.addressManager)
+			return addressexchange.ReceiveAddresses(m.context, incomingRoute, outgoingRoute, peer)
 		},
 	)
 }
@@ -99,14 +98,14 @@ func (m *Manager) addBlockRelayFlows(router *routerpkg.Router, stopped *uint32, 
 
 	addFlow("HandleRelayInvs", router, []wire.MessageCommand{wire.CmdInvRelayBlock, wire.CmdBlock}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return blockrelay.HandleRelayInvs(incomingRoute,
-				outgoingRoute, peer, m.netAdapter, m.dag, m.OnNewBlock)
+			return blockrelay.HandleRelayInvs(m.context, incomingRoute,
+				outgoingRoute, peer)
 		},
 	)
 
 	addFlow("HandleRelayBlockRequests", router, []wire.MessageCommand{wire.CmdGetRelayBlocks}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return blockrelay.HandleRelayBlockRequests(incomingRoute, outgoingRoute, peer, m.dag)
+			return blockrelay.HandleRelayBlockRequests(m.context, incomingRoute, outgoingRoute, peer)
 		},
 	)
 }
@@ -116,13 +115,13 @@ func (m *Manager) addPingFlows(router *routerpkg.Router, stopped *uint32, stop c
 
 	addFlow("ReceivePings", router, []wire.MessageCommand{wire.CmdPing}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ping.ReceivePings(incomingRoute, outgoingRoute)
+			return ping.ReceivePings(m.context, incomingRoute, outgoingRoute)
 		},
 	)
 
 	addFlow("SendPings", router, []wire.MessageCommand{wire.CmdPong}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ping.SendPings(incomingRoute, outgoingRoute, peer)
+			return ping.SendPings(m.context, incomingRoute, outgoingRoute, peer)
 		},
 	)
 }
@@ -134,31 +133,31 @@ func (m *Manager) addIBDFlows(router *routerpkg.Router, stopped *uint32, stop ch
 
 	addFlow("HandleIBD", router, []wire.MessageCommand{wire.CmdBlockLocator, wire.CmdIBDBlock}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ibd.HandleIBD(incomingRoute, outgoingRoute, peer, m.dag, m.OnNewBlock)
+			return ibd.HandleIBD(m.context, incomingRoute, outgoingRoute, peer)
 		},
 	)
 
 	addFlow("RequestSelectedTip", router, []wire.MessageCommand{wire.CmdSelectedTip}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ibd.RequestSelectedTip(incomingRoute, outgoingRoute, peer, m.dag)
+			return ibd.RequestSelectedTip(m.context, incomingRoute, outgoingRoute, peer)
 		},
 	)
 
 	addFlow("HandleGetSelectedTip", router, []wire.MessageCommand{wire.CmdGetSelectedTip}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ibd.HandleGetSelectedTip(incomingRoute, outgoingRoute, m.dag)
+			return ibd.HandleGetSelectedTip(m.context, incomingRoute, outgoingRoute)
 		},
 	)
 
 	addFlow("HandleGetBlockLocator", router, []wire.MessageCommand{wire.CmdGetBlockLocator}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ibd.HandleGetBlockLocator(incomingRoute, outgoingRoute, m.dag)
+			return ibd.HandleGetBlockLocator(m.context, incomingRoute, outgoingRoute)
 		},
 	)
 
 	addFlow("HandleGetBlocks", router, []wire.MessageCommand{wire.CmdGetBlocks}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ibd.HandleGetBlocks(incomingRoute, outgoingRoute, m.dag)
+			return ibd.HandleGetBlocks(m.context, incomingRoute, outgoingRoute)
 		},
 	)
 }
@@ -169,8 +168,7 @@ func (m *Manager) addTransactionRelayFlow(router *routerpkg.Router, stopped *uin
 
 	addFlow("HandleRelayedTransactions", router, []wire.MessageCommand{wire.CmdInv, wire.CmdTx}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return relaytransactions.HandleRelayedTransactions(incomingRoute, outgoingRoute, m.netAdapter, m.dag,
-				m.txPool, m.sharedRequestedTransactions)
+			return relaytransactions.HandleRelayedTransactions(m.context, incomingRoute, outgoingRoute)
 		},
 	)
 }

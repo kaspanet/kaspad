@@ -7,9 +7,13 @@ import (
 	"math/rand"
 )
 
+// SendAddressesContext is the interface for the context needed for the SendAddresses flow.
+type SendAddressesContext interface {
+	AddressManager() *addrmgr.AddrManager
+}
+
 // SendAddresses sends addresses to a peer that requests it.
-func SendAddresses(incomingRoute *router.Route, outgoingRoute *router.Route,
-	addressManager *addrmgr.AddrManager) error {
+func SendAddresses(context SendAddressesContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
 
 	message, err := incomingRoute.Dequeue()
 	if err != nil {
@@ -17,7 +21,8 @@ func SendAddresses(incomingRoute *router.Route, outgoingRoute *router.Route,
 	}
 
 	msgGetAddresses := message.(*wire.MsgGetAddresses)
-	addresses := addressManager.AddressCache(msgGetAddresses.IncludeAllSubnetworks, msgGetAddresses.SubnetworkID)
+	addresses := context.AddressManager().AddressCache(msgGetAddresses.IncludeAllSubnetworks,
+		msgGetAddresses.SubnetworkID)
 	msgAddresses := wire.NewMsgAddresses(msgGetAddresses.IncludeAllSubnetworks, msgGetAddresses.SubnetworkID)
 	err = msgAddresses.AddAddresses(shuffleAddresses(addresses)...)
 	if err != nil {

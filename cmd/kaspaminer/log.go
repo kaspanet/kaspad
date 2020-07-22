@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/logs"
-	"github.com/kaspanet/kaspad/rpcclient"
+	"github.com/kaspanet/kaspad/rpc/client"
 	"github.com/kaspanet/kaspad/util/panics"
 	"os"
 )
@@ -28,5 +28,5 @@ func initLog(logFile, errLogFile string) {
 }
 
 func enableRPCLogging() {
-	rpcclient.UseLogger(backendLog, logs.LevelTrace)
+	client.UseLogger(backendLog, logs.LevelTrace)
 }
