@@ -31,7 +31,7 @@ func newMinerClient(connCfg *client.ConnConfig) (*minerClient, error) {
 	}
 
 	if err = minerClient.NotifyBlocks(); err != nil {
-		return nil, errors.Errorf("Error while registering minerClient %s for block notifications: %s", minerClient.Host(), err)
+		return nil, errors.Wrapf(err, "error while registering minerClient %s for block notifications", minerClient.Host())
 	}
 	return minerClient, nil
 }

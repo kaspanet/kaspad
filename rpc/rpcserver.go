@@ -707,6 +707,7 @@ func NewRPCServer(
 		return nil, errors.New("RPCS: No valid listen address")
 	}
 	rpc := Server{
+		cfg:                    cfg,
 		listeners:              rpcListeners,
 		startupTime:            mstime.Now(),
 		statusLines:            make(map[int]string),
