@@ -57,8 +57,9 @@ func (m *Manager) startFlows(netConnection *netadapter.NetConnection, router *ro
 	stopped := uint32(0)
 
 	netConnection.SetOnBadMessageHandler(func(err error) {
-		atomic.AddUint32(&stopped, 1)
-		stop <- protocolerrors.Wrap(true, err, "received bad message")
+		if atomic.AddUint32(&stopped, 1) == 1 {
+			stop <- protocolerrors.Wrap(true, err, "received bad message")
+		}
 	})
 
 	peer, closed, err := handshake.HandleHandshake(m.context, router, netConnection)
