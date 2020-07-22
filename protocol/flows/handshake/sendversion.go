@@ -25,19 +25,32 @@ var (
 	defaultRequiredServices = wire.SFNodeNetwork
 )
 
+type sendVersionFlow struct {
+	HandleHandshakeContext
+	incomingRoute, outgoingRoute *router.Route
+}
+
 // SendVersion sends a version to a peer and waits for verack.
 func SendVersion(context HandleHandshakeContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
+	flow := &sendVersionFlow{
+		HandleHandshakeContext: context,
+		incomingRoute:          incomingRoute,
+		outgoingRoute:          outgoingRoute,
+	}
+	return flow.start()
+}
 
-	selectedTipHash := context.DAG().SelectedTipHash()
-	subnetworkID := context.Config().SubnetworkID
+func (flow *sendVersionFlow) start() error {
+	selectedTipHash := flow.DAG().SelectedTipHash()
+	subnetworkID := flow.Config().SubnetworkID
 
 	// Version message.
-	localAddress, err := context.NetAdapter().GetBestLocalAddress()
+	localAddress, err := flow.NetAdapter().GetBestLocalAddress()
 	if err != nil {
 		panic(err)
 	}
-	msg := wire.NewMsgVersion(localAddress, context.NetAdapter().ID(), selectedTipHash, subnetworkID)
-	msg.AddUserAgent(userAgentName, userAgentVersion, context.Config().UserAgentComments...)
+	msg := wire.NewMsgVersion(localAddress, flow.NetAdapter().ID(), selectedTipHash, subnetworkID)
+	msg.AddUserAgent(userAgentName, userAgentVersion, flow.Config().UserAgentComments...)
 
 	// Advertise the services flag
 	msg.Services = defaultServices
@@ -46,15 +59,15 @@ func SendVersion(context HandleHandshakeContext, incomingRoute *router.Route, ou
 	msg.ProtocolVersion = wire.ProtocolVersion
 
 	// Advertise if inv messages for transactions are desired.
-	msg.DisableRelayTx = context.Config().BlocksOnly
+	msg.DisableRelayTx = flow.Config().BlocksOnly
 
-	err = outgoingRoute.Enqueue(msg)
+	err = flow.outgoingRoute.Enqueue(msg)
 	if err != nil {
 		return err
 	}
 
 	// Wait for verack
-	_, err = incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	_, err = flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return err
 	}

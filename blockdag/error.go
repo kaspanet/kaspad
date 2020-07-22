@@ -206,6 +206,10 @@ const (
 	// ErrDelayedBlockIsNotAllowed indicates that a block with a delayed timestamp was
 	// submitted with BFDisallowDelay flag raised.
 	ErrDelayedBlockIsNotAllowed
+
+	// ErrOrphanBlockIsNotAllowed indicates that an orphan block was submitted with
+	// BFDisallowOrphans flag raised.
+	ErrOrphanBlockIsNotAllowed
 )
 
 // Map of ErrorCode values back to their constant names for pretty printing.
@@ -254,6 +258,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrInvalidPayloadHash:        "ErrInvalidPayloadHash",
 	ErrInvalidParentsRelation:    "ErrInvalidParentsRelation",
 	ErrDelayedBlockIsNotAllowed:  "ErrDelayedBlockIsNotAllowed",
+	ErrOrphanBlockIsNotAllowed:   "ErrOrphanBlockIsNotAllowed",
 }
 
 // String returns the ErrorCode as a human-readable name.

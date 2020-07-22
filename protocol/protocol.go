@@ -3,6 +3,7 @@ package protocol
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/netadapter"
+	"github.com/kaspanet/kaspad/protocol/flows/ibd/selectedtip"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/protocol/flows/handshake"
@@ -30,14 +31,14 @@ func (m *Manager) routerInitializer(netConnection *netadapter.NetConnection) (*r
 					// TODO(libp2p) Ban peer
 					panic("unimplemented")
 				}
-				err = m.context.NetAdapter().DisconnectAssociatedConnection(router)
+				err = m.context.NetAdapter().Disconnect(netConnection)
 				if err != nil {
 					panic(err)
 				}
 				return
 			}
 			if errors.Is(err, routerpkg.ErrTimeout) {
-				err = m.context.NetAdapter().DisconnectAssociatedConnection(router)
+				err = m.context.NetAdapter().Disconnect(netConnection)
 				if err != nil {
 					panic(err)
 				}
@@ -139,13 +140,13 @@ func (m *Manager) addIBDFlows(router *routerpkg.Router, stopped *uint32, stop ch
 
 	addFlow("RequestSelectedTip", router, []wire.MessageCommand{wire.CmdSelectedTip}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ibd.RequestSelectedTip(m.context, incomingRoute, outgoingRoute, peer)
+			return selectedtip.RequestSelectedTip(m.context, incomingRoute, outgoingRoute, peer)
 		},
 	)
 
 	addFlow("HandleGetSelectedTip", router, []wire.MessageCommand{wire.CmdGetSelectedTip}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
-			return ibd.HandleGetSelectedTip(m.context, incomingRoute, outgoingRoute)
+			return selectedtip.HandleGetSelectedTip(m.context, incomingRoute, outgoingRoute)
 		},
 	)
 

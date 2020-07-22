@@ -26,28 +26,45 @@ type RelayInvsContext interface {
 	Broadcast(message wire.Message) error
 }
 
+type handleRelayInvsFlow struct {
+	RelayInvsContext
+	incomingRoute, outgoingRoute *router.Route
+	peer                         *peerpkg.Peer
+	invsQueue                    []*wire.MsgInvRelayBlock
+}
+
 // HandleRelayInvs listens to wire.MsgInvRelayBlock messages, requests their corresponding blocks if they
 // are missing, adds them to the DAG and propagates them to the rest of the network.
 func HandleRelayInvs(context RelayInvsContext, incomingRoute *router.Route, outgoingRoute *router.Route,
 	peer *peerpkg.Peer) error {
 
-	invsQueue := make([]*wire.MsgInvRelayBlock, 0)
+	flow := &handleRelayInvsFlow{
+		RelayInvsContext: context,
+		incomingRoute:    incomingRoute,
+		outgoingRoute:    outgoingRoute,
+		peer:             peer,
+		invsQueue:        make([]*wire.MsgInvRelayBlock, 0),
+	}
+	return flow.start()
+}
+
+func (flow *handleRelayInvsFlow) start() error {
 	for {
-		inv, err := readInv(incomingRoute, &invsQueue)
+		inv, err := flow.readInv()
 		if err != nil {
 			return err
 		}
 
-		if context.DAG().IsKnownBlock(inv.Hash) {
-			if context.DAG().IsKnownInvalid(inv.Hash) {
+		if flow.DAG().IsKnownBlock(inv.Hash) {
+			if flow.DAG().IsKnownInvalid(inv.Hash) {
 				return protocolerrors.Errorf(true, "sent inv of an invalid block %s",
 					inv.Hash)
 			}
 			continue
 		}
 
-		context.StartIBDIfRequired()
-		if context.IsInIBD() {
+		flow.StartIBDIfRequired()
+		if flow.IsInIBD() {
 			// Block relay is disabled during IBD
 			continue
 		}
@@ -56,7 +73,7 @@ func HandleRelayInvs(context RelayInvsContext, incomingRoute *router.Route, outg
 		requestQueue.enqueueIfNotExists(inv.Hash)
 
 		for requestQueue.len() > 0 {
-			err := requestBlocks(context, outgoingRoute, peer, incomingRoute, &invsQueue, requestQueue)
+			err := flow.requestBlocks(requestQueue)
 			if err != nil {
 				return err
 			}
@@ -64,30 +81,28 @@ func HandleRelayInvs(context RelayInvsContext, incomingRoute *router.Route, outg
 	}
 }
 
-func readInv(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlock) (*wire.MsgInvRelayBlock, error) {
+func (flow *handleRelayInvsFlow) readInv() (*wire.MsgInvRelayBlock, error) {
 
-	if len(*invsQueue) > 0 {
+	if len(flow.invsQueue) > 0 {
 		var inv *wire.MsgInvRelayBlock
-		inv, *invsQueue = (*invsQueue)[0], (*invsQueue)[1:]
+		inv, flow.invsQueue = flow.invsQueue[0], flow.invsQueue[1:]
 		return inv, nil
 	}
 
-	msg, err := incomingRoute.Dequeue()
+	msg, err := flow.incomingRoute.Dequeue()
 	if err != nil {
 		return nil, err
 	}
 
 	inv, ok := msg.(*wire.MsgInvRelayBlock)
 	if !ok {
-		return nil, protocolerrors.Errorf(true, "unexpected %s message in the block relay flow while "+
+		return nil, protocolerrors.Errorf(true, "unexpected %s message in the block relay handleRelayInvsFlow while "+
 			"expecting an inv message", msg.Command())
 	}
 	return inv, nil
 }
 
-func requestBlocks(context RelayInvsContext, outgoingRoute *router.Route,
-	peer *peerpkg.Peer, incomingRoute *router.Route,
-	invsQueue *[]*wire.MsgInvRelayBlock, requestQueue *hashesQueueSet) error {
+func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) error {
 
 	numHashesToRequest := mathUtil.MinInt(wire.MsgGetRelayBlocksHashes, requestQueue.len())
 	hashesToRequest := requestQueue.dequeue(numHashesToRequest)
@@ -95,7 +110,7 @@ func requestBlocks(context RelayInvsContext, outgoingRoute *router.Route,
 	pendingBlocks := map[daghash.Hash]struct{}{}
 	var filteredHashesToRequest []*daghash.Hash
 	for _, hash := range hashesToRequest {
-		exists := context.SharedRequestedBlocks().addIfNotExists(hash)
+		exists := flow.SharedRequestedBlocks().addIfNotExists(hash)
 		if !exists {
 			continue
 		}
@@ -106,16 +121,16 @@ func requestBlocks(context RelayInvsContext, outgoingRoute *router.Route,
 
 	// In case the function returns earlier than expected, we want to make sure requestedBlocks is
 	// clean from any pending blocks.
-	defer context.SharedRequestedBlocks().removeSet(pendingBlocks)
+	defer flow.SharedRequestedBlocks().removeSet(pendingBlocks)
 
 	getRelayBlocksMsg := wire.NewMsgGetRelayBlocks(filteredHashesToRequest)
-	err := outgoingRoute.Enqueue(getRelayBlocksMsg)
+	err := flow.outgoingRoute.Enqueue(getRelayBlocksMsg)
 	if err != nil {
 		return err
 	}
 
 	for len(pendingBlocks) > 0 {
-		msgBlock, err := readMsgBlock(incomingRoute, invsQueue)
+		msgBlock, err := flow.readMsgBlock()
 		if err != nil {
 			return err
 		}
@@ -126,9 +141,9 @@ func requestBlocks(context RelayInvsContext, outgoingRoute *router.Route,
 			return protocolerrors.Errorf(true, "got unrequested block %s", block.Hash())
 		}
 		delete(pendingBlocks, *blockHash)
-		context.SharedRequestedBlocks().remove(blockHash)
+		flow.SharedRequestedBlocks().remove(blockHash)
 
-		err = processAndRelayBlock(context, peer, requestQueue, block)
+		err = flow.processAndRelayBlock(requestQueue, block)
 		if err != nil {
 			return err
 		}
@@ -139,18 +154,18 @@ func requestBlocks(context RelayInvsContext, outgoingRoute *router.Route,
 // readMsgBlock returns the next msgBlock in msgChan, and populates invsQueue with any inv messages that meanwhile arrive.
 //
 // Note: this function assumes msgChan can contain only wire.MsgInvRelayBlock and wire.MsgBlock messages.
-func readMsgBlock(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlock) (
+func (flow *handleRelayInvsFlow) readMsgBlock() (
 	msgBlock *wire.MsgBlock, err error) {
 
 	for {
-		message, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+		message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 		if err != nil {
 			return nil, err
 		}
 
 		switch message := message.(type) {
 		case *wire.MsgInvRelayBlock:
-			*invsQueue = append(*invsQueue, message)
+			flow.invsQueue = append(flow.invsQueue, message)
 		case *wire.MsgBlock:
 			return message, nil
 		default:
@@ -159,11 +174,10 @@ func readMsgBlock(incomingRoute *router.Route, invsQueue *[]*wire.MsgInvRelayBlo
 	}
 }
 
-func processAndRelayBlock(context RelayInvsContext, peer *peerpkg.Peer,
-	requestQueue *hashesQueueSet, block *util.Block) error {
+func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueSet, block *util.Block) error {
 
 	blockHash := block.Hash()
-	isOrphan, isDelayed, err := context.DAG().ProcessBlock(block, blockdag.BFNone)
+	isOrphan, isDelayed, err := flow.DAG().ProcessBlock(block, blockdag.BFNone)
 	if err != nil {
 		// When the error is a rule error, it means the block was simply
 		// rejected as opposed to something actually going wrong, so log
@@ -173,7 +187,7 @@ func processAndRelayBlock(context RelayInvsContext, peer *peerpkg.Peer,
 				blockHash))
 		}
 		log.Infof("Rejected block %s from %s: %s", blockHash,
-			peer, err)
+			flow.peer, err)
 
 		return protocolerrors.Wrap(true, err, "got invalid block")
 	}
@@ -190,7 +204,7 @@ func processAndRelayBlock(context RelayInvsContext, peer *peerpkg.Peer,
 		}
 
 		const maxOrphanBlueScoreDiff = 10000
-		selectedTipBlueScore := context.DAG().SelectedTipBlueScore()
+		selectedTipBlueScore := flow.DAG().SelectedTipBlueScore()
 		if blueScore > selectedTipBlueScore+maxOrphanBlueScoreDiff {
 			log.Infof("Orphan block %s has blue score %d and the selected tip blue score is "+
 				"%d. Ignoring orphans with a blue score difference from the selected tip greater than %d",
@@ -199,7 +213,7 @@ func processAndRelayBlock(context RelayInvsContext, peer *peerpkg.Peer,
 		}
 
 		// Request the parents for the orphan block from the peer that sent it.
-		missingAncestors := context.DAG().GetOrphanMissingAncestorHashes(blockHash)
+		missingAncestors := flow.DAG().GetOrphanMissingAncestorHashes(blockHash)
 		for _, missingAncestor := range missingAncestors {
 			requestQueue.enqueueIfNotExists(missingAncestor)
 		}
@@ -215,13 +229,13 @@ func processAndRelayBlock(context RelayInvsContext, peer *peerpkg.Peer,
 	// sm.restartSyncIfNeeded()
 	//// Clear the rejected transactions.
 	//sm.rejectedTxns = make(map[daghash.TxID]struct{})
-	err = context.Broadcast(wire.NewMsgInvBlock(blockHash))
+	err = flow.Broadcast(wire.NewMsgInvBlock(blockHash))
 	if err != nil {
 		return err
 	}
 
-	context.StartIBDIfRequired()
-	err = context.OnNewBlock(block)
+	flow.StartIBDIfRequired()
+	err = flow.OnNewBlock(block)
 	if err != nil {
 		panic(err)
 	}
