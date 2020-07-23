@@ -21,7 +21,6 @@ type Peer struct {
 	selectedTipHashMtx sync.RWMutex
 	selectedTipHash    *daghash.Hash
 
-	id                       *id.ID
 	userAgent                string
 	services                 wire.ServiceFlag
 	advertisedProtocolVerion uint32 // protocol version advertised by remote
@@ -54,6 +53,11 @@ func New(connection *netadapter.NetConnection) *Peer {
 	}
 }
 
+// Connection returns the NetConnection associated with this peer
+func (p *Peer) Connection() *netadapter.NetConnection {
+	return p.connection
+}
+
 // SelectedTipHash returns the selected tip of the peer.
 func (p *Peer) SelectedTipHash() *daghash.Hash {
 	p.selectedTipHashMtx.RLock()
@@ -76,7 +80,7 @@ func (p *Peer) SubnetworkID() *subnetworkid.SubnetworkID {
 
 // ID returns the peer ID.
 func (p *Peer) ID() *id.ID {
-	return p.id
+	return p.connection.ID()
 }
 
 // TimeOffset returns the peer's time offset.
@@ -110,10 +114,7 @@ func (p *Peer) UpdateFieldsFromMsgVersion(msg *wire.MsgVersion) {
 	p.advertisedProtocolVerion = msg.ProtocolVersion
 	p.protocolVersion = mathUtil.MinUint32(p.protocolVersion, p.advertisedProtocolVerion)
 	log.Debugf("Negotiated protocol version %d for peer %s",
-		p.protocolVersion, p.id)
-
-	// Set the peer's ID.
-	p.id = msg.ID
+		p.protocolVersion, p.ID())
 
 	// Set the supported services for the peer to what the remote peer
 	// advertised.

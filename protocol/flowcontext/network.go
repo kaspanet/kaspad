@@ -3,7 +3,6 @@ package flowcontext
 import (
 	"github.com/kaspanet/kaspad/connmanager"
 	"github.com/kaspanet/kaspad/netadapter"
-	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/wire"
@@ -33,22 +32,22 @@ func (f *FlowContext) AddToPeers(peer *peerpkg.Peer) error {
 	return nil
 }
 
-// readyPeerIDs returns the peer IDs of all the ready peers.
-func (f *FlowContext) readyPeerIDs() []*id.ID {
+// readyPeerConnections returns the NetConnections of all the ready peers.
+func (f *FlowContext) readyPeerConnections() []*netadapter.NetConnection {
 	f.peersMutex.RLock()
 	defer f.peersMutex.RUnlock()
-	peerIDs := make([]*id.ID, len(f.peers))
+	peerConnections := make([]*netadapter.NetConnection, len(f.peers))
 	i := 0
-	for peerID := range f.peers {
-		peerIDs[i] = peerID
+	for _, peer := range f.peers {
+		peerConnections[i] = peer.Connection()
 		i++
 	}
-	return peerIDs
+	return peerConnections
 }
 
 // Broadcast broadcast the given message to all the ready peers.
 func (f *FlowContext) Broadcast(message wire.Message) error {
-	return f.netAdapter.Broadcast(f.readyPeerIDs(), message)
+	return f.netAdapter.Broadcast(f.readyPeerConnections(), message)
 }
 
 // Peers returns the currently active peers
