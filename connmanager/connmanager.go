@@ -132,3 +132,8 @@ func (c *ConnectionManager) waitTillNextIteration() {
 	case <-c.loopTicker.C:
 	}
 }
+
+// Ban prevents the given netConnection from connecting again
+func (c *ConnectionManager) Ban(netConnection *netadapter.NetConnection) {
+	c.netAdapter.Ban(netConnection)
+}

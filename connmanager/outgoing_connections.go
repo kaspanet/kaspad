@@ -22,7 +22,8 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 	log.Debugf("Have got %d outgoing connections out of target %d, adding %d more",
 		liveConnections, c.targetOutgoing, c.targetOutgoing-liveConnections)
 
-	for len(c.activeOutgoing) < c.targetOutgoing {
+	connectionsNeededCount := c.targetOutgoing - len(c.activeOutgoing)
+	for i := 0; i < connectionsNeededCount; i++ {
 		address := c.addressManager.GetAddress()
 		if address == nil {
 			log.Warnf("No more addresses available")
@@ -30,15 +31,20 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 		}
 
 		netAddress := address.NetAddress()
+		tcpAddress := netAddress.TCPAddress()
+		if c.netAdapter.IsBanned(tcpAddress) {
+			continue
+		}
+
 		c.addressManager.Attempt(netAddress)
-		addressString := netAddress.TCPAddress().String()
+		addressString := tcpAddress.String()
 		err := c.initiateConnection(addressString)
 		if err != nil {
 			log.Infof("Couldn't connect to %s: %s", addressString, err)
 			continue
 		}
 
-		c.addressManager.Connected(address.NetAddress())
-		c.activeOutgoing[address.NetAddress().TCPAddress().String()] = struct{}{}
+		c.addressManager.Connected(netAddress)
+		c.activeOutgoing[addressString] = struct{}{}
 	}
 }

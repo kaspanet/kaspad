@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/connmanager"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/protocol/flowcontext"
@@ -18,10 +19,11 @@ type Manager struct {
 
 // NewManager creates a new instance of the p2p protocol manager
 func NewManager(cfg *config.Config, dag *blockdag.BlockDAG, netAdapter *netadapter.NetAdapter,
-	addressManager *addrmgr.AddrManager, txPool *mempool.TxPool) (*Manager, error) {
+	addressManager *addrmgr.AddrManager, txPool *mempool.TxPool, connectionManager *connmanager.ConnectionManager,
+) (*Manager, error) {
 
 	manager := Manager{
-		context: flowcontext.New(cfg, dag, addressManager, txPool, netAdapter),
+		context: flowcontext.New(cfg, dag, addressManager, txPool, netAdapter, connectionManager),
 	}
 	netAdapter.SetRouterInitializer(manager.routerInitializer)
 	return &manager, nil

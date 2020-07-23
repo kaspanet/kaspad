@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/connmanager"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/netadapter/id"
@@ -23,9 +24,9 @@ type FlowContext struct {
 	cfg               *config.Config
 	netAdapter        *netadapter.NetAdapter
 	txPool            *mempool.TxPool
-	addedTransactions []*util.Tx
 	dag               *blockdag.BlockDAG
 	addressManager    *addrmgr.AddrManager
+	connectionManager *connmanager.ConnectionManager
 
 	transactionsToRebroadcastLock sync.Mutex
 	transactionsToRebroadcast     map[daghash.TxID]*util.Tx
@@ -43,13 +44,16 @@ type FlowContext struct {
 }
 
 // New returns a new instance of FlowContext.
-func New(cfg *config.Config, dag *blockdag.BlockDAG,
-	addressManager *addrmgr.AddrManager, txPool *mempool.TxPool, netAdapter *netadapter.NetAdapter) *FlowContext {
+func New(cfg *config.Config, dag *blockdag.BlockDAG, addressManager *addrmgr.AddrManager,
+	txPool *mempool.TxPool, netAdapter *netadapter.NetAdapter,
+	connectionManager *connmanager.ConnectionManager) *FlowContext {
+
 	return &FlowContext{
 		cfg:                         cfg,
 		netAdapter:                  netAdapter,
 		dag:                         dag,
 		addressManager:              addressManager,
+		connectionManager:           connectionManager,
 		txPool:                      txPool,
 		sharedRequestedTransactions: relaytransactions.NewSharedRequestedTransactions(),
 		sharedRequestedBlocks:       blockrelay.NewSharedRequestedBlocks(),

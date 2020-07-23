@@ -110,12 +110,12 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 	}
 	addressManager := addrmgr.New(cfg, databaseContext)
 
-	protocolManager, err := protocol.NewManager(cfg, dag, netAdapter, addressManager, txMempool)
+	connectionManager, err := connmanager.New(cfg, netAdapter, addressManager)
 	if err != nil {
 		return nil, err
 	}
 
-	connectionManager, err := connmanager.New(cfg, netAdapter, addressManager)
+	protocolManager, err := protocol.NewManager(cfg, dag, netAdapter, addressManager, txMempool, connectionManager)
 	if err != nil {
 		return nil, err
 	}
