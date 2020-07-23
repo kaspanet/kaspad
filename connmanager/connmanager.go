@@ -135,7 +135,7 @@ func (c *ConnectionManager) banIP(ip string) {
 	c.bannedAddresses[ip] = struct{}{}
 }
 
-// IsBanned returns whether the given IP is banned
+// isIPBanned returns whether the given IP is banned
 func (c *ConnectionManager) isIPBanned(ip string) bool {
 	c.bannedAddressesLock.RLock()
 	defer c.bannedAddressesLock.RUnlock()
