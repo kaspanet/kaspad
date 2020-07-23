@@ -112,3 +112,8 @@ func (c *ConnectionManager) connectionsLoop() {
 func (c *ConnectionManager) ConnectionCount() int {
 	return c.netAdapter.ConnectionCount()
 }
+
+// Ban prevents the given netConnection from connecting again
+func (c *ConnectionManager) Ban(netConnection *netadapter.NetConnection) {
+	c.netAdapter.Ban(netConnection)
+}

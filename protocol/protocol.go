@@ -28,8 +28,7 @@ func (m *Manager) routerInitializer(netConnection *netadapter.NetConnection) (*r
 		if err != nil {
 			if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
 				if protocolErr.ShouldBan {
-					// TODO(libp2p) Ban peer
-					panic("unimplemented")
+					m.context.ConnectionManager().Ban(netConnection)
 				}
 				err = m.context.NetAdapter().Disconnect(netConnection)
 				if err != nil {
@@ -56,6 +55,12 @@ func (m *Manager) routerInitializer(netConnection *netadapter.NetConnection) (*r
 func (m *Manager) startFlows(netConnection *netadapter.NetConnection, router *routerpkg.Router) error {
 	stop := make(chan error)
 	stopped := uint32(0)
+
+	netConnection.SetOnInvalidMessageHandler(func(err error) {
+		if atomic.AddUint32(&stopped, 1) == 1 {
+			stop <- protocolerrors.Wrap(true, err, "received bad message")
+		}
+	})
 
 	peer, closed, err := handshake.HandleHandshake(m.context, router, netConnection)
 	if err != nil {

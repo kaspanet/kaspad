@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/peer"
+	"net"
 )
 
 type p2pServer struct {
@@ -23,7 +24,17 @@ func (p *p2pServer) MessageStream(stream protowire.P2P_MessageStreamServer) erro
 	if !ok {
 		return errors.Errorf("Error getting stream peer info from context")
 	}
-	connection := newConnection(p.server, peerInfo.Addr, false, stream)
+	tcpAddress, ok := peerInfo.Addr.(*net.TCPAddr)
+	if !ok {
+		return errors.Errorf("non-tcp connections are not supported")
+	}
+
+	if p.server.IsBanned(tcpAddress) {
+		log.Debugf("received connection attempt from banned peer %s", peerInfo.Addr)
+		return nil
+	}
+
+	connection := newConnection(p.server, tcpAddress, false, stream)
 
 	err := p.server.onConnectedHandler(connection)
 	if err != nil {

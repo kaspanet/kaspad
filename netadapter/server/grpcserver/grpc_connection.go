@@ -13,19 +13,20 @@ import (
 
 type gRPCConnection struct {
 	server     *gRPCServer
-	address    net.Addr
+	address    *net.TCPAddr
 	isOutbound bool
 	stream     grpcStream
 	router     *router.Router
 
-	stopChan              chan struct{}
-	clientConn            grpc.ClientConn
-	onDisconnectedHandler server.OnDisconnectedHandler
+	stopChan                chan struct{}
+	clientConn              grpc.ClientConn
+	onDisconnectedHandler   server.OnDisconnectedHandler
+	onInvalidMessageHandler server.OnInvalidMessageHandler
 
 	isConnected uint32
 }
 
-func newConnection(server *gRPCServer, address net.Addr, isOutbound bool, stream grpcStream) *gRPCConnection {
+func newConnection(server *gRPCServer, address *net.TCPAddr, isOutbound bool, stream grpcStream) *gRPCConnection {
 	connection := &gRPCConnection{
 		server:      server,
 		address:     address,
@@ -61,6 +62,10 @@ func (c *gRPCConnection) SetOnDisconnectedHandler(onDisconnectedHandler server.O
 	c.onDisconnectedHandler = onDisconnectedHandler
 }
 
+func (c *gRPCConnection) SetOnInvalidMessageHandler(onInvalidMessageHandler server.OnInvalidMessageHandler) {
+	c.onInvalidMessageHandler = onInvalidMessageHandler
+}
+
 // Disconnect disconnects the connection
 // Calling this function a second time doesn't do anything
 //
@@ -83,6 +88,6 @@ func (c *gRPCConnection) Disconnect() error {
 	return c.onDisconnectedHandler()
 }
 
-func (c *gRPCConnection) Address() net.Addr {
+func (c *gRPCConnection) Address() *net.TCPAddr {
 	return c.address
 }
