@@ -54,5 +54,5 @@ func (f *FlowContext) AddBlock(block *util.Block, flags blockdag.BehaviorFlags) 
 	if err != nil {
 		return err
 	}
-	return f.Broadcast(block.MsgBlock())
+	return f.Broadcast(wire.NewMsgInvBlock(block.Hash()))
 }
