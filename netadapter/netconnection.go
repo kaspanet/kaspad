@@ -34,8 +34,8 @@ func (c *NetConnection) Address() string {
 	return c.connection.Address().String()
 }
 
-// SetOnBadMessageHandler sets a handler function
-// for bad messages
-func (c *NetConnection) SetOnBadMessageHandler(onBadMessageHandler server.OnBadMessageHandler) {
-	c.connection.SetOnBadMessageHandler(onBadMessageHandler)
+// SetOnInvalidMessageHandler sets a handler function
+// for invalid messages
+func (c *NetConnection) SetOnInvalidMessageHandler(onInvalidMessageHandler server.OnInvalidMessageHandler) {
+	c.connection.SetOnInvalidMessageHandler(onInvalidMessageHandler)
 }

@@ -56,7 +56,7 @@ func (m *Manager) startFlows(netConnection *netadapter.NetConnection, router *ro
 	stop := make(chan error)
 	stopped := uint32(0)
 
-	netConnection.SetOnBadMessageHandler(func(err error) {
+	netConnection.SetOnInvalidMessageHandler(func(err error) {
 		if atomic.AddUint32(&stopped, 1) == 1 {
 			stop <- protocolerrors.Wrap(true, err, "received bad message")
 		}

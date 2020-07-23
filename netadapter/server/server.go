@@ -17,10 +17,10 @@ type OnConnectedHandler func(connection Connection) error
 // called once a Connection has been disconnected.
 type OnDisconnectedHandler func() error
 
-// OnBadMessageHandler is a function that is to be called when
-// a bad message (cannot be parsed/doesn't have a route)
+// OnInvalidMessageHandler is a function that is to be called when
+// an invalid message (cannot be parsed/doesn't have a route)
 // was received from a connection.
-type OnBadMessageHandler func(err error)
+type OnInvalidMessageHandler func(err error)
 
 // Server represents a p2p server.
 type Server interface {
@@ -39,7 +39,7 @@ type Connection interface {
 	Disconnect() error
 	IsConnected() bool
 	SetOnDisconnectedHandler(onDisconnectedHandler OnDisconnectedHandler)
-	SetOnBadMessageHandler(onBadMessageHandler OnBadMessageHandler)
+	SetOnInvalidMessageHandler(onInvalidMessageHandler OnInvalidMessageHandler)
 	Address() *net.TCPAddr
 }
 

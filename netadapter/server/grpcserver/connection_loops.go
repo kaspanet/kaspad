@@ -68,7 +68,7 @@ func (c *gRPCConnection) receiveLoop() error {
 		}
 		message, err := protoMessage.ToWireMessage()
 		if err != nil {
-			c.onBadMessageHandler(err)
+			c.onInvalidMessageHandler(err)
 			return err
 		}
 
@@ -82,7 +82,7 @@ func (c *gRPCConnection) receiveLoop() error {
 				log.Debugf("Router for %s is closed. Exiting the receive loop", c)
 				return nil
 			}
-			c.onBadMessageHandler(err)
+			c.onInvalidMessageHandler(err)
 			return err
 		}
 	}

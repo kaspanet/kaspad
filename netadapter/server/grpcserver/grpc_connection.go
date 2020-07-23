@@ -18,10 +18,10 @@ type gRPCConnection struct {
 	stream     grpcStream
 	router     *router.Router
 
-	stopChan              chan struct{}
-	clientConn            grpc.ClientConn
-	onDisconnectedHandler server.OnDisconnectedHandler
-	onBadMessageHandler   server.OnBadMessageHandler
+	stopChan                chan struct{}
+	clientConn              grpc.ClientConn
+	onDisconnectedHandler   server.OnDisconnectedHandler
+	onInvalidMessageHandler server.OnInvalidMessageHandler
 
 	isConnected uint32
 }
@@ -62,8 +62,8 @@ func (c *gRPCConnection) SetOnDisconnectedHandler(onDisconnectedHandler server.O
 	c.onDisconnectedHandler = onDisconnectedHandler
 }
 
-func (c *gRPCConnection) SetOnBadMessageHandler(onBadMessageHandler server.OnBadMessageHandler) {
-	c.onBadMessageHandler = onBadMessageHandler
+func (c *gRPCConnection) SetOnInvalidMessageHandler(onInvalidMessageHandler server.OnInvalidMessageHandler) {
+	c.onInvalidMessageHandler = onInvalidMessageHandler
 }
 
 // Disconnect disconnects the connection
