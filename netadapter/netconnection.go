@@ -28,6 +28,7 @@ func (c *NetConnection) ID() *id.ID {
 	return c.id
 }
 
+// SetID sets the ID associated with this connection
 func (c *NetConnection) SetID(peerID *id.ID) {
 	c.id = peerID
 }
