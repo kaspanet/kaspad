@@ -144,7 +144,7 @@ func (na *NetAdapter) Broadcast(netConnections []*NetConnection, message wire.Me
 	defer na.RUnlock()
 	for _, netConnection := range netConnections {
 		router := na.connectionsToRouters[netConnection]
-		err := router.EnqueueIncomingMessage(message)
+		err := router.OutgoingRoute().Enqueue(message)
 		if err != nil {
 			if errors.Is(err, routerpkg.ErrRouteClosed) {
 				log.Debugf("Cannot enqueue message to %s: router is closed", netConnection)
