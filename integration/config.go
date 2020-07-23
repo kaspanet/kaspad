@@ -53,7 +53,6 @@ func commonConfig() *config.Config {
 	commonConfig.DisableDNSSeed = true
 	commonConfig.RPCUser = rpcUser
 	commonConfig.RPCPass = rpcPass
-	commonConfig.DebugLevel = "trace"
 
 	return commonConfig
 }
