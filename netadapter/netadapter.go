@@ -101,7 +101,7 @@ func (na *NetAdapter) ConnectionCount() int {
 }
 
 func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
-	netConnection := newNetConnection(connection, nil)
+	netConnection := newNetConnection(connection)
 	router, err := na.routerInitializer(netConnection)
 	if err != nil {
 		return err
