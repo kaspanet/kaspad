@@ -17,7 +17,7 @@ import (
 
 // RouterInitializer is a function that initializes a new
 // router to be used with a new connection
-type RouterInitializer func(netConnection *NetConnection) (*routerpkg.Router, error)
+type RouterInitializer func(netConnection *NetConnection) *routerpkg.Router
 
 // NetAdapter is an abstraction layer over networking.
 // This type expects a RouteInitializer function. This
@@ -102,10 +102,7 @@ func (na *NetAdapter) ConnectionCount() int {
 
 func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
 	netConnection := newNetConnection(connection, nil)
-	router, err := na.routerInitializer(netConnection)
-	if err != nil {
-		return err
-	}
+	router := na.routerInitializer(netConnection)
 	connection.Start(router)
 
 	na.connectionsToRouters[netConnection] = router
@@ -221,15 +218,4 @@ func (na *NetAdapter) Disconnect(netConnection *NetConnection) error {
 		log.Warnf("Error disconnecting from %s: %s", netConnection, err)
 	}
 	return nil
-}
-
-// IsBanned checks whether the given address had previously
-// been banned
-func (na *NetAdapter) IsBanned(address *net.TCPAddr) bool {
-	return na.server.IsBanned(address)
-}
-
-// Ban prevents the given netConnection from connecting again
-func (na *NetAdapter) Ban(netConnection *NetConnection) {
-	na.server.Ban(netConnection.connection.Address())
 }

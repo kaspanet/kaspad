@@ -29,11 +29,6 @@ func (p *p2pServer) MessageStream(stream protowire.P2P_MessageStreamServer) erro
 		return errors.Errorf("non-tcp connections are not supported")
 	}
 
-	if p.server.IsBanned(tcpAddress) {
-		log.Debugf("received connection attempt from banned peer %s", peerInfo.Addr)
-		return nil
-	}
-
 	connection := newConnection(p.server, tcpAddress, false, stream)
 
 	err := p.server.onConnectedHandler(connection)

@@ -21,9 +21,17 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (m *Manager) routerInitializer(netConnection *netadapter.NetConnection) (*routerpkg.Router, error) {
+func (m *Manager) routerInitializer(netConnection *netadapter.NetConnection) *routerpkg.Router {
 	router := routerpkg.NewRouter()
 	spawn("newRouterInitializer-startFlows", func() {
+		if m.context.ConnectionManager().IsBanned(netConnection) {
+			err := m.context.NetAdapter().Disconnect(netConnection)
+			if err != nil {
+				panic(err)
+			}
+			return
+		}
+
 		err := m.startFlows(netConnection, router)
 		if err != nil {
 			if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
@@ -49,7 +57,7 @@ func (m *Manager) routerInitializer(netConnection *netadapter.NetConnection) (*r
 			panic(err)
 		}
 	})
-	return router, nil
+	return router
 }
 
 func (m *Manager) startFlows(netConnection *netadapter.NetConnection, router *routerpkg.Router) error {
