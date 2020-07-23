@@ -1,132 +1,83 @@
-package kaspad
+package app
 
 import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/kaspanet/kaspad/netadapter"
-
-	"github.com/kaspanet/kaspad/dbaccess"
-
-	"github.com/kaspanet/kaspad/dnsseed"
-	"github.com/kaspanet/kaspad/wire"
-
-	"github.com/kaspanet/kaspad/connmanager"
-
 	"github.com/kaspanet/kaspad/addrmgr"
-
-	"github.com/kaspanet/kaspad/util/panics"
-
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/blockdag/indexers"
 	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/connmanager"
+	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/kaspanet/kaspad/dnsseed"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/mining"
+	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/protocol"
 	"github.com/kaspanet/kaspad/rpc"
 	"github.com/kaspanet/kaspad/signal"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/panics"
+	"github.com/kaspanet/kaspad/wire"
 )
 
-// Kaspad is a wrapper for all the Kaspad services
-type Kaspad struct {
+// App is a wrapper for all the kaspad services
+type App struct {
 	cfg               *config.Config
 	rpcServer         *rpc.Server
 	addressManager    *addrmgr.AddrManager
-	protocolManager   *protocol.Manager
+	ProtocolManager   *protocol.Manager
 	connectionManager *connmanager.ConnectionManager
+	netAdapter        *netadapter.NetAdapter
 
 	started, shutdown int32
 }
 
-// New returns a new Kaspad instance configured to listen on address for the
-// kaspa network type specified by dagParams.
-func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrupt <-chan struct{}) (*Kaspad, error) {
-	indexManager, acceptanceIndex := setupIndexes(cfg)
-
-	sigCache := txscript.NewSigCache(cfg.SigCacheMaxSize)
-
-	// Create a new block DAG instance with the appropriate configuration.
-	dag, err := setupDAG(cfg, databaseContext, interrupt, sigCache, indexManager)
-	if err != nil {
-		return nil, err
-	}
-
-	txMempool := setupMempool(cfg, dag, sigCache)
-
-	netAdapter, err := netadapter.NewNetAdapter(cfg)
-	if err != nil {
-		return nil, err
-	}
-	addressManager := addrmgr.New(cfg, databaseContext)
-
-	protocolManager, err := protocol.NewManager(cfg, dag, addressManager, txMempool)
-	if err != nil {
-		return nil, err
-	}
-
-	connectionManager, err := connmanager.New(cfg, netAdapter, addressManager)
-	if err != nil {
-		return nil, err
-	}
-
-	rpcServer, err := setupRPC(cfg, dag, txMempool, sigCache, acceptanceIndex)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Kaspad{
-		cfg:               cfg,
-		rpcServer:         rpcServer,
-		protocolManager:   protocolManager,
-		connectionManager: connectionManager,
-	}, nil
-}
-
-// Start launches all the Kaspad services.
-func (k *Kaspad) Start() {
+// Start launches all the kaspad services.
+func (a *App) Start() {
 	// Already started?
-	if atomic.AddInt32(&k.started, 1) != 1 {
+	if atomic.AddInt32(&a.started, 1) != 1 {
 		return
 	}
 
-	log.Trace("Starting Kaspad")
+	log.Trace("Starting kaspad")
 
-	err := k.protocolManager.Start()
+	err := a.ProtocolManager.Start()
 	if err != nil {
 		panics.Exit(log, fmt.Sprintf("Error starting the p2p protocol: %+v", err))
 	}
 
-	k.maybeSeedFromDNS()
+	a.maybeSeedFromDNS()
 
-	k.connectionManager.Start()
+	a.connectionManager.Start()
 
-	if !k.cfg.DisableRPC {
-		k.rpcServer.Start()
+	if !a.cfg.DisableRPC {
+		a.rpcServer.Start()
 	}
 }
 
-// Stop gracefully shuts down all the Kaspad services.
-func (k *Kaspad) Stop() error {
+// Stop gracefully shuts down all the kaspad services.
+func (a *App) Stop() error {
 	// Make sure this only happens once.
-	if atomic.AddInt32(&k.shutdown, 1) != 1 {
+	if atomic.AddInt32(&a.shutdown, 1) != 1 {
 		log.Infof("Kaspad is already in the process of shutting down")
 		return nil
 	}
 
 	log.Warnf("Kaspad shutting down")
 
-	k.connectionManager.Stop()
+	a.connectionManager.Stop()
 
-	err := k.protocolManager.Stop()
+	err := a.ProtocolManager.Stop()
 	if err != nil {
 		log.Errorf("Error stopping the p2p protocol: %+v", err)
 	}
 
 	// Shutdown the RPC server if it's not disabled.
-	if !k.cfg.DisableRPC {
-		err := k.rpcServer.Stop()
+	if !a.cfg.DisableRPC {
+		err := a.rpcServer.Stop()
 		if err != nil {
 			log.Errorf("Error stopping rpcServer: %+v", err)
 		}
@@ -135,21 +86,10 @@ func (k *Kaspad) Stop() error {
 	return nil
 }
 
-<<<<<<< HEAD:kaspad/kaspad.go
-func (k *Kaspad) maybeSeedFromDNS() {
-	if !k.cfg.DisableDNSSeed {
-		dnsseed.SeedFromDNS(k.cfg.NetParams(), k.cfg.DNSSeed, wire.SFNodeNetwork, false, nil,
-			k.cfg.Lookup, func(addresses []*wire.NetAddress) {
-				// Kaspad uses a lookup of the dns seeder here. Since seeder returns
-				// IPs of nodes and not its own IP, we can not know real IP of
-				// source. So we'll take first returned address as source.
-				k.addressManager.AddAddresses(addresses, addresses[0], nil)
-			})
-=======
-// newKaspad returns a new kaspad instance configured to listen on addr for the
+// New returns a new App instance configured to listen on addr for the
 // kaspa network type specified by dagParams. Use start to begin accepting
 // connections from peers.
-func newKaspad(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrupt <-chan struct{}) (*kaspad, error) {
+func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrupt <-chan struct{}) (*App, error) {
 	indexManager, acceptanceIndex := setupIndexes(cfg)
 
 	sigCache := txscript.NewSigCache(cfg.SigCacheMaxSize)
@@ -168,7 +108,7 @@ func newKaspad(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, in
 	}
 	addressManager := addrmgr.New(cfg, databaseContext)
 
-	protocolManager, err := protocol.NewManager(cfg, dag, addressManager, txMempool)
+	protocolManager, err := protocol.NewManager(cfg, dag, netAdapter, addressManager, txMempool)
 	if err != nil {
 		return nil, err
 	}
@@ -177,15 +117,32 @@ func newKaspad(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, in
 	if err != nil {
 		return nil, err
 	}
-
-	rpcServer, err := setupRPC(cfg, dag, txMempool, sigCache, acceptanceIndex,
-		connectionManager, addressManager, protocolManager)
+	rpcServer, err := setupRPC(
+		cfg, dag, txMempool, sigCache, acceptanceIndex, connectionManager, addressManager, protocolManager)
 	if err != nil {
 		return nil, err
->>>>>>> origin/v0.6.0-libp2p:kaspad.go
 	}
+
+	return &App{
+		cfg:               cfg,
+		rpcServer:         rpcServer,
+		ProtocolManager:   protocolManager,
+		connectionManager: connectionManager,
+		netAdapter:        netAdapter,
+	}, nil
 }
 
+func (a *App) maybeSeedFromDNS() {
+	if !a.cfg.DisableDNSSeed {
+		dnsseed.SeedFromDNS(a.cfg.NetParams(), a.cfg.DNSSeed, wire.SFNodeNetwork, false, nil,
+			a.cfg.Lookup, func(addresses []*wire.NetAddress) {
+				// Kaspad uses a lookup of the dns seeder here. Since seeder returns
+				// IPs of nodes and not its own IP, we can not know real IP of
+				// source. So we'll take first returned address as source.
+				a.addressManager.AddAddresses(addresses, addresses[0], nil)
+			})
+	}
+}
 func setupDAG(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrupt <-chan struct{},
 	sigCache *txscript.SigCache, indexManager blockdag.IndexManager) (*blockdag.BlockDAG, error) {
 
@@ -238,9 +195,14 @@ func setupMempool(cfg *config.Config, dag *blockdag.BlockDAG, sigCache *txscript
 	return mempool.New(&mempoolConfig)
 }
 
-func setupRPC(cfg *config.Config, dag *blockdag.BlockDAG, txMempool *mempool.TxPool, sigCache *txscript.SigCache,
-	acceptanceIndex *indexers.AcceptanceIndex, connectionManager *connmanager.ConnectionManager,
-	addressManager *addrmgr.AddrManager, protocolManager *protocol.Manager) (*rpc.Server, error) {
+func setupRPC(cfg *config.Config,
+	dag *blockdag.BlockDAG,
+	txMempool *mempool.TxPool,
+	sigCache *txscript.SigCache,
+	acceptanceIndex *indexers.AcceptanceIndex,
+	connectionManager *connmanager.ConnectionManager,
+	addressManager *addrmgr.AddrManager,
+	protocolManager *protocol.Manager) (*rpc.Server, error) {
 
 	if !cfg.DisableRPC {
 		policy := mining.Policy{
@@ -266,7 +228,7 @@ func setupRPC(cfg *config.Config, dag *blockdag.BlockDAG, txMempool *mempool.TxP
 }
 
 // WaitForShutdown blocks until the main listener and peer handlers are stopped.
-func (k *Kaspad) WaitForShutdown() {
+func (a *App) WaitForShutdown() {
 	// TODO(libp2p)
-	//	k.p2pServer.WaitForShutdown()
+	// a.p2pServer.WaitForShutdown()
 }

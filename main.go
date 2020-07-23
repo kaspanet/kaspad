@@ -13,7 +13,7 @@ import (
 	"runtime/pprof"
 	"time"
 
-	"github.com/kaspanet/kaspad/kaspad"
+	"github.com/kaspanet/kaspad/app"
 
 	"github.com/kaspanet/kaspad/dbaccess"
 
@@ -125,7 +125,7 @@ func kaspadMain(startedChan chan<- struct{}) error {
 	}
 
 	// Create Kaspad and Start it.
-	kaspad, err := kaspad.New(cfg, databaseContext, interrupt)
+	kaspad, err := app.New(cfg, databaseContext, interrupt)
 	if err != nil {
 		log.Errorf("Unable to Start Kaspad: %+v", err)
 		return err

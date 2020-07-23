@@ -10,10 +10,10 @@ import (
 )
 
 func TestIntegrationBasicSync(t *testing.T) {
-	kaspad1, kaspad2, client1, client2, teardown := setup(t)
+	app1, app2, client1, client2, teardown := setup(t)
 	defer teardown()
 
-	connect(t, kaspad1, kaspad2, client1, client2)
+	connect(t, app1, app2, client1, client2)
 
 	blockTemplate, err := client1.GetBlockTemplate(testAddress1, "")
 	if err != nil {

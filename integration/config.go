@@ -6,17 +6,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kaspanet/kaspad/dagconfig"
-
 	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/dagconfig"
 )
 
 const (
-	kaspad1P2PAddress = "127.0.0.1:54321"
-	kaspad2P2PAddress = "127.0.0.1:54322"
+	p2pAddress1 = "127.0.0.1:54321"
+	p2pAddress2 = "127.0.0.1:54322"
 
-	kaspad1RPCAddress = "127.0.0.1:12345"
-	kaspad2RPCAddress = "127.0.0.1:12346"
+	rpcAddress1 = "127.0.0.1:12345"
+	rpcAddress2 = "127.0.0.1:12346"
 
 	rpcUser = "user"
 	rpcPass = "pass"
@@ -30,20 +29,20 @@ const (
 	defaultTimeout = 10 * time.Second
 )
 
-func configs(t *testing.T) (kaspad1Config, kaspad2Config *config.Config) {
-	kaspad1Config = commonConfig()
-	kaspad1Config.DataDir = randomDirectory(t)
-	kaspad1Config.Listeners = []string{kaspad1P2PAddress}
-	kaspad1Config.RPCListeners = []string{kaspad1RPCAddress}
-	kaspad1Config.DisableTLS = true
+func configs(t *testing.T) (config1, config2 *config.Config) {
+	config1 = commonConfig()
+	config1.DataDir = randomDirectory(t)
+	config1.Listeners = []string{p2pAddress1}
+	config1.RPCListeners = []string{rpcAddress1}
+	config1.DisableTLS = true
 
-	kaspad2Config = commonConfig()
-	kaspad2Config.DataDir = randomDirectory(t)
-	kaspad2Config.Listeners = []string{kaspad2P2PAddress}
-	kaspad2Config.RPCListeners = []string{kaspad2RPCAddress}
-	kaspad2Config.DisableTLS = true
+	config2 = commonConfig()
+	config2.DataDir = randomDirectory(t)
+	config2.Listeners = []string{p2pAddress2}
+	config2.RPCListeners = []string{rpcAddress2}
+	config2.DisableTLS = true
 
-	return kaspad1Config, kaspad2Config
+	return config1, config2
 }
 
 func commonConfig() *config.Config {
@@ -54,6 +53,7 @@ func commonConfig() *config.Config {
 	commonConfig.DisableDNSSeed = true
 	commonConfig.RPCUser = rpcUser
 	commonConfig.RPCPass = rpcPass
+	commonConfig.DebugLevel = "trace"
 
 	return commonConfig
 }

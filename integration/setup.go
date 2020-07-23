@@ -4,98 +4,93 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/kaspanet/kaspad/app"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/dbaccess"
-	kaspadpkg "github.com/kaspanet/kaspad/kaspad"
 )
 
-func setup(t *testing.T) (kaspad1, kaspad2 *kaspadpkg.Kaspad, client1, client2 *rpcClient, teardownFunc func()) {
-	kaspad1Config, kaspad2Config := configs(t)
+func setup(t *testing.T) (app1, app2 *app.App, client1, client2 *rpcClient, teardownFunc func()) {
+	config1, config2 := configs(t)
 
-	kaspad1DatabaseContext, kaspad2DatabaseContext := openDBs(t, kaspad1Config, kaspad2Config)
+	databaseContext1, databaseContext2 := openDBs(t, config1, config2)
 
-	kaspad1, kaspad2 = NewKaspads(t,
-		kaspad1Config, kaspad2Config,
-		kaspad1DatabaseContext, kaspad2DatabaseContext)
+	app1, app2 = newApps(t, config1, config2, databaseContext1, databaseContext2)
 
-	kaspad1.Start()
-	kaspad2.Start()
+	app1.Start()
+	app2.Start()
 
 	client1, client2 = rpcClients(t)
 
-	return kaspad1, kaspad2, client1, client2,
-		func() { teardown(t, kaspad1DatabaseContext, kaspad2DatabaseContext, kaspad1, kaspad2) }
+	return app1, app2, client1, client2,
+		func() { teardown(t, databaseContext1, databaseContext2, app1, app2) }
 }
 
 func rpcClients(t *testing.T) (client1, client2 *rpcClient) {
-	client1, err := newRPCClient(kaspad1RPCAddress)
+	client1, err := newRPCClient(rpcAddress1)
 	if err != nil {
-		t.Fatalf("Error getting RPC client for kaspad1 %+v", err)
+		t.Fatalf("Error getting RPC client for app1 %+v", err)
 	}
-	client2, err = newRPCClient(kaspad2RPCAddress)
+	client2, err = newRPCClient(rpcAddress2)
 	if err != nil {
-		t.Fatalf("Error getting RPC client for kaspad2: %+v", err)
+		t.Fatalf("Error getting RPC client for app2: %+v", err)
 	}
 	return client1, client2
 }
 
-func teardown(t *testing.T,
-	kaspad1DatabaseContext, kaspad2DatabaseContext *dbaccess.DatabaseContext,
-	kaspad1, kaspad2 *kaspadpkg.Kaspad) {
+func teardown(t *testing.T, databaseContext1, databaseContext2 *dbaccess.DatabaseContext, app1, app2 *app.App) {
 
-	err := kaspad1DatabaseContext.Close()
+	err := databaseContext1.Close()
 	if err != nil {
-		t.Errorf("Error closing kaspad1DatabaseContext: %+v", err)
+		t.Errorf("Error closing databaseContext1: %+v", err)
 	}
-	err = kaspad2DatabaseContext.Close()
+	err = databaseContext2.Close()
 	if err != nil {
-		t.Errorf("Error closing kaspad2DatabaseContext: %+v", err)
+		t.Errorf("Error closing databaseContext2: %+v", err)
 	}
 
-	err = kaspad1.Stop()
+	err = app1.Stop()
 	if err != nil {
-		t.Errorf("Error stopping kaspad1 %+v", err)
+		t.Errorf("Error stopping app1 %+v", err)
 	}
-	err = kaspad2.Stop()
+	err = app2.Stop()
 	if err != nil {
-		t.Errorf("Error stopping kaspad2: %+v", err)
+		t.Errorf("Error stopping app2: %+v", err)
 	}
 
-	kaspad1.WaitForShutdown()
-	kaspad2.WaitForShutdown()
+	app1.WaitForShutdown()
+	app2.WaitForShutdown()
 }
 
-func NewKaspads(t *testing.T,
-	kaspad1Config, kaspad2Config *config.Config,
-	kaspad1DatabaseContext, kaspad2DatabaseContext *dbaccess.DatabaseContext,
-) (kaspad1, kaspad2 *kaspadpkg.Kaspad) {
+func newApps(t *testing.T, config1, config2 *config.Config,
+	databaseContext1, databaseContext2 *dbaccess.DatabaseContext,
+) (app1, app2 *app.App) {
 
-	kaspad1, err := kaspadpkg.New(kaspad1Config, kaspad1DatabaseContext, make(chan struct{}))
+	app1, err := app.New(config1, databaseContext1, make(chan struct{}))
 	if err != nil {
-		t.Fatalf("Error creating kaspad1: %+v", err)
+		t.Fatalf("Error creating app1: %+v", err)
 	}
 
-	kaspad2, err = kaspadpkg.New(kaspad2Config, kaspad2DatabaseContext, make(chan struct{}))
+	app2, err = app.New(config2, databaseContext2, make(chan struct{}))
 	if err != nil {
-		t.Fatalf("Error creating kaspad2: %+v", err)
+		t.Fatalf("Error creating app2: %+v", err)
 	}
-	return kaspad1, kaspad2
+	return app1, app2
 }
 
-func openDBs(t *testing.T, kaspad1Config *config.Config, kaspad2Config *config.Config) (
-	kaspad1DatabaseContext *dbaccess.DatabaseContext,
-	kaspad2DatabaseContext *dbaccess.DatabaseContext) {
+func openDBs(t *testing.T, config1 *config.Config, config2 *config.Config) (
+	databaseContext1 *dbaccess.DatabaseContext,
+	databaseContext2 *dbaccess.DatabaseContext) {
 
-	kaspad1DatabaseContext, err := openDB(kaspad1Config)
+	databaseContext1, err := openDB(config1)
 	if err != nil {
-		t.Fatalf("Error openning database for kaspad1: %+v", err)
+		t.Fatalf("Error openning database for app1: %+v", err)
 	}
 
-	kaspad2DatabaseContext, err = openDB(kaspad2Config)
+	databaseContext2, err = openDB(config2)
 	if err != nil {
-		t.Fatalf("Error openning database for kaspad2: %+v", err)
+		t.Fatalf("Error openning database for app2: %+v", err)
 	}
-	return kaspad1DatabaseContext, kaspad2DatabaseContext
+	return databaseContext1, databaseContext2
 }
 
 func openDB(cfg *config.Config) (*dbaccess.DatabaseContext, error) {
