@@ -31,9 +31,7 @@ type NetAdapter struct {
 	routerInitializer RouterInitializer
 	stop              uint32
 
-	routersToConnections map[*routerpkg.Router]*NetConnection
-	connectionsToIDs     map[*NetConnection]*id.ID
-	idsToRouters         map[*id.ID]*routerpkg.Router
+	connectionsToRouters map[*NetConnection]*routerpkg.Router
 	sync.RWMutex
 }
 
@@ -53,9 +51,7 @@ func NewNetAdapter(cfg *config.Config) (*NetAdapter, error) {
 		id:     netAdapterID,
 		server: s,
 
-		routersToConnections: make(map[*routerpkg.Router]*NetConnection),
-		connectionsToIDs:     make(map[*NetConnection]*id.ID),
-		idsToRouters:         make(map[*id.ID]*routerpkg.Router),
+		connectionsToRouters: make(map[*NetConnection]*routerpkg.Router),
 	}
 
 	adapter.server.SetOnConnectedHandler(adapter.onConnectedHandler)
@@ -90,9 +86,9 @@ func (na *NetAdapter) Connect(address string) error {
 
 // Connections returns a list of connections currently connected and active
 func (na *NetAdapter) Connections() []*NetConnection {
-	netConnections := make([]*NetConnection, 0, len(na.connectionsToIDs))
+	netConnections := make([]*NetConnection, 0, len(na.connectionsToRouters))
 
-	for netConnection := range na.connectionsToIDs {
+	for netConnection := range na.connectionsToRouters {
 		netConnections = append(netConnections, netConnection)
 	}
 
@@ -101,7 +97,7 @@ func (na *NetAdapter) Connections() []*NetConnection {
 
 // ConnectionCount returns the count of the connected connections
 func (na *NetAdapter) ConnectionCount() int {
-	return len(na.connectionsToIDs)
+	return len(na.connectionsToRouters)
 }
 
 func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
@@ -112,9 +108,7 @@ func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
 	}
 	connection.Start(router)
 
-	na.routersToConnections[router] = netConnection
-
-	na.connectionsToIDs[netConnection] = nil
+	na.connectionsToRouters[netConnection] = router
 
 	router.SetOnRouteCapacityReachedHandler(func() {
 		err := connection.Disconnect()
@@ -126,36 +120,10 @@ func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
 		}
 	})
 	connection.SetOnDisconnectedHandler(func() error {
-		na.cleanupConnection(netConnection, router)
+		delete(na.connectionsToRouters, netConnection)
 		return router.Close()
 	})
 	return nil
-}
-
-// AssociateRouterID associates the connection for the given router
-// with the given ID
-func (na *NetAdapter) AssociateRouterID(router *routerpkg.Router, id *id.ID) error {
-	netConnection, ok := na.routersToConnections[router]
-	if !ok {
-		return errors.Errorf("router not registered for id %s", id)
-	}
-
-	netConnection.id = id
-
-	na.connectionsToIDs[netConnection] = id
-	na.idsToRouters[id] = router
-	return nil
-}
-
-func (na *NetAdapter) cleanupConnection(netConnection *NetConnection, router *routerpkg.Router) {
-	connectionID, ok := na.connectionsToIDs[netConnection]
-	if !ok {
-		return
-	}
-
-	delete(na.routersToConnections, router)
-	delete(na.connectionsToIDs, netConnection)
-	delete(na.idsToRouters, connectionID)
 }
 
 // SetRouterInitializer sets the routerInitializer function
@@ -171,20 +139,15 @@ func (na *NetAdapter) ID() *id.ID {
 
 // Broadcast sends the given `message` to every peer corresponding
 // to each ID in `ids`
-func (na *NetAdapter) Broadcast(connectionIDs []*id.ID, message wire.Message) error {
+func (na *NetAdapter) Broadcast(netConnections []*NetConnection, message wire.Message) error {
 	na.RLock()
 	defer na.RUnlock()
-	for _, connectionID := range connectionIDs {
-		router, ok := na.idsToRouters[connectionID]
-		if !ok {
-			log.Warnf("connectionID %s is not registered", connectionID)
-			continue
-		}
+	for _, netConnection := range netConnections {
+		router := na.connectionsToRouters[netConnection]
 		err := router.EnqueueIncomingMessage(message)
 		if err != nil {
 			if errors.Is(err, routerpkg.ErrRouteClosed) {
-				connection := na.routersToConnections[router]
-				log.Debugf("Cannot enqueue message to %s: router is closed", connection)
+				log.Debugf("Cannot enqueue message to %s: router is closed", netConnection)
 				continue
 			}
 			return err
