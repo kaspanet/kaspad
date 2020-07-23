@@ -23,7 +23,6 @@ type FlowContext struct {
 	cfg               *config.Config
 	netAdapter        *netadapter.NetAdapter
 	txPool            *mempool.TxPool
-	addedTransactions []*util.Tx
 	dag               *blockdag.BlockDAG
 	addressManager    *addrmgr.AddrManager
 	connectionManager *connmanager.ConnectionManager
