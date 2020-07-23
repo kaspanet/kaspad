@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	// svcName is the name of Kaspad service.
+	// svcName is the name of kaspad service.
 	svcName = "kaspadsvc"
 
 	// svcDisplayName is the service name that will be shown in the windows
@@ -37,7 +37,7 @@ const (
 // elog is used to send messages to the Windows event log.
 var elog *eventlog.Log
 
-// logServiceStart logs information about Kaspad when the main server has
+// logServiceStart logs information about kaspad when the main server has
 // been started to the Windows event log.
 func logServiceStart() {
 	var message string
@@ -55,16 +55,16 @@ type kaspadService struct{}
 
 // Execute is the main entry point the winsvc package calls when receiving
 // information from the Windows service control manager. It launches the
-// long-running kaspadMain (which is the real meat of Kaspad), handles service
+// long-running kaspadMain (which is the real meat of kaspad), handles service
 // change requests, and notifies the service control manager of changes.
 func (s *kaspadService) Execute(args []string, r <-chan svc.ChangeRequest, changes chan<- svc.Status) (bool, uint32) {
-	// Service Start is pending.
+	// Service start is pending.
 	const cmdsAccepted = svc.AcceptStop | svc.AcceptShutdown
 	changes <- svc.Status{State: svc.StartPending}
 
-	// Start kaspadMain in a separate goroutine so the service can Start
+	// Start kaspadMain in a separate goroutine so the service can start
 	// quickly. Shutdown (along with a potential error) is reported via
-	// doneChan. startedChan is notified once Kaspad is started so this can
+	// doneChan. startedChan is notified once kaspad is started so this can
 	// be properly logged
 	doneChan := make(chan error)
 	startedChan := make(chan struct{})
@@ -84,7 +84,7 @@ loop:
 				changes <- c.CurrentStatus
 
 			case svc.Stop, svc.Shutdown:
-				// Service Stop is pending. Don't accept any
+				// Service stop is pending. Don't accept any
 				// more commands while pending.
 				changes <- svc.Status{State: svc.StopPending}
 
@@ -112,7 +112,7 @@ loop:
 	return false, 0
 }
 
-// installService attempts to install the Kaspad service. Typically this should
+// installService attempts to install the kaspad service. Typically this should
 // be done by the msi installer, but it is provided here since it can be useful
 // for development.
 func installService() error {
@@ -161,7 +161,7 @@ func installService() error {
 	return eventlog.InstallAsEventCreate(svcName, eventsSupported)
 }
 
-// removeService attempts to uninstall the Kaspad service. Typically this should
+// removeService attempts to uninstall the kaspad service. Typically this should
 // be done by the msi uninstaller, but it is provided here since it can be
 // useful for development. Not the eventlog entry is intentionally not removed
 // since it would invalidate any existing event log messages.
@@ -184,7 +184,7 @@ func removeService() error {
 	return service.Delete()
 }
 
-// startService attempts to Start the Kaspad service.
+// startService attempts to Start the kaspad service.
 func startService() error {
 	// Connect to the windows service manager.
 	serviceManager, err := mgr.Connect()
@@ -201,7 +201,7 @@ func startService() error {
 
 	err = service.Start(os.Args)
 	if err != nil {
-		return errors.Errorf("could not Start service: %s", err)
+		return errors.Errorf("could not start service: %s", err)
 	}
 
 	return nil
@@ -259,10 +259,10 @@ func performServiceCommand(command string) error {
 	case "remove":
 		err = removeService()
 
-	case "Start":
+	case "start":
 		err = startService()
 
-	case "Stop":
+	case "stop":
 		err = controlService(svc.Stop, svc.Stopped)
 
 	default:
@@ -273,7 +273,7 @@ func performServiceCommand(command string) error {
 }
 
 // serviceMain checks whether we're being invoked as a service, and if so uses
-// the service control manager to Start the long-running server. A flag is
+// the service control manager to start the long-running server. A flag is
 // returned to the caller so the application can determine whether to exit (when
 // running as a service) or launch in normal interactive mode.
 func serviceMain() (bool, error) {
@@ -295,7 +295,7 @@ func serviceMain() (bool, error) {
 
 	err = svc.Run(svcName, &kaspadService{})
 	if err != nil {
-		elog.Error(1, fmt.Sprintf("Service Start failed: %s", err))
+		elog.Error(1, fmt.Sprintf("Service start failed: %s", err))
 		return true, err
 	}
 
