@@ -138,7 +138,7 @@ func (na *NetAdapter) ID() *id.ID {
 }
 
 // Broadcast sends the given `message` to every peer corresponding
-// NetConnection in the given netConnections
+// to each NetConnection in the given netConnections
 func (na *NetAdapter) Broadcast(netConnections []*NetConnection, message wire.Message) error {
 	na.RLock()
 	defer na.RUnlock()
