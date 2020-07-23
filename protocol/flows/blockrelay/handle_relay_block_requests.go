@@ -31,7 +31,7 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 			if blockdag.IsNotInDAGErr(err) {
 				return protocolerrors.Errorf(true, "block %s not found", hash)
 			} else if err != nil {
-				panic(errors.Wrapf(err, "unable to fetch requested block hash %s", hash))
+				return errors.Wrapf(err, "unable to fetch requested block hash %s", hash)
 			}
 			msgBlock := block.MsgBlock()
 

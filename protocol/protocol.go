@@ -191,6 +191,9 @@ func addFlow(name string, router *routerpkg.Router, messageTypes []wire.MessageC
 		err := flow(route)
 		if err != nil {
 			log.Errorf("error from %s flow: %s", name, err)
+			if protocolErr := &(protocolerrors.ProtocolError{}); !errors.As(err, &protocolErr) {
+				panic(err)
+			}
 		}
 		if atomic.AddUint32(stopped, 1) == 1 {
 			stopChan <- err
@@ -217,6 +220,9 @@ func addOneTimeFlow(name string, router *routerpkg.Router, messageTypes []wire.M
 		err := flow(route)
 		if err != nil {
 			log.Errorf("error from %s flow: %s", name, err)
+			if protocolErr := &(protocolerrors.ProtocolError{}); !errors.As(err, &protocolErr) {
+				panic(err)
+			}
 		}
 		if err != nil && atomic.AddUint32(stopped, 1) == 1 {
 			stopChan <- err

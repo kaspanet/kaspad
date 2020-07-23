@@ -21,7 +21,7 @@ func (f *FlowContext) AddTransaction(tx *util.Tx) error {
 	}
 
 	if len(transactionsAcceptedToMempool) > 1 {
-		panic(errors.New("got more than one accepted transactions when no orphans were allowed"))
+		return errors.New("got more than one accepted transactions when no orphans were allowed")
 	}
 
 	f.transactionsToRebroadcast[*tx.ID()] = tx

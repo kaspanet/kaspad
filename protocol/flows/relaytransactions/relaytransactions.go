@@ -163,7 +163,7 @@ func (flow *handleRelayedTransactionsFlow) readMsgTx() (
 		case *wire.MsgTx:
 			return message, nil
 		default:
-			panic(errors.Errorf("unexpected message %s", message.Command()))
+			return nil, errors.Errorf("unexpected message %s", message.Command())
 		}
 	}
 }
@@ -188,10 +188,10 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 			// When the error is a rule error, it means the transaction was
 			// simply rejected as opposed to something actually going wrong,
 			// so log it as such. Otherwise, something really did go wrong,
-			// so panic.
+			// so return the error as is.
 			ruleErr := &mempool.RuleError{}
 			if !errors.As(err, ruleErr) {
-				panic(errors.Wrapf(err, "failed to process transaction %s", tx.ID()))
+				return errors.Wrapf(err, "failed to process transaction %s", tx.ID())
 			}
 
 			shouldBan := false
@@ -211,7 +211,7 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 		}
 		err = flow.broadcastAcceptedTransactions(acceptedTxs)
 		if err != nil {
-			panic(err)
+			return err
 		}
 		// TODO(libp2p) Notify transactionsAcceptedToMempool to RPC
 	}

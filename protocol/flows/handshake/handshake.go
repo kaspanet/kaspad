@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/protocol/common"
+	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"sync"
 	"sync/atomic"
 
@@ -33,12 +34,12 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 
 	receiveVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVersion})
 	if err != nil {
-		panic(err)
+		return nil, false, err
 	}
 
 	sendVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVerAck})
 	if err != nil {
-		panic(err)
+		return nil, false, err
 	}
 
 	// For HandleHandshake to finish, we need to get from the other node
@@ -58,6 +59,9 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 		address, err := ReceiveVersion(context, receiveVersionRoute, router.OutgoingRoute(), peer)
 		if err != nil {
 			log.Errorf("error from ReceiveVersion: %s", err)
+			if protocolErr := &(protocolerrors.ProtocolError{}); !errors.As(err, &protocolErr) {
+				panic(err)
+			}
 		}
 		if err != nil {
 			if atomic.AddUint32(&errChanUsed, 1) != 1 {
@@ -73,6 +77,9 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 		err := SendVersion(context, sendVersionRoute, router.OutgoingRoute())
 		if err != nil {
 			log.Errorf("error from SendVersion: %s", err)
+			if protocolErr := &(protocolerrors.ProtocolError{}); !errors.As(err, &protocolErr) {
+				panic(err)
+			}
 		}
 		if err != nil {
 			if atomic.AddUint32(&errChanUsed, 1) != 1 {
