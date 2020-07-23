@@ -182,6 +182,9 @@ func MakeEmptyMessage(command MessageCommand) (Message, error) {
 	case CmdIBDBlock:
 		msg = &MsgIBDBlock{}
 
+	case CmdInvRelayBlock:
+		msg = &MsgInvRelayBlock{}
+
 	default:
 		return nil, errors.Errorf("unhandled command [%s]", command)
 	}
