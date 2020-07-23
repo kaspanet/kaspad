@@ -5,7 +5,6 @@ import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/netadapter"
-	"github.com/kaspanet/kaspad/protocol/common"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"sync"
 	"sync/atomic"
@@ -100,10 +99,7 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 
 	err = context.AddToPeers(peer)
 	if err != nil {
-		if errors.Is(err, common.ErrPeerWithSameIDExists) {
-			return nil, false, err
-		}
-		panic(err)
+		return nil, false, err
 	}
 
 	if peerAddress != nil {
@@ -116,7 +112,7 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 
 	err = router.RemoveRoute([]wire.MessageCommand{wire.CmdVersion, wire.CmdVerAck})
 	if err != nil {
-		panic(err)
+		return nil, false, err
 	}
 
 	return peer, false, nil
