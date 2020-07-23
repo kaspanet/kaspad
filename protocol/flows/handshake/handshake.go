@@ -99,12 +99,6 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 		panic(err)
 	}
 
-	peerID := peer.ID()
-	err = context.NetAdapter().AssociateRouterID(router, peerID)
-	if err != nil {
-		panic(err)
-	}
-
 	if peerAddress != nil {
 		subnetworkID := peer.SubnetworkID()
 		context.AddressManager().AddAddress(peerAddress, peerAddress, subnetworkID)
