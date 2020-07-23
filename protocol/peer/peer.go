@@ -21,13 +21,16 @@ type Peer struct {
 	selectedTipHashMtx sync.RWMutex
 	selectedTipHash    *daghash.Hash
 
-	id                    *id.ID
-	userAgent             string
-	services              wire.ServiceFlag
-	advertisedProtocolVer uint32 // protocol version advertised by remote
-	protocolVersion       uint32 // negotiated protocol version
-	disableRelayTx        bool
-	subnetworkID          *subnetworkid.SubnetworkID
+	id                       *id.ID
+	userAgent                string
+	services                 wire.ServiceFlag
+	advertisedProtocolVerion uint32 // protocol version advertised by remote
+	protocolVersion          uint32 // negotiated protocol version
+	disableRelayTx           bool
+	subnetworkID             *subnetworkid.SubnetworkID
+
+	timeOffset        time.Duration
+	connectionStarted time.Time
 
 	pingLock         sync.RWMutex
 	lastPingNonce    uint64        // The nonce of the last ping we sent
@@ -47,6 +50,7 @@ func New(connection *netadapter.NetConnection) *Peer {
 		connection:             connection,
 		selectedTipRequestChan: make(chan struct{}),
 		ibdStartChan:           make(chan struct{}),
+		connectionStarted:      time.Now(),
 	}
 }
 
@@ -75,11 +79,36 @@ func (p *Peer) ID() *id.ID {
 	return p.id
 }
 
+// TimeOffset returns the peer's time offset.
+func (p *Peer) TimeOffset() time.Duration {
+	return p.timeOffset
+}
+
+// UserAgent returns the peer's user agent.
+func (p *Peer) UserAgent() string {
+	return p.userAgent
+}
+
+// AdvertisedProtocolVersion returns the peer's advertised protocol version.
+func (p *Peer) AdvertisedProtocolVersion() uint32 {
+	return p.advertisedProtocolVerion
+}
+
+// TimeConnected returns the time since the connection to this been has been started.
+func (p *Peer) TimeConnected() time.Duration {
+	return time.Since(p.connectionStarted)
+}
+
+// IsOutbound returns whether the peer is an outbound connection.
+func (p *Peer) IsOutbound() bool {
+	return p.connection.IsOutbound()
+}
+
 // UpdateFieldsFromMsgVersion updates the peer with the data from the version message.
 func (p *Peer) UpdateFieldsFromMsgVersion(msg *wire.MsgVersion) {
 	// Negotiate the protocol version.
-	p.advertisedProtocolVer = msg.ProtocolVersion
-	p.protocolVersion = mathUtil.MinUint32(p.protocolVersion, p.advertisedProtocolVer)
+	p.advertisedProtocolVerion = msg.ProtocolVersion
+	p.protocolVersion = mathUtil.MinUint32(p.protocolVersion, p.advertisedProtocolVerion)
 	log.Debugf("Negotiated protocol version %d for peer %s",
 		p.protocolVersion, p.id)
 
@@ -96,6 +125,8 @@ func (p *Peer) UpdateFieldsFromMsgVersion(msg *wire.MsgVersion) {
 	p.disableRelayTx = msg.DisableRelayTx
 	p.selectedTipHash = msg.SelectedTipHash
 	p.subnetworkID = msg.SubnetworkID
+
+	p.timeOffset = mstime.Since(msg.Timestamp)
 }
 
 // SetPingPending sets the ping state of the peer to 'pending'
