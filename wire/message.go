@@ -185,6 +185,9 @@ func MakeEmptyMessage(command MessageCommand) (Message, error) {
 	case CmdInvRelayBlock:
 		msg = &MsgInvRelayBlock{}
 
+	case CmdGetRelayBlocks:
+		msg = &MsgGetRelayBlocks{}
+
 	default:
 		return nil, errors.Errorf("unhandled command [%s]", command)
 	}
