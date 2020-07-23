@@ -38,9 +38,8 @@ type FlowContext struct {
 	startIBDMutex sync.Mutex
 	ibdPeer       *peerpkg.Peer
 
-	peers             map[*id.ID]*peerpkg.Peer
-	peersMutex        sync.RWMutex
-	peerAddedCallback func(*peerpkg.Peer)
+	peers      map[*id.ID]*peerpkg.Peer
+	peersMutex sync.RWMutex
 }
 
 // New returns a new instance of FlowContext.

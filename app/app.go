@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	"github.com/kaspanet/kaspad/netadapter/id"
+
 	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/blockdag/indexers"
@@ -28,7 +30,7 @@ type App struct {
 	cfg               *config.Config
 	rpcServer         *rpc.Server
 	addressManager    *addrmgr.AddrManager
-	ProtocolManager   *protocol.Manager
+	protocolManager   *protocol.Manager
 	connectionManager *connmanager.ConnectionManager
 	netAdapter        *netadapter.NetAdapter
 
@@ -44,7 +46,7 @@ func (a *App) Start() {
 
 	log.Trace("Starting kaspad")
 
-	err := a.ProtocolManager.Start()
+	err := a.protocolManager.Start()
 	if err != nil {
 		panics.Exit(log, fmt.Sprintf("Error starting the p2p protocol: %+v", err))
 	}
@@ -70,7 +72,7 @@ func (a *App) Stop() error {
 
 	a.connectionManager.Stop()
 
-	err := a.ProtocolManager.Stop()
+	err := a.protocolManager.Stop()
 	if err != nil {
 		log.Errorf("Error stopping the p2p protocol: %+v", err)
 	}
@@ -126,7 +128,7 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 	return &App{
 		cfg:               cfg,
 		rpcServer:         rpcServer,
-		ProtocolManager:   protocolManager,
+		protocolManager:   protocolManager,
 		connectionManager: connectionManager,
 		netAdapter:        netAdapter,
 	}, nil
@@ -225,6 +227,10 @@ func setupRPC(cfg *config.Config,
 		return rpcServer, nil
 	}
 	return nil, nil
+}
+
+func (a *App) ID() *id.ID {
+	return a.netAdapter.ID()
 }
 
 // WaitForShutdown blocks until the main listener and peer handlers are stopped.
