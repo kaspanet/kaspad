@@ -205,17 +205,16 @@ type GetNetworkInfoResult struct {
 
 // GetConnectedPeerInfoResult models the data returned from the getConnectedPeerInfo command.
 type GetConnectedPeerInfoResult struct {
-	ID               string `json:"id"`
-	Address          string `json:"address"`
-	LastPingDuration int64  `json:"lastPingDuration"`
-	SelectedTipHash  string `json:"selectedTipHash"`
-	IsSyncNode       bool   `json:"isSyncNode"`
-	IsInbound        bool   `json:"isInbound"`
-	BanScore         uint32 `json:"banScore"`
-	TimeOffset       int64  `json:"timeOffset"`
-	UserAgent        string `json:"userAgent"`
-	ProtocolVersion  uint32 `json:"protocolVersion"`
-	TimeConnected    int64  `json:"timeConnected"`
+	ID                        string `json:"id"`
+	Address                   string `json:"address"`
+	LastPingDuration          int64  `json:"lastPingDuration"`
+	SelectedTipHash           string `json:"selectedTipHash"`
+	IsSyncNode                bool   `json:"isSyncNode"`
+	IsOutbound                bool   `json:"isOutbound"`
+	TimeOffset                int64  `json:"timeOffset"`
+	UserAgent                 string `json:"userAgent"`
+	AdvertisedProtocolVersion uint32 `json:"advertisedProtocolVersion"`
+	TimeConnected             int64  `json:"timeConnected"`
 }
 
 // GetPeerAddressesResult models the data returned from the getPeerAddresses command.

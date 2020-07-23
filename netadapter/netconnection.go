@@ -34,6 +34,11 @@ func (c *NetConnection) Address() string {
 	return c.connection.Address().String()
 }
 
+// IsOutbound returns whether the connection is outbound
+func (c *NetConnection) IsOutbound() bool {
+	return c.connection.IsOutbound()
+}
+
 // IP returns the IP address associated with this connection
 func (c *NetConnection) IP() string {
 	return c.connection.Address().IP.String()

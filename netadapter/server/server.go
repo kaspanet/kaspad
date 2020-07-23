@@ -36,6 +36,7 @@ type Connection interface {
 	Start(router *router.Router)
 	Disconnect() error
 	IsConnected() bool
+	IsOutbound() bool
 	SetOnDisconnectedHandler(onDisconnectedHandler OnDisconnectedHandler)
 	SetOnInvalidMessageHandler(onInvalidMessageHandler OnInvalidMessageHandler)
 	Address() *net.TCPAddr
