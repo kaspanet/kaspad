@@ -1,12 +1,12 @@
 package handshake
 
 import (
+	"github.com/kaspanet/kaspad/addressmanager"
 	"github.com/kaspanet/kaspad/protocol/common"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"sync"
 	"sync/atomic"
 
-	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/netadapter"
@@ -23,7 +23,7 @@ type HandleHandshakeContext interface {
 	Config() *config.Config
 	NetAdapter() *netadapter.NetAdapter
 	DAG() *blockdag.BlockDAG
-	AddressManager() *addrmgr.AddrManager
+	AddressManager() *addressmanager.AddressManager
 	StartIBDIfRequired()
 	AddToPeers(peer *peerpkg.Peer) error
 }

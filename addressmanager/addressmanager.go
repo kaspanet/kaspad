@@ -9,6 +9,7 @@ import (
 	crand "crypto/rand" // for seeding
 	"encoding/binary"
 	"encoding/gob"
+	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
@@ -35,6 +36,9 @@ type triedAddressBucketArray [TriedBucketCount][]*KnownAddress
 // AddressManager provides a concurrency safe address manager for caching potential
 // peers on the Kaspa network.
 type AddressManager struct {
+	cfg             *config.Config
+	databaseContext *dbaccess.DatabaseContext
+
 	mutex              sync.Mutex
 	lookupFunc         func(string) ([]net.IP, error)
 	random             *rand.Rand
@@ -168,10 +172,10 @@ const (
 	// to a getAddresses. If we have less than this amount, we send everything.
 	getAddrMin = 50
 
-	// GetAddrMax is the most addresses that we will send in response
+	// GetAddressesMax is the most addresses that we will send in response
 	// to a getAddress (in practise the most addresses we will return from a
 	// call to AddressCache()).
-	GetAddrMax = 2500
+	GetAddressesMax = 2500
 
 	// getAddrPercent is the percentage of total addresses known that we
 	// will share with a call to AddressCache.
@@ -181,12 +185,27 @@ const (
 	serializationVersion = 1
 )
 
+// New returns a new Kaspa address manager.
+func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext) *AddressManager {
+	addressManager := AddressManager{
+		cfg:               cfg,
+		databaseContext:   databaseContext,
+		lookupFunc:        cfg.Lookup,
+		random:            rand.New(rand.NewSource(time.Now().UnixNano())),
+		quit:              make(chan struct{}),
+		localAddresses:    make(map[AddressKey]*localAddress),
+		localSubnetworkID: cfg.SubnetworkID,
+	}
+	addressManager.reset()
+	return &addressManager
+}
+
 // updateAddress is a helper function to either update an address already known
 // to the address manager, or to add the address if not already known.
 func (am *AddressManager) updateAddress(netAddress, sourceAddress *wire.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
 	// Filter out non-routable addresses. Note that non-routable
 	// also includes invalid and local addresses.
-	if !IsRoutable(netAddress) {
+	if !am.IsRoutable(netAddress) {
 		return
 	}
 
@@ -351,8 +370,8 @@ func (am *AddressManager) newAddressBucketIndex(netAddress, srcAddress *wire.Net
 
 	data1 := []byte{}
 	data1 = append(data1, am.key[:]...)
-	data1 = append(data1, []byte(GroupKey(netAddress))...)
-	data1 = append(data1, []byte(GroupKey(srcAddress))...)
+	data1 = append(data1, []byte(am.GroupKey(netAddress))...)
+	data1 = append(data1, []byte(am.GroupKey(srcAddress))...)
 	hash1 := daghash.DoubleHashB(data1)
 	hash64 := binary.LittleEndian.Uint64(hash1)
 	hash64 %= newBucketsPerGroup
@@ -360,7 +379,7 @@ func (am *AddressManager) newAddressBucketIndex(netAddress, srcAddress *wire.Net
 	binary.LittleEndian.PutUint64(hashbuf[:], hash64)
 	data2 := []byte{}
 	data2 = append(data2, am.key[:]...)
-	data2 = append(data2, GroupKey(srcAddress)...)
+	data2 = append(data2, am.GroupKey(srcAddress)...)
 	data2 = append(data2, hashbuf[:]...)
 
 	hash2 := daghash.DoubleHashB(data2)
@@ -379,7 +398,7 @@ func (am *AddressManager) triedAddressBucketIndex(netAddress *wire.NetAddress) i
 	binary.LittleEndian.PutUint64(hashbuf[:], hash64)
 	data2 := []byte{}
 	data2 = append(data2, am.key[:]...)
-	data2 = append(data2, GroupKey(netAddress)...)
+	data2 = append(data2, am.GroupKey(netAddress)...)
 	data2 = append(data2, hashbuf[:]...)
 
 	hash2 := daghash.DoubleHashB(data2)
@@ -421,7 +440,7 @@ func (am *AddressManager) savePeers() error {
 		return err
 	}
 
-	return dbaccess.StorePeersState(dbaccess.NoTx(), serializedPeersState)
+	return dbaccess.StorePeersState(am.databaseContext, serializedPeersState)
 }
 
 func (am *AddressManager) serializePeersState() ([]byte, error) {
@@ -529,7 +548,7 @@ func (am *AddressManager) loadPeers() error {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	serializedPeerState, err := dbaccess.FetchPeersState(dbaccess.NoTx())
+	serializedPeerState, err := dbaccess.FetchPeersState(am.databaseContext)
 	if dbaccess.IsNotFoundError(err) {
 		am.reset()
 		log.Info("No peers state was found in the database. Created a new one", am.totalNumAddresses())
@@ -708,7 +727,7 @@ func (am *AddressManager) Start() error {
 
 	// Start the address ticker to save addresses periodically.
 	am.wg.Add(1)
-	spawn(am.addressHandler)
+	spawn("addressManager.addressHandler", am.addressHandler)
 	return nil
 }
 
@@ -831,8 +850,8 @@ func (am *AddressManager) AddressCache(includeAllSubnetworks bool, subnetworkID 
 	}
 
 	numAddresses := len(allAddresses) * getAddrPercent / 100
-	if numAddresses > GetAddrMax {
-		numAddresses = GetAddrMax
+	if numAddresses > GetAddressesMax {
+		numAddresses = GetAddressesMax
 	}
 	if len(allAddresses) < getAddrMin {
 		numAddresses = len(allAddresses)
@@ -1226,7 +1245,7 @@ func (am *AddressManager) incrementTriedAddressCount(subnetworkID *subnetworkid.
 // AddLocalAddress adds netAddress to the list of known local addresses to advertise
 // with the given priority.
 func (am *AddressManager) AddLocalAddress(netAddress *wire.NetAddress, priority AddressPriority) error {
-	if !IsRoutable(netAddress) {
+	if !am.IsRoutable(netAddress) {
 		return errors.Errorf("address %s is not routable", netAddress.IP)
 	}
 
@@ -1250,7 +1269,7 @@ func (am *AddressManager) AddLocalAddress(netAddress *wire.NetAddress, priority 
 
 // getReachabilityFrom returns the relative reachability of the provided local
 // address to the provided remote address.
-func getReachabilityFrom(localAddress, remoteAddress *wire.NetAddress) int {
+func (am *AddressManager) getReachabilityFrom(localAddress, remoteAddress *wire.NetAddress) int {
 	const (
 		Unreachable = 0
 		Default     = iota
@@ -1261,12 +1280,12 @@ func getReachabilityFrom(localAddress, remoteAddress *wire.NetAddress) int {
 		Private
 	)
 
-	if !IsRoutable(remoteAddress) {
+	if !am.IsRoutable(remoteAddress) {
 		return Unreachable
 	}
 
 	if IsRFC4380(remoteAddress) {
-		if !IsRoutable(localAddress) {
+		if !am.IsRoutable(localAddress) {
 			return Default
 		}
 
@@ -1282,7 +1301,7 @@ func getReachabilityFrom(localAddress, remoteAddress *wire.NetAddress) int {
 	}
 
 	if IsIPv4(remoteAddress) {
-		if IsRoutable(localAddress) && IsIPv4(localAddress) {
+		if am.IsRoutable(localAddress) && IsIPv4(localAddress) {
 			return Ipv4
 		}
 		return Unreachable
@@ -1295,7 +1314,7 @@ func getReachabilityFrom(localAddress, remoteAddress *wire.NetAddress) int {
 		tunnelled = true
 	}
 
-	if !IsRoutable(localAddress) {
+	if !am.IsRoutable(localAddress) {
 		return Default
 	}
 
@@ -1324,13 +1343,13 @@ func (am *AddressManager) GetBestLocalAddress(remoteAddress *wire.NetAddress) *w
 	bestReach := 0
 	var bestScore AddressPriority
 	var bestAddress *wire.NetAddress
-	for _, la := range am.localAddresses {
-		reach := getReachabilityFrom(la.netAddress, remoteAddress)
+	for _, localAddress := range am.localAddresses {
+		reach := am.getReachabilityFrom(localAddress.netAddress, remoteAddress)
 		if reach > bestReach ||
-			(reach == bestReach && la.score > bestScore) {
+			(reach == bestReach && localAddress.score > bestScore) {
 			bestReach = reach
-			bestScore = la.score
-			bestAddress = la.netAddress
+			bestScore = localAddress.score
+			bestAddress = localAddress.netAddress
 		}
 	}
 	if bestAddress != nil {
@@ -1352,18 +1371,4 @@ func (am *AddressManager) GetBestLocalAddress(remoteAddress *wire.NetAddress) *w
 	}
 
 	return bestAddress
-}
-
-// New returns a new Kaspa address manager.
-// Use Start to begin processing asynchronous address updates.
-func New(lookupFunc func(string) ([]net.IP, error), subnetworkID *subnetworkid.SubnetworkID) *AddressManager {
-	am := AddressManager{
-		lookupFunc:        lookupFunc,
-		random:            rand.New(rand.NewSource(time.Now().UnixNano())),
-		quit:              make(chan struct{}),
-		localAddresses:    make(map[AddressKey]*localAddress),
-		localSubnetworkID: subnetworkID,
-	}
-	am.reset()
-	return &am
 }

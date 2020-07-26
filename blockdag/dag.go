@@ -930,7 +930,7 @@ func (dag *BlockDAG) isInSelectedParentChainOf(node *blockNode, other *blockNode
 
 // FinalityInterval is the interval that determines the finality window of the DAG.
 func (dag *BlockDAG) FinalityInterval() uint64 {
-	return uint64(dag.dagParams.FinalityDuration / dag.dagParams.TargetTimePerBlock)
+	return uint64(dag.Params.FinalityDuration / dag.Params.TargetTimePerBlock)
 }
 
 // checkFinalityViolation checks the new block does not violate the finality rules
@@ -1452,7 +1452,7 @@ func (dag *BlockDAG) isSynced() bool {
 		dagTimestamp = selectedTip.timestamp
 	}
 	dagTime := mstime.UnixMilliseconds(dagTimestamp)
-	return dag.Now().Sub(dagTime) <= isDAGCurrentMaxDiff*dag.dagParams.TargetTimePerBlock
+	return dag.Now().Sub(dagTime) <= isDAGCurrentMaxDiff*dag.Params.TargetTimePerBlock
 }
 
 // Now returns the adjusted time according to
