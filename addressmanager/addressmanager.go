@@ -183,7 +183,7 @@ const (
 
 // updateAddress is a helper function to either update an address already known
 // to the address manager, or to add the address if not already known.
-func (am *AddressManager) updateAddress(netAddress, srcAddress *wire.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
+func (am *AddressManager) updateAddress(netAddress, sourceAddress *wire.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
 	// Filter out non-routable addresses. Note that non-routable
 	// also includes invalid and local addresses.
 	if !IsRoutable(netAddress) {
@@ -227,18 +227,24 @@ func (am *AddressManager) updateAddress(netAddress, srcAddress *wire.NetAddress,
 		}
 	} else {
 		// Make a copy of the net address to avoid races since it is
-		// updated elsewhere in the addrmanager code and would otherwise
-		// change the actual netaddress on the peer.
-		netAddrCopy := *netAddress
-		knownAddress = &KnownAddress{netAddress: &netAddrCopy, sourceAddress: srcAddress, subnetworkID: subnetworkID}
+		// updated elsewhere in the addressManager code and would otherwise
+		// change the actual netAddress on the peer.
+		netAddressCopy := *netAddress
+		knownAddress = &KnownAddress{netAddress: &netAddressCopy, sourceAddress: sourceAddress, subnetworkID: subnetworkID}
 		am.addressIndex[addressKey] = knownAddress
 		am.incrementNewAddressCount(subnetworkID)
 	}
 
-	newAddressBucketIndex := am.getNewAddressBucketIndex(netAddress, srcAddress)
+	// Already exists?
+	newAddressBucketArray := am.newAddressBucketArray(knownAddress.subnetworkID)
+	newAddressBucketIndex := am.newAddressBucketIndex(netAddress, sourceAddress)
+	if newAddressBucketArray != nil {
+		if _, ok := newAddressBucketArray[newAddressBucketIndex][addressKey]; ok {
+			return
+		}
+	}
 
 	// Enforce max addresses.
-	newAddressBucketArray := am.newAddressBucketArray(knownAddress.subnetworkID)
 	if newAddressBucketArray != nil && len(newAddressBucketArray[newAddressBucketIndex]) > newBucketSize {
 		log.Tracef("new bucket is full, expiring old")
 		am.expireNew(knownAddress.subnetworkID, newAddressBucketIndex)
@@ -340,7 +346,7 @@ func (am *AddressManager) pickTried(subnetworkID *subnetworkid.SubnetworkID, buc
 	return oldest, oldestIndex
 }
 
-func (am *AddressManager) getNewAddressBucketIndex(netAddress, srcAddress *wire.NetAddress) int {
+func (am *AddressManager) newAddressBucketIndex(netAddress, srcAddress *wire.NetAddress) int {
 	// doublesha256(key + sourcegroup + int64(doublesha256(key + group + sourcegroup))%bucket_per_source_group) % num_new_buckets
 
 	data1 := []byte{}
@@ -361,7 +367,7 @@ func (am *AddressManager) getNewAddressBucketIndex(netAddress, srcAddress *wire.
 	return int(binary.LittleEndian.Uint64(hash2) % NewBucketCount)
 }
 
-func (am *AddressManager) getTriedAddressBucketIndex(netAddress *wire.NetAddress) int {
+func (am *AddressManager) triedAddressBucketIndex(netAddress *wire.NetAddress) int {
 	// doublesha256(key + group + truncate_to_64bits(doublesha256(key)) % buckets_per_group) % num_buckets
 	data1 := []byte{}
 	data1 = append(data1, am.key[:]...)
@@ -1062,7 +1068,7 @@ func (am *AddressManager) Good(address *wire.NetAddress, subnetworkID *subnetwor
 	knownAddress.subnetworkID = subnetworkID
 
 	addressKey := NetAddressKey(address)
-	triedAddressBucketIndex := am.getTriedAddressBucketIndex(knownAddress.netAddress)
+	triedAddressBucketIndex := am.triedAddressBucketIndex(knownAddress.netAddress)
 
 	if knownAddress.tried {
 		// If this address was already tried, and subnetworkID didn't change - don't do anything
@@ -1120,7 +1126,7 @@ func (am *AddressManager) Good(address *wire.NetAddress, subnetworkID *subnetwor
 	knownAddressToRemove, knownAddressToRemoveIndex := am.pickTried(knownAddress.subnetworkID, triedAddressBucketIndex)
 
 	// First bucket index it would have been put in.
-	newAddressBucketIndex := am.getNewAddressBucketIndex(knownAddressToRemove.netAddress, knownAddressToRemove.sourceAddress)
+	newAddressBucketIndex := am.newAddressBucketIndex(knownAddressToRemove.netAddress, knownAddressToRemove.sourceAddress)
 
 	// If no room in the original bucket, we put it in a bucket we just
 	// freed up a space in.
