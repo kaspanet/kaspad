@@ -185,10 +185,6 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 
 		acceptedTxs, err := flow.TxPool().ProcessTransaction(tx, true, 0) // TODO(libp2p) Use the peer ID for the mempool tag
 		if err != nil {
-			// When the error is a rule error, it means the transaction was
-			// simply rejected as opposed to something actually going wrong,
-			// so log it as such. Otherwise, something really did go wrong,
-			// so return the error as is.
 			ruleErr := &mempool.RuleError{}
 			if !errors.As(err, ruleErr) {
 				return errors.Wrapf(err, "failed to process transaction %s", tx.ID())
