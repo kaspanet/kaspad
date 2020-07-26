@@ -1,6 +1,7 @@
 package handshake
 
 import (
+	"github.com/kaspanet/kaspad/protocol/common"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"sync"
 	"sync/atomic"
@@ -100,6 +101,9 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 
 	err = context.AddToPeers(peer)
 	if err != nil {
+		if errors.As(err, &common.ErrPeerWithSameIDExists) {
+			return nil, false, protocolerrors.Wrap(false, err, "peer already exists")
+		}
 		return nil, false, err
 	}
 
