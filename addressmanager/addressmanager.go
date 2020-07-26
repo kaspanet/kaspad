@@ -165,7 +165,7 @@ const (
 	minBadDays = 7
 
 	// getAddrMin is the least addresses that we will send in response
-	// to a getAddress. If we have less than this amount, we send everything.
+	// to a getAddresses. If we have less than this amount, we send everything.
 	getAddrMin = 50
 
 	// GetAddrMax is the most addresses that we will send in response
