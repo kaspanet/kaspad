@@ -34,10 +34,14 @@ func TestIntegrationBasicSync(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error from NotifyBlocks: %+v", err)
 	}
-
 	app2OnBlockAddedChan := make(chan *wire.BlockHeader)
 	client2.onBlockAdded = func(header *wire.BlockHeader) {
 		app2OnBlockAddedChan <- header
+	}
+
+	err = client3.NotifyBlocks()
+	if err != nil {
+		t.Fatalf("Error from NotifyBlocks: %+v", err)
 	}
 	app3OnBlockAddedChan := make(chan *wire.BlockHeader)
 	client3.onBlockAdded = func(header *wire.BlockHeader) {
