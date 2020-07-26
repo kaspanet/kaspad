@@ -31,12 +31,12 @@ func TestChance(t *testing.T) {
 				0, mstime.Now().Add(-30*time.Minute), mstime.Now(), false, 0),
 			1.0,
 		}, {
-			//Test case in which lastattempt < 0
+			//Test case in which lastAttempt < 0
 			addressmanager.TstNewKnownAddress(&wire.NetAddress{Timestamp: now.Add(-35 * time.Second)},
 				0, mstime.Now().Add(30*time.Minute), mstime.Now(), false, 0),
 			1.0 * .01,
 		}, {
-			//Test case in which lastattempt < ten minutes
+			//Test case in which lastAttempt < ten minutes
 			addressmanager.TstNewKnownAddress(&wire.NetAddress{Timestamp: now.Add(-35 * time.Second)},
 				0, mstime.Now().Add(-5*time.Minute), mstime.Now(), false, 0),
 			1.0 * .01,

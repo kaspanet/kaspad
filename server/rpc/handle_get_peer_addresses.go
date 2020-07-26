@@ -24,8 +24,8 @@ func handleGetPeerAddresses(s *Server, cmd interface{}, closeChan <-chan struct{
 
 	for i, addr := range peersState.Addresses {
 		rpcPeersState.Addresses[i] = &rpcmodel.GetPeerAddressesKnownAddressResult{
-			Addr:         string(addr.Addr),
-			Src:          string(addr.Src),
+			Addr:         string(addr.Address),
+			Src:          string(addr.SourceAddress),
 			SubnetworkID: addr.SubnetworkID,
 			Attempts:     addr.Attempts,
 			TimeStamp:    addr.TimeStamp,
@@ -34,25 +34,25 @@ func handleGetPeerAddresses(s *Server, cmd interface{}, closeChan <-chan struct{
 		}
 	}
 
-	for subnetworkID, bucket := range peersState.NewBuckets {
+	for subnetworkID, bucket := range peersState.SubnetworkNewAddressBucketArrays {
 		rpcPeersState.NewBuckets[subnetworkID] = &rpcmodel.GetPeerAddressesNewBucketResult{}
 		for i, addr := range bucket {
 			rpcPeersState.NewBuckets[subnetworkID][i] = convertAddressKeySliceToString(addr)
 		}
 	}
 
-	for i, addr := range peersState.NewBucketFullNodes {
+	for i, addr := range peersState.FullNodeNewAddressBucketArray {
 		rpcPeersState.NewBucketFullNodes[i] = convertAddressKeySliceToString(addr)
 	}
 
-	for subnetworkID, bucket := range peersState.TriedBuckets {
+	for subnetworkID, bucket := range peersState.SubnetworkTriedAddressBucketArrays {
 		rpcPeersState.TriedBuckets[subnetworkID] = &rpcmodel.GetPeerAddressesTriedBucketResult{}
 		for i, addr := range bucket {
 			rpcPeersState.TriedBuckets[subnetworkID][i] = convertAddressKeySliceToString(addr)
 		}
 	}
 
-	for i, addr := range peersState.TriedBucketFullNodes {
+	for i, addr := range peersState.FullNodeTriedAddressBucketArray {
 		rpcPeersState.TriedBucketFullNodes[i] = convertAddressKeySliceToString(addr)
 	}
 

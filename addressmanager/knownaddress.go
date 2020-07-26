@@ -16,14 +16,14 @@ import (
 // KnownAddress tracks information about a known network address that is used
 // to determine how viable an address is.
 type KnownAddress struct {
-	netAddress   *wire.NetAddress
-	srcAddr      *wire.NetAddress
-	attempts     int
-	lastattempt  mstime.Time
-	lastsuccess  mstime.Time
-	tried        bool
-	refs         int // reference count of new buckets
-	subnetworkID *subnetworkid.SubnetworkID
+	netAddress     *wire.NetAddress
+	sourceAddress  *wire.NetAddress
+	attempts       int
+	lastAttempt    mstime.Time
+	lastSuccess    mstime.Time
+	tried          bool
+	referenceCount int // reference count of new buckets
+	subnetworkID   *subnetworkid.SubnetworkID
 }
 
 // NetAddress returns the underlying wire.NetAddress associated with the
@@ -39,7 +39,7 @@ func (ka *KnownAddress) SubnetworkID() *subnetworkid.SubnetworkID {
 
 // LastAttempt returns the last time the known address was attempted.
 func (ka *KnownAddress) LastAttempt() mstime.Time {
-	return ka.lastattempt
+	return ka.lastAttempt
 }
 
 // chance returns the selection probability for a known address. The priority
@@ -47,7 +47,7 @@ func (ka *KnownAddress) LastAttempt() mstime.Time {
 // attempted and how often attempts to connect to it have failed.
 func (ka *KnownAddress) chance() float64 {
 	now := mstime.Now()
-	lastAttempt := now.Sub(ka.lastattempt)
+	lastAttempt := now.Sub(ka.lastAttempt)
 
 	if lastAttempt < 0 {
 		lastAttempt = 0
@@ -77,7 +77,7 @@ func (ka *KnownAddress) chance() float64 {
 // All addresses that meet these criteria are assumed to be worthless and not
 // worth keeping hold of.
 func (ka *KnownAddress) isBad() bool {
-	if ka.lastattempt.After(mstime.Now().Add(-1 * time.Minute)) {
+	if ka.lastAttempt.After(mstime.Now().Add(-1 * time.Minute)) {
 		return false
 	}
 
@@ -92,12 +92,12 @@ func (ka *KnownAddress) isBad() bool {
 	}
 
 	// Never succeeded?
-	if ka.lastsuccess.IsZero() && ka.attempts >= numRetries {
+	if ka.lastSuccess.IsZero() && ka.attempts >= numRetries {
 		return true
 	}
 
 	// Hasn't succeeded in too long?
-	if !ka.lastsuccess.After(mstime.Now().Add(-1*minBadDays*time.Hour*24)) &&
+	if !ka.lastSuccess.After(mstime.Now().Add(-1*minBadDays*time.Hour*24)) &&
 		ka.attempts >= maxFailures {
 		return true
 	}

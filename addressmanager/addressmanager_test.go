@@ -443,7 +443,7 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	amgr.Good(addr, oldSubnetwork)
 
 	// make sure address was saved to addressIndex under oldSubnetwork
-	ka := amgr.find(addr)
+	ka := amgr.knownAddress(addr)
 	if ka == nil {
 		t.Fatalf("Address was not found after first time .Good called")
 	}
@@ -468,7 +468,7 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	amgr.Good(addr, newSubnetwork)
 
 	// make sure address was updated in addressIndex under newSubnetwork
-	ka = amgr.find(addr)
+	ka = amgr.knownAddress(addr)
 	if ka == nil {
 		t.Fatalf("Address was not found after second time .Good called")
 	}
