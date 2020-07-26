@@ -1094,18 +1094,21 @@ func (am *AddressManager) Good(address *wire.NetAddress, subnetworkID *subnetwor
 	// Ok, need to move it to tried.
 
 	// Remove from all new buckets.
-	// Record one of the buckets in question and call it the `first'
-	oldBucketIndex := -1
+	// Record one of the buckets in question and call it the `oldBucketIndex'
+	var oldBucketIndex int
+	oldBucketIndexFound := false
 	if !knownAddress.tried {
 		newAddressBucketArray := am.newAddressBucketArray(oldSubnetworkID)
 		for i := range newAddressBucketArray {
 			// we check for existence so we can record the first one
 			if _, ok := newAddressBucketArray[i][addressKey]; ok {
+				if !oldBucketIndexFound {
+					oldBucketIndex = i
+					oldBucketIndexFound = true
+				}
+
 				delete(newAddressBucketArray[i], addressKey)
 				knownAddress.referenceCount--
-				if oldBucketIndex == -1 {
-					oldBucketIndex = i
-				}
 			}
 		}
 
@@ -1132,7 +1135,7 @@ func (am *AddressManager) Good(address *wire.NetAddress, subnetworkID *subnetwor
 	// freed up a space in.
 	newAddressBucketArray := am.newAddressBucketArray(knownAddress.subnetworkID)
 	if len(newAddressBucketArray[newAddressBucketIndex]) >= newBucketSize {
-		if oldBucketIndex == -1 {
+		if !oldBucketIndexFound {
 			// If address was a tried bucket with updated subnetworkID - oldBucketIndex will be equal to -1.
 			// In that case - find some non-full bucket.
 			// If no such bucket exists - throw knownAddressToRemove away
