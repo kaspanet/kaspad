@@ -33,11 +33,11 @@ const (
 	blockDbNamePrefix = "blocks"
 )
 
-// winServiceMain is only invoked on Windows. It detects when Kaspad is running
+// winServiceMain is only invoked on Windows. It detects when kaspad is running
 // as a service and reacts accordingly.
 var winServiceMain func() (bool, error)
 
-// kaspadMain is the real main function for Kaspad. It is necessary to work
+// kaspadMain is the real main function for kaspad. It is necessary to work
 // around the fact that deferred functions do not run when os.Exit() is called.
 // The optional startedChan writes once all services has started.
 func kaspadMain(startedChan chan<- struct{}) error {
@@ -76,7 +76,7 @@ func kaspadMain(startedChan chan<- struct{}) error {
 		defer pprof.StopCPUProfile()
 	}
 
-	// Perform upgrades to Kaspad as new versions require it.
+	// Perform upgrades to kaspad as new versions require it.
 	if err := doUpgrades(); err != nil {
 		log.Errorf("%s", err)
 		return err
@@ -124,17 +124,17 @@ func kaspadMain(startedChan chan<- struct{}) error {
 		return nil
 	}
 
-	// Create Kaspad and Start it.
+	// Create kaspad and start it.
 	kaspad, err := app.New(cfg, databaseContext, interrupt)
 	if err != nil {
-		log.Errorf("Unable to Start Kaspad: %+v", err)
+		log.Errorf("Unable to start kaspad: %+v", err)
 		return err
 	}
 	defer func() {
-		log.Infof("Gracefully shutting down Kaspad...")
+		log.Infof("Gracefully shutting down kaspad...")
 		err := kaspad.Stop()
 		if err != nil {
-			log.Errorf("Error stopping Kaspad: %+v", err)
+			log.Errorf("Error stopping kaspad: %+v", err)
 		}
 
 		shutdownDone := make(chan struct{})
