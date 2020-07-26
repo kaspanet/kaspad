@@ -442,7 +442,7 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	amgr.AddAddress(addr, srcAddr, oldSubnetwork)
 	amgr.Good(addr, oldSubnetwork)
 
-	// make sure address was saved to addrIndex under oldSubnetwork
+	// make sure address was saved to addressIndex under oldSubnetwork
 	ka := amgr.find(addr)
 	if ka == nil {
 		t.Fatalf("Address was not found after first time .Good called")
@@ -452,7 +452,7 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	}
 
 	// make sure address was added to correct bucket under oldSubnetwork
-	bucket := amgr.subnetworkTriedAddresBucketArrays[*oldSubnetwork][amgr.getTriedBucket(addr)]
+	bucket := amgr.subnetworkTriedAddresBucketArrays[*oldSubnetwork][amgr.getTriedAddressBucketIndex(addr)]
 	wasFound := false
 	for _, ka := range bucket {
 		if NetAddressKey(ka.NetAddress()) == addrKey {
@@ -467,7 +467,7 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	newSubnetwork := subnetworkid.SubnetworkIDRegistry
 	amgr.Good(addr, newSubnetwork)
 
-	// make sure address was updated in addrIndex under newSubnetwork
+	// make sure address was updated in addressIndex under newSubnetwork
 	ka = amgr.find(addr)
 	if ka == nil {
 		t.Fatalf("Address was not found after second time .Good called")
@@ -477,7 +477,7 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	}
 
 	// make sure address was removed from bucket under oldSubnetwork
-	bucket = amgr.subnetworkTriedAddresBucketArrays[*oldSubnetwork][amgr.getTriedBucket(addr)]
+	bucket = amgr.subnetworkTriedAddresBucketArrays[*oldSubnetwork][amgr.getTriedAddressBucketIndex(addr)]
 	wasFound = false
 	for _, ka := range bucket {
 		if NetAddressKey(ka.NetAddress()) == addrKey {
@@ -489,7 +489,7 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	}
 
 	// make sure address was added to correct bucket under newSubnetwork
-	bucket = amgr.subnetworkTriedAddresBucketArrays[*newSubnetwork][amgr.getTriedBucket(addr)]
+	bucket = amgr.subnetworkTriedAddresBucketArrays[*newSubnetwork][amgr.getTriedAddressBucketIndex(addr)]
 	wasFound = false
 	for _, ka := range bucket {
 		if NetAddressKey(ka.NetAddress()) == addrKey {

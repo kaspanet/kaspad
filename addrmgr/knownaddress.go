@@ -16,7 +16,7 @@ import (
 // KnownAddress tracks information about a known network address that is used
 // to determine how viable an address is.
 type KnownAddress struct {
-	na           *wire.NetAddress
+	netAddress   *wire.NetAddress
 	srcAddr      *wire.NetAddress
 	attempts     int
 	lastattempt  mstime.Time
@@ -29,7 +29,7 @@ type KnownAddress struct {
 // NetAddress returns the underlying wire.NetAddress associated with the
 // known address.
 func (ka *KnownAddress) NetAddress() *wire.NetAddress {
-	return ka.na
+	return ka.netAddress
 }
 
 // SubnetworkID returns the subnetwork ID of the known address.
@@ -82,12 +82,12 @@ func (ka *KnownAddress) isBad() bool {
 	}
 
 	// From the future?
-	if ka.na.Timestamp.After(mstime.Now().Add(10 * time.Minute)) {
+	if ka.netAddress.Timestamp.After(mstime.Now().Add(10 * time.Minute)) {
 		return true
 	}
 
 	// Over a month old?
-	if ka.na.Timestamp.Before(mstime.Now().Add(-1 * numMissingDays * time.Hour * 24)) {
+	if ka.netAddress.Timestamp.Before(mstime.Now().Add(-1 * numMissingDays * time.Hour * 24)) {
 		return true
 	}
 
