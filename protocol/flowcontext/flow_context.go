@@ -1,7 +1,7 @@
 package flowcontext
 
 import (
-	"github.com/kaspanet/kaspad/addrmgr"
+	"github.com/kaspanet/kaspad/addressmanager"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/connmanager"
@@ -24,7 +24,7 @@ type FlowContext struct {
 	netAdapter        *netadapter.NetAdapter
 	txPool            *mempool.TxPool
 	dag               *blockdag.BlockDAG
-	addressManager    *addrmgr.AddrManager
+	addressManager    *addressmanager.AddressManager
 	connectionManager *connmanager.ConnectionManager
 
 	transactionsToRebroadcastLock sync.Mutex
@@ -43,7 +43,7 @@ type FlowContext struct {
 }
 
 // New returns a new instance of FlowContext.
-func New(cfg *config.Config, dag *blockdag.BlockDAG, addressManager *addrmgr.AddrManager,
+func New(cfg *config.Config, dag *blockdag.BlockDAG, addressManager *addressmanager.AddressManager,
 	txPool *mempool.TxPool, netAdapter *netadapter.NetAdapter,
 	connectionManager *connmanager.ConnectionManager) *FlowContext {
 

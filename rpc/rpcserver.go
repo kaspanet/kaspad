@@ -12,7 +12,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/kaspanet/kaspad/addrmgr"
+	"github.com/kaspanet/kaspad/addressmanager"
 	"github.com/kaspanet/kaspad/connmanager"
 	"github.com/kaspanet/kaspad/protocol"
 	"github.com/kaspanet/kaspad/util/mstime"
@@ -168,7 +168,7 @@ type Server struct {
 	acceptanceIndex        *indexers.AcceptanceIndex
 	blockTemplateGenerator *mining.BlkTmplGenerator
 	connectionManager      *connmanager.ConnectionManager
-	addressManager         *addrmgr.AddrManager
+	addressManager         *addressmanager.AddressManager
 	protocolManager        *protocol.Manager
 }
 
@@ -694,7 +694,7 @@ func NewRPCServer(
 	acceptanceIndex *indexers.AcceptanceIndex,
 	blockTemplateGenerator *mining.BlkTmplGenerator,
 	connectionManager *connmanager.ConnectionManager,
-	addressManager *addrmgr.AddrManager,
+	addressManager *addressmanager.AddressManager,
 	protocolManager *protocol.Manager,
 ) (*Server, error) {
 	// Setup listeners for the configured RPC listen addresses and

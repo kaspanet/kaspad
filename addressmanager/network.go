@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package addrmgr
+package addressmanager
 
 import (
 	"net"
@@ -200,8 +200,8 @@ func IsValid(na *wire.NetAddress) bool {
 // IsRoutable returns whether or not the passed address is routable over
 // the public internet. This is true as long as the address is valid and is not
 // in any reserved ranges.
-func (a *AddrManager) IsRoutable(na *wire.NetAddress) bool {
-	if a.cfg.NetParams().AcceptUnroutable {
+func (am *AddressManager) IsRoutable(na *wire.NetAddress) bool {
+	if am.cfg.NetParams().AcceptUnroutable {
 		return !IsLocal(na)
 	}
 
@@ -215,11 +215,11 @@ func (a *AddrManager) IsRoutable(na *wire.NetAddress) bool {
 // of. This is the /16 for IPv4, the /32 (/36 for he.net) for IPv6, the string
 // "local" for a local address, and the string "unroutable" for an unroutable
 // address.
-func (a *AddrManager) GroupKey(na *wire.NetAddress) string {
+func (am *AddressManager) GroupKey(na *wire.NetAddress) string {
 	if IsLocal(na) {
 		return "local"
 	}
-	if !a.IsRoutable(na) {
+	if !am.IsRoutable(na) {
 		return "unroutable"
 	}
 	if IsIPv4(na) {

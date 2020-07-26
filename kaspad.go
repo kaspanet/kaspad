@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/addressmanager"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/dbaccess"
@@ -10,8 +11,6 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 
 	"github.com/kaspanet/kaspad/connmanager"
-
-	"github.com/kaspanet/kaspad/addrmgr"
 
 	"github.com/kaspanet/kaspad/netadapter"
 
@@ -33,7 +32,7 @@ import (
 type kaspad struct {
 	cfg               *config.Config
 	rpcServer         *rpc.Server
-	addressManager    *addrmgr.AddrManager
+	addressManager    *addressmanager.AddressManager
 	protocolManager   *protocol.Manager
 	connectionManager *connmanager.ConnectionManager
 
@@ -123,7 +122,7 @@ func newKaspad(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, in
 	if err != nil {
 		return nil, err
 	}
-	addressManager := addrmgr.New(cfg, databaseContext)
+	addressManager := addressmanager.New(cfg, databaseContext)
 
 	connectionManager, err := connmanager.New(cfg, netAdapter, addressManager)
 	if err != nil {
@@ -203,7 +202,7 @@ func setupMempool(cfg *config.Config, dag *blockdag.BlockDAG, sigCache *txscript
 
 func setupRPC(cfg *config.Config, dag *blockdag.BlockDAG, txMempool *mempool.TxPool, sigCache *txscript.SigCache,
 	acceptanceIndex *indexers.AcceptanceIndex, connectionManager *connmanager.ConnectionManager,
-	addressManager *addrmgr.AddrManager, protocolManager *protocol.Manager) (*rpc.Server, error) {
+	addressManager *addressmanager.AddressManager, protocolManager *protocol.Manager) (*rpc.Server, error) {
 
 	if !cfg.DisableRPC {
 		policy := mining.Policy{

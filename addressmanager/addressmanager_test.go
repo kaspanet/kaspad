@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package addrmgr
+package addressmanager
 
 import (
 	"fmt"
@@ -26,7 +26,7 @@ import (
 // method.
 type naTest struct {
 	in   wire.NetAddress
-	want string
+	want AddressKey
 }
 
 // naTests houses all of the tests to be performed against the NetAddressKey
@@ -97,7 +97,7 @@ func addNaTests() {
 	addNaTest("fef3::4:4", 8336, "[fef3::4:4]:8336")
 }
 
-func addNaTest(ip string, port uint16, want string) {
+func addNaTest(ip string, port uint16, want AddressKey) {
 	nip := net.ParseIP(ip)
 	na := *wire.NewNetAddressIPPort(nip, port, wire.SFNodeNetwork)
 	test := naTest{na, want}
@@ -109,7 +109,7 @@ func lookupFuncForTest(host string) ([]net.IP, error) {
 }
 
 func newAddrManagerForTest(t *testing.T, testName string,
-	localSubnetworkID *subnetworkid.SubnetworkID) (addressManager *AddrManager, teardown func()) {
+	localSubnetworkID *subnetworkid.SubnetworkID) (addressManager *AddressManager, teardown func()) {
 
 	cfg := config.DefaultConfig()
 	cfg.SubnetworkID = localSubnetworkID
@@ -302,7 +302,7 @@ func TestNeedMoreAddresses(t *testing.T) {
 
 	var err error
 	for i := 0; i < addrsToAdd; i++ {
-		s := fmt.Sprintf("%d.%d.173.147:8333", i/128+60, i%128+60)
+		s := AddressKey(fmt.Sprintf("%d.%d.173.147:8333", i/128+60, i%128+60))
 		addrs[i], err = amgr.DeserializeNetAddress(s)
 		if err != nil {
 			t.Errorf("Failed to turn %s into an address: %v", s, err)
@@ -333,7 +333,7 @@ func TestGood(t *testing.T) {
 
 	var err error
 	for i := 0; i < addrsToAdd; i++ {
-		s := fmt.Sprintf("%d.173.147.%d:8333", i/64+60, i%64+60)
+		s := AddressKey(fmt.Sprintf("%d.173.147.%d:8333", i/64+60, i%64+60))
 		addrs[i], err = amgr.DeserializeNetAddress(s)
 		if err != nil {
 			t.Errorf("Failed to turn %s into an address: %v", s, err)
@@ -382,8 +382,8 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	amgr.AddAddress(addr, srcAddr, oldSubnetwork)
 	amgr.Good(addr, oldSubnetwork)
 
-	// make sure address was saved to addrIndex under oldSubnetwork
-	ka := amgr.find(addr)
+	// make sure address was saved to addressIndex under oldSubnetwork
+	ka := amgr.knownAddress(addr)
 	if ka == nil {
 		t.Fatalf("Address was not found after first time .Good called")
 	}
@@ -392,10 +392,10 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	}
 
 	// make sure address was added to correct bucket under oldSubnetwork
-	bucket := amgr.addrTried[*oldSubnetwork][amgr.getTriedBucket(addr)]
+	bucket := amgr.subnetworkTriedAddresBucketArrays[*oldSubnetwork][amgr.triedAddressBucketIndex(addr)]
 	wasFound := false
-	for e := bucket.Front(); e != nil; e = e.Next() {
-		if NetAddressKey(e.Value.(*KnownAddress).NetAddress()) == addrKey {
+	for _, ka := range bucket {
+		if NetAddressKey(ka.NetAddress()) == addrKey {
 			wasFound = true
 		}
 	}
@@ -407,8 +407,8 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	newSubnetwork := subnetworkid.SubnetworkIDRegistry
 	amgr.Good(addr, newSubnetwork)
 
-	// make sure address was updated in addrIndex under newSubnetwork
-	ka = amgr.find(addr)
+	// make sure address was updated in addressIndex under newSubnetwork
+	ka = amgr.knownAddress(addr)
 	if ka == nil {
 		t.Fatalf("Address was not found after second time .Good called")
 	}
@@ -417,10 +417,10 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	}
 
 	// make sure address was removed from bucket under oldSubnetwork
-	bucket = amgr.addrTried[*oldSubnetwork][amgr.getTriedBucket(addr)]
+	bucket = amgr.subnetworkTriedAddresBucketArrays[*oldSubnetwork][amgr.triedAddressBucketIndex(addr)]
 	wasFound = false
-	for e := bucket.Front(); e != nil; e = e.Next() {
-		if NetAddressKey(e.Value.(*KnownAddress).NetAddress()) == addrKey {
+	for _, ka := range bucket {
+		if NetAddressKey(ka.NetAddress()) == addrKey {
 			wasFound = true
 		}
 	}
@@ -429,10 +429,10 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	}
 
 	// make sure address was added to correct bucket under newSubnetwork
-	bucket = amgr.addrTried[*newSubnetwork][amgr.getTriedBucket(addr)]
+	bucket = amgr.subnetworkTriedAddresBucketArrays[*newSubnetwork][amgr.triedAddressBucketIndex(addr)]
 	wasFound = false
-	for e := bucket.Front(); e != nil; e = e.Next() {
-		if NetAddressKey(e.Value.(*KnownAddress).NetAddress()) == addrKey {
+	for _, ka := range bucket {
+		if NetAddressKey(ka.NetAddress()) == addrKey {
 			wasFound = true
 		}
 	}

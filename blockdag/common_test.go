@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/kaspanet/kaspad/util/mstime"
 
@@ -97,11 +96,9 @@ func (dag *BlockDAG) TestSetCoinbaseMaturity(maturity uint64) {
 // use of it.
 func newTestDAG(params *dagconfig.Params) *BlockDAG {
 	index := newBlockIndex(params)
-	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
 	dag := &BlockDAG{
 		Params:                         params,
 		timeSource:                     NewTimeSource(),
-		targetTimePerBlock:             targetTimePerBlock,
 		difficultyAdjustmentWindowSize: params.DifficultyAdjustmentWindowSize,
 		TimestampDeviationTolerance:    params.TimestampDeviationTolerance,
 		powMaxBits:                     util.BigToCompact(params.PowMax),

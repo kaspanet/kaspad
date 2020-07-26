@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package addrmgr
+package addressmanager
 
 import (
 	"github.com/kaspanet/kaspad/util/mstime"
@@ -19,6 +19,6 @@ func TstKnownAddressChance(ka *KnownAddress) float64 {
 
 func TstNewKnownAddress(na *wire.NetAddress, attempts int,
 	lastattempt, lastsuccess mstime.Time, tried bool, refs int) *KnownAddress {
-	return &KnownAddress{na: na, attempts: attempts, lastattempt: lastattempt,
-		lastsuccess: lastsuccess, tried: tried, refs: refs}
+	return &KnownAddress{netAddress: na, attempts: attempts, lastAttempt: lastattempt,
+		lastSuccess: lastsuccess, tried: tried, referenceCount: refs}
 }
