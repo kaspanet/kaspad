@@ -47,7 +47,7 @@ func (flow *sendVersionFlow) start() error {
 	// Version message.
 	localAddress, err := flow.NetAdapter().GetBestLocalAddress()
 	if err != nil {
-		panic(err)
+		return err
 	}
 	msg := wire.NewMsgVersion(localAddress, flow.NetAdapter().ID(), selectedTipHash, subnetworkID)
 	msg.AddUserAgent(userAgentName, userAgentVersion, flow.Config().UserAgentComments...)

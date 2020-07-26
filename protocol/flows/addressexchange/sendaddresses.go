@@ -26,7 +26,7 @@ func SendAddresses(context SendAddressesContext, incomingRoute *router.Route, ou
 	msgAddresses := wire.NewMsgAddresses(msgGetAddresses.IncludeAllSubnetworks, msgGetAddresses.SubnetworkID)
 	err = msgAddresses.AddAddresses(shuffleAddresses(addresses)...)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	return outgoingRoute.Enqueue(msgAddresses)

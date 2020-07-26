@@ -48,8 +48,8 @@ func (flow *handleGetSelectedTipFlow) receiveGetSelectedTip() error {
 	}
 	_, ok := message.(*wire.MsgGetSelectedTip)
 	if !ok {
-		panic(errors.Errorf("received unexpected message type. "+
-			"expected: %s, got: %s", wire.CmdGetSelectedTip, message.Command()))
+		return errors.Errorf("received unexpected message type. "+
+			"expected: %s, got: %s", wire.CmdGetSelectedTip, message.Command())
 	}
 
 	return nil
