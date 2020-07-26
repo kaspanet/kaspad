@@ -1,6 +1,8 @@
 package handshake
 
 import (
+	"github.com/kaspanet/kaspad/protocol/common"
+	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"sync"
 	"sync/atomic"
 
@@ -8,7 +10,6 @@ import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/netadapter"
-	"github.com/kaspanet/kaspad/protocol/common"
 
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
@@ -34,12 +35,12 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 
 	receiveVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVersion})
 	if err != nil {
-		panic(err)
+		return nil, false, err
 	}
 
 	sendVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVerAck})
 	if err != nil {
-		panic(err)
+		return nil, false, err
 	}
 
 	// For HandleHandshake to finish, we need to get from the other node
@@ -59,6 +60,9 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 		address, err := ReceiveVersion(context, receiveVersionRoute, router.OutgoingRoute(), peer)
 		if err != nil {
 			log.Errorf("error from ReceiveVersion: %s", err)
+			if protocolErr := &(protocolerrors.ProtocolError{}); !errors.As(err, &protocolErr) {
+				panic(err)
+			}
 		}
 		if err != nil {
 			if atomic.AddUint32(&errChanUsed, 1) != 1 {
@@ -74,6 +78,9 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 		err := SendVersion(context, sendVersionRoute, router.OutgoingRoute())
 		if err != nil {
 			log.Errorf("error from SendVersion: %s", err)
+			if protocolErr := &(protocolerrors.ProtocolError{}); !errors.As(err, &protocolErr) {
+				panic(err)
+			}
 		}
 		if err != nil {
 			if atomic.AddUint32(&errChanUsed, 1) != 1 {
@@ -94,10 +101,10 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 
 	err = context.AddToPeers(peer)
 	if err != nil {
-		if errors.Is(err, common.ErrPeerWithSameIDExists) {
-			return nil, false, err
+		if errors.As(err, &common.ErrPeerWithSameIDExists) {
+			return nil, false, protocolerrors.Wrap(false, err, "peer already exists")
 		}
-		panic(err)
+		return nil, false, err
 	}
 
 	if peerAddress != nil {
@@ -110,7 +117,7 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 
 	err = router.RemoveRoute([]wire.MessageCommand{wire.CmdVersion, wire.CmdVerAck})
 	if err != nil {
-		panic(err)
+		return nil, false, err
 	}
 
 	return peer, false, nil

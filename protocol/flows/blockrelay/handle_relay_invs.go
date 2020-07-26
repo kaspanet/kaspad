@@ -169,25 +169,19 @@ func (flow *handleRelayInvsFlow) readMsgBlock() (
 		case *wire.MsgBlock:
 			return message, nil
 		default:
-			panic(errors.Errorf("unexpected message %s", message.Command()))
+			return nil, errors.Errorf("unexpected message %s", message.Command())
 		}
 	}
 }
 
 func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueSet, block *util.Block) error {
-
 	blockHash := block.Hash()
 	isOrphan, isDelayed, err := flow.DAG().ProcessBlock(block, blockdag.BFNone)
 	if err != nil {
-		// When the error is a rule error, it means the block was simply
-		// rejected as opposed to something actually going wrong, so log
-		// it as such. Otherwise, something really did go wrong, so panic.
 		if !errors.As(err, &blockdag.RuleError{}) {
-			panic(errors.Wrapf(err, "failed to process block %s",
-				blockHash))
+			return errors.Wrapf(err, "failed to process block %s", blockHash)
 		}
-		log.Infof("Rejected block %s from %s: %s", blockHash,
-			flow.peer, err)
+		log.Infof("Rejected block %s from %s: %s", blockHash, flow.peer, err)
 
 		return protocolerrors.Wrap(true, err, "got invalid block")
 	}
@@ -237,7 +231,7 @@ func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueS
 	flow.StartIBDIfRequired()
 	err = flow.OnNewBlock(block)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	return nil

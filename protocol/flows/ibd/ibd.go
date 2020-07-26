@@ -178,7 +178,7 @@ func (flow *handleIBDFlow) processIBDBlock(msgIBDBlock *wire.MsgIBDBlock) error 
 	}
 	err = flow.OnNewBlock(block)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	return nil
 }
