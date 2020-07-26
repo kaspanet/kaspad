@@ -31,7 +31,7 @@ const (
 	testAddress3   = "kaspasim:qq2wz0hl73a0qcl8872wr3djplwmyulurscsqxehu2"
 	testAddress3PK = "cc94a79bbccca30b0e3edff1895cbdf8d4ddcc119eacfd692970151dcc2881c2"
 
-	defaultTimeout = 10 * time.Minute // TODO: change back to 10 seconds
+	defaultTimeout = 10 * time.Second
 )
 
 func configs(t *testing.T) (config1, config2, config3 *config.Config) {

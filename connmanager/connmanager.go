@@ -137,12 +137,3 @@ func (c *ConnectionManager) waitTillNextIteration() {
 func (c *ConnectionManager) Ban(netConnection *netadapter.NetConnection) {
 	c.netAdapter.Ban(netConnection)
 }
-
-func (c *ConnectionManager) waitTillNextIteration() {
-	select {
-	case <-c.resetLoopChan:
-		c.loopTicker.Stop()
-		c.loopTicker = time.NewTicker(connectionsLoopInterval)
-	case <-c.loopTicker.C:
-	}
-}
