@@ -890,10 +890,10 @@ func (am *AddressManager) HostToNetAddress(host string, port uint16, services wi
 
 // NetAddressKey returns a key in the form of ip:port for IPv4 addresses
 // or [ip]:port for IPv6 addresses for use as keys in maps.
-func NetAddressKey(na *wire.NetAddress) AddressKey {
-	port := strconv.FormatUint(uint64(na.Port), 10)
+func NetAddressKey(netAddress *wire.NetAddress) AddressKey {
+	port := strconv.FormatUint(uint64(netAddress.Port), 10)
 
-	return AddressKey(net.JoinHostPort(na.IP.String(), port))
+	return AddressKey(net.JoinHostPort(netAddress.IP.String(), port))
 }
 
 // GetAddress returns a single address that should be routable. It picks a
