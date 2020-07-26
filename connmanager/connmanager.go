@@ -33,6 +33,9 @@ type ConnectionManager struct {
 	activeIncoming   map[string]struct{}
 	maxIncoming      int
 
+	bannedAddresses     map[string]struct{}
+	bannedAddressesLock sync.RWMutex
+
 	stop                   uint32
 	connectionRequestsLock sync.Mutex
 
@@ -50,6 +53,7 @@ func New(cfg *config.Config, netAdapter *netadapter.NetAdapter, addressManager *
 		pendingRequested: map[string]*connectionRequest{},
 		activeOutgoing:   map[string]struct{}{},
 		activeIncoming:   map[string]struct{}{},
+		bannedAddresses:  map[string]struct{}{},
 		resetLoopChan:    make(chan struct{}),
 		loopTicker:       time.NewTicker(connectionsLoopInterval),
 	}
@@ -124,9 +128,31 @@ func (c *ConnectionManager) ConnectionCount() int {
 	return c.netAdapter.ConnectionCount()
 }
 
-// Ban prevents the given netConnection from connecting again
+// Ban marks the given netConnection as banned
 func (c *ConnectionManager) Ban(netConnection *netadapter.NetConnection) {
-	c.netAdapter.Ban(netConnection)
+	c.banIP(netConnection.IP())
+}
+
+// IsBanned returns whether the given netConnection is banned
+func (c *ConnectionManager) IsBanned(netConnection *netadapter.NetConnection) bool {
+	return c.isIPBanned(netConnection.IP())
+}
+
+// banIP marks the given IP as banned
+func (c *ConnectionManager) banIP(ip string) {
+	c.bannedAddressesLock.Lock()
+	defer c.bannedAddressesLock.Unlock()
+
+	c.bannedAddresses[ip] = struct{}{}
+}
+
+// isIPBanned returns whether the given IP is banned
+func (c *ConnectionManager) isIPBanned(ip string) bool {
+	c.bannedAddressesLock.RLock()
+	defer c.bannedAddressesLock.RUnlock()
+
+	_, ok := c.bannedAddresses[ip]
+	return ok
 }
 
 func (c *ConnectionManager) waitTillNextIteration() {

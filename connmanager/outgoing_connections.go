@@ -32,7 +32,7 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 
 		netAddress := address.NetAddress()
 		tcpAddress := netAddress.TCPAddress()
-		if c.netAdapter.IsBanned(tcpAddress) {
+		if c.isIPBanned(tcpAddress.IP.String()) {
 			continue
 		}
 

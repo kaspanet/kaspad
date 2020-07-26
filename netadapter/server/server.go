@@ -28,8 +28,6 @@ type Server interface {
 	Start() error
 	Stop() error
 	SetOnConnectedHandler(onConnectedHandler OnConnectedHandler)
-	IsBanned(address *net.TCPAddr) bool
-	Ban(address *net.TCPAddr)
 }
 
 // Connection represents a p2p server connection.
