@@ -452,7 +452,7 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	}
 
 	// make sure address was added to correct bucket under oldSubnetwork
-	bucket := amgr.addrTried[*oldSubnetwork][amgr.getTriedBucket(addr)]
+	bucket := amgr.subnetworkTriedAddresBucketArrays[*oldSubnetwork][amgr.getTriedBucket(addr)]
 	wasFound := false
 	for _, ka := range bucket {
 		if NetAddressKey(ka.NetAddress()) == addrKey {
@@ -477,7 +477,7 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	}
 
 	// make sure address was removed from bucket under oldSubnetwork
-	bucket = amgr.addrTried[*oldSubnetwork][amgr.getTriedBucket(addr)]
+	bucket = amgr.subnetworkTriedAddresBucketArrays[*oldSubnetwork][amgr.getTriedBucket(addr)]
 	wasFound = false
 	for _, ka := range bucket {
 		if NetAddressKey(ka.NetAddress()) == addrKey {
@@ -489,7 +489,7 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	}
 
 	// make sure address was added to correct bucket under newSubnetwork
-	bucket = amgr.addrTried[*newSubnetwork][amgr.getTriedBucket(addr)]
+	bucket = amgr.subnetworkTriedAddresBucketArrays[*newSubnetwork][amgr.getTriedBucket(addr)]
 	wasFound = false
 	for _, ka := range bucket {
 		if NetAddressKey(ka.NetAddress()) == addrKey {

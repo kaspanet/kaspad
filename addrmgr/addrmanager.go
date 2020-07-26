@@ -29,32 +29,33 @@ import (
 // AddressKey represents a "string" key in the form of ip:port for IPv4 addresses
 // or [ip]:port for IPv6 addresses for use as keys in maps.
 type AddressKey string
-type newBucket [NewBucketCount]map[AddressKey]*KnownAddress
-type triedBucket [TriedBucketCount][]*KnownAddress
+type newAddressBucketArray [NewBucketCount]map[AddressKey]*KnownAddress
+type triedAddressBucketArray [TriedBucketCount][]*KnownAddress
 
 // AddrManager provides a concurrency safe address manager for caching potential
 // peers on the Kaspa network.
 type AddrManager struct {
-	mtx                sync.Mutex
-	lookupFunc         func(string) ([]net.IP, error)
-	rand               *rand.Rand
-	key                [32]byte
-	addrIndex          map[AddressKey]*KnownAddress // address key to ka for all addrs.
-	addrNew            map[subnetworkid.SubnetworkID]*newBucket
-	addrNewFullNodes   newBucket
-	addrTried          map[subnetworkid.SubnetworkID]*triedBucket
-	addrTriedFullNodes triedBucket
-	started            int32
-	shutdown           int32
-	wg                 sync.WaitGroup
-	quit               chan struct{}
-	nTried             map[subnetworkid.SubnetworkID]int
-	nNew               map[subnetworkid.SubnetworkID]int
-	nTriedFullNodes    int
-	nNewFullNodes      int
-	lamtx              sync.Mutex
-	localAddresses     map[AddressKey]*localAddress
-	localSubnetworkID  *subnetworkid.SubnetworkID
+	mtx               sync.Mutex
+	lookupFunc        func(string) ([]net.IP, error)
+	rand              *rand.Rand
+	key               [32]byte
+	addrIndex         map[AddressKey]*KnownAddress // address keys to known addresses for all addresses.
+	started           int32
+	shutdown          int32
+	wg                sync.WaitGroup
+	quit              chan struct{}
+	lamtx             sync.Mutex
+	localAddresses    map[AddressKey]*localAddress
+	localSubnetworkID *subnetworkid.SubnetworkID
+
+	fullNodeNewAddressBucketArray     newAddressBucketArray
+	fullNodeNewAddressCount           int
+	fullNodeTriedAddressBucketArray   triedAddressBucketArray
+	fullNodeTriedAddressCount         int
+	subnetworkNewAddressBucketArrays  map[subnetworkid.SubnetworkID]*newAddressBucketArray
+	subnetworkNewAddressCounts        map[subnetworkid.SubnetworkID]int
+	subnetworkTriedAddresBucketArrays map[subnetworkid.SubnetworkID]*triedAddressBucketArray
+	subnetworkTriedAddressCounts      map[subnetworkid.SubnetworkID]int
 }
 
 type serializedKnownAddress struct {
@@ -230,13 +231,13 @@ func (a *AddrManager) updateAddress(netAddr, srcAddr *wire.NetAddress, subnetwor
 		netAddrCopy := *netAddr
 		ka = &KnownAddress{na: &netAddrCopy, srcAddr: srcAddr, subnetworkID: subnetworkID}
 		a.addrIndex[addressKey] = ka
-		a.incrementNNewNodes(subnetworkID)
+		a.incrementNewAddressCount(subnetworkID)
 	}
 
 	bucketIndex := a.getNewBucket(netAddr, srcAddr)
 
 	// Enforce max addresses.
-	addrNewBucket := a.addrNewBucket(ka.subnetworkID)
+	addrNewBucket := a.newAddressBucketArray(ka.subnetworkID)
 	if addrNewBucket != nil && len(addrNewBucket[bucketIndex]) > newBucketSize {
 		log.Tracef("new bucket is full, expiring old")
 		a.expireNew(ka.subnetworkID, bucketIndex)
@@ -246,39 +247,39 @@ func (a *AddrManager) updateAddress(netAddr, srcAddr *wire.NetAddress, subnetwor
 	ka.refs++
 	a.updateAddrNew(bucketIndex, addressKey, ka)
 
-	nAllNodes := a.nNewNodes(ka.subnetworkID) + a.nTriedNodes(ka.subnetworkID)
+	nAllNodes := a.newAddressCount(ka.subnetworkID) + a.triedAddressCount(ka.subnetworkID)
 	log.Tracef("Added new address %s for a total of %d addresses", addressKey, nAllNodes)
 
 }
 
 func (a *AddrManager) updateAddrNew(bucket int, addressKey AddressKey, ka *KnownAddress) {
 	if ka.subnetworkID == nil {
-		a.addrNewFullNodes[bucket][addressKey] = ka
+		a.fullNodeNewAddressBucketArray[bucket][addressKey] = ka
 		return
 	}
 
-	if _, ok := a.addrNew[*ka.subnetworkID]; !ok {
-		a.addrNew[*ka.subnetworkID] = &newBucket{}
-		for i := range a.addrNew[*ka.subnetworkID] {
-			a.addrNew[*ka.subnetworkID][i] = make(map[AddressKey]*KnownAddress)
+	if _, ok := a.subnetworkNewAddressBucketArrays[*ka.subnetworkID]; !ok {
+		a.subnetworkNewAddressBucketArrays[*ka.subnetworkID] = &newAddressBucketArray{}
+		for i := range a.subnetworkNewAddressBucketArrays[*ka.subnetworkID] {
+			a.subnetworkNewAddressBucketArrays[*ka.subnetworkID][i] = make(map[AddressKey]*KnownAddress)
 		}
 	}
-	a.addrNew[*ka.subnetworkID][bucket][addressKey] = ka
+	a.subnetworkNewAddressBucketArrays[*ka.subnetworkID][bucket][addressKey] = ka
 }
 
 func (a *AddrManager) updateAddrTried(bucket int, ka *KnownAddress) {
 	if ka.subnetworkID == nil {
-		a.addrTriedFullNodes[bucket] = append(a.addrTriedFullNodes[bucket], ka)
+		a.fullNodeTriedAddressBucketArray[bucket] = append(a.fullNodeTriedAddressBucketArray[bucket], ka)
 		return
 	}
 
-	if _, ok := a.addrTried[*ka.subnetworkID]; !ok {
-		a.addrTried[*ka.subnetworkID] = &triedBucket{}
-		for i := range a.addrTried[*ka.subnetworkID] {
-			a.addrTried[*ka.subnetworkID][i] = nil
+	if _, ok := a.subnetworkTriedAddresBucketArrays[*ka.subnetworkID]; !ok {
+		a.subnetworkTriedAddresBucketArrays[*ka.subnetworkID] = &triedAddressBucketArray{}
+		for i := range a.subnetworkTriedAddresBucketArrays[*ka.subnetworkID] {
+			a.subnetworkTriedAddresBucketArrays[*ka.subnetworkID][i] = nil
 		}
 	}
-	a.addrTried[*ka.subnetworkID][bucket] = append(a.addrTried[*ka.subnetworkID][bucket], ka)
+	a.subnetworkTriedAddresBucketArrays[*ka.subnetworkID][bucket] = append(a.subnetworkTriedAddresBucketArrays[*ka.subnetworkID][bucket], ka)
 }
 
 // expireNew makes space in the new buckets by expiring the really bad entries.
@@ -289,14 +290,14 @@ func (a *AddrManager) expireNew(subnetworkID *subnetworkid.SubnetworkID, bucketI
 	// We keep track of oldest in the initial traversal and use that
 	// information instead.
 	var oldest *KnownAddress
-	addrNewBucket := a.addrNewBucket(subnetworkID)
+	addrNewBucket := a.newAddressBucketArray(subnetworkID)
 	for k, v := range addrNewBucket[bucketIndex] {
 		if v.isBad() {
 			log.Tracef("expiring bad address %s", k)
 			delete(addrNewBucket[bucketIndex], k)
 			v.refs--
 			if v.refs == 0 {
-				a.decrementNNewNodes(subnetworkID)
+				a.decrementNewAddressCount(subnetworkID)
 				delete(a.addrIndex, k)
 			}
 			continue
@@ -315,7 +316,7 @@ func (a *AddrManager) expireNew(subnetworkID *subnetworkid.SubnetworkID, bucketI
 		delete(addrNewBucket[bucketIndex], key)
 		oldest.refs--
 		if oldest.refs == 0 {
-			a.decrementNNewNodes(subnetworkID)
+			a.decrementNewAddressCount(subnetworkID)
 			delete(a.addrIndex, key)
 		}
 	}
@@ -326,7 +327,7 @@ func (a *AddrManager) expireNew(subnetworkID *subnetworkid.SubnetworkID, bucketI
 func (a *AddrManager) pickTried(subnetworkID *subnetworkid.SubnetworkID, bucketIndex int) (ka *KnownAddress, index int) {
 	var oldest *KnownAddress
 	oldestIndex := -1
-	addrTriedBucket := a.addrTriedBucket(subnetworkID)
+	addrTriedBucket := a.triedAddressBucketArray(subnetworkID)
 	for i, ka := range addrTriedBucket[bucketIndex] {
 		if oldest == nil || oldest.na.Timestamp.After(ka.na.Timestamp) {
 			oldestIndex = i
@@ -462,48 +463,48 @@ func (a *AddrManager) PeersStateForSerialization() (*PeersStateForSerialization,
 	}
 
 	peersState.NewBuckets = make(map[string]*serializedNewBucket)
-	for subnetworkID := range a.addrNew {
+	for subnetworkID := range a.subnetworkNewAddressBucketArrays {
 		subnetworkIDStr := subnetworkID.String()
 		peersState.NewBuckets[subnetworkIDStr] = &serializedNewBucket{}
 
-		for i := range a.addrNew[subnetworkID] {
-			peersState.NewBuckets[subnetworkIDStr][i] = make([]AddressKey, len(a.addrNew[subnetworkID][i]))
+		for i := range a.subnetworkNewAddressBucketArrays[subnetworkID] {
+			peersState.NewBuckets[subnetworkIDStr][i] = make([]AddressKey, len(a.subnetworkNewAddressBucketArrays[subnetworkID][i]))
 			j := 0
-			for k := range a.addrNew[subnetworkID][i] {
+			for k := range a.subnetworkNewAddressBucketArrays[subnetworkID][i] {
 				peersState.NewBuckets[subnetworkIDStr][i][j] = k
 				j++
 			}
 		}
 	}
 
-	for i := range a.addrNewFullNodes {
-		peersState.NewBucketFullNodes[i] = make([]AddressKey, len(a.addrNewFullNodes[i]))
+	for i := range a.fullNodeNewAddressBucketArray {
+		peersState.NewBucketFullNodes[i] = make([]AddressKey, len(a.fullNodeNewAddressBucketArray[i]))
 		j := 0
-		for k := range a.addrNewFullNodes[i] {
+		for k := range a.fullNodeNewAddressBucketArray[i] {
 			peersState.NewBucketFullNodes[i][j] = k
 			j++
 		}
 	}
 
 	peersState.TriedBuckets = make(map[string]*serializedTriedBucket)
-	for subnetworkID := range a.addrTried {
+	for subnetworkID := range a.subnetworkTriedAddresBucketArrays {
 		subnetworkIDStr := subnetworkID.String()
 		peersState.TriedBuckets[subnetworkIDStr] = &serializedTriedBucket{}
 
-		for i := range a.addrTried[subnetworkID] {
-			peersState.TriedBuckets[subnetworkIDStr][i] = make([]AddressKey, len(a.addrTried[subnetworkID][i]))
+		for i := range a.subnetworkTriedAddresBucketArrays[subnetworkID] {
+			peersState.TriedBuckets[subnetworkIDStr][i] = make([]AddressKey, len(a.subnetworkTriedAddresBucketArrays[subnetworkID][i]))
 			j := 0
-			for _, ka := range a.addrTried[subnetworkID][i] {
+			for _, ka := range a.subnetworkTriedAddresBucketArrays[subnetworkID][i] {
 				peersState.TriedBuckets[subnetworkIDStr][i][j] = NetAddressKey(ka.na)
 				j++
 			}
 		}
 	}
 
-	for i := range a.addrTriedFullNodes {
-		peersState.TriedBucketFullNodes[i] = make([]AddressKey, len(a.addrTriedFullNodes[i]))
+	for i := range a.fullNodeTriedAddressBucketArray {
+		peersState.TriedBucketFullNodes[i] = make([]AddressKey, len(a.fullNodeTriedAddressBucketArray[i]))
 		j := 0
-		for _, ka := range a.addrTriedFullNodes[i] {
+		for _, ka := range a.fullNodeTriedAddressBucketArray[i] {
 			peersState.TriedBucketFullNodes[i][j] = NetAddressKey(ka.na)
 			j++
 		}
@@ -591,7 +592,7 @@ func (a *AddrManager) deserializePeersState(serializedPeerState []byte) error {
 				}
 
 				if ka.refs == 0 {
-					a.nNew[*subnetworkID]++
+					a.subnetworkNewAddressCounts[*subnetworkID]++
 				}
 				ka.refs++
 				a.updateAddrNew(i, val, ka)
@@ -608,7 +609,7 @@ func (a *AddrManager) deserializePeersState(serializedPeerState []byte) error {
 			}
 
 			if ka.refs == 0 {
-				a.nNewFullNodes++
+				a.fullNodeNewAddressCount++
 			}
 			ka.refs++
 			a.updateAddrNew(i, val, ka)
@@ -629,8 +630,8 @@ func (a *AddrManager) deserializePeersState(serializedPeerState []byte) error {
 				}
 
 				ka.tried = true
-				a.nTried[*subnetworkID]++
-				a.addrTried[*subnetworkID][i] = append(a.addrTried[*subnetworkID][i], ka)
+				a.subnetworkTriedAddressCounts[*subnetworkID]++
+				a.subnetworkTriedAddresBucketArrays[*subnetworkID][i] = append(a.subnetworkTriedAddresBucketArrays[*subnetworkID][i], ka)
 			}
 		}
 	}
@@ -644,8 +645,8 @@ func (a *AddrManager) deserializePeersState(serializedPeerState []byte) error {
 			}
 
 			ka.tried = true
-			a.nTriedFullNodes++
-			a.addrTriedFullNodes[i] = append(a.addrTriedFullNodes[i], ka)
+			a.fullNodeTriedAddressCount++
+			a.fullNodeTriedAddressBucketArray[i] = append(a.fullNodeTriedAddressBucketArray[i], ka)
 		}
 	}
 
@@ -763,18 +764,18 @@ func (a *AddrManager) AddAddressByIP(addrIP string, subnetworkID *subnetworkid.S
 // which are known to the address manager.
 func (a *AddrManager) numAddresses(subnetworkID *subnetworkid.SubnetworkID) int {
 	if subnetworkID == nil {
-		return a.nNewFullNodes + a.nTriedFullNodes
+		return a.fullNodeNewAddressCount + a.fullNodeTriedAddressCount
 	}
-	return a.nTried[*subnetworkID] + a.nNew[*subnetworkID]
+	return a.subnetworkTriedAddressCounts[*subnetworkID] + a.subnetworkNewAddressCounts[*subnetworkID]
 }
 
 // totalNumAddresses returns the number of addresses known to the address manager.
 func (a *AddrManager) totalNumAddresses() int {
-	total := a.nNewFullNodes + a.nTriedFullNodes
-	for _, numAddresses := range a.nTried {
+	total := a.fullNodeNewAddressCount + a.fullNodeTriedAddressCount
+	for _, numAddresses := range a.subnetworkTriedAddressCounts {
 		total += numAddresses
 	}
-	for _, numAddresses := range a.nNew {
+	for _, numAddresses := range a.subnetworkNewAddressCounts {
 		total += numAddresses
 	}
 	return total
@@ -849,20 +850,20 @@ func (a *AddrManager) reset() {
 
 	// fill key with bytes from a good random source.
 	io.ReadFull(crand.Reader, a.key[:])
-	a.addrNew = make(map[subnetworkid.SubnetworkID]*newBucket)
-	a.addrTried = make(map[subnetworkid.SubnetworkID]*triedBucket)
+	a.subnetworkNewAddressBucketArrays = make(map[subnetworkid.SubnetworkID]*newAddressBucketArray)
+	a.subnetworkTriedAddresBucketArrays = make(map[subnetworkid.SubnetworkID]*triedAddressBucketArray)
 
-	a.nNew = make(map[subnetworkid.SubnetworkID]int)
-	a.nTried = make(map[subnetworkid.SubnetworkID]int)
+	a.subnetworkNewAddressCounts = make(map[subnetworkid.SubnetworkID]int)
+	a.subnetworkTriedAddressCounts = make(map[subnetworkid.SubnetworkID]int)
 
-	for i := range a.addrNewFullNodes {
-		a.addrNewFullNodes[i] = make(map[AddressKey]*KnownAddress)
+	for i := range a.fullNodeNewAddressBucketArray {
+		a.fullNodeNewAddressBucketArray[i] = make(map[AddressKey]*KnownAddress)
 	}
-	for i := range a.addrTriedFullNodes {
-		a.addrTriedFullNodes[i] = nil
+	for i := range a.fullNodeTriedAddressBucketArray {
+		a.fullNodeTriedAddressBucketArray[i] = nil
 	}
-	a.nNewFullNodes = 0
-	a.nTriedFullNodes = 0
+	a.fullNodeNewAddressCount = 0
+	a.fullNodeTriedAddressCount = 0
 }
 
 // HostToNetAddress returns a netaddress given a host address. If
@@ -900,10 +901,10 @@ func (a *AddrManager) GetAddress() *KnownAddress {
 	a.mtx.Lock()
 	defer a.mtx.Unlock()
 
-	addrTriedBucket := a.addrTriedBucket(a.localSubnetworkID)
-	nTriedNodes := a.nTriedNodes(a.localSubnetworkID)
-	addrNewBucket := a.addrNewBucket(a.localSubnetworkID)
-	nNewNodes := a.nNewNodes(a.localSubnetworkID)
+	addrTriedBucket := a.triedAddressBucketArray(a.localSubnetworkID)
+	nTriedNodes := a.triedAddressCount(a.localSubnetworkID)
+	addrNewBucket := a.newAddressBucketArray(a.localSubnetworkID)
+	nNewNodes := a.newAddressCount(a.localSubnetworkID)
 	knownAddress := a.getAddress(addrTriedBucket, nTriedNodes, addrNewBucket, nNewNodes)
 
 	return knownAddress
@@ -912,7 +913,7 @@ func (a *AddrManager) GetAddress() *KnownAddress {
 
 // getAddress returns a single address that should be routable.
 // See GetAddress for further details.
-func (a *AddrManager) getAddress(addrTried *triedBucket, nTried int, addrNew *newBucket, nNew int) *KnownAddress {
+func (a *AddrManager) getAddress(addrTried *triedAddressBucketArray, nTried int, addrNew *newAddressBucketArray, nNew int) *KnownAddress {
 	// Use a 50% chance for choosing between tried and new table entries.
 	var addrBucket bucket
 	if nTried > 0 && (nNew == 0 || a.rand.Intn(2) == 0) {
@@ -952,7 +953,7 @@ type bucket interface {
 	randomBucket(random *rand.Rand) []*KnownAddress
 }
 
-func (nb *newBucket) randomBucket(random *rand.Rand) []*KnownAddress {
+func (nb *newAddressBucketArray) randomBucket(random *rand.Rand) []*KnownAddress {
 	nonEmptyBuckets := make([]map[AddressKey]*KnownAddress, 0, NewBucketCount)
 	for _, bucket := range nb {
 		if len(bucket) > 0 {
@@ -970,11 +971,11 @@ func (nb *newBucket) randomBucket(random *rand.Rand) []*KnownAddress {
 	return randomBucketSlice
 }
 
-func (nb *newBucket) name() string {
+func (nb *newAddressBucketArray) name() string {
 	return "new"
 }
 
-func (tb *triedBucket) randomBucket(random *rand.Rand) []*KnownAddress {
+func (tb *triedAddressBucketArray) randomBucket(random *rand.Rand) []*KnownAddress {
 	nonEmptyBuckets := make([][]*KnownAddress, 0, TriedBucketCount)
 	for _, bucket := range tb {
 		if len(bucket) > 0 {
@@ -985,7 +986,7 @@ func (tb *triedBucket) randomBucket(random *rand.Rand) []*KnownAddress {
 	return nonEmptyBuckets[randomIndex]
 }
 
-func (tb *triedBucket) name() string {
+func (tb *triedAddressBucketArray) name() string {
 	return "tried"
 }
 
@@ -1065,7 +1066,7 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 
 		// If this address was already tried, but subnetworkID was changed -
 		// update subnetworkID, than continue as though this is a new address
-		bucket := a.addrTried[*oldSubnetworkID][triedBucketIndex]
+		bucket := a.subnetworkTriedAddresBucketArrays[*oldSubnetworkID][triedBucketIndex]
 		toRemoveIndex := -1
 		for i, ka := range bucket {
 			if NetAddressKey(ka.NetAddress()) == addrKey {
@@ -1073,7 +1074,7 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 			}
 		}
 		if toRemoveIndex != -1 {
-			a.addrTried[*oldSubnetworkID][triedBucketIndex] =
+			a.subnetworkTriedAddresBucketArrays[*oldSubnetworkID][triedBucketIndex] =
 				append(bucket[:toRemoveIndex], bucket[toRemoveIndex+1:]...)
 		}
 	}
@@ -1084,7 +1085,7 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 	// Record one of the buckets in question and call it the `first'
 	oldBucket := -1
 	if !ka.tried {
-		addrNewBucket := a.addrNewBucket(oldSubnetworkID)
+		addrNewBucket := a.newAddressBucketArray(oldSubnetworkID)
 		for i := range addrNewBucket {
 			// we check for existence so we can record the first one
 			if _, ok := addrNewBucket[i][addrKey]; ok {
@@ -1096,16 +1097,16 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 			}
 		}
 
-		a.decrementNNewNodes(oldSubnetworkID)
+		a.decrementNewAddressCount(oldSubnetworkID)
 	}
 
 	// Room in this tried bucket?
-	addrTriedBucket := a.addrTriedBucket(ka.subnetworkID)
-	nTriedNodes := a.nTriedNodes(ka.subnetworkID)
+	addrTriedBucket := a.triedAddressBucketArray(ka.subnetworkID)
+	nTriedNodes := a.triedAddressCount(ka.subnetworkID)
 	if nTriedNodes == 0 || len(addrTriedBucket[triedBucketIndex]) < triedBucketSize {
 		ka.tried = true
 		a.updateAddrTried(triedBucketIndex, ka)
-		a.incrementNTriedNodes(ka.subnetworkID)
+		a.incrementTriedAddressCount(ka.subnetworkID)
 		return
 	}
 
@@ -1117,7 +1118,7 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 
 	// If no room in the original bucket, we put it in a bucket we just
 	// freed up a space in.
-	addrNewBucket := a.addrNewBucket(ka.subnetworkID)
+	addrNewBucket := a.newAddressBucketArray(ka.subnetworkID)
 	if len(addrNewBucket[newBucket]) >= newBucketSize {
 		if oldBucket == -1 {
 			// If addr was a tried bucket with updated subnetworkID - oldBucket will be equal to -1.
@@ -1140,10 +1141,10 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 	kaToRemove.tried = false
 	kaToRemove.refs++
 
-	// We don't touch a.nTried here since the number of tried stays the same
+	// We don't touch a.subnetworkTriedAddressCounts here since the number of tried stays the same
 	// but we decremented new above, raise it again since we're putting
 	// something back.
-	a.incrementNNewNodes(ka.subnetworkID)
+	a.incrementNewAddressCount(ka.subnetworkID)
 
 	kaToRemoveKey := NetAddressKey(kaToRemove.na)
 	log.Tracef("Replacing %s with %s in tried", kaToRemoveKey, addrKey)
@@ -1152,56 +1153,56 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 	addrNewBucket[newBucket][kaToRemoveKey] = kaToRemove
 }
 
-func (a *AddrManager) addrNewBucket(subnetworkID *subnetworkid.SubnetworkID) *newBucket {
+func (a *AddrManager) newAddressBucketArray(subnetworkID *subnetworkid.SubnetworkID) *newAddressBucketArray {
 	if subnetworkID == nil {
-		return &a.addrNewFullNodes
+		return &a.fullNodeNewAddressBucketArray
 	}
-	return a.addrNew[*subnetworkID]
+	return a.subnetworkNewAddressBucketArrays[*subnetworkID]
 }
 
-func (a *AddrManager) addrTriedBucket(subnetworkID *subnetworkid.SubnetworkID) *triedBucket {
+func (a *AddrManager) triedAddressBucketArray(subnetworkID *subnetworkid.SubnetworkID) *triedAddressBucketArray {
 	if subnetworkID == nil {
-		return &a.addrTriedFullNodes
+		return &a.fullNodeTriedAddressBucketArray
 	}
-	return a.addrTried[*subnetworkID]
+	return a.subnetworkTriedAddresBucketArrays[*subnetworkID]
 }
 
-func (a *AddrManager) incrementNNewNodes(subnetworkID *subnetworkid.SubnetworkID) {
+func (a *AddrManager) incrementNewAddressCount(subnetworkID *subnetworkid.SubnetworkID) {
 	if subnetworkID == nil {
-		a.nNewFullNodes++
+		a.fullNodeNewAddressCount++
 		return
 	}
-	a.nNew[*subnetworkID]++
+	a.subnetworkNewAddressCounts[*subnetworkID]++
 }
 
-func (a *AddrManager) decrementNNewNodes(subnetworkID *subnetworkid.SubnetworkID) {
+func (a *AddrManager) decrementNewAddressCount(subnetworkID *subnetworkid.SubnetworkID) {
 	if subnetworkID == nil {
-		a.nNewFullNodes--
+		a.fullNodeNewAddressCount--
 		return
 	}
-	a.nNew[*subnetworkID]--
+	a.subnetworkNewAddressCounts[*subnetworkID]--
 }
 
-func (a *AddrManager) nTriedNodes(subnetworkID *subnetworkid.SubnetworkID) int {
+func (a *AddrManager) triedAddressCount(subnetworkID *subnetworkid.SubnetworkID) int {
 	if subnetworkID == nil {
-		return a.nTriedFullNodes
+		return a.fullNodeTriedAddressCount
 	}
-	return a.nTried[*subnetworkID]
+	return a.subnetworkTriedAddressCounts[*subnetworkID]
 }
 
-func (a *AddrManager) nNewNodes(subnetworkID *subnetworkid.SubnetworkID) int {
+func (a *AddrManager) newAddressCount(subnetworkID *subnetworkid.SubnetworkID) int {
 	if subnetworkID == nil {
-		return a.nNewFullNodes
+		return a.fullNodeNewAddressCount
 	}
-	return a.nNew[*subnetworkID]
+	return a.subnetworkNewAddressCounts[*subnetworkID]
 }
 
-func (a *AddrManager) incrementNTriedNodes(subnetworkID *subnetworkid.SubnetworkID) {
+func (a *AddrManager) incrementTriedAddressCount(subnetworkID *subnetworkid.SubnetworkID) {
 	if subnetworkID == nil {
-		a.nTriedFullNodes++
+		a.fullNodeTriedAddressCount++
 		return
 	}
-	a.nTried[*subnetworkID]++
+	a.subnetworkTriedAddressCounts[*subnetworkID]++
 }
 
 // AddLocalAddress adds na to the list of known local addresses to advertise
