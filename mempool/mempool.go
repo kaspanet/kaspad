@@ -638,17 +638,25 @@ func (mp *TxPool) RemoveTransactions(txs []*util.Tx) error {
 // contain transactions which were previously unknown to the memory pool.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
+func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) error {
 	// Protect concurrent access.
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
+	return mp.removeDoubleSpends(tx)
+}
+
+func (mp *TxPool) removeDoubleSpends(tx *util.Tx) error {
 	for _, txIn := range tx.MsgTx().TxIn {
 		if txRedeemer, ok := mp.outpoints[txIn.PreviousOutpoint]; ok {
 			if !txRedeemer.ID().IsEqual(tx.ID()) {
-				mp.removeTransaction(txRedeemer, true, false)
+				err := mp.removeTransaction(txRedeemer, true, false)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
+	return nil
 }
 
 // addTransaction adds the passed transaction to the memory pool. It should
@@ -1353,16 +1361,19 @@ func (mp *TxPool) HandleNewBlock(block *util.Block) ([]*util.Tx, error) {
 	// no longer an orphan. Transactions which depend on a confirmed
 	// transaction are NOT removed recursively because they are still
 	// valid.
-	err := mp.RemoveTransactions(block.Transactions()[util.CoinbaseTransactionIndex+1:])
+	err := mp.removeTransactions(block.Transactions()[util.CoinbaseTransactionIndex+1:])
 	if err != nil {
 		mp.mpUTXOSet = oldUTXOSet
 		return nil, err
 	}
 	acceptedTxs := make([]*util.Tx, 0)
 	for _, tx := range block.Transactions()[util.CoinbaseTransactionIndex+1:] {
-		mp.RemoveDoubleSpends(tx)
-		mp.RemoveOrphan(tx)
-		acceptedOrphans := mp.ProcessOrphans(tx)
+		err := mp.removeDoubleSpends(tx)
+		if err != nil {
+			return nil, err
+		}
+		mp.removeOrphan(tx, false)
+		acceptedOrphans := mp.processOrphans(tx)
 		for _, acceptedOrphan := range acceptedOrphans {
 			acceptedTxs = append(acceptedTxs, acceptedOrphan.Tx)
 		}
