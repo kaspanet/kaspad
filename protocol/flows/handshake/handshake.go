@@ -1,6 +1,7 @@
 package handshake
 
 import (
+	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"sync"
 	"sync/atomic"
 
@@ -8,7 +9,6 @@ import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/netadapter"
-	"github.com/kaspanet/kaspad/protocol/common"
 
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
