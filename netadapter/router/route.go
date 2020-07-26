@@ -4,6 +4,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kaspanet/kaspad/protocol/protocolerrors"
+
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
@@ -14,10 +16,10 @@ const (
 
 var (
 	// ErrTimeout signifies that one of the router functions had a timeout.
-	ErrTimeout = errors.New("timeout expired")
+	ErrTimeout = protocolerrors.New(false, "timeout expired")
 
 	// ErrRouteClosed indicates that a route was closed while reading/writing.
-	ErrRouteClosed = errors.New("route is closed")
+	ErrRouteClosed = protocolerrors.New(false, "route is closed")
 )
 
 // onCapacityReachedHandler is a function that is to be
