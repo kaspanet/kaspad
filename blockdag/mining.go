@@ -106,7 +106,7 @@ func (dag *BlockDAG) NextCoinbaseFromAddress(payToAddress util.Address, extraDat
 // the median timestamp of the last several blocks per the DAG consensus
 // rules.
 func (dag *BlockDAG) NextBlockMinimumTime() mstime.Time {
-	return dag.CalcPastMedianTime().Add(time.Second)
+	return dag.CalcPastMedianTime().Add(time.Millisecond)
 }
 
 // NextBlockTime returns a valid block time for the

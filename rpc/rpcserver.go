@@ -12,7 +12,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/kaspanet/kaspad/addrmgr"
+	"github.com/kaspanet/kaspad/addressmanager"
 	"github.com/kaspanet/kaspad/connmanager"
 	"github.com/kaspanet/kaspad/protocol"
 	"github.com/kaspanet/kaspad/util/mstime"
