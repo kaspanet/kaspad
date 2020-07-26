@@ -64,5 +64,3 @@ func (f *FlowContext) Peers() []*peerpkg.Peer {
 	}
 	return peers
 }
-
-type PeerAddedCallback func(*peerpkg.Peer)
