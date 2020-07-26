@@ -9,6 +9,7 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"math"
 	"net"
 	"runtime"
@@ -1540,7 +1541,7 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 			MaxTxVersion:    1,
 		},
 		DAGParams:      dagParams,
-		MedianTimePast: func() time.Time { return s.DAG.CalcPastMedianTime() },
+		MedianTimePast: func() mstime.Time { return s.DAG.CalcPastMedianTime() },
 		CalcSequenceLockNoLock: func(tx *util.Tx, utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 			return s.DAG.CalcSequenceLockNoLock(tx, utxoSet, true)
 		},

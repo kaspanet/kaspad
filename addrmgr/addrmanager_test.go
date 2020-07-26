@@ -9,6 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"io/ioutil"
 	"net"
@@ -313,7 +314,7 @@ func TestConnected(t *testing.T) {
 	ka := amgr.GetAddress()
 	na := ka.NetAddress()
 	// make it an hour ago
-	na.Timestamp = time.Unix(time.Now().Add(time.Hour*-1).Unix(), 0)
+	na.Timestamp = mstime.Now().Add(time.Hour * -1)
 
 	amgr.Connected(na)
 

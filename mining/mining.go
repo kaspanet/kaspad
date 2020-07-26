@@ -5,8 +5,8 @@
 package mining
 
 import (
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
-	"time"
 
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/dagconfig"
@@ -30,7 +30,7 @@ type TxDesc struct {
 	Tx *util.Tx
 
 	// Added is the time when the entry was added to the source pool.
-	Added time.Time
+	Added mstime.Time
 
 	// Fee is the total fee the transaction associated with the entry pays.
 	Fee uint64
@@ -47,7 +47,7 @@ type TxDesc struct {
 type TxSource interface {
 	// LastUpdated returns the last time a transaction was added to or
 	// removed from the source pool.
-	LastUpdated() time.Time
+	LastUpdated() mstime.Time
 
 	// MiningDescs returns a slice of mining descriptors for all the
 	// transactions in the source pool.

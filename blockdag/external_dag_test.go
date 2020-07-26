@@ -40,7 +40,7 @@ import (
 func TestFinality(t *testing.T) {
 	params := dagconfig.SimnetParams
 	params.K = 1
-	params.FinalityInterval = 100
+	params.FinalityDuration = 100 * params.TargetTimePerBlock
 	dag, teardownFunc, err := blockdag.DAGSetup("TestFinality", true, blockdag.Config{
 		DAGParams: &params,
 	})
@@ -74,7 +74,7 @@ func TestFinality(t *testing.T) {
 	currentNode := genesis
 
 	// First we build a chain of params.FinalityInterval blocks for future use
-	for i := uint64(0); i < params.FinalityInterval; i++ {
+	for i := uint64(0); i < dag.FinalityInterval(); i++ {
 		currentNode, err = buildNodeToDag([]*daghash.Hash{currentNode.Hash()})
 		if err != nil {
 			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
@@ -86,7 +86,7 @@ func TestFinality(t *testing.T) {
 	// Now we build a new chain of 2 * params.FinalityInterval blocks, pointed to genesis, and
 	// we expect the block with height 1 * params.FinalityInterval to be the last finality point
 	currentNode = genesis
-	for i := uint64(0); i < params.FinalityInterval; i++ {
+	for i := uint64(0); i < dag.FinalityInterval(); i++ {
 		currentNode, err = buildNodeToDag([]*daghash.Hash{currentNode.Hash()})
 		if err != nil {
 			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
@@ -95,7 +95,7 @@ func TestFinality(t *testing.T) {
 
 	expectedFinalityPoint := currentNode
 
-	for i := uint64(0); i < params.FinalityInterval; i++ {
+	for i := uint64(0); i < dag.FinalityInterval(); i++ {
 		currentNode, err = buildNodeToDag([]*daghash.Hash{currentNode.Hash()})
 		if err != nil {
 			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
@@ -175,9 +175,19 @@ func TestFinalityInterval(t *testing.T) {
 		&dagconfig.SimnetParams,
 	}
 	for _, params := range netParams {
-		if params.FinalityInterval > wire.MaxInvPerMsg {
-			t.Errorf("FinalityInterval in %s should be lower or equal to wire.MaxInvPerMsg", params.Name)
-		}
+		func() {
+			dag, teardownFunc, err := blockdag.DAGSetup("TestFinalityInterval", true, blockdag.Config{
+				DAGParams: params,
+			})
+			if err != nil {
+				t.Fatalf("Failed to setup dag instance for %s: %v", params.Name, err)
+			}
+			defer teardownFunc()
+
+			if dag.FinalityInterval() > wire.MaxInvPerMsg {
+				t.Errorf("FinalityInterval in %s should be lower or equal to wire.MaxInvPerMsg", params.Name)
+			}
+		}()
 	}
 }
 

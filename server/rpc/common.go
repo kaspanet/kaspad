@@ -169,8 +169,8 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 	}
 
 	if blkHeader != nil {
-		txReply.Time = uint64(blkHeader.Timestamp.Unix())
-		txReply.BlockTime = uint64(blkHeader.Timestamp.Unix())
+		txReply.Time = uint64(blkHeader.Timestamp.UnixMilliseconds())
+		txReply.BlockTime = uint64(blkHeader.Timestamp.UnixMilliseconds())
 		txReply.BlockHash = blkHash
 	}
 
@@ -260,7 +260,7 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		ParentHashes:         daghash.Strings(blockHeader.ParentHashes),
 		SelectedParentHash:   selectedParentHashStr,
 		Nonce:                blockHeader.Nonce,
-		Time:                 blockHeader.Timestamp.Unix(),
+		Time:                 blockHeader.Timestamp.UnixMilliseconds(),
 		Confirmations:        blockConfirmations,
 		BlueScore:            blockBlueScore,
 		IsChainBlock:         isChainBlock,

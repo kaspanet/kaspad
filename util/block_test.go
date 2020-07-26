@@ -6,18 +6,17 @@ package util_test
 
 import (
 	"bytes"
+	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 	"io"
 	"math"
 	"reflect"
 	"testing"
-	"time"
-
-	"github.com/davecgh/go-spew/spew"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/util/subnetworkid"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // TestBlock tests the API for Block.
@@ -31,7 +30,7 @@ func TestBlock(t *testing.T) {
 	}
 
 	// Hash for block 100,000.
-	wantHashStr := "839a8e072e6d402128f6f9a32ffc012e471e071e8ef8405552b1e58ef7b681f0"
+	wantHashStr := "239edd8f4b5904d7973e7e7105f1aa48412cd82bab87aefd7aae809d01bd8d21"
 	wantHash, err := daghash.NewHashFromStr(wantHashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
@@ -331,9 +330,9 @@ var Block100000 = wire.MsgBlock{
 			0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63,
 			0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
 		},
-		Timestamp: time.Unix(1529483563, 0), // 2018-06-20 08:32:43 +0000 UTC
-		Bits:      0x1e00ffff,               // 503382015
-		Nonce:     0x000ae53f,               // 714047
+		Timestamp: mstime.UnixMilliseconds(1529483563000),
+		Bits:      0x1e00ffff, // 503382015
+		Nonce:     0x000ae53f, // 714047
 	},
 	Transactions: []*wire.MsgTx{
 		{

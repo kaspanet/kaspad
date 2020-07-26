@@ -16,7 +16,7 @@ func (sp *Peer) OnGetBlockLocator(_ *peer.Peer, msg *wire.MsgGetBlockLocator) {
 				"%s and %s that was requested from peer %s: %s", msg.HighHash, msg.LowHash, sp, err)
 		}
 		sp.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectInvalid, nil,
-			peer.BanScoreInvalidMsgBlockLocator, 0,
+			peer.BanScoreInvalidMsgGetBlockLocator, 0,
 			fmt.Sprintf("couldn't build a block locator between blocks %s and %s", msg.HighHash, msg.LowHash))
 		return
 	}

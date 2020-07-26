@@ -5,6 +5,7 @@
 package addrmgr_test
 
 import (
+	"github.com/kaspanet/kaspad/util/mstime"
 	"math"
 	"testing"
 	"time"
@@ -14,7 +15,7 @@ import (
 )
 
 func TestChance(t *testing.T) {
-	now := time.Unix(time.Now().Unix(), 0)
+	now := mstime.Now()
 	var tests = []struct {
 		addr     *addrmgr.KnownAddress
 		expected float64
@@ -22,27 +23,27 @@ func TestChance(t *testing.T) {
 		{
 			//Test normal case
 			addrmgr.TstNewKnownAddress(&wire.NetAddress{Timestamp: now.Add(-35 * time.Second)},
-				0, time.Now().Add(-30*time.Minute), time.Now(), false, 0),
+				0, mstime.Now().Add(-30*time.Minute), mstime.Now(), false, 0),
 			1.0,
 		}, {
 			//Test case in which lastseen < 0
 			addrmgr.TstNewKnownAddress(&wire.NetAddress{Timestamp: now.Add(20 * time.Second)},
-				0, time.Now().Add(-30*time.Minute), time.Now(), false, 0),
+				0, mstime.Now().Add(-30*time.Minute), mstime.Now(), false, 0),
 			1.0,
 		}, {
 			//Test case in which lastattempt < 0
 			addrmgr.TstNewKnownAddress(&wire.NetAddress{Timestamp: now.Add(-35 * time.Second)},
-				0, time.Now().Add(30*time.Minute), time.Now(), false, 0),
+				0, mstime.Now().Add(30*time.Minute), mstime.Now(), false, 0),
 			1.0 * .01,
 		}, {
 			//Test case in which lastattempt < ten minutes
 			addrmgr.TstNewKnownAddress(&wire.NetAddress{Timestamp: now.Add(-35 * time.Second)},
-				0, time.Now().Add(-5*time.Minute), time.Now(), false, 0),
+				0, mstime.Now().Add(-5*time.Minute), mstime.Now(), false, 0),
 			1.0 * .01,
 		}, {
 			//Test case with several failed attempts.
 			addrmgr.TstNewKnownAddress(&wire.NetAddress{Timestamp: now.Add(-35 * time.Second)},
-				2, time.Now().Add(-30*time.Minute), time.Now(), false, 0),
+				2, mstime.Now().Add(-30*time.Minute), mstime.Now(), false, 0),
 			1 / 1.5 / 1.5,
 		},
 	}
@@ -57,13 +58,13 @@ func TestChance(t *testing.T) {
 }
 
 func TestIsBad(t *testing.T) {
-	now := time.Unix(time.Now().Unix(), 0)
+	now := mstime.Now()
 	future := now.Add(35 * time.Minute)
 	monthOld := now.Add(-43 * time.Hour * 24)
 	secondsOld := now.Add(-2 * time.Second)
 	minutesOld := now.Add(-27 * time.Minute)
 	hoursOld := now.Add(-5 * time.Hour)
-	zeroTime := time.Time{}
+	zeroTime := mstime.Time{}
 
 	futureNa := &wire.NetAddress{Timestamp: future}
 	minutesOldNa := &wire.NetAddress{Timestamp: minutesOld}

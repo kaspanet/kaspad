@@ -5,6 +5,7 @@
 package netsync
 
 import (
+	"github.com/kaspanet/kaspad/util/mstime"
 	"sync"
 	"time"
 
@@ -18,7 +19,7 @@ import (
 type blockProgressLogger struct {
 	receivedLogBlocks int64
 	receivedLogTx     int64
-	lastBlockLogTime  time.Time
+	lastBlockLogTime  mstime.Time
 
 	subsystemLogger *logs.Logger
 	progressAction  string
@@ -31,7 +32,7 @@ type blockProgressLogger struct {
 //  ({numTxs}, height {lastBlockHeight}, {lastBlockTimeStamp})
 func newBlockProgressLogger(progressMessage string, logger *logs.Logger) *blockProgressLogger {
 	return &blockProgressLogger{
-		lastBlockLogTime: time.Now(),
+		lastBlockLogTime: mstime.Now(),
 		progressAction:   progressMessage,
 		subsystemLogger:  logger,
 	}
@@ -47,7 +48,7 @@ func (b *blockProgressLogger) LogBlockBlueScore(block *util.Block, blueScore uin
 	b.receivedLogBlocks++
 	b.receivedLogTx += int64(len(block.MsgBlock().Transactions))
 
-	now := time.Now()
+	now := mstime.Now()
 	duration := now.Sub(b.lastBlockLogTime)
 	if duration < time.Second*10 {
 		return

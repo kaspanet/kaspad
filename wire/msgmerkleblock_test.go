@@ -7,14 +7,13 @@ package wire
 import (
 	"bytes"
 	"crypto/rand"
+	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 	"io"
 	"reflect"
 	"testing"
-	"time"
-
-	"github.com/davecgh/go-spew/spew"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // TestMerkleBlock tests the MsgMerkleBlock API.
@@ -333,9 +332,9 @@ var merkleBlockOne = MsgMerkleBlock{
 		},
 		AcceptedIDMerkleRoot: exampleAcceptedIDMerkleRoot,
 		UTXOCommitment:       exampleUTXOCommitment,
-		Timestamp:            time.Unix(0x4966bc61, 0), // 2009-01-08 20:54:25 -0600 CST
-		Bits:                 0x1d00ffff,               // 486604799
-		Nonce:                0x9962e301,               // 2573394689
+		Timestamp:            mstime.UnixMilliseconds(0x17315ed0f99),
+		Bits:                 0x1d00ffff, // 486604799
+		Nonce:                0x9962e301, // 2573394689
 	},
 	Transactions: 1,
 	Hashes: []*daghash.Hash{
@@ -374,7 +373,7 @@ var merkleBlockOneBytes = []byte{
 	0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
 	0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63,
 	0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
-	0x61, 0xbc, 0x66, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
+	0x99, 0x0f, 0xed, 0x15, 0x73, 0x01, 0x00, 0x00, // Timestamp
 	0xff, 0xff, 0x00, 0x1d, // Bits
 	0x01, 0xe3, 0x62, 0x99, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce
 	0x01, 0x00, 0x00, 0x00, // TxnCount

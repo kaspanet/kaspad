@@ -6,6 +6,7 @@ package connmgr
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/util/mstime"
 	mrand "math/rand"
 	"net"
 	"strconv"
@@ -88,7 +89,7 @@ func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag, incl
 				addresses[i] = wire.NewNetAddressTimestamp(
 					// seed with addresses from a time randomly selected
 					// between 3 and 7 days ago.
-					time.Now().Add(-1*time.Second*time.Duration(secondsIn3Days+
+					mstime.Now().Add(-1*time.Second*time.Duration(secondsIn3Days+
 						randSource.Int31n(secondsIn4Days))),
 					0, peer, uint16(intPort))
 			}

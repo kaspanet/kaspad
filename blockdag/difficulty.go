@@ -6,14 +6,14 @@ package blockdag
 
 import (
 	"github.com/kaspanet/kaspad/util/bigintpool"
-	"time"
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/kaspanet/kaspad/util"
 )
 
 // requiredDifficulty calculates the required difficulty for a
 // block given its bluest parent.
-func (dag *BlockDAG) requiredDifficulty(bluestParent *blockNode, newBlockTime time.Time) uint32 {
+func (dag *BlockDAG) requiredDifficulty(bluestParent *blockNode, newBlockTime mstime.Time) uint32 {
 	// Genesis block.
 	if bluestParent == nil || bluestParent.blueScore < dag.difficultyAdjustmentWindowSize+1 {
 		return dag.powMaxBits
@@ -34,7 +34,7 @@ func (dag *BlockDAG) requiredDifficulty(bluestParent *blockNode, newBlockTime ti
 	defer bigintpool.Release(newTarget)
 	windowTimeStampDifference := bigintpool.Acquire(windowMaxTimeStamp - windowMinTimestamp)
 	defer bigintpool.Release(windowTimeStampDifference)
-	targetTimePerBlock := bigintpool.Acquire(dag.targetTimePerBlock)
+	targetTimePerBlock := bigintpool.Acquire(dag.dagParams.TargetTimePerBlock.Milliseconds())
 	defer bigintpool.Release(targetTimePerBlock)
 	difficultyAdjustmentWindowSize := bigintpool.Acquire(int64(dag.difficultyAdjustmentWindowSize))
 	defer bigintpool.Release(difficultyAdjustmentWindowSize)
@@ -55,7 +55,7 @@ func (dag *BlockDAG) requiredDifficulty(bluestParent *blockNode, newBlockTime ti
 // be built on top of the current tips.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) NextRequiredDifficulty(timestamp time.Time) uint32 {
+func (dag *BlockDAG) NextRequiredDifficulty(timestamp mstime.Time) uint32 {
 	difficulty := dag.requiredDifficulty(dag.virtual.parents.bluest(), timestamp)
 	return difficulty
 }

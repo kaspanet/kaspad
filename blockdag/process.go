@@ -157,8 +157,7 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 
 	// The block must not already exist in the DAG.
 	if dag.IsInDAG(blockHash) && !wasBlockStored {
-		str := fmt.Sprintf("already have block %s", blockHash)
-		return false, false, ruleError(ErrDuplicateBlock, str)
+		return false, false, errors.Errorf("already have block %s", blockHash)
 	}
 
 	// The block must not already exist as an orphan.
@@ -203,8 +202,8 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 	// Handle the case of a block with a valid timestamp(non-delayed) which points to a delayed block.
 	delay, isParentDelayed := dag.maxDelayOfParents(missingParents)
 	if isParentDelayed {
-		// Add Nanosecond to ensure that parent process time will be after its child.
-		delay += time.Nanosecond
+		// Add Millisecond to ensure that parent process time will be after its child.
+		delay += time.Millisecond
 		err := dag.addDelayedBlock(block, delay)
 		if err != nil {
 			return false, false, err

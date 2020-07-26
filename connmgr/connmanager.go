@@ -740,7 +740,7 @@ func (cm *ConnManager) getNewAddress() (*net.TCPAddr, error) {
 
 		// only allow recent nodes (10mins) after we failed 30
 		// times
-		if tries < 30 && time.Since(addr.LastAttempt()) < 10*time.Minute {
+		if tries < 30 && time.Since(addr.LastAttempt().ToNativeTime()) < 10*time.Minute {
 			continue
 		}
 

@@ -6,13 +6,12 @@ package wire
 
 import (
 	"bytes"
-	"reflect"
-	"testing"
-	"time"
-
 	"github.com/davecgh/go-spew/spew"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/util/random"
+	"reflect"
+	"testing"
 )
 
 // TestBlockHeader tests the BlockHeader API.
@@ -62,7 +61,7 @@ func TestBlockHeaderWire(t *testing.T) {
 		HashMerkleRoot:       mainnetGenesisMerkleRoot,
 		AcceptedIDMerkleRoot: exampleAcceptedIDMerkleRoot,
 		UTXOCommitment:       exampleUTXOCommitment,
-		Timestamp:            time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
+		Timestamp:            mstime.UnixMilliseconds(0x17315ed0f99),
 		Bits:                 bits,
 		Nonce:                nonce,
 	}
@@ -91,7 +90,7 @@ func TestBlockHeaderWire(t *testing.T) {
 		0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
 		0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63,
 		0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
-		0x29, 0xab, 0x5f, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
+		0x99, 0x0f, 0xed, 0x15, 0x73, 0x01, 0x00, 0x00, // Timestamp
 		0xff, 0xff, 0x00, 0x1d, // Bits
 		0xf3, 0xe0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce
 	}
@@ -178,7 +177,7 @@ func TestBlockHeaderSerialize(t *testing.T) {
 		HashMerkleRoot:       mainnetGenesisMerkleRoot,
 		AcceptedIDMerkleRoot: exampleAcceptedIDMerkleRoot,
 		UTXOCommitment:       exampleUTXOCommitment,
-		Timestamp:            time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
+		Timestamp:            mstime.UnixMilliseconds(0x17315ed0f99),
 		Bits:                 bits,
 		Nonce:                nonce,
 	}
@@ -207,7 +206,7 @@ func TestBlockHeaderSerialize(t *testing.T) {
 		0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
 		0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63,
 		0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
-		0x29, 0xab, 0x5f, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
+		0x99, 0x0f, 0xed, 0x15, 0x73, 0x01, 0x00, 0x00, // Timestamp
 		0xff, 0xff, 0x00, 0x1d, // Bits
 		0xf3, 0xe0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce
 	}
@@ -260,7 +259,7 @@ func TestBlockHeaderSerialize(t *testing.T) {
 func TestBlockHeaderSerializeSize(t *testing.T) {
 	nonce := uint64(123123) // 0x1e0f3
 	bits := uint32(0x1d00ffff)
-	timestamp := time.Unix(0x495fab29, 0) // 2009-01-03 12:15:05 -0600 CST
+	timestamp := mstime.UnixMilliseconds(0x495fab29000)
 	baseBlockHdr := &BlockHeader{
 		Version:              1,
 		ParentHashes:         []*daghash.Hash{mainnetGenesisHash, simnetGenesisHash},
@@ -308,7 +307,7 @@ func TestBlockHeaderSerializeSize(t *testing.T) {
 func TestIsGenesis(t *testing.T) {
 	nonce := uint64(123123) // 0x1e0f3
 	bits := uint32(0x1d00ffff)
-	timestamp := time.Unix(0x495fab29, 0) // 2009-01-03 12:15:05 -0600 CST
+	timestamp := mstime.UnixMilliseconds(0x495fab29000)
 
 	baseBlockHdr := &BlockHeader{
 		Version:        1,

@@ -3,10 +3,9 @@ package mining
 // This file functions are not considered safe for regular use, and should be used for test purposes only.
 
 import (
-	"github.com/pkg/errors"
-	"time"
-
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/txscript"
@@ -20,8 +19,8 @@ type fakeTxSource struct {
 	txDescs []*TxDesc
 }
 
-func (txs *fakeTxSource) LastUpdated() time.Time {
-	return time.Unix(0, 0)
+func (txs *fakeTxSource) LastUpdated() mstime.Time {
+	return mstime.UnixMilliseconds(0)
 }
 
 func (txs *fakeTxSource) MiningDescs() []*TxDesc {

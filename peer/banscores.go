@@ -26,7 +26,9 @@ const (
 
 	BanScoreInvalidMsgGetBlockInvs = 10
 
-	BanScoreInvalidMsgBlockLocator = 100
+	BanScoreInvalidMsgGetBlockLocator = 100
+
+	BanScoreEmptyBlockLocator = 100
 
 	BanScoreSentTxToBlocksOnly = 20
 

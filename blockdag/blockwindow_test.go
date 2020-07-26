@@ -51,12 +51,12 @@ func TestBlueBlockWindow(t *testing.T) {
 			expectedWindowWithGenesisPadding: []string{"B", "A", "A", "A", "A", "A", "A", "A", "A", "A"},
 		},
 		{
-			parents:                          []string{"C", "D"},
+			parents:                          []string{"D", "C"},
 			id:                               "E",
 			expectedWindowWithGenesisPadding: []string{"D", "C", "B", "A", "A", "A", "A", "A", "A", "A"},
 		},
 		{
-			parents:                          []string{"C", "D"},
+			parents:                          []string{"D", "C"},
 			id:                               "F",
 			expectedWindowWithGenesisPadding: []string{"D", "C", "B", "A", "A", "A", "A", "A", "A", "A"},
 		},

@@ -7,6 +7,7 @@ package main
 import (
 	"encoding/binary"
 	"github.com/kaspanet/kaspad/blockdag/indexers"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 	"io"
 	"sync"
@@ -39,8 +40,8 @@ type blockImporter struct {
 	receivedLogBlocks int64
 	receivedLogTx     int64
 	lastHeight        int64
-	lastBlockTime     time.Time
-	lastLogTime       time.Time
+	lastBlockTime     mstime.Time
+	lastLogTime       mstime.Time
 }
 
 // readBlock reads the next block from the input file.
@@ -170,7 +171,7 @@ out:
 func (bi *blockImporter) logProgress() {
 	bi.receivedLogBlocks++
 
-	now := time.Now()
+	now := mstime.Now()
 	duration := now.Sub(bi.lastLogTime)
 	if duration < time.Second*time.Duration(cfg.Progress) {
 		return
@@ -315,6 +316,6 @@ func newBlockImporter(r io.ReadSeeker) (*blockImporter, error) {
 		errChan:      make(chan error),
 		quit:         make(chan struct{}),
 		dag:          dag,
-		lastLogTime:  time.Now(),
+		lastLogTime:  mstime.Now(),
 	}, nil
 }
