@@ -366,17 +366,16 @@ var helpDescsEnUS = map[string]string{
 	"getNetTotalsResult-timeMillis":     "Number of milliseconds since 1 Jan 1970 GMT",
 
 	// GetConnectedPeerInfoResult help.
-	"getConnectedPeerInfoResult-id":               "A unique node ID",
-	"getConnectedPeerInfoResult-address":          "The ip address and port of the peer",
-	"getConnectedPeerInfoResult-selectedTipHash":  "The hash of the selected tip of the peer",
-	"getConnectedPeerInfoResult-lastPingDuration": "The duration of the last ping to the peer in milliseconds",
-	"getConnectedPeerInfoResult-isSyncNode":       "Whether or not the peer is the sync peer",
-	"getConnectedPeerInfoResult-isInbound":        "Whether the peer is inbound or outbound",
-	"getConnectedPeerInfoResult-banScore":         "The ban score of the peer",
-	"getConnectedPeerInfoResult-timeOffset":       "The time difference between this node and the peer",
-	"getConnectedPeerInfoResult-userAgent":        "The user agent of the peer",
-	"getConnectedPeerInfoResult-protocolVersion":  "The p2p protocol version of the peer",
-	"getConnectedPeerInfoResult-timeConnected":    "The timestamp of when the peer connected to this node",
+	"getConnectedPeerInfoResult-id":                        "A unique node ID",
+	"getConnectedPeerInfoResult-address":                   "The ip address and port of the peer",
+	"getConnectedPeerInfoResult-selectedTipHash":           "The hash of the selected tip of the peer",
+	"getConnectedPeerInfoResult-lastPingDuration":          "The duration of the last ping to the peer in milliseconds",
+	"getConnectedPeerInfoResult-isSyncNode":                "Whether or not the peer is the sync peer",
+	"getConnectedPeerInfoResult-isOutbound":                "Whether the peer is inbound or outbound",
+	"getConnectedPeerInfoResult-timeOffset":                "The time difference between this node and the peer",
+	"getConnectedPeerInfoResult-userAgent":                 "The user agent of the peer",
+	"getConnectedPeerInfoResult-advertisedProtocolVersion": "The advertised p2p protocol version of the peer",
+	"getConnectedPeerInfoResult-timeConnected":             "The timestamp of when the peer connected to this node",
 
 	// GetConnectedPeerInfoCmd help.
 	"getConnectedPeerInfo--synopsis": "Returns data about each connected network peer as an array of json objects.",

@@ -66,6 +66,10 @@ func (c *gRPCConnection) SetOnInvalidMessageHandler(onInvalidMessageHandler serv
 	c.onInvalidMessageHandler = onInvalidMessageHandler
 }
 
+func (c *gRPCConnection) IsOutbound() bool {
+	return c.isOutbound
+}
+
 // Disconnect disconnects the connection
 // Calling this function a second time doesn't do anything
 //
