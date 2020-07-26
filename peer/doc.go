@@ -113,7 +113,7 @@ additional useful functionality that is typically desired.
 For example, the PushAddrMsg function automatically limits the addresses to the
 maximum number allowed by the message and randomizes the chosen addresses when
 there are too many. This allows the caller to simply provide a slice of known
-addresses, such as that returned by the addrmgr package, without having to worry
+addresses, such as that returned by the addressmanager package, without having to worry
 about the details.
 
 Next, the PushGetBlockInvsMsg and PushGetHeadersMsg functions will construct proper

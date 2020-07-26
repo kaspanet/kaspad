@@ -6,7 +6,7 @@ package rpcmodel
 
 import (
 	"encoding/json"
-	"github.com/kaspanet/kaspad/addrmgr"
+	"github.com/kaspanet/kaspad/addressmanager"
 )
 
 // GetBlockHeaderVerboseResult models the data from the getblockheader command when
@@ -263,10 +263,10 @@ type GetPeerAddressesKnownAddressResult struct {
 }
 
 // GetPeerAddressesNewBucketResult models a GetPeerAddressesResult new bucket.
-type GetPeerAddressesNewBucketResult [addrmgr.NewBucketCount][]string
+type GetPeerAddressesNewBucketResult [addressmanager.NewBucketCount][]string
 
 // GetPeerAddressesTriedBucketResult models a GetPeerAddressesResult tried bucket.
-type GetPeerAddressesTriedBucketResult [addrmgr.TriedBucketCount][]string
+type GetPeerAddressesTriedBucketResult [addressmanager.TriedBucketCount][]string
 
 // GetRawMempoolVerboseResult models the data returned from the getrawmempool
 // command when the verbose flag is set. When the verbose flag is not set,

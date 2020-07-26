@@ -1,5 +1,5 @@
 /*
-Package addrmgr implements concurrency safe Kaspa address manager.
+Package addressmanager implements concurrency safe Kaspa address manager.
 
 Address Manager Overview
 
@@ -31,4 +31,4 @@ peers which no longer appear to be good peers as well as bias the selection
 toward known good peers. The general idea is to make a best effort at only
 providing usable addresses.
 */
-package addrmgr
+package addressmanager

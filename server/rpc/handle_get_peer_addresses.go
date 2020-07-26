@@ -1,6 +1,9 @@
 package rpc
 
-import "github.com/kaspanet/kaspad/rpcmodel"
+import (
+	"github.com/kaspanet/kaspad/addressmanager"
+	"github.com/kaspanet/kaspad/rpcmodel"
+)
 
 // handleGetPeerAddresses handles getPeerAddresses commands.
 func handleGetPeerAddresses(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
@@ -21,8 +24,8 @@ func handleGetPeerAddresses(s *Server, cmd interface{}, closeChan <-chan struct{
 
 	for i, addr := range peersState.Addresses {
 		rpcPeersState.Addresses[i] = &rpcmodel.GetPeerAddressesKnownAddressResult{
-			Addr:         addr.Addr,
-			Src:          addr.Src,
+			Addr:         string(addr.Address),
+			Src:          string(addr.SourceAddress),
 			SubnetworkID: addr.SubnetworkID,
 			Attempts:     addr.Attempts,
 			TimeStamp:    addr.TimeStamp,
@@ -31,27 +34,35 @@ func handleGetPeerAddresses(s *Server, cmd interface{}, closeChan <-chan struct{
 		}
 	}
 
-	for subnetworkID, bucket := range peersState.NewBuckets {
+	for subnetworkID, bucket := range peersState.SubnetworkNewAddressBucketArrays {
 		rpcPeersState.NewBuckets[subnetworkID] = &rpcmodel.GetPeerAddressesNewBucketResult{}
 		for i, addr := range bucket {
-			rpcPeersState.NewBuckets[subnetworkID][i] = addr
+			rpcPeersState.NewBuckets[subnetworkID][i] = convertAddressKeySliceToString(addr)
 		}
 	}
 
-	for i, addr := range peersState.NewBucketFullNodes {
-		rpcPeersState.NewBucketFullNodes[i] = addr
+	for i, addr := range peersState.FullNodeNewAddressBucketArray {
+		rpcPeersState.NewBucketFullNodes[i] = convertAddressKeySliceToString(addr)
 	}
 
-	for subnetworkID, bucket := range peersState.TriedBuckets {
+	for subnetworkID, bucket := range peersState.SubnetworkTriedAddressBucketArrays {
 		rpcPeersState.TriedBuckets[subnetworkID] = &rpcmodel.GetPeerAddressesTriedBucketResult{}
 		for i, addr := range bucket {
-			rpcPeersState.TriedBuckets[subnetworkID][i] = addr
+			rpcPeersState.TriedBuckets[subnetworkID][i] = convertAddressKeySliceToString(addr)
 		}
 	}
 
-	for i, addr := range peersState.TriedBucketFullNodes {
-		rpcPeersState.TriedBucketFullNodes[i] = addr
+	for i, addr := range peersState.FullNodeTriedAddressBucketArray {
+		rpcPeersState.TriedBucketFullNodes[i] = convertAddressKeySliceToString(addr)
 	}
 
 	return rpcPeersState, nil
+}
+
+func convertAddressKeySliceToString(addressKeys []addressmanager.AddressKey) []string {
+	strings := make([]string, len(addressKeys))
+	for j, addr := range addressKeys {
+		strings[j] = string(addr)
+	}
+	return strings
 }

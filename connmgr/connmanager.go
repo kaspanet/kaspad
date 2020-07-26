@@ -7,7 +7,7 @@ package connmgr
 import (
 	nativeerrors "errors"
 	"fmt"
-	"github.com/kaspanet/kaspad/addrmgr"
+	"github.com/kaspanet/kaspad/addressmanager"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/wire"
 	"net"
@@ -161,7 +161,7 @@ type Config struct {
 	// connection is disconnected.
 	OnDisconnection func(*ConnReq)
 
-	AddrManager *addrmgr.AddrManager
+	AddrManager *addressmanager.AddressManager
 
 	// Dial connects to the address on the named network. It cannot be nil.
 	Dial func(net.Addr) (net.Conn, error)
@@ -289,7 +289,7 @@ func (cm *ConnManager) isAddressUsed(addr *net.TCPAddr) bool {
 func usedOutboundGroupsKey(addr *net.TCPAddr) string {
 	// A fake service flag is used since it doesn't affect the group key.
 	na := wire.NewNetAddress(addr, wire.SFNodeNetwork)
-	return addrmgr.GroupKey(na)
+	return addressmanager.GroupKey(na)
 }
 
 func usedAddressesKey(addr *net.TCPAddr) string {

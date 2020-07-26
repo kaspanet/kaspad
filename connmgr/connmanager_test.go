@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kaspanet/kaspad/addrmgr"
+	"github.com/kaspanet/kaspad/addressmanager"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/dbaccess"
@@ -178,7 +178,7 @@ func overrideActiveConfig() func() {
 	}
 }
 
-func addressManagerForTest(t *testing.T, testName string, numAddresses uint8) (*addrmgr.AddrManager, func()) {
+func addressManagerForTest(t *testing.T, testName string, numAddresses uint8) (*addressmanager.AddressManager, func()) {
 	amgr, teardown := createEmptyAddressManagerForTest(t, testName)
 
 	for i := uint8(0); i < numAddresses; i++ {
@@ -192,7 +192,7 @@ func addressManagerForTest(t *testing.T, testName string, numAddresses uint8) (*
 	return amgr, teardown
 }
 
-func createEmptyAddressManagerForTest(t *testing.T, testName string) (*addrmgr.AddrManager, func()) {
+func createEmptyAddressManagerForTest(t *testing.T, testName string) (*addressmanager.AddressManager, func()) {
 	path, err := ioutil.TempDir("", fmt.Sprintf("%s-database", testName))
 	if err != nil {
 		t.Fatalf("createEmptyAddressManagerForTest: TempDir unexpectedly "+
@@ -204,7 +204,7 @@ func createEmptyAddressManagerForTest(t *testing.T, testName string) (*addrmgr.A
 		t.Fatalf("error creating db: %s", err)
 	}
 
-	return addrmgr.New(nil, nil), func() {
+	return addressmanager.New(nil, nil), func() {
 		// Wait for the connection manager to finish, so it'll
 		// have access to the address manager as long as it's
 		// alive.
