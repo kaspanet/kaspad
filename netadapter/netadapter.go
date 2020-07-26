@@ -139,8 +139,13 @@ func (na *NetAdapter) ID() *id.ID {
 func (na *NetAdapter) Broadcast(netConnections []*NetConnection, message wire.Message) error {
 	na.RLock()
 	defer na.RUnlock()
+
 	for _, netConnection := range netConnections {
-		router := na.connectionsToRouters[netConnection]
+		router, ok := na.connectionsToRouters[netConnection]
+		if !ok { // skip connections that were removed
+			continue
+		}
+
 		err := router.OutgoingRoute().Enqueue(message)
 		if err != nil {
 			if errors.Is(err, routerpkg.ErrRouteClosed) {
