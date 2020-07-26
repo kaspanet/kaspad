@@ -64,6 +64,8 @@ func (m *Manager) AddTransaction(tx *util.Tx) error {
 		if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
 			return err
 		}
+
+		// TODO(libp2p): Remove panic once RPC is integrated into protocol architecture
 		panic(err)
 	}
 	return nil
@@ -76,6 +78,8 @@ func (m *Manager) AddBlock(block *util.Block, flags blockdag.BehaviorFlags) erro
 		if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
 			return err
 		}
+
+		// TODO(libp2p): Remove panic once RPC is integrated into protocol architecture
 		panic(err)
 	}
 	return nil
