@@ -111,7 +111,7 @@ func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) err
 	var filteredHashesToRequest []*daghash.Hash
 	for _, hash := range hashesToRequest {
 		exists := flow.SharedRequestedBlocks().addIfNotExists(hash)
-		if !exists {
+		if exists {
 			continue
 		}
 

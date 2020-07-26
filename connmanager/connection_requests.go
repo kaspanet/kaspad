@@ -100,6 +100,8 @@ func (c *ConnectionManager) AddConnectionRequest(address string, isPermanent boo
 			address:     address,
 			isPermanent: isPermanent,
 		}
+
+		c.run()
 	})
 }
 

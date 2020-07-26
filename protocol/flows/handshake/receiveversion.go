@@ -90,5 +90,8 @@ func (flow *receiveVersionFlow) start() (*wire.NetAddress, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	flow.peer.Connection().SetID(msgVersion.ID)
+
 	return msgVersion.Address, nil
 }
