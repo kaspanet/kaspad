@@ -10,7 +10,7 @@ import (
 )
 
 func TestIntegrationBasicSync(t *testing.T) {
-	app1, app2, client1, client2, teardown := setup(t)
+	app1, app2, _, client1, client2, _, teardown := setup(t)
 	defer teardown()
 
 	connect(t, app1, app2, client1, client2)

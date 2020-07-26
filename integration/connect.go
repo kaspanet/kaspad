@@ -7,8 +7,8 @@ import (
 	"github.com/kaspanet/kaspad/app"
 )
 
-func connect(t *testing.T, app1, app2 *app.App, client1, client2 *rpcClient) {
-	err := client2.ConnectNode(p2pAddress1)
+func connect(t *testing.T, app1, app2 *app.App, client1, client2 *rpcClient, app1P2PAddress string) {
+	err := client2.ConnectNode(app1P2PAddress)
 	if err != nil {
 		t.Fatalf("Error connecting the nodes")
 	}
