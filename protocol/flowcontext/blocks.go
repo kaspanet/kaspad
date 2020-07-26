@@ -20,6 +20,10 @@ func (f *FlowContext) OnNewBlock(block *util.Block) error {
 	}
 	// TODO(libp2p) Notify transactionsAcceptedToMempool to RPC
 
+	return f.broadcastTransactions(block, transactionsAcceptedToMempool)
+}
+
+func (f *FlowContext) broadcastTransactions(block *util.Block, transactionsAcceptedToMempool []*util.Tx) error {
 	f.updateTransactionsToRebroadcast(block)
 
 	// Don't relay transactions when in IBD.
@@ -38,6 +42,10 @@ func (f *FlowContext) OnNewBlock(block *util.Block) error {
 	}
 
 	copy(txIDsToBroadcast[len(transactionsAcceptedToMempool):], txIDsToBroadcast)
+
+	if len(txIDsToBroadcast) == 0 {
+		return nil
+	}
 	if len(txIDsToBroadcast) > wire.MaxInvPerTxInvMsg {
 		txIDsToBroadcast = txIDsToBroadcast[:wire.MaxInvPerTxInvMsg]
 	}
