@@ -69,5 +69,5 @@ func isConnected(t *testing.T, app1, app2 *app.App, client1, client2 *rpcClient)
 		t.Fatalf("app1Connected is %t while app2Connected is %t", app1Connected, app2Connected)
 	}
 
-	return app1Connected
+	return app1Connected && app2Connected
 }
