@@ -917,20 +917,22 @@ func (am *AddressManager) GetAddress() *KnownAddress {
 
 // getAddress returns a single address that should be routable.
 // See GetAddress for further details.
-func (am *AddressManager) getAddress(addrTried *triedAddressBucketArray, nTried int, addrNew *newAddressBucketArray, nNew int) *KnownAddress {
-	// Use a 50% chance for choosing between tried and new table entries.
-	var addrBucket bucket
-	if nTried > 0 && (nNew == 0 || am.random.Intn(2) == 0) {
-		addrBucket = addrTried
-	} else if nNew > 0 {
-		addrBucket = addrNew
+func (am *AddressManager) getAddress(triedAddressBucketArray *triedAddressBucketArray, triedAddressCount int,
+	newAddressBucketArray *newAddressBucketArray, newAddressCount int) *KnownAddress {
+
+	// Use a 50% chance for choosing between tried and new addresses.
+	var bucketArray addressBucketArray
+	if triedAddressCount > 0 && (newAddressCount == 0 || am.random.Intn(2) == 0) {
+		bucketArray = triedAddressBucketArray
+	} else if newAddressCount > 0 {
+		bucketArray = newAddressBucketArray
 	} else {
 		// There aren't any addresses in any of the buckets
 		return nil
 	}
 
 	// Pick a random bucket
-	randomBucket := addrBucket.randomBucket(am.random)
+	randomBucket := bucketArray.randomBucket(am.random)
 
 	// Get the sum of all chances
 	totalChance := float64(0)
@@ -952,7 +954,7 @@ func (am *AddressManager) getAddress(addrTried *triedAddressBucketArray, nTried 
 	panic("randomValue is exactly 1, which cannot happen")
 }
 
-type bucket interface {
+type addressBucketArray interface {
 	name() string
 	randomBucket(random *rand.Rand) []*KnownAddress
 }
