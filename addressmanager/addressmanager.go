@@ -957,7 +957,7 @@ func (am *AddressManager) getAddress(triedAddressBucketArray *triedAddressBucket
 		}
 	}
 
-	panic("randomValue is exactly 1, which cannot happen")
+	panic("randomValue is equal to or greater than 1, which cannot happen")
 }
 
 type addressBucketArray interface {
