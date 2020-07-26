@@ -1,12 +1,13 @@
 package flowcontext
 
 import (
+	"sync/atomic"
+
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/protocol/flows/blockrelay"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
-	"sync/atomic"
 )
 
 // OnNewBlock updates the mempool after a new block arrival, and
@@ -17,8 +18,13 @@ func (f *FlowContext) OnNewBlock(block *util.Block) error {
 	if err != nil {
 		return err
 	}
+
 	// TODO(libp2p) Notify transactionsAcceptedToMempool to RPC
 
+	return f.broadcastTransactionsAfterBlockAdded(block, transactionsAcceptedToMempool)
+}
+
+func (f *FlowContext) broadcastTransactionsAfterBlockAdded(block *util.Block, transactionsAcceptedToMempool []*util.Tx) error {
 	f.updateTransactionsToRebroadcast(block)
 
 	// Don't relay transactions when in IBD.
@@ -37,7 +43,13 @@ func (f *FlowContext) OnNewBlock(block *util.Block) error {
 	}
 
 	copy(txIDsToBroadcast[len(transactionsAcceptedToMempool):], txIDsToBroadcast)
-	txIDsToBroadcast = txIDsToBroadcast[:wire.MaxInvPerTxInvMsg]
+
+	if len(txIDsToBroadcast) == 0 {
+		return nil
+	}
+	if len(txIDsToBroadcast) > wire.MaxInvPerTxInvMsg {
+		txIDsToBroadcast = txIDsToBroadcast[:wire.MaxInvPerTxInvMsg]
+	}
 	inv := wire.NewMsgTxInv(txIDsToBroadcast)
 	return f.Broadcast(inv)
 }
