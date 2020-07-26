@@ -2,7 +2,6 @@ package integration
 
 import (
 	"io/ioutil"
-	"os"
 	"testing"
 	"time"
 
@@ -39,19 +38,16 @@ func configs(t *testing.T) (config1, config2, config3 *config.Config) {
 	config1.DataDir = randomDirectory(t)
 	config1.Listeners = []string{p2pAddress1}
 	config1.RPCListeners = []string{rpcAddress1}
-	config1.DisableTLS = true
 
 	config2 = commonConfig()
 	config2.DataDir = randomDirectory(t)
 	config2.Listeners = []string{p2pAddress2}
 	config2.RPCListeners = []string{rpcAddress2}
-	config2.DisableTLS = true
 
 	config3 = commonConfig()
 	config3.DataDir = randomDirectory(t)
 	config3.Listeners = []string{p3pAddress3}
 	config3.RPCListeners = []string{rpcAddress3}
-	config3.DisableTLS = true
 
 	return config1, config2, config3
 }
@@ -64,12 +60,13 @@ func commonConfig() *config.Config {
 	commonConfig.DisableDNSSeed = true
 	commonConfig.RPCUser = rpcUser
 	commonConfig.RPCPass = rpcPass
+	commonConfig.DisableTLS = true
 
 	return commonConfig
 }
 
 func randomDirectory(t *testing.T) string {
-	dir, err := ioutil.TempDir(os.TempDir(), "integration-test-*")
+	dir, err := ioutil.TempDir("", "integration-test")
 	if err != nil {
 		t.Fatalf("Error creating temporary directory for test: %+v", err)
 	}
