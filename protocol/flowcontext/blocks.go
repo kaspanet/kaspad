@@ -18,12 +18,13 @@ func (f *FlowContext) OnNewBlock(block *util.Block) error {
 	if err != nil {
 		return err
 	}
+
 	// TODO(libp2p) Notify transactionsAcceptedToMempool to RPC
 
-	return f.broadcastTransactions(block, transactionsAcceptedToMempool)
+	return f.broadcastTransactionsAfterBlockAdded(block, transactionsAcceptedToMempool)
 }
 
-func (f *FlowContext) broadcastTransactions(block *util.Block, transactionsAcceptedToMempool []*util.Tx) error {
+func (f *FlowContext) broadcastTransactionsAfterBlockAdded(block *util.Block, transactionsAcceptedToMempool []*util.Tx) error {
 	f.updateTransactionsToRebroadcast(block)
 
 	// Don't relay transactions when in IBD.
