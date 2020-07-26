@@ -23,7 +23,7 @@ import (
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/kaspanet/kaspad/addrmgr"
+	"github.com/kaspanet/kaspad/addressmanager"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/blockdag/indexers"
 	"github.com/kaspanet/kaspad/config"
@@ -127,7 +127,7 @@ type Peer struct {
 	sentAddrs       bool
 	isWhitelisted   bool
 	filter          *bloom.Filter
-	knownAddresses  map[addrmgr.AddressKey]struct{}
+	knownAddresses  map[addressmanager.AddressKey]struct{}
 	DynamicBanScore connmgr.DynamicBanScore
 	quit            chan struct{}
 	// The following chans are used to sync blockmanager and server.
@@ -215,7 +215,7 @@ type Server struct {
 	shutdownSched int32
 
 	DAGParams   *dagconfig.Params
-	AddrManager *addrmgr.AddressManager
+	AddrManager *addressmanager.AddressManager
 	connManager *connmgr.ConnManager
 	SigCache    *txscript.SigCache
 	SyncManager *netsync.SyncManager
@@ -256,7 +256,7 @@ func newServerPeer(s *Server, isPersistent bool) *Peer {
 		server:         s,
 		persistent:     isPersistent,
 		filter:         bloom.LoadFilter(nil),
-		knownAddresses: make(map[addrmgr.AddressKey]struct{}),
+		knownAddresses: make(map[addressmanager.AddressKey]struct{}),
 		quit:           make(chan struct{}),
 		txProcessed:    make(chan struct{}, 1),
 		blockProcessed: make(chan struct{}, 1),
@@ -278,13 +278,13 @@ func (sp *Peer) blockExists(hash *daghash.Hash) bool {
 // the peer to prevent sending duplicate addresses.
 func (sp *Peer) addKnownAddresses(addresses []*wire.NetAddress) {
 	for _, na := range addresses {
-		sp.knownAddresses[addrmgr.NetAddressKey(na)] = struct{}{}
+		sp.knownAddresses[addressmanager.NetAddressKey(na)] = struct{}{}
 	}
 }
 
 // addressKnown true if the given address is already known to the peer.
 func (sp *Peer) addressKnown(na *wire.NetAddress) bool {
-	_, exists := sp.knownAddresses[addrmgr.NetAddressKey(na)]
+	_, exists := sp.knownAddresses[addressmanager.NetAddressKey(na)]
 	return exists
 }
 
@@ -1435,11 +1435,11 @@ out:
 				}
 				na := wire.NewNetAddressIPPort(externalip, uint16(listenPort),
 					s.services)
-				err = s.AddrManager.AddLocalAddress(na, addrmgr.UpnpPrio)
+				err = s.AddrManager.AddLocalAddress(na, addressmanager.UpnpPrio)
 				if err != nil {
 					// XXX DeletePortMapping?
 				}
-				srvrLog.Warnf("Successfully bound via UPnP to %s", addrmgr.NetAddressKey(na))
+				srvrLog.Warnf("Successfully bound via UPnP to %s", addressmanager.NetAddressKey(na))
 				first = false
 			}
 			timer.Reset(time.Minute * 15)
@@ -1469,7 +1469,7 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 		services &^= wire.SFNodeBloom
 	}
 
-	addressManager := addrmgr.New(serverutils.KaspadLookup, config.ActiveConfig().SubnetworkID)
+	addressManager := addressmanager.New(serverutils.KaspadLookup, config.ActiveConfig().SubnetworkID)
 
 	var listeners []net.Listener
 	var nat serverutils.NAT
@@ -1603,7 +1603,7 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 // initListeners initializes the configured net listeners and adds any bound
 // addresses to the address manager. Returns the listeners and a NAT interface,
 // which is non-nil if UPnP is in use.
-func initListeners(amgr *addrmgr.AddressManager, listenAddrs []string, services wire.ServiceFlag) ([]net.Listener, serverutils.NAT, error) {
+func initListeners(amgr *addressmanager.AddressManager, listenAddrs []string, services wire.ServiceFlag) ([]net.Listener, serverutils.NAT, error) {
 	// Listen for TCP connections at the configured addresses
 	netAddrs, err := ParseListeners(listenAddrs)
 	if err != nil {
@@ -1650,7 +1650,7 @@ func initListeners(amgr *addrmgr.AddressManager, listenAddrs []string, services 
 				continue
 			}
 
-			err = amgr.AddLocalAddress(na, addrmgr.ManualPrio)
+			err = amgr.AddLocalAddress(na, addressmanager.ManualPrio)
 			if err != nil {
 				amgrLog.Warnf("Skipping specified external IP: %s", err)
 			}
@@ -1718,7 +1718,7 @@ func addrStringToNetAddr(addr string) (*net.TCPAddr, error) {
 
 // addLocalAddress adds an address that this node is listening on to the
 // address manager so that it may be relayed to peers.
-func addLocalAddress(addrMgr *addrmgr.AddressManager, addr string, services wire.ServiceFlag) error {
+func addLocalAddress(addrMgr *addressmanager.AddressManager, addr string, services wire.ServiceFlag) error {
 	host, portStr, err := net.SplitHostPort(addr)
 	if err != nil {
 		return err
@@ -1748,7 +1748,7 @@ func addLocalAddress(addrMgr *addrmgr.AddressManager, addr string, services wire
 			}
 
 			netAddr := wire.NewNetAddressIPPort(ifaceIP, uint16(port), services)
-			addrMgr.AddLocalAddress(netAddr, addrmgr.BoundPrio)
+			addrMgr.AddLocalAddress(netAddr, addressmanager.BoundPrio)
 		}
 	} else {
 		netAddr, err := addrMgr.HostToNetAddress(host, uint16(port), services)
@@ -1756,7 +1756,7 @@ func addLocalAddress(addrMgr *addrmgr.AddressManager, addr string, services wire
 			return err
 		}
 
-		addrMgr.AddLocalAddress(netAddr, addrmgr.BoundPrio)
+		addrMgr.AddLocalAddress(netAddr, addressmanager.BoundPrio)
 	}
 
 	return nil

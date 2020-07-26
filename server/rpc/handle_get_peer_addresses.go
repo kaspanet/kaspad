@@ -1,7 +1,7 @@
 package rpc
 
 import (
-	"github.com/kaspanet/kaspad/addrmgr"
+	"github.com/kaspanet/kaspad/addressmanager"
 	"github.com/kaspanet/kaspad/rpcmodel"
 )
 
@@ -59,7 +59,7 @@ func handleGetPeerAddresses(s *Server, cmd interface{}, closeChan <-chan struct{
 	return rpcPeersState, nil
 }
 
-func convertAddressKeySliceToString(addressKeys []addrmgr.AddressKey) []string {
+func convertAddressKeySliceToString(addressKeys []addressmanager.AddressKey) []string {
 	strings := make([]string, len(addressKeys))
 	for j, addr := range addressKeys {
 		strings[j] = string(addr)

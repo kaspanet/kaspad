@@ -2,7 +2,7 @@ package p2p
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/addrmgr"
+	"github.com/kaspanet/kaspad/addressmanager"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/peer"
 	"github.com/kaspanet/kaspad/util/mstime"
@@ -21,9 +21,9 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 		return
 	}
 
-	if len(msg.AddrList) > addrmgr.GetAddrMax {
+	if len(msg.AddrList) > addressmanager.GetAddrMax {
 		sp.AddBanScoreAndPushRejectMsg(msg.Command(), wire.RejectInvalid, nil,
-			peer.BanScoreSentTooManyAddresses, 0, fmt.Sprintf("address count excceeded %d", addrmgr.GetAddrMax))
+			peer.BanScoreSentTooManyAddresses, 0, fmt.Sprintf("address count excceeded %d", addressmanager.GetAddrMax))
 		return
 	}
 
