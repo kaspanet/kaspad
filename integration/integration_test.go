@@ -10,10 +10,13 @@ import (
 )
 
 func TestIntegrationBasicSync(t *testing.T) {
-	app1, app2, _, client1, client2, _, teardown := setup(t)
+	app1, app2, app3, client1, client2, client3, teardown := setup(t)
 	defer teardown()
 
-	connect(t, app1, app2, client1, client2)
+	// Connect nodes in chain: 1 <--> 2 <--> 3
+	// So that node 3 doesn't directly get blocks from node 1
+	connect(t, app1, app2, client1, client2, p2pAddress1)
+	connect(t, app2, app3, client2, client3, p2pAddress2)
 
 	blockTemplate, err := client1.GetBlockTemplate(testAddress1, "")
 	if err != nil {
@@ -32,9 +35,13 @@ func TestIntegrationBasicSync(t *testing.T) {
 		t.Fatalf("Error from NotifyBlocks: %+v", err)
 	}
 
-	onBlockAddedChan := make(chan *wire.BlockHeader)
+	app2OnBlockAddedChan := make(chan *wire.BlockHeader)
 	client2.onBlockAdded = func(header *wire.BlockHeader) {
-		onBlockAddedChan <- header
+		app2OnBlockAddedChan <- header
+	}
+	app3OnBlockAddedChan := make(chan *wire.BlockHeader)
+	client3.onBlockAdded = func(header *wire.BlockHeader) {
+		app3OnBlockAddedChan <- header
 	}
 
 	err = client1.SubmitBlock(block, nil)
@@ -44,9 +51,19 @@ func TestIntegrationBasicSync(t *testing.T) {
 
 	var header *wire.BlockHeader
 	select {
-	case header = <-onBlockAddedChan:
+	case header = <-app2OnBlockAddedChan:
 	case <-time.After(defaultTimeout):
-		t.Fatalf("Timeout waiting for block added notification")
+		t.Fatalf("Timeout waiting for block added notification on node directly connected to miner")
+	}
+
+	if !header.BlockHash().IsEqual(block.Hash()) {
+		t.Errorf("Expected block with hash '%s', but got '%s'", block.Hash(), header.BlockHash())
+	}
+
+	select {
+	case header = <-app3OnBlockAddedChan:
+	case <-time.After(defaultTimeout):
+		t.Fatalf("Timeout waiting for block added notification on node indirectly connected to miner")
 	}
 
 	if !header.BlockHash().IsEqual(block.Hash()) {
