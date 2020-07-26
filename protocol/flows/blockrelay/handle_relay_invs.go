@@ -178,10 +178,6 @@ func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueS
 	blockHash := block.Hash()
 	isOrphan, isDelayed, err := flow.DAG().ProcessBlock(block, blockdag.BFNone)
 	if err != nil {
-		// When the error is a rule error, it means the block was simply
-		// rejected as opposed to something actually going wrong, so log
-		// it as such. Otherwise, something really did go wrong, so return
-		// the error as is.
 		if !errors.As(err, &blockdag.RuleError{}) {
 			return errors.Wrapf(err, "failed to process block %s", blockHash)
 		}
