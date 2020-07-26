@@ -787,7 +787,7 @@ type rpcserverConfig struct {
 	AcceptanceIndex *indexers.AcceptanceIndex
 
 	// addressManager defines the address manager for the RPC server to use.
-	addressManager *addrmgr.AddrManager
+	addressManager *addrmgr.AddressManager
 }
 
 // setupRPCListeners returns a slice of listeners that are configured for use

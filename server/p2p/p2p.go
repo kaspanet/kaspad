@@ -215,7 +215,7 @@ type Server struct {
 	shutdownSched int32
 
 	DAGParams   *dagconfig.Params
-	AddrManager *addrmgr.AddrManager
+	AddrManager *addrmgr.AddressManager
 	connManager *connmgr.ConnManager
 	SigCache    *txscript.SigCache
 	SyncManager *netsync.SyncManager
@@ -1603,7 +1603,7 @@ func NewServer(listenAddrs []string, dagParams *dagconfig.Params, interrupt <-ch
 // initListeners initializes the configured net listeners and adds any bound
 // addresses to the address manager. Returns the listeners and a NAT interface,
 // which is non-nil if UPnP is in use.
-func initListeners(amgr *addrmgr.AddrManager, listenAddrs []string, services wire.ServiceFlag) ([]net.Listener, serverutils.NAT, error) {
+func initListeners(amgr *addrmgr.AddressManager, listenAddrs []string, services wire.ServiceFlag) ([]net.Listener, serverutils.NAT, error) {
 	// Listen for TCP connections at the configured addresses
 	netAddrs, err := ParseListeners(listenAddrs)
 	if err != nil {
@@ -1718,7 +1718,7 @@ func addrStringToNetAddr(addr string) (*net.TCPAddr, error) {
 
 // addLocalAddress adds an address that this node is listening on to the
 // address manager so that it may be relayed to peers.
-func addLocalAddress(addrMgr *addrmgr.AddrManager, addr string, services wire.ServiceFlag) error {
+func addLocalAddress(addrMgr *addrmgr.AddressManager, addr string, services wire.ServiceFlag) error {
 	host, portStr, err := net.SplitHostPort(addr)
 	if err != nil {
 		return err

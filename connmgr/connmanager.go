@@ -161,7 +161,7 @@ type Config struct {
 	// connection is disconnected.
 	OnDisconnection func(*ConnReq)
 
-	AddrManager *addrmgr.AddrManager
+	AddrManager *addrmgr.AddressManager
 
 	// Dial connects to the address on the named network. It cannot be nil.
 	Dial func(net.Addr) (net.Conn, error)

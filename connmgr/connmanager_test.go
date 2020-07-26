@@ -178,7 +178,7 @@ func overrideActiveConfig() func() {
 	}
 }
 
-func addressManagerForTest(t *testing.T, testName string, numAddresses uint8) (*addrmgr.AddrManager, func()) {
+func addressManagerForTest(t *testing.T, testName string, numAddresses uint8) (*addrmgr.AddressManager, func()) {
 	amgr, teardown := createEmptyAddressManagerForTest(t, testName)
 
 	for i := uint8(0); i < numAddresses; i++ {
@@ -192,7 +192,7 @@ func addressManagerForTest(t *testing.T, testName string, numAddresses uint8) (*
 	return amgr, teardown
 }
 
-func createEmptyAddressManagerForTest(t *testing.T, testName string) (*addrmgr.AddrManager, func()) {
+func createEmptyAddressManagerForTest(t *testing.T, testName string) (*addrmgr.AddressManager, func()) {
 	path, err := ioutil.TempDir("", fmt.Sprintf("%s-database", testName))
 	if err != nil {
 		t.Fatalf("createEmptyAddressManagerForTest: TempDir unexpectedly "+

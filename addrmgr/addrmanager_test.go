@@ -109,7 +109,7 @@ func lookupFuncForTest(host string) ([]net.IP, error) {
 }
 
 func newAddrManagerForTest(t *testing.T, testName string,
-	localSubnetworkID *subnetworkid.SubnetworkID) (addressManager *AddrManager, teardown func()) {
+	localSubnetworkID *subnetworkid.SubnetworkID) (addressManager *AddressManager, teardown func()) {
 
 	dbPath, err := ioutil.TempDir("", testName)
 	if err != nil {
