@@ -1079,13 +1079,16 @@ func (am *AddressManager) Good(address *wire.NetAddress, subnetworkID *subnetwor
 		// If this address was already tried, but subnetworkID was changed -
 		// update subnetworkID, than continue as though this is a new address
 		bucket := am.subnetworkTriedAddresBucketArrays[*oldSubnetworkID][triedAddressBucketIndex]
-		toRemoveIndex := -1
+		var toRemoveIndex int
+		toRemoveIndexFound := false
 		for i, knownAddress := range bucket {
 			if NetAddressKey(knownAddress.NetAddress()) == addressKey {
 				toRemoveIndex = i
+				toRemoveIndexFound = true
+				break
 			}
 		}
-		if toRemoveIndex != -1 {
+		if toRemoveIndexFound {
 			am.subnetworkTriedAddresBucketArrays[*oldSubnetworkID][triedAddressBucketIndex] =
 				append(bucket[:toRemoveIndex], bucket[toRemoveIndex+1:]...)
 		}
