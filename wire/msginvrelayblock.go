@@ -1,8 +1,9 @@
 package wire
 
 import (
-	"github.com/kaspanet/kaspad/util/daghash"
 	"io"
+
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // MsgInvRelayBlock implements the Message interface and represents a kaspa
@@ -15,7 +16,8 @@ type MsgInvRelayBlock struct {
 // KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgInvRelayBlock) KaspaDecode(r io.Reader, pver uint32) error {
-	return ReadElement(r, &msg.Hash)
+	msg.Hash = &daghash.Hash{}
+	return ReadElement(r, msg.Hash)
 }
 
 // KaspaEncode encodes the receiver to w using the kaspa protocol encoding.

@@ -13,10 +13,9 @@ type NetConnection struct {
 	id         *id.ID
 }
 
-func newNetConnection(connection server.Connection, id *id.ID) *NetConnection {
+func newNetConnection(connection server.Connection) *NetConnection {
 	return &NetConnection{
 		connection: connection,
-		id:         id,
 	}
 }
 
@@ -27,6 +26,11 @@ func (c *NetConnection) String() string {
 // ID returns the ID associated with this connection
 func (c *NetConnection) ID() *id.ID {
 	return c.id
+}
+
+// SetID sets the ID associated with this connection
+func (c *NetConnection) SetID(peerID *id.ID) {
+	c.id = peerID
 }
 
 // Address returns the address associated with this connection

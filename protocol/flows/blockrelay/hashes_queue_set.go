@@ -8,7 +8,7 @@ type hashesQueueSet struct {
 }
 
 func (r *hashesQueueSet) enqueueIfNotExists(hash *daghash.Hash) {
-	if _, ok := r.set[*hash]; !ok {
+	if _, ok := r.set[*hash]; ok {
 		return
 	}
 	r.queue = append(r.queue, hash)

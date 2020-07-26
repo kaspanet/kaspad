@@ -1,8 +1,9 @@
 package wire
 
 import (
-	"github.com/kaspanet/kaspad/util/daghash"
 	"io"
+
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // MsgGetRelayBlocksHashes is the maximum number of hashes that can
@@ -19,13 +20,38 @@ type MsgGetRelayBlocks struct {
 // KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgGetRelayBlocks) KaspaDecode(r io.Reader, pver uint32) error {
-	return ReadElement(r, &msg.Hashes)
+	numHashes, err := ReadVarInt(r)
+	if err != nil {
+		return err
+	}
+
+	msg.Hashes = make([]*daghash.Hash, numHashes)
+	for i := uint64(0); i < numHashes; i++ {
+		msg.Hashes[i] = &daghash.Hash{}
+		err := ReadElement(r, msg.Hashes[i])
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgGetRelayBlocks) KaspaEncode(w io.Writer, pver uint32) error {
-	return WriteElement(w, msg.Hashes)
+	err := WriteVarInt(w, uint64(len(msg.Hashes)))
+	if err != nil {
+		return err
+	}
+	for _, hash := range msg.Hashes {
+		err := WriteElement(w, hash)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Command returns the protocol command string for the message. This is part
