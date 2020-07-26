@@ -888,7 +888,7 @@ func (am *AddressManager) HostToNetAddress(host string, port uint16, services wi
 	return wire.NewNetAddressIPPort(ip, port, services), nil
 }
 
-// NetAddressKey returns a "string" key in the form of ip:port for IPv4 addresses
+// NetAddressKey returns a key in the form of ip:port for IPv4 addresses
 // or [ip]:port for IPv6 addresses for use as keys in maps.
 func NetAddressKey(na *wire.NetAddress) AddressKey {
 	port := strconv.FormatUint(uint64(na.Port), 10)
