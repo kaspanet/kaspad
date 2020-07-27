@@ -4,16 +4,14 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	"github.com/kaspanet/kaspad/addressmanager"
 	"github.com/kaspanet/kaspad/netadapter"
-	"github.com/kaspanet/kaspad/protocol/flows/ibd/selectedtip"
-
-	"github.com/kaspanet/kaspad/protocol/flows/handshake"
-
+	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/flows/addressexchange"
 	"github.com/kaspanet/kaspad/protocol/flows/blockrelay"
-
-	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
+	"github.com/kaspanet/kaspad/protocol/flows/handshake"
 	"github.com/kaspanet/kaspad/protocol/flows/ibd"
+	"github.com/kaspanet/kaspad/protocol/flows/ibd/selectedtip"
 	"github.com/kaspanet/kaspad/protocol/flows/ping"
 	"github.com/kaspanet/kaspad/protocol/flows/relaytransactions"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
@@ -25,7 +23,11 @@ import (
 func (m *Manager) routerInitializer(netConnection *netadapter.NetConnection) *routerpkg.Router {
 	router := routerpkg.NewRouter()
 	spawn("newRouterInitializer-startFlows", func() {
-		if m.context.ConnectionManager().IsBanned(netConnection) {
+		isBanned, err := m.context.ConnectionManager().IsBanned(netConnection)
+		if err != nil && !errors.Is(err, addressmanager.ErrAddressNotFound) {
+			panic(err)
+		}
+		if isBanned {
 			err := m.context.NetAdapter().Disconnect(netConnection)
 			if err != nil {
 				panic(err)
@@ -33,11 +35,14 @@ func (m *Manager) routerInitializer(netConnection *netadapter.NetConnection) *ro
 			return
 		}
 
-		err := m.startFlows(netConnection, router)
+		err = m.startFlows(netConnection, router)
 		if err != nil {
 			if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
 				if protocolErr.ShouldBan {
-					m.context.ConnectionManager().Ban(netConnection)
+					err := m.context.ConnectionManager().Ban(netConnection)
+					if err != nil && !errors.Is(err, addressmanager.ErrAddressNotFound) {
+						panic(err)
+					}
 				}
 				err = m.context.NetAdapter().Disconnect(netConnection)
 				if err != nil {
