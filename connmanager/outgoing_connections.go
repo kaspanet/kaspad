@@ -23,7 +23,11 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 		liveConnections, c.targetOutgoing, c.targetOutgoing-liveConnections)
 
 	connectionsNeededCount := c.targetOutgoing - len(c.activeOutgoing)
+
+	// TODO(libp2p): instead of the following weird behavior, request from
+	// the addressManager to return a connectionsNeededCount of addresses.
 	connectionAttempts := connectionsNeededCount * 2
+
 	for i := 0; i < connectionAttempts; i++ {
 		// Return in case we've already reached or surpassed our target
 		if len(c.activeOutgoing) >= c.targetOutgoing {
