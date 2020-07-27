@@ -61,6 +61,7 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 		address, err := ReceiveVersion(context, receiveVersionRoute, router.OutgoingRoute(), peer)
 		if err != nil {
 			context.HandleError(err, "SendVersion", &isStopping, errChan)
+			return
 		}
 		peerAddress = address
 	})
@@ -70,6 +71,7 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 		err := SendVersion(context, sendVersionRoute, router.OutgoingRoute())
 		if err != nil {
 			context.HandleError(err, "SendVersion", &isStopping, errChan)
+			return
 		}
 	})
 

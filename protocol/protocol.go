@@ -200,6 +200,7 @@ func (m *Manager) addFlow(name string, router *routerpkg.Router, messageTypes []
 		err := flow(route)
 		if err != nil {
 			m.context.HandleError(err, name, isStopping, stopChan)
+			return
 		}
 	})
 }
@@ -223,6 +224,7 @@ func (m *Manager) addOneTimeFlow(name string, router *routerpkg.Router, messageT
 		err := flow(route)
 		if err != nil {
 			m.context.HandleError(err, name, isStopping, stopChan)
+			return
 		}
 	})
 }
