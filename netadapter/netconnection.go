@@ -7,7 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/netadapter/server"
 )
 
-// NetConnection is a wrapper to a server connection for use by services external to netAdapter
+// NetConnection is a wrapper to a server connection for use by services external to NetAdapter
 type NetConnection struct {
 	connection server.Connection
 	id         *id.ID

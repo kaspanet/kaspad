@@ -2,7 +2,6 @@ package integration
 
 import (
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 
 	rpcclient "github.com/kaspanet/kaspad/rpc/client"
@@ -10,8 +9,7 @@ import (
 
 type rpcClient struct {
 	*rpcclient.Client
-	onBlockAdded   func(*wire.BlockHeader)
-	onChainChanged func(removedChainBlockHashes []*daghash.Hash, addedChainBlocks []*rpcclient.ChainBlock)
+	onBlockAdded func(*wire.BlockHeader)
 }
 
 func newRPCClient(rpcAddress string) (*rpcClient, error) {
@@ -22,12 +20,8 @@ func newRPCClient(rpcAddress string) (*rpcClient, error) {
 				client.onBlockAdded(header)
 			}
 		},
-		OnChainChanged: func(removedChainBlockHashes []*daghash.Hash, addedChainBlocks []*rpcclient.ChainBlock) {
-			if client.onChainChanged != nil {
-				client.onChainChanged(removedChainBlockHashes, addedChainBlocks)
-			}
-		},
 	}
+
 	connConfig := &rpcclient.ConnConfig{
 		Host:           rpcAddress,
 		Endpoint:       "ws",
