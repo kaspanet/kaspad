@@ -24,8 +24,8 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 
 	connectionsNeededCount := c.targetOutgoing - len(c.activeOutgoing)
 
-	// TODO(libp2p): instead of the following weird behavior, request from
-	// the addressManager to return a connectionsNeededCount of addresses.
+	// TODO: instead of the following weird behavior, request from the
+	// addressManager to return a connectionsNeededCount of addresses.
 	connectionAttempts := connectionsNeededCount * 2
 
 	for i := 0; i < connectionAttempts; i++ {
