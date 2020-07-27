@@ -1379,10 +1379,12 @@ func (am *AddressManager) GetBestLocalAddress(remoteAddress *wire.NetAddress) *w
 	return bestAddress
 }
 
+// Ban marks the given address as banned
 func (am *AddressManager) Ban(address *wire.NetAddress) error {
 	return am.setBanned(address, true, mstime.Now())
 }
 
+// Unban marks the given address as not banned
 func (am *AddressManager) Unban(address *wire.NetAddress) error {
 	return am.setBanned(address, false, mstime.Time{})
 }
@@ -1400,6 +1402,7 @@ func (am *AddressManager) setBanned(address *wire.NetAddress, banned bool, banne
 	return nil
 }
 
+// IsBanned returns whether the given address is banned
 func (am *AddressManager) IsBanned(address *wire.NetAddress) (bool, error) {
 	am.localAddressesLock.Lock()
 	defer am.localAddressesLock.Unlock()
