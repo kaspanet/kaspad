@@ -237,6 +237,8 @@ type GetPeerAddressesKnownAddressResult struct {
 	TimeStamp    int64
 	LastAttempt  int64
 	LastSuccess  int64
+	IsBanned     bool
+	BannedTime   int64
 }
 
 // GetPeerAddressesNewBucketResult models a GetPeerAddressesResult new bucket.

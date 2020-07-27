@@ -70,6 +70,8 @@ type serializedKnownAddress struct {
 	TimeStamp     int64
 	LastAttempt   int64
 	LastSuccess   int64
+	IsBanned      bool
+	BannedTime    int64
 	// no refcount or tried, that is available from context.
 }
 
@@ -184,6 +186,10 @@ const (
 	// serializationVersion is the current version of the on-disk format.
 	serializationVersion = 1
 )
+
+// ErrAddressNotFound is an error returned from some functions when a
+// given address is not found in the address manager
+var ErrAddressNotFound = errors.New("address not found")
 
 // New returns a new Kaspa address manager.
 func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext) *AddressManager {
@@ -485,6 +491,8 @@ func (am *AddressManager) PeersStateForSerialization() (*PeersStateForSerializat
 		serializedAddress.Attempts = knownAddress.attempts
 		serializedAddress.LastAttempt = knownAddress.lastAttempt.UnixMilliseconds()
 		serializedAddress.LastSuccess = knownAddress.lastSuccess.UnixMilliseconds()
+		serializedAddress.IsBanned = knownAddress.isBanned
+		serializedAddress.BannedTime = knownAddress.bannedTime.UnixMilliseconds()
 		// Tried and referenceCount are implicit in the rest of the structure
 		// and will be worked out from context on unserialisation.
 		peersState.Addresses[i] = serializedAddress
@@ -604,6 +612,8 @@ func (am *AddressManager) deserializePeersState(serializedPeerState []byte) erro
 		knownAddress.attempts = serializedKnownAddress.Attempts
 		knownAddress.lastAttempt = mstime.UnixMilliseconds(serializedKnownAddress.LastAttempt)
 		knownAddress.lastSuccess = mstime.UnixMilliseconds(serializedKnownAddress.LastSuccess)
+		knownAddress.isBanned = serializedKnownAddress.IsBanned
+		knownAddress.bannedTime = mstime.UnixMilliseconds(serializedKnownAddress.BannedTime)
 		am.addressIndex[NetAddressKey(knownAddress.netAddress)] = knownAddress
 	}
 
@@ -1371,4 +1381,41 @@ func (am *AddressManager) GetBestLocalAddress(remoteAddress *wire.NetAddress) *w
 	}
 
 	return bestAddress
+}
+
+// Ban marks the given address as banned
+func (am *AddressManager) Ban(address *wire.NetAddress) error {
+	return am.setBanned(address, true, mstime.Now())
+}
+
+// Unban marks the given address as not banned
+func (am *AddressManager) Unban(address *wire.NetAddress) error {
+	return am.setBanned(address, false, mstime.Time{})
+}
+
+func (am *AddressManager) setBanned(address *wire.NetAddress, isBanned bool, bannedTime mstime.Time) error {
+	am.localAddressesLock.Lock()
+	defer am.localAddressesLock.Unlock()
+
+	knownAddress := am.knownAddress(address)
+	if knownAddress == nil {
+		return errors.Wrapf(ErrAddressNotFound, "address %s "+
+			"is not registered with the address manager", address.TCPAddress())
+	}
+	knownAddress.isBanned = isBanned
+	knownAddress.bannedTime = bannedTime
+	return nil
+}
+
+// IsBanned returns whether the given address is banned
+func (am *AddressManager) IsBanned(address *wire.NetAddress) (bool, error) {
+	am.localAddressesLock.Lock()
+	defer am.localAddressesLock.Unlock()
+
+	knownAddress := am.knownAddress(address)
+	if knownAddress == nil {
+		return false, errors.Wrapf(ErrAddressNotFound, "address %s "+
+			"is not registered with the address manager", address.TCPAddress())
+	}
+	return knownAddress.isBanned, nil
 }
