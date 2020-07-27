@@ -49,6 +49,7 @@ func commonConfig() *config.Config {
 	commonConfig.RPCUser = rpcUser
 	commonConfig.RPCPass = rpcPass
 	commonConfig.DisableTLS = true
+	commonConfig.Simnet = true
 
 	return commonConfig
 }
