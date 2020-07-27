@@ -9,7 +9,8 @@ import (
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 )
 
-// HandleError handles an error from a flow
+// HandleError handles an error from a flow,
+// It increments isStopping and sends the error to errChan if isStopping == 0
 //
 // If this is ErrRouteClosed - ignores the error
 // If this is ProtocolError - logs the error
