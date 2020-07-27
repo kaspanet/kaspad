@@ -25,6 +25,7 @@ type KnownAddress struct {
 	referenceCount int // reference count of new buckets
 	subnetworkID   *subnetworkid.SubnetworkID
 	banned         bool
+	bannedTime     mstime.Time
 }
 
 // NetAddress returns the underlying wire.NetAddress associated with the

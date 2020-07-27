@@ -70,6 +70,8 @@ type serializedKnownAddress struct {
 	TimeStamp     int64
 	LastAttempt   int64
 	LastSuccess   int64
+	Banned        bool
+	BannedTime    int64
 	// no refcount or tried, that is available from context.
 }
 
@@ -485,6 +487,8 @@ func (am *AddressManager) PeersStateForSerialization() (*PeersStateForSerializat
 		serializedAddress.Attempts = knownAddress.attempts
 		serializedAddress.LastAttempt = knownAddress.lastAttempt.UnixMilliseconds()
 		serializedAddress.LastSuccess = knownAddress.lastSuccess.UnixMilliseconds()
+		serializedAddress.Banned = knownAddress.banned
+		serializedAddress.BannedTime = knownAddress.bannedTime.UnixMilliseconds()
 		// Tried and referenceCount are implicit in the rest of the structure
 		// and will be worked out from context on unserialisation.
 		peersState.Addresses[i] = serializedAddress
@@ -604,6 +608,8 @@ func (am *AddressManager) deserializePeersState(serializedPeerState []byte) erro
 		knownAddress.attempts = serializedKnownAddress.Attempts
 		knownAddress.lastAttempt = mstime.UnixMilliseconds(serializedKnownAddress.LastAttempt)
 		knownAddress.lastSuccess = mstime.UnixMilliseconds(serializedKnownAddress.LastSuccess)
+		knownAddress.banned = serializedKnownAddress.Banned
+		knownAddress.bannedTime = mstime.UnixMilliseconds(serializedKnownAddress.BannedTime)
 		am.addressIndex[NetAddressKey(knownAddress.netAddress)] = knownAddress
 	}
 
@@ -1374,6 +1380,14 @@ func (am *AddressManager) GetBestLocalAddress(remoteAddress *wire.NetAddress) *w
 }
 
 func (am *AddressManager) Ban(address *wire.NetAddress) error {
+	return am.setBanned(address, true, mstime.Now())
+}
+
+func (am *AddressManager) Unban(address *wire.NetAddress) error {
+	return am.setBanned(address, false, mstime.Time{})
+}
+
+func (am *AddressManager) setBanned(address *wire.NetAddress, banned bool, bannedTime mstime.Time) error {
 	am.localAddressesLock.Lock()
 	defer am.localAddressesLock.Unlock()
 
@@ -1381,7 +1395,8 @@ func (am *AddressManager) Ban(address *wire.NetAddress) error {
 	if knownAddress == nil {
 		return errors.Errorf("address %s is not registered with the address manager", address.TCPAddress())
 	}
-	knownAddress.banned = true
+	knownAddress.banned = banned
+	knownAddress.bannedTime = bannedTime
 	return nil
 }
 
@@ -1391,7 +1406,8 @@ func (am *AddressManager) IsBanned(address *wire.NetAddress) (bool, error) {
 
 	knownAddress := am.knownAddress(address)
 	if knownAddress == nil {
-		return false, errors.Errorf("address %s is not registered with the address manager", address.TCPAddress())
+		return false, errors.Errorf("address %s "+
+			"is not registered with the address manager", address.TCPAddress())
 	}
 	return knownAddress.banned, nil
 }
