@@ -10,7 +10,7 @@ import (
 )
 
 // HandleError handles an error from a flow,
-// It increments isStopping and sends the error to errChan if isStopping == 0
+// It sends the error to errChan if isStopping == 0 and increments isStopping
 //
 // If this is ErrRouteClosed - ignores the error
 // If this is ProtocolError - logs the error
