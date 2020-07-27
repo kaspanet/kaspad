@@ -22,8 +22,14 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 	log.Debugf("Have got %d outgoing connections out of target %d, adding %d more",
 		liveConnections, c.targetOutgoing, c.targetOutgoing-liveConnections)
 
-	connectionsNeededCount := (c.targetOutgoing - len(c.activeOutgoing)) * 2
-	for i := 0; i < connectionsNeededCount; i++ {
+	connectionsNeededCount := c.targetOutgoing - len(c.activeOutgoing)
+	connectionAttempts := connectionsNeededCount * 2
+	for i := 0; i < connectionAttempts; i++ {
+		// Return in case we've already reached or surpassed our target
+		if len(c.activeOutgoing) >= c.targetOutgoing {
+			return
+		}
+
 		address := c.addressManager.GetAddress()
 		if address == nil {
 			log.Warnf("No more addresses available")
