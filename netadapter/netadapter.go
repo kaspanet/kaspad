@@ -108,7 +108,6 @@ func (na *NetAdapter) ConnectionCount() int {
 
 func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
 	netConnection := newNetConnection(connection)
-	log.Infof("~~~~~~~ %s: call routerInitializer", na.id)
 	router := na.routerInitializer(netConnection)
 	connection.Start(router)
 
@@ -139,7 +138,6 @@ func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
 // SetRouterInitializer sets the routerInitializer function
 // for the net adapter
 func (na *NetAdapter) SetRouterInitializer(routerInitializer RouterInitializer) {
-	log.Infof("~~~~~~ %s: SetRouterInitializer", na.id)
 	na.routerInitializer = routerInitializer
 }
 

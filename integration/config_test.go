@@ -12,7 +12,7 @@ import (
 const (
 	p2pAddress1 = "127.0.0.1:54321"
 	p2pAddress2 = "127.0.0.1:54322"
-	p3pAddress3 = "127.0.0.1:54323"
+	p2pAddress3 = "127.0.0.1:54323"
 
 	rpcAddress1 = "127.0.0.1:12345"
 	rpcAddress2 = "127.0.0.1:12346"
@@ -33,23 +33,11 @@ const (
 	defaultTimeout = 10 * time.Second
 )
 
-func configs(t *testing.T) (config1, config2, config3 *config.Config) {
-	config1 = commonConfig()
-	config1.DataDir = randomDirectory(t)
-	config1.Listeners = []string{p2pAddress1}
-	config1.RPCListeners = []string{rpcAddress1}
-
-	config2 = commonConfig()
-	config2.DataDir = randomDirectory(t)
-	config2.Listeners = []string{p2pAddress2}
-	config2.RPCListeners = []string{rpcAddress2}
-
-	config3 = commonConfig()
-	config3.DataDir = randomDirectory(t)
-	config3.Listeners = []string{p3pAddress3}
-	config3.RPCListeners = []string{rpcAddress3}
-
-	return config1, config2, config3
+func setConfig(t *testing.T, harness *appHarness) {
+	harness.config = commonConfig()
+	harness.config.DataDir = randomDirectory(t)
+	harness.config.Listeners = []string{harness.p2pAddress}
+	harness.config.RPCListeners = []string{harness.rpcAddress}
 }
 
 func commonConfig() *config.Config {

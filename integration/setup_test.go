@@ -9,119 +9,83 @@ import (
 	"github.com/kaspanet/kaspad/dbaccess"
 )
 
-func setup(t *testing.T) (app1, app2, app3 *app.App, client1, client2, client3 *rpcClient, teardownFunc func()) {
-	config1, config2, config3 := configs(t)
-
-	databaseContext1, databaseContext2, databaseContext3 := openDBs(t, config1, config2, config3)
-
-	app1, app2, app3 = newApps(t, config1, config2, config3, databaseContext1, databaseContext2, databaseContext3)
-
-	app1.Start()
-	app2.Start()
-	app3.Start()
-
-	client1, client2, client3 = rpcClients(t)
-
-	return app1, app2, app3, client1, client2, client3,
-		func() { teardown(t, app1, app2, app3, databaseContext1, databaseContext2, databaseContext3) }
+type appHarness struct {
+	app             *app.App
+	rpcClient       *rpcClient
+	p2pAddress      string
+	rpcAddress      string
+	config          *config.Config
+	databaseContext *dbaccess.DatabaseContext
 }
 
-func rpcClients(t *testing.T) (client1, client2, client3 *rpcClient) {
-	client1, err := newRPCClient(rpcAddress1)
-	if err != nil {
-		t.Fatalf("Error getting RPC client for app1 %+v", err)
-	}
+func setup(t *testing.T) (appHarness1, appHarness2, appHarness3 *appHarness, teardownFunc func()) {
+	appHarness1 = &appHarness{p2pAddress: p2pAddress1, rpcAddress: rpcAddress1}
+	appHarness2 = &appHarness{p2pAddress: p2pAddress2, rpcAddress: rpcAddress2}
+	appHarness3 = &appHarness{p2pAddress: p2pAddress3, rpcAddress: rpcAddress3}
 
-	client2, err = newRPCClient(rpcAddress2)
-	if err != nil {
-		t.Fatalf("Error getting RPC client for app2: %+v", err)
-	}
+	setConfig(t, appHarness1)
+	setConfig(t, appHarness2)
+	setConfig(t, appHarness3)
 
-	client3, err = newRPCClient(rpcAddress3)
-	if err != nil {
-		t.Fatalf("Error getting RPC client for app3: %+v", err)
-	}
+	setDatabaseContext(t, appHarness1)
+	setDatabaseContext(t, appHarness2)
+	setDatabaseContext(t, appHarness3)
 
-	return client1, client2, client3
+	setApp(t, appHarness1)
+	setApp(t, appHarness2)
+	setApp(t, appHarness3)
+
+	appHarness1.app.Start()
+	appHarness2.app.Start()
+	appHarness3.app.Start()
+
+	setRPCClient(t, appHarness1)
+	setRPCClient(t, appHarness2)
+	setRPCClient(t, appHarness3)
+
+	return appHarness1, appHarness2, appHarness3,
+		func() {
+			teardown(t, appHarness1)
+			teardown(t, appHarness2)
+			teardown(t, appHarness3)
+		}
 }
 
-func teardown(t *testing.T, app1, app2, app3 *app.App,
-	databaseContext1, databaseContext2, databaseContext3 *dbaccess.DatabaseContext) {
-
-	err := app1.Stop()
+func setRPCClient(t *testing.T, harness *appHarness) {
+	var err error
+	harness.rpcClient, err = newRPCClient(harness.rpcAddress)
 	if err != nil {
-		t.Errorf("Error stopping app1 %+v", err)
+		t.Fatalf("Error getting RPC client %+v", err)
 	}
-	err = app2.Stop()
+}
+func teardown(t *testing.T, harness *appHarness) {
+	err := harness.app.Stop()
 	if err != nil {
-		t.Errorf("Error stopping app2: %+v", err)
-	}
-	err = app3.Stop()
-	if err != nil {
-		t.Errorf("Error stopping app3: %+v", err)
+		t.Errorf("Error stopping App: %+v", err)
 	}
 
-	app1.WaitForShutdown()
-	app2.WaitForShutdown()
-	app3.WaitForShutdown()
+	harness.app.WaitForShutdown()
 
-	err = databaseContext1.Close()
+	err = harness.databaseContext.Close()
 	if err != nil {
-		t.Errorf("Error closing databaseContext1: %+v", err)
-	}
-	err = databaseContext2.Close()
-	if err != nil {
-		t.Errorf("Error closing databaseContext2: %+v", err)
-	}
-	err = databaseContext3.Close()
-	if err != nil {
-		t.Errorf("Error closing databaseContext3: %+v", err)
+		t.Errorf("Error closing database context: %+v", err)
 	}
 }
 
-func newApps(t *testing.T, config1, config2, config3 *config.Config,
-	databaseContext1, databaseContext2, databaseContext3 *dbaccess.DatabaseContext,
-) (app1, app2, app3 *app.App) {
-
-	app1, err := app.New(config1, databaseContext1, make(chan struct{}))
+func setApp(t *testing.T, harness *appHarness) {
+	var err error
+	harness.app, err = app.New(harness.config, harness.databaseContext, make(chan struct{}))
 	if err != nil {
-		t.Fatalf("Error creating app1: %+v", err)
+		t.Fatalf("Error creating app: %+v", err)
 	}
-
-	app2, err = app.New(config2, databaseContext2, make(chan struct{}))
-	if err != nil {
-		t.Fatalf("Error creating app2: %+v", err)
-	}
-
-	app3, err = app.New(config3, databaseContext3, make(chan struct{}))
-	if err != nil {
-		t.Fatalf("Error creating app3: %+v", err)
-	}
-
-	return app1, app2, app3
 }
 
-func openDBs(t *testing.T, config1, config2, config3 *config.Config) (
-	databaseContext1 *dbaccess.DatabaseContext,
-	databaseContext2 *dbaccess.DatabaseContext,
-	databaseContext3 *dbaccess.DatabaseContext) {
-
-	databaseContext1, err := openDB(config1)
+func setDatabaseContext(t *testing.T, harness *appHarness) {
+	var err error
+	harness.databaseContext, err = openDB(harness.config)
 	if err != nil {
-		t.Fatalf("Error openning database for app1: %+v", err)
+		t.Fatalf("Error openning database: %+v", err)
 	}
-
-	databaseContext2, err = openDB(config2)
-	if err != nil {
-		t.Fatalf("Error openning database for app2: %+v", err)
-	}
-
-	databaseContext3, err = openDB(config3)
-	if err != nil {
-		t.Fatalf("Error openning database for app3: %+v", err)
-	}
-
-	return databaseContext1, databaseContext2, databaseContext3
 }
 
 func openDB(cfg *config.Config) (*dbaccess.DatabaseContext, error) {
