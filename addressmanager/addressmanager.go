@@ -187,6 +187,10 @@ const (
 	serializationVersion = 1
 )
 
+// ErrAddressNotFound is an error returned from some functions when a
+// given address is not found in the address manager
+var ErrAddressNotFound = errors.New("address not found")
+
 // New returns a new Kaspa address manager.
 func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext) *AddressManager {
 	addressManager := AddressManager{
@@ -1395,7 +1399,8 @@ func (am *AddressManager) setBanned(address *wire.NetAddress, banned bool, banne
 
 	knownAddress := am.knownAddress(address)
 	if knownAddress == nil {
-		return errors.Errorf("address %s is not registered with the address manager", address.TCPAddress())
+		return errors.Wrapf(ErrAddressNotFound, "address %s "+
+			"is not registered with the address manager", address.TCPAddress())
 	}
 	knownAddress.banned = banned
 	knownAddress.bannedTime = bannedTime
@@ -1409,7 +1414,7 @@ func (am *AddressManager) IsBanned(address *wire.NetAddress) (bool, error) {
 
 	knownAddress := am.knownAddress(address)
 	if knownAddress == nil {
-		return false, errors.Errorf("address %s "+
+		return false, errors.Wrapf(ErrAddressNotFound, "address %s "+
 			"is not registered with the address manager", address.TCPAddress())
 	}
 	return knownAddress.banned, nil

@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/addressmanager"
 	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/protocol/flows/ibd/selectedtip"
 	"sync/atomic"
@@ -26,6 +27,9 @@ func (m *Manager) routerInitializer(netConnection *netadapter.NetConnection) *ro
 	spawn("newRouterInitializer-startFlows", func() {
 		isBanned, err := m.context.ConnectionManager().IsBanned(netConnection)
 		if err != nil {
+			if errors.Is(err, addressmanager.ErrAddressNotFound) {
+				return
+			}
 			panic(err)
 		}
 		if isBanned {
@@ -42,6 +46,9 @@ func (m *Manager) routerInitializer(netConnection *netadapter.NetConnection) *ro
 				if protocolErr.ShouldBan {
 					err := m.context.ConnectionManager().Ban(netConnection)
 					if err != nil {
+						if errors.Is(err, addressmanager.ErrAddressNotFound) {
+							return
+						}
 						panic(err)
 					}
 				}
