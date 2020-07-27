@@ -22,7 +22,7 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 	log.Debugf("Have got %d outgoing connections out of target %d, adding %d more",
 		liveConnections, c.targetOutgoing, c.targetOutgoing-liveConnections)
 
-	connectionsNeededCount := c.targetOutgoing - len(c.activeOutgoing)
+	connectionsNeededCount := (c.targetOutgoing - len(c.activeOutgoing)) * 2
 	for i := 0; i < connectionsNeededCount; i++ {
 		address := c.addressManager.GetAddress()
 		if address == nil {
@@ -32,13 +32,18 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 
 		netAddress := address.NetAddress()
 		tcpAddress := netAddress.TCPAddress()
-		if c.isIPBanned(tcpAddress.IP.String()) {
+		addressString := tcpAddress.String()
+		isBanned, err := c.addressManager.IsBanned(netAddress)
+		if err != nil {
+			log.Infof("Couldn't resolve whether %s is banned: %s", addressString, err)
+			continue
+		}
+		if isBanned {
 			continue
 		}
 
 		c.addressManager.Attempt(netAddress)
-		addressString := tcpAddress.String()
-		err := c.initiateConnection(addressString)
+		err = c.initiateConnection(addressString)
 		if err != nil {
 			log.Infof("Couldn't connect to %s: %s", addressString, err)
 			continue

@@ -1372,3 +1372,26 @@ func (am *AddressManager) GetBestLocalAddress(remoteAddress *wire.NetAddress) *w
 
 	return bestAddress
 }
+
+func (am *AddressManager) Ban(address *wire.NetAddress) error {
+	am.localAddressesLock.Lock()
+	defer am.localAddressesLock.Unlock()
+
+	knownAddress := am.knownAddress(address)
+	if knownAddress == nil {
+		return errors.Errorf("address %s is not registered with the address manager", address.TCPAddress())
+	}
+	knownAddress.banned = true
+	return nil
+}
+
+func (am *AddressManager) IsBanned(address *wire.NetAddress) (bool, error) {
+	am.localAddressesLock.Lock()
+	defer am.localAddressesLock.Unlock()
+
+	knownAddress := am.knownAddress(address)
+	if knownAddress == nil {
+		return false, errors.Errorf("address %s is not registered with the address manager", address.TCPAddress())
+	}
+	return knownAddress.banned, nil
+}

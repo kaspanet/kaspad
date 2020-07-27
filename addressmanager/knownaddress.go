@@ -24,6 +24,7 @@ type KnownAddress struct {
 	tried          bool
 	referenceCount int // reference count of new buckets
 	subnetworkID   *subnetworkid.SubnetworkID
+	banned         bool
 }
 
 // NetAddress returns the underlying wire.NetAddress associated with the
