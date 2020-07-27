@@ -1,11 +1,11 @@
 package connmanager
 
 import (
+	"github.com/kaspanet/kaspad/addressmanager"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/netadapter"
 
 	"github.com/kaspanet/kaspad/config"
@@ -24,7 +24,7 @@ type connectionRequest struct {
 type ConnectionManager struct {
 	cfg            *config.Config
 	netAdapter     *netadapter.NetAdapter
-	addressManager *addrmgr.AddrManager
+	addressManager *addressmanager.AddressManager
 
 	activeRequested  map[string]*connectionRequest
 	pendingRequested map[string]*connectionRequest
@@ -44,7 +44,7 @@ type ConnectionManager struct {
 }
 
 // New instantiates a new instance of a ConnectionManager
-func New(cfg *config.Config, netAdapter *netadapter.NetAdapter, addressManager *addrmgr.AddrManager) (*ConnectionManager, error) {
+func New(cfg *config.Config, netAdapter *netadapter.NetAdapter, addressManager *addressmanager.AddressManager) (*ConnectionManager, error) {
 	c := &ConnectionManager{
 		cfg:              cfg,
 		netAdapter:       netAdapter,

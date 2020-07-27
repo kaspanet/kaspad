@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	"github.com/kaspanet/kaspad/addressmanager"
+
 	"github.com/kaspanet/kaspad/netadapter/id"
 
-	"github.com/kaspanet/kaspad/addrmgr"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/blockdag/indexers"
 	"github.com/kaspanet/kaspad/config"
@@ -29,7 +30,7 @@ import (
 type App struct {
 	cfg               *config.Config
 	rpcServer         *rpc.Server
-	addressManager    *addrmgr.AddrManager
+	addressManager    *addressmanager.AddressManager
 	protocolManager   *protocol.Manager
 	connectionManager *connmanager.ConnectionManager
 	netAdapter        *netadapter.NetAdapter
@@ -108,7 +109,7 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 	if err != nil {
 		return nil, err
 	}
-	addressManager := addrmgr.New(cfg, databaseContext)
+	addressManager := addressmanager.New(cfg, databaseContext)
 
 	connectionManager, err := connmanager.New(cfg, netAdapter, addressManager)
 	if err != nil {
@@ -203,7 +204,7 @@ func setupRPC(cfg *config.Config,
 	sigCache *txscript.SigCache,
 	acceptanceIndex *indexers.AcceptanceIndex,
 	connectionManager *connmanager.ConnectionManager,
-	addressManager *addrmgr.AddrManager,
+	addressManager *addressmanager.AddressManager,
 	protocolManager *protocol.Manager) (*rpc.Server, error) {
 
 	if !cfg.DisableRPC {

@@ -1,7 +1,7 @@
 package addressexchange
 
 import (
-	"github.com/kaspanet/kaspad/addrmgr"
+	"github.com/kaspanet/kaspad/addressmanager"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/common"
@@ -13,7 +13,7 @@ import (
 // ReceiveAddressesContext is the interface for the context needed for the ReceiveAddresses flow.
 type ReceiveAddressesContext interface {
 	Config() *config.Config
-	AddressManager() *addrmgr.AddrManager
+	AddressManager() *addressmanager.AddressManager
 }
 
 // ReceiveAddresses asks a peer for more addresses if needed.
@@ -37,8 +37,8 @@ func ReceiveAddresses(context ReceiveAddressesContext, incomingRoute *router.Rou
 	}
 
 	msgAddresses := message.(*wire.MsgAddresses)
-	if len(msgAddresses.AddrList) > addrmgr.GetAddressesMax {
-		return protocolerrors.Errorf(true, "address count excceeded %d", addrmgr.GetAddressesMax)
+	if len(msgAddresses.AddrList) > addressmanager.GetAddressesMax {
+		return protocolerrors.Errorf(true, "address count excceeded %d", addressmanager.GetAddressesMax)
 	}
 
 	if msgAddresses.IncludeAllSubnetworks {

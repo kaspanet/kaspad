@@ -1,7 +1,7 @@
 package addressexchange
 
 import (
-	"github.com/kaspanet/kaspad/addrmgr"
+	"github.com/kaspanet/kaspad/addressmanager"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/wire"
 	"math/rand"
@@ -9,7 +9,7 @@ import (
 
 // SendAddressesContext is the interface for the context needed for the SendAddresses flow.
 type SendAddressesContext interface {
-	AddressManager() *addrmgr.AddrManager
+	AddressManager() *addressmanager.AddressManager
 }
 
 // SendAddresses sends addresses to a peer that requests it.

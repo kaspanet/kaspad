@@ -1,7 +1,7 @@
 package protocol
 
 import (
-	"github.com/kaspanet/kaspad/addrmgr"
+	"github.com/kaspanet/kaspad/addressmanager"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/connmanager"
@@ -21,8 +21,8 @@ type Manager struct {
 
 // NewManager creates a new instance of the p2p protocol manager
 func NewManager(cfg *config.Config, dag *blockdag.BlockDAG, netAdapter *netadapter.NetAdapter,
-	addressManager *addrmgr.AddrManager, txPool *mempool.TxPool, connectionManager *connmanager.ConnectionManager,
-) (*Manager, error) {
+	addressManager *addressmanager.AddressManager, txPool *mempool.TxPool,
+	connectionManager *connmanager.ConnectionManager) (*Manager, error) {
 
 	manager := Manager{
 		context: flowcontext.New(cfg, dag, addressManager, txPool, netAdapter, connectionManager),
