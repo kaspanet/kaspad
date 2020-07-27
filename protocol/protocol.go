@@ -26,10 +26,7 @@ func (m *Manager) routerInitializer(netConnection *netadapter.NetConnection) *ro
 	router := routerpkg.NewRouter()
 	spawn("newRouterInitializer-startFlows", func() {
 		isBanned, err := m.context.ConnectionManager().IsBanned(netConnection)
-		if err != nil {
-			if errors.Is(err, addressmanager.ErrAddressNotFound) {
-				return
-			}
+		if err != nil && !errors.Is(err, addressmanager.ErrAddressNotFound) {
 			panic(err)
 		}
 		if isBanned {
@@ -45,10 +42,7 @@ func (m *Manager) routerInitializer(netConnection *netadapter.NetConnection) *ro
 			if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
 				if protocolErr.ShouldBan {
 					err := m.context.ConnectionManager().Ban(netConnection)
-					if err != nil {
-						if errors.Is(err, addressmanager.ErrAddressNotFound) {
-							return
-						}
+					if err != nil && !errors.Is(err, addressmanager.ErrAddressNotFound) {
 						panic(err)
 					}
 				}
