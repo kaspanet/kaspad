@@ -237,7 +237,7 @@ type GetPeerAddressesKnownAddressResult struct {
 	TimeStamp    int64
 	LastAttempt  int64
 	LastSuccess  int64
-	Banned       bool
+	IsBanned     bool
 	BannedTime   int64
 }
 

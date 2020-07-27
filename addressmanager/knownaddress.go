@@ -24,7 +24,7 @@ type KnownAddress struct {
 	tried          bool
 	referenceCount int // reference count of new buckets
 	subnetworkID   *subnetworkid.SubnetworkID
-	banned         bool
+	isBanned       bool
 	bannedTime     mstime.Time
 }
 

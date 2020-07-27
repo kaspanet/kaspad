@@ -402,7 +402,7 @@ var helpDescsEnUS = map[string]string{
 	"getPeerAddressesKnownAddressResult-timeStamp":    "Time the address was added",
 	"getPeerAddressesKnownAddressResult-lastAttempt":  "Last attempt to connect to the address",
 	"getPeerAddressesKnownAddressResult-lastSuccess":  "Last successful attempt to connect to the address",
-	"getPeerAddressesKnownAddressResult-banned":       "Whether the address was banned",
+	"getPeerAddressesKnownAddressResult-isBanned":     "Whether the address was banned",
 	"getPeerAddressesKnownAddressResult-bannedTime":   "Time the address was banned",
 
 	// GetPeerAddressesCmd help.

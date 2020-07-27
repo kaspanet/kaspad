@@ -31,7 +31,7 @@ func handleGetPeerAddresses(s *Server, cmd interface{}, closeChan <-chan struct{
 			TimeStamp:    addr.TimeStamp,
 			LastAttempt:  addr.LastAttempt,
 			LastSuccess:  addr.LastSuccess,
-			Banned:       addr.Banned,
+			IsBanned:     addr.IsBanned,
 			BannedTime:   addr.BannedTime,
 		}
 	}
