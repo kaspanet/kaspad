@@ -13,9 +13,7 @@ func connect(t *testing.T, appHarness1, appHarness2 *appHarness) {
 
 	onConnectedChan := make(chan struct{})
 	abortConnectionChan := make(chan struct{})
-	defer func() {
-		close(abortConnectionChan)
-	}()
+	defer close(abortConnectionChan)
 
 	spawn("integration.connect-Wait for connection", func() {
 		for range time.Tick(10 * time.Millisecond) {
