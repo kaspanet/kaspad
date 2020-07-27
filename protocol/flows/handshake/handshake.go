@@ -1,11 +1,11 @@
 package handshake
 
 import (
+	"sync"
+
 	"github.com/kaspanet/kaspad/addressmanager"
 	"github.com/kaspanet/kaspad/protocol/common"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
-	"sync"
-	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/config"
@@ -26,6 +26,7 @@ type HandleHandshakeContext interface {
 	AddressManager() *addressmanager.AddressManager
 	StartIBDIfRequired()
 	AddToPeers(peer *peerpkg.Peer) error
+	HandleError(err error, flowName string, isStopping *uint32, errChan chan<- error)
 }
 
 // HandleHandshake sets up the handshake protocol - It sends a version message and waits for an incoming
@@ -49,7 +50,7 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
-	errChanUsed := uint32(0)
+	isStopping := uint32(0)
 	errChan := make(chan error)
 
 	peer = peerpkg.New(netConnection)
@@ -59,16 +60,7 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 		defer wg.Done()
 		address, err := ReceiveVersion(context, receiveVersionRoute, router.OutgoingRoute(), peer)
 		if err != nil {
-			log.Errorf("error from ReceiveVersion: %s", err)
-			if protocolErr := &(protocolerrors.ProtocolError{}); !errors.As(err, &protocolErr) {
-				panic(err)
-			}
-		}
-		if err != nil {
-			if atomic.AddUint32(&errChanUsed, 1) != 1 {
-				errChan <- err
-			}
-			return
+			context.HandleError(err, "SendVersion", &isStopping, errChan)
 		}
 		peerAddress = address
 	})
@@ -77,16 +69,7 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 		defer wg.Done()
 		err := SendVersion(context, sendVersionRoute, router.OutgoingRoute())
 		if err != nil {
-			log.Errorf("error from SendVersion: %s", err)
-			if protocolErr := &(protocolerrors.ProtocolError{}); !errors.As(err, &protocolErr) {
-				panic(err)
-			}
-		}
-		if err != nil {
-			if atomic.AddUint32(&errChanUsed, 1) != 1 {
-				errChan <- err
-			}
-			return
+			context.HandleError(err, "SendVersion", &isStopping, errChan)
 		}
 	})
 
