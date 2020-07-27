@@ -2,6 +2,7 @@ package netadapter
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/wire"
 
 	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/netadapter/server"
@@ -43,9 +44,9 @@ func (c *NetConnection) IsOutbound() bool {
 	return c.connection.IsOutbound()
 }
 
-// IP returns the IP address associated with this connection
-func (c *NetConnection) IP() string {
-	return c.connection.Address().IP.String()
+// NetAddress returns the NetAddress associated with this connection
+func (c *NetConnection) NetAddress() *wire.NetAddress {
+	return wire.NewNetAddress(c.connection.Address(), 0)
 }
 
 // SetOnInvalidMessageHandler sets a handler function
