@@ -86,7 +86,9 @@ func (x *BlockMessage) fromWireMessage(msgBlock *wire.MsgBlock) error {
 	}
 	protoTransactions := make([]*TransactionMessage, len(msgBlock.Transactions))
 	for i, tx := range msgBlock.Transactions {
-		protoTransactions[i].fromWireMessage(tx)
+		protoTx := new(TransactionMessage)
+		protoTx.fromWireMessage(tx)
+		protoTransactions[i] = protoTx
 	}
 	*x = BlockMessage{
 		Header:       protoHeader,

@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
 )
 
 func (x *KaspadMessage_Transaction) toWireMessage() (*wire.MsgTx, error) {
@@ -26,6 +27,10 @@ func (x *TransactionMessage) toWireMessage() (*wire.MsgTx, error) {
 
 		outpoint := wire.NewOutpoint(prevTxID, protoInput.PreviousOutpoint.Index)
 		inputs[i] = wire.NewTxIn(outpoint, protoInput.SignatureScript)
+	}
+
+	if x.SubnetworkID == nil {
+		return nil, errors.New("transaction subnetwork field cannot be nil")
 	}
 
 	subnetworkID, err := subnetworkid.New(x.SubnetworkID.Bytes)

@@ -1,13 +1,12 @@
 package protowire
 
 import (
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/wire"
 )
 
 func (x *KaspadMessage_GetAddresses_) toWireMessage() (*wire.MsgGetAddresses, error) {
 	protoGetAddresses := x.GetAddresses_
-	subnetworkID, err := subnetworkid.New(protoGetAddresses.SubnetworkID.Bytes)
+	subnetworkID, err := protoGetAddresses.SubnetworkID.toWire()
 	if err != nil {
 		return nil, err
 	}
@@ -21,9 +20,7 @@ func (x *KaspadMessage_GetAddresses_) toWireMessage() (*wire.MsgGetAddresses, er
 func (x *KaspadMessage_GetAddresses_) fromWireMessage(msgGetAddresses *wire.MsgGetAddresses) error {
 	x.GetAddresses_ = &GetAddressesMessage{
 		IncludeAllSubnetworks: msgGetAddresses.IncludeAllSubnetworks,
-		SubnetworkID: &SubnetworkID{
-			Bytes: msgGetAddresses.SubnetworkID.CloneBytes(),
-		},
+		SubnetworkID:          wireSubnetworkIDToProto(msgGetAddresses.SubnetworkID),
 	}
 	return nil
 }

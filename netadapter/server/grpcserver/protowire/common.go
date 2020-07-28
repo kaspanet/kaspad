@@ -70,10 +70,16 @@ func wireTransactionIDsToProto(ids []*daghash.TxID) []*TransactionID {
 }
 
 func (x *SubnetworkID) toWire() (*subnetworkid.SubnetworkID, error) {
+	if x == nil {
+		return nil, nil
+	}
 	return subnetworkid.New(x.Bytes)
 }
 
 func wireSubnetworkIDToProto(id *subnetworkid.SubnetworkID) *SubnetworkID {
+	if id == nil {
+		return nil
+	}
 	return &SubnetworkID{
 		Bytes: id.CloneBytes(),
 	}
