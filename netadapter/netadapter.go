@@ -121,7 +121,7 @@ func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
 		delete(na.connections, netConnection)
 	})
 
-	netConnection.Start()
+	netConnection.start()
 
 	return nil
 }

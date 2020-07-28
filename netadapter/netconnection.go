@@ -50,7 +50,7 @@ func newNetConnection(connection server.Connection, routerInitializer RouterInit
 	return netConnection
 }
 
-func (c *NetConnection) Start() {
+func (c *NetConnection) start() {
 	c.connection.Start(c.router)
 }
 
