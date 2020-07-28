@@ -20,14 +20,9 @@ type Manager struct {
 }
 
 // NewManager creates a new instance of the p2p protocol manager
-func NewManager(cfg *config.Config, dag *blockdag.BlockDAG,
+func NewManager(cfg *config.Config, dag *blockdag.BlockDAG, netAdapter *netadapter.NetAdapter,
 	addressManager *addressmanager.AddressManager, txPool *mempool.TxPool,
 	connectionManager *connmanager.ConnectionManager) (*Manager, error) {
-
-	netAdapter, err := netadapter.NewNetAdapter(cfg)
-	if err != nil {
-		return nil, err
-	}
 
 	manager := Manager{
 		context: flowcontext.New(cfg, dag, addressManager, txPool, netAdapter, connectionManager),
