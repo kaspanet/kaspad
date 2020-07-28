@@ -89,7 +89,10 @@ func (m *Manager) AddBlock(block *util.Block, flags blockdag.BehaviorFlags) erro
 
 func (m *Manager) startFlows(flows []*flow, peer *peerpkg.Peer, errChan <-chan error) error {
 	for _, flow := range flows {
-		spawn(fmt.Sprintf("flow-%s", flow.name), func() { flow.executeFunc(peer) })
+		executeFunc := flow.executeFunc // extract to new variable so that it's not overwrite
+		spawn(fmt.Sprintf("flow-%s", flow.name), func() {
+			executeFunc(peer)
+		})
 	}
 
 	return <-errChan
