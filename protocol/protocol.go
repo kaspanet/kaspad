@@ -20,9 +20,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (m *Manager) routerInitializer(netConnection *netadapter.NetConnection) *routerpkg.Router {
-	router := routerpkg.NewRouter()
-	spawn("newRouterInitializer-startFlows", func() {
+func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *netadapter.NetConnection) {
+	spawn("routerInitializer-startFlows", func() {
 		isBanned, err := m.context.ConnectionManager().IsBanned(netConnection)
 		if err != nil && !errors.Is(err, addressmanager.ErrAddressNotFound) {
 			panic(err)
@@ -63,7 +62,6 @@ func (m *Manager) routerInitializer(netConnection *netadapter.NetConnection) *ro
 			panic(err)
 		}
 	})
-	return router
 }
 
 func (m *Manager) startFlows(netConnection *netadapter.NetConnection, router *routerpkg.Router) error {

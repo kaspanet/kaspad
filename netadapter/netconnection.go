@@ -2,6 +2,8 @@ package netadapter
 
 import (
 	"fmt"
+
+	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/wire"
 
 	"github.com/kaspanet/kaspad/netadapter/id"
@@ -12,11 +14,13 @@ import (
 type NetConnection struct {
 	connection server.Connection
 	id         *id.ID
+	router     *routerpkg.Router
 }
 
-func newNetConnection(connection server.Connection) *NetConnection {
+func newNetConnection(connection server.Connection, router *routerpkg.Router) *NetConnection {
 	return &NetConnection{
 		connection: connection,
+		router:     router,
 	}
 }
 

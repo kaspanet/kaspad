@@ -17,7 +17,7 @@ import (
 
 // RouterInitializer is a function that initializes a new
 // router to be used with a new connection
-type RouterInitializer func(netConnection *NetConnection) *routerpkg.Router
+type RouterInitializer func(*routerpkg.Router, *NetConnection)
 
 // NetAdapter is an abstraction layer over networking.
 // This type expects a RouteInitializer function. This
@@ -31,8 +31,8 @@ type NetAdapter struct {
 	routerInitializer RouterInitializer
 	stop              uint32
 
-	connectionsToRouters     map[*NetConnection]*routerpkg.Router
-	connectionsToRoutersLock sync.RWMutex
+	connections     map[*NetConnection]struct{}
+	connectionsLock sync.RWMutex
 }
 
 // NewNetAdapter creates and starts a new NetAdapter on the
@@ -51,7 +51,7 @@ func NewNetAdapter(cfg *config.Config) (*NetAdapter, error) {
 		id:     netAdapterID,
 		server: s,
 
-		connectionsToRouters: make(map[*NetConnection]*routerpkg.Router),
+		connections: make(map[*NetConnection]struct{}),
 	}
 
 	adapter.server.SetOnConnectedHandler(adapter.onConnectedHandler)
@@ -86,12 +86,12 @@ func (na *NetAdapter) Connect(address string) error {
 
 // Connections returns a list of connections currently connected and active
 func (na *NetAdapter) Connections() []*NetConnection {
-	na.connectionsToRoutersLock.RLock()
-	defer na.connectionsToRoutersLock.RUnlock()
+	na.connectionsLock.RLock()
+	defer na.connectionsLock.RUnlock()
 
-	netConnections := make([]*NetConnection, 0, len(na.connectionsToRouters))
+	netConnections := make([]*NetConnection, 0, len(na.connections))
 
-	for netConnection := range na.connectionsToRouters {
+	for netConnection := range na.connections {
 		netConnections = append(netConnections, netConnection)
 	}
 
@@ -100,21 +100,23 @@ func (na *NetAdapter) Connections() []*NetConnection {
 
 // ConnectionCount returns the count of the connected connections
 func (na *NetAdapter) ConnectionCount() int {
-	na.connectionsToRoutersLock.RLock()
-	defer na.connectionsToRoutersLock.RUnlock()
+	na.connectionsLock.RLock()
+	defer na.connectionsLock.RUnlock()
 
-	return len(na.connectionsToRouters)
+	return len(na.connections)
 }
 
 func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
-	netConnection := newNetConnection(connection)
-	router := na.routerInitializer(netConnection)
+	router := routerpkg.NewRouter()
+	netConnection := newNetConnection(connection, router)
+	na.routerInitializer(router, netConnection)
+
 	connection.Start(router)
 
-	na.connectionsToRoutersLock.Lock()
-	defer na.connectionsToRoutersLock.Unlock()
+	na.connectionsLock.Lock()
+	defer na.connectionsLock.Unlock()
 
-	na.connectionsToRouters[netConnection] = router
+	na.connections[netConnection] = struct{}{}
 
 	router.SetOnRouteCapacityReachedHandler(func() {
 		err := connection.Disconnect()
@@ -126,10 +128,10 @@ func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
 		}
 	})
 	connection.SetOnDisconnectedHandler(func() error {
-		na.connectionsToRoutersLock.Lock()
-		defer na.connectionsToRoutersLock.Unlock()
+		na.connectionsLock.Lock()
+		defer na.connectionsLock.Unlock()
 
-		delete(na.connectionsToRouters, netConnection)
+		delete(na.connections, netConnection)
 		return router.Close()
 	})
 	return nil
@@ -149,16 +151,11 @@ func (na *NetAdapter) ID() *id.ID {
 // Broadcast sends the given `message` to every peer corresponding
 // to each NetConnection in the given netConnections
 func (na *NetAdapter) Broadcast(netConnections []*NetConnection, message wire.Message) error {
-	na.connectionsToRoutersLock.RLock()
-	defer na.connectionsToRoutersLock.RUnlock()
+	na.connectionsLock.RLock()
+	defer na.connectionsLock.RUnlock()
 
 	for _, netConnection := range netConnections {
-		router, ok := na.connectionsToRouters[netConnection]
-		if !ok { // skip connections that were removed
-			continue
-		}
-
-		err := router.OutgoingRoute().Enqueue(message)
+		err := netConnection.router.OutgoingRoute().Enqueue(message)
 		if err != nil {
 			if errors.Is(err, routerpkg.ErrRouteClosed) {
 				log.Debugf("Cannot enqueue message to %s: router is closed", netConnection)
