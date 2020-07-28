@@ -112,14 +112,14 @@ func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
 	na.connectionsLock.Lock()
 	defer na.connectionsLock.Unlock()
 
-	na.connections[netConnection] = struct{}{}
-
 	netConnection.setOnDisconnectedHandler(func() {
 		na.connectionsLock.Lock()
 		defer na.connectionsLock.Unlock()
 
 		delete(na.connections, netConnection)
 	})
+
+	na.connections[netConnection] = struct{}{}
 
 	netConnection.start()
 

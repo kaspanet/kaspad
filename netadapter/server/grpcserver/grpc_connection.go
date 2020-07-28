@@ -89,7 +89,9 @@ func (c *gRPCConnection) Disconnect() {
 
 	log.Debugf("Disconnected from %s", c)
 
-	c.onDisconnectedHandler()
+	if c.onDisconnectedHandler != nil {
+		c.onDisconnectedHandler()
+	}
 }
 
 func (c *gRPCConnection) Address() *net.TCPAddr {
