@@ -92,3 +92,15 @@ func (c *NetConnection) SetOnInvalidMessageHandler(onInvalidMessageHandler serve
 func (c *NetConnection) setOnDisconnectedHandler(onDisconnectedHandler server.OnDisconnectedHandler) {
 	c.onDisconnectedHandler = onDisconnectedHandler
 }
+
+// Disconnect disconnects the given connection
+func (c *NetConnection) Disconnect() error {
+	err := c.connection.Disconnect()
+	if err != nil {
+		if !errors.Is(err, server.ErrNetwork) {
+			return err
+		}
+		log.Warnf("Error disconnecting from %s: %s", c, err)
+	}
+	return nil
+}

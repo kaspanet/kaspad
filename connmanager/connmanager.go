@@ -1,10 +1,11 @@
 package connmanager
 
 import (
-	"github.com/kaspanet/kaspad/addressmanager"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/kaspanet/kaspad/addressmanager"
 
 	"github.com/kaspanet/kaspad/netadapter"
 
@@ -82,7 +83,7 @@ func (c *ConnectionManager) Stop() {
 	atomic.StoreUint32(&c.stop, 1)
 
 	for _, connection := range c.netAdapter.Connections() {
-		_ = c.netAdapter.Disconnect(connection) // Ignore errors since connection might be in the midst of disconnecting
+		_ = connection.Disconnect() // Ignore errors since connection might be in the midst of disconnecting
 	}
 
 	c.loopTicker.Stop()

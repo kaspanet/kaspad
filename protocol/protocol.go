@@ -27,7 +27,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 			panic(err)
 		}
 		if isBanned {
-			err := m.context.NetAdapter().Disconnect(netConnection)
+			err := netConnection.Disconnect()
 			if err != nil {
 				panic(err)
 			}
@@ -43,14 +43,14 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 						panic(err)
 					}
 				}
-				err = m.context.NetAdapter().Disconnect(netConnection)
+				err = netConnection.Disconnect()
 				if err != nil {
 					panic(err)
 				}
 				return
 			}
 			if errors.Is(err, routerpkg.ErrTimeout) {
-				err = m.context.NetAdapter().Disconnect(netConnection)
+				err = netConnection.Disconnect()
 				if err != nil {
 					panic(err)
 				}

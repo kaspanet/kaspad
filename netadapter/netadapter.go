@@ -210,15 +210,3 @@ func (na *NetAdapter) GetBestLocalAddress() (*wire.NetAddress, error) {
 	}
 	return nil, errors.New("no address was found")
 }
-
-// Disconnect disconnects the given connection
-func (na *NetAdapter) Disconnect(netConnection *NetConnection) error {
-	err := netConnection.connection.Disconnect()
-	if err != nil {
-		if !errors.Is(err, server.ErrNetwork) {
-			return err
-		}
-		log.Warnf("Error disconnecting from %s: %s", netConnection, err)
-	}
-	return nil
-}
