@@ -15,7 +15,7 @@ type OnConnectedHandler func(connection Connection) error
 
 // OnDisconnectedHandler is a function that is to be
 // called once a Connection has been disconnected.
-type OnDisconnectedHandler func() error
+type OnDisconnectedHandler func()
 
 // OnInvalidMessageHandler is a function that is to be called when
 // an invalid message (cannot be parsed/doesn't have a route)

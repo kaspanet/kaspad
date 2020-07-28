@@ -107,33 +107,22 @@ func (na *NetAdapter) ConnectionCount() int {
 }
 
 func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
-	router := routerpkg.NewRouter()
-	netConnection := newNetConnection(connection, router)
-	na.routerInitializer(router, netConnection)
-
-	connection.Start(router)
+	netConnection := newNetConnection(connection, na.routerInitializer)
 
 	na.connectionsLock.Lock()
 	defer na.connectionsLock.Unlock()
 
 	na.connections[netConnection] = struct{}{}
 
-	router.SetOnRouteCapacityReachedHandler(func() {
-		err := connection.Disconnect()
-		if err != nil {
-			if !errors.Is(err, server.ErrNetwork) {
-				panic(err)
-			}
-			log.Warnf("Failed to disconnect from %s", connection)
-		}
-	})
-	connection.SetOnDisconnectedHandler(func() error {
+	netConnection.setOnDisconnectedHandler(func() {
 		na.connectionsLock.Lock()
 		defer na.connectionsLock.Unlock()
 
 		delete(na.connections, netConnection)
-		return router.Close()
 	})
+
+	netConnection.Start()
+
 	return nil
 }
 
