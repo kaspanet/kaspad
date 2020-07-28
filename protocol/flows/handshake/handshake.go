@@ -31,18 +31,9 @@ type HandleHandshakeContext interface {
 
 // HandleHandshake sets up the handshake protocol - It sends a version message and waits for an incoming
 // version message, as well as a verack for the sent version
-func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router, netConnection *netadapter.NetConnection,
+func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.NetConnection,
+	receiveVersionRoute *routerpkg.Route, sendVersionRoute *routerpkg.Route, outgoingRoute *routerpkg.Route,
 ) (peer *peerpkg.Peer, err error) {
-
-	receiveVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVersion})
-	if err != nil {
-		return nil, err
-	}
-
-	sendVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVerAck})
-	if err != nil {
-		return nil, err
-	}
 
 	// For HandleHandshake to finish, we need to get from the other node
 	// a version and verack messages, so we increase the wait group by 2
@@ -58,7 +49,7 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router, n
 	var peerAddress *wire.NetAddress
 	spawn("HandleHandshake-ReceiveVersion", func() {
 		defer wg.Done()
-		address, err := ReceiveVersion(context, receiveVersionRoute, router.OutgoingRoute(), peer)
+		address, err := ReceiveVersion(context, receiveVersionRoute, outgoingRoute, peer)
 		if err != nil {
 			context.HandleError(err, "SendVersion", &isStopping, errChan)
 			return
@@ -68,7 +59,7 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router, n
 
 	spawn("HandleHandshake-SendVersion", func() {
 		defer wg.Done()
-		err := SendVersion(context, sendVersionRoute, router.OutgoingRoute())
+		err := SendVersion(context, sendVersionRoute, outgoingRoute)
 		if err != nil {
 			context.HandleError(err, "SendVersion", &isStopping, errChan)
 			return
@@ -99,11 +90,6 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router, n
 	}
 
 	context.StartIBDIfRequired()
-
-	err = router.RemoveRoute([]wire.MessageCommand{wire.CmdVersion, wire.CmdVerAck})
-	if err != nil {
-		return nil, err
-	}
 
 	return peer, nil
 }

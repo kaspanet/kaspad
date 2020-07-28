@@ -28,6 +28,14 @@ type flow struct {
 }
 
 func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *netadapter.NetConnection) {
+	isStopping := uint32(0)
+	errChan := make(chan error)
+
+	flows := m.registerFlows(router, errChan, &isStopping)
+	receiveVersionRoute, sendVersionRoute := registerHandshakeRoutes(router)
+
+	// After flows were registered - spawn a new thread that will wait for connection to finish initializing
+	// and start receiving messages
 	spawn("routerInitializer-registerFlows", func() {
 		isBanned, err := m.context.ConnectionManager().IsBanned(netConnection)
 		if err != nil && !errors.Is(err, addressmanager.ErrAddressNotFound) {
@@ -38,24 +46,19 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 			return
 		}
 
-		isStopping := uint32(0)
-		errChan := make(chan error)
-
 		netConnection.SetOnInvalidMessageHandler(func(err error) {
 			if atomic.AddUint32(&isStopping, 1) == 1 {
 				errChan <- protocolerrors.Wrap(true, err, "received bad message")
 			}
 		})
 
-		flows, err := m.registerFlows(router, errChan, &isStopping)
-		if err != nil {
-			netConnection.Disconnect()
-		}
-
-		peer, err := handshake.HandleHandshake(m.context, router, netConnection)
+		peer, err := handshake.HandleHandshake(m.context, netConnection, receiveVersionRoute,
+			sendVersionRoute, router.OutgoingRoute())
 		if err != nil {
 			m.handleError(err, netConnection)
 		}
+
+		removeHandshakeRoutes(router)
 
 		err = m.startFlows(flows, peer, errChan)
 		if err != nil {
@@ -85,8 +88,7 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 	panic(err)
 }
 
-func (m *Manager) registerFlows(router *routerpkg.Router, stop chan error, isStopping *uint32) (
-	flows []*flow, err error) {
+func (m *Manager) registerFlows(router *routerpkg.Router, stop chan error, isStopping *uint32) (flows []*flow) {
 
 	flows = m.addAddressFlows(router, isStopping, stop)
 	flows = append(flows, m.addBlockRelayFlows(router, isStopping, stop)...)
@@ -94,7 +96,7 @@ func (m *Manager) registerFlows(router *routerpkg.Router, stop chan error, isSto
 	flows = append(flows, m.addIBDFlows(router, isStopping, stop)...)
 	flows = append(flows, m.addTransactionRelayFlow(router, isStopping, stop)...)
 
-	return flows, err
+	return flows
 }
 
 func (m *Manager) addAddressFlows(router *routerpkg.Router, isStopping *uint32, stop chan error) []*flow {
@@ -243,5 +245,27 @@ func (m *Manager) addOneTimeFlow(name string, router *routerpkg.Router, messageT
 				return
 			}
 		},
+	}
+}
+
+func registerHandshakeRoutes(router *routerpkg.Router) (
+	receiveVersionRoute *routerpkg.Route, sendVersionRoute *routerpkg.Route) {
+	receiveVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVersion})
+	if err != nil {
+		panic(err)
+	}
+
+	sendVersionRoute, err = router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVerAck})
+	if err != nil {
+		panic(err)
+	}
+
+	return receiveVersionRoute, sendVersionRoute
+}
+
+func removeHandshakeRoutes(router *routerpkg.Router) {
+	err := router.RemoveRoute([]wire.MessageCommand{wire.CmdVersion, wire.CmdVerAck})
+	if err != nil {
+		panic(err)
 	}
 }
