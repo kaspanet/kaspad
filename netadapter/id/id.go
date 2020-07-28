@@ -47,6 +47,17 @@ func (id *ID) Serialize(w io.Writer) error {
 	return err
 }
 
+// SerializeToBytes returns a byte slice of the serialized receiver.
+func (id *ID) SerializeToBytes() ([]byte, error) {
+	w := &bytes.Buffer{}
+	err := id.Serialize(w)
+	if err != nil {
+		return nil, err
+	}
+
+	return w.Bytes(), nil
+}
+
 // FromBytes returns an ID deserialized from the given byte slice.
 func FromBytes(serializedID []byte) *ID {
 	r := bytes.NewReader(serializedID)

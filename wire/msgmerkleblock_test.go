@@ -46,9 +46,9 @@ func TestMerkleBlock(t *testing.T) {
 			maxPayload, wantPayload)
 	}
 
-	// Load maxTxPerBlock hashes
+	// Load MaxTxPerBlock hashes
 	data := make([]byte, 32)
-	for i := 0; i < maxTxPerBlock; i++ {
+	for i := 0; i < MaxTxPerBlock; i++ {
 		rand.Read(data)
 		hash, err := daghash.NewHash(data)
 		if err != nil {
@@ -89,7 +89,7 @@ func TestMerkleBlock(t *testing.T) {
 		t.Errorf("decode of MsgMerkleBlock failed [%v] err <%v>", buf, err)
 	}
 
-	// Force extra hash to test maxTxPerBlock.
+	// Force extra hash to test MaxTxPerBlock.
 	msg.Hashes = append(msg.Hashes, hash)
 	err = msg.KaspaEncode(&buf, pver)
 	if err == nil {
@@ -277,7 +277,7 @@ func TestMerkleBlockOverflowErrors(t *testing.T) {
 	// Create bytes for a merkle block that claims to have more than the max
 	// allowed tx hashes.
 	var buf bytes.Buffer
-	WriteVarInt(&buf, maxTxPerBlock+1)
+	WriteVarInt(&buf, MaxTxPerBlock+1)
 	numHashesOffset := 189
 	exceedMaxHashes := make([]byte, numHashesOffset)
 	copy(exceedMaxHashes, merkleBlockOneBytes[:numHashesOffset])

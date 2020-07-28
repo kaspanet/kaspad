@@ -13,19 +13,19 @@ const MaxInvPerTxInvMsg = MaxInvPerMsg
 // TxInv message. It is used to notify the network about new transactions
 // by sending their ID, and let the receiving node decide if it needs it.
 type MsgInvTransaction struct {
-	TxIDS []*daghash.TxID
+	TxIDs []*daghash.TxID
 }
 
 // KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgInvTransaction) KaspaDecode(r io.Reader, pver uint32) error {
-	return ReadElement(r, &msg.TxIDS)
+	return ReadElement(r, &msg.TxIDs)
 }
 
 // KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgInvTransaction) KaspaEncode(w io.Writer, pver uint32) error {
-	return WriteElement(w, msg.TxIDS)
+	return WriteElement(w, msg.TxIDs)
 }
 
 // Command returns the protocol command string for the message. This is part
@@ -44,6 +44,6 @@ func (msg *MsgInvTransaction) MaxPayloadLength(pver uint32) uint32 {
 // the Message interface. See MsgInvTransaction for details.
 func NewMsgTxInv(ids []*daghash.TxID) *MsgInvTransaction {
 	return &MsgInvTransaction{
-		TxIDS: ids,
+		TxIDs: ids,
 	}
 }

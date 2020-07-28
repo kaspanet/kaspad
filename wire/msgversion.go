@@ -127,7 +127,7 @@ func (msg *MsgVersion) KaspaDecode(r io.Reader, pver uint32) error {
 	if err != nil {
 		return err
 	}
-	err = validateUserAgent(userAgent)
+	err = ValidateUserAgent(userAgent)
 	if err != nil {
 		return err
 	}
@@ -152,7 +152,7 @@ func (msg *MsgVersion) KaspaDecode(r io.Reader, pver uint32) error {
 // KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgVersion) KaspaEncode(w io.Writer, pver uint32) error {
-	err := validateUserAgent(msg.UserAgent)
+	err := ValidateUserAgent(msg.UserAgent)
 	if err != nil {
 		return err
 	}
@@ -250,8 +250,8 @@ func NewMsgVersion(addr *NetAddress, id *id.ID,
 	}
 }
 
-// validateUserAgent checks userAgent length against MaxUserAgentLen
-func validateUserAgent(userAgent string) error {
+// ValidateUserAgent checks userAgent length against MaxUserAgentLen
+func ValidateUserAgent(userAgent string) error {
 	if len(userAgent) > MaxUserAgentLen {
 		str := fmt.Sprintf("user agent too long [len %d, max %d]",
 			len(userAgent), MaxUserAgentLen)

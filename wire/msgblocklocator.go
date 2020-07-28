@@ -43,10 +43,6 @@ func (msg *MsgBlockLocator) KaspaDecode(r io.Reader, pver uint32) error {
 			return err
 		}
 		msg.BlockLocatorHashes = append(msg.BlockLocatorHashes, hash)
-
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }

@@ -62,8 +62,8 @@ func (flow *handleRelayedTransactionsFlow) start() error {
 func (flow *handleRelayedTransactionsFlow) requestInvTransactions(
 	inv *wire.MsgInvTransaction) (requestedIDs []*daghash.TxID, err error) {
 
-	idsToRequest := make([]*daghash.TxID, 0, len(inv.TxIDS))
-	for _, txID := range inv.TxIDS {
+	idsToRequest := make([]*daghash.TxID, 0, len(inv.TxIDs))
+	for _, txID := range inv.TxIDs {
 		if flow.isKnownTransaction(txID) {
 			continue
 		}
