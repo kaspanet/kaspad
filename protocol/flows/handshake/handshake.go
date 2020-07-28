@@ -31,17 +31,17 @@ type HandleHandshakeContext interface {
 
 // HandleHandshake sets up the handshake protocol - It sends a version message and waits for an incoming
 // version message, as well as a verack for the sent version
-func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
-	netConnection *netadapter.NetConnection) (peer *peerpkg.Peer, closed bool, err error) {
+func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router, netConnection *netadapter.NetConnection,
+) (peer *peerpkg.Peer, err error) {
 
 	receiveVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVersion})
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	sendVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVerAck})
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	// For HandleHandshake to finish, we need to get from the other node
@@ -78,18 +78,18 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 	select {
 	case err := <-errChan:
 		if err != nil {
-			return nil, false, err
+			return nil, err
 		}
-		return nil, true, nil
+		return nil, nil
 	case <-locks.ReceiveFromChanWhenDone(func() { wg.Wait() }):
 	}
 
 	err = context.AddToPeers(peer)
 	if err != nil {
 		if errors.As(err, &common.ErrPeerWithSameIDExists) {
-			return nil, false, protocolerrors.Wrap(false, err, "peer already exists")
+			return nil, protocolerrors.Wrap(false, err, "peer already exists")
 		}
-		return nil, false, err
+		return nil, err
 	}
 
 	if peerAddress != nil {
@@ -102,8 +102,8 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 
 	err = router.RemoveRoute([]wire.MessageCommand{wire.CmdVersion, wire.CmdVerAck})
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
-	return peer, false, nil
+	return peer, nil
 }
