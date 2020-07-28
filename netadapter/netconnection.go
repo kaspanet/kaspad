@@ -5,7 +5,6 @@ import (
 
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/wire"
-	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/netadapter/server"
@@ -36,13 +35,7 @@ func newNetConnection(connection server.Connection, routerInitializer RouterInit
 	})
 
 	router.SetOnRouteCapacityReachedHandler(func() {
-		err := connection.Disconnect()
-		if err != nil {
-			if !errors.Is(err, server.ErrNetwork) {
-				panic(err)
-			}
-			log.Warnf("Failed to disconnect from %s", connection)
-		}
+		netConnection.Disconnect()
 	})
 
 	routerInitializer(router, netConnection)
@@ -94,13 +87,6 @@ func (c *NetConnection) setOnDisconnectedHandler(onDisconnectedHandler server.On
 }
 
 // Disconnect disconnects the given connection
-func (c *NetConnection) Disconnect() error {
-	err := c.connection.Disconnect()
-	if err != nil {
-		if !errors.Is(err, server.ErrNetwork) {
-			return err
-		}
-		log.Warnf("Error disconnecting from %s: %s", c, err)
-	}
-	return nil
+func (c *NetConnection) Disconnect() {
+	c.connection.Disconnect()
 }

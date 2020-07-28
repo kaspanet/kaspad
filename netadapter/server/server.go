@@ -34,7 +34,7 @@ type Server interface {
 type Connection interface {
 	fmt.Stringer
 	Start(router *router.Router)
-	Disconnect() error
+	Disconnect()
 	IsConnected() bool
 	IsOutbound() bool
 	SetOnDisconnectedHandler(onDisconnectedHandler OnDisconnectedHandler)

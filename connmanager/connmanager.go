@@ -83,7 +83,7 @@ func (c *ConnectionManager) Stop() {
 	atomic.StoreUint32(&c.stop, 1)
 
 	for _, connection := range c.netAdapter.Connections() {
-		_ = connection.Disconnect() // Ignore errors since connection might be in the midst of disconnecting
+		connection.Disconnect()
 	}
 
 	c.loopTicker.Stop()
