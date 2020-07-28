@@ -175,22 +175,6 @@ func ReadElement(r io.Reader, element interface{}) error {
 		}
 		*e = KaspaNet(rv)
 		return nil
-
-	case *BloomUpdateType:
-		rv, err := binaryserializer.Uint8(r)
-		if err != nil {
-			return err
-		}
-		*e = BloomUpdateType(rv)
-		return nil
-
-	case *RejectCode:
-		rv, err := binaryserializer.Uint8(r)
-		if err != nil {
-			return err
-		}
-		*e = RejectCode(rv)
-		return nil
 	}
 
 	return errors.Wrapf(errNoEncodingForType, "couldn't find a way to read type %T", element)
@@ -317,20 +301,6 @@ func WriteElement(w io.Writer, element interface{}) error {
 
 	case KaspaNet:
 		err := binaryserializer.PutUint32(w, littleEndian, uint32(e))
-		if err != nil {
-			return err
-		}
-		return nil
-
-	case BloomUpdateType:
-		err := binaryserializer.PutUint8(w, uint8(e))
-		if err != nil {
-			return err
-		}
-		return nil
-
-	case RejectCode:
-		err := binaryserializer.PutUint8(w, uint8(e))
 		if err != nil {
 			return err
 		}

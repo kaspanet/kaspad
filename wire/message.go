@@ -5,19 +5,8 @@
 package wire
 
 import (
-	"bytes"
 	"fmt"
-	"io"
-
-	"github.com/pkg/errors"
-
-	"github.com/kaspanet/kaspad/util/daghash"
 )
-
-// MessageHeaderSize is the number of bytes in a kaspa message header.
-// Kaspa network (magic) 4 bytes + command 4 byte + payload length 4 bytes +
-// checksum 4 bytes.
-const MessageHeaderSize = 16
 
 // MaxMessagePayload is the maximum bytes a message can be regardless of other
 // individual limits imposed by messages themselves.
@@ -41,26 +30,16 @@ const (
 	CmdGetAddresses    MessageCommand = 2
 	CmdAddress         MessageCommand = 3
 	CmdGetBlocks       MessageCommand = 4
-	CmdInv             MessageCommand = 5
-	CmdGetData         MessageCommand = 6
-	CmdNotFound        MessageCommand = 7
 	CmdBlock           MessageCommand = 8
 	CmdTx              MessageCommand = 9
 	CmdPing            MessageCommand = 10
 	CmdPong            MessageCommand = 11
-	CmdFilterAdd       MessageCommand = 12
-	CmdFilterClear     MessageCommand = 13
-	CmdFilterLoad      MessageCommand = 14
-	CmdMerkleBlock     MessageCommand = 15
-	CmdReject          MessageCommand = 16
-	CmdFeeFilter       MessageCommand = 17
 	CmdGetBlockLocator MessageCommand = 18
 	CmdBlockLocator    MessageCommand = 19
 	CmdSelectedTip     MessageCommand = 20
 	CmdGetSelectedTip  MessageCommand = 21
 	CmdInvRelayBlock   MessageCommand = 22
 	CmdGetRelayBlocks  MessageCommand = 23
-	CmdRejectMalformed MessageCommand = 24 // Used only for reject message
 	CmdInvTransaction  MessageCommand = 25
 	CmdGetTransactions MessageCommand = 26
 	CmdIBDBlock        MessageCommand = 27
@@ -72,26 +51,16 @@ var messageCommandToString = map[MessageCommand]string{
 	CmdGetAddresses:    "GetAddress",
 	CmdAddress:         "Address",
 	CmdGetBlocks:       "GetBlocks",
-	CmdInv:             "Inv",
-	CmdGetData:         "GetData",
-	CmdNotFound:        "NotFound",
 	CmdBlock:           "Block",
 	CmdTx:              "Tx",
 	CmdPing:            "Ping",
 	CmdPong:            "Pong",
-	CmdFilterAdd:       "FilterAdd",
-	CmdFilterClear:     "FilterClear",
-	CmdFilterLoad:      "FilterLoad",
-	CmdMerkleBlock:     "MerkleBlock",
-	CmdReject:          "Reject",
-	CmdFeeFilter:       "FeeFilter",
 	CmdGetBlockLocator: "GetBlockLocator",
 	CmdBlockLocator:    "BlockLocator",
 	CmdSelectedTip:     "SelectedTip",
 	CmdGetSelectedTip:  "GetSelectedTip",
 	CmdInvRelayBlock:   "InvRelayBlock",
 	CmdGetRelayBlocks:  "GetRelayBlocks",
-	CmdRejectMalformed: "RejectMalformed",
 	CmdInvTransaction:  "InvTransaction",
 	CmdGetTransactions: "GetTransactions",
 	CmdIBDBlock:        "IBDBlock",
@@ -102,305 +71,5 @@ var messageCommandToString = map[MessageCommand]string{
 // and may therefore contain additional or fewer fields than those which
 // are used directly in the protocol encoded message.
 type Message interface {
-	KaspaDecode(io.Reader, uint32) error
-	KaspaEncode(io.Writer, uint32) error
 	Command() MessageCommand
-	MaxPayloadLength(uint32) uint32
-}
-
-// MakeEmptyMessage creates a message of the appropriate concrete type based
-// on the command.
-func MakeEmptyMessage(command MessageCommand) (Message, error) {
-	var msg Message
-	switch command {
-	case CmdVersion:
-		msg = &MsgVersion{}
-
-	case CmdVerAck:
-		msg = &MsgVerAck{}
-
-	case CmdGetAddresses:
-		msg = &MsgGetAddresses{}
-
-	case CmdAddress:
-		msg = &MsgAddresses{}
-
-	case CmdGetBlocks:
-		msg = &MsgGetBlocks{}
-
-	case CmdBlock:
-		msg = &MsgBlock{}
-
-	case CmdInv:
-		msg = &MsgInv{}
-
-	case CmdGetData:
-		msg = &MsgGetData{}
-
-	case CmdGetBlockLocator:
-		msg = &MsgGetBlockLocator{}
-
-	case CmdBlockLocator:
-		msg = &MsgBlockLocator{}
-
-	case CmdNotFound:
-		msg = &MsgNotFound{}
-
-	case CmdTx:
-		msg = &MsgTx{}
-
-	case CmdPing:
-		msg = &MsgPing{}
-
-	case CmdPong:
-		msg = &MsgPong{}
-
-	case CmdFilterAdd:
-		msg = &MsgFilterAdd{}
-
-	case CmdFilterClear:
-		msg = &MsgFilterClear{}
-
-	case CmdFilterLoad:
-		msg = &MsgFilterLoad{}
-
-	case CmdMerkleBlock:
-		msg = &MsgMerkleBlock{}
-
-	case CmdReject:
-		msg = &MsgReject{}
-
-	case CmdFeeFilter:
-		msg = &MsgFeeFilter{}
-
-	case CmdGetSelectedTip:
-		msg = &MsgGetSelectedTip{}
-
-	case CmdSelectedTip:
-		msg = &MsgSelectedTip{}
-
-	case CmdIBDBlock:
-		msg = &MsgIBDBlock{}
-
-	case CmdInvRelayBlock:
-		msg = &MsgInvRelayBlock{}
-
-	case CmdGetRelayBlocks:
-		msg = &MsgGetRelayBlocks{}
-
-	default:
-		return nil, errors.Errorf("unhandled command [%s]", command)
-	}
-	return msg, nil
-}
-
-// messageHeader defines the header structure for all kaspa protocol messages.
-type messageHeader struct {
-	magic    KaspaNet       // 4 bytes
-	command  MessageCommand // 4 bytes
-	length   uint32         // 4 bytes
-	checksum [4]byte        // 4 bytes
-}
-
-// readMessageHeader reads a kaspa message header from r.
-func readMessageHeader(r io.Reader) (int, *messageHeader, error) {
-	// Since readElements doesn't return the amount of bytes read, attempt
-	// to read the entire header into a buffer first in case there is a
-	// short read so the proper amount of read bytes are known. This works
-	// since the header is a fixed size.
-	var headerBytes [MessageHeaderSize]byte
-	n, err := io.ReadFull(r, headerBytes[:])
-	if err != nil {
-		return n, nil, err
-	}
-	hr := bytes.NewReader(headerBytes[:])
-
-	// Create and populate a messageHeader struct from the raw header bytes.
-	hdr := messageHeader{}
-	err = readElements(hr, &hdr.magic, &hdr.command, &hdr.length, &hdr.checksum)
-	if err != nil {
-		return 0, nil, err
-	}
-
-	return n, &hdr, nil
-}
-
-// discardInput reads n bytes from reader r in chunks and discards the read
-// bytes. This is used to skip payloads when various errors occur and helps
-// prevent rogue nodes from causing massive memory allocation through forging
-// header length.
-func discardInput(r io.Reader, n uint32) {
-	maxSize := uint32(10 * 1024) // 10k at a time
-	numReads := n / maxSize
-	bytesRemaining := n % maxSize
-	if n > 0 {
-		buf := make([]byte, maxSize)
-		for i := uint32(0); i < numReads; i++ {
-			io.ReadFull(r, buf)
-		}
-	}
-	if bytesRemaining > 0 {
-		buf := make([]byte, bytesRemaining)
-		io.ReadFull(r, buf)
-	}
-}
-
-// WriteMessageN writes a kaspa Message to w including the necessary header
-// information and returns the number of bytes written. This function is the
-// same as WriteMessage except it also returns the number of bytes written.
-func WriteMessageN(w io.Writer, msg Message, pver uint32, kaspaNet KaspaNet) (int, error) {
-	totalBytes := 0
-
-	// Encode the message payload.
-	var bw bytes.Buffer
-	err := msg.KaspaEncode(&bw, pver)
-	if err != nil {
-		return totalBytes, err
-	}
-	payload := bw.Bytes()
-	lenp := len(payload)
-
-	// Enforce maximum overall message payload.
-	if lenp > MaxMessagePayload {
-		str := fmt.Sprintf("message payload is too large - encoded "+
-			"%d bytes, but maximum message payload is %d bytes",
-			lenp, MaxMessagePayload)
-		return totalBytes, messageError("WriteMessage", str)
-	}
-
-	// Enforce maximum message payload based on the message type.
-	mpl := msg.MaxPayloadLength(pver)
-	if uint32(lenp) > mpl {
-		str := fmt.Sprintf("message payload is too large - encoded "+
-			"%d bytes, but maximum message payload size for "+
-			"messages of type [%s] is %d.", lenp, msg.Command(), mpl)
-		return totalBytes, messageError("WriteMessage", str)
-	}
-
-	// Create header for the message.
-	hdr := messageHeader{}
-	hdr.magic = kaspaNet
-	hdr.command = msg.Command()
-	hdr.length = uint32(lenp)
-	copy(hdr.checksum[:], daghash.DoubleHashB(payload)[0:4])
-
-	// Encode the header for the message. This is done to a buffer
-	// rather than directly to the writer since writeElements doesn't
-	// return the number of bytes written.
-	hw := bytes.NewBuffer(make([]byte, 0, MessageHeaderSize))
-	err = writeElements(hw, hdr.magic, hdr.command, hdr.length, hdr.checksum)
-	if err != nil {
-		return 0, err
-	}
-
-	// Write header.
-	n, err := w.Write(hw.Bytes())
-	totalBytes += n
-	if err != nil {
-		return totalBytes, err
-	}
-
-	// Write payload.
-	n, err = w.Write(payload)
-	totalBytes += n
-	return totalBytes, err
-}
-
-// WriteMessage writes a kaspa Message to w including the necessary header
-// information. This function is the same as WriteMessageN except it doesn't
-// doesn't return the number of bytes written. This function is mainly provided
-// for backwards compatibility with the original API, but it's also useful for
-// callers that don't care about byte counts.
-func WriteMessage(w io.Writer, msg Message, pver uint32, kaspaNet KaspaNet) error {
-	_, err := WriteMessageN(w, msg, pver, kaspaNet)
-	return err
-}
-
-// ReadMessageN reads, validates, and parses the next kaspa Message from r for
-// the provided protocol version and kaspa network. It returns the number of
-// bytes read in addition to the parsed Message and raw bytes which comprise the
-// message. This function is the same as ReadMessage except it also returns the
-// number of bytes read.
-func ReadMessageN(r io.Reader, pver uint32, kaspaNet KaspaNet) (int, Message, []byte, error) {
-	totalBytes := 0
-	n, hdr, err := readMessageHeader(r)
-	totalBytes += n
-	if err != nil {
-		return totalBytes, nil, nil, err
-	}
-
-	// Enforce maximum message payload.
-	if hdr.length > MaxMessagePayload {
-		str := fmt.Sprintf("message payload is too large - header "+
-			"indicates %d bytes, but max message payload is %d "+
-			"bytes.", hdr.length, MaxMessagePayload)
-		return totalBytes, nil, nil, messageError("ReadMessage", str)
-
-	}
-
-	// Check for messages from the wrong kaspa network.
-	if hdr.magic != kaspaNet {
-		discardInput(r, hdr.length)
-		str := fmt.Sprintf("message from other network [%s]", hdr.magic)
-		return totalBytes, nil, nil, messageError("ReadMessage", str)
-	}
-
-	command := hdr.command
-	// Create struct of appropriate message type based on the command.
-	msg, err := MakeEmptyMessage(command)
-	if err != nil {
-		discardInput(r, hdr.length)
-		return totalBytes, nil, nil, messageError("ReadMessage",
-			err.Error())
-	}
-
-	// Check for maximum length based on the message type as a malicious client
-	// could otherwise create a well-formed header and set the length to max
-	// numbers in order to exhaust the machine's memory.
-	mpl := msg.MaxPayloadLength(pver)
-	if hdr.length > mpl {
-		discardInput(r, hdr.length)
-		str := fmt.Sprintf("payload exceeds max length - header "+
-			"indicates %d bytes, but max payload size for "+
-			"messages of type [%s] is %d.", hdr.length, command, mpl)
-		return totalBytes, nil, nil, messageError("ReadMessage", str)
-	}
-
-	// Read payload.
-	payload := make([]byte, hdr.length)
-	n, err = io.ReadFull(r, payload)
-	totalBytes += n
-	if err != nil {
-		return totalBytes, nil, nil, err
-	}
-
-	// Test checksum.
-	checksum := daghash.DoubleHashB(payload)[0:4]
-	if !bytes.Equal(checksum[:], hdr.checksum[:]) {
-		str := fmt.Sprintf("payload checksum failed - header "+
-			"indicates %x, but actual checksum is %x.",
-			hdr.checksum, checksum)
-		return totalBytes, nil, nil, messageError("ReadMessage", str)
-	}
-
-	// Unmarshal message. NOTE: This must be a *bytes.Buffer since the
-	// MsgVersion KaspaDecode function requires it.
-	pr := bytes.NewBuffer(payload)
-	err = msg.KaspaDecode(pr, pver)
-	if err != nil {
-		return totalBytes, nil, nil, err
-	}
-
-	return totalBytes, msg, payload, nil
-}
-
-// ReadMessage reads, validates, and parses the next kaspa Message from r for
-// the provided protocol version and kaspa network. It returns the parsed
-// Message and raw bytes which comprise the message. This function only differs
-// from ReadMessageN in that it doesn't return the number of bytes read. This
-// function is mainly provided for backwards compatibility with the original
-// API, but it's also useful for callers that don't care about byte counts.
-func ReadMessage(r io.Reader, pver uint32, kaspaNet KaspaNet) (Message, []byte, error) {
-	_, msg, buf, err := ReadMessageN(r, pver, kaspaNet)
-	return msg, buf, err
 }

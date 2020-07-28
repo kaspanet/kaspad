@@ -192,7 +192,7 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 
 			shouldBan := false
 			if txRuleErr := (&mempool.TxRuleError{}); errors.As(ruleErr.Err, txRuleErr) {
-				if txRuleErr.RejectCode == wire.RejectInvalid {
+				if txRuleErr.RejectCode == mempool.RejectInvalid {
 					shouldBan = true
 				}
 			} else if dagRuleErr := (&blockdag.RuleError{}); errors.As(ruleErr.Err, dagRuleErr) {

@@ -317,7 +317,7 @@ func (mp *TxPool) maybeAddOrphan(tx *util.Tx, tag Tag) error {
 		str := fmt.Sprintf("orphan transaction size of %d bytes is "+
 			"larger than max allowed size of %d bytes",
 			serializedLen, mp.cfg.Policy.MaxOrphanTxSize)
-		return txRuleError(wire.RejectNonstandard, str)
+		return txRuleError(RejectNonstandard, str)
 	}
 
 	// Add the orphan if the none of the above disqualified it.
@@ -718,7 +718,7 @@ func (mp *TxPool) checkPoolDoubleSpend(tx *util.Tx) error {
 			str := fmt.Sprintf("output %s already spent by "+
 				"transaction %s in the memory pool",
 				txIn.PreviousOutpoint, txR.ID())
-			return txRuleError(wire.RejectDuplicate, str)
+			return txRuleError(RejectDuplicate, str)
 		}
 	}
 
@@ -784,7 +784,7 @@ func checkTransactionMassSanity(tx *util.Tx) error {
 	if serializedTxSize*blockdag.MassPerTxByte > wire.MaxMassPerTx {
 		str := fmt.Sprintf("serialized transaction is too big - got "+
 			"%d, max %d", serializedTxSize, wire.MaxMassPerBlock)
-		return txRuleError(wire.RejectInvalid, str)
+		return txRuleError(RejectInvalid, str)
 	}
 	return nil
 }
@@ -811,7 +811,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 		mp.isOrphanInPool(txID)) {
 
 		str := fmt.Sprintf("already have transaction %s", txID)
-		return nil, nil, txRuleError(wire.RejectDuplicate, str)
+		return nil, nil, txRuleError(RejectDuplicate, str)
 	}
 
 	// Don't accept the transaction if it's from an incompatible subnetwork.
@@ -819,14 +819,14 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 	if !tx.MsgTx().IsSubnetworkCompatible(subnetworkID) {
 		str := fmt.Sprintf("tx %s belongs to an invalid subnetwork %s, DAG subnetwork %s", tx.ID(),
 			tx.MsgTx().SubnetworkID, subnetworkID)
-		return nil, nil, txRuleError(wire.RejectInvalid, str)
+		return nil, nil, txRuleError(RejectInvalid, str)
 	}
 
 	// Disallow non-native/coinbase subnetworks in networks that don't allow them
 	if !mp.cfg.DAG.Params.EnableNonNativeSubnetworks {
 		if !(tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
 			tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase)) {
-			return nil, nil, txRuleError(wire.RejectInvalid, "non-native/coinbase subnetworks are not allowed")
+			return nil, nil, txRuleError(RejectInvalid, "non-native/coinbase subnetworks are not allowed")
 		}
 	}
 
@@ -867,7 +867,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 	if tx.IsCoinBase() {
 		str := fmt.Sprintf("transaction %s is an individual coinbase transaction",
 			txID)
-		return nil, nil, txRuleError(wire.RejectInvalid, str)
+		return nil, nil, txRuleError(RejectInvalid, str)
 	}
 
 	// We take the blue score of the current virtual block to validate
@@ -887,7 +887,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 			// a non standard error.
 			rejectCode, found := extractRejectCode(err)
 			if !found {
-				rejectCode = wire.RejectNonstandard
+				rejectCode = RejectNonstandard
 			}
 			str := fmt.Sprintf("transaction %s is not standard: %s",
 				txID, err)
@@ -915,7 +915,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 		prevOut.Index = uint32(txOutIdx)
 		_, ok := mp.mpUTXOSet.Get(prevOut)
 		if ok {
-			return nil, nil, txRuleError(wire.RejectDuplicate,
+			return nil, nil, txRuleError(RejectDuplicate,
 				"transaction already exists")
 		}
 	}
@@ -956,7 +956,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 	}
 	if !blockdag.SequenceLockActive(sequenceLock, nextBlockBlueScore,
 		medianTimePast) {
-		return nil, nil, txRuleError(wire.RejectNonstandard,
+		return nil, nil, txRuleError(RejectNonstandard,
 			"transaction's sequence locks on inputs not met")
 	}
 
@@ -995,7 +995,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 			// a non standard error.
 			rejectCode, found := extractRejectCode(err)
 			if !found {
-				rejectCode = wire.RejectNonstandard
+				rejectCode = RejectNonstandard
 			}
 			str := fmt.Sprintf("transaction %s has a non-standard "+
 				"input: %s", txID, err)
@@ -1010,7 +1010,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 	// Don't allow transactions with 0 fees.
 	if txFee == 0 {
 		str := fmt.Sprintf("transaction %s has 0 fees", txID)
-		return nil, nil, txRuleError(wire.RejectInsufficientFee, str)
+		return nil, nil, txRuleError(RejectInsufficientFee, str)
 	}
 
 	// Don't allow transactions with fees too low to get into a mined block.
@@ -1031,7 +1031,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 		str := fmt.Sprintf("transaction %s has %d fees which is under "+
 			"the required amount of %d", txID, txFee,
 			minFee)
-		return nil, nil, txRuleError(wire.RejectInsufficientFee, str)
+		return nil, nil, txRuleError(RejectInsufficientFee, str)
 	}
 
 	// Verify crypto signatures for each input and reject the transaction if
@@ -1218,7 +1218,7 @@ func (mp *TxPool) ProcessTransaction(tx *util.Tx, allowOrphan bool, tag Tag) ([]
 		str := fmt.Sprintf("orphan transaction %s references "+
 			"outputs of unknown or fully-spent "+
 			"transaction %s", tx.ID(), missingParents[0])
-		return nil, txRuleError(wire.RejectDuplicate, str)
+		return nil, txRuleError(RejectDuplicate, str)
 	}
 
 	// Potentially add the orphan transaction to the orphan pool.

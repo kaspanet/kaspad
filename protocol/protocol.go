@@ -180,7 +180,7 @@ func (m *Manager) addTransactionRelayFlow(router *routerpkg.Router, stopped *uin
 
 	outgoingRoute := router.OutgoingRoute()
 
-	addFlow("HandleRelayedTransactions", router, []wire.MessageCommand{wire.CmdInv, wire.CmdTx}, stopped, stop,
+	addFlow("HandleRelayedTransactions", router, []wire.MessageCommand{wire.CmdInvTransaction, wire.CmdTx}, stopped, stop,
 		func(incomingRoute *routerpkg.Route) error {
 			return relaytransactions.HandleRelayedTransactions(m.context, incomingRoute, outgoingRoute)
 		},

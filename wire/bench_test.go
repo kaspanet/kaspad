@@ -7,7 +7,6 @@ package wire
 import (
 	"bytes"
 	"compress/bzip2"
-	"fmt"
 	"io/ioutil"
 	"math"
 	"net"
@@ -418,104 +417,6 @@ func BenchmarkDecodeAddr(b *testing.B) {
 
 	r := bytes.NewReader(buf)
 	var msg MsgAddresses
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		r.Seek(0, 0)
-		msg.KaspaDecode(r, pver)
-	}
-}
-
-// BenchmarkDecodeInv performs a benchmark on how long it takes to decode an inv
-// message with the maximum number of entries.
-func BenchmarkDecodeInv(b *testing.B) {
-	// Create a message with the maximum number of entries.
-	pver := ProtocolVersion
-	var m MsgInv
-	for i := 0; i < MaxInvPerMsg; i++ {
-		hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x", i))
-		if err != nil {
-			b.Fatalf("NewHashFromStr: unexpected error: %v", err)
-		}
-		m.AddInvVect(NewInvVect(InvTypeBlock, hash))
-	}
-
-	// Serialize it so the bytes are available to test the decode below.
-	var bb bytes.Buffer
-	if err := m.KaspaEncode(&bb, pver); err != nil {
-		b.Fatalf("MsgInv.KaspaEncode: unexpected error: %v", err)
-	}
-	buf := bb.Bytes()
-
-	r := bytes.NewReader(buf)
-	var msg MsgInv
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		r.Seek(0, 0)
-		msg.KaspaDecode(r, pver)
-	}
-}
-
-// BenchmarkDecodeNotFound performs a benchmark on how long it takes to decode
-// a notfound message with the maximum number of entries.
-func BenchmarkDecodeNotFound(b *testing.B) {
-	// Create a message with the maximum number of entries.
-	pver := ProtocolVersion
-	var m MsgNotFound
-	for i := 0; i < MaxInvPerMsg; i++ {
-		hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x", i))
-		if err != nil {
-			b.Fatalf("NewHashFromStr: unexpected error: %v", err)
-		}
-		m.AddInvVect(NewInvVect(InvTypeBlock, hash))
-	}
-
-	// Serialize it so the bytes are available to test the decode below.
-	var bb bytes.Buffer
-	if err := m.KaspaEncode(&bb, pver); err != nil {
-		b.Fatalf("MsgNotFound.KaspaEncode: unexpected error: %v", err)
-	}
-	buf := bb.Bytes()
-
-	r := bytes.NewReader(buf)
-	var msg MsgNotFound
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		r.Seek(0, 0)
-		msg.KaspaDecode(r, pver)
-	}
-}
-
-// BenchmarkDecodeMerkleBlock performs a benchmark on how long it takes to
-// decode a reasonably sized merkleblock message.
-func BenchmarkDecodeMerkleBlock(b *testing.B) {
-	// Create a message with random data.
-	pver := ProtocolVersion
-	var m MsgMerkleBlock
-	hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x", 10000))
-	if err != nil {
-		b.Fatalf("NewHashFromStr: unexpected error: %v", err)
-	}
-	m.Header = *NewBlockHeader(1, []*daghash.Hash{hash}, hash, hash, hash, 0, uint64(10000))
-	for i := 0; i < 105; i++ {
-		hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x", i))
-		if err != nil {
-			b.Fatalf("NewHashFromStr: unexpected error: %v", err)
-		}
-		m.AddTxHash(hash)
-		if i%8 == 0 {
-			m.Flags = append(m.Flags, uint8(i))
-		}
-	}
-
-	// Serialize it so the bytes are available to test the decode below.
-	var bb bytes.Buffer
-	if err := m.KaspaEncode(&bb, pver); err != nil {
-		b.Fatalf("MsgMerkleBlock.KaspaEncode: unexpected error: %v", err)
-	}
-	buf := bb.Bytes()
-
-	r := bytes.NewReader(buf)
-	var msg MsgMerkleBlock
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		r.Seek(0, 0)

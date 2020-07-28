@@ -5,8 +5,8 @@
 package mempool
 
 import (
+	"fmt"
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
 
@@ -28,14 +28,56 @@ func (e RuleError) Error() string {
 	return e.Err.Error()
 }
 
+// TODO(libp2p) Consider if it should be kept.
+// RejectCode represents a numeric value by which a remote peer indicates
+// why a message was rejected.
+type RejectCode uint8
+
+// These constants define the various supported reject codes.
+const (
+	RejectMalformed       RejectCode = 0x01
+	RejectInvalid         RejectCode = 0x10
+	RejectObsolete        RejectCode = 0x11
+	RejectDuplicate       RejectCode = 0x12
+	RejectNotRequested    RejectCode = 0x13
+	RejectNonstandard     RejectCode = 0x40
+	RejectDust            RejectCode = 0x41
+	RejectInsufficientFee RejectCode = 0x42
+	RejectFinality        RejectCode = 0x43
+	RejectDifficulty      RejectCode = 0x44
+)
+
+// Map of reject codes back strings for pretty printing.
+var rejectCodeStrings = map[RejectCode]string{
+	RejectMalformed:       "REJECT_MALFORMED",
+	RejectInvalid:         "REJECT_INVALID",
+	RejectObsolete:        "REJECT_OBSOLETE",
+	RejectDuplicate:       "REJECT_DUPLICATE",
+	RejectNonstandard:     "REJECT_NONSTANDARD",
+	RejectDust:            "REJECT_DUST",
+	RejectInsufficientFee: "REJECT_INSUFFICIENTFEE",
+	RejectFinality:        "REJECT_FINALITY",
+	RejectDifficulty:      "REJECT_DIFFICULTY",
+	RejectNotRequested:    "REJECT_NOTREQUESTED",
+}
+
+// String returns the RejectCode in human-readable form.
+func (code RejectCode) String() string {
+	if s, ok := rejectCodeStrings[code]; ok {
+		return s
+	}
+
+	return fmt.Sprintf("Unknown RejectCode (%d)", uint8(code))
+}
+
 // TxRuleError identifies a rule violation. It is used to indicate that
 // processing of a transaction failed due to one of the many validation
 // rules. The caller can use type assertions to determine if a failure was
 // specifically due to a rule violation and access the ErrorCode field to
 // ascertain the specific reason for the rule violation.
 type TxRuleError struct {
-	RejectCode  wire.RejectCode // The code to send with reject messages
-	Description string          // Human readable description of the issue
+	RejectCode  RejectCode // The code to send with reject messages
+	Description string     // Human readable description of the issue
 }
 
 // Error satisfies the error interface and prints human-readable errors.
@@ -45,7 +87,7 @@ func (e TxRuleError) Error() string {
 
 // txRuleError creates an underlying TxRuleError with the given a set of
 // arguments and returns a RuleError that encapsulates it.
-func txRuleError(c wire.RejectCode, desc string) RuleError {
+func txRuleError(c RejectCode, desc string) RuleError {
 	return RuleError{
 		Err: TxRuleError{RejectCode: c, Description: desc},
 	}
@@ -62,7 +104,7 @@ func dagRuleError(dagErr blockdag.RuleError) RuleError {
 // extractRejectCode attempts to return a relevant reject code for a given error
 // by examining the error for known types. It will return true if a code
 // was successfully extracted.
-func extractRejectCode(err error) (wire.RejectCode, bool) {
+func extractRejectCode(err error) (RejectCode, bool) {
 	// Pull the underlying error out of a RuleError.
 	var ruleErr RuleError
 	if ok := errors.As(err, &ruleErr); ok {
@@ -72,25 +114,25 @@ func extractRejectCode(err error) (wire.RejectCode, bool) {
 	var dagRuleErr blockdag.RuleError
 	if errors.As(err, &dagRuleErr) {
 		// Convert the DAG error to a reject code.
-		var code wire.RejectCode
+		var code RejectCode
 		switch dagRuleErr.ErrorCode {
 		// Rejected due to duplicate.
 		case blockdag.ErrDuplicateBlock:
-			code = wire.RejectDuplicate
+			code = RejectDuplicate
 
 		// Rejected due to obsolete version.
 		case blockdag.ErrBlockVersionTooOld:
-			code = wire.RejectObsolete
+			code = RejectObsolete
 
 		// Rejected due to being earlier than the last finality point.
 		case blockdag.ErrFinalityPointTimeTooOld:
-			code = wire.RejectFinality
+			code = RejectFinality
 		case blockdag.ErrDifficultyTooLow:
-			code = wire.RejectDifficulty
+			code = RejectDifficulty
 
 		// Everything else is due to the block or transaction being invalid.
 		default:
-			code = wire.RejectInvalid
+			code = RejectInvalid
 		}
 
 		return code, true
@@ -102,15 +144,15 @@ func extractRejectCode(err error) (wire.RejectCode, bool) {
 	}
 
 	if err == nil {
-		return wire.RejectInvalid, false
+		return RejectInvalid, false
 	}
 
-	return wire.RejectInvalid, false
+	return RejectInvalid, false
 }
 
 // ErrToRejectErr examines the underlying type of the error and returns a reject
 // code and string appropriate to be sent in a wire.MsgReject message.
-func ErrToRejectErr(err error) (wire.RejectCode, string) {
+func ErrToRejectErr(err error) (RejectCode, string) {
 	// Return the reject code along with the error text if it can be
 	// extracted from the error.
 	rejectCode, found := extractRejectCode(err)
@@ -124,11 +166,11 @@ func ErrToRejectErr(err error) (wire.RejectCode, string) {
 	// string rather than allowing the following code that dereferences the
 	// err to panic.
 	if err == nil {
-		return wire.RejectInvalid, "rejected"
+		return RejectInvalid, "rejected"
 	}
 
 	// When the underlying error is not one of the above cases, just return
-	// wire.RejectInvalid with a generic rejected string plus the error
+	// RejectInvalid with a generic rejected string plus the error
 	// text.
-	return wire.RejectInvalid, "rejected: " + err.Error()
+	return RejectInvalid, "rejected: " + err.Error()
 }
