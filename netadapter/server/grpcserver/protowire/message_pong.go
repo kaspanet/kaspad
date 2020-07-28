@@ -10,8 +10,9 @@ func (x *KaspadMessage_Pong) toWireMessage() (*wire.MsgPing, error) {
 	}, nil
 }
 
-func (x *KaspadMessage_Pong) fromWireMessage(msgPing *wire.MsgPing) {
+func (x *KaspadMessage_Pong) fromWireMessage(msgPong *wire.MsgPong) error {
 	x.Pong = &PongMessage{
-		Nonce: msgPing.Nonce,
+		Nonce: msgPong.Nonce,
 	}
+	return nil
 }

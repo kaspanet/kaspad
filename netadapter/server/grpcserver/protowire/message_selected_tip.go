@@ -11,8 +11,9 @@ func (x *KaspadMessage_SelectedTip_) toWireMessage() (*wire.MsgSelectedTip, erro
 	return &wire.MsgSelectedTip{SelectedTipHash: hash}, nil
 }
 
-func (x *KaspadMessage_SelectedTip_) fromWireMessage(msgSelectedTip *wire.MsgSelectedTip) {
+func (x *KaspadMessage_SelectedTip_) fromWireMessage(msgSelectedTip *wire.MsgSelectedTip) error {
 	x.SelectedTip_ = &SelectedTipMessage{
 		SelectedTipHash: wireHashToProto(msgSelectedTip.SelectedTipHash),
 	}
+	return nil
 }

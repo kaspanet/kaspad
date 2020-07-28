@@ -10,9 +10,10 @@ func (x *KaspadMessage_Transaction) toWireMessage() (*wire.MsgTx, error) {
 	return x.toWireMessage()
 }
 
-func (x *KaspadMessage_Transaction) fromWireMessage(msgTx *wire.MsgTx) {
+func (x *KaspadMessage_Transaction) fromWireMessage(msgTx *wire.MsgTx) error {
 	x.Transaction = new(TransactionMessage)
 	x.Transaction.fromWireMessage(msgTx)
+	return nil
 }
 
 func (x *TransactionMessage) toWireMessage() (*wire.MsgTx, error) {

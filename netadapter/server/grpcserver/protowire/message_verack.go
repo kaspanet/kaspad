@@ -6,5 +6,6 @@ func (x *KaspadMessage_Verack) toWireMessage() (*wire.MsgVerAck, error) {
 	return &wire.MsgVerAck{}, nil
 }
 
-func (x *KaspadMessage_Verack) fromWireMessage(_ *wire.MsgVerAck) {
+func (x *KaspadMessage_Verack) fromWireMessage(_ *wire.MsgVerAck) error {
+	return nil
 }

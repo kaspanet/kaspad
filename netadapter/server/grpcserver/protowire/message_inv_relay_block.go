@@ -11,8 +11,9 @@ func (x *KaspadMessage_InvRelayBlock) toWireMessage() (*wire.MsgInvRelayBlock, e
 	return &wire.MsgInvRelayBlock{Hash: hash}, nil
 }
 
-func (x *KaspadMessage_InvRelayBlock) fromWireMessage(msgInvRelayBlock *wire.MsgInvRelayBlock) {
+func (x *KaspadMessage_InvRelayBlock) fromWireMessage(msgInvRelayBlock *wire.MsgInvRelayBlock) error {
 	x.InvRelayBlock = &InvRelayBlockMessage{
 		Hash: wireHashToProto(msgInvRelayBlock.Hash),
 	}
+	return nil
 }

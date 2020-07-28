@@ -6,5 +6,6 @@ func (x *KaspadMessage_GetSelectedTip) toWireMessage() (*wire.MsgGetSelectedTip,
 	return &wire.MsgGetSelectedTip{}, nil
 }
 
-func (x *KaspadMessage_GetSelectedTip) fromWireMessage(_ *wire.MsgGetSelectedTip) {
+func (x *KaspadMessage_GetSelectedTip) fromWireMessage(_ *wire.MsgGetSelectedTip) error {
+	return nil
 }
