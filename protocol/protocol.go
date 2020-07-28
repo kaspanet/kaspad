@@ -20,18 +20,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (m *Manager) routerInitializer(netConnection *netadapter.NetConnection) *routerpkg.Router {
-	router := routerpkg.NewRouter()
-	spawn("newRouterInitializer-startFlows", func() {
+func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *netadapter.NetConnection) {
+	spawn("routerInitializer-startFlows", func() {
 		isBanned, err := m.context.ConnectionManager().IsBanned(netConnection)
 		if err != nil && !errors.Is(err, addressmanager.ErrAddressNotFound) {
 			panic(err)
 		}
 		if isBanned {
-			err := m.context.NetAdapter().Disconnect(netConnection)
-			if err != nil {
-				panic(err)
-			}
+			netConnection.Disconnect()
 			return
 		}
 
@@ -44,17 +40,11 @@ func (m *Manager) routerInitializer(netConnection *netadapter.NetConnection) *ro
 						panic(err)
 					}
 				}
-				err = m.context.NetAdapter().Disconnect(netConnection)
-				if err != nil {
-					panic(err)
-				}
+				netConnection.Disconnect()
 				return
 			}
 			if errors.Is(err, routerpkg.ErrTimeout) {
-				err = m.context.NetAdapter().Disconnect(netConnection)
-				if err != nil {
-					panic(err)
-				}
+				netConnection.Disconnect()
 				return
 			}
 			if errors.Is(err, routerpkg.ErrRouteClosed) {
@@ -63,7 +53,6 @@ func (m *Manager) routerInitializer(netConnection *netadapter.NetConnection) *ro
 			panic(err)
 		}
 	})
-	return router
 }
 
 func (m *Manager) startFlows(netConnection *netadapter.NetConnection, router *routerpkg.Router) error {

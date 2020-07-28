@@ -25,10 +25,8 @@ func (c *gRPCConnection) connectionLoops() error {
 
 	err := <-errChan
 
-	disconnectErr := c.Disconnect()
-	if disconnectErr != nil {
-		log.Errorf("Error from disconnect: %s", disconnectErr)
-	}
+	c.Disconnect()
+
 	return err
 }
 

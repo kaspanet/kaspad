@@ -90,11 +90,10 @@ func (r *Route) setOnCapacityReachedHandler(onCapacityReachedHandler onCapacityR
 }
 
 // Close closes this route
-func (r *Route) Close() error {
+func (r *Route) Close() {
 	r.closeLock.Lock()
 	defer r.closeLock.Unlock()
 
 	r.closed = true
 	close(r.channel)
-	return nil
 }
