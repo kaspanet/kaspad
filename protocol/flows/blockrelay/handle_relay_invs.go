@@ -103,7 +103,6 @@ func (flow *handleRelayInvsFlow) readInv() (*wire.MsgInvRelayBlock, error) {
 }
 
 func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) error {
-
 	numHashesToRequest := mathUtil.MinInt(wire.MsgGetRelayBlocksHashes, requestQueue.len())
 	hashesToRequest := requestQueue.dequeue(numHashesToRequest)
 
@@ -117,6 +116,11 @@ func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) err
 
 		pendingBlocks[*hash] = struct{}{}
 		filteredHashesToRequest = append(filteredHashesToRequest, hash)
+	}
+
+	// Exit early if we've filtered out all the hashes
+	if len(filteredHashesToRequest) == 0 {
+		return nil
 	}
 
 	// In case the function returns earlier than expected, we want to make sure requestedBlocks is

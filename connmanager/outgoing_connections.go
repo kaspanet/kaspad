@@ -23,7 +23,13 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 		liveConnections, c.targetOutgoing, c.targetOutgoing-liveConnections)
 
 	connectionsNeededCount := c.targetOutgoing - len(c.activeOutgoing)
-	for i := 0; i < connectionsNeededCount; i++ {
+	connectionAttempts := connectionsNeededCount * 2
+	for i := 0; i < connectionAttempts; i++ {
+		// Return in case we've already reached or surpassed our target
+		if len(c.activeOutgoing) >= c.targetOutgoing {
+			return
+		}
+
 		address := c.addressManager.GetAddress()
 		if address == nil {
 			log.Warnf("No more addresses available")
@@ -32,13 +38,18 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 
 		netAddress := address.NetAddress()
 		tcpAddress := netAddress.TCPAddress()
-		if c.isIPBanned(tcpAddress.IP.String()) {
+		addressString := tcpAddress.String()
+		isBanned, err := c.addressManager.IsBanned(netAddress)
+		if err != nil {
+			log.Infof("Couldn't resolve whether %s is banned: %s", addressString, err)
+			continue
+		}
+		if isBanned {
 			continue
 		}
 
 		c.addressManager.Attempt(netAddress)
-		addressString := tcpAddress.String()
-		err := c.initiateConnection(addressString)
+		err = c.initiateConnection(addressString)
 		if err != nil {
 			log.Infof("Couldn't connect to %s: %s", addressString, err)
 			continue

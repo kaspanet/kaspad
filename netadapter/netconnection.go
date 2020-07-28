@@ -3,20 +3,48 @@ package netadapter
 import (
 	"fmt"
 
+	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
+	"github.com/kaspanet/kaspad/wire"
+
 	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/netadapter/server"
 )
 
 // NetConnection is a wrapper to a server connection for use by services external to NetAdapter
 type NetConnection struct {
-	connection server.Connection
-	id         *id.ID
+	connection            server.Connection
+	id                    *id.ID
+	router                *routerpkg.Router
+	onDisconnectedHandler server.OnDisconnectedHandler
 }
 
-func newNetConnection(connection server.Connection) *NetConnection {
-	return &NetConnection{
+func newNetConnection(connection server.Connection, routerInitializer RouterInitializer) *NetConnection {
+	router := routerpkg.NewRouter()
+
+	netConnection := &NetConnection{
 		connection: connection,
+		router:     router,
 	}
+
+	netConnection.connection.SetOnDisconnectedHandler(func() {
+		router.Close()
+
+		if netConnection.onDisconnectedHandler != nil {
+			netConnection.onDisconnectedHandler()
+		}
+	})
+
+	router.SetOnRouteCapacityReachedHandler(func() {
+		netConnection.Disconnect()
+	})
+
+	routerInitializer(router, netConnection)
+
+	return netConnection
+}
+
+func (c *NetConnection) start() {
+	c.connection.Start(c.router)
 }
 
 func (c *NetConnection) String() string {
@@ -43,13 +71,22 @@ func (c *NetConnection) IsOutbound() bool {
 	return c.connection.IsOutbound()
 }
 
-// IP returns the IP address associated with this connection
-func (c *NetConnection) IP() string {
-	return c.connection.Address().IP.String()
+// NetAddress returns the NetAddress associated with this connection
+func (c *NetConnection) NetAddress() *wire.NetAddress {
+	return wire.NewNetAddress(c.connection.Address(), 0)
 }
 
 // SetOnInvalidMessageHandler sets a handler function
 // for invalid messages
 func (c *NetConnection) SetOnInvalidMessageHandler(onInvalidMessageHandler server.OnInvalidMessageHandler) {
 	c.connection.SetOnInvalidMessageHandler(onInvalidMessageHandler)
+}
+
+func (c *NetConnection) setOnDisconnectedHandler(onDisconnectedHandler server.OnDisconnectedHandler) {
+	c.onDisconnectedHandler = onDisconnectedHandler
+}
+
+// Disconnect disconnects the given connection
+func (c *NetConnection) Disconnect() {
+	c.connection.Disconnect()
 }

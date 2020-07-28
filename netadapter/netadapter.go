@@ -17,7 +17,7 @@ import (
 
 // RouterInitializer is a function that initializes a new
 // router to be used with a new connection
-type RouterInitializer func(netConnection *NetConnection) *routerpkg.Router
+type RouterInitializer func(*routerpkg.Router, *NetConnection)
 
 // NetAdapter is an abstraction layer over networking.
 // This type expects a RouteInitializer function. This
@@ -31,8 +31,8 @@ type NetAdapter struct {
 	routerInitializer RouterInitializer
 	stop              uint32
 
-	connectionsToRouters map[*NetConnection]*routerpkg.Router
-	sync.RWMutex
+	connections     map[*NetConnection]struct{}
+	connectionsLock sync.RWMutex
 }
 
 // NewNetAdapter creates and starts a new NetAdapter on the
@@ -51,7 +51,7 @@ func NewNetAdapter(cfg *config.Config) (*NetAdapter, error) {
 		id:     netAdapterID,
 		server: s,
 
-		connectionsToRouters: make(map[*NetConnection]*routerpkg.Router),
+		connections: make(map[*NetConnection]struct{}),
 	}
 
 	adapter.server.SetOnConnectedHandler(adapter.onConnectedHandler)
@@ -86,9 +86,12 @@ func (na *NetAdapter) Connect(address string) error {
 
 // Connections returns a list of connections currently connected and active
 func (na *NetAdapter) Connections() []*NetConnection {
-	netConnections := make([]*NetConnection, 0, len(na.connectionsToRouters))
+	na.connectionsLock.RLock()
+	defer na.connectionsLock.RUnlock()
 
-	for netConnection := range na.connectionsToRouters {
+	netConnections := make([]*NetConnection, 0, len(na.connections))
+
+	for netConnection := range na.connections {
 		netConnections = append(netConnections, netConnection)
 	}
 
@@ -97,29 +100,29 @@ func (na *NetAdapter) Connections() []*NetConnection {
 
 // ConnectionCount returns the count of the connected connections
 func (na *NetAdapter) ConnectionCount() int {
-	return len(na.connectionsToRouters)
+	na.connectionsLock.RLock()
+	defer na.connectionsLock.RUnlock()
+
+	return len(na.connections)
 }
 
 func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
-	netConnection := newNetConnection(connection)
-	router := na.routerInitializer(netConnection)
-	connection.Start(router)
+	netConnection := newNetConnection(connection, na.routerInitializer)
 
-	na.connectionsToRouters[netConnection] = router
+	na.connectionsLock.Lock()
+	defer na.connectionsLock.Unlock()
 
-	router.SetOnRouteCapacityReachedHandler(func() {
-		err := connection.Disconnect()
-		if err != nil {
-			if !errors.Is(err, server.ErrNetwork) {
-				panic(err)
-			}
-			log.Warnf("Failed to disconnect from %s", connection)
-		}
+	netConnection.setOnDisconnectedHandler(func() {
+		na.connectionsLock.Lock()
+		defer na.connectionsLock.Unlock()
+
+		delete(na.connections, netConnection)
 	})
-	connection.SetOnDisconnectedHandler(func() error {
-		delete(na.connectionsToRouters, netConnection)
-		return router.Close()
-	})
+
+	na.connections[netConnection] = struct{}{}
+
+	netConnection.start()
+
 	return nil
 }
 
@@ -137,11 +140,11 @@ func (na *NetAdapter) ID() *id.ID {
 // Broadcast sends the given `message` to every peer corresponding
 // to each NetConnection in the given netConnections
 func (na *NetAdapter) Broadcast(netConnections []*NetConnection, message wire.Message) error {
-	na.RLock()
-	defer na.RUnlock()
+	na.connectionsLock.RLock()
+	defer na.connectionsLock.RUnlock()
+
 	for _, netConnection := range netConnections {
-		router := na.connectionsToRouters[netConnection]
-		err := router.OutgoingRoute().Enqueue(message)
+		err := netConnection.router.OutgoingRoute().Enqueue(message)
 		if err != nil {
 			if errors.Is(err, routerpkg.ErrRouteClosed) {
 				log.Debugf("Cannot enqueue message to %s: router is closed", netConnection)
@@ -206,16 +209,4 @@ func (na *NetAdapter) GetBestLocalAddress() (*wire.NetAddress, error) {
 		return wire.NewNetAddressIPPort(ip, uint16(portInt), wire.SFNodeNetwork), nil
 	}
 	return nil, errors.New("no address was found")
-}
-
-// Disconnect disconnects the given connection
-func (na *NetAdapter) Disconnect(netConnection *NetConnection) error {
-	err := netConnection.connection.Disconnect()
-	if err != nil {
-		if !errors.Is(err, server.ErrNetwork) {
-			return err
-		}
-		log.Warnf("Error disconnecting from %s: %s", netConnection, err)
-	}
-	return nil
 }
