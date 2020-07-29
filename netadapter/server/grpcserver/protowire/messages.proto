@@ -8,20 +8,21 @@ message KaspadMessage {
     AddressesMessage addresses = 1;
     BlockMessage block = 2;
     TransactionMessage transaction = 3;
-    BlockLocatorMessage blockLocator = 4;
-    GetAddressesMessage getAddresses = 5;
-    GetBlocksMessage getBlocks = 6;
-    GetRelayBlocksMessage getRelayBlocks = 7;
-    GetSelectedTipMessage getSelectedTip = 8;
-    GetTransactionsMessage getTransactions = 9;
-    BlockMessage ibdBlock = 10;
-    InvRelayBlockMessage invRelayBlock = 11;
-    InvTransactionsMessage invTransactions = 12;
-    PingMessage ping = 13;
-    PongMessage pong = 14;
-    SelectedTipMessage selectedTip = 15;
-    VerackMessage verack = 16;
-    VersionMessage version = 17;
+    GetBlockLocatorMessage getBlockLocator = 4;
+    BlockLocatorMessage blockLocator = 5;
+    GetAddressesMessage getAddresses = 6;
+    GetBlocksMessage getBlocks = 7;
+    GetRelayBlocksMessage getRelayBlocks = 8;
+    GetSelectedTipMessage getSelectedTip = 9;
+    GetTransactionsMessage getTransactions = 10;
+    BlockMessage ibdBlock = 11;
+    InvRelayBlockMessage invRelayBlock = 12;
+    InvTransactionsMessage invTransactions = 13;
+    PingMessage ping = 14;
+    PongMessage pong = 15;
+    SelectedTipMessage selectedTip = 16;
+    VerackMessage verack = 17;
+    VersionMessage version = 18;
   }
 }
 
@@ -105,6 +106,13 @@ message Hash{
   bytes bytes = 1;
 }
 // BlockMessage end
+
+// GetBlockLocatorMessage start
+message GetBlockLocatorMessage{
+  Hash lowHash = 1;
+  Hash highHash = 2;
+}
+// GetBlockLocatorMessage end
 
 // BlockLocatorMessage start
 message BlockLocatorMessage{

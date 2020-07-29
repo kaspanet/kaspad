@@ -41,8 +41,15 @@ func toPayload(message wire.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *wire.MsgGetBlockLocator:
+		payload := new(KaspadMessage_GetBlockLocator)
+		err := payload.fromWireMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	case *wire.MsgBlockLocator:
-		payload := new(KaspadMessage_BlockLocator)
+		payload := new(KaspadMessage_BlockLocator_)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
