@@ -1,13 +1,14 @@
 package ping
 
 import (
+	"time"
+
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/util/random"
 	"github.com/kaspanet/kaspad/wire"
-	"time"
 )
 
 // SendPingsContext is the interface for the context needed for the SendPings flow.

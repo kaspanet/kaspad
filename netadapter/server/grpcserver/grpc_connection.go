@@ -74,9 +74,9 @@ func (c *gRPCConnection) IsOutbound() bool {
 // Calling this function a second time doesn't do anything
 //
 // This is part of the Connection interface
-func (c *gRPCConnection) Disconnect() error {
+func (c *gRPCConnection) Disconnect() {
 	if !c.IsConnected() {
-		return nil
+		return
 	}
 	atomic.StoreUint32(&c.isConnected, 0)
 
@@ -89,7 +89,9 @@ func (c *gRPCConnection) Disconnect() error {
 
 	log.Debugf("Disconnected from %s", c)
 
-	return c.onDisconnectedHandler()
+	if c.onDisconnectedHandler != nil {
+		c.onDisconnectedHandler()
+	}
 }
 
 func (c *gRPCConnection) Address() *net.TCPAddr {

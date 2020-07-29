@@ -1,9 +1,10 @@
 package router
 
 import (
+	"sync"
+
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
-	"sync"
 )
 
 const outgoingRouteMaxMessages = wire.MaxInvPerMsg + defaultMaxMessages
@@ -86,7 +87,7 @@ func (r *Router) OutgoingRoute() *Route {
 
 // Close shuts down the router by closing all registered
 // incoming routes and the outgoing route
-func (r *Router) Close() error {
+func (r *Router) Close() {
 	r.incomingRoutesLock.Lock()
 	defer r.incomingRoutesLock.Unlock()
 
@@ -95,12 +96,9 @@ func (r *Router) Close() error {
 		incomingRoutes[route] = struct{}{}
 	}
 	for route := range incomingRoutes {
-		err := route.Close()
-		if err != nil {
-			return err
-		}
+		route.Close()
 	}
-	return r.outgoingRoute.Close()
+	r.outgoingRoute.Close()
 }
 
 func (r *Router) incomingRoute(messageType wire.MessageCommand) (*Route, bool) {

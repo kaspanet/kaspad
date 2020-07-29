@@ -25,10 +25,8 @@ func (c *gRPCConnection) connectionLoops() error {
 
 	err := <-errChan
 
-	disconnectErr := c.Disconnect()
-	if disconnectErr != nil {
-		log.Errorf("Error from disconnect: %s", disconnectErr)
-	}
+	c.Disconnect()
+
 	return err
 }
 
@@ -43,6 +41,7 @@ func (c *gRPCConnection) sendLoop() error {
 			return err
 		}
 
+		log.Debugf("outgoing '%s' message to %s", message.Command(), c)
 		log.Tracef("outgoing '%s' message to %s: %s", message.Command(), c, logger.NewLogClosure(func() string {
 			return spew.Sdump(message)
 		}))
@@ -76,6 +75,7 @@ func (c *gRPCConnection) receiveLoop() error {
 			return err
 		}
 
+		log.Debugf("incoming '%s' message from %s", message.Command(), c)
 		log.Tracef("incoming '%s' message from %s: %s", message.Command(), c, logger.NewLogClosure(func() string {
 			return spew.Sdump(message)
 		}))
