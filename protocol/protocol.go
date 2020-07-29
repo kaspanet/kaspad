@@ -56,6 +56,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 			sendVersionRoute, router.OutgoingRoute())
 		if err != nil {
 			m.handleError(err, netConnection)
+			return
 		}
 
 		removeHandshakeRoutes(router)
@@ -63,6 +64,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 		err = m.startFlows(flows, peer, errChan)
 		if err != nil {
 			m.handleError(err, netConnection)
+			return
 		}
 	})
 }
