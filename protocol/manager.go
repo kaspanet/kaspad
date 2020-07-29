@@ -1,6 +1,8 @@
 package protocol
 
 import (
+	"fmt"
+
 	"github.com/kaspanet/kaspad/addressmanager"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/config"
@@ -78,4 +80,15 @@ func (m *Manager) AddBlock(block *util.Block, flags blockdag.BehaviorFlags) erro
 		panic(err)
 	}
 	return nil
+}
+
+func (m *Manager) runFlows(flows []*flow, peer *peerpkg.Peer, errChan <-chan error) error {
+	for _, flow := range flows {
+		executeFunc := flow.executeFunc // extract to new variable so that it's not overwritten
+		spawn(fmt.Sprintf("flow-%s", flow.name), func() {
+			executeFunc(peer)
+		})
+	}
+
+	return <-errChan
 }

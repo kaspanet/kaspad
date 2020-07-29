@@ -31,18 +31,9 @@ type HandleHandshakeContext interface {
 
 // HandleHandshake sets up the handshake protocol - It sends a version message and waits for an incoming
 // version message, as well as a verack for the sent version
-func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
-	netConnection *netadapter.NetConnection) (peer *peerpkg.Peer, closed bool, err error) {
-
-	receiveVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVersion})
-	if err != nil {
-		return nil, false, err
-	}
-
-	sendVersionRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVerAck})
-	if err != nil {
-		return nil, false, err
-	}
+func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.NetConnection,
+	receiveVersionRoute *routerpkg.Route, sendVersionRoute *routerpkg.Route, outgoingRoute *routerpkg.Route,
+) (peer *peerpkg.Peer, err error) {
 
 	// For HandleHandshake to finish, we need to get from the other node
 	// a version and verack messages, so we increase the wait group by 2
@@ -58,7 +49,7 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 	var peerAddress *wire.NetAddress
 	spawn("HandleHandshake-ReceiveVersion", func() {
 		defer wg.Done()
-		address, err := ReceiveVersion(context, receiveVersionRoute, router.OutgoingRoute(), peer)
+		address, err := ReceiveVersion(context, receiveVersionRoute, outgoingRoute, peer)
 		if err != nil {
 			context.HandleError(err, "SendVersion", &isStopping, errChan)
 			return
@@ -68,7 +59,7 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 
 	spawn("HandleHandshake-SendVersion", func() {
 		defer wg.Done()
-		err := SendVersion(context, sendVersionRoute, router.OutgoingRoute())
+		err := SendVersion(context, sendVersionRoute, outgoingRoute)
 		if err != nil {
 			context.HandleError(err, "SendVersion", &isStopping, errChan)
 			return
@@ -78,18 +69,18 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 	select {
 	case err := <-errChan:
 		if err != nil {
-			return nil, false, err
+			return nil, err
 		}
-		return nil, true, nil
+		return nil, nil
 	case <-locks.ReceiveFromChanWhenDone(func() { wg.Wait() }):
 	}
 
 	err = context.AddToPeers(peer)
 	if err != nil {
 		if errors.As(err, &common.ErrPeerWithSameIDExists) {
-			return nil, false, protocolerrors.Wrap(false, err, "peer already exists")
+			return nil, protocolerrors.Wrap(false, err, "peer already exists")
 		}
-		return nil, false, err
+		return nil, err
 	}
 
 	if peerAddress != nil {
@@ -100,10 +91,5 @@ func HandleHandshake(context HandleHandshakeContext, router *routerpkg.Router,
 
 	context.StartIBDIfRequired()
 
-	err = router.RemoveRoute([]wire.MessageCommand{wire.CmdVersion, wire.CmdVerAck})
-	if err != nil {
-		return nil, false, err
-	}
-
-	return peer, false, nil
+	return peer, nil
 }
