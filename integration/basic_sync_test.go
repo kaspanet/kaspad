@@ -10,7 +10,7 @@ import (
 )
 
 func TestIntegrationBasicSync(t *testing.T) {
-	appHarness1, appHarness2, appHarness3, teardown := setup(t)
+	appHarness1, appHarness2, appHarness3, teardown := standardSetup(t)
 	defer teardown()
 
 	// Connect nodes in chain: 1 <--> 2 <--> 3
