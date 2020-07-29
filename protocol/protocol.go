@@ -39,7 +39,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 
 	// After flows were registered - spawn a new thread that will wait for connection to finish initializing
 	// and start receiving messages
-	spawn("routerInitializer-registerFlows", func() {
+	spawn("routerInitializer-runFlows", func() {
 		isBanned, err := m.context.ConnectionManager().IsBanned(netConnection)
 		if err != nil && !errors.Is(err, addressmanager.ErrAddressNotFound) {
 			panic(err)
