@@ -25,7 +25,7 @@ func (f *FlowContext) StartIBDIfRequired() {
 
 	atomic.StoreUint32(&f.isInIBD, 1)
 	f.ibdPeer = peer
-	peer.StartIBD()
+	spawn("StartIBDIfRequired-peer.StartIBD", peer.StartIBD)
 }
 
 // IsInIBD is true if IBD is currently running
