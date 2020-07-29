@@ -47,7 +47,7 @@ func (id *ID) Serialize(w io.Writer) error {
 	return err
 }
 
-// SerializeToBytes returns a byte slice of the serialized receiver.
+// SerializeToBytes serializes the receiver and returns a byte slice of the serialized id.
 func (id *ID) SerializeToBytes() ([]byte, error) {
 	w := &bytes.Buffer{}
 	err := id.Serialize(w)

@@ -30,7 +30,6 @@ func (e RuleError) Error() string {
 
 // RejectCode represents a numeric value by which a remote peer indicates
 // why a message was rejected.
-// TODO(libp2p) Consider if it should be kept.
 type RejectCode uint8
 
 // These constants define the various supported reject codes.

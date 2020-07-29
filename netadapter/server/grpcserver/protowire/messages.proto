@@ -25,7 +25,7 @@ message KaspadMessage {
   }
 }
 
-// AddressesMessage Start
+// AddressesMessage start
 message AddressesMessage{
   bool includeAllSubnetworks = 1;
   SubnetworkID subnetworkID = 2;
@@ -42,7 +42,7 @@ message NetAddress{
 message SubnetworkID{
   bytes bytes = 1;
 }
-// AddressesMessage End
+// AddressesMessage end
 
 // GetAddressesMessage start
 message GetAddressesMessage{
@@ -51,7 +51,7 @@ message GetAddressesMessage{
 }
 // GetAddressesMessage end
 
-// TransactionMessage Start
+// TransactionMessage start
 message TransactionMessage{
   int32 version = 1;
   repeated TransactionInput inputs = 2;
@@ -82,9 +82,9 @@ message TransactionOutput{
   uint64 value = 1;
   bytes ScriptPubKey = 2;
 }
-// TransactionMessage End
+// TransactionMessage end
 
-// BlockMessage Start
+// BlockMessage start
 message BlockMessage{
   BlockHeader header = 1;
   repeated TransactionMessage transactions = 2;
@@ -104,7 +104,7 @@ message BlockHeader{
 message Hash{
   bytes bytes = 1;
 }
-// BlockMessage End
+// BlockMessage end
 
 // BlockLocatorMessage start
 message BlockLocatorMessage{
