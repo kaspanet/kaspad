@@ -4,7 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-func (x *KaspadMessage_GetAddresses_) toWireMessage() (*wire.MsgGetAddresses, error) {
+func (x *KaspadMessage_GetAddresses_) toWireMessage() (wire.Message, error) {
 	protoGetAddresses := x.GetAddresses_
 	subnetworkID, err := protoGetAddresses.SubnetworkID.toWire()
 	if err != nil {

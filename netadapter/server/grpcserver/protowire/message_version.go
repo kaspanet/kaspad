@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-func (x *KaspadMessage_Version) toWireMessage() (*wire.MsgVersion, error) {
+func (x *KaspadMessage_Version) toWireMessage() (wire.Message, error) {
 	address, err := x.Version.Address.toWire()
 	if err != nil {
 		return nil, err

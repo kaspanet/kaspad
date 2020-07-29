@@ -4,7 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-func (x *KaspadMessage_Pong) toWireMessage() (*wire.MsgPing, error) {
+func (x *KaspadMessage_Pong) toWireMessage() (wire.Message, error) {
 	return &wire.MsgPing{
 		Nonce: x.Pong.Nonce,
 	}, nil

@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_Transaction) toWireMessage() (*wire.MsgTx, error) {
+func (x *KaspadMessage_Transaction) toWireMessage() (wire.Message, error) {
 	return x.toWireMessage()
 }
 
@@ -17,7 +17,7 @@ func (x *KaspadMessage_Transaction) fromWireMessage(msgTx *wire.MsgTx) error {
 	return nil
 }
 
-func (x *TransactionMessage) toWireMessage() (*wire.MsgTx, error) {
+func (x *TransactionMessage) toWireMessage() (wire.Message, error) {
 	inputs := make([]*wire.TxIn, len(x.Inputs))
 	for i, protoInput := range x.Inputs {
 		prevTxID, err := protoInput.PreviousOutpoint.TransactionID.toWire()

@@ -2,7 +2,7 @@ package protowire
 
 import "github.com/kaspanet/kaspad/wire"
 
-func (x *KaspadMessage_GetSelectedTip) toWireMessage() (*wire.MsgGetSelectedTip, error) {
+func (x *KaspadMessage_GetSelectedTip) toWireMessage() (wire.Message, error) {
 	return &wire.MsgGetSelectedTip{}, nil
 }
 

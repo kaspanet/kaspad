@@ -5,7 +5,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_InvTransactions) toWireMessage() (*wire.MsgInvTransaction, error) {
+func (x *KaspadMessage_InvTransactions) toWireMessage() (wire.Message, error) {
 	if len(x.InvTransactions.Ids) > wire.MaxInvPerTxInvMsg {
 		return nil, errors.Errorf("too many hashes for message "+
 			"[count %d, max %d]", len(x.InvTransactions.Ids), wire.MaxInvPerTxInvMsg)

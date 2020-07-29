@@ -5,7 +5,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_Addresses) toWireMessage() (*wire.MsgAddresses, error) {
+func (x *KaspadMessage_Addresses) toWireMessage() (wire.Message, error) {
 	protoAddresses := x.Addresses
 	if len(x.Addresses.AddressList) > wire.MaxAddressesPerMsg {
 		return nil, errors.Errorf("too many addresses for message "+

@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_Block) toWireMessage() (*wire.MsgBlock, error) {
+func (x *KaspadMessage_Block) toWireMessage() (wire.Message, error) {
 	return x.Block.toWireMessage()
 }
 
@@ -15,7 +15,7 @@ func (x *KaspadMessage_Block) fromWireMessage(msgBlock *wire.MsgBlock) error {
 	return x.Block.fromWireMessage(msgBlock)
 }
 
-func (x *BlockMessage) toWireMessage() (*wire.MsgBlock, error) {
+func (x *BlockMessage) toWireMessage() (wire.Message, error) {
 	if len(x.Transactions) > wire.MaxTxPerBlock {
 		return nil, errors.Errorf("too many transactions to fit into a block "+
 			"[count %d, max %d]", len(x.Transactions), wire.MaxTxPerBlock)
@@ -55,10 +55,11 @@ func (x *BlockMessage) toWireMessage() (*wire.MsgBlock, error) {
 
 	transactions := make([]*wire.MsgTx, len(x.Transactions))
 	for i, protoTx := range x.Transactions {
-		transactions[i], err = protoTx.toWireMessage()
+		msgTx, err := protoTx.toWireMessage()
 		if err != nil {
 			return nil, err
 		}
+		transactions[i] = msgTx.(*wire.MsgTx)
 	}
 
 	return &wire.MsgBlock{

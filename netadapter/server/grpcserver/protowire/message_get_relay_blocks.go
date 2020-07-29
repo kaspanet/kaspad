@@ -5,7 +5,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_GetRelayBlocks) toWireMessage() (*wire.MsgGetRelayBlocks, error) {
+func (x *KaspadMessage_GetRelayBlocks) toWireMessage() (wire.Message, error) {
 	if len(x.GetRelayBlocks.Hashes) > wire.MsgGetRelayBlocksHashes {
 		return nil, errors.Errorf("too many hashes for message "+
 			"[count %d, max %d]", len(x.GetRelayBlocks.Hashes), wire.MsgGetRelayBlocksHashes)

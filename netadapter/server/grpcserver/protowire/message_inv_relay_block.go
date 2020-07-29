@@ -2,7 +2,7 @@ package protowire
 
 import "github.com/kaspanet/kaspad/wire"
 
-func (x *KaspadMessage_InvRelayBlock) toWireMessage() (*wire.MsgInvRelayBlock, error) {
+func (x *KaspadMessage_InvRelayBlock) toWireMessage() (wire.Message, error) {
 	hash, err := x.InvRelayBlock.Hash.toWire()
 	if err != nil {
 		return nil, err

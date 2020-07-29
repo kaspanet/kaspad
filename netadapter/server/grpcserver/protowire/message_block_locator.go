@@ -5,7 +5,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_BlockLocator) toWireMessage() (*wire.MsgBlockLocator, error) {
+func (x *KaspadMessage_BlockLocator) toWireMessage() (wire.Message, error) {
 	if len(x.BlockLocator.Hashes) > wire.MaxBlockLocatorsPerMsg {
 		return nil, errors.Errorf("too many block locator hashes for message "+
 			"[count %d, max %d]", len(x.BlockLocator.Hashes), wire.MaxBlockLocatorsPerMsg)

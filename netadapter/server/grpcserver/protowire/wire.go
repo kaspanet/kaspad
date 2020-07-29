@@ -5,46 +5,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+type converter interface {
+	toWireMessage() (wire.Message, error)
+}
+
 // ToWireMessage converts a KaspadMessage to its wire.Message representation
 func (x *KaspadMessage) ToWireMessage() (wire.Message, error) {
-	switch payload := x.Payload.(type) {
-	case *KaspadMessage_Addresses:
-		return payload.toWireMessage()
-	case *KaspadMessage_Block:
-		return payload.toWireMessage()
-	case *KaspadMessage_BlockLocator:
-		return payload.toWireMessage()
-	case *KaspadMessage_GetAddresses_:
-		return payload.toWireMessage()
-	case *KaspadMessage_GetBlocks:
-		return payload.toWireMessage()
-	case *KaspadMessage_GetRelayBlocks:
-		return payload.toWireMessage()
-	case *KaspadMessage_GetSelectedTip:
-		return payload.toWireMessage()
-	case *KaspadMessage_GetTransactions:
-		return payload.toWireMessage()
-	case *KaspadMessage_IbdBlock:
-		return payload.toWireMessage()
-	case *KaspadMessage_InvRelayBlock:
-		return payload.toWireMessage()
-	case *KaspadMessage_InvTransactions:
-		return payload.toWireMessage()
-	case *KaspadMessage_Ping:
-		return payload.toWireMessage()
-	case *KaspadMessage_Pong:
-		return payload.toWireMessage()
-	case *KaspadMessage_SelectedTip_:
-		return payload.toWireMessage()
-	case *KaspadMessage_Transaction:
-		return payload.toWireMessage()
-	case *KaspadMessage_Verack:
-		return payload.toWireMessage()
-	case *KaspadMessage_Version:
-		return payload.toWireMessage()
-	default:
-		return nil, errors.Errorf("unknown payload type %T", payload)
-	}
+	return x.Payload.(converter).toWireMessage()
 }
 
 // FromWireMessage creates a KaspadMessage from a wire.Message

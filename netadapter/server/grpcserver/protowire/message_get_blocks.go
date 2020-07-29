@@ -2,7 +2,7 @@ package protowire
 
 import "github.com/kaspanet/kaspad/wire"
 
-func (x *KaspadMessage_GetBlocks) toWireMessage() (*wire.MsgGetBlocks, error) {
+func (x *KaspadMessage_GetBlocks) toWireMessage() (wire.Message, error) {
 	lowHash, err := x.GetBlocks.LowHash.toWire()
 	if err != nil {
 		return nil, err
