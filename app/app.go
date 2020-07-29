@@ -230,8 +230,8 @@ func setupRPC(cfg *config.Config,
 	return nil, nil
 }
 
-// ID returns the network ID associated with this App
-func (a *App) ID() *id.ID {
+// P2PNodeID returns the network ID associated with this App
+func (a *App) P2PNodeID() *id.ID {
 	return a.netAdapter.ID()
 }
 
