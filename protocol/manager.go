@@ -87,7 +87,7 @@ func (m *Manager) AddBlock(block *util.Block, flags blockdag.BehaviorFlags) erro
 	return nil
 }
 
-func (m *Manager) startFlows(flows []*flow, peer *peerpkg.Peer, errChan <-chan error) error {
+func (m *Manager) runFlows(flows []*flow, peer *peerpkg.Peer, errChan <-chan error) error {
 	for _, flow := range flows {
 		executeFunc := flow.executeFunc // extract to new variable so that it's not overwritten
 		spawn(fmt.Sprintf("flow-%s", flow.name), func() {
