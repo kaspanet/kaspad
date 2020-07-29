@@ -129,7 +129,7 @@ func newKaspad(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, in
 		return nil, err
 	}
 
-	protocolManager, err := protocol.NewManager(cfg, dag, addressManager, txMempool, connectionManager)
+	protocolManager, err := protocol.NewManager(cfg, dag, netAdapter, addressManager, txMempool, connectionManager)
 	if err != nil {
 		return nil, err
 	}
