@@ -1,4 +1,3 @@
-package integration
 
 import (
 	"math/rand"
