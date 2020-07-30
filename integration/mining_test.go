@@ -27,7 +27,7 @@ func solveBlock(block *util.Block) *wire.MsgBlock {
 }
 
 func requestAndSolveTemplate(t *testing.T, harness *appHarness) *util.Block {
-	blockTemplate, err := harness.rpcClient.GetBlockTemplate(testAddress1, "")
+	blockTemplate, err := harness.rpcClient.GetBlockTemplate(harness.minigAddress, "")
 	if err != nil {
 		t.Fatalf("Error getting block template: %+v", err)
 	}
@@ -38,6 +38,11 @@ func requestAndSolveTemplate(t *testing.T, harness *appHarness) *util.Block {
 	}
 
 	solveBlock(block)
+
+	err = harness.rpcClient.SubmitBlock(block, nil)
+	if err != nil {
+		t.Fatalf("Error submitting block: %s", err)
+	}
 
 	return block
 }

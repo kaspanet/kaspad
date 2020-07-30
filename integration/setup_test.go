@@ -14,18 +14,27 @@ type appHarness struct {
 	rpcClient       *rpcClient
 	p2pAddress      string
 	rpcAddress      string
+	minigAddress    string
+	minigAddressPK  string
 	config          *config.Config
 	databaseContext *dbaccess.DatabaseContext
 }
 
 type harnessParams struct {
-	p2pAddress string
-	rpcAddress string
+	p2pAddress      string
+	rpcAddress      string
+	miningAddress   string
+	miningAddressPK string
 }
 
 // setupHarness creates a single appHarness with given parameters
 func setupHarness(t *testing.T, params *harnessParams) (harness *appHarness, teardownFunc func()) {
-	harness = &appHarness{p2pAddress: params.p2pAddress, rpcAddress: params.rpcAddress}
+	harness = &appHarness{
+		p2pAddress:     params.p2pAddress,
+		rpcAddress:     params.rpcAddress,
+		minigAddress:   params.miningAddress,
+		minigAddressPK: params.miningAddressPK,
+	}
 
 	setConfig(t, harness)
 	setDatabaseContext(t, harness)
@@ -57,9 +66,9 @@ func setupHarnesses(t *testing.T, harnessesParams []*harnessParams) (harnesses [
 // standardSetup creates a standard setup of 3 appHarnesses that should work for most tests
 func standardSetup(t *testing.T) (appHarness1, appHarness2, appHarness3 *appHarness, teardownFunc func()) {
 	harnesses, teardown := setupHarnesses(t, []*harnessParams{
-		{p2pAddress: p2pAddress1, rpcAddress: rpcAddress1},
-		{p2pAddress: p2pAddress2, rpcAddress: rpcAddress2},
-		{p2pAddress: p2pAddress3, rpcAddress: rpcAddress3},
+		{p2pAddress: p2pAddress1, rpcAddress: rpcAddress1, miningAddress: miningAddress1},
+		{p2pAddress: p2pAddress2, rpcAddress: rpcAddress2, miningAddress: miningAddress2},
+		{p2pAddress: p2pAddress3, rpcAddress: rpcAddress3, miningAddress: miningAddress3},
 	})
 
 	return harnesses[0], harnesses[1], harnesses[2], teardown

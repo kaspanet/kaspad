@@ -16,8 +16,6 @@ func TestIntegrationBasicSync(t *testing.T) {
 	connect(t, appHarness1, appHarness2)
 	connect(t, appHarness2, appHarness3)
 
-	block := requestAndSolveTemplate(t, appHarness1)
-
 	app2OnBlockAddedChan := make(chan *wire.BlockHeader)
 	SetOnBlockAddedHandler(t, appHarness2, func(header *wire.BlockHeader) {
 		app2OnBlockAddedChan <- header
@@ -28,10 +26,7 @@ func TestIntegrationBasicSync(t *testing.T) {
 		app3OnBlockAddedChan <- header
 	})
 
-	err := appHarness1.rpcClient.SubmitBlock(block, nil)
-	if err != nil {
-		t.Fatalf("Error submitting block: %s", err)
-	}
+	block := requestAndSolveTemplate(t, appHarness1)
 
 	var header *wire.BlockHeader
 	select {
