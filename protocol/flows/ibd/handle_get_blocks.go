@@ -8,7 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-const ibdBatchSize = 80
+const ibdBatchSize = router.DefaultMaxMessages
 
 // GetBlocksContext is the interface for the context needed for the HandleGetBlocks flow.
 type GetBlocksContext interface {
@@ -48,18 +48,21 @@ func (flow *handleGetBlocksFlow) start() error {
 				end = len(msgIBDBlocks)
 			}
 
-			err = flow.sendMsgIBDBlocks(msgIBDBlocks[offset:end])
+			blocksToSend := msgIBDBlocks[offset:end]
+			err = flow.sendMsgIBDBlocks(blocksToSend)
 			if err != nil {
 				return nil
+			}
+
+			// Exit the loop and don't wait for the GetNextIBDBlocks message if the last batch was
+			// less than ibdBatchSize.
+			if len(blocksToSend)%ibdBatchSize == 0 {
+				break
 			}
 
 			message, err := flow.incomingRoute.Dequeue()
 			if err != nil {
 				return err
-			}
-
-			if end > len(msgIBDBlocks) {
-				break
 			}
 
 			if _, ok := message.(*wire.MsgGetNextIBDBlocks); !ok {
