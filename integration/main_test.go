@@ -8,7 +8,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	logger.SetLogLevels("trace") // TODO: Set back to debug
+	logger.SetLogLevels("debug")
 
 	os.Exit(m.Run())
 }
