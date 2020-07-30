@@ -6,9 +6,9 @@ import (
 )
 
 func (x *KaspadMessage_RequestRelayBlocks) toWireMessage() (wire.Message, error) {
-	if len(x.RequestRelayBlocks.Hashes) > wire.MsgGetRelayBlocksHashes {
+	if len(x.RequestRelayBlocks.Hashes) > wire.MsgRequestRelayBlocksHashes {
 		return nil, errors.Errorf("too many hashes for message "+
-			"[count %d, max %d]", len(x.RequestRelayBlocks.Hashes), wire.MsgGetRelayBlocksHashes)
+			"[count %d, max %d]", len(x.RequestRelayBlocks.Hashes), wire.MsgRequestRelayBlocksHashes)
 	}
 	hashes, err := protoHashesToWire(x.RequestRelayBlocks.Hashes)
 	if err != nil {
@@ -18,9 +18,9 @@ func (x *KaspadMessage_RequestRelayBlocks) toWireMessage() (wire.Message, error)
 }
 
 func (x *KaspadMessage_RequestRelayBlocks) fromWireMessage(msgGetRelayBlocks *wire.MsgRequestRelayBlocks) error {
-	if len(msgGetRelayBlocks.Hashes) > wire.MsgGetRelayBlocksHashes {
+	if len(msgGetRelayBlocks.Hashes) > wire.MsgRequestRelayBlocksHashes {
 		return errors.Errorf("too many hashes for message "+
-			"[count %d, max %d]", len(msgGetRelayBlocks.Hashes), wire.MsgGetRelayBlocksHashes)
+			"[count %d, max %d]", len(msgGetRelayBlocks.Hashes), wire.MsgRequestRelayBlocksHashes)
 	}
 
 	x.RequestRelayBlocks = &RequestRelayBlocksMessage{

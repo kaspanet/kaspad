@@ -4,9 +4,9 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// MaxInvPerGetTransactionsMsg is the maximum number of hashes that can
+// MaxInvPerRequestTransactionsMsg is the maximum number of hashes that can
 // be in a single CmdInvTransaction message.
-const MaxInvPerGetTransactionsMsg = MaxInvPerMsg
+const MaxInvPerRequestTransactionsMsg = MaxInvPerMsg
 
 // MsgRequestTransactions implements the Message interface and represents a kaspa
 // RequestTransactions message. It is used to request transactions as part of the

@@ -6,9 +6,9 @@ import (
 )
 
 func (x *KaspadMessage_RequestTransactions) toWireMessage() (wire.Message, error) {
-	if len(x.RequestTransactions.Ids) > wire.MaxInvPerGetTransactionsMsg {
+	if len(x.RequestTransactions.Ids) > wire.MaxInvPerRequestTransactionsMsg {
 		return nil, errors.Errorf("too many hashes for message "+
-			"[count %d, max %d]", len(x.RequestTransactions.Ids), wire.MaxInvPerGetTransactionsMsg)
+			"[count %d, max %d]", len(x.RequestTransactions.Ids), wire.MaxInvPerRequestTransactionsMsg)
 	}
 
 	ids, err := protoTransactionIDsToWire(x.RequestTransactions.Ids)
@@ -19,9 +19,9 @@ func (x *KaspadMessage_RequestTransactions) toWireMessage() (wire.Message, error
 }
 
 func (x *KaspadMessage_RequestTransactions) fromWireMessage(msgGetTransactions *wire.MsgRequestTransactions) error {
-	if len(x.RequestTransactions.Ids) > wire.MaxInvPerGetTransactionsMsg {
+	if len(x.RequestTransactions.Ids) > wire.MaxInvPerRequestTransactionsMsg {
 		return errors.Errorf("too many hashes for message "+
-			"[count %d, max %d]", len(x.RequestTransactions.Ids), wire.MaxInvPerGetTransactionsMsg)
+			"[count %d, max %d]", len(x.RequestTransactions.Ids), wire.MaxInvPerRequestTransactionsMsg)
 	}
 
 	x.RequestTransactions = &RequestTransactionsMessage{
