@@ -30,7 +30,7 @@ func TestPongLatest(t *testing.T) {
 	}
 
 	// Ensure the command is expected value.
-	wantCmd := MessageCommand(11)
+	wantCmd := MessageCommand(8)
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgPong: wrong command - got %v want %v",
 			cmd, wantCmd)

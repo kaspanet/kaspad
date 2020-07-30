@@ -30,19 +30,19 @@ const (
 	CmdRequestAddresses    MessageCommand = 2
 	CmdAddresses           MessageCommand = 3
 	CmdRequestIBDBlocks    MessageCommand = 4
-	CmdBlock               MessageCommand = 8
-	CmdTx                  MessageCommand = 9
-	CmdPing                MessageCommand = 10
-	CmdPong                MessageCommand = 11
-	CmdRequestBlockLocator MessageCommand = 18
-	CmdBlockLocator        MessageCommand = 19
-	CmdSelectedTip         MessageCommand = 20
-	CmdRequestSelectedTip  MessageCommand = 21
-	CmdInvRelayBlock       MessageCommand = 22
-	CmdRequestRelayBlocks  MessageCommand = 23
-	CmdInvTransaction      MessageCommand = 25
-	CmdRequestTransactions MessageCommand = 26
-	CmdIBDBlock            MessageCommand = 27
+	CmdBlock               MessageCommand = 5
+	CmdTx                  MessageCommand = 6
+	CmdPing                MessageCommand = 7
+	CmdPong                MessageCommand = 8
+	CmdRequestBlockLocator MessageCommand = 9
+	CmdBlockLocator        MessageCommand = 10
+	CmdSelectedTip         MessageCommand = 11
+	CmdRequestSelectedTip  MessageCommand = 12
+	CmdInvRelayBlock       MessageCommand = 13
+	CmdRequestRelayBlocks  MessageCommand = 14
+	CmdInvTransaction      MessageCommand = 15
+	CmdRequestTransactions MessageCommand = 16
+	CmdIBDBlock            MessageCommand = 17
 )
 
 var messageCommandToString = map[MessageCommand]string{

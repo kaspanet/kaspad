@@ -17,7 +17,7 @@ func TestGetSelectedTip(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Ensure the command is expected value.
-	wantCmd := MessageCommand(21)
+	wantCmd := MessageCommand(12)
 	msg := NewMsgGetSelectedTip()
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgGetSelectedTip: wrong command - got %v want %v",

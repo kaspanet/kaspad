@@ -31,7 +31,7 @@ func TestPing(t *testing.T) {
 	}
 
 	// Ensure the command is expected value.
-	wantCmd := MessageCommand(10)
+	wantCmd := MessageCommand(7)
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgPing: wrong command - got %v want %v",
 			cmd, wantCmd)

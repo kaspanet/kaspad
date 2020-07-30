@@ -14,7 +14,7 @@ func TestSelectedTip(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Ensure the command is expected value.
-	wantCmd := MessageCommand(20)
+	wantCmd := MessageCommand(11)
 	msg := NewMsgSelectedTip(&daghash.ZeroHash)
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgSelectedTip: wrong command - got %v want %v",

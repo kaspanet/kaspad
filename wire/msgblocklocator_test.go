@@ -24,7 +24,7 @@ func TestBlockLocator(t *testing.T) {
 	msg := NewMsgBlockLocator([]*daghash.Hash{locatorHash})
 
 	// Ensure the command is expected value.
-	wantCmd := MessageCommand(19)
+	wantCmd := MessageCommand(10)
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgBlockLocator: wrong command - got %v want %v",
 			cmd, wantCmd)
