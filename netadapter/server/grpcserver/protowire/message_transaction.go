@@ -6,7 +6,7 @@ import (
 )
 
 func (x *KaspadMessage_Transaction) toWireMessage() (wire.Message, error) {
-	return x.toWireMessage()
+	return x.Transaction.toWireMessage()
 }
 
 func (x *KaspadMessage_Transaction) fromWireMessage(msgTx *wire.MsgTx) error {
