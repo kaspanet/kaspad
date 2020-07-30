@@ -1,7 +1,6 @@
 package protowire
 
 import (
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
@@ -40,7 +39,7 @@ func (x *TransactionMessage) toWireMessage() (wire.Message, error) {
 		return nil, errors.New("transaction subnetwork field cannot be nil")
 	}
 
-	subnetworkID, err := subnetworkid.New(x.SubnetworkID.Bytes)
+	subnetworkID, err := x.SubnetworkID.toWire()
 	if err != nil {
 		return nil, err
 	}

@@ -22,6 +22,10 @@ func (x *BlockMessage) toWireMessage() (wire.Message, error) {
 	}
 
 	protoBlockHeader := x.Header
+	if protoBlockHeader == nil {
+		return nil, errors.New("block header field cannot be nil")
+	}
+
 	parentHashes, err := protoHashesToWire(protoBlockHeader.ParentHashes)
 	if err != nil {
 		return nil, err
