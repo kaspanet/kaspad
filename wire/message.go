@@ -36,65 +36,69 @@ func (cmd MessageCommand) String() string {
 
 // Commands used in kaspa message headers which describe the type of message.
 const (
-	CmdVersion         MessageCommand = 0
-	CmdVerAck          MessageCommand = 1
-	CmdGetAddresses    MessageCommand = 2
-	CmdAddress         MessageCommand = 3
-	CmdGetBlocks       MessageCommand = 4
-	CmdInv             MessageCommand = 5
-	CmdGetData         MessageCommand = 6
-	CmdNotFound        MessageCommand = 7
-	CmdBlock           MessageCommand = 8
-	CmdTx              MessageCommand = 9
-	CmdPing            MessageCommand = 10
-	CmdPong            MessageCommand = 11
-	CmdFilterAdd       MessageCommand = 12
-	CmdFilterClear     MessageCommand = 13
-	CmdFilterLoad      MessageCommand = 14
-	CmdMerkleBlock     MessageCommand = 15
-	CmdReject          MessageCommand = 16
-	CmdFeeFilter       MessageCommand = 17
-	CmdGetBlockLocator MessageCommand = 18
-	CmdBlockLocator    MessageCommand = 19
-	CmdSelectedTip     MessageCommand = 20
-	CmdGetSelectedTip  MessageCommand = 21
-	CmdInvRelayBlock   MessageCommand = 22
-	CmdGetRelayBlocks  MessageCommand = 23
-	CmdRejectMalformed MessageCommand = 24 // Used only for reject message
-	CmdInvTransaction  MessageCommand = 25
-	CmdGetTransactions MessageCommand = 26
-	CmdIBDBlock        MessageCommand = 27
+	CmdVersion          MessageCommand = 0
+	CmdVerAck           MessageCommand = 1
+	CmdGetAddresses     MessageCommand = 2
+	CmdAddress          MessageCommand = 3
+	CmdGetBlocks        MessageCommand = 4
+	CmdInv              MessageCommand = 5
+	CmdGetData          MessageCommand = 6
+	CmdNotFound         MessageCommand = 7
+	CmdBlock            MessageCommand = 8
+	CmdTx               MessageCommand = 9
+	CmdPing             MessageCommand = 10
+	CmdPong             MessageCommand = 11
+	CmdFilterAdd        MessageCommand = 12
+	CmdFilterClear      MessageCommand = 13
+	CmdFilterLoad       MessageCommand = 14
+	CmdMerkleBlock      MessageCommand = 15
+	CmdReject           MessageCommand = 16
+	CmdFeeFilter        MessageCommand = 17
+	CmdGetBlockLocator  MessageCommand = 18
+	CmdBlockLocator     MessageCommand = 19
+	CmdSelectedTip      MessageCommand = 20
+	CmdGetSelectedTip   MessageCommand = 21
+	CmdInvRelayBlock    MessageCommand = 22
+	CmdGetRelayBlocks   MessageCommand = 23
+	CmdRejectMalformed  MessageCommand = 24 // Used only for reject message
+	CmdInvTransaction   MessageCommand = 25
+	CmdGetTransactions  MessageCommand = 26
+	CmdIBDBlock         MessageCommand = 27
+	CmdGetNextIBDBlocks MessageCommand = 28
+	CmdDoneIBDBlocks    MessageCommand = 29
 )
 
 var messageCommandToString = map[MessageCommand]string{
-	CmdVersion:         "Version",
-	CmdVerAck:          "VerAck",
-	CmdGetAddresses:    "GetAddress",
-	CmdAddress:         "Address",
-	CmdGetBlocks:       "GetBlocks",
-	CmdInv:             "Inv",
-	CmdGetData:         "GetData",
-	CmdNotFound:        "NotFound",
-	CmdBlock:           "Block",
-	CmdTx:              "Tx",
-	CmdPing:            "Ping",
-	CmdPong:            "Pong",
-	CmdFilterAdd:       "FilterAdd",
-	CmdFilterClear:     "FilterClear",
-	CmdFilterLoad:      "FilterLoad",
-	CmdMerkleBlock:     "MerkleBlock",
-	CmdReject:          "Reject",
-	CmdFeeFilter:       "FeeFilter",
-	CmdGetBlockLocator: "GetBlockLocator",
-	CmdBlockLocator:    "BlockLocator",
-	CmdSelectedTip:     "SelectedTip",
-	CmdGetSelectedTip:  "GetSelectedTip",
-	CmdInvRelayBlock:   "InvRelayBlock",
-	CmdGetRelayBlocks:  "GetRelayBlocks",
-	CmdRejectMalformed: "RejectMalformed",
-	CmdInvTransaction:  "InvTransaction",
-	CmdGetTransactions: "GetTransactions",
-	CmdIBDBlock:        "IBDBlock",
+	CmdVersion:          "Version",
+	CmdVerAck:           "VerAck",
+	CmdGetAddresses:     "GetAddress",
+	CmdAddress:          "Address",
+	CmdGetBlocks:        "GetBlocks",
+	CmdInv:              "Inv",
+	CmdGetData:          "GetData",
+	CmdNotFound:         "NotFound",
+	CmdBlock:            "Block",
+	CmdTx:               "Tx",
+	CmdPing:             "Ping",
+	CmdPong:             "Pong",
+	CmdFilterAdd:        "FilterAdd",
+	CmdFilterClear:      "FilterClear",
+	CmdFilterLoad:       "FilterLoad",
+	CmdMerkleBlock:      "MerkleBlock",
+	CmdReject:           "Reject",
+	CmdFeeFilter:        "FeeFilter",
+	CmdGetBlockLocator:  "GetBlockLocator",
+	CmdBlockLocator:     "BlockLocator",
+	CmdSelectedTip:      "SelectedTip",
+	CmdGetSelectedTip:   "GetSelectedTip",
+	CmdInvRelayBlock:    "InvRelayBlock",
+	CmdGetRelayBlocks:   "GetRelayBlocks",
+	CmdRejectMalformed:  "RejectMalformed",
+	CmdInvTransaction:   "InvTransaction",
+	CmdGetTransactions:  "GetTransactions",
+	CmdIBDBlock:         "IBDBlock",
+	CmdGetNextIBDBlocks: "GetNextIBDBlocks",
+	CmdDoneIBDBlocks:    "DoneIBDBlocks",
 }
 
 // Message is an interface that describes a kaspa message. A type that
@@ -187,6 +191,12 @@ func MakeEmptyMessage(command MessageCommand) (Message, error) {
 
 	case CmdGetRelayBlocks:
 		msg = &MsgGetRelayBlocks{}
+
+	case CmdGetNextIBDBlocks:
+		msg = &MsgGetNextIBDBlocks{}
+
+	case CmdDoneIBDBlocks:
+		msg = &MsgDoneIBDBlocks{}
 
 	default:
 		return nil, errors.Errorf("unhandled command [%s]", command)

@@ -3,9 +3,12 @@ package ibd
 import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/netadapter/router"
+	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
+
+const ibdBatchSize = 80
 
 // GetBlocksContext is the interface for the context needed for the HandleGetBlocks flow.
 type GetBlocksContext interface {
@@ -39,9 +42,34 @@ func (flow *handleGetBlocksFlow) start() error {
 			return err
 		}
 
-		err = flow.sendMsgIBDBlocks(msgIBDBlocks)
+		for offset := 0; offset < len(msgIBDBlocks); offset += ibdBatchSize {
+			end := offset + ibdBatchSize
+			if end > len(msgIBDBlocks) {
+				end = len(msgIBDBlocks)
+			}
+
+			err = flow.sendMsgIBDBlocks(msgIBDBlocks[offset:end])
+			if err != nil {
+				return nil
+			}
+
+			message, err := flow.incomingRoute.Dequeue()
+			if err != nil {
+				return err
+			}
+
+			if end > len(msgIBDBlocks) {
+				break
+			}
+
+			if _, ok := message.(*wire.MsgGetNextIBDBlocks); !ok {
+				return protocolerrors.Errorf(true, "received unexpected message type. "+
+					"expected: %s, got: %s", wire.CmdGetNextIBDBlocks, message.Command())
+			}
+		}
+		err = flow.outgoingRoute.Enqueue(wire.NewMsgDoneIBDBlocks())
 		if err != nil {
-			return nil
+			return err
 		}
 	}
 }
