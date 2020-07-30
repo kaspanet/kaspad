@@ -4,12 +4,14 @@ import (
 	"math/rand"
 	"testing"
 
+	clientpkg "github.com/kaspanet/kaspad/rpc/client"
+
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 )
 
-func solveBlock(t *testing.T, block *util.Block) *wire.MsgBlock {
+func solveBlock(block *util.Block) *wire.MsgBlock {
 	msgBlock := block.MsgBlock()
 	targetDifficulty := util.CompactToBig(msgBlock.Header.Bits)
 	initialNonce := rand.Uint64()
@@ -22,4 +24,20 @@ func solveBlock(t *testing.T, block *util.Block) *wire.MsgBlock {
 	}
 
 	panic("Failed to solve block! This should never happen")
+}
+
+func requestAndSolveTemplate(t *testing.T, harness *appHarness) *util.Block {
+	blockTemplate, err := harness.rpcClient.GetBlockTemplate(testAddress1, "")
+	if err != nil {
+		t.Fatalf("Error getting block template: %+v", err)
+	}
+
+	block, err := clientpkg.ConvertGetBlockTemplateResultToBlock(blockTemplate)
+	if err != nil {
+		t.Fatalf("Error parsing blockTemplate: %s", err)
+	}
+
+	solveBlock(block)
+
+	return block
 }
