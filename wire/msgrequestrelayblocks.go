@@ -21,9 +21,9 @@ func (msg *MsgRequestRelayBlocks) Command() MessageCommand {
 	return CmdRequestRelayBlocks
 }
 
-// NewMsgGetRelayBlocks returns a new kaspa RequestRelayBlocks message that conforms to
+// NewMsgRequestRelayBlocks returns a new kaspa RequestRelayBlocks message that conforms to
 // the Message interface. See MsgRequestRelayBlocks for details.
-func NewMsgGetRelayBlocks(hashes []*daghash.Hash) *MsgRequestRelayBlocks {
+func NewMsgRequestRelayBlocks(hashes []*daghash.Hash) *MsgRequestRelayBlocks {
 	return &MsgRequestRelayBlocks{
 		Hashes: hashes,
 	}

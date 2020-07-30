@@ -25,7 +25,7 @@ func ReceiveAddresses(context ReceiveAddressesContext, incomingRoute *router.Rou
 	}
 
 	subnetworkID := peer.SubnetworkID()
-	msgGetAddresses := wire.NewMsgGetAddresses(false, subnetworkID)
+	msgGetAddresses := wire.NewMsgRequestAddresses(false, subnetworkID)
 	err := outgoingRoute.Enqueue(msgGetAddresses)
 	if err != nil {
 		return err

@@ -12,9 +12,9 @@ import (
 func TestGetSelectedTip(t *testing.T) {
 	// Ensure the command is expected value.
 	wantCmd := MessageCommand(12)
-	msg := NewMsgGetSelectedTip()
+	msg := NewMsgRequestSelectedTip()
 	if cmd := msg.Command(); cmd != wantCmd {
-		t.Errorf("NewMsgGetSelectedTip: wrong command - got %v want %v",
+		t.Errorf("NewMsgRequestSelectedTip: wrong command - got %v want %v",
 			cmd, wantCmd)
 	}
 }

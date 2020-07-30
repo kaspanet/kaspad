@@ -12,8 +12,8 @@ func (msg *MsgRequestSelectedTip) Command() MessageCommand {
 	return CmdRequestSelectedTip
 }
 
-// NewMsgGetSelectedTip returns a new kaspa RequestSelectedTip message that conforms to the
+// NewMsgRequestSelectedTip returns a new kaspa RequestSelectedTip message that conforms to the
 // Message interface.
-func NewMsgGetSelectedTip() *MsgRequestSelectedTip {
+func NewMsgRequestSelectedTip() *MsgRequestSelectedTip {
 	return &MsgRequestSelectedTip{}
 }

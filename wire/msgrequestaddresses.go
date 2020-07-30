@@ -25,9 +25,9 @@ func (msg *MsgRequestAddresses) Command() MessageCommand {
 	return CmdRequestAddresses
 }
 
-// NewMsgGetAddresses returns a new kaspa getaddr message that conforms to the
+// NewMsgRequestAddresses returns a new kaspa RequestAddresses message that conforms to the
 // Message interface. See MsgRequestAddresses for details.
-func NewMsgGetAddresses(includeAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID) *MsgRequestAddresses {
+func NewMsgRequestAddresses(includeAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID) *MsgRequestAddresses {
 	return &MsgRequestAddresses{
 		IncludeAllSubnetworks: includeAllSubnetworks,
 		SubnetworkID:          subnetworkID,

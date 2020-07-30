@@ -19,10 +19,10 @@ func (msg *MsgRequestBlockLocator) Command() MessageCommand {
 	return CmdRequestBlockLocator
 }
 
-// NewMsgGetBlockLocator returns a new getlocator message that conforms to the
+// NewMsgRequestBlockLocator returns a new RequestBlockLocator message that conforms to the
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
-func NewMsgGetBlockLocator(highHash, lowHash *daghash.Hash) *MsgRequestBlockLocator {
+func NewMsgRequestBlockLocator(highHash, lowHash *daghash.Hash) *MsgRequestBlockLocator {
 	return &MsgRequestBlockLocator{
 		HighHash: highHash,
 		LowHash:  lowHash,

@@ -78,7 +78,7 @@ func (flow *handleRelayedTransactionsFlow) requestInvTransactions(
 		return idsToRequest, nil
 	}
 
-	msgGetTransactions := wire.NewMsgGetTransactions(idsToRequest)
+	msgGetTransactions := wire.NewMsgRequestTransactions(idsToRequest)
 	err = flow.outgoingRoute.Enqueue(msgGetTransactions)
 	if err != nil {
 		flow.SharedRequestedTransactions().removeMany(idsToRequest)

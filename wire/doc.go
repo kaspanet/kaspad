@@ -113,7 +113,7 @@ a remote node running a kaspa peer. Example syntax to request addresses
 from a remote peer is:
 
 	// Create a new getaddr kaspa message.
-	msg := wire.NewMsgGetAddresses()
+	msg := wire.NewMsgRequestAddresses()
 
 	// Writes a kaspa message msg to conn using the protocol version
 	// pver, and the kaspa network kaspaNet. The return is a possible

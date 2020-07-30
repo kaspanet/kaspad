@@ -127,7 +127,7 @@ func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) err
 	// clean from any pending blocks.
 	defer flow.SharedRequestedBlocks().removeSet(pendingBlocks)
 
-	getRelayBlocksMsg := wire.NewMsgGetRelayBlocks(filteredHashesToRequest)
+	getRelayBlocksMsg := wire.NewMsgRequestRelayBlocks(filteredHashesToRequest)
 	err := flow.outgoingRoute.Enqueue(getRelayBlocksMsg)
 	if err != nil {
 		return err

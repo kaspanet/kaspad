@@ -96,7 +96,7 @@ func (flow *handleIBDFlow) findHighestSharedBlockHash(peerSelectedTipHash *dagha
 
 func (flow *handleIBDFlow) sendGetBlockLocator(lowHash *daghash.Hash, highHash *daghash.Hash) error {
 
-	msgGetBlockLocator := wire.NewMsgGetBlockLocator(highHash, lowHash)
+	msgGetBlockLocator := wire.NewMsgRequestBlockLocator(highHash, lowHash)
 	return flow.outgoingRoute.Enqueue(msgGetBlockLocator)
 }
 

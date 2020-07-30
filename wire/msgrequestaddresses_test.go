@@ -12,9 +12,9 @@ import (
 func TestGetAddresses(t *testing.T) {
 	// Ensure the command is expected value.
 	wantCmd := MessageCommand(2)
-	msg := NewMsgGetAddresses(false, nil)
+	msg := NewMsgRequestAddresses(false, nil)
 	if cmd := msg.Command(); cmd != wantCmd {
-		t.Errorf("NewMsgGetAddresses: wrong command - got %v want %v",
+		t.Errorf("NewMsgRequestAddresses: wrong command - got %v want %v",
 			cmd, wantCmd)
 	}
 }

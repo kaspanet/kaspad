@@ -21,9 +21,9 @@ func (msg *MsgRequestTransactions) Command() MessageCommand {
 	return CmdRequestTransactions
 }
 
-// NewMsgGetTransactions returns a new kaspa RequestTransactions message that conforms to
+// NewMsgRequestTransactions returns a new kaspa RequestTransactions message that conforms to
 // the Message interface. See MsgRequestTransactions for details.
-func NewMsgGetTransactions(ids []*daghash.TxID) *MsgRequestTransactions {
+func NewMsgRequestTransactions(ids []*daghash.TxID) *MsgRequestTransactions {
 	return &MsgRequestTransactions{
 		IDs: ids,
 	}
