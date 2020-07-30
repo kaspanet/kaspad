@@ -1,7 +1,6 @@
 package protowire
 
 import (
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
@@ -29,6 +28,14 @@ func (x *TransactionMessage) toWireMessage() (wire.Message, error) {
 		inputs[i] = wire.NewTxIn(outpoint, protoInput.SignatureScript)
 	}
 
+	outputs := make([]*wire.TxOut, len(x.Outputs))
+	for i, protoOutput := range x.Outputs {
+		outputs[i] = &wire.TxOut{
+			Value:        protoOutput.Value,
+			ScriptPubKey: protoOutput.ScriptPubKey,
+		}
+	}
+
 	if x.SubnetworkID == nil {
 		return nil, errors.New("transaction subnetwork field cannot be nil")
 	}
@@ -38,7 +45,7 @@ func (x *TransactionMessage) toWireMessage() (wire.Message, error) {
 		return nil, err
 	}
 
-	payloadHash, err := daghash.NewHash(x.PayloadHash.Bytes)
+	payloadHash, err := x.PayloadHash.toWire()
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +53,7 @@ func (x *TransactionMessage) toWireMessage() (wire.Message, error) {
 	return &wire.MsgTx{
 		Version:      x.Version,
 		TxIn:         inputs,
-		TxOut:        nil,
+		TxOut:        outputs,
 		LockTime:     x.LockTime,
 		SubnetworkID: *subnetworkID,
 		Gas:          x.Gas,
