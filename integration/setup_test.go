@@ -14,8 +14,8 @@ type appHarness struct {
 	rpcClient       *rpcClient
 	p2pAddress      string
 	rpcAddress      string
-	minigAddress    string
-	minigAddressPK  string
+	miningAddress   string
+	miningAddressPK string
 	config          *config.Config
 	databaseContext *dbaccess.DatabaseContext
 }
@@ -30,10 +30,10 @@ type harnessParams struct {
 // setupHarness creates a single appHarness with given parameters
 func setupHarness(t *testing.T, params *harnessParams) (harness *appHarness, teardownFunc func()) {
 	harness = &appHarness{
-		p2pAddress:     params.p2pAddress,
-		rpcAddress:     params.rpcAddress,
-		minigAddress:   params.miningAddress,
-		minigAddressPK: params.miningAddressPK,
+		p2pAddress:      params.p2pAddress,
+		rpcAddress:      params.rpcAddress,
+		miningAddress:   params.miningAddress,
+		miningAddressPK: params.miningAddressPK,
 	}
 
 	setConfig(t, harness)

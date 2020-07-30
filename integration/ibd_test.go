@@ -17,12 +17,12 @@ func TestIBD(t *testing.T) {
 	defer teardown()
 
 	for i := 0; i < numBlocks; i++ {
-		requestAndSolveTemplate(t, syncer)
+		mineNextBlock(t, syncer)
 	}
 
 	blockAddedWG := sync.WaitGroup{}
 	blockAddedWG.Add(numBlocks)
-	SetOnBlockAddedHandler(t, syncee, func(header *wire.BlockHeader) { blockAddedWG.Done() })
+	setOnBlockAddedHandler(t, syncee, func(header *wire.BlockHeader) { blockAddedWG.Done() })
 
 	connect(t, syncer, syncee)
 
