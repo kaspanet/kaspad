@@ -184,7 +184,7 @@ func removeService() error {
 	return service.Delete()
 }
 
-// startService attempts to start the kaspad service.
+// startService attempts to Start the kaspad service.
 func startService() error {
 	// Connect to the windows service manager.
 	serviceManager, err := mgr.Connect()

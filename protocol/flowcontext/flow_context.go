@@ -1,6 +1,9 @@
 package flowcontext
 
 import (
+	"sync"
+	"time"
+
 	"github.com/kaspanet/kaspad/addressmanager"
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/config"
@@ -13,8 +16,6 @@ import (
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"sync"
-	"time"
 )
 
 // FlowContext holds state that is relevant to more than one flow or one peer, and allows communication between
