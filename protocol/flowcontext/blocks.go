@@ -50,7 +50,7 @@ func (f *FlowContext) broadcastTransactionsAfterBlockAdded(block *util.Block, tr
 	if len(txIDsToBroadcast) > wire.MaxInvPerTxInvMsg {
 		txIDsToBroadcast = txIDsToBroadcast[:wire.MaxInvPerTxInvMsg]
 	}
-	inv := wire.NewMsgTxInv(txIDsToBroadcast)
+	inv := wire.NewMsgInvTransaction(txIDsToBroadcast)
 	return f.Broadcast(inv)
 }
 

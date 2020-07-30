@@ -5,20 +5,13 @@
 package wire
 
 import (
-	"bytes"
-	"github.com/pkg/errors"
-	"io"
-	"reflect"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/kaspanet/kaspad/util/random"
 )
 
 // TestPing tests the MsgPing API against the latest protocol version.
 func TestPing(t *testing.T) {
-	pver := ProtocolVersion
-
 	// Ensure we get the same nonce back out.
 	nonce, err := random.Uint64()
 	if err != nil {
@@ -35,131 +28,5 @@ func TestPing(t *testing.T) {
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgPing: wrong command - got %v want %v",
 			cmd, wantCmd)
-	}
-
-	// Ensure max payload is expected value for latest protocol version.
-	wantPayload := uint32(8)
-	maxPayload := msg.MaxPayloadLength(pver)
-	if maxPayload != wantPayload {
-		t.Errorf("MaxPayloadLength: wrong max payload length for "+
-			"protocol version %d - got %v, want %v", pver,
-			maxPayload, wantPayload)
-	}
-}
-
-// TestPingCrossProtocol tests the MsgPing API when encoding with the latest
-// protocol version and decoding with BIP0031Version.
-func TestPingCrossProtocol(t *testing.T) {
-	nonce, err := random.Uint64()
-	if err != nil {
-		t.Errorf("random.Uint64: Error generating nonce: %v", err)
-	}
-	msg := NewMsgPing(nonce)
-	if msg.Nonce != nonce {
-		t.Errorf("NewMsgPing: wrong nonce - got %v, want %v",
-			msg.Nonce, nonce)
-	}
-
-	// Encode with latest protocol version.
-	var buf bytes.Buffer
-	err = msg.KaspaEncode(&buf, ProtocolVersion)
-	if err != nil {
-		t.Errorf("encode of MsgPing failed %v err <%v>", msg, err)
-	}
-}
-
-// TestPingWire tests the MsgPing wire encode and decode for various protocol
-// versions.
-func TestPingWire(t *testing.T) {
-	tests := []struct {
-		in   MsgPing // Message to encode
-		out  MsgPing // Expected decoded message
-		buf  []byte  // Wire encoding
-		pver uint32  // Protocol version for wire encoding
-	}{
-		// Latest protocol version.
-		{
-			MsgPing{Nonce: 123123}, // 0x1e0f3
-			MsgPing{Nonce: 123123}, // 0x1e0f3
-			[]byte{0xf3, 0xe0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00},
-			ProtocolVersion,
-		},
-	}
-
-	t.Logf("Running %d tests", len(tests))
-	for i, test := range tests {
-		// Encode the message to wire format.
-		var buf bytes.Buffer
-		err := test.in.KaspaEncode(&buf, test.pver)
-		if err != nil {
-			t.Errorf("KaspaEncode #%d error %v", i, err)
-			continue
-		}
-		if !bytes.Equal(buf.Bytes(), test.buf) {
-			t.Errorf("KaspaEncode #%d\n got: %s want: %s", i,
-				spew.Sdump(buf.Bytes()), spew.Sdump(test.buf))
-			continue
-		}
-
-		// Decode the message from wire format.
-		var msg MsgPing
-		rbuf := bytes.NewReader(test.buf)
-		err = msg.KaspaDecode(rbuf, test.pver)
-		if err != nil {
-			t.Errorf("KaspaDecode #%d error %v", i, err)
-			continue
-		}
-		if !reflect.DeepEqual(msg, test.out) {
-			t.Errorf("KaspaDecode #%d\n got: %s want: %s", i,
-				spew.Sdump(msg), spew.Sdump(test.out))
-			continue
-		}
-	}
-}
-
-// TestPingWireErrors performs negative tests against wire encode and decode
-// of MsgPing to confirm error paths work correctly.
-func TestPingWireErrors(t *testing.T) {
-	pver := ProtocolVersion
-
-	tests := []struct {
-		in       *MsgPing // Value to encode
-		buf      []byte   // Wire encoding
-		pver     uint32   // Protocol version for wire encoding
-		max      int      // Max size of fixed buffer to induce errors
-		writeErr error    // Expected write error
-		readErr  error    // Expected read error
-	}{
-		// Latest protocol version with intentional read/write errors.
-		{
-			&MsgPing{Nonce: 123123}, // 0x1e0f3
-			[]byte{0xf3, 0xe0, 0x01, 0x00},
-			pver,
-			2,
-			io.ErrShortWrite,
-			io.ErrUnexpectedEOF,
-		},
-	}
-
-	t.Logf("Running %d tests", len(tests))
-	for i, test := range tests {
-		// Encode to wire format.
-		w := newFixedWriter(test.max)
-		err := test.in.KaspaEncode(w, test.pver)
-		if !errors.Is(err, test.writeErr) {
-			t.Errorf("KaspaEncode #%d wrong error got: %v, want: %v",
-				i, err, test.writeErr)
-			continue
-		}
-
-		// Decode from wire format.
-		var msg MsgPing
-		r := newFixedReader(test.max, test.buf)
-		err = msg.KaspaDecode(r, test.pver)
-		if !errors.Is(err, test.readErr) {
-			t.Errorf("KaspaDecode #%d wrong error got: %v, want: %v",
-				i, err, test.readErr)
-			continue
-		}
 	}
 }

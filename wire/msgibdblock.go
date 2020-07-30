@@ -4,25 +4,11 @@
 
 package wire
 
-import "io"
-
 // MsgIBDBlock implements the Message interface and represents a kaspa
 // ibdblock message. It is used to deliver block and transaction information in
 // response to a RequestIBDBlocks message (MsgRequestIBDBlocks).
 type MsgIBDBlock struct {
-	MsgBlock
-}
-
-// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
-// This is part of the Message interface implementation.
-func (msg *MsgIBDBlock) KaspaDecode(r io.Reader, pver uint32) error {
-	return msg.MsgBlock.KaspaDecode(r, pver)
-}
-
-// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
-// This is part of the Message interface implementation.
-func (msg *MsgIBDBlock) KaspaEncode(w io.Writer, pver uint32) error {
-	return msg.MsgBlock.KaspaEncode(w, pver)
+	*MsgBlock
 }
 
 // Command returns the protocol command string for the message. This is part
@@ -40,5 +26,5 @@ func (msg *MsgIBDBlock) MaxPayloadLength(pver uint32) uint32 {
 // NewMsgIBDBlock returns a new kaspa ibdblock message that conforms to the
 // Message interface. See MsgIBDBlock for details.
 func NewMsgIBDBlock(msgBlock *MsgBlock) *MsgIBDBlock {
-	return &MsgIBDBlock{*msgBlock}
+	return &MsgIBDBlock{msgBlock}
 }

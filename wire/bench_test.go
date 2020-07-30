@@ -9,7 +9,6 @@ import (
 	"compress/bzip2"
 	"io/ioutil"
 	"math"
-	"net"
 	"os"
 	"testing"
 
@@ -370,57 +369,6 @@ func BenchmarkWriteBlockHeader(b *testing.B) {
 	header := blockOne.Header
 	for i := 0; i < b.N; i++ {
 		writeBlockHeader(ioutil.Discard, 0, &header)
-	}
-}
-
-// BenchmarkDecodeGetBlockInvs performs a benchmark on how long it takes to
-// decode a getblockinvs message.
-func BenchmarkDecodeGetBlockInvs(b *testing.B) {
-	pver := ProtocolVersion
-	var m MsgRequestIBDBlocks
-	m.LowHash = &daghash.Hash{1}
-	m.HighHash = &daghash.Hash{1}
-
-	// Serialize it so the bytes are available to test the decode below.
-	var bb bytes.Buffer
-	if err := m.KaspaEncode(&bb, pver); err != nil {
-		b.Fatalf("MsgRequestIBDBlocks.KaspaEncode: unexpected error: %v", err)
-	}
-	buf := bb.Bytes()
-
-	r := bytes.NewReader(buf)
-	var msg MsgRequestIBDBlocks
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		r.Seek(0, 0)
-		msg.KaspaDecode(r, pver)
-	}
-}
-
-// BenchmarkDecodeAddr performs a benchmark on how long it takes to decode an
-// addr message with the maximum number of addresses.
-func BenchmarkDecodeAddr(b *testing.B) {
-	// Create a message with the maximum number of addresses.
-	pver := ProtocolVersion
-	ip := net.ParseIP("127.0.0.1")
-	ma := NewMsgAddresses(false, nil)
-	for port := uint16(0); port < MaxAddressesPerMsg; port++ {
-		ma.AddAddress(NewNetAddressIPPort(ip, port, SFNodeNetwork))
-	}
-
-	// Serialize it so the bytes are available to test the decode below.
-	var bb bytes.Buffer
-	if err := ma.KaspaEncode(&bb, pver); err != nil {
-		b.Fatalf("MsgAddresses.KaspaEncode: unexpected error: %v", err)
-	}
-	buf := bb.Bytes()
-
-	r := bytes.NewReader(buf)
-	var msg MsgAddresses
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		r.Seek(0, 0)
-		msg.KaspaDecode(r, pver)
 	}
 }
 

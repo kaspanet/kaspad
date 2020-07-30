@@ -140,7 +140,7 @@ func (flow *handleIBDFlow) downloadBlocks(highestSharedBlockHash *daghash.Hash,
 func (flow *handleIBDFlow) sendGetBlocks(highestSharedBlockHash *daghash.Hash,
 	peerSelectedTipHash *daghash.Hash) error {
 
-	msgGetBlockInvs := wire.NewMsgGetBlocks(highestSharedBlockHash, peerSelectedTipHash)
+	msgGetBlockInvs := wire.NewMsgRequstIBDBlocks(highestSharedBlockHash, peerSelectedTipHash)
 	return flow.outgoingRoute.Enqueue(msgGetBlockInvs)
 }
 
@@ -160,7 +160,7 @@ func (flow *handleIBDFlow) receiveIBDBlock() (msgIBDBlock *wire.MsgIBDBlock, err
 
 func (flow *handleIBDFlow) processIBDBlock(msgIBDBlock *wire.MsgIBDBlock) error {
 
-	block := util.NewBlock(&msgIBDBlock.MsgBlock)
+	block := util.NewBlock(msgIBDBlock.MsgBlock)
 	if flow.DAG().IsInDAG(block.Hash()) {
 		return nil
 	}

@@ -2,7 +2,6 @@ package wire
 
 import (
 	"github.com/kaspanet/kaspad/util/daghash"
-	"io"
 )
 
 // MaxInvPerTxInvMsg is the maximum number of hashes that can
@@ -16,33 +15,15 @@ type MsgInvTransaction struct {
 	TxIDs []*daghash.TxID
 }
 
-// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
-// This is part of the Message interface implementation.
-func (msg *MsgInvTransaction) KaspaDecode(r io.Reader, pver uint32) error {
-	return ReadElement(r, &msg.TxIDs)
-}
-
-// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
-// This is part of the Message interface implementation.
-func (msg *MsgInvTransaction) KaspaEncode(w io.Writer, pver uint32) error {
-	return WriteElement(w, msg.TxIDs)
-}
-
 // Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgInvTransaction) Command() MessageCommand {
 	return CmdInvTransaction
 }
 
-// MaxPayloadLength returns the maximum length the payload can be for the
-// receiver. This is part of the Message interface implementation.
-func (msg *MsgInvTransaction) MaxPayloadLength(pver uint32) uint32 {
-	return daghash.TxIDSize*MaxInvPerTxInvMsg + uint32(VarIntSerializeSize(MaxInvPerTxInvMsg))
-}
-
-// NewMsgTxInv returns a new kaspa TxInv message that conforms to
+// NewMsgInvTransaction returns a new kaspa TxInv message that conforms to
 // the Message interface. See MsgInvTransaction for details.
-func NewMsgTxInv(ids []*daghash.TxID) *MsgInvTransaction {
+func NewMsgInvTransaction(ids []*daghash.TxID) *MsgInvTransaction {
 	return &MsgInvTransaction{
 		TxIDs: ids,
 	}

@@ -6,7 +6,6 @@ package wire
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/kaspanet/kaspad/netadapter/id"
@@ -73,160 +72,10 @@ func (msg *MsgVersion) AddService(service ServiceFlag) {
 	msg.Services |= service
 }
 
-// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
-// The version message is special in that the protocol version hasn't been
-// negotiated yet. As a result, the pver field is ignored and any fields which
-// are added in new versions are optional. This also mean that r must be a
-// *bytes.Buffer so the number of remaining bytes can be ascertained.
-//
-// This is part of the Message interface implementation.
-func (msg *MsgVersion) KaspaDecode(r io.Reader, pver uint32) error {
-	err := readElements(r, &msg.ProtocolVersion, &msg.Services,
-		(*int64Time)(&msg.Timestamp))
-	if err != nil {
-		return err
-	}
-
-	// Read subnetwork ID
-	var isFullNode bool
-	err = ReadElement(r, &isFullNode)
-	if err != nil {
-		return err
-	}
-	if isFullNode {
-		msg.SubnetworkID = nil
-	} else {
-		var subnetworkID subnetworkid.SubnetworkID
-		err = ReadElement(r, &subnetworkID)
-		if err != nil {
-			return err
-		}
-		msg.SubnetworkID = &subnetworkID
-	}
-
-	var hasAddress bool
-	err = ReadElement(r, &hasAddress)
-	if err != nil {
-		return err
-	}
-
-	if hasAddress {
-		msg.Address = new(NetAddress)
-		err = readNetAddress(r, pver, msg.Address, false)
-		if err != nil {
-			return err
-		}
-	}
-
-	msg.ID = new(id.ID)
-	err = ReadElement(r, msg.ID)
-	if err != nil {
-		return err
-	}
-	userAgent, err := ReadVarString(r, pver)
-	if err != nil {
-		return err
-	}
-	err = ValidateUserAgent(userAgent)
-	if err != nil {
-		return err
-	}
-	msg.UserAgent = userAgent
-
-	msg.SelectedTipHash = &daghash.Hash{}
-	err = ReadElement(r, msg.SelectedTipHash)
-	if err != nil {
-		return err
-	}
-
-	var relayTx bool
-	err = ReadElement(r, &relayTx)
-	if err != nil {
-		return err
-	}
-	msg.DisableRelayTx = !relayTx
-
-	return nil
-}
-
-// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
-// This is part of the Message interface implementation.
-func (msg *MsgVersion) KaspaEncode(w io.Writer, pver uint32) error {
-	err := ValidateUserAgent(msg.UserAgent)
-	if err != nil {
-		return err
-	}
-
-	err = writeElements(w, msg.ProtocolVersion, msg.Services,
-		msg.Timestamp.UnixMilliseconds())
-	if err != nil {
-		return err
-	}
-
-	// Write subnetwork ID
-	isFullNode := msg.SubnetworkID == nil
-	err = WriteElement(w, isFullNode)
-	if err != nil {
-		return err
-	}
-	if !isFullNode {
-		err = WriteElement(w, msg.SubnetworkID)
-		if err != nil {
-			return err
-		}
-	}
-
-	if msg.Address != nil {
-		err = WriteElement(w, true)
-		if err != nil {
-			return err
-		}
-
-		err = writeNetAddress(w, pver, msg.Address, false)
-		if err != nil {
-			return err
-		}
-	}
-
-	err = WriteElement(w, msg.ID)
-	if err != nil {
-		return err
-	}
-
-	err = WriteVarString(w, msg.UserAgent)
-	if err != nil {
-		return err
-	}
-
-	err = WriteElement(w, msg.SelectedTipHash)
-	if err != nil {
-		return err
-	}
-
-	// The wire encoding for the field is true when transactions should be
-	// relayed, so reverse it from the DisableRelayTx field.
-	err = WriteElement(w, !msg.DisableRelayTx)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgVersion) Command() MessageCommand {
 	return CmdVersion
-}
-
-// MaxPayloadLength returns the maximum length the payload can be for the
-// receiver. This is part of the Message interface implementation.
-func (msg *MsgVersion) MaxPayloadLength(pver uint32) uint32 {
-	// Protocol version 4 bytes + services 8 bytes + timestamp 16 bytes +
-	// remote and local net addresses + nonce 8 bytes + length of user
-	// agent (varInt) + max allowed useragent length + selected tip hash length +
-	// relay transactions flag 1 byte.
-	return 29 + (maxNetAddressPayload(pver) * 2) + MaxVarIntPayload +
-		MaxUserAgentLen + daghash.HashSize
 }
 
 // NewMsgVersion returns a new kaspa version message that conforms to the

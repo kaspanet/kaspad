@@ -1,8 +1,6 @@
 package wire
 
 import (
-	"io"
-
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -15,48 +13,10 @@ type MsgRequestBlockLocator struct {
 	LowHash  *daghash.Hash
 }
 
-// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
-// This is part of the Message interface implementation.
-func (msg *MsgRequestBlockLocator) KaspaDecode(r io.Reader, pver uint32) error {
-	msg.HighHash = &daghash.Hash{}
-	err := ReadElement(r, msg.HighHash)
-	if err != nil {
-		return err
-	}
-
-	msg.LowHash = &daghash.Hash{}
-	err = ReadElement(r, msg.LowHash)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
-// This is part of the Message interface implementation.
-func (msg *MsgRequestBlockLocator) KaspaEncode(w io.Writer, pver uint32) error {
-	err := WriteElement(w, msg.HighHash)
-	if err != nil {
-		return err
-	}
-
-	err = WriteElement(w, msg.LowHash)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgRequestBlockLocator) Command() MessageCommand {
 	return CmdRequestBlockLocator
-}
-
-// MaxPayloadLength returns the maximum length the payload can be for the
-// receiver. This is part of the Message interface implementation.
-func (msg *MsgRequestBlockLocator) MaxPayloadLength(pver uint32) uint32 {
-	return daghash.HashSize * 2
 }
 
 // NewMsgGetBlockLocator returns a new getlocator message that conforms to the

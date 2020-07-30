@@ -141,7 +141,7 @@ func (flow *handleRelayedTransactionsFlow) broadcastAcceptedTransactions(accepte
 	for i, tx := range acceptedTxs {
 		idsToBroadcast[i] = tx.Tx.ID()
 	}
-	inv := wire.NewMsgTxInv(idsToBroadcast)
+	inv := wire.NewMsgInvTransaction(idsToBroadcast)
 	return flow.Broadcast(inv)
 }
 
