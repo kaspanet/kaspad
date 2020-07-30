@@ -29,6 +29,7 @@ func (f *FlowContext) AddToPeers(peer *peerpkg.Peer) error {
 	}
 
 	f.peers[peer.ID()] = peer
+
 	return nil
 }
 

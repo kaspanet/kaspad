@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/pointers"
 	"github.com/kaspanet/kaspad/wire"
@@ -26,23 +27,23 @@ func (r FutureAddNodeResult) Receive() error {
 	return err
 }
 
-// AddManualNodeAsync returns an instance of a type that can be used to get the result
+// ConnectNodeAsync returns an instance of a type that can be used to get the result
 // of the RPC at some future time by invoking the Receive function on the
 // returned instance.
 //
-// See AddNode for the blocking version and more details.
-func (c *Client) AddManualNodeAsync(host string) FutureAddNodeResult {
+// See Connect for the blocking version and more details.
+func (c *Client) ConnectNodeAsync(host string) FutureAddNodeResult {
 	cmd := model.NewConnectCmd(host, pointers.Bool(false))
 	return c.sendCmd(cmd)
 }
 
-// AddManualNode attempts to perform the passed command on the passed persistent peer.
+// ConnectNode attempts to perform the passed command on the passed persistent peer.
 // For example, it can be used to add or a remove a persistent peer, or to do
 // a one time connection to a peer.
 //
 // It may not be used to remove non-persistent peers.
-func (c *Client) AddManualNode(host string) error {
-	return c.AddManualNodeAsync(host).Receive()
+func (c *Client) ConnectNode(host string) error {
+	return c.ConnectNodeAsync(host).Receive()
 }
 
 // FutureGetConnectionCountResult is a future promise to deliver the result

@@ -12,10 +12,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/kaspanet/kaspad/addressmanager"
-	"github.com/kaspanet/kaspad/connmanager"
-	"github.com/kaspanet/kaspad/protocol"
-	"github.com/kaspanet/kaspad/util/mstime"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -25,6 +21,11 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/kaspanet/kaspad/addressmanager"
+	"github.com/kaspanet/kaspad/connmanager"
+	"github.com/kaspanet/kaspad/protocol"
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/pkg/errors"
 
@@ -707,7 +708,8 @@ func NewRPCServer(
 		return nil, errors.New("RPCS: No valid listen address")
 	}
 	rpc := Server{
-		cfg:                    cfg,
+		cfg: cfg,
+
 		listeners:              rpcListeners,
 		startupTime:            mstime.Now(),
 		statusLines:            make(map[int]string),

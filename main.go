@@ -13,6 +13,8 @@ import (
 	"runtime/pprof"
 	"time"
 
+	"github.com/kaspanet/kaspad/app"
+
 	"github.com/kaspanet/kaspad/dbaccess"
 
 	"github.com/kaspanet/kaspad/blockdag/indexers"
@@ -122,19 +124,22 @@ func kaspadMain(startedChan chan<- struct{}) error {
 		return nil
 	}
 
-	// Create kaspad and start it.
-	kaspad, err := newKaspad(cfg, databaseContext, interrupt)
+	// Create app and start it.
+	app, err := app.New(cfg, databaseContext, interrupt)
 	if err != nil {
 		log.Errorf("Unable to start kaspad: %+v", err)
 		return err
 	}
 	defer func() {
 		log.Infof("Gracefully shutting down kaspad...")
-		kaspad.stop()
+		err := app.Stop()
+		if err != nil {
+			log.Errorf("Error stopping kaspad: %+v", err)
+		}
 
 		shutdownDone := make(chan struct{})
 		go func() {
-			kaspad.WaitForShutdown()
+			app.WaitForShutdown()
 			shutdownDone <- struct{}{}
 		}()
 
@@ -147,7 +152,7 @@ func kaspadMain(startedChan chan<- struct{}) error {
 		}
 		log.Infof("Kaspad shutdown complete")
 	}()
-	kaspad.start()
+	app.Start()
 	if startedChan != nil {
 		startedChan <- struct{}{}
 	}
