@@ -62,8 +62,8 @@ func (flow *handleRelayedTransactionsFlow) start() error {
 func (flow *handleRelayedTransactionsFlow) requestInvTransactions(
 	inv *wire.MsgInvTransaction) (requestedIDs []*daghash.TxID, err error) {
 
-	idsToRequest := make([]*daghash.TxID, 0, len(inv.TxIDS))
-	for _, txID := range inv.TxIDS {
+	idsToRequest := make([]*daghash.TxID, 0, len(inv.TxIDs))
+	for _, txID := range inv.TxIDs {
 		if flow.isKnownTransaction(txID) {
 			continue
 		}
@@ -78,7 +78,7 @@ func (flow *handleRelayedTransactionsFlow) requestInvTransactions(
 		return idsToRequest, nil
 	}
 
-	msgGetTransactions := wire.NewMsgGetTransactions(idsToRequest)
+	msgGetTransactions := wire.NewMsgRequestTransactions(idsToRequest)
 	err = flow.outgoingRoute.Enqueue(msgGetTransactions)
 	if err != nil {
 		flow.SharedRequestedTransactions().removeMany(idsToRequest)
@@ -141,7 +141,7 @@ func (flow *handleRelayedTransactionsFlow) broadcastAcceptedTransactions(accepte
 	for i, tx := range acceptedTxs {
 		idsToBroadcast[i] = tx.Tx.ID()
 	}
-	inv := wire.NewMsgTxInv(idsToBroadcast)
+	inv := wire.NewMsgInvTransaction(idsToBroadcast)
 	return flow.Broadcast(inv)
 }
 
@@ -192,7 +192,7 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 
 			shouldBan := false
 			if txRuleErr := (&mempool.TxRuleError{}); errors.As(ruleErr.Err, txRuleErr) {
-				if txRuleErr.RejectCode == wire.RejectInvalid {
+				if txRuleErr.RejectCode == mempool.RejectInvalid {
 					shouldBan = true
 				}
 			} else if dagRuleErr := (&blockdag.RuleError{}); errors.As(ruleErr.Err, dagRuleErr) {

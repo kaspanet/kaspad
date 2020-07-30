@@ -500,8 +500,8 @@ func TestProcessTransaction(t *testing.T) {
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
-	if code, _ := extractRejectCode(err); code != wire.RejectDuplicate {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectDuplicate, code)
+	if code, _ := extractRejectCode(err); code != RejectDuplicate {
+		t.Errorf("Unexpected error code. Expected %v but got %v", RejectDuplicate, code)
 	}
 
 	orphanedTx, err := harness.CreateSignedTx([]spendableOutpoint{{
@@ -533,8 +533,8 @@ func TestProcessTransaction(t *testing.T) {
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
-	if code, _ := extractRejectCode(err); code != wire.RejectDuplicate {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectDuplicate, code)
+	if code, _ := extractRejectCode(err); code != RejectDuplicate {
+		t.Errorf("Unexpected error code. Expected %v but got %v", RejectDuplicate, code)
 	}
 
 	// Checks that a coinbase transaction cannot be added to the mempool
@@ -547,8 +547,8 @@ func TestProcessTransaction(t *testing.T) {
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
-	if code, _ := extractRejectCode(err); code != wire.RejectInvalid {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectInvalid, code)
+	if code, _ := extractRejectCode(err); code != RejectInvalid {
+		t.Errorf("Unexpected error code. Expected %v but got %v", RejectInvalid, code)
 	}
 
 	// Checks that a transaction is rejected from the mempool if its
@@ -561,8 +561,8 @@ func TestProcessTransaction(t *testing.T) {
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
-	if code, _ := extractRejectCode(err); code != wire.RejectInvalid {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectInsufficientFee, code)
+	if code, _ := extractRejectCode(err); code != RejectInvalid {
+		t.Errorf("Unexpected error code. Expected %v but got %v", RejectInsufficientFee, code)
 	}
 	expectedErrStr := "serialized transaction is too big"
 	if !strings.Contains(err.Error(), expectedErrStr) {
@@ -579,8 +579,8 @@ func TestProcessTransaction(t *testing.T) {
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
-	if code, _ := extractRejectCode(err); code != wire.RejectNonstandard {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectNonstandard, code)
+	if code, _ := extractRejectCode(err); code != RejectNonstandard {
+		t.Errorf("Unexpected error code. Expected %v but got %v", RejectNonstandard, code)
 	}
 
 	// Checks that a transaction is rejected from the mempool if its
@@ -593,8 +593,8 @@ func TestProcessTransaction(t *testing.T) {
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
-	if code, _ := extractRejectCode(err); code != wire.RejectInsufficientFee {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectInsufficientFee, code)
+	if code, _ := extractRejectCode(err); code != RejectInsufficientFee {
+		t.Errorf("Unexpected error code. Expected %v but got %v", RejectInsufficientFee, code)
 	}
 
 	// Checks that if a ps2h sigscript has more sigops then maxStandardP2SHSigOps, it gets rejected
@@ -675,8 +675,8 @@ func TestProcessTransaction(t *testing.T) {
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
-	if code, _ := extractRejectCode(err); code != wire.RejectNonstandard {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectNonstandard, code)
+	if code, _ := extractRejectCode(err); code != RejectNonstandard {
+		t.Errorf("Unexpected error code. Expected %v but got %v", RejectNonstandard, code)
 	}
 	expectedErrStr = fmt.Sprintf("transaction %v has a non-standard input: "+
 		"transaction input #%d has "+
@@ -716,8 +716,8 @@ func TestProcessTransaction(t *testing.T) {
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
-	if code, _ := extractRejectCode(err); code != wire.RejectNonstandard {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectNonstandard, code)
+	if code, _ := extractRejectCode(err); code != RejectNonstandard {
+		t.Errorf("Unexpected error code. Expected %v but got %v", RejectNonstandard, code)
 	}
 	expectedErrStr = "transaction's sequence locks on inputs not met"
 	if err.Error() != expectedErrStr {
@@ -734,8 +734,8 @@ func TestProcessTransaction(t *testing.T) {
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
-	if code, _ := extractRejectCode(err); code != wire.RejectInsufficientFee {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectInsufficientFee, code)
+	if code, _ := extractRejectCode(err); code != RejectInsufficientFee {
+		t.Errorf("Unexpected error code. Expected %v but got %v", RejectInsufficientFee, code)
 	}
 
 	txIns = []*wire.TxIn{{
@@ -753,8 +753,8 @@ func TestProcessTransaction(t *testing.T) {
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
-	if code, _ := extractRejectCode(err); code != wire.RejectNonstandard {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectNonstandard, code)
+	if code, _ := extractRejectCode(err); code != RejectNonstandard {
+		t.Errorf("Unexpected error code. Expected %v but got %v", RejectNonstandard, code)
 	}
 }
 
@@ -798,8 +798,8 @@ func TestDoubleSpends(t *testing.T) {
 	if err == nil {
 		t.Errorf("ProcessTransaction expected an error, not nil")
 	}
-	if code, _ := extractRejectCode(err); code != wire.RejectDuplicate {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectDuplicate, code)
+	if code, _ := extractRejectCode(err); code != RejectDuplicate {
+		t.Errorf("Unexpected error code. Expected %v but got %v", RejectDuplicate, code)
 	}
 	testPoolMembership(tc, tx3, false, false, false)
 
@@ -851,8 +851,8 @@ func TestDoubleSpendsFromDAG(t *testing.T) {
 	if ok := errors.As(err, &ruleErr); ok {
 		var txRuleErr TxRuleError
 		if ok := errors.As(ruleErr.Err, &txRuleErr); ok {
-			if txRuleErr.RejectCode != wire.RejectDuplicate {
-				t.Errorf("ProcessTransaction expected an %v reject code but got %v", wire.RejectDuplicate, txRuleErr.RejectCode)
+			if txRuleErr.RejectCode != RejectDuplicate {
+				t.Errorf("ProcessTransaction expected an %v reject code but got %v", RejectDuplicate, txRuleErr.RejectCode)
 			}
 		} else {
 			t.Errorf("ProcessTransaction expected a ruleErr.Err to be a TxRuleError but got %v", err)
@@ -1004,9 +1004,9 @@ func TestOrphanReject(t *testing.T) {
 			t.Fatalf("ProcessTransaction: failed to extract reject "+
 				"code from error %q", err)
 		}
-		if code != wire.RejectDuplicate {
+		if code != RejectDuplicate {
 			t.Fatalf("ProcessTransaction: unexpected reject code "+
-				"-- got %v, want %v", code, wire.RejectDuplicate)
+				"-- got %v, want %v", code, RejectDuplicate)
 		}
 
 		// Ensure no transactions were reported as accepted.
@@ -1597,27 +1597,27 @@ func TestCount(t *testing.T) {
 func TestExtractRejectCode(t *testing.T) {
 	tests := []struct {
 		blockdagRuleErrorCode blockdag.ErrorCode
-		wireRejectCode        wire.RejectCode
+		wireRejectCode        RejectCode
 	}{
 		{
 			blockdagRuleErrorCode: blockdag.ErrDuplicateBlock,
-			wireRejectCode:        wire.RejectDuplicate,
+			wireRejectCode:        RejectDuplicate,
 		},
 		{
 			blockdagRuleErrorCode: blockdag.ErrBlockVersionTooOld,
-			wireRejectCode:        wire.RejectObsolete,
+			wireRejectCode:        RejectObsolete,
 		},
 		{
 			blockdagRuleErrorCode: blockdag.ErrFinalityPointTimeTooOld,
-			wireRejectCode:        wire.RejectFinality,
+			wireRejectCode:        RejectFinality,
 		},
 		{
 			blockdagRuleErrorCode: blockdag.ErrDifficultyTooLow,
-			wireRejectCode:        wire.RejectDifficulty,
+			wireRejectCode:        RejectDifficulty,
 		},
 		{
 			blockdagRuleErrorCode: math.MaxUint32,
-			wireRejectCode:        wire.RejectInvalid,
+			wireRejectCode:        RejectInvalid,
 		},
 	}
 
@@ -1632,19 +1632,19 @@ func TestExtractRejectCode(t *testing.T) {
 		}
 	}
 
-	txRuleError := TxRuleError{RejectCode: wire.RejectDust}
+	txRuleError := TxRuleError{RejectCode: RejectDust}
 	txExtractedCode, ok := extractRejectCode(txRuleError)
 	if !ok {
 		t.Errorf("TestExtractRejectCode: %v could not be extracted", txRuleError)
 	}
-	if txExtractedCode != wire.RejectDust {
-		t.Errorf("TestExtractRejectCode: expected %v to extract %v but got %v", wire.RejectDust, wire.RejectDust, txExtractedCode)
+	if txExtractedCode != RejectDust {
+		t.Errorf("TestExtractRejectCode: expected %v to extract %v but got %v", RejectDust, RejectDust, txExtractedCode)
 	}
 
 	var nilErr error
 	nilErrExtractedCode, ok := extractRejectCode(nilErr)
-	if nilErrExtractedCode != wire.RejectInvalid {
-		t.Errorf("TestExtractRejectCode: expected %v to extract %v but got %v", wire.RejectInvalid, wire.RejectInvalid, nilErrExtractedCode)
+	if nilErrExtractedCode != RejectInvalid {
+		t.Errorf("TestExtractRejectCode: expected %v to extract %v but got %v", RejectInvalid, RejectInvalid, nilErrExtractedCode)
 	}
 	if ok {
 		t.Errorf("TestExtractRejectCode: a nil error is expected to return false but got %v", ok)
@@ -1653,8 +1653,8 @@ func TestExtractRejectCode(t *testing.T) {
 	nonRuleError := errors.New("nonRuleError")
 
 	fErrExtractedCode, ok := extractRejectCode(nonRuleError)
-	if fErrExtractedCode != wire.RejectInvalid {
-		t.Errorf("TestExtractRejectCode: expected %v to extract %v but got %v", wire.RejectInvalid, wire.RejectInvalid, nilErrExtractedCode)
+	if fErrExtractedCode != RejectInvalid {
+		t.Errorf("TestExtractRejectCode: expected %v to extract %v but got %v", RejectInvalid, RejectInvalid, nilErrExtractedCode)
 	}
 	if ok {
 		t.Errorf("TestExtractRejectCode: a nonRuleError is expected to return false but got %v", ok)

@@ -64,7 +64,7 @@ func (flow *requestSelectedTipFlow) runSelectedTipRequest() error {
 }
 
 func (flow *requestSelectedTipFlow) requestSelectedTip() error {
-	msgGetSelectedTip := wire.NewMsgGetSelectedTip()
+	msgGetSelectedTip := wire.NewMsgRequestSelectedTip()
 	return flow.outgoingRoute.Enqueue(msgGetSelectedTip)
 }
 

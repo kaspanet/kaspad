@@ -25,7 +25,7 @@ func (f *FlowContext) AddTransaction(tx *util.Tx) error {
 	}
 
 	f.transactionsToRebroadcast[*tx.ID()] = tx
-	inv := wire.NewMsgTxInv([]*daghash.TxID{tx.ID()})
+	inv := wire.NewMsgInvTransaction([]*daghash.TxID{tx.ID()})
 	return f.Broadcast(inv)
 }
 

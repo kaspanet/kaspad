@@ -5,19 +5,9 @@
 package wire
 
 import (
-	"encoding/binary"
-	"github.com/kaspanet/kaspad/util/binaryserializer"
 	"github.com/kaspanet/kaspad/util/mstime"
-	"io"
 	"net"
 )
-
-// maxNetAddressPayload returns the max payload size for a kaspa NetAddress
-// based on the protocol version.
-func maxNetAddressPayload(pver uint32) uint32 {
-	// Services 8 bytes + ip 16 bytes + port 2 bytes + timestamp 8 bytes.
-	return uint32(34)
-}
 
 // NetAddress defines information about a peer on the network including the time
 // it was last seen, the services it supports, its IP address, and port.
@@ -81,59 +71,4 @@ func NewNetAddressTimestamp(
 // supported services with defaults for the remaining fields.
 func NewNetAddress(addr *net.TCPAddr, services ServiceFlag) *NetAddress {
 	return NewNetAddressIPPort(addr.IP, uint16(addr.Port), services)
-}
-
-// readNetAddress reads an encoded NetAddress from r depending on the protocol
-// version and whether or not the timestamp is included per ts. Some messages
-// like version do not include the timestamp.
-func readNetAddress(r io.Reader, pver uint32, na *NetAddress, ts bool) error {
-	var ip [16]byte
-
-	if ts {
-		err := ReadElement(r, (*int64Time)(&na.Timestamp))
-		if err != nil {
-			return err
-		}
-	}
-
-	err := readElements(r, &na.Services, &ip)
-	if err != nil {
-		return err
-	}
-	port, err := binaryserializer.Uint16(r, bigEndian)
-	if err != nil {
-		return err
-	}
-
-	*na = NetAddress{
-		Timestamp: na.Timestamp,
-		Services:  na.Services,
-		IP:        net.IP(ip[:]),
-		Port:      port,
-	}
-	return nil
-}
-
-// writeNetAddress serializes a NetAddress to w depending on the protocol
-// version and whether or not the timestamp is included per ts. Some messages
-// like version do not include the timestamp.
-func writeNetAddress(w io.Writer, pver uint32, na *NetAddress, ts bool) error {
-	if ts {
-		err := WriteElement(w, na.Timestamp.UnixMilliseconds())
-		if err != nil {
-			return err
-		}
-	}
-
-	// Ensure to always write 16 bytes even if the ip is nil.
-	var ip [16]byte
-	if na.IP != nil {
-		copy(ip[:], na.IP.To16())
-	}
-	err := writeElements(w, na.Services, ip)
-	if err != nil {
-		return err
-	}
-
-	return binary.Write(w, bigEndian, na.Port)
 }
