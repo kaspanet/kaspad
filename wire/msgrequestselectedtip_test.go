@@ -8,8 +8,8 @@ import (
 	"testing"
 )
 
-// TestGetSelectedTip tests the MsgRequestSelectedTip API.
-func TestGetSelectedTip(t *testing.T) {
+// TestRequestSelectedTip tests the MsgRequestSelectedTip API.
+func TestRequestSelectedTip(t *testing.T) {
 	// Ensure the command is expected value.
 	wantCmd := MessageCommand(12)
 	msg := NewMsgRequestSelectedTip()

@@ -8,8 +8,8 @@ import (
 	"testing"
 )
 
-// TestGetAddresses tests the MsgRequestAddresses API.
-func TestGetAddresses(t *testing.T) {
+// TestRequestAddresses tests the MsgRequestAddresses API.
+func TestRequestAddresses(t *testing.T) {
 	// Ensure the command is expected value.
 	wantCmd := MessageCommand(2)
 	msg := NewMsgRequestAddresses(false, nil)

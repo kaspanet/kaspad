@@ -10,8 +10,8 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// TestGetBlocks tests the MsgRequestIBDBlocks API.
-func TestGetBlocks(t *testing.T) {
+// TestRequstIBDBlocks tests the MsgRequestIBDBlocks API.
+func TestRequstIBDBlocks(t *testing.T) {
 	hashStr := "000000000002e7ad7b9eef9479e4aabc65cb831269cc20d2632c13684406dee0"
 	lowHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
