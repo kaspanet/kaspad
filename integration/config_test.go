@@ -21,16 +21,17 @@ const (
 	rpcUser = "user"
 	rpcPass = "pass"
 
-	miningAddress1   = "kaspasim:qz3tm5pew9lrdpnn8kytgtm6a0mx772j4uw02snetn"
-	miningAddress1PK = "69f470ff9cd4010de7f4a95161867c49834435423526d9bab83781821cdf95bf"
+	miningAddress1           = "kaspasim:qzmdkk8ay8sgvp8cnwts8gtdylz9j7572slwdh85qv"
+	miningAddress1PrivateKey = "be9e9884f03e687166479e22d21b064db7903d69b5a46878aae66521c01a6094"
 
-	miningAddress2   = "kaspasim:qqdf0vrh3u576eqzkp0s8qagc04tuj2xnu4sfskhx0"
-	miningAddress2PK = "aed46ef760223032d2641e086dd48d0b0a4d581811e68ccf15bed2b8fe87348e"
+	miningAddress2           = "kaspasim:qze20hwkc4lzq37jt0hrym5emlsxxs8j3qyf3y4ghs"
+	miningAddress2PrivateKey = "98bd8d8e1f7078abefd017839f83edd0e3c8226ed4989e4d7a8bceb5935de193"
 
-	miningAddress3   = "kaspasim:qq2wz0hl73a0qcl8872wr3djplwmyulurscsqxehu2"
-	miningAddress3PK = "cc94a79bbccca30b0e3edff1895cbdf8d4ddcc119eacfd692970151dcc2881c2"
+	miningAddress3           = "kaspasim:qretklduvhg5h2aj7jd8w4heq7pvtkpv9q6w4sqfen"
+	miningAddress3PrivateKey = "eb0af684f2cdbb4ed2d85fbfe0b7f40654a7777fb2c47f142ffb5543b594d1e4"
 
-	defaultTimeout = 10 * time.Second
+	// defaultTimeout = 10 * time.Second //TODO: Restore this
+	defaultTimeout = 10 * time.Minute
 )
 
 func setConfig(t *testing.T, harness *appHarness) {
@@ -43,7 +44,8 @@ func setConfig(t *testing.T, harness *appHarness) {
 func commonConfig() *config.Config {
 	commonConfig := config.DefaultConfig()
 
-	commonConfig.ActiveNetParams = &dagconfig.SimnetParams
+	*commonConfig.ActiveNetParams = dagconfig.SimnetParams // Copy so that we can make changes safely
+	commonConfig.ActiveNetParams.BlockCoinbaseMaturity = 10
 	commonConfig.TargetOutboundPeers = 0
 	commonConfig.DisableDNSSeed = true
 	commonConfig.RPCUser = rpcUser
