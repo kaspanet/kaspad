@@ -103,7 +103,7 @@ func (flow *handleRelayInvsFlow) readInv() (*wire.MsgInvRelayBlock, error) {
 }
 
 func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) error {
-	numHashesToRequest := mathUtil.MinInt(wire.MsgGetRelayBlocksHashes, requestQueue.len())
+	numHashesToRequest := mathUtil.MinInt(wire.MsgRequestRelayBlocksHashes, requestQueue.len())
 	hashesToRequest := requestQueue.dequeue(numHashesToRequest)
 
 	pendingBlocks := map[daghash.Hash]struct{}{}
@@ -127,7 +127,7 @@ func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) err
 	// clean from any pending blocks.
 	defer flow.SharedRequestedBlocks().removeSet(pendingBlocks)
 
-	getRelayBlocksMsg := wire.NewMsgGetRelayBlocks(filteredHashesToRequest)
+	getRelayBlocksMsg := wire.NewMsgRequestRelayBlocks(filteredHashesToRequest)
 	err := flow.outgoingRoute.Enqueue(getRelayBlocksMsg)
 	if err != nil {
 		return err

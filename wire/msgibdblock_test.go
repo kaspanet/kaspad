@@ -26,7 +26,7 @@ func TestIBDBlock(t *testing.T) {
 	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, acceptedIDMerkleRoot, utxoCommitment, bits, nonce)
 
 	// Ensure the command is expected value.
-	wantCmd := MessageCommand(27)
+	wantCmd := MessageCommand(17)
 	msg := NewMsgIBDBlock(NewMsgBlock(bh))
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgIBDBlock: wrong command - got %v want %v",
@@ -77,8 +77,8 @@ func TestIBDBlockWire(t *testing.T) {
 	}{
 		// Latest protocol version.
 		{
-			&MsgIBDBlock{blockOne},
-			&MsgIBDBlock{blockOne},
+			&MsgIBDBlock{&blockOne},
+			&MsgIBDBlock{&blockOne},
 			blockOneBytes,
 			blockOneTxLocs,
 			ProtocolVersion,
@@ -102,6 +102,7 @@ func TestIBDBlockWire(t *testing.T) {
 
 		// Decode the message from wire format.
 		var msg MsgIBDBlock
+		msg.MsgBlock = new(MsgBlock)
 		rbuf := bytes.NewReader(test.buf)
 		err = msg.KaspaDecode(rbuf, test.pver)
 		if err != nil {
