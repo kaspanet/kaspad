@@ -109,13 +109,13 @@ func (m *Manager) registerAddressFlows(router *routerpkg.Router, isStopping *uin
 	outgoingRoute := router.OutgoingRoute()
 
 	return []*flow{
-		m.registerOneTimeFlow("SendAddresses", router, []wire.MessageCommand{wire.CmdGetAddresses}, isStopping, errChan,
+		m.registerOneTimeFlow("SendAddresses", router, []wire.MessageCommand{wire.CmdRequestAddresses}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return addressexchange.SendAddresses(m.context, incomingRoute, outgoingRoute)
 			},
 		),
 
-		m.registerOneTimeFlow("ReceiveAddresses", router, []wire.MessageCommand{wire.CmdAddress}, isStopping, errChan,
+		m.registerOneTimeFlow("ReceiveAddresses", router, []wire.MessageCommand{wire.CmdAddresses}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return addressexchange.ReceiveAddresses(m.context, incomingRoute, outgoingRoute, peer)
 			},
@@ -133,7 +133,7 @@ func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *
 			},
 		),
 
-		m.registerFlow("HandleRelayBlockRequests", router, []wire.MessageCommand{wire.CmdGetRelayBlocks}, isStopping, errChan,
+		m.registerFlow("HandleRelayBlockRequests", router, []wire.MessageCommand{wire.CmdRequestRelayBlocks}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return blockrelay.HandleRelayBlockRequests(m.context, incomingRoute, outgoingRoute, peer)
 			},
@@ -173,19 +173,19 @@ func (m *Manager) registerIBDFlows(router *routerpkg.Router, isStopping *uint32,
 			},
 		),
 
-		m.registerFlow("HandleGetSelectedTip", router, []wire.MessageCommand{wire.CmdGetSelectedTip}, isStopping, errChan,
+		m.registerFlow("HandleGetSelectedTip", router, []wire.MessageCommand{wire.CmdRequestSelectedTip}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return selectedtip.HandleGetSelectedTip(m.context, incomingRoute, outgoingRoute)
 			},
 		),
 
-		m.registerFlow("HandleGetBlockLocator", router, []wire.MessageCommand{wire.CmdGetBlockLocator}, isStopping, errChan,
+		m.registerFlow("HandleGetBlockLocator", router, []wire.MessageCommand{wire.CmdRequestBlockLocator}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return ibd.HandleGetBlockLocator(m.context, incomingRoute, outgoingRoute)
 			},
 		),
 
-		m.registerFlow("HandleGetBlocks", router, []wire.MessageCommand{wire.CmdGetBlocks}, isStopping, errChan,
+		m.registerFlow("HandleGetBlocks", router, []wire.MessageCommand{wire.CmdRequestIBDBlocks}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return ibd.HandleGetBlocks(m.context, incomingRoute, outgoingRoute)
 			},

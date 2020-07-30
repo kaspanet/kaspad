@@ -10,20 +10,20 @@ import (
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
-// MsgGetAddresses implements the Message interface and represents a kaspa
-// getaddr message. It is used to request a list of known active peers on the
+// MsgRequestAddresses implements the Message interface and represents a kaspa
+// RequestAddresses message. It is used to request a list of known active peers on the
 // network from a peer to help identify potential nodes. The list is returned
 // via one or more addr messages (MsgAddresses).
 //
 // This message has no payload.
-type MsgGetAddresses struct {
+type MsgRequestAddresses struct {
 	IncludeAllSubnetworks bool
 	SubnetworkID          *subnetworkid.SubnetworkID
 }
 
 // KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
-func (msg *MsgGetAddresses) KaspaDecode(r io.Reader, pver uint32) error {
+func (msg *MsgRequestAddresses) KaspaDecode(r io.Reader, pver uint32) error {
 	msg.SubnetworkID = nil
 
 	err := ReadElement(r, &msg.IncludeAllSubnetworks)
@@ -55,7 +55,7 @@ func (msg *MsgGetAddresses) KaspaDecode(r io.Reader, pver uint32) error {
 
 // KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
-func (msg *MsgGetAddresses) KaspaEncode(w io.Writer, pver uint32) error {
+func (msg *MsgRequestAddresses) KaspaEncode(w io.Writer, pver uint32) error {
 	err := WriteElement(w, msg.IncludeAllSubnetworks)
 	if err != nil {
 		return err
@@ -83,21 +83,21 @@ func (msg *MsgGetAddresses) KaspaEncode(w io.Writer, pver uint32) error {
 
 // Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
-func (msg *MsgGetAddresses) Command() MessageCommand {
-	return CmdGetAddresses
+func (msg *MsgRequestAddresses) Command() MessageCommand {
+	return CmdRequestAddresses
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver. This is part of the Message interface implementation.
-func (msg *MsgGetAddresses) MaxPayloadLength(pver uint32) uint32 {
+func (msg *MsgRequestAddresses) MaxPayloadLength(pver uint32) uint32 {
 	// SubnetworkID length + IncludeAllSubnetworks (1) + isFullNode (1)
 	return subnetworkid.IDLength + 2
 }
 
 // NewMsgGetAddresses returns a new kaspa getaddr message that conforms to the
-// Message interface. See MsgGetAddresses for details.
-func NewMsgGetAddresses(includeAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID) *MsgGetAddresses {
-	return &MsgGetAddresses{
+// Message interface. See MsgRequestAddresses for details.
+func NewMsgGetAddresses(includeAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID) *MsgRequestAddresses {
+	return &MsgRequestAddresses{
 		IncludeAllSubnetworks: includeAllSubnetworks,
 		SubnetworkID:          subnetworkID,
 	}

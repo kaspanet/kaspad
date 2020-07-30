@@ -46,10 +46,10 @@ func (flow *handleGetSelectedTipFlow) receiveGetSelectedTip() error {
 	if err != nil {
 		return err
 	}
-	_, ok := message.(*wire.MsgGetSelectedTip)
+	_, ok := message.(*wire.MsgRequestSelectedTip)
 	if !ok {
 		return errors.Errorf("received unexpected message type. "+
-			"expected: %s, got: %s", wire.CmdGetSelectedTip, message.Command())
+			"expected: %s, got: %s", wire.CmdRequestSelectedTip, message.Command())
 	}
 
 	return nil

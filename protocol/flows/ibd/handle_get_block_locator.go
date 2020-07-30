@@ -57,7 +57,7 @@ func (flow *handleGetBlockLocatorFlow) receiveGetBlockLocator() (lowHash *daghas
 	if err != nil {
 		return nil, nil, err
 	}
-	msgGetBlockLocator := message.(*wire.MsgGetBlockLocator)
+	msgGetBlockLocator := message.(*wire.MsgRequestBlockLocator)
 
 	return msgGetBlockLocator.LowHash, msgGetBlockLocator.HighHash, nil
 }

@@ -41,50 +41,50 @@ func toPayload(message wire.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgGetBlockLocator:
-		payload := new(KaspadMessage_GetBlockLocator)
+	case *wire.MsgRequestBlockLocator:
+		payload := new(KaspadMessage_RequestBlockLocator)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
 	case *wire.MsgBlockLocator:
-		payload := new(KaspadMessage_BlockLocator_)
+		payload := new(KaspadMessage_BlockLocator)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgGetAddresses:
-		payload := new(KaspadMessage_GetAddresses_)
+	case *wire.MsgRequestAddresses:
+		payload := new(KaspadMessage_RequestAddresses)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgGetBlocks:
-		payload := new(KaspadMessage_GetBlocks)
+	case *wire.MsgRequestIBDBlocks:
+		payload := new(KaspadMessage_RequestIBDBlocks)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgGetRelayBlocks:
-		payload := new(KaspadMessage_GetRelayBlocks)
+	case *wire.MsgRequestRelayBlocks:
+		payload := new(KaspadMessage_RequestRelayBlocks)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgGetSelectedTip:
-		payload := new(KaspadMessage_GetSelectedTip)
+	case *wire.MsgRequestSelectedTip:
+		payload := new(KaspadMessage_RequestSelectedTip)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgGetTransactions:
-		payload := new(KaspadMessage_GetTransactions)
+	case *wire.MsgRequestTransactions:
+		payload := new(KaspadMessage_RequestTransactions)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
@@ -126,7 +126,7 @@ func toPayload(message wire.Message) (isKaspadMessage_Payload, error) {
 		}
 		return payload, nil
 	case *wire.MsgSelectedTip:
-		payload := new(KaspadMessage_SelectedTip_)
+		payload := new(KaspadMessage_SelectedTip)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err

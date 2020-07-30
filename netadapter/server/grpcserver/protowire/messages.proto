@@ -8,13 +8,13 @@ message KaspadMessage {
     AddressesMessage addresses = 1;
     BlockMessage block = 2;
     TransactionMessage transaction = 3;
-    GetBlockLocatorMessage getBlockLocator = 4;
+    RequestBlockLocatorMessage requestBlockLocator = 4;
     BlockLocatorMessage blockLocator = 5;
-    GetAddressesMessage getAddresses = 6;
-    GetBlocksMessage getBlocks = 7;
-    GetRelayBlocksMessage getRelayBlocks = 8;
-    GetSelectedTipMessage getSelectedTip = 9;
-    GetTransactionsMessage getTransactions = 10;
+    RequestAddressesMessage requestAddresses = 6;
+    RequestIBDBlocksMessage requestIBDBlocks = 7;
+    RequestRelayBlocksMessage requestRelayBlocks = 8;
+    RequestSelectedTipMessage requestSelectedTip = 9;
+    RequestTransactionsMessage requestTransactions = 10;
     BlockMessage ibdBlock = 11;
     InvRelayBlockMessage invRelayBlock = 12;
     InvTransactionsMessage invTransactions = 13;
@@ -46,7 +46,7 @@ message SubnetworkID{
 // AddressesMessage end
 
 // GetAddressesMessage start
-message GetAddressesMessage{
+message RequestAddressesMessage{
   bool includeAllSubnetworks = 1;
   SubnetworkID subnetworkID = 2;
 }
@@ -108,7 +108,7 @@ message Hash{
 // BlockMessage end
 
 // GetBlockLocatorMessage start
-message GetBlockLocatorMessage{
+message RequestBlockLocatorMessage{
   Hash lowHash = 1;
   Hash highHash = 2;
 }
@@ -121,25 +121,25 @@ message BlockLocatorMessage{
 // BlockLocatorMessage end
 
 // GetBlocksMessage start
-message GetBlocksMessage{
+message RequestIBDBlocksMessage{
   Hash lowHash = 1;
   Hash highHash = 2;
 }
 // GetBlocksMessage end
 
 // GetRelayBlocksMessage start
-message GetRelayBlocksMessage{
+message RequestRelayBlocksMessage{
   repeated Hash hashes = 1;
 }
 // GetRelayBlocksMessage end
 
 // GetSelectedTipMessage start
-message GetSelectedTipMessage{
+message RequestSelectedTipMessage{
 }
 // GetSelectedTipMessage end
 
 // GetTransactionsMessage start
-message GetTransactionsMessage{
+message RequestTransactionsMessage{
   repeated TransactionID ids = 1;
 }
 // GetTransactionsMessage end

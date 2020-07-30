@@ -4,21 +4,21 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-func (x *KaspadMessage_GetAddresses_) toWireMessage() (wire.Message, error) {
-	protoGetAddresses := x.GetAddresses_
+func (x *KaspadMessage_RequestAddresses) toWireMessage() (wire.Message, error) {
+	protoGetAddresses := x.RequestAddresses
 	subnetworkID, err := protoGetAddresses.SubnetworkID.toWire()
 	if err != nil {
 		return nil, err
 	}
 
-	return &wire.MsgGetAddresses{
+	return &wire.MsgRequestAddresses{
 		IncludeAllSubnetworks: protoGetAddresses.IncludeAllSubnetworks,
 		SubnetworkID:          subnetworkID,
 	}, nil
 }
 
-func (x *KaspadMessage_GetAddresses_) fromWireMessage(msgGetAddresses *wire.MsgGetAddresses) error {
-	x.GetAddresses_ = &GetAddressesMessage{
+func (x *KaspadMessage_RequestAddresses) fromWireMessage(msgGetAddresses *wire.MsgRequestAddresses) error {
+	x.RequestAddresses = &RequestAddressesMessage{
 		IncludeAllSubnetworks: msgGetAddresses.IncludeAllSubnetworks,
 		SubnetworkID:          wireSubnetworkIDToProto(msgGetAddresses.SubnetworkID),
 	}

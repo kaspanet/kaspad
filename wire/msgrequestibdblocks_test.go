@@ -15,7 +15,7 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// TestGetBlocks tests the MsgGetBlocks API.
+// TestGetBlocks tests the MsgRequestIBDBlocks API.
 func TestGetBlocks(t *testing.T) {
 	pver := ProtocolVersion
 
@@ -55,7 +55,7 @@ func TestGetBlocks(t *testing.T) {
 	}
 }
 
-// TestGetBlocksWire tests the MsgGetBlocks wire encode and decode for various
+// TestGetBlocksWire tests the MsgRequestIBDBlocks wire encode and decode for various
 // numbers of block locator hashes and protocol versions.
 func TestGetBlocksWire(t *testing.T) {
 	hashStr := "2710f40c87ec93d010a6fd95f42c59a2cbacc60b18cf6b7957535"
@@ -70,7 +70,7 @@ func TestGetBlocksWire(t *testing.T) {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
-	// MsgGetBlocks message with no start or high hash.
+	// MsgRequestIBDBlocks message with no start or high hash.
 	noStartOrStop := NewMsgGetBlocks(&daghash.Hash{}, &daghash.Hash{})
 	noStartOrStopEncoded := []byte{
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -83,7 +83,7 @@ func TestGetBlocksWire(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // High hash
 	}
 
-	// MsgGetBlocks message with a low hash and a high hash.
+	// MsgRequestIBDBlocks message with a low hash and a high hash.
 	withLowAndHighHash := NewMsgGetBlocks(lowHash, highHash)
 	withLowAndHighHashEncoded := []byte{
 		0x35, 0x75, 0x95, 0xb7, 0xf6, 0x8c, 0xb1, 0x60,
@@ -97,10 +97,10 @@ func TestGetBlocksWire(t *testing.T) {
 	}
 
 	tests := []struct {
-		in   *MsgGetBlocks // Message to encode
-		out  *MsgGetBlocks // Expected decoded message
-		buf  []byte        // Wire encoding
-		pver uint32        // Protocol version for wire encoding
+		in   *MsgRequestIBDBlocks // Message to encode
+		out  *MsgRequestIBDBlocks // Expected decoded message
+		buf  []byte               // Wire encoding
+		pver uint32               // Protocol version for wire encoding
 	}{
 		// Latest protocol version with no block locators.
 		{
@@ -135,7 +135,7 @@ func TestGetBlocksWire(t *testing.T) {
 		}
 
 		// Decode the message from wire format.
-		var msg MsgGetBlocks
+		var msg MsgRequestIBDBlocks
 		rbuf := bytes.NewReader(test.buf)
 		err = msg.KaspaDecode(rbuf, test.pver)
 		if err != nil {
@@ -151,7 +151,7 @@ func TestGetBlocksWire(t *testing.T) {
 }
 
 // TestGetBlocksWireErrors performs negative tests against wire encode and
-// decode of MsgGetBlocks to confirm error paths work correctly.
+// decode of MsgRequestIBDBlocks to confirm error paths work correctly.
 func TestGetBlocksWireErrors(t *testing.T) {
 	// Set protocol inside getheaders message.
 	pver := ProtocolVersion
@@ -168,7 +168,7 @@ func TestGetBlocksWireErrors(t *testing.T) {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
-	// MsgGetBlocks message with multiple block locators and a high hash.
+	// MsgRequestIBDBlocks message with multiple block locators and a high hash.
 	baseGetBlocks := NewMsgGetBlocks(lowHash, highHash)
 	baseGetBlocksEncoded := []byte{
 		0x35, 0x75, 0x95, 0xb7, 0xf6, 0x8c, 0xb1, 0x60,
@@ -182,12 +182,12 @@ func TestGetBlocksWireErrors(t *testing.T) {
 	}
 
 	tests := []struct {
-		in       *MsgGetBlocks // Value to encode
-		buf      []byte        // Wire encoding
-		pver     uint32        // Protocol version for wire encoding
-		max      int           // Max size of fixed buffer to induce errors
-		writeErr error         // Expected write error
-		readErr  error         // Expected read error
+		in       *MsgRequestIBDBlocks // Value to encode
+		buf      []byte               // Wire encoding
+		pver     uint32               // Protocol version for wire encoding
+		max      int                  // Max size of fixed buffer to induce errors
+		writeErr error                // Expected write error
+		readErr  error                // Expected read error
 	}{
 		// Force error in low hash.
 		{baseGetBlocks, baseGetBlocksEncoded, pver, 0, io.ErrShortWrite, io.EOF},
@@ -218,7 +218,7 @@ func TestGetBlocksWireErrors(t *testing.T) {
 		}
 
 		// Decode from wire format.
-		var msg MsgGetBlocks
+		var msg MsgRequestIBDBlocks
 		r := newFixedReader(test.max, test.buf)
 		err = msg.KaspaDecode(r, test.pver)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.readErr) {

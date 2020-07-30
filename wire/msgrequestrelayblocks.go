@@ -7,19 +7,19 @@ import (
 )
 
 // MsgGetRelayBlocksHashes is the maximum number of hashes that can
-// be in a single getrelblks message.
+// be in a single RequestRelayBlocks message.
 const MsgGetRelayBlocksHashes = MaxInvPerMsg
 
-// MsgGetRelayBlocks implements the Message interface and represents a kaspa
-// getrelblks message. It is used to request blocks as part of the block
+// MsgRequestRelayBlocks implements the Message interface and represents a kaspa
+// RequestRelayBlocks message. It is used to request blocks as part of the block
 // relay protocol.
-type MsgGetRelayBlocks struct {
+type MsgRequestRelayBlocks struct {
 	Hashes []*daghash.Hash
 }
 
 // KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
-func (msg *MsgGetRelayBlocks) KaspaDecode(r io.Reader, pver uint32) error {
+func (msg *MsgRequestRelayBlocks) KaspaDecode(r io.Reader, pver uint32) error {
 	numHashes, err := ReadVarInt(r)
 	if err != nil {
 		return err
@@ -39,7 +39,7 @@ func (msg *MsgGetRelayBlocks) KaspaDecode(r io.Reader, pver uint32) error {
 
 // KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
-func (msg *MsgGetRelayBlocks) KaspaEncode(w io.Writer, pver uint32) error {
+func (msg *MsgRequestRelayBlocks) KaspaEncode(w io.Writer, pver uint32) error {
 	err := WriteVarInt(w, uint64(len(msg.Hashes)))
 	if err != nil {
 		return err
@@ -56,20 +56,20 @@ func (msg *MsgGetRelayBlocks) KaspaEncode(w io.Writer, pver uint32) error {
 
 // Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
-func (msg *MsgGetRelayBlocks) Command() MessageCommand {
-	return CmdGetRelayBlocks
+func (msg *MsgRequestRelayBlocks) Command() MessageCommand {
+	return CmdRequestRelayBlocks
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver. This is part of the Message interface implementation.
-func (msg *MsgGetRelayBlocks) MaxPayloadLength(pver uint32) uint32 {
+func (msg *MsgRequestRelayBlocks) MaxPayloadLength(pver uint32) uint32 {
 	return daghash.HashSize*MsgGetRelayBlocksHashes + uint32(VarIntSerializeSize(MsgGetRelayBlocksHashes))
 }
 
-// NewMsgGetRelayBlocks returns a new kaspa getrelblks message that conforms to
-// the Message interface. See MsgGetRelayBlocks for details.
-func NewMsgGetRelayBlocks(hashes []*daghash.Hash) *MsgGetRelayBlocks {
-	return &MsgGetRelayBlocks{
+// NewMsgGetRelayBlocks returns a new kaspa RequestRelayBlocks message that conforms to
+// the Message interface. See MsgRequestRelayBlocks for details.
+func NewMsgGetRelayBlocks(hashes []*daghash.Hash) *MsgRequestRelayBlocks {
+	return &MsgRequestRelayBlocks{
 		Hashes: hashes,
 	}
 }

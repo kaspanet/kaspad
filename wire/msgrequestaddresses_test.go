@@ -13,7 +13,7 @@ import (
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
-// TestGetAddresses tests the MsgGetAddresses API.
+// TestGetAddresses tests the MsgRequestAddresses API.
 func TestGetAddresses(t *testing.T) {
 	pver := ProtocolVersion
 
@@ -36,7 +36,7 @@ func TestGetAddresses(t *testing.T) {
 	}
 }
 
-// TestGetAddressesWire tests the MsgGetAddresses wire encode and decode for various
+// TestGetAddressesWire tests the MsgRequestAddresses wire encode and decode for various
 // protocol versions.
 func TestGetAddressesWire(t *testing.T) {
 	// With all subnetworks
@@ -57,10 +57,10 @@ func TestGetAddressesWire(t *testing.T) {
 	}
 
 	tests := []struct {
-		in   *MsgGetAddresses // Message to encode
-		out  *MsgGetAddresses // Expected decoded message
-		buf  []byte           // Wire encoding
-		pver uint32           // Protocol version for wire encoding
+		in   *MsgRequestAddresses // Message to encode
+		out  *MsgRequestAddresses // Expected decoded message
+		buf  []byte               // Wire encoding
+		pver uint32               // Protocol version for wire encoding
 	}{
 		// Latest protocol version. All subnetworks
 		{
@@ -94,7 +94,7 @@ func TestGetAddressesWire(t *testing.T) {
 		}
 
 		// Decode the message from wire format.
-		var msg MsgGetAddresses
+		var msg MsgRequestAddresses
 		rbuf := bytes.NewReader(test.buf)
 		err = msg.KaspaDecode(rbuf, test.pver)
 		if err != nil {

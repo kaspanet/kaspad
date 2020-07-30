@@ -12,7 +12,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
-// TestGetSelectedTip tests the MsgGetSelectedTip API.
+// TestGetSelectedTip tests the MsgRequestSelectedTip API.
 func TestGetSelectedTip(t *testing.T) {
 	pver := ProtocolVersion
 
@@ -34,17 +34,17 @@ func TestGetSelectedTip(t *testing.T) {
 	}
 }
 
-// TestGetSelectedTipWire tests the MsgGetSelectedTip wire encode and decode for various
+// TestGetSelectedTipWire tests the MsgRequestSelectedTip wire encode and decode for various
 // protocol versions.
 func TestGetSelectedTipWire(t *testing.T) {
 	msgGetSelectedTip := NewMsgGetSelectedTip()
 	msgGetSelectedTipEncoded := []byte{}
 
 	tests := []struct {
-		in   *MsgGetSelectedTip // Message to encode
-		out  *MsgGetSelectedTip // Expected decoded message
-		buf  []byte             // Wire encoding
-		pver uint32             // Protocol version for wire encoding
+		in   *MsgRequestSelectedTip // Message to encode
+		out  *MsgRequestSelectedTip // Expected decoded message
+		buf  []byte                 // Wire encoding
+		pver uint32                 // Protocol version for wire encoding
 	}{
 		// Latest protocol version.
 		{
@@ -71,7 +71,7 @@ func TestGetSelectedTipWire(t *testing.T) {
 		}
 
 		// Decode the message from wire format.
-		var msg MsgGetSelectedTip
+		var msg MsgRequestSelectedTip
 		rbuf := bytes.NewReader(test.buf)
 		err = msg.KaspaDecode(rbuf, test.pver)
 		if err != nil {

@@ -14,7 +14,7 @@ type RelayBlockRequestsContext interface {
 	DAG() *blockdag.BlockDAG
 }
 
-// HandleRelayBlockRequests listens to wire.MsgGetRelayBlocks messages and sends
+// HandleRelayBlockRequests listens to wire.MsgRequestRelayBlocks messages and sends
 // their corresponding blocks to the requesting peer.
 func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *router.Route,
 	outgoingRoute *router.Route, peer *peerpkg.Peer) error {
@@ -24,7 +24,7 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 		if err != nil {
 			return err
 		}
-		getRelayBlocksMessage := message.(*wire.MsgGetRelayBlocks)
+		getRelayBlocksMessage := message.(*wire.MsgRequestRelayBlocks)
 		for _, hash := range getRelayBlocksMessage.Hashes {
 			// Fetch the block from the database.
 			block, err := context.DAG().BlockByHash(hash)

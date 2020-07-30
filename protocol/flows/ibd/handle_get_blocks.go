@@ -53,7 +53,7 @@ func receiveGetBlocks(incomingRoute *router.Route) (lowHash *daghash.Hash,
 	if err != nil {
 		return nil, nil, err
 	}
-	msgGetBlocks := message.(*wire.MsgGetBlocks)
+	msgGetBlocks := message.(*wire.MsgRequestIBDBlocks)
 
 	return msgGetBlocks.LowHash, msgGetBlocks.HighHash, nil
 }

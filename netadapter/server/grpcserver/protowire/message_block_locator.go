@@ -5,24 +5,24 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_BlockLocator_) toWireMessage() (wire.Message, error) {
-	if len(x.BlockLocator_.Hashes) > wire.MaxBlockLocatorsPerMsg {
+func (x *KaspadMessage_BlockLocator) toWireMessage() (wire.Message, error) {
+	if len(x.BlockLocator.Hashes) > wire.MaxBlockLocatorsPerMsg {
 		return nil, errors.Errorf("too many block locator hashes for message "+
-			"[count %d, max %d]", len(x.BlockLocator_.Hashes), wire.MaxBlockLocatorsPerMsg)
+			"[count %d, max %d]", len(x.BlockLocator.Hashes), wire.MaxBlockLocatorsPerMsg)
 	}
-	hashes, err := protoHashesToWire(x.BlockLocator_.Hashes)
+	hashes, err := protoHashesToWire(x.BlockLocator.Hashes)
 	if err != nil {
 		return nil, err
 	}
 	return &wire.MsgBlockLocator{BlockLocatorHashes: hashes}, nil
 }
 
-func (x *KaspadMessage_BlockLocator_) fromWireMessage(msgBlockLocator *wire.MsgBlockLocator) error {
+func (x *KaspadMessage_BlockLocator) fromWireMessage(msgBlockLocator *wire.MsgBlockLocator) error {
 	if len(msgBlockLocator.BlockLocatorHashes) > wire.MaxBlockLocatorsPerMsg {
 		return errors.Errorf("too many block locator hashes for message "+
 			"[count %d, max %d]", len(msgBlockLocator.BlockLocatorHashes), wire.MaxBlockLocatorsPerMsg)
 	}
-	x.BlockLocator_ = &BlockLocatorMessage{
+	x.BlockLocator = &BlockLocatorMessage{
 		Hashes: wireHashesToProto(msgBlockLocator.BlockLocatorHashes),
 	}
 	return nil

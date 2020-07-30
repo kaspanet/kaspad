@@ -2,8 +2,8 @@ package protowire
 
 import "github.com/kaspanet/kaspad/wire"
 
-func (x *KaspadMessage_SelectedTip_) toWireMessage() (wire.Message, error) {
-	hash, err := x.SelectedTip_.SelectedTipHash.toWire()
+func (x *KaspadMessage_SelectedTip) toWireMessage() (wire.Message, error) {
+	hash, err := x.SelectedTip.SelectedTipHash.toWire()
 	if err != nil {
 		return nil, err
 	}
@@ -11,8 +11,8 @@ func (x *KaspadMessage_SelectedTip_) toWireMessage() (wire.Message, error) {
 	return &wire.MsgSelectedTip{SelectedTipHash: hash}, nil
 }
 
-func (x *KaspadMessage_SelectedTip_) fromWireMessage(msgSelectedTip *wire.MsgSelectedTip) error {
-	x.SelectedTip_ = &SelectedTipMessage{
+func (x *KaspadMessage_SelectedTip) fromWireMessage(msgSelectedTip *wire.MsgSelectedTip) error {
+	x.SelectedTip = &SelectedTipMessage{
 		SelectedTipHash: wireHashToProto(msgSelectedTip.SelectedTipHash),
 	}
 	return nil

@@ -25,45 +25,45 @@ func (cmd MessageCommand) String() string {
 
 // Commands used in kaspa message headers which describe the type of message.
 const (
-	CmdVersion         MessageCommand = 0
-	CmdVerAck          MessageCommand = 1
-	CmdGetAddresses    MessageCommand = 2
-	CmdAddress         MessageCommand = 3
-	CmdGetBlocks       MessageCommand = 4
-	CmdBlock           MessageCommand = 8
-	CmdTx              MessageCommand = 9
-	CmdPing            MessageCommand = 10
-	CmdPong            MessageCommand = 11
-	CmdGetBlockLocator MessageCommand = 18
-	CmdBlockLocator    MessageCommand = 19
-	CmdSelectedTip     MessageCommand = 20
-	CmdGetSelectedTip  MessageCommand = 21
-	CmdInvRelayBlock   MessageCommand = 22
-	CmdGetRelayBlocks  MessageCommand = 23
-	CmdInvTransaction  MessageCommand = 25
-	CmdGetTransactions MessageCommand = 26
-	CmdIBDBlock        MessageCommand = 27
+	CmdVersion             MessageCommand = 0
+	CmdVerAck              MessageCommand = 1
+	CmdRequestAddresses    MessageCommand = 2
+	CmdAddresses           MessageCommand = 3
+	CmdRequestIBDBlocks    MessageCommand = 4
+	CmdBlock               MessageCommand = 8
+	CmdTx                  MessageCommand = 9
+	CmdPing                MessageCommand = 10
+	CmdPong                MessageCommand = 11
+	CmdRequestBlockLocator MessageCommand = 18
+	CmdBlockLocator        MessageCommand = 19
+	CmdSelectedTip         MessageCommand = 20
+	CmdRequestSelectedTip  MessageCommand = 21
+	CmdInvRelayBlock       MessageCommand = 22
+	CmdRequestRelayBlocks  MessageCommand = 23
+	CmdInvTransaction      MessageCommand = 25
+	CmdRequestTransactions MessageCommand = 26
+	CmdIBDBlock            MessageCommand = 27
 )
 
 var messageCommandToString = map[MessageCommand]string{
-	CmdVersion:         "Version",
-	CmdVerAck:          "VerAck",
-	CmdGetAddresses:    "GetAddress",
-	CmdAddress:         "Address",
-	CmdGetBlocks:       "GetBlocks",
-	CmdBlock:           "Block",
-	CmdTx:              "Tx",
-	CmdPing:            "Ping",
-	CmdPong:            "Pong",
-	CmdGetBlockLocator: "GetBlockLocator",
-	CmdBlockLocator:    "BlockLocator",
-	CmdSelectedTip:     "SelectedTip",
-	CmdGetSelectedTip:  "GetSelectedTip",
-	CmdInvRelayBlock:   "InvRelayBlock",
-	CmdGetRelayBlocks:  "GetRelayBlocks",
-	CmdInvTransaction:  "InvTransaction",
-	CmdGetTransactions: "GetTransactions",
-	CmdIBDBlock:        "IBDBlock",
+	CmdVersion:             "Version",
+	CmdVerAck:              "VerAck",
+	CmdRequestAddresses:    "RequestAddresses",
+	CmdAddresses:           "Addresses",
+	CmdRequestIBDBlocks:    "RequestBlocks",
+	CmdBlock:               "Block",
+	CmdTx:                  "Tx",
+	CmdPing:                "Ping",
+	CmdPong:                "Pong",
+	CmdRequestBlockLocator: "RequestBlockLocator",
+	CmdBlockLocator:        "BlockLocator",
+	CmdSelectedTip:         "SelectedTip",
+	CmdRequestSelectedTip:  "RequestSelectedTip",
+	CmdInvRelayBlock:       "InvRelayBlock",
+	CmdRequestRelayBlocks:  "RequestRelayBlocks",
+	CmdInvTransaction:      "InvTransaction",
+	CmdRequestTransactions: "RequestTransactions",
+	CmdIBDBlock:            "IBDBlock",
 }
 
 // Message is an interface that describes a kaspa message. A type that

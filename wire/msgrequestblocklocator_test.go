@@ -11,7 +11,7 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// TestGetBlockLocator tests the MsgGetBlockLocator API.
+// TestGetBlockLocator tests the MsgRequestBlockLocator API.
 func TestGetBlockLocator(t *testing.T) {
 	pver := ProtocolVersion
 
@@ -39,7 +39,7 @@ func TestGetBlockLocator(t *testing.T) {
 	}
 }
 
-// TestGetBlockLocatorWire tests the MsgGetBlockLocator wire encode and decode.
+// TestGetBlockLocatorWire tests the MsgRequestBlockLocator wire encode and decode.
 func TestGetBlockLocatorWire(t *testing.T) {
 	hashStr := "2710f40c87ec93d010a6fd95f42c59a2cbacc60b18cf6b7957535"
 	highHash, err := daghash.NewHashFromStr(hashStr)
@@ -53,7 +53,7 @@ func TestGetBlockLocatorWire(t *testing.T) {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
-	// MsgGetBlockLocator message with no block locators or high hash.
+	// MsgRequestBlockLocator message with no block locators or high hash.
 	noLowAndHighHash := NewMsgGetBlockLocator(&daghash.ZeroHash, &daghash.ZeroHash)
 	noLowAndHighHashEncoded := []byte{
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -66,7 +66,7 @@ func TestGetBlockLocatorWire(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Low hash
 	}
 
-	// MsgGetBlockLocator message with multiple block locators and a high hash.
+	// MsgRequestBlockLocator message with multiple block locators and a high hash.
 	withLowAndHighHash := NewMsgGetBlockLocator(highHash, lowHash)
 	withLowAndHighHashEncoded := []byte{
 		0x35, 0x75, 0x95, 0xb7, 0xf6, 0x8c, 0xb1, 0x60,
@@ -80,10 +80,10 @@ func TestGetBlockLocatorWire(t *testing.T) {
 	}
 
 	tests := []struct {
-		in   *MsgGetBlockLocator // Message to encode
-		out  *MsgGetBlockLocator // Expected decoded message
-		buf  []byte              // Wire encoding
-		pver uint32              // Protocol version for wire encoding
+		in   *MsgRequestBlockLocator // Message to encode
+		out  *MsgRequestBlockLocator // Expected decoded message
+		buf  []byte                  // Wire encoding
+		pver uint32                  // Protocol version for wire encoding
 	}{
 		// Message with no low hash and high hash.
 		{
@@ -118,7 +118,7 @@ func TestGetBlockLocatorWire(t *testing.T) {
 		}
 
 		// Decode the message from wire format.
-		var msg MsgGetBlockLocator
+		var msg MsgRequestBlockLocator
 		rbuf := bytes.NewReader(test.buf)
 		err = msg.KaspaDecode(rbuf, test.pver)
 		if err != nil {
@@ -134,7 +134,7 @@ func TestGetBlockLocatorWire(t *testing.T) {
 }
 
 // TestGetBlockLocatorWireErrors performs negative tests against wire encode and
-// decode of MsgGetBlockLocator to confirm error paths work correctly.
+// decode of MsgRequestBlockLocator to confirm error paths work correctly.
 func TestGetBlockLocatorWireErrors(t *testing.T) {
 	// Set protocol inside getlocator message.
 	pver := ProtocolVersion
@@ -151,7 +151,7 @@ func TestGetBlockLocatorWireErrors(t *testing.T) {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
-	// MsgGetBlockLocator message with multiple block locators and a high hash.
+	// MsgRequestBlockLocator message with multiple block locators and a high hash.
 	baseGetBlockLocator := NewMsgGetBlockLocator(highHash, lowHash)
 	baseGetBlockLocatorEncoded := []byte{
 		0x35, 0x75, 0x95, 0xb7, 0xf6, 0x8c, 0xb1, 0x60,
@@ -165,12 +165,12 @@ func TestGetBlockLocatorWireErrors(t *testing.T) {
 	}
 
 	tests := []struct {
-		in       *MsgGetBlockLocator // Value to encode
-		buf      []byte              // Wire encoding
-		pver     uint32              // Protocol version for wire encoding
-		max      int                 // Max size of fixed buffer to induce errors
-		writeErr error               // Expected write error
-		readErr  error               // Expected read error
+		in       *MsgRequestBlockLocator // Value to encode
+		buf      []byte                  // Wire encoding
+		pver     uint32                  // Protocol version for wire encoding
+		max      int                     // Max size of fixed buffer to induce errors
+		writeErr error                   // Expected write error
+		readErr  error                   // Expected read error
 	}{
 		// Force error in low hash.
 		{baseGetBlockLocator, baseGetBlockLocatorEncoded, pver, 0, io.ErrShortWrite, io.EOF},
@@ -201,7 +201,7 @@ func TestGetBlockLocatorWireErrors(t *testing.T) {
 		}
 
 		// Decode from wire format.
-		var msg MsgGetBlockLocator
+		var msg MsgRequestBlockLocator
 		r := newFixedReader(test.max, test.buf)
 		err = msg.KaspaDecode(r, test.pver)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.readErr) {

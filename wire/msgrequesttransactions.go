@@ -9,41 +9,41 @@ import (
 // be in a single CmdInvTransaction message.
 const MaxInvPerGetTransactionsMsg = MaxInvPerMsg
 
-// MsgGetTransactions implements the Message interface and represents a kaspa
-// GetTransactions message. It is used to request transactions as part of the
+// MsgRequestTransactions implements the Message interface and represents a kaspa
+// RequestTransactions message. It is used to request transactions as part of the
 // transactions relay protocol.
-type MsgGetTransactions struct {
+type MsgRequestTransactions struct {
 	IDs []*daghash.TxID
 }
 
 // KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
 // This is part of the Message interface implementation.
-func (msg *MsgGetTransactions) KaspaDecode(r io.Reader, pver uint32) error {
+func (msg *MsgRequestTransactions) KaspaDecode(r io.Reader, pver uint32) error {
 	return ReadElement(r, &msg.IDs)
 }
 
 // KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
 // This is part of the Message interface implementation.
-func (msg *MsgGetTransactions) KaspaEncode(w io.Writer, pver uint32) error {
+func (msg *MsgRequestTransactions) KaspaEncode(w io.Writer, pver uint32) error {
 	return WriteElement(w, msg.IDs)
 }
 
 // Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
-func (msg *MsgGetTransactions) Command() MessageCommand {
-	return CmdGetTransactions
+func (msg *MsgRequestTransactions) Command() MessageCommand {
+	return CmdRequestTransactions
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver. This is part of the Message interface implementation.
-func (msg *MsgGetTransactions) MaxPayloadLength(pver uint32) uint32 {
+func (msg *MsgRequestTransactions) MaxPayloadLength(pver uint32) uint32 {
 	return daghash.TxIDSize*MaxInvPerGetTransactionsMsg + uint32(VarIntSerializeSize(MaxInvPerGetTransactionsMsg))
 }
 
-// NewMsgGetTransactions returns a new kaspa GetTransactions message that conforms to
-// the Message interface. See MsgGetTransactions for details.
-func NewMsgGetTransactions(ids []*daghash.TxID) *MsgGetTransactions {
-	return &MsgGetTransactions{
+// NewMsgGetTransactions returns a new kaspa RequestTransactions message that conforms to
+// the Message interface. See MsgRequestTransactions for details.
+func NewMsgGetTransactions(ids []*daghash.TxID) *MsgRequestTransactions {
+	return &MsgRequestTransactions{
 		IDs: ids,
 	}
 }

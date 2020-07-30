@@ -8,7 +8,7 @@ import "io"
 
 // MsgIBDBlock implements the Message interface and represents a kaspa
 // ibdblock message. It is used to deliver block and transaction information in
-// response to a getblocks message (MsgGetBlocks).
+// response to a RequestIBDBlocks message (MsgRequestIBDBlocks).
 type MsgIBDBlock struct {
 	MsgBlock
 }
