@@ -8,29 +8,29 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// GetBlockLocatorContext is the interface for the context needed for the HandleGetBlockLocator flow.
-type GetBlockLocatorContext interface {
+// RequestBlockLocatorContext is the interface for the context needed for the HandleRequestBlockLocator flow.
+type RequestBlockLocatorContext interface {
 	DAG() *blockdag.BlockDAG
 }
 
-type handleGetBlockLocatorFlow struct {
-	GetBlockLocatorContext
+type handleRequestBlockLocatorFlow struct {
+	RequestBlockLocatorContext
 	incomingRoute, outgoingRoute *router.Route
 }
 
-// HandleGetBlockLocator handles getBlockLocator messages
-func HandleGetBlockLocator(context GetBlockLocatorContext, incomingRoute *router.Route,
+// HandleRequestBlockLocator handles getBlockLocator messages
+func HandleRequestBlockLocator(context RequestBlockLocatorContext, incomingRoute *router.Route,
 	outgoingRoute *router.Route) error {
 
-	flow := &handleGetBlockLocatorFlow{
-		GetBlockLocatorContext: context,
-		incomingRoute:          incomingRoute,
-		outgoingRoute:          outgoingRoute,
+	flow := &handleRequestBlockLocatorFlow{
+		RequestBlockLocatorContext: context,
+		incomingRoute:              incomingRoute,
+		outgoingRoute:              outgoingRoute,
 	}
 	return flow.start()
 }
 
-func (flow *handleGetBlockLocatorFlow) start() error {
+func (flow *handleRequestBlockLocatorFlow) start() error {
 	for {
 		lowHash, highHash, err := flow.receiveGetBlockLocator()
 		if err != nil {
@@ -50,7 +50,7 @@ func (flow *handleGetBlockLocatorFlow) start() error {
 	}
 }
 
-func (flow *handleGetBlockLocatorFlow) receiveGetBlockLocator() (lowHash *daghash.Hash,
+func (flow *handleRequestBlockLocatorFlow) receiveGetBlockLocator() (lowHash *daghash.Hash,
 	highHash *daghash.Hash, err error) {
 
 	message, err := flow.incomingRoute.Dequeue()
@@ -62,7 +62,7 @@ func (flow *handleGetBlockLocatorFlow) receiveGetBlockLocator() (lowHash *daghas
 	return msgGetBlockLocator.LowHash, msgGetBlockLocator.HighHash, nil
 }
 
-func (flow *handleGetBlockLocatorFlow) sendBlockLocator(locator blockdag.BlockLocator) error {
+func (flow *handleRequestBlockLocatorFlow) sendBlockLocator(locator blockdag.BlockLocator) error {
 	msgBlockLocator := wire.NewMsgBlockLocator(locator)
 	err := flow.outgoingRoute.Enqueue(msgBlockLocator)
 	if err != nil {

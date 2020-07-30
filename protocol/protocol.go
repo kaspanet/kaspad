@@ -173,21 +173,21 @@ func (m *Manager) registerIBDFlows(router *routerpkg.Router, isStopping *uint32,
 			},
 		),
 
-		m.registerFlow("HandleGetSelectedTip", router, []wire.MessageCommand{wire.CmdRequestSelectedTip}, isStopping, errChan,
+		m.registerFlow("HandleRequestSelectedTip", router, []wire.MessageCommand{wire.CmdRequestSelectedTip}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return selectedtip.HandleGetSelectedTip(m.context, incomingRoute, outgoingRoute)
+				return selectedtip.HandleRequestSelectedTip(m.context, incomingRoute, outgoingRoute)
 			},
 		),
 
-		m.registerFlow("HandleGetBlockLocator", router, []wire.MessageCommand{wire.CmdRequestBlockLocator}, isStopping, errChan,
+		m.registerFlow("HandleRequestBlockLocator", router, []wire.MessageCommand{wire.CmdRequestBlockLocator}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return ibd.HandleGetBlockLocator(m.context, incomingRoute, outgoingRoute)
+				return ibd.HandleRequestBlockLocator(m.context, incomingRoute, outgoingRoute)
 			},
 		),
 
-		m.registerFlow("HandleGetBlocks", router, []wire.MessageCommand{wire.CmdRequestIBDBlocks}, isStopping, errChan,
+		m.registerFlow("HandleRequestIBDBlocks", router, []wire.MessageCommand{wire.CmdRequestIBDBlocks}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return ibd.HandleGetBlocks(m.context, incomingRoute, outgoingRoute)
+				return ibd.HandleRequestIBDBlocks(m.context, incomingRoute, outgoingRoute)
 			},
 		)}
 }

@@ -7,29 +7,29 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// GetBlocksContext is the interface for the context needed for the HandleGetBlocks flow.
-type GetBlocksContext interface {
+// RequestIBDBlocksContext is the interface for the context needed for the HandleRequestIBDBlocks flow.
+type RequestIBDBlocksContext interface {
 	DAG() *blockdag.BlockDAG
 }
 
-type handleGetBlocksFlow struct {
-	GetBlocksContext
+type handleRequestBlocksFlow struct {
+	RequestIBDBlocksContext
 	incomingRoute, outgoingRoute *router.Route
 }
 
-// HandleGetBlocks handles getBlocks messages
-func HandleGetBlocks(context GetBlocksContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
-	flow := &handleGetBlocksFlow{
-		GetBlocksContext: context,
-		incomingRoute:    incomingRoute,
-		outgoingRoute:    outgoingRoute,
+// HandleRequestIBDBlocks handles getBlocks messages
+func HandleRequestIBDBlocks(context RequestIBDBlocksContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
+	flow := &handleRequestBlocksFlow{
+		RequestIBDBlocksContext: context,
+		incomingRoute:           incomingRoute,
+		outgoingRoute:           outgoingRoute,
 	}
 	return flow.start()
 }
 
-func (flow *handleGetBlocksFlow) start() error {
+func (flow *handleRequestBlocksFlow) start() error {
 	for {
-		lowHash, highHash, err := receiveGetBlocks(flow.incomingRoute)
+		lowHash, highHash, err := receiveRequestIBDBlocks(flow.incomingRoute)
 		if err != nil {
 			return err
 		}
@@ -46,19 +46,19 @@ func (flow *handleGetBlocksFlow) start() error {
 	}
 }
 
-func receiveGetBlocks(incomingRoute *router.Route) (lowHash *daghash.Hash,
+func receiveRequestIBDBlocks(incomingRoute *router.Route) (lowHash *daghash.Hash,
 	highHash *daghash.Hash, err error) {
 
 	message, err := incomingRoute.Dequeue()
 	if err != nil {
 		return nil, nil, err
 	}
-	msgGetBlocks := message.(*wire.MsgRequestIBDBlocks)
+	msgRequestIBDBlocks := message.(*wire.MsgRequestIBDBlocks)
 
-	return msgGetBlocks.LowHash, msgGetBlocks.HighHash, nil
+	return msgRequestIBDBlocks.LowHash, msgRequestIBDBlocks.HighHash, nil
 }
 
-func (flow *handleGetBlocksFlow) buildMsgIBDBlocks(lowHash *daghash.Hash,
+func (flow *handleRequestBlocksFlow) buildMsgIBDBlocks(lowHash *daghash.Hash,
 	highHash *daghash.Hash) ([]*wire.MsgIBDBlock, error) {
 
 	const maxHashesInMsgIBDBlocks = wire.MaxInvPerMsg
@@ -79,7 +79,7 @@ func (flow *handleGetBlocksFlow) buildMsgIBDBlocks(lowHash *daghash.Hash,
 	return msgIBDBlocks, nil
 }
 
-func (flow *handleGetBlocksFlow) sendMsgIBDBlocks(msgIBDBlocks []*wire.MsgIBDBlock) error {
+func (flow *handleRequestBlocksFlow) sendMsgIBDBlocks(msgIBDBlocks []*wire.MsgIBDBlock) error {
 	for _, msgIBDBlock := range msgIBDBlocks {
 		err := flow.outgoingRoute.Enqueue(msgIBDBlock)
 		if err != nil {

@@ -7,27 +7,27 @@ import (
 	"github.com/pkg/errors"
 )
 
-// GetSelectedTipContext is the interface for the context needed for the HandleGetSelectedTip flow.
-type GetSelectedTipContext interface {
+// HandleRequestSelectedTipContext is the interface for the context needed for the HandleRequestSelectedTip flow.
+type HandleRequestSelectedTipContext interface {
 	DAG() *blockdag.BlockDAG
 }
 
-type handleGetSelectedTipFlow struct {
-	GetSelectedTipContext
+type handleRequestSelectedTipFlow struct {
+	HandleRequestSelectedTipContext
 	incomingRoute, outgoingRoute *router.Route
 }
 
-// HandleGetSelectedTip handles getSelectedTip messages
-func HandleGetSelectedTip(context GetSelectedTipContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
-	flow := &handleGetSelectedTipFlow{
-		GetSelectedTipContext: context,
-		incomingRoute:         incomingRoute,
-		outgoingRoute:         outgoingRoute,
+// HandleRequestSelectedTip handles getSelectedTip messages
+func HandleRequestSelectedTip(context HandleRequestSelectedTipContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
+	flow := &handleRequestSelectedTipFlow{
+		HandleRequestSelectedTipContext: context,
+		incomingRoute:                   incomingRoute,
+		outgoingRoute:                   outgoingRoute,
 	}
 	return flow.start()
 }
 
-func (flow *handleGetSelectedTipFlow) start() error {
+func (flow *handleRequestSelectedTipFlow) start() error {
 	for {
 		err := flow.receiveGetSelectedTip()
 		if err != nil {
@@ -41,7 +41,7 @@ func (flow *handleGetSelectedTipFlow) start() error {
 	}
 }
 
-func (flow *handleGetSelectedTipFlow) receiveGetSelectedTip() error {
+func (flow *handleRequestSelectedTipFlow) receiveGetSelectedTip() error {
 	message, err := flow.incomingRoute.Dequeue()
 	if err != nil {
 		return err
@@ -55,7 +55,7 @@ func (flow *handleGetSelectedTipFlow) receiveGetSelectedTip() error {
 	return nil
 }
 
-func (flow *handleGetSelectedTipFlow) sendSelectedTipHash() error {
+func (flow *handleRequestSelectedTipFlow) sendSelectedTipHash() error {
 	msgSelectedTip := wire.NewMsgSelectedTip(flow.DAG().SelectedTipHash())
 	return flow.outgoingRoute.Enqueue(msgSelectedTip)
 }
