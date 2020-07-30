@@ -25,24 +25,24 @@ func (cmd MessageCommand) String() string {
 
 // Commands used in kaspa message headers which describe the type of message.
 const (
-	CmdVersion             MessageCommand = 0
-	CmdVerAck              MessageCommand = 1
-	CmdRequestAddresses    MessageCommand = 2
-	CmdAddresses           MessageCommand = 3
-	CmdRequestIBDBlocks    MessageCommand = 4
-	CmdBlock               MessageCommand = 5
-	CmdTx                  MessageCommand = 6
-	CmdPing                MessageCommand = 7
-	CmdPong                MessageCommand = 8
-	CmdRequestBlockLocator MessageCommand = 9
-	CmdBlockLocator        MessageCommand = 10
-	CmdSelectedTip         MessageCommand = 11
-	CmdRequestSelectedTip  MessageCommand = 12
-	CmdInvRelayBlock       MessageCommand = 13
-	CmdRequestRelayBlocks  MessageCommand = 14
-	CmdInvTransaction      MessageCommand = 15
-	CmdRequestTransactions MessageCommand = 16
-	CmdIBDBlock            MessageCommand = 17
+	CmdVersion MessageCommand = iota
+	CmdVerAck
+	CmdRequestAddresses
+	CmdAddresses
+	CmdRequestIBDBlocks
+	CmdBlock
+	CmdTx
+	CmdPing
+	CmdPong
+	CmdRequestBlockLocator
+	CmdBlockLocator
+	CmdSelectedTip
+	CmdRequestSelectedTip
+	CmdInvRelayBlock
+	CmdRequestRelayBlocks
+	CmdInvTransaction
+	CmdRequestTransactions
+	CmdIBDBlock
 )
 
 var messageCommandToString = map[MessageCommand]string{
