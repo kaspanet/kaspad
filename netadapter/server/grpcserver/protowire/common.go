@@ -1,12 +1,13 @@
 package protowire
 
 import (
+	"math"
+
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
-	"math"
 )
 
 func (x *Hash) toWire() (*daghash.Hash, error) {

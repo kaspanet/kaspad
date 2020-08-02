@@ -3,13 +3,14 @@ package blockdag
 import (
 	"bytes"
 	"encoding/binary"
+	"time"
+
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/wire"
-	"time"
 )
 
 // BlockForMining returns a block with the given transactions

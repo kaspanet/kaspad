@@ -119,7 +119,8 @@ func (m *Manager) registerAddressFlows(router *routerpkg.Router, isStopping *uin
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return addressexchange.ReceiveAddresses(m.context, incomingRoute, outgoingRoute, peer)
 			},
-		)}
+		),
+	}
 }
 
 func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *uint32, errChan chan error) []*flow {
@@ -137,7 +138,8 @@ func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return blockrelay.HandleRelayBlockRequests(m.context, incomingRoute, outgoingRoute, peer)
 			},
-		)}
+		),
+	}
 }
 
 func (m *Manager) registerPingFlows(router *routerpkg.Router, isStopping *uint32, errChan chan error) []*flow {
@@ -154,7 +156,8 @@ func (m *Manager) registerPingFlows(router *routerpkg.Router, isStopping *uint32
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return ping.SendPings(m.context, incomingRoute, outgoingRoute, peer)
 			},
-		)}
+		),
+	}
 }
 
 func (m *Manager) registerIBDFlows(router *routerpkg.Router, isStopping *uint32, errChan chan error) []*flow {
@@ -190,18 +193,27 @@ func (m *Manager) registerIBDFlows(router *routerpkg.Router, isStopping *uint32,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return ibd.HandleRequestIBDBlocks(m.context, incomingRoute, outgoingRoute)
 			},
-		)}
+		),
+	}
 }
 
 func (m *Manager) registerTransactionRelayFlow(router *routerpkg.Router, isStopping *uint32, errChan chan error) []*flow {
 	outgoingRoute := router.OutgoingRoute()
 
 	return []*flow{
-		m.registerFlow("HandleRelayedTransactions", router, []wire.MessageCommand{wire.CmdInvTransaction, wire.CmdTx}, isStopping, errChan,
+		m.registerFlow("HandleRelayedTransactions", router,
+			[]wire.MessageCommand{wire.CmdInvTransaction, wire.CmdTx, wire.CmdTransactionNotFound}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return relaytransactions.HandleRelayedTransactions(m.context, incomingRoute, outgoingRoute)
 			},
-		)}
+		),
+		m.registerFlow("HandleRequestTransactions", router,
+			[]wire.MessageCommand{wire.CmdRequestTransactions}, isStopping, errChan,
+			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
+				return relaytransactions.HandleRequestedTransactions(m.context, incomingRoute, outgoingRoute)
+			},
+		),
+	}
 }
 
 func (m *Manager) registerFlow(name string, router *routerpkg.Router, messageTypes []wire.MessageCommand, isStopping *uint32,

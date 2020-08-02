@@ -748,34 +748,36 @@ func (mp *TxPool) fetchTxDesc(txID *daghash.TxID) (*TxDesc, bool) {
 // FetchTxDesc returns the requested TxDesc from the transaction pool.
 // This only fetches from the main transaction pool and does not include
 // orphans.
+// returns false in the second return parameter if transaction was not found
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) FetchTxDesc(txID *daghash.TxID) (*TxDesc, error) {
+func (mp *TxPool) FetchTxDesc(txID *daghash.TxID) (*TxDesc, bool) {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
 	if txDesc, exists := mp.fetchTxDesc(txID); exists {
-		return txDesc, nil
+		return txDesc, true
 	}
 
-	return nil, errors.Errorf("transaction is not in the pool")
+	return nil, false
 }
 
 // FetchTransaction returns the requested transaction from the transaction pool.
 // This only fetches from the main transaction pool and does not include
 // orphans.
+// returns false in the second return parameter if transaction was not found
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) FetchTransaction(txID *daghash.TxID) (*util.Tx, error) {
+func (mp *TxPool) FetchTransaction(txID *daghash.TxID) (*util.Tx, bool) {
 	// Protect concurrent access.
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
 	if txDesc, exists := mp.fetchTxDesc(txID); exists {
-		return txDesc.Tx, nil
+		return txDesc.Tx, true
 	}
 
-	return nil, errors.Errorf("transaction is not in the pool")
+	return nil, false
 }
 
 // checkTransactionMassSanity checks that a transaction must not exceed the maximum allowed block mass when serialized.

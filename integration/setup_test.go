@@ -10,30 +10,30 @@ import (
 )
 
 type appHarness struct {
-	app             *app.App
-	rpcClient       *rpcClient
-	p2pAddress      string
-	rpcAddress      string
-	miningAddress   string
-	miningAddressPK string
-	config          *config.Config
-	databaseContext *dbaccess.DatabaseContext
+	app                     *app.App
+	rpcClient               *rpcClient
+	p2pAddress              string
+	rpcAddress              string
+	miningAddress           string
+	miningAddressPrivateKey string
+	config                  *config.Config
+	databaseContext         *dbaccess.DatabaseContext
 }
 
 type harnessParams struct {
-	p2pAddress      string
-	rpcAddress      string
-	miningAddress   string
-	miningAddressPK string
+	p2pAddress              string
+	rpcAddress              string
+	miningAddress           string
+	miningAddressPrivateKey string
 }
 
 // setupHarness creates a single appHarness with given parameters
 func setupHarness(t *testing.T, params *harnessParams) (harness *appHarness, teardownFunc func()) {
 	harness = &appHarness{
-		p2pAddress:      params.p2pAddress,
-		rpcAddress:      params.rpcAddress,
-		miningAddress:   params.miningAddress,
-		miningAddressPK: params.miningAddressPK,
+		p2pAddress:              params.p2pAddress,
+		rpcAddress:              params.rpcAddress,
+		miningAddress:           params.miningAddress,
+		miningAddressPrivateKey: params.miningAddressPrivateKey,
 	}
 
 	setConfig(t, harness)
@@ -66,9 +66,23 @@ func setupHarnesses(t *testing.T, harnessesParams []*harnessParams) (harnesses [
 // standardSetup creates a standard setup of 3 appHarnesses that should work for most tests
 func standardSetup(t *testing.T) (appHarness1, appHarness2, appHarness3 *appHarness, teardownFunc func()) {
 	harnesses, teardown := setupHarnesses(t, []*harnessParams{
-		{p2pAddress: p2pAddress1, rpcAddress: rpcAddress1, miningAddress: miningAddress1},
-		{p2pAddress: p2pAddress2, rpcAddress: rpcAddress2, miningAddress: miningAddress2},
-		{p2pAddress: p2pAddress3, rpcAddress: rpcAddress3, miningAddress: miningAddress3},
+		{
+			p2pAddress:              p2pAddress1,
+			rpcAddress:              rpcAddress1,
+			miningAddress:           miningAddress1,
+			miningAddressPrivateKey: miningAddress1PrivateKey,
+		},
+		{
+			p2pAddress:              p2pAddress2,
+			rpcAddress:              rpcAddress2,
+			miningAddress:           miningAddress2,
+			miningAddressPrivateKey: miningAddress2PrivateKey,
+		}, {
+			p2pAddress:              p2pAddress3,
+			rpcAddress:              rpcAddress3,
+			miningAddress:           miningAddress3,
+			miningAddressPrivateKey: miningAddress3PrivateKey,
+		},
 	})
 
 	return harnesses[0], harnesses[1], harnesses[2], teardown

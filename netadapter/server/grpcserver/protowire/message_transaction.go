@@ -1,6 +1,7 @@
 package protowire
 
 import (
+	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
@@ -44,9 +45,12 @@ func (x *TransactionMessage) toWireMessage() (wire.Message, error) {
 		return nil, err
 	}
 
-	payloadHash, err := x.PayloadHash.toWire()
-	if err != nil {
-		return nil, err
+	var payloadHash *daghash.Hash
+	if x.PayloadHash != nil {
+		payloadHash, err = x.PayloadHash.toWire()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &wire.MsgTx{
@@ -82,6 +86,10 @@ func (x *TransactionMessage) fromWireMessage(msgTx *wire.MsgTx) {
 		}
 	}
 
+	var payloadHash *Hash
+	if msgTx.PayloadHash != nil {
+		payloadHash = wireHashToProto(msgTx.PayloadHash)
+	}
 	*x = TransactionMessage{
 		Version:      msgTx.Version,
 		Inputs:       protoInputs,
@@ -89,7 +97,8 @@ func (x *TransactionMessage) fromWireMessage(msgTx *wire.MsgTx) {
 		LockTime:     msgTx.LockTime,
 		SubnetworkID: wireSubnetworkIDToProto(&msgTx.SubnetworkID),
 		Gas:          msgTx.Gas,
-		PayloadHash:  wireHashToProto(msgTx.PayloadHash),
+		PayloadHash:  payloadHash,
 		Payload:      msgTx.Payload,
 	}
+
 }

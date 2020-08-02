@@ -3,6 +3,7 @@ package rpc
 import (
 	"encoding/hex"
 	"fmt"
+
 	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
@@ -36,8 +37,8 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	// TODO: This is racy. It should attempt to fetch it directly and check
 	// the error.
 	if includeMempool && s.txMempool.HaveTransaction(txID) {
-		tx, err := s.txMempool.FetchTransaction(txID)
-		if err != nil {
+		tx, ok := s.txMempool.FetchTransaction(txID)
+		if !ok {
 			return nil, rpcNoTxInfoError(txID)
 		}
 
