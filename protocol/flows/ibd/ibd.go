@@ -137,8 +137,8 @@ func (flow *handleIBDFlow) downloadBlocks(highestSharedBlockHash *daghash.Hash,
 			return err
 		}
 
-		if i != 0 && i%ibdBatchSize == 0 {
-			err = flow.outgoingRoute.Enqueue(wire.NewMsgGetNextIBDBlocks())
+		if i != 0 && (i+1)%ibdBatchSize == 0 {
+			err = flow.outgoingRoute.Enqueue(wire.NewMsgRequestNextIBDBlocks())
 			if err != nil {
 				return err
 			}

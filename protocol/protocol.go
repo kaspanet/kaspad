@@ -186,7 +186,7 @@ func (m *Manager) registerIBDFlows(router *routerpkg.Router, isStopping *uint32,
 			},
 		),
 
-		m.registerFlow("HandleRequestIBDBlocks", router, []wire.MessageCommand{wire.CmdRequestIBDBlocks, wire.CmdGetNextIBDBlocks}, isStopping, errChan,
+		m.registerFlow("HandleRequestIBDBlocks", router, []wire.MessageCommand{wire.CmdRequestIBDBlocks, wire.CmdRequestNextIBDBlocks}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return ibd.HandleRequestIBDBlocks(m.context, incomingRoute, outgoingRoute)
 			},

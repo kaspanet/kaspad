@@ -65,9 +65,9 @@ func (flow *handleRequestBlocksFlow) start() error {
 				return err
 			}
 
-			if _, ok := message.(*wire.MsgGetNextIBDBlocks); !ok {
+			if _, ok := message.(*wire.MsgRequestNextIBDBlocks); !ok {
 				return protocolerrors.Errorf(true, "received unexpected message type. "+
-					"expected: %s, got: %s", wire.CmdGetNextIBDBlocks, message.Command())
+					"expected: %s, got: %s", wire.CmdRequestNextIBDBlocks, message.Command())
 			}
 		}
 		err = flow.outgoingRoute.Enqueue(wire.NewMsgDoneIBDBlocks())

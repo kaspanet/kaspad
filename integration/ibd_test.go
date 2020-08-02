@@ -22,13 +22,17 @@ func TestIBD(t *testing.T) {
 
 	blockAddedWG := sync.WaitGroup{}
 	blockAddedWG.Add(numBlocks)
-	setOnBlockAddedHandler(t, syncee, func(header *wire.BlockHeader) { blockAddedWG.Done() })
+	receivedBlocks := 0
+	setOnBlockAddedHandler(t, syncee, func(header *wire.BlockHeader) {
+		receivedBlocks++
+		blockAddedWG.Done()
+	})
 
 	connect(t, syncer, syncee)
 
 	select {
 	case <-time.After(defaultTimeout):
-		t.Fatalf("Timeout waiting for IBD to finish")
+		t.Fatalf("Timeout waiting for IBD to finish. Received %d blocks out of %d", receivedBlocks, numBlocks)
 	case <-locks.ReceiveFromChanWhenDone(func() { blockAddedWG.Wait() }):
 	}
 
