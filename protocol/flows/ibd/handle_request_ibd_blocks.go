@@ -56,7 +56,7 @@ func (flow *handleRequestBlocksFlow) start() error {
 
 			// Exit the loop and don't wait for the GetNextIBDBlocks message if the last batch was
 			// less than ibdBatchSize.
-			if len(blocksToSend)%ibdBatchSize == 0 {
+			if len(blocksToSend) < ibdBatchSize {
 				break
 			}
 
