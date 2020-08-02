@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	defaultMaxMessages = 100
+	// DefaultMaxMessages is the default capacity for a route with a capacity defined
+	DefaultMaxMessages = 100
 )
 
 var (
@@ -40,7 +41,7 @@ type Route struct {
 
 // NewRoute create a new Route
 func NewRoute() *Route {
-	return newRouteWithCapacity(defaultMaxMessages)
+	return newRouteWithCapacity(DefaultMaxMessages)
 }
 
 func newRouteWithCapacity(capacity int) *Route {
@@ -58,7 +59,7 @@ func (r *Route) Enqueue(message wire.Message) error {
 	if r.closed {
 		return errors.WithStack(ErrRouteClosed)
 	}
-	if len(r.channel) == defaultMaxMessages {
+	if len(r.channel) == DefaultMaxMessages {
 		r.onCapacityReachedHandler()
 	}
 	r.channel <- message

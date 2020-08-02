@@ -69,6 +69,20 @@ func toPayload(message wire.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *wire.MsgRequestNextIBDBlocks:
+		payload := new(KaspadMessage_RequestNextIBDBlocks)
+		err := payload.fromWireMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *wire.MsgDoneIBDBlocks:
+		payload := new(KaspadMessage_DoneIBDBlocks)
+		err := payload.fromWireMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	case *wire.MsgRequestRelayBlocks:
 		payload := new(KaspadMessage_RequestRelayBlocks)
 		err := payload.fromWireMessage(message)
