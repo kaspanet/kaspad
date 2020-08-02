@@ -3,6 +3,7 @@ package rpc
 import (
 	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/pkg/errors"
 )
 
 func handleGetMempoolEntry(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
@@ -12,9 +13,9 @@ func handleGetMempoolEntry(s *Server, cmd interface{}, closeChan <-chan struct{}
 		return nil, err
 	}
 
-	txDesc, err := s.txMempool.FetchTxDesc(txID)
-	if err != nil {
-		return nil, err
+	txDesc, ok := s.txMempool.FetchTxDesc(txID)
+	if !ok {
+		return nil, errors.Errorf("transaction is not in the pool")
 	}
 
 	tx := txDesc.Tx

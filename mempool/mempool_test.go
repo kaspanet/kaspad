@@ -882,12 +882,12 @@ func TestFetchTransaction(t *testing.T) {
 	}
 	harness.txPool.ProcessTransaction(orphanedTx, true, 0)
 	testPoolMembership(tc, orphanedTx, true, false, false)
-	fetchedorphanedTx, err := harness.txPool.FetchTransaction(orphanedTx.ID())
+	fetchedorphanedTx, ok := harness.txPool.FetchTransaction(orphanedTx.ID())
 	if fetchedorphanedTx != nil {
 		t.Fatalf("FetchTransaction: expected fetchedorphanedTx to be nil")
 	}
-	if err == nil {
-		t.Errorf("FetchTransaction: expected an error, not nil")
+	if ok {
+		t.Errorf("FetchTransaction: expected an ok=false, got ok=true")
 	}
 
 	tx, err := harness.createTx(spendableOuts[0], uint64(txRelayFeeForTest), 1)
@@ -896,12 +896,12 @@ func TestFetchTransaction(t *testing.T) {
 	}
 	harness.txPool.ProcessTransaction(tx, true, 0)
 	testPoolMembership(tc, tx, false, true, false)
-	fetchedTx, err := harness.txPool.FetchTransaction(tx.ID())
+	fetchedTx, ok := harness.txPool.FetchTransaction(tx.ID())
 	if !reflect.DeepEqual(fetchedTx, tx) {
 		t.Fatalf("FetchTransaction: returned a transaction, but not the right one")
 	}
-	if err != nil {
-		t.Errorf("FetchTransaction: unexpected error: %v", err)
+	if !ok {
+		t.Errorf("FetchTransaction: unexpected expoected ok=true, got ok=false")
 	}
 
 }
