@@ -39,18 +39,18 @@ func connect(t *testing.T, incoming, outgoing *appHarness) {
 		t.Fatalf("Timed out waiting for the apps to connect")
 	}
 }
-func isConnected(t *testing.T, incoming, outgoing *appHarness) bool {
-	connectedPeerInfo1, err := incoming.rpcClient.GetConnectedPeerInfo()
+func isConnected(t *testing.T, appHarness1, appHarness2 *appHarness) bool {
+	connectedPeerInfo1, err := appHarness1.rpcClient.GetConnectedPeerInfo()
 	if err != nil {
 		t.Fatalf("Error getting connected peer info for app1: %+v", err)
 	}
-	connectedPeerInfo2, err := outgoing.rpcClient.GetConnectedPeerInfo()
+	connectedPeerInfo2, err := appHarness2.rpcClient.GetConnectedPeerInfo()
 	if err != nil {
 		t.Fatalf("Error getting connected peer info for app2: %+v", err)
 	}
 
 	var incomingConnected, outgoingConnected bool
-	app1ID, app2ID := incoming.app.P2PNodeID().String(), outgoing.app.P2PNodeID().String()
+	app1ID, app2ID := appHarness1.app.P2PNodeID().String(), appHarness2.app.P2PNodeID().String()
 
 	for _, connectedPeer := range connectedPeerInfo1 {
 		if connectedPeer.ID == app2ID {
