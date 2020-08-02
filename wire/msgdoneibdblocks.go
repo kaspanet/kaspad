@@ -13,7 +13,7 @@ func (msg *MsgDoneIBDBlocks) Command() MessageCommand {
 	return CmdDoneIBDBlocks
 }
 
-// NewMsgDoneIBDBlocks returns a new kaspa GetNextIBDBlocks message that conforms to the
+// NewMsgDoneIBDBlocks returns a new kaspa DoneIBDBlocks message that conforms to the
 // Message interface.
 func NewMsgDoneIBDBlocks() *MsgDoneIBDBlocks {
 	return &MsgDoneIBDBlocks{}
