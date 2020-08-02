@@ -14,41 +14,64 @@ type appHarness struct {
 	rpcClient       *rpcClient
 	p2pAddress      string
 	rpcAddress      string
+	miningAddress   string
+	miningAddressPK string
 	config          *config.Config
 	databaseContext *dbaccess.DatabaseContext
 }
 
-func setup(t *testing.T) (appHarness1, appHarness2, appHarness3 *appHarness, teardownFunc func()) {
-	appHarness1 = &appHarness{p2pAddress: p2pAddress1, rpcAddress: rpcAddress1}
-	appHarness2 = &appHarness{p2pAddress: p2pAddress2, rpcAddress: rpcAddress2}
-	appHarness3 = &appHarness{p2pAddress: p2pAddress3, rpcAddress: rpcAddress3}
+type harnessParams struct {
+	p2pAddress      string
+	rpcAddress      string
+	miningAddress   string
+	miningAddressPK string
+}
 
-	setConfig(t, appHarness1)
-	setConfig(t, appHarness2)
-	setConfig(t, appHarness3)
+// setupHarness creates a single appHarness with given parameters
+func setupHarness(t *testing.T, params *harnessParams) (harness *appHarness, teardownFunc func()) {
+	harness = &appHarness{
+		p2pAddress:      params.p2pAddress,
+		rpcAddress:      params.rpcAddress,
+		miningAddress:   params.miningAddress,
+		miningAddressPK: params.miningAddressPK,
+	}
 
-	setDatabaseContext(t, appHarness1)
-	setDatabaseContext(t, appHarness2)
-	setDatabaseContext(t, appHarness3)
+	setConfig(t, harness)
+	setDatabaseContext(t, harness)
+	setApp(t, harness)
+	harness.app.Start()
+	setRPCClient(t, harness)
 
-	setApp(t, appHarness1)
-	setApp(t, appHarness2)
-	setApp(t, appHarness3)
+	return harness, func() {
+		teardown(t, harness)
+	}
+}
 
-	appHarness1.app.Start()
-	appHarness2.app.Start()
-	appHarness3.app.Start()
+// setupHarnesses creates multiple appHarnesses, according to number of parameters passed
+func setupHarnesses(t *testing.T, harnessesParams []*harnessParams) (harnesses []*appHarness, teardownFunc func()) {
+	var teardowns []func()
+	for _, params := range harnessesParams {
+		harness, teardownFunc := setupHarness(t, params)
+		harnesses = append(harnesses, harness)
+		teardowns = append(teardowns, teardownFunc)
+	}
 
-	setRPCClient(t, appHarness1)
-	setRPCClient(t, appHarness2)
-	setRPCClient(t, appHarness3)
-
-	return appHarness1, appHarness2, appHarness3,
-		func() {
-			teardown(t, appHarness1)
-			teardown(t, appHarness2)
-			teardown(t, appHarness3)
+	return harnesses, func() {
+		for _, teardownFunc := range teardowns {
+			teardownFunc()
 		}
+	}
+}
+
+// standardSetup creates a standard setup of 3 appHarnesses that should work for most tests
+func standardSetup(t *testing.T) (appHarness1, appHarness2, appHarness3 *appHarness, teardownFunc func()) {
+	harnesses, teardown := setupHarnesses(t, []*harnessParams{
+		{p2pAddress: p2pAddress1, rpcAddress: rpcAddress1, miningAddress: miningAddress1},
+		{p2pAddress: p2pAddress2, rpcAddress: rpcAddress2, miningAddress: miningAddress2},
+		{p2pAddress: p2pAddress3, rpcAddress: rpcAddress3, miningAddress: miningAddress3},
+	})
+
+	return harnesses[0], harnesses[1], harnesses[2], teardown
 }
 
 func setRPCClient(t *testing.T, harness *appHarness) {

@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-func connect(t *testing.T, appHarness1, appHarness2 *appHarness) {
-	err := appHarness2.rpcClient.ConnectNode(appHarness1.p2pAddress)
+func connect(t *testing.T, incoming, outgoing *appHarness) {
+	err := outgoing.rpcClient.ConnectNode(incoming.p2pAddress)
 	if err != nil {
 		t.Fatalf("Error connecting the nodes")
 	}
@@ -17,7 +17,7 @@ func connect(t *testing.T, appHarness1, appHarness2 *appHarness) {
 
 	spawn("integration.connect-Wait for connection", func() {
 		for range time.Tick(10 * time.Millisecond) {
-			if isConnected(t, appHarness1, appHarness2) {
+			if isConnected(t, incoming, outgoing) {
 				close(onConnectedChan)
 				return
 			}

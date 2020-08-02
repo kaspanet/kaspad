@@ -5,12 +5,10 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/wire"
-
-	clientpkg "github.com/kaspanet/kaspad/rpc/client"
 )
 
 func TestIntegrationBasicSync(t *testing.T) {
-	appHarness1, appHarness2, appHarness3, teardown := setup(t)
+	appHarness1, appHarness2, appHarness3, teardown := standardSetup(t)
 	defer teardown()
 
 	// Connect nodes in chain: 1 <--> 2 <--> 3
@@ -18,40 +16,17 @@ func TestIntegrationBasicSync(t *testing.T) {
 	connect(t, appHarness1, appHarness2)
 	connect(t, appHarness2, appHarness3)
 
-	blockTemplate, err := appHarness1.rpcClient.GetBlockTemplate(testAddress1, "")
-	if err != nil {
-		t.Fatalf("Error getting block template: %+v", err)
-	}
-
-	block, err := clientpkg.ConvertGetBlockTemplateResultToBlock(blockTemplate)
-	if err != nil {
-		t.Fatalf("Error parsing blockTemplate: %s", err)
-	}
-
-	solveBlock(t, block)
-
-	err = appHarness2.rpcClient.NotifyBlocks()
-	if err != nil {
-		t.Fatalf("Error from NotifyBlocks: %+v", err)
-	}
 	app2OnBlockAddedChan := make(chan *wire.BlockHeader)
-	appHarness2.rpcClient.onBlockAdded = func(header *wire.BlockHeader) {
+	setOnBlockAddedHandler(t, appHarness2, func(header *wire.BlockHeader) {
 		app2OnBlockAddedChan <- header
-	}
+	})
 
-	err = appHarness3.rpcClient.NotifyBlocks()
-	if err != nil {
-		t.Fatalf("Error from NotifyBlocks: %+v", err)
-	}
 	app3OnBlockAddedChan := make(chan *wire.BlockHeader)
-	appHarness3.rpcClient.onBlockAdded = func(header *wire.BlockHeader) {
+	setOnBlockAddedHandler(t, appHarness3, func(header *wire.BlockHeader) {
 		app3OnBlockAddedChan <- header
-	}
+	})
 
-	err = appHarness1.rpcClient.SubmitBlock(block, nil)
-	if err != nil {
-		t.Fatalf("Error submitting block: %s", err)
-	}
+	block := mineNextBlock(t, appHarness1)
 
 	var header *wire.BlockHeader
 	select {
