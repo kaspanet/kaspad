@@ -28,5 +28,5 @@ func TestAddressExchange(t *testing.T) {
 		}
 	}
 
-	t.Errorf("Didn't testAddress in list of addresses of appHarness3")
+	t.Errorf("Didn't find testAddress in list of addresses of appHarness3")
 }
