@@ -21,14 +21,14 @@ const (
 	rpcUser = "user"
 	rpcPass = "pass"
 
-	testAddress1   = "kaspasim:qz3tm5pew9lrdpnn8kytgtm6a0mx772j4uw02snetn"
-	testAddress1PK = "69f470ff9cd4010de7f4a95161867c49834435423526d9bab83781821cdf95bf"
+	miningAddress1   = "kaspasim:qz3tm5pew9lrdpnn8kytgtm6a0mx772j4uw02snetn"
+	miningAddress1PK = "69f470ff9cd4010de7f4a95161867c49834435423526d9bab83781821cdf95bf"
 
-	testAddress2   = "kaspasim:qqdf0vrh3u576eqzkp0s8qagc04tuj2xnu4sfskhx0"
-	testAddress2PK = "aed46ef760223032d2641e086dd48d0b0a4d581811e68ccf15bed2b8fe87348e"
+	miningAddress2   = "kaspasim:qqdf0vrh3u576eqzkp0s8qagc04tuj2xnu4sfskhx0"
+	miningAddress2PK = "aed46ef760223032d2641e086dd48d0b0a4d581811e68ccf15bed2b8fe87348e"
 
-	testAddress3   = "kaspasim:qq2wz0hl73a0qcl8872wr3djplwmyulurscsqxehu2"
-	testAddress3PK = "cc94a79bbccca30b0e3edff1895cbdf8d4ddcc119eacfd692970151dcc2881c2"
+	miningAddress3   = "kaspasim:qq2wz0hl73a0qcl8872wr3djplwmyulurscsqxehu2"
+	miningAddress3PK = "cc94a79bbccca30b0e3edff1895cbdf8d4ddcc119eacfd692970151dcc2881c2"
 
 	defaultTimeout = 10 * time.Second
 )
