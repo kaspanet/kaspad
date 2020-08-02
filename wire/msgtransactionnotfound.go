@@ -8,8 +8,8 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// MsgTransactionNotFound defines a kaspa transactionnotfound message which is sent in response to
-// a requesttransactions message if any of the requested data in not available on the peer.
+// MsgTransactionNotFound defines a kaspa TransactionNotFound message which is sent in response to
+// a RequestTransactions message if any of the requested data in not available on the peer.
 type MsgTransactionNotFound struct {
 	ID *daghash.TxID
 }
@@ -17,7 +17,7 @@ type MsgTransactionNotFound struct {
 // Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgTransactionNotFound) Command() MessageCommand {
-	return CmdNotFound
+	return CmdTransactionNotFound
 }
 
 // NewMsgTransactionNotFound returns a new kaspa transactionsnotfound message that conforms to the

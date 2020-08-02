@@ -201,7 +201,7 @@ func (m *Manager) registerTransactionRelayFlow(router *routerpkg.Router, isStopp
 
 	return []*flow{
 		m.registerFlow("HandleRelayedTransactions", router,
-			[]wire.MessageCommand{wire.CmdInvTransaction, wire.CmdTx, wire.CmdNotFound}, isStopping, errChan,
+			[]wire.MessageCommand{wire.CmdInvTransaction, wire.CmdTx, wire.CmdTransactionNotFound}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return relaytransactions.HandleRelayedTransactions(m.context, incomingRoute, outgoingRoute)
 			},
