@@ -41,7 +41,12 @@ func Test64IncomingConnections(t *testing.T) {
 			t.Fatalf("Error from NotifyBlocks: %+v", err)
 		}
 
+		blockAdded := false
 		bully.rpcClient.onBlockAdded = func(header *wire.BlockHeader) {
+			if blockAdded {
+				t.Fatalf("Single bully reported block added twice")
+			}
+			blockAdded = true
 			blockAddedWG.Done()
 		}
 	}
