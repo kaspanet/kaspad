@@ -21,14 +21,21 @@ func TestTxRelay(t *testing.T) {
 	connect(t, payer, mediator)
 	connect(t, mediator, payee)
 
+	payeeBlockAddedChan := make(chan *wire.BlockHeader)
+	SetOnBlockAddedHandler(t, payee, func(header *wire.BlockHeader) {
+		payeeBlockAddedChan <- header
+	})
 	// skip the first block because it's paying to genesis script
 	requestAndSolveTemplate(t, payer)
+	waitForPayeeToReceiveBlock(t, payeeBlockAddedChan)
 	// use the second block to get money to pay with
 	secondBlock := requestAndSolveTemplate(t, payer)
+	waitForPayeeToReceiveBlock(t, payeeBlockAddedChan)
 
 	// Mine BlockCoinbaseMaturity more blocks for our money to mature
 	for i := uint64(0); i < payer.config.ActiveNetParams.BlockCoinbaseMaturity; i++ {
 		requestAndSolveTemplate(t, payer)
+		waitForPayeeToReceiveBlock(t, payeeBlockAddedChan)
 	}
 
 	tx := generateTx(t, secondBlock.CoinbaseTransaction().MsgTx(), payer, payee)
@@ -60,6 +67,14 @@ func TestTxRelay(t *testing.T) {
 	case <-txAddedToMempoolChan:
 	case <-time.After(defaultTimeout):
 		t.Fatalf("Timeout waiting for transaction to be accepted into mempool")
+	}
+}
+
+func waitForPayeeToReceiveBlock(t *testing.T, payeeBlockAddedChan chan *wire.BlockHeader) {
+	select {
+	case <-payeeBlockAddedChan:
+	case <-time.After(defaultTimeout):
+		t.Fatalf("Timeout waiting for block added")
 	}
 }
 
