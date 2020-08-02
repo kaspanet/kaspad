@@ -86,6 +86,10 @@ func (x *TransactionMessage) fromWireMessage(msgTx *wire.MsgTx) {
 		}
 	}
 
+	var payloadHash *Hash
+	if msgTx.PayloadHash != nil {
+		payloadHash = wireHashToProto(msgTx.PayloadHash)
+	}
 	*x = TransactionMessage{
 		Version:      msgTx.Version,
 		Inputs:       protoInputs,
@@ -93,10 +97,8 @@ func (x *TransactionMessage) fromWireMessage(msgTx *wire.MsgTx) {
 		LockTime:     msgTx.LockTime,
 		SubnetworkID: wireSubnetworkIDToProto(&msgTx.SubnetworkID),
 		Gas:          msgTx.Gas,
+		PayloadHash:  payloadHash,
 		Payload:      msgTx.Payload,
 	}
 
-	if msgTx.PayloadHash != nil {
-		x.PayloadHash = wireHashToProto(msgTx.PayloadHash)
-	}
 }
