@@ -12,18 +12,20 @@ message KaspadMessage {
     BlockLocatorMessage blockLocator = 5;
     RequestAddressesMessage requestAddresses = 6;
     RequestIBDBlocksMessage requestIBDBlocks = 7;
-    RequestRelayBlocksMessage requestRelayBlocks = 8;
-    RequestSelectedTipMessage requestSelectedTip = 9;
-    RequestTransactionsMessage requestTransactions = 10;
-    BlockMessage ibdBlock = 11;
-    InvRelayBlockMessage invRelayBlock = 12;
-    InvTransactionsMessage invTransactions = 13;
-    PingMessage ping = 14;
-    PongMessage pong = 15;
-    SelectedTipMessage selectedTip = 16;
-    VerackMessage verack = 17;
-    VersionMessage version = 18;
-    TransactionNotFoundMessage transactionNotFound=19;
+    RequestNextIBDBlocksMessage requestNextIBDBlocks = 8;
+    DoneIBDBlocksMessage DoneIBDBlocks = 9;
+    RequestRelayBlocksMessage requestRelayBlocks = 10;
+    RequestSelectedTipMessage requestSelectedTip = 11;
+    RequestTransactionsMessage requestTransactions = 12;
+    BlockMessage ibdBlock = 13;
+    InvRelayBlockMessage invRelayBlock = 14;
+    InvTransactionsMessage invTransactions = 15;
+    PingMessage ping = 16;
+    PongMessage pong = 17;
+    SelectedTipMessage selectedTip = 18;
+    VerackMessage verack = 19;
+    VersionMessage version = 20;
+    TransactionNotFoundMessage transactionNotFound=21;
   }
 }
 
@@ -127,6 +129,16 @@ message RequestIBDBlocksMessage{
   Hash highHash = 2;
 }
 // GetBlocksMessage end
+
+// RequestNextIBDBlocksMessage start
+message RequestNextIBDBlocksMessage{
+}
+// RequestNextIBDBlocksMessage end
+
+// DoneIBDBlocksMessage start
+message DoneIBDBlocksMessage{
+}
+// DoneIBDBlocksMessage end
 
 // GetRelayBlocksMessage start
 message RequestRelayBlocksMessage{

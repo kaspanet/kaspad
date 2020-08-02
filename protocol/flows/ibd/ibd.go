@@ -122,17 +122,28 @@ func (flow *handleIBDFlow) downloadBlocks(highestSharedBlockHash *daghash.Hash,
 		return err
 	}
 
+	blocksReceived := 0
 	for {
-		msgIBDBlock, err := flow.receiveIBDBlock()
+		msgIBDBlock, doneIBD, err := flow.receiveIBDBlock()
 		if err != nil {
 			return err
 		}
+
+		if doneIBD {
+			return nil
+		}
+
 		err = flow.processIBDBlock(msgIBDBlock)
 		if err != nil {
 			return err
 		}
-		if msgIBDBlock.BlockHash().IsEqual(peerSelectedTipHash) {
-			return nil
+
+		blocksReceived++
+		if blocksReceived%ibdBatchSize == 0 {
+			err = flow.outgoingRoute.Enqueue(wire.NewMsgRequestNextIBDBlocks())
+			if err != nil {
+				return err
+			}
 		}
 	}
 }
@@ -144,18 +155,21 @@ func (flow *handleIBDFlow) sendGetBlocks(highestSharedBlockHash *daghash.Hash,
 	return flow.outgoingRoute.Enqueue(msgGetBlockInvs)
 }
 
-func (flow *handleIBDFlow) receiveIBDBlock() (msgIBDBlock *wire.MsgIBDBlock, err error) {
+func (flow *handleIBDFlow) receiveIBDBlock() (msgIBDBlock *wire.MsgIBDBlock, doneIBD bool, err error) {
 	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	msgIBDBlock, ok := message.(*wire.MsgIBDBlock)
-	if !ok {
-		return nil,
+	switch message := message.(type) {
+	case *wire.MsgIBDBlock:
+		return message, false, nil
+	case *wire.MsgDoneIBDBlocks:
+		return nil, true, nil
+	default:
+		return nil, false,
 			protocolerrors.Errorf(true, "received unexpected message type. "+
 				"expected: %s, got: %s", wire.CmdIBDBlock, message.Command())
 	}
-	return msgIBDBlock, nil
 }
 
 func (flow *handleIBDFlow) processIBDBlock(msgIBDBlock *wire.MsgIBDBlock) error {

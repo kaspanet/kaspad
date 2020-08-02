@@ -43,29 +43,33 @@ const (
 	CmdInvTransaction
 	CmdRequestTransactions
 	CmdIBDBlock
+	CmdRequestNextIBDBlocks
+	CmdDoneIBDBlocks
 	CmdTransactionNotFound
 )
 
 var messageCommandToString = map[MessageCommand]string{
-	CmdVersion:             "Version",
-	CmdVerAck:              "VerAck",
-	CmdRequestAddresses:    "RequestAddresses",
-	CmdAddresses:           "Addresses",
-	CmdRequestIBDBlocks:    "RequestBlocks",
-	CmdBlock:               "Block",
-	CmdTx:                  "Tx",
-	CmdPing:                "Ping",
-	CmdPong:                "Pong",
-	CmdRequestBlockLocator: "RequestBlockLocator",
-	CmdBlockLocator:        "BlockLocator",
-	CmdSelectedTip:         "SelectedTip",
-	CmdRequestSelectedTip:  "RequestSelectedTip",
-	CmdInvRelayBlock:       "InvRelayBlock",
-	CmdRequestRelayBlocks:  "RequestRelayBlocks",
-	CmdInvTransaction:      "InvTransaction",
-	CmdRequestTransactions: "RequestTransactions",
-	CmdIBDBlock:            "IBDBlock",
-	CmdTransactionNotFound: "TransactionNotFound",
+	CmdVersion:              "Version",
+	CmdVerAck:               "VerAck",
+	CmdRequestAddresses:     "RequestAddresses",
+	CmdAddresses:            "Addresses",
+	CmdRequestIBDBlocks:     "RequestBlocks",
+	CmdBlock:                "Block",
+	CmdTx:                   "Tx",
+	CmdPing:                 "Ping",
+	CmdPong:                 "Pong",
+	CmdRequestBlockLocator:  "RequestBlockLocator",
+	CmdBlockLocator:         "BlockLocator",
+	CmdSelectedTip:          "SelectedTip",
+	CmdRequestSelectedTip:   "RequestSelectedTip",
+	CmdInvRelayBlock:        "InvRelayBlock",
+	CmdRequestRelayBlocks:   "RequestRelayBlocks",
+	CmdInvTransaction:       "InvTransaction",
+	CmdRequestTransactions:  "RequestTransactions",
+	CmdIBDBlock:             "IBDBlock",
+	CmdRequestNextIBDBlocks: "RequestNextIBDBlocks",
+	CmdDoneIBDBlocks:        "DoneIBDBlocks",
+	CmdTransactionNotFound:  "TransactionNotFound",
 }
 
 // Message is an interface that describes a kaspa message. A type that
