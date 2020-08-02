@@ -132,6 +132,7 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 		protocolManager:   protocolManager,
 		connectionManager: connectionManager,
 		netAdapter:        netAdapter,
+		addressManager:    addressManager,
 	}, nil
 }
 
@@ -233,6 +234,11 @@ func setupRPC(cfg *config.Config,
 // P2PNodeID returns the network ID associated with this App
 func (a *App) P2PNodeID() *id.ID {
 	return a.netAdapter.ID()
+}
+
+// AddressManager returns the AddressManager associated with this App
+func (a *App) AddressManager() *addressmanager.AddressManager {
+	return a.addressManager
 }
 
 // WaitForShutdown blocks until the main listener and peer handlers are stopped.

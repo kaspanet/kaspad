@@ -149,6 +149,43 @@ func (c *Client) GetConnectedPeerInfo() ([]model.GetConnectedPeerInfoResult, err
 	return c.GetConnectedPeerInfoAsync().Receive()
 }
 
+// FutureGetPeerAddresses is a future promise to deliver the result of a
+// GetPeerAddresses RPC invocation (or an applicable error).
+type FutureGetPeerAddresses chan *response
+
+// Receive waits for the response promised by the future and returns data about
+// peer addresses.
+func (r FutureGetPeerAddresses) Receive() (*model.GetPeerAddressesResult, error) {
+	res, err := receiveFuture(r)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal result as an array of getPeerAddresses result objects.
+	peerAddresses := &model.GetPeerAddressesResult{}
+	err = json.Unmarshal(res, peerAddresses)
+	if err != nil {
+		return nil, err
+	}
+
+	return peerAddresses, nil
+}
+
+// GetPeerAddressesAsync returns an instance of a type that can be used to get the
+// result of the RPC at some future time by invoking the Receive function on the
+// returned instance.
+//
+// See GetPeerAddresses for the blocking version and more details.
+func (c *Client) GetPeerAddressesAsync() FutureGetPeerAddresses {
+	cmd := model.NewGetPeerAddressesCmd()
+	return c.sendCmd(cmd)
+}
+
+// GetPeerAddresses returns data about each connected network peer.
+func (c *Client) GetPeerAddresses() (*model.GetPeerAddressesResult, error) {
+	return c.GetPeerAddressesAsync().Receive()
+}
+
 // FutureGetNetTotalsResult is a future promise to deliver the result of a
 // GetNetTotalsAsync RPC invocation (or an applicable error).
 type FutureGetNetTotalsResult chan *response
