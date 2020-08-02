@@ -1,6 +1,7 @@
 package protowire
 
 import (
+	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
@@ -44,9 +45,12 @@ func (x *TransactionMessage) toWireMessage() (wire.Message, error) {
 		return nil, err
 	}
 
-	payloadHash, err := x.PayloadHash.toWire()
-	if err != nil {
-		return nil, err
+	var payloadHash *daghash.Hash
+	if x.PayloadHash != nil {
+		payloadHash, err = x.PayloadHash.toWire()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &wire.MsgTx{

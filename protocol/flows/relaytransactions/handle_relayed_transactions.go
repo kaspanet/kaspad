@@ -13,8 +13,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-// RelayedTransactionsContext is the interface for the context needed for the HandleRelayedTransactions flow.
-type RelayedTransactionsContext interface {
+// TransactionsRelayContext is the interface for the context needed for the
+// HandleRelayedTransactions and HandleRequestedTransactions flows.
+type TransactionsRelayContext interface {
 	NetAdapter() *netadapter.NetAdapter
 	DAG() *blockdag.BlockDAG
 	SharedRequestedTransactions() *SharedRequestedTransactions
@@ -23,19 +24,19 @@ type RelayedTransactionsContext interface {
 }
 
 type handleRelayedTransactionsFlow struct {
-	RelayedTransactionsContext
+	TransactionsRelayContext
 	incomingRoute, outgoingRoute *router.Route
 	invsQueue                    []*wire.MsgInvTransaction
 }
 
 // HandleRelayedTransactions listens to wire.MsgInvTransaction messages, requests their corresponding transactions if they
 // are missing, adds them to the mempool and propagates them to the rest of the network.
-func HandleRelayedTransactions(context RelayedTransactionsContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
+func HandleRelayedTransactions(context TransactionsRelayContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
 	flow := &handleRelayedTransactionsFlow{
-		RelayedTransactionsContext: context,
-		incomingRoute:              incomingRoute,
-		outgoingRoute:              outgoingRoute,
-		invsQueue:                  make([]*wire.MsgInvTransaction, 0),
+		TransactionsRelayContext: context,
+		incomingRoute:            incomingRoute,
+		outgoingRoute:            outgoingRoute,
+		invsQueue:                make([]*wire.MsgInvTransaction, 0),
 	}
 	return flow.start()
 }
@@ -114,7 +115,6 @@ func (flow *handleRelayedTransactionsFlow) isKnownTransaction(txID *daghash.TxID
 }
 
 func (flow *handleRelayedTransactionsFlow) readInv() (*wire.MsgInvTransaction, error) {
-
 	if len(flow.invsQueue) > 0 {
 		var inv *wire.MsgInvTransaction
 		inv, flow.invsQueue = flow.invsQueue[0], flow.invsQueue[1:]
@@ -145,42 +145,53 @@ func (flow *handleRelayedTransactionsFlow) broadcastAcceptedTransactions(accepte
 	return flow.Broadcast(inv)
 }
 
-// readMsgTx returns the next msgTx in incomingRoute, and populates invsQueue with any inv messages that meanwhile arrive.
+// readMsgTxOrNotFound returns the next msgTx or msgTransactionNotFound in incomingRoute,
+// returning only one of the message types at a time.
 //
-// Note: this function assumes msgChan can contain only wire.MsgInvTransaction and wire.MsgBlock messages.
-func (flow *handleRelayedTransactionsFlow) readMsgTx() (
-	msgTx *wire.MsgTx, err error) {
+// and populates invsQueue with any inv messages that meanwhile arrive.
+func (flow *handleRelayedTransactionsFlow) readMsgTxOrNotFound() (
+	msgTx *wire.MsgTx, msgNotFound *wire.MsgTransactionNotFound, err error) {
 
 	for {
 		message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		switch message := message.(type) {
 		case *wire.MsgInvTransaction:
 			flow.invsQueue = append(flow.invsQueue, message)
 		case *wire.MsgTx:
-			return message, nil
+			return message, nil, nil
+		case *wire.MsgTransactionNotFound:
+			return nil, message, nil
 		default:
-			return nil, errors.Errorf("unexpected message %s", message.Command())
+			return nil, nil, errors.Errorf("unexpected message %s", message.Command())
 		}
 	}
 }
 
 func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransactions []*daghash.TxID) error {
-
 	// In case the function returns earlier than expected, we want to make sure sharedRequestedTransactions is
 	// clean from any pending transactions.
 	defer flow.SharedRequestedTransactions().removeMany(requestedTransactions)
 	for _, expectedID := range requestedTransactions {
-		msgTx, err := flow.readMsgTx()
+		msgTx, msgTxNotFound, err := flow.readMsgTxOrNotFound()
 		if err != nil {
 			return err
 		}
+		if msgTxNotFound != nil {
+			if !msgTxNotFound.ID.IsEqual(expectedID) {
+				return protocolerrors.Errorf(true, "expected transaction %s, but got %s",
+					expectedID, msgTxNotFound.ID)
+			}
+
+			continue
+		}
 		tx := util.NewTx(msgTx)
 		if !tx.ID().IsEqual(expectedID) {
-			return protocolerrors.Errorf(true, "expected transaction %s", expectedID)
+			return protocolerrors.Errorf(true, "expected transaction %s, but got %s",
+				expectedID, tx.ID())
 		}
 
 		acceptedTxs, err := flow.TxPool().ProcessTransaction(tx, true, 0) // TODO(libp2p) Use the peer ID for the mempool tag
