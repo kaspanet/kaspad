@@ -26,15 +26,15 @@ func TestTxRelay(t *testing.T) {
 		payeeBlockAddedChan <- header
 	})
 	// skip the first block because it's paying to genesis script
-	requestAndSolveTemplate(t, payer)
+	mineNextBlock(t, payer)
 	waitForPayeeToReceiveBlock(t, payeeBlockAddedChan)
 	// use the second block to get money to pay with
-	secondBlock := requestAndSolveTemplate(t, payer)
+	secondBlock := mineNextBlock(t, payer)
 	waitForPayeeToReceiveBlock(t, payeeBlockAddedChan)
 
 	// Mine BlockCoinbaseMaturity more blocks for our money to mature
 	for i := uint64(0); i < payer.config.ActiveNetParams.BlockCoinbaseMaturity; i++ {
-		requestAndSolveTemplate(t, payer)
+		mineNextBlock(t, payer)
 		waitForPayeeToReceiveBlock(t, payeeBlockAddedChan)
 	}
 

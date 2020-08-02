@@ -17,7 +17,7 @@ func TestIBD(t *testing.T) {
 	defer teardown()
 
 	for i := 0; i < numBlocks; i++ {
-		requestAndSolveTemplate(t, syncer)
+		mineNextBlock(t, syncer)
 	}
 
 	blockAddedWG := sync.WaitGroup{}

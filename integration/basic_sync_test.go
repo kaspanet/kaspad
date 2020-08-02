@@ -26,7 +26,7 @@ func TestIntegrationBasicSync(t *testing.T) {
 		app3OnBlockAddedChan <- header
 	})
 
-	block := requestAndSolveTemplate(t, appHarness1)
+	block := mineNextBlock(t, appHarness1)
 
 	var header *wire.BlockHeader
 	select {

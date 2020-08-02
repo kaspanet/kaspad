@@ -26,7 +26,7 @@ func solveBlock(block *util.Block) *wire.MsgBlock {
 	panic("Failed to solve block! This should never happen")
 }
 
-func requestAndSolveTemplate(t *testing.T, harness *appHarness) *util.Block {
+func mineNextBlock(t *testing.T, harness *appHarness) *util.Block {
 	blockTemplate, err := harness.rpcClient.GetBlockTemplate(harness.miningAddress, "")
 	if err != nil {
 		t.Fatalf("Error getting block template: %+v", err)
