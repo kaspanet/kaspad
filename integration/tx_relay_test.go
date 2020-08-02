@@ -22,7 +22,7 @@ func TestTxRelay(t *testing.T) {
 	connect(t, mediator, payee)
 
 	payeeBlockAddedChan := make(chan *wire.BlockHeader)
-	SetOnBlockAddedHandler(t, payee, func(header *wire.BlockHeader) {
+	setOnBlockAddedHandler(t, payee, func(header *wire.BlockHeader) {
 		payeeBlockAddedChan <- header
 	})
 	// skip the first block because it's paying to genesis script

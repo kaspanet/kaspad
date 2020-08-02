@@ -22,7 +22,7 @@ func TestIBD(t *testing.T) {
 
 	blockAddedWG := sync.WaitGroup{}
 	blockAddedWG.Add(numBlocks)
-	SetOnBlockAddedHandler(t, syncee, func(header *wire.BlockHeader) { blockAddedWG.Done() })
+	setOnBlockAddedHandler(t, syncee, func(header *wire.BlockHeader) { blockAddedWG.Done() })
 
 	connect(t, syncer, syncee)
 
