@@ -66,8 +66,8 @@ var messageCommandToString = map[MessageCommand]string{
 	CmdInvTransaction:      "InvTransaction",
 	CmdRequestTransactions: "RequestTransactions",
 	CmdIBDBlock:            "IBDBlock",
-	CmdGetNextIBDBlocks: "GetNextIBDBlocks",
-	CmdDoneIBDBlocks:    "DoneIBDBlocks",
+	CmdGetNextIBDBlocks:    "GetNextIBDBlocks",
+	CmdDoneIBDBlocks:       "DoneIBDBlocks",
 }
 
 // Message is an interface that describes a kaspa message. A type that
