@@ -19,7 +19,7 @@ func (x *KaspadMessage_RequestTransactions) toWireMessage() (wire.Message, error
 }
 
 func (x *KaspadMessage_RequestTransactions) fromWireMessage(msgGetTransactions *wire.MsgRequestTransactions) error {
-	if len(x.RequestTransactions.Ids) > wire.MaxInvPerRequestTransactionsMsg {
+	if len(msgGetTransactions.IDs) > wire.MaxInvPerRequestTransactionsMsg {
 		return errors.Errorf("too many hashes for message "+
 			"[count %d, max %d]", len(x.RequestTransactions.Ids), wire.MaxInvPerRequestTransactionsMsg)
 	}
