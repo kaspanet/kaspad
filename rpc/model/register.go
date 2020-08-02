@@ -79,7 +79,7 @@ type methodInfo struct {
 
 var (
 	// These fields are used to map the registered types to method names.
-	registerLock         sync.RWMutex
+	methodsLock          sync.RWMutex
 	methodToConcreteType = make(map[string]reflect.Type)
 	methodToInfo         = make(map[string]methodInfo)
 	concreteTypeToMethod = make(map[reflect.Type]string)
@@ -150,8 +150,8 @@ func isAcceptableKind(kind reflect.Kind) bool {
 // is recommended to simply pass a nil pointer cast to the appropriate type.
 // For example, (*FooCmd)(nil).
 func RegisterCmd(method string, cmd interface{}, flags UsageFlag) error {
-	registerLock.Lock()
-	defer registerLock.Unlock()
+	methodsLock.Lock()
+	defer methodsLock.Unlock()
 
 	if _, ok := methodToConcreteType[method]; ok {
 		str := fmt.Sprintf("method %q is already registered", method)
@@ -274,8 +274,8 @@ func MustRegisterCommand(method string, cmd interface{}, flags UsageFlag) {
 // RegisteredCmdMethods returns a sorted list of methods for all registered
 // commands.
 func RegisteredCmdMethods() []string {
-	registerLock.Lock()
-	defer registerLock.Unlock()
+	methodsLock.Lock()
+	defer methodsLock.Unlock()
 
 	methods := make([]string, 0, len(methodToInfo))
 	for k := range methodToInfo {
