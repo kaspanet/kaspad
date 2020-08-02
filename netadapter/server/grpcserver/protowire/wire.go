@@ -90,6 +90,13 @@ func toPayload(message wire.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *wire.MsgTransactionNotFound:
+		payload := new(KaspadMessage_TransactionNotFound)
+		err := payload.fromWireMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	case *wire.MsgIBDBlock:
 		payload := new(KaspadMessage_IbdBlock)
 		err := payload.fromWireMessage(message)

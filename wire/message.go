@@ -43,6 +43,7 @@ const (
 	CmdInvTransaction
 	CmdRequestTransactions
 	CmdIBDBlock
+	CmdNotFound
 )
 
 var messageCommandToString = map[MessageCommand]string{
@@ -64,6 +65,7 @@ var messageCommandToString = map[MessageCommand]string{
 	CmdInvTransaction:      "InvTransaction",
 	CmdRequestTransactions: "RequestTransactions",
 	CmdIBDBlock:            "IBDBlock",
+	CmdNotFound:            "NotFound",
 }
 
 // Message is an interface that describes a kaspa message. A type that

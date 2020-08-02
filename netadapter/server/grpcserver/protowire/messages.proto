@@ -23,6 +23,7 @@ message KaspadMessage {
     SelectedTipMessage selectedTip = 16;
     VerackMessage verack = 17;
     VersionMessage version = 18;
+    TransactionNotFoundMessage transactionNotFound=19;
   }
 }
 
@@ -138,11 +139,17 @@ message RequestSelectedTipMessage{
 }
 // GetSelectedTipMessage end
 
-// GetTransactionsMessage start
-message RequestTransactionsMessage{
+// RequestTransactionsMessage start
+message RequestTransactionsMessage {
   repeated TransactionID ids = 1;
 }
 // GetTransactionsMessage end
+
+// TransactionNotFoundMessage start
+message TransactionNotFoundMessage{
+  TransactionID id = 1;
+}
+// TransactionsNotFoundMessage end
 
 // InvRelayBlockMessage start
 message InvRelayBlockMessage{
