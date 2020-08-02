@@ -93,7 +93,10 @@ func (x *TransactionMessage) fromWireMessage(msgTx *wire.MsgTx) {
 		LockTime:     msgTx.LockTime,
 		SubnetworkID: wireSubnetworkIDToProto(&msgTx.SubnetworkID),
 		Gas:          msgTx.Gas,
-		PayloadHash:  wireHashToProto(msgTx.PayloadHash),
 		Payload:      msgTx.Payload,
+	}
+
+	if msgTx.PayloadHash != nil {
+		x.PayloadHash = wireHashToProto(msgTx.PayloadHash)
 	}
 }

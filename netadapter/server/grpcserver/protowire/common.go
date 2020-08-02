@@ -27,9 +27,6 @@ func protoHashesToWire(protoHashes []*Hash) ([]*daghash.Hash, error) {
 }
 
 func wireHashToProto(hash *daghash.Hash) *Hash {
-	if hash == nil {
-		return nil
-	}
 	return &Hash{
 		Bytes: hash.CloneBytes(),
 	}
