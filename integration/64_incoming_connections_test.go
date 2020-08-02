@@ -12,10 +12,11 @@ import (
 )
 
 func Test64IncomingConnections(t *testing.T) {
-	const numBullies = 64 // Much more then 64 hosts creates a risk of running out of available file descriptors
-	params := make([]*harnessParams, numBullies+1)
+	// Much more than 64 hosts creates a risk of running out of available file descriptors for leveldb
+	const numBullies = 64
+	harnessesParams := make([]*harnessParams, numBullies+1)
 	for i := 0; i < numBullies+1; i++ {
-		params[i] = &harnessParams{
+		harnessesParams[i] = &harnessParams{
 			p2pAddress:              fmt.Sprintf("127.0.0.1:%d", 12345+i),
 			rpcAddress:              fmt.Sprintf("127.0.0.1:%d", 22345+i),
 			miningAddress:           miningAddress1,
@@ -23,7 +24,7 @@ func Test64IncomingConnections(t *testing.T) {
 		}
 	}
 
-	appHarnesses, teardown := setupHarnesses(t, params)
+	appHarnesses, teardown := setupHarnesses(t, harnessesParams)
 	defer teardown()
 
 	victim, bullies := appHarnesses[0], appHarnesses[1:]
