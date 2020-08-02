@@ -20,7 +20,7 @@ func SendAddresses(context SendAddressesContext, incomingRoute *router.Route, ou
 		return err
 	}
 
-	msgGetAddresses := message.(*wire.MsgGetAddresses)
+	msgGetAddresses := message.(*wire.MsgRequestAddresses)
 	addresses := context.AddressManager().AddressCache(msgGetAddresses.IncludeAllSubnetworks,
 		msgGetAddresses.SubnetworkID)
 	msgAddresses := wire.NewMsgAddresses(msgGetAddresses.IncludeAllSubnetworks, msgGetAddresses.SubnetworkID)

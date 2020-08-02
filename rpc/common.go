@@ -55,12 +55,12 @@ func rpcNoTxInfoError(txID *daghash.TxID) *model.RPCError {
 			txID))
 }
 
-// messageToHex serializes a message to the wire protocol encoding using the
+// msgTxToHex serializes a transaction to the wire protocol encoding using the
 // latest protocol version and returns a hex-encoded string of the result.
-func messageToHex(msg wire.Message) (string, error) {
+func msgTxToHex(msgTx *wire.MsgTx) (string, error) {
 	var buf bytes.Buffer
-	if err := msg.KaspaEncode(&buf, maxProtocolVersion); err != nil {
-		context := fmt.Sprintf("Failed to encode msg of type %T", msg)
+	if err := msgTx.KaspaEncode(&buf, maxProtocolVersion); err != nil {
+		context := fmt.Sprintf("Failed to encode msg of type %T", msgTx)
 		return "", internalRPCError(err.Error(), context)
 	}
 
@@ -143,7 +143,7 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 	txID string, blkHeader *wire.BlockHeader, blkHash string,
 	acceptingBlock *daghash.Hash, isInMempool bool) (*model.TxRawResult, error) {
 
-	mtxHex, err := messageToHex(mtx)
+	mtxHex, err := msgTxToHex(mtx)
 	if err != nil {
 		return nil, err
 	}

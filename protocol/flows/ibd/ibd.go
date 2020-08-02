@@ -96,7 +96,7 @@ func (flow *handleIBDFlow) findHighestSharedBlockHash(peerSelectedTipHash *dagha
 
 func (flow *handleIBDFlow) sendGetBlockLocator(lowHash *daghash.Hash, highHash *daghash.Hash) error {
 
-	msgGetBlockLocator := wire.NewMsgGetBlockLocator(highHash, lowHash)
+	msgGetBlockLocator := wire.NewMsgRequestBlockLocator(highHash, lowHash)
 	return flow.outgoingRoute.Enqueue(msgGetBlockLocator)
 }
 
@@ -149,7 +149,7 @@ func (flow *handleIBDFlow) downloadBlocks(highestSharedBlockHash *daghash.Hash,
 func (flow *handleIBDFlow) sendGetBlocks(highestSharedBlockHash *daghash.Hash,
 	peerSelectedTipHash *daghash.Hash) error {
 
-	msgGetBlockInvs := wire.NewMsgGetBlocks(highestSharedBlockHash, peerSelectedTipHash)
+	msgGetBlockInvs := wire.NewMsgRequstIBDBlocks(highestSharedBlockHash, peerSelectedTipHash)
 	return flow.outgoingRoute.Enqueue(msgGetBlockInvs)
 }
 
@@ -172,7 +172,7 @@ func (flow *handleIBDFlow) receiveIBDBlock() (msgIBDBlock *wire.MsgIBDBlock, don
 
 func (flow *handleIBDFlow) processIBDBlock(msgIBDBlock *wire.MsgIBDBlock) error {
 
-	block := util.NewBlock(&msgIBDBlock.MsgBlock)
+	block := util.NewBlock(msgIBDBlock.MsgBlock)
 	if flow.DAG().IsInDAG(block.Hash()) {
 		return nil
 	}

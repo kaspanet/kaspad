@@ -1,10 +1,11 @@
 package flowcontext
 
 import (
-	"github.com/kaspanet/kaspad/blockdag"
-	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"sync/atomic"
 	"time"
+
+	"github.com/kaspanet/kaspad/blockdag"
+	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 )
 
 // StartIBDIfRequired selects a peer and starts IBD against it
@@ -19,7 +20,7 @@ func (f *FlowContext) StartIBDIfRequired() {
 
 	peer := f.selectPeerForIBD(f.dag)
 	if peer == nil {
-		f.requestSelectedTipsIfRequired()
+		spawn("StartIBDIfRequired-requestSelectedTipsIfRequired", f.requestSelectedTipsIfRequired)
 		return
 	}
 
