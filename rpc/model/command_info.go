@@ -11,22 +11,22 @@ import (
 )
 
 func concreteTypeToMethodWithRLock(rt reflect.Type) (string, bool) {
-	registerLock.RLock()
-	defer registerLock.RUnlock()
+	methodsLock.RLock()
+	defer methodsLock.RUnlock()
 	method, ok := concreteTypeToMethod[rt]
 	return method, ok
 }
 
 func methodToInfoWithRLock(method string) (methodInfo, bool) {
-	registerLock.RLock()
-	defer registerLock.RUnlock()
+	methodsLock.RLock()
+	defer methodsLock.RUnlock()
 	info, ok := methodToInfo[method]
 	return info, ok
 }
 
 func methodConcreteTypeAndInfoWithRLock(method string) (reflect.Type, methodInfo, bool) {
-	registerLock.RLock()
-	defer registerLock.RUnlock()
+	methodsLock.RLock()
+	defer methodsLock.RUnlock()
 	rtp, ok := methodToConcreteType[method]
 	if !ok {
 		return nil, methodInfo{}, false
@@ -245,8 +245,9 @@ func methodUsageText(rtp reflect.Type, defaults map[int]reflect.Value, method st
 func MethodUsageText(method string) (string, error) {
 	// Look up details about the provided method and error out if not
 	// registered.
-	registerLock.RLock()
-	defer registerLock.RUnlock()
+	methodsLock.Lock() // Take write lock to protect methodToInfo from concurrent read and write
+	defer methodsLock.Unlock()
+
 	rtp, ok := methodToConcreteType[method]
 	info := methodToInfo[method]
 	if !ok {
