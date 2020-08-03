@@ -5,7 +5,7 @@ import (
 )
 
 func (x *KaspadMessage_Pong) toWireMessage() (wire.Message, error) {
-	return &wire.MsgPing{
+	return &wire.MsgPong{
 		Nonce: x.Pong.Nonce,
 	}, nil
 }
