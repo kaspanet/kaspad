@@ -43,7 +43,7 @@ func setupHarness(t *testing.T, params *harnessParams) (harness *appHarness, tea
 	setRPCClient(t, harness)
 
 	return harness, func() {
-		teardown(t, harness)
+		teardownHarness(t, harness)
 	}
 }
 
@@ -95,7 +95,8 @@ func setRPCClient(t *testing.T, harness *appHarness) {
 		t.Fatalf("Error getting RPC client %+v", err)
 	}
 }
-func teardown(t *testing.T, harness *appHarness) {
+
+func teardownHarness(t *testing.T, harness *appHarness) {
 	err := harness.app.Stop()
 	if err != nil {
 		t.Errorf("Error stopping App: %+v", err)
