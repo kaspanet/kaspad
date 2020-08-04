@@ -7,9 +7,13 @@ import (
 )
 
 func (x *KaspadMessage_Version) toWireMessage() (wire.Message, error) {
-	address, err := x.Version.Address.toWire()
-	if err != nil {
-		return nil, err
+	var address *wire.NetAddress
+	if x.Version.Address != nil {
+		var err error
+		address, err = x.Version.Address.toWire()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	selectedTipHash, err := x.Version.SelectedTipHash.toWire()
@@ -51,11 +55,16 @@ func (x *KaspadMessage_Version) fromWireMessage(msgVersion *wire.MsgVersion) err
 		return err
 	}
 
+	var address *NetAddress
+	if msgVersion.Address != nil {
+		address = wireNetAddressToProto(msgVersion.Address)
+	}
+
 	x.Version = &VersionMessage{
 		ProtocolVersion: msgVersion.ProtocolVersion,
 		Services:        uint64(msgVersion.Services),
 		Timestamp:       msgVersion.Timestamp.UnixMilliseconds(),
-		Address:         wireNetAddressToProto(msgVersion.Address),
+		Address:         address,
 		Id:              versionID,
 		UserAgent:       msgVersion.UserAgent,
 		SelectedTipHash: wireHashToProto(msgVersion.SelectedTipHash),
