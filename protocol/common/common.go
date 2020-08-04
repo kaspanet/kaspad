@@ -1,8 +1,9 @@
 package common
 
 import (
-	"github.com/pkg/errors"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // DefaultTimeout is the default duration to wait for enqueuing/dequeuing
@@ -10,4 +11,4 @@ import (
 const DefaultTimeout = 30 * time.Second
 
 // ErrPeerWithSameIDExists signifies that a peer with the same ID already exist.
-var ErrPeerWithSameIDExists = errors.New("ready with the same ID already exists")
+var ErrPeerWithSameIDExists = errors.New("ready peer with the same ID already exists")

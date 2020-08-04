@@ -141,16 +141,19 @@ func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) err
 
 		block := util.NewBlock(msgBlock)
 		blockHash := block.Hash()
+
 		if _, ok := pendingBlocks[*blockHash]; !ok {
 			return protocolerrors.Errorf(true, "got unrequested block %s", block.Hash())
 		}
-		delete(pendingBlocks, *blockHash)
-		flow.SharedRequestedBlocks().remove(blockHash)
 
 		err = flow.processAndRelayBlock(requestQueue, block)
 		if err != nil {
 			return err
 		}
+
+		delete(pendingBlocks, *blockHash)
+		flow.SharedRequestedBlocks().remove(blockHash)
+
 	}
 	return nil
 }

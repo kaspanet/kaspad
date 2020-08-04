@@ -6,9 +6,10 @@ package blockdag
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/pkg/errors"
-	"time"
 
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -162,7 +163,8 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 
 	// The block must not already exist in the DAG.
 	if dag.IsInDAG(blockHash) && !wasBlockStored {
-		return false, false, errors.Errorf("already have block %s", blockHash)
+		str := fmt.Sprintf("already have block %s", blockHash)
+		return false, false, ruleError(ErrDuplicateBlock, str)
 	}
 
 	// The block must not already exist as an orphan.
