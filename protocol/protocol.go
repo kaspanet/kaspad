@@ -74,7 +74,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 
 func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection) {
 	if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
-		if protocolErr.ShouldBan {
+		if !m.context.Config().DisableBanning && protocolErr.ShouldBan {
 			log.Warnf("Banning %s (reason: %s)", netConnection, protocolErr.Cause)
 			err := m.context.ConnectionManager().Ban(netConnection)
 			if err != nil && !errors.Is(err, addressmanager.ErrAddressNotFound) {
