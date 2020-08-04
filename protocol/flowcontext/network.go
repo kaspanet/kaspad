@@ -21,8 +21,8 @@ func (f *FlowContext) ConnectionManager() *connmanager.ConnectionManager {
 
 // AddToPeers marks this peer as ready and adds it to the ready peers list.
 func (f *FlowContext) AddToPeers(peer *peerpkg.Peer) error {
-	f.peersMutex.RLock()
-	defer f.peersMutex.RUnlock()
+	f.peersMutex.Lock()
+	defer f.peersMutex.Unlock()
 
 	if _, ok := f.peers[peer.ID()]; ok {
 		return errors.Wrapf(common.ErrPeerWithSameIDExists, "peer with ID %s already exists", peer.ID())
