@@ -16,7 +16,7 @@ const MaxMessagePayload = (1024 * 1024 * 32) // 32MB
 type MessageCommand uint32
 
 func (cmd MessageCommand) String() string {
-	cmdString, ok := messageCommandToString[cmd]
+	cmdString, ok := MessageCommandToString[cmd]
 	if !ok {
 		cmdString = "unknown command"
 	}
@@ -48,7 +48,8 @@ const (
 	CmdTransactionNotFound
 )
 
-var messageCommandToString = map[MessageCommand]string{
+// MessageCommandToString maps all MessageCommands to their string representation
+var MessageCommandToString = map[MessageCommand]string{
 	CmdVersion:              "Version",
 	CmdVerAck:               "VerAck",
 	CmdRequestAddresses:     "RequestAddresses",
