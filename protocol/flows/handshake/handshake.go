@@ -96,7 +96,7 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 	return peer, nil
 }
 
-// Handshake is different from other flows, since in it should consider ErrRouteClosed as ProtocolError
+// Handshake is different from other flows, since in it should forward errRouteClosed to errChan
 // Therefore we implement a separate handleError for handshake
 func handleError(err error, flowName string, isStopping *uint32, errChan chan error) {
 	if errors.Is(err, router.ErrRouteClosed) {
