@@ -96,9 +96,14 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 	return peer, nil
 }
 
+// Handshake is different from other flows, since in it should consider ErrRouteClosed as ProtocolError
+// Therefore we implement a separate handleError for handshake
 func handleError(err error, flowName string, isStopping *uint32, errChan chan error) {
-	protocolErr := &(protocolerrors.ProtocolError{})
-	if errors.Is(err, router.ErrRouteClosed) || errors.As(err, &protocolErr) {
+	if errors.Is(err, router.ErrRouteClosed) {
+		errChan <- protocolerrors.Wrap(false, err, "Disconnected on handshake")
+	}
+
+	if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
 		log.Errorf("Handshake protocol error from %s: %s", flowName, err)
 		if atomic.AddUint32(isStopping, 1) == 1 {
 			errChan <- err
