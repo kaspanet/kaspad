@@ -20,7 +20,8 @@ var (
 	ErrTimeout = protocolerrors.New(false, "timeout expired")
 
 	// ErrRouteClosed indicates that a route was closed while reading/writing.
-	ErrRouteClosed = errors.New("route is closed")
+	// TODO(libp2p): Remove protocol error here
+	ErrRouteClosed = protocolerrors.New(false, "route is closed")
 )
 
 // onCapacityReachedHandler is a function that is to be

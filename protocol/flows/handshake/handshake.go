@@ -26,7 +26,7 @@ type HandleHandshakeContext interface {
 	AddressManager() *addressmanager.AddressManager
 	StartIBDIfRequired()
 	AddToPeers(peer *peerpkg.Peer) error
-	HandleError(err error, flowName string, isStopping *uint32, allowClosed bool, errChan chan<- error)
+	HandleError(err error, flowName string, isStopping *uint32, errChan chan<- error)
 }
 
 // HandleHandshake sets up the handshake protocol - It sends a version message and waits for an incoming
@@ -51,7 +51,7 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 		defer wg.Done()
 		address, err := ReceiveVersion(context, receiveVersionRoute, outgoingRoute, peer)
 		if err != nil {
-			context.HandleError(err, "SendVersion", &isStopping, false, errChan)
+			context.HandleError(err, "SendVersion", &isStopping, errChan)
 			return
 		}
 		peerAddress = address
@@ -61,7 +61,7 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 		defer wg.Done()
 		err := SendVersion(context, sendVersionRoute, outgoingRoute)
 		if err != nil {
-			context.HandleError(err, "SendVersion", &isStopping, false, errChan)
+			context.HandleError(err, "SendVersion", &isStopping, errChan)
 			return
 		}
 	})

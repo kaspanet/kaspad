@@ -229,7 +229,7 @@ func (m *Manager) registerFlow(name string, router *routerpkg.Router, messageTyp
 		executeFunc: func(peer *peerpkg.Peer) {
 			err := initializeFunc(route, peer)
 			if err != nil {
-				m.context.HandleError(err, name, isStopping, true, errChan)
+				m.context.HandleError(err, name, isStopping, errChan)
 				return
 			}
 		},
@@ -256,7 +256,7 @@ func (m *Manager) registerOneTimeFlow(name string, router *routerpkg.Router, mes
 
 			err := initializeFunc(route, peer)
 			if err != nil {
-				m.context.HandleError(err, name, isStopping, true, stopChan)
+				m.context.HandleError(err, name, isStopping, stopChan)
 				return
 			}
 		},
