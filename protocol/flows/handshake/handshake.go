@@ -101,6 +101,7 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 func handleError(err error, flowName string, isStopping *uint32, errChan chan error) {
 	if errors.Is(err, router.ErrRouteClosed) {
 		errChan <- protocolerrors.Wrap(false, err, "Disconnected on handshake")
+		return
 	}
 
 	if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
