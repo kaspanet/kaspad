@@ -1,4 +1,4 @@
-package netadaptermock
+package standalone
 
 import (
 	"time"
@@ -11,7 +11,7 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// Routes holds the incoming and outgoing routes of a connection created by NetAdapterMock
+// Routes holds the incoming and outgoing routes of a connection created by MinimalNetAdapter
 type Routes struct {
 	netConnection                *netadapter.NetConnection
 	IncomingRoute, OutgoingRoute *router.Route
@@ -48,7 +48,7 @@ func (r *Routes) WaitForDisconnect(timeout time.Duration) error {
 	}
 }
 
-// Close closes all the routes in this Routes object
+// Disconnect closes the connection behind the routes, thus closing all routes
 func (r *Routes) Disconnect() {
 	r.netConnection.Disconnect()
 }

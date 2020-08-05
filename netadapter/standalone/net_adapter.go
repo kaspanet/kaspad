@@ -1,4 +1,4 @@
-package netadaptermock
+package standalone
 
 import (
 	"sync"
@@ -17,16 +17,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-// NetAdapterMock allows tests and other tools to mockup a simple network adapter without implementing all the required
-// supporting structures.
-type NetAdapterMock struct {
+// MinimalNetAdapter allows tests and other tools to use a simple network adapter without implementing
+// all the required supporting structures.
+type MinimalNetAdapter struct {
 	lock       sync.Mutex
 	netAdapter *netadapter.NetAdapter
 	routesChan <-chan *Routes
 }
 
-// New creates a new instance of a NetAdapterMock
-func New(cfg *config.Config) (*NetAdapterMock, error) {
+// NewMinimalNetAdapter creates a new instance of a MinimalNetAdapter
+func NewMinimalNetAdapter(cfg *config.Config) (*MinimalNetAdapter, error) {
 	netAdapter, err := netadapter.NewNetAdapter(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error starting netAdapter")
@@ -40,7 +40,7 @@ func New(cfg *config.Config) (*NetAdapterMock, error) {
 		return nil, errors.Wrap(err, "Error starting netAdapter")
 	}
 
-	return &NetAdapterMock{
+	return &MinimalNetAdapter{
 		lock:       sync.Mutex{},
 		netAdapter: netAdapter,
 		routesChan: routesChan,
@@ -51,7 +51,7 @@ func New(cfg *config.Config) (*NetAdapterMock, error) {
 // To simplify usage the return type contains only two routes:
 // OutgoingRoute - for all outgoing messages
 // IncomingRoute - for all incoming messages (excluding handshake messages)
-func (nam *NetAdapterMock) Connect(address string) (*Routes, error) {
+func (nam *MinimalNetAdapter) Connect(address string) (*Routes, error) {
 	nam.lock.Lock()
 	defer nam.lock.Unlock()
 

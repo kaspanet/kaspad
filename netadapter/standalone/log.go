@@ -1,4 +1,4 @@
-package netadaptermock
+package standalone
 
 import (
 	"github.com/kaspanet/kaspad/logger"
