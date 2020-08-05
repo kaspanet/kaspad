@@ -288,6 +288,6 @@ func ruleError(c ErrorCode, desc string) error {
 	return errors.WithStack(RuleError{ErrorCode: c, Description: desc})
 }
 
-// InvalidParameterError signifies that an invalid parameter has been
+// ErrInvalidParameter signifies that an invalid parameter has been
 // supplied to one of the BlockDAG functions.
-var InvalidParameterError = errors.New("invalid parameter")
+var ErrInvalidParameter = errors.New("invalid parameter")

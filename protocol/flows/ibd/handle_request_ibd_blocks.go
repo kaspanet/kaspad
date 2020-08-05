@@ -96,7 +96,7 @@ func (flow *handleRequestBlocksFlow) buildMsgIBDBlocks(lowHash *daghash.Hash,
 	const maxHashesInMsgIBDBlocks = wire.MaxInvPerMsg
 	blockHashes, err := flow.DAG().AntiPastHashesBetween(lowHash, highHash, maxHashesInMsgIBDBlocks)
 	if err != nil {
-		if errors.Is(err, blockdag.InvalidParameterError) {
+		if errors.Is(err, blockdag.ErrInvalidParameter) {
 			return nil, protocolerrors.Wrapf(true, err, "could not get antiPast between "+
 				"%s and %s", lowHash, highHash)
 		}
