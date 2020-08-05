@@ -3,6 +3,8 @@ package netadaptermock
 import (
 	"time"
 
+	"github.com/kaspanet/kaspad/netadapter"
+
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/netadapter/router"
@@ -11,6 +13,7 @@ import (
 
 // Routes holds the incoming and outgoing routes of a connection created by NetAdapterMock
 type Routes struct {
+	netConnection                *netadapter.NetConnection
 	IncomingRoute, OutgoingRoute *router.Route
 	handshakeRoute               *router.Route
 	pingRoute                    *router.Route
@@ -46,9 +49,6 @@ func (r *Routes) WaitForDisconnect(timeout time.Duration) error {
 }
 
 // Close closes all the routes in this Routes object
-func (r *Routes) Close() {
-	r.IncomingRoute.Close()
-	r.OutgoingRoute.Close()
-	r.handshakeRoute.Close()
-	r.pingRoute.Close()
+func (r *Routes) Disconnect() {
+	r.netConnection.Disconnect()
 }

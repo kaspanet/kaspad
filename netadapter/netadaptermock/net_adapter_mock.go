@@ -170,6 +170,7 @@ func generateRouteInitializer() (netadapter.RouterInitializer, <-chan *Routes) {
 
 		spawn("netAdapterMock-routeInitializer-sendRoutesToChan", func() {
 			routesChan <- &Routes{
+				netConnection:  netConnection,
 				OutgoingRoute:  router.OutgoingRoute(),
 				IncomingRoute:  everythingElseRoute,
 				handshakeRoute: handshakeRoute,
