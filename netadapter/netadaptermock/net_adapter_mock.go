@@ -47,7 +47,7 @@ func New(cfg *config.Config) (*NetAdapterMock, error) {
 	}, nil
 }
 
-// Connect opens a connection to the given address, handles handshake, and returns the routes this connection
+// Connect opens a connection to the given address, handles handshake, and returns the routes for this connection
 // To simplify usage the return type contains only two routes:
 // OutgoingRoute - for all outgoing messages
 // IncomingRoute - for all incoming messages (excluding handshake messages)
@@ -61,7 +61,7 @@ func (nam *NetAdapterMock) Connect(address string) (*Routes, error) {
 	}
 
 	routes := <-nam.routesChan
-	err = handleHandshake(routes)
+	err = handleHandshake(routes, nam.netAdapter.ID())
 	if err != nil {
 		return nil, errors.Wrap(err, "Error in handshake")
 	}
@@ -95,7 +95,7 @@ func handlePingPong(routes *Routes) error {
 	}
 }
 
-func handleHandshake(routes *Routes) error {
+func handleHandshake(routes *Routes, ourID *id.ID) error {
 	msg, err := routes.handshakeRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return err
@@ -106,10 +106,6 @@ func handleHandshake(routes *Routes) error {
 		return errors.Errorf("Expected first message to be of type %s, but got %s", wire.CmdVersion, msg.Command())
 	}
 
-	ourID, err := id.GenerateID()
-	if err != nil {
-		return err
-	}
 	err = routes.OutgoingRoute.Enqueue(&wire.MsgVersion{
 		ProtocolVersion: versionMessage.ProtocolVersion,
 		Services:        versionMessage.Services,
