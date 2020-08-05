@@ -2,6 +2,7 @@ package handshake
 
 import (
 	"sync"
+	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/addressmanager"
 	"github.com/kaspanet/kaspad/protocol/common"
@@ -11,6 +12,7 @@ import (
 	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/netadapter"
 
+	"github.com/kaspanet/kaspad/netadapter/router"
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/util/locks"
@@ -51,7 +53,7 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 		defer wg.Done()
 		address, err := ReceiveVersion(context, receiveVersionRoute, outgoingRoute, peer)
 		if err != nil {
-			context.HandleError(err, "SendVersion", &isStopping, errChan)
+			handleError(err, "ReceiveVersion", &isStopping, errChan)
 			return
 		}
 		peerAddress = address
@@ -61,7 +63,7 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 		defer wg.Done()
 		err := SendVersion(context, sendVersionRoute, outgoingRoute)
 		if err != nil {
-			context.HandleError(err, "SendVersion", &isStopping, errChan)
+			handleError(err, "SendVersion", &isStopping, errChan)
 			return
 		}
 	})
@@ -92,4 +94,16 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 	context.StartIBDIfRequired()
 
 	return peer, nil
+}
+
+func handleError(err error, flowName string, isStopping *uint32, errChan chan error) {
+	protocolErr := &(protocolerrors.ProtocolError{})
+	if errors.Is(err, router.ErrRouteClosed) || errors.As(err, &protocolErr) {
+		log.Errorf("Handshake protocol error from %s: %s", flowName, err)
+		if atomic.AddUint32(isStopping, 1) == 1 {
+			errChan <- err
+		}
+		return
+	}
+	panic(err)
 }
