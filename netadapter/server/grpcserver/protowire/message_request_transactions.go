@@ -5,7 +5,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_RequestTransactions) toWireMessage() (domainmessage.Message, error) {
+func (x *KaspadMessage_RequestTransactions) toDomainMessage() (domainmessage.Message, error) {
 	if len(x.RequestTransactions.Ids) > domainmessage.MaxInvPerRequestTransactionsMsg {
 		return nil, errors.Errorf("too many hashes for message "+
 			"[count %d, max %d]", len(x.RequestTransactions.Ids), domainmessage.MaxInvPerRequestTransactionsMsg)
@@ -18,7 +18,7 @@ func (x *KaspadMessage_RequestTransactions) toWireMessage() (domainmessage.Messa
 	return &domainmessage.MsgRequestTransactions{IDs: ids}, nil
 }
 
-func (x *KaspadMessage_RequestTransactions) fromWireMessage(msgGetTransactions *domainmessage.MsgRequestTransactions) error {
+func (x *KaspadMessage_RequestTransactions) fromDomainMessage(msgGetTransactions *domainmessage.MsgRequestTransactions) error {
 	if len(msgGetTransactions.IDs) > domainmessage.MaxInvPerRequestTransactionsMsg {
 		return errors.Errorf("too many hashes for message "+
 			"[count %d, max %d]", len(x.RequestTransactions.Ids), domainmessage.MaxInvPerRequestTransactionsMsg)

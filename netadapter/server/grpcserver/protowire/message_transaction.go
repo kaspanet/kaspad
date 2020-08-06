@@ -6,17 +6,17 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_Transaction) toWireMessage() (domainmessage.Message, error) {
-	return x.Transaction.toWireMessage()
+func (x *KaspadMessage_Transaction) toDomainMessage() (domainmessage.Message, error) {
+	return x.Transaction.toDomainMessage()
 }
 
-func (x *KaspadMessage_Transaction) fromWireMessage(msgTx *domainmessage.MsgTx) error {
+func (x *KaspadMessage_Transaction) fromDomainMessage(msgTx *domainmessage.MsgTx) error {
 	x.Transaction = new(TransactionMessage)
-	x.Transaction.fromWireMessage(msgTx)
+	x.Transaction.fromDomainMessage(msgTx)
 	return nil
 }
 
-func (x *TransactionMessage) toWireMessage() (domainmessage.Message, error) {
+func (x *TransactionMessage) toDomainMessage() (domainmessage.Message, error) {
 	inputs := make([]*domainmessage.TxIn, len(x.Inputs))
 	for i, protoInput := range x.Inputs {
 		prevTxID, err := protoInput.PreviousOutpoint.TransactionID.toWire()
@@ -65,7 +65,7 @@ func (x *TransactionMessage) toWireMessage() (domainmessage.Message, error) {
 	}, nil
 }
 
-func (x *TransactionMessage) fromWireMessage(msgTx *domainmessage.MsgTx) {
+func (x *TransactionMessage) fromDomainMessage(msgTx *domainmessage.MsgTx) {
 	protoInputs := make([]*TransactionInput, len(msgTx.TxIn))
 	for i, input := range msgTx.TxIn {
 		protoInputs[i] = &TransactionInput{

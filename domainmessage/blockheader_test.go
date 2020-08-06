@@ -47,9 +47,9 @@ func TestBlockHeader(t *testing.T) {
 	}
 }
 
-// TestBlockHeaderWire tests the BlockHeader domainmessage encode and decode for various
+// TestBlockHeaderEncoding tests the BlockHeader domainmessage encode and decode for various
 // protocol versions.
-func TestBlockHeaderWire(t *testing.T) {
+func TestBlockHeaderEncoding(t *testing.T) {
 	nonce := uint64(123123) // 0x000000000001e0f3
 	pver := ProtocolVersion
 
@@ -98,7 +98,7 @@ func TestBlockHeaderWire(t *testing.T) {
 	tests := []struct {
 		in   *BlockHeader // Data to encode
 		out  *BlockHeader // Expected decoded data
-		buf  []byte       // Wire encoding
+		buf  []byte       // Encoded data
 		pver uint32       // Protocol version for domainmessage encoding
 	}{
 		// Latest protocol version.

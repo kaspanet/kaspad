@@ -57,13 +57,13 @@ var exampleUTXOCommitment = &daghash.Hash{
 	0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
 }
 
-// TestElementWire tests domainmessage encode and decode for various element types. This
+// TestElementEncoding tests domainmessage encode and decode for various element types. This
 // is mainly to test the "fast" paths in readElement and writeElement which use
 // type assertions to avoid reflection when possible.
-func TestElementWire(t *testing.T) {
+func TestElementEncoding(t *testing.T) {
 	tests := []struct {
 		in  interface{} // Value to encode
-		buf []byte      // Wire encoding
+		buf []byte      // Encoded value
 	}{
 		{int32(1), []byte{0x01, 0x00, 0x00, 0x00}},
 		{uint32(256), []byte{0x00, 0x01, 0x00, 0x00}},
@@ -122,10 +122,6 @@ func TestElementWire(t *testing.T) {
 			[]byte{0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 		},
 		{
-			InvType(InvTypeTx),
-			[]byte{0x01, 0x00, 0x00, 0x00},
-		},
-		{
 			KaspaNet(Mainnet),
 			[]byte{0x1d, 0xf7, 0xdc, 0x3d},
 		},
@@ -169,9 +165,9 @@ func TestElementWire(t *testing.T) {
 	}
 }
 
-// TestElementWireErrors performs negative tests against domainmessage encode and decode
+// TestElementEncodingErrors performs negative tests against domainmessage encode and decode
 // of various element types to confirm error paths work correctly.
-func TestElementWireErrors(t *testing.T) {
+func TestElementEncodingErrors(t *testing.T) {
 	type writeElementReflect int32
 
 	tests := []struct {
@@ -206,7 +202,6 @@ func TestElementWireErrors(t *testing.T) {
 			0, io.ErrShortWrite, io.EOF,
 		},
 		{ServiceFlag(SFNodeNetwork), 0, io.ErrShortWrite, io.EOF},
-		{InvType(InvTypeTx), 0, io.ErrShortWrite, io.EOF},
 		{KaspaNet(Mainnet), 0, io.ErrShortWrite, io.EOF},
 		// Type with no supported encoding.
 		{writeElementReflect(0), 0, errNoEncodingForType, errNoEncodingForType},
@@ -238,11 +233,11 @@ func TestElementWireErrors(t *testing.T) {
 	}
 }
 
-// TestVarIntWire tests domainmessage encode and decode for variable length integers.
-func TestVarIntWire(t *testing.T) {
+// TestVarIntEncoding tests domainmessage encode and decode for variable length integers.
+func TestVarIntEncoding(t *testing.T) {
 	tests := []struct {
 		value uint64 // Value to encode
-		buf   []byte // Wire encoding
+		buf   []byte // Encoded value
 	}{
 		// Latest protocol version.
 		// Single byte
@@ -299,12 +294,12 @@ func TestVarIntWire(t *testing.T) {
 	}
 }
 
-// TestVarIntWireErrors performs negative tests against domainmessage encode and decode
+// TestVarIntEncodingErrors performs negative tests against domainmessage encode and decode
 // of variable length integers to confirm error paths work correctly.
-func TestVarIntWireErrors(t *testing.T) {
+func TestVarIntEncodingErrors(t *testing.T) {
 	tests := []struct {
 		in       uint64 // Value to encode
-		buf      []byte // Wire encoding
+		buf      []byte // Encoded value
 		max      int    // Max size of fixed buffer to induce errors
 		writeErr error  // Expected write error
 		readErr  error  // Expected read error
@@ -400,7 +395,7 @@ func TestVarIntNonCanonical(t *testing.T) {
 	}
 }
 
-// TestVarIntWire tests the serialize size for variable length integers.
+// TestVarIntEncoding tests the serialize size for variable length integers.
 func TestVarIntSerializeSize(t *testing.T) {
 	tests := []struct {
 		val  uint64 // Value to get the serialized size for
@@ -435,8 +430,8 @@ func TestVarIntSerializeSize(t *testing.T) {
 	}
 }
 
-// TestVarStringWire tests domainmessage encode and decode for variable length strings.
-func TestVarStringWire(t *testing.T) {
+// TestVarStringEncoding tests domainmessage encode and decode for variable length strings.
+func TestVarStringEncoding(t *testing.T) {
 	pver := ProtocolVersion
 
 	// str256 is a string that takes a 2-byte varint to encode.
@@ -445,7 +440,7 @@ func TestVarStringWire(t *testing.T) {
 	tests := []struct {
 		in   string // String to encode
 		out  string // String to decoded value
-		buf  []byte // Wire encoding
+		buf  []byte // Encoded value
 		pver uint32 // Protocol version for domainmessage encoding
 	}{
 		// Latest protocol version.
@@ -487,9 +482,9 @@ func TestVarStringWire(t *testing.T) {
 	}
 }
 
-// TestVarStringWireErrors performs negative tests against domainmessage encode and
+// TestVarStringEncodingErrors performs negative tests against domainmessage encode and
 // decode of variable length strings to confirm error paths work correctly.
-func TestVarStringWireErrors(t *testing.T) {
+func TestVarStringEncodingErrors(t *testing.T) {
 	pver := ProtocolVersion
 
 	// str256 is a string that takes a 2-byte varint to encode.
@@ -497,7 +492,7 @@ func TestVarStringWireErrors(t *testing.T) {
 
 	tests := []struct {
 		in       string // Value to encode
-		buf      []byte // Wire encoding
+		buf      []byte // Encoded value
 		pver     uint32 // Protocol version for domainmessage encoding
 		max      int    // Max size of fixed buffer to induce errors
 		writeErr error  // Expected write error
@@ -542,7 +537,7 @@ func TestVarStringOverflowErrors(t *testing.T) {
 	pver := ProtocolVersion
 
 	tests := []struct {
-		buf  []byte // Wire encoding
+		buf  []byte // Encoded value
 		pver uint32 // Protocol version for domainmessage encoding
 		err  error  // Expected error
 	}{
@@ -566,8 +561,8 @@ func TestVarStringOverflowErrors(t *testing.T) {
 
 }
 
-// TestVarBytesWire tests domainmessage encode and decode for variable length byte array.
-func TestVarBytesWire(t *testing.T) {
+// TestVarBytesEncoding tests domainmessage encode and decode for variable length byte array.
+func TestVarBytesEncoding(t *testing.T) {
 	pver := ProtocolVersion
 
 	// bytes256 is a byte array that takes a 2-byte varint to encode.
@@ -575,7 +570,7 @@ func TestVarBytesWire(t *testing.T) {
 
 	tests := []struct {
 		in   []byte // Byte Array to write
-		buf  []byte // Wire encoding
+		buf  []byte // Encoded value
 		pver uint32 // Protocol version for domainmessage encoding
 	}{
 		// Latest protocol version.
@@ -618,9 +613,9 @@ func TestVarBytesWire(t *testing.T) {
 	}
 }
 
-// TestVarBytesWireErrors performs negative tests against domainmessage encode and
+// TestVarBytesEncodingErrors performs negative tests against domainmessage encode and
 // decode of variable length byte arrays to confirm error paths work correctly.
-func TestVarBytesWireErrors(t *testing.T) {
+func TestVarBytesEncodingErrors(t *testing.T) {
 	pver := ProtocolVersion
 
 	// bytes256 is a byte array that takes a 2-byte varint to encode.
@@ -628,7 +623,7 @@ func TestVarBytesWireErrors(t *testing.T) {
 
 	tests := []struct {
 		in       []byte // Byte Array to write
-		buf      []byte // Wire encoding
+		buf      []byte // Encoded value
 		pver     uint32 // Protocol version for domainmessage encoding
 		max      int    // Max size of fixed buffer to induce errors
 		writeErr error  // Expected write error
@@ -674,7 +669,7 @@ func TestVarBytesOverflowErrors(t *testing.T) {
 	pver := ProtocolVersion
 
 	tests := []struct {
-		buf  []byte // Wire encoding
+		buf  []byte // Encoded value
 		pver uint32 // Protocol version for domainmessage encoding
 		err  error  // Expected error
 	}{

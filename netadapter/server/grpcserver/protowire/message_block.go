@@ -6,16 +6,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_Block) toWireMessage() (domainmessage.Message, error) {
-	return x.Block.toWireMessage()
+func (x *KaspadMessage_Block) toDomainMessage() (domainmessage.Message, error) {
+	return x.Block.toDomainMessage()
 }
 
-func (x *KaspadMessage_Block) fromWireMessage(msgBlock *domainmessage.MsgBlock) error {
+func (x *KaspadMessage_Block) fromDomainMessage(msgBlock *domainmessage.MsgBlock) error {
 	x.Block = new(BlockMessage)
-	return x.Block.fromWireMessage(msgBlock)
+	return x.Block.fromDomainMessage(msgBlock)
 }
 
-func (x *BlockMessage) toWireMessage() (domainmessage.Message, error) {
+func (x *BlockMessage) toDomainMessage() (domainmessage.Message, error) {
 	if len(x.Transactions) > domainmessage.MaxTxPerBlock {
 		return nil, errors.Errorf("too many transactions to fit into a block "+
 			"[count %d, max %d]", len(x.Transactions), domainmessage.MaxTxPerBlock)
@@ -59,7 +59,7 @@ func (x *BlockMessage) toWireMessage() (domainmessage.Message, error) {
 
 	transactions := make([]*domainmessage.MsgTx, len(x.Transactions))
 	for i, protoTx := range x.Transactions {
-		msgTx, err := protoTx.toWireMessage()
+		msgTx, err := protoTx.toDomainMessage()
 		if err != nil {
 			return nil, err
 		}
@@ -72,7 +72,7 @@ func (x *BlockMessage) toWireMessage() (domainmessage.Message, error) {
 	}, nil
 }
 
-func (x *BlockMessage) fromWireMessage(msgBlock *domainmessage.MsgBlock) error {
+func (x *BlockMessage) fromDomainMessage(msgBlock *domainmessage.MsgBlock) error {
 	if len(msgBlock.Transactions) > domainmessage.MaxTxPerBlock {
 		return errors.Errorf("too many transactions to fit into a block "+
 			"[count %d, max %d]", len(msgBlock.Transactions), domainmessage.MaxTxPerBlock)
@@ -92,7 +92,7 @@ func (x *BlockMessage) fromWireMessage(msgBlock *domainmessage.MsgBlock) error {
 	protoTransactions := make([]*TransactionMessage, len(msgBlock.Transactions))
 	for i, tx := range msgBlock.Transactions {
 		protoTx := new(TransactionMessage)
-		protoTx.fromWireMessage(tx)
+		protoTx.fromDomainMessage(tx)
 		protoTransactions[i] = protoTx
 	}
 	*x = BlockMessage{

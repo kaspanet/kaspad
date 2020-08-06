@@ -253,9 +253,9 @@ func TestTxHashAndID(t *testing.T) {
 	}
 }
 
-// TestTxWire tests the MsgTx domainmessage encode and decode for various numbers
+// TestTxEncoding tests the MsgTx domainmessage encode and decode for various numbers
 // of transaction inputs and outputs and protocol versions.
-func TestTxWire(t *testing.T) {
+func TestTxEncoding(t *testing.T) {
 	// Empty tx message.
 	noTx := NewNativeMsgTx(1, nil, nil)
 	noTxEncoded := []byte{
@@ -271,7 +271,7 @@ func TestTxWire(t *testing.T) {
 	tests := []struct {
 		in   *MsgTx // Message to encode
 		out  *MsgTx // Expected decoded message
-		buf  []byte // Wire encoding
+		buf  []byte // Encoded value
 		pver uint32 // Protocol version for domainmessage encoding
 	}{
 		// Latest protocol version with no transactions.
@@ -322,14 +322,14 @@ func TestTxWire(t *testing.T) {
 	}
 }
 
-// TestTxWireErrors performs negative tests against domainmessage encode and decode
+// TestTxEncodingErrors performs negative tests against domainmessage encode and decode
 // of MsgTx to confirm error paths work correctly.
-func TestTxWireErrors(t *testing.T) {
+func TestTxEncodingErrors(t *testing.T) {
 	pver := ProtocolVersion
 
 	tests := []struct {
 		in       *MsgTx // Value to encode
-		buf      []byte // Wire encoding
+		buf      []byte // Encoded value
 		pver     uint32 // Protocol version for domainmessage encoding
 		max      int    // Max size of fixed buffer to induce errors
 		writeErr error  // Expected write error
@@ -628,7 +628,7 @@ func TestTxOverflowErrors(t *testing.T) {
 	txVer := uint32(1)
 
 	tests := []struct {
-		buf     []byte // Wire encoding
+		buf     []byte // Encoded value
 		pver    uint32 // Protocol version for domainmessage encoding
 		version uint32 // Transaction version
 		err     error  // Expected error

@@ -20,6 +20,9 @@ import (
 // MaxVarIntPayload is the maximum payload size for a variable length integer.
 const MaxVarIntPayload = 9
 
+// MaxInvPerMsg is the maximum number of inventory vectors that can be in any type of kaspa inv message.
+const MaxInvPerMsg = 1 << 17
+
 var (
 	// littleEndian is a convenience variable since binary.LittleEndian is
 	// quite long.
@@ -160,14 +163,6 @@ func ReadElement(r io.Reader, element interface{}) error {
 		*e = ServiceFlag(rv)
 		return nil
 
-	case *InvType:
-		rv, err := binaryserializer.Uint32(r, littleEndian)
-		if err != nil {
-			return err
-		}
-		*e = InvType(rv)
-		return nil
-
 	case *KaspaNet:
 		rv, err := binaryserializer.Uint32(r, littleEndian)
 		if err != nil {
@@ -287,13 +282,6 @@ func WriteElement(w io.Writer, element interface{}) error {
 
 	case ServiceFlag:
 		err := binaryserializer.PutUint64(w, littleEndian, uint64(e))
-		if err != nil {
-			return err
-		}
-		return nil
-
-	case InvType:
-		err := binaryserializer.PutUint32(w, littleEndian, uint32(e))
 		if err != nil {
 			return err
 		}

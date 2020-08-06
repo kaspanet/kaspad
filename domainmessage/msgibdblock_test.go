@@ -65,13 +65,13 @@ func TestIBDBlock(t *testing.T) {
 	}
 }
 
-// TestIBDBlockWire tests the MsgIBDBlock domainmessage encode and decode for various numbers
+// TestIBDBlockEncoding tests the MsgIBDBlock domainmessage encode and decode for various numbers
 // of transaction inputs and outputs and protocol versions.
-func TestIBDBlockWire(t *testing.T) {
+func TestIBDBlockEncoding(t *testing.T) {
 	tests := []struct {
 		in     *MsgIBDBlock // Message to encode
 		out    *MsgIBDBlock // Expected decoded message
-		buf    []byte       // Wire encoding
+		buf    []byte       // Encoded value
 		txLocs []TxLoc      // Expected transaction locations
 		pver   uint32       // Protocol version for domainmessage encoding
 	}{

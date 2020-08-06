@@ -144,13 +144,13 @@ func TestConvertToPartial(t *testing.T) {
 	}
 }
 
-// TestBlockWire tests the MsgBlock domainmessage encode and decode for various numbers
+// TestBlockEncoding tests the MsgBlock domainmessage encode and decode for various numbers
 // of transaction inputs and outputs and protocol versions.
-func TestBlockWire(t *testing.T) {
+func TestBlockEncoding(t *testing.T) {
 	tests := []struct {
 		in     *MsgBlock // Message to encode
 		out    *MsgBlock // Expected decoded message
-		buf    []byte    // Wire encoding
+		buf    []byte    // Encoded value
 		txLocs []TxLoc   // Expected transaction locations
 		pver   uint32    // Protocol version for domainmessage encoding
 	}{
@@ -195,14 +195,14 @@ func TestBlockWire(t *testing.T) {
 	}
 }
 
-// TestBlockWireErrors performs negative tests against domainmessage encode and decode
+// TestBlockEncodingErrors performs negative tests against domainmessage encode and decode
 // of MsgBlock to confirm error paths work correctly.
-func TestBlockWireErrors(t *testing.T) {
+func TestBlockEncodingErrors(t *testing.T) {
 	pver := ProtocolVersion
 
 	tests := []struct {
 		in       *MsgBlock // Value to encode
-		buf      []byte    // Wire encoding
+		buf      []byte    // Encoded value
 		pver     uint32    // Protocol version for domainmessage encoding
 		max      int       // Max size of fixed buffer to induce errors
 		writeErr error     // Expected write error
@@ -400,7 +400,7 @@ func TestBlockOverflowErrors(t *testing.T) {
 	pver := ProtocolVersion
 
 	tests := []struct {
-		buf  []byte // Wire encoding
+		buf  []byte // Encoded value
 		pver uint32 // Protocol version for domainmessage encoding
 		err  error  // Expected error
 	}{
