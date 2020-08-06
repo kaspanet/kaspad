@@ -7,6 +7,7 @@ import (
 )
 
 func (x *KaspadMessage_Version) toWireMessage() (wire.Message, error) {
+	// Address is optional for non-listening nodes
 	var address *wire.NetAddress
 	if x.Version.Address != nil {
 		var err error
@@ -55,6 +56,7 @@ func (x *KaspadMessage_Version) fromWireMessage(msgVersion *wire.MsgVersion) err
 		return err
 	}
 
+	// Address is optional for non-listening nodes
 	var address *NetAddress
 	if msgVersion.Address != nil {
 		address = wireNetAddressToProto(msgVersion.Address)
