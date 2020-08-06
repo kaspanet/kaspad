@@ -51,17 +51,17 @@ func NewMinimalNetAdapter(cfg *config.Config) (*MinimalNetAdapter, error) {
 // To simplify usage the return type contains only two routes:
 // OutgoingRoute - for all outgoing messages
 // IncomingRoute - for all incoming messages (excluding handshake messages)
-func (nam *MinimalNetAdapter) Connect(address string) (*Routes, error) {
-	nam.lock.Lock()
-	defer nam.lock.Unlock()
+func (mna *MinimalNetAdapter) Connect(address string) (*Routes, error) {
+	mna.lock.Lock()
+	defer mna.lock.Unlock()
 
-	err := nam.netAdapter.Connect(address)
+	err := mna.netAdapter.Connect(address)
 	if err != nil {
 		return nil, err
 	}
 
-	routes := <-nam.routesChan
-	err = handleHandshake(routes, nam.netAdapter.ID())
+	routes := <-mna.routesChan
+	err = handleHandshake(routes, mna.netAdapter.ID())
 	if err != nil {
 		return nil, errors.Wrap(err, "Error in handshake")
 	}
@@ -76,6 +76,9 @@ func (nam *MinimalNetAdapter) Connect(address string) (*Routes, error) {
 	return routes, nil
 }
 
+// handlePingPong makes sure that we are not disconnected due to not responding to pings.
+// However, it only responds to pings, not sending it's own, to conform to the minimal-ness
+// of MinimalNetAdapter
 func handlePingPong(routes *Routes) error {
 	for {
 		message, err := routes.pingRoute.Dequeue()
