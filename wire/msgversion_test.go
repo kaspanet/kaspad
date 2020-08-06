@@ -6,7 +6,7 @@ package wire
 
 import (
 	"github.com/davecgh/go-spew/spew"
-	id "github.com/kaspanet/kaspad/netadapter/id"
+	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"net"
 	"reflect"
@@ -27,7 +27,7 @@ func TestVersion(t *testing.T) {
 	}
 
 	// Ensure we get the correct data back out.
-	msg := NewMsgVersion(me, generatedID, selectedTipHash, nil)
+	msg := NewMsgVersion(me, generatedID, "mainnet", selectedTipHash, nil)
 	if msg.ProtocolVersion != pver {
 		t.Errorf("NewMsgVersion: wrong protocol version - got %v, want %v",
 			msg.ProtocolVersion, pver)

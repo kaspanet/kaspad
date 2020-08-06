@@ -49,7 +49,8 @@ func (flow *sendVersionFlow) start() error {
 	if err != nil {
 		return err
 	}
-	msg := wire.NewMsgVersion(localAddress, flow.NetAdapter().ID(), selectedTipHash, subnetworkID)
+	msg := wire.NewMsgVersion(localAddress, flow.NetAdapter().ID(),
+		flow.Config().ActiveNetParams.Name, selectedTipHash, subnetworkID)
 	msg.AddUserAgent(userAgentName, userAgentVersion, flow.Config().UserAgentComments...)
 
 	// Advertise the services flag
