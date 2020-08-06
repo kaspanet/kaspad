@@ -22,9 +22,9 @@ import (
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // FileExists returns whether or not the named file or directory exists.
@@ -121,30 +121,30 @@ type txSubnetworkData struct {
 	Payload      []byte
 }
 
-func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, subnetworkData *txSubnetworkData) *wire.MsgTx {
-	txIns := []*wire.TxIn{}
-	txOuts := []*wire.TxOut{}
+func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, subnetworkData *txSubnetworkData) *domainmessage.MsgTx {
+	txIns := []*domainmessage.TxIn{}
+	txOuts := []*domainmessage.TxOut{}
 
 	for i := uint32(0); i < numInputs; i++ {
-		txIns = append(txIns, &wire.TxIn{
-			PreviousOutpoint: *wire.NewOutpoint(&daghash.TxID{}, i),
+		txIns = append(txIns, &domainmessage.TxIn{
+			PreviousOutpoint: *domainmessage.NewOutpoint(&daghash.TxID{}, i),
 			SignatureScript:  []byte{},
-			Sequence:         wire.MaxTxInSequenceNum,
+			Sequence:         domainmessage.MaxTxInSequenceNum,
 		})
 	}
 
 	for i := uint32(0); i < numOutputs; i++ {
-		txOuts = append(txOuts, &wire.TxOut{
+		txOuts = append(txOuts, &domainmessage.TxOut{
 			ScriptPubKey: OpTrueScript,
 			Value:        outputValue,
 		})
 	}
 
 	if subnetworkData != nil {
-		return wire.NewSubnetworkMsgTx(wire.TxVersion, txIns, txOuts, subnetworkData.subnetworkID, subnetworkData.Gas, subnetworkData.Payload)
+		return domainmessage.NewSubnetworkMsgTx(domainmessage.TxVersion, txIns, txOuts, subnetworkData.subnetworkID, subnetworkData.Gas, subnetworkData.Payload)
 	}
 
-	return wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)
+	return domainmessage.NewNativeMsgTx(domainmessage.TxVersion, txIns, txOuts)
 }
 
 // VirtualForTest is an exported version for virtualBlock, so that it can be returned by exported test_util methods
@@ -186,7 +186,7 @@ func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (
 // LoadBlocks reads files containing kaspa gzipped block data from disk
 // and returns them as an array of util.Block.
 func LoadBlocks(filename string) (blocks []*util.Block, err error) {
-	var network = wire.Mainnet
+	var network = domainmessage.Mainnet
 	var dr io.Reader
 	var fi io.ReadCloser
 
@@ -244,7 +244,7 @@ func opTrueAddress(prefix util.Bech32Prefix) (util.Address, error) {
 }
 
 // PrepareBlockForTest generates a block with the proper merkle roots, coinbase transaction etc. This function is used for test purposes only
-func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*wire.MsgTx) (*wire.MsgBlock, error) {
+func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*domainmessage.MsgTx) (*domainmessage.MsgBlock, error) {
 	newVirtual, err := GetVirtualFromParentsForTest(dag, parentHashes)
 	if err != nil {
 		return nil, err
@@ -297,7 +297,7 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 
 // PrepareAndProcessBlockForTest prepares a block that points to the given parent
 // hashes and process it.
-func PrepareAndProcessBlockForTest(t *testing.T, dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*wire.MsgTx) *wire.MsgBlock {
+func PrepareAndProcessBlockForTest(t *testing.T, dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*domainmessage.MsgTx) *domainmessage.MsgBlock {
 	daghash.Sort(parentHashes)
 	block, err := PrepareBlockForTest(dag, parentHashes, transactions)
 	if err != nil {

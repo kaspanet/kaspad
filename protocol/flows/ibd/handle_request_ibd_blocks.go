@@ -2,10 +2,10 @@ package ibd
 
 import (
 	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 const ibdBatchSize = router.DefaultMaxMessages
@@ -65,12 +65,12 @@ func (flow *handleRequestBlocksFlow) start() error {
 				return err
 			}
 
-			if _, ok := message.(*wire.MsgRequestNextIBDBlocks); !ok {
+			if _, ok := message.(*domainmessage.MsgRequestNextIBDBlocks); !ok {
 				return protocolerrors.Errorf(true, "received unexpected message type. "+
-					"expected: %s, got: %s", wire.CmdRequestNextIBDBlocks, message.Command())
+					"expected: %s, got: %s", domainmessage.CmdRequestNextIBDBlocks, message.Command())
 			}
 		}
-		err = flow.outgoingRoute.Enqueue(wire.NewMsgDoneIBDBlocks())
+		err = flow.outgoingRoute.Enqueue(domainmessage.NewMsgDoneIBDBlocks())
 		if err != nil {
 			return err
 		}
@@ -84,33 +84,33 @@ func receiveRequestIBDBlocks(incomingRoute *router.Route) (lowHash *daghash.Hash
 	if err != nil {
 		return nil, nil, err
 	}
-	msgRequestIBDBlocks := message.(*wire.MsgRequestIBDBlocks)
+	msgRequestIBDBlocks := message.(*domainmessage.MsgRequestIBDBlocks)
 
 	return msgRequestIBDBlocks.LowHash, msgRequestIBDBlocks.HighHash, nil
 }
 
 func (flow *handleRequestBlocksFlow) buildMsgIBDBlocks(lowHash *daghash.Hash,
-	highHash *daghash.Hash) ([]*wire.MsgIBDBlock, error) {
+	highHash *daghash.Hash) ([]*domainmessage.MsgIBDBlock, error) {
 
-	const maxHashesInMsgIBDBlocks = wire.MaxInvPerMsg
+	const maxHashesInMsgIBDBlocks = domainmessage.MaxInvPerMsg
 	blockHashes, err := flow.DAG().AntiPastHashesBetween(lowHash, highHash, maxHashesInMsgIBDBlocks)
 	if err != nil {
 		return nil, err
 	}
 
-	msgIBDBlocks := make([]*wire.MsgIBDBlock, len(blockHashes))
+	msgIBDBlocks := make([]*domainmessage.MsgIBDBlock, len(blockHashes))
 	for i, blockHash := range blockHashes {
 		block, err := flow.DAG().BlockByHash(blockHash)
 		if err != nil {
 			return nil, err
 		}
-		msgIBDBlocks[i] = wire.NewMsgIBDBlock(block.MsgBlock())
+		msgIBDBlocks[i] = domainmessage.NewMsgIBDBlock(block.MsgBlock())
 	}
 
 	return msgIBDBlocks, nil
 }
 
-func (flow *handleRequestBlocksFlow) sendMsgIBDBlocks(msgIBDBlocks []*wire.MsgIBDBlock) error {
+func (flow *handleRequestBlocksFlow) sendMsgIBDBlocks(msgIBDBlocks []*domainmessage.MsgIBDBlock) error {
 	for _, msgIBDBlock := range msgIBDBlocks {
 		err := flow.outgoingRoute.Enqueue(msgIBDBlock)
 		if err != nil {

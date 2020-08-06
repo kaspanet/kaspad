@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/wire"
+	"github.com/kaspanet/kaspad/domainmessage"
 )
 
 const (
@@ -78,7 +78,7 @@ const (
 )
 
 // NewUTXOEntry creates a new utxoEntry representing the given txOut
-func NewUTXOEntry(txOut *wire.TxOut, isCoinbase bool, blockBlueScore uint64) *UTXOEntry {
+func NewUTXOEntry(txOut *domainmessage.TxOut, isCoinbase bool, blockBlueScore uint64) *UTXOEntry {
 	entry := &UTXOEntry{
 		amount:         txOut.Value,
 		scriptPubKey:   txOut.ScriptPubKey,
@@ -93,7 +93,7 @@ func NewUTXOEntry(txOut *wire.TxOut, isCoinbase bool, blockBlueScore uint64) *UT
 }
 
 // utxoCollection represents a set of UTXOs indexed by their outpoints
-type utxoCollection map[wire.Outpoint]*UTXOEntry
+type utxoCollection map[domainmessage.Outpoint]*UTXOEntry
 
 func (uc utxoCollection) String() string {
 	utxoStrings := make([]string, len(uc))
@@ -112,31 +112,31 @@ func (uc utxoCollection) String() string {
 }
 
 // add adds a new UTXO entry to this collection
-func (uc utxoCollection) add(outpoint wire.Outpoint, entry *UTXOEntry) {
+func (uc utxoCollection) add(outpoint domainmessage.Outpoint, entry *UTXOEntry) {
 	uc[outpoint] = entry
 }
 
 // remove removes a UTXO entry from this collection if it exists
-func (uc utxoCollection) remove(outpoint wire.Outpoint) {
+func (uc utxoCollection) remove(outpoint domainmessage.Outpoint) {
 	delete(uc, outpoint)
 }
 
 // get returns the UTXOEntry represented by provided outpoint,
 // and a boolean value indicating if said UTXOEntry is in the set or not
-func (uc utxoCollection) get(outpoint wire.Outpoint) (*UTXOEntry, bool) {
+func (uc utxoCollection) get(outpoint domainmessage.Outpoint) (*UTXOEntry, bool) {
 	entry, ok := uc[outpoint]
 	return entry, ok
 }
 
 // contains returns a boolean value indicating whether a UTXO entry is in the set
-func (uc utxoCollection) contains(outpoint wire.Outpoint) bool {
+func (uc utxoCollection) contains(outpoint domainmessage.Outpoint) bool {
 	_, ok := uc[outpoint]
 	return ok
 }
 
 // containsWithBlueScore returns a boolean value indicating whether a UTXOEntry
 // is in the set and its blue score is equal to the given blue score.
-func (uc utxoCollection) containsWithBlueScore(outpoint wire.Outpoint, blueScore uint64) bool {
+func (uc utxoCollection) containsWithBlueScore(outpoint domainmessage.Outpoint, blueScore uint64) bool {
 	entry, ok := uc.get(outpoint)
 	return ok && entry.blockBlueScore == blueScore
 }
@@ -353,7 +353,7 @@ func (d *UTXODiff) clone() *UTXODiff {
 //
 // If d.useMultiset is true, this function MUST be
 // called with the DAG lock held.
-func (d *UTXODiff) AddEntry(outpoint wire.Outpoint, entry *UTXOEntry) error {
+func (d *UTXODiff) AddEntry(outpoint domainmessage.Outpoint, entry *UTXOEntry) error {
 	if d.toRemove.containsWithBlueScore(outpoint, entry.blockBlueScore) {
 		d.toRemove.remove(outpoint)
 	} else if _, exists := d.toAdd[outpoint]; exists {
@@ -368,7 +368,7 @@ func (d *UTXODiff) AddEntry(outpoint wire.Outpoint, entry *UTXOEntry) error {
 //
 // If d.useMultiset is true, this function MUST be
 // called with the DAG lock held.
-func (d *UTXODiff) RemoveEntry(outpoint wire.Outpoint, entry *UTXOEntry) error {
+func (d *UTXODiff) RemoveEntry(outpoint domainmessage.Outpoint, entry *UTXOEntry) error {
 	if d.toAdd.containsWithBlueScore(outpoint, entry.blockBlueScore) {
 		d.toAdd.remove(outpoint)
 	} else if _, exists := d.toRemove[outpoint]; exists {
@@ -399,9 +399,9 @@ type UTXOSet interface {
 	fmt.Stringer
 	diffFrom(other UTXOSet) (*UTXODiff, error)
 	WithDiff(utxoDiff *UTXODiff) (UTXOSet, error)
-	AddTx(tx *wire.MsgTx, blockBlueScore uint64) (ok bool, err error)
+	AddTx(tx *domainmessage.MsgTx, blockBlueScore uint64) (ok bool, err error)
 	clone() UTXOSet
-	Get(outpoint wire.Outpoint) (*UTXOEntry, bool)
+	Get(outpoint domainmessage.Outpoint) (*UTXOEntry, bool)
 }
 
 // FullUTXOSet represents a full list of transaction outputs and their values
@@ -456,7 +456,7 @@ func (fus *FullUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 // necessarily means there's an error).
 //
 // This function MUST be called with the DAG lock held.
-func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blueScore uint64) (isAccepted bool, err error) {
+func (fus *FullUTXOSet) AddTx(tx *domainmessage.MsgTx, blueScore uint64) (isAccepted bool, err error) {
 	if !fus.containsInputs(tx) {
 		return false, nil
 	}
@@ -467,7 +467,7 @@ func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blueScore uint64) (isAccepted bool
 
 	isCoinbase := tx.IsCoinBase()
 	for i, txOut := range tx.TxOut {
-		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
+		outpoint := *domainmessage.NewOutpoint(tx.TxID(), uint32(i))
 		entry := NewUTXOEntry(txOut, isCoinbase, blueScore)
 		fus.add(outpoint, entry)
 	}
@@ -475,9 +475,9 @@ func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blueScore uint64) (isAccepted bool
 	return true, nil
 }
 
-func (fus *FullUTXOSet) containsInputs(tx *wire.MsgTx) bool {
+func (fus *FullUTXOSet) containsInputs(tx *domainmessage.MsgTx) bool {
 	for _, txIn := range tx.TxIn {
-		outpoint := *wire.NewOutpoint(&txIn.PreviousOutpoint.TxID, txIn.PreviousOutpoint.Index)
+		outpoint := *domainmessage.NewOutpoint(&txIn.PreviousOutpoint.TxID, txIn.PreviousOutpoint.Index)
 		if !fus.contains(outpoint) {
 			return false
 		}
@@ -492,7 +492,7 @@ func (fus *FullUTXOSet) clone() UTXOSet {
 }
 
 // Get returns the UTXOEntry associated with the given Outpoint, and a boolean indicating if such entry was found
-func (fus *FullUTXOSet) Get(outpoint wire.Outpoint) (*UTXOEntry, bool) {
+func (fus *FullUTXOSet) Get(outpoint domainmessage.Outpoint) (*UTXOEntry, bool) {
 	utxoEntry, ok := fus.utxoCollection[outpoint]
 	return utxoEntry, ok
 }
@@ -540,7 +540,7 @@ func (dus *DiffUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 //
 // If dus.UTXODiff.useMultiset is true, this function MUST be
 // called with the DAG lock held.
-func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockBlueScore uint64) (bool, error) {
+func (dus *DiffUTXOSet) AddTx(tx *domainmessage.MsgTx, blockBlueScore uint64) (bool, error) {
 	if !dus.containsInputs(tx) {
 		return false, nil
 	}
@@ -553,7 +553,7 @@ func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockBlueScore uint64) (bool, erro
 	return true, nil
 }
 
-func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockBlueScore uint64) error {
+func (dus *DiffUTXOSet) appendTx(tx *domainmessage.MsgTx, blockBlueScore uint64) error {
 	for _, txIn := range tx.TxIn {
 		entry, ok := dus.Get(txIn.PreviousOutpoint)
 		if !ok {
@@ -567,7 +567,7 @@ func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockBlueScore uint64) error {
 
 	isCoinbase := tx.IsCoinBase()
 	for i, txOut := range tx.TxOut {
-		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
+		outpoint := *domainmessage.NewOutpoint(tx.TxID(), uint32(i))
 		entry := NewUTXOEntry(txOut, isCoinbase, blockBlueScore)
 
 		err := dus.UTXODiff.AddEntry(outpoint, entry)
@@ -578,9 +578,9 @@ func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockBlueScore uint64) error {
 	return nil
 }
 
-func (dus *DiffUTXOSet) containsInputs(tx *wire.MsgTx) bool {
+func (dus *DiffUTXOSet) containsInputs(tx *domainmessage.MsgTx) bool {
 	for _, txIn := range tx.TxIn {
-		outpoint := *wire.NewOutpoint(&txIn.PreviousOutpoint.TxID, txIn.PreviousOutpoint.Index)
+		outpoint := *domainmessage.NewOutpoint(&txIn.PreviousOutpoint.TxID, txIn.PreviousOutpoint.Index)
 		isInBase := dus.base.contains(outpoint)
 		isInDiffToAdd := dus.UTXODiff.toAdd.contains(outpoint)
 		isInDiffToRemove := dus.UTXODiff.toRemove.contains(outpoint)
@@ -626,7 +626,7 @@ func (dus *DiffUTXOSet) cloneWithoutBase() UTXOSet {
 
 // Get returns the UTXOEntry associated with provided outpoint in this UTXOSet.
 // Returns false in second output if this UTXOEntry was not found
-func (dus *DiffUTXOSet) Get(outpoint wire.Outpoint) (*UTXOEntry, bool) {
+func (dus *DiffUTXOSet) Get(outpoint domainmessage.Outpoint) (*UTXOEntry, bool) {
 	if toRemoveEntry, ok := dus.UTXODiff.toRemove.get(outpoint); ok {
 		// An exception is made for entries with unequal blue scores
 		// These are just "updates" to accepted blue score

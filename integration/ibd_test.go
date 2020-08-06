@@ -7,7 +7,7 @@ import (
 
 	"github.com/kaspanet/kaspad/util/locks"
 
-	"github.com/kaspanet/kaspad/wire"
+	"github.com/kaspanet/kaspad/domainmessage"
 )
 
 func TestIBD(t *testing.T) {
@@ -23,7 +23,7 @@ func TestIBD(t *testing.T) {
 	blockAddedWG := sync.WaitGroup{}
 	blockAddedWG.Add(numBlocks)
 	receivedBlocks := 0
-	setOnBlockAddedHandler(t, syncee, func(header *wire.BlockHeader) {
+	setOnBlockAddedHandler(t, syncee, func(header *domainmessage.BlockHeader) {
 		receivedBlocks++
 		blockAddedWG.Done()
 	})

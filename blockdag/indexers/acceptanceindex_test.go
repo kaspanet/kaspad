@@ -12,28 +12,28 @@ import (
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
 
 func TestAcceptanceIndexSerializationAndDeserialization(t *testing.T) {
 	// Create test data
 	hash, _ := daghash.NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
-	txIn1 := &wire.TxIn{SignatureScript: []byte{1}, PreviousOutpoint: wire.Outpoint{Index: 1}, Sequence: 0}
-	txIn2 := &wire.TxIn{SignatureScript: []byte{2}, PreviousOutpoint: wire.Outpoint{Index: 2}, Sequence: 0}
-	txOut1 := &wire.TxOut{ScriptPubKey: []byte{1}, Value: 10}
-	txOut2 := &wire.TxOut{ScriptPubKey: []byte{2}, Value: 20}
+	txIn1 := &domainmessage.TxIn{SignatureScript: []byte{1}, PreviousOutpoint: domainmessage.Outpoint{Index: 1}, Sequence: 0}
+	txIn2 := &domainmessage.TxIn{SignatureScript: []byte{2}, PreviousOutpoint: domainmessage.Outpoint{Index: 2}, Sequence: 0}
+	txOut1 := &domainmessage.TxOut{ScriptPubKey: []byte{1}, Value: 10}
+	txOut2 := &domainmessage.TxOut{ScriptPubKey: []byte{2}, Value: 20}
 	blockTxsAcceptanceData := blockdag.BlockTxsAcceptanceData{
 		BlockHash: *hash,
 		TxAcceptanceData: []blockdag.TxAcceptanceData{
 			{
-				Tx:         util.NewTx(wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn1}, []*wire.TxOut{txOut1})),
+				Tx:         util.NewTx(domainmessage.NewNativeMsgTx(domainmessage.TxVersion, []*domainmessage.TxIn{txIn1}, []*domainmessage.TxOut{txOut1})),
 				IsAccepted: true,
 			},
 			{
-				Tx:         util.NewTx(wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn2}, []*wire.TxOut{txOut2})),
+				Tx:         util.NewTx(domainmessage.NewNativeMsgTx(domainmessage.TxVersion, []*domainmessage.TxIn{txIn2}, []*domainmessage.TxOut{txOut2})),
 				IsAccepted: false,
 			},
 		},

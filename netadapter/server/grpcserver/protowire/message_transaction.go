@@ -1,36 +1,36 @@
 package protowire
 
 import (
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_Transaction) toWireMessage() (wire.Message, error) {
+func (x *KaspadMessage_Transaction) toWireMessage() (domainmessage.Message, error) {
 	return x.Transaction.toWireMessage()
 }
 
-func (x *KaspadMessage_Transaction) fromWireMessage(msgTx *wire.MsgTx) error {
+func (x *KaspadMessage_Transaction) fromWireMessage(msgTx *domainmessage.MsgTx) error {
 	x.Transaction = new(TransactionMessage)
 	x.Transaction.fromWireMessage(msgTx)
 	return nil
 }
 
-func (x *TransactionMessage) toWireMessage() (wire.Message, error) {
-	inputs := make([]*wire.TxIn, len(x.Inputs))
+func (x *TransactionMessage) toWireMessage() (domainmessage.Message, error) {
+	inputs := make([]*domainmessage.TxIn, len(x.Inputs))
 	for i, protoInput := range x.Inputs {
 		prevTxID, err := protoInput.PreviousOutpoint.TransactionID.toWire()
 		if err != nil {
 			return nil, err
 		}
 
-		outpoint := wire.NewOutpoint(prevTxID, protoInput.PreviousOutpoint.Index)
-		inputs[i] = wire.NewTxIn(outpoint, protoInput.SignatureScript)
+		outpoint := domainmessage.NewOutpoint(prevTxID, protoInput.PreviousOutpoint.Index)
+		inputs[i] = domainmessage.NewTxIn(outpoint, protoInput.SignatureScript)
 	}
 
-	outputs := make([]*wire.TxOut, len(x.Outputs))
+	outputs := make([]*domainmessage.TxOut, len(x.Outputs))
 	for i, protoOutput := range x.Outputs {
-		outputs[i] = &wire.TxOut{
+		outputs[i] = &domainmessage.TxOut{
 			Value:        protoOutput.Value,
 			ScriptPubKey: protoOutput.ScriptPubKey,
 		}
@@ -53,7 +53,7 @@ func (x *TransactionMessage) toWireMessage() (wire.Message, error) {
 		}
 	}
 
-	return &wire.MsgTx{
+	return &domainmessage.MsgTx{
 		Version:      x.Version,
 		TxIn:         inputs,
 		TxOut:        outputs,
@@ -65,7 +65,7 @@ func (x *TransactionMessage) toWireMessage() (wire.Message, error) {
 	}, nil
 }
 
-func (x *TransactionMessage) fromWireMessage(msgTx *wire.MsgTx) {
+func (x *TransactionMessage) fromWireMessage(msgTx *domainmessage.MsgTx) {
 	protoInputs := make([]*TransactionInput, len(msgTx.TxIn))
 	for i, input := range msgTx.TxIn {
 		protoInputs[i] = &TransactionInput{

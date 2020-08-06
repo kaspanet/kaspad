@@ -16,7 +16,7 @@ import (
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/wire"
+	"github.com/kaspanet/kaspad/domainmessage"
 )
 
 const (
@@ -34,13 +34,13 @@ const (
 
 // OnSeed is the signature of the callback function which is invoked when DNS
 // seeding is successful.
-type OnSeed func(addrs []*wire.NetAddress)
+type OnSeed func(addrs []*domainmessage.NetAddress)
 
 // LookupFunc is the signature of the DNS lookup function.
 type LookupFunc func(string) ([]net.IP, error)
 
 // SeedFromDNS uses DNS seeding to populate the address manager with peers.
-func SeedFromDNS(dagParams *dagconfig.Params, customSeed string, reqServices wire.ServiceFlag, includeAllSubnetworks bool,
+func SeedFromDNS(dagParams *dagconfig.Params, customSeed string, reqServices domainmessage.ServiceFlag, includeAllSubnetworks bool,
 	subnetworkID *subnetworkid.SubnetworkID, lookupFn LookupFunc, seedFn OnSeed) {
 
 	var dnsSeeds []string
@@ -52,7 +52,7 @@ func SeedFromDNS(dagParams *dagconfig.Params, customSeed string, reqServices wir
 
 	for _, dnsseed := range dnsSeeds {
 		var host string
-		if reqServices == wire.SFNodeNetwork {
+		if reqServices == domainmessage.SFNodeNetwork {
 			host = dnsseed
 		} else {
 			host = fmt.Sprintf("%c%x.%s", ServiceFlagPrefixChar, uint64(reqServices), dnsseed)
@@ -81,11 +81,11 @@ func SeedFromDNS(dagParams *dagconfig.Params, customSeed string, reqServices wir
 			if numPeers == 0 {
 				return
 			}
-			addresses := make([]*wire.NetAddress, len(seedPeers))
+			addresses := make([]*domainmessage.NetAddress, len(seedPeers))
 			// if this errors then we have *real* problems
 			intPort, _ := strconv.Atoi(dagParams.DefaultPort)
 			for i, peer := range seedPeers {
-				addresses[i] = wire.NewNetAddressTimestamp(
+				addresses[i] = domainmessage.NewNetAddressTimestamp(
 					// seed with addresses from a time randomly selected
 					// between 3 and 7 days ago.
 					mstime.Now().Add(-1*time.Second*time.Duration(secondsIn3Days+

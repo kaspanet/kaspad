@@ -1,24 +1,24 @@
 package protowire
 
 import (
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_Block) toWireMessage() (wire.Message, error) {
+func (x *KaspadMessage_Block) toWireMessage() (domainmessage.Message, error) {
 	return x.Block.toWireMessage()
 }
 
-func (x *KaspadMessage_Block) fromWireMessage(msgBlock *wire.MsgBlock) error {
+func (x *KaspadMessage_Block) fromWireMessage(msgBlock *domainmessage.MsgBlock) error {
 	x.Block = new(BlockMessage)
 	return x.Block.fromWireMessage(msgBlock)
 }
 
-func (x *BlockMessage) toWireMessage() (wire.Message, error) {
-	if len(x.Transactions) > wire.MaxTxPerBlock {
+func (x *BlockMessage) toWireMessage() (domainmessage.Message, error) {
+	if len(x.Transactions) > domainmessage.MaxTxPerBlock {
 		return nil, errors.Errorf("too many transactions to fit into a block "+
-			"[count %d, max %d]", len(x.Transactions), wire.MaxTxPerBlock)
+			"[count %d, max %d]", len(x.Transactions), domainmessage.MaxTxPerBlock)
 	}
 
 	protoBlockHeader := x.Header
@@ -46,7 +46,7 @@ func (x *BlockMessage) toWireMessage() (wire.Message, error) {
 		return nil, err
 	}
 
-	header := wire.BlockHeader{
+	header := domainmessage.BlockHeader{
 		Version:              protoBlockHeader.Version,
 		ParentHashes:         parentHashes,
 		HashMerkleRoot:       hashMerkleRoot,
@@ -57,25 +57,25 @@ func (x *BlockMessage) toWireMessage() (wire.Message, error) {
 		Nonce:                protoBlockHeader.Nonce,
 	}
 
-	transactions := make([]*wire.MsgTx, len(x.Transactions))
+	transactions := make([]*domainmessage.MsgTx, len(x.Transactions))
 	for i, protoTx := range x.Transactions {
 		msgTx, err := protoTx.toWireMessage()
 		if err != nil {
 			return nil, err
 		}
-		transactions[i] = msgTx.(*wire.MsgTx)
+		transactions[i] = msgTx.(*domainmessage.MsgTx)
 	}
 
-	return &wire.MsgBlock{
+	return &domainmessage.MsgBlock{
 		Header:       header,
 		Transactions: transactions,
 	}, nil
 }
 
-func (x *BlockMessage) fromWireMessage(msgBlock *wire.MsgBlock) error {
-	if len(msgBlock.Transactions) > wire.MaxTxPerBlock {
+func (x *BlockMessage) fromWireMessage(msgBlock *domainmessage.MsgBlock) error {
+	if len(msgBlock.Transactions) > domainmessage.MaxTxPerBlock {
 		return errors.Errorf("too many transactions to fit into a block "+
-			"[count %d, max %d]", len(msgBlock.Transactions), wire.MaxTxPerBlock)
+			"[count %d, max %d]", len(msgBlock.Transactions), domainmessage.MaxTxPerBlock)
 	}
 
 	header := msgBlock.Header

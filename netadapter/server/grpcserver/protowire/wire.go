@@ -1,21 +1,21 @@
 package protowire
 
 import (
-	"github.com/kaspanet/kaspad/wire"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/pkg/errors"
 )
 
 type converter interface {
-	toWireMessage() (wire.Message, error)
+	toWireMessage() (domainmessage.Message, error)
 }
 
-// ToWireMessage converts a KaspadMessage to its wire.Message representation
-func (x *KaspadMessage) ToWireMessage() (wire.Message, error) {
+// ToWireMessage converts a KaspadMessage to its domainmessage.Message representation
+func (x *KaspadMessage) ToWireMessage() (domainmessage.Message, error) {
 	return x.Payload.(converter).toWireMessage()
 }
 
-// FromWireMessage creates a KaspadMessage from a wire.Message
-func FromWireMessage(message wire.Message) (*KaspadMessage, error) {
+// FromWireMessage creates a KaspadMessage from a domainmessage.Message
+func FromWireMessage(message domainmessage.Message) (*KaspadMessage, error) {
 	payload, err := toPayload(message)
 	if err != nil {
 		return nil, err
@@ -25,149 +25,149 @@ func FromWireMessage(message wire.Message) (*KaspadMessage, error) {
 	}, nil
 }
 
-func toPayload(message wire.Message) (isKaspadMessage_Payload, error) {
+func toPayload(message domainmessage.Message) (isKaspadMessage_Payload, error) {
 	switch message := message.(type) {
-	case *wire.MsgAddresses:
+	case *domainmessage.MsgAddresses:
 		payload := new(KaspadMessage_Addresses)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgBlock:
+	case *domainmessage.MsgBlock:
 		payload := new(KaspadMessage_Block)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgRequestBlockLocator:
+	case *domainmessage.MsgRequestBlockLocator:
 		payload := new(KaspadMessage_RequestBlockLocator)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgBlockLocator:
+	case *domainmessage.MsgBlockLocator:
 		payload := new(KaspadMessage_BlockLocator)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgRequestAddresses:
+	case *domainmessage.MsgRequestAddresses:
 		payload := new(KaspadMessage_RequestAddresses)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgRequestIBDBlocks:
+	case *domainmessage.MsgRequestIBDBlocks:
 		payload := new(KaspadMessage_RequestIBDBlocks)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgRequestNextIBDBlocks:
+	case *domainmessage.MsgRequestNextIBDBlocks:
 		payload := new(KaspadMessage_RequestNextIBDBlocks)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgDoneIBDBlocks:
+	case *domainmessage.MsgDoneIBDBlocks:
 		payload := new(KaspadMessage_DoneIBDBlocks)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgRequestRelayBlocks:
+	case *domainmessage.MsgRequestRelayBlocks:
 		payload := new(KaspadMessage_RequestRelayBlocks)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgRequestSelectedTip:
+	case *domainmessage.MsgRequestSelectedTip:
 		payload := new(KaspadMessage_RequestSelectedTip)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgRequestTransactions:
+	case *domainmessage.MsgRequestTransactions:
 		payload := new(KaspadMessage_RequestTransactions)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgTransactionNotFound:
+	case *domainmessage.MsgTransactionNotFound:
 		payload := new(KaspadMessage_TransactionNotFound)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgIBDBlock:
+	case *domainmessage.MsgIBDBlock:
 		payload := new(KaspadMessage_IbdBlock)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgInvRelayBlock:
+	case *domainmessage.MsgInvRelayBlock:
 		payload := new(KaspadMessage_InvRelayBlock)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgInvTransaction:
+	case *domainmessage.MsgInvTransaction:
 		payload := new(KaspadMessage_InvTransactions)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgPing:
+	case *domainmessage.MsgPing:
 		payload := new(KaspadMessage_Ping)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgPong:
+	case *domainmessage.MsgPong:
 		payload := new(KaspadMessage_Pong)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgSelectedTip:
+	case *domainmessage.MsgSelectedTip:
 		payload := new(KaspadMessage_SelectedTip)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgTx:
+	case *domainmessage.MsgTx:
 		payload := new(KaspadMessage_Transaction)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgVerAck:
+	case *domainmessage.MsgVerAck:
 		payload := new(KaspadMessage_Verack)
 		err := payload.fromWireMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *wire.MsgVersion:
+	case *domainmessage.MsgVersion:
 		payload := new(KaspadMessage_Version)
 		err := payload.fromWireMessage(message)
 		if err != nil {

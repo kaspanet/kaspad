@@ -3,10 +3,10 @@ package rpc
 import (
 	"bytes"
 	"encoding/hex"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
 
@@ -19,7 +19,7 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 	if err != nil {
 		return nil, rpcDecodeHexError(hexStr)
 	}
-	var msgTx wire.MsgTx
+	var msgTx domainmessage.MsgTx
 	err = msgTx.Deserialize(bytes.NewReader(serializedTx))
 	if err != nil {
 		return nil, &model.RPCError{

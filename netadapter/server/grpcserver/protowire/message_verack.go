@@ -1,11 +1,11 @@
 package protowire
 
-import "github.com/kaspanet/kaspad/wire"
+import "github.com/kaspanet/kaspad/domainmessage"
 
-func (x *KaspadMessage_Verack) toWireMessage() (wire.Message, error) {
-	return &wire.MsgVerAck{}, nil
+func (x *KaspadMessage_Verack) toWireMessage() (domainmessage.Message, error) {
+	return &domainmessage.MsgVerAck{}, nil
 }
 
-func (x *KaspadMessage_Verack) fromWireMessage(_ *wire.MsgVerAck) error {
+func (x *KaspadMessage_Verack) fromWireMessage(_ *domainmessage.MsgVerAck) error {
 	return nil
 }
