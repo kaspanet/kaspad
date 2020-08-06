@@ -21,11 +21,13 @@ type gRPCServer struct {
 	server             *grpc.Server
 }
 
+const maxReceiveMessageSize = 1024 * 1024 * 5 // 5MB
+
 // NewGRPCServer creates and starts a gRPC server, listening on the
 // provided addresses/ports
 func NewGRPCServer(listeningAddrs []string) (server.Server, error) {
 	s := &gRPCServer{
-		server:         grpc.NewServer(),
+		server:         grpc.NewServer(grpc.MaxRecvMsgSize(maxReceiveMessageSize)),
 		listeningAddrs: listeningAddrs,
 	}
 	protowire.RegisterP2PServer(s.server, newP2PServer(s))
