@@ -77,7 +77,7 @@ func (mna *MinimalNetAdapter) Connect(address string) (*Routes, error) {
 }
 
 // handlePingPong makes sure that we are not disconnected due to not responding to pings.
-// However, it only responds to pings, not sending it's own, to conform to the minimal-ness
+// However, it only responds to pings, not sending its own, to conform to the minimal-ness
 // of MinimalNetAdapter
 func handlePingPong(routes *Routes) error {
 	for {
@@ -146,10 +146,11 @@ func generateRouteInitializer() (netadapter.RouterInitializer, <-chan *Routes) {
 	cmdsWithBuiltInRoutes := []wire.MessageCommand{wire.CmdVerAck, wire.CmdVersion, wire.CmdPing}
 
 	everythingElse := make([]wire.MessageCommand, 0, len(wire.MessageCommandToString)-len(cmdsWithBuiltInRoutes))
+OuterLoop:
 	for command := range wire.MessageCommandToString {
 		for _, cmdWithBuiltInRoute := range cmdsWithBuiltInRoutes {
 			if command == cmdWithBuiltInRoute {
-				continue
+				continue OuterLoop
 			}
 		}
 
