@@ -106,7 +106,7 @@ func handleHandshake(routes *Routes, ourID *id.ID) error {
 
 	versionMessage, ok := msg.(*wire.MsgVersion)
 	if !ok {
-		return errors.Errorf("Expected first message to be of type %s, but got %s", wire.CmdVersion, msg.Command())
+		return errors.Errorf("expected first message to be of type %s, but got %s", wire.CmdVersion, msg.Command())
 	}
 
 	err = routes.OutgoingRoute.Enqueue(&wire.MsgVersion{
@@ -131,7 +131,7 @@ func handleHandshake(routes *Routes, ourID *id.ID) error {
 
 	_, ok = msg.(*wire.MsgVerAck)
 	if !ok {
-		return errors.Errorf("Expected second message to be of type %s, but got %s", wire.CmdVerAck, msg.Command())
+		return errors.Errorf("expected second message to be of type %s, but got %s", wire.CmdVerAck, msg.Command())
 	}
 
 	err = routes.OutgoingRoute.Enqueue(&wire.MsgVerAck{})
@@ -143,11 +143,17 @@ func handleHandshake(routes *Routes, ourID *id.ID) error {
 }
 
 func generateRouteInitializer() (netadapter.RouterInitializer, <-chan *Routes) {
-	everythingElse := make([]wire.MessageCommand, 0, len(wire.MessageCommandToString)-3)
+	cmdsWithBuiltInRoutes := []wire.MessageCommand{wire.CmdVerAck, wire.CmdVersion, wire.CmdPing}
+
+	everythingElse := make([]wire.MessageCommand, 0, len(wire.MessageCommandToString)-len(cmdsWithBuiltInRoutes))
 	for command := range wire.MessageCommandToString {
-		if command != wire.CmdVersion && command != wire.CmdVerAck && command != wire.CmdPing {
-			everythingElse = append(everythingElse, command)
+		for _, cmdWithBuiltInRoute := range cmdsWithBuiltInRoutes {
+			if command == cmdWithBuiltInRoute {
+				continue
+			}
 		}
+
+		everythingElse = append(everythingElse, command)
 	}
 
 	routesChan := make(chan *Routes)
@@ -155,16 +161,16 @@ func generateRouteInitializer() (netadapter.RouterInitializer, <-chan *Routes) {
 	routeInitializer := func(router *router.Router, netConnection *netadapter.NetConnection) {
 		handshakeRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdVersion, wire.CmdVerAck})
 		if err != nil {
-			panic(errors.Wrap(err, "Error registering handshake route"))
+			panic(errors.Wrap(err, "error registering handshake route"))
 		}
 		pingRoute, err := router.AddIncomingRoute([]wire.MessageCommand{wire.CmdPing})
 		if err != nil {
-			panic(errors.Wrap(err, "Error registering ping route"))
+			panic(errors.Wrap(err, "error registering ping route"))
 		}
 
 		everythingElseRoute, err := router.AddIncomingRoute(everythingElse)
 		if err != nil {
-			panic(errors.Wrap(err, "Error registering everythingElseRoute"))
+			panic(errors.Wrap(err, "error registering everythingElseRoute"))
 		}
 
 		spawn("netAdapterMock-routeInitializer-sendRoutesToChan", func() {

@@ -26,7 +26,7 @@ func (r *Routes) WaitForMessageOfType(command wire.MessageCommand, timeout time.
 	for {
 		message, err := r.IncomingRoute.DequeueWithTimeout(timeoutTime.Sub(time.Now()))
 		if err != nil {
-			return nil, errors.Wrapf(err, "Error waiting for message of type %s", command)
+			return nil, errors.Wrapf(err, "error waiting for message of type %s", command)
 		}
 		if message.Command() == command {
 			return message, nil
@@ -43,7 +43,7 @@ func (r *Routes) WaitForDisconnect(timeout time.Duration) error {
 			return nil
 		}
 		if err != nil {
-			return errors.Wrap(err, "Error waiting for disconnect")
+			return errors.Wrap(err, "error waiting for disconnect")
 		}
 	}
 }
