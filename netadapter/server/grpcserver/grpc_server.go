@@ -3,6 +3,7 @@ package grpcserver
 import (
 	"context"
 	"fmt"
+	"google.golang.org/grpc/encoding/gzip"
 	"net"
 	"time"
 
@@ -87,7 +88,7 @@ func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 	}
 
 	client := protowire.NewP2PClient(gRPCConnection)
-	stream, err := client.MessageStream(context.Background())
+	stream, err := client.MessageStream(context.Background(), grpc.UseCompressor(gzip.Name))
 	if err != nil {
 		return nil, errors.Wrapf(err, "error getting client stream for %s", address)
 	}
