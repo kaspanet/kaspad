@@ -146,11 +146,11 @@ func generateRouteInitializer() (netadapter.RouterInitializer, <-chan *Routes) {
 	cmdsWithBuiltInRoutes := []wire.MessageCommand{wire.CmdVerAck, wire.CmdVersion, wire.CmdPing}
 
 	everythingElse := make([]wire.MessageCommand, 0, len(wire.MessageCommandToString)-len(cmdsWithBuiltInRoutes))
-OuterLoop:
+outerLoop:
 	for command := range wire.MessageCommandToString {
 		for _, cmdWithBuiltInRoute := range cmdsWithBuiltInRoutes {
 			if command == cmdWithBuiltInRoute {
-				continue OuterLoop
+				continue outerLoop
 			}
 		}
 
