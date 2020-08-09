@@ -289,21 +289,6 @@ func (dag *BlockDAG) addBlock(node *blockNode,
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) connectBlock(node *blockNode,
 	block *util.Block, selectedParentAnticone []*blockNode, fastAdd bool) (*chainUpdates, error) {
-	// No warnings about unknown rules or versions until the DAG is
-	// synced.
-	if dag.isSynced() {
-		// Warn if any unknown new rules are either about to activate or
-		// have already been activated.
-		if err := dag.warnUnknownRuleActivations(node); err != nil {
-			return nil, err
-		}
-
-		// Warn if a high enough percentage of the last blocks have
-		// unexpected versions.
-		if err := dag.warnUnknownVersions(node); err != nil {
-			return nil, err
-		}
-	}
 
 	if err := dag.checkFinalityViolation(node); err != nil {
 		return nil, err

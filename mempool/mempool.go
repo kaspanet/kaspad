@@ -58,12 +58,6 @@ type Config struct {
 	// utxo set.
 	CalcSequenceLockNoLock func(*util.Tx, blockdag.UTXOSet) (*blockdag.SequenceLock, error)
 
-	// IsDeploymentActive returns true if the target deploymentID is
-	// active, and false otherwise. The mempool uses this function to gauge
-	// if transactions using new to be soft-forked rules should be allowed
-	// into the mempool or not.
-	IsDeploymentActive func(deploymentID uint32) (bool, error)
-
 	// SigCache defines a signature cache to use.
 	SigCache *txscript.SigCache
 

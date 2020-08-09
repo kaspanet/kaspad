@@ -108,23 +108,6 @@ type BlockDAG struct {
 	delayedBlocks      map[daghash.Hash]*delayedBlock
 	delayedBlocksQueue delayedBlocksHeap
 
-	// The following caches are used to efficiently keep track of the
-	// current deployment threshold state of each rule change deployment.
-	//
-	// This information is stored in the database so it can be quickly
-	// reconstructed on load.
-	//
-	// warningCaches caches the current deployment threshold state for blocks
-	// in each of the **possible** deployments. This is used in order to
-	// detect when new unrecognized rule changes are being voted on and/or
-	// have been activated such as will be the case when older versions of
-	// the software are being used
-	//
-	// deploymentCaches caches the current deployment threshold state for
-	// blocks in each of the actively defined deployments.
-	warningCaches    []thresholdStateCache
-	deploymentCaches []thresholdStateCache
-
 	// The following fields are used to determine if certain warnings have
 	// already been shown.
 	//
@@ -182,8 +165,6 @@ func New(config *Config) (*BlockDAG, error) {
 		prevOrphans:                    make(map[daghash.Hash][]*orphanBlock),
 		delayedBlocks:                  make(map[daghash.Hash]*delayedBlock),
 		delayedBlocksQueue:             newDelayedBlocksHeap(),
-		warningCaches:                  newThresholdCaches(vbNumBits),
-		deploymentCaches:               newThresholdCaches(dagconfig.DefinedDeployments),
 		blockCount:                     0,
 		subnetworkID:                   config.SubnetworkID,
 		startTime:                      mstime.Now(),
@@ -236,12 +217,6 @@ func New(config *Config) (*BlockDAG, error) {
 
 	// Save a reference to the genesis block.
 	dag.genesis = genesis
-
-	// Initialize rule change threshold state caches.
-	err = dag.initThresholdCaches()
-	if err != nil {
-		return nil, err
-	}
 
 	selectedTip := dag.selectedTip()
 	log.Infof("DAG state (blue score %d, hash %s)",

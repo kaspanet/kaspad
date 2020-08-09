@@ -13,6 +13,9 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
+// The current block version
+const blockVersion = 0x10000000
+
 // BlockForMining returns a block with the given transactions
 // that points to the current DAG tips, that is valid from
 // all aspects except proof of work.
@@ -21,13 +24,6 @@ import (
 func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, error) {
 	blockTimestamp := dag.NextBlockTime()
 	requiredDifficulty := dag.NextRequiredDifficulty(blockTimestamp)
-
-	// Calculate the next expected block version based on the state of the
-	// rule change deployments.
-	nextBlockVersion, err := dag.CalcNextBlockVersion()
-	if err != nil {
-		return nil, err
-	}
 
 	// Create a new block ready to be solved.
 	hashMerkleTree := BuildHashMerkleTreeStore(transactions)
@@ -46,7 +42,7 @@ func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, er
 	}
 
 	msgBlock.Header = wire.BlockHeader{
-		Version:              nextBlockVersion,
+		Version:              blockVersion,
 		ParentHashes:         dag.TipHashes(),
 		HashMerkleRoot:       hashMerkleTree.Root(),
 		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
