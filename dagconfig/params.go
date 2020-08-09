@@ -189,7 +189,7 @@ func (p *Params) NormalizeRPCServerAddress(addr string) (string, error) {
 // MainnetParams defines the network parameters for the main Kaspa network.
 var MainnetParams = Params{
 	K:           ghostdagK,
-	Name:        "mainnet",
+	Name:        "kaspa-mainnet",
 	Net:         wire.Mainnet,
 	RPCPort:     "16110",
 	DefaultPort: "16111",
@@ -242,7 +242,7 @@ var MainnetParams = Params{
 // 3), this network is sometimes simply called "testnet".
 var RegressionNetParams = Params{
 	K:           ghostdagK,
-	Name:        "regtest",
+	Name:        "kaspa-regtest",
 	Net:         wire.Regtest,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
@@ -293,7 +293,7 @@ var RegressionNetParams = Params{
 // TestnetParams defines the network parameters for the test Kaspa network.
 var TestnetParams = Params{
 	K:           ghostdagK,
-	Name:        "testnet",
+	Name:        "kaspa-testnet",
 	Net:         wire.Testnet,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
@@ -350,7 +350,7 @@ var TestnetParams = Params{
 // just turn into another public testnet.
 var SimnetParams = Params{
 	K:           ghostdagK,
-	Name:        "simnet",
+	Name:        "kaspa-simnet",
 	Net:         wire.Simnet,
 	RPCPort:     "16510",
 	DefaultPort: "16511",
@@ -399,7 +399,7 @@ var SimnetParams = Params{
 // DevnetParams defines the network parameters for the development Kaspa network.
 var DevnetParams = Params{
 	K:           ghostdagK,
-	Name:        "devnet",
+	Name:        "kaspa-devnet",
 	Net:         wire.Devnet,
 	RPCPort:     "16610",
 	DefaultPort: "16611",
