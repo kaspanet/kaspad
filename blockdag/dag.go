@@ -173,6 +173,26 @@ func New(config *Config) (*BlockDAG, error) {
 	return dag, nil
 }
 
+// Lock locks the DAG for writing.
+func (dag *BlockDAG) Lock() {
+	dag.dagLock.Lock()
+}
+
+// Unlock unlocks the DAG for writing.
+func (dag *BlockDAG) Unlock() {
+	dag.dagLock.Unlock()
+}
+
+// RLock locks the DAG for reading.
+func (dag *BlockDAG) RLock() {
+	dag.dagLock.RLock()
+}
+
+// RUnlock unlocks the DAG for reading.
+func (dag *BlockDAG) RUnlock() {
+	dag.dagLock.RUnlock()
+}
+
 // Now returns the adjusted time according to
 // dag.timeSource. See TimeSource.Now for
 // more details.
@@ -349,26 +369,6 @@ func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash, maxHeaders uint64) ([
 		}
 	}
 	return headers, nil
-}
-
-// Lock locks the DAG for writing.
-func (dag *BlockDAG) Lock() {
-	dag.dagLock.Lock()
-}
-
-// Unlock unlocks the DAG for writing.
-func (dag *BlockDAG) Unlock() {
-	dag.dagLock.Unlock()
-}
-
-// RLock locks the DAG for reading.
-func (dag *BlockDAG) RLock() {
-	dag.dagLock.RLock()
-}
-
-// RUnlock unlocks the DAG for reading.
-func (dag *BlockDAG) RUnlock() {
-	dag.dagLock.RUnlock()
 }
 
 // ForEachHash runs the given fn on every hash that's currently known to
