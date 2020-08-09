@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"math"
-	"sort"
 	"sync"
 
 	"github.com/kaspanet/kaspad/dbaccess"
@@ -17,7 +16,6 @@ import (
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
@@ -187,235 +185,6 @@ func New(config *Config) (*BlockDAG, error) {
 		selectedTip.blueScore, selectedTip.hash)
 
 	return dag, nil
-}
-
-// IsKnownBlock returns whether or not the DAG instance has the block represented
-// by the passed hash. This includes checking the various places a block can
-// be in, like part of the DAG or the orphan pool.
-//
-// This function is safe for concurrent access.
-func (dag *BlockDAG) IsKnownBlock(hash *daghash.Hash) bool {
-	return dag.IsInDAG(hash) || dag.IsKnownOrphan(hash) || dag.isKnownDelayedBlock(hash) || dag.IsKnownInvalid(hash)
-}
-
-// AreKnownBlocks returns whether or not the DAG instances has all blocks represented
-// by the passed hashes. This includes checking the various places a block can
-// be in, like part of the DAG or the orphan pool.
-//
-// This function is safe for concurrent access.
-func (dag *BlockDAG) AreKnownBlocks(hashes []*daghash.Hash) bool {
-	for _, hash := range hashes {
-		haveBlock := dag.IsKnownBlock(hash)
-		if !haveBlock {
-			return false
-		}
-	}
-
-	return true
-}
-
-// IsKnownInvalid returns whether the passed hash is known to be an invalid block.
-// Note that if the block is not found this method will return false.
-//
-// This function is safe for concurrent access.
-func (dag *BlockDAG) IsKnownInvalid(hash *daghash.Hash) bool {
-	node, ok := dag.index.LookupNode(hash)
-	if !ok {
-		return false
-	}
-	return dag.index.NodeStatus(node).KnownInvalid()
-}
-
-func (dag *BlockDAG) addNodeToIndexWithInvalidAncestor(block *util.Block) error {
-	blockHeader := &block.MsgBlock().Header
-	newNode, _ := dag.newBlockNode(blockHeader, newBlockSet())
-	newNode.status = statusInvalidAncestor
-	dag.index.AddNode(newNode)
-
-	dbTx, err := dag.databaseContext.NewTx()
-	if err != nil {
-		return err
-	}
-	defer dbTx.RollbackUnlessClosed()
-	err = dag.index.flushToDB(dbTx)
-	if err != nil {
-		return err
-	}
-	return dbTx.Commit()
-}
-
-func lookupParentNodes(block *util.Block, dag *BlockDAG) (blockSet, error) {
-	header := block.MsgBlock().Header
-	parentHashes := header.ParentHashes
-
-	nodes := newBlockSet()
-	for _, parentHash := range parentHashes {
-		node, ok := dag.index.LookupNode(parentHash)
-		if !ok {
-			str := fmt.Sprintf("parent block %s is unknown", parentHash)
-			return nil, ruleError(ErrParentBlockUnknown, str)
-		} else if dag.index.NodeStatus(node).KnownInvalid() {
-			str := fmt.Sprintf("parent block %s is known to be invalid", parentHash)
-			return nil, ruleError(ErrInvalidAncestorBlock, str)
-		}
-
-		nodes.add(node)
-	}
-
-	return nodes, nil
-}
-
-func calculateAcceptedIDMerkleRoot(multiBlockTxsAcceptanceData MultiBlockTxsAcceptanceData) *daghash.Hash {
-	var acceptedTxs []*util.Tx
-	for _, blockTxsAcceptanceData := range multiBlockTxsAcceptanceData {
-		for _, txAcceptance := range blockTxsAcceptanceData.TxAcceptanceData {
-			if !txAcceptance.IsAccepted {
-				continue
-			}
-			acceptedTxs = append(acceptedTxs, txAcceptance.Tx)
-		}
-	}
-	sort.Slice(acceptedTxs, func(i, j int) bool {
-		return daghash.LessTxID(acceptedTxs[i].ID(), acceptedTxs[j].ID())
-	})
-
-	acceptedIDMerkleTree := BuildIDMerkleTreeStore(acceptedTxs)
-	return acceptedIDMerkleTree.Root()
-}
-
-func (node *blockNode) validateAcceptedIDMerkleRoot(dag *BlockDAG, txsAcceptanceData MultiBlockTxsAcceptanceData) error {
-	if node.isGenesis() {
-		return nil
-	}
-
-	calculatedAccepetedIDMerkleRoot := calculateAcceptedIDMerkleRoot(txsAcceptanceData)
-	header := node.Header()
-	if !header.AcceptedIDMerkleRoot.IsEqual(calculatedAccepetedIDMerkleRoot) {
-		str := fmt.Sprintf("block accepted ID merkle root is invalid - block "+
-			"header indicates %s, but calculated value is %s",
-			header.AcceptedIDMerkleRoot, calculatedAccepetedIDMerkleRoot)
-		return ruleError(ErrBadMerkleRoot, str)
-	}
-	return nil
-}
-
-// calcMultiset returns the multiset of the past UTXO of the given block.
-func (node *blockNode) calcMultiset(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData,
-	selectedParentPastUTXO UTXOSet) (*secp256k1.MultiSet, error) {
-
-	return node.pastUTXOMultiSet(dag, acceptanceData, selectedParentPastUTXO)
-}
-
-func (node *blockNode) pastUTXOMultiSet(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData,
-	selectedParentPastUTXO UTXOSet) (*secp256k1.MultiSet, error) {
-
-	ms, err := node.selectedParentMultiset(dag)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, blockAcceptanceData := range acceptanceData {
-		for _, txAcceptanceData := range blockAcceptanceData.TxAcceptanceData {
-			if !txAcceptanceData.IsAccepted {
-				continue
-			}
-
-			tx := txAcceptanceData.Tx.MsgTx()
-
-			var err error
-			ms, err = addTxToMultiset(ms, tx, selectedParentPastUTXO, node.blueScore)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	return ms, nil
-}
-
-// selectedParentMultiset returns the multiset of the node's selected
-// parent. If the node is the genesis blockNode then it does not have
-// a selected parent, in which case return a new, empty multiset.
-func (node *blockNode) selectedParentMultiset(dag *BlockDAG) (*secp256k1.MultiSet, error) {
-	if node.isGenesis() {
-		return secp256k1.NewMultiset(), nil
-	}
-
-	ms, err := dag.multisetStore.multisetByBlockNode(node.selectedParent)
-	if err != nil {
-		return nil, err
-	}
-
-	return ms, nil
-}
-
-func addTxToMultiset(ms *secp256k1.MultiSet, tx *wire.MsgTx, pastUTXO UTXOSet, blockBlueScore uint64) (*secp256k1.MultiSet, error) {
-	for _, txIn := range tx.TxIn {
-		entry, ok := pastUTXO.Get(txIn.PreviousOutpoint)
-		if !ok {
-			return nil, errors.Errorf("Couldn't find entry for outpoint %s", txIn.PreviousOutpoint)
-		}
-
-		var err error
-		ms, err = removeUTXOFromMultiset(ms, entry, &txIn.PreviousOutpoint)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	isCoinbase := tx.IsCoinBase()
-	for i, txOut := range tx.TxOut {
-		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
-		entry := NewUTXOEntry(txOut, isCoinbase, blockBlueScore)
-
-		var err error
-		ms, err = addUTXOToMultiset(ms, entry, &outpoint)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return ms, nil
-}
-
-func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
-	var currentSubnetworkID *subnetworkid.SubnetworkID
-	var currentSubnetworkGasLimit uint64
-	var currentGasUsage uint64
-	var err error
-
-	// We assume here that transactions are ordered by subnetworkID,
-	// since it was already validated in checkTransactionSanity
-	for _, tx := range block.Transactions() {
-		msgTx := tx.MsgTx()
-
-		// In native and Built-In subnetworks all txs must have Gas = 0, and that was already validated in checkTransactionSanity
-		// Therefore - no need to check them here.
-		if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) || msgTx.SubnetworkID.IsBuiltIn() {
-			continue
-		}
-
-		if !msgTx.SubnetworkID.IsEqual(currentSubnetworkID) {
-			currentSubnetworkID = &msgTx.SubnetworkID
-			currentGasUsage = 0
-			currentSubnetworkGasLimit, err = dag.GasLimit(currentSubnetworkID)
-			if err != nil {
-				return errors.Errorf("Error getting gas limit for subnetworkID '%s': %s", currentSubnetworkID, err)
-			}
-		}
-
-		newGasUsage := currentGasUsage + msgTx.Gas
-		if newGasUsage < currentGasUsage { // check for overflow
-			str := fmt.Sprintf("Block gas usage in subnetwork with ID %s has overflown", currentSubnetworkID)
-			return ruleError(ErrInvalidGas, str)
-		}
-		if newGasUsage > currentSubnetworkGasLimit {
-			str := fmt.Sprintf("Block wastes too much gas in subnetwork with ID %s", currentSubnetworkID)
-			return ruleError(ErrInvalidGas, str)
-		}
-
-		currentGasUsage = newGasUsage
-	}
-
-	return nil
 }
 
 // LastFinalityPointHash returns the hash of the last finality point
@@ -1410,4 +1179,41 @@ func (dag *BlockDAG) ForEachHash(fn func(hash daghash.Hash) error) error {
 // This function is safe for concurrent access.
 func (dag *BlockDAG) IsInDAG(hash *daghash.Hash) bool {
 	return dag.index.HaveBlock(hash)
+}
+
+// IsKnownBlock returns whether or not the DAG instance has the block represented
+// by the passed hash. This includes checking the various places a block can
+// be in, like part of the DAG or the orphan pool.
+//
+// This function is safe for concurrent access.
+func (dag *BlockDAG) IsKnownBlock(hash *daghash.Hash) bool {
+	return dag.IsInDAG(hash) || dag.IsKnownOrphan(hash) || dag.isKnownDelayedBlock(hash) || dag.IsKnownInvalid(hash)
+}
+
+// AreKnownBlocks returns whether or not the DAG instances has all blocks represented
+// by the passed hashes. This includes checking the various places a block can
+// be in, like part of the DAG or the orphan pool.
+//
+// This function is safe for concurrent access.
+func (dag *BlockDAG) AreKnownBlocks(hashes []*daghash.Hash) bool {
+	for _, hash := range hashes {
+		haveBlock := dag.IsKnownBlock(hash)
+		if !haveBlock {
+			return false
+		}
+	}
+
+	return true
+}
+
+// IsKnownInvalid returns whether the passed hash is known to be an invalid block.
+// Note that if the block is not found this method will return false.
+//
+// This function is safe for concurrent access.
+func (dag *BlockDAG) IsKnownInvalid(hash *daghash.Hash) bool {
+	node, ok := dag.index.LookupNode(hash)
+	if !ok {
+		return false
+	}
+	return dag.index.NodeStatus(node).KnownInvalid()
 }

@@ -5,7 +5,9 @@
 package blockdag
 
 import (
+	"fmt"
 	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/kaspanet/kaspad/util"
 	"sync"
 
 	"github.com/kaspanet/kaspad/dagconfig"
@@ -133,4 +135,43 @@ func (bi *blockIndex) flushToDB(dbContext *dbaccess.TxContext) error {
 
 func (bi *blockIndex) clearDirtyEntries() {
 	bi.dirty = make(map[*blockNode]struct{})
+}
+
+func (dag *BlockDAG) addNodeToIndexWithInvalidAncestor(block *util.Block) error {
+	blockHeader := &block.MsgBlock().Header
+	newNode, _ := dag.newBlockNode(blockHeader, newBlockSet())
+	newNode.status = statusInvalidAncestor
+	dag.index.AddNode(newNode)
+
+	dbTx, err := dag.databaseContext.NewTx()
+	if err != nil {
+		return err
+	}
+	defer dbTx.RollbackUnlessClosed()
+	err = dag.index.flushToDB(dbTx)
+	if err != nil {
+		return err
+	}
+	return dbTx.Commit()
+}
+
+func lookupParentNodes(block *util.Block, dag *BlockDAG) (blockSet, error) {
+	header := block.MsgBlock().Header
+	parentHashes := header.ParentHashes
+
+	nodes := newBlockSet()
+	for _, parentHash := range parentHashes {
+		node, ok := dag.index.LookupNode(parentHash)
+		if !ok {
+			str := fmt.Sprintf("parent block %s is unknown", parentHash)
+			return nil, ruleError(ErrParentBlockUnknown, str)
+		} else if dag.index.NodeStatus(node).KnownInvalid() {
+			str := fmt.Sprintf("parent block %s is known to be invalid", parentHash)
+			return nil, ruleError(ErrInvalidAncestorBlock, str)
+		}
+
+		nodes.add(node)
+	}
+
+	return nodes, nil
 }
