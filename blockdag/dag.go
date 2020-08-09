@@ -25,13 +25,6 @@ import (
 	"github.com/kaspanet/kaspad/wire"
 )
 
-// chainUpdates represents the updates made to the selected parent chain after
-// a block had been added to the DAG.
-type chainUpdates struct {
-	removedChainBlockHashes []*daghash.Hash
-	addedChainBlockHashes   []*daghash.Hash
-}
-
 // BlockDAG provides functions for working with the kaspa block DAG.
 // It includes functionality such as rejecting duplicate blocks, ensuring blocks
 // follow all rules, and orphan handling.
@@ -1560,64 +1553,6 @@ func (dag *BlockDAG) ForEachHash(fn func(hash daghash.Hash) error) error {
 		}
 	}
 	return nil
-}
-
-// IndexManager provides a generic interface that is called when blocks are
-// connected to the DAG for the purpose of supporting optional indexes.
-type IndexManager interface {
-	// Init is invoked during DAG initialize in order to allow the index
-	// manager to initialize itself and any indexes it is managing.
-	Init(*BlockDAG, *dbaccess.DatabaseContext) error
-
-	// ConnectBlock is invoked when a new block has been connected to the
-	// DAG.
-	ConnectBlock(dbContext *dbaccess.TxContext, blockHash *daghash.Hash, acceptedTxsData MultiBlockTxsAcceptanceData) error
-}
-
-// Config is a descriptor which specifies the blockDAG instance configuration.
-type Config struct {
-	// Interrupt specifies a channel the caller can close to signal that
-	// long running operations, such as catching up indexes or performing
-	// database migrations, should be interrupted.
-	//
-	// This field can be nil if the caller does not desire the behavior.
-	Interrupt <-chan struct{}
-
-	// DAGParams identifies which DAG parameters the DAG is associated
-	// with.
-	//
-	// This field is required.
-	DAGParams *dagconfig.Params
-
-	// TimeSource defines the time source to use for things such as
-	// block processing and determining whether or not the DAG is current.
-	TimeSource TimeSource
-
-	// SigCache defines a signature cache to use when when validating
-	// signatures. This is typically most useful when individual
-	// transactions are already being validated prior to their inclusion in
-	// a block such as what is usually done via a transaction memory pool.
-	//
-	// This field can be nil if the caller is not interested in using a
-	// signature cache.
-	SigCache *txscript.SigCache
-
-	// IndexManager defines an index manager to use when initializing the
-	// DAG and connecting blocks.
-	//
-	// This field can be nil if the caller does not wish to make use of an
-	// index manager.
-	IndexManager IndexManager
-
-	// SubnetworkID identifies which subnetwork the DAG is associated
-	// with.
-	//
-	// This field is required.
-	SubnetworkID *subnetworkid.SubnetworkID
-
-	// DatabaseContext is the context in which all database queries related to
-	// this DAG are going to run.
-	DatabaseContext *dbaccess.DatabaseContext
 }
 
 // IsInDAG determines whether a block with the given hash exists in

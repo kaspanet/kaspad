@@ -12,6 +12,13 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
+// chainUpdates represents the updates made to the selected parent chain after
+// a block had been added to the DAG.
+type chainUpdates struct {
+	removedChainBlockHashes []*daghash.Hash
+	addedChainBlockHashes   []*daghash.Hash
+}
+
 // ProcessBlock is the main workhorse for handling insertion of new blocks into
 // the block DAG. It includes functionality such as rejecting duplicate
 // blocks, ensuring blocks follow all rules, orphan handling, and insertion into
