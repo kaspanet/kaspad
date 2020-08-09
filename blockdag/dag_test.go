@@ -1124,21 +1124,6 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	}
 }
 
-func TestIsDAGCurrentMaxDiff(t *testing.T) {
-	netParams := []*dagconfig.Params{
-		&dagconfig.MainnetParams,
-		&dagconfig.TestnetParams,
-		&dagconfig.DevnetParams,
-		&dagconfig.RegressionNetParams,
-		&dagconfig.SimnetParams,
-	}
-	for _, params := range netParams {
-		if params.FinalityDuration < isDAGCurrentMaxDiff*params.TargetTimePerBlock {
-			t.Errorf("in %s, a DAG can be considered current even if it's below the finality point", params.Name)
-		}
-	}
-}
-
 func testProcessBlockRuleError(t *testing.T, dag *BlockDAG, block *wire.MsgBlock, expectedRuleErr error) {
 	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(block), BFNoPoWCheck)
 
