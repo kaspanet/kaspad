@@ -7,21 +7,21 @@ import (
 )
 
 // RejectsContext is the interface for the context needed for the HandleRejects flow.
-type RejectsContext interface {
+type HandleRejectsContext interface {
 }
 
 type handleRejectsFlow struct {
-	RejectsContext
+	HandleRejectsContext
 	incomingRoute, outgoingRoute *router.Route
 }
 
-// ReceivePings handles all ping messages coming through incomingRoute.
-// This function assumes that incomingRoute will only return MsgPing.
-func HandleRejects(context RejectsContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
+// HandleRejects handles all reject messages coming through incomingRoute.
+// This function assumes that incomingRoute will only return MsgReject.
+func HandleRejects(context HandleRejectsContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
 	flow := &handleRejectsFlow{
-		RejectsContext: context,
-		incomingRoute:  incomingRoute,
-		outgoingRoute:  outgoingRoute,
+		HandleRejectsContext: context,
+		incomingRoute:        incomingRoute,
+		outgoingRoute:        outgoingRoute,
 	}
 	return flow.start()
 }
