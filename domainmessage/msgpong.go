@@ -10,6 +10,7 @@ package domainmessage
 //
 // This message was not added until protocol versions AFTER BIP0031Version.
 type MsgPong struct {
+	baseMessage
 	// Unique value associated with message that is used to identify
 	// specific ping message.
 	Nonce uint64

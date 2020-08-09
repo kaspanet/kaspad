@@ -6,6 +6,7 @@ package domainmessage
 
 import (
 	"fmt"
+	"time"
 )
 
 // MaxMessagePayload is the maximum bytes a message can be regardless of other
@@ -79,4 +80,8 @@ var MessageCommandToString = map[MessageCommand]string{
 // are used directly in the protocol encoded message.
 type Message interface {
 	Command() MessageCommand
+	MessageNumber() uint64
+	SetMessageNumber(index uint64)
+	ReceivedAt() time.Time
+	SetReceivedAt(receivedAt time.Time)
 }

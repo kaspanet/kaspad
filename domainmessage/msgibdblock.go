@@ -8,6 +8,7 @@ package domainmessage
 // ibdblock message. It is used to deliver block and transaction information in
 // response to a RequestIBDBlocks message (MsgRequestIBDBlocks).
 type MsgIBDBlock struct {
+	baseMessage
 	*MsgBlock
 }
 
@@ -26,5 +27,5 @@ func (msg *MsgIBDBlock) MaxPayloadLength(pver uint32) uint32 {
 // NewMsgIBDBlock returns a new kaspa ibdblock message that conforms to the
 // Message interface. See MsgIBDBlock for details.
 func NewMsgIBDBlock(msgBlock *MsgBlock) *MsgIBDBlock {
-	return &MsgIBDBlock{msgBlock}
+	return &MsgIBDBlock{MsgBlock: msgBlock}
 }

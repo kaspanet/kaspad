@@ -8,6 +8,7 @@ import (
 // block inventory message. It is used to notify the network about new block
 // by sending their hash, and let the receiving node decide if it needs it.
 type MsgInvRelayBlock struct {
+	baseMessage
 	Hash *daghash.Hash
 }
 

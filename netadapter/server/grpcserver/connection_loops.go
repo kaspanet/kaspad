@@ -2,6 +2,7 @@ package grpcserver
 
 import (
 	"io"
+	"time"
 
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/pkg/errors"
@@ -61,6 +62,7 @@ func (c *gRPCConnection) sendLoop() error {
 }
 
 func (c *gRPCConnection) receiveLoop() error {
+	messageNumber := uint64(0)
 	for c.IsConnected() {
 		protoMessage, err := c.stream.Recv()
 		if err != nil {
@@ -75,10 +77,17 @@ func (c *gRPCConnection) receiveLoop() error {
 			return err
 		}
 
-		log.Debugf("incoming '%s' message from %s", message.Command(), c)
-		log.Tracef("incoming '%s' message from %s: %s", message.Command(), c, logger.NewLogClosure(func() string {
-			return spew.Sdump(message)
-		}))
+		messageNumber++
+		message.SetMessageNumber(messageNumber)
+		message.SetReceivedAt(time.Now())
+
+		log.Debugf("incoming '%s' message from %s (message number %d)", message.Command(), c,
+			message.MessageNumber())
+
+		log.Tracef("incoming '%s' message from %s  (message number %d): %s", message.Command(),
+			c, message.MessageNumber(), logger.NewLogClosure(func() string {
+				return spew.Sdump(message)
+			}))
 
 		err = c.router.EnqueueIncomingMessage(message)
 		if err != nil {

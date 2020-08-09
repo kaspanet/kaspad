@@ -5,7 +5,9 @@ package domainmessage
 // syncer sent all the requested blocks.
 //
 // This message has no payload.
-type MsgDoneIBDBlocks struct{}
+type MsgDoneIBDBlocks struct {
+	baseMessage
+}
 
 // Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
