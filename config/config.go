@@ -18,6 +18,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kaspanet/kaspad/dagconfig"
+
 	"github.com/pkg/errors"
 
 	"github.com/btcsuite/go-socks/socks"
@@ -67,8 +69,6 @@ var (
 	defaultRPCCertFile = filepath.Join(DefaultHomeDir, "rpc.cert")
 	defaultLogDir      = filepath.Join(DefaultHomeDir, defaultLogDirname)
 )
-
-var activeConfig *Config
 
 // RunServiceCommand is only set to a real function on Windows. It is used
 // to parse and execute service commands specified via the -s flag.
@@ -172,42 +172,8 @@ func newConfigParser(cfgFlags *Flags, so *serviceOptions, options flags.Options)
 	return parser
 }
 
-//LoadAndSetActiveConfig loads the config that can be afterward be accesible through ActiveConfig()
-func LoadAndSetActiveConfig() error {
-	tcfg, _, err := loadConfig()
-	if err != nil {
-		return err
-	}
-	activeConfig = tcfg
-	return nil
-}
-
-// ActiveConfig is a getter to the main config
-func ActiveConfig() *Config {
-	return activeConfig
-}
-
-// SetActiveConfig sets the active config
-// to the given config.
-func SetActiveConfig(cfg *Config) {
-	activeConfig = cfg
-}
-
-// loadConfig initializes and parses the config using a config file and command
-// line options.
-//
-// The configuration proceeds as follows:
-// 	1) Start with a default config with sane settings
-// 	2) Pre-parse the command line to check for an alternative config file
-// 	3) Load configuration file overwriting defaults with any specified options
-// 	4) Parse CLI options and overwrite/add any specified options
-//
-// The above results in kaspad functioning properly without any config settings
-// while still allowing the user to override settings with config files and
-// command line options. Command line options always take precedence.
-func loadConfig() (*Config, []string, error) {
-	// Default config.
-	cfgFlags := Flags{
+func defaultFlags() *Flags {
+	return &Flags{
 		ConfigFile:           defaultConfigFile,
 		DebugLevel:           defaultLogLevel,
 		TargetOutboundPeers:  defaultTargetOutboundPeers,
@@ -227,6 +193,29 @@ func loadConfig() (*Config, []string, error) {
 		MinRelayTxFee:        defaultMinRelayTxFee,
 		AcceptanceIndex:      defaultAcceptanceIndex,
 	}
+}
+
+// DefaultConfig returns the default kaspad configuration
+func DefaultConfig() *Config {
+	config := &Config{Flags: defaultFlags()}
+	config.NetworkFlags.ActiveNetParams = &dagconfig.MainnetParams
+	return config
+}
+
+// LoadConfig initializes and parses the config using a config file and command
+// line options.
+//
+// The configuration proceeds as follows:
+// 	1) Start with a default config with sane settings
+// 	2) Pre-parse the command line to check for an alternative config file
+// 	3) Load configuration file overwriting defaults with any specified options
+// 	4) Parse CLI options and overwrite/add any specified options
+//
+// The above results in kaspad functioning properly without any config settings
+// while still allowing the user to override settings with config files and
+// command line options. Command line options always take precedence.
+func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
+	cfgFlags := defaultFlags()
 
 	// Service options which are only added on Windows.
 	serviceOpts := serviceOptions{}
@@ -236,8 +225,8 @@ func loadConfig() (*Config, []string, error) {
 	// help message error can be ignored here since they will be caught by
 	// the final parse below.
 	preCfg := cfgFlags
-	preParser := newConfigParser(&preCfg, &serviceOpts, flags.HelpFlag)
-	_, err := preParser.Parse()
+	preParser := newConfigParser(preCfg, &serviceOpts, flags.HelpFlag)
+	_, err = preParser.Parse()
 	if err != nil {
 		var flagsErr *flags.Error
 		if ok := errors.As(err, &flagsErr); ok && flagsErr.Type == flags.ErrHelp {
@@ -269,9 +258,9 @@ func loadConfig() (*Config, []string, error) {
 
 	// Load additional config from file.
 	var configFileError error
-	parser := newConfigParser(&cfgFlags, &serviceOpts, flags.Default)
-	activeConfig = &Config{
-		Flags: &cfgFlags,
+	parser := newConfigParser(cfgFlags, &serviceOpts, flags.Default)
+	cfg = &Config{
+		Flags: cfgFlags,
 	}
 	if !(preCfg.RegressionTest || preCfg.Simnet) || preCfg.ConfigFile !=
 		defaultConfigFile {
@@ -297,12 +286,12 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// Don't add peers from the config file when in regression test mode.
-	if preCfg.RegressionTest && len(activeConfig.AddPeers) > 0 {
-		activeConfig.AddPeers = nil
+	if preCfg.RegressionTest && len(cfg.AddPeers) > 0 {
+		cfg.AddPeers = nil
 	}
 
 	// Parse command line options again to ensure they take precedence.
-	remainingArgs, err := parser.Parse()
+	remainingArgs, err = parser.Parse()
 	if err != nil {
 		var flagsErr *flags.Error
 		if ok := errors.As(err, &flagsErr); !ok || flagsErr.Type != flags.ErrHelp {
@@ -332,8 +321,8 @@ func loadConfig() (*Config, []string, error) {
 		return nil, nil, err
 	}
 
-	if !activeConfig.DisableRPC {
-		if activeConfig.RPCUser == "" {
+	if !cfg.DisableRPC {
+		if cfg.RPCUser == "" {
 			str := "%s: rpcuser cannot be empty"
 			err := errors.Errorf(str, funcName)
 			fmt.Fprintln(os.Stderr, err)
@@ -341,7 +330,7 @@ func loadConfig() (*Config, []string, error) {
 			return nil, nil, err
 		}
 
-		if activeConfig.RPCPass == "" {
+		if cfg.RPCPass == "" {
 			str := "%s: rpcpass cannot be empty"
 			err := errors.Errorf(str, funcName)
 			fmt.Fprintln(os.Stderr, err)
@@ -350,7 +339,7 @@ func loadConfig() (*Config, []string, error) {
 		}
 	}
 
-	err = activeConfig.ResolveNetwork(parser)
+	err = cfg.ResolveNetwork(parser)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -359,21 +348,21 @@ func loadConfig() (*Config, []string, error) {
 	// according to the default of the active network. The set
 	// configuration value takes precedence over the default value for the
 	// selected network.
-	relayNonStd := activeConfig.NetParams().RelayNonStdTxs
+	relayNonStd := cfg.NetParams().RelayNonStdTxs
 	switch {
-	case activeConfig.RelayNonStd && activeConfig.RejectNonStd:
+	case cfg.RelayNonStd && cfg.RejectNonStd:
 		str := "%s: rejectnonstd and relaynonstd cannot be used " +
 			"together -- choose only one"
 		err := errors.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
 		return nil, nil, err
-	case activeConfig.RejectNonStd:
+	case cfg.RejectNonStd:
 		relayNonStd = false
-	case activeConfig.RelayNonStd:
+	case cfg.RelayNonStd:
 		relayNonStd = true
 	}
-	activeConfig.RelayNonStd = relayNonStd
+	cfg.RelayNonStd = relayNonStd
 
 	// Append the network type to the data directory so it is "namespaced"
 	// per network. In addition to the block database, there are other
@@ -381,26 +370,26 @@ func loadConfig() (*Config, []string, error) {
 	// All data is specific to a network, so namespacing the data directory
 	// means each individual piece of serialized data does not have to
 	// worry about changing names per network and such.
-	activeConfig.DataDir = cleanAndExpandPath(activeConfig.DataDir)
-	activeConfig.DataDir = filepath.Join(activeConfig.DataDir, activeConfig.NetParams().Name)
+	cfg.DataDir = cleanAndExpandPath(cfg.DataDir)
+	cfg.DataDir = filepath.Join(cfg.DataDir, cfg.NetParams().Name)
 
 	// Append the network type to the log directory so it is "namespaced"
 	// per network in the same fashion as the data directory.
-	activeConfig.LogDir = cleanAndExpandPath(activeConfig.LogDir)
-	activeConfig.LogDir = filepath.Join(activeConfig.LogDir, activeConfig.NetParams().Name)
+	cfg.LogDir = cleanAndExpandPath(cfg.LogDir)
+	cfg.LogDir = filepath.Join(cfg.LogDir, cfg.NetParams().Name)
 
 	// Special show command to list supported subsystems and exit.
-	if activeConfig.DebugLevel == "show" {
+	if cfg.DebugLevel == "show" {
 		fmt.Println("Supported subsystems", logger.SupportedSubsystems())
 		os.Exit(0)
 	}
 
 	// Initialize log rotation. After log rotation has been initialized, the
 	// logger variables may be used.
-	logger.InitLog(filepath.Join(activeConfig.LogDir, defaultLogFilename), filepath.Join(activeConfig.LogDir, defaultErrLogFilename))
+	logger.InitLog(filepath.Join(cfg.LogDir, defaultLogFilename), filepath.Join(cfg.LogDir, defaultErrLogFilename))
 
 	// Parse, validate, and set debug log level(s).
-	if err := logger.ParseAndSetDebugLevels(activeConfig.DebugLevel); err != nil {
+	if err := logger.ParseAndSetDebugLevels(cfg.DebugLevel); err != nil {
 		err := errors.Errorf("%s: %s", funcName, err.Error())
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
@@ -408,8 +397,8 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// Validate profile port number
-	if activeConfig.Profile != "" {
-		profilePort, err := strconv.Atoi(activeConfig.Profile)
+	if cfg.Profile != "" {
+		profilePort, err := strconv.Atoi(cfg.Profile)
 		if err != nil || profilePort < 1024 || profilePort > 65535 {
 			str := "%s: The profile port must be between 1024 and 65535"
 			err := errors.Errorf(str, funcName)
@@ -420,20 +409,20 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// Don't allow ban durations that are too short.
-	if activeConfig.BanDuration < time.Second {
+	if cfg.BanDuration < time.Second {
 		str := "%s: The banduration option may not be less than 1s -- parsed [%s]"
-		err := errors.Errorf(str, funcName, activeConfig.BanDuration)
+		err := errors.Errorf(str, funcName, cfg.BanDuration)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
 		return nil, nil, err
 	}
 
 	// Validate any given whitelisted IP addresses and networks.
-	if len(activeConfig.Whitelists) > 0 {
+	if len(cfg.Whitelists) > 0 {
 		var ip net.IP
-		activeConfig.Whitelists = make([]*net.IPNet, 0, len(activeConfig.Flags.Whitelists))
+		cfg.Whitelists = make([]*net.IPNet, 0, len(cfg.Flags.Whitelists))
 
-		for _, addr := range activeConfig.Flags.Whitelists {
+		for _, addr := range cfg.Flags.Whitelists {
 			_, ipnet, err := net.ParseCIDR(addr)
 			if err != nil {
 				ip = net.ParseIP(addr)
@@ -456,12 +445,12 @@ func loadConfig() (*Config, []string, error) {
 					Mask: net.CIDRMask(bits, bits),
 				}
 			}
-			activeConfig.Whitelists = append(activeConfig.Whitelists, ipnet)
+			cfg.Whitelists = append(cfg.Whitelists, ipnet)
 		}
 	}
 
 	// --addPeer and --connect do not mix.
-	if len(activeConfig.AddPeers) > 0 && len(activeConfig.ConnectPeers) > 0 {
+	if len(cfg.AddPeers) > 0 && len(cfg.ConnectPeers) > 0 {
 		str := "%s: the --addpeer and --connect options can not be " +
 			"mixed"
 		err := errors.Errorf(str, funcName)
@@ -471,27 +460,28 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// --proxy or --connect without --listen disables listening.
-	if (activeConfig.Proxy != "" || len(activeConfig.ConnectPeers) > 0) &&
-		len(activeConfig.Listeners) == 0 {
-		activeConfig.DisableListen = true
+	if (cfg.Proxy != "" || len(cfg.ConnectPeers) > 0) &&
+		len(cfg.Listeners) == 0 {
+		cfg.DisableListen = true
 	}
 
-	// Connect means no DNS seeding.
-	if len(activeConfig.ConnectPeers) > 0 {
-		activeConfig.DisableDNSSeed = true
+	// ConnectPeers means no DNS seeding and no outbound peers
+	if len(cfg.ConnectPeers) > 0 {
+		cfg.DisableDNSSeed = true
+		cfg.TargetOutboundPeers = 0
 	}
 
 	// Add the default listener if none were specified. The default
 	// listener is all addresses on the listen port for the network
 	// we are to connect to.
-	if len(activeConfig.Listeners) == 0 {
-		activeConfig.Listeners = []string{
-			net.JoinHostPort("", activeConfig.NetParams().DefaultPort),
+	if len(cfg.Listeners) == 0 {
+		cfg.Listeners = []string{
+			net.JoinHostPort("", cfg.NetParams().DefaultPort),
 		}
 	}
 
 	// Check to make sure limited and admin users don't have the same username
-	if activeConfig.RPCUser == activeConfig.RPCLimitUser && activeConfig.RPCUser != "" {
+	if cfg.RPCUser == cfg.RPCLimitUser && cfg.RPCUser != "" {
 		str := "%s: --rpcuser and --rpclimituser must not specify the " +
 			"same username"
 		err := errors.Errorf(str, funcName)
@@ -501,7 +491,7 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// Check to make sure limited and admin users don't have the same password
-	if activeConfig.RPCPass == activeConfig.RPCLimitPass && activeConfig.RPCPass != "" {
+	if cfg.RPCPass == cfg.RPCLimitPass && cfg.RPCPass != "" {
 		str := "%s: --rpcpass and --rpclimitpass must not specify the " +
 			"same password"
 		err := errors.Errorf(str, funcName)
@@ -511,39 +501,39 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// The RPC server is disabled if no username or password is provided.
-	if (activeConfig.RPCUser == "" || activeConfig.RPCPass == "") &&
-		(activeConfig.RPCLimitUser == "" || activeConfig.RPCLimitPass == "") {
-		activeConfig.DisableRPC = true
+	if (cfg.RPCUser == "" || cfg.RPCPass == "") &&
+		(cfg.RPCLimitUser == "" || cfg.RPCLimitPass == "") {
+		cfg.DisableRPC = true
 	}
 
-	if activeConfig.DisableRPC {
+	if cfg.DisableRPC {
 		log.Infof("RPC service is disabled")
 	}
 
 	// Default RPC to listen on localhost only.
-	if !activeConfig.DisableRPC && len(activeConfig.RPCListeners) == 0 {
+	if !cfg.DisableRPC && len(cfg.RPCListeners) == 0 {
 		addrs, err := net.LookupHost("localhost")
 		if err != nil {
 			return nil, nil, err
 		}
-		activeConfig.RPCListeners = make([]string, 0, len(addrs))
+		cfg.RPCListeners = make([]string, 0, len(addrs))
 		for _, addr := range addrs {
-			addr = net.JoinHostPort(addr, activeConfig.NetParams().RPCPort)
-			activeConfig.RPCListeners = append(activeConfig.RPCListeners, addr)
+			addr = net.JoinHostPort(addr, cfg.NetParams().RPCPort)
+			cfg.RPCListeners = append(cfg.RPCListeners, addr)
 		}
 	}
 
-	if activeConfig.RPCMaxConcurrentReqs < 0 {
+	if cfg.RPCMaxConcurrentReqs < 0 {
 		str := "%s: The rpcmaxwebsocketconcurrentrequests option may " +
 			"not be less than 0 -- parsed [%d]"
-		err := errors.Errorf(str, funcName, activeConfig.RPCMaxConcurrentReqs)
+		err := errors.Errorf(str, funcName, cfg.RPCMaxConcurrentReqs)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
 		return nil, nil, err
 	}
 
 	// Validate the the minrelaytxfee.
-	activeConfig.MinRelayTxFee, err = util.NewAmount(activeConfig.Flags.MinRelayTxFee)
+	cfg.MinRelayTxFee, err = util.NewAmount(cfg.Flags.MinRelayTxFee)
 	if err != nil {
 		str := "%s: invalid minrelaytxfee: %s"
 		err := errors.Errorf(str, funcName, err)
@@ -553,39 +543,39 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// Disallow 0 and negative min tx fees.
-	if activeConfig.MinRelayTxFee == 0 {
+	if cfg.MinRelayTxFee == 0 {
 		str := "%s: The minrelaytxfee option must be greater than 0 -- parsed [%d]"
-		err := errors.Errorf(str, funcName, activeConfig.MinRelayTxFee)
+		err := errors.Errorf(str, funcName, cfg.MinRelayTxFee)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
 		return nil, nil, err
 	}
 
 	// Limit the max block mass to a sane value.
-	if activeConfig.BlockMaxMass < blockMaxMassMin || activeConfig.BlockMaxMass >
+	if cfg.BlockMaxMass < blockMaxMassMin || cfg.BlockMaxMass >
 		blockMaxMassMax {
 
 		str := "%s: The blockmaxmass option must be in between %d " +
 			"and %d -- parsed [%d]"
 		err := errors.Errorf(str, funcName, blockMaxMassMin,
-			blockMaxMassMax, activeConfig.BlockMaxMass)
+			blockMaxMassMax, cfg.BlockMaxMass)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
 		return nil, nil, err
 	}
 
 	// Limit the max orphan count to a sane value.
-	if activeConfig.MaxOrphanTxs < 0 {
+	if cfg.MaxOrphanTxs < 0 {
 		str := "%s: The maxorphantx option may not be less than 0 " +
 			"-- parsed [%d]"
-		err := errors.Errorf(str, funcName, activeConfig.MaxOrphanTxs)
+		err := errors.Errorf(str, funcName, cfg.MaxOrphanTxs)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
 		return nil, nil, err
 	}
 
 	// Look for illegal characters in the user agent comments.
-	for _, uaComment := range activeConfig.UserAgentComments {
+	for _, uaComment := range cfg.UserAgentComments {
 		if strings.ContainsAny(uaComment, "/:()") {
 			err := errors.Errorf("%s: The following characters must not "+
 				"appear in user agent comments: '/', ':', '(', ')'",
@@ -597,7 +587,7 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// --acceptanceindex and --dropacceptanceindex do not mix.
-	if activeConfig.AcceptanceIndex && activeConfig.DropAcceptanceIndex {
+	if cfg.AcceptanceIndex && cfg.DropAcceptanceIndex {
 		err := errors.Errorf("%s: the --acceptanceindex and --dropacceptanceindex "+
 			"options may not be activated at the same time",
 			funcName)
@@ -608,29 +598,29 @@ func loadConfig() (*Config, []string, error) {
 
 	// Add default port to all listener addresses if needed and remove
 	// duplicate addresses.
-	activeConfig.Listeners, err = network.NormalizeAddresses(activeConfig.Listeners,
-		activeConfig.NetParams().DefaultPort)
+	cfg.Listeners, err = network.NormalizeAddresses(cfg.Listeners,
+		cfg.NetParams().DefaultPort)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// Add default port to all rpc listener addresses if needed and remove
 	// duplicate addresses.
-	activeConfig.RPCListeners, err = network.NormalizeAddresses(activeConfig.RPCListeners,
-		activeConfig.NetParams().RPCPort)
+	cfg.RPCListeners, err = network.NormalizeAddresses(cfg.RPCListeners,
+		cfg.NetParams().RPCPort)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// Only allow TLS to be disabled if the RPC is bound to localhost
 	// addresses.
-	if !activeConfig.DisableRPC && activeConfig.DisableTLS {
+	if !cfg.DisableRPC && cfg.DisableTLS {
 		allowedTLSListeners := map[string]struct{}{
 			"localhost": {},
 			"127.0.0.1": {},
 			"::1":       {},
 		}
-		for _, addr := range activeConfig.RPCListeners {
+		for _, addr := range cfg.RPCListeners {
 			host, _, err := net.SplitHostPort(addr)
 			if err != nil {
 				str := "%s: RPC listen interface '%s' is " +
@@ -652,16 +642,25 @@ func loadConfig() (*Config, []string, error) {
 		}
 	}
 
+	// Disallow --addpeer and --connect used together
+	if len(cfg.AddPeers) > 0 && len(cfg.ConnectPeers) > 0 {
+		str := "%s: --addpeer and --connect can not be used together"
+		err := errors.Errorf(str, funcName)
+		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(os.Stderr, usageMessage)
+		return nil, nil, err
+	}
+
 	// Add default port to all added peer addresses if needed and remove
 	// duplicate addresses.
-	activeConfig.AddPeers, err = network.NormalizeAddresses(activeConfig.AddPeers,
-		activeConfig.NetParams().DefaultPort)
+	cfg.AddPeers, err = network.NormalizeAddresses(cfg.AddPeers,
+		cfg.NetParams().DefaultPort)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	activeConfig.ConnectPeers, err = network.NormalizeAddresses(activeConfig.ConnectPeers,
-		activeConfig.NetParams().DefaultPort)
+	cfg.ConnectPeers, err = network.NormalizeAddresses(cfg.ConnectPeers,
+		cfg.NetParams().DefaultPort)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -671,24 +670,24 @@ func loadConfig() (*Config, []string, error) {
 	// net.DialTimeout function as well as the system DNS resolver. When a
 	// proxy is specified, the dial function is set to the proxy specific
 	// dial function.
-	activeConfig.Dial = net.DialTimeout
-	activeConfig.Lookup = net.LookupIP
-	if activeConfig.Proxy != "" {
-		_, _, err := net.SplitHostPort(activeConfig.Proxy)
+	cfg.Dial = net.DialTimeout
+	cfg.Lookup = net.LookupIP
+	if cfg.Proxy != "" {
+		_, _, err := net.SplitHostPort(cfg.Proxy)
 		if err != nil {
 			str := "%s: Proxy address '%s' is invalid: %s"
-			err := errors.Errorf(str, funcName, activeConfig.Proxy, err)
+			err := errors.Errorf(str, funcName, cfg.Proxy, err)
 			fmt.Fprintln(os.Stderr, err)
 			fmt.Fprintln(os.Stderr, usageMessage)
 			return nil, nil, err
 		}
 
 		proxy := &socks.Proxy{
-			Addr:     activeConfig.Proxy,
-			Username: activeConfig.ProxyUser,
-			Password: activeConfig.ProxyPass,
+			Addr:     cfg.Proxy,
+			Username: cfg.ProxyUser,
+			Password: cfg.ProxyPass,
 		}
-		activeConfig.Dial = proxy.DialTimeout
+		cfg.Dial = proxy.DialTimeout
 	}
 
 	// Warn about missing config file only after all other configuration is
@@ -698,7 +697,7 @@ func loadConfig() (*Config, []string, error) {
 		log.Warnf("%s", configFileError)
 	}
 
-	return activeConfig, remainingArgs, nil
+	return cfg, remainingArgs, nil
 }
 
 // createDefaultConfig copies the file sample-kaspad.conf to the given destination path,

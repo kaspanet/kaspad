@@ -1,12 +1,13 @@
 package mining
 
 import (
-	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"math"
 	"math/rand"
 	"sort"
+
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
 const (
@@ -136,7 +137,7 @@ func (g *BlkTmplGenerator) collectCandidatesTxs(sourceTxs []*TxDesc) []*candidat
 
 		// A block can't contain non-finalized transactions.
 		if !blockdag.IsFinalizedTransaction(tx, nextBlockBlueScore,
-			g.timeSource.Now()) {
+			g.dag.Now()) {
 			log.Debugf("Skipping non-finalized tx %s", tx.ID())
 			continue
 		}
@@ -157,7 +158,7 @@ func (g *BlkTmplGenerator) collectCandidatesTxs(sourceTxs []*TxDesc) []*candidat
 		gasLimit := uint64(0)
 		if !tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) && !tx.MsgTx().SubnetworkID.IsBuiltIn() {
 			subnetworkID := tx.MsgTx().SubnetworkID
-			gasLimit, err = blockdag.GasLimit(&subnetworkID)
+			gasLimit, err = g.dag.GasLimit(&subnetworkID)
 			if err != nil {
 				log.Warnf("Skipping tx %s due to error in "+
 					"GasLimit: %s", tx.ID(), err)
@@ -207,7 +208,7 @@ func (g *BlkTmplGenerator) calcTxValue(tx *util.Tx, fee uint64) (float64, error)
 	}
 
 	gas := msgTx.Gas
-	gasLimit, err := blockdag.GasLimit(&msgTx.SubnetworkID)
+	gasLimit, err := g.dag.GasLimit(&msgTx.SubnetworkID)
 	if err != nil {
 		return 0, err
 	}

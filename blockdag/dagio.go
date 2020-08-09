@@ -28,19 +28,19 @@ var (
 	byteOrder = binary.LittleEndian
 )
 
-// errNotInDAG signifies that a block hash or height that is not in the
+// ErrNotInDAG signifies that a block hash that is not in the
 // DAG was requested.
-type errNotInDAG string
+type ErrNotInDAG string
 
 // Error implements the error interface.
-func (e errNotInDAG) Error() string {
+func (e ErrNotInDAG) Error() string {
 	return string(e)
 }
 
-// isNotInDAGErr returns whether or not the passed error is an
-// errNotInDAG error.
-func isNotInDAGErr(err error) bool {
-	var notInDAGErr errNotInDAG
+// IsNotInDAGErr returns whether or not the passed error is an
+// ErrNotInDAG error.
+func IsNotInDAGErr(err error) bool {
+	var notInDAGErr ErrNotInDAG
 	return errors.As(err, &notInDAGErr)
 }
 
@@ -164,9 +164,9 @@ func saveDAGState(dbContext dbaccess.Context, state *dagState) error {
 // createDAGState initializes the DAG state to the
 // genesis block and the node's local subnetwork id.
 func (dag *BlockDAG) createDAGState(localSubnetworkID *subnetworkid.SubnetworkID) error {
-	return saveDAGState(dbaccess.NoTx(), &dagState{
-		TipHashes:         []*daghash.Hash{dag.dagParams.GenesisHash},
-		LastFinalityPoint: dag.dagParams.GenesisHash,
+	return saveDAGState(dag.databaseContext, &dagState{
+		TipHashes:         []*daghash.Hash{dag.Params.GenesisHash},
+		LastFinalityPoint: dag.Params.GenesisHash,
 		LocalSubnetworkID: localSubnetworkID,
 	})
 }
@@ -177,7 +177,7 @@ func (dag *BlockDAG) createDAGState(localSubnetworkID *subnetworkid.SubnetworkID
 func (dag *BlockDAG) initDAGState() error {
 	// Fetch the stored DAG state from the database. If it doesn't exist,
 	// it means that kaspad is running for the first time.
-	serializedDAGState, err := dbaccess.FetchDAGState(dbaccess.NoTx())
+	serializedDAGState, err := dbaccess.FetchDAGState(dag.databaseContext)
 	if dbaccess.IsNotFoundError(err) {
 		// Initialize the database and the DAG state to the genesis block.
 		return dag.createDAGState(dag.subnetworkID)
@@ -209,13 +209,13 @@ func (dag *BlockDAG) initDAGState() error {
 	}
 
 	log.Debugf("Loading reachability data...")
-	err = dag.reachabilityTree.init(dbaccess.NoTx())
+	err = dag.reachabilityTree.init(dag.databaseContext)
 	if err != nil {
 		return err
 	}
 
 	log.Debugf("Loading multiset data...")
-	err = dag.multisetStore.init(dbaccess.NoTx())
+	err = dag.multisetStore.init(dag.databaseContext)
 	if err != nil {
 		return err
 	}
@@ -263,7 +263,7 @@ func (dag *BlockDAG) validateLocalSubnetworkID(state *dagState) error {
 }
 
 func (dag *BlockDAG) initBlockIndex() (unprocessedBlockNodes []*blockNode, err error) {
-	blockIndexCursor, err := dbaccess.BlockIndexCursor(dbaccess.NoTx())
+	blockIndexCursor, err := dbaccess.BlockIndexCursor(dag.databaseContext)
 	if err != nil {
 		return nil, err
 	}
@@ -293,7 +293,7 @@ func (dag *BlockDAG) initBlockIndex() (unprocessedBlockNodes []*blockNode, err e
 		}
 
 		if dag.blockCount == 0 {
-			if !node.hash.IsEqual(dag.dagParams.GenesisHash) {
+			if !node.hash.IsEqual(dag.Params.GenesisHash) {
 				return nil, errors.Errorf("Expected "+
 					"first entry in block index to be genesis block, "+
 					"found %s", node.hash)
@@ -317,7 +317,7 @@ func (dag *BlockDAG) initBlockIndex() (unprocessedBlockNodes []*blockNode, err e
 
 func (dag *BlockDAG) initUTXOSet() (fullUTXOCollection utxoCollection, err error) {
 	fullUTXOCollection = make(utxoCollection)
-	cursor, err := dbaccess.UTXOSetCursor(dbaccess.NoTx())
+	cursor, err := dbaccess.UTXOSetCursor(dag.databaseContext)
 	if err != nil {
 		return nil, err
 	}
@@ -368,7 +368,7 @@ func (dag *BlockDAG) processUnprocessedBlockNodes(unprocessedBlockNodes []*block
 	for _, node := range unprocessedBlockNodes {
 		// Check to see if the block exists in the block DB. If it
 		// doesn't, the database has certainly been corrupted.
-		blockExists, err := dbaccess.HasBlock(dbaccess.NoTx(), node.hash)
+		blockExists, err := dbaccess.HasBlock(dag.databaseContext, node.hash)
 		if err != nil {
 			return errors.Wrapf(err, "HasBlock "+
 				"for block %s failed: %s", node.hash, err)
@@ -379,7 +379,7 @@ func (dag *BlockDAG) processUnprocessedBlockNodes(unprocessedBlockNodes []*block
 		}
 
 		// Attempt to accept the block.
-		block, err := fetchBlockByHash(dbaccess.NoTx(), node.hash)
+		block, err := dag.fetchBlockByHash(node.hash)
 		if err != nil {
 			return err
 		}
@@ -421,7 +421,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		version:              header.Version,
 		bits:                 header.Bits,
 		nonce:                header.Nonce,
-		timestamp:            header.Timestamp.Unix(),
+		timestamp:            header.Timestamp.UnixMilliseconds(),
 		hashMerkleRoot:       header.HashMerkleRoot,
 		acceptedIDMerkleRoot: header.AcceptedIDMerkleRoot,
 		utxoCommitment:       header.UTXOCommitment,
@@ -510,8 +510,8 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 
 // fetchBlockByHash retrieves the raw block for the provided hash,
 // deserializes it, and returns a util.Block of it.
-func fetchBlockByHash(dbContext dbaccess.Context, hash *daghash.Hash) (*util.Block, error) {
-	blockBytes, err := dbaccess.FetchBlock(dbContext, hash)
+func (dag *BlockDAG) fetchBlockByHash(hash *daghash.Hash) (*util.Block, error) {
+	blockBytes, err := dbaccess.FetchBlock(dag.databaseContext, hash)
 	if err != nil {
 		return nil, err
 	}
@@ -607,10 +607,10 @@ func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
 	node, ok := dag.index.LookupNode(hash)
 	if !ok {
 		str := fmt.Sprintf("block %s is not in the DAG", hash)
-		return nil, errNotInDAG(str)
+		return nil, ErrNotInDAG(str)
 	}
 
-	block, err := fetchBlockByHash(dbaccess.NoTx(), node.hash)
+	block, err := dag.fetchBlockByHash(node.hash)
 	if err != nil {
 		return nil, err
 	}
@@ -639,7 +639,7 @@ func (dag *BlockDAG) BlockHashesFrom(lowHash *daghash.Hash, limit int) ([]*dagha
 	}
 
 	key := blockIndexKey(lowHash, blueScore)
-	cursor, err := dbaccess.BlockIndexCursorFrom(dbaccess.NoTx(), key)
+	cursor, err := dbaccess.BlockIndexCursorFrom(dag.databaseContext, key)
 	if dbaccess.IsNotFoundError(err) {
 		return nil, errors.Wrapf(err, "block %s not in block index", lowHash)
 	}

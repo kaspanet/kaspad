@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"math"
 	"sort"
 	"time"
@@ -56,12 +57,12 @@ func isNullOutpoint(outpoint *wire.Outpoint) bool {
 // met, meaning that all the inputs of a given transaction have reached a
 // blue score or time sufficient for their relative lock-time maturity.
 func SequenceLockActive(sequenceLock *SequenceLock, blockBlueScore uint64,
-	medianTimePast time.Time) bool {
+	medianTimePast mstime.Time) bool {
 
-	// If either the seconds, or blue score relative-lock time has not yet
+	// If either the milliseconds, or blue score relative-lock time has not yet
 	// reached, then the transaction is not yet mature according to its
 	// sequence locks.
-	if sequenceLock.Seconds >= medianTimePast.Unix() ||
+	if sequenceLock.Milliseconds >= medianTimePast.UnixMilliseconds() ||
 		sequenceLock.BlockBlueScore >= int64(blockBlueScore) {
 		return false
 	}
@@ -70,7 +71,7 @@ func SequenceLockActive(sequenceLock *SequenceLock, blockBlueScore uint64,
 }
 
 // IsFinalizedTransaction determines whether or not a transaction is finalized.
-func IsFinalizedTransaction(tx *util.Tx, blockBlueScore uint64, blockTime time.Time) bool {
+func IsFinalizedTransaction(tx *util.Tx, blockBlueScore uint64, blockTime mstime.Time) bool {
 	msgTx := tx.MsgTx()
 
 	// Lock time of zero means the transaction is finalized.
@@ -87,7 +88,7 @@ func IsFinalizedTransaction(tx *util.Tx, blockBlueScore uint64, blockTime time.T
 	if lockTime < txscript.LockTimeThreshold {
 		blockTimeOrBlueScore = int64(blockBlueScore)
 	} else {
-		blockTimeOrBlueScore = blockTime.Unix()
+		blockTimeOrBlueScore = blockTime.UnixMilliseconds()
 	}
 	if int64(lockTime) < blockTimeOrBlueScore {
 		return true
@@ -131,15 +132,6 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	msgTx := tx.MsgTx()
 	if !isCoinbase && len(msgTx.TxIn) == 0 {
 		return ruleError(ErrNoTxInputs, "transaction has no inputs")
-	}
-
-	// A transaction must not exceed the maximum allowed block mass when
-	// serialized.
-	serializedTxSize := msgTx.SerializeSize()
-	if serializedTxSize*MassPerTxByte > wire.MaxMassPerTx {
-		str := fmt.Sprintf("serialized transaction is too big - got "+
-			"%d, max %d", serializedTxSize, wire.MaxMassPerBlock)
-		return ruleError(ErrTxMassTooHigh, str)
 	}
 
 	// Ensure the transaction amounts are in range. Each transaction
@@ -273,9 +265,9 @@ func (dag *BlockDAG) checkProofOfWork(header *wire.BlockHeader, flags BehaviorFl
 	}
 
 	// The target difficulty must be less than the maximum allowed.
-	if target.Cmp(dag.dagParams.PowMax) > 0 {
+	if target.Cmp(dag.Params.PowMax) > 0 {
 		str := fmt.Sprintf("block target difficulty of %064x is "+
-			"higher than max of %064x", target, dag.dagParams.PowMax)
+			"higher than max of %064x", target, dag.Params.PowMax)
 		return ruleError(ErrUnexpectedDifficulty, str)
 	}
 
@@ -411,7 +403,7 @@ func (dag *BlockDAG) checkBlockHeaderSanity(block *util.Block, flags BehaviorFla
 	}
 
 	if len(header.ParentHashes) == 0 {
-		if !header.BlockHash().IsEqual(dag.dagParams.GenesisHash) {
+		if !header.BlockHash().IsEqual(dag.Params.GenesisHash) {
 			return 0, ruleError(ErrNoParents, "block has no parents")
 		}
 	} else {
@@ -421,23 +413,11 @@ func (dag *BlockDAG) checkBlockHeaderSanity(block *util.Block, flags BehaviorFla
 		}
 	}
 
-	// A block timestamp must not have a greater precision than one second.
-	// This check is necessary because Go time.Time values support
-	// nanosecond precision whereas the consensus rules only apply to
-	// seconds and it's much nicer to deal with standard Go time values
-	// instead of converting to seconds everywhere.
-	if !header.Timestamp.Equal(time.Unix(header.Timestamp.Unix(), 0)) {
-		str := fmt.Sprintf("block timestamp of %s has a higher "+
-			"precision than one second", header.Timestamp)
-		return 0, ruleError(ErrInvalidTime, str)
-	}
-
 	// Ensure the block time is not too far in the future. If it's too far, return
 	// the duration of time that should be waited before the block becomes valid.
 	// This check needs to be last as it does not return an error but rather marks the
 	// header as delayed (and valid).
-	maxTimestamp := dag.Now().Add(time.Second *
-		time.Duration(int64(dag.TimestampDeviationTolerance)*dag.targetTimePerBlock))
+	maxTimestamp := dag.Now().Add(time.Duration(dag.TimestampDeviationTolerance) * dag.Params.TargetTimePerBlock)
 	if header.Timestamp.After(maxTimestamp) {
 		return header.Timestamp.Sub(maxTimestamp), nil
 	}
@@ -573,7 +553,7 @@ func (dag *BlockDAG) checkBlockTransactionOrder(block *util.Block) error {
 
 func (dag *BlockDAG) checkNoNonNativeTransactions(block *util.Block) error {
 	// Disallow non-native/coinbase subnetworks in networks that don't allow them
-	if !dag.dagParams.EnableNonNativeSubnetworks {
+	if !dag.Params.EnableNonNativeSubnetworks {
 		transactions := block.Transactions()
 		for _, tx := range transactions {
 			if !(tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
@@ -958,7 +938,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 
 	for _, tx := range transactions {
 		txFee, err := CheckTransactionInputsAndCalulateFee(tx, block.blueScore, pastUTXO,
-			dag.dagParams, fastAdd)
+			dag.Params, fastAdd)
 		if err != nil {
 			return nil, err
 		}

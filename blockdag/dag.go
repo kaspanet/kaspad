@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kaspanet/kaspad/util/mstime"
+
 	"github.com/kaspanet/kaspad/dbaccess"
 
 	"github.com/pkg/errors"
@@ -30,7 +32,9 @@ const (
 	// queued.
 	maxOrphanBlocks = 100
 
-	isDAGCurrentMaxDiff = 12 * time.Hour
+	// isDAGCurrentMaxDiff is the number of blocks from the network tips (estimated by timestamps) for the current
+	// to be considered not synced
+	isDAGCurrentMaxDiff = 40_000
 )
 
 // orphanBlock represents a block that we don't yet have the parent for. It
@@ -38,13 +42,13 @@ const (
 // forever.
 type orphanBlock struct {
 	block      *util.Block
-	expiration time.Time
+	expiration mstime.Time
 }
 
 // delayedBlock represents a block which has a delayed timestamp and will be processed at processTime
 type delayedBlock struct {
 	block       *util.Block
-	processTime time.Time
+	processTime mstime.Time
 }
 
 // chainUpdates represents the updates made to the selected parent chain after
@@ -61,17 +65,17 @@ type BlockDAG struct {
 	// The following fields are set when the instance is created and can't
 	// be changed afterwards, so there is no need to protect them with a
 	// separate mutex.
-	dagParams    *dagconfig.Params
-	timeSource   TimeSource
-	sigCache     *txscript.SigCache
-	indexManager IndexManager
-	genesis      *blockNode
+	Params          *dagconfig.Params
+	databaseContext *dbaccess.DatabaseContext
+	timeSource      TimeSource
+	sigCache        *txscript.SigCache
+	indexManager    IndexManager
+	genesis         *blockNode
 
 	// The following fields are calculated based upon the provided DAG
 	// parameters. They are also set when the instance is created and
 	// can't be changed afterwards, so there is no need to protect them with
 	// a separate mutex.
-	targetTimePerBlock             int64 // The target delay between blocks (in seconds)
 	difficultyAdjustmentWindowSize uint64
 	TimestampDeviationTolerance    uint64
 
@@ -156,8 +160,106 @@ type BlockDAG struct {
 
 	reachabilityTree *reachabilityTree
 
-	recentBlockProcessingTimestamps []time.Time
-	startTime                       time.Time
+	recentBlockProcessingTimestamps []mstime.Time
+	startTime                       mstime.Time
+}
+
+// New returns a BlockDAG instance using the provided configuration details.
+func New(config *Config) (*BlockDAG, error) {
+	// Enforce required config fields.
+	if config.DAGParams == nil {
+		return nil, errors.New("BlockDAG.New DAG parameters nil")
+	}
+	if config.TimeSource == nil {
+		return nil, errors.New("BlockDAG.New timesource is nil")
+	}
+	if config.DatabaseContext == nil {
+		return nil, errors.New("BlockDAG.DatabaseContext timesource is nil")
+	}
+
+	params := config.DAGParams
+
+	index := newBlockIndex(params)
+	dag := &BlockDAG{
+		Params:                         params,
+		databaseContext:                config.DatabaseContext,
+		timeSource:                     config.TimeSource,
+		sigCache:                       config.SigCache,
+		indexManager:                   config.IndexManager,
+		difficultyAdjustmentWindowSize: params.DifficultyAdjustmentWindowSize,
+		TimestampDeviationTolerance:    params.TimestampDeviationTolerance,
+		powMaxBits:                     util.BigToCompact(params.PowMax),
+		index:                          index,
+		orphans:                        make(map[daghash.Hash]*orphanBlock),
+		prevOrphans:                    make(map[daghash.Hash][]*orphanBlock),
+		delayedBlocks:                  make(map[daghash.Hash]*delayedBlock),
+		delayedBlocksQueue:             newDelayedBlocksHeap(),
+		warningCaches:                  newThresholdCaches(vbNumBits),
+		deploymentCaches:               newThresholdCaches(dagconfig.DefinedDeployments),
+		blockCount:                     0,
+		subnetworkID:                   config.SubnetworkID,
+		startTime:                      mstime.Now(),
+	}
+
+	dag.virtual = newVirtualBlock(dag, nil)
+	dag.utxoDiffStore = newUTXODiffStore(dag)
+	dag.multisetStore = newMultisetStore(dag)
+	dag.reachabilityTree = newReachabilityTree(dag)
+
+	// Initialize the DAG state from the passed database. When the db
+	// does not yet contain any DAG state, both it and the DAG state
+	// will be initialized to contain only the genesis block.
+	err := dag.initDAGState()
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialize and catch up all of the currently active optional indexes
+	// as needed.
+	if config.IndexManager != nil {
+		err = config.IndexManager.Init(dag, dag.databaseContext)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	genesis, ok := index.LookupNode(params.GenesisHash)
+
+	if !ok {
+		genesisBlock := util.NewBlock(dag.Params.GenesisBlock)
+		// To prevent the creation of a new err variable unintentionally so the
+		// defered function above could read err - declare isOrphan and isDelayed explicitly.
+		var isOrphan, isDelayed bool
+		isOrphan, isDelayed, err = dag.ProcessBlock(genesisBlock, BFNone)
+		if err != nil {
+			return nil, err
+		}
+		if isDelayed {
+			return nil, errors.New("genesis block shouldn't be in the future")
+		}
+		if isOrphan {
+			return nil, errors.New("genesis block is unexpectedly orphan")
+		}
+		genesis, ok = index.LookupNode(params.GenesisHash)
+		if !ok {
+			return nil, errors.New("genesis is not found in the DAG after it was proccessed")
+		}
+	}
+
+	// Save a reference to the genesis block.
+	dag.genesis = genesis
+
+	// Initialize rule change threshold state caches.
+	err = dag.initThresholdCaches()
+	if err != nil {
+		return nil, err
+	}
+
+	selectedTip := dag.selectedTip()
+	log.Infof("DAG state (blue score %d, hash %s)",
+		selectedTip.blueScore, selectedTip.hash)
+
+	return dag, nil
 }
 
 // IsKnownBlock returns whether or not the DAG instance has the block represented
@@ -220,7 +322,7 @@ func (dag *BlockDAG) IsKnownInvalid(hash *daghash.Hash) bool {
 // GetOrphanMissingAncestorHashes returns all of the missing parents in the orphan's sub-DAG
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) GetOrphanMissingAncestorHashes(orphanHash *daghash.Hash) ([]*daghash.Hash, error) {
+func (dag *BlockDAG) GetOrphanMissingAncestorHashes(orphanHash *daghash.Hash) []*daghash.Hash {
 	// Protect concurrent access. Using a read lock only so multiple
 	// readers can query without blocking each other.
 	dag.orphanLock.RLock()
@@ -245,7 +347,7 @@ func (dag *BlockDAG) GetOrphanMissingAncestorHashes(orphanHash *daghash.Hash) ([
 			}
 		}
 	}
-	return missingAncestorsHashes, nil
+	return missingAncestorsHashes
 }
 
 // removeOrphanBlock removes the passed orphan block from the orphan pool and
@@ -293,7 +395,7 @@ func (dag *BlockDAG) removeOrphanBlock(orphan *orphanBlock) {
 func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 	// Remove expired orphan blocks.
 	for _, oBlock := range dag.orphans {
-		if time.Now().After(oBlock.expiration) {
+		if mstime.Now().After(oBlock.expiration) {
 			dag.removeOrphanBlock(oBlock)
 			continue
 		}
@@ -325,7 +427,7 @@ func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 
 	// Insert the block into the orphan map with an expiration time
 	// 1 hour from now.
-	expiration := time.Now().Add(time.Hour)
+	expiration := mstime.Now().Add(time.Hour)
 	oBlock := &orphanBlock{
 		block:      block,
 		expiration: expiration,
@@ -345,7 +447,7 @@ func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 // block either after 'seconds' (according to past median time), or once the
 // 'BlockBlueScore' has been reached.
 type SequenceLock struct {
-	Seconds        int64
+	Milliseconds   int64
 	BlockBlueScore int64
 }
 
@@ -379,7 +481,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 	// A value of -1 for each relative lock type represents a relative time
 	// lock value that will allow a transaction to be included in a block
 	// at any given height or time.
-	sequenceLock := &SequenceLock{Seconds: -1, BlockBlueScore: -1}
+	sequenceLock := &SequenceLock{Milliseconds: -1, BlockBlueScore: -1}
 
 	// Sequence locks don't apply to coinbase transactions Therefore, we
 	// return sequence lock values of -1 indicating that this transaction
@@ -431,16 +533,15 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			}
 			medianTime := blockNode.PastMedianTime(dag)
 
-			// Time based relative time-locks as defined by BIP 68
-			// have a time granularity of RelativeLockSeconds, so
-			// we shift left by this amount to convert to the
-			// proper relative time-lock. We also subtract one from
-			// the relative lock to maintain the original lockTime
-			// semantics.
-			timeLockSeconds := (relativeLock << wire.SequenceLockTimeGranularity) - 1
-			timeLock := medianTime.Unix() + timeLockSeconds
-			if timeLock > sequenceLock.Seconds {
-				sequenceLock.Seconds = timeLock
+			// Time based relative time-locks have a time granularity of
+			// wire.SequenceLockTimeGranularity, so we shift left by this
+			// amount to convert to the proper relative time-lock. We also
+			// subtract one from the relative lock to maintain the original
+			// lockTime semantics.
+			timeLockMilliseconds := (relativeLock << wire.SequenceLockTimeGranularity) - 1
+			timeLock := medianTime.UnixMilliseconds() + timeLockMilliseconds
+			if timeLock > sequenceLock.Milliseconds {
+				sequenceLock.Milliseconds = timeLock
 			}
 		default:
 			// The relative lock-time for this input is expressed
@@ -459,18 +560,18 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 }
 
 // LockTimeToSequence converts the passed relative locktime to a sequence
-// number in accordance to BIP-68.
-func LockTimeToSequence(isSeconds bool, locktime uint64) uint64 {
+// number.
+func LockTimeToSequence(isMilliseconds bool, locktime uint64) uint64 {
 	// If we're expressing the relative lock time in blocks, then the
 	// corresponding sequence number is simply the desired input age.
-	if !isSeconds {
+	if !isMilliseconds {
 		return locktime
 	}
 
-	// Set the 22nd bit which indicates the lock time is in seconds, then
-	// shift the locktime over by 9 since the time granularity is in
-	// 512-second intervals (2^9). This results in a max lock-time of
-	// 33,553,920 seconds, or 1.1 years.
+	// Set the 22nd bit which indicates the lock time is in milliseconds, then
+	// shift the locktime over by 19 since the time granularity is in
+	// 524288-millisecond intervals (2^19). This results in a max lock-time of
+	// 34,359,214,080 seconds, or 1.1 years.
 	return wire.SequenceLockTimeIsSeconds |
 		locktime>>wire.SequenceLockTimeGranularity
 }
@@ -492,7 +593,7 @@ func (dag *BlockDAG) addBlock(node *blockNode,
 		if errors.As(err, &RuleError{}) {
 			dag.index.SetStatusFlags(node, statusValidateFailed)
 
-			dbTx, err := dbaccess.NewTx()
+			dbTx, err := dag.databaseContext.NewTx()
 			if err != nil {
 				return nil, err
 			}
@@ -685,7 +786,7 @@ func addTxToMultiset(ms *secp256k1.MultiSet, tx *wire.MsgTx, pastUTXO UTXOSet, b
 func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UTXODiff,
 	txsAcceptanceData MultiBlockTxsAcceptanceData, feeData compactFeeData) error {
 
-	dbTx, err := dbaccess.NewTx()
+	dbTx, err := dag.databaseContext.NewTx()
 	if err != nil {
 		return err
 	}
@@ -787,7 +888,7 @@ func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
 		if !msgTx.SubnetworkID.IsEqual(currentSubnetworkID) {
 			currentSubnetworkID = &msgTx.SubnetworkID
 			currentGasUsage = 0
-			currentSubnetworkGasLimit, err = GasLimit(currentSubnetworkID)
+			currentSubnetworkGasLimit, err = dag.GasLimit(currentSubnetworkID)
 			if err != nil {
 				return errors.Errorf("Error getting gas limit for subnetworkID '%s': %s", currentSubnetworkID, err)
 			}
@@ -825,6 +926,11 @@ func (dag *BlockDAG) isInSelectedParentChainOf(node *blockNode, other *blockNode
 	}
 
 	return dag.reachabilityTree.isReachabilityTreeAncestorOf(node, other)
+}
+
+// FinalityInterval is the interval that determines the finality window of the DAG.
+func (dag *BlockDAG) FinalityInterval() uint64 {
+	return uint64(dag.Params.FinalityDuration / dag.Params.TargetTimePerBlock)
 }
 
 // checkFinalityViolation checks the new block does not violate the finality rules
@@ -877,7 +983,7 @@ func (dag *BlockDAG) updateFinalityPoint() {
 		}
 	}
 	dag.lastFinalityPoint = currentNode
-	spawn(func() {
+	spawn("dag.finalizeNodesBelowFinalityPoint", func() {
 		dag.finalizeNodesBelowFinalityPoint(true)
 	})
 }
@@ -889,7 +995,7 @@ func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
 	}
 	var nodesToDelete []*blockNode
 	if deleteDiffData {
-		nodesToDelete = make([]*blockNode, 0, dag.dagParams.FinalityInterval)
+		nodesToDelete = make([]*blockNode, 0, dag.FinalityInterval())
 	}
 	for len(queue) > 0 {
 		var current *blockNode
@@ -905,7 +1011,7 @@ func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
 		}
 	}
 	if deleteDiffData {
-		err := dag.utxoDiffStore.removeBlocksDiffData(dbaccess.NoTx(), nodesToDelete)
+		err := dag.utxoDiffStore.removeBlocksDiffData(dag.databaseContext, nodesToDelete)
 		if err != nil {
 			panic(fmt.Sprintf("Error removing diff data from utxoDiffStore: %s", err))
 		}
@@ -1136,10 +1242,10 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 	return genesisPastUTXO
 }
 
-func (node *blockNode) fetchBlueBlocks() ([]*util.Block, error) {
+func (dag *BlockDAG) fetchBlueBlocks(node *blockNode) ([]*util.Block, error) {
 	blueBlocks := make([]*util.Block, len(node.blues))
 	for i, blueBlockNode := range node.blues {
-		blueBlock, err := fetchBlockByHash(dbaccess.NoTx(), blueBlockNode.hash)
+		blueBlock, err := dag.fetchBlockByHash(blueBlockNode.hash)
 		if err != nil {
 			return nil, err
 		}
@@ -1253,7 +1359,7 @@ func (dag *BlockDAG) pastUTXO(node *blockNode) (
 		return nil, nil, nil, err
 	}
 
-	blueBlocks, err := node.fetchBlueBlocks()
+	blueBlocks, err := dag.fetchBlueBlocks(node)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -1341,18 +1447,18 @@ func (dag *BlockDAG) isSynced() bool {
 	var dagTimestamp int64
 	selectedTip := dag.selectedTip()
 	if selectedTip == nil {
-		dagTimestamp = dag.dagParams.GenesisBlock.Header.Timestamp.Unix()
+		dagTimestamp = dag.Params.GenesisBlock.Header.Timestamp.UnixMilliseconds()
 	} else {
 		dagTimestamp = selectedTip.timestamp
 	}
-	dagTime := time.Unix(dagTimestamp, 0)
-	return dag.Now().Sub(dagTime) <= isDAGCurrentMaxDiff
+	dagTime := mstime.UnixMilliseconds(dagTimestamp)
+	return dag.Now().Sub(dagTime) <= isDAGCurrentMaxDiff*dag.Params.TargetTimePerBlock
 }
 
 // Now returns the adjusted time according to
 // dag.timeSource. See TimeSource.Now for
 // more details.
-func (dag *BlockDAG) Now() time.Time {
+func (dag *BlockDAG) Now() mstime.Time {
 	return dag.timeSource.Now()
 }
 
@@ -1407,7 +1513,7 @@ func (dag *BlockDAG) UTXOSet() *FullUTXOSet {
 }
 
 // CalcPastMedianTime returns the past median time of the DAG.
-func (dag *BlockDAG) CalcPastMedianTime() time.Time {
+func (dag *BlockDAG) CalcPastMedianTime() mstime.Time {
 	return dag.virtual.tips().bluest().PastMedianTime(dag)
 }
 
@@ -1583,7 +1689,7 @@ func (dag *BlockDAG) IsInSelectedParentChain(blockHash *daghash.Hash) (bool, err
 	blockNode, ok := dag.index.LookupNode(blockHash)
 	if !ok {
 		str := fmt.Sprintf("block %s is not in the DAG", blockHash)
-		return false, errNotInDAG(str)
+		return false, ErrNotInDAG(str)
 	}
 	return dag.virtual.selectedParentChainSet.contains(blockNode), nil
 }
@@ -1696,7 +1802,7 @@ func (dag *BlockDAG) ChildHashesByHash(hash *daghash.Hash) ([]*daghash.Hash, err
 	node, ok := dag.index.LookupNode(hash)
 	if !ok {
 		str := fmt.Sprintf("block %s is not in the DAG", hash)
-		return nil, errNotInDAG(str)
+		return nil, ErrNotInDAG(str)
 
 	}
 
@@ -1711,7 +1817,7 @@ func (dag *BlockDAG) SelectedParentHash(blockHash *daghash.Hash) (*daghash.Hash,
 	node, ok := dag.index.LookupNode(blockHash)
 	if !ok {
 		str := fmt.Sprintf("block %s is not in the DAG", blockHash)
-		return nil, errNotInDAG(str)
+		return nil, ErrNotInDAG(str)
 
 	}
 
@@ -1978,7 +2084,7 @@ func (dag *BlockDAG) peekDelayedBlock() *delayedBlock {
 type IndexManager interface {
 	// Init is invoked during DAG initialize in order to allow the index
 	// manager to initialize itself and any indexes it is managing.
-	Init(*BlockDAG) error
+	Init(*BlockDAG, *dbaccess.DatabaseContext) error
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
@@ -2025,102 +2131,10 @@ type Config struct {
 	//
 	// This field is required.
 	SubnetworkID *subnetworkid.SubnetworkID
-}
 
-// New returns a BlockDAG instance using the provided configuration details.
-func New(config *Config) (*BlockDAG, error) {
-	// Enforce required config fields.
-	if config.DAGParams == nil {
-		return nil, errors.New("BlockDAG.New DAG parameters nil")
-	}
-	if config.TimeSource == nil {
-		return nil, errors.New("BlockDAG.New timesource is nil")
-	}
-
-	params := config.DAGParams
-	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
-
-	index := newBlockIndex(params)
-	dag := &BlockDAG{
-		dagParams:                      params,
-		timeSource:                     config.TimeSource,
-		sigCache:                       config.SigCache,
-		indexManager:                   config.IndexManager,
-		targetTimePerBlock:             targetTimePerBlock,
-		difficultyAdjustmentWindowSize: params.DifficultyAdjustmentWindowSize,
-		TimestampDeviationTolerance:    params.TimestampDeviationTolerance,
-		powMaxBits:                     util.BigToCompact(params.PowMax),
-		index:                          index,
-		orphans:                        make(map[daghash.Hash]*orphanBlock),
-		prevOrphans:                    make(map[daghash.Hash][]*orphanBlock),
-		delayedBlocks:                  make(map[daghash.Hash]*delayedBlock),
-		delayedBlocksQueue:             newDelayedBlocksHeap(),
-		warningCaches:                  newThresholdCaches(vbNumBits),
-		deploymentCaches:               newThresholdCaches(dagconfig.DefinedDeployments),
-		blockCount:                     0,
-		subnetworkID:                   config.SubnetworkID,
-		startTime:                      time.Now(),
-	}
-
-	dag.virtual = newVirtualBlock(dag, nil)
-	dag.utxoDiffStore = newUTXODiffStore(dag)
-	dag.multisetStore = newMultisetStore(dag)
-	dag.reachabilityTree = newReachabilityTree(dag)
-
-	// Initialize the DAG state from the passed database. When the db
-	// does not yet contain any DAG state, both it and the DAG state
-	// will be initialized to contain only the genesis block.
-	err := dag.initDAGState()
-	if err != nil {
-		return nil, err
-	}
-
-	// Initialize and catch up all of the currently active optional indexes
-	// as needed.
-	if config.IndexManager != nil {
-		err = config.IndexManager.Init(dag)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	genesis, ok := index.LookupNode(params.GenesisHash)
-
-	if !ok {
-		genesisBlock := util.NewBlock(dag.dagParams.GenesisBlock)
-		// To prevent the creation of a new err variable unintentionally so the
-		// defered function above could read err - declare isOrphan and isDelayed explicitly.
-		var isOrphan, isDelayed bool
-		isOrphan, isDelayed, err = dag.ProcessBlock(genesisBlock, BFNone)
-		if err != nil {
-			return nil, err
-		}
-		if isDelayed {
-			return nil, errors.New("genesis block shouldn't be in the future")
-		}
-		if isOrphan {
-			return nil, errors.New("genesis block is unexpectedly orphan")
-		}
-		genesis, ok = index.LookupNode(params.GenesisHash)
-		if !ok {
-			return nil, errors.New("genesis is not found in the DAG after it was proccessed")
-		}
-	}
-
-	// Save a reference to the genesis block.
-	dag.genesis = genesis
-
-	// Initialize rule change threshold state caches.
-	err = dag.initThresholdCaches()
-	if err != nil {
-		return nil, err
-	}
-
-	selectedTip := dag.selectedTip()
-	log.Infof("DAG state (blue score %d, hash %s)",
-		selectedTip.blueScore, selectedTip.hash)
-
-	return dag, nil
+	// DatabaseContext is the context in which all database queries related to
+	// this DAG are going to run.
+	DatabaseContext *dbaccess.DatabaseContext
 }
 
 func (dag *BlockDAG) isKnownDelayedBlock(hash *daghash.Hash) bool {

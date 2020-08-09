@@ -9,7 +9,7 @@ import "io"
 // fakeMessage implements the Message interface and is used to force encode
 // errors in messages.
 type fakeMessage struct {
-	command        string
+	command        MessageCommand
 	payload        []byte
 	forceEncodeErr bool
 	forceLenErr    bool
@@ -39,7 +39,7 @@ func (msg *fakeMessage) KaspaEncode(w io.Writer, pver uint32) error {
 
 // Command returns the command field of the fake message and satisfies the
 // Message interface.
-func (msg *fakeMessage) Command() string {
+func (msg *fakeMessage) Command() MessageCommand {
 	return msg.command
 }
 

@@ -5,11 +5,11 @@
 package mining
 
 import (
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 	"time"
 
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -30,7 +30,7 @@ type TxDesc struct {
 	Tx *util.Tx
 
 	// Added is the time when the entry was added to the source pool.
-	Added time.Time
+	Added mstime.Time
 
 	// Fee is the total fee the transaction associated with the entry pays.
 	Fee uint64
@@ -47,7 +47,7 @@ type TxDesc struct {
 type TxSource interface {
 	// LastUpdated returns the last time a transaction was added to or
 	// removed from the source pool.
-	LastUpdated() time.Time
+	LastUpdated() mstime.Time
 
 	// MiningDescs returns a slice of mining descriptors for all the
 	// transactions in the source pool.
@@ -86,12 +86,10 @@ type BlockTemplate struct {
 // It also houses additional state required in order to ensure the templates
 // are built on top of the current DAG and adhere to the consensus rules.
 type BlkTmplGenerator struct {
-	policy     *Policy
-	dagParams  *dagconfig.Params
-	txSource   TxSource
-	dag        *blockdag.BlockDAG
-	timeSource blockdag.TimeSource
-	sigCache   *txscript.SigCache
+	policy   *Policy
+	txSource TxSource
+	dag      *blockdag.BlockDAG
+	sigCache *txscript.SigCache
 }
 
 // NewBlkTmplGenerator returns a new block template generator for the given
@@ -100,18 +98,15 @@ type BlkTmplGenerator struct {
 // The additional state-related fields are required in order to ensure the
 // templates are built on top of the current DAG and adhere to the
 // consensus rules.
-func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
+func NewBlkTmplGenerator(policy *Policy,
 	txSource TxSource, dag *blockdag.BlockDAG,
-	timeSource blockdag.TimeSource,
 	sigCache *txscript.SigCache) *BlkTmplGenerator {
 
 	return &BlkTmplGenerator{
-		policy:     policy,
-		dagParams:  params,
-		txSource:   txSource,
-		dag:        dag,
-		timeSource: timeSource,
-		sigCache:   sigCache,
+		policy:   policy,
+		txSource: txSource,
+		dag:      dag,
+		sigCache: sigCache,
 	}
 }
 
@@ -233,4 +228,22 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 // This function is safe for concurrent access.
 func (g *BlkTmplGenerator) TxSource() TxSource {
 	return g.txSource
+}
+
+// IsSynced checks if the node is synced enough based upon its worldview.
+// This is used to determine if the node can support mining and requesting newly-mined blocks.
+// To do that, first it checks if the selected tip timestamp is not older than maxTipAge. If that's the case, it means
+// the node is synced since blocks' timestamps are not allowed to deviate too much into the future.
+// If that's not the case it checks the rate it added new blocks to the DAG recently. If it's faster than
+// blockRate * maxSyncRateDeviation it means the node is not synced, since when the node is synced it shouldn't add
+// blocks to the DAG faster than the block rate.
+func (g *BlkTmplGenerator) IsSynced() bool {
+	const maxTipAge = 5 * time.Minute
+	isCloseToCurrentTime := g.dag.Now().Sub(g.dag.SelectedTipHeader().Timestamp) <= maxTipAge
+	if isCloseToCurrentTime {
+		return true
+	}
+
+	const maxSyncRateDeviation = 1.05
+	return g.dag.IsSyncRateBelowThreshold(maxSyncRateDeviation)
 }

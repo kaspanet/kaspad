@@ -2,14 +2,15 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/dbaccess"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 type testBlockData struct {
@@ -33,7 +34,7 @@ func TestGHOSTDAG(t *testing.T) {
 	}{
 		{
 			k:            3,
-			expectedReds: []string{"F", "G", "H", "I", "N", "Q"},
+			expectedReds: []string{"F", "G", "H", "I", "N", "P"},
 			dagData: []*testBlockData{
 				{
 					parents:                []string{"A"},
@@ -166,7 +167,7 @@ func TestGHOSTDAG(t *testing.T) {
 					id:                     "T",
 					expectedScore:          13,
 					expectedSelectedParent: "S",
-					expectedBlues:          []string{"S", "O", "P"},
+					expectedBlues:          []string{"S", "O", "Q"},
 				},
 			},
 		},
@@ -294,15 +295,15 @@ func TestBlueAnticoneSizeErrors(t *testing.T) {
 	defer teardownFunc()
 
 	// Prepare a block chain with size K beginning with the genesis block
-	currentBlockA := dag.dagParams.GenesisBlock
-	for i := dagconfig.KType(0); i < dag.dagParams.K; i++ {
+	currentBlockA := dag.Params.GenesisBlock
+	for i := dagconfig.KType(0); i < dag.Params.K; i++ {
 		newBlock := prepareAndProcessBlockByParentMsgBlocks(t, dag, currentBlockA)
 		currentBlockA = newBlock
 	}
 
 	// Prepare another block chain with size K beginning with the genesis block
-	currentBlockB := dag.dagParams.GenesisBlock
-	for i := dagconfig.KType(0); i < dag.dagParams.K; i++ {
+	currentBlockB := dag.Params.GenesisBlock
+	for i := dagconfig.KType(0); i < dag.Params.K; i++ {
 		newBlock := prepareAndProcessBlockByParentMsgBlocks(t, dag, currentBlockB)
 		currentBlockB = newBlock
 	}
@@ -342,8 +343,8 @@ func TestGHOSTDAGErrors(t *testing.T) {
 	defer teardownFunc()
 
 	// Add two child blocks to the genesis
-	block1 := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.dagParams.GenesisBlock)
-	block2 := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.dagParams.GenesisBlock)
+	block1 := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.Params.GenesisBlock)
+	block2 := prepareAndProcessBlockByParentMsgBlocks(t, dag, dag.Params.GenesisBlock)
 
 	// Add a child block to the previous two blocks
 	block3 := prepareAndProcessBlockByParentMsgBlocks(t, dag, block1, block2)
@@ -351,7 +352,7 @@ func TestGHOSTDAGErrors(t *testing.T) {
 	// Clear the reachability store
 	dag.reachabilityTree.store.loaded = map[daghash.Hash]*reachabilityData{}
 
-	dbTx, err := dbaccess.NewTx()
+	dbTx, err := dag.databaseContext.NewTx()
 	if err != nil {
 		t.Fatalf("NewTx: %s", err)
 	}

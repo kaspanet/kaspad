@@ -1,10 +1,11 @@
 package blockdag
 
 import (
-	"github.com/kaspanet/kaspad/util"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/kaspanet/kaspad/util"
 
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -89,18 +90,18 @@ func TestProcessDelayedBlocks(t *testing.T) {
 		}
 	}()
 
-	initialTime := dag1.dagParams.GenesisBlock.Header.Timestamp
+	initialTime := dag1.Params.GenesisBlock.Header.Timestamp
 	// Here we use a fake time source that returns a timestamp
 	// one hour into the future to make delayedBlock artificially
 	// valid.
 	dag1.timeSource = newFakeTimeSource(initialTime.Add(time.Hour))
 
-	delayedBlock, err := PrepareBlockForTest(dag1, []*daghash.Hash{dag1.dagParams.GenesisBlock.BlockHash()}, nil)
+	delayedBlock, err := PrepareBlockForTest(dag1, []*daghash.Hash{dag1.Params.GenesisBlock.BlockHash()}, nil)
 	if err != nil {
 		t.Fatalf("error in PrepareBlockForTest: %s", err)
 	}
 
-	blockDelay := time.Duration(dag1.dagParams.TimestampDeviationTolerance*uint64(dag1.targetTimePerBlock)+5) * time.Second
+	blockDelay := time.Duration(dag1.Params.TimestampDeviationTolerance)*dag1.Params.TargetTimePerBlock + 5*time.Second
 	delayedBlock.Header.Timestamp = initialTime.Add(blockDelay)
 
 	isOrphan, isDelayed, err := dag1.ProcessBlock(util.NewBlock(delayedBlock), BFNoPoWCheck)
@@ -177,7 +178,7 @@ func TestProcessDelayedBlocks(t *testing.T) {
 		t.Errorf("dag.IsKnownBlock should return true for a child of a delayed block")
 	}
 
-	blockBeforeDelay, err := PrepareBlockForTest(dag2, []*daghash.Hash{dag2.dagParams.GenesisBlock.BlockHash()}, nil)
+	blockBeforeDelay, err := PrepareBlockForTest(dag2, []*daghash.Hash{dag2.Params.GenesisBlock.BlockHash()}, nil)
 	if err != nil {
 		t.Fatalf("error in PrepareBlockForTest: %s", err)
 	}
@@ -202,12 +203,15 @@ func TestProcessDelayedBlocks(t *testing.T) {
 	}
 
 	// We advance the clock to the point where delayedBlock timestamp is valid.
-	deviationTolerance := int64(dag2.TimestampDeviationTolerance) * dag2.targetTimePerBlock
-	secondsUntilDelayedBlockIsValid := delayedBlock.Header.Timestamp.Unix() - deviationTolerance - dag2.Now().Unix() + 1
-	dag2.timeSource = newFakeTimeSource(initialTime.Add(time.Duration(secondsUntilDelayedBlockIsValid) * time.Second))
+	deviationTolerance := time.Duration(dag2.TimestampDeviationTolerance) * dag2.Params.TargetTimePerBlock
+	timeUntilDelayedBlockIsValid := delayedBlock.Header.Timestamp.
+		Add(-deviationTolerance).
+		Sub(dag2.Now()) +
+		time.Second
+	dag2.timeSource = newFakeTimeSource(initialTime.Add(timeUntilDelayedBlockIsValid))
 
 	blockAfterDelay, err := PrepareBlockForTest(dag2,
-		[]*daghash.Hash{dag2.dagParams.GenesisBlock.BlockHash()},
+		[]*daghash.Hash{dag2.Params.GenesisBlock.BlockHash()},
 		nil)
 	if err != nil {
 		t.Fatalf("error in PrepareBlockForTest: %s", err)

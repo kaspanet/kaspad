@@ -6,14 +6,13 @@ package mempool
 
 import (
 	"bytes"
-	"github.com/pkg/errors"
-	"testing"
-	"time"
-
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/wire"
+	"github.com/pkg/errors"
+	"testing"
 )
 
 // TestCalcMinRequiredTxRelayFee tests the calcMinRequiredTxRelayFee API.
@@ -199,7 +198,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 		tx         *wire.MsgTx
 		height     uint64
 		isStandard bool
-		code       wire.RejectCode
+		code       RejectCode
 	}{
 		{
 			name:       "Typical pay-to-pubkey-hash transaction",
@@ -212,7 +211,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 			tx:         wire.NewNativeMsgTx(wire.TxVersion+1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{&dummyTxOut}),
 			height:     300000,
 			isStandard: false,
-			code:       wire.RejectNonstandard,
+			code:       RejectNonstandard,
 		},
 		{
 			name: "Transaction is not finalized",
@@ -223,7 +222,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 			}}, []*wire.TxOut{&dummyTxOut}, 300001),
 			height:     300000,
 			isStandard: false,
-			code:       wire.RejectNonstandard,
+			code:       RejectNonstandard,
 		},
 		{
 			name: "Transaction size is too large",
@@ -234,7 +233,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 			}}),
 			height:     300000,
 			isStandard: false,
-			code:       wire.RejectNonstandard,
+			code:       RejectNonstandard,
 		},
 		{
 			name: "Signature script size is too large",
@@ -246,7 +245,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 			}}, []*wire.TxOut{&dummyTxOut}),
 			height:     300000,
 			isStandard: false,
-			code:       wire.RejectNonstandard,
+			code:       RejectNonstandard,
 		},
 		{
 			name: "Signature script that does more than push data",
@@ -258,7 +257,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 			}}, []*wire.TxOut{&dummyTxOut}),
 			height:     300000,
 			isStandard: false,
-			code:       wire.RejectNonstandard,
+			code:       RejectNonstandard,
 		},
 		{
 			name: "Valid but non standard public key script",
@@ -268,7 +267,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 			}}),
 			height:     300000,
 			isStandard: false,
-			code:       wire.RejectNonstandard,
+			code:       RejectNonstandard,
 		},
 		{
 			name: "Dust output",
@@ -278,7 +277,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 			}}),
 			height:     300000,
 			isStandard: false,
-			code:       wire.RejectDust,
+			code:       RejectDust,
 		},
 		{
 			name: "Nulldata transaction",
@@ -288,11 +287,11 @@ func TestCheckTransactionStandard(t *testing.T) {
 			}}),
 			height:     300000,
 			isStandard: false,
-			code:       wire.RejectNonstandard,
+			code:       RejectNonstandard,
 		},
 	}
 
-	pastMedianTime := time.Now()
+	pastMedianTime := mstime.Now()
 	for _, test := range tests {
 		// Ensure standardness is as expected.
 		err := checkTransactionStandard(util.NewTx(test.tx),

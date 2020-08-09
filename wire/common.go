@@ -7,13 +7,14 @@ package wire
 import (
 	"encoding/binary"
 	"fmt"
-	"io"
-	"math"
-	"time"
-
+	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/util/binaryserializer"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"github.com/pkg/errors"
+	"io"
+	"math"
 )
 
 // MaxVarIntPayload is the maximum payload size for a variable length integer.
@@ -34,10 +35,13 @@ var (
 var errNonCanonicalVarInt = "non-canonical varint %x - discriminant %x must " +
 	"encode a value greater than %x"
 
-// int64Time represents a unix timestamp encoded with an int64. It is used as
-// a way to signal the readElement function how to decode a timestamp into a Go
-// time.Time since it is otherwise ambiguous.
-type int64Time time.Time
+// errNoEncodingForType signifies that there's no encoding for the given type.
+var errNoEncodingForType = errors.New("there's no encoding for this type")
+
+// int64Time represents a unix timestamp with milliseconds precision encoded with
+// an int64. It is used as a way to signal the readElement function how to decode
+// a timestamp into a Go mstime.Time since it is otherwise ambiguous.
+type int64Time mstime.Time
 
 // ReadElement reads the next sequence of bytes from r using little endian
 // depending on the concrete type of element pointed to.
@@ -77,6 +81,14 @@ func ReadElement(r io.Reader, element interface{}) error {
 		*e = rv
 		return nil
 
+	case *uint8:
+		rv, err := binaryserializer.Uint8(r)
+		if err != nil {
+			return err
+		}
+		*e = rv
+		return nil
+
 	case *bool:
 		rv, err := binaryserializer.Uint8(r)
 		if err != nil {
@@ -95,7 +107,7 @@ func ReadElement(r io.Reader, element interface{}) error {
 		if err != nil {
 			return err
 		}
-		*e = int64Time(time.Unix(int64(rv), 0))
+		*e = int64Time(mstime.UnixMilliseconds(int64(rv)))
 		return nil
 
 	// Message header checksum.
@@ -107,11 +119,12 @@ func ReadElement(r io.Reader, element interface{}) error {
 		return nil
 
 	// Message header command.
-	case *[CommandSize]uint8:
-		_, err := io.ReadFull(r, e[:])
+	case *MessageCommand:
+		rv, err := binaryserializer.Uint32(r, littleEndian)
 		if err != nil {
 			return err
 		}
+		*e = MessageCommand(rv)
 		return nil
 
 	// IP address.
@@ -128,6 +141,9 @@ func ReadElement(r io.Reader, element interface{}) error {
 			return err
 		}
 		return nil
+
+	case *id.ID:
+		return e.Deserialize(r)
 
 	case *subnetworkid.SubnetworkID:
 		_, err := io.ReadFull(r, e[:])
@@ -159,27 +175,9 @@ func ReadElement(r io.Reader, element interface{}) error {
 		}
 		*e = KaspaNet(rv)
 		return nil
-
-	case *BloomUpdateType:
-		rv, err := binaryserializer.Uint8(r)
-		if err != nil {
-			return err
-		}
-		*e = BloomUpdateType(rv)
-		return nil
-
-	case *RejectCode:
-		rv, err := binaryserializer.Uint8(r)
-		if err != nil {
-			return err
-		}
-		*e = RejectCode(rv)
-		return nil
 	}
 
-	// Fall back to the slower binary.Read if a fast path was not available
-	// above.
-	return binary.Read(r, littleEndian, element)
+	return errors.Wrapf(errNoEncodingForType, "couldn't find a way to read type %T", element)
 }
 
 // readElements reads multiple items from r. It is equivalent to multiple
@@ -227,6 +225,13 @@ func WriteElement(w io.Writer, element interface{}) error {
 		}
 		return nil
 
+	case uint8:
+		err := binaryserializer.PutUint8(w, e)
+		if err != nil {
+			return err
+		}
+		return nil
+
 	case bool:
 		var err error
 		if e {
@@ -248,8 +253,8 @@ func WriteElement(w io.Writer, element interface{}) error {
 		return nil
 
 	// Message header command.
-	case [CommandSize]uint8:
-		_, err := w.Write(e[:])
+	case MessageCommand:
+		err := binaryserializer.PutUint32(w, littleEndian, uint32(e))
 		if err != nil {
 			return err
 		}
@@ -269,6 +274,9 @@ func WriteElement(w io.Writer, element interface{}) error {
 			return err
 		}
 		return nil
+
+	case *id.ID:
+		return e.Serialize(w)
 
 	case *subnetworkid.SubnetworkID:
 		_, err := w.Write(e[:])
@@ -297,25 +305,9 @@ func WriteElement(w io.Writer, element interface{}) error {
 			return err
 		}
 		return nil
-
-	case BloomUpdateType:
-		err := binaryserializer.PutUint8(w, uint8(e))
-		if err != nil {
-			return err
-		}
-		return nil
-
-	case RejectCode:
-		err := binaryserializer.PutUint8(w, uint8(e))
-		if err != nil {
-			return err
-		}
-		return nil
 	}
 
-	// Fall back to the slower binary.Write if a fast path was not available
-	// above.
-	return binary.Write(w, littleEndian, element)
+	return errors.Wrapf(errNoEncodingForType, "couldn't find a way to write type %T", element)
 }
 
 // writeElements writes multiple items to w. It is equivalent to multiple

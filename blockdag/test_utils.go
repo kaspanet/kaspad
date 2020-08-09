@@ -5,11 +5,6 @@ package blockdag
 import (
 	"compress/bzip2"
 	"encoding/binary"
-	"github.com/kaspanet/kaspad/database/ffldb/ldb"
-	"github.com/kaspanet/kaspad/dbaccess"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/pkg/errors"
-	"github.com/syndtr/goleveldb/leveldb/opt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -18,6 +13,12 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/kaspanet/kaspad/database/ffldb/ldb"
+	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/pkg/errors"
+	"github.com/syndtr/goleveldb/leveldb/opt"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
@@ -49,9 +50,9 @@ func DAGSetup(dbName string, openDb bool, config Config) (*BlockDAG, func(), err
 	// overwrite `spawn` to count the number of running goroutines
 	spawnWaitGroup := sync.WaitGroup{}
 	realSpawn := spawn
-	spawn = func(f func()) {
+	spawn = func(name string, f func()) {
 		spawnWaitGroup.Add(1)
-		realSpawn(func() {
+		realSpawn(name, func() {
 			f()
 			spawnWaitGroup.Done()
 		})
@@ -75,17 +76,19 @@ func DAGSetup(dbName string, openDb bool, config Config) (*BlockDAG, func(), err
 
 		dbPath := filepath.Join(tmpDir, dbName)
 		_ = os.RemoveAll(dbPath)
-		err = dbaccess.Open(dbPath)
+		databaseContext, err := dbaccess.New(dbPath)
 		if err != nil {
 			return nil, nil, errors.Errorf("error creating db: %s", err)
 		}
+
+		config.DatabaseContext = databaseContext
 
 		// Setup a teardown function for cleaning up. This function is
 		// returned to the caller to be invoked when it is done testing.
 		teardown = func() {
 			spawnWaitGroup.Wait()
 			spawn = realSpawn
-			dbaccess.Close()
+			databaseContext.Close()
 			ldb.Options = originalLDBOptions
 			os.RemoveAll(dbPath)
 		}
@@ -249,7 +252,7 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 	oldVirtual := SetVirtualForTest(dag, newVirtual)
 	defer SetVirtualForTest(dag, oldVirtual)
 
-	OpTrueAddr, err := opTrueAddress(dag.dagParams.Prefix)
+	OpTrueAddr, err := opTrueAddress(dag.Params.Prefix)
 	if err != nil {
 		return nil, err
 	}

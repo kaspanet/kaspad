@@ -30,10 +30,10 @@ func TestTx(t *testing.T) {
 	}
 
 	// Ensure the command is expected value.
-	wantCmd := "tx"
+	wantCmd := MessageCommand(6)
 	msg := NewNativeMsgTx(1, nil, nil)
 	if cmd := msg.Command(); cmd != wantCmd {
-		t.Errorf("NewMsgAddr: wrong command - got %v want %v",
+		t.Errorf("NewMsgAddresses: wrong command - got %v want %v",
 			cmd, wantCmd)
 	}
 
@@ -192,7 +192,7 @@ func TestTxHashAndID(t *testing.T) {
 		return
 	}
 	payload := []byte{1, 2, 3}
-	txIns := []*TxIn{&TxIn{
+	txIns := []*TxIn{{
 		PreviousOutpoint: Outpoint{
 			Index: 0,
 			TxID:  daghash.TxID{1, 2, 3},

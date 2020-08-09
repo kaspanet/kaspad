@@ -7,6 +7,7 @@ package main
 import (
 	"encoding/binary"
 	"github.com/kaspanet/kaspad/blockdag/indexers"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 	"io"
 	"sync"
@@ -39,8 +40,8 @@ type blockImporter struct {
 	receivedLogBlocks int64
 	receivedLogTx     int64
 	lastHeight        int64
-	lastBlockTime     time.Time
-	lastLogTime       time.Time
+	lastBlockTime     mstime.Time
+	lastLogTime       mstime.Time
 }
 
 // readBlock reads the next block from the input file.
@@ -170,7 +171,7 @@ out:
 func (bi *blockImporter) logProgress() {
 	bi.receivedLogBlocks++
 
-	now := time.Now()
+	now := mstime.Now()
 	duration := now.Sub(bi.lastLogTime)
 	if duration < time.Second*time.Duration(cfg.Progress) {
 		return
@@ -264,12 +265,12 @@ func (bi *blockImporter) Import() chan *importResults {
 	// Start up the read and process handling goroutines. This setup allows
 	// blocks to be read from disk in parallel while being processed.
 	bi.wg.Add(2)
-	spawn(bi.readHandler)
-	spawn(bi.processHandler)
+	spawn("blockImporter.readHandler", bi.readHandler)
+	spawn("blockImporter.processHandler", bi.processHandler)
 
 	// Wait for the import to finish in a separate goroutine and signal
 	// the status handler when done.
-	spawn(func() {
+	spawn("blockImporter.sendToDoneChan", func() {
 		bi.wg.Wait()
 		bi.doneChan <- true
 	})
@@ -277,7 +278,7 @@ func (bi *blockImporter) Import() chan *importResults {
 	// Start the status handler and return the result channel that it will
 	// send the results on when the import is done.
 	resultChan := make(chan *importResults)
-	spawn(func() {
+	spawn("blockImporter.statusHandler", func() {
 		bi.statusHandler(resultChan)
 	})
 	return resultChan
@@ -315,6 +316,6 @@ func newBlockImporter(r io.ReadSeeker) (*blockImporter, error) {
 		errChan:      make(chan error),
 		quit:         make(chan struct{}),
 		dag:          dag,
-		lastLogTime:  time.Now(),
+		lastLogTime:  mstime.Now(),
 	}, nil
 }

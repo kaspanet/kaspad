@@ -7,16 +7,16 @@ package mempool
 import (
 	"container/list"
 	"fmt"
-	"github.com/pkg/errors"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/pkg/errors"
+
 	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/logger"
 	"github.com/kaspanet/kaspad/mining"
-	"github.com/kaspanet/kaspad/rpcmodel"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -52,15 +52,6 @@ type Config struct {
 	// Policy defines the various mempool configuration options related
 	// to policy.
 	Policy Policy
-
-	// DAGParams identifies which DAG parameters the txpool is
-	// associated with.
-	DAGParams *dagconfig.Params
-
-	// MedianTimePast defines the function to use in order to access the
-	// median time past calculated from the point-of-view of the current
-	// selected tip.
-	MedianTimePast func() time.Time
 
 	// CalcSequenceLockNoLock defines the function to use in order to generate
 	// the current sequence lock for the given transaction using the passed
@@ -124,7 +115,7 @@ type TxDesc struct {
 type orphanTx struct {
 	tx         *util.Tx
 	tag        Tag
-	expiration time.Time
+	expiration mstime.Time
 }
 
 // TxPool is used as a source of transactions that need to be mined into blocks
@@ -147,7 +138,7 @@ type TxPool struct {
 	// scanned in order to evict orphans. This is NOT a hard deadline as
 	// the scan will only run when an orphan is added to the pool as opposed
 	// to on an unconditional timer.
-	nextExpireScan time.Time
+	nextExpireScan mstime.Time
 
 	mpUTXOSet blockdag.UTXOSet
 }
@@ -231,7 +222,7 @@ func (mp *TxPool) limitNumOrphans() error {
 	// Scan through the orphan pool and remove any expired orphans when it's
 	// time. This is done for efficiency so the scan only happens
 	// periodically instead of on every orphan added to the pool.
-	if now := time.Now(); now.After(mp.nextExpireScan) {
+	if now := mstime.Now(); now.After(mp.nextExpireScan) {
 		origNumOrphans := len(mp.orphans)
 		for _, otx := range mp.orphans {
 			if now.After(otx.expiration) {
@@ -293,7 +284,7 @@ func (mp *TxPool) addOrphan(tx *util.Tx, tag Tag) {
 	mp.orphans[*tx.ID()] = &orphanTx{
 		tx:         tx,
 		tag:        tag,
-		expiration: time.Now().Add(orphanTTL),
+		expiration: mstime.Now().Add(orphanTTL),
 	}
 	for _, txIn := range tx.MsgTx().TxIn {
 		if _, exists := mp.orphansByPrev[txIn.PreviousOutpoint]; !exists {
@@ -326,7 +317,7 @@ func (mp *TxPool) maybeAddOrphan(tx *util.Tx, tag Tag) error {
 		str := fmt.Sprintf("orphan transaction size of %d bytes is "+
 			"larger than max allowed size of %d bytes",
 			serializedLen, mp.cfg.Policy.MaxOrphanTxSize)
-		return txRuleError(wire.RejectNonstandard, str)
+		return txRuleError(RejectNonstandard, str)
 	}
 
 	// Add the orphan if the none of the above disqualified it.
@@ -355,11 +346,11 @@ func (mp *TxPool) removeOrphanDoubleSpends(tx *util.Tx) {
 // exists in the main pool.
 //
 // This function MUST be called with the mempool lock held (for reads).
-func (mp *TxPool) isTransactionInPool(hash *daghash.TxID) bool {
-	if _, exists := mp.pool[*hash]; exists {
+func (mp *TxPool) isTransactionInPool(txID *daghash.TxID) bool {
+	if _, exists := mp.pool[*txID]; exists {
 		return true
 	}
-	return mp.isInDependPool(hash)
+	return mp.isInDependPool(txID)
 }
 
 // IsTransactionInPool returns whether or not the passed transaction already
@@ -402,8 +393,8 @@ func (mp *TxPool) IsInDependPool(hash *daghash.TxID) bool {
 // in the orphan pool.
 //
 // This function MUST be called with the mempool lock held (for reads).
-func (mp *TxPool) isOrphanInPool(hash *daghash.TxID) bool {
-	if _, exists := mp.orphans[*hash]; exists {
+func (mp *TxPool) isOrphanInPool(txID *daghash.TxID) bool {
+	if _, exists := mp.orphans[*txID]; exists {
 		return true
 	}
 
@@ -427,19 +418,19 @@ func (mp *TxPool) IsOrphanInPool(hash *daghash.TxID) bool {
 // in the main pool or in the orphan pool.
 //
 // This function MUST be called with the mempool lock held (for reads).
-func (mp *TxPool) haveTransaction(hash *daghash.TxID) bool {
-	return mp.isTransactionInPool(hash) || mp.isOrphanInPool(hash)
+func (mp *TxPool) haveTransaction(txID *daghash.TxID) bool {
+	return mp.isTransactionInPool(txID) || mp.isOrphanInPool(txID)
 }
 
 // HaveTransaction returns whether or not the passed transaction already exists
 // in the main pool or in the orphan pool.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) HaveTransaction(hash *daghash.TxID) bool {
+func (mp *TxPool) HaveTransaction(txID *daghash.TxID) bool {
 	// Protect concurrent access.
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
-	haveTx := mp.haveTransaction(hash)
+	haveTx := mp.haveTransaction(txID)
 
 	return haveTx
 }
@@ -474,7 +465,7 @@ func (mp *TxPool) removeTransactions(txs []*util.Tx) error {
 	if err != nil {
 		return err
 	}
-	atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
+	atomic.StoreInt64(&mp.lastUpdated, mstime.Now().UnixMilliseconds())
 
 	return nil
 }
@@ -512,7 +503,7 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeDependants bool, restoreI
 	if err != nil {
 		return err
 	}
-	atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
+	atomic.StoreInt64(&mp.lastUpdated, mstime.Now().UnixMilliseconds())
 
 	return nil
 }
@@ -647,17 +638,25 @@ func (mp *TxPool) RemoveTransactions(txs []*util.Tx) error {
 // contain transactions which were previously unknown to the memory pool.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
+func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) error {
 	// Protect concurrent access.
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
+	return mp.removeDoubleSpends(tx)
+}
+
+func (mp *TxPool) removeDoubleSpends(tx *util.Tx) error {
 	for _, txIn := range tx.MsgTx().TxIn {
 		if txRedeemer, ok := mp.outpoints[txIn.PreviousOutpoint]; ok {
 			if !txRedeemer.ID().IsEqual(tx.ID()) {
-				mp.removeTransaction(txRedeemer, true, false)
+				err := mp.removeTransaction(txRedeemer, true, false)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
+	return nil
 }
 
 // addTransaction adds the passed transaction to the memory pool. It should
@@ -675,7 +674,7 @@ func (mp *TxPool) addTransaction(tx *util.Tx, fee uint64, parentsInPool []*wire.
 	txD := &TxDesc{
 		TxDesc: mining.TxDesc{
 			Tx:             tx,
-			Added:          time.Now(),
+			Added:          mstime.Now(),
 			Fee:            fee,
 			FeePerMegaGram: fee * 1e6 / mass,
 		},
@@ -702,7 +701,7 @@ func (mp *TxPool) addTransaction(tx *util.Tx, fee uint64, parentsInPool []*wire.
 	} else if !isAccepted {
 		return nil, errors.Errorf("unexpectedly failed to add tx %s to the mempool utxo set", tx.ID())
 	}
-	atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
+	atomic.StoreInt64(&mp.lastUpdated, mstime.Now().UnixMilliseconds())
 
 	return txD, nil
 }
@@ -719,7 +718,7 @@ func (mp *TxPool) checkPoolDoubleSpend(tx *util.Tx) error {
 			str := fmt.Sprintf("output %s already spent by "+
 				"transaction %s in the memory pool",
 				txIn.PreviousOutpoint, txR.ID())
-			return txRuleError(wire.RejectDuplicate, str)
+			return txRuleError(RejectDuplicate, str)
 		}
 	}
 
@@ -749,34 +748,47 @@ func (mp *TxPool) fetchTxDesc(txID *daghash.TxID) (*TxDesc, bool) {
 // FetchTxDesc returns the requested TxDesc from the transaction pool.
 // This only fetches from the main transaction pool and does not include
 // orphans.
+// returns false in the second return parameter if transaction was not found
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) FetchTxDesc(txID *daghash.TxID) (*TxDesc, error) {
+func (mp *TxPool) FetchTxDesc(txID *daghash.TxID) (*TxDesc, bool) {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
 	if txDesc, exists := mp.fetchTxDesc(txID); exists {
-		return txDesc, nil
+		return txDesc, true
 	}
 
-	return nil, errors.Errorf("transaction is not in the pool")
+	return nil, false
 }
 
 // FetchTransaction returns the requested transaction from the transaction pool.
 // This only fetches from the main transaction pool and does not include
 // orphans.
+// returns false in the second return parameter if transaction was not found
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) FetchTransaction(txID *daghash.TxID) (*util.Tx, error) {
+func (mp *TxPool) FetchTransaction(txID *daghash.TxID) (*util.Tx, bool) {
 	// Protect concurrent access.
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
 	if txDesc, exists := mp.fetchTxDesc(txID); exists {
-		return txDesc.Tx, nil
+		return txDesc.Tx, true
 	}
 
-	return nil, errors.Errorf("transaction is not in the pool")
+	return nil, false
+}
+
+// checkTransactionMassSanity checks that a transaction must not exceed the maximum allowed block mass when serialized.
+func checkTransactionMassSanity(tx *util.Tx) error {
+	serializedTxSize := tx.MsgTx().SerializeSize()
+	if serializedTxSize*blockdag.MassPerTxByte > wire.MaxMassPerTx {
+		str := fmt.Sprintf("serialized transaction is too big - got "+
+			"%d, max %d", serializedTxSize, wire.MaxMassPerBlock)
+		return txRuleError(RejectInvalid, str)
+	}
+	return nil
 }
 
 // maybeAcceptTransaction is the main workhorse for handling insertion of new
@@ -801,7 +813,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 		mp.isOrphanInPool(txID)) {
 
 		str := fmt.Sprintf("already have transaction %s", txID)
-		return nil, nil, txRuleError(wire.RejectDuplicate, str)
+		return nil, nil, txRuleError(RejectDuplicate, str)
 	}
 
 	// Don't accept the transaction if it's from an incompatible subnetwork.
@@ -809,21 +821,26 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 	if !tx.MsgTx().IsSubnetworkCompatible(subnetworkID) {
 		str := fmt.Sprintf("tx %s belongs to an invalid subnetwork %s, DAG subnetwork %s", tx.ID(),
 			tx.MsgTx().SubnetworkID, subnetworkID)
-		return nil, nil, txRuleError(wire.RejectInvalid, str)
+		return nil, nil, txRuleError(RejectInvalid, str)
 	}
 
 	// Disallow non-native/coinbase subnetworks in networks that don't allow them
-	if !mp.cfg.DAGParams.EnableNonNativeSubnetworks {
+	if !mp.cfg.DAG.Params.EnableNonNativeSubnetworks {
 		if !(tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
 			tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase)) {
-			return nil, nil, txRuleError(wire.RejectInvalid, "non-native/coinbase subnetworks are not allowed")
+			return nil, nil, txRuleError(RejectInvalid, "non-native/coinbase subnetworks are not allowed")
 		}
+	}
+
+	err := checkTransactionMassSanity(tx)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	// Perform preliminary sanity checks on the transaction. This makes
 	// use of blockDAG which contains the invariant rules for what
 	// transactions are allowed into blocks.
-	err := blockdag.CheckTransactionSanity(tx, subnetworkID)
+	err = blockdag.CheckTransactionSanity(tx, subnetworkID)
 	if err != nil {
 		var ruleErr blockdag.RuleError
 		if ok := errors.As(err, &ruleErr); ok {
@@ -835,7 +852,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 	// Check that transaction does not overuse GAS
 	msgTx := tx.MsgTx()
 	if !msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) && !msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) {
-		gasLimit, err := blockdag.GasLimit(&msgTx.SubnetworkID)
+		gasLimit, err := mp.cfg.DAG.GasLimit(&msgTx.SubnetworkID)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -852,14 +869,14 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 	if tx.IsCoinBase() {
 		str := fmt.Sprintf("transaction %s is an individual coinbase transaction",
 			txID)
-		return nil, nil, txRuleError(wire.RejectInvalid, str)
+		return nil, nil, txRuleError(RejectInvalid, str)
 	}
 
 	// We take the blue score of the current virtual block to validate
 	// the transaction as though it was mined on top of the current tips
 	nextBlockBlueScore := mp.cfg.DAG.VirtualBlueScore()
 
-	medianTimePast := mp.cfg.MedianTimePast()
+	medianTimePast := mp.cfg.DAG.CalcPastMedianTime()
 
 	// Don't allow non-standard transactions if the network parameters
 	// forbid their acceptance.
@@ -872,7 +889,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 			// a non standard error.
 			rejectCode, found := extractRejectCode(err)
 			if !found {
-				rejectCode = wire.RejectNonstandard
+				rejectCode = RejectNonstandard
 			}
 			str := fmt.Sprintf("transaction %s is not standard: %s",
 				txID, err)
@@ -900,7 +917,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 		prevOut.Index = uint32(txOutIdx)
 		_, ok := mp.mpUTXOSet.Get(prevOut)
 		if ok {
-			return nil, nil, txRuleError(wire.RejectDuplicate,
+			return nil, nil, txRuleError(RejectDuplicate,
 				"transaction already exists")
 		}
 	}
@@ -941,7 +958,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 	}
 	if !blockdag.SequenceLockActive(sequenceLock, nextBlockBlueScore,
 		medianTimePast) {
-		return nil, nil, txRuleError(wire.RejectNonstandard,
+		return nil, nil, txRuleError(RejectNonstandard,
 			"transaction's sequence locks on inputs not met")
 	}
 
@@ -961,7 +978,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 	// Also returns the fees associated with the transaction which will be
 	// used later.
 	txFee, err := blockdag.CheckTransactionInputsAndCalulateFee(tx, nextBlockBlueScore,
-		mp.mpUTXOSet, mp.cfg.DAGParams, false)
+		mp.mpUTXOSet, mp.cfg.DAG.Params, false)
 	if err != nil {
 		var dagRuleErr blockdag.RuleError
 		if ok := errors.As(err, &dagRuleErr); ok {
@@ -980,7 +997,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 			// a non standard error.
 			rejectCode, found := extractRejectCode(err)
 			if !found {
-				rejectCode = wire.RejectNonstandard
+				rejectCode = RejectNonstandard
 			}
 			str := fmt.Sprintf("transaction %s has a non-standard "+
 				"input: %s", txID, err)
@@ -995,7 +1012,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 	// Don't allow transactions with 0 fees.
 	if txFee == 0 {
 		str := fmt.Sprintf("transaction %s has 0 fees", txID)
-		return nil, nil, txRuleError(wire.RejectInsufficientFee, str)
+		return nil, nil, txRuleError(RejectInsufficientFee, str)
 	}
 
 	// Don't allow transactions with fees too low to get into a mined block.
@@ -1016,7 +1033,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 		str := fmt.Sprintf("transaction %s has %d fees which is under "+
 			"the required amount of %d", txID, txFee,
 			minFee)
-		return nil, nil, txRuleError(wire.RejectInsufficientFee, str)
+		return nil, nil, txRuleError(RejectInsufficientFee, str)
 	}
 
 	// Verify crypto signatures for each input and reject the transaction if
@@ -1203,7 +1220,7 @@ func (mp *TxPool) ProcessTransaction(tx *util.Tx, allowOrphan bool, tag Tag) ([]
 		str := fmt.Sprintf("orphan transaction %s references "+
 			"outputs of unknown or fully-spent "+
 			"transaction %s", tx.ID(), missingParents[0])
-		return nil, txRuleError(wire.RejectDuplicate, str)
+		return nil, txRuleError(RejectDuplicate, str)
 	}
 
 	// Potentially add the orphan transaction to the orphan pool.
@@ -1286,55 +1303,20 @@ func (mp *TxPool) MiningDescs() []*mining.TxDesc {
 	return descs
 }
 
-// RawMempoolVerbose returns all of the entries in the mempool as a fully
-// populated jsonrpc result.
-//
-// This function is safe for concurrent access.
-func (mp *TxPool) RawMempoolVerbose() map[string]*rpcmodel.GetRawMempoolVerboseResult {
-	mp.mtx.RLock()
-	defer mp.mtx.RUnlock()
-
-	result := make(map[string]*rpcmodel.GetRawMempoolVerboseResult, len(mp.pool))
-
-	for _, desc := range mp.pool {
-		// Calculate the current priority based on the inputs to
-		// the transaction. Use zero if one or more of the
-		// input transactions can't be found for some reason.
-		tx := desc.Tx
-
-		mpd := &rpcmodel.GetRawMempoolVerboseResult{
-			Size:    int32(tx.MsgTx().SerializeSize()),
-			Fee:     util.Amount(desc.Fee).ToKAS(),
-			Time:    desc.Added.Unix(),
-			Depends: make([]string, 0),
-		}
-		for _, txIn := range tx.MsgTx().TxIn {
-			txID := &txIn.PreviousOutpoint.TxID
-			if mp.haveTransaction(txID) {
-				mpd.Depends = append(mpd.Depends,
-					txID.String())
-			}
-		}
-
-		result[tx.ID().String()] = mpd
-	}
-
-	return result
-}
-
 // LastUpdated returns the last time a transaction was added to or removed from
 // the main pool. It does not include the orphan pool.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) LastUpdated() time.Time {
-	return time.Unix(atomic.LoadInt64(&mp.lastUpdated), 0)
+func (mp *TxPool) LastUpdated() mstime.Time {
+	return mstime.UnixMilliseconds(atomic.LoadInt64(&mp.lastUpdated))
 }
 
-// HandleNewBlock removes all the transactions in the new block
+// HandleNewBlockOld removes all the transactions in the new block
 // from the mempool and the orphan pool, and it also removes
 // from the mempool transactions that double spend a
 // transaction that is already in the DAG
-func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan NewBlockMsg) error {
+func (mp *TxPool) HandleNewBlockOld(block *util.Block, txChan chan NewBlockMsg) error {
+	// TODO(libp2p) Remove this function
 	oldUTXOSet := mp.mpUTXOSet
 
 	// Remove all of the transactions (except the coinbase) in the
@@ -1361,6 +1343,46 @@ func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan NewBlockMsg) err
 	return nil
 }
 
+// HandleNewBlock removes all the transactions in the new block
+// from the mempool and the orphan pool, and it also removes
+// from the mempool transactions that double spend a
+// transaction that is already in the DAG
+func (mp *TxPool) HandleNewBlock(block *util.Block) ([]*util.Tx, error) {
+	// Protect concurrent access.
+	mp.cfg.DAG.RLock()
+	defer mp.cfg.DAG.RUnlock()
+	mp.mtx.Lock()
+	defer mp.mtx.Unlock()
+
+	oldUTXOSet := mp.mpUTXOSet
+
+	// Remove all of the transactions (except the coinbase) in the
+	// connected block from the transaction pool. Secondly, remove any
+	// transactions which are now double spends as a result of these
+	// new transactions. Finally, remove any transaction that is
+	// no longer an orphan. Transactions which depend on a confirmed
+	// transaction are NOT removed recursively because they are still
+	// valid.
+	err := mp.removeTransactions(block.Transactions()[util.CoinbaseTransactionIndex+1:])
+	if err != nil {
+		mp.mpUTXOSet = oldUTXOSet
+		return nil, err
+	}
+	acceptedTxs := make([]*util.Tx, 0)
+	for _, tx := range block.Transactions()[util.CoinbaseTransactionIndex+1:] {
+		err := mp.removeDoubleSpends(tx)
+		if err != nil {
+			return nil, err
+		}
+		mp.removeOrphan(tx, false)
+		acceptedOrphans := mp.processOrphans(tx)
+		for _, acceptedOrphan := range acceptedOrphans {
+			acceptedTxs = append(acceptedTxs, acceptedOrphan.Tx)
+		}
+	}
+	return acceptedTxs, nil
+}
+
 // New returns a new memory pool for validating and storing standalone
 // transactions until they are mined into a block.
 func New(cfg *Config) *TxPool {
@@ -1373,7 +1395,7 @@ func New(cfg *Config) *TxPool {
 		dependsByPrev:  make(map[wire.Outpoint]map[daghash.TxID]*TxDesc),
 		orphans:        make(map[daghash.TxID]*orphanTx),
 		orphansByPrev:  make(map[wire.Outpoint]map[daghash.TxID]*util.Tx),
-		nextExpireScan: time.Now().Add(orphanExpireScanInterval),
+		nextExpireScan: mstime.Now().Add(orphanExpireScanInterval),
 		outpoints:      make(map[wire.Outpoint]*util.Tx),
 		mpUTXOSet:      mpUTXO,
 	}

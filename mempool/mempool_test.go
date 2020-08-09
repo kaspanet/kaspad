@@ -10,10 +10,11 @@ import (
 	"math"
 	"reflect"
 	"runtime"
+	"strings"
 	"sync"
 	"testing"
-	"time"
 
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -34,7 +35,7 @@ import (
 type fakeDAG struct {
 	sync.RWMutex
 	currentBlueScore uint64
-	medianTimePast   time.Time
+	medianTimePast   mstime.Time
 }
 
 // BlueScore returns the current blue score associated with the fake DAG
@@ -54,7 +55,7 @@ func (s *fakeDAG) SetBlueScore(blueScore uint64) {
 
 // MedianTimePast returns the current median time past associated with the fake
 // DAG instance.
-func (s *fakeDAG) MedianTimePast() time.Time {
+func (s *fakeDAG) MedianTimePast() mstime.Time {
 	s.RLock()
 	defer s.RUnlock()
 	mtp := s.medianTimePast
@@ -63,7 +64,7 @@ func (s *fakeDAG) MedianTimePast() time.Time {
 
 // SetMedianTimePast sets the current median time past associated with the fake
 // DAG instance.
-func (s *fakeDAG) SetMedianTimePast(mtp time.Time) {
+func (s *fakeDAG) SetMedianTimePast(mtp mstime.Time) {
 	s.Lock()
 	defer s.Unlock()
 	s.medianTimePast = mtp
@@ -73,7 +74,7 @@ func calcSequenceLock(tx *util.Tx,
 	utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 
 	return &blockdag.SequenceLock{
-		Seconds:        -1,
+		Milliseconds:   -1,
 		BlockBlueScore: -1,
 	}, nil
 }
@@ -254,7 +255,7 @@ func (tc *testContext) mineTransactions(transactions []*util.Tx, numberOfBlocks 
 		if i == 0 {
 			blockTxs = msgTxs
 		}
-		block, err := mining.PrepareBlockForTest(tc.harness.txPool.cfg.DAG, tc.harness.txPool.cfg.DAGParams, tc.harness.txPool.cfg.DAG.TipHashes(), blockTxs, false)
+		block, err := mining.PrepareBlockForTest(tc.harness.txPool.cfg.DAG, tc.harness.txPool.cfg.DAG.TipHashes(), blockTxs, false)
 		if err != nil {
 			tc.t.Fatalf("PrepareBlockForTest: %s", err)
 		}
@@ -275,16 +276,16 @@ func (tc *testContext) mineTransactions(transactions []*util.Tx, numberOfBlocks 
 		// Handle new block by pool
 		ch := make(chan NewBlockMsg)
 		go func() {
-			err = tc.harness.txPool.HandleNewBlock(utilBlock, ch)
+			err = tc.harness.txPool.HandleNewBlockOld(utilBlock, ch)
 			close(ch)
 		}()
 
-		// process messages pushed by HandleNewBlock
+		// process messages pushed by HandleNewBlockOld
 		for range ch {
 		}
-		// ensure that HandleNewBlock has not failed
+		// ensure that HandleNewBlockOld has not failed
 		if err != nil {
-			tc.t.Fatalf("HandleNewBlock failed to handle block %s", err)
+			tc.t.Fatalf("HandleNewBlockOld failed to handle block %s", err)
 		}
 
 		coinbaseTx := block.Transactions[util.CoinbaseTransactionIndex]
@@ -347,8 +348,6 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 				MinRelayTxFee:   1000, // 1 sompi per byte
 				MaxTxVersion:    1,
 			},
-			DAGParams:              &params,
-			MedianTimePast:         fDAG.MedianTimePast,
 			CalcSequenceLockNoLock: calcSequenceLock,
 			SigCache:               nil,
 		}),
@@ -364,7 +363,7 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 	} else {
 		harness.dag.SetBlueScore(curHeight + 1)
 	}
-	harness.dag.SetMedianTimePast(time.Now())
+	harness.dag.SetMedianTimePast(mstime.Now())
 
 	return tc, outpoints, teardownFunc, nil
 }
@@ -488,7 +487,7 @@ func TestProcessTransaction(t *testing.T) {
 
 	harness := tc.harness
 
-	//Checks that a transaction cannot be added to the transaction pool if it's already there
+	// Checks that a transaction cannot be added to the transaction pool if it's already there
 	tx, err := harness.createTx(spendableOuts[0], uint64(txRelayFeeForTest), 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
@@ -501,8 +500,8 @@ func TestProcessTransaction(t *testing.T) {
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
-	if code, _ := extractRejectCode(err); code != wire.RejectDuplicate {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectDuplicate, code)
+	if code, _ := extractRejectCode(err); code != RejectDuplicate {
+		t.Errorf("Unexpected error code. Expected %v but got %v", RejectDuplicate, code)
 	}
 
 	orphanedTx, err := harness.CreateSignedTx([]spendableOutpoint{{
@@ -513,8 +512,8 @@ func TestProcessTransaction(t *testing.T) {
 		t.Fatalf("unable to create signed tx: %v", err)
 	}
 
-	//Checks that an orphaned transaction cannot be
-	//added to the orphan pool if MaxOrphanTxs is 0
+	// Checks that an orphaned transaction cannot be
+	// added to the orphan pool if MaxOrphanTxs is 0
 	harness.txPool.cfg.Policy.MaxOrphanTxs = 0
 	_, err = harness.txPool.ProcessTransaction(orphanedTx, true, 0)
 	if err != nil {
@@ -528,17 +527,17 @@ func TestProcessTransaction(t *testing.T) {
 		t.Errorf("ProcessTransaction: unexpected error: %v", err)
 	}
 
-	//Checks that an orphaned transaction cannot be
-	//added to the orphan pool if it's already there
+	// Checks that an orphaned transaction cannot be
+	// added to the orphan pool if it's already there
 	_, err = harness.txPool.ProcessTransaction(tx, true, 0)
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
-	if code, _ := extractRejectCode(err); code != wire.RejectDuplicate {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectDuplicate, code)
+	if code, _ := extractRejectCode(err); code != RejectDuplicate {
+		t.Errorf("Unexpected error code. Expected %v but got %v", RejectDuplicate, code)
 	}
 
-	//Checks that a coinbase transaction cannot be added to the mempool
+	// Checks that a coinbase transaction cannot be added to the mempool
 	currentBlueScore := harness.dag.BlueScore()
 	coinbase, err := harness.CreateCoinbaseTx(currentBlueScore+1, 1)
 	if err != nil {
@@ -548,11 +547,29 @@ func TestProcessTransaction(t *testing.T) {
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
-	if code, _ := extractRejectCode(err); code != wire.RejectInvalid {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectInvalid, code)
+	if code, _ := extractRejectCode(err); code != RejectInvalid {
+		t.Errorf("Unexpected error code. Expected %v but got %v", RejectInvalid, code)
 	}
 
-	//Checks that non standard transactions are rejected from the mempool
+	// Checks that a transaction is rejected from the mempool if its
+	// size is above 50KB, and its fee is below the minimum relay fee
+	tooBigTx, err := harness.createTx(spendableOuts[1], 0, 1000000) // A transaction with 2000 outputs, in order to make it bigger than 50kb
+	if err != nil {
+		t.Fatalf("unable to create transaction: %v", err)
+	}
+	_, err = harness.txPool.ProcessTransaction(tooBigTx, true, 0)
+	if err == nil {
+		t.Errorf("ProcessTransaction: expected an error, not nil")
+	}
+	if code, _ := extractRejectCode(err); code != RejectInvalid {
+		t.Errorf("Unexpected error code. Expected %v but got %v", RejectInsufficientFee, code)
+	}
+	expectedErrStr := "serialized transaction is too big"
+	if !strings.Contains(err.Error(), expectedErrStr) {
+		t.Fatalf("ProcessBlock expected error \"%v\" but got \"%v\"", expectedErrStr, err)
+	}
+
+	// Checks that non standard transactions are rejected from the mempool
 	nonStdTx, err := harness.createTx(spendableOuts[0], 0, 1)
 	if err != nil {
 		t.Fatalf("Unexpected error from harness.createTx: %s", err)
@@ -562,13 +579,13 @@ func TestProcessTransaction(t *testing.T) {
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
-	if code, _ := extractRejectCode(err); code != wire.RejectNonstandard {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectNonstandard, code)
+	if code, _ := extractRejectCode(err); code != RejectNonstandard {
+		t.Errorf("Unexpected error code. Expected %v but got %v", RejectNonstandard, code)
 	}
 
-	//Checks that a transaction is rejected from the mempool if its
-	//size is above 50KB, and its fee is below the minimum relay fee
-	bigLowFeeTx, err := harness.createTx(spendableOuts[1], 0, 2000) //A transaction with 2000 outputs, in order to make it bigger than 50kb
+	// Checks that a transaction is rejected from the mempool if its
+	// size is above 50KB, and its fee is below the minimum relay fee
+	bigLowFeeTx, err := harness.createTx(spendableOuts[1], 0, 2000) // A transaction with 2000 outputs, in order to make it bigger than 50kb
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
@@ -576,13 +593,13 @@ func TestProcessTransaction(t *testing.T) {
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
-	if code, _ := extractRejectCode(err); code != wire.RejectInsufficientFee {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectInsufficientFee, code)
+	if code, _ := extractRejectCode(err); code != RejectInsufficientFee {
+		t.Errorf("Unexpected error code. Expected %v but got %v", RejectInsufficientFee, code)
 	}
 
-	//Checks that if a ps2h sigscript has more sigops then maxStandardP2SHSigOps, it gets rejected
+	// Checks that if a ps2h sigscript has more sigops then maxStandardP2SHSigOps, it gets rejected
 
-	//maxStandardP2SHSigOps is 15, so 16 OpCheckSig will make it a non standard script
+	// maxStandardP2SHSigOps is 15, so 16 OpCheckSig will make it a non standard script
 	nonStdSigScript, err := txscript.NewScriptBuilder().
 		AddOp(txscript.OpCheckSig).
 		AddOp(txscript.OpCheckSig).
@@ -658,10 +675,10 @@ func TestProcessTransaction(t *testing.T) {
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
-	if code, _ := extractRejectCode(err); code != wire.RejectNonstandard {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectNonstandard, code)
+	if code, _ := extractRejectCode(err); code != RejectNonstandard {
+		t.Errorf("Unexpected error code. Expected %v but got %v", RejectNonstandard, code)
 	}
-	expectedErrStr := fmt.Sprintf("transaction %v has a non-standard input: "+
+	expectedErrStr = fmt.Sprintf("transaction %v has a non-standard input: "+
 		"transaction input #%d has "+
 		"%d signature operations which is more "+
 		"than the allowed max amount of %d",
@@ -670,7 +687,7 @@ func TestProcessTransaction(t *testing.T) {
 		t.Errorf("Unexpected error message. Expected \"%s\" but got \"%s\"", expectedErrStr, err.Error())
 	}
 
-	//Checks that a transaction with no outputs will not get rejected
+	// Checks that a transaction with no outputs will not get rejected
 	noOutsTx := util.NewTx(wire.NewNativeMsgTx(1, []*wire.TxIn{{
 		PreviousOutpoint: dummyPrevOut,
 		SignatureScript:  dummySigScript,
@@ -682,12 +699,12 @@ func TestProcessTransaction(t *testing.T) {
 		t.Errorf("ProcessTransaction: %v", err)
 	}
 
-	//Checks that transactions get rejected from mempool if sequence lock is not active
+	// Checks that transactions get rejected from mempool if sequence lock is not active
 	harness.txPool.cfg.CalcSequenceLockNoLock = func(tx *util.Tx,
 		view blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 
 		return &blockdag.SequenceLock{
-			Seconds:        math.MaxInt64,
+			Milliseconds:   math.MaxInt64,
 			BlockBlueScore: math.MaxInt64,
 		}, nil
 	}
@@ -699,8 +716,8 @@ func TestProcessTransaction(t *testing.T) {
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
-	if code, _ := extractRejectCode(err); code != wire.RejectNonstandard {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectNonstandard, code)
+	if code, _ := extractRejectCode(err); code != RejectNonstandard {
+		t.Errorf("Unexpected error code. Expected %v but got %v", RejectNonstandard, code)
 	}
 	expectedErrStr = "transaction's sequence locks on inputs not met"
 	if err.Error() != expectedErrStr {
@@ -708,7 +725,7 @@ func TestProcessTransaction(t *testing.T) {
 	}
 	harness.txPool.cfg.CalcSequenceLockNoLock = calcSequenceLock
 
-	//Transaction should be rejected from mempool because it has low fee, and its priority is above mining.MinHighPriority
+	// Transaction should be rejected from mempool because it has low fee, and its priority is above mining.MinHighPriority
 	tx, err = harness.createTx(spendableOuts[4], 0, 1000)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
@@ -717,13 +734,13 @@ func TestProcessTransaction(t *testing.T) {
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
-	if code, _ := extractRejectCode(err); code != wire.RejectInsufficientFee {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectInsufficientFee, code)
+	if code, _ := extractRejectCode(err); code != RejectInsufficientFee {
+		t.Errorf("Unexpected error code. Expected %v but got %v", RejectInsufficientFee, code)
 	}
 
 	txIns = []*wire.TxIn{{
 		PreviousOutpoint: spendableOuts[5].outpoint,
-		SignatureScript:  []byte{02, 01}, //Unparsable script
+		SignatureScript:  []byte{02, 01}, // Unparsable script
 		Sequence:         wire.MaxTxInSequenceNum,
 	}}
 	txOuts = []*wire.TxOut{{
@@ -736,8 +753,8 @@ func TestProcessTransaction(t *testing.T) {
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
-	if code, _ := extractRejectCode(err); code != wire.RejectNonstandard {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectNonstandard, code)
+	if code, _ := extractRejectCode(err); code != RejectNonstandard {
+		t.Errorf("Unexpected error code. Expected %v but got %v", RejectNonstandard, code)
 	}
 }
 
@@ -749,7 +766,7 @@ func TestDoubleSpends(t *testing.T) {
 	defer teardownFunc()
 	harness := tc.harness
 
-	//Add two transactions to the mempool
+	// Add two transactions to the mempool
 	tx1, err := harness.createTx(spendableOuts[0], uint64(txRelayFeeForTest), 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
@@ -770,27 +787,27 @@ func TestDoubleSpends(t *testing.T) {
 	testPoolMembership(tc, tx1, false, true, false)
 	testPoolMembership(tc, tx2, false, true, false)
 
-	//Spends the same outpoint as tx2
+	// Spends the same outpoint as tx2
 	tx3, err := harness.createTx(spendableOuts[0], uint64(txRelayFeeForTest)+2, 1) // We put here different fee to create different transaction hash
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
 
-	//First we try to add it to the mempool and see it rejected
+	// First we try to add it to the mempool and see it rejected
 	_, err = harness.txPool.ProcessTransaction(tx3, true, 0)
 	if err == nil {
 		t.Errorf("ProcessTransaction expected an error, not nil")
 	}
-	if code, _ := extractRejectCode(err); code != wire.RejectDuplicate {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectDuplicate, code)
+	if code, _ := extractRejectCode(err); code != RejectDuplicate {
+		t.Errorf("Unexpected error code. Expected %v but got %v", RejectDuplicate, code)
 	}
 	testPoolMembership(tc, tx3, false, false, false)
 
-	//Then we assume tx3 is already in the DAG, so we need to remove
-	//transactions that spends the same outpoints from the mempool
+	// Then we assume tx3 is already in the DAG, so we need to remove
+	// transactions that spends the same outpoints from the mempool
 	harness.txPool.RemoveDoubleSpends(tx3)
-	//Ensures that only the transaction that double spends the same
-	//funds as tx3 is removed, and the other one remains unaffected
+	// Ensures that only the transaction that double spends the same
+	// funds as tx3 is removed, and the other one remains unaffected
 	testPoolMembership(tc, tx1, false, false, false)
 	testPoolMembership(tc, tx2, false, true, false)
 }
@@ -834,8 +851,8 @@ func TestDoubleSpendsFromDAG(t *testing.T) {
 	if ok := errors.As(err, &ruleErr); ok {
 		var txRuleErr TxRuleError
 		if ok := errors.As(ruleErr.Err, &txRuleErr); ok {
-			if txRuleErr.RejectCode != wire.RejectDuplicate {
-				t.Errorf("ProcessTransaction expected an %v reject code but got %v", wire.RejectDuplicate, txRuleErr.RejectCode)
+			if txRuleErr.RejectCode != RejectDuplicate {
+				t.Errorf("ProcessTransaction expected an %v reject code but got %v", RejectDuplicate, txRuleErr.RejectCode)
 			}
 		} else {
 			t.Errorf("ProcessTransaction expected a ruleErr.Err to be a TxRuleError but got %v", err)
@@ -846,8 +863,8 @@ func TestDoubleSpendsFromDAG(t *testing.T) {
 	testPoolMembership(tc, tx, false, false, false)
 }
 
-//TestFetchTransaction checks that FetchTransaction
-//returns only transaction from the main pool and not from the orphan pool
+// TestFetchTransaction checks that FetchTransaction
+// returns only transaction from the main pool and not from the orphan pool
 func TestFetchTransaction(t *testing.T) {
 	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.SimnetParams, 1, "TestFetchTransaction")
 	if err != nil {
@@ -865,12 +882,12 @@ func TestFetchTransaction(t *testing.T) {
 	}
 	harness.txPool.ProcessTransaction(orphanedTx, true, 0)
 	testPoolMembership(tc, orphanedTx, true, false, false)
-	fetchedorphanedTx, err := harness.txPool.FetchTransaction(orphanedTx.ID())
+	fetchedorphanedTx, ok := harness.txPool.FetchTransaction(orphanedTx.ID())
 	if fetchedorphanedTx != nil {
 		t.Fatalf("FetchTransaction: expected fetchedorphanedTx to be nil")
 	}
-	if err == nil {
-		t.Errorf("FetchTransaction: expected an error, not nil")
+	if ok {
+		t.Errorf("FetchTransaction: expected an ok=false, got ok=true")
 	}
 
 	tx, err := harness.createTx(spendableOuts[0], uint64(txRelayFeeForTest), 1)
@@ -879,12 +896,12 @@ func TestFetchTransaction(t *testing.T) {
 	}
 	harness.txPool.ProcessTransaction(tx, true, 0)
 	testPoolMembership(tc, tx, false, true, false)
-	fetchedTx, err := harness.txPool.FetchTransaction(tx.ID())
+	fetchedTx, ok := harness.txPool.FetchTransaction(tx.ID())
 	if !reflect.DeepEqual(fetchedTx, tx) {
 		t.Fatalf("FetchTransaction: returned a transaction, but not the right one")
 	}
-	if err != nil {
-		t.Errorf("FetchTransaction: unexpected error: %v", err)
+	if !ok {
+		t.Errorf("FetchTransaction: unexpected expoected ok=true, got ok=false")
 	}
 
 }
@@ -987,9 +1004,9 @@ func TestOrphanReject(t *testing.T) {
 			t.Fatalf("ProcessTransaction: failed to extract reject "+
 				"code from error %q", err)
 		}
-		if code != wire.RejectDuplicate {
+		if code != RejectDuplicate {
 			t.Fatalf("ProcessTransaction: unexpected reject code "+
-				"-- got %v, want %v", code, wire.RejectDuplicate)
+				"-- got %v, want %v", code, RejectDuplicate)
 		}
 
 		// Ensure no transactions were reported as accepted.
@@ -1005,7 +1022,7 @@ func TestOrphanReject(t *testing.T) {
 	}
 }
 
-//TestOrphanExpiration checks every time we add an orphan transaction
+// TestOrphanExpiration checks every time we add an orphan transaction
 // it will check if we are beyond nextExpireScan, and if so, it will remove
 // all expired orphan transactions
 func TestOrphanExpiration(t *testing.T) {
@@ -1028,7 +1045,7 @@ func TestOrphanExpiration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unexpected error on harness.ProcessTransaction: %s", err)
 	}
-	harness.txPool.orphans[*expiredTx.ID()].expiration = time.Unix(0, 0)
+	harness.txPool.orphans[*expiredTx.ID()].expiration = mstime.UnixMilliseconds(0)
 
 	tx1, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
@@ -1043,13 +1060,12 @@ func TestOrphanExpiration(t *testing.T) {
 		t.Fatalf("Unexpected error on harness.ProcessTransaction: %s", err)
 	}
 
-	//First check that expired orphan transactions are not removed before nextExpireScan
+	// First check that expired orphan transactions are not removed before nextExpireScan
 	testPoolMembership(tc, tx1, true, false, false)
 	testPoolMembership(tc, expiredTx, true, false, false)
 
-	//Force nextExpireScan to be in the past
-	harness.txPool.nextExpireScan = time.Unix(0, 0)
-	fmt.Println(harness.txPool.nextExpireScan.Unix())
+	// Force nextExpireScan to be in the past
+	harness.txPool.nextExpireScan = mstime.UnixMilliseconds(0)
 
 	tx2, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
@@ -1062,14 +1078,14 @@ func TestOrphanExpiration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unexpected error on harness.ProcessTransaction: %s", err)
 	}
-	//Check that only expired orphan transactions are removed
+	// Check that only expired orphan transactions are removed
 	testPoolMembership(tc, tx1, true, false, false)
 	testPoolMembership(tc, tx2, true, false, false)
 	testPoolMembership(tc, expiredTx, false, false, false)
 }
 
-//TestMaxOrphanTxSize ensures that a transaction that is
-//bigger than MaxOrphanTxSize will get rejected
+// TestMaxOrphanTxSize ensures that a transaction that is
+// bigger than MaxOrphanTxSize will get rejected
 func TestMaxOrphanTxSize(t *testing.T) {
 	tc, _, teardownFunc, err := newPoolHarness(t, &dagconfig.SimnetParams, 1, "TestMaxOrphanTxSize")
 	if err != nil {
@@ -1119,7 +1135,7 @@ func TestRemoveTransaction(t *testing.T) {
 		testPoolMembership(tc, tx, false, true, i != 0)
 	}
 
-	//Checks that when removeRedeemers is false, the specified transaction is the only transaction that gets removed
+	// Checks that when removeRedeemers is false, the specified transaction is the only transaction that gets removed
 	tc.mineTransactions(chainedTxns[:1], 1)
 	testPoolMembership(tc, chainedTxns[0], false, false, false)
 	testPoolMembership(tc, chainedTxns[1], false, true, false)
@@ -1127,7 +1143,7 @@ func TestRemoveTransaction(t *testing.T) {
 	testPoolMembership(tc, chainedTxns[3], false, true, true)
 	testPoolMembership(tc, chainedTxns[4], false, true, true)
 
-	//Checks that when removeRedeemers is true, all of the transaction that are dependent on it get removed
+	// Checks that when removeRedeemers is true, all of the transaction that are dependent on it get removed
 	err = harness.txPool.RemoveTransaction(chainedTxns[1], true, true)
 	if err != nil {
 		t.Fatalf("RemoveTransaction: %v", err)
@@ -1581,27 +1597,27 @@ func TestCount(t *testing.T) {
 func TestExtractRejectCode(t *testing.T) {
 	tests := []struct {
 		blockdagRuleErrorCode blockdag.ErrorCode
-		wireRejectCode        wire.RejectCode
+		wireRejectCode        RejectCode
 	}{
 		{
 			blockdagRuleErrorCode: blockdag.ErrDuplicateBlock,
-			wireRejectCode:        wire.RejectDuplicate,
+			wireRejectCode:        RejectDuplicate,
 		},
 		{
 			blockdagRuleErrorCode: blockdag.ErrBlockVersionTooOld,
-			wireRejectCode:        wire.RejectObsolete,
+			wireRejectCode:        RejectObsolete,
 		},
 		{
 			blockdagRuleErrorCode: blockdag.ErrFinalityPointTimeTooOld,
-			wireRejectCode:        wire.RejectFinality,
+			wireRejectCode:        RejectFinality,
 		},
 		{
 			blockdagRuleErrorCode: blockdag.ErrDifficultyTooLow,
-			wireRejectCode:        wire.RejectDifficulty,
+			wireRejectCode:        RejectDifficulty,
 		},
 		{
 			blockdagRuleErrorCode: math.MaxUint32,
-			wireRejectCode:        wire.RejectInvalid,
+			wireRejectCode:        RejectInvalid,
 		},
 	}
 
@@ -1616,19 +1632,19 @@ func TestExtractRejectCode(t *testing.T) {
 		}
 	}
 
-	txRuleError := TxRuleError{RejectCode: wire.RejectDust}
+	txRuleError := TxRuleError{RejectCode: RejectDust}
 	txExtractedCode, ok := extractRejectCode(txRuleError)
 	if !ok {
 		t.Errorf("TestExtractRejectCode: %v could not be extracted", txRuleError)
 	}
-	if txExtractedCode != wire.RejectDust {
-		t.Errorf("TestExtractRejectCode: expected %v to extract %v but got %v", wire.RejectDust, wire.RejectDust, txExtractedCode)
+	if txExtractedCode != RejectDust {
+		t.Errorf("TestExtractRejectCode: expected %v to extract %v but got %v", RejectDust, RejectDust, txExtractedCode)
 	}
 
 	var nilErr error
 	nilErrExtractedCode, ok := extractRejectCode(nilErr)
-	if nilErrExtractedCode != wire.RejectInvalid {
-		t.Errorf("TestExtractRejectCode: expected %v to extract %v but got %v", wire.RejectInvalid, wire.RejectInvalid, nilErrExtractedCode)
+	if nilErrExtractedCode != RejectInvalid {
+		t.Errorf("TestExtractRejectCode: expected %v to extract %v but got %v", RejectInvalid, RejectInvalid, nilErrExtractedCode)
 	}
 	if ok {
 		t.Errorf("TestExtractRejectCode: a nil error is expected to return false but got %v", ok)
@@ -1637,8 +1653,8 @@ func TestExtractRejectCode(t *testing.T) {
 	nonRuleError := errors.New("nonRuleError")
 
 	fErrExtractedCode, ok := extractRejectCode(nonRuleError)
-	if fErrExtractedCode != wire.RejectInvalid {
-		t.Errorf("TestExtractRejectCode: expected %v to extract %v but got %v", wire.RejectInvalid, wire.RejectInvalid, nilErrExtractedCode)
+	if fErrExtractedCode != RejectInvalid {
+		t.Errorf("TestExtractRejectCode: expected %v to extract %v but got %v", RejectInvalid, RejectInvalid, nilErrExtractedCode)
 	}
 	if ok {
 		t.Errorf("TestExtractRejectCode: a nonRuleError is expected to return false but got %v", ok)
@@ -1697,11 +1713,11 @@ func TestHandleNewBlock(t *testing.T) {
 	// Handle new block by pool
 	ch := make(chan NewBlockMsg)
 	go func() {
-		err = harness.txPool.HandleNewBlock(block, ch)
+		err = harness.txPool.HandleNewBlockOld(block, ch)
 		close(ch)
 	}()
 
-	// process messages pushed by HandleNewBlock
+	// process messages pushed by HandleNewBlockOld
 	blockTransactions := make(map[daghash.TxID]int)
 	for msg := range ch {
 		blockTransactions[*msg.Tx.ID()] = 1
@@ -1718,12 +1734,12 @@ func TestHandleNewBlock(t *testing.T) {
 			}
 		}
 	}
-	// ensure that HandleNewBlock has not failed
+	// ensure that HandleNewBlockOld has not failed
 	if err != nil {
-		t.Fatalf("HandleNewBlock failed to handle block %v", err)
+		t.Fatalf("HandleNewBlockOld failed to handle block %v", err)
 	}
 
-	// Validate messages pushed by HandleNewBlock into the channel
+	// Validate messages pushed by HandleNewBlockOld into the channel
 	if len(blockTransactions) != 2 {
 		t.Fatalf("Wrong size of blockTransactions after new block handling")
 	}
@@ -1763,9 +1779,9 @@ var dummyBlock = wire.MsgBlock{
 			0x28, 0xc3, 0x06, 0x7c, 0xc3, 0x8d, 0x48, 0x85,
 			0xef, 0xb5, 0xa4, 0xac, 0x42, 0x47, 0xe9, 0xf3,
 		}, // f3e94742aca4b5ef85488dc37c06c3282295ffec960994b2c0d5ac2a25a95766
-		Timestamp: time.Unix(1529483563, 0), // 2018-06-20 08:32:43 +0000 UTC
-		Bits:      0x1e00ffff,               // 503382015
-		Nonce:     0x000ae53f,               // 714047
+		Timestamp: mstime.UnixMilliseconds(1529483563000), // 2018-06-20 08:32:43 +0000 UTC
+		Bits:      0x1e00ffff,                             // 503382015
+		Nonce:     0x000ae53f,                             // 714047
 	},
 	Transactions: []*wire.MsgTx{
 		{

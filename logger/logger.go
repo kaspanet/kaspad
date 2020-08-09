@@ -46,6 +46,14 @@ var (
 	txmpLog = BackendLog.Logger("TXMP")
 	utilLog = BackendLog.Logger("UTIL")
 	profLog = BackendLog.Logger("PROF")
+	protLog = BackendLog.Logger("PROT")
+	muxxLog = BackendLog.Logger("MUXX")
+	grpcLog = BackendLog.Logger("GRPC")
+	p2psLog = BackendLog.Logger("P2PS")
+	ntarLog = BackendLog.Logger("NTAR")
+	dnssLog = BackendLog.Logger("DNSS")
+	snvrLog = BackendLog.Logger("SNVR")
+	ibdsLog = BackendLog.Logger("IBDS")
 )
 
 // SubsystemTags is an enum of all sub system tags
@@ -67,7 +75,15 @@ var SubsystemTags = struct {
 	SYNC,
 	TXMP,
 	UTIL,
-	PROF string
+	PROF,
+	PROT,
+	MUXX,
+	GRPC,
+	P2PS,
+	NTAR,
+	DNSS,
+	SNVR,
+	IBDS string
 }{
 	ADXR: "ADXR",
 	AMGR: "AMGR",
@@ -87,6 +103,14 @@ var SubsystemTags = struct {
 	TXMP: "TXMP",
 	UTIL: "UTIL",
 	PROF: "PROF",
+	PROT: "PROT",
+	MUXX: "MUXX",
+	GRPC: "GRPC",
+	P2PS: "P2PS",
+	NTAR: "NTAR",
+	DNSS: "DNSS",
+	SNVR: "SNVR",
+	IBDS: "IBDS",
 }
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
@@ -109,6 +133,14 @@ var subsystemLoggers = map[string]*logs.Logger{
 	SubsystemTags.TXMP: txmpLog,
 	SubsystemTags.UTIL: utilLog,
 	SubsystemTags.PROF: profLog,
+	SubsystemTags.PROT: protLog,
+	SubsystemTags.MUXX: muxxLog,
+	SubsystemTags.GRPC: grpcLog,
+	SubsystemTags.P2PS: p2psLog,
+	SubsystemTags.NTAR: ntarLog,
+	SubsystemTags.DNSS: dnssLog,
+	SubsystemTags.SNVR: snvrLog,
+	SubsystemTags.IBDS: ibdsLog,
 }
 
 // InitLog attaches log file and error log file to the backend log.

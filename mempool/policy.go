@@ -6,7 +6,7 @@ package mempool
 
 import (
 	"fmt"
-	"time"
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/txscript"
@@ -100,13 +100,13 @@ func checkInputsStandard(tx *util.Tx, utxoSet blockdag.UTXOSet) error {
 					"%d signature operations which is more "+
 					"than the allowed max amount of %d",
 					i, numSigOps, maxStandardP2SHSigOps)
-				return txRuleError(wire.RejectNonstandard, str)
+				return txRuleError(RejectNonstandard, str)
 			}
 
 		case txscript.NonStandardTy:
 			str := fmt.Sprintf("transaction input #%d has a "+
 				"non-standard script form", i)
-			return txRuleError(wire.RejectNonstandard, str)
+			return txRuleError(RejectNonstandard, str)
 		}
 	}
 
@@ -191,7 +191,7 @@ func isDust(txOut *wire.TxOut, minRelayTxFee util.Amount) bool {
 // of recognized forms, and not containing "dust" outputs (those that are
 // so small it costs more to process them than they are worth).
 func checkTransactionStandard(tx *util.Tx, blueScore uint64,
-	medianTimePast time.Time, policy *Policy) error {
+	medianTimePast mstime.Time, policy *Policy) error {
 
 	// The transaction must be a currently supported version.
 	msgTx := tx.MsgTx()
@@ -199,13 +199,13 @@ func checkTransactionStandard(tx *util.Tx, blueScore uint64,
 		str := fmt.Sprintf("transaction version %d is not in the "+
 			"valid range of %d-%d", msgTx.Version, 1,
 			policy.MaxTxVersion)
-		return txRuleError(wire.RejectNonstandard, str)
+		return txRuleError(RejectNonstandard, str)
 	}
 
 	// The transaction must be finalized to be standard and therefore
 	// considered for inclusion in a block.
 	if !blockdag.IsFinalizedTransaction(tx, blueScore, medianTimePast) {
-		return txRuleError(wire.RejectNonstandard,
+		return txRuleError(RejectNonstandard,
 			"transaction is not finalized")
 	}
 
@@ -217,7 +217,7 @@ func checkTransactionStandard(tx *util.Tx, blueScore uint64,
 	if serializedLen > MaxStandardTxSize {
 		str := fmt.Sprintf("transaction size of %d is larger than max "+
 			"allowed size of %d", serializedLen, MaxStandardTxSize)
-		return txRuleError(wire.RejectNonstandard, str)
+		return txRuleError(RejectNonstandard, str)
 	}
 
 	for i, txIn := range msgTx.TxIn {
@@ -230,7 +230,7 @@ func checkTransactionStandard(tx *util.Tx, blueScore uint64,
 				"script size of %d bytes is large than max "+
 				"allowed size of %d bytes", i, sigScriptLen,
 				maxStandardSigScriptSize)
-			return txRuleError(wire.RejectNonstandard, str)
+			return txRuleError(RejectNonstandard, str)
 		}
 
 		// Each transaction input signature script must only contain
@@ -238,12 +238,12 @@ func checkTransactionStandard(tx *util.Tx, blueScore uint64,
 		isPushOnly, err := txscript.IsPushOnlyScript(txIn.SignatureScript)
 		if err != nil {
 			str := fmt.Sprintf("transaction input %d: IsPushOnlyScript: %t. Error %s", i, isPushOnly, err)
-			return txRuleError(wire.RejectNonstandard, str)
+			return txRuleError(RejectNonstandard, str)
 		}
 		if !isPushOnly {
 			str := fmt.Sprintf("transaction input %d: signature "+
 				"script is not push only", i)
-			return txRuleError(wire.RejectNonstandard, str)
+			return txRuleError(RejectNonstandard, str)
 		}
 	}
 
@@ -253,13 +253,13 @@ func checkTransactionStandard(tx *util.Tx, blueScore uint64,
 		scriptClass := txscript.GetScriptClass(txOut.ScriptPubKey)
 		if scriptClass == txscript.NonStandardTy {
 			str := fmt.Sprintf("transaction output %d: non-standard script form", i)
-			return txRuleError(wire.RejectNonstandard, str)
+			return txRuleError(RejectNonstandard, str)
 		}
 
 		if isDust(txOut, policy.MinRelayTxFee) {
 			str := fmt.Sprintf("transaction output %d: payment "+
 				"of %d is dust", i, txOut.Value)
-			return txRuleError(wire.RejectDust, str)
+			return txRuleError(RejectDust, str)
 		}
 	}
 

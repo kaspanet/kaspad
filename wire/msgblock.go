@@ -27,9 +27,9 @@ const MaxMassPerBlock = 10000000
 // MaxMassPerTx is the maximum total mass a transaction may have.
 const MaxMassPerTx = MaxMassPerBlock / 2
 
-// maxTxPerBlock is the maximum number of transactions that could
+// MaxTxPerBlock is the maximum number of transactions that could
 // possibly fit into a block.
-const maxTxPerBlock = (MaxMassPerBlock / minTxPayload) + 1
+const MaxTxPerBlock = (MaxMassPerBlock / minTxPayload) + 1
 
 // TxLoc holds locator data for the offset and length of where a transaction is
 // located within a MsgBlock data buffer.
@@ -74,9 +74,9 @@ func (msg *MsgBlock) KaspaDecode(r io.Reader, pver uint32) error {
 	// Prevent more transactions than could possibly fit into a block.
 	// It would be possible to cause memory exhaustion and panics without
 	// a sane upper bound on this count.
-	if txCount > maxTxPerBlock {
+	if txCount > MaxTxPerBlock {
 		str := fmt.Sprintf("too many transactions to fit into a block "+
-			"[count %d, max %d]", txCount, maxTxPerBlock)
+			"[count %d, max %d]", txCount, MaxTxPerBlock)
 		return messageError("MsgBlock.KaspaDecode", str)
 	}
 
@@ -132,9 +132,9 @@ func (msg *MsgBlock) DeserializeTxLoc(r *bytes.Buffer) ([]TxLoc, error) {
 	// Prevent more transactions than could possibly fit into a block.
 	// It would be possible to cause memory exhaustion and panics without
 	// a sane upper bound on this count.
-	if txCount > maxTxPerBlock {
+	if txCount > MaxTxPerBlock {
 		str := fmt.Sprintf("too many transactions to fit into a block "+
-			"[count %d, max %d]", txCount, maxTxPerBlock)
+			"[count %d, max %d]", txCount, MaxTxPerBlock)
 		return nil, messageError("MsgBlock.DeserializeTxLoc", str)
 	}
 
@@ -213,7 +213,7 @@ func (msg *MsgBlock) SerializeSize() int {
 
 // Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
-func (msg *MsgBlock) Command() string {
+func (msg *MsgBlock) Command() MessageCommand {
 	return CmdBlock
 }
 

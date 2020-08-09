@@ -157,7 +157,7 @@ func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdCondit
 
 		// The state is simply defined if the start time hasn't been
 		// been reached yet.
-		if uint64(medianTime.Unix()) < checker.BeginTime() {
+		if uint64(medianTime.UnixMilliseconds()) < checker.BeginTime() {
 			cache.Update(prevNode.hash, ThresholdDefined)
 			break
 		}
@@ -194,7 +194,7 @@ func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdCondit
 			// The deployment of the rule change fails if it expires
 			// before it is accepted and locked in.
 			medianTime := prevNode.PastMedianTime(dag)
-			medianTimeUnix := uint64(medianTime.Unix())
+			medianTimeUnix := uint64(medianTime.UnixMilliseconds())
 			if medianTimeUnix >= checker.EndTime() {
 				state = ThresholdFailed
 				break
@@ -211,7 +211,7 @@ func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdCondit
 			// The deployment of the rule change fails if it expires
 			// before it is accepted and locked in.
 			medianTime := prevNode.PastMedianTime(dag)
-			if uint64(medianTime.Unix()) >= checker.EndTime() {
+			if uint64(medianTime.UnixMilliseconds()) >= checker.EndTime() {
 				state = ThresholdFailed
 				break
 			}
@@ -297,11 +297,11 @@ func (dag *BlockDAG) IsDeploymentActive(deploymentID uint32) (bool, error) {
 //
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) deploymentState(prevNode *blockNode, deploymentID uint32) (ThresholdState, error) {
-	if deploymentID > uint32(len(dag.dagParams.Deployments)) {
+	if deploymentID > uint32(len(dag.Params.Deployments)) {
 		return ThresholdFailed, errors.Errorf("deployment ID %d does not exist", deploymentID)
 	}
 
-	deployment := &dag.dagParams.Deployments[deploymentID]
+	deployment := &dag.Params.Deployments[deploymentID]
 	checker := deploymentChecker{deployment: deployment, dag: dag}
 	cache := &dag.deploymentCaches[deploymentID]
 
@@ -325,8 +325,8 @@ func (dag *BlockDAG) initThresholdCaches() error {
 			return err
 		}
 	}
-	for id := 0; id < len(dag.dagParams.Deployments); id++ {
-		deployment := &dag.dagParams.Deployments[id]
+	for id := 0; id < len(dag.Params.Deployments); id++ {
+		deployment := &dag.Params.Deployments[id]
 		cache := &dag.deploymentCaches[id]
 		checker := deploymentChecker{deployment: deployment, dag: dag}
 		_, err := dag.thresholdState(prevNode, checker, cache)

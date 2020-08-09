@@ -6,9 +6,10 @@ package blockdag
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/pkg/errors"
-	"time"
 
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -48,6 +49,10 @@ const (
 	// BFDisallowDelay is set to indicate that a delayed block should be rejected.
 	// This is used for the case where a block is submitted through RPC.
 	BFDisallowDelay
+
+	// BFDisallowOrphans is set to indicate that an orphan block should be rejected.
+	// This is used for the case where a block is submitted through RPC.
+	BFDisallowOrphans
 
 	// BFNone is a convenience value to specifically indicate no flags.
 	BFNone BehaviorFlags = 0
@@ -151,6 +156,7 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 	isAfterDelay := flags&BFAfterDelay == BFAfterDelay
 	wasBlockStored := flags&BFWasStored == BFWasStored
 	disallowDelay := flags&BFDisallowDelay == BFDisallowDelay
+	disallowOrphans := flags&BFDisallowOrphans == BFDisallowOrphans
 
 	blockHash := block.Hash()
 	log.Tracef("Processing block %s", blockHash)
@@ -199,12 +205,16 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 			missingParents = append(missingParents, parentHash)
 		}
 	}
+	if len(missingParents) > 0 && disallowOrphans {
+		str := fmt.Sprintf("Cannot process orphan blocks while the BFDisallowOrphans flag is raised %s", blockHash)
+		return false, false, ruleError(ErrOrphanBlockIsNotAllowed, str)
+	}
 
 	// Handle the case of a block with a valid timestamp(non-delayed) which points to a delayed block.
 	delay, isParentDelayed := dag.maxDelayOfParents(missingParents)
 	if isParentDelayed {
-		// Add Nanosecond to ensure that parent process time will be after its child.
-		delay += time.Nanosecond
+		// Add Millisecond to ensure that parent process time will be after its child.
+		delay += time.Millisecond
 		err := dag.addDelayedBlock(block, delay)
 		if err != nil {
 			return false, false, err
@@ -221,7 +231,7 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 		// The number K*2 was chosen since in peace times anticone is limited to K blocks,
 		// while some red block can make it a bit bigger, but much more than that indicates
 		// there might be some problem with the netsync process.
-		if flags&BFIsSync == BFIsSync && dagconfig.KType(len(dag.orphans)) < dag.dagParams.K*2 {
+		if flags&BFIsSync == BFIsSync && dagconfig.KType(len(dag.orphans)) < dag.Params.K*2 {
 			log.Debugf("Adding orphan block %s. This is normal part of netsync process", blockHash)
 		} else {
 			log.Infof("Adding orphan block %s", blockHash)

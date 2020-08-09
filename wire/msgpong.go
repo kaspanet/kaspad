@@ -4,10 +4,6 @@
 
 package wire
 
-import (
-	"io"
-)
-
 // MsgPong implements the Message interface and represents a kaspa pong
 // message which is used primarily to confirm that a connection is still valid
 // in response to a kaspa ping message (MsgPing).
@@ -19,29 +15,10 @@ type MsgPong struct {
 	Nonce uint64
 }
 
-// KaspaDecode decodes r using the kaspa protocol encoding into the receiver.
-// This is part of the Message interface implementation.
-func (msg *MsgPong) KaspaDecode(r io.Reader, pver uint32) error {
-	return ReadElement(r, &msg.Nonce)
-}
-
-// KaspaEncode encodes the receiver to w using the kaspa protocol encoding.
-// This is part of the Message interface implementation.
-func (msg *MsgPong) KaspaEncode(w io.Writer, pver uint32) error {
-	return WriteElement(w, msg.Nonce)
-}
-
 // Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
-func (msg *MsgPong) Command() string {
+func (msg *MsgPong) Command() MessageCommand {
 	return CmdPong
-}
-
-// MaxPayloadLength returns the maximum length the payload can be for the
-// receiver. This is part of the Message interface implementation.
-func (msg *MsgPong) MaxPayloadLength(pver uint32) uint32 {
-	// Nonce 8 bytes.
-	return uint32(8)
 }
 
 // NewMsgPong returns a new kaspa pong message that conforms to the Message

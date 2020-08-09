@@ -2,10 +2,11 @@ package blockdag_test
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"math"
 	"strings"
 	"testing"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
@@ -40,7 +41,7 @@ import (
 func TestFinality(t *testing.T) {
 	params := dagconfig.SimnetParams
 	params.K = 1
-	params.FinalityInterval = 100
+	params.FinalityDuration = 100 * params.TargetTimePerBlock
 	dag, teardownFunc, err := blockdag.DAGSetup("TestFinality", true, blockdag.Config{
 		DAGParams: &params,
 	})
@@ -49,7 +50,7 @@ func TestFinality(t *testing.T) {
 	}
 	defer teardownFunc()
 	buildNodeToDag := func(parentHashes []*daghash.Hash) (*util.Block, error) {
-		msgBlock, err := mining.PrepareBlockForTest(dag, &params, parentHashes, nil, false)
+		msgBlock, err := mining.PrepareBlockForTest(dag, parentHashes, nil, false)
 		if err != nil {
 			return nil, err
 		}
@@ -74,7 +75,7 @@ func TestFinality(t *testing.T) {
 	currentNode := genesis
 
 	// First we build a chain of params.FinalityInterval blocks for future use
-	for i := uint64(0); i < params.FinalityInterval; i++ {
+	for i := uint64(0); i < dag.FinalityInterval(); i++ {
 		currentNode, err = buildNodeToDag([]*daghash.Hash{currentNode.Hash()})
 		if err != nil {
 			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
@@ -86,7 +87,7 @@ func TestFinality(t *testing.T) {
 	// Now we build a new chain of 2 * params.FinalityInterval blocks, pointed to genesis, and
 	// we expect the block with height 1 * params.FinalityInterval to be the last finality point
 	currentNode = genesis
-	for i := uint64(0); i < params.FinalityInterval; i++ {
+	for i := uint64(0); i < dag.FinalityInterval(); i++ {
 		currentNode, err = buildNodeToDag([]*daghash.Hash{currentNode.Hash()})
 		if err != nil {
 			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
@@ -95,7 +96,7 @@ func TestFinality(t *testing.T) {
 
 	expectedFinalityPoint := currentNode
 
-	for i := uint64(0); i < params.FinalityInterval; i++ {
+	for i := uint64(0); i < dag.FinalityInterval(); i++ {
 		currentNode, err = buildNodeToDag([]*daghash.Hash{currentNode.Hash()})
 		if err != nil {
 			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
@@ -175,9 +176,19 @@ func TestFinalityInterval(t *testing.T) {
 		&dagconfig.SimnetParams,
 	}
 	for _, params := range netParams {
-		if params.FinalityInterval > wire.MaxInvPerMsg {
-			t.Errorf("FinalityInterval in %s should be lower or equal to wire.MaxInvPerMsg", params.Name)
-		}
+		func() {
+			dag, teardownFunc, err := blockdag.DAGSetup("TestFinalityInterval", true, blockdag.Config{
+				DAGParams: params,
+			})
+			if err != nil {
+				t.Fatalf("Failed to setup dag instance for %s: %v", params.Name, err)
+			}
+			defer teardownFunc()
+
+			if dag.FinalityInterval() > wire.MaxInvPerMsg {
+				t.Errorf("FinalityInterval in %s should be lower or equal to wire.MaxInvPerMsg", params.Name)
+			}
+		}()
 	}
 }
 
@@ -200,7 +211,7 @@ func TestSubnetworkRegistry(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not register network: %s", err)
 	}
-	limit, err := blockdag.GasLimit(subnetworkID)
+	limit, err := dag.GasLimit(subnetworkID)
 	if err != nil {
 		t.Fatalf("could not retrieve gas limit: %s", err)
 	}
@@ -221,7 +232,7 @@ func TestChainedTransactions(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	block1, err := mining.PrepareBlockForTest(dag, &params, []*daghash.Hash{params.GenesisHash}, nil, false)
+	block1, err := mining.PrepareBlockForTest(dag, []*daghash.Hash{params.GenesisHash}, nil, false)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -269,7 +280,7 @@ func TestChainedTransactions(t *testing.T) {
 	}
 	chainedTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{chainedTxIn}, []*wire.TxOut{chainedTxOut})
 
-	block2, err := mining.PrepareBlockForTest(dag, &params, []*daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{tx}, false)
+	block2, err := mining.PrepareBlockForTest(dag, []*daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{tx}, false)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -315,7 +326,7 @@ func TestChainedTransactions(t *testing.T) {
 	}
 	nonChainedTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{nonChainedTxIn}, []*wire.TxOut{nonChainedTxOut})
 
-	block3, err := mining.PrepareBlockForTest(dag, &params, []*daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{nonChainedTx}, false)
+	block3, err := mining.PrepareBlockForTest(dag, []*daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{nonChainedTx}, false)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -372,7 +383,7 @@ func TestOrderInDiffFromAcceptanceData(t *testing.T) {
 		}
 
 		// Create the block
-		msgBlock, err := mining.PrepareBlockForTest(dag, &params, []*daghash.Hash{previousBlock.Hash()}, txs, false)
+		msgBlock, err := mining.PrepareBlockForTest(dag, []*daghash.Hash{previousBlock.Hash()}, txs, false)
 		if err != nil {
 			t.Fatalf("TestOrderInDiffFromAcceptanceData: Failed to prepare block: %s", err)
 		}
@@ -429,7 +440,7 @@ func TestGasLimit(t *testing.T) {
 
 	cbTxs := []*wire.MsgTx{}
 	for i := 0; i < 4; i++ {
-		fundsBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), nil, false)
+		fundsBlock, err := mining.PrepareBlockForTest(dag, dag.TipHashes(), nil, false)
 		if err != nil {
 			t.Fatalf("PrepareBlockForTest: %v", err)
 		}
@@ -481,7 +492,7 @@ func TestGasLimit(t *testing.T) {
 	tx2 := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{tx2In}, []*wire.TxOut{tx2Out}, subnetworkID, 10000, []byte{})
 
 	// Here we check that we can't process a block that has transactions that exceed the gas limit
-	overLimitBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{tx1, tx2}, true)
+	overLimitBlock, err := mining.PrepareBlockForTest(dag, dag.TipHashes(), []*wire.MsgTx{tx1, tx2}, true)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -516,7 +527,7 @@ func TestGasLimit(t *testing.T) {
 		subnetworkID, math.MaxUint64, []byte{})
 
 	// Here we check that we can't process a block that its transactions' gas overflows uint64
-	overflowGasBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{tx1, overflowGasTx}, true)
+	overflowGasBlock, err := mining.PrepareBlockForTest(dag, dag.TipHashes(), []*wire.MsgTx{tx1, overflowGasTx}, true)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -550,7 +561,7 @@ func TestGasLimit(t *testing.T) {
 	nonExistentSubnetworkTx := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{nonExistentSubnetworkTxIn},
 		[]*wire.TxOut{nonExistentSubnetworkTxOut}, nonExistentSubnetwork, 1, []byte{})
 
-	nonExistentSubnetworkBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{nonExistentSubnetworkTx, overflowGasTx}, true)
+	nonExistentSubnetworkBlock, err := mining.PrepareBlockForTest(dag, dag.TipHashes(), []*wire.MsgTx{nonExistentSubnetworkTx, overflowGasTx}, true)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -571,7 +582,7 @@ func TestGasLimit(t *testing.T) {
 	}
 
 	// Here we check that we can process a block with a transaction that doesn't exceed the gas limit
-	validBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{tx1}, true)
+	validBlock, err := mining.PrepareBlockForTest(dag, dag.TipHashes(), []*wire.MsgTx{tx1}, true)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}

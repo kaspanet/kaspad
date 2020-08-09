@@ -28,11 +28,6 @@ const (
 	// to a newer version.
 	ErrBlockVersionTooOld
 
-	// ErrInvalidTime indicates the time in the passed block has a precision
-	// that is more than one second. The DAG consensus rules require
-	// timestamps to have a maximum precision of one second.
-	ErrInvalidTime
-
 	// ErrTimeTooOld indicates the time is either before the median time of
 	// the last several blocks per the DAG consensus rules.
 	ErrTimeTooOld
@@ -211,6 +206,10 @@ const (
 	// ErrDelayedBlockIsNotAllowed indicates that a block with a delayed timestamp was
 	// submitted with BFDisallowDelay flag raised.
 	ErrDelayedBlockIsNotAllowed
+
+	// ErrOrphanBlockIsNotAllowed indicates that an orphan block was submitted with
+	// BFDisallowOrphans flag raised.
+	ErrOrphanBlockIsNotAllowed
 )
 
 // Map of ErrorCode values back to their constant names for pretty printing.
@@ -218,7 +217,6 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrDuplicateBlock:            "ErrDuplicateBlock",
 	ErrBlockMassTooHigh:          "ErrBlockMassTooHigh",
 	ErrBlockVersionTooOld:        "ErrBlockVersionTooOld",
-	ErrInvalidTime:               "ErrInvalidTime",
 	ErrTimeTooOld:                "ErrTimeTooOld",
 	ErrTimeTooNew:                "ErrTimeTooNew",
 	ErrNoParents:                 "ErrNoParents",
@@ -260,6 +258,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrInvalidPayloadHash:        "ErrInvalidPayloadHash",
 	ErrInvalidParentsRelation:    "ErrInvalidParentsRelation",
 	ErrDelayedBlockIsNotAllowed:  "ErrDelayedBlockIsNotAllowed",
+	ErrOrphanBlockIsNotAllowed:   "ErrOrphanBlockIsNotAllowed",
 }
 
 // String returns the ErrorCode as a human-readable name.

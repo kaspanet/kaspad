@@ -6,15 +6,16 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/dbaccess"
-	"github.com/pkg/errors"
 	"math"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/kaspanet/go-secp256k1"
+	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/txscript"
@@ -207,10 +208,10 @@ func TestIsKnownBlock(t *testing.T) {
 		{hash: dagconfig.SimnetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "2eb8903d3eb7f977ab329649f56f4125afa532662f7afe5dba0d4a3f1b93746f", want: true},
+		{hash: "46314ca17e117b31b467fe1b26fd36c98ee83e750aa5e3b3c1c32870afbe5984", want: true},
 
 		// Block 100000 should be present (as an orphan).
-		{hash: "65b20b048a074793ebfd1196e49341c8d194dabfc6b44a4fd0c607406e122baf", want: true},
+		{hash: "732c891529619d43b5aeb3df42ba25dea483a8c0aded1cf585751ebabea28f29", want: true},
 
 		// Random hashes should not be available.
 		{hash: "123", want: false},
@@ -278,13 +279,13 @@ func TestCalcSequenceLock(t *testing.T) {
 	// Obtain the past median time from the PoV of the input created above.
 	// The past median time for the input is the past median time from the PoV
 	// of the block *prior* to the one that included it.
-	medianTime := node.RelativeAncestor(5).PastMedianTime(dag).Unix()
+	medianTime := node.RelativeAncestor(5).PastMedianTime(dag).UnixMilliseconds()
 
 	// The median time calculated from the PoV of the best block in the
 	// test DAG. For unconfirmed inputs, this value will be used since
 	// the MTP will be calculated from the PoV of the yet-to-be-mined
 	// block.
-	nextMedianTime := node.PastMedianTime(dag).Unix()
+	nextMedianTime := node.PastMedianTime(dag).UnixMilliseconds()
 	nextBlockBlueScore := int32(numBlocksToGenerate) + 1
 
 	// Add an additional transaction which will serve as our unconfirmed
@@ -315,35 +316,34 @@ func TestCalcSequenceLock(t *testing.T) {
 			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutpoint: utxo, Sequence: wire.MaxTxInSequenceNum}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:        -1,
+				Milliseconds:   -1,
 				BlockBlueScore: -1,
 			},
 		},
 		// A transaction with a single input whose lock time is
 		// expressed in seconds. However, the specified lock time is
 		// below the required floor for time based lock times since
-		// they have time granularity of 512 seconds. As a result, the
-		// seconds lock-time should be just before the median time of
+		// they have time granularity of 524288 milliseconds. As a result, the
+		// milliseconds lock-time should be just before the median time of
 		// the targeted block.
 		{
-			name:    "single input, seconds lock time below time granularity",
+			name:    "single input, milliseconds lock time below time granularity",
 			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutpoint: utxo, Sequence: LockTimeToSequence(true, 2)}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:        medianTime - 1,
+				Milliseconds:   medianTime - 1,
 				BlockBlueScore: -1,
 			},
 		},
 		// A transaction with a single input whose lock time is
-		// expressed in seconds. The number of seconds should be 1023
-		// seconds after the median past time of the last block in the
-		// chain.
+		// expressed in seconds. The number of seconds should be 1048575
+		// milliseconds after the median past time of the DAG.
 		{
-			name:    "single input, 1023 seconds after median time",
-			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutpoint: utxo, Sequence: LockTimeToSequence(true, 1024)}}, nil),
+			name:    "single input, 1048575 milliseconds after median time",
+			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutpoint: utxo, Sequence: LockTimeToSequence(true, 1048576)}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:        medianTime + 1023,
+				Milliseconds:   medianTime + 1048575,
 				BlockBlueScore: -1,
 			},
 		},
@@ -358,7 +358,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			tx: wire.NewNativeMsgTx(1,
 				[]*wire.TxIn{{
 					PreviousOutpoint: utxo,
-					Sequence:         LockTimeToSequence(true, 2560),
+					Sequence:         LockTimeToSequence(true, 2621440),
 				}, {
 					PreviousOutpoint: utxo,
 					Sequence:         LockTimeToSequence(false, 4),
@@ -370,7 +370,7 @@ func TestCalcSequenceLock(t *testing.T) {
 				nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:        medianTime + (5 << wire.SequenceLockTimeGranularity) - 1,
+				Milliseconds:   medianTime + (5 << wire.SequenceLockTimeGranularity) - 1,
 				BlockBlueScore: int64(prevUtxoBlueScore) + 3,
 			},
 		},
@@ -383,7 +383,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutpoint: utxo, Sequence: LockTimeToSequence(false, 3)}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:        -1,
+				Milliseconds:   -1,
 				BlockBlueScore: int64(prevUtxoBlueScore) + 2,
 			},
 		},
@@ -394,14 +394,14 @@ func TestCalcSequenceLock(t *testing.T) {
 			name: "two inputs, lock-times in seconds",
 			tx: wire.NewNativeMsgTx(1, []*wire.TxIn{{
 				PreviousOutpoint: utxo,
-				Sequence:         LockTimeToSequence(true, 5120),
+				Sequence:         LockTimeToSequence(true, 5242880),
 			}, {
 				PreviousOutpoint: utxo,
-				Sequence:         LockTimeToSequence(true, 2560),
+				Sequence:         LockTimeToSequence(true, 2621440),
 			}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:        medianTime + (10 << wire.SequenceLockTimeGranularity) - 1,
+				Milliseconds:   medianTime + (10 << wire.SequenceLockTimeGranularity) - 1,
 				BlockBlueScore: -1,
 			},
 		},
@@ -422,7 +422,7 @@ func TestCalcSequenceLock(t *testing.T) {
 				nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:        -1,
+				Milliseconds:   -1,
 				BlockBlueScore: int64(prevUtxoBlueScore) + 10,
 			},
 		},
@@ -434,10 +434,10 @@ func TestCalcSequenceLock(t *testing.T) {
 			tx: wire.NewNativeMsgTx(1,
 				[]*wire.TxIn{{
 					PreviousOutpoint: utxo,
-					Sequence:         LockTimeToSequence(true, 2560),
+					Sequence:         LockTimeToSequence(true, 2621440),
 				}, {
 					PreviousOutpoint: utxo,
-					Sequence:         LockTimeToSequence(true, 6656),
+					Sequence:         LockTimeToSequence(true, 6815744),
 				}, {
 					PreviousOutpoint: utxo,
 					Sequence:         LockTimeToSequence(false, 3),
@@ -448,7 +448,7 @@ func TestCalcSequenceLock(t *testing.T) {
 				nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:        medianTime + (13 << wire.SequenceLockTimeGranularity) - 1,
+				Milliseconds:   medianTime + (13 << wire.SequenceLockTimeGranularity) - 1,
 				BlockBlueScore: int64(prevUtxoBlueScore) + 8,
 			},
 		},
@@ -464,7 +464,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			utxoSet: utxoSet,
 			mempool: true,
 			want: &SequenceLock{
-				Seconds:        -1,
+				Milliseconds:   -1,
 				BlockBlueScore: int64(nextBlockBlueScore) + 1,
 			},
 		},
@@ -472,12 +472,12 @@ func TestCalcSequenceLock(t *testing.T) {
 		// a time based lock, so the lock time should be based off the
 		// MTP of the *next* block.
 		{
-			name:    "single input, unconfirmed, lock-time in seoncds",
-			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutpoint: unConfUtxo, Sequence: LockTimeToSequence(true, 1024)}}, nil),
+			name:    "single input, unconfirmed, lock-time in milliseoncds",
+			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutpoint: unConfUtxo, Sequence: LockTimeToSequence(true, 1048576)}}, nil),
 			utxoSet: utxoSet,
 			mempool: true,
 			want: &SequenceLock{
-				Seconds:        nextMedianTime + 1023,
+				Milliseconds:   nextMedianTime + 1048575,
 				BlockBlueScore: -1,
 			},
 		},
@@ -491,9 +491,9 @@ func TestCalcSequenceLock(t *testing.T) {
 			t.Fatalf("test '%s', unable to calc sequence lock: %v", test.name, err)
 		}
 
-		if seqLock.Seconds != test.want.Seconds {
-			t.Fatalf("test '%s' got %v seconds want %v seconds",
-				test.name, seqLock.Seconds, test.want.Seconds)
+		if seqLock.Milliseconds != test.want.Milliseconds {
+			t.Fatalf("test '%s' got %v milliseconds want %v milliseconds",
+				test.name, seqLock.Milliseconds, test.want.Milliseconds)
 		}
 		if seqLock.BlockBlueScore != test.want.BlockBlueScore {
 			t.Fatalf("test '%s' got blue score of %v want blue score of %v ",
@@ -519,31 +519,35 @@ func TestCalcPastMedianTime(t *testing.T) {
 	}
 
 	tests := []struct {
-		blockNumber                 uint32
-		expectedSecondsSinceGenesis int64
+		blockNumber                      uint32
+		expectedMillisecondsSinceGenesis int64
 	}{
 		{
-			blockNumber:                 262,
-			expectedSecondsSinceGenesis: 130,
+			blockNumber:                      262,
+			expectedMillisecondsSinceGenesis: 130000,
 		},
 		{
-			blockNumber:                 270,
-			expectedSecondsSinceGenesis: 138,
+			blockNumber:                      270,
+			expectedMillisecondsSinceGenesis: 138000,
 		},
 		{
-			blockNumber:                 240,
-			expectedSecondsSinceGenesis: 108,
+			blockNumber:                      240,
+			expectedMillisecondsSinceGenesis: 108000,
 		},
 		{
-			blockNumber:                 5,
-			expectedSecondsSinceGenesis: 0,
+			blockNumber:                      5,
+			expectedMillisecondsSinceGenesis: 0,
 		},
 	}
 
 	for _, test := range tests {
-		secondsSinceGenesis := nodes[test.blockNumber].PastMedianTime(dag).Unix() - dag.genesis.Header().Timestamp.Unix()
-		if secondsSinceGenesis != test.expectedSecondsSinceGenesis {
-			t.Errorf("TestCalcPastMedianTime: expected past median time of block %v to be %v seconds from genesis but got %v", test.blockNumber, test.expectedSecondsSinceGenesis, secondsSinceGenesis)
+		millisecondsSinceGenesis := nodes[test.blockNumber].PastMedianTime(dag).UnixMilliseconds() -
+			dag.genesis.Header().Timestamp.UnixMilliseconds()
+
+		if millisecondsSinceGenesis != test.expectedMillisecondsSinceGenesis {
+			t.Errorf("TestCalcPastMedianTime: expected past median time of block %v to be %v milliseconds "+
+				"from genesis but got %v",
+				test.blockNumber, test.expectedMillisecondsSinceGenesis, millisecondsSinceGenesis)
 		}
 	}
 }
@@ -553,18 +557,19 @@ func TestNew(t *testing.T) {
 
 	dbPath := filepath.Join(tempDir, "TestNew")
 	_ = os.RemoveAll(dbPath)
-	err := dbaccess.Open(dbPath)
+	databaseContext, err := dbaccess.New(dbPath)
 	if err != nil {
 		t.Fatalf("error creating db: %s", err)
 	}
 	defer func() {
-		dbaccess.Close()
+		databaseContext.Close()
 		os.RemoveAll(dbPath)
 	}()
 	config := &Config{
-		DAGParams:  &dagconfig.SimnetParams,
-		TimeSource: NewTimeSource(),
-		SigCache:   txscript.NewSigCache(1000),
+		DatabaseContext: databaseContext,
+		DAGParams:       &dagconfig.SimnetParams,
+		TimeSource:      NewTimeSource(),
+		SigCache:        txscript.NewSigCache(1000),
 	}
 	_, err = New(config)
 	if err != nil {
@@ -592,20 +597,21 @@ func TestAcceptingInInit(t *testing.T) {
 	// Create a test database
 	dbPath := filepath.Join(tempDir, "TestAcceptingInInit")
 	_ = os.RemoveAll(dbPath)
-	err := dbaccess.Open(dbPath)
+	databaseContext, err := dbaccess.New(dbPath)
 	if err != nil {
 		t.Fatalf("error creating db: %s", err)
 	}
 	defer func() {
-		dbaccess.Close()
+		databaseContext.Close()
 		os.RemoveAll(dbPath)
 	}()
 
 	// Create a DAG to add the test block into
 	config := &Config{
-		DAGParams:  &dagconfig.SimnetParams,
-		TimeSource: NewTimeSource(),
-		SigCache:   txscript.NewSigCache(1000),
+		DatabaseContext: databaseContext,
+		DAGParams:       &dagconfig.SimnetParams,
+		TimeSource:      NewTimeSource(),
+		SigCache:        txscript.NewSigCache(1000),
 	}
 	dag, err := New(config)
 	if err != nil {
@@ -629,7 +635,7 @@ func TestAcceptingInInit(t *testing.T) {
 	testNode.status = statusDataStored
 
 	// Manually add the test block to the database
-	dbTx, err := dbaccess.NewTx()
+	dbTx, err := databaseContext.NewTx()
 	if err != nil {
 		t.Fatalf("Failed to open database "+
 			"transaction: %s", err)
@@ -696,7 +702,7 @@ func TestConfirmations(t *testing.T) {
 
 	// Add a chain of blocks
 	chainBlocks := make([]*wire.MsgBlock, 5)
-	chainBlocks[0] = dag.dagParams.GenesisBlock
+	chainBlocks[0] = dag.Params.GenesisBlock
 	for i := uint32(1); i < 5; i++ {
 		chainBlocks[i] = prepareAndProcessBlockByParentMsgBlocks(t, dag, chainBlocks[i-1])
 	}
@@ -805,7 +811,7 @@ func TestAcceptingBlock(t *testing.T) {
 
 	numChainBlocks := uint32(10)
 	chainBlocks := make([]*wire.MsgBlock, numChainBlocks)
-	chainBlocks[0] = dag.dagParams.GenesisBlock
+	chainBlocks[0] = dag.Params.GenesisBlock
 	for i := uint32(1); i <= numChainBlocks-1; i++ {
 		chainBlocks[i] = prepareAndProcessBlockByParentMsgBlocks(t, dag, chainBlocks[i-1])
 	}
@@ -921,7 +927,7 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 	blockTime := dag.genesis.Header().Timestamp
 
 	flushUTXODiffStore := func() {
-		dbTx, err := dbaccess.NewTx()
+		dbTx, err := dag.databaseContext.NewTx()
 		if err != nil {
 			t.Fatalf("Failed to open database transaction: %s", err)
 		}
@@ -951,7 +957,7 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 		flushUTXODiffStore()
 		return node
 	}
-	finalityInterval := dag.dagParams.FinalityInterval
+	finalityInterval := dag.FinalityInterval()
 	nodes := make([]*blockNode, 0, finalityInterval)
 	currentNode := dag.genesis
 	nodes = append(nodes, currentNode)
@@ -1127,7 +1133,7 @@ func TestIsDAGCurrentMaxDiff(t *testing.T) {
 		&dagconfig.SimnetParams,
 	}
 	for _, params := range netParams {
-		if params.TargetTimePerBlock*time.Duration(params.FinalityInterval) < isDAGCurrentMaxDiff {
+		if params.FinalityDuration < isDAGCurrentMaxDiff*params.TargetTimePerBlock {
 			t.Errorf("in %s, a DAG can be considered current even if it's below the finality point", params.Name)
 		}
 	}

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kaspanet/kaspad/rpcclient"
+	"github.com/kaspanet/kaspad/rpc/client"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
@@ -10,30 +10,30 @@ import (
 )
 
 type minerClient struct {
-	*rpcclient.Client
+	*client.Client
 	onBlockAdded chan struct{}
 }
 
-func newMinerClient(connCfg *rpcclient.ConnConfig) (*minerClient, error) {
-	client := &minerClient{
+func newMinerClient(connCfg *client.ConnConfig) (*minerClient, error) {
+	minerClient := &minerClient{
 		onBlockAdded: make(chan struct{}, 1),
 	}
-	notificationHandlers := &rpcclient.NotificationHandlers{
+	notificationHandlers := &client.NotificationHandlers{
 		OnFilteredBlockAdded: func(_ uint64, header *wire.BlockHeader,
 			txs []*util.Tx) {
-			client.onBlockAdded <- struct{}{}
+			minerClient.onBlockAdded <- struct{}{}
 		},
 	}
 	var err error
-	client.Client, err = rpcclient.New(connCfg, notificationHandlers)
+	minerClient.Client, err = client.New(connCfg, notificationHandlers)
 	if err != nil {
 		return nil, errors.Errorf("Error connecting to address %s: %s", connCfg.Host, err)
 	}
 
-	if err = client.NotifyBlocks(); err != nil {
-		return nil, errors.Errorf("Error while registering client %s for block notifications: %s", client.Host(), err)
+	if err = minerClient.NotifyBlocks(); err != nil {
+		return nil, errors.Wrapf(err, "error while registering minerClient %s for block notifications", minerClient.Host())
 	}
-	return client, nil
+	return minerClient, nil
 }
 
 func connectToServer(cfg *configFlags) (*minerClient, error) {
@@ -47,7 +47,7 @@ func connectToServer(cfg *configFlags) (*minerClient, error) {
 		return nil, err
 	}
 
-	connCfg := &rpcclient.ConnConfig{
+	connCfg := &client.ConnConfig{
 		Host:           rpcAddr,
 		Endpoint:       "ws",
 		User:           cfg.RPCUser,

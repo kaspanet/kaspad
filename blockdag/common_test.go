@@ -12,7 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
+
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/pkg/errors"
 
@@ -86,7 +87,7 @@ func loadUTXOSet(filename string) (UTXOSet, error) {
 // TestSetCoinbaseMaturity makes the ability to set the coinbase maturity
 // available when running tests.
 func (dag *BlockDAG) TestSetCoinbaseMaturity(maturity uint64) {
-	dag.dagParams.BlockCoinbaseMaturity = maturity
+	dag.Params.BlockCoinbaseMaturity = maturity
 }
 
 // newTestDAG returns a DAG that is usable for syntetic tests. It is
@@ -95,11 +96,9 @@ func (dag *BlockDAG) TestSetCoinbaseMaturity(maturity uint64) {
 // use of it.
 func newTestDAG(params *dagconfig.Params) *BlockDAG {
 	index := newBlockIndex(params)
-	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
 	dag := &BlockDAG{
-		dagParams:                      params,
+		Params:                         params,
 		timeSource:                     NewTimeSource(),
-		targetTimePerBlock:             targetTimePerBlock,
 		difficultyAdjustmentWindowSize: params.DifficultyAdjustmentWindowSize,
 		TimestampDeviationTolerance:    params.TimestampDeviationTolerance,
 		powMaxBits:                     util.BigToCompact(params.PowMax),
@@ -119,7 +118,7 @@ func newTestDAG(params *dagconfig.Params) *BlockDAG {
 
 // newTestNode creates a block node connected to the passed parent with the
 // provided fields populated and fake values for the other fields.
-func newTestNode(dag *BlockDAG, parents blockSet, blockVersion int32, bits uint32, timestamp time.Time) *blockNode {
+func newTestNode(dag *BlockDAG, parents blockSet, blockVersion int32, bits uint32, timestamp mstime.Time) *blockNode {
 	// Make up a header and create a block node from it.
 	header := &wire.BlockHeader{
 		Version:              blockVersion,
@@ -186,13 +185,13 @@ func nodeByMsgBlock(t *testing.T, dag *BlockDAG, block *wire.MsgBlock) *blockNod
 }
 
 type fakeTimeSource struct {
-	time time.Time
+	time mstime.Time
 }
 
-func (fts *fakeTimeSource) Now() time.Time {
-	return time.Unix(fts.time.Unix(), 0)
+func (fts *fakeTimeSource) Now() mstime.Time {
+	return fts.time
 }
 
-func newFakeTimeSource(fakeTime time.Time) TimeSource {
+func newFakeTimeSource(fakeTime mstime.Time) TimeSource {
 	return &fakeTimeSource{time: fakeTime}
 }
