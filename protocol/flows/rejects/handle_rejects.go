@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 )
 
-// RejectsContext is the interface for the context needed for the HandleRejects flow.
+// HandleRejectsContext is the interface for the context needed for the HandleRejects flow.
 type HandleRejectsContext interface {
 }
 
