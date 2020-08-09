@@ -87,17 +87,6 @@ type BlockDAG struct {
 	delayedBlocks      map[daghash.Hash]*delayedBlock
 	delayedBlocksQueue delayedBlocksHeap
 
-	// The following fields are used to determine if certain warnings have
-	// already been shown.
-	//
-	// unknownRulesWarned refers to warnings due to unknown rules being
-	// activated.
-	//
-	// unknownVersionsWarned refers to warnings due to unknown versions
-	// being mined.
-	unknownRulesWarned    bool
-	unknownVersionsWarned bool
-
 	// The notifications field stores a slice of callbacks to be executed on
 	// certain blockDAG events.
 	notificationsLock sync.RWMutex
