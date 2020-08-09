@@ -3,6 +3,7 @@ package blockdag
 import (
 	"bytes"
 	"encoding/binary"
+	"math"
 	"time"
 
 	"github.com/kaspanet/go-secp256k1"
@@ -122,4 +123,16 @@ func (dag *BlockDAG) NextBlockTime() mstime.Time {
 	}
 
 	return newTimestamp
+}
+
+// CurrentBits returns the bits of the tip with the lowest bits, which also means it has highest difficulty.
+func (dag *BlockDAG) CurrentBits() uint32 {
+	tips := dag.virtual.tips()
+	minBits := uint32(math.MaxUint32)
+	for tip := range tips {
+		if minBits > tip.Header().Bits {
+			minBits = tip.Header().Bits
+		}
+	}
+	return minBits
 }
