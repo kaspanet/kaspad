@@ -118,7 +118,6 @@ func New(config *Config) (*BlockDAG, error) {
 
 	params := config.DAGParams
 
-	index := newBlockIndex(params)
 	dag := &BlockDAG{
 		Params:                         params,
 		databaseContext:                config.DatabaseContext,
@@ -128,7 +127,7 @@ func New(config *Config) (*BlockDAG, error) {
 		difficultyAdjustmentWindowSize: params.DifficultyAdjustmentWindowSize,
 		TimestampDeviationTolerance:    params.TimestampDeviationTolerance,
 		powMaxBits:                     util.BigToCompact(params.PowMax),
-		index:                          index,
+		index:                          newBlockIndex(params),
 		orphans:                        make(map[daghash.Hash]*orphanBlock),
 		prevOrphans:                    make(map[daghash.Hash][]*orphanBlock),
 		delayedBlocks:                  make(map[daghash.Hash]*delayedBlock),
@@ -160,14 +159,11 @@ func New(config *Config) (*BlockDAG, error) {
 		}
 	}
 
-	genesis, ok := index.LookupNode(params.GenesisHash)
+	genesis, ok := dag.index.LookupNode(params.GenesisHash)
 
 	if !ok {
 		genesisBlock := util.NewBlock(dag.Params.GenesisBlock)
-		// To prevent the creation of a new err variable unintentionally so the
-		// defered function above could read err - declare isOrphan and isDelayed explicitly.
-		var isOrphan, isDelayed bool
-		isOrphan, isDelayed, err = dag.ProcessBlock(genesisBlock, BFNone)
+		isOrphan, isDelayed, err := dag.ProcessBlock(genesisBlock, BFNone)
 		if err != nil {
 			return nil, err
 		}
@@ -177,7 +173,7 @@ func New(config *Config) (*BlockDAG, error) {
 		if isOrphan {
 			return nil, errors.New("genesis block is unexpectedly orphan")
 		}
-		genesis, ok = index.LookupNode(params.GenesisHash)
+		genesis, ok = dag.index.LookupNode(params.GenesisHash)
 		if !ok {
 			return nil, errors.New("genesis is not found in the DAG after it was proccessed")
 		}
