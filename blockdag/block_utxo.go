@@ -2,6 +2,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
@@ -76,6 +77,43 @@ func checkDoubleSpendsWithBlockPast(pastUTXO UTXOSet, blockTransactions []*util.
 	}
 
 	return nil
+}
+
+// verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
+// to save extra traversals it returns the transactions acceptance data, the compactFeeData
+// for the new block and its multiset.
+func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
+	newBlockUTXO UTXOSet, txsAcceptanceData MultiBlockTxsAcceptanceData, newBlockFeeData compactFeeData, multiset *secp256k1.MultiSet, err error) {
+
+	pastUTXO, selectedParentPastUTXO, txsAcceptanceData, err := dag.pastUTXO(node)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	err = node.validateAcceptedIDMerkleRoot(dag, txsAcceptanceData)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	feeData, err := dag.checkConnectToPastUTXO(node, pastUTXO, transactions, fastAdd)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	multiset, err = node.calcMultiset(dag, txsAcceptanceData, selectedParentPastUTXO)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	calculatedMultisetHash := daghash.Hash(*multiset.Finalize())
+	if !calculatedMultisetHash.IsEqual(node.utxoCommitment) {
+		str := fmt.Sprintf("block %s UTXO commitment is invalid - block "+
+			"header indicates %s, but calculated value is %s", node.hash,
+			node.utxoCommitment, calculatedMultisetHash)
+		return nil, nil, nil, nil, ruleError(ErrBadUTXOCommitment, str)
+	}
+
+	return pastUTXO, txsAcceptanceData, feeData, multiset, nil
 }
 
 func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
