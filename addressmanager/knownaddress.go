@@ -10,14 +10,14 @@ import (
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/kaspanet/kaspad/wire"
+	"github.com/kaspanet/kaspad/domainmessage"
 )
 
 // KnownAddress tracks information about a known network address that is used
 // to determine how viable an address is.
 type KnownAddress struct {
-	netAddress     *wire.NetAddress
-	sourceAddress  *wire.NetAddress
+	netAddress     *domainmessage.NetAddress
+	sourceAddress  *domainmessage.NetAddress
 	attempts       int
 	lastAttempt    mstime.Time
 	lastSuccess    mstime.Time
@@ -28,9 +28,9 @@ type KnownAddress struct {
 	bannedTime     mstime.Time
 }
 
-// NetAddress returns the underlying wire.NetAddress associated with the
+// NetAddress returns the underlying domainmessage.NetAddress associated with the
 // known address.
-func (ka *KnownAddress) NetAddress() *wire.NetAddress {
+func (ka *KnownAddress) NetAddress() *domainmessage.NetAddress {
 	return ka.netAddress
 }
 

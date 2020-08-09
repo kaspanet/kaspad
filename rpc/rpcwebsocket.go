@@ -26,11 +26,11 @@ import (
 
 	"github.com/btcsuite/websocket"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 const (
@@ -268,21 +268,21 @@ type wsClientFilter struct {
 	otherAddresses map[string]struct{}
 
 	// Outpoints of unspent outputs.
-	unspent map[wire.Outpoint]struct{}
+	unspent map[domainmessage.Outpoint]struct{}
 }
 
 // newWSClientFilter creates a new, empty wsClientFilter struct to be used
 // for a websocket client.
 //
 // NOTE: This extension was ported from github.com/decred/dcrd
-func newWSClientFilter(addresses []string, unspentOutpoints []wire.Outpoint, params *dagconfig.Params) *wsClientFilter {
+func newWSClientFilter(addresses []string, unspentOutpoints []domainmessage.Outpoint, params *dagconfig.Params) *wsClientFilter {
 	filter := &wsClientFilter{
 		pubKeyHashes:        map[[ripemd160.Size]byte]struct{}{},
 		scriptHashes:        map[[ripemd160.Size]byte]struct{}{},
 		compressedPubKeys:   map[[33]byte]struct{}{},
 		uncompressedPubKeys: map[[65]byte]struct{}{},
 		otherAddresses:      map[string]struct{}{},
-		unspent:             make(map[wire.Outpoint]struct{}, len(unspentOutpoints)),
+		unspent:             make(map[domainmessage.Outpoint]struct{}, len(unspentOutpoints)),
 	}
 
 	for _, s := range addresses {
@@ -348,7 +348,7 @@ func (f *wsClientFilter) existsAddress(a util.Address) bool {
 // addUnspentOutpoint adds an outpoint to the wsClientFilter.
 //
 // NOTE: This extension was ported from github.com/decred/dcrd
-func (f *wsClientFilter) addUnspentOutpoint(op *wire.Outpoint) {
+func (f *wsClientFilter) addUnspentOutpoint(op *domainmessage.Outpoint) {
 	f.unspent[*op] = struct{}{}
 }
 
@@ -356,12 +356,12 @@ func (f *wsClientFilter) addUnspentOutpoint(op *wire.Outpoint) {
 // the wsClientFilter.
 //
 // NOTE: This extension was ported from github.com/decred/dcrd
-func (f *wsClientFilter) existsUnspentOutpointNoLock(op *wire.Outpoint) bool {
+func (f *wsClientFilter) existsUnspentOutpointNoLock(op *domainmessage.Outpoint) bool {
 	_, ok := f.unspent[*op]
 	return ok
 }
 
-func (f *wsClientFilter) existsUnspentOutpoint(op *wire.Outpoint) bool {
+func (f *wsClientFilter) existsUnspentOutpoint(op *domainmessage.Outpoint) bool {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.existsUnspentOutpointNoLock(op)
@@ -602,7 +602,7 @@ func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
 				defer filter.mu.Unlock()
 				if filter.existsAddress(addr) {
 					subscribed[quitChan] = struct{}{}
-					op := wire.Outpoint{
+					op := domainmessage.Outpoint{
 						TxID:  *tx.ID(),
 						Index: uint32(i),
 					}
@@ -755,7 +755,7 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 }
 
 // txHexString returns the serialized transaction encoded in hexadecimal.
-func txHexString(tx *wire.MsgTx) string {
+func txHexString(tx *domainmessage.MsgTx) string {
 	buf := bytes.NewBuffer(make([]byte, 0, tx.SerializeSize()))
 	// Ignore Serialize's error, as writing to a bytes.buffer cannot fail.
 	tx.Serialize(buf)

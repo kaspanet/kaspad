@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/kaspanet/go-secp256k1"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // BlockForMining returns a block with the given transactions
@@ -18,7 +18,7 @@ import (
 // all aspects except proof of work.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, error) {
+func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*domainmessage.MsgBlock, error) {
 	blockTimestamp := dag.NextBlockTime()
 	requiredDifficulty := dag.NextRequiredDifficulty(blockTimestamp)
 
@@ -35,7 +35,7 @@ func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, er
 	if err != nil {
 		return nil, err
 	}
-	var msgBlock wire.MsgBlock
+	var msgBlock domainmessage.MsgBlock
 	for _, tx := range transactions {
 		msgBlock.AddTransaction(tx.MsgTx())
 	}
@@ -45,7 +45,7 @@ func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*wire.MsgBlock, er
 		return nil, err
 	}
 
-	msgBlock.Header = wire.BlockHeader{
+	msgBlock.Header = domainmessage.BlockHeader{
 		Version:              nextBlockVersion,
 		ParentHashes:         dag.TipHashes(),
 		HashMerkleRoot:       hashMerkleTree.Root(),

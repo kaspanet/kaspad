@@ -1,8 +1,8 @@
 package relaytransactions
 
 import (
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/netadapter/router"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 type handleRequestedTransactionsFlow struct {
@@ -10,7 +10,7 @@ type handleRequestedTransactionsFlow struct {
 	incomingRoute, outgoingRoute *router.Route
 }
 
-// HandleRequestedTransactions listens to wire.MsgRequestTransactions messages, responding with the requested
+// HandleRequestedTransactions listens to domainmessage.MsgRequestTransactions messages, responding with the requested
 // transactions if those are in the mempool.
 // Missing transactions would be ignored
 func HandleRequestedTransactions(context TransactionsRelayContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
@@ -33,7 +33,7 @@ func (flow *handleRequestedTransactionsFlow) start() error {
 			tx, ok := flow.TxPool().FetchTransaction(transactionID)
 
 			if !ok {
-				msgTransactionNotFound := wire.NewMsgTransactionNotFound(transactionID)
+				msgTransactionNotFound := domainmessage.NewMsgTransactionNotFound(transactionID)
 				err := flow.outgoingRoute.Enqueue(msgTransactionNotFound)
 				if err != nil {
 					return err
@@ -49,11 +49,11 @@ func (flow *handleRequestedTransactionsFlow) start() error {
 	}
 }
 
-func (flow *handleRequestedTransactionsFlow) readRequestTransactions() (*wire.MsgRequestTransactions, error) {
+func (flow *handleRequestedTransactionsFlow) readRequestTransactions() (*domainmessage.MsgRequestTransactions, error) {
 	msg, err := flow.incomingRoute.Dequeue()
 	if err != nil {
 		return nil, err
 	}
 
-	return msg.(*wire.MsgRequestTransactions), nil
+	return msg.(*domainmessage.MsgRequestTransactions), nil
 }

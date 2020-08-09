@@ -12,13 +12,13 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/mining"
 	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/random"
-	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
 
@@ -285,7 +285,7 @@ func handleGetBlockTemplateProposal(s *Server, request *model.TemplateRequest) (
 				"hexadecimal string (not %q)", hexData),
 		}
 	}
-	var msgBlock wire.MsgBlock
+	var msgBlock domainmessage.MsgBlock
 	if err := msgBlock.Deserialize(bytes.NewReader(dataBytes)); err != nil {
 		return nil, &model.RPCError{
 			Code:    model.ErrRPCDeserialization,
@@ -534,7 +534,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, payAddr util.Address) 
 	// changed or the transactions in the memory pool have been updated and
 	// it has been at least gbtRegenerateSecond since the last template was
 	// generated.
-	var msgBlock *wire.MsgBlock
+	var msgBlock *domainmessage.MsgBlock
 	var targetDifficulty string
 	tipHashes := s.dag.TipHashes()
 	template := state.template
@@ -711,7 +711,7 @@ func (state *gbtWorkState) blockTemplateResult(s *Server) (*model.GetBlockTempla
 		CurTime:              header.Timestamp.UnixMilliseconds(),
 		Height:               template.Height,
 		ParentHashes:         daghash.Strings(header.ParentHashes),
-		MassLimit:            wire.MaxMassPerBlock,
+		MassLimit:            domainmessage.MaxMassPerBlock,
 		Transactions:         transactions,
 		HashMerkleRoot:       header.HashMerkleRoot.String(),
 		AcceptedIDMerkleRoot: header.AcceptedIDMerkleRoot.String(),

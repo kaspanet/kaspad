@@ -92,7 +92,7 @@ func (e ErrorCode) String() string {
 
 // Error identifies a general error. This differs from an RPCError in that this
 // error typically is used more by the consumers of the package as opposed to
-// RPCErrors which are intended to be returned to the client across the wire via
+// RPCErrors which are intended to be returned to the client across the domainmessage via
 // a JSON-RPC Response. The caller can use type assertions to determine the
 // specific error and access the ErrorCode field.
 type Error struct {

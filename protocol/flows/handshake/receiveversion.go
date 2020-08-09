@@ -1,11 +1,11 @@
 package handshake
 
 import (
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 var (
@@ -16,7 +16,7 @@ var (
 
 	// minAcceptableProtocolVersion is the lowest protocol version that a
 	// connected peer may support.
-	minAcceptableProtocolVersion = wire.ProtocolVersion
+	minAcceptableProtocolVersion = domainmessage.ProtocolVersion
 )
 
 type receiveVersionFlow struct {
@@ -28,7 +28,7 @@ type receiveVersionFlow struct {
 // ReceiveVersion waits for the peer to send a version message, sends a
 // verack in response, and updates its info accordingly.
 func ReceiveVersion(context HandleHandshakeContext, incomingRoute *router.Route, outgoingRoute *router.Route,
-	peer *peerpkg.Peer) (*wire.NetAddress, error) {
+	peer *peerpkg.Peer) (*domainmessage.NetAddress, error) {
 
 	flow := &receiveVersionFlow{
 		HandleHandshakeContext: context,
@@ -40,13 +40,13 @@ func ReceiveVersion(context HandleHandshakeContext, incomingRoute *router.Route,
 	return flow.start()
 }
 
-func (flow *receiveVersionFlow) start() (*wire.NetAddress, error) {
+func (flow *receiveVersionFlow) start() (*domainmessage.NetAddress, error) {
 	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, err
 	}
 
-	msgVersion, ok := message.(*wire.MsgVersion)
+	msgVersion, ok := message.(*domainmessage.MsgVersion)
 	if !ok {
 		return nil, protocolerrors.New(true, "a version message must precede all others")
 	}
@@ -64,7 +64,7 @@ func (flow *receiveVersionFlow) start() (*wire.NetAddress, error) {
 	// too old.
 	//
 	// NOTE: If minAcceptableProtocolVersion is raised to be higher than
-	// wire.RejectVersion, this should send a reject packet before
+	// domainmessage.RejectVersion, this should send a reject packet before
 	// disconnecting.
 	if msgVersion.ProtocolVersion < minAcceptableProtocolVersion {
 		//TODO(libp2p) create error type for disconnect but don't ban
@@ -91,7 +91,7 @@ func (flow *receiveVersionFlow) start() (*wire.NetAddress, error) {
 	//}
 
 	flow.peer.UpdateFieldsFromMsgVersion(msgVersion)
-	err = flow.outgoingRoute.Enqueue(wire.NewMsgVerAck())
+	err = flow.outgoingRoute.Enqueue(domainmessage.NewMsgVerAck())
 	if err != nil {
 		return nil, err
 	}

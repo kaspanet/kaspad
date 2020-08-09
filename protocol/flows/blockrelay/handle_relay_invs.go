@@ -2,6 +2,7 @@ package blockrelay
 
 import (
 	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/blocklogger"
@@ -11,7 +12,6 @@ import (
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	mathUtil "github.com/kaspanet/kaspad/util/math"
-	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
 
@@ -23,17 +23,17 @@ type RelayInvsContext interface {
 	SharedRequestedBlocks() *SharedRequestedBlocks
 	StartIBDIfRequired()
 	IsInIBD() bool
-	Broadcast(message wire.Message) error
+	Broadcast(message domainmessage.Message) error
 }
 
 type handleRelayInvsFlow struct {
 	RelayInvsContext
 	incomingRoute, outgoingRoute *router.Route
 	peer                         *peerpkg.Peer
-	invsQueue                    []*wire.MsgInvRelayBlock
+	invsQueue                    []*domainmessage.MsgInvRelayBlock
 }
 
-// HandleRelayInvs listens to wire.MsgInvRelayBlock messages, requests their corresponding blocks if they
+// HandleRelayInvs listens to domainmessage.MsgInvRelayBlock messages, requests their corresponding blocks if they
 // are missing, adds them to the DAG and propagates them to the rest of the network.
 func HandleRelayInvs(context RelayInvsContext, incomingRoute *router.Route, outgoingRoute *router.Route,
 	peer *peerpkg.Peer) error {
@@ -43,7 +43,7 @@ func HandleRelayInvs(context RelayInvsContext, incomingRoute *router.Route, outg
 		incomingRoute:    incomingRoute,
 		outgoingRoute:    outgoingRoute,
 		peer:             peer,
-		invsQueue:        make([]*wire.MsgInvRelayBlock, 0),
+		invsQueue:        make([]*domainmessage.MsgInvRelayBlock, 0),
 	}
 	return flow.start()
 }
@@ -81,10 +81,10 @@ func (flow *handleRelayInvsFlow) start() error {
 	}
 }
 
-func (flow *handleRelayInvsFlow) readInv() (*wire.MsgInvRelayBlock, error) {
+func (flow *handleRelayInvsFlow) readInv() (*domainmessage.MsgInvRelayBlock, error) {
 
 	if len(flow.invsQueue) > 0 {
-		var inv *wire.MsgInvRelayBlock
+		var inv *domainmessage.MsgInvRelayBlock
 		inv, flow.invsQueue = flow.invsQueue[0], flow.invsQueue[1:]
 		return inv, nil
 	}
@@ -94,7 +94,7 @@ func (flow *handleRelayInvsFlow) readInv() (*wire.MsgInvRelayBlock, error) {
 		return nil, err
 	}
 
-	inv, ok := msg.(*wire.MsgInvRelayBlock)
+	inv, ok := msg.(*domainmessage.MsgInvRelayBlock)
 	if !ok {
 		return nil, protocolerrors.Errorf(true, "unexpected %s message in the block relay handleRelayInvsFlow while "+
 			"expecting an inv message", msg.Command())
@@ -103,7 +103,7 @@ func (flow *handleRelayInvsFlow) readInv() (*wire.MsgInvRelayBlock, error) {
 }
 
 func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) error {
-	numHashesToRequest := mathUtil.MinInt(wire.MsgRequestRelayBlocksHashes, requestQueue.len())
+	numHashesToRequest := mathUtil.MinInt(domainmessage.MsgRequestRelayBlocksHashes, requestQueue.len())
 	hashesToRequest := requestQueue.dequeue(numHashesToRequest)
 
 	pendingBlocks := map[daghash.Hash]struct{}{}
@@ -127,7 +127,7 @@ func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) err
 	// clean from any pending blocks.
 	defer flow.SharedRequestedBlocks().removeSet(pendingBlocks)
 
-	getRelayBlocksMsg := wire.NewMsgRequestRelayBlocks(filteredHashesToRequest)
+	getRelayBlocksMsg := domainmessage.NewMsgRequestRelayBlocks(filteredHashesToRequest)
 	err := flow.outgoingRoute.Enqueue(getRelayBlocksMsg)
 	if err != nil {
 		return err
@@ -160,9 +160,9 @@ func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) err
 
 // readMsgBlock returns the next msgBlock in msgChan, and populates invsQueue with any inv messages that meanwhile arrive.
 //
-// Note: this function assumes msgChan can contain only wire.MsgInvRelayBlock and wire.MsgBlock messages.
+// Note: this function assumes msgChan can contain only domainmessage.MsgInvRelayBlock and domainmessage.MsgBlock messages.
 func (flow *handleRelayInvsFlow) readMsgBlock() (
-	msgBlock *wire.MsgBlock, err error) {
+	msgBlock *domainmessage.MsgBlock, err error) {
 
 	for {
 		message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
@@ -171,9 +171,9 @@ func (flow *handleRelayInvsFlow) readMsgBlock() (
 		}
 
 		switch message := message.(type) {
-		case *wire.MsgInvRelayBlock:
+		case *domainmessage.MsgInvRelayBlock:
 			flow.invsQueue = append(flow.invsQueue, message)
-		case *wire.MsgBlock:
+		case *domainmessage.MsgBlock:
 			return message, nil
 		default:
 			return nil, errors.Errorf("unexpected message %s", message.Command())
@@ -230,7 +230,7 @@ func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueS
 	// sm.restartSyncIfNeeded()
 	//// Clear the rejected transactions.
 	//sm.rejectedTxns = make(map[daghash.TxID]struct{})
-	err = flow.Broadcast(wire.NewMsgInvBlock(blockHash))
+	err = flow.Broadcast(domainmessage.NewMsgInvBlock(blockHash))
 	if err != nil {
 		return err
 	}

@@ -1,8 +1,8 @@
 package ping
 
 import (
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/netadapter/router"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // ReceivePingsContext is the interface for the context needed for the ReceivePings flow.
@@ -31,9 +31,9 @@ func (flow *receivePingsFlow) start() error {
 		if err != nil {
 			return err
 		}
-		pingMessage := message.(*wire.MsgPing)
+		pingMessage := message.(*domainmessage.MsgPing)
 
-		pongMessage := wire.NewMsgPong(pingMessage.Nonce)
+		pongMessage := domainmessage.NewMsgPong(pingMessage.Nonce)
 		err = flow.outgoingRoute.Enqueue(pongMessage)
 		if err != nil {
 			return err

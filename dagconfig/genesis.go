@@ -5,13 +5,13 @@
 package dagconfig
 
 import (
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
-	"github.com/kaspanet/kaspad/wire"
 )
 
-var genesisTxOuts = []*wire.TxOut{}
+var genesisTxOuts = []*domainmessage.TxOut{}
 
 var genesisTxPayload = []byte{
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Blue score
@@ -23,7 +23,7 @@ var genesisTxPayload = []byte{
 
 // genesisCoinbaseTx is the coinbase transaction for the genesis blocks for
 // the main network.
-var genesisCoinbaseTx = wire.NewSubnetworkMsgTx(1, []*wire.TxIn{}, genesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, genesisTxPayload)
+var genesisCoinbaseTx = domainmessage.NewSubnetworkMsgTx(1, []*domainmessage.TxIn{}, genesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, genesisTxPayload)
 
 // genesisHash is the hash of the first block in the block DAG for the main
 // network (genesis block).
@@ -45,8 +45,8 @@ var genesisMerkleRoot = daghash.Hash{
 
 // genesisBlock defines the genesis block of the block DAG which serves as the
 // public transaction ledger for the main network.
-var genesisBlock = wire.MsgBlock{
-	Header: wire.BlockHeader{
+var genesisBlock = domainmessage.MsgBlock{
+	Header: domainmessage.BlockHeader{
 		Version:              0x10000000,
 		ParentHashes:         []*daghash.Hash{},
 		HashMerkleRoot:       &genesisMerkleRoot,
@@ -56,10 +56,10 @@ var genesisBlock = wire.MsgBlock{
 		Bits:                 0x207fffff,
 		Nonce:                0x1,
 	},
-	Transactions: []*wire.MsgTx{genesisCoinbaseTx},
+	Transactions: []*domainmessage.MsgTx{genesisCoinbaseTx},
 }
 
-var devnetGenesisTxOuts = []*wire.TxOut{}
+var devnetGenesisTxOuts = []*domainmessage.TxOut{}
 
 var devnetGenesisTxPayload = []byte{
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Blue score
@@ -72,7 +72,7 @@ var devnetGenesisTxPayload = []byte{
 
 // devnetGenesisCoinbaseTx is the coinbase transaction for the genesis blocks for
 // the development network.
-var devnetGenesisCoinbaseTx = wire.NewSubnetworkMsgTx(1, []*wire.TxIn{}, devnetGenesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, devnetGenesisTxPayload)
+var devnetGenesisCoinbaseTx = domainmessage.NewSubnetworkMsgTx(1, []*domainmessage.TxIn{}, devnetGenesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, devnetGenesisTxPayload)
 
 // devGenesisHash is the hash of the first block in the block DAG for the development
 // network (genesis block).
@@ -94,8 +94,8 @@ var devnetGenesisMerkleRoot = daghash.Hash{
 
 // devnetGenesisBlock defines the genesis block of the block DAG which serves as the
 // public transaction ledger for the development network.
-var devnetGenesisBlock = wire.MsgBlock{
-	Header: wire.BlockHeader{
+var devnetGenesisBlock = domainmessage.MsgBlock{
+	Header: domainmessage.BlockHeader{
 		Version:              0x10000000,
 		ParentHashes:         []*daghash.Hash{},
 		HashMerkleRoot:       &devnetGenesisMerkleRoot,
@@ -105,10 +105,10 @@ var devnetGenesisBlock = wire.MsgBlock{
 		Bits:                 0x1e7fffff,
 		Nonce:                0x10bb,
 	},
-	Transactions: []*wire.MsgTx{devnetGenesisCoinbaseTx},
+	Transactions: []*domainmessage.MsgTx{devnetGenesisCoinbaseTx},
 }
 
-var regtestGenesisTxOuts = []*wire.TxOut{}
+var regtestGenesisTxOuts = []*domainmessage.TxOut{}
 
 var regtestGenesisTxPayload = []byte{
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Blue score
@@ -121,7 +121,7 @@ var regtestGenesisTxPayload = []byte{
 
 // regtestGenesisCoinbaseTx is the coinbase transaction for
 // the genesis blocks for the regtest network.
-var regtestGenesisCoinbaseTx = wire.NewSubnetworkMsgTx(1, []*wire.TxIn{}, regtestGenesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, regtestGenesisTxPayload)
+var regtestGenesisCoinbaseTx = domainmessage.NewSubnetworkMsgTx(1, []*domainmessage.TxIn{}, regtestGenesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, regtestGenesisTxPayload)
 
 // devGenesisHash is the hash of the first block in the block DAG for the development
 // network (genesis block).
@@ -143,8 +143,8 @@ var regtestGenesisMerkleRoot = daghash.Hash{
 
 // regtestGenesisBlock defines the genesis block of the block DAG which serves as the
 // public transaction ledger for the development network.
-var regtestGenesisBlock = wire.MsgBlock{
-	Header: wire.BlockHeader{
+var regtestGenesisBlock = domainmessage.MsgBlock{
+	Header: domainmessage.BlockHeader{
 		Version:              0x10000000,
 		ParentHashes:         []*daghash.Hash{},
 		HashMerkleRoot:       &regtestGenesisMerkleRoot,
@@ -154,10 +154,10 @@ var regtestGenesisBlock = wire.MsgBlock{
 		Bits:                 0x207fffff,
 		Nonce:                0x0,
 	},
-	Transactions: []*wire.MsgTx{regtestGenesisCoinbaseTx},
+	Transactions: []*domainmessage.MsgTx{regtestGenesisCoinbaseTx},
 }
 
-var simnetGenesisTxOuts = []*wire.TxOut{}
+var simnetGenesisTxOuts = []*domainmessage.TxOut{}
 
 var simnetGenesisTxPayload = []byte{
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Blue score
@@ -169,7 +169,7 @@ var simnetGenesisTxPayload = []byte{
 }
 
 // simnetGenesisCoinbaseTx is the coinbase transaction for the simnet genesis block.
-var simnetGenesisCoinbaseTx = wire.NewSubnetworkMsgTx(1, []*wire.TxIn{}, simnetGenesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, simnetGenesisTxPayload)
+var simnetGenesisCoinbaseTx = domainmessage.NewSubnetworkMsgTx(1, []*domainmessage.TxIn{}, simnetGenesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, simnetGenesisTxPayload)
 
 // simnetGenesisHash is the hash of the first block in the block DAG for
 // the simnet (genesis block).
@@ -191,8 +191,8 @@ var simnetGenesisMerkleRoot = daghash.Hash{
 
 // simnetGenesisBlock defines the genesis block of the block DAG which serves as the
 // public transaction ledger for the development network.
-var simnetGenesisBlock = wire.MsgBlock{
-	Header: wire.BlockHeader{
+var simnetGenesisBlock = domainmessage.MsgBlock{
+	Header: domainmessage.BlockHeader{
 		Version:              0x10000000,
 		ParentHashes:         []*daghash.Hash{},
 		HashMerkleRoot:       &simnetGenesisMerkleRoot,
@@ -202,10 +202,10 @@ var simnetGenesisBlock = wire.MsgBlock{
 		Bits:                 0x207fffff,
 		Nonce:                0x0,
 	},
-	Transactions: []*wire.MsgTx{simnetGenesisCoinbaseTx},
+	Transactions: []*domainmessage.MsgTx{simnetGenesisCoinbaseTx},
 }
 
-var testnetGenesisTxOuts = []*wire.TxOut{}
+var testnetGenesisTxOuts = []*domainmessage.TxOut{}
 
 var testnetGenesisTxPayload = []byte{
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Blue score
@@ -215,7 +215,7 @@ var testnetGenesisTxPayload = []byte{
 }
 
 // testnetGenesisCoinbaseTx is the coinbase transaction for the testnet genesis block.
-var testnetGenesisCoinbaseTx = wire.NewSubnetworkMsgTx(1, []*wire.TxIn{}, testnetGenesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, testnetGenesisTxPayload)
+var testnetGenesisCoinbaseTx = domainmessage.NewSubnetworkMsgTx(1, []*domainmessage.TxIn{}, testnetGenesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, testnetGenesisTxPayload)
 
 // testnetGenesisHash is the hash of the first block in the block DAG for the test
 // network (genesis block).
@@ -237,8 +237,8 @@ var testnetGenesisMerkleRoot = daghash.Hash{
 
 // testnetGenesisBlock defines the genesis block of the block DAG which serves as the
 // public transaction ledger for testnet.
-var testnetGenesisBlock = wire.MsgBlock{
-	Header: wire.BlockHeader{
+var testnetGenesisBlock = domainmessage.MsgBlock{
+	Header: domainmessage.BlockHeader{
 		Version:              0x10000000,
 		ParentHashes:         []*daghash.Hash{},
 		HashMerkleRoot:       &testnetGenesisMerkleRoot,
@@ -248,5 +248,5 @@ var testnetGenesisBlock = wire.MsgBlock{
 		Bits:                 0x1e7fffff,
 		Nonce:                0x162ca,
 	},
-	Transactions: []*wire.MsgTx{testnetGenesisCoinbaseTx},
+	Transactions: []*domainmessage.MsgTx{testnetGenesisCoinbaseTx},
 }

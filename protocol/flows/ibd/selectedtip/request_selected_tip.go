@@ -2,11 +2,11 @@ package selectedtip
 
 import (
 	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // RequestSelectedTipContext is the interface for the context needed for the RequestSelectedTip flow.
@@ -64,7 +64,7 @@ func (flow *requestSelectedTipFlow) runSelectedTipRequest() error {
 }
 
 func (flow *requestSelectedTipFlow) requestSelectedTip() error {
-	msgGetSelectedTip := wire.NewMsgRequestSelectedTip()
+	msgGetSelectedTip := domainmessage.NewMsgRequestSelectedTip()
 	return flow.outgoingRoute.Enqueue(msgGetSelectedTip)
 }
 
@@ -73,7 +73,7 @@ func (flow *requestSelectedTipFlow) receiveSelectedTip() (selectedTipHash *dagha
 	if err != nil {
 		return nil, err
 	}
-	msgSelectedTip := message.(*wire.MsgSelectedTip)
+	msgSelectedTip := message.(*domainmessage.MsgSelectedTip)
 
 	return msgSelectedTip.SelectedTipHash, nil
 }

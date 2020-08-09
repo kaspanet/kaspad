@@ -10,8 +10,8 @@ import (
 
 	"github.com/kaspanet/kaspad/util"
 
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // registerSubnetworks scans a list of transactions, singles out
@@ -19,7 +19,7 @@ import (
 // subnetwork based on it.
 // This function returns an error if one or more transactions are invalid
 func registerSubnetworks(dbContext dbaccess.Context, txs []*util.Tx) error {
-	subnetworkRegistryTxs := make([]*wire.MsgTx, 0)
+	subnetworkRegistryTxs := make([]*domainmessage.MsgTx, 0)
 	for _, tx := range txs {
 		msgTx := tx.MsgTx()
 
@@ -60,7 +60,7 @@ func registerSubnetworks(dbContext dbaccess.Context, txs []*util.Tx) error {
 // validateSubnetworkRegistryTransaction makes sure that a given subnetwork registry
 // transaction is valid. Such a transaction is valid iff:
 // - Its entire payload is a uint64 (8 bytes)
-func validateSubnetworkRegistryTransaction(tx *wire.MsgTx) error {
+func validateSubnetworkRegistryTransaction(tx *domainmessage.MsgTx) error {
 	if len(tx.Payload) != 8 {
 		return ruleError(ErrSubnetworkRegistry, fmt.Sprintf("validation failed: subnetwork registry"+
 			"tx '%s' has an invalid payload", tx.TxHash()))
@@ -70,7 +70,7 @@ func validateSubnetworkRegistryTransaction(tx *wire.MsgTx) error {
 }
 
 // TxToSubnetworkID creates a subnetwork ID from a subnetwork registry transaction
-func TxToSubnetworkID(tx *wire.MsgTx) (*subnetworkid.SubnetworkID, error) {
+func TxToSubnetworkID(tx *domainmessage.MsgTx) (*subnetworkid.SubnetworkID, error) {
 	txHash := tx.TxHash()
 	return subnetworkid.New(util.Hash160(txHash[:]))
 }
@@ -114,14 +114,14 @@ type subnetwork struct {
 	gasLimit uint64
 }
 
-func newSubnetwork(tx *wire.MsgTx) *subnetwork {
+func newSubnetwork(tx *domainmessage.MsgTx) *subnetwork {
 	return &subnetwork{
 		gasLimit: ExtractGasLimit(tx),
 	}
 }
 
 // ExtractGasLimit extracts the gas limit from the transaction payload
-func ExtractGasLimit(tx *wire.MsgTx) uint64 {
+func ExtractGasLimit(tx *domainmessage.MsgTx) uint64 {
 	return binary.LittleEndian.Uint64(tx.Payload[:8])
 }
 

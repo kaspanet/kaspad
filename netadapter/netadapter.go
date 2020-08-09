@@ -7,11 +7,11 @@ import (
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/netadapter/id"
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/netadapter/server"
 	"github.com/kaspanet/kaspad/netadapter/server/grpcserver"
-	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
 
@@ -139,7 +139,7 @@ func (na *NetAdapter) ID() *id.ID {
 
 // Broadcast sends the given `message` to every peer corresponding
 // to each NetConnection in the given netConnections
-func (na *NetAdapter) Broadcast(netConnections []*NetConnection, message wire.Message) error {
+func (na *NetAdapter) Broadcast(netConnections []*NetConnection, message domainmessage.Message) error {
 	na.connectionsLock.RLock()
 	defer na.connectionsLock.RUnlock()
 
@@ -158,7 +158,7 @@ func (na *NetAdapter) Broadcast(netConnections []*NetConnection, message wire.Me
 
 // GetBestLocalAddress returns the most appropriate local address to use
 // for the given remote address.
-func (na *NetAdapter) GetBestLocalAddress() (*wire.NetAddress, error) {
+func (na *NetAdapter) GetBestLocalAddress() (*domainmessage.NetAddress, error) {
 	//TODO(libp2p) Reimplement this, and check reachability to the other node
 	if len(na.cfg.ExternalIPs) > 0 {
 		host, portString, err := net.SplitHostPort(na.cfg.ExternalIPs[0])
@@ -181,7 +181,7 @@ func (na *NetAdapter) GetBestLocalAddress() (*wire.NetAddress, error) {
 				return nil, errors.Errorf("Cannot resolve IP address for host '%s'", host)
 			}
 		}
-		return wire.NewNetAddressIPPort(ip, uint16(portInt), wire.SFNodeNetwork), nil
+		return domainmessage.NewNetAddressIPPort(ip, uint16(portInt), domainmessage.SFNodeNetwork), nil
 
 	}
 	listenAddress := na.cfg.Listeners[0]
@@ -206,7 +206,7 @@ func (na *NetAdapter) GetBestLocalAddress() (*wire.NetAddress, error) {
 			continue
 		}
 
-		return wire.NewNetAddressIPPort(ip, uint16(portInt), wire.SFNodeNetwork), nil
+		return domainmessage.NewNetAddressIPPort(ip, uint16(portInt), domainmessage.SFNodeNetwork), nil
 	}
 	return nil, errors.New("no address was found")
 }

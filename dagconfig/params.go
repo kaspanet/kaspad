@@ -14,8 +14,8 @@ import (
 
 	"github.com/kaspanet/kaspad/util"
 
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // These variables are the DAG proof-of-work limit parameters for each default
@@ -101,7 +101,7 @@ type Params struct {
 	Name string
 
 	// Net defines the magic bytes used to identify the network.
-	Net wire.KaspaNet
+	Net domainmessage.KaspaNet
 
 	// RPCPort defines the rpc server port
 	RPCPort string
@@ -114,7 +114,7 @@ type Params struct {
 	DNSSeeds []string
 
 	// GenesisBlock defines the first block of the DAG.
-	GenesisBlock *wire.MsgBlock
+	GenesisBlock *domainmessage.MsgBlock
 
 	// GenesisHash is the starting block hash.
 	GenesisHash *daghash.Hash
@@ -190,7 +190,7 @@ func (p *Params) NormalizeRPCServerAddress(addr string) (string, error) {
 var MainnetParams = Params{
 	K:           ghostdagK,
 	Name:        "kaspa-mainnet",
-	Net:         wire.Mainnet,
+	Net:         domainmessage.Mainnet,
 	RPCPort:     "16110",
 	DefaultPort: "16111",
 	DNSSeeds:    []string{"dnsseed.kas.pa"},
@@ -243,7 +243,7 @@ var MainnetParams = Params{
 var RegressionNetParams = Params{
 	K:           ghostdagK,
 	Name:        "kaspa-regtest",
-	Net:         wire.Regtest,
+	Net:         domainmessage.Regtest,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
 	DNSSeeds:    []string{},
@@ -294,7 +294,7 @@ var RegressionNetParams = Params{
 var TestnetParams = Params{
 	K:           ghostdagK,
 	Name:        "kaspa-testnet",
-	Net:         wire.Testnet,
+	Net:         domainmessage.Testnet,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
 	DNSSeeds:    []string{"testnet-dnsseed.kas.pa"},
@@ -351,7 +351,7 @@ var TestnetParams = Params{
 var SimnetParams = Params{
 	K:           ghostdagK,
 	Name:        "kaspa-simnet",
-	Net:         wire.Simnet,
+	Net:         domainmessage.Simnet,
 	RPCPort:     "16510",
 	DefaultPort: "16511",
 	DNSSeeds:    []string{}, // NOTE: There must NOT be any seeds.
@@ -400,7 +400,7 @@ var SimnetParams = Params{
 var DevnetParams = Params{
 	K:           ghostdagK,
 	Name:        "kaspa-devnet",
-	Net:         wire.Devnet,
+	Net:         domainmessage.Devnet,
 	RPCPort:     "16610",
 	DefaultPort: "16611",
 	DNSSeeds:    []string{}, // NOTE: There must NOT be any seeds.
@@ -455,7 +455,7 @@ var (
 )
 
 var (
-	registeredNets = make(map[wire.KaspaNet]struct{})
+	registeredNets = make(map[domainmessage.KaspaNet]struct{})
 )
 
 // Register registers the network parameters for a Kaspa network. This may

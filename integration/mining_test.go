@@ -6,12 +6,12 @@ import (
 
 	clientpkg "github.com/kaspanet/kaspad/rpc/client"
 
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 )
 
-func solveBlock(block *util.Block) *wire.MsgBlock {
+func solveBlock(block *util.Block) *domainmessage.MsgBlock {
 	msgBlock := block.MsgBlock()
 	targetDifficulty := util.CompactToBig(msgBlock.Header.Bits)
 	initialNonce := rand.Uint64()

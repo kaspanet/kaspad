@@ -8,7 +8,7 @@ import (
 
 	"github.com/kaspanet/kaspad/util/locks"
 
-	"github.com/kaspanet/kaspad/wire"
+	"github.com/kaspanet/kaspad/domainmessage"
 )
 
 func Test64IncomingConnections(t *testing.T) {
@@ -42,7 +42,7 @@ func Test64IncomingConnections(t *testing.T) {
 		}
 
 		blockAdded := false
-		bully.rpcClient.onBlockAdded = func(header *wire.BlockHeader) {
+		bully.rpcClient.onBlockAdded = func(header *domainmessage.BlockHeader) {
 			if blockAdded {
 				t.Fatalf("Single bully reported block added twice")
 			}

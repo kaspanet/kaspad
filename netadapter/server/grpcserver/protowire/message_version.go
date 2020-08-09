@@ -1,15 +1,20 @@
 package protowire
 
 import (
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/kaspanet/kaspad/wire"
 )
 
-func (x *KaspadMessage_Version) toWireMessage() (wire.Message, error) {
-	address, err := x.Version.Address.toWire()
-	if err != nil {
-		return nil, err
+func (x *KaspadMessage_Version) toDomainMessage() (domainmessage.Message, error) {
+	// Address is optional for non-listening nodes
+	var address *domainmessage.NetAddress
+	if x.Version.Address != nil {
+		var err error
+		address, err = x.Version.Address.toWire()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	selectedTipHash, err := x.Version.SelectedTipHash.toWire()
@@ -22,15 +27,15 @@ func (x *KaspadMessage_Version) toWireMessage() (wire.Message, error) {
 		return nil, err
 	}
 
-	err = wire.ValidateUserAgent(x.Version.UserAgent)
+	err = domainmessage.ValidateUserAgent(x.Version.UserAgent)
 	if err != nil {
 		return nil, err
 	}
 
-	return &wire.MsgVersion{
+	return &domainmessage.MsgVersion{
 		ProtocolVersion: x.Version.ProtocolVersion,
 		Network:         x.Version.Network,
-		Services:        wire.ServiceFlag(x.Version.Services),
+		Services:        domainmessage.ServiceFlag(x.Version.Services),
 		Timestamp:       mstime.UnixMilliseconds(x.Version.Timestamp),
 		Address:         address,
 		ID:              id.FromBytes(x.Version.Id),
@@ -41,8 +46,8 @@ func (x *KaspadMessage_Version) toWireMessage() (wire.Message, error) {
 	}, nil
 }
 
-func (x *KaspadMessage_Version) fromWireMessage(msgVersion *wire.MsgVersion) error {
-	err := wire.ValidateUserAgent(msgVersion.UserAgent)
+func (x *KaspadMessage_Version) fromDomainMessage(msgVersion *domainmessage.MsgVersion) error {
+	err := domainmessage.ValidateUserAgent(msgVersion.UserAgent)
 	if err != nil {
 		return err
 	}
@@ -52,12 +57,18 @@ func (x *KaspadMessage_Version) fromWireMessage(msgVersion *wire.MsgVersion) err
 		return err
 	}
 
+	// Address is optional for non-listening nodes
+	var address *NetAddress
+	if msgVersion.Address != nil {
+		address = wireNetAddressToProto(msgVersion.Address)
+	}
+
 	x.Version = &VersionMessage{
 		ProtocolVersion: msgVersion.ProtocolVersion,
 		Network:         msgVersion.Network,
 		Services:        uint64(msgVersion.Services),
 		Timestamp:       msgVersion.Timestamp.UnixMilliseconds(),
-		Address:         wireNetAddressToProto(msgVersion.Address),
+		Address:         address,
 		Id:              versionID,
 		UserAgent:       msgVersion.UserAgent,
 		SelectedTipHash: wireHashToProto(msgVersion.SelectedTipHash),

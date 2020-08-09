@@ -21,10 +21,10 @@ import (
 
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 const (
@@ -513,14 +513,14 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 		// mask in order to obtain the time lock delta required before
 		// this input can be spent.
 		sequenceNum := txIn.Sequence
-		relativeLock := int64(sequenceNum & wire.SequenceLockTimeMask)
+		relativeLock := int64(sequenceNum & domainmessage.SequenceLockTimeMask)
 
 		switch {
 		// Relative time locks are disabled for this input, so we can
 		// skip any further calculation.
-		case sequenceNum&wire.SequenceLockTimeDisabled == wire.SequenceLockTimeDisabled:
+		case sequenceNum&domainmessage.SequenceLockTimeDisabled == domainmessage.SequenceLockTimeDisabled:
 			continue
-		case sequenceNum&wire.SequenceLockTimeIsSeconds == wire.SequenceLockTimeIsSeconds:
+		case sequenceNum&domainmessage.SequenceLockTimeIsSeconds == domainmessage.SequenceLockTimeIsSeconds:
 			// This input requires a relative time lock expressed
 			// in seconds before it can be spent. Therefore, we
 			// need to query for the block prior to the one in
@@ -534,11 +534,11 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			medianTime := blockNode.PastMedianTime(dag)
 
 			// Time based relative time-locks have a time granularity of
-			// wire.SequenceLockTimeGranularity, so we shift left by this
+			// domainmessage.SequenceLockTimeGranularity, so we shift left by this
 			// amount to convert to the proper relative time-lock. We also
 			// subtract one from the relative lock to maintain the original
 			// lockTime semantics.
-			timeLockMilliseconds := (relativeLock << wire.SequenceLockTimeGranularity) - 1
+			timeLockMilliseconds := (relativeLock << domainmessage.SequenceLockTimeGranularity) - 1
 			timeLock := medianTime.UnixMilliseconds() + timeLockMilliseconds
 			if timeLock > sequenceLock.Milliseconds {
 				sequenceLock.Milliseconds = timeLock
@@ -572,8 +572,8 @@ func LockTimeToSequence(isMilliseconds bool, locktime uint64) uint64 {
 	// shift the locktime over by 19 since the time granularity is in
 	// 524288-millisecond intervals (2^19). This results in a max lock-time of
 	// 34,359,214,080 seconds, or 1.1 years.
-	return wire.SequenceLockTimeIsSeconds |
-		locktime>>wire.SequenceLockTimeGranularity
+	return domainmessage.SequenceLockTimeIsSeconds |
+		locktime>>domainmessage.SequenceLockTimeGranularity
 }
 
 // addBlock handles adding the passed block to the DAG.
@@ -755,7 +755,7 @@ func (node *blockNode) selectedParentMultiset(dag *BlockDAG) (*secp256k1.MultiSe
 	return ms, nil
 }
 
-func addTxToMultiset(ms *secp256k1.MultiSet, tx *wire.MsgTx, pastUTXO UTXOSet, blockBlueScore uint64) (*secp256k1.MultiSet, error) {
+func addTxToMultiset(ms *secp256k1.MultiSet, tx *domainmessage.MsgTx, pastUTXO UTXOSet, blockBlueScore uint64) (*secp256k1.MultiSet, error) {
 	for _, txIn := range tx.TxIn {
 		entry, ok := pastUTXO.Get(txIn.PreviousOutpoint)
 		if !ok {
@@ -771,7 +771,7 @@ func addTxToMultiset(ms *secp256k1.MultiSet, tx *wire.MsgTx, pastUTXO UTXOSet, b
 
 	isCoinbase := tx.IsCoinBase()
 	for i, txOut := range tx.TxOut {
-		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
+		outpoint := *domainmessage.NewOutpoint(tx.TxID(), uint32(i))
 		entry := NewUTXOEntry(txOut, isCoinbase, blockBlueScore)
 
 		var err error
@@ -1485,7 +1485,7 @@ func (dag *BlockDAG) selectedTip() *blockNode {
 // It will return nil if there is no tip.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) SelectedTipHeader() *wire.BlockHeader {
+func (dag *BlockDAG) SelectedTipHeader() *domainmessage.BlockHeader {
 	selectedTip := dag.selectedTip()
 	if selectedTip == nil {
 		return nil
@@ -1522,7 +1522,7 @@ func (dag *BlockDAG) CalcPastMedianTime() mstime.Time {
 //
 // This function is safe for concurrent access. However, the returned entry (if
 // any) is NOT.
-func (dag *BlockDAG) GetUTXOEntry(outpoint wire.Outpoint) (*UTXOEntry, bool) {
+func (dag *BlockDAG) GetUTXOEntry(outpoint domainmessage.Outpoint) (*UTXOEntry, bool) {
 	return dag.virtual.utxoSet.get(outpoint)
 }
 
@@ -1582,7 +1582,7 @@ func (dag *BlockDAG) BlockConfirmationsByHashNoLock(hash *daghash.Hash) (uint64,
 // in the DAG's UTXO set.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) UTXOConfirmations(outpoint *wire.Outpoint) (uint64, bool) {
+func (dag *BlockDAG) UTXOConfirmations(outpoint *domainmessage.Outpoint) (uint64, bool) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 
@@ -1784,11 +1784,11 @@ func (dag *BlockDAG) CurrentBits() uint32 {
 
 // HeaderByHash returns the block header identified by the given hash or an
 // error if it doesn't exist.
-func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*wire.BlockHeader, error) {
+func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*domainmessage.BlockHeader, error) {
 	node, ok := dag.index.LookupNode(hash)
 	if !ok {
 		err := errors.Errorf("block %s is not known", hash)
-		return &wire.BlockHeader{}, err
+		return &domainmessage.BlockHeader{}, err
 	}
 
 	return node.Header(), nil
@@ -1851,14 +1851,14 @@ func (dag *BlockDAG) antiPastHashesBetween(lowHash, highHash *daghash.Hash, maxH
 func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries uint64) ([]*blockNode, error) {
 	lowNode, ok := dag.index.LookupNode(lowHash)
 	if !ok {
-		return nil, errors.Errorf("Couldn't find low hash %s", lowHash)
+		return nil, errors.Wrapf(ErrInvalidParameter, "couldn't find low hash %s", lowHash)
 	}
 	highNode, ok := dag.index.LookupNode(highHash)
 	if !ok {
-		return nil, errors.Errorf("Couldn't find high hash %s", highHash)
+		return nil, errors.Wrapf(ErrInvalidParameter, "couldn't find high hash %s", highHash)
 	}
 	if lowNode.blueScore >= highNode.blueScore {
-		return nil, errors.Errorf("Low hash blueScore >= high hash blueScore (%d >= %d)",
+		return nil, errors.Wrapf(ErrInvalidParameter, "low hash blueScore >= high hash blueScore (%d >= %d)",
 			lowNode.blueScore, highNode.blueScore)
 	}
 
@@ -1937,20 +1937,20 @@ func (dag *BlockDAG) AntiPastHashesBetween(lowHash, highHash *daghash.Hash, maxH
 // max number of block headers.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) antiPastHeadersBetween(lowHash, highHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
+func (dag *BlockDAG) antiPastHeadersBetween(lowHash, highHash *daghash.Hash, maxHeaders uint64) ([]*domainmessage.BlockHeader, error) {
 	nodes, err := dag.antiPastBetween(lowHash, highHash, maxHeaders)
 	if err != nil {
 		return nil, err
 	}
-	headers := make([]*wire.BlockHeader, len(nodes))
+	headers := make([]*domainmessage.BlockHeader, len(nodes))
 	for i, node := range nodes {
 		headers[i] = node.Header()
 	}
 	return headers, nil
 }
 
-// GetTopHeaders returns the top wire.MaxBlockHeadersPerMsg block headers ordered by blue score.
-func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
+// GetTopHeaders returns the top domainmessage.MaxBlockHeadersPerMsg block headers ordered by blue score.
+func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash, maxHeaders uint64) ([]*domainmessage.BlockHeader, error) {
 	highNode := &dag.virtual.blockNode
 	if highHash != nil {
 		var ok bool
@@ -1959,7 +1959,7 @@ func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash, maxHeaders uint64) ([
 			return nil, errors.Errorf("Couldn't find the high hash %s in the dag", highHash)
 		}
 	}
-	headers := make([]*wire.BlockHeader, 0, highNode.blueScore)
+	headers := make([]*domainmessage.BlockHeader, 0, highNode.blueScore)
 	queue := newDownHeap()
 	queue.pushSet(highNode.parents)
 
@@ -1997,10 +1997,10 @@ func (dag *BlockDAG) RUnlock() {
 
 // AntiPastHeadersBetween returns the headers of the blocks between the
 // lowHash's antiPast and highHash's antiPast, or up to
-// wire.MaxBlockHeadersPerMsg block headers.
+// domainmessage.MaxBlockHeadersPerMsg block headers.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) AntiPastHeadersBetween(lowHash, highHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
+func (dag *BlockDAG) AntiPastHeadersBetween(lowHash, highHash *daghash.Hash, maxHeaders uint64) ([]*domainmessage.BlockHeader, error) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 	headers, err := dag.antiPastHeadersBetween(lowHash, highHash, maxHeaders)
