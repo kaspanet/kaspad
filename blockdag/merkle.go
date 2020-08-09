@@ -168,3 +168,15 @@ func (node *blockNode) validateAcceptedIDMerkleRoot(dag *BlockDAG, txsAcceptance
 	}
 	return nil
 }
+
+// NextAcceptedIDMerkleRootNoLock prepares the acceptedIDMerkleRoot for the next mined block
+//
+// This function MUST be called with the DAG read-lock held
+func (dag *BlockDAG) NextAcceptedIDMerkleRootNoLock() (*daghash.Hash, error) {
+	txsAcceptanceData, err := dag.TxsAcceptedByVirtual()
+	if err != nil {
+		return nil, err
+	}
+
+	return calculateAcceptedIDMerkleRoot(txsAcceptanceData), nil
+}

@@ -662,3 +662,16 @@ func (dag *BlockDAG) BlockHashesFrom(lowHash *daghash.Hash, limit int) ([]*dagha
 
 	return blockHashes, nil
 }
+
+func (dag *BlockDAG) fetchBlueBlocks(node *blockNode) ([]*util.Block, error) {
+	blueBlocks := make([]*util.Block, len(node.blues))
+	for i, blueBlockNode := range node.blues {
+		blueBlock, err := dag.fetchBlockByHash(blueBlockNode.hash)
+		if err != nil {
+			return nil, err
+		}
+
+		blueBlocks[i] = blueBlock
+	}
+	return blueBlocks, nil
+}

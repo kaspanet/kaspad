@@ -52,8 +52,6 @@ type BlockDAG struct {
 	// fields in this struct below this point.
 	dagLock sync.RWMutex
 
-	utxoLock sync.RWMutex
-
 	// index and virtual are related to the memory block index. They both
 	// have their own locks, however they are often also protected by the
 	// DAG lock to help prevent logic races when blocks are being processed.
@@ -103,17 +101,6 @@ type BlockDAG struct {
 
 // New returns a BlockDAG instance using the provided configuration details.
 func New(config *Config) (*BlockDAG, error) {
-	// Enforce required config fields.
-	if config.DAGParams == nil {
-		return nil, errors.New("BlockDAG.New DAG parameters nil")
-	}
-	if config.TimeSource == nil {
-		return nil, errors.New("BlockDAG.New timesource is nil")
-	}
-	if config.DatabaseContext == nil {
-		return nil, errors.New("BlockDAG.DatabaseContext timesource is nil")
-	}
-
 	params := config.DAGParams
 
 	dag := &BlockDAG{
@@ -187,156 +174,6 @@ func New(config *Config) (*BlockDAG, error) {
 	return dag, nil
 }
 
-// LastFinalityPointHash returns the hash of the last finality point
-func (dag *BlockDAG) LastFinalityPointHash() *daghash.Hash {
-	if dag.lastFinalityPoint == nil {
-		return nil
-	}
-	return dag.lastFinalityPoint.hash
-}
-
-// isInSelectedParentChainOf returns whether `node` is in the selected parent chain of `other`.
-func (dag *BlockDAG) isInSelectedParentChainOf(node *blockNode, other *blockNode) (bool, error) {
-	// By definition, a node is not in the selected parent chain of itself.
-	if node == other {
-		return false, nil
-	}
-
-	return dag.reachabilityTree.isReachabilityTreeAncestorOf(node, other)
-}
-
-// FinalityInterval is the interval that determines the finality window of the DAG.
-func (dag *BlockDAG) FinalityInterval() uint64 {
-	return uint64(dag.Params.FinalityDuration / dag.Params.TargetTimePerBlock)
-}
-
-// checkFinalityViolation checks the new block does not violate the finality rules
-// specifically - the new block selectedParent chain should contain the old finality point.
-func (dag *BlockDAG) checkFinalityViolation(newNode *blockNode) error {
-	// the genesis block can not violate finality rules
-	if newNode.isGenesis() {
-		return nil
-	}
-
-	// Because newNode doesn't have reachability data we
-	// need to check if the last finality point is in the
-	// selected parent chain of newNode.selectedParent, so
-	// we explicitly check if newNode.selectedParent is
-	// the finality point.
-	if dag.lastFinalityPoint == newNode.selectedParent {
-		return nil
-	}
-
-	isInSelectedChain, err := dag.isInSelectedParentChainOf(dag.lastFinalityPoint, newNode.selectedParent)
-	if err != nil {
-		return err
-	}
-
-	if !isInSelectedChain {
-		return ruleError(ErrFinality, "the last finality point is not in the selected parent chain of this block")
-	}
-	return nil
-}
-
-// updateFinalityPoint updates the dag's last finality point if necessary.
-func (dag *BlockDAG) updateFinalityPoint() {
-	selectedTip := dag.selectedTip()
-	// if the selected tip is the genesis block - it should be the new finality point
-	if selectedTip.isGenesis() {
-		dag.lastFinalityPoint = selectedTip
-		return
-	}
-	// We are looking for a new finality point only if the new block's finality score is higher
-	// by 2 than the existing finality point's
-	if selectedTip.finalityScore(dag) < dag.lastFinalityPoint.finalityScore(dag)+2 {
-		return
-	}
-
-	var currentNode *blockNode
-	for currentNode = selectedTip.selectedParent; ; currentNode = currentNode.selectedParent {
-		// We look for the first node in the selected parent chain that has a higher finality score than the last finality point.
-		if currentNode.selectedParent.finalityScore(dag) == dag.lastFinalityPoint.finalityScore(dag) {
-			break
-		}
-	}
-	dag.lastFinalityPoint = currentNode
-	spawn("dag.finalizeNodesBelowFinalityPoint", func() {
-		dag.finalizeNodesBelowFinalityPoint(true)
-	})
-}
-
-func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
-	queue := make([]*blockNode, 0, len(dag.lastFinalityPoint.parents))
-	for parent := range dag.lastFinalityPoint.parents {
-		queue = append(queue, parent)
-	}
-	var nodesToDelete []*blockNode
-	if deleteDiffData {
-		nodesToDelete = make([]*blockNode, 0, dag.FinalityInterval())
-	}
-	for len(queue) > 0 {
-		var current *blockNode
-		current, queue = queue[0], queue[1:]
-		if !current.isFinalized {
-			current.isFinalized = true
-			if deleteDiffData {
-				nodesToDelete = append(nodesToDelete, current)
-			}
-			for parent := range current.parents {
-				queue = append(queue, parent)
-			}
-		}
-	}
-	if deleteDiffData {
-		err := dag.utxoDiffStore.removeBlocksDiffData(dag.databaseContext, nodesToDelete)
-		if err != nil {
-			panic(fmt.Sprintf("Error removing diff data from utxoDiffStore: %s", err))
-		}
-	}
-}
-
-// IsKnownFinalizedBlock returns whether the block is below the finality point.
-// IsKnownFinalizedBlock might be false-negative because node finality status is
-// updated in a separate goroutine. To get a definite answer if a block
-// is finalized or not, use dag.checkFinalityViolation.
-func (dag *BlockDAG) IsKnownFinalizedBlock(blockHash *daghash.Hash) bool {
-	node, ok := dag.index.LookupNode(blockHash)
-	return ok && node.isFinalized
-}
-
-// NextBlockCoinbaseTransaction prepares the coinbase transaction for the next mined block
-//
-// This function CAN'T be called with the DAG lock held.
-func (dag *BlockDAG) NextBlockCoinbaseTransaction(scriptPubKey []byte, extraData []byte) (*util.Tx, error) {
-	dag.dagLock.RLock()
-	defer dag.dagLock.RUnlock()
-
-	return dag.NextBlockCoinbaseTransactionNoLock(scriptPubKey, extraData)
-}
-
-// NextBlockCoinbaseTransactionNoLock prepares the coinbase transaction for the next mined block
-//
-// This function MUST be called with the DAG read-lock held
-func (dag *BlockDAG) NextBlockCoinbaseTransactionNoLock(scriptPubKey []byte, extraData []byte) (*util.Tx, error) {
-	txsAcceptanceData, err := dag.TxsAcceptedByVirtual()
-	if err != nil {
-		return nil, err
-	}
-	return dag.virtual.blockNode.expectedCoinbaseTransaction(dag, txsAcceptanceData, scriptPubKey, extraData)
-}
-
-// NextAcceptedIDMerkleRootNoLock prepares the acceptedIDMerkleRoot for the next mined block
-//
-// This function MUST be called with the DAG read-lock held
-func (dag *BlockDAG) NextAcceptedIDMerkleRootNoLock() (*daghash.Hash, error) {
-	txsAcceptanceData, err := dag.TxsAcceptedByVirtual()
-	if err != nil {
-		return nil, err
-	}
-
-	return calculateAcceptedIDMerkleRoot(txsAcceptanceData), nil
-}
-
 // TxsAcceptedByVirtual retrieves transactions accepted by the current virtual block
 //
 // This function MUST be called with the DAG read-lock held
@@ -358,8 +195,6 @@ func (dag *BlockDAG) TxsAcceptedByBlockHash(blockHash *daghash.Hash) (MultiBlock
 }
 
 func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) error {
-	dag.utxoLock.Lock()
-	defer dag.utxoLock.Unlock()
 	return newVirtualUTXODiffSet.meldToBase()
 }
 
@@ -420,19 +255,6 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 	}
 	genesisPastUTXO := UTXOSet(NewDiffUTXOSet(virtual.utxoSet, diff))
 	return genesisPastUTXO
-}
-
-func (dag *BlockDAG) fetchBlueBlocks(node *blockNode) ([]*util.Block, error) {
-	blueBlocks := make([]*util.Block, len(node.blues))
-	for i, blueBlockNode := range node.blues {
-		blueBlock, err := dag.fetchBlockByHash(blueBlockNode.hash)
-		if err != nil {
-			return nil, err
-		}
-
-		blueBlocks[i] = blueBlock
-	}
-	return blueBlocks, nil
 }
 
 // applyBlueBlocks adds all transactions in the blue blocks to the selectedParent's past UTXO set
@@ -1216,4 +1038,14 @@ func (dag *BlockDAG) IsKnownInvalid(hash *daghash.Hash) bool {
 		return false
 	}
 	return dag.index.NodeStatus(node).KnownInvalid()
+}
+
+// isInSelectedParentChainOf returns whether `node` is in the selected parent chain of `other`.
+func (dag *BlockDAG) isInSelectedParentChainOf(node *blockNode, other *blockNode) (bool, error) {
+	// By definition, a node is not in the selected parent chain of itself.
+	if node == other {
+		return false, nil
+	}
+
+	return dag.reachabilityTree.isReachabilityTreeAncestorOf(node, other)
 }

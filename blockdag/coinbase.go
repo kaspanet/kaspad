@@ -197,3 +197,24 @@ func coinbaseOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode,
 
 	return txOut, nil
 }
+
+// NextBlockCoinbaseTransaction prepares the coinbase transaction for the next mined block
+//
+// This function CAN'T be called with the DAG lock held.
+func (dag *BlockDAG) NextBlockCoinbaseTransaction(scriptPubKey []byte, extraData []byte) (*util.Tx, error) {
+	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
+
+	return dag.NextBlockCoinbaseTransactionNoLock(scriptPubKey, extraData)
+}
+
+// NextBlockCoinbaseTransactionNoLock prepares the coinbase transaction for the next mined block
+//
+// This function MUST be called with the DAG read-lock held
+func (dag *BlockDAG) NextBlockCoinbaseTransactionNoLock(scriptPubKey []byte, extraData []byte) (*util.Tx, error) {
+	txsAcceptanceData, err := dag.TxsAcceptedByVirtual()
+	if err != nil {
+		return nil, err
+	}
+	return dag.virtual.blockNode.expectedCoinbaseTransaction(dag, txsAcceptanceData, scriptPubKey, extraData)
+}
