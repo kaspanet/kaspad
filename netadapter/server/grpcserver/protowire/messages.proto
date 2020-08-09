@@ -25,7 +25,8 @@ message KaspadMessage {
     SelectedTipMessage selectedTip = 18;
     VerackMessage verack = 19;
     VersionMessage version = 20;
-    TransactionNotFoundMessage transactionNotFound=21;
+    TransactionNotFoundMessage transactionNotFound = 21;
+    RejectMessage reject = 22;
   }
 }
 
@@ -211,6 +212,12 @@ message VersionMessage{
   SubnetworkID subnetworkID = 9;
 }
 // VersionMessage end
+
+// RejectMessage start
+message RejectMessage{
+  string reason = 2;
+}
+// RejectMessage end
 
 service P2P {
   rpc MessageStream (stream KaspadMessage) returns (stream KaspadMessage) {}

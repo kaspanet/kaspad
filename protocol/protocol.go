@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"github.com/kaspanet/kaspad/protocol/flows/rejects"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/addressmanager"
@@ -58,7 +59,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 		peer, err := handshake.HandleHandshake(m.context, netConnection, receiveVersionRoute,
 			sendVersionRoute, router.OutgoingRoute())
 		if err != nil {
-			m.handleError(err, netConnection)
+			m.handleError(err, netConnection, router.OutgoingRoute())
 			return
 		}
 
@@ -66,13 +67,13 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 
 		err = m.runFlows(flows, peer, errChan)
 		if err != nil {
-			m.handleError(err, netConnection)
+			m.handleError(err, netConnection, router.OutgoingRoute())
 			return
 		}
 	})
 }
 
-func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection) {
+func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection, outgoingRoute *routerpkg.Route) {
 	if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
 		if !m.context.Config().DisableBanning && protocolErr.ShouldBan {
 			log.Warnf("Banning %s (reason: %s)", netConnection, protocolErr.Cause)
@@ -80,6 +81,7 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 			if err != nil && !errors.Is(err, addressmanager.ErrAddressNotFound) {
 				panic(err)
 			}
+			_ = outgoingRoute.Enqueue(domainmessage.NewMsgReject(protocolErr.Error()))
 		}
 		netConnection.Disconnect()
 		return
@@ -211,6 +213,19 @@ func (m *Manager) registerTransactionRelayFlow(router *routerpkg.Router, isStopp
 			[]domainmessage.MessageCommand{domainmessage.CmdRequestTransactions}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return relaytransactions.HandleRequestedTransactions(m.context, incomingRoute, outgoingRoute)
+			},
+		),
+	}
+}
+
+func (m *Manager) registerRejectsFlow(router *routerpkg.Router, isStopping *uint32, errChan chan error) []*flow {
+	outgoingRoute := router.OutgoingRoute()
+
+	return []*flow{
+		m.registerFlow("HandleRejects", router,
+			[]domainmessage.MessageCommand{domainmessage.CmdReject}, isStopping, errChan,
+			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
+				return rejects.HandleRejects(m.context, incomingRoute, outgoingRoute)
 			},
 		),
 	}
