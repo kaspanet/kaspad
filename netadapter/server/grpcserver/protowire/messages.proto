@@ -215,7 +215,7 @@ message VersionMessage{
 
 // RejectMessage start
 message RejectMessage{
-  string reason = 2;
+  string reason = 1;
 }
 // RejectMessage end
 
