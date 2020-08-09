@@ -220,7 +220,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	}
 
 	// Make sure that all the block's transactions are finalized
-	fastAdd := flags&BFFastAdd == BFFastAdd
+	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.NodeStatus(newNode).KnownValid()
 	bluestParent := parents.bluest()
 	if !fastAdd {
 		if err := dag.validateAllTxsFinalized(block, newNode, bluestParent); err != nil {
@@ -228,17 +228,49 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 		}
 	}
 
-	// Connect the passed block to the DAG. This also handles validation of the
-	// transaction scripts.
-	chainUpdates, err := dag.addBlock(newNode, block, selectedParentAnticone, flags)
+	// Connect the block to the DAG.
+	chainUpdates, err := dag.connectBlock(newNode, block, selectedParentAnticone, fastAdd)
 	if err != nil {
-		return err
+		return dag.handleProcessBlockError(err, newNode)
 	}
+	dag.blockCount++
 
-	// Notify the caller that the new block was accepted into the block
-	// DAG. The caller would typically want to react by relaying the
-	// inventory to other peers.
+	dag.notifyBlockAccepted(block, chainUpdates, flags)
+
+	return nil
+}
+
+func (dag *BlockDAG) handleProcessBlockError(err error, newNode *blockNode) error {
+	if errors.As(err, &RuleError{}) {
+		dag.index.SetStatusFlags(newNode, statusValidateFailed)
+
+		dbTx, err := dag.databaseContext.NewTx()
+		if err != nil {
+			return err
+		}
+		defer dbTx.RollbackUnlessClosed()
+
+		err = dag.index.flushToDB(dbTx)
+		if err != nil {
+			return err
+		}
+		err = dbTx.Commit()
+		if err != nil {
+			return err
+		}
+	}
+	return err
+}
+
+// notifyBlockAccepted notifies the caller that the new block was
+// accepted into the block DAG. The caller would typically want to
+// react by relaying the inventory to other peers.
+//
+// This function assumes that the DAG lock is currently held.
+func (dag *BlockDAG) notifyBlockAccepted(block *util.Block, chainUpdates *chainUpdates, flags BehaviorFlags) {
 	dag.dagLock.Unlock()
+	defer dag.dagLock.Lock()
+
 	dag.sendNotification(NTBlockAdded, &BlockAddedNotificationData{
 		Block:         block,
 		WasUnorphaned: flags&BFWasUnorphaned != 0,
@@ -249,46 +281,6 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 			AddedChainBlockHashes:   chainUpdates.addedChainBlockHashes,
 		})
 	}
-	dag.dagLock.Lock()
-
-	return nil
-}
-
-// addBlock handles adding the passed block to the DAG.
-//
-// The flags modify the behavior of this function as follows:
-//  - BFFastAdd: Avoids several expensive transaction validation operations.
-//
-// This function MUST be called with the DAG state lock held (for writes).
-func (dag *BlockDAG) addBlock(node *blockNode,
-	block *util.Block, selectedParentAnticone []*blockNode, flags BehaviorFlags) (*chainUpdates, error) {
-	// Skip checks if node has already been fully validated.
-	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.NodeStatus(node).KnownValid()
-
-	// Connect the block to the DAG.
-	chainUpdates, err := dag.connectBlock(node, block, selectedParentAnticone, fastAdd)
-	if err != nil {
-		if errors.As(err, &RuleError{}) {
-			dag.index.SetStatusFlags(node, statusValidateFailed)
-
-			dbTx, err := dag.databaseContext.NewTx()
-			if err != nil {
-				return nil, err
-			}
-			defer dbTx.RollbackUnlessClosed()
-			err = dag.index.flushToDB(dbTx)
-			if err != nil {
-				return nil, err
-			}
-			err = dbTx.Commit()
-			if err != nil {
-				return nil, err
-			}
-		}
-		return nil, err
-	}
-	dag.blockCount++
-	return chainUpdates, nil
 }
 
 // connectBlock handles connecting the passed node/block to the DAG.
