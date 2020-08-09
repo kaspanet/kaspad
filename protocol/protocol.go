@@ -103,6 +103,7 @@ func (m *Manager) registerFlows(router *routerpkg.Router, errChan chan error, is
 	flows = append(flows, m.registerPingFlows(router, isStopping, errChan)...)
 	flows = append(flows, m.registerIBDFlows(router, isStopping, errChan)...)
 	flows = append(flows, m.registerTransactionRelayFlow(router, isStopping, errChan)...)
+	flows = append(flows, m.registerRejectsFlow(router, isStopping, errChan)...)
 
 	return flows
 }
