@@ -440,6 +440,77 @@ func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 	}
 }
 
+// processOrphans determines if there are any orphans which depend on the passed
+// block hash (they are no longer orphans if true) and potentially accepts them.
+// It repeats the process for the newly accepted blocks (to detect further
+// orphans which may no longer be orphans) until there are no more.
+//
+// The flags do not modify the behavior of this function directly, however they
+// are needed to pass along to maybeAcceptBlock.
+//
+// This function MUST be called with the DAG state lock held (for writes).
+func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) error {
+	// Start with processing at least the passed hash. Leave a little room
+	// for additional orphan blocks that need to be processed without
+	// needing to grow the array in the common case.
+	processHashes := make([]*daghash.Hash, 0, 10)
+	processHashes = append(processHashes, hash)
+	for len(processHashes) > 0 {
+		// Pop the first hash to process from the slice.
+		processHash := processHashes[0]
+		processHashes[0] = nil // Prevent GC leak.
+		processHashes = processHashes[1:]
+
+		// Look up all orphans that are parented by the block we just
+		// accepted.  An indexing for loop is
+		// intentionally used over a range here as range does not
+		// reevaluate the slice on each iteration nor does it adjust the
+		// index for the modified slice.
+		for i := 0; i < len(dag.prevOrphans[*processHash]); i++ {
+			orphan := dag.prevOrphans[*processHash][i]
+			if orphan == nil {
+				log.Warnf("Found a nil entry at index %d in the "+
+					"orphan dependency list for block %s", i,
+					processHash)
+				continue
+			}
+
+			// Skip this orphan if one or more of its parents are
+			// still missing.
+			_, err := lookupParentNodes(orphan.block, dag)
+			if err != nil {
+				var ruleErr RuleError
+				if ok := errors.As(err, &ruleErr); ok && ruleErr.ErrorCode == ErrParentBlockUnknown {
+					continue
+				}
+				return err
+			}
+
+			// Remove the orphan from the orphan pool.
+			orphanHash := orphan.block.Hash()
+			dag.removeOrphanBlock(orphan)
+			i--
+
+			// Potentially accept the block into the block DAG.
+			err = dag.maybeAcceptBlock(orphan.block, flags|BFWasUnorphaned)
+			if err != nil {
+				// Since we don't want to reject the original block because of
+				// a bad unorphaned child, only return an error if it's not a RuleError.
+				if !errors.As(err, &RuleError{}) {
+					return err
+				}
+				log.Warnf("Verification failed for orphan block %s: %s", orphanHash, err)
+			}
+
+			// Add this block to the list of blocks to process so
+			// any orphan blocks that depend on this block are
+			// handled too.
+			processHashes = append(processHashes, orphanHash)
+		}
+	}
+	return nil
+}
+
 // SequenceLock represents the converted relative lock-time in seconds, and
 // absolute block-blue-score for a transaction input's relative lock-times.
 // According to SequenceLock, after the referenced input has been confirmed
@@ -2079,6 +2150,22 @@ func (dag *BlockDAG) peekDelayedBlock() *delayedBlock {
 	return dag.delayedBlocksQueue.peek()
 }
 
+// maxDelayOfParents returns the maximum delay of the given block hashes.
+// Note that delay could be 0, but isDelayed will return true. This is the case where the parent process time is due.
+func (dag *BlockDAG) maxDelayOfParents(parentHashes []*daghash.Hash) (delay time.Duration, isDelayed bool) {
+	for _, parentHash := range parentHashes {
+		if delayedParent, exists := dag.delayedBlocks[*parentHash]; exists {
+			isDelayed = true
+			parentDelay := delayedParent.processTime.Sub(dag.Now())
+			if parentDelay > delay {
+				delay = parentDelay
+			}
+		}
+	}
+
+	return delay, isDelayed
+}
+
 // IndexManager provides a generic interface that is called when blocks are
 // connected to the DAG for the purpose of supporting optional indexes.
 type IndexManager interface {
@@ -2140,4 +2227,12 @@ type Config struct {
 func (dag *BlockDAG) isKnownDelayedBlock(hash *daghash.Hash) bool {
 	_, exists := dag.delayedBlocks[*hash]
 	return exists
+}
+
+// IsInDAG determines whether a block with the given hash exists in
+// the DAG.
+//
+// This function is safe for concurrent access.
+func (dag *BlockDAG) IsInDAG(hash *daghash.Hash) bool {
+	return dag.index.HaveBlock(hash)
 }
