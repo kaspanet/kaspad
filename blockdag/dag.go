@@ -1851,14 +1851,14 @@ func (dag *BlockDAG) antiPastHashesBetween(lowHash, highHash *daghash.Hash, maxH
 func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries uint64) ([]*blockNode, error) {
 	lowNode, ok := dag.index.LookupNode(lowHash)
 	if !ok {
-		return nil, errors.Errorf("Couldn't find low hash %s", lowHash)
+		return nil, errors.Wrapf(ErrInvalidParameter, "couldn't find low hash %s", lowHash)
 	}
 	highNode, ok := dag.index.LookupNode(highHash)
 	if !ok {
-		return nil, errors.Errorf("Couldn't find high hash %s", highHash)
+		return nil, errors.Wrapf(ErrInvalidParameter, "couldn't find high hash %s", highHash)
 	}
 	if lowNode.blueScore >= highNode.blueScore {
-		return nil, errors.Errorf("Low hash blueScore >= high hash blueScore (%d >= %d)",
+		return nil, errors.Wrapf(ErrInvalidParameter, "low hash blueScore >= high hash blueScore (%d >= %d)",
 			lowNode.blueScore, highNode.blueScore)
 	}
 
