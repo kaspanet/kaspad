@@ -792,126 +792,8 @@ func (dag *BlockDAG) SelectedParentHash(blockHash *daghash.Hash) (*daghash.Hash,
 	return node.selectedParent.hash, nil
 }
 
-// antiPastHashesBetween returns the hashes of the blocks between the
-// lowHash's antiPast and highHash's antiPast, or up to the provided
-// max number of block hashes.
-//
-// This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) antiPastHashesBetween(lowHash, highHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
-	nodes, err := dag.antiPastBetween(lowHash, highHash, maxHashes)
-	if err != nil {
-		return nil, err
-	}
-	hashes := make([]*daghash.Hash, len(nodes))
-	for i, node := range nodes {
-		hashes[i] = node.hash
-	}
-	return hashes, nil
-}
-
-// antiPastBetween returns the blockNodes between the lowHash's antiPast
-// and highHash's antiPast, or up to the provided max number of blocks.
-//
-// This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries uint64) ([]*blockNode, error) {
-	lowNode, ok := dag.index.LookupNode(lowHash)
-	if !ok {
-		return nil, errors.Errorf("Couldn't find low hash %s", lowHash)
-	}
-	highNode, ok := dag.index.LookupNode(highHash)
-	if !ok {
-		return nil, errors.Errorf("Couldn't find high hash %s", highHash)
-	}
-	if lowNode.blueScore >= highNode.blueScore {
-		return nil, errors.Errorf("Low hash blueScore >= high hash blueScore (%d >= %d)",
-			lowNode.blueScore, highNode.blueScore)
-	}
-
-	// In order to get no more then maxEntries blocks from the
-	// future of the lowNode (including itself), we iterate the
-	// selected parent chain of the highNode and stop once we reach
-	// highNode.blueScore-lowNode.blueScore+1 <= maxEntries. That
-	// stop point becomes the new highNode.
-	// Using blueScore as an approximation is considered to be
-	// fairly accurate because we presume that most DAG blocks are
-	// blue.
-	for highNode.blueScore-lowNode.blueScore+1 > maxEntries {
-		highNode = highNode.selectedParent
-	}
-
-	// Collect every node in highNode's past (including itself) but
-	// NOT in the lowNode's past (excluding itself) into an up-heap
-	// (a heap sorted by blueScore from lowest to greatest).
-	visited := newBlockSet()
-	candidateNodes := newUpHeap()
-	queue := newDownHeap()
-	queue.Push(highNode)
-	for queue.Len() > 0 {
-		current := queue.pop()
-		if visited.contains(current) {
-			continue
-		}
-		visited.add(current)
-		isCurrentAncestorOfLowNode, err := dag.isInPast(current, lowNode)
-		if err != nil {
-			return nil, err
-		}
-		if isCurrentAncestorOfLowNode {
-			continue
-		}
-		candidateNodes.Push(current)
-		for parent := range current.parents {
-			queue.Push(parent)
-		}
-	}
-
-	// Pop candidateNodes into a slice. Since candidateNodes is
-	// an up-heap, it's guaranteed to be ordered from low to high
-	nodesLen := int(maxEntries)
-	if candidateNodes.Len() < nodesLen {
-		nodesLen = candidateNodes.Len()
-	}
-	nodes := make([]*blockNode, nodesLen)
-	for i := 0; i < nodesLen; i++ {
-		nodes[i] = candidateNodes.pop()
-	}
-	return nodes, nil
-}
-
 func (dag *BlockDAG) isInPast(this *blockNode, other *blockNode) (bool, error) {
 	return dag.reachabilityTree.isInPast(this, other)
-}
-
-// AntiPastHashesBetween returns the hashes of the blocks between the
-// lowHash's antiPast and highHash's antiPast, or up to the provided
-// max number of block hashes.
-//
-// This function is safe for concurrent access.
-func (dag *BlockDAG) AntiPastHashesBetween(lowHash, highHash *daghash.Hash, maxHashes uint64) ([]*daghash.Hash, error) {
-	dag.dagLock.RLock()
-	defer dag.dagLock.RUnlock()
-	hashes, err := dag.antiPastHashesBetween(lowHash, highHash, maxHashes)
-	if err != nil {
-		return nil, err
-	}
-	return hashes, nil
-}
-
-// antiPastHeadersBetween returns the headers of the blocks between the
-// lowHash's antiPast and highHash's antiPast, or up to the provided
-// max number of block headers.
-//
-// This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) antiPastHeadersBetween(lowHash, highHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
-	nodes, err := dag.antiPastBetween(lowHash, highHash, maxHeaders)
-	if err != nil {
-		return nil, err
-	}
-	headers := make([]*wire.BlockHeader, len(nodes))
-	for i, node := range nodes {
-		headers[i] = node.Header()
-	}
-	return headers, nil
 }
 
 // GetTopHeaders returns the top wire.MaxBlockHeadersPerMsg block headers ordered by blue score.
@@ -958,26 +840,6 @@ func (dag *BlockDAG) RLock() {
 // RUnlock unlocks the DAG's UTXO set for reading.
 func (dag *BlockDAG) RUnlock() {
 	dag.dagLock.RUnlock()
-}
-
-// AntiPastHeadersBetween returns the headers of the blocks between the
-// lowHash's antiPast and highHash's antiPast, or up to
-// wire.MaxBlockHeadersPerMsg block headers.
-//
-// This function is safe for concurrent access.
-func (dag *BlockDAG) AntiPastHeadersBetween(lowHash, highHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
-	dag.dagLock.RLock()
-	defer dag.dagLock.RUnlock()
-	headers, err := dag.antiPastHeadersBetween(lowHash, highHash, maxHeaders)
-	if err != nil {
-		return nil, err
-	}
-	return headers, nil
-}
-
-// SubnetworkID returns the node's subnetwork ID
-func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
-	return dag.subnetworkID
 }
 
 // ForEachHash runs the given fn on every hash that's currently known to

@@ -197,3 +197,8 @@ func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
 
 	return nil
 }
+
+// SubnetworkID returns the node's subnetwork ID
+func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
+	return dag.subnetworkID
+}
