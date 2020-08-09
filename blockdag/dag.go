@@ -511,6 +511,45 @@ func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 	return nil
 }
 
+func (dag *BlockDAG) addNodeToIndexWithInvalidAncestor(block *util.Block) error {
+	blockHeader := &block.MsgBlock().Header
+	newNode, _ := dag.newBlockNode(blockHeader, newBlockSet())
+	newNode.status = statusInvalidAncestor
+	dag.index.AddNode(newNode)
+
+	dbTx, err := dag.databaseContext.NewTx()
+	if err != nil {
+		return err
+	}
+	defer dbTx.RollbackUnlessClosed()
+	err = dag.index.flushToDB(dbTx)
+	if err != nil {
+		return err
+	}
+	return dbTx.Commit()
+}
+
+func lookupParentNodes(block *util.Block, dag *BlockDAG) (blockSet, error) {
+	header := block.MsgBlock().Header
+	parentHashes := header.ParentHashes
+
+	nodes := newBlockSet()
+	for _, parentHash := range parentHashes {
+		node, ok := dag.index.LookupNode(parentHash)
+		if !ok {
+			str := fmt.Sprintf("parent block %s is unknown", parentHash)
+			return nil, ruleError(ErrParentBlockUnknown, str)
+		} else if dag.index.NodeStatus(node).KnownInvalid() {
+			str := fmt.Sprintf("parent block %s is known to be invalid", parentHash)
+			return nil, ruleError(ErrInvalidAncestorBlock, str)
+		}
+
+		nodes.add(node)
+	}
+
+	return nodes, nil
+}
+
 // SequenceLock represents the converted relative lock-time in seconds, and
 // absolute block-blue-score for a transaction input's relative lock-times.
 // According to SequenceLock, after the referenced input has been confirmed
