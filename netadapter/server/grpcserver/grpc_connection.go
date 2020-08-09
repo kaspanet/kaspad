@@ -90,11 +90,11 @@ func (c *gRPCConnection) Disconnect() {
 			time.Sleep(finishSendDuration)
 			clientStream := c.stream.(protowire.P2P_MessageStreamClient)
 			_ = clientStream.CloseSend() // ignore error because we don't really know what's the status of the connection
+			log.Debugf("Disconnected from %s", c)
 		})
 	}
 
-	log.Debugf("Disconnected from %s", c)
-
+	log.Debugf("Disconnecting from %s", c)
 	if c.onDisconnectedHandler != nil {
 		c.onDisconnectedHandler()
 	}
