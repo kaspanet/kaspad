@@ -23,10 +23,6 @@ const (
 	// in the future, just finished the delay
 	BFAfterDelay
 
-	// BFIsSync may be set to indicate that the block was sent as part of the
-	// netsync process
-	BFIsSync
-
 	// BFWasStored is set to indicate that the block was previously stored
 	// in the block index but was never fully processed
 	BFWasStored

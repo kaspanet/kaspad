@@ -114,6 +114,8 @@ func (dag *BlockDAG) removeOrphanBlock(orphan *orphanBlock) {
 // blocks and will remove the oldest received orphan block if the limit is
 // exceeded.
 func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
+	log.Infof("Adding orphan block %s", block.Hash())
+
 	// Remove expired orphan blocks.
 	for _, oBlock := range dag.orphans {
 		if mstime.Now().After(oBlock.expiration) {
