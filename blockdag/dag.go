@@ -686,43 +686,6 @@ func LockTimeToSequence(isMilliseconds bool, locktime uint64) uint64 {
 		locktime>>wire.SequenceLockTimeGranularity
 }
 
-// addBlock handles adding the passed block to the DAG.
-//
-// The flags modify the behavior of this function as follows:
-//  - BFFastAdd: Avoids several expensive transaction validation operations.
-//
-// This function MUST be called with the DAG state lock held (for writes).
-func (dag *BlockDAG) addBlock(node *blockNode,
-	block *util.Block, selectedParentAnticone []*blockNode, flags BehaviorFlags) (*chainUpdates, error) {
-	// Skip checks if node has already been fully validated.
-	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.NodeStatus(node).KnownValid()
-
-	// Connect the block to the DAG.
-	chainUpdates, err := dag.connectBlock(node, block, selectedParentAnticone, fastAdd)
-	if err != nil {
-		if errors.As(err, &RuleError{}) {
-			dag.index.SetStatusFlags(node, statusValidateFailed)
-
-			dbTx, err := dag.databaseContext.NewTx()
-			if err != nil {
-				return nil, err
-			}
-			defer dbTx.RollbackUnlessClosed()
-			err = dag.index.flushToDB(dbTx)
-			if err != nil {
-				return nil, err
-			}
-			err = dbTx.Commit()
-			if err != nil {
-				return nil, err
-			}
-		}
-		return nil, err
-	}
-	dag.blockCount++
-	return chainUpdates, nil
-}
-
 func calculateAcceptedIDMerkleRoot(multiBlockTxsAcceptanceData MultiBlockTxsAcceptanceData) *daghash.Hash {
 	var acceptedTxs []*util.Tx
 	for _, blockTxsAcceptanceData := range multiBlockTxsAcceptanceData {
@@ -755,65 +718,6 @@ func (node *blockNode) validateAcceptedIDMerkleRoot(dag *BlockDAG, txsAcceptance
 		return ruleError(ErrBadMerkleRoot, str)
 	}
 	return nil
-}
-
-// connectBlock handles connecting the passed node/block to the DAG.
-//
-// This function MUST be called with the DAG state lock held (for writes).
-func (dag *BlockDAG) connectBlock(node *blockNode,
-	block *util.Block, selectedParentAnticone []*blockNode, fastAdd bool) (*chainUpdates, error) {
-	// No warnings about unknown rules or versions until the DAG is
-	// synced.
-	if dag.isSynced() {
-		// Warn if any unknown new rules are either about to activate or
-		// have already been activated.
-		if err := dag.warnUnknownRuleActivations(node); err != nil {
-			return nil, err
-		}
-
-		// Warn if a high enough percentage of the last blocks have
-		// unexpected versions.
-		if err := dag.warnUnknownVersions(node); err != nil {
-			return nil, err
-		}
-	}
-
-	if err := dag.checkFinalityViolation(node); err != nil {
-		return nil, err
-	}
-
-	if err := dag.validateGasLimit(block); err != nil {
-		return nil, err
-	}
-
-	newBlockPastUTXO, txsAcceptanceData, newBlockFeeData, newBlockMultiSet, err :=
-		node.verifyAndBuildUTXO(dag, block.Transactions(), fastAdd)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error verifying UTXO for %s", node)
-	}
-
-	err = node.validateCoinbaseTransaction(dag, block, txsAcceptanceData)
-	if err != nil {
-		return nil, err
-	}
-
-	// Apply all changes to the DAG.
-	virtualUTXODiff, chainUpdates, err :=
-		dag.applyDAGChanges(node, newBlockPastUTXO, newBlockMultiSet, selectedParentAnticone)
-	if err != nil {
-		// Since all validation logic has already ran, if applyDAGChanges errors out,
-		// this means we have a problem in the internal structure of the DAG - a problem which is
-		// irrecoverable, and it would be a bad idea to attempt adding any more blocks to the DAG.
-		// Therefore - in such cases we panic.
-		panic(err)
-	}
-
-	err = dag.saveChangesFromBlock(block, virtualUTXODiff, txsAcceptanceData, newBlockFeeData)
-	if err != nil {
-		return nil, err
-	}
-
-	return chainUpdates, nil
 }
 
 // calcMultiset returns the multiset of the past UTXO of the given block.
@@ -891,91 +795,6 @@ func addTxToMultiset(ms *secp256k1.MultiSet, tx *wire.MsgTx, pastUTXO UTXOSet, b
 		}
 	}
 	return ms, nil
-}
-
-func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UTXODiff,
-	txsAcceptanceData MultiBlockTxsAcceptanceData, feeData compactFeeData) error {
-
-	dbTx, err := dag.databaseContext.NewTx()
-	if err != nil {
-		return err
-	}
-	defer dbTx.RollbackUnlessClosed()
-
-	err = dag.index.flushToDB(dbTx)
-	if err != nil {
-		return err
-	}
-
-	err = dag.utxoDiffStore.flushToDB(dbTx)
-	if err != nil {
-		return err
-	}
-
-	err = dag.reachabilityTree.storeState(dbTx)
-	if err != nil {
-		return err
-	}
-
-	err = dag.multisetStore.flushToDB(dbTx)
-	if err != nil {
-		return err
-	}
-
-	// Update DAG state.
-	state := &dagState{
-		TipHashes:         dag.TipHashes(),
-		LastFinalityPoint: dag.lastFinalityPoint.hash,
-		LocalSubnetworkID: dag.subnetworkID,
-	}
-	err = saveDAGState(dbTx, state)
-	if err != nil {
-		return err
-	}
-
-	// Update the UTXO set using the diffSet that was melded into the
-	// full UTXO set.
-	err = updateUTXOSet(dbTx, virtualUTXODiff)
-	if err != nil {
-		return err
-	}
-
-	// Scan all accepted transactions and register any subnetwork registry
-	// transaction. If any subnetwork registry transaction is not well-formed,
-	// fail the entire block.
-	err = registerSubnetworks(dbTx, block.Transactions())
-	if err != nil {
-		return err
-	}
-
-	// Allow the index manager to call each of the currently active
-	// optional indexes with the block being connected so they can
-	// update themselves accordingly.
-	if dag.indexManager != nil {
-		err := dag.indexManager.ConnectBlock(dbTx, block.Hash(), txsAcceptanceData)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Apply the fee data into the database
-	err = dbaccess.StoreFeeData(dbTx, block.Hash(), feeData)
-	if err != nil {
-		return err
-	}
-
-	err = dbTx.Commit()
-	if err != nil {
-		return err
-	}
-
-	dag.index.clearDirtyEntries()
-	dag.utxoDiffStore.clearDirtyEntries()
-	dag.utxoDiffStore.clearOldEntries()
-	dag.reachabilityTree.store.clearDirtyEntries()
-	dag.multisetStore.clearNewEntries()
-
-	return nil
 }
 
 func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
@@ -1190,66 +1009,6 @@ func (dag *BlockDAG) TxsAcceptedByBlockHash(blockHash *daghash.Hash) (MultiBlock
 	return txsAcceptanceData, err
 }
 
-// applyDAGChanges does the following:
-// 1. Connects each of the new block's parents to the block.
-// 2. Adds the new block to the DAG's tips.
-// 3. Updates the DAG's full UTXO set.
-// 4. Updates each of the tips' utxoDiff.
-// 5. Applies the new virtual's blue score to all the unaccepted UTXOs
-// 6. Adds the block to the reachability structures
-// 7. Adds the multiset of the block to the multiset store.
-// 8. Updates the finality point of the DAG (if required).
-//
-// It returns the diff in the virtual block's UTXO set.
-//
-// This function MUST be called with the DAG state lock held (for writes).
-func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockPastUTXO UTXOSet,
-	newBlockMultiset *secp256k1.MultiSet, selectedParentAnticone []*blockNode) (
-	virtualUTXODiff *UTXODiff, chainUpdates *chainUpdates, err error) {
-
-	// Add the block to the reachability tree
-	err = dag.reachabilityTree.addBlock(node, selectedParentAnticone)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed adding block to the reachability tree")
-	}
-
-	dag.multisetStore.setMultiset(node, newBlockMultiset)
-
-	if err = node.updateParents(dag, newBlockPastUTXO); err != nil {
-		return nil, nil, errors.Wrapf(err, "failed updating parents of %s", node)
-	}
-
-	// Update the virtual block's parents (the DAG tips) to include the new block.
-	chainUpdates = dag.virtual.AddTip(node)
-
-	// Build a UTXO set for the new virtual block
-	newVirtualUTXO, _, _, err := dag.pastUTXO(&dag.virtual.blockNode)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "could not restore past UTXO for virtual")
-	}
-
-	// Apply new utxoDiffs to all the tips
-	err = updateTipsUTXO(dag, newVirtualUTXO)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed updating the tips' UTXO")
-	}
-
-	// It is now safe to meld the UTXO set to base.
-	diffSet := newVirtualUTXO.(*DiffUTXOSet)
-	virtualUTXODiff = diffSet.UTXODiff
-	err = dag.meldVirtualUTXO(diffSet)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed melding the virtual UTXO")
-	}
-
-	dag.index.SetStatusFlags(node, statusValid)
-
-	// And now we can update the finality point of the DAG (if required)
-	dag.updateFinalityPoint()
-
-	return virtualUTXODiff, chainUpdates, nil
-}
-
 func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) error {
 	dag.utxoLock.Lock()
 	defer dag.utxoLock.Unlock()
@@ -1273,43 +1032,6 @@ func checkDoubleSpendsWithBlockPast(pastUTXO UTXOSet, blockTransactions []*util.
 	}
 
 	return nil
-}
-
-// verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
-// to save extra traversals it returns the transactions acceptance data, the compactFeeData
-// for the new block and its multiset.
-func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
-	newBlockUTXO UTXOSet, txsAcceptanceData MultiBlockTxsAcceptanceData, newBlockFeeData compactFeeData, multiset *secp256k1.MultiSet, err error) {
-
-	pastUTXO, selectedParentPastUTXO, txsAcceptanceData, err := dag.pastUTXO(node)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-
-	err = node.validateAcceptedIDMerkleRoot(dag, txsAcceptanceData)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-
-	feeData, err := dag.checkConnectToPastUTXO(node, pastUTXO, transactions, fastAdd)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-
-	multiset, err = node.calcMultiset(dag, txsAcceptanceData, selectedParentPastUTXO)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-
-	calculatedMultisetHash := daghash.Hash(*multiset.Finalize())
-	if !calculatedMultisetHash.IsEqual(node.utxoCommitment) {
-		str := fmt.Sprintf("block %s UTXO commitment is invalid - block "+
-			"header indicates %s, but calculated value is %s", node.hash,
-			node.utxoCommitment, calculatedMultisetHash)
-		return nil, nil, nil, nil, ruleError(ErrBadUTXOCommitment, str)
-	}
-
-	return pastUTXO, txsAcceptanceData, feeData, multiset, nil
 }
 
 // TxAcceptanceData stores a transaction together with an indication
