@@ -55,6 +55,11 @@ func (flow *receiveVersionFlow) start() (*domainmessage.NetAddress, error) {
 		return nil, protocolerrors.New(true, "connected to self")
 	}
 
+	// Disconnect and ban peers from a different network
+	if msgVersion.Network != flow.Config().ActiveNetParams.Name {
+		return nil, protocolerrors.Errorf(true, "wrong network")
+	}
+
 	// Notify and disconnect clients that have a protocol version that is
 	// too old.
 	//

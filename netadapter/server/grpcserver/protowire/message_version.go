@@ -34,6 +34,7 @@ func (x *KaspadMessage_Version) toDomainMessage() (domainmessage.Message, error)
 
 	return &domainmessage.MsgVersion{
 		ProtocolVersion: x.Version.ProtocolVersion,
+		Network:         x.Version.Network,
 		Services:        domainmessage.ServiceFlag(x.Version.Services),
 		Timestamp:       mstime.UnixMilliseconds(x.Version.Timestamp),
 		Address:         address,
@@ -64,6 +65,7 @@ func (x *KaspadMessage_Version) fromDomainMessage(msgVersion *domainmessage.MsgV
 
 	x.Version = &VersionMessage{
 		ProtocolVersion: msgVersion.ProtocolVersion,
+		Network:         msgVersion.Network,
 		Services:        uint64(msgVersion.Services),
 		Timestamp:       msgVersion.Timestamp.UnixMilliseconds(),
 		Address:         address,

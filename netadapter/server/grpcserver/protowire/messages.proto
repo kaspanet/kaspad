@@ -210,6 +210,7 @@ message VersionMessage{
   Hash selectedTipHash = 7;
   bool disableRelayTx = 8;
   SubnetworkID subnetworkID = 9;
+  string network = 10;
 }
 // VersionMessage end
 

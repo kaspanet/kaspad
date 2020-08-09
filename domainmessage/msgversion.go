@@ -34,6 +34,9 @@ type MsgVersion struct {
 	// Version of the protocol the node is using.
 	ProtocolVersion uint32
 
+	// The peer's network (mainnet, testnet, etc.)
+	Network string
+
 	// Bitfield which identifies the enabled services.
 	Services ServiceFlag
 
@@ -81,13 +84,14 @@ func (msg *MsgVersion) Command() MessageCommand {
 // NewMsgVersion returns a new kaspa version message that conforms to the
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
-func NewMsgVersion(addr *NetAddress, id *id.ID,
+func NewMsgVersion(addr *NetAddress, id *id.ID, network string,
 	selectedTipHash *daghash.Hash, subnetworkID *subnetworkid.SubnetworkID) *MsgVersion {
 
 	// Limit the timestamp to one millisecond precision since the protocol
 	// doesn't support better.
 	return &MsgVersion{
 		ProtocolVersion: ProtocolVersion,
+		Network:         network,
 		Services:        0,
 		Timestamp:       mstime.Now(),
 		Address:         addr,
