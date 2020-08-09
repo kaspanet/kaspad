@@ -13,10 +13,10 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 var (
@@ -88,7 +88,7 @@ type NotificationHandlers struct {
 	// NotifyBlocks has been made to register for the notification and the
 	// function is non-nil. Its parameters differ from OnBlockAdded: it
 	// receives the block's blueScore, header, and relevant transactions.
-	OnFilteredBlockAdded func(blueScore uint64, header *wire.BlockHeader,
+	OnFilteredBlockAdded func(blueScore uint64, header *domainmessage.BlockHeader,
 		txs []*util.Tx)
 
 	// OnChainChanged is invoked when the selected parent chain of the
@@ -316,7 +316,7 @@ func parseChainChangedParams(params []json.RawMessage) (removedChainBlockHashes 
 // parseFilteredBlockAddedParams parses out the parameters included in a
 // filteredblockadded notification.
 func parseFilteredBlockAddedParams(params []json.RawMessage) (uint64,
-	*wire.BlockHeader, []*util.Tx, error) {
+	*domainmessage.BlockHeader, []*util.Tx, error) {
 
 	if len(params) < 3 {
 		return 0, nil, nil, wrongNumParams(len(params))
@@ -336,7 +336,7 @@ func parseFilteredBlockAddedParams(params []json.RawMessage) (uint64,
 	}
 
 	// Deserialize block header from slice of bytes.
-	var blockHeader wire.BlockHeader
+	var blockHeader domainmessage.BlockHeader
 	err = blockHeader.Deserialize(bytes.NewReader(blockHeaderBytes))
 	if err != nil {
 		return 0, nil, nil, err
@@ -593,7 +593,7 @@ func (r FutureLoadTxFilterResult) Receive() error {
 //
 // See LoadTxFilter for the blocking version and more details.
 func (c *Client) LoadTxFilterAsync(reload bool, addresses []util.Address,
-	outpoints []wire.Outpoint) FutureLoadTxFilterResult {
+	outpoints []domainmessage.Outpoint) FutureLoadTxFilterResult {
 
 	addrStrs := make([]string, len(addresses))
 	for i, a := range addresses {
@@ -614,6 +614,6 @@ func (c *Client) LoadTxFilterAsync(reload bool, addresses []util.Address,
 // LoadTxFilter loads, reloads, or adds data to a websocket client's transaction
 // filter. The filter is consistently updated based on inspected transactions
 // during mempool acceptance, block acceptance, and for all rescanned blocks.
-func (c *Client) LoadTxFilter(reload bool, addresses []util.Address, outpoints []wire.Outpoint) error {
+func (c *Client) LoadTxFilter(reload bool, addresses []util.Address, outpoints []domainmessage.Outpoint) error {
 	return c.LoadTxFilterAsync(reload, addresses, outpoints).Receive()
 }

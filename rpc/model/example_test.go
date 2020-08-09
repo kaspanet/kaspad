@@ -35,7 +35,7 @@ func ExampleMarshalCommand() {
 	}
 
 	// Display the marshalled command. Ordinarily this would be sent across
-	// the wire to the RPC server, but for this example, just display it.
+	// the domainmessage to the RPC server, but for this example, just display it.
 	fmt.Printf("%s\n", marshalledBytes)
 
 	// Output:
@@ -45,11 +45,11 @@ func ExampleMarshalCommand() {
 // This example demonstrates how to unmarshal a JSON-RPC request and then
 // unmarshal the concrete request into a concrete command.
 func ExampleUnmarshalCommand() {
-	// Ordinarily this would be read from the wire, but for this example,
+	// Ordinarily this would be read from the domainmessage, but for this example,
 	// it is hard coded here for clarity.
 	data := []byte(`{"jsonrpc":"1.0","method":"getBlock","params":["000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",false],"id":1}`)
 
-	// Unmarshal the raw bytes from the wire into a JSON-RPC request.
+	// Unmarshal the raw bytes from the domainmessage into a JSON-RPC request.
 	var request model.Request
 	if err := json.Unmarshal(data, &request); err != nil {
 		fmt.Println(err)
@@ -108,7 +108,7 @@ func ExampleMarshalResponse() {
 	}
 
 	// Display the marshalled response. Ordinarily this would be sent
-	// across the wire to the RPC client, but for this example, just display
+	// across the domainmessage to the RPC client, but for this example, just display
 	// it.
 	fmt.Printf("%s\n", marshalledBytes)
 
@@ -119,12 +119,12 @@ func ExampleMarshalResponse() {
 // This example demonstrates how to unmarshal a JSON-RPC response and then
 // unmarshal the result field in the response to a concrete type.
 func Example_unmarshalResponse() {
-	// Ordinarily this would be read from the wire, but for this example,
+	// Ordinarily this would be read from the domainmessage, but for this example,
 	// it is hard coded here for clarity. This is an example response to a
 	// getblockheight request.
 	data := []byte(`{"result":350001,"error":null,"id":1}`)
 
-	// Unmarshal the raw bytes from the wire into a JSON-RPC response.
+	// Unmarshal the raw bytes from the domainmessage into a JSON-RPC response.
 	var response model.Response
 	if err := json.Unmarshal(data, &response); err != nil {
 		fmt.Println("Malformed JSON-RPC response:", err)

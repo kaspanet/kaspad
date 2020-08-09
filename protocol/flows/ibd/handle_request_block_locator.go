@@ -2,10 +2,10 @@ package ibd
 
 import (
 	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // RequestBlockLocatorContext is the interface for the context needed for the HandleRequestBlockLocator flow.
@@ -57,13 +57,13 @@ func (flow *handleRequestBlockLocatorFlow) receiveGetBlockLocator() (lowHash *da
 	if err != nil {
 		return nil, nil, err
 	}
-	msgGetBlockLocator := message.(*wire.MsgRequestBlockLocator)
+	msgGetBlockLocator := message.(*domainmessage.MsgRequestBlockLocator)
 
 	return msgGetBlockLocator.LowHash, msgGetBlockLocator.HighHash, nil
 }
 
 func (flow *handleRequestBlockLocatorFlow) sendBlockLocator(locator blockdag.BlockLocator) error {
-	msgBlockLocator := wire.NewMsgBlockLocator(locator)
+	msgBlockLocator := domainmessage.NewMsgBlockLocator(locator)
 	err := flow.outgoingRoute.Enqueue(msgBlockLocator)
 	if err != nil {
 		return err

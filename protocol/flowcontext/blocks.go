@@ -4,10 +4,10 @@ import (
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/protocol/flows/blockrelay"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // OnNewBlock updates the mempool after a new block arrival, and
@@ -47,10 +47,10 @@ func (f *FlowContext) broadcastTransactionsAfterBlockAdded(block *util.Block, tr
 	if len(txIDsToBroadcast) == 0 {
 		return nil
 	}
-	if len(txIDsToBroadcast) > wire.MaxInvPerTxInvMsg {
-		txIDsToBroadcast = txIDsToBroadcast[:wire.MaxInvPerTxInvMsg]
+	if len(txIDsToBroadcast) > domainmessage.MaxInvPerTxInvMsg {
+		txIDsToBroadcast = txIDsToBroadcast[:domainmessage.MaxInvPerTxInvMsg]
 	}
-	inv := wire.NewMsgInvTransaction(txIDsToBroadcast)
+	inv := domainmessage.NewMsgInvTransaction(txIDsToBroadcast)
 	return f.Broadcast(inv)
 }
 
@@ -66,5 +66,5 @@ func (f *FlowContext) AddBlock(block *util.Block, flags blockdag.BehaviorFlags) 
 	if err != nil {
 		return err
 	}
-	return f.Broadcast(wire.NewMsgInvBlock(block.Hash()))
+	return f.Broadcast(domainmessage.NewMsgInvBlock(block.Hash()))
 }

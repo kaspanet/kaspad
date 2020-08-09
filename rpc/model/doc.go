@@ -4,7 +4,7 @@ Package model provides primitives for working with the kaspa JSON-RPC API.
 Overview
 
 When communicating via the JSON-RPC protocol, all of the commands need to be
-marshalled to and from the the wire in the appropriate format. This package
+marshalled to and from the the domainmessage in the appropriate format. This package
 provides data structures and primitives to ease this process.
 
 In addition, it also provides some additional features such as custom command
@@ -17,7 +17,7 @@ provide some intuition into what the marshalling and unmarshalling that is
 discussed below is doing under the hood.
 
 As defined by the JSON-RPC spec, there are effectively two forms of messages on
-the wire:
+the domainmessage:
 
   - Request Objects
     {"jsonrpc":"1.0","id":"SOMEID","method":"SOMEMETHOD","params":[SOMEPARAMS]}
@@ -51,7 +51,7 @@ package map into the required parts of the protocol
 
 To simplify the marshalling of the requests and responses, the MarshalCommand and
 MarshalResponse functions are provided. They return the raw bytes ready to be
-sent across the wire.
+sent across the domainmessage.
 
 Unmarshalling a received Request object is a two step process:
   1) Unmarshal the raw bytes into a Request struct instance via json.Unmarshal
@@ -119,7 +119,7 @@ There are 2 distinct type of errors supported by this package:
 
   - General errors related to marshalling or unmarshalling or improper use of
     the package (type Error)
-  - RPC errors which are intended to be returned across the wire as a part of
+  - RPC errors which are intended to be returned across the domainmessage as a part of
     the JSON-RPC response (type RPCError)
 
 The first category of errors (type Error) typically indicates a programmer error

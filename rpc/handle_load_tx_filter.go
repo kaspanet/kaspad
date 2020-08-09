@@ -1,9 +1,9 @@
 package rpc
 
 import (
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // handleLoadTxFilter implements the loadTxFilter command extension for
@@ -13,7 +13,7 @@ import (
 func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	cmd := icmd.(*model.LoadTxFilterCmd)
 
-	outpoints := make([]wire.Outpoint, len(cmd.Outpoints))
+	outpoints := make([]domainmessage.Outpoint, len(cmd.Outpoints))
 	for i := range cmd.Outpoints {
 		txID, err := daghash.NewTxIDFromStr(cmd.Outpoints[i].TxID)
 		if err != nil {
@@ -22,7 +22,7 @@ func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
 				Message: err.Error(),
 			}
 		}
-		outpoints[i] = wire.Outpoint{
+		outpoints[i] = domainmessage.Outpoint{
 			TxID:  *txID,
 			Index: cmd.Outpoints[i].Index,
 		}

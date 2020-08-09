@@ -10,10 +10,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
 
@@ -141,13 +141,13 @@ func ConvertGetBlockTemplateResultToBlock(template *model.GetBlockTemplateResult
 		return nil, errors.Wrapf(err, "error parsing utxoCommitment '%s'", template.UTXOCommitment)
 	}
 	// parse rest of block
-	msgBlock := wire.NewMsgBlock(
-		wire.NewBlockHeader(template.Version, parentHashes, hashMerkleRoot,
+	msgBlock := domainmessage.NewMsgBlock(
+		domainmessage.NewBlockHeader(template.Version, parentHashes, hashMerkleRoot,
 			acceptedIDMerkleRoot, utxoCommitment, bits, 0))
 
 	for i, txResult := range template.Transactions {
 		reader := hex.NewDecoder(strings.NewReader(txResult.Data))
-		tx := &wire.MsgTx{}
+		tx := &domainmessage.MsgTx{}
 		if err := tx.KaspaDecode(reader, 0); err != nil {
 			return nil, errors.Wrapf(err, "error decoding tx #%d", i)
 		}

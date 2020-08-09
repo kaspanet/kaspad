@@ -15,13 +15,13 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/logger"
 	"github.com/kaspanet/kaspad/mining"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 const (
@@ -129,10 +129,10 @@ type TxPool struct {
 	cfg           Config
 	pool          map[daghash.TxID]*TxDesc
 	depends       map[daghash.TxID]*TxDesc
-	dependsByPrev map[wire.Outpoint]map[daghash.TxID]*TxDesc
+	dependsByPrev map[domainmessage.Outpoint]map[daghash.TxID]*TxDesc
 	orphans       map[daghash.TxID]*orphanTx
-	orphansByPrev map[wire.Outpoint]map[daghash.TxID]*util.Tx
-	outpoints     map[wire.Outpoint]*util.Tx
+	orphansByPrev map[domainmessage.Outpoint]map[daghash.TxID]*util.Tx
+	outpoints     map[domainmessage.Outpoint]*util.Tx
 
 	// nextExpireScan is the time after which the orphan pool will be
 	// scanned in order to evict orphans. This is NOT a hard deadline as
@@ -174,7 +174,7 @@ func (mp *TxPool) removeOrphan(tx *util.Tx, removeRedeemers bool) {
 
 	// Remove any orphans that redeem outputs from this one if requested.
 	if removeRedeemers {
-		prevOut := wire.Outpoint{TxID: *txID}
+		prevOut := domainmessage.Outpoint{TxID: *txID}
 		for txOutIdx := range tx.MsgTx().TxOut {
 			prevOut.Index = uint32(txOutIdx)
 			for _, orphan := range mp.orphansByPrev[prevOut] {
@@ -479,7 +479,7 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeDependants bool, restoreI
 	if removeDependants {
 		// Remove any transactions which rely on this one.
 		for i := uint32(0); i < uint32(len(tx.MsgTx().TxOut)); i++ {
-			prevOut := wire.Outpoint{TxID: *txID, Index: i}
+			prevOut := domainmessage.Outpoint{TxID: *txID, Index: i}
 			if txRedeemer, exists := mp.outpoints[prevOut]; exists {
 				err := mp.removeTransaction(txRedeemer, true, false)
 				if err != nil {
@@ -541,7 +541,7 @@ func (mp *TxPool) removeTransactionWithDiff(tx *util.Tx, diff *blockdag.UTXODiff
 // removeTransactionUTXOEntriesFromDiff removes tx's UTXOEntries from the diff
 func (mp *TxPool) removeTransactionUTXOEntriesFromDiff(tx *util.Tx, diff *blockdag.UTXODiff) error {
 	for idx := range tx.MsgTx().TxOut {
-		outpoint := *wire.NewOutpoint(tx.ID(), uint32(idx))
+		outpoint := *domainmessage.NewOutpoint(tx.ID(), uint32(idx))
 		entry, exists := mp.mpUTXOSet.Get(outpoint)
 		if exists {
 			err := diff.RemoveEntry(outpoint, entry)
@@ -583,7 +583,7 @@ func (mp *TxPool) markTransactionOutputsUnspent(tx *util.Tx, diff *blockdag.UTXO
 // processRemovedTransactionDependencies processes the dependencies of a
 // transaction tx that was just now removed from the mempool
 func (mp *TxPool) processRemovedTransactionDependencies(tx *util.Tx) {
-	prevOut := wire.Outpoint{TxID: *tx.ID()}
+	prevOut := domainmessage.Outpoint{TxID: *tx.ID()}
 	for txOutIdx := range tx.MsgTx().TxOut {
 		// Skip to the next available output if there are none.
 		prevOut.Index = uint32(txOutIdx)
@@ -664,7 +664,7 @@ func (mp *TxPool) removeDoubleSpends(tx *util.Tx) error {
 // helper for maybeAcceptTransaction.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) addTransaction(tx *util.Tx, fee uint64, parentsInPool []*wire.Outpoint) (*TxDesc, error) {
+func (mp *TxPool) addTransaction(tx *util.Tx, fee uint64, parentsInPool []*domainmessage.Outpoint) (*TxDesc, error) {
 	// Add the transaction to the pool and mark the referenced outpoints
 	// as spent by the pool.
 	mass, err := blockdag.CalcTxMassFromUTXOSet(tx, mp.mpUTXOSet)
@@ -728,7 +728,7 @@ func (mp *TxPool) checkPoolDoubleSpend(tx *util.Tx) error {
 // CheckSpend checks whether the passed outpoint is already spent by a
 // transaction in the mempool. If that's the case the spending transaction will
 // be returned, if not nil will be returned.
-func (mp *TxPool) CheckSpend(op wire.Outpoint) *util.Tx {
+func (mp *TxPool) CheckSpend(op domainmessage.Outpoint) *util.Tx {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 	txR := mp.outpoints[op]
@@ -783,9 +783,9 @@ func (mp *TxPool) FetchTransaction(txID *daghash.TxID) (*util.Tx, bool) {
 // checkTransactionMassSanity checks that a transaction must not exceed the maximum allowed block mass when serialized.
 func checkTransactionMassSanity(tx *util.Tx) error {
 	serializedTxSize := tx.MsgTx().SerializeSize()
-	if serializedTxSize*blockdag.MassPerTxByte > wire.MaxMassPerTx {
+	if serializedTxSize*blockdag.MassPerTxByte > domainmessage.MaxMassPerTx {
 		str := fmt.Sprintf("serialized transaction is too big - got "+
-			"%d, max %d", serializedTxSize, wire.MaxMassPerBlock)
+			"%d, max %d", serializedTxSize, domainmessage.MaxMassPerBlock)
 		return txRuleError(RejectInvalid, str)
 	}
 	return nil
@@ -912,7 +912,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 
 	// Don't allow the transaction if it exists in the DAG and is
 	// not already fully spent.
-	prevOut := wire.Outpoint{TxID: *txID}
+	prevOut := domainmessage.Outpoint{TxID: *txID}
 	for txOutIdx := range tx.MsgTx().TxOut {
 		prevOut.Index = uint32(txOutIdx)
 		_, ok := mp.mpUTXOSet.Get(prevOut)
@@ -927,7 +927,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 	// is not handled by this function, and the caller should use
 	// maybeAddOrphan if this behavior is desired.
 	var missingParents []*daghash.TxID
-	var parentsInPool []*wire.Outpoint
+	var parentsInPool []*domainmessage.Outpoint
 	for _, txIn := range tx.MsgTx().TxIn {
 		if _, ok := mp.mpUTXOSet.Get(txIn.PreviousOutpoint); !ok {
 			// Must make a copy of the hash here since the iterator
@@ -1075,7 +1075,7 @@ func (mp *TxPool) processOrphans(acceptedTx *util.Tx) []*TxDesc {
 		firstElement := processList.Remove(processList.Front())
 		processItem := firstElement.(*util.Tx)
 
-		prevOut := wire.Outpoint{TxID: *processItem.ID()}
+		prevOut := domainmessage.Outpoint{TxID: *processItem.ID()}
 		for txOutIdx := range processItem.MsgTx().TxOut {
 			// Look up all orphans that redeem the output that is
 			// now available. This will typically only be one, but
@@ -1392,11 +1392,11 @@ func New(cfg *Config) *TxPool {
 		cfg:            *cfg,
 		pool:           make(map[daghash.TxID]*TxDesc),
 		depends:        make(map[daghash.TxID]*TxDesc),
-		dependsByPrev:  make(map[wire.Outpoint]map[daghash.TxID]*TxDesc),
+		dependsByPrev:  make(map[domainmessage.Outpoint]map[daghash.TxID]*TxDesc),
 		orphans:        make(map[daghash.TxID]*orphanTx),
-		orphansByPrev:  make(map[wire.Outpoint]map[daghash.TxID]*util.Tx),
+		orphansByPrev:  make(map[domainmessage.Outpoint]map[daghash.TxID]*util.Tx),
 		nextExpireScan: mstime.Now().Add(orphanExpireScanInterval),
-		outpoints:      make(map[wire.Outpoint]*util.Tx),
+		outpoints:      make(map[domainmessage.Outpoint]*util.Tx),
 		mpUTXOSet:      mpUTXO,
 	}
 }

@@ -145,7 +145,7 @@ func TestDevnetGenesisBlock(t *testing.T) {
 	}
 }
 
-// genesisBlockBytes are the wire encoded bytes for the genesis block of the
+// genesisBlockBytes are the encoded bytes for the genesis block of the
 // main network as of protocol version 1.
 var genesisBlockBytes = []byte{
 	0x00, 0x00, 0x00, 0x10, 0x00, 0xca, 0x85, 0x56, 0x27, 0xc7, 0x6a, 0xb5, 0x7a, 0x26, 0x1d, 0x63,
@@ -165,7 +165,7 @@ var genesisBlockBytes = []byte{
 	0x30, 0xcd, 0x5a, 0x4b, 0x87,
 }
 
-// regtestGenesisBlockBytes are the wire encoded bytes for the genesis block of
+// regtestGenesisBlockBytes are the encoded bytes for the genesis block of
 // the regression test network as of protocol version 1.
 var regtestGenesisBlockBytes = []byte{
 	0x00, 0x00, 0x00, 0x10, 0x00, 0x1e, 0x08, 0xae, 0x1f, 0x43, 0xf5, 0xfc, 0x24, 0xe6, 0xec, 0x54,
@@ -186,7 +186,7 @@ var regtestGenesisBlockBytes = []byte{
 	0x73, 0x74,
 }
 
-// testnetGenesisBlockBytes are the wire encoded bytes for the genesis block of
+// testnetGenesisBlockBytes are the encoded bytes for the genesis block of
 // the test network as of protocol version 1.
 var testnetGenesisBlockBytes = []byte{
 	0x00, 0x00, 0x00, 0x10, 0x00, 0xa0, 0xa1, 0x3d, 0xfd, 0x86, 0x41, 0x35, 0xc8, 0xbd, 0xbb, 0xe6,
@@ -205,7 +205,7 @@ var testnetGenesisBlockBytes = []byte{
 	0x61, 0x73, 0x70, 0x61, 0x2d, 0x74, 0x65, 0x73, 0x74, 0x6e, 0x65, 0x74,
 }
 
-// simnetGenesisBlockBytes are the wire encoded bytes for the genesis block of
+// simnetGenesisBlockBytes are the encoded bytes for the genesis block of
 // the simulation test network as of protocol version 1.
 var simnetGenesisBlockBytes = []byte{
 	0x00, 0x00, 0x00, 0x10, 0x00, 0x47, 0x52, 0xc7, 0x23, 0x70, 0x4d, 0x89, 0x17, 0xbd, 0x44, 0x26,
@@ -226,7 +226,7 @@ var simnetGenesisBlockBytes = []byte{
 	0x74,
 }
 
-// devnetGenesisBlockBytes are the wire encoded bytes for the genesis block of
+// devnetGenesisBlockBytes are the encoded bytes for the genesis block of
 // the development network as of protocol version 1.
 var devnetGenesisBlockBytes = []byte{
 	0x00, 0x00, 0x00, 0x10, 0x00, 0x68, 0x60, 0xe7, 0x77, 0x47, 0x74, 0x7f, 0xd5, 0x55, 0x58, 0x8a,
