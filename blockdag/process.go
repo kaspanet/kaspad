@@ -154,7 +154,7 @@ func (dag *BlockDAG) processOrphansAndDelayedBlocks(blockHash *daghash.Hash, fla
 // the block DAG before adding it. The block is expected to have already
 // gone through ProcessBlock before calling this function with it.
 //
-// The flags are also passed to checkBlockContext and connectToDAG. See
+// The flags are also passed to checkBlockContext and connectBlock. See
 // their documentation for how the flags modify their behavior.
 //
 // This function MUST be called with the dagLock held (for writes).
@@ -172,7 +172,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	// Connect the block to the DAG.
 	chainUpdates, err := dag.connectBlock(newNode, block, selectedParentAnticone, flags)
 	if err != nil {
-		return dag.handleProcessBlockError(err, newNode)
+		return dag.handleConnectBlockError(err, newNode)
 	}
 
 	dag.notifyBlockAccepted(block, chainUpdates, flags)
@@ -424,7 +424,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 	return nil
 }
 
-func (dag *BlockDAG) handleProcessBlockError(err error, newNode *blockNode) error {
+func (dag *BlockDAG) handleConnectBlockError(err error, newNode *blockNode) error {
 	if errors.As(err, &RuleError{}) {
 		dag.index.SetStatusFlags(newNode, statusValidateFailed)
 
