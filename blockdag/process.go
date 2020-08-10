@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/dbaccess"
-	"github.com/pkg/errors"
-	"time"
-
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/pkg/errors"
+	"time"
 )
 
 // chainUpdates represents the updates made to the selected parent chain after
@@ -37,64 +36,19 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 	blockHash := block.Hash()
 	log.Tracef("Processing block %s", blockHash)
 
-	// The block must not already exist in the DAG.
 	err = dag.checkDuplicateBlock(blockHash, flags)
 	if err != nil {
 		return false, false, err
 	}
 
-	isAfterDelay := flags&BFAfterDelay == BFAfterDelay
-	if !isAfterDelay {
-		// Perform preliminary sanity checks on the block and its transactions.
-		delay, err := dag.checkBlockSanity(block, flags)
-		if err != nil {
-			return false, false, err
-		}
-
-		disallowDelay := flags&BFDisallowDelay == BFDisallowDelay
-		if delay != 0 && disallowDelay {
-			str := fmt.Sprintf("Cannot process blocks beyond the allowed time offset while the BFDisallowDelay flag is raised %s", blockHash)
-			return false, true, ruleError(ErrDelayedBlockIsNotAllowed, str)
-		}
-
-		if delay != 0 {
-			err = dag.addDelayedBlock(block, delay)
-			if err != nil {
-				return false, false, err
-			}
-			return false, true, nil
-		}
+	err = dag.checkBlockSanity(block, flags)
+	if err != nil {
+		return false, false, err
 	}
 
-	var missingParents []*daghash.Hash
-	for _, parentHash := range block.MsgBlock().Header.ParentHashes {
-		if !dag.IsInDAG(parentHash) {
-			missingParents = append(missingParents, parentHash)
-		}
-	}
-
-	disallowOrphans := flags&BFDisallowOrphans == BFDisallowOrphans
-	if len(missingParents) > 0 && disallowOrphans {
-		str := fmt.Sprintf("Cannot process orphan blocks while the BFDisallowOrphans flag is raised %s", blockHash)
-		return false, false, ruleError(ErrOrphanBlockIsNotAllowed, str)
-	}
-
-	// Handle the case of a block with a valid timestamp(non-delayed) which points to a delayed block.
-	delay, isParentDelayed := dag.maxDelayOfParents(missingParents)
-	if isParentDelayed {
-		// Add Millisecond to ensure that parent process time will be after its child.
-		delay += time.Millisecond
-		err := dag.addDelayedBlock(block, delay)
-		if err != nil {
-			return false, false, err
-		}
-		return false, true, err
-	}
-
-	// Handle orphan blocks.
-	if len(missingParents) > 0 {
-		dag.addOrphanBlock(block)
-		return true, false, nil
+	isOrphan, isDelayed, err = dag.processBlockCheckDelayedAndOrphanBlocks(block, flags)
+	if isOrphan || isDelayed || err != nil {
+		return isOrphan, isDelayed, err
 	}
 
 	// The block has passed all context independent checks and appears sane
@@ -104,19 +58,9 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 		return false, false, err
 	}
 
-	// Accept any orphan blocks that depend on this block (they are
-	// no longer orphans) and repeat for those accepted blocks until
-	// there are no more.
-	err = dag.processOrphans(blockHash, flags)
+	err = dag.processOrphansAndDelayedBlocks(blockHash, flags)
 	if err != nil {
 		return false, false, err
-	}
-
-	if !isAfterDelay {
-		err = dag.processDelayedBlocks()
-		if err != nil {
-			return false, false, err
-		}
 	}
 
 	log.Debugf("Accepted block %s", blockHash)
@@ -124,24 +68,92 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 	return false, false, nil
 }
 
-func (dag *BlockDAG) checkDuplicateBlock(blockHash *daghash.Hash, flags BehaviorFlags) error {
-	wasBlockStored := flags&BFWasStored == BFWasStored
-	if dag.IsInDAG(blockHash) && !wasBlockStored {
-		str := fmt.Sprintf("already have block %s", blockHash)
-		return ruleError(ErrDuplicateBlock, str)
+func (dag *BlockDAG) processBlockCheckDelayedAndOrphanBlocks(block *util.Block, flags BehaviorFlags) (isOrphan bool, isDelayed bool, err error) {
+	if !isBehaviorFlagRaised(flags, BFAfterDelay) {
+		isDelayed, err := dag.processBlockCheckBlockDelay(block, flags)
+		if err != nil {
+			return false, false, err
+		}
+		if isDelayed {
+			return false, true, nil
+		}
 	}
 
-	// The block must not already exist as an orphan.
-	if _, exists := dag.orphans[*blockHash]; exists {
-		str := fmt.Sprintf("already have block (orphan) %s", blockHash)
-		return ruleError(ErrDuplicateBlock, str)
+	isOrphan, err = dag.processBlockCheckMissingParents(block, flags)
+	if err != nil {
+		return false, false, err
+	}
+	if isOrphan {
+		return true, false, nil
+	}
+	return false, false, nil
+}
+
+func (dag *BlockDAG) processBlockCheckBlockDelay(block *util.Block, flags BehaviorFlags) (isDelayed bool, err error) {
+	delay, isDelayed := dag.checkBlockDelayed(block)
+	if isDelayed && isBehaviorFlagRaised(flags, BFDisallowDelay) {
+		str := fmt.Sprintf("Cannot process blocks beyond the "+
+			"allowed time offset while the BFDisallowDelay flag is "+
+			"raised %s", block.Hash())
+		return false, ruleError(ErrDelayedBlockIsNotAllowed, str)
 	}
 
-	if dag.isKnownDelayedBlock(blockHash) {
-		str := fmt.Sprintf("already have block (delayed) %s", blockHash)
-		return ruleError(ErrDuplicateBlock, str)
+	if isDelayed {
+		err := dag.addDelayedBlock(block, delay)
+		if err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+	return false, nil
+}
+
+func (dag *BlockDAG) processBlockCheckMissingParents(block *util.Block, flags BehaviorFlags) (isOrphan bool, err error) {
+	var missingParents []*daghash.Hash
+	for _, parentHash := range block.MsgBlock().Header.ParentHashes {
+		if !dag.IsInDAG(parentHash) {
+			missingParents = append(missingParents, parentHash)
+		}
 	}
 
+	if len(missingParents) > 0 && isBehaviorFlagRaised(flags, BFDisallowOrphans) {
+		str := fmt.Sprintf("Cannot process orphan blocks while the "+
+			"BFDisallowOrphans flag is raised %s", block.Hash())
+		return false, ruleError(ErrOrphanBlockIsNotAllowed, str)
+	}
+
+	// Handle the case of a block with a valid timestamp(non-delayed) which points to a delayed block.
+	delay, isParentDelayed := dag.maxDelayOfParents(missingParents)
+	if isParentDelayed {
+		// Add Millisecond to ensure that parent process time will be after its child.
+		delay += time.Millisecond
+		err := dag.addDelayedBlock(block, delay)
+		if err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+
+	// Handle orphan blocks.
+	if len(missingParents) > 0 {
+		dag.addOrphanBlock(block)
+		return true, nil
+	}
+	return false, nil
+}
+
+func (dag *BlockDAG) processOrphansAndDelayedBlocks(blockHash *daghash.Hash, flags BehaviorFlags) error {
+	err := dag.processOrphans(blockHash, flags)
+	if err != nil {
+		return err
+	}
+
+	if !isBehaviorFlagRaised(flags, BFAfterDelay) {
+		err = dag.processDelayedBlocks()
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

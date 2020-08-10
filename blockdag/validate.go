@@ -7,11 +7,9 @@ package blockdag
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/pkg/errors"
 	"math"
 	"sort"
-	"time"
-
-	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/domainmessage"
@@ -392,37 +390,28 @@ func CalcTxMass(tx *util.Tx, previousScriptPubKeys [][]byte) uint64 {
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkProofOfWork.
-func (dag *BlockDAG) checkBlockHeaderSanity(block *util.Block, flags BehaviorFlags) (delay time.Duration, err error) {
+func (dag *BlockDAG) checkBlockHeaderSanity(block *util.Block, flags BehaviorFlags) error {
 	// Ensure the proof of work bits in the block header is in min/max range
 	// and the block hash is less than the target value described by the
 	// bits.
 	header := &block.MsgBlock().Header
-	err = dag.checkProofOfWork(header, flags)
+	err := dag.checkProofOfWork(header, flags)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	if len(header.ParentHashes) == 0 {
 		if !header.BlockHash().IsEqual(dag.Params.GenesisHash) {
-			return 0, ruleError(ErrNoParents, "block has no parents")
+			return ruleError(ErrNoParents, "block has no parents")
 		}
 	} else {
 		err = checkBlockParentsOrder(header)
 		if err != nil {
-			return 0, err
+			return err
 		}
 	}
 
-	// Ensure the block time is not too far in the future. If it's too far, return
-	// the duration of time that should be waited before the block becomes valid.
-	// This check needs to be last as it does not return an error but rather marks the
-	// header as delayed (and valid).
-	maxTimestamp := dag.Now().Add(time.Duration(dag.TimestampDeviationTolerance) * dag.Params.TargetTimePerBlock)
-	if header.Timestamp.After(maxTimestamp) {
-		return header.Timestamp.Sub(maxTimestamp), nil
-	}
-
-	return 0, nil
+	return nil
 }
 
 //checkBlockParentsOrder ensures that the block's parents are ordered by hash
@@ -445,56 +434,56 @@ func checkBlockParentsOrder(header *domainmessage.BlockHeader) error {
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkBlockHeaderSanity.
-func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (time.Duration, error) {
-	delay, err := dag.checkBlockHeaderSanity(block, flags)
+func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) error {
+	err := dag.checkBlockHeaderSanity(block, flags)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	err = dag.checkBlockContainsAtLeastOneTransaction(block)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	err = dag.checkBlockContainsLessThanMaxBlockMassTransactions(block)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	err = dag.checkFirstBlockTransactionIsCoinbase(block)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	err = dag.checkBlockContainsOnlyOneCoinbase(block)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	err = dag.checkBlockTransactionOrder(block)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	err = dag.checkNoNonNativeTransactions(block)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	err = dag.checkBlockTransactionSanity(block)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	err = dag.checkBlockHashMerkleRoot(block)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	// The following check will be fairly quick since the transaction IDs
 	// are already cached due to building the merkle tree above.
 	err = dag.checkBlockDuplicateTransactions(block)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	err = dag.checkBlockDoubleSpends(block)
 	if err != nil {
-		return 0, err
+		return err
 	}
-	return delay, nil
+	return nil
 }
 
 func (dag *BlockDAG) checkBlockContainsAtLeastOneTransaction(block *util.Block) error {
@@ -1025,12 +1014,13 @@ func (dag *BlockDAG) CheckConnectBlockTemplateNoLock(block *util.Block) error {
 
 	header := block.MsgBlock().Header
 
-	delay, err := dag.checkBlockSanity(block, flags)
+	err := dag.checkBlockSanity(block, flags)
 	if err != nil {
 		return err
 	}
 
-	if delay != 0 {
+	_, isDelayed := dag.checkBlockDelayed(block)
+	if isDelayed {
 		return errors.Errorf("Block timestamp is too far in the future")
 	}
 
@@ -1050,4 +1040,25 @@ func (dag *BlockDAG) CheckConnectBlockTemplateNoLock(block *util.Block) error {
 		dag.UTXOSet(), block.Transactions(), false)
 
 	return err
+}
+
+func (dag *BlockDAG) checkDuplicateBlock(blockHash *daghash.Hash, flags BehaviorFlags) error {
+	wasBlockStored := flags&BFWasStored == BFWasStored
+	if dag.IsInDAG(blockHash) && !wasBlockStored {
+		str := fmt.Sprintf("already have block %s", blockHash)
+		return ruleError(ErrDuplicateBlock, str)
+	}
+
+	// The block must not already exist as an orphan.
+	if _, exists := dag.orphans[*blockHash]; exists {
+		str := fmt.Sprintf("already have block (orphan) %s", blockHash)
+		return ruleError(ErrDuplicateBlock, str)
+	}
+
+	if dag.isKnownDelayedBlock(blockHash) {
+		str := fmt.Sprintf("already have block (delayed) %s", blockHash)
+		return ruleError(ErrDuplicateBlock, str)
+	}
+
+	return nil
 }

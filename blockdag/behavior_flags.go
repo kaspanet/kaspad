@@ -38,3 +38,7 @@ const (
 	// BFNone is a convenience value to specifically indicate no flags.
 	BFNone BehaviorFlags = 0
 )
+
+func isBehaviorFlagRaised(flags BehaviorFlags, flag BehaviorFlags) bool {
+	return flags&flag == flag
+}
