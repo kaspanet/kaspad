@@ -44,7 +44,7 @@ func (dag *BlockDAG) processDelayedBlocks() error {
 		delayedBlock := dag.popDelayedBlock()
 		_, _, err := dag.processBlockNoLock(delayedBlock.block, BFAfterDelay)
 		if err != nil {
-			log.Errorf("Error while processing delayed block (block %s)", delayedBlock.block.Hash().String())
+			log.Errorf("Error while processing delayed block (block %s): %s", delayedBlock.block.Hash().String(), err)
 			// Rule errors should not be propagated as they refer only to the delayed block,
 			// while this function runs in the context of another block
 			if !errors.As(err, &RuleError{}) {
