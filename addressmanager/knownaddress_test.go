@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/addressmanager"
-	"github.com/kaspanet/kaspad/wire"
+	"github.com/kaspanet/kaspad/domainmessage"
 )
 
 func TestChance(t *testing.T) {
@@ -22,27 +22,27 @@ func TestChance(t *testing.T) {
 	}{
 		{
 			//Test normal case
-			addressmanager.TstNewKnownAddress(&wire.NetAddress{Timestamp: now.Add(-35 * time.Second)},
+			addressmanager.TstNewKnownAddress(&domainmessage.NetAddress{Timestamp: now.Add(-35 * time.Second)},
 				0, mstime.Now().Add(-30*time.Minute), mstime.Now(), false, 0),
 			1.0,
 		}, {
 			//Test case in which lastseen < 0
-			addressmanager.TstNewKnownAddress(&wire.NetAddress{Timestamp: now.Add(20 * time.Second)},
+			addressmanager.TstNewKnownAddress(&domainmessage.NetAddress{Timestamp: now.Add(20 * time.Second)},
 				0, mstime.Now().Add(-30*time.Minute), mstime.Now(), false, 0),
 			1.0,
 		}, {
 			//Test case in which lastAttempt < 0
-			addressmanager.TstNewKnownAddress(&wire.NetAddress{Timestamp: now.Add(-35 * time.Second)},
+			addressmanager.TstNewKnownAddress(&domainmessage.NetAddress{Timestamp: now.Add(-35 * time.Second)},
 				0, mstime.Now().Add(30*time.Minute), mstime.Now(), false, 0),
 			1.0 * .01,
 		}, {
 			//Test case in which lastAttempt < ten minutes
-			addressmanager.TstNewKnownAddress(&wire.NetAddress{Timestamp: now.Add(-35 * time.Second)},
+			addressmanager.TstNewKnownAddress(&domainmessage.NetAddress{Timestamp: now.Add(-35 * time.Second)},
 				0, mstime.Now().Add(-5*time.Minute), mstime.Now(), false, 0),
 			1.0 * .01,
 		}, {
 			//Test case with several failed attempts.
-			addressmanager.TstNewKnownAddress(&wire.NetAddress{Timestamp: now.Add(-35 * time.Second)},
+			addressmanager.TstNewKnownAddress(&domainmessage.NetAddress{Timestamp: now.Add(-35 * time.Second)},
 				2, mstime.Now().Add(-30*time.Minute), mstime.Now(), false, 0),
 			1 / 1.5 / 1.5,
 		},
@@ -66,10 +66,10 @@ func TestIsBad(t *testing.T) {
 	hoursOld := now.Add(-5 * time.Hour)
 	zeroTime := mstime.Time{}
 
-	futureNa := &wire.NetAddress{Timestamp: future}
-	minutesOldNa := &wire.NetAddress{Timestamp: minutesOld}
-	monthOldNa := &wire.NetAddress{Timestamp: monthOld}
-	currentNa := &wire.NetAddress{Timestamp: secondsOld}
+	futureNa := &domainmessage.NetAddress{Timestamp: future}
+	minutesOldNa := &domainmessage.NetAddress{Timestamp: minutesOld}
+	monthOldNa := &domainmessage.NetAddress{Timestamp: monthOld}
+	currentNa := &domainmessage.NetAddress{Timestamp: secondsOld}
 
 	//Test addresses that have been tried in the last minute.
 	if addressmanager.TstKnownAddressIsBad(addressmanager.TstNewKnownAddress(futureNa, 3, secondsOld, zeroTime, false, 0)) {

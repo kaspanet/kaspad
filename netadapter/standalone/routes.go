@@ -7,8 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/netadapter/router"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // Routes holds the incoming and outgoing routes of a connection created by MinimalNetAdapter
@@ -21,7 +21,7 @@ type Routes struct {
 
 // WaitForMessageOfType waits for a message of requested type up to `timeout`, skipping all messages of any other type
 // received while waiting
-func (r *Routes) WaitForMessageOfType(command wire.MessageCommand, timeout time.Duration) (wire.Message, error) {
+func (r *Routes) WaitForMessageOfType(command domainmessage.MessageCommand, timeout time.Duration) (domainmessage.Message, error) {
 	timeoutTime := time.Now().Add(timeout)
 	for {
 		message, err := r.IncomingRoute.DequeueWithTimeout(timeoutTime.Sub(time.Now()))

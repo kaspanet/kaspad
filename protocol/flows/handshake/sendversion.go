@@ -1,10 +1,10 @@
 package handshake
 
 import (
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/common"
 	"github.com/kaspanet/kaspad/version"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 var (
@@ -18,11 +18,11 @@ var (
 
 	// defaultServices describes the default services that are supported by
 	// the server.
-	defaultServices = wire.SFNodeNetwork | wire.SFNodeBloom | wire.SFNodeCF
+	defaultServices = domainmessage.SFNodeNetwork | domainmessage.SFNodeBloom | domainmessage.SFNodeCF
 
 	// defaultRequiredServices describes the default services that are
 	// required to be supported by outbound peers.
-	defaultRequiredServices = wire.SFNodeNetwork
+	defaultRequiredServices = domainmessage.SFNodeNetwork
 )
 
 type sendVersionFlow struct {
@@ -49,14 +49,15 @@ func (flow *sendVersionFlow) start() error {
 	if err != nil {
 		return err
 	}
-	msg := wire.NewMsgVersion(localAddress, flow.NetAdapter().ID(), selectedTipHash, subnetworkID)
+	msg := domainmessage.NewMsgVersion(localAddress, flow.NetAdapter().ID(),
+		flow.Config().ActiveNetParams.Name, selectedTipHash, subnetworkID)
 	msg.AddUserAgent(userAgentName, userAgentVersion, flow.Config().UserAgentComments...)
 
 	// Advertise the services flag
 	msg.Services = defaultServices
 
 	// Advertise our max supported protocol version.
-	msg.ProtocolVersion = wire.ProtocolVersion
+	msg.ProtocolVersion = domainmessage.ProtocolVersion
 
 	// Advertise if inv messages for transactions are desired.
 	msg.DisableRelayTx = flow.Config().BlocksOnly

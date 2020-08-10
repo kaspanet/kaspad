@@ -6,12 +6,12 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/util/daghash"
 	mathUtil "github.com/kaspanet/kaspad/util/math"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // Peer holds data about a peer.
@@ -22,7 +22,7 @@ type Peer struct {
 	selectedTipHash    *daghash.Hash
 
 	userAgent                string
-	services                 wire.ServiceFlag
+	services                 domainmessage.ServiceFlag
 	advertisedProtocolVerion uint32 // protocol version advertised by remote
 	protocolVersion          uint32 // negotiated protocol version
 	disableRelayTx           bool
@@ -109,7 +109,7 @@ func (p *Peer) IsOutbound() bool {
 }
 
 // UpdateFieldsFromMsgVersion updates the peer with the data from the version message.
-func (p *Peer) UpdateFieldsFromMsgVersion(msg *wire.MsgVersion) {
+func (p *Peer) UpdateFieldsFromMsgVersion(msg *domainmessage.MsgVersion) {
 	// Negotiate the protocol version.
 	p.advertisedProtocolVerion = msg.ProtocolVersion
 	p.protocolVersion = mathUtil.MinUint32(p.protocolVersion, p.advertisedProtocolVerion)

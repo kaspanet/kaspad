@@ -1,11 +1,11 @@
 package protowire
 
-import "github.com/kaspanet/kaspad/wire"
+import "github.com/kaspanet/kaspad/domainmessage"
 
-func (x *KaspadMessage_RequestNextIBDBlocks) toWireMessage() (wire.Message, error) {
-	return &wire.MsgRequestNextIBDBlocks{}, nil
+func (x *KaspadMessage_RequestNextIBDBlocks) toDomainMessage() (domainmessage.Message, error) {
+	return &domainmessage.MsgRequestNextIBDBlocks{}, nil
 }
 
-func (x *KaspadMessage_RequestNextIBDBlocks) fromWireMessage(_ *wire.MsgRequestNextIBDBlocks) error {
+func (x *KaspadMessage_RequestNextIBDBlocks) fromDomainMessage(_ *domainmessage.MsgRequestNextIBDBlocks) error {
 	return nil
 }

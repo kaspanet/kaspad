@@ -22,11 +22,11 @@ import (
 
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/mining"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // fakeDAG is used by the pool harness to provide generated test utxos and
@@ -82,7 +82,7 @@ func calcSequenceLock(tx *util.Tx,
 // spendableOutpoint is a convenience type that houses a particular utxo and the
 // amount associated with it.
 type spendableOutpoint struct {
-	outpoint wire.Outpoint
+	outpoint domainmessage.Outpoint
 	amount   util.Amount
 }
 
@@ -91,7 +91,7 @@ type spendableOutpoint struct {
 // transactions.
 func txOutToSpendableOutpoint(tx *util.Tx, outputNum uint32) spendableOutpoint {
 	return spendableOutpoint{
-		outpoint: wire.Outpoint{TxID: *tx.ID(), Index: outputNum},
+		outpoint: domainmessage.Outpoint{TxID: *tx.ID(), Index: outputNum},
 		amount:   util.Amount(tx.MsgTx().TxOut[outputNum].Value),
 	}
 }
@@ -125,16 +125,16 @@ func (p *poolHarness) CreateCoinbaseTx(blueScore uint64, numOutputs uint32) (*ut
 		return nil, err
 	}
 
-	txIns := []*wire.TxIn{{
+	txIns := []*domainmessage.TxIn{{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
-		PreviousOutpoint: *wire.NewOutpoint(&daghash.TxID{},
-			wire.MaxPrevOutIndex),
+		PreviousOutpoint: *domainmessage.NewOutpoint(&daghash.TxID{},
+			domainmessage.MaxPrevOutIndex),
 		SignatureScript: coinbaseScript,
-		Sequence:        wire.MaxTxInSequenceNum,
+		Sequence:        domainmessage.MaxTxInSequenceNum,
 	}}
 
-	txOuts := []*wire.TxOut{}
+	txOuts := []*domainmessage.TxOut{}
 	totalInput := blockdag.CalcBlockSubsidy(blueScore, p.dagParams)
 	amountPerOutput := totalInput / uint64(numOutputs)
 	remainder := totalInput - amountPerOutput*uint64(numOutputs)
@@ -145,13 +145,13 @@ func (p *poolHarness) CreateCoinbaseTx(blueScore uint64, numOutputs uint32) (*ut
 		if i == numOutputs-1 {
 			amount = amountPerOutput + remainder
 		}
-		txOuts = append(txOuts, &wire.TxOut{
+		txOuts = append(txOuts, &domainmessage.TxOut{
 			ScriptPubKey: p.payScript,
 			Value:        amount,
 		})
 	}
 
-	return util.NewTx(wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)), nil
+	return util.NewTx(domainmessage.NewNativeMsgTx(domainmessage.TxVersion, txIns, txOuts)), nil
 }
 
 // CreateSignedTxForSubnetwork creates a new signed transaction that consumes the provided
@@ -169,16 +169,16 @@ func (p *poolHarness) CreateSignedTxForSubnetwork(inputs []spendableOutpoint, nu
 	amountPerOutput := uint64(totalInput) / uint64(numOutputs)
 	remainder := uint64(totalInput) - amountPerOutput*uint64(numOutputs)
 
-	var txIns []*wire.TxIn
+	var txIns []*domainmessage.TxIn
 	for _, input := range inputs {
-		txIns = append(txIns, &wire.TxIn{
+		txIns = append(txIns, &domainmessage.TxIn{
 			PreviousOutpoint: input.outpoint,
 			SignatureScript:  p.signatureScript,
-			Sequence:         wire.MaxTxInSequenceNum,
+			Sequence:         domainmessage.MaxTxInSequenceNum,
 		})
 	}
 
-	var txOuts []*wire.TxOut
+	var txOuts []*domainmessage.TxOut
 	for i := uint32(0); i < numOutputs; i++ {
 		// Ensure the final output accounts for any remainder that might
 		// be left from splitting the input amount.
@@ -186,13 +186,13 @@ func (p *poolHarness) CreateSignedTxForSubnetwork(inputs []spendableOutpoint, nu
 		if i == numOutputs-1 {
 			amount = amountPerOutput + remainder
 		}
-		txOuts = append(txOuts, &wire.TxOut{
+		txOuts = append(txOuts, &domainmessage.TxOut{
 			ScriptPubKey: p.payScript,
 			Value:        amount,
 		})
 	}
 
-	tx := wire.NewSubnetworkMsgTx(wire.TxVersion, txIns, txOuts, subnetworkID, gas, []byte{})
+	tx := domainmessage.NewSubnetworkMsgTx(domainmessage.TxVersion, txIns, txOuts, subnetworkID, gas, []byte{})
 
 	// Sign the new transaction.
 	for i := range tx.TxIn {
@@ -224,21 +224,21 @@ func (p *poolHarness) CreateTxChain(firstOutput spendableOutpoint, numTxns uint3
 		// associated with the harness.
 		spendableAmount = spendableAmount - txRelayFeeForTest
 
-		txIn := &wire.TxIn{
+		txIn := &domainmessage.TxIn{
 			PreviousOutpoint: prevOutpoint,
 			SignatureScript:  p.signatureScript,
-			Sequence:         wire.MaxTxInSequenceNum,
+			Sequence:         domainmessage.MaxTxInSequenceNum,
 		}
-		txOut := &wire.TxOut{
+		txOut := &domainmessage.TxOut{
 			ScriptPubKey: p.payScript,
 			Value:        uint64(spendableAmount),
 		}
-		tx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
+		tx := domainmessage.NewNativeMsgTx(domainmessage.TxVersion, []*domainmessage.TxIn{txIn}, []*domainmessage.TxOut{txOut})
 
 		txChain = append(txChain, util.NewTx(tx))
 
 		// Next transaction uses outputs from this one.
-		prevOutpoint = wire.Outpoint{TxID: *tx.TxID(), Index: 0}
+		prevOutpoint = domainmessage.Outpoint{TxID: *tx.TxID(), Index: 0}
 	}
 
 	return txChain, nil
@@ -246,12 +246,12 @@ func (p *poolHarness) CreateTxChain(firstOutput spendableOutpoint, numTxns uint3
 
 func (tc *testContext) mineTransactions(transactions []*util.Tx, numberOfBlocks uint64) []spendableOutpoint {
 	var outpoints []spendableOutpoint
-	msgTxs := make([]*wire.MsgTx, len(transactions))
+	msgTxs := make([]*domainmessage.MsgTx, len(transactions))
 	for i, tx := range transactions {
 		msgTxs[i] = tx.MsgTx()
 	}
 	for i := uint64(0); i < numberOfBlocks; i++ {
-		var blockTxs []*wire.MsgTx
+		var blockTxs []*domainmessage.MsgTx
 		if i == 0 {
 			blockTxs = msgTxs
 		}
@@ -292,7 +292,7 @@ func (tc *testContext) mineTransactions(transactions []*util.Tx, numberOfBlocks 
 
 		for i, txOut := range coinbaseTx.TxOut {
 			outpoints = append(outpoints, spendableOutpoint{
-				outpoint: *wire.NewOutpoint(coinbaseTx.TxID(), uint32(i)),
+				outpoint: *domainmessage.NewOutpoint(coinbaseTx.TxID(), uint32(i)),
 				amount:   util.Amount(txOut.Value),
 			})
 		}
@@ -455,21 +455,21 @@ func testPoolMembership(tc *testContext, tx *util.Tx, inOrphanPool, inTxPool boo
 }
 
 func (p *poolHarness) createTx(outpoint spendableOutpoint, fee uint64, numOutputs int64) (*util.Tx, error) {
-	txIns := []*wire.TxIn{{
+	txIns := []*domainmessage.TxIn{{
 		PreviousOutpoint: outpoint.outpoint,
 		SignatureScript:  nil,
-		Sequence:         wire.MaxTxInSequenceNum,
+		Sequence:         domainmessage.MaxTxInSequenceNum,
 	}}
 
-	var txOuts []*wire.TxOut
+	var txOuts []*domainmessage.TxOut
 	amountPerOutput := (uint64(outpoint.amount) - fee) / uint64(numOutputs)
 	for i := int64(0); i < numOutputs; i++ {
-		txOuts = append(txOuts, &wire.TxOut{
+		txOuts = append(txOuts, &domainmessage.TxOut{
 			ScriptPubKey: p.payScript,
 			Value:        amountPerOutput,
 		})
 	}
-	tx := wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)
+	tx := domainmessage.NewNativeMsgTx(domainmessage.TxVersion, txIns, txOuts)
 
 	// Sign the new transaction.
 	tx.TxIn[0].SignatureScript = p.signatureScript
@@ -506,7 +506,7 @@ func TestProcessTransaction(t *testing.T) {
 
 	orphanedTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outpoint: wire.Outpoint{TxID: daghash.TxID{}, Index: 1},
+		outpoint: domainmessage.Outpoint{TxID: daghash.TxID{}, Index: 1},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -574,7 +574,7 @@ func TestProcessTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unexpected error from harness.createTx: %s", err)
 	}
-	nonStdTx.MsgTx().Version = wire.TxVersion + 1
+	nonStdTx.MsgTx().Version = domainmessage.TxVersion + 1
 	_, err = harness.txPool.ProcessTransaction(nonStdTx, true, 0)
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
@@ -641,7 +641,7 @@ func TestProcessTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewShaHashFromStr: unexpected error: %v", err)
 	}
-	dummyPrevOut := wire.Outpoint{TxID: *dummyPrevOutTxID, Index: 1}
+	dummyPrevOut := domainmessage.Outpoint{TxID: *dummyPrevOutTxID, Index: 1}
 	dummySigScript := bytes.Repeat([]byte{0x00}, 65)
 
 	addrHash := [20]byte{0x01}
@@ -654,23 +654,23 @@ func TestProcessTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("PayToAddrScript: unexpected error: %v", err)
 	}
-	p2shTx := util.NewTx(wire.NewNativeMsgTx(1, nil, []*wire.TxOut{{Value: 5000000000, ScriptPubKey: p2shScriptPubKey}}))
+	p2shTx := util.NewTx(domainmessage.NewNativeMsgTx(1, nil, []*domainmessage.TxOut{{Value: 5000000000, ScriptPubKey: p2shScriptPubKey}}))
 	if isAccepted, err := harness.txPool.mpUTXOSet.AddTx(p2shTx.MsgTx(), currentBlueScore+1); err != nil {
 		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
 	} else if !isAccepted {
 		t.Fatalf("AddTx unexpectedly didn't add tx %s", p2shTx.ID())
 	}
 
-	txIns := []*wire.TxIn{{
-		PreviousOutpoint: wire.Outpoint{TxID: *p2shTx.ID(), Index: 0},
+	txIns := []*domainmessage.TxIn{{
+		PreviousOutpoint: domainmessage.Outpoint{TxID: *p2shTx.ID(), Index: 0},
 		SignatureScript:  wrappedP2SHNonStdSigScript,
-		Sequence:         wire.MaxTxInSequenceNum,
+		Sequence:         domainmessage.MaxTxInSequenceNum,
 	}}
-	txOuts := []*wire.TxOut{{
+	txOuts := []*domainmessage.TxOut{{
 		Value:        5000000000,
 		ScriptPubKey: dummyScriptPubKey,
 	}}
-	nonStdSigScriptTx := util.NewTx(wire.NewNativeMsgTx(1, txIns, txOuts))
+	nonStdSigScriptTx := util.NewTx(domainmessage.NewNativeMsgTx(1, txIns, txOuts))
 	_, err = harness.txPool.ProcessTransaction(nonStdSigScriptTx, true, 0)
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
@@ -688,10 +688,10 @@ func TestProcessTransaction(t *testing.T) {
 	}
 
 	// Checks that a transaction with no outputs will not get rejected
-	noOutsTx := util.NewTx(wire.NewNativeMsgTx(1, []*wire.TxIn{{
+	noOutsTx := util.NewTx(domainmessage.NewNativeMsgTx(1, []*domainmessage.TxIn{{
 		PreviousOutpoint: dummyPrevOut,
 		SignatureScript:  dummySigScript,
-		Sequence:         wire.MaxTxInSequenceNum,
+		Sequence:         domainmessage.MaxTxInSequenceNum,
 	}},
 		nil))
 	_, err = harness.txPool.ProcessTransaction(noOutsTx, true, 0)
@@ -738,16 +738,16 @@ func TestProcessTransaction(t *testing.T) {
 		t.Errorf("Unexpected error code. Expected %v but got %v", RejectInsufficientFee, code)
 	}
 
-	txIns = []*wire.TxIn{{
+	txIns = []*domainmessage.TxIn{{
 		PreviousOutpoint: spendableOuts[5].outpoint,
 		SignatureScript:  []byte{02, 01}, // Unparsable script
-		Sequence:         wire.MaxTxInSequenceNum,
+		Sequence:         domainmessage.MaxTxInSequenceNum,
 	}}
-	txOuts = []*wire.TxOut{{
+	txOuts = []*domainmessage.TxOut{{
 		Value:        1,
 		ScriptPubKey: dummyScriptPubKey,
 	}}
-	tx = util.NewTx(wire.NewNativeMsgTx(1, txIns, txOuts))
+	tx = util.NewTx(domainmessage.NewNativeMsgTx(1, txIns, txOuts))
 	_, err = harness.txPool.ProcessTransaction(tx, true, 0)
 	fmt.Println(err)
 	if err == nil {
@@ -826,7 +826,7 @@ func TestDoubleSpendsFromDAG(t *testing.T) {
 	}
 
 	dag := harness.txPool.cfg.DAG
-	blockdag.PrepareAndProcessBlockForTest(t, dag, dag.TipHashes(), []*wire.MsgTx{tx.MsgTx()})
+	blockdag.PrepareAndProcessBlockForTest(t, dag, dag.TipHashes(), []*domainmessage.MsgTx{tx.MsgTx()})
 
 	// Check that a transaction that double spends the DAG UTXO set is orphaned.
 	doubleSpendTx, err := harness.createTx(spendableOuts[0], uint64(txRelayFeeForTest), 2)
@@ -875,7 +875,7 @@ func TestFetchTransaction(t *testing.T) {
 
 	orphanedTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outpoint: wire.Outpoint{TxID: daghash.TxID{1}, Index: 1},
+		outpoint: domainmessage.Outpoint{TxID: daghash.TxID{1}, Index: 1},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1035,7 +1035,7 @@ func TestOrphanExpiration(t *testing.T) {
 
 	expiredTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outpoint: wire.Outpoint{TxID: daghash.TxID{}, Index: 0},
+		outpoint: domainmessage.Outpoint{TxID: daghash.TxID{}, Index: 0},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("Unexpected error on harness.CreateSignedTx: %s", err)
@@ -1049,7 +1049,7 @@ func TestOrphanExpiration(t *testing.T) {
 
 	tx1, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outpoint: wire.Outpoint{TxID: daghash.TxID{1}, Index: 0},
+		outpoint: domainmessage.Outpoint{TxID: daghash.TxID{1}, Index: 0},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("Unexpected error on harness.CreateSignedTx: %s", err)
@@ -1069,7 +1069,7 @@ func TestOrphanExpiration(t *testing.T) {
 
 	tx2, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outpoint: wire.Outpoint{TxID: daghash.TxID{2}, Index: 0},
+		outpoint: domainmessage.Outpoint{TxID: daghash.TxID{2}, Index: 0},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("Unexpected error on harness.CreateSignedTx: %s", err)
@@ -1098,7 +1098,7 @@ func TestMaxOrphanTxSize(t *testing.T) {
 
 	tx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outpoint: wire.Outpoint{TxID: daghash.TxID{}, Index: 0},
+		outpoint: domainmessage.Outpoint{TxID: daghash.TxID{}, Index: 0},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1227,7 +1227,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 
 	orphanedTx1, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outpoint: wire.Outpoint{TxID: daghash.TxID{1}, Index: 1},
+		outpoint: domainmessage.Outpoint{TxID: daghash.TxID{1}, Index: 1},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1235,7 +1235,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 	harness.txPool.ProcessTransaction(orphanedTx1, true, 1)
 	orphanedTx2, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outpoint: wire.Outpoint{TxID: daghash.TxID{2}, Index: 2},
+		outpoint: domainmessage.Outpoint{TxID: daghash.TxID{2}, Index: 2},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1243,7 +1243,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 	harness.txPool.ProcessTransaction(orphanedTx2, true, 1)
 	orphanedTx3, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outpoint: wire.Outpoint{TxID: daghash.TxID{3}, Index: 3},
+		outpoint: domainmessage.Outpoint{TxID: daghash.TxID{3}, Index: 3},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1252,7 +1252,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 
 	orphanedTx4, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outpoint: wire.Outpoint{TxID: daghash.TxID{4}, Index: 4},
+		outpoint: domainmessage.Outpoint{TxID: daghash.TxID{4}, Index: 4},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1312,7 +1312,7 @@ func TestBasicOrphanRemoval(t *testing.T) {
 	// and ensure the state of all other orphans are unaffected.
 	nonChainedOrphanTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outpoint: wire.Outpoint{TxID: daghash.TxID{}, Index: 0},
+		outpoint: domainmessage.Outpoint{TxID: daghash.TxID{}, Index: 0},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1536,7 +1536,7 @@ func TestCheckSpend(t *testing.T) {
 
 	// Now all but the last tx should be spent by the next.
 	for i := 0; i < len(chainedTxns)-1; i++ {
-		op = wire.Outpoint{
+		op = domainmessage.Outpoint{
 			TxID:  *chainedTxns[i].ID(),
 			Index: 0,
 		}
@@ -1549,7 +1549,7 @@ func TestCheckSpend(t *testing.T) {
 	}
 
 	// The last tx should have no spend.
-	op = wire.Outpoint{
+	op = domainmessage.Outpoint{
 		TxID:  *chainedTxns[txChainLength-1].ID(),
 		Index: 0,
 	}
@@ -1681,7 +1681,7 @@ func TestHandleNewBlock(t *testing.T) {
 
 	orphanTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(2500000000 - txRelayFeeForTest),
-		outpoint: wire.Outpoint{TxID: *txID, Index: 0},
+		outpoint: domainmessage.Outpoint{TxID: *txID, Index: 0},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1757,8 +1757,8 @@ func TestHandleNewBlock(t *testing.T) {
 }
 
 // dummyBlock defines a block on the block DAG. It is used to test block operations.
-var dummyBlock = wire.MsgBlock{
-	Header: wire.BlockHeader{
+var dummyBlock = domainmessage.MsgBlock{
+	Header: domainmessage.BlockHeader{
 		Version: 1,
 		ParentHashes: []*daghash.Hash{
 			{
@@ -1783,11 +1783,11 @@ var dummyBlock = wire.MsgBlock{
 		Bits:      0x1e00ffff,                             // 503382015
 		Nonce:     0x000ae53f,                             // 714047
 	},
-	Transactions: []*wire.MsgTx{
+	Transactions: []*domainmessage.MsgTx{
 		{
 			Version: 1,
-			TxIn:    []*wire.TxIn{},
-			TxOut: []*wire.TxOut{
+			TxIn:    []*domainmessage.TxIn{},
+			TxOut: []*domainmessage.TxOut{
 				{
 					Value: 0x12a05f200, // 5000000000
 					ScriptPubKey: []byte{

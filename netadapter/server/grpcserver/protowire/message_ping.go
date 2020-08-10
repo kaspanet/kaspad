@@ -1,16 +1,16 @@
 package protowire
 
 import (
-	"github.com/kaspanet/kaspad/wire"
+	"github.com/kaspanet/kaspad/domainmessage"
 )
 
-func (x *KaspadMessage_Ping) toWireMessage() (wire.Message, error) {
-	return &wire.MsgPing{
+func (x *KaspadMessage_Ping) toDomainMessage() (domainmessage.Message, error) {
+	return &domainmessage.MsgPing{
 		Nonce: x.Ping.Nonce,
 	}, nil
 }
 
-func (x *KaspadMessage_Ping) fromWireMessage(msgPing *wire.MsgPing) error {
+func (x *KaspadMessage_Ping) fromDomainMessage(msgPing *domainmessage.MsgPing) error {
 	x.Ping = &PingMessage{
 		Nonce: msgPing.Nonce,
 	}

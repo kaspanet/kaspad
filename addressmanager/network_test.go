@@ -8,7 +8,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/kaspanet/kaspad/wire"
+	"github.com/kaspanet/kaspad/domainmessage"
 )
 
 // TestIPTypes ensures the various functions which determine the type of an IP
@@ -17,7 +17,7 @@ func TestIPTypes(t *testing.T) {
 	amgr, teardown := newAddrManagerForTest(t, "TestAddAddressByIP", nil)
 	defer teardown()
 	type ipTest struct {
-		in       wire.NetAddress
+		in       domainmessage.NetAddress
 		rfc1918  bool
 		rfc2544  bool
 		rfc3849  bool
@@ -40,7 +40,7 @@ func TestIPTypes(t *testing.T) {
 		rfc4193, rfc4380, rfc4843, rfc4862, rfc5737, rfc6052, rfc6145, rfc6598,
 		local, valid, routable bool) ipTest {
 		nip := net.ParseIP(ip)
-		na := *wire.NewNetAddressIPPort(nip, 16111, wire.SFNodeNetwork)
+		na := *domainmessage.NewNetAddressIPPort(nip, 16111, domainmessage.SFNodeNetwork)
 		test := ipTest{na, rfc1918, rfc2544, rfc3849, rfc3927, rfc3964, rfc4193, rfc4380,
 			rfc4843, rfc4862, rfc5737, rfc6052, rfc6145, rfc6598, local, valid, routable}
 		return test
@@ -196,7 +196,7 @@ func TestGroupKey(t *testing.T) {
 
 	for i, test := range tests {
 		nip := net.ParseIP(test.ip)
-		na := *wire.NewNetAddressIPPort(nip, 8333, wire.SFNodeNetwork)
+		na := *domainmessage.NewNetAddressIPPort(nip, 8333, domainmessage.SFNodeNetwork)
 		if key := amgr.GroupKey(&na); key != test.expected {
 			t.Errorf("TestGroupKey #%d (%s): unexpected group key "+
 				"- got '%s', want '%s'", i, test.name,

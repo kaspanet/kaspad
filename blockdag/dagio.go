@@ -15,11 +15,11 @@ import (
 	"github.com/kaspanet/kaspad/dbaccess"
 	"github.com/pkg/errors"
 
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/binaryserializer"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 var (
@@ -49,7 +49,7 @@ func IsNotInDAGErr(err error) bool {
 // keys will be iterated in an ascending order by the outpoint index.
 var outpointIndexByteOrder = binary.BigEndian
 
-func serializeOutpoint(w io.Writer, outpoint *wire.Outpoint) error {
+func serializeOutpoint(w io.Writer, outpoint *domainmessage.Outpoint) error {
 	_, err := w.Write(outpoint.TxID[:])
 	if err != nil {
 		return err
@@ -61,10 +61,10 @@ func serializeOutpoint(w io.Writer, outpoint *wire.Outpoint) error {
 var outpointSerializeSize = daghash.TxIDSize + 4
 
 // deserializeOutpoint decodes an outpoint from the passed serialized byte
-// slice into a new wire.Outpoint using a format that is suitable for long-
+// slice into a new domainmessage.Outpoint using a format that is suitable for long-
 // term storage. This format is described in detail above.
-func deserializeOutpoint(r io.Reader) (*wire.Outpoint, error) {
-	outpoint := &wire.Outpoint{}
+func deserializeOutpoint(r io.Reader) (*domainmessage.Outpoint, error) {
+	outpoint := &domainmessage.Outpoint{}
 	_, err := r.Read(outpoint.TxID[:])
 	if err != nil {
 		return nil, err
@@ -410,7 +410,7 @@ func (dag *BlockDAG) processUnprocessedBlockNodes(unprocessedBlockNodes []*block
 func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 	buffer := bytes.NewReader(blockRow)
 
-	var header wire.BlockHeader
+	var header domainmessage.BlockHeader
 	err := header.Deserialize(buffer)
 	if err != nil {
 		return nil, err
@@ -464,7 +464,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		return nil, err
 	}
 
-	bluesCount, err := wire.ReadVarInt(buffer)
+	bluesCount, err := domainmessage.ReadVarInt(buffer)
 	if err != nil {
 		return nil, err
 	}
@@ -483,7 +483,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		}
 	}
 
-	bluesAnticoneSizesLen, err := wire.ReadVarInt(buffer)
+	bluesAnticoneSizesLen, err := domainmessage.ReadVarInt(buffer)
 	if err != nil {
 		return nil, err
 	}
@@ -527,7 +527,7 @@ func storeBlock(dbContext *dbaccess.TxContext, block *util.Block) error {
 }
 
 func serializeBlockNode(node *blockNode) ([]byte, error) {
-	w := bytes.NewBuffer(make([]byte, 0, wire.MaxBlockHeaderPayload+1))
+	w := bytes.NewBuffer(make([]byte, 0, domainmessage.MaxBlockHeaderPayload+1))
 	header := node.Header()
 	err := header.Serialize(w)
 	if err != nil {
@@ -554,7 +554,7 @@ func serializeBlockNode(node *blockNode) ([]byte, error) {
 		return nil, err
 	}
 
-	err = wire.WriteVarInt(w, uint64(len(node.blues)))
+	err = domainmessage.WriteVarInt(w, uint64(len(node.blues)))
 	if err != nil {
 		return nil, err
 	}
@@ -566,7 +566,7 @@ func serializeBlockNode(node *blockNode) ([]byte, error) {
 		}
 	}
 
-	err = wire.WriteVarInt(w, uint64(len(node.bluesAnticoneSizes)))
+	err = domainmessage.WriteVarInt(w, uint64(len(node.bluesAnticoneSizes)))
 	if err != nil {
 		return nil, err
 	}

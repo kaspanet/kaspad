@@ -9,9 +9,9 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 const (
@@ -118,7 +118,7 @@ func checkInputsStandard(tx *util.Tx, utxoSet blockdag.UTXOSet) error {
 // Dust is defined in terms of the minimum transaction relay fee. In
 // particular, if the cost to the network to spend coins is more than 1/3 of the
 // minimum transaction relay fee, it is considered dust.
-func isDust(txOut *wire.TxOut, minRelayTxFee util.Amount) bool {
+func isDust(txOut *domainmessage.TxOut, minRelayTxFee util.Amount) bool {
 	// Unspendable outputs are considered dust.
 	if txscript.IsUnspendable(txOut.ScriptPubKey) {
 		return true

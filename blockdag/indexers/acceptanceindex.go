@@ -6,9 +6,9 @@ import (
 
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // AcceptanceIndex implements a txAcceptanceData by block hash index. That is to say,
@@ -113,7 +113,7 @@ func (idx *AcceptanceIndex) TxsAcceptanceData(blockHash *daghash.Hash) (blockdag
 }
 
 type serializableTxAcceptanceData struct {
-	MsgTx      wire.MsgTx
+	MsgTx      domainmessage.MsgTx
 	IsAccepted bool
 }
 

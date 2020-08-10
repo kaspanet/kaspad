@@ -4,12 +4,12 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/rpc/model"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/pointers"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // handleGetTxOut handles getTxOut commands.
@@ -64,7 +64,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		isCoinbase = mtx.IsCoinBase()
 		isInMempool = true
 	} else {
-		out := wire.Outpoint{TxID: *txID, Index: c.Vout}
+		out := domainmessage.Outpoint{TxID: *txID, Index: c.Vout}
 		entry, ok := s.dag.GetUTXOEntry(out)
 		if !ok {
 			return nil, rpcNoTxInfoError(txID)

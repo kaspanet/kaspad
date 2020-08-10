@@ -2,8 +2,8 @@ package addressexchange
 
 import (
 	"github.com/kaspanet/kaspad/addressmanager"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/netadapter/router"
-	"github.com/kaspanet/kaspad/wire"
 	"math/rand"
 )
 
@@ -20,10 +20,10 @@ func SendAddresses(context SendAddressesContext, incomingRoute *router.Route, ou
 		return err
 	}
 
-	msgGetAddresses := message.(*wire.MsgRequestAddresses)
+	msgGetAddresses := message.(*domainmessage.MsgRequestAddresses)
 	addresses := context.AddressManager().AddressCache(msgGetAddresses.IncludeAllSubnetworks,
 		msgGetAddresses.SubnetworkID)
-	msgAddresses := wire.NewMsgAddresses(msgGetAddresses.IncludeAllSubnetworks, msgGetAddresses.SubnetworkID)
+	msgAddresses := domainmessage.NewMsgAddresses(msgGetAddresses.IncludeAllSubnetworks, msgGetAddresses.SubnetworkID)
 	err = msgAddresses.AddAddresses(shuffleAddresses(addresses)...)
 	if err != nil {
 		return err
@@ -33,14 +33,14 @@ func SendAddresses(context SendAddressesContext, incomingRoute *router.Route, ou
 }
 
 // shuffleAddresses randomizes the given addresses sent if there are more than the maximum allowed in one message.
-func shuffleAddresses(addresses []*wire.NetAddress) []*wire.NetAddress {
+func shuffleAddresses(addresses []*domainmessage.NetAddress) []*domainmessage.NetAddress {
 	addressCount := len(addresses)
 
-	if addressCount < wire.MaxAddressesPerMsg {
+	if addressCount < domainmessage.MaxAddressesPerMsg {
 		return addresses
 	}
 
-	shuffleAddresses := make([]*wire.NetAddress, addressCount)
+	shuffleAddresses := make([]*domainmessage.NetAddress, addressCount)
 	copy(shuffleAddresses, addresses)
 
 	rand.Shuffle(addressCount, func(i, j int) {
@@ -48,6 +48,6 @@ func shuffleAddresses(addresses []*wire.NetAddress) []*wire.NetAddress {
 	})
 
 	// Truncate it to the maximum size.
-	shuffleAddresses = shuffleAddresses[:wire.MaxAddressesPerMsg]
+	shuffleAddresses = shuffleAddresses[:domainmessage.MaxAddressesPerMsg]
 	return shuffleAddresses
 }
