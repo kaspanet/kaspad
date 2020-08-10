@@ -51,7 +51,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 
 		spawn("Manager.routerInitializer-netConnection.DequeueInvalidMessage", func() {
 			for {
-				err, isOpen := netConnection.DequeueInvalidMessage()
+				isOpen, err := netConnection.DequeueInvalidMessage()
 				if !isOpen {
 					return
 				}

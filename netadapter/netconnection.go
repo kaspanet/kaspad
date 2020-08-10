@@ -94,7 +94,8 @@ func (c *NetConnection) Disconnect() {
 	c.connection.Disconnect()
 }
 
-func (c *NetConnection) DequeueInvalidMessage() (err error, isOpen bool) {
+// DequeueInvalidMessage dequeues the next invalid message
+func (c *NetConnection) DequeueInvalidMessage() (isOpen bool, err error) {
 	err, isOpen = <-c.invalidMessageChan
-	return err, isOpen
+	return isOpen, err
 }
