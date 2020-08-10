@@ -706,11 +706,20 @@ func (dag *BlockDAG) validateParents(blockHeader *domainmessage.BlockHeader, par
 // for how the flags modify its behavior.
 //
 // This function MUST be called with the dag state lock held (for writes).
-func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockContext(block *util.Block, flags BehaviorFlags) error {
+	err := dag.checkBlockParents(block)
+	if err != nil {
+		return err
+	}
+	parents, err := lookupParentNodes(block, dag)
+	if err != nil {
+		return err
+	}
+
 	bluestParent := parents.bluest()
 	fastAdd := flags&BFFastAdd == BFFastAdd
 
-	err := dag.validateParents(&block.MsgBlock().Header, parents)
+	err = dag.validateParents(&block.MsgBlock().Header, parents)
 	if err != nil {
 		return err
 	}
@@ -722,6 +731,33 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, flag
 	}
 
 	return nil
+}
+
+func (dag *BlockDAG) checkBlockParents(block *util.Block) error {
+	_, err := lookupParentNodes(block, dag)
+	if err != nil {
+		var ruleErr RuleError
+		if ok := errors.As(err, &ruleErr); ok && ruleErr.ErrorCode == ErrInvalidAncestorBlock {
+			err := dag.addNodeToIndexWithInvalidAncestor(block)
+			if err != nil {
+				return err
+			}
+		}
+		return err
+	}
+	return nil
+}
+
+func (dag *BlockDAG) checkBlockTxsFinalized(block *util.Block, node *blockNode, flags BehaviorFlags) error {
+	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.NodeStatus(node).KnownValid()
+	if fastAdd {
+		return nil
+	}
+	parents, err := lookupParentNodes(block, dag)
+	if err != nil {
+		return err
+	}
+	return dag.validateAllTxsFinalized(block, node, parents.bluest())
 }
 
 func (dag *BlockDAG) validateAllTxsFinalized(block *util.Block, node *blockNode, bluestParent *blockNode) error {
@@ -1024,12 +1060,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplateNoLock(block *util.Block) error {
 		return errors.Errorf("Block timestamp is too far in the future")
 	}
 
-	parents, err := lookupParentNodes(block, dag)
-	if err != nil {
-		return err
-	}
-
-	err = dag.checkBlockContext(block, parents, flags)
+	err = dag.checkBlockContext(block, flags)
 	if err != nil {
 		return err
 	}

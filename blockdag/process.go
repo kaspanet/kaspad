@@ -159,27 +159,36 @@ func (dag *BlockDAG) processOrphansAndDelayedBlocks(blockHash *daghash.Hash, fla
 //
 // This function MUST be called with the dagLock held (for writes).
 func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) error {
-	parents, err := lookupParentNodes(block, dag)
+	err := dag.checkBlockContext(block, flags)
 	if err != nil {
-		var ruleErr RuleError
-		if ok := errors.As(err, &ruleErr); ok && ruleErr.ErrorCode == ErrInvalidAncestorBlock {
-			err := dag.addNodeToIndexWithInvalidAncestor(block)
-			if err != nil {
-				return err
-			}
-		}
 		return err
 	}
 
-	// The block must pass all of the validation rules which depend on the
-	// position of the block within the block DAG.
-	err = dag.checkBlockContext(block, parents, flags)
+	newNode, selectedParentAnticone, err := dag.createNewBlockNode(block)
 	if err != nil {
 		return err
 	}
+
+	// Connect the block to the DAG.
+	chainUpdates, err := dag.connectBlock(newNode, block, selectedParentAnticone, flags)
+	if err != nil {
+		return dag.handleProcessBlockError(err, newNode)
+	}
+
+	dag.notifyBlockAccepted(block, chainUpdates, flags)
+
+	return nil
+}
+
+func (dag *BlockDAG) createNewBlockNode(block *util.Block) (
+	newNode *blockNode, selectedParentAnticone []*blockNode, err error) {
 
 	// Create a new block node for the block and add it to the node index.
-	newNode, selectedParentAnticone := dag.newBlockNode(&block.MsgBlock().Header, parents)
+	parents, err := lookupParentNodes(block, dag)
+	if err != nil {
+		return nil, nil, err
+	}
+	newNode, selectedParentAnticone = dag.newBlockNode(&block.MsgBlock().Header, parents)
 	newNode.status = statusDataStored
 	dag.index.AddNode(newNode)
 
@@ -194,55 +203,42 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	// blocks that fail to connect available for further analysis.
 	dbTx, err := dag.databaseContext.NewTx()
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	defer dbTx.RollbackUnlessClosed()
 	blockExists, err := dbaccess.HasBlock(dbTx, block.Hash())
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	if !blockExists {
 		err := storeBlock(dbTx, block)
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
 	}
 	err = dag.index.flushToDB(dbTx)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	err = dbTx.Commit()
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
-
-	// Make sure that all the block's transactions are finalized
-	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.NodeStatus(newNode).KnownValid()
-	bluestParent := parents.bluest()
-	if !fastAdd {
-		if err := dag.validateAllTxsFinalized(block, newNode, bluestParent); err != nil {
-			return err
-		}
-	}
-
-	// Connect the block to the DAG.
-	chainUpdates, err := dag.connectBlock(newNode, block, selectedParentAnticone, fastAdd)
-	if err != nil {
-		return dag.handleProcessBlockError(err, newNode)
-	}
-
-	dag.notifyBlockAccepted(block, chainUpdates, flags)
-
-	return nil
+	return newNode, selectedParentAnticone, nil
 }
 
 // connectBlock handles connecting the passed node/block to the DAG.
 //
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) connectBlock(node *blockNode,
-	block *util.Block, selectedParentAnticone []*blockNode, fastAdd bool) (*chainUpdates, error) {
+	block *util.Block, selectedParentAnticone []*blockNode, flags BehaviorFlags) (*chainUpdates, error) {
 
-	if err := dag.checkFinalityViolation(node); err != nil {
+	err := dag.checkBlockTxsFinalized(block, node, flags)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = dag.checkFinalityViolation(node); err != nil {
 		return nil, err
 	}
 
@@ -251,7 +247,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	}
 
 	newBlockPastUTXO, txsAcceptanceData, newBlockFeeData, newBlockMultiSet, err :=
-		node.verifyAndBuildUTXO(dag, block.Transactions(), fastAdd)
+		node.verifyAndBuildUTXO(dag, block.Transactions(), isBehaviorFlagRaised(flags, BFFastAdd))
 	if err != nil {
 		return nil, errors.Wrapf(err, "error verifying UTXO for %s", node)
 	}
