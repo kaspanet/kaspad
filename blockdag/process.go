@@ -22,9 +22,6 @@ type chainUpdates struct {
 // blocks, ensuring blocks follow all rules, orphan handling, and insertion into
 // the block DAG.
 //
-// When no errors occurred during processing, the first return value indicates
-// whether or not the block is an orphan.
-//
 // This function is safe for concurrent access.
 func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrphan bool, isDelayed bool, err error) {
 	dag.dagLock.Lock()
@@ -51,8 +48,6 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 		return isOrphan, isDelayed, err
 	}
 
-	// The block has passed all context independent checks and appears sane
-	// enough to potentially accept it into the block DAG.
 	err = dag.maybeAcceptBlock(block, flags)
 	if err != nil {
 		return false, false, err
@@ -169,7 +164,6 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 		return err
 	}
 
-	// Connect the block to the DAG.
 	chainUpdates, err := dag.connectBlock(newNode, block, selectedParentAnticone, flags)
 	if err != nil {
 		return dag.handleConnectBlockError(err, newNode)
@@ -257,7 +251,6 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 		return nil, err
 	}
 
-	// Apply all changes to the DAG.
 	virtualUTXODiff, chainUpdates, err :=
 		dag.applyDAGChanges(node, newBlockPastUTXO, newBlockMultiSet, selectedParentAnticone)
 	if err != nil {
