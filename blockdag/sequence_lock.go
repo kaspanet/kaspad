@@ -26,24 +26,24 @@ type SequenceLock struct {
 // the candidate transaction to be included in a block.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoSet UTXOSet, mempool bool) (*SequenceLock, error) {
+func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoSet UTXOSet) (*SequenceLock, error) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 
-	return dag.calcSequenceLock(dag.selectedTip(), utxoSet, tx, mempool)
+	return dag.calcSequenceLock(dag.selectedTip(), utxoSet, tx)
 }
 
 // CalcSequenceLockNoLock is lock free version of CalcSequenceLockWithLock
 // This function is unsafe for concurrent access.
-func (dag *BlockDAG) CalcSequenceLockNoLock(tx *util.Tx, utxoSet UTXOSet, mempool bool) (*SequenceLock, error) {
-	return dag.calcSequenceLock(dag.selectedTip(), utxoSet, tx, mempool)
+func (dag *BlockDAG) CalcSequenceLockNoLock(tx *util.Tx, utxoSet UTXOSet) (*SequenceLock, error) {
+	return dag.calcSequenceLock(dag.selectedTip(), utxoSet, tx)
 }
 
 // calcSequenceLock computes the relative lock-times for the passed
 // transaction. See the exported version, CalcSequenceLock for further details.
 //
 // This function MUST be called with the DAG state lock held (for writes).
-func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util.Tx, mempool bool) (*SequenceLock, error) {
+func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util.Tx) (*SequenceLock, error) {
 	// A value of -1 for each relative lock type represents a relative time
 	// lock value that will allow a transaction to be included in a block
 	// at any given height or time.

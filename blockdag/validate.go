@@ -979,7 +979,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 			// A transaction can only be included within a block
 			// once the sequence locks of *all* its inputs are
 			// active.
-			sequenceLock, err := dag.calcSequenceLock(block, pastUTXO, tx, false)
+			sequenceLock, err := dag.calcSequenceLock(block, pastUTXO, tx)
 			if err != nil {
 				return nil, err
 			}
