@@ -288,7 +288,7 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	isNotAddedOutputRemovedWithBlueScore := func(outpoint wire.Outpoint, utxoEntry, diffEntry *UTXOEntry) bool {
 		return !(diffEntry.blockBlueScore != utxoEntry.blockBlueScore &&
 			(d.toAdd.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) ||
-			other.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)))
+				other.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)))
 	}
 
 	if checkIntersectionWithRule(d.toRemove, other.toAdd, isNotAddedOutputRemovedWithBlueScore) {
@@ -296,11 +296,11 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	}
 
 	//check that NOT (entries with unequal blue score AND utxoEntry is in d.toRemove and/or other.toAdd) -> Error
-    isNotRemovedOutputAddedWithBlueScore := func(outpoint wire.Outpoint, utxoEntry, diffEntry *UTXOEntry) bool {
+	isNotRemovedOutputAddedWithBlueScore := func(outpoint wire.Outpoint, utxoEntry, diffEntry *UTXOEntry) bool {
 		return !(diffEntry.blockBlueScore != utxoEntry.blockBlueScore &&
 			(d.toRemove.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) ||
-			other.toAdd.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)))
-    }
+				other.toAdd.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)))
+	}
 
 	if checkIntersectionWithRule(d.toAdd, other.toRemove, isNotRemovedOutputAddedWithBlueScore) {
 		return nil, errors.New("diffFrom: outpoint both in d.toRemove and in other.toAdd")
@@ -311,7 +311,7 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	if checkIntersectionWithRule(d.toRemove, other.toRemove,
 		func(outpoint wire.Outpoint, utxoEntry, diffEntry *UTXOEntry) bool {
 			return utxoEntry.blockBlueScore != diffEntry.blockBlueScore
-	}) {
+		}) {
 		return nil, errors.New("diffFrom: outpoint both in d.toRemove and other.toRemove with different " +
 			"blue scores, with no corresponding entry in d.toAdd")
 	}
