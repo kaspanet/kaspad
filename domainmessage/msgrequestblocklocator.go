@@ -9,6 +9,7 @@ import (
 // and low hash.
 // The locator is returned via a locator message (MsgBlockLocator).
 type MsgRequestBlockLocator struct {
+	baseMessage
 	HighHash *daghash.Hash
 	LowHash  *daghash.Hash
 }

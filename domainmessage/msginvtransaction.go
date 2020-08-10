@@ -12,6 +12,7 @@ const MaxInvPerTxInvMsg = MaxInvPerMsg
 // TxInv message. It is used to notify the network about new transactions
 // by sending their ID, and let the receiving node decide if it needs it.
 type MsgInvTransaction struct {
+	baseMessage
 	TxIDs []*daghash.TxID
 }
 

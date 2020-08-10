@@ -12,6 +12,7 @@ const MaxInvPerRequestTransactionsMsg = MaxInvPerMsg
 // RequestTransactions message. It is used to request transactions as part of the
 // transactions relay protocol.
 type MsgRequestTransactions struct {
+	baseMessage
 	IDs []*daghash.TxID
 }
 

@@ -12,6 +12,7 @@ const MsgRequestRelayBlocksHashes = MaxInvPerMsg
 // RequestRelayBlocks message. It is used to request blocks as part of the block
 // relay protocol.
 type MsgRequestRelayBlocks struct {
+	baseMessage
 	Hashes []*daghash.Hash
 }
 

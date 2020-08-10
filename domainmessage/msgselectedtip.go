@@ -8,6 +8,7 @@ import (
 // selectedtip message. It is used to answer getseltip messages and tell
 // the asking peer what is the selected tip of this peer.
 type MsgSelectedTip struct {
+	baseMessage
 	// The selected tip hash of the generator of the message.
 	SelectedTipHash *daghash.Hash
 }
