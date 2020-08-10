@@ -78,15 +78,7 @@ func (dag *BlockDAG) processBlockCheckDelayedAndOrphanBlocks(block *util.Block, 
 			return false, true, nil
 		}
 	}
-
-	isOrphan, err = dag.processBlockCheckMissingParents(block, flags)
-	if err != nil {
-		return false, false, err
-	}
-	if isOrphan {
-		return true, false, nil
-	}
-	return false, false, nil
+	return dag.processBlockCheckMissingParents(block, flags)
 }
 
 func (dag *BlockDAG) processBlockCheckBlockDelay(block *util.Block, flags BehaviorFlags) (isDelayed bool, err error) {
@@ -108,7 +100,7 @@ func (dag *BlockDAG) processBlockCheckBlockDelay(block *util.Block, flags Behavi
 	return false, nil
 }
 
-func (dag *BlockDAG) processBlockCheckMissingParents(block *util.Block, flags BehaviorFlags) (isOrphan bool, err error) {
+func (dag *BlockDAG) processBlockCheckMissingParents(block *util.Block, flags BehaviorFlags) (isOrphan bool, isDelayed bool, err error) {
 	var missingParents []*daghash.Hash
 	for _, parentHash := range block.MsgBlock().Header.ParentHashes {
 		if !dag.IsInDAG(parentHash) {
@@ -119,7 +111,7 @@ func (dag *BlockDAG) processBlockCheckMissingParents(block *util.Block, flags Be
 	if len(missingParents) > 0 && isBehaviorFlagRaised(flags, BFDisallowOrphans) {
 		str := fmt.Sprintf("Cannot process orphan blocks while the "+
 			"BFDisallowOrphans flag is raised %s", block.Hash())
-		return false, ruleError(ErrOrphanBlockIsNotAllowed, str)
+		return false, false, ruleError(ErrOrphanBlockIsNotAllowed, str)
 	}
 
 	// Handle the case of a block with a valid timestamp(non-delayed) which points to a delayed block.
@@ -129,17 +121,17 @@ func (dag *BlockDAG) processBlockCheckMissingParents(block *util.Block, flags Be
 		delay += time.Millisecond
 		err := dag.addDelayedBlock(block, delay)
 		if err != nil {
-			return false, err
+			return false, false, err
 		}
-		return true, nil
+		return false, true, nil
 	}
 
 	// Handle orphan blocks.
 	if len(missingParents) > 0 {
 		dag.addOrphanBlock(block)
-		return true, nil
+		return true, false, nil
 	}
-	return false, nil
+	return false, false, nil
 }
 
 func (dag *BlockDAG) processOrphansAndDelayedBlocks(blockHash *daghash.Hash, flags BehaviorFlags) error {
