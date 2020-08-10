@@ -1,6 +1,7 @@
 package grpcserver
 
 import (
+	"github.com/pkg/errors"
 	"net"
 	"sync/atomic"
 
@@ -40,6 +41,14 @@ func newConnection(server *gRPCServer, address *net.TCPAddr, isOutbound bool, st
 }
 
 func (c *gRPCConnection) Start(router *router.Router) {
+	if c.onDisconnectedHandler == nil {
+		panic(errors.New("onDisconnectedHandler is nil"))
+	}
+
+	if c.onInvalidMessageHandler == nil {
+		panic(errors.New("onInvalidMessageHandler is nil"))
+	}
+
 	c.router = router
 
 	spawn("gRPCConnection.Start-connectionLoops", func() {
