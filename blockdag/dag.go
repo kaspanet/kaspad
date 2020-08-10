@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"sync"
 
@@ -19,7 +20,6 @@ import (
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // BlockDAG provides functions for working with the kaspa block DAG.
@@ -210,7 +210,7 @@ func (dag *BlockDAG) selectedTip() *blockNode {
 // It will return nil if there is no tip.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) SelectedTipHeader() *wire.BlockHeader {
+func (dag *BlockDAG) SelectedTipHeader() *domainmessage.BlockHeader {
 	selectedTip := dag.selectedTip()
 	if selectedTip == nil {
 		return nil
@@ -247,7 +247,7 @@ func (dag *BlockDAG) CalcPastMedianTime() mstime.Time {
 //
 // This function is safe for concurrent access. However, the returned entry (if
 // any) is NOT.
-func (dag *BlockDAG) GetUTXOEntry(outpoint wire.Outpoint) (*UTXOEntry, bool) {
+func (dag *BlockDAG) GetUTXOEntry(outpoint domainmessage.Outpoint) (*UTXOEntry, bool) {
 	return dag.virtual.utxoSet.get(outpoint)
 }
 
@@ -298,11 +298,11 @@ func (dag *BlockDAG) TipHashes() []*daghash.Hash {
 
 // HeaderByHash returns the block header identified by the given hash or an
 // error if it doesn't exist.
-func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*wire.BlockHeader, error) {
+func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*domainmessage.BlockHeader, error) {
 	node, ok := dag.index.LookupNode(hash)
 	if !ok {
 		err := errors.Errorf("block %s is not known", hash)
-		return &wire.BlockHeader{}, err
+		return &domainmessage.BlockHeader{}, err
 	}
 
 	return node.Header(), nil
@@ -345,8 +345,8 @@ func (dag *BlockDAG) isInPast(this *blockNode, other *blockNode) (bool, error) {
 	return dag.reachabilityTree.isInPast(this, other)
 }
 
-// GetTopHeaders returns the top wire.MaxBlockHeadersPerMsg block headers ordered by blue score.
-func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
+// GetTopHeaders returns the top domainmessage.MaxBlockHeadersPerMsg block headers ordered by blue score.
+func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash, maxHeaders uint64) ([]*domainmessage.BlockHeader, error) {
 	highNode := &dag.virtual.blockNode
 	if highHash != nil {
 		var ok bool
@@ -355,7 +355,7 @@ func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash, maxHeaders uint64) ([
 			return nil, errors.Errorf("Couldn't find the high hash %s in the dag", highHash)
 		}
 	}
-	headers := make([]*wire.BlockHeader, 0, highNode.blueScore)
+	headers := make([]*domainmessage.BlockHeader, 0, highNode.blueScore)
 	queue := newDownHeap()
 	queue.pushSet(highNode.parents)
 

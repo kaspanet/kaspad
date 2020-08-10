@@ -1,8 +1,8 @@
 package blockdag
 
 import (
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
 
@@ -215,12 +215,12 @@ func (dag *BlockDAG) AntiPastHashesBetween(lowHash, highHash *daghash.Hash, maxH
 // max number of block headers.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) antiPastHeadersBetween(lowHash, highHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
+func (dag *BlockDAG) antiPastHeadersBetween(lowHash, highHash *daghash.Hash, maxHeaders uint64) ([]*domainmessage.BlockHeader, error) {
 	nodes, err := dag.antiPastBetween(lowHash, highHash, maxHeaders)
 	if err != nil {
 		return nil, err
 	}
-	headers := make([]*wire.BlockHeader, len(nodes))
+	headers := make([]*domainmessage.BlockHeader, len(nodes))
 	for i, node := range nodes {
 		headers[i] = node.Header()
 	}
@@ -229,10 +229,10 @@ func (dag *BlockDAG) antiPastHeadersBetween(lowHash, highHash *daghash.Hash, max
 
 // AntiPastHeadersBetween returns the headers of the blocks between the
 // lowHash's antiPast and highHash's antiPast, or up to
-// wire.MaxBlockHeadersPerMsg block headers.
+// domainmessage.MaxBlockHeadersPerMsg block headers.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) AntiPastHeadersBetween(lowHash, highHash *daghash.Hash, maxHeaders uint64) ([]*wire.BlockHeader, error) {
+func (dag *BlockDAG) AntiPastHeadersBetween(lowHash, highHash *daghash.Hash, maxHeaders uint64) ([]*domainmessage.BlockHeader, error) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 	headers, err := dag.antiPastHeadersBetween(lowHash, highHash, maxHeaders)

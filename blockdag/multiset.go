@@ -2,7 +2,7 @@ package blockdag
 
 import (
 	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/wire"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/pkg/errors"
 )
 
@@ -55,7 +55,7 @@ func (node *blockNode) selectedParentMultiset(dag *BlockDAG) (*secp256k1.MultiSe
 	return ms, nil
 }
 
-func addTxToMultiset(ms *secp256k1.MultiSet, tx *wire.MsgTx, pastUTXO UTXOSet, blockBlueScore uint64) (*secp256k1.MultiSet, error) {
+func addTxToMultiset(ms *secp256k1.MultiSet, tx *domainmessage.MsgTx, pastUTXO UTXOSet, blockBlueScore uint64) (*secp256k1.MultiSet, error) {
 	for _, txIn := range tx.TxIn {
 		entry, ok := pastUTXO.Get(txIn.PreviousOutpoint)
 		if !ok {
@@ -71,7 +71,7 @@ func addTxToMultiset(ms *secp256k1.MultiSet, tx *wire.MsgTx, pastUTXO UTXOSet, b
 
 	isCoinbase := tx.IsCoinBase()
 	for i, txOut := range tx.TxOut {
-		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
+		outpoint := *domainmessage.NewOutpoint(tx.TxID(), uint32(i))
 		entry := NewUTXOEntry(txOut, isCoinbase, blockBlueScore)
 
 		var err error
