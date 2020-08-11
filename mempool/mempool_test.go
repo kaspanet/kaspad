@@ -276,7 +276,7 @@ func (tc *testContext) mineTransactions(transactions []*util.Tx, numberOfBlocks 
 		// Handle new block by pool
 		ch := make(chan NewBlockMsg)
 		go func() {
-			err = tc.harness.txPool.HandleNewBlockOld(utilBlock, ch)
+			_, err = tc.harness.txPool.HandleNewBlock(utilBlock)
 			close(ch)
 		}()
 
@@ -1711,46 +1711,7 @@ func TestHandleNewBlock(t *testing.T) {
 	}
 
 	// Handle new block by pool
-	ch := make(chan NewBlockMsg)
-	go func() {
-		err = harness.txPool.HandleNewBlockOld(block, ch)
-		close(ch)
-	}()
-
-	// process messages pushed by HandleNewBlockOld
-	blockTransactions := make(map[daghash.TxID]int)
-	for msg := range ch {
-		blockTransactions[*msg.Tx.ID()] = 1
-		if *msg.Tx.ID() != *blockTx1.ID() {
-			if len(msg.AcceptedTxs) != 0 {
-				t.Fatalf("Expected amount of accepted transactions 0. Got: %v", len(msg.AcceptedTxs))
-			}
-		} else {
-			if len(msg.AcceptedTxs) != 1 {
-				t.Fatalf("Wrong accepted transactions length")
-			}
-			if *msg.AcceptedTxs[0].Tx.ID() != *orphanTx.ID() {
-				t.Fatalf("Wrong accepted transaction ID")
-			}
-		}
-	}
-	// ensure that HandleNewBlockOld has not failed
-	if err != nil {
-		t.Fatalf("HandleNewBlockOld failed to handle block %v", err)
-	}
-
-	// Validate messages pushed by HandleNewBlockOld into the channel
-	if len(blockTransactions) != 2 {
-		t.Fatalf("Wrong size of blockTransactions after new block handling")
-	}
-
-	if _, ok := blockTransactions[*blockTx1.ID()]; !ok {
-		t.Fatalf("Transaction 1 of new block is not handled")
-	}
-
-	if _, ok := blockTransactions[*blockTx2.ID()]; !ok {
-		t.Fatalf("Transaction 2 of new block is not handled")
-	}
+	_, err = harness.txPool.HandleNewBlock(block)
 
 	// ensure that orphan transaction moved to main pool
 	testPoolMembership(tc, orphanTx, false, true, false)

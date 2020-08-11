@@ -1311,38 +1311,6 @@ func (mp *TxPool) LastUpdated() mstime.Time {
 	return mstime.UnixMilliseconds(atomic.LoadInt64(&mp.lastUpdated))
 }
 
-// HandleNewBlockOld removes all the transactions in the new block
-// from the mempool and the orphan pool, and it also removes
-// from the mempool transactions that double spend a
-// transaction that is already in the DAG
-func (mp *TxPool) HandleNewBlockOld(block *util.Block, txChan chan NewBlockMsg) error {
-	// TODO(libp2p) Remove this function
-	oldUTXOSet := mp.mpUTXOSet
-
-	// Remove all of the transactions (except the coinbase) in the
-	// connected block from the transaction pool. Secondly, remove any
-	// transactions which are now double spends as a result of these
-	// new transactions. Finally, remove any transaction that is
-	// no longer an orphan. Transactions which depend on a confirmed
-	// transaction are NOT removed recursively because they are still
-	// valid.
-	err := mp.RemoveTransactions(block.Transactions()[util.CoinbaseTransactionIndex+1:])
-	if err != nil {
-		mp.mpUTXOSet = oldUTXOSet
-		return err
-	}
-	for _, tx := range block.Transactions()[util.CoinbaseTransactionIndex+1:] {
-		mp.RemoveDoubleSpends(tx)
-		mp.RemoveOrphan(tx)
-		acceptedTxs := mp.ProcessOrphans(tx)
-		txChan <- NewBlockMsg{
-			AcceptedTxs: acceptedTxs,
-			Tx:          tx,
-		}
-	}
-	return nil
-}
-
 // HandleNewBlock removes all the transactions in the new block
 // from the mempool and the orphan pool, and it also removes
 // from the mempool transactions that double spend a
