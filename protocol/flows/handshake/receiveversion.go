@@ -67,7 +67,6 @@ func (flow *receiveVersionFlow) start() (*domainmessage.NetAddress, error) {
 	// domainmessage.RejectVersion, this should send a reject packet before
 	// disconnecting.
 	if msgVersion.ProtocolVersion < minAcceptableProtocolVersion {
-		//TODO(libp2p) create error type for disconnect but don't ban
 		return nil, protocolerrors.Errorf(false, "protocol version must be %d or greater",
 			minAcceptableProtocolVersion)
 	}
