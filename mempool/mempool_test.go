@@ -273,17 +273,7 @@ func (tc *testContext) mineTransactions(transactions []*util.Tx, numberOfBlocks 
 				"is an orphan", block.BlockHash())
 		}
 
-		// Handle new block by pool
-		ch := make(chan NewBlockMsg)
-		go func() {
-			_, err = tc.harness.txPool.HandleNewBlock(utilBlock)
-			close(ch)
-		}()
-
-		// process messages pushed by HandleNewBlockOld
-		for range ch {
-		}
-		// ensure that HandleNewBlockOld has not failed
+		_, err = tc.harness.txPool.HandleNewBlock(utilBlock)
 		if err != nil {
 			tc.t.Fatalf("HandleNewBlockOld failed to handle block %s", err)
 		}
