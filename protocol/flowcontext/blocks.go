@@ -19,8 +19,6 @@ func (f *FlowContext) OnNewBlock(block *util.Block) error {
 		return err
 	}
 
-	// TODO(libp2p) Notify transactionsAcceptedToMempool to RPC
-
 	return f.broadcastTransactionsAfterBlockAdded(block, transactionsAcceptedToMempool)
 }
 

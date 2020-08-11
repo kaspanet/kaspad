@@ -159,7 +159,6 @@ func (na *NetAdapter) Broadcast(netConnections []*NetConnection, message domainm
 // GetBestLocalAddress returns the most appropriate local address to use
 // for the given remote address.
 func (na *NetAdapter) GetBestLocalAddress() (*domainmessage.NetAddress, error) {
-	//TODO(libp2p) Reimplement this, and check reachability to the other node
 	if len(na.cfg.ExternalIPs) > 0 {
 		host, portString, err := net.SplitHostPort(na.cfg.ExternalIPs[0])
 		if err != nil {

@@ -62,7 +62,6 @@ func (m *Manager) AddTransaction(tx *util.Tx) error {
 			return err
 		}
 
-		// TODO(libp2p): Remove panic once RPC is rewritten to use flows
 		panic(err)
 	}
 	return nil
@@ -76,7 +75,6 @@ func (m *Manager) AddBlock(block *util.Block, flags blockdag.BehaviorFlags) erro
 			return err
 		}
 
-		// TODO(libp2p): Remove panic once RPC is rewritten to use flows
 		panic(err)
 	}
 	return nil

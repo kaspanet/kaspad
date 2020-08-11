@@ -243,6 +243,5 @@ func (a *App) AddressManager() *addressmanager.AddressManager {
 
 // WaitForShutdown blocks until the main listener and peer handlers are stopped.
 func (a *App) WaitForShutdown() {
-	// TODO(libp2p)
 	// a.p2pServer.WaitForShutdown()
 }

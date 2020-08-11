@@ -220,7 +220,6 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 		if err != nil {
 			return err
 		}
-		// TODO(libp2p) Notify transactionsAcceptedToMempool to RPC
 	}
 	return nil
 }
