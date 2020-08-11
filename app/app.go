@@ -168,6 +168,7 @@ func setupIndexes(cfg *config.Config) (blockdag.IndexManager, *indexers.Acceptan
 	var acceptanceIndex *indexers.AcceptanceIndex
 	if cfg.AcceptanceIndex {
 		log.Info("acceptance index is enabled")
+		acceptanceIndex = indexers.NewAcceptanceIndex()
 		indexes = append(indexes, acceptanceIndex)
 	}
 
