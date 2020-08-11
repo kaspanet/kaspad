@@ -7,7 +7,6 @@ import (
 
 // handleGetNetTotals implements the getNetTotals command.
 func handleGetNetTotals(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	// TODO(libp2p): fill this up with real values
 	reply := &model.GetNetTotalsResult{
 		TotalBytesRecv: 0,
 		TotalBytesSent: 0,
