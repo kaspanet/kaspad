@@ -135,8 +135,6 @@ func (flow *handleRelayedTransactionsFlow) readInv() (*domainmessage.MsgInvTrans
 }
 
 func (flow *handleRelayedTransactionsFlow) broadcastAcceptedTransactions(acceptedTxs []*mempool.TxDesc) error {
-	// TODO(libp2p) Add mechanism to avoid sending to other peers invs that are known to them (e.g. mruinvmap)
-	// TODO(libp2p) Consider broadcasting in bulks
 	idsToBroadcast := make([]*daghash.TxID, len(acceptedTxs))
 	for i, tx := range acceptedTxs {
 		idsToBroadcast[i] = tx.Tx.ID()
