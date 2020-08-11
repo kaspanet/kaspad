@@ -178,6 +178,9 @@ type Params struct {
 
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks bool
+
+	// DisableDifficultyAdjustment determine whether to use difficulty
+	DisableDifficultyAdjustment bool
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default
@@ -394,6 +397,8 @@ var SimnetParams = Params{
 
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks: false,
+
+	DisableDifficultyAdjustment: true,
 }
 
 // DevnetParams defines the network parameters for the development Kaspa network.
