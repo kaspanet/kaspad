@@ -51,7 +51,6 @@ func ReceiveAddresses(context ReceiveAddressesContext, incomingRoute *router.Rou
 			context.Config().SubnetworkID, msgAddresses.Command(), msgAddresses.SubnetworkID)
 	}
 
-	// TODO(libp2p) Consider adding to peer known addresses set
 	sourceAddress := peer.Connection().NetAddress()
 	context.AddressManager().AddAddresses(msgAddresses.AddrList, sourceAddress, msgAddresses.SubnetworkID)
 	return nil
