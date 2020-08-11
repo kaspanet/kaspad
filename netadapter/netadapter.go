@@ -61,6 +61,10 @@ func NewNetAdapter(cfg *config.Config) (*NetAdapter, error) {
 
 // Start begins the operation of the NetAdapter
 func (na *NetAdapter) Start() error {
+	if na.routerInitializer == nil {
+		return errors.New("routerInitializer was not set")
+	}
+
 	err := na.server.Start()
 	if err != nil {
 		return err
