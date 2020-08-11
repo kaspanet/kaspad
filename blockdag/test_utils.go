@@ -245,13 +245,6 @@ func opTrueAddress(prefix util.Bech32Prefix) (util.Address, error) {
 
 // PrepareBlockForTest generates a block with the proper merkle roots, coinbase transaction etc. This function is used for test purposes only
 func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*domainmessage.MsgTx) (*domainmessage.MsgBlock, error) {
-	//newVirtual, err := GetVirtualFromParentsForTest(dag, parentHashes)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//oldVirtual := SetVirtualForTest(dag, newVirtual)
-	//defer SetVirtualForTest(dag, oldVirtual)
-
 	parents := newBlockSet()
 	for _, hash := range parentHashes {
 		parent, ok := dag.index.LookupNode(hash)
