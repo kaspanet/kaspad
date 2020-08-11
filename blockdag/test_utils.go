@@ -245,12 +245,36 @@ func opTrueAddress(prefix util.Bech32Prefix) (util.Address, error) {
 
 // PrepareBlockForTest generates a block with the proper merkle roots, coinbase transaction etc. This function is used for test purposes only
 func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*domainmessage.MsgTx) (*domainmessage.MsgBlock, error) {
-	newVirtual, err := GetVirtualFromParentsForTest(dag, parentHashes)
+	//newVirtual, err := GetVirtualFromParentsForTest(dag, parentHashes)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//oldVirtual := SetVirtualForTest(dag, newVirtual)
+	//defer SetVirtualForTest(dag, oldVirtual)
+
+	parents := newBlockSet()
+	for _, hash := range parentHashes {
+		parent, ok := dag.index.LookupNode(hash)
+		if !ok {
+			return nil, errors.Errorf("parent %s was not found", hash)
+		}
+		parents.add(parent)
+	}
+	node, _ := dag.newBlockNode(nil, parents)
+
+	_, selectedParentPastUTXO, txsAcceptanceData, err := dag.pastUTXO(node)
 	if err != nil {
 		return nil, err
 	}
-	oldVirtual := SetVirtualForTest(dag, newVirtual)
-	defer SetVirtualForTest(dag, oldVirtual)
+
+	calculatedAccepetedIDMerkleRoot := calculateAcceptedIDMerkleRoot(txsAcceptanceData)
+
+	multiset, err := node.calcMultiset(dag, txsAcceptanceData, selectedParentPastUTXO)
+	if err != nil {
+		return nil, err
+	}
+
+	calculatedMultisetHash := daghash.Hash(*multiset.Finalize())
 
 	OpTrueAddr, err := opTrueAddress(dag.Params.Prefix)
 	if err != nil {
@@ -265,7 +289,12 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 		return nil, err
 	}
 
-	blockTransactions[0], err = dag.NextCoinbaseFromAddress(OpTrueAddr, coinbasePayloadExtraData)
+	coinbasePayloadScriptPubKey, err := txscript.PayToAddrScript(OpTrueAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	blockTransactions[0], err = node.expectedCoinbaseTransaction(dag, txsAcceptanceData, coinbasePayloadScriptPubKey, coinbasePayloadExtraData)
 	if err != nil {
 		return nil, err
 	}
@@ -285,14 +314,31 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 		return subnetworkid.Less(&blockTransactions[i].MsgTx().SubnetworkID, &blockTransactions[j].MsgTx().SubnetworkID)
 	})
 
-	block, err := dag.BlockForMining(blockTransactions)
+	// Create a new block ready to be solved.
+	hashMerkleTree := BuildHashMerkleTreeStore(blockTransactions)
+
+	var msgBlock domainmessage.MsgBlock
+	for _, tx := range blockTransactions {
+		msgBlock.AddTransaction(tx.MsgTx())
+	}
+
+	version, err := dag.calcNextBlockVersion(node.selectedParent)
 	if err != nil {
 		return nil, err
 	}
-	block.Header.Timestamp = dag.NextBlockMinimumTime()
-	block.Header.Bits = dag.NextRequiredDifficulty(block.Header.Timestamp)
 
-	return block, nil
+	timestamp := node.parents.bluest().PastMedianTime(dag)
+	msgBlock.Header = domainmessage.BlockHeader{
+		Version:              version,
+		ParentHashes:         parentHashes,
+		HashMerkleRoot:       hashMerkleTree.Root(),
+		AcceptedIDMerkleRoot: calculatedAccepetedIDMerkleRoot,
+		UTXOCommitment:       &calculatedMultisetHash,
+		Timestamp:            timestamp,
+		Bits:                 dag.requiredDifficulty(node.parents.bluest(), timestamp),
+	}
+
+	return &msgBlock, nil
 }
 
 // PrepareAndProcessBlockForTest prepares a block that points to the given parent
