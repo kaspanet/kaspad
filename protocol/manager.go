@@ -11,9 +11,7 @@ import (
 	"github.com/kaspanet/kaspad/netadapter"
 	"github.com/kaspanet/kaspad/protocol/flowcontext"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
-	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/pkg/errors"
 )
 
 // Manager manages the p2p protocol
@@ -56,28 +54,12 @@ func (m *Manager) IBDPeer() *peerpkg.Peer {
 
 // AddTransaction adds transaction to the mempool and propagates it.
 func (m *Manager) AddTransaction(tx *util.Tx) error {
-	err := m.context.AddTransaction(tx)
-	if err != nil {
-		if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
-			return err
-		}
-
-		panic(err)
-	}
-	return nil
+	return m.context.AddTransaction(tx)
 }
 
 // AddBlock adds the given block to the DAG and propagates it.
 func (m *Manager) AddBlock(block *util.Block, flags blockdag.BehaviorFlags) error {
-	err := m.context.AddBlock(block, flags)
-	if err != nil {
-		if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
-			return err
-		}
-
-		panic(err)
-	}
-	return nil
+	return m.context.AddBlock(block, flags)
 }
 
 func (m *Manager) runFlows(flows []*flow, peer *peerpkg.Peer, errChan <-chan error) error {
