@@ -1,11 +1,10 @@
 package standalone
 
 import (
+	"github.com/kaspanet/kaspad/util/mstime"
 	"sync"
 
 	"github.com/kaspanet/kaspad/network/netadapter/id"
-	"github.com/kaspanet/kaspad/util/mstime"
-
 	"github.com/kaspanet/kaspad/network/protocol/common"
 
 	"github.com/kaspanet/kaspad/network/domainmessage"
@@ -20,6 +19,7 @@ import (
 // MinimalNetAdapter allows tests and other tools to use a simple network adapter without implementing
 // all the required supporting structures.
 type MinimalNetAdapter struct {
+	cfg        *config.Config
 	lock       sync.Mutex
 	netAdapter *netadapter.NetAdapter
 	routesChan <-chan *Routes
@@ -41,6 +41,7 @@ func NewMinimalNetAdapter(cfg *config.Config) (*MinimalNetAdapter, error) {
 	}
 
 	return &MinimalNetAdapter{
+		cfg:        cfg,
 		lock:       sync.Mutex{},
 		netAdapter: netAdapter,
 		routesChan: routesChan,
@@ -61,13 +62,13 @@ func (mna *MinimalNetAdapter) Connect(address string) (*Routes, error) {
 	}
 
 	routes := <-mna.routesChan
-	err = handleHandshake(routes, mna.netAdapter.ID())
+	err = mna.handleHandshake(routes, mna.netAdapter.ID())
 	if err != nil {
 		return nil, errors.Wrap(err, "Error in handshake")
 	}
 
 	spawn("netAdapterMock-handlePingPong", func() {
-		err := handlePingPong(routes)
+		err := mna.handlePingPong(routes)
 		if err != nil {
 			panic(errors.Wrap(err, "Error from ping-pong"))
 		}
@@ -79,7 +80,7 @@ func (mna *MinimalNetAdapter) Connect(address string) (*Routes, error) {
 // handlePingPong makes sure that we are not disconnected due to not responding to pings.
 // However, it only responds to pings, not sending its own, to conform to the minimal-ness
 // of MinimalNetAdapter
-func handlePingPong(routes *Routes) error {
+func (*MinimalNetAdapter) handlePingPong(routes *Routes) error {
 	for {
 		message, err := routes.pingRoute.Dequeue()
 		if err != nil {
@@ -98,7 +99,7 @@ func handlePingPong(routes *Routes) error {
 	}
 }
 
-func handleHandshake(routes *Routes, ourID *id.ID) error {
+func (mna *MinimalNetAdapter) handleHandshake(routes *Routes, ourID *id.ID) error {
 	msg, err := routes.handshakeRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return err
@@ -111,6 +112,7 @@ func handleHandshake(routes *Routes, ourID *id.ID) error {
 
 	err = routes.OutgoingRoute.Enqueue(&domainmessage.MsgVersion{
 		ProtocolVersion: versionMessage.ProtocolVersion,
+		Network:         mna.cfg.ActiveNetParams.Name,
 		Services:        versionMessage.Services,
 		Timestamp:       mstime.Now(),
 		Address:         nil,
