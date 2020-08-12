@@ -79,7 +79,7 @@ func (dag *BlockDAG) processBlockCheckDelayedAndOrphanBlocks(block *util.Block, 
 func (dag *BlockDAG) processBlockCheckBlockDelay(block *util.Block, flags BehaviorFlags) (isDelayed bool, err error) {
 	delay, isDelayed := dag.checkBlockDelayed(block)
 	if isDelayed && isBehaviorFlagRaised(flags, BFDisallowDelay) {
-		str := fmt.Sprintf("Cannot process blocks beyond the "+
+		str := fmt.Sprintf("cannot process blocks beyond the "+
 			"allowed time offset while the BFDisallowDelay flag is "+
 			"raised %s", block.Hash())
 		return false, ruleError(ErrDelayedBlockIsNotAllowed, str)
@@ -104,7 +104,7 @@ func (dag *BlockDAG) processBlockCheckMissingParents(block *util.Block, flags Be
 	}
 
 	if len(missingParents) > 0 && isBehaviorFlagRaised(flags, BFDisallowOrphans) {
-		str := fmt.Sprintf("Cannot process orphan blocks while the "+
+		str := fmt.Sprintf("cannot process orphan blocks while the "+
 			"BFDisallowOrphans flag is raised %s", block.Hash())
 		return false, false, ruleError(ErrOrphanBlockIsNotAllowed, str)
 	}
