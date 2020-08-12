@@ -62,11 +62,11 @@ func (a *App) Start() {
 }
 
 // Stop gracefully shuts down all the kaspad services.
-func (a *App) Stop() error {
+func (a *App) Stop() {
 	// Make sure this only happens once.
 	if atomic.AddInt32(&a.shutdown, 1) != 1 {
 		log.Infof("Kaspad is already in the process of shutting down")
-		return nil
+		return
 	}
 
 	log.Warnf("Kaspad shutting down")
@@ -86,7 +86,12 @@ func (a *App) Stop() error {
 		}
 	}
 
-	return nil
+	err = a.addressManager.Stop()
+	if err != nil {
+		log.Errorf("Error stopping address manager: %s", err)
+	}
+
+	return
 }
 
 // New returns a new App instance configured to listen on addr for the
@@ -239,10 +244,4 @@ func (a *App) P2PNodeID() *id.ID {
 // AddressManager returns the AddressManager associated with this App
 func (a *App) AddressManager() *addressmanager.AddressManager {
 	return a.addressManager
-}
-
-// WaitForShutdown blocks until the main listener and peer handlers are stopped.
-func (a *App) WaitForShutdown() {
-	// TODO(libp2p)
-	// a.p2pServer.WaitForShutdown()
 }
