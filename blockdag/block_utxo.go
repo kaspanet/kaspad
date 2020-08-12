@@ -100,17 +100,9 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 		return nil, nil, nil, nil, err
 	}
 
-	multiset, err = node.calcMultiset(dag, txsAcceptanceData, selectedParentPastUTXO)
+	err = dag.validateUTXOCommitment(node, txsAcceptanceData, selectedParentPastUTXO)
 	if err != nil {
 		return nil, nil, nil, nil, err
-	}
-
-	calculatedMultisetHash := daghash.Hash(*multiset.Finalize())
-	if !calculatedMultisetHash.IsEqual(node.utxoCommitment) {
-		str := fmt.Sprintf("block %s UTXO commitment is invalid - block "+
-			"header indicates %s, but calculated value is %s", node.hash,
-			node.utxoCommitment, calculatedMultisetHash)
-		return nil, nil, nil, nil, ruleError(ErrBadUTXOCommitment, str)
 	}
 
 	return pastUTXO, txsAcceptanceData, feeData, multiset, nil

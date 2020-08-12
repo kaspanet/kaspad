@@ -1029,6 +1029,25 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	return feeData, nil
 }
 
+func (dag *BlockDAG) validateUTXOCommitment(node *blockNode,
+	txsAcceptanceData MultiBlockTxsAcceptanceData, selectedParentPastUTXO UTXOSet) error {
+
+	multiset, err := node.calcMultiset(dag, txsAcceptanceData, selectedParentPastUTXO)
+	if err != nil {
+		return err
+	}
+
+	calculatedMultisetHash := daghash.Hash(*multiset.Finalize())
+	if !calculatedMultisetHash.IsEqual(node.utxoCommitment) {
+		str := fmt.Sprintf("block %s UTXO commitment is invalid - block "+
+			"header indicates %s, but calculated value is %s", node.hash,
+			node.utxoCommitment, calculatedMultisetHash)
+		return ruleError(ErrBadUTXOCommitment, str)
+	}
+
+	return nil
+}
+
 // CheckConnectBlockTemplate fully validates that connecting the passed block to
 // the DAG does not violate any consensus rules, aside from the proof of
 // work requirement.
