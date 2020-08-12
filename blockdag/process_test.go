@@ -104,7 +104,7 @@ func TestProcessDelayedBlocks(t *testing.T) {
 
 	blockDelay := time.Duration(dag1.Params.TimestampDeviationTolerance)*dag1.Params.TargetTimePerBlock + 5*time.Second
 	delayedBlock.Header.Timestamp = initialTime.Add(blockDelay)
-	delayedBlock.Header.Nonce = 1
+	delayedBlock.Header.Nonce = 2
 
 	isOrphan, isDelayed, err := dag1.ProcessBlock(util.NewBlock(delayedBlock), BFNoPoWCheck)
 	if err != nil {

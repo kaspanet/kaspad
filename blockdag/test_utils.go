@@ -315,14 +315,9 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 		msgBlock.AddTransaction(tx.MsgTx())
 	}
 
-	version, err := dag.calcNextBlockVersion(node.selectedParent)
-	if err != nil {
-		return nil, err
-	}
-
 	timestamp := node.parents.bluest().PastMedianTime(dag)
 	msgBlock.Header = domainmessage.BlockHeader{
-		Version:              version,
+		Version:              blockVersion,
 		ParentHashes:         parentHashes,
 		HashMerkleRoot:       hashMerkleTree.Root(),
 		AcceptedIDMerkleRoot: calculatedAccepetedIDMerkleRoot,
