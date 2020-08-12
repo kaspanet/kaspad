@@ -708,11 +708,7 @@ func (dag *BlockDAG) validateParents(blockHeader *domainmessage.BlockHeader, par
 //
 // This function MUST be called with the dag state lock held (for writes).
 func (dag *BlockDAG) checkBlockContext(block *util.Block, flags BehaviorFlags) error {
-	err := dag.checkBlockParents(block)
-	if err != nil {
-		return err
-	}
-	parents, err := lookupParentNodes(block, dag)
+	parents, err := dag.checkBlockParents(block)
 	if err != nil {
 		return err
 	}
@@ -734,19 +730,19 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, flags BehaviorFlags) e
 	return nil
 }
 
-func (dag *BlockDAG) checkBlockParents(block *util.Block) error {
-	_, err := lookupParentNodes(block, dag)
+func (dag *BlockDAG) checkBlockParents(block *util.Block) (parents blockSet, err error) {
+	parents, err = lookupParentNodes(block, dag)
 	if err != nil {
 		var ruleErr RuleError
 		if ok := errors.As(err, &ruleErr); ok && ruleErr.ErrorCode == ErrInvalidAncestorBlock {
 			err := dag.addNodeToIndexWithInvalidAncestor(block)
 			if err != nil {
-				return err
+				return nil, err
 			}
 		}
-		return err
+		return nil, err
 	}
-	return nil
+	return parents, nil
 }
 
 func (dag *BlockDAG) checkBlockTransactionsFinalized(block *util.Block, node *blockNode, flags BehaviorFlags) error {
