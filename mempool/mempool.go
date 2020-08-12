@@ -851,7 +851,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 
 	// Check that transaction does not overuse GAS
 	msgTx := tx.MsgTx()
-	if !msgTx.SubnetworkID.IsBuiltIn() {
+	if !msgTx.SubnetworkID.IsBuiltInOrNative() {
 		gasLimit, err := mp.cfg.DAG.GasLimit(&msgTx.SubnetworkID)
 		if err != nil {
 			return nil, nil, err

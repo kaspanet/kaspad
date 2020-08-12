@@ -15,8 +15,7 @@ func handleGetSubnetwork(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 	}
 
 	var gasLimit *uint64
-	if !subnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) &&
-		!subnetworkID.IsBuiltIn() {
+	if !subnetworkID.IsBuiltInOrNative() {
 		limit, err := s.dag.GasLimit(subnetworkID)
 		if err != nil {
 			return nil, &model.RPCError{
