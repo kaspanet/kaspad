@@ -754,17 +754,10 @@ func (dag *BlockDAG) checkBlockTransactionsFinalized(block *util.Block, node *bl
 	if fastAdd {
 		return nil
 	}
-	parents, err := lookupParentNodes(block, dag)
-	if err != nil {
-		return err
-	}
-	return dag.validateAllTxsFinalized(block, node, parents.bluest())
-}
 
-func (dag *BlockDAG) validateAllTxsFinalized(block *util.Block, node *blockNode, bluestParent *blockNode) error {
 	blockTime := block.MsgBlock().Header.Timestamp
 	if !block.IsGenesis() {
-		blockTime = bluestParent.PastMedianTime(dag)
+		blockTime = node.selectedParent.PastMedianTime(dag)
 	}
 
 	// Ensure all transactions in the block are finalized.
