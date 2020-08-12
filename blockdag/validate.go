@@ -154,7 +154,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	if err != nil {
 		return err
 	}
-	err = checkNativeTransactionPayload(tx, subnetworkID)
+	err = checkNativeTransactionPayload(tx)
 	if err != nil {
 		return err
 	}
@@ -285,7 +285,7 @@ func checkSubnetworkRegistryTransaction(tx *util.Tx) error {
 	return nil
 }
 
-func checkNativeTransactionPayload(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
+func checkNativeTransactionPayload(tx *util.Tx) error {
 	msgTx := tx.MsgTx()
 	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) && len(msgTx.Payload) > 0 {
 		return ruleError(ErrInvalidPayload, "transaction in the native subnetwork includes a payload")
