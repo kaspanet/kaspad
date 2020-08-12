@@ -200,7 +200,31 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 		}
 	}
 
-	// Check payload's hash
+	err := checkTransactionPayloadHash(tx)
+	if err != nil {
+		return err
+	}
+	err = checkGasInBuildInOrNativeTransactions(tx)
+	if err != nil {
+		return err
+	}
+	err = checkSubnetworkRegistryTransaction(tx)
+	if err != nil {
+		return err
+	}
+	err = checkNativeTransactionPayload(tx, subnetworkID)
+	if err != nil {
+		return err
+	}
+	err = checkTransactionSubnetwork(tx, subnetworkID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func checkTransactionPayloadHash(tx *util.Tx) error {
+	msgTx := tx.MsgTx()
 	if !msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
 		payloadHash := daghash.DoubleHashH(msgTx.Payload)
 		if !msgTx.PayloadHash.IsEqual(&payloadHash) {
@@ -209,8 +233,12 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	} else if msgTx.PayloadHash != nil {
 		return ruleError(ErrInvalidPayloadHash, "unexpected non-empty payload hash in native subnetwork")
 	}
+	return nil
+}
 
+func checkGasInBuildInOrNativeTransactions(tx *util.Tx) error {
 	// Transactions in native, registry and coinbase subnetworks must have Gas = 0
+	msgTx := tx.MsgTx()
 	if (msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
 		msgTx.SubnetworkID.IsBuiltIn()) &&
 		msgTx.Gas > 0 {
@@ -218,23 +246,31 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 		return ruleError(ErrInvalidGas, "transaction in the native or "+
 			"registry subnetworks has gas > 0 ")
 	}
+	return nil
+}
 
-	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) {
-		err := validateSubnetworkRegistryTransaction(msgTx)
+func checkSubnetworkRegistryTransaction(tx *util.Tx) error {
+	if tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) {
+		err := validateSubnetworkRegistryTransaction(tx.MsgTx())
 		if err != nil {
 			return err
 		}
 	}
+	return nil
+}
 
-	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) &&
-		len(msgTx.Payload) > 0 {
-
-		return ruleError(ErrInvalidPayload,
-			"transaction in the native subnetwork includes a payload")
+func checkNativeTransactionPayload(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
+	msgTx := tx.MsgTx()
+	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) && len(msgTx.Payload) > 0 {
+		return ruleError(ErrInvalidPayload, "transaction in the native subnetwork includes a payload")
 	}
+	return nil
+}
 
+func checkTransactionSubnetwork(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
 	// If we are a partial node, only transactions on built in subnetworks
 	// or our own subnetwork may have a payload
+	msgTx := tx.MsgTx()
 	isLocalNodeFull := subnetworkID == nil
 	shouldTxBeFull := msgTx.SubnetworkID.IsBuiltIn() ||
 		msgTx.SubnetworkID.IsEqual(subnetworkID)
@@ -243,7 +279,6 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 			"transaction that was expected to be partial has a payload "+
 				"with length > 0")
 	}
-
 	return nil
 }
 
