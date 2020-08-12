@@ -84,7 +84,7 @@ func (dag *BlockDAG) maxDelayOfParents(parentHashes []*daghash.Hash) (delay time
 	return delay, isDelayed
 }
 
-func (dag *BlockDAG) checkBlockDelayed(block *util.Block) (delay time.Duration, isDelayed bool) {
+func (dag *BlockDAG) shouldBlockBeDelayed(block *util.Block) (delay time.Duration, isDelayed bool) {
 	header := &block.MsgBlock().Header
 
 	maxTimestamp := dag.Now().Add(time.Duration(dag.TimestampDeviationTolerance) * dag.Params.TargetTimePerBlock)

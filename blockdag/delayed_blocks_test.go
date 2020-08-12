@@ -7,9 +7,9 @@ import (
 	"time"
 )
 
-func TestCheckBlockDelayed(t *testing.T) {
+func TestShouldBlockBeDelayed(t *testing.T) {
 	// Create a new database and dag instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestCheckBlockDelayed", true, Config{
+	dag, teardownFunc, err := DAGSetup("TestShouldBlockBeDelayed", true, Config{
 		DAGParams: &dagconfig.SimnetParams,
 	})
 	if err != nil {
@@ -22,11 +22,11 @@ func TestCheckBlockDelayed(t *testing.T) {
 	expectedDelay := 10 * time.Second
 	deviationTolerance := time.Duration(dag.TimestampDeviationTolerance) * dag.Params.TargetTimePerBlock
 	blockInTheFuture.Header.Timestamp = dag.Now().Add(deviationTolerance + expectedDelay)
-	delay, isDelayed := dag.checkBlockDelayed(util.NewBlock(&blockInTheFuture))
+	delay, isDelayed := dag.shouldBlockBeDelayed(util.NewBlock(&blockInTheFuture))
 	if !isDelayed {
-		t.Errorf("TestCheckBlockDelayed: block unexpectedly not delayed")
+		t.Errorf("TestShouldBlockBeDelayed: block unexpectedly not delayed")
 	}
 	if delay != expectedDelay {
-		t.Errorf("TestCheckBlockDelayed: expected %s delay but got %s", expectedDelay, delay)
+		t.Errorf("TestShouldBlockBeDelayed: expected %s delay but got %s", expectedDelay, delay)
 	}
 }

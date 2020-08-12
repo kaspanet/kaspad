@@ -1057,7 +1057,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplateNoLock(block *util.Block) error {
 		return err
 	}
 
-	_, isDelayed := dag.checkBlockDelayed(block)
+	_, isDelayed := dag.shouldBlockBeDelayed(block)
 	if isDelayed {
 		return errors.Errorf("Block timestamp is too far in the future")
 	}

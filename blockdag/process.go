@@ -43,7 +43,7 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 		return false, false, err
 	}
 
-	isOrphan, isDelayed, err = dag.processBlockCheckDelayedAndOrphanBlocks(block, flags)
+	isOrphan, isDelayed, err = dag.checkDelayedAndOrphanBlocks(block, flags)
 	if isOrphan || isDelayed || err != nil {
 		return isOrphan, isDelayed, err
 	}
@@ -63,9 +63,9 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 	return false, false, nil
 }
 
-func (dag *BlockDAG) processBlockCheckDelayedAndOrphanBlocks(block *util.Block, flags BehaviorFlags) (isOrphan bool, isDelayed bool, err error) {
+func (dag *BlockDAG) checkDelayedAndOrphanBlocks(block *util.Block, flags BehaviorFlags) (isOrphan bool, isDelayed bool, err error) {
 	if !isBehaviorFlagRaised(flags, BFAfterDelay) {
-		isDelayed, err := dag.processBlockCheckBlockDelay(block, flags)
+		isDelayed, err := dag.checkBlockDelay(block, flags)
 		if err != nil {
 			return false, false, err
 		}
@@ -73,11 +73,11 @@ func (dag *BlockDAG) processBlockCheckDelayedAndOrphanBlocks(block *util.Block, 
 			return false, true, nil
 		}
 	}
-	return dag.processBlockCheckMissingParents(block, flags)
+	return dag.checkMissingParents(block, flags)
 }
 
-func (dag *BlockDAG) processBlockCheckBlockDelay(block *util.Block, flags BehaviorFlags) (isDelayed bool, err error) {
-	delay, isDelayed := dag.checkBlockDelayed(block)
+func (dag *BlockDAG) checkBlockDelay(block *util.Block, flags BehaviorFlags) (isDelayed bool, err error) {
+	delay, isDelayed := dag.shouldBlockBeDelayed(block)
 	if isDelayed && isBehaviorFlagRaised(flags, BFDisallowDelay) {
 		str := fmt.Sprintf("cannot process blocks beyond the "+
 			"allowed time offset while the BFDisallowDelay flag is "+
@@ -95,7 +95,7 @@ func (dag *BlockDAG) processBlockCheckBlockDelay(block *util.Block, flags Behavi
 	return false, nil
 }
 
-func (dag *BlockDAG) processBlockCheckMissingParents(block *util.Block, flags BehaviorFlags) (isOrphan bool, isDelayed bool, err error) {
+func (dag *BlockDAG) checkMissingParents(block *util.Block, flags BehaviorFlags) (isOrphan bool, isDelayed bool, err error) {
 	var missingParents []*daghash.Hash
 	for _, parentHash := range block.MsgBlock().Header.ParentHashes {
 		if !dag.IsInDAG(parentHash) {
