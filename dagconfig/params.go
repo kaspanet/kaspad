@@ -238,6 +238,8 @@ var MainnetParams = Params{
 
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks: false,
+
+	DisableDifficultyAdjustment: false,
 }
 
 // RegressionNetParams defines the network parameters for the regression test
@@ -291,6 +293,8 @@ var RegressionNetParams = Params{
 
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks: false,
+
+	DisableDifficultyAdjustment: false,
 }
 
 // TestnetParams defines the network parameters for the test Kaspa network.
@@ -342,6 +346,8 @@ var TestnetParams = Params{
 
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks: false,
+
+	DisableDifficultyAdjustment: false,
 }
 
 // SimnetParams defines the network parameters for the simulation test Kaspa
@@ -450,6 +456,8 @@ var DevnetParams = Params{
 
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks: false,
+
+	DisableDifficultyAdjustment: false,
 }
 
 var (
