@@ -9,7 +9,9 @@ package domainmessage
 // to negotiate parameters. It implements the Message interface.
 //
 // This message has no payload.
-type MsgVerAck struct{}
+type MsgVerAck struct {
+	baseMessage
+}
 
 // Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.

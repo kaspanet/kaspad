@@ -15,6 +15,7 @@ import (
 //
 // This message has no payload.
 type MsgRequestAddresses struct {
+	baseMessage
 	IncludeAllSubnetworks bool
 	SubnetworkID          *subnetworkid.SubnetworkID
 }

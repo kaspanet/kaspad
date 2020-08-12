@@ -97,14 +97,9 @@ func setRPCClient(t *testing.T, harness *appHarness) {
 }
 
 func teardownHarness(t *testing.T, harness *appHarness) {
-	err := harness.app.Stop()
-	if err != nil {
-		t.Errorf("Error stopping App: %+v", err)
-	}
+	harness.app.Stop()
 
-	harness.app.WaitForShutdown()
-
-	err = harness.databaseContext.Close()
+	err := harness.databaseContext.Close()
 	if err != nil {
 		t.Errorf("Error closing database context: %+v", err)
 	}

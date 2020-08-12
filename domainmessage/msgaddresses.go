@@ -24,6 +24,7 @@ const MaxAddressesPerMsg = 1000
 // Use the AddAddress function to build up the list of known addresses when
 // sending an Addresses message to another peer.
 type MsgAddresses struct {
+	baseMessage
 	IncludeAllSubnetworks bool
 	SubnetworkID          *subnetworkid.SubnetworkID
 	AddrList              []*NetAddress

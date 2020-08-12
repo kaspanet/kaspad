@@ -156,7 +156,7 @@ func (g *BlkTmplGenerator) collectCandidatesTxs(sourceTxs []*TxDesc) []*candidat
 		}
 
 		gasLimit := uint64(0)
-		if !tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) && !tx.MsgTx().SubnetworkID.IsBuiltIn() {
+		if !tx.MsgTx().SubnetworkID.IsBuiltInOrNative() {
 			subnetworkID := tx.MsgTx().SubnetworkID
 			gasLimit, err = g.dag.GasLimit(&subnetworkID)
 			if err != nil {
@@ -202,8 +202,7 @@ func (g *BlkTmplGenerator) calcTxValue(tx *util.Tx, fee uint64) (float64, error)
 	massLimit := g.policy.BlockMaxMass
 
 	msgTx := tx.MsgTx()
-	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
-		msgTx.SubnetworkID.IsBuiltIn() {
+	if msgTx.SubnetworkID.IsBuiltInOrNative() {
 		return float64(fee) / (float64(mass) / float64(massLimit)), nil
 	}
 
@@ -266,7 +265,7 @@ func (g *BlkTmplGenerator) populateTemplateFromCandidates(candidateTxs []*candid
 
 		// Enforce maximum gas per subnetwork per block. Also check
 		// for overflow.
-		if !tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) && !tx.MsgTx().SubnetworkID.IsBuiltIn() {
+		if !tx.MsgTx().SubnetworkID.IsBuiltInOrNative() {
 			subnetworkID := tx.MsgTx().SubnetworkID
 			gasUsage, ok := gasUsageMap[subnetworkID]
 			if !ok {

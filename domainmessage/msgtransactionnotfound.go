@@ -11,6 +11,7 @@ import (
 // MsgTransactionNotFound defines a kaspa TransactionNotFound message which is sent in response to
 // a RequestTransactions message if any of the requested data in not available on the peer.
 type MsgTransactionNotFound struct {
+	baseMessage
 	ID *daghash.TxID
 }
 

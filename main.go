@@ -132,14 +132,10 @@ func kaspadMain(startedChan chan<- struct{}) error {
 	}
 	defer func() {
 		log.Infof("Gracefully shutting down kaspad...")
-		err := app.Stop()
-		if err != nil {
-			log.Errorf("Error stopping kaspad: %+v", err)
-		}
 
 		shutdownDone := make(chan struct{})
 		go func() {
-			app.WaitForShutdown()
+			app.Stop()
 			shutdownDone <- struct{}{}
 		}()
 

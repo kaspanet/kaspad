@@ -881,7 +881,7 @@ func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
 
 		// In native and Built-In subnetworks all txs must have Gas = 0, and that was already validated in checkTransactionSanity
 		// Therefore - no need to check them here.
-		if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) || msgTx.SubnetworkID.IsBuiltIn() {
+		if msgTx.SubnetworkID.IsBuiltInOrNative() {
 			continue
 		}
 
