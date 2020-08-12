@@ -7,14 +7,16 @@ package blockdag
 import (
 	"fmt"
 	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/pkg/errors"
 	"math"
 	"sort"
 
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/txscript"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/util/mstime"
+
+	"github.com/pkg/errors"
+
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -265,10 +267,7 @@ func checkTransactionPayloadHash(tx *util.Tx) error {
 func checkGasInBuiltInOrNativeTransactions(tx *util.Tx) error {
 	// Transactions in native, registry and coinbase subnetworks must have Gas = 0
 	msgTx := tx.MsgTx()
-	if (msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
-		msgTx.SubnetworkID.IsBuiltIn()) &&
-		msgTx.Gas > 0 {
-
+	if msgTx.SubnetworkID.IsBuiltInOrNative() && msgTx.Gas > 0 {
 		return ruleError(ErrInvalidGas, "transaction in the native or "+
 			"registry subnetworks has gas > 0 ")
 	}
