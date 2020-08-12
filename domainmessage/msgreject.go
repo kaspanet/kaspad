@@ -3,6 +3,7 @@ package domainmessage
 // MsgReject implements the Message interface and represents a kaspa
 // Reject message. It is used to notify peers why they are banned.
 type MsgReject struct {
+	baseMessage
 	Reason string
 }
 
