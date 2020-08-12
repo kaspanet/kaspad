@@ -100,7 +100,12 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 		return nil, nil, nil, nil, err
 	}
 
-	err = dag.validateUTXOCommitment(node, txsAcceptanceData, selectedParentPastUTXO)
+	multiset, err = node.calcMultiset(dag, txsAcceptanceData, selectedParentPastUTXO)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	err = node.validateUTXOCommitment(multiset)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}

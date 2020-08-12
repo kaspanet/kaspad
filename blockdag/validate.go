@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 	"math"
@@ -1029,14 +1030,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	return feeData, nil
 }
 
-func (dag *BlockDAG) validateUTXOCommitment(node *blockNode,
-	txsAcceptanceData MultiBlockTxsAcceptanceData, selectedParentPastUTXO UTXOSet) error {
-
-	multiset, err := node.calcMultiset(dag, txsAcceptanceData, selectedParentPastUTXO)
-	if err != nil {
-		return err
-	}
-
+func (node *blockNode) validateUTXOCommitment(multiset *secp256k1.MultiSet) error {
 	calculatedMultisetHash := daghash.Hash(*multiset.Finalize())
 	if !calculatedMultisetHash.IsEqual(node.utxoCommitment) {
 		str := fmt.Sprintf("block %s UTXO commitment is invalid - block "+
