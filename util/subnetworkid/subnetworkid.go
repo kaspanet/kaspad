@@ -7,8 +7,9 @@ package subnetworkid
 
 import (
 	"encoding/hex"
-	"github.com/pkg/errors"
 	"math/big"
+
+	"github.com/pkg/errors"
 )
 
 // IDLength of array used to store the subnetwork ID. See SubnetworkID.
@@ -194,6 +195,12 @@ func (id *SubnetworkID) Cmp(target *SubnetworkID) int {
 // always use 0 gas.
 func (id *SubnetworkID) IsBuiltIn() bool {
 	return id.IsEqual(SubnetworkIDCoinbase) || id.IsEqual(SubnetworkIDRegistry)
+}
+
+// IsBuiltInOrNative returns true if the subnetwork is the native or a built in subnetwork,
+// see IsBuiltIn for further details
+func (id *SubnetworkID) IsBuiltInOrNative() bool {
+	return id.IsEqual(SubnetworkIDNative) || id.IsBuiltIn()
 }
 
 // Less returns true iff id a is less than id b
