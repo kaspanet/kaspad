@@ -126,13 +126,55 @@ func CalcBlockSubsidy(blueScore uint64, dagParams *dagconfig.Params) uint64 {
 // CheckTransactionSanity performs some preliminary checks on a transaction to
 // ensure it is sane. These checks are context free.
 func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
-	isCoinbase := tx.IsCoinBase()
-	// A transaction must have at least one input.
+	err := checkTransactionInputCount(tx)
+	if err != nil {
+		return err
+	}
+	err = checkTransactionAmountRanges(tx)
+	if err != nil {
+		return err
+	}
+	err = checkDuplicateTransactionInputs(tx)
+	if err != nil {
+		return err
+	}
+	err = checkCoinbaseLength(tx)
+	if err != nil {
+		return err
+	}
+	err = checkTransactionPayloadHash(tx)
+	if err != nil {
+		return err
+	}
+	err = checkGasInBuildInOrNativeTransactions(tx)
+	if err != nil {
+		return err
+	}
+	err = checkSubnetworkRegistryTransaction(tx)
+	if err != nil {
+		return err
+	}
+	err = checkNativeTransactionPayload(tx, subnetworkID)
+	if err != nil {
+		return err
+	}
+	err = checkTransactionSubnetwork(tx, subnetworkID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func checkTransactionInputCount(tx *util.Tx) error {
+	// A non-coinbase transaction must have at least one input.
 	msgTx := tx.MsgTx()
-	if !isCoinbase && len(msgTx.TxIn) == 0 {
+	if !tx.IsCoinBase() && len(msgTx.TxIn) == 0 {
 		return ruleError(ErrNoTxInputs, "transaction has no inputs")
 	}
+	return nil
+}
 
+func checkTransactionAmountRanges(tx *util.Tx) error {
 	// Ensure the transaction amounts are in range. Each transaction
 	// output must not be negative or more than the max allowed per
 	// transaction. Also, the total of all outputs must abide by the same
@@ -140,7 +182,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	// as a sompi. One kaspa is a quantity of sompi as defined by the
 	// SompiPerKaspa constant.
 	var totalSompi uint64
-	for _, txOut := range msgTx.TxOut {
+	for _, txOut := range tx.MsgTx().TxOut {
 		sompi := txOut.Value
 		if sompi > util.MaxSompi {
 			str := fmt.Sprintf("transaction output value of %d is "+
@@ -168,20 +210,25 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 			return ruleError(ErrBadTxOutValue, str)
 		}
 	}
+	return nil
+}
 
-	// Check for duplicate transaction inputs.
+func checkDuplicateTransactionInputs(tx *util.Tx) error {
 	existingTxOut := make(map[domainmessage.Outpoint]struct{})
-	for _, txIn := range msgTx.TxIn {
+	for _, txIn := range tx.MsgTx().TxIn {
 		if _, exists := existingTxOut[txIn.PreviousOutpoint]; exists {
 			return ruleError(ErrDuplicateTxInputs, "transaction "+
 				"contains duplicate inputs")
 		}
 		existingTxOut[txIn.PreviousOutpoint] = struct{}{}
 	}
+	return nil
+}
 
+func checkCoinbaseLength(tx *util.Tx) error {
 	// Coinbase payload length must not exceed the max length.
-	if isCoinbase {
-		payloadLen := len(msgTx.Payload)
+	if tx.IsCoinBase() {
+		payloadLen := len(tx.MsgTx().Payload)
 		if payloadLen > MaxCoinbasePayloadLen {
 			str := fmt.Sprintf("coinbase transaction payload length "+
 				"of %d is out of range (max: %d)",
@@ -191,34 +238,13 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	} else {
 		// Previous transaction outputs referenced by the inputs to this
 		// transaction must not be null.
-		for _, txIn := range msgTx.TxIn {
+		for _, txIn := range tx.MsgTx().TxIn {
 			if isNullOutpoint(&txIn.PreviousOutpoint) {
 				return ruleError(ErrBadTxInput, "transaction "+
 					"input refers to previous output that "+
 					"is null")
 			}
 		}
-	}
-
-	err := checkTransactionPayloadHash(tx)
-	if err != nil {
-		return err
-	}
-	err = checkGasInBuildInOrNativeTransactions(tx)
-	if err != nil {
-		return err
-	}
-	err = checkSubnetworkRegistryTransaction(tx)
-	if err != nil {
-		return err
-	}
-	err = checkNativeTransactionPayload(tx, subnetworkID)
-	if err != nil {
-		return err
-	}
-	err = checkTransactionSubnetwork(tx, subnetworkID)
-	if err != nil {
-		return err
 	}
 	return nil
 }
