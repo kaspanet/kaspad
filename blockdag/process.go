@@ -227,7 +227,7 @@ func (dag *BlockDAG) createBlockNodeFromBlock(block *util.Block) (
 func (dag *BlockDAG) connectBlock(node *blockNode,
 	block *util.Block, selectedParentAnticone []*blockNode, flags BehaviorFlags) (*chainUpdates, error) {
 
-	err := dag.checkBlockTxsFinalized(block, node, flags)
+	err := dag.checkBlockTransactionsFinalized(block, node, flags)
 	if err != nil {
 		return nil, err
 	}

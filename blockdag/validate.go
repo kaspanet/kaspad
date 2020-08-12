@@ -749,7 +749,7 @@ func (dag *BlockDAG) checkBlockParents(block *util.Block) error {
 	return nil
 }
 
-func (dag *BlockDAG) checkBlockTxsFinalized(block *util.Block, node *blockNode, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockTransactionsFinalized(block *util.Block, node *blockNode, flags BehaviorFlags) error {
 	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.NodeStatus(node).KnownValid()
 	if fastAdd {
 		return nil
