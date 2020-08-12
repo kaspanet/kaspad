@@ -159,7 +159,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 		return err
 	}
 
-	newNode, selectedParentAnticone, err := dag.createNewBlockNode(block)
+	newNode, selectedParentAnticone, err := dag.createBlockNodeFromBlock(block)
 	if err != nil {
 		return err
 	}
@@ -174,7 +174,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	return nil
 }
 
-func (dag *BlockDAG) createNewBlockNode(block *util.Block) (
+func (dag *BlockDAG) createBlockNodeFromBlock(block *util.Block) (
 	newNode *blockNode, selectedParentAnticone []*blockNode, err error) {
 
 	// Create a new block node for the block and add it to the node index.
