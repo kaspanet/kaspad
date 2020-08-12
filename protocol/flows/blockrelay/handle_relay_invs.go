@@ -185,7 +185,12 @@ func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueS
 	blockHash := block.Hash()
 	isOrphan, isDelayed, err := flow.DAG().ProcessBlock(block, blockdag.BFNone)
 	if err != nil {
-		return err
+		if !errors.As(err, &blockdag.RuleError{}) {
+			return errors.Wrapf(err, "failed to process block %s", blockHash)
+		}
+		log.Infof("Rejected block %s from %s: %s", blockHash, flow.peer, err)
+
+		return protocolerrors.Wrap(true, err, "got invalid block")
 	}
 
 	if isDelayed {

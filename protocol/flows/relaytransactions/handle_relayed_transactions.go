@@ -196,7 +196,25 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 
 		acceptedTxs, err := flow.TxPool().ProcessTransaction(tx, true, 0) // TODO(libp2p) Use the peer ID for the mempool tag
 		if err != nil {
-			return err
+			ruleErr := &mempool.RuleError{}
+			if !errors.As(err, ruleErr) {
+				return errors.Wrapf(err, "failed to process transaction %s", tx.ID())
+			}
+
+			shouldBan := false
+			if txRuleErr := (&mempool.TxRuleError{}); errors.As(ruleErr.Err, txRuleErr) {
+				if txRuleErr.RejectCode == mempool.RejectInvalid {
+					shouldBan = true
+				}
+			} else if dagRuleErr := (&blockdag.RuleError{}); errors.As(ruleErr.Err, dagRuleErr) {
+				shouldBan = true
+			}
+
+			if !shouldBan {
+				continue
+			}
+
+			return protocolerrors.Errorf(true, "rejected transaction %s", tx.ID())
 		}
 		err = flow.broadcastAcceptedTransactions(acceptedTxs)
 		if err != nil {

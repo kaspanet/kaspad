@@ -6,9 +6,6 @@ package mempool
 
 import (
 	"fmt"
-
-	"github.com/kaspanet/kaspad/protocol/protocolerrors"
-
 	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/pkg/errors"
 )
@@ -21,10 +18,6 @@ import (
 // blockdag.RuleError.
 type RuleError struct {
 	Err error
-}
-
-func (e RuleError) Unwrap() error {
-	return e.Err
 }
 
 // Error satisfies the error interface and prints human-readable errors.
@@ -84,7 +77,6 @@ func (code RejectCode) String() string {
 type TxRuleError struct {
 	RejectCode  RejectCode // The code to send with reject messages
 	Description string     // Human readable description of the issue
-	protocolErr *protocolerrors.ProtocolError
 }
 
 // Error satisfies the error interface and prints human-readable errors.
@@ -92,16 +84,11 @@ func (e TxRuleError) Error() string {
 	return e.Description
 }
 
-func (e TxRuleError) Unwrap() error {
-	return e.protocolErr
-}
-
 // txRuleError creates an underlying TxRuleError with the given a set of
 // arguments and returns a RuleError that encapsulates it.
 func txRuleError(c RejectCode, desc string) RuleError {
-	protocolErr := protocolerrors.New(c == RejectInvalid, desc)
 	return RuleError{
-		Err: TxRuleError{RejectCode: c, Description: desc, protocolErr: protocolErr},
+		Err: TxRuleError{RejectCode: c, Description: desc},
 	}
 }
 

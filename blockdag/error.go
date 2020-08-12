@@ -7,8 +7,6 @@ package blockdag
 import (
 	"fmt"
 
-	"github.com/kaspanet/kaspad/protocol/protocolerrors"
-
 	"github.com/pkg/errors"
 )
 
@@ -279,7 +277,6 @@ func (e ErrorCode) String() string {
 type RuleError struct {
 	ErrorCode   ErrorCode // Describes the kind of error
 	Description string    // Human readable description of the issue
-	protocolErr *protocolerrors.ProtocolError
 }
 
 // Error satisfies the error interface and prints human-readable errors.
@@ -287,13 +284,8 @@ func (e RuleError) Error() string {
 	return e.Description
 }
 
-func (e RuleError) Unwrap() error {
-	return e.protocolErr
-}
-
 func ruleError(c ErrorCode, desc string) error {
-	protocolErr := protocolerrors.New(true, desc)
-	return errors.WithStack(RuleError{ErrorCode: c, Description: desc, protocolErr: protocolErr})
+	return errors.WithStack(RuleError{ErrorCode: c, Description: desc})
 }
 
 // ErrInvalidParameter signifies that an invalid parameter has been
