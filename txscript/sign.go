@@ -9,13 +9,13 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // RawTxInSignature returns the serialized Schnorr signature for the input idx of
 // the given transaction, with hashType appended to it.
-func RawTxInSignature(tx *wire.MsgTx, idx int, script []byte,
+func RawTxInSignature(tx *domainmessage.MsgTx, idx int, script []byte,
 	hashType SigHashType, key *secp256k1.PrivateKey) ([]byte, error) {
 
 	hash, err := CalcSignatureHash(script, hashType, tx, idx)
@@ -39,7 +39,7 @@ func RawTxInSignature(tx *wire.MsgTx, idx int, script []byte,
 // as the idx'th input. privKey is serialized in either a compressed or
 // uncompressed format based on compress. This format must match the same format
 // used to generate the payment address, or the script validation will fail.
-func SignatureScript(tx *wire.MsgTx, idx int, script []byte, hashType SigHashType, privKey *secp256k1.PrivateKey, compress bool) ([]byte, error) {
+func SignatureScript(tx *domainmessage.MsgTx, idx int, script []byte, hashType SigHashType, privKey *secp256k1.PrivateKey, compress bool) ([]byte, error) {
 	sig, err := RawTxInSignature(tx, idx, script, hashType, privKey)
 	if err != nil {
 		return nil, err
@@ -62,7 +62,7 @@ func SignatureScript(tx *wire.MsgTx, idx int, script []byte, hashType SigHashTyp
 	return NewScriptBuilder().AddData(sig).AddData(pkData).Script()
 }
 
-func sign(dagParams *dagconfig.Params, tx *wire.MsgTx, idx int,
+func sign(dagParams *dagconfig.Params, tx *domainmessage.MsgTx, idx int,
 	script []byte, hashType SigHashType, kdb KeyDB, sdb ScriptDB) ([]byte,
 	ScriptClass, util.Address, error) {
 
@@ -105,7 +105,7 @@ func sign(dagParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 // The return value is the best effort merging of the two scripts. Calling this
 // function with addresses, class and nrequired that do not match scriptPubKey is
 // an error and results in undefined behaviour.
-func mergeScripts(dagParams *dagconfig.Params, tx *wire.MsgTx, idx int,
+func mergeScripts(dagParams *dagconfig.Params, tx *domainmessage.MsgTx, idx int,
 	class ScriptClass, sigScript, prevScript []byte) ([]byte, error) {
 
 	// TODO: the scripthash and multisig paths here are overly
@@ -199,7 +199,7 @@ func (sc ScriptClosure) GetScript(address util.Address) ([]byte, error) {
 // getScript. If previousScript is provided then the results in previousScript
 // will be merged in a type-dependent manner with the newly generated.
 // signature script.
-func SignTxOutput(dagParams *dagconfig.Params, tx *wire.MsgTx, idx int,
+func SignTxOutput(dagParams *dagconfig.Params, tx *domainmessage.MsgTx, idx int,
 	scriptPubKey []byte, hashType SigHashType, kdb KeyDB, sdb ScriptDB,
 	previousScript []byte) ([]byte, error) {
 

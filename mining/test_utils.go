@@ -7,10 +7,10 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // fakeTxSource is a simple implementation of TxSource interface
@@ -36,8 +36,8 @@ func (txs *fakeTxSource) HaveTransaction(txID *daghash.TxID) bool {
 }
 
 // PrepareBlockForTest generates a block with the proper merkle roots, coinbase transaction etc. This function is used for test purposes only
-func PrepareBlockForTest(dag *blockdag.BlockDAG, parentHashes []*daghash.Hash, transactions []*wire.MsgTx, forceTransactions bool,
-) (*wire.MsgBlock, error) {
+func PrepareBlockForTest(dag *blockdag.BlockDAG, parentHashes []*daghash.Hash, transactions []*domainmessage.MsgTx, forceTransactions bool,
+) (*domainmessage.MsgBlock, error) {
 
 	newVirtual, err := blockdag.GetVirtualFromParentsForTest(dag, parentHashes)
 	if err != nil {
@@ -76,7 +76,7 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, parentHashes []*daghash.Hash, t
 		return nil, err
 	}
 
-	txsToAdd := make([]*wire.MsgTx, 0)
+	txsToAdd := make([]*domainmessage.MsgTx, 0)
 	for _, tx := range transactions {
 		found := false
 		for _, blockTx := range template.Block.Transactions {

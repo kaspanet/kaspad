@@ -3,11 +3,11 @@ package addressexchange
 import (
 	"github.com/kaspanet/kaspad/addressmanager"
 	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // ReceiveAddressesContext is the interface for the context needed for the ReceiveAddresses flow.
@@ -25,7 +25,7 @@ func ReceiveAddresses(context ReceiveAddressesContext, incomingRoute *router.Rou
 	}
 
 	subnetworkID := peer.SubnetworkID()
-	msgGetAddresses := wire.NewMsgRequestAddresses(false, subnetworkID)
+	msgGetAddresses := domainmessage.NewMsgRequestAddresses(false, subnetworkID)
 	err := outgoingRoute.Enqueue(msgGetAddresses)
 	if err != nil {
 		return err
@@ -36,7 +36,7 @@ func ReceiveAddresses(context ReceiveAddressesContext, incomingRoute *router.Rou
 		return err
 	}
 
-	msgAddresses := message.(*wire.MsgAddresses)
+	msgAddresses := message.(*domainmessage.MsgAddresses)
 	if len(msgAddresses.AddrList) > addressmanager.GetAddressesMax {
 		return protocolerrors.Errorf(true, "address count excceeded %d", addressmanager.GetAddressesMax)
 	}
@@ -53,7 +53,7 @@ func ReceiveAddresses(context ReceiveAddressesContext, incomingRoute *router.Rou
 
 	// TODO(libp2p) Consider adding to peer known addresses set
 	// TODO(libp2p) Replace with real peer IP
-	fakeSourceAddress := new(wire.NetAddress)
+	fakeSourceAddress := new(domainmessage.NetAddress)
 	context.AddressManager().AddAddresses(msgAddresses.AddrList, fakeSourceAddress, msgAddresses.SubnetworkID)
 	return nil
 }

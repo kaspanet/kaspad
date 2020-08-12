@@ -1,27 +1,27 @@
 package protowire
 
 import (
-	"github.com/kaspanet/kaspad/wire"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_RequestTransactions) toWireMessage() (wire.Message, error) {
-	if len(x.RequestTransactions.Ids) > wire.MaxInvPerRequestTransactionsMsg {
+func (x *KaspadMessage_RequestTransactions) toDomainMessage() (domainmessage.Message, error) {
+	if len(x.RequestTransactions.Ids) > domainmessage.MaxInvPerRequestTransactionsMsg {
 		return nil, errors.Errorf("too many hashes for message "+
-			"[count %d, max %d]", len(x.RequestTransactions.Ids), wire.MaxInvPerRequestTransactionsMsg)
+			"[count %d, max %d]", len(x.RequestTransactions.Ids), domainmessage.MaxInvPerRequestTransactionsMsg)
 	}
 
 	ids, err := protoTransactionIDsToWire(x.RequestTransactions.Ids)
 	if err != nil {
 		return nil, err
 	}
-	return &wire.MsgRequestTransactions{IDs: ids}, nil
+	return &domainmessage.MsgRequestTransactions{IDs: ids}, nil
 }
 
-func (x *KaspadMessage_RequestTransactions) fromWireMessage(msgGetTransactions *wire.MsgRequestTransactions) error {
-	if len(msgGetTransactions.IDs) > wire.MaxInvPerRequestTransactionsMsg {
+func (x *KaspadMessage_RequestTransactions) fromDomainMessage(msgGetTransactions *domainmessage.MsgRequestTransactions) error {
+	if len(msgGetTransactions.IDs) > domainmessage.MaxInvPerRequestTransactionsMsg {
 		return errors.Errorf("too many hashes for message "+
-			"[count %d, max %d]", len(x.RequestTransactions.Ids), wire.MaxInvPerRequestTransactionsMsg)
+			"[count %d, max %d]", len(x.RequestTransactions.Ids), domainmessage.MaxInvPerRequestTransactionsMsg)
 	}
 
 	x.RequestTransactions = &RequestTransactionsMessage{

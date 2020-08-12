@@ -1,17 +1,17 @@
 package protowire
 
-import "github.com/kaspanet/kaspad/wire"
+import "github.com/kaspanet/kaspad/domainmessage"
 
-func (x *KaspadMessage_SelectedTip) toWireMessage() (wire.Message, error) {
+func (x *KaspadMessage_SelectedTip) toDomainMessage() (domainmessage.Message, error) {
 	hash, err := x.SelectedTip.SelectedTipHash.toWire()
 	if err != nil {
 		return nil, err
 	}
 
-	return &wire.MsgSelectedTip{SelectedTipHash: hash}, nil
+	return &domainmessage.MsgSelectedTip{SelectedTipHash: hash}, nil
 }
 
-func (x *KaspadMessage_SelectedTip) fromWireMessage(msgSelectedTip *wire.MsgSelectedTip) error {
+func (x *KaspadMessage_SelectedTip) fromDomainMessage(msgSelectedTip *domainmessage.MsgSelectedTip) error {
 	x.SelectedTip = &SelectedTipMessage{
 		SelectedTipHash: wireHashToProto(msgSelectedTip.SelectedTipHash),
 	}

@@ -5,8 +5,8 @@
 package addressmanager
 
 import (
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 func TstKnownAddressIsBad(ka *KnownAddress) bool {
@@ -17,7 +17,7 @@ func TstKnownAddressChance(ka *KnownAddress) float64 {
 	return ka.chance()
 }
 
-func TstNewKnownAddress(na *wire.NetAddress, attempts int,
+func TstNewKnownAddress(na *domainmessage.NetAddress, attempts int,
 	lastattempt, lastsuccess mstime.Time, tried bool, refs int) *KnownAddress {
 	return &KnownAddress{netAddress: na, attempts: attempts, lastAttempt: lastattempt,
 		lastSuccess: lastsuccess, tried: tried, referenceCount: refs}

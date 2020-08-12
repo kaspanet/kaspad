@@ -18,9 +18,9 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // loadUTXOSet returns a utxo view loaded from a file.
@@ -78,7 +78,7 @@ func loadUTXOSet(filename string) (UTXOSet, error) {
 		if err != nil {
 			return nil, err
 		}
-		utxoSet.utxoCollection[wire.Outpoint{TxID: txID, Index: index}] = entry
+		utxoSet.utxoCollection[domainmessage.Outpoint{TxID: txID, Index: index}] = entry
 	}
 
 	return utxoSet, nil
@@ -120,7 +120,7 @@ func newTestDAG(params *dagconfig.Params) *BlockDAG {
 // provided fields populated and fake values for the other fields.
 func newTestNode(dag *BlockDAG, parents blockSet, blockVersion int32, bits uint32, timestamp mstime.Time) *blockNode {
 	// Make up a header and create a block node from it.
-	header := &wire.BlockHeader{
+	header := &domainmessage.BlockHeader{
 		Version:              blockVersion,
 		ParentHashes:         parents.hashes(),
 		Bits:                 bits,
@@ -168,7 +168,7 @@ func checkRuleError(gotErr, wantErr error) error {
 	return nil
 }
 
-func prepareAndProcessBlockByParentMsgBlocks(t *testing.T, dag *BlockDAG, parents ...*wire.MsgBlock) *wire.MsgBlock {
+func prepareAndProcessBlockByParentMsgBlocks(t *testing.T, dag *BlockDAG, parents ...*domainmessage.MsgBlock) *domainmessage.MsgBlock {
 	parentHashes := make([]*daghash.Hash, len(parents))
 	for i, parent := range parents {
 		parentHashes[i] = parent.BlockHash()
@@ -176,7 +176,7 @@ func prepareAndProcessBlockByParentMsgBlocks(t *testing.T, dag *BlockDAG, parent
 	return PrepareAndProcessBlockForTest(t, dag, parentHashes, nil)
 }
 
-func nodeByMsgBlock(t *testing.T, dag *BlockDAG, block *wire.MsgBlock) *blockNode {
+func nodeByMsgBlock(t *testing.T, dag *BlockDAG, block *domainmessage.MsgBlock) *blockNode {
 	node, ok := dag.index.LookupNode(block.BlockHash())
 	if !ok {
 		t.Fatalf("couldn't find block node with hash %s", block.BlockHash())

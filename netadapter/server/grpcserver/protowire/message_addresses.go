@@ -1,15 +1,15 @@
 package protowire
 
 import (
-	"github.com/kaspanet/kaspad/wire"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_Addresses) toWireMessage() (wire.Message, error) {
+func (x *KaspadMessage_Addresses) toDomainMessage() (domainmessage.Message, error) {
 	protoAddresses := x.Addresses
-	if len(x.Addresses.AddressList) > wire.MaxAddressesPerMsg {
+	if len(x.Addresses.AddressList) > domainmessage.MaxAddressesPerMsg {
 		return nil, errors.Errorf("too many addresses for message "+
-			"[count %d, max %d]", len(x.Addresses.AddressList), wire.MaxAddressesPerMsg)
+			"[count %d, max %d]", len(x.Addresses.AddressList), domainmessage.MaxAddressesPerMsg)
 	}
 
 	subnetworkID, err := protoAddresses.SubnetworkID.toWire()
@@ -17,24 +17,24 @@ func (x *KaspadMessage_Addresses) toWireMessage() (wire.Message, error) {
 		return nil, err
 	}
 
-	addressList := make([]*wire.NetAddress, len(protoAddresses.AddressList))
+	addressList := make([]*domainmessage.NetAddress, len(protoAddresses.AddressList))
 	for i, address := range protoAddresses.AddressList {
 		addressList[i], err = address.toWire()
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &wire.MsgAddresses{
+	return &domainmessage.MsgAddresses{
 		IncludeAllSubnetworks: protoAddresses.IncludeAllSubnetworks,
 		SubnetworkID:          subnetworkID,
 		AddrList:              addressList,
 	}, nil
 }
 
-func (x *KaspadMessage_Addresses) fromWireMessage(msgAddresses *wire.MsgAddresses) error {
-	if len(msgAddresses.AddrList) > wire.MaxAddressesPerMsg {
+func (x *KaspadMessage_Addresses) fromDomainMessage(msgAddresses *domainmessage.MsgAddresses) error {
+	if len(msgAddresses.AddrList) > domainmessage.MaxAddressesPerMsg {
 		return errors.Errorf("too many addresses for message "+
-			"[count %d, max %d]", len(msgAddresses.AddrList), wire.MaxAddressesPerMsg)
+			"[count %d, max %d]", len(msgAddresses.AddrList), domainmessage.MaxAddressesPerMsg)
 	}
 
 	addressList := make([]*NetAddress, len(msgAddresses.AddrList))

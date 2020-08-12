@@ -15,8 +15,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // scriptTestName returns a descriptive test name for the given reference script
@@ -210,17 +210,17 @@ func parseExpectedResult(expected string) ([]ErrorCode, error) {
 
 // createSpendTx generates a basic spending transaction given the passed
 // signature and public key scripts.
-func createSpendingTx(sigScript, scriptPubKey []byte) *wire.MsgTx {
+func createSpendingTx(sigScript, scriptPubKey []byte) *domainmessage.MsgTx {
 
-	outpoint := wire.NewOutpoint(&daghash.TxID{}, ^uint32(0))
-	txIn := wire.NewTxIn(outpoint, []byte{Op0, Op0})
-	txOut := wire.NewTxOut(0, scriptPubKey)
-	coinbaseTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
+	outpoint := domainmessage.NewOutpoint(&daghash.TxID{}, ^uint32(0))
+	txIn := domainmessage.NewTxIn(outpoint, []byte{Op0, Op0})
+	txOut := domainmessage.NewTxOut(0, scriptPubKey)
+	coinbaseTx := domainmessage.NewNativeMsgTx(domainmessage.TxVersion, []*domainmessage.TxIn{txIn}, []*domainmessage.TxOut{txOut})
 
-	outpoint = wire.NewOutpoint(coinbaseTx.TxID(), 0)
-	txIn = wire.NewTxIn(outpoint, sigScript)
-	txOut = wire.NewTxOut(0, nil)
-	spendingTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
+	outpoint = domainmessage.NewOutpoint(coinbaseTx.TxID(), 0)
+	txIn = domainmessage.NewTxIn(outpoint, sigScript)
+	txOut = domainmessage.NewTxOut(0, nil)
+	spendingTx := domainmessage.NewNativeMsgTx(domainmessage.TxVersion, []*domainmessage.TxIn{txIn}, []*domainmessage.TxOut{txOut})
 
 	return spendingTx
 }

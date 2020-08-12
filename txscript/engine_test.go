@@ -7,8 +7,8 @@ package txscript
 import (
 	"testing"
 
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // TestBadPC sets the pc to a deliberately bad result then confirms that Step()
@@ -24,9 +24,9 @@ func TestBadPC(t *testing.T) {
 	}
 
 	// tx with almost empty scripts.
-	txIns := []*wire.TxIn{
+	txIns := []*domainmessage.TxIn{
 		{
-			PreviousOutpoint: wire.Outpoint{
+			PreviousOutpoint: domainmessage.Outpoint{
 				TxID: daghash.TxID([32]byte{
 					0xc9, 0x97, 0xa5, 0xe5,
 					0x6e, 0x10, 0x41, 0x02,
@@ -43,11 +43,11 @@ func TestBadPC(t *testing.T) {
 			Sequence:        4294967295,
 		},
 	}
-	txOuts := []*wire.TxOut{{
+	txOuts := []*domainmessage.TxOut{{
 		Value:        1000000000,
 		ScriptPubKey: nil,
 	}}
-	tx := wire.NewNativeMsgTx(1, txIns, txOuts)
+	tx := domainmessage.NewNativeMsgTx(1, txIns, txOuts)
 	scriptPubKey := mustParseShortForm("NOP")
 
 	for _, test := range tests {
@@ -90,8 +90,8 @@ func TestCheckErrorCondition(t *testing.T) {
 
 	for i, test := range tests {
 		func() {
-			txIns := []*wire.TxIn{{
-				PreviousOutpoint: wire.Outpoint{
+			txIns := []*domainmessage.TxIn{{
+				PreviousOutpoint: domainmessage.Outpoint{
 					TxID: daghash.TxID([32]byte{
 						0xc9, 0x97, 0xa5, 0xe5,
 						0x6e, 0x10, 0x41, 0x02,
@@ -107,11 +107,11 @@ func TestCheckErrorCondition(t *testing.T) {
 				SignatureScript: nil,
 				Sequence:        4294967295,
 			}}
-			txOuts := []*wire.TxOut{{
+			txOuts := []*domainmessage.TxOut{{
 				Value:        1000000000,
 				ScriptPubKey: nil,
 			}}
-			tx := wire.NewNativeMsgTx(1, txIns, txOuts)
+			tx := domainmessage.NewNativeMsgTx(1, txIns, txOuts)
 
 			scriptPubKey := mustParseShortForm(test.script)
 
@@ -209,8 +209,8 @@ func TestDisasmPC(t *testing.T) {
 	t.Parallel()
 
 	// tx with almost empty scripts.
-	txIns := []*wire.TxIn{{
-		PreviousOutpoint: wire.Outpoint{
+	txIns := []*domainmessage.TxIn{{
+		PreviousOutpoint: domainmessage.Outpoint{
 			TxID: daghash.TxID([32]byte{
 				0xc9, 0x97, 0xa5, 0xe5,
 				0x6e, 0x10, 0x41, 0x02,
@@ -226,11 +226,11 @@ func TestDisasmPC(t *testing.T) {
 		SignatureScript: mustParseShortForm("OP_2"),
 		Sequence:        4294967295,
 	}}
-	txOuts := []*wire.TxOut{{
+	txOuts := []*domainmessage.TxOut{{
 		Value:        1000000000,
 		ScriptPubKey: nil,
 	}}
-	tx := wire.NewNativeMsgTx(1, txIns, txOuts)
+	tx := domainmessage.NewNativeMsgTx(1, txIns, txOuts)
 
 	scriptPubKey := mustParseShortForm("OP_DROP NOP TRUE")
 
@@ -269,8 +269,8 @@ func TestDisasmScript(t *testing.T) {
 	t.Parallel()
 
 	// tx with almost empty scripts.
-	txIns := []*wire.TxIn{{
-		PreviousOutpoint: wire.Outpoint{
+	txIns := []*domainmessage.TxIn{{
+		PreviousOutpoint: domainmessage.Outpoint{
 			TxID: daghash.TxID([32]byte{
 				0xc9, 0x97, 0xa5, 0xe5,
 				0x6e, 0x10, 0x41, 0x02,
@@ -286,11 +286,11 @@ func TestDisasmScript(t *testing.T) {
 		SignatureScript: mustParseShortForm("OP_2"),
 		Sequence:        4294967295,
 	}}
-	txOuts := []*wire.TxOut{{
+	txOuts := []*domainmessage.TxOut{{
 		Value:        1000000000,
 		ScriptPubKey: nil,
 	}}
-	tx := wire.NewNativeMsgTx(1, txIns, txOuts)
+	tx := domainmessage.NewNativeMsgTx(1, txIns, txOuts)
 	scriptPubKey := mustParseShortForm("OP_DROP NOP TRUE")
 
 	vm, err := NewEngine(scriptPubKey, tx, 0, 0, nil)

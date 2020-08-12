@@ -3,8 +3,8 @@ package netadapter
 import (
 	"fmt"
 
+	"github.com/kaspanet/kaspad/domainmessage"
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
-	"github.com/kaspanet/kaspad/wire"
 
 	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/netadapter/server"
@@ -72,8 +72,8 @@ func (c *NetConnection) IsOutbound() bool {
 }
 
 // NetAddress returns the NetAddress associated with this connection
-func (c *NetConnection) NetAddress() *wire.NetAddress {
-	return wire.NewNetAddress(c.connection.Address(), 0)
+func (c *NetConnection) NetAddress() *domainmessage.NetAddress {
+	return domainmessage.NewNetAddress(c.connection.Address(), 0)
 }
 
 // SetOnInvalidMessageHandler sets a handler function

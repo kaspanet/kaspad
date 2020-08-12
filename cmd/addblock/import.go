@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // importResults houses the stats and result as an import operation.
@@ -68,10 +68,10 @@ func (bi *blockImporter) readBlock() ([]byte, error) {
 	if err := binary.Read(bi.r, binary.LittleEndian, &blockLen); err != nil {
 		return nil, err
 	}
-	if blockLen > wire.MaxMessagePayload {
+	if blockLen > domainmessage.MaxMessagePayload {
 		return nil, errors.Errorf("block payload of %d bytes is larger "+
 			"than the max allowed %d bytes", blockLen,
-			wire.MaxMessagePayload)
+			domainmessage.MaxMessagePayload)
 	}
 
 	serializedBlock := make([]byte, blockLen)

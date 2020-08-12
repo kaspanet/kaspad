@@ -2,13 +2,13 @@ package ibd
 
 import (
 	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // HandleIBDContext is the interface for the context needed for the HandleIBD flow.
@@ -96,7 +96,7 @@ func (flow *handleIBDFlow) findHighestSharedBlockHash(peerSelectedTipHash *dagha
 
 func (flow *handleIBDFlow) sendGetBlockLocator(lowHash *daghash.Hash, highHash *daghash.Hash) error {
 
-	msgGetBlockLocator := wire.NewMsgRequestBlockLocator(highHash, lowHash)
+	msgGetBlockLocator := domainmessage.NewMsgRequestBlockLocator(highHash, lowHash)
 	return flow.outgoingRoute.Enqueue(msgGetBlockLocator)
 }
 
@@ -105,11 +105,11 @@ func (flow *handleIBDFlow) receiveBlockLocator() (blockLocatorHashes []*daghash.
 	if err != nil {
 		return nil, err
 	}
-	msgBlockLocator, ok := message.(*wire.MsgBlockLocator)
+	msgBlockLocator, ok := message.(*domainmessage.MsgBlockLocator)
 	if !ok {
 		return nil,
 			protocolerrors.Errorf(true, "received unexpected message type. "+
-				"expected: %s, got: %s", wire.CmdBlockLocator, message.Command())
+				"expected: %s, got: %s", domainmessage.CmdBlockLocator, message.Command())
 	}
 	return msgBlockLocator.BlockLocatorHashes, nil
 }
@@ -140,7 +140,7 @@ func (flow *handleIBDFlow) downloadBlocks(highestSharedBlockHash *daghash.Hash,
 
 		blocksReceived++
 		if blocksReceived%ibdBatchSize == 0 {
-			err = flow.outgoingRoute.Enqueue(wire.NewMsgRequestNextIBDBlocks())
+			err = flow.outgoingRoute.Enqueue(domainmessage.NewMsgRequestNextIBDBlocks())
 			if err != nil {
 				return err
 			}
@@ -151,28 +151,28 @@ func (flow *handleIBDFlow) downloadBlocks(highestSharedBlockHash *daghash.Hash,
 func (flow *handleIBDFlow) sendGetBlocks(highestSharedBlockHash *daghash.Hash,
 	peerSelectedTipHash *daghash.Hash) error {
 
-	msgGetBlockInvs := wire.NewMsgRequstIBDBlocks(highestSharedBlockHash, peerSelectedTipHash)
+	msgGetBlockInvs := domainmessage.NewMsgRequstIBDBlocks(highestSharedBlockHash, peerSelectedTipHash)
 	return flow.outgoingRoute.Enqueue(msgGetBlockInvs)
 }
 
-func (flow *handleIBDFlow) receiveIBDBlock() (msgIBDBlock *wire.MsgIBDBlock, doneIBD bool, err error) {
+func (flow *handleIBDFlow) receiveIBDBlock() (msgIBDBlock *domainmessage.MsgIBDBlock, doneIBD bool, err error) {
 	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, false, err
 	}
 	switch message := message.(type) {
-	case *wire.MsgIBDBlock:
+	case *domainmessage.MsgIBDBlock:
 		return message, false, nil
-	case *wire.MsgDoneIBDBlocks:
+	case *domainmessage.MsgDoneIBDBlocks:
 		return nil, true, nil
 	default:
 		return nil, false,
 			protocolerrors.Errorf(true, "received unexpected message type. "+
-				"expected: %s, got: %s", wire.CmdIBDBlock, message.Command())
+				"expected: %s, got: %s", domainmessage.CmdIBDBlock, message.Command())
 	}
 }
 
-func (flow *handleIBDFlow) processIBDBlock(msgIBDBlock *wire.MsgIBDBlock) error {
+func (flow *handleIBDFlow) processIBDBlock(msgIBDBlock *domainmessage.MsgIBDBlock) error {
 
 	block := util.NewBlock(msgIBDBlock.MsgBlock)
 	if flow.DAG().IsInDAG(block.Hash()) {

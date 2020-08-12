@@ -9,9 +9,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/pointers"
-	"github.com/kaspanet/kaspad/wire"
 
 	"github.com/kaspanet/kaspad/rpc/model"
 )
@@ -273,7 +273,7 @@ type FutureGetSelectedTipResult chan *response
 
 // Receive waits for the response promised by the future and returns the
 // selected tip block.
-func (r FutureGetSelectedTipResult) Receive() (*wire.MsgBlock, error) {
+func (r FutureGetSelectedTipResult) Receive() (*domainmessage.MsgBlock, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
@@ -293,7 +293,7 @@ func (r FutureGetSelectedTipResult) Receive() (*wire.MsgBlock, error) {
 	}
 
 	// Deserialize the block and return it.
-	var msgBlock wire.MsgBlock
+	var msgBlock domainmessage.MsgBlock
 	err = msgBlock.Deserialize(bytes.NewReader(serializedBlock))
 	if err != nil {
 		return nil, err
@@ -353,7 +353,7 @@ type FutureGetCurrentNetResult chan *response
 
 // Receive waits for the response promised by the future and returns the network
 // the server is running on.
-func (r FutureGetCurrentNetResult) Receive() (wire.KaspaNet, error) {
+func (r FutureGetCurrentNetResult) Receive() (domainmessage.KaspaNet, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return 0, err
@@ -366,7 +366,7 @@ func (r FutureGetCurrentNetResult) Receive() (wire.KaspaNet, error) {
 		return 0, err
 	}
 
-	return wire.KaspaNet(net), nil
+	return domainmessage.KaspaNet(net), nil
 }
 
 // GetCurrentNetAsync returns an instance of a type that can be used to get the
@@ -380,7 +380,7 @@ func (c *Client) GetCurrentNetAsync() FutureGetCurrentNetResult {
 }
 
 // GetCurrentNet returns the network the server is running on.
-func (c *Client) GetCurrentNet() (wire.KaspaNet, error) {
+func (c *Client) GetCurrentNet() (domainmessage.KaspaNet, error) {
 	return c.GetCurrentNetAsync().Receive()
 }
 
@@ -390,7 +390,7 @@ type FutureGetHeadersResult chan *response
 
 // Receive waits for the response promised by the future and returns the
 // getheaders result.
-func (r FutureGetHeadersResult) Receive() ([]wire.BlockHeader, error) {
+func (r FutureGetHeadersResult) Receive() ([]domainmessage.BlockHeader, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
@@ -403,8 +403,8 @@ func (r FutureGetHeadersResult) Receive() ([]wire.BlockHeader, error) {
 		return nil, err
 	}
 
-	// Deserialize the []string into []wire.BlockHeader.
-	headers := make([]wire.BlockHeader, len(result))
+	// Deserialize the []string into []domainmessage.BlockHeader.
+	headers := make([]domainmessage.BlockHeader, len(result))
 	for i, headerHex := range result {
 		serialized, err := hex.DecodeString(headerHex)
 		if err != nil {
@@ -432,7 +432,7 @@ func (c *Client) GetTopHeadersAsync(highHash *daghash.Hash) FutureGetHeadersResu
 }
 
 // GetTopHeaders sends a getTopHeaders rpc command to the server.
-func (c *Client) GetTopHeaders(highHash *daghash.Hash) ([]wire.BlockHeader, error) {
+func (c *Client) GetTopHeaders(highHash *daghash.Hash) ([]domainmessage.BlockHeader, error) {
 	return c.GetTopHeadersAsync(highHash).Receive()
 }
 
@@ -453,10 +453,10 @@ func (c *Client) GetHeadersAsync(lowHash, highHash *daghash.Hash) FutureGetHeade
 	return c.sendCmd(cmd)
 }
 
-// GetHeaders mimics the wire protocol getheaders and headers messages by
+// GetHeaders mimics the domainmessage protocol getheaders and headers messages by
 // returning all headers in the DAG after the first known block in the
 // locators, up until a block hash matches highHash.
-func (c *Client) GetHeaders(lowHash, highHash *daghash.Hash) ([]wire.BlockHeader, error) {
+func (c *Client) GetHeaders(lowHash, highHash *daghash.Hash) ([]domainmessage.BlockHeader, error) {
 	return c.GetHeadersAsync(lowHash, highHash).Receive()
 }
 

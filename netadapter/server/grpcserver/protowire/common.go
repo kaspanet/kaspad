@@ -3,10 +3,10 @@ package protowire
 import (
 	"math"
 
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
-	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 )
 
@@ -86,19 +86,19 @@ func wireSubnetworkIDToProto(id *subnetworkid.SubnetworkID) *SubnetworkID {
 	}
 }
 
-func (x *NetAddress) toWire() (*wire.NetAddress, error) {
+func (x *NetAddress) toWire() (*domainmessage.NetAddress, error) {
 	if x.Port > math.MaxUint16 {
 		return nil, errors.Errorf("port number is larger than %d", math.MaxUint16)
 	}
-	return &wire.NetAddress{
+	return &domainmessage.NetAddress{
 		Timestamp: mstime.UnixMilliseconds(x.Timestamp),
-		Services:  wire.ServiceFlag(x.Services),
+		Services:  domainmessage.ServiceFlag(x.Services),
 		IP:        x.Ip,
 		Port:      uint16(x.Port),
 	}, nil
 }
 
-func wireNetAddressToProto(address *wire.NetAddress) *NetAddress {
+func wireNetAddressToProto(address *domainmessage.NetAddress) *NetAddress {
 	return &NetAddress{
 		Timestamp: address.Timestamp.UnixMilliseconds(),
 		Services:  uint64(address.Services),

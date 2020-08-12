@@ -12,8 +12,8 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // blockStatus is a bit field representing the validation state of the block.
@@ -106,7 +106,7 @@ type blockNode struct {
 // anticone of its selected parent (parent with highest blue score).
 // selectedParentAnticone is used to update reachability data we store for future reachability queries.
 // This function is NOT safe for concurrent access.
-func (dag *BlockDAG) newBlockNode(blockHeader *wire.BlockHeader, parents blockSet) (node *blockNode, selectedParentAnticone []*blockNode) {
+func (dag *BlockDAG) newBlockNode(blockHeader *domainmessage.BlockHeader, parents blockSet) (node *blockNode, selectedParentAnticone []*blockNode) {
 	node = &blockNode{
 		parents:            parents,
 		children:           make(blockSet),
@@ -160,9 +160,9 @@ func (node *blockNode) less(other *blockNode) bool {
 // Header constructs a block header from the node and returns it.
 //
 // This function is safe for concurrent access.
-func (node *blockNode) Header() *wire.BlockHeader {
+func (node *blockNode) Header() *domainmessage.BlockHeader {
 	// No lock is needed because all accessed fields are immutable.
-	return &wire.BlockHeader{
+	return &domainmessage.BlockHeader{
 		Version:              node.version,
 		ParentHashes:         node.ParentHashes(),
 		HashMerkleRoot:       node.hashMerkleRoot,

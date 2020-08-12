@@ -3,12 +3,12 @@ package ping
 import (
 	"time"
 
+	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/protocol/peer"
 	"github.com/kaspanet/kaspad/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/util/random"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // SendPingsContext is the interface for the context needed for the SendPings flow.
@@ -46,7 +46,7 @@ func (flow *sendPingsFlow) start() error {
 		}
 		flow.peer.SetPingPending(nonce)
 
-		pingMessage := wire.NewMsgPing(nonce)
+		pingMessage := domainmessage.NewMsgPing(nonce)
 		err = flow.outgoingRoute.Enqueue(pingMessage)
 		if err != nil {
 			return err
@@ -56,7 +56,7 @@ func (flow *sendPingsFlow) start() error {
 		if err != nil {
 			return err
 		}
-		pongMessage := message.(*wire.MsgPong)
+		pongMessage := message.(*domainmessage.MsgPong)
 		if pongMessage.Nonce != pingMessage.Nonce {
 			return protocolerrors.New(true, "nonce mismatch between ping and pong")
 		}
