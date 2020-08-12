@@ -31,6 +31,7 @@ var DefaultUserAgent = fmt.Sprintf("/kaspad:%s/", version.Version())
 // message (MsgVerAck). This exchange must take place before any further
 // communication is allowed to proceed.
 type MsgVersion struct {
+	baseMessage
 	// Version of the protocol the node is using.
 	ProtocolVersion uint32
 

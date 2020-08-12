@@ -12,6 +12,7 @@ const MaxBlockLocatorsPerMsg = 500
 // locator message. It is used to find the blockLocator of a peer that is
 // syncing with you.
 type MsgBlockLocator struct {
+	baseMessage
 	BlockLocatorHashes []*daghash.Hash
 }
 

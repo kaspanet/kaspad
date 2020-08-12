@@ -176,6 +176,9 @@ type Params struct {
 
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks bool
+
+	// DisableDifficultyAdjustment determine whether to use difficulty
+	DisableDifficultyAdjustment bool
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default
@@ -226,6 +229,8 @@ var MainnetParams = Params{
 
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks: false,
+
+	DisableDifficultyAdjustment: false,
 }
 
 // RegressionNetParams defines the network parameters for the regression test
@@ -272,6 +277,8 @@ var RegressionNetParams = Params{
 
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks: false,
+
+	DisableDifficultyAdjustment: false,
 }
 
 // TestnetParams defines the network parameters for the test Kaspa network.
@@ -316,6 +323,8 @@ var TestnetParams = Params{
 
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks: false,
+
+	DisableDifficultyAdjustment: false,
 }
 
 // SimnetParams defines the network parameters for the simulation test Kaspa
@@ -364,6 +373,8 @@ var SimnetParams = Params{
 
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks: false,
+
+	DisableDifficultyAdjustment: true,
 }
 
 // DevnetParams defines the network parameters for the development Kaspa network.
@@ -408,6 +419,8 @@ var DevnetParams = Params{
 
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks: false,
+
+	DisableDifficultyAdjustment: false,
 }
 
 var (

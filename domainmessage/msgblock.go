@@ -42,6 +42,7 @@ type TxLoc struct {
 // block message. It is used to deliver block and transaction information in
 // response to a getdata message (MsgGetData) for a given block hash.
 type MsgBlock struct {
+	baseMessage
 	Header       BlockHeader
 	Transactions []*MsgTx
 }
