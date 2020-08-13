@@ -174,7 +174,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	return nil
 }
 
-// createBlockNodeFromBlock generates a new block node for given block
+// createBlockNodeFromBlock generates a new block node for the given block
 // and stores it in the block index with statusDataStored.
 func (dag *BlockDAG) createBlockNodeFromBlock(block *util.Block) (
 	newNode *blockNode, selectedParentAnticone []*blockNode, err error) {
