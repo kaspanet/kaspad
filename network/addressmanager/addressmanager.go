@@ -9,8 +9,8 @@ import (
 	crand "crypto/rand" // for seeding
 	"encoding/binary"
 	"encoding/gob"
-	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/config"
+	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
 	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"

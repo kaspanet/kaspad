@@ -5,13 +5,13 @@ import (
 	"github.com/kaspanet/kaspad/util"
 	"os"
 
-	"github.com/kaspanet/kaspad/version"
+	"github.com/kaspanet/kaspad/infrastructure/version"
 
 	"github.com/pkg/errors"
 
 	_ "net/http/pprof"
 
-	"github.com/kaspanet/kaspad/signal"
+	"github.com/kaspanet/kaspad/infrastructure/signal"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/kaspanet/kaspad/util/profiling"
 )

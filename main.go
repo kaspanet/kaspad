@@ -15,15 +15,15 @@ import (
 
 	"github.com/kaspanet/kaspad/app"
 
-	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
 
 	"github.com/kaspanet/kaspad/blockdag/indexers"
-	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/limits"
-	"github.com/kaspanet/kaspad/signal"
+	"github.com/kaspanet/kaspad/infrastructure/config"
+	"github.com/kaspanet/kaspad/infrastructure/limits"
+	"github.com/kaspanet/kaspad/infrastructure/signal"
+	"github.com/kaspanet/kaspad/infrastructure/version"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/kaspanet/kaspad/util/profiling"
-	"github.com/kaspanet/kaspad/version"
 )
 
 const (

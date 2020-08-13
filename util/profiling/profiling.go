@@ -7,7 +7,7 @@ import (
 	// Required for profiling
 	_ "net/http/pprof"
 
-	"github.com/kaspanet/kaspad/logs"
+	"github.com/kaspanet/kaspad/infrastructure/logs"
 	"github.com/kaspanet/kaspad/util/panics"
 )
 

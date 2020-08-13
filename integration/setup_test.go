@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/kaspanet/kaspad/app"
-	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/config"
+	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
 )
 
 type appHarness struct {

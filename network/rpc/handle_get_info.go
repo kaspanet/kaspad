@@ -1,8 +1,8 @@
 package rpc
 
 import (
+	"github.com/kaspanet/kaspad/infrastructure/version"
 	"github.com/kaspanet/kaspad/network/rpc/model"
-	"github.com/kaspanet/kaspad/version"
 )
 
 // handleGetInfo implements the getInfo command. We only return the fields

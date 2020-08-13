@@ -9,7 +9,7 @@ import (
 
 	"github.com/kaspanet/kaspad/network/netadapter"
 
-	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/infrastructure/config"
 )
 
 // connectionRequest represents a user request (either through CLI or RPC) to connect to a certain node

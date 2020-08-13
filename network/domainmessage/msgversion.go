@@ -6,11 +6,11 @@ package domainmessage
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/infrastructure/version"
 	"strings"
 
 	"github.com/kaspanet/kaspad/network/netadapter/id"
 	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/kaspanet/kaspad/version"
 
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/subnetworkid"

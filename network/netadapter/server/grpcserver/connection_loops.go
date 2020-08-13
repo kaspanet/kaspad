@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/kaspanet/kaspad/logger"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 
 	"github.com/kaspanet/kaspad/network/netadapter/server/grpcserver/protowire"
 )

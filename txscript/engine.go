@@ -6,7 +6,7 @@ package txscript
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/logger"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/network/domainmessage"
 )
 

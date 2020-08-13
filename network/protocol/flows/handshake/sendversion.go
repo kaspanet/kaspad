@@ -1,10 +1,10 @@
 package handshake
 
 import (
+	"github.com/kaspanet/kaspad/infrastructure/version"
 	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/network/netadapter/router"
 	"github.com/kaspanet/kaspad/network/protocol/common"
-	"github.com/kaspanet/kaspad/version"
 )
 
 var (

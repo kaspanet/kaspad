@@ -2,7 +2,7 @@ package blockdag
 
 import (
 	"github.com/kaspanet/kaspad/dagconfig"
-	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
 	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 )

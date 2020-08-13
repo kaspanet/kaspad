@@ -8,7 +8,7 @@ import (
 
 	"github.com/kaspanet/kaspad/network/domainmessage"
 
-	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/network/netadapter/router"
 )
 

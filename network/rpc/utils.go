@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/infrastructure/config"
 
 	"github.com/kaspanet/kaspad/util"
 )

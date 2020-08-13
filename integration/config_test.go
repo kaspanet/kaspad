@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kaspanet/kaspad/config"
 	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/infrastructure/config"
 )
 
 const (

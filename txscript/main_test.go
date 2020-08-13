@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kaspanet/kaspad/logs"
+	"github.com/kaspanet/kaspad/infrastructure/logs"
 )
 
 func TestMain(m *testing.M) {
