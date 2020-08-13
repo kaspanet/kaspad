@@ -5,15 +5,15 @@ import (
 	"testing"
 
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
+	"github.com/kaspanet/kaspad/network/domainmessage"
 )
 
-func generateNewUTXOEntry(index uint64) (wire.Outpoint, *UTXOEntry) {
+func generateNewUTXOEntry(index uint64) (domainmessage.Outpoint, *UTXOEntry) {
 	txSuffix := strconv.FormatUint(index, 10)
 	txStr := "0000000000000000000000000000000000000000000000000000000000000000"
 	txID, _ := daghash.NewTxIDFromStr(txStr[0:len(txStr)-len(txSuffix)] + txSuffix)
-	outpoint := *wire.NewOutpoint(txID, 0)
-	utxoEntry := NewUTXOEntry(&wire.TxOut{ScriptPubKey: []byte{}, Value: index}, true, index)
+	outpoint := *domainmessage.NewOutpoint(txID, 0)
+	utxoEntry := NewUTXOEntry(&domainmessage.TxOut{ScriptPubKey: []byte{}, Value: index}, true, index)
 
 	return outpoint, utxoEntry
 }
