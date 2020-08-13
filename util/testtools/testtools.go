@@ -3,23 +3,23 @@ package testtools
 import (
 	"time"
 
-	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/mining"
+	"github.com/kaspanet/kaspad/domain/mining"
 	"github.com/kaspanet/kaspad/util/daghash"
 
-	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/domain/blockdag"
 
-	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/domain/txscript"
+	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // RegisterSubnetworkForTest is used to register network on DAG with specified gas limit
 func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, gasLimit uint64) (*subnetworkid.SubnetworkID, error) {
-	buildNextBlock := func(parentHashes []*daghash.Hash, txs []*wire.MsgTx) (*util.Block, error) {
+	buildNextBlock := func(parentHashes []*daghash.Hash, txs []*domainmessage.MsgTx) (*util.Block, error) {
 		msgBlock, err := mining.PrepareBlockForTest(dag, parentHashes, txs, false)
 		if err != nil {
 			return nil, err
@@ -46,7 +46,7 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 	}
 
 	// Create a block in order to fund later transactions
-	fundsBlock, err := buildNextBlock(dag.TipHashes(), []*wire.MsgTx{})
+	fundsBlock, err := buildNextBlock(dag.TipHashes(), []*domainmessage.MsgTx{})
 	if err != nil {
 		return nil, errors.Errorf("could not build funds block: %s", err)
 	}
@@ -63,9 +63,9 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 	if err != nil {
 		return nil, errors.Errorf("Failed to build signature script: %s", err)
 	}
-	txIn := &wire.TxIn{
-		PreviousOutpoint: *wire.NewOutpoint(fundsBlockCbTx.TxID(), 0),
-		Sequence:         wire.MaxTxInSequenceNum,
+	txIn := &domainmessage.TxIn{
+		PreviousOutpoint: *domainmessage.NewOutpoint(fundsBlockCbTx.TxID(), 0),
+		Sequence:         domainmessage.MaxTxInSequenceNum,
 		SignatureScript:  signatureScript,
 	}
 
@@ -73,14 +73,14 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 	if err != nil {
 		return nil, err
 	}
-	txOut := &wire.TxOut{
+	txOut := &domainmessage.TxOut{
 		ScriptPubKey: scriptPubKey,
 		Value:        fundsBlockCbTx.TxOut[0].Value,
 	}
-	registryTx := wire.NewRegistryMsgTx(1, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, gasLimit)
+	registryTx := domainmessage.NewRegistryMsgTx(1, []*domainmessage.TxIn{txIn}, []*domainmessage.TxOut{txOut}, gasLimit)
 
 	// Add it to the DAG
-	registryBlock, err := buildNextBlock([]*daghash.Hash{fundsBlock.Hash()}, []*wire.MsgTx{registryTx})
+	registryBlock, err := buildNextBlock([]*daghash.Hash{fundsBlock.Hash()}, []*domainmessage.MsgTx{registryTx})
 	if err != nil {
 		return nil, errors.Errorf("could not build registry block: %s", err)
 	}

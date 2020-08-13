@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/kaspanet/kaspad/rpc/client"
+	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/rpc/client"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"time"
@@ -19,7 +19,7 @@ func newMinerClient(connCfg *client.ConnConfig) (*minerClient, error) {
 		onBlockAdded: make(chan struct{}, 1),
 	}
 	notificationHandlers := &client.NotificationHandlers{
-		OnFilteredBlockAdded: func(_ uint64, header *wire.BlockHeader,
+		OnFilteredBlockAdded: func(_ uint64, header *domainmessage.BlockHeader,
 			txs []*util.Tx) {
 			minerClient.onBlockAdded <- struct{}{}
 		},

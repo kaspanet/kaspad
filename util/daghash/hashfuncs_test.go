@@ -68,6 +68,35 @@ func TestHashFuncs(t *testing.T) {
 			t.Errorf("HashH(%q) = %s, want %s", test.in, h, test.out)
 			continue
 		}
+		writer := NewHashWriter()
+		n, err := writer.Write([]byte(test.in))
+		if err != nil || n != len(test.in) {
+			t.Fatalf("This should never fail, n expected: '%d', found: '%d'. err: '%+v'.", n, len(test.in), err)
+		}
+		hash = writer.Finalize()
+		h = fmt.Sprintf("%x", hash[:])
+		if h != test.out {
+			t.Fatalf("Finalize(%q) = %s, want %s", test.in, h, test.out)
+		}
+
+		// Test that writing the input part by part still results in the same hash.
+		writer = NewHashWriter()
+		slice := []byte(test.in)[:len(test.in)/2]
+		n, err = writer.Write(slice)
+		if err != nil || n != len(slice) {
+			t.Fatalf("This should never fail, n expected: '%d', found: '%d'. err: '%+v'.", n, len(slice), err)
+		}
+		slice = []byte(test.in)[len(test.in)/2:]
+		n, err = writer.Write([]byte(test.in)[len(test.in)/2:])
+		if err != nil || n != len(slice) {
+			t.Fatalf("This should never fail, n expected: '%d', found: '%d'. err: '%+v'.", n, len(slice), err)
+		}
+		hash = writer.Finalize()
+		h = fmt.Sprintf("%x", hash[:])
+		if h != test.out {
+			t.Errorf("Finalize(%q) = %s, want %s", test.in, h, test.out)
+			continue
+		}
 	}
 }
 
@@ -130,6 +159,36 @@ func TestDoubleHashFuncs(t *testing.T) {
 		if h != test.out {
 			t.Errorf("DoubleHashH(%q) = %s, want %s", test.in, h,
 				test.out)
+			continue
+		}
+		writer := NewDoubleHashWriter()
+		n, err := writer.Write([]byte(test.in))
+		if err != nil || n != len(test.in) {
+			t.Fatalf("This should never fail, n expected: '%d', found: '%d'. err: '%+v'.", n, len(test.in), err)
+		}
+		hash = writer.Finalize()
+		h = fmt.Sprintf("%x", hash[:])
+		if h != test.out {
+			t.Errorf("Finalize(%q) = %s, want %s", test.in, h, test.out)
+			continue
+		}
+
+		// Test that writing the input part by part still results in the same hash.
+		writer = NewDoubleHashWriter()
+		slice := []byte(test.in)[:len(test.in)/2]
+		n, err = writer.Write(slice)
+		if err != nil || n != len(slice) {
+			t.Fatalf("This should never fail, n expected: '%d', found: '%d'. err: '%+v'.", n, len(slice), err)
+		}
+		slice = []byte(test.in)[len(test.in)/2:]
+		n, err = writer.Write([]byte(test.in)[len(test.in)/2:])
+		if err != nil || n != len(slice) {
+			t.Fatalf("This should never fail, n expected: '%d', found: '%d'. err: '%+v'.", n, len(slice), err)
+		}
+		hash = writer.Finalize()
+		h = fmt.Sprintf("%x", hash[:])
+		if h != test.out {
+			t.Errorf("Finalize(%q) = %s, want %s", test.in, h, test.out)
 			continue
 		}
 	}

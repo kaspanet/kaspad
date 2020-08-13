@@ -8,8 +8,8 @@ import (
 	"bytes"
 	"io"
 
+	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // TxIndexUnknown is the value returned for a transaction index that is unknown.
@@ -22,20 +22,20 @@ const TxIndexUnknown = -1
 // transaction on its first access so subsequent accesses don't have to repeat
 // the relatively expensive hashing operations.
 type Tx struct {
-	msgTx   *wire.MsgTx   // Underlying MsgTx
-	txHash  *daghash.Hash // Cached transaction hash
-	txID    *daghash.TxID // Cached transaction ID
-	txIndex int           // Position within a block or TxIndexUnknown
+	msgTx   *domainmessage.MsgTx // Underlying MsgTx
+	txHash  *daghash.Hash        // Cached transaction hash
+	txID    *daghash.TxID        // Cached transaction ID
+	txIndex int                  // Position within a block or TxIndexUnknown
 }
 
-// MsgTx returns the underlying wire.MsgTx for the transaction.
-func (t *Tx) MsgTx() *wire.MsgTx {
+// MsgTx returns the underlying domainmessage.MsgTx for the transaction.
+func (t *Tx) MsgTx() *domainmessage.MsgTx {
 	// Return the cached transaction.
 	return t.msgTx
 }
 
 // Hash returns the hash of the transaction. This is equivalent to
-// calling TxHash on the underlying wire.MsgTx, however it caches the
+// calling TxHash on the underlying domainmessage.MsgTx, however it caches the
 // result so subsequent calls are more efficient.
 func (t *Tx) Hash() *daghash.Hash {
 	// Return the cached hash if it has already been generated.
@@ -50,7 +50,7 @@ func (t *Tx) Hash() *daghash.Hash {
 }
 
 // ID returns the id of the transaction. This is equivalent to
-// calling TxID on the underlying wire.MsgTx, however it caches the
+// calling TxID on the underlying domainmessage.MsgTx, however it caches the
 // result so subsequent calls are more efficient.
 func (t *Tx) ID() *daghash.TxID {
 	// Return the cached hash if it has already been generated.
@@ -85,8 +85,8 @@ func (t *Tx) IsCoinBase() bool {
 }
 
 // NewTx returns a new instance of a kaspa transaction given an underlying
-// wire.MsgTx. See Tx.
-func NewTx(msgTx *wire.MsgTx) *Tx {
+// domainmessage.MsgTx. See Tx.
+func NewTx(msgTx *domainmessage.MsgTx) *Tx {
 	return &Tx{
 		msgTx:   msgTx,
 		txIndex: TxIndexUnknown,
@@ -104,7 +104,7 @@ func NewTxFromBytes(serializedTx []byte) (*Tx, error) {
 // Reader to deserialize the transaction. See Tx.
 func NewTxFromReader(r io.Reader) (*Tx, error) {
 	// Deserialize the bytes into a MsgTx.
-	var msgTx wire.MsgTx
+	var msgTx domainmessage.MsgTx
 	err := msgTx.Deserialize(r)
 	if err != nil {
 		return nil, err

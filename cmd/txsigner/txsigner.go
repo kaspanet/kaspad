@@ -5,9 +5,9 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/domain/txscript"
+	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 	"os"
 )
@@ -58,12 +58,12 @@ func parsePrivateKey(privateKeyHex string) (*secp256k1.PrivateKey, error) {
 	return secp256k1.DeserializePrivateKeyFromSlice(privateKeyBytes)
 }
 
-func parseTransaction(transactionHex string) (*wire.MsgTx, error) {
+func parseTransaction(transactionHex string) (*domainmessage.MsgTx, error) {
 	serializedTx, err := hex.DecodeString(transactionHex)
 	if err != nil {
 		return nil, errors.Wrap(err, "couldn't decode transaction hex")
 	}
-	var transaction wire.MsgTx
+	var transaction domainmessage.MsgTx
 	err = transaction.Deserialize(bytes.NewReader(serializedTx))
 	return &transaction, err
 }
@@ -81,7 +81,7 @@ func createScriptPubKey(publicKey *secp256k1.SchnorrPublicKey) ([]byte, error) {
 	return scriptPubKey, err
 }
 
-func signTransaction(transaction *wire.MsgTx, privateKey *secp256k1.PrivateKey, scriptPubKey []byte) error {
+func signTransaction(transaction *domainmessage.MsgTx, privateKey *secp256k1.PrivateKey, scriptPubKey []byte) error {
 	for i, transactionInput := range transaction.TxIn {
 		signatureScript, err := txscript.SignatureScript(transaction, i, scriptPubKey, txscript.SigHashAll, privateKey, true)
 		if err != nil {
@@ -92,7 +92,7 @@ func signTransaction(transaction *wire.MsgTx, privateKey *secp256k1.PrivateKey, 
 	return nil
 }
 
-func serializeTransaction(transaction *wire.MsgTx) (string, error) {
+func serializeTransaction(transaction *domainmessage.MsgTx) (string, error) {
 	buf := bytes.NewBuffer(make([]byte, 0, transaction.SerializeSize()))
 	err := transaction.Serialize(buf)
 	serializedTransaction := hex.EncodeToString(buf.Bytes())

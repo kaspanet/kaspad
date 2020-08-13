@@ -7,11 +7,11 @@ package util_test
 import (
 	"bytes"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
-	"github.com/kaspanet/kaspad/wire"
 	"github.com/pkg/errors"
 	"io"
 	"math"
@@ -138,7 +138,7 @@ func TestBlock(t *testing.T) {
 	}
 
 	// Transaction offsets and length for the transaction in Block100000.
-	wantTxLocs := []wire.TxLoc{
+	wantTxLocs := []domainmessage.TxLoc{
 		{TxStart: 186, TxLen: 163},
 		{TxStart: 349, TxLen: 287},
 		{TxStart: 636, TxLen: 285},
@@ -296,8 +296,8 @@ func TestBlockErrors(t *testing.T) {
 
 // Block100000 defines block 100,000 of the block DAG. It is used to
 // test Block operations.
-var Block100000 = wire.MsgBlock{
-	Header: wire.BlockHeader{
+var Block100000 = domainmessage.MsgBlock{
+	Header: domainmessage.BlockHeader{
 		Version: 1,
 		ParentHashes: []*daghash.Hash{
 			{
@@ -334,12 +334,12 @@ var Block100000 = wire.MsgBlock{
 		Bits:      0x1e00ffff, // 503382015
 		Nonce:     0x000ae53f, // 714047
 	},
-	Transactions: []*wire.MsgTx{
+	Transactions: []*domainmessage.MsgTx{
 		{
 			Version: 1,
-			TxIn: []*wire.TxIn{
+			TxIn: []*domainmessage.TxIn{
 				{
-					PreviousOutpoint: wire.Outpoint{
+					PreviousOutpoint: domainmessage.Outpoint{
 						TxID:  daghash.TxID{},
 						Index: 0xffffffff,
 					},
@@ -349,7 +349,7 @@ var Block100000 = wire.MsgBlock{
 					Sequence: math.MaxUint64,
 				},
 			},
-			TxOut: []*wire.TxOut{
+			TxOut: []*domainmessage.TxOut{
 				{
 					Value: 0x12a05f200, // 5000000000
 					ScriptPubKey: []byte{
@@ -372,9 +372,9 @@ var Block100000 = wire.MsgBlock{
 		},
 		{
 			Version: 1,
-			TxIn: []*wire.TxIn{
+			TxIn: []*domainmessage.TxIn{
 				{
-					PreviousOutpoint: wire.Outpoint{
+					PreviousOutpoint: domainmessage.Outpoint{
 						TxID: daghash.TxID([32]byte{
 							0x03, 0x2e, 0x38, 0xe9, 0xc0, 0xa8, 0x4c, 0x60,
 							0x46, 0xd6, 0x87, 0xd1, 0x05, 0x56, 0xdc, 0xac,
@@ -409,7 +409,7 @@ var Block100000 = wire.MsgBlock{
 					Sequence: math.MaxUint64,
 				},
 			},
-			TxOut: []*wire.TxOut{
+			TxOut: []*domainmessage.TxOut{
 				{
 					Value: 0x2123e300, // 556000000
 					ScriptPubKey: []byte{
@@ -442,9 +442,9 @@ var Block100000 = wire.MsgBlock{
 		},
 		{
 			Version: 1,
-			TxIn: []*wire.TxIn{
+			TxIn: []*domainmessage.TxIn{
 				{
-					PreviousOutpoint: wire.Outpoint{
+					PreviousOutpoint: domainmessage.Outpoint{
 						TxID: daghash.TxID([32]byte{
 							0xc3, 0x3e, 0xbf, 0xf2, 0xa7, 0x09, 0xf1, 0x3d,
 							0x9f, 0x9a, 0x75, 0x69, 0xab, 0x16, 0xa3, 0x27,
@@ -478,7 +478,7 @@ var Block100000 = wire.MsgBlock{
 					Sequence: math.MaxUint64,
 				},
 			},
-			TxOut: []*wire.TxOut{
+			TxOut: []*domainmessage.TxOut{
 				{
 					Value: 0xf4240, // 1000000
 					ScriptPubKey: []byte{
@@ -511,9 +511,9 @@ var Block100000 = wire.MsgBlock{
 		},
 		{
 			Version: 1,
-			TxIn: []*wire.TxIn{
+			TxIn: []*domainmessage.TxIn{
 				{
-					PreviousOutpoint: wire.Outpoint{
+					PreviousOutpoint: domainmessage.Outpoint{
 						TxID: daghash.TxID([32]byte{
 							0x0b, 0x60, 0x72, 0xb3, 0x86, 0xd4, 0xa7, 0x73,
 							0x23, 0x52, 0x37, 0xf6, 0x4c, 0x11, 0x26, 0xac,
@@ -548,7 +548,7 @@ var Block100000 = wire.MsgBlock{
 					Sequence: math.MaxUint64,
 				},
 			},
-			TxOut: []*wire.TxOut{
+			TxOut: []*domainmessage.TxOut{
 				{
 					Value: 0xf4240, // 1000000
 					ScriptPubKey: []byte{

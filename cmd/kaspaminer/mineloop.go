@@ -7,8 +7,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	clientpkg "github.com/kaspanet/kaspad/rpc/client"
-	"github.com/kaspanet/kaspad/rpc/model"
+	clientpkg "github.com/kaspanet/kaspad/network/rpc/client"
+	"github.com/kaspanet/kaspad/network/rpc/model"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"

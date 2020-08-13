@@ -15,15 +15,15 @@ import (
 
 	"github.com/kaspanet/kaspad/app"
 
-	"github.com/kaspanet/kaspad/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
 
-	"github.com/kaspanet/kaspad/blockdag/indexers"
-	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/limits"
-	"github.com/kaspanet/kaspad/signal"
+	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
+	"github.com/kaspanet/kaspad/infrastructure/config"
+	"github.com/kaspanet/kaspad/infrastructure/limits"
+	"github.com/kaspanet/kaspad/infrastructure/signal"
+	"github.com/kaspanet/kaspad/infrastructure/version"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/kaspanet/kaspad/util/profiling"
-	"github.com/kaspanet/kaspad/version"
 )
 
 const (
@@ -132,14 +132,10 @@ func kaspadMain(startedChan chan<- struct{}) error {
 	}
 	defer func() {
 		log.Infof("Gracefully shutting down kaspad...")
-		err := app.Stop()
-		if err != nil {
-			log.Errorf("Error stopping kaspad: %+v", err)
-		}
 
 		shutdownDone := make(chan struct{})
 		go func() {
-			app.WaitForShutdown()
+			app.Stop()
 			shutdownDone <- struct{}{}
 		}()
 

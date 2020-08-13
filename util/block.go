@@ -11,8 +11,8 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 	"io"
 
+	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/wire"
 )
 
 // OutOfRangeError describes an error due to accessing an element that is out
@@ -35,7 +35,7 @@ func (e OutOfRangeError) Error() string {
 // repeat the relatively expensive hashing operations.
 type Block struct {
 	// Underlying MsgBlock
-	msgBlock *wire.MsgBlock
+	msgBlock *domainmessage.MsgBlock
 
 	// Serialized bytes for the block. This is used only internally, and .Hash() should be used anywhere.
 	serializedBlock []byte
@@ -53,14 +53,14 @@ type Block struct {
 	blueScore *uint64
 }
 
-// MsgBlock returns the underlying wire.MsgBlock for the Block.
-func (b *Block) MsgBlock() *wire.MsgBlock {
+// MsgBlock returns the underlying domainmessage.MsgBlock for the Block.
+func (b *Block) MsgBlock() *domainmessage.MsgBlock {
 	// Return the cached block.
 	return b.msgBlock
 }
 
 // Bytes returns the serialized bytes for the Block. This is equivalent to
-// calling Serialize on the underlying wire.MsgBlock, however it caches the
+// calling Serialize on the underlying domainmessage.MsgBlock, however it caches the
 // result so subsequent calls are more efficient.
 func (b *Block) Bytes() ([]byte, error) {
 	// Return the cached serialized bytes if it has already been generated.
@@ -82,7 +82,7 @@ func (b *Block) Bytes() ([]byte, error) {
 }
 
 // Hash returns the block identifier hash for the Block. This is equivalent to
-// calling BlockHash on the underlying wire.MsgBlock, however it caches the
+// calling BlockHash on the underlying domainmessage.MsgBlock, however it caches the
 // result so subsequent calls are more efficient.
 func (b *Block) Hash() *daghash.Hash {
 	// Return the cached block hash if it has already been generated.
@@ -99,8 +99,8 @@ func (b *Block) Hash() *daghash.Hash {
 // Tx returns a wrapped transaction (util.Tx) for the transaction at the
 // specified index in the Block. The supplied index is 0 based. That is to
 // say, the first transaction in the block is txNum 0. This is nearly
-// equivalent to accessing the raw transaction (wire.MsgTx) from the
-// underlying wire.MsgBlock, however the wrapped transaction has some helpful
+// equivalent to accessing the raw transaction (domainmessage.MsgTx) from the
+// underlying domainmessage.MsgBlock, however the wrapped transaction has some helpful
 // properties such as caching the hash so subsequent calls are more efficient.
 func (b *Block) Tx(txNum int) (*Tx, error) {
 	// Ensure the requested transaction is in range.
@@ -130,7 +130,7 @@ func (b *Block) Tx(txNum int) (*Tx, error) {
 
 // Transactions returns a slice of wrapped transactions (util.Tx) for all
 // transactions in the Block. This is nearly equivalent to accessing the raw
-// transactions (wire.MsgTx) in the underlying wire.MsgBlock, however it
+// transactions (domainmessage.MsgTx) in the underlying domainmessage.MsgBlock, however it
 // instead provides easy access to wrapped versions (util.Tx) of them.
 func (b *Block) Transactions() []*Tx {
 	// Return transactions if they have ALL already been generated. This
@@ -162,7 +162,7 @@ func (b *Block) Transactions() []*Tx {
 // TxHash returns the hash for the requested transaction number in the Block.
 // The supplied index is 0 based. That is to say, the first transaction in the
 // block is txNum 0. This is equivalent to calling TxHash on the underlying
-// wire.MsgTx, however it caches the result so subsequent calls are more
+// domainmessage.MsgTx, however it caches the result so subsequent calls are more
 // efficient.
 func (b *Block) TxHash(txNum int) (*daghash.Hash, error) {
 	// Attempt to get a wrapped transaction for the specified index. It
@@ -181,14 +181,14 @@ func (b *Block) TxHash(txNum int) (*daghash.Hash, error) {
 // TxLoc returns the offsets and lengths of each transaction in a raw block.
 // It is used to allow fast indexing into transactions within the raw byte
 // stream.
-func (b *Block) TxLoc() ([]wire.TxLoc, error) {
+func (b *Block) TxLoc() ([]domainmessage.TxLoc, error) {
 	rawMsg, err := b.Bytes()
 	if err != nil {
 		return nil, err
 	}
 	rbuf := bytes.NewBuffer(rawMsg)
 
-	var mblock wire.MsgBlock
+	var mblock domainmessage.MsgBlock
 	txLocs, err := mblock.DeserializeTxLoc(rbuf)
 	if err != nil {
 		return nil, err
@@ -224,8 +224,8 @@ func (b *Block) BlueScore() (uint64, error) {
 }
 
 // NewBlock returns a new instance of a kaspa block given an underlying
-// wire.MsgBlock. See Block.
-func NewBlock(msgBlock *wire.MsgBlock) *Block {
+// domainmessage.MsgBlock. See Block.
+func NewBlock(msgBlock *domainmessage.MsgBlock) *Block {
 	return &Block{
 		msgBlock: msgBlock,
 	}
@@ -247,7 +247,7 @@ func NewBlockFromBytes(serializedBlock []byte) (*Block, error) {
 // Reader to deserialize the block. See Block.
 func NewBlockFromReader(r io.Reader) (*Block, error) {
 	// Deserialize the bytes into a MsgBlock.
-	var msgBlock wire.MsgBlock
+	var msgBlock domainmessage.MsgBlock
 	err := msgBlock.Deserialize(r)
 	if err != nil {
 		return nil, err
@@ -260,8 +260,8 @@ func NewBlockFromReader(r io.Reader) (*Block, error) {
 }
 
 // NewBlockFromBlockAndBytes returns a new instance of a kaspa block given
-// an underlying wire.MsgBlock and the serialized bytes for it. See Block.
-func NewBlockFromBlockAndBytes(msgBlock *wire.MsgBlock, serializedBlock []byte) *Block {
+// an underlying domainmessage.MsgBlock and the serialized bytes for it. See Block.
+func NewBlockFromBlockAndBytes(msgBlock *domainmessage.MsgBlock, serializedBlock []byte) *Block {
 	return &Block{
 		msgBlock:        msgBlock,
 		serializedBlock: serializedBlock,
