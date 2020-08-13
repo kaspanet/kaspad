@@ -35,7 +35,7 @@ func New(shouldBan bool, message string) error {
 	}
 }
 
-// Wrap wraps the given error and returns it as a ProtoclError.
+// Wrap wraps the given error and returns it as a ProtocolError.
 func Wrap(shouldBan bool, err error, message string) error {
 	return &ProtocolError{
 		ShouldBan: shouldBan,
@@ -43,7 +43,7 @@ func Wrap(shouldBan bool, err error, message string) error {
 	}
 }
 
-// Wrapf wraps the given error with the given format and returns it as a ProtoclError.
+// Wrapf wraps the given error with the given format and returns it as a ProtocolError.
 func Wrapf(shouldBan bool, err error, format string, args ...interface{}) error {
 	return &ProtocolError{
 		ShouldBan: shouldBan,
