@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 func generateNewUTXOEntry(index uint64) (domainmessage.Outpoint, *UTXOEntry) {
