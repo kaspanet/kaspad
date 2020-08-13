@@ -2,9 +2,9 @@ package netadapter
 
 import (
 	"fmt"
-
 	"github.com/kaspanet/kaspad/domainmessage"
 	routerpkg "github.com/kaspanet/kaspad/netadapter/router"
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/netadapter/id"
 	"github.com/kaspanet/kaspad/netadapter/server"
@@ -15,23 +15,28 @@ type NetConnection struct {
 	connection            server.Connection
 	id                    *id.ID
 	router                *routerpkg.Router
+	invalidMessageChan    chan error
 	onDisconnectedHandler server.OnDisconnectedHandler
+	isConnected           uint32
 }
 
 func newNetConnection(connection server.Connection, routerInitializer RouterInitializer) *NetConnection {
 	router := routerpkg.NewRouter()
 
 	netConnection := &NetConnection{
-		connection: connection,
-		router:     router,
+		connection:         connection,
+		router:             router,
+		invalidMessageChan: make(chan error),
 	}
 
 	netConnection.connection.SetOnDisconnectedHandler(func() {
 		router.Close()
+		close(netConnection.invalidMessageChan)
+		netConnection.onDisconnectedHandler()
+	})
 
-		if netConnection.onDisconnectedHandler != nil {
-			netConnection.onDisconnectedHandler()
-		}
+	netConnection.connection.SetOnInvalidMessageHandler(func(err error) {
+		netConnection.invalidMessageChan <- err
 	})
 
 	router.SetOnRouteCapacityReachedHandler(func() {
@@ -44,6 +49,10 @@ func newNetConnection(connection server.Connection, routerInitializer RouterInit
 }
 
 func (c *NetConnection) start() {
+	if c.onDisconnectedHandler == nil {
+		panic(errors.New("onDisconnectedHandler is nil"))
+	}
+
 	c.connection.Start(c.router)
 }
 
@@ -76,12 +85,6 @@ func (c *NetConnection) NetAddress() *domainmessage.NetAddress {
 	return domainmessage.NewNetAddress(c.connection.Address(), 0)
 }
 
-// SetOnInvalidMessageHandler sets a handler function
-// for invalid messages
-func (c *NetConnection) SetOnInvalidMessageHandler(onInvalidMessageHandler server.OnInvalidMessageHandler) {
-	c.connection.SetOnInvalidMessageHandler(onInvalidMessageHandler)
-}
-
 func (c *NetConnection) setOnDisconnectedHandler(onDisconnectedHandler server.OnDisconnectedHandler) {
 	c.onDisconnectedHandler = onDisconnectedHandler
 }
@@ -89,4 +92,10 @@ func (c *NetConnection) setOnDisconnectedHandler(onDisconnectedHandler server.On
 // Disconnect disconnects the given connection
 func (c *NetConnection) Disconnect() {
 	c.connection.Disconnect()
+}
+
+// DequeueInvalidMessage dequeues the next invalid message
+func (c *NetConnection) DequeueInvalidMessage() (isOpen bool, err error) {
+	err, isOpen = <-c.invalidMessageChan
+	return isOpen, err
 }

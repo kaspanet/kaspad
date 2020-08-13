@@ -37,6 +37,10 @@ func NewGRPCServer(listeningAddrs []string) (server.Server, error) {
 }
 
 func (s *gRPCServer) Start() error {
+	if s.onConnectedHandler == nil {
+		return errors.New("onConnectedHandler is nil")
+	}
+
 	for _, listenAddr := range s.listeningAddrs {
 		err := s.listenOn(listenAddr)
 		if err != nil {
