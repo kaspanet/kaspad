@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"net"
 	"sync/atomic"
+	"time"
 
 	"github.com/kaspanet/kaspad/netadapter/router"
 	"github.com/kaspanet/kaspad/netadapter/server/grpcserver/protowire"
@@ -92,12 +93,17 @@ func (c *gRPCConnection) Disconnect() {
 	close(c.stopChan)
 
 	if c.isOutbound {
-		clientStream := c.stream.(protowire.P2P_MessageStreamClient)
-		_ = clientStream.CloseSend() // ignore error because we don't really know what's the status of the connection
+		spawn("gRPCConnection.Disconnect-clientStream.CloseSend", func() {
+			// Wait a second before closing the stream, to let the send queue to get emptied.
+			const finishSendDuration = time.Second
+			time.Sleep(finishSendDuration)
+			clientStream := c.stream.(protowire.P2P_MessageStreamClient)
+			_ = clientStream.CloseSend() // ignore error because we don't really know what's the status of the connection
+			log.Debugf("Disconnected from %s", c)
+		})
 	}
 
-	log.Debugf("Disconnected from %s", c)
-
+	log.Debugf("Disconnecting from %s", c)
 	if c.onDisconnectedHandler != nil {
 		c.onDisconnectedHandler()
 	}

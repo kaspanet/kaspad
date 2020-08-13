@@ -100,3 +100,8 @@ func (r *Route) Close() {
 	r.closed = true
 	close(r.channel)
 }
+
+// IsEmpty returns true if the route doesn't have any pending messages
+func (r *Route) IsEmpty() bool {
+	return len(r.channel) == 0
+}

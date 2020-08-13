@@ -47,6 +47,7 @@ const (
 	CmdRequestNextIBDBlocks
 	CmdDoneIBDBlocks
 	CmdTransactionNotFound
+	CmdReject
 )
 
 // MessageCommandToString maps all MessageCommands to their string representation
@@ -72,6 +73,7 @@ var MessageCommandToString = map[MessageCommand]string{
 	CmdRequestNextIBDBlocks: "RequestNextIBDBlocks",
 	CmdDoneIBDBlocks:        "DoneIBDBlocks",
 	CmdTransactionNotFound:  "TransactionNotFound",
+	CmdReject:               "Reject",
 }
 
 // Message is an interface that describes a kaspa message. A type that

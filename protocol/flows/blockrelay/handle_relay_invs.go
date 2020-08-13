@@ -190,7 +190,7 @@ func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueS
 		}
 		log.Infof("Rejected block %s from %s: %s", blockHash, flow.peer, err)
 
-		return protocolerrors.Wrap(true, err, "got invalid block")
+		return protocolerrors.Wrapf(true, err, "got invalid block %s", blockHash)
 	}
 
 	if isDelayed {
