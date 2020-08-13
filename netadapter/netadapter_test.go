@@ -105,7 +105,11 @@ func TestNetAdapter(t *testing.T) {
 	// wait for routes to be added to map, then they can be used to receive broadcasted message
 	wg.Wait()
 
-	r, _ := routes.Load("B")
+	r, ok := routes.Load("B")
+	if !ok {
+		t.Fatal("TestNetAdapter: route loading failed")
+	}
+
 	msg, err := r.(*router.Route).DequeueWithTimeout(timeout)
 	if err != nil {
 		t.Fatalf("TestNetAdapter: dequeuing message failed: %+v", err)
@@ -121,7 +125,11 @@ func TestNetAdapter(t *testing.T) {
 		t.Fatalf("TestNetAdapter: expected '%d' message number but got %d", nonce, number)
 	}
 
-	r, _ = routes.Load("C")
+	r, ok = routes.Load("C")
+	if !ok {
+		t.Fatal("TestNetAdapter: route loading failed")
+	}
+
 	msg, err = r.(*router.Route).DequeueWithTimeout(timeout)
 	if err != nil {
 		t.Fatalf("TestNetAdapter: dequeuing message failed: %+v", err)
