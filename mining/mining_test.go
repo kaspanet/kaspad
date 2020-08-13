@@ -19,6 +19,8 @@ func TestIncestousNewBlockTemplate(t *testing.T) {
 	}
 	defer teardownFunc()
 
+	t.Logf("genesis: %s", dag.Params.GenesisHash)
+
 	// Create a block over genesis but don't submit it
 	// Note that even though we're calling PrepareBlockForTest for
 	// convenience's sake, what we're actually testing is
@@ -27,6 +29,7 @@ func TestIncestousNewBlockTemplate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error in PrepareBlockForTest: %s", err)
 	}
+	t.Logf("heldBlock: %s", heldBlock.BlockHash())
 
 	// Add a chain with size `chainSize` over the genesis
 	const chainSize = 1010
@@ -48,6 +51,7 @@ func TestIncestousNewBlockTemplate(t *testing.T) {
 		}
 		chainTipHash = block.BlockHash()
 	}
+	t.Logf("chainTipHash: %s", chainTipHash)
 
 	// Add `heldBlock` to the DAG
 	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(heldBlock), blockdag.BFNoPoWCheck)
