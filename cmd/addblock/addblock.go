@@ -8,8 +8,8 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/kaspanet/kaspad/limits"
-	"github.com/kaspanet/kaspad/logs"
+	"github.com/kaspanet/kaspad/infrastructure/limits"
+	"github.com/kaspanet/kaspad/infrastructure/logs"
 	"github.com/kaspanet/kaspad/util/panics"
 )
 

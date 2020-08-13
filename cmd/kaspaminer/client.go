@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/kaspanet/kaspad/domainmessage"
-	"github.com/kaspanet/kaspad/rpc/client"
+	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/rpc/client"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 	"io/ioutil"

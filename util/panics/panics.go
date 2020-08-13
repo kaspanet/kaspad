@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/kaspanet/kaspad/logs"
+	"github.com/kaspanet/kaspad/infrastructure/logs"
 )
 
 const exitHandlerTimeout = 5 * time.Second

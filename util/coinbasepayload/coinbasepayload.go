@@ -3,7 +3,7 @@ package coinbasepayload
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/kaspanet/kaspad/domainmessage"
+	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util/binaryserializer"
 	"github.com/pkg/errors"
 )

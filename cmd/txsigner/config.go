@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/jessevdk/go-flags"
-	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/infrastructure/config"
 )
 
 var activeConfig *ConfigFlags
