@@ -5,10 +5,11 @@
 package domainmessage
 
 import (
-	"bytes"
+	"fmt"
+	"io"
+
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
-	"io"
 )
 
 // BaseBlockHeaderPayload is the base number of bytes a block header can be,
@@ -65,13 +66,18 @@ func (h *BlockHeader) NumParentBlocks() byte {
 // BlockHash computes the block identifier hash for the given block header.
 func (h *BlockHeader) BlockHash() *daghash.Hash {
 	// Encode the header and double sha256 everything prior to the number of
-	// transactions. Ignore the error returns since there is no way the
-	// encode could fail except being out of memory which would cause a
-	// run-time panic.
-	buf := bytes.NewBuffer(make([]byte, 0, BaseBlockHeaderPayload+h.NumParentBlocks()))
-	_ = writeBlockHeader(buf, 0, h)
+	// transactions.
+	writer := daghash.NewDoubleHashWriter()
+	err := writeBlockHeader(writer, 0, h)
+	if err != nil {
+		// It seems like this could only happen if the writer returned an error.
+		// and this writer should never return an error (no allocations or possible failures)
+		// the only non-writer error path here is unknown types in `WriteElement`
+		panic(fmt.Sprintf("BlockHash() failed. this should never fail unless BlockHeader was changed. err: %+v", err))
+	}
 
-	return daghash.DoubleHashP(buf.Bytes())
+	res := writer.Finalize()
+	return &res
 }
 
 // IsGenesis returns true iff this block is a genesis block
