@@ -12,10 +12,10 @@ import (
 	"github.com/kaspanet/kaspad/netadapter/router"
 )
 
-// getRouterInitializer returns new RouterInitializer which simply sets
+// routerInitializerForTest returns new RouterInitializer which simply sets
 // new incoming route for router and stores this route in map for further usage in tests
-func getRouterInitializer(routes *sync.Map, routeName string,
-	t *testing.T, wg *sync.WaitGroup) func(*router.Router, *NetConnection) {
+func routerInitializerForTest(t *testing.T, routes *sync.Map,
+	routeName string, wg *sync.WaitGroup) func(*router.Router, *NetConnection) {
 	return func(router *router.Router, connection *NetConnection) {
 		route, err := router.AddIncomingRoute([]domainmessage.MessageCommand{domainmessage.CmdPing})
 		if err != nil {
@@ -27,11 +27,16 @@ func getRouterInitializer(routes *sync.Map, routeName string,
 }
 
 func TestNetAdapter(t *testing.T) {
-	timeout := time.Second * 5
-	nonce := uint64(1)
+	const (
+		timeout = time.Second * 5
+		nonce   = uint64(1)
 
-	host := "127.0.0.1"
-	portA, portB, portC := 3000, 3001, 3002
+		host  = "127.0.0.1"
+		portA = 3000
+		portB = 3001
+		portC = 3002
+	)
+
 	addressA := fmt.Sprintf("%s:%d", host, portA)
 	addressB := fmt.Sprintf("%s:%d", host, portB)
 	addressC := fmt.Sprintf("%s:%d", host, portC)
@@ -61,7 +66,7 @@ func TestNetAdapter(t *testing.T) {
 		t.Fatalf("TestNetAdapter: NetAdapter instantiation failed: %+v", err)
 	}
 
-	initializer := getRouterInitializer(routes, "B", t, wg)
+	initializer := routerInitializerForTest(t, routes, "B", wg)
 	adapterB.SetRouterInitializer(initializer)
 	err = adapterB.Start()
 	if err != nil {
@@ -73,7 +78,7 @@ func TestNetAdapter(t *testing.T) {
 		t.Fatalf("TestNetAdapter: NetAdapter instantiation failed: %+v", err)
 	}
 
-	initializer = getRouterInitializer(routes, "C", t, wg)
+	initializer = routerInitializerForTest(t, routes, "C", wg)
 	adapterC.SetRouterInitializer(initializer)
 	err = adapterC.Start()
 	if err != nil {
