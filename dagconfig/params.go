@@ -5,6 +5,7 @@
 package dagconfig
 
 import (
+	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util/network"
 	"math/big"
 	"time"
@@ -12,8 +13,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util"
-
-	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 

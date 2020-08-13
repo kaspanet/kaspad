@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/logs"
-	"github.com/kaspanet/kaspad/rpc/client"
+	"github.com/kaspanet/kaspad/network/rpc/client"
 	"github.com/kaspanet/kaspad/util/panics"
 	"os"
 )

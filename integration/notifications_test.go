@@ -3,7 +3,7 @@ package integration
 import (
 	"testing"
 
-	"github.com/kaspanet/kaspad/domainmessage"
+	"github.com/kaspanet/kaspad/network/domainmessage"
 )
 
 func setOnBlockAddedHandler(t *testing.T, harness *appHarness, handler func(header *domainmessage.BlockHeader)) {

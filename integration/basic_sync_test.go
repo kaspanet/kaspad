@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kaspanet/kaspad/domainmessage"
+	"github.com/kaspanet/kaspad/network/domainmessage"
 )
 
 func TestIntegrationBasicSync(t *testing.T) {

@@ -6,8 +6,8 @@ package txscript
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/domainmessage"
 	"github.com/kaspanet/kaspad/logger"
+	"github.com/kaspanet/kaspad/network/domainmessage"
 )
 
 // ScriptFlags is a bitmask defining additional operations or tests that will be

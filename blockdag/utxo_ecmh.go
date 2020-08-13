@@ -3,7 +3,7 @@ package blockdag
 import (
 	"bytes"
 	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/domainmessage"
+	"github.com/kaspanet/kaspad/network/domainmessage"
 )
 
 func addUTXOToMultiset(ms *secp256k1.MultiSet, entry *UTXOEntry, outpoint *domainmessage.Outpoint) (*secp256k1.MultiSet, error) {

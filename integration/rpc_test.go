@@ -1,10 +1,10 @@
 package integration
 
 import (
-	"github.com/kaspanet/kaspad/domainmessage"
+	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util"
 
-	rpcclient "github.com/kaspanet/kaspad/rpc/client"
+	rpcclient "github.com/kaspanet/kaspad/network/rpc/client"
 )
 
 type rpcClient struct {
