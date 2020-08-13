@@ -33,8 +33,8 @@ const (
 	// has failed validation, thus the block is also invalid.
 	statusInvalidAncestor
 
-	// statusSuspect indicates that the block wasn't checked for UTXO violations.
-	statusSuspect
+	// statusUTXONotVerified indicates that the block UTXO wasn't verified.
+	statusUTXONotVerified
 
 	// statusViolatedFinality indicates that the block violated finality.
 	statusViolatedFinality
