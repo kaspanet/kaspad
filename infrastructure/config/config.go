@@ -77,7 +77,7 @@ var RunServiceCommand func(string) error
 // Flags defines the configuration options for kaspad.
 //
 // See loadConfig for details on the configuration load process.
-type Flags struct {
+type 	Flags struct {
 	ShowVersion          bool          `short:"V" long:"version" description:"Display version information and exit"`
 	ConfigFile           string        `short:"C" long:"configfile" description:"Path to configuration file"`
 	DataDir              string        `short:"b" long:"datadir" description:"Directory to store data"`
@@ -106,6 +106,7 @@ type Flags struct {
 	DisableTLS           bool          `long:"notls" description:"Disable TLS for the RPC server -- NOTE: This is only allowed if the RPC server is bound to localhost"`
 	DisableDNSSeed       bool          `long:"nodnsseed" description:"Disable DNS seeding for peers"`
 	DNSSeed              string        `long:"dnsseed" description:"Override DNS seeds with specified hostname (Only 1 hostname allowed)"`
+	GRPCSeed             string        `long:"grpcseed" description:"Hostname of gRPC server for seeding peers"`
 	ExternalIPs          []string      `long:"externalip" description:"Add an ip to the list of local addresses we claim to listen on to peers"`
 	Proxy                string        `long:"proxy" description:"Connect via SOCKS5 proxy (eg. 127.0.0.1:9050)"`
 	ProxyUser            string        `long:"proxyuser" description:"Username for proxy server"`
