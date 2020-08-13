@@ -233,18 +233,18 @@ func intersectionWithRemainderHavingBlueScoreInPlace(collection1, collection2, r
 	}
 }
 
-// substractionHavingBlueScore calculates a substraction between collection1 and collection2
+// subtractionHavingBlueScore calculates a subtraction between collection1 and collection2
 // having same blue score, returns the result
-func substractionHavingBlueScore(collection1, collection2 utxoCollection) (result utxoCollection) {
+func subtractionHavingBlueScore(collection1, collection2 utxoCollection) (result utxoCollection) {
 	result = make(utxoCollection, len(collection1))
 
-	substractionHavingBlueScoreInPlace(collection1, collection2, result)
+	subtractionHavingBlueScoreInPlace(collection1, collection2, result)
 	return
 }
 
-// substractionHavingBlueScoreInPlace calculates a substraction between collection1 and collection2
+// subtractionHavingBlueScoreInPlace calculates a subtraction between collection1 and collection2
 // having same blue score, puts it into result
-func substractionHavingBlueScoreInPlace(collection1, collection2, result utxoCollection) {
+func subtractionHavingBlueScoreInPlace(collection1, collection2, result utxoCollection) {
 	for outpoint, utxoEntry := range collection1 {
 		if !collection2.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
 			result.add(outpoint, utxoEntry)
@@ -252,19 +252,19 @@ func substractionHavingBlueScoreInPlace(collection1, collection2, result utxoCol
 	}
 }
 
-// substractionWithRemainderHavingBlueScore calculates a substraction between collection1 and collection2
+// subtractionWithRemainderHavingBlueScore calculates a subtraction between collection1 and collection2
 // having same blue score, returns the result and the remainder from collection1
-func substractionWithRemainderHavingBlueScore(collection1, collection2 utxoCollection) (result, remainder utxoCollection) {
+func subtractionWithRemainderHavingBlueScore(collection1, collection2 utxoCollection) (result, remainder utxoCollection) {
 	result = make(utxoCollection, len(collection1))
 	remainder = make(utxoCollection, len(collection1))
 
-	substractionWithRemainderHavingBlueScoreInPlace(collection1, collection2, result, remainder)
+	subtractionWithRemainderHavingBlueScoreInPlace(collection1, collection2, result, remainder)
 	return
 }
 
-// substractionWithRemainderHavingBlueScoreInPlace calculates a substraction between collection1 and collection2
+// subtractionWithRemainderHavingBlueScoreInPlace calculates a subtraction between collection1 and collection2
 // having same blue score, puts it into result and into remainder from collection1
-func substractionWithRemainderHavingBlueScoreInPlace(collection1, collection2, result, remainder utxoCollection) {
+func subtractionWithRemainderHavingBlueScoreInPlace(collection1, collection2, result, remainder utxoCollection) {
 	for outpoint, utxoEntry := range collection1 {
 		if !collection2.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
 			result.add(outpoint, utxoEntry)
@@ -348,7 +348,7 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	// All transactions in d.toAdd:
 	// If they are not in other.toAdd - should be added in result.toRemove
 	inBothToAdd := make(utxoCollection, len(d.toAdd))
-	substractionWithRemainderHavingBlueScoreInPlace(d.toAdd, other.toAdd, result.toRemove, inBothToAdd)
+	subtractionWithRemainderHavingBlueScoreInPlace(d.toAdd, other.toAdd, result.toRemove, inBothToAdd)
 	// If they are in other.toRemove - base utxoSet is not the same
 	if checkIntersection(inBothToAdd, d.toRemove) != checkIntersection(inBothToAdd, other.toRemove) {
 		return nil, errors.New(
@@ -357,15 +357,15 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 
 	// All transactions in other.toRemove:
 	// If they are not in d.toRemove - should be added in result.toRemove
-	substractionHavingBlueScoreInPlace(other.toRemove, d.toRemove, result.toRemove)
+	subtractionHavingBlueScoreInPlace(other.toRemove, d.toRemove, result.toRemove)
 
 	// All transactions in d.toRemove:
 	// If they are not in other.toRemove - should be added in result.toAdd
-	substractionHavingBlueScoreInPlace(d.toRemove, other.toRemove, result.toAdd)
+	subtractionHavingBlueScoreInPlace(d.toRemove, other.toRemove, result.toAdd)
 
 	// All transactions in other.toAdd:
 	// If they are not in d.toAdd - should be added in result.toAdd
-	substractionHavingBlueScoreInPlace(other.toAdd, d.toAdd, result.toAdd)
+	subtractionHavingBlueScoreInPlace(other.toAdd, d.toAdd, result.toAdd)
 
 	return &result, nil
 }
