@@ -146,7 +146,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	if err != nil {
 		return err
 	}
-	err = checkGasInBuildInOrNativeTransactions(tx)
+	err = checkGasInBuiltInOrNativeTransactions(tx)
 	if err != nil {
 		return err
 	}
@@ -262,7 +262,7 @@ func checkTransactionPayloadHash(tx *util.Tx) error {
 	return nil
 }
 
-func checkGasInBuildInOrNativeTransactions(tx *util.Tx) error {
+func checkGasInBuiltInOrNativeTransactions(tx *util.Tx) error {
 	// Transactions in native, registry and coinbase subnetworks must have Gas = 0
 	msgTx := tx.MsgTx()
 	if (msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
