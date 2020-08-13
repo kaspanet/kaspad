@@ -135,8 +135,6 @@ func (flow *handleRelayedTransactionsFlow) readInv() (*domainmessage.MsgInvTrans
 }
 
 func (flow *handleRelayedTransactionsFlow) broadcastAcceptedTransactions(acceptedTxs []*mempool.TxDesc) error {
-	// TODO(libp2p) Add mechanism to avoid sending to other peers invs that are known to them (e.g. mruinvmap)
-	// TODO(libp2p) Consider broadcasting in bulks
 	idsToBroadcast := make([]*daghash.TxID, len(acceptedTxs))
 	for i, tx := range acceptedTxs {
 		idsToBroadcast[i] = tx.Tx.ID()
@@ -194,7 +192,7 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 				expectedID, tx.ID())
 		}
 
-		acceptedTxs, err := flow.TxPool().ProcessTransaction(tx, true, 0) // TODO(libp2p) Use the peer ID for the mempool tag
+		acceptedTxs, err := flow.TxPool().ProcessTransaction(tx, true)
 		if err != nil {
 			ruleErr := &mempool.RuleError{}
 			if !errors.As(err, ruleErr) {
@@ -220,7 +218,6 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 		if err != nil {
 			return err
 		}
-		// TODO(libp2p) Notify transactionsAcceptedToMempool to RPC
 	}
 	return nil
 }

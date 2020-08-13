@@ -67,7 +67,6 @@ func (flow *receiveVersionFlow) start() (*domainmessage.NetAddress, error) {
 	// domainmessage.RejectVersion, this should send a reject packet before
 	// disconnecting.
 	if msgVersion.ProtocolVersion < minAcceptableProtocolVersion {
-		//TODO(libp2p) create error type for disconnect but don't ban
 		return nil, protocolerrors.Errorf(false, "protocol version must be %d or greater",
 			minAcceptableProtocolVersion)
 	}
@@ -77,18 +76,18 @@ func (flow *receiveVersionFlow) start() (*domainmessage.NetAddress, error) {
 		return nil, protocolerrors.New(true, "partial nodes are not allowed")
 	}
 
-	// TODO(libp2p)
-	//// Disconnect if:
-	//// - we are a full node and the outbound connection we've initiated is a partial node
-	//// - the remote node is partial and our subnetwork doesn't match their subnetwork
-	//localSubnetworkID := config.ActiveConfig().SubnetworkID
-	//isLocalNodeFull := localSubnetworkID == nil
-	//isRemoteNodeFull := msgVersion.SubnetworkID == nil
-	//if (isLocalNodeFull && !isRemoteNodeFull && !connection.IsInbound()) ||
-	//	(!isLocalNodeFull && !isRemoteNodeFull && !msgVersion.SubnetworkID.IsEqual(localSubnetworkID)) {
-	//
-	//	return nil, false, errors.New("incompatible subnetworks")
-	//}
+	// Disconnect if:
+	// - we are a full node and the outbound connection we've initiated is a partial node
+	// - the remote node is partial and our subnetwork doesn't match their subnetwork
+	localSubnetworkID := flow.Config().SubnetworkID
+	isLocalNodeFull := localSubnetworkID == nil
+	isRemoteNodeFull := msgVersion.SubnetworkID == nil
+	isOutbound := flow.peer.Connection().IsOutbound()
+	if (isLocalNodeFull && !isRemoteNodeFull && isOutbound) ||
+		(!isLocalNodeFull && !isRemoteNodeFull && !msgVersion.SubnetworkID.IsEqual(localSubnetworkID)) {
+
+		return nil, protocolerrors.New(false, "incompatible subnetworks")
+	}
 
 	flow.peer.UpdateFieldsFromMsgVersion(msgVersion)
 	err = flow.outgoingRoute.Enqueue(domainmessage.NewMsgVerAck())

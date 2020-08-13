@@ -76,7 +76,6 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getInfo":              handleGetInfo,
 	"getMempoolInfo":       handleGetMempoolInfo,
 	"getMempoolEntry":      handleGetMempoolEntry,
-	"getNetTotals":         handleGetNetTotals,
 	"getConnectedPeerInfo": handleGetConnectedPeerInfo,
 	"getPeerAddresses":     handleGetPeerAddresses,
 	"getRawMempool":        handleGetRawMempool,
@@ -95,6 +94,7 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 var rpcUnimplemented = map[string]struct{}{
 	"getMempoolEntry": {},
 	"getNetworkInfo":  {},
+	"getNetTotals":    {},
 }
 
 // Commands that are available to a limited user

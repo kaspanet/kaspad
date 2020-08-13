@@ -15,7 +15,7 @@ func (f *FlowContext) AddTransaction(tx *util.Tx) error {
 	f.transactionsToRebroadcastLock.Lock()
 	defer f.transactionsToRebroadcastLock.Unlock()
 
-	transactionsAcceptedToMempool, err := f.txPool.ProcessTransaction(tx, false, 0)
+	transactionsAcceptedToMempool, err := f.txPool.ProcessTransaction(tx, false)
 	if err != nil {
 		return err
 	}

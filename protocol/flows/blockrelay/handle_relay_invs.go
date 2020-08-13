@@ -224,12 +224,6 @@ func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueS
 	if err != nil {
 		return err
 	}
-	//TODO(libp2p)
-	//// When the block is not an orphan, log information about it and
-	//// update the DAG state.
-	// sm.restartSyncIfNeeded()
-	//// Clear the rejected transactions.
-	//sm.rejectedTxns = make(map[daghash.TxID]struct{})
 	err = flow.Broadcast(domainmessage.NewMsgInvBlock(blockHash))
 	if err != nil {
 		return err
