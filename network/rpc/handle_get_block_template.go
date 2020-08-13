@@ -11,11 +11,11 @@ import (
 
 	"github.com/kaspanet/kaspad/util/mstime"
 
-	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/mining"
+	"github.com/kaspanet/kaspad/domain/blockdag"
+	"github.com/kaspanet/kaspad/domain/mining"
+	"github.com/kaspanet/kaspad/domain/txscript"
 	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/network/rpc/model"
-	"github.com/kaspanet/kaspad/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/random"

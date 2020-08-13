@@ -4,9 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/domain/blockdag"
+	"github.com/kaspanet/kaspad/domain/mempool"
 	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/network/addressmanager"
 	"github.com/kaspanet/kaspad/network/connmanager"
 	"github.com/kaspanet/kaspad/network/netadapter"

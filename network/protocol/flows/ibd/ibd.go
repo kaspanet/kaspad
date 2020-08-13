@@ -1,7 +1,7 @@
 package ibd
 
 import (
-	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/network/netadapter/router"
 	"github.com/kaspanet/kaspad/network/protocol/common"

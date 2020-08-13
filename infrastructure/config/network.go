@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 	"github.com/jessevdk/go-flags"
-	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
 	"os"
 )

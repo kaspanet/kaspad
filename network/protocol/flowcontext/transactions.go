@@ -1,7 +1,7 @@
 package flowcontext
 
 import (
-	"github.com/kaspanet/kaspad/mempool"
+	"github.com/kaspanet/kaspad/domain/mempool"
 	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/network/protocol/flows/relaytransactions"
 	"github.com/kaspanet/kaspad/util"

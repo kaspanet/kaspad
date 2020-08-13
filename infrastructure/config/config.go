@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kaspanet/kaspad/dagconfig"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 
 	"github.com/pkg/errors"
 

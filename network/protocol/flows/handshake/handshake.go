@@ -8,7 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/network/protocol/common"
 	"github.com/kaspanet/kaspad/network/protocol/protocolerrors"
 
-	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/network/netadapter"
 
