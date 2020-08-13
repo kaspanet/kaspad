@@ -104,6 +104,9 @@ func TestProcessDelayedBlocks(t *testing.T) {
 
 	blockDelay := time.Duration(dag1.Params.TimestampDeviationTolerance)*dag1.Params.TargetTimePerBlock + 5*time.Second
 	delayedBlock.Header.Timestamp = initialTime.Add(blockDelay)
+
+	// We change the nonce here because even with BFNoPoWCheck, the un-delaying
+	// process always runs with BFNone.
 	delayedBlock.Header.Nonce = 2
 
 	isOrphan, isDelayed, err := dag1.ProcessBlock(util.NewBlock(delayedBlock), BFNoPoWCheck)
