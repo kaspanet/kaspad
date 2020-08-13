@@ -33,7 +33,7 @@ func (c *gRPCConnection) connectionLoops() error {
 
 func (c *gRPCConnection) sendLoop() error {
 	outgoingRoute := c.router.OutgoingRoute()
-	// Once the connected is closed, the send loop empties the remaining messages in the channel.
+	// Once the connection is closed, the send loop empties the remaining messages in the channel.
 	for c.IsConnected() || !outgoingRoute.IsEmpty() {
 		message, err := outgoingRoute.Dequeue()
 		if err != nil {
